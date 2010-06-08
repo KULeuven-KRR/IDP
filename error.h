@@ -103,6 +103,8 @@ namespace Error {
 
 	/** Unknown options or commands **/
 	void unkncommand(const string& name, ParseInfo* thisplace);
+	void wrongcommandargs(const string& name, ParseInfo*  thisplace);
+	void ambigcommand(const string& name, ParseInfo* thisplace);
 }
 
 namespace Warning {

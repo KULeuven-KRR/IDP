@@ -31,6 +31,7 @@ class ParseInfo {
 		ParseInfo(unsigned int line, unsigned int col, string* file) :
 			_line(line), _col(col), _file(file) { }
 		ParseInfo(ParseInfo& p) : _line(p.line()), _col(p.col()), _file(p.file()) { }
+		ParseInfo(ParseInfo* p) : _line(p->line()), _col(p->col()), _file(p->file()) { }
 
 		// Destructor
 		~ParseInfo() { }

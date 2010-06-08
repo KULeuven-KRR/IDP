@@ -368,6 +368,8 @@ namespace Insert {
 	vector<Vocabulary*>	_usingvocab;	// The vocabularies currently used to parse
 	vector<Structure*>	_usingstruct;	// The structures currently used to parse
 
+	map<string,vector<Inference*> >	_inferences;	// All inference methods
+
 	string*	currfile()					{ return _currfile;	}
 	void	currfile(const string& s)	{ _allfiles.push_back(_currfile); _currfile = new string(s);	}
 	void	currfile(string* s)			{ _allfiles.push_back(_currfile); if(s) _currfile = new string(*s); else _currfile = 0;	}
@@ -681,6 +683,11 @@ namespace Insert {
 
 	void initialize() {
 		_currspace = Namespace::global();
+		_inferences["print"].push_back(new PrintTheory());
+		_inferences["print"].push_back(new PrintVocabulary());
+		_inferences["print"].push_back(new PrintStructure());
+		_inferences["print"].push_back(new PrintNamespace());
+		_inferences["push_negations"].push_back(new PushNegations());
 	}
 
 	void cleanup() {
@@ -688,6 +695,11 @@ namespace Insert {
 			if(_allfiles[n]) delete(_allfiles[n]);
 		}
 		if(_currfile) delete(_currfile);
+		for(map<string,vector<Inference*> >::iterator it = _inferences.begin(); it != _inferences.end(); ++it) {
+			for(unsigned int n = 0; n < (it->second).size(); ++n) {
+				delete((it->second)[n]);
+			}
+		}
 	}
 
 	void closespace() {
@@ -1645,7 +1657,7 @@ namespace Insert {
 		PredInter* pt = _currstructure->inter(p);
 		if(pt) {
 			SortPredTable* spt = dynamic_cast<SortPredTable*>(pt->ctpf());
-			UserSortTable* ust;
+			UserSortTable* ust = 0;
 			switch(t) {
 				case ELINT:
 					ust = spt->table()->add(e._int); break;
@@ -1663,7 +1675,7 @@ namespace Insert {
 			}
 		}
 		else {
-			UserSortTable* ust;
+			UserSortTable* ust = 0;
 			switch(t) {
 				case ELINT: ust = new IntSortTable(); ust->add(e._int); break;
 				case ELDOUBLE: ust = new FloatSortTable(); ust->add(*(e._double)); delete(e._double); break;
@@ -2166,7 +2178,7 @@ namespace Insert {
 	EqChainForm* eqchain(char c, bool b, Term* lt, Term* rt, YYLTYPE l) {
 		if(lt && rt) {
 			ParseInfo* pi = parseinfo(l);
-			EqChainForm* ecf = new EqChainForm(true,lt,pi);
+			EqChainForm* ecf = new EqChainForm(true,true,lt,pi);
 			ecf->add(c,b,rt);
 			return ecf;
 		}
@@ -2499,59 +2511,101 @@ namespace Insert {
 	/*****************
 		Statements
 	*****************/
+
+	bool checkarg(const string& arg, InfArgType t) {
+		switch(t) {
+			case IAT_THEORY:
+				if(theoInScope(arg)) return true;
+				break;
+			case IAT_VOCABULARY:
+				if(vocabInScope(arg)) return true;
+				break;
+			case IAT_STRUCTURE:
+				if(structInScope(arg)) return true;
+				break;
+			case IAT_NAMESPACE:
+				if(namespaceInScope(arg)) return true;
+				break;
+			case IAT_VOID:
+				if(arg.size() == 0) return true;
+			default: assert(false); 
+		}
+		return false;
+	}
+
+	InfArg convertarg(const string& arg, InfArgType t) {
+		InfArg a;
+		switch(t) {
+			case IAT_THEORY:
+				a._theory = theoInScope(arg);
+				break;
+			case IAT_VOCABULARY:
+				a._vocabulary = vocabInScope(arg);
+				break;
+			case IAT_STRUCTURE:
+				a._structure = structInScope(arg);
+				break;
+			case IAT_NAMESPACE:
+				a._namespace = namespaceInScope(arg);
+				break;
+			case IAT_VOID:
+				break;
+			default:
+				assert(false);
+		}
+		return a;
+	}
+
+	void command(const string& cname, const vector<string>& args, const string& res, YYLTYPE l) {
+		ParseInfo* pi = parseinfo(l);
+		map<string,vector<Inference*> >::iterator it = _inferences.find(cname);
+		if(it != _inferences.end()) {
+			vector<Inference*> vi;
+			for(unsigned int n = 0; n < (it->second).size(); ++n) {
+				if(args.size() == (it->second)[n]->arity()) vi.push_back((it->second)[n]);
+			}
+			if(vi.empty()) {
+				Error::unkncommand(cname + '/' + itos(args.size()),pi);
+			}
+			else {
+				vector<Inference*> vi2;
+				for(unsigned int n = 0; n < vi.size(); ++n) {
+					bool ok = true;
+					for(unsigned int m = 0; m < args.size(); ++m) {
+						ok = checkarg(args[m],(vi[n]->intypes())[m]);
+						if(!ok) break;
+					}
+					if(ok) {
+						ok = checkarg(res,vi[n]->outtype());
+						if(ok) vi2.push_back(vi[n]);
+					}
+				}
+				if(vi2.empty()) Error::wrongcommandargs(cname + '/' + itos(args.size()),pi);
+				else if(vi2.size() == 1) {
+					vector<InfArg> via;
+					for(unsigned int m = 0; m < args.size(); ++m)
+						via.push_back(convertarg(args[m],(vi2[0]->intypes())[m]));
+					InfArg out = convertarg(res,vi2[0]->outtype());
+					vi2[0]->execute(via,out);
+				}
+				else Error::ambigcommand(cname + '/' + itos(args.size()),pi);
+			}
+		}
+		else {
+			Error::unkncommand(cname + '/' + itos(args.size()),pi);
+		}
+		delete(pi);
+	}
 	
 	void command(const string& cname, const vector<string>& args, YYLTYPE l) {
-		if(cname == "print_vocabulary") {
-			if(args.size() == 1) {
-				Vocabulary* voc = vocabInScope(args[0]);
-				if(voc) {
-					Execute::print(voc);
-				}
-				else {
-					ParseInfo* pi = parseinfo(l);
-					Error::undeclvoc(args[0],pi);
-					delete(pi);
-				}
-				return;
-			}
-		}
-		else if(cname == "print_theory") {
-			if(args.size() == 1) {
-				Theory* theo = theoInScope(args[0]);
-				if(theo) {
-					Execute::print(theo);
-				}
-				else {
-					ParseInfo* pi = parseinfo(l);
-					Error::undecltheo(args[0],pi);
-					delete(pi);
-				}
-				return;
-			}
-		}
-		else if(cname == "print_structure") {
-			if(args.size() == 1) {
-				Structure* str = structInScope(args[0]);
-				if(str) {
-					Execute::print(str);
-				}
-				else {
-					ParseInfo* pi = parseinfo(l);
-					Error::undeclstruct(args[0],pi);
-					delete(pi);
-				}
-				return;
-			}
-		}
-		ParseInfo* pi = parseinfo(l);
-		Error::unkncommand(cname + '/' + itos(args.size()),pi);
-		delete(pi);
+		string res;
+		command(cname,args,res,l);
 	}
 
 	void command(const string& cname, YYLTYPE l) {
-		ParseInfo* pi = parseinfo(l);
-		Error::unkncommand(cname + "/0",pi);
-		delete(pi);
+		vector<string> args;
+		string res;
+		command(cname,args,res,l);
 	}
 
 }

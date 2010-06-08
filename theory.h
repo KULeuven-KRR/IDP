@@ -29,6 +29,11 @@ class Formula {
 		// Constructor
 		Formula(bool sign, ParseInfo* pi):   _sign(sign), _pi(pi)  { }
 
+		// Virtual constructors
+		virtual	Formula*	clone()									const = 0;	// copy the formula while keeping the free variables
+		virtual	Formula*	clone(const map<Variable*,Variable*>&)	const = 0;	// copy the formulas, and replace the free variables
+																				// as inidicated by the map
+
 		// Destructor
 		virtual ~Formula() { }
 
@@ -37,6 +42,7 @@ class Formula {
 		void	swapsign()	{ _sign = !_sign;	}
 
 		// Inspectors
+				bool			sign()					const { return _sign;			}
 				unsigned int	nrFvars()				const { return _fvars.size();	}
 				Variable*		fvar(unsigned int n)	const { return _fvars[n];		}
 				ParseInfo*		pi()					const { return _pi;				}
@@ -70,6 +76,9 @@ class PredForm : public Formula {
 		PredForm(bool sign, PFSymbol* p, const vector<Term*>& a, ParseInfo* pi) : 
 			Formula(sign,pi), _symb(p), _args(a) { setfvars(); }
 
+		PredForm*	clone()									const;
+		PredForm*	clone(const map<Variable*,Variable*>&)	const;
+
 	    // Destructor
 		~PredForm();
 
@@ -99,6 +108,7 @@ class PredForm : public Formula {
 class EqChainForm : public Formula {
 
 	private:
+		bool			_conj;		// Indicates whether the chain is a conjunction or disjunction of (in)equalties
 		vector<Term*>	_terms;		// The consecutive terms in the chain
 		vector<char>	_comps;		// The consecutive comparisons ('=', '>' or '<') in the chain
 		vector<bool>	_signs;		// The signs of the consecutive comparisons
@@ -106,21 +116,31 @@ class EqChainForm : public Formula {
 	public:
 
 		// Constructors
-		EqChainForm(bool sign, Term* t, ParseInfo* pi) : Formula(sign,pi), _terms(1,t), _comps(0), _signs(0) { setfvars(); }
+		EqChainForm(bool sign, bool c, Term* t, ParseInfo* pi) : 
+			Formula(sign,pi), _conj(c), _terms(1,t), _comps(0), _signs(0) { setfvars(); }
+		EqChainForm(bool sign, bool c, const vector<Term*>& vt, const vector<char>& vc, const vector<bool>& vs, ParseInfo* pi) :
+			Formula(sign,pi), _conj(c), _terms(vt), _comps(vc), _signs(vs) { setfvars();	}
+
+		EqChainForm*	clone()									const;
+		EqChainForm*	clone(const map<Variable*,Variable*>&)	const;
 
 	    // Destructor
 		~EqChainForm();
 
 		// Mutators
-		void add(char c, bool s, Term* t) { _comps.push_back(c); _signs.push_back(s); _terms.push_back(t); }
+		void add(char c, bool s, Term* t)		{ _comps.push_back(c); _signs.push_back(s); _terms.push_back(t);	}
+		void conj(bool b)						{ _conj = b;														}
+		void compsign(unsigned int n, bool b)	{ _signs[n] = b;													}
 
 		// Inspectors
-		unsigned int	nrQvars()				const	{ return 0;					}
-		unsigned int	nrSubforms()			const	{ return 0;					}
-		unsigned int	nrSubterms()			const	{ return _terms.size();		}
-		Variable*		qvar(unsigned int n)	const	{ assert(false); return 0;	}
-		Formula*		subform(unsigned int n)	const	{ assert(false); return 0;	}
-		Term*			subterm(unsigned int n)	const	{ return _terms[n];			}
+		bool			conj()						const	{ return _conj;				}
+		bool			compsign(unsigned int n)	const	{ return _signs[n];			}
+		unsigned int	nrQvars()					const	{ return 0;					}
+		unsigned int	nrSubforms()				const	{ return 0;					}
+		unsigned int	nrSubterms()				const	{ return _terms.size();		}
+		Variable*		qvar(unsigned int n)		const	{ assert(false); return 0;	}
+		Formula*		subform(unsigned int n)		const	{ assert(false); return 0;	}
+		Term*			subterm(unsigned int n)		const	{ return _terms[n];			}
 
 		// Visitor
 		void accept(Visitor* v);
@@ -143,6 +163,9 @@ class EquivForm : public Formula {
 		// Constructors
 		EquivForm(bool sign, Formula* lf, Formula* rt, ParseInfo* pi) : 
 			Formula(sign,pi), _left(lf), _right(rt) { setfvars(); }
+
+		EquivForm*	clone()									const;
+		EquivForm*	clone(const map<Variable*,Variable*>&)	const;
 
 	    // Destructor
 		~EquivForm();
@@ -181,8 +204,14 @@ class BoolForm : public Formula {
 		BoolForm(bool sign, bool c, const vector<Formula*>& sb, ParseInfo* pi) :
 			Formula(sign,pi), _subf(sb), _conj(c) { setfvars(); }
 
+		BoolForm*	clone()									const;
+		BoolForm*	clone(const map<Variable*,Variable*>&)	const;
+
 	    // Destructor
 		~BoolForm();
+
+		// Mutators
+		void			conj(bool b)	{ _conj = b;	}
 
 		// Inspectors
 		bool			conj()					const	{ return _conj;				}
@@ -218,8 +247,14 @@ class QuantForm : public Formula {
 		QuantForm(bool sign, bool u, const vector<Variable*>& v, Formula* sf, ParseInfo* pi) : 
 			Formula(sign,pi), _vars(v), _subf(sf), _univ(u) { setfvars(); }
 
+		QuantForm*	clone()									const;
+		QuantForm*	clone(const map<Variable*,Variable*>&)	const;
+
 	   // Destructor
 	   ~QuantForm();
+
+		// Mutators
+		void	univ(bool b)	{ _univ = b;	}
 
 		// Inspectors
 		Formula*		subf()					const { return _subf;				}
@@ -259,6 +294,8 @@ class Rule {
 		Rule(const vector<Variable*>& vv, PredForm* h, Formula* b, ParseInfo* pi) : 
 			_head(h), _body(b), _vars(vv), _pi(pi) { }
 
+		Rule*	clone()									const;
+
 		// Destructor
 		~Rule();
 
@@ -287,6 +324,8 @@ class Definition {
 
 		// Constructors
 		Definition() : _rules(0), _defsyms(0) { } 
+
+		Definition*	clone()									const;
 
 		// Destructor
 		~Definition();
@@ -321,6 +360,8 @@ class FixpDef {
 
 		// Constructors
 		FixpDef(bool lfp) : _lfp(lfp), _defs(0), _rules(0) { }
+
+		FixpDef*	clone()									const;
 
 		// Destructor 
 		~FixpDef();
@@ -369,6 +410,8 @@ class Theory {
 		Theory(const string& name, ParseInfo* pi) : _name(name), _vocabulary(0), _structure(0), _pi(pi) { }
 		Theory(const string& name, Vocabulary* voc, Structure* str, ParseInfo* pi) : _name(name), _vocabulary(voc), _structure(str), _pi(pi) { }
 
+		Theory*	clone()									const;
+
 		// Destructor
 		~Theory();
 
@@ -380,14 +423,33 @@ class Theory {
 		void	add(FixpDef* fd)			{ _fixpdefs.push_back(fd);		}
 
 		// Inspectors
-		const string&	name()			const { return _name;		}
-		Vocabulary*		vocabulary()	const { return _vocabulary;	}
-		Structure*		structure()		const { return _structure;	}
-		ParseInfo*		pi()			const { return _pi;			}
+		const string&	name()						const { return _name;				}
+		Vocabulary*		vocabulary()				const { return _vocabulary;			}
+		Structure*		structure()					const { return _structure;			}
+		ParseInfo*		pi()						const { return _pi;					}
+		unsigned int	nrSentences()				const { return _sentences.size();	}
+		unsigned int	nrDefinitions()				const { return _definitions.size();	}
+		unsigned int	nrFixpDefs()				const { return _fixpdefs.size();	}
+		Formula*		sentence(unsigned int n)	const { return _sentences[n];		}
+		Definition*		definition(unsigned int n)	const { return _definitions[n];		}
+		FixpDef*		fixpdef(unsigned int n)		const { return _fixpdefs[n];		}
 
 		// Debugging
 		string to_string() const;
 
 };
+
+namespace TheoryUtils {
+	// Push negations inside
+	void push_negations(Theory*);
+	// Flatten formulas
+	// TODO
+	// Rewrite A <=> B to (A => B) & (B => A)
+	// TODO
+	// Rewrite chains of equalities to a chain of conjunctions
+	// TODO
+	// Merge definitions
+	// TODO
+}
 
 #endif

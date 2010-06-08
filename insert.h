@@ -144,6 +144,7 @@ namespace Insert {
 	FuncTerm*		maxterm(Sort*,YYLTYPE l);
 
 	/** Statements **/
+	void	command(const string& cname, const vector<string>& args, const string& res, YYLTYPE l);
 	void	command(const string&, const vector<string>&, YYLTYPE);
 	void	command(const string&, YYLTYPE);
 }

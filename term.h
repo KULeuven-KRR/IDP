@@ -27,6 +27,10 @@ class Term {
 		// Constructors
 		Term(ParseInfo* pi) : _pi(pi) { }
 
+		// Virtual constructors
+		virtual Term* clone()									const = 0;
+		virtual Term* clone(const map<Variable*,Variable*>&)	const = 0;
+
 		// Destructor
 		virtual ~Term() { }
 
@@ -71,6 +75,9 @@ class VarTerm : public Term {
 
 		// Constructors
 		VarTerm(Variable* v, ParseInfo* pi);
+
+		VarTerm* clone()								const;
+		VarTerm* clone(const map<Variable*,Variable*>&)	const;
 
 		// Destructor
 		~VarTerm() { delete(_pi);	}
@@ -117,6 +124,9 @@ class FuncTerm : public Term {
 		// Constructors
 		FuncTerm(Function* f, const vector<Term*>& a, ParseInfo* pi);
 
+		FuncTerm* clone()									const;
+		FuncTerm* clone(const map<Variable*,Variable*>&)	const;
+
 		// Destructor
 		~FuncTerm();
 
@@ -160,8 +170,11 @@ class DomainTerm : public Term {
 		DomainTerm(Sort* s, ElementType t, Element v, ParseInfo* pi) : 
 			Term(pi), _sort(s), _type(t), _value(v) { assert(s); setfvars(); }
 
+		DomainTerm* clone()								const;
+		DomainTerm* clone(const map<Variable*,Variable*>&)	const;
+
 		// Destructor
-		~DomainTerm() { delete(_pi);	}
+		~DomainTerm();
 
 		// Inspectors
 		Sort*			sort()					const { return _sort;				}
@@ -199,6 +212,9 @@ class SetExpr {
 
 		// Constructors
 		SetExpr(ParseInfo* pi) : _pi(pi) { }
+
+		virtual SetExpr* clone()								const = 0;
+		virtual SetExpr* clone(const map<Variable*,Variable*>&)	const = 0;
 
 		// Destructor
 		virtual ~SetExpr() { }
@@ -239,6 +255,9 @@ class EnumSetExpr : public SetExpr {
 		EnumSetExpr(const vector<Formula*>& s, const vector<Term*>& w, ParseInfo* pi) : 
 			SetExpr(pi), _subf(s), _weights(w) { setfvars(); }
 
+		EnumSetExpr* clone()								const;
+		EnumSetExpr* clone(const map<Variable*,Variable*>&)	const;
+
 		// Destructor
 		~EnumSetExpr();
 
@@ -272,6 +291,9 @@ class QuantSetExpr : public SetExpr {
 		// Constructors
 		QuantSetExpr(const vector<Variable*>& v, Formula* s, ParseInfo* pi) : 
 			SetExpr(pi), _subf(s), _vars(v) { setfvars(); }
+
+		QuantSetExpr* clone()								const;
+		QuantSetExpr* clone(const map<Variable*,Variable*>&)	const;
 
 		// Destructor
 		~QuantSetExpr();
@@ -309,6 +331,9 @@ class AggTerm : public Term {
 		// Constructors
 		AggTerm(SetExpr* s, AggType t, ParseInfo* pi) : 
 			Term(pi), _set(s), _type(t) { setfvars(); }
+
+		AggTerm* clone()								const;
+		AggTerm* clone(const map<Variable*,Variable*>&)	const;
 
 		// Destructor
 		~AggTerm() { delete(_pi); delete(_set); }

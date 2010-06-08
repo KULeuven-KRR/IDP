@@ -56,6 +56,15 @@ void Visitor::traverse(SetExpr* s) {
 	}
 }
 
+void Visitor::traverse(Theory* t) {
+	for(unsigned int n = 0; n < t->nrSentences(); ++n) 
+		t->sentence(n)->accept(this);
+	for(unsigned int n = 0; n < t->nrDefinitions(); ++n) 
+		t->definition(n)->accept(this);
+	for(unsigned int n = 0; n < t->nrFixpDefs(); ++n) 
+		t->fixpdef(n)->accept(this);
+}
+
 /******************
 	Visit terms
 ******************/
@@ -119,5 +128,3 @@ void Definition::accept(Visitor* v) {
 void FixpDef::accept(Visitor* v) {
 	v->visit(this);
 }
-
-

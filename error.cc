@@ -404,6 +404,16 @@ namespace Error {
 		error(thisplace);
 		cerr << "Command " << name << " does not exist." << endl;
 	}
+
+	void wrongcommandargs(const string& name, ParseInfo* thisplace) {
+		error(thisplace);
+		cerr << "The arguments given to command " << name << " are either of the wrong type, or do not exist.\n";
+	}
+
+	void ambigcommand(const string& name, ParseInfo* thisplace) {
+		error(thisplace);
+		cerr << "Ambiguous call to overloaded command " << name << ".\n";
+	}
 }
 
 namespace Warning {

@@ -7,24 +7,36 @@
 #include "execute.h"
 #include <iostream>
 
-namespace Execute {
-
-	void print(Theory* t) {
-		// TODO
-		string s = t->to_string();
-		cout << s;
-	}
-
-	void print(Vocabulary* v) {
-		// TODO
-		string s = v->to_string();
-		cout << s;
-	}
-
-	void print(Structure* i) {
-		// TODO
-		string s = i->to_string();
-		cout << s;
-	}
-
+void PrintTheory::execute(const vector<InfArg>& args, InfArg res) const {
+	assert(args.size() == 1);
+	// TODO
+	string s = (args[0]._theory)->to_string();
+	cout << s;
 }
+
+void PrintVocabulary::execute(const vector<InfArg>& args, InfArg res) const {
+	assert(args.size() == 1);
+	// TODO
+	string s = (args[0]._vocabulary)->to_string();
+	cout << s;
+}
+
+void PrintStructure::execute(const vector<InfArg>& args, InfArg res) const {
+	assert(args.size() == 1);
+	// TODO
+	string s = (args[0]._structure)->to_string();
+	cout << s;
+}
+
+void PrintNamespace::execute(const vector<InfArg>& args, InfArg res) const {
+	assert(args.size() == 1);
+	// TODO
+	//string s = (args[0]._namespace)->to_string();
+	//cout << s;
+}
+
+void PushNegations::execute(const vector<InfArg>& args, InfArg res) const {
+	assert(args.size() == 1);
+	TheoryUtils::push_negations(args[0]._theory);
+}
+

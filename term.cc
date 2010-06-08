@@ -23,6 +23,88 @@ FuncTerm::FuncTerm(Function* f, const vector<Term*>& a, ParseInfo* pi) : Term(pi
 	setfvars();
 }
 
+
+/** Cloning while keeping free variables **/
+
+VarTerm* VarTerm::clone() const {
+	map<Variable*,Variable*> mvv;
+	return clone(mvv);
+}
+
+FuncTerm* FuncTerm::clone() const {
+	map<Variable*,Variable*> mvv;
+	return clone(mvv);
+}
+
+DomainTerm* DomainTerm::clone() const {
+	map<Variable*,Variable*> mvv;
+	return clone(mvv);
+}
+
+AggTerm* AggTerm::clone() const {
+	map<Variable*,Variable*> mvv;
+	return clone(mvv);
+}
+
+EnumSetExpr* EnumSetExpr::clone() const {
+	map<Variable*,Variable*> mvv;
+	return clone(mvv);
+}
+
+QuantSetExpr* QuantSetExpr::clone() const {
+	map<Variable*,Variable*> mvv;
+	return clone(mvv);
+}
+
+/** Cloning while substituting free variables **/
+
+VarTerm* VarTerm::clone(const map<Variable*,Variable*>& mvv) const {
+	map<Variable*,Variable*>::const_iterator it = mvv.find(_var);
+	if(it != mvv.end()) return new VarTerm(it->second,new ParseInfo(_pi));
+	else return new VarTerm(_var,new ParseInfo(_pi));
+}
+
+FuncTerm* FuncTerm::clone(const map<Variable*,Variable*>& mvv) const {
+	vector<Term*> na(_args.size());
+	for(unsigned int n = 0; n < _args.size(); ++n) na[n] = _args[n]->clone(mvv);
+	return new FuncTerm(_func,na,new ParseInfo(_pi));
+}
+
+DomainTerm* DomainTerm::clone(const map<Variable*,Variable*>& mvv) const {
+	Element ne;
+	switch(_type) {
+		case ELINT: ne._int = _value._int; break;
+		case ELDOUBLE: ne._double = new double(*(_value._double)); break;
+		case ELSTRING: ne._string = new string(*(_value._string)); break;
+		default: assert(false);
+	}
+	return new DomainTerm(_sort,_type,ne,new ParseInfo(_pi));
+}
+
+AggTerm* AggTerm::clone(const map<Variable*,Variable*>& mvv) const {
+	SetExpr* ns = _set->clone(mvv);
+	return new AggTerm(ns,_type,new ParseInfo(_pi));
+}
+
+EnumSetExpr* EnumSetExpr::clone(const map<Variable*,Variable*>& mvv) const {
+	vector<Formula*> nf(_subf.size());
+	vector<Term*> nt(_weights.size());
+	for(unsigned int n = 0; n < _subf.size(); ++n) nf[n] = _subf[n]->clone(mvv);
+	for(unsigned int n = 0; n < _weights.size(); ++n) nt[n] = _weights[n]->clone(mvv);
+	return new EnumSetExpr(nf,nt,new ParseInfo(_pi));
+}
+
+QuantSetExpr* QuantSetExpr::clone(const map<Variable*,Variable*>& mvv) const {
+	vector<Variable*> nv(_vars.size());
+	map<Variable*,Variable*> nmvv = mvv;
+	for(unsigned int n = 0; n < _vars.size(); ++n) {
+		nv[n] = new Variable(_vars[n]->name(),_vars[n]->sort(),new ParseInfo(_vars[n]->pi()));
+		nmvv[_vars[n]] = nv[n];
+	}
+	Formula* nf = _subf->clone(nmvv);
+	return new QuantSetExpr(nv,nf,new ParseInfo(_pi));
+}
+
 /******************
 	Destructors
 ******************/
@@ -30,6 +112,16 @@ FuncTerm::FuncTerm(Function* f, const vector<Term*>& a, ParseInfo* pi) : Term(pi
 FuncTerm::~FuncTerm() {
 	delete(_pi);
 	for(unsigned int n = 0; n < _args.size(); ++n) delete(_args[n]);
+}
+
+DomainTerm::~DomainTerm() {
+	delete(_pi);
+	switch(_type) {
+		case ELINT: break;
+		case ELDOUBLE: delete(_value._double); break;
+		case ELSTRING: delete(_value._string); break;
+		default: assert(false);
+	}
 }
 
 EnumSetExpr::~EnumSetExpr() {

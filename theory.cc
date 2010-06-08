@@ -5,9 +5,84 @@
 ************************************/
 
 #include "theory.h"
+#include "visitor.h"
 #include <iostream>
 
 extern string tabstring(unsigned int);
+
+/*******************
+	Constructors
+*******************/
+
+/** Cloning while keeping free variables **/
+
+PredForm* PredForm::clone() const {
+	map<Variable*,Variable*> mvv;
+	return clone(mvv);
+}
+
+EqChainForm* EqChainForm::clone() const {
+	map<Variable*,Variable*> mvv;
+	return clone(mvv);
+}
+
+EquivForm* EquivForm::clone() const {
+	map<Variable*,Variable*> mvv;
+	return clone(mvv);
+}
+
+BoolForm* BoolForm::clone() const {
+	map<Variable*,Variable*> mvv;
+	return clone(mvv);
+}
+
+QuantForm* QuantForm::clone() const {
+	map<Variable*,Variable*> mvv;
+	return clone(mvv);
+}
+
+/** Cloning while substituting free variables **/
+
+PredForm* PredForm::clone(const map<Variable*,Variable*>& mvv) const {
+	vector<Term*> na(_args.size());
+	for(unsigned int n = 0; n < _args.size(); ++n) na[n] = _args[n]->clone(mvv);
+	PredForm* pf = new PredForm(_sign,_symb,na,new ParseInfo(_pi));
+	return pf;
+}
+
+EqChainForm* EqChainForm::clone(const map<Variable*,Variable*>& mvv) const {
+	vector<Term*> nt(_terms.size());
+	for(unsigned int n = 0; n < _terms.size(); ++n) nt[n] = _terms[n]->clone(mvv);
+	EqChainForm* ef = new EqChainForm(_sign,_conj,nt,_comps,_signs,new ParseInfo(_pi));
+	return ef;
+}
+
+EquivForm* EquivForm::clone(const map<Variable*,Variable*>& mvv) const {
+	Formula* nl = _left->clone(mvv);
+	Formula* nr = _right->clone(mvv);
+	EquivForm* ef =  new EquivForm(_sign,nl,nr,new ParseInfo(_pi));
+	return ef;
+}
+
+BoolForm* BoolForm::clone(const map<Variable*,Variable*>& mvv) const {
+	vector<Formula*> ns(_subf.size());
+	for(unsigned int n = 0; n < _subf.size(); ++n) ns[n] = _subf[n]->clone(mvv);
+	BoolForm* bf = new BoolForm(_sign,_conj,ns,new ParseInfo(_pi));
+	return bf;
+}
+
+QuantForm* QuantForm::clone(const map<Variable*,Variable*>& mvv) const {
+	vector<Variable*> nv(_vars.size());
+	map<Variable*,Variable*> nmvv = mvv;
+	for(unsigned int n = 0; n < _vars.size(); ++n) {
+		nv[n] = new Variable(_vars[n]->name(),_vars[n]->sort(),new ParseInfo(_vars[n]->pi()));
+		nmvv[_vars[n]] = nv[n];
+	}
+	Formula* nf = _subf->clone(nmvv);
+	QuantForm* qf = new QuantForm(_sign,_univ,nv,nf,new ParseInfo(_pi));
+	return qf;
+}
+
 
 /*****************
 	Destructors
@@ -179,6 +254,7 @@ string EqChainForm::to_string() const {
 				break;
 		}
 		s = s + _terms[n+1]->to_string();
+		if(!_conj && n+1 < _comps.size()) s = s + " | " + _terms[n+1]->to_string();
 	}
 	s = s + ")";
 	return s;
@@ -273,4 +349,63 @@ string Theory::to_string() const {
 		s = s + _fixpdefs[n]->to_string(3);
 	}
 	return s + "}\n";
+}
+
+/*************************
+	Rewriting theories
+*************************/
+
+/** Push negations inside **/
+
+class NegationPush : public Visitor {
+
+	public:
+		NegationPush(Theory* t)	: Visitor() { traverse(t);	}
+
+		void visit(EqChainForm*);
+		void visit(EquivForm*);
+		void visit(BoolForm*);
+		void visit(QuantForm*);
+
+};
+
+void NegationPush::visit(EqChainForm* f) {
+	if(!f->sign()) {
+		f->swapsign();
+		f->conj(!f->conj());
+		for(unsigned int n = 0; n < f->nrSubterms()-1; ++n)  f->compsign(n,!f->compsign(n));
+	}
+	traverse(f);
+}
+
+void NegationPush::visit(EquivForm* f) {
+	if(!f->sign()) {
+		f->swapsign();
+		f->right()->swapsign();
+	}
+	traverse(f);
+}
+
+void NegationPush::visit(BoolForm* f) {
+	if(!f->sign()) {
+		f->swapsign();
+		for(unsigned int n = 0; n < f->nrSubforms(); ++n) 
+			f->subform(n)->swapsign();
+		f->conj(!f->conj());
+	}
+	traverse(f);
+}
+
+void NegationPush::visit(QuantForm* f) {
+	if(!f->sign()) {
+		f->swapsign();
+		f->subf()->swapsign();
+		f->univ(!f->univ());
+	}
+	traverse(f);
+}
+
+namespace TheoryUtils {
+	void push_negations(Theory* t) { NegationPush np(t);	}
+	// TODO
 }

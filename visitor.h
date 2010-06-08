@@ -22,6 +22,7 @@ class Visitor {
 		void traverse(Definition* d);
 		void traverse(FixpDef* f);
 		void traverse(SetExpr* s);
+		void traverse(Theory* t);
 
 		// Formulas 
 		virtual void visit(PredForm* a)			{ traverse(a);	}
@@ -44,6 +45,9 @@ class Visitor {
 		// Set expressions
 		virtual void visit(EnumSetExpr* a)		{ traverse(a);	}
 		virtual void visit(QuantSetExpr* a)		{ traverse(a);	}
+
+		// Theories
+		virtual void visit(Theory* t)			{ traverse(t);	}
 };
 
 #endif
