@@ -12,10 +12,10 @@ enum WarningTypes { WT_FREE_VARS=0, WT_VARORCONST=1, WT_SORTDERIVE=2, WT_STDIN=3
 struct Options {
 
 		  // Attributes
-		  bool				_statistics;
-		  bool				_verbose;
-		  bool				_readfromstdin;
-		  vector<bool>		_warning;
+		  bool				_statistics;		// print statistics on stderr iff _statistics=true
+		  bool				_verbose;			// print extra information on stderr iff _verbose=true
+		  bool				_readfromstdin;		// expect input from stdin iff _readfromstdin=true
+		  vector<bool>		_warning;			// _warning[n] = true means that warnings of type n are not suppressed
 
 		  // Constructor
 		  Options() {

@@ -28,8 +28,9 @@ class Term {
 		Term(ParseInfo* pi) : _pi(pi) { }
 
 		// Virtual constructors
-		virtual Term* clone()									const = 0;
-		virtual Term* clone(const map<Variable*,Variable*>&)	const = 0;
+		virtual Term* clone()									const = 0;	// create a copy of the term while keeping the free variables
+		virtual Term* clone(const map<Variable*,Variable*>&)	const = 0;	// create a copy of the term and substitute the
+																			// free variables according to the given map
 
 		// Destructor
 		virtual ~Term() { }

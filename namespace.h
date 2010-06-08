@@ -20,14 +20,14 @@ class Namespace {
 		string					_name;			// The name of the namespace
 		Namespace*				_superspace;	// The parent of the namespace in the namespace hierarchy
 												// Null-pointer if top of the hierarchy
-		map<string,Namespace*>	_subspaces;		// The childres of the namespace in the namespace hierarchy
-		map<string,Vocabulary*>	_vocabularies;	// The vocabularies in the namespace
-		map<string,Structure*>	_structures;	// The structures in the namespace
-		map<string,Theory*>		_theories;		// the theories in the namespace
-		vector<Namespace*>		_subs;
-		vector<Vocabulary*>		_vocs;
-		vector<Structure*>		_structs;
-		vector<Theory*>			_theos;
+		map<string,Namespace*>	_subspaces;		// Map a name to the corresponding subspace
+		map<string,Vocabulary*>	_vocabularies;	// Map a name to the corresponding vocabulary
+		map<string,Structure*>	_structures;	// Map a name to the corresponding structure
+		map<string,Theory*>		_theories;		// Map a name to the corresponding theory
+		vector<Namespace*>		_subs;			// The children of the namespace in the namespace hierarchy
+		vector<Vocabulary*>		_vocs;			// The vocabularies in the namespace
+		vector<Structure*>		_structs;		// The structures in the namespace                   
+		vector<Theory*>			_theos;			// The theories in the namespace                           
 		ParseInfo*				_pi;			// the place where the namespace was parsed
 		static Namespace*		_global;		// the global namespace
 

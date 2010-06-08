@@ -41,7 +41,7 @@ class SortTable {
 		virtual ElementType		type()					const = 0;		// return the type (int, double or string) of the
 																		// elements in the table
 
-		virtual Element			element(unsigned int n)	= 0;			// returns the n'th element
+		virtual Element			element(unsigned int n)	= 0;			// returns (a pointer to) the n'th element
 
 		// Cleanup
 		virtual void sortunique() { } // Sort the table and remove doubles.
@@ -364,6 +364,7 @@ class PredTable {
 
 typedef vector<vector<Element> > VVE;
 
+/** Finite tables **/
 class FinitePredTable : public PredTable {
 
 	public:
@@ -391,6 +392,7 @@ class FinitePredTable : public PredTable {
 
 };
 
+/** Tables where all tuples are enumerated **/
 class UserPredTable : public FinitePredTable {
 	
 	private:
@@ -431,6 +433,8 @@ class UserPredTable : public FinitePredTable {
 		string to_string(unsigned int spaces = 0)	const;
 };
 
+/** Tables with arity 1 **/
+
 class SortPredTable : public FinitePredTable {
 	
 	private:
@@ -462,8 +466,8 @@ class SortPredTable : public FinitePredTable {
 };
 
 /*
- * Three-valued predicate interpretation, represented by two pointers to tables.
- *	If the two pointers are equal, the interpretation is certainly two-valued.
+ * Four-valued predicate interpretation, represented by two pointers to tables.
+ *	If the two pointers are equal and _ct != _cf, the interpretation is certainly two-valued.
  */ 
 class PredInter {
 	
@@ -619,9 +623,9 @@ class Structure {
 		SortTable*		inter(Sort* s)			const;	// Return the domain of s.
 		PredInter*		inter(Predicate* p)		const;	// Return the interpretation of p.
 		FuncInter*		inter(Function* f)		const;	// Return the interpretation of f.
-		bool			hasInter(Sort* s)		const;
-		bool			hasInter(Predicate* p)	const;
-		bool			hasInter(Function* f)	const;
+		bool			hasInter(Sort* s)		const;	// True iff s has an interpretation
+		bool			hasInter(Predicate* p)	const;	// True iff p has an interpretation
+		bool			hasInter(Function* f)	const;	// True iff f has an interpretation
 
 		// Debugging
 		string	to_string(unsigned int spaces = 0) const;
