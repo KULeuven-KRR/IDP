@@ -1,0 +1,26 @@
+TABS
+====
+- Use a tabstop of size 4
+- Do not expand tabs to spaces
+
+GETTERS & SETTERS
+=================
+- Try to stick to the following sheme:
+	class A {
+		private:
+			int _value;		// Attribute starts with an underscore
+		public:
+			// ...
+			void value(int v) { _value = v;		}	// setter has the name of the attribute, but without the underscore
+			int value() const { return _value;	}	// ... similarly for the getter
+	}
+
+INFERENCE METHODS
+=================
+- Avoid to directly add methods that are specific to an inference method to the classes implementing vocabularies, theories and structures. Use a decorator or a visitor if possible.
+
+BEFORE COMMITTING YOUR CHANGES TO THE SERVER
+============================================
+- Test for memory leaks by running
+	valgrind --leak-check=yes gidl testfile
+  The output should contain no errors and only 3 memory leaks (from bison)
