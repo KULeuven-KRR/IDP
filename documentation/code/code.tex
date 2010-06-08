@@ -1,0 +1,352 @@
+\documentclass{article}
+\usepackage{xspace}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{listings}
+\lstdefinelanguage{foid}
+{
+	morecomment=[s]{/*}{*/},	
+	morecomment=[l]{//}
+}
+\lstset{
+	language=foid,
+	tabsize=4,
+	basicstyle=\ttfamily,
+	commentstyle=\itshape
+}
+
+\newcommand{\gidl}{{\sc gidl}\xspace}
+
+\title{Documentation of \gidl's source code}
+\author{Johan Wittocx}
+
+\begin{document}
+\maketitle
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Files}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{description}
+	\item[vocabulary.\{h,cc\}] Sorts (types), predicate and function symbols
+	\item[structure.\{h,cc\}] Interpretations (tables) for sorts, predicates and functions
+	\item[term.\{h,cc\}] Terms and set expresssions
+	\item[theory.\{h,cc\}] Formulas, definitions, fixpoint definitions and theories
+	\item[namespace.\{h,cc\}] Namespaces
+	\item[builtin.\{h,cc\}] Built-in sorts, predicates and functions
+	\item[execute.\{h,cc\}] Inference methods
+	\item[visitor.\{h,cc\}] Visitor patterns
+	\item[options.h] (Command-line) options
+	\item[error.\{h,cc\}] Error and warning messages
+	\item[lex.ll, parse.yy, insert.\{h,cc\}] Parsing
+	\item[main.cc] Initialize data, read command-line arguments, parse input files, delete data
+\end{description}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{vocabulary.\{h,cc\}}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%----------------------------------------------------------%
+\subsection*{Parse locations}
+%----------------------------------------------------------%
+
+\begin{description}
+	\item[class ParseInfo] Stores the location (line, column and file) of a parsed object. This is used to produce clear error messages.
+\end{description}
+Note: almost all objects that can occur in the input files have a pointer to a ParseInfo object. The only exception are domain elements, because storing the parse location of each domain element in a (possibly large) structure seems too much overhead. If some object is builtin, its ParseInfo pointer is set to 0.
+
+%----------------------------------------------------------%
+\subsection*{Domain elements}
+%----------------------------------------------------------%
+
+\begin{description}
+	\item[union Element] A domain element (either an integer, a double or a string). Characters are domain elements of type string.  
+	\item[enum ElementType] The three different types of elements
+\end{description}
+
+%----------------------------------------------------------%
+\subsection*{Sorts (types)}
+%----------------------------------------------------------%
+
+Sorts are implemented in the class \emph{Sort}. This class stores the name of a sort, its parent and children in the sort hierarchy and a pointer to the predicate associated to this sort. The base sort of the sort, as well as its depth in the sort hierarchy can in principle be derived from the parent of the sort, but to avoid recomputation, the base and depth are stored as well.
+
+%----------------------------------------------------------%
+\subsection*{Variables}
+%----------------------------------------------------------%
+
+Variables are implemented in the class \emph{Variable}. This class stores the name and the sort of a variable.
+
+%----------------------------------------------------------%
+\subsection*{Predicate and function symbols}
+%----------------------------------------------------------%
+
+Predicate and function symbols are implemented by subclasses \emph{Predicate} and \emph{Function} of the abstract class \emph{PFSymbol}. A PFSymbol stores the name of a symbol and its sorts. The name includes the arity of the symbol. For instance, if
+\begin{lstlisting}
+	type A
+	type B
+	P(A,B)
+	F(B) = A
+\end{lstlisting}
+is parsed, a PFSymbol with name P/2 and sorts [A,B] is created, as well as a PFSymbol with name F/1 and sorts [B,A].
+
+A predicate has the same attributes as a PFSymbol. A function has a boolean attribute indicating whether the function is partial or not.
+
+%----------------------------------------------------------%
+\subsection*{Vocabulary}
+%----------------------------------------------------------%
+
+Vocabularies are implemented in the class \emph{Vocabulary}. A vocabulary has a name, a list of sorts, a list of predicate symbols and a list of function symbols.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{structure.\{h,cc\}}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%----------------------------------------------------------%
+\subsection*{Tables for sorts}
+%----------------------------------------------------------%
+
+Tables for sorts are implemented in the class \emph{SortTable}. The most important methods are 
+\begin{lstlisting}
+	bool finite();
+	ElementType type();
+	Element element(unsigned int n);
+	bool contains(Element e, ElementType t);
+\end{lstlisting}
+The first one returns true if the table if finite. The second one returns the type of elements in the table (integer, double or string). The third one returns the $n$'th element in the table. Note that if the third method is called on an infinite table, \gidl will abort. The returned element has the type of the table (i.e., the type returned by \texttt{type()}). Even if the element at position $n$ is an integer, e.g., $5$, the returned element will be a pointer to the string \texttt{"5"} if the type of the table is \emph{string}. Etc. The fourth method returns true if the given element $e$ of type $t$ belongs to the table. This method can return true even if $t$ is not equal to the type of the table.
+
+The elements of in a SortTable are not necessarily sorted and may contain doubles. Calling the method \texttt{sortunique} makes sure the table is sorted and contains no doubles. The elements are sorted as follows:
+\begin{itemize}
+	\item All numbers are before all strings that do not represent numbers.
+	\item The numbers are sorted according to $<$ on $\mathbb{R}$.
+	\item The strings that do not represent numbers are sorted lexicographicaly.
+\end{itemize}
+
+%----------------------------------------------------------%
+\subsection*{Tables for predicates}
+%----------------------------------------------------------%
+
+Interpretations for predicates are implemented in the class \emph{PredInter}. The interpretations are always 4-valued (but not necessarily strictly 4-valued). An interpretation has four attributes: two pointers to tables (\texttt{\_ctpf} and \texttt{\_cfpt}) and two booleans (\texttt{\_ct} and \texttt{\_cf}). If \texttt{\_ct} is true, the table \texttt{\_ctpf} contains all the tuples that are certainly in the relation. If \texttt{\_ct} if false, \texttt{\_ctpf} contains all the tuples that are possibly not in the relation. Similarly, if \texttt{\_cf} is true, the table \texttt{\_cfpt} contains all the tuples that are certainly not in the relation. If \texttt{\_cf} if false, \texttt{\_cfpt} contains all the tuples that are possibly in the relation. The pointers \texttt{\_ctpf} and \texttt{\_cfpt} may point to the same table.
+
+The tables pointed to in a predicate interpretation are implemented in the class \emph{PredTable}. This class is very similar to SortTable, except that it may have more than one column. Each column has its own type. When \texttt{sortunique()} is called on a PredTable, its tuples are sorted ``lexicographicaly''. 
+
+%----------------------------------------------------------%
+\subsection*{Tables for functions}
+%----------------------------------------------------------%
+
+Interpretations for functions are implemented in the class \emph{FuncInter}. The main methods are
+\begin{lstlisting}
+	PredInter*      predinter();
+	const Element&  operator[](const vector<Element>& tuple);
+\end{lstlisting}
+The first returns the corresponding interpretation for the graph of the function. The second method computes the value of the given tuple according to the function. In case the function is partial, this method returns the element \texttt{DOES\_NOT\_EXIST} if called on a tuple that has no image.
+
+%----------------------------------------------------------%
+\subsection*{Structures}
+%----------------------------------------------------------%
+
+Structures are implemented in the class \emph{Structure}. A structure has a name, a vocabulary, a list of sort interpretations, a list of predicate interpretations and a list of function interpretations. The interpretation at position $n$ in the list of sort interpretation is the interpretation of the $n$'th sort of the structure's vocabulary. Similarly for predicates and function symbols. 
+
+Note: the table for a sort and its associated predicate is stored at the same address in memory. 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{term.\{h,cc\}}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%----------------------------------------------------------%
+\subsection*{Term}
+%----------------------------------------------------------%
+
+Terms are implemented in the class \emph{Term}. A term has a list of its free variables as attributes. There are several subclasses of Term:
+\begin{itemize}
+	\item VarTerm: a variable. E.g., $x$. A VarTerm has only one attribute: its variable.
+	\item FuncTerm: a function applied to tuple of arguments. E.g., $F(x,y)$, $x+y$, $G(F(z))$, $C$ \ldots. A FuncTerm has two attributes: its function and its arguments (a list of terms).
+	\item DomainTerm: a domain element. A DomainTerm has three attributes: its sort, its type (int, double or string) and its value.
+	\item AggTerm: an aggregate term. E.g., $\#\{ x \mid P(x) \}$. An AggTerm has two attributes: its type (cardinality, sum, product, minimum, maximum) and a set expression.
+\end{itemize}
+
+%----------------------------------------------------------%
+\subsection*{Set expressions}
+%----------------------------------------------------------%
+
+Set expressions are implemented in the class \emph{SetExpr}. A set expression has a list of its free variables as attributes. There are two subclasses of SetExpr.
+\begin{itemize}
+	\item EnumSetExpr: set expressions of the form $\{ (\varphi_1,w_1), \ldots, (\varphi_n,w_n) \}$, where the $\varphi_i$ are formulas and the $w_i$ are terms. The attribute \texttt{\_subf} is a list of formulas containing the $\varphi_i$. The attribute \texttt{\_weights} contains the corresponding terms $w_i$.
+	\item QuantSetExpr: set expressions of the form $\{ \overline{x} \mid \varphi \}$. Attribute \texttt{\_vars} represents $\overline{x}$, attribute \texttt{\_subf} represents $\varphi$.
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{theory.\{h,cc\}}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%----------------------------------------------------------%
+\subsection*{Formulas}
+%----------------------------------------------------------%
+
+Formulas are implemented in the class \emph{Formula}. The attributes of a formula are the list of its free variables and its sign (a boolean). The formula is negated iff the sign is false.
+
+Formula has the following subclasses:
+\begin{itemize}
+	\item PredForm: atoms\footnote{I.e., literals, if the sign is taken into account. A similar remark holds for the other subclasses of Formula.} of the form, e.g., $P(t_1,\ldots,t_n)$, $F(t_1,\ldots,t_n) = t_{n+1}$, $t_1 < t_2$, $SUCC(t_1,t_2)$, \ldots. Attribute \texttt{\_symb} stores the predicate or function symbol that is applied, attribute \texttt{\_args} is a tuple of terms representing the arguments. If \texttt{\_symb} is a function symbol, say $F$, and \texttt{\_args} is the tuple $(t_1, \ldots, t_{n+1})$, this represents the formula $F(t_1,\ldots,t_n) = t_{n+1}$.
+	\item EqChainForm: formulas of the form 
+		\[ t_1 \sim_1 t_2 \land t_2 \sim_2 t_3 \land \ldots \land t_{n-1} \sim_{n-1} t_n  \]
+		or
+		\[ t_1 \sim_1 t_2 \lor t_2 \sim_2 t_3 \lor \ldots \lor t_{n-1} \sim_{n-1} t_n,  \]
+		where $\sim_i \in \{ =, \neq, <, >, \leq, \geq \}$ for each $i$. If attribute \texttt{\_conj} is true, the formula is of the former format, else it is of the latter format. Attribute \texttt{\_terms} stores the terms $t_1,\ldots,t_n$. The comparison operators $\sim_i$ are represented by a pair of a character and a boolean:
+		\begin{center}
+			\begin{tabular}{cc|c}
+				char & bool & $\sim$ \\
+				\hline
+				= & true & $=$ \\
+				= & false & $\neq$ \\
+				$<$ & true & $<$ \\
+				$<$ & false & $\geq$ \\
+				$>$ & true & $>$ \\
+				$>$ & false & $\leq$ 
+			\end{tabular}
+		\end{center}
+		The characters are stored in attribute \texttt{\_comps}, the corresponding booleans in attribute \texttt{\_signs}.
+	\item EquivForm: formulas of the form $\varphi \equiv \psi$. Attribute \texttt{\_left} stores $\varphi$, attribute \texttt{\_right} stores $\psi$.
+	\item BoolForm: Formulas of the form
+		\[ \varphi_1 \land \varphi_2 \land \ldots \land \varphi_n \]
+		or
+		\[ \varphi_1 \lor \varphi_2 \lor \ldots \lor \varphi_n. \]
+		If attribute \texttt{\_conj} is true, the formula is of the former format, else it is of the latter format. Attribute \texttt{\_subf} stores the formula $\varphi_1,\ldots,\varphi_n$.
+	\item QuantForm: formulas of the form $\forall x_1 \cdots \forall x_n\ \varphi$ or $\exists x_1 \cdots \exists x_n\ \varphi$. If attribute \texttt{\_univ} is true, the formula is of the former format, else it is of the latter format. Attribute \texttt{\_subf} stores $\varphi$, attribute \texttt{\_vars} stores the variables $x_1,\ldots,x_n$.
+\end{itemize}
+
+%----------------------------------------------------------%
+\subsection*{Rules, definitions and fixpoint definitions}
+%----------------------------------------------------------%
+
+Definitional rules are implemented in the class \emph{Rule}. A rule has as attributes its head, its body and the (universally) quantified variables that occur in the head. The head is a PredForm, the body a formula.
+
+Definitions are implemented in the class \emph{Definition}. A definition has as attributes the list of its rules and the list of its defined symbols.
+
+Fixpoint definitions are implemented in the class \emph{FixpDef}. A fixpoint definition has as attributes its type (least or greatest fixpoint), a list of its rules, a list of its defined symbols, and a list of its direct subdefinitions.
+
+%----------------------------------------------------------%
+\subsection*{Theories}
+%----------------------------------------------------------%
+
+Theories are implemented in the class \emph{Theory}. A theory has as attributes its vocabulary, a list of its sentences, a list of its definitions and a list of its fixpoint definitions. It also has a pointer to a structure. If the sentences or rules in the theory contain domain elements, they are domain elements of that structure. The pointer may be $0$ if the theory contains no domain elements.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{namespace.\{h,cc\}}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+TODO
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{builtin.\{h,cc\}}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+TODO
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{visitor.\{h,cc\}}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+TODO
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{execute.\{h,cc\}}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+See Section~\ref{sec:whattodo} on adding an inference method.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{options.h}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+Contains a struct \emph{Options} for storing the options. There is one global variable options of type Options that stores the current options. This variable is declared in file namespace.cc. To be able to access these options in another file, that file should contain 
+\begin{lstlisting}
+	extern Options options;
+\end{lstlisting}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{error.\{h,cc\}}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+All error and warning messages, as well as methods to implement the ``verbose'' option.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Parsing}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+The parser is implemented in the files lex.ll, parse.yy, insert.h and insert.cc. If you want to add something to the parser, send me (Johan) an e-mail.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Guarantees when an object is parsed without errors}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+(The lists below are not exhaustive)
+
+Guaranteed:
+\begin{itemize}
+	\item Vocabulary
+	\item Theory
+	\item Structure
+	\begin{itemize}
+		\item Every predicate and function of the structure's vocabulary has an interpretation.
+		\item All tables are sorted and do not contain doubles.
+	\end{itemize}
+\end{itemize}
+
+Not guaranteed:
+\begin{itemize}
+	\item Vocabulary
+	\item Theory
+	\item Structure
+	\begin{itemize}
+		\item Not every sort of the structure's vocabulary need to have a interpretation
+		\item A structure may be strictly four-valued, i.e., inconsistent
+	\end{itemize}
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{What to do \ldots}\label{sec:whattodo}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%----------------------------------------------------------%
+\subsection*{\ldots to add an option?}
+%----------------------------------------------------------%
+\begin{enumerate}
+	\item Add an attribute to \texttt{struct Options} (options.h)
+	\item Set a default value to that attribute in the constructor of \texttt{struct Options}
+	\item Document the option in the method \texttt{usage} (main.cc)
+	\item Parse the option in the method \texttt{read\_options} (main.cc)
+\end{enumerate}
+
+%----------------------------------------------------------%
+\subsection*{\ldots to add an inference method?}
+%----------------------------------------------------------%
+\begin{enumerate}
+	\item Create a subclass (say $A$) of \texttt{class Inference} (execute.h)
+	\item In the constructor of $A$, make sure the types of the input arguments and output argument of the inference method are initialized.
+	\item Implement the inference method in method \texttt{execute} of $A$.
+	\item If you want to allow a user to call the method from an execute block, add the line 
+	\begin{lstlisting}
+		_inferences["name"].push_back(new A());
+	\end{lstlisting}
+	in the method \texttt{initialize} of namespace \texttt{Insert} (insert.cc). Here, \texttt{name} is the name the user uses to call the inference method.
+\end{enumerate}
+
+%----------------------------------------------------------%
+\subsection*{\ldots to add a built-in sort, predicate or function symbol?}
+%----------------------------------------------------------%
+
+TODO
+% What to do if
+%	you want to add an option
+%	you want to add an inference method
+%	you want to add a builtin sort/function/predicate
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Other remarks}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{itemize}
+	\item Many classes have a method \texttt{string to\_string()}, which can be used to print the object (e.g., while debugging).
+	\item Have a look at namespaces with a name ending on \texttt{Utils} (e.g., \texttt{namespace TableUtils}). They contain many usefull methods that are not directly implemented in the main classes.
+\end{itemize}
+\end{document}
