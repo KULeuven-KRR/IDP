@@ -407,5 +407,4 @@ void NegationPush::visit(QuantForm* f) {
 
 namespace TheoryUtils {
 	void push_negations(Theory* t) { NegationPush np(t);	}
-	// TODO
 }
