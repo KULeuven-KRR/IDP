@@ -30,7 +30,7 @@
 \begin{description}
 	\item[vocabulary.\{h,cc\}] Sorts (types), predicate and function symbols
 	\item[structure.\{h,cc\}] Interpretations (tables) for sorts, predicates and functions
-	\item[term.\{h,cc\}] Terms and set expresssions
+	\item[term.\{h,cc\}] Terms and set expressions
 	\item[theory.\{h,cc\}] Formulas, definitions, fixpoint definitions and theories
 	\item[namespace.\{h,cc\}] Namespaces
 	\item[builtin.\{h,cc\}] Built-in sorts, predicates and functions
@@ -118,7 +118,7 @@ The elements of in a SortTable are not necessarily sorted and may contain double
 \begin{itemize}
 	\item All numbers are before all strings that do not represent numbers.
 	\item The numbers are sorted according to $<$ on $\mathbb{R}$.
-	\item The strings that do not represent numbers are sorted lexicographicaly.
+	\item The strings that do not represent numbers are sorted lexicographically.
 \end{itemize}
 
 %----------------------------------------------------------%
@@ -127,7 +127,7 @@ The elements of in a SortTable are not necessarily sorted and may contain double
 
 Interpretations for predicates are implemented in the class \emph{PredInter}. The interpretations are always 4-valued (but not necessarily strictly 4-valued). An interpretation has four attributes: two pointers to tables (\texttt{\_ctpf} and \texttt{\_cfpt}) and two booleans (\texttt{\_ct} and \texttt{\_cf}). If \texttt{\_ct} is true, the table \texttt{\_ctpf} contains all the tuples that are certainly in the relation. If \texttt{\_ct} if false, \texttt{\_ctpf} contains all the tuples that are possibly not in the relation. Similarly, if \texttt{\_cf} is true, the table \texttt{\_cfpt} contains all the tuples that are certainly not in the relation. If \texttt{\_cf} if false, \texttt{\_cfpt} contains all the tuples that are possibly in the relation. The pointers \texttt{\_ctpf} and \texttt{\_cfpt} may point to the same table.
 
-The tables pointed to in a predicate interpretation are implemented in the class \emph{PredTable}. This class is very similar to SortTable, except that it may have more than one column. Each column has its own type. When \texttt{sortunique()} is called on a PredTable, its tuples are sorted ``lexicographicaly''. 
+The tables pointed to in a predicate interpretation are implemented in the class \emph{PredTable}. This class is very similar to SortTable, except that it may have more than one column. Each column has its own type. When \texttt{sortunique()} is called on a PredTable, its tuples are sorted ``lexicographically''. 
 
 %----------------------------------------------------------%
 \subsection*{Tables for functions}
@@ -347,6 +347,6 @@ TODO
 
 \begin{itemize}
 	\item Many classes have a method \texttt{string to\_string()}, which can be used to print the object (e.g., while debugging).
-	\item Have a look at namespaces with a name ending on \texttt{Utils} (e.g., \texttt{namespace TableUtils}). They contain many usefull methods that are not directly implemented in the main classes.
+	\item Have a look at namespaces with a name ending on \texttt{Utils} (e.g., \texttt{namespace TableUtils}). They contain many useful methods that are not directly implemented in the main classes.
 \end{itemize}
 \end{document}

@@ -498,6 +498,8 @@ class PredInter {
 		bool		cf()	const	{ return _cf;	}
 		bool		istrue(const vector<Element>& vi)	const { return (_ct ? _ctpf->contains(vi) : !(_ctpf->contains(vi)));	}
 		bool		isfalse(const vector<Element>& vi)	const { return (_cf ? _cfpt->contains(vi) : !(_cfpt->contains(vi)));	}
+		bool		istrue(const vector<TypedElement>& vi)	const;
+		bool		isfalse(const vector<TypedElement>& vi)	const;
 
 		// Debugging
 		string to_string(unsigned int spaces = 0) const;
@@ -527,8 +529,10 @@ class FuncInter {
 		virtual void sortunique() { }
 
 		// Inspectors
-		virtual const		Element& operator[](const vector<Element>& vi)	const = 0;
-		virtual PredInter*	predinter()										const = 0;
+		virtual const		Element& operator[](const vector<Element>& vi)		const = 0;
+		virtual const		Element& operator[](const vector<TypedElement>& vi)	const = 0;
+		virtual PredInter*	predinter()											const = 0;
+				ElementType	outtype()											const { return _outtype;	}
 		
 		// Debugging
 		virtual string to_string(unsigned int spaces = 0) const = 0;
@@ -558,11 +562,12 @@ class UserFuncInter : public FuncInter {
 		void sortunique() { _ptable->sortunique();	}
 
 		// Inspectors
-		bool			istrue(const vector<Element>& vi)		const { return _ptable->istrue(vi);		}
-		bool			isfalse(const vector<Element>& vi)		const { return _ptable->isfalse(vi);	}
-		const Element&	operator[](const vector<Element>& vi)	const;
-		PredInter*		predinter()								const { return _ptable;					}
-		UserPredTable*	ftable()								const { return _ftable;					}
+		bool			istrue(const vector<Element>& vi)			const { return _ptable->istrue(vi);		}
+		bool			isfalse(const vector<Element>& vi)			const { return _ptable->isfalse(vi);	}
+		const Element&	operator[](const vector<Element>& vi)		const;
+		const Element&  operator[](const vector<TypedElement>& vi)	const;
+		PredInter*		predinter()									const { return _ptable;					}
+		UserPredTable*	ftable()									const { return _ftable;					}
 
 		// Debugging
 		string to_string(unsigned int spaces = 0) const;
@@ -623,6 +628,7 @@ class Structure {
 		SortTable*		inter(Sort* s)			const;	// Return the domain of s.
 		PredInter*		inter(Predicate* p)		const;	// Return the interpretation of p.
 		FuncInter*		inter(Function* f)		const;	// Return the interpretation of f.
+		PredInter*		inter(PFSymbol* s)		const;  // Return the interpretation of s.
 		bool			hasInter(Sort* s)		const;	// True iff s has an interpretation
 		bool			hasInter(Predicate* p)	const;	// True iff p has an interpretation
 		bool			hasInter(Function* f)	const;	// True iff f has an interpretation
@@ -631,5 +637,10 @@ class Structure {
 		string	to_string(unsigned int spaces = 0) const;
 
 };
+
+class Theory;
+namespace StructUtils {
+	Theory*	convert_to_theory(Structure*);	// Make a theory containing all literals that are true according to the given structure
+}
 
 #endif

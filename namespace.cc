@@ -42,8 +42,8 @@ Namespace::~Namespace() {
 	for(unsigned int n = 0; n < _subs.size(); ++n) delete(_subs[n]);
 	for(unsigned int n = 0; n < _vocs.size(); ++n) delete(_vocs[n]);
 	for(unsigned int n = 0; n < _structs.size(); ++n) delete(_structs[n]);
-	for(unsigned int n = 0; n < _theos.size(); ++n) delete(_theos[n]);
-	delete(_pi);
+	for(unsigned int n = 0; n < _theos.size(); ++n) _theos[n]->recursiveDelete();
+	if(_pi) delete(_pi);
 }
 
 /** Find subparts **/

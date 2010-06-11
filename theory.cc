@@ -6,9 +6,11 @@
 
 #include "theory.h"
 #include "visitor.h"
+#include "builtin.h"
 #include <iostream>
 
 extern string tabstring(unsigned int);
+extern bool nexttuple(vector<unsigned int>&,const vector<unsigned int>&);
 
 /*******************
 	Constructors
@@ -46,28 +48,36 @@ QuantForm* QuantForm::clone() const {
 PredForm* PredForm::clone(const map<Variable*,Variable*>& mvv) const {
 	vector<Term*> na(_args.size());
 	for(unsigned int n = 0; n < _args.size(); ++n) na[n] = _args[n]->clone(mvv);
-	PredForm* pf = new PredForm(_sign,_symb,na,new ParseInfo(_pi));
+	ParseInfo* npi = 0;
+	if(_pi) npi = new ParseInfo(_pi);
+	PredForm* pf = new PredForm(_sign,_symb,na,npi);
 	return pf;
 }
 
 EqChainForm* EqChainForm::clone(const map<Variable*,Variable*>& mvv) const {
 	vector<Term*> nt(_terms.size());
 	for(unsigned int n = 0; n < _terms.size(); ++n) nt[n] = _terms[n]->clone(mvv);
-	EqChainForm* ef = new EqChainForm(_sign,_conj,nt,_comps,_signs,new ParseInfo(_pi));
+	ParseInfo* npi = 0;
+	if(_pi) npi = new ParseInfo(_pi);
+	EqChainForm* ef = new EqChainForm(_sign,_conj,nt,_comps,_signs,npi);
 	return ef;
 }
 
 EquivForm* EquivForm::clone(const map<Variable*,Variable*>& mvv) const {
 	Formula* nl = _left->clone(mvv);
 	Formula* nr = _right->clone(mvv);
-	EquivForm* ef =  new EquivForm(_sign,nl,nr,new ParseInfo(_pi));
+	ParseInfo* npi = 0;
+	if(_pi) npi = new ParseInfo(_pi);
+	EquivForm* ef =  new EquivForm(_sign,nl,nr,npi);
 	return ef;
 }
 
 BoolForm* BoolForm::clone(const map<Variable*,Variable*>& mvv) const {
 	vector<Formula*> ns(_subf.size());
 	for(unsigned int n = 0; n < _subf.size(); ++n) ns[n] = _subf[n]->clone(mvv);
-	BoolForm* bf = new BoolForm(_sign,_conj,ns,new ParseInfo(_pi));
+	ParseInfo* npi = 0;
+	if(_pi) npi = new ParseInfo(_pi);
+	BoolForm* bf = new BoolForm(_sign,_conj,ns,npi);
 	return bf;
 }
 
@@ -75,11 +85,15 @@ QuantForm* QuantForm::clone(const map<Variable*,Variable*>& mvv) const {
 	vector<Variable*> nv(_vars.size());
 	map<Variable*,Variable*> nmvv = mvv;
 	for(unsigned int n = 0; n < _vars.size(); ++n) {
-		nv[n] = new Variable(_vars[n]->name(),_vars[n]->sort(),new ParseInfo(_vars[n]->pi()));
+		ParseInfo* npi = 0;
+		if(_pi) npi = new ParseInfo(_pi);
+		nv[n] = new Variable(_vars[n]->name(),_vars[n]->sort(),npi);
 		nmvv[_vars[n]] = nv[n];
 	}
 	Formula* nf = _subf->clone(nmvv);
-	QuantForm* qf = new QuantForm(_sign,_univ,nv,nf,new ParseInfo(_pi));
+	ParseInfo* npi = 0;
+	if(_pi) npi = new ParseInfo(_pi);
+	QuantForm* qf = new QuantForm(_sign,_univ,nv,nf,npi);
 	return qf;
 }
 
@@ -88,54 +102,56 @@ QuantForm* QuantForm::clone(const map<Variable*,Variable*>& mvv) const {
 	Destructors
 *****************/
 
-PredForm::~PredForm() {
-	delete(_pi);
-	for(unsigned int n = 0; n < _args.size(); ++n) delete(_args[n]);
+void PredForm::recursiveDelete() {
+	for(unsigned int n = 0; n < _args.size(); ++n) _args[n]->recursiveDelete();
+	delete(this);
 }
 
-EqChainForm::~EqChainForm() {
-	delete(_pi);
-	for(unsigned int n = 0; n < _terms.size(); ++n) delete(_terms[n]);
+void EqChainForm::recursiveDelete() {
+	for(unsigned int n = 0; n < _terms.size(); ++n) _terms[n]->recursiveDelete();
+	delete(this);
 }
 
-EquivForm::~EquivForm() {
-	delete(_pi);
-	delete(_left);
-	delete(_right);
+void EquivForm::recursiveDelete() {
+	_left->recursiveDelete();
+	_right->recursiveDelete();
+	delete(this);
 }
 
-BoolForm::~BoolForm() {
-	delete(_pi);
-	for(unsigned int n = 0; n < _subf.size(); ++n) delete(_subf[n]);
+void BoolForm::recursiveDelete() {
+	for(unsigned int n = 0; n < _subf.size(); ++n) _subf[n]->recursiveDelete();
+	delete(this);
 }
 
-QuantForm::~QuantForm() {
-	delete(_pi) ;
-	delete(_subf);
+void QuantForm::recursiveDelete() {
+	_subf->recursiveDelete();
 	for(unsigned int n = 0; n < _vars.size(); ++n) delete(_vars[n]);
+	delete(this);
 }
 
-Rule::~Rule() {
-	delete(_pi);
-	delete(_head);
-	delete(_body);
+void Rule::recursiveDelete() {
+	_head->recursiveDelete();
+	_body->recursiveDelete();
 	for(unsigned int n = 0; n < nrQvars(); ++n) delete(qvar(n));
+	delete(this);
 }
 
-Definition::~Definition() {
-	for(unsigned int n = 0; n < _rules.size(); ++n) delete(_rules[n]);
+void Definition::recursiveDelete() {
+	for(unsigned int n = 0; n < _rules.size(); ++n) _rules[n]->recursiveDelete();
+	delete(this);
 }
 
-FixpDef::~FixpDef() {
-	for(unsigned int n = 0; n < _rules.size(); ++n) delete(_rules[n]);
-	for(unsigned int n = 0; n < _defs.size(); ++n) delete(_defs[n]);
+void FixpDef::recursiveDelete() {
+	for(unsigned int n = 0; n < _rules.size(); ++n) _rules[n]->recursiveDelete();
+	for(unsigned int n = 0; n < _defs.size(); ++n) _defs[n]->recursiveDelete();
+	delete(this);
 }
 
-Theory::~Theory() {
-	delete(_pi);
-	for(unsigned int n = 0; n < _sentences.size(); ++n) delete(_sentences[n]);
-	for(unsigned int n = 0; n < _definitions.size(); ++n) delete(_definitions[n]);
-	for(unsigned int n = 0; n < _fixpdefs.size(); ++n) delete(_fixpdefs[n]);
+void Theory::recursiveDelete() {
+	for(unsigned int n = 0; n < _sentences.size(); ++n) _sentences[n]->recursiveDelete();
+	for(unsigned int n = 0; n < _definitions.size(); ++n) _definitions[n]->recursiveDelete();
+	for(unsigned int n = 0; n < _fixpdefs.size(); ++n) _fixpdefs[n]->recursiveDelete();
+	delete(this);
 }
 
 /*******************************
@@ -197,6 +213,18 @@ void FixpDef::add(PFSymbol* p) {
 		if(p == _defsyms[n]) return;
 	}
 	_defsyms.push_back(p);
+}
+
+void Definition::defsyms() {
+	_defsyms.clear();
+	for(unsigned int n = 0; n < _rules.size(); ++n) 
+		add(_rules[n]->head()->symb());
+}
+
+void FixpDef::defsyms() {
+	_defsyms.clear();
+	for(unsigned int n = 0; n < _rules.size(); ++n) 
+		add(_rules[n]->head()->symb());
 }
 
 /***************************
@@ -268,8 +296,8 @@ string EquivForm::to_string() const {
 string BoolForm::to_string() const {
 	string s;
 	if(_subf.empty()) {
-		if(_sign == _conj) return "True";
-		else return "False";
+		if(_sign == _conj) return "true";
+		else return "false";
 	}
 	if(!_sign) s = '~';
 	s = s + '(' + _subf[0]->to_string();
@@ -336,7 +364,7 @@ string Theory::to_string() const {
 	string s = "#theory " + _name;
 	if(_vocabulary) {
 		s = s + " : " + _vocabulary->name();
-		if(_structure) s = s + _structure->name();
+		if(_structure) s = s + ' ' + _structure->name();
 	}
 	s = s + " {\n";
 	for(unsigned int n = 0; n < _sentences.size(); ++n) {
@@ -351,16 +379,226 @@ string Theory::to_string() const {
 	return s + "}\n";
 }
 
+
+/********************
+	Formula utils
+********************/
+
+/** Evaluate formulas **/
+
+namespace TVUtils {
+
+	TruthValue swaptruthvalue(TruthValue v) {
+		switch(v) {
+			case TV_TRUE: return TV_FALSE;
+			case TV_FALSE: return TV_TRUE;
+			default: return v;
+		}
+	}
+
+	TruthValue glbt(TruthValue v1, TruthValue v2) {
+		if(v1 == TV_UNDEF || v2 == TV_UNDEF) return TV_UNDEF;
+		switch(v1) {
+			case TV_TRUE:
+				return v2;
+			case TV_FALSE:
+				return TV_FALSE;
+			case TV_UNKN:
+				switch(v2) {
+					case TV_TRUE: 
+					case TV_UNKN: 
+						return TV_UNKN;
+					case TV_FALSE: 
+					case TV_INCO: 
+						return TV_FALSE;
+					case TV_UNDEF:
+						assert(false);
+				}
+			case TV_INCO:
+				switch(v2) {
+					case TV_TRUE: 
+					case TV_INCO: 
+						return TV_INCO;
+					case TV_FALSE: 
+					case TV_UNKN: 
+						return TV_FALSE;
+					case TV_UNDEF:
+						assert(false);
+				}
+			default:
+				return TV_UNDEF;
+		}
+	}
+
+	TruthValue lubt(TruthValue v1, TruthValue v2) {
+		if(v1 == TV_UNDEF || v2 == TV_UNDEF) return TV_UNDEF;
+		switch(v1) {
+			case TV_TRUE:
+				return TV_TRUE;
+			case TV_FALSE:
+				return v2;
+			case TV_UNKN:
+				switch(v2) {
+					case TV_TRUE: 
+					case TV_INCO: 
+						return TV_TRUE;
+					case TV_FALSE: 
+					case TV_UNKN: 
+						return TV_UNKN;
+					case TV_UNDEF:
+						assert(false);
+				}
+			case TV_INCO:
+				switch(v2) {
+					case TV_TRUE: 
+					case TV_UNKN:
+						return TV_TRUE;
+					case TV_FALSE: 
+					case TV_INCO: 
+						return TV_INCO;
+					case TV_UNDEF:
+						assert(false);
+				}
+			default:
+				return TV_UNDEF;
+		}
+	}
+}
+
+class FormulaEvaluator : public Visitor {
+
+	private:
+		Structure*					_structure;
+		map<Variable*,TypedElement>	_varmapping;
+		TruthValue					_returnvalue;
+
+	public:
+		
+		FormulaEvaluator(Formula* f, Structure* s, const map<Variable*,TypedElement>& m) :
+			Visitor(), _structure(s), _varmapping(m) { f->accept(this);	}
+		
+		TruthValue returnvalue()	const { return _returnvalue;	}
+
+		void visit(PredForm*);
+		void visit(BoolForm*);
+		void visit(EqChainForm*);
+		void visit(EquivForm*);
+		void visit(QuantForm*);
+		
+};
+
+void FormulaEvaluator::visit(PredForm* pf) {
+	vector<TypedElement> argvalues(pf->nrSubterms());
+	TermEvaluator* te = new TermEvaluator(_structure,_varmapping);
+	for(unsigned int n = 0; n < pf->nrSubterms(); ++n) {
+		pf->subterm(n)->accept(te);
+		if(ElementUtil::exists(te->returnvalue())) argvalues.push_back(te->returnvalue());
+		else {
+			_returnvalue = TV_UNDEF;
+			return;
+		}
+	}
+	PredInter* pt = _structure->inter(pf->symb());
+	assert(pt);
+	if(pt->istrue(argvalues)) {
+		if(pt->ctpf() != pt->cfpt() && pt->isfalse(argvalues)) _returnvalue = TV_INCO;
+		else _returnvalue = TV_TRUE;
+	}
+	else if(pt->isfalse(argvalues)) _returnvalue = TV_FALSE;
+	else _returnvalue = TV_UNKN;
+	if(!pf->sign()) {
+		_returnvalue = TVUtils::swaptruthvalue(_returnvalue);
+	}
+}
+
+void FormulaEvaluator::visit(EquivForm* ef) {
+	assert(false);
+}
+
+void FormulaEvaluator::visit(EqChainForm* ef) {
+	assert(false);
+}
+
+void FormulaEvaluator::visit(BoolForm* bf) {
+	TruthValue result;
+	if(bf->conj()) result = TV_TRUE;
+	else result = TV_FALSE;
+	for(unsigned int n = 0; n < bf->nrSubforms(); ++n) {
+		bf->subform(n)->accept(this);
+		result = (bf->conj()) ? TVUtils::glbt(result,_returnvalue) : TVUtils::lubt(result,_returnvalue) ;
+		if((bf->conj() && result == TV_FALSE) || (!(bf->conj()) && result == TV_TRUE)) break;
+	}
+	_returnvalue = result;
+	if(!bf->sign()) _returnvalue = TVUtils::swaptruthvalue(_returnvalue);
+	return;
+}
+
+void FormulaEvaluator::visit(QuantForm* qf) {
+	TruthValue result = (qf->univ()) ? TV_TRUE : TV_FALSE;
+
+	vector<unsigned int> limits;
+	vector<SortTable*> tables;
+	for(unsigned int n = 0; n < qf->nrQvars(); ++n) {
+		SortTable* st = _structure->inter(qf->qvar(n)->sort());
+		assert(st);
+		assert(st->finite());
+		if(st->empty()) {
+			_returnvalue = result;
+			if(!qf->sign()) _returnvalue = TVUtils::swaptruthvalue(_returnvalue);
+			return;
+		}
+		else {
+			limits.push_back(st->size());
+			tables.push_back(st);
+			TypedElement e; 
+			e._type = st->type(); 
+			_varmapping[qf->qvar(n)] = e;
+		}
+	}
+	vector<unsigned int> tuple(limits.size(),0);
+
+	do {
+		for(unsigned int n = 0; n < tuple.size(); ++n) 
+			_varmapping[qf->qvar(n)]._element = tables[n]->element(tuple[n]);
+		qf->subf()->accept(this);
+		result = (qf->univ()) ? TVUtils::glbt(result,_returnvalue) : TVUtils::lubt(result,_returnvalue) ;
+		if((qf->univ() && result == TV_FALSE) || ((!qf->univ()) && result == TV_TRUE)) break;
+	} while(nexttuple(tuple,limits));
+	_returnvalue = result;
+	if(!qf->sign()) _returnvalue = TVUtils::swaptruthvalue(_returnvalue);
+	return;
+}
+
+namespace FormulaUtils {
+	TruthValue evaluate(Formula* f, Structure* s, const map<Variable*,TypedElement>& m) {
+		FormulaEvaluator fe(f,s,m);
+		return fe.returnvalue();
+	}
+}
+
 /*************************
 	Rewriting theories
 *************************/
+
+void Theory::add(Theory* t) {
+	for(unsigned int n = 0; n < t->nrDefinitions(); ++n) {
+		_definitions.push_back(t->definition(n));
+	}
+	for(unsigned int n = 0; n < t->nrFixpDefs(); ++n) {
+		_fixpdefs.push_back(t->fixpdef(n));
+	}
+	for(unsigned int n = 0; n < t->nrSentences(); ++n) {
+		_sentences.push_back(t->sentence(n));
+	}
+
+}
 
 /** Push negations inside **/
 
 class NegationPush : public Visitor {
 
 	public:
-		NegationPush(Theory* t)	: Visitor() { traverse(t);	}
+		NegationPush(Theory* t)	: Visitor() { t->accept(this);	}
 
 		void visit(EqChainForm*);
 		void visit(EquivForm*);
@@ -405,6 +643,135 @@ void NegationPush::visit(QuantForm* f) {
 	traverse(f);
 }
 
+/** Rewrite A <=> B to (A => B) & (B => A) **/
+
+class EquivRemover : public MutatingVisitor {
+
+	public:
+		EquivRemover(Theory* t)	: MutatingVisitor() { t->accept(this);	}
+
+		BoolForm* visit(EquivForm*);
+
+};
+
+BoolForm* EquivRemover::visit(EquivForm* ef) {
+	Formula* nl = ef->left()->accept(this);
+	Formula* nr = ef->right()->accept(this);
+	if(nl != ef->left()) delete(ef->left());
+	if(nr != ef->right()) delete(ef->right());
+	vector<Formula*> vf1(2);
+	vector<Formula*> vf2(2);
+	vf1[0] = nl; vf1[1] = nr;
+	vf2[0] = nl->clone(); vf2[1] = nr->clone();
+	vf1[0]->swapsign(); vf2[1]->swapsign();
+	ParseInfo* nip1 = 0; ParseInfo* nip2 = 0; ParseInfo* nip = 0;
+	if(ef->pi()) {
+		nip1 = new ParseInfo(ef->pi());
+		nip2 = new ParseInfo(ef->pi());
+		nip = new ParseInfo(ef->pi());
+	}
+	BoolForm* bf1 = new BoolForm(true,false,vf1,nip1);
+	BoolForm* bf2 = new BoolForm(true,false,vf2,nip2);
+	vector<Formula*> vf(2); vf[0] = bf1; vf[1] = bf2;
+	BoolForm* bf = new BoolForm(ef->sign(),true,vf,nip);
+	return bf;
+}
+
+/** Rewrite (! x : ! y : phi) to (! x y : phi), rewrite ((A & B) & C) to (A & B & C), etc. **/
+
+class Flattener : public Visitor {
+
+	public:
+		Flattener(Theory* t) : Visitor() { t->accept(this);	}
+
+		void visit(BoolForm*);
+		void visit(QuantForm*);
+
+};
+
+void Flattener::visit(BoolForm* bf) {
+	vector<Formula*> newsubf;
+	traverse(bf);
+	for(unsigned int n = 0; n < bf->nrSubforms(); ++n) {
+		if(typeid(*(bf->subform(n))) == typeid(BoolForm)) {
+			BoolForm* sbf = dynamic_cast<BoolForm*>(bf->subform(n));
+			if((bf->conj() == sbf->conj()) && sbf->sign()) {
+				for(unsigned int m = 0; m < sbf->nrSubforms(); ++m) newsubf.push_back(sbf->subform(m));
+				delete(sbf);
+			}
+			else newsubf.push_back(bf->subform(n));
+		}
+		else newsubf.push_back(bf->subform(n));
+	}
+	bf->subf(newsubf);
+}
+
+void Flattener::visit(QuantForm* qf) {
+	traverse(qf);	
+	if(typeid(*(qf->subf())) == typeid(QuantForm)) {
+		QuantForm* sqf = dynamic_cast<QuantForm*>(qf->subf());
+		if((qf->univ() == sqf->univ()) && sqf->sign()) {
+			qf->subf(sqf->subf());
+			for(unsigned int n = 0; n < sqf->nrQvars(); ++n) 
+				qf->add(sqf->qvar(n));
+			delete(sqf);
+		}
+	}
+}
+
+/**  Rewrite chains of equalities to a conjunction or disjunction of atoms **/
+
+class EqChainRemover : public MutatingVisitor {
+
+	public:
+		EqChainRemover(Theory* t)	: MutatingVisitor() { t->accept(this);	}
+
+		Formula* visit(EqChainForm*);
+
+};
+
+Formula* EqChainRemover::visit(EqChainForm* ef) {
+	for(unsigned int n = 0; n < ef->nrSubterms(); ++n) ef->subterm(n)->accept(this);
+	vector<Formula*> vf;
+	for(unsigned int n = 0; n < ef->nrSubterms()-1; ++n) {
+		Predicate* p = 0;
+		switch(ef->comp(n)) {
+			case '=' : p = Builtin::pred("=/2"); break;
+			case '<' : p = Builtin::pred("</2"); break;
+			case '>' : p = Builtin::pred(">/2"); break;
+			default: assert(false);
+		}
+		vector<Sort*> vs(2); vs[0] = ef->subterm(n)->sort(); vs[1] = ef->subterm(n+1)->sort();
+		p = p->disambiguate(vs);
+		assert(p);
+		vector<Term*> vt(2); 
+		if(n) vt[0] = ef->subterm(n)->clone();
+		else vt[0] = ef->subterm(n);
+		vt[1] = ef->subterm(n+1);
+		ParseInfo* nip = 0;
+		if(ef->pi()) nip = new ParseInfo(ef->pi());
+		PredForm* pf = new PredForm(ef->compsign(n),p,vt,nip);
+		vf.push_back(pf);
+	}
+	if(vf.size() == 1) {
+		if(!ef->sign()) vf[0]->swapsign();
+		return vf[0];
+	}
+	else {
+		ParseInfo* nip = 0;
+		if(ef->pi()) nip = new ParseInfo(ef->pi());
+		BoolForm* bf = new BoolForm(ef->sign(),ef->conj(),vf,nip);
+		return bf;
+	}
+}
+
+
+/** Theory utils **/
+
 namespace TheoryUtils {
-	void push_negations(Theory* t) { NegationPush np(t);	}
+	void push_negations(Theory* t)	{ NegationPush np(t);	}
+	void remove_equiv(Theory* t)	{ EquivRemover er(t);	}
+	void flatten(Theory* t)			{ Flattener f(t);		}
+	void remove_eqchains(Theory* t)	{ EqChainRemover er(t);	}
+	void tseitin(Theory* t)			{ /* TODO */			} 
 }

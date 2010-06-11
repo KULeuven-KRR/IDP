@@ -12,23 +12,142 @@
 extern string itos(int);
 extern string dtos(double);
 extern string tabstring(unsigned int);
+extern bool isInt(const string&);
+extern bool isInt(double);
+extern int stoi(const string&);
+extern bool isDouble(const string&);
+extern double stod(const string&);
+extern int MAX_INT;
 
 /*********************
 	Domain element
 *********************/
 
-string ElementToString(Element e, ElementType t) {
-	switch(t) {
-		case ELINT:
-			return itos(e._int);
-		case ELDOUBLE:
-			return dtos(*(e._double));
-		case ELSTRING:
-			return *(e._string);
-		default:
-			assert(false);
+namespace ElementUtil {
+
+	Element _nonexistingInt;
+	Element _nonexistingDouble;
+	Element _nonexistingString;
+
+	string ElementToString(Element e, ElementType t) {
+		switch(t) {
+			case ELINT:
+				return itos(e._int);
+			case ELDOUBLE:
+				return dtos(*(e._double));
+			case ELSTRING:
+				return *(e._string);
+			default:
+				assert(false);
+		}
+		return "";
 	}
-	return "";
+
+	string ElementToString(TypedElement e) {
+		return ElementToString(e._element,e._type);
+	}
+
+	Element& nonexist(ElementType t) {
+		switch(t) {
+			case ELINT:
+				_nonexistingInt._int = MAX_INT;
+				return _nonexistingInt;
+			case ELDOUBLE:
+				_nonexistingDouble._double = 0;
+				return _nonexistingDouble;
+			case ELSTRING:
+				_nonexistingString._string = 0;
+				return _nonexistingString;
+			default:
+				assert(false);
+		}
+		return _nonexistingInt;
+	}
+
+	bool exists(Element e, ElementType t) {
+		switch(t) {
+			case ELINT:
+				return e._int != MAX_INT;
+			case ELDOUBLE:
+				return e._double != 0;
+				break;
+			case ELSTRING:
+				return e._string != 0;
+				break;
+			default:
+				assert(false); return false;
+		}
+	}
+	
+	bool exists(TypedElement e) {
+		return exists(e._element,e._type);
+	}
+
+	Element convert(Element e, ElementType oldtype, ElementType newtype) {
+		if(oldtype == newtype) return e;
+		Element ne;
+		switch(oldtype) {
+			case ELINT:
+				if(newtype == ELSTRING) {
+					ne._string = new string(itos(e._int));
+				}
+				else {
+					assert(newtype == ELDOUBLE);
+					ne._double = new double(e._int);
+				}
+				break;
+			case ELDOUBLE:
+				if(newtype == ELINT) {
+					if(isInt(*(e._double))) {
+						ne._int = int(*(e._double));
+					}
+					else return nonexist(newtype);
+				}
+				else {
+					assert(newtype == ELSTRING);
+					ne._string = new string(dtos(*(e._double)));
+				}
+				break;
+			case ELSTRING:
+				if(newtype == ELINT) {
+					if(isInt(*(e._string))) {
+						ne._int = stoi(*(e._string));
+					}
+					else return nonexist(newtype);
+				}
+				else {
+					assert(newtype == ELDOUBLE);
+					if(isDouble(*(e._string))) {
+						ne._double = new double(stod(*(e._string)));
+					}
+					else return nonexist(newtype);
+				}
+				break;
+
+			default:
+				assert(false);
+		}
+		return ne;
+	}
+
+	Element	convert(TypedElement te, ElementType t) {
+		return convert(te._element,te._type,t);
+	}
+
+	Element clone(Element e, ElementType t) {
+		Element ne;
+		switch(t) {
+			case ELINT: ne._int = e._int; break;
+			case ELDOUBLE: ne._double = new double(*(e._double)); break;
+			case ELSTRING: ne._string = new string(*(e._string)); break;
+			default: assert(false);
+		}
+		return ne;
+	}
+
+	Element clone(TypedElement te) {
+		return clone(te._element,te._type);
+	}
 }
 
 /************

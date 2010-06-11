@@ -12,6 +12,7 @@
 #include <map>
 #include <cassert>
 using namespace std;
+enum InfArgType { IAT_VOID, IAT_THEORY, IAT_STRUCTURE, IAT_VOCABULARY, IAT_NAMESPACE };
 
 /***************************************
 	Parse location of parsed objects	
@@ -60,8 +61,11 @@ union Element {
 	string*	_string;
 };
 
-// Convert a domain element to a string
-string ElementToString(Element,ElementType);
+// A domain element and its type
+struct TypedElement{
+	Element		_element;
+	ElementType	_type;
+};
 
 // Class that implements the relation 'less-than-or-equal' on tuples of domain elements
 class ElementWeakOrdering {
@@ -90,6 +94,23 @@ class ElementEquality {
 
 };
 
+namespace ElementUtil {
+	string		ElementToString(Element,ElementType);	// Convert a domain element to a string
+	string		ElementToString(TypedElement);
+
+	Element&	nonexist(ElementType);					// Return the non-existing domain element (used for partial functions)
+
+	bool		exists(Element,ElementType);
+	bool		exists(TypedElement);
+
+	Element		convert(TypedElement,ElementType);
+	Element		convert(Element,ElementType,ElementType);
+
+	Element		clone(Element,ElementType);
+	Element		clone(TypedElement);
+}
+
+
 
 /*************
 	Sorts
@@ -115,8 +136,8 @@ class Sort {
 		Sort(const string& name, ParseInfo* pi);  
 
 		// Destructor
-		virtual ~Sort() { delete(_pi); }	// NOTE: deleting a sort creates dangling pointers
-											// Only delete sorts when the global namespace is deleted
+		virtual ~Sort() { if(_pi) delete(_pi); }	// NOTE: deleting a sort creates dangling pointers
+													// Only delete sorts when the global namespace is deleted
 
 		// Mutators
 		void	parent(Sort* p);	// Set the parent of the sort to p. This also changes _base and _depth.
@@ -170,7 +191,7 @@ class Variable {
 		Variable(Sort* s);	// constructor for an internal variable 
 
 		// Destructor
-		~Variable() { delete(_pi);	}	// NOTE: deleting variables creates dangling pointers
+		~Variable() { if(_pi) delete(_pi);	}	// NOTE: deleting variables creates dangling pointers
 										// Only delete a variable when deleting its quantifier!
 
 		// Mutators
@@ -215,8 +236,8 @@ class PFSymbol {
 			_name(name), _sorts(sorts), _pi(pi) { }
 
 		// Destructor
-		virtual ~PFSymbol() { delete(_pi);	}	// NOTE: deleting a PFSymbol creates dangling pointers
-												// Only delete a PFSymbol if the global namespace is deleted
+		virtual ~PFSymbol() { if(_pi) delete(_pi);	}	// NOTE: deleting a PFSymbol creates dangling pointers
+														// Only delete a PFSymbol if the global namespace is deleted
 
 		// Inspectors
 		string					name()					const { return _name;							}
@@ -325,7 +346,7 @@ class Vocabulary {
 		Vocabulary(const string& name, ParseInfo* pi) : _name(name), _pi(pi) { }
 
 		// Destructor
-		~Vocabulary() { delete(_pi);	}
+		~Vocabulary() { if(_pi) delete(_pi);	}
 
 		// Mutators
 		void addSort(Sort*);
@@ -343,7 +364,7 @@ class Vocabulary {
 		bool				contains(Function*)				const;	// true iff the vocabulary contains the given function
 		unsigned int		index(Sort*)					const;	// return the index of the given sort
 		unsigned int		index(Predicate*)				const;	// return the index of the given predicate
-		unsigned int		index(Function*)				const;	// return the indes of the given function
+		unsigned int		index(Function*)				const;	// return the index of the given function
 		unsigned int		nrSorts()						const	{ return _vsorts.size();		}
 		unsigned int		nrPreds()						const	{ return _vpredicates.size();	}
 		unsigned int		nrFuncs()						const	{ return _vfunctions.size();	}

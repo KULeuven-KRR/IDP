@@ -4,7 +4,7 @@
 	(c) K.U.Leuven
 ************************************/
 
-#include "structure.h"
+#include "theory.h"
 #include "builtin.h"
 #include <iostream>
 #include <algorithm>
@@ -15,8 +15,6 @@ extern double stod(const string&);
 extern string dtos(double);
 extern bool isDouble(const string&);
 extern string tabstring(unsigned int);
-
-Element DOES_NOT_EXIST;	// The unique non-existing domain element 
 
 /**************
 	Domains
@@ -726,6 +724,40 @@ PredInter::~PredInter() {
 	}
 }
 
+bool PredInter::istrue(const vector<TypedElement>& vte) const {
+	vector<Element> ve(vte.size());
+	for(unsigned int n = 0; n < vte.size(); ++n) {
+		ve[n] = ElementUtil::convert(vte[n],_ctpf->type(n));
+	}
+	bool result = istrue(ve);
+	for(unsigned int n = 0; n < vte.size(); ++n) {
+		if(_ctpf->type(n) == ELSTRING) {
+			if(ve[n]._string != vte[n]._element._string) delete(ve[n]._string);
+		}
+		else if(_ctpf->type(n) == ELDOUBLE) {
+			if(ve[n]._double != vte[n]._element._double) delete(ve[n]._double);
+		}
+	}
+	return result;
+}
+
+bool PredInter::isfalse(const vector<TypedElement>& vte) const {
+	vector<Element> ve(vte.size());
+	for(unsigned int n = 0; n < vte.size(); ++n) {
+		ve[n] = ElementUtil::convert(vte[n],_cfpt->type(n));
+	}
+	bool result = isfalse(ve);
+	for(unsigned int n = 0; n < vte.size(); ++n) {
+		if(_cfpt->type(n) == ELSTRING) {
+			if(ve[n]._string != vte[n]._element._string) delete(ve[n]._string);
+		}
+		else if(_cfpt->type(n) == ELDOUBLE) {
+			if(ve[n]._double != vte[n]._element._double) delete(ve[n]._double);
+		}
+	}
+	return result;
+}
+
 /** Debugging **/
 
 string UserPredTable::to_string(unsigned int spaces) const {
@@ -780,7 +812,24 @@ const Element& UserFuncInter::operator[](const vector<Element>& vi) const {
 		VVE::const_iterator it = lower_bound(_ftable->begin(),_ftable->end(),vi,_order);
 		if(it != _ftable->end() && _equality(*it,vi)) return it->back();
 	}
-	return DOES_NOT_EXIST;
+	return ElementUtil::nonexist(_outtype);
+}
+
+const Element& UserFuncInter::operator[](const vector<TypedElement>& vte) const {
+	vector<Element> ve(vte.size());
+	for(unsigned int n = 0; n < vte.size(); ++n) {
+		ve[n] = ElementUtil::convert(vte[n],_intypes[n]);
+	}
+	const Element& result = operator[](ve);
+	for(unsigned int n = 0; n < vte.size(); ++n) {
+		if(_intypes[n] == ELSTRING) {
+			if(ve[n]._string != vte[n]._element._string) delete(ve[n]._string);
+		}
+		else if(_intypes[n] == ELDOUBLE) {
+			if(ve[n]._double != vte[n]._element._double) delete(ve[n]._double);
+		}
+	}
+	return result;
 }
 
 string UserFuncInter::to_string(unsigned int spaces) const {
@@ -816,7 +865,7 @@ FuncInter* leastFuncInter(const vector<ElementType>& t) {
 /** Destructor **/
 
 Structure::~Structure() {
-	delete(_pi);
+	if(_pi) delete(_pi);
 	for(unsigned int n = 0; n < _predinter.size(); ++n) 
 		if(_predinter[n]) delete(_predinter[n]);
 	for(unsigned int n = 0; n < _funcinter.size(); ++n) 
@@ -894,6 +943,11 @@ FuncInter* Structure::inter(Function* f) const {
 	return _funcinter[_vocabulary->index(f)];
 }
 
+PredInter* Structure::inter(PFSymbol* s) const {
+	if(s->ispred()) return inter(dynamic_cast<Predicate*>(s));
+	else return inter(dynamic_cast<Function*>(s))->predinter();
+}
+
 bool Structure::hasInter(Sort* s) const {
 	return (inter(s) != 0);
 }
@@ -930,4 +984,18 @@ string Structure::to_string(unsigned int spaces) const {
 		else s = s + tab + "      no interpretation\n";
 	}
 	return s;
+}
+
+/**********************
+	Structure utils
+**********************/
+
+namespace StructUtils {
+
+	Theory* convert_to_theory(Structure* s) {
+		Theory* result = new Theory("",s->vocabulary(),s,0);
+		// TODO
+		return result;
+	}
+
 }
