@@ -7,9 +7,7 @@
 #ifndef TERM_H
 #define TERM_H
 
-class Formula;
-class SetExpr;
-class Visitor;
+#include "visitor.h"
 
 /*******************************
 	Abstract base class term
@@ -33,7 +31,8 @@ class Term {
 																			// free variables according to the given map
 
 		// Destructor
-		virtual ~Term() { }
+		virtual ~Term() { if(_pi) delete(_pi); }
+		virtual void recursiveDelete() = 0;
 
 		// Mutators
 		virtual	void	setfvars();		// Compute the free variables of the term
@@ -55,7 +54,8 @@ class Term {
 		virtual bool			contains(Variable*)		const;		// true iff the term contains the variable
 
 		// Visitor
-		virtual void			accept(Visitor*)		= 0;
+		virtual void	accept(Visitor*)			= 0;
+		virtual Term*	accept(MutatingVisitor*)	= 0;
 
 		// Debugging
 		virtual	string	to_string()	const = 0;	
@@ -81,7 +81,7 @@ class VarTerm : public Term {
 		VarTerm* clone(const map<Variable*,Variable*>&)	const;
 
 		// Destructor
-		~VarTerm() { delete(_pi);	}
+		void recursiveDelete() { delete(this);	}
 
 		// Mutators
 		void	setfvars();
@@ -101,7 +101,8 @@ class VarTerm : public Term {
 		bool			contains(Variable* v)	const	{ return _var == v;			}	
 
 		// Visitor
-		void accept(Visitor* v);
+		void	accept(Visitor* v);
+		Term*	accept(MutatingVisitor* v);
 
 		// Output
 		string to_string()	const { return _var->to_string();	}
@@ -129,10 +130,11 @@ class FuncTerm : public Term {
 		FuncTerm* clone(const map<Variable*,Variable*>&)	const;
 
 		// Destructor
-		~FuncTerm();
+		void recursiveDelete();
 
 		// Mutators
-		void func(Function* f) { _func = f;	}
+		void func(Function* f)				{ _func = f;	}
+		void arg(unsigned int n, Term* t)	{ _args[n] = t;	}
 
 		// Inspectors
 		Sort*			sort()					const	{ return _func->outsort();	}
@@ -148,7 +150,8 @@ class FuncTerm : public Term {
 		unsigned int	nrQvars()				const	{ return 0;					}
 
 		// Visitor
-		void accept(Visitor* v);
+		void	accept(Visitor* v);
+		Term*	accept(MutatingVisitor* v);
 
 		// Debugging
 		string to_string() const;
@@ -175,7 +178,7 @@ class DomainTerm : public Term {
 		DomainTerm* clone(const map<Variable*,Variable*>&)	const;
 
 		// Destructor
-		~DomainTerm();
+		void recursiveDelete();
 
 		// Inspectors
 		Sort*			sort()					const { return _sort;				}
@@ -187,9 +190,12 @@ class DomainTerm : public Term {
 		Term*			subterm(unsigned int n)	const { assert(false); return 0;	}
 		SetExpr*		subset(unsigned int n)	const { assert(false); return 0;	}
 		Variable*		qvar(unsigned int n)	const { assert(false); return 0;	}
+		Element			value()					const { return _value;				}
+		ElementType		type()					const { return _type;				}
 
 		// Visitor
-		void accept(Visitor* v);
+		void	accept(Visitor* v);
+		Term*	accept(MutatingVisitor* v);
 
 		// Debugging
 		string	to_string()	const;	
@@ -218,7 +224,8 @@ class SetExpr {
 		virtual SetExpr* clone(const map<Variable*,Variable*>&)	const = 0;
 
 		// Destructor
-		virtual ~SetExpr() { }
+		virtual void recursiveDelete() = 0;
+		virtual ~SetExpr() { if(_pi) delete(_pi); }
 
 		// Mutators
 		void	setfvars();
@@ -235,7 +242,8 @@ class SetExpr {
 		virtual	Sort*			firstargsort()			const = 0;
 
 		// Visitor
-		virtual void accept(Visitor* v) = 0;
+		virtual void		accept(Visitor* v) = 0;
+		virtual SetExpr*	accept(MutatingVisitor* v) = 0;
 
 		// Debugging
 		virtual string	to_string()	const = 0;
@@ -260,7 +268,11 @@ class EnumSetExpr : public SetExpr {
 		EnumSetExpr* clone(const map<Variable*,Variable*>&)	const;
 
 		// Destructor
-		~EnumSetExpr();
+		void recursiveDelete();
+
+		// Mutators
+		void	subf(unsigned int n, Formula* f)	{ _subf[n] = f;		}
+		void	weight(unsigned int n, Term* t)		{ _weights[n] = t;	}
 
 		// Inspectors
 		unsigned int	nrSubforms()			const	{ return _subf.size();		}	
@@ -272,7 +284,8 @@ class EnumSetExpr : public SetExpr {
 		Sort*			firstargsort()			const;
 
 		// Visitor
-		void accept(Visitor* v);
+		void		accept(Visitor* v);
+		SetExpr*	accept(MutatingVisitor* v);
 
 		// Debugging
 		string	to_string()	const;	
@@ -297,7 +310,10 @@ class QuantSetExpr : public SetExpr {
 		QuantSetExpr* clone(const map<Variable*,Variable*>&)	const;
 
 		// Destructor
-		~QuantSetExpr();
+		void recursiveDelete();
+
+		// Mutators
+		void	subf(Formula* f)	{ _subf = f;	}
 
 		// Inspectors
 		unsigned int	nrSubforms()			const	{ return 1;					}	
@@ -306,10 +322,12 @@ class QuantSetExpr : public SetExpr {
 		Formula*		subform(unsigned int n)	const	{ return _subf;				}
 		Term*			subterm(unsigned int n)	const	{ assert(false); return 0;	}
 		Variable*		qvar(unsigned int n)	const	{ return _vars[n];			}
+		Formula*		subf()					const	{ return _subf;				}
 		Sort*			firstargsort()			const;
 
 		// Visitor
-		void accept(Visitor* v);
+		void		accept(Visitor* v);
+		SetExpr*	accept(MutatingVisitor* v);
 
 		// Debugging
 		string	to_string()	const;	
@@ -337,7 +355,10 @@ class AggTerm : public Term {
 		AggTerm* clone(const map<Variable*,Variable*>&)	const;
 
 		// Destructor
-		~AggTerm() { delete(_pi); delete(_set); }
+		void recursiveDelete() { _set->recursiveDelete(); delete(this);	}
+
+		// Mutators
+		void	set(SetExpr* s) { _set = s;	}
 
 		// Inspectors
 		Sort*			sort()					const;
@@ -353,11 +374,37 @@ class AggTerm : public Term {
 		AggType			type()					const	{ return _type;					}
 
 		// Visitor
-		void accept(Visitor* v);
+		void	accept(Visitor* v);
+		Term*	accept(MutatingVisitor* v);
 
 		// Debugging
 		string	to_string()	const;	
 
+};
+
+namespace TermUtils {
+	// evaluate the given term in the given structure under the given variable mapping
+	TypedElement		evaluate(Term*,Structure*,const map<Variable*,TypedElement>&);	
+}
+
+class TermEvaluator : public Visitor {
+
+	private:
+		TypedElement				_returnvalue;
+		Structure*					_structure;
+		map<Variable*,TypedElement>	_varmapping;
+
+	public:
+		TermEvaluator(Structure* s,const map<Variable*,TypedElement> m);
+		TermEvaluator(Term* t,Structure* s,const map<Variable*,TypedElement> m);
+
+		TypedElement returnvalue()	{ return _returnvalue;	}
+
+		void visit(VarTerm* vt);
+		void visit(FuncTerm* ft);
+		void visit(DomainTerm* dt);
+		void visit(AggTerm* at);
+		
 };
 
 

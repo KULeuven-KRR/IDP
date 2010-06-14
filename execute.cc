@@ -5,38 +5,85 @@
 ************************************/
 
 #include "execute.h"
+#include "ground.h"
 #include <iostream>
 
-void PrintTheory::execute(const vector<InfArg>& args, InfArg res) const {
+void PrintTheory::execute(const vector<InfArg>& args, const string& res,Namespace*) const {
 	assert(args.size() == 1);
 	// TODO
 	string s = (args[0]._theory)->to_string();
 	cout << s;
 }
 
-void PrintVocabulary::execute(const vector<InfArg>& args, InfArg res) const {
+void PrintVocabulary::execute(const vector<InfArg>& args, const string& res,Namespace*) const {
 	assert(args.size() == 1);
 	// TODO
 	string s = (args[0]._vocabulary)->to_string();
 	cout << s;
 }
 
-void PrintStructure::execute(const vector<InfArg>& args, InfArg res) const {
+void PrintStructure::execute(const vector<InfArg>& args, const string& res,Namespace*) const {
 	assert(args.size() == 1);
 	// TODO
 	string s = (args[0]._structure)->to_string();
 	cout << s;
 }
 
-void PrintNamespace::execute(const vector<InfArg>& args, InfArg res) const {
+void PrintNamespace::execute(const vector<InfArg>& args, const string& res,Namespace*) const {
 	assert(args.size() == 1);
 	// TODO
 	//string s = (args[0]._namespace)->to_string();
 	//cout << s;
 }
 
-void PushNegations::execute(const vector<InfArg>& args, InfArg res) const {
+void PushNegations::execute(const vector<InfArg>& args, const string& res,Namespace*) const {
 	assert(args.size() == 1);
 	TheoryUtils::push_negations(args[0]._theory);
 }
 
+void RemoveEquivalences::execute(const vector<InfArg>& args, const string& res,Namespace*) const {
+	assert(args.size() == 1);
+	TheoryUtils::remove_equiv(args[0]._theory);
+}
+
+void FlattenFormulas::execute(const vector<InfArg>& args, const string& res,Namespace*) const {
+	assert(args.size() == 1);
+	TheoryUtils::flatten(args[0]._theory);
+}
+
+void RemoveEqchains::execute(const vector<InfArg>& args, const string& res,Namespace*) const {
+	assert(args.size() == 1);
+	TheoryUtils::remove_eqchains(args[0]._theory);
+}
+
+GroundingInference::GroundingInference() { 
+	_intypes = vector<InfArgType>(2);
+	_intypes[0] = IAT_THEORY; 
+	_intypes[1] = IAT_STRUCTURE;
+	_outtype = IAT_VOID;	
+}
+
+void GroundingInference::execute(const vector<InfArg>& args, const string& res,Namespace*) const {
+	assert(args.size() == 2);
+	NaiveGrounder ng(args[1]._structure);
+	Theory* gr = ng.ground(args[0]._theory);
+	// TODO: change the following
+	string s = gr->to_string();
+	cout << s;
+	delete(gr);
+}
+
+GroundingWithResult::GroundingWithResult() { 
+	_intypes = vector<InfArgType>(2);
+	_intypes[0] = IAT_THEORY; 
+	_intypes[1] = IAT_STRUCTURE;
+	_outtype = IAT_THEORY;	
+}
+
+void GroundingWithResult::execute(const vector<InfArg>& args, const string& res,Namespace* cn) const {
+	assert(args.size() == 2);
+	NaiveGrounder ng(args[1]._structure);
+	Theory* gr = ng.ground(args[0]._theory);
+	gr->name(res);
+	cn->add(gr);
+}

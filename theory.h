@@ -35,7 +35,8 @@ class Formula {
 																				// as inidicated by the map
 
 		// Destructor
-		virtual ~Formula() { }
+		virtual void recursiveDelete() = 0;
+		virtual ~Formula() { if(_pi) delete(_pi);	}
 
 		// Mutators
 		void	setfvars();		// compute the free variables
@@ -55,7 +56,8 @@ class Formula {
 				bool			contains(Variable*)		const;		// true iff the formula contains the variable
 
 		// Visitor
-		virtual void accept(Visitor* v) = 0;
+		virtual void		accept(Visitor* v) = 0;
+		virtual Formula*	accept(MutatingVisitor* v) = 0;
 
 		// Debugging
 		virtual string to_string()	const = 0;
@@ -80,10 +82,11 @@ class PredForm : public Formula {
 		PredForm*	clone(const map<Variable*,Variable*>&)	const;
 
 	    // Destructor
-		~PredForm();
+		void recursiveDelete();
 
 		// Mutators
-		void	symb(PFSymbol* s)	{ _symb = s;	}
+		void	symb(PFSymbol* s)				{ _symb = s;	}
+		void	arg(unsigned int n, Term* t)	{ _args[n] = t;	}
 
 		// Inspectors
 		PFSymbol*		symb()					const { return _symb;				}
@@ -95,7 +98,8 @@ class PredForm : public Formula {
 		Term*			subterm(unsigned int n)	const { return _args[n];			}
 		
 		// Visitor
-		void accept(Visitor* v);
+		void		accept(Visitor* v);
+		Formula*	accept(MutatingVisitor* v);
 
 		// Debugging
 		string to_string() const;
@@ -125,15 +129,17 @@ class EqChainForm : public Formula {
 		EqChainForm*	clone(const map<Variable*,Variable*>&)	const;
 
 	    // Destructor
-		~EqChainForm();
+		void recursiveDelete();
 
 		// Mutators
 		void add(char c, bool s, Term* t)		{ _comps.push_back(c); _signs.push_back(s); _terms.push_back(t);	}
 		void conj(bool b)						{ _conj = b;														}
 		void compsign(unsigned int n, bool b)	{ _signs[n] = b;													}
+		void term(unsigned int n, Term* t)		{ _terms[n] = t;													}
 
 		// Inspectors
 		bool			conj()						const	{ return _conj;				}
+		char			comp(unsigned int n)		const	{ return _comps[n];			}
 		bool			compsign(unsigned int n)	const	{ return _signs[n];			}
 		unsigned int	nrQvars()					const	{ return 0;					}
 		unsigned int	nrSubforms()				const	{ return 0;					}
@@ -142,8 +148,12 @@ class EqChainForm : public Formula {
 		Formula*		subform(unsigned int n)		const	{ assert(false); return 0;	}
 		Term*			subterm(unsigned int n)		const	{ return _terms[n];			}
 
+		const vector<char>&	comps()		const	{ return _comps;	}
+		const vector<bool>& compsigns()	const	{ return _signs;	}
+
 		// Visitor
-		void accept(Visitor* v);
+		void		accept(Visitor* v);
+		Formula*	accept(MutatingVisitor* v);
 
 		// Debugging
 		string to_string() const;
@@ -168,7 +178,11 @@ class EquivForm : public Formula {
 		EquivForm*	clone(const map<Variable*,Variable*>&)	const;
 
 	    // Destructor
-		~EquivForm();
+		void recursiveDelete();
+
+		// Mutators
+		void left(Formula* f)	{ _left = f;	}
+		void right(Formula* f)	{ _right = f;	}
 
 		// Inspectors
 		Formula*		left()					const { return _left;					}
@@ -181,7 +195,8 @@ class EquivForm : public Formula {
 		Term*			subterm(unsigned int n) const { assert(false); return 0;	 	}
 
 		// Visitor
-		void accept(Visitor* v);
+		void		accept(Visitor* v);
+		Formula*	accept(MutatingVisitor* v);
 
 		// Debuging
 		string to_string() const;
@@ -208,10 +223,12 @@ class BoolForm : public Formula {
 		BoolForm*	clone(const map<Variable*,Variable*>&)	const;
 
 	    // Destructor
-		~BoolForm();
+		void recursiveDelete();
 
 		// Mutators
-		void			conj(bool b)	{ _conj = b;	}
+		void	conj(bool b)						{ _conj = b;	}
+		void	subf(unsigned int n, Formula* f)	{ _subf[n] = f;	}
+		void	subf(const vector<Formula*>& s)		{ _subf = s;	}
 
 		// Inspectors
 		bool			conj()					const	{ return _conj;				}
@@ -224,7 +241,8 @@ class BoolForm : public Formula {
 		Term*			subterm(unsigned int n)	const	{ assert(false); return 0; 	}
 
 		// Visitor
-		void accept(Visitor* v);
+		void		accept(Visitor* v);
+		Formula*	accept(MutatingVisitor* v);
 
 		// Debugging
 		string to_string()	const;
@@ -251,10 +269,12 @@ class QuantForm : public Formula {
 		QuantForm*	clone(const map<Variable*,Variable*>&)	const;
 
 	   // Destructor
-	   ~QuantForm();
+	   void recursiveDelete();
 
 		// Mutators
-		void	univ(bool b)	{ _univ = b;	}
+		void	add(Variable* v)	{ _vars.push_back(v);	}
+		void	univ(bool b)		{ _univ = b;			}
+		void	subf(Formula* f)	{ _subf = f;			}
 
 		// Inspectors
 		Formula*		subf()					const { return _subf;				}
@@ -268,12 +288,28 @@ class QuantForm : public Formula {
 		Term*			subterm(unsigned int n)	const { assert(false); return 0;	}
 
 		// Visitor
-		void accept(Visitor* v);
+		void		accept(Visitor* v);
+		Formula*	accept(MutatingVisitor* v);
 
 		// Debugging
 		string to_string()	const;
 
 };
+
+enum TruthValue { TV_TRUE, TV_FALSE, TV_UNKN, TV_INCO, TV_UNDEF };
+
+namespace FormulaUtils {
+	
+	/*
+	 * Evaulate a formula in a structure under the given variable mapping
+	 *	Preconditions: 
+	 *		- the formula is not allowed to contain subformulas of the class EquivForm or EqChainForm
+	 *		- for all subterms, the preconditions of evaluate(Term*,Structure*,const map<Variable*,TypedElement>&) must hold
+	 *		- the sort of every quantified variable in the formula should have a finite domain in the given structure
+	 */
+	TruthValue evaluate(Formula*,Structure*,const map<Variable*,TypedElement>&);	
+																				
+}
 
 
 /******************
@@ -297,7 +333,11 @@ class Rule {
 		Rule*	clone()									const;
 
 		// Destructor
-		~Rule();
+		~Rule() { if(_pi) delete(_pi);	}
+		void recursiveDelete();
+
+		// Mutators
+		void	body(Formula* f)	{ _body = f;	}
 
 		// Inspectors
 		PredForm*		head()					const { return _head;			}
@@ -307,7 +347,8 @@ class Rule {
 		Variable*		qvar(unsigned int n)	const { return _vars[n];		}
 
 		// Visitor
-		void accept(Visitor* v);
+		void	accept(Visitor* v);
+		Rule*	accept(MutatingVisitor* v);
 
 		// Debug
 		string to_string() const;
@@ -325,14 +366,17 @@ class Definition {
 		// Constructors
 		Definition() : _rules(0), _defsyms(0) { } 
 
-		Definition*	clone()									const;
+		Definition*	clone()	const;
 
 		// Destructor
-		~Definition();
+		~Definition() { }
+		void recursiveDelete();
 
 		// Mutators
-		void	add(Rule*);				// add a rule
-		void	add(PFSymbol* p);		// set 'p' to be a defined symbol
+		void	add(Rule*);						// add a rule
+		void	add(PFSymbol* p);				// set 'p' to be a defined symbol
+		void	rule(unsigned int n, Rule* r)	{ _rules[n] = r;	}
+		void	defsyms();						// (Re)compute the list of defined symbols
 
 		// Inspectors
 		unsigned int	nrrules()				const { return _rules.size();		}
@@ -341,7 +385,8 @@ class Definition {
 		PFSymbol*		defsym(unsigned int n)	const { return _defsyms[n];			}
 
 		// Visitor
-		void accept(Visitor* v);
+		void		accept(Visitor* v);
+		Definition*	accept(MutatingVisitor* v);
 
 		// Debug
 		string to_string(unsigned int spaces = 0) const;
@@ -361,15 +406,19 @@ class FixpDef {
 		// Constructors
 		FixpDef(bool lfp) : _lfp(lfp), _defs(0), _rules(0) { }
 
-		FixpDef*	clone()									const;
+		FixpDef*	clone()	const;
 
 		// Destructor 
-		~FixpDef();
+		~FixpDef() { }
+		void recursiveDelete();
 
 		// Mutators
-		void	add(Rule* r);			// add a rule
-		void	add(PFSymbol* p);		// set 'p' to be a defined symbol
-		void	add(FixpDef* d)			{ _defs.push_back(d);	}
+		void	add(Rule* r);					// add a rule
+		void	add(PFSymbol* p);				// set 'p' to be a defined symbol
+		void	add(FixpDef* d)					{ _defs.push_back(d);	}
+		void	rule(unsigned int n, Rule* r)	{ _rules[n] = r;		}
+		void	def(unsigned int n, FixpDef* d)	{ _defs[n] = d;			}
+		void	defsyms();						// (Re)compute the list of defined symbols
 
 		// Inspectors
 		bool			lfp()					const { return _lfp;			}
@@ -379,7 +428,8 @@ class FixpDef {
 		FixpDef*		def(unsigned int n)		const { return _defs[n];		}
 
 		// Visitor
-		void accept(Visitor* v);
+		void		accept(Visitor* v);
+		FixpDef*	accept(MutatingVisitor* v);
 
 		// Debug
 		string to_string(unsigned int spaces = 0) const;
@@ -410,17 +460,23 @@ class Theory {
 		Theory(const string& name, ParseInfo* pi) : _name(name), _vocabulary(0), _structure(0), _pi(pi) { }
 		Theory(const string& name, Vocabulary* voc, Structure* str, ParseInfo* pi) : _name(name), _vocabulary(voc), _structure(str), _pi(pi) { }
 
-		Theory*	clone()									const;
+		Theory*	clone()	const;
 
 		// Destructor
-		~Theory();
+		void recursiveDelete();
+		~Theory() { if(_pi) delete(_pi); }
 
 		// Mutators
-		void	vocabulary(Vocabulary* v)	{ _vocabulary = v;				}
-		void	structure(Structure* s)		{ _structure = s;				}
-		void	add(Formula* f)				{ _sentences.push_back(f);		}
-		void	add(Definition* d)			{ _definitions.push_back(d);	}
-		void	add(FixpDef* fd)			{ _fixpdefs.push_back(fd);		}
+		void	vocabulary(Vocabulary* v)					{ _vocabulary = v;				}
+		void	structure(Structure* s)						{ _structure = s;				}
+		void	add(Formula* f)								{ _sentences.push_back(f);		}
+		void	add(Definition* d)							{ _definitions.push_back(d);	}
+		void	add(FixpDef* fd)							{ _fixpdefs.push_back(fd);		}
+		void	add(Theory* t);
+		void	sentence(unsigned int n, Formula* f)		{ _sentences[n] = f;			}
+		void	definition(unsigned int n, Definition* d)	{ _definitions[n] = d;			}
+		void	fixpdef(unsigned int n, FixpDef* d)			{ _fixpdefs[n] = d;				}
+		void	name(const string& n)						{ _name = n;					}
 
 		// Inspectors
 		const string&	name()						const { return _name;				}
@@ -434,22 +490,28 @@ class Theory {
 		Definition*		definition(unsigned int n)	const { return _definitions[n];		}
 		FixpDef*		fixpdef(unsigned int n)		const { return _fixpdefs[n];		}
 
+		// Visitor
+		void	accept(Visitor*);
+		Theory*	accept(MutatingVisitor*);
+
 		// Debugging
 		string to_string() const;
 
 };
 
 namespace TheoryUtils {
-	// Push negations inside
-	void push_negations(Theory*);
-	// Flatten formulas
-	// TODO
-	// Rewrite A <=> B to (A => B) & (B => A)
-	// TODO
-	// Rewrite chains of equalities to a chain of conjunctions
-	// TODO
-	// Merge definitions
-	// TODO
+
+	/** Rewriting theories **/
+	void push_negations(Theory*);	// Push negations inside
+	void remove_equiv(Theory*);		// Rewrite A <=> B to (A => B) & (B => A)
+	void flatten(Theory*);			// Rewrite (! x : ! y : phi) to (! x y : phi), rewrite ((A & B) & C) to (A & B & C), etc.
+	void remove_eqchains(Theory*);	// Rewrite chains of equalities to a conjunction or disjunction of atoms.
+	void tseitin(Theory*);			// Apply the Tseitin transformation
+	// TODO  Merge definitions
+	
+	/** Completion **/
+	// TODO  Compute completion of definitions
+	
 }
 
 #endif

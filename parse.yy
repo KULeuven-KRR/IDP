@@ -52,6 +52,7 @@ extern string dtos(double);
 	char				chr;
 	double*				dou;
 	string*				str;
+	InfArgType			iat;
 
 	Sort*				sor;
 	Predicate*			pre;
@@ -149,6 +150,7 @@ extern string dtos(double);
 %left UMINUS
 
 /** Non-terminals with semantic value **/
+%type <iat> outtype
 %type <nmr> integer
 %type <dou> floatnr
 %type <str> strelement
@@ -837,15 +839,35 @@ statement		: option
 option			: OPTION identifier '=' identifier
 				;
 
-command			: command_name '(' command_args ')'	{ Insert::command(*$1,*$3,@1); delete($1); delete($3);	}
+command			: void_command
+				| nonvoid_command
+				;
+				
+void_command	: command_name '(' command_args ')'	{ Insert::command(*$1,*$3,@1); delete($1); delete($3);	}
 				| command_name '(' ')'				{ Insert::command(*$1,@1); delete($1);					}
 				| command_name						{ Insert::command(*$1,@1); delete($1);					}
+				;
+
+nonvoid_command	: outtype identifier '=' command_name '(' command_args ')'	{ Insert::command($1,*$4,*$6,*$2,@1);
+																			  delete($2); delete($4); delete($6);
+																			}
+				| outtype identifier '=' command_name '(' ')'				{ Insert::command($1,*$4,*$2,@1); 
+																			  delete($2); delete($4);
+																			}
+				| outtype identifier '=' command_name						{ Insert::command($1,*$4,*$2,@1); 
+																			  delete($2); delete($4);
+																			}	
+				;
+
+outtype			: THEORY_HEADER		{ $$ = IAT_THEORY;		}
+				| STRUCT_HEADER		{ $$ = IAT_STRUCTURE;	}
+				| VOCAB_HEADER		{ $$ = IAT_VOCABULARY;	}
 				;
 
 command_name	: identifier						{ $$ = $1;	}
 				;
 
-command_args	: command_args command_arg			{ $$ = $1; $$->push_back(*$2); delete($2);		}
+command_args	: command_args ',' command_arg		{ $$ = $1; $$->push_back(*$3); delete($3);		}
 				| command_arg						{ $$ = new vector<string>(1,*$1); delete($1);	}
 				;
 

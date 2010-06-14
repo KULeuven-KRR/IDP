@@ -7,12 +7,27 @@
 #ifndef VISITOR_H
 #define VISITOR_H
 
-#include "theory.h"
+class Formula;
+class Term;
+class Rule;
+class Definition;
+class FixpDef;
+class SetExpr;
+class Theory;
+class PredForm;
+class EqChainForm;
+class EquivForm;	
+class BoolForm;
+class QuantForm;
+class VarTerm;
+class AggTerm;
+class DomainTerm;
+class FuncTerm;
+class QuantSetExpr;
+class EnumSetExpr;
 
 class Visitor {
-	
 	public:
-
 		Visitor() { }
 		virtual ~Visitor() { }
 
@@ -25,29 +40,65 @@ class Visitor {
 		void traverse(Theory* t);
 
 		// Formulas 
-		virtual void visit(PredForm* a)			{ traverse(a);	}
-		virtual void visit(EqChainForm* a)		{ traverse(a);	}
-		virtual void visit(EquivForm* a)		{ traverse(a);	}
-		virtual void visit(BoolForm* a)			{ traverse(a);	}
-		virtual void visit(QuantForm* a)		{ traverse(a);	}
+		virtual void visit(PredForm* a);			
+		virtual void visit(EqChainForm* a);
+		virtual void visit(EquivForm* a);
+		virtual void visit(BoolForm* a);
+		virtual void visit(QuantForm* a);
 
 		// Definitions 
-		virtual void visit(Rule* a)				{ traverse(a);	}
-		virtual void visit(Definition* a)		{ traverse(a);	}
-		virtual void visit(FixpDef* a)			{ traverse(a);	}
+		virtual void visit(Rule* a);
+		virtual void visit(Definition* a);
+		virtual void visit(FixpDef* a);
 
 		// Terms
-		virtual void visit(VarTerm* a)			{ traverse(a);	}
-		virtual void visit(FuncTerm* a)			{ traverse(a);	}
-		virtual void visit(DomainTerm* a)		{ traverse(a);	}
-		virtual void visit(AggTerm* a)			{ traverse(a);	}
+		virtual void visit(VarTerm* a);
+		virtual void visit(FuncTerm* a);
+		virtual void visit(DomainTerm* a);
+		virtual void visit(AggTerm* a);
 
 		// Set expressions
-		virtual void visit(EnumSetExpr* a)		{ traverse(a);	}
-		virtual void visit(QuantSetExpr* a)		{ traverse(a);	}
+		virtual void visit(EnumSetExpr* a);
+		virtual void visit(QuantSetExpr* a);
 
 		// Theories
-		virtual void visit(Theory* t)			{ traverse(t);	}
+		virtual void visit(Theory* t);
+
 };
+
+class MutatingVisitor {
+	
+	public:
+
+		MutatingVisitor() { }
+		virtual ~MutatingVisitor() { }
+
+		// Formulas 
+		virtual Formula* visit(PredForm* a);	
+		virtual Formula* visit(EqChainForm* a);	
+		virtual Formula* visit(EquivForm* a);	
+		virtual Formula* visit(BoolForm* a);	
+		virtual Formula* visit(QuantForm* a);	
+
+		// Definitions 
+		virtual Rule* visit(Rule* a);		// NOTE: the head of a rule is not visited by this default implementation!
+		virtual Definition* visit(Definition* a);	
+		virtual FixpDef* visit(FixpDef* a);		
+
+		// Terms
+		virtual Term* visit(VarTerm* a);		
+		virtual Term* visit(FuncTerm* a);	
+		virtual Term* visit(DomainTerm* a);	
+		virtual Term* visit(AggTerm* a);		
+
+		// Set expressions
+		virtual SetExpr* visit(EnumSetExpr* a);	
+		virtual SetExpr* visit(QuantSetExpr* a);
+
+		// Theories
+		virtual Theory* visit(Theory* t);	
+
+};
+
 
 #endif

@@ -103,6 +103,7 @@ void parse(const vector<string>& inputfiles) {
 		if(yyin) {
 			Insert::currfile(inputfiles[n]);
 			yyparse();	
+			fclose(yyin);
 		}
 		else Error::unknfile(inputfiles[n]);
 	}

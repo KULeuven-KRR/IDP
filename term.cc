@@ -6,6 +6,7 @@
 
 #include "namespace.h"
 #include "builtin.h"
+#include "visitor.h"
 
 extern string itos(int);
 extern string dtos(double);
@@ -60,14 +61,18 @@ QuantSetExpr* QuantSetExpr::clone() const {
 
 VarTerm* VarTerm::clone(const map<Variable*,Variable*>& mvv) const {
 	map<Variable*,Variable*>::const_iterator it = mvv.find(_var);
-	if(it != mvv.end()) return new VarTerm(it->second,new ParseInfo(_pi));
-	else return new VarTerm(_var,new ParseInfo(_pi));
+	ParseInfo* nip = 0;
+	if(_pi) nip = new ParseInfo(_pi);
+	if(it != mvv.end()) return new VarTerm(it->second,nip);
+	else return new VarTerm(_var,nip);
 }
 
 FuncTerm* FuncTerm::clone(const map<Variable*,Variable*>& mvv) const {
 	vector<Term*> na(_args.size());
 	for(unsigned int n = 0; n < _args.size(); ++n) na[n] = _args[n]->clone(mvv);
-	return new FuncTerm(_func,na,new ParseInfo(_pi));
+	ParseInfo* nip = 0;
+	if(_pi) nip = new ParseInfo(_pi);
+	return new FuncTerm(_func,na,nip);
 }
 
 DomainTerm* DomainTerm::clone(const map<Variable*,Variable*>& mvv) const {
@@ -78,12 +83,16 @@ DomainTerm* DomainTerm::clone(const map<Variable*,Variable*>& mvv) const {
 		case ELSTRING: ne._string = new string(*(_value._string)); break;
 		default: assert(false);
 	}
-	return new DomainTerm(_sort,_type,ne,new ParseInfo(_pi));
+	ParseInfo* nip = 0;
+	if(_pi) nip = new ParseInfo(_pi);
+	return new DomainTerm(_sort,_type,ne,nip);
 }
 
 AggTerm* AggTerm::clone(const map<Variable*,Variable*>& mvv) const {
 	SetExpr* ns = _set->clone(mvv);
-	return new AggTerm(ns,_type,new ParseInfo(_pi));
+	ParseInfo* nip = 0;
+	if(_pi) nip = new ParseInfo(_pi);
+	return new AggTerm(ns,_type,nip);
 }
 
 EnumSetExpr* EnumSetExpr::clone(const map<Variable*,Variable*>& mvv) const {
@@ -91,7 +100,9 @@ EnumSetExpr* EnumSetExpr::clone(const map<Variable*,Variable*>& mvv) const {
 	vector<Term*> nt(_weights.size());
 	for(unsigned int n = 0; n < _subf.size(); ++n) nf[n] = _subf[n]->clone(mvv);
 	for(unsigned int n = 0; n < _weights.size(); ++n) nt[n] = _weights[n]->clone(mvv);
-	return new EnumSetExpr(nf,nt,new ParseInfo(_pi));
+	ParseInfo* nip = 0;
+	if(_pi) nip = new ParseInfo(_pi);
+	return new EnumSetExpr(nf,nt,nip);
 }
 
 QuantSetExpr* QuantSetExpr::clone(const map<Variable*,Variable*>& mvv) const {
@@ -102,38 +113,40 @@ QuantSetExpr* QuantSetExpr::clone(const map<Variable*,Variable*>& mvv) const {
 		nmvv[_vars[n]] = nv[n];
 	}
 	Formula* nf = _subf->clone(nmvv);
-	return new QuantSetExpr(nv,nf,new ParseInfo(_pi));
+	ParseInfo* nip = 0;
+	if(_pi) nip = new ParseInfo(_pi);
+	return new QuantSetExpr(nv,nf,nip);
 }
 
 /******************
 	Destructors
 ******************/
 
-FuncTerm::~FuncTerm() {
-	delete(_pi);
-	for(unsigned int n = 0; n < _args.size(); ++n) delete(_args[n]);
+void FuncTerm::recursiveDelete() {
+	for(unsigned int n = 0; n < _args.size(); ++n) _args[n]->recursiveDelete();
+	delete(this);
 }
 
-DomainTerm::~DomainTerm() {
-	delete(_pi);
+void DomainTerm::recursiveDelete() {
 	switch(_type) {
 		case ELINT: break;
 		case ELDOUBLE: delete(_value._double); break;
 		case ELSTRING: delete(_value._string); break;
 		default: assert(false);
 	}
+	delete(this);
 }
 
-EnumSetExpr::~EnumSetExpr() {
-	delete(_pi);
-	for(unsigned int n = 0; n < _subf.size(); ++n) delete(_subf[n]);
-	for(unsigned int n = 0; n < _weights.size(); ++n) delete(_weights[n]);
+void EnumSetExpr::recursiveDelete() {
+	for(unsigned int n = 0; n < _subf.size(); ++n) _subf[n]->recursiveDelete();
+	for(unsigned int n = 0; n < _weights.size(); ++n) _weights[n]->recursiveDelete();
+	delete(this);
 }
 
-QuantSetExpr::~QuantSetExpr() {
-	delete(_pi);
-	delete(_subf);
+void QuantSetExpr::recursiveDelete() {
+	_subf->recursiveDelete();
 	for(unsigned int n = 0; n < _vars.size(); ++n) delete(_vars[n]);
+	delete(this);
 }
 
 /*******************************
@@ -298,4 +311,48 @@ string makestring(const AggType& t) {
 string AggTerm::to_string() const {
 	string s = makestring(_type) + _set->to_string();
 	return s;
+}
+
+
+/*****************
+	Term utils
+*****************/
+
+TermEvaluator::TermEvaluator(Structure* s,const map<Variable*,TypedElement> m) : 
+	Visitor(), _structure(s), _varmapping(m) { }
+TermEvaluator::TermEvaluator(Term* t,Structure* s,const map<Variable*,TypedElement> m) : 
+	Visitor(), _structure(s), _varmapping(m) { t->accept(this);	}
+
+void TermEvaluator::visit(VarTerm* vt) {
+	assert(_varmapping.find(vt->var()) != _varmapping.end());
+	_returnvalue = _varmapping[vt->var()];
+}
+
+void TermEvaluator::visit(FuncTerm* ft) {
+	vector<TypedElement> argvalues;
+	for(unsigned int n = 0; n < ft->nrSubterms(); ++n) {
+		ft->subterm(n)->accept(this);
+		if(ElementUtil::exists(_returnvalue)) argvalues.push_back(_returnvalue);
+		else return;
+	}
+	FuncInter* fi = _structure->inter(ft->func());
+	assert(fi);
+	_returnvalue._element = (*fi)[argvalues];
+	_returnvalue._type = fi->outtype();
+}
+
+void TermEvaluator::visit(DomainTerm* dt) {
+	_returnvalue._element = dt->value();
+	_returnvalue._type = dt->type();
+}
+
+void TermEvaluator::visit(AggTerm* at) {
+	assert(false); // TODO: not yet implemented
+}
+
+namespace TermUtils {
+	TypedElement evaluate(Term* t,Structure* s,const map<Variable*,TypedElement> m) {
+		TermEvaluator te(t,s,m);
+		return te.returnvalue();
+	}
 }

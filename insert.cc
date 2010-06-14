@@ -688,6 +688,11 @@ namespace Insert {
 		_inferences["print"].push_back(new PrintStructure());
 		_inferences["print"].push_back(new PrintNamespace());
 		_inferences["push_negations"].push_back(new PushNegations());
+		_inferences["remove_equivalences"].push_back(new RemoveEquivalences());
+		_inferences["remove_eqchains"].push_back(new RemoveEqchains());
+		_inferences["flatten"].push_back(new FlattenFormulas());
+		_inferences["ground"].push_back(new GroundingInference());
+		_inferences["ground"].push_back(new GroundingWithResult());
 	}
 
 	void cleanup() {
@@ -1004,7 +1009,7 @@ namespace Insert {
 				if(st && pt) {
 					for(unsigned int r = 0; r < st->size(); ++r) {
 						if(!(pt->contains(st->element(r),st->type()))) {
-							string str = ElementToString(st->element(r),st->type());
+							string str = ElementUtil::ElementToString(st->element(r),st->type());
 							Error::sortelnotinsort(str,s->name(),s->parent()->name(),_currstructure->name());
 						}
 					}
@@ -1023,7 +1028,7 @@ namespace Insert {
 						if(ct) {
 							for(unsigned int r = 0; r < ct->size(); ++r) {
 								if(!(st->contains(ct->element(r,c),ct->type(c)))) {
-									string str = ElementToString(ct->element(r,c),ct->type(c));
+									string str = ElementUtil::ElementToString(ct->element(r,c),ct->type(c));
 									Error::predelnotinsort(str,p->name(),p->sort(c)->name(),_currstructure->name());
 								}
 							}
@@ -1031,7 +1036,7 @@ namespace Insert {
 						if(cf && ct != cf) {
 							for(unsigned int r = 0; r < cf->size(); ++r) {
 								if(!(st->contains(cf->element(r,c),cf->type(c)))) {
-									string str = ElementToString(cf->element(r,c),cf->type(c));
+									string str = ElementUtil::ElementToString(cf->element(r,c),cf->type(c));
 									Error::predelnotinsort(str,p->name(),p->sort(c)->name(),_currstructure->name());
 								}
 							}
@@ -1053,7 +1058,7 @@ namespace Insert {
 						if(ct) {
 							for(unsigned int r = 0; r < ct->size(); ++r) {
 								if(!(st->contains(ct->element(r,c),ct->type(c)))) {
-									string str = ElementToString(ct->element(r,c),ct->type(c));
+									string str = ElementUtil::ElementToString(ct->element(r,c),ct->type(c));
 									Error::predelnotinsort(str,f->name(),f->sort(c)->name(),_currstructure->name());
 								}
 							}
@@ -1061,7 +1066,7 @@ namespace Insert {
 						if(cf && ct != cf) {
 							for(unsigned int r = 0; r < cf->size(); ++r) {
 								if(!(st->contains(cf->element(r,c),cf->type(c)))) {
-									string str = ElementToString(cf->element(r,c),cf->type(c));
+									string str = ElementUtil::ElementToString(cf->element(r,c),cf->type(c));
 									Error::predelnotinsort(str,f->name(),f->sort(c)->name(),_currstructure->name());
 								}
 							}
@@ -1091,7 +1096,7 @@ namespace Insert {
 							vector<Element> vel = ct->tuple(r);
 							vector<string> vstr(vel.size()-1);
 							for(unsigned int c = 0; c < vel.size()-1; ++c) 
-								vstr[c] = ElementToString(vel[c],ct->type(c));
+								vstr[c] = ElementUtil::ElementToString(vel[c],ct->type(c));
 							Error::notfunction(f->name(),_currstructure->name(),vstr);
 							while(eq(ct->tuple(r-1),ct->tuple(r))) ++r;
 							isfunc = false;
@@ -2556,7 +2561,7 @@ namespace Insert {
 		return a;
 	}
 
-	void command(const string& cname, const vector<string>& args, const string& res, YYLTYPE l) {
+	void command(InfArgType type, const string& cname, const vector<string>& args, const string& res, YYLTYPE l) {
 		ParseInfo* pi = parseinfo(l);
 		map<string,vector<Inference*> >::iterator it = _inferences.find(cname);
 		if(it != _inferences.end()) {
@@ -2576,8 +2581,7 @@ namespace Insert {
 						if(!ok) break;
 					}
 					if(ok) {
-						ok = checkarg(res,vi[n]->outtype());
-						if(ok) vi2.push_back(vi[n]);
+						if(type == vi[n]->outtype()) vi2.push_back(vi[n]);
 					}
 				}
 				if(vi2.empty()) Error::wrongcommandargs(cname + '/' + itos(args.size()),pi);
@@ -2585,8 +2589,7 @@ namespace Insert {
 					vector<InfArg> via;
 					for(unsigned int m = 0; m < args.size(); ++m)
 						via.push_back(convertarg(args[m],(vi2[0]->intypes())[m]));
-					InfArg out = convertarg(res,vi2[0]->outtype());
-					vi2[0]->execute(via,out);
+					vi2[0]->execute(via,res,_currspace);
 				}
 				else Error::ambigcommand(cname + '/' + itos(args.size()),pi);
 			}
@@ -2599,13 +2602,18 @@ namespace Insert {
 	
 	void command(const string& cname, const vector<string>& args, YYLTYPE l) {
 		string res;
-		command(cname,args,res,l);
+		command(IAT_VOID,cname,args,res,l);
+	}
+
+	void command(InfArgType t, const string& cname, const string& res, YYLTYPE l) {
+		vector<string> args;
+		command(t,cname,args,res,l);
 	}
 
 	void command(const string& cname, YYLTYPE l) {
 		vector<string> args;
 		string res;
-		command(cname,args,res,l);
+		command(IAT_VOID,cname,args,res,l);
 	}
 
 }

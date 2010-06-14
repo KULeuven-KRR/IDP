@@ -8,6 +8,7 @@
 #include <limits>
 #include <iostream>
 #include <sstream>
+#include <vector>
 #include <stdlib.h>
 using namespace std;
 
@@ -18,6 +19,16 @@ int MAX_INT = numeric_limits<int>::max();
 // Number of chars
 int nrOfChars() {
 	return numeric_limits<char>::max() - numeric_limits<char>::min();
+}
+
+// Next tuple
+bool nexttuple(vector<unsigned int>& tuple, const vector<unsigned int>& limits) {
+	for(unsigned int n = 0; n < tuple.size(); ++n) {
+		++tuple[n]; 
+		if(tuple[n] == limits[n]) tuple[n] = 0;
+		else return true;
+	}
+	return false;
 }
 
 // Convert integer to string

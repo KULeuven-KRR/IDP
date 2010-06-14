@@ -30,7 +30,7 @@
 \begin{description}
 	\item[vocabulary.\{h,cc\}] Sorts (types), predicate and function symbols
 	\item[structure.\{h,cc\}] Interpretations (tables) for sorts, predicates and functions
-	\item[term.\{h,cc\}] Terms and set expresssions
+	\item[term.\{h,cc\}] Terms and set expressions
 	\item[theory.\{h,cc\}] Formulas, definitions, fixpoint definitions and theories
 	\item[namespace.\{h,cc\}] Namespaces
 	\item[builtin.\{h,cc\}] Built-in sorts, predicates and functions
@@ -40,6 +40,9 @@
 	\item[error.\{h,cc\}] Error and warning messages
 	\item[lex.ll, parse.yy, insert.\{h,cc\}] Parsing
 	\item[main.cc] Initialize data, read command-line arguments, parse input files, delete data
+	\item[common.cc] Some common methods (convert string to int, maximum integer, \ldots)
+	\item[ground.\{h,cc\}] (Naive) grounder
+	\item[clconst.h] Some classes for parsing command-line constants
 \end{description}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -118,7 +121,7 @@ The elements of in a SortTable are not necessarily sorted and may contain double
 \begin{itemize}
 	\item All numbers are before all strings that do not represent numbers.
 	\item The numbers are sorted according to $<$ on $\mathbb{R}$.
-	\item The strings that do not represent numbers are sorted lexicographicaly.
+	\item The strings that do not represent numbers are sorted lexicographically.
 \end{itemize}
 
 %----------------------------------------------------------%
@@ -127,7 +130,7 @@ The elements of in a SortTable are not necessarily sorted and may contain double
 
 Interpretations for predicates are implemented in the class \emph{PredInter}. The interpretations are always 4-valued (but not necessarily strictly 4-valued). An interpretation has four attributes: two pointers to tables (\texttt{\_ctpf} and \texttt{\_cfpt}) and two booleans (\texttt{\_ct} and \texttt{\_cf}). If \texttt{\_ct} is true, the table \texttt{\_ctpf} contains all the tuples that are certainly in the relation. If \texttt{\_ct} if false, \texttt{\_ctpf} contains all the tuples that are possibly not in the relation. Similarly, if \texttt{\_cf} is true, the table \texttt{\_cfpt} contains all the tuples that are certainly not in the relation. If \texttt{\_cf} if false, \texttt{\_cfpt} contains all the tuples that are possibly in the relation. The pointers \texttt{\_ctpf} and \texttt{\_cfpt} may point to the same table.
 
-The tables pointed to in a predicate interpretation are implemented in the class \emph{PredTable}. This class is very similar to SortTable, except that it may have more than one column. Each column has its own type. When \texttt{sortunique()} is called on a PredTable, its tuples are sorted ``lexicographicaly''. 
+The tables pointed to in a predicate interpretation are implemented in the class \emph{PredTable}. This class is very similar to SortTable, except that it may have more than one column. Each column has its own type. When \texttt{sortunique()} is called on a PredTable, its tuples are sorted ``lexicographically''. 
 
 %----------------------------------------------------------%
 \subsection*{Tables for functions}
@@ -138,7 +141,7 @@ Interpretations for functions are implemented in the class \emph{FuncInter}. The
 	PredInter*      predinter();
 	const Element&  operator[](const vector<Element>& tuple);
 \end{lstlisting}
-The first returns the corresponding interpretation for the graph of the function. The second method computes the value of the given tuple according to the function. In case the function is partial, this method returns the element \texttt{DOES\_NOT\_EXIST} if called on a tuple that has no image.
+The first returns the corresponding interpretation for the graph of the function. The second method computes the value of the given tuple according to the function. In case the function is partial, this method returns a non-existing element. 
 
 %----------------------------------------------------------%
 \subsection*{Structures}
@@ -234,19 +237,25 @@ Theories are implemented in the class \emph{Theory}. A theory has as attributes 
 \section{namespace.\{h,cc\}}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-TODO
+Namespaces are implemented in the class \emph{Namespace}. A namespace contains a list of subspaces, a list of theories, a list of vocabularies and a list of structures. It also has a pointer to its parent in the hierarchy of namespaces. 
+
+All namespaces are decendants of the global namespace, which can be accessed through \texttt{Namespace::global()}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{builtin.\{h,cc\}}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-TODO
+The files builtin.h and builtin.cc implement the built-in vocabulary and structure. All symbols in the built-in vocabulary are implicitly part of each vocabulary. E.g., if you call \texttt{contains(p)} on a vocabulary, and \texttt{p} is a pointer to a built-in predicate, the result will be \texttt{true}. 
+
+See~\ref{sec:whattodo} for information about adding built-in sorts, predicates or functions.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{visitor.\{h,cc\}}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-TODO
+The classes \emph{Visitor} and \emph{MutatingVisitor} are two visitor patterns for theories. The first one implements a visitor that goes depth-first, left-to-right through theories and formulas, and changes nothing. The second one traverses formulas in the same manner, but changes the children of a formula it visits by the result of visiting the children. The MutatingVisitor is the recommanded one to use when implementing a method that rewrites formulas. 
+
+For good examples of the use of Visitor and MutatingVisitor, see the classes NegationPush and EquivRemover in theory.cc.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{execute.\{h,cc\}}
@@ -283,23 +292,25 @@ The parser is implemented in the files lex.ll, parse.yy, insert.h and insert.cc.
 
 Guaranteed:
 \begin{itemize}
-	\item Vocabulary
-	\item Theory
+	\item Vocabulary (TODO)
+	\item Theory (TODO)
 	\item Structure
 	\begin{itemize}
 		\item Every predicate and function of the structure's vocabulary has an interpretation.
 		\item All tables are sorted and do not contain doubles.
+		\item TODO
 	\end{itemize}
 \end{itemize}
 
 Not guaranteed:
 \begin{itemize}
-	\item Vocabulary
-	\item Theory
+	\item Vocabulary (TODO)
+	\item Theory (TODO)
 	\item Structure
 	\begin{itemize}
 		\item Not every sort of the structure's vocabulary need to have a interpretation
 		\item A structure may be strictly four-valued, i.e., inconsistent
+		\item TODO
 	\end{itemize}
 \end{itemize}
 
@@ -336,10 +347,6 @@ Not guaranteed:
 %----------------------------------------------------------%
 
 TODO
-% What to do if
-%	you want to add an option
-%	you want to add an inference method
-%	you want to add a builtin sort/function/predicate
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Other remarks}
@@ -347,6 +354,23 @@ TODO
 
 \begin{itemize}
 	\item Many classes have a method \texttt{string to\_string()}, which can be used to print the object (e.g., while debugging).
-	\item Have a look at namespaces with a name ending on \texttt{Utils} (e.g., \texttt{namespace TableUtils}). They contain many usefull methods that are not directly implemented in the main classes.
+	\item Have a look at namespaces with a name ending on \texttt{Utils} (e.g., \texttt{namespace TableUtils}). They contain many useful methods that are not directly implemented in the main classes. For instance:
+	\begin{itemize}
+		\item ElementUtil: methods to clone elements, to convert elements to another type, to create a non-existing element (return value for partial functions), check if an element is an existing element, \ldots
+		\item SortUtils: a method to find the closest common ancestor of two sorts.
+		\item TableUtils: methods to return the least predicate and the least function interpretation with a given arity.
+		\item StructUtils: method to convert a structure to a theory (of facts).
+		\item TermUtils: a method to evaluate a term in a given structure
+		\item FormulaUtils: a method to evaluate a formula in a given structure
+		\item TheoryUtils:
+		\begin{itemize}
+			\item Push negations inside
+			\item Flatten conjunctions, disjunctions and quantifiers
+			\item Rewrite equivalences and chains of equalities
+			\item Apply the Tseitin transformation
+			\item \ldots
+		\end{itemize}
+		\item TVUtils: compute the inverse of a truth value, the glb of two truth values, \ldots
+	\end{itemize}
 \end{itemize}
 \end{document}
