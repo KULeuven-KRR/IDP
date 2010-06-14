@@ -100,13 +100,13 @@ namespace ElementUtil {
 
 	Element&	nonexist(ElementType);					// Return the non-existing domain element (used for partial functions)
 
-	bool		exists(Element,ElementType);
-	bool		exists(TypedElement);
+	bool		exists(Element,ElementType);			// Checks if the element exists
+	bool		exists(TypedElement);					
 
-	Element		convert(TypedElement,ElementType);
+	Element		convert(TypedElement,ElementType);			// Convert an element from one type to another
 	Element		convert(Element,ElementType,ElementType);
 
-	Element		clone(Element,ElementType);
+	Element		clone(Element,ElementType);		// Clone an element (creates a new pointer in case of doubles and strings)
 	Element		clone(TypedElement);
 }
 
