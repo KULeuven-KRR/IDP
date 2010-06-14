@@ -11,7 +11,7 @@
 #include "error.h"
 #include "options.h"
 #include "clconst.h"
-#include <stdio.h>
+#include <cstdio>
 #include <iostream>
 
 extern int yyparse();
