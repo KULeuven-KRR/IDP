@@ -28,7 +28,7 @@ endif
 # ############################################################
 LEX=lex
 GRAMMAR=parse
-SOURCES=vocabulary.o structure.o term.o theory.o namespace.o insert.o error.o common.o execute.o builtin.o visitor.o ground.o
+SOURCES=vocabulary.o structure.o term.o theory.o namespace.o insert.o error.o common.o execute.o builtin.o visitor.o ground.o ecnf.o
 MAIN=main
 OBJECTS=$(GRAMMAR).tab.o $(LEX).yy.o $(SOURCES) $(MAIN).o
 OUTPUT=gidl

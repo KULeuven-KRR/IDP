@@ -7,6 +7,8 @@
 #include "theory.h"
 #include "visitor.h"
 #include "builtin.h"
+#include "ecnf.h"
+#include "ground.h"
 #include <iostream>
 
 extern string tabstring(unsigned int);
@@ -765,13 +767,108 @@ Formula* EqChainRemover::visit(EqChainForm* ef) {
 	}
 }
 
+/** Convert to ecnf **/
+
+enum ECNFCONVRTT { ECTT_ATOM, ECTT_CLAUSE };
+
+class TheoryConvertor : public Visitor {
+	
+	private:
+		GroundTranslator*	_translator;
+		EcnfTheory*			_returnvalue;
+		int					_curratom;
+		vector<int>			_currclause;
+		ECNFCONVRTT			_rettype;
+
+	public:
+		
+		TheoryConvertor(Theory* t, GroundTranslator* g) : 
+			Visitor(), _translator(g), _returnvalue(new EcnfTheory()) { t->accept(this); }
+
+		void visit(PredForm*);
+		void visit(EqChainForm*);
+		void visit(EquivForm*);
+		void visit(BoolForm*);
+		void visit(QuantForm*);
+		void visit(Theory*);
+
+		EcnfTheory*	returnvalue()	const { return _returnvalue;	}
+
+};
+
+void TheoryConvertor::visit(Theory* t) {
+	for(unsigned int n = 0; n < t->nrSentences(); ++n) {
+		t->sentence(n)->accept(this);
+		switch(_rettype) {
+			case ECTT_ATOM:
+				_returnvalue->addClause(vector<int>(1,_curratom));
+				break;
+			case ECTT_CLAUSE:
+				_returnvalue->addClause(_currclause);
+				break;
+			default:
+				assert(false);
+		}
+	}
+	for(unsigned int n = 0; n < t->nrDefinitions(); ++n) {
+		t->definition(n)->accept(this);
+		// TODO
+	}
+	for(unsigned int n = 0; n < t->nrFixpDefs(); ++n) {
+		// TODO
+		t->fixpdef(n)->accept(this);
+	}
+}
+
+void TheoryConvertor::visit(PredForm* pf) {
+	// TODO: aggregates!
+	vector<string> args(pf->symb()->nrsorts());
+	for(unsigned int n = 0; n < pf->symb()->nrsorts(); ++n) {
+		assert(typeid(*(pf->subterm(n))) == typeid(DomainTerm));
+		DomainTerm* dt = dynamic_cast<DomainTerm*>(pf->subterm(n));
+		args[n] = ElementUtil::ElementToString(dt->value(),dt->type());
+	}
+	_curratom = _translator->translate(pf->symb(),args);
+	if(!pf->sign()) _curratom = -_curratom;
+	_rettype = ECTT_ATOM;
+}
+
+void TheoryConvertor::visit(BoolForm* bf) {
+	assert(bf->sign());
+	assert(!bf->conj());
+	vector<int> literals;
+	for(unsigned int n = 0; n < bf->nrSubforms(); ++n) {
+		bf->subform(n)->accept(this);
+		literals.push_back(_curratom);
+	}
+	_currclause = literals;
+	_rettype = ECTT_CLAUSE;
+}
+
+void TheoryConvertor::visit(EquivForm*) {
+	assert(false);
+}
+
+void TheoryConvertor::visit(EqChainForm*) {
+	assert(false);
+}
+
+void TheoryConvertor::visit(QuantForm*) {
+	assert(false);
+}
 
 /** Theory utils **/
 
 namespace TheoryUtils {
+	
+	/** Rewriting theories **/
 	void push_negations(Theory* t)	{ NegationPush np(t);	}
 	void remove_equiv(Theory* t)	{ EquivRemover er(t);	}
 	void flatten(Theory* t)			{ Flattener f(t);		}
 	void remove_eqchains(Theory* t)	{ EqChainRemover er(t);	}
 	void tseitin(Theory* t)			{ /* TODO */			} 
+	
+	/** ECNF **/
+	EcnfTheory*	convert_to_ecnf(Theory* t, GroundTranslator* g)	{ TheoryConvertor tc(t,g); return tc.returnvalue();	}
+
 }

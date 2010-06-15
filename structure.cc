@@ -15,6 +15,7 @@ extern double stod(const string&);
 extern string dtos(double);
 extern bool isDouble(const string&);
 extern string tabstring(unsigned int);
+extern bool nexttuple(vector<unsigned int>&, const vector<unsigned int>&);
 
 /**************
 	Domains
@@ -741,6 +742,24 @@ bool PredInter::istrue(const vector<TypedElement>& vte) const {
 	return result;
 }
 
+bool PredTable::contains(const vector<TypedElement>& vte) const {
+	vector<Element> ve(vte.size());
+	for(unsigned int n = 0; n < vte.size(); ++n) {
+		ve[n] = ElementUtil::convert(vte[n],_types[n]);
+	}
+	bool result = contains(ve);
+	for(unsigned int n = 0; n < vte.size(); ++n) {
+		if(_types[n] == ELSTRING) {
+			if(ve[n]._string != vte[n]._element._string) delete(ve[n]._string);
+		}
+		else if(_types[n] == ELDOUBLE) {
+			if(ve[n]._double != vte[n]._element._double) delete(ve[n]._double);
+		}
+	}
+	return result;
+}
+
+
 bool PredInter::isfalse(const vector<TypedElement>& vte) const {
 	vector<Element> ve(vte.size());
 	for(unsigned int n = 0; n < vte.size(); ++n) {
@@ -990,12 +1009,129 @@ string Structure::to_string(unsigned int spaces) const {
 	Structure utils
 **********************/
 
-namespace StructUtils {
+/** Convert a structure to a theory of facts **/
 
-	Theory* convert_to_theory(Structure* s) {
-		Theory* result = new Theory("",s->vocabulary(),s,0);
-		// TODO
-		return result;
+class StructConvertor : public Visitor {
+
+	private:
+		PFSymbol*	_currsymbol;
+		Theory*		_returnvalue;
+		Structure*	_structure;
+
+	public:
+		StructConvertor(Structure* s) : Visitor(), _currsymbol(0), _returnvalue(0), _structure(s) { visit(s);	}
+
+		void	visit(Structure*);
+		void	visit(PredInter*);
+		void	visit(FuncInter*);
+		Theory*	returnvalue()	const { return _returnvalue;	}
+		
+};
+
+void StructConvertor::visit(Structure* s) {
+	_returnvalue = new Theory("",s->vocabulary(),s,0);
+	for(unsigned int n = 0; n < s->vocabulary()->nrPreds(); ++n) {
+		_currsymbol = s->vocabulary()->pred(n);
+		visit(s->predinter(n));
+	}
+	for(unsigned int n = 0; n < s->vocabulary()->nrFuncs(); ++n) {
+		_currsymbol = s->vocabulary()->func(n);
+		visit(s->funcinter(n));
+	}
+}
+
+void StructConvertor::visit(PredInter* pt) {
+	if(pt->ct()) {
+		vector<Term*> vt(_currsymbol->nrsorts());
+		for(unsigned int r = 0; r < pt->ctpf()->size(); ++r) {
+			for(unsigned int c = 0; c < vt.size(); ++c) {
+				Element e = ElementUtil::clone(pt->ctpf()->element(r,c),pt->ctpf()->type(c));
+				vt[c] = new DomainTerm(_currsymbol->sort(c),pt->ctpf()->type(c),e,0);
+			}
+			_returnvalue->add(new PredForm(true,_currsymbol,vt,0));
+		}
+	}
+	else {
+		PredTable* comp = StructUtils::complement(pt->ctpf(),_currsymbol->sorts(),_structure);
+		vector<Term*> vt(_currsymbol->nrsorts());
+		for(unsigned int r = 0; r < comp->size(); ++r) {
+			for(unsigned int c = 0; c < vt.size(); ++c) {
+				Element e = ElementUtil::clone(comp->element(r,c),comp->type(c));
+				vt[c] = new DomainTerm(_currsymbol->sort(c),comp->type(c),e,0);
+			}
+			_returnvalue->add(new PredForm(true,_currsymbol,vt,0));
+		}
+		delete(comp);
+	}
+	if(pt->cf()) {
+		vector<Term*> vt(_currsymbol->nrsorts());
+		for(unsigned int r = 0; r < pt->cfpt()->size(); ++r) {
+			for(unsigned int c = 0; c < vt.size(); ++c) {
+				Element e = ElementUtil::clone(pt->cfpt()->element(r,c),pt->cfpt()->type(c));
+				vt[c] = new DomainTerm(_currsymbol->sort(c),pt->cfpt()->type(c),e,0);
+			}
+			_returnvalue->add(new PredForm(false,_currsymbol,vt,0));
+		}
+	}
+	else {
+		PredTable* comp = StructUtils::complement(pt->cfpt(),_currsymbol->sorts(),_structure);
+		vector<Term*> vt(_currsymbol->nrsorts());
+		for(unsigned int r = 0; r < comp->size(); ++r) {
+			for(unsigned int c = 0; c < vt.size(); ++c) {
+				Element e = ElementUtil::clone(comp->element(r,c),comp->type(c));
+				vt[c] = new DomainTerm(_currsymbol->sort(c),comp->type(c),e,0);
+			}
+			_returnvalue->add(new PredForm(false,_currsymbol,vt,0));
+		}
+		delete(comp);
+	}
+}
+
+void StructConvertor::visit(FuncInter* ft) {
+	visit(ft->predinter());
+	// TODO: do something smarter here ...
+}
+
+/** Structure utils **/
+
+namespace StructUtils {
+	Theory*		convert_to_theory(Structure* s) { StructConvertor sc(s); return sc.returnvalue();	}
+
+	PredTable*	complement(PredTable* pt,const vector<Sort*>& vs, Structure* s) {
+		vector<unsigned int> limits;
+		vector<SortTable*> tables;
+		vector<TypedElement> tuple;
+		vector<ElementType> types;
+		bool empty = false;
+		for(unsigned int n = 0; n < vs.size(); ++n) {
+			SortTable* st = s->inter(vs[n]);
+			assert(st);
+			assert(st->finite());
+			if(st->empty()) empty = true;
+			limits.push_back(st->size());
+			tables.push_back(st);
+			TypedElement e; e._type = st->type();
+			tuple.push_back(e);
+			types.push_back(st->type());
+		}
+		UserPredTable* upt = new UserPredTable(types);
+		if(empty) return upt;
+		else {
+			vector<unsigned int> iter(limits.size(),0);
+			do {
+				for(unsigned int n = 0; n < tuple.size(); ++n) {
+					tuple[n]._element = tables[n]->element(iter[n]);
+				}
+				if(!pt->contains(tuple)) {
+					vector<Element> ve(tuple.size());
+					for(unsigned int n = 0; n < tuple.size(); ++n) {
+						ve[n] = ElementUtil::clone(tuple[n]);
+					}
+					upt->addRow(ve,types);
+				}
+			} while(nexttuple(iter,limits));
+			return upt;
+		}
 	}
 
 }

@@ -10,7 +10,7 @@
 
 /** Global namespace and options **/
 
-Namespace* Namespace::_global = new Namespace("global namespace",0,0);
+Namespace* Namespace::_global = new Namespace("global_namespace",0,0);
 Options options;
 
 bool Namespace::isGlobal() const {

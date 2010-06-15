@@ -20,6 +20,23 @@ extern double stod(const string&);
 extern int MAX_INT;
 
 /*********************
+	Argument types
+*********************/
+
+namespace IATUtils {
+	string to_string(InfArgType t) {
+		switch(t) {
+			case IAT_VOID: return "void";
+			case IAT_NAMESPACE: return "Namespace";
+			case IAT_STRUCTURE: return "Structure";
+			case IAT_THEORY: return "Theory";
+			case IAT_VOCABULARY: return "Vocabulary";
+			default: assert(false); return "";
+		}
+	}
+}
+
+/*********************
 	Domain element
 *********************/
 

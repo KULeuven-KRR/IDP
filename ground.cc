@@ -10,6 +10,21 @@
 extern string itos(int);
 extern bool nexttuple(vector<unsigned int>&, const vector<unsigned int>&);
 
+/**********************************************
+	Translate from ground atoms to numbers
+**********************************************/
+
+int NaiveTranslator::translate(PFSymbol* s, const vector<string>& args) {
+	map<PFSymbol*,map<vector<string>,int> >::iterator it = _table.find(s);
+	if(it != _table.end()) {
+		map<vector<string>,int>::iterator jt = (it->second).find(args);
+		if(jt != (it->second).end()) return jt->second;
+	}
+	_table[s][args] = _nextnumber;
+	return _nextnumber++;
+}
+
+
 /********************************************************
 	Basic top-down, non-optimized grounding algorithm
 ********************************************************/
