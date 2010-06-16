@@ -345,39 +345,65 @@ void outputHR::outputunsat(){
 }
 
 
-/****************************
-	HUMAN READABLE OUTPUT
-****************************/
+/*******************************
+	INTEGRATED SYSTEM OUTPUT
+********************************/
+
+void copyToVec(const vector<int>& v, vec<Lit>& v2){
+	for(vector<int>::const_iterator i=v.begin(); i<v.end(); i++){
+		if(*i<0){
+			v2.push(Lit(-(*i), true));
+		}else{
+			v2.push(Lit(*i, false));
+		}
+	}
+}
 
 outputSolver::outputSolver() : _solver(NULL) {
 	ECNF_mode modes;
 	modes.verbosity = 7;
 	_solver = new PCSolver(modes);
 }
+outputSolver::outputSolver(PCSolver* solver) : _solver(solver) {}
 outputSolver::~outputSolver(){ }
 
 void outputSolver::outputinit(GroundFeatures*){}
 void outputSolver::outputend(){}
 void outputSolver::outputunitclause(int l){
-
+	vec<Lit> v;
+	if(l<0){
+		v.push(Lit(-(l), true));
+	}else{
+		v.push(Lit(l, false));
+	}
+	solver()->addClause(v);
 }
 
-void outputSolver::outputclause(const vector<int>& vi){
-	solver()->addClause(vi);
+void outputSolver::outputclause(const vector<int>& lits){
+	vec<Lit> l;
+	copyToVec(lits, l);
+	solver()->addClause(l);
 }
 
 void outputSolver::outputunitrule(int h, int b) {
 	vector<int> body;
 	body.push_back(b);
-	solver()->addRule(true, h, body);
+	outputrule(h, body, true);
 }
 
 void outputSolver::outputunitfdrule(int d, int h, int b) {
-	//TODO
+	//TODO later
 }
 
-void outputSolver::outputrule(int h, const vector<int>& b, bool c){
-	solver()->addRule(c, h, b);
+void outputSolver::outputrule(int head, const vector<int>& b, bool c){
+	vec<Lit> l;
+	if(head<0){
+		l.push(Lit(-head, true));
+	}else{
+		l.push(Lit(head, false));
+	}
+	copyToVec(b, l);
+	solver()->addRule(c, l);
 }
 
 void outputSolver::outputfdrule(int d, int h, const vector<int>& b, bool c){
@@ -385,23 +411,24 @@ void outputSolver::outputfdrule(int d, int h, const vector<int>& b, bool c){
 }
 
 void outputSolver::outputmax(int h, const vector<int>& b) {
-	//solver->addAggrExpr(h, b[0], b[1], lower, MAX, defined);
+	//solver->addAggrExpr(h, b[0], b[1], false, MAX, true);
+	//solver->addAggrExpr(h, b[0], b[2], true, MAX, true);
 }
 
 void outputSolver::outputmin(int h, const vector<int>& b){
-	//solver->addAggrExpr(h, b[0], b[1], lower, MIN, defined);
+	//solver->addAggrExpr(h, b[0], b[1], lower, MIN, true);
 }
 
 void outputSolver::outputsum(int h, const vector<int>& b){
-	//solver->addAggrExpr(h, b[0], b[1], lower, SUM, defined);
+	//solver->addAggrExpr(h, b[0], b[1], lower, SUM, true);
 }
 
 void outputSolver::outputprod(int h, const vector<int>& b){
-	//solver->addAggrExpr(h, b[0], b[1], lower, PROD, defined);
+	//solver->addAggrExpr(h, b[0], b[1], lower, PROD, true);
 }
 
 void outputSolver::outputcard(int h, const vector<int>& b){
-	//solver->addAggrExpr(h, b[0], b[1], lower, CARD, defined);
+	//solver->addAggrExpr(h, b[0], b[1], lower, CARD, true);
 }
 
 void outputSolver::outputeu(const vector<int>& b) {
@@ -412,20 +439,30 @@ void outputSolver::outputamo(const vector<int>& b) {
 
 }
 
-void outputSolver::outputset(int s, const vector<int>& sets) {
-
+void outputSolver::outputset(int s, const vector<int>& lits) {
+	vec<Lit> l;
+	copyToVec(lits, l);
+	solver()->addSet(s, l);
 }
 
-void outputSolver::outputwset(int s, const vector<int>& sets, const vector<int>& weights) {
-
+void outputSolver::outputwset(int s, const vector<int>& lits, const vector<int>& weights) {
+	vec<Lit> l;
+	copyToVec(lits, l);
+	solver()->addSet(s, l, weights);
 }
 
 void outputSolver::outputfixpdef(int d, const vector<int>& sd, bool l) {
-
+	//TODO later
 }
 
 void outputSolver::outputunsat(){
-
+	//TODO this will probably crash
+	vec<Lit> l;
+	l.push(Lit(1));
+	solver()->addClause(l);
+	vec<Lit> l2;
+	l2.push(Lit(1, true));
+	solver()->addClause(l2);
 }
 
 /*****************************

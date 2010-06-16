@@ -128,6 +128,7 @@ class outputSolver : public GroundPrinter {
 		PCSolver* solver() { return _solver; }
 	public:
 		outputSolver();
+		outputSolver(PCSolver* solver);
 		~outputSolver();
 		void outputinit(GroundFeatures*);
 		void outputend();
