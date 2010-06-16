@@ -38,7 +38,7 @@ class SortChecker : public Visitor {
 
 void SortChecker::visit(PredForm* pf) {
 	PFSymbol* s = pf->symb();
-	for(unsigned int n = 0; n < s->nrsorts(); ++n) {
+	for(unsigned int n = 0; n < s->nrSorts(); ++n) {
 		Sort* s1 = s->sort(n);
 		Sort* s2 = pf->subterm(n)->sort();
 		if(s1 && s2) {
@@ -167,7 +167,7 @@ void SortDeriver::visit(PredForm* pf) {
 	}
 
 	// Visit the children while asserting the sorts of the predicate
-	for(unsigned int n = 0; n < p->nrsorts(); ++n) {
+	for(unsigned int n = 0; n < p->nrSorts(); ++n) {
 		_assertsort = p->sort(n);
 		pf->subterm(n)->accept(this);
 	}
@@ -286,7 +286,7 @@ void SortDeriver::derivepreds() {
 	for(set<PredForm*>::iterator it = _overloadedatoms.begin(); it != _overloadedatoms.end(); ) {
 		set<PredForm*>::iterator jt = it; ++jt;
 		PFSymbol* p = (*it)->symb();
-		vector<Sort*> vs(p->nrsorts(),0);
+		vector<Sort*> vs(p->nrSorts(),0);
 		for(unsigned int n = 0; n < vs.size(); ++n) {
 			vs[n] = (*it)->subterm(n)->sort();
 		}
@@ -1052,7 +1052,7 @@ namespace Insert {
 			if(pt) {
 				PredTable* ct = pt->ctpf();
 				PredTable* cf = pt->cfpt();
-				for(unsigned int c = 0; c < f->nrsorts(); ++c) {
+				for(unsigned int c = 0; c < f->nrSorts(); ++c) {
 					SortTable* st = _currstructure->inter(f->sort(c));
 					if(st) {
 						if(ct) {
@@ -1236,7 +1236,7 @@ namespace Insert {
 							_currstructure->inter(evp[0],new PredInter(upt,true));
 						}
 						else {
-							vector<ElementType> vet(evf[0]->nrsorts(),ELINT);
+							vector<ElementType> vet(evf[0]->nrSorts(),ELINT);
 							UserPredTable* upt = new UserPredTable(vet);
 							PredInter* pt = new PredInter(upt,true);
 							vet.pop_back();
@@ -1329,7 +1329,7 @@ namespace Insert {
 							}
 						}
 						else {
-							vector<ElementType> vet(evf[0]->nrsorts(),ELINT);
+							vector<ElementType> vet(evf[0]->nrSorts(),ELINT);
 							UserPredTable* upt = new UserPredTable(vet);
 							switch(_emptythreeinters[n]._utf) {
 								case UTF_CT:

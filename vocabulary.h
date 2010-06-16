@@ -242,7 +242,7 @@ class PFSymbol {
 		// Inspectors
 		string					name()					const { return _name;							}
 		ParseInfo*				pi()					const { return _pi;								}
-		unsigned int			nrsorts()				const { return _sorts.size();					}
+		unsigned int			nrSorts()				const { return _sorts.size();					}
 		Sort*					sort(unsigned int n)	const { return _sorts[n];						}
 		const vector<Sort*>&	sorts()					const { return _sorts;							}
 		string					to_string()				const { return _name.substr(0,_name.find('/'));	}

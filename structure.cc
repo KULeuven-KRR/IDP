@@ -911,7 +911,7 @@ void Structure::close() {
 		}
 	}
 	for(unsigned int n = 0; n < _funcinter.size(); ++n) {
-		vector<ElementType> vet(_vocabulary->func(n)->nrsorts(),ELINT);
+		vector<ElementType> vet(_vocabulary->func(n)->nrSorts(),ELINT);
 		if(!_funcinter[n]) {
 			_funcinter[n] = TableUtils::leastFuncInter(vet);
 		}
