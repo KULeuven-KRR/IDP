@@ -42,19 +42,15 @@ gidl: $(OBJECTS)
 	$(GPP) $(GPPFLAGS) -o $(OUTPUT) $(OBJECTS)
 
 clean:
-	-rm -f $(LEX).yy.* $(DATALEX).yy.* $(OUTPUT) $(GRAMMAR).tab.cc $(GRAMMAR).output \
-		$(GRAMMAR).tab.hh $(OBJECTS)
+	-rm -f $(LEX).yy.* $(DATALEX).yy.* $(OUTPUT) $(GRAMMAR).tab.cpp $(GRAMMAR).output \
+		$(GRAMMAR).tab.hpp $(OBJECTS)
 
 # separate rule for this, because of ".yy.c" instead of ".yy.cc" --> see (*)
-%.o:	%.c
+%.o:	%.cpp
 	$(GPP) $(GPPFLAGS) -c -o $@ $<
 
-%.o:	%.cc
-	$(GPP) $(GPPFLAGS) -c -o $@ $<
-
-%.tab.cc:%.yy
+%.tab.cpp:%.yy
 	$(YACC) $(YACCFLAGS) --output=$@ $<
 
-%.yy.c:	%.ll
+%.yy.cpp:	%.ll
 	$(FLEX) $(FLEXFLAGS) -o$@ $<
-

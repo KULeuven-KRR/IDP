@@ -5,8 +5,8 @@
 ************************************/
 
 #include <iostream>
-#include "error.h"
-#include "options.h"
+#include "error.hpp"
+#include "options.hpp"
 extern Options options;
 
 namespace Error {

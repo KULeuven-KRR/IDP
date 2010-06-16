@@ -4,8 +4,8 @@
 	(c) K.U.Leuven
 ************************************/
 
-#include "theory.h"
-#include "builtin.h"
+#include "theory.hpp"
+#include "builtin.hpp"
 #include <iostream>
 #include <algorithm>
 

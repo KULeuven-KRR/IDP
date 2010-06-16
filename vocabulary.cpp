@@ -4,8 +4,8 @@
 	(c) K.U.Leuven
 ************************************/
 
-#include "namespace.h"
-#include "builtin.h"
+#include "namespace.hpp"
+#include "builtin.hpp"
 #include <iostream>
 #include <algorithm>
 

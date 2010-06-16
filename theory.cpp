@@ -4,11 +4,11 @@
 	(c) K.U.Leuven
 ************************************/
 
-#include "theory.h"
-#include "visitor.h"
-#include "builtin.h"
-#include "ecnf.h"
-#include "ground.h"
+#include "theory.hpp"
+#include "visitor.hpp"
+#include "builtin.hpp"
+#include "ecnf.hpp"
+#include "ground.hpp"
 #include <iostream>
 
 extern string tabstring(unsigned int);

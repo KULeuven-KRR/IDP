@@ -4,7 +4,7 @@
 	(c) K.U.Leuven
 ************************************/
 
-#include "theory.h"
+#include "theory.hpp"
 
 void Visitor::visit(PredForm* a)		{ traverse(a);	}
 void Visitor::visit(EqChainForm* a)		{ traverse(a);	}

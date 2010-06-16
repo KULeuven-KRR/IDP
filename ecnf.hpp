@@ -7,7 +7,7 @@
 #ifndef ECNF_H
 #define ECNF_H
 
-#include "term.h"
+#include "term.hpp"
 
 struct GroundFeatures {
 	bool	_containsDefinitions;

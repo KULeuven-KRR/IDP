@@ -7,10 +7,10 @@
 %{
 
 #include <typeinfo>
-#include "insert.h"
-#include "error.h"
-#include "parse.tab.hh"
-#include "clconst.h"
+#include "insert.hpp"
+#include "error.hpp"
+#include "parse.tab.hpp"
+#include "clconst.hpp"
 
 extern YYSTYPE yylval;
 extern YYLTYPE yylloc;

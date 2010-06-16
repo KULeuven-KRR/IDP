@@ -7,8 +7,8 @@
 #ifndef THEORY_H
 #define THEORY_H
 
-#include "structure.h"
-#include "term.h"
+#include "structure.hpp"
+#include "term.hpp"
 
 class GroundTranslator;
 class EcnfTheory;

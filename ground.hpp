@@ -7,7 +7,7 @@
 #ifndef GROUND_H
 #define GROUND_H
 
-#include "theory.h"
+#include "theory.hpp"
 
 /**********************************************
 	Translate from ground atoms to numbers

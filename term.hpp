@@ -7,8 +7,8 @@
 #ifndef TERM_H
 #define TERM_H
 
-#include "vocabulary.h"
-#include "visitor.h"
+#include "vocabulary.hpp"
+#include "visitor.hpp"
 
 /*******************************
 	Abstract base class term
