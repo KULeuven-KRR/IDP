@@ -8,6 +8,7 @@
 #define ECNF_H
 
 #include "term.hpp"
+#include "pcsolver/solvers/PCSolver.hpp"
 
 struct GroundFeatures {
 	bool	_containsDefinitions;
@@ -37,12 +38,17 @@ class GroundPrinter {
 		virtual void outputclause(const vector<int>& l) = 0;
 		virtual void outputunitrule(int h, int b) = 0;
 		virtual void outputrule(int h, const vector<int>& b, bool c) = 0;
+		//Maximum aggregate, with head=h, id=[0], bound[1]
 		virtual void outputmax(int h, const vector<int>&) = 0;
+		//Minimum aggregate, with head=h, id=[0], bound[1]
 		virtual void outputmin(int h, const vector<int>&) = 0;
+		//Sum aggregate, with head=h, id=[0], bound[1]
 		virtual void outputsum(int h, const vector<int>&) = 0;
+		//Product aggregate, with head=h, id=[0], bound[1]
 		virtual void outputprod(int h, const vector<int>&) = 0;
 		virtual void outputeu(const vector<int>&) = 0;
 		virtual void outputamo(const vector<int>&) = 0;
+		//Cardinality aggregate, with head=h, id=[0], bound[1]
 		virtual void outputcard(int h, const vector<int>& b) = 0;
 		virtual void outputset(int s, const vector<int>& sets) = 0;
 		virtual void outputunitfdrule(int d, int h, int b) = 0;
@@ -111,6 +117,37 @@ class outputHR : public GroundPrinter {
 		void outputunitfdrule(int d, int h, int b);
 		void outputfdrule(int d, int h, const vector<int>& b, bool c);
 		void outputfixpdef(int d, const vector<int>& sd, bool l);
+		void outputunsat();
+
+};
+
+class outputSolver : public GroundPrinter {
+
+	private:
+		PCSolver* _solver;
+		PCSolver* solver() { return _solver; }
+	public:
+		outputSolver();
+		~outputSolver();
+		void outputinit(GroundFeatures*);
+		void outputend();
+		void outputtseitin(int l){};
+		void outputunitclause(int l);
+		void outputclause(const vector<int>& l);
+		void outputunitrule(int h, int b);
+		void outputrule(int h, const vector<int>& b, bool c);
+		void outputcard(int h, const vector<int>& b);
+		void outputmax(int h, const vector<int>&);
+		void outputmin(int h, const vector<int>&);
+		void outputsum(int h, const vector<int>&);
+		void outputprod(int h, const vector<int>&);
+		void outputeu(const vector<int>&);
+		void outputamo(const vector<int>&);
+		void outputunitfdrule(int d, int h, int b);
+		void outputfdrule(int d, int h, const vector<int>& b, bool c);
+		void outputfixpdef(int d, const vector<int>& sd, bool l);
+		void outputset(int s, const vector<int>& sets);
+		void outputwset(int s, const vector<int>& sets, const vector<int>& weights);
 		void outputunsat();
 
 };

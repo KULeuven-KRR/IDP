@@ -71,7 +71,7 @@ void GroundingInference::execute(const vector<InfArg>& args, const string& res,N
 	Theory* gr = ng.ground(args[0]._theory);
 	NaiveTranslator* nt = new NaiveTranslator();
 	EcnfTheory* ecnfgr = TheoryUtils::convert_to_ecnf(gr,nt);
-	outputECNF* printer = new outputECNF(stdout); 
+	GroundPrinter* printer = new outputECNF(stdout);
 	ecnfgr->print(printer);
 	gr->recursiveDelete();
 	delete(ecnfgr);

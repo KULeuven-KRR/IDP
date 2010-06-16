@@ -344,6 +344,90 @@ void outputHR::outputunsat(){
 	fprintf(_out,"False. // Inconsistent ground theory\n");
 }
 
+
+/****************************
+	HUMAN READABLE OUTPUT
+****************************/
+
+outputSolver::outputSolver() : _solver(NULL) {
+	ECNF_mode modes;
+	modes.verbosity = 7;
+	_solver = new PCSolver(modes);
+}
+outputSolver::~outputSolver(){ }
+
+void outputSolver::outputinit(GroundFeatures*){}
+void outputSolver::outputend(){}
+void outputSolver::outputunitclause(int l){
+
+}
+
+void outputSolver::outputclause(const vector<int>& vi){
+	solver()->addClause(vi);
+}
+
+void outputSolver::outputunitrule(int h, int b) {
+	vector<int> body;
+	body.push_back(b);
+	solver()->addRule(true, h, body);
+}
+
+void outputSolver::outputunitfdrule(int d, int h, int b) {
+	//TODO
+}
+
+void outputSolver::outputrule(int h, const vector<int>& b, bool c){
+	solver()->addRule(c, h, b);
+}
+
+void outputSolver::outputfdrule(int d, int h, const vector<int>& b, bool c){
+	//TODO
+}
+
+void outputSolver::outputmax(int h, const vector<int>& b) {
+	//solver->addAggrExpr(h, b[0], b[1], lower, MAX, defined);
+}
+
+void outputSolver::outputmin(int h, const vector<int>& b){
+	//solver->addAggrExpr(h, b[0], b[1], lower, MIN, defined);
+}
+
+void outputSolver::outputsum(int h, const vector<int>& b){
+	//solver->addAggrExpr(h, b[0], b[1], lower, SUM, defined);
+}
+
+void outputSolver::outputprod(int h, const vector<int>& b){
+	//solver->addAggrExpr(h, b[0], b[1], lower, PROD, defined);
+}
+
+void outputSolver::outputcard(int h, const vector<int>& b){
+	//solver->addAggrExpr(h, b[0], b[1], lower, CARD, defined);
+}
+
+void outputSolver::outputeu(const vector<int>& b) {
+
+}
+
+void outputSolver::outputamo(const vector<int>& b) {
+
+}
+
+void outputSolver::outputset(int s, const vector<int>& sets) {
+
+}
+
+void outputSolver::outputwset(int s, const vector<int>& sets, const vector<int>& weights) {
+
+}
+
+void outputSolver::outputfixpdef(int d, const vector<int>& sd, bool l) {
+
+}
+
+void outputSolver::outputunsat(){
+
+}
+
 /*****************************
 	Internal encf theories
 *****************************/
