@@ -4,14 +4,14 @@
 	(c) K.U.Leuven
 ************************************/
 
-#include "insert.h"
-#include "builtin.h"
-#include "namespace.h"
-#include "parse.tab.hh"
-#include "error.h"
-#include "options.h"
-#include "clconst.h"
-#include <stdio.h>
+#include "insert.hpp"
+#include "builtin.hpp"
+#include "namespace.hpp"
+#include "parse.tab.hpp"
+#include "error.hpp"
+#include "options.hpp"
+#include "clconst.hpp"
+#include <cstdio>
 #include <iostream>
 
 extern int yyparse();

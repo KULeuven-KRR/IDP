@@ -4,8 +4,8 @@
 	(c) K.U.Leuven
 ************************************/
 
-#include "builtin.h"
-#include "structure.h"
+#include "builtin.hpp"
+#include "structure.hpp"
 #include <iostream>
 #include <typeinfo>
 #include <cmath>

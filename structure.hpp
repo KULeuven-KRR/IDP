@@ -7,7 +7,7 @@
 #ifndef STRUCTURE_H
 #define STRUCTURE_H
 
-#include "term.h"
+#include "vocabulary.hpp"
 
 /******************************************
 	Domains (interpretations for sorts)

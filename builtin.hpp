@@ -7,8 +7,8 @@
 #ifndef BUILTIN_H
 #define BUILTIN_H
 
-#include "structure.h"
-#include "vocabulary.h"
+#include "structure.hpp"
+#include "vocabulary.hpp"
 
 namespace Builtin {
 	

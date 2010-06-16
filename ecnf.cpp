@@ -4,7 +4,7 @@
 	(c) K.U.Leuven
 ************************************/
 
-#include "ecnf.h"
+#include "ecnf.hpp"
 #include <iostream>
 
 /******************

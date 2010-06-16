@@ -4,9 +4,9 @@
 	(c) K.U.Leuven
 ************************************/
 
-#include "namespace.h"
-#include "builtin.h"
-#include "visitor.h"
+#include "namespace.hpp"
+#include "builtin.hpp"
+#include "visitor.hpp"
 
 extern string itos(int);
 extern string dtos(double);

@@ -7,7 +7,7 @@
 #ifndef NAMESPACE_H
 #define NAMESPACE_H
 
-#include "theory.h"
+#include "theory.hpp"
 #include <set>
 
 /*****************

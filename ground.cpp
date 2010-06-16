@@ -4,7 +4,7 @@
 	(c) K.U.Leuven
 ************************************/
 
-#include "ground.h"
+#include "ground.hpp"
 #include <typeinfo>
 
 extern string itos(int);

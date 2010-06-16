@@ -7,9 +7,9 @@
 %{
 
 #include <iostream>
-#include "insert.h"
-#include "error.h"
-#include "builtin.h"
+#include "insert.hpp"
+#include "error.hpp"
+#include "builtin.hpp"
 
 // Lexer
 extern int yylex();

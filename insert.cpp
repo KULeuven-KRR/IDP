@@ -4,13 +4,13 @@
 	(c) K.U.Leuven
 ************************************/
 
-#include "namespace.h"
-#include "execute.h"
-#include "error.h"
-#include "visitor.h"
-#include "insert.h"
-#include "parse.tab.hh"
-#include "builtin.h"
+#include "namespace.hpp"
+#include "execute.hpp"
+#include "error.hpp"
+#include "visitor.hpp"
+#include "insert.hpp"
+#include "parse.tab.hpp"
+#include "builtin.hpp"
 #include <iostream>
 #include <list>
 #include <set>

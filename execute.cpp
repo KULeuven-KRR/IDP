@@ -4,9 +4,9 @@
 	(c) K.U.Leuven
 ************************************/
 
-#include "execute.h"
-#include "ground.h"
-#include "ecnf.h"
+#include "execute.hpp"
+#include "ground.hpp"
+#include "ecnf.hpp"
 #include <iostream>
 
 void PrintTheory::execute(const vector<InfArg>& args, const string& res,Namespace*) const {

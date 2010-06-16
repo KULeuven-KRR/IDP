@@ -4,8 +4,8 @@
 	(c) K.U.Leuven
 ************************************/
 
-#include "namespace.h"
-#include "options.h"
+#include "namespace.hpp"
+#include "options.hpp"
 #include <iostream>
 
 /** Global namespace and options **/
