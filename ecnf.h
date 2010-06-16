@@ -7,7 +7,7 @@
 #ifndef ECNF_H
 #define ECNF_H
 
-#include "term.h"
+#include "theory.h"
 
 struct GroundFeatures {
 	bool	_containsDefinitions;
@@ -141,7 +141,7 @@ struct EcnfDefinition {
 	vector<EcnfRule>	_conjrules;
 };
 
-class EcnfTheory {
+class EcnfTheory : public AbstractTheory {
 	
 	private:
 		GroundFeatures			_features;
@@ -153,10 +153,28 @@ class EcnfTheory {
 
 	public:
 
+		// Constructor
+		EcnfTheory() : AbstractTheory("",0)	{ }
+
+		// Destructor
+		void recursiveDelete() { }
+
 		// Mutators
 		void addClause(const EcnfClause& vi)		{ _clauses.push_back(vi);											}
 		void addDefinition(const EcnfDefinition& d)	{ _definitions.push_back(d); _features._containsDefinitions = true;	}
 		void addAggregate(const EcnfAgg& a)			{ _aggregates.push_back(a); _features._containsAggregates = true;	}
+
+		// Inspectors
+		unsigned int	nrSentences()	const { return _clauses.size() + _aggregates.size();	}
+		unsigned int	nrDefinitions()	const { return _definitions.size();					}
+		unsigned int	nrFixpDefs()	const { return 0;	/* TODO */							}
+
+		// Visitor
+		void			accept(Visitor* v)			{ v->visit(this);	}
+		AbstractTheory*	accept(MutatingVisitor* v)	{ v->visit(this);	}
+
+		// Debugging
+		string to_string() const	{ return ""; /* TODO */ }
 
 		// Output
 		void print(GroundPrinter*);

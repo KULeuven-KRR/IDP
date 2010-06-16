@@ -25,6 +25,7 @@ void Visitor::visit(SortTable*)			{ }
 void Visitor::visit(PredInter*)			{ }
 void Visitor::visit(FuncInter*)			{ }
 void Visitor::visit(Structure* s)		{ traverse(s);	}
+void Visitor::visit(EcnfTheory*)		{ /* TODO */	}
 
 
 void Visitor::traverse(Formula* f) {
@@ -377,6 +378,11 @@ Theory* MutatingVisitor::visit(Theory* t) {
 			t->fixpdef(n,fd);
 		}
 	}
+	return t;
+}
+
+EcnfTheory* MutatingVisitor::visit(EcnfTheory* t) {
+	// TODO
 	return t;
 }
 

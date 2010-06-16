@@ -29,6 +29,7 @@ class SortTable;
 class PredInter;
 class FuncInter;
 class Structure;
+class EcnfTheory;
 
 class Visitor {
 	public:
@@ -70,6 +71,7 @@ class Visitor {
 
 		// Theories
 		virtual void visit(Theory* t);
+		virtual void visit(EcnfTheory* t);
 
 		/** Structures **/
 
@@ -114,6 +116,7 @@ class MutatingVisitor {
 
 		// Theories
 		virtual Theory* visit(Theory* t);	
+		virtual EcnfTheory* visit(EcnfTheory* t);
 
 
 };

@@ -322,11 +322,6 @@ namespace Error {
 		cerr << "Function " << fname << " is not in the vocabulary of theory " << tname << "." << endl;
 	}
 
-	void sortnotintheostruct(const string& name, const string& sname, ParseInfo* thisplace) {
-		error(thisplace);
-		cerr << "Sort " << name << " does not belong to the vocabulary of structure " << sname << "." << endl;
-	}
-
 	void symbnotinstructvoc(const string& name, const string& sname, ParseInfo* thisplace) {
 		error(thisplace);
 		cerr << "Symbol " << name << " does not belong to the vocabulary of structrure " << sname << "." << endl;
@@ -345,11 +340,6 @@ namespace Error {
 	void funcnotinstructvoc(const string& name, const string& sname, ParseInfo* thisplace) {
 		error(thisplace);
 		cerr << "Function " << name << " does not belong to the vocabulary of structrure " << sname << "." << endl;
-	}
-
-	void notheostruct(ParseInfo* thisplace) {
-		error(thisplace);
-		cerr << "Use of domain element in a theory without an associated structure." << endl;
 	}
 
 	/** Using overlapping symbols **/

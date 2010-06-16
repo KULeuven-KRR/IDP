@@ -104,6 +104,9 @@ class ElementEquality {
 };
 
 namespace ElementUtil {
+	
+	ElementType	resolve(ElementType,ElementType);
+
 	string		ElementToString(Element,ElementType);	// Convert a domain element to a string
 	string		ElementToString(TypedElement);
 

@@ -11,10 +11,10 @@
 
 
 union InfArg {
-	Vocabulary*	_vocabulary;
-	Structure*	_structure;
-	Theory*		_theory;
-	Namespace*	_namespace;
+	Vocabulary*			_vocabulary;
+	AbstractStructure*	_structure;
+	AbstractTheory*		_theory;
+	Namespace*			_namespace;
 };
 
 class Inference {

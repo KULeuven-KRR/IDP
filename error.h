@@ -81,8 +81,6 @@ namespace Error {
 	void sortnotintheovoc(const string& sname, const string& tname, ParseInfo* thisplace);
 	void prednotintheovoc(const string& pname, const string& tname, ParseInfo* thisplace);
 	void funcnotintheovoc(const string& fname, const string& tname, ParseInfo* thisplace);
-	void sortnotintheostruct(const string& sname, const string& strname, ParseInfo* thisplace);
-	void notheostruct(ParseInfo* thisplace);
 
 	void symbnotinstructvoc(const string& name, const string& sname, ParseInfo* thisplace);
 	void sortnotinstructvoc(const string& name, const string& sname, ParseInfo* thisplace);

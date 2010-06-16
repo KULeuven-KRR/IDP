@@ -316,15 +316,11 @@ pointer_name		: pointer_name "::" identifier	{ $$ = $1; $$->push_back(*$3); dele
 	Theory	
 *************/
 
-theory		: THEORY_HEADER theory_name ':' vocab_pointer struct_pointer '{' def_forms '}'	{ Insert::closetheory();	}
-			| THEORY_HEADER theory_name ':' vocab_pointer '{' def_forms '}'					{ Insert::closetheory();	}
+theory		: THEORY_HEADER theory_name ':' vocab_pointer '{' def_forms '}'		{ Insert::closetheory();	}
 			;
 
 theory_name	: identifier	{ Insert::opentheory(*$1,@1); delete($1); }
 			;
-
-struct_pointer	: pointer_name	{ Insert::usingstruct(*$1,@1); delete($1); }
-				;
 
 def_forms	: /* empty */
 			| def_forms definition		{ Insert::definition($2);	}

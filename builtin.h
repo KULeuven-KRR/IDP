@@ -27,8 +27,8 @@ namespace Builtin {
 	void	deleteAll();
 
 	SortTable*	inter(Sort* s);
-	PredInter*	inter(Predicate* p);
-	FuncInter*	inter(Function* f);
+	PredInter*	inter(Predicate* p,const vector<SortTable*>&);
+	FuncInter*	inter(Function* f,const vector<SortTable*>&);
 
 }
 

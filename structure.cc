@@ -5,6 +5,7 @@
 ************************************/
 
 #include "theory.h"
+#include "structure.h"
 #include "builtin.h"
 #include <iostream>
 #include <algorithm>
@@ -373,6 +374,62 @@ Element MixedSortTable::element(unsigned int n) {
 	return e;
 }
 
+/** Return the position of an element **/
+
+unsigned int IntSortTable::position(Element e, ElementType t) const {
+	assert(SortTable::contains(e,t));
+	Element el = ElementUtil::convert(e,t,ELINT);
+	return lower_bound(_table.begin(),_table.end(),el._int) - _table.begin();
+}
+
+unsigned int RanSortTable::position(Element e, ElementType t) const {
+	assert(SortTable::contains(e,t));
+	Element el = ElementUtil::convert(e,t,ELINT);
+	return el._int - _first;
+}
+
+unsigned int FloatSortTable::position(Element e, ElementType t) const {
+	assert(SortTable::contains(e,t));
+	Element el = ElementUtil::convert(e,t,ELDOUBLE);
+	unsigned int pos = lower_bound(_table.begin(),_table.end(),*(el._double)) - _table.begin();
+	if(t != ELDOUBLE) delete(el._double);
+	return pos;
+}
+
+unsigned int StrSortTable::position(Element e, ElementType t) const {
+	assert(SortTable::contains(e,t));
+	Element el = ElementUtil::convert(e,t,ELSTRING);
+	unsigned int pos = lower_bound(_table.begin(),_table.end(),*(el._string)) - _table.begin();
+	if(t != ELSTRING) delete(el._string);
+	return pos;
+}
+
+unsigned int MixedSortTable::position(Element e, ElementType t) const {
+	assert(SortTable::contains(e,t));
+	unsigned int pos;
+	switch(t) {
+		case ELINT:
+			pos = lower_bound(_numtable.begin(),_numtable.end(),double(e._int)) - _numtable.begin();
+			break;
+		case ELDOUBLE:
+			pos = lower_bound(_numtable.begin(),_numtable.end(),*(e._double)) - _numtable.begin();
+			break;
+		case ELSTRING: 
+		{
+			unsigned int p = lower_bound(_strtable.begin(),_strtable.end(),(*(e._string))) - _strtable.begin();
+			if(p != _strtable.size() && _strtable[p] == (*(e._string))) pos = p;
+			else {
+				double d = stod(*(e._string));
+				assert(d || isDouble(*(e._string)));
+				pos = lower_bound(_numtable.begin(),_numtable.end(),d) - _numtable.begin();
+			}
+		}
+	}
+	return pos;
+}
+
+
+
 /** Debugging **/
 
 string MixedSortTable::to_string() const {
@@ -419,6 +476,7 @@ string FloatSortTable::to_string() const {
 	Predicate interpretations
 ********************************/
 
+/** Finite tables **/
 SortPredTable::SortPredTable(UserSortTable* t) : FinitePredTable(vector<ElementType>(1,t->type())), _table(t) { }
 
 UserPredTable::~UserPredTable() {
@@ -826,7 +884,7 @@ string PredInter::to_string(unsigned int spaces) const {
 	Function interpretations
 *******************************/
 
-const Element& UserFuncInter::operator[](const vector<Element>& vi) const {
+Element UserFuncInter::operator[](const vector<Element>& vi) const {
 	if(_ftable) {
 		VVE::const_iterator it = lower_bound(_ftable->begin(),_ftable->end(),vi,_order);
 		if(it != _ftable->end() && _equality(*it,vi)) return it->back();
@@ -834,12 +892,12 @@ const Element& UserFuncInter::operator[](const vector<Element>& vi) const {
 	return ElementUtil::nonexist(_outtype);
 }
 
-const Element& UserFuncInter::operator[](const vector<TypedElement>& vte) const {
+Element FuncInter::operator[](const vector<TypedElement>& vte) const {
 	vector<Element> ve(vte.size());
 	for(unsigned int n = 0; n < vte.size(); ++n) {
 		ve[n] = ElementUtil::convert(vte[n],_intypes[n]);
 	}
-	const Element& result = operator[](ve);
+	Element result = operator[](ve);
 	for(unsigned int n = 0; n < vte.size(); ++n) {
 		if(_intypes[n] == ELSTRING) {
 			if(ve[n]._string != vte[n]._element._string) delete(ve[n]._string);
@@ -884,7 +942,6 @@ FuncInter* leastFuncInter(const vector<ElementType>& t) {
 /** Destructor **/
 
 Structure::~Structure() {
-	if(_pi) delete(_pi);
 	for(unsigned int n = 0; n < _predinter.size(); ++n) 
 		if(_predinter[n]) delete(_predinter[n]);
 	for(unsigned int n = 0; n < _funcinter.size(); ++n) 
@@ -953,12 +1010,20 @@ SortTable* Structure::inter(Sort* s) const {
 }
 
 PredInter* Structure::inter(Predicate* p) const {
-	if(p->builtin()) return Builtin::inter(p);
+	if(p->builtin()) {
+		vector<SortTable*> vs(p->arity());
+		for(unsigned int n = 0; n < p->arity(); ++n) vs[n] = inter(p->sort(n));
+		return Builtin::inter(p,vs);
+	}
 	return _predinter[_vocabulary->index(p)];
 }
 
 FuncInter* Structure::inter(Function* f) const {
-	if(f->builtin()) return Builtin::inter(f);
+	if(f->builtin()) {
+		vector<SortTable*> vs(f->nrsorts());
+		for(unsigned int n = 0; n < f->nrsorts(); ++n) vs[n] = inter(f->sort(n));
+		return Builtin::inter(f,vs);
+	}
 	return _funcinter[_vocabulary->index(f)];
 }
 
@@ -1019,7 +1084,7 @@ class StructConvertor : public Visitor {
 		Structure*	_structure;
 
 	public:
-		StructConvertor(Structure* s) : Visitor(), _currsymbol(0), _returnvalue(0), _structure(s) { visit(s);	}
+		StructConvertor(Structure* s) : Visitor(), _currsymbol(0), _returnvalue(0), _structure(s) { s->accept(this);	}
 
 		void	visit(Structure*);
 		void	visit(PredInter*);
@@ -1029,7 +1094,7 @@ class StructConvertor : public Visitor {
 };
 
 void StructConvertor::visit(Structure* s) {
-	_returnvalue = new Theory("",s->vocabulary(),s,0);
+	_returnvalue = new Theory("",s->vocabulary(),0);
 	for(unsigned int n = 0; n < s->vocabulary()->nrPreds(); ++n) {
 		_currsymbol = s->vocabulary()->pred(n);
 		visit(s->predinter(n));

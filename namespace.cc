@@ -74,12 +74,12 @@ Vocabulary* Namespace::vocabulary(const string& vn) const {
 	return ((_vocabularies.find(vn))->second);
 }
 
-Theory* Namespace::theory(const string& tn) const {
+AbstractTheory* Namespace::theory(const string& tn) const {
 	assert(isTheory(tn));
 	return ((_theories.find(tn))->second);
 }
 
-Structure* Namespace::structure(const string& sn) const {
+AbstractStructure* Namespace::structure(const string& sn) const {
 	assert(isStructure(sn));
 	return ((_structures.find(sn))->second);
 }

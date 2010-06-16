@@ -67,8 +67,9 @@ GroundingInference::GroundingInference() {
 
 void GroundingInference::execute(const vector<InfArg>& args, const string& res,Namespace*) const {
 	assert(args.size() == 2);
-	NaiveGrounder ng(args[1]._structure);
-	Theory* gr = ng.ground(args[0]._theory);
+	// TODO: remove the dynamic casts!
+	NaiveGrounder ng(dynamic_cast<Structure*>(args[1]._structure));	
+	Theory* gr = ng.ground(dynamic_cast<Theory*>(args[0]._theory));
 	NaiveTranslator* nt = new NaiveTranslator();
 	EcnfTheory* ecnfgr = TheoryUtils::convert_to_ecnf(gr,nt);
 	outputECNF* printer = new outputECNF(stdout); 
@@ -89,8 +90,9 @@ GroundingWithResult::GroundingWithResult() {
 
 void GroundingWithResult::execute(const vector<InfArg>& args, const string& res,Namespace* cn) const {
 	assert(args.size() == 2);
-	NaiveGrounder ng(args[1]._structure);
-	Theory* gr = ng.ground(args[0]._theory);
+	// TODO: remove the dynamic casts!
+	NaiveGrounder ng(dynamic_cast<Structure*>(args[1]._structure));
+	Theory* gr = ng.ground(dynamic_cast<Theory*>(args[0]._theory));
 	gr->name(res);
 	cn->add(gr);
 }
@@ -98,7 +100,8 @@ void GroundingWithResult::execute(const vector<InfArg>& args, const string& res,
 
 void StructToTheory::execute(const vector<InfArg>& args, const string& res,Namespace* cn) const {
 	assert(args.size() == 1);
-	Theory* t = StructUtils::convert_to_theory(args[0]._structure);
+	// TODO: remove the dynamic casts!
+	Theory* t = StructUtils::convert_to_theory(dynamic_cast<Structure*>(args[0]._structure));
 	t->name(res);
 	cn->add(t);
 }

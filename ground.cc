@@ -275,7 +275,7 @@ void NaiveGrounder::visit(FixpDef* d) {
 }
 
 void NaiveGrounder::visit(Theory* t) {
-	Theory* grounding = new Theory("",t->vocabulary(),_structure,0);
+	Theory* grounding = new Theory("",t->vocabulary(),0);
 	for(unsigned int n = 0; n < t->nrDefinitions(); ++n) {
 		_returnDef = 0;
 		t->definition(n)->accept(this);

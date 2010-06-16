@@ -366,7 +366,6 @@ string Theory::to_string() const {
 	string s = "#theory " + _name;
 	if(_vocabulary) {
 		s = s + " : " + _vocabulary->name();
-		if(_structure) s = s + ' ' + _structure->name();
 	}
 	s = s + " {\n";
 	for(unsigned int n = 0; n < _sentences.size(); ++n) {
@@ -600,7 +599,7 @@ void Theory::add(Theory* t) {
 class NegationPush : public Visitor {
 
 	public:
-		NegationPush(Theory* t)	: Visitor() { t->accept(this);	}
+		NegationPush(AbstractTheory* t)	: Visitor() { t->accept(this);	}
 
 		void visit(EqChainForm*);
 		void visit(EquivForm*);
@@ -650,7 +649,7 @@ void NegationPush::visit(QuantForm* f) {
 class EquivRemover : public MutatingVisitor {
 
 	public:
-		EquivRemover(Theory* t)	: MutatingVisitor() { t->accept(this);	}
+		EquivRemover(AbstractTheory* t)	: MutatingVisitor() { t->accept(this);	}
 
 		BoolForm* visit(EquivForm*);
 
@@ -684,7 +683,7 @@ BoolForm* EquivRemover::visit(EquivForm* ef) {
 class Flattener : public Visitor {
 
 	public:
-		Flattener(Theory* t) : Visitor() { t->accept(this);	}
+		Flattener(AbstractTheory* t) : Visitor() { t->accept(this);	}
 
 		void visit(BoolForm*);
 		void visit(QuantForm*);
@@ -726,7 +725,7 @@ void Flattener::visit(QuantForm* qf) {
 class EqChainRemover : public MutatingVisitor {
 
 	public:
-		EqChainRemover(Theory* t)	: MutatingVisitor() { t->accept(this);	}
+		EqChainRemover(AbstractTheory* t)	: MutatingVisitor() { t->accept(this);	}
 
 		Formula* visit(EqChainForm*);
 
@@ -782,7 +781,7 @@ class TheoryConvertor : public Visitor {
 
 	public:
 		
-		TheoryConvertor(Theory* t, GroundTranslator* g) : 
+		TheoryConvertor(AbstractTheory* t, GroundTranslator* g) : 
 			Visitor(), _translator(g), _returnvalue(new EcnfTheory()) { t->accept(this); }
 
 		void visit(PredForm*);
@@ -857,18 +856,47 @@ void TheoryConvertor::visit(QuantForm*) {
 	assert(false);
 }
 
+/** Tseitin transformation **/
+
+class Tseitinizer : public MutatingVisitor {
+	private:
+		bool _insiderule;
+	public:
+
+		Tseitinizer(AbstractTheory* t);
+
+		void visit(QuantForm* qf);
+};
+
+Tseitinizer::Tseitinizer(AbstractTheory* t) {
+	// TODO: clone t's vocabulary!
+	
+	// Prepare the theory
+	TheoryUtils::remove_eqchains(t);
+	TheoryUtils::push_negations(t);
+
+}
+
+
+
+Tseitinizer::
+
 /** Theory utils **/
 
 namespace TheoryUtils {
 	
 	/** Rewriting theories **/
-	void push_negations(Theory* t)	{ NegationPush np(t);	}
-	void remove_equiv(Theory* t)	{ EquivRemover er(t);	}
-	void flatten(Theory* t)			{ Flattener f(t);		}
-	void remove_eqchains(Theory* t)	{ EqChainRemover er(t);	}
-	void tseitin(Theory* t)			{ /* TODO */			} 
+	void push_negations(AbstractTheory* t)		{ NegationPush np(t);	}
+	void remove_equiv(AbstractTheory* t)		{ EquivRemover er(t);	}
+	void flatten(AbstractTheory* t)				{ Flattener f(t);		}
+	void remove_eqchains(AbstractTheory* t)		{ EqChainRemover er(t);	}
+
+	/** Tseitin transformation **/
+	void tseitin_def(AbstractTheory* t)		{ /* TODO */} 
+	void tseitin_impl(AbstractTheory* t)	{ /* TODO */} 
+	void tseitin_equiv(AbstractTheory* t)	{ /* TODO */} 
 	
 	/** ECNF **/
-	EcnfTheory*	convert_to_ecnf(Theory* t, GroundTranslator* g)	{ TheoryConvertor tc(t,g); return tc.returnvalue();	}
+	EcnfTheory*	convert_to_ecnf(AbstractTheory* t, GroundTranslator* g)	{ TheoryConvertor tc(t,g); return tc.returnvalue();	}
 
 }
