@@ -51,16 +51,16 @@ void Visitor::traverse(Rule* r) {
 }
 
 void Visitor::traverse(Definition* d) {
-	for(unsigned int n = 0; n < d->nrrules(); ++n) {
+	for(unsigned int n = 0; n < d->nrRules(); ++n) {
 		visit(d->rule(n));
 	}
 }
 
 void Visitor::traverse(FixpDef* d) {
-	for(unsigned int n = 0; n < d->nrrules(); ++n) {
+	for(unsigned int n = 0; n < d->nrRules(); ++n) {
 		visit(d->rule(n));
 	}
-	for(unsigned int n = 0; n < d->nrdefs(); ++n) {
+	for(unsigned int n = 0; n < d->nrDefs(); ++n) {
 		visit(d->def(n));
 	}
 }
@@ -242,7 +242,7 @@ Rule* MutatingVisitor::visit(Rule* r) {
 }
 
 Definition* MutatingVisitor::visit(Definition* d) {
-	for(unsigned int n = 0; n < d->nrrules(); ++n) {
+	for(unsigned int n = 0; n < d->nrRules(); ++n) {
 		Rule* r = d->rule(n)->accept(this);
 		if(r != d->rule(n)) {
 			delete(d->rule(n));
@@ -254,14 +254,14 @@ Definition* MutatingVisitor::visit(Definition* d) {
 }
 
 FixpDef* MutatingVisitor::visit(FixpDef* fd) {
-	for(unsigned int n = 0; n < fd->nrrules(); ++n) {
+	for(unsigned int n = 0; n < fd->nrRules(); ++n) {
 		Rule* r = fd->rule(n)->accept(this);
 		if(r != fd->rule(n)) {
 			delete(fd->rule(n));
 			fd->rule(n,r);
 		}
 	}
-	for(unsigned int n = 0; n < fd->nrdefs(); ++n) {
+	for(unsigned int n = 0; n < fd->nrDefs(); ++n) {
 		FixpDef* d = fd->def(n)->accept(this);
 		if(d != fd->def(n)) {
 			delete(fd->def(n));
