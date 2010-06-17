@@ -39,12 +39,17 @@ namespace Error {
 
 	void unknoption(const string& s) {
 		error();
-		cerr << s << " is an unknown option." << endl;
+		cerr << "'" << s << "' is an unknown option." << endl;
 	}
 
 	void unknfile(const string& s) {
 		error();
 		cerr << "'" << s << "' is not a valid file name or not readable." << endl;
+	}
+
+	void unknformat(const string& s) {
+		error();
+		cerr << "'" << s << "' is an unknown format." << endl;
 	}
 
 	void constsetexp() {

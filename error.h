@@ -22,6 +22,7 @@ namespace Error {
 	void constnotset(const string&, ParseInfo* pi);
 	void unknoption(const string&);
 	void unknfile(const string&);
+	void unknformat(const string&);
 	void constsetexp();
 	void stringconsexp(const string&, ParseInfo* pi);
 	void twicestdin(ParseInfo* pi);
