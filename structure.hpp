@@ -7,7 +7,7 @@
 #ifndef STRUCTURE_H
 #define STRUCTURE_H
 
-#include "vocabulary.h"
+#include "vocabulary.hpp"
 
 /******************************************
 	Domains (interpretations for sorts)
@@ -352,6 +352,7 @@ class PredTable {
 		virtual	unsigned int		size()									const = 0;	// the size of the table
 		virtual	bool				empty()									const = 0;	// true iff the table is empty
 		virtual	bool				contains(const vector<Element>&)		const = 0;
+				bool				contains(const vector<TypedElement>&)	const;
 		virtual	vector<Element>		tuple(unsigned int n)					const = 0;	// the n'th tuple
 		virtual Element				element(unsigned int r,unsigned int c)	const = 0;	// the element at position (r,c)
 				unsigned int				arity()							const { return _types.size();	}	
@@ -622,16 +623,19 @@ class Structure {
 													// interpretation.
 
 		// Inspectors
-		const string&	name()					const { return _name;		}
-		ParseInfo*		pi()					const { return _pi;			}
-		Vocabulary*		vocabulary()			const { return _vocabulary;	}
-		SortTable*		inter(Sort* s)			const;	// Return the domain of s.
-		PredInter*		inter(Predicate* p)		const;	// Return the interpretation of p.
-		FuncInter*		inter(Function* f)		const;	// Return the interpretation of f.
-		PredInter*		inter(PFSymbol* s)		const;  // Return the interpretation of s.
-		bool			hasInter(Sort* s)		const;	// True iff s has an interpretation
-		bool			hasInter(Predicate* p)	const;	// True iff p has an interpretation
-		bool			hasInter(Function* f)	const;	// True iff f has an interpretation
+		const string&	name()						const { return _name;		}
+		ParseInfo*		pi()						const { return _pi;			}
+		Vocabulary*		vocabulary()				const { return _vocabulary;	}
+		SortTable*		inter(Sort* s)				const;	// Return the domain of s.
+		PredInter*		inter(Predicate* p)			const;	// Return the interpretation of p.
+		FuncInter*		inter(Function* f)			const;	// Return the interpretation of f.
+		PredInter*		inter(PFSymbol* s)			const;  // Return the interpretation of s.
+		SortTable*		sortinter(unsigned int n)	const { return _sortinter[n];	}
+		PredInter*		predinter(unsigned int n)	const { return _predinter[n];	}
+		FuncInter*		funcinter(unsigned int n)	const { return _funcinter[n];	}
+		bool			hasInter(Sort* s)			const;	// True iff s has an interpretation
+		bool			hasInter(Predicate* p)		const;	// True iff p has an interpretation
+		bool			hasInter(Function* f)		const;	// True iff f has an interpretation
 
 		// Debugging
 		string	to_string(unsigned int spaces = 0) const;
@@ -641,6 +645,7 @@ class Structure {
 class Theory;
 namespace StructUtils {
 	Theory*	convert_to_theory(Structure*);	// Make a theory containing all literals that are true according to the given structure
+	PredTable*	complement(PredTable*,const vector<Sort*>&, Structure*);	// Compute the complement of the given table 
 }
 
 #endif

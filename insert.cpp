@@ -4,13 +4,13 @@
 	(c) K.U.Leuven
 ************************************/
 
-#include "namespace.h"
-#include "execute.h"
-#include "error.h"
-#include "visitor.h"
-#include "insert.h"
-#include "parse.tab.hh"
-#include "builtin.h"
+#include "namespace.hpp"
+#include "execute.hpp"
+#include "error.hpp"
+#include "visitor.hpp"
+#include "insert.hpp"
+#include "parse.tab.hpp"
+#include "builtin.hpp"
 #include <iostream>
 #include <list>
 #include <set>
@@ -693,6 +693,8 @@ namespace Insert {
 		_inferences["flatten"].push_back(new FlattenFormulas());
 		_inferences["ground"].push_back(new GroundingInference());
 		_inferences["ground"].push_back(new GroundingWithResult());
+		_inferences["convert_to_theory"].push_back(new StructToTheory());
+		_inferences["model_expand"].push_back(new ModelExpansionInference());
 	}
 
 	void cleanup() {
@@ -2617,3 +2619,18 @@ namespace Insert {
 	}
 
 }
+
+	void help_execute() {
+		cout << "The available methods in the execute block are:\n";
+		for(map<string,vector<Inference*> >::iterator it = Insert::_inferences.begin(); it != Insert::_inferences.end(); ++it) {
+			for(unsigned int n = 0; n < (it->second).size(); ++n) {
+				cout << "   " << IATUtils::to_string(((it->second)[n])->outtype()) << ' ' << it->first << '(';
+				for(unsigned int m = 0; m < ((it->second)[n])->arity(); ++m) {
+					cout << IATUtils::to_string((((it->second)[n])->intypes())[m]);
+					if(m != ((it->second)[n])->arity()-1) cout << ',';
+				}
+				cout << ")\n";
+				cout << "      " << ((it->second)[n])->description() << '\n';
+			}
+		}
+	}

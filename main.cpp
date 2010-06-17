@@ -1,17 +1,18 @@
 /************************************
-	main.cc
+	main.cpp
 	this file belongs to GidL 2.0
 	(c) K.U.Leuven
 ************************************/
 
-#include "insert.h"
-#include "builtin.h"
-#include "namespace.h"
-#include "parse.tab.hh"
-#include "error.h"
-#include "options.h"
+#include "insert.hpp"
+#include "builtin.hpp"
+#include "namespace.hpp"
+#include "parse.tab.hpp"
+#include "error.hpp"
+#include "options.hpp"
+#include "clconst.hpp"
+
 #include "files.h"
-#include "clconst.h"
 #include <cstdio>
 #include <iostream>
 
@@ -25,6 +26,8 @@ extern bool		isInt(const string&);
 extern bool		isDouble(const string&);
 extern int		stoi(const string&);
 extern double	stod(const string&);
+
+extern void help_execute();
 
 /** Initialize data structures **/
 void initialize() {
@@ -45,7 +48,8 @@ void usage() {
 		 << "    -o <filename>:       write the output to <filename> instead of stdout\n"
 		 << "    --format=<format>:   use specified format for the output\n"
 		 << "    -v, --version:       show version number and stop\n"
-		 << "    -h, --help:          show this help message\n\n";
+		 << "    -h, --help:          show this help message\n"
+		 << "    --help-execute:      show all methods available in the execute block\n\n";
 	exit(0);
 }
 
@@ -99,7 +103,8 @@ vector<string> read_options(int argc, char* argv[]) {
 													  else					Error::unknformat(fmt);
 													}
 		else if(str == "-v" || str == "--version")	{ cout << "GidL 2.0.1\n"; exit(0);	}
-		else if(str == "-h" || str == "--help")		{ usage();							}
+		else if(str == "-h" || str == "--help")		{ usage(); exit(0);					}
+		else if(str == "--help-execute")			{ help_execute(); exit(0);			}
 		else if(str[0] == '-')						{ Error::unknoption(str);			}
 		else										{ inputfiles.push_back(str);		}
 	}

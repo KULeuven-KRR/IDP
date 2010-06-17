@@ -8,7 +8,7 @@
 #define INSERT_H
 
 #include <utility>
-#include "theory.h"
+#include "theory.hpp"
 
 struct YYLTYPE;
 

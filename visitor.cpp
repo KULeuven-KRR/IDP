@@ -4,7 +4,7 @@
 	(c) K.U.Leuven
 ************************************/
 
-#include "theory.h"
+#include "theory.hpp"
 
 void Visitor::visit(PredForm* a)		{ traverse(a);	}
 void Visitor::visit(EqChainForm* a)		{ traverse(a);	}
@@ -21,7 +21,10 @@ void Visitor::visit(AggTerm* a)			{ traverse(a);	}
 void Visitor::visit(EnumSetExpr* a)		{ traverse(a);	}
 void Visitor::visit(QuantSetExpr* a)	{ traverse(a);	}
 void Visitor::visit(Theory* t)			{ traverse(t);	}
-
+void Visitor::visit(SortTable*)			{ }
+void Visitor::visit(PredInter*)			{ }
+void Visitor::visit(FuncInter*)			{ }
+void Visitor::visit(Structure* s)		{ traverse(s);	}
 
 
 void Visitor::traverse(Formula* f) {
@@ -81,6 +84,18 @@ void Visitor::traverse(Theory* t) {
 		t->definition(n)->accept(this);
 	for(unsigned int n = 0; n < t->nrFixpDefs(); ++n) 
 		t->fixpdef(n)->accept(this);
+}
+
+void Visitor::traverse(Structure* s) {
+	for(unsigned int n = 0; n < s->vocabulary()->nrSorts(); ++n) {
+		visit(s->sortinter(n));
+	}
+	for(unsigned int n = 0; n < s->vocabulary()->nrPreds(); ++n) {
+		visit(s->predinter(n));
+	}
+	for(unsigned int n = 0; n < s->vocabulary()->nrFuncs(); ++n) {
+		visit(s->funcinter(n));
+	}
 }
 
 /******************

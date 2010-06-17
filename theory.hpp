@@ -7,8 +7,11 @@
 #ifndef THEORY_H
 #define THEORY_H
 
-#include "structure.h"
-#include "term.h"
+#include "structure.hpp"
+#include "term.hpp"
+
+class GroundTranslator;
+class EcnfTheory;
 
 /***************
 	Formulas
@@ -512,6 +515,9 @@ namespace TheoryUtils {
 	
 	/** Completion **/
 	// TODO  Compute completion of definitions
+	
+	/** ECNF **/
+	EcnfTheory*	convert_to_ecnf(Theory*,GroundTranslator*);		// Convert the theory to ecnf using the given translator
 	
 }
 

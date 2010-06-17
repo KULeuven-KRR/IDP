@@ -1,17 +1,17 @@
 /************************************
-	namespace.cc	
+	namespace.cpp	
 	this file belongs to GidL 2.0
 	(c) K.U.Leuven
 ************************************/
 
-#include "namespace.h"
-#include "options.h"
+#include "namespace.hpp"
+#include "options.hpp"
 #include "files.h"
 #include <iostream>
 
 /** Global namespace and options **/
 
-Namespace* Namespace::_global = new Namespace("global namespace",0,0);
+Namespace* Namespace::_global = new Namespace("global_namespace",0,0);
 Options options;
 Files files;
 

@@ -25,6 +25,10 @@ class DomainTerm;
 class FuncTerm;
 class QuantSetExpr;
 class EnumSetExpr;
+class SortTable;
+class PredInter;
+class FuncInter;
+class Structure;
 
 class Visitor {
 	public:
@@ -38,6 +42,9 @@ class Visitor {
 		void traverse(FixpDef* f);
 		void traverse(SetExpr* s);
 		void traverse(Theory* t);
+		void traverse(Structure* s);
+
+		/** Theories **/
 
 		// Formulas 
 		virtual void visit(PredForm* a);			
@@ -64,6 +71,14 @@ class Visitor {
 		// Theories
 		virtual void visit(Theory* t);
 
+		/** Structures **/
+
+		virtual void visit(SortTable*);
+		virtual void visit(PredInter*);
+		virtual void visit(FuncInter*);
+		virtual void visit(Structure*);
+
+
 };
 
 class MutatingVisitor {
@@ -72,6 +87,8 @@ class MutatingVisitor {
 
 		MutatingVisitor() { }
 		virtual ~MutatingVisitor() { }
+
+		/** Theories **/ 
 
 		// Formulas 
 		virtual Formula* visit(PredForm* a);	
@@ -97,6 +114,7 @@ class MutatingVisitor {
 
 		// Theories
 		virtual Theory* visit(Theory* t);	
+
 
 };
 

@@ -7,7 +7,7 @@
 #ifndef ERROR_H
 #define ERROR_H
 
-#include "namespace.h"
+#include "namespace.hpp"
 
 namespace Error {
 

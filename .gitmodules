@@ -1,0 +1,3 @@
+[submodule "pcsolver"]
+	path = pcsolver
+	url = server:/repos/minisatid

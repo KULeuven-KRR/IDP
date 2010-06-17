@@ -4,29 +4,16 @@
 	(c) K.U.Leuven
 ************************************/
 
-#include "execute.h"
-#include "options.h"
-#include "files.h"
-#include "print.h"
-#include "ground.h"
+#include "execute.hpp"
+#include "ground.hpp"
+#include "ecnf.hpp"
 #include <iostream>
-
-extern Options options;
-extern Files files;
 
 void PrintTheory::execute(const vector<InfArg>& args, const string& res,Namespace*) const {
 	assert(args.size() == 1);
 	// TODO
-	switch(options._format) {
-		case OF_TXT: {
-			string s = (args[0]._theory)->to_string();
-			fputs(s.c_str(),files._outputfile);
-		} break;
-		case OF_IDP: {
-			IDPPrinter printer;
-			printer.print(args[0]._theory);
-		} break;
-	}
+	string s = (args[0]._theory)->to_string();
+	cout << s;
 }
 
 void PrintVocabulary::execute(const vector<InfArg>& args, const string& res,Namespace*) const {
@@ -75,16 +62,21 @@ GroundingInference::GroundingInference() {
 	_intypes[0] = IAT_THEORY; 
 	_intypes[1] = IAT_STRUCTURE;
 	_outtype = IAT_VOID;	
+	_description = "Ground the theory and structure and print the grounding";
 }
 
 void GroundingInference::execute(const vector<InfArg>& args, const string& res,Namespace*) const {
 	assert(args.size() == 2);
 	NaiveGrounder ng(args[1]._structure);
 	Theory* gr = ng.ground(args[0]._theory);
-	// TODO: change the following
-	string s = gr->to_string();
-	cout << s;
-	delete(gr);
+	NaiveTranslator* nt = new NaiveTranslator();
+	EcnfTheory* ecnfgr = TheoryUtils::convert_to_ecnf(gr,nt);
+	GroundPrinter* printer = new outputECNF(stdout);
+	ecnfgr->print(printer);
+	gr->recursiveDelete();
+	delete(ecnfgr);
+	delete(nt);
+	delete(printer);
 }
 
 GroundingWithResult::GroundingWithResult() { 
@@ -92,6 +84,7 @@ GroundingWithResult::GroundingWithResult() {
 	_intypes[0] = IAT_THEORY; 
 	_intypes[1] = IAT_STRUCTURE;
 	_outtype = IAT_THEORY;	
+	_description = "Ground the theory and structure and store the grounding";
 }
 
 void GroundingWithResult::execute(const vector<InfArg>& args, const string& res,Namespace* cn) const {
@@ -100,4 +93,38 @@ void GroundingWithResult::execute(const vector<InfArg>& args, const string& res,
 	Theory* gr = ng.ground(args[0]._theory);
 	gr->name(res);
 	cn->add(gr);
+}
+
+ModelExpansionInference::ModelExpansionInference() {
+	_intypes = vector<InfArgType>(2);
+	_intypes[0] = IAT_THEORY;
+	_intypes[1] = IAT_STRUCTURE;
+	_outtype = IAT_VOID;
+	_description = "Performs model expansion on the structure given the theory it should satisfy.";
+}
+
+void ModelExpansionInference::execute(const vector<InfArg>& args, const string& res,Namespace* cn) const {
+	assert(args.size() == 2);
+	NaiveGrounder ng(args[1]._structure);
+	Theory* gr = ng.ground(args[0]._theory);
+	NaiveTranslator* nt = new NaiveTranslator();
+	EcnfTheory* ecnfgr = TheoryUtils::convert_to_ecnf(gr,nt);
+	ECNF_mode modes;
+	modes.nbmodels = 1;
+	PCSolver* solver = new PCSolver(modes);
+	GroundPrinter* printer = new outputToSolver(solver);
+	ecnfgr->print(printer);
+	gr->recursiveDelete();
+	solver->solve();
+	delete(solver);
+	delete(ecnfgr);
+	delete(nt);
+	delete(printer);
+}
+
+void StructToTheory::execute(const vector<InfArg>& args, const string& res,Namespace* cn) const {
+	assert(args.size() == 1);
+	Theory* t = StructUtils::convert_to_theory(args[0]._structure);
+	t->name(res);
+	cn->add(t);
 }

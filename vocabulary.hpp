@@ -12,7 +12,16 @@
 #include <map>
 #include <cassert>
 using namespace std;
+
+/*********************
+	Argument types
+*********************/
+
 enum InfArgType { IAT_VOID, IAT_THEORY, IAT_STRUCTURE, IAT_VOCABULARY, IAT_NAMESPACE };
+
+namespace IATUtils { 
+	string to_string(InfArgType);
+}
 
 /***************************************
 	Parse location of parsed objects	

@@ -7,7 +7,30 @@
 #ifndef GROUND_H
 #define GROUND_H
 
-#include "theory.h"
+#include "theory.hpp"
+
+/**********************************************
+	Translate from ground atoms to numbers
+**********************************************/
+
+class GroundTranslator {
+
+	public:
+		virtual int translate(PFSymbol*,const vector<string>&) = 0;
+};
+
+class NaiveTranslator : public GroundTranslator {
+
+	private:
+		int										_nextnumber;
+		map<PFSymbol*,map<vector<string>,int> >	_table;
+
+	public:
+		
+		NaiveTranslator() : _nextnumber(1) { }
+		int translate(PFSymbol*,const vector<string>&);
+};
+
 
 /********************************************************
 	Basic top-down, non-optimized grounding algorithm
