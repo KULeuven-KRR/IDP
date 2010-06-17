@@ -5,14 +5,28 @@
 ************************************/
 
 #include "execute.h"
+#include "options.h"
+#include "files.h"
+#include "print.h"
 #include "ground.h"
 #include <iostream>
+
+extern Options options;
+extern Files files;
 
 void PrintTheory::execute(const vector<InfArg>& args, const string& res,Namespace*) const {
 	assert(args.size() == 1);
 	// TODO
-	string s = (args[0]._theory)->to_string();
-	cout << s;
+	switch(options._format) {
+		case OF_TXT: {
+			string s = (args[0]._theory)->to_string();
+			fputs(s.c_str(),files._outputfile);
+		} break;
+		case OF_IDP: {
+			IDPPrinter printer;
+			printer.print(args[0]._theory);
+		} break;
+	}
 }
 
 void PrintVocabulary::execute(const vector<InfArg>& args, const string& res,Namespace*) const {
