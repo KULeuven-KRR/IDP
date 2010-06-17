@@ -124,6 +124,12 @@ class GroundingWithResult : public Inference {
 		void execute(const vector<InfArg>& args, const string& res,Namespace*) const;
 };
 
+class ModelExpansionInference : public Inference {
+	public:
+		ModelExpansionInference();
+		void execute(const vector<InfArg>& args, const string& res,Namespace*) const;
+};
+
 class StructToTheory : public Inference {
 	public:
 		StructToTheory() {

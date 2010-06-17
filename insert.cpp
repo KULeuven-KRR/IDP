@@ -694,6 +694,7 @@ namespace Insert {
 		_inferences["ground"].push_back(new GroundingInference());
 		_inferences["ground"].push_back(new GroundingWithResult());
 		_inferences["convert_to_theory"].push_back(new StructToTheory());
+		_inferences["model_expand"].push_back(new ModelExpansionInference());
 	}
 
 	void cleanup() {

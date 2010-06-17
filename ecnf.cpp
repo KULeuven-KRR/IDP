@@ -84,46 +84,47 @@ void outputECNF::outputfdrule(int d, int h, const vector<int>& b, bool c) {
 	fprintf(_out,"0\n");
 }
 
-void outputECNF::outputmax(int h, const vector<int>& b) {
-	fprintf(_out,"Max %d " ,h);
+void outputECNF::outputmax(int h, bool defined, int setid, bool lowerthan, int bound) {
+	/*fprintf(_out,"Max %d " ,h);
 	for(unsigned int n = 0; n < b.size(); ++n){
 		fprintf(_out,"%d ",b[n]);
 	}
-	fprintf(_out,"0\n");
+	fprintf(_out,"0\n");*/
 }
 
-void outputECNF::outputmin(int h, const vector<int>& b){
-	fprintf(_out,"Min %d " ,h);
+void outputECNF::outputmin(int h, bool defined, int setid, bool lowerthan, int bound){
+	/*fprintf(_out,"Min %d " ,h);
 	for(unsigned int n = 0; n < b.size(); ++n){
 		fprintf(_out,"%d ",b[n]);
 	}
-	fprintf(_out,"0\n");
+	fprintf(_out,"0\n");*/
 }
 
-void outputECNF::outputsum(int h, const vector<int>& b){
-	fprintf(_out,"Sum %d " ,h);
+void outputECNF::outputsum(int h, bool defined, int setid, bool lowerthan, int bound){
+	/*fprintf(_out,"Sum %d " ,h);
 	for(unsigned int n = 0; n < b.size(); ++n){
 		fprintf(_out,"%d ",b[n]);
 	}
-	fprintf(_out,"0\n");
+	fprintf(_out,"0\n");*/
 }
 
-void outputECNF::outputprod(int h, const vector<int>& b){
-	fprintf(_out,"Prod %d " ,h);
+void outputECNF::outputprod(int h, bool defined, int setid, bool lowerthan, int bound){
+	/*fprintf(_out,"Prod %d " ,h);
 	for(unsigned int n = 0; n < b.size(); ++n){
 		fprintf(_out,"%d ",b[n]);
 	}
-	fprintf(_out,"0\n");
+	fprintf(_out,"0\n");*/
 }
 
-void outputECNF::outputcard(int h, const vector<int>& b){
-	fprintf(_out,"Card %d " ,h);
+void outputECNF::outputcard(int h, bool defined, int setid, bool lowerthan, int bound){
+	/*fprintf(_out,"Card %d " ,h);
 	for(unsigned int n = 0; n < b.size(); ++n){
 		fprintf(_out,"%d ",b[n]);
 	}
-	fprintf(_out,"0\n");
+	fprintf(_out,"0\n");*/
 }
 
+//TODO important: no longer supported by solver
 void outputECNF::outputeu(const vector<int>& b) {
 	fprintf(_out,"EU ");
 	for(unsigned int n = 0; n < b.size(); ++n){
@@ -132,6 +133,7 @@ void outputECNF::outputeu(const vector<int>& b) {
 	fprintf(_out,"0\n");
 }
 
+//TODO important: no longer supported by solver
 void outputECNF::outputamo(const vector<int>& b) {
 	fprintf(_out,"AMO ");
 	for(unsigned int n = 0; n < b.size(); ++n){
@@ -230,6 +232,7 @@ string toHR(int l) {
 		}
 	}
 	*/
+	return "";
 }
 
 void outputHR::outputinit(GroundFeatures*){}
@@ -282,24 +285,32 @@ void outputHR::outputfdrule(int d, int h, const vector<int>& b, bool c){
 	outputrule(h,b,c);
 }
 
-void outputHR::outputmax(int h, const vector<int>& b) {
-	fprintf(_out,"%s is true iff the maximum of set nr. %d is between %d and %d.\n", toHR(h).c_str(),b[0],b[1],b[2]);
+void outputHR::outputmax(int h, bool defined, int setid, bool lowerthan, int bound) {
+	outputaggregate(h, defined, setid, lowerthan, bound, "maximum");
 }
 
-void outputHR::outputmin(int h, const vector<int>& b){
-	fprintf(_out,"%s is true iff the minimum of set nr. %d is between %d and %d.\n", toHR(h).c_str(),b[0],b[1],b[2]);
+void outputHR::outputmin(int h, bool defined, int setid, bool lowerthan, int bound){
+	outputaggregate(h, defined, setid, lowerthan, bound, "minimum");
 }
 
-void outputHR::outputsum(int h, const vector<int>& b){
-	fprintf(_out,"%s is true iff the sum of set nr. %d is between %d and %d.\n", toHR(h).c_str(),b[0],b[1],b[2]);
+void outputHR::outputsum(int h, bool defined, int setid, bool lowerthan, int bound){
+	outputaggregate(h, defined, setid, lowerthan, bound, "sum");
 }
 
-void outputHR::outputprod(int h, const vector<int>& b){
-	fprintf(_out,"%s is true iff the product of set nr. %d is between %d and %d.\n", toHR(h).c_str(),b[0],b[1],b[2]);
+void outputHR::outputprod(int h, bool defined, int setid, bool lowerthan, int bound){
+	outputaggregate(h, defined, setid, lowerthan, bound, "product");
 }
 
-void outputHR::outputcard(int h, const vector<int>& b){
-	fprintf(_out,"%s is true iff the cardinality of set nr. %d is between %d and %d.\n", toHR(h).c_str(),b[0],b[1],b[2]);
+void outputHR::outputcard(int h, bool defined, int setid, bool lowerthan, int bound){
+	outputaggregate(h, defined, setid, lowerthan, bound, "cardinality");
+}
+
+void outputHR::outputaggregate(int h, bool defined, int setid, bool lowerthan, int bound, const char* type){
+	if(defined){
+		fprintf(_out,"%s is true iff the %s of set nr. %d %s %d.\n", toHR(h).c_str(), type, setid, lowerthan?"=<":">=", bound);
+	}else{
+		fprintf(_out,"%s is defined as the %s of set nr. %d %s %d.\n", toHR(h).c_str(), type, setid, lowerthan?"=<":">=", bound);
+	}
 }
 
 void outputHR::outputeu(const vector<int>& b) {
@@ -359,17 +370,17 @@ void copyToVec(const vector<int>& v, vec<Lit>& v2){
 	}
 }
 
-outputSolver::outputSolver() : _solver(NULL) {
+/*outputToSolver::outputToSolver() : _solver(NULL) {
 	ECNF_mode modes;
 	modes.verbosity = 7;
 	_solver = new PCSolver(modes);
-}
-outputSolver::outputSolver(PCSolver* solver) : _solver(solver) {}
-outputSolver::~outputSolver(){ }
+}*/
+outputToSolver::outputToSolver(PCSolver* solver) : _solver(solver) {}
+outputToSolver::~outputToSolver(){ }
 
-void outputSolver::outputinit(GroundFeatures*){}
-void outputSolver::outputend(){}
-void outputSolver::outputunitclause(int l){
+void outputToSolver::outputinit(GroundFeatures*){}
+void outputToSolver::outputend(){}
+void outputToSolver::outputunitclause(int l){
 	vec<Lit> v;
 	if(l<0){
 		v.push(Lit(-(l), true));
@@ -379,23 +390,23 @@ void outputSolver::outputunitclause(int l){
 	solver()->addClause(v);
 }
 
-void outputSolver::outputclause(const vector<int>& lits){
+void outputToSolver::outputclause(const vector<int>& lits){
 	vec<Lit> l;
 	copyToVec(lits, l);
 	solver()->addClause(l);
 }
 
-void outputSolver::outputunitrule(int h, int b) {
+void outputToSolver::outputunitrule(int h, int b) {
 	vector<int> body;
 	body.push_back(b);
 	outputrule(h, body, true);
 }
 
-void outputSolver::outputunitfdrule(int d, int h, int b) {
+void outputToSolver::outputunitfdrule(int d, int h, int b) {
 	//TODO later
 }
 
-void outputSolver::outputrule(int head, const vector<int>& b, bool c){
+void outputToSolver::outputrule(int head, const vector<int>& b, bool c){
 	vec<Lit> l;
 	if(head<0){
 		l.push(Lit(-head, true));
@@ -406,57 +417,58 @@ void outputSolver::outputrule(int head, const vector<int>& b, bool c){
 	solver()->addRule(c, l);
 }
 
-void outputSolver::outputfdrule(int d, int h, const vector<int>& b, bool c){
+void outputToSolver::outputfdrule(int d, int h, const vector<int>& b, bool c){
 	//TODO
 }
 
-void outputSolver::outputmax(int h, const vector<int>& b) {
-	//solver->addAggrExpr(h, b[0], b[1], false, MAX, true);
-	//solver->addAggrExpr(h, b[0], b[2], true, MAX, true);
+void outputToSolver::outputmax(int h, bool defined, int setid, bool lowerthan, int bound) {
+	solver()->addAggrExpr(Lit(h), setid, bound, lowerthan, MAX, defined);
 }
 
-void outputSolver::outputmin(int h, const vector<int>& b){
-	//solver->addAggrExpr(h, b[0], b[1], lower, MIN, true);
+void outputToSolver::outputmin(int h, bool defined, int setid, bool lowerthan, int bound){
+	solver()->addAggrExpr(Lit(h), setid, bound, lowerthan, MIN, defined);
 }
 
-void outputSolver::outputsum(int h, const vector<int>& b){
-	//solver->addAggrExpr(h, b[0], b[1], lower, SUM, true);
+void outputToSolver::outputsum(int h, bool defined, int setid, bool lowerthan, int bound){
+	solver()->addAggrExpr(Lit(h), setid, bound, lowerthan, SUM, defined);
 }
 
-void outputSolver::outputprod(int h, const vector<int>& b){
-	//solver->addAggrExpr(h, b[0], b[1], lower, PROD, true);
+void outputToSolver::outputprod(int h, bool defined, int setid, bool lowerthan, int bound){
+	solver()->addAggrExpr(Lit(h), setid, bound, lowerthan, PROD, defined);
 }
 
-void outputSolver::outputcard(int h, const vector<int>& b){
-	//solver->addAggrExpr(h, b[0], b[1], lower, CARD, true);
+void outputToSolver::outputcard(int h, bool defined, int setid, bool lowerthan, int bound){
+	solver()->addAggrExpr(Lit(h), setid, bound, lowerthan, CARD, defined);
 }
 
-void outputSolver::outputeu(const vector<int>& b) {
-
+//Not supported by solver
+void outputToSolver::outputeu(const vector<int>& b) {
+	assert(false);
 }
 
-void outputSolver::outputamo(const vector<int>& b) {
-
+//Not supported by solver
+void outputToSolver::outputamo(const vector<int>& b) {
+	assert(false);
 }
 
-void outputSolver::outputset(int s, const vector<int>& lits) {
+void outputToSolver::outputset(int setid, const vector<int>& lits) {
 	vec<Lit> l;
 	copyToVec(lits, l);
-	solver()->addSet(s, l);
+	solver()->addSet(setid, l);
 }
 
-void outputSolver::outputwset(int s, const vector<int>& lits, const vector<int>& weights) {
+void outputToSolver::outputwset(int setid, const vector<int>& lits, const vector<int>& weights) {
 	vec<Lit> l;
 	copyToVec(lits, l);
-	solver()->addSet(s, l, weights);
+	solver()->addSet(setid, l, weights);
 }
 
-void outputSolver::outputfixpdef(int d, const vector<int>& sd, bool l) {
+void outputToSolver::outputfixpdef(int d, const vector<int>& sd, bool l) {
 	//TODO later
 }
 
-void outputSolver::outputunsat(){
-	//TODO this will probably crash
+void outputToSolver::outputunsat(){
+	//FIXME this will probably crash
 	vec<Lit> l;
 	l.push(Lit(1));
 	solver()->addClause(l);
@@ -469,6 +481,7 @@ void outputSolver::outputunsat(){
 	Internal encf theories
 *****************************/
 
+//This should change into printer->print(theory)
 void EcnfTheory::print(GroundPrinter* p) {
 	p->outputinit(&_features);
 	for(unsigned int n = 0; n < _clauses.size(); ++n) {
