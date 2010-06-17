@@ -10,6 +10,7 @@
 #include "parse.tab.hh"
 #include "error.h"
 #include "options.h"
+#include "files.h"
 #include "clconst.h"
 #include <cstdio>
 #include <iostream>
@@ -17,6 +18,7 @@
 extern int yyparse();
 extern FILE* yyin;
 extern Options options;
+extern Files files;
 extern map<string,CLConst*>	clconsts;
 
 extern bool		isInt(const string&);
@@ -40,6 +42,8 @@ void usage() {
 		 << "    -c <name1>=<name2>:  substitute <name2> for <name1> in the input\n"
 		 << "    -I:                  read from stdin\n"
 		 << "    -W:                  suppress all warnings\n"
+		 << "    -o <filename>:       write the output to <filename> instead of stdout\n"
+		 << "    --format=<format>:   use specified format for the output\n"
 		 << "    -v, --version:       show version number and stop\n"
 		 << "    -h, --help:          show this help message\n\n";
 	exit(0);
@@ -85,6 +89,14 @@ vector<string> read_options(int argc, char* argv[]) {
 		else if(str == "-W")						{ for(unsigned int n = 0; n < options._warning.size(); ++n) {
 														  options._warning[n] = false;
 													  }
+													}
+		else if(str == "-o")						{ files._outputfile = fopen(argv[0],"w");
+													  argc--; argv++;
+													}
+		else if(str.substr(0,9) == "--format=")		{ string fmt = str.substr(9,str.length()-9);
+													  if (fmt == "txt")		options._format = OF_TXT;
+													  else if(fmt == "idp")	options._format = OF_IDP;
+													  else					Error::unknformat(fmt);
 													}
 		else if(str == "-v" || str == "--version")	{ cout << "GidL 2.0.1\n"; exit(0);	}
 		else if(str == "-h" || str == "--help")		{ usage();							}
