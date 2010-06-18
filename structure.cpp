@@ -1042,7 +1042,7 @@ void StructConvertor::visit(Structure* s) {
 
 void StructConvertor::visit(PredInter* pt) {
 	if(pt->ct()) {
-		vector<Term*> vt(_currsymbol->nrsorts());
+		vector<Term*> vt(_currsymbol->nrSorts());
 		for(unsigned int r = 0; r < pt->ctpf()->size(); ++r) {
 			for(unsigned int c = 0; c < vt.size(); ++c) {
 				Element e = ElementUtil::clone(pt->ctpf()->element(r,c),pt->ctpf()->type(c));
@@ -1053,7 +1053,7 @@ void StructConvertor::visit(PredInter* pt) {
 	}
 	else {
 		PredTable* comp = StructUtils::complement(pt->ctpf(),_currsymbol->sorts(),_structure);
-		vector<Term*> vt(_currsymbol->nrsorts());
+		vector<Term*> vt(_currsymbol->nrSorts());
 		for(unsigned int r = 0; r < comp->size(); ++r) {
 			for(unsigned int c = 0; c < vt.size(); ++c) {
 				Element e = ElementUtil::clone(comp->element(r,c),comp->type(c));
@@ -1064,7 +1064,7 @@ void StructConvertor::visit(PredInter* pt) {
 		delete(comp);
 	}
 	if(pt->cf()) {
-		vector<Term*> vt(_currsymbol->nrsorts());
+		vector<Term*> vt(_currsymbol->nrSorts());
 		for(unsigned int r = 0; r < pt->cfpt()->size(); ++r) {
 			for(unsigned int c = 0; c < vt.size(); ++c) {
 				Element e = ElementUtil::clone(pt->cfpt()->element(r,c),pt->cfpt()->type(c));
@@ -1075,7 +1075,7 @@ void StructConvertor::visit(PredInter* pt) {
 	}
 	else {
 		PredTable* comp = StructUtils::complement(pt->cfpt(),_currsymbol->sorts(),_structure);
-		vector<Term*> vt(_currsymbol->nrsorts());
+		vector<Term*> vt(_currsymbol->nrSorts());
 		for(unsigned int r = 0; r < comp->size(); ++r) {
 			for(unsigned int c = 0; c < vt.size(); ++c) {
 				Element e = ElementUtil::clone(comp->element(r,c),comp->type(c));
