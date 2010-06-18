@@ -6,7 +6,7 @@
 
 #include "namespace.hpp"
 #include "options.hpp"
-#include "files.h"
+#include "files.hpp"
 #include <iostream>
 
 /** Global namespace and options **/

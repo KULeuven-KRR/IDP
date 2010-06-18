@@ -1,15 +1,15 @@
 /************************************
-	print.h	
+	print.hpp
 	this file belongs to GidL 2.0
 	(c) K.U.Leuven
 ************************************/
 
-#ifndef PRINT_H
-#define PRINT_H
+#ifndef PRINT_HPP
+#define PRINT_HPP
 
-#include "files.h"
-#include "visitor.h"
-#include "theory.h"
+#include "files.hpp"
+#include "visitor.hpp"
+#include "theory.hpp"
 #include <cstdio>
 
 extern Files files;

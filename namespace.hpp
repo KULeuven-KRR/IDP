@@ -1,11 +1,11 @@
 /************************************
-	namespace.h	
+	namespace.hpp	
 	this file belongs to GidL 2.0
 	(c) K.U.Leuven
 ************************************/
 
-#ifndef NAMESPACE_H
-#define NAMESPACE_H
+#ifndef NAMESPACE_HPP
+#define NAMESPACE_HPP
 
 #include "theory.hpp"
 #include <set>

@@ -1,11 +1,11 @@
 /************************************
-	files.h
+	files.hpp
 	this file belongs to GidL 2.0
 	(c) K.U.Leuven
 ************************************/
 
-#ifndef FILES_H
-#define FILES_H
+#ifndef FILES_HPP
+#define FILES_HPP
 
 #include <cstdio>
 

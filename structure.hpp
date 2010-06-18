@@ -1,11 +1,11 @@
 /************************************
-	structure.h
+	structure.hpp
 	this file belongs to GidL 2.0
 	(c) K.U.Leuven
 ************************************/
 
-#ifndef STRUCTURE_H
-#define STRUCTURE_H
+#ifndef STRUCTURE_HPP
+#define STRUCTURE_HPP
 
 #include "vocabulary.hpp"
 

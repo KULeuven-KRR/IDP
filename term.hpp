@@ -1,11 +1,11 @@
 /************************************
-	term.h
+	term.hpp
 	this file belongs to GidL 2.0
 	(c) K.U.Leuven
 ************************************/
 
-#ifndef TERM_H
-#define TERM_H
+#ifndef TERM_HPP
+#define TERM_HPP
 
 #include "vocabulary.hpp"
 #include "visitor.hpp"

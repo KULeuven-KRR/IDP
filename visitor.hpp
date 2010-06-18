@@ -1,11 +1,11 @@
 /************************************
-	visitor.h
+	visitor.hpp
 	this file belongs to GidL 2.0
 	(c) K.U.Leuven
 ************************************/
 
-#ifndef VISITOR_H
-#define VISITOR_H
+#ifndef VISITOR_HPP
+#define VISITOR_HPP
 
 class Formula;
 class Term;

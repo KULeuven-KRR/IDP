@@ -10,9 +10,8 @@
 #include "parse.tab.hpp"
 #include "error.hpp"
 #include "options.hpp"
+#include "files.hpp"
 #include "clconst.hpp"
-
-#include "files.h"
 #include <cstdio>
 #include <iostream>
 

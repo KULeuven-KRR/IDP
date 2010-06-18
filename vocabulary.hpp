@@ -1,11 +1,11 @@
 /************************************
-	vocabulary.h
+	vocabulary.hpp
 	this file belongs to GidL 2.0
 	(c) K.U.Leuven
 ************************************/
 
-#ifndef VOCABULARY_H
-#define VOCABULARY_H
+#ifndef VOCABULARY_HPP
+#define VOCABULARY_HPP
 
 #include <string>
 #include <vector>

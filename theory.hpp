@@ -1,11 +1,11 @@
 /************************************
-	theory.h
+	theory.hpp
 	this file belongs to GidL 2.0
 	(c) K.U.Leuven
 ************************************/
 
-#ifndef THEORY_H
-#define THEORY_H
+#ifndef THEORY_HPP
+#define THEORY_HPP
 
 #include "structure.hpp"
 #include "term.hpp"

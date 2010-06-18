@@ -1,5 +1,5 @@
 /************************************
-	theory.cc
+	theory.cpp
 	this file belongs to GidL 2.0
 	(c) K.U.Leuven
 ************************************/

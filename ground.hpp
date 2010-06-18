@@ -1,11 +1,11 @@
 /************************************
-	ground.h
+	ground.hpp
 	this file belongs to GidL 2.0
 	(c) K.U.Leuven
 ************************************/
 
-#ifndef GROUND_H
-#define GROUND_H
+#ifndef GROUND_HPP
+#define GROUND_HPP
 
 #include "theory.hpp"
 

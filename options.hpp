@@ -1,11 +1,11 @@
 /************************************
-	options.h
+	options.hpp
 	this file belongs to GidL 2.0
 	(c) K.U.Leuven
 ************************************/
 
-#ifndef OPTIONS_H
-#define OPTIONS_H
+#ifndef OPTIONS_HPP
+#define OPTIONS_HPP
 
 enum WarningTypes { WT_FREE_VARS=0, WT_VARORCONST=1, WT_SORTDERIVE=2, WT_STDIN=3 };
 enum OutputFormat { OF_TXT, OF_IDP };

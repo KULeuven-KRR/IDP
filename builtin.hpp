@@ -1,11 +1,11 @@
 /************************************
-	builtin.h
+	builtin.hpp
 	this file belongs to GidL 2.0
 	(c) K.U.Leuven
 ************************************/
 
-#ifndef BUILTIN_H
-#define BUILTIN_H
+#ifndef BUILTIN_HPP
+#define BUILTIN_HPP
 
 #include "structure.hpp"
 #include "vocabulary.hpp"

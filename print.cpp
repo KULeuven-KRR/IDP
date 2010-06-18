@@ -1,13 +1,12 @@
 /************************************
-	print.cc
+	print.cpp
 	this file belongs to GidL 2.0
 	(c) K.U.Leuven
 ************************************/
 
-#include "print.h"
-#include "theory.h"
-#include "term.h"
-#include <cstdarg>
+#include "print.hpp"
+#include "theory.hpp"
+#include "term.hpp"
 
 /** Theory **/
 

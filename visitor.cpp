@@ -1,5 +1,5 @@
 /************************************
-	Visitor::visitor.cc
+	Visitor::visitor.cpp
 	this file belongs to GidL 2.0
 	(c) K.U.Leuven
 ************************************/

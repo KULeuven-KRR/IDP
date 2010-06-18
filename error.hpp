@@ -1,11 +1,11 @@
 /************************************
-	error.h
+	error.hpp
 	this file belongs to GidL 2.0
 	(c) K.U.Leuven
 ************************************/
 
-#ifndef ERROR_H
-#define ERROR_H
+#ifndef ERROR_HPP
+#define ERROR_HPP
 
 #include "namespace.hpp"
 

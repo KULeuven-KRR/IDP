@@ -1,11 +1,11 @@
 /************************************
-	execute.h
+	execute.hpp
 	this file belongs to GidL 2.0
 	(c) K.U.Leuven
 ************************************/
 
-#ifndef EXECUTE_H
-#define EXECUTE_H
+#ifndef EXECUTE_HPP
+#define EXECUTE_HPP
 
 #include "namespace.hpp"
 
