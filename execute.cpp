@@ -8,11 +8,11 @@
 #include "ground.hpp"
 #include "ecnf.hpp"
 #include "options.hpp"
-#include "files.hpp"
+#include "print.hpp"
 #include <iostream>
+#include <cstdio>
 
-extern Options options
-extern Files files
+extern Options options;
 
 void PrintTheory::execute(const vector<InfArg>& args, const string& res,Namespace*) const {
 	assert(args.size() == 1);
@@ -20,7 +20,13 @@ void PrintTheory::execute(const vector<InfArg>& args, const string& res,Namespac
 	switch(options._format) {
 		case OF_TXT: {
 			string s = (args[0]._theory)->to_string();
-			fputs(s.c_str(),files._outputfile);
+			FILE* out;
+			if(options._outputfile.empty())
+				out = stdout;
+			else
+				out = fopen(options._outputfile.c_str(),"w");
+			fputs(s.c_str(),out);
+			fclose(out);
 		} break;
 		case OF_IDP: {
 			IDPPrinter printer;

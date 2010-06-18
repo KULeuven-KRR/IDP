@@ -6,14 +6,12 @@
 
 #include "namespace.hpp"
 #include "options.hpp"
-#include "files.hpp"
 #include <iostream>
 
 /** Global namespace and options **/
 
 Namespace* Namespace::_global = new Namespace("global_namespace",0,0);
 Options options;
-Files files;
 
 bool Namespace::isGlobal() const {
 	return (this == _global);

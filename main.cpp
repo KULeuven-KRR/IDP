@@ -10,7 +10,6 @@
 #include "parse.tab.hpp"
 #include "error.hpp"
 #include "options.hpp"
-#include "files.hpp"
 #include "clconst.hpp"
 #include <cstdio>
 #include <iostream>
@@ -18,7 +17,6 @@
 extern int yyparse();
 extern FILE* yyin;
 extern Options options;
-extern Files files;
 extern map<string,CLConst*>	clconsts;
 
 extern bool		isInt(const string&);
@@ -93,7 +91,7 @@ vector<string> read_options(int argc, char* argv[]) {
 														  options._warning[n] = false;
 													  }
 													}
-		else if(str == "-o")						{ files._outputfile = fopen(argv[0],"w");
+		else if(str == "-o")						{ options._outputfile = argv[0];
 													  argc--; argv++;
 													}
 		else if(str.substr(0,9) == "--format=")		{ string fmt = str.substr(9,str.length()-9);

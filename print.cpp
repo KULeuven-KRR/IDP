@@ -178,7 +178,9 @@ void IDPPrinter::visit(VarTerm* t) {
 }
 
 void IDPPrinter::visit(FuncTerm* t) {
-	fputs(t->func()->name().c_str(),_out);
+	string fullname = t->func()->name();
+	string shortname = fullname.substr(0,fullname.find('/'));
+	fputs(shortname.c_str(),_out);
 	if(t->nrSubterms()) {
 		fputs("(",_out);
 		t->arg(0)->accept(this);
