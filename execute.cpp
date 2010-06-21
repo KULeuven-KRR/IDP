@@ -16,38 +16,21 @@ extern Options options;
 
 void PrintTheory::execute(const vector<InfArg>& args, const string& res,Namespace*) const {
 	assert(args.size() == 1);
-	// TODO
-	switch(options._format) {
-		case OF_TXT: {
-			string s = (args[0]._theory)->to_string();
-			FILE* out;
-			if(options._outputfile.empty())
-				out = stdout;
-			else
-				out = fopen(options._outputfile.c_str(),"w");
-			fputs(s.c_str(),out);
-			fclose(out);
-		} break;
-		case OF_IDP: {
-			IDPPrinter printer;
-			printer.print(args[0]._theory);
-		} break;
-	}
+	Printer* printer = Printer::create();
+	printer->print(args[0]._theory);
 }
 
 
 void PrintVocabulary::execute(const vector<InfArg>& args, const string& res,Namespace*) const {
 	assert(args.size() == 1);
-	// TODO
-	string s = (args[0]._vocabulary)->to_string();
-	cout << s;
+	Printer* printer = Printer::create();
+	printer->print(args[0]._vocabulary);
 }
 
 void PrintStructure::execute(const vector<InfArg>& args, const string& res,Namespace*) const {
 	assert(args.size() == 1);
-	// TODO
-	string s = (args[0]._structure)->to_string();
-	cout << s;
+	Printer* printer = Printer::create();
+	printer->print(args[0]._structure);
 }
 
 void PrintNamespace::execute(const vector<InfArg>& args, const string& res,Namespace*) const {

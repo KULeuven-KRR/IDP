@@ -91,7 +91,12 @@ vector<string> read_options(int argc, char* argv[]) {
 														  options._warning[n] = false;
 													  }
 													}
-		else if(str == "-o")						{ options._outputfile = argv[0];
+		else if(str == "-o")						{ FILE* test = fopen(argv[0],"w");
+													  if(!test) Error::unabletoopenfile(argv[0]);
+													  else { 
+														  fclose(test);
+														  options._outputfile = argv[0];
+													  }
 													  argc--; argv++;
 													}
 		else if(str.substr(0,9) == "--format=")		{ string fmt = str.substr(9,str.length()-9);

@@ -79,6 +79,11 @@ namespace Error {
 		cerr << "Could not open file " << s << ".\n";
 	}
 
+	void unabletoopenfile(const string& s) {
+		error();
+		cerr << "Could not open file " << s << ".\n";
+	}
+
 	/** Invalid ranges **/
 	void invalidrange(int n1, int n2, ParseInfo* pi) {
 		error(pi);

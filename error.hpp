@@ -30,6 +30,7 @@ namespace Error {
 	/** File errors **/
 	void cyclicinclude(const string&, ParseInfo* pi);
 	void unexistingfile(const string&, ParseInfo* pi);
+	void unabletoopenfile(const string&);
 
 	/** Invalid ranges **/
 	void invalidrange(int n1, int n2, ParseInfo* pi);

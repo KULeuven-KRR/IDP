@@ -8,52 +8,45 @@
 #define PRINT_HPP
 
 #include "visitor.hpp"
-#include "theory.hpp"
-#include "options.hpp"
 #include <cstdio>
-
-extern Options options;
 
 class Printer : public Visitor {
 
 	protected:
 		FILE* _out;
+		unsigned int _indent;
+		Printer(); 
+		~Printer();
 	
 	public:
-		Printer() : Visitor() {
-			if(options._outputfile.empty())
-				_out = stdout;
-			else
-				_out = fopen(options._outputfile.c_str(),"w");
-		}
+		// Factory method
+		static Printer* create();
 
-		~Printer() {
-			fclose(_out);
-		}
+		// Print methods
+		void print(Vocabulary* v);
+		void print(Theory* t);
+		void print(Structure* s);
 
-//		void print(Vocabulary* v) 	{ v->accept(this); }
-		void print(Theory* t) 		{ t->accept(this); }
-//		void print(Structure* s) 	{ s->accept(this); }
+		// Indentation
+		void indent();
+		void unindent();
+		void printtab();
+
+};
+
+class SimplePrinter : public Printer {
+
+	public:
+		void visit(Theory*);
+		void visit(Structure*);
+		void visit(Vocabulary*);
 
 };
 
 class IDPPrinter : public Printer {
 
 	public:
-		// Constructors
-//		IDPPrinter() : Printer() {
-//			_out = fopen(options._outputfile,'w');
-//		}
-
-//		IDPPrinter(Theory* t)	: Visitor() { 
-//			_out = files._outputfile;
-//			t->accept(this);
-//		}
-
-		// Print methods
-//		void print(Theory* t) { t->accept(this); }
-
-		// Theory
+		/** Theories **/
 		void visit(Theory*);
 
 		// Formulas
@@ -77,6 +70,18 @@ class IDPPrinter : public Printer {
 		// Set expressions
 		void visit(EnumSetExpr*);
 		void visit(QuantSetExpr*);
+
+		/** Structures **/
+		void visit(Structure*);
+		void visit(SortTable*);
+		void visit(PredInter*);
+		void visit(FuncInter*);
+
+		/** Vocabularies **/
+		void visit(Vocabulary*);
+		void visit(Sort*);
+		void visit(Predicate*);
+		void visit(Function*);
 
 };
 

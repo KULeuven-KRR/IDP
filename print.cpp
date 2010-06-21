@@ -6,7 +6,76 @@
 
 #include "print.hpp"
 #include "theory.hpp"
+#include "vocabulary.hpp"
+#include "structure.hpp"
 #include "term.hpp"
+#include "options.hpp"
+
+extern Options options;
+
+/**************
+    Printer
+**************/
+
+Printer::Printer() {
+	// Set indentation level to zero
+	_indent = 0;
+	// Open outputfile if given in options, use stdout otherwise
+	if(options._outputfile.empty())
+		_out = stdout;
+	else
+		_out = fopen(options._outputfile.c_str(),"a");
+}
+
+Printer::~Printer() {
+	fclose(_out);
+}
+
+Printer* Printer::create() {
+	switch(options._format) {
+		case OF_TXT:
+			return new SimplePrinter();
+		case OF_IDP:
+			return new IDPPrinter();
+		default:
+			//Error unknown format => unable to create printer
+			return NULL;
+	}
+}
+
+void Printer::print(Vocabulary* v) 	{ v->accept(this); }
+void Printer::print(Theory* t) 		{ t->accept(this); }
+void Printer::print(Structure* s) 	{ s->accept(this); }
+
+void Printer::indent() 		{ _indent++; }
+void Printer::unindent() 	{ _indent--; }
+void Printer::printtab() {
+	for(unsigned int n = 0; n < _indent; ++n)
+		fputs("  ",_out);
+}
+
+/*******************
+    SimplePrinter
+*******************/
+
+void SimplePrinter::visit(Vocabulary* v) {
+	string str = v->to_string();
+	fputs(str.c_str(),_out);
+}
+
+void SimplePrinter::visit(Theory* t) {
+	string str = t->to_string();
+	fputs(str.c_str(),_out);
+}
+
+void SimplePrinter::visit(Structure* s) {
+	string str = s->to_string();
+	fputs(str.c_str(),_out);
+}
+
+/*****************
+    IDPPrinter
+*****************/
 
 /** Theory **/
 
@@ -18,7 +87,9 @@ void IDPPrinter::visit(Theory* t) {
 			fprintf(_out," %s",t->structure()->name().c_str());
 	}
 	fprintf(_out," {\n");
+	indent();
 	for(unsigned int n = 0; n < t->nrSentences(); ++n) {
+		printtab();
 		t->sentence(n)->accept(this);
 		fprintf(_out,".\n");
 	}
@@ -28,6 +99,7 @@ void IDPPrinter::visit(Theory* t) {
 	for(unsigned int n = 0; n < t->nrFixpDefs(); ++n) {
 		t->fixpdef(n)->accept(this);
 	}
+	unindent();
 	fprintf(_out,"}\n");
 }
 
@@ -131,6 +203,7 @@ void IDPPrinter::visit(QuantForm* f) {
 /** Definitions **/
 
 void IDPPrinter::visit(Rule* r) {
+	printtab();
 	if(r->nrQvars()) {
 		fprintf(_out,"!");
 		for(unsigned int n = 0; n < r->nrQvars(); ++n) {
@@ -147,27 +220,31 @@ void IDPPrinter::visit(Rule* r) {
 }
 
 void IDPPrinter::visit(Definition* d) {
-	// What about tabs?
+	printtab();
 	fprintf(_out,"{\n");
+	indent();
 	for(unsigned int n = 0; n < d->nrRules(); ++n) {
-		fprintf(_out," ");
 		d->rule(n)->accept(this);
 		fprintf(_out,"\n");
 	}
+	unindent();
+	printtab();
 	fprintf(_out,"}\n");
 }
 
 void IDPPrinter::visit(FixpDef* d) {
-	// What about tabs?
+	printtab();
 	fprintf(_out,"%s [\n",(d->lfp() ? "LFD" : "GFD"));
+	indent();
 	for(unsigned int n = 0; n < d->nrRules(); ++n) {
-		fprintf(_out," ");
 		d->rule(n)->accept(this);
 		fprintf(_out,"\n");
 	}
 	for(unsigned int n = 0; n < d->nrDefs(); ++n) {
 		d->def(n)->accept(this);
 	}
+	unindent();
+	printtab();
 	fprintf(_out,"]\n");
 }
 
@@ -228,3 +305,79 @@ void IDPPrinter::visit(QuantSetExpr* s) {
 	s->subform(0)->accept(this); //Stef: use subf() instead?
 	fputs(" }",_out);
 }
+
+/*****************
+    Structures
+*****************/
+
+void IDPPrinter::visit(Structure* s) {
+	fprintf(_out,"#structure %s",s->name().c_str());
+	if(s->vocabulary())
+		fprintf(_out," : %s",s->vocabulary()->name().c_str());
+	fprintf(_out,"{\n");
+	indent();
+	traverse(s);
+	unindent();
+	fprintf(_out,"}\n");
+}
+
+void IDPPrinter::visit(SortTable* s) {
+	//TODO visit method for every kind of sort table?
+}
+
+void IDPPrinter::visit(PredInter* p) {
+	//TODO visit methods for UserPredTable and SortPredTable
+}
+
+void IDPPrinter::visit(FuncInter* f) {
+	//TODO visit methods for UserPredTable and SortPredTable
+}
+
+/*******************
+    Vocabularies
+*******************/
+
+void IDPPrinter::visit(Vocabulary* v) {
+	fprintf(_out,"#vocabulary %s {\n",v->name().c_str());
+	indent();
+	traverse(v);
+	unindent();
+	fprintf(_out,"}\n");
+}
+
+void IDPPrinter::visit(Sort* s) {
+	printtab();
+	fprintf(_out,"type %s",s->name().c_str());
+	if(s->parent())
+		fprintf(_out," isa %s",s->parent()->name().c_str());
+	fprintf(_out,"\n");
+}
+
+void IDPPrinter::visit(Predicate* p) {
+	printtab();
+	string shortname = p->name().substr(0,p->name().find('/'));
+	fputs(shortname.c_str(),_out);
+	if(p->arity() > 0) {
+		fprintf(_out,"(%s",p->sort(0)->name().c_str());
+		for(unsigned int n = 1; n < p->arity(); ++n)
+			fprintf(_out,",%s",p->sort(n)->name().c_str());
+		fprintf(_out,")");
+	}
+	fprintf(_out,"\n");
+}
+
+void IDPPrinter::visit(Function* f) {
+	printtab();
+	if(f->partial())
+		fprintf(_out,"partial ");
+	string shortname = f->name().substr(0,f->name().find('/'));
+	fputs(shortname.c_str(),_out);
+	if(f->arity() > 0) {
+		fprintf(_out,"(%s",f->insort(0)->name().c_str());
+		for(unsigned int n = 1; n < f->arity(); ++n)
+			fprintf(_out,",%s",f->insort(n)->name().c_str());
+		fprintf(_out,")");
+	}
+	fprintf(_out," : %s\n",f->outsort()->name().c_str());
+}
+

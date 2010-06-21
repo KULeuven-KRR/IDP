@@ -7,6 +7,7 @@
 #ifndef VOCABULARY_HPP
 #define VOCABULARY_HPP
 
+#include "visitor.hpp"
 #include <string>
 #include <vector>
 #include <map>
@@ -169,6 +170,8 @@ class Sort {
 		string			to_string()				const	{ return _name;		}
 		virtual bool	builtin()				const	{ return false;	}
 
+		//Visitor
+		void accept(Visitor*);
 };
 
 namespace SortUtils {
@@ -284,6 +287,9 @@ class Predicate : public PFSymbol {
 		// Built-in symbols 
 		virtual Predicate*		disambiguate(const vector<Sort*>&)		{ return this;	}
 
+		// Visitor
+		void accept(Visitor*);
+
 		// Debugging of GidL
 		void	inspect()	const;
 
@@ -318,6 +324,9 @@ class Function : public PFSymbol {
 
 		// Built-in symbols 
 		virtual Function*		disambiguate(const vector<Sort*>&)		{ return this;	}
+
+		// Visitor
+		void accept(Visitor*);
 
 		// Debugging of GidL
 		void	inspect()	const;
@@ -385,6 +394,9 @@ class Vocabulary {
 		Function*			func(const string&)				const;	// return the function with the given name (ending on /arity)
 		vector<Predicate*>	pred_no_arity(const string&)	const;	// return all predicates with the given name (not including the arity)
 		vector<Function*>	func_no_arity(const string&)	const;	// return all functions with the given name (not including the arity)
+
+		// Visitor
+		void accept(Visitor*);
 
 		// Debugging
 		string to_string(unsigned int spaces = 0) const;

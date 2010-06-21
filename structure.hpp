@@ -46,6 +46,9 @@ class SortTable {
 		// Cleanup
 		virtual void sortunique() { } // Sort the table and remove doubles.
 
+		// Visitor
+		void accept(Visitor*);
+
 		// Debugging
 		virtual string to_string() const = 0;
 
@@ -502,6 +505,9 @@ class PredInter {
 		bool		istrue(const vector<TypedElement>& vi)	const;
 		bool		isfalse(const vector<TypedElement>& vi)	const;
 
+		// Visitor
+		void accept(Visitor*);
+
 		// Debugging
 		string to_string(unsigned int spaces = 0) const;
 
@@ -535,6 +541,9 @@ class FuncInter {
 		virtual PredInter*	predinter()											const = 0;
 				ElementType	outtype()											const { return _outtype;	}
 		
+		// Visitor
+		void accept(Visitor*);
+
 		// Debugging
 		virtual string to_string(unsigned int spaces = 0) const = 0;
 
@@ -636,6 +645,9 @@ class Structure {
 		bool			hasInter(Sort* s)			const;	// True iff s has an interpretation
 		bool			hasInter(Predicate* p)		const;	// True iff p has an interpretation
 		bool			hasInter(Function* f)		const;	// True iff f has an interpretation
+
+		// Visitor
+		void accept(Visitor*);
 
 		// Debugging
 		string	to_string(unsigned int spaces = 0) const;

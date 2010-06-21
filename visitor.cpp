@@ -22,10 +22,14 @@ void Visitor::visit(EnumSetExpr* a)		{ traverse(a);	}
 void Visitor::visit(QuantSetExpr* a)	{ traverse(a);	}
 void Visitor::visit(Theory* t)			{ traverse(t);	}
 void Visitor::visit(SortTable*)			{ }
+//TODO visit for every kind of sort table?
 void Visitor::visit(PredInter*)			{ }
 void Visitor::visit(FuncInter*)			{ }
 void Visitor::visit(Structure* s)		{ traverse(s);	}
-
+void Visitor::visit(Sort*)				{ }
+void Visitor::visit(Predicate*)			{ }
+void Visitor::visit(Function*)			{ }
+void Visitor::visit(Vocabulary* v)		{ traverse(v); }
 
 void Visitor::traverse(Formula* f) {
 	for(unsigned int n = 0; n < f->nrSubforms(); ++n) {
@@ -98,6 +102,18 @@ void Visitor::traverse(Structure* s) {
 	}
 }
 
+void Visitor::traverse(Vocabulary* v) {
+	for(unsigned int n = 0; n < v->nrSorts(); ++n) {
+		visit(v->sort(n));
+	}
+	for(unsigned int n = 0; n < v->nrPreds(); ++n) {
+		visit(v->pred(n));
+	}
+	for(unsigned int n = 0; n < v->nrFuncs(); ++n) {
+		visit(v->func(n));
+	}
+}
+
 /******************
 	Visit terms
 ******************/
@@ -166,6 +182,41 @@ void Theory::accept(Visitor* v) {
 	v->visit(this);
 }
 
+/** Structure **/
+
+void Structure::accept(Visitor* v) {
+	v->visit(this);
+}
+
+void SortTable::accept(Visitor* v) {
+	v->visit(this);
+}
+
+void PredInter::accept(Visitor* v) {
+	v->visit(this);
+}
+
+void FuncInter::accept(Visitor* v) {
+	v->visit(this);
+}
+
+/** Vocabulary **/
+
+void Vocabulary::accept(Visitor* v) {
+	v->visit(this);
+}
+
+void Sort::accept(Visitor* v) {
+	v->visit(this);
+}
+
+void Predicate::accept(Visitor* v) {
+	v->visit(this);
+}
+
+void Function::accept(Visitor* v) {
+	v->visit(this);
+}
 
 /***********************
 	Mutating visitor
