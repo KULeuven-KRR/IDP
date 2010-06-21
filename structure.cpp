@@ -818,7 +818,7 @@ string PredInter::to_string(unsigned int spaces) const {
 	s = s + _ctpf->to_string(spaces+2);
 	if(_cf) s = s + tab + "certainly false tuples:\n";
 	else s = s + tab + "possibly true tuples:\n";
-	s = s + _ctpf->to_string(spaces+2);
+	s = s + _cfpt->to_string(spaces+2);
 	return s;
 }
 
