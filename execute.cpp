@@ -7,30 +7,30 @@
 #include "execute.hpp"
 #include "ground.hpp"
 #include "ecnf.hpp"
-#include "options.hpp"
 #include "print.hpp"
 #include <iostream>
 #include <cstdio>
-
-extern Options options;
 
 void PrintTheory::execute(const vector<InfArg>& args, const string& res,Namespace*) const {
 	assert(args.size() == 1);
 	Printer* printer = Printer::create();
 	printer->print(args[0]._theory);
+	delete(printer);
 }
-
 
 void PrintVocabulary::execute(const vector<InfArg>& args, const string& res,Namespace*) const {
 	assert(args.size() == 1);
 	Printer* printer = Printer::create();
 	printer->print(args[0]._vocabulary);
+	delete(printer);
 }
 
 void PrintStructure::execute(const vector<InfArg>& args, const string& res,Namespace*) const {
 	assert(args.size() == 1);
-	Printer* printer = Printer::create();
+	//TODO currently uses simple printer...
+	Printer* printer = new SimplePrinter();
 	printer->print(args[0]._structure);
+	delete(printer);
 }
 
 void PrintNamespace::execute(const vector<InfArg>& args, const string& res,Namespace*) const {

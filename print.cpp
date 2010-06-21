@@ -28,7 +28,8 @@ Printer::Printer() {
 }
 
 Printer::~Printer() {
-	fclose(_out);
+	if(! options._outputfile.empty())
+		fclose(_out);
 }
 
 Printer* Printer::create() {

@@ -16,11 +16,11 @@ class Printer : public Visitor {
 		FILE* _out;
 		unsigned int _indent;
 		Printer(); 
-		~Printer();
 	
 	public:
 		// Factory method
 		static Printer* create();
+		~Printer();
 
 		// Print methods
 		void print(Vocabulary* v);
