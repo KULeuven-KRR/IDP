@@ -13,6 +13,7 @@
 #include "clconst.hpp"
 #include <cstdio>
 #include <iostream>
+#include <cstdlib>
 
 extern int yyparse();
 extern FILE* yyin;

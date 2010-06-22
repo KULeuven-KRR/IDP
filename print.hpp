@@ -8,6 +8,8 @@
 #define PRINT_HPP
 
 #include "visitor.hpp"
+#include "vocabulary.hpp"
+#include "structure.hpp"
 #include <cstdio>
 
 class Printer : public Visitor {
@@ -44,6 +46,10 @@ class SimplePrinter : public Printer {
 };
 
 class IDPPrinter : public Printer {
+
+	private:
+		PFSymbol* _currsymbol;
+		void print(PredTable*);
 
 	public:
 		/** Theories **/

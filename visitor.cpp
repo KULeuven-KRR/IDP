@@ -22,7 +22,6 @@ void Visitor::visit(EnumSetExpr* a)		{ traverse(a);	}
 void Visitor::visit(QuantSetExpr* a)	{ traverse(a);	}
 void Visitor::visit(Theory* t)			{ traverse(t);	}
 void Visitor::visit(SortTable*)			{ }
-//TODO visit for every kind of sort table?
 void Visitor::visit(PredInter*)			{ }
 void Visitor::visit(FuncInter*)			{ }
 void Visitor::visit(Structure* s)		{ traverse(s);	}

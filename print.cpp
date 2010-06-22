@@ -303,7 +303,7 @@ void IDPPrinter::visit(QuantSetExpr* s) {
 			fprintf(_out,"[%s]",s->qvar(n)->sort()->name().c_str());
 	}
 	fputs(": ",_out);
-	s->subform(0)->accept(this); //Stef: use subf() instead?
+	s->subform(0)->accept(this);
 	fputs(" }",_out);
 }
 
@@ -312,26 +312,75 @@ void IDPPrinter::visit(QuantSetExpr* s) {
 *****************/
 
 void IDPPrinter::visit(Structure* s) {
+	Vocabulary* v = s->vocabulary();
 	fprintf(_out,"#structure %s",s->name().c_str());
 	if(s->vocabulary())
-		fprintf(_out," : %s",s->vocabulary()->name().c_str());
+		fprintf(_out," : %s",v->name().c_str());
 	fprintf(_out,"{\n");
 	indent();
-	traverse(s);
+	for(unsigned int n = 0; n < v->nrPreds(); ++n) {
+		_currsymbol = v->pred(n);
+		if(s->hasInter(v->pred(n)))
+			s->inter(v->pred(n))->accept(this);
+		else {
+			string fullname = v->pred(n)->name();
+			string shortname = fullname.substr(0,fullname.find('/'));
+			fprintf(_out,"%s = {}",shortname.c_str());
+		}
+	}
+	for(unsigned int n = 0; n < v->nrFuncs(); ++n) {
+		_currsymbol = v->func(n);
+		if(s->hasInter(v->func(n)))
+			s->inter(v->func(n))->accept(this);
+		else {
+			string fullname = v->func(n)->name();
+			string shortname = fullname.substr(0,fullname.find('/'));
+			printtab();
+			fprintf(_out,"%s = {}",shortname.c_str());
+		}
+	}
 	unindent();
 	fprintf(_out,"}\n");
 }
 
-void IDPPrinter::visit(SortTable* s) {
-	//TODO visit method for every kind of sort table?
+void IDPPrinter::visit(SortTable* t) {
+	for(unsigned int n = 0; n < t->size(); ++n) {
+		string s = ElementUtil::ElementToString(t->element(n),t->type());
+		fputs(s.c_str(),_out);
+		if(n < t->size()-1)
+			fprintf(_out,";");
+	}
+}
+
+void IDPPrinter::print(PredTable* t) {
+	for(unsigned int r = 0; r < t->size(); ++r) {
+		for(unsigned int c = 0; c < t->arity(); ++c) {
+			string s = ElementUtil::ElementToString(t->element(r,c),t->type(c));
+			fputs(s.c_str(),_out);
+			if(c < t->arity()-1)
+				fprintf(_out,",");
+		}
+		if(r < t->size()-1)
+			fprintf(_out,"; ");
+	}
 }
 
 void IDPPrinter::visit(PredInter* p) {
-	//TODO visit methods for UserPredTable and SortPredTable
+	string fullname = _currsymbol->name();
+	string shortname = fullname.substr(0,fullname.find('/'));
+	printtab();
+	fprintf(_out,"%s[%s] = { ",shortname.c_str(),(p->ct() ? "ct" : "pf"));
+	print(p->ctpf());
+	fprintf(_out," }\n");
+	printtab();
+	fprintf(_out,"%s[%s] = { ",shortname.c_str(),(p->cf() ? "cf" : "pt"));
+	print(p->cfpt());
+	fprintf(_out," }\n");
 }
 
 void IDPPrinter::visit(FuncInter* f) {
-	//TODO visit methods for UserPredTable and SortPredTable
+	//TODO
+	f->predinter()->accept(this);	
 }
 
 /*******************

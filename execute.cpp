@@ -27,8 +27,7 @@ void PrintVocabulary::execute(const vector<InfArg>& args, const string& res,Name
 
 void PrintStructure::execute(const vector<InfArg>& args, const string& res,Namespace*) const {
 	assert(args.size() == 1);
-	//TODO currently uses simple printer...
-	Printer* printer = new SimplePrinter();
+	Printer* printer = Printer::create();
 	printer->print(args[0]._structure);
 	delete(printer);
 }
