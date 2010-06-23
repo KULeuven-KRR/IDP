@@ -22,7 +22,7 @@ class Printer : public Visitor {
 	public:
 		// Factory method
 		static Printer* create();
-		~Printer();
+		virtual ~Printer();
 
 		// Print methods
 		void print(Vocabulary* v);
@@ -48,8 +48,10 @@ class SimplePrinter : public Printer {
 class IDPPrinter : public Printer {
 
 	private:
-		PFSymbol* _currsymbol;
+		PFSymbol* 	_currsymbol;
+		Structure* 	_currstructure;
 		void print(PredTable*);
+		void printInter(const char*,const char*,PredTable*,PredTable*);
 
 	public:
 		/** Theories **/

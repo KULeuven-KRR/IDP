@@ -861,19 +861,45 @@ string UserFuncInter::to_string(unsigned int spaces) const {
 
 namespace TableUtils {
 
-PredInter* leastPredInter(const vector<ElementType>& t) {
-	UserPredTable* t1 = new UserPredTable(t);
-	UserPredTable* t2 = new UserPredTable(t);
-	return new PredInter(t1,t2,true,true);
-}
+	PredInter* leastPredInter(const vector<ElementType>& t) {
+		UserPredTable* t1 = new UserPredTable(t);
+		UserPredTable* t2 = new UserPredTable(t);
+		return new PredInter(t1,t2,true,true);
+	}
 
-FuncInter* leastFuncInter(const vector<ElementType>& t) {
-	PredInter* pt = leastPredInter(t);
-	vector<ElementType> in = t;
-	ElementType out = in.back();
-	in.pop_back();
-	return new UserFuncInter(in,out,pt);
-}
+	FuncInter* leastFuncInter(const vector<ElementType>& t) {
+		PredInter* pt = leastPredInter(t);
+		vector<ElementType> in = t;
+		ElementType out = in.back();
+		in.pop_back();
+		return new UserFuncInter(in,out,pt);
+	}
+
+	PredTable* intersection(PredTable* pt1,PredTable* pt2) {
+		// this function may only be used in certain cases!
+		assert(pt1->arity() == pt2->arity());
+		assert(pt1->types() == pt2->types());
+		assert(pt1->finite());
+		UserPredTable* upt = new UserPredTable(pt1->types());
+		// add tuples from pt1 that are also in pt2
+		for(unsigned int n = 0; n < pt1->size(); ++n)
+			if(pt2->contains(pt1->tuple(n)))
+				upt->addRow(pt1->tuple(n),pt1->types());
+		return upt;
+	}
+
+	PredTable* difference(PredTable* pt1,PredTable* pt2) {
+		// this function may only be used in certain cases!
+		assert(pt1->arity() == pt2->arity());
+		assert(pt1->types() == pt2->types());
+		assert(pt1->finite());
+		UserPredTable* upt = new UserPredTable(pt1->types());
+		// add tuples from pt1 that are not in pt2
+		for(unsigned int n = 0; n < pt1->size(); ++n)
+			if(!pt2->contains(pt1->tuple(n)))
+				upt->addRow(pt1->tuple(n),pt1->types());
+		return upt;
+	}
 
 }
 

@@ -369,6 +369,7 @@ class PredTable {
 typedef vector<vector<Element> > VVE;
 
 /** Finite tables **/
+
 class FinitePredTable : public PredTable {
 
 	public:
@@ -397,6 +398,7 @@ class FinitePredTable : public PredTable {
 };
 
 /** Tables where all tuples are enumerated **/
+
 class UserPredTable : public FinitePredTable {
 	
 	private:
@@ -423,12 +425,14 @@ class UserPredTable : public FinitePredTable {
 		void				changeElType(unsigned int,ElementType);
 		vector<Element>&	operator[](unsigned int n)				{ return _table[n];	}
 
+		// Iterators
+		VVE::iterator		begin()									{ return _table.begin();	}
+		VVE::iterator		end()									{ return _table.end();		}
+
 		// Inspectors
 		unsigned int			size()									const { return _table.size();	}
 		bool					empty()									const { return _table.empty();	}
 		bool					contains(const vector<Element>&)		const;
-		VVE::const_iterator		begin()									const { return _table.begin();	}
-		VVE::const_iterator		end()									const { return _table.end();	}
 		const vector<Element>&	operator[](unsigned int n)				const { return _table[n];		}
 		vector<Element>			tuple(unsigned int n)					const { return _table[n];		}
 		Element					element(unsigned int r,unsigned int c)	const { return _table[r][c];	}
@@ -536,10 +540,10 @@ class FuncInter {
 		virtual void sortunique() { }
 
 		// Inspectors
-		virtual const		Element& operator[](const vector<Element>& vi)		const = 0;
-		virtual const		Element& operator[](const vector<TypedElement>& vi)	const = 0;
-		virtual PredInter*	predinter()											const = 0;
-				ElementType	outtype()											const { return _outtype;	}
+		virtual const Element& 	operator[](const vector<Element>& vi)			const = 0;
+		virtual const Element& 	operator[](const vector<TypedElement>& vi)		const = 0;
+		virtual PredInter*		predinter()										const = 0;
+				ElementType		outtype()										const { return _outtype;	}
 		
 		// Visitor
 		void accept(Visitor*);
@@ -591,6 +595,8 @@ class UserFuncInter : public FuncInter {
 namespace TableUtils {
 	PredInter*	leastPredInter(unsigned int n);	// construct a new, least precise predicate interpretation with arity n
 	FuncInter*	leastFuncInter(unsigned int n);	// construct a new, least precise function interpretation with arity n
+	PredTable*	intersection(PredTable*,PredTable*);
+	PredTable*	difference(PredTable*,PredTable*);
 }
 
 /*****************

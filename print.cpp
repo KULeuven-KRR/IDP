@@ -39,8 +39,9 @@ Printer* Printer::create() {
 		case OF_IDP:
 			return new IDPPrinter();
 		default:
-			//Error unknown format => unable to create printer
-			return NULL;
+			//Error unknown format
+			//return new SimplePrinter() ??
+			assert(false);
 	}
 }
 
@@ -312,6 +313,7 @@ void IDPPrinter::visit(QuantSetExpr* s) {
 *****************/
 
 void IDPPrinter::visit(Structure* s) {
+	_currstructure = s;
 	Vocabulary* v = s->vocabulary();
 	fprintf(_out,"#structure %s",s->name().c_str());
 	if(s->vocabulary())
@@ -322,22 +324,11 @@ void IDPPrinter::visit(Structure* s) {
 		_currsymbol = v->pred(n);
 		if(s->hasInter(v->pred(n)))
 			s->inter(v->pred(n))->accept(this);
-		else {
-			string fullname = v->pred(n)->name();
-			string shortname = fullname.substr(0,fullname.find('/'));
-			fprintf(_out,"%s = {}",shortname.c_str());
-		}
 	}
 	for(unsigned int n = 0; n < v->nrFuncs(); ++n) {
 		_currsymbol = v->func(n);
 		if(s->hasInter(v->func(n)))
 			s->inter(v->func(n))->accept(this);
-		else {
-			string fullname = v->func(n)->name();
-			string shortname = fullname.substr(0,fullname.find('/'));
-			printtab();
-			fprintf(_out,"%s = {}",shortname.c_str());
-		}
 	}
 	unindent();
 	fprintf(_out,"}\n");
@@ -358,28 +349,80 @@ void IDPPrinter::print(PredTable* t) {
 			string s = ElementUtil::ElementToString(t->element(r,c),t->type(c));
 			fputs(s.c_str(),_out);
 			if(c < t->arity()-1)
-				fprintf(_out,",");
+				fprintf(_out,(_currsymbol->ispred() ? "," : "->"));
 		}
 		if(r < t->size()-1)
 			fprintf(_out,"; ");
 	}
 }
 
-void IDPPrinter::visit(PredInter* p) {
+void IDPPrinter::printInter(const char* pt1name,const char* pt2name,PredTable* pt1,PredTable* pt2) {
 	string fullname = _currsymbol->name();
 	string shortname = fullname.substr(0,fullname.find('/'));
 	printtab();
-	fprintf(_out,"%s[%s] = { ",shortname.c_str(),(p->ct() ? "ct" : "pf"));
-	print(p->ctpf());
+	fprintf(_out,"%s[%s] = { ",shortname.c_str(),pt1name);
+	if(pt1) print(pt1);
 	fprintf(_out," }\n");
 	printtab();
-	fprintf(_out,"%s[%s] = { ",shortname.c_str(),(p->cf() ? "cf" : "pt"));
-	print(p->cfpt());
+	fprintf(_out,"%s[%s] = { ",shortname.c_str(),pt2name);
+	if(pt2) print(pt2);
 	fprintf(_out," }\n");
 }
 
+void IDPPrinter::visit(PredInter* p) {
+	string fullname = _currsymbol->name();
+	string shortname = fullname.substr(0,fullname.find('/'));
+	if(_currsymbol->nrSorts() == 0) { // proposition
+		printtab();
+		fprintf(_out,"%s = %s\n",shortname.c_str(),(p->ctpf()->empty() ? "false" : "true"));
+	}
+	else if(!_currsymbol->ispred() && _currsymbol->nrSorts() == 1) { // constant
+		printtab();
+		fprintf(_out,"%s = ",shortname.c_str());
+		print(p->ctpf());
+		fprintf(_out,"\n");
+	}
+	else if(p->ctpf() == p->cfpt()) {
+		if(p->ct() && p->cf()) { // impossible
+			assert(false);
+		}
+		else if(p->ct()) { // p = ctpf
+			printtab();
+			fprintf(_out,"%s = { ",shortname.c_str());
+			print(p->ctpf());
+			fprintf(_out," }\n");
+		}
+		else if(p->cf()) { // p[cf] = cfpt and p[u] = comp(cfpt)
+			PredTable* u = StructUtils::complement(p->cfpt(),_currsymbol->sorts(),_currstructure);
+			printInter("cf","u",p->cfpt(),u);
+			delete(u);
+		}
+		else { // p[ct] = {} and p[cf] = {}
+			printInter("ct","cf",NULL,NULL);
+		}
+	}
+	else {
+		if(p->ct() && p->cf()) { // p[ct] = { ctpf } and p[cf] = { cfpt }
+			printInter("ct","cf",p->ctpf(),p->cfpt());
+		}
+		else if(p->ct()) { // p[ct] = { ctpf } and p[u] = { cfpt \ ctpf }
+			PredTable* u = TableUtils::difference(p->cfpt(),p->ctpf());
+			printInter("ct","u",p->ctpf(),u);
+			delete(u);
+		}
+		else if(p->cf()) { // p[cf] = { cfpt } and p[u] = { ctpf \ cfpt }
+			PredTable* u = TableUtils::difference(p->ctpf(),p->cfpt());
+			printInter("cf","u",p->cfpt(),u);
+			delete(u);
+		}
+		else { // p[ct] = {} and p[cf] = {}
+			printInter("ct","cf",NULL,NULL);
+		}
+	}
+}
+
 void IDPPrinter::visit(FuncInter* f) {
-	//TODO
+	//TODO Currently, function interpretation is handled as predicate interpretation
 	f->predinter()->accept(this);	
 }
 
