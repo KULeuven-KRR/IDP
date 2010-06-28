@@ -7,7 +7,7 @@
 #ifndef ECNF_H
 #define ECNF_H
 
-#include "term.hpp"
+#include "theory.hpp"
 
 struct GroundFeatures {
 	bool	_containsDefinitions;
@@ -170,8 +170,8 @@ class EcnfTheory : public AbstractTheory {
 		unsigned int	nrFixpDefs()	const { return 0;	/* TODO */							}
 
 		// Visitor
-		void			accept(Visitor* v)			{ v->visit(this);	}
-		AbstractTheory*	accept(MutatingVisitor* v)	{ v->visit(this);	}
+		void			accept(Visitor* v)			{ v->visit(this);			}
+		AbstractTheory*	accept(MutatingVisitor* v)	{ return v->visit(this);	}
 
 		// Debugging
 		string to_string() const	{ return ""; /* TODO */ }

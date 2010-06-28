@@ -68,8 +68,14 @@ GroundingInference::GroundingInference() {
 void GroundingInference::execute(const vector<InfArg>& args, const string& res,Namespace*) const {
 	assert(args.size() == 2);
 	// TODO: remove the dynamic casts!
-	NaiveGrounder ng(dynamic_cast<Structure*>(args[1]._structure));	
-	Theory* gr = ng.ground(dynamic_cast<Theory*>(args[0]._theory));
+	Theory* t = dynamic_cast<Theory*>(args[0]._theory);
+	Structure* s = dynamic_cast<Structure*>(args[1]._structure);
+	TheoryUtils::move_functions(t);
+	NaiveGrounder ng(s);	
+	Theory* gr = ng.ground(t);
+	TheoryUtils::remove_eqchains(gr);
+	TheoryUtils::simplify(gr,s);
+	TheoryUtils::tseitin(gr);
 	NaiveTranslator* nt = new NaiveTranslator();
 	EcnfTheory* ecnfgr = TheoryUtils::convert_to_ecnf(gr,nt);
 	outputECNF* printer = new outputECNF(stdout); 
@@ -104,4 +110,31 @@ void StructToTheory::execute(const vector<InfArg>& args, const string& res,Names
 	Theory* t = StructUtils::convert_to_theory(dynamic_cast<Structure*>(args[0]._structure));
 	t->name(res);
 	cn->add(t);
+}
+
+void MoveQuantifiers::execute(const vector<InfArg>& args, const string& res,Namespace* cn) const {
+	TheoryUtils::move_quantifiers(args[0]._theory);
+}
+
+void ApplyTseitin::execute(const vector<InfArg>& args, const string& res,Namespace* cn) const {
+	// TODO: remove the dynamic casts!
+	TheoryUtils::tseitin(dynamic_cast<Theory*>(args[0]._theory));
+}
+
+GroundSimplify::GroundSimplify() {
+	_intypes = vector<InfArgType>(2);
+	_intypes[0] = IAT_THEORY;
+	_intypes[1] = IAT_STRUCTURE;
+	_outtype = IAT_VOID;
+	_description = "Replace ground atoms in the theory by their truth value in the structure";
+}
+
+void GroundSimplify::execute(const vector<InfArg>& args, const string& res,Namespace* cn) const {
+	// TODO: remove the dynamic casts!
+	TheoryUtils::simplify(dynamic_cast<Theory*>(args[0]._theory),dynamic_cast<Structure*>(args[1]._structure));
+}
+
+void MoveFunctions::execute(const vector<InfArg>& args, const string& res,Namespace* cn) const {
+	// TODO: remove the dynamic casts!
+	TheoryUtils::move_functions(dynamic_cast<Theory*>(args[0]._theory));
 }

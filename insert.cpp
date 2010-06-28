@@ -693,6 +693,10 @@ namespace Insert {
 		_inferences["ground"].push_back(new GroundingInference());
 		_inferences["ground"].push_back(new GroundingWithResult());
 		_inferences["convert_to_theory"].push_back(new StructToTheory());
+		_inferences["move_quantifiers"].push_back(new MoveQuantifiers());
+		_inferences["tseitin"].push_back(new ApplyTseitin());
+		_inferences["simplify"].push_back(new GroundSimplify());
+		_inferences["move_functions"].push_back(new MoveFunctions());
 	}
 
 	void cleanup() {
@@ -1303,7 +1307,6 @@ namespace Insert {
 										_unknownpredtables[evp[0]] = upt;
 									else {
 										Error::multunknpredinter(evp[0]->name(),_emptythreeinters[n]._pi);
-										delete(_emptythreeinters[n]._pi);
 									}
 									break;
 								default:
@@ -1325,13 +1328,13 @@ namespace Insert {
 										_unknownfunctables[evf[0]] = upt;
 									else {
 										Error::multunknfuncinter(evf[0]->name(),_emptythreeinters[n]._pi);
-										delete(_emptythreeinters[n]._pi);
 									}
 									break;
 								default:
 									assert(false);
 							}
 						}
+						delete(_emptythreeinters[n]._pi);
 					}
 					else {
 						tempthree.push_back(_emptythreeinters[n]);

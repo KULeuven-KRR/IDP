@@ -31,11 +31,17 @@ class FuncInter;
 class Structure;
 class EcnfTheory;
 
+/*
+ *	class Visitor
+ *		This class implements a visitor pattern for namespaces, theories, etc.
+ *		By default, if 'visit' is called on an object A, then A is traversed depth-first, from left to right.
+ */
 class Visitor {
 	public:
 		Visitor() { }
 		virtual ~Visitor() { }
 
+		// Traverse the parse tree
 		void traverse(Formula* f);
 		void traverse(Term* t);
 		void traverse(Rule* r);
@@ -83,6 +89,13 @@ class Visitor {
 
 };
 
+/*
+ *	class MutatingVisitor
+ *		This class implements a visitor pattern for namespaces, theories, etc. that changes the object it visits.
+ *		By default, if 'visit' is called on an object A, then A is traversed depth-first, from left to right.
+ *		During the traversal, a call of 'visit' to a direct child B of A gives a returnvalue B'. 
+ *		If B' is equal to B, nothing happens. Else, B' becomes a child of A instead of B, and B is deleted non-recursively. 
+ */
 class MutatingVisitor {
 	
 	public:
@@ -100,7 +113,7 @@ class MutatingVisitor {
 		virtual Formula* visit(QuantForm* a);	
 
 		// Definitions 
-		virtual Rule* visit(Rule* a);		// NOTE: the head of a rule is not visited by this default implementation!
+		virtual Rule* visit(Rule* a);		// NOTE: the head of a rule is not visited by the default implementation!
 		virtual Definition* visit(Definition* a);	
 		virtual FixpDef* visit(FixpDef* a);		
 

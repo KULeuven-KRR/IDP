@@ -266,6 +266,7 @@ Function* OverloadedFunction::disambiguate(const vector<Sort*>& vs) {
 	if(it != _children.end()) return it->second;
 	else {
 		BuiltInFunction* bif = new BuiltInFunction(_name,vsd,_inter);
+		bif->partial(_partial);
 		_children[vsd] = bif;
 		return bif;
 	}
@@ -684,6 +685,7 @@ class PlusFuncInter : public FuncInter {
 		mutable map<double,double*>	_memory;
 	public:
 		PlusFuncInter(ElementType t);
+		~PlusFuncInter() { delete(_predinter);	}
 
 		Element operator[](const vector<Element>& vi)		const;
 		PredInter*	predinter()								const { return _predinter;	}
@@ -766,6 +768,7 @@ class MinusFuncInter : public FuncInter {
 		mutable map<double,double*>	_memory;
 	public:
 		MinusFuncInter(ElementType t);
+		~MinusFuncInter() { delete(_predinter);	}
 
 		Element operator[](const vector<Element>& vi)		const;
 		PredInter*	predinter()								const { return _predinter;	}
@@ -848,6 +851,7 @@ class TimesFuncInter : public FuncInter {
 		mutable map<double,double*>	_memory;
 	public:
 		TimesFuncInter(ElementType t);
+		~TimesFuncInter() { delete(_predinter);	}
 
 		Element operator[](const vector<Element>& vi)		const;
 		PredInter*	predinter()								const { return _predinter;	}
@@ -932,6 +936,7 @@ class DivFuncInter : public FuncInter {
 		mutable map<double,double*>	_memory;
 	public:
 		DivFuncInter(ElementType t);
+		~DivFuncInter() { delete(_predinter);	}
 
 		Element operator[](const vector<Element>& vi)		const;
 		PredInter*	predinter()								const { return _predinter;	}
@@ -978,6 +983,66 @@ FuncInter* divfuncinter(const vector<SortTable*>& vs) {
 	return new DivFuncInter(vs[0]->type());
 }
 
+/** Modulo **/
+
+class ModPredTable : public PredTable {
+	public:
+		ModPredTable() : PredTable(vector<ElementType>(3,ELINT)) { }
+		bool			finite()								const { return false;				}
+		unsigned int	size()									const { assert(false); return 0;	}
+		bool			empty()									const { return false;				}
+		vector<Element>	tuple(unsigned int n)					const { assert(false); return vector<Element>(0);	}
+		Element			element(unsigned int r, unsigned int c)	const { assert(false); Element e; return e;			}
+		bool			contains(const vector<Element>&)		const;
+		string			to_string(unsigned int spaces = 0)		const;
+};
+
+bool ModPredTable::contains(const vector<Element>& ve) const {
+	if(ve[1]._int == 0) return false;
+	else return (ve[0]._int % ve[1]._int == ve[2]._int);
+}
+
+string ModPredTable::to_string(unsigned int spaces) const {
+	string s = tabstring(spaces);
+	return s + "%/3";
+}
+
+class ModFuncInter : public FuncInter {
+	private: 
+		PredInter*			_predinter;
+	public:
+		ModFuncInter();
+		~ModFuncInter() { delete(_predinter);	}
+
+		Element operator[](const vector<Element>& vi)		const;
+		PredInter*	predinter()								const { return _predinter;	}
+		string to_string(unsigned int spaces = 0)			const;
+};
+
+ModFuncInter::ModFuncInter() : FuncInter(vector<ElementType>(2,ELINT),ELINT) {
+	ModPredTable* ppt = new ModPredTable();
+	_predinter = new PredInter(ppt,true);
+}
+
+Element ModFuncInter::operator[](const vector<Element>& vi) const {
+	if(vi[1]._int == 0) return ElementUtil::nonexist(ELINT);
+	else {
+		Element e;
+		e._int = vi[0]._int % vi[1]._int;
+		return e;
+	}
+}
+
+string ModFuncInter::to_string(unsigned int spaces) const {
+	string s = tabstring(spaces);
+	return s + "%/2";
+}
+
+FuncInter* modfuncinter(const vector<SortTable*>& vs) {
+	return new ModFuncInter();
+}
+
+
 /** Exponentiation **/
 
 class ExpPredTable : public PredTable {
@@ -1011,6 +1076,7 @@ class ExpFuncInter : public FuncInter {
 		mutable map<double,double*>	_memory;
 	public:
 		ExpFuncInter(const vector<ElementType>&,ElementType);
+		~ExpFuncInter() { delete(_predinter);	}
 
 		Element operator[](const vector<Element>& vi)		const;
 		PredInter*	predinter()								const { return _predinter;	}
@@ -1088,6 +1154,7 @@ class AbsFuncInter : public FuncInter {
 		mutable map<double,double*>	_memory;
 	public:
 		AbsFuncInter(ElementType t);
+		~AbsFuncInter() { delete(_predinter);	}
 
 		Element operator[](const vector<Element>& vi)		const;
 		PredInter*	predinter()								const { return _predinter;	}
@@ -1170,6 +1237,7 @@ class UMinFuncInter : public FuncInter {
 		mutable map<double,double*>	_memory;
 	public:
 		UMinFuncInter(ElementType t);
+		~UMinFuncInter() { delete(_predinter);	}
 
 		Element operator[](const vector<Element>& vi)		const;
 		PredInter*	predinter()								const { return _predinter;	}
@@ -1271,6 +1339,7 @@ namespace Builtin {
 	OverloadedFunction* _uminusfunc;		// -/1
 	OverloadedFunction* _minfunc;			// MIN/0
 	OverloadedFunction* _maxfunc;			// MAX/0
+	BuiltInFunction*	_modfunc;			// %/2
 
 	/** Built-in symbol lists **/
 	map<string,Sort*>		_builtinsorts;
@@ -1352,6 +1421,7 @@ namespace Builtin {
 		_minusfunc	= new OverloadedFunction("-/2",2,sd,&minusfuncinter);
 		_timesfunc	= new OverloadedFunction("*/2",2,sd,&timesfuncinter);
 		_divfunc	= new OverloadedFunction("//2",2,sd,&divfuncinter);
+		_divfunc->partial(true);
 		_absfunc	= new OverloadedFunction("abs/1",1,sd,&absfuncinter);
 		_uminusfunc	= new OverloadedFunction("-/1",1,sd,&uminfuncinter);
 		sd = &overloaded_function_deriver2;
@@ -1359,6 +1429,9 @@ namespace Builtin {
 		_maxfunc	= new OverloadedFunction("MAX/0",0,sd,&maximumfuncinter);
 		sd = &overloaded_function_deriver3;
 		_expfunc	= new OverloadedFunction("^/2",2,sd,&expfuncinter);
+		vector<Sort*> modsorts(3,_intsort);
+		_modfunc	= new BuiltInFunction("%/2",modsorts,&modfuncinter);
+		_modfunc->partial(true);
 
 		_builtinfuncs["+/2"]	= _plusfunc;
 		_builtinfuncs["-/2"]	= _minusfunc;
@@ -1369,17 +1442,29 @@ namespace Builtin {
 		_builtinfuncs["-/1"]	= _uminusfunc;
 		_builtinfuncs["MIN/0"]	= _minfunc;
 		_builtinfuncs["MAX/0"]	= _maxfunc;
+		_builtinfuncs["%/2"]	= _modfunc;
 
 	}
 
 	// Destruction
 	void deleteAll() {
+		for(map<Predicate*,map<vector<SortTable*>,PredInter*> >::iterator it = _predinters.begin(); it != _predinters.end(); ++it) {
+			for(map<vector<SortTable*>,PredInter*>::iterator jt = (it->second).begin(); jt != (it->second).end(); ++jt) {
+				delete(jt->second);
+			}
+		}
+		for(map<Function*,map<vector<SortTable*>,FuncInter*> >::iterator it = _funcinters.begin(); it != _funcinters.end(); ++it) {
+			for(map<vector<SortTable*>,FuncInter*>::iterator jt = (it->second).begin(); jt != (it->second).end(); ++jt) {
+				delete(jt->second);
+			}
+		}
 		for(map<string,Sort*>::iterator it = _builtinsorts.begin(); it != _builtinsorts.end(); ++it) 
 			delete(it->second);
 		for(map<string,Predicate*>::iterator it = _builtinpreds.begin(); it != _builtinpreds.end(); ++it) 
 			delete(it->second);
 		for(map<string,Function*>::iterator it = _builtinfuncs.begin(); it != _builtinfuncs.end(); ++it) 
 			delete(it->second);
+
 	}
 
 	// Structure

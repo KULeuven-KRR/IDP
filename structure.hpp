@@ -8,6 +8,7 @@
 #define STRUCTURE_H
 
 #include "vocabulary.hpp"
+#include "visitor.hpp"
 
 /******************************************
 	Domains (interpretations for sorts)
@@ -609,7 +610,7 @@ class AbstractStructure {
 		AbstractStructure(string name, ParseInfo* pi) : _name(name), _pi(pi), _vocabulary(0) { }
 
 		// Destructor
-		~AbstractStructure() { if(_pi) delete(_pi);	}
+		virtual ~AbstractStructure() { if(_pi) delete(_pi);	}
 
 		// Mutators
 		virtual void	vocabulary(Vocabulary* v) = 0;			// set the vocabulary

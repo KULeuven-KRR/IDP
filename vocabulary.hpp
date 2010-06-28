@@ -13,12 +13,14 @@
 #include <cassert>
 using namespace std;
 
-/*********************
-	Argument types
-*********************/
+/*******************************************
+	Argument types for inference methods
+*******************************************/
 
+// The types are: void, theory, structure, vocabulary and namespace
 enum InfArgType { IAT_VOID, IAT_THEORY, IAT_STRUCTURE, IAT_VOCABULARY, IAT_NAMESPACE };
 
+// Convert a InfArgType to a string (e.g., IAT_VOID converts to "void")
 namespace IATUtils { 
 	string to_string(InfArgType);
 }
@@ -27,13 +29,23 @@ namespace IATUtils {
 	Parse location of parsed objects	
 ***************************************/
 
+/*
+ *		A ParseInfo contains a line number, a column number and a file. 
+ *
+ *		Almost every object that can be written by a user has a pointer to a ParseInfo object. 
+ *		The ParseInfo stores where the object was parsed. This is used for producing precise error and warning messages.
+ *		Objects that are not parsed (e.g., internally created variables) have a null-pointer as ParseInfo.
+ *
+ */
 class ParseInfo {
 
 	private:
 
 		int			_line;		// line number where the object is declared
 		int			_col;		// column number where the object is declared
-		string*		_file;		// file name where the object is declared	
+		string*		_file;		// file name where the object is declared
+								// NOTE: different ParseInfo objects may point to the same string. Do not call delete(_file) when
+								// deleting a ParseInfo object.
 	
 	public:
 
@@ -57,10 +69,16 @@ class ParseInfo {
 	Domain elements
 **********************/
 
-// The three different types of domain elements
-//		ELINT: an integer
-//		ELDOUBLE: a floating point number
-//		ELSTRING: a string (characters are strings of length 1)
+/*
+ * The three different types of domain elements 
+ *		ELINT: an integer 
+ *		ELDOUBLE: a floating point number 
+ *		ELSTRING: a string (characters are strings of length 1)
+ *
+ *		These types form a hierarchy: ints are also doubles, doubles are also strings
+ *
+ */
+
 enum ElementType { ELINT, ELDOUBLE, ELSTRING };
 
 // A single domain element
@@ -70,13 +88,13 @@ union Element {
 	string*	_string;
 };
 
-// A domain element and its type
+// A pair of a domain element and its type
 struct TypedElement{
 	Element		_element;
 	ElementType	_type;
 };
 
-// Class that implements the relation 'less-than-or-equal' on tuples of domain elements
+// Class that implements the relation 'less-than-or-equal' on tuples of domain elements with the same types
 class ElementWeakOrdering {
 	
 	private:
@@ -89,7 +107,7 @@ class ElementWeakOrdering {
 		void changeType(unsigned int n, ElementType t) { _types[n] = t;	}
 };
 
-// Class that implements the relation 'equal' on tuples of domain elements
+// Class that implements the relation 'equal' on tuples of domain elements with the same types
 class ElementEquality {
 
 	private:
@@ -103,23 +121,31 @@ class ElementEquality {
 
 };
 
+// Usefull functions on domain elements
 namespace ElementUtil {
 	
+	// Return the least precise elementtype of the two given types
 	ElementType	resolve(ElementType,ElementType);
 
-	string		ElementToString(Element,ElementType);	// Convert a domain element to a string
+	// Convert a domain element to a string
+	string		ElementToString(Element,ElementType);
 	string		ElementToString(TypedElement);
 
-	Element&	nonexist(ElementType);					// Return the non-existing domain element (used for partial functions)
+	// Return the non-existing domain element (used for partial functions)
+	Element&	nonexist(ElementType);				
 
-	bool		exists(Element,ElementType);			// Checks if the element exists
+	// Checks if the element exists
+	bool		exists(Element,ElementType);	
 	bool		exists(TypedElement);					
 
-	Element		convert(TypedElement,ElementType);			// Convert an element from one type to another
-	Element		convert(Element,ElementType,ElementType);
+	// Convert an element from one type to another
+	Element		convert(TypedElement,ElementType newtype);		
+	Element		convert(Element,ElementType oldtype,ElementType newtype);
 
-	Element		clone(Element,ElementType);		// Clone an element (creates a new pointer in case of doubles and strings)
+	// Clone an element (creates a new pointer in case of doubles and strings)
+	Element		clone(Element,ElementType);	
 	Element		clone(TypedElement);
+
 }
 
 
@@ -137,8 +163,8 @@ class Sort {
 		string			_name;		// name of the sort
 		Sort*			_parent;	// parent sort (equal to 0, if this is a base sort)
 		Sort*			_base;		// base sort 
-		vector<Sort*>	_children;	// the children of the sort
-		unsigned int	_depth;		// depth of this sort in the sort hierarchy
+		vector<Sort*>	_children;	// the children of the sort in the sort hierarchy 
+		unsigned int	_depth;		// depth of this sort in the sort hierarchy (0 for base sorts)
 		Predicate*		_pred;		// the predicate that corresponds to the sort
 		ParseInfo*		_pi;		// the place where the sort was declared (0 for non user-defined sorts)
 
@@ -177,7 +203,7 @@ class Sort {
 namespace SortUtils {
 
 	/*
-	 * return the common ancestor with maximum depth of the sort and s. 
+	 * return the common ancestor with maximum depth of the given sorts. 
 	 * Return 0 if such an ancestor does not exist.
 	 */ 
 	Sort* resolve(Sort* s1, Sort* s2);
@@ -194,7 +220,7 @@ class Variable {
 		string		_name;	// name of the variable
 		Sort*		_sort;	// sort of the variable (0 if the sort is not derived)
 		static int	_nvnr;	// used to create unique new names for internal variables
-		ParseInfo*	_pi;	// the place where the variable was declared (0 for non user-defined variables)
+		ParseInfo*	_pi;	// the place where the variable was quantified (0 for non user-defined variables)
 
 	public:
 
@@ -204,7 +230,7 @@ class Variable {
 
 		// Destructor
 		~Variable() { if(_pi) delete(_pi);	}	// NOTE: deleting variables creates dangling pointers
-										// Only delete a variable when deleting its quantifier!
+												// Only delete a variable when deleting its quantifier!
 
 		// Mutators
 		void	sort(Sort* s)	{ _sort = s; }
@@ -263,22 +289,27 @@ class PFSymbol {
 		// Built-in symbols 
 		virtual bool			builtin()			const				{ return false;	}	// true iff the symbol is built-in
 		virtual bool			overloaded()		const				{ return false;	}	// true iff the symbol is overloaded
-		virtual PFSymbol*		disambiguate(const vector<Sort*>&)		{ return this;	}
+		virtual PFSymbol*		disambiguate(const vector<Sort*>&)		{ return this;	}	// this method tries to disambiguate 
+																							// overloaded symbols. See builtin.cpp
+																							// for more information
+																						
 
 };
 
 
-/** Predicates **/
+/** Predicate symbols **/
 
 class Predicate : public PFSymbol {
 
 	private:
+		static int	_npnr;	// used to create unique new names for internal predicates
 
 	public:
 
 		// Constructors
 		Predicate(const string& name,const vector<Sort*>& sorts, ParseInfo* pi) :
 			PFSymbol(name,sorts,pi) { }
+		Predicate(const vector<Sort*>& sorts);	// constructor for internal predicates
 
 		// Inspectors
 		unsigned int	arity()		const { return _sorts.size();	}
@@ -287,9 +318,6 @@ class Predicate : public PFSymbol {
 		// Built-in symbols 
 		virtual Predicate*		disambiguate(const vector<Sort*>&)		{ return this;	}
 
-		// Debugging of GidL
-		void	inspect()	const;
-
 };
 
 
@@ -297,7 +325,7 @@ class Predicate : public PFSymbol {
 
 class Function : public PFSymbol {
 
-	private:
+	protected:
 		bool	_partial;	// true iff the function is declared as partial function
 
 	public:
@@ -322,9 +350,6 @@ class Function : public PFSymbol {
 		// Built-in symbols 
 		virtual Function*		disambiguate(const vector<Sort*>&)		{ return this;	}
 
-		// Debugging of GidL
-		void	inspect()	const;
-
 };
 
 
@@ -339,7 +364,7 @@ class Vocabulary {
 		string		_name;	// name of the vocabulary. Default name is the empty string
 		ParseInfo*	_pi;	// place where the vocabulary was parsed
 
-		// map symbols of the vocabulary to an index
+		// map symbols of the vocabulary to a unique index
 		map<Sort*,unsigned int>			_sorts;		
 		map<Predicate*,unsigned int>	_predicates;
 		map<Function*,unsigned int>		_functions;
@@ -347,7 +372,11 @@ class Vocabulary {
 		vector<Sort*>					_vsorts;
 		vector<Predicate*>				_vpredicates;
 		vector<Function*>				_vfunctions;
-		// map name of a symbol to the symbol
+		// map a name to a symbol of the vocabulary
+		// NOTE: these lists are not exhaustive. 
+		//	They only contain the symbols that are explicitly added by a user to the vocabulary.
+		// NOTE: if string <my_name> maps to sort s, then s->name is not necessarily <my_name>
+		// NOTE: the strings that map to predicates and functions end on /arity
 		map<string,Sort*>		_sortnames;
 		map<string,Predicate*>	_prednames;
 		map<string,Function*>	_funcnames;
@@ -361,12 +390,12 @@ class Vocabulary {
 		~Vocabulary() { if(_pi) delete(_pi);	}
 
 		// Mutators
-		void addSort(Sort*);
-		void addPred(Predicate*);
-		void addFunc(Function*);
-		void addSort(const string&, Sort*);
-		void addPred(const string&, Predicate*);
-		void addFunc(const string&, Function*);
+		void addSort(Sort*);							// Add the given sort (and its ancestors) to the vocabulary
+		void addPred(Predicate*);						// Add the given predicate (and its sorts) to the vocabulary
+		void addFunc(Function*);						// Add the given function (and its sorts) to the vocabulary
+		void addSort(const string& n, Sort* s);			// Add the given sort (and its ancestors) and set _sortnames[n] = s
+		void addPred(const string& n, Predicate* p); // Add the given predicate (and its sorts) to the vocabulary and set _prednames[n] = p
+		void addFunc(const string& n, Function* f);	 // Add the given function (and its sorts) to the vocabulary and set _funcnames[n] = f
 
 		// Inspectors
 		const string&		name()							const { return _name;					}

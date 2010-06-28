@@ -5,6 +5,7 @@
 ************************************/
 
 #include "theory.hpp"
+#include <iostream>
 
 void Visitor::visit(PredForm* a)		{ traverse(a);	}
 void Visitor::visit(EqChainForm* a)		{ traverse(a);	}

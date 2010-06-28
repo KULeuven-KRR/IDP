@@ -280,6 +280,15 @@ void VarUtils::sortunique(vector<Variable*>& vv) {
 	Predicates and functions
 *******************************/
 
+/** Constructor for internal predicates **/ 
+
+int Predicate::_npnr = 0;
+
+Predicate::Predicate(const vector<Sort*>& sorts) : PFSymbol("",sorts,0) {
+	_name = "_internal_predicate_" + itos(_npnr) + "/" + itos(sorts.size());
+	++_npnr;
+}
+
 /** Inspectors **/
 
 vector<Sort*> Function::insorts() const {

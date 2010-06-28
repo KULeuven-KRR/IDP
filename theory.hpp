@@ -38,8 +38,8 @@ class Formula {
 																				// as inidicated by the map
 
 		// Destructor
-		virtual void recursiveDelete() = 0;
-		virtual ~Formula() { if(_pi) delete(_pi);	}
+		virtual void recursiveDelete() = 0;				// delete the formula and all its children (subformulas, subterms, etc)
+		virtual ~Formula() { if(_pi) delete(_pi);	}	// delete the formula, but not its children
 
 		// Mutators
 		void	setfvars();		// compute the free variables
@@ -57,6 +57,8 @@ class Formula {
 		virtual	Formula*		subform(unsigned int n)	const = 0;	// the n'th direct subformula
 		virtual	Term*			subterm(unsigned int n)	const = 0;	// the n'th direct subterm
 				bool			contains(Variable*)		const;		// true iff the formula contains the variable
+		virtual	bool			trueformula()			const { return false;	}
+		virtual	bool			falseformula()			const { return false;	}
 
 		// Visitor
 		virtual void		accept(Visitor* v) = 0;
@@ -242,6 +244,9 @@ class BoolForm : public Formula {
 		Variable*		qvar(unsigned int n)	const	{ assert(false); return 0;	}
 		Formula*		subform(unsigned int n)	const	{ return _subf[n];			}
 		Term*			subterm(unsigned int n)	const	{ assert(false); return 0; 	}
+		bool			trueformula()			const	{ return (_subf.empty() && _conj == _sign);	}
+		bool			falseformula()			const	{ return (_subf.empty() && _conj != _sign);	}
+
 
 		// Visitor
 		void		accept(Visitor* v);
@@ -289,6 +294,7 @@ class QuantForm : public Formula {
 		Variable*		qvar(unsigned int n)	const { return _vars[n];			}
 		Formula*		subform(unsigned int n)	const { return	_subf;				}
 		Term*			subterm(unsigned int n)	const { assert(false); return 0;	}
+		const vector<Variable*>&	qvars()		const { return _vars;				}
 
 		// Visitor
 		void		accept(Visitor* v);
@@ -511,6 +517,10 @@ class Theory : public AbstractTheory {
 		void	sentence(unsigned int n, Formula* f)		{ _sentences[n] = f;			}
 		void	definition(unsigned int n, Definition* d)	{ _definitions[n] = d;			}
 		void	fixpdef(unsigned int n, FixpDef* d)			{ _fixpdefs[n] = d;				}
+		void	pop_sentence()								{ _sentences.pop_back();		}
+		void	clear_sentences()							{ _sentences.clear();			}
+		void	clear_definitions()							{ _definitions.clear();			}
+		void	clear_fixpdefs()							{ _fixpdefs.clear();			}
 
 		// Inspectors
 		unsigned int	nrSentences()				const { return _sentences.size();	}
@@ -536,13 +546,16 @@ namespace TheoryUtils {
 	void remove_equiv(AbstractTheory*);		// Rewrite A <=> B to (A => B) & (B => A)
 	void flatten(AbstractTheory*);			// Rewrite (! x : ! y : phi) to (! x y : phi), rewrite ((A & B) & C) to (A & B & C), etc.
 	void remove_eqchains(AbstractTheory*);	// Rewrite chains of equalities to a conjunction or disjunction of atoms.
+	void move_quantifiers(AbstractTheory* t);	// Rewrite (! x : phi & chi) to ((! x : phi) & (!x : chi)), and similarly for ?|
+	void move_functions(Theory* t);
 	// TODO  Merge definitions
 
 	/** Tseitin transformation **/
-	AbstractTheory* tseitin_def(AbstractTheory*);	// Apply the Tseitin transformation, using definitions to define new predicates
-	AbstractTheory* tseitin_impl(AbstractTheory*);	// Apply the Tseitin transformation, using (where possible) implications to define new predicates.
-	AbstractTheory* tseitin_equiv(AbstractTheory*);	// Apply the Tseitin transformation, using (where possible) equivalences to define new predicates.
+	void tseitin(Theory*);	// Apply the Tseitin transformation, using (where possible) implications to define new predicates.
 	
+	/** Simplify theories **/
+	void simplify(Theory* t, Structure* s);		// Replace ground atoms by their truth value in s
+
 	/** Completion **/
 	// TODO  Compute completion of definitions
 	
