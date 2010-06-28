@@ -697,6 +697,7 @@ namespace Insert {
 		_inferences["tseitin"].push_back(new ApplyTseitin());
 		_inferences["simplify"].push_back(new GroundSimplify());
 		_inferences["move_functions"].push_back(new MoveFunctions());
+		_inferences["model_expand"].push_back(new ModelExpansionInference());
 	}
 
 	void cleanup() {

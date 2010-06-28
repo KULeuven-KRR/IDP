@@ -1,6 +1,6 @@
 # Compiler
 GPP=g++
-GPPFLAGS=-O3 -D NDEBUG -Wall -pedantic
+GPPFLAGS=-O3 -D NDEBUG -Wall -Wextra -Wno-unused-parameter -ffloat-store -pedantic -Wno-variadic-macros #-D GMP
 
 # Lexer
 FLEX=flex
@@ -26,31 +26,61 @@ endif
 
 # filenames
 # ############################################################
-LEX=lex
-GRAMMAR=parse
-SOURCES=vocabulary.o structure.o term.o theory.o namespace.o insert.o error.o common.o execute.o builtin.o visitor.o ground.o ecnf.o
-MAIN=main
-OBJECTS=$(GRAMMAR).tab.o $(LEX).yy.o $(SOURCES) $(MAIN).o
-OUTPUT=gidl
+PHDRS		= parse.tab.hpp #pcsolver/solvers/ecnf.y.hpp 
+CHDRS		= $(PHDRS) $(wildcard *.hpp) $(wildcard pcsolver/solver3/*.hpp) $(wildcard pcsolver/mtl/*.hpp) $(wildcard pcsolver/solvers/*.hpp) $(wildcard pcsolver/solvers/aggs/*.hpp)
+PSRCS		= parse.tab.cpp lex.yy.cpp #pcsolver/solvers/ecnf.y.cpp pcsolver/solvers/ecnf.l.cpp pcsolver/solvers/ecnf.y.cpp 
+CSRCS		= $(PSRCS) $(wildcard *.cpp) $(wildcard pcsolver/solvers/[!M]*.cpp) $(wildcard pcsolver/solvers/M[!a]*.cpp) $(wildcard pcsolver/solvers/aggs/*.cpp) $(wildcard pcsolver/solver3/*.cpp) $(wildcard pcsolver/mtl/*.cpp)
+CFLAGS	= -Ipcsolver/mtl -Ipcsolver/solvers -Ipcsolver/solvers/aggs -Ipcsolver/solver3 -I.
+LFLAGS	= #-lz -lgmpxx -lgmp
+EXEC		= gidl
 
 # stuff to make
 # ############################################################
 
-all: gidl
+all: $(EXEC)
 
-gidl: $(OBJECTS)
-	$(GPP) $(GPPFLAGS) -o $(OUTPUT) $(OBJECTS)
+COBJS	?= $(addsuffix .o, $(basename $(CSRCS)))
 
+EXEC		?= $(notdir $(shell pwd))
+
+CFLAGS	?= $(GPPFLAGS)
+
+## Compile options
+%.o:		CFLAGS +=$(COPTIMIZE) -ggdb -D DEBUG
+
+## Link options
+$(EXEC):					LFLAGS := -ggdb $(LFLAGS)
+
+## Dependencies
+$(EXEC):			$(COBJS)
+
+## Build rule
+%.o %.op %.od %.or %.occ: %.cpp
+	@echo Compiling: "$@ ( $< )"
+	@$(GPP) $(CFLAGS) -c -o $@ $<
+	
+%.tab.cpp: %.yy
+	@echo Compiling: "$@ ( $< )"
+	@bison $(YACCFLAGS)  --output=$@ $<
+	
+%.yy.cpp: %.ll
+	@echo Compiling: "$@ ( $< )"
+	@flex $(FLEXFLAGS) -o$@ $<
+	
+%.y.cpp: %.y
+	@echo Compiling: "$@ ( $< )"
+	@bison -p ecnf --defines --output=$@ $<
+	
+%.l.cpp: %.l
+	@echo Compiling: "$@ ( $< )"
+	@flex -P ecnf -o$@ $<
+
+## Linking rules for all executables
+$(EXEC): # $(EXEC)_codecover $(EXEC)_profile $(EXEC)_debug $(EXEC)_release $(EXEC)_static:
+	@echo Linking: "$@" #( $^ )"
+	@$(GPP) $^ $(GPPFLAGS) $(LFLAGS) -o $@
+
+## Clean rule
 clean:
-	-rm -f $(LEX).yy.* $(DATALEX).yy.* $(OUTPUT) $(GRAMMAR).tab.cpp $(GRAMMAR).output \
-		$(GRAMMAR).tab.hpp $(OBJECTS)
-
-# separate rule for this, because of ".yy.c" instead of ".yy.cc" --> see (*)
-%.o:	%.cpp
-	$(GPP) $(GPPFLAGS) -c -o $@ $<
-
-%.tab.cpp:%.yy
-	$(YACC) $(YACCFLAGS) --output=$@ $<
-
-%.yy.cpp:	%.ll
-	$(FLEX) $(FLEXFLAGS) -o$@ $<
+	@rm -f $(EXEC) $(EXEC)_codecover $(EXEC)_profile $(EXEC)_debug $(EXEC)_release $(EXEC)_static \
+		$(PSRCS) $(PHDRS) $(COBJS) $(CCCOBJS) $(PCOBJS) $(DCOBJS) $(RCOBJS) *.core depend.mk lib$(LIB).a lib$(LIB)d.a

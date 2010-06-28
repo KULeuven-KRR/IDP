@@ -78,7 +78,7 @@ void GroundingInference::execute(const vector<InfArg>& args, const string& res,N
 	TheoryUtils::tseitin(gr);
 	NaiveTranslator* nt = new NaiveTranslator();
 	EcnfTheory* ecnfgr = TheoryUtils::convert_to_ecnf(gr,nt);
-	outputECNF* printer = new outputECNF(stdout); 
+	GroundPrinter* printer = new outputECNF(stdout);
 	ecnfgr->print(printer);
 	gr->recursiveDelete();
 	delete(ecnfgr);
@@ -103,6 +103,43 @@ void GroundingWithResult::execute(const vector<InfArg>& args, const string& res,
 	cn->add(gr);
 }
 
+ModelExpansionInference::ModelExpansionInference() {
+	_intypes = vector<InfArgType>(2);
+	_intypes[0] = IAT_THEORY;
+	_intypes[1] = IAT_STRUCTURE;
+	_outtype = IAT_VOID;
+	_description = "Performs model expansion on the structure given the theory it should satisfy.";
+}
+
+void ModelExpansionInference::execute(const vector<InfArg>& args, const string& res,Namespace* cn) const {
+	assert(args.size() == 2);
+	NaiveGrounder ng(args[1]._structure);
+	Theory* gr = ng.ground(args[0]._theory);
+	NaiveTranslator* nt = new NaiveTranslator();
+	EcnfTheory* ecnfgr = TheoryUtils::convert_to_ecnf(gr,nt);
+	ECNF_mode modes;
+	modes.nbmodels = 1;
+	PCSolver* solver = new PCSolver(modes);
+	GroundPrinter* printer = new outputToSolver(solver);
+	ecnfgr->print(printer);
+	gr->recursiveDelete();
+	vector<vector<int> > models;
+	bool sat = solver->solve(models);
+	/*example use
+	if(sat){
+		for(int i=0; i<models.size(); i++){
+			cout <<"Model ";
+			for(int j=0; j<models[i].size(); j++){
+				cout <<models[i][j] <<" ";
+			}
+			cout <<"\n";
+		}
+	}*/
+	delete(solver);
+	delete(ecnfgr);
+	delete(nt);
+	delete(printer);
+}
 
 void StructToTheory::execute(const vector<InfArg>& args, const string& res,Namespace* cn) const {
 	assert(args.size() == 1);
