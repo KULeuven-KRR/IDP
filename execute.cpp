@@ -117,7 +117,18 @@ void ModelExpansionInference::execute(const vector<InfArg>& args, const string& 
 	GroundPrinter* printer = new outputToSolver(solver);
 	ecnfgr->print(printer);
 	gr->recursiveDelete();
-	solver->solve();
+	vector<vector<int> > models;
+	bool sat = solver->solve(models);
+	/*example use
+	if(sat){
+		for(int i=0; i<models.size(); i++){
+			cout <<"Model ";
+			for(int j=0; j<models[i].size(); j++){
+				cout <<models[i][j] <<" ";
+			}
+			cout <<"\n";
+		}
+	}*/
 	delete(solver);
 	delete(ecnfgr);
 	delete(nt);
