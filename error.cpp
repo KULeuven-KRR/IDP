@@ -62,6 +62,11 @@ namespace Error {
 		cerr << "stdin can be parsed only once.\n";
 	}
 
+	void nrmodelsnegative() {
+		error();
+		cerr << "Expected a non-negative integer after '-n'" << endl;
+	}
+
 	/** File errors **/
 
 	void cyclicinclude(const string& s, ParseInfo* pi) {

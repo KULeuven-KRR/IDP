@@ -25,6 +25,7 @@ namespace Error {
 	void constsetexp();
 	void stringconsexp(const string&, ParseInfo* pi);
 	void twicestdin(ParseInfo* pi);
+	void nrmodelsnegative();
 
 	/** File errors **/
 	void cyclicinclude(const string&, ParseInfo* pi);

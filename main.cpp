@@ -38,6 +38,7 @@ void usage() {
 	cout << "Usage:\n"
 		 << "   gidl [options] [filename [filename [...]]]\n\n";
 	cout << "Options:\n"
+		 << "    -n<num>              find <num> solutions for to model expansion problems (0=all; default 1)\n"
 		 << "    --statistics:        show statistics\n"
 		 << "    --verbose:           print additional information\n"
 		 << "    -c <name1>=<name2>:  substitute <name2> for <name1> in the input\n"
@@ -73,7 +74,12 @@ vector<string> read_options(int argc, char* argv[]) {
 	while(argc) {
 		string str(argv[0]);
 		argc--; argv++;
-		if(str == "--statistics")					{ options._statistics = true;		}
+		if(str.substr(0,2) == "-n" && isInt(str.substr(2,str.size()-2))) {
+													  int nrm = stoi(str.substr(2,str.size()-2));
+													  if(nrm < 0) Error::nrmodelsnegative();
+													  else options._nrmodels = nrm;
+													}
+		else if(str == "--statistics")				{ options._statistics = true;		}
 		else if(str == "--verbose")					{ options._verbose = true;			}
 		else if(str == "-c")						{ str = argv[0];
 													  if(argc && (str.find('=') != string::npos)) {

@@ -22,6 +22,8 @@ int NaiveTranslator::translate(PFSymbol* s, const vector<string>& args) {
 		if(jt != (it->second).end()) return jt->second;
 	}
 	_table[s][args] = _nextnumber;
+	_backsymbtable.push_back(s);
+	_backargstable.push_back(args);
 	return _nextnumber++;
 }
 

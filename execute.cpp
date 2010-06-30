@@ -8,6 +8,9 @@
 #include "ground.hpp"
 #include "ecnf.hpp"
 #include <iostream>
+#include "options.hpp"
+
+extern Options options;
 
 void PrintTheory::execute(const vector<InfArg>& args, const string& res,Namespace*) const {
 	assert(args.size() == 1);
@@ -113,28 +116,43 @@ ModelExpansionInference::ModelExpansionInference() {
 
 void ModelExpansionInference::execute(const vector<InfArg>& args, const string& res,Namespace* cn) const {
 	assert(args.size() == 2);
-	NaiveGrounder ng(args[1]._structure);
-	Theory* gr = ng.ground(args[0]._theory);
+	Theory* t = dynamic_cast<Theory*>(args[0]._theory);
+	Structure* s = dynamic_cast<Structure*>(args[1]._structure);
+	TheoryUtils::move_functions(t);
+	NaiveGrounder ng(s);	
+	Theory* gr = ng.ground(t);
+	TheoryUtils::remove_eqchains(gr);
+	TheoryUtils::simplify(gr,s);
+	TheoryUtils::tseitin(gr);
 	NaiveTranslator* nt = new NaiveTranslator();
 	EcnfTheory* ecnfgr = TheoryUtils::convert_to_ecnf(gr,nt);
 	ECNF_mode modes;
-	modes.nbmodels = 1;
+	modes.nbmodels = options._nrmodels;
 	PCSolver* solver = new PCSolver(modes);
 	GroundPrinter* printer = new outputToSolver(solver);
 	ecnfgr->print(printer);
 	gr->recursiveDelete();
 	vector<vector<int> > models;
 	bool sat = solver->solve(models);
-	/*example use
+	//example use
 	if(sat){
 		for(int i=0; i<models.size(); i++){
-			cout <<"Model ";
+			cout <<"=== Model " << (i+1) << " ===\n";
 			for(int j=0; j<models[i].size(); j++){
-				cout <<models[i][j] <<" ";
+				if(models[i][j] > 0) {
+					//cout <<models[i][j] <<" ";
+					cout << nt->symbol(models[i][j]-1)->to_string() << '(';
+					vector<string> args = nt->args(models[i][j]-1);
+					for(unsigned int n = 0; n < args.size(); ++n) {
+						cout << args[n];
+						if(n < args.size()-1) cout << ',';
+					}
+					cout << "). ";
+				}
 			}
-			cout <<"\n";
+			cout <<"\n\n";
 		}
-	}*/
+	}
 	delete(solver);
 	delete(ecnfgr);
 	delete(nt);
