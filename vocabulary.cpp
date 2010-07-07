@@ -36,25 +36,32 @@ namespace IATUtils {
 	}
 }
 
-/*********************
-	Domain element
-*********************/
+/**********************
+	Domain elements
+**********************/
+
+string compound::to_string() const {
+	if(_function) {
+		string s = _function->to_string();
+		if(!_args.empty()) {
+			s = s + '(' + ElementUtil::ElementToString(_args[0]);
+			for(unsigned int n = 1; n < _args.size(); ++n) {
+				s = s + ',' + ElementUtil::ElementToString(_args[n]);
+			}
+			s = s + ')';
+		}
+		return s;
+	}
+	else {
+		assert(_args.size() == 1);
+		return ElementUtil::ElementToString(_args[0]);
+	}
+}
 
 namespace ElementUtil {
 
-	Element _nonexistingInt;
-	Element _nonexistingDouble;
-	Element _nonexistingString;
-
 	ElementType resolve(ElementType t1, ElementType t2) {
-		switch(t1) {
-			case ELINT: return t2;
-			case ELDOUBLE: 
-				if(t2 == ELSTRING) return ELSTRING;
-				else return ELDOUBLE;
-			case ELSTRING: return ELSTRING;
-			default: assert(false); return ELSTRING;
-		}
+		return (t1 < t2) ? t2 : t1;
 	}
 
 	string ElementToString(Element e, ElementType t) {
@@ -62,34 +69,35 @@ namespace ElementUtil {
 			case ELINT:
 				return itos(e._int);
 			case ELDOUBLE:
-				return dtos(*(e._double));
+				return dtos(e._double);
 			case ELSTRING:
 				return *(e._string);
+			case ELCOMPOUND:
+				return e._compound->to_string();
 			default:
-				assert(false);
+				assert(false); return "???";
 		}
-		return "";
 	}
 
 	string ElementToString(TypedElement e) {
 		return ElementToString(e._element,e._type);
 	}
 
-	Element& nonexist(ElementType t) {
+	Element nonexist(ElementType t) {
+		Element e;
 		switch(t) {
 			case ELINT:
-				_nonexistingInt._int = MAX_INT;
-				return _nonexistingInt;
+				e._int = MAX_INT;
 			case ELDOUBLE:
-				_nonexistingDouble._double = 0;
-				return _nonexistingDouble;
+				e._double = MAX_DOUBLE;
 			case ELSTRING:
-				_nonexistingString._string = 0;
-				return _nonexistingString;
+				e._string = 0;
+			case ELCOMPOUND:
+				e._compound = 0;
 			default:
 				assert(false);
 		}
-		return _nonexistingInt;
+		return e;
 	}
 
 	bool exists(Element e, ElementType t) {
@@ -97,11 +105,11 @@ namespace ElementUtil {
 			case ELINT:
 				return e._int != MAX_INT;
 			case ELDOUBLE:
-				return e._double != 0;
-				break;
+				return e._double != MAX_DOUBLE;
 			case ELSTRING:
 				return e._string != 0;
-				break;
+			case ELCOMPOUND:
+				return e.compound != 0;
 			default:
 				assert(false); return false;
 		}
@@ -117,11 +125,15 @@ namespace ElementUtil {
 		switch(oldtype) {
 			case ELINT:
 				if(newtype == ELSTRING) {
-					ne._string = new string(itos(e._int));
+					ne._string = IDPointer(itos(e._int));
+				}
+				else if(newtype == ELDOUBLE) {
+					ne._double = double(e._int);
 				}
 				else {
-					assert(newtype == ELDOUBLE);
-					ne._double = new double(e._int);
+					assert(newtype == ELCOMPOUND);
+					TypedElement te(e,oldtype);
+					ne._compound = CPPointer(te);
 				}
 				break;
 			case ELDOUBLE:
@@ -131,9 +143,13 @@ namespace ElementUtil {
 					}
 					else return nonexist(newtype);
 				}
+				else if(newtype == ELSTRING) {
+					ne._string = IDPointer(dtos(*(e._double)));
+				}
 				else {
-					assert(newtype == ELSTRING);
-					ne._string = new string(dtos(*(e._double)));
+					assert(newtype == ELCOMPOUND);
+					TypedElement te(e,oldtype);
+					ne._compound = CPPointer(te);
 				}
 				break;
 			case ELSTRING:
@@ -143,15 +159,23 @@ namespace ElementUtil {
 					}
 					else return nonexist(newtype);
 				}
-				else {
-					assert(newtype == ELDOUBLE);
+				else if(newtype == ELDOUBLE) {
 					if(isDouble(*(e._string))) {
 						ne._double = new double(stod(*(e._string)));
 					}
 					else return nonexist(newtype);
 				}
+				else {
+					assert(newtype == ELCOMPOUND);
+					TypedElement te(e,oldtype);
+					ne._compound = CPPointer(te);
+				}
 				break;
-
+			case ELCOMPOUND:
+				if(e._compound->_function == 0) 
+					return convert((e._compound->_args)[0],newtype);
+				else return nonexist(newtype);
+				break;
 			default:
 				assert(false);
 		}
@@ -162,20 +186,6 @@ namespace ElementUtil {
 		return convert(te._element,te._type,t);
 	}
 
-	Element clone(Element e, ElementType t) {
-		Element ne;
-		switch(t) {
-			case ELINT: ne._int = e._int; break;
-			case ELDOUBLE: ne._double = new double(*(e._double)); break;
-			case ELSTRING: ne._string = new string(*(e._string)); break;
-			default: assert(false);
-		}
-		return ne;
-	}
-
-	Element clone(TypedElement te) {
-		return clone(te._element,te._type);
-	}
 }
 
 /************

@@ -12,6 +12,16 @@
 #include <stdlib.h>
 using namespace std;
 
+#include <tr1/memory>
+using namespace std;
+using namespace std::tr1;
+
+/************************
+	Memory management
+************************/
+class DomainData;
+extern shared_ptr<DomainData> domaindata;
+
 // Extreme integers
 int MIN_INT = numeric_limits<int>::min();
 int MAX_INT = numeric_limits<int>::max();

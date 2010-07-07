@@ -132,7 +132,7 @@ namespace Insert {
 	EnumSetExpr*	set(const vector<Formula*>&, YYLTYPE);
 
 	DomainTerm*		domterm(int,YYLTYPE);
-	DomainTerm*		domterm(double*,YYLTYPE);
+	DomainTerm*		domterm(double,YYLTYPE);
 	DomainTerm*		domterm(string*,YYLTYPE);
 	DomainTerm*		domterm(char,YYLTYPE);
 	DomainTerm*		domterm(string*,Sort*,YYLTYPE);

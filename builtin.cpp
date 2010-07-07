@@ -288,7 +288,7 @@ class AllIntSortTable : public SortTable {
 		bool			contains(const string& s)	const { return isInt(s);			}
 		bool			contains(int)				const { return true;				}
 		bool			contains(double d)			const { return isInt(d);			}
-		Element			element(unsigned int n)			  { assert(false); Element e; return e;	}
+		Element			element(unsigned int n)		const { assert(false); Element e; return e;	}
 		ElementType		type()						const { return ELINT;				}
 		unsigned int	position(Element,ElementType)	const { assert(false); return 0;	}
 
@@ -308,7 +308,7 @@ class AllFloatSortTable : public SortTable {
 		bool			contains(const string& s)	const { return isDouble(s);			}
 		bool			contains(int)				const { return true;				}
 		bool			contains(double)			const { return true;				}
-		Element			element(unsigned int n)			  { assert(false); Element e; return e;	}
+		Element			element(unsigned int n)		const { assert(false); Element e; return e;	}
 		ElementType		type()						const { return ELDOUBLE;			}
 		unsigned int	position(Element,ElementType)	const { assert(false); return 0;	}
 
@@ -328,7 +328,7 @@ class AllStringSortTable : public SortTable {
 		bool			contains(const string& s)	const { return true;				}
 		bool			contains(int)				const { return true;				}
 		bool			contains(double)			const { return true;				}
-		Element			element(unsigned int n)			  { assert(false); Element e; return e;	}
+		Element			element(unsigned int n)		const { assert(false); Element e; return e;	}
 		ElementType		type()						const { return ELSTRING;			}
 		unsigned int	position(Element,ElementType)	const { assert(false); return 0;	}
 
@@ -348,7 +348,7 @@ class AllCharSortTable : public SortTable {
 		bool			contains(const string& s)		const { return (s.size() == 1);		}
 		bool			contains(int n)					const { return isChar(n);			}
 		bool			contains(double d)				const { return isChar(d);			}
-		Element			element(unsigned int n)			      { Element e; e._string = new string(1,char(n)); return e;	}
+		Element			element(unsigned int n)			const { Element e; e._string = new string(1,char(n)); return e;	}
 		ElementType		type()							const { return ELSTRING;			}
 		unsigned int	position(Element,ElementType)	const { assert(false); return 0; 	} // TODO?
 
@@ -401,9 +401,11 @@ bool EqualPredTable::contains(const vector<Element>& ve) const {
 		case ELINT:
 			return ve[0]._int == ve[1]._int;
 		case ELDOUBLE:
-			return (*(ve[0]._double)) == (*(ve[1]._double));
+			return (ve[0]._double) == (ve[1]._double);
 		case ELSTRING:
-			return (*(ve[0]._string)) == (*(ve[1]._string));
+			return (ve[0]._string) == (ve[1]._string);
+		case ELCOMPOUND:
+			return (ve[0]._compound) == (ve[1]._compound);
 		default:
 			assert(false); return false;
 	}
@@ -476,7 +478,7 @@ bool StrLessThanPredTable::contains(const vector<Element>& ve) const {
 		case ELINT:
 			return ve[0]._int < ve[1]._int;
 		case ELDOUBLE:
-			return (*(ve[0]._double)) < (*(ve[1]._double));
+			return (ve[0]._double < ve[1]._double);
 		case ELSTRING:
 			if(isDouble(*(ve[0]._string))) {
 				if(isDouble(*(ve[1]._string))) return (stod(*(ve[0]._string)) < stod(*(ve[1]._string)));
@@ -557,7 +559,7 @@ bool StrGreaterThanPredTable::contains(const vector<Element>& ve) const {
 		case ELINT:
 			return ve[0]._int < ve[1]._int;
 		case ELDOUBLE:
-			return (*(ve[0]._double)) < (*(ve[1]._double));
+			return (ve[0]._double < ve[1]._double);
 		case ELSTRING:
 			if(isDouble(*(ve[0]._string))) {
 				if(isDouble(*(ve[1]._string))) return (stod(*(ve[0]._string)) < stod(*(ve[1]._string)));
@@ -667,7 +669,7 @@ bool PlusPredTable::contains(const vector<Element>& ve) const {
 		case ELINT:
 			return (ve[0]._int + ve[1]._int == ve[2]._int);
 		case ELDOUBLE:
-			return ((*(ve[0]._double)) + (*(ve[1]._double)) == (*(ve[2]._double)));
+			return (ve[0]._double + ve[1]._double == ve[2]._double);
 		default:
 			assert(false); return false;
 	}
@@ -682,7 +684,6 @@ class PlusFuncInter : public FuncInter {
 	private: 
 		ElementType			_type;		// int or double
 		PredInter*			_predinter;
-		mutable map<double,double*>	_memory;
 	public:
 		PlusFuncInter(ElementType t);
 		~PlusFuncInter() { delete(_predinter);	}
@@ -704,15 +705,8 @@ Element PlusFuncInter::operator[](const vector<Element>& vi) const {
 			e._int = vi[0]._int + vi[1]._int;
 			break;
 		case ELDOUBLE:
-		{
-			double d = (*(vi[0]._double)) + (*(vi[1]._double));
-			map<double,double*>::iterator it = _memory.find(d);
-			if(it != _memory.end()) e._double = it->second;
-			else {
-				e._double = new double(d);
-				_memory[d] = e._double;
-			}
-		}
+			e._double = (vi[0]._double + vi[1]._double);
+			break;
 		default: assert(false);
 	}
 	return e;
@@ -750,7 +744,7 @@ bool MinusPredTable::contains(const vector<Element>& ve) const {
 		case ELINT:
 			return (ve[0]._int - ve[1]._int == ve[2]._int);
 		case ELDOUBLE:
-			return ((*(ve[0]._double)) - (*(ve[1]._double)) == (*(ve[2]._double)));
+			return (ve[0]._double - ve[1]._double == ve[2]._double);
 		default:
 			assert(false); return false;
 	}
@@ -765,7 +759,6 @@ class MinusFuncInter : public FuncInter {
 	private: 
 		ElementType			_type;		// int or double
 		PredInter*			_predinter;
-		mutable map<double,double*>	_memory;
 	public:
 		MinusFuncInter(ElementType t);
 		~MinusFuncInter() { delete(_predinter);	}
@@ -787,15 +780,8 @@ Element MinusFuncInter::operator[](const vector<Element>& vi) const {
 			e._int = vi[0]._int - vi[1]._int;
 			break;
 		case ELDOUBLE:
-		{
-			double d = (*(vi[0]._double)) - (*(vi[1]._double));
-			map<double,double*>::iterator it = _memory.find(d);
-			if(it != _memory.end()) e._double = it->second;
-			else {
-				e._double = new double(d);
-				_memory[d] = e._double;
-			}
-		}
+			e._double = (vi[0]._double - vi[1]._double);
+			break;
 		default: assert(false);
 	}
 	return e;
@@ -833,7 +819,7 @@ bool TimesPredTable::contains(const vector<Element>& ve) const {
 		case ELINT:
 			return (ve[0]._int * ve[1]._int == ve[2]._int);
 		case ELDOUBLE:
-			return ((*(ve[0]._double)) * (*(ve[1]._double)) == (*(ve[2]._double)));
+			return (ve[0]._double * ve[1]._double == ve[2]._double);
 		default:
 			assert(false); return false;
 	}
@@ -848,7 +834,6 @@ class TimesFuncInter : public FuncInter {
 	private: 
 		ElementType			_type;		// int or double
 		PredInter*			_predinter;
-		mutable map<double,double*>	_memory;
 	public:
 		TimesFuncInter(ElementType t);
 		~TimesFuncInter() { delete(_predinter);	}
@@ -870,15 +855,8 @@ Element TimesFuncInter::operator[](const vector<Element>& vi) const {
 			e._int = vi[0]._int * vi[1]._int;
 			break;
 		case ELDOUBLE:
-		{
-			double d = (*(vi[0]._double)) * (*(vi[1]._double));
-			map<double,double*>::iterator it = _memory.find(d);
-			if(it != _memory.end()) e._double = it->second;
-			else {
-				e._double = new double(d);
-				_memory[d] = e._double;
-			}
-		}
+			e._double = vi[0]._double * vi[1]._double;
+			break;
 		default: assert(false);
 	}
 	return e;
@@ -917,8 +895,8 @@ bool DivPredTable::contains(const vector<Element>& ve) const {
 			if(ve[1]._int == 0) return false;
 			else return (ve[0]._int / ve[1]._int == ve[2]._int);
 		case ELDOUBLE:
-			if(*(ve[1]._double) == 0) return false; 
-			else return ((*(ve[0]._double)) / (*(ve[1]._double)) == (*(ve[2]._double)));
+			if(ve[1]._double == 0) return false; 
+			else return (ve[0]._double / ve[1]._double == ve[2]._double);
 		default:
 			assert(false); return false;
 	}
@@ -933,7 +911,6 @@ class DivFuncInter : public FuncInter {
 	private: 
 		ElementType			_type;		// int or double
 		PredInter*			_predinter;
-		mutable map<double,double*>	_memory;
 	public:
 		DivFuncInter(ElementType t);
 		~DivFuncInter() { delete(_predinter);	}
@@ -956,17 +933,9 @@ Element DivFuncInter::operator[](const vector<Element>& vi) const {
 			else e._int = vi[0]._int / vi[1]._int;
 			break;
 		case ELDOUBLE:
-		{
-			if((*(vi[1]._double)) == 0) return ElementUtil::nonexist(ELDOUBLE);
-			else {double d = (*(vi[0]._double)) * (*(vi[1]._double));
-				map<double,double*>::iterator it = _memory.find(d);
-				if(it != _memory.end()) e._double = it->second;
-				else {
-					e._double = new double(d);
-					_memory[d] = e._double;
-				}
-			}
-		}
+			if(vi[1]._double == 0) return ElementUtil::nonexist(ELDOUBLE);
+			else e._double = (vi[0]._double / vi[1]._double);
+			break;
 		default: assert(false);
 	}
 	return e;
@@ -1059,9 +1028,9 @@ class ExpPredTable : public PredTable {
 
 bool ExpPredTable::contains(const vector<Element>& ve) const {
 	vector<double> vd(3);
-	vd[0] = (_types[0] == ELINT) ? double(ve[0]._int) : (*(ve[0]._double));
-	vd[1] = (_types[1] == ELINT) ? double(ve[1]._int) : (*(ve[1]._double));
-	vd[2] = (*(ve[2]._double));
+	vd[0] = (_types[0] == ELINT) ? double(ve[0]._int) : ve[0]._double;
+	vd[1] = (_types[1] == ELINT) ? double(ve[1]._int) : ve[1]._double;
+	vd[2] = ve[2]._double;
 	return (pow(vd[0],vd[1]) == vd[2]);
 }
 
@@ -1073,7 +1042,6 @@ string ExpPredTable::to_string(unsigned int spaces) const {
 class ExpFuncInter : public FuncInter {
 	private: 
 		PredInter*			_predinter;
-		mutable map<double,double*>	_memory;
 	public:
 		ExpFuncInter(const vector<ElementType>&,ElementType);
 		~ExpFuncInter() { delete(_predinter);	}
@@ -1090,16 +1058,11 @@ ExpFuncInter::ExpFuncInter(const vector<ElementType>& vet, ElementType t) : Func
 }
 
 Element ExpFuncInter::operator[](const vector<Element>& ve) const {
-	double d1 = (_intypes[0] == ELINT) ? double(ve[0]._int) : (*(ve[0]._double));
-	double d2 = (_intypes[1] == ELINT) ? double(ve[1]._int) : (*(ve[1]._double));
+	double d1 = (_intypes[0] == ELINT) ? double(ve[0]._int) : ve[0]._double;
+	double d2 = (_intypes[1] == ELINT) ? double(ve[1]._int) : ve[1]._double;
 	double res = pow(d1,d2);
 	Element e;
-	map<double,double*>::iterator it = _memory.find(res);
-	if(it != _memory.end()) e._double = it->second;
-	else {
-		e._double = new double(res);
-		_memory[res] = e._double;
-	}
+	e._double = res;
 	return e;
 }
 
@@ -1136,7 +1099,7 @@ bool AbsPredTable::contains(const vector<Element>& ve) const {
 		case ELINT:
 			return (abs(ve[0]._int) ==  ve[1]._int);
 		case ELDOUBLE:
-			return (fabs(*(ve[0]._double)) == (*(ve[1]._double)));
+			return (fabs(ve[0]._double) == ve[1]._double);
 		default:
 			assert(false); return false;
 	}
@@ -1151,7 +1114,6 @@ class AbsFuncInter : public FuncInter {
 	private: 
 		ElementType			_type;		// int or double
 		PredInter*			_predinter;
-		mutable map<double,double*>	_memory;
 	public:
 		AbsFuncInter(ElementType t);
 		~AbsFuncInter() { delete(_predinter);	}
@@ -1173,15 +1135,8 @@ Element AbsFuncInter::operator[](const vector<Element>& vi) const {
 			e._int = abs(vi[0]._int);
 			break;
 		case ELDOUBLE:
-		{
-			double d = fabs(*(vi[0]._double));
-			map<double,double*>::iterator it = _memory.find(d);
-			if(it != _memory.end()) e._double = it->second;
-			else {
-				e._double = new double(d);
-				_memory[d] = e._double;
-			}
-		}
+			e._double = fabs(vi[0]._double);
+			break;
 		default: assert(false);
 	}
 	return e;
@@ -1219,7 +1174,7 @@ bool UminPredTable::contains(const vector<Element>& ve) const {
 		case ELINT:
 			return (-(ve[0]._int) ==  ve[1]._int);
 		case ELDOUBLE:
-			return (-(*(ve[0]._double)) == (*(ve[1]._double)));
+			return (-(ve[0]._double) == ve[1]._double);
 		default:
 			assert(false); return false;
 	}
@@ -1234,7 +1189,6 @@ class UMinFuncInter : public FuncInter {
 	private: 
 		ElementType			_type;		// int or double
 		PredInter*			_predinter;
-		mutable map<double,double*>	_memory;
 	public:
 		UMinFuncInter(ElementType t);
 		~UMinFuncInter() { delete(_predinter);	}
@@ -1256,15 +1210,8 @@ Element UMinFuncInter::operator[](const vector<Element>& vi) const {
 			e._int = -(vi[0]._int);
 			break;
 		case ELDOUBLE:
-		{
-			double d = -(*(vi[0]._double));
-			map<double,double*>::iterator it = _memory.find(d);
-			if(it != _memory.end()) e._double = it->second;
-			else {
-				e._double = new double(d);
-				_memory[d] = e._double;
-			}
-		}
+			e._double = -(vi[0]._double);
+			break;
 		default: assert(false);
 	}
 	return e;
@@ -1288,7 +1235,7 @@ FuncInter* minimumfuncinter(const vector<SortTable*>& vs) {
 	UserPredTable* upt = new UserPredTable(vector<ElementType>(1,vs[0]->type()));
 	upt->addRow();
 	if(vs[0]->empty()) (*upt)[0][0] = ElementUtil::nonexist(vs[0]->type());
-	else (*upt)[0][0] = ElementUtil::clone(vs[0]->element(0),vs[0]->type());
+	else (*upt)[0][0] = vs[0]->element(0);
 	PredInter* pt = new PredInter(upt,true);
 	return new UserFuncInter(vector<ElementType>(0),vs[0]->type(),pt,upt);
 }
@@ -1299,7 +1246,7 @@ FuncInter* maximumfuncinter(const vector<SortTable*>& vs) {
 	UserPredTable* upt = new UserPredTable(vector<ElementType>(1,vs[0]->type()));
 	upt->addRow();
 	if(vs[0]->empty()) (*upt)[0][0] = ElementUtil::nonexist(vs[0]->type());
-	else (*upt)[0][0] = ElementUtil::clone(vs[0]->element(vs[0]->size() - 1),vs[0]->type());
+	else (*upt)[0][0] = vs[0]->element(vs[0]->size() - 1);
 	PredInter* pt = new PredInter(upt,true);
 	return new UserFuncInter(vector<ElementType>(0),vs[0]->type(),pt,upt);
 }

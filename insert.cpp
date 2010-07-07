@@ -1652,7 +1652,7 @@ namespace Insert {
 				case ELINT:
 					ust = spt->table()->add(e._int); break;
 				case ELDOUBLE:
-					ust = spt->table()->add(*(e._double)); delete(e._double); break;
+					ust = spt->table()->add(e._double); break;
 				case ELSTRING:
 					ust = spt->table()->add(*(e._string)); delete(e._string); break;
 				default:
@@ -1668,7 +1668,7 @@ namespace Insert {
 			UserSortTable* ust = 0;
 			switch(t) {
 				case ELINT: ust = new IntSortTable(); ust->add(e._int); break;
-				case ELDOUBLE: ust = new FloatSortTable(); ust->add(*(e._double)); delete(e._double); break;
+				case ELDOUBLE: ust = new FloatSortTable(); ust->add(e._double); break;
 				case ELSTRING: ust = new StrSortTable(); ust->add(*(e._string)); delete(e._string); break;
 				default: assert(false);
 			}
@@ -1700,7 +1700,7 @@ namespace Insert {
 				case ELSTRING: {
 					StrSortTable* sst = dynamic_cast<StrSortTable*>(st);
 					for(unsigned int n = 0; n < st->size(); ++n) {
-						Element e; e._string = new string((*sst)[n]);
+						Element e; e._string = (*sst)[n];
 						predatom(p,ELSTRING,e);
 					}
 					break;
@@ -1729,7 +1729,7 @@ namespace Insert {
 				switch(vet[c]) {
 					case ELINT: ve2[c]._int = ve[c]._int; break;
 					case ELDOUBLE:
-						if(ve[c]._double) ve2[c]._double = new double(*(ve[c]._double));
+						if(ve[c]._double) ve2[c]._double = ve[c]._double;
 						else {
 							ve2[c]._int = (vst[vstctr]->element(vi[vstctr]))._int;
 							++vstctr;
@@ -1764,7 +1764,7 @@ namespace Insert {
 		for(unsigned int c = 0; c < ve.size(); ++c) {
 			switch(vet[c]) {
 				case ELINT: break;
-				case ELDOUBLE: if(ve[c]._double) delete(ve[c]._double); break;
+				case ELDOUBLE: break;
 				case ELSTRING: if(ve[c]._string) delete(ve[c]._string); break;
 				default: assert(false);
 			}
@@ -1828,7 +1828,7 @@ namespace Insert {
 				switch(vet[c]) {
 					case ELINT: ve2[c]._int = ve[c]._int; break;
 					case ELDOUBLE:
-						if(ve[c]._double) ve2[c]._double = new double(*(ve[c]._double));
+						if(ve[c]._double) ve2[c]._double = ve[c]._double;
 						else {
 							ve2[c]._int = (vst[vstctr]->element(vi[vstctr]))._int;
 							++vstctr;
@@ -1863,7 +1863,7 @@ namespace Insert {
 		for(unsigned int c = 0; c < ve.size(); ++c) {
 			switch(vet[c]) {
 				case ELINT: break;
-				case ELDOUBLE: if(ve[c]._double) delete(ve[c]._double); break;
+				case ELDOUBLE: break;
 				case ELSTRING: if(ve[c]._string) delete(ve[c]._string); break;
 				default: assert(false);
 			}
@@ -2425,7 +2425,7 @@ namespace Insert {
 		return new DomainTerm(Builtin::intsort(),ELINT,en,parseinfo(l));
 	}
 
-	DomainTerm* domterm(double* d, YYLTYPE l) {
+	DomainTerm* domterm(double d, YYLTYPE l) {
 		Element ed; ed._double = d;
 		return new DomainTerm(Builtin::floatsort(),ELDOUBLE,ed,parseinfo(l));
 	}

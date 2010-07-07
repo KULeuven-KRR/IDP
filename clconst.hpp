@@ -23,7 +23,7 @@ class DoubleClConst : public CLConst {
 		double _value;
 	public:
 		DoubleClConst(double d) : _value(d) { }
-		int execute() const { yylval.dou = new double(_value); return FLNUMBER;	}
+		int execute() const { yylval.dou = _value; return FLNUMBER;	}
 };
 class CharCLConst : public CLConst {
 	private:

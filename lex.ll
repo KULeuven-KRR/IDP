@@ -7,6 +7,8 @@
 %{
 
 #include <typeinfo>
+#include "common.hpp"
+#include "data.hpp"
 #include "insert.hpp"
 #include "error.hpp"
 #include "parse.tab.hpp"
@@ -317,17 +319,17 @@ COMMENTLINE		"//".*
 							  yylval.chr = *yytext;
 							  return CHARACTER;			}
 <*>{ID}						{ advancecol();
-							  yylval.str = new string(yytext);
+							  yylval.str = IDPointer(yytext);
 							  return IDENTIFIER;		}
 <*>{STR}					{ advancecol();
 							  char* temp = yytext; ++temp;
-							  yylval.str = new string(temp,yyleng-2);
+							  yylval.str = IDPointer(string(temp,yyleng-2));
 							  return STRINGCONS;		}
 <*>{INT}					{ advancecol();
 							  yylval.nmr = atoi(yytext);
 							  return INTEGER;		    }
 <*>{FL}						{ advancecol();
-							  yylval.dou = new double(atof(yytext));
+							  yylval.dou = atof(yytext);
 							  return FLNUMBER;			}
 <*>{CHR}					{ advancecol();
 							  yylval.chr = (yytext)[1];

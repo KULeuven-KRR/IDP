@@ -35,7 +35,7 @@ int NaiveTranslator::translate(PFSymbol* s, const vector<string>& args) {
 void NaiveGrounder::visit(VarTerm* vt) {
 	assert(_varmapping.find(vt->var()) != _varmapping.end());
 	TypedElement te = _varmapping[vt->var()];
-	Element e = ElementUtil::clone(te);
+	Element e = te._element;
 	_returnTerm = new DomainTerm(vt->sort(),te._type,e,0);
 }
 
@@ -105,7 +105,7 @@ void NaiveGrounder::visit(QuantSetExpr* s) {
 	assert(!tables.empty());
 	ElementType weighttype = tables[0]->type();
 	do {
-		Element weight = ElementUtil::clone(tables[0]->element(tuple[0]),weighttype);
+		Element weight = tables[0]->element(tuple[0]);
 		for(unsigned int n = 0; n < tuple.size(); ++n) {
 			_varmapping[s->qvar(n)]._element = tables[n]->element(tuple[n]);
 		}
@@ -336,9 +336,9 @@ void NaiveGrounder::visit(Theory* t) {
 						vector<Term*> vt(f->nrsorts());
 						for(unsigned int a = 0; a < f->arity(); ++a) {
 							ElementType tp = intables[a]->type();
-							vt[a] = new DomainTerm(f->insort(a),tp,ElementUtil::clone(intables[a]->element(intuple[a]),tp),0);
+							vt[a] = new DomainTerm(f->insort(a),tp,intables[a]->element(intuple[a]),0);
 						}
-						vt.back() = new DomainTerm(f->outsort(),outtable->type(),ElementUtil::clone(outtable->element(outtuple1[0]),outtable->type()),0);
+						vt.back() = new DomainTerm(f->outsort(),outtable->type(),outtable->element(outtuple1[0]),0);
 						existvector.push_back(new PredForm(true,f,vt,0));
 						outtuple2[0] = outtuple1[0];
 						while(nexttuple(outtuple2,outlimit)) {
@@ -346,9 +346,9 @@ void NaiveGrounder::visit(Theory* t) {
 							vector<Term*> vt2(f->nrsorts());
 							for(unsigned int a = 0; a < f->arity(); ++a) {
 								ElementType tp = intables[a]->type();
-								vt2[a] = new DomainTerm(f->insort(a),tp,ElementUtil::clone(intables[a]->element(intuple[a]),tp),0);
+								vt2[a] = new DomainTerm(f->insort(a),tp,intables[a]->element(intuple[a]),0);
 							}
-							vt2.back() = new DomainTerm(f->outsort(),outtable->type(),ElementUtil::clone(outtable->element(outtuple2[0]),outtable->type()),0);
+							vt2.back() = new DomainTerm(f->outsort(),outtable->type(),outtable->element(outtuple2[0]),0);
 							Formula* f2 = new PredForm(false,f,vt2,0);
 							vector<Formula*> vf(2); vf[0] = f1; vf[1] = f2;
 							BoolForm* bf = new BoolForm(true,false,vf,0);

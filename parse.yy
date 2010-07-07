@@ -21,7 +21,7 @@ unsigned int		_currcol(0);
 bool				_wrongarity = false;
 void				addEmpty();
 void				addInt(int,YYLTYPE);
-void				addFloat(double*,YYLTYPE);
+void				addFloat(double,YYLTYPE);
 void				addString(string*,YYLTYPE);
 void				closeRow(YYLTYPE);
 void				closeTable();
@@ -50,7 +50,7 @@ extern string dtos(double);
 %union{
 	int					nmr;
 	char				chr;
-	double*				dou;
+	double				dou;
 	string*				str;
 	InfArgType			iat;
 
@@ -534,7 +534,7 @@ elements		: elements ';' charrange			{ $$ = $1->add((*$3)[0],(*$3)[1]); delete($
 				| elements ';' '(' integer ')'		{ $$ = $$->add($4);								
 													  if($$ != $1) delete($1);
 													}
-				| elements ';' '(' floatnr ')'		{ $$ = $$->add(*$4); delete($4);				
+				| elements ';' '(' floatnr ')'		{ $$ = $$->add($4);
 													  if($$ != $1) delete($1);
 													}
 				| elements ';' integer				{ $$ = $$->add($3);								
@@ -543,17 +543,17 @@ elements		: elements ';' charrange			{ $$ = $1->add((*$3)[0],(*$3)[1]); delete($
 				| elements ';' strelement			{ $$ = $$->add(*$3); delete($3);				
 													  if($$ != $1) delete($1);
 													}
-				| elements ';' floatnr				{ $$ = $$->add(*$3); delete($3);				
+				| elements ';' floatnr				{ $$ = $$->add($3); 
 													  if($$ != $1) delete($1);
 													}
 				| charrange							{ $$ = new StrSortTable(); $$ = $$->add((*$1)[0],(*$1)[1]); delete($1);	}
 				| intrange							{ $$ = new RanSortTable((*$1)[0],(*$1)[1]); delete($1);					}
 				| '(' strelement ')'				{ $$ = new StrSortTable(); $$ = $$->add(*$2); delete($2);				}
 				| '(' integer ')'					{ $$ = new IntSortTable(); $$ = $$->add($2);							}
-				| '(' floatnr ')'                   { $$ = new FloatSortTable(); $$ = $$->add(*$2); delete($2);				}
+				| '(' floatnr ')'                   { $$ = new FloatSortTable(); $$ = $$->add($2);							}
 				| strelement						{ $$ = new StrSortTable(); $$ = $$->add(*$1); delete($1);				}
 				| integer							{ $$ = new IntSortTable(); $$ = $$->add($1);							}	
-				| floatnr							{ $$ = new FloatSortTable(); $$ = $$->add(*$1); delete($1);				}
+				| floatnr							{ $$ = new FloatSortTable(); $$ = $$->add($1);							}
 				;
 
 strelement		: identifier	{ $$ = $1;	}
@@ -710,8 +710,8 @@ integer			: INTEGER		{ $$ = $1;		}
 				| '-' INTEGER	{ $$ = -$2;		}
 				;
 
-floatnr			: FLNUMBER			{ $$ = $1;								}
-				| '-' FLNUMBER		{ $$ = new double(-(*$2)); delete($2);	}
+floatnr			: FLNUMBER			{ $$ = $1;		}
+				| '-' FLNUMBER		{ $$ = -($2);	}
 				;
 
 identifier		: IDENTIFIER	{ $$ = $1;	}
@@ -917,7 +917,7 @@ void addInt(int n, YYLTYPE l) {
 					(*_currtable)[_currrow][_currcol]._int = n;
 					break;
 				case ELDOUBLE:
-					(*_currtable)[_currrow][_currcol]._double = new double(n);
+					(*_currtable)[_currrow][_currcol]._double = double(n);
 					break;
 				case ELSTRING:
 					(*_currtable)[_currrow][_currcol]._string = new string(itos(n));
@@ -979,7 +979,7 @@ void addString(string* s, YYLTYPE l) {
 	_currcol++;
 }
 
-void addFloat(double* d, YYLTYPE l) {
+void addFloat(double d, YYLTYPE l) {
 	if(!_currtable) // we start parsing a new table
 		_currtable = new UserPredTable(vector<ElementType>(0)); 
 	if(_currrow) {	// the table already contains at least one row
@@ -995,7 +995,7 @@ void addFloat(double* d, YYLTYPE l) {
 					(*_currtable)[_currrow][_currcol]._double = d;
 					break;
 				case ELSTRING:
-					(*_currtable)[_currrow][_currcol]._string = new string(dtos(*d));
+					(*_currtable)[_currrow][_currcol]._string = new string(dtos(d));
 					break;
 				default:
 					assert(false);

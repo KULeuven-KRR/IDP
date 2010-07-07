@@ -9,73 +9,144 @@
 
 #include "vocabulary.hpp"
 #include "visitor.hpp"
+typedef vector<vector<Element> > VVE;
 
-/******************************************
-	Domains (interpretations for sorts)
-******************************************/
+/*************************************
+	Interpretations for predicates
+*************************************/
 
-class SortTable {
+class PredTable {
+
+	public:
+		
+		// Constructors
+		PredTable() { }
+
+		// Destructor
+		virtual ~PredTable() { }
+
+		// Mutators
+		virtual void	sortunique() = 0;	// Sort and remove duplicates
+
+		// Inspectors
+		virtual bool			finite()				const = 0;	// true iff the table is finite
+		virtual	bool			empty()					const = 0;	// true iff the table is empty
+		virtual	unsigned int	arity()					const = 0;	// the number of columns in the table
+		virtual	ElementType		type(unsigned int n)	const = 0;	// the type of elements in the n'th column
+
+		// Check if the table contains a given tuple
+		//	precondition: the table is sorted and contains no duplicates
+		virtual	bool	contains(const vector<Element>&)		const = 0;	// true iff the table contains the tuple
+																			// precondition: the given tuple has the same
+																			// types as the types of the table
+				bool	contains(const vector<TypedElement>&)	const;		// true iff the table contains the tuple
+																			// works also if the types of the tuple do not
+																			// match the types of the table
+
+		// Inspectors for finite tables
+		virtual	unsigned int		size()									const = 0;	// the size of the table
+		virtual	vector<Element>		tuple(unsigned int n)					const = 0;	// the n'th tuple
+		virtual Element				element(unsigned int r,unsigned int c)	const = 0;	// the element at position (r,c)
+
+		// Debugging
+		virtual string to_string(unsigned int spaces = 0)	const = 0;
+
+};
+
+/*****************************************************
+	Interpretations for sorts and unary predicates
+*****************************************************/
+
+/** Abstract base class **/
+
+class SortTable : public PredTable {
 	
 	public:
+
+		// Constructors
+		SortTable() : PredTable() { }
 
 		// Destructor
 		virtual ~SortTable() { }
 
+		// Mutators
+		virtual void sortunique() = 0; 
+
 		// Inspectors
-		virtual bool			finite()				const { return true;	}	// Return true iff the size of the table is finite
-		virtual unsigned int	size()					const = 0;			// Returns the number of elements.
-		virtual bool			empty()					const = 0;			// True iff the sort contains no elements
+		virtual bool			finite()				const = 0;	// Return true iff the size of the table is finite
+		virtual bool			empty()					const = 0;	// True iff the sort contains no elements
+		virtual ElementType		type()					const = 0;	// return the type of the elements in the table
+				unsigned int	arity()					const { return 1;		}
+				ElementType		type(unsigned int n)	const { return type();	}
 
-		virtual	bool			contains(const string&)	const = 0;			// true iff the table contains the string.
-																			// Only works correct if the table is sorted and
-																			// contains no doubles. 
-		virtual bool			contains(int)			const = 0;			// true iff the table contains the integer
-																			// Only works correct if the table is sorted and
-																			// contains no doubles. 
-		virtual bool			contains(double)		const = 0;			// true iff the table contains the integer
-																			// Only works correct if the table is sorted and
-																			// contains no doubles.
-				bool			contains(Element,ElementType) const;		// true iff the table contains the element
-																			// Only works correct if the table is sorted and
-																			// contains no doubles. 
-																			//
-		virtual ElementType		type()					const = 0;			// return the type (int, double or string) of the
-																			// elements in the table
+		// Check if the table contains a given element
+		//	precondition: the table is sorted and contains no duplicates
+				bool	contains(const vector<Element>& ve)			const { return contains(ve[0]);	}
+				bool	contains(const vector<TypedElement>& ve)	const { return contains(ve[0]);	}	
+		virtual	bool	contains(string*)							const = 0;	// true iff the table contains the string.
+		virtual bool	contains(int)								const = 0;	// true iff the table contains the integer
+		virtual bool	contains(double)							const = 0;	// true iff the table contains the double
+		virtual	bool	contains(compound*)							const = 0;	// true iff the table contains the compound
+				bool	contains(Element,ElementType)				const;		// true iff the table contains the element
+				bool	contains(Element e)							const { return contains(e,type());				}
+				bool	contains(TypedElement te)					const { return contains(te._element,te._type);	}
 
-		virtual Element			element(unsigned int n)	= 0;				// returns (a pointer to) the n'th element
-		virtual unsigned int	position(Element,ElementType)	const = 0;	// returns the position of the given element
 
-		// Cleanup
-		virtual void sortunique() { } // Sort the table and remove doubles.
+		// Inspectors for finite tables
+		virtual unsigned int	size()									const = 0;	// Returns the number of elements.
+		virtual Element			element(unsigned int n)					const = 0;	// Return the n'th element
+				TypedElement	telement(unsigned int n)				const { TypedElement te(element(n),type()); return te;	}
+		virtual	vector<Element>	tuple(unsigned int n)					const { return vector<Element>(1,element(n));			}
+		virtual Element			element(unsigned int r,unsigned int c)	const { return element(r);								}
+		virtual unsigned int	position(Element,ElementType)			const = 0;	// Return the position of the given element
+				unsigned int	position(Element e)						const { return position(e,type());					}
+				unsigned int	position(TypedElement te)				const { return position(te._element,te._type);		}
 
 		// Debugging
 		virtual string to_string() const = 0;
 
 };
 
-class UserSortTable : public SortTable {
+/** Abstract class for finite unary tables **/
+class FiniteSortTable : public SortTable {
 
 	public:
+	
+		// Constructors
+		FiniteSortTable() : SortTable() { }
 
 		// Destructor
-		virtual ~UserSortTable() { }
+		virtual ~FiniteSortTable() { }
 
 		// Add elements to a table
 		// A pointer to the resulting table is returned. This pointer may point to 'this', but this is not
 		// neccessarily the case. No pointers are deleted when calling these methods.
-		// The result of add(...) is not necessarily sorted and may contain doubles.
-		virtual UserSortTable*	add(int)			= 0;	 // Add an integer to the table.
-		virtual UserSortTable*	add(double)			= 0;	 // Add a floating point number to the table
-		virtual UserSortTable*	add(const string&)	= 0;	 // Add a string to the table.
-		virtual UserSortTable*	add(int,int)		= 0;	 // Add a range of integers to the table.
-		virtual UserSortTable*	add(char,char)		= 0;	 // Add a range of characters to the table.
+		// The result of add(...) is not necessarily sorted and may contain duplicates.
+		virtual FiniteSortTable*	add(int)		= 0;	 // Add an integer to the table.
+		virtual FiniteSortTable*	add(double)		= 0;	 // Add a floating point number to the table
+		virtual FiniteSortTable*	add(string*)	= 0;	 // Add a string to the table.
+		virtual FiniteSortTable*	add(int,int)	= 0;	 // Add a range of integers to the table.
+		virtual FiniteSortTable*	add(char,char)	= 0;	 // Add a range of characters to the table.
 
-		// Cleanup
-		virtual void sortunique() = 0; // Sort the table and remove doubles.
+		// Mutators
+		virtual void sortunique() = 0; // Sort the table and remove duplicates.
 
 		// Inspectors
-		Element			element(unsigned int n)			= 0;		// returns the n'th element
-		unsigned int	position(Element,ElementType)	const = 0;	// returns the position of the given element
+		virtual bool			finite()	const { return true;	}
+		virtual bool			empty()		const = 0;	
+		virtual ElementType		type()		const = 0;
+
+		// Check if the table contains a given element
+		//	precondition: the table is sorted and contains no duplicates
+		virtual	bool	contains(string*)	const = 0;
+		virtual bool	contains(int)		const = 0;
+		virtual bool	contains(double)	const = 0;
+		virtual	bool	contains(compound*)	const = 0;
+
+		// Inspectors for finite tables
+		virtual unsigned int	size()							const = 0;	// Returns the number of elements.
+		virtual Element			element(unsigned int n)			const = 0;	// Return the n'th element
+		virtual unsigned int	position(Element,ElementType)	const = 0;	// returns the position of the given element
 
 		// Debugging
 		virtual string to_string() const = 0;
@@ -84,32 +155,36 @@ class UserSortTable : public SortTable {
 
 /** Empty table **/
 
-class EmptySortTable : public UserSortTable {
+class EmptySortTable : public FiniteSortTable {
 
 	public:
+
+		// Constructors
+		EmptySortTable() : FiniteSortTable() { }
 
 		// Destructor
 		virtual ~EmptySortTable() { }
 
-		UserSortTable*	add(int);	
-		UserSortTable*	add(double);	
-		UserSortTable*	add(const string&);	
-		UserSortTable*	add(int,int);	
-		UserSortTable*	add(char,char);	
+		// Add elements to a table
+		FiniteSortTable*	add(int);	
+		FiniteSortTable*	add(double);	
+		FiniteSortTable*	add(string*);	
+		FiniteSortTable*	add(int,int);	
+		FiniteSortTable*	add(char,char);	
 
-		// Cleanup
+		// Mutators
 		void sortunique() { }
 
 		// Inspectors
-		bool			finite()					const { return true;	} 
-		unsigned int	size()						const { return 0;		}	
-		bool			empty()						const { return true;	}	
-		bool			contains(const string&)		const { return false;	}	
-		bool			contains(int)				const { return false;	}	
-		bool			contains(double)			const { return false;	}	
-		ElementType		type()						const { return ELINT;	}
-		Element			element(unsigned int n)		{ assert(false); Element e; return e; } 
-		unsigned int	position(Element,ElementType)	const { assert(false); return 0;	}
+		bool			empty()							const { return true;						}	
+		ElementType		type()							const { return ElementUtil::leasttype();	}
+		bool			contains(string*)				const { return false;						}	
+		bool			contains(int)					const { return false;						}	
+		bool			contains(double)				const { return false;						}	
+		bool			contains(compound*)				const { return false;						}
+		unsigned int	size()							const { return 0;							}	
+		Element			element(unsigned int n)			const { assert(false); Element e; return e; } 
+		unsigned int	position(Element,ElementType)	const { assert(false); return 0;			}
 															
 		// Debugging
 		string to_string() const { return "";	}
@@ -118,7 +193,7 @@ class EmptySortTable : public UserSortTable {
 
 /** Domain is an interval of integers **/
 
-class RanSortTable : public UserSortTable {
+class RanSortTable : public FiniteSortTable {
 	
 	private:
 		int _first;		// first element in the range
@@ -126,34 +201,36 @@ class RanSortTable : public UserSortTable {
 
 	public:
 
+		// Constructors
+		RanSortTable(int f, int l) : FiniteSortTable(), _first(f), _last(l) { }
+
 		// Destructor
 		~RanSortTable() { }
 
-		// Constructors
-		RanSortTable(int f, int l) : _first(f), _last(l) { }
+		// Add elements to the table
+		FiniteSortTable*	add(int);
+		FiniteSortTable*	add(string*);
+		FiniteSortTable*	add(double);
+		FiniteSortTable*	add(int,int);
+		FiniteSortTable*	add(char,char);
 
 		// Mutators
-		UserSortTable*	add(int);
-		UserSortTable*	add(const string&);
-		UserSortTable*	add(double);
-		UserSortTable*	add(int,int);
-		UserSortTable*	add(char,char);
-
-		// Cleanup
 		void			sortunique() { }
 
 		// Inspectors
-		unsigned int	size()							const { return _last-_first+1;		}
-		bool			empty()							const { return _first > _last;		}
-		int				operator[](unsigned int n)		const { return _first+n;			}
-		int				first()							const { return _first;				}
-		int				last()							const { return _last;				}
-		bool			contains(const string&)			const;
+		bool			empty()							const { return _first > _last;	}
+		ElementType		type()							const { return ELINT;			}
+		bool			contains(string*)				const;
 		bool			contains(int)					const;
 		bool			contains(double)				const;
-		ElementType		type()							const { return ELINT;				}
-		Element			element(unsigned int n)			{ Element e; e._int = _first+n; return e;	}
+		bool			contains(compound*)				const;
+		unsigned int	size()							const { return _last-_first+1;	}
+		Element			element(unsigned int n)			const { Element e; e._int = _first+n; return e;	}
 		unsigned int	position(Element,ElementType)	const;
+
+		int	operator[](unsigned int n)	const { return _first+n;	}
+		int	first()						const { return _first;		}
+		int	last()						const { return _last;		}
 
 		// Debugging
 		string to_string() const;
@@ -161,9 +238,9 @@ class RanSortTable : public UserSortTable {
 };
 
 
-/** Domain is a set of integers, but not an interval **/
+/** Domain is a set of integers, but not necessarily an interval **/
 
-class IntSortTable : public UserSortTable {
+class IntSortTable : public FiniteSortTable {
 	
 	private:
 		vector<int> _table;
@@ -171,33 +248,35 @@ class IntSortTable : public UserSortTable {
 	public:
 
 		// Constructors
-		IntSortTable() : _table(0) { }
+		IntSortTable() : FiniteSortTable(), _table(0) { }
 
 		// Destructor
 		~IntSortTable() { }
 
-		// Mutators
-		UserSortTable*	add(int);
-		UserSortTable*  add(const string&);
-		UserSortTable*	add(double);
-		UserSortTable*  add(int,int);
-		UserSortTable*  add(char,char);
+		// Add elements to the table
+		FiniteSortTable*	add(int);
+		FiniteSortTable*	add(string*);
+		FiniteSortTable*	add(double);
+		FiniteSortTable*	add(int,int);
+		FiniteSortTable*	add(char,char);
 
-		// Cleanup
+		// Mutators
 		void	sortunique();
 
 		// Inspectors
-		unsigned int	size()						const { return _table.size();		}
-		bool			empty()						const { return _table.empty();		}
-		bool			contains(const string&)		const;
-		bool			contains(int)				const;
-		bool			contains(double)			const;
-		int				operator[](unsigned int n)	const { return _table[n];			}
-		int				first()						const { return _table.front();		}
-		int				last()						const { return _table.back();		}
-		ElementType		type()						const { return ELINT;				}
-		Element			element(unsigned int n)		{ Element e; e._int = _table[n]; return e;	}
+		bool			empty()							const { return _table.empty();	}
+		ElementType		type()							const { return ELINT;			}
+		bool			contains(string*)				const;
+		bool			contains(int)					const;
+		bool			contains(double)				const;
+		bool			contains(compound*)				const;
+		unsigned int	size()							const { return _table.size();	}
+		Element			element(unsigned int n)			const { Element e; e._int = _table[n]; return e;	}
 		unsigned int	position(Element,ElementType)	const;
+
+		int	operator[](unsigned int n)	const { return _table[n];			}
+		int	first()						const { return _table.front();		}
+		int	last()						const { return _table.back();		}
 
 		// Debugging
 		string to_string() const;
@@ -206,7 +285,7 @@ class IntSortTable : public UserSortTable {
 
 /** Domain is a set of doubles **/
 
-class FloatSortTable : public UserSortTable {
+class FloatSortTable : public FiniteSortTable {
 	
 	private:
 		vector<double> _table;
@@ -214,33 +293,35 @@ class FloatSortTable : public UserSortTable {
 	public:
 
 		// Constructors
-		FloatSortTable() : _table(0) { }
+		FloatSortTable() : FiniteSortTable(), _table(0) { }
 
 		// Destructor
 		~FloatSortTable() { }
 
-		// Mutators
-		UserSortTable*	add(int);
-		UserSortTable*  add(const string&);
-		UserSortTable*	add(double);
-		UserSortTable*  add(int,int);
-		UserSortTable*  add(char,char);
+		// Add elements to the table
+		FiniteSortTable*	add(int);
+		FiniteSortTable*	add(string*);
+		FiniteSortTable*	add(double);
+		FiniteSortTable*	add(int,int);
+		FiniteSortTable*	add(char,char);
 
-		// Cleanup
+		// Mutators
 		void	sortunique();
 
 		// Inspectors
-		unsigned int	size()						const { return _table.size();		}
-		bool			empty()						const { return _table.empty();		}
-		bool			contains(const string&)		const;
-		bool			contains(int)				const;
-		bool			contains(double)			const;
-		double			operator[](unsigned int n)	const { return _table[n];			}
-		double			first()						const { return _table.front();		}
-		double			last()						const { return _table.back();		}
-		ElementType		type()						const { return ELDOUBLE;			}
-		Element			element(unsigned int n)		{ Element e; e._double = &(_table[n]); return e;	}
+		bool			empty()							const { return _table.empty();		}
+		ElementType		type()							const { return ELDOUBLE;			}
+		bool			contains(string*)				const;
+		bool			contains(int)					const;
+		bool			contains(double)				const;
+		bool			contains(compound*)				const;
+		unsigned int	size()							const { return _table.size();		}
+		Element			element(unsigned int n)			const { Element e; e._double = _table[n]; return e;	}
 		unsigned int	position(Element,ElementType)	const;
+
+		double	operator[](unsigned int n)	const { return _table[n];			}
+		double	first()						const { return _table.front();		}
+		double	last()						const { return _table.back();		}
 
 		// Debugging
 		string to_string() const;
@@ -250,10 +331,10 @@ class FloatSortTable : public UserSortTable {
 
 /** Domain is a set of strings **/
 
-class StrSortTable : public UserSortTable {
+class StrSortTable : public FiniteSortTable {
 	
 	private:
-		vector<string> _table;
+		vector<string*> _table;
 
 	public:
 
@@ -263,71 +344,74 @@ class StrSortTable : public UserSortTable {
 		// Destructor
 		~StrSortTable() { }
 
-		// Mutators
-		UserSortTable*	add(int);
-		UserSortTable*	add(const string&);
-		UserSortTable*	add(double);
-		UserSortTable*	add(int,int);
-		UserSortTable*	add(char,char);
+		// Add elements to the table
+		FiniteSortTable*	add(int);
+		FiniteSortTable*	add(string*);
+		FiniteSortTable*	add(double);
+		FiniteSortTable*	add(int,int);
+		FiniteSortTable*	add(char,char);
 
 		// Cleanup
-		void			sortunique();
+		void	sortunique();
 
 		// Inspectors
-		unsigned int	size()						const { return _table.size();		}
-		bool			empty()						const { return _table.empty();		}
-		bool			contains(const string&)		const;
-		bool			contains(int)				const;
-		bool			contains(double)			const;
-		const string&	operator[](unsigned int n)	const { return _table[n];			}
-		const string&	first()						const { return _table.front();		}
-		const string&	last()						const { return _table.back();		}
-		ElementType		type()						const { return ELSTRING;			}
-		Element			element(unsigned int n)		{ Element e; e._string = &(_table[n]); return e;	}
+		bool			empty()							const { return _table.empty();		}
+		ElementType		type()							const { return ELSTRING;			}
+		bool			contains(int)					const;
+		bool			contains(double)				const;
+		bool			contains(string*)				const;
+		bool			contains(compound*)				const;
+		unsigned int	size()							const { return _table.size();		}
+		Element			element(unsigned int n)			const { Element e; e._string = _table[n]; return e;	}
 		unsigned int	position(Element,ElementType)	const;
+
+		string*	operator[](unsigned int n)	const { return _table[n];			}
+		string*	first()						const { return _table.front();		}
+		string*	last()						const { return _table.back();		}
 
 		// Debugging
 		string to_string() const;
 
 };
 
-/** Domain contains both numbers and strings **/
+/** Domain contains numbers, strings, and/or compounds **/
 
-class MixedSortTable : public UserSortTable {
+class MixedSortTable : public FiniteSortTable {
 	
 	private:
-		vector<double>	_numtable;
-		vector<string>	_strtable;
-		vector<string*>	_numstrmem;
+		vector<double>		_numtable;
+		vector<string*>		_strtable;
+		vector<compound*>	_comtable;
 
 	public:
 
 		// Constructors
-		MixedSortTable() : _numtable(0), _strtable(0), _numstrmem(0) { }
-		MixedSortTable(const vector<string>& t) : _numtable(0), _strtable(t), _numstrmem(0) { }
-		MixedSortTable(const vector<double>& t) : _numtable(t), _strtable(0), _numstrmem(t.size(),0) { }
+		MixedSortTable() : _numtable(0), _strtable(0) { }
+		MixedSortTable(const vector<string*>& t) : _numtable(0), _strtable(t)	{ }
+		MixedSortTable(const vector<double>& t) : _numtable(t), _strtable(0)	{ }
 
 		// Destructor
-		~MixedSortTable() { for(unsigned int n = 0; n < _numstrmem.size(); ++n) { if(_numstrmem[n]) delete(_numstrmem[n]); } }
+		~MixedSortTable() { }
+
+		// Add elements to the table
+		FiniteSortTable*	add(int);
+		FiniteSortTable*	add(string*);
+		FiniteSortTable*	add(double);
+		FiniteSortTable*	add(int,int);
+		FiniteSortTable*	add(char,char);
 
 		// Mutators
-		UserSortTable*	add(int);
-		UserSortTable*	add(const string&);
-		UserSortTable*	add(double);
-		UserSortTable*	add(int,int);
-		UserSortTable*	add(char,char);
-
-		// Cleanup
 		void			sortunique();
 
 		// Inspectors
-		unsigned int	size()						const { return _numtable.size() + _strtable.size();			}
-		bool			empty()						const { return (_numtable.empty() && _strtable.empty());	}
-		bool			contains(const string&)		const;
-		bool			contains(int)				const;
-		bool			contains(double)			const;
-		ElementType		type()						const { return ELSTRING;	}
-		Element			element(unsigned int n); 
+		bool			empty()							const;
+		ElementType		type()							const;
+		bool			contains(int)					const;
+		bool			contains(double)				const;
+		bool			contains(string*)				const;
+		bool			contains(compound*)				const;
+		unsigned int	size()							const;
+		Element			element(unsigned int n)			const; 
 		unsigned int	position(Element,ElementType)	const;
 
 		// Debugging
@@ -336,11 +420,13 @@ class MixedSortTable : public UserSortTable {
 };
 
 
-/*************************************
-	Interpretations for predicates
-*************************************/
+/***********************************************
+	Interpretations for non-unary predicates
+***********************************************/
 
-class PredTable {
+/** Abstract base class **/
+
+class NonUnaryPredTable : public PredTable {
 
 	protected:
 		vector<ElementType>	_types;
@@ -348,79 +434,52 @@ class PredTable {
 	public:
 		
 		// Constructors
-		PredTable(const vector<ElementType>& t) : _types(t) { }
+		NonUnaryPredTable(const vector<ElementType>& t) : PredTable(), _types(t) { }
 
 		// Destructor
-		virtual ~PredTable() { }
+		virtual ~NonUnaryPredTable() { }
 
 		// Mutators
-		virtual void	sortunique()	{ }	// Sort and remove doubles
+		virtual void	sortunique()	= 0;
 
 		// Inspectors
-		virtual bool				finite()								const = 0;	// true iff the table is finite
-		virtual	unsigned int		size()									const = 0;	// the size of the table
-		virtual	bool				empty()									const = 0;	// true iff the table is empty
+		virtual bool				finite()				const = 0;	// true iff the table is finite
+		virtual	bool				empty()					const = 0;	// true iff the table is empty
+				unsigned int		arity()					const { return _types.size();	}	
+				ElementType			type(unsigned int n)	const { return _types[n];		}
+
+		// Check if the table contains a given tuple
 		virtual	bool				contains(const vector<Element>&)		const = 0;
-				bool				contains(const vector<TypedElement>&)	const;
-		virtual	vector<Element>		tuple(unsigned int n)					const = 0;	// the n'th tuple
-		virtual Element				element(unsigned int r,unsigned int c)	const = 0;	// the element at position (r,c)
-				unsigned int				arity()							const { return _types.size();	}	
-				ElementType					type(unsigned int n)			const { return _types[n];		}
-				const vector<ElementType>&	types()							const { return _types;			}
 
-		// Debugging
-		virtual string to_string(unsigned int spaces = 0)	const = 0;
-};
-
-typedef vector<vector<Element> > VVE;
-
-/** Finite tables **/
-class FinitePredTable : public PredTable {
-
-	public:
-		
-		// Constructors
-		FinitePredTable(const vector<ElementType>& t) : PredTable(t) { }
-
-		// Destructor
-		virtual ~FinitePredTable() { }
-
-		// Mutators
-		virtual void	sortunique()												= 0;	// Sort and remove doubles
-		virtual void	addRow(const vector<Element>&, const vector<ElementType>&)	= 0;	// Add a tuple
-
-		// Inspectors
-				bool				finite()								const { return true;	}
+		// Inspectors for finite tables
 		virtual	unsigned int		size()									const = 0;	// the size of the table
-		virtual	bool				empty()									const = 0;	// true iff the table is empty
-		virtual	bool				contains(const vector<Element>&)		const = 0;
 		virtual	vector<Element>		tuple(unsigned int n)					const = 0;	// the n'th tuple
 		virtual Element				element(unsigned int r,unsigned int c)	const = 0;	// the element at position (r,c)
 
 		// Debugging
 		virtual string to_string(unsigned int spaces = 0)	const = 0;
-
 };
 
-/** Tables where all tuples are enumerated **/
-class UserPredTable : public FinitePredTable {
+/** Finite tables  **/
+
+class FinitePredTable : public NonUnaryPredTable {
 	
 	private:
-		vector<vector<Element> >	_table;	
-		ElementWeakOrdering			_order;
-		ElementEquality				_equality;
+		vector<vector<Element> >	_table;		// the actual table
+		ElementWeakOrdering			_order;		// less-than-or-equal relation on the tuples of this table
+		ElementEquality				_equality;	// equality relation on the tuples of this table
 
 	public:
 
 		// Constructors 
-		UserPredTable(const vector<ElementType>& t) : FinitePredTable(t), _table(0), _order(t), _equality(t) { }
-		UserPredTable(const UserPredTable&);
+		FinitePredTable(const vector<ElementType>& t) : NonUnaryPredTable(t), _table(0), _order(t), _equality(t) { }
+		FinitePredTable(const UserPredTable&);
 
 		// Destructor
-		virtual ~UserPredTable();
+		~FinitePredTable() { }
 
 		// Mutators
-		void			sortunique();		// Sort and remove doubles
+		void	sortunique();
 
 		// Parsing
 		void				addRow()								{ _table.push_back(vector<Element>(_types.size()));	}
@@ -430,50 +489,28 @@ class UserPredTable : public FinitePredTable {
 		vector<Element>&	operator[](unsigned int n)				{ return _table[n];	}
 
 		// Inspectors
-		unsigned int			size()									const { return _table.size();	}
-		bool					empty()									const { return _table.empty();	}
-		bool					contains(const vector<Element>&)		const;
+		bool				finite()								const { return true;			}
+		bool				empty()									const { return _table.empty();	}
+		unsigned int		size()									const { return _table.size();	}
+		vector<Element>		tuple(unsigned int n)					const { return _table[n];		}
+		Element				element(unsigned int r,unsigned int c)	const { return _table[r][c];	}
+
+		// Check if the table contains a given tuple
+		bool	contains(const vector<Element>&)	const;
+
+		// Other inspectors
 		VVE::const_iterator		begin()									const { return _table.begin();	}
 		VVE::const_iterator		end()									const { return _table.end();	}
 		const vector<Element>&	operator[](unsigned int n)				const { return _table[n];		}
-		vector<Element>			tuple(unsigned int n)					const { return _table[n];		}
-		Element					element(unsigned int r,unsigned int c)	const { return _table[r][c];	}
 		
 		// Debugging
 		string to_string(unsigned int spaces = 0)	const;
 };
 
-/** Tables with arity 1 **/
 
-class SortPredTable : public FinitePredTable {
-	
-	private:
-		UserSortTable*	_table;
-
-	public:
-
-		// Constructors
-		SortPredTable(UserSortTable* t);
-
-		// Destructor
-		virtual ~SortPredTable() { delete(_table);	}
-
-		// Mutators
-		void sortunique()						{ _table->sortunique();	}
-		void addRow(const vector<Element>&, const vector<ElementType>&);
-		void table(UserSortTable* ust)			{ _table = ust;			}
-
-		// Inspectors
-		unsigned int	size()									const { return _table->size();	}
-		bool			empty()									const { return _table->empty();	}
-		bool			contains(const vector<Element>&)		const;
-		vector<Element>	tuple(unsigned int n)					const { return vector<Element>(1,_table->element(n));	}
-		Element			element(unsigned int r,unsigned int c)	const { assert(!c);	return _table->element(r);			}
-		UserSortTable*	table()									const { return _table;									}
-
-		// Debugging
-		string to_string(unsigned int spaces = 0)	const;
-};
+/********************************************
+	Four-valued predicate interpretations
+********************************************/
 
 /*
  * Four-valued predicate interpretation, represented by two pointers to tables.
@@ -502,14 +539,14 @@ class PredInter {
 		void sortunique()	{ _ctpf->sortunique(); if(_ctpf != _cfpt) _cfpt->sortunique();	}
 
 		// Inspectors
-		PredTable*	ctpf()	const	{ return _ctpf;	}
-		PredTable*	cfpt()	const	{ return _cfpt;	}
-		bool		ct()	const	{ return _ct;	}
-		bool		cf()	const	{ return _cf;	}
-		bool		istrue(const vector<Element>& vi)	const { return (_ct ? _ctpf->contains(vi) : !(_ctpf->contains(vi)));	}
-		bool		isfalse(const vector<Element>& vi)	const { return (_cf ? _cfpt->contains(vi) : !(_cfpt->contains(vi)));	}
-		bool		istrue(const vector<TypedElement>& vi)	const;
-		bool		isfalse(const vector<TypedElement>& vi)	const;
+		PredTable*	ctpf()									const { return _ctpf;	}
+		PredTable*	cfpt()									const { return _cfpt;	}
+		bool		ct()									const { return _ct;		}
+		bool		cf()									const { return _cf;		}
+		bool		istrue(const vector<Element>& vi)		const { return (_ct ? _ctpf->contains(vi) : !(_ctpf->contains(vi)));	}
+		bool		isfalse(const vector<Element>& vi)		const { return (_cf ? _cfpt->contains(vi) : !(_cfpt->contains(vi)));	}
+		bool		istrue(const vector<TypedElement>& vi)	const;	// return true iff the given tuple is true or inconsistent
+		bool		isfalse(const vector<TypedElement>& vi)	const;	// return false iff the given tuple is false or inconsistent
 
 		// Debugging
 		string to_string(unsigned int spaces = 0) const;
@@ -520,6 +557,8 @@ class PredInter {
 /************************************
 	Interpretations for functions 
 ************************************/
+
+HIER BEZIG
 
 class FuncInter {
 
@@ -600,9 +639,9 @@ class AbstractStructure {
 
 	protected:
 
-		string				_name;			// The name of the structure
-		ParseInfo*			_pi;			// The place where this structure was parsed.
-		Vocabulary*			_vocabulary;	// The vocabulary of the structure.
+		string			_name;			// The name of the structure
+		ParseInfo		_pi;			// The place where this structure was parsed.
+		Vocabulary*		_vocabulary;	// The vocabulary of the structure.
 
 	public:
 
