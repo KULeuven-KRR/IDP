@@ -1,6 +1,6 @@
 # Compiler
 GPP=g++
-GPPFLAGS=-O3 -D NDEBUG -Wall -Wextra -Wno-unused-parameter -ffloat-store -pedantic -Wno-variadic-macros #-D GMP
+GPPFLAGS=-D NDEBUG -Wall -Wextra -Wno-unused-parameter -ffloat-store -pedantic -Wno-variadic-macros #-D GMP
 
 # Lexer
 FLEX=flex

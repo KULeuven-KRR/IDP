@@ -17,19 +17,19 @@
 class Namespace {
 
 	private:
-		string					_name;			// The name of the namespace
-		Namespace*				_superspace;	// The parent of the namespace in the namespace hierarchy
-												// Null-pointer if top of the hierarchy
-		map<string,Namespace*>	_subspaces;		// Map a name to the corresponding subspace
-		map<string,Vocabulary*>	_vocabularies;	// Map a name to the corresponding vocabulary
-		map<string,Structure*>	_structures;	// Map a name to the corresponding structure
-		map<string,Theory*>		_theories;		// Map a name to the corresponding theory
-		vector<Namespace*>		_subs;			// The children of the namespace in the namespace hierarchy
-		vector<Vocabulary*>		_vocs;			// The vocabularies in the namespace
-		vector<Structure*>		_structs;		// The structures in the namespace                   
-		vector<Theory*>			_theos;			// The theories in the namespace                           
-		ParseInfo*				_pi;			// the place where the namespace was parsed
-		static Namespace*		_global;		// the global namespace
+		string							_name;			// The name of the namespace
+		Namespace*						_superspace;	// The parent of the namespace in the namespace hierarchy
+														// Null-pointer if top of the hierarchy
+		map<string,Namespace*>			_subspaces;		// Map a name to the corresponding subspace
+		map<string,Vocabulary*>			_vocabularies;	// Map a name to the corresponding vocabulary
+		map<string,AbstractStructure*>	_structures;	// Map a name to the corresponding structure
+		map<string,AbstractTheory*>		_theories;		// Map a name to the corresponding theory
+		vector<Namespace*>				_subs;			// The children of the namespace in the namespace hierarchy
+		vector<Vocabulary*>				_vocs;			// The vocabularies in the namespace
+		vector<AbstractStructure*>		_structs;		// The structures in the namespace                   
+		vector<AbstractTheory*>			_theos;			// The theories in the namespace                           
+		ParseInfo*						_pi;			// the place where the namespace was parsed
+		static Namespace*				_global;		// the global namespace
 
 	public:
 
@@ -52,16 +52,16 @@ class Namespace {
 		bool				isStructure(const string&)	const;
 		Namespace*			subspace(const string&)		const;
 		Vocabulary*			vocabulary(const string&)	const;
-		Theory*				theory(const string&)		const;
-		Structure*			structure(const string&)	const;
+		AbstractTheory*		theory(const string&)		const;
+		AbstractStructure*	structure(const string&)	const;
 		unsigned int		nrSubs()					const { return _subs.size();	}
 		unsigned int		nrVocs()					const { return _vocs.size();	}
 		unsigned int		nrStructs()					const { return _structs.size();	}
 		unsigned int		nrTheos()					const { return _theos.size();	}
 		Namespace*			subspace(unsigned int n)	const { return _subs[n];		}
 		Vocabulary*			vocabulary(unsigned int n)	const { return _vocs[n];		}
-		Theory*				theory(unsigned int n)		const { return _theos[n];		}
-		Structure*			structure(unsigned int n)	const { return _structs[n];		}
+		AbstractTheory*		theory(unsigned int n)		const { return _theos[n];		}
+		AbstractStructure*	structure(unsigned int n)	const { return _structs[n];		}
 		set<Sort*>			allSorts()					const;
 		set<Predicate*>		allPreds()					const;
 		set<Function*>		allFuncs()					const;
@@ -71,10 +71,10 @@ class Namespace {
 		static void			deleteGlobal();
 
 		// Mutators	
-		void	add(Vocabulary* v)	{ _vocabularies[v->name()] = v;	_vocs.push_back(v);		}
-		void	add(Namespace* n)	{ _subspaces[n->name()] = n; _subs.push_back(n);		}
-		void	add(Structure* s)	{ _structures[s->name()] = s; _structs.push_back(s);	}
-		void	add(Theory* t)		{ _theories[t->name()] = t; _theos.push_back(t);		}
+		void	add(Vocabulary* v)			{ _vocabularies[v->name()] = v;	_vocs.push_back(v);		}
+		void	add(Namespace* n)			{ _subspaces[n->name()] = n; _subs.push_back(n);		}
+		void	add(AbstractStructure* s)	{ _structures[s->name()] = s; _structs.push_back(s);	}
+		void	add(AbstractTheory* t)		{ _theories[t->name()] = t; _theos.push_back(t);		}
 };
 
 #endif

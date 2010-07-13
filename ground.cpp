@@ -6,6 +6,7 @@
 
 #include "ground.hpp"
 #include <typeinfo>
+#include <iostream>
 
 extern string itos(int);
 extern bool nexttuple(vector<unsigned int>&, const vector<unsigned int>&);
@@ -21,6 +22,8 @@ int NaiveTranslator::translate(PFSymbol* s, const vector<string>& args) {
 		if(jt != (it->second).end()) return jt->second;
 	}
 	_table[s][args] = _nextnumber;
+	_backsymbtable.push_back(s);
+	_backargstable.push_back(args);
 	return _nextnumber++;
 }
 
@@ -275,7 +278,9 @@ void NaiveGrounder::visit(FixpDef* d) {
 }
 
 void NaiveGrounder::visit(Theory* t) {
-	Theory* grounding = new Theory("",t->vocabulary(),_structure,0);
+	Theory* grounding = new Theory("",t->vocabulary(),0);
+
+	// Ground the theory
 	for(unsigned int n = 0; n < t->nrDefinitions(); ++n) {
 		_returnDef = 0;
 		t->definition(n)->accept(this);
@@ -294,9 +299,68 @@ void NaiveGrounder::visit(Theory* t) {
 		assert(_returnFormula);
 		grounding->add(_returnFormula);
 	}
+	
+	// Add the structure
 	Theory* structtheo = StructUtils::convert_to_theory(_structure);
 	grounding->add(structtheo);
 	delete(structtheo);
+
+	// Add the function constraints
+	Vocabulary* v = t->vocabulary();
+	for(unsigned int n = 0; n < v->nrFuncs(); ++n) {
+		Function* f = v->func(n);
+		vector<unsigned int> intuple(f->arity(),0);
+		vector<unsigned int> outtuple1(1,0);
+		vector<unsigned int> outtuple2(1,0);
+		vector<unsigned int> inlimits(f->arity());
+		vector<unsigned int> outlimit(1);
+		vector<SortTable*>	 intables(f->arity());
+		SortTable*			 outtable;
+		unsigned int m = 0;
+		for(; m < f->arity(); ++m) {
+			intables[m] = _structure->inter(f->insort(m));
+			inlimits[m] = intables[m]->size();
+			if(inlimits[m] == 0) break;
+		}
+		if(m == f->arity()) {
+			outtable = _structure->inter(f->outsort());
+			outlimit[0] = outtable->size();
+			if(outlimit[0] == 0) {
+				// TODO
+			}
+			else {
+				do {
+					vector<Formula*> existvector;
+					outtuple1[0] = 0;
+					do {
+						vector<Term*> vt(f->nrsorts());
+						for(unsigned int a = 0; a < f->arity(); ++a) {
+							ElementType tp = intables[a]->type();
+							vt[a] = new DomainTerm(f->insort(a),tp,ElementUtil::clone(intables[a]->element(intuple[a]),tp),0);
+						}
+						vt.back() = new DomainTerm(f->outsort(),outtable->type(),ElementUtil::clone(outtable->element(outtuple1[0]),outtable->type()),0);
+						existvector.push_back(new PredForm(true,f,vt,0));
+						outtuple2[0] = outtuple1[0];
+						while(nexttuple(outtuple2,outlimit)) {
+							Formula* f1 = (existvector.back())->clone(); f1->swapsign();
+							vector<Term*> vt2(f->nrsorts());
+							for(unsigned int a = 0; a < f->arity(); ++a) {
+								ElementType tp = intables[a]->type();
+								vt2[a] = new DomainTerm(f->insort(a),tp,ElementUtil::clone(intables[a]->element(intuple[a]),tp),0);
+							}
+							vt2.back() = new DomainTerm(f->outsort(),outtable->type(),ElementUtil::clone(outtable->element(outtuple2[0]),outtable->type()),0);
+							Formula* f2 = new PredForm(false,f,vt2,0);
+							vector<Formula*> vf(2); vf[0] = f1; vf[1] = f2;
+							BoolForm* bf = new BoolForm(true,false,vf,0);
+							grounding->add(bf);
+						} 
+					} while(nexttuple(outtuple1,outlimit));
+					BoolForm* bf = new BoolForm(true,false,existvector,0);
+					grounding->add(bf);
+				} while(nexttuple(intuple,inlimits));
+			}
+		}
+	}
 
 	_returnTheory = grounding;
 }

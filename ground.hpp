@@ -24,11 +24,17 @@ class NaiveTranslator : public GroundTranslator {
 	private:
 		int										_nextnumber;
 		map<PFSymbol*,map<vector<string>,int> >	_table;
+		vector<PFSymbol*>						_backsymbtable;
+		vector<vector<string> >					_backargstable;
 
 	public:
 		
 		NaiveTranslator() : _nextnumber(1) { }
-		int translate(PFSymbol*,const vector<string>&);
+
+		int						translate(PFSymbol*,const vector<string>&);
+		PFSymbol*				symbol(unsigned int n)	const { return _backsymbtable[n-1];	}
+		const vector<string>&	args(unsigned int n)	const { return _backargstable[n-1];	}
+
 };
 
 

@@ -5,6 +5,7 @@
 ************************************/
 
 #include "theory.hpp"
+#include <iostream>
 
 void Visitor::visit(PredForm* a)		{ traverse(a);	}
 void Visitor::visit(EqChainForm* a)		{ traverse(a);	}
@@ -29,6 +30,7 @@ void Visitor::visit(Sort*)				{ }
 void Visitor::visit(Predicate*)			{ }
 void Visitor::visit(Function*)			{ }
 void Visitor::visit(Vocabulary* v)		{ traverse(v); }
+void Visitor::visit(EcnfTheory*)		{ /* TODO */	}
 
 void Visitor::traverse(Formula* f) {
 	for(unsigned int n = 0; n < f->nrSubforms(); ++n) {
@@ -427,6 +429,11 @@ Theory* MutatingVisitor::visit(Theory* t) {
 			t->fixpdef(n,fd);
 		}
 	}
+	return t;
+}
+
+EcnfTheory* MutatingVisitor::visit(EcnfTheory* t) {
+	// TODO
 	return t;
 }
 

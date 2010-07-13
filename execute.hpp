@@ -11,10 +11,10 @@
 
 
 union InfArg {
-	Vocabulary*	_vocabulary;
-	Structure*	_structure;
-	Theory*		_theory;
-	Namespace*	_namespace;
+	Vocabulary*			_vocabulary;
+	AbstractStructure*	_structure;
+	AbstractTheory*		_theory;
+	Namespace*			_namespace;
 };
 
 class Inference {
@@ -136,6 +136,42 @@ class StructToTheory : public Inference {
 			_intypes = vector<InfArgType>(1,IAT_STRUCTURE); 
 			_outtype = IAT_THEORY;	
 			_description = "Rewrite a structure to a theory";
+		}
+		void execute(const vector<InfArg>& args, const string& res,Namespace*) const;
+};
+
+class MoveQuantifiers : public Inference {
+	public:
+		MoveQuantifiers() {
+			_intypes = vector<InfArgType>(1,IAT_THEORY);
+			_outtype = IAT_VOID;
+			_description = "Move universal (existential) quantifiers inside conjunctions (disjunctions)";
+		}
+		void execute(const vector<InfArg>& args, const string& res,Namespace*) const;
+};
+
+class ApplyTseitin : public Inference {
+	public:
+		ApplyTseitin() {
+			_intypes = vector<InfArgType>(1,IAT_THEORY);
+			_outtype = IAT_VOID;
+			_description = "Apply the tseitin transformation to a theory";
+		}
+		void execute(const vector<InfArg>& args, const string& res,Namespace*) const;
+};
+
+class GroundSimplify : public Inference {
+	public:
+		GroundSimplify();
+		void execute(const vector<InfArg>& args, const string& res,Namespace*) const;
+};
+
+class MoveFunctions : public Inference {
+	public:
+		MoveFunctions() {
+			_intypes = vector<InfArgType>(1,IAT_THEORY);
+			_outtype = IAT_VOID;
+			_description = "Move functions until no functions are nested";
 		}
 		void execute(const vector<InfArg>& args, const string& res,Namespace*) const;
 };

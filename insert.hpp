@@ -58,7 +58,6 @@ namespace Insert {
 	Function*	copyfunc(const string& name, Function*, YYLTYPE);	// copy a function
 
 	/** Structure **/
-	void usingstruct(const vector<string>& sname, YYLTYPE);	// use structure 'sname' when parsing
 	void openstructure(const string& name, YYLTYPE);
 	void closestructure();
 	void closeaspstructure();

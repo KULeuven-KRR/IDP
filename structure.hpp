@@ -8,6 +8,7 @@
 #define STRUCTURE_HPP
 
 #include "vocabulary.hpp"
+#include "visitor.hpp"
 
 /******************************************
 	Domains (interpretations for sorts)
@@ -22,26 +23,27 @@ class SortTable {
 
 		// Inspectors
 		virtual bool			finite()				const { return true;	}	// Return true iff the size of the table is finite
-		virtual unsigned int	size()					const = 0;		// Returns the number of elements.
-		virtual bool			empty()					const = 0;		// True iff the sort contains no elements
+		virtual unsigned int	size()					const = 0;			// Returns the number of elements.
+		virtual bool			empty()					const = 0;			// True iff the sort contains no elements
 
-		virtual	bool			contains(const string&)	const = 0;		// true iff the table contains the string.
-																		// Only works correct if the table is sorted and
-																		// contains no doubles. 
-		virtual bool			contains(int)			const = 0;		// true iff the table contains the integer
-																		// Only works correct if the table is sorted and
-																		// contains no doubles. 
-		virtual bool			contains(double)		const = 0;		// true iff the table contains the integer
-																		// Only works correct if the table is sorted and
-																		// contains no doubles.
-				bool			contains(Element,ElementType) const;	// true iff the table contains the element
-																		// Only works correct if the table is sorted and
-																		// contains no doubles. 
-																		//
-		virtual ElementType		type()					const = 0;		// return the type (int, double or string) of the
-																		// elements in the table
+		virtual	bool			contains(const string&)	const = 0;			// true iff the table contains the string.
+																			// Only works correct if the table is sorted and
+																			// contains no doubles. 
+		virtual bool			contains(int)			const = 0;			// true iff the table contains the integer
+																			// Only works correct if the table is sorted and
+																			// contains no doubles. 
+		virtual bool			contains(double)		const = 0;			// true iff the table contains the integer
+																			// Only works correct if the table is sorted and
+																			// contains no doubles.
+				bool			contains(Element,ElementType) const;		// true iff the table contains the element
+																			// Only works correct if the table is sorted and
+																			// contains no doubles. 
+																			//
+		virtual ElementType		type()					const = 0;			// return the type (int, double or string) of the
+																			// elements in the table
 
-		virtual Element			element(unsigned int n)	= 0;			// returns (a pointer to) the n'th element
+		virtual Element			element(unsigned int n)	= 0;				// returns (a pointer to) the n'th element
+		virtual unsigned int	position(Element,ElementType)	const = 0;	// returns the position of the given element
 
 		// Cleanup
 		virtual void sortunique() { } // Sort the table and remove doubles.
@@ -75,7 +77,8 @@ class UserSortTable : public SortTable {
 		virtual void sortunique() = 0; // Sort the table and remove doubles.
 
 		// Inspectors
-		Element					element(unsigned int n)		 = 0;	// returns the n'th element
+		Element			element(unsigned int n)			= 0;		// returns the n'th element
+		unsigned int	position(Element,ElementType)	const = 0;	// returns the position of the given element
 
 		// Debugging
 		virtual string to_string() const = 0;
@@ -109,6 +112,7 @@ class EmptySortTable : public UserSortTable {
 		bool			contains(double)			const { return false;	}	
 		ElementType		type()						const { return ELINT;	}
 		Element			element(unsigned int n)		{ assert(false); Element e; return e; } 
+		unsigned int	position(Element,ElementType)	const { assert(false); return 0;	}
 															
 		// Debugging
 		string to_string() const { return "";	}
@@ -152,6 +156,7 @@ class RanSortTable : public UserSortTable {
 		bool			contains(double)				const;
 		ElementType		type()							const { return ELINT;				}
 		Element			element(unsigned int n)			{ Element e; e._int = _first+n; return e;	}
+		unsigned int	position(Element,ElementType)	const;
 
 		// Debugging
 		string to_string() const;
@@ -195,6 +200,7 @@ class IntSortTable : public UserSortTable {
 		int				last()						const { return _table.back();		}
 		ElementType		type()						const { return ELINT;				}
 		Element			element(unsigned int n)		{ Element e; e._int = _table[n]; return e;	}
+		unsigned int	position(Element,ElementType)	const;
 
 		// Debugging
 		string to_string() const;
@@ -237,6 +243,7 @@ class FloatSortTable : public UserSortTable {
 		double			last()						const { return _table.back();		}
 		ElementType		type()						const { return ELDOUBLE;			}
 		Element			element(unsigned int n)		{ Element e; e._double = &(_table[n]); return e;	}
+		unsigned int	position(Element,ElementType)	const;
 
 		// Debugging
 		string to_string() const;
@@ -280,6 +287,7 @@ class StrSortTable : public UserSortTable {
 		const string&	last()						const { return _table.back();		}
 		ElementType		type()						const { return ELSTRING;			}
 		Element			element(unsigned int n)		{ Element e; e._string = &(_table[n]); return e;	}
+		unsigned int	position(Element,ElementType)	const;
 
 		// Debugging
 		string to_string() const;
@@ -323,6 +331,7 @@ class MixedSortTable : public UserSortTable {
 		bool			contains(double)			const;
 		ElementType		type()						const { return ELSTRING;	}
 		Element			element(unsigned int n); 
+		unsigned int	position(Element,ElementType)	const;
 
 		// Debugging
 		string to_string() const;
@@ -540,10 +549,10 @@ class FuncInter {
 		virtual void sortunique() { }
 
 		// Inspectors
-		virtual const Element& 	operator[](const vector<Element>& vi)			const = 0;
-		virtual const Element& 	operator[](const vector<TypedElement>& vi)		const = 0;
-		virtual PredInter*		predinter()										const = 0;
-				ElementType		outtype()										const { return _outtype;	}
+		virtual Element		operator[](const vector<Element>& vi)		const = 0;
+				Element		operator[](const vector<TypedElement>& vi)	const;
+		virtual PredInter*	predinter()									const = 0;
+				ElementType	outtype()									const { return _outtype;	}
 		
 		// Visitor
 		void accept(Visitor*);
@@ -578,8 +587,7 @@ class UserFuncInter : public FuncInter {
 		// Inspectors
 		bool			istrue(const vector<Element>& vi)			const { return _ptable->istrue(vi);		}
 		bool			isfalse(const vector<Element>& vi)			const { return _ptable->isfalse(vi);	}
-		const Element&	operator[](const vector<Element>& vi)		const;
-		const Element&  operator[](const vector<TypedElement>& vi)	const;
+		Element			operator[](const vector<Element>& vi)		const;
 		PredInter*		predinter()									const { return _ptable;					}
 		UserPredTable*	ftable()									const { return _ftable;					}
 
@@ -603,13 +611,38 @@ namespace TableUtils {
 	Structures
 *****************/
 
-class Structure {
+class AbstractStructure {
 
-	private:
+	protected:
 
 		string				_name;			// The name of the structure
 		ParseInfo*			_pi;			// The place where this structure was parsed.
 		Vocabulary*			_vocabulary;	// The vocabulary of the structure.
+
+	public:
+
+		// Constructors
+		AbstractStructure(string name, ParseInfo* pi) : _name(name), _pi(pi), _vocabulary(0) { }
+
+		// Destructor
+		virtual ~AbstractStructure() { if(_pi) delete(_pi);	}
+
+		// Mutators
+		virtual void	vocabulary(Vocabulary* v) = 0;			// set the vocabulary
+
+		// Inspectors
+		const string&	name()						const { return _name;		}
+		ParseInfo*		pi()						const { return _pi;			}
+		Vocabulary*		vocabulary()				const { return _vocabulary;	}
+
+		// Debugging
+		virtual string	to_string(unsigned int spaces = 0) const = 0;
+
+};
+
+class Structure : public AbstractStructure {
+
+	private:
 
 		vector<SortTable*>	_sortinter;		// The domains of the structure. 
 											// The domain for sort s is stored in _sortinter[n], 
@@ -623,7 +656,7 @@ class Structure {
 	public:
 		
 		// Constructors
-		Structure(string name, ParseInfo* pi) : _name(name), _pi(pi) { }
+		Structure(string name, ParseInfo* pi) : AbstractStructure(name,pi) { }
 
 		// Destructor
 		~Structure();
@@ -638,9 +671,7 @@ class Structure {
 													// interpretation.
 
 		// Inspectors
-		const string&	name()						const { return _name;		}
-		ParseInfo*		pi()						const { return _pi;			}
-		Vocabulary*		vocabulary()				const { return _vocabulary;	}
+		Vocabulary*		vocabulary()				const { return AbstractStructure::vocabulary();	}
 		SortTable*		inter(Sort* s)				const;	// Return the domain of s.
 		PredInter*		inter(Predicate* p)			const;	// Return the interpretation of p.
 		FuncInter*		inter(Function* f)			const;	// Return the interpretation of f.
@@ -653,7 +684,7 @@ class Structure {
 		bool			hasInter(Function* f)		const;	// True iff f has an interpretation
 
 		// Visitor
-		void accept(Visitor*);
+		void accept(Visitor* v)	{ v->visit(this);	}
 
 		// Debugging
 		string	to_string(unsigned int spaces = 0) const;

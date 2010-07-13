@@ -366,7 +366,6 @@ namespace Insert {
 	Structure*		_currstructure;	// The current structure
 
 	vector<Vocabulary*>	_usingvocab;	// The vocabularies currently used to parse
-	vector<Structure*>	_usingstruct;	// The structures currently used to parse
 
 	map<string,vector<Inference*> >	_inferences;	// All inference methods
 
@@ -448,7 +447,7 @@ namespace Insert {
 		return 0;
 	}
 
-	Theory* theoInScope(const string& name) {
+	AbstractTheory* theoInScope(const string& name) {
 		Namespace* ns = _currspace;
 		while(ns) {
 			if(ns->isTheory(name)) {
@@ -470,7 +469,7 @@ namespace Insert {
 		return 0;
 	}
 
-	Structure* structInScope(const string& name) {
+	AbstractStructure* structInScope(const string& name) {
 		Namespace* ns = _currspace;
 		while(ns) {
 			if(ns->isStructure(name)) {
@@ -501,7 +500,7 @@ namespace Insert {
 		}
 	}
 
-	Structure* structInScope(const vector<string>& vs) {
+	AbstractStructure* structInScope(const vector<string>& vs) {
 		assert(!vs.empty());
 		if(vs.size() == 1) {
 			return structInScope(vs[0]);
@@ -694,6 +693,10 @@ namespace Insert {
 		_inferences["ground"].push_back(new GroundingInference());
 		_inferences["ground"].push_back(new GroundingWithResult());
 		_inferences["convert_to_theory"].push_back(new StructToTheory());
+		_inferences["move_quantifiers"].push_back(new MoveQuantifiers());
+		_inferences["tseitin"].push_back(new ApplyTseitin());
+		_inferences["simplify"].push_back(new GroundSimplify());
+		_inferences["move_functions"].push_back(new MoveFunctions());
 		_inferences["model_expand"].push_back(new ModelExpansionInference());
 	}
 
@@ -784,20 +787,6 @@ namespace Insert {
 			_usingvocab.push_back(v);
 		}
 		else Error::undeclvoc(oneName(vs),pi);
-		delete(pi);
-	}
-
-	void usingstruct(const vector<string>& vs, YYLTYPE l) {
-		ParseInfo* pi = parseinfo(l);
-		Structure* s = structInScope(vs);
-		if(s) {
-			if(_usingstruct.empty()) {
-				if(_currtheory) _currtheory->structure(s);
-			}
-			_usingstruct.push_back(s);
-			
-		}
-		else Error::undeclstruct(oneName(vs),pi);
 		delete(pi);
 	}
 
@@ -989,16 +978,12 @@ namespace Insert {
 	void openstructure(const string& sname, YYLTYPE l) {
 		Info::print("Parsing structure " + sname);
 		ParseInfo* pi = parseinfo(l);
-		Structure* s = structInScope(sname);
+		AbstractStructure* s = structInScope(sname);
 		if(s) {
 			Error::multdeclstruct(sname,pi,s->pi());
-			_currstructure = s;		// avoid null-pointer
-			delete(pi);
 		}
-		else {
-			_currstructure = new Structure(sname,pi);
-			_currspace->add(_currstructure);
-		}
+		_currstructure = new Structure(sname,pi);
+		_currspace->add(_currstructure);
 	}
 
 	void structinclusioncheck() {
@@ -1323,7 +1308,6 @@ namespace Insert {
 										_unknownpredtables[evp[0]] = upt;
 									else {
 										Error::multunknpredinter(evp[0]->name(),_emptythreeinters[n]._pi);
-										delete(_emptythreeinters[n]._pi);
 									}
 									break;
 								default:
@@ -1345,13 +1329,13 @@ namespace Insert {
 										_unknownfunctables[evf[0]] = upt;
 									else {
 										Error::multunknfuncinter(evf[0]->name(),_emptythreeinters[n]._pi);
-										delete(_emptythreeinters[n]._pi);
 									}
 									break;
 								default:
 									assert(false);
 							}
 						}
+						delete(_emptythreeinters[n]._pi);
 					}
 					else {
 						tempthree.push_back(_emptythreeinters[n]);
@@ -1396,7 +1380,6 @@ namespace Insert {
 		_unknownpredtables.clear();
 		_unknownfunctables.clear();
 		_usingvocab.clear();
-		_usingstruct.clear();
 		_currstructure = 0;
 
 	}
@@ -1917,29 +1900,21 @@ namespace Insert {
 	void opentheory(const string& tname, YYLTYPE l) {
 		Info::print("Parsing theory "  + tname);
 		ParseInfo* pi = parseinfo(l);
-		Theory* t = theoInScope(tname);
+		AbstractTheory* t = theoInScope(tname);
 		if(t) {
 			Error::multdecltheo(tname,pi,t->pi());
-			_currtheory = t;	// avoid null-pointer
-			delete(pi);
 		}
-		else {
-			_currtheory = new Theory(tname,pi);
-			_currspace->add(_currtheory);
-		}
+		_currtheory = new Theory(tname,pi);
+		_currspace->add(_currtheory);
 	}
 
 	void closetheory() {
 		_usingvocab.clear();
-		_usingstruct.clear();
 		_currtheory = 0;
 	}
 
 	void definition(Definition* d) {
-		if(d) {
-			// TODO
-			_currtheory->add(d);
-		}
+		if(d) _currtheory->add(d);
 	}
 
 	void sentence(Formula* f) {
@@ -1957,10 +1932,7 @@ namespace Insert {
 	}
 
 	void fixpdef(FixpDef* d) {
-		if(d) {
-			// TODO
-			_currtheory->add(d);
-		}
+		if(d) _currtheory->add(d);
 	}
 
 	BoolForm* trueform() {
@@ -2471,18 +2443,14 @@ namespace Insert {
 	DomainTerm* domterm(string* n, Sort* s, YYLTYPE l) {
 		ParseInfo* pi = parseinfo(l);
 		if(s) { 
-			if(!_usingstruct.empty()) {
-				if(_usingstruct[0]->vocabulary()->contains(s)) {
-					Element en; en._string = n;
-					return new DomainTerm(s,ELSTRING,en,pi);
-				}
-				else  Error::sortnotintheostruct(s->name(),_usingstruct[0]->name(),pi);
-			}
-			else Error::notheostruct(pi);
+			Element en; en._string = n;
+			return new DomainTerm(s,ELSTRING,en,pi);
 		}
-		delete(pi);
-		delete(n);
-		return 0;
+		else {
+			delete(pi);
+			delete(n);
+			return 0;
+		}
 	}
 
 	FuncTerm* minterm(YYLTYPE l) {

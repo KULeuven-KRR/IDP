@@ -17,6 +17,7 @@ struct Options {
 		bool			_verbose;			// print extra information on stderr iff _verbose=true
 		bool			_readfromstdin;		// expect input from stdin iff _readfromstdin=true
 		vector<bool>	_warning;			// _warning[n] = true means that warnings of type n are not suppressed
+		unsigned int	_nrmodels;			// number of models 
 		string			_outputfile;		// holds the outputfilename
 		OutputFormat	_format;			// use specified format for the output
 
@@ -26,6 +27,7 @@ struct Options {
 				_verbose = false;
 				_readfromstdin = false;
 				_warning = vector<bool>(4,true);
+				_nrmodels = 1;
 				_outputfile = "";
 				_format = OF_TXT;
 		}

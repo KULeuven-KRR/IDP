@@ -46,6 +46,17 @@ namespace ElementUtil {
 	Element _nonexistingDouble;
 	Element _nonexistingString;
 
+	ElementType resolve(ElementType t1, ElementType t2) {
+		switch(t1) {
+			case ELINT: return t2;
+			case ELDOUBLE: 
+				if(t2 == ELSTRING) return ELSTRING;
+				else return ELDOUBLE;
+			case ELSTRING: return ELSTRING;
+			default: assert(false); return ELSTRING;
+		}
+	}
+
 	string ElementToString(Element e, ElementType t) {
 		switch(t) {
 			case ELINT:
@@ -268,6 +279,15 @@ void VarUtils::sortunique(vector<Variable*>& vv) {
 /*******************************
 	Predicates and functions
 *******************************/
+
+/** Constructor for internal predicates **/ 
+
+int Predicate::_npnr = 0;
+
+Predicate::Predicate(const vector<Sort*>& sorts) : PFSymbol("",sorts,0) {
+	_name = "_internal_predicate_" + itos(_npnr) + "/" + itos(sorts.size());
+	++_npnr;
+}
 
 /** Inspectors **/
 

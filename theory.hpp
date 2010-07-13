@@ -38,8 +38,8 @@ class Formula {
 																				// as inidicated by the map
 
 		// Destructor
-		virtual void recursiveDelete() = 0;
-		virtual ~Formula() { if(_pi) delete(_pi);	}
+		virtual void recursiveDelete() = 0;				// delete the formula and all its children (subformulas, subterms, etc)
+		virtual ~Formula() { if(_pi) delete(_pi);	}	// delete the formula, but not its children
 
 		// Mutators
 		void	setfvars();		// compute the free variables
@@ -57,6 +57,8 @@ class Formula {
 		virtual	Formula*		subform(unsigned int n)	const = 0;	// the n'th direct subformula
 		virtual	Term*			subterm(unsigned int n)	const = 0;	// the n'th direct subterm
 				bool			contains(Variable*)		const;		// true iff the formula contains the variable
+		virtual	bool			trueformula()			const { return false;	}
+		virtual	bool			falseformula()			const { return false;	}
 
 		// Visitor
 		virtual void		accept(Visitor* v) = 0;
@@ -243,6 +245,9 @@ class BoolForm : public Formula {
 		Variable*		qvar(unsigned int n)	const	{ assert(false); return 0;	}
 		Formula*		subform(unsigned int n)	const	{ return _subf[n];			}
 		Term*			subterm(unsigned int n)	const	{ assert(false); return 0; 	}
+		bool			trueformula()			const	{ return (_subf.empty() && _conj == _sign);	}
+		bool			falseformula()			const	{ return (_subf.empty() && _conj != _sign);	}
+
 
 		// Visitor
 		void		accept(Visitor* v);
@@ -290,6 +295,7 @@ class QuantForm : public Formula {
 		Variable*		qvar(unsigned int n)	const { return _vars[n];			}
 		Formula*		subform(unsigned int n)	const { return	_subf;				}
 		Term*			subterm(unsigned int n)	const { assert(false); return 0;	}
+		const vector<Variable*>&	qvars()		const { return _vars;				}
 
 		// Visitor
 		void		accept(Visitor* v);
@@ -445,14 +451,49 @@ class FixpDef {
 	Theories
 ***************/
 
-class Theory {
-	
-	private:
+class AbstractTheory {
+
+	protected:
 
 		string				_name;
 		Vocabulary*			_vocabulary;
-		Structure*			_structure;
 		ParseInfo*			_pi;
+
+	public:
+
+		// Constructors 
+		AbstractTheory(const string& name, ParseInfo* pi) : _name(name), _vocabulary(0), _pi(pi) { }
+		AbstractTheory(const string& name, Vocabulary* voc, ParseInfo* pi) : _name(name), _vocabulary(voc), _pi(pi) { }
+
+		// Destructor
+		virtual void recursiveDelete() = 0;
+		virtual ~AbstractTheory() { if(_pi) delete(_pi); }
+
+		// Mutators
+		void	vocabulary(Vocabulary* v)					{ _vocabulary = v;				}
+		void	name(const string& n)						{ _name = n;					}
+
+		// Inspectors
+				const string&	name()						const { return _name;				}
+				Vocabulary*		vocabulary()				const { return _vocabulary;			}
+				ParseInfo*		pi()						const { return _pi;					}
+		virtual	unsigned int	nrSentences()				const = 0;
+		virtual	unsigned int	nrDefinitions()				const = 0;
+		virtual unsigned int	nrFixpDefs()				const = 0;
+
+		// Visitor
+		virtual void			accept(Visitor*) = 0;
+		virtual AbstractTheory*	accept(MutatingVisitor*) = 0;
+
+		// Debugging
+		virtual string to_string() const = 0;
+
+
+};
+
+class Theory : public AbstractTheory {
+	
+	private:
 
 		vector<Formula*>	_sentences;
 		vector<Definition*>	_definitions;
@@ -461,18 +502,15 @@ class Theory {
 	public:
 
 		// Constructors 
-		Theory(const string& name, ParseInfo* pi) : _name(name), _vocabulary(0), _structure(0), _pi(pi) { }
-		Theory(const string& name, Vocabulary* voc, Structure* str, ParseInfo* pi) : _name(name), _vocabulary(voc), _structure(str), _pi(pi) { }
+		Theory(const string& name, ParseInfo* pi) : AbstractTheory(name,pi) { }
+		Theory(const string& name, Vocabulary* voc, ParseInfo* pi) : AbstractTheory(name,voc,pi) { }
 
 		Theory*	clone()	const;
 
 		// Destructor
 		void recursiveDelete();
-		~Theory() { if(_pi) delete(_pi); }
 
 		// Mutators
-		void	vocabulary(Vocabulary* v)					{ _vocabulary = v;				}
-		void	structure(Structure* s)						{ _structure = s;				}
 		void	add(Formula* f)								{ _sentences.push_back(f);		}
 		void	add(Definition* d)							{ _definitions.push_back(d);	}
 		void	add(FixpDef* fd)							{ _fixpdefs.push_back(fd);		}
@@ -480,13 +518,12 @@ class Theory {
 		void	sentence(unsigned int n, Formula* f)		{ _sentences[n] = f;			}
 		void	definition(unsigned int n, Definition* d)	{ _definitions[n] = d;			}
 		void	fixpdef(unsigned int n, FixpDef* d)			{ _fixpdefs[n] = d;				}
-		void	name(const string& n)						{ _name = n;					}
+		void	pop_sentence()								{ _sentences.pop_back();		}
+		void	clear_sentences()							{ _sentences.clear();			}
+		void	clear_definitions()							{ _definitions.clear();			}
+		void	clear_fixpdefs()							{ _fixpdefs.clear();			}
 
 		// Inspectors
-		const string&	name()						const { return _name;				}
-		Vocabulary*		vocabulary()				const { return _vocabulary;			}
-		Structure*		structure()					const { return _structure;			}
-		ParseInfo*		pi()						const { return _pi;					}
 		unsigned int	nrSentences()				const { return _sentences.size();	}
 		unsigned int	nrDefinitions()				const { return _definitions.size();	}
 		unsigned int	nrFixpDefs()				const { return _fixpdefs.size();	}
@@ -506,18 +543,25 @@ class Theory {
 namespace TheoryUtils {
 
 	/** Rewriting theories **/
-	void push_negations(Theory*);	// Push negations inside
-	void remove_equiv(Theory*);		// Rewrite A <=> B to (A => B) & (B => A)
-	void flatten(Theory*);			// Rewrite (! x : ! y : phi) to (! x y : phi), rewrite ((A & B) & C) to (A & B & C), etc.
-	void remove_eqchains(Theory*);	// Rewrite chains of equalities to a conjunction or disjunction of atoms.
-	void tseitin(Theory*);			// Apply the Tseitin transformation
+	void push_negations(AbstractTheory*);	// Push negations inside
+	void remove_equiv(AbstractTheory*);		// Rewrite A <=> B to (A => B) & (B => A)
+	void flatten(AbstractTheory*);			// Rewrite (! x : ! y : phi) to (! x y : phi), rewrite ((A & B) & C) to (A & B & C), etc.
+	void remove_eqchains(AbstractTheory*);	// Rewrite chains of equalities to a conjunction or disjunction of atoms.
+	void move_quantifiers(AbstractTheory* t);	// Rewrite (! x : phi & chi) to ((! x : phi) & (!x : chi)), and similarly for ?|
+	void move_functions(Theory* t);
 	// TODO  Merge definitions
+
+	/** Tseitin transformation **/
+	void tseitin(Theory*);	// Apply the Tseitin transformation, using (where possible) implications to define new predicates.
 	
+	/** Simplify theories **/
+	void simplify(Theory* t, Structure* s);		// Replace ground atoms by their truth value in s
+
 	/** Completion **/
 	// TODO  Compute completion of definitions
 	
 	/** ECNF **/
-	EcnfTheory*	convert_to_ecnf(Theory*,GroundTranslator*);		// Convert the theory to ecnf using the given translator
+	EcnfTheory*	convert_to_ecnf(AbstractTheory*,GroundTranslator*);		// Convert the theory to ecnf using the given translator
 	
 }
 
