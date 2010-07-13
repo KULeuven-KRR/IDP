@@ -50,9 +50,8 @@ void start_include(string s) {
 	// check if we are including from the included file
 	for(unsigned int n = 0; n < include_buffer_files.size(); ++n) {
 		if(*(include_buffer_files[n]) == s) {
-			ParseInfo* pi = new ParseInfo(yylloc.first_line,yylloc.first_column,Insert::currfile());
+			ParseInfo pi(yylloc.first_line,yylloc.first_column,Insert::currfile());
 			Error::cyclicinclude(s,pi);
-			delete(pi);
 			return;
 		}
 	}
@@ -65,9 +64,8 @@ void start_include(string s) {
 	FILE* oldfile = yyin;
 	yyin = fopen(s.c_str(),"r");
 	if(!yyin) {
-		ParseInfo* pi = new ParseInfo(yylloc.first_line,yylloc.first_column,Insert::currfile());
+		ParseInfo pi(yylloc.first_line,yylloc.first_column,Insert::currfile());
 		Error::unexistingfile(s,pi);
-		delete(pi);
 		include_buffer_stack.pop_back();
 		include_buffer_files.pop_back();
 		include_line_stack.pop_back();
@@ -84,9 +82,8 @@ void start_include(string s) {
 }
 void start_stdin_include() {
 	if(stdin_included) {
-		ParseInfo* pi = new ParseInfo(yylloc.first_line,yylloc.first_column,Insert::currfile());
+		ParseInfo pi(yylloc.first_line,yylloc.first_column,Insert::currfile());
 		Error::twicestdin(pi);
-		delete(pi);
 	}
 	else {
 		// store the current buffer
@@ -199,16 +196,14 @@ COMMENTLINE		"//".*
 									  start_include(slc->value());
 								  }
 								  else {
-									  ParseInfo* pi = new ParseInfo(yylloc.first_line,yylloc.first_column,Insert::currfile());
+									  ParseInfo pi(yylloc.first_line,yylloc.first_column,Insert::currfile());
 									  Error::stringconsexp(temp,pi);
-									  delete(pi);
 								  }
 								  BEGIN(caller);
 							  }
 							  else {
-								  ParseInfo* pi = new ParseInfo(yylloc.first_line,yylloc.first_column,Insert::currfile());
+								  ParseInfo pi(yylloc.first_line,yylloc.first_column,Insert::currfile());
 								  Error::constnotset(temp,pi);
-								  delete(pi);
 								  BEGIN(caller);
 							  }
 							}
@@ -227,14 +222,6 @@ COMMENTLINE		"//".*
 
 <theory>"type"              { advancecol();
 							  return TYPE;				}
-<theory>"int"				{ advancecol();
-							  return INTSORT;			}
-<theory>"string"			{ advancecol();
-							  return STRINGSORT;		}
-<theory>"float"				{ advancecol();
-							  return FLOATSORT;			}
-<theory>"char"				{ advancecol();
-							  return CHARSORT;			}
 <theory>"partial"			{ advancecol();
 							  return PARTIAL;			}
 <theory>"isa"				{ advancecol();
@@ -342,9 +329,8 @@ COMMENTLINE		"//".*
 								  return (clconsts[temp])->execute();
 							  }
 							  else {
-								  ParseInfo* pi = new ParseInfo(yylloc.first_line,yylloc.first_column,Insert::currfile());
+								  ParseInfo pi(yylloc.first_line,yylloc.first_column,Insert::currfile());
 								  Error::constnotset(temp,pi);
-								  delete(pi);
 								  return INTEGER;
 							  }
 							}

@@ -36,7 +36,7 @@ void NaiveGrounder::visit(VarTerm* vt) {
 	assert(_varmapping.find(vt->var()) != _varmapping.end());
 	TypedElement te = _varmapping[vt->var()];
 	Element e = te._element;
-	_returnTerm = new DomainTerm(vt->sort(),te._type,e,0);
+	_returnTerm = new DomainTerm(vt->sort(),te._type,e,ParseInfo());
 }
 
 void NaiveGrounder::visit(DomainTerm* dt) {
@@ -51,14 +51,14 @@ void NaiveGrounder::visit(FuncTerm* ft) {
 		assert(_returnTerm);
 		vt.push_back(_returnTerm);
 	}
-	_returnTerm = new FuncTerm(ft->func(),vt,0);
+	_returnTerm = new FuncTerm(ft->func(),vt,ParseInfo());
 }
 
 void NaiveGrounder::visit(AggTerm* at) {
 	_returnSet = 0;
 	at->set()->accept(this);
 	assert(_returnSet);
-	_returnTerm = new AggTerm(_returnSet,at->type(),0);
+	_returnTerm = new AggTerm(_returnSet,at->type(),ParseInfo());
 }
 
 void NaiveGrounder::visit(EnumSetExpr* s) {
@@ -76,7 +76,7 @@ void NaiveGrounder::visit(EnumSetExpr* s) {
 		assert(_returnTerm);
 		vt.push_back(_returnTerm);
 	}
-	_returnSet = new EnumSetExpr(vf,vt,0);
+	_returnSet = new EnumSetExpr(vf,vt,ParseInfo());
 }
 
 void NaiveGrounder::visit(QuantSetExpr* s) {
@@ -89,7 +89,7 @@ void NaiveGrounder::visit(QuantSetExpr* s) {
 		assert(st);
 		assert(st->finite());
 		if(st->empty()) {
-			_returnSet = new EnumSetExpr(vf,vt,0);
+			_returnSet = new EnumSetExpr(vf,vt,ParseInfo());
 			return;
 		}
 		else {
@@ -113,9 +113,9 @@ void NaiveGrounder::visit(QuantSetExpr* s) {
 		s->subf()->accept(this);
 		assert(_returnFormula);
 		vf.push_back(_returnFormula);
-		vt.push_back(new DomainTerm(s->qvar(0)->sort(),weighttype,weight,0));
+		vt.push_back(new DomainTerm(s->qvar(0)->sort(),weighttype,weight,ParseInfo()));
 	} while(nexttuple(tuple,limits));
-	_returnSet = new EnumSetExpr(vf,vt,0);
+	_returnSet = new EnumSetExpr(vf,vt,ParseInfo());
 }
 
 void NaiveGrounder::visit(PredForm* pf) {
@@ -126,7 +126,7 @@ void NaiveGrounder::visit(PredForm* pf) {
 		assert(_returnTerm);
 		vt.push_back(_returnTerm);
 	}
-	_returnFormula = new PredForm(pf->sign(),pf->symb(),vt,0);
+	_returnFormula = new PredForm(pf->sign(),pf->symb(),vt,ParseInfo());
 }
 
 void NaiveGrounder::visit(EquivForm* ef) {
@@ -138,7 +138,7 @@ void NaiveGrounder::visit(EquivForm* ef) {
 	ef->right()->accept(this);
 	assert(_returnFormula);
 	Formula* nr = _returnFormula;
-	_returnFormula = new EquivForm(ef->sign(),nl,nr,0);
+	_returnFormula = new EquivForm(ef->sign(),nl,nr,ParseInfo());
 }
 
 void NaiveGrounder::visit(EqChainForm* ef) {
@@ -149,7 +149,7 @@ void NaiveGrounder::visit(EqChainForm* ef) {
 		assert(_returnTerm);
 		vt.push_back(_returnTerm);
 	}
-	_returnFormula = new EqChainForm(ef->sign(),ef->conj(),vt,ef->comps(),ef->compsigns(),0);
+	_returnFormula = new EqChainForm(ef->sign(),ef->conj(),vt,ef->comps(),ef->compsigns(),ParseInfo());
 }
 
 void NaiveGrounder::visit(BoolForm* bf) {
@@ -160,7 +160,7 @@ void NaiveGrounder::visit(BoolForm* bf) {
 		assert(_returnFormula);
 		vf.push_back(_returnFormula);
 	}
-	_returnFormula = new BoolForm(bf->sign(),bf->conj(),vf,0);
+	_returnFormula = new BoolForm(bf->sign(),bf->conj(),vf,ParseInfo());
 }
 
 void NaiveGrounder::visit(QuantForm* qf) {
@@ -172,7 +172,7 @@ void NaiveGrounder::visit(QuantForm* qf) {
 		assert(st);
 		assert(st->finite());
 		if(st->empty()) {
-			_returnFormula = new BoolForm(qf->sign(),qf->univ(),vf,0);
+			_returnFormula = new BoolForm(qf->sign(),qf->univ(),vf,ParseInfo());
 			return;
 		}
 		else {
@@ -194,7 +194,7 @@ void NaiveGrounder::visit(QuantForm* qf) {
 		assert(_returnFormula);
 		vf.push_back(_returnFormula);
 	} while(nexttuple(tuple,limits));
-	_returnFormula = new BoolForm(qf->sign(),qf->univ(),vf,0);
+	_returnFormula = new BoolForm(qf->sign(),qf->univ(),vf,ParseInfo());
 }
 
 void NaiveGrounder::visit(Rule* r) {
@@ -237,7 +237,7 @@ void NaiveGrounder::visit(Rule* r) {
 		assert(_returnFormula);
 		nb = _returnFormula;
 
-		d->add(new Rule(vector<Variable*>(0),nh,nb,0));
+		d->add(new Rule(vector<Variable*>(0),nh,nb,ParseInfo()));
 
 	} while(nexttuple(tuple,limits));
 	_returnDef = d;
@@ -278,7 +278,7 @@ void NaiveGrounder::visit(FixpDef* d) {
 }
 
 void NaiveGrounder::visit(Theory* t) {
-	Theory* grounding = new Theory("",t->vocabulary(),0);
+	Theory* grounding = new Theory("",t->vocabulary(),ParseInfo());
 
 	// Ground the theory
 	for(unsigned int n = 0; n < t->nrDefinitions(); ++n) {
@@ -336,26 +336,26 @@ void NaiveGrounder::visit(Theory* t) {
 						vector<Term*> vt(f->nrsorts());
 						for(unsigned int a = 0; a < f->arity(); ++a) {
 							ElementType tp = intables[a]->type();
-							vt[a] = new DomainTerm(f->insort(a),tp,intables[a]->element(intuple[a]),0);
+							vt[a] = new DomainTerm(f->insort(a),tp,intables[a]->element(intuple[a]),ParseInfo());
 						}
-						vt.back() = new DomainTerm(f->outsort(),outtable->type(),outtable->element(outtuple1[0]),0);
-						existvector.push_back(new PredForm(true,f,vt,0));
+						vt.back() = new DomainTerm(f->outsort(),outtable->type(),outtable->element(outtuple1[0]),ParseInfo());
+						existvector.push_back(new PredForm(true,f,vt,ParseInfo()));
 						outtuple2[0] = outtuple1[0];
 						while(nexttuple(outtuple2,outlimit)) {
 							Formula* f1 = (existvector.back())->clone(); f1->swapsign();
 							vector<Term*> vt2(f->nrsorts());
 							for(unsigned int a = 0; a < f->arity(); ++a) {
 								ElementType tp = intables[a]->type();
-								vt2[a] = new DomainTerm(f->insort(a),tp,intables[a]->element(intuple[a]),0);
+								vt2[a] = new DomainTerm(f->insort(a),tp,intables[a]->element(intuple[a]),ParseInfo());
 							}
-							vt2.back() = new DomainTerm(f->outsort(),outtable->type(),outtable->element(outtuple2[0]),0);
-							Formula* f2 = new PredForm(false,f,vt2,0);
+							vt2.back() = new DomainTerm(f->outsort(),outtable->type(),outtable->element(outtuple2[0]),ParseInfo());
+							Formula* f2 = new PredForm(false,f,vt2,ParseInfo());
 							vector<Formula*> vf(2); vf[0] = f1; vf[1] = f2;
-							BoolForm* bf = new BoolForm(true,false,vf,0);
+							BoolForm* bf = new BoolForm(true,false,vf,ParseInfo());
 							grounding->add(bf);
 						} 
 					} while(nexttuple(outtuple1,outlimit));
-					BoolForm* bf = new BoolForm(true,false,existvector,0);
+					BoolForm* bf = new BoolForm(true,false,existvector,ParseInfo());
 					grounding->add(bf);
 				} while(nexttuple(intuple,inlimits));
 			}

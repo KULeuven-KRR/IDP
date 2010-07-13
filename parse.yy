@@ -15,7 +15,7 @@
 extern int yylex();
 
 // Parsing tables efficiently
-UserPredTable*		_currtable = 0;
+FinitePredTable*	_currtable = 0;
 unsigned int		_currrow(0);
 unsigned int		_currcol(0);
 bool				_wrongarity = false;
@@ -27,10 +27,10 @@ void				closeRow(YYLTYPE);
 void				closeTable();
 
 // Parsing ASP structures efficiently
-vector<Element>			_currtuple;
-vector<UserSortTable*>	_currexpanders;
-vector<ElementType>		_currtypes;
-void					closeTuple();
+vector<Element>				_currtuple;
+vector<FiniteSortTable*>	_currexpanders;
+vector<ElementType>			_currtypes;
+void						closeTuple();
 
 // Errors
 void yyerror(const char* s);
@@ -62,7 +62,7 @@ extern string dtos(double);
 	Formula*			fom;
 	EqChainForm*		eqc;
 	Rule*				rul;
-	UserSortTable*		sta;
+	FiniteSortTable*	sta;
 	FixpDef*			fpd;
 	Definition*			def;
 	Variable*			var;
@@ -91,10 +91,6 @@ extern string dtos(double);
 %token EXECUTE_HEADER
 
 /** Keywords **/
-%token STRINGSORT
-%token FLOATSORT
-%token CHARSORT
-%token INTSORT
 %token PARTIAL
 %token OPTION
 %token MINAGG
@@ -160,7 +156,6 @@ extern string dtos(double);
 %type <var> variable
 %type <sor> sort_pointer
 %type <sor> theosort_pointer
-%type <sor> basesort_pointer
 %type <pre> pred_decl
 %type <pre>	pred_pointer
 %type <fun> func_decl
@@ -287,7 +282,6 @@ symbol_copy		: TYPE identifier '=' sort_pointer	{ Insert::copysort(*$2,$4,@2); d
 /** Symbol pointers **/
 
 sort_pointer		: pointer_name				{ $$ = Insert::sortpointer(*$1,@1); delete($1); }
-					| basesort_pointer			{ $$ = $1;	}
 					;
 
 pred_pointer		: pointer_name '/' INTEGER	{ $1->back() = $1->back() + '/' + itos($3);
@@ -300,12 +294,6 @@ func_pointer		: pointer_name '/' INTEGER ':'	{ $1->back() = $1->back() + '/' + i
 													  $$ = Insert::funcpointer(*$1,@1); 
 													  delete($1);
 													}
-					;
-
-basesort_pointer	: INTSORT		{ $$ = Builtin::intsort();		}			
-					| FLOATSORT		{ $$ = Builtin::floatsort();	}
-					| CHARSORT		{ $$ = Builtin::charsort();		}
-					| STRINGSORT	{ $$ = Builtin::stringsort();	}	
 					;
 
 pointer_name		: pointer_name "::" identifier	{ $$ = $1; $$->push_back(*$3); delete($3);		}
@@ -430,7 +418,6 @@ variable	: identifier							{ $$ = Insert::quantifiedvar(*$1,@1); delete($1);		}
 			;
 
 theosort_pointer	:	pointer_name		{ $$ = Insert::theosortpointer(*$1,@1); delete($1);	}
-                    |   basesort_pointer	{ $$ = $1;	}
 					;
 
 /** Terms **/                                            
@@ -528,7 +515,7 @@ elements		: elements ';' charrange			{ $$ = $1->add((*$3)[0],(*$3)[1]); delete($
 				| elements ';' intrange				{ $$ = $1->add((*$3)[0],(*$3)[1]); delete($3);	
 													  if($$ != $1) delete($1);
 													}
-				| elements ';' '(' strelement ')'	{ $$ = $$->add(*$4); delete($4);				
+				| elements ';' '(' strelement ')'	{ $$ = $$->add($4);				
 													  if($$ != $1) delete($1);
 													}
 				| elements ';' '(' integer ')'		{ $$ = $$->add($4);								
@@ -540,7 +527,7 @@ elements		: elements ';' charrange			{ $$ = $1->add((*$3)[0],(*$3)[1]); delete($
 				| elements ';' integer				{ $$ = $$->add($3);								
 													  if($$ != $1) delete($1);
 													}
-				| elements ';' strelement			{ $$ = $$->add(*$3); delete($3);				
+				| elements ';' strelement			{ $$ = $$->add($3);
 													  if($$ != $1) delete($1);
 													}
 				| elements ';' floatnr				{ $$ = $$->add($3); 
@@ -548,10 +535,10 @@ elements		: elements ';' charrange			{ $$ = $1->add((*$3)[0],(*$3)[1]); delete($
 													}
 				| charrange							{ $$ = new StrSortTable(); $$ = $$->add((*$1)[0],(*$1)[1]); delete($1);	}
 				| intrange							{ $$ = new RanSortTable((*$1)[0],(*$1)[1]); delete($1);					}
-				| '(' strelement ')'				{ $$ = new StrSortTable(); $$ = $$->add(*$2); delete($2);				}
+				| '(' strelement ')'				{ $$ = new StrSortTable(); $$ = $$->add($2);							}
 				| '(' integer ')'					{ $$ = new IntSortTable(); $$ = $$->add($2);							}
 				| '(' floatnr ')'                   { $$ = new FloatSortTable(); $$ = $$->add($2);							}
-				| strelement						{ $$ = new StrSortTable(); $$ = $$->add(*$1); delete($1);				}
+				| strelement						{ $$ = new StrSortTable(); $$ = $$->add($1);							}
 				| integer							{ $$ = new IntSortTable(); $$ = $$->add($1);							}	
 				| floatnr							{ $$ = new FloatSortTable(); $$ = $$->add($1);							}
 				;
@@ -678,9 +665,8 @@ threefunc_inter	: pointer_name '[' identifier ']' '=' '{' ftuples_es '}'	{ if(!_
 
 intrange	: integer ".." integer			{ $$ = new vector<int>(2,$1); 
 											  if($1 > $3) { 
-												  ParseInfo* pi = new ParseInfo(@1.first_line,@1.first_column,Insert::currfile());
+												  ParseInfo pi(@1.first_line,@1.first_column,Insert::currfile());
 												  Error::invalidrange($1,$3,pi); 
-												  delete(pi);
 											  }
 											  else { (*$$)[1] = $3; }
 											}
@@ -688,17 +674,15 @@ intrange	: integer ".." integer			{ $$ = new vector<int>(2,$1);
 
 charrange	: CHARACTER ".." CHARACTER		{ $$ = new vector<char>(2,$1); 
 											  if($1 > $3) { 
-												  ParseInfo* pi = new ParseInfo(@1.first_line,@1.first_column,Insert::currfile());
+												  ParseInfo pi(@1.first_line,@1.first_column,Insert::currfile());
 												  Error::invalidrange($1,$3,pi); 
-												  delete(pi);
 											  }
 											  else { (*$$)[1] = $3; }
 											}	
 			| CHARCONS ".." CHARCONS		{ $$ = new vector<char>(2,$1); 
 											  if($1 > $3) { 
-												  ParseInfo* pi = new ParseInfo(@1.first_line,@1.first_column,Insert::currfile());
+												  ParseInfo pi(@1.first_line,@1.first_column,Insert::currfile());
 												  Error::invalidrange($1,$3,pi); 
-												  delete(pi);
 											  }
 											  else { (*$$)[1] = $3; }
 											}
@@ -878,9 +862,8 @@ void closeRow(YYLTYPE l) {
 	++_currrow;
 	if(_currcol != _currtable->arity()) {
 		if(!_wrongarity) {
-			ParseInfo* pi = new ParseInfo(l.first_line,l.first_column,Insert::currfile());
+			ParseInfo pi(l.first_line,l.first_column,Insert::currfile());
 			Error::wrongarity(pi);
-			delete(pi);
 			_wrongarity = true;
 		}
 	}
@@ -901,13 +884,13 @@ void closeTuple() {
 }
 
 void addEmpty() {
-	if(!_currtable) _currtable = new UserPredTable(vector<ElementType>(0));
+	if(!_currtable) _currtable = new FinitePredTable(vector<ElementType>(0));
 	_currtable->addRow();
 }
 
 void addInt(int n, YYLTYPE l) {
 	if(!_currtable) // we start parsing a new table
-		_currtable = new UserPredTable(vector<ElementType>(0)); 
+		_currtable = new FinitePredTable(vector<ElementType>(0)); 
 	if(_currrow) {	// the table already contains at least one row
 		if(!_currcol)	// start parsing a new row 
 			_currtable->addRow();
@@ -928,9 +911,8 @@ void addInt(int n, YYLTYPE l) {
 		}
 		else {	// tuple with an incompatible arity
 			if(!_wrongarity) {
-				ParseInfo* pi = new ParseInfo(l.first_line,l.first_column,Insert::currfile());
+				ParseInfo pi(l.first_line,l.first_column,Insert::currfile());
 				Error::wrongarity(pi);
-				delete(pi);
 				_wrongarity = true;
 			}
 		}
@@ -945,7 +927,7 @@ void addInt(int n, YYLTYPE l) {
 
 void addString(string* s, YYLTYPE l) {
 	if(!_currtable) // we start parsing a new table
-		_currtable = new UserPredTable(vector<ElementType>(0)); 
+		_currtable = new FinitePredTable(vector<ElementType>(0)); 
 	if(_currrow) {	// the table already contains at least one row
 		if(!_currcol)	// start parsing a new row 
 			_currtable->addRow();
@@ -964,9 +946,8 @@ void addString(string* s, YYLTYPE l) {
 		}
 		else {	// tuple with an incompatible arity
 			if(!_wrongarity) {
-				ParseInfo* pi = new ParseInfo(l.first_line,l.first_column,Insert::currfile());
+				ParseInfo pi(l.first_line,l.first_column,Insert::currfile());
 				Error::wrongarity(pi);
-				delete(pi);
 				_wrongarity = true;
 			}
 		}
@@ -981,7 +962,7 @@ void addString(string* s, YYLTYPE l) {
 
 void addFloat(double d, YYLTYPE l) {
 	if(!_currtable) // we start parsing a new table
-		_currtable = new UserPredTable(vector<ElementType>(0)); 
+		_currtable = new FinitePredTable(vector<ElementType>(0)); 
 	if(_currrow) {	// the table already contains at least one row
 		if(!_currcol)	// start parsing a new row 
 			_currtable->addRow();
@@ -1003,9 +984,8 @@ void addFloat(double d, YYLTYPE l) {
 		}
 		else {	// tuple with an incompatible arity
 			if(!_wrongarity) {
-				ParseInfo* pi = new ParseInfo(l.first_line,l.first_column,Insert::currfile());
+				ParseInfo pi(l.first_line,l.first_column,Insert::currfile());
 				Error::wrongarity(pi);
-				delete(pi);
 				_wrongarity = true;
 			}
 		}
@@ -1021,8 +1001,7 @@ void addFloat(double d, YYLTYPE l) {
 /** Error messages **/
 
 void yyerror(const char* s) {
-	ParseInfo* pi = new ParseInfo(yylloc.first_line,yylloc.first_column,Insert::currfile());
+	ParseInfo pi(yylloc.first_line,yylloc.first_column,Insert::currfile());
 	Error::error(pi);
 	cerr << s << endl;
-	delete(pi);
 }

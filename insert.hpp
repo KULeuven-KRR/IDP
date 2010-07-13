@@ -63,9 +63,9 @@ namespace Insert {
 	void closeaspstructure();
 
 	// two-valued interpretations
-	void sortinter(const vector<string>& sname, UserSortTable* t, YYLTYPE);
-	void predinter(const vector<string>& pname, UserPredTable* t, YYLTYPE);
-	void funcinter(const vector<string>& fname, UserPredTable* t, YYLTYPE);
+	void sortinter(const vector<string>& sname, FiniteSortTable* t, YYLTYPE);
+	void predinter(const vector<string>& pname, FinitePredTable* t, YYLTYPE);
+	void funcinter(const vector<string>& fname, FinitePredTable* t, YYLTYPE);
 	void emptyinter(const vector<string>&,YYLTYPE);
 	void truepredinter(const vector<string>&, YYLTYPE);
 	void falsepredinter(const vector<string>&, YYLTYPE);
@@ -75,13 +75,13 @@ namespace Insert {
 	void truethreepredinter(const vector<string>& pname, const string& utf, YYLTYPE);
 	void falsethreepredinter(const vector<string>& pname, const string& utf, YYLTYPE);
 	void threefuncinter(const vector<string>& fname, const string& utf, FinitePredTable* t, YYLTYPE);
-	void threeinter(const vector<string>& name, const string& utf, UserSortTable* t, YYLTYPE);
+	void threeinter(const vector<string>& name, const string& utf, FiniteSortTable* t, YYLTYPE);
 	void emptythreeinter(const vector<string>& name, const string& utf, YYLTYPE);
 
 	// asp atoms
 	void predatom(const vector<string>&,YYLTYPE);
-	void predatom(const vector<string>&, const vector<ElementType>&, const vector<Element>&, const vector<UserSortTable*>&, YYLTYPE);
-	void funcatom(const vector<string>&, const vector<ElementType>&, const vector<Element>&, const vector<UserSortTable*>&, YYLTYPE);
+	void predatom(const vector<string>&, const vector<ElementType>&, const vector<Element>&, const vector<FiniteSortTable*>&, YYLTYPE);
+	void funcatom(const vector<string>&, const vector<ElementType>&, const vector<Element>&, const vector<FiniteSortTable*>&, YYLTYPE);
 
 	/** Theory **/
 	void opentheory(const string& tname, YYLTYPE);

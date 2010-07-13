@@ -7,11 +7,9 @@
 #ifndef VOCABULARY_H
 #define VOCABULARY_H
 
-#include <string>
-#include <vector>
+#include "common.hpp"
 #include <map>
 #include <cassert>
-using namespace std;
 
 /*******************************************
 	Argument types for inference methods
@@ -32,34 +30,37 @@ namespace IATUtils {
 /*
  *		A ParseInfo contains a line number, a column number and a file. 
  *
- *		Almost every object that can be written by a user has a pointer to a ParseInfo object. 
+ *		Almost every object that can be written by a user has a ParseInfo object as attribute. 
  *		The ParseInfo stores where the object was parsed. This is used for producing precise error and warning messages.
- *		Objects that are not parsed (e.g., internally created variables) have a null-pointer as ParseInfo.
+ *		Objects that are not parsed (e.g., internally created variables) have line number 0 in their ParseInfo.
  *
  */
 class ParseInfo {
 
 	private:
 
-		unsigned int	_line;	// line number where the object is declared
+		unsigned int	_line;	// line number where the object is declared (0 for non-parsed objects)
 		unsigned int	_col;	// column number where the object is declared
 		string*			_file;	// file name where the object is declared
 								// NOTE: different ParseInfo objects may point to the same string. Do not call delete(_file) when
 								// deleting a ParseInfo object.
+								// NOTE: _file == 0 when parsed on stdin
 	
 	public:
 
 		// Constructors
+		ParseInfo() : _line(0), _col(0), _file(0) { }
 		ParseInfo(unsigned int line, unsigned int col, string* file) : _line(line), _col(col), _file(file) { }
-		ParseInfo(ParseInfo& p) : _line(p.line()), _col(p.col()), _file(p.file()) { }
+		ParseInfo(const ParseInfo& p) : _line(p.line()), _col(p.col()), _file(p.file()) { }
 
 		// Destructor
 		virtual ~ParseInfo() { }
 
 		// Inspectors
-		unsigned int	line()	const { return _line;	}
-		unsigned int	col()	const { return _col;	}
-		string*			file()	const { return _file;	}
+		unsigned int	line()		const { return _line;		}
+		unsigned int	col()		const { return _col;		}
+		string*			file()		const { return _file;		}
+		bool			isParsed()	const { return _line != 0;	}
 
 };
 
@@ -78,8 +79,10 @@ class FormParseInfo : public ParseInfo {
 	public:
 
 		// Constructors
+		FormParseInfo() : ParseInfo(), _original(0) { }
 		FormParseInfo(unsigned int line, unsigned int col, string* file, Formula* orig) : 
 			ParseInfo(line,col,file), _original(orig) { }
+		FormParseInfo(const FormParseInfo& p) : ParseInfo(p.line(),p.col(),p.file()), _original(p.original()) { }
 
 		// Inspectors
 		Formula*	original()	const { return _original;	}
@@ -92,6 +95,7 @@ class FormParseInfo : public ParseInfo {
 *************/
 
 class Predicate;
+class SortTable;
 
 class Sort {
 
@@ -108,6 +112,7 @@ class Sort {
 	public:
 
 		// Constructors
+		Sort(const string& name);
 		Sort(const string& name, const ParseInfo& pi);  
 
 		// Destructor
@@ -132,8 +137,10 @@ class Sort {
 		bool				floatsort()				const;  // Returns true if the sort is a subsort of the floats
 		bool				stringsort()			const;  // Returns true if the sort is a subsort of the strings
 		bool				charsort()				const;  // Returns true if the sort is a subsort of the chars
-		string				to_string()				const	{ return _name;		}
-		virtual bool		builtin()				const	{ return false;	}
+		string				to_string()				const	{ return _name;				}
+		virtual bool		builtin()				const	{ return false;				}
+		virtual SortTable*	inter()					const	{ return 0;					}	// returns the built-in interpretation for
+																							// built-in sorts
 
 };
 
@@ -207,6 +214,8 @@ class PFSymbol {
 	public:
 
 		// Constructors
+		PFSymbol(const string& name, const vector<Sort*>& sorts) : 
+			_name(name), _sorts(sorts) { }
 		PFSymbol(const string& name, const vector<Sort*>& sorts, const ParseInfo& pi) : 
 			_name(name), _sorts(sorts), _pi(pi) { }
 
@@ -236,6 +245,8 @@ class PFSymbol {
 
 /** Predicate symbols **/
 
+class PredInter;
+
 class Predicate : public PFSymbol {
 
 	private:
@@ -244,13 +255,14 @@ class Predicate : public PFSymbol {
 	public:
 
 		// Constructors
-		Predicate(const string& name,const vector<Sort*>& sorts, const ParseInfo& pi) :
-			PFSymbol(name,sorts,pi) { }
-		Predicate(const vector<Sort*>& sorts);	// constructor for internal predicates
+		Predicate(const string& name,const vector<Sort*>& sorts, const ParseInfo& pi) : PFSymbol(name,sorts,pi) { }
+		Predicate(const string& name,const vector<Sort*>& sorts) : PFSymbol(name,sorts) { }
+		Predicate(const vector<Sort*>& sorts);	// constructor for internal/tseitin predicates
 
 		// Inspectors
-		unsigned int	arity()		const { return _sorts.size();	}
-		bool			ispred()	const { return true;			}
+						unsigned int	arity()								const { return _sorts.size();	}
+						bool			ispred()							const { return true;			}
+		virtual			PredInter*		inter(const vector<SortTable*>& vs)	const { return 0;				}
 
 		// Built-in symbols 
 		virtual Predicate*		disambiguate(const vector<Sort*>&)		{ return this;	}
@@ -259,6 +271,8 @@ class Predicate : public PFSymbol {
 
 
 /** Functions **/
+
+class FuncInter;
 
 class Function : public PFSymbol {
 
@@ -272,17 +286,22 @@ class Function : public PFSymbol {
 			PFSymbol(name,is,pi), _partial(false) { _sorts.push_back(os); }
 		Function(const string& name, const vector<Sort*>& sorts, const ParseInfo& pi) : 
 			PFSymbol(name,sorts,pi), _partial(false) { }
+		Function(const string& name, const vector<Sort*>& is, Sort* os) : 
+			PFSymbol(name,is), _partial(false) { _sorts.push_back(os); }
+		Function(const string& name, const vector<Sort*>& sorts) : 
+			PFSymbol(name,sorts), _partial(false) { }
 
 		// Mutators
 		void		partial(const bool& b)	{ _partial = b;		}
 	
 		// Inspectors
-		vector<Sort*>		insorts()				const;	// returns the input sorts of the function
-		unsigned int		arity()					const { return _sorts.size()-1;	}
-		Sort*				insort(const int& n)	const { return _sorts[n];		}
-		Sort*				outsort()				const { return _sorts.back();	}
-		bool				partial()				const { return _partial;		}
-		bool				ispred()				const { return false;			}
+		vector<Sort*>		insorts()							const;	// returns the input sorts of the function
+		unsigned int		arity()								const { return _sorts.size()-1;	}
+		Sort*				insort(const int& n)				const { return _sorts[n];		}
+		Sort*				outsort()							const { return _sorts.back();	}
+		bool				partial()							const { return _partial;		}
+		bool				ispred()							const { return false;			}
+		virtual	FuncInter*	inter(const vector<SortTable*>& vs)	const { return 0;				}
 
 		// Built-in symbols 
 		virtual Function*		disambiguate(const vector<Sort*>&)		{ return this;	}
@@ -299,7 +318,7 @@ class Vocabulary {
 	private:
 
 		string		_name;	// name of the vocabulary. Default name is the empty string
-		ParseInfo&	_pi;	// place where the vocabulary was parsed
+		ParseInfo	_pi;	// place where the vocabulary was parsed
 
 		// map symbols of the vocabulary to a unique index
 		map<Sort*,unsigned int>			_sorts;		
@@ -321,10 +340,11 @@ class Vocabulary {
 	public:
 
 		// Constructors
+		Vocabulary(const string& name) : _name(name) { }
 		Vocabulary(const string& name, const ParseInfo& pi) : _name(name), _pi(pi) { }
 
 		// Destructor
-		~Vocabulary() { if(_pi) delete(_pi);	}
+		virtual ~Vocabulary() { }
 
 		// Mutators
 		void addSort(Sort*);						 // Add the given sort (and its ancestors) to the vocabulary
@@ -443,13 +463,16 @@ namespace ElementUtil {
 	// Return the least precise elementtype of the two given types
 	ElementType	resolve(ElementType,ElementType);
 
+	// Return the most precise elementtype
+	ElementType leasttype() { return ELINT;	}
+
 	// Convert a domain element to a string
 	string		ElementToString(Element,ElementType);
 	string		ElementToString(TypedElement);
 
 	// Return the non-existing domain element. 
 	//	Non-existing domain elements are used as return value when a partial function is applied on elements outside its domain
-	Element&	nonexist(ElementType);				
+	Element	nonexist(ElementType);				
 
 	// Checks if the element exists
 	bool		exists(Element,ElementType);	
@@ -459,7 +482,16 @@ namespace ElementUtil {
 	Element		convert(TypedElement,ElementType newtype);		
 	Element		convert(Element,ElementType oldtype,ElementType newtype);
 
+	// Compare elements
+	bool	equal(Element e1, ElementType t1, Element e2, ElementType t2);				// equality
+	bool	strlessthan(Element e1, ElementType t1, Element e2, ElementType t2);		// strictly less than
+	bool	lessthanorequal(Element e1, ElementType t1, Element e2, ElementType t2);	// less than or equal
+
 }
+
+bool operator==(TypedElement e1, TypedElement e2);
+bool operator<=(TypedElement e1, TypedElement e2);
+bool operator<(TypedElement e1, TypedElement e2);
 
 
 

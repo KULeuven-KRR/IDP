@@ -9,11 +9,15 @@
 
 #include <string>
 #include <tr1/unordered_map>
+#include <tr1/memory>
 #include <map>
+#include "vocabulary.hpp"
 using namespace std;
 using namespace std::tr1;
 
-typedef unordered_map<string,string*>	HMSSP;
+typedef unordered_map<string,string*>			MSSP;
+typedef map<vector<TypedElement>,compound*>		MVTC;
+typedef map<Function*,MVTC>						MFMVTC;
 
 /******************************************
 	Shared pointers for domain elements
@@ -21,9 +25,19 @@ typedef unordered_map<string,string*>	HMSSP;
 
 class DomainData {
 	private:
-		HMSSP	_sharedstrings;
+		MSSP	_sharedstrings;
+		MFMVTC	_sharedcompounds;
 	public:
-		string*	stringpointer(const string&);
+		string*		stringpointer(const string&);
+		compound*	compoundpointer(Function*,const vector<TypedElement>&);
 };
+
+/****************************
+	Built-in vocabularies
+****************************/
+
+class Vocabulary;
+Vocabulary*	stdbuiltin();	// Returns the standard built-in vocabulary
+
 
 #endif

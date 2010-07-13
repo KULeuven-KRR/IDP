@@ -10,7 +10,7 @@
 
 /** Global namespace and options **/
 
-Namespace* Namespace::_global = new Namespace("global_namespace",0,0);
+Namespace* Namespace::_global = new Namespace("global_namespace",0,ParseInfo());
 Options options;
 
 bool Namespace::isGlobal() const {
@@ -43,7 +43,6 @@ Namespace::~Namespace() {
 	for(unsigned int n = 0; n < _vocs.size(); ++n) delete(_vocs[n]);
 	for(unsigned int n = 0; n < _structs.size(); ++n) delete(_structs[n]);
 	for(unsigned int n = 0; n < _theos.size(); ++n) _theos[n]->recursiveDelete();
-	if(_pi) delete(_pi);
 }
 
 /** Find subparts **/

@@ -25,12 +25,12 @@ class Formula {
 
 		bool				_sign;	// true iff the formula does not start with a negation
 		vector<Variable*>	_fvars;	// free variables of the formula
-		ParseInfo*			_pi;	// the place where the formula was parsed (0 for non user-defined formulas)
+		ParseInfo			_pi;	// the place where the formula was parsed (0 for non user-defined formulas)
 
 	public:
 
 		// Constructor
-		Formula(bool sign, ParseInfo* pi):   _sign(sign), _pi(pi)  { }
+		Formula(bool sign, const ParseInfo& pi):   _sign(sign), _pi(pi)  { }
 
 		// Virtual constructors
 		virtual	Formula*	clone()									const = 0;	// copy the formula while keeping the free variables
@@ -38,27 +38,27 @@ class Formula {
 																				// as inidicated by the map
 
 		// Destructor
-		virtual void recursiveDelete() = 0;				// delete the formula and all its children (subformulas, subterms, etc)
-		virtual ~Formula() { if(_pi) delete(_pi);	}	// delete the formula, but not its children
+		virtual void recursiveDelete() = 0;	// delete the formula and all its children (subformulas, subterms, etc)
+		virtual ~Formula() { }				// delete the formula, but not its children
 
 		// Mutators
 		void	setfvars();		// compute the free variables
 		void	swapsign()	{ _sign = !_sign;	}
 
 		// Inspectors
-				bool			sign()					const { return _sign;			}
-				unsigned int	nrFvars()				const { return _fvars.size();	}
-				Variable*		fvar(unsigned int n)	const { return _fvars[n];		}
-				ParseInfo*		pi()					const { return _pi;				}
-		virtual	unsigned int	nrQvars()				const = 0;	// number of variables quantified by the formula
-		virtual	unsigned int	nrSubforms()			const = 0;	// number of direct subformulas
-		virtual	unsigned int	nrSubterms()			const = 0;  // number of direct subterms
-		virtual	Variable*		qvar(unsigned int n)	const = 0;	// the n'th quantified variable
-		virtual	Formula*		subform(unsigned int n)	const = 0;	// the n'th direct subformula
-		virtual	Term*			subterm(unsigned int n)	const = 0;	// the n'th direct subterm
-				bool			contains(Variable*)		const;		// true iff the formula contains the variable
-		virtual	bool			trueformula()			const { return false;	}
-		virtual	bool			falseformula()			const { return false;	}
+				bool				sign()					const { return _sign;			}
+				unsigned int		nrFvars()				const { return _fvars.size();	}
+				Variable*			fvar(unsigned int n)	const { return _fvars[n];		}
+				const ParseInfo&	pi()					const { return _pi;				}
+		virtual	unsigned int		nrQvars()				const = 0;	// number of variables quantified by the formula
+		virtual	unsigned int		nrSubforms()			const = 0;	// number of direct subformulas
+		virtual	unsigned int		nrSubterms()			const = 0;  // number of direct subterms
+		virtual	Variable*			qvar(unsigned int n)	const = 0;	// the n'th quantified variable
+		virtual	Formula*			subform(unsigned int n)	const = 0;	// the n'th direct subformula
+		virtual	Term*				subterm(unsigned int n)	const = 0;	// the n'th direct subterm
+				bool				contains(Variable*)		const;		// true iff the formula contains the variable
+		virtual	bool				trueformula()			const { return false;	}
+		virtual	bool				falseformula()			const { return false;	}
 
 		// Visitor
 		virtual void		accept(Visitor* v) = 0;
@@ -80,7 +80,7 @@ class PredForm : public Formula {
 	public:
 
 		// Constructors
-		PredForm(bool sign, PFSymbol* p, const vector<Term*>& a, ParseInfo* pi) : 
+		PredForm(bool sign, PFSymbol* p, const vector<Term*>& a, const ParseInfo& pi) : 
 			Formula(sign,pi), _symb(p), _args(a) { setfvars(); }
 
 		PredForm*	clone()									const;
@@ -125,9 +125,9 @@ class EqChainForm : public Formula {
 	public:
 
 		// Constructors
-		EqChainForm(bool sign, bool c, Term* t, ParseInfo* pi) : 
+		EqChainForm(bool sign, bool c, Term* t, const ParseInfo& pi) : 
 			Formula(sign,pi), _conj(c), _terms(1,t), _comps(0), _signs(0) { setfvars(); }
-		EqChainForm(bool sign, bool c, const vector<Term*>& vt, const vector<char>& vc, const vector<bool>& vs, ParseInfo* pi) :
+		EqChainForm(bool sign, bool c, const vector<Term*>& vt, const vector<char>& vc, const vector<bool>& vs, const ParseInfo& pi) :
 			Formula(sign,pi), _conj(c), _terms(vt), _comps(vc), _signs(vs) { setfvars();	}
 
 		EqChainForm*	clone()									const;
@@ -176,7 +176,7 @@ class EquivForm : public Formula {
 	public:
 		
 		// Constructors
-		EquivForm(bool sign, Formula* lf, Formula* rt, ParseInfo* pi) : 
+		EquivForm(bool sign, Formula* lf, Formula* rt, const ParseInfo& pi) : 
 			Formula(sign,pi), _left(lf), _right(rt) { setfvars(); }
 
 		EquivForm*	clone()									const;
@@ -221,7 +221,7 @@ class BoolForm : public Formula {
 	public:
 
 		// Constructors
-		BoolForm(bool sign, bool c, const vector<Formula*>& sb, ParseInfo* pi) :
+		BoolForm(bool sign, bool c, const vector<Formula*>& sb, const ParseInfo& pi) :
 			Formula(sign,pi), _subf(sb), _conj(c) { setfvars(); }
 
 		BoolForm*	clone()									const;
@@ -270,7 +270,7 @@ class QuantForm : public Formula {
 	public:
 
 		// Constructors
-		QuantForm(bool sign, bool u, const vector<Variable*>& v, Formula* sf, ParseInfo* pi) : 
+		QuantForm(bool sign, bool u, const vector<Variable*>& v, Formula* sf, const ParseInfo& pi) : 
 			Formula(sign,pi), _vars(v), _subf(sf), _univ(u) { setfvars(); }
 
 		QuantForm*	clone()									const;
@@ -331,29 +331,29 @@ class Rule {
 		PredForm*			_head;
 		Formula*			_body;
 		vector<Variable*>	_vars;	// The universally quantified variables
-		ParseInfo*			_pi;
+		ParseInfo			_pi;
 
 	public:
 
 		// Constructors
-		Rule(const vector<Variable*>& vv, PredForm* h, Formula* b, ParseInfo* pi) : 
+		Rule(const vector<Variable*>& vv, PredForm* h, Formula* b, const ParseInfo& pi) : 
 			_head(h), _body(b), _vars(vv), _pi(pi) { }
 
 		Rule*	clone()									const;
 
 		// Destructor
-		~Rule() { if(_pi) delete(_pi);	}
+		~Rule() { }
 		void recursiveDelete();
 
 		// Mutators
 		void	body(Formula* f)	{ _body = f;	}
 
 		// Inspectors
-		PredForm*		head()					const { return _head;			}
-		Formula*		body()					const { return _body;			}
-		ParseInfo*		pi()					const { return _pi;				}
-		unsigned int	nrQvars()				const { return _vars.size();	}
-		Variable*		qvar(unsigned int n)	const { return _vars[n];		}
+		PredForm*			head()					const { return _head;			}
+		Formula*			body()					const { return _body;			}
+		const ParseInfo&	pi()					const { return _pi;				}
+		unsigned int		nrQvars()				const { return _vars.size();	}
+		Variable*			qvar(unsigned int n)	const { return _vars[n];		}
 
 		// Visitor
 		void	accept(Visitor* v);
@@ -456,29 +456,29 @@ class AbstractTheory {
 
 		string				_name;
 		Vocabulary*			_vocabulary;
-		ParseInfo*			_pi;
+		ParseInfo			_pi;
 
 	public:
 
 		// Constructors 
-		AbstractTheory(const string& name, ParseInfo* pi) : _name(name), _vocabulary(0), _pi(pi) { }
-		AbstractTheory(const string& name, Vocabulary* voc, ParseInfo* pi) : _name(name), _vocabulary(voc), _pi(pi) { }
+		AbstractTheory(const string& name, const ParseInfo& pi) : _name(name), _vocabulary(0), _pi(pi) { }
+		AbstractTheory(const string& name, Vocabulary* voc, const ParseInfo& pi) : _name(name), _vocabulary(voc), _pi(pi) { }
 
 		// Destructor
 		virtual void recursiveDelete() = 0;
-		virtual ~AbstractTheory() { if(_pi) delete(_pi); }
+		virtual ~AbstractTheory() { }
 
 		// Mutators
 		void	vocabulary(Vocabulary* v)					{ _vocabulary = v;				}
 		void	name(const string& n)						{ _name = n;					}
 
 		// Inspectors
-				const string&	name()						const { return _name;				}
-				Vocabulary*		vocabulary()				const { return _vocabulary;			}
-				ParseInfo*		pi()						const { return _pi;					}
-		virtual	unsigned int	nrSentences()				const = 0;
-		virtual	unsigned int	nrDefinitions()				const = 0;
-		virtual unsigned int	nrFixpDefs()				const = 0;
+				const string&		name()						const { return _name;				}
+				Vocabulary*			vocabulary()				const { return _vocabulary;			}
+				const ParseInfo&	pi()						const { return _pi;					}
+		virtual	unsigned int		nrSentences()				const = 0;
+		virtual	unsigned int		nrDefinitions()				const = 0;
+		virtual unsigned int		nrFixpDefs()				const = 0;
 
 		// Visitor
 		virtual void			accept(Visitor*) = 0;
@@ -501,8 +501,8 @@ class Theory : public AbstractTheory {
 	public:
 
 		// Constructors 
-		Theory(const string& name, ParseInfo* pi) : AbstractTheory(name,pi) { }
-		Theory(const string& name, Vocabulary* voc, ParseInfo* pi) : AbstractTheory(name,voc,pi) { }
+		Theory(const string& name, const ParseInfo& pi) : AbstractTheory(name,pi) { }
+		Theory(const string& name, Vocabulary* voc, const ParseInfo& pi) : AbstractTheory(name,voc,pi) { }
 
 		Theory*	clone()	const;
 

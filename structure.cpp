@@ -23,35 +23,34 @@ extern bool nexttuple(vector<unsigned int>&, const vector<unsigned int>&);
 
 /** add elements or intervals **/
 
-UserSortTable* MixedSortTable::add(int e) {
+FiniteSortTable* MixedSortTable::add(int e) {
 	_numtable.push_back(double(e));
-	_numstrmem.push_back(0);
 	return this;
 }
 
-UserSortTable* EmptySortTable::add(int e) {
+FiniteSortTable* EmptySortTable::add(int e) {
 	IntSortTable* ist = new IntSortTable();
 	ist->add(e);
 	return ist;
 }
 
-UserSortTable* StrSortTable::add(int e) {
+FiniteSortTable* StrSortTable::add(int e) {
 	MixedSortTable* mst = new MixedSortTable(_table);
 	mst->add(e);
 	return mst;
 }
 
-UserSortTable* IntSortTable::add(int e) {
+FiniteSortTable* IntSortTable::add(int e) {
 	_table.push_back(e);
 	return this;
 }
 
-UserSortTable* FloatSortTable::add(int e) {
+FiniteSortTable* FloatSortTable::add(int e) {
 	_table.push_back(double(e));
 	return this;
 }
 
-UserSortTable* RanSortTable::add(int e) {
+FiniteSortTable* RanSortTable::add(int e) {
 	if(e == _last + 1) _last = e;
 	else if(e == _first - 1) _first = e;
 	else if(e < _first || e > _last) {
@@ -63,17 +62,17 @@ UserSortTable* RanSortTable::add(int e) {
 	return this;
 }
 
-UserSortTable* MixedSortTable::add(const string& e) {
+FiniteSortTable* MixedSortTable::add(string* e) {
 	_strtable.push_back(e);
 	return this;
 }
 
-UserSortTable* StrSortTable::add(const string& e) {
+FiniteSortTable* StrSortTable::add(string* e) {
 	_table.push_back(e);
 	return this;
 }
 
-UserSortTable* IntSortTable::add(const string& e) {
+FiniteSortTable* IntSortTable::add(string* e) {
 	MixedSortTable* mst = new MixedSortTable();
 	for(unsigned int n = 0; n < _table.size(); ++n)
 		mst->add(_table[n]);
@@ -81,52 +80,51 @@ UserSortTable* IntSortTable::add(const string& e) {
 	return mst;
 }
 
-UserSortTable* FloatSortTable::add(const string& e) {
+FiniteSortTable* FloatSortTable::add(string* e) {
 	MixedSortTable* mst = new MixedSortTable(_table);
 	mst->add(e);
 	return mst;
 }
 
-UserSortTable* RanSortTable::add(const string& e) {
+FiniteSortTable* RanSortTable::add(string* e) {
 	MixedSortTable* mst = new MixedSortTable();
 	mst->add(_first,_last);
 	mst->add(e);
 	return mst;
 }
 
-UserSortTable* EmptySortTable::add(const string& e) {
+FiniteSortTable* EmptySortTable::add(string* e) {
 	StrSortTable* sst = new StrSortTable();
 	sst->add(e);
 	return sst;
 }
 
-UserSortTable* MixedSortTable::add(int f, int l) {
+FiniteSortTable* MixedSortTable::add(int f, int l) {
 	for(int e = f; e <= l; ++e) {
 		_numtable.push_back(double(e));
-		_numstrmem.push_back(0);
 	}
 	return this;
 }
 
-UserSortTable* StrSortTable::add(int f, int l) {
+FiniteSortTable* StrSortTable::add(int f, int l) {
 	MixedSortTable* mst = new MixedSortTable(_table);
 	mst->add(f,l);
 	return mst;
 }
 
-UserSortTable* IntSortTable::add(int f, int l) {
+FiniteSortTable* IntSortTable::add(int f, int l) {
 	for(int n = f; n <= l; ++n) 
 		_table.push_back(n);
 	return this;
 }
 
-UserSortTable* FloatSortTable::add(int f, int l) {
+FiniteSortTable* FloatSortTable::add(int f, int l) {
 	for(int n = f; n <= l; ++n) 
 		_table.push_back(double(n));
 	return this;
 }
 
-UserSortTable* RanSortTable::add(int f, int l) {
+FiniteSortTable* RanSortTable::add(int f, int l) {
 	if(f >= _first && f <= _last+1) {
 		_last = (l > _last ? l : _last);
 		return this;
@@ -144,25 +142,25 @@ UserSortTable* RanSortTable::add(int f, int l) {
 	}
 }
 
-UserSortTable* EmptySortTable::add(int f, int l) {
+FiniteSortTable* EmptySortTable::add(int f, int l) {
 	return new RanSortTable(f,l);
 }
 
-UserSortTable* MixedSortTable::add(char f, char l) {
+FiniteSortTable* MixedSortTable::add(char f, char l) {
 	for(char n = f; n <= l; ++n) {
-		_strtable.push_back(string(1,n));
+		_strtable.push_back(IDPointer(string(1,n)));
 	}
 	return this;
 }
 
-UserSortTable* StrSortTable::add(char f, char l) {
+FiniteSortTable* StrSortTable::add(char f, char l) {
 	for(char n = f; n <= l; ++n) {
-		_table.push_back(string(1,n));
+		_table.push_back(IDPointer(string(1,n)));
 	}
 	return this;
 }
 
-UserSortTable* IntSortTable::add(char f, char l) {
+FiniteSortTable* IntSortTable::add(char f, char l) {
 	MixedSortTable* mst = new MixedSortTable();
 	mst->add(f,l);
 	for(unsigned int n = 0; n < _table.size(); ++n)
@@ -170,38 +168,37 @@ UserSortTable* IntSortTable::add(char f, char l) {
 	return mst;
 }
 
-UserSortTable* FloatSortTable::add(char f, char l) {
+FiniteSortTable* FloatSortTable::add(char f, char l) {
 	MixedSortTable* mst = new MixedSortTable(_table);
 	mst->add(f,l);
 	return mst;
 }
 
-UserSortTable* RanSortTable::add(char f, char l) {
+FiniteSortTable* RanSortTable::add(char f, char l) {
 	MixedSortTable* mst = new MixedSortTable();
 	mst->add(_first,_last);
 	mst->add(f,l);
 	return mst;
 }
 
-UserSortTable* EmptySortTable::add(char f, char l) {
+FiniteSortTable* EmptySortTable::add(char f, char l) {
 	StrSortTable* sst = new StrSortTable();
 	sst->add(f,l);
 	return sst;
 }
 
-UserSortTable* MixedSortTable::add(double e) {
+FiniteSortTable* MixedSortTable::add(double e) {
 	_numtable.push_back(e);
-	_numstrmem.push_back(0);
 	return this;
 }
 
-UserSortTable* StrSortTable::add(double e) {
+FiniteSortTable* StrSortTable::add(double e) {
 	MixedSortTable* mst = new MixedSortTable(_table);
 	mst->add(e);
 	return mst;
 }
 
-UserSortTable* IntSortTable::add(double e) {
+FiniteSortTable* IntSortTable::add(double e) {
 	if(double(int(e)) == e) return add(int(e));
 	else {
 		FloatSortTable* fst = new FloatSortTable();
@@ -212,12 +209,12 @@ UserSortTable* IntSortTable::add(double e) {
 	}
 }
 
-UserSortTable* FloatSortTable::add(double e) {
+FiniteSortTable* FloatSortTable::add(double e) {
 	_table.push_back(double(e));
 	return this;
 }
 
-UserSortTable* RanSortTable::add(double e) {
+FiniteSortTable* RanSortTable::add(double e) {
 	if(double(int(e)) == e) return add(int(e));
 	else {
 		FloatSortTable* fst = new FloatSortTable();
@@ -227,7 +224,7 @@ UserSortTable* RanSortTable::add(double e) {
 	}
 }
 
-UserSortTable* EmptySortTable::add(double e) {
+FiniteSortTable* EmptySortTable::add(double e) {
 	FloatSortTable* fst = new FloatSortTable();
 	fst->add(e);
 	return fst;
@@ -240,7 +237,7 @@ void MixedSortTable::sortunique() {
 	vector<double>::iterator it = unique(_numtable.begin(),_numtable.end());
 	_numtable.erase(it,_numtable.end());
 	sort(_strtable.begin(),_strtable.end());
-	vector<string>::iterator jt = unique(_strtable.begin(),_strtable.end());
+	vector<string*>::iterator jt = unique(_strtable.begin(),_strtable.end());
 	_strtable.erase(jt,_strtable.end());
 }
 
@@ -258,7 +255,7 @@ void FloatSortTable::sortunique() {
 
 void StrSortTable::sortunique() {
 	sort(_table.begin(),_table.end());
-	vector<string>::iterator it = unique(_table.begin(),_table.end());
+	vector<string*>::iterator it = unique(_table.begin(),_table.end());
 	_table.erase(it,_table.end());
 }
 
@@ -269,21 +266,21 @@ bool SortTable::contains(Element e, ElementType t) const {
 		case ELINT: 
 			return contains(e._int);
 		case ELDOUBLE:
-			return contains(*(e._double));
+			return contains(e._double);
 		case ELSTRING:
-			return contains(*(e._string));
+			return contains(e._string);
 		default:
 			assert(false);
 	}
 	return false;
 }
 
-bool MixedSortTable::contains(const string& s) const {
+bool MixedSortTable::contains(string* s) const {
 	unsigned int p = lower_bound(_strtable.begin(),_strtable.end(),s) - _strtable.begin();
 	if(p != _strtable.size() && _strtable[p] == s) return true;
 	else {
-		double d = stod(s);
-		if(d || isDouble(s)) {
+		double d = stod(*s);
+		if(d || isDouble(*s)) {
 			unsigned int pd = lower_bound(_numtable.begin(),_numtable.end(),d) - _numtable.begin();
 			return (pd != _numtable.size() && _numtable[p] == d);
 		}
@@ -291,25 +288,25 @@ bool MixedSortTable::contains(const string& s) const {
 	}
 }
 
-bool RanSortTable::contains(const string& s) const {
-	int n = stoi(s);
-	if(n || s == "0") return contains(n);
+bool RanSortTable::contains(string* s) const {
+	int n = stoi(*s);
+	if(n || *s == "0") return contains(n);
 	else return false;
 }
 
-bool FloatSortTable::contains(const string& s) const {
-	double d = stod(s);
-	if(d || isDouble(s)) return contains(d);
+bool FloatSortTable::contains(string* s) const {
+	double d = stod(*s);
+	if(d || isDouble(*s)) return contains(d);
 	else return false;
 }
 
-bool IntSortTable::contains(const string& s) const {
-	int n = stoi(s);
-	if(n || s == "0") return contains(n);
+bool IntSortTable::contains(string* s) const {
+	int n = stoi(*s);
+	if(n || *s == "0") return contains(n);
 	else return false;
 }
 
-bool StrSortTable::contains(const string& s) const {
+bool StrSortTable::contains(string* s) const {
 	unsigned int p = lower_bound(_table.begin(),_table.end(),s) - _table.begin();
 	return (p != _table.size() && _table[p] == s);
 }
@@ -328,7 +325,7 @@ bool IntSortTable::contains(int n) const {
 }
 
 bool StrSortTable::contains(int n) const {
-	return contains(itos(n));
+	return contains(IDPointer(itos(n)));
 }
 
 bool FloatSortTable::contains(int n) const {
@@ -341,7 +338,7 @@ bool MixedSortTable::contains(double d) const {
 }
 
 bool StrSortTable::contains(double d) const {
-	return contains(dtos(d));
+	return contains(IDPointer(dtos(d)));
 }
 
 bool IntSortTable::contains(double d) const {
@@ -361,14 +358,13 @@ bool FloatSortTable::contains(double d) const {
 
 /** Inspectors **/
 
-Element MixedSortTable::element(unsigned int n) {
+Element MixedSortTable::element(unsigned int n) const {
 	Element e;
 	if(n < _numtable.size()) {
-		if(!_numstrmem[n]) _numstrmem[n] = new string(dtos(_numtable[n]));
-		e._string = _numstrmem[n]; 
+		e._string = IDPointer(dtos(_numtable[n]));
 	}
 	else {
-		e._string = &(_strtable[n-_numtable.size()]);
+		e._string = _strtable[n-_numtable.size()];
 	}
 	return e;
 }
@@ -390,15 +386,14 @@ unsigned int RanSortTable::position(Element e, ElementType t) const {
 unsigned int FloatSortTable::position(Element e, ElementType t) const {
 	assert(SortTable::contains(e,t));
 	Element el = ElementUtil::convert(e,t,ELDOUBLE);
-	unsigned int pos = lower_bound(_table.begin(),_table.end(),*(el._double)) - _table.begin();
-	if(t != ELDOUBLE) delete(el._double);
+	unsigned int pos = lower_bound(_table.begin(),_table.end(),el._double) - _table.begin();
 	return pos;
 }
 
 unsigned int StrSortTable::position(Element e, ElementType t) const {
 	assert(SortTable::contains(e,t));
 	Element el = ElementUtil::convert(e,t,ELSTRING);
-	unsigned int pos = lower_bound(_table.begin(),_table.end(),*(el._string)) - _table.begin();
+	unsigned int pos = lower_bound(_table.begin(),_table.end(),el._string) - _table.begin();
 	if(t != ELSTRING) delete(el._string);
 	return pos;
 }
@@ -411,12 +406,12 @@ unsigned int MixedSortTable::position(Element e, ElementType t) const {
 			pos = lower_bound(_numtable.begin(),_numtable.end(),double(e._int)) - _numtable.begin();
 			break;
 		case ELDOUBLE:
-			pos = lower_bound(_numtable.begin(),_numtable.end(),*(e._double)) - _numtable.begin();
+			pos = lower_bound(_numtable.begin(),_numtable.end(),e._double) - _numtable.begin();
 			break;
 		case ELSTRING: 
 		{
-			unsigned int p = lower_bound(_strtable.begin(),_strtable.end(),(*(e._string))) - _strtable.begin();
-			if(p != _strtable.size() && _strtable[p] == (*(e._string))) pos = p;
+			unsigned int p = lower_bound(_strtable.begin(),_strtable.end(),(e._string)) - _strtable.begin();
+			if(p != _strtable.size() && _strtable[p] == (e._string)) pos = p;
 			else {
 				double d = stod(*(e._string));
 				assert(d || isDouble(*(e._string)));
@@ -431,43 +426,43 @@ unsigned int MixedSortTable::position(Element e, ElementType t) const {
 
 /** Debugging **/
 
-string MixedSortTable::to_string() const {
-	string s;
+string MixedSortTable::to_string(unsigned int spaces) const {
+	string s = tabstring(spaces);
 	for(unsigned int n = 0; n < _numtable.size(); ++n) s = s + dtos(_numtable[n]) + ' ';
-	for(unsigned int n = 0; n < _strtable.size(); ++n) s = s + _strtable[n] + ' ';
+	for(unsigned int n = 0; n < _strtable.size(); ++n) s = s + *_strtable[n] + ' ';
 	return s;
 }
 
-string RanSortTable::to_string() const {
-	string s = itos(_first) + ".." + itos(_last);
+string RanSortTable::to_string(unsigned int spaces) const {
+	string s = tabstring(spaces) + itos(_first) + ".." + itos(_last);
 	return s;
 }
 
-string IntSortTable::to_string() const {
+string IntSortTable::to_string(unsigned int spaces) const {
+	string s = tabstring(spaces);
 	if(size()) {
-		string s = itos(_table[0]);
+		s = s + itos(_table[0]);
 		for(unsigned int n = 1; n < size(); ++n) s = s + ' ' + itos(_table[n]);
-		return s;
 	}
-	else return "";
+	return s;
 }
 
-string StrSortTable::to_string() const {
+string StrSortTable::to_string(unsigned int spaces) const {
+	string s = tabstring(spaces);
 	if(size()) {
-		string s = _table[0];
-		for(unsigned int n = 1; n < size(); ++n) s = s + ' ' + _table[n];
-		return s;
+		s = s + *_table[0];
+		for(unsigned int n = 1; n < size(); ++n) s = s + ' ' + *_table[n];
 	}
-	else return "";
+	return s;
 }
 
-string FloatSortTable::to_string() const {
+string FloatSortTable::to_string(unsigned int spaces) const {
+	string s = tabstring(spaces);
 	if(size()) {
-		string s = dtos(_table[0]);
+		s = s + dtos(_table[0]);
 		for(unsigned int n = 1; n < size(); ++n) s = s + ' ' + dtos(_table[n]);
-		return s;
 	}
-	else return "";
+	return s;
 }
 
 
@@ -476,28 +471,6 @@ string FloatSortTable::to_string() const {
 ********************************/
 
 /** Finite tables **/
-SortPredTable::SortPredTable(UserSortTable* t) : FinitePredTable(vector<ElementType>(1,t->type())), _table(t) { }
-
-UserPredTable::~UserPredTable() {
-	for(unsigned int c = 0; c < _types.size(); ++c) {
-		switch(_types[c]) {
-			case ELINT:
-				break;
-			case ELDOUBLE:
-				for(unsigned int r = 0; r < _table.size(); ++r) {
-					delete(_table[r][c]._double);
-				}
-				break;
-			case ELSTRING:
-				for(unsigned int r = 0; r < _table.size(); ++r) {
-					delete(_table[r][c]._string);
-				}
-				break;
-			default:
-				assert(false);
-		}
-	}
-}
 
 bool ElementWeakOrdering::operator()(const vector<Element>& x,const vector<Element>& y) const {
 	for(unsigned int n = 0; n < _types.size(); ++n) {
@@ -511,10 +484,10 @@ bool ElementWeakOrdering::operator()(const vector<Element>& x,const vector<Eleme
 				}
 				break;
 			case ELDOUBLE:
-				if(*(x[n]._double) < *(y[n]._double)) {
+				if((x[n]._double) < (y[n]._double)) {
 					return true;
 				}
-				else if(*(x[n]._double) > *(y[n]._double)) {
+				else if((x[n]._double) > (y[n]._double)) {
 					return false;
 				}
 				break;
@@ -554,10 +527,10 @@ bool ElementEquality::operator()(const vector<Element>& x,const vector<Element>&
 				if(x[n]._int != y[n]._int) return false;
 				break;
 			case ELDOUBLE:
-				if(*(x[n]._double) != *(y[n]._double)) return false;
+				if((x[n]._double) != (y[n]._double)) return false;
 				break;
 			case ELSTRING:
-				if(*(x[n]._string) != *(y[n]._string)) return false;
+				if((x[n]._string) != (y[n]._string)) return false;
 				break;
 			default:
 				assert(false);
@@ -566,8 +539,8 @@ bool ElementEquality::operator()(const vector<Element>& x,const vector<Element>&
 	return true;
 }
 
-UserPredTable::UserPredTable(const UserPredTable& t) : 
-	FinitePredTable(t.types()), _table(t.size(),vector<Element>(t.arity())), _order(t.types()), _equality(t.types()) {
+FinitePredTable::FinitePredTable(const FinitePredTable& t) : 
+	PredTable(), _types(t.types()), _table(t.size(),vector<Element>(t.arity())), _order(t.types()), _equality(t.types()) {
 	for(unsigned int n = 0; n < t.size(); ++n) {
 		for(unsigned int m = 0; m < _types.size(); ++m) {
 			switch(_types[m]) {
@@ -575,10 +548,10 @@ UserPredTable::UserPredTable(const UserPredTable& t) :
 					_table[n][m]._int = t[n][m]._int;
 					break;
 				case ELDOUBLE:
-					_table[n][m]._double = new double(*(t[n][m]._double));
+					_table[n][m]._double = (t[n][m]._double);
 					break;
 				case ELSTRING:
-					_table[n][m]._string = new string(*(t[n][m]._string));
+					_table[n][m]._string = (t[n][m]._string);
 					break;
 				default:
 					assert(false);
@@ -587,27 +560,11 @@ UserPredTable::UserPredTable(const UserPredTable& t) :
 	}
 }
 
-void UserPredTable::sortunique() {
+void FinitePredTable::sortunique() {
 	sort(_table.begin(),_table.end(),_order);
 	vector<unsigned int> doublepos;
 	for(unsigned int r = 1; r < _table.size(); ++r) {
 		if(_equality(_table[r-1],_table[r])) doublepos.push_back(r);
-	}
-	for(unsigned int n = 0; n < doublepos.size(); ++n) {
-		for(unsigned int c = 0; c < _types.size(); ++c) {
-			switch(_types[c]) {
-				case ELINT:
-					break;
-				case ELDOUBLE:
-					delete(_table[doublepos[n]][c]._double);
-					break;
-				case ELSTRING:
-					delete(_table[doublepos[n]][c]._string);
-					break;
-				default:
-					assert(false);
-			}
-		}
 	}
 	doublepos.push_back(_table.size());
 	for(unsigned int n = 1; n < doublepos.size(); ++n) {
@@ -618,13 +575,13 @@ void UserPredTable::sortunique() {
 	for(unsigned int n = 0; n < doublepos.size()-1; ++n) _table.pop_back();
 }
 
-void UserPredTable::changeElType(unsigned int col, ElementType t) {
+void FinitePredTable::changeElType(unsigned int col, ElementType t) {
 	switch(_types[col]) {
 		case ELINT:
 			switch(t) {
 				case ELDOUBLE:
 					for(unsigned int n = 0; n < _table.size(); ++n) {
-						_table[n][col]._double = new double(_table[n][col]._int);
+						_table[n][col]._double = double(_table[n][col]._int);
 					}
 					break;
 				case ELSTRING:
@@ -639,7 +596,7 @@ void UserPredTable::changeElType(unsigned int col, ElementType t) {
 		case ELDOUBLE:
 			assert(t == ELSTRING);
 			for(unsigned int n = 0; n < _table.size(); ++n) {
-				_table[n][col]._string = new string(dtos(*(_table[n][col]._double)));
+				_table[n][col]._string = IDPointer(string(dtos(_table[n][col]._double)));
 			}
 			break;
 		default:
@@ -650,7 +607,7 @@ void UserPredTable::changeElType(unsigned int col, ElementType t) {
 	_equality.changeType(col,t);
 }
 
-void UserPredTable::addColumn(ElementType t) {
+void FinitePredTable::addColumn(ElementType t) {
 	assert(_table.size() == 1);
 	_types.push_back(t);
 	_order.addType(t);
@@ -659,12 +616,12 @@ void UserPredTable::addColumn(ElementType t) {
 	_table[0].push_back(e);
 }
 
-bool UserPredTable::contains(const vector<Element>& vi) const {
+bool FinitePredTable::contains(const vector<Element>& vi) const {
 	vector<vector<Element> >::const_iterator it = lower_bound(_table.begin(),_table.end(),vi,_order);
 	return (it != _table.end() && _equality(*it,vi));
 }
 
-void UserPredTable::addRow(const vector<Element>& vi, const vector<ElementType>& vet) {
+void FinitePredTable::addRow(const vector<Element>& vi, const vector<ElementType>& vet) {
 	assert(vet.size() == _types.size());
 	unsigned int r = _table.size();
 	addRow();
@@ -676,10 +633,10 @@ void UserPredTable::addRow(const vector<Element>& vi, const vector<ElementType>&
 						_table[r][n]._int = vi[n]._int;
 						break;
 					case ELDOUBLE:
-						_table[r][n]._double = new double(vi[n]._int); 
+						_table[r][n]._double = double(vi[n]._int); 
 						break;
 					case ELSTRING:
-						_table[r][n]._string = new string(itos(vi[n]._int)); 
+						_table[r][n]._string = IDPointer(string(itos(vi[n]._int))); 
 						break;
 					default:
 						assert(false);
@@ -689,13 +646,13 @@ void UserPredTable::addRow(const vector<Element>& vi, const vector<ElementType>&
 				switch(_types[n]) {
 					case ELINT:
 						changeElType(n,ELDOUBLE);
-						_table[r][n]._double = new double(*(vi[n]._double));
+						_table[r][n]._double = (vi[n]._double);
 						break;
 					case ELDOUBLE:
-						_table[r][n]._double = new double(*(vi[n]._double));
+						_table[r][n]._double = (vi[n]._double);
 						break;
 					case ELSTRING:
-						_table[r][n]._string = new string(dtos(*(vi[n]._double)));
+						_table[r][n]._string = IDPointer(string(dtos(vi[n]._double)));
 						break;
 					default:
 						assert(false);
@@ -722,39 +679,6 @@ void UserPredTable::addRow(const vector<Element>& vi, const vector<ElementType>&
 				assert(false);
 		}
 	}
-}
-
-void SortPredTable::addRow(const vector<Element>& vi, const vector<ElementType>& vet) {
-	assert(vi.size() == 1);
-	switch(vet[0]) {
-		case ELINT:
-			_table = _table->add(vi[0]._int);
-			break;
-		case ELDOUBLE:
-			_table = _table->add(*(vi[0]._double));
-			break;
-		case ELSTRING:
-			_table = _table->add(*(vi[0]._string));
-			break;
-		default:
-			assert(false);
-	}
-	_types[0] = _table->type();
-}
-
-bool SortPredTable::contains(const vector<Element>& vi) const {
-	assert(vi.size() == 1);
-	switch(_types[0]) {
-		case ELINT:
-			return _table->contains(vi[0]._int);
-		case ELDOUBLE:
-			return _table->contains(*(vi[0]._double));
-		case ELSTRING:
-			return _table->contains(*(vi[0]._string));
-		default:
-			assert(false);
-	}
-	return false;
 }
 
 void PredInter::replace(PredTable* pt, bool ctpf, bool c) {
@@ -788,31 +712,15 @@ bool PredInter::istrue(const vector<TypedElement>& vte) const {
 		ve[n] = ElementUtil::convert(vte[n],_ctpf->type(n));
 	}
 	bool result = istrue(ve);
-	for(unsigned int n = 0; n < vte.size(); ++n) {
-		if(_ctpf->type(n) == ELSTRING) {
-			if(ve[n]._string != vte[n]._element._string) delete(ve[n]._string);
-		}
-		else if(_ctpf->type(n) == ELDOUBLE) {
-			if(ve[n]._double != vte[n]._element._double) delete(ve[n]._double);
-		}
-	}
 	return result;
 }
 
 bool PredTable::contains(const vector<TypedElement>& vte) const {
 	vector<Element> ve(vte.size());
 	for(unsigned int n = 0; n < vte.size(); ++n) {
-		ve[n] = ElementUtil::convert(vte[n],_types[n]);
+		ve[n] = ElementUtil::convert(vte[n],type(n));
 	}
 	bool result = contains(ve);
-	for(unsigned int n = 0; n < vte.size(); ++n) {
-		if(_types[n] == ELSTRING) {
-			if(ve[n]._string != vte[n]._element._string) delete(ve[n]._string);
-		}
-		else if(_types[n] == ELDOUBLE) {
-			if(ve[n]._double != vte[n]._element._double) delete(ve[n]._double);
-		}
-	}
 	return result;
 }
 
@@ -823,20 +731,12 @@ bool PredInter::isfalse(const vector<TypedElement>& vte) const {
 		ve[n] = ElementUtil::convert(vte[n],_cfpt->type(n));
 	}
 	bool result = isfalse(ve);
-	for(unsigned int n = 0; n < vte.size(); ++n) {
-		if(_cfpt->type(n) == ELSTRING) {
-			if(ve[n]._string != vte[n]._element._string) delete(ve[n]._string);
-		}
-		else if(_cfpt->type(n) == ELDOUBLE) {
-			if(ve[n]._double != vte[n]._element._double) delete(ve[n]._double);
-		}
-	}
 	return result;
 }
 
 /** Debugging **/
 
-string UserPredTable::to_string(unsigned int spaces) const {
+string FinitePredTable::to_string(unsigned int spaces) const {
 	string tab = tabstring(spaces);
 	string s;
 	for(unsigned int n = 0; n < size(); ++n) {
@@ -847,7 +747,7 @@ string UserPredTable::to_string(unsigned int spaces) const {
 					s = s + itos(_table[n][m]._int);
 					break;
 				case ELDOUBLE:
-					s = s + dtos(*(_table[n][m]._double));
+					s = s + dtos((_table[n][m]._double));
 					break;
 				case ELSTRING:
 					s = s + (*(_table[n][m]._string));
@@ -860,11 +760,6 @@ string UserPredTable::to_string(unsigned int spaces) const {
 		s = s + '\n';
 	}
 	return s;
-}
-
-string SortPredTable::to_string(unsigned int spaces) const {
-	string tab = tabstring(spaces);
-	return tab + _table->to_string() + '\n';
 }
 
 string PredInter::to_string(unsigned int spaces) const {
@@ -883,33 +778,24 @@ string PredInter::to_string(unsigned int spaces) const {
 	Function interpretations
 *******************************/
 
-Element UserFuncInter::operator[](const vector<Element>& vi) const {
-	if(_ftable) {
-		VVE::const_iterator it = lower_bound(_ftable->begin(),_ftable->end(),vi,_order);
-		if(it != _ftable->end() && _equality(*it,vi)) return it->back();
-	}
-	return ElementUtil::nonexist(_outtype);
+Element FiniteFuncTable::operator[](const vector<Element>& vi) const {
+	VVE::const_iterator it = lower_bound(_ftable->begin(),_ftable->end(),vi,_order);
+	if(it != _ftable->end() && _equality(*it,vi)) return it->back();
+	else return ElementUtil::nonexist(type(arity()));
 }
 
-Element FuncInter::operator[](const vector<TypedElement>& vte) const {
+Element FuncTable::operator[](const vector<TypedElement>& vte) const {
 	vector<Element> ve(vte.size());
 	for(unsigned int n = 0; n < vte.size(); ++n) {
-		ve[n] = ElementUtil::convert(vte[n],_intypes[n]);
+		ve[n] = ElementUtil::convert(vte[n],type(n));
 	}
 	Element result = operator[](ve);
-	for(unsigned int n = 0; n < vte.size(); ++n) {
-		if(_intypes[n] == ELSTRING) {
-			if(ve[n]._string != vte[n]._element._string) delete(ve[n]._string);
-		}
-		else if(_intypes[n] == ELDOUBLE) {
-			if(ve[n]._double != vte[n]._element._double) delete(ve[n]._double);
-		}
-	}
 	return result;
 }
 
-string UserFuncInter::to_string(unsigned int spaces) const {
-	return _ptable->to_string(spaces);
+string FuncInter::to_string(unsigned int spaces) const {
+	if(_ftable) return _ftable->to_string(spaces);
+	else return _pinter->to_string(spaces);
 }
 
 /*****************
@@ -919,17 +805,14 @@ string UserFuncInter::to_string(unsigned int spaces) const {
 namespace TableUtils {
 
 PredInter* leastPredInter(const vector<ElementType>& t) {
-	UserPredTable* t1 = new UserPredTable(t);
-	UserPredTable* t2 = new UserPredTable(t);
+	FinitePredTable* t1 = new FinitePredTable(t);
+	FinitePredTable* t2 = new FinitePredTable(t);
 	return new PredInter(t1,t2,true,true);
 }
 
 FuncInter* leastFuncInter(const vector<ElementType>& t) {
 	PredInter* pt = leastPredInter(t);
-	vector<ElementType> in = t;
-	ElementType out = in.back();
-	in.pop_back();
-	return new UserFuncInter(in,out,pt);
+	return new FuncInter(0,pt);
 }
 
 }
@@ -977,11 +860,11 @@ void Structure::close() {
 			_predinter[n] = TableUtils::leastPredInter(vet);
 		}
 		else if(!(_predinter[n]->ctpf())) {
-			PredTable* pt = new UserPredTable(vet);
+			PredTable* pt = new FinitePredTable(vet);
 			_predinter[n]->replace(pt,true,true);
 		}
 		else if(!(_predinter[n]->cfpt())) {
-			PredTable* pt = new UserPredTable(vet);
+			PredTable* pt = new FinitePredTable(vet);
 			_predinter[n]->replace(pt,false,true);
 		}
 	}
@@ -991,11 +874,11 @@ void Structure::close() {
 			_funcinter[n] = TableUtils::leastFuncInter(vet);
 		}
 		else if(!(_funcinter[n]->predinter()->ctpf())) {
-			PredTable* pt = new UserPredTable(vet);
+			PredTable* pt = new FinitePredTable(vet);
 			_funcinter[n]->predinter()->replace(pt,true,true);
 		}
 		else if(!(_funcinter[n]->predinter()->cfpt())) {
-			PredTable* pt = new UserPredTable(vet);
+			PredTable* pt = new FinitePredTable(vet);
 			_funcinter[n]->predinter()->replace(pt,false,true);
 		}
 	}
@@ -1004,7 +887,7 @@ void Structure::close() {
 /** Inspectors **/
 
 SortTable* Structure::inter(Sort* s) const {
-	if(s->builtin()) return Builtin::inter(s);
+	if(s->builtin()) return s->inter();
 	return _sortinter[_vocabulary->index(s)];
 }
 
@@ -1012,7 +895,7 @@ PredInter* Structure::inter(Predicate* p) const {
 	if(p->builtin()) {
 		vector<SortTable*> vs(p->arity());
 		for(unsigned int n = 0; n < p->arity(); ++n) vs[n] = inter(p->sort(n));
-		return Builtin::inter(p,vs);
+		return p->inter(vs);
 	}
 	return _predinter[_vocabulary->index(p)];
 }
@@ -1021,7 +904,7 @@ FuncInter* Structure::inter(Function* f) const {
 	if(f->builtin()) {
 		vector<SortTable*> vs(f->nrsorts());
 		for(unsigned int n = 0; n < f->nrsorts(); ++n) vs[n] = inter(f->sort(n));
-		return Builtin::inter(f,vs);
+		return f->inter(vs);
 	}
 	return _funcinter[_vocabulary->index(f)];
 }
@@ -1093,7 +976,7 @@ class StructConvertor : public Visitor {
 };
 
 void StructConvertor::visit(Structure* s) {
-	_returnvalue = new Theory("",s->vocabulary(),0);
+	_returnvalue = new Theory("",s->vocabulary(),ParseInfo());
 	for(unsigned int n = 0; n < s->vocabulary()->nrPreds(); ++n) {
 		_currsymbol = s->vocabulary()->pred(n);
 		visit(s->predinter(n));
@@ -1109,10 +992,10 @@ void StructConvertor::visit(PredInter* pt) {
 		vector<Term*> vt(_currsymbol->nrsorts());
 		for(unsigned int r = 0; r < pt->ctpf()->size(); ++r) {
 			for(unsigned int c = 0; c < vt.size(); ++c) {
-				Element e = ElementUtil::clone(pt->ctpf()->element(r,c),pt->ctpf()->type(c));
-				vt[c] = new DomainTerm(_currsymbol->sort(c),pt->ctpf()->type(c),e,0);
+				Element e = pt->ctpf()->element(r,c);
+				vt[c] = new DomainTerm(_currsymbol->sort(c),pt->ctpf()->type(c),e,ParseInfo());
 			}
-			_returnvalue->add(new PredForm(true,_currsymbol,vt,0));
+			_returnvalue->add(new PredForm(true,_currsymbol,vt,ParseInfo()));
 		}
 	}
 	else {
@@ -1120,10 +1003,10 @@ void StructConvertor::visit(PredInter* pt) {
 		vector<Term*> vt(_currsymbol->nrsorts());
 		for(unsigned int r = 0; r < comp->size(); ++r) {
 			for(unsigned int c = 0; c < vt.size(); ++c) {
-				Element e = ElementUtil::clone(comp->element(r,c),comp->type(c));
-				vt[c] = new DomainTerm(_currsymbol->sort(c),comp->type(c),e,0);
+				Element e = comp->element(r,c);
+				vt[c] = new DomainTerm(_currsymbol->sort(c),comp->type(c),e,ParseInfo());
 			}
-			_returnvalue->add(new PredForm(true,_currsymbol,vt,0));
+			_returnvalue->add(new PredForm(true,_currsymbol,vt,ParseInfo()));
 		}
 		delete(comp);
 	}
@@ -1131,10 +1014,10 @@ void StructConvertor::visit(PredInter* pt) {
 		vector<Term*> vt(_currsymbol->nrsorts());
 		for(unsigned int r = 0; r < pt->cfpt()->size(); ++r) {
 			for(unsigned int c = 0; c < vt.size(); ++c) {
-				Element e = ElementUtil::clone(pt->cfpt()->element(r,c),pt->cfpt()->type(c));
-				vt[c] = new DomainTerm(_currsymbol->sort(c),pt->cfpt()->type(c),e,0);
+				Element e = pt->cfpt()->element(r,c);
+				vt[c] = new DomainTerm(_currsymbol->sort(c),pt->cfpt()->type(c),e,ParseInfo());
 			}
-			_returnvalue->add(new PredForm(false,_currsymbol,vt,0));
+			_returnvalue->add(new PredForm(false,_currsymbol,vt,ParseInfo()));
 		}
 	}
 	else {
@@ -1142,10 +1025,10 @@ void StructConvertor::visit(PredInter* pt) {
 		vector<Term*> vt(_currsymbol->nrsorts());
 		for(unsigned int r = 0; r < comp->size(); ++r) {
 			for(unsigned int c = 0; c < vt.size(); ++c) {
-				Element e = ElementUtil::clone(comp->element(r,c),comp->type(c));
-				vt[c] = new DomainTerm(_currsymbol->sort(c),comp->type(c),e,0);
+				Element e = comp->element(r,c);
+				vt[c] = new DomainTerm(_currsymbol->sort(c),comp->type(c),e,ParseInfo());
 			}
-			_returnvalue->add(new PredForm(false,_currsymbol,vt,0));
+			_returnvalue->add(new PredForm(false,_currsymbol,vt,ParseInfo()));
 		}
 		delete(comp);
 	}
@@ -1178,7 +1061,7 @@ namespace StructUtils {
 			tuple.push_back(e);
 			types.push_back(st->type());
 		}
-		UserPredTable* upt = new UserPredTable(types);
+		FinitePredTable* upt = new FinitePredTable(types);
 		if(empty) return upt;
 		else {
 			vector<unsigned int> iter(limits.size(),0);
@@ -1189,7 +1072,7 @@ namespace StructUtils {
 				if(!pt->contains(tuple)) {
 					vector<Element> ve(tuple.size());
 					for(unsigned int n = 0; n < tuple.size(); ++n) {
-						ve[n] = ElementUtil::clone(tuple[n]);
+						ve[n] = tuple[n]._element;
 					}
 					upt->addRow(ve,types);
 				}

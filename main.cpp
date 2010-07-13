@@ -29,7 +29,6 @@ extern void help_execute();
 
 /** Initialize data structures **/
 void initialize() {
-	Builtin::initialize();
 	Insert::initialize();
 }
 
@@ -128,7 +127,6 @@ void parse(const vector<string>& inputfiles) {
 /** Delete all data **/
 void cleanup() {
 	Namespace::deleteGlobal();
-	Builtin::deleteAll();
 	Insert::cleanup();
 	for(map<string,CLConst*>::iterator it = clconsts.begin(); it != clconsts.end(); ++it) delete(it->second);
 }

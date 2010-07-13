@@ -4,6 +4,7 @@
 	(c) K.U.Leuven
 ************************************/
 
+#include "data.hpp"
 #include "theory.hpp"
 #include "visitor.hpp"
 #include "builtin.hpp"
@@ -51,36 +52,28 @@ QuantForm* QuantForm::clone() const {
 PredForm* PredForm::clone(const map<Variable*,Variable*>& mvv) const {
 	vector<Term*> na(_args.size());
 	for(unsigned int n = 0; n < _args.size(); ++n) na[n] = _args[n]->clone(mvv);
-	ParseInfo* npi = 0;
-	if(_pi) npi = new ParseInfo(_pi);
-	PredForm* pf = new PredForm(_sign,_symb,na,npi);
+	PredForm* pf = new PredForm(_sign,_symb,na,_pi);
 	return pf;
 }
 
 EqChainForm* EqChainForm::clone(const map<Variable*,Variable*>& mvv) const {
 	vector<Term*> nt(_terms.size());
 	for(unsigned int n = 0; n < _terms.size(); ++n) nt[n] = _terms[n]->clone(mvv);
-	ParseInfo* npi = 0;
-	if(_pi) npi = new ParseInfo(_pi);
-	EqChainForm* ef = new EqChainForm(_sign,_conj,nt,_comps,_signs,npi);
+	EqChainForm* ef = new EqChainForm(_sign,_conj,nt,_comps,_signs,_pi);
 	return ef;
 }
 
 EquivForm* EquivForm::clone(const map<Variable*,Variable*>& mvv) const {
 	Formula* nl = _left->clone(mvv);
 	Formula* nr = _right->clone(mvv);
-	ParseInfo* npi = 0;
-	if(_pi) npi = new ParseInfo(_pi);
-	EquivForm* ef =  new EquivForm(_sign,nl,nr,npi);
+	EquivForm* ef =  new EquivForm(_sign,nl,nr,_pi);
 	return ef;
 }
 
 BoolForm* BoolForm::clone(const map<Variable*,Variable*>& mvv) const {
 	vector<Formula*> ns(_subf.size());
 	for(unsigned int n = 0; n < _subf.size(); ++n) ns[n] = _subf[n]->clone(mvv);
-	ParseInfo* npi = 0;
-	if(_pi) npi = new ParseInfo(_pi);
-	BoolForm* bf = new BoolForm(_sign,_conj,ns,npi);
+	BoolForm* bf = new BoolForm(_sign,_conj,ns,_pi);
 	return bf;
 }
 
@@ -88,15 +81,11 @@ QuantForm* QuantForm::clone(const map<Variable*,Variable*>& mvv) const {
 	vector<Variable*> nv(_vars.size());
 	map<Variable*,Variable*> nmvv = mvv;
 	for(unsigned int n = 0; n < _vars.size(); ++n) {
-		ParseInfo* npi = 0;
-		if(_pi) npi = new ParseInfo(_pi);
-		nv[n] = new Variable(_vars[n]->name(),_vars[n]->sort(),npi);
+		nv[n] = new Variable(_vars[n]->name(),_vars[n]->sort(),_pi);
 		nmvv[_vars[n]] = nv[n];
 	}
 	Formula* nf = _subf->clone(nmvv);
-	ParseInfo* npi = 0;
-	if(_pi) npi = new ParseInfo(_pi);
-	QuantForm* qf = new QuantForm(_sign,_univ,nv,nf,npi);
+	QuantForm* qf = new QuantForm(_sign,_univ,nv,nf,_pi);
 	return qf;
 }
 
@@ -678,16 +667,10 @@ BoolForm* EquivRemover::visit(EquivForm* ef) {
 	vf1[0] = nl; vf1[1] = nr;
 	vf2[0] = nl->clone(); vf2[1] = nr->clone();
 	vf1[0]->swapsign(); vf2[1]->swapsign();
-	ParseInfo* nip1 = 0; ParseInfo* nip2 = 0; ParseInfo* nip = 0;
-	if(ef->pi()) {
-		nip1 = new ParseInfo(ef->pi());
-		nip2 = new ParseInfo(ef->pi());
-		nip = new ParseInfo(ef->pi());
-	}
-	BoolForm* bf1 = new BoolForm(true,false,vf1,nip1);
-	BoolForm* bf2 = new BoolForm(true,false,vf2,nip2);
+	BoolForm* bf1 = new BoolForm(true,false,vf1,ef->pi());
+	BoolForm* bf2 = new BoolForm(true,false,vf2,ef->pi());
 	vector<Formula*> vf(2); vf[0] = bf1; vf[1] = bf2;
-	BoolForm* bf = new BoolForm(ef->sign(),true,vf,nip);
+	BoolForm* bf = new BoolForm(ef->sign(),true,vf,ef->pi());
 	return bf;
 }
 
@@ -751,9 +734,9 @@ Formula* EqChainRemover::visit(EqChainForm* ef) {
 	for(unsigned int n = 0; n < ef->nrSubterms()-1; ++n) {
 		Predicate* p = 0;
 		switch(ef->comp(n)) {
-			case '=' : p = Builtin::pred("=/2"); break;
-			case '<' : p = Builtin::pred("</2"); break;
-			case '>' : p = Builtin::pred(">/2"); break;
+			case '=' : p = stdbuiltin()->pred("=/2"); break;
+			case '<' : p = stdbuiltin()->pred("</2"); break;
+			case '>' : p = stdbuiltin()->pred(">/2"); break;
 			default: assert(false);
 		}
 		vector<Sort*> vs(2); vs[0] = ef->subterm(n)->sort(); vs[1] = ef->subterm(n+1)->sort();
@@ -763,9 +746,7 @@ Formula* EqChainRemover::visit(EqChainForm* ef) {
 		if(n) vt[0] = ef->subterm(n)->clone();
 		else vt[0] = ef->subterm(n);
 		vt[1] = ef->subterm(n+1);
-		ParseInfo* nip = 0;
-		if(ef->pi()) nip = new ParseInfo(ef->pi());
-		PredForm* pf = new PredForm(ef->compsign(n),p,vt,nip);
+		PredForm* pf = new PredForm(ef->compsign(n),p,vt,ef->pi());
 		vf.push_back(pf);
 	}
 	if(vf.size() == 1) {
@@ -773,9 +754,7 @@ Formula* EqChainRemover::visit(EqChainForm* ef) {
 		return vf[0];
 	}
 	else {
-		ParseInfo* nip = 0;
-		if(ef->pi()) nip = new ParseInfo(ef->pi());
-		BoolForm* bf = new BoolForm(ef->sign(),ef->conj(),vf,nip);
+		BoolForm* bf = new BoolForm(ef->sign(),ef->conj(),vf,ef->pi());
 		return bf;
 	}
 }
@@ -893,12 +872,12 @@ Formula* QuantMover::visit(QuantForm* qf) {
 			bool s = (qf->sign() == bf->sign());
 			vector<Formula*> vf(bf->nrSubforms());
 			for(unsigned int n = 0; n < bf->nrSubforms(); ++n) {
-				QuantForm* nqf = new QuantForm(s,u,qf->qvars(),bf->subform(n),0);
+				QuantForm* nqf = new QuantForm(s,u,qf->qvars(),bf->subform(n),ParseInfo());
 				vf[n] = nqf->clone();
 				delete(nqf);
 			}
 			qf->recursiveDelete();
-			BoolForm* nbf = new BoolForm(true,c,vf,0);
+			BoolForm* nbf = new BoolForm(true,c,vf,ParseInfo());
 			return nbf->accept(this);
 		}
 	}
@@ -948,9 +927,7 @@ Theory* Tseitinizer::visit(Theory* t) {
 				vv.push_back(f->fvar(m));
 			}
 			if(!vv.empty()) {
-				ParseInfo* npi = 0;
-				if(f->pi()) npi = new ParseInfo(f->pi());
-				f = new QuantForm(true,true,vv,f,npi);
+				f = new QuantForm(true,true,vv,f,f->pi());
 			}
 			delete(t->sentence(n));
 			t->sentence(n,f);
@@ -987,16 +964,16 @@ Formula* Tseitinizer::visit(BoolForm* bf) {
 					vector<Variable*> vv(bf->nrFvars());
 					vector<Term*> vt(bf->nrFvars());
 					for(unsigned int m = 0; m < bf->nrFvars(); ++m) {
-						vv[m] = new Variable(bf->fvar(m)->name(),bf->fvar(m)->sort(),0);
-						vt[m] = new VarTerm(vv[m],0);
+						vv[m] = new Variable(bf->fvar(m)->name(),bf->fvar(m)->sort(),ParseInfo());
+						vt[m] = new VarTerm(vv[m],ParseInfo());
 						mvv[bf->fvar(m)] = vv[m];
 					}
 					vector<Formula*> vf(2);
 					vf[0] = bf->subform(n)->clone(mvv);
-					vf[1] = new PredForm(false,tspred,vt,0);
-					BoolForm* f = new BoolForm(true,false,vf,0);
+					vf[1] = new PredForm(false,tspred,vt,ParseInfo());
+					BoolForm* f = new BoolForm(true,false,vf,ParseInfo());
 					if(vv.empty()) _theory->add(f);
-					else _theory->add(new QuantForm(true,true,vv,f,0));
+					else _theory->add(new QuantForm(true,true,vv,f,ParseInfo()));
 					bf->subform(n)->recursiveDelete();
 				}
 			}
@@ -1005,23 +982,23 @@ Formula* Tseitinizer::visit(BoolForm* bf) {
 				vector<Variable*> vv(bf->nrFvars());
 				vector<Term*> vt(bf->nrFvars());
 				for(unsigned int n = 0; n < bf->nrFvars(); ++n) {
-					vv[n] = new Variable(bf->fvar(n)->name(),bf->fvar(n)->sort(),0);
-					vt[n] = new VarTerm(vv[n],0);
+					vv[n] = new Variable(bf->fvar(n)->name(),bf->fvar(n)->sort(),ParseInfo());
+					vt[n] = new VarTerm(vv[n],ParseInfo());
 					mvv[bf->fvar(n)] = vv[n];
 				}
 				vector<Formula*> vf;
-				vf.push_back(new PredForm(false,tspred,vt,0));
+				vf.push_back(new PredForm(false,tspred,vt,ParseInfo()));
 				for(unsigned int n = 0; n < bf->nrSubforms(); ++n) {
 					vf.push_back(bf->subform(n)->clone(mvv));
 					bf->subform(n)->recursiveDelete();
 				}
-				BoolForm* f = new BoolForm(true,false,vf,0);
+				BoolForm* f = new BoolForm(true,false,vf,ParseInfo());
 				if(vv.empty()) _theory->add(f);
-				else _theory->add(new QuantForm(true,true,vv,f,0));
+				else _theory->add(new QuantForm(true,true,vv,f,ParseInfo()));
 			}
 			vector<Term*> vt(bf->nrFvars());
-			for(unsigned int n = 0; n < bf->nrFvars(); ++n) vt[n] = new VarTerm(bf->fvar(n),0);
-			return new PredForm(true,tspred,vt,0);
+			for(unsigned int n = 0; n < bf->nrFvars(); ++n) vt[n] = new VarTerm(bf->fvar(n),ParseInfo());
+			return new PredForm(true,tspred,vt,ParseInfo());
 		}
 		else {
 			if(bf->conj()) {	// A conjunction at sentence level: split the conjunction
@@ -1095,9 +1072,7 @@ Theory* Simplifier::visit(Theory* t) {
 					vv.push_back(f->fvar(m));
 				}
 				if(!vv.empty()) {
-					ParseInfo* npi = 0;
-					if(f->pi()) npi = new ParseInfo(f->pi());
-					f = new QuantForm(true,true,vv,f,npi);
+					f = new QuantForm(true,true,vv,f,f->pi());
 				}
 				delete(t->sentence(n));
 				t->sentence(n-move,f);
@@ -1137,7 +1112,7 @@ Formula* Simplifier::visit(PredForm* pf) {
 			case TV_FALSE:
 			{
 				vector<Formula*> vf(0);
-				BoolForm* bf = new BoolForm(true,tv==TV_TRUE,vf,0);
+				BoolForm* bf = new BoolForm(true,tv==TV_TRUE,vf,ParseInfo());
 				for(unsigned int n = 0; n < pf->nrSubterms(); ++n) pf->subterm(n)->recursiveDelete();
 				return bf;
 			}
@@ -1178,7 +1153,7 @@ Formula* Simplifier::visit(BoolForm* bf) {
 		if(!bf->sign()) vf[0]->swapsign();
 		return vf[0];
 	}
-	else return new BoolForm(bf->sign(),bf->conj(),vf,0);
+	else return new BoolForm(bf->sign(),bf->conj(),vf,ParseInfo());
 }
 
 /** Move functions **/
@@ -1197,7 +1172,7 @@ Formula* FuncGrapher::visit(PredForm* pf) {
 			vector<Term*> vt;
 			for(unsigned int n = 0; n < ft->nrSubterms(); ++n) vt.push_back(ft->subterm(n));
 			vt.push_back(pf->subterm(1));
-			pf = new PredForm(pf->sign(),ft->func(),vt,0);
+			pf = new PredForm(pf->sign(),ft->func(),vt,ParseInfo());
 			delete(ft);
 		}
 		else if(typeid(*(pf->subterm(1))) == typeid(FuncTerm)) {
@@ -1205,7 +1180,7 @@ Formula* FuncGrapher::visit(PredForm* pf) {
 			vector<Term*> vt;
 			for(unsigned int n = 0; n < ft->nrSubterms(); ++n) vt.push_back(ft->subterm(n));
 			vt.push_back(pf->subterm(0));
-			pf = new PredForm(pf->sign(),ft->func(),vt,0);
+			pf = new PredForm(pf->sign(),ft->func(),vt,ParseInfo());
 			delete(ft);
 		}
 	}
@@ -1244,11 +1219,11 @@ Term* FuncMover::visit(FuncTerm* ft) {
 	Function* f = ft->func();
 	if((f->partial() || !f->builtin()) && _dontmove.find(f) == _dontmove.end()) {
 		Variable* v = new Variable(f->outsort());
-		VarTerm* vt = new VarTerm(v,0);
+		VarTerm* vt = new VarTerm(v,ParseInfo());
 		vector<Term*> args;
 		for(unsigned int n = 0; n < f->arity(); ++n) args.push_back(t->subterm(n));
 		args.push_back(vt);
-		PredForm* pf = new PredForm(true,f,args,0);
+		PredForm* pf = new PredForm(true,f,args,ParseInfo());
 		_funcgraphs.push_back(pf);
 		_newvars.push_back(v);
 		return vt->clone();
@@ -1323,8 +1298,8 @@ Formula* FuncMover::visit(PredForm* pf) {
 		}
 		_funcgraphs.push_back(pf->clone());
 		for(unsigned int n = 0; n < pf->nrSubterms(); ++n) pf->subterm(n)->recursiveDelete();
-		BoolForm* bf = new BoolForm(true,!_poscontext,_funcgraphs,0);
-		QuantForm* qf = new QuantForm(true,_poscontext,_newvars,bf,0);
+		BoolForm* bf = new BoolForm(true,!_poscontext,_funcgraphs,ParseInfo());
+		QuantForm* qf = new QuantForm(true,_poscontext,_newvars,bf,ParseInfo());
 		_funcgraphs.clear();
 		_newvars.clear();
 		Formula* f = visit(qf);
@@ -1345,9 +1320,7 @@ Theory* FuncMover::visit(Theory* t) {
 				vv.push_back(f->fvar(m));
 			}
 			if(!vv.empty()) {
-				ParseInfo* npi = 0;
-				if(f->pi()) npi = new ParseInfo(f->pi());
-				f = new QuantForm(true,true,vv,f,npi);
+				f = new QuantForm(true,true,vv,f,f->pi());
 			}
 			delete(t->sentence(n));
 			t->sentence(n,f);

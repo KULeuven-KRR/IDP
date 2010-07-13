@@ -4,6 +4,7 @@
 	(c) K.U.Leuven
 ************************************/
 
+#include "data.hpp"
 #include "namespace.hpp"
 #include "builtin.hpp"
 #include "visitor.hpp"
@@ -16,11 +17,11 @@ extern string dtos(double);
 	Constructors
 *******************/
 
-VarTerm::VarTerm(Variable* v, ParseInfo* pi) : Term(pi), _var(v) {
+VarTerm::VarTerm(Variable* v, const ParseInfo& pi) : Term(pi), _var(v) {
 	setfvars();
 }
 
-FuncTerm::FuncTerm(Function* f, const vector<Term*>& a, ParseInfo* pi) : Term(pi), _func(f), _args(a) { 
+FuncTerm::FuncTerm(Function* f, const vector<Term*>& a, const ParseInfo& pi) : Term(pi), _func(f), _args(a) { 
 	setfvars();
 }
 
@@ -61,38 +62,30 @@ QuantSetExpr* QuantSetExpr::clone() const {
 
 VarTerm* VarTerm::clone(const map<Variable*,Variable*>& mvv) const {
 	map<Variable*,Variable*>::const_iterator it = mvv.find(_var);
-	ParseInfo* nip = 0;
-	if(_pi) nip = new ParseInfo(_pi);
-	if(it != mvv.end()) return new VarTerm(it->second,nip);
-	else return new VarTerm(_var,nip);
+	if(it != mvv.end()) return new VarTerm(it->second,_pi);
+	else return new VarTerm(_var,_pi);
 }
 
 FuncTerm* FuncTerm::clone(const map<Variable*,Variable*>& mvv) const {
 	vector<Term*> na(_args.size());
 	for(unsigned int n = 0; n < _args.size(); ++n) na[n] = _args[n]->clone(mvv);
-	ParseInfo* nip = 0;
-	if(_pi) nip = new ParseInfo(_pi);
-	return new FuncTerm(_func,na,nip);
+	return new FuncTerm(_func,na,_pi);
 }
 
 DomainTerm* DomainTerm::clone(const map<Variable*,Variable*>& mvv) const {
 	Element ne;
 	switch(_type) {
 		case ELINT: ne._int = _value._int; break;
-		case ELDOUBLE: ne._double = new double(*(_value._double)); break;
-		case ELSTRING: ne._string = new string(*(_value._string)); break;
+		case ELDOUBLE: ne._double = _value._double; break;
+		case ELSTRING: ne._string = _value._string; break;
 		default: assert(false);
 	}
-	ParseInfo* nip = 0;
-	if(_pi) nip = new ParseInfo(_pi);
-	return new DomainTerm(_sort,_type,ne,nip);
+	return new DomainTerm(_sort,_type,ne,_pi);
 }
 
 AggTerm* AggTerm::clone(const map<Variable*,Variable*>& mvv) const {
 	SetExpr* ns = _set->clone(mvv);
-	ParseInfo* nip = 0;
-	if(_pi) nip = new ParseInfo(_pi);
-	return new AggTerm(ns,_type,nip);
+	return new AggTerm(ns,_type,_pi);
 }
 
 EnumSetExpr* EnumSetExpr::clone(const map<Variable*,Variable*>& mvv) const {
@@ -100,22 +93,18 @@ EnumSetExpr* EnumSetExpr::clone(const map<Variable*,Variable*>& mvv) const {
 	vector<Term*> nt(_weights.size());
 	for(unsigned int n = 0; n < _subf.size(); ++n) nf[n] = _subf[n]->clone(mvv);
 	for(unsigned int n = 0; n < _weights.size(); ++n) nt[n] = _weights[n]->clone(mvv);
-	ParseInfo* nip = 0;
-	if(_pi) nip = new ParseInfo(_pi);
-	return new EnumSetExpr(nf,nt,nip);
+	return new EnumSetExpr(nf,nt,_pi);
 }
 
 QuantSetExpr* QuantSetExpr::clone(const map<Variable*,Variable*>& mvv) const {
 	vector<Variable*> nv(_vars.size());
 	map<Variable*,Variable*> nmvv = mvv;
 	for(unsigned int n = 0; n < _vars.size(); ++n) {
-		nv[n] = new Variable(_vars[n]->name(),_vars[n]->sort(),new ParseInfo(_vars[n]->pi()));
+		nv[n] = new Variable(_vars[n]->name(),_vars[n]->sort(),_vars[n]->pi());
 		nmvv[_vars[n]] = nv[n];
 	}
 	Formula* nf = _subf->clone(nmvv);
-	ParseInfo* nip = 0;
-	if(_pi) nip = new ParseInfo(_pi);
-	return new QuantSetExpr(nv,nf,nip);
+	return new QuantSetExpr(nv,nf,_pi);
 }
 
 /******************
@@ -128,12 +117,6 @@ void FuncTerm::recursiveDelete() {
 }
 
 void DomainTerm::recursiveDelete() {
-	switch(_type) {
-		case ELINT: break;
-		case ELDOUBLE: delete(_value._double); break;
-		case ELSTRING: delete(_value._string); break;
-		default: assert(false);
-	}
 	delete(this);
 }
 
@@ -229,7 +212,7 @@ Sort* QuantSetExpr::firstargsort() const {
 }
 
 Sort* AggTerm::sort() const {
-	if(_type == AGGCARD) return Builtin::intsort();
+	if(_type == AGGCARD) return stdbuiltin()->sort("nat");
 	else return _set->firstargsort();
 }
 
@@ -272,7 +255,7 @@ string DomainTerm::to_string() const {
 		case ELINT:
 			return itos(_value._int);
 		case ELDOUBLE:
-			return dtos(*(_value._double));
+			return dtos(_value._double);
 		case ELSTRING:
 			return *(_value._string);
 		default:
@@ -337,8 +320,8 @@ void TermEvaluator::visit(FuncTerm* ft) {
 	}
 	FuncInter* fi = _structure->inter(ft->func());
 	assert(fi);
-	_returnvalue._element = (*fi)[argvalues];
-	_returnvalue._type = fi->outtype();
+	_returnvalue._element = (*(fi->functable()))[argvalues];
+	_returnvalue._type = fi->functable()->type(fi->functable()->arity());
 }
 
 void TermEvaluator::visit(DomainTerm* dt) {

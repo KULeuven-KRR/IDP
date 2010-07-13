@@ -247,9 +247,7 @@ Rule* MutatingVisitor::visit(Rule* r) {
 			if(m == r->nrQvars()) vv.push_back(nb->fvar(n));
 		}
 		if(!vv.empty()) {
-			ParseInfo* npi = 0; 
-			if(nb->pi()) npi = new ParseInfo(nb->pi());
-			nb = new QuantForm(true,false,vv,nb,npi);
+			nb = new QuantForm(true,false,vv,nb,nb->pi());
 		}
 		// Replace the body
 		delete(r->body());
@@ -357,9 +355,7 @@ Theory* MutatingVisitor::visit(Theory* t) {
 				vv.push_back(f->fvar(m));
 			}
 			if(!vv.empty()) {
-				ParseInfo* npi = 0;
-				if(f->pi()) npi = new ParseInfo(f->pi());
-				f = new QuantForm(true,true,vv,f,npi);
+				f = new QuantForm(true,true,vv,f,f->pi());
 			}
 			delete(t->sentence(n));
 			t->sentence(n,f);

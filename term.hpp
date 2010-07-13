@@ -19,12 +19,12 @@ class Term {
 	protected:
 
 		vector<Variable*>	_fvars;	// Free variables of the term
-		ParseInfo*			_pi;	// the place where the term was parsed (0 for non user-defined terms)
+		ParseInfo			_pi;	// the place where the term was parsed (0 for non user-defined terms)
 
 	public:
 
 		// Constructors
-		Term(ParseInfo* pi) : _pi(pi) { }
+		Term(const ParseInfo& pi) : _pi(pi) { }
 
 		// Virtual constructors
 		virtual Term* clone()									const = 0;	// create a copy of the term while keeping the free variables
@@ -32,7 +32,7 @@ class Term {
 																			// free variables according to the given map
 
 		// Destructor
-		virtual ~Term() { if(_pi) delete(_pi); }
+		virtual ~Term() { }
 		virtual void recursiveDelete() = 0;
 
 		// Mutators
@@ -40,19 +40,19 @@ class Term {
 		virtual void	sort(Sort*)	{ }	// Set the sort of the term (only does something for VarTerm)
 
 		// Inspectors
-		virtual	Sort*			sort()					const = 0;	// The sort of the term
-		virtual	unsigned int	nrSubforms()			const = 0;	// number of direct subformulas
-		virtual	unsigned int	nrSubterms()			const = 0;	// number of direct subterms
-		virtual	unsigned int	nrSubsets()				const = 0;	// number of direct subsets
-				unsigned int	nrFvars()				const { return _fvars.size();	}
-		virtual	unsigned int	nrQvars()				const = 0;	// the number of variables quantified by the term
-		virtual	Formula*		subform(unsigned int n)	const = 0;	// the n'th direct subformula
-		virtual	Term*			subterm(unsigned int n)	const = 0;	// the n'th direct subterm
-		virtual	SetExpr*		subset(unsigned int n)	const = 0;	// the n'th direct subset
-		virtual	Variable*		fvar(unsigned int n)	const { return _fvars[n];		}
-		virtual Variable*		qvar(unsigned int n)	const = 0;	// the n'th quantified variable of the term
-				ParseInfo*		pi()					const { return _pi;				}
-		virtual bool			contains(Variable*)		const;		// true iff the term contains the variable
+		virtual	Sort*				sort()					const = 0;	// The sort of the term
+		virtual	unsigned int		nrSubforms()			const = 0;	// number of direct subformulas
+		virtual	unsigned int		nrSubterms()			const = 0;	// number of direct subterms
+		virtual	unsigned int		nrSubsets()				const = 0;	// number of direct subsets
+				unsigned int		nrFvars()				const { return _fvars.size();	}
+		virtual	unsigned int		nrQvars()				const = 0;	// the number of variables quantified by the term
+		virtual	Formula*			subform(unsigned int n)	const = 0;	// the n'th direct subformula
+		virtual	Term*				subterm(unsigned int n)	const = 0;	// the n'th direct subterm
+		virtual	SetExpr*			subset(unsigned int n)	const = 0;	// the n'th direct subset
+		virtual	Variable*			fvar(unsigned int n)	const { return _fvars[n];		}
+		virtual Variable*			qvar(unsigned int n)	const = 0;	// the n'th quantified variable of the term
+				const ParseInfo&	pi()					const { return _pi;				}
+		virtual bool				contains(Variable*)		const;		// true iff the term contains the variable
 
 		// Visitor
 		virtual void	accept(Visitor*)			= 0;
@@ -76,7 +76,7 @@ class VarTerm : public Term {
 	public:
 
 		// Constructors
-		VarTerm(Variable* v, ParseInfo* pi);
+		VarTerm(Variable* v, const ParseInfo& pi);
 
 		VarTerm* clone()								const;
 		VarTerm* clone(const map<Variable*,Variable*>&)	const;
@@ -125,7 +125,7 @@ class FuncTerm : public Term {
 	public:
 
 		// Constructors
-		FuncTerm(Function* f, const vector<Term*>& a, ParseInfo* pi);
+		FuncTerm(Function* f, const vector<Term*>& a, const ParseInfo& pi);
 
 		FuncTerm* clone()									const;
 		FuncTerm* clone(const map<Variable*,Variable*>&)	const;
@@ -172,7 +172,7 @@ class DomainTerm : public Term {
 	public:
 
 		// Constructors
-		DomainTerm(Sort* s, ElementType t, Element v, ParseInfo* pi) : 
+		DomainTerm(Sort* s, ElementType t, Element v, const ParseInfo& pi) : 
 			Term(pi), _sort(s), _type(t), _value(v) { assert(s); setfvars(); }
 
 		DomainTerm* clone()								const;
@@ -214,19 +214,19 @@ class SetExpr {
 	protected:
 		
 		vector<Variable*>	_fvars;	// The free variables of the set expression
-		ParseInfo*			_pi;	// the place where the set was parsed (0 for non user-defined sets)
+		ParseInfo			_pi;	// the place where the set was parsed (0 for non user-defined sets)
 
 	public:
 
 		// Constructors
-		SetExpr(ParseInfo* pi) : _pi(pi) { }
+		SetExpr(const ParseInfo& pi) : _pi(pi) { }
 
 		virtual SetExpr* clone()								const = 0;
 		virtual SetExpr* clone(const map<Variable*,Variable*>&)	const = 0;
 
 		// Destructor
 		virtual void recursiveDelete() = 0;
-		virtual ~SetExpr() { if(_pi) delete(_pi); }
+		virtual ~SetExpr() { }
 
 		// Mutators
 		void	setfvars();
@@ -262,7 +262,7 @@ class EnumSetExpr : public SetExpr {
 	public:
 
 		// Constructors
-		EnumSetExpr(const vector<Formula*>& s, const vector<Term*>& w, ParseInfo* pi) : 
+		EnumSetExpr(const vector<Formula*>& s, const vector<Term*>& w, const ParseInfo& pi) : 
 			SetExpr(pi), _subf(s), _weights(w) { setfvars(); }
 
 		EnumSetExpr* clone()								const;
@@ -304,7 +304,7 @@ class QuantSetExpr : public SetExpr {
 	public:
 
 		// Constructors
-		QuantSetExpr(const vector<Variable*>& v, Formula* s, ParseInfo* pi) : 
+		QuantSetExpr(const vector<Variable*>& v, Formula* s, const ParseInfo& pi) : 
 			SetExpr(pi), _subf(s), _vars(v) { setfvars(); }
 
 		QuantSetExpr* clone()								const;
@@ -349,7 +349,7 @@ class AggTerm : public Term {
 	public:
 
 		// Constructors
-		AggTerm(SetExpr* s, AggType t, ParseInfo* pi) : 
+		AggTerm(SetExpr* s, AggType t, const ParseInfo& pi) : 
 			Term(pi), _set(s), _type(t) { setfvars(); }
 
 		AggTerm* clone()								const;

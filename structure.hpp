@@ -29,10 +29,11 @@ class PredTable {
 		virtual void	sortunique() = 0;	// Sort and remove duplicates
 
 		// Inspectors
-		virtual bool			finite()				const = 0;	// true iff the table is finite
-		virtual	bool			empty()					const = 0;	// true iff the table is empty
-		virtual	unsigned int	arity()					const = 0;	// the number of columns in the table
-		virtual	ElementType		type(unsigned int n)	const = 0;	// the type of elements in the n'th column
+		virtual bool				finite()				const = 0;	// true iff the table is finite
+		virtual	bool				empty()					const = 0;	// true iff the table is empty
+		virtual	unsigned int		arity()					const = 0;	// the number of columns in the table
+		virtual	ElementType			type(unsigned int n)	const = 0;	// the type of elements in the n'th column
+				vector<ElementType>	types()					const;		// all types of the table
 
 		// Check if the table contains a given tuple
 		//	precondition: the table is sorted and contains no duplicates
@@ -103,7 +104,7 @@ class SortTable : public PredTable {
 				unsigned int	position(TypedElement te)				const { return position(te._element,te._type);		}
 
 		// Debugging
-		virtual string to_string() const = 0;
+		virtual string to_string(unsigned int spaces = 0) const = 0;
 
 };
 
@@ -149,7 +150,7 @@ class FiniteSortTable : public SortTable {
 		virtual unsigned int	position(Element,ElementType)	const = 0;	// returns the position of the given element
 
 		// Debugging
-		virtual string to_string() const = 0;
+		virtual string to_string(unsigned int spaces = 0) const = 0;
 
 };
 
@@ -187,7 +188,7 @@ class EmptySortTable : public FiniteSortTable {
 		unsigned int	position(Element,ElementType)	const { assert(false); return 0;			}
 															
 		// Debugging
-		string to_string() const { return "";	}
+		string to_string(unsigned int spaces = 0) const { return "";	}
 
 };
 
@@ -233,7 +234,7 @@ class RanSortTable : public FiniteSortTable {
 		int	last()						const { return _last;		}
 
 		// Debugging
-		string to_string() const;
+		string to_string(unsigned int spaces = 0) const;
 
 };
 
@@ -279,7 +280,7 @@ class IntSortTable : public FiniteSortTable {
 		int	last()						const { return _table.back();		}
 
 		// Debugging
-		string to_string() const;
+		string to_string(unsigned int spaces = 0) const;
 
 };
 
@@ -324,7 +325,7 @@ class FloatSortTable : public FiniteSortTable {
 		double	last()						const { return _table.back();		}
 
 		// Debugging
-		string to_string() const;
+		string to_string(unsigned int spaces = 0) const;
 
 };
 
@@ -370,7 +371,7 @@ class StrSortTable : public FiniteSortTable {
 		string*	last()						const { return _table.back();		}
 
 		// Debugging
-		string to_string() const;
+		string to_string(unsigned int spaces = 0) const;
 
 };
 
@@ -415,7 +416,7 @@ class MixedSortTable : public FiniteSortTable {
 		unsigned int	position(Element,ElementType)	const;
 
 		// Debugging
-		string to_string() const;
+		string to_string(unsigned int spaces = 0) const;
 
 };
 
@@ -424,47 +425,12 @@ class MixedSortTable : public FiniteSortTable {
 	Interpretations for non-unary predicates
 ***********************************************/
 
-/** Abstract base class **/
+/** Finite, enumerated tables  **/
 
-class NonUnaryPredTable : public PredTable {
-
-	protected:
-		vector<ElementType>	_types;
-	
-	public:
-		
-		// Constructors
-		NonUnaryPredTable(const vector<ElementType>& t) : PredTable(), _types(t) { }
-
-		// Destructor
-		virtual ~NonUnaryPredTable() { }
-
-		// Mutators
-		virtual void	sortunique()	= 0;
-
-		// Inspectors
-		virtual bool				finite()				const = 0;	// true iff the table is finite
-		virtual	bool				empty()					const = 0;	// true iff the table is empty
-				unsigned int		arity()					const { return _types.size();	}	
-				ElementType			type(unsigned int n)	const { return _types[n];		}
-
-		// Check if the table contains a given tuple
-		virtual	bool				contains(const vector<Element>&)		const = 0;
-
-		// Inspectors for finite tables
-		virtual	unsigned int		size()									const = 0;	// the size of the table
-		virtual	vector<Element>		tuple(unsigned int n)					const = 0;	// the n'th tuple
-		virtual Element				element(unsigned int r,unsigned int c)	const = 0;	// the element at position (r,c)
-
-		// Debugging
-		virtual string to_string(unsigned int spaces = 0)	const = 0;
-};
-
-/** Finite tables  **/
-
-class FinitePredTable : public NonUnaryPredTable {
+class FinitePredTable : public PredTable {
 	
 	private:
+		vector<ElementType>			_types;		// the types of elements in the columns
 		vector<vector<Element> >	_table;		// the actual table
 		ElementWeakOrdering			_order;		// less-than-or-equal relation on the tuples of this table
 		ElementEquality				_equality;	// equality relation on the tuples of this table
@@ -472,8 +438,9 @@ class FinitePredTable : public NonUnaryPredTable {
 	public:
 
 		// Constructors 
-		FinitePredTable(const vector<ElementType>& t) : NonUnaryPredTable(t), _table(0), _order(t), _equality(t) { }
-		FinitePredTable(const UserPredTable&);
+		FinitePredTable(const vector<ElementType>& t) : PredTable(), _types(t), _table(0), _order(t), _equality(t) { }
+		FinitePredTable(const FinitePredTable&);
+		FinitePredTable(const FiniteSortTable&);
 
 		// Destructor
 		~FinitePredTable() { }
@@ -491,6 +458,8 @@ class FinitePredTable : public NonUnaryPredTable {
 		// Inspectors
 		bool				finite()								const { return true;			}
 		bool				empty()									const { return _table.empty();	}
+		unsigned int		arity()									const { return _types.size();	}	
+		ElementType			type(unsigned int n)					const { return _types[n];		}
 		unsigned int		size()									const { return _table.size();	}
 		vector<Element>		tuple(unsigned int n)					const { return _table[n];		}
 		Element				element(unsigned int r,unsigned int c)	const { return _table[r][c];	}
@@ -531,12 +500,12 @@ class PredInter {
 		PredInter(PredTable* p, bool b) : _ctpf(p), _cfpt(p), _ct(b), _cf(!b) { }
 
 		// Destructor
-		virtual ~PredInter();
+		~PredInter();
 
 		// Mutators
 		void replace(PredTable* pt,bool ctpf, bool c);	// If ctpf is true, replace _ctpf by pt and set _ct to c
 														// Else, replace cfpt by pt and set _cf to c
-		void sortunique()	{ _ctpf->sortunique(); if(_ctpf != _cfpt) _cfpt->sortunique();	}
+		void sortunique()	{ if(_ctpf) _ctpf->sortunique(); if(_cfpt && _ctpf != _cfpt) _cfpt->sortunique();	}
 
 		// Inspectors
 		PredTable*	ctpf()									const { return _ctpf;	}
@@ -558,64 +527,124 @@ class PredInter {
 	Interpretations for functions 
 ************************************/
 
-HIER BEZIG
+/** abstract base class **/
 
-class FuncInter {
-
-	protected:
-		vector<ElementType>	_intypes;
-		ElementType			_outtype;
+class FuncTable {
 
 	public:
-		
-		// Constructors
-		FuncInter(const vector<ElementType>& in, ElementType out) : _intypes(in), _outtype(out) { }
+
+		// Constructor
+		FuncTable() { }
 
 		// Destructor
-		virtual ~FuncInter() { }
-
-		// Mutators
-		virtual void sortunique() { }
+		virtual ~FuncTable() { }
 
 		// Inspectors
-		virtual Element		operator[](const vector<Element>& vi)		const = 0;
-				Element		operator[](const vector<TypedElement>& vi)	const;
-		virtual PredInter*	predinter()									const = 0;
-				ElementType	outtype()									const { return _outtype;	}
-		
+		virtual bool			finite()			const = 0;
+		virtual bool			empty()				const = 0;
+		virtual unsigned int	arity()				const = 0;
+		virtual unsigned int	size()				const = 0;
+		virtual ElementType		type(unsigned int)	const = 0;
+
+		virtual	Element	operator[](const vector<Element>& vi)		const = 0;
+				Element	operator[](const vector<TypedElement>& vi)	const;
+
 		// Debugging
 		virtual string to_string(unsigned int spaces = 0) const = 0;
 
 };
 
-class UserFuncInter : public FuncInter {
+
+/** finite, enumerated functions **/
+class FiniteFuncTable : public FuncTable {
 
 	private:
-		UserPredTable*		_ftable;	// the function table, if the function is 2-valued
-		PredInter*			_ptable;	// interpretation of the associated predicate
-		ElementWeakOrdering	_order;
-		ElementEquality		_equality;
+		FinitePredTable*	_ftable;	// the actual table
+		ElementWeakOrdering	_order;		// less-than-or-equal on a tuple of domain elements with arity n = (_ftable->arity() - 1)
+										// and types (_ftable->type(0),...,_ftable->type(n)).
+		ElementEquality		_equality;	// equality on the on a tuple of domain elements with arity n = (_ftable->arity() - 1)
+										// and types (_ftable->type(0),...,_ftable->type(n)).
 
 	public:
 		
 		// Constructors
-		UserFuncInter(const vector<ElementType>& t, ElementType out, PredInter* pt) : 
-			FuncInter(t,out), _ftable(0), _ptable(pt), _order(t), _equality(t) { }
-		UserFuncInter(const vector<ElementType>& t, ElementType out, PredInter* pt, UserPredTable* ft) : 
-			FuncInter(t,out), _ftable(ft), _ptable(pt), _order(t), _equality(t) { }
+		FiniteFuncTable(FinitePredTable* ft);
 
 		// Destructor
-		virtual ~UserFuncInter() { delete(_ptable); } // NOTE: _ftable is also deleted because it is part of _ptable
-
-		// Mutators
-		void sortunique() { _ptable->sortunique();	}
+		~FiniteFuncTable();
 
 		// Inspectors
-		bool			istrue(const vector<Element>& vi)			const { return _ptable->istrue(vi);		}
-		bool			isfalse(const vector<Element>& vi)			const { return _ptable->isfalse(vi);	}
-		Element			operator[](const vector<Element>& vi)		const;
-		PredInter*		predinter()									const { return _ptable;					}
-		UserPredTable*	ftable()									const { return _ftable;					}
+		bool				finite()				const { return true;					}
+		bool				empty()					const { return _ftable->finite();		}
+		unsigned int		arity()					const { return _ftable->arity() - 1;	}
+		unsigned int		size()					const { return _ftable->size();			}
+		FinitePredTable*	ftable()				const { return _ftable;					}
+		ElementType			type(unsigned int n)	const { return _ftable->type(n);		}
+
+		Element		operator[](const vector<Element>& vi)		const;
+
+		// Debugging
+		string to_string(unsigned int spaces = 0) const;
+
+};
+
+/** predicate table derived from function table **/
+class FuncPredTable : public PredTable {
+
+	private:
+		FuncTable* _ftable;
+
+	public:
+
+		// Constructors
+		FuncPredTable(FuncTable* ft) : PredTable(), _ftable(ft) { }
+
+		// Destructor
+		~FuncPredTable() { }
+
+		// Mutators
+		void sortunique() { }
+
+		// Inspectors
+		bool			finite()				const { return _ftable->finite();		}
+		bool			empty()					const { return _ftable->empty();		}
+		unsigned int	arity()					const { return _ftable->arity() + 1;	}
+		ElementType		type(unsigned int n)	const;
+
+		// Check if the table contains a given tuple
+		virtual	bool	contains(const vector<Element>&)	const;
+
+		// Inspectors for finite tables
+		virtual	unsigned int		size()									const { return _ftable->size();	}
+		virtual	vector<Element>		tuple(unsigned int n)					const;
+		virtual Element				element(unsigned int r,unsigned int c)	const;
+
+		// Debugging
+		virtual string to_string(unsigned int spaces = 0)	const { return _ftable->to_string(spaces);	}
+
+};
+
+/** four-valued function interpretations **/
+class FuncInter {
+
+	private:
+		FuncTable*	_ftable;	// the function (if it is two-valued).
+		PredInter*	_pinter;	// the interpretation for the graph of the function
+
+	public:
+		
+		// Constructors
+		FuncInter(FuncTable* ft, PredInter* pt) : _ftable(ft), _pinter(pt) { }
+
+		// Destructor
+		~FuncInter(); 
+
+		// Mutators
+		void sortunique() { if(_pinter) _pinter->sortunique(); }
+
+		// Inspectors
+		PredInter*	predinter()	const { return _pinter;	}
+		FuncTable*	functable()	const { return _ftable;	}
 
 		// Debugging
 		string to_string(unsigned int spaces = 0) const;
@@ -635,6 +664,8 @@ namespace TableUtils {
 	Structures
 *****************/
 
+/** Abstract base class **/
+
 class AbstractStructure {
 
 	protected:
@@ -646,23 +677,25 @@ class AbstractStructure {
 	public:
 
 		// Constructors
-		AbstractStructure(string name, ParseInfo* pi) : _name(name), _pi(pi), _vocabulary(0) { }
+		AbstractStructure(string name, const ParseInfo& pi) : _name(name), _pi(pi), _vocabulary(0) { }
 
 		// Destructor
-		virtual ~AbstractStructure() { if(_pi) delete(_pi);	}
+		virtual ~AbstractStructure() { }
 
 		// Mutators
-		virtual void	vocabulary(Vocabulary* v) = 0;			// set the vocabulary
+		virtual void	vocabulary(Vocabulary* v) { _vocabulary = v;	}	// set the vocabulary
 
 		// Inspectors
-		const string&	name()						const { return _name;		}
-		ParseInfo*		pi()						const { return _pi;			}
-		Vocabulary*		vocabulary()				const { return _vocabulary;	}
+		const string&	name()			const { return _name;		}
+		ParseInfo		pi()			const { return _pi;			}
+		Vocabulary*		vocabulary()	const { return _vocabulary;	}
 
 		// Debugging
 		virtual string	to_string(unsigned int spaces = 0) const = 0;
 
 };
+
+/** Structures as constructed by the parser **/
 
 class Structure : public AbstractStructure {
 
@@ -680,7 +713,7 @@ class Structure : public AbstractStructure {
 	public:
 		
 		// Constructors
-		Structure(string name, ParseInfo* pi) : AbstractStructure(name,pi) { }
+		Structure(const string& name, const ParseInfo& pi) : AbstractStructure(name,pi) { }
 
 		// Destructor
 		~Structure();
@@ -717,8 +750,12 @@ class Structure : public AbstractStructure {
 
 class Theory;
 namespace StructUtils {
-	Theory*	convert_to_theory(Structure*);	// Make a theory containing all literals that are true according to the given structure
-	PredTable*	complement(PredTable*,const vector<Sort*>&, Structure*);	// Compute the complement of the given table 
+
+	// Make a theory containing all literals that are true according to the given structure
+	Theory*		convert_to_theory(AbstractStructure*);	
+
+	// Compute the complement of the given table in the given structure
+	PredTable*	complement(PredTable*,const vector<Sort*>&, AbstractStructure*);
 }
 
 #endif

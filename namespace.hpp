@@ -28,13 +28,13 @@ class Namespace {
 		vector<Vocabulary*>				_vocs;			// The vocabularies in the namespace
 		vector<AbstractStructure*>		_structs;		// The structures in the namespace                   
 		vector<AbstractTheory*>			_theos;			// The theories in the namespace                           
-		ParseInfo*						_pi;			// the place where the namespace was parsed
+		ParseInfo						_pi;			// the place where the namespace was parsed
 		static Namespace*				_global;		// the global namespace
 
 	public:
 
 		// Constructors
-		Namespace(string name, Namespace* super, ParseInfo* pi) : _name(name), _superspace(super), _pi(pi)
+		Namespace(string name, Namespace* super, const ParseInfo& pi) : _name(name), _superspace(super), _pi(pi)
 			{ if(super) super->add(this); }
 
 		// Destructor
@@ -43,7 +43,7 @@ class Namespace {
 		// Inspectors
 		const string&		name()						const	{ return _name;			}
 		Namespace*			super()						const	{ return _superspace;	}
-		ParseInfo*			pi()						const	{ return _pi;			}
+		const ParseInfo&	pi()						const	{ return _pi;			}
 		bool				isGlobal()					const;	// return true iff the namespace is the global namespace
 		string				fullname()					const;	// return the full name of the namespace 
 		bool				isSubspace(const string&)	const;

@@ -4,6 +4,7 @@
 	(c) K.U.Leuven
 ************************************/
 
+#include "data.hpp"
 #include "namespace.hpp"
 #include "builtin.hpp"
 #include <iostream>
@@ -109,7 +110,7 @@ namespace ElementUtil {
 			case ELSTRING:
 				return e._string != 0;
 			case ELCOMPOUND:
-				return e.compound != 0;
+				return e._compound != 0;
 			default:
 				assert(false); return false;
 		}
@@ -138,13 +139,13 @@ namespace ElementUtil {
 				break;
 			case ELDOUBLE:
 				if(newtype == ELINT) {
-					if(isInt(*(e._double))) {
-						ne._int = int(*(e._double));
+					if(isInt(e._double)) {
+						ne._int = int(e._double);
 					}
 					else return nonexist(newtype);
 				}
 				else if(newtype == ELSTRING) {
-					ne._string = IDPointer(dtos(*(e._double)));
+					ne._string = IDPointer(dtos(e._double));
 				}
 				else {
 					assert(newtype == ELCOMPOUND);
@@ -161,7 +162,7 @@ namespace ElementUtil {
 				}
 				else if(newtype == ELDOUBLE) {
 					if(isDouble(*(e._string))) {
-						ne._double = new double(stod(*(e._string)));
+						ne._double = stod(*(e._string));
 					}
 					else return nonexist(newtype);
 				}
@@ -192,7 +193,7 @@ namespace ElementUtil {
 	Sorts
 ************/
 
-Sort::Sort(const string& name, ParseInfo* pi) : _name(name), _pi(pi) { 
+Sort::Sort(const string& name, const ParseInfo& pi) : _name(name), _pi(pi) { 
 	_parent = 0;
 	_base = this;
 	_depth = 0;
@@ -222,24 +223,6 @@ void Sort::child(Sort* c) {
 	}
 }
 
-/** Inspectors **/
-
-bool Sort::intsort() const {
-	return _base == Builtin::intsort();
-}
-
-bool Sort::floatsort() const {
-	return _base == Builtin::floatsort();
-}
-
-bool Sort::stringsort() const {
-	return _base == Builtin::stringsort();
-}
-
-bool Sort::charsort() const {
-	return _base == Builtin::charsort();
-}
-
 /** Utils **/
 
 namespace SortUtils {
@@ -266,7 +249,7 @@ int Variable::_nvnr = 0;
 
 /** Constructor for internal variables **/ 
 
-Variable::Variable(Sort* s) : _sort(s), _pi(0) {
+Variable::Variable(Sort* s) : _sort(s) {
 	_name = "_var_" + s->name() + "_" + itos(Variable::_nvnr);
 	++_nvnr;
 }
@@ -294,7 +277,7 @@ void VarUtils::sortunique(vector<Variable*>& vv) {
 
 int Predicate::_npnr = 0;
 
-Predicate::Predicate(const vector<Sort*>& sorts) : PFSymbol("",sorts,0) {
+Predicate::Predicate(const vector<Sort*>& sorts) : PFSymbol("",sorts,ParseInfo()) {
 	_name = "_internal_predicate_" + itos(_npnr) + "/" + itos(sorts.size());
 	++_npnr;
 }
@@ -397,7 +380,7 @@ unsigned int Vocabulary::index(Function* f) const {
 }
 
 Sort* Vocabulary::sort(const string& name) const {
-	Sort* s = Builtin::sort(name);
+	Sort* s = stdbuiltin()->sort(name);
 	if(s) return s;
 	else {
 		map<string,Sort*>::const_iterator it = _sortnames.find(name);
@@ -407,7 +390,7 @@ Sort* Vocabulary::sort(const string& name) const {
 }
 
 Predicate* Vocabulary::pred(const string& name) const {
-	Predicate* p = Builtin::pred(name);
+	Predicate* p = stdbuiltin()->pred(name);
 	if(p) return p;
 	else {
 		map<string,Predicate*>::const_iterator it = _prednames.find(name);
@@ -417,7 +400,7 @@ Predicate* Vocabulary::pred(const string& name) const {
 }
 
 Function* Vocabulary::func(const string& name) const {
-	Function* f = Builtin::func(name);
+	Function* f = stdbuiltin()->func(name);
 	if(f) return f;
 	else {
 		map<string,Function*>::const_iterator it = _funcnames.find(name);
@@ -427,7 +410,7 @@ Function* Vocabulary::func(const string& name) const {
 }
 
 vector<Predicate*> Vocabulary::pred_no_arity(const string& name) const {
-	vector<Predicate*> vp = Builtin::pred_no_arity(name);
+	vector<Predicate*> vp = stdbuiltin()->pred_no_arity(name);
 	for(unsigned int n = 0; n < _vpredicates.size(); ++n) {
 		string pn = _vpredicates[n]->name();
 		if(pn.substr(0,pn.find('/')) == name) vp.push_back(_vpredicates[n]);
@@ -436,7 +419,7 @@ vector<Predicate*> Vocabulary::pred_no_arity(const string& name) const {
 }
 
 vector<Function*> Vocabulary::func_no_arity(const string& name) const {
-	vector<Function*> vf = Builtin::func_no_arity(name);
+	vector<Function*> vf = stdbuiltin()->func_no_arity(name);
 	for(unsigned int n = 0; n < _vfunctions.size(); ++n) {
 		string fn = _vfunctions[n]->name();
 		if(fn.substr(0,fn.find('/')) == name) vf.push_back(_vfunctions[n]);

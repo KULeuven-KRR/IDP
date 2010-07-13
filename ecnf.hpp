@@ -198,7 +198,7 @@ class EcnfTheory : public AbstractTheory {
 	public:
 
 		// Constructor
-		EcnfTheory() : AbstractTheory("",0)	{ }
+		EcnfTheory() : AbstractTheory("",ParseInfo())	{ }
 
 		// Destructor
 		void recursiveDelete() { }
