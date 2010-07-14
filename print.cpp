@@ -39,8 +39,6 @@ Printer* Printer::create() {
 		case OF_IDP:
 			return new IDPPrinter();
 		default:
-			//Error unknown format
-			//return new SimplePrinter() ??
 			assert(false);
 	}
 }
@@ -85,8 +83,8 @@ void IDPPrinter::visit(Theory* t) {
 	fprintf(_out,"#theory %s",t->name().c_str());
 	if(t->vocabulary()) {
 		fprintf(_out," : %s",t->vocabulary()->name().c_str());
-		if(t->structure())
-			fprintf(_out," %s",t->structure()->name().c_str());
+//		if(t->structure())
+//			fprintf(_out," %s",t->structure()->name().c_str());
 	}
 	fprintf(_out," {\n");
 	indent();

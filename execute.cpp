@@ -16,7 +16,8 @@ extern Options options;
 void PrintTheory::execute(const vector<InfArg>& args, const string& res,Namespace*) const {
 	assert(args.size() == 1);
 	Printer* printer = Printer::create();
-	printer->print(args[0]._theory);
+	Theory* t = dynamic_cast<Theory*>(args[0]._theory);
+	printer->print(t);
 	delete(printer);
 }
 
@@ -30,7 +31,8 @@ void PrintVocabulary::execute(const vector<InfArg>& args, const string& res,Name
 void PrintStructure::execute(const vector<InfArg>& args, const string& res,Namespace*) const {
 	assert(args.size() == 1);
 	Printer* printer = Printer::create();
-	printer->print(args[0]._structure);
+	Structure* s = dynamic_cast<Structure*>(args[0]._structure);
+	printer->print(s);
 	delete(printer);
 }
 

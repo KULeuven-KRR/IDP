@@ -333,7 +333,7 @@ void NaiveGrounder::visit(Theory* t) {
 					vector<Formula*> existvector;
 					outtuple1[0] = 0;
 					do {
-						vector<Term*> vt(f->nrsorts());
+						vector<Term*> vt(f->nrSorts());
 						for(unsigned int a = 0; a < f->arity(); ++a) {
 							ElementType tp = intables[a]->type();
 							vt[a] = new DomainTerm(f->insort(a),tp,ElementUtil::clone(intables[a]->element(intuple[a]),tp),0);
@@ -343,7 +343,7 @@ void NaiveGrounder::visit(Theory* t) {
 						outtuple2[0] = outtuple1[0];
 						while(nexttuple(outtuple2,outlimit)) {
 							Formula* f1 = (existvector.back())->clone(); f1->swapsign();
-							vector<Term*> vt2(f->nrsorts());
+							vector<Term*> vt2(f->nrSorts());
 							for(unsigned int a = 0; a < f->arity(); ++a) {
 								ElementType tp = intables[a]->type();
 								vt2[a] = new DomainTerm(f->insort(a),tp,ElementUtil::clone(intables[a]->element(intuple[a]),tp),0);

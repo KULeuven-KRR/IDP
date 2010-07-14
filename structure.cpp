@@ -1045,8 +1045,8 @@ PredInter* Structure::inter(Predicate* p) const {
 
 FuncInter* Structure::inter(Function* f) const {
 	if(f->builtin()) {
-		vector<SortTable*> vs(f->nrsorts());
-		for(unsigned int n = 0; n < f->nrsorts(); ++n) vs[n] = inter(f->sort(n));
+		vector<SortTable*> vs(f->nrSorts());
+		for(unsigned int n = 0; n < f->nrSorts(); ++n) vs[n] = inter(f->sort(n));
 		return Builtin::inter(f,vs);
 	}
 	return _funcinter[_vocabulary->index(f)];

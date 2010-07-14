@@ -684,7 +684,7 @@ class Structure : public AbstractStructure {
 		bool			hasInter(Function* f)		const;	// True iff f has an interpretation
 
 		// Visitor
-		void accept(Visitor* v)	{ v->visit(this);	}
+		void accept(Visitor* v);
 
 		// Debugging
 		string	to_string(unsigned int spaces = 0) const;
