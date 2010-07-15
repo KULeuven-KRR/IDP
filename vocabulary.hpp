@@ -322,7 +322,7 @@ class Predicate : public PFSymbol {
 		virtual Predicate*		disambiguate(const vector<Sort*>&)		{ return this;	}
 
 		// Visitor
-		void accept(Visitor*);
+		void 	accept(Visitor*);
 
 		// Debugging of GidL
 		void	inspect()	const;
@@ -346,7 +346,7 @@ class Function : public PFSymbol {
 			PFSymbol(name,sorts,pi), _partial(false) { }
 
 		// Mutators
-		void		partial(const bool& b)	{ _partial = b;		}
+		void		partial(const bool& b)	{ _partial = b;	}
 	
 		// Inspectors
 		vector<Sort*>		insorts()				const;	// returns the input sorts of the function
@@ -360,7 +360,7 @@ class Function : public PFSymbol {
 		virtual Function*		disambiguate(const vector<Sort*>&)		{ return this;	}
 
 		// Visitor
-		void accept(Visitor*);
+		void 	accept(Visitor*);
 
 		// Debugging of GidL
 		void	inspect()	const;

@@ -269,11 +269,11 @@ func_decl		: PARTIAL full_func_decl				{ $$ = $2; if($$) $$->partial(true);	}
 				| full_func_decl						{ $$ = $1;								}
 				;
 
-full_func_decl	: identifier '(' sort_pointer_tuple ')' ':' sort_pointer	{ Insert::function(*$1,*$3,$6,@1);
+full_func_decl	: identifier '(' sort_pointer_tuple ')' ':' sort_pointer	{ $$ = Insert::function(*$1,*$3,$6,@1);
 																			  delete($1); delete($3); }
-				| identifier '(' ')' ':' sort_pointer						{ Insert::function(*$1,$5,@1); 
+				| identifier '(' ')' ':' sort_pointer						{ $$ = Insert::function(*$1,$5,@1); 
 																			  delete($1); }
-				| identifier ':' sort_pointer								{ Insert::function(*$1,$3,@1); 
+				| identifier ':' sort_pointer								{ $$ = Insert::function(*$1,$3,@1); 
 																			  delete($1); }	
 				; 														
 
