@@ -346,8 +346,12 @@ void IDPPrinter::print(PredTable* t) {
 		for(unsigned int c = 0; c < t->arity(); ++c) {
 			string s = ElementUtil::ElementToString(t->element(r,c),t->type(c));
 			fputs(s.c_str(),_out);
-			if(c < t->arity()-1)
-				fprintf(_out,(_currsymbol->ispred() ? "," : "->"));
+			if(c < t->arity()-1) {
+				if(not(_currsymbol->ispred()) && c == t->arity()-2)
+					fprintf(_out,"->");
+				else
+					fprintf(_out,",");
+			}
 		}
 		if(r < t->size()-1)
 			fprintf(_out,"; ");

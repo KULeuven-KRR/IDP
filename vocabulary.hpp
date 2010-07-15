@@ -295,7 +295,6 @@ class PFSymbol {
 		virtual PFSymbol*		disambiguate(const vector<Sort*>&)		{ return this;	}	// this method tries to disambiguate 
 																							// overloaded symbols. See builtin.cpp
 																							// for more information
-																						
 
 };
 
