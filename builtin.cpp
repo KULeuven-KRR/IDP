@@ -8,6 +8,7 @@
 #include "structure.hpp"
 #include <iostream>
 #include <typeinfo>
+#include <cstdlib> //contains abs for ints
 #include <cmath>
 
 extern bool isDouble(const string&);

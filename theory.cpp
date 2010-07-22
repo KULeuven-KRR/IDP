@@ -12,6 +12,8 @@
 #include <iostream>
 #include <set>
 
+#include <typeinfo>
+
 extern string tabstring(unsigned int);
 extern bool nexttuple(vector<unsigned int>&,const vector<unsigned int>&);
 
