@@ -26,13 +26,13 @@ endif
 
 # filenames
 # ############################################################
-PHDRS		= parse.tab.hpp #pcsolver/solvers/ecnf.y.hpp 
-CHDRS		= $(PHDRS) $(wildcard *.hpp) $(wildcard pcsolver/solver3/*.hpp) $(wildcard pcsolver/mtl/*.hpp) $(wildcard pcsolver/solvers/*.hpp) $(wildcard pcsolver/solvers/aggs/*.hpp)
-PSRCS		= parse.tab.cpp lex.yy.cpp #pcsolver/solvers/ecnf.y.cpp pcsolver/solvers/ecnf.l.cpp pcsolver/solvers/ecnf.y.cpp 
-CSRCS		= $(PSRCS) $(wildcard *.cpp) $(wildcard pcsolver/solvers/[!M]*.cpp) $(wildcard pcsolver/solvers/M[!a]*.cpp) $(wildcard pcsolver/solvers/aggs/*.cpp) $(wildcard pcsolver/solver3/*.cpp) $(wildcard pcsolver/mtl/*.cpp)
-CFLAGS	= -Ipcsolver/mtl -Ipcsolver/solvers -Ipcsolver/solvers/aggs -Ipcsolver/solver3 -I.
+PHDRS	= parse.tab.hpp #pcsolver/solvers/ecnf.y.hpp 
+CHDRS	= $(PHDRS) $(wildcard *.hpp) $(wildcard pcsolver/solver3/*.hpp) $(wildcard pcsolver/mtl/*.hpp) $(wildcard pcsolver/solvers/*.hpp) $(wildcard pcsolver/solvers/aggs/*.hpp)
+PSRCS	= parse.tab.cpp lex.yy.cpp #pcsolver/solvers/ecnf.y.cpp pcsolver/solvers/ecnf.l.cpp pcsolver/solvers/ecnf.y.cpp 
+CSRCS	= $(PSRCS) $(wildcard *.cpp) $(wildcard pcsolver/solvers/[!M]*.cpp) $(wildcard pcsolver/solvers/M[!a]*.cpp) $(wildcard pcsolver/solvers/aggs/*.cpp) $(wildcard pcsolver/solver3/*.cpp) $(wildcard pcsolver/mtl/*.cpp)
+CFLAGS	= -Ipcsolver/ -I.
 LFLAGS	= #-lz -lgmpxx -lgmp
-EXEC		= gidl
+EXEC	= gidl
 
 # stuff to make
 # ############################################################

@@ -131,7 +131,7 @@ void ModelExpansionInference::execute(const vector<InfArg>& args, const string& 
 	EcnfTheory* ecnfgr = TheoryUtils::convert_to_ecnf(gr,nt);
 	ECNF_mode modes;
 	modes.nbmodels = options._nrmodels;
-	PCSolver* solver = new PCSolver(modes);
+	PropositionalSolver* solver = new PropositionalSolver(modes);
 	GroundPrinter* printer = new outputToSolver(solver);
 	ecnfgr->print(printer);
 	gr->recursiveDelete();

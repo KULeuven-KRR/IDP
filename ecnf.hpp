@@ -8,7 +8,7 @@
 #define ECNF_H
 
 #include "theory.hpp"
-#include "pcsolver/solvers/PCSolver.hpp"
+#include "solvers/ExternalInterface.hpp"
 
 struct GroundFeatures {
 	bool	_containsDefinitions;
@@ -130,11 +130,11 @@ class outputToSolver : public GroundPrinter {
 
 	private:
 		//Not owning pointer!
-		PCSolver* _solver;
-		PCSolver* solver() { return _solver; }
+		PropositionalSolver* _solver;
+		PropositionalSolver* solver() { return _solver; }
 	public:
 		//outputToSolver();
-		outputToSolver(PCSolver* solver);
+		outputToSolver(PropositionalSolver* solver);
 		~outputToSolver();
 		void outputinit(GroundFeatures*);
 		void outputend();
