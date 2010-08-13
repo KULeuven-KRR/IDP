@@ -305,7 +305,7 @@ class QuantForm : public Formula {
 
 };
 
-enum TruthValue { TV_TRUE, TV_FALSE, TV_UNKN, TV_INCO, TV_UNDEF };
+enum TruthValue { TV_TRUE, TV_FALSE, TV_UNKN };
 
 namespace FormulaUtils {
 	
@@ -316,7 +316,7 @@ namespace FormulaUtils {
 	 *		- for all subterms, the preconditions of evaluate(Term*,Structure*,const map<Variable*,TypedElement>&) must hold
 	 *		- the sort of every quantified variable in the formula should have a finite domain in the given structure
 	 */
-	TruthValue evaluate(Formula*,Structure*,const map<Variable*,TypedElement>&);	
+	TruthValue evaluate(Formula*,AbstractStructure*,const map<Variable*,TypedElement>&);	
 																				
 }
 
@@ -354,6 +354,7 @@ class Rule {
 		const ParseInfo&	pi()					const { return _pi;				}
 		unsigned int		nrQvars()				const { return _vars.size();	}
 		Variable*			qvar(unsigned int n)	const { return _vars[n];		}
+		const vector<Variable*>&	qvars()			const { return _vars;			}
 
 		// Visitor
 		void	accept(Visitor* v);
@@ -469,8 +470,11 @@ class AbstractTheory {
 		virtual ~AbstractTheory() { }
 
 		// Mutators
-		void	vocabulary(Vocabulary* v)					{ _vocabulary = v;				}
-		void	name(const string& n)						{ _name = n;					}
+				void	vocabulary(Vocabulary* v)	{ _vocabulary = v;				}
+				void	name(const string& n)		{ _name = n;					}
+		virtual	void	add(Formula* f)				= 0;
+		virtual void	add(Definition* d)			= 0;
+		virtual void	add(FixpDef* fd)			= 0;
 
 		// Inspectors
 				const string&		name()						const { return _name;				}

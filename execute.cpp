@@ -162,7 +162,7 @@ void ModelExpansionInference::execute(const vector<InfArg>& args, const string& 
 void StructToTheory::execute(const vector<InfArg>& args, const string& res,Namespace* cn) const {
 	assert(args.size() == 1);
 	// TODO: remove the dynamic casts!
-	Theory* t = StructUtils::convert_to_theory(dynamic_cast<Structure*>(args[0]._structure));
+	AbstractTheory* t = StructUtils::convert_to_theory(dynamic_cast<Structure*>(args[0]._structure));
 	t->name(res);
 	cn->add(t);
 }

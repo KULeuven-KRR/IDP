@@ -25,11 +25,11 @@ typedef map<Function*,MVTC>						MFMVTC;
 
 class DomainData {
 	private:
-		MSSP	_sharedstrings;
-		MFMVTC	_sharedcompounds;
+		MSSP	_sharedstrings;		// map a string to its shared pointer
+		MFMVTC	_sharedcompounds;	// map a compund to its shared pointer
 	public:
-		string*		stringpointer(const string&);
-		compound*	compoundpointer(Function*,const vector<TypedElement>&);
+		string*		stringpointer(const string&);							// get the shared pointer of a string
+		compound*	compoundpointer(Function*,const vector<TypedElement>&);	// get the shared pointer of a compound
 };
 
 /****************************

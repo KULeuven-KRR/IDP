@@ -408,7 +408,7 @@ union Element {
 };
 
 // A pair of a domain element and its type
-struct TypedElement{
+struct TypedElement {
 	Element		_element;
 	ElementType	_type;
 	TypedElement(Element e, ElementType t) : _element(e), _type(t) { }
@@ -437,6 +437,7 @@ class ElementWeakOrdering {
 		vector<ElementType>	_types;	// the types of the two tuples that are compared
 
 	public:
+		ElementWeakOrdering() { }
 		ElementWeakOrdering(const vector<ElementType>& t) : _types(t) { }
 		bool operator()(const vector<Element>&,const vector<Element>&) const;
 		void addType(ElementType t) { _types.push_back(t);	}
@@ -450,6 +451,7 @@ class ElementEquality {
 		vector<ElementType>	_types;	// the types of the two tuples that are compared
 
 	public:
+		ElementEquality() { }
 		ElementEquality(const vector<ElementType>& t) : _types(t) { }
 		bool operator()(const vector<Element>&,const vector<Element>&) const;
 		void addType(ElementType t) { _types.push_back(t);	}
@@ -464,7 +466,11 @@ namespace ElementUtil {
 	ElementType	resolve(ElementType,ElementType);
 
 	// Return the most precise elementtype
-	ElementType leasttype() { return ELINT;	}
+	ElementType leasttype(); 
+
+	// Return the most precise type of the given element
+	ElementType reduce(Element,ElementType);
+	ElementType reduce(TypedElement);
 
 	// Convert a domain element to a string
 	string		ElementToString(Element,ElementType);
@@ -492,8 +498,5 @@ namespace ElementUtil {
 bool operator==(TypedElement e1, TypedElement e2);
 bool operator<=(TypedElement e1, TypedElement e2);
 bool operator<(TypedElement e1, TypedElement e2);
-
-
-
 
 #endif

@@ -40,6 +40,7 @@ compound* DomainData::compoundpointer(Function* f, const vector<TypedElement>& v
 }
 
 shared_ptr<DomainData> _domaindata(new DomainData());
+
 string*		IDPointer(char* s)			{ return _domaindata->stringpointer(string(s));						}
 string*		IDPointer(const string& s)	{ return _domaindata->stringpointer(s);								}
 compound*	CPPointer(TypedElement e)	{ return _domaindata->compoundpointer(0,vector<TypedElement>(1,e));	}

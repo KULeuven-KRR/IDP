@@ -13,9 +13,6 @@
 #include <iostream>
 #include <set>
 
-extern string tabstring(unsigned int);
-extern bool nexttuple(vector<unsigned int>&,const vector<unsigned int>&);
-
 /*******************
 	Constructors
 *******************/
@@ -388,7 +385,6 @@ namespace TVUtils {
 	}
 
 	TruthValue glbt(TruthValue v1, TruthValue v2) {
-		if(v1 == TV_UNDEF || v2 == TV_UNDEF) return TV_UNDEF;
 		switch(v1) {
 			case TV_TRUE:
 				return v2;
@@ -400,29 +396,12 @@ namespace TVUtils {
 					case TV_UNKN: 
 						return TV_UNKN;
 					case TV_FALSE: 
-					case TV_INCO: 
 						return TV_FALSE;
-					case TV_UNDEF:
-						assert(false);
 				}
-			case TV_INCO:
-				switch(v2) {
-					case TV_TRUE: 
-					case TV_INCO: 
-						return TV_INCO;
-					case TV_FALSE: 
-					case TV_UNKN: 
-						return TV_FALSE;
-					case TV_UNDEF:
-						assert(false);
-				}
-			default:
-				return TV_UNDEF;
 		}
 	}
 
 	TruthValue lubt(TruthValue v1, TruthValue v2) {
-		if(v1 == TV_UNDEF || v2 == TV_UNDEF) return TV_UNDEF;
 		switch(v1) {
 			case TV_TRUE:
 				return TV_TRUE;
@@ -431,27 +410,11 @@ namespace TVUtils {
 			case TV_UNKN:
 				switch(v2) {
 					case TV_TRUE: 
-					case TV_INCO: 
 						return TV_TRUE;
 					case TV_FALSE: 
 					case TV_UNKN: 
 						return TV_UNKN;
-					case TV_UNDEF:
-						assert(false);
 				}
-			case TV_INCO:
-				switch(v2) {
-					case TV_TRUE: 
-					case TV_UNKN:
-						return TV_TRUE;
-					case TV_FALSE: 
-					case TV_INCO: 
-						return TV_INCO;
-					case TV_UNDEF:
-						assert(false);
-				}
-			default:
-				return TV_UNDEF;
 		}
 	}
 
@@ -459,9 +422,7 @@ namespace TVUtils {
 		switch(v) {
 			case TV_TRUE: return "true";
 			case TV_FALSE: return "false";
-			case TV_INCO: return "inconsistent";
 			case TV_UNKN: return "unknown";
-			case TV_UNDEF: return "undefined";
 			default: assert(false); return "";
 		}
 	}
@@ -470,14 +431,15 @@ namespace TVUtils {
 class FormulaEvaluator : public Visitor {
 
 	private:
-		Structure*					_structure;
+		AbstractStructure*			_structure;
 		map<Variable*,TypedElement>	_varmapping;
 		TruthValue					_returnvalue;
+		bool						_context;
 
 	public:
 		
-		FormulaEvaluator(Formula* f, Structure* s, const map<Variable*,TypedElement>& m) :
-			Visitor(), _structure(s), _varmapping(m) { f->accept(this);	}
+		FormulaEvaluator(Formula* f, AbstractStructure* s, const map<Variable*,TypedElement>& m) :
+			Visitor(), _structure(s), _varmapping(m), _context(true) { f->accept(this);	}
 		
 		TruthValue returnvalue()	const { return _returnvalue;	}
 
@@ -490,39 +452,80 @@ class FormulaEvaluator : public Visitor {
 };
 
 void FormulaEvaluator::visit(PredForm* pf) {
-	vector<TypedElement> argvalues(pf->nrSubterms());
+	// Evaluate the terms
+	vector<SortTable*> argvalues(pf->nrSubterms());
+	vector<TypedElement> currvalue(pf->nrSubterms());
 	TermEvaluator* te = new TermEvaluator(_structure,_varmapping);
 	for(unsigned int n = 0; n < pf->nrSubterms(); ++n) {
 		pf->subterm(n)->accept(te);
-		if(ElementUtil::exists(te->returnvalue())) argvalues[n] = te->returnvalue();
-		else {
-			_returnvalue = TV_UNDEF;
-			return;
-		}
+		argvalues[n] = te->returnvalue();
+		currvalue[n]._type = argvalues[n]->type();
 	}
-	delete(te);
+	// Set the context
+	if(!pf->sign()) _context = !_context;
+	// Evaluate the formula
+	SortTableTupleIterator stti(argvalues);
+	_returnvalue = (_context ? TV_TRUE : TV_FALSE);
 	PredInter* pt = _structure->inter(pf->symb());
-	assert(pt);
-	if(pt->istrue(argvalues)) {
-		if(pt->ctpf() != pt->cfpt() && pt->isfalse(argvalues)) _returnvalue = TV_INCO;
-		else _returnvalue = TV_TRUE;
+	if(!stti.empty()) {
+		do {
+			for(unsigned int n = 0; n < pf->nrSubterms(); ++n) currvalue[n]._element = stti.value(n);
+			if(pt->istrue(currvalue)) {
+				if(!_context) {
+					if(stti.singleton()) _returnvalue = TV_TRUE;
+					else _returnvalue = TV_UNKN;
+					break;
+				}
+			}
+			else if(pt->isfalse(currvalue)) {
+				if(_context) {
+					if(stti.singleton()) _returnvalue = TV_FALSE;
+					else _returnvalue = TV_UNKN;
+					break;
+				}
+			}
+			else {
+				_returnvalue = TV_UNKN;
+			}
+		} while(stti.nextvalue());
 	}
-	else if(pt->isfalse(argvalues)) _returnvalue = TV_FALSE;
-	else _returnvalue = TV_UNKN;
 	if(!pf->sign()) {
 		_returnvalue = TVUtils::swaptruthvalue(_returnvalue);
+		_context = !_context;
 	}
+	// Delete tables
+	for(unsigned int n = 0; n < argvalues.size(); ++n) delete(argvalues[n]);
 }
 
 void FormulaEvaluator::visit(EquivForm* ef) {
-	assert(false);
+	// NOTE: evaluating an equivalence in a three-valued structure/context with partial functions
+	//		 leads to ambiguities! TODO: give a warning!
+	ef->left()->accept(this);
+	if(_returnvalue != TV_UNKN) {
+		TruthValue lv = _returnvalue;
+		ef->right()->accept(this);
+		if(_returnvalue != TV_UNKN) {
+			_returnvalue = (_returnvalue == lv ? TV_TRUE : TV_FALSE);
+		}
+	}
+	if(!ef->sign()) _returnvalue = TVUtils::swaptruthvalue(_returnvalue);
 }
 
 void FormulaEvaluator::visit(EqChainForm* ef) {
-	assert(false);
+	vector<Formula*> vf(ef->nrSubterms()-1);
+	for(unsigned int n = 0; n < vf.size(); ++n) {
+		vector<Term*> vt(2); vt[0] = ef->subterm(n); vt[1] = ef->subterm(n+1);
+		string pn = string(1,ef->comp(n)) + "/2";
+		vf[n] = new PredForm(ef->compsign(n),stdbuiltin()->pred(pn),vt,FormParseInfo());
+	}
+	BoolForm* bf = new BoolForm(ef->sign(),ef->conj(),vf,FormParseInfo());
+	bf->accept(this);
+	for(unsigned int n = 0; n < vf.size(); ++n) { delete(vf[n]); }
+	delete(bf);
 }
 
 void FormulaEvaluator::visit(BoolForm* bf) {
+	if(!bf->sign()) _context = !_context;
 	TruthValue result;
 	if(bf->conj()) result = TV_TRUE;
 	else result = TV_FALSE;
@@ -532,48 +535,41 @@ void FormulaEvaluator::visit(BoolForm* bf) {
 		if((bf->conj() && result == TV_FALSE) || (!(bf->conj()) && result == TV_TRUE)) break;
 	}
 	_returnvalue = result;
-	if(!bf->sign()) _returnvalue = TVUtils::swaptruthvalue(_returnvalue);
+	if(!bf->sign()) {
+		_returnvalue = TVUtils::swaptruthvalue(_returnvalue);
+		_context = !_context;
+	}
 	return;
 }
 
 void FormulaEvaluator::visit(QuantForm* qf) {
+	if(!qf->sign()) _context = !_context;
 	TruthValue result = (qf->univ()) ? TV_TRUE : TV_FALSE;
-
-	vector<unsigned int> limits;
-	vector<SortTable*> tables;
-	for(unsigned int n = 0; n < qf->nrQvars(); ++n) {
-		SortTable* st = _structure->inter(qf->qvar(n)->sort());
-		assert(st);
-		assert(st->finite());
-		if(st->empty()) {
-			_returnvalue = result;
-			if(!qf->sign()) _returnvalue = TVUtils::swaptruthvalue(_returnvalue);
-			return;
-		}
-		else {
-			limits.push_back(st->size());
-			tables.push_back(st);
+	SortTableTupleIterator vti(qf->qvars(),_structure);
+	if(!vti.empty()) {
+		for(unsigned int n = 0; n < qf->nrQvars(); ++n) {
 			TypedElement e; 
-			e._type = st->type(); 
+			e._type = vti.type(n); 
 			_varmapping[qf->qvar(n)] = e;
 		}
+		do {
+			for(unsigned int n = 0; n < qf->nrQvars(); ++n) 
+				_varmapping[qf->qvar(n)]._element = vti.value(n);
+			qf->subf()->accept(this);
+			result = (qf->univ()) ? TVUtils::glbt(result,_returnvalue) : TVUtils::lubt(result,_returnvalue) ;
+			if((qf->univ() && result == TV_FALSE) || ((!qf->univ()) && result == TV_TRUE)) break;
+		} while(vti.nextvalue());
 	}
-	vector<unsigned int> tuple(limits.size(),0);
-
-	do {
-		for(unsigned int n = 0; n < tuple.size(); ++n) 
-			_varmapping[qf->qvar(n)]._element = tables[n]->element(tuple[n]);
-		qf->subf()->accept(this);
-		result = (qf->univ()) ? TVUtils::glbt(result,_returnvalue) : TVUtils::lubt(result,_returnvalue) ;
-		if((qf->univ() && result == TV_FALSE) || ((!qf->univ()) && result == TV_TRUE)) break;
-	} while(nexttuple(tuple,limits));
 	_returnvalue = result;
-	if(!qf->sign()) _returnvalue = TVUtils::swaptruthvalue(_returnvalue);
+	if(!qf->sign()) {
+		_returnvalue = TVUtils::swaptruthvalue(_returnvalue);
+		_context = !_context;
+	}
 	return;
 }
 
 namespace FormulaUtils {
-	TruthValue evaluate(Formula* f, Structure* s, const map<Variable*,TypedElement>& m) {
+	TruthValue evaluate(Formula* f, AbstractStructure* s, const map<Variable*,TypedElement>& m) {
 		FormulaEvaluator fe(f,s,m);
 		return fe.returnvalue();
 	}

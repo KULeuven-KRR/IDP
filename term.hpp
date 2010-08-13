@@ -33,7 +33,7 @@ class Term {
 
 		// Destructor
 		virtual ~Term() { }
-		virtual void recursiveDelete() = 0;
+		virtual void recursiveDelete() = 0;		// Delete a term and its subterms
 
 		// Mutators
 		virtual	void	setfvars();		// Compute the free variables of the term
@@ -64,9 +64,9 @@ class Term {
 };
 
 
-/****************
-	Variables
-****************/
+/*******************************
+	Terms that are variables
+*******************************/
 
 class VarTerm : public Term {
 	
@@ -111,9 +111,10 @@ class VarTerm : public Term {
 };
 
 
-/******************************
-	Functions and constants
-******************************/
+/***********************************************************************
+	Terms formed by applying a function to a tuple of terms
+	Constants (0-ary function applied to empty tuple)
+***********************************************************************/
 
 class FuncTerm : public Term {
 	
@@ -159,13 +160,15 @@ class FuncTerm : public Term {
 
 };
 
-/** Domain elements **/
+/**********************
+	Domain constants
+**********************/
 
 class DomainTerm : public Term {
 
 	private:
 		Sort*		_sort;		// The sort of the domain element
-		ElementType	_type;		// Whether the term is an int, double or string
+		ElementType	_type;		// Whether the term is an int, double, string, or compound
 		Element		_value;		// The value of the domain element
 		
 
@@ -225,7 +228,7 @@ class SetExpr {
 		virtual SetExpr* clone(const map<Variable*,Variable*>&)	const = 0;
 
 		// Destructor
-		virtual void recursiveDelete() = 0;
+		virtual void recursiveDelete() = 0;	// Delete the set and its subformulas and subterms
 		virtual ~SetExpr() { }
 
 		// Mutators
@@ -233,14 +236,14 @@ class SetExpr {
 
 		// Inspectors
 				unsigned int	nrFvars()				const { return _fvars.size();	}
-		virtual	unsigned int	nrSubforms()			const = 0;	
-		virtual	unsigned int	nrSubterms()			const = 0;	
-		virtual	unsigned int	nrQvars()				const = 0;	
+		virtual	unsigned int	nrSubforms()			const = 0;	// Number of direct subformulas of the set
+		virtual	unsigned int	nrSubterms()			const = 0;	// Number of direct subterms of the set
+		virtual	unsigned int	nrQvars()				const = 0;	// Number of variables quantified by the set
 				Variable*		fvar(unsigned int n)	const { return _fvars[n];		}	
-		virtual	Formula*		subform(unsigned int n)	const = 0;	
-		virtual	Term*			subterm(unsigned int n)	const = 0;	
-		virtual	Variable*		qvar(unsigned int n)	const = 0;	
-		virtual	Sort*			firstargsort()			const = 0;
+		virtual	Formula*		subform(unsigned int n)	const = 0;	// The n'th direct subformula
+		virtual	Term*			subterm(unsigned int n)	const = 0;	// The n'th direct subterm
+		virtual	Variable*		qvar(unsigned int n)	const = 0;	// The n'th quantified variable
+		virtual	Sort*			firstargsort()			const = 0;	// Sort of the first element in any tuple in the set
 
 		// Visitor
 		virtual void		accept(Visitor* v) = 0;
@@ -325,6 +328,7 @@ class QuantSetExpr : public SetExpr {
 		Variable*		qvar(unsigned int n)	const	{ return _vars[n];			}
 		Formula*		subf()					const	{ return _subf;				}
 		Sort*			firstargsort()			const;
+		const vector<Variable*>&	qvars()		const	{ return _vars;				}
 
 		// Visitor
 		void		accept(Visitor* v);
@@ -337,6 +341,10 @@ class QuantSetExpr : public SetExpr {
 
 /** Aggregate types **/
 enum AggType { AGGCARD, AGGSUM, AGGPROD, AGGMIN, AGGMAX };
+
+namespace AggUtils {
+	double compute(AggType,const vector<double>&);	// apply the aggregate on the given set of doubles 
+}
 
 /** Aggregate term **/
 class AggTerm : public Term {
@@ -383,23 +391,22 @@ class AggTerm : public Term {
 
 };
 
-namespace TermUtils {
-	// evaluate the given term in the given structure under the given variable mapping
-	TypedElement		evaluate(Term*,Structure*,const map<Variable*,TypedElement>&);	
-}
+/***********************
+	Evaluating terms
+***********************/
 
 class TermEvaluator : public Visitor {
 
 	private:
-		TypedElement				_returnvalue;
-		Structure*					_structure;
+		FiniteSortTable*			_returnvalue;
+		AbstractStructure*			_structure;
 		map<Variable*,TypedElement>	_varmapping;
 
 	public:
-		TermEvaluator(Structure* s,const map<Variable*,TypedElement> m);
-		TermEvaluator(Term* t,Structure* s,const map<Variable*,TypedElement> m);
+		TermEvaluator(AbstractStructure* s,const map<Variable*,TypedElement> m);
+		TermEvaluator(Term* t,AbstractStructure* s,const map<Variable*,TypedElement> m);
 
-		TypedElement returnvalue()	{ return _returnvalue;	}
+		FiniteSortTable* returnvalue()	{ return _returnvalue;	}
 
 		void visit(VarTerm* vt);
 		void visit(FuncTerm* ft);
@@ -407,6 +414,16 @@ class TermEvaluator : public Visitor {
 		void visit(AggTerm* at);
 		
 };
+
+namespace TermUtils {
+	// evaluate the given term in the given structure under the given variable mapping
+	//		see comments in the actual code about the value of terms in a three-valued structure 
+	//		and of terms involving partial functions
+	//	NOTE: This method works for general terms and structures. Therefore, it is rather slow.
+	//		  Faster methods exist if the structure is two-valued and the term contains no partial functions
+	FiniteSortTable*	evaluate(Term*,AbstractStructure*,const map<Variable*,TypedElement>&);	
+}
+
 
 
 #endif 

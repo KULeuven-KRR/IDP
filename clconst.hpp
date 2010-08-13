@@ -7,10 +7,18 @@
 #ifndef CLCONST_H
 #define CLCONST_H
 
+/************************************************
+	class to represent the different 
+	types of constants set at the command line
+	(only used by the lexical analyser)
+************************************************/
+
 class CLConst {
 	public:
-		virtual int execute() const = 0;
+		virtual int execute() const = 0;	// Set yylval to the value of the constant
 };
+
+// Integers
 class IntClConst : public CLConst {
 	private:
 		int	_value;
@@ -18,6 +26,8 @@ class IntClConst : public CLConst {
 		IntClConst(int v) : _value(v) { }
 		int execute() const { yylval.nmr = _value; return INTEGER;		}
 };
+
+// Doubles
 class DoubleClConst : public CLConst {
 	private:
 		double _value;
@@ -25,6 +35,8 @@ class DoubleClConst : public CLConst {
 		DoubleClConst(double d) : _value(d) { }
 		int execute() const { yylval.dou = _value; return FLNUMBER;	}
 };
+
+// Chars
 class CharCLConst : public CLConst {
 	private:
 		char _value;
@@ -33,6 +45,8 @@ class CharCLConst : public CLConst {
 		CharCLConst(char c, bool b) : _value(c), _cons(b) { }
 		int execute() const { yylval.chr = _value; return _cons ? CHARCONS : CHARACTER;	}
 };
+
+// Strings
 class StrClConst : public CLConst {
 	private:
 		string	_value;

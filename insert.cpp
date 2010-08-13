@@ -16,9 +16,6 @@
 #include <list>
 #include <set>
 
-extern string itos(int);
-extern string dtos(double);
-
 /********************
 	Sort checking
 ********************/

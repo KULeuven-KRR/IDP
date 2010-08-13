@@ -7,7 +7,12 @@
 #ifndef OPTIONS_H
 #define OPTIONS_H
 
-enum WarningTypes { WT_FREE_VARS=0, WT_VARORCONST=1, WT_SORTDERIVE=2, WT_STDIN=3 };
+enum WarningTypes { 
+	WT_FREE_VARS=0,		// warning if free variables are detected
+	WT_VARORCONST=1,	// warning if it is ambiguous whether some term is a variable or a constant
+	WT_SORTDERIVE=2,	// warning if some (probably unexpected) sorts are derived for a variable
+	WT_STDIN=3			// warning if trying to read from the stdin
+};
 
 struct Options {
 
@@ -18,7 +23,7 @@ struct Options {
 		  vector<bool>		_warning;			// _warning[n] = true means that warnings of type n are not suppressed
 		  unsigned int		_nrmodels;			// number of models 
 
-		  // Constructor
+		  // Constructor (default options)
 		  Options() {
 				_statistics = false;
 				_verbose = false;

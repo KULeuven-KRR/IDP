@@ -8,9 +8,6 @@
 #include <typeinfo>
 #include <iostream>
 
-extern string itos(int);
-extern bool nexttuple(vector<unsigned int>&, const vector<unsigned int>&);
-
 /**********************************************
 	Translate from ground atoms to numbers
 **********************************************/
@@ -80,42 +77,33 @@ void NaiveGrounder::visit(EnumSetExpr* s) {
 }
 
 void NaiveGrounder::visit(QuantSetExpr* s) {
-	vector<unsigned int> limits;
+	SortTableTupleIterator stti(s->qvars(),_structure);
 	vector<SortTable*> tables;
 	vector<Formula*> vf(0);
 	vector<Term*> vt(0);
 	for(unsigned int n = 0; n < s->nrQvars(); ++n) {
-		SortTable* st = _structure->inter(s->qvar(n)->sort());
-		assert(st);
-		assert(st->finite());
-		if(st->empty()) {
-			_returnSet = new EnumSetExpr(vf,vt,ParseInfo());
-			return;
-		}
-		else {
-			limits.push_back(st->size());
-			tables.push_back(st);
-			TypedElement e; 
-			e._type = st->type(); 
-			_varmapping[s->qvar(n)] = e;
-		}
+		TypedElement e; 
+		e._type = stti.type(n); 
+		_varmapping[s->qvar(n)] = e;
 	}
-
-	vector<unsigned int> tuple(limits.size(),0);
-	assert(!tables.empty());
-	ElementType weighttype = tables[0]->type();
-	do {
-		Element weight = tables[0]->element(tuple[0]);
-		for(unsigned int n = 0; n < tuple.size(); ++n) {
-			_varmapping[s->qvar(n)]._element = tables[n]->element(tuple[n]);
-		}
-		_returnFormula = 0;
-		s->subf()->accept(this);
-		assert(_returnFormula);
-		vf.push_back(_returnFormula);
-		vt.push_back(new DomainTerm(s->qvar(0)->sort(),weighttype,weight,ParseInfo()));
-	} while(nexttuple(tuple,limits));
-	_returnSet = new EnumSetExpr(vf,vt,ParseInfo());
+	if(stti.empty()) {
+		_returnSet = new EnumSetExpr(vf,vt,ParseInfo());
+	}
+	else {
+		ElementType weighttype = tables[0]->type();
+		do {
+			Element weight = stti.value(0);
+			for(unsigned int n = 0; n < s->nrQvars(); ++n) {
+				_varmapping[s->qvar(n)]._element = stti.value(n);
+			}
+			_returnFormula = 0;
+			s->subf()->accept(this);
+			assert(_returnFormula);
+			vf.push_back(_returnFormula);
+			vt.push_back(new DomainTerm(s->qvar(0)->sort(),weighttype,weight,ParseInfo()));
+		} while(stti.nextvalue());
+		_returnSet = new EnumSetExpr(vf,vt,ParseInfo());
+	}
 }
 
 void NaiveGrounder::visit(PredForm* pf) {
@@ -164,82 +152,61 @@ void NaiveGrounder::visit(BoolForm* bf) {
 }
 
 void NaiveGrounder::visit(QuantForm* qf) {
-	vector<unsigned int> limits;
-	vector<SortTable*> tables;
+	SortTableTupleIterator stti(qf->qvars(),_structure);
 	vector<Formula*> vf(0);
 	for(unsigned int n = 0; n < qf->nrQvars(); ++n) {
-		SortTable* st = _structure->inter(qf->qvar(n)->sort());
-		assert(st);
-		assert(st->finite());
-		if(st->empty()) {
-			_returnFormula = new BoolForm(qf->sign(),qf->univ(),vf,ParseInfo());
-			return;
-		}
-		else {
-			limits.push_back(st->size());
-			tables.push_back(st);
-			TypedElement e; 
-			e._type = st->type(); 
-			_varmapping[qf->qvar(n)] = e;
-		}
+		TypedElement e; 
+		e._type = stti.type(n); 
+		_varmapping[qf->qvar(n)] = e;
 	}
-
-	vector<unsigned int> tuple(limits.size(),0);
-	do {
-		for(unsigned int n = 0; n < tuple.size(); ++n) {
-			_varmapping[qf->qvar(n)]._element = tables[n]->element(tuple[n]);
-		}
-		_returnFormula = 0;
-		qf->subf()->accept(this);
-		assert(_returnFormula);
-		vf.push_back(_returnFormula);
-	} while(nexttuple(tuple,limits));
-	_returnFormula = new BoolForm(qf->sign(),qf->univ(),vf,ParseInfo());
+	if(stti.empty()) {
+		_returnFormula = new BoolForm(qf->sign(),qf->univ(),vf,ParseInfo());
+	}
+	else {
+		do {
+			for(unsigned int n = 0; n < qf->nrQvars(); ++n) {
+				_varmapping[qf->qvar(n)]._element = stti.value(n);
+			}
+			_returnFormula = 0;
+			qf->subf()->accept(this);
+			assert(_returnFormula);
+			vf.push_back(_returnFormula);
+		} while(stti.nextvalue());
+		_returnFormula = new BoolForm(qf->sign(),qf->univ(),vf,ParseInfo());
+	}
 }
 
 void NaiveGrounder::visit(Rule* r) {
-	vector<unsigned int> limits;
-	vector<SortTable*> tables;
+	SortTableTupleIterator stti(r->qvars(),_structure);
 	Definition* d = new Definition();
 	for(unsigned int n = 0; n < r->nrQvars(); ++n) {
-		SortTable* st = _structure->inter(r->qvar(n)->sort());
-		assert(st);
-		assert(st->finite());
-		if(st->empty()) {
-			_returnDef = d;
-			return;
-		}
-		else {
-			limits.push_back(st->size());
-			tables.push_back(st);
-			TypedElement e; 
-			e._type = st->type(); 
-			_varmapping[r->qvar(n)] = e;
-		}
+		TypedElement e; 
+		e._type = stti.type(n); 
+		_varmapping[r->qvar(n)] = e;
 	}
+	if(!stti.empty()) {
+		do {
+			for(unsigned int n = 0; n < r->nrQvars(); ++n) {
+				_varmapping[r->qvar(n)]._element = stti.value(n);
+			}
+			Formula* nb;
+			PredForm* nh;
 
-	vector<unsigned int> tuple(limits.size(),0);
-	do {
-		for(unsigned int n = 0; n < tuple.size(); ++n) {
-			_varmapping[r->qvar(n)]._element = tables[n]->element(tuple[n]);
-		}
-		Formula* nb;
-		PredForm* nh;
+			_returnFormula = 0;
+			r->head()->accept(this);
+			assert(_returnFormula);
+			assert(typeid(*_returnFormula) == typeid(PredForm));
+			nh = dynamic_cast<PredForm*>(_returnFormula);
 
-		_returnFormula = 0;
-		r->head()->accept(this);
-		assert(_returnFormula);
-		assert(typeid(*_returnFormula) == typeid(PredForm));
-		nh = dynamic_cast<PredForm*>(_returnFormula);
+			_returnFormula = 0;
+			r->body()->accept(this);
+			assert(_returnFormula);
+			nb = _returnFormula;
 
-		_returnFormula = 0;
-		r->body()->accept(this);
-		assert(_returnFormula);
-		nb = _returnFormula;
+			d->add(new Rule(vector<Variable*>(0),nh,nb,ParseInfo()));
 
-		d->add(new Rule(vector<Variable*>(0),nh,nb,ParseInfo()));
-
-	} while(nexttuple(tuple,limits));
+		} while(stti.nextvalue());
+	}
 	_returnDef = d;
 }
 
@@ -301,8 +268,8 @@ void NaiveGrounder::visit(Theory* t) {
 	}
 	
 	// Add the structure
-	Theory* structtheo = StructUtils::convert_to_theory(_structure);
-	grounding->add(structtheo);
+	AbstractTheory* structtheo = StructUtils::convert_to_theory(_structure);
+	grounding->add(dynamic_cast<Theory*>(structtheo));	// TODO: remove the dynamic cast
 	delete(structtheo);
 
 	// Add the function constraints

@@ -65,6 +65,32 @@ namespace ElementUtil {
 		return (t1 < t2) ? t2 : t1;
 	}
 
+	ElementType leasttype() { return ELINT;	}
+
+	ElementType reduce(Element e, ElementType t) {
+		switch(t) {
+			case ELINT: 
+				break;
+			case ELDOUBLE:
+				if(double(int(e._double)) == e._double) return ELINT;
+				break;
+			case ELSTRING:
+				if(isInt(*(e._string))) return ELINT;
+				else if(isDouble(*(e._string))) return ELDOUBLE;
+				break;
+			case ELCOMPOUND:
+				if(!(e._compound->_function)) return reduce((e._compound->_args)[0]._element,(e._compound->_args)[0]._type);
+				break;
+			default:
+				assert(false);
+		}
+		return t;
+	}
+
+	ElementType reduce(TypedElement te) {
+		return reduce(te._element,te._type);
+	}
+
 	string ElementToString(Element e, ElementType t) {
 		switch(t) {
 			case ELINT:
@@ -187,11 +213,146 @@ namespace ElementUtil {
 		return convert(te._element,te._type,t);
 	}
 
+	bool equal(Element e1, ElementType t1, Element e2, ElementType t2) {
+		switch(t1) {
+			case ELINT:
+				switch(t2) {
+					case ELINT: return e1._int == e2._int;
+					case ELDOUBLE: return double(e1._int) == e2._double;
+					case ELSTRING: return (isInt(*(e2._string)) && e1._int == stoi(*(e2._string)));
+					case ELCOMPOUND: return ((e2._compound)->_function == 0 && 
+											  equal(e1,t1,((e2._compound)->_args)[0]._element,((e2._compound)->_args)[0]._type));
+					default: assert(false); return false;
+				}
+			case ELDOUBLE:
+				switch(t2) {
+					case ELINT: return e1._double == double(e2._int);
+					case ELDOUBLE: return e1._double == e2._double;
+					case ELSTRING: return (isDouble(*(e2._string)) && e1._double == stod(*(e2._string)));
+					case ELCOMPOUND: return ((e2._compound)->_function == 0 && 
+											  equal(e1,t1,((e2._compound)->_args)[0]._element,((e2._compound)->_args)[0]._type));
+					default: assert(false); return false;
+				}
+			case ELSTRING:
+				switch(t2) {
+					case ELINT: return (isInt(*(e1._string)) && e2._int == stoi(*(e1._string)));
+					case ELDOUBLE: return (isDouble(*(e1._string)) && e2._double == stod(*(e1._string)));
+					case ELSTRING: return e1._string == e2._string;
+					case ELCOMPOUND: return ((e2._compound)->_function == 0 && 
+											  equal(e1,t1,((e2._compound)->_args)[0]._element,((e2._compound)->_args)[0]._type));
+					default: assert(false); return false;
+				}
+			case ELCOMPOUND:
+				switch(t2) {
+					case ELINT: return ((e1._compound)->_function == 0 && 
+											  equal(e2,t2,((e1._compound)->_args)[0]._element,((e1._compound)->_args)[0]._type));
+					case ELDOUBLE: return ((e1._compound)->_function == 0 && 
+											  equal(e2,t2,((e1._compound)->_args)[0]._element,((e1._compound)->_args)[0]._type));
+					case ELSTRING: return ((e1._compound)->_function == 0 && 
+											  equal(e2,t2,((e1._compound)->_args)[0]._element,((e1._compound)->_args)[0]._type));
+					case ELCOMPOUND: 
+						if((e1._compound)->_function != (e2._compound)->_function) return false;
+						else {
+							for(unsigned int n = 0; n < (e1._compound)->_function->arity(); ++n) {
+								if(!(((e1._compound)->_args)[n] ==  ((e2._compound)->_args)[n])) return false;
+							}
+							return true;
+						}
+					default: assert(false); return false;
+				}
+			default:
+				assert(false); return false;
+		}
+	}
+
+	bool strlessthan(Element e1, ElementType t1, Element e2, ElementType t2) {
+		switch(t1) {
+			case ELINT:
+				switch(t2) {
+					case ELINT: return e1._int < e2._int;
+					case ELDOUBLE: return double(e1._int) < e2._double;
+					case ELSTRING: return ((!isDouble(*(e2._string))) || double(e1._int) < stod(*(e2._string)));
+					case ELCOMPOUND: return ((e2._compound)->_function != 0 || 
+											  strlessthan(e1,t1,((e2._compound)->_args)[0]._element,((e2._compound)->_args)[0]._type));
+					default: assert(false); return false;
+				}
+			case ELDOUBLE:
+				switch(t2) {
+					case ELINT: return e1._double < double(e2._int);
+					case ELDOUBLE: return e1._double < e2._double;
+					case ELSTRING: return ((!isDouble(*(e2._string))) || e1._double < stod(*(e2._string)));
+					case ELCOMPOUND: return ((e2._compound)->_function != 0 || 
+											  strlessthan(e1,t1,((e2._compound)->_args)[0]._element,((e2._compound)->_args)[0]._type));
+					default: assert(false); return false;
+				}
+			case ELSTRING:
+				switch(t2) {
+					case ELINT: return (isDouble(*(e1._string)) && stod(*(e1._string)) < double(e2._int));
+					case ELDOUBLE: return (isDouble(*(e1._string)) && stod(*(e1._string)) < e2._double);
+					case ELSTRING: {
+						if(isDouble(*(e1._string))) {
+							if(isDouble(*(e2._string))) return stod(*(e1._string)) < stod(*(e2._string));
+							else return true;
+						}
+						else if(isDouble(*(e2._string))) return false;
+						else return e1._string < e2._string;
+					}
+					case ELCOMPOUND: return ((e2._compound)->_function != 0 || 
+											  strlessthan(e1,t1,((e2._compound)->_args)[0]._element,((e2._compound)->_args)[0]._type));
+					default: assert(false); return false;
+				}
+			case ELCOMPOUND:
+				switch(t2) {
+					case ELINT: return ((e1._compound)->_function == 0 && 
+											  strlessthan(((e1._compound)->_args)[0]._element,((e1._compound)->_args)[0]._type,e2,t2));
+					case ELDOUBLE: return ((e1._compound)->_function == 0 && 
+											  strlessthan(((e1._compound)->_args)[0]._element,((e1._compound)->_args)[0]._type,e2,t2));
+					case ELSTRING: return ((e1._compound)->_function == 0 && 
+											  strlessthan(((e1._compound)->_args)[0]._element,((e1._compound)->_args)[0]._type,e2,t2));
+					case ELCOMPOUND: 
+						if((e1._compound)->_function == 0) {
+							if((e2._compound)->_function == 0) return ((e1._compound)->_args)[0] < ((e2._compound)->_args)[0];
+							else return true;
+						}
+						else if((e2._compound)->_function == 0) return false;
+						else if((e1._compound)->_function < (e2._compound)->_function) return true;
+						else if((e1._compound)->_function > (e2._compound)->_function) return false;
+						else {
+							for(unsigned int n = 0; n < (e1._compound)->_function->arity(); ++n) {
+								if((((e1._compound)->_args)[n] <  ((e2._compound)->_args)[n])) return true;
+								if((((e2._compound)->_args)[n] <  ((e1._compound)->_args)[n])) return false;
+							}
+							return false;
+						}
+					default: assert(false); return false;
+				}
+			default:
+				assert(false); return false;
+		}
+	}
+
+
+	bool lessthanorequal(Element e1, ElementType t1, Element e2, ElementType t2) {
+		return (strlessthan(e1,t1,e2,t2) || equal(e1,t1,e2,t2));
+	}
+
 }
+
+bool operator==(TypedElement e1, TypedElement e2)	{ return ElementUtil::equal(e1._element,e1._type,e2._element,e2._type);				}
+bool operator<=(TypedElement e1, TypedElement e2)	{ return ElementUtil::lessthanorequal(e1._element,e1._type,e2._element,e2._type);	}
+bool operator<(TypedElement e1, TypedElement e2)	{ return ElementUtil::strlessthan(e1._element,e1._type,e2._element,e2._type);		}
 
 /************
 	Sorts
 ************/
+
+Sort::Sort(const string& name) : _name(name), _pi() { 
+	_parent = 0;
+	_base = this;
+	_depth = 0;
+	_children = vector<Sort*>(0);
+	_pred = 0;
+}
 
 Sort::Sort(const string& name, const ParseInfo& pi) : _name(name), _pi(pi) { 
 	_parent = 0;

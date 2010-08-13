@@ -13,8 +13,8 @@
 /* 
  * The standard builtin vocabulary
  *		sorts:			nat, int, float, char, string
- *		predicates:		'=', '<', '>', SUCC, 
- *		functions:		+, -, *, /, ^, %, abs, -/1, MIN, MAX
+ *		predicates:		=/2, </2, >/2, SUCC/2, 
+ *		functions:		+/2, -/2, * /2, //2, ^/2, %/2, abs/1, -/1, MIN/0, MAX/0
  */
 class StdBuiltin : public Vocabulary {
 	public:

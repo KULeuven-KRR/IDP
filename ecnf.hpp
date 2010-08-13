@@ -207,6 +207,9 @@ class EcnfTheory : public AbstractTheory {
 		void addClause(const EcnfClause& vi)		{ _clauses.push_back(vi);											}
 		void addDefinition(const EcnfDefinition& d)	{ _definitions.push_back(d); _features._containsDefinitions = true;	}
 		void addAggregate(const EcnfAgg& a)			{ _aggregates.push_back(a); _features._containsAggregates = true;	}
+		void	add(Formula* f)						{ /* TODO */	}
+		void	add(Definition* d)					{ /* TODO */	}
+		void	add(FixpDef* fd)					{ /* TODO */	}
 
 		// Inspectors
 		unsigned int	nrSentences()	const { return _clauses.size() + _aggregates.size();	}

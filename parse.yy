@@ -209,7 +209,7 @@ idp		        : /* empty */
 namespace		: NAMESPACE_HEADER namespace_name '{' idp '}'	{ Insert::closespace();	}
 				;
 
-namespace_name	: identifier	{ Insert::openspace(*$1,@1); delete($1);	}
+namespace_name	: identifier	{ Insert::openspace(*$1,@1); }
 				;
  
 /***************************
@@ -222,7 +222,7 @@ vocabulary			: VOCAB_HEADER vocab_name '{' vocab_content '}'						{ Insert::clos
 					| VOCAB_HEADER vocab_name ':' vocab_pointers '{' vocab_content '}'	{ Insert::closevocab();	}
 					;
 
-vocab_name			: identifier	{ Insert::openvocab(*$1,@1); delete($1);	}
+vocab_name			: identifier	{ Insert::openvocab(*$1,@1); }
 					;
 
 vocab_pointers		: vocab_pointers vocab_pointer
@@ -251,13 +251,13 @@ symbol_pointer		: pred_pointer	{ Insert::predicate($1);	}
 
 /** Symbol declarations **/
 
-sort_decl		: TYPE identifier					{ Insert::sort(*$2,@2); delete($2);	}
-				| TYPE identifier ISA sort_pointer	{ Insert::sort(*$2,$4,@2); delete($2); }
+sort_decl		: TYPE identifier					{ Insert::sort(*$2,@2);		}
+				| TYPE identifier ISA sort_pointer	{ Insert::sort(*$2,$4,@2);	}
 				;
 
-pred_decl		: identifier '(' sort_pointer_tuple ')'	{ Insert::predicate(*$1,*$3,@1); delete($1); delete($3); }
-				| identifier '(' ')'					{ Insert::predicate(*$1,@1); delete($1); }
-				| identifier							{ Insert::predicate(*$1,@1); delete($1); }
+pred_decl		: identifier '(' sort_pointer_tuple ')'	{ Insert::predicate(*$1,*$3,@1); delete($3); }
+				| identifier '(' ')'					{ Insert::predicate(*$1,@1);  }
+				| identifier							{ Insert::predicate(*$1,@1);  }
 				;
 
 func_decl		: PARTIAL full_func_decl				{ $$ = $2; if($$) $$->partial(true);	}
@@ -265,18 +265,16 @@ func_decl		: PARTIAL full_func_decl				{ $$ = $2; if($$) $$->partial(true);	}
 				;
 
 full_func_decl	: identifier '(' sort_pointer_tuple ')' ':' sort_pointer	{ Insert::function(*$1,*$3,$6,@1);
-																			  delete($1); delete($3); }
-				| identifier '(' ')' ':' sort_pointer						{ Insert::function(*$1,$5,@1); 
-																			  delete($1); }
-				| identifier ':' sort_pointer								{ Insert::function(*$1,$3,@1); 
-																			  delete($1); }	
+																			  delete($3); }
+				| identifier '(' ')' ':' sort_pointer						{ Insert::function(*$1,$5,@1); }
+				| identifier ':' sort_pointer								{ Insert::function(*$1,$3,@1); }	
 				; 														
 
 /** Symbol copy **/
 
-symbol_copy		: TYPE identifier '=' sort_pointer	{ Insert::copysort(*$2,$4,@2); delete($2); }
-				| identifier '=' pred_pointer		{ Insert::copypred(*$1,$3,@1); delete($1); }
-				| identifier '=' func_pointer		{ Insert::copyfunc(*$1,$3,@1); delete($1); }
+symbol_copy		: TYPE identifier '=' sort_pointer	{ Insert::copysort(*$2,$4,@2);  }
+				| identifier '=' pred_pointer		{ Insert::copypred(*$1,$3,@1);  }
+				| identifier '=' func_pointer		{ Insert::copyfunc(*$1,$3,@1);  }
 				;
 
 /** Symbol pointers **/

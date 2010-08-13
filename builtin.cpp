@@ -41,7 +41,8 @@ class BuiltInPredicate : public Predicate {
 
 	private:
 
-		PredInter*	(*_inter)(const vector<SortTable*>&);
+		PredInter*	(*_inter)(const vector<SortTable*>&);	// The intersection of the interpretation of the predicate
+															// with the cross product of the given SortTables
 
 	public:
 
@@ -67,7 +68,8 @@ class BuiltInFunction : public Function {
 	
 	private:
 
-		FuncInter*	(*_inter)(const vector<SortTable*>&);
+		FuncInter*	(*_inter)(const vector<SortTable*>&);	// The intersection of the interpretation of the function
+															// with the cross product of the given SortTables
 
 	public:
 
@@ -94,9 +96,11 @@ class BuiltInFunction : public Function {
 class OverloadedPredicate : public Predicate {
 
 	private:
-		vector<Sort*>							(*_deriveSort)(const vector<Sort*>&);
-		PredInter*								(*_inter)(const vector<SortTable*>&);
-		map<vector<Sort*>,BuiltInPredicate*>	_children;	// Maps a tuple of sorts to the overloaded predicate
+		vector<Sort*>	(*_deriveSort)(const vector<Sort*>&);	// Derives the missing sorts (null-pointers) 
+																// in the given vector of sorts
+		PredInter*		(*_inter)(const vector<SortTable*>&);	// The intersection of the interpretation of the predicate
+																// with the cross product of the given SortTables
+		map<vector<Sort*>,BuiltInPredicate*>	_children;		// Maps a tuple of sorts to the overloaded predicate
 
 	public:
 
@@ -110,7 +114,7 @@ class OverloadedPredicate : public Predicate {
 		// Inspectors
 		bool		overloaded()	const { return true;	}
 		bool		builtin()		const { return true;	}
-		Predicate*	disambiguate(const vector<Sort*>&);
+		Predicate*	disambiguate(const vector<Sort*>&);		// Derive the overloaded predicate that has the given sorts
 
 };
 
@@ -170,9 +174,11 @@ Predicate* OverloadedPredicate::disambiguate(const vector<Sort*>& vs) {
 class OverloadedFunction : public Function {
 
 	private:
-		vector<Sort*>						(*_deriveSort)(const vector<Sort*>&);
-		FuncInter*							(*_inter)(const vector<SortTable*>&);
-		map<vector<Sort*>,BuiltInFunction*>	_children;	// Maps a tuple of sorts to the overloaded function
+		vector<Sort*>	(*_deriveSort)(const vector<Sort*>&);	// Derives the missing sorts (null-pointers) 
+																// in the given vector of sorts
+		FuncInter*	 	(*_inter)(const vector<SortTable*>&);	// The intersection of the interpretation of the predicate
+																// with the cross product of the given SortTables
+		map<vector<Sort*>,BuiltInFunction*>	_children;			// Maps a tuple of sorts to the overloaded function
 
 	public:
 
@@ -186,7 +192,7 @@ class OverloadedFunction : public Function {
 		// Inspectors
 		bool		overloaded()	const { return true;	}
 		bool		builtin()		const { return true;	}
-		Function*	disambiguate(const vector<Sort*>&);
+		Function*	disambiguate(const vector<Sort*>&);		// Derive the overloaded function that has the given sorts
 };
 
 OverloadedFunction::~OverloadedFunction() {
@@ -287,10 +293,10 @@ class InfiniteSortTable : public SortTable {
 		virtual	ElementType	type()		const = 0;
 
 		// Check if the table contains a given element
-		bool	contains(string* s)	const = 0; 
-		bool	contains(int n)		const = 0;
-		bool	contains(double d)	const = 0;
-		bool	contains(compound*)	const = 0;
+		virtual bool	contains(string* s)	const = 0; 
+		virtual bool	contains(int n)		const = 0;
+		virtual bool	contains(double d)	const = 0;
+		virtual bool	contains(compound*)	const = 0;
 
 		// Inspectors for finite tables
 		unsigned int	size()							const { assert(false); return MAX_INT;		}
@@ -317,6 +323,11 @@ class AllNatSortTable : public InfiniteSortTable {
 	
 };
 
+bool AllNatSortTable::contains(compound* c) const {
+	if(c->_function) return false;
+	else return SortTable::contains((c->_args)[0]);
+}
+
 /** All integers **/
 
 class AllIntSortTable : public InfiniteSortTable {
@@ -330,6 +341,11 @@ class AllIntSortTable : public InfiniteSortTable {
 		string		to_string(unsigned int n = 0)	const { return tabstring(n) + "all integers";	}
 		
 };
+
+bool AllIntSortTable::contains(compound* c) const {
+	if(c->_function) return false;
+	else return SortTable::contains((c->_args)[0]);
+}
 
 /** All floating point numbers **/
 
@@ -345,6 +361,11 @@ class AllFloatSortTable : public InfiniteSortTable {
 		
 };
 
+bool AllFloatSortTable::contains(compound* c) const {
+	if(c->_function) return false;
+	else return SortTable::contains((c->_args)[0]);
+}
+
 /** All strings **/
 
 class AllStringSortTable : public InfiniteSortTable {
@@ -358,6 +379,11 @@ class AllStringSortTable : public InfiniteSortTable {
 		string		to_string(unsigned int n  = 0)	const { return tabstring(n) + "all strings";	}
 		
 };
+
+bool AllStringSortTable::contains(compound* c) const {
+	if(c->_function) return false;
+	else return SortTable::contains((c->_args)[0]);
+}
 
 /** All characters **/
 
@@ -395,6 +421,18 @@ class AllCharSortTable : public SortTable {
 		
 };
 
+bool AllCharSortTable::contains(compound* c) const {
+	if(c->_function) return false;
+	else return SortTable::contains((c->_args)[0]);
+}
+
+unsigned int AllCharSortTable::position(Element e,ElementType t) const {
+	string* s = (ElementUtil::convert(e,t,ELSTRING))._string;
+	assert(s->size() == 1);
+	char c = (*s)[0];
+	return c - char(0);
+}
+
 /*******************************
 	Built-in predicate tables
 *******************************/
@@ -421,7 +459,7 @@ class InfinitePredTable : public PredTable {
 		virtual	ElementType		type(unsigned int)	const = 0;
 
 		// Check if the table contains a given tuple
-		virtual bool	contains(const vector<Element>&)	const;
+		virtual bool	contains(const vector<Element>&)	const = 0;
 
 		// Inspectors for finite tables	
 		unsigned int	size()									const { assert(false); return MAX_INT;					}
@@ -614,11 +652,13 @@ class InfiniteFuncTable : public FuncTable {
 		virtual ~InfiniteFuncTable() { }
 
 		// Inspectors
-		virtual bool			finite()			const { return false;					}
-		virtual bool			empty()				const { return false;					}
-		virtual unsigned int	arity()				const = 0;
-		virtual unsigned int	size()				const { assert(false); return MAX_INT;	}
-		virtual ElementType		type(unsigned int)	const = 0;
+				bool			finite()								const { return false;								}
+				bool			empty()									const { return false;								}
+				unsigned int	size()									const { assert(false); return MAX_INT;				}
+				vector<Element>	tuple(unsigned int n)					const { assert(false); return vector<Element>(0);	}
+				Element			element(unsigned int r,unsigned int c)	const { assert(false); Element e; return e;			}
+		virtual unsigned int	arity()									const = 0;
+		virtual ElementType		type(unsigned int)						const = 0;
 
 		virtual	Element	operator[](const vector<Element>& vi)		const = 0;
 

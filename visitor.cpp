@@ -7,26 +7,26 @@
 #include "theory.hpp"
 #include <iostream>
 
-void Visitor::visit(PredForm* a)		{ traverse(a);	}
-void Visitor::visit(EqChainForm* a)		{ traverse(a);	}
-void Visitor::visit(EquivForm* a)		{ traverse(a);	}
-void Visitor::visit(BoolForm* a)		{ traverse(a);	}
-void Visitor::visit(QuantForm* a)		{ traverse(a);	}
-void Visitor::visit(Rule* a)			{ traverse(a);	}
-void Visitor::visit(Definition* a)		{ traverse(a);	}
-void Visitor::visit(FixpDef* a)			{ traverse(a);	}
-void Visitor::visit(VarTerm* a)			{ traverse(a);	}
-void Visitor::visit(FuncTerm* a)		{ traverse(a);	}
-void Visitor::visit(DomainTerm* a)		{ traverse(a);	}
-void Visitor::visit(AggTerm* a)			{ traverse(a);	}
-void Visitor::visit(EnumSetExpr* a)		{ traverse(a);	}
-void Visitor::visit(QuantSetExpr* a)	{ traverse(a);	}
-void Visitor::visit(Theory* t)			{ traverse(t);	}
-void Visitor::visit(SortTable*)			{ }
-void Visitor::visit(PredInter*)			{ }
-void Visitor::visit(FuncInter*)			{ }
-void Visitor::visit(Structure* s)		{ traverse(s);	}
-void Visitor::visit(EcnfTheory*)		{ /* TODO */	}
+void Visitor::visit(PredForm* a)			{ traverse(a);	}
+void Visitor::visit(EqChainForm* a)			{ traverse(a);	}
+void Visitor::visit(EquivForm* a)			{ traverse(a);	}
+void Visitor::visit(BoolForm* a)			{ traverse(a);	}
+void Visitor::visit(QuantForm* a)			{ traverse(a);	}
+void Visitor::visit(Rule* a)				{ traverse(a);	}
+void Visitor::visit(Definition* a)			{ traverse(a);	}
+void Visitor::visit(FixpDef* a)				{ traverse(a);	}
+void Visitor::visit(VarTerm* a)				{ traverse(a);	}
+void Visitor::visit(FuncTerm* a)			{ traverse(a);	}
+void Visitor::visit(DomainTerm* a)			{ traverse(a);	}
+void Visitor::visit(AggTerm* a)				{ traverse(a);	}
+void Visitor::visit(EnumSetExpr* a)			{ traverse(a);	}
+void Visitor::visit(QuantSetExpr* a)		{ traverse(a);	}
+void Visitor::visit(Theory* t)				{ traverse(t);	}
+void Visitor::visit(SortTable*)				{ }
+void Visitor::visit(PredInter*)				{ }
+void Visitor::visit(FuncInter*)				{ }
+void Visitor::visit(Structure* s)			{ traverse(s);	}
+void Visitor::visit(EcnfTheory*)			{ /* TODO */	}
 
 
 void Visitor::traverse(Formula* f) {
