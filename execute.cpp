@@ -9,6 +9,7 @@
 #include "ecnf.hpp"
 #include <iostream>
 #include "options.hpp"
+#include "data.hpp"
 
 extern Options options;
 
@@ -70,22 +71,19 @@ GroundingInference::GroundingInference() {
 
 void GroundingInference::execute(const vector<InfArg>& args, const string& res,Namespace*) const {
 	assert(args.size() == 2);
-	// TODO: remove the dynamic casts!
-	Theory* t = dynamic_cast<Theory*>(args[0]._theory);
-	Structure* s = dynamic_cast<Structure*>(args[1]._structure);
+	AbstractTheory* t = args[0]._theory;
+	AbstractStructure* s = args[1]._structure;
 	TheoryUtils::move_functions(t);
 	NaiveGrounder ng(s);	
-	Theory* gr = ng.ground(t);
+	AbstractTheory* gr = ng.ground(t);
 	TheoryUtils::remove_eqchains(gr);
-	TheoryUtils::simplify(gr,s);
+	TheoryUtils::reduce(gr,s);
 	TheoryUtils::tseitin(gr);
-	NaiveTranslator* nt = new NaiveTranslator();
-	EcnfTheory* ecnfgr = TheoryUtils::convert_to_ecnf(gr,nt);
+	EcnfTheory* ecnfgr = TheoryUtils::convert_to_ecnf(gr);
 	GroundPrinter* printer = new outputECNF(stdout);
 	ecnfgr->print(printer);
 	gr->recursiveDelete();
 	delete(ecnfgr);
-	delete(nt);
 	delete(printer);
 }
 
@@ -99,9 +97,8 @@ GroundingWithResult::GroundingWithResult() {
 
 void GroundingWithResult::execute(const vector<InfArg>& args, const string& res,Namespace* cn) const {
 	assert(args.size() == 2);
-	// TODO: remove the dynamic casts!
-	NaiveGrounder ng(dynamic_cast<Structure*>(args[1]._structure));
-	Theory* gr = ng.ground(dynamic_cast<Theory*>(args[0]._theory));
+	NaiveGrounder ng(args[1]._structure);
+	AbstractTheory* gr = ng.ground(args[0]._theory);
 	gr->name(res);
 	cn->add(gr);
 }
@@ -116,18 +113,17 @@ ModelExpansionInference::ModelExpansionInference() {
 
 void ModelExpansionInference::execute(const vector<InfArg>& args, const string& res,Namespace* cn) const {
 	assert(args.size() == 2);
-	Theory* t = dynamic_cast<Theory*>(args[0]._theory);
-	Structure* s = dynamic_cast<Structure*>(args[1]._structure);
+	AbstractTheory* t = args[0]._theory;
+	AbstractStructure* s = args[1]._structure;
 	TheoryUtils::move_functions(t);
 	NaiveGrounder ng(s);	
-	Theory* gr = ng.ground(t);
+	AbstractTheory* gr = ng.ground(t);
 	TheoryUtils::remove_eqchains(gr);
-	TheoryUtils::simplify(gr,s);
+	TheoryUtils::reduce(gr,s);
 	TheoryUtils::tseitin(gr);
-	NaiveTranslator* nt = new NaiveTranslator();
-	EcnfTheory* ecnfgr = TheoryUtils::convert_to_ecnf(gr,nt);
+	EcnfTheory* ecnfgr = TheoryUtils::convert_to_ecnf(gr);
 	ECNF_mode modes;
-	modes.nbmodels = options._nrmodels;
+	modes.nbmodels = _options._nrmodels;
 	PCSolver* solver = new PCSolver(modes);
 	GroundPrinter* printer = new outputToSolver(solver);
 	ecnfgr->print(printer);
@@ -141,8 +137,8 @@ void ModelExpansionInference::execute(const vector<InfArg>& args, const string& 
 			for(int j=0; j<models[i].size(); j++){
 				if(models[i][j] > 0) {
 					//cout <<models[i][j] <<" ";
-					cout << nt->symbol(models[i][j]-1)->to_string() << '(';
-					vector<string> args = nt->args(models[i][j]-1);
+					cout << ecnfgr->translator()->symbol(models[i][j]-1)->to_string() << '(';
+					vector<string> args = ecnfgr->translator()->args(models[i][j]-1);
 					for(unsigned int n = 0; n < args.size(); ++n) {
 						cout << args[n];
 						if(n < args.size()-1) cout << ',';
@@ -155,14 +151,12 @@ void ModelExpansionInference::execute(const vector<InfArg>& args, const string& 
 	}
 	delete(solver);
 	delete(ecnfgr);
-	delete(nt);
 	delete(printer);
 }
 
 void StructToTheory::execute(const vector<InfArg>& args, const string& res,Namespace* cn) const {
 	assert(args.size() == 1);
-	// TODO: remove the dynamic casts!
-	AbstractTheory* t = StructUtils::convert_to_theory(dynamic_cast<Structure*>(args[0]._structure));
+	AbstractTheory* t = StructUtils::convert_to_theory(args[0]._structure);
 	t->name(res);
 	cn->add(t);
 }
@@ -172,11 +166,10 @@ void MoveQuantifiers::execute(const vector<InfArg>& args, const string& res,Name
 }
 
 void ApplyTseitin::execute(const vector<InfArg>& args, const string& res,Namespace* cn) const {
-	// TODO: remove the dynamic casts!
-	TheoryUtils::tseitin(dynamic_cast<Theory*>(args[0]._theory));
+	TheoryUtils::tseitin(args[0]._theory);
 }
 
-GroundSimplify::GroundSimplify() {
+GroundReduce::GroundReduce() {
 	_intypes = vector<InfArgType>(2);
 	_intypes[0] = IAT_THEORY;
 	_intypes[1] = IAT_STRUCTURE;
@@ -184,12 +177,10 @@ GroundSimplify::GroundSimplify() {
 	_description = "Replace ground atoms in the theory by their truth value in the structure";
 }
 
-void GroundSimplify::execute(const vector<InfArg>& args, const string& res,Namespace* cn) const {
-	// TODO: remove the dynamic casts!
-	TheoryUtils::simplify(dynamic_cast<Theory*>(args[0]._theory),dynamic_cast<Structure*>(args[1]._structure));
+void GroundReduce::execute(const vector<InfArg>& args, const string& res,Namespace* cn) const {
+	TheoryUtils::reduce(args[0]._theory,args[1]._structure);
 }
 
 void MoveFunctions::execute(const vector<InfArg>& args, const string& res,Namespace* cn) const {
-	// TODO: remove the dynamic casts!
-	TheoryUtils::move_functions(dynamic_cast<Theory*>(args[0]._theory));
+	TheoryUtils::move_functions(args[0]._theory);
 }

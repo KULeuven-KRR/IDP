@@ -22,4 +22,5 @@ class StdBuiltin : public Vocabulary {
 		StdBuiltin();
 };
 
+
 #endif

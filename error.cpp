@@ -7,7 +7,7 @@
 #include <iostream>
 #include "error.hpp"
 #include "options.hpp"
-extern Options options;
+#include "data.hpp"
 
 namespace Error {
 	
@@ -429,7 +429,7 @@ namespace Warning {
 	/** Ambiguous statements **/
 
 	void varcouldbeconst(const string& name, const ParseInfo& thisplace) {
-		if(options._warning[WT_VARORCONST]) {
+		if(_options._warning[WT_VARORCONST]) {
 			warning(thisplace);
 			cerr << "'" << name << "' could be a variable or a constant. GidL assumes it is a variable.\n";
 		}
@@ -437,7 +437,7 @@ namespace Warning {
 
 	/** Free variables **/
 	void freevars(const string& fv, const ParseInfo& thisplace) {
-		if(options._warning[WT_FREE_VARS]) {
+		if(_options._warning[WT_FREE_VARS]) {
 			warning(thisplace);
 			if(fv.size() > 1) cerr << "Variables" << fv << " are not quantified.\n";
 			else cerr << "Variable" << fv[0] << " is not quantified.\n";
@@ -446,7 +446,7 @@ namespace Warning {
 
 	/** Unexpeded type derivation **/
 	void derivevarsort(const string& varname, const string& sortname, const ParseInfo& thisplace) {
-		if(options._warning[WT_SORTDERIVE]) {
+		if(_options._warning[WT_SORTDERIVE]) {
 			warning(thisplace);
 			cerr << "Derived sort " << sortname << " for variable " << varname << ".\n";
 		}
@@ -454,7 +454,7 @@ namespace Warning {
 
 	/** Reading from stdin **/
 	void readingfromstdin() {
-		if(options._warning[WT_STDIN]) {
+		if(_options._warning[WT_STDIN]) {
 			cerr << "(Reading from stdin)\n";
 		}
 	}
@@ -464,7 +464,7 @@ namespace Info {
 	
 	/** Information **/
 	void print(const string& s) {
-		if(options._verbose) {
+		if(_options._verbose) {
 			cerr << s << endl;
 		}
 	}

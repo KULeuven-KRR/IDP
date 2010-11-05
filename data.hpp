@@ -28,16 +28,22 @@ class DomainData {
 		MSSP	_sharedstrings;		// map a string to its shared pointer
 		MFMVTC	_sharedcompounds;	// map a compund to its shared pointer
 	public:
+		~DomainData();
 		string*		stringpointer(const string&);							// get the shared pointer of a string
 		compound*	compoundpointer(Function*,const vector<TypedElement>&);	// get the shared pointer of a compound
 };
 
-/****************************
-	Built-in vocabularies
-****************************/
+/******************
+	Global data
+******************/
 
-class Vocabulary;
-Vocabulary*	stdbuiltin();	// Returns the standard built-in vocabulary
+class StdBuiltin;
+struct Options;
+class Namespace;
 
+extern StdBuiltin	_stdbuiltin;		// Standard built-in vocabularium
+extern DomainData	_domaindata;		// Shared domain element pointers
+extern Options		_options;			// Options
+extern Namespace	_globalnamespace;	// The global namespace
 
 #endif

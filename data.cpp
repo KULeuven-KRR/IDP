@@ -5,7 +5,9 @@
 ************************************/
 
 #include "data.hpp"
+#include "options.hpp"
 #include "builtin.hpp"
+#include "namespace.hpp"
 
 /******************************************
 	Shared pointers for domain elements
@@ -39,16 +41,26 @@ compound* DomainData::compoundpointer(Function* f, const vector<TypedElement>& v
 	}
 }
 
-shared_ptr<DomainData> _domaindata(new DomainData());
+DomainData::~DomainData() {
+	for(MSSP::iterator it = _sharedstrings.begin(); it != _sharedstrings.end(); ++it) {
+		delete(it->second);
+	}
+	for(MFMVTC::iterator it = _sharedcompounds.begin(); it != _sharedcompounds.end(); ++it) {
+		for(MVTC::iterator jt = (it->second).begin(); jt != (it->second).end(); ++jt) {
+			delete(jt->second);
+		}
+	}
+}
 
-string*		IDPointer(char* s)			{ return _domaindata->stringpointer(string(s));						}
-string*		IDPointer(const string& s)	{ return _domaindata->stringpointer(s);								}
-compound*	CPPointer(TypedElement e)	{ return _domaindata->compoundpointer(0,vector<TypedElement>(1,e));	}
+string*		IDPointer(char* s)			{ return _domaindata.stringpointer(string(s));						}
+string*		IDPointer(const string& s)	{ return _domaindata.stringpointer(s);								}
+compound*	CPPointer(TypedElement e)	{ return _domaindata.compoundpointer(0,vector<TypedElement>(1,e));	}
 
-/****************************
-	Built-in vocabularies
-****************************/
+/******************
+	Global data	
+******************/
 
-shared_ptr<StdBuiltin> _stdbuiltin(new StdBuiltin());
-
-Vocabulary*	stdbuiltin() { return _stdbuiltin.get();	}
+StdBuiltin	_stdbuiltin;		// Standard built-in vocabularium
+DomainData	_domaindata;		// Shared domain element pointers
+Options		_options;			// Options
+Namespace	_globalnamespace("global_namespace",0,ParseInfo());	// The global namespace

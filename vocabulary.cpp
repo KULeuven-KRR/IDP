@@ -10,16 +10,6 @@
 #include <iostream>
 #include <algorithm>
 
-extern string itos(int);
-extern string dtos(double);
-extern string tabstring(unsigned int);
-extern bool isInt(const string&);
-extern bool isInt(double);
-extern int stoi(const string&);
-extern bool isDouble(const string&);
-extern double stod(const string&);
-extern int MAX_INT;
-
 /*********************
 	Argument types
 *********************/
@@ -456,6 +446,24 @@ vector<Sort*> Function::insorts() const {
 	Vocabulary
 *****************/
 
+/** Constructors **/
+
+Vocabulary::Vocabulary(Vocabulary* v) : _name(""), _pi(ParseInfo()) {
+	for(unsigned int n = 0; n < v->nrSorts(); ++n) {
+		_sorts[v->sort(n)] = n;
+		_vsorts.push_back(v->sort(n));
+	}
+	for(unsigned int n = 0; n < v->nrPreds(); ++n) {
+		_predicates[v->pred(n)] = n;
+		_vpredicates.push_back(v->pred(n));
+	}
+	for(unsigned int n = 0; n < v->nrFuncs(); ++n) {
+		_functions[v->func(n)] = n;
+		_vfunctions.push_back(v->func(n));
+	}
+	// TODO: copy _sortnames, _prednames, and _funcnames?
+}
+
 /** Mutators **/
 
 void Vocabulary::addSort(Sort* s) {
@@ -541,37 +549,38 @@ unsigned int Vocabulary::index(Function* f) const {
 }
 
 Sort* Vocabulary::sort(const string& name) const {
-	Sort* s = stdbuiltin()->sort(name);
-	if(s) return s;
-	else {
-		map<string,Sort*>::const_iterator it = _sortnames.find(name);
-		if(it != _sortnames.end()) return it->second;
-		else return 0;
+	if(this != &_stdbuiltin) {
+		Sort* s = _stdbuiltin.sort(name);
+		if(s) return s;
 	}
+	map<string,Sort*>::const_iterator it = _sortnames.find(name);
+	if(it != _sortnames.end()) return it->second;
+	else return 0;
 }
 
 Predicate* Vocabulary::pred(const string& name) const {
-	Predicate* p = stdbuiltin()->pred(name);
-	if(p) return p;
-	else {
-		map<string,Predicate*>::const_iterator it = _prednames.find(name);
-		if(it != _prednames.end()) return it->second;
-		else return 0;
+	if(this != &_stdbuiltin) {
+		Predicate* p = _stdbuiltin.pred(name);
+		if(p) return p;
 	}
+	map<string,Predicate*>::const_iterator it = _prednames.find(name);
+	if(it != _prednames.end()) return it->second;
+	else return 0;
 }
 
 Function* Vocabulary::func(const string& name) const {
-	Function* f = stdbuiltin()->func(name);
-	if(f) return f;
-	else {
-		map<string,Function*>::const_iterator it = _funcnames.find(name);
-		if(it != _funcnames.end()) return it->second;
-		else return 0;
+	if(this != &_stdbuiltin) {
+		Function* f = _stdbuiltin.func(name);
+		if(f) return f;
 	}
+	map<string,Function*>::const_iterator it = _funcnames.find(name);
+	if(it != _funcnames.end()) return it->second;
+	else return 0;
 }
 
 vector<Predicate*> Vocabulary::pred_no_arity(const string& name) const {
-	vector<Predicate*> vp = stdbuiltin()->pred_no_arity(name);
+	vector<Predicate*> vp;
+	if(this != &_stdbuiltin) vp = _stdbuiltin.pred_no_arity(name);
 	for(unsigned int n = 0; n < _vpredicates.size(); ++n) {
 		string pn = _vpredicates[n]->name();
 		if(pn.substr(0,pn.find('/')) == name) vp.push_back(_vpredicates[n]);
@@ -580,7 +589,8 @@ vector<Predicate*> Vocabulary::pred_no_arity(const string& name) const {
 }
 
 vector<Function*> Vocabulary::func_no_arity(const string& name) const {
-	vector<Function*> vf = stdbuiltin()->func_no_arity(name);
+	vector<Function*> vf;
+	if(this != &_stdbuiltin) vf = _stdbuiltin.func_no_arity(name);
 	for(unsigned int n = 0; n < _vfunctions.size(); ++n) {
 		string fn = _vfunctions[n]->name();
 		if(fn.substr(0,fn.find('/')) == name) vf.push_back(_vfunctions[n]);

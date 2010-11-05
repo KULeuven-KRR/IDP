@@ -24,6 +24,11 @@ int NaiveTranslator::translate(PFSymbol* s, const vector<string>& args) {
 	return _nextnumber++;
 }
 
+int NaiveTranslator::nextTseitin() {
+	_backsymbtable.push_back(0);
+	_backargstable.push_back(vector<string>(0));
+	return _nextnumber++;
+}
 
 /********************************************************
 	Basic top-down, non-optimized grounding algorithm
@@ -269,65 +274,8 @@ void NaiveGrounder::visit(Theory* t) {
 	
 	// Add the structure
 	AbstractTheory* structtheo = StructUtils::convert_to_theory(_structure);
-	grounding->add(dynamic_cast<Theory*>(structtheo));	// TODO: remove the dynamic cast
+	grounding->add(structtheo);
 	delete(structtheo);
-
-	// Add the function constraints
-	Vocabulary* v = t->vocabulary();
-	for(unsigned int n = 0; n < v->nrFuncs(); ++n) {
-		Function* f = v->func(n);
-		vector<unsigned int> intuple(f->arity(),0);
-		vector<unsigned int> outtuple1(1,0);
-		vector<unsigned int> outtuple2(1,0);
-		vector<unsigned int> inlimits(f->arity());
-		vector<unsigned int> outlimit(1);
-		vector<SortTable*>	 intables(f->arity());
-		SortTable*			 outtable;
-		unsigned int m = 0;
-		for(; m < f->arity(); ++m) {
-			intables[m] = _structure->inter(f->insort(m));
-			inlimits[m] = intables[m]->size();
-			if(inlimits[m] == 0) break;
-		}
-		if(m == f->arity()) {
-			outtable = _structure->inter(f->outsort());
-			outlimit[0] = outtable->size();
-			if(outlimit[0] == 0) {
-				// TODO
-			}
-			else {
-				do {
-					vector<Formula*> existvector;
-					outtuple1[0] = 0;
-					do {
-						vector<Term*> vt(f->nrsorts());
-						for(unsigned int a = 0; a < f->arity(); ++a) {
-							ElementType tp = intables[a]->type();
-							vt[a] = new DomainTerm(f->insort(a),tp,intables[a]->element(intuple[a]),ParseInfo());
-						}
-						vt.back() = new DomainTerm(f->outsort(),outtable->type(),outtable->element(outtuple1[0]),ParseInfo());
-						existvector.push_back(new PredForm(true,f,vt,ParseInfo()));
-						outtuple2[0] = outtuple1[0];
-						while(nexttuple(outtuple2,outlimit)) {
-							Formula* f1 = (existvector.back())->clone(); f1->swapsign();
-							vector<Term*> vt2(f->nrsorts());
-							for(unsigned int a = 0; a < f->arity(); ++a) {
-								ElementType tp = intables[a]->type();
-								vt2[a] = new DomainTerm(f->insort(a),tp,intables[a]->element(intuple[a]),ParseInfo());
-							}
-							vt2.back() = new DomainTerm(f->outsort(),outtable->type(),outtable->element(outtuple2[0]),ParseInfo());
-							Formula* f2 = new PredForm(false,f,vt2,ParseInfo());
-							vector<Formula*> vf(2); vf[0] = f1; vf[1] = f2;
-							BoolForm* bf = new BoolForm(true,false,vf,ParseInfo());
-							grounding->add(bf);
-						} 
-					} while(nexttuple(outtuple1,outlimit));
-					BoolForm* bf = new BoolForm(true,false,existvector,ParseInfo());
-					grounding->add(bf);
-				} while(nexttuple(intuple,inlimits));
-			}
-		}
-	}
 
 	_returnTheory = grounding;
 }

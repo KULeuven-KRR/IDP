@@ -42,8 +42,6 @@ class ParseInfo {
 		unsigned int	_line;	// line number where the object is declared (0 for non-parsed objects)
 		unsigned int	_col;	// column number where the object is declared
 		string*			_file;	// file name where the object is declared
-								// NOTE: different ParseInfo objects may point to the same string. Do not call delete(_file) when
-								// deleting a ParseInfo object.
 								// NOTE: _file == 0 when parsed on stdin
 	
 	public:
@@ -139,7 +137,8 @@ class Sort {
 		bool				charsort()				const;  // Returns true if the sort is a subsort of the chars
 		string				to_string()				const	{ return _name;				}
 		virtual bool		builtin()				const	{ return false;				}
-		virtual SortTable*	inter()					const	{ return 0;					}	// returns the built-in interpretation for
+		virtual SortTable*	inter()					const	{ return 0;					}	// returns the built-in
+																							// interpretation for
 																							// built-in sorts
 
 };
@@ -342,6 +341,7 @@ class Vocabulary {
 		// Constructors
 		Vocabulary(const string& name) : _name(name) { }
 		Vocabulary(const string& name, const ParseInfo& pi) : _name(name), _pi(pi) { }
+		Vocabulary(Vocabulary* v);
 
 		// Destructor
 		virtual ~Vocabulary() { }

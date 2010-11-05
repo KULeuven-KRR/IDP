@@ -212,19 +212,19 @@ vector<Sort*> overloaded_function_deriver1(const vector<Sort*>& vs) {
 	bool deriveint = true;
 	for(unsigned int n = 0; n < vs.size()-1; ++n) {
 		if(vs[n]) {
-			if(vs[n]->base() != stdbuiltin()->sort("float")) return vector<Sort*>(vs.size(),0);
+			if(vs[n]->base() != _stdbuiltin.sort("float")) return vector<Sort*>(vs.size(),0);
 			else {
 				Sort* temp = vs[n];
 				while(temp) {
-					if(temp == stdbuiltin()->sort("int")) break;
+					if(temp == _stdbuiltin.sort("int")) break;
 					temp = temp->parent();
 				}
 				if(!temp) deriveint = false;
 			}
 		}
 	}
-	if(deriveint) return vector<Sort*>(vs.size(),stdbuiltin()->sort("int"));
-	else return vector<Sort*>(vs.size(),stdbuiltin()->sort("float"));
+	if(deriveint) return vector<Sort*>(vs.size(),_stdbuiltin.sort("int"));
+	else return vector<Sort*>(vs.size(),_stdbuiltin.sort("float"));
 }
 
 /** Possibility 2
@@ -247,7 +247,7 @@ vector<Sort*> overloaded_function_deriver2(const vector<Sort*>& vs) {
  */
 vector<Sort*> overloaded_function_deriver3(const vector<Sort*>& vs) {
 	vector<Sort*> vsn = vs;
-	vsn.back() = stdbuiltin()->sort("float");
+	vsn.back() = _stdbuiltin.sort("float");
 	for(unsigned int n = 0; n < vs.size() - 1; ++n) {
 		if(vs[n] == 0) return vector<Sort*>(vs.size(),0);
 	}

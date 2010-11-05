@@ -205,7 +205,7 @@ Sort* QuantSetExpr::firstargsort() const {
 }
 
 Sort* AggTerm::sort() const {
-	if(_type == AGGCARD) return stdbuiltin()->sort("nat");
+	if(_type == AGGCARD) return _stdbuiltin.sort("nat");
 	else return _set->firstargsort();
 }
 

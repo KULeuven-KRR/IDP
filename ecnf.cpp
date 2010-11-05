@@ -477,6 +477,202 @@ void outputToSolver::outputunsat(){
 	solver()->addClause(l2);
 }
 
+/***********************
+	Ecnf definitions
+***********************/
+
+void EcnfDefinition::addRule(int head, const vector<int>& body, bool conj, GroundTranslator* t) {
+	map<int,RuleType>::iterator it = _ruletypes.find(head);
+	if(it == _ruletypes.end() || it->second == RT_FALSE) {	// no rule yet with the given head (or the rule with the given head is false)
+		if(body.empty()) {
+			_ruletypes[head] = (conj ? RT_TRUE : RT_FALSE);
+		}
+		else if(body.size() == 1) {
+			_ruletypes[head] = RT_UNARY;
+		}
+		else {
+			_ruletypes[head] = (conj ? RT_CONJ : RT_DISJ);
+		}
+		_bodies[head] = body;
+	}
+	else if(body.empty()) {		// rule to add has true or false body
+		if(conj) {
+			if(it->second == RT_AGG) _aggs.erase(head);
+			_ruletypes[head] = RT_TRUE;
+			_bodies[head] = body;
+		}
+	}
+	else {
+		switch(it->second) {
+			case RT_TRUE:
+				break;
+			case RT_FALSE:
+				assert(false);
+				break;
+			case RT_UNARY:
+				if(body.size() == 1) {
+					_ruletypes[head] = RT_DISJ;
+					_bodies[head].push_back(body[0]);
+				}
+				else if(!conj) {
+					_ruletypes[head] = RT_DISJ;
+					int temp = _bodies[head][0];
+					_bodies[head] = body;
+					_bodies[head].push_back(temp);
+				}
+				else {
+					int ts = t->nextTseitin();
+					_ruletypes[ts] = RT_CONJ;
+					_bodies[ts] = body;
+					_ruletypes[head] = RT_DISJ;
+					_bodies[head].push_back(ts);
+				}
+				break;
+			case RT_DISJ:
+			{
+				if((!conj) || body.size() == 1) {
+					vector<int>& vi = _bodies[head];
+					for(unsigned int n = 0; n < body.size(); ++n) vi.push_back(body[n]);
+				}
+				else {
+					int ts = t->nextTseitin();
+					_ruletypes[ts] = RT_CONJ;
+					_bodies[ts] = body;
+					_bodies[head].push_back(ts);
+				}
+			}
+			case RT_CONJ:
+				if((!conj) || body.size() == 1) {
+					int ts = t->nextTseitin();
+					_ruletypes[ts] = RT_CONJ;
+					_bodies[ts] = _bodies[head];
+					_ruletypes[head] = RT_DISJ;
+					_bodies[head] = body;
+					_bodies[head].push_back(ts);
+				}
+				else {
+					int ts1 = t->nextTseitin();
+					int ts2 = t->nextTseitin();
+					_ruletypes[ts1] = RT_CONJ;
+					_ruletypes[ts2] = RT_CONJ;
+					_ruletypes[head] = RT_DISJ;
+					_bodies[ts1] = _bodies[head];
+					_bodies[ts2] = body;
+					vector<int> vi(2) ; vi[0] = ts1; vi[1] = ts2;
+					_bodies[head] = vi;
+				}
+				break;
+			case RT_AGG:
+				if((!conj) || body.size() == 1) {
+					int ts = t->nextTseitin();
+					_ruletypes[ts] = RT_AGG;
+					EcnfAgg efa(_aggs[head]);
+					efa._head = ts;
+					_aggs[ts] = efa;
+					_aggs.erase(head);
+					_ruletypes[head] = RT_DISJ;
+					_bodies[head] = body;
+					_bodies[head].push_back(ts);
+				}
+				else {
+					int ts1 = t->nextTseitin();
+					int ts2 = t->nextTseitin();
+					_ruletypes[ts1] = RT_AGG;
+					_ruletypes[ts2] = RT_CONJ;
+					_ruletypes[head] = RT_DISJ;
+					EcnfAgg efa(_aggs[head]);
+					efa._head = ts1;
+					_aggs[ts1] = efa;
+					_aggs.erase(head);
+					_bodies[ts2] = body;
+					vector<int> vi(2); vi[0] = ts1; vi[1] = ts2;
+					_bodies[head] = vi;
+				}
+				break;
+			default:
+				assert(false);
+		}
+	}
+}
+
+void EcnfDefinition::addAgg(const EcnfAgg& a, GroundTranslator* t) {
+	int head = a._head;
+	map<int,RuleType>::iterator it = _ruletypes.find(head);
+	if(it == _ruletypes.end() || it->second == RT_FALSE) {
+		_ruletypes[head] = RT_AGG;
+		_bodies.erase(head);
+		_aggs[head] = a;
+	}
+	else {
+		switch(it->second) {
+			case RT_TRUE:
+				break;
+			case RT_FALSE:
+				assert(false); 
+				break;
+			case RT_UNARY:
+			{
+				int ts = t->nextTseitin();
+				_ruletypes[head] = RT_DISJ;
+				_bodies[head].push_back(ts);
+				_ruletypes[ts] = RT_AGG;
+				_aggs[ts] = a;
+				_aggs[ts]._head = ts;
+				break;
+			}
+			case RT_DISJ:
+			{
+				int ts = t->nextTseitin();
+				_bodies[head].push_back(ts);
+				_ruletypes[ts] = RT_AGG;
+				_aggs[ts] = a;
+				_aggs[ts]._head = ts;
+				break;
+			}
+			case RT_CONJ:
+			{
+				int ts1 = t->nextTseitin();
+				int ts2 = t->nextTseitin();
+				_ruletypes[ts1] = RT_CONJ;
+				_bodies[ts1] = _bodies[head];
+				_ruletypes[ts2] = RT_AGG;
+				_aggs[ts2] = a;
+				_aggs[ts2]._head = ts2;
+				vector<int> vi(2); vi[0] = ts1; vi[1] = ts2;
+				_ruletypes[head] = RT_DISJ;
+				_bodies[head] = vi;
+				break;
+			}
+			case RT_AGG:
+			{
+				int ts1 = t->nextTseitin();
+				int ts2 = t->nextTseitin();
+				_ruletypes[ts1] = RT_AGG;
+				_aggs[ts1] = _aggs[head];
+				_aggs[ts1]._head = ts1;
+				_ruletypes[ts2] = RT_AGG;
+				_aggs[ts2] = a;
+				_aggs[ts2]._head = ts2;
+				_aggs.erase(head);
+				vector<int> vi(2); vi[0] = ts1; vi[1] = ts2;
+				_ruletypes[head] = RT_DISJ;
+				_bodies[head] = vi;
+				break;
+			}
+		}
+	}
+}
+
+bool EcnfFixpDef::containsAgg() const {
+	if(_rules.containsAgg()) return true;
+	else {
+		for(unsigned int n = 0; n < _subdefs.size(); ++n) {
+			if(_subdefs[n].containsAgg()) return true;
+		}
+		return false;
+	}
+}
+
 /*****************************
 	Internal encf theories
 *****************************/
@@ -488,4 +684,31 @@ void EcnfTheory::print(GroundPrinter* p) {
 		p->outputclause(_clauses[n]);
 	}
 	// TODO: definitions, aggregates, ...
+}
+
+void EcnfTheory::add(Formula* f) {
+	assert(false); // TODO not yet implemented
+}
+
+void EcnfTheory::add(Definition* d) {
+	assert(false); // TODO not yet implemented
+}
+
+void EcnfTheory::add(FixpDef* d) {
+	assert(false); // TODO not yet implemented
+}
+
+string EcnfTheory::to_string() const {
+	assert(false); // TODO: not yet implemented
+}
+
+Formula* EcnfTheory::sentence(unsigned int n) const{
+	assert(false); // TODO: not yet implemented
+}
+
+Definition* EcnfTheory::definition(unsigned int n) const {
+	assert(false); // TODO: not yet implemented
+}
+FixpDef* EcnfTheory::fixpdef(unsigned int n) const {
+	assert(false); // TODO: not yet implemented
 }

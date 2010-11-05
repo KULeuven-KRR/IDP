@@ -417,10 +417,12 @@ class TermEvaluator : public Visitor {
 
 namespace TermUtils {
 	// evaluate the given term in the given structure under the given variable mapping
-	//		see comments in the actual code about the value of terms in a three-valued structure 
-	//		and of terms involving partial functions
+	//		in case of a three-valued function, this may result in multipel values of the term
+	//		in case of a partial function, the term may have no value
 	//	NOTE: This method works for general terms and structures. Therefore, it is rather slow.
 	//		  Faster methods exist if the structure is two-valued and the term contains no partial functions
+	//	Precondition: all bounded variables in the term range over a finite domain in the given structure
+	//	Precondition: all free variables of the term are interpreted by the given map
 	FiniteSortTable*	evaluate(Term*,AbstractStructure*,const map<Variable*,TypedElement>&);	
 }
 

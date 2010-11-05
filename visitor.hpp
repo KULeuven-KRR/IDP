@@ -19,6 +19,7 @@ class EqChainForm;
 class EquivForm;	
 class BoolForm;
 class QuantForm;
+class AggForm;
 class VarTerm;
 class AggTerm;
 class DomainTerm;
@@ -59,6 +60,7 @@ class Visitor {
 		virtual void visit(EquivForm* a);
 		virtual void visit(BoolForm* a);
 		virtual void visit(QuantForm* a);
+		virtual void visit(AggForm* a);
 
 		// Definitions 
 		virtual void visit(Rule* a);
@@ -111,6 +113,7 @@ class MutatingVisitor {
 		virtual Formula* visit(EquivForm* a);	
 		virtual Formula* visit(BoolForm* a);	
 		virtual Formula* visit(QuantForm* a);	
+		virtual Formula* visit(AggForm* a);
 
 		// Definitions 
 		virtual Rule* visit(Rule* a);		// NOTE: the head of a rule is not visited by the default implementation!

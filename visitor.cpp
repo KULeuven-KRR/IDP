@@ -12,6 +12,7 @@ void Visitor::visit(EqChainForm* a)			{ traverse(a);	}
 void Visitor::visit(EquivForm* a)			{ traverse(a);	}
 void Visitor::visit(BoolForm* a)			{ traverse(a);	}
 void Visitor::visit(QuantForm* a)			{ traverse(a);	}
+void Visitor::visit(AggForm* a)				{ traverse(a);	}
 void Visitor::visit(Rule* a)				{ traverse(a);	}
 void Visitor::visit(Definition* a)			{ traverse(a);	}
 void Visitor::visit(FixpDef* a)				{ traverse(a);	}
@@ -152,6 +153,10 @@ void QuantForm::accept(Visitor* v) {
 	v->visit(this);
 }
 
+void AggForm::accept(Visitor* v) {
+	v->visit(this);
+}
+
 void Rule::accept(Visitor* v) {
 	v->visit(this);
 }
@@ -232,6 +237,21 @@ Formula* MutatingVisitor::visit(QuantForm* qf) {
 	}
 	qf->setfvars();
 	return qf;
+}
+
+Formula* MutatingVisitor::visit(AggForm* af) {
+	Term* nl = _left->accept(this);
+	if(nl != _left) {
+		delete(_left);
+		_left = nl;
+	}
+	SetExpr* s = _right->set()->accept(this);
+	if(s != _right->set()) {
+		delete(_right->set());
+		_right->set(s);
+	}
+	af->setfvars();
+	return af;
 }
 
 Rule* MutatingVisitor::visit(Rule* r) {
@@ -424,6 +444,10 @@ Formula* BoolForm::accept(MutatingVisitor* v) {
 }
 
 Formula* QuantForm::accept(MutatingVisitor* v) {
+	return v->visit(this);
+}
+
+Formula* AggForm::accept(MutatingVisitor* v) {
 	return v->visit(this);
 }
 

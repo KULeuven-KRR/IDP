@@ -305,16 +305,55 @@ class QuantForm : public Formula {
 
 };
 
+
+/** Aggregate atoms **/
+
+class AggForm : public Formula {
+
+	private:
+		char		_comp;	// '=', '<', or '>'
+		Term*		_left;
+		AggTerm*	_right;
+
+	public:
+
+		// Constructors
+		AggForm(bool sign, char c, Term* l, AggTerm* r, const ParseInfo& pi) : 
+			Formula(sign,pi), _comp(c), _left(l), _right(r) { setfvars(); }
+
+		AggForm*	clone()									const;
+		AggForm*	clone(const map<Variable*,Variable*>&)	const;
+
+	   // Destructor
+	   void recursiveDelete();
+
+		// Inspectors
+		unsigned int	nrQvars()				const { return 0;						}
+		unsigned int	nrSubforms()			const { return 0;						}
+		unsigned int	nrSubterms()			const { return 2;						}
+		Variable*		qvar(unsigned int n)	const { assert(false); return 0;		}
+		Formula*		subform(unsigned int n)	const { assert(false); return 0;		}
+		Term*			subterm(unsigned int n)	const { return (n ? _right : _left);	}
+
+		// Visitor
+		void		accept(Visitor* v);
+		Formula*	accept(MutatingVisitor* v);
+
+		// Debugging
+		string to_string()	const;
+
+};
+
 enum TruthValue { TV_TRUE, TV_FALSE, TV_UNKN };
 
 namespace FormulaUtils {
 	
 	/*
-	 * Evaulate a formula in a structure under the given variable mapping
+	 * Evaluate a formula in a structure under the given variable mapping
 	 *	Preconditions: 
-	 *		- the formula is not allowed to contain subformulas of the class EquivForm or EqChainForm
 	 *		- for all subterms, the preconditions of evaluate(Term*,Structure*,const map<Variable*,TypedElement>&) must hold
 	 *		- the sort of every quantified variable in the formula should have a finite domain in the given structure
+	 *		- every free variable in the formula is interpreted by the given map
 	 */
 	TruthValue evaluate(Formula*,AbstractStructure*,const map<Variable*,TypedElement>&);	
 																				
@@ -470,19 +509,22 @@ class AbstractTheory {
 		virtual ~AbstractTheory() { }
 
 		// Mutators
-				void	vocabulary(Vocabulary* v)	{ _vocabulary = v;				}
-				void	name(const string& n)		{ _name = n;					}
-		virtual	void	add(Formula* f)				= 0;
-		virtual void	add(Definition* d)			= 0;
-		virtual void	add(FixpDef* fd)			= 0;
+				void	vocabulary(Vocabulary* v)	{ _vocabulary = v;	}
+				void	name(const string& n)		{ _name = n;		}
+		virtual	void	add(Formula* f)				= 0;	// Add a formula to the theory
+		virtual void	add(Definition* d)			= 0;	// Add a definition to the theory
+		virtual void	add(FixpDef* fd)			= 0;	// Add a fixpoint definition to the theory
 
 		// Inspectors
 				const string&		name()						const { return _name;				}
 				Vocabulary*			vocabulary()				const { return _vocabulary;			}
 				const ParseInfo&	pi()						const { return _pi;					}
-		virtual	unsigned int		nrSentences()				const = 0;
-		virtual	unsigned int		nrDefinitions()				const = 0;
-		virtual unsigned int		nrFixpDefs()				const = 0;
+		virtual	unsigned int		nrSentences()				const = 0;	// the number of sentences in the theory
+		virtual	unsigned int		nrDefinitions()				const = 0;	// the number of definitions in the theory
+		virtual unsigned int		nrFixpDefs()				const = 0;	// the number of fixpoind definitions in the theory
+		virtual Formula*			sentence(unsigned int n)	const = 0;	// the n'th sentence in the theory
+		virtual Definition*			definition(unsigned int n)	const = 0;	// the n'th definition in the theory
+		virtual FixpDef*			fixpdef(unsigned int n)		const = 0;  // the n'th fixpoint definition in the theory
 
 		// Visitor
 		virtual void			accept(Visitor*) = 0;
@@ -517,7 +559,7 @@ class Theory : public AbstractTheory {
 		void	add(Formula* f)								{ _sentences.push_back(f);		}
 		void	add(Definition* d)							{ _definitions.push_back(d);	}
 		void	add(FixpDef* fd)							{ _fixpdefs.push_back(fd);		}
-		void	add(Theory* t);
+		void	add(AbstractTheory* t);
 		void	sentence(unsigned int n, Formula* f)		{ _sentences[n] = f;			}
 		void	definition(unsigned int n, Definition* d)	{ _definitions[n] = d;			}
 		void	fixpdef(unsigned int n, FixpDef* d)			{ _fixpdefs[n] = d;				}
@@ -550,21 +592,37 @@ namespace TheoryUtils {
 	void remove_equiv(AbstractTheory*);		// Rewrite A <=> B to (A => B) & (B => A)
 	void flatten(AbstractTheory*);			// Rewrite (! x : ! y : phi) to (! x y : phi), rewrite ((A & B) & C) to (A & B & C), etc.
 	void remove_eqchains(AbstractTheory*);	// Rewrite chains of equalities to a conjunction or disjunction of atoms.
-	void move_quantifiers(AbstractTheory* t);	// Rewrite (! x : phi & chi) to ((! x : phi) & (!x : chi)), and similarly for ?|
-	void move_functions(Theory* t);
+	void move_quantifiers(AbstractTheory* t);	// Rewrite (! x : phi & chi) to ((! x : phi) & (!x : chi)), and similarly for ?.
+	void move_functions(AbstractTheory* t);
 	// TODO  Merge definitions
 
 	/** Tseitin transformation **/
-	void tseitin(Theory*);	// Apply the Tseitin transformation, using (where possible) implications to define new predicates.
+	// Apply the Tseitin transformation, using (where possible) implications to define new predicates.
+	void tseitin(AbstractTheory*);	
 	
-	/** Simplify theories **/
-	void simplify(Theory* t, Structure* s);		// Replace ground atoms by their truth value in s
+	/** Reduce theories **/
+	void reduce(AbstractTheory* t, AbstractStructure* s);		// Replace ground atoms by their truth value in s
 
 	/** Completion **/
 	// TODO  Compute completion of definitions
 	
 	/** ECNF **/
-	EcnfTheory*	convert_to_ecnf(AbstractTheory*,GroundTranslator*);		// Convert the theory to ecnf using the given translator
+	// Convert the theory to ecnf using the given translator
+	//		Preconditions:
+	//			1) The input theory is ground
+	//				(no quantifiers, no set expressions { x | phi }, no rules with free variables)
+	//			2) The only built-in predicates appear in formulas of the form
+	//				~(d < agg) or ~(d > agg), where d is a DomainTerm and agg an AggTerm
+	//			   These are represented by a PredForm, not by an EqChainForm.
+	//			3) Every set in an AggTerm is an EnumSetExpr
+	//			4) The only equivalences are sentences of the form (atom <=> aggatom), where 
+	//			   atom is a PredForm that does not contain an aggregate 
+	//			   and aggatom is a formula of the form mentioned in (2).
+	//			5) Aggregate atoms only occur in sentences or rules of the form
+	//				(atom <=> aggatom)		NOTE: (aggatom <=> atom) is not allowed
+	//				(~atom | aggatom)		NOTE: (aggatom | ~atom) is not allowed
+	//				atom <- aggatom
+	EcnfTheory*	convert_to_ecnf(AbstractTheory*);
 	
 }
 

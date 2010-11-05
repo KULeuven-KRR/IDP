@@ -9,7 +9,7 @@
 
 #include "namespace.hpp"
 
-
+/** Possible argument or return value of an execute statement **/
 union InfArg {
 	Vocabulary*			_vocabulary;
 	AbstractStructure*	_structure;
@@ -17,14 +17,15 @@ union InfArg {
 	Namespace*			_namespace;
 };
 
+/** An execute statement **/
 class Inference {
 	protected:
-		vector<InfArgType>	_intypes;
-		InfArgType			_outtype;
-		string				_description;
+		vector<InfArgType>	_intypes;		// types of the input arguments
+		InfArgType			_outtype;		// type of the return value
+		string				_description;	// description of the inference
 	public:
 		virtual ~Inference() { }
-		virtual void execute(const vector<InfArg>& args, const string& res,Namespace*) const = 0;
+		virtual void execute(const vector<InfArg>& args, const string& res,Namespace*) const = 0;	// execute the statement
 		const vector<InfArgType>&	intypes()		const { return _intypes;		}
 		InfArgType					outtype()		const { return _outtype;		}
 		unsigned int				arity()			const { return _intypes.size();	}
@@ -160,9 +161,9 @@ class ApplyTseitin : public Inference {
 		void execute(const vector<InfArg>& args, const string& res,Namespace*) const;
 };
 
-class GroundSimplify : public Inference {
+class GroundReduce : public Inference {
 	public:
-		GroundSimplify();
+		GroundReduce();
 		void execute(const vector<InfArg>& args, const string& res,Namespace*) const;
 };
 

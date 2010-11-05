@@ -84,12 +84,12 @@ void SortChecker::visit(AggTerm* at) {
 	if(at->type() != AGGCARD) {
 		SetExpr* s = at->set();
 		if(s->nrQvars() && s->qvar(0)->sort()) {
-			if(s->qvar(0)->sort()->base() != stdbuiltin()->sort("float")) {
+			if(s->qvar(0)->sort()->base() != _stdbuiltin.sort("float")) {
 				Error::wrongsort(s->qvar(0)->name(),s->qvar(0)->sort()->name(),"int or float",s->qvar(0)->pi());
 			}
 		}
 		for(unsigned int n = 0; n < s->nrSubterms(); ++n) {
-			if(s->subterm(n)->sort() && s->subterm(n)->sort()->base() != stdbuiltin()->sort("float")) {
+			if(s->subterm(n)->sort() && s->subterm(n)->sort()->base() != _stdbuiltin.sort("float")) {
 				Error::wrongsort(s->subterm(n)->to_string(),s->subterm(n)->sort()->name(),"int or float",s->subterm(n)->pi());
 			}
 		}
@@ -679,7 +679,7 @@ namespace Insert {
 	***********************/
 
 	void initialize() {
-		_currspace = Namespace::global();
+		_currspace = &_globalnamespace;
 		_inferences["print"].push_back(new PrintTheory());
 		_inferences["print"].push_back(new PrintVocabulary());
 		_inferences["print"].push_back(new PrintStructure());
@@ -693,7 +693,7 @@ namespace Insert {
 		_inferences["convert_to_theory"].push_back(new StructToTheory());
 		_inferences["move_quantifiers"].push_back(new MoveQuantifiers());
 		_inferences["tseitin"].push_back(new ApplyTseitin());
-		_inferences["simplify"].push_back(new GroundSimplify());
+		_inferences["reduce"].push_back(new GroundReduce());
 		_inferences["move_functions"].push_back(new MoveFunctions());
 		_inferences["model_expand"].push_back(new ModelExpansionInference());
 	}
@@ -2006,7 +2006,7 @@ namespace Insert {
 
 	PredForm* succform(Term* lt, Term* rt, YYLTYPE l) {
 		if(lt && rt) {
-			Predicate* p = stdbuiltin()->pred("SUCC/2");
+			Predicate* p = _stdbuiltin.pred("SUCC/2");
 			vector<Term*> vt(2); vt[0] = lt; vt[1] = rt;
 			return new PredForm(true,p,vt,parseinfo(l));
 		}
@@ -2116,9 +2116,9 @@ namespace Insert {
 			QuantSetExpr* qse = new QuantSetExpr(vv,f,pi);
 			vector<Term*> vt(2);
 			Element en; en._int = n;
-			vt[0] = new DomainTerm(stdbuiltin()->sort("int"),ELINT,en,pi);
+			vt[0] = new DomainTerm(_stdbuiltin.sort("int"),ELINT,en,pi);
 			vt[1] = new AggTerm(qse,AGGCARD,pi);
-			Predicate* p = stdbuiltin()->pred(string(1,c) + "/2");
+			Predicate* p = _stdbuiltin.pred(string(1,c) + "/2");
 			return new PredForm(b,p,vt,pi);
 		}
 		else {
@@ -2299,7 +2299,7 @@ namespace Insert {
 
 	Term* arterm(char c, Term* lt, Term* rt, YYLTYPE l) {
 		if(lt && rt) {
-			Function* f = stdbuiltin()->func(string(1,c) + "/2");
+			Function* f = _stdbuiltin.func(string(1,c) + "/2");
 			assert(f);
 			vector<Term*> vt(2); vt[0] = lt; vt[1] = rt;
 			return new FuncTerm(f,vt,parseinfo(l));
@@ -2313,7 +2313,7 @@ namespace Insert {
 
 	Term* arterm(const string& s, Term* t, YYLTYPE l) {
 		if(t) {
-			Function* f = stdbuiltin()->func(s + "/1");
+			Function* f = _stdbuiltin.func(s + "/1");
 			assert(f);
 			vector<Term*> vt(1,t);
 			return new FuncTerm(f,vt,parseinfo(l));
@@ -2370,7 +2370,7 @@ namespace Insert {
 		for(unsigned int n = 0; n < vf.size(); ++n) {
 			if(vf[n]) {
 				Element one; one._int = 1;
-				vt.push_back(new DomainTerm(stdbuiltin()->sort("int"),ELINT,one,vf[n]->pi()));
+				vt.push_back(new DomainTerm(_stdbuiltin.sort("int"),ELINT,one,vf[n]->pi()));
 			}
 			else {
 				for(unsigned int m = 0; m < vf.size(); ++m) {
@@ -2393,22 +2393,22 @@ namespace Insert {
 
 	DomainTerm* domterm(int n, YYLTYPE l) {
 		Element en; en._int = n;
-		return new DomainTerm(stdbuiltin()->sort("int"),ELINT,en,parseinfo(l));
+		return new DomainTerm(_stdbuiltin.sort("int"),ELINT,en,parseinfo(l));
 	}
 
 	DomainTerm* domterm(double d, YYLTYPE l) {
 		Element ed; ed._double = d;
-		return new DomainTerm(stdbuiltin()->sort("float"),ELDOUBLE,ed,parseinfo(l));
+		return new DomainTerm(_stdbuiltin.sort("float"),ELDOUBLE,ed,parseinfo(l));
 	}
 
 	DomainTerm* domterm(string* s, YYLTYPE l) {
 		Element es; es._string = s;
-		return new DomainTerm(stdbuiltin()->sort("string"),ELSTRING,es,parseinfo(l));
+		return new DomainTerm(_stdbuiltin.sort("string"),ELSTRING,es,parseinfo(l));
 	}
 
 	DomainTerm* domterm(char c, YYLTYPE l) {
 		Element es; es._string = new string(1,c);
-		return new DomainTerm(stdbuiltin()->sort("char"),ELSTRING,es,parseinfo(l));
+		return new DomainTerm(_stdbuiltin.sort("char"),ELSTRING,es,parseinfo(l));
 	}
 
 	DomainTerm* domterm(string* n, Sort* s, YYLTYPE l) {
@@ -2424,13 +2424,13 @@ namespace Insert {
 	}
 
 	FuncTerm* minterm(YYLTYPE l) {
-		Function* f = stdbuiltin()->func("MIN/0");
+		Function* f = _stdbuiltin.func("MIN/0");
 		vector<Term*> vt(0);
 		return new FuncTerm(f,vt,parseinfo(l));
 	}
 
 	FuncTerm* maxterm(YYLTYPE l) {
-		Function* f = stdbuiltin()->func("MAX/0");
+		Function* f = _stdbuiltin.func("MAX/0");
 		vector<Term*> vt(0);
 		return new FuncTerm(f,vt,parseinfo(l));
 	}

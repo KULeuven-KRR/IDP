@@ -29,7 +29,6 @@ class Namespace {
 		vector<AbstractStructure*>		_structs;		// The structures in the namespace                   
 		vector<AbstractTheory*>			_theos;			// The theories in the namespace                           
 		ParseInfo						_pi;			// the place where the namespace was parsed
-		static Namespace*				_global;		// the global namespace
 
 	public:
 
@@ -65,10 +64,6 @@ class Namespace {
 		set<Sort*>			allSorts()					const;
 		set<Predicate*>		allPreds()					const;
 		set<Function*>		allFuncs()					const;
-
-		// Static member functions
-		static Namespace*	global()		{ return _global;	}
-		static void			deleteGlobal();
 
 		// Mutators	
 		void	add(Vocabulary* v)			{ _vocabularies[v->name()] = v;	_vocs.push_back(v);		}

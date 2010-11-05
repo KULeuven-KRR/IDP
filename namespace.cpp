@@ -4,41 +4,34 @@
 	(c) K.U.Leuven
 ************************************/
 
+#include "data.hpp"
 #include "namespace.hpp"
 #include "options.hpp"
 #include <iostream>
 
 /** Global namespace and options **/
 
-Namespace* Namespace::_global = new Namespace("global_namespace",0,ParseInfo());
-Options options;
-
 bool Namespace::isGlobal() const {
-	return (this == _global);
-}
-
-void Namespace::deleteGlobal() {
-	// Collect symbols
-	set<Sort*> ss = _global->allSorts();
-	set<Predicate*> sp = _global->allPreds();
-	set<Function*> sf = _global->allFuncs();
-	// Delete the global namespace
-	delete(_global);
-	// Delete the symbols
-	for(set<Function*>::iterator it = sf.begin(); it != sf.end(); ++it) {
-		delete(*it);
-	}
-	for(set<Predicate*>::iterator it = sp.begin(); it != sp.end(); ++it) {
-		delete(*it);
-	}
-	for(set<Sort*>::iterator it = ss.begin(); it != ss.end(); ++it) {
-		delete(*it);
-	}
+	return (this == &_globalnamespace);
 }
 
 /** Destructor **/
 
 Namespace::~Namespace() {
+	if(isGlobal()) {	// delete all symbols
+		set<Sort*> ss = allSorts();
+		set<Predicate*> sp = allPreds();
+		set<Function*> sf = allFuncs();
+		for(set<Function*>::iterator it = sf.begin(); it != sf.end(); ++it) {
+			delete(*it);
+		}
+		for(set<Predicate*>::iterator it = sp.begin(); it != sp.end(); ++it) {
+			delete(*it);
+		}
+		for(set<Sort*>::iterator it = ss.begin(); it != ss.end(); ++it) {
+			delete(*it);
+		}
+	}
 	for(unsigned int n = 0; n < _subs.size(); ++n) delete(_subs[n]);
 	for(unsigned int n = 0; n < _vocs.size(); ++n) delete(_vocs[n]);
 	for(unsigned int n = 0; n < _structs.size(); ++n) delete(_structs[n]);
