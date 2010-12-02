@@ -687,12 +687,12 @@ string MixedSortTable::to_string(unsigned int spaces) const {
 	for(unsigned int n = 0; n < _numtable.size(); ++n) s = s + dtos(_numtable[n]) + ' ';
 	for(unsigned int n = 0; n < _strtable.size(); ++n) s = s + *_strtable[n] + ' ';
 	for(unsigned int n = 0; n < _comtable.size(); ++n) s = s + _comtable[n]->to_string() + ' ';
-	return s;
+	return s + '\n';
 }
 
 string RanSortTable::to_string(unsigned int spaces) const {
 	string s = tabstring(spaces) + itos(_first) + ".." + itos(_last);
-	return s;
+	return s + '\n';
 }
 
 string IntSortTable::to_string(unsigned int spaces) const {
@@ -701,7 +701,7 @@ string IntSortTable::to_string(unsigned int spaces) const {
 		s = s + itos(_table[0]);
 		for(unsigned int n = 1; n < size(); ++n) s = s + ' ' + itos(_table[n]);
 	}
-	return s;
+	return s + '\n';
 }
 
 string StrSortTable::to_string(unsigned int spaces) const {
@@ -710,7 +710,7 @@ string StrSortTable::to_string(unsigned int spaces) const {
 		s = s + *_table[0];
 		for(unsigned int n = 1; n < size(); ++n) s = s + ' ' + *_table[n];
 	}
-	return s;
+	return s + '\n';
 }
 
 string FloatSortTable::to_string(unsigned int spaces) const {
@@ -719,7 +719,7 @@ string FloatSortTable::to_string(unsigned int spaces) const {
 		s = s + dtos(_table[0]);
 		for(unsigned int n = 1; n < size(); ++n) s = s + ' ' + dtos(_table[n]);
 	}
-	return s;
+	return s + '\n';
 }
 
 
@@ -1041,9 +1041,9 @@ Structure::~Structure() {
 /** Mutators **/
 
 void Structure::vocabulary(Vocabulary* v) {
-	_sortinter = vector<SortTable*>(v->nrSorts(),0);
-	_predinter = vector<PredInter*>(v->nrPreds(),0);
-	_funcinter = vector<FuncInter*>(v->nrFuncs(),0);
+	_sortinter = vector<SortTable*>(v->nrNBSorts(),0);
+	_predinter = vector<PredInter*>(v->nrNBPreds(),0);
+	_funcinter = vector<FuncInter*>(v->nrNBFuncs(),0);
 	_vocabulary = v;
 }
 
@@ -1061,7 +1061,7 @@ void Structure::inter(Function* f, FuncInter* i) {
 
 void Structure::close() {
 	for(unsigned int n = 0; n < _predinter.size(); ++n) {
-		vector<ElementType> vet(_vocabulary->pred(n)->arity(),ELINT);
+		vector<ElementType> vet(_vocabulary->nbpred(n)->arity(),ELINT);
 		if(!_predinter[n]) {
 			_predinter[n] = TableUtils::leastPredInter(vet);
 		}
@@ -1075,7 +1075,7 @@ void Structure::close() {
 		}
 	}
 	for(unsigned int n = 0; n < _funcinter.size(); ++n) {
-		vector<ElementType> vet(_vocabulary->func(n)->nrsorts(),ELINT);
+		vector<ElementType> vet(_vocabulary->nbfunc(n)->nrsorts(),ELINT);
 		if(!_funcinter[n]) {
 			_funcinter[n] = TableUtils::leastFuncInter(vet);
 		}
@@ -1098,20 +1098,12 @@ SortTable* Structure::inter(Sort* s) const {
 }
 
 PredInter* Structure::inter(Predicate* p) const {
-	if(p->builtin()) {
-		vector<SortTable*> vs(p->arity());
-		for(unsigned int n = 0; n < p->arity(); ++n) vs[n] = inter(p->sort(n));
-		return p->inter(vs);
-	}
+	if(p->builtin()) return p->inter(*this);
 	return _predinter[_vocabulary->index(p)];
 }
 
 FuncInter* Structure::inter(Function* f) const {
-	if(f->builtin()) {
-		vector<SortTable*> vs(f->nrsorts());
-		for(unsigned int n = 0; n < f->nrsorts(); ++n) vs[n] = inter(f->sort(n));
-		return f->inter(vs);
-	}
+	if(f->builtin()) return f->inter(*this);
 	return _funcinter[_vocabulary->index(f)];
 }
 
@@ -1139,19 +1131,19 @@ string Structure::to_string(unsigned int spaces) const {
 	string s = tab + "Structure " + _name + " over vocabulary " + _vocabulary->name() + ":\n";
 	s = s + tab + "  Sorts:\n";
 	for(unsigned int n = 0; n < _sortinter.size(); ++n) {
-		s = s + tab + "    " + _vocabulary->sort(n)->to_string() + '\n';
-		if(_sortinter[n]) s = s + tab + "      " + _sortinter[n]->to_string() + '\n';
+		s = s + tab + "    " + _vocabulary->nbsort(n)->to_string() + '\n';
+		if(_sortinter[n]) s = s + tab + "      " + _sortinter[n]->to_string();
 		else s = s + tab + "      no domain\n";
 	}
 	s = s + tab + "  Predicates:\n";
 	for(unsigned int n = 0; n < _predinter.size(); ++n) {
-		s = s + tab + "    " + _vocabulary->pred(n)->to_string() + '\n';
+		s = s + tab + "    " + _vocabulary->nbpred(n)->to_string() + '\n';
 		if(_predinter[n]) s = s + _predinter[n]->to_string(spaces+6);
 		else s = s + tab + "      no interpretation\n";
 	}
 	s = s + tab + "  Functions:\n";
 	for(unsigned int n = 0; n < _funcinter.size(); ++n) {
-		s = s + tab + "    " + _vocabulary->func(n)->to_string() + '\n';
+		s = s + tab + "    " + _vocabulary->nbfunc(n)->to_string() + '\n';
 		if(_funcinter[n]) s = s + _funcinter[n]->to_string(spaces+6);
 		else s = s + tab + "      no interpretation\n";
 	}
@@ -1183,12 +1175,12 @@ class StructConvertor : public Visitor {
 
 void StructConvertor::visit(Structure* s) {
 	_returnvalue = new Theory("",s->vocabulary(),ParseInfo());
-	for(unsigned int n = 0; n < s->vocabulary()->nrPreds(); ++n) {
-		_currsymbol = s->vocabulary()->pred(n);
+	for(unsigned int n = 0; n < s->vocabulary()->nrNBPreds(); ++n) {
+		_currsymbol = s->vocabulary()->nbpred(n);
 		visit(s->predinter(n));
 	}
-	for(unsigned int n = 0; n < s->vocabulary()->nrFuncs(); ++n) {
-		_currsymbol = s->vocabulary()->func(n);
+	for(unsigned int n = 0; n < s->vocabulary()->nrNBFuncs(); ++n) {
+		_currsymbol = s->vocabulary()->nbfunc(n);
 		visit(s->funcinter(n));
 	}
 }

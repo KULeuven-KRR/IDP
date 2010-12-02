@@ -177,6 +177,9 @@ COMMENTLINE		"//".*
 							  caller = YY_START;
 							  BEGIN(include);
 							}
+<*>"#using"					{ advancecol();
+							  return USING;
+							}
 
 	/**************
 		Include
@@ -224,20 +227,14 @@ COMMENTLINE		"//".*
 							  return TYPE;				}
 <theory>"partial"			{ advancecol();
 							  return PARTIAL;			}
+<theory>"constructor"		{ advancecol();
+							  return CONSTR;			}
 <theory>"isa"				{ advancecol();
 							  return ISA;				}
-
-
-	/** Built-in **/
-
-<theory>"MIN"				{ advancecol();
-							  return MIN;				}
-<theory>"MAX"				{ advancecol();
-							  return MAX;				}
-<theory>"SUCC"				{ advancecol();
-							  return SUCC;				}
-<theory>"abs"				{ advancecol();
-							  return ABS;				}
+<theory>"extends"			{ advancecol();
+							  return EXTENDS;			}
+<theory>"extern"			{ advancecol();
+							  return EXTERN;			}
 
 
 	/** Aggregates **/

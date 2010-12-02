@@ -90,13 +90,13 @@ void Visitor::traverse(Theory* t) {
 }
 
 void Visitor::traverse(Structure* s) {
-	for(unsigned int n = 0; n < s->vocabulary()->nrSorts(); ++n) {
+	for(unsigned int n = 0; n < s->vocabulary()->nrNBSorts(); ++n) {
 		visit(s->sortinter(n));
 	}
-	for(unsigned int n = 0; n < s->vocabulary()->nrPreds(); ++n) {
+	for(unsigned int n = 0; n < s->vocabulary()->nrNBPreds(); ++n) {
 		visit(s->predinter(n));
 	}
-	for(unsigned int n = 0; n < s->vocabulary()->nrFuncs(); ++n) {
+	for(unsigned int n = 0; n < s->vocabulary()->nrNBFuncs(); ++n) {
 		visit(s->funcinter(n));
 	}
 }
@@ -240,15 +240,15 @@ Formula* MutatingVisitor::visit(QuantForm* qf) {
 }
 
 Formula* MutatingVisitor::visit(AggForm* af) {
-	Term* nl = _left->accept(this);
-	if(nl != _left) {
-		delete(_left);
-		_left = nl;
+	Term* nl = af->left()->accept(this);
+	if(nl != af->left()) {
+		delete(af->left());
+		af->left(nl);
 	}
-	SetExpr* s = _right->set()->accept(this);
-	if(s != _right->set()) {
-		delete(_right->set());
-		_right->set(s);
+	SetExpr* s = af->right()->set()->accept(this);
+	if(s != af->right()->set()) {
+		delete(af->right()->set());
+		af->right()->set(s);
 	}
 	af->setfvars();
 	return af;

@@ -19,7 +19,7 @@ class Term {
 	protected:
 
 		vector<Variable*>	_fvars;	// Free variables of the term
-		ParseInfo			_pi;	// the place where the term was parsed (0 for non user-defined terms)
+		ParseInfo			_pi;	// the place where the term was parsed
 
 	public:
 
@@ -217,7 +217,7 @@ class SetExpr {
 	protected:
 		
 		vector<Variable*>	_fvars;	// The free variables of the set expression
-		ParseInfo			_pi;	// the place where the set was parsed (0 for non user-defined sets)
+		ParseInfo			_pi;	// the place where the set was parsed
 
 	public:
 
@@ -259,8 +259,8 @@ class EnumSetExpr : public SetExpr {
 
 	private:
 		
-		vector<Formula*>	_subf;
-		vector<Term*>		_weights;
+		vector<Formula*>	_subf;		// the subformulas
+		vector<Term*>		_weights;	// the associated weights
 
 	public:
 
@@ -301,8 +301,8 @@ class QuantSetExpr : public SetExpr {
 
 	private:
 
-		Formula*			_subf;
-		vector<Variable*>	_vars;
+		Formula*			_subf;	// the direct subformula
+		vector<Variable*>	_vars;	// the quantified variables
 
 	public:
 
@@ -310,7 +310,7 @@ class QuantSetExpr : public SetExpr {
 		QuantSetExpr(const vector<Variable*>& v, Formula* s, const ParseInfo& pi) : 
 			SetExpr(pi), _subf(s), _vars(v) { setfvars(); }
 
-		QuantSetExpr* clone()								const;
+		QuantSetExpr* clone()									const;
 		QuantSetExpr* clone(const map<Variable*,Variable*>&)	const;
 
 		// Destructor
@@ -417,7 +417,7 @@ class TermEvaluator : public Visitor {
 
 namespace TermUtils {
 	// evaluate the given term in the given structure under the given variable mapping
-	//		in case of a three-valued function, this may result in multipel values of the term
+	//		in case of a three-valued function, this may result in multiple values of the term
 	//		in case of a partial function, the term may have no value
 	//	NOTE: This method works for general terms and structures. Therefore, it is rather slow.
 	//		  Faster methods exist if the structure is two-valued and the term contains no partial functions

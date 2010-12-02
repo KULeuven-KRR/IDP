@@ -40,25 +40,105 @@ class BuiltInSort : public Sort {
 class BuiltInPredicate : public Predicate {
 
 	private:
-
-		PredInter*	(*_inter)(const vector<SortTable*>&);	// The intersection of the interpretation of the predicate
-															// with the cross product of the given SortTables
+		PredInter*	_inter;	
 
 	public:
 
 		// Constructors
-		BuiltInPredicate(const string& n, const vector<Sort*>& vs, PredInter* (*it)(const vector<SortTable*>&)) : 
+		BuiltInPredicate(const string& n, const vector<Sort*>& vs, PredInter* it) : 
 			Predicate(n,vs) { _inter = it; }
 
 		// Destructor
-		~BuiltInPredicate() { }
+		~BuiltInPredicate() { delete(_inter);	}
 
 		// Inspectors
-		bool		builtin()							const { return true;		}
-		PredInter*	inter(const vector<SortTable*>& vs)	const { return _inter(vs);	}
+		bool		builtin()							const { return true;	}
+		PredInter*	inter(const AbstractStructure& s)	const { return _inter;	}
 	
 };
 
+class SemiBuiltInPredicate : public Predicate {
+	
+	private:
+		mutable map<vector<SortTable*>,PredInter*>	_inters;
+		PredInter*									(*_inter)(const vector<SortTable*>&);
+
+	public:
+		// Constructor
+		SemiBuiltInPredicate(const string& n, const vector<Sort*>& vs, PredInter* (*inter)(const vector<SortTable*>&)) : 
+			Predicate(n,vs) { _inter = inter;	}
+
+		// Destructor
+		~SemiBuiltInPredicate() { }
+
+		// Inspector
+		bool		builtin()							const { return true;	}
+		PredInter*	inter(const AbstractStructure& s)	const;
+
+
+};
+
+PredInter* SemiBuiltInPredicate::inter(const AbstractStructure& s) const {
+	vector<SortTable*> vs(nrsorts());
+	for(unsigned int n = 0; n < nrsorts(); ++n) vs[n] = s.inter(sort(n));
+	map<vector<SortTable*>,PredInter*>::const_iterator it = _inters.find(vs);
+	if(it != _inters.end()) return it->second;
+	else {
+		PredInter* pi = _inter(vs);
+		_inters[vs] = pi;
+		return pi;
+	}
+}
+
+
+
+/*************************************************************************
+	Class to implement comparison predicates (currently '=', '<', '>')
+*************************************************************************/
+
+class ComparisonPredicate : public OverloadedPredicate {
+
+	private:
+		PredInter* (*_inter)(const vector<SortTable*>&);
+
+	public:
+		ComparisonPredicate(const string& name, unsigned int ar, PredInter* (*inter)(const vector<SortTable*>&)) : 
+			OverloadedPredicate(name,ar) { _inter = inter;	}
+		~ComparisonPredicate() { }
+
+	// Inspectors
+	bool		contains(Predicate* p)				const { return p->name() == _name;	}
+	Predicate*	disambiguate(const vector<Sort*>&);
+
+};
+
+Predicate* ComparisonPredicate::disambiguate(const vector<Sort*>& vs) {
+	Sort* s = 0;
+	bool containszeros = false;
+	for(unsigned int n = 0; n < vs.size(); ++n) {
+		if(vs[n]) {
+			if(s) {
+				s = SortUtils::resolve(s,vs[n]);
+				if(!s) return 0;
+			}
+			else s = vs[n];
+		}
+		else containszeros = true;
+	}
+
+	Predicate* p = 0;
+	if(s) {
+		if(!(containszeros && s->nrParents())) {
+			vector<Sort*> nvs = vector<Sort*>(vs.size(),s);
+			p = OverloadedPredicate::disambiguate(nvs);
+			if(!p) {
+				p = new SemiBuiltInPredicate(_name,nvs,_inter);
+				_overpreds.push_back(p);
+			}
+		}
+	}
+	return p;
+}
 
 /************************* 
 	Built-in functions 
@@ -67,205 +147,156 @@ class BuiltInPredicate : public Predicate {
 class BuiltInFunction : public Function {
 	
 	private:
-
-		FuncInter*	(*_inter)(const vector<SortTable*>&);	// The intersection of the interpretation of the function
-															// with the cross product of the given SortTables
+		FuncInter*	_inter;	
 
 	public:
 
 		// Constructors
-		BuiltInFunction(const string& n, const vector<Sort*>& is, Sort* os, FuncInter* (*ft)(const vector<SortTable*>&)) : 
-			Function(n,is,os) { _inter = ft; }
-		BuiltInFunction(const string& n, const vector<Sort*>& s, FuncInter* (*ft)(const vector<SortTable*>&)) : 
-			Function(n,s) { _inter = ft; }
+		BuiltInFunction(const string& n, const vector<Sort*>& is, Sort* os, FuncInter* ft) : 
+			Function(n,is,os), _inter(ft) { }
+		BuiltInFunction(const string& n, const vector<Sort*>& s, FuncInter* ft) : 
+			Function(n,s), _inter(ft) { }
 
 		// Destructor
-		~BuiltInFunction() { }
+		~BuiltInFunction() { delete(_inter); }
 
 		// Inspectors
-		bool		builtin()							const { return true;		}
-		FuncInter*	inter(const vector<SortTable*>& s)	const { return _inter(s);	}
+		bool		builtin()							const { return true;	}
+		FuncInter*	inter(const AbstractStructure& s)	const { return _inter;	}
 
 };
 
-
-/****************************
-	Overloaded predicates
-****************************/
-
-class OverloadedPredicate : public Predicate {
-
+class SemiBuiltInFunction : public Function { 
+	
 	private:
-		vector<Sort*>	(*_deriveSort)(const vector<Sort*>&);	// Derives the missing sorts (null-pointers) 
-																// in the given vector of sorts
-		PredInter*		(*_inter)(const vector<SortTable*>&);	// The intersection of the interpretation of the predicate
-																// with the cross product of the given SortTables
-		map<vector<Sort*>,BuiltInPredicate*>	_children;		// Maps a tuple of sorts to the overloaded predicate
+		mutable map<vector<SortTable*>,FuncInter*>	_inters;
+		FuncInter*									(*_inter)(const vector<SortTable*>&);
 
 	public:
-
-		// Constructors
-		OverloadedPredicate(const string& n, unsigned int ar, vector<Sort*> (*ds)(const vector<Sort*>&), PredInter* (*di)(const vector<SortTable*>&)) : 
-			Predicate(n,vector<Sort*>(ar,0)) { _deriveSort = ds; _inter = di; }
+		// Constructor
+		SemiBuiltInFunction(const string& n, const vector<Sort*>& is, FuncInter* (*inter)(const vector<SortTable*>&)) : 
+			Function(n,is) { _inter = inter;	}
 
 		// Destructor
-		~OverloadedPredicate();
+		~SemiBuiltInFunction() { }
 
-		// Inspectors
-		bool		overloaded()	const { return true;	}
-		bool		builtin()		const { return true;	}
-		Predicate*	disambiguate(const vector<Sort*>&);		// Derive the overloaded predicate that has the given sorts
+		// Inspector
+		bool		builtin()							const { return true;	}
+		FuncInter*	inter(const AbstractStructure& s)	const;
 
 };
 
-OverloadedPredicate::~OverloadedPredicate() {
-	for(map<vector<Sort*>,BuiltInPredicate*>::iterator it = _children.begin(); it != _children.end(); ++it) 
-		delete(it->second);
+FuncInter* SemiBuiltInFunction::inter(const AbstractStructure& s) const {
+	vector<SortTable*> vs(nrsorts());
+	for(unsigned int n = 0; n < nrsorts(); ++n) vs[n] = s.inter(sort(n));
+	map<vector<SortTable*>,FuncInter*>::const_iterator it = _inters.find(vs);
+	if(it != _inters.end()) return it->second;
+	else {
+		FuncInter* fi = _inter(vs);
+		_inters[vs] = fi;
+		return fi;
+	}
 }
 
-/** Sort derivation for overloaded predicate symbols **/
+/***************************************************************************
+	Class to implement SUCC, PRED, MIN and MAX
+***************************************************************************/
 
-/** Possibilty 1: 
- *		If the given sorts are (a_1,...,a_n) and none of them is equal to 0 and they have the same base sort,
- *		return the sorts (b,...,b), where b = resolve(a_1,...,a_n) 
- *		Else, let a_i be the first sort that is not equal to 0. If a_i is a base sort and has no subsorts 
- *		and is equal to all other non-zero sorts among (a_1,...,a_n), return the sorts (a_i,...,a_i).
- *		Else return (0,...,0).
- *
- *		Used for predicates: =/2, </2, >/2, SUCC/2
- */
-vector<Sort*> overloaded_predicate_deriver1(const vector<Sort*>& vs) {
+class ComparisonFunction : public OverloadedFunction {
+
+	private:
+		FuncInter* (*_inter)(const vector<SortTable*>&);
+
+	public:
+		ComparisonFunction(const string& name, unsigned int ar, FuncInter* (*inter)(const vector<SortTable*>&)) : 
+			OverloadedFunction(name,ar) { _inter = inter; partial(ar == 1);	}
+		~ComparisonFunction() { }
+
+	// Inspectors
+	bool		contains(Function* f)				const { return f->name() == _name;	}
+	Function*	disambiguate(const vector<Sort*>&);
+
+};
+
+Function* ComparisonFunction::disambiguate(const vector<Sort*>& vs) {
 	Sort* s = 0;
 	bool containszeros = false;
 	for(unsigned int n = 0; n < vs.size(); ++n) {
 		if(vs[n]) {
 			if(s) {
 				s = SortUtils::resolve(s,vs[n]);
-				if(!s) return vector<Sort*>(vs.size(),0);
+				if(!s) return 0;
 			}
 			else s = vs[n];
 		}
 		else containszeros = true;
 	}
-	if(s && containszeros) {
-		if(s->parent() || s->nrChildren()) return vector<Sort*>(vs.size(),0);
-	}
-	return vector<Sort*>(vs.size(),s);
-}
 
-Predicate* OverloadedPredicate::disambiguate(const vector<Sort*>& vs) {
-	vector<Sort*> vsd = _deriveSort(vs);
-	assert(!vsd.empty());
-	if(!vsd[0]) return 0;
-	map<vector<Sort*>,BuiltInPredicate*>::iterator it = _children.find(vsd);
-	if(it != _children.end()) return it->second;
-	else {
-		BuiltInPredicate* bip = new BuiltInPredicate(_name,vsd,_inter);
-		_children[vsd] = bip;
-		return bip;
-	}
-	return 0;
-}
-
-/***************************
-	Overloaded functions
-***************************/
-
-class OverloadedFunction : public Function {
-
-	private:
-		vector<Sort*>	(*_deriveSort)(const vector<Sort*>&);	// Derives the missing sorts (null-pointers) 
-																// in the given vector of sorts
-		FuncInter*	 	(*_inter)(const vector<SortTable*>&);	// The intersection of the interpretation of the predicate
-																// with the cross product of the given SortTables
-		map<vector<Sort*>,BuiltInFunction*>	_children;			// Maps a tuple of sorts to the overloaded function
-
-	public:
-
-		// Constructors
-		OverloadedFunction(const string& n, unsigned int ar, vector<Sort*> (*ds)(const vector<Sort*>&), FuncInter* (*di)(const vector<SortTable*>&)) : 
-			Function(n,vector<Sort*>(ar+1,0),0) { _deriveSort = ds; _inter = di;	}
-
-		// Destructor
-		~OverloadedFunction();
-
-		// Inspectors
-		bool		overloaded()	const { return true;	}
-		bool		builtin()		const { return true;	}
-		Function*	disambiguate(const vector<Sort*>&);		// Derive the overloaded function that has the given sorts
-};
-
-OverloadedFunction::~OverloadedFunction() {
-	for(map<vector<Sort*>,BuiltInFunction*>::iterator it = _children.begin(); it != _children.end(); ++it) 
-		delete(it->second);
-}
-
-/** Sort derivation for overloaded predicate symbols **/
-
-/** Possibility 1
- *		If all but the last argument are subsorts of int, derive (int,...,int)
- *		Else if one of the arguments is a subsort of float, but not of int, derive (float,....,float)
- *		
- *		Used for functions +, -, *, /, abs 
- */
-vector<Sort*> overloaded_function_deriver1(const vector<Sort*>& vs) {
-	bool deriveint = true;
-	for(unsigned int n = 0; n < vs.size()-1; ++n) {
-		if(vs[n]) {
-			if(vs[n]->base() != _stdbuiltin.sort("float")) return vector<Sort*>(vs.size(),0);
-			else {
-				Sort* temp = vs[n];
-				while(temp) {
-					if(temp == _stdbuiltin.sort("int")) break;
-					temp = temp->parent();
-				}
-				if(!temp) deriveint = false;
+	Function* f = 0;
+	if(s) {
+		if(!(containszeros && s->nrParents())) {
+			vector<Sort*> nvs = vector<Sort*>(vs.size(),s);
+			Function* f = OverloadedFunction::disambiguate(nvs);
+			if(!f) {
+				f = new SemiBuiltInFunction(_name,nvs,_inter);
+				f->partial(partial());
+				_overfuncs.push_back(f);
 			}
 		}
 	}
-	if(deriveint) return vector<Sort*>(vs.size(),_stdbuiltin.sort("int"));
-	else return vector<Sort*>(vs.size(),_stdbuiltin.sort("float"));
+	return f;
 }
 
-/** Possibility 2
- *		If the incoming vector contains a 0, return (0,...,0).
- *		Else return the incoming vector.
- *
- *		Used for functions MIN and MAX
- */
-vector<Sort*> overloaded_function_deriver2(const vector<Sort*>& vs) {
+/***********************
+	IntFloatFunction
+	Used for +, -, *, /, abs, and -/1
+***********************/
+
+class IntFloatFunction : public OverloadedFunction {
+
+	private:
+		FuncInter*	(*_inter)(const vector<Sort*>&);
+
+	public:
+		
+	IntFloatFunction(const string& name, unsigned int ar, FuncInter* (*inter)(const vector<Sort*>&)) : 
+		OverloadedFunction(name,ar) { _inter = inter;	}
+	~IntFloatFunction() { }
+
+	// Inspectors
+	bool		contains(Function* f)				const { return f->name() == _name;	}
+	Function*	disambiguate(const vector<Sort*>&);
+
+};
+
+Function* IntFloatFunction::disambiguate(const vector<Sort*>& vs) {
+	unsigned int intcount = 0;
+	bool hasfloat = false;
+	Sort* ints = (StdBuiltin::instance())->sort("int");
+	Sort* floats = (StdBuiltin::instance())->sort("float");
 	for(unsigned int n = 0; n < vs.size(); ++n) {
-		if(!vs[n]) return vector<Sort*>(vs.size(),0);
+		if(vs[n]) {
+			if(SortUtils::resolve(ints,vs[n]) == ints) ++intcount;
+			else if(SortUtils::resolve(floats,vs[n]) == floats) hasfloat = true;
+			else return 0;
+		}
 	}
-	return vs;
-}
 
-/** Possibility 3
- *		Derive that the last argument is float
- *
- *		Used for function ^
- */
-vector<Sort*> overloaded_function_deriver3(const vector<Sort*>& vs) {
-	vector<Sort*> vsn = vs;
-	vsn.back() = _stdbuiltin.sort("float");
-	for(unsigned int n = 0; n < vs.size() - 1; ++n) {
-		if(vs[n] == 0) return vector<Sort*>(vs.size(),0);
+	Sort* s = 0;
+	if(intcount >= vs.size()-1) s = ints;
+	if(hasfloat) s = floats;
+	
+	Function* f = 0;
+	if(s) {
+		vector<Sort*> nvs = vector<Sort*>(vs.size(),s);
+		f = OverloadedFunction::disambiguate(nvs);
+		if(!f) {
+			f = new BuiltInFunction(_name,nvs,_inter(nvs));
+			f->partial(partial());
+			_overfuncs.push_back(f);
+		}
 	}
-	return vsn;
-}
-
-Function* OverloadedFunction::disambiguate(const vector<Sort*>& vs) {
-	vector<Sort*> vsd = _deriveSort(vs);
-	assert(!vsd.empty());
-	if(!vsd[0]) return 0;
-	map<vector<Sort*>,BuiltInFunction*>::iterator it = _children.find(vsd);
-	if(it != _children.end()) return it->second;
-	else {
-		BuiltInFunction* bif = new BuiltInFunction(_name,vsd,_inter);
-		bif->partial(_partial);
-		_children[vsd] = bif;
-		return bif;
-	}
+	return f;
 }
 
 /***************************
@@ -437,60 +468,33 @@ unsigned int AllCharSortTable::position(Element e,ElementType t) const {
 	Built-in predicate tables
 *******************************/
 
-/** Infinite tables **/
+/** Comparisons **/
 
-class InfinitePredTable : public PredTable {
+class ComparisonPredTable : public PredTable {
+
+	protected:
+		SortTable*	_leftsort;
+		SortTable*	_rightsort;
 
 	public:
 		
 		// Constructor
-		InfinitePredTable() : PredTable() { }
+		ComparisonPredTable(SortTable* tl, SortTable* tr) : PredTable(), _leftsort(tl), _rightsort(tr) { }
 
 		// Destructor
-		virtual ~InfinitePredTable() { }
+		virtual ~ComparisonPredTable() { }
 
 		// Mutators
 		void sortunique() { }
 
 		// Inspectors
-				bool			finite()			const { return true;	}
-				bool			empty()				const { return false;	}
-		virtual unsigned int	arity()				const = 0;
-		virtual	ElementType		type(unsigned int)	const = 0;
-
-		// Check if the table contains a given tuple
-		virtual bool	contains(const vector<Element>&)	const = 0;
-
-		// Inspectors for finite tables	
-		unsigned int	size()									const { assert(false); return MAX_INT;					}
-		vector<Element>	tuple(unsigned int n)					const { assert(false); vector<Element> ve; return ve;	}
-		Element			element(unsigned int r, unsigned int c)	const { assert(false); Element e; return e;				}
-
-		// Debugging
-		virtual string	to_string(unsigned int spaces = 0)		const = 0;
-
-
-};
-
-/** Comparisons **/
-
-class ComparisonPredTable : public InfinitePredTable {
-
-	protected:
-		ElementType	_lefttype;	// The type of the left-hand side elements in the table
-		ElementType _righttype; // The type of the right-hand side elements in the table
-
-	public:
-		
-		// Constructor
-		ComparisonPredTable(ElementType tl, ElementType tr) : InfinitePredTable(), _lefttype(tl), _righttype(tr) { }
-
-		// Destructor
-		virtual ~ComparisonPredTable() { }
-
-		// Inspectors
-		unsigned int	arity()					const { return 2;							}
-		ElementType		type(unsigned int n)	const { return n ? _righttype : _lefttype;	}
+		virtual	bool	finite()						const = 0;
+		virtual	bool	empty()							const = 0;
+				unsigned int	arity()					const { return 2;							}
+				ElementType		type(unsigned int n)	const { return n ? _rightsort->type() : _leftsort->type();	}
+		virtual unsigned int	size()					const = 0;
+		virtual vector<Element>	tuple(unsigned int n)	const = 0;
+		virtual Element			element(unsigned int r, unsigned int c)	const = 0;
 
 		// Check if the table contains a given tuple
 		virtual bool	contains(const vector<Element>&)	const = 0;
@@ -504,19 +508,27 @@ class ComparisonPredTable : public InfinitePredTable {
 
 class EqualPredTable : public ComparisonPredTable {
 	public:
-		EqualPredTable(ElementType tl, ElementType tr) : ComparisonPredTable(tl,tr) { }
+		EqualPredTable(SortTable* tl, SortTable* tr) : ComparisonPredTable(tl,tr) { }
 		~EqualPredTable() { }
+
 		bool	contains(const vector<Element>&)	const;
+		bool	finite()							const { return (_leftsort->finite() || _rightsort->finite()); }
+		bool	empty()								const { assert(false); return false; /* TODO */ }
+
+		unsigned int	size()					const { assert(false); return 0; /* TODO */ }
+		vector<Element>	tuple(unsigned int n)	const { assert(false); return vector<Element>(0); /* TODO */ }
+		Element			element(unsigned int r, unsigned int c)	const { assert(false); Element e; return e; /* TODO */ }
+
 		string	to_string(unsigned int spaces = 0)	const { return tabstring(spaces) + "=/2";	}
 };
 
 bool EqualPredTable::contains(const vector<Element>& ve) const {
-	return ElementUtil::equal(ve[0],_lefttype,ve[1],_righttype);
+	return ElementUtil::equal(ve[0],_leftsort->type(),ve[1],_rightsort->type());
 }
 
 PredInter*	equalinter(const vector<SortTable*>& vs) {
 	assert(vs.size() == 2);
-	PredTable* pt = new EqualPredTable(vs[0]->type(),vs[1]->type());
+	PredTable* pt = new EqualPredTable(vs[0],vs[1]);
 	return new PredInter(pt,true);
 }
 
@@ -524,19 +536,25 @@ PredInter*	equalinter(const vector<SortTable*>& vs) {
 
 class StrLessThanPredTable : public ComparisonPredTable {
 	public:
-		StrLessThanPredTable(ElementType tl, ElementType tr) : ComparisonPredTable(tl,tr) { }
+		StrLessThanPredTable(SortTable* tl, SortTable* tr) : ComparisonPredTable(tl,tr) { }
 		~StrLessThanPredTable() { }
 		bool	contains(const vector<Element>&)		const;
+		bool	finite()							const { assert(false); return false; /* TODO */ }
+		bool	empty()								const { assert(false); return false; /* TODO */ }
+
+		unsigned int	size()					const { assert(false); return 0; /* TODO */ }
+		vector<Element>	tuple(unsigned int n)	const { assert(false); return vector<Element>(0); /* TODO */ }
+		Element			element(unsigned int r, unsigned int c)	const { assert(false); Element e; return e; /* TODO */ }
 		string	to_string(unsigned int spaces = 0)		const { return tabstring(spaces) + "</2";	}
 };
 
 bool StrLessThanPredTable::contains(const vector<Element>& ve) const {
-	return ElementUtil::strlessthan(ve[0],_lefttype,ve[1],_righttype);
+	return ElementUtil::strlessthan(ve[0],_leftsort->type(),ve[1],_rightsort->type());
 }
 
 PredInter*	strlessinter(const vector<SortTable*>& vs) {
 	assert(vs.size() == 2);
-	PredTable* pt = new StrLessThanPredTable(vs[0]->type(),vs[1]->type());
+	PredTable* pt = new StrLessThanPredTable(vs[0],vs[1]);
 	return new PredInter(pt,true);
 }
 
@@ -544,97 +562,26 @@ PredInter*	strlessinter(const vector<SortTable*>& vs) {
 
 class StrGreaterThanPredTable : public ComparisonPredTable {
 	public:
-		StrGreaterThanPredTable(ElementType tl, ElementType tr) : ComparisonPredTable(tl,tr) { }
+		StrGreaterThanPredTable(SortTable* tl, SortTable* tr) : ComparisonPredTable(tl,tr) { }
 		~StrGreaterThanPredTable() { }
 		bool	contains(const vector<Element>&)		const;
+		bool	finite()							const { assert(false); return false; /* TODO */ }
+		bool	empty()								const { assert(false); return false; /* TODO */ }
+
+		unsigned int	size()					const { assert(false); return 0; /* TODO */ }
+		vector<Element>	tuple(unsigned int n)	const { assert(false); return vector<Element>(0); /* TODO */ }
+		Element			element(unsigned int r, unsigned int c)	const { assert(false); Element e; return e; /* TODO */ }
 		string	to_string(unsigned int spaces = 0)		const { return tabstring(spaces) + ">/2";	}
 };
 
 bool StrGreaterThanPredTable::contains(const vector<Element>& ve) const {
-	return ElementUtil::strlessthan(ve[1],_righttype,ve[0],_lefttype);
+	return ElementUtil::strlessthan(ve[1],_rightsort->type(),ve[0],_leftsort->type());
 }
 
 PredInter*	strgreaterinter(const vector<SortTable*>& vs) {
 	assert(vs.size() == 2);
-	PredTable* pt = new StrGreaterThanPredTable(vs[0]->type(),vs[1]->type());
+	PredTable* pt = new StrGreaterThanPredTable(vs[0],vs[1]);
 	assert(vs.size() == 2);
-}
-
-/** Successor **/
-
-class SuccPredTable : public PredTable {
-
-	private:
-		SortTable*	_table;		// The table of the sort of the successor predicate
-
-	public:
-
-		// Constructors
-		SuccPredTable(SortTable* t) : PredTable(), _table(t) { }
-
-		// Destructor
-		~SuccPredTable() { }
-
-		// Mutators
-		void sortunique() { }
-
-		// Inspectors
-		bool			finite()				const { return _table->finite();						}
-		bool			empty()					const { return (_table->finite() && size() == 0);		}
-		unsigned int	arity()					const { return 2;										}
-		ElementType		type(unsigned int n)	const { return _table->type();							}
-
-		// Check if the table contains a given tuple
-		bool			contains(const vector<Element>&)		const;
-
-		// Inspectors for finite tables
-		unsigned int	size()									const { return _table->size() - 1;	}
-		vector<Element>	tuple(unsigned int n)					const;
-		Element			element(unsigned int r, unsigned int c)	const;
-
-		// Debugging
-		string	to_string(unsigned int spaces = 0)		const { return tabstring(spaces) + "SUCC/2";	} 
-
-};
-
-bool SuccPredTable::contains(const vector<Element>& ve) const {
-	if(_table->finite()) {
-		unsigned int p1 = _table->position(ve[0],_table->type());
-		unsigned int p2 = _table->position(ve[1],_table->type());
-		return (p2 == p1+1);
-	}
-	else if(typeid(*_table) == typeid(AllNatSortTable)) {
-		return (ve[1]._int == ve[0]._int + 1);
-	}
-	else if(typeid(*_table) == typeid(AllIntSortTable)) {
-		return (ve[1]._int == ve[0]._int + 1);
-	}
-	else if(typeid(*_table) == typeid(AllCharSortTable)) {
-		char c1 = (*(ve[0]._string))[0];
-		++c1;
-		return (c1 == (*(ve[1]._string))[0]);
-	}
-	assert(false);
-	return false;
-}
-
-vector<Element> SuccPredTable::tuple(unsigned int n) const {
-	vector<Element> ve(2);
-	ve[0] = element(n,0);
-	ve[1] = element(n,1);
-	return ve;
-}
-
-Element	SuccPredTable::element(unsigned int r, unsigned int c) const {
-	if(c == 0) return _table->element(r);
-	else return _table->element(r+1);
-}
-
-PredInter*	succinter(const vector<SortTable*>& vs) {
-	assert(vs.size() == 2);
-	assert(vs[0] == vs[1]);
-	PredTable* pt = new SuccPredTable(vs[0]);
-	return new PredInter(pt,true);
 }
 
 /******************************
@@ -715,9 +662,11 @@ Element PlusFuncTable::operator[](const vector<Element>& vi) const {
 	return e;
 }
 
-FuncInter* plusfuncinter(const vector<SortTable*>& vs) {
+FuncInter* plusfuncinter(const vector<Sort*>& vs) {
 	assert(vs.size() == 3); assert(vs[0] == vs[1]); assert(vs[1] == vs[2]);
-	FuncTable* ft = new PlusFuncTable(vs[0]->type());
+	ElementType t = ELINT;
+	if(vs[0] == (StdBuiltin::instance())->sort("float")) t = ELDOUBLE;
+	FuncTable* ft = new PlusFuncTable(t);
 	PredTable* pt = new FuncPredTable(ft);
 	PredInter* pi = new PredInter(pt,true);
 	return new FuncInter(ft,pi);
@@ -748,9 +697,11 @@ Element MinusFuncTable::operator[](const vector<Element>& vi) const {
 	return e;
 }
 
-FuncInter* minusfuncinter(const vector<SortTable*>& vs) {
+FuncInter* minusfuncinter(const vector<Sort*>& vs) {
 	assert(vs.size() == 3); assert(vs[0] == vs[1]); assert(vs[1] == vs[2]);
-	FuncTable* ft = new MinusFuncTable(vs[0]->type());
+	ElementType t = ELINT;
+	if(vs[0] == (StdBuiltin::instance())->sort("float")) t = ELDOUBLE;
+	FuncTable* ft = new MinusFuncTable(t);
 	PredTable* pt = new FuncPredTable(ft);
 	PredInter* pi = new PredInter(pt,true);
 	return new FuncInter(ft,pi);
@@ -781,9 +732,11 @@ Element TimesFuncTable::operator[](const vector<Element>& vi) const {
 	return e;
 }
 
-FuncInter* timesfuncinter(const vector<SortTable*>& vs) {
+FuncInter* timesfuncinter(const vector<Sort*>& vs) {
 	assert(vs.size() == 3); assert(vs[0] == vs[1]); assert(vs[1] == vs[2]);
-	FuncTable* ft = new TimesFuncTable(vs[0]->type());
+	ElementType t = ELINT;
+	if(vs[0] == (StdBuiltin::instance())->sort("float")) t = ELDOUBLE;
+	FuncTable* ft = new TimesFuncTable(t);
 	PredTable* pt = new FuncPredTable(ft);
 	PredInter* pi = new PredInter(pt,true);
 	return new FuncInter(ft,pi);
@@ -816,9 +769,11 @@ Element DivFuncTable::operator[](const vector<Element>& vi) const {
 	return e;
 }
 
-FuncInter* divfuncinter(const vector<SortTable*>& vs) {
+FuncInter* divfuncinter(const vector<Sort*>& vs) {
 	assert(vs.size() == 3); assert(vs[0] == vs[1]); assert(vs[1] == vs[2]);
-	FuncTable* ft = new DivFuncTable(vs[0]->type());
+	ElementType t = ELINT;
+	if(vs[0] == (StdBuiltin::instance())->sort("float")) t = ELDOUBLE;
+	FuncTable* ft = new DivFuncTable(t);
 	PredTable* pt = new FuncPredTable(ft);
 	PredInter* pi = new PredInter(pt,true);
 	return new FuncInter(ft,pi);
@@ -845,7 +800,7 @@ Element ModFuncTable::operator[](const vector<Element>& vi) const {
 	}
 }
 
-FuncInter* modfuncinter(const vector<SortTable*>& vs) {
+FuncInter* modfuncinter() {
 	FuncTable* ft = new ModFuncTable();
 	PredTable* pt = new FuncPredTable(ft);
 	PredInter* pi = new PredInter(pt,true);
@@ -854,32 +809,24 @@ FuncInter* modfuncinter(const vector<SortTable*>& vs) {
 
 /** Exponentiation **/
 
-class ExpFuncTable : public AritFuncTable {
+class ExpFuncTable : public InfiniteFuncTable {
 	public:
-		ExpFuncTable(ElementType t) : AritFuncTable(t) { }
+		ExpFuncTable() : InfiniteFuncTable() { }
 		~ExpFuncTable() { }
-		unsigned int arity()							const { return 2;	}
+		unsigned int arity()							const { return 2;			}
+		ElementType type(unsigned int n)				const { return ELDOUBLE;	}
 		Element operator[](const vector<Element>& vi)	const;
 		string to_string(unsigned int spaces = 0)		const { return tabstring(spaces) + "^/2";	}
 };
 
 Element ExpFuncTable::operator[](const vector<Element>& ve) const {
 	Element e;
-	switch(_type) {
-		case ELINT:
-			assert(ve[1]._int >= 0);
-			e._int = int(pow(double(ve[0]._int),double(ve[1]._int)));
-			break;
-		case ELDOUBLE:
-			e._double = pow(ve[0]._double,ve[1]._double);
-			break;
-		default: assert(false);
-	}
+	e._double = pow(ve[0]._double,ve[1]._double);
 	return e;
 }
 
-FuncInter* expfuncinter(const vector<SortTable*>& vs) {
-	FuncTable* ft = new ExpFuncTable(vs[1]->type());
+FuncInter* expfuncinter() {
+	FuncTable* ft = new ExpFuncTable();
 	PredTable* pt = new FuncPredTable(ft);
 	PredInter* pi = new PredInter(pt,true);
 	return new FuncInter(ft,pi);
@@ -910,9 +857,11 @@ Element AbsFuncTable::operator[](const vector<Element>& vi) const {
 	return e;
 }
 
-FuncInter* absfuncinter(const vector<SortTable*>& vs) {
+FuncInter* absfuncinter(const vector<Sort*>& vs) {
 	assert(vs.size() == 2); assert(vs[0] == vs[1]);
-	FuncTable* ft = new AbsFuncTable(vs[0]->type());
+	ElementType t = ELINT;
+	if(vs[0] == (StdBuiltin::instance())->sort("float")) t = ELDOUBLE;
+	FuncTable* ft = new AbsFuncTable(t);
 	PredTable* pt = new FuncPredTable(ft);
 	PredInter* pi = new PredInter(pt,true);
 	return new FuncInter(ft,pi);
@@ -943,9 +892,11 @@ Element UMinFuncTable::operator[](const vector<Element>& vi) const {
 	return e;
 }
 
-FuncInter* uminfuncinter(const vector<SortTable*>& vs) {
+FuncInter* uminfuncinter(const vector<Sort*>& vs) {
 	assert(vs.size() == 2); assert(vs[0] == vs[1]);
-	FuncTable* ft = new UMinFuncTable(vs[0]->type());
+	ElementType t = ELINT;
+	if(vs[0] == (StdBuiltin::instance())->sort("float")) t = ELDOUBLE;
+	FuncTable* ft = new UMinFuncTable(t);
 	PredTable* pt = new FuncPredTable(ft);
 	PredInter* pi = new PredInter(pt,true);
 	return new FuncInter(ft,pi);
@@ -976,9 +927,135 @@ FuncInter* maximumfuncinter(const vector<SortTable*>& vs) {
 	return new FuncInter(fft,pt);
 }
 
+/** Successor and predecessor **/
+
+class SuccFuncTable : public FuncTable {
+
+	private:
+		SortTable*	_table;
+		bool		_succ;
+
+	public:
+
+		// Constructors
+		SuccFuncTable(SortTable* t, bool s) : FuncTable(), _table(t), _succ(s) { }
+
+		// Destructor
+		~SuccFuncTable() { }
+
+		// Inspectors
+		bool			finite()								const { return _table->finite();	}
+		bool			empty()									const { return (_table->finite()) && _table->size() < 2;	}
+		unsigned int	size()									const { assert(_table->finite()); return _table->size()-1;	}
+		vector<Element>	tuple(unsigned int n)					const;
+		Element			element(unsigned int r,unsigned int c)	const;
+		unsigned int	arity()									const { return 1;				}
+		ElementType		type(unsigned int)						const { return _table->type();	}
+		Element			operator[](const vector<Element>& vi)	const;
+
+		// Debugging
+		string to_string(unsigned int spaces = 0) const;
+
+};
+
+string SuccFuncTable::to_string(unsigned int spaces) const {
+	if(_succ) return tabstring(spaces) + "SUCC/1";
+	else return tabstring(spaces) + "PRED/1";
+}
+
+Element SuccFuncTable::operator[](const vector<Element>& ve) const {
+	if(_table->finite()) {
+		unsigned int p1 = _table->position(ve[0],_table->type());
+		if(_succ) {
+			if(p1 < _table->size()-1) return _table->element(p1+1); 
+			else return ElementUtil::nonexist(_table->type());
+		}
+		else {
+			if(p1 > 0) return _table->element(p1-1);
+			else return ElementUtil::nonexist(_table->type());
+		}
+	}
+	else if(typeid(*_table) == typeid(AllNatSortTable)) {
+		if(_succ) {
+			Element e; e._int = ve[0]._int + 1; return e;
+		}
+		else {
+			if(ve[0]._int == 0) return ElementUtil::nonexist(ELINT);
+			else {
+				Element e; e._int = ve[0]._int - 1; return e;
+			}
+		}
+	}
+	else if(typeid(*_table) == typeid(AllIntSortTable)) {
+		if(_succ) {
+			Element e; e._int = ve[0]._int + 1; return e;
+		}
+		else {
+			Element e; e._int = ve[0]._int - 1; return e;
+		}
+	}
+	else if(typeid(*_table) == typeid(AllCharSortTable)) {
+		char c1 = (*(ve[0]._string))[0];
+		if(_succ) ++c1;
+		else {
+			if(c1 == 0) return ElementUtil::nonexist(ELSTRING);
+			else --c1;
+		}
+		Element e; 
+		e._string = IDPointer(string(1,c1));
+		return e;
+	}
+	assert(false);
+	Element e;
+	return e;
+}
+
+vector<Element> SuccFuncTable::tuple(unsigned int n) const {
+	vector<Element> ve(2);
+	ve[0] = element(n,0);
+	ve[1] = element(n,1);
+	return ve;
+}
+
+Element	SuccFuncTable::element(unsigned int r, unsigned int c) const {
+	if(_succ) {
+		if(c == 0) return _table->element(r);
+		else return _table->element(r+1);
+	}
+	else {
+		if(c == 0) return _table->element(r+1);
+		else return _table->element(r);
+	}
+}
+
+FuncInter* succfuncinter(const vector<SortTable*>& vs) {
+	assert(vs.size() == 2);
+	assert(vs[0] == vs[1]);
+	FuncTable* ft = new SuccFuncTable(vs[0],true);
+	PredTable* pt = new FuncPredTable(ft);
+	PredInter* pi = new PredInter(pt,true);
+	return new FuncInter(ft,pi);
+}
+
+FuncInter* predfuncinter(const vector<SortTable*>& vs) {
+	assert(vs.size() == 2);
+	assert(vs[0] == vs[1]);
+	FuncTable* ft = new SuccFuncTable(vs[0],false);
+	PredTable* pt = new FuncPredTable(ft);
+	PredInter* pi = new PredInter(pt,true);
+	return new FuncInter(ft,pi);
+}
+
 /**********************************
 	Standard built-in vocabulary
 **********************************/
+
+StdBuiltin* StdBuiltin::_instance = 0;
+
+StdBuiltin* StdBuiltin::instance() {
+	if(!_instance) _instance = new StdBuiltin();
+	return _instance;
+}
 
 StdBuiltin::StdBuiltin() : Vocabulary("std") {
 
@@ -990,11 +1067,11 @@ StdBuiltin::StdBuiltin() : Vocabulary("std") {
 	Sort* stringsort	= new BuiltInSort("string",new AllStringSortTable());
 
 	// Add the sorts
-	addSort("nat",natsort);
-	addSort("int",intsort);
-	addSort("float",floatsort);
-	addSort("char",charsort);
-	addSort("string",stringsort);
+	addSort(natsort);
+	addSort(intsort);
+	addSort(floatsort);
+	addSort(charsort);
+	addSort(stringsort);
 
 	// Set sort hierarchy 
 	intsort->parent(floatsort);
@@ -1002,32 +1079,29 @@ StdBuiltin::StdBuiltin() : Vocabulary("std") {
 	charsort->parent(stringsort);
 
 	// Built-in predicates
-	vector<Sort*> (*sd)(const vector<Sort*>&);
-	sd = &overloaded_predicate_deriver1;
-	addPred("=/2",new OverloadedPredicate("=/2",2,sd,&equalinter));
-	addPred("</2",new OverloadedPredicate("</2",2,sd,&strlessinter));
-	addPred(">/2",new OverloadedPredicate(">/2",2,sd,&strgreaterinter));
-	addPred("SUCC/2",new OverloadedPredicate("SUCC/2",2,sd,&succinter));
+	addPred(new ComparisonPredicate("=/2",2,&equalinter));
+	addPred(new ComparisonPredicate("</2",2,&strlessinter));
+	addPred(new ComparisonPredicate(">/2",2,&strgreaterinter));
 
 	// Built-in functions
-	sd = &overloaded_function_deriver1;
-	addFunc("+/2",new OverloadedFunction("+/2",2,sd,&plusfuncinter));
-	addFunc("-/2",new OverloadedFunction("-/2",2,sd,&minusfuncinter));
-	addFunc("*/2",new OverloadedFunction("*/2",2,sd,&timesfuncinter));
-	Function* divfunc = new OverloadedFunction("//2",2,sd,&divfuncinter); divfunc->partial(true);
-	addFunc("//2",divfunc);
-	addFunc("abs/1",new OverloadedFunction("abs/1",1,sd,&absfuncinter));
-	addFunc("-/1",new OverloadedFunction("-/1",1,sd,&uminfuncinter));
-
-	sd = &overloaded_function_deriver2;
-	addFunc("MIN/0",new OverloadedFunction("MIN/0",0,sd,&minimumfuncinter));
-	addFunc("MAX/0",new OverloadedFunction("MAX/0",0,sd,&maximumfuncinter));
-
-	sd = &overloaded_function_deriver3;
-	addFunc("^/2",new OverloadedFunction("^/2",2,sd,&expfuncinter));
+	addFunc(new IntFloatFunction("+/2",2,&plusfuncinter));
+	addFunc(new IntFloatFunction("-/2",2,&minusfuncinter));
+	addFunc(new IntFloatFunction("*/2",2,&timesfuncinter));
+	Function* divfunc = new IntFloatFunction("//2",2,&divfuncinter); divfunc->partial(true);
+	addFunc(divfunc);
+	addFunc(new IntFloatFunction("abs/1",1,&absfuncinter));
+	addFunc(new IntFloatFunction("-/1",1,&uminfuncinter));
 
 	vector<Sort*> modsorts(3,intsort);
-	Function* modfunc = new BuiltInFunction("%/2",modsorts,&modfuncinter); modfunc->partial(true);
-	addFunc("%/2",modfunc);
+	Function* modfunc = new BuiltInFunction("%/2",modsorts,modfuncinter()); modfunc->partial(true);
+	addFunc(modfunc);
+
+	vector<Sort*> expsorts(3,floatsort);
+	addFunc(new BuiltInFunction("^/2",expsorts,expfuncinter()));
+
+	addFunc(new ComparisonFunction("MIN/0",0,&minimumfuncinter));
+	addFunc(new ComparisonFunction("MAX/0",0,&maximumfuncinter));
+	addFunc(new ComparisonFunction("SUCC/1",1,&succfuncinter));
+	addFunc(new ComparisonFunction("PRED/1",1,&predfuncinter));
 
 }

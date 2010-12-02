@@ -30,6 +30,8 @@ class Namespace {
 		vector<AbstractTheory*>			_theos;			// The theories in the namespace                           
 		ParseInfo						_pi;			// the place where the namespace was parsed
 
+		static Namespace*				_global;		// The global namespace
+
 	public:
 
 		// Constructors
@@ -40,10 +42,12 @@ class Namespace {
 		~Namespace();
 
 		// Inspectors
-		const string&		name()						const	{ return _name;			}
-		Namespace*			super()						const	{ return _superspace;	}
-		const ParseInfo&	pi()						const	{ return _pi;			}
-		bool				isGlobal()					const;	// return true iff the namespace is the global namespace
+		static Namespace*	global();	
+
+		const string&		name()						const	{ return _name;				}
+		Namespace*			super()						const	{ return _superspace;		}
+		const ParseInfo&	pi()						const	{ return _pi;				}
+		bool				isGlobal()					const	{ return this == _global;	}
 		string				fullname()					const;	// return the full name of the namespace 
 		bool				isSubspace(const string&)	const;
 		bool				isVocab(const string&)		const;

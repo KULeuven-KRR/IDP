@@ -52,15 +52,20 @@ DomainData::~DomainData() {
 	}
 }
 
-string*		IDPointer(char* s)			{ return _domaindata.stringpointer(string(s));						}
-string*		IDPointer(const string& s)	{ return _domaindata.stringpointer(s);								}
-compound*	CPPointer(TypedElement e)	{ return _domaindata.compoundpointer(0,vector<TypedElement>(1,e));	}
+DomainData* DomainData::_instance = 0;
+
+DomainData* DomainData::instance() {
+	if(!_instance) _instance = new DomainData();
+	return _instance;
+}
+
+string*		IDPointer(char* s)			{ return DomainData::instance()->stringpointer(string(s));						}
+string*		IDPointer(const string& s)	{ return DomainData::instance()->stringpointer(s);								}
+compound*	CPPointer(TypedElement e)	{ return DomainData::instance()->compoundpointer(0,vector<TypedElement>(1,e));	}
 
 /******************
 	Global data	
 ******************/
 
-StdBuiltin	_stdbuiltin;		// Standard built-in vocabularium
-DomainData	_domaindata;		// Shared domain element pointers
 Options		_options;			// Options
 Namespace	_globalnamespace("global_namespace",0,ParseInfo());	// The global namespace

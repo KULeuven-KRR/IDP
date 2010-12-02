@@ -10,9 +10,7 @@
 #include <sstream>
 #include <vector>
 #include <stdlib.h>
-#include <tr1/memory>
 using namespace std;
-using namespace std::tr1;
 
 // Extreme numbers
 int		MIN_INT		= numeric_limits<int>::min();

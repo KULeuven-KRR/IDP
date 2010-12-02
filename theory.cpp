@@ -540,7 +540,7 @@ void FormulaEvaluator::visit(EqChainForm* ef) {
 	for(unsigned int n = 0; n < vf.size(); ++n) {
 		vector<Term*> vt(2); vt[0] = ef->subterm(n); vt[1] = ef->subterm(n+1);
 		string pn = string(1,ef->comp(n)) + "/2";
-		vf[n] = new PredForm(ef->compsign(n),_stdbuiltin.pred(pn),vt,FormParseInfo());
+		vf[n] = new PredForm(ef->compsign(n),StdBuiltin::instance()->pred(pn),vt,FormParseInfo());
 	}
 	BoolForm* bf = new BoolForm(ef->sign(),ef->conj(),vf,FormParseInfo());
 	bf->accept(this);
@@ -754,9 +754,9 @@ Formula* EqChainRemover::visit(EqChainForm* ef) {
 	for(unsigned int n = 0; n < ef->nrSubterms()-1; ++n) {
 		Predicate* p = 0;
 		switch(ef->comp(n)) {
-			case '=' : p = _stdbuiltin.pred("=/2"); break;
-			case '<' : p = _stdbuiltin.pred("</2"); break;
-			case '>' : p = _stdbuiltin.pred(">/2"); break;
+			case '=' : p = StdBuiltin::instance()->pred("=/2"); break;
+			case '<' : p = StdBuiltin::instance()->pred("</2"); break;
+			case '>' : p = StdBuiltin::instance()->pred(">/2"); break;
 			default: assert(false);
 		}
 		vector<Sort*> vs(2); vs[0] = ef->subterm(n)->sort(); vs[1] = ef->subterm(n+1)->sort();
@@ -990,7 +990,7 @@ Formula* QuantMover::visit(QuantForm* qf) {
 				vf[n] = nqf->clone();
 				delete(nqf);
 			}
-			qf->recursiveDelete();
+			qf->subf()->recursiveDelete();
 			BoolForm* nbf = new BoolForm(true,c,vf,ParseInfo());
 			return nbf->accept(this);
 		}
@@ -1018,8 +1018,8 @@ class Tseitinizer : public MutatingVisitor {
 
 Tseitinizer::Tseitinizer(AbstractTheory* t) {
 	// Clone t's vocabulary!
-	Vocabulary* v = new Vocabulary(t->vocabulary());
-	t->vocabulary(v);
+	// TODO Vocabulary* v = new Vocabulary(t->vocabulary());
+	// TODO t->vocabulary(v);
 	
 	// Prepare the theory
 	TheoryUtils::remove_eqchains(t);
@@ -1088,7 +1088,7 @@ Formula* Tseitinizer::visit(BoolForm* bf) {
 			vector<Sort*> vs(bf->nrFvars());
 			for(unsigned int n = 0; n < bf->nrFvars(); ++n) vs[n] = bf->fvar(n)->sort();
 			Predicate* tspred = new Predicate(vs);
-			_theory->vocabulary()->addPred(tspred->name(),tspred);
+			_theory->vocabulary()->addPred(tspred);
 			if(bf->conj()) {	// A conjunction deeper than sentence level
 				for(unsigned int n = 0; n < bf->nrSubforms(); ++n) {
 					map<Variable*,Variable*> mvv;
@@ -1371,7 +1371,7 @@ Formula* Reducer::visit(EqChainForm* ef) {
 		if(ef->subterm(n-1)->nrFvars() == 0 && ef->subterm(n)->nrFvars() == 0) {
 			vector<Term*> vt(2); vt[0] = ef->subterm(n-1); vt[1] = ef->subterm(n);
 			string pn = string(1,ef->comp(n)) + "/2";
-			PredForm* pf = new PredForm(ef->compsign(n-1),_stdbuiltin.pred(pn),vt,FormParseInfo());
+			PredForm* pf = new PredForm(ef->compsign(n-1),StdBuiltin::instance()->pred(pn),vt,FormParseInfo());
 			map<Variable*,TypedElement> mvt;
 			TruthValue tv = FormulaUtils::evaluate(pf,_structure,mvt);
 			delete(pf);
@@ -1639,15 +1639,18 @@ Formula* AggGrapher::visit(PredForm* pf) {
 	if(pfs == "=/2" || pfs == "</2" || pfs == ">/2") {
 		if(typeid(*(pf->subterm(0))) == typeid(AggTerm)) {
 			AggTerm* at = dynamic_cast<AggTerm*>(pf->subterm(0));
-			Predicate* p = pf->symb();
-			if(pfs == "</2") p = _stdbuiltin->pred(">/2");
-			else if(pfs == ">/2") p = _stdbuiltin->pred("</2");
-			AggForm* af = new AggForm(pf->sign(),p,pf->subterm(1),at,FormParseInfo());
+			char c = '=';
+			if(pfs == "</2") c = '>';
+			else if(pfs == ">/2") c = '<'; 
+			AggForm* af = new AggForm(pf->sign(),c,pf->subterm(1),at,FormParseInfo());
 			return af;
 		}
 		else if(typeid(*(pf->subterm(1))) == typeid(AggTerm)) {
 			AggTerm* at = dynamic_cast<AggTerm*>(pf->subterm(1));
-			AggForm* af = new AggForm(pf->sign(),pf->symb(),pf->subterm(0),at,FormParseInfo());
+			char c = '=';
+			if(pfs == ">/2") c = '>';
+			else if(pfs == "</2") c = '<'; 
+			AggForm* af = new AggForm(pf->sign(),c,pf->subterm(0),at,FormParseInfo());
 			return af;
 		}
 		else return pf;
@@ -1688,16 +1691,16 @@ Formula* AggMover::visit(PredForm* pf) {
 			vector<Term*> vt(2); 
 			Term* l = new VarTerm(_newvars[n],ParseInfo());
 			AggTerm* r = _aggs[n];
-			AggForm* af = new AggForm(false,_stdbuiltin.pred("=/2"),l,r,FormParseInfo());
+			AggForm* af = new AggForm(false,'=',l,r,FormParseInfo());
 			vf.push_back(af);
 		}
 		vf.push_back(pf->clone());
 		for(unsigned int n = 0; n < pf->nrSubterms(); ++n) pf->subterm(n)->recursiveDelete();
-		BoolForm* bf = new BoolForm(true,false,_vf,FormParseInfo());
+		BoolForm* bf = new BoolForm(true,false,vf,FormParseInfo());
 		QuantForm* qf = new QuantForm(true,true,_newvars,bf,FormParseInfo());
 		_aggs.clear();
 		_newvars.clear();
-		Formula* f = visit(qf);
+		Formula* f = MutatingVisitor::visit(qf);
 		if(f != qf) delete(qf);
 		return f;
 	}

@@ -123,7 +123,7 @@ void ModelExpansionInference::execute(const vector<InfArg>& args, const string& 
 	TheoryUtils::tseitin(gr);
 	EcnfTheory* ecnfgr = TheoryUtils::convert_to_ecnf(gr);
 	ECNF_mode modes;
-	modes.nbmodels = _options._nrmodels;
+	modes.nbmodels = 1;
 	PCSolver* solver = new PCSolver(modes);
 	GroundPrinter* printer = new outputToSolver(solver);
 	ecnfgr->print(printer);

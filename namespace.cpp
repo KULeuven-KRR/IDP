@@ -7,12 +7,20 @@
 #include "data.hpp"
 #include "namespace.hpp"
 #include "options.hpp"
+#include "builtin.hpp"
 #include <iostream>
 
-/** Global namespace and options **/
+/** Global namespace **/
 
-bool Namespace::isGlobal() const {
-	return (this == &_globalnamespace);
+Namespace* Namespace::_global = 0; 
+
+Namespace* Namespace::global() {
+	if(!_global) {
+		ParseInfo pi;
+		_global = new Namespace("global_namespace",0,pi);
+		_global->add(StdBuiltin::instance());
+	}
+	return _global;
 }
 
 /** Destructor **/
@@ -96,36 +104,36 @@ string Namespace::fullname() const {
 
 set<Sort*> Namespace::allSorts() const {
 	set<Sort*> ss;
-	for(unsigned int n = 0; n < _vocs.size(); ++n) {
+/*	for(unsigned int n = 0; n < _vocs.size(); ++n) {
 		for(unsigned int m = 0; m < _vocs[n]->nrSorts(); ++m) ss.insert(_vocs[n]->sort(m));
 	}
 	for(unsigned int n = 0; n < _subs.size(); ++n) {
 		set<Sort*> temp = _subs[n]->allSorts();
 		ss.insert(temp.begin(),temp.end());
-	}
+	}*/
 	return ss;
 }
 
 set<Predicate*> Namespace::allPreds() const {
 	set<Predicate*> sp;
-	for(unsigned int n = 0; n < _vocs.size(); ++n) {
+/*	for(unsigned int n = 0; n < _vocs.size(); ++n) {
 		for(unsigned int m = 0; m < _vocs[n]->nrPreds(); ++m) sp.insert(_vocs[n]->pred(m));
 	}
 	for(unsigned int n = 0; n < _subs.size(); ++n) {
 		set<Predicate*> temp = _subs[n]->allPreds();
 		sp.insert(temp.begin(),temp.end());
-	}
+	}*/
 	return sp;
 }
 
 set<Function*> Namespace::allFuncs() const {
 	set<Function*> sf;
-	for(unsigned int n = 0; n < _vocs.size(); ++n) {
+/*	for(unsigned int n = 0; n < _vocs.size(); ++n) {
 		for(unsigned int m = 0; m < _vocs[n]->nrFuncs(); ++m) sf.insert(_vocs[n]->func(m));
 	}
 	for(unsigned int n = 0; n < _subs.size(); ++n) {
 		set<Function*> temp = _subs[n]->allFuncs();
 		sf.insert(temp.begin(),temp.end());
-	}
+	}*/
 	return sf;
 }

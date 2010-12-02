@@ -324,8 +324,11 @@ class AggForm : public Formula {
 		AggForm*	clone()									const;
 		AggForm*	clone(const map<Variable*,Variable*>&)	const;
 
-	   // Destructor
-	   void recursiveDelete();
+		// Destructor
+		void recursiveDelete();
+
+		// Mutators
+		void left(Term* t) { _left = t;	}
 
 		// Inspectors
 		unsigned int	nrQvars()				const { return 0;						}
@@ -334,6 +337,8 @@ class AggForm : public Formula {
 		Variable*		qvar(unsigned int n)	const { assert(false); return 0;		}
 		Formula*		subform(unsigned int n)	const { assert(false); return 0;		}
 		Term*			subterm(unsigned int n)	const { return (n ? _right : _left);	}
+		Term*			left()					const { return _left;					}
+		AggTerm*		right()					const { return _right;					}
 
 		// Visitor
 		void		accept(Visitor* v);

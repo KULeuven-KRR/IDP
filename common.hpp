@@ -8,11 +8,11 @@
 #include <vector>
 #include <string>
 using namespace std;
-
-/** Memory management **/
 struct compound;
 struct TypedElement;
 
+/** Memory management **/
+// The functions below implement shared pointers to strings and compound elements. All user defined strings should be created by a call to one of these functions. Similarly for all compound elements.
 extern string*		IDPointer(char* s);			// return a 'shared' pointer to s;
 extern string*		IDPointer(const string& s);	// return a 'shared' pointer to s;
 extern compound*	CPPointer(TypedElement e);	// return a 'shared' pointer to compound 0(e);

@@ -12,6 +12,7 @@
 #include <tr1/memory>
 #include <map>
 #include "vocabulary.hpp"
+#include "options.hpp"
 using namespace std;
 using namespace std::tr1;
 
@@ -19,31 +20,22 @@ typedef unordered_map<string,string*>			MSSP;
 typedef map<vector<TypedElement>,compound*>		MVTC;
 typedef map<Function*,MVTC>						MFMVTC;
 
+extern Options _options;
+
 /******************************************
 	Shared pointers for domain elements
 ******************************************/
 
 class DomainData {
 	private:
+		static DomainData*	_instance;
 		MSSP	_sharedstrings;		// map a string to its shared pointer
 		MFMVTC	_sharedcompounds;	// map a compund to its shared pointer
-	public:
 		~DomainData();
+	public:
+		static DomainData*	instance();
 		string*		stringpointer(const string&);							// get the shared pointer of a string
 		compound*	compoundpointer(Function*,const vector<TypedElement>&);	// get the shared pointer of a compound
 };
-
-/******************
-	Global data
-******************/
-
-class StdBuiltin;
-struct Options;
-class Namespace;
-
-extern StdBuiltin	_stdbuiltin;		// Standard built-in vocabularium
-extern DomainData	_domaindata;		// Shared domain element pointers
-extern Options		_options;			// Options
-extern Namespace	_globalnamespace;	// The global namespace
 
 #endif

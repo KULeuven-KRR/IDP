@@ -17,9 +17,11 @@
  *		functions:		+/2, -/2, * /2, //2, ^/2, %/2, abs/1, -/1, MIN/0, MAX/0
  */
 class StdBuiltin : public Vocabulary {
-	public:
-		// Constructor
+	private:
+		static StdBuiltin* _instance;	
 		StdBuiltin();
+	public:
+		static StdBuiltin* instance();
 };
 
 

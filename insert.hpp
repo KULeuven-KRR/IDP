@@ -34,18 +34,25 @@ namespace Insert {
 	void openspace(const string& sname,YYLTYPE);	// set the current namespace to its subspace with name 'sname'
 
 	/** Vocabulary **/
-	void openvocab(const string& vname, YYLTYPE);				// create a new vocabulary with name 'vname' 
-																	// in the current namespace
-	void closevocab();												// stop parsing a vocabulary
+	void openvocab(const string& vname, YYLTYPE);			// create a new vocabulary with name 'vname' 
+															// in the current namespace
+	void closevocab();										// stop parsing a vocabulary
 	void usingvocab(const vector<string>& vname, YYLTYPE);	// Use vocabulary 'vname' when parsing
+	void setvocab(const vector<string>& vname, YYLTYPE);	// Set the vocabulary of the current theory or structure 
 
 	Sort*		sortpointer(const vector<string>& sname, YYLTYPE);		// return sort with name 'sname'
 	Sort*		theosortpointer(const vector<string>& vs, YYLTYPE l);	// return sort with name 'sname'
 	Predicate*	predpointer(const vector<string>& pname, YYLTYPE);		// return predicate with name 'pname'
 	Function*	funcpointer(const vector<string>& fname, YYLTYPE);		// return function with name 'fname'
+	Predicate*	predpointer(const vector<string>& pname, const vector<Sort*>&, YYLTYPE);
+	Function*	funcpointer(const vector<string>& fname, const vector<Sort*>&, YYLTYPE);	
 
-	Sort*		sort(const string& name, YYLTYPE);				// create a new base sort
-	Sort*		sort(const string& name, Sort* sups, YYLTYPE);	// create a new subsort
+	// Create new sorts
+	Sort*	sort(const string& name, YYLTYPE);						
+	Sort*	sort(const string& name, const vector<Sort*> supbs, bool p, YYLTYPE);
+	Sort*	sort(const string& name, const vector<Sort*> sups, const vector<Sort*> subs, YYLTYPE);
+
+	Sort*		sort(Sort* s);											// add an existing sort
 	Predicate*	predicate(Predicate* p);								// add an existing predicate 
 	Function*	function(Function* f);									// add an existing function 
 	Predicate*	predicate(const string& name, const vector<Sort*>& sorts, YYLTYPE);	// create a new predicate
@@ -104,7 +111,6 @@ namespace Insert {
 	PredForm*		funcgraphform(const vector<string>&, Term*, YYLTYPE);
 	PredForm*		predform(const vector<string>&, const vector<Term*>&, YYLTYPE);
 	PredForm*		predform(const vector<string>&, YYLTYPE);
-	PredForm*		succform(Term*, Term*, YYLTYPE);
 	EquivForm*		equivform(Formula*,Formula*,YYLTYPE);
 	BoolForm*		disjform(Formula*,Formula*,YYLTYPE);
 	BoolForm*		conjform(Formula*,Formula*,YYLTYPE);
@@ -136,11 +142,6 @@ namespace Insert {
 	DomainTerm*		domterm(string*,YYLTYPE);
 	DomainTerm*		domterm(char,YYLTYPE);
 	DomainTerm*		domterm(string*,Sort*,YYLTYPE);
-
-	FuncTerm*		minterm(YYLTYPE l);
-	FuncTerm*		minterm(Sort*,YYLTYPE l);
-	FuncTerm*		maxterm(YYLTYPE l);
-	FuncTerm*		maxterm(Sort*,YYLTYPE l);
 
 	/** Statements **/
 	void	command(InfArgType,const string& cname, const vector<string>& args, const string& res, YYLTYPE l);
