@@ -96,6 +96,16 @@ namespace Error {
 		cerr << "The tuples in this table have different lengths" << endl;
 	}
 
+	void wrongpredarity(const string& p, const ParseInfo& pi) {
+		error(pi);
+		cerr << "Wrong number of terms given to predicate " << p << ".\n";
+	}
+
+	void wrongfuncarity(const string& f, const ParseInfo& pi) {
+		error(pi);
+		cerr << "Wrong number of terms given to function " << f << ".\n";
+	}
+
 	/** Invalid interpretations **/
 	void expectedutf(const string& s, const ParseInfo& pi) {
 		error(pi);
@@ -249,30 +259,6 @@ namespace Error {
 		cerr << "." << endl;
 	}
 
-	void multdeclsort(const string& sname, const ParseInfo& thisplace, const ParseInfo& prevdeclplace) {
-		error(thisplace);
-		cerr << "Sort " << sname << " is already declared in this scope" 
-			 << ", namely at line " << prevdeclplace.line() << ", column " << prevdeclplace.col(); 
-		if(prevdeclplace.file()) cerr << " of file " << *(prevdeclplace.file());
-		cerr << "." << endl;
-	}
-
-	void multdeclpred(const string& pname, const ParseInfo& thisplace, const ParseInfo& prevdeclplace) {
-		error(thisplace);
-		cerr << "Predicate " << pname << " is already declared in this scope" 
-			 << ", namely at line " << prevdeclplace.line() << ", column " << prevdeclplace.col(); 
-		if(prevdeclplace.file()) cerr << " of file " << *(prevdeclplace.file());
-		cerr << "." << endl;
-	}
-
-	void multdeclfunc(const string& fname, const ParseInfo& thisplace, const ParseInfo& prevdeclplace) {
-		error(thisplace);
-		cerr << "Function " << fname << " is already declared in this scope" 
-			 << ", namely at line " << prevdeclplace.line() << ", column " << prevdeclplace.col(); 
-		if(prevdeclplace.file()) cerr << " of file " << *(prevdeclplace.file());
-		cerr << "." << endl;
-	}
-
 	/** Undeclared objects **/
 
 	void undeclvoc(const string& vocname, const ParseInfo& thisplace) {
@@ -348,27 +334,21 @@ namespace Error {
 	}
 
 	/** Using overlapping symbols **/
-	void doublesortusing(const string& sname, const string& vocname1, const string& vocname2, const ParseInfo& thisplace) {
-		error(thisplace);
-		cerr << "Sort with name " << sname << " can refer to a sort in vocabulary " 
-			 << vocname1 << " and to a different sort in vocabulary " << vocname2 << "." << endl;
-	}
-
-	void doublepredusing(const string& pname, const string& vocname1, const string& vocname2, const ParseInfo& thisplace) {
-		error(thisplace);
-		cerr << "Predicate with name " << pname << " can refer to a predicate in vocabulary " 
-			 << vocname1 << " and to a different predicate in vocabulary " << vocname2 << "." << endl;
-	}
-
-	void doublefuncusing(const string& fname, const string& vocname1, const string& vocname2, const ParseInfo& thisplace) {
-		error(thisplace);
-		cerr << "Function with name " << fname << " can refer to a function in vocabulary " 
-			 << vocname1 << " and to a different function in vocabulary " << vocname2 << "." << endl;
-	}
-
 	void predorfuncsymbol(const string& name, const ParseInfo& pi) {
 		error(pi);
 		cerr << name << " could be the predicate " << name << "/1 or the function " << name << "/0 at this place.\n";
+	}
+
+	/** Sort hierarchy errors **/
+
+	void notsubsort(const string& c, const string& p, const ParseInfo& pi) {
+		error(pi);
+		cerr << "Sort " << c << " is not a subsort of sort " << p << ".\n";
+	}
+
+	void cyclichierarchy(const string& c, const string& p, const ParseInfo& pi) {
+		error(pi);
+		cerr << "Cycle introduced between sort " << c << " and sort " << p << ".\n"; 
 	}
 
 	/** Type checking **/
@@ -376,6 +356,11 @@ namespace Error {
 	void novarsort(const string& name, const ParseInfo& thisplace) {
 		error(thisplace);
 		cerr << "Could not derive the sort of variable " << name << ".\n";
+	}
+
+	void nodomsort(const string& name, const ParseInfo& thisplace) {
+		error(thisplace);
+		cerr << "Could not derive the sort of domain element " << name << ".\n";
 	}
 
 	void nopredsort(const string& name, const ParseInfo& thisplace) {

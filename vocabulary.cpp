@@ -105,12 +105,16 @@ namespace ElementUtil {
 		switch(t) {
 			case ELINT:
 				e._int = MAX_INT;
+				break;
 			case ELDOUBLE:
 				e._double = MAX_DOUBLE;
+				break;
 			case ELSTRING:
 				e._string = 0;
+				break;
 			case ELCOMPOUND:
 				e._compound = 0;
+				break;
 			default:
 				assert(false);
 		}
@@ -402,11 +406,11 @@ vector<Sort*> OverloadedSort::nonbuiltins() {
 	return vs;
 }
 
-set<Sort*> Sort::ancestors() const {
+set<Sort*> Sort::ancestors(Vocabulary* v) const {
 	set<Sort*> ss;
 	for(unsigned int n = 0; n < nrParents(); ++n) {
-		ss.insert(parent(n));
-		set<Sort*> temp = parent(n)->ancestors();
+		if((!v) || v->contains(parent(n))) ss.insert(parent(n));
+		set<Sort*> temp = parent(n)->ancestors(v);
 		for(set<Sort*>::iterator it = temp.begin(); it != temp.end(); ++it)
 			ss.insert(*it);
 	}
@@ -439,9 +443,9 @@ bool OverloadedFunction::contains(Function* f) const {
 namespace SortUtils {
 
 	// Return the smallest common ancestor of two sorts, if there is an unique one
-	Sort* resolve(Sort* s1, Sort* s2) {
-		set<Sort*> ss1 = s1->ancestors(); ss1.insert(s1);
-		set<Sort*> ss2 = s2->ancestors(); ss2.insert(s2);
+	Sort* resolve(Sort* s1, Sort* s2, Vocabulary* v) {
+		set<Sort*> ss1 = s1->ancestors(v); ss1.insert(s1);
+		set<Sort*> ss2 = s2->ancestors(v); ss2.insert(s2);
 		set<Sort*> ss;
 		for(set<Sort*>::iterator it = ss1.begin(); it != ss1.end(); ++it) {
 			if(ss2.find(*it) != ss2.end()) ss.insert(*it);
@@ -451,7 +455,7 @@ namespace SortUtils {
 		else if(vs.size() == 1) return vs[0];
 		else {
 			for(unsigned int n = 0; n < vs.size(); ++n) {
-				set<Sort*> ds = vs[n]->ancestors();
+				set<Sort*> ds = vs[n]->ancestors(v);
 				for(set<Sort*>::const_iterator it = ds.begin(); it != ds.end(); ++it) ss.erase(*it);
 			}
 			vs = vector<Sort*>(ss.begin(),ss.end());
@@ -563,32 +567,32 @@ vector<Sort*> Function::insorts() const {
 	return vs;
 }
 
-Predicate* Predicate::disambiguate(const vector<Sort*>& vs) {
+Predicate* Predicate::disambiguate(const vector<Sort*>& vs,Vocabulary* v) {
 	for(unsigned int n = 0; n < _sorts.size(); ++n) {
-		if(!SortUtils::resolve(vs[n],_sorts[n])) return 0;
+		if(!SortUtils::resolve(vs[n],_sorts[n],v)) return 0;
 	}
 	return this;
 }
 
-Function* Function::disambiguate(const vector<Sort*>& vs) {
+Function* Function::disambiguate(const vector<Sort*>& vs,Vocabulary* v) {
 	for(unsigned int n = 0; n < _sorts.size(); ++n) {
-		if(!SortUtils::resolve(vs[n],_sorts[n])) return 0;
+		if(!SortUtils::resolve(vs[n],_sorts[n],v)) return 0;
 	}
 	return this;
 }
 
-Predicate* OverloadedPredicate::disambiguate(const vector<Sort*>& vs) {
+Predicate* OverloadedPredicate::disambiguate(const vector<Sort*>& vs,Vocabulary* v) {
 	Predicate* candidate = 0;
 	for(unsigned int n = 0; n < _overpreds.size(); ++n) {
 		Predicate* newcandidate = 0;
 		if(_overpreds[n]->overloaded()) {
-			newcandidate = _overpreds[n]->disambiguate(vs);
+			newcandidate = _overpreds[n]->disambiguate(vs,v);
 		}
 		else {
 			unsigned int m = 0;
 			for(; m < vs.size(); ++m) {
 				if(vs[m]) {
-					if(!(SortUtils::resolve(vs[m],_overpreds[n]->sort(m)))) break;
+					if(!(SortUtils::resolve(vs[m],_overpreds[n]->sort(m),v))) break;
 				}
 			}
 			if(m == vs.size()) {
@@ -606,18 +610,18 @@ Predicate* OverloadedPredicate::disambiguate(const vector<Sort*>& vs) {
 	return candidate;
 }
 
-Function* OverloadedFunction::disambiguate(const vector<Sort*>& vs) {
+Function* OverloadedFunction::disambiguate(const vector<Sort*>& vs,Vocabulary* v) {
 	Function* candidate = 0;
 	for(unsigned int n = 0; n < _overfuncs.size(); ++n) {
 		Function* newcandidate = 0;
 		if(_overfuncs[n]->overloaded()) {
-			newcandidate = _overfuncs[n]->disambiguate(vs);
+			newcandidate = _overfuncs[n]->disambiguate(vs,v);
 		}
 		else {
 			unsigned int m = 0;
 			for(; m < vs.size(); ++m) {
 				if(vs[m]) {
-					if(!(SortUtils::resolve(vs[m],_overfuncs[n]->sort(m)))) break;
+					if(!(SortUtils::resolve(vs[m],_overfuncs[n]->sort(m),v))) break;
 				}
 			}
 			if(m == vs.size()) {
@@ -781,6 +785,28 @@ namespace FuncUtils {
 /*****************
 	Vocabulary
 *****************/
+
+/** Constructors **/
+
+Vocabulary::Vocabulary(const string& name) : _name(name) {
+	if(_name != "std") addVocabulary(StdBuiltin::instance());
+}
+
+Vocabulary::Vocabulary(const string& name, const ParseInfo& pi) : _name(name), _pi(pi) {
+	if(_name != "std") addVocabulary(StdBuiltin::instance());
+}
+
+void Vocabulary::addVocabulary(Vocabulary* v) {
+	for(map<string,Sort*>::iterator it = v->firstsort(); it != v->lastsort(); ++it) {
+		addSort(it->second);
+	}
+	for(map<string,Predicate*>::iterator it = v->firstpred(); it != v->lastpred(); ++it) {
+		addPred(it->second);
+	}
+	for(map<string,Function*>::iterator it = v->firstfunc(); it != v->lastfunc(); ++it) {
+		addFunc(it->second);
+	}
+}
 
 /** Mutators **/
 

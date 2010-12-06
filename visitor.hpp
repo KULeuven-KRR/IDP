@@ -15,6 +15,7 @@ class FixpDef;
 class SetExpr;
 class Theory;
 class PredForm;
+class BracketForm;
 class EqChainForm;
 class EquivForm;	
 class BoolForm;
@@ -56,6 +57,7 @@ class Visitor {
 
 		// Formulas 
 		virtual void visit(PredForm* a);			
+		virtual void visit(BracketForm* a);			
 		virtual void visit(EqChainForm* a);
 		virtual void visit(EquivForm* a);
 		virtual void visit(BoolForm* a);
@@ -109,6 +111,7 @@ class MutatingVisitor {
 
 		// Formulas 
 		virtual Formula* visit(PredForm* a);	
+		virtual Formula* visit(BracketForm* a);	
 		virtual Formula* visit(EqChainForm* a);	
 		virtual Formula* visit(EquivForm* a);	
 		virtual Formula* visit(BoolForm* a);	

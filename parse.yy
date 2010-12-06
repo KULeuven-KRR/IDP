@@ -67,6 +67,7 @@ extern string dtos(double);
 	Definition*			def;
 	Variable*			var;
 	FTTuple*			ftt;
+	NSTuple*			nst;
 	SetExpr*			set;
 
 	vector<int>*		vint;
@@ -93,7 +94,6 @@ extern string dtos(double);
 /** Keywords **/
 %token PARTIAL
 %token EXTENDS
-%token OPTION
 %token EXTERN
 %token MINAGG
 %token MAXAGG
@@ -161,6 +161,7 @@ extern string dtos(double);
 %type <pre>	pred_pointer
 %type <fun> func_decl
 %type <fun> full_func_decl
+%type <fun> arit_func_decl
 %type <fun> func_pointer
 %type <ter> term
 %type <ter> domterm
@@ -178,6 +179,7 @@ extern string dtos(double);
 %type <fpd> fixpdef
 %type <def> definition
 %type <ftt> form_term_tuple
+%type <nst> theo_pf_pointer
 %type <set> set
 
 %type <vint> intrange
@@ -188,6 +190,8 @@ extern string dtos(double);
 %type <vrul> rules
 %type <vstr> pointer_name
 %type <vsor> sort_pointer_tuple
+%type <vsor> binary_arit_func_sorts
+%type <vsor> unary_arit_func_sorts
 %type <vprf> fd_rules
 %type <vstr> command_args
 %type <vftt> form_term_list
@@ -284,6 +288,8 @@ func_decl		: PARTIAL CONSTR full_func_decl			{ $$ = $3; if($$) { $$->partial(tru
 				| PARTIAL full_func_decl				{ $$ = $2; if($$) $$->partial(true);							}
 				| CONSTR full_func_decl					{ $$ = $2; if($$) $$->constructor(true);						}
 				| full_func_decl						{ $$ = $1;														}
+				| PARTIAL arit_func_decl				{ $$ = $2; if($$) $$->partial(true);							}
+				| arit_func_decl						{ $$ = $1;														}
 				;
 
 full_func_decl	: identifier '(' sort_pointer_tuple ')' ':' sort_pointer	{ Insert::function(*$1,*$3,$6,@1);
@@ -291,6 +297,28 @@ full_func_decl	: identifier '(' sort_pointer_tuple ')' ':' sort_pointer	{ Insert
 				| identifier '(' ')' ':' sort_pointer						{ Insert::function(*$1,$5,@1); }
 				| identifier ':' sort_pointer								{ Insert::function(*$1,$3,@1); }	
 				; 														
+
+arit_func_decl	: '-' binary_arit_func_sorts				{ $$ = Insert::function("-/2",*$2,@1); delete($2);		}
+                | '+' binary_arit_func_sorts				{ $$ = Insert::function("+/2",*$2,@1); delete($2);		}
+                | '*' binary_arit_func_sorts				{ $$ = Insert::function("*/2",*$2,@1); delete($2);		}
+                | '/' binary_arit_func_sorts				{ $$ = Insert::function("//2",*$2,@1); delete($2);		}
+                | '%' binary_arit_func_sorts				{ $$ = Insert::function("%/2",*$2,@1); delete($2);		}
+                | '^' binary_arit_func_sorts				{ $$ = Insert::function("^/2",*$2,@1); delete($2);		}
+                | '-' unary_arit_func_sorts  %prec UMINUS	{ $$ = Insert::function("-/1",*$2,@1); delete($2);		}
+                | ABS unary_arit_func_sorts					{ $$ = Insert::function("abs/1",*$2,@1); delete($2);	}
+				;
+
+binary_arit_func_sorts	: '(' sort_pointer ',' sort_pointer ')' ':' sort_pointer	{ $$ = new vector<Sort*>(3);
+																					  (*$$)[0] = $2;
+																					  (*$$)[1] = $4;
+																					  (*$$)[2] = $7;
+																					}
+						;
+
+unary_arit_func_sorts	: '(' sort_pointer ')' ':' sort_pointer	{ $$ = new vector<Sort*>(2);
+																  (*$$)[0] = $2; (*$$)[1] = $5;
+																}
+						;
 
 /** Symbol pointers **/
 
@@ -422,9 +450,9 @@ predicate   : pointer_name								{ $1->back() = $1->back() + "/0";
 														  $$ = Insert::predform(*$1,@1); delete($1); }
             | pointer_name '(' term_tuple ')'			{ $1->back() = $1->back() + '/' + itos($3->size());
 														  $$ = Insert::predform(*$1,*$3,@1); delete($1); delete($3); }
-			| pred_pointer								{ /* TODO */ }
-			| pred_pointer '(' ')'						{  /* TODO */ }
-			| pred_pointer '(' term_tuple ')'			{  /* TODO */ }
+			| theo_pf_pointer							{ $$ = Insert::predform($1,@1); }
+			| theo_pf_pointer '(' ')'					{ $$ = Insert::predform($1,@1); }
+			| theo_pf_pointer '(' term_tuple ')'		{ $$ = Insert::predform($1,*$3,@1); delete($3); }
             ;
 
 eq_chain	: eq_chain '='  term	{ $$ = Insert::eqchain('=',true,$1,$3,@1);	}
@@ -461,14 +489,17 @@ term		: function		{ $$ = $1;	}
 			| aggterm		{ $$ = $1;	}
 			;
 
-function	: pointer_name '(' term_tuple ')'	{ $1->back() = $1->back() + '/' + itos($3->size());				
-												  $$ = Insert::functerm(*$1,*$3,@1); delete($1); delete($3);	}
-			| pointer_name '(' ')'				{ $1->back() = $1->back() + "/0";
-												  $$ = Insert::functerm(*$1,@1); delete($1);	}
-			| func_pointer '(' term_tuple ')'	{ /* TODO */  }
-			| func_pointer '(' ')'				{ /* TODO */  }
-			| func_pointer						{ /* TODO */  }
+function	: pointer_name '(' term_tuple ')'		{ $1->back() = $1->back() + '/' + itos($3->size());				
+													  $$ = Insert::functerm(*$1,*$3,@1); delete($1); delete($3);	}
+			| pointer_name '(' ')'					{ $1->back() = $1->back() + "/0";
+													  $$ = Insert::functerm(*$1,@1); delete($1);	}
+			| theo_pf_pointer '(' term_tuple ')'	{ $$ = Insert::functerm($1,*$3,@1); delete($3);	}
+			| theo_pf_pointer '(' ')'				{ $$ = Insert::functerm($1,@1); }
+			| theo_pf_pointer						{ $$ = Insert::functerm($1,@1); }
 			;
+
+theo_pf_pointer	: pointer_name '[' sort_pointer_tuple ']'	{ $$ = new NSTuple(*$1,*$3); delete($1); delete($3);	}
+				;
 
 funcvar		: pointer_name	{ $$ = Insert::funcvar(*$1,@1); delete($1);	}
 			;
@@ -488,7 +519,8 @@ domterm		: INTEGER									{ $$ = Insert::domterm($1,@1);		}
 			| FLNUMBER									{ $$ = Insert::domterm($1,@1);		}
 			| STRINGCONS								{ $$ = Insert::domterm($1,@1);		}
 			| CHARCONS									{ $$ = Insert::domterm($1,@1);		}
-			| '[' identifier ':' theosort_pointer ']'	{ $$ = Insert::domterm($2,$4,@1);	}
+			| '@' identifier '[' theosort_pointer ']'	{ $$ = Insert::domterm($2,$4,@1);	}
+			| '@' identifier							{ $$ = Insert::domterm($2,0,@1);	}
 			;
 
 aggterm		: CARD set							{ $$ = Insert::aggregate(AGGCARD,$2,@1);	}
@@ -838,19 +870,12 @@ form_term_tuple	: '(' formula ',' term ')'					{ $$ = Insert::fttuple($2,$4);		}
 	Instructions
 *******************/
 
-instructions	: EXECUTE_HEADER '{' statements '}'
+instructions	: EXECUTE_HEADER '{' commands '}'
 				;
 
-statements		: /* empty */
-				| statements statement
-				| statements using
-				;
-
-statement		: option
-				| command
-				;
-
-option			: OPTION identifier '=' identifier
+commands		: /* empty */
+				| commands command
+				| commands using
 				;
 
 command			: void_command
@@ -863,13 +888,11 @@ void_command	: command_name '(' command_args ')'	{ Insert::command(*$1,*$3,@1); 
 				;
 
 nonvoid_command	: outtype identifier '=' command_name '(' command_args ')'	{ Insert::command($1,*$4,*$6,*$2,@1);
-																			  delete($4); delete($6);
+																			  delete($6);
 																			}
 				| outtype identifier '=' command_name '(' ')'				{ Insert::command($1,*$4,*$2,@1); 
-																			  delete($4);
 																			}
 				| outtype identifier '=' command_name						{ Insert::command($1,*$4,*$2,@1); 
-																			  delete($4);
 																			}	
 				;
 

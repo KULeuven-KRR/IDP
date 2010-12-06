@@ -1193,7 +1193,7 @@ void StructConvertor::visit(PredInter* pt) {
 				Element e = pt->ctpf()->element(r,c);
 				vt[c] = new DomainTerm(_currsymbol->sort(c),pt->ctpf()->type(c),e,ParseInfo());
 			}
-			_returnvalue->add(new PredForm(true,_currsymbol,vt,ParseInfo()));
+			_returnvalue->add(new PredForm(true,_currsymbol,vt,FormParseInfo()));
 		}
 	}
 	else {
@@ -1204,7 +1204,7 @@ void StructConvertor::visit(PredInter* pt) {
 				Element e = comp->element(r,c);
 				vt[c] = new DomainTerm(_currsymbol->sort(c),comp->type(c),e,ParseInfo());
 			}
-			_returnvalue->add(new PredForm(true,_currsymbol,vt,ParseInfo()));
+			_returnvalue->add(new PredForm(true,_currsymbol,vt,FormParseInfo()));
 		}
 		delete(comp);
 	}
@@ -1215,7 +1215,7 @@ void StructConvertor::visit(PredInter* pt) {
 				Element e = pt->cfpt()->element(r,c);
 				vt[c] = new DomainTerm(_currsymbol->sort(c),pt->cfpt()->type(c),e,ParseInfo());
 			}
-			_returnvalue->add(new PredForm(false,_currsymbol,vt,ParseInfo()));
+			_returnvalue->add(new PredForm(false,_currsymbol,vt,FormParseInfo()));
 		}
 	}
 	else {
@@ -1226,7 +1226,7 @@ void StructConvertor::visit(PredInter* pt) {
 				Element e = comp->element(r,c);
 				vt[c] = new DomainTerm(_currsymbol->sort(c),comp->type(c),e,ParseInfo());
 			}
-			_returnvalue->add(new PredForm(false,_currsymbol,vt,ParseInfo()));
+			_returnvalue->add(new PredForm(false,_currsymbol,vt,FormParseInfo()));
 		}
 		delete(comp);
 	}
@@ -1280,7 +1280,7 @@ namespace StructUtils {
 /** Iterate over all elements in the cross product of a tuple of SortTables **/
 
 SortTableTupleIterator::SortTableTupleIterator(const vector<SortTable*>& vs) : _tables(vs) {
-	for(unsigned int n; n < vs.size(); ++n) {
+	for(unsigned int n = 0; n < vs.size(); ++n) {
 		_currvalue.push_back(0);
 		assert(vs[0]->finite());
 		_limits.push_back(vs[0]->size());
@@ -1288,7 +1288,7 @@ SortTableTupleIterator::SortTableTupleIterator(const vector<SortTable*>& vs) : _
 }
 
 SortTableTupleIterator::SortTableTupleIterator(const vector<Variable*>& vv, AbstractStructure* str) {
-	for(unsigned int n; n < vv.size(); ++n) {
+	for(unsigned int n = 0; n < vv.size(); ++n) {
 		_currvalue.push_back(0);
 		assert(vv[n]->sort());
 		SortTable* st = str->inter(vv[n]->sort());

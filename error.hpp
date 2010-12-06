@@ -37,6 +37,8 @@ namespace Error {
 
 	/** Invalid tuples **/
 	void wrongarity(const ParseInfo& pi);
+	void wrongpredarity(const string& p, const ParseInfo& pi);
+	void wrongfuncarity(const string& f, const ParseInfo& pi);
 
 	/** Invalid interpretations **/
 	void multpredinter(const string& s, const ParseInfo& pi);
@@ -65,9 +67,6 @@ namespace Error {
 	void multdeclvoc(const string& vocname, const ParseInfo& thisplace, const ParseInfo& prevdeclplace);
 	void multdecltheo(const string& thname, const ParseInfo& thisplace, const ParseInfo& prevdeclplace);
 	void multdeclstruct(const string& sname, const ParseInfo& thisplace, const ParseInfo& prevdeclplace);
-	void multdeclsort(const string& sname, const ParseInfo& thisplace, const ParseInfo& prevdeclplace);
-	void multdeclpred(const string& pname, const ParseInfo& thisplace, const ParseInfo& prevdeclplace);
-	void multdeclfunc(const string& fname, const ParseInfo& thisplace, const ParseInfo& prevdeclplace);
 
 	/** Undeclared objects **/
 	void undeclvoc(const string& vocname, const ParseInfo& thisplace);
@@ -89,15 +88,17 @@ namespace Error {
 	void funcnotinstructvoc(const string& name, const string& sname, const ParseInfo& thisplace);
 
 	/** Using overlapping symbols **/
-	void doublesortusing(const string& sname, const string& vocname1, const string& vocname2, const ParseInfo& thisplace);
-	void doublepredusing(const string& pname, const string& vocname1, const string& vocname2, const ParseInfo& thisplace);
-	void doublefuncusing(const string& fname, const string& vocname1, const string& vocname2, const ParseInfo& thisplace);
 	void predorfuncsymbol(const string& name, const ParseInfo& thisplace);
+
+	/** Sort hierarchy errors **/
+	void notsubsort(const string&, const string&, const ParseInfo& pi);
+	void cyclichierarchy(const string&, const string&, const ParseInfo& pi);
 
 	/** Type checking **/
 	void novarsort(const string&, const ParseInfo& thisplace);
 	void nopredsort(const string&, const ParseInfo& thisplace);
 	void nofuncsort(const string&, const ParseInfo& thisplace);
+	void nodomsort(const string&, const ParseInfo& thisplace);
 	void wrongsort(const string&, const string&, const string&, const ParseInfo&);
 
 	/** Unknown options or commands **/

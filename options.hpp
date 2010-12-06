@@ -21,6 +21,7 @@ struct Options {
 		  bool				_statistics;		// print statistics on stderr iff _statistics=true
 		  bool				_verbose;			// print extra information on stderr iff _verbose=true
 		  bool				_readfromstdin;		// expect input from stdin iff _readfromstdin=true
+		  bool				_interactive;		// interactive mode if _interactive is true
 		  vector<bool>		_warning;			// _warning[n] = true means that warnings of type n are not suppressed
 
 		  // Constructor (default options)
@@ -28,6 +29,7 @@ struct Options {
 				_statistics = false;
 				_verbose = false;
 				_readfromstdin = false;
+				_interactive = false;
 				_warning = vector<bool>(4,true);
 		  }
 

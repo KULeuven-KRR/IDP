@@ -37,7 +37,7 @@ class Term {
 
 		// Mutators
 		virtual	void	setfvars();		// Compute the free variables of the term
-		virtual void	sort(Sort*)	{ }	// Set the sort of the term (only does something for VarTerm)
+		virtual void	sort(Sort*)	{ }	// Set the sort of the term (only does something for VarTerm and DomainTerm)
 
 		// Inspectors
 		virtual	Sort*				sort()					const = 0;	// The sort of the term
@@ -183,6 +183,9 @@ class DomainTerm : public Term {
 
 		// Destructor
 		void recursiveDelete();
+
+		// Mutators
+		void	sort(Sort* s)	{ _sort = s;	}
 
 		// Inspectors
 		Sort*			sort()					const { return _sort;				}

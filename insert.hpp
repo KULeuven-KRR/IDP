@@ -20,6 +20,14 @@ struct FTTuple {
 	FTTuple(Formula* f, Term* t) : _formula(f), _term(t) { }
 };
 
+// Pair of name and sorts
+struct NSTuple {
+	vector<string>	_name;
+	vector<Sort*>	_sorts;
+
+	NSTuple(const vector<string>& n, const vector<Sort*>& s) : _name(n), _sorts(s) { }
+};
+
 namespace Insert {
 
 	/** Data **/
@@ -58,6 +66,7 @@ namespace Insert {
 	Predicate*	predicate(const string& name, const vector<Sort*>& sorts, YYLTYPE);	// create a new predicate
 	Predicate*	predicate(const string& name, YYLTYPE);								// create a new 0-ary predicate
 	Function*	function(const string& name, const vector<Sort*>& insorts, Sort* outsort, YYLTYPE);	// create a new function
+	Function*	function(const string& name, const vector<Sort*>& insorts, YYLTYPE);	// create a new function
 	Function*	function(const string& name, Sort* outsort, YYLTYPE);									// create a new constant
 
 	Sort*		copysort(const string& name, Sort*, YYLTYPE);		// copy a sort
@@ -111,6 +120,8 @@ namespace Insert {
 	PredForm*		funcgraphform(const vector<string>&, Term*, YYLTYPE);
 	PredForm*		predform(const vector<string>&, const vector<Term*>&, YYLTYPE);
 	PredForm*		predform(const vector<string>&, YYLTYPE);
+	PredForm*		predform(NSTuple*, const vector<Term*>&, YYLTYPE);
+	PredForm*		predform(NSTuple*, YYLTYPE);
 	EquivForm*		equivform(Formula*,Formula*,YYLTYPE);
 	BoolForm*		disjform(Formula*,Formula*,YYLTYPE);
 	BoolForm*		conjform(Formula*,Formula*,YYLTYPE);
@@ -127,6 +138,8 @@ namespace Insert {
 
 	FuncTerm*		functerm(const vector<string>&, const vector<Term*>&, YYLTYPE);
 	FuncTerm*		functerm(const vector<string>&, YYLTYPE);
+	FuncTerm*		functerm(NSTuple*, const vector<Term*>&, YYLTYPE);
+	FuncTerm*		functerm(NSTuple*, YYLTYPE);
 	Term*			funcvar(const vector<string>&, YYLTYPE);
 	Term*			arterm(char,Term*,Term*,YYLTYPE);
 	Term*			arterm(const string&,Term*,YYLTYPE);

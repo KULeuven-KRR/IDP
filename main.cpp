@@ -20,6 +20,7 @@
 extern int yyparse();
 extern FILE* yyin;
 extern map<string,CLConst*>	clconsts;
+extern void parsestring(const string&);
 
 extern void help_execute();
 
@@ -33,6 +34,7 @@ void usage() {
 	cout << "Usage:\n"
 		 << "   gidl [options] [filename [filename [...]]]\n\n";
 	cout << "Options:\n"
+		 << "    -i, --interactive	  run in interactive mode\n"
 		 << "    --statistics:        show statistics\n"
 		 << "    --verbose:           print additional information\n"
 		 << "    -c <name1>=<name2>:  substitute <name2> for <name1> in the input\n"
@@ -68,7 +70,8 @@ vector<string> read_options(int argc, char* argv[]) {
 	while(argc) {
 		string str(argv[0]);
 		argc--; argv++;
-		if(str == "--statistics")					{ _options._statistics = true;		}
+		if(str == "-i" || str == "--interactive")	{ _options._interactive = true;		}
+		else if(str == "--statistics")				{ _options._statistics = true;		}
 		else if(str == "--verbose")					{ _options._verbose = true;			}
 		else if(str == "-c")						{ str = argv[0];
 													  if(argc && (str.find('=') != string::npos)) {
@@ -115,6 +118,27 @@ void parse(const vector<string>& inputfiles) {
 	}
 }
 
+/** Interactive mode **/
+void interactive() {
+	cout << "Running GidL in interactive mode.\n"
+		 << "  Type 'help' for help.\n"
+		 << "  Type 'exit' to quit.\n\n";
+
+	while(true) {
+		cout << "> ";
+		string str;
+		getline(cin,str);
+		if(str == "exit") return;
+		else if(str == "help") {
+			help_execute();
+		}
+		else {
+			str = "#execute{ " + str + "}";
+			parsestring(str);
+		}
+	}
+}
+
 /** Delete all data **/
 void cleanup() {
 	Insert::cleanup();
@@ -126,6 +150,7 @@ int main(int argc, char* argv[]) {
 	initialize();
 	vector<string> inputfiles = read_options(argc,argv);
 	parse(inputfiles);
+	if(_options._interactive) interactive();
 	cleanup();
 	return Error::nr_of_errors();
 }

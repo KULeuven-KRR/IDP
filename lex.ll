@@ -17,6 +17,8 @@
 extern YYSTYPE yylval;
 extern YYLTYPE yylloc;
 
+extern void setclconst(string,string);
+
 // Return to right mode after a comment
 int caller;	
 
@@ -38,6 +40,14 @@ void advanceline() {
 void advancecol()	{ 
 	yylloc.first_column += prevlength;
 	prevlength = yyleng;						
+}
+
+// Scan from string
+extern int yyparse();
+void parsestring(const string& str) {
+	YY_BUFFER_STATE buffer = yy_scan_string(str.c_str());
+	yyparse();
+	yy_delete_buffer(buffer);
 }
 
 // Handle includes
@@ -171,14 +181,9 @@ COMMENTLINE		"//".*
 <*>"#execute"				{ BEGIN(INITIAL);
 							  advancecol();
 							  return EXECUTE_HEADER;	}
-<*>"#option"				{ advancecol();
-							  return OPTION;			}
 <*>"#include"				{ advancecol();
 							  caller = YY_START;
 							  BEGIN(include);
-							}
-<*>"#using"					{ advancecol();
-							  return USING;
 							}
 
 	/**************
@@ -205,8 +210,10 @@ COMMENTLINE		"//".*
 								  BEGIN(caller);
 							  }
 							  else {
-								  ParseInfo pi(yylloc.first_line,yylloc.first_column,Insert::currfile());
-								  Error::constnotset(temp,pi);
+								  cerr << "Type a value for constant " << temp << endl << "> "; 
+								  string str;
+								  getline(cin,str);
+								  start_include(str);
 								  BEGIN(caller);
 							  }
 							}
@@ -295,10 +302,13 @@ COMMENTLINE		"//".*
 	/******************
 		Identifiers
 	******************/
+
 <*>"true"					{ advancecol();
 							  return TRUE;				}
 <*>"false"					{ advancecol();
 							  return FALSE;				}
+<*>"using"					{ advancecol();
+							  return USING;				}
 <*>{CH}						{ advancecol();
 							  yylval.chr = *yytext;
 							  return CHARACTER;			}
@@ -326,9 +336,11 @@ COMMENTLINE		"//".*
 								  return (clconsts[temp])->execute();
 							  }
 							  else {
-								  ParseInfo pi(yylloc.first_line,yylloc.first_column,Insert::currfile());
-								  Error::constnotset(temp,pi);
-								  return INTEGER;
+								  cerr << "Type a value for constant " << temp << endl << "> "; 
+								  string str;
+								  getline(cin,str);
+								  setclconst(temp,str);
+								  return (clconsts[temp])->execute();
 							  }
 							}
 

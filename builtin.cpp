@@ -108,17 +108,17 @@ class ComparisonPredicate : public OverloadedPredicate {
 
 	// Inspectors
 	bool		contains(Predicate* p)				const { return p->name() == _name;	}
-	Predicate*	disambiguate(const vector<Sort*>&);
+	Predicate*	disambiguate(const vector<Sort*>&,Vocabulary*);
 
 };
 
-Predicate* ComparisonPredicate::disambiguate(const vector<Sort*>& vs) {
+Predicate* ComparisonPredicate::disambiguate(const vector<Sort*>& vs,Vocabulary* v) {
 	Sort* s = 0;
 	bool containszeros = false;
 	for(unsigned int n = 0; n < vs.size(); ++n) {
 		if(vs[n]) {
 			if(s) {
-				s = SortUtils::resolve(s,vs[n]);
+				s = SortUtils::resolve(s,vs[n],v);
 				if(!s) return 0;
 			}
 			else s = vs[n];
@@ -130,7 +130,7 @@ Predicate* ComparisonPredicate::disambiguate(const vector<Sort*>& vs) {
 	if(s) {
 		if(!(containszeros && s->nrParents())) {
 			vector<Sort*> nvs = vector<Sort*>(vs.size(),s);
-			p = OverloadedPredicate::disambiguate(nvs);
+			p = OverloadedPredicate::disambiguate(nvs,v);
 			if(!p) {
 				p = new SemiBuiltInPredicate(_name,nvs,_inter);
 				_overpreds.push_back(p);
@@ -214,17 +214,17 @@ class ComparisonFunction : public OverloadedFunction {
 
 	// Inspectors
 	bool		contains(Function* f)				const { return f->name() == _name;	}
-	Function*	disambiguate(const vector<Sort*>&);
+	Function*	disambiguate(const vector<Sort*>&, Vocabulary* v);
 
 };
 
-Function* ComparisonFunction::disambiguate(const vector<Sort*>& vs) {
+Function* ComparisonFunction::disambiguate(const vector<Sort*>& vs, Vocabulary* v) {
 	Sort* s = 0;
 	bool containszeros = false;
 	for(unsigned int n = 0; n < vs.size(); ++n) {
 		if(vs[n]) {
 			if(s) {
-				s = SortUtils::resolve(s,vs[n]);
+				s = SortUtils::resolve(s,vs[n],v);
 				if(!s) return 0;
 			}
 			else s = vs[n];
@@ -236,7 +236,7 @@ Function* ComparisonFunction::disambiguate(const vector<Sort*>& vs) {
 	if(s) {
 		if(!(containszeros && s->nrParents())) {
 			vector<Sort*> nvs = vector<Sort*>(vs.size(),s);
-			Function* f = OverloadedFunction::disambiguate(nvs);
+			f = OverloadedFunction::disambiguate(nvs,v);
 			if(!f) {
 				f = new SemiBuiltInFunction(_name,nvs,_inter);
 				f->partial(partial());
@@ -265,19 +265,19 @@ class IntFloatFunction : public OverloadedFunction {
 
 	// Inspectors
 	bool		contains(Function* f)				const { return f->name() == _name;	}
-	Function*	disambiguate(const vector<Sort*>&);
+	Function*	disambiguate(const vector<Sort*>&,Vocabulary* v);
 
 };
 
-Function* IntFloatFunction::disambiguate(const vector<Sort*>& vs) {
+Function* IntFloatFunction::disambiguate(const vector<Sort*>& vs, Vocabulary* v) {
 	unsigned int intcount = 0;
 	bool hasfloat = false;
 	Sort* ints = (StdBuiltin::instance())->sort("int");
 	Sort* floats = (StdBuiltin::instance())->sort("float");
 	for(unsigned int n = 0; n < vs.size(); ++n) {
 		if(vs[n]) {
-			if(SortUtils::resolve(ints,vs[n]) == ints) ++intcount;
-			else if(SortUtils::resolve(floats,vs[n]) == floats) hasfloat = true;
+			if(SortUtils::resolve(ints,vs[n],v) == ints) ++intcount;
+			else if(SortUtils::resolve(floats,vs[n],v) == floats) hasfloat = true;
 			else return 0;
 		}
 	}
@@ -289,7 +289,7 @@ Function* IntFloatFunction::disambiguate(const vector<Sort*>& vs) {
 	Function* f = 0;
 	if(s) {
 		vector<Sort*> nvs = vector<Sort*>(vs.size(),s);
-		f = OverloadedFunction::disambiguate(nvs);
+		f = OverloadedFunction::disambiguate(nvs,v);
 		if(!f) {
 			f = new BuiltInFunction(_name,nvs,_inter(nvs));
 			f->partial(partial());

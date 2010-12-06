@@ -17,6 +17,7 @@ class SortTable;
 class PredInter;
 class FuncInter;
 class AbstractStructure;
+class Vocabulary;
 struct compound;
 
 /*******************************************
@@ -130,15 +131,15 @@ class Sort {
 		void	pred(Predicate* p)	{ _pred = p;	}
 		
 		// Inspectors
-		string				name()					const	{ return _name;				} 
-		const ParseInfo&	pi()					const	{ return _pi;				}
-		unsigned int		nrParents()				const	{ return _parents.size();	}
-		Sort*				parent(unsigned int n)	const	{ return _parents[n];		}
-		Predicate*			pred()					const	{ return _pred;				}
-		unsigned int		nrChildren()			const	{ return _children.size();	}
-		Sort*				child(unsigned int n)	const	{ return _children[n];		}
-		string				to_string()				const	{ return _name;				}
-		set<Sort*>			ancestors()				const;
+		string				name()						const	{ return _name;				} 
+		const ParseInfo&	pi()						const	{ return _pi;				}
+		unsigned int		nrParents()					const	{ return _parents.size();	}
+		Sort*				parent(unsigned int n)		const	{ return _parents[n];		}
+		Predicate*			pred()						const	{ return _pred;				}
+		unsigned int		nrChildren()				const	{ return _children.size();	}
+		Sort*				child(unsigned int n)		const	{ return _children[n];		}
+		string				to_string()					const	{ return _name;				}
+		set<Sort*>			ancestors(Vocabulary* v)	const;
 
 		// Overloaded sorts
 		virtual bool			overloaded()		const	{ return false;		}   // true for overloaded sorts
@@ -185,7 +186,7 @@ namespace SortUtils {
 	 * return the common ancestor with maximum depth of the given sorts. 
 	 * Return 0 if such an ancestor does not exist.
 	 */ 
-	Sort* resolve(Sort* s1, Sort* s2);
+	Sort* resolve(Sort* s1, Sort* s2, Vocabulary* v);
 
 	/**
 	 * return a new overloaded sort containing the two given sorts
@@ -284,7 +285,7 @@ class PFSymbol {
 		// Overloaded symbols
 		virtual bool		overloaded()						const	{ return false;	}	// true iff the symbol 
 																							// is overloaded.
-		virtual PFSymbol*	disambiguate(const vector<Sort*>&)  = 0;	// this method tries to
+		virtual PFSymbol*	disambiguate(const vector<Sort*>&,Vocabulary*)  = 0;	// this method tries to
 																			// disambiguate 
 																			// overloaded symbols.
 
@@ -318,7 +319,7 @@ class Predicate : public PFSymbol {
 
 		// Overloaded symbols 
 		virtual bool				contains(Predicate* p)				const { return p == this;	}
-		virtual Predicate*			disambiguate(const vector<Sort*>&);
+		virtual Predicate*			disambiguate(const vector<Sort*>&,Vocabulary*);
 		virtual vector<Predicate*>	nonbuiltins();
 		virtual	vector<Sort*>		allsorts()							const;
 
@@ -345,7 +346,7 @@ class OverloadedPredicate : public Predicate {
 		// Inspectors
 				bool				overloaded()						const { return true;	}
 		virtual bool				contains(Predicate* p)				const;
-		virtual Predicate*			disambiguate(const vector<Sort*>&);
+		virtual Predicate*			disambiguate(const vector<Sort*>&,Vocabulary*);
 				vector<Predicate*>	nonbuiltins();	//!< All non-builtin predicates 
 													//!< that are overloaded by the predicate
 				vector<Sort*>		allsorts()							const;
@@ -408,7 +409,7 @@ class Function : public PFSymbol {
 
 		// Overloaded symbols 
 		virtual bool				contains(Function* f)	const { return f == this;				}
-		virtual Function*			disambiguate(const vector<Sort*>&);
+		virtual Function*			disambiguate(const vector<Sort*>&,Vocabulary*);
 		virtual	vector<Function*>	nonbuiltins();	
 		virtual	vector<Sort*>		allsorts()				const;	
 
@@ -435,7 +436,7 @@ class OverloadedFunction : public Function {
 		// Inspectors
 				bool				overloaded()						const { return true;	}
 		virtual bool				contains(Function* f)				const;
-		virtual Function*			disambiguate(const vector<Sort*>&);
+		virtual Function*			disambiguate(const vector<Sort*>&,Vocabulary*);
 				vector<Function*>	nonbuiltins();	//!< All non-builtin functions 
 													//!< that are overloaded by the function
 				vector<Sort*>		allsorts()							const;	
@@ -488,8 +489,8 @@ class Vocabulary {
 	public:
 
 		// Constructors
-		Vocabulary(const string& name) : _name(name) { }
-		Vocabulary(const string& name, const ParseInfo& pi) : _name(name), _pi(pi) { }
+		Vocabulary(const string& name); 
+		Vocabulary(const string& name, const ParseInfo& pi); 
 
 		// Destructor
 		virtual ~Vocabulary() { }
@@ -498,6 +499,7 @@ class Vocabulary {
 		void addSort(Sort*);		 //!< Add the given sort (and its ancestors) to the vocabulary
 		void addPred(Predicate*);	 //!< Add the given predicate (and its sorts) to the vocabulary
 		void addFunc(Function*);	 //!< Add the given function (and its sorts) to the vocabulary
+		void addVocabulary(Vocabulary*);
 
 		// Inspectors
 		const string&		name()					const { return _name;					}
@@ -514,6 +516,13 @@ class Vocabulary {
 		Sort*				nbsort(unsigned int n)	const { return _index2sort[n];			}
 		Predicate*			nbpred(unsigned int n)	const { return _index2predicate[n];		}
 		Function*			nbfunc(unsigned int n)	const { return _index2function[n];		}
+
+		map<string,Sort*>::iterator			firstsort()	{ return _name2sort.begin();	}
+		map<string,Predicate*>::iterator	firstpred()	{ return _name2pred.begin();	}
+		map<string,Function*>::iterator		firstfunc()	{ return _name2func.begin();	}
+		map<string,Sort*>::iterator			lastsort()	{ return _name2sort.end();		}
+		map<string,Predicate*>::iterator	lastpred()	{ return _name2pred.end();		}
+		map<string,Function*>::iterator		lastfunc()	{ return _name2func.end();		}
 
 		Sort*				sort(const string&)	const;	// return the sort with the given name
 		Predicate*			pred(const string&)	const;	// return the predicate with the given name (ending on /arity)

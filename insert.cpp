@@ -22,10 +22,13 @@
 
 class SortChecker : public Visitor {
 
+	private:
+		Vocabulary* _vocab;
+
 	public:
-		SortChecker(Formula* f)		: Visitor() { f->accept(this);	}
-		SortChecker(Definition* d)	: Visitor() { d->accept(this);	}
-		SortChecker(FixpDef* d)		: Visitor() { d->accept(this);	}
+		SortChecker(Formula* f,Vocabulary* v)		: Visitor(), _vocab(v) { f->accept(this);	}
+		SortChecker(Definition* d,Vocabulary* v)	: Visitor(), _vocab(v) { d->accept(this);	}
+		SortChecker(FixpDef* d,Vocabulary* v)		: Visitor(), _vocab(v) { d->accept(this);	}
 
 		void visit(PredForm*);
 		void visit(EqChainForm*);
@@ -40,7 +43,7 @@ void SortChecker::visit(PredForm* pf) {
 		Sort* s1 = s->sort(n);
 		Sort* s2 = pf->subterm(n)->sort();
 		if(s1 && s2) {
-			if(!SortUtils::resolve(s1,s2)) {
+			if(!SortUtils::resolve(s1,s2,_vocab)) {
 				Error::wrongsort(pf->subterm(n)->to_string(),s2->name(),s1->name(),pf->subterm(n)->pi());
 			}
 		}
@@ -54,7 +57,7 @@ void SortChecker::visit(FuncTerm* ft) {
 		Sort* s1 = f->insort(n);
 		Sort* s2 = ft->subterm(n)->sort();
 		if(s1 && s2) {
-			if(!SortUtils::resolve(s1,s2)) {
+			if(!SortUtils::resolve(s1,s2,_vocab)) {
 				Error::wrongsort(ft->subterm(n)->to_string(),s2->name(),s1->name(),ft->subterm(n)->pi());
 			}
 		}
@@ -72,7 +75,7 @@ void SortChecker::visit(EqChainForm* ef) {
 	for(; n < ef->nrSubterms(); ++n) {
 		Sort* t = ef->subterm(n)->sort();
 		if(t) {
-			if(!SortUtils::resolve(s,t)) {
+			if(!SortUtils::resolve(s,t,_vocab)) {
 				Error::wrongsort(ef->subterm(n)->to_string(),t->name(),s->name(),ef->subterm(n)->pi());
 			}
 		}
@@ -84,12 +87,12 @@ void SortChecker::visit(AggTerm* at) {
 	if(at->type() != AGGCARD) {
 		SetExpr* s = at->set();
 		if(s->nrQvars() && s->qvar(0)->sort()) {
-			if(!SortUtils::resolve(s->qvar(0)->sort(),StdBuiltin::instance()->sort("float"))) {
+			if(!SortUtils::resolve(s->qvar(0)->sort(),StdBuiltin::instance()->sort("float"),_vocab)) {
 				Error::wrongsort(s->qvar(0)->name(),s->qvar(0)->sort()->name(),"int or float",s->qvar(0)->pi());
 			}
 		}
 		for(unsigned int n = 0; n < s->nrSubterms(); ++n) {
-			if(s->subterm(n)->sort() && !SortUtils::resolve(s->subterm(n)->sort(),StdBuiltin::instance()->sort("float"))) {
+			if(s->subterm(n)->sort() && !SortUtils::resolve(s->subterm(n)->sort(),StdBuiltin::instance()->sort("float"),_vocab)) {
 				Error::wrongsort(s->subterm(n)->to_string(),s->subterm(n)->sort()->name(),"int or float",s->subterm(n)->pi());
 			}
 		}
@@ -107,15 +110,17 @@ class SortDeriver : public Visitor {
 		map<Variable*,set<Sort*> >	_untyped;			// The untyped variables, with their possible types
 		map<FuncTerm*,Sort*>		_overloadedterms;	// The terms with an overloaded function
 		set<PredForm*>				_overloadedatoms;	// The atoms with an overloaded predicate
+		set<DomainTerm*>			_domelements;		// The untyped domain elements
 		bool						_changed;
 		bool						_firstvisit;
 		Sort*						_assertsort;
+		Vocabulary*					_vocab;
 
 	public:
 
 		// Constructor
-		SortDeriver(Formula* f) : Visitor() { run(f); }
-		SortDeriver(Rule* r)	: Visitor() { run(r); }
+		SortDeriver(Formula* f,Vocabulary* v) : Visitor(), _vocab(v) { run(f); }
+		SortDeriver(Rule* r,Vocabulary* v)	: Visitor(), _vocab(v) { run(r); }
 
 		// Run sort derivation 
 		void run(Formula*);
@@ -129,6 +134,7 @@ class SortDeriver : public Visitor {
 		void visit(Rule*);
 
 		void visit(VarTerm*);
+		void visit(DomainTerm*);
 		void visit(FuncTerm*);
 
 		void visit(QuantSetExpr*);
@@ -204,6 +210,18 @@ void SortDeriver::visit(VarTerm* vt) {
 	}
 }
 
+void SortDeriver::visit(DomainTerm* dt) {
+	if(_firstvisit && (!(dt->sort()))) {
+		_domelements.insert(dt);
+	}
+
+	if((!(dt->sort())) && _assertsort) {
+		dt->sort(_assertsort);
+		_changed = true;
+		_domelements.erase(dt);
+	}
+}
+
 void SortDeriver::visit(FuncTerm* ft) {
 	Function* f = ft->func();
 
@@ -242,7 +260,7 @@ void SortDeriver::derivesorts() {
 			Sort* s = *kt;
 			++kt;
 			for(; kt != (it->second).end(); ++kt) {
-				s = SortUtils::resolve(s,*kt);
+				s = SortUtils::resolve(s,*kt,_vocab);
 				if(!s) { // In case of conflicting sorts, assign the first sort. 
 						 // Error message will be given during final check.
 					s = *((it->second).begin());
@@ -270,7 +288,7 @@ void SortDeriver::derivefuncs() {
 			vs[n] = it->first->subterm(n)->sort();
 		}
 		vs.push_back(it->second);
-		Function* rf = f->disambiguate(vs);
+		Function* rf = f->disambiguate(vs,_vocab);
 		if(rf) {
 			it->first->func(rf);
 			if(!rf->overloaded()) _overloadedterms.erase(it);
@@ -288,7 +306,7 @@ void SortDeriver::derivepreds() {
 		for(unsigned int n = 0; n < vs.size(); ++n) {
 			vs[n] = (*it)->subterm(n)->sort();
 		}
-		PFSymbol* rp = p->disambiguate(vs);
+		PFSymbol* rp = p->disambiguate(vs,_vocab);
 		if(rp) {
 			(*it)->symb(rp);
 			if(!rp->overloaded()) _overloadedatoms.erase(it);
@@ -344,6 +362,9 @@ void SortDeriver::check() {
 	for(map<FuncTerm*,Sort*>::iterator it = _overloadedterms.begin(); it != _overloadedterms.end(); ++it) {
 		Error::nofuncsort(it->first->func()->name(),it->first->pi());
 	}
+	for(set<DomainTerm*>::iterator it = _domelements.begin(); it != _domelements.end(); ++it) {
+		Error::nodomsort((*it)->to_string(),(*it)->pi());
+	}
 }
 
 /**************
@@ -379,7 +400,9 @@ namespace Insert {
 	string*		currfile()					{ return _currfile;	}
 	void		currfile(const string& s)	{ _allfiles.push_back(_currfile); _currfile = new string(s);	}
 	void		currfile(string* s)			{ _allfiles.push_back(_currfile); if(s) _currfile = new string(*s); else _currfile = 0;	}
-	ParseInfo   parseinfo(YYLTYPE l)		{ return ParseInfo(l.first_line,l.first_column,_currfile);	}
+	ParseInfo		parseinfo(YYLTYPE l)		{ return ParseInfo(l.first_line,l.first_column,_currfile);	}
+	FormParseInfo	formparseinfo(Formula* f, YYLTYPE l)	{ return FormParseInfo(l.first_line,l.first_column,_currfile,f);	}
+	FormParseInfo	formparseinfo(YYLTYPE l)	{ return FormParseInfo(l.first_line,l.first_column,_currfile,0);	}
 
 	// Empty 2-valued interpretations
 	struct NameLoc {
@@ -799,7 +822,7 @@ namespace Insert {
 
 	Predicate* predpointer(const vector<string>& vs, const vector<Sort*>& va, YYLTYPE l) {
 		Predicate* p = predpointer(vs,l);
-		if(p) p = p->disambiguate(va);
+		if(p) p = p->disambiguate(va,0);
 		return p;
 	}
 
@@ -812,7 +835,7 @@ namespace Insert {
 
 	Function* funcpointer(const vector<string>& vs, const vector<Sort*>& va, YYLTYPE l) {
 		Function* f = funcpointer(vs,l);
-		if(f) f->disambiguate(va);
+		if(f) f->disambiguate(va,0);
 		return f;
 	}
 
@@ -849,19 +872,12 @@ namespace Insert {
 	Sort* sort(const string& name, YYLTYPE l) {
 		ParseInfo pi = parseinfo(l);
 		ParseInfo pip = parseinfo(l);
-		Sort* s = sortInScope(name);
-		if(s) {
-			Error::multdeclsort(name,pi,s->pi());
-			return 0;
-		}
-		else {
-			s = new Sort(name,pi);
-			_currvocab->addSort(s);
-			Predicate* p = new Predicate(name + "/1",vector<Sort*>(1,s),pip);
-			_currvocab->addPred(p);
-			s->pred(p);
-			return s;
-		}
+		Sort* s = new Sort(name,pi);
+		_currvocab->addSort(s);
+		Predicate* p = new Predicate(name + "/1",vector<Sort*>(1,s),pip);
+		_currvocab->addPred(p);
+		s->pred(p);
+		return s;
 	}
 
 	Sort* sort(const string& name, const vector<Sort*> supbs, bool p, YYLTYPE l) {
@@ -873,11 +889,43 @@ namespace Insert {
 	Sort* sort(const string& name, const vector<Sort*> sups, const vector<Sort*> subs, YYLTYPE l) {
 		Sort* s = sort(name,l);
 		if(s) {
+			vector<std::set<Sort*> > supsa(sups.size());
+			vector<std::set<Sort*> > subsa(subs.size());
 			for(unsigned int n = 0; n < sups.size(); ++n) {
-				if(sups[n]) s->parent(sups[n]);
+				if(sups[n]) {
+					supsa[n] = sups[n]->ancestors(0);
+					supsa[n].insert(sups[n]);
+				}
 			}
 			for(unsigned int n = 0; n < subs.size(); ++n) {
-				if(subs[n]) s->child(subs[n]);
+				if(subs[n]) {
+					subsa[n] = subs[n]->ancestors(0);
+					subsa[n].insert(subs[n]);
+				}
+			}
+			for(unsigned int n = 0; n < sups.size(); ++n) {
+				if(sups[n]) {
+					for(unsigned int m = 0; m < subs.size(); ++m) {
+						if(subs[m]) {
+							if(subsa[m].find(sups[n]) == subsa[m].end()) {
+								Error::notsubsort(subs[m]->name(),sups[n]->name(),parseinfo(l));
+							}
+						}
+					}
+					s->parent(sups[n]);
+				}
+			}
+			for(unsigned int n = 0; n < subs.size(); ++n) {
+				if(subs[n]) {
+					for(unsigned int m = 0; m < sups.size(); ++m) {
+						if(sups[m]) {
+							if(supsa[m].find(subs[n]) != supsa[m].end()) {
+								Error::cyclichierarchy(subs[n]->name(),sups[m]->name(),parseinfo(l));
+							}
+						}
+					}
+					s->child(subs[n]);
+				}
 			}
 		}
 		return s;
@@ -917,6 +965,17 @@ namespace Insert {
 		}
 		if(!outsort) return 0;
 		Function* f = new Function(nar,insorts,outsort,pi);
+		_currvocab->addFunc(f);
+		return f;
+	}
+
+	Function* function(const string& name, const vector<Sort*>& sorts, YYLTYPE l) {
+		ParseInfo pi = parseinfo(l);
+		string nar = string(name) + '/' + itos(sorts.size());
+		for(unsigned int n = 0; n < sorts.size(); ++n) {
+			if(!sorts[n]) return 0;
+		}
+		Function* f = new Function(nar,sorts,pi);
 		_currvocab->addFunc(f);
 		return f;
 	}
@@ -1863,8 +1922,8 @@ namespace Insert {
 			vector<Variable*> vv = freevars(f->pi());
 			if(!vv.empty()) f =  new QuantForm(true,true,vv,f,f->pi());
 			// 2. Sort derivation & checking
-			SortDeriver sd(f); 
-			SortChecker sc(f);
+			SortDeriver sd(f,_currvocab); 
+			SortChecker sc(f,_currvocab);
 			// Add the formula to the current theory
 			_currtheory->add(f);
 		}
@@ -1877,28 +1936,28 @@ namespace Insert {
 
 	BoolForm* trueform() {
 		vector<Formula*> vf(0);
-		return new BoolForm(true,true,vf,ParseInfo());
+		return new BoolForm(true,true,vf,FormParseInfo());
 	}
 
 	BoolForm* trueform(YYLTYPE l) {
-		ParseInfo pi = parseinfo(l);
 		vector<Formula*> vf(0);
+		FormParseInfo pi = formparseinfo(new BoolForm(true,true,vf,FormParseInfo()),l);
 		return new BoolForm(true,true,vf,pi);
 	}
 
 	BoolForm* falseform() {
 		vector<Formula*> vf(0);
-		return new BoolForm(true,false,vf,ParseInfo());
+		return new BoolForm(true,false,vf,FormParseInfo());
 	}
 
 	BoolForm* falseform(YYLTYPE l) {
-		ParseInfo pi = parseinfo(l);
 		vector<Formula*> vf(0);
+		FormParseInfo pi = formparseinfo(new BoolForm(true,false,vf,FormParseInfo()),l);
 		return new BoolForm(true,false,vf,pi);
 	}
 
 	PredForm* predform(const vector<string>& vs, const vector<Term*>& vt, YYLTYPE l) {
-		ParseInfo pi = parseinfo(l);
+		FormParseInfo pi = formparseinfo(l);
 		Predicate* p = predInScope(vs);
 		string uname = oneName(vs);
 		if(p) {
@@ -1911,7 +1970,7 @@ namespace Insert {
 						return 0;
 					}
 				}
-				return new PredForm(true,p,vt,pi);
+				return new PredForm(true,p,vt,pi);	
 			}
 			else {
 				Error::prednotintheovoc(uname,_currtheory->name(),pi);
@@ -1926,13 +1985,60 @@ namespace Insert {
 		}
 	}
 
+	PredForm* predform(NSTuple* nst, const vector<Term*>& vt, YYLTYPE l) {
+		FormParseInfo pi = formparseinfo(l);
+		(nst->_name).back() = (nst->_name).back() + '/' + itos((nst->_sorts).size());
+		Predicate* p = predInScope(nst->_name);
+		if(p) p = p->disambiguate(nst->_sorts,0);
+		if(p) {
+			if(belongsToVoc(p)) {
+				if(p->arity() == vt.size()) {
+					for(unsigned int n = 0; n < vt.size(); ++n) {
+						if(!vt[n]) {
+							// delete the correctly parsed terms
+							for(unsigned int m = 0; m < n; ++m) delete(vt[m]);
+							for(unsigned int m = n+1; m < vt.size(); ++m) { if(vt[m]) delete(vt[m]); }
+							delete(nst);
+							return 0;
+						}
+					}
+					delete(nst);
+					return new PredForm(true,p,vt,pi);	// TODO change the formparseinfo
+				}
+				else {
+					Error::wrongpredarity(p->name(),pi);
+					for(unsigned int n = 0; n < vt.size(); ++n) { if(vt[n]) delete(vt[n]); }
+					delete(nst);
+					return 0;
+				}
+			}
+			else {
+				Error::prednotintheovoc(p->name(),_currtheory->name(),pi);
+				for(unsigned int n = 0; n < vt.size(); ++n) { if(vt[n]) delete(vt[n]); }
+				delete(nst);
+				return 0;
+			}
+		}
+		else {
+			Error::undeclpred(oneName(nst->_name),pi);
+			for(unsigned int n = 0; n < vt.size(); ++n) { if(vt[n]) delete(vt[n]); }
+			delete(nst);
+			return 0;
+		}
+	}
+
 	PredForm* predform(const vector<string>& vs, YYLTYPE l) {
 		vector<Term*> vt(0);
 		return predform(vs,vt,l);
 	}
 
+	PredForm* predform(NSTuple* t, YYLTYPE l) {
+		vector<Term*> vt(0);
+		return predform(t,vt,l);
+	}
+
 	PredForm* funcgraphform(const vector<string>& vs, const vector<Term*>& vt, Term* t, YYLTYPE l) {
-		ParseInfo pi = parseinfo(l);
+		FormParseInfo pi = formparseinfo(l);
 		Function* f = funcInScope(vs);
 		string uname = oneName(vs);
 		if(f) {
@@ -1950,7 +2056,7 @@ namespace Insert {
 					return 0;
 				}
 				vector<Term*> vt2(vt); vt2.push_back(t);
-				return new PredForm(true,f,vt2,pi);
+				return new PredForm(true,f,vt2,pi);	// TODO: change the formparseinfo
 			}
 			else {
 				Error::funcnotintheovoc(uname,_currtheory->name(),pi);
@@ -1972,7 +2078,8 @@ namespace Insert {
 
 	EquivForm* equivform(Formula* lf, Formula* rf, YYLTYPE l) {
 		if(lf && rf) {
-			ParseInfo pi = parseinfo(l);
+			//Formula* fpf = new EquivForm(true,lf->pi().original(),rf->pi().original(),FormParseInfo());
+			FormParseInfo pi = formparseinfo(0,l);
 			return new EquivForm(true,lf,rf,pi);
 		}
 		else {
@@ -1985,8 +2092,11 @@ namespace Insert {
 	BoolForm* disjform(Formula* lf, Formula* rf, YYLTYPE l) {
 		if(lf && rf) {
 			vector<Formula*> vf(2);
+			vector<Formula*> pivf(2);
 			vf[0] = lf; vf[1] = rf;
-			ParseInfo pi = parseinfo(l);
+			//pivf[0] = lf->pi().original(); pivf[1] = rf->pi().original();
+			//BoolForm* pibf = new BoolForm(true,false,pivf,FormParseInfo());
+			FormParseInfo pi = formparseinfo(0,l);
 			return new BoolForm(true,false,vf,pi);
 		}
 		else {
@@ -1999,8 +2109,11 @@ namespace Insert {
 	BoolForm* conjform(Formula* lf, Formula* rf, YYLTYPE l) {
 		if(lf && rf) {
 			vector<Formula*> vf(2);
+			vector<Formula*> pivf(2);
 			vf[0] = lf; vf[1] = rf;
-			ParseInfo pi = parseinfo(l);
+			//pivf[0] = lf->pi().original(); pivf[1] = rf->pi().original();
+			//BoolForm* pibf = new BoolForm(true,true,pivf,FormParseInfo());
+			FormParseInfo pi = formparseinfo(0,l);
 			return new BoolForm(true,true,vf,pi);
 		}
 		else {
@@ -2039,7 +2152,8 @@ namespace Insert {
 	QuantForm* univform(const vector<Variable*>& vv, Formula* f, YYLTYPE l) {
 		remove_vars(vv);
 		if(f) {
-			ParseInfo pi = parseinfo(l);
+			//QuantForm* piqf = new QuantForm(true,true,vv,f->pi().original(),FormParseInfo());
+			FormParseInfo pi = formparseinfo(0,l);
 			return new QuantForm(true,true,vv,f,pi);
 		}
 		else {
@@ -2052,7 +2166,8 @@ namespace Insert {
 	QuantForm* existform(const vector<Variable*>& vv, Formula* f, YYLTYPE l) {
 		remove_vars(vv);
 		if(f) {
-			ParseInfo pi = parseinfo(l);
+			//QuantForm* piqf = new QuantForm(true,false,vv,f->pi().original(),FormParseInfo());
+			FormParseInfo pi = formparseinfo(0,l);
 			return new QuantForm(true,false,vv,f,pi);
 		}
 		else {
@@ -2065,14 +2180,14 @@ namespace Insert {
 	PredForm* bexform(char c, bool b, int n, const vector<Variable*>& vv, Formula* f, YYLTYPE l) {
 		remove_vars(vv);
 		if(f) {
-			ParseInfo pi = parseinfo(l);
+			FormParseInfo pi = formparseinfo(l);
 			QuantSetExpr* qse = new QuantSetExpr(vv,f,pi);
 			vector<Term*> vt(2);
 			Element en; en._int = n;
 			vt[0] = new DomainTerm(StdBuiltin::instance()->sort("int"),ELINT,en,pi);
 			vt[1] = new AggTerm(qse,AGGCARD,pi);
 			Predicate* p = StdBuiltin::instance()->pred(string(1,c) + "/2");
-			return new PredForm(b,p,vt,pi);
+			return new PredForm(b,p,vt,pi);	// TODO adapt formparseinfo
 		}
 		else {
 			for(unsigned int n = 0; n < vv.size(); ++n) delete(vv[n]);
@@ -2083,7 +2198,7 @@ namespace Insert {
 
 	EqChainForm* eqchain(char c, bool b, Term* lt, Term* rt, YYLTYPE l) {
 		if(lt && rt) {
-			ParseInfo pi = parseinfo(l);
+			FormParseInfo pi = formparseinfo(l);	// TODO adapt formparseinfo
 			EqChainForm* ecf = new EqChainForm(true,true,lt,pi);
 			ecf->add(c,b,rt);
 			return ecf;
@@ -2126,10 +2241,10 @@ namespace Insert {
 				else bv.push_back(vv[n]);
 			}
 			// Create a new rule
-			if(!(bv.empty())) body = new QuantForm(true,false,bv,body,ParseInfo((body->pi())));
+			if(!(bv.empty())) body = new QuantForm(true,false,bv,body,FormParseInfo((body->pi())));
 			Rule* r = new Rule(hv,head,body,pi);
 			// Sort derivation
-			SortDeriver sd(r);
+			SortDeriver sd(r,_currvocab);
 			// Return the rule
 			return r;
 		}
@@ -2219,9 +2334,54 @@ namespace Insert {
 		}
 	}
 
+	FuncTerm* functerm(NSTuple* nst, const vector<Term*>& vt, YYLTYPE l) {
+		ParseInfo pi = parseinfo(l);
+		(nst->_name).back() = (nst->_name).back() + '/' + itos((nst->_sorts).size()-1);
+		Function* f = funcInScope(nst->_name);
+		if(f) f = f->disambiguate(nst->_sorts,0);
+		if(f) {
+			if(belongsToVoc(f)) {
+				if(f->arity() == vt.size()) {
+					for(unsigned int n = 0; n < vt.size(); ++n) {
+						if(!vt[n]) {
+							for(unsigned int m = 0; m < vt.size(); ++m) { if(vt[m]) delete(vt[m]);	}
+							delete(nst);
+							return 0;
+						}
+					}
+					delete(nst);
+					return new FuncTerm(f,vt,pi);
+				}
+				else {
+					Error::wrongfuncarity(f->name(),pi);
+					for(unsigned int n = 0; n < vt.size(); ++n) { if(vt[n]) delete(vt[n]);	}
+					delete(nst);
+					return 0;
+				}
+			}
+			else {
+				Error::funcnotintheovoc(f->name(),_currtheory->name(),pi);
+				for(unsigned int n = 0; n < vt.size(); ++n) { if(vt[n]) delete(vt[n]);	}
+				delete(nst);
+				return 0;
+			}
+		}
+		else {
+			Error::undeclfunc(oneName(nst->_name),pi);
+			for(unsigned int n = 0; n < vt.size(); ++n) { if(vt[n]) delete(vt[n]);	}
+			delete(nst);
+			return 0;
+		}
+	}
+
 	FuncTerm* functerm(const vector<string>& vs, YYLTYPE l) {
 		vector<Term*> vt = vector<Term*>(0);
 		return functerm(vs,vt,l);
+	}
+
+	FuncTerm* functerm(NSTuple* nst, YYLTYPE l) {
+		vector<Term*> vt = vector<Term*>(0);
+		return functerm(nst,vt,l);
 	}
 
 	Term* funcvar(const vector<string>& vs, YYLTYPE l) {
@@ -2252,7 +2412,7 @@ namespace Insert {
 
 	Term* arterm(char c, Term* lt, Term* rt, YYLTYPE l) {
 		if(lt && rt) {
-			Function* f = StdBuiltin::instance()->func(string(1,c) + "/2");
+			Function* f = _currvocab->func(string(1,c) + "/2");
 			assert(f);
 			vector<Term*> vt(2); vt[0] = lt; vt[1] = rt;
 			return new FuncTerm(f,vt,parseinfo(l));
@@ -2266,7 +2426,7 @@ namespace Insert {
 
 	Term* arterm(const string& s, Term* t, YYLTYPE l) {
 		if(t) {
-			Function* f = StdBuiltin::instance()->func(s + "/1");
+			Function* f = _currvocab->func(s + "/1");
 			assert(f);
 			vector<Term*> vt(1,t);
 			return new FuncTerm(f,vt,parseinfo(l));
@@ -2369,10 +2529,6 @@ namespace Insert {
 		if(s) { 
 			Element en; en._string = n;
 			return new DomainTerm(s,ELSTRING,en,pi);
-		}
-		else {
-			delete(n);
-			return 0;
 		}
 	}
 

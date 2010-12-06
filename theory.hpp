@@ -25,12 +25,13 @@ class Formula {
 
 		bool				_sign;	// true iff the formula does not start with a negation
 		vector<Variable*>	_fvars;	// free variables of the formula
-		ParseInfo			_pi;	// the place where the formula was parsed (0 for non user-defined formulas)
+		FormParseInfo		_pi;	// the place where the formula was parsed (0 for non user-defined formulas)
 
 	public:
 
 		// Constructor
-		Formula(bool sign, const ParseInfo& pi):   _sign(sign), _pi(pi)  { }
+		Formula(bool sign) : _sign(sign) { }
+		Formula(bool sign, const FormParseInfo& pi):   _sign(sign), _pi(pi)  { }
 
 		// Virtual constructors
 		virtual	Formula*	clone()									const = 0;	// copy the formula while keeping the free variables
@@ -46,19 +47,19 @@ class Formula {
 		void	swapsign()	{ _sign = !_sign;	}
 
 		// Inspectors
-				bool				sign()					const { return _sign;			}
-				unsigned int		nrFvars()				const { return _fvars.size();	}
-				Variable*			fvar(unsigned int n)	const { return _fvars[n];		}
-				const ParseInfo&	pi()					const { return _pi;				}
-		virtual	unsigned int		nrQvars()				const = 0;	// number of variables quantified by the formula
-		virtual	unsigned int		nrSubforms()			const = 0;	// number of direct subformulas
-		virtual	unsigned int		nrSubterms()			const = 0;  // number of direct subterms
-		virtual	Variable*			qvar(unsigned int n)	const = 0;	// the n'th quantified variable
-		virtual	Formula*			subform(unsigned int n)	const = 0;	// the n'th direct subformula
-		virtual	Term*				subterm(unsigned int n)	const = 0;	// the n'th direct subterm
-				bool				contains(Variable*)		const;		// true iff the formula contains the variable
-		virtual	bool				trueformula()			const { return false;	}
-		virtual	bool				falseformula()			const { return false;	}
+				bool					sign()					const { return _sign;			}
+				unsigned int			nrFvars()				const { return _fvars.size();	}
+				Variable*				fvar(unsigned int n)	const { return _fvars[n];		}
+				const FormParseInfo&	pi()					const { return _pi;				}
+		virtual	unsigned int			nrQvars()				const = 0;	// number of variables quantified by the formula
+		virtual	unsigned int			nrSubforms()			const = 0;	// number of direct subformulas
+		virtual	unsigned int			nrSubterms()			const = 0;  // number of direct subterms
+		virtual	Variable*				qvar(unsigned int n)	const = 0;	// the n'th quantified variable
+		virtual	Formula*				subform(unsigned int n)	const = 0;	// the n'th direct subformula
+		virtual	Term*					subterm(unsigned int n)	const = 0;	// the n'th direct subterm
+				bool					contains(Variable*)		const;		// true iff the formula contains the variable
+		virtual	bool					trueformula()			const { return false;	}
+		virtual	bool					falseformula()			const { return false;	}
 
 		// Visitor
 		virtual void		accept(Visitor* v) = 0;
@@ -80,7 +81,7 @@ class PredForm : public Formula {
 	public:
 
 		// Constructors
-		PredForm(bool sign, PFSymbol* p, const vector<Term*>& a, const ParseInfo& pi) : 
+		PredForm(bool sign, PFSymbol* p, const vector<Term*>& a, const FormParseInfo& pi) : 
 			Formula(sign,pi), _symb(p), _args(a) { setfvars(); }
 
 		PredForm*	clone()									const;
@@ -125,9 +126,9 @@ class EqChainForm : public Formula {
 	public:
 
 		// Constructors
-		EqChainForm(bool sign, bool c, Term* t, const ParseInfo& pi) : 
+		EqChainForm(bool sign, bool c, Term* t, const FormParseInfo& pi) : 
 			Formula(sign,pi), _conj(c), _terms(1,t), _comps(0), _signs(0) { setfvars(); }
-		EqChainForm(bool sign, bool c, const vector<Term*>& vt, const vector<char>& vc, const vector<bool>& vs, const ParseInfo& pi) :
+		EqChainForm(bool sign, bool c, const vector<Term*>& vt, const vector<char>& vc, const vector<bool>& vs, const FormParseInfo& pi) :
 			Formula(sign,pi), _conj(c), _terms(vt), _comps(vc), _signs(vs) { setfvars();	}
 
 		EqChainForm*	clone()									const;
@@ -176,7 +177,7 @@ class EquivForm : public Formula {
 	public:
 		
 		// Constructors
-		EquivForm(bool sign, Formula* lf, Formula* rt, const ParseInfo& pi) : 
+		EquivForm(bool sign, Formula* lf, Formula* rt, const FormParseInfo& pi) : 
 			Formula(sign,pi), _left(lf), _right(rt) { setfvars(); }
 
 		EquivForm*	clone()									const;
@@ -221,7 +222,7 @@ class BoolForm : public Formula {
 	public:
 
 		// Constructors
-		BoolForm(bool sign, bool c, const vector<Formula*>& sb, const ParseInfo& pi) :
+		BoolForm(bool sign, bool c, const vector<Formula*>& sb, const FormParseInfo& pi) :
 			Formula(sign,pi), _subf(sb), _conj(c) { setfvars(); }
 
 		BoolForm*	clone()									const;
@@ -270,7 +271,7 @@ class QuantForm : public Formula {
 	public:
 
 		// Constructors
-		QuantForm(bool sign, bool u, const vector<Variable*>& v, Formula* sf, const ParseInfo& pi) : 
+		QuantForm(bool sign, bool u, const vector<Variable*>& v, Formula* sf, const FormParseInfo& pi) : 
 			Formula(sign,pi), _vars(v), _subf(sf), _univ(u) { setfvars(); }
 
 		QuantForm*	clone()									const;
@@ -318,7 +319,7 @@ class AggForm : public Formula {
 	public:
 
 		// Constructors
-		AggForm(bool sign, char c, Term* l, AggTerm* r, const ParseInfo& pi) : 
+		AggForm(bool sign, char c, Term* l, AggTerm* r, const FormParseInfo& pi) : 
 			Formula(sign,pi), _comp(c), _left(l), _right(r) { setfvars(); }
 
 		AggForm*	clone()									const;
@@ -349,6 +350,65 @@ class AggForm : public Formula {
 
 };
 
+/*******************************************
+	Formulas for debugging purposes only
+		these formulas will only appear 
+		in parseinfo objects
+*******************************************/
+
+
+class BracketForm : public Formula {
+
+	private:
+		Formula*		_subf;		// the subformula
+
+	public:
+
+		// Constructors
+		BracketForm(bool sign, Formula* subf) : 
+			Formula(sign), _subf(subf) { setfvars(); }
+
+		BracketForm*	clone()									const;
+		BracketForm*	clone(const map<Variable*,Variable*>&)	const;
+
+	    // Destructor
+		void recursiveDelete();
+
+		// Mutators
+		void	subf(Formula* f) { _subf = f;	}
+
+		// Inspectors
+		Formula*		subf()					const { return _subf;				}
+		unsigned int	nrQvars()				const { return 0;					}
+		unsigned int	nrSubforms()			const { return 1;					}
+		unsigned int	nrSubterms()			const { return 0;					}
+		Variable*		qvar(unsigned int n)	const { assert(false); return 0;	}
+		Formula*		subform(unsigned int n)	const { return _subf;				}
+		Term*			subterm(unsigned int n)	const { assert(false); return 0;	}
+		
+		// Visitor
+		void		accept(Visitor* v);
+		Formula*	accept(MutatingVisitor* v);
+
+		// Debugging
+		string to_string() const;
+
+};
+/*
+class ImplicationFormula : public Formula {
+	TODO
+};
+
+class RestrQuantFormula : public Formula {
+	TODO
+};
+
+class NegatedFormula : public Formula {
+	TODO
+};
+*/
+
+// Truth values
 enum TruthValue { TV_TRUE, TV_FALSE, TV_UNKN };
 
 namespace FormulaUtils {

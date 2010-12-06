@@ -8,7 +8,7 @@ FLEXFLAGS=
 
 # Parser generator
 YACC=bison
-YACCFLAGS=--defines
+YACCFLAGS=--defines -v
 
 ifdef V
 

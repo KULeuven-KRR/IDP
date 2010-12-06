@@ -119,7 +119,7 @@ void NaiveGrounder::visit(PredForm* pf) {
 		assert(_returnTerm);
 		vt.push_back(_returnTerm);
 	}
-	_returnFormula = new PredForm(pf->sign(),pf->symb(),vt,ParseInfo());
+	_returnFormula = new PredForm(pf->sign(),pf->symb(),vt,FormParseInfo());
 }
 
 void NaiveGrounder::visit(EquivForm* ef) {
@@ -131,7 +131,7 @@ void NaiveGrounder::visit(EquivForm* ef) {
 	ef->right()->accept(this);
 	assert(_returnFormula);
 	Formula* nr = _returnFormula;
-	_returnFormula = new EquivForm(ef->sign(),nl,nr,ParseInfo());
+	_returnFormula = new EquivForm(ef->sign(),nl,nr,FormParseInfo());
 }
 
 void NaiveGrounder::visit(EqChainForm* ef) {
@@ -142,7 +142,7 @@ void NaiveGrounder::visit(EqChainForm* ef) {
 		assert(_returnTerm);
 		vt.push_back(_returnTerm);
 	}
-	_returnFormula = new EqChainForm(ef->sign(),ef->conj(),vt,ef->comps(),ef->compsigns(),ParseInfo());
+	_returnFormula = new EqChainForm(ef->sign(),ef->conj(),vt,ef->comps(),ef->compsigns(),FormParseInfo());
 }
 
 void NaiveGrounder::visit(BoolForm* bf) {
@@ -153,7 +153,7 @@ void NaiveGrounder::visit(BoolForm* bf) {
 		assert(_returnFormula);
 		vf.push_back(_returnFormula);
 	}
-	_returnFormula = new BoolForm(bf->sign(),bf->conj(),vf,ParseInfo());
+	_returnFormula = new BoolForm(bf->sign(),bf->conj(),vf,FormParseInfo());
 }
 
 void NaiveGrounder::visit(QuantForm* qf) {
@@ -165,7 +165,7 @@ void NaiveGrounder::visit(QuantForm* qf) {
 		_varmapping[qf->qvar(n)] = e;
 	}
 	if(stti.empty()) {
-		_returnFormula = new BoolForm(qf->sign(),qf->univ(),vf,ParseInfo());
+		_returnFormula = new BoolForm(qf->sign(),qf->univ(),vf,FormParseInfo());
 	}
 	else {
 		do {
@@ -177,7 +177,7 @@ void NaiveGrounder::visit(QuantForm* qf) {
 			assert(_returnFormula);
 			vf.push_back(_returnFormula);
 		} while(stti.nextvalue());
-		_returnFormula = new BoolForm(qf->sign(),qf->univ(),vf,ParseInfo());
+		_returnFormula = new BoolForm(qf->sign(),qf->univ(),vf,FormParseInfo());
 	}
 }
 

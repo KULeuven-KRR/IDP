@@ -8,6 +8,7 @@
 #include <iostream>
 
 void Visitor::visit(PredForm* a)			{ traverse(a);	}
+void Visitor::visit(BracketForm* a)			{ traverse(a);	}
 void Visitor::visit(EqChainForm* a)			{ traverse(a);	}
 void Visitor::visit(EquivForm* a)			{ traverse(a);	}
 void Visitor::visit(BoolForm* a)			{ traverse(a);	}
@@ -137,6 +138,10 @@ void PredForm::accept(Visitor* v) {
 	v->visit(this);
 }
 
+void BracketForm::accept(Visitor* v) {
+	v->visit(this);
+}
+
 void EquivForm::accept(Visitor* v) {
 	v->visit(this);
 }
@@ -188,6 +193,16 @@ Formula* MutatingVisitor::visit(PredForm* pf) {
 	}
 	pf->setfvars();
 	return pf;
+}
+
+Formula* MutatingVisitor::visit(BracketForm* bf) {
+	Formula* f = bf->subf()->accept(this);
+	if(f != bf->subf()) {
+		delete(bf->subf());
+		bf->subf(f);
+	}
+	bf->setfvars();
+	return bf;
 }
 
 Formula* MutatingVisitor::visit(EqChainForm* ef) {
@@ -428,6 +443,10 @@ SetExpr* EnumSetExpr::accept(MutatingVisitor* v) {
 }
 
 Formula* PredForm::accept(MutatingVisitor* v) {
+	return v->visit(this);
+}
+
+Formula* BracketForm::accept(MutatingVisitor* v) {
 	return v->visit(this);
 }
 
