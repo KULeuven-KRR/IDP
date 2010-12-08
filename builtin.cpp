@@ -5,6 +5,7 @@
 ************************************/
 
 #include <typeinfo>
+#include <cstdlib> //contains abs for ints
 #include <cmath>
 #include "builtin.hpp"
 #include "data.hpp"
