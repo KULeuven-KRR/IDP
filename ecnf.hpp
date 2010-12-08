@@ -9,7 +9,7 @@
 
 #include "theory.hpp"
 #include "ground.hpp"
-#include "pcsolver/solvers/PCSolver.hpp"
+#include "pcsolver/solvers/pcsolver/PCSolver.hpp"
 
 struct GroundFeatures {
 	bool	_containsDefinitions;
