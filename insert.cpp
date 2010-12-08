@@ -1391,25 +1391,25 @@ namespace Insert {
 		_emptythreeinters.clear();
 		_unknownpredtables.clear();
 		_unknownfunctables.clear();
+
+		// close block
 		closeblock();
 	}
 
 	void closeaspstructure() {
-		/*Vocabulary* v = _currstructure->vocabulary();
-		for(unsigned int n = 0; n < v->nrSorts(); ++n) {
-			SortTable* st = _currstructure->inter(v->sort(n));
+		for(unsigned int n = 0; n < _currstructure->nrSortInters(); ++n) {
+			SortTable* st = _currstructure->sortinter(n);
 			if(st) st->sortunique();
 		}
-		for(unsigned int n = 0; n < v->nrPreds(); ++n) {
-			PredInter* pt = _currstructure->inter(v->pred(n));
+		for(unsigned int n = 0; n < _currstructure->nrPredInters(); ++n) {
+			PredInter* pt = _currstructure->predinter(n);
 			if(pt) pt->sortunique();
 		}
-		for(unsigned int n = 0; n < v->nrFuncs(); ++n) {
-			FuncInter* ft = _currstructure->inter(v->func(n));
+		for(unsigned int n = 0; n < _currstructure->nrFuncInters(); ++n) {
+			FuncInter* ft = _currstructure->funcinter(n);
 			if(ft) ft->sortunique();
 		}
 		closestructure();
-		*/
 	}
 
 	/** Two-valued interpretations **/

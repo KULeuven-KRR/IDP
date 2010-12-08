@@ -787,6 +787,9 @@ class Structure : public AbstractStructure {
 		bool			hasInter(Sort* s)			const;	// True iff s has an interpretation
 		bool			hasInter(Predicate* p)		const;	// True iff p has an interpretation
 		bool			hasInter(Function* f)		const;	// True iff f has an interpretation
+		unsigned int	nrSortInters()				const { return _sortinter.size();	}
+		unsigned int	nrPredInters()				const { return _predinter.size();	}
+		unsigned int	nrFuncInters()				const { return _funcinter.size();	}
 
 		// Visitor
 		void accept(Visitor* v)	{ v->visit(this);	}
