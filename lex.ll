@@ -11,7 +11,7 @@
 #include "data.hpp"
 #include "insert.hpp"
 #include "error.hpp"
-#include "parse.tab.hpp"
+#include "parse.h"
 #include "clconst.hpp"
 
 extern YYSTYPE yylval;

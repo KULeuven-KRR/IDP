@@ -360,12 +360,12 @@ void outputHR::outputunsat(){
 	INTEGRATED SYSTEM OUTPUT
 ********************************/
 
-void copyToVec(const vector<int>& v, vec<Lit>& v2){
+void copyToVec(const vector<int>& v, vector<Literal>& v2){
 	for(vector<int>::const_iterator i=v.begin(); i<v.end(); i++){
 		if(*i<0){
-			v2.push(Lit(-(*i), true));
+			v2.push_back(Literal(-(*i), true));
 		}else{
-			v2.push(Lit(*i, false));
+			v2.push_back(Literal(*i, false));
 		}
 	}
 }
@@ -375,23 +375,23 @@ void copyToVec(const vector<int>& v, vec<Lit>& v2){
 	modes.verbosity = 7;
 	_solver = new PCSolver(modes);
 }*/
-outputToSolver::outputToSolver(PCSolver* solver) : _solver(solver) {}
+outputToSolver::outputToSolver(SATSolver* solver) : _solver(solver) {}
 outputToSolver::~outputToSolver(){ }
 
 void outputToSolver::outputinit(GroundFeatures*){}
 void outputToSolver::outputend(){}
 void outputToSolver::outputunitclause(int l){
-	vec<Lit> v;
+	vector<Literal> v;
 	if(l<0){
-		v.push(Lit(-(l), true));
+		v.push_back(Literal(-(l), true));
 	}else{
-		v.push(Lit(l, false));
+		v.push_back(Literal(l, false));
 	}
 	solver()->addClause(v);
 }
 
 void outputToSolver::outputclause(const vector<int>& lits){
-	vec<Lit> l;
+	vector<Literal> l;
 	copyToVec(lits, l);
 	solver()->addClause(l);
 }
@@ -407,14 +407,10 @@ void outputToSolver::outputunitfdrule(int d, int h, int b) {
 }
 
 void outputToSolver::outputrule(int head, const vector<int>& b, bool c){
-	vec<Lit> l;
-	if(head<0){
-		l.push(Lit(-head, true));
-	}else{
-		l.push(Lit(head, false));
-	}
+	Literal h = Literal(abs(head), head<0);
+	vector<Literal> l;
 	copyToVec(b, l);
-	solver()->addRule(c, l);
+	solver()->addRule(c, h, l);
 }
 
 void outputToSolver::outputfdrule(int d, int h, const vector<int>& b, bool c){
@@ -422,23 +418,33 @@ void outputToSolver::outputfdrule(int d, int h, const vector<int>& b, bool c){
 }
 
 void outputToSolver::outputmax(int h, bool defined, int setid, bool lowerthan, int bound) {
-	solver()->addAggrExpr(Lit(h), setid, bound, lowerthan, MAX, defined);
+	HdEq sem = defined?DEF:COMP;
+	Bound sign = lowerthan?UPPERBOUND:LOWERBOUND;
+	solver()->addAggrExpr(Literal(h), setid, Weight(bound), sign, MAX, sem);
 }
 
 void outputToSolver::outputmin(int h, bool defined, int setid, bool lowerthan, int bound){
-	solver()->addAggrExpr(Lit(h), setid, bound, lowerthan, MIN, defined);
+	HdEq sem = defined?DEF:COMP;
+	Bound sign = lowerthan?UPPERBOUND:LOWERBOUND;
+	solver()->addAggrExpr(Literal(h), setid, Weight(bound), sign, MIN, sem);
 }
 
 void outputToSolver::outputsum(int h, bool defined, int setid, bool lowerthan, int bound){
-	solver()->addAggrExpr(Lit(h), setid, bound, lowerthan, SUM, defined);
+	HdEq sem = defined?DEF:COMP;
+	Bound sign = lowerthan?UPPERBOUND:LOWERBOUND;
+	solver()->addAggrExpr(Literal(h), setid, Weight(bound), sign, SUM, sem);
 }
 
 void outputToSolver::outputprod(int h, bool defined, int setid, bool lowerthan, int bound){
-	solver()->addAggrExpr(Lit(h), setid, bound, lowerthan, PROD, defined);
+	HdEq sem = defined?DEF:COMP;
+	Bound sign = lowerthan?UPPERBOUND:LOWERBOUND;
+	solver()->addAggrExpr(Literal(h), setid, Weight(bound), sign, PROD, sem);
 }
 
 void outputToSolver::outputcard(int h, bool defined, int setid, bool lowerthan, int bound){
-	solver()->addAggrExpr(Lit(h), setid, bound, lowerthan, CARD, defined);
+	HdEq sem = defined?DEF:COMP;
+	Bound sign = lowerthan?UPPERBOUND:LOWERBOUND;
+	solver()->addAggrExpr(Literal(h), setid, Weight(bound), sign, CARD, sem);
 }
 
 //Not supported by solver
@@ -452,13 +458,13 @@ void outputToSolver::outputamo(const vector<int>& b) {
 }
 
 void outputToSolver::outputset(int setid, const vector<int>& lits) {
-	vec<Lit> l;
+	vector<Literal> l;
 	copyToVec(lits, l);
 	solver()->addSet(setid, l);
 }
 
 void outputToSolver::outputwset(int setid, const vector<int>& lits, const vector<int>& weights) {
-	vec<Lit> l;
+	vector<Literal> l;
 	copyToVec(lits, l);
 	solver()->addSet(setid, l, weights);
 }
@@ -469,11 +475,11 @@ void outputToSolver::outputfixpdef(int d, const vector<int>& sd, bool l) {
 
 void outputToSolver::outputunsat(){
 	//FIXME this will probably crash
-	vec<Lit> l;
-	l.push(Lit(1));
+	vector<Literal> l;
+	l.push_back(Literal(1));
 	solver()->addClause(l);
-	vec<Lit> l2;
-	l2.push(Lit(1, true));
+	vector<Literal> l2;
+	l2.push_back(Literal(1, true));
 	solver()->addClause(l2);
 }
 

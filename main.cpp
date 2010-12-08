@@ -8,7 +8,7 @@
 #include "insert.hpp"
 #include "builtin.hpp"
 #include "namespace.hpp"
-#include "parse.tab.hpp"
+#include "parse.h"
 #include "error.hpp"
 #include "options.hpp"
 #include "clconst.hpp"
