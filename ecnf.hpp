@@ -9,7 +9,7 @@
 
 #include "theory.hpp"
 #include "ground.hpp"
-#include "pcsolver/solvers/pcsolver/PCSolver.hpp"
+#include "pcsolver/solvers/external/ExternalInterface.hpp"
 
 struct GroundFeatures {
 	bool	_containsDefinitions;
@@ -129,15 +129,17 @@ class outputHR : public GroundPrinter {
 
 };
 
+typedef PropositionalSolver SATSolver;
+
 class outputToSolver : public GroundPrinter {
 
 	private:
 		//Not owning pointer!
-		PCSolver* _solver;
-		PCSolver* solver() { return _solver; }
+		SATSolver* _solver;
+		SATSolver* solver() { return _solver; }
 	public:
 		//outputToSolver();
-		outputToSolver(PCSolver* solver);
+		outputToSolver(SATSolver* solver);
 		~outputToSolver();
 		void outputinit(GroundFeatures*);
 		void outputend();

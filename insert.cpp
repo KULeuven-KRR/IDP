@@ -10,7 +10,7 @@
 #include "error.hpp"
 #include "visitor.hpp"
 #include "insert.hpp"
-#include "parse.tab.hpp"
+#include "parse.h"
 #include "builtin.hpp"
 #include <iostream>
 #include <list>

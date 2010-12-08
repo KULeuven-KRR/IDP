@@ -124,21 +124,21 @@ void ModelExpansionInference::execute(const vector<InfArg>& args, const string& 
 	EcnfTheory* ecnfgr = TheoryUtils::convert_to_ecnf(gr);
 	ECNF_mode modes;
 	modes.nbmodels = 1;
-	PCSolver* solver = new PCSolver(modes);
+	SATSolver* solver = new SATSolver(modes);
 	GroundPrinter* printer = new outputToSolver(solver);
 	ecnfgr->print(printer);
 	gr->recursiveDelete();
-	vector<vector<int> > models;
+	vector<vector<Literal> > models;
 	bool sat = solver->solve(models);
 	//example use
 	if(sat){
 		for(int i=0; i<models.size(); i++){
 			cout <<"=== Model " << (i+1) << " ===\n";
 			for(int j=0; j<models[i].size(); j++){
-				if(models[i][j] > 0) {
+				if(models[i][j].getAtom().getValue() > 0) {
 					//cout <<models[i][j] <<" ";
-					cout << ecnfgr->translator()->symbol(models[i][j]-1)->to_string() << '(';
-					vector<string> args = ecnfgr->translator()->args(models[i][j]-1);
+					cout << ecnfgr->translator()->symbol((models[i][j].getAtom().getValue())-1)->to_string() << '(';
+					vector<string> args = ecnfgr->translator()->args(models[i][j].getAtom().getValue()-1);
 					for(unsigned int n = 0; n < args.size(); ++n) {
 						cout << args[n];
 						if(n < args.size()-1) cout << ',';

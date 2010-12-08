@@ -6,7 +6,7 @@ if test -z $CXXFLAGS; then
 fi
 AC_PROG_CXX
 AC_DECL_YYTEXT
-AC_PROG_LEX
+#AC_PROG_LEX
 AC_PROG_YACC
 AM_INIT_AUTOMAKE([foreign subdir-objects]) #silent-rules FROM VERSION 1.11 #-ffloat-store
 AC_LANG([C++])
@@ -80,7 +80,7 @@ AC_ARG_ENABLE([bits],
 esac],[])
 
 # files to generate via autotools (.am or .in source files)
-AC_CONFIG_FILES([Makefile pcsolver/Makefile])
+AC_CONFIG_FILES([Makefile])
 
 # generate the final Makefile etc.
 AC_OUTPUT
