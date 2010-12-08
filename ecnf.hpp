@@ -135,20 +135,11 @@ class outputToSolver : public GroundPrinter {
 
 	private:
 		//Not owning pointer!
-<<<<<<< HEAD:ecnf.hpp
 		SATSolver* _solver;
 		SATSolver* solver() { return _solver; }
-=======
-		PropositionalSolver* _solver;
-		PropositionalSolver* solver() { return _solver; }
->>>>>>> 2f436c6337303ee6c7616e7c6673c925f448d476:ecnf.hpp
 	public:
 		//outputToSolver();
-<<<<<<< HEAD:ecnf.hpp
 		outputToSolver(SATSolver* solver);
-=======
-		outputToSolver(PropositionalSolver* solver);
->>>>>>> 2f436c6337303ee6c7616e7c6673c925f448d476:ecnf.hpp
 		~outputToSolver();
 		void outputinit(GroundFeatures*);
 		void outputend();
