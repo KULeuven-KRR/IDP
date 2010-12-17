@@ -981,6 +981,30 @@ namespace TableUtils {
 		return leastFuncInter(vet);
 	}
 
+	PredTable* intersection(PredTable* pt1,PredTable* pt2) {
+		// this function may only be used in certain cases!
+		assert(pt1->arity() == pt2->arity());
+		assert(pt1->types() == pt2->types());
+		assert(pt1->finite());
+		UserPredTable* upt = new UserPredTable(pt1->types());
+		// add tuples from pt1 that are also in pt2
+		for(unsigned int n = 0; n < pt1->size(); ++n)
+			if(pt2->contains(pt1->tuple(n)))
+				upt->addRow(pt1->tuple(n),pt1->types());
+		return upt;
+
+	PredTable* difference(PredTable* pt1,PredTable* pt2) {
+		// this function may only be used in certain cases!
+		assert(pt1->arity() == pt2->arity());
+		assert(pt1->types() == pt2->types());
+		assert(pt1->finite());
+		UserPredTable* upt = new UserPredTable(pt1->types());
+		// add tuples from pt1 that are not in pt2
+		for(unsigned int n = 0; n < pt1->size(); ++n)
+			if(!pt2->contains(pt1->tuple(n)))
+				upt->addRow(pt1->tuple(n),pt1->types());
+		return upt;
+
 	FiniteSortTable* singletonSort(Element e, ElementType t) {
 		EmptySortTable est;
 		switch(t) {
@@ -1075,7 +1099,7 @@ void Structure::close() {
 		}
 	}
 	for(unsigned int n = 0; n < _funcinter.size(); ++n) {
-		vector<ElementType> vet(_vocabulary->nbfunc(n)->nrsorts(),ELINT);
+		vector<ElementType> vet(_vocabulary->nbfunc(n)->nrSorts(),ELINT);
 		if(!_funcinter[n]) {
 			_funcinter[n] = TableUtils::leastFuncInter(vet);
 		}
