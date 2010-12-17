@@ -12,9 +12,11 @@
 #include <stdlib.h>
 using namespace std;
 
-// Extreme integers
-int MIN_INT = numeric_limits<int>::min();
-int MAX_INT = numeric_limits<int>::max();
+// Extreme numbers
+int		MIN_INT		= numeric_limits<int>::min();
+int		MAX_INT		= numeric_limits<int>::max();
+double	MIN_DOUBLE	= numeric_limits<double>::min(); 
+double	MAX_DOUBLE	= numeric_limits<double>::max(); 
 
 // Number of chars
 int nrOfChars() {
@@ -33,43 +35,18 @@ bool nexttuple(vector<unsigned int>& tuple, const vector<unsigned int>& limits) 
 
 // Convert integer to string
 string itos(int n) {
-   if(n == 0) return "0";
-   string s;
-   int a = abs(n);
-   while(a > 0) {
-	  int temp = a % 10;
-	  char c = '0' + temp;
-	  s = c + s;
-	  a = (a - temp) / 10;
-   }
-   if(n < 0) return ('-' + s);
-   else return s;
+	stringstream sst;
+	sst << n;
+	return sst.str();
 }
 
 // Convert string to integer 
 // (returns 0 when the string is not an integer)
 int stoi(const string& s) {
-	int i = 0;
-	unsigned int n = 0;
-	bool inv = false;
-	if(s.size() && s[0] == '-') { 
-		inv = true;
-		++n;
-	}
-	for( ; n < s.size(); ++n) {
-		if(s[n] < '0' || s[n] > '9') return 0;
-		i = i * 10 + (s[n] - '0');
-	}
-	if(inv) return -i;
-	else return i;
-}
-
-// Return a string of n spaces
-string tabstring(unsigned int n) {
-	string tab;
-	for(unsigned int m = 0; m < n; ++m) 
-		tab = tab + ' ';
-	return tab;
+	stringstream i(s);
+	int n;
+	if(!(i >> n)) return 0;
+	else return n;
 }
 
 // Convert double to string 
@@ -113,4 +90,12 @@ bool isChar(int n) {
 bool isChar(double d) {
 	if(isInt(d)) return isChar(int(d));
 	else return false;
+}
+
+// Return a string of n spaces
+string tabstring(unsigned int n) {
+	string tab;
+	for(unsigned int m = 0; m < n; ++m) 
+		tab = tab + ' ';
+	return tab;
 }

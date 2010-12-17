@@ -20,6 +20,14 @@ struct FTTuple {
 	FTTuple(Formula* f, Term* t) : _formula(f), _term(t) { }
 };
 
+// Pair of name and sorts
+struct NSTuple {
+	vector<string>	_name;
+	vector<Sort*>	_sorts;
+
+	NSTuple(const vector<string>& n, const vector<Sort*>& s) : _name(n), _sorts(s) { }
+};
+
 namespace Insert {
 
 	/** Data **/
@@ -34,23 +42,31 @@ namespace Insert {
 	void openspace(const string& sname,YYLTYPE);	// set the current namespace to its subspace with name 'sname'
 
 	/** Vocabulary **/
-	void openvocab(const string& vname, YYLTYPE);				// create a new vocabulary with name 'vname' 
-																	// in the current namespace
-	void closevocab();												// stop parsing a vocabulary
+	void openvocab(const string& vname, YYLTYPE);			// create a new vocabulary with name 'vname' 
+															// in the current namespace
+	void closevocab();										// stop parsing a vocabulary
 	void usingvocab(const vector<string>& vname, YYLTYPE);	// Use vocabulary 'vname' when parsing
+	void setvocab(const vector<string>& vname, YYLTYPE);	// Set the vocabulary of the current theory or structure 
 
 	Sort*		sortpointer(const vector<string>& sname, YYLTYPE);		// return sort with name 'sname'
 	Sort*		theosortpointer(const vector<string>& vs, YYLTYPE l);	// return sort with name 'sname'
 	Predicate*	predpointer(const vector<string>& pname, YYLTYPE);		// return predicate with name 'pname'
 	Function*	funcpointer(const vector<string>& fname, YYLTYPE);		// return function with name 'fname'
+	Predicate*	predpointer(const vector<string>& pname, const vector<Sort*>&, YYLTYPE);
+	Function*	funcpointer(const vector<string>& fname, const vector<Sort*>&, YYLTYPE);	
 
-	Sort*		sort(const string& name, YYLTYPE);				// create a new base sort
-	Sort*		sort(const string& name, Sort* sups, YYLTYPE);	// create a new subsort
+	// Create new sorts
+	Sort*	sort(const string& name, YYLTYPE);						
+	Sort*	sort(const string& name, const vector<Sort*> supbs, bool p, YYLTYPE);
+	Sort*	sort(const string& name, const vector<Sort*> sups, const vector<Sort*> subs, YYLTYPE);
+
+	Sort*		sort(Sort* s);											// add an existing sort
 	Predicate*	predicate(Predicate* p);								// add an existing predicate 
 	Function*	function(Function* f);									// add an existing function 
 	Predicate*	predicate(const string& name, const vector<Sort*>& sorts, YYLTYPE);	// create a new predicate
 	Predicate*	predicate(const string& name, YYLTYPE);								// create a new 0-ary predicate
 	Function*	function(const string& name, const vector<Sort*>& insorts, Sort* outsort, YYLTYPE);	// create a new function
+	Function*	function(const string& name, const vector<Sort*>& insorts, YYLTYPE);	// create a new function
 	Function*	function(const string& name, Sort* outsort, YYLTYPE);									// create a new constant
 
 	Sort*		copysort(const string& name, Sort*, YYLTYPE);		// copy a sort
@@ -63,9 +79,9 @@ namespace Insert {
 	void closeaspstructure();
 
 	// two-valued interpretations
-	void sortinter(const vector<string>& sname, UserSortTable* t, YYLTYPE);
-	void predinter(const vector<string>& pname, UserPredTable* t, YYLTYPE);
-	void funcinter(const vector<string>& fname, UserPredTable* t, YYLTYPE);
+	void sortinter(const vector<string>& sname, FiniteSortTable* t, YYLTYPE);
+	void predinter(const vector<string>& pname, FinitePredTable* t, YYLTYPE);
+	void funcinter(const vector<string>& fname, FinitePredTable* t, YYLTYPE);
 	void emptyinter(const vector<string>&,YYLTYPE);
 	void truepredinter(const vector<string>&, YYLTYPE);
 	void falsepredinter(const vector<string>&, YYLTYPE);
@@ -75,13 +91,13 @@ namespace Insert {
 	void truethreepredinter(const vector<string>& pname, const string& utf, YYLTYPE);
 	void falsethreepredinter(const vector<string>& pname, const string& utf, YYLTYPE);
 	void threefuncinter(const vector<string>& fname, const string& utf, FinitePredTable* t, YYLTYPE);
-	void threeinter(const vector<string>& name, const string& utf, UserSortTable* t, YYLTYPE);
+	void threeinter(const vector<string>& name, const string& utf, FiniteSortTable* t, YYLTYPE);
 	void emptythreeinter(const vector<string>& name, const string& utf, YYLTYPE);
 
 	// asp atoms
 	void predatom(const vector<string>&,YYLTYPE);
-	void predatom(const vector<string>&, const vector<ElementType>&, const vector<Element>&, const vector<UserSortTable*>&, YYLTYPE);
-	void funcatom(const vector<string>&, const vector<ElementType>&, const vector<Element>&, const vector<UserSortTable*>&, YYLTYPE);
+	void predatom(const vector<string>&, const vector<ElementType>&, const vector<Element>&, const vector<FiniteSortTable*>&, YYLTYPE);
+	void funcatom(const vector<string>&, const vector<ElementType>&, const vector<Element>&, const vector<FiniteSortTable*>&, YYLTYPE);
 
 	/** Theory **/
 	void opentheory(const string& tname, YYLTYPE);
@@ -104,7 +120,8 @@ namespace Insert {
 	PredForm*		funcgraphform(const vector<string>&, Term*, YYLTYPE);
 	PredForm*		predform(const vector<string>&, const vector<Term*>&, YYLTYPE);
 	PredForm*		predform(const vector<string>&, YYLTYPE);
-	PredForm*		succform(Term*, Term*, YYLTYPE);
+	PredForm*		predform(NSTuple*, const vector<Term*>&, YYLTYPE);
+	PredForm*		predform(NSTuple*, YYLTYPE);
 	EquivForm*		equivform(Formula*,Formula*,YYLTYPE);
 	BoolForm*		disjform(Formula*,Formula*,YYLTYPE);
 	BoolForm*		conjform(Formula*,Formula*,YYLTYPE);
@@ -121,6 +138,8 @@ namespace Insert {
 
 	FuncTerm*		functerm(const vector<string>&, const vector<Term*>&, YYLTYPE);
 	FuncTerm*		functerm(const vector<string>&, YYLTYPE);
+	FuncTerm*		functerm(NSTuple*, const vector<Term*>&, YYLTYPE);
+	FuncTerm*		functerm(NSTuple*, YYLTYPE);
 	Term*			funcvar(const vector<string>&, YYLTYPE);
 	Term*			arterm(char,Term*,Term*,YYLTYPE);
 	Term*			arterm(const string&,Term*,YYLTYPE);
@@ -132,15 +151,10 @@ namespace Insert {
 	EnumSetExpr*	set(const vector<Formula*>&, YYLTYPE);
 
 	DomainTerm*		domterm(int,YYLTYPE);
-	DomainTerm*		domterm(double*,YYLTYPE);
+	DomainTerm*		domterm(double,YYLTYPE);
 	DomainTerm*		domterm(string*,YYLTYPE);
 	DomainTerm*		domterm(char,YYLTYPE);
 	DomainTerm*		domterm(string*,Sort*,YYLTYPE);
-
-	FuncTerm*		minterm(YYLTYPE l);
-	FuncTerm*		minterm(Sort*,YYLTYPE l);
-	FuncTerm*		maxterm(YYLTYPE l);
-	FuncTerm*		maxterm(Sort*,YYLTYPE l);
 
 	/** Statements **/
 	void	command(InfArgType,const string& cname, const vector<string>& args, const string& res, YYLTYPE l);

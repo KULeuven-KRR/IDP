@@ -15,10 +15,12 @@ class FixpDef;
 class SetExpr;
 class Theory;
 class PredForm;
+class BracketForm;
 class EqChainForm;
 class EquivForm;	
 class BoolForm;
 class QuantForm;
+class AggForm;
 class VarTerm;
 class AggTerm;
 class DomainTerm;
@@ -62,10 +64,12 @@ class Visitor {
 
 		// Formulas 
 		virtual void visit(PredForm* a);			
+		virtual void visit(BracketForm* a);			
 		virtual void visit(EqChainForm* a);
 		virtual void visit(EquivForm* a);
 		virtual void visit(BoolForm* a);
 		virtual void visit(QuantForm* a);
+		virtual void visit(AggForm* a);
 
 		// Definitions 
 		virtual void visit(Rule* a);
@@ -114,10 +118,12 @@ class MutatingVisitor {
 
 		// Formulas 
 		virtual Formula* visit(PredForm* a);	
+		virtual Formula* visit(BracketForm* a);	
 		virtual Formula* visit(EqChainForm* a);	
 		virtual Formula* visit(EquivForm* a);	
 		virtual Formula* visit(BoolForm* a);	
 		virtual Formula* visit(QuantForm* a);	
+		virtual Formula* visit(AggForm* a);
 
 		// Definitions 
 		virtual Rule* visit(Rule* a);		// NOTE: the head of a rule is not visited by the default implementation!

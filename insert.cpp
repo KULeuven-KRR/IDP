@@ -4,19 +4,17 @@
 	(c) K.U.Leuven
 ************************************/
 
+#include "data.hpp"
 #include "namespace.hpp"
 #include "execute.hpp"
 #include "error.hpp"
 #include "visitor.hpp"
 #include "insert.hpp"
-#include "parse.tab.hpp"
+#include "parse.h"
 #include "builtin.hpp"
 #include <iostream>
 #include <list>
 #include <set>
-
-extern string itos(int);
-extern string dtos(double);
 
 /********************
 	Sort checking
@@ -24,10 +22,13 @@ extern string dtos(double);
 
 class SortChecker : public Visitor {
 
+	private:
+		Vocabulary* _vocab;
+
 	public:
-		SortChecker(Formula* f)		: Visitor() { f->accept(this);	}
-		SortChecker(Definition* d)	: Visitor() { d->accept(this);	}
-		SortChecker(FixpDef* d)		: Visitor() { d->accept(this);	}
+		SortChecker(Formula* f,Vocabulary* v)		: Visitor(), _vocab(v) { f->accept(this);	}
+		SortChecker(Definition* d,Vocabulary* v)	: Visitor(), _vocab(v) { d->accept(this);	}
+		SortChecker(FixpDef* d,Vocabulary* v)		: Visitor(), _vocab(v) { d->accept(this);	}
 
 		void visit(PredForm*);
 		void visit(EqChainForm*);
@@ -42,7 +43,7 @@ void SortChecker::visit(PredForm* pf) {
 		Sort* s1 = s->sort(n);
 		Sort* s2 = pf->subterm(n)->sort();
 		if(s1 && s2) {
-			if(s1->base() != s2->base()) {
+			if(!SortUtils::resolve(s1,s2,_vocab)) {
 				Error::wrongsort(pf->subterm(n)->to_string(),s2->name(),s1->name(),pf->subterm(n)->pi());
 			}
 		}
@@ -56,7 +57,7 @@ void SortChecker::visit(FuncTerm* ft) {
 		Sort* s1 = f->insort(n);
 		Sort* s2 = ft->subterm(n)->sort();
 		if(s1 && s2) {
-			if(s1->base() != s2->base()) {
+			if(!SortUtils::resolve(s1,s2,_vocab)) {
 				Error::wrongsort(ft->subterm(n)->to_string(),s2->name(),s1->name(),ft->subterm(n)->pi());
 			}
 		}
@@ -74,7 +75,7 @@ void SortChecker::visit(EqChainForm* ef) {
 	for(; n < ef->nrSubterms(); ++n) {
 		Sort* t = ef->subterm(n)->sort();
 		if(t) {
-			if(s->base() != t->base()) {
+			if(!SortUtils::resolve(s,t,_vocab)) {
 				Error::wrongsort(ef->subterm(n)->to_string(),t->name(),s->name(),ef->subterm(n)->pi());
 			}
 		}
@@ -86,12 +87,12 @@ void SortChecker::visit(AggTerm* at) {
 	if(at->type() != AGGCARD) {
 		SetExpr* s = at->set();
 		if(s->nrQvars() && s->qvar(0)->sort()) {
-			if(s->qvar(0)->sort()->base() != Builtin::floatsort()) {
+			if(!SortUtils::resolve(s->qvar(0)->sort(),StdBuiltin::instance()->sort("float"),_vocab)) {
 				Error::wrongsort(s->qvar(0)->name(),s->qvar(0)->sort()->name(),"int or float",s->qvar(0)->pi());
 			}
 		}
 		for(unsigned int n = 0; n < s->nrSubterms(); ++n) {
-			if(s->subterm(n)->sort() && s->subterm(n)->sort()->base() != Builtin::floatsort()) {
+			if(s->subterm(n)->sort() && !SortUtils::resolve(s->subterm(n)->sort(),StdBuiltin::instance()->sort("float"),_vocab)) {
 				Error::wrongsort(s->subterm(n)->to_string(),s->subterm(n)->sort()->name(),"int or float",s->subterm(n)->pi());
 			}
 		}
@@ -109,15 +110,17 @@ class SortDeriver : public Visitor {
 		map<Variable*,set<Sort*> >	_untyped;			// The untyped variables, with their possible types
 		map<FuncTerm*,Sort*>		_overloadedterms;	// The terms with an overloaded function
 		set<PredForm*>				_overloadedatoms;	// The atoms with an overloaded predicate
+		set<DomainTerm*>			_domelements;		// The untyped domain elements
 		bool						_changed;
 		bool						_firstvisit;
 		Sort*						_assertsort;
+		Vocabulary*					_vocab;
 
 	public:
 
 		// Constructor
-		SortDeriver(Formula* f) : Visitor() { run(f); }
-		SortDeriver(Rule* r)	: Visitor() { run(r); }
+		SortDeriver(Formula* f,Vocabulary* v) : Visitor(), _vocab(v) { run(f); }
+		SortDeriver(Rule* r,Vocabulary* v)	: Visitor(), _vocab(v) { run(r); }
 
 		// Run sort derivation 
 		void run(Formula*);
@@ -131,6 +134,7 @@ class SortDeriver : public Visitor {
 		void visit(Rule*);
 
 		void visit(VarTerm*);
+		void visit(DomainTerm*);
 		void visit(FuncTerm*);
 
 		void visit(QuantSetExpr*);
@@ -178,7 +182,7 @@ void SortDeriver::visit(EqChainForm* ef) {
 	if(!_firstvisit) {
 		for(unsigned int n = 0; n < ef->nrSubterms(); ++n) {
 			Sort* temp = ef->subterm(n)->sort();
-			if(temp && temp->base() == temp && temp->nrChildren() == 0) {
+			if(temp && temp->nrParents() == 0 && temp->nrChildren() == 0) {
 				s = temp;
 				break;
 			}
@@ -203,6 +207,18 @@ void SortDeriver::visit(Rule* r) {
 void SortDeriver::visit(VarTerm* vt) {
 	if((!(vt->sort())) && _assertsort) {
 		_untyped[vt->var()].insert(_assertsort);
+	}
+}
+
+void SortDeriver::visit(DomainTerm* dt) {
+	if(_firstvisit && (!(dt->sort()))) {
+		_domelements.insert(dt);
+	}
+
+	if((!(dt->sort())) && _assertsort) {
+		dt->sort(_assertsort);
+		_changed = true;
+		_domelements.erase(dt);
 	}
 }
 
@@ -244,7 +260,7 @@ void SortDeriver::derivesorts() {
 			Sort* s = *kt;
 			++kt;
 			for(; kt != (it->second).end(); ++kt) {
-				s = SortUtils::resolve(s,*kt);
+				s = SortUtils::resolve(s,*kt,_vocab);
 				if(!s) { // In case of conflicting sorts, assign the first sort. 
 						 // Error message will be given during final check.
 					s = *((it->second).begin());
@@ -272,7 +288,7 @@ void SortDeriver::derivefuncs() {
 			vs[n] = it->first->subterm(n)->sort();
 		}
 		vs.push_back(it->second);
-		Function* rf = f->disambiguate(vs);
+		Function* rf = f->disambiguate(vs,_vocab);
 		if(rf) {
 			it->first->func(rf);
 			if(!rf->overloaded()) _overloadedterms.erase(it);
@@ -290,7 +306,7 @@ void SortDeriver::derivepreds() {
 		for(unsigned int n = 0; n < vs.size(); ++n) {
 			vs[n] = (*it)->subterm(n)->sort();
 		}
-		PFSymbol* rp = p->disambiguate(vs);
+		PFSymbol* rp = p->disambiguate(vs,_vocab);
 		if(rp) {
 			(*it)->symb(rp);
 			if(!rp->overloaded()) _overloadedatoms.erase(it);
@@ -346,6 +362,9 @@ void SortDeriver::check() {
 	for(map<FuncTerm*,Sort*>::iterator it = _overloadedterms.begin(); it != _overloadedterms.end(); ++it) {
 		Error::nofuncsort(it->first->func()->name(),it->first->pi());
 	}
+	for(set<DomainTerm*>::iterator it = _domelements.begin(); it != _domelements.end(); ++it) {
+		Error::nodomsort((*it)->to_string(),(*it)->pi());
+	}
 }
 
 /**************
@@ -358,27 +377,38 @@ namespace Insert {
 		Data
 	***********/
 	
-	string*			_currfile = 0;	// The current file
-	vector<string*>	_allfiles;		// All the parsed files
-	Namespace*		_currspace;		// The current namespace
-	Vocabulary*		_currvocab;		// The current vocabulary
-	Theory*			_currtheory;	// The current theory
-	Structure*		_currstructure;	// The current structure
+	string*					_currfile = 0;	// The current file
+	vector<string*>			_allfiles;		// All the parsed files
+	Namespace*				_currspace;		// The current namespace
+	Vocabulary*				_currvocab;		// The current vocabulary
+	Theory*					_currtheory;	// The current theory
+	Structure*				_currstructure;	// The current structure
 
-	vector<Vocabulary*>	_usingvocab;	// The vocabularies currently used to parse
+	vector<Vocabulary*>		_usingvocab;	// The vocabularies currently used to parse
+	vector<unsigned int>	_nrvocabs;		// The number of using statements in the current block
+
+	void closeblock() {
+		for(unsigned int n = 0; n < _nrvocabs.back(); ++n) _usingvocab.pop_back();
+		_nrvocabs.pop_back();
+		_currvocab = 0;
+		_currtheory = 0;
+		_currstructure = 0;
+	}
 
 	map<string,vector<Inference*> >	_inferences;	// All inference methods
 
-	string*	currfile()					{ return _currfile;	}
-	void	currfile(const string& s)	{ _allfiles.push_back(_currfile); _currfile = new string(s);	}
-	void	currfile(string* s)			{ _allfiles.push_back(_currfile); if(s) _currfile = new string(*s); else _currfile = 0;	}
-	ParseInfo* parseinfo(YYLTYPE l)		{ return new ParseInfo(l.first_line,l.first_column,_currfile);	}
+	string*		currfile()					{ return _currfile;	}
+	void		currfile(const string& s)	{ _allfiles.push_back(_currfile); _currfile = new string(s);	}
+	void		currfile(string* s)			{ _allfiles.push_back(_currfile); if(s) _currfile = new string(*s); else _currfile = 0;	}
+	ParseInfo		parseinfo(YYLTYPE l)		{ return ParseInfo(l.first_line,l.first_column,_currfile);	}
+	FormParseInfo	formparseinfo(Formula* f, YYLTYPE l)	{ return FormParseInfo(l.first_line,l.first_column,_currfile,f);	}
+	FormParseInfo	formparseinfo(YYLTYPE l)	{ return FormParseInfo(l.first_line,l.first_column,_currfile,0);	}
 
 	// Empty 2-valued interpretations
 	struct NameLoc {
 		vector<string>	_name;
-		ParseInfo*		_pi;
-		NameLoc(const vector<string>& vs, ParseInfo* pi) : _name(vs), _pi(pi) { }
+		ParseInfo		_pi;
+		NameLoc(const vector<string>& vs, const ParseInfo& pi) : _name(vs), _pi(pi) { }
 	};
 	vector<NameLoc>	_emptyinters;
 
@@ -389,8 +419,8 @@ namespace Insert {
 	struct NameUTFLoc {
 		vector<string>	_name;
 		UTF				_utf;
-		ParseInfo*		_pi;
-		NameUTFLoc(const vector<string>& n, UTF u, ParseInfo* pi) : _name(n), _utf(u), _pi(pi) { }
+		ParseInfo		_pi;
+		NameUTFLoc(const vector<string>& n, UTF u, const ParseInfo& pi) : _name(n), _utf(u), _pi(pi) { }
 	};
 	map<Predicate*,FinitePredTable*>	_unknownpredtables;
 	map<Function*,FinitePredTable*>		_unknownfunctables;
@@ -413,23 +443,17 @@ namespace Insert {
 	*****************/
 
 	bool belongsToVoc(Sort* s) {
-		for(unsigned int n = 0; n < _usingvocab.size(); ++n) {
-			if(_usingvocab[n]->contains(s)) return true;
-		}
+		if(_currvocab->contains(s)) return true;
 		return false;
 	}
 
 	bool belongsToVoc(Predicate* p) {
-		for(unsigned int n = 0; n < _usingvocab.size(); ++n) {
-			if(_usingvocab[n]->contains(p)) return true;
-		}
+		if(_currvocab->contains(p)) return true;
 		return false;
 	}
 
 	bool belongsToVoc(Function* f) {
-		for(unsigned int n = 0; n < _usingvocab.size(); ++n) {
-			if(_usingvocab[n]->contains(f)) return true;
-		}
+		if(_currvocab->contains(f)) return true;
 		return false;
 	}
 
@@ -521,11 +545,13 @@ namespace Insert {
 	}
 
 	Sort* sortInScope(const string& name) {
+		vector<Sort*> vs;
 		for(unsigned int n = 0; n < _usingvocab.size(); ++n) {
 			Sort* s = _usingvocab[n]->sort(name);
-			if(s) return s;
+			if(s) vs.push_back(s);
 		}
-		return 0;
+		if(vs.empty()) return 0;
+		else return(SortUtils::overload(vs));
 	}
 
 	Sort* sortInScope(const vector<string>& vs) {
@@ -543,11 +569,13 @@ namespace Insert {
 	}
 
 	Predicate* predInScope(const string& name) {
+		vector<Predicate*> vp;
 		for(unsigned int n = 0; n < _usingvocab.size(); ++n) {
 			Predicate* p = _usingvocab[n]->pred(name);
-			if(p) return p;
+			if(p) vp.push_back(p);
 		}
-		return 0;
+		if(vp.empty()) return 0;
+		else return PredUtils::overload(vp);
 	}
 
 	Predicate* predInScope(const vector<string>& vs) {
@@ -565,11 +593,12 @@ namespace Insert {
 	}
 
 	vector<Predicate*> noArPredInScope(const string& name) {
+		vector<Predicate*> vp;
 		for(unsigned int n = 0; n < _usingvocab.size(); ++n) {
-			vector<Predicate*> vp = _usingvocab[n]->pred_no_arity(name);
-			if(!vp.empty()) return vp;
+			vector<Predicate*> nvp = _usingvocab[n]->pred_no_arity(name);
+			for(unsigned int m = 0; m < nvp.size(); ++m) vp.push_back(nvp[m]);
 		}
-		return vector<Predicate*>(0);
+		return vp;
 	}
 
 	vector<Predicate*> noArPredInScope(const vector<string>& vs) {
@@ -587,11 +616,13 @@ namespace Insert {
 	}
 
 	Function* funcInScope(const string& name) {
+		vector<Function*> vf;
 		for(unsigned int n = 0; n < _usingvocab.size(); ++n) {
 			Function* f = _usingvocab[n]->func(name);
-			if(f) return f;
+			if(f) vf.push_back(f);
 		}
-		return 0;
+		if(vf.empty()) return 0;
+		else return FuncUtils::overload(vf);
 	}
 
 	Function* funcInScope(const vector<string>& vs) {
@@ -609,11 +640,12 @@ namespace Insert {
 	}
 
 	vector<Function*> noArFuncInScope(const string& name) {
+		vector<Function*> vf;
 		for(unsigned int n = 0; n < _usingvocab.size(); ++n) {
-			vector<Function*> vf = _usingvocab[n]->func_no_arity(name);
-			if(!vf.empty()) return vf;
+			vector<Function*> nvf = _usingvocab[n]->func_no_arity(name);
+			for(unsigned int m = 0; m < nvf.size(); ++m) vf.push_back(nvf[m]);
 		}
-		return vector<Function*>(0);
+		return vf;
 	}
 
 
@@ -664,7 +696,7 @@ namespace Insert {
 		}
 	}
 
-	vector<Variable*> freevars(ParseInfo* pi) {
+	vector<Variable*> freevars(const ParseInfo& pi) {
 		vector<Variable*> vv;
 		string vs;
 		for(list<VarName>::iterator i = curr_vars.begin(); i != curr_vars.end(); ++i) {
@@ -695,7 +727,7 @@ namespace Insert {
 		_inferences["convert_to_theory"].push_back(new StructToTheory());
 		_inferences["move_quantifiers"].push_back(new MoveQuantifiers());
 		_inferences["tseitin"].push_back(new ApplyTseitin());
-		_inferences["simplify"].push_back(new GroundSimplify());
+		_inferences["reduce"].push_back(new GroundReduce());
 		_inferences["move_functions"].push_back(new MoveFunctions());
 		_inferences["model_expand"].push_back(new ModelExpansionInference());
 	}
@@ -713,16 +745,18 @@ namespace Insert {
 	}
 
 	void closespace() {
+		closeblock();
 		_currspace = _currspace->super();
 		assert(_currspace);
 	}
 
 	void openspace(const string& sname, YYLTYPE l) {
 		Info::print("Parsing namespace " + sname);
-		ParseInfo* pi = parseinfo(l);
+		ParseInfo pi = parseinfo(l);
 		Namespace* ns = namespaceInScope(sname);
 		if(ns) Error::multdeclns(sname,pi,ns->pi());
 		_currspace = new Namespace(sname,_currspace,pi);
+		_nrvocabs.push_back(0);
 	}
 
 
@@ -734,85 +768,81 @@ namespace Insert {
 
 	void openvocab(const string& vname, YYLTYPE l) {
 		Info::print("Parsing vocabulary " + vname);
-		ParseInfo* pi = parseinfo(l);
+		ParseInfo pi = parseinfo(l);
 		Vocabulary* v = vocabInScope(vname);
 		if(v) {
 			Error::multdeclvoc(vname,pi,v->pi());
-			_currvocab = v;	// avoid null-pointer
 		}
 		else {
-			_currvocab = new Vocabulary(vname,pi); 
-			_currspace->add(_currvocab);
-			_usingvocab.push_back(_currvocab);
+			v = new Vocabulary(vname,pi);
+			_currspace->add(v);
 		}
+		_currvocab = v;	
+		_usingvocab.push_back(v);
+		_nrvocabs.push_back(1);
 	}
 
 	void closevocab() {
-		_usingvocab.clear();
-		_currvocab = 0;
+		closeblock();
 	}
 
 	void usingvocab(const vector<string>& vs, YYLTYPE l) {
-		ParseInfo* pi = parseinfo(l);
+		ParseInfo pi = parseinfo(l);
 		Vocabulary* v = vocabInScope(vs);
 		if(v) {
-			// Test for overlapping symbols
-			for(unsigned int n = 0; n < _usingvocab.size(); ++n) {
-				for(unsigned int m = 0; m < v->nrSorts(); ++m) {
-					Sort* s = _usingvocab[n]->sort(v->sort(m)->name());
-					if(s && s != v->sort(m)) {
-						Error::doublesortusing(s->name(),v->name(),_usingvocab[n]->name(),pi);
-					}
-				}
-				for(unsigned int m = 0; m < v->nrPreds(); ++m) {
-					Predicate* p = _usingvocab[n]->pred(v->pred(m)->name());
-					if(p && p != v->pred(m)) {
-						Error::doublepredusing(p->name(),v->name(),_usingvocab[n]->name(),pi);
-					}
-				}
-				for(unsigned int m = 0; m < v->nrFuncs(); ++m) {
-					Function* f = _usingvocab[n]->func(v->func(m)->name()); 
-					if(f && f != v->func(m)) {
-						Error::doublefuncusing(f->name(),v->name(),_usingvocab[n]->name(),pi);
-					}
-				}
-			}
-			// Add the vocabulary to the current theory or structure
-			if(_usingvocab.empty()) {
-				if(_currtheory) _currtheory->vocabulary(v);
-				else if(_currstructure) _currstructure->vocabulary(v);
-			}
-
-			// Add the vocabulary
 			_usingvocab.push_back(v);
+			_nrvocabs.back() = _nrvocabs.back()+1;
 		}
 		else Error::undeclvoc(oneName(vs),pi);
-		delete(pi);
+	}
+
+	void setvocab(const vector<string>& vs, YYLTYPE l) {
+		ParseInfo pi = parseinfo(l);
+		Vocabulary* v = vocabInScope(vs);
+		if(v) {
+			_usingvocab.push_back(v);
+			_nrvocabs.back() = _nrvocabs.back()+1;
+			if(_currstructure) _currstructure->vocabulary(v);
+			else if(_currtheory) _currtheory->vocabulary(v);
+			_currvocab = v;
+		}
+		else {
+			Error::undeclvoc(oneName(vs),pi);
+		}
 	}
 
 	/** Pointers to symbols **/
 
 	Predicate* predpointer(const vector<string>& vs, YYLTYPE l) {
-		ParseInfo* pi = parseinfo(l);
+		ParseInfo pi = parseinfo(l);
 		Predicate* p = predInScope(vs);
 		if(!p) Error::undeclpred(oneName(vs),pi);
-		delete(pi);
+		return p;
+	}
+
+	Predicate* predpointer(const vector<string>& vs, const vector<Sort*>& va, YYLTYPE l) {
+		Predicate* p = predpointer(vs,l);
+		if(p) p = p->disambiguate(va,0);
 		return p;
 	}
 
 	Function* funcpointer(const vector<string>& vs, YYLTYPE l) {
-		ParseInfo* pi = parseinfo(l);
+		ParseInfo pi = parseinfo(l);
 		Function* f = funcInScope(vs);
 		if(!f) Error::undeclfunc(oneName(vs),pi);
-		delete(pi);
+		return f;
+	}
+
+	Function* funcpointer(const vector<string>& vs, const vector<Sort*>& va, YYLTYPE l) {
+		Function* f = funcpointer(vs,l);
+		if(f) f->disambiguate(va,0);
 		return f;
 	}
 
 	Sort* sortpointer(const vector<string>& vs, YYLTYPE l) {
-		ParseInfo* pi = parseinfo(l);
+		ParseInfo pi = parseinfo(l);
 		Sort* s = sortInScope(vs);
 		if(!s) Error::undeclsort(oneName(vs),pi);
-		delete(pi);
 		return s;
 	}
 
@@ -823,10 +853,9 @@ namespace Insert {
 				return s;
 			}
 			else {
-				ParseInfo* pi = parseinfo(l);
+				ParseInfo pi = parseinfo(l);
 				string uname = oneName(vs);
 				Error::sortnotintheovoc(uname,_currtheory->name(),pi);
-				delete(pi);
 				return 0;
 			}
 		}
@@ -835,30 +864,69 @@ namespace Insert {
 
 	/** Add symbols to the current vocabulary **/
 
-	Sort* sort(const string& name, YYLTYPE l) {
-		ParseInfo* pi = parseinfo(l);
-		ParseInfo* pip = parseinfo(l);
-		Sort* s = sortInScope(name);
-		if(s) {
-			Error::multdeclsort(name,pi,s->pi());
-			delete(pi); delete(pip);
-			return 0;
-		}
-		else {
-			s = new Sort(name,pi);
-			_currvocab->addSort(name,s);
-			Predicate* p = new Predicate(name + "/1",vector<Sort*>(1,s),pip);
-			_currvocab->addPred(name + "/1",p);
-			s->pred(p);
-			return s;
-		}
+	Sort* sort(Sort* s) {
+		if(s) _currvocab->addSort(s);
+		return s;
 	}
 
-	Sort* sort(const string& name, Sort* sups, YYLTYPE l) {
+	Sort* sort(const string& name, YYLTYPE l) {
+		ParseInfo pi = parseinfo(l);
+		ParseInfo pip = parseinfo(l);
+		Sort* s = new Sort(name,pi);
+		_currvocab->addSort(s);
+		Predicate* p = new Predicate(name + "/1",vector<Sort*>(1,s),pip);
+		_currvocab->addPred(p);
+		s->pred(p);
+		return s;
+	}
+
+	Sort* sort(const string& name, const vector<Sort*> supbs, bool p, YYLTYPE l) {
+		vector<Sort*> vs(0);
+		if(p) return sort(name,supbs,vs,l);
+		else return sort(name,vs,supbs,l);
+	}
+
+	Sort* sort(const string& name, const vector<Sort*> sups, const vector<Sort*> subs, YYLTYPE l) {
 		Sort* s = sort(name,l);
-		if(sups) {
-			s->parent(sups);
-			_currvocab->addSort(name,s);
+		if(s) {
+			vector<std::set<Sort*> > supsa(sups.size());
+			vector<std::set<Sort*> > subsa(subs.size());
+			for(unsigned int n = 0; n < sups.size(); ++n) {
+				if(sups[n]) {
+					supsa[n] = sups[n]->ancestors(0);
+					supsa[n].insert(sups[n]);
+				}
+			}
+			for(unsigned int n = 0; n < subs.size(); ++n) {
+				if(subs[n]) {
+					subsa[n] = subs[n]->ancestors(0);
+					subsa[n].insert(subs[n]);
+				}
+			}
+			for(unsigned int n = 0; n < sups.size(); ++n) {
+				if(sups[n]) {
+					for(unsigned int m = 0; m < subs.size(); ++m) {
+						if(subs[m]) {
+							if(subsa[m].find(sups[n]) == subsa[m].end()) {
+								Error::notsubsort(subs[m]->name(),sups[n]->name(),parseinfo(l));
+							}
+						}
+					}
+					s->parent(sups[n]);
+				}
+			}
+			for(unsigned int n = 0; n < subs.size(); ++n) {
+				if(subs[n]) {
+					for(unsigned int m = 0; m < sups.size(); ++m) {
+						if(sups[m]) {
+							if(supsa[m].find(subs[n]) != supsa[m].end()) {
+								Error::cyclichierarchy(subs[n]->name(),sups[m]->name(),parseinfo(l));
+							}
+						}
+					}
+					s->child(subs[n]);
+				}
+			}
 		}
 		return s;
 	}
@@ -869,21 +937,14 @@ namespace Insert {
 	}
 
 	Predicate* predicate(const string& name, const vector<Sort*>& sorts, YYLTYPE l) {
-		ParseInfo* pi = parseinfo(l);
+		ParseInfo pi = parseinfo(l);
 		string nar = string(name) + '/' + itos(sorts.size());
-		Predicate* p = predInScope(nar);
-		if(p) {
-			Error::multdeclpred(nar,pi,p->pi());
-			return 0;
+		for(unsigned int n = 0; n < sorts.size(); ++n) {
+			if(!sorts[n]) return 0;
 		}
-		else {
-			for(unsigned int n = 0; n < sorts.size(); ++n) {
-				if(!sorts[n]) return 0;
-			}
-			p = new Predicate(nar,sorts,pi);
-			_currvocab->addPred(nar,p);
-			return p;
-		}
+		Predicate* p = new Predicate(nar,sorts,pi);
+		_currvocab->addPred(p);
+		return p;
 	}
 
 	Predicate* predicate(const string& name, YYLTYPE l) {
@@ -897,77 +958,31 @@ namespace Insert {
 	}
 
 	Function* function(const string& name, const vector<Sort*>& insorts, Sort* outsort, YYLTYPE l) {
-		ParseInfo* pi = parseinfo(l);
+		ParseInfo pi = parseinfo(l);
 		string nar = string(name) + '/' + itos(insorts.size());
-		Function* f = funcInScope(nar);
-		if(f) {
-			Error::multdeclfunc(nar,pi,f->pi());
-			return 0;
+		for(unsigned int n = 0; n < insorts.size(); ++n) {
+			if(!insorts[n]) return 0;
 		}
-		else {
-			for(unsigned int n = 0; n < insorts.size(); ++n) {
-				if(!insorts[n]) return 0;
-			}
-			if(!outsort) return 0;
-			f = new Function(nar,insorts,outsort,pi);
-			_currvocab->addFunc(nar,f);
-			return f;
+		if(!outsort) return 0;
+		Function* f = new Function(nar,insorts,outsort,pi);
+		_currvocab->addFunc(f);
+		return f;
+	}
+
+	Function* function(const string& name, const vector<Sort*>& sorts, YYLTYPE l) {
+		ParseInfo pi = parseinfo(l);
+		string nar = string(name) + '/' + itos(sorts.size());
+		for(unsigned int n = 0; n < sorts.size(); ++n) {
+			if(!sorts[n]) return 0;
 		}
+		Function* f = new Function(nar,sorts,pi);
+		_currvocab->addFunc(f);
+		return f;
 	}
 
 	Function* function(const string& name, Sort* outsort, YYLTYPE l) {
 		vector<Sort*> vs(0);
 		return function(name,vs,outsort,l);
-	}
-
-	Sort* copysort(const string& name, Sort* cs, YYLTYPE l) {
-		ParseInfo* pi = parseinfo(l);
-		if(cs) {
-			Sort* s = sortInScope(cs->name());
-			if(s) {
-				Error::multdeclsort(name,pi,cs->pi());
-				return 0;
-			}
-			else {
-				_currvocab->addSort(name,cs);
-				return cs;
-			}
-		}
-		else return 0;
-	}
-
-	Predicate* copypred(const string& name, Predicate* cp, YYLTYPE l) {
-		ParseInfo* pi = parseinfo(l);
-		if(cp) {
-			string nar = name + '/' + itos(cp->arity());
-			Predicate* p = predInScope(nar);
-			if(p) {
-				Error::multdeclpred(nar,pi,cp->pi());
-				return 0;
-			}
-			else {
-				_currvocab->addPred(nar,cp);
-				return cp;
-			}
-		}
-		else return 0;
-	}
-
-	Function* copyfunc(const string& name, Function* cf, YYLTYPE l) {
-		ParseInfo* pi = parseinfo(l);
-		if(cf) {
-			string nar = name + '/' + itos(cf->arity());
-			Function* f = funcInScope(nar);
-			if(f) {
-				Error::multdeclfunc(nar,pi,cf->pi());
-				return 0;
-			}
-			else {
-				_currvocab->addFunc(nar,cf);
-				return cf;
-			}
-		}
-		else return 0;
 	}
 
 
@@ -977,17 +992,18 @@ namespace Insert {
 
 	void openstructure(const string& sname, YYLTYPE l) {
 		Info::print("Parsing structure " + sname);
-		ParseInfo* pi = parseinfo(l);
+		ParseInfo pi = parseinfo(l);
 		AbstractStructure* s = structInScope(sname);
 		if(s) {
 			Error::multdeclstruct(sname,pi,s->pi());
 		}
 		_currstructure = new Structure(sname,pi);
 		_currspace->add(_currstructure);
+		_nrvocabs.push_back(0);
 	}
 
 	void structinclusioncheck() {
-		Vocabulary* v = _currstructure->vocabulary();
+		/*Vocabulary* v = _currstructure->vocabulary();
 		for(unsigned int n = 0; n < v->nrSorts(); ++n) {
 			Sort* s = v->sort(n);
 			if(s->parent()) {
@@ -1062,10 +1078,11 @@ namespace Insert {
 				}
 			}
 		}
+		*/
 	}
 
 	void functioncheck() {
-		Vocabulary* v = _currstructure->vocabulary();
+		/*Vocabulary* v = _currstructure->vocabulary();
 		for(unsigned int n = 0; n < v->nrFuncs(); ++n) {
 			Function* f = v->func(n);
 			FuncInter* ft = _currstructure->inter(f);
@@ -1110,6 +1127,7 @@ namespace Insert {
 				}
 			}
 		}
+		*/
 	}
 
 	void closestructure() {
@@ -1201,7 +1219,6 @@ namespace Insert {
 				vector<Function*> vf = noArFuncInScope(_emptyinters[n]._name);
 				if(vp.empty() && vf.empty()) {
 					Error::symbnotinstructvoc(oneName(_emptyinters[n]._name),_currstructure->name(),_emptyinters[n]._pi);
-					delete(_emptyinters[n]._pi);
 				}
 				else {	// There is at least one symbol with the parsed name
 					vector<Predicate*> evp;
@@ -1214,20 +1231,20 @@ namespace Insert {
 					}
 					if(evp.empty() && evf.empty()) {
 						Error::emptyassign(oneName(_emptyinters[n]._name),_emptyinters[n]._pi);
-						delete(_emptyinters[n]._pi);
 					}
 					else if(evp.size() + evf.size() == 1) {
 						if(!evp.empty()) {
 							vector<ElementType> vet(evp[0]->arity(),ELINT);
-							UserPredTable* upt = new UserPredTable(vet);
+							FinitePredTable* upt = new FinitePredTable(vet);
 							_currstructure->inter(evp[0],new PredInter(upt,true));
 						}
 						else {
-							vector<ElementType> vet(evf[0]->nrSorts(),ELINT);
-							UserPredTable* upt = new UserPredTable(vet);
+							vector<ElementType> vet(evf[0]->nrsorts(),ELINT);
+							FinitePredTable* upt = new FinitePredTable(vet);
+							FiniteFuncTable* fft = new FiniteFuncTable(upt);
 							PredInter* pt = new PredInter(upt,true);
 							vet.pop_back();
-							_currstructure->inter(evf[0],new UserFuncInter(vet,ELINT,pt,upt));
+							_currstructure->inter(evf[0],new FuncInter(fft,pt));
 						}
 					}
 					else {
@@ -1246,7 +1263,6 @@ namespace Insert {
 				vector<Function*> vf = noArFuncInScope(_emptythreeinters[n]._name);
 				if(vp.empty() && vf.empty()) {
 					Error::symbnotinstructvoc(oneName(_emptythreeinters[n]._name),_currstructure->name(),_emptythreeinters[n]._pi);
-					delete(_emptythreeinters[n]._pi);
 				}
 				else {
 					vector<Predicate*> evp;
@@ -1290,12 +1306,11 @@ namespace Insert {
 					}				
 					if(evp.empty() && evf.empty()) {
 						Error::emptyassign(oneName(_emptythreeinters[n]._name),_emptythreeinters[n]._pi);
-						delete(_emptythreeinters[n]._pi);
 					}
 					else if(evp.size() + evf.size() == 1) {
 						if(!evp.empty()) {
 							vector<ElementType> vet(evp[0]->arity(),ELINT);
-							UserPredTable* upt = new UserPredTable(vet);
+							FinitePredTable* upt = new FinitePredTable(vet);
 							switch(_emptythreeinters[n]._utf) {
 								case UTF_CT:
 									_currstructure->inter(evp[0])->replace(upt,true,true);
@@ -1315,8 +1330,8 @@ namespace Insert {
 							}
 						}
 						else {
-							vector<ElementType> vet(evf[0]->nrSorts(),ELINT);
-							UserPredTable* upt = new UserPredTable(vet);
+							vector<ElementType> vet(evf[0]->nrsorts(),ELINT);
+							FinitePredTable* upt = new FinitePredTable(vet);
 							switch(_emptythreeinters[n]._utf) {
 								case UTF_CT:
 									_currstructure->inter(evf[0])->predinter()->replace(upt,true,true);
@@ -1335,7 +1350,6 @@ namespace Insert {
 									assert(false);
 							}
 						}
-						delete(_emptythreeinters[n]._pi);
 					}
 					else {
 						tempthree.push_back(_emptythreeinters[n]);
@@ -1350,11 +1364,9 @@ namespace Insert {
 		// Errors for non-assignable tables
 		for(unsigned int n = 0; n < _emptyinters.size(); ++n) {
 			Error::emptyambig(oneName(_emptyinters[n]._name),_emptyinters[n]._pi);
-			delete(_emptyinters[n]._pi);
 		}
 		for(unsigned int n = 0; n < _emptythreeinters.size(); ++n) {
 			Error::emptyambig(oneName(_emptythreeinters[n]._name),_emptythreeinters[n]._pi);
-			delete(_emptythreeinters[n]._pi);
 		}
 		for(map<Predicate*,FinitePredTable*>::iterator it = _unknownpredtables.begin(); it != _unknownpredtables.end(); ++it) {
 			Error::onethreepred(it->first->name(),_currstructure->name());
@@ -1379,23 +1391,22 @@ namespace Insert {
 		_emptythreeinters.clear();
 		_unknownpredtables.clear();
 		_unknownfunctables.clear();
-		_usingvocab.clear();
-		_currstructure = 0;
 
+		// close block
+		closeblock();
 	}
 
 	void closeaspstructure() {
-		Vocabulary* v = _currstructure->vocabulary();
-		for(unsigned int n = 0; n < v->nrSorts(); ++n) {
-			SortTable* st = _currstructure->inter(v->sort(n));
+		for(unsigned int n = 0; n < _currstructure->nrSortInters(); ++n) {
+			SortTable* st = _currstructure->sortinter(n);
 			if(st) st->sortunique();
 		}
-		for(unsigned int n = 0; n < v->nrPreds(); ++n) {
-			PredInter* pt = _currstructure->inter(v->pred(n));
+		for(unsigned int n = 0; n < _currstructure->nrPredInters(); ++n) {
+			PredInter* pt = _currstructure->predinter(n);
 			if(pt) pt->sortunique();
 		}
-		for(unsigned int n = 0; n < v->nrFuncs(); ++n) {
-			FuncInter* ft = _currstructure->inter(v->func(n));
+		for(unsigned int n = 0; n < _currstructure->nrFuncInters(); ++n) {
+			FuncInter* ft = _currstructure->funcinter(n);
 			if(ft) ft->sortunique();
 		}
 		closestructure();
@@ -1403,38 +1414,34 @@ namespace Insert {
 
 	/** Two-valued interpretations **/
 
-	void sortinter(const vector<string>& sname, UserSortTable* t, YYLTYPE l) {
+	void sortinter(const vector<string>& sname, FiniteSortTable* t, YYLTYPE l) {
 		Sort* s = sortInScope(sname);
 		vector<string> pname(sname); pname.back() = pname.back() + "/1";
 		Predicate* p = predInScope(pname);
 		if(s) {
 			assert(p);
 			t->sortunique();
-			PredTable* pt = new SortPredTable(t);
-			PredInter* i = new PredInter(pt,true);
+			PredInter* i = new PredInter(t,true);
 			_currstructure->inter(s,t);
 			_currstructure->inter(p,i);
 		}
 		else if(p) {
 			t->sortunique();
-			PredTable* pt = new SortPredTable(t);
-			PredInter* i = new PredInter(pt,true);
+			PredInter* i = new PredInter(t,true);
 			_currstructure->inter(p,i);
 		}
 		else {
-			ParseInfo* pi = parseinfo(l);
+			ParseInfo pi = parseinfo(l);
 			Error::prednotinstructvoc(oneName(pname),_currstructure->name(),pi);
-			delete(pi);
 		}
 	}
 
-	void predinter(const vector<string>& pname, UserPredTable* t, YYLTYPE l) {
+	void predinter(const vector<string>& pname, FinitePredTable* t, YYLTYPE l) {
 		Predicate* p = predInScope(pname);
 		if(p) {
 			if(_currstructure->inter(p)) {
-				ParseInfo* pi = parseinfo(l);
+				ParseInfo pi = parseinfo(l);
 				Error::multpredinter(p->name(),pi);
-				delete(pi);
 			}
 			else {
 				t->sortunique();
@@ -1443,43 +1450,41 @@ namespace Insert {
 			}
 		}
 		else {
-			ParseInfo* pi = parseinfo(l);
+			ParseInfo pi = parseinfo(l);
 			Error::prednotinstructvoc(oneName(pname),_currstructure->name(),pi);
-			delete(pi);
 		}
 	}
 
-	void funcinter(const vector<string>& fname, UserPredTable* t, YYLTYPE l) {
+	void funcinter(const vector<string>& fname, FinitePredTable* t, YYLTYPE l) {
 		Function* f = funcInScope(fname);
 		if(f) {
 			if(_currstructure->inter(f)) {
-				ParseInfo* pi = parseinfo(l);
+				ParseInfo pi = parseinfo(l);
 				Error::multfuncinter(f->name(),pi);
-				delete(pi);
 			}
 			else {
 				t->sortunique();
 				vector<ElementType> in = t->types(); ElementType out = in.back(); in.pop_back();
 				PredInter* pt = new PredInter(t,true);
-				FuncInter* ft = new UserFuncInter(in,out,pt,t);
+				FiniteFuncTable* fft = new FiniteFuncTable(t);
+				FuncInter* ft = new FuncInter(fft,pt);
 				_currstructure->inter(f,ft);
 			}
 		}
 		else {
-			ParseInfo* pi = parseinfo(l);
+			ParseInfo pi = parseinfo(l);
 			Error::funcnotinstructvoc(oneName(fname),_currstructure->name(),pi);
-			delete(pi);
 		}
 	}
 
 	void truepredinter(const vector<string>& name, YYLTYPE l) {
-		UserPredTable* upt = new UserPredTable(vector<ElementType>(0));
+		FinitePredTable* upt = new FinitePredTable(vector<ElementType>(0));
 		upt->addRow();
 		predinter(name,upt,l);
 	}
 
 	void falsepredinter(const vector<string>& name, YYLTYPE l) {
-		UserPredTable* upt = new UserPredTable(vector<ElementType>(0));
+		FinitePredTable* upt = new FinitePredTable(vector<ElementType>(0));
 		predinter(name,upt,l);
 	}
 
@@ -1489,7 +1494,7 @@ namespace Insert {
 
 	/** Three-valued interpretations **/
 
-	UTF getUTF(const string& utf, ParseInfo* pi) {
+	UTF getUTF(const string& utf, const ParseInfo& pi) {
 		if(utf == "u") return UTF_UNKNOWN;
 		else if(utf == "ct") return UTF_CT;
 		else if(utf == "cf") return UTF_CF;
@@ -1501,7 +1506,7 @@ namespace Insert {
 
 	void threepredinter(const vector<string>& pname, const string& utf, FinitePredTable* t, YYLTYPE l) {
 		Predicate* p = predInScope(pname);
-		ParseInfo* pi = parseinfo(l);
+		ParseInfo pi = parseinfo(l);
 		if(p) {
 			t->sortunique();
 			switch(getUTF(utf,pi)) {
@@ -1542,23 +1547,22 @@ namespace Insert {
 			}
 		}
 		else Error::prednotinstructvoc(oneName(pname),_currstructure->name(),pi);
-		delete(pi);
 	}
 
 	void truethreepredinter(const vector<string>& pname, const string& utf, YYLTYPE l) {
-		UserPredTable* upt = new UserPredTable(vector<ElementType>(0));
+		FinitePredTable* upt = new FinitePredTable(vector<ElementType>(0));
 		upt->addRow();
 		threepredinter(pname,utf,upt,l);
 	}
 
 	void falsethreepredinter(const vector<string>& pname, const string& utf, YYLTYPE l) {
-		UserPredTable* upt = new UserPredTable(vector<ElementType>(0));
+		FinitePredTable* upt = new FinitePredTable(vector<ElementType>(0));
 		threepredinter(pname,utf,upt,l);
 	}
 
 	void threefuncinter(const vector<string>& fname, const string& utf, FinitePredTable* t, YYLTYPE l) {
 		Function* f = funcInScope(fname);
-		ParseInfo* pi = parseinfo(l);
+		ParseInfo pi = parseinfo(l);
 		if(f) {
 			t->sortunique();
 			switch(getUTF(utf,pi)) {
@@ -1576,7 +1580,7 @@ namespace Insert {
 					else {
 						PredInter* pt = new PredInter(t,0,true,true);
 						vector<ElementType> in = t->types(); ElementType out = in.back(); in.pop_back();
-						ft = new UserFuncInter(in,out,pt);
+						ft = new FuncInter(0,pt);
 						_currstructure->inter(f,ft);
 					}
 					break;
@@ -1591,7 +1595,7 @@ namespace Insert {
 					else {
 						PredInter* pt = new PredInter(0,t,true,true);
 						vector<ElementType> in = t->types(); ElementType out = in.back(); in.pop_back();
-						ft = new UserFuncInter(in,out,pt);
+						ft = new FuncInter(0,pt);
 						_currstructure->inter(f,ft);
 					}
 					break;
@@ -1603,32 +1607,30 @@ namespace Insert {
 			}
 		}
 		else Error::funcnotinstructvoc(oneName(fname),_currstructure->name(),pi);
-		delete(pi);	
 	}
 
-	void threeinter(const vector<string>& name, const string& utf, UserSortTable* t, YYLTYPE l) {
+	void threeinter(const vector<string>& name, const string& utf, FiniteSortTable* t, YYLTYPE l) {
 		vector<string> pname = name; pname.back() = pname.back() + "/1";
 		vector<string> fname = name; fname.back() = fname.back() + "/0";
 		Predicate* p = predInScope(pname);
 		Function* f = funcInScope(fname);
-		ParseInfo* pi = parseinfo(l);
+		ParseInfo pi = parseinfo(l);
 		if(p) {
 			if(f) Error::predorfuncsymbol(oneName(name),pi);
 			else {
-				SortPredTable* spt = new SortPredTable(t);
+				FinitePredTable* spt = new FinitePredTable(*t);
 				threepredinter(pname,utf,spt,l);
 			}
 		}
 		else if(f) {
-			SortPredTable* spt = new SortPredTable(t);
+			FinitePredTable* spt = new FinitePredTable(*t);
 			threefuncinter(fname,utf,spt,l);
 		}
 		else Error::symbnotinstructvoc(oneName(name),_currstructure->name(),pi);
-		delete(pi);
 	}
 
 	void emptythreeinter(const vector<string>& name, const string& utf, YYLTYPE l) {
-		ParseInfo* pi = parseinfo(l);
+		ParseInfo pi = parseinfo(l);
 		UTF u = getUTF(utf,pi);
 		if(u != UTF_ERROR) {
 			NameUTFLoc nul(name,u,pi);
@@ -1639,51 +1641,49 @@ namespace Insert {
 	/** ASP atoms **/
 
 	void predatom(Predicate* p, const vector<ElementType>& vet, const vector<Element>& ve) {
-		UserPredTable* pt = dynamic_cast<UserPredTable*>(_currstructure->inter(p)->ctpf());
+		FinitePredTable* pt = dynamic_cast<FinitePredTable*>(_currstructure->inter(p)->ctpf());
 		pt->addRow(ve,vet);
 	}
 
 	void predatom(Predicate* p, ElementType t, Element e) {
 		PredInter* pt = _currstructure->inter(p);
 		if(pt) {
-			SortPredTable* spt = dynamic_cast<SortPredTable*>(pt->ctpf());
-			UserSortTable* ust = 0;
+			FiniteSortTable* spt = dynamic_cast<FiniteSortTable*>(pt->ctpf());
+			FiniteSortTable* ust = 0;
 			switch(t) {
 				case ELINT:
-					ust = spt->table()->add(e._int); break;
+					ust = spt->add(e._int); break;
 				case ELDOUBLE:
-					ust = spt->table()->add(*(e._double)); delete(e._double); break;
+					ust = spt->add(e._double); break;
 				case ELSTRING:
-					ust = spt->table()->add(*(e._string)); delete(e._string); break;
+					ust = spt->add(e._string); break;
 				default:
 					assert(false);
 			}
-			if(ust != spt->table()) {
-				delete(spt->table());
-				spt->table(ust);
+			if(ust != spt) {
+				delete(spt);
+				pt->replace(ust,true,true);
 				if(p->sort(0)->pred() == p) _currstructure->inter(p->sort(0),ust);
 			}
 		}
 		else {
-			UserSortTable* ust = 0;
+			FiniteSortTable* ust = 0;
 			switch(t) {
 				case ELINT: ust = new IntSortTable(); ust->add(e._int); break;
-				case ELDOUBLE: ust = new FloatSortTable(); ust->add(*(e._double)); delete(e._double); break;
-				case ELSTRING: ust = new StrSortTable(); ust->add(*(e._string)); delete(e._string); break;
+				case ELDOUBLE: ust = new FloatSortTable(); ust->add(e._double); break;
+				case ELSTRING: ust = new StrSortTable(); ust->add(e._string); break;
 				default: assert(false);
 			}
-			SortPredTable* spt = new SortPredTable(ust);
-			pt = new PredInter(spt,true);
+			pt = new PredInter(ust,true);
 			_currstructure->inter(p,pt);
 			if(p->sort(0)->pred() == p) _currstructure->inter(p->sort(0),ust);
 		}
 	}
 
-	void predatom(Predicate* p, UserSortTable* st) {
+	void predatom(Predicate* p, FiniteSortTable* st) {
 		PredInter* pt = _currstructure->inter(p);
 		if(!pt) {
-			SortPredTable* spt = new SortPredTable(st);
-			pt = new PredInter(spt,true);
+			pt = new PredInter(st,true);
 			_currstructure->inter(p,pt);
 			if(p->sort(0)->pred() == p) _currstructure->inter(p->sort(0),st);
 		}
@@ -1700,7 +1700,7 @@ namespace Insert {
 				case ELSTRING: {
 					StrSortTable* sst = dynamic_cast<StrSortTable*>(st);
 					for(unsigned int n = 0; n < st->size(); ++n) {
-						Element e; e._string = new string((*sst)[n]);
+						Element e; e._string = (*sst)[n];
 						predatom(p,ELSTRING,e);
 					}
 					break;
@@ -1711,7 +1711,7 @@ namespace Insert {
 		}
 	}
 
-	void predatom(Predicate* p, const vector<ElementType>& vet, const vector<Element>& ve, const vector<UserSortTable*>& vst) {
+	void predatom(Predicate* p, const vector<ElementType>& vet, const vector<Element>& ve, const vector<FiniteSortTable*>& vst) {
 		vector<ElementType> vet2(vet.size());
 		for(unsigned int c = 0; c < vet.size(); ++c) {
 			switch(vet[c]) {
@@ -1729,7 +1729,7 @@ namespace Insert {
 				switch(vet[c]) {
 					case ELINT: ve2[c]._int = ve[c]._int; break;
 					case ELDOUBLE:
-						if(ve[c]._double) ve2[c]._double = new double(*(ve[c]._double));
+						if(ve[c]._double) ve2[c]._double = ve[c]._double;
 						else {
 							ve2[c]._int = (vst[vstctr]->element(vi[vstctr]))._int;
 							++vstctr;
@@ -1764,7 +1764,7 @@ namespace Insert {
 		for(unsigned int c = 0; c < ve.size(); ++c) {
 			switch(vet[c]) {
 				case ELINT: break;
-				case ELDOUBLE: if(ve[c]._double) delete(ve[c]._double); break;
+				case ELDOUBLE: break;
 				case ELSTRING: if(ve[c]._string) delete(ve[c]._string); break;
 				default: assert(false);
 			}
@@ -1777,13 +1777,13 @@ namespace Insert {
 	void predatom(const vector<string>& name,YYLTYPE l) {
 		vector<ElementType> vet(0);
 		vector<Element> ve(0);
-		vector<UserSortTable*> vst(0);
+		vector<FiniteSortTable*> vst(0);
 		return predatom(name,vet,ve,vst,l);
 	}
 
-	void predatom(const vector<string>& name, const vector<ElementType>& vet, const vector<Element>& ve, const vector<UserSortTable*>& vst, YYLTYPE l) {
+	void predatom(const vector<string>& name, const vector<ElementType>& vet, const vector<Element>& ve, const vector<FiniteSortTable*>& vst, YYLTYPE l) {
 		Predicate* p = predInScope(name);
-		ParseInfo* pi = parseinfo(l);
+		ParseInfo pi = parseinfo(l);
 		if(p) {
 			if(p->arity() == 1) {
 				if(vst.empty()) predatom(p,vet[0],ve[0]);
@@ -1793,7 +1793,7 @@ namespace Insert {
 				PredInter* pt = _currstructure->inter(p);
 				if(!pt) {
 					vector<ElementType> vet2(vet.size(),ELINT);
-					UserPredTable* upt = new UserPredTable(vet2);
+					FinitePredTable* upt = new FinitePredTable(vet2);
 					pt = new PredInter(upt,true);
 					_currstructure->inter(p,pt);
 				}
@@ -1802,15 +1802,15 @@ namespace Insert {
 			}
 		}
 		else Error::prednotinstructvoc(oneName(name),_currstructure->name(),pi);
-		delete(pi);
 	}
 
 	void funcatom(Function* f, const vector<ElementType>& vet, const vector<Element>& ve) {
-		UserFuncInter* ft = dynamic_cast<UserFuncInter*>(_currstructure->inter(f));
-		ft->ftable()->addRow(ve,vet);
+		FuncInter* ft = _currstructure->inter(f);
+		FiniteFuncTable* fft = dynamic_cast<FiniteFuncTable*>(ft->functable());
+		fft->ftable()->addRow(ve,vet);
 	}
 
-	void funcatom(Function* f, const vector<ElementType>& vet, const vector<Element>& ve, const vector<UserSortTable*>& vst) {
+	void funcatom(Function* f, const vector<ElementType>& vet, const vector<Element>& ve, const vector<FiniteSortTable*>& vst) {
 		vector<ElementType> vet2(vet.size());
 		for(unsigned int c = 0; c < vet.size(); ++c) {
 			switch(vet[c]) {
@@ -1828,7 +1828,7 @@ namespace Insert {
 				switch(vet[c]) {
 					case ELINT: ve2[c]._int = ve[c]._int; break;
 					case ELDOUBLE:
-						if(ve[c]._double) ve2[c]._double = new double(*(ve[c]._double));
+						if(ve[c]._double) ve2[c]._double = ve[c]._double;
 						else {
 							ve2[c]._int = (vst[vstctr]->element(vi[vstctr]))._int;
 							++vstctr;
@@ -1863,7 +1863,7 @@ namespace Insert {
 		for(unsigned int c = 0; c < ve.size(); ++c) {
 			switch(vet[c]) {
 				case ELINT: break;
-				case ELDOUBLE: if(ve[c]._double) delete(ve[c]._double); break;
+				case ELDOUBLE: break;
 				case ELSTRING: if(ve[c]._string) delete(ve[c]._string); break;
 				default: assert(false);
 			}
@@ -1873,24 +1873,23 @@ namespace Insert {
 		}
 	}
 
-	void funcatom(const vector<string>& name, const vector<ElementType>& vet, const vector<Element>& ve, const vector<UserSortTable*>& vst, YYLTYPE l) {
+	void funcatom(const vector<string>& name, const vector<ElementType>& vet, const vector<Element>& ve, const vector<FiniteSortTable*>& vst, YYLTYPE l) {
 		Function* f = funcInScope(name);
-		ParseInfo* pi = parseinfo(l);
+		ParseInfo pi = parseinfo(l);
 		if(f) {
 			FuncInter* ft = _currstructure->inter(f);
 			if(!ft) {
 				vector<ElementType> vet2(vet.size(),ELINT);
-				UserPredTable* upt = new UserPredTable(vet2);
+				FinitePredTable* upt = new FinitePredTable(vet2);
+				FiniteFuncTable* fft = new FiniteFuncTable(upt);
 				PredInter* pt = new PredInter(upt,true);
-				vet2.pop_back();
-				ft = new UserFuncInter(vet2,ELINT,pt,upt);
+				ft = new FuncInter(fft,pt);
 				_currstructure->inter(f,ft);
 			}
 			if(vst.empty()) funcatom(f,vet,ve);
 			else funcatom(f,vet,ve,vst);
 		}
 		else Error::funcnotinstructvoc(oneName(name),_currstructure->name(),pi);
-		delete(pi);
 	}
 
 	/***************
@@ -1899,18 +1898,18 @@ namespace Insert {
 
 	void opentheory(const string& tname, YYLTYPE l) {
 		Info::print("Parsing theory "  + tname);
-		ParseInfo* pi = parseinfo(l);
+		ParseInfo pi = parseinfo(l);
 		AbstractTheory* t = theoInScope(tname);
 		if(t) {
 			Error::multdecltheo(tname,pi,t->pi());
 		}
 		_currtheory = new Theory(tname,pi);
 		_currspace->add(_currtheory);
+		_nrvocabs.push_back(0);
 	}
 
 	void closetheory() {
-		_usingvocab.clear();
-		_currtheory = 0;
+		closeblock();
 	}
 
 	void definition(Definition* d) {
@@ -1923,8 +1922,8 @@ namespace Insert {
 			vector<Variable*> vv = freevars(f->pi());
 			if(!vv.empty()) f =  new QuantForm(true,true,vv,f,f->pi());
 			// 2. Sort derivation & checking
-			SortDeriver sd(f); 
-			SortChecker sc(f);
+			SortDeriver sd(f,_currvocab); 
+			SortChecker sc(f,_currvocab);
 			// Add the formula to the current theory
 			_currtheory->add(f);
 		}
@@ -1937,28 +1936,28 @@ namespace Insert {
 
 	BoolForm* trueform() {
 		vector<Formula*> vf(0);
-		return new BoolForm(true,true,vf,0);
+		return new BoolForm(true,true,vf,FormParseInfo());
 	}
 
 	BoolForm* trueform(YYLTYPE l) {
-		ParseInfo* pi = parseinfo(l);
 		vector<Formula*> vf(0);
+		FormParseInfo pi = formparseinfo(new BoolForm(true,true,vf,FormParseInfo()),l);
 		return new BoolForm(true,true,vf,pi);
 	}
 
 	BoolForm* falseform() {
 		vector<Formula*> vf(0);
-		return new BoolForm(true,false,vf,0);
+		return new BoolForm(true,false,vf,FormParseInfo());
 	}
 
 	BoolForm* falseform(YYLTYPE l) {
-		ParseInfo* pi = parseinfo(l);
 		vector<Formula*> vf(0);
+		FormParseInfo pi = formparseinfo(new BoolForm(true,false,vf,FormParseInfo()),l);
 		return new BoolForm(true,false,vf,pi);
 	}
 
 	PredForm* predform(const vector<string>& vs, const vector<Term*>& vt, YYLTYPE l) {
-		ParseInfo* pi = parseinfo(l);
+		FormParseInfo pi = formparseinfo(l);
 		Predicate* p = predInScope(vs);
 		string uname = oneName(vs);
 		if(p) {
@@ -1971,7 +1970,7 @@ namespace Insert {
 						return 0;
 					}
 				}
-				return new PredForm(true,p,vt,pi);
+				return new PredForm(true,p,vt,pi);	
 			}
 			else {
 				Error::prednotintheovoc(uname,_currtheory->name(),pi);
@@ -1986,13 +1985,60 @@ namespace Insert {
 		}
 	}
 
+	PredForm* predform(NSTuple* nst, const vector<Term*>& vt, YYLTYPE l) {
+		FormParseInfo pi = formparseinfo(l);
+		(nst->_name).back() = (nst->_name).back() + '/' + itos((nst->_sorts).size());
+		Predicate* p = predInScope(nst->_name);
+		if(p) p = p->disambiguate(nst->_sorts,0);
+		if(p) {
+			if(belongsToVoc(p)) {
+				if(p->arity() == vt.size()) {
+					for(unsigned int n = 0; n < vt.size(); ++n) {
+						if(!vt[n]) {
+							// delete the correctly parsed terms
+							for(unsigned int m = 0; m < n; ++m) delete(vt[m]);
+							for(unsigned int m = n+1; m < vt.size(); ++m) { if(vt[m]) delete(vt[m]); }
+							delete(nst);
+							return 0;
+						}
+					}
+					delete(nst);
+					return new PredForm(true,p,vt,pi);	// TODO change the formparseinfo
+				}
+				else {
+					Error::wrongpredarity(p->name(),pi);
+					for(unsigned int n = 0; n < vt.size(); ++n) { if(vt[n]) delete(vt[n]); }
+					delete(nst);
+					return 0;
+				}
+			}
+			else {
+				Error::prednotintheovoc(p->name(),_currtheory->name(),pi);
+				for(unsigned int n = 0; n < vt.size(); ++n) { if(vt[n]) delete(vt[n]); }
+				delete(nst);
+				return 0;
+			}
+		}
+		else {
+			Error::undeclpred(oneName(nst->_name),pi);
+			for(unsigned int n = 0; n < vt.size(); ++n) { if(vt[n]) delete(vt[n]); }
+			delete(nst);
+			return 0;
+		}
+	}
+
 	PredForm* predform(const vector<string>& vs, YYLTYPE l) {
 		vector<Term*> vt(0);
 		return predform(vs,vt,l);
 	}
 
+	PredForm* predform(NSTuple* t, YYLTYPE l) {
+		vector<Term*> vt(0);
+		return predform(t,vt,l);
+	}
+
 	PredForm* funcgraphform(const vector<string>& vs, const vector<Term*>& vt, Term* t, YYLTYPE l) {
-		ParseInfo* pi = parseinfo(l);
+		FormParseInfo pi = formparseinfo(l);
 		Function* f = funcInScope(vs);
 		string uname = oneName(vs);
 		if(f) {
@@ -2010,7 +2056,7 @@ namespace Insert {
 					return 0;
 				}
 				vector<Term*> vt2(vt); vt2.push_back(t);
-				return new PredForm(true,f,vt2,pi);
+				return new PredForm(true,f,vt2,pi);	// TODO: change the formparseinfo
 			}
 			else {
 				Error::funcnotintheovoc(uname,_currtheory->name(),pi);
@@ -2030,22 +2076,10 @@ namespace Insert {
 		return funcgraphform(vs,vt,t,l);
 	}
 
-	PredForm* succform(Term* lt, Term* rt, YYLTYPE l) {
-		if(lt && rt) {
-			Predicate* p = Builtin::pred("SUCC/2");
-			vector<Term*> vt(2); vt[0] = lt; vt[1] = rt;
-			return new PredForm(true,p,vt,parseinfo(l));
-		}
-		else {
-			if(lt) delete(lt);
-			if(rt) delete(rt);
-			return 0;
-		}
-	}
-
 	EquivForm* equivform(Formula* lf, Formula* rf, YYLTYPE l) {
 		if(lf && rf) {
-			ParseInfo* pi = parseinfo(l);
+			//Formula* fpf = new EquivForm(true,lf->pi().original(),rf->pi().original(),FormParseInfo());
+			FormParseInfo pi = formparseinfo(0,l);
 			return new EquivForm(true,lf,rf,pi);
 		}
 		else {
@@ -2058,8 +2092,11 @@ namespace Insert {
 	BoolForm* disjform(Formula* lf, Formula* rf, YYLTYPE l) {
 		if(lf && rf) {
 			vector<Formula*> vf(2);
+			vector<Formula*> pivf(2);
 			vf[0] = lf; vf[1] = rf;
-			ParseInfo* pi = parseinfo(l);
+			//pivf[0] = lf->pi().original(); pivf[1] = rf->pi().original();
+			//BoolForm* pibf = new BoolForm(true,false,pivf,FormParseInfo());
+			FormParseInfo pi = formparseinfo(0,l);
 			return new BoolForm(true,false,vf,pi);
 		}
 		else {
@@ -2072,8 +2109,11 @@ namespace Insert {
 	BoolForm* conjform(Formula* lf, Formula* rf, YYLTYPE l) {
 		if(lf && rf) {
 			vector<Formula*> vf(2);
+			vector<Formula*> pivf(2);
 			vf[0] = lf; vf[1] = rf;
-			ParseInfo* pi = parseinfo(l);
+			//pivf[0] = lf->pi().original(); pivf[1] = rf->pi().original();
+			//BoolForm* pibf = new BoolForm(true,true,pivf,FormParseInfo());
+			FormParseInfo pi = formparseinfo(0,l);
 			return new BoolForm(true,true,vf,pi);
 		}
 		else {
@@ -2112,7 +2152,8 @@ namespace Insert {
 	QuantForm* univform(const vector<Variable*>& vv, Formula* f, YYLTYPE l) {
 		remove_vars(vv);
 		if(f) {
-			ParseInfo* pi = parseinfo(l);
+			//QuantForm* piqf = new QuantForm(true,true,vv,f->pi().original(),FormParseInfo());
+			FormParseInfo pi = formparseinfo(0,l);
 			return new QuantForm(true,true,vv,f,pi);
 		}
 		else {
@@ -2125,7 +2166,8 @@ namespace Insert {
 	QuantForm* existform(const vector<Variable*>& vv, Formula* f, YYLTYPE l) {
 		remove_vars(vv);
 		if(f) {
-			ParseInfo* pi = parseinfo(l);
+			//QuantForm* piqf = new QuantForm(true,false,vv,f->pi().original(),FormParseInfo());
+			FormParseInfo pi = formparseinfo(0,l);
 			return new QuantForm(true,false,vv,f,pi);
 		}
 		else {
@@ -2138,14 +2180,14 @@ namespace Insert {
 	PredForm* bexform(char c, bool b, int n, const vector<Variable*>& vv, Formula* f, YYLTYPE l) {
 		remove_vars(vv);
 		if(f) {
-			ParseInfo* pi = parseinfo(l);
+			FormParseInfo pi = formparseinfo(l);
 			QuantSetExpr* qse = new QuantSetExpr(vv,f,pi);
 			vector<Term*> vt(2);
 			Element en; en._int = n;
-			vt[0] = new DomainTerm(Builtin::intsort(),ELINT,en,pi);
+			vt[0] = new DomainTerm(StdBuiltin::instance()->sort("int"),ELINT,en,pi);
 			vt[1] = new AggTerm(qse,AGGCARD,pi);
-			Predicate* p = Builtin::pred(string(1,c) + "/2");
-			return new PredForm(b,p,vt,pi);
+			Predicate* p = StdBuiltin::instance()->pred(string(1,c) + "/2");
+			return new PredForm(b,p,vt,pi);	// TODO adapt formparseinfo
 		}
 		else {
 			for(unsigned int n = 0; n < vv.size(); ++n) delete(vv[n]);
@@ -2156,7 +2198,7 @@ namespace Insert {
 
 	EqChainForm* eqchain(char c, bool b, Term* lt, Term* rt, YYLTYPE l) {
 		if(lt && rt) {
-			ParseInfo* pi = parseinfo(l);
+			FormParseInfo pi = formparseinfo(l);	// TODO adapt formparseinfo
 			EqChainForm* ecf = new EqChainForm(true,true,lt,pi);
 			ecf->add(c,b,rt);
 			return ecf;
@@ -2181,7 +2223,7 @@ namespace Insert {
 	}
 
 	Rule* rule(const vector<Variable*>& qv, PredForm* head, Formula* body,YYLTYPE l) {
-		ParseInfo* pi = parseinfo(l);
+		ParseInfo pi = parseinfo(l);
 		remove_vars(qv);
 		if(head && body) {
 			// Quantify the free variables
@@ -2199,10 +2241,10 @@ namespace Insert {
 				else bv.push_back(vv[n]);
 			}
 			// Create a new rule
-			if(!(bv.empty())) body = new QuantForm(true,false,bv,body,new ParseInfo(*(body->pi())));
+			if(!(bv.empty())) body = new QuantForm(true,false,bv,body,FormParseInfo((body->pi())));
 			Rule* r = new Rule(hv,head,body,pi);
 			// Sort derivation
-			SortDeriver sd(r);
+			SortDeriver sd(r,_currvocab);
 			// Return the rule
 			return r;
 		}
@@ -2253,7 +2295,7 @@ namespace Insert {
 	}
 
 	Variable* quantifiedvar(const string& name, YYLTYPE l) {
-		ParseInfo* pi = parseinfo(l);
+		ParseInfo pi = parseinfo(l);
 		Variable* v = new Variable(name,0,pi);
 		curr_vars.push_front(VarName(name,v));
 		return v;
@@ -2266,7 +2308,7 @@ namespace Insert {
 	}
 
 	FuncTerm* functerm(const vector<string>& vs, const vector<Term*>& vt, YYLTYPE l) {
-		ParseInfo* pi = parseinfo(l);
+		ParseInfo pi = parseinfo(l);
 		Function* f = funcInScope(vs);
 		string uname = oneName(vs);
 		if(f) {
@@ -2274,7 +2316,6 @@ namespace Insert {
 				for(unsigned int n = 0; n < vt.size(); ++n) {
 					if(!vt[n]) {
 						for(unsigned int m = 0; m < vt.size(); ++m) { if(vt[m]) delete(vt[m]);	}
-						delete(pi);
 						return 0;
 					}
 				}
@@ -2283,14 +2324,52 @@ namespace Insert {
 			else {
 				Error::funcnotintheovoc(uname,_currtheory->name(),pi);
 				for(unsigned int n = 0; n < vt.size(); ++n) { if(vt[n]) delete(vt[n]);	}
-						delete(pi);
 				return 0;
 			}
 		}
 		else {
 			Error::undeclfunc(uname,pi);
 			for(unsigned int n = 0; n < vt.size(); ++n) { if(vt[n]) delete(vt[n]);	}
-						delete(pi);
+			return 0;
+		}
+	}
+
+	FuncTerm* functerm(NSTuple* nst, const vector<Term*>& vt, YYLTYPE l) {
+		ParseInfo pi = parseinfo(l);
+		(nst->_name).back() = (nst->_name).back() + '/' + itos((nst->_sorts).size()-1);
+		Function* f = funcInScope(nst->_name);
+		if(f) f = f->disambiguate(nst->_sorts,0);
+		if(f) {
+			if(belongsToVoc(f)) {
+				if(f->arity() == vt.size()) {
+					for(unsigned int n = 0; n < vt.size(); ++n) {
+						if(!vt[n]) {
+							for(unsigned int m = 0; m < vt.size(); ++m) { if(vt[m]) delete(vt[m]);	}
+							delete(nst);
+							return 0;
+						}
+					}
+					delete(nst);
+					return new FuncTerm(f,vt,pi);
+				}
+				else {
+					Error::wrongfuncarity(f->name(),pi);
+					for(unsigned int n = 0; n < vt.size(); ++n) { if(vt[n]) delete(vt[n]);	}
+					delete(nst);
+					return 0;
+				}
+			}
+			else {
+				Error::funcnotintheovoc(f->name(),_currtheory->name(),pi);
+				for(unsigned int n = 0; n < vt.size(); ++n) { if(vt[n]) delete(vt[n]);	}
+				delete(nst);
+				return 0;
+			}
+		}
+		else {
+			Error::undeclfunc(oneName(nst->_name),pi);
+			for(unsigned int n = 0; n < vt.size(); ++n) { if(vt[n]) delete(vt[n]);	}
+			delete(nst);
 			return 0;
 		}
 	}
@@ -2300,12 +2379,17 @@ namespace Insert {
 		return functerm(vs,vt,l);
 	}
 
+	FuncTerm* functerm(NSTuple* nst, YYLTYPE l) {
+		vector<Term*> vt = vector<Term*>(0);
+		return functerm(nst,vt,l);
+	}
+
 	Term* funcvar(const vector<string>& vs, YYLTYPE l) {
 		if(vs.size() == 1) {
 			Variable* v = getVar(vs[0]);
 			string c = vs[0] + "/0";
 			Function* f = funcInScope(c);
-			ParseInfo* pi = parseinfo(l);
+			ParseInfo pi = parseinfo(l);
 			if(v) {
 				if(f) Warning::varcouldbeconst(vs[0],pi);
 				return new VarTerm(v,pi);
@@ -2328,7 +2412,7 @@ namespace Insert {
 
 	Term* arterm(char c, Term* lt, Term* rt, YYLTYPE l) {
 		if(lt && rt) {
-			Function* f = Builtin::func(string(1,c) + "/2");
+			Function* f = _currvocab->func(string(1,c) + "/2");
 			assert(f);
 			vector<Term*> vt(2); vt[0] = lt; vt[1] = rt;
 			return new FuncTerm(f,vt,parseinfo(l));
@@ -2342,7 +2426,7 @@ namespace Insert {
 
 	Term* arterm(const string& s, Term* t, YYLTYPE l) {
 		if(t) {
-			Function* f = Builtin::func(s + "/1");
+			Function* f = _currvocab->func(s + "/1");
 			assert(f);
 			vector<Term*> vt(1,t);
 			return new FuncTerm(f,vt,parseinfo(l));
@@ -2365,7 +2449,7 @@ namespace Insert {
 	QuantSetExpr* set(const vector<Variable*>& vv, Formula* f, YYLTYPE l) {
 		remove_vars(vv);
 		if(f) {
-			ParseInfo* pi = parseinfo(l);
+			ParseInfo pi = parseinfo(l);
 			return new QuantSetExpr(vv,f,pi);
 		}
 		else {
@@ -2390,7 +2474,7 @@ namespace Insert {
 				return 0;
 			}
 		}
-		ParseInfo* pi = parseinfo(l);
+		ParseInfo pi = parseinfo(l);
 		return new EnumSetExpr(vf,vt,pi);
 	}
 
@@ -2399,7 +2483,7 @@ namespace Insert {
 		for(unsigned int n = 0; n < vf.size(); ++n) {
 			if(vf[n]) {
 				Element one; one._int = 1;
-				vt.push_back(new DomainTerm(Builtin::intsort(),ELINT,one,vf[n]->pi()));
+				vt.push_back(new DomainTerm(StdBuiltin::instance()->sort("int"),ELINT,one,vf[n]->pi()));
 			}
 			else {
 				for(unsigned int m = 0; m < vf.size(); ++m) {
@@ -2408,13 +2492,13 @@ namespace Insert {
 				return 0;
 			}
 		}
-		ParseInfo* pi = parseinfo(l);
+		ParseInfo pi = parseinfo(l);
 		return new EnumSetExpr(vf,vt,pi);
 	}
 
 	AggTerm* aggregate(AggType at, SetExpr* s, YYLTYPE l) {
 		if(s) {
-			ParseInfo* pi = parseinfo(l);
+			ParseInfo pi = parseinfo(l);
 			return new AggTerm(s,at,pi);
 		}
 		else return 0;
@@ -2422,65 +2506,30 @@ namespace Insert {
 
 	DomainTerm* domterm(int n, YYLTYPE l) {
 		Element en; en._int = n;
-		return new DomainTerm(Builtin::intsort(),ELINT,en,parseinfo(l));
+		return new DomainTerm(StdBuiltin::instance()->sort("int"),ELINT,en,parseinfo(l));
 	}
 
-	DomainTerm* domterm(double* d, YYLTYPE l) {
+	DomainTerm* domterm(double d, YYLTYPE l) {
 		Element ed; ed._double = d;
-		return new DomainTerm(Builtin::floatsort(),ELDOUBLE,ed,parseinfo(l));
+		return new DomainTerm(StdBuiltin::instance()->sort("float"),ELDOUBLE,ed,parseinfo(l));
 	}
 
 	DomainTerm* domterm(string* s, YYLTYPE l) {
 		Element es; es._string = s;
-		return new DomainTerm(Builtin::stringsort(),ELSTRING,es,parseinfo(l));
+		return new DomainTerm(StdBuiltin::instance()->sort("string"),ELSTRING,es,parseinfo(l));
 	}
 
 	DomainTerm* domterm(char c, YYLTYPE l) {
 		Element es; es._string = new string(1,c);
-		return new DomainTerm(Builtin::charsort(),ELSTRING,es,parseinfo(l));
+		return new DomainTerm(StdBuiltin::instance()->sort("char"),ELSTRING,es,parseinfo(l));
 	}
 
 	DomainTerm* domterm(string* n, Sort* s, YYLTYPE l) {
-		ParseInfo* pi = parseinfo(l);
+		ParseInfo pi = parseinfo(l);
 		if(s) { 
 			Element en; en._string = n;
 			return new DomainTerm(s,ELSTRING,en,pi);
 		}
-		else {
-			delete(pi);
-			delete(n);
-			return 0;
-		}
-	}
-
-	FuncTerm* minterm(YYLTYPE l) {
-		Function* f = Builtin::func("MIN/0");
-		vector<Term*> vt(0);
-		return new FuncTerm(f,vt,parseinfo(l));
-	}
-
-	FuncTerm* maxterm(YYLTYPE l) {
-		Function* f = Builtin::func("MAX/0");
-		vector<Term*> vt(0);
-		return new FuncTerm(f,vt,parseinfo(l));
-	}
-
-	FuncTerm* minterm(Sort* s, YYLTYPE l) {
-		FuncTerm* ft = minterm(l);
-		if(s) {
-			vector<Sort*> vs(1,s);
-			ft->func(ft->func()->disambiguate(vs));
-		}
-		return ft;
-	}
-
-	FuncTerm* maxterm(Sort* s, YYLTYPE l) {
-		FuncTerm* ft = maxterm(l);
-		if(s) {
-			vector<Sort*> vs(1,s);
-			ft->func(ft->func()->disambiguate(vs));
-		}
-		return ft;
 	}
 
 	/*****************
@@ -2532,7 +2581,7 @@ namespace Insert {
 	}
 
 	void command(InfArgType type, const string& cname, const vector<string>& args, const string& res, YYLTYPE l) {
-		ParseInfo* pi = parseinfo(l);
+		ParseInfo pi = parseinfo(l);
 		map<string,vector<Inference*> >::iterator it = _inferences.find(cname);
 		if(it != _inferences.end()) {
 			vector<Inference*> vi;
@@ -2567,7 +2616,6 @@ namespace Insert {
 		else {
 			Error::unkncommand(cname + '/' + itos(args.size()),pi);
 		}
-		delete(pi);
 	}
 	
 	void command(const string& cname, const vector<string>& args, YYLTYPE l) {
@@ -2588,17 +2636,17 @@ namespace Insert {
 
 }
 
-	void help_execute() {
-		cout << "The available methods in the execute block are:\n";
-		for(map<string,vector<Inference*> >::iterator it = Insert::_inferences.begin(); it != Insert::_inferences.end(); ++it) {
-			for(unsigned int n = 0; n < (it->second).size(); ++n) {
-				cout << "   " << IATUtils::to_string(((it->second)[n])->outtype()) << ' ' << it->first << '(';
-				for(unsigned int m = 0; m < ((it->second)[n])->arity(); ++m) {
-					cout << IATUtils::to_string((((it->second)[n])->intypes())[m]);
-					if(m != ((it->second)[n])->arity()-1) cout << ',';
-				}
-				cout << ")\n";
-				cout << "      " << ((it->second)[n])->description() << '\n';
+void help_execute() {
+	cout << "The available methods in the execute block are:\n";
+	for(map<string,vector<Inference*> >::iterator it = Insert::_inferences.begin(); it != Insert::_inferences.end(); ++it) {
+		for(unsigned int n = 0; n < (it->second).size(); ++n) {
+			cout << "   " << IATUtils::to_string(((it->second)[n])->outtype()) << ' ' << it->first << '(';
+			for(unsigned int m = 0; m < ((it->second)[n])->arity(); ++m) {
+				cout << IATUtils::to_string((((it->second)[n])->intypes())[m]);
+				if(m != ((it->second)[n])->arity()-1) cout << ',';
 			}
+			cout << ")\n";
+			cout << "      " << ((it->second)[n])->description() << '\n';
 		}
 	}
+}

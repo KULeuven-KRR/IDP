@@ -4,10 +4,11 @@
 	(c) K.U.Leuven
 ************************************/
 
+#include "data.hpp"
 #include "insert.hpp"
 #include "builtin.hpp"
 #include "namespace.hpp"
-#include "parse.tab.hpp"
+#include "parse.h"
 #include "error.hpp"
 #include "options.hpp"
 #include "clconst.hpp"
@@ -15,21 +16,16 @@
 #include <iostream>
 #include <cstdlib>
 
+// Parser stuff
 extern int yyparse();
 extern FILE* yyin;
-extern Options options;
 extern map<string,CLConst*>	clconsts;
-
-extern bool		isInt(const string&);
-extern bool		isDouble(const string&);
-extern int		stoi(const string&);
-extern double	stod(const string&);
+extern void parsestring(const string&);
 
 extern void help_execute();
 
 /** Initialize data structures **/
 void initialize() {
-	Builtin::initialize();
 	Insert::initialize();
 }
 
@@ -38,7 +34,7 @@ void usage() {
 	cout << "Usage:\n"
 		 << "   gidl [options] [filename [filename [...]]]\n\n";
 	cout << "Options:\n"
-		 << "    -n<num>              find <num> solutions for to model expansion problems (0=all; default 1)\n"
+		 << "    -i, --interactive	  run in interactive mode\n"
 		 << "    --statistics:        show statistics\n"
 		 << "    --verbose:           print additional information\n"
 		 << "    -c <name1>=<name2>:  substitute <name2> for <name1> in the input\n"
@@ -76,13 +72,9 @@ vector<string> read_options(int argc, char* argv[]) {
 	while(argc) {
 		string str(argv[0]);
 		argc--; argv++;
-		if(str.substr(0,2) == "-n" && isInt(str.substr(2,str.size()-2))) {
-													  int nrm = stoi(str.substr(2,str.size()-2));
-													  if(nrm < 0) Error::nrmodelsnegative();
-													  else options._nrmodels = nrm;
-													}
-		else if(str == "--statistics")				{ options._statistics = true;		}
-		else if(str == "--verbose")					{ options._verbose = true;			}
+		if(str == "-i" || str == "--interactive")	{ _options._interactive = true;		}
+		else if(str == "--statistics")				{ _options._statistics = true;		}
+		else if(str == "--verbose")					{ _options._verbose = true;			}
 		else if(str == "-c")						{ str = argv[0];
 													  if(argc && (str.find('=') != string::npos)) {
 														  int p = str.find('=');
@@ -93,9 +85,9 @@ vector<string> read_options(int argc, char* argv[]) {
 													  else Error::constsetexp();
 													  argc--; argv++;
 													}
-		else if(str == "-I")						{ options._readfromstdin = true;	}
-		else if(str == "-W")						{ for(unsigned int n = 0; n < options._warning.size(); ++n) {
-														  options._warning[n] = false;
+		else if(str == "-I")						{ _options._readfromstdin = true;	}
+		else if(str == "-W")						{ for(unsigned int n = 0; n < _options._warning.size(); ++n) {
+														  _options._warning[n] = false;
 													  }
 													}
 		else if(str == "-o")						{ FILE* test = fopen(argv[0],"w");
@@ -130,20 +122,40 @@ void parse(const vector<string>& inputfiles) {
 			Insert::currfile(inputfiles[n]);
 			yyparse();	
 			fclose(yyin);
+			// TODO: de 'using' vocabularia van de global namespace uitvegen
 		}
 		else Error::unknfile(inputfiles[n]);
 	}
-	if(options._readfromstdin) {
+	if(_options._readfromstdin) {
 		yyin = stdin;
 		Insert::currfile(0);
 		yyparse();
 	}
 }
 
+/** Interactive mode **/
+void interactive() {
+	cout << "Running GidL in interactive mode.\n"
+		 << "  Type 'help' for help.\n"
+		 << "  Type 'exit' to quit.\n\n";
+
+	while(true) {
+		cout << "> ";
+		string str;
+		getline(cin,str);
+		if(str == "exit") return;
+		else if(str == "help") {
+			help_execute();
+		}
+		else {
+			str = "#execute{ " + str + "}";
+			parsestring(str);
+		}
+	}
+}
+
 /** Delete all data **/
 void cleanup() {
-	Namespace::deleteGlobal();
-	Builtin::deleteAll();
 	Insert::cleanup();
 	for(map<string,CLConst*>::iterator it = clconsts.begin(); it != clconsts.end(); ++it) delete(it->second);
 }
@@ -153,6 +165,7 @@ int main(int argc, char* argv[]) {
 	initialize();
 	vector<string> inputfiles = read_options(argc,argv);
 	parse(inputfiles);
+	if(_options._interactive) interactive();
 	cleanup();
 	return Error::nr_of_errors();
 }

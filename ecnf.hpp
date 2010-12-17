@@ -8,14 +8,17 @@
 #define ECNF_H
 
 #include "theory.hpp"
-#include "solvers/ExternalInterface.hpp"
+#include "ground.hpp"
+#include "pcsolver/solvers/external/ExternalInterface.hpp"
 
 struct GroundFeatures {
 	bool	_containsDefinitions;
 	bool	_containsAggregates;
+	bool	_containsFixpDefs;
 	GroundFeatures() {
 		_containsDefinitions = false;
 		_containsAggregates = false;
+		_containsFixpDefs = false;
 	}
 };
 
@@ -126,15 +129,17 @@ class outputHR : public GroundPrinter {
 
 };
 
+typedef PropositionalSolver SATSolver;
+
 class outputToSolver : public GroundPrinter {
 
 	private:
 		//Not owning pointer!
-		PropositionalSolver* _solver;
-		PropositionalSolver* solver() { return _solver; }
+		SATSolver* _solver;
+		SATSolver* solver() { return _solver; }
 	public:
 		//outputToSolver();
-		outputToSolver(PropositionalSolver* solver);
+		outputToSolver(SATSolver* solver);
 		~outputToSolver();
 		void outputinit(GroundFeatures*);
 		void outputend();
@@ -163,62 +168,114 @@ class outputToSolver : public GroundPrinter {
 	Internal ecnf theories
 *****************************/
 
-typedef vector<int> EcnfClause;
-typedef vector<int> EcnfRule;
+/** Propositional clause **/
+typedef vector<int> EcnfClause;	// vector of all literals in a clause
 
+/** Propositional set **/
 struct EcnfSet {
-	vector<int>		_literals;
-	vector<double>	_weights;	// empty for a non-weighted set
+	vector<int>	_set;
+	vector<double> _weights;
+	EcnfSet(const vector<int>& s, const vector<double>& w) : _set(s), _weights(w) { }
 };
 
+/** Propositional expression of one of the following forms
+		(a) head <- agg(set) =< bound
+		(b) head <- bound =< agg(set)
+		(c) head <=> agg(set) =< bound
+		(d) head <=> bound =< agg(set)
+		(e) head => agg(set) =< bound
+		(f) head => bound =< agg(set)
+**/
+enum EcnfHeadAgg { EHA_DEFINED, EHA_EQUIV, EHA_IMPLIES }; // cases (a,b), (c,d), and (e,f), respectively.
 struct EcnfAgg {
-	AggType			_type;
-	bool			_lower;
-	bool			_defined;
-	int				_head;
-	unsigned int	_set;
-	int				_bound;
+	AggType			_type;		// the aggregate
+	bool			_lower;		// true in cases (b) and (d)
+	EcnfHeadAgg		_eha;		// the relation between head and aggregate expression
+	int				_head;		// head atom
+	unsigned int	_set;		// the set id
+	double			_bound;		// the bound
+	EcnfAgg(AggType t, bool l, EcnfHeadAgg e, int h, unsigned int s, double b) :
+		_type(t), _lower(l), _eha(e), _head(h), _set(s), _bound(b) { }
+	EcnfAgg(const EcnfAgg& efa) : 
+		_type(efa._type), _lower(efa._lower), _eha(efa._eha), _head(efa._head), _set(efa._set), _bound(efa._bound) { }
+	EcnfAgg() { }
 };
 
+/** Propositional definition **/
+enum RuleType { RT_TRUE, RT_FALSE, RT_UNARY, RT_CONJ, RT_DISJ, RT_AGG };
 struct EcnfDefinition {
-	vector<EcnfRule>	_disjrules;
-	vector<EcnfRule>	_conjrules;
+	map<int,RuleType>		_ruletypes;	// map a head to its current ruletype
+	map<int,vector<int> >	_bodies;	// map a head to its body (conjunctive and disjunctive rules)
+	map<int,EcnfAgg>		_aggs;		// map a head to its aggregate body
+	void addAgg(const EcnfAgg& a, GroundTranslator* t);
+	void addRule(int head, const vector<int>& body, bool conj, GroundTranslator* t);
+	bool containsAgg()	const { return !_aggs.empty();	}
+};
+
+/** Propositional fixpoint definition **/
+struct EcnfFixpDef {
+	EcnfDefinition		_rules;		// the direct subrules
+	vector<EcnfFixpDef>	_subdefs;	// the direct subdefinitions
+	void addAgg(const EcnfAgg& a, GroundTranslator* t) { _rules.addAgg(a,t);	}
+	void addRule(int head, const vector<int>& body, bool conj, GroundTranslator* t) { _rules.addRule(head,body,conj,t);	}
+	bool containsAgg()	const;
 };
 
 class EcnfTheory : public AbstractTheory {
 	
 	private:
 		GroundFeatures			_features;
+		
+		GroundTranslator*		_translator;
 
-		vector<EcnfClause>		_clauses;
+		vector<EcnfClause>		_clauses;	
 		vector<EcnfDefinition>	_definitions;
-		vector<EcnfSet>			_sets;
 		vector<EcnfAgg>			_aggregates;
+		vector<EcnfFixpDef>		_fixpdefs;
+		vector<EcnfSet>			_sets;
 
 	public:
 
 		// Constructor
-		EcnfTheory() : AbstractTheory("",0)	{ }
+		EcnfTheory() : AbstractTheory("",ParseInfo()), _translator(new NaiveTranslator()) { }
 
 		// Destructor
 		void recursiveDelete() { }
 
 		// Mutators
 		void addClause(const EcnfClause& vi)		{ _clauses.push_back(vi);											}
-		void addDefinition(const EcnfDefinition& d)	{ _definitions.push_back(d); _features._containsDefinitions = true;	}
-		void addAggregate(const EcnfAgg& a)			{ _aggregates.push_back(a); _features._containsAggregates = true;	}
+		void addDefinition(const EcnfDefinition& d)	{ _definitions.push_back(d); 
+													  _features._containsDefinitions = true;	
+													  _features._containsAggregates = 
+														_features._containsAggregates || d.containsAgg();				}
+		void addFixpDef(const EcnfFixpDef& d)		{ _fixpdefs.push_back(d); 
+													  _features._containsFixpDefs = true;		
+													  _features._containsAggregates = 
+														_features._containsAggregates || d.containsAgg();				} 
+		void addAgg(const EcnfAgg& a)				{ _aggregates.push_back(a); _features._containsAggregates = true;	}
+
+		unsigned int addSet(const vector<int>& lits, const vector<double>& weights)
+													{ _sets.push_back(EcnfSet(lits,weights)); return _sets.size() - 1;	}
+
+		void add(Formula* f);	
+		void add(Definition* d);
+		void add(FixpDef* fd);	
 
 		// Inspectors
-		unsigned int	nrSentences()	const { return _clauses.size() + _aggregates.size();	}
-		unsigned int	nrDefinitions()	const { return _definitions.size();					}
-		unsigned int	nrFixpDefs()	const { return 0;	/* TODO */							}
+		unsigned int		nrSentences()				const { return _clauses.size() + _aggregates.size();	}
+		unsigned int		nrDefinitions()				const { return _definitions.size();						}
+		unsigned int		nrFixpDefs()				const { return _fixpdefs.size();						}
+		Formula*			sentence(unsigned int n)	const;
+		Definition*			definition(unsigned int n)	const;
+		FixpDef*			fixpdef(unsigned int n)		const;
+		GroundTranslator*	translator()				const { return _translator;	}
 
 		// Visitor
 		void			accept(Visitor* v)			{ v->visit(this);			}
 		AbstractTheory*	accept(MutatingVisitor* v)	{ return v->visit(this);	}
 
 		// Debugging
-		string to_string() const	{ return ""; /* TODO */ }
+		string to_string() const;
 
 		// Output
 		void print(GroundPrinter*);

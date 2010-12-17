@@ -28,7 +28,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \begin{description}
-	\item[vocabulary.\{h,cc\}] Sorts (types), predicate and function symbols
+	\item[vocabulary.\{h,cc\}] Sorts (types), predicate and function symbols, domain elements
 	\item[structure.\{h,cc\}] Interpretations (tables) for sorts, predicates and functions
 	\item[term.\{h,cc\}] Terms and set expressions
 	\item[theory.\{h,cc\}] Formulas, definitions, fixpoint definitions and theories
@@ -55,6 +55,7 @@
 
 \begin{description}
 	\item[class ParseInfo] Stores the location (line, column and file) of a parsed object. This is used to produce clear error messages.
+	\item[class FormParseInfo] Also stores the originally parsed formula (containing brackets, implications, extended existential quantifiers, \ldots). 
 \end{description}
 Note: almost all objects that can occur in the input files have a pointer to a ParseInfo object. The only exception are domain elements, because storing the parse location of each domain element in a (possibly large) structure seems too much overhead. If some object is builtin, its ParseInfo pointer is set to 0.
 
@@ -63,8 +64,8 @@ Note: almost all objects that can occur in the input files have a pointer to a P
 %----------------------------------------------------------%
 
 \begin{description}
-	\item[union Element] A domain element (either an integer, a double or a string). Characters are domain elements of type string.  
-	\item[enum ElementType] The three different types of elements
+	\item[union Element] A domain element (either an integer, a double, a string, or a compound element). Characters are domain elements of type string.  
+	\item[enum ElementType] The four different types of elements
 \end{description}
 
 %----------------------------------------------------------%

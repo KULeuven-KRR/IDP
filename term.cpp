@@ -4,6 +4,7 @@
 	(c) K.U.Leuven
 ************************************/
 
+#include "data.hpp"
 #include "namespace.hpp"
 #include "builtin.hpp"
 #include "visitor.hpp"
@@ -16,11 +17,11 @@ extern string dtos(double);
 	Constructors
 *******************/
 
-VarTerm::VarTerm(Variable* v, ParseInfo* pi) : Term(pi), _var(v) {
+VarTerm::VarTerm(Variable* v, const ParseInfo& pi) : Term(pi), _var(v) {
 	setfvars();
 }
 
-FuncTerm::FuncTerm(Function* f, const vector<Term*>& a, ParseInfo* pi) : Term(pi), _func(f), _args(a) { 
+FuncTerm::FuncTerm(Function* f, const vector<Term*>& a, const ParseInfo& pi) : Term(pi), _func(f), _args(a) { 
 	setfvars();
 }
 
@@ -61,38 +62,23 @@ QuantSetExpr* QuantSetExpr::clone() const {
 
 VarTerm* VarTerm::clone(const map<Variable*,Variable*>& mvv) const {
 	map<Variable*,Variable*>::const_iterator it = mvv.find(_var);
-	ParseInfo* nip = 0;
-	if(_pi) nip = new ParseInfo(_pi);
-	if(it != mvv.end()) return new VarTerm(it->second,nip);
-	else return new VarTerm(_var,nip);
+	if(it != mvv.end()) return new VarTerm(it->second,_pi);
+	else return new VarTerm(_var,_pi);
 }
 
 FuncTerm* FuncTerm::clone(const map<Variable*,Variable*>& mvv) const {
 	vector<Term*> na(_args.size());
 	for(unsigned int n = 0; n < _args.size(); ++n) na[n] = _args[n]->clone(mvv);
-	ParseInfo* nip = 0;
-	if(_pi) nip = new ParseInfo(_pi);
-	return new FuncTerm(_func,na,nip);
+	return new FuncTerm(_func,na,_pi);
 }
 
 DomainTerm* DomainTerm::clone(const map<Variable*,Variable*>& mvv) const {
-	Element ne;
-	switch(_type) {
-		case ELINT: ne._int = _value._int; break;
-		case ELDOUBLE: ne._double = new double(*(_value._double)); break;
-		case ELSTRING: ne._string = new string(*(_value._string)); break;
-		default: assert(false);
-	}
-	ParseInfo* nip = 0;
-	if(_pi) nip = new ParseInfo(_pi);
-	return new DomainTerm(_sort,_type,ne,nip);
+	return new DomainTerm(_sort,_type,_value,_pi);
 }
 
 AggTerm* AggTerm::clone(const map<Variable*,Variable*>& mvv) const {
 	SetExpr* ns = _set->clone(mvv);
-	ParseInfo* nip = 0;
-	if(_pi) nip = new ParseInfo(_pi);
-	return new AggTerm(ns,_type,nip);
+	return new AggTerm(ns,_type,_pi);
 }
 
 EnumSetExpr* EnumSetExpr::clone(const map<Variable*,Variable*>& mvv) const {
@@ -100,22 +86,18 @@ EnumSetExpr* EnumSetExpr::clone(const map<Variable*,Variable*>& mvv) const {
 	vector<Term*> nt(_weights.size());
 	for(unsigned int n = 0; n < _subf.size(); ++n) nf[n] = _subf[n]->clone(mvv);
 	for(unsigned int n = 0; n < _weights.size(); ++n) nt[n] = _weights[n]->clone(mvv);
-	ParseInfo* nip = 0;
-	if(_pi) nip = new ParseInfo(_pi);
-	return new EnumSetExpr(nf,nt,nip);
+	return new EnumSetExpr(nf,nt,_pi);
 }
 
 QuantSetExpr* QuantSetExpr::clone(const map<Variable*,Variable*>& mvv) const {
 	vector<Variable*> nv(_vars.size());
 	map<Variable*,Variable*> nmvv = mvv;
 	for(unsigned int n = 0; n < _vars.size(); ++n) {
-		nv[n] = new Variable(_vars[n]->name(),_vars[n]->sort(),new ParseInfo(_vars[n]->pi()));
+		nv[n] = new Variable(_vars[n]->name(),_vars[n]->sort(),_vars[n]->pi());
 		nmvv[_vars[n]] = nv[n];
 	}
 	Formula* nf = _subf->clone(nmvv);
-	ParseInfo* nip = 0;
-	if(_pi) nip = new ParseInfo(_pi);
-	return new QuantSetExpr(nv,nf,nip);
+	return new QuantSetExpr(nv,nf,_pi);
 }
 
 /******************
@@ -128,12 +110,6 @@ void FuncTerm::recursiveDelete() {
 }
 
 void DomainTerm::recursiveDelete() {
-	switch(_type) {
-		case ELINT: break;
-		case ELDOUBLE: delete(_value._double); break;
-		case ELSTRING: delete(_value._string); break;
-		default: assert(false);
-	}
 	delete(this);
 }
 
@@ -229,7 +205,7 @@ Sort* QuantSetExpr::firstargsort() const {
 }
 
 Sort* AggTerm::sort() const {
-	if(_type == AGGCARD) return Builtin::intsort();
+	if(_type == AGGCARD) return StdBuiltin::instance()->sort("nat");
 	else return _set->firstargsort();
 }
 
@@ -272,7 +248,7 @@ string DomainTerm::to_string() const {
 		case ELINT:
 			return itos(_value._int);
 		case ELDOUBLE:
-			return dtos(*(_value._double));
+			return dtos(_value._double);
 		case ELSTRING:
 			return *(_value._string);
 		default:
@@ -318,41 +294,241 @@ string AggTerm::to_string() const {
 	Term utils
 *****************/
 
-TermEvaluator::TermEvaluator(Structure* s,const map<Variable*,TypedElement> m) : 
+class SetEvaluator : public Visitor {
+
+	private:
+		vector<SortTable*>			_truevalues;
+		vector<SortTable*>			_unknvalues;
+		AbstractStructure*			_structure;
+		map<Variable*,TypedElement>	_varmapping;
+
+	public:
+		SetEvaluator(SetExpr* e, AbstractStructure* s, const map<Variable*,TypedElement> m) :
+			Visitor(), _structure(s), _varmapping(m) { e->accept(this);	}
+
+		const vector<SortTable*>& truevalues()	const	{ return _truevalues;	}
+		const vector<SortTable*>& unknvalues()	const	{ return _unknvalues;	}
+
+		void visit(EnumSetExpr*);
+		void visit(QuantSetExpr*);
+
+};
+
+void SetEvaluator::visit(EnumSetExpr* e) {
+	for(unsigned int n = 0; n < e->nrSubforms(); ++n) {
+		TruthValue tv = FormulaUtils::evaluate(e->subform(n),_structure,_varmapping);
+		switch(tv) {
+			case TV_TRUE:
+			{
+				TermEvaluator te(e->subterm(n),_structure,_varmapping);
+				FiniteSortTable* st = te.returnvalue();
+				if(st->empty()) delete(st);
+				else _truevalues.push_back(st);
+				break;
+			}
+			case TV_FALSE:
+				break;
+			case TV_UNKN:
+			{
+				TermEvaluator te(e->subterm(n),_structure,_varmapping);
+				FiniteSortTable* st = te.returnvalue();
+				if(st->empty()) delete(st);
+				else _unknvalues.push_back(st);
+				break;
+			}
+		}
+	}
+}
+
+void SetEvaluator::visit(QuantSetExpr* e)	{
+	SortTableTupleIterator vti(e->qvars(),_structure);
+	if(!vti.empty()) {
+		for(unsigned int n; n < e->nrQvars(); ++n) {
+			TypedElement te; 
+			te._type = vti.type(n); 
+			_varmapping[e->qvar(n)] = te;
+		}
+		do {
+			for(unsigned int n = 0; n < e->nrQvars(); ++n) 
+				_varmapping[e->qvar(n)]._element = vti.value(n);
+			SortTable* sst = TableUtils::singletonSort(_varmapping[e->qvar(0)]);
+			TruthValue tv = FormulaUtils::evaluate(e->subf(),_structure,_varmapping);
+			switch(tv) {
+				case TV_TRUE:
+					_truevalues.push_back(sst);
+					break;
+				case TV_FALSE:
+					delete(sst);
+					break;
+				case TV_UNKN:
+					_unknvalues.push_back(sst);
+					break;
+			}
+		} while(vti.nextvalue());
+	}
+}
+
+TermEvaluator::TermEvaluator(AbstractStructure* s,const map<Variable*,TypedElement> m) : 
 	Visitor(), _structure(s), _varmapping(m) { }
-TermEvaluator::TermEvaluator(Term* t,Structure* s,const map<Variable*,TypedElement> m) : 
+TermEvaluator::TermEvaluator(Term* t,AbstractStructure* s,const map<Variable*,TypedElement> m) : 
 	Visitor(), _structure(s), _varmapping(m) { t->accept(this);	}
 
 void TermEvaluator::visit(VarTerm* vt) {
 	assert(_varmapping.find(vt->var()) != _varmapping.end());
-	_returnvalue = _varmapping[vt->var()];
-}
-
-void TermEvaluator::visit(FuncTerm* ft) {
-	vector<TypedElement> argvalues;
-	for(unsigned int n = 0; n < ft->nrSubterms(); ++n) {
-		ft->subterm(n)->accept(this);
-		if(ElementUtil::exists(_returnvalue)) argvalues.push_back(_returnvalue);
-		else return;
-	}
-	FuncInter* fi = _structure->inter(ft->func());
-	assert(fi);
-	_returnvalue._element = (*fi)[argvalues];
-	_returnvalue._type = fi->outtype();
+	_returnvalue = TableUtils::singletonSort(_varmapping[vt->var()]);
 }
 
 void TermEvaluator::visit(DomainTerm* dt) {
-	_returnvalue._element = dt->value();
-	_returnvalue._type = dt->type();
+	_returnvalue = TableUtils::singletonSort(dt->value(),dt->type());
+}
+
+void TermEvaluator::visit(FuncTerm* ft) {
+	// Calculate the value of the subterms
+	vector<SortTable*> argvalues;
+	for(unsigned int n = 0; n < ft->nrSubterms(); ++n) {
+		ft->subterm(n)->accept(this);
+		if(_returnvalue->empty()) {
+			for(unsigned int m = 0; m < argvalues.size(); ++m) delete(argvalues[m]);
+			return;
+		}
+		else argvalues.push_back(_returnvalue);
+	}
+	// Calculate the value of the function
+	SortTableTupleIterator stti(argvalues);
+	Function* f = ft->func();
+	FuncInter* fi = _structure->inter(f);
+	assert(fi);
+	_returnvalue = new EmptySortTable();
+	if(fi->functable()) {	// Two-valued function
+		FuncTable* fut = fi->functable();
+		ElementType et = fut->type(fut->arity());
+		do {
+			vector<TypedElement> vet(f->arity());
+			for(unsigned int n = 0; n < f->arity(); ++n) { 
+				vet[n]._element = stti.value(n);
+				vet[n]._type = stti.type(n);
+			}
+			Element e = (*fut)[vet];
+			if(ElementUtil::exists(e,et)) {
+				FiniteSortTable* st = _returnvalue->add(e,et);
+				if(st != _returnvalue) { 
+					delete(_returnvalue);	
+					_returnvalue = st;
+				}
+			}
+		} while(stti.nextvalue());
+	}
+	else {	// Three-valued function
+		PredInter* pi = fi->predinter();
+		PredTable* pt = pi->cfpt();
+		vector<bool> vb(pt->arity(),true); vb.back() = false;
+		do {
+			vector<TypedElement> vet(pt->arity());
+			for(unsigned int n = 0; n < f->arity(); ++n) {
+				vet[n]._element = stti.value(n);
+				vet[n]._type = stti.type(n);
+			}
+			PredTable* ppt = TableUtils::project(pt,vet,vb);
+			if(pi->cf()) {
+				PredTable* ippt = StructUtils::complement(ppt,vector<Sort*>(1,f->outsort()),_structure);
+				delete(ppt);
+				ppt = ippt;
+			}
+			assert(ppt->finite());
+			for(unsigned int n = 0; n < ppt->size(); ++n) {
+				FiniteSortTable* st = _returnvalue->add(ppt->element(n,0),ppt->type(0));
+				if(st != _returnvalue) {
+					delete(_returnvalue);
+					_returnvalue = st;
+				}
+			}
+		} while(stti.nextvalue());
+	}
+	_returnvalue->sortunique();
+	for(unsigned int n = 0; n < argvalues.size(); ++n) delete(argvalues[n]);
 }
 
 void TermEvaluator::visit(AggTerm* at) {
-	assert(false); // TODO: not yet implemented
+	SetEvaluator sev(at->set(),_structure,_varmapping);
+	if(at->type() == AGGCARD) {
+		int tv = sev.truevalues().size();
+		int uv = tv + sev.unknvalues().size();
+		_returnvalue = new RanSortTable(tv,uv);
+		return;
+	}
+	else {
+		_returnvalue = new EmptySortTable();
+		SortTableTupleIterator ittrue(sev.truevalues());
+		vector<double> tvs(sev.truevalues().size());
+		assert(!ittrue.empty());
+		do {
+			// compute the value of the true part
+			for(unsigned int n = 0; n < tvs.size(); ++n) 
+				tvs[n] = (ElementUtil::convert(ittrue.value(n),ittrue.type(n),ELDOUBLE))._double;
+			double tv = AggUtils::compute(at->type(),tvs);
+			// choose which unknown values will be treated as true
+			vector<unsigned int> limits(sev.unknvalues().size(),1);
+			vector<unsigned int> tuple(limits.size(),0);
+			do {
+				vector<SortTable*> vst;
+				for(unsigned int n = 0; n < tuple.size(); ++n) {
+					if(tuple[n]) vst.push_back((sev.unknvalues())[n]);
+				}
+				vector<double> uvs(vst.size()+1);
+				uvs[0] = tv;
+				SortTableTupleIterator itunkn(vst);
+				assert(!itunkn.empty());
+				do {
+					for(unsigned int n = 1; n < uvs.size(); ++n) 
+						uvs[n] = (ElementUtil::convert(itunkn.value(n-1),itunkn.type(n-1),ELDOUBLE))._double;
+					double tuv = AggUtils::compute(at->type(),uvs);
+					FiniteSortTable* temp = _returnvalue->add(tuv);
+					if(temp != _returnvalue) {
+						delete(_returnvalue);
+						_returnvalue = temp;
+					}
+				} while(itunkn.nextvalue());
+			} while(nexttuple(tuple,limits));
+		} while(ittrue.nextvalue());
+	}
+	// delete tables
+	for(unsigned int n = 0; n < sev.truevalues().size(); ++n) delete((sev.truevalues())[n]);
+	for(unsigned int n = 0; n < sev.unknvalues().size(); ++n) delete((sev.unknvalues())[n]);
 }
 
 namespace TermUtils {
-	TypedElement evaluate(Term* t,Structure* s,const map<Variable*,TypedElement> m) {
+	FiniteSortTable* evaluate(Term* t,AbstractStructure* s,const map<Variable*,TypedElement> m) {
 		TermEvaluator te(t,s,m);
 		return te.returnvalue();
 	}
+}
+
+namespace AggUtils {
+
+	double compute(AggType agg, const vector<double>& args) {
+		double d;
+		switch(agg) {
+			case AGGCARD:
+				d = double(args.size());
+				break;
+			case AGGSUM:
+				d = 0;
+				for(unsigned int n = 0; n < args.size(); ++n) d += args[n];
+				break;
+			case AGGPROD:
+				d = 1;
+				for(unsigned int n = 0; n < args.size(); ++n) d = d * args[n];
+				break;
+			case AGGMIN:
+				d = MAX_DOUBLE;
+				for(unsigned int n = 0; n < args.size(); ++n) d = (d <= args[n] ? d : args[n]);
+				break;
+			case AGGMAX:
+				d = MIN_DOUBLE;
+				for(unsigned int n = 0; n < args.size(); ++n) d = (d >= args[n] ? d : args[n]);
+				break;
+		}
+		return d;
+	}
+
 }

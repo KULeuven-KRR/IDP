@@ -4,20 +4,11 @@
 	(c) K.U.Leuven
 ************************************/
 
+#include "data.hpp"
 #include "namespace.hpp"
 #include "builtin.hpp"
 #include <iostream>
 #include <algorithm>
-
-extern string itos(int);
-extern string dtos(double);
-extern string tabstring(unsigned int);
-extern bool isInt(const string&);
-extern bool isInt(double);
-extern int stoi(const string&);
-extern bool isDouble(const string&);
-extern double stod(const string&);
-extern int MAX_INT;
 
 /*********************
 	Argument types
@@ -36,25 +27,58 @@ namespace IATUtils {
 	}
 }
 
-/*********************
-	Domain element
-*********************/
+/**********************
+	Domain elements
+**********************/
+
+string compound::to_string() const {
+	if(_function) {
+		string s = _function->to_string();
+		if(!_args.empty()) {
+			s = s + '(' + ElementUtil::ElementToString(_args[0]);
+			for(unsigned int n = 1; n < _args.size(); ++n) {
+				s = s + ',' + ElementUtil::ElementToString(_args[n]);
+			}
+			s = s + ')';
+		}
+		return s;
+	}
+	else {
+		assert(_args.size() == 1);
+		return ElementUtil::ElementToString(_args[0]);
+	}
+}
 
 namespace ElementUtil {
 
-	Element _nonexistingInt;
-	Element _nonexistingDouble;
-	Element _nonexistingString;
-
 	ElementType resolve(ElementType t1, ElementType t2) {
-		switch(t1) {
-			case ELINT: return t2;
-			case ELDOUBLE: 
-				if(t2 == ELSTRING) return ELSTRING;
-				else return ELDOUBLE;
-			case ELSTRING: return ELSTRING;
-			default: assert(false); return ELSTRING;
+		return (t1 < t2) ? t2 : t1;
+	}
+
+	ElementType leasttype() { return ELINT;	}
+
+	ElementType reduce(Element e, ElementType t) {
+		switch(t) {
+			case ELINT: 
+				break;
+			case ELDOUBLE:
+				if(double(int(e._double)) == e._double) return ELINT;
+				break;
+			case ELSTRING:
+				if(isInt(*(e._string))) return ELINT;
+				else if(isDouble(*(e._string))) return ELDOUBLE;
+				break;
+			case ELCOMPOUND:
+				if(!(e._compound->_function)) return reduce((e._compound->_args)[0]._element,(e._compound->_args)[0]._type);
+				break;
+			default:
+				assert(false);
 		}
+		return t;
+	}
+
+	ElementType reduce(TypedElement te) {
+		return reduce(te._element,te._type);
 	}
 
 	string ElementToString(Element e, ElementType t) {
@@ -62,34 +86,39 @@ namespace ElementUtil {
 			case ELINT:
 				return itos(e._int);
 			case ELDOUBLE:
-				return dtos(*(e._double));
+				return dtos(e._double);
 			case ELSTRING:
 				return *(e._string);
+			case ELCOMPOUND:
+				return e._compound->to_string();
 			default:
-				assert(false);
+				assert(false); return "???";
 		}
-		return "";
 	}
 
 	string ElementToString(TypedElement e) {
 		return ElementToString(e._element,e._type);
 	}
 
-	Element& nonexist(ElementType t) {
+	Element nonexist(ElementType t) {
+		Element e;
 		switch(t) {
 			case ELINT:
-				_nonexistingInt._int = MAX_INT;
-				return _nonexistingInt;
+				e._int = MAX_INT;
+				break;
 			case ELDOUBLE:
-				_nonexistingDouble._double = 0;
-				return _nonexistingDouble;
+				e._double = MAX_DOUBLE;
+				break;
 			case ELSTRING:
-				_nonexistingString._string = 0;
-				return _nonexistingString;
+				e._string = 0;
+				break;
+			case ELCOMPOUND:
+				e._compound = 0;
+				break;
 			default:
 				assert(false);
 		}
-		return _nonexistingInt;
+		return e;
 	}
 
 	bool exists(Element e, ElementType t) {
@@ -97,11 +126,11 @@ namespace ElementUtil {
 			case ELINT:
 				return e._int != MAX_INT;
 			case ELDOUBLE:
-				return e._double != 0;
-				break;
+				return e._double != MAX_DOUBLE;
 			case ELSTRING:
 				return e._string != 0;
-				break;
+			case ELCOMPOUND:
+				return e._compound != 0;
 			default:
 				assert(false); return false;
 		}
@@ -117,23 +146,31 @@ namespace ElementUtil {
 		switch(oldtype) {
 			case ELINT:
 				if(newtype == ELSTRING) {
-					ne._string = new string(itos(e._int));
+					ne._string = IDPointer(itos(e._int));
+				}
+				else if(newtype == ELDOUBLE) {
+					ne._double = double(e._int);
 				}
 				else {
-					assert(newtype == ELDOUBLE);
-					ne._double = new double(e._int);
+					assert(newtype == ELCOMPOUND);
+					TypedElement te(e,oldtype);
+					ne._compound = CPPointer(te);
 				}
 				break;
 			case ELDOUBLE:
 				if(newtype == ELINT) {
-					if(isInt(*(e._double))) {
-						ne._int = int(*(e._double));
+					if(isInt(e._double)) {
+						ne._int = int(e._double);
 					}
 					else return nonexist(newtype);
 				}
+				else if(newtype == ELSTRING) {
+					ne._string = IDPointer(dtos(e._double));
+				}
 				else {
-					assert(newtype == ELSTRING);
-					ne._string = new string(dtos(*(e._double)));
+					assert(newtype == ELCOMPOUND);
+					TypedElement te(e,oldtype);
+					ne._compound = CPPointer(te);
 				}
 				break;
 			case ELSTRING:
@@ -143,15 +180,23 @@ namespace ElementUtil {
 					}
 					else return nonexist(newtype);
 				}
-				else {
-					assert(newtype == ELDOUBLE);
+				else if(newtype == ELDOUBLE) {
 					if(isDouble(*(e._string))) {
-						ne._double = new double(stod(*(e._string)));
+						ne._double = stod(*(e._string));
 					}
 					else return nonexist(newtype);
 				}
+				else {
+					assert(newtype == ELCOMPOUND);
+					TypedElement te(e,oldtype);
+					ne._compound = CPPointer(te);
+				}
 				break;
-
+			case ELCOMPOUND:
+				if(e._compound->_function == 0) 
+					return convert((e._compound->_args)[0],newtype);
+				else return nonexist(newtype);
+				break;
 			default:
 				assert(false);
 		}
@@ -162,30 +207,147 @@ namespace ElementUtil {
 		return convert(te._element,te._type,t);
 	}
 
-	Element clone(Element e, ElementType t) {
-		Element ne;
-		switch(t) {
-			case ELINT: ne._int = e._int; break;
-			case ELDOUBLE: ne._double = new double(*(e._double)); break;
-			case ELSTRING: ne._string = new string(*(e._string)); break;
-			default: assert(false);
+	bool equal(Element e1, ElementType t1, Element e2, ElementType t2) {
+		switch(t1) {
+			case ELINT:
+				switch(t2) {
+					case ELINT: return e1._int == e2._int;
+					case ELDOUBLE: return double(e1._int) == e2._double;
+					case ELSTRING: return (isInt(*(e2._string)) && e1._int == stoi(*(e2._string)));
+					case ELCOMPOUND: return ((e2._compound)->_function == 0 && 
+											  equal(e1,t1,((e2._compound)->_args)[0]._element,((e2._compound)->_args)[0]._type));
+					default: assert(false); return false;
+				}
+			case ELDOUBLE:
+				switch(t2) {
+					case ELINT: return e1._double == double(e2._int);
+					case ELDOUBLE: return e1._double == e2._double;
+					case ELSTRING: return (isDouble(*(e2._string)) && e1._double == stod(*(e2._string)));
+					case ELCOMPOUND: return ((e2._compound)->_function == 0 && 
+											  equal(e1,t1,((e2._compound)->_args)[0]._element,((e2._compound)->_args)[0]._type));
+					default: assert(false); return false;
+				}
+			case ELSTRING:
+				switch(t2) {
+					case ELINT: return (isInt(*(e1._string)) && e2._int == stoi(*(e1._string)));
+					case ELDOUBLE: return (isDouble(*(e1._string)) && e2._double == stod(*(e1._string)));
+					case ELSTRING: return e1._string == e2._string;
+					case ELCOMPOUND: return ((e2._compound)->_function == 0 && 
+											  equal(e1,t1,((e2._compound)->_args)[0]._element,((e2._compound)->_args)[0]._type));
+					default: assert(false); return false;
+				}
+			case ELCOMPOUND:
+				switch(t2) {
+					case ELINT: return ((e1._compound)->_function == 0 && 
+											  equal(e2,t2,((e1._compound)->_args)[0]._element,((e1._compound)->_args)[0]._type));
+					case ELDOUBLE: return ((e1._compound)->_function == 0 && 
+											  equal(e2,t2,((e1._compound)->_args)[0]._element,((e1._compound)->_args)[0]._type));
+					case ELSTRING: return ((e1._compound)->_function == 0 && 
+											  equal(e2,t2,((e1._compound)->_args)[0]._element,((e1._compound)->_args)[0]._type));
+					case ELCOMPOUND: 
+						if((e1._compound)->_function != (e2._compound)->_function) return false;
+						else {
+							for(unsigned int n = 0; n < (e1._compound)->_function->arity(); ++n) {
+								if(!(((e1._compound)->_args)[n] ==  ((e2._compound)->_args)[n])) return false;
+							}
+							return true;
+						}
+					default: assert(false); return false;
+				}
+			default:
+				assert(false); return false;
 		}
-		return ne;
 	}
 
-	Element clone(TypedElement te) {
-		return clone(te._element,te._type);
+	bool strlessthan(Element e1, ElementType t1, Element e2, ElementType t2) {
+		switch(t1) {
+			case ELINT:
+				switch(t2) {
+					case ELINT: return e1._int < e2._int;
+					case ELDOUBLE: return double(e1._int) < e2._double;
+					case ELSTRING: return ((!isDouble(*(e2._string))) || double(e1._int) < stod(*(e2._string)));
+					case ELCOMPOUND: return ((e2._compound)->_function != 0 || 
+											  strlessthan(e1,t1,((e2._compound)->_args)[0]._element,((e2._compound)->_args)[0]._type));
+					default: assert(false); return false;
+				}
+			case ELDOUBLE:
+				switch(t2) {
+					case ELINT: return e1._double < double(e2._int);
+					case ELDOUBLE: return e1._double < e2._double;
+					case ELSTRING: return ((!isDouble(*(e2._string))) || e1._double < stod(*(e2._string)));
+					case ELCOMPOUND: return ((e2._compound)->_function != 0 || 
+											  strlessthan(e1,t1,((e2._compound)->_args)[0]._element,((e2._compound)->_args)[0]._type));
+					default: assert(false); return false;
+				}
+			case ELSTRING:
+				switch(t2) {
+					case ELINT: return (isDouble(*(e1._string)) && stod(*(e1._string)) < double(e2._int));
+					case ELDOUBLE: return (isDouble(*(e1._string)) && stod(*(e1._string)) < e2._double);
+					case ELSTRING: {
+						if(isDouble(*(e1._string))) {
+							if(isDouble(*(e2._string))) return stod(*(e1._string)) < stod(*(e2._string));
+							else return true;
+						}
+						else if(isDouble(*(e2._string))) return false;
+						else return e1._string < e2._string;
+					}
+					case ELCOMPOUND: return ((e2._compound)->_function != 0 || 
+											  strlessthan(e1,t1,((e2._compound)->_args)[0]._element,((e2._compound)->_args)[0]._type));
+					default: assert(false); return false;
+				}
+			case ELCOMPOUND:
+				switch(t2) {
+					case ELINT: return ((e1._compound)->_function == 0 && 
+											  strlessthan(((e1._compound)->_args)[0]._element,((e1._compound)->_args)[0]._type,e2,t2));
+					case ELDOUBLE: return ((e1._compound)->_function == 0 && 
+											  strlessthan(((e1._compound)->_args)[0]._element,((e1._compound)->_args)[0]._type,e2,t2));
+					case ELSTRING: return ((e1._compound)->_function == 0 && 
+											  strlessthan(((e1._compound)->_args)[0]._element,((e1._compound)->_args)[0]._type,e2,t2));
+					case ELCOMPOUND: 
+						if((e1._compound)->_function == 0) {
+							if((e2._compound)->_function == 0) return ((e1._compound)->_args)[0] < ((e2._compound)->_args)[0];
+							else return true;
+						}
+						else if((e2._compound)->_function == 0) return false;
+						else if((e1._compound)->_function < (e2._compound)->_function) return true;
+						else if((e1._compound)->_function > (e2._compound)->_function) return false;
+						else {
+							for(unsigned int n = 0; n < (e1._compound)->_function->arity(); ++n) {
+								if((((e1._compound)->_args)[n] <  ((e2._compound)->_args)[n])) return true;
+								if((((e2._compound)->_args)[n] <  ((e1._compound)->_args)[n])) return false;
+							}
+							return false;
+						}
+					default: assert(false); return false;
+				}
+			default:
+				assert(false); return false;
+		}
 	}
+
+
+	bool lessthanorequal(Element e1, ElementType t1, Element e2, ElementType t2) {
+		return (strlessthan(e1,t1,e2,t2) || equal(e1,t1,e2,t2));
+	}
+
 }
+
+bool operator==(TypedElement e1, TypedElement e2)	{ return ElementUtil::equal(e1._element,e1._type,e2._element,e2._type);				}
+bool operator<=(TypedElement e1, TypedElement e2)	{ return ElementUtil::lessthanorequal(e1._element,e1._type,e2._element,e2._type);	}
+bool operator<(TypedElement e1, TypedElement e2)	{ return ElementUtil::strlessthan(e1._element,e1._type,e2._element,e2._type);		}
 
 /************
 	Sorts
 ************/
 
-Sort::Sort(const string& name, ParseInfo* pi) : _name(name), _pi(pi) { 
-	_parent = 0;
-	_base = this;
-	_depth = 0;
+Sort::Sort(const string& name) : _name(name), _pi() { 
+	_parents = vector<Sort*>(0); 
+	_children = vector<Sort*>(0);
+	_pred = 0;
+}
+
+Sort::Sort(const string& name, const ParseInfo& pi) : _name(name), _pi(pi) { 
+	_parents = vector<Sort*>(0);
 	_children = vector<Sort*>(0);
 	_pred = 0;
 }
@@ -193,10 +355,12 @@ Sort::Sort(const string& name, ParseInfo* pi) : _name(name), _pi(pi) {
 /** Mutators **/
 
 void Sort::parent(Sort* p) {
-	if(_parent != p) {
-		_parent = p;
-		_base = p->base();
-		_depth = p->depth() + 1;
+	unsigned int n = 0;
+	for(; n < _parents.size(); ++n) {
+		if(p == _parents[n]) break;
+	}
+	if(n == _parents.size()) {
+		_parents.push_back(p);
 		p->child(this);
 	}
 }
@@ -212,38 +376,123 @@ void Sort::child(Sort* c) {
 	}
 }
 
-/** Inspectors **/
-
-bool Sort::intsort() const {
-	return _base == Builtin::intsort();
+void OverloadedSort::oversort(Sort* s) {
+	assert(s->name() == name());
+	unsigned int n = 0;
+	for(; n < _oversorts.size(); ++n) {
+		if(_oversorts[n] == s) break;
+	}
+	if(n == _oversorts.size()) _oversorts.push_back(s);
 }
 
-bool Sort::floatsort() const {
-	return _base == Builtin::floatsort();
+vector<Sort*> Sort::nonbuiltins() {
+	vector<Sort*> vs;
+	if(!builtin()) vs.push_back(this);
+	return vs;
 }
 
-bool Sort::stringsort() const {
-	return _base == Builtin::stringsort();
+vector<Sort*> OverloadedSort::nonbuiltins() {
+	vector<Sort*> vs;
+	for(unsigned int n = 0; n < _oversorts.size(); ++n) {
+		vector<Sort*> temp = _oversorts[n]->nonbuiltins();
+		for(unsigned int m = 0; m < temp.size(); ++m) {
+			unsigned int k = 0;
+			for(; k < vs.size(); ++k) {
+				if(vs[k] == temp[m]) break;
+			}
+			if(k == vs.size()) vs.push_back(temp[m]);
+		}
+	}
+	return vs;
 }
 
-bool Sort::charsort() const {
-	return _base == Builtin::charsort();
+set<Sort*> Sort::ancestors(Vocabulary* v) const {
+	set<Sort*> ss;
+	for(unsigned int n = 0; n < nrParents(); ++n) {
+		if((!v) || v->contains(parent(n))) ss.insert(parent(n));
+		set<Sort*> temp = parent(n)->ancestors(v);
+		for(set<Sort*>::iterator it = temp.begin(); it != temp.end(); ++it)
+			ss.insert(*it);
+	}
+	return ss;
+}
+
+bool OverloadedSort::contains(Sort* s) const {
+	for(unsigned int n = 0; n < _oversorts.size(); ++n) {
+		if(_oversorts[n]->contains(s)) return true;
+	}
+	return false;
+}
+
+bool OverloadedPredicate::contains(Predicate* p) const {
+	for(unsigned int n = 0; n < _overpreds.size(); ++n) {
+		if(_overpreds[n]->contains(p)) return true;
+	}
+	return false;
+}
+
+bool OverloadedFunction::contains(Function* f) const {
+	for(unsigned int n = 0; n < _overfuncs.size(); ++n) {
+		if(_overfuncs[n]->contains(f)) return true;
+	}
+	return false;
 }
 
 /** Utils **/
 
 namespace SortUtils {
 
-	// Return the smallest common ancestor of two sorts
-	Sort* resolve(Sort* s1, Sort* s2) {
-		if(s1->base() != s2->base()) return 0;
-		while(s1 != s2 && (s1->depth() || s2->depth())) {
-			if(s1->depth() > s2->depth()) s1 = s1->parent();
-			else if(s2->depth() > s1->depth()) s2 = s2->parent();
-			else { s1 = s1->parent(); s2 = s2->parent(); }
+	// Return the smallest common ancestor of two sorts, if there is an unique one
+	Sort* resolve(Sort* s1, Sort* s2, Vocabulary* v) {
+		set<Sort*> ss1 = s1->ancestors(v); ss1.insert(s1);
+		set<Sort*> ss2 = s2->ancestors(v); ss2.insert(s2);
+		set<Sort*> ss;
+		for(set<Sort*>::iterator it = ss1.begin(); it != ss1.end(); ++it) {
+			if(ss2.find(*it) != ss2.end()) ss.insert(*it);
 		}
-		assert(s1 == s2);
-		return s1;
+		vector<Sort*> vs = vector<Sort*>(ss.begin(),ss.end());
+		if(vs.empty()) return 0;
+		else if(vs.size() == 1) return vs[0];
+		else {
+			for(unsigned int n = 0; n < vs.size(); ++n) {
+				set<Sort*> ds = vs[n]->ancestors(v);
+				for(set<Sort*>::const_iterator it = ds.begin(); it != ds.end(); ++it) ss.erase(*it);
+			}
+			vs = vector<Sort*>(ss.begin(),ss.end());
+			if(vs.size() == 1) return vs[0];
+			else return 0;
+		}
+		//	if(s1->base() != s2->base()) return 0;
+		//	while(s1 != s2 && (s1->depth() || s2->depth())) {
+		//		if(s1->depth() > s2->depth()) s1 = s1->parent();
+		//		else if(s2->depth() > s1->depth()) s2 = s2->parent();
+		//		else { s1 = s1->parent(); s2 = s2->parent(); }
+		//	}
+		//	assert(s1 == s2);
+		//	return s1;
+	}
+
+	// Overload two sorts
+	Sort* overload(Sort* s1, Sort* s2) {
+		assert(s1->name() == s2->name());
+		if(s1 == s2) return s1;
+		OverloadedSort* ovs = new OverloadedSort(s1->name());
+		ovs->oversort(s1);
+		ovs->oversort(s2);
+		return ovs;
+	}
+
+	// Overload multiple sorts
+	Sort* overload(const vector<Sort*>& vs) {
+		if(vs.empty()) return 0;
+		else if(vs.size() == 1) return vs[0];
+		else {
+			OverloadedSort* ovs = new OverloadedSort(vs[0]->name());
+			for(unsigned int n = 0; n < vs.size(); ++n) {
+				ovs->oversort(vs[n]);
+			}
+			return ovs;
+		}
 	}
 
 }
@@ -256,7 +505,7 @@ int Variable::_nvnr = 0;
 
 /** Constructor for internal variables **/ 
 
-Variable::Variable(Sort* s) : _sort(s), _pi(0) {
+Variable::Variable(Sort* s) : _sort(s) {
 	_name = "_var_" + s->name() + "_" + itos(Variable::_nvnr);
 	++_nvnr;
 }
@@ -284,10 +533,31 @@ void VarUtils::sortunique(vector<Variable*>& vv) {
 
 int Predicate::_npnr = 0;
 
-Predicate::Predicate(const vector<Sort*>& sorts) : PFSymbol("",sorts,0) {
+Predicate::Predicate(const vector<Sort*>& sorts) : PFSymbol("",sorts,ParseInfo()) {
 	_name = "_internal_predicate_" + itos(_npnr) + "/" + itos(sorts.size());
 	++_npnr;
 }
+
+/** Mutators **/
+
+void OverloadedPredicate::overpred(Predicate* p) {
+	assert(p->name() == _name);
+	unsigned int n = 0;
+	for(; n < _overpreds.size(); ++n) {
+		if(_overpreds[n] == p) break;
+	}
+	if(n == _overpreds.size()) _overpreds.push_back(p);
+}
+
+void OverloadedFunction::overfunc(Function* f) {
+	assert(f->name() == _name);
+	unsigned int n = 0;
+	for(; n < _overfuncs.size(); ++n) {
+		if(_overfuncs[n] == f) break;
+	}
+	if(n == _overfuncs.size()) _overfuncs.push_back(f);
+}
+
 
 /** Inspectors **/
 
@@ -297,139 +567,416 @@ vector<Sort*> Function::insorts() const {
 	return vs;
 }
 
+Predicate* Predicate::disambiguate(const vector<Sort*>& vs,Vocabulary* v) {
+	for(unsigned int n = 0; n < _sorts.size(); ++n) {
+		if(!SortUtils::resolve(vs[n],_sorts[n],v)) return 0;
+	}
+	return this;
+}
+
+Function* Function::disambiguate(const vector<Sort*>& vs,Vocabulary* v) {
+	for(unsigned int n = 0; n < _sorts.size(); ++n) {
+		if(!SortUtils::resolve(vs[n],_sorts[n],v)) return 0;
+	}
+	return this;
+}
+
+Predicate* OverloadedPredicate::disambiguate(const vector<Sort*>& vs,Vocabulary* v) {
+	Predicate* candidate = 0;
+	for(unsigned int n = 0; n < _overpreds.size(); ++n) {
+		Predicate* newcandidate = 0;
+		if(_overpreds[n]->overloaded()) {
+			newcandidate = _overpreds[n]->disambiguate(vs,v);
+		}
+		else {
+			unsigned int m = 0;
+			for(; m < vs.size(); ++m) {
+				if(vs[m]) {
+					if(!(SortUtils::resolve(vs[m],_overpreds[n]->sort(m),v))) break;
+				}
+			}
+			if(m == vs.size()) {
+				newcandidate = _overpreds[n];
+			}
+		}
+		if(newcandidate) {
+			if(candidate && newcandidate != candidate) {
+				candidate = 0; 
+				break;
+			}
+			else candidate = newcandidate;
+		}
+	}
+	return candidate;
+}
+
+Function* OverloadedFunction::disambiguate(const vector<Sort*>& vs,Vocabulary* v) {
+	Function* candidate = 0;
+	for(unsigned int n = 0; n < _overfuncs.size(); ++n) {
+		Function* newcandidate = 0;
+		if(_overfuncs[n]->overloaded()) {
+			newcandidate = _overfuncs[n]->disambiguate(vs,v);
+		}
+		else {
+			unsigned int m = 0;
+			for(; m < vs.size(); ++m) {
+				if(vs[m]) {
+					if(!(SortUtils::resolve(vs[m],_overfuncs[n]->sort(m),v))) break;
+				}
+			}
+			if(m == vs.size()) {
+				newcandidate = _overfuncs[n];
+			}
+		}
+		if(newcandidate) {
+			if(candidate && newcandidate != candidate) {
+				candidate = 0; 
+				break;
+			}
+			else candidate = newcandidate;
+		}
+	}
+	return candidate;
+}
+
+PredInter* Function::predinter(const AbstractStructure& s) const {
+	FuncInter* fi = inter(s);
+	if(fi) return fi->predinter();
+	else return 0;
+}
+
+vector<Predicate*> Predicate::nonbuiltins() {
+	vector<Predicate*> vp;
+	if(!builtin()) vp.push_back(this);
+	return vp;
+}
+
+vector<Predicate*> OverloadedPredicate::nonbuiltins() {
+	vector<Predicate*> vp;
+	for(unsigned int n = 0; n < _overpreds.size(); ++n) {
+		vector<Predicate*> temp = _overpreds[n]->nonbuiltins();
+		for(unsigned int m = 0; m < temp.size(); ++m) {
+			unsigned int k = 0;
+			for(; k < vp.size(); ++k) {
+				if(vp[k] == temp[m]) break;
+			}
+			if(k == vp.size()) vp.push_back(temp[m]);
+		}
+	}
+	return vp;
+}
+
+vector<Function*> Function::nonbuiltins() {
+	vector<Function*> vf;
+	if(!builtin()) vf.push_back(this);
+	return vf;
+}
+
+vector<Function*> OverloadedFunction::nonbuiltins() {
+	vector<Function*> vf;
+	for(unsigned int n = 0; n < _overfuncs.size(); ++n) {
+		vector<Function*> temp = _overfuncs[n]->nonbuiltins();
+		for(unsigned int m = 0; m < temp.size(); ++m) {
+			unsigned int k = 0;
+			for(; k < vf.size(); ++k) {
+				if(vf[k] == temp[m]) break;
+			}
+			if(k == vf.size()) vf.push_back(temp[m]);
+		}
+	}
+	return vf;
+}
+
+vector<Sort*> Predicate::allsorts() const {
+	return _sorts;
+}
+
+vector<Sort*> OverloadedPredicate::allsorts() const {
+	vector<Sort*> vs;
+	for(unsigned int n = 0; n < _overpreds.size(); ++n) {
+		vector<Sort*> temp = _overpreds[n]->allsorts();
+		for(unsigned int m = 0; m < temp.size(); ++m) {
+			unsigned int k = 0;
+			for(; k < vs.size(); ++k) {
+				if(vs[k] == temp[m]) break;
+			}
+			if(k == vs.size()) vs.push_back(temp[m]);
+		}
+	}
+	return vs;
+}
+
+vector<Sort*> Function::allsorts() const {
+	return _sorts;
+}
+
+vector<Sort*> OverloadedFunction::allsorts() const {
+	vector<Sort*> vs;
+	for(unsigned int n = 0; n < _overfuncs.size(); ++n) {
+		vector<Sort*> temp = _overfuncs[n]->allsorts();
+		for(unsigned int m = 0; m < temp.size(); ++m) {
+			unsigned int k = 0;
+			for(; k < vs.size(); ++k) {
+				if(vs[k] == temp[m]) break;
+			}
+			if(k == vs.size()) vs.push_back(temp[m]);
+		}
+	}
+	return vs;
+}
+
+
+namespace PredUtils {
+
+	// Overload two predicates
+	Predicate* overload(Predicate* p1, Predicate* p2) {
+		assert(p1->name() == p2->name());
+		if(p1 == p2) return p1;
+		OverloadedPredicate* ovp = new OverloadedPredicate(p1->name(),p1->arity());
+		ovp->overpred(p1);
+		ovp->overpred(p2);
+		return ovp;
+	}
+
+	// Overload multiple predicates
+	Predicate* overload(const vector<Predicate*>& vp) {
+		if(vp.empty()) return 0;
+		else if(vp.size() == 1) return vp[0];
+		else {
+			OverloadedPredicate* ovp = new OverloadedPredicate(vp[0]->name(),vp[0]->arity());
+			for(unsigned int n = 0; n < vp.size(); ++n) {
+				ovp->overpred(vp[n]);
+			}
+			return ovp;
+		}
+	}
+
+
+}
+
+namespace FuncUtils {
+
+	// Overload two functions
+	Function* overload(Function* f1, Function* f2) {
+		assert(f1->name() == f2->name());
+		if(f1 == f2) return f1;
+		OverloadedFunction* ovf = new OverloadedFunction(f1->name(),f1->arity());
+		ovf->overfunc(f1);
+		ovf->overfunc(f2);
+		return ovf;
+	}
+
+	// Overload multiple functions
+	Function* overload(const vector<Function*>& vf) {
+		if(vf.empty()) return 0;
+		else if(vf.size() == 1) return vf[0];
+		else {
+			OverloadedFunction* ovf = new OverloadedFunction(vf[0]->name(),vf[0]->arity());
+			for(unsigned int n = 0; n < vf.size(); ++n) {
+				ovf->overfunc(vf[n]);
+			}
+			return ovf;
+		}
+	}
+
+}
+
 
 /*****************
 	Vocabulary
 *****************/
 
+/** Constructors **/
+
+Vocabulary::Vocabulary(const string& name) : _name(name) {
+	if(_name != "std") addVocabulary(StdBuiltin::instance());
+}
+
+Vocabulary::Vocabulary(const string& name, const ParseInfo& pi) : _name(name), _pi(pi) {
+	if(_name != "std") addVocabulary(StdBuiltin::instance());
+}
+
+void Vocabulary::addVocabulary(Vocabulary* v) {
+	for(map<string,Sort*>::iterator it = v->firstsort(); it != v->lastsort(); ++it) {
+		addSort(it->second);
+	}
+	for(map<string,Predicate*>::iterator it = v->firstpred(); it != v->lastpred(); ++it) {
+		addPred(it->second);
+	}
+	for(map<string,Function*>::iterator it = v->firstfunc(); it != v->lastfunc(); ++it) {
+		addFunc(it->second);
+	}
+}
+
 /** Mutators **/
 
 void Vocabulary::addSort(Sort* s) {
 	if(!contains(s)) {
-		_sorts[s] = _vsorts.size();
-		_vsorts.push_back(s);
-		if(s->parent()) addSort(s->parent());
+		if(_name2sort.find(s->name()) == _name2sort.end()) {
+			_name2sort[s->name()] = s;
+		}
+		else {
+			Sort* ovs = SortUtils::overload(s,_name2sort[s->name()]);
+			assert(ovs->overloaded());
+			_name2sort[s->name()] = ovs;
+		}
+
+		if(s->overloaded()) {
+			vector<Sort*> vs = s->nonbuiltins();
+			for(unsigned int n = 0; n < vs.size(); ++n) {
+				if(_sort2index.find(vs[n]) == _sort2index.end()) {
+					_sort2index[vs[n]] = _index2sort.size();
+					_index2sort.push_back(vs[n]);
+				}
+			}
+		}
+		else {
+			if(!s->builtin()) {
+				_sort2index[s] = _index2sort.size();
+				_index2sort.push_back(s);
+			}
+		}
+
+		if(s->pred()) {
+			addPred(s->pred());
+		}
 	}
 }
 
 void Vocabulary::addPred(Predicate* p) {
 	if(!contains(p)) {
-		_predicates[p] = _vpredicates.size();
-		_vpredicates.push_back(p);
-		for(unsigned int n = 0; n < p->arity(); ++n) addSort(p->sort(n));
+		if(_name2pred.find(p->name()) == _name2pred.end()) {
+			_name2pred[p->name()] = p;
+		}
+		else {
+			Predicate* ovp = PredUtils::overload(p,_name2pred[p->name()]);
+			_name2pred[p->name()] = ovp;
+		}
+
+		if(p->overloaded()) {
+			vector<Predicate*> vp = p->nonbuiltins();
+			for(unsigned int n = 0; n < vp.size(); ++n) {
+				if(_predicate2index.find(vp[n]) == _predicate2index.end()) {
+					_predicate2index[vp[n]] = _index2predicate.size();
+					_index2predicate.push_back(vp[n]);
+				}
+			}
+			vector<Sort*> vs = p->allsorts();
+			for(unsigned int n = 0; n < vs.size(); ++n) {
+				addSort(vs[n]);
+			}
+		}
+		else {
+			if(!p->builtin()) {
+				_predicate2index[p] = _index2predicate.size();
+				_index2predicate.push_back(p);
+			}
+			for(unsigned int n = 0; n < p->arity(); ++n) addSort(p->sort(n));
+		}
 	}
 }
 
 void Vocabulary::addFunc(Function* f) {
 	if(!contains(f)) {
-		_functions[f] = _vfunctions.size();
-		_vfunctions.push_back(f);
-		for(unsigned int n = 0; n < f->arity(); ++n) addSort(f->insort(n));
-		addSort(f->outsort());
+		if(_name2func.find(f->name()) == _name2func.end()) {
+			_name2func[f->name()] = f;
+		}
+		else {
+			Function* ovf = FuncUtils::overload(f,_name2func[f->name()]);
+			_name2func[f->name()] = ovf;
+		}
+
+		if(f->overloaded()) {
+			vector<Function*> vf = f->nonbuiltins();
+			for(unsigned int n = 0; n < vf.size(); ++n) {
+				if(_function2index.find(vf[n]) == _function2index.end()) {
+					_function2index[vf[n]] = _index2function.size();
+					_index2function.push_back(vf[n]);
+				}
+			}
+			vector<Sort*> vs = f->allsorts();
+			for(unsigned int n = 0; n < vs.size(); ++n) {
+				addSort(vs[n]);
+			}
+		}
+		else {
+			if(!f->builtin()) {
+				_function2index[f] = _index2function.size();
+				_index2function.push_back(f);
+			}
+			for(unsigned int n = 0; n < f->arity(); ++n) addSort(f->insort(n));
+			addSort(f->outsort());
+		}
 	}
 }
-
-void Vocabulary::addSort(const string& name, Sort* s) {
-	if(!s->builtin()) {
-		addSort(s);
-		_sortnames[name] = s;
-	}
-}
-
-void Vocabulary::addPred(const string& name, Predicate* p) {
-	if(!p->builtin()) {
-		addPred(p);
-		_prednames[name] = p;
-	}
-}
-
-void Vocabulary::addFunc(const string& name, Function* f) {
-	if(!f->builtin()) {
-		addFunc(f);
-		_funcnames[name] = f;
-	}
-}
-
 
 /** Inspectors **/
 
 bool Vocabulary::contains(Sort* s) const {
-	if(s->builtin()) return true;
-	else return (_sorts.find(s) != _sorts.end());
+	map<string,Sort*>::const_iterator it = _name2sort.find(s->name());
+	if(it != _name2sort.end()) return it->second->contains(s);
+	else return false;
 }
 
 bool Vocabulary::contains(Predicate* p) const {
-	if(p->builtin()) return true;
-	else return (_predicates.find(p) != _predicates.end());
+	map<string,Predicate*>::const_iterator it = _name2pred.find(p->name());
+	if(it != _name2pred.end()) return it->second->contains(p);
+	else return false;
 }
 
 bool Vocabulary::contains(Function* f) const {
-	if(f->builtin()) return true;
-	else return (_functions.find(f) != _functions.end());
+	map<string,Function*>::const_iterator it = _name2func.find(f->name());
+	if(it != _name2func.end()) return it->second->contains(f);
+	else return false;
 }
 
 unsigned int Vocabulary::index(Sort* s) const {
-	assert(contains(s));
-	assert(!s->builtin());
-	return _sorts.find(s)->second;
+	assert(_sort2index.find(s) != _sort2index.end());
+	return _sort2index.find(s)->second;
 }
 
 unsigned int Vocabulary::index(Predicate* p) const {
-	assert(contains(p));
-	assert(!p->builtin());
-	return _predicates.find(p)->second;
+	assert(_predicate2index.find(p) != _predicate2index.end());
+	return _predicate2index.find(p)->second;
 }
 
 unsigned int Vocabulary::index(Function* f) const {
-	assert(contains(f));
-	assert(!f->builtin());
-	return _functions.find(f)->second;
+	assert(_function2index.find(f) != _function2index.end());
+	return _function2index.find(f)->second;
 }
 
 Sort* Vocabulary::sort(const string& name) const {
-	Sort* s = Builtin::sort(name);
-	if(s) return s;
-	else {
-		map<string,Sort*>::const_iterator it = _sortnames.find(name);
-		if(it != _sortnames.end()) return it->second;
-		else return 0;
-	}
+	map<string,Sort*>::const_iterator it = _name2sort.find(name);
+	if(it != _name2sort.end()) return it->second;
+	else return 0;
 }
 
 Predicate* Vocabulary::pred(const string& name) const {
-	Predicate* p = Builtin::pred(name);
-	if(p) return p;
-	else {
-		map<string,Predicate*>::const_iterator it = _prednames.find(name);
-		if(it != _prednames.end()) return it->second;
-		else return 0;
-	}
+	map<string,Predicate*>::const_iterator it = _name2pred.find(name);
+	if(it != _name2pred.end()) return it->second;
+	else return 0;
 }
 
 Function* Vocabulary::func(const string& name) const {
-	Function* f = Builtin::func(name);
-	if(f) return f;
-	else {
-		map<string,Function*>::const_iterator it = _funcnames.find(name);
-		if(it != _funcnames.end()) return it->second;
-		else return 0;
-	}
+	map<string,Function*>::const_iterator it = _name2func.find(name);
+	if(it != _name2func.end())  return it->second;
+	else  return 0;
 }
 
 vector<Predicate*> Vocabulary::pred_no_arity(const string& name) const {
-	vector<Predicate*> vp = Builtin::pred_no_arity(name);
-	for(unsigned int n = 0; n < _vpredicates.size(); ++n) {
-		string pn = _vpredicates[n]->name();
-		if(pn.substr(0,pn.find('/')) == name) vp.push_back(_vpredicates[n]);
+	vector<Predicate*> vp;
+	for(map<string,Predicate*>::const_iterator it = _name2pred.begin(); it != _name2pred.end(); ++it) {
+		string nm = it->second->name();
+		if(nm.substr(0,nm.find('/')) == name) vp.push_back(it->second);
 	}
 	return vp;
 }
 
 vector<Function*> Vocabulary::func_no_arity(const string& name) const {
-	vector<Function*> vf = Builtin::func_no_arity(name);
-	for(unsigned int n = 0; n < _vfunctions.size(); ++n) {
-		string fn = _vfunctions[n]->name();
-		if(fn.substr(0,fn.find('/')) == name) vf.push_back(_vfunctions[n]);
+	vector<Function*> vf;
+	for(map<string,Function*>::const_iterator it = _name2func.begin(); it != _name2func.end(); ++it) {
+		string nm = it->second->name();
+		if(nm.substr(0,nm.find('/')) == name) vf.push_back(it->second);
 	}
 	return vf;
 }
@@ -440,16 +987,19 @@ string Vocabulary::to_string(unsigned int spaces) const {
 	string tab = tabstring(spaces);
 	string s = tab + "Vocabulary " + _name + ":\n";
 	s = s + tab + "  Sorts:\n";
-	for(unsigned int n = 0; n < nrSorts(); ++n) {
-		s = s + tab + "    " + sort(n)->name() + '\n';
+	for(map<string,Sort*>::const_iterator it = _name2sort.begin(); it != _name2sort.end(); ++it) {
+		if(it->second->overloaded()) {
+			OverloadedSort* os = dynamic_cast<OverloadedSort*>(it->second);
+		}
+		else s = s + tab + "    " + it->second->name() + '\n';
 	}
 	s = s + tab + "  Predicates:\n";
-	for(unsigned int n = 0; n < nrPreds(); ++n) {
-		s = s + tab + "    " + pred(n)->name() + '\n';
+	for(map<string,Predicate*>::const_iterator it = _name2pred.begin(); it != _name2pred.end(); ++it) {
+		s = s + tab + "    " + it->second->name() + '\n';
 	}
 	s = s + tab + "  Functions:\n";
-	for(unsigned int n = 0; n < nrFuncs(); ++n) {
-		s = s + tab + "    " + func(n)->name() + '\n';
+	for(map<string,Function*>::const_iterator it = _name2func.begin(); it != _name2func.end(); ++it) {
+		s = s + tab + "    " + it->second->name() + '\n';
 	}
 	return s;
 }

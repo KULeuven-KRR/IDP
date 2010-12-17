@@ -28,23 +28,26 @@ class Namespace {
 		vector<Vocabulary*>				_vocs;			// The vocabularies in the namespace
 		vector<AbstractStructure*>		_structs;		// The structures in the namespace                   
 		vector<AbstractTheory*>			_theos;			// The theories in the namespace                           
-		ParseInfo*						_pi;			// the place where the namespace was parsed
-		static Namespace*				_global;		// the global namespace
+		ParseInfo						_pi;			// the place where the namespace was parsed
+
+		static Namespace*				_global;		// The global namespace
 
 	public:
 
 		// Constructors
-		Namespace(string name, Namespace* super, ParseInfo* pi) : _name(name), _superspace(super), _pi(pi)
+		Namespace(string name, Namespace* super, const ParseInfo& pi) : _name(name), _superspace(super), _pi(pi)
 			{ if(super) super->add(this); }
 
 		// Destructor
 		~Namespace();
 
 		// Inspectors
-		const string&		name()						const	{ return _name;			}
-		Namespace*			super()						const	{ return _superspace;	}
-		ParseInfo*			pi()						const	{ return _pi;			}
-		bool				isGlobal()					const;	// return true iff the namespace is the global namespace
+		static Namespace*	global();	
+
+		const string&		name()						const	{ return _name;				}
+		Namespace*			super()						const	{ return _superspace;		}
+		const ParseInfo&	pi()						const	{ return _pi;				}
+		bool				isGlobal()					const	{ return this == _global;	}
 		string				fullname()					const;	// return the full name of the namespace 
 		bool				isSubspace(const string&)	const;
 		bool				isVocab(const string&)		const;
@@ -65,10 +68,6 @@ class Namespace {
 		set<Sort*>			allSorts()					const;
 		set<Predicate*>		allPreds()					const;
 		set<Function*>		allFuncs()					const;
-
-		// Static member functions
-		static Namespace*	global()		{ return _global;	}
-		static void			deleteGlobal();
 
 		// Mutators	
 		void	add(Vocabulary* v)			{ _vocabularies[v->name()] = v;	_vocs.push_back(v);		}

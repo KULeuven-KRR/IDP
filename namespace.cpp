@@ -4,46 +4,46 @@
 	(c) K.U.Leuven
 ************************************/
 
+#include "data.hpp"
 #include "namespace.hpp"
 #include "options.hpp"
+#include "builtin.hpp"
 #include <iostream>
 
-/** Global namespace and options **/
+/** Global namespace **/
 
-Namespace* Namespace::_global = new Namespace("global_namespace",0,0);
-Options options;
+Namespace* Namespace::_global = 0; 
 
-bool Namespace::isGlobal() const {
-	return (this == _global);
-}
-
-void Namespace::deleteGlobal() {
-	// Collect symbols
-	set<Sort*> ss = _global->allSorts();
-	set<Predicate*> sp = _global->allPreds();
-	set<Function*> sf = _global->allFuncs();
-	// Delete the global namespace
-	delete(_global);
-	// Delete the symbols
-	for(set<Function*>::iterator it = sf.begin(); it != sf.end(); ++it) {
-		delete(*it);
+Namespace* Namespace::global() {
+	if(!_global) {
+		ParseInfo pi;
+		_global = new Namespace("global_namespace",0,pi);
+		_global->add(StdBuiltin::instance());
 	}
-	for(set<Predicate*>::iterator it = sp.begin(); it != sp.end(); ++it) {
-		delete(*it);
-	}
-	for(set<Sort*>::iterator it = ss.begin(); it != ss.end(); ++it) {
-		delete(*it);
-	}
+	return _global;
 }
 
 /** Destructor **/
 
 Namespace::~Namespace() {
+	if(isGlobal()) {	// delete all symbols
+		set<Sort*> ss = allSorts();
+		set<Predicate*> sp = allPreds();
+		set<Function*> sf = allFuncs();
+		for(set<Function*>::iterator it = sf.begin(); it != sf.end(); ++it) {
+			delete(*it);
+		}
+		for(set<Predicate*>::iterator it = sp.begin(); it != sp.end(); ++it) {
+			delete(*it);
+		}
+		for(set<Sort*>::iterator it = ss.begin(); it != ss.end(); ++it) {
+			delete(*it);
+		}
+	}
 	for(unsigned int n = 0; n < _subs.size(); ++n) delete(_subs[n]);
 	for(unsigned int n = 0; n < _vocs.size(); ++n) delete(_vocs[n]);
 	for(unsigned int n = 0; n < _structs.size(); ++n) delete(_structs[n]);
 	for(unsigned int n = 0; n < _theos.size(); ++n) _theos[n]->recursiveDelete();
-	if(_pi) delete(_pi);
 }
 
 /** Find subparts **/
@@ -104,36 +104,36 @@ string Namespace::fullname() const {
 
 set<Sort*> Namespace::allSorts() const {
 	set<Sort*> ss;
-	for(unsigned int n = 0; n < _vocs.size(); ++n) {
+/*	for(unsigned int n = 0; n < _vocs.size(); ++n) {
 		for(unsigned int m = 0; m < _vocs[n]->nrSorts(); ++m) ss.insert(_vocs[n]->sort(m));
 	}
 	for(unsigned int n = 0; n < _subs.size(); ++n) {
 		set<Sort*> temp = _subs[n]->allSorts();
 		ss.insert(temp.begin(),temp.end());
-	}
+	}*/
 	return ss;
 }
 
 set<Predicate*> Namespace::allPreds() const {
 	set<Predicate*> sp;
-	for(unsigned int n = 0; n < _vocs.size(); ++n) {
+/*	for(unsigned int n = 0; n < _vocs.size(); ++n) {
 		for(unsigned int m = 0; m < _vocs[n]->nrPreds(); ++m) sp.insert(_vocs[n]->pred(m));
 	}
 	for(unsigned int n = 0; n < _subs.size(); ++n) {
 		set<Predicate*> temp = _subs[n]->allPreds();
 		sp.insert(temp.begin(),temp.end());
-	}
+	}*/
 	return sp;
 }
 
 set<Function*> Namespace::allFuncs() const {
 	set<Function*> sf;
-	for(unsigned int n = 0; n < _vocs.size(); ++n) {
+/*	for(unsigned int n = 0; n < _vocs.size(); ++n) {
 		for(unsigned int m = 0; m < _vocs[n]->nrFuncs(); ++m) sf.insert(_vocs[n]->func(m));
 	}
 	for(unsigned int n = 0; n < _subs.size(); ++n) {
 		set<Function*> temp = _subs[n]->allFuncs();
 		sf.insert(temp.begin(),temp.end());
-	}
+	}*/
 	return sf;
 }

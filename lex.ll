@@ -7,13 +7,17 @@
 %{
 
 #include <typeinfo>
+#include "common.hpp"
+#include "data.hpp"
 #include "insert.hpp"
 #include "error.hpp"
-#include "parse.tab.hpp"
+#include "parse.h"
 #include "clconst.hpp"
 
 extern YYSTYPE yylval;
 extern YYLTYPE yylloc;
+
+extern void setclconst(string,string);
 
 // Return to right mode after a comment
 int caller;	
@@ -38,6 +42,14 @@ void advancecol()	{
 	prevlength = yyleng;						
 }
 
+// Scan from string
+extern int yyparse();
+void parsestring(const string& str) {
+	YY_BUFFER_STATE buffer = yy_scan_string(str.c_str());
+	yyparse();
+	yy_delete_buffer(buffer);
+}
+
 // Handle includes
 vector<YY_BUFFER_STATE>	include_buffer_stack;	// currently opened buffers
 vector<string*>			include_buffer_files;	// currently opened files
@@ -48,9 +60,8 @@ void start_include(string s) {
 	// check if we are including from the included file
 	for(unsigned int n = 0; n < include_buffer_files.size(); ++n) {
 		if(*(include_buffer_files[n]) == s) {
-			ParseInfo* pi = new ParseInfo(yylloc.first_line,yylloc.first_column,Insert::currfile());
+			ParseInfo pi(yylloc.first_line,yylloc.first_column,Insert::currfile());
 			Error::cyclicinclude(s,pi);
-			delete(pi);
 			return;
 		}
 	}
@@ -63,9 +74,8 @@ void start_include(string s) {
 	FILE* oldfile = yyin;
 	yyin = fopen(s.c_str(),"r");
 	if(!yyin) {
-		ParseInfo* pi = new ParseInfo(yylloc.first_line,yylloc.first_column,Insert::currfile());
+		ParseInfo pi(yylloc.first_line,yylloc.first_column,Insert::currfile());
 		Error::unexistingfile(s,pi);
-		delete(pi);
 		include_buffer_stack.pop_back();
 		include_buffer_files.pop_back();
 		include_line_stack.pop_back();
@@ -82,9 +92,8 @@ void start_include(string s) {
 }
 void start_stdin_include() {
 	if(stdin_included) {
-		ParseInfo* pi = new ParseInfo(yylloc.first_line,yylloc.first_column,Insert::currfile());
+		ParseInfo pi(yylloc.first_line,yylloc.first_column,Insert::currfile());
 		Error::twicestdin(pi);
-		delete(pi);
 	}
 	else {
 		// store the current buffer
@@ -172,8 +181,6 @@ COMMENTLINE		"//".*
 <*>"#execute"				{ BEGIN(INITIAL);
 							  advancecol();
 							  return EXECUTE_HEADER;	}
-<*>"#option"				{ advancecol();
-							  return OPTION;			}
 <*>"#include"				{ advancecol();
 							  caller = YY_START;
 							  BEGIN(include);
@@ -197,16 +204,16 @@ COMMENTLINE		"//".*
 									  start_include(slc->value());
 								  }
 								  else {
-									  ParseInfo* pi = new ParseInfo(yylloc.first_line,yylloc.first_column,Insert::currfile());
+									  ParseInfo pi(yylloc.first_line,yylloc.first_column,Insert::currfile());
 									  Error::stringconsexp(temp,pi);
-									  delete(pi);
 								  }
 								  BEGIN(caller);
 							  }
 							  else {
-								  ParseInfo* pi = new ParseInfo(yylloc.first_line,yylloc.first_column,Insert::currfile());
-								  Error::constnotset(temp,pi);
-								  delete(pi);
+								  cerr << "Type a value for constant " << temp << endl << "> "; 
+								  string str;
+								  getline(cin,str);
+								  start_include(str);
 								  BEGIN(caller);
 							  }
 							}
@@ -225,30 +232,16 @@ COMMENTLINE		"//".*
 
 <theory>"type"              { advancecol();
 							  return TYPE;				}
-<theory>"int"				{ advancecol();
-							  return INTSORT;			}
-<theory>"string"			{ advancecol();
-							  return STRINGSORT;		}
-<theory>"float"				{ advancecol();
-							  return FLOATSORT;			}
-<theory>"char"				{ advancecol();
-							  return CHARSORT;			}
 <theory>"partial"			{ advancecol();
 							  return PARTIAL;			}
+<theory>"constructor"		{ advancecol();
+							  return CONSTR;			}
 <theory>"isa"				{ advancecol();
 							  return ISA;				}
-
-
-	/** Built-in **/
-
-<theory>"MIN"				{ advancecol();
-							  return MIN;				}
-<theory>"MAX"				{ advancecol();
-							  return MAX;				}
-<theory>"SUCC"				{ advancecol();
-							  return SUCC;				}
-<theory>"abs"				{ advancecol();
-							  return ABS;				}
+<theory>"extends"			{ advancecol();
+							  return EXTENDS;			}
+<theory>"extern"			{ advancecol();
+							  return EXTERN;			}
 
 
 	/** Aggregates **/
@@ -309,25 +302,28 @@ COMMENTLINE		"//".*
 	/******************
 		Identifiers
 	******************/
+
 <*>"true"					{ advancecol();
 							  return TRUE;				}
 <*>"false"					{ advancecol();
 							  return FALSE;				}
+<*>"using"					{ advancecol();
+							  return USING;				}
 <*>{CH}						{ advancecol();
 							  yylval.chr = *yytext;
 							  return CHARACTER;			}
 <*>{ID}						{ advancecol();
-							  yylval.str = new string(yytext);
+							  yylval.str = IDPointer(yytext);
 							  return IDENTIFIER;		}
 <*>{STR}					{ advancecol();
 							  char* temp = yytext; ++temp;
-							  yylval.str = new string(temp,yyleng-2);
+							  yylval.str = IDPointer(string(temp,yyleng-2));
 							  return STRINGCONS;		}
 <*>{INT}					{ advancecol();
 							  yylval.nmr = atoi(yytext);
 							  return INTEGER;		    }
 <*>{FL}						{ advancecol();
-							  yylval.dou = new double(atof(yytext));
+							  yylval.dou = atof(yytext);
 							  return FLNUMBER;			}
 <*>{CHR}					{ advancecol();
 							  yylval.chr = (yytext)[1];
@@ -340,10 +336,11 @@ COMMENTLINE		"//".*
 								  return (clconsts[temp])->execute();
 							  }
 							  else {
-								  ParseInfo* pi = new ParseInfo(yylloc.first_line,yylloc.first_column,Insert::currfile());
-								  Error::constnotset(temp,pi);
-								  delete(pi);
-								  return INTEGER;
+								  cerr << "Type a value for constant " << temp << endl << "> "; 
+								  string str;
+								  getline(cin,str);
+								  setclconst(temp,str);
+								  return (clconsts[temp])->execute();
 							  }
 							}
 

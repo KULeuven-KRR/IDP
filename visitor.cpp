@@ -7,30 +7,32 @@
 #include "theory.hpp"
 #include <iostream>
 
-void Visitor::visit(PredForm* a)		{ traverse(a);	}
-void Visitor::visit(EqChainForm* a)		{ traverse(a);	}
-void Visitor::visit(EquivForm* a)		{ traverse(a);	}
-void Visitor::visit(BoolForm* a)		{ traverse(a);	}
-void Visitor::visit(QuantForm* a)		{ traverse(a);	}
-void Visitor::visit(Rule* a)			{ traverse(a);	}
-void Visitor::visit(Definition* a)		{ traverse(a);	}
-void Visitor::visit(FixpDef* a)			{ traverse(a);	}
-void Visitor::visit(VarTerm* a)			{ traverse(a);	}
-void Visitor::visit(FuncTerm* a)		{ traverse(a);	}
-void Visitor::visit(DomainTerm* a)		{ traverse(a);	}
-void Visitor::visit(AggTerm* a)			{ traverse(a);	}
-void Visitor::visit(EnumSetExpr* a)		{ traverse(a);	}
-void Visitor::visit(QuantSetExpr* a)	{ traverse(a);	}
-void Visitor::visit(Theory* t)			{ traverse(t);	}
-void Visitor::visit(SortTable*)			{ }
-void Visitor::visit(PredInter*)			{ }
-void Visitor::visit(FuncInter*)			{ }
-void Visitor::visit(Structure* s)		{ traverse(s);	}
+void Visitor::visit(PredForm* a)			{ traverse(a);	}
+void Visitor::visit(BracketForm* a)			{ traverse(a);	}
+void Visitor::visit(EqChainForm* a)			{ traverse(a);	}
+void Visitor::visit(EquivForm* a)			{ traverse(a);	}
+void Visitor::visit(BoolForm* a)			{ traverse(a);	}
+void Visitor::visit(QuantForm* a)			{ traverse(a);	}
+void Visitor::visit(AggForm* a)				{ traverse(a);	}
+void Visitor::visit(Rule* a)				{ traverse(a);	}
+void Visitor::visit(Definition* a)			{ traverse(a);	}
+void Visitor::visit(FixpDef* a)				{ traverse(a);	}
+void Visitor::visit(VarTerm* a)				{ traverse(a);	}
+void Visitor::visit(FuncTerm* a)			{ traverse(a);	}
+void Visitor::visit(DomainTerm* a)			{ traverse(a);	}
+void Visitor::visit(AggTerm* a)				{ traverse(a);	}
+void Visitor::visit(EnumSetExpr* a)			{ traverse(a);	}
+void Visitor::visit(QuantSetExpr* a)		{ traverse(a);	}
+void Visitor::visit(Theory* t)				{ traverse(t);	}
+void Visitor::visit(SortTable*)				{ }
+void Visitor::visit(PredInter*)				{ }
+void Visitor::visit(FuncInter*)				{ }
+void Visitor::visit(Structure* s)			{ traverse(s);	}
 void Visitor::visit(Sort*)				{ }
 void Visitor::visit(Predicate*)			{ }
 void Visitor::visit(Function*)			{ }
 void Visitor::visit(Vocabulary* v)		{ traverse(v); }
-void Visitor::visit(EcnfTheory*)		{ /* TODO */	}
+void Visitor::visit(EcnfTheory*)			{ /* TODO */	}
 
 void Visitor::traverse(Formula* f) {
 	for(unsigned int n = 0; n < f->nrSubforms(); ++n) {
@@ -92,13 +94,13 @@ void Visitor::traverse(Theory* t) {
 }
 
 void Visitor::traverse(Structure* s) {
-	for(unsigned int n = 0; n < s->vocabulary()->nrSorts(); ++n) {
+	for(unsigned int n = 0; n < s->vocabulary()->nrNBSorts(); ++n) {
 		visit(s->sortinter(n));
 	}
-	for(unsigned int n = 0; n < s->vocabulary()->nrPreds(); ++n) {
+	for(unsigned int n = 0; n < s->vocabulary()->nrNBPreds(); ++n) {
 		visit(s->predinter(n));
 	}
-	for(unsigned int n = 0; n < s->vocabulary()->nrFuncs(); ++n) {
+	for(unsigned int n = 0; n < s->vocabulary()->nrNBFuncs(); ++n) {
 		visit(s->funcinter(n));
 	}
 }
@@ -151,6 +153,10 @@ void PredForm::accept(Visitor* v) {
 	v->visit(this);
 }
 
+void BracketForm::accept(Visitor* v) {
+	v->visit(this);
+}
+
 void EquivForm::accept(Visitor* v) {
 	v->visit(this);
 }
@@ -164,6 +170,10 @@ void BoolForm::accept(Visitor* v) {
 }
 
 void QuantForm::accept(Visitor* v) {
+	v->visit(this);
+}
+
+void AggForm::accept(Visitor* v) {
 	v->visit(this);
 }
 
@@ -235,6 +245,16 @@ Formula* MutatingVisitor::visit(PredForm* pf) {
 	return pf;
 }
 
+Formula* MutatingVisitor::visit(BracketForm* bf) {
+	Formula* f = bf->subf()->accept(this);
+	if(f != bf->subf()) {
+		delete(bf->subf());
+		bf->subf(f);
+	}
+	bf->setfvars();
+	return bf;
+}
+
 Formula* MutatingVisitor::visit(EqChainForm* ef) {
 	for(unsigned int n = 0; n < ef->nrSubterms(); ++n) {
 		Term* nt = ef->subterm(n)->accept(this);
@@ -284,6 +304,21 @@ Formula* MutatingVisitor::visit(QuantForm* qf) {
 	return qf;
 }
 
+Formula* MutatingVisitor::visit(AggForm* af) {
+	Term* nl = af->left()->accept(this);
+	if(nl != af->left()) {
+		delete(af->left());
+		af->left(nl);
+	}
+	SetExpr* s = af->right()->set()->accept(this);
+	if(s != af->right()->set()) {
+		delete(af->right()->set());
+		af->right()->set(s);
+	}
+	af->setfvars();
+	return af;
+}
+
 Rule* MutatingVisitor::visit(Rule* r) {
 	Formula* nb = r->body()->accept(this);
 	if(nb != r->body()) {
@@ -297,9 +332,7 @@ Rule* MutatingVisitor::visit(Rule* r) {
 			if(m == r->nrQvars()) vv.push_back(nb->fvar(n));
 		}
 		if(!vv.empty()) {
-			ParseInfo* npi = 0; 
-			if(nb->pi()) npi = new ParseInfo(nb->pi());
-			nb = new QuantForm(true,false,vv,nb,npi);
+			nb = new QuantForm(true,false,vv,nb,nb->pi());
 		}
 		// Replace the body
 		delete(r->body());
@@ -407,9 +440,7 @@ Theory* MutatingVisitor::visit(Theory* t) {
 				vv.push_back(f->fvar(m));
 			}
 			if(!vv.empty()) {
-				ParseInfo* npi = 0;
-				if(f->pi()) npi = new ParseInfo(f->pi());
-				f = new QuantForm(true,true,vv,f,npi);
+				f = new QuantForm(true,true,vv,f,f->pi());
 			}
 			delete(t->sentence(n));
 			t->sentence(n,f);
@@ -465,6 +496,10 @@ Formula* PredForm::accept(MutatingVisitor* v) {
 	return v->visit(this);
 }
 
+Formula* BracketForm::accept(MutatingVisitor* v) {
+	return v->visit(this);
+}
+
 Formula* EquivForm::accept(MutatingVisitor* v) {
 	return v->visit(this);
 }
@@ -478,6 +513,10 @@ Formula* BoolForm::accept(MutatingVisitor* v) {
 }
 
 Formula* QuantForm::accept(MutatingVisitor* v) {
+	return v->visit(this);
+}
+
+Formula* AggForm::accept(MutatingVisitor* v) {
 	return v->visit(this);
 }
 
