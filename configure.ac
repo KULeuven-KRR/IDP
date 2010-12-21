@@ -32,8 +32,8 @@ AC_SUBST([AC_CXXFLAGS])
 AC_SUBST([AC_LDFLAGS])
 AC_SUBST([LIBS])
 
-AC_CXXFLAGS = " "
-AC_LDFLAGS = " "
+AC_CXXFLAGS=" "
+AC_LDFLAGS=" "
 
 AC_CXXFLAGS+="-ansi -pedantic -Wall -Wextra "
 
