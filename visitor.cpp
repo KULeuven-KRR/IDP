@@ -28,10 +28,10 @@ void Visitor::visit(SortTable*)				{ }
 void Visitor::visit(PredInter*)				{ }
 void Visitor::visit(FuncInter*)				{ }
 void Visitor::visit(Structure* s)			{ traverse(s);	}
-void Visitor::visit(Sort*)				{ }
-void Visitor::visit(Predicate*)			{ }
-void Visitor::visit(Function*)			{ }
-void Visitor::visit(Vocabulary* v)		{ traverse(v); }
+void Visitor::visit(Sort*)					{ }
+void Visitor::visit(Predicate*)				{ }
+void Visitor::visit(Function*)				{ }
+void Visitor::visit(Vocabulary* v)			{ traverse(v); }
 void Visitor::visit(EcnfTheory*)			{ /* TODO */	}
 
 void Visitor::traverse(Formula* f) {
@@ -106,14 +106,14 @@ void Visitor::traverse(Structure* s) {
 }
 
 void Visitor::traverse(Vocabulary* v) {
-	for(unsigned int n = 0; n < v->nrSorts(); ++n) {
-		visit(v->sort(n));
+	for(unsigned int n = 0; n < v->nrNBSorts(); ++n) {
+		visit(v->nbsort(n));
 	}
-	for(unsigned int n = 0; n < v->nrPreds(); ++n) {
-		visit(v->pred(n));
+	for(unsigned int n = 0; n < v->nrNBPreds(); ++n) {
+		visit(v->nbpred(n));
 	}
-	for(unsigned int n = 0; n < v->nrFuncs(); ++n) {
-		visit(v->func(n));
+	for(unsigned int n = 0; n < v->nrNBFuncs(); ++n) {
+		visit(v->nbfunc(n));
 	}
 }
 

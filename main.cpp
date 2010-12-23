@@ -94,13 +94,13 @@ vector<string> read_options(int argc, char* argv[]) {
 													  if(!test) Error::unabletoopenfile(argv[0]);
 													  else { 
 														  fclose(test);
-														  options._outputfile = argv[0];
+														  _options._outputfile = argv[0];
 													  }
 													  argc--; argv++;
 													}
 		else if(str.substr(0,9) == "--format=")		{ string fmt = str.substr(9,str.length()-9);
-													  if (fmt == "txt")		options._format = OF_TXT;
-													  else if(fmt == "idp")	options._format = OF_IDP;
+													  if (fmt == "txt")		_options._format = OF_TXT;
+													  else if(fmt == "idp")	_options._format = OF_IDP;
 													  else					Error::unknformat(fmt);
 													}
 		else if(str == "-v" || str == "--version")	{ cout << "GidL 2.0.1\n"; exit(0);	}

@@ -7,6 +7,7 @@
 #ifndef VOCABULARY_HPP
 #define VOCABULARY_HPP
 
+#include "visitor.hpp"
 #include "common.hpp"
 #include <map>
 #include <set>
@@ -151,6 +152,8 @@ class Sort {
 		virtual SortTable*	inter()		const	{ return 0;		}	// returns the built-in
 																				// interpretation for
 																				// built-in sorts
+		// Visitor
+        void accept(Visitor*);
 
 };
 
@@ -274,7 +277,7 @@ class PFSymbol {
 		// Inspectors
 		string					name()					const { return _name;							}
 		const ParseInfo&		pi()					const { return _pi;								}
-		unsigned int			nrsorts()				const { return _sorts.size();					}
+		unsigned int			nrSorts()				const { return _sorts.size();					}
 		Sort*					sort(unsigned int n)	const { return _sorts[n];						}
 		const vector<Sort*>&	sorts()					const { return _sorts;							}
 		string					to_string()				const { return _name.substr(0,_name.find('/'));	}
@@ -324,6 +327,9 @@ class Predicate : public PFSymbol {
 		virtual Predicate*			disambiguate(const vector<Sort*>&,Vocabulary*);
 		virtual vector<Predicate*>	nonbuiltins();
 		virtual	vector<Sort*>		allsorts()							const;
+
+		// Visitor
+        void accept(Visitor*);
 
 };
 
@@ -420,6 +426,9 @@ class Function : public PFSymbol {
 		virtual Function*			disambiguate(const vector<Sort*>&,Vocabulary*);
 		virtual	vector<Function*>	nonbuiltins();	
 		virtual	vector<Sort*>		allsorts()				const;	
+
+		// Visitor
+        void accept(Visitor*);
 
 };
 

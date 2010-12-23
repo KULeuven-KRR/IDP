@@ -8,13 +8,10 @@
 #include "ground.hpp"
 #include "ecnf.hpp"
 #include "print.hpp"
-#include <iostream>
-#include "options.hpp"
 #include "data.hpp"
+#include <iostream>
 
-extern Options options;
-
-void PrintTheory::execute(const vector<InfArg>& args, const string& res,Namespace*) const {
+void PrintTheory::execute(const vector<InfArg>& args, const string& res, Namespace*) const {
 	assert(args.size() == 1);
 	Printer* printer = Printer::create();
 	Theory* t = dynamic_cast<Theory*>(args[0]._theory);
@@ -22,14 +19,14 @@ void PrintTheory::execute(const vector<InfArg>& args, const string& res,Namespac
 	delete(printer);
 }
 
-void PrintVocabulary::execute(const vector<InfArg>& args, const string& res,Namespace*) const {
+void PrintVocabulary::execute(const vector<InfArg>& args, const string& res, Namespace*) const {
 	assert(args.size() == 1);
 	Printer* printer = Printer::create();
 	printer->print(args[0]._vocabulary);
 	delete(printer);
 }
 
-void PrintStructure::execute(const vector<InfArg>& args, const string& res,Namespace*) const {
+void PrintStructure::execute(const vector<InfArg>& args, const string& res, Namespace*) const {
 	assert(args.size() == 1);
 	Printer* printer = Printer::create();
 	Structure* s = dynamic_cast<Structure*>(args[0]._structure);
@@ -37,29 +34,29 @@ void PrintStructure::execute(const vector<InfArg>& args, const string& res,Names
 	delete(printer);
 }
 
-void PrintNamespace::execute(const vector<InfArg>& args, const string& res,Namespace*) const {
+void PrintNamespace::execute(const vector<InfArg>& args, const string& res, Namespace*) const {
 	assert(args.size() == 1);
 	// TODO
 	//string s = (args[0]._namespace)->to_string();
 	//cout << s;
 }
 
-void PushNegations::execute(const vector<InfArg>& args, const string& res,Namespace*) const {
+void PushNegations::execute(const vector<InfArg>& args, const string& res, Namespace*) const {
 	assert(args.size() == 1);
 	TheoryUtils::push_negations(args[0]._theory);
 }
 
-void RemoveEquivalences::execute(const vector<InfArg>& args, const string& res,Namespace*) const {
+void RemoveEquivalences::execute(const vector<InfArg>& args, const string& res, Namespace*) const {
 	assert(args.size() == 1);
 	TheoryUtils::remove_equiv(args[0]._theory);
 }
 
-void FlattenFormulas::execute(const vector<InfArg>& args, const string& res,Namespace*) const {
+void FlattenFormulas::execute(const vector<InfArg>& args, const string& res, Namespace*) const {
 	assert(args.size() == 1);
 	TheoryUtils::flatten(args[0]._theory);
 }
 
-void RemoveEqchains::execute(const vector<InfArg>& args, const string& res,Namespace*) const {
+void RemoveEqchains::execute(const vector<InfArg>& args, const string& res, Namespace*) const {
 	assert(args.size() == 1);
 	TheoryUtils::remove_eqchains(args[0]._theory);
 }
@@ -72,7 +69,7 @@ GroundingInference::GroundingInference() {
 	_description = "Ground the theory and structure and print the grounding";
 }
 
-void GroundingInference::execute(const vector<InfArg>& args, const string& res,Namespace*) const {
+void GroundingInference::execute(const vector<InfArg>& args, const string& res, Namespace*) const {
 	assert(args.size() == 2);
 	AbstractTheory* t = args[0]._theory;
 	AbstractStructure* s = args[1]._structure;
@@ -98,7 +95,7 @@ GroundingWithResult::GroundingWithResult() {
 	_description = "Ground the theory and structure and store the grounding";
 }
 
-void GroundingWithResult::execute(const vector<InfArg>& args, const string& res,Namespace* cn) const {
+void GroundingWithResult::execute(const vector<InfArg>& args, const string& res, Namespace* cn) const {
 	assert(args.size() == 2);
 	NaiveGrounder ng(args[1]._structure);
 	AbstractTheory* gr = ng.ground(args[0]._theory);
@@ -114,7 +111,7 @@ ModelExpansionInference::ModelExpansionInference() {
 	_description = "Performs model expansion on the structure given the theory it should satisfy.";
 }
 
-void ModelExpansionInference::execute(const vector<InfArg>& args, const string& res,Namespace* cn) const {
+void ModelExpansionInference::execute(const vector<InfArg>& args, const string& res, Namespace* cn) const {
 	assert(args.size() == 2);
 	AbstractTheory* t = args[0]._theory;
 	AbstractStructure* s = args[1]._structure;
@@ -157,18 +154,18 @@ void ModelExpansionInference::execute(const vector<InfArg>& args, const string& 
 	delete(printer);
 }
 
-void StructToTheory::execute(const vector<InfArg>& args, const string& res,Namespace* cn) const {
+void StructToTheory::execute(const vector<InfArg>& args, const string& res, Namespace* cn) const {
 	assert(args.size() == 1);
 	AbstractTheory* t = StructUtils::convert_to_theory(args[0]._structure);
 	t->name(res);
 	cn->add(t);
 }
 
-void MoveQuantifiers::execute(const vector<InfArg>& args, const string& res,Namespace* cn) const {
+void MoveQuantifiers::execute(const vector<InfArg>& args, const string& res, Namespace* cn) const {
 	TheoryUtils::move_quantifiers(args[0]._theory);
 }
 
-void ApplyTseitin::execute(const vector<InfArg>& args, const string& res,Namespace* cn) const {
+void ApplyTseitin::execute(const vector<InfArg>& args, const string& res, Namespace* cn) const {
 	TheoryUtils::tseitin(args[0]._theory);
 }
 
@@ -180,10 +177,10 @@ GroundReduce::GroundReduce() {
 	_description = "Replace ground atoms in the theory by their truth value in the structure";
 }
 
-void GroundReduce::execute(const vector<InfArg>& args, const string& res,Namespace* cn) const {
+void GroundReduce::execute(const vector<InfArg>& args, const string& res, Namespace* cn) const {
 	TheoryUtils::reduce(args[0]._theory,args[1]._structure);
 }
 
-void MoveFunctions::execute(const vector<InfArg>& args, const string& res,Namespace* cn) const {
+void MoveFunctions::execute(const vector<InfArg>& args, const string& res, Namespace* cn) const {
 	TheoryUtils::move_functions(args[0]._theory);
 }

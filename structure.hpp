@@ -646,10 +646,9 @@ class FuncPredTable : public PredTable {
 		void sortunique() { }
 
 		// Inspectors
-		virtual Element		operator[](const vector<Element>& vi)		const = 0;
-				Element		operator[](const vector<TypedElement>& vi)	const;
-		virtual PredInter*	predinter()									const = 0;
-				ElementType	outtype()									const { return _outtype;	}
+//		virtual Element		operator[](const vector<Element>& vi)		const = 0;
+//				Element		operator[](const vector<TypedElement>& vi)	const;
+//		virtual PredInter*	predinter()									const = 0;
 
 		bool			finite()				const { return _ftable->finite();		}
 		bool			empty()					const { return _ftable->empty();		}
@@ -696,6 +695,9 @@ class FuncInter {
 
 		// Debugging
 		string to_string(unsigned int spaces = 0) const;
+
+		// Visitor
+        void accept(Visitor*);
 
 };
 

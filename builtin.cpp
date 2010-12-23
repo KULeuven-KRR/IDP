@@ -80,8 +80,8 @@ class SemiBuiltInPredicate : public Predicate {
 };
 
 PredInter* SemiBuiltInPredicate::inter(const AbstractStructure& s) const {
-	vector<SortTable*> vs(nrsorts());
-	for(unsigned int n = 0; n < nrsorts(); ++n) vs[n] = s.inter(sort(n));
+	vector<SortTable*> vs(nrSorts());
+	for(unsigned int n = 0; n < nrSorts(); ++n) vs[n] = s.inter(sort(n));
 	map<vector<SortTable*>,PredInter*>::const_iterator it = _inters.find(vs);
 	if(it != _inters.end()) return it->second;
 	else {
@@ -188,8 +188,8 @@ class SemiBuiltInFunction : public Function {
 };
 
 FuncInter* SemiBuiltInFunction::inter(const AbstractStructure& s) const {
-	vector<SortTable*> vs(nrsorts());
-	for(unsigned int n = 0; n < nrsorts(); ++n) vs[n] = s.inter(sort(n));
+	vector<SortTable*> vs(nrSorts());
+	for(unsigned int n = 0; n < nrSorts(); ++n) vs[n] = s.inter(sort(n));
 	map<vector<SortTable*>,FuncInter*>::const_iterator it = _inters.find(vs);
 	if(it != _inters.end()) return it->second;
 	else {

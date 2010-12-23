@@ -1239,7 +1239,7 @@ namespace Insert {
 							_currstructure->inter(evp[0],new PredInter(upt,true));
 						}
 						else {
-							vector<ElementType> vet(evf[0]->nrsorts(),ELINT);
+							vector<ElementType> vet(evf[0]->nrSorts(),ELINT);
 							FinitePredTable* upt = new FinitePredTable(vet);
 							FiniteFuncTable* fft = new FiniteFuncTable(upt);
 							PredInter* pt = new PredInter(upt,true);
@@ -1330,7 +1330,7 @@ namespace Insert {
 							}
 						}
 						else {
-							vector<ElementType> vet(evf[0]->nrsorts(),ELINT);
+							vector<ElementType> vet(evf[0]->nrSorts(),ELINT);
 							FinitePredTable* upt = new FinitePredTable(vet);
 							switch(_emptythreeinters[n]._utf) {
 								case UTF_CT:

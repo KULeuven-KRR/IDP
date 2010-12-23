@@ -29,8 +29,8 @@ namespace Error {
 	void nrmodelsnegative();
 
 	/** File errors **/
-	void cyclicinclude(const string&, ParseInfo* pi);
-	void unexistingfile(const string&, ParseInfo* pi);
+	void cyclicinclude(const string&, const ParseInfo& pi);
+	void unexistingfile(const string&, const ParseInfo& pi);
 	void unabletoopenfile(const string&);
 
 	/** Invalid ranges **/

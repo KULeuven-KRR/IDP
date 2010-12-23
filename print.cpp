@@ -9,9 +9,10 @@
 #include "vocabulary.hpp"
 #include "structure.hpp"
 #include "term.hpp"
-#include "options.hpp"
+//#include "options.hpp"
+#include "data.hpp"
 
-extern Options options;
+//extern Options options;
 
 /**************
     Printer
@@ -21,19 +22,19 @@ Printer::Printer() {
 	// Set indentation level to zero
 	_indent = 0;
 	// Open outputfile if given in options, use stdout otherwise
-	if(options._outputfile.empty())
+	if(_options._outputfile.empty())
 		_out = stdout;
 	else
-		_out = fopen(options._outputfile.c_str(),"a");
+		_out = fopen(_options._outputfile.c_str(),"a");
 }
 
 Printer::~Printer() {
-	if(! options._outputfile.empty())
+	if(! _options._outputfile.empty())
 		fclose(_out);
 }
 
 Printer* Printer::create() {
-	switch(options._format) {
+	switch(_options._format) {
 		case OF_TXT:
 			return new SimplePrinter();
 		case OF_IDP:
@@ -318,15 +319,15 @@ void IDPPrinter::visit(Structure* s) {
 		fprintf(_out," : %s",v->name().c_str());
 	fprintf(_out,"{\n");
 	indent();
-	for(unsigned int n = 0; n < v->nrPreds(); ++n) {
-		_currsymbol = v->pred(n);
-		if(s->hasInter(v->pred(n)))
-			s->inter(v->pred(n))->accept(this);
+	for(unsigned int n = 0; n < v->nrNBPreds(); ++n) {
+		_currsymbol = v->nbpred(n);
+		if(s->hasInter(v->nbpred(n)))
+			s->inter(v->nbpred(n))->accept(this);
 	}
-	for(unsigned int n = 0; n < v->nrFuncs(); ++n) {
-		_currsymbol = v->func(n);
-		if(s->hasInter(v->func(n)))
-			s->inter(v->func(n))->accept(this);
+	for(unsigned int n = 0; n < v->nrNBFuncs(); ++n) {
+		_currsymbol = v->nbfunc(n);
+		if(s->hasInter(v->nbfunc(n)))
+			s->inter(v->nbfunc(n))->accept(this);
 	}
 	unindent();
 	fprintf(_out,"}\n");
@@ -443,8 +444,10 @@ void IDPPrinter::visit(Vocabulary* v) {
 void IDPPrinter::visit(Sort* s) {
 	printtab();
 	fprintf(_out,"type %s",s->name().c_str());
-	if(s->parent())
-		fprintf(_out," isa %s",s->parent()->name().c_str());
+//	if(s->nrParents() > 0)
+//		fprintf(_out," isa %s",s->parent(0)->name().c_str());
+//		for(unsigned int n = 1; n < s->nrParents(); ++n)
+//			fprintf(_out,",%s",s->parent(n)->name().c_str());
 	fprintf(_out,"\n");
 }
 
