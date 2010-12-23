@@ -444,10 +444,10 @@ void IDPPrinter::visit(Vocabulary* v) {
 void IDPPrinter::visit(Sort* s) {
 	printtab();
 	fprintf(_out,"type %s",s->name().c_str());
-//	if(s->nrParents() > 0)
-//		fprintf(_out," isa %s",s->parent(0)->name().c_str());
-//		for(unsigned int n = 1; n < s->nrParents(); ++n)
-//			fprintf(_out,",%s",s->parent(n)->name().c_str());
+	if(s->nrParents() > 0)
+		fprintf(_out," isa %s",s->parent(0)->name().c_str());
+		for(unsigned int n = 1; n < s->nrParents(); ++n)
+			fprintf(_out,",%s",s->parent(n)->name().c_str());
 	fprintf(_out,"\n");
 }
 

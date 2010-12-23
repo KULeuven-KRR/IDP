@@ -912,7 +912,7 @@ namespace Insert {
 							}
 						}
 					}
-					s->parent(sups[n]);
+					s->addParent(sups[n]);
 				}
 			}
 			for(unsigned int n = 0; n < subs.size(); ++n) {
@@ -924,7 +924,7 @@ namespace Insert {
 							}
 						}
 					}
-					s->child(subs[n]);
+					s->addChild(subs[n]);
 				}
 			}
 		}

@@ -354,29 +354,29 @@ Sort::Sort(const string& name, const ParseInfo& pi) : _name(name), _pi(pi) {
 
 /** Mutators **/
 
-void Sort::parent(Sort* p) {
+void Sort::addParent(Sort* p) {
 	unsigned int n = 0;
 	for(; n < _parents.size(); ++n) {
 		if(p == _parents[n]) break;
 	}
 	if(n == _parents.size()) {
 		_parents.push_back(p);
-		p->child(this);
+		p->addChild(this);
 	}
 }
 
-void Sort::child(Sort* c) {
+void Sort::addChild(Sort* c) {
 	unsigned int n = 0;
 	for(; n < _children.size(); ++n) {
 		if(c == _children[n]) break;
 	}
 	if(n == _children.size()) {
 		_children.push_back(c);
-		c->parent(this);
+		c->addParent(this);
 	}
 }
 
-void OverloadedSort::oversort(Sort* s) {
+void OverloadedSort::addOversort(Sort* s) {
 	assert(s->name() == name());
 	unsigned int n = 0;
 	for(; n < _oversorts.size(); ++n) {
@@ -477,8 +477,8 @@ namespace SortUtils {
 		assert(s1->name() == s2->name());
 		if(s1 == s2) return s1;
 		OverloadedSort* ovs = new OverloadedSort(s1->name());
-		ovs->oversort(s1);
-		ovs->oversort(s2);
+		ovs->addOversort(s1);
+		ovs->addOversort(s2);
 		return ovs;
 	}
 
@@ -489,7 +489,7 @@ namespace SortUtils {
 		else {
 			OverloadedSort* ovs = new OverloadedSort(vs[0]->name());
 			for(unsigned int n = 0; n < vs.size(); ++n) {
-				ovs->oversort(vs[n]);
+				ovs->addOversort(vs[n]);
 			}
 			return ovs;
 		}

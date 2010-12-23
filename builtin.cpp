@@ -1075,9 +1075,9 @@ StdBuiltin::StdBuiltin() : Vocabulary("std") {
 	addSort(stringsort);
 
 	// Set sort hierarchy 
-	intsort->parent(floatsort);
-	natsort->parent(intsort);
-	charsort->parent(stringsort);
+	intsort->addParent(floatsort);
+	natsort->addParent(intsort);
+	charsort->addParent(stringsort);
 
 	// Built-in predicates
 	addPred(new ComparisonPredicate("=/2",2,&equalinter));

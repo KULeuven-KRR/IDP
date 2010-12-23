@@ -127,8 +127,8 @@ class Sort {
 							// Only delete sorts when all vocabularies where the sort occurs are deleted 
 
 		// Mutators
-		void	parent(Sort* p);	// Add p as a parent. Also add this as a child of p.
-		void	child(Sort* c);		// Add c as a child. Also add this as a parent of c.
+		void	addParent(Sort* p);	// Add p as a parent. Also add this as a child of p.
+		void	addChild(Sort* c);		// Add c as a child. Also add this as a parent of c.
 		void	pred(Predicate* p)	{ _pred = p;	}
 		
 		// Inspectors
@@ -171,11 +171,11 @@ class OverloadedSort : public Sort {
 		~OverloadedSort() { }
 
 		// Mutators
-		void	oversort(Sort* s);	// add an overloaded sort
+		void	addOversort(Sort* s);	// add an overloaded sort
 
 		// Inspectors
 		unsigned int			nrOversorts()				const	{ return _oversorts.size();	}
-		Sort*					overSort(unsigned int n)	const	{ return _oversorts[n];		}
+		Sort*					oversort(unsigned int n)	const	{ return _oversorts[n];		}
 		bool					overloaded()				const	{ return true;				}
 		virtual	bool			contains(Sort* s)			const;
 		vector<Sort*>			nonbuiltins();	//!< All non-builtin sorts that are overloaded
