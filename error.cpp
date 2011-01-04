@@ -106,6 +106,21 @@ namespace Error {
 		cerr << "Wrong number of terms given to function " << f << ".\n";
 	}
 
+	void incompatiblearity(const string& n, const ParseInfo& pi) {
+		error(pi);
+		cerr << "The arity of symbol " << n << " is different from the arity of the table assigned to it.\n";
+	}
+
+	void prednameexpected(const ParseInfo& pi) {
+		error(pi);
+		cerr << "Expected a name of a predicate, instead of a function name.\n";
+	}
+
+	void funcnameexpected(const ParseInfo& pi) {
+		error(pi);
+		cerr << "Expected a name of a function, instead of a predicate name.\n";
+	}
+
 	/** Invalid interpretations **/
 	void expectedutf(const string& s, const ParseInfo& pi) {
 		error(pi);
@@ -276,6 +291,11 @@ namespace Error {
 		cerr << "Structure " << sname << " is not declared in this scope." << endl;
 	}
 
+	void undeclspace(const string& sname, const ParseInfo& thisplace) {
+		error(thisplace);
+		cerr << "Namespace " << sname << " is not declared in this scope." << endl;
+	}
+
 	void undeclsort(const string& sname, const ParseInfo& thisplace) {
 		error(thisplace);
 		cerr << "Sort " << sname << " is not declared in this scope." << endl;
@@ -337,6 +357,72 @@ namespace Error {
 	void predorfuncsymbol(const string& name, const ParseInfo& pi) {
 		error(pi);
 		cerr << name << " could be the predicate " << name << "/1 or the function " << name << "/0 at this place.\n";
+	}
+
+	void overloadedsort(const string& name, const ParseInfo& p1, const ParseInfo& p2, const ParseInfo& thisplace) {
+		error(thisplace);
+		cerr << "The sort " << name << " used here could be the sort declared at " 
+			 << "line " << p1.line() << ", column " << p1.col();
+		if(p1.file()) cerr << " of file " << p1.file();
+		cerr << " or the sort declared at "
+			 << "line " << p2.line() << ", column " << p2.col();
+		if(p2.file()) cerr << " of file " << p2.file();
+		cerr << ".\n";
+	}
+
+	void overloadedpred(const string& name, const ParseInfo& p1, const ParseInfo& p2, const ParseInfo& thisplace) {
+		error(thisplace);
+		cerr << "The predicate " << name << " used here could be the predicate declared at " 
+			 << "line " << p1.line() << ", column " << p1.col();
+		if(p1.file()) cerr << " of file " << p1.file();
+		cerr << " or the predicate declared at "
+			 << "line " << p2.line() << ", column " << p2.col();
+		if(p2.file()) cerr << " of file " << p2.file();
+		cerr << ".\n";
+	}
+
+	void overloadedspace(const string& name, const ParseInfo& p1, const ParseInfo& p2, const ParseInfo& thisplace) {
+		error(thisplace);
+		cerr << "The namespace " << name << " used here could be the namespace declared at " 
+			 << "line " << p1.line() << ", column " << p1.col();
+		if(p1.file()) cerr << " of file " << p1.file();
+		cerr << " or the namespace declared at "
+			 << "line " << p2.line() << ", column " << p2.col();
+		if(p2.file()) cerr << " of file " << p2.file();
+		cerr << ".\n";
+	}
+
+	void overloadedstructure(const string& name, const ParseInfo& p1, const ParseInfo& p2, const ParseInfo& thisplace) {
+		error(thisplace);
+		cerr << "The structure " << name << " used here could be the structure declared at " 
+			 << "line " << p1.line() << ", column " << p1.col();
+		if(p1.file()) cerr << " of file " << p1.file();
+		cerr << " or the structure declared at "
+			 << "line " << p2.line() << ", column " << p2.col();
+		if(p2.file()) cerr << " of file " << p2.file();
+		cerr << ".\n";
+	}
+
+	void overloadedtheory(const string& name, const ParseInfo& p1, const ParseInfo& p2, const ParseInfo& thisplace) {
+		error(thisplace);
+		cerr << "The theory " << name << " used here could be the theory declared at " 
+			 << "line " << p1.line() << ", column " << p1.col();
+		if(p1.file()) cerr << " of file " << p1.file();
+		cerr << " or the theory declared at "
+			 << "line " << p2.line() << ", column " << p2.col();
+		if(p2.file()) cerr << " of file " << p2.file();
+		cerr << ".\n";
+	}
+
+	void overloadedvocab(const string& name, const ParseInfo& p1, const ParseInfo& p2, const ParseInfo& thisplace) {
+		error(thisplace);
+		cerr << "The vocabulary " << name << " used here could be the vocabulary declared at " 
+			 << "line " << p1.line() << ", column " << p1.col();
+		if(p1.file()) cerr << " of file " << p1.file();
+		cerr << " or the vocabulary declared at "
+			 << "line " << p2.line() << ", column " << p2.col();
+		if(p2.file()) cerr << " of file " << p2.file();
+		cerr << ".\n";
 	}
 
 	/** Sort hierarchy errors **/

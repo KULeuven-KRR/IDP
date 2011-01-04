@@ -95,10 +95,10 @@ class VarTerm : public Term {
 		unsigned int	nrSubterms()			const	{ return 0;					}
 		unsigned int	nrSubsets()				const	{ return 0;					}
 		unsigned int	nrQvars()				const	{ return 0;					}
-		Formula*		subform(unsigned int n)	const	{ assert(false); return 0;	}
-		Term*			subterm(unsigned int n)	const	{ assert(false); return 0;	}
-		SetExpr*		subset(unsigned int n)	const	{ assert(false); return 0;	}
-		Variable*		qvar(unsigned int n)	const	{ assert(false); return 0;	}
+		Formula*		subform(unsigned int)	const	{ assert(false); return 0;	}
+		Term*			subterm(unsigned int)	const	{ assert(false); return 0;	}
+		SetExpr*		subset(unsigned int)	const	{ assert(false); return 0;	}
+		Variable*		qvar(unsigned int)		const	{ assert(false); return 0;	}
 		bool			contains(Variable* v)	const	{ return _var == v;			}	
 
 		// Visitor
@@ -142,10 +142,10 @@ class FuncTerm : public Term {
 		Sort*			sort()					const	{ return _func->outsort();	}
 		Function*		func()					const	{ return _func;				}
 		Term*			arg(unsigned int n)		const	{ return _args[n];			}
-		Formula*		subform(unsigned int n)	const	{ assert(false); return 0;	}
+		Formula*		subform(unsigned int)	const	{ assert(false); return 0;	}
 		Term*			subterm(unsigned int n)	const	{ return _args[n];			}
-		SetExpr*		subset(unsigned int n)	const	{ assert(false); return 0;	}
-		Variable*		qvar(unsigned int n)	const	{ assert(false); return 0;	}
+		SetExpr*		subset(unsigned int)	const	{ assert(false); return 0;	}
+		Variable*		qvar(unsigned int)		const	{ assert(false); return 0;	}
 		unsigned int	nrSubforms()			const	{ return 0;					}
 		unsigned int	nrSubterms()			const	{ return _args.size();		}
 		unsigned int	nrSubsets()				const	{ return 0;					}
@@ -193,10 +193,10 @@ class DomainTerm : public Term {
 		unsigned int	nrSubterms()			const { return 0;					}
 		unsigned int	nrSubsets()				const { return 0;					}
 		unsigned int	nrQvars()				const { return 0;					}
-		Formula*		subform(unsigned int n)	const { assert(false); return 0;	}
-		Term*			subterm(unsigned int n)	const { assert(false); return 0;	}
-		SetExpr*		subset(unsigned int n)	const { assert(false); return 0;	}
-		Variable*		qvar(unsigned int n)	const { assert(false); return 0;	}
+		Formula*		subform(unsigned int)	const { assert(false); return 0;	}
+		Term*			subterm(unsigned int)	const { assert(false); return 0;	}
+		SetExpr*		subset(unsigned int)	const { assert(false); return 0;	}
+		Variable*		qvar(unsigned int)		const { assert(false); return 0;	}
 		Element			value()					const { return _value;				}
 		ElementType		type()					const { return _type;				}
 
@@ -287,7 +287,7 @@ class EnumSetExpr : public SetExpr {
 		unsigned int	nrQvars()				const	{ return 0;					}
 		Formula*		subform(unsigned int n)	const	{ return _subf[n];			}
 		Term*			subterm(unsigned int n)	const	{ return _weights[n];		}
-		Variable*		qvar(unsigned int n)	const	{ assert(false); return 0;	}
+		Variable*		qvar(unsigned int)		const	{ assert(false); return 0;	}
 		Sort*			firstargsort()			const;
 
 		// Visitor
@@ -326,8 +326,8 @@ class QuantSetExpr : public SetExpr {
 		unsigned int	nrSubforms()			const	{ return 1;					}	
 		unsigned int	nrSubterms()			const	{ return 0;					}
 		unsigned int	nrQvars()				const	{ return _vars.size();		}
-		Formula*		subform(unsigned int n)	const	{ return _subf;				}
-		Term*			subterm(unsigned int n)	const	{ assert(false); return 0;	}
+		Formula*		subform(unsigned int)	const	{ return _subf;				}
+		Term*			subterm(unsigned int)	const	{ assert(false); return 0;	}
 		Variable*		qvar(unsigned int n)	const	{ return _vars[n];			}
 		Formula*		subf()					const	{ return _subf;				}
 		Sort*			firstargsort()			const;
@@ -380,7 +380,7 @@ class AggTerm : public Term {
 		unsigned int	nrSubsets()				const	{ return 1;						}
 		Formula*		subform(unsigned int n)	const	{ return _set->subform(n);		}
 		Term*			subterm(unsigned int n)	const	{ return _set->subterm(n);		}
-		SetExpr*		subset(unsigned int n)	const	{ return _set;					}
+		SetExpr*		subset(unsigned int)	const	{ return _set;					}
 		Variable*		qvar(unsigned int n)	const	{ return _set->qvar(n);			}
 		SetExpr*		set()					const	{ return _set;					}
 		AggType			type()					const	{ return _type;					}

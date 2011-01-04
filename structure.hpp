@@ -78,7 +78,7 @@ class SortTable : public PredTable {
 		virtual bool			empty()					const = 0;	// True iff the sort contains no elements
 		virtual ElementType		type()					const = 0;	// return the type of the elements in the table
 				unsigned int	arity()					const { return 1;		}
-				ElementType		type(unsigned int n)	const { return type();	}
+				ElementType		type(unsigned int )		const { return type();	}
 
 		// Check if the table contains a given element
 		//	precondition: the table is sorted and contains no duplicates
@@ -98,7 +98,7 @@ class SortTable : public PredTable {
 		virtual Element			element(unsigned int n)					const = 0;	// Return the n'th element
 				TypedElement	telement(unsigned int n)				const { TypedElement te(element(n),type()); return te;	}
 				vector<Element>	tuple(unsigned int n)					const { return vector<Element>(1,element(n));			}
-				Element			element(unsigned int r,unsigned int c)	const { return element(r);								}
+				Element			element(unsigned int r,unsigned int )	const { return element(r);								}
 		virtual unsigned int	position(Element,ElementType)			const = 0;	// Return the position of the given element
 				unsigned int	position(Element e)						const { return position(e,type());					}
 				unsigned int	position(TypedElement te)				const { return position(te._element,te._type);		}
@@ -187,13 +187,13 @@ class EmptySortTable : public FiniteSortTable {
 		bool			contains(int)						const { return false;						}	
 		bool			contains(double)					const { return false;						}	
 		bool			contains(compound*)					const { return false;						}
-		bool			contains(const TypedElement& te)	const { return false;						}
+		bool			contains(const TypedElement& )		const { return false;						}
 		unsigned int	size()								const { return 0;							}	
-		Element			element(unsigned int n)				const { assert(false); Element e; return e; } 
+		Element			element(unsigned int )				const { assert(false); Element e; return e; } 
 		unsigned int	position(Element,ElementType)		const { assert(false); return 0;			}
 															
 		// Debugging
-		string to_string(unsigned int spaces = 0) const { return "";	}
+		string to_string(unsigned int) const { return "";	}
 
 };
 

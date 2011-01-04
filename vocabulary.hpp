@@ -141,42 +141,11 @@ class Sort {
 		string				to_string()					const	{ return _name;				}
 		set<Sort*>			ancestors(Vocabulary* v)	const;
 
-		// Overloaded sorts
-		virtual bool			overloaded()		const	{ return false;		}   // true for overloaded sorts
-		virtual bool			contains(Sort* s)	const	{ return s == this;	}	// true if the overloaded sort contains s
-		virtual vector<Sort*>	nonbuiltins();
-
 		// Built-in sorts
 		virtual bool		builtin()	const	{ return false;	}
 		virtual SortTable*	inter()		const	{ return 0;		}	// returns the built-in
 																				// interpretation for
 																				// built-in sorts
-
-};
-
-class OverloadedSort : public Sort {
-
-	private:
-		vector<Sort*>	_oversorts;	// the overloaded sorts
-
-	public:
-
-		// Constructor
-		OverloadedSort(const string& name) : Sort(name) { }
-
-		// Destructor
-		~OverloadedSort() { }
-
-		// Mutators
-		void	oversort(Sort* s);	// add an overloaded sort
-
-		// Inspectors
-		unsigned int			nrOversorts()				const	{ return _oversorts.size();	}
-		Sort*					overSort(unsigned int n)	const	{ return _oversorts[n];		}
-		bool					overloaded()				const	{ return true;				}
-		virtual	bool			contains(Sort* s)			const;
-		vector<Sort*>			nonbuiltins();	//!< All non-builtin sorts that are overloaded
-												//!<  by this sort
 
 };
 
@@ -188,15 +157,6 @@ namespace SortUtils {
 	 */ 
 	Sort* resolve(Sort* s1, Sort* s2, Vocabulary* v);
 
-	/**
-	 * return a new overloaded sort containing the two given sorts
-	 */
-	Sort* overload(Sort* s1, Sort* s2);
-
-	/**
-	 * return a new overloaded sort containing the given sorts
-	 */
-	Sort* overload(const vector<Sort*>& vs);
 }
 
 
@@ -285,6 +245,7 @@ class PFSymbol {
 		// Overloaded symbols
 		virtual bool		overloaded()						const	{ return false;	}	// true iff the symbol 
 																							// is overloaded.
+		virtual PFSymbol*	resolve(const vector<Sort*>&) = 0;
 		virtual PFSymbol*	disambiguate(const vector<Sort*>&,Vocabulary*)  = 0;	// this method tries to
 																			// disambiguate 
 																			// overloaded symbols.
@@ -319,6 +280,7 @@ class Predicate : public PFSymbol {
 
 		// Overloaded symbols 
 		virtual bool				contains(Predicate* p)				const { return p == this;	}
+		virtual Predicate*			resolve(const vector<Sort*>&);
 		virtual Predicate*			disambiguate(const vector<Sort*>&,Vocabulary*);
 		virtual vector<Predicate*>	nonbuiltins();
 		virtual	vector<Sort*>		allsorts()							const;
@@ -346,6 +308,7 @@ class OverloadedPredicate : public Predicate {
 		// Inspectors
 				bool				overloaded()						const { return true;	}
 		virtual bool				contains(Predicate* p)				const;
+		virtual Predicate*			resolve(const vector<Sort*>&);
 		virtual Predicate*			disambiguate(const vector<Sort*>&,Vocabulary*);
 				vector<Predicate*>	nonbuiltins();	//!< All non-builtin predicates 
 													//!< that are overloaded by the predicate
@@ -405,10 +368,11 @@ class Function : public PFSymbol {
 
 		// Built-in symbols
 				PredInter*		predinter(const AbstractStructure& s)	const;
-		virtual	FuncInter*		inter(const AbstractStructure& s)		const { return 0;		}
+		virtual	FuncInter*		inter(const AbstractStructure&)		const { return 0;		}
 
 		// Overloaded symbols 
 		virtual bool				contains(Function* f)	const { return f == this;				}
+		virtual Function*			resolve(const vector<Sort*>&);
 		virtual Function*			disambiguate(const vector<Sort*>&,Vocabulary*);
 		virtual	vector<Function*>	nonbuiltins();	
 		virtual	vector<Sort*>		allsorts()				const;	
@@ -436,6 +400,7 @@ class OverloadedFunction : public Function {
 		// Inspectors
 				bool				overloaded()						const { return true;	}
 		virtual bool				contains(Function* f)				const;
+		virtual Function*			resolve(const vector<Sort*>&);
 		virtual Function*			disambiguate(const vector<Sort*>&,Vocabulary*);
 				vector<Function*>	nonbuiltins();	//!< All non-builtin functions 
 													//!< that are overloaded by the function
@@ -474,7 +439,7 @@ class Vocabulary {
 		// NOTE: the strings that map to predicates and functions end on /arity
 		// NOTE: if there is more than one sort/predicate/function with the same name and arity,
 		// this maps to an overloaded sort/predicate/function
-		map<string,Sort*>		_name2sort;
+		map<string,set<Sort*> >	_name2sort;
 		map<string,Predicate*>	_name2pred;
 		map<string,Function*>	_name2func;
 
@@ -517,14 +482,14 @@ class Vocabulary {
 		Predicate*			nbpred(unsigned int n)	const { return _index2predicate[n];		}
 		Function*			nbfunc(unsigned int n)	const { return _index2function[n];		}
 
-		map<string,Sort*>::iterator			firstsort()	{ return _name2sort.begin();	}
+		map<string,set<Sort*> >::iterator	firstsort()	{ return _name2sort.begin();	}
 		map<string,Predicate*>::iterator	firstpred()	{ return _name2pred.begin();	}
 		map<string,Function*>::iterator		firstfunc()	{ return _name2func.begin();	}
-		map<string,Sort*>::iterator			lastsort()	{ return _name2sort.end();		}
+		map<string,set<Sort*> >::iterator	lastsort()	{ return _name2sort.end();		}
 		map<string,Predicate*>::iterator	lastpred()	{ return _name2pred.end();		}
 		map<string,Function*>::iterator		lastfunc()	{ return _name2func.end();		}
 
-		Sort*				sort(const string&)	const;	// return the sort with the given name
+		const set<Sort*>*	sort(const string&)	const;	// return the sorts with the given name
 		Predicate*			pred(const string&)	const;	// return the predicate with the given name (ending on /arity)
 		Function*			func(const string&)	const;	// return the function with the given name (ending on /arity)
 

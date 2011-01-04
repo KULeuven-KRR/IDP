@@ -16,7 +16,6 @@ struct YYLTYPE;
 struct FTTuple {
 	Formula* _formula;
 	Term*	 _term;
-
 	FTTuple(Formula* f, Term* t) : _formula(f), _term(t) { }
 };
 
@@ -24,36 +23,55 @@ struct FTTuple {
 struct NSTuple {
 	vector<string>	_name;
 	vector<Sort*>	_sorts;
+	bool			_arityincluded;	// true iff the name ends on /arity
+	bool			_sortsincluded;	// true iff the sorts are initialized
+	bool			_func;			// true if the pointer points to a function
+	ParseInfo		_pi;
 
-	NSTuple(const vector<string>& n, const vector<Sort*>& s) : _name(n), _sorts(s) { }
+	NSTuple(const vector<string>& n, const vector<Sort*>& s, bool ari, const ParseInfo& pi) :
+		_name(n), _sorts(s), _arityincluded(ari), _sortsincluded(true), _func(false), _pi(pi) { }
+	NSTuple(const vector<string>& n, bool ari, const ParseInfo& pi) :
+		_name(n), _sorts(0), _arityincluded(ari), _sortsincluded(false), _func(false), _pi(pi) { }
+	void func(bool b) { _func = b; }
+	void includePredArity() { 
+		assert(_sortsincluded && !_arityincluded); 
+		_name.back() = _name.back() + '/' + itos(_sorts.size());	
+		_arityincluded = true;
+	}
+	void includeFuncArity() {
+		assert(_sortsincluded && !_arityincluded); 
+		_name.back() = _name.back() + '/' + itos(_sorts.size() - 1);	
+		_arityincluded = true;
+	}
+	void includeArity(unsigned int n) {
+		assert(!_arityincluded); 
+		_name.back() = _name.back() + '/' + itos(n);	
+		_arityincluded = true;
+	}
+	string to_string();
 };
 
 namespace Insert {
 
-	/** Data **/
+	/** Input files **/
 	string*	currfile();					// return the current filename
 	void	currfile(const string& s);	// set the current file to s
 	void	currfile(string* s);		// set the current file to s
 	
-	/** Global structure **/
-	void initialize();	// initialize current namespace to the global namespace
+	/** Initialize and destruct the parser TODO : avoid these...  **/
+	void initialize();	
 	void cleanup();		
+
+	// Namespaces
 	void closespace();	// set current namespace to its parent
 	void openspace(const string& sname,YYLTYPE);	// set the current namespace to its subspace with name 'sname'
+	void usingspace(const vector<string>& sname, YYLTYPE);
 
 	/** Vocabulary **/
-	void openvocab(const string& vname, YYLTYPE);			// create a new vocabulary with name 'vname' 
-															// in the current namespace
-	void closevocab();										// stop parsing a vocabulary
-	void usingvocab(const vector<string>& vname, YYLTYPE);	// Use vocabulary 'vname' when parsing
-	void setvocab(const vector<string>& vname, YYLTYPE);	// Set the vocabulary of the current theory or structure 
-
-	Sort*		sortpointer(const vector<string>& sname, YYLTYPE);		// return sort with name 'sname'
-	Sort*		theosortpointer(const vector<string>& vs, YYLTYPE l);	// return sort with name 'sname'
-	Predicate*	predpointer(const vector<string>& pname, YYLTYPE);		// return predicate with name 'pname'
-	Function*	funcpointer(const vector<string>& fname, YYLTYPE);		// return function with name 'fname'
-	Predicate*	predpointer(const vector<string>& pname, const vector<Sort*>&, YYLTYPE);
-	Function*	funcpointer(const vector<string>& fname, const vector<Sort*>&, YYLTYPE);	
+	void openvocab(const string& vname, YYLTYPE);	// create a new vocabulary with name 'vname' in the current namespace
+	void closevocab();								// stop parsing a vocabulary
+	void usingvocab(const vector<string>& vname, YYLTYPE);	// use vocabulary 'vname' when parsing
+	void setvocab(const vector<string>& vname, YYLTYPE);	// set the vocabulary of the current theory or structure 
 
 	// Create new sorts
 	Sort*	sort(const string& name, YYLTYPE);						
@@ -77,27 +95,27 @@ namespace Insert {
 	void openstructure(const string& name, YYLTYPE);
 	void closestructure();
 	void closeaspstructure();
+	void closeaspbelief();
 
 	// two-valued interpretations
-	void sortinter(const vector<string>& sname, FiniteSortTable* t, YYLTYPE);
-	void predinter(const vector<string>& pname, FinitePredTable* t, YYLTYPE);
-	void funcinter(const vector<string>& fname, FinitePredTable* t, YYLTYPE);
-	void emptyinter(const vector<string>&,YYLTYPE);
-	void truepredinter(const vector<string>&, YYLTYPE);
-	void falsepredinter(const vector<string>&, YYLTYPE);
+	void sortinter(NSTuple*, FiniteSortTable* t);
+	void predinter(NSTuple*, FinitePredTable* t);
+	void funcinter(NSTuple*, FinitePredTable* t);
+	void emptyinter(NSTuple*);
+	void truepredinter(NSTuple*);
+	void falsepredinter(NSTuple*);
 
 	// three-valued interpretations
-	void threepredinter(const vector<string>& pname, const string& utf, FinitePredTable* t, YYLTYPE);
-	void truethreepredinter(const vector<string>& pname, const string& utf, YYLTYPE);
-	void falsethreepredinter(const vector<string>& pname, const string& utf, YYLTYPE);
-	void threefuncinter(const vector<string>& fname, const string& utf, FinitePredTable* t, YYLTYPE);
-	void threeinter(const vector<string>& name, const string& utf, FiniteSortTable* t, YYLTYPE);
-	void emptythreeinter(const vector<string>& name, const string& utf, YYLTYPE);
+	void threepredinter(NSTuple*, const string& utf, FinitePredTable* t);
+	void truethreepredinter(NSTuple*, const string& utf);
+	void falsethreepredinter(NSTuple*, const string& utf);
+	void threefuncinter(NSTuple*, const string& utf, FinitePredTable* t);
+	void threeinter(NSTuple*, const string& utf, FiniteSortTable* t);
+	void emptythreeinter(NSTuple*, const string& utf);
 
 	// asp atoms
-	void predatom(const vector<string>&,YYLTYPE);
-	void predatom(const vector<string>&, const vector<ElementType>&, const vector<Element>&, const vector<FiniteSortTable*>&, YYLTYPE);
-	void funcatom(const vector<string>&, const vector<ElementType>&, const vector<Element>&, const vector<FiniteSortTable*>&, YYLTYPE);
+	void predatom(NSTuple*, const vector<Element>&, const vector<FiniteSortTable*>&, const vector<ElementType>&, const vector<bool>&,bool);
+	void funcatom(NSTuple*, const vector<Element>&, const vector<FiniteSortTable*>&, const vector<ElementType>&, const vector<bool>&,bool);
 
 	/** Theory **/
 	void opentheory(const string& tname, YYLTYPE);
@@ -116,10 +134,8 @@ namespace Insert {
 
 	BoolForm*		trueform(YYLTYPE);		// the formula TRUE
 	BoolForm*		falseform(YYLTYPE);		// the formula FALSE
-	PredForm*		funcgraphform(const vector<string>&, const vector<Term*>&, Term*, YYLTYPE);
-	PredForm*		funcgraphform(const vector<string>&, Term*, YYLTYPE);
-	PredForm*		predform(const vector<string>&, const vector<Term*>&, YYLTYPE);
-	PredForm*		predform(const vector<string>&, YYLTYPE);
+	PredForm*		funcgraphform(NSTuple*, const vector<Term*>&, Term*, YYLTYPE);
+	PredForm*		funcgraphform(NSTuple*, Term*, YYLTYPE);
 	PredForm*		predform(NSTuple*, const vector<Term*>&, YYLTYPE);
 	PredForm*		predform(NSTuple*, YYLTYPE);
 	EquivForm*		equivform(Formula*,Formula*,YYLTYPE);
@@ -136,11 +152,8 @@ namespace Insert {
 	Variable*		quantifiedvar(const string& name, YYLTYPE l);
 	Variable*		quantifiedvar(const string& name, Sort* sort, YYLTYPE l);
 
-	FuncTerm*		functerm(const vector<string>&, const vector<Term*>&, YYLTYPE);
-	FuncTerm*		functerm(const vector<string>&, YYLTYPE);
-	FuncTerm*		functerm(NSTuple*, const vector<Term*>&, YYLTYPE);
-	FuncTerm*		functerm(NSTuple*, YYLTYPE);
-	Term*			funcvar(const vector<string>&, YYLTYPE);
+	FuncTerm*		functerm(NSTuple*, const vector<Term*>&);
+	Term*			functerm(NSTuple*);
 	Term*			arterm(char,Term*,Term*,YYLTYPE);
 	Term*			arterm(const string&,Term*,YYLTYPE);
 
@@ -161,6 +174,25 @@ namespace Insert {
 	void	command(const string& cname, const vector<string>& args, YYLTYPE);
 	void	command(InfArgType,const string& cname, const string& res, YYLTYPE);
 	void	command(const string& cname, YYLTYPE);
+
+	/** Pointers to symbols **/
+
+	// Return the sort with the given name
+	Sort*	sortpointer(const vector<string>& sname, YYLTYPE);	
+
+	// Return the predicate with the given name and sorts
+	Predicate*	predpointer(const vector<string>& pname, const vector<Sort*>&, YYLTYPE);
+	Predicate*	predpointer(const vector<string>& pname, YYLTYPE);	
+
+	// Return the function with the given name and sorts
+	Function*	funcpointer(const vector<string>& fname, const vector<Sort*>&, YYLTYPE);	
+	Function*	funcpointer(const vector<string>& fname, YYLTYPE);	
+
+	/** Pointers to symbols in the current vocabulary **/
+	Sort*		theosortpointer(const vector<string>& vs, YYLTYPE l);
+	NSTuple*	internpointer(const vector<string>& name, const vector<Sort*>& sorts, YYLTYPE l);
+	NSTuple*	internpointer(const vector<string>& name, YYLTYPE l);
+
 }
 
 #endif

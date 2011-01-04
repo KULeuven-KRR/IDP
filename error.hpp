@@ -39,6 +39,11 @@ namespace Error {
 	void wrongarity(const ParseInfo& pi);
 	void wrongpredarity(const string& p, const ParseInfo& pi);
 	void wrongfuncarity(const string& f, const ParseInfo& pi);
+	void incompatiblearity(const string& n, const ParseInfo& pi);
+
+	/** Function name where predicate is expected, and vice versa **/
+	void prednameexpected(const ParseInfo& pi);
+	void funcnameexpected(const ParseInfo& pi);
 
 	/** Invalid interpretations **/
 	void multpredinter(const string& s, const ParseInfo& pi);
@@ -72,6 +77,7 @@ namespace Error {
 	void undeclvoc(const string& vocname, const ParseInfo& thisplace);
 	void undecltheo(const string& tname, const ParseInfo& thisplace);
 	void undeclstruct(const string& sname, const ParseInfo& thisplace);
+	void undeclspace(const string& sname, const ParseInfo& thisplace);
 	void undeclsort(const string& sname, const ParseInfo& thisplace);
 	void undeclpred(const string& pname, const ParseInfo& thisplace);
 	void undeclfunc(const string& fname, const ParseInfo& thisplace);
@@ -89,6 +95,12 @@ namespace Error {
 
 	/** Using overlapping symbols **/
 	void predorfuncsymbol(const string& name, const ParseInfo& thisplace);
+	void overloadedsort(const string& name, const ParseInfo& p1, const ParseInfo& p2, const ParseInfo& thisplace);
+	void overloadedpred(const string& name, const ParseInfo& p1, const ParseInfo& p2, const ParseInfo& thisplace);
+	void overloadedspace(const string& name, const ParseInfo& p1, const ParseInfo& p2, const ParseInfo& thisplace);
+	void overloadedvocab(const string& name, const ParseInfo& p1, const ParseInfo& p2, const ParseInfo& thisplace);
+	void overloadedtheory(const string& name, const ParseInfo& p1, const ParseInfo& p2, const ParseInfo& thisplace);
+	void overloadedstructure(const string& name, const ParseInfo& p1, const ParseInfo& p2, const ParseInfo& thisplace);
 
 	/** Sort hierarchy errors **/
 	void notsubsort(const string&, const string&, const ParseInfo& pi);

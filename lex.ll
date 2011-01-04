@@ -20,7 +20,8 @@ extern YYLTYPE yylloc;
 extern void setclconst(string,string);
 
 // Return to right mode after a comment
-int caller;	
+int commentcaller;	
+int	includecaller;
 
 // Tab length
 int tablen = 4;
@@ -128,6 +129,8 @@ void end_include() {
 %option noyywrap
 
 %x comment
+%x vocabulary
+%x structure
 %x theory 
 %x include
 
@@ -148,33 +151,36 @@ COMMENTLINE		"//".*
 	***************/
 
 <*>{COMMENTLINE}			{							}
-<*>"/*"						{ caller = YY_START;
+<*>"/*"						{ commentcaller = YY_START;
 							  BEGIN(comment);	
 							  advancecol();				}
 <comment>[^*\n]*			{ advancecol();				}
 <comment>[^*\n]*\n			{ advanceline();			}
 <comment>"*"+[^*/\n]*		{ advancecol();				}
 <comment>"*"+[^*/\n]*\n		{ advanceline();			}
-<comment>"*"+"/"			{ BEGIN(caller);           
+<comment>"*"+"/"			{ BEGIN(commentcaller);           
 							  advancecol();				}
 
 
-	/***************************
-		Headers (GidL2 style)
-	***************************/
+	/***************
+		Headers 
+	***************/
 
-<*>"#vocabulary"			{ BEGIN(theory);
+<*>"#vocabulary"			{ BEGIN(vocabulary);
 							  advancecol();
 							  return VOCAB_HEADER;		}
 <*>"#theory"				{ BEGIN(theory);
 							  advancecol();
 							  return THEORY_HEADER;		}
-<*>"#structure"				{ BEGIN(INITIAL);
+<*>"#structure"				{ BEGIN(structure);
 							  advancecol();
 							  return STRUCT_HEADER;		}
-<*>"#asp_structure"			{ BEGIN(INITIAL);
+<*>"#asp_structure"			{ BEGIN(structure);
 							  advancecol();
 							  return ASP_HEADER;		}
+<*>"#asp_belief"			{ BEGIN(structure);
+							  advancecol();
+							  return ASP_BELIEF;		}
 <*>"#namespace"				{ BEGIN(INITIAL);
 							  advancecol();
 							  return NAMESPACE_HEADER;	}
@@ -182,7 +188,7 @@ COMMENTLINE		"//".*
 							  advancecol();
 							  return EXECUTE_HEADER;	}
 <*>"#include"				{ advancecol();
-							  caller = YY_START;
+							  includecaller = YY_START;
 							  BEGIN(include);
 							}
 
@@ -192,7 +198,7 @@ COMMENTLINE		"//".*
 
 <include>"stdin"			{ advancecol();
 							  start_stdin_include();
-							  BEGIN(caller);
+							  BEGIN(includecaller);
 							}
 <include>"$"[a-zA-Z0-9_]*	{ advancecol();
 							  string temp(yytext);
@@ -207,41 +213,45 @@ COMMENTLINE		"//".*
 									  ParseInfo pi(yylloc.first_line,yylloc.first_column,Insert::currfile());
 									  Error::stringconsexp(temp,pi);
 								  }
-								  BEGIN(caller);
+								  BEGIN(includecaller);
 							  }
 							  else {
 								  cerr << "Type a value for constant " << temp << endl << "> "; 
 								  string str;
 								  getline(cin,str);
 								  start_include(str);
-								  BEGIN(caller);
+								  BEGIN(includecaller);
 							  }
 							}
 <include>{STR}				{ advancecol();
 							  char* temp = yytext; ++temp;
 							  string str(temp,yyleng-2);
 							  start_include(str);	
-							  BEGIN(caller);
+							  BEGIN(includecaller);
 							}
+
+	/****************
+		Vocabulary
+	****************/
+
+	/** Keywords **/
+
+<vocabulary>"type"              { advancecol();
+								  return TYPE;				}
+<vocabulary>"partial"			{ advancecol();
+								  return PARTIAL;			}
+<vocabulary>"constructor"		{ advancecol();
+								  return CONSTR;			}
+<vocabulary>"isa"				{ advancecol();
+								  return ISA;				}
+<vocabulary>"extends"			{ advancecol();
+								  return EXTENDS;			}
+<vocabulary>"extern"			{ advancecol();
+								  return EXTERN;			}
 
 	/*************
 		Theory
 	*************/
-
-	/** Keywords **/
-
-<theory>"type"              { advancecol();
-							  return TYPE;				}
-<theory>"partial"			{ advancecol();
-							  return PARTIAL;			}
-<theory>"constructor"		{ advancecol();
-							  return CONSTR;			}
-<theory>"isa"				{ advancecol();
-							  return ISA;				}
-<theory>"extends"			{ advancecol();
-							  return EXTENDS;			}
-<theory>"extern"			{ advancecol();
-							  return EXTERN;			}
 
 
 	/** Aggregates **/
@@ -276,7 +286,12 @@ COMMENTLINE		"//".*
 							  return EQUIV;				}
 <theory>"<-"				{ advancecol();
 							  return DEFIMP;			}
+	/** True and false **/
 
+<theory>"true"				{ advancecol();
+							  return TRUE;				}
+<theory>"false"				{ advancecol();
+							  return FALSE;				}
 
 	/** Comparison **/
 
@@ -286,29 +301,36 @@ COMMENTLINE		"//".*
 						   	  return GEQ;				}
 <theory>"~="                { advancecol();
 							  return NEQ;				}
+	/** Ranges **/
 
+<theory>".."				{ advancecol();
+							  return RANGE;				}
 
 
 	/****************
 		Structure 
 	****************/
 
-"->"						{ advancecol();
+<structure>"->"				{ advancecol();
 							  return MAPS;				}
-<*>".."						{ advancecol();
+<structure>".."				{ advancecol();
 							  return RANGE;				}
+<structure>"true"					{ advancecol();
+							  return TRUE;				}
+<structure>"false"					{ advancecol();
+							  return FALSE;				}
 
 
 	/******************
 		Identifiers
 	******************/
 
-<*>"true"					{ advancecol();
-							  return TRUE;				}
-<*>"false"					{ advancecol();
-							  return FALSE;				}
 <*>"using"					{ advancecol();
 							  return USING;				}
+<*>"vocabulary"				{ advancecol();
+							  return VOCABULARY;		}
+<*>"namespace"				{ advancecol();
+							  return NAMESPACE;			}
 <*>{CH}						{ advancecol();
 							  yylval.chr = *yytext;
 							  return CHARACTER;			}
