@@ -20,7 +20,7 @@ typedef unordered_map<string,string*>			MSSP;
 typedef map<vector<TypedElement>,compound*>		MVTC;
 typedef map<Function*,MVTC>						MFMVTC;
 
-extern Options _options;
+extern CLOptions _cloptions;
 
 /******************************************
 	Shared pointers for domain elements

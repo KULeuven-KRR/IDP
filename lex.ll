@@ -26,6 +26,9 @@ int	includecaller;
 // Tab length
 int tablen = 4;
 
+// Bracket counter for closing lua blocks
+int bracketcounter;
+
 // substitute command line constants
 map<string,CLConst*> clconsts;	
 
@@ -132,7 +135,10 @@ void end_include() {
 %x vocabulary
 %x structure
 %x theory 
+%x option
 %x include
+%x procedure
+%x lua
 
 ID				_*[A-Za-z][a-zA-Z0-9_]*	
 CH				[A-Za-z]
@@ -161,6 +167,51 @@ COMMENTLINE		"//".*
 <comment>"*"+"/"			{ BEGIN(commentcaller);           
 							  advancecol();				}
 
+	/*************
+		Include
+	*************/
+
+<*>"#include"				{ advancecol();
+							  includecaller = YY_START;
+							  BEGIN(include);
+							}
+
+	/**********
+		Lua
+	**********/
+
+<procedure>"{"				{ advancecol();
+							  BEGIN(lua);
+							  bracketcounter = 0;		
+							  return *yytext;
+							}
+<lua>"{"					{ advancecol(); 
+							  Insert::luacode(string("{"));
+							  ++bracketcounter;			}
+<lua>"}"					{ advancecol();
+							  --bracketcounter;
+							  if(bracketcounter < 1) {
+								BEGIN(INITIAL);
+								return *yytext;
+							  }
+							  else Insert::luacode(string("}"));
+							}
+<lua>"#"{ID}				{ advancecol();
+							  Insert::luacode(yytext);
+							}
+<lua>{WHITESPACE}           { advancecol();				
+							  Insert::luacode(string(" "));
+							}
+<lua>"\t"					{ advancecol(); 
+							  Insert::luacode(string("\t"));
+							  prevlength = tablen;		
+							}
+<lua>.                      { advancecol();
+							  Insert::luacode(yytext);	
+							}
+<lua>\n                     { advanceline();			
+							  Insert::luacode(string("\n"));
+							}
 
 	/***************
 		Headers 
@@ -184,12 +235,12 @@ COMMENTLINE		"//".*
 <*>"#namespace"				{ BEGIN(INITIAL);
 							  advancecol();
 							  return NAMESPACE_HEADER;	}
-<*>"#execute"				{ BEGIN(INITIAL);
+<*>"#procedure"				{ BEGIN(procedure);
 							  advancecol();
-							  return EXECUTE_HEADER;	}
-<*>"#include"				{ advancecol();
-							  includecaller = YY_START;
-							  BEGIN(include);
+							  return PROCEDURE_HEADER;	}
+<*>"#options"				{ BEGIN(option);
+							  advancecol();
+							  return OPTION_HEADER;
 							}
 
 	/**************
@@ -248,6 +299,10 @@ COMMENTLINE		"//".*
 								  return EXTENDS;			}
 <vocabulary>"extern"			{ advancecol();
 								  return EXTERN;			}
+<option>"extern"				{ advancecol();
+								  return EXTERN;			}
+<option>"options"				{ advancecol();	
+								  return OPTIONS;			}
 
 	/*************
 		Theory
@@ -315,10 +370,12 @@ COMMENTLINE		"//".*
 							  return MAPS;				}
 <structure>".."				{ advancecol();
 							  return RANGE;				}
-<structure>"true"					{ advancecol();
+<structure>"true"			{ advancecol();
 							  return TRUE;				}
-<structure>"false"					{ advancecol();
+<structure>"false"			{ advancecol();
 							  return FALSE;				}
+<structure>"procedure"		{ advancecol();
+							  return PROCEDURE;			}
 
 
 	/******************

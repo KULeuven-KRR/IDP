@@ -11,8 +11,6 @@
 #include "options.hpp"
 #include "data.hpp"
 
-extern Options options;
-
 void PrintTheory::execute(const vector<InfArg>& args, const string& res,Namespace*) const {
 	assert(args.size() == 1);
 	// TODO

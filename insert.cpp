@@ -407,6 +407,8 @@ namespace Insert {
 	Vocabulary*				_currvocab;		// The current vocabulary
 	Theory*					_currtheory;	// The current theory
 	Structure*				_currstructure;	// The current structure
+	InfOptions*				_curroptions;	// The current options
+	LuaProcedure*			_currproc;		// The current procedure
 
 	vector<Vocabulary*>		_usingvocab;	// The vocabularies currently used to parse
 	vector<unsigned int>	_nrvocabs;		// The number of using vocabulary statements in the current block
@@ -422,6 +424,8 @@ namespace Insert {
 		_currvocab = 0;
 		_currtheory = 0;
 		_currstructure = 0;
+		_curroptions = 0;
+		_currproc = 0;
 	}
 
 	map<string,vector<Inference*> >	_inferences;	// All inference methods
@@ -515,6 +519,28 @@ namespace Insert {
 		return s;
 	}
 
+	InfOptions* optionsInScope(const string& name, const ParseInfo& pi) {
+		InfOptions* opt = 0;
+		for(unsigned int n = 0; n < _usingspace.size(); ++n) {
+			if(_usingspace[n]->isOption(name)) {
+				if(opt) Error::overloadedopt(name,_usingspace[n]->option(name)->_pi,opt->_pi,pi);
+				else opt = _usingspace[n]->option(name);
+			}
+		}
+		return opt;
+	}
+
+	LuaProcedure* procInScope(const string& name, const ParseInfo& pi) {
+		LuaProcedure* lp = 0;
+		for(unsigned int n = 0; n < _usingspace.size(); ++n) {
+			if(_usingspace[n]->isProc(name)) {
+				if(lp) Error::overloadedproc(name,_usingspace[n]->procedure(name)->pi(),lp->pi(),pi);
+				else lp = _usingspace[n]->procedure(name);
+			}
+		}
+		return lp;
+	}
+
 	Namespace* namespaceInScope(const vector<string>& vs, const ParseInfo& pi) {
 		assert(!vs.empty());
 		if(vs.size() == 1) {
@@ -567,6 +593,46 @@ namespace Insert {
 			}
 			if(ns->isStructure(vs.back())) {
 				return ns->structure(vs.back());
+			}
+			else return 0;
+		}
+	}
+
+	InfOptions* optionsInScope(const vector<string>& vs, const ParseInfo& pi) {
+		assert(!vs.empty());
+		if(vs.size() == 1) {
+			return optionsInScope(vs[0],pi);
+		}
+		else {
+			Namespace* ns = namespaceInScope(vs[0],pi);
+			for(unsigned int n = 1; n < (vs.size()-1); ++n) {
+				if(ns->isSubspace(vs[n])) {
+					ns = ns->subspace(vs[n]);
+				}
+				else return 0;
+			}
+			if(ns->isOption(vs.back())) {
+				return ns->option(vs.back());
+			}
+			else return 0;
+		}
+	}
+
+	LuaProcedure* procInScope(const vector<string>& vs, const ParseInfo& pi) {
+		assert(!vs.empty());
+		if(vs.size() == 1) {
+			return procInScope(vs[0],pi);
+		}
+		else {
+			Namespace* ns = namespaceInScope(vs[0],pi);
+			for(unsigned int n = 1; n < (vs.size()-1); ++n) {
+				if(ns->isSubspace(vs[n])) {
+					ns = ns->subspace(vs[n]);
+				}
+				else return 0;
+			}
+			if(ns->isProc(vs.back())) {
+				return ns->procedure(vs.back());
 			}
 			else return 0;
 		}
@@ -813,6 +879,115 @@ namespace Insert {
 		_nrspaces.push_back(1);
 	}
 
+	/*************
+		Options
+	*************/
+	
+	void openoptions(const string& name, YYLTYPE l) {
+		Info::print("Parsing options " + name);
+		ParseInfo pi = parseinfo(l);
+		InfOptions* opt = optionsInScope(name,pi);
+		if(opt) Error::multdeclopt(name,pi,opt->_pi);
+		_curroptions = new InfOptions(name,pi);
+		_currspace->add(_curroptions);
+		_nrvocabs.push_back(0);
+		_nrspaces.push_back(0);
+	}
+
+	void closeoptions() {
+		closeblock();
+	}
+
+	void externoption(const vector<string>& name, YYLTYPE l) {
+		ParseInfo pi = parseinfo(l);
+		InfOptions* opt = optionsInScope(name,pi);
+		if(opt) _curroptions->set(opt);
+		else Error::undeclopt(oneName(name),pi);
+	}
+
+	void option(const string& opt, const string& val, YYLTYPE l) {
+		ParseInfo pi = parseinfo(l);
+		if(InfOptions::isoption(opt)) {
+			Error::wrongvaluetype(opt,pi);
+		}
+		else Error::unknopt(opt,pi);
+	}
+
+	void option(const string& opt, double val, YYLTYPE l) {
+		ParseInfo pi = parseinfo(l);
+		if(InfOptions::isoption(opt)) {
+			Error::wrongvaluetype(opt,pi);
+		}
+		else Error::unknopt(opt,pi);
+	}
+
+	void option(const string& opt, int val, YYLTYPE l) {
+		ParseInfo pi = parseinfo(l);
+		if(InfOptions::isoption(opt)) {
+			if(opt == "nrmodels") {
+				if(val >= 0) {
+					_curroptions->_nrmodels = val;
+				}
+				else Error::posintexpected(opt,pi);
+			}
+			else Error::wrongvaluetype(opt,pi);
+		}
+		else Error::unknopt(opt,pi);
+	}
+
+	/*****************
+		Procedures
+	*****************/
+
+	void openproc(const string& name, YYLTYPE l) {
+		Info::print("Parsing procedure " + name);
+		ParseInfo pi = parseinfo(l);
+		LuaProcedure* lp = procInScope(name,pi);
+		if(lp) Error::multdeclproc(name,pi,lp->pi());
+		_currproc = new LuaProcedure(name,pi);
+		_currspace->add(_currproc);
+		_nrvocabs.push_back(0);
+		_nrspaces.push_back(0);
+	}
+
+	void closeproc() {
+		closeblock();
+	}
+
+	void procarg(const string& type, const string& name, YYLTYPE l) {
+		InfArgType tp = IATUtils::to_iat(type);
+		if(tp != IAT_ERROR) _currproc->addarg(tp,name);
+		else {
+			ParseInfo pi = parseinfo(l);
+			Error::unkniat(type,pi);
+		}
+	}
+
+	void procreturn(const string& type, YYLTYPE l) {
+		InfArgType tp = IATUtils::to_iat(type);
+		if(tp != IAT_ERROR) _currproc->outtype(tp);
+		else {
+			ParseInfo pi = parseinfo(l);
+			Error::unkniat(type,pi);
+		}
+	}
+
+	void luacode(char* s) {
+		_currproc->add(s);
+	}
+
+	void luacode(const string& s) {
+		_currproc->add(s);
+	}
+
+	void luacode(const vector<string>& vs) {
+		assert(!vs.empty());
+		_currproc->add(vs[0]);
+		for(unsigned int n = 1; n < vs.size(); ++n) {
+			_currproc->add(string("."));
+			_currproc->add(vs[n]);
+		}
+	}
 
 	/*******************
 		Vocabularies
@@ -946,6 +1121,25 @@ namespace Insert {
 	}
 
 	/** Add symbols to the current vocabulary **/
+
+	void externvocab(const vector<string>& vname, YYLTYPE l) {
+		ParseInfo pi = parseinfo(l);
+		Vocabulary* v = vocabInScope(vname,pi);
+		if(v) {
+			for(map<string,std::set<Sort*> >::iterator it = v->firstsort(); it != v->lastsort(); ++it) {
+				for(std::set<Sort*>::iterator jt = (it->second).begin(); jt != (it->second).end(); ++jt) {
+					_currvocab->addSort(*jt);
+				}
+			}
+			for(map<string,Predicate*>::iterator it = v->firstpred(); it != v->lastpred(); ++it) {
+				_currvocab->addPred(it->second);
+			}
+			for(map<string,Function*>::iterator it = v->firstfunc(); it != v->lastfunc(); ++it) {
+				_currvocab->addFunc(it->second);
+			}
+		}
+		else Error::undeclvoc(oneName(vname),pi);
+	}
 
 	Sort* sort(Sort* s) {
 		if(s) _currvocab->addSort(s);
@@ -1615,16 +1809,18 @@ namespace Insert {
 	/** ASP atoms **/
 
 	void predatom(Predicate* p, const vector<ElementType>& vet, const vector<Element>& ve, bool ct) {
-// TODO
-		FinitePredTable* pt = dynamic_cast<FinitePredTable*>(_currstructure->inter(p)->ctpf());
+		FinitePredTable* pt;
+		if(ct) pt = dynamic_cast<FinitePredTable*>(_currstructure->inter(p)->ctpf());
+		else pt = dynamic_cast<FinitePredTable*>(_currstructure->inter(p)->cfpt());
 		pt->addRow(ve,vet);
 	}
 
 	void predatom(Predicate* p, ElementType t, Element e, bool ct) {
-// TODO
 		PredInter* pt = _currstructure->inter(p);
 		if(pt) {
-			FiniteSortTable* spt = dynamic_cast<FiniteSortTable*>(pt->ctpf());
+			FiniteSortTable* spt;
+			if(ct) spt = dynamic_cast<FiniteSortTable*>(pt->ctpf());
+			else spt = dynamic_cast<FiniteSortTable*>(pt->cfpt());
 			FiniteSortTable* ust = 0;
 			switch(t) {
 				case ELINT:
@@ -1633,36 +1829,39 @@ namespace Insert {
 					ust = spt->add(e._double); break;
 				case ELSTRING:
 					ust = spt->add(e._string); break;
+				case ELCOMPOUND:
+					ust = spt->add(e._compound); break;
 				default:
 					assert(false);
 			}
 			if(ust != spt) {
 				delete(spt);
-				pt->replace(ust,true,true);
-				if(p->sort(0)->pred() == p) _currstructure->inter(p->sort(0),ust);
+				pt->replace(ust,ct,true);
 			}
 		}
 		else {
 			FiniteSortTable* ust = 0;
+			FiniteSortTable* ost = new IntSortTable();
 			switch(t) {
 				case ELINT: ust = new IntSortTable(); ust->add(e._int); break;
 				case ELDOUBLE: ust = new FloatSortTable(); ust->add(e._double); break;
 				case ELSTRING: ust = new StrSortTable(); ust->add(e._string); break;
+				case ELCOMPOUND: ust = new MixedSortTable(); ust->add(e._compound); break;
 				default: assert(false);
 			}
-			pt = new PredInter(ust,true);
+			if(ct) pt = new PredInter(ust,ost,true,true);
+			else pt = new PredInter(ost,ust,true,true);
 			_currstructure->inter(p,pt);
-			if(p->sort(0)->pred() == p) _currstructure->inter(p->sort(0),ust);
 		}
 	}
 
 	void predatom(Predicate* p, FiniteSortTable* st, bool ct) {
-// TODO
 		PredInter* pt = _currstructure->inter(p);
 		if(!pt) {
-			pt = new PredInter(st,true);
+			FiniteSortTable* ost = new IntSortTable();
+			if(ct) pt = new PredInter(st,ost,true,true);
+			else pt = new PredInter(ost,st,true,true);
 			_currstructure->inter(p,pt);
-			if(p->sort(0)->pred() == p) _currstructure->inter(p->sort(0),st);
 		}
 		else {
 			switch(st->type()) {
@@ -1689,64 +1888,34 @@ namespace Insert {
 	}
 
 	void predatom(Predicate* p, const vector<ElementType>& vet, const vector<Element>& ve, const vector<FiniteSortTable*>& vst, const vector<bool>& vb, bool ct) {
-// TODO
-		vector<ElementType> vet2(vet.size());
-		for(unsigned int c = 0; c < vet.size(); ++c) {
-			switch(vet[c]) {
-				case ELDOUBLE: vet2[c] = ve[c]._double ? ELDOUBLE : ELINT; break;
-				default: vet2[c] = vet[c];
+
+		vector<ElementType> vet2(vb.size());
+		unsigned int skipcounter = 0;
+		for(unsigned int n = 0; n < vb.size(); ++n) {
+			if(vb[n]) vet2[n] = vet[n-skipcounter];
+			else {
+				vet2[n] = vst[skipcounter]->type();
+				++skipcounter;
 			}
 		}
+
 		vector<Element> ve2(ve.size());
-		vector<unsigned int> vi(vst.size(),0); 
-		unsigned int posctr = 0;
-		while(posctr < vi.size()) {
-			// Add the current tuple
-			unsigned int vstctr = 0;
-			for(unsigned int c = 0; c < ve2.size(); ++c) {
-				switch(vet[c]) {
-					case ELINT: ve2[c]._int = ve[c]._int; break;
-					case ELDOUBLE:
-						if(ve[c]._double) ve2[c]._double = ve[c]._double;
-						else {
-							ve2[c]._int = (vst[vstctr]->element(vi[vstctr]))._int;
-							++vstctr;
-						}
-						break;
-					case ELSTRING:
-						if(ve[c]._string) ve2[c]._string = new string(*(ve[c]._string));
-						else {
-							ve2[c]._string = (vst[vstctr]->element(vi[vstctr]))._string;
-							++vstctr;
-						}
-						break;
-					default:
-						assert(false);
+		vector<SortTable*> vst2; for(unsigned int n = 0; n < vst.size(); ++n) vst2.push_back(vst[n]);
+		SortTableTupleIterator stti(vst2);
+		if(!stti.empty()) {
+			do {
+				unsigned int skip = 0;
+				for(unsigned int n = 0; n < vb.size(); ++n) {
+					if(vb[n]) ve2[n] = ve[n-skip];
+					else {
+						ve2[n] = stti.value(skip);
+						++skip;
+					}
 				}
-			}
-			predatom(p,vet2,ve2,ct);
-			// Advance in the tables
-			bool advanced = false;
-			while(!advanced && posctr < vi.size()) {
-				++vi[posctr];
-				if(vi[posctr] == vst[posctr]->size()) {
-					vi[posctr] = 0;
-					++posctr;
-				}
-				else {
-					advanced = true;
-					posctr = 0;
-				}
-			}
+				predatom(p,vet2,ve2,ct);
+			} while(stti.nextvalue());
 		}
-		for(unsigned int c = 0; c < ve.size(); ++c) {
-			switch(vet[c]) {
-				case ELINT: break;
-				case ELDOUBLE: break;
-				case ELSTRING: if(ve[c]._string) delete(ve[c]._string); break;
-				default: assert(false);
-			}
-		}
+
 		for(unsigned int n = 0; n < vst.size(); ++n) {
 			delete(vst[n]);
 		}
@@ -1786,94 +1955,115 @@ namespace Insert {
 		delete(nst);
 	}
 
-	void funcatom(Function* f, const vector<ElementType>& vet, const vector<Element>& ve) {
+	void funcatom(Function* f, const vector<ElementType>& vet, const vector<Element>& ve, bool ct) {
 		FuncInter* ft = _currstructure->inter(f);
-		FiniteFuncTable* fft = dynamic_cast<FiniteFuncTable*>(ft->functable());
-		fft->ftable()->addRow(ve,vet);
+		FinitePredTable* pt;
+		if(ct) pt = dynamic_cast<FinitePredTable*>(ft->predinter()->ctpf());
+		else pt = dynamic_cast<FinitePredTable*>(ft->predinter()->cfpt());
+		pt->addRow(ve,vet);
 	}
 
-	void funcatom(Function* f, const vector<ElementType>& vet, const vector<Element>& ve, const vector<FiniteSortTable*>& vst) {
-		vector<ElementType> vet2(vet.size());
-		for(unsigned int c = 0; c < vet.size(); ++c) {
-			switch(vet[c]) {
-				case ELDOUBLE: vet2[c] = ve[c]._double ? ELDOUBLE : ELINT; break;
-				default: vet2[c] = vet[c];
+	void funcatom(Function* f, const vector<ElementType>& vet, const vector<Element>& ve, const vector<FiniteSortTable*>& vst, const vector<bool>& vb, bool ct) {
+		vector<ElementType> vet2(vb.size());
+		unsigned int skipcounter = 0;
+		for(unsigned int n = 0; n < vb.size(); ++n) {
+			if(vb[n]) vet2[n] = vet[n-skipcounter];
+			else {
+				vet2[n] = vst[skipcounter]->type();
+				++skipcounter;
 			}
 		}
+
 		vector<Element> ve2(ve.size());
-		vector<unsigned int> vi(vst.size(),0); 
-		unsigned int posctr = 0;
-		while(posctr < vi.size()) {
-			// Add the current tuple
-			unsigned int vstctr = 0;
-			for(unsigned int c = 0; c < ve2.size(); ++c) {
-				switch(vet[c]) {
-					case ELINT: ve2[c]._int = ve[c]._int; break;
-					case ELDOUBLE:
-						if(ve[c]._double) ve2[c]._double = ve[c]._double;
-						else {
-							ve2[c]._int = (vst[vstctr]->element(vi[vstctr]))._int;
-							++vstctr;
-						}
-						break;
-					case ELSTRING:
-						if(ve[c]._string) ve2[c]._string = new string(*(ve[c]._string));
-						else {
-							ve2[c]._string = (vst[vstctr]->element(vi[vstctr]))._string;
-							++vstctr;
-						}
-						break;
-					default:
-						assert(false);
+		vector<SortTable*> vst2; for(unsigned int n = 0; n < vst.size(); ++n) vst2.push_back(vst[n]);
+		SortTableTupleIterator stti(vst2);
+		if(!stti.empty()) {
+			do {
+				unsigned int skip = 0;
+				for(unsigned int n = 0; n < vb.size(); ++n) {
+					if(vb[n]) ve2[n] = ve[n-skip];
+					else {
+						ve2[n] = stti.value(skip);
+						++skip;
+					}
 				}
-			}
-			funcatom(f,vet2,ve2);
-			// Advance in the tables
-			bool advanced = false;
-			while(!advanced && posctr < vi.size()) {
-				++vi[posctr];
-				if(vi[posctr] == vst[posctr]->size()) {
-					vi[posctr] = 0;
-					++posctr;
-				}
-				else {
-					advanced = true;
-					posctr = 0;
-				}
-			}
+				funcatom(f,vet2,ve2,ct);
+			} while(stti.nextvalue());
 		}
-		for(unsigned int c = 0; c < ve.size(); ++c) {
-			switch(vet[c]) {
-				case ELINT: break;
-				case ELDOUBLE: break;
-				case ELSTRING: if(ve[c]._string) delete(ve[c]._string); break;
-				default: assert(false);
-			}
-		}
+
 		for(unsigned int n = 0; n < vst.size(); ++n) {
 			delete(vst[n]);
 		}
 	}
 
-	void funcatom(const vector<string>& name, const vector<ElementType>& vet, const vector<Element>& ve, const vector<FiniteSortTable*>& vst, YYLTYPE l) {
-		ParseInfo pi = parseinfo(l);
-		Function* f = funcInScope(name,pi);
-		if(f) {
-			FuncInter* ft = _currstructure->inter(f);
-			if(!ft) {
-				vector<ElementType> vet2(vet.size(),ELINT);
-				FinitePredTable* upt = new FinitePredTable(vet2);
-				FiniteFuncTable* fft = new FiniteFuncTable(upt);
-				PredInter* pt = new PredInter(upt,true);
-				ft = new FuncInter(fft,pt);
-				_currstructure->inter(f,ft);
-			}
-			if(vst.empty()) funcatom(f,vet,ve);
-			else funcatom(f,vet,ve,vst);
+	void funcatom(NSTuple* nst, const vector<Element>& ve, const vector<FiniteSortTable*>& vt, const vector<ElementType>& vet, const vector<bool>& vb,bool ct) {
+		ParseInfo pi = nst->_pi;
+		if(nst->_sortsincluded) {
+			if((nst->_sorts).size() != vb.size()) Error::incompatiblearity(nst->to_string(),pi);
+			if(!nst->_func) Error::funcnameexpected(pi);
 		}
-		else Error::funcnotinstructvoc(oneName(name),_currstructure->name(),pi);
+		(nst->_name).back() = (nst->_name).back() + '/' + itos(vb.size()-1);
+		Function* f = funcInScope(nst->_name,pi);
+		if(f && nst->_sortsincluded && (nst->_sorts).size() == vb.size()) f = f->resolve(nst->_sorts);
+		if(f) {
+			if(belongsToVoc(f)) {
+				FuncInter* ft = _currstructure->inter(f);
+				if(!ft) {
+					vector<ElementType> vet2(vb.size(),ELINT);
+					FinitePredTable* ctt = new FinitePredTable(vet2);
+					FinitePredTable* cft = new FinitePredTable(vet2);
+					PredInter* pt = new PredInter(ctt,cft,true,true);
+					ft = new FuncInter(0,pt);
+					_currstructure->inter(f,ft);
+				}
+				if(vt.empty()) funcatom(f,vet,ve,ct);
+				else funcatom(f,vet,ve,vt,vb,ct);
+			}
+			else Error::funcnotinstructvoc(nst->to_string(),_currstructure->name(),pi);
+		}
+		else Error::undeclfunc(nst->to_string(),pi);
+		delete(nst);
 	}
 
+
+	/** Compound domain elements **/
+
+	compound* makecompound(NSTuple* nst, const vector<TypedElement*>& vte) {
+		ParseInfo pi = nst->_pi;
+		if(nst->_sortsincluded) {
+			if((nst->_sorts).size() != vte.size()+1) Error::incompatiblearity(nst->to_string(),pi);
+			if(!(nst->_func)) Error::funcnameexpected(pi);
+		}
+		(nst->_name).back() = (nst->_name).back() + '/' + itos(vte.size());
+		Function* f = funcInScope(nst->_name,pi);
+		compound* c = 0;
+		if(f && nst->_sortsincluded && (nst->_sorts).size() == vte.size()+1) f = f->resolve(nst->_sorts);
+		if(f) {
+			if(belongsToVoc(f)) {
+				if(f->constructor()) {
+					vector<TypedElement> nvte;
+					for(unsigned int n = 0; n < vte.size(); ++n) {
+						if(vte[n]) {
+							nvte.push_back(*(vte[n]));
+							delete((vte[n]));
+						}
+						else return 0;
+					}
+					c = CPPointer(f,nvte);
+				}
+				else Error::funcnotconstr(nst->to_string(),pi);
+			}
+			else Error::funcnotinstructvoc(nst->to_string(),_currstructure->name(),pi);
+		}
+		else Error::undeclfunc(nst->to_string(),pi);
+		return c;
+	}
+
+	compound* makecompound(NSTuple* nst) {
+		vector<TypedElement*> vte(0);
+		return makecompound(nst,vte);
+	}
+	
 	/***************
 		Theories
 	***************/

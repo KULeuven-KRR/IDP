@@ -7,6 +7,8 @@
 #ifndef OPTIONS_H
 #define OPTIONS_H
 
+/** Command-line options **/
+
 enum WarningTypes { 
 	WT_FREE_VARS=0,		// warning if free variables are detected
 	WT_VARORCONST=1,	// warning if it is ambiguous whether some term is a variable or a constant
@@ -14,7 +16,7 @@ enum WarningTypes {
 	WT_STDIN=3			// warning if trying to read from the stdin
 };
 
-struct Options {
+class CLOptions {
 
 	public:
 		  // Attributes
@@ -25,13 +27,47 @@ struct Options {
 		  vector<bool>		_warning;			// _warning[n] = true means that warnings of type n are not suppressed
 
 		  // Constructor (default options)
-		  Options() {
+		  CLOptions() {
 				_statistics = false;
 				_verbose = false;
 				_readfromstdin = false;
 				_interactive = false;
 				_warning = vector<bool>(4,true);
 		  }
+
+};
+
+/** Inference options **/
+
+class InfOptions {
+	
+	public:
+
+		// Name and place
+		string			_name;		// the name of the options
+		ParseInfo		_pi;		
+
+		// Attributes
+		unsigned int	_nrmodels;	// the number of models to compute
+		
+		// Constructor (default options)
+		InfOptions(const string& name, const ParseInfo& pi) : 
+			_name(name), 
+			_pi(pi),
+			_nrmodels(1) 
+			{ }
+
+		// Setters
+		void set(InfOptions* opt) {
+			_nrmodels = opt->_nrmodels;
+		}
+
+		// Inspectors
+		static bool isoption(const string& str) {
+			bool r = false;
+			if(str == "nrmodels") r = true;
+			return r;
+		}
 
 };
 

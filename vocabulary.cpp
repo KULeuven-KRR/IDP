@@ -15,15 +15,25 @@
 *********************/
 
 namespace IATUtils {
+
 	string to_string(InfArgType t) {
 		switch(t) {
 			case IAT_VOID: return "void";
-			case IAT_NAMESPACE: return "Namespace";
-			case IAT_STRUCTURE: return "Structure";
-			case IAT_THEORY: return "Theory";
-			case IAT_VOCABULARY: return "Vocabulary";
+			case IAT_NAMESPACE: return "namespace";
+			case IAT_STRUCTURE: return "structure";
+			case IAT_THEORY: return "theory";
+			case IAT_VOCABULARY: return "vocabulary";
 			default: assert(false); return "";
 		}
+	}
+
+	InfArgType to_iat(const string& s) {
+		if(s == "void") return IAT_VOID;
+		else if(s == "namespace") return IAT_NAMESPACE;
+		else if(s == "structure") return IAT_STRUCTURE;
+		else if(s == "theory") return IAT_THEORY;
+		else if(s == "vocabulary") return IAT_VOCABULARY;
+		else return IAT_ERROR;
 	}
 }
 

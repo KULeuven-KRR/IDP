@@ -6,6 +6,7 @@
 
 #include "data.hpp"
 #include "namespace.hpp"
+#include "execute.hpp"
 #include "options.hpp"
 #include "builtin.hpp"
 #include <iostream>
@@ -64,6 +65,14 @@ bool Namespace::isStructure(const string& sn) const {
 	return (_structures.find(sn) != _structures.end());
 }
 
+bool Namespace::isOption(const string& on) const {
+	return (_options.find(on) != _options.end());
+}
+
+bool Namespace::isProc(const string& lp) const {
+	return (_procedures.find(lp) != _procedures.end());
+}
+
 Namespace* Namespace::subspace(const string& sn) const {
 	assert(isSubspace(sn));
 	return ((_subspaces.find(sn))->second);
@@ -82,6 +91,20 @@ AbstractTheory* Namespace::theory(const string& tn) const {
 AbstractStructure* Namespace::structure(const string& sn) const {
 	assert(isStructure(sn));
 	return ((_structures.find(sn))->second);
+}
+
+InfOptions* Namespace::option(const string& on) const {
+	assert(isOption(on));
+	return ((_options.find(on))->second);
+}
+
+LuaProcedure* Namespace::procedure(const string& lp) const { 
+	assert(isProc(lp));
+	return ((_procedures.find(lp))->second);
+}
+
+void Namespace::add(LuaProcedure* lp) {
+	_procedures[lp->name()] = lp;
 }
 
 /** Full name of the namespace **/

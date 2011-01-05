@@ -70,9 +70,9 @@ vector<string> read_options(int argc, char* argv[]) {
 	while(argc) {
 		string str(argv[0]);
 		argc--; argv++;
-		if(str == "-i" || str == "--interactive")	{ _options._interactive = true;		}
-		else if(str == "--statistics")				{ _options._statistics = true;		}
-		else if(str == "--verbose")					{ _options._verbose = true;			}
+		if(str == "-i" || str == "--interactive")	{ _cloptions._interactive = true;		}
+		else if(str == "--statistics")				{ _cloptions._statistics = true;		}
+		else if(str == "--verbose")					{ _cloptions._verbose = true;			}
 		else if(str == "-c")						{ str = argv[0];
 													  if(argc && (str.find('=') != string::npos)) {
 														  int p = str.find('=');
@@ -83,9 +83,9 @@ vector<string> read_options(int argc, char* argv[]) {
 													  else Error::constsetexp();
 													  argc--; argv++;
 													}
-		else if(str == "-I")						{ _options._readfromstdin = true;	}
-		else if(str == "-W")						{ for(unsigned int n = 0; n < _options._warning.size(); ++n) {
-														  _options._warning[n] = false;
+		else if(str == "-I")						{ _cloptions._readfromstdin = true;	}
+		else if(str == "-W")						{ for(unsigned int n = 0; n < _cloptions._warning.size(); ++n) {
+														  _cloptions._warning[n] = false;
 													  }
 													}
 		else if(str == "-v" || str == "--version")	{ cout << "GidL 2.0.1\n"; exit(0);	}
@@ -111,7 +111,7 @@ void parse(const vector<string>& inputfiles) {
 		}
 		else Error::unknfile(inputfiles[n]);
 	}
-	if(_options._readfromstdin) {
+	if(_cloptions._readfromstdin) {
 		yyin = stdin;
 		Insert::currfile(0);
 		yyparse();
@@ -150,7 +150,7 @@ int main(int argc, char* argv[]) {
 	initialize();
 	vector<string> inputfiles = read_options(argc,argv);
 	parse(inputfiles);
-	if(_options._interactive) interactive();
+	if(_cloptions._interactive) interactive();
 	cleanup();
 	return Error::nr_of_errors();
 }

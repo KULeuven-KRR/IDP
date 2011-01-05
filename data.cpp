@@ -62,10 +62,12 @@ DomainData* DomainData::instance() {
 string*		IDPointer(char* s)			{ return DomainData::instance()->stringpointer(string(s));						}
 string*		IDPointer(const string& s)	{ return DomainData::instance()->stringpointer(s);								}
 compound*	CPPointer(TypedElement e)	{ return DomainData::instance()->compoundpointer(0,vector<TypedElement>(1,e));	}
+compound*	CPPointer(Function* f, const vector<TypedElement>& vte)	{ 
+	return DomainData::instance()->compoundpointer(f,vte);
+}
 
 /******************
 	Global data	
 ******************/
 
-Options		_options;			// Options
-Namespace	_globalnamespace("global_namespace",0,ParseInfo());	// The global namespace
+CLOptions		_cloptions;			// Options

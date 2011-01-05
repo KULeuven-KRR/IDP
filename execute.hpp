@@ -8,6 +8,32 @@
 #define EXECUTE_H
 
 #include "namespace.hpp"
+#include <sstream>
+
+/** Lua procedures **/
+
+class LuaProcedure {
+	private:
+		string				_name;
+		ParseInfo			_pi;
+		vector<InfArgType>	_intypes;
+		vector<string>		_innames;
+		InfArgType			_outtype;
+		stringstream		_code;
+	public:
+		LuaProcedure(const string& name, const ParseInfo& pi) :
+			_name(name), _pi(pi), _intypes(0), _innames(0), _outtype(IAT_VOID) { }
+
+		// Mutators
+		void addarg(InfArgType iat, const string& name) { _intypes.push_back(iat); _innames.push_back(name);	}
+		void outtype(InfArgType iat) { _outtype = iat;	}
+		void add(char* s) { _code << s;	}
+		void add(const string& s)	{ _code << s;	}
+		
+		// Inspectors
+		const ParseInfo&	pi()	const { return _pi;		}
+		const string&		name()	const { return _name;	}
+};
 
 /** Possible argument or return value of an execute statement **/
 union InfArg {

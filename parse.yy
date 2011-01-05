@@ -23,6 +23,7 @@ void				addEmpty();
 void				addInt(int,YYLTYPE);
 void				addFloat(double,YYLTYPE);
 void				addString(string*,YYLTYPE);
+void				addCompound(compound*,YYLTYPE);
 void				closeRow(YYLTYPE);
 void				closeTable();
 
@@ -54,6 +55,7 @@ extern string dtos(double);
 	double				dou;
 	string*				str;
 	InfArgType			iat;
+	compound*			cpo;
 
 	Sort*				sor;
 	Predicate*			pre;
@@ -71,15 +73,16 @@ extern string dtos(double);
 	NSTuple*			nst;
 	SetExpr*			set;
 
-	vector<int>*		vint;
-	vector<char>*		vcha;
-	vector<string>*		vstr;
-	vector<Sort*>*		vsor;
-	vector<Variable*>*	vvar;
-	vector<Term*>*		vter;
-	vector<Formula*>*	vfom;
-	vector<Rule*>*		vrul;
-	vector<FTTuple*>*	vftt;
+	vector<int>*			vint;
+	vector<char>*			vcha;
+	vector<string>*			vstr;
+	vector<Sort*>*			vsor;
+	vector<Variable*>*		vvar;
+	vector<Term*>*			vter;
+	vector<Formula*>*		vfom;
+	vector<Rule*>*			vrul;
+	vector<FTTuple*>*		vftt;
+	vector<TypedElement*>*	vtpe;
 
 	vector<pair<Rule*,FixpDef*> >*	vprf;
 }
@@ -91,11 +94,14 @@ extern string dtos(double);
 %token ASP_HEADER
 %token ASP_BELIEF
 %token NAMESPACE_HEADER
-%token EXECUTE_HEADER
+%token PROCEDURE_HEADER
+%token OPTION_HEADER
 
 /** Keywords **/
 %token VOCABULARY
 %token NAMESPACE
+%token PROCEDURE
+%token OPTIONS
 %token PARTIAL
 %token EXTENDS
 %token EXTERN
@@ -151,13 +157,10 @@ extern string dtos(double);
 %left UMINUS
 
 /** Non-terminals with semantic value **/
-%type <iat> outtype
 %type <nmr> integer
 %type <dou> floatnr
 %type <str> strelement
 %type <str>	identifier
-%type <str> command_arg
-%type <str> command_name
 %type <var> variable
 %type <sor> sort_pointer
 %type <sor> theosort_pointer
@@ -182,6 +185,8 @@ extern string dtos(double);
 %type <def> definition
 %type <ftt> form_term_tuple
 %type <set> set
+%type <cpo> compound
+%type <str> argtype
 
 %type <vint> intrange
 %type <vcha> charrange
@@ -195,8 +200,8 @@ extern string dtos(double);
 %type <vsor> binary_arit_func_sorts
 %type <vsor> unary_arit_func_sorts
 %type <vprf> fd_rules
-%type <vstr> command_args
 %type <vftt> form_term_list
+%type <vtpe> compound_args
 
 %%
 
@@ -211,6 +216,7 @@ idp		        : /* empty */
 				| idp structure
 				| idp asp_structure
 				| idp instructions
+				| idp options
 				| idp using
 		        ;
 	
@@ -231,8 +237,11 @@ using			: USING VOCABULARY pointer_name					{ Insert::usingvocab(*$3,@1); delete
 
 /** Structure of vocabulary declaration **/
 
-vocabulary			: VOCAB_HEADER vocab_name '{' vocab_content '}'				{ Insert::closevocab();	}	
+vocabulary			: VOCAB_HEADER vocab_name '{' vocab_content '}'		{ Insert::closevocab();	}	
+					| VOCAB_HEADER vocab_name '=' function_call			{ /* TODO */ 
+																		  Insert::closevocab();	}
 					;
+
 
 vocab_name			: identifier	{ Insert::openvocab(*$1,@1); }
 					;
@@ -243,6 +252,7 @@ vocab_pointer		: pointer_name	{ Insert::setvocab(*$1,@1); delete($1); }
 vocab_content		: /* empty */
 					| vocab_content symbol_declaration
 					| vocab_content EXTERN extern_symbol
+					| vocab_content EXTERN VOCABULARY pointer_name	{ Insert::externvocab(*$4,@4); delete($4);	}
 					| vocab_content using
 					| vocab_content error
 					;
@@ -363,10 +373,20 @@ pointer_name		: pointer_name "::" identifier	{ $$ = $1; $$->push_back(*$3); 		}
 *************/
 
 theory		: THEORY_HEADER theory_name ':' vocab_pointer '{' def_forms '}'		{ Insert::closetheory();	}
+			| THEORY_HEADER theory_name '=' function_call						{ /* TODO */ 
+																				  Insert::closetheory();	}
 			;
 
 theory_name	: identifier	{ Insert::opentheory(*$1,@1);  }
 			;
+
+function_call	: pointer_name '(' pointer_names ')'	/* TODO */
+				| pointer_name '(' ')'					/* TODO */
+				;
+
+pointer_names	: pointer_names ',' pointer_name	/* TODO */
+				| pointer_name						/* TODO */
+				;
 
 def_forms	: /* empty */
 			| def_forms definition		{ Insert::definition($2);	}
@@ -522,6 +542,8 @@ set			: '{' variables ':' formula '}'		{ $$ = Insert::set(*$2,$4,@1); delete($2)
 **********************/
 
 structure		: STRUCT_HEADER struct_name ':' vocab_pointer '{' interpretations '}'	{ Insert::closestructure();	}
+				| STRUCT_HEADER struct_name '=' function_call							{ /* TODO */ 
+																						  Insert::closestructure();	}
 				;
 
 struct_name		: identifier	{ Insert::openstructure(*$1,@1); }
@@ -536,6 +558,7 @@ interpretation	: empty_inter
 				| sort_inter
 				| pred_inter
 				| func_inter
+				| proc_inter
 				| three_inter
 				| error
 				;
@@ -560,40 +583,40 @@ elements		: elements ';' charrange			{ $$ = $1->add((*$3)[0],(*$3)[1]); delete($
 				| elements ';' intrange				{ $$ = $1->add((*$3)[0],(*$3)[1]); delete($3);	
 													  if($$ != $1) delete($1);
 													}
-				| elements ';' '(' strelement ')'	{ $$ = $$->add($4);				
+				| elements ';' '(' strelement ')'	{ $$ = $1->add($4);				
 													  if($$ != $1) delete($1);
 													}
-				| elements ';' '(' integer ')'		{ $$ = $$->add($4);								
+				| elements ';' '(' integer ')'		{ $$ = $1->add($4);								
 													  if($$ != $1) delete($1);
 													}
-				| elements ';' '(' compound ')'		{ /* TODO */
-													}
-				| elements ';' '(' floatnr ')'		{ $$ = $$->add($4);
+				| elements ';' '(' compound ')'		{ $$ = $1->add($4);
 													  if($$ != $1) delete($1);
 													}
-				| elements ';' integer				{ $$ = $$->add($3);								
+				| elements ';' '(' floatnr ')'		{ $$ = $1->add($4);
 													  if($$ != $1) delete($1);
 													}
-				| elements ';' strelement			{ $$ = $$->add($3);
+				| elements ';' integer				{ $$ = $1->add($3);								
 													  if($$ != $1) delete($1);
 													}
-				| elements ';' floatnr				{ $$ = $$->add($3); 
+				| elements ';' strelement			{ $$ = $1->add($3);
 													  if($$ != $1) delete($1);
 													}
-				| elements ';' compound				{ /* TODO */	
+				| elements ';' floatnr				{ $$ = $1->add($3); 
+													  if($$ != $1) delete($1);
+													}
+				| elements ';' compound				{ $$ = $1->add($3);
+													  if($$ != $1) delete($1);
 													}
 				| charrange							{ $$ = new StrSortTable(); $$ = $$->add((*$1)[0],(*$1)[1]); delete($1);	}
 				| intrange							{ $$ = new RanSortTable((*$1)[0],(*$1)[1]); delete($1);					}
 				| '(' strelement ')'				{ $$ = new StrSortTable(); $$ = $$->add($2);							}
 				| '(' integer ')'					{ $$ = new IntSortTable(); $$ = $$->add($2);							}
 				| '(' floatnr ')'                   { $$ = new FloatSortTable(); $$ = $$->add($2);							}
-				| '(' compound ')'					{ /* TODO */
-													}
+				| '(' compound ')'					{ $$ = new MixedSortTable(); $$ = $$->add($2);							}
 				| strelement						{ $$ = new StrSortTable(); $$ = $$->add($1);							}
-				| integer							{ $$ = new IntSortTable(); $$ = $$->add($1);							}	
+				| integer							{ $$ = new IntSortTable(); $$ = $$->add($1);							}
 				| floatnr							{ $$ = new FloatSortTable(); $$ = $$->add($1);							}
-				| compound							{ /* TODO */
-													}
+				| compound							{ $$ = new MixedSortTable(); $$ = $$->add($1);							}
 				;
 
 strelement		: identifier	{ $$ = $1;	}
@@ -629,12 +652,12 @@ ptuple			: ptuple ',' pelement
 				| pelement ',' pelement	
 				;
 
-pelement		: integer		{ addInt($1,@1); 										}
-				| identifier	{ addString($1,@1);										}
+pelement		: integer		{ addInt($1,@1);											}
+				| identifier	{ addString($1,@1);											}
 				| CHARCONS		{ string* str = IDPointer(string(1,$1)); addString(str,@1);	}
-				| STRINGCONS	{ addString($1,@1);										}
-				| floatnr		{ addFloat($1,@1);										}
-				| compound		{ /* TODO */											}
+				| STRINGCONS	{ addString($1,@1);											}
+				| floatnr		{ addFloat($1,@1);											}
+				| compound		{ addCompound($1,@1);										}
 				;
 
 /** Interpretations for functions **/
@@ -659,6 +682,11 @@ ftuple			: ptuple "->" pelement
 				| pelement "->" pelement
 				| emptyptuple "->" pelement				
 				| "->" pelement
+				;
+
+/** Procedural interpretations **/
+
+proc_inter		: intern_pointer '=' PROCEDURE pointer_name		/* TODO */
 				;
 
 /** Three-valued interpretations **/
@@ -719,18 +747,26 @@ charrange	: CHARACTER ".." CHARACTER		{ $$ = new vector<char>(2,$1);
 
 /** Compound elements **/
 
-compound	: intern_pointer '(' compound_args ')'	{ $$ = Insert::compound($1,*$3); delete($3);	}
-			| intern_pointer '(' ')'				{ $$ = Insert::compound($1);					}
+compound	: intern_pointer '(' compound_args ')'	{ $$ = Insert::makecompound($1,*$3); delete($3);	}
+			| intern_pointer '(' ')'				{ $$ = Insert::makecompound($1);					}
 			;
 
-compound_args	: compound_args ',' floatnr		{ /* TODO */							}
-				| compound_args ',' integer		{ /* TODO */							}
-				| compound_args ',' strelement	{ /* TODO */							}
-				| compound_args ',' compound	{ $$->push_back($3);					}
-				| floatnr						{ /* TODO */							}
-				| integer						{ /* TODO */							}
-				| strelement					{ /* TODO */							}
-				| compound						{ $$ = new vector<TypedElement>(1,$1);	}
+compound_args	: compound_args ',' floatnr		{ TypedElement* t = new TypedElement($3);	
+												  $$->push_back(t);							}
+				| compound_args ',' integer		{ TypedElement* t = new TypedElement($3);	
+												  $$->push_back(t);							}
+				| compound_args ',' strelement	{ TypedElement* t = new TypedElement($3);	
+												  $$->push_back(t);							}
+				| compound_args ',' compound	{ TypedElement* t = new TypedElement($3);	
+												  $$->push_back(t);							}
+				| floatnr						{ TypedElement* t = new TypedElement($1);
+												  $$ = new vector<TypedElement*>(1,t);		}
+				| integer						{ TypedElement* t = new TypedElement($1);
+												  $$ = new vector<TypedElement*>(1,t);		}
+				| strelement					{ TypedElement* t = new TypedElement($1);
+												  $$ = new vector<TypedElement*>(1,t);		}
+				| compound						{ TypedElement* t = new TypedElement($1);
+												  $$ = new vector<TypedElement*>(1,t);		}
 				;
 	         
 /** Terminals **/
@@ -800,18 +836,14 @@ domain_tuple	: domain_tuple ',' domain_element
 				| domain_range	
 				;
 
-domain_range	: intrange		{ Element e; e._double = 0; _currtuple.push_back(e);
-								  _currtypes.push_back(ELDOUBLE);
-								  RanSortTable* rst = new RanSortTable((*$1)[0],(*$1)[1]);
-								  _currelements.push_back(rst);
+domain_range	: intrange		{ RanSortTable* rst = new RanSortTable((*$1)[0],(*$1)[1]);
+								  _currranges.push_back(rst);
 								  _iselement.push_back(false);
 								  delete($1);
 								}
-				| charrange		{ Element e; e._string = 0; _currtuple.push_back(e);
-								  _currtypes.push_back(ELSTRING);
-								  StrSortTable* sst = new StrSortTable();
+				| charrange		{ StrSortTable* sst = new StrSortTable();
 								  sst->add((*$1)[0],(*$1)[1]);
-								  _currelements.push_back(sst);
+								  _currranges.push_back(sst);
 								  _iselement.push_back(false);
 								  delete($1);
 								}
@@ -832,7 +864,10 @@ domain_element	: strelement	{ Element e; e._string = $1;
 								  _currtypes.push_back(ELDOUBLE);
 								  _iselement.push_back(true);
 								}
-				| compound		{ /* TODO */
+				| compound		{ Element e; e._compound = $1;
+								  _currelements.push_back(e);
+								  _currtypes.push_back(ELCOMPOUND);
+								  _iselement.push_back(true);
 								}
 				;
 
@@ -871,46 +906,55 @@ form_term_tuple	: '(' formula ',' term ')'					{ $$ = Insert::fttuple($2,$4);		}
 	Instructions
 *******************/
 
-instructions	: EXECUTE_HEADER '{' commands '}'	// TODO open and close execute block
-				;
+instructions		: PROCEDURE_HEADER proc_name proc_sig '{' lua_block '}'		{ Insert::closeproc();	}
+					;
 
-commands		: /* empty */
-				| commands command
-				| commands using
-				;
+proc_name			: identifier	{ Insert::openproc(*$1,@1);	}
+					;
 
-command			: void_command
-				| nonvoid_command
-				;
-				
-void_command	: command_name '(' command_args ')'	{ Insert::command(*$1,*$3,@1); delete($3);	}
-				| command_name '(' ')'				{ Insert::command(*$1,@1); 					}
-				| command_name						{ Insert::command(*$1,@1); 					}
-				;
+proc_sig			: '(' ')' 
+					| '(' args ')'
+					| '(' ')' ':' argtype		{ Insert::procreturn(*$4,@4);	}
+					| '(' args ')' ':' argtype	{ Insert::procreturn(*$5,@5);	}
+					;
 
-nonvoid_command	: outtype identifier '=' command_name '(' command_args ')'	{ Insert::command($1,*$4,*$6,*$2,@1);
-																			  delete($6);
-																			}
-				| outtype identifier '=' command_name '(' ')'				{ Insert::command($1,*$4,*$2,@1); 
-																			}
-				| outtype identifier '=' command_name						{ Insert::command($1,*$4,*$2,@1); 
-																			}	
-				;
+lua_block			: /* empty */
+					| lua_block using
+					| lua_block identifier		{ Insert::luacode(*$2);	}
+					| lua_block STRINGCONS		{ string str = string("\"") + *$2 + string("\""); Insert::luacode(str);	}
+					| lua_block CHARCONS		{ string str = string("'") + $2 + string("'"); Insert::luacode(str);	}
+					| lua_block INTEGER			{ Insert::luacode(itos($2));							}
+					| lua_block FLNUMBER		{ Insert::luacode(dtos($2));							}
+					| lua_block pointer_name "::" identifier	{ $2->push_back(*$4); Insert::luacode(*$2); delete($2);	}
+					;
 
-outtype			: THEORY_HEADER		{ $$ = IAT_THEORY;		}
-				| STRUCT_HEADER		{ $$ = IAT_STRUCTURE;	}
-				| VOCAB_HEADER		{ $$ = IAT_VOCABULARY;	}
-				;
+args				: args ',' argtype identifier	{ Insert::procarg(*$3,*$4,@3);	}
+					| argtype identifier			{ Insert::procarg(*$1,*$2,@1);	}
+					;
 
-command_name	: identifier						{ $$ = $1;	}
-				;
+argtype				: identifier	{ $$ = $1;	}
+					;
 
-command_args	: command_args ',' command_arg		{ $$ = $1; $$->push_back(*$3);		}
-				| command_arg						{ $$ = new vector<string>(1,*$1);	}
-				;
+/**************
+	Options
+**************/
 
-command_arg		: identifier						{ $$ = $1;	}
-				;
+options	: OPTION_HEADER option_name '{' optassigns '}'	{ Insert::closeoptions();	}
+		;
+
+option_name	: identifier	{ Insert::openoptions(*$1,@1);	}
+			;
+
+optassigns	: /* empty */
+			| optassigns optassign	
+			| optassigns EXTERN OPTIONS pointer_name	{ Insert::externoption(*$4,@4);	delete($4);	}
+			;
+
+optassign	: identifier '=' strelement		{ Insert::option(*$1,*$3,@1);	}
+			| identifier '=' floatnr		{ Insert::option(*$1,$3,@1);	}
+			| identifier '=' integer		{ Insert::option(*$1,$3,@1);	}
+			;
+
 
 %%
 
@@ -964,6 +1008,9 @@ void addInt(int n, YYLTYPE l) {
 				case ELSTRING:
 					(*_currtable)[_currrow][_currcol]._string = IDPointer(itos(n));
 					break;
+				case ELCOMPOUND:
+					(*_currtable)[_currrow][_currcol]._compound = CPPointer(TypedElement(n));
+					break;
 				default:
 					assert(false);
 			}
@@ -995,13 +1042,17 @@ void addString(string* s, YYLTYPE l) {
 				case ELINT:
 				case ELDOUBLE:
 					_currtable->changeElType(_currcol,ELSTRING);
+					(*_currtable)[_currrow][_currcol]._string = s;
 					break;
 				case ELSTRING:
+					(*_currtable)[_currrow][_currcol]._string = s;
+					break;
+				case ELCOMPOUND:
+					(*_currtable)[_currrow][_currcol]._compound = CPPointer(TypedElement(s));
 					break;
 				default:
 					assert(false);
 			}
-			(*_currtable)[_currrow][_currcol]._string = s;
 		}
 		else {	// tuple with an incompatible arity
 			if(!_wrongarity) {
@@ -1015,6 +1066,40 @@ void addString(string* s, YYLTYPE l) {
 		if(!_currcol) _currtable->addRow();
 		_currtable->addColumn(ELSTRING);
 		(*_currtable)[0][_currcol]._string = s;
+	}
+	_currcol++;
+}
+
+void addCompound(compound* s, YYLTYPE l) {
+	if(!_currtable) // we start parsing a new table
+		_currtable = new FinitePredTable(vector<ElementType>(0)); 
+	if(_currrow) {	// the table already contains at least one row
+		if(!_currcol)	// start parsing a new row 
+			_currtable->addRow();
+		if(_currcol < _currtable->arity()) {	// OK, we are within the number of columns of the table
+			switch(_currtable->type(_currcol)) {
+				case ELINT:
+				case ELDOUBLE:
+				case ELSTRING:
+					_currtable->changeElType(_currcol,ELCOMPOUND);
+					break;
+				case ELCOMPOUND:
+					break;
+			}
+			(*_currtable)[_currrow][_currcol]._compound = s;
+		}
+		else {	// tuple with an incompatible arity
+			if(!_wrongarity) {
+				ParseInfo pi(l.first_line,l.first_column,Insert::currfile());
+				Error::wrongarity(pi);
+				_wrongarity = true;
+			}
+		}
+	}
+	else {	// we are parsing the first row of the table
+		if(!_currcol) _currtable->addRow();
+		_currtable->addColumn(ELCOMPOUND);
+		(*_currtable)[0][_currcol]._compound = s;
 	}
 	_currcol++;
 }
@@ -1036,6 +1121,9 @@ void addFloat(double d, YYLTYPE l) {
 					break;
 				case ELSTRING:
 					(*_currtable)[_currrow][_currcol]._string = IDPointer(dtos(d));
+					break;
+				case ELCOMPOUND:
+					(*_currtable)[_currrow][_currcol]._compound = CPPointer(TypedElement(d));
 					break;
 				default:
 					assert(false);

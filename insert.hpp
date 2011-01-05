@@ -62,16 +62,34 @@ namespace Insert {
 	void initialize();	
 	void cleanup();		
 
-	// Namespaces
+	/** Namespaces **/
 	void closespace();	// set current namespace to its parent
 	void openspace(const string& sname,YYLTYPE);	// set the current namespace to its subspace with name 'sname'
 	void usingspace(const vector<string>& sname, YYLTYPE);
+
+	/** Options **/
+	void openoptions(const string& name, YYLTYPE);
+	void closeoptions();
+	void externoption(const vector<string>& name, YYLTYPE);
+	void option(const string& opt, const string& val,YYLTYPE);
+	void option(const string& opt, double val,YYLTYPE);
+	void option(const string& opt, int val,YYLTYPE);
+
+	/** Procedures **/
+	void openproc(const string& name, YYLTYPE);
+	void closeproc();
+	void procarg(const string& type, const string& name, YYLTYPE);
+	void procreturn(const string& type, YYLTYPE);
+	void luacode(char*);
+	void luacode(const string&);
+	void luacode(const vector<string>&);
 
 	/** Vocabulary **/
 	void openvocab(const string& vname, YYLTYPE);	// create a new vocabulary with name 'vname' in the current namespace
 	void closevocab();								// stop parsing a vocabulary
 	void usingvocab(const vector<string>& vname, YYLTYPE);	// use vocabulary 'vname' when parsing
 	void setvocab(const vector<string>& vname, YYLTYPE);	// set the vocabulary of the current theory or structure 
+	void externvocab(const vector<string>& vname, YYLTYPE);	// add an existing vocabulary
 
 	// Create new sorts
 	Sort*	sort(const string& name, YYLTYPE);						
@@ -116,6 +134,10 @@ namespace Insert {
 	// asp atoms
 	void predatom(NSTuple*, const vector<Element>&, const vector<FiniteSortTable*>&, const vector<ElementType>&, const vector<bool>&,bool);
 	void funcatom(NSTuple*, const vector<Element>&, const vector<FiniteSortTable*>&, const vector<ElementType>&, const vector<bool>&,bool);
+
+	// compound elements
+	compound* makecompound(NSTuple*, const vector<TypedElement*>& vte);
+	compound* makecompound(NSTuple*);
 
 	/** Theory **/
 	void opentheory(const string& tname, YYLTYPE);

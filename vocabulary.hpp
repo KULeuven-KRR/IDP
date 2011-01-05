@@ -25,11 +25,12 @@ struct compound;
 *******************************************/
 
 // The types are: void, theory, structure, vocabulary and namespace
-enum InfArgType { IAT_VOID, IAT_THEORY, IAT_STRUCTURE, IAT_VOCABULARY, IAT_NAMESPACE };
+enum InfArgType { IAT_VOID, IAT_THEORY, IAT_STRUCTURE, IAT_VOCABULARY, IAT_NAMESPACE, IAT_ERROR };
 
 // Convert a InfArgType to a string (e.g., IAT_VOID converts to "void")
 namespace IATUtils { 
-	string to_string(InfArgType);
+	string		to_string(InfArgType);
+	InfArgType	to_iat(const string&);
 }
 
 /***************************************
@@ -532,6 +533,10 @@ struct TypedElement {
 	Element		_element;
 	ElementType	_type;
 	TypedElement(Element e, ElementType t) : _element(e), _type(t) { }
+	TypedElement(int n) : _type(ELINT) { _element._int = n;	}
+	TypedElement(double d) : _type(ELDOUBLE) { _element._double = d;	}
+	TypedElement(string* s) : _type(ELSTRING) { _element._string = s;	}
+	TypedElement(compound* c) : _type(ELCOMPOUND) { _element._compound = c;	}
 	TypedElement() : _type(ELINT) { }
 };
 

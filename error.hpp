@@ -44,6 +44,7 @@ namespace Error {
 	/** Function name where predicate is expected, and vice versa **/
 	void prednameexpected(const ParseInfo& pi);
 	void funcnameexpected(const ParseInfo& pi);
+	void funcnotconstr(const string& s, const ParseInfo& pi);
 
 	/** Invalid interpretations **/
 	void multpredinter(const string& s, const ParseInfo& pi);
@@ -72,6 +73,8 @@ namespace Error {
 	void multdeclvoc(const string& vocname, const ParseInfo& thisplace, const ParseInfo& prevdeclplace);
 	void multdecltheo(const string& thname, const ParseInfo& thisplace, const ParseInfo& prevdeclplace);
 	void multdeclstruct(const string& sname, const ParseInfo& thisplace, const ParseInfo& prevdeclplace);
+	void multdeclopt(const string& sname, const ParseInfo& thisplace, const ParseInfo& prevdeclplace);
+	void multdeclproc(const string& sname, const ParseInfo& thisplace, const ParseInfo& prevdeclplace);
 
 	/** Undeclared objects **/
 	void undeclvoc(const string& vocname, const ParseInfo& thisplace);
@@ -82,6 +85,7 @@ namespace Error {
 	void undeclpred(const string& pname, const ParseInfo& thisplace);
 	void undeclfunc(const string& fname, const ParseInfo& thisplace);
 	void undeclsymb(const string& name, const ParseInfo& thisplace);
+	void undeclopt(const string& name, const ParseInfo& thisplace);
 
 	/** Unavailable objects **/
 	void sortnotintheovoc(const string& sname, const string& tname, const ParseInfo& thisplace);
@@ -101,6 +105,8 @@ namespace Error {
 	void overloadedvocab(const string& name, const ParseInfo& p1, const ParseInfo& p2, const ParseInfo& thisplace);
 	void overloadedtheory(const string& name, const ParseInfo& p1, const ParseInfo& p2, const ParseInfo& thisplace);
 	void overloadedstructure(const string& name, const ParseInfo& p1, const ParseInfo& p2, const ParseInfo& thisplace);
+	void overloadedopt(const string& name, const ParseInfo& p1, const ParseInfo& p2, const ParseInfo& thisplace);
+	void overloadedproc(const string& name, const ParseInfo& p1, const ParseInfo& p2, const ParseInfo& thisplace);
 
 	/** Sort hierarchy errors **/
 	void notsubsort(const string&, const string&, const ParseInfo& pi);
@@ -115,7 +121,11 @@ namespace Error {
 
 	/** Unknown options or commands **/
 	void unkncommand(const string& name, const ParseInfo& thisplace);
+	void unknopt(const string& name, const ParseInfo& thisplace);
+	void unkniat(const string& name, const ParseInfo& thisplace);
 	void wrongcommandargs(const string& name, const ParseInfo&  thisplace);
+	void wrongvaluetype(const string& name, const ParseInfo& thisplace);
+	void posintexpected(const string& name, const ParseInfo& thisplace);
 	void ambigcommand(const string& name, const ParseInfo& thisplace);
 }
 
