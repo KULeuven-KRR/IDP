@@ -7,6 +7,7 @@ fi
 AC_PROG_CXX
 AC_DECL_YYTEXT
 #AC_PROG_LEX
+AC_DISABLE_SHARED
 AC_PROG_LIBTOOL
 AC_PROG_YACC
 AM_INIT_AUTOMAKE([foreign subdir-objects]) #silent-rules FROM VERSION 1.11 #-ffloat-store
@@ -33,8 +34,8 @@ AC_SUBST([AC_CXXFLAGS])
 AC_SUBST([AC_LDFLAGS])
 AC_SUBST([LIBS])
 
-AC_CXXFLAGS = " "
-AC_LDFLAGS = " "
+AC_CXXFLAGS=" "
+AC_LDFLAGS=" "
 
 AC_CXXFLAGS+="-ansi -pedantic -Wall -Wextra "
 
@@ -81,7 +82,8 @@ AC_ARG_ENABLE([bits],
 esac],[])
 
 # files to generate via autotools (.am or .in source files)
-AC_CONFIG_FILES([Makefile])
+AC_CONFIG_SUBDIRS([lib/lua])
+AC_CONFIG_FILES([Makefile lib/Makefile])
 
 # generate the final Makefile etc.
 AC_OUTPUT
