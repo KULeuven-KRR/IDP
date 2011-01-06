@@ -8,6 +8,7 @@
 #include "insert.hpp"
 #include "builtin.hpp"
 #include "namespace.hpp"
+#include "execute.hpp"
 #include "parse.h"
 #include "error.hpp"
 #include "options.hpp"
@@ -35,6 +36,7 @@ void usage() {
 		 << "   gidl [options] [filename [filename [...]]]\n\n";
 	cout << "Options:\n"
 		 << "    -i, --interactive	  run in interactive mode\n"
+		 << "    -e \"<proc>\"          run procedure <proc> after parsing\n"
 		 << "    --statistics:        show statistics\n"
 		 << "    --verbose:           print additional information\n"
 		 << "    -c <name1>=<name2>:  substitute <name2> for <name1> in the input\n"
@@ -71,6 +73,8 @@ vector<string> read_options(int argc, char* argv[]) {
 		string str(argv[0]);
 		argc--; argv++;
 		if(str == "-i" || str == "--interactive")	{ _cloptions._interactive = true;		}
+		else if(str == "-e" || str == "--execute")  { _cloptions._exec = string(argv[0]); 
+													  argc--; argv++;						}
 		else if(str == "--statistics")				{ _cloptions._statistics = true;		}
 		else if(str == "--verbose")					{ _cloptions._verbose = true;			}
 		else if(str == "-c")						{ str = argv[0];
@@ -118,6 +122,18 @@ void parse(const vector<string>& inputfiles) {
 	}
 }
 
+/** Execute a procecure **/
+
+void executeproc(const string& proc) {
+	// TODO allow for procedures with arguments and procedures outside the global namespace
+	if(proc != "") {
+		if(Namespace::global()->isProc(proc)) {
+			Namespace::global()->procedure(proc)->execute();
+		}
+		else Error::unkncommand(proc);
+	}
+}
+
 /** Interactive mode **/
 void interactive() {
 	cout << "Running GidL in interactive mode.\n"
@@ -129,13 +145,8 @@ void interactive() {
 		string str;
 		getline(cin,str);
 		if(str == "exit") return;
-		else if(str == "help") {
-			help_execute();
-		}
-		else {
-			str = "#execute{ " + str + "}";
-			parsestring(str);
-		}
+		else if(str == "help") help_execute();
+		else executeproc(str);
 	}
 }
 
@@ -150,6 +161,7 @@ int main(int argc, char* argv[]) {
 	initialize();
 	vector<string> inputfiles = read_options(argc,argv);
 	parse(inputfiles);
+	executeproc(_cloptions._exec);
 	if(_cloptions._interactive) interactive();
 	cleanup();
 	return Error::nr_of_errors();

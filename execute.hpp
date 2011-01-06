@@ -33,6 +33,8 @@ class LuaProcedure {
 		// Inspectors
 		const ParseInfo&	pi()	const { return _pi;		}
 		const string&		name()	const { return _name;	}
+
+		void	execute()	const;
 };
 
 /** Possible argument or return value of an execute statement **/

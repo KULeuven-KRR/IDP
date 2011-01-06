@@ -1,5 +1,8 @@
-AM_CXXFLAGS = @AC_CXXFLAGS@ -Wall -Wextra -pedantic
+subdirs=lua/lua-5.1.4
+AM_CXXFLAGS = @AC_CXXFLAGS@ -Wall -Wextra -pedantic -I$(srcdir)/lua/lua-5.1.4/etc -I$(srcdir)/lua/lua-5.1.4/src
 AM_LDFLAGS = @AC_LDFLAGS@  
+
+gidl_LDADD = -L$(builddir)/lua/lua-5.1.4/src -ldl $(srcdir)/lua/lua-5.1.4/src/liblua.a
 
 YFLAGS = -d -v
 LFLAGS = 

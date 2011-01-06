@@ -25,6 +25,7 @@ class CLOptions {
 		  bool				_readfromstdin;		// expect input from stdin iff _readfromstdin=true
 		  bool				_interactive;		// interactive mode if _interactive is true
 		  vector<bool>		_warning;			// _warning[n] = true means that warnings of type n are not suppressed
+		  string			_exec;				// the procedure called from the command line
 
 		  // Constructor (default options)
 		  CLOptions() {
@@ -33,6 +34,7 @@ class CLOptions {
 				_readfromstdin = false;
 				_interactive = false;
 				_warning = vector<bool>(4,true);
+				_exec = "";
 		  }
 
 };

@@ -186,31 +186,40 @@ COMMENTLINE		"//".*
 							  return *yytext;
 							}
 <lua>"{"					{ advancecol(); 
-							  Insert::luacode(string("{"));
-							  ++bracketcounter;			}
+							  ++bracketcounter;			
+							  yylval.chr = *yytext;
+							  return CHARACTER;
+							}
 <lua>"}"					{ advancecol();
 							  --bracketcounter;
 							  if(bracketcounter < 1) {
 								BEGIN(INITIAL);
 								return *yytext;
 							  }
-							  else Insert::luacode(string("}"));
+							  else {
+							    yylval.chr = *yytext;
+							    return CHARACTER;
+							  }
 							}
 <lua>"#"{ID}				{ advancecol();
-							  Insert::luacode(yytext);
+							  yylval.str = IDPointer(yytext);
+							  return IDENTIFIER;		
 							}
 <lua>{WHITESPACE}           { advancecol();				
-							  Insert::luacode(string(" "));
+							  yylval.str = IDPointer(yytext);
+							  return IDENTIFIER;		
 							}
 <lua>"\t"					{ advancecol(); 
-							  Insert::luacode(string("\t"));
-							  prevlength = tablen;		
+							  yylval.chr = *yytext;
+							  return CHARACTER;
 							}
 <lua>.                      { advancecol();
-							  Insert::luacode(yytext);	
+							  yylval.chr = *yytext;
+							  return CHARACTER;
 							}
 <lua>\n                     { advanceline();			
-							  Insert::luacode(string("\n"));
+							  yylval.chr = *yytext;
+							  return CHARACTER;
 							}
 
 	/***************

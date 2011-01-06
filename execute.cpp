@@ -10,6 +10,16 @@
 #include <iostream>
 #include "options.hpp"
 #include "data.hpp"
+#include "lua.hpp"
+
+void LuaProcedure::execute() const {
+	// TODO TODO TODO
+	lua_State *L = lua_open();
+	luaL_openlibs(L);
+	string str = _code.str();
+	luaL_loadbuffer(L,str.c_str(),str.length(),_name.c_str());
+	lua_call(L,0,0);
+}
 
 void PrintTheory::execute(const vector<InfArg>& args, const string& res,Namespace*) const {
 	assert(args.size() == 1);

@@ -121,6 +121,7 @@ namespace Error {
 
 	/** Unknown options or commands **/
 	void unkncommand(const string& name, const ParseInfo& thisplace);
+	void unkncommand(const string& name);
 	void unknopt(const string& name, const ParseInfo& thisplace);
 	void unkniat(const string& name, const ParseInfo& thisplace);
 	void wrongcommandargs(const string& name, const ParseInfo&  thisplace);

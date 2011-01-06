@@ -516,7 +516,12 @@ namespace Error {
 
 	void unkncommand(const string& name, const ParseInfo& thisplace) {
 		error(thisplace);
-		cerr << "Command " << name << " does not exist." << endl;
+		cerr << "Procedure " << name << " does not exist." << endl;
+	}
+
+	void unkncommand(const string& name) {
+		error();
+		cerr << "Procedure " << name << " does not exist." << endl;
 	}
 
 	void unknopt(const string& name, const ParseInfo& thisplace) {

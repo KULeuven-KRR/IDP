@@ -7,6 +7,7 @@ fi
 AC_PROG_CXX
 AC_DECL_YYTEXT
 #AC_PROG_LEX
+AC_PROG_LIBTOOL
 AC_PROG_YACC
 AM_INIT_AUTOMAKE([foreign subdir-objects]) #silent-rules FROM VERSION 1.11 #-ffloat-store
 AC_LANG([C++])
