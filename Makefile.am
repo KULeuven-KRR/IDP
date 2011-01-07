@@ -7,7 +7,7 @@ LFLAGS =
 
 bin_PROGRAMS = gidl
 
-gidl_LDADD = -L$(builddir)/lib/lua/src/.libs/ -llua-5.1
+gidl_LDADD = -L$(builddir)/lib/lua/src/.libs -llua -ldl
 
 BUILT_SOURCES = parse.h
 

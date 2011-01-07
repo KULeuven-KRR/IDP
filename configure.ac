@@ -82,6 +82,9 @@ AC_ARG_ENABLE([bits],
 esac],[])
 
 # files to generate via autotools (.am or .in source files)
+ac_configure_args+=--enable-shared=no #IMPORTANT: the reason for this is that we want to force lua to compile only a static library, so we link statically with lua.
+	#in future, when we allow installing, we can remove this, and also it breaks the configure semantics, because it will also offer all options of subdir configure.ac to the
+	#top --help
 AC_CONFIG_SUBDIRS([lib/lua])
 AC_CONFIG_FILES([Makefile lib/Makefile])
 
