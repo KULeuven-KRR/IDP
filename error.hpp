@@ -124,10 +124,10 @@ namespace Error {
 	void unkncommand(const string& name);
 	void unknopt(const string& name, const ParseInfo& thisplace);
 	void unkniat(const string& name, const ParseInfo& thisplace);
-	void wrongcommandargs(const string& name, const ParseInfo&  thisplace);
+	void wrongcommandargs(const string& name);
 	void wrongvaluetype(const string& name, const ParseInfo& thisplace);
 	void posintexpected(const string& name, const ParseInfo& thisplace);
-	void ambigcommand(const string& name, const ParseInfo& thisplace);
+	void ambigcommand(const string& name);
 }
 
 namespace Warning {

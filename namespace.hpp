@@ -9,6 +9,7 @@
 
 #include "theory.hpp"
 #include "options.hpp"
+#include "lua.hpp"
 #include <set>
 
 class LuaProcedure;
@@ -85,6 +86,10 @@ class Namespace {
 		void	add(AbstractTheory* t)		{ _theories[t->name()] = t; _theos.push_back(t);		}
 		void	add(InfOptions* o)			{ _options[o->_name] = o;								}
 		void	add(LuaProcedure* l);
+
+		// Lua communication
+		int tolua(lua_State*,const vector<string>&) const;
+		int	tolua(lua_State*) const;
 };
 
 #endif

@@ -107,6 +107,116 @@ void Namespace::add(LuaProcedure* lp) {
 	_procedures[lp->name()] = lp;
 }
 
+/** Insert the namespace in lua **/
+
+void insertlongname(lua_State* L, const vector<string>& longname) {
+	lua_newtable(L);
+	for(unsigned int n = 0; n < longname.size(); ++n) {
+		lua_pushinteger(L,n+1);
+		lua_pushstring(L,longname[n].c_str());
+		lua_settable(L,-3);
+	}
+}
+
+int Namespace::tolua(lua_State* L, const vector<string>& longname) const {
+	lua_newtable(L);		// table to gather the children of the namespace
+	int childcounter = 1;	// maintain the index of the table
+
+	for(map<string,Namespace*>::const_iterator it = _subspaces.begin(); it != _subspaces.end(); ++it) {
+		vector<string> sublongname = longname; sublongname.push_back(it->second->name());
+		lua_pushinteger(L,childcounter); ++childcounter;
+		tolua(L,sublongname);	
+		lua_settable(L,-3);
+	}
+
+	for(map<string,LuaProcedure*>::const_iterator it = _procedures.begin(); it != _procedures.end(); ++it) {
+		vector<string> sublongname = longname; sublongname.push_back(it->second->name());
+		lua_pushinteger(L,childcounter); ++childcounter;
+		lua_getglobal(L,"idp_intern");
+		lua_getfield(L,-1,"newnode");
+		lua_getfield(L,-2,"idpprocedure");
+		lua_pushstring(L,(it->second->name()).c_str());
+		insertlongname(L,sublongname);
+		lua_pushinteger(L,it->second->arity());
+		luaL_dostring(L,((it->second)->code()).c_str());
+		lua_getglobal(L,"tempfunc");
+assert(lua_isfunction(L,-1));
+		lua_call(L,4,1);	// call idpprocedure
+		lua_call(L,1,1);	// call newnode
+		lua_remove(L,-2);	// remove idp_intern
+		lua_settable(L,-3);	
+	}
+
+	for(map<string,AbstractTheory*>::const_iterator it = _theories.begin(); it != _theories.end(); ++it) {
+		vector<string> sublongname = longname; sublongname.push_back(it->second->name());
+		lua_pushinteger(L,childcounter); ++childcounter;
+		lua_getglobal(L,"idp_intern");
+		lua_getfield(L,-1,"newnode");
+		lua_getfield(L,-2,"idptheory");
+		lua_pushstring(L,(it->second->name()).c_str());
+		insertlongname(L,sublongname);
+		lua_call(L,2,1);	// call idpprocedure
+		lua_call(L,1,1);	// call newnode
+		lua_remove(L,-2);	// remove idp_intern
+		lua_settable(L,-3);	
+	}
+
+	if(longname.empty()) {
+		for(int n = 1; n < childcounter; ++n) {
+			lua_getglobal(L,"idp_intern");
+			lua_pushinteger(L,n);
+			lua_gettable(L,-3);
+			lua_getfield(L,-2,"getname");
+			lua_call(L,1,1);
+			const char* nm = lua_tostring(L,-1);
+			lua_pop(L,2);
+			lua_pushinteger(L,n);
+			lua_gettable(L,-2);
+			lua_setglobal(L,nm);
+		}
+	}
+	else {
+		// TODO
+	}
+
+	return 0;	// TODO: change this
+}
+
+int Namespace::tolua(lua_State* L) const {
+	vector<string> longname(0);
+	return tolua(L,longname);
+}
+
+/*
+	lua_getglobal(L,"idp_intern");
+	lua_getfield(L,-1,"maketable");
+	lua_remove(L,-2);
+	int counter = 0;
+	for(map<string,LuaProcedure*>::const_iterator it = _procedures.begin(); it != _procedures.end(); ++it) {
+		lua_pushstring(L,(it->first).c_str());
+		lua_newtable(L); // TODO
+		lua_pushinteger(L,(it->second)->arity());
+		luaL_loadstring(L,((it->second)->code()).c_str());
+		lua_getglobal(L,"idp_intern");
+		lua_getfield(L,-1, "makeprocedure");
+		lua_insert(L,-6);
+		lua_pop(L,1);
+		lua_call(L,4,1);
+		++counter;
+	}
+	lua_call(L,counter,1);
+	lua_getglobal(L,"idp_intern");
+	lua_getfield(L,-1,"makenode");
+	lua_insert(L,-3);
+	lua_pop(L,1);
+	lua_call(L,1,1);
+
+	lua_setglobal(L,"t");
+
+	// TODO
+	return 0;
+	*/
+
 /** Full name of the namespace **/
 
 string Namespace::fullname() const {

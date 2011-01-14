@@ -428,7 +428,6 @@ namespace Insert {
 		_currproc = 0;
 	}
 
-	map<string,vector<Inference*> >	_inferences;	// All inference methods
 
 	string*		currfile()					{ return _currfile;	}
 	void		currfile(const string& s)	{ _allfiles.push_back(_currfile); _currfile = new string(s);	}
@@ -832,22 +831,6 @@ namespace Insert {
 		_nrspaces.push_back(1);
 		_usingspace.push_back(_currspace);
 
-		_inferences["print"].push_back(new PrintTheory());
-		_inferences["print"].push_back(new PrintVocabulary());
-		_inferences["print"].push_back(new PrintStructure());
-		_inferences["print"].push_back(new PrintNamespace());
-		_inferences["push_negations"].push_back(new PushNegations());
-		_inferences["remove_equivalences"].push_back(new RemoveEquivalences());
-		_inferences["remove_eqchains"].push_back(new RemoveEqchains());
-		_inferences["flatten"].push_back(new FlattenFormulas());
-		_inferences["ground"].push_back(new GroundingInference());
-		_inferences["ground"].push_back(new GroundingWithResult());
-		_inferences["convert_to_theory"].push_back(new StructToTheory());
-		_inferences["move_quantifiers"].push_back(new MoveQuantifiers());
-		_inferences["tseitin"].push_back(new ApplyTseitin());
-		_inferences["reduce"].push_back(new GroundReduce());
-		_inferences["move_functions"].push_back(new MoveFunctions());
-		_inferences["model_expand"].push_back(new ModelExpansionInference());
 	}
 
 	void cleanup() {
@@ -855,11 +838,6 @@ namespace Insert {
 			if(_allfiles[n]) delete(_allfiles[n]);
 		}
 		if(_currfile) delete(_currfile);
-		for(map<string,vector<Inference*> >::iterator it = _inferences.begin(); it != _inferences.end(); ++it) {
-			for(unsigned int n = 0; n < (it->second).size(); ++n) {
-				delete((it->second)[n]);
-			}
-		}
 	}
 
 	void closespace() {
@@ -948,28 +926,18 @@ namespace Insert {
 		_currspace->add(_currproc);
 		_nrvocabs.push_back(0);
 		_nrspaces.push_back(0);
+		_currproc->add(string("tempfunc = function ("));
 	}
 
 	void closeproc() {
+		_currproc->add(string("end"));
 		closeblock();
 	}
 
-	void procarg(const string& type, const string& name, YYLTYPE l) {
-		InfArgType tp = IATUtils::to_iat(type);
-		if(tp != IAT_ERROR) _currproc->addarg(tp,name);
-		else {
-			ParseInfo pi = parseinfo(l);
-			Error::unkniat(type,pi);
-		}
-	}
-
-	void procreturn(const string& type, YYLTYPE l) {
-		InfArgType tp = IATUtils::to_iat(type);
-		if(tp != IAT_ERROR) _currproc->outtype(tp);
-		else {
-			ParseInfo pi = parseinfo(l);
-			Error::unkniat(type,pi);
-		}
+	void procarg(const string& name) {
+		if(_currproc->arity()) _currproc->add(",");
+		_currproc->add(name);
+		_currproc->addarg(name);
 	}
 
 	void luacode(char* s) {
@@ -2614,112 +2582,9 @@ namespace Insert {
 		else return 0;
 	}
 
-	/*****************
-		Statements
-	*****************/
-
-	bool checkarg(const string& arg, InfArgType t, const ParseInfo& pi) {
-		switch(t) {
-			case IAT_THEORY:
-				if(theoInScope(arg,pi)) return true;
-				break;
-			case IAT_VOCABULARY:
-				if(vocabInScope(arg,pi)) return true;
-				break;
-			case IAT_STRUCTURE:
-				if(structInScope(arg,pi)) return true;
-				break;
-			case IAT_NAMESPACE:
-				if(namespaceInScope(arg,pi)) return true;
-				break;
-			case IAT_VOID:
-				if(arg.size() == 0) return true;
-			default: assert(false); 
-		}
-		return false;
-	}
-
-	InfArg convertarg(const string& arg, InfArgType t, const ParseInfo& pi) {
-		InfArg a;
-		switch(t) {
-			case IAT_THEORY:
-				a._theory = theoInScope(arg,pi);
-				break;
-			case IAT_VOCABULARY:
-				a._vocabulary = vocabInScope(arg,pi);
-				break;
-			case IAT_STRUCTURE:
-				a._structure = structInScope(arg,pi);
-				break;
-			case IAT_NAMESPACE:
-				a._namespace = namespaceInScope(arg,pi);
-				break;
-			case IAT_VOID:
-				break;
-			default:
-				assert(false);
-		}
-		return a;
-	}
-
-	void command(InfArgType type, const string& cname, const vector<string>& args, const string& res, YYLTYPE l) {
-		ParseInfo pi = parseinfo(l);
-		map<string,vector<Inference*> >::iterator it = _inferences.find(cname);
-		if(it != _inferences.end()) {
-			vector<Inference*> vi;
-			for(unsigned int n = 0; n < (it->second).size(); ++n) {
-				if(args.size() == (it->second)[n]->arity()) vi.push_back((it->second)[n]);
-			}
-			if(vi.empty()) {
-				Error::unkncommand(cname + '/' + itos(args.size()),pi);
-			}
-			else {
-				vector<Inference*> vi2;
-				for(unsigned int n = 0; n < vi.size(); ++n) {
-					bool ok = true;
-					for(unsigned int m = 0; m < args.size(); ++m) {
-						ok = checkarg(args[m],(vi[n]->intypes())[m],pi);
-						if(!ok) break;
-					}
-					if(ok) {
-						if(type == vi[n]->outtype()) vi2.push_back(vi[n]);
-					}
-				}
-				if(vi2.empty()) Error::wrongcommandargs(cname + '/' + itos(args.size()),pi);
-				else if(vi2.size() == 1) {
-					vector<InfArg> via;
-					for(unsigned int m = 0; m < args.size(); ++m)
-						via.push_back(convertarg(args[m],(vi2[0]->intypes())[m],pi));
-					vi2[0]->execute(via,res,_currspace);
-				}
-				else Error::ambigcommand(cname + '/' + itos(args.size()),pi);
-			}
-		}
-		else {
-			Error::unkncommand(cname + '/' + itos(args.size()),pi);
-		}
-	}
-	
-	void command(const string& cname, const vector<string>& args, YYLTYPE l) {
-		string res;
-		command(IAT_VOID,cname,args,res,l);
-	}
-
-	void command(InfArgType t, const string& cname, const string& res, YYLTYPE l) {
-		vector<string> args;
-		command(t,cname,args,res,l);
-	}
-
-	void command(const string& cname, YYLTYPE l) {
-		vector<string> args;
-		string res;
-		command(IAT_VOID,cname,args,res,l);
-	}
-
-}
-
-void help_execute() {
-	cout << "The available methods in the execute block are:\n";
+	void help_execute() {
+// TODO
+/*	cout << "The available methods in the execute block are:\n";
 	for(map<string,vector<Inference*> >::iterator it = Insert::_inferences.begin(); it != Insert::_inferences.end(); ++it) {
 		for(unsigned int n = 0; n < (it->second).size(); ++n) {
 			cout << "   " << IATUtils::to_string(((it->second)[n])->outtype()) << ' ' << it->first << '(';
@@ -2730,5 +2595,7 @@ void help_execute() {
 			cout << ")\n";
 			cout << "      " << ((it->second)[n])->description() << '\n';
 		}
+	}*/
 	}
 }
+

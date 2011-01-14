@@ -13,6 +13,7 @@
 #include "error.hpp"
 #include "options.hpp"
 #include "clconst.hpp"
+#include "lua.hpp"
 #include <cstdio>
 #include <iostream>
 #include <cstdlib>
@@ -23,10 +24,12 @@ extern FILE* yyin;
 extern map<string,CLConst*>	clconsts;
 extern void parsestring(const string&);
 
-extern void help_execute();
+// Lua stuff
+extern int idpcall(lua_State*);
 
 /** Initialize data structures **/
 void initialize() {
+	BuiltinProcs::initialize();
 	Insert::initialize();
 }
 
@@ -43,8 +46,7 @@ void usage() {
 		 << "    -I:                  read from stdin\n"
 		 << "    -W:                  suppress all warnings\n"
 		 << "    -v, --version:       show version number and stop\n"
-		 << "    -h, --help:          show this help message\n"
-		 << "    --help-execute:      show all methods available in the execute block\n\n";
+		 << "    -h, --help:          show this help message\n\n";
 	exit(0);
 }
 
@@ -94,7 +96,6 @@ vector<string> read_options(int argc, char* argv[]) {
 													}
 		else if(str == "-v" || str == "--version")	{ cout << "GidL 2.0.1\n"; exit(0);	}
 		else if(str == "-h" || str == "--help")		{ usage(); exit(0);					}
-		else if(str == "--help-execute")			{ help_execute(); exit(0);			}
 		else if(str[0] == '-')						{ Error::unknoption(str);			}
 		else										{ inputfiles.push_back(str);		}
 	}
@@ -103,6 +104,13 @@ vector<string> read_options(int argc, char* argv[]) {
 
 /** Parse input files **/
 void parse(const vector<string>& inputfiles) {
+
+	// Parse standard input file
+	yyin = fopen("../idp_intern.idp","r");
+	yyparse();
+	fclose(yyin);
+
+	// Parse files of the user
 	for(unsigned int n = 0; n < inputfiles.size(); ++n) {
 		yylloc.first_line = 1;
 		yylloc.first_column = 1;
@@ -124,20 +132,19 @@ void parse(const vector<string>& inputfiles) {
 
 /** Execute a procecure **/
 
-void executeproc(const string& proc) {
-	// TODO allow for procedures with arguments and procedures outside the global namespace
+void executeproc(lua_State* L, const string& proc) {
 	if(proc != "") {
-		if(Namespace::global()->isProc(proc)) {
-			Namespace::global()->procedure(proc)->execute();
+		luaL_loadstring(L,proc.c_str());
+		int res = lua_pcall(L,0,0,0);
+		if(res) {
+			cerr << string(lua_tostring(L,1)) << endl;
 		}
-		else Error::unkncommand(proc);
 	}
 }
 
 /** Interactive mode **/
-void interactive() {
+void interactive(lua_State* L) {
 	cout << "Running GidL in interactive mode.\n"
-		 << "  Type 'help' for help.\n"
 		 << "  Type 'exit' to quit.\n\n";
 
 	while(true) {
@@ -145,8 +152,13 @@ void interactive() {
 		string str;
 		getline(cin,str);
 		if(str == "exit") return;
-		else if(str == "help") help_execute();
-		else executeproc(str);
+		else {
+			luaL_loadstring(L,str.c_str());
+			int res = lua_pcall(L,0,0,0);
+			if(res) {
+				cerr << string(lua_tostring(L,1)) << endl;
+			}
+		}
 	}
 }
 
@@ -158,11 +170,28 @@ void cleanup() {
 
 /** Main **/
 int main(int argc, char* argv[]) {
+
+	// Parse idp input
 	initialize();
 	vector<string> inputfiles = read_options(argc,argv);
 	parse(inputfiles);
-	executeproc(_cloptions._exec);
-	if(_cloptions._interactive) interactive();
+
+	// Run
+	if(!Error::nr_of_errors()) {
+		// Initialize communication with lua
+		lua_State* L = lua_open();
+		luaL_openlibs(L);
+		lua_pushcfunction(L,&idpcall);
+		lua_setglobal(L,"idpcall");
+		luaL_dofile(L,"../idp_intern.lua");	// TODO: remove hard link
+		Namespace::global()->tolua(L);
+
+		// Execute statements
+		executeproc(L,_cloptions._exec);
+		if(_cloptions._interactive) interactive(L);
+	}
+
+	// Exit
 	cleanup();
 	return Error::nr_of_errors();
 }

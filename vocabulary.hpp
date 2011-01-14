@@ -25,7 +25,10 @@ struct compound;
 *******************************************/
 
 // The types are: void, theory, structure, vocabulary and namespace
-enum InfArgType { IAT_VOID, IAT_THEORY, IAT_STRUCTURE, IAT_VOCABULARY, IAT_NAMESPACE, IAT_ERROR };
+enum InfArgType { 
+	IAT_VOID, IAT_THEORY, IAT_STRUCTURE, IAT_VOCABULARY, IAT_NAMESPACE, IAT_ERROR,
+	IAT_NIL, IAT_NUMBER, IAT_BOOLEAN, IAT_STRING, IAT_TABLE, IAT_FUNCTION, IAT_USERDATA, IAT_THREAD, IAT_LIGHTUSERDATA
+};
 
 // Convert a InfArgType to a string (e.g., IAT_VOID converts to "void")
 namespace IATUtils { 

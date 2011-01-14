@@ -78,8 +78,7 @@ namespace Insert {
 	/** Procedures **/
 	void openproc(const string& name, YYLTYPE);
 	void closeproc();
-	void procarg(const string& type, const string& name, YYLTYPE);
-	void procreturn(const string& type, YYLTYPE);
+	void procarg(const string& name);
 	void luacode(char*);
 	void luacode(const string&);
 	void luacode(const vector<string>&);
@@ -190,12 +189,6 @@ namespace Insert {
 	DomainTerm*		domterm(string*,YYLTYPE);
 	DomainTerm*		domterm(char,YYLTYPE);
 	DomainTerm*		domterm(string*,Sort*,YYLTYPE);
-
-	/** Statements **/
-	void	command(InfArgType,const string& cname, const vector<string>& args, const string& res, YYLTYPE l);
-	void	command(const string& cname, const vector<string>& args, YYLTYPE);
-	void	command(InfArgType,const string& cname, const string& res, YYLTYPE);
-	void	command(const string& cname, YYLTYPE);
 
 	/** Pointers to symbols **/
 

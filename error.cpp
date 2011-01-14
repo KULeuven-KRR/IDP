@@ -534,8 +534,8 @@ namespace Error {
 		cerr << "Argument type " << name << " does not exist." << endl;
 	}
 
-	void wrongcommandargs(const string& name, const ParseInfo& thisplace) {
-		error(thisplace);
+	void wrongcommandargs(const string& name) {
+		error();
 		cerr << "The arguments given to command " << name << " are either of the wrong type, or do not exist.\n";
 	}
 
@@ -549,8 +549,8 @@ namespace Error {
 		cerr << "The value given to option " << name << " should be a positive integer.\n";
 	}
 
-	void ambigcommand(const string& name, const ParseInfo& thisplace) {
-		error(thisplace);
+	void ambigcommand(const string& name) {
+		error();
 		cerr << "Ambiguous call to overloaded command " << name << ".\n";
 	}
 }

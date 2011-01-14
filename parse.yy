@@ -129,16 +129,16 @@ extern string dtos(double);
 %token <str> STRINGCONS
 
 /** Aliases **/
-%token <operator> MAPS		"->"
-%token <operator> EQUIV		"<=>"
-%token <operator> IMPL		"=>"
-%token <operator> RIMPL		"<="
-%token <operator> DEFIMP	"<-"
-%token <operator> NEQ		"~="
-%token <operator> LEQ		"=<"
-%token <operator> GEQ		">="
-%token <operator> RANGE		".."
-%token <operator> NSPACE	"::"
+%token <operator> MAPS			"->"
+%token <operator> EQUIV			"<=>"
+%token <operator> IMPL			"=>"
+%token <operator> RIMPL			"<="
+%token <operator> DEFIMP		"<-"
+%token <operator> NEQ			"~="
+%token <operator> LEQ			"=<"
+%token <operator> GEQ			">="
+%token <operator> RANGE			".."
+%token <operator> NSPACE		"::"
 
 /** Precedence declarations for connectives **/
 %right ':'
@@ -186,7 +186,6 @@ extern string dtos(double);
 %type <ftt> form_term_tuple
 %type <set> set
 %type <cpo> compound
-%type <str> argtype
 
 %type <vint> intrange
 %type <vcha> charrange
@@ -912,10 +911,8 @@ instructions		: PROCEDURE_HEADER proc_name proc_sig '{' lua_block '}'		{ Insert:
 proc_name			: identifier	{ Insert::openproc(*$1,@1);	}
 					;
 
-proc_sig			: '(' ')' 
-					| '(' args ')'
-					| '(' ')' ':' argtype		{ Insert::procreturn(*$4,@4);	}
-					| '(' args ')' ':' argtype	{ Insert::procreturn(*$5,@5);	}
+proc_sig			: '(' ')'		{ Insert::luacode(string(")"));	}
+					| '(' args ')'	{ Insert::luacode(string(")"));	}
 					;
 
 lua_block			: /* empty */
@@ -928,11 +925,8 @@ lua_block			: /* empty */
 					| lua_block pointer_name "::" identifier	{ $2->push_back(*$4); Insert::luacode(*$2); delete($2);	}
 					;
 
-args				: args ',' argtype identifier	{ Insert::procarg(*$3,*$4,@3);	}
-					| argtype identifier			{ Insert::procarg(*$1,*$2,@1);	}
-					;
-
-argtype				: identifier	{ $$ = $1;	}
+args				: args ',' identifier	{ Insert::procarg(*$3);		}
+					| identifier			{ Insert::procarg(*$1);		}
 					;
 
 /**************
