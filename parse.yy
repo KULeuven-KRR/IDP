@@ -96,6 +96,7 @@ extern string dtos(double);
 %token NAMESPACE_HEADER
 %token PROCEDURE_HEADER
 %token OPTION_HEADER
+%token EXEC_HEADER
 
 /** Keywords **/
 %token VOCABULARY
@@ -207,6 +208,10 @@ extern string dtos(double);
 /*********************
 	Global structure
 *********************/
+
+idporblock		: idp
+				| execstatement	
+				;
 
 idp		        : /* empty */
 				| idp namespace 
@@ -916,7 +921,6 @@ proc_sig			: '(' ')'		{ Insert::luacode(string(")"));	}
 					;
 
 lua_block			: /* empty */
-					| lua_block using
 					| lua_block identifier		{ Insert::luacode(*$2);	}
 					| lua_block STRINGCONS		{ string str = string("\"") + *$2 + string("\""); Insert::luacode(str);	}
 					| lua_block CHARCONS		{ string str = string("'") + $2 + string("'"); Insert::luacode(str);	}
@@ -928,6 +932,16 @@ lua_block			: /* empty */
 args				: args ',' identifier	{ Insert::procarg(*$3);		}
 					| identifier			{ Insert::procarg(*$1);		}
 					;
+
+execstatement	: EXEC_HEADER openexec lua_block closeexec	
+				;
+
+openexec		: '{'											{ Insert::openexec();	}
+				;
+
+closeexec		: '}'
+				;
+
 
 /**************
 	Options

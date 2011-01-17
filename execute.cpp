@@ -187,7 +187,7 @@ namespace BuiltinProcs {
 				for(int a = 0; a < vs.size() -1; ++a) {
 					ns = ns->subspace(vs[a]);
 				}
-				a._theory = ns->theory(vs[vs.size()-1]);
+				a._vocabulary = ns->vocabulary(vs[vs.size()-1]);
 				break;
 			}
 			case IAT_STRUCTURE:
@@ -197,7 +197,7 @@ namespace BuiltinProcs {
 				for(int a = 0; a < vs.size() -1; ++a) {
 					ns = ns->subspace(vs[a]);
 				}
-				a._theory = ns->theory(vs[vs.size()-1]);
+				a._structure = ns->structure(vs[vs.size()-1]);
 				break;
 			}
 			case IAT_NAMESPACE:
@@ -207,7 +207,7 @@ namespace BuiltinProcs {
 				for(int a = 0; a < vs.size() -1; ++a) {
 					ns = ns->subspace(vs[a]);
 				}
-				a._theory = ns->theory(vs[vs.size()-1]);
+				a._namespace = ns->subspace(vs[vs.size()-1]);
 				break;
 			}
 			case IAT_VOID:
@@ -275,8 +275,8 @@ InfArg PrintTheory::execute(const vector<InfArg>& args) const {
 	assert(args.size() == 1);
 	// TODO
 	string s = (args[0]._theory)->to_string();
-	cout << s;
-	InfArg a;
+	//cout << s;
+	InfArg a; a._string = IDPointer(s);
 	return a;
 }
 
@@ -284,8 +284,8 @@ InfArg PrintVocabulary::execute(const vector<InfArg>& args) const {
 	assert(args.size() == 1);
 	// TODO
 	string s = (args[0]._vocabulary)->to_string();
-	cout << s;
-	InfArg a;
+	// cout << s;
+	InfArg a; a._string = IDPointer(s);
 	return a;
 }
 
@@ -293,17 +293,17 @@ InfArg PrintStructure::execute(const vector<InfArg>& args) const {
 	assert(args.size() == 1);
 	// TODO
 	string s = (args[0]._structure)->to_string();
-	cout << s;
-	InfArg a;
+	// cout << s;
+	InfArg a; a._string = IDPointer(s);
 	return a;
 }
 
 InfArg PrintNamespace::execute(const vector<InfArg>& args) const {
 	assert(args.size() == 1);
 	// TODO
-	//string s = (args[0]._namespace)->to_string();
+	// string s = (args[0]._namespace)->to_string();
 	//cout << s;
-	InfArg a;
+	InfArg a; a._string = IDPointer("");
 	return a;
 }
 

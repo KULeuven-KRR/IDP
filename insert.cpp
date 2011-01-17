@@ -917,6 +917,16 @@ namespace Insert {
 		Procedures
 	*****************/
 
+	void openexec() {
+		_currproc = new LuaProcedure();
+	}
+
+	LuaProcedure* currproc() {
+		LuaProcedure* r = _currproc;
+		_currproc = 0;
+		return r;
+	}
+
 	void openproc(const string& name, YYLTYPE l) {
 		Info::print("Parsing procedure " + name);
 		ParseInfo pi = parseinfo(l);
@@ -952,8 +962,9 @@ namespace Insert {
 		assert(!vs.empty());
 		_currproc->add(vs[0]);
 		for(unsigned int n = 1; n < vs.size(); ++n) {
-			_currproc->add(string("."));
+			_currproc->add(string("(idp_intern.descend,\""));
 			_currproc->add(vs[n]);
+			_currproc->add(string("\")"));
 		}
 	}
 

@@ -26,12 +26,12 @@ local function idpfunction(name,longname)
 	return { idptype = "function", name = name, longname = longname }
 end
 
-local function idpvocabulary(name,longname,children) 
-	return { idptype = "vocabulary", name = name, longname = longname, children = children }
+local function idpvocabulary(name,longname) 
+	return { idptype = "vocabulary", name = name, longname = longname }
 end
 
-local function idpnamespace(name,longname,children)
-	return { idptype = "namespace", name = name, longname = longname, children = children }
+local function idpnamespace(name,longname)
+	return { idptype = "namespace", name = name, longname = longname }
 end
 
 local function newnodedata(name) 
@@ -65,6 +65,7 @@ local getfunction		= { }
 local getnamespace		= { }
 local getvocabulary		= { }
 local doinsert			= { }
+local isidp				= { }
 
 local function createnode(nodedata)
 	return function(...) 
@@ -73,6 +74,8 @@ local function createnode(nodedata)
 			argone = argtable[1]
 			if argone == descend then
 				return (nodedata.children)[argtable[2]]
+			elseif argone == isidp then
+				return isidp
 			elseif argone == getchildren then
 				return nodedata.children
 			elseif argone == getrunprocs then
@@ -105,7 +108,7 @@ local function createnode(nodedata)
 					(nodedata.children)[argtable[2](getname)] = argtable[2]
 				end
 			elseif (nodedata.runprocs)[#argtable] then
-				(nodedata.runprocs)[#argtable](...)
+				return (nodedata.runprocs)[#argtable](...)
 			else
 				print("ERROR: Procedure "..nodedata.name.."/"..#argtable.." does not exist.")
 				return nil
@@ -163,10 +166,6 @@ local function newnode(object)
 	nodedata[object.idptype] = object.longname
 	if object.idptype == "procedure" then
 		nodedata["runprocs"][object.argnums] = object.code
-	elseif idptype == "vocabulary" then
-		nodedata["children"] = object.children
-	elseif idptype == "namespace" then
-		nodedata["children"] = object.children
 	end
 
 	return createnode(nodedata)
@@ -202,3 +201,16 @@ idp_intern = {
 	newnode			= newnode,
 	idpcall			= idpcall
 }
+
+local oldTostring = tostring
+function tostring(e) 
+	if type(e) == "function" then
+		if e(isidp) == isidp then
+			return idptostring(e)
+		else
+			return oldTostring(e)
+		end
+	else 
+		return oldTostring(e)
+	end
+end

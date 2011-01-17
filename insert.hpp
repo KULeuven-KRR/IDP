@@ -9,6 +9,7 @@
 
 #include <utility>
 #include "theory.hpp"
+class LuaProcedure;
 
 struct YYLTYPE;
 
@@ -76,6 +77,9 @@ namespace Insert {
 	void option(const string& opt, int val,YYLTYPE);
 
 	/** Procedures **/
+	void			openexec();
+	LuaProcedure*	currproc();
+
 	void openproc(const string& name, YYLTYPE);
 	void closeproc();
 	void procarg(const string& name);

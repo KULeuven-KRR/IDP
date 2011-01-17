@@ -2,14 +2,18 @@
 	return idp_intern.idpcall("model_expand",Theo,Struct)
 }
 
-#procedure idpprint(Theo) {
-	return idp_intern.idpcall("print",Theo)
+/*#procedure model_expand(Theo,Struct,Opt) {
+	return idp_intern.idpcall("model_expand",Theo,Struct,Opt)
+}*/
+
+#procedure idptostring(obj) {
+	return idp_intern.idpcall("print",obj)
 }
 
-#procedure push_negations(T) {
-	return idp_intern.idpcall("push_negations",T)
-}
-/*
+/*#procedure idpprint(Theo,Opt) {
+	return idp_intern.idpcall("print",Theo,Opt)
+}*/
+
 #namespace IDP_EXPERT {
 	
 	#procedure push_negations(T) {
@@ -53,4 +57,4 @@
 	}
 
 }
-*/
+

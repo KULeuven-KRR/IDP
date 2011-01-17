@@ -11,6 +11,8 @@
 #include <map>
 #include <set>
 #include <cassert>
+#include "lua.hpp"
+
 class Formula;
 class Predicate;
 class SortTable;
@@ -499,6 +501,8 @@ class Vocabulary {
 
 		vector<Predicate*>	pred_no_arity(const string&)	const;	// return all predicates with the given name (not including the arity)
 		vector<Function*>	func_no_arity(const string&)	const;	// return all functions with the given name (not including the arity)
+
+		int tolua(lua_State*,const vector<string>&) const;
 
 		// Debugging
 		string to_string(unsigned int spaces = 0) const;

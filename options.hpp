@@ -70,6 +70,7 @@ class InfOptions {
 			if(str == "nrmodels") r = true;
 			return r;
 		}
+		const string& name() const { return _name; }
 
 };
 

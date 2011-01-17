@@ -23,6 +23,7 @@ class LuaProcedure {
 		vector<string>		_innames;
 		stringstream		_code;
 	public:
+		LuaProcedure() { }
 		LuaProcedure(const string& name, const ParseInfo& pi) :
 			_name(name), _pi(pi), _innames(0) { }
 
@@ -69,7 +70,7 @@ class PrintTheory : public Inference {
 	public:
 		PrintTheory() { 
 			_intypes = vector<InfArgType>(1,IAT_THEORY); 
-			_outtype = IAT_VOID;
+			_outtype = IAT_STRING;
 			_description = "Print the theory";
 		}
 		InfArg execute(const vector<InfArg>& args) const;
@@ -79,7 +80,7 @@ class PrintVocabulary : public Inference {
 	public:
 		PrintVocabulary() { 
 			_intypes = vector<InfArgType>(1,IAT_VOCABULARY); 
-			_outtype = IAT_VOID;	
+			_outtype = IAT_STRING;	
 			_description = "Print the vocabulary";
 		}
 		InfArg execute(const vector<InfArg>& args) const;
@@ -89,7 +90,7 @@ class PrintStructure : public Inference {
 	public:
 		PrintStructure() { 
 			_intypes = vector<InfArgType>(1,IAT_STRUCTURE); 
-			_outtype = IAT_VOID;	
+			_outtype = IAT_STRING;	
 			_description = "Print the structure";
 		}
 		InfArg execute(const vector<InfArg>& args) const;
@@ -99,7 +100,7 @@ class PrintNamespace : public Inference {
 	public:
 		PrintNamespace() { 
 			_intypes = vector<InfArgType>(1,IAT_NAMESPACE); 
-			_outtype = IAT_VOID;	
+			_outtype = IAT_STRING;	
 			_description = "Print the namespace";
 		}
 		InfArg execute(const vector<InfArg>& args) const;

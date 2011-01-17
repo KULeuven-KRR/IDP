@@ -180,6 +180,9 @@ COMMENTLINE		"//".*
 		Lua
 	**********/
 
+<*>"##intern##"				{ BEGIN(procedure); 
+							  return EXEC_HEADER;
+							}
 <procedure>"{"				{ advancecol();
 							  BEGIN(lua);
 							  bracketcounter = 0;		
@@ -192,7 +195,7 @@ COMMENTLINE		"//".*
 							}
 <lua>"}"					{ advancecol();
 							  --bracketcounter;
-							  if(bracketcounter < 1) {
+							  if(bracketcounter < 0) {
 								BEGIN(INITIAL);
 								return *yytext;
 							  }

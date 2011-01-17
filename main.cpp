@@ -17,6 +17,8 @@
 #include <cstdio>
 #include <iostream>
 #include <cstdlib>
+#include "readline-6.1/readline.h"
+#include "readline-6.1/history.h"
 
 // Parser stuff
 extern int yyparse();
@@ -143,17 +145,35 @@ void executeproc(lua_State* L, const string& proc) {
 }
 
 /** Interactive mode **/
+
+static char *line_read = (char *)NULL;
+char* rl_gets() {
+	if (line_read) {
+		free(line_read);
+		line_read = (char *)NULL;
+    }
+	line_read = readline ("> ");
+	if (line_read && *line_read) add_history(line_read);
+	return (line_read);
+}
+
 void interactive(lua_State* L) {
 	cout << "Running GidL in interactive mode.\n"
 		 << "  Type 'exit' to quit.\n\n";
 
 	while(true) {
-		cout << "> ";
-		string str;
-		getline(cin,str);
-		if(str == "exit") return;
+		//cout << "> ";
+		//string str;
+		//getline(cin,str);
+		char* userline = rl_gets();
+		if(string(userline) == "exit") return;
+		//if(str == "exit") return;
 		else {
-			luaL_loadstring(L,str.c_str());
+			string str = "##intern##{"+string(userline)+'}';
+			parsestring(str);
+			LuaProcedure* proc = Insert::currproc();
+			luaL_loadstring(L,(proc->code()).c_str());
+			//luaL_loadstring(L,str.c_str());
 			int res = lua_pcall(L,0,0,0);
 			if(res) {
 				cerr << string(lua_tostring(L,1)) << endl;
