@@ -30,7 +30,8 @@ gidl_SOURCES = \
 		parse.yy\
 		lex.ll\
 		options.hpp\
-		clconst.hpp
+		clconst.hpp\
+		interactive.cpp
 
 #MINISATID PART, HEADERS ARE TAKEN CARE OF BY THE SUB MAKEFILE
 gidl_SOURCES += \

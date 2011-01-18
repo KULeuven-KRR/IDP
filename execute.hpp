@@ -57,6 +57,8 @@ class Inference {
 		vector<InfArgType>	_intypes;		// types of the input arguments
 		InfArgType			_outtype;		// type of the return value
 		string				_description;	// description of the inference
+		bool				_reload;		// true if after completing the inference,
+											// new components are added to the global namespace
 	public:
 		virtual ~Inference() { }
 		virtual InfArg execute(const vector<InfArg>& args) const = 0;	// execute the statement
@@ -64,6 +66,17 @@ class Inference {
 		InfArgType					outtype()		const { return _outtype;		}
 		unsigned int				arity()			const { return _intypes.size();	}
 		string						description()	const { return _description;	}
+		bool						reload()		const { return _reload;			}
+};
+
+class LoadFile : public Inference {
+	public:
+		LoadFile() { _intypes = vector<InfArgType>(1,IAT_STRING);	
+					 _outtype = IAT_VOID;
+					 _description = "Load the given file";
+					 _reload = true;
+		}
+		InfArg execute(const vector<InfArg>& args) const;
 };
 
 class PrintTheory : public Inference {
@@ -72,6 +85,7 @@ class PrintTheory : public Inference {
 			_intypes = vector<InfArgType>(1,IAT_THEORY); 
 			_outtype = IAT_STRING;
 			_description = "Print the theory";
+			_reload = false;
 		}
 		InfArg execute(const vector<InfArg>& args) const;
 };
@@ -82,6 +96,7 @@ class PrintVocabulary : public Inference {
 			_intypes = vector<InfArgType>(1,IAT_VOCABULARY); 
 			_outtype = IAT_STRING;	
 			_description = "Print the vocabulary";
+			_reload = false;
 		}
 		InfArg execute(const vector<InfArg>& args) const;
 };
@@ -92,6 +107,7 @@ class PrintStructure : public Inference {
 			_intypes = vector<InfArgType>(1,IAT_STRUCTURE); 
 			_outtype = IAT_STRING;	
 			_description = "Print the structure";
+			_reload = false;
 		}
 		InfArg execute(const vector<InfArg>& args) const;
 };
@@ -102,6 +118,7 @@ class PrintNamespace : public Inference {
 			_intypes = vector<InfArgType>(1,IAT_NAMESPACE); 
 			_outtype = IAT_STRING;	
 			_description = "Print the namespace";
+			_reload = false;
 		}
 		InfArg execute(const vector<InfArg>& args) const;
 };
@@ -112,6 +129,7 @@ class PushNegations : public Inference {
 			_intypes = vector<InfArgType>(1,IAT_THEORY); 
 			_outtype = IAT_VOID;	
 			_description = "Push all negations inside until they are in front of atoms";
+			_reload = false;
 		}
 		InfArg execute(const vector<InfArg>& args) const;
 };
@@ -122,6 +140,7 @@ class RemoveEquivalences : public Inference {
 			_intypes = vector<InfArgType>(1,IAT_THEORY); 
 			_outtype = IAT_VOID;	
 			_description = "Rewrite equivalences into pairs of implications";
+			_reload = false;
 		}
 		InfArg execute(const vector<InfArg>& args) const;
 };
@@ -132,6 +151,7 @@ class RemoveEqchains : public Inference {
 			_intypes = vector<InfArgType>(1,IAT_THEORY); 
 			_outtype = IAT_VOID;	
 			_description = "Rewrite chains of (in)equalities to conjunctions of atoms";
+			_reload = false;
 		}
 		InfArg execute(const vector<InfArg>& args) const;
 
@@ -143,6 +163,7 @@ class FlattenFormulas : public Inference {
 			_intypes = vector<InfArgType>(1,IAT_THEORY); 
 			_outtype = IAT_VOID;	
 			_description = "Rewrite ((A & B) & C) to (A & B & C), rewrite (! x : ! y : phi(x,y)) to (! x y : phi(x,y)), etc.";
+			_reload = false;
 		}
 		InfArg execute(const vector<InfArg>& args) const;
 };
@@ -171,6 +192,7 @@ class StructToTheory : public Inference {
 			_intypes = vector<InfArgType>(1,IAT_STRUCTURE); 
 			_outtype = IAT_THEORY;	
 			_description = "Rewrite a structure to a theory";
+			_reload = false;
 		}
 		InfArg execute(const vector<InfArg>& args) const;
 };
@@ -181,6 +203,7 @@ class MoveQuantifiers : public Inference {
 			_intypes = vector<InfArgType>(1,IAT_THEORY);
 			_outtype = IAT_VOID;
 			_description = "Move universal (existential) quantifiers inside conjunctions (disjunctions)";
+			_reload = false;
 		}
 		InfArg execute(const vector<InfArg>& args) const;
 };
@@ -191,6 +214,7 @@ class ApplyTseitin : public Inference {
 			_intypes = vector<InfArgType>(1,IAT_THEORY);
 			_outtype = IAT_VOID;
 			_description = "Apply the tseitin transformation to a theory";
+			_reload = false;
 		}
 		InfArg execute(const vector<InfArg>& args) const;
 };
@@ -207,6 +231,7 @@ class MoveFunctions : public Inference {
 			_intypes = vector<InfArgType>(1,IAT_THEORY);
 			_outtype = IAT_VOID;
 			_description = "Move functions until no functions are nested";
+			_reload = false;
 		}
 		InfArg execute(const vector<InfArg>& args) const;
 };

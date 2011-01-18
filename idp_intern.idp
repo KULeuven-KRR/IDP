@@ -1,3 +1,7 @@
+#procedure parse(filename) {
+	return idp_intern.idpcall("load_file",filename)
+}
+
 #procedure model_expand(Theo,Struct) {
 	return idp_intern.idpcall("model_expand",Theo,Struct)
 }
@@ -48,8 +52,8 @@
 		return idp_intern.idpcall("flatten",T)
 	}
 
-	#procedure ground(T,S,Opt) {
-		return idp_intern.idpcall("ground",T,S,Opt)
+	#procedure ground(T,S) {
+		return idp_intern.idpcall("ground",T,S)
 	}
 
 	#procedure reduce(T,S) {

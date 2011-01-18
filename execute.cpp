@@ -38,6 +38,7 @@ namespace BuiltinProcs {
 		_inferences["reduce"].push_back(new GroundReduce());
 		_inferences["move_functions"].push_back(new MoveFunctions());
 		_inferences["model_expand"].push_back(new ModelExpansionInference());
+		_inferences["load_file"].push_back(new LoadFile());
 	}
 
 	bool checkintern(lua_State* L, int n, const string& tp) {
@@ -216,10 +217,13 @@ namespace BuiltinProcs {
 				break;
 			case IAT_NUMBER:
 				a._number = lua_tonumber(L,n);
+				break;
 			case IAT_BOOLEAN:
 				a._boolean = lua_toboolean(L,n);
+				break;
 			case IAT_STRING:
 				a._string = IDPointer(lua_tostring(L,n));
+				break;
 			default:
 				assert(false);
 		}
@@ -255,6 +259,7 @@ int idpcall(lua_State* L) {
 		for(unsigned int m = 1; m <= nrargs; ++m)
 			via.push_back(BuiltinProcs::convertarg(L,m,(vi2[0]->intypes())[m-1]));
 		InfArg res = vi2[0]->execute(via);
+		if(vi2[0]->reload()) (Namespace::global())->tolua(L);
 		if(vi2[0]->outtype() == IAT_VOID) return 0;
 		else {
 			BuiltinProcs::converttolua(L,res,vi2[0]->outtype());
@@ -271,6 +276,14 @@ int idpcall(lua_State* L) {
 /*
 	Built-in procedures
 */
+
+extern void parsefile(const string&);
+InfArg LoadFile::execute(const vector<InfArg>& args) const {
+	parsefile(*(args[0]._string));
+	InfArg a; 
+	return a;
+}
+
 InfArg PrintTheory::execute(const vector<InfArg>& args) const {
 	assert(args.size() == 1);
 	// TODO
@@ -341,6 +354,7 @@ GroundingInference::GroundingInference() {
 	_intypes[1] = IAT_STRUCTURE;
 	_outtype = IAT_VOID;	
 	_description = "Ground the theory and structure and print the grounding";
+	_reload = false;
 }
 
 InfArg GroundingInference::execute(const vector<InfArg>& args) const {
@@ -369,6 +383,7 @@ GroundingWithResult::GroundingWithResult() {
 	_intypes[1] = IAT_STRUCTURE;
 	_outtype = IAT_THEORY;	
 	_description = "Ground the theory and structure and store the grounding";
+	_reload = false;
 }
 
 InfArg GroundingWithResult::execute(const vector<InfArg>& args) const {
@@ -385,6 +400,7 @@ ModelExpansionInference::ModelExpansionInference() {
 	_intypes[1] = IAT_STRUCTURE;
 	_outtype = IAT_VOID;
 	_description = "Performs model expansion on the structure given the theory it should satisfy.";
+	_reload = false;
 }
 
 InfArg ModelExpansionInference::execute(const vector<InfArg>& args) const {
@@ -457,6 +473,7 @@ GroundReduce::GroundReduce() {
 	_intypes[1] = IAT_STRUCTURE;
 	_outtype = IAT_VOID;
 	_description = "Replace ground atoms in the theory by their truth value in the structure";
+	_reload = false;
 }
 
 InfArg GroundReduce::execute(const vector<InfArg>& args) const {

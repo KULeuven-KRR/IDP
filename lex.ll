@@ -49,9 +49,11 @@ void advancecol()	{
 // Scan from string
 extern int yyparse();
 void parsestring(const string& str) {
+	YY_BUFFER_STATE old = YY_CURRENT_BUFFER;
 	YY_BUFFER_STATE buffer = yy_scan_string(str.c_str());
 	yyparse();
 	yy_delete_buffer(buffer);
+	yy_switch_to_buffer(old);
 }
 
 // Handle includes
@@ -307,7 +309,7 @@ COMMENTLINE		"//".*
 								  return CONSTR;			}
 <vocabulary>"isa"				{ advancecol();
 								  return ISA;				}
-<vocabulary>"extends"			{ advancecol();
+<vocabulary>"contains"			{ advancecol();
 								  return EXTENDS;			}
 <vocabulary>"extern"			{ advancecol();
 								  return EXTERN;			}

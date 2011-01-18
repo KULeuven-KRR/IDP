@@ -17,8 +17,6 @@
 #include <cstdio>
 #include <iostream>
 #include <cstdlib>
-#include "readline-6.1/readline.h"
-#include "readline-6.1/history.h"
 
 // Parser stuff
 extern int yyparse();
@@ -105,6 +103,19 @@ vector<string> read_options(int argc, char* argv[]) {
 }
 
 /** Parse input files **/
+void parsefile(const string& str) {
+	yylloc.first_line = 1;
+	yylloc.first_column = 1;
+	yyin = fopen(str.c_str(),"r");
+	if(yyin) {
+		Insert::currfile(str);
+		yyparse();	
+		fclose(yyin);
+		// TODO: de 'using' vocabularia van de global namespace uitvegen
+	}
+	else Error::unknfile(str);
+}
+
 void parse(const vector<string>& inputfiles) {
 
 	// Parse standard input file
@@ -114,16 +125,7 @@ void parse(const vector<string>& inputfiles) {
 
 	// Parse files of the user
 	for(unsigned int n = 0; n < inputfiles.size(); ++n) {
-		yylloc.first_line = 1;
-		yylloc.first_column = 1;
-		yyin = fopen(inputfiles[n].c_str(),"r");
-		if(yyin) {
-			Insert::currfile(inputfiles[n]);
-			yyparse();	
-			fclose(yyin);
-			// TODO: de 'using' vocabularia van de global namespace uitvegen
-		}
-		else Error::unknfile(inputfiles[n]);
+		parsefile(inputfiles[n]);
 	}
 	if(_cloptions._readfromstdin) {
 		yyin = stdin;
@@ -136,44 +138,33 @@ void parse(const vector<string>& inputfiles) {
 
 void executeproc(lua_State* L, const string& proc) {
 	if(proc != "") {
-		luaL_loadstring(L,proc.c_str());
+		string str = "##intern##{"+proc+'}';
+		parsestring(str);
+		LuaProcedure* proc = Insert::currproc();
+		luaL_loadstring(L,(proc->code()).c_str());
+		delete(proc);
 		int res = lua_pcall(L,0,0,0);
-		if(res) {
-			cerr << string(lua_tostring(L,1)) << endl;
-		}
+		if(res) cerr << string(lua_tostring(L,1)) << endl; 
 	}
 }
 
 /** Interactive mode **/
 
-static char *line_read = (char *)NULL;
-char* rl_gets() {
-	if (line_read) {
-		free(line_read);
-		line_read = (char *)NULL;
-    }
-	line_read = readline ("> ");
-	if (line_read && *line_read) add_history(line_read);
-	return (line_read);
-}
+extern char* rl_gets();
 
 void interactive(lua_State* L) {
 	cout << "Running GidL in interactive mode.\n"
 		 << "  Type 'exit' to quit.\n\n";
 
 	while(true) {
-		//cout << "> ";
-		//string str;
-		//getline(cin,str);
 		char* userline = rl_gets();
 		if(string(userline) == "exit") return;
-		//if(str == "exit") return;
 		else {
 			string str = "##intern##{"+string(userline)+'}';
 			parsestring(str);
 			LuaProcedure* proc = Insert::currproc();
 			luaL_loadstring(L,(proc->code()).c_str());
-			//luaL_loadstring(L,str.c_str());
+			delete(proc);
 			int res = lua_pcall(L,0,0,0);
 			if(res) {
 				cerr << string(lua_tostring(L,1)) << endl;
@@ -181,6 +172,7 @@ void interactive(lua_State* L) {
 		}
 	}
 }
+
 
 /** Delete all data **/
 void cleanup() {
