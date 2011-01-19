@@ -17,6 +17,7 @@
 #include <cstdio>
 #include <iostream>
 #include <cstdlib>
+#include "interactive.hpp"
 
 // Parser stuff
 extern int yyparse();
@@ -37,9 +38,11 @@ void initialize() {
 void usage() {
 	cout << "Usage:\n"
 		 << "   gidl [options] [filename [filename [...]]]\n\n";
-	cout << "Options:\n"
-		 << "    -i, --interactive	  run in interactive mode\n"
-		 << "    -e \"<proc>\"          run procedure <proc> after parsing\n"
+	cout << "Options:\n";
+#ifdef USEINTERACTIVE
+	cout << "    -i, --interactive	  run in interactive mode\n"
+#endif	
+	cout << "    -e \"<proc>\"          run procedure <proc> after parsing\n"
 		 << "    --statistics:        show statistics\n"
 		 << "    --verbose:           print additional information\n"
 		 << "    -c <name1>=<name2>:  substitute <name2> for <name1> in the input\n"
@@ -74,9 +77,11 @@ vector<string> read_options(int argc, char* argv[]) {
 	while(argc) {
 		string str(argv[0]);
 		argc--; argv++;
-		if(str == "-i" || str == "--interactive")	{ _cloptions._interactive = true;		}
-		else if(str == "-e" || str == "--execute")  { _cloptions._exec = string(argv[0]); 
-													  argc--; argv++;						}
+		if(str == "-e" || str == "--execute")  		{ _cloptions._exec = string(argv[0]); 
+														argc--; argv++;						}
+#ifdef USEINTERACTIVE
+		else if(str == "-i" || str == "--interactive")	{ _cloptions._interactive = true;	}
+#endif
 		else if(str == "--statistics")				{ _cloptions._statistics = true;		}
 		else if(str == "--verbose")					{ _cloptions._verbose = true;			}
 		else if(str == "-c")						{ str = argv[0];
@@ -150,8 +155,7 @@ void executeproc(lua_State* L, const string& proc) {
 
 /** Interactive mode **/
 
-extern char* rl_gets();
-
+#ifdef USEINTERACTIVE
 void interactive(lua_State* L) {
 	cout << "Running GidL in interactive mode.\n"
 		 << "  Type 'exit' to quit.\n\n";
@@ -172,6 +176,11 @@ void interactive(lua_State* L) {
 		}
 	}
 }
+#else
+void interactive(lua_State* L) {
+	cerr << "IDP was compiled without interactive support!\n";
+}
+#endif
 
 
 /** Delete all data **/
