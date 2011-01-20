@@ -81,11 +81,35 @@ AC_ARG_ENABLE([bits],
 	*) AC_MSG_ERROR([bad value ${enableval} for --enable-bits]) ;;
 esac],[])
 
+AC_ARG_WITH(
+  [readline],
+  [AC_HELP_STRING([--with-readline], [Use readline for interpreter input [default=yes]])],
+  [use_readline=$withval],
+  [use_readline=yes]
+)
+
+# Check for readline
+if test "x$use_readline" == "xyes"; then
+  AC_CHECK_LIB([readline], [readline], [lib=" -lncurses "], [use_readline=no], [-lncurses])
+  if test "x$use_readline" == "xno"; then
+	AC_CHECK_LIB([readline], [readline], [lib=" -ltermcap "], [use_readline=no], [-ltermcap])
+  fi
+  AC_CHECK_LIB([readline], [readline], [], [use_readline=no], [$lib])
+  AC_CHECK_HEADERS([readline/readline.h readline/history.h], [], [use_readline=no])
+  if test "x$use_readline" == "xno"; then
+    AC_MSG_WARN([readline headers could not be found, disabling readline support])
+  else
+    AC_LDFLAGS+= " -lreadline $lib "
+  fi
+fi
+AM_CONDITIONAL([USEREADLINE],[test x$use_readline = xyes])
+AM_CONDITIONAL([USEINTERACTIVE],[test x$use_readline = xyes])
+
 # files to generate via autotools (.am or .in source files)
 ac_configure_args+=" --enable-shared=no " #IMPORTANT: the reason for this is that we want to force lua to compile only a static library, so we link statically with lua.
 	#in future, when we allow installing, we can remove this, and also it breaks the configure semantics, because it will also offer all options of subdir configure.ac to the
 	#top --help
-AC_CONFIG_SUBDIRS([lib/lua])
+AC_CONFIG_SUBDIRS([lib/readline lib/lua])
 AC_CONFIG_FILES([Makefile lib/Makefile])
 
 # generate the final Makefile etc.

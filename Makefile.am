@@ -1,13 +1,17 @@
 SUBDIRS = lib
-AM_CXXFLAGS = @AC_CXXFLAGS@ -Wall -Wextra -pedantic -I$(srcdir)/lib/lua/etc -I$(srcdir)/lib/lua/src -I$(builddir)/lib/lua/src
-AM_LDFLAGS = @AC_LDFLAGS@  
+AM_CXXFLAGS = @AC_CXXFLAGS@ -Wall -Wextra -pedantic\
+		-I$(srcdir)/lib/lua/etc -I$(srcdir)/lib/lua/src\
+		-I$(builddir)/lib/lua/src  -I $(srcdir)/lib/\
+		-DDATADIR=\"$(datadir)\"
+		
+AM_LDFLAGS = @AC_LDFLAGS@
 
 YFLAGS = -d -v
 LFLAGS = 
 
 bin_PROGRAMS = gidl
 
-gidl_LDADD = -L$(builddir)/lib/lua/src/.libs -llua -ldl
+gidl_LDADD = -L$(builddir)/lib/lua/src/.libs -llua
 
 BUILT_SOURCES = parse.h
 
@@ -31,7 +35,7 @@ gidl_SOURCES = \
 		lex.ll\
 		options.hpp\
 		clconst.hpp\
-		interactive.cpp
+		interactive.cpp interactive.hpp
 
 #MINISATID PART, HEADERS ARE TAKEN CARE OF BY THE SUB MAKEFILE
 gidl_SOURCES += \
@@ -55,6 +59,10 @@ gidl_SOURCES += \
 		pcsolver/solvers/SATSolver.h pcsolver/solvers/SATUtils.h
 
 CXXFLAGS += -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS -I $(srcdir)/pcsolver/
+
+if USEINTERACTIVE
+CXXFLAGS+=-DUSEINTERACTIVE
+endif
 
 #MINISAT 2.07 09z
 
@@ -91,3 +99,6 @@ CXXFLAGS+=-DUSEMINISAT
 endif
 
 dist_doc_DATA = README
+
+data_stddir = $(datadir)/std
+data_std_DATA = data/idp_intern.idp data/idp_intern.lua

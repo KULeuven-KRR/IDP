@@ -132,6 +132,7 @@ void end_include() {
 %}
 
 %option noyywrap
+%option never-interactive
 
 %x comment
 %x vocabulary
