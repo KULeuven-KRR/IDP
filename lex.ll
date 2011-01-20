@@ -136,6 +136,7 @@ void end_include() {
 %x comment
 %x vocabulary
 %x structure
+%x aspstructure
 %x theory 
 %x option
 %x include
@@ -240,10 +241,10 @@ COMMENTLINE		"//".*
 <*>"#structure"				{ BEGIN(structure);
 							  advancecol();
 							  return STRUCT_HEADER;		}
-<*>"#asp_structure"			{ BEGIN(structure);
+<*>"#asp_structure"			{ BEGIN(aspstructure);
 							  advancecol();
 							  return ASP_HEADER;		}
-<*>"#asp_belief"			{ BEGIN(structure);
+<*>"#asp_belief"			{ BEGIN(aspstructure);
 							  advancecol();
 							  return ASP_BELIEF;		}
 <*>"#namespace"				{ BEGIN(INITIAL);
@@ -390,6 +391,9 @@ COMMENTLINE		"//".*
 							  return FALSE;				}
 <structure>"procedure"		{ advancecol();
 							  return PROCEDURE;			}
+<aspstructure>"%".*			{							}
+<aspstructure>".."			{ advancecol();
+							  return RANGE;				}
 
 
 	/******************

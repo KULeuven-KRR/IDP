@@ -989,8 +989,8 @@ void closeTable() {
 
 void closeTuple() {
 	_currelements.clear();
-	_currelements.clear();
 	_currtypes.clear();
+	_currranges.clear();
 	_iselement.clear();
 }
 

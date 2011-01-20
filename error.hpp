@@ -144,6 +144,9 @@ namespace Warning {
 	/** Unexpeded type derivation **/
 	void derivevarsort(const string& varname, const string& sortname, const ParseInfo& thisplace);
 
+	/** Autocompletion **/
+	void addingeltosort(const string& elname, const string& sortname);
+
 	/** Reading from stdin **/
 	void readingfromstdin();
 

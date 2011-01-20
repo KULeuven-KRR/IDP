@@ -13,7 +13,12 @@ enum WarningTypes {
 	WT_FREE_VARS=0,		// warning if free variables are detected
 	WT_VARORCONST=1,	// warning if it is ambiguous whether some term is a variable or a constant
 	WT_SORTDERIVE=2,	// warning if some (probably unexpected) sorts are derived for a variable
-	WT_STDIN=3			// warning if trying to read from the stdin
+	WT_STDIN=3,			// warning if trying to read from the stdin
+	WT_AUTOCOMPL=4		// warning if structure is completed automatically
+};
+
+enum StyleOptions {
+	SO_CASE=0	// variables start with lowercase, all other symbols with uppercase
 };
 
 class CLOptions {
@@ -25,6 +30,7 @@ class CLOptions {
 		  bool				_readfromstdin;		// expect input from stdin iff _readfromstdin=true
 		  bool				_interactive;		// interactive mode if _interactive is true
 		  vector<bool>		_warning;			// _warning[n] = true means that warnings of type n are not suppressed
+		  vector<bool>		_style;				// _style[n] = true means that style option n is enforced
 		  string			_exec;				// the procedure called from the command line
 
 		  // Constructor (default options)
@@ -33,7 +39,8 @@ class CLOptions {
 				_verbose = false;
 				_readfromstdin = false;
 				_interactive = false;
-				_warning = vector<bool>(4,true);
+				_warning = vector<bool>(5,true);
+				_style = vector<bool>(1,false);
 				_exec = "";
 		  }
 

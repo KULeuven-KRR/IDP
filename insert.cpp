@@ -477,9 +477,9 @@ namespace Insert {
 	Namespace* namespaceInScope(const string& name, const ParseInfo& pi) {
 		Namespace* ns = 0;
 		for(unsigned int n = 0; n < _usingspace.size(); ++n) {
-			if(_usingspace[n]->name() == name) {
+			if(_usingspace[n]->isSubspace(name)) {
 				if(ns) Error::overloadedspace(name,_usingspace[n]->pi(),ns->pi(),pi);
-				else ns = _usingspace[n];
+				else ns = _usingspace[n]->subspace(name);
 			}
 		}
 		return ns;
@@ -564,14 +564,17 @@ namespace Insert {
 		}
 		else {
 			Namespace* ns = namespaceInScope(vs[0],pi);
-			for(unsigned int n = 1; n < (vs.size()-1); ++n) {
-				if(ns->isSubspace(vs[n])) {
-					ns = ns->subspace(vs[n]);
+			if(ns) {
+				for(unsigned int n = 1; n < (vs.size()-1); ++n) {
+					if(ns->isSubspace(vs[n])) {
+						ns = ns->subspace(vs[n]);
+					}
+					else return 0;
+				}
+				if(ns->isVocab(vs.back())) {
+					return ns->vocabulary(vs.back());
 				}
 				else return 0;
-			}
-			if(ns->isVocab(vs.back())) {
-				return ns->vocabulary(vs.back());
 			}
 			else return 0;
 		}
@@ -604,14 +607,17 @@ namespace Insert {
 		}
 		else {
 			Namespace* ns = namespaceInScope(vs[0],pi);
-			for(unsigned int n = 1; n < (vs.size()-1); ++n) {
-				if(ns->isSubspace(vs[n])) {
-					ns = ns->subspace(vs[n]);
+			if(ns) {
+				for(unsigned int n = 1; n < (vs.size()-1); ++n) {
+					if(ns->isSubspace(vs[n])) {
+						ns = ns->subspace(vs[n]);
+					}
+					else return 0;
+				}
+				if(ns->isOption(vs.back())) {
+					return ns->option(vs.back());
 				}
 				else return 0;
-			}
-			if(ns->isOption(vs.back())) {
-				return ns->option(vs.back());
 			}
 			else return 0;
 		}
@@ -883,7 +889,7 @@ namespace Insert {
 		else Error::undeclopt(oneName(name),pi);
 	}
 
-	void option(const string& opt, const string& val, YYLTYPE l) {
+	void option(const string& opt, const string&, YYLTYPE l) {
 		ParseInfo pi = parseinfo(l);
 		if(InfOptions::isoption(opt)) {
 			Error::wrongvaluetype(opt,pi);
@@ -891,7 +897,7 @@ namespace Insert {
 		else Error::unknopt(opt,pi);
 	}
 
-	void option(const string& opt, double val, YYLTYPE l) {
+	void option(const string& opt, double, YYLTYPE l) {
 		ParseInfo pi = parseinfo(l);
 		if(InfOptions::isoption(opt)) {
 			Error::wrongvaluetype(opt,pi);
@@ -945,7 +951,7 @@ namespace Insert {
 	}
 
 	void procarg(const string& name) {
-		if(_currproc->arity()) _currproc->add(",");
+		if(_currproc->arity()) _currproc->add(string(","));
 		_currproc->add(name);
 		_currproc->addarg(name);
 	}
@@ -1259,241 +1265,91 @@ namespace Insert {
 		_nrspaces.push_back(0);
 	}
 
-	void structinclusioncheck() {
-		/*Vocabulary* v = _currstructure->vocabulary();
-		for(unsigned int n = 0; n < v->nrSorts(); ++n) {
-			Sort* s = v->sort(n);
-			if(s->parent()) {
-				SortTable* st = _currstructure->inter(s);
-				SortTable* pt = _currstructure->inter(s->parent());
-				if(st && pt) {
-					for(unsigned int r = 0; r < st->size(); ++r) {
-						if(!(pt->contains(st->element(r),st->type()))) {
-							string str = ElementUtil::ElementToString(st->element(r),st->type());
-							Error::sortelnotinsort(str,s->name(),s->parent()->name(),_currstructure->name());
-						}
-					}
-				}
-			}
-		}
-		for(unsigned int n = 0; n < v->nrPreds(); ++n) {
-			Predicate* p = v->pred(n);
-			PredInter* pt = _currstructure->inter(p);
+	void assignunknowntables() {
+		// Assign the unknown predicate interpretations
+		for(map<Predicate*,FinitePredTable*>::iterator it = _unknownpredtables.begin(); it != _unknownpredtables.end(); ++it) {
+			PredInter* pt = _currstructure->inter(it->first);
 			if(pt) {
-				PredTable* ct = pt->ctpf();
-				PredTable* cf = pt->cfpt();
-				for(unsigned int c = 0; c < p->arity(); ++c) {
-					SortTable* st = _currstructure->inter(p->sort(c));
-					if(st) {
-						if(ct) {
-							for(unsigned int r = 0; r < ct->size(); ++r) {
-								if(!(st->contains(ct->element(r,c),ct->type(c)))) {
-									string str = ElementUtil::ElementToString(ct->element(r,c),ct->type(c));
-									Error::predelnotinsort(str,p->name(),p->sort(c)->name(),_currstructure->name());
-								}
-							}
+				if(pt->ctpf()) {
+					if(pt->cfpt()) {
+						Error::threethreepred(it->first->name(),_currstructure->name());
+						delete(it->second);
+					}
+					else {
+						assert(pt->ct()); 
+						assert(pt->ctpf()->finite());
+						FinitePredTable* fpt = it->second;
+						for(unsigned int n = 0; n < pt->ctpf()->size(); ++n) {
+							fpt->addRow(pt->ctpf()->tuple(n),pt->ctpf()->types());
 						}
-						if(cf && ct != cf) {
-							for(unsigned int r = 0; r < cf->size(); ++r) {
-								if(!(st->contains(cf->element(r,c),cf->type(c)))) {
-									string str = ElementUtil::ElementToString(cf->element(r,c),cf->type(c));
-									Error::predelnotinsort(str,p->name(),p->sort(c)->name(),_currstructure->name());
-								}
-							}
-						}
+						fpt->sortunique();
+						pt->replace(fpt,false,false);
 					}
 				}
+				else {
+					assert(pt->cfpt()); 
+					assert(pt->cf()); 
+					assert(pt->cfpt()->finite());
+					FinitePredTable* fpt = it->second;
+					for(unsigned int n = 0; n < pt->cfpt()->size(); ++n) {
+						fpt->addRow(pt->cfpt()->tuple(n),pt->cfpt()->types());
+					}
+					fpt->sortunique();
+					pt->replace(fpt,true,false);
+				}
+			}
+			else {
+				Error::onethreepred(it->first->name(),_currstructure->name());
+				delete(it->second);
 			}
 		}
-		for(unsigned int n = 0; n < v->nrFuncs(); ++n) {
-			Function* f = v->func(n);
+		// Assign the unknown function interpretations
+		for(map<Function*,FinitePredTable*>::iterator it = _unknownfunctables.begin(); it != _unknownfunctables.end(); ++it) {
+			FuncInter* ft = _currstructure->inter(it->first);
 			PredInter* pt = 0;
-			if(_currstructure->inter(f)) pt = _currstructure->inter(f)->predinter();
+			if(ft) pt = ft->predinter();
 			if(pt) {
-				PredTable* ct = pt->ctpf();
-				PredTable* cf = pt->cfpt();
-				for(unsigned int c = 0; c < f->nrsorts(); ++c) {
-					SortTable* st = _currstructure->inter(f->sort(c));
-					if(st) {
-						if(ct) {
-							for(unsigned int r = 0; r < ct->size(); ++r) {
-								if(!(st->contains(ct->element(r,c),ct->type(c)))) {
-									string str = ElementUtil::ElementToString(ct->element(r,c),ct->type(c));
-									Error::predelnotinsort(str,f->name(),f->sort(c)->name(),_currstructure->name());
-								}
-							}
-						}
-						if(cf && ct != cf) {
-							for(unsigned int r = 0; r < cf->size(); ++r) {
-								if(!(st->contains(cf->element(r,c),cf->type(c)))) {
-									string str = ElementUtil::ElementToString(cf->element(r,c),cf->type(c));
-									Error::predelnotinsort(str,f->name(),f->sort(c)->name(),_currstructure->name());
-								}
-							}
-						}
+				if(pt->ctpf()) {
+					if(pt->cfpt()) {
+						Error::threethreefunc(it->first->name(),_currstructure->name());
+						delete(it->second);
 					}
+					else {
+						assert(pt->ct()); 
+						assert(pt->ctpf()->finite());
+						FinitePredTable* fpt = it->second;
+						for(unsigned int n = 0; n < pt->ctpf()->size(); ++n) {
+							fpt->addRow(pt->ctpf()->tuple(n),pt->ctpf()->types());
+						}
+						fpt->sortunique();
+						pt->replace(fpt,false,false);
+					}
+				}
+				else {
+					assert(pt->cfpt()); 
+					assert(pt->cf()); 
+					assert(pt->cfpt()->finite());
+					FinitePredTable* fpt = it->second;
+					for(unsigned int n = 0; n < pt->cfpt()->size(); ++n) {
+						fpt->addRow(pt->cfpt()->tuple(n),pt->cfpt()->types());
+					}
+					fpt->sortunique();
+					pt->replace(fpt,true,false);
 				}
 			}
-		}
-		*/
-	}
-
-	void functioncheck() {
-		/*Vocabulary* v = _currstructure->vocabulary();
-		for(unsigned int n = 0; n < v->nrFuncs(); ++n) {
-			Function* f = v->func(n);
-			FuncInter* ft = _currstructure->inter(f);
-			if(ft) {
-				PredInter* pt = ft->predinter();
-				PredTable* ct = pt->ctpf();
-				PredTable* cf = pt->cfpt();
-				// Check if the interpretation is indeed a function
-				bool isfunc = true;
-				if(ct) {
-					vector<ElementType> vet = ct->types(); vet.pop_back();
-					ElementEquality eq(vet);
-					for(unsigned int r = 1; r < ct->size(); ) {
-						if(eq(ct->tuple(r-1),ct->tuple(r))) {
-							vector<Element> vel = ct->tuple(r);
-							vector<string> vstr(vel.size()-1);
-							for(unsigned int c = 0; c < vel.size()-1; ++c) 
-								vstr[c] = ElementUtil::ElementToString(vel[c],ct->type(c));
-							Error::notfunction(f->name(),_currstructure->name(),vstr);
-							while(eq(ct->tuple(r-1),ct->tuple(r))) ++r;
-							isfunc = false;
-						}
-						else ++r;
-					}
-				}
-				// Check if the interpretation is total
-				if(isfunc && !(f->partial()) && ct && (ct == cf || (!(pt->cf()) && cf->size() == 0))) {
-					unsigned int c = 0;
-					unsigned int s = 1;
-					for(; c < f->arity(); ++c) {
-						if(_currstructure->inter(f->insort(c))) {
-							s = s * _currstructure->inter(f->insort(c))->size();
-						}
-						else break;
-					}
-					if(c == f->arity()) {
-						assert(ct->size() <= s);
-						if(ct->size() < s) {
-							Error::nottotal(f->name(),_currstructure->name());
-						}
-					}
-				}
+			else {
+				Error::onethreefunc(it->first->name(),_currstructure->name());
+				delete(it->second);
 			}
 		}
-		*/
 	}
 
 	void closestructure() {
-
-		// Complete the structure
-		bool change = true;
-		while(change) {
-			change = false;
-
-			// Assign the unknown predicate interpretations
-			for(map<Predicate*,FinitePredTable*>::iterator it = _unknownpredtables.begin(); it != _unknownpredtables.end(); ) {
-				map<Predicate*,FinitePredTable*>::iterator jt = it; ++it;
-				PredInter* pt = _currstructure->inter(jt->first);
-				if(pt) {
-					if(pt->ctpf()) {
-						if(pt->cfpt()) {
-							Error::threethreepred(jt->first->name(),_currstructure->name());
-							delete(jt->second);
-						}
-						else {
-							assert(pt->ct()); 
-							assert(pt->ctpf()->finite());
-							FinitePredTable* fpt = jt->second;
-							for(unsigned int n = 0; n < pt->ctpf()->size(); ++n) {
-								fpt->addRow(pt->ctpf()->tuple(n),pt->ctpf()->types());
-							}
-							fpt->sortunique();
-							pt->replace(fpt,false,false);
-						}
-					}
-					else {
-						assert(pt->cfpt()); 
-						assert(pt->cf()); 
-						assert(pt->cfpt()->finite());
-						FinitePredTable* fpt = jt->second;
-						for(unsigned int n = 0; n < pt->cfpt()->size(); ++n) {
-							fpt->addRow(pt->cfpt()->tuple(n),pt->cfpt()->types());
-						}
-						fpt->sortunique();
-						pt->replace(fpt,true,false);
-					}
-					_unknownpredtables.erase(jt);
-					change = true;
-				}
-			}
-			// Assign the unknown function interpretations
-			for(map<Function*,FinitePredTable*>::iterator it = _unknownfunctables.begin(); it != _unknownfunctables.end(); ) {
-				map<Function*,FinitePredTable*>::iterator jt = it; ++it;
-				FuncInter* ft = _currstructure->inter(jt->first);
-				PredInter* pt = 0;
-				if(ft) pt = ft->predinter();
-				if(pt) {
-					if(pt->ctpf()) {
-						if(pt->cfpt()) {
-							Error::threethreefunc(jt->first->name(),_currstructure->name());
-							delete(jt->second);
-						}
-						else {
-							assert(pt->ct()); 
-							assert(pt->ctpf()->finite());
-							FinitePredTable* fpt = jt->second;
-							for(unsigned int n = 0; n < pt->ctpf()->size(); ++n) {
-								fpt->addRow(pt->ctpf()->tuple(n),pt->ctpf()->types());
-							}
-							fpt->sortunique();
-							pt->replace(fpt,false,false);
-						}
-					}
-					else {
-						assert(pt->cfpt()); 
-						assert(pt->cf()); 
-						assert(pt->cfpt()->finite());
-						FinitePredTable* fpt = jt->second;
-						for(unsigned int n = 0; n < pt->cfpt()->size(); ++n) {
-							fpt->addRow(pt->cfpt()->tuple(n),pt->cfpt()->types());
-						}
-						fpt->sortunique();
-						pt->replace(fpt,true,false);
-					}
-					_unknownfunctables.erase(jt);
-					change = true;
-				}
-			}
-		}
-
-		// Errors for non-assignable tables
-		for(map<Predicate*,FinitePredTable*>::iterator it = _unknownpredtables.begin(); it != _unknownpredtables.end(); ++it) {
-			Error::onethreepred(it->first->name(),_currstructure->name());
-			delete(it->second);
-		}
-		for(map<Function*,FinitePredTable*>::iterator it = _unknownfunctables.begin(); it != _unknownfunctables.end(); ++it) {
-			Error::onethreefunc(it->first->name(),_currstructure->name());
-			delete(it->second);
-		}
-	
-		// inclusion checks
-		structinclusioncheck();
-
-		// function check
-		functioncheck();
-
-		// close the structure
-		_currstructure->close();
-
-		// reset the auxiliary data structures
+		assignunknowntables();
+		_currstructure->autocomplete();
+		_currstructure->functioncheck();
 		_unknownpredtables.clear();
 		_unknownfunctables.clear();
-
-		// close block
 		closeblock();
 	}
 
@@ -1846,7 +1702,7 @@ namespace Insert {
 			switch(st->type()) {
 				case ELINT: {
 					RanSortTable* rst = dynamic_cast<RanSortTable*>(st);
-					for(unsigned int n = 0; n < st->size(); ++n) {
+					for(unsigned int n = 0; n < rst->size(); ++n) {
 						Element e; e._int = (*rst)[n];
 						predatom(p,ELINT,e,ct);
 					}
@@ -1854,7 +1710,7 @@ namespace Insert {
 				}
 				case ELSTRING: {
 					StrSortTable* sst = dynamic_cast<StrSortTable*>(st);
-					for(unsigned int n = 0; n < st->size(); ++n) {
+					for(unsigned int n = 0; n < sst->size(); ++n) {
 						Element e; e._string = (*sst)[n];
 						predatom(p,ELSTRING,e,ct);
 					}
@@ -1878,7 +1734,7 @@ namespace Insert {
 			}
 		}
 
-		vector<Element> ve2(ve.size());
+		vector<Element> ve2(vb.size());
 		vector<SortTable*> vst2; for(unsigned int n = 0; n < vst.size(); ++n) vst2.push_back(vst[n]);
 		SortTableTupleIterator stti(vst2);
 		if(!stti.empty()) {
@@ -1953,7 +1809,7 @@ namespace Insert {
 			}
 		}
 
-		vector<Element> ve2(ve.size());
+		vector<Element> ve2(vb.size());
 		vector<SortTable*> vst2; for(unsigned int n = 0; n < vst.size(); ++n) vst2.push_back(vst[n]);
 		SortTableTupleIterator stti(vst2);
 		if(!stti.empty()) {
@@ -2109,20 +1965,20 @@ namespace Insert {
 	}
 
 	PredForm* predform(NSTuple* nst, const vector<Term*>& vt, YYLTYPE l) {
-		if(nst->_sortsincluded) nst->includePredArity();
-		else nst->includeArity(vt.size());
+		if(nst->_sortsincluded) {
+			if((nst->_sorts).size() != vt.size()) Error::incompatiblearity(nst->to_string(),nst->_pi);
+			if(nst->_func) Error::prednameexpected(nst->_pi);
+		}
+		(nst->_name).back() = (nst->_name).back() + '/' + itos(vt.size());
 		FormParseInfo pi = formparseinfo(l);
 		Predicate* p = predInScope(nst->_name,nst->_pi);
 		PredForm* pf = 0;
-		if(p && nst->_sortsincluded) p = p->resolve(nst->_sorts);
+		if(p && nst->_sortsincluded && (nst->_sorts).size() == vt.size()) p = p->resolve(nst->_sorts);
 		if(p) {
 			if(belongsToVoc(p)) {
-				if(p->arity() == vt.size()) {
-					unsigned int n = 0;
-					for(; n < vt.size(); ++n) { if(!vt[n]) break; }
-					if(n == vt.size()) pf = new PredForm(true,p,vt,pi);	// TODO change the formparseinfo
-				}
-				else Error::wrongpredarity(p->name(),nst->_pi);
+				unsigned int n = 0;
+				for(; n < vt.size(); ++n) { if(!vt[n]) break; }
+				if(n == vt.size()) pf = new PredForm(true,p,vt,pi);	// TODO change the formparseinfo
 			}
 			else Error::prednotintheovoc(p->name(),_currtheory->name(),nst->_pi);
 		}
@@ -2412,11 +2268,14 @@ namespace Insert {
 	}
 
 	FuncTerm* functerm(NSTuple* nst, const vector<Term*>& vt) {
-		if(nst->_sortsincluded) nst->includeFuncArity();
-		else nst->includeArity(vt.size());
+		if(nst->_sortsincluded) {
+			if((nst->_sorts).size() != vt.size()+1) Error::incompatiblearity(nst->to_string(),nst->_pi);
+			if(!nst->_func) Error::funcnameexpected(nst->_pi);
+		}
+		(nst->_name).back() = (nst->_name).back() + '/' + itos(vt.size());
 		Function* f = funcInScope(nst->_name,nst->_pi);
+		if(f && nst->_sortsincluded && (nst->_sorts).size() == vt.size()+1) f = f->resolve(nst->_sorts);
 		FuncTerm* t = 0;
-		if(f && nst->_sortsincluded) f = f->resolve(nst->_sorts);
 		if(f) {
 			if(belongsToVoc(f)) {
 				if(f->arity() == vt.size()) {

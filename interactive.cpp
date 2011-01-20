@@ -10,7 +10,7 @@ char* rl_gets() {
 		free(line_read);
 		line_read = (char *)NULL;
     }
-	line_read = readline ("> ");
+	line_read = readline("> ");	// TODO: doesn't wait if there was already a file on stdin
 	if (line_read && *line_read) add_history(line_read);
 	return (line_read);
 }

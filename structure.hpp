@@ -771,7 +771,9 @@ class Structure : public AbstractStructure {
 		void	inter(Sort* s,SortTable* d);		// set the domain of s to d.
 		void	inter(Predicate* p, PredInter* i);	// set the interpretation of p to i.
 		void	inter(Function* f, FuncInter* i);	// set the interpretation of f to i.
-		void	close();							// set the interpretation of all predicates and functions that 
+		void	addElement(Element,ElementType,Sort*);	// add the given element to the interpretation of the given sort
+		void	functioncheck();					// check the correctness of the function tables
+		void	autocomplete();						// set the interpretation of all predicates and functions that 
 													// do not yet have an interpretation to the least precise 
 													// interpretation.
 

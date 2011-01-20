@@ -562,6 +562,11 @@ namespace Warning {
 
 	/** Global error messages **/
 
+	void warning() {
+		warningcounter++;
+		cerr << "WARNING: ";
+	}
+
 	void warning(const ParseInfo& p) {
 		warningcounter++;
 		cerr << "WARNING at line " << p.line() 
@@ -595,6 +600,15 @@ namespace Warning {
 			cerr << "Derived sort " << sortname << " for variable " << varname << ".\n";
 		}
 	}
+
+	/** Autocompletion **/
+	void addingeltosort(const string& elname, const string& sortname) {
+		if(_cloptions._warning[WT_AUTOCOMPL]) {
+			warning();
+			cerr << "Adding element " << elname << " to the interpretation of sort " << sortname << ".\n";
+		}
+	}
+
 
 	/** Reading from stdin **/
 	void readingfromstdin() {

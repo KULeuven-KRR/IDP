@@ -30,7 +30,7 @@ namespace BuiltinProcs {
 		_inferences["remove_equivalences"].push_back(new RemoveEquivalences());
 		_inferences["remove_eqchains"].push_back(new RemoveEqchains());
 		_inferences["flatten"].push_back(new FlattenFormulas());
-		_inferences["ground"].push_back(new GroundingInference());
+	//	_inferences["ground"].push_back(new GroundingInference());
 		_inferences["ground"].push_back(new GroundingWithResult());
 		_inferences["convert_to_theory"].push_back(new StructToTheory());
 		_inferences["move_quantifiers"].push_back(new MoveQuantifiers());
@@ -175,8 +175,8 @@ namespace BuiltinProcs {
 			{	
 				vector<string> vs = convertintern(L,n,"gettheory");
 				Namespace* ns = Namespace::global();
-				for(int a = 0; a < vs.size() -1; ++a) {
-					ns = ns->subspace(vs[a]);
+				for(unsigned int m = 0; m < vs.size() -1; ++m) {
+					ns = ns->subspace(vs[m]);
 				}
 				a._theory = ns->theory(vs[vs.size()-1]);
 				break;
@@ -185,8 +185,8 @@ namespace BuiltinProcs {
 			{
 				vector<string> vs = convertintern(L,n,"getvocabulary");
 				Namespace* ns = Namespace::global();
-				for(int a = 0; a < vs.size() -1; ++a) {
-					ns = ns->subspace(vs[a]);
+				for(unsigned int m = 0; m < vs.size() -1; ++m) {
+					ns = ns->subspace(vs[m]);
 				}
 				a._vocabulary = ns->vocabulary(vs[vs.size()-1]);
 				break;
@@ -195,8 +195,8 @@ namespace BuiltinProcs {
 			{
 				vector<string> vs = convertintern(L,n,"getstructure");
 				Namespace* ns = Namespace::global();
-				for(int a = 0; a < vs.size() -1; ++a) {
-					ns = ns->subspace(vs[a]);
+				for(unsigned int m = 0; m < vs.size() -1; ++m) {
+					ns = ns->subspace(vs[m]);
 				}
 				a._structure = ns->structure(vs[vs.size()-1]);
 				break;
@@ -205,8 +205,8 @@ namespace BuiltinProcs {
 			{
 				vector<string> vs = convertintern(L,n,"getnamespace");
 				Namespace* ns = Namespace::global();
-				for(int a = 0; a < vs.size() -1; ++a) {
-					ns = ns->subspace(vs[a]);
+				for(unsigned int m = 0; m < vs.size() -1; ++m) {
+					ns = ns->subspace(vs[m]);
 				}
 				a._namespace = ns->subspace(vs[vs.size()-1]);
 				break;
@@ -239,7 +239,7 @@ int idpcall(lua_State* L) {
 	vector<Inference*> pvi = BuiltinProcs::_inferences[name];
 
 	// Try to find correct inference 
-	int nrargs = lua_gettop(L); 
+	unsigned int nrargs = lua_gettop(L); 
 	vector<Inference*> vi;
 	for(unsigned int n = 0; n < pvi.size(); ++n) {
 		if(nrargs == pvi[n]->arity()) vi.push_back(pvi[n]);

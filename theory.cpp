@@ -449,6 +449,7 @@ namespace TVUtils {
 					case TV_FALSE: 
 						return TV_FALSE;
 				}
+			default: assert(false); return TV_UNKN;
 		}
 	}
 
@@ -466,6 +467,7 @@ namespace TVUtils {
 					case TV_UNKN: 
 						return TV_UNKN;
 				}
+			default: assert(false); return TV_UNKN;
 		}
 	}
 
@@ -970,14 +972,14 @@ void TheoryConvertor::visit(Rule* r) {
 	else {
 		if(_rettype == ECTT_ATOM) {
 			_currclause = vector<int>(1,_curratom);
-			_rettype == ECTT_CONJ;
+			_rettype = ECTT_CONJ;
 		}
 		if(_infixpdef) _currfixpdef.addRule(headatom,_currclause,_rettype==ECTT_CONJ,_returnvalue->translator());
 		else _currdefinition.addRule(headatom,_currclause,_rettype==ECTT_CONJ,_returnvalue->translator());
 	}
 }
 
-void TheoryConvertor::visit(QuantSetExpr* e) {
+void TheoryConvertor::visit(QuantSetExpr*) {
 	assert(false);
 }
 

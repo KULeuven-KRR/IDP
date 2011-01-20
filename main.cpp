@@ -119,7 +119,7 @@ void parsefile(const string& str) {
 void parse(const vector<string>& inputfiles) {
 
 	// Parse standard input file
-	yyin = fopen("../idp_intern.idp","r");
+	yyin = fopen("../idp_intern.idp","r");	// TODO remove hard link
 	yyparse();
 	fclose(yyin);
 
@@ -158,18 +158,21 @@ void interactive(lua_State* L) {
 
 	while(true) {
 		char* userline = rl_gets();
-		if(string(userline) == "exit") return;
-		else {
-			string str = "##intern##{"+string(userline)+'}';
-			parsestring(str);
-			LuaProcedure* proc = Insert::currproc();
-			luaL_loadstring(L,(proc->code()).c_str());
-			delete(proc);
-			int res = lua_pcall(L,0,0,0);
-			if(res) {
+		if(userline) {
+			if(string(userline) == "exit") return;
+			else {
+				string str = "##intern##{"+string(userline)+'}';
+				parsestring(str);
+				LuaProcedure* proc = Insert::currproc();
+				luaL_loadstring(L,(proc->code()).c_str());
+				delete(proc);
+				int res = lua_pcall(L,0,0,0);
+				if(res) {
 				cerr << string(lua_tostring(L,1)) << endl;
+				}
 			}
 		}
+		else cout << "\n";
 	}
 }
 
