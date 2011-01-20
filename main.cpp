@@ -40,16 +40,16 @@ void usage() {
 		 << "   gidl [options] [filename [filename [...]]]\n\n";
 	cout << "Options:\n";
 #ifdef USEINTERACTIVE
-	cout << "    -i, --interactive	  run in interactive mode\n"
+	cout << "    -i, --interactive    run in interactive mode\n";
 #endif	
 	cout << "    -e \"<proc>\"          run procedure <proc> after parsing\n"
-		 << "    --statistics:        show statistics\n"
-		 << "    --verbose:           print additional information\n"
-		 << "    -c <name1>=<name2>:  substitute <name2> for <name1> in the input\n"
-		 << "    -I:                  read from stdin\n"
-		 << "    -W:                  suppress all warnings\n"
-		 << "    -v, --version:       show version number and stop\n"
-		 << "    -h, --help:          show this help message\n\n";
+		 << "    --statistics         show statistics\n"
+		 << "    --verbose            print additional information\n"
+		 << "    -c <name1>=<name2>   substitute <name2> for <name1> in the input\n"
+		 << "    -I                   read from stdin\n"
+		 << "    -W                   suppress all warnings\n"
+		 << "    -v, --version        show version number and stop\n"
+		 << "    -h, --help           show this help message\n\n";
 	exit(0);
 }
 
@@ -92,7 +92,7 @@ vector<string> read_options(int argc, char* argv[]) {
 														  setclconst(name1,name2); 
 													  }
 													  else Error::constsetexp();
-													  argc--; argv++;
+												  argc--; argv++;
 													}
 		else if(str == "-I")						{ _cloptions._readfromstdin = true;	}
 		else if(str == "-W")						{ for(unsigned int n = 0; n < _cloptions._warning.size(); ++n) {
@@ -118,13 +118,21 @@ void parsefile(const string& str) {
 		fclose(yyin);
 		// TODO: de 'using' vocabularia van de global namespace uitvegen
 	}
-	else Error::unknfile(str);
+	else{
+		Error::unknfile(str);
+		exit(-1); //TODO propere abort
+	}
 }
 
 void parse(const vector<string>& inputfiles) {
-
 	// Parse standard input file
-	yyin = fopen("../idp_intern.idp","r");
+	stringstream ss;
+	ss <<DATADIR <<"/std/idp_intern.idp";
+	yyin = fopen(ss.str().c_str(),"r");
+	if(yyin==NULL){
+		Error::unknfile(ss.str());
+		exit(-1); //TODO propere abort
+	}
 	yyparse();
 	fclose(yyin);
 
@@ -204,7 +212,9 @@ int main(int argc, char* argv[]) {
 		luaL_openlibs(L);
 		lua_pushcfunction(L,&idpcall);
 		lua_setglobal(L,"idpcall");
-		luaL_dofile(L,"../idp_intern.lua");	// TODO: remove hard link
+		stringstream ss;
+		ss <<DATADIR <<"/std/idp_intern.lua";
+		luaL_dofile(L,ss.str().c_str());
 		Namespace::global()->tolua(L);
 
 		// Execute statements

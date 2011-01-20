@@ -2,7 +2,7 @@
 
 /** Interactive mode **/
 
-#ifdef USEREADLINE
+#ifdef USEINTERACTIVE
 #include <readline/readline.h>
 #include <readline/history.h>
 #include <cstdlib>
