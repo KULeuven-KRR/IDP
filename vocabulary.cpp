@@ -10,33 +10,6 @@
 #include <iostream>
 #include <algorithm>
 
-/*********************
-	Argument types
-*********************/
-
-namespace IATUtils {
-
-	string to_string(InfArgType t) {
-		switch(t) {
-			case IAT_VOID: return "void";
-			case IAT_NAMESPACE: return "namespace";
-			case IAT_STRUCTURE: return "structure";
-			case IAT_THEORY: return "theory";
-			case IAT_VOCABULARY: return "vocabulary";
-			default: assert(false); return "";
-		}
-	}
-
-	InfArgType to_iat(const string& s) {
-		if(s == "void") return IAT_VOID;
-		else if(s == "namespace") return IAT_NAMESPACE;
-		else if(s == "structure") return IAT_STRUCTURE;
-		else if(s == "theory") return IAT_THEORY;
-		else if(s == "vocabulary") return IAT_VOCABULARY;
-		else return IAT_ERROR;
-	}
-}
-
 /**********************
 	Domain elements
 **********************/
@@ -343,6 +316,7 @@ namespace ElementUtil {
 }
 
 bool operator==(TypedElement e1, TypedElement e2)	{ return ElementUtil::equal(e1._element,e1._type,e2._element,e2._type);				}
+bool operator!=(TypedElement e1, TypedElement e2)	{ return !(e1==e2);	}
 bool operator<=(TypedElement e1, TypedElement e2)	{ return ElementUtil::lessthanorequal(e1._element,e1._type,e2._element,e2._type);	}
 bool operator<(TypedElement e1, TypedElement e2)	{ return ElementUtil::strlessthan(e1._element,e1._type,e2._element,e2._type);		}
 
@@ -951,6 +925,15 @@ bool Vocabulary::contains(Function* f) const {
 	map<string,Function*>::const_iterator it = _name2func.find(f->name());
 	if(it != _name2func.end()) return it->second->contains(f);
 	else return false;
+}
+
+bool Vocabulary::contains(PFSymbol* s) const {
+	if(s->ispred()) {
+		return contains(dynamic_cast<Predicate*>(s));
+	}
+	else {
+		return contains(dynamic_cast<Function*>(s));
+	}
 }
 
 unsigned int Vocabulary::index(Sort* s) const {

@@ -22,22 +22,6 @@ class AbstractStructure;
 class Vocabulary;
 struct compound;
 
-/*******************************************
-	Argument types for inference methods
-*******************************************/
-
-// The types are: void, theory, structure, vocabulary and namespace
-enum InfArgType { 
-	IAT_VOID, IAT_THEORY, IAT_STRUCTURE, IAT_VOCABULARY, IAT_NAMESPACE, IAT_ERROR,
-	IAT_NIL, IAT_NUMBER, IAT_BOOLEAN, IAT_STRING, IAT_TABLE, IAT_FUNCTION, IAT_USERDATA, IAT_THREAD, IAT_LIGHTUSERDATA
-};
-
-// Convert a InfArgType to a string (e.g., IAT_VOID converts to "void")
-namespace IATUtils { 
-	string		to_string(InfArgType);
-	InfArgType	to_iat(const string&);
-}
-
 /***************************************
 	Parse location of parsed objects	
 ***************************************/
@@ -478,6 +462,7 @@ class Vocabulary {
 		bool				contains(Sort* s)		const;	//!< true if the vocabulary contains the sort
 		bool				contains(Predicate* p)	const;	//!< true if the vocabulary contains the predicate
 		bool				contains(Function* f)	const;	//!< true if the vocabulary contains the function
+		bool				contains(PFSymbol* s)	const; 	//!< true if the vocabulary contains the symbol
 		unsigned int		index(Sort*)			const;	//!< return the index of the given sort
 		unsigned int		index(Predicate*)		const;	//!< return the index of the given predicate
 		unsigned int		index(Function*)		const;	//!< return the index of the given function
@@ -629,6 +614,7 @@ namespace ElementUtil {
 }
 
 bool operator==(TypedElement e1, TypedElement e2);
+bool operator!=(TypedElement e1, TypedElement e2);
 bool operator<=(TypedElement e1, TypedElement e2);
 bool operator<(TypedElement e1, TypedElement e2);
 

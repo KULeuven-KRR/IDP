@@ -67,6 +67,7 @@ namespace Error {
 	void funcelnotinsort(const string& el, const string& p, const string& s, const string& str);
 	void notfunction(const string& f, const string& str, const vector<string>& el);
 	void nottotal(const string& f, const string& str);
+	void threevalsort(const string& s, const ParseInfo& pi);
 
 	/** Multiple incompatible declarations of the same object **/
 	void multdeclns(const string& nsname, const ParseInfo& thisplace, const ParseInfo& prevdeclplace);
@@ -145,7 +146,7 @@ namespace Warning {
 	void derivevarsort(const string& varname, const string& sortname, const ParseInfo& thisplace);
 
 	/** Autocompletion **/
-	void addingeltosort(const string& elname, const string& sortname);
+	void addingeltosort(const string& elname, const string& sortname,const string& strname);
 
 	/** Reading from stdin **/
 	void readingfromstdin();

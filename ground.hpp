@@ -16,28 +16,29 @@
 class GroundTranslator {
 
 	public:
-		virtual int translate(PFSymbol*,const vector<string>&) = 0;	// translate an atom to an integer
+		virtual int translate(PFSymbol*,const vector<TypedElement>&) = 0;	// translate an atom to an integer
 		virtual int nextTseitin() = 0;								// return a new tseitin atom
 		virtual PFSymbol*				symbol(unsigned int n)	const = 0; 
-		virtual const vector<string>&	args(unsigned int n)	const = 0; 
+		virtual const vector<TypedElement>&	args(unsigned int n)	const = 0; 
 };
 
 class NaiveTranslator : public GroundTranslator {
 
 	private:
-		int										_nextnumber;		// lowest number that currently has no corresponding atom
-		map<PFSymbol*,map<vector<string>,int> >	_table;				// maps atoms to integers
-		vector<PFSymbol*>						_backsymbtable;		// map integer to the symbol of its corresponding atom
-		vector<vector<string> >					_backargstable;		// map integer to the terms of its corresponding atom
+		int	_nextnumber;	// lowest number that currently has no corresponding atom
+
+		map<PFSymbol*,map<vector<TypedElement>,int> >	_table;			// maps atoms to integers
+		vector<PFSymbol*>								_backsymbtable;	// map integer to the symbol of its corresponding atom
+		vector<vector<TypedElement> >					_backargstable;	// map integer to the terms of its corresponding atom
 
 	public:
 		
 		NaiveTranslator() : _nextnumber(1) { }
 
-		int						translate(PFSymbol*,const vector<string>&);
-		int						nextTseitin();	
-		PFSymbol*				symbol(unsigned int n)	const { return _backsymbtable[n-1];	}
-		const vector<string>&	args(unsigned int n)	const { return _backargstable[n-1];	}
+		int							translate(PFSymbol*,const vector<TypedElement>&);
+		int							nextTseitin();	
+		PFSymbol*					symbol(unsigned int n)	const { return _backsymbtable[n-1];	}
+		const vector<TypedElement>&	args(unsigned int n)	const { return _backargstable[n-1];	}
 
 };
 

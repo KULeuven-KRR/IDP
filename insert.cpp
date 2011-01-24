@@ -936,17 +936,18 @@ namespace Insert {
 	void openproc(const string& name, YYLTYPE l) {
 		Info::print("Parsing procedure " + name);
 		ParseInfo pi = parseinfo(l);
-		LuaProcedure* lp = procInScope(name,pi);
-		if(lp) Error::multdeclproc(name,pi,lp->pi());
 		_currproc = new LuaProcedure(name,pi);
-		_currspace->add(_currproc);
 		_nrvocabs.push_back(0);
 		_nrspaces.push_back(0);
-		_currproc->add(string("tempfunc = function ("));
+		_currproc->add(string("idp_intern_tempfunc = function ("));
 	}
 
 	void closeproc() {
+		string str = _currproc->name() + '/' + itos(_currproc->arity());
+		LuaProcedure* lp = procInScope(str,_currproc->pi());
+		if(lp) Error::multdeclproc(_currproc->name(),_currproc->pi(),lp->pi());
 		_currproc->add(string("end"));
+		_currspace->add(_currproc);
 		closeblock();
 	}
 
@@ -954,6 +955,53 @@ namespace Insert {
 		if(_currproc->arity()) _currproc->add(string(","));
 		_currproc->add(name);
 		_currproc->addarg(name);
+	}
+
+	void luacloseargs() {
+		_currproc->add(string(")"));
+		// include using namespace statements
+		for(unsigned int n = 1; n < _usingspace.size(); ++n) {	// n=1 to skip over the global namespace
+			Namespace* ns = _usingspace[n];
+			vector<string> fn = ns->fullnamevector();
+			stringstream common;
+			common << fn[0];
+			for(unsigned int m = 1; m < fn.size(); ++m) {
+				cerr << "m=" << m << endl;
+				common << "(idp_intern.descend,\"" << fn[m] << "\")";
+			}
+			string comstr = common.str();
+			for(unsigned int m = 0; m < ns->nrSubs(); ++m) {
+				Namespace* nns = ns->subspace(m);
+				stringstream toadd;
+				toadd << "local " << nns->name() << " = idp_intern.mergenodes("
+					  << nns->name() << "," << comstr << "(idp_intern.descend,\"" << nns->name() << "\"))\n";
+				_currproc->add(toadd.str());
+			}
+			for(unsigned int m = 0; m < ns->nrVocs(); ++m) {
+				Vocabulary* nns = ns->vocabulary(m);
+				stringstream toadd;
+				toadd << "local " << nns->name() << " = idp_intern.mergenodes("
+					  << nns->name() << "," << comstr << "(idp_intern.descend,\"" << nns->name() << "\"))\n";
+				_currproc->add(toadd.str());
+			}
+			for(unsigned int m = 0; m < ns->nrStructs(); ++m) {
+				AbstractStructure* nns = ns->structure(m);
+				stringstream toadd;
+				toadd << "local " << nns->name() << " = idp_intern.mergenodes("
+					  << nns->name() << "," << comstr << "(idp_intern.descend,\"" << nns->name() << "\"))\n";
+				_currproc->add(toadd.str());
+			}
+			for(unsigned int m = 0; m < ns->nrTheos(); ++m) {
+				AbstractTheory* nns = ns->theory(m);
+				stringstream toadd;
+				toadd << "local " << nns->name() << " = idp_intern.mergenodes("
+					  << nns->name() << "," << comstr << "(idp_intern.descend,\"" << nns->name() << "\"))\n";
+				_currproc->add(toadd.str());
+			}
+			// TODO: options and procedures
+		}
+		// include using vocabulary statements
+		// TODO
 	}
 
 	void luacode(char* s) {
@@ -1360,6 +1408,42 @@ namespace Insert {
 		}
 		for(unsigned int n = 0; n < _currstructure->nrPredInters(); ++n) {
 			PredInter* pt = _currstructure->predinter(n);
+			if(!pt) {
+				Predicate* p = _currstructure->vocabulary()->nbpred(n);
+				pt = TableUtils::leastPredInter(p->arity());
+				_currstructure->inter(p,pt);
+			}
+			if(pt->cfpt()) {
+				// TODO: warning?
+				delete(pt->cfpt());
+				pt->replace(pt->ctpf(),false,false);
+			}
+			pt->sortunique();
+		}
+		for(unsigned int n = 0; n < _currstructure->nrFuncInters(); ++n) {
+			FuncInter* ft = _currstructure->funcinter(n);
+			if(!ft) {
+				Function* f = _currstructure->vocabulary()->nbfunc(n);
+				ft = TableUtils::leastFuncInter(f->arity()+1);
+				_currstructure->inter(f,ft);
+			}
+			if(ft->predinter()->cfpt()) {
+				// TODO: warning?
+				delete(ft->predinter()->cfpt());
+				ft->predinter()->replace(ft->predinter()->ctpf(),false,false);
+			}
+			ft->sortunique();
+		}
+		closestructure();
+	}
+
+	void closeaspbelief() {
+		for(unsigned int n = 0; n < _currstructure->nrSortInters(); ++n) {
+			SortTable* st = _currstructure->sortinter(n);
+			if(st) st->sortunique();
+		}
+		for(unsigned int n = 0; n < _currstructure->nrPredInters(); ++n) {
+			PredInter* pt = _currstructure->predinter(n);
 			if(pt) pt->sortunique();
 		}
 		for(unsigned int n = 0; n < _currstructure->nrFuncInters(); ++n) {
@@ -1367,10 +1451,6 @@ namespace Insert {
 			if(ft) ft->sortunique();
 		}
 		closestructure();
-	}
-
-	void closeaspbelief() {
-		// TODO
 	}
 
 	/** Two-valued interpretations **/
@@ -1504,46 +1584,51 @@ namespace Insert {
 		Predicate* p = predInScope(nst->_name,pi);
 		if(p && nst->_sortsincluded && (nst->_sorts).size() == t->arity()) p = p->resolve(nst->_sorts);
 		if(p) {
-			if(belongsToVoc(p)) {
-				t->sortunique();
-				switch(getUTF(utf,pi)) {
-					case UTF_UNKNOWN:
-						if(_unknownpredtables.find(p) == _unknownpredtables.end() && !(p->builtin()))  _unknownpredtables[p] = t;
-						else Error::multunknpredinter(p->name(),pi);
-						break;
-					case UTF_CT:
-					{	
-						PredInter* pt = _currstructure->inter(p);
-						if(pt) {
-							if(pt->ctpf()) Error::multctpredinter(p->name(),pi);
-							else pt->replace(t,true,true);
-						}
-						else {
-							pt = new PredInter(t,0,true,true);
-							_currstructure->inter(p,pt);
-						}
-						break;
-					}
-					case UTF_CF:
-					{
-						PredInter* pt = _currstructure->inter(p);
-						if(pt) {
-							if(pt->cfpt()) Error::multcfpredinter(p->name(),pi);
-							else pt->replace(t,false,true);
-						}
-						else {
-							pt = new PredInter(0,t,true,true);
-							_currstructure->inter(p,pt);
-						}
-						break;
-					}
-					case UTF_ERROR:
-						break;
-					default:
-						assert(false);
-				}
+			if(p->arity() == 1 && p->sort(0)->pred() == p) {
+				Error::threevalsort(p->name(),pi);
 			}
-			else Error::prednotinstructvoc(nst->to_string(),_currstructure->name(),pi);
+			else {
+				if(belongsToVoc(p)) {
+					t->sortunique();
+					switch(getUTF(utf,pi)) {
+						case UTF_UNKNOWN:
+							if(_unknownpredtables.find(p) == _unknownpredtables.end() && !(p->builtin()))  _unknownpredtables[p] = t;
+							else Error::multunknpredinter(p->name(),pi);
+							break;
+						case UTF_CT:
+						{	
+							PredInter* pt = _currstructure->inter(p);
+							if(pt) {
+								if(pt->ctpf()) Error::multctpredinter(p->name(),pi);
+								else pt->replace(t,true,true);
+							}
+							else {
+								pt = new PredInter(t,0,true,true);
+								_currstructure->inter(p,pt);
+							}
+							break;
+						}
+						case UTF_CF:
+						{
+							PredInter* pt = _currstructure->inter(p);
+							if(pt) {
+								if(pt->cfpt()) Error::multcfpredinter(p->name(),pi);
+								else pt->replace(t,false,true);
+							}
+							else {
+								pt = new PredInter(0,t,true,true);
+								_currstructure->inter(p,pt);
+							}
+							break;
+						}
+						case UTF_ERROR:
+							break;
+						default:
+							assert(false);
+					}
+				}
+				else Error::prednotinstructvoc(nst->to_string(),_currstructure->name(),pi);
+			}
 		}
 		else Error::undeclpred(nst->to_string(),pi);
 	}
@@ -2453,19 +2538,7 @@ namespace Insert {
 	}
 
 	void help_execute() {
-// TODO
-/*	cout << "The available methods in the execute block are:\n";
-	for(map<string,vector<Inference*> >::iterator it = Insert::_inferences.begin(); it != Insert::_inferences.end(); ++it) {
-		for(unsigned int n = 0; n < (it->second).size(); ++n) {
-			cout << "   " << IATUtils::to_string(((it->second)[n])->outtype()) << ' ' << it->first << '(';
-			for(unsigned int m = 0; m < ((it->second)[n])->arity(); ++m) {
-				cout << IATUtils::to_string((((it->second)[n])->intypes())[m]);
-				if(m != ((it->second)[n])->arity()-1) cout << ',';
-			}
-			cout << ")\n";
-			cout << "      " << ((it->second)[n])->description() << '\n';
-		}
-	}*/
+		// TODO?
 	}
 }
 

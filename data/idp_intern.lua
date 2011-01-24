@@ -124,6 +124,9 @@ end
 
 local function mergenodes(node1,node2) 
 
+	if type(node1) == "nil" then return node2 end
+	if type(node2) == "nil" then return node1 end
+
 	local nodedata = newnodedata(node1(getname))
 
 	-- merge children
@@ -172,6 +175,18 @@ local function newnode(object)
 
 end
 
+function using(obj) 
+	local longnamesp = obj(getnamespace)
+	local longnamevoc = obj(getvocabulary)
+	if longnamesp then
+		-- TODO
+	elseif longnamevoc then
+		-- TODO
+	else
+		print("ERROR: expected a namespace or vocabulary as argument for procedure using.")
+	end
+end
+
 idp_intern = {
 	descend			= descend,			
     getchildren		= getchildren,
@@ -187,6 +202,8 @@ idp_intern = {
     getnamespace	= getnamespace,	
     getvocabulary	= getvocabulary,	
     doinsert		= doinsert,
+
+	mergenodes		= mergenodes,
 
 	idpprocedure	= idpprocedure,
 	idptheory		= idptheory,
@@ -210,7 +227,9 @@ function tostring(e)
 		else
 			return oldTostring(e)
 		end
-	else 
+	elseif type(e) == "userdata" then
+		return idptostring(e)
+	else
 		return oldTostring(e)
 	end
 end

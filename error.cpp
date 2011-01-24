@@ -245,6 +245,12 @@ namespace Error {
 		cerr << "The interpretation of function " << f << " in structure " << str << " is non-total.\n";
 	}
 
+
+	void threevalsort(const string& s, const ParseInfo& pi) {
+		error(pi);
+		cerr << "Not allowed to assign a three-valued interpretation to a sort.\n";
+	}
+
 	/** Multiple incompatible declarations of the same object **/
 
 	void multdeclns(const string& nsname, const ParseInfo& thisplace, const ParseInfo& prevdeclplace) {
@@ -602,10 +608,10 @@ namespace Warning {
 	}
 
 	/** Autocompletion **/
-	void addingeltosort(const string& elname, const string& sortname) {
+	void addingeltosort(const string& elname, const string& sortname, const string& structname) {
 		if(_cloptions._warning[WT_AUTOCOMPL]) {
 			warning();
-			cerr << "Adding element " << elname << " to the interpretation of sort " << sortname << ".\n";
+			cerr << "Adding element " << elname << " to the interpretation of sort " << sortname << " in structure " << structname << ".\n";
 		}
 	}
 

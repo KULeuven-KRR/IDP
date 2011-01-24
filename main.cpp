@@ -117,6 +117,7 @@ void parsefile(const string& str) {
 		yyparse();	
 		fclose(yyin);
 		// TODO: de 'using' vocabularia van de global namespace uitvegen
+		// en er globale variabelen van maken...?
 	}
 	else Error::unknfile(str);
 }
@@ -143,6 +144,35 @@ void parse(const vector<string>& inputfiles) {
 	}
 }
 
+/** Communication with lua **/
+
+void createmetatables(lua_State* L) {
+	luaL_newmetatable (L,"theory");
+	lua_pushboolean(L,true);
+	lua_setfield(L,-2,"gettheory");
+	lua_pop(L,1);
+
+	luaL_newmetatable (L,"structure");
+	lua_pushboolean(L,true);
+	lua_setfield(L,-2,"getstructure");
+	lua_pop(L,1);
+
+	luaL_newmetatable (L,"namespace");
+	lua_pushboolean(L,true);
+	lua_setfield(L,-2,"getnamespace");
+	lua_pop(L,1);
+
+	luaL_newmetatable (L,"vocabulary");
+	lua_pushboolean(L,true);
+	lua_setfield(L,-2,"getvocabulary");
+	lua_pop(L,1);
+
+	luaL_newmetatable (L,"options");
+	lua_pushboolean(L,true);
+	lua_setfield(L,-2,"getoptions");
+	lua_pop(L,1);
+}
+
 /** Execute a procecure **/
 
 void executeproc(lua_State* L, const string& proc) {
@@ -159,11 +189,11 @@ void executeproc(lua_State* L, const string& proc) {
 
 /** Interactive mode **/
 
-#ifdef USEINTERACTIVE
 void interactive(lua_State* L) {
 	cout << "Running GidL in interactive mode.\n"
 		 << "  Type 'exit' to quit.\n\n";
 
+#ifdef USEINTERACTIVE
 	while(true) {
 		char* userline = rl_gets();
 		if(userline) {
@@ -182,12 +212,23 @@ void interactive(lua_State* L) {
 		}
 		else cout << "\n";
 	}
-}
 #else
-void interactive(lua_State* L) {
-	cerr << "IDP was compiled without interactive support!\n";
-}
+	cout << "> ";
+	string userline = cin.getline();
+	while(userline != "exit") {
+		string str = "##intern##{"+userline+'}';
+		parsestring(str);
+		LuaProcedure* proc = Insert::currproc();
+		luaL_loadstring(L,(proc->code()).c_str());
+		delete(proc);
+		int res = lua_pcall(L,0,0,0);
+		if(res) {
+			cerr << string(lua_tostring(L,1)) << endl;
+		}
+		userline = cin.getline();
+	}
 #endif
+}
 
 
 /** Delete all data **/
@@ -215,6 +256,9 @@ int main(int argc, char* argv[]) {
 		ss <<DATADIR <<"/std/idp_intern.lua";
 		luaL_dofile(L,ss.str().c_str());
 		Namespace::global()->tolua(L);
+
+		// Create metatables
+		createmetatables(L);
 
 		// Execute statements
 		executeproc(L,_cloptions._exec);

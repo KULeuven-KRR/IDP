@@ -83,6 +83,7 @@ namespace Insert {
 	void openproc(const string& name, YYLTYPE);
 	void closeproc();
 	void procarg(const string& name);
+	void luacloseargs();
 	void luacode(char*);
 	void luacode(const string&);
 	void luacode(const vector<string>&);

@@ -12,10 +12,10 @@
 	Translate from ground atoms to numbers
 **********************************************/
 
-int NaiveTranslator::translate(PFSymbol* s, const vector<string>& args) {
-	map<PFSymbol*,map<vector<string>,int> >::iterator it = _table.find(s);
+int NaiveTranslator::translate(PFSymbol* s, const vector<TypedElement>& args) {
+	map<PFSymbol*,map<vector<TypedElement>,int> >::iterator it = _table.find(s);
 	if(it != _table.end()) {
-		map<vector<string>,int>::iterator jt = (it->second).find(args);
+		map<vector<TypedElement>,int>::iterator jt = (it->second).find(args);
 		if(jt != (it->second).end()) return jt->second;
 	}
 	_table[s][args] = _nextnumber;
@@ -26,7 +26,7 @@ int NaiveTranslator::translate(PFSymbol* s, const vector<string>& args) {
 
 int NaiveTranslator::nextTseitin() {
 	_backsymbtable.push_back(0);
-	_backargstable.push_back(vector<string>(0));
+	_backargstable.push_back(vector<TypedElement>(0));
 	return _nextnumber++;
 }
 

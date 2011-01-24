@@ -10,6 +10,17 @@
 #include "namespace.hpp"
 #include <sstream>
 
+/*******************************************
+	Argument types for inference methods
+*******************************************/
+
+enum InfArgType { 
+	IAT_VOID, IAT_THEORY, IAT_STRUCTURE, IAT_VOCABULARY, IAT_NAMESPACE, IAT_OPTIONS, IAT_ERROR,
+	IAT_NIL, IAT_NUMBER, IAT_BOOLEAN, IAT_STRING, IAT_TABLE, IAT_FUNCTION, IAT_USERDATA, IAT_THREAD, IAT_LIGHTUSERDATA,
+	IAT_SET_OF_STRUCTURES
+};
+
+
 namespace BuiltinProcs {
 	void initialize();
 }
@@ -42,13 +53,15 @@ class LuaProcedure {
 
 /** Possible argument or return value of an execute statement **/
 union InfArg {
-	Vocabulary*			_vocabulary;
-	AbstractStructure*	_structure;
-	AbstractTheory*		_theory;
-	Namespace*			_namespace;
-	double				_number;
-	bool				_boolean;
-	string*				_string;
+	Vocabulary*					_vocabulary;
+	AbstractStructure*			_structure;
+	AbstractTheory*				_theory;
+	Namespace*					_namespace;
+	double						_number;
+	bool						_boolean;
+	string*						_string;
+	InfOptions*					_options;
+	vector<AbstractStructure*>*	_setofstructures;
 };
 
 /** An execute statement **/
@@ -182,7 +195,7 @@ class GroundingWithResult : public Inference {
 
 class ModelExpansionInference : public Inference {
 	public:
-		ModelExpansionInference();
+		ModelExpansionInference(bool opts);
 		InfArg execute(const vector<InfArg>& args) const;
 };
 

@@ -30,18 +30,26 @@ namespace BuiltinProcs {
 		_inferences["remove_equivalences"].push_back(new RemoveEquivalences());
 		_inferences["remove_eqchains"].push_back(new RemoveEqchains());
 		_inferences["flatten"].push_back(new FlattenFormulas());
-	//	_inferences["ground"].push_back(new GroundingInference());
 		_inferences["ground"].push_back(new GroundingWithResult());
 		_inferences["convert_to_theory"].push_back(new StructToTheory());
 		_inferences["move_quantifiers"].push_back(new MoveQuantifiers());
 		_inferences["tseitin"].push_back(new ApplyTseitin());
 		_inferences["reduce"].push_back(new GroundReduce());
 		_inferences["move_functions"].push_back(new MoveFunctions());
-		_inferences["model_expand"].push_back(new ModelExpansionInference());
+		_inferences["model_expand"].push_back(new ModelExpansionInference(false));
+		_inferences["model_expand"].push_back(new ModelExpansionInference(true));
 		_inferences["load_file"].push_back(new LoadFile());
 	}
 
 	bool checkintern(lua_State* L, int n, const string& tp) {
+		if(lua_type(L,n) == LUA_TUSERDATA) {
+			bool ret = luaL_getmetafield(L,n,tp.c_str());
+			if(ret) {
+				if(lua_isboolean(L,-1)) ret = lua_toboolean(L,-1);
+				lua_pop(L,1);
+			}
+			return ret;
+		}
 		if(lua_type(L,n) == LUA_TFUNCTION) {
 			lua_getglobal(L,"idp_intern");
 			lua_pushvalue(L,n);
@@ -75,6 +83,8 @@ namespace BuiltinProcs {
 				return checkintern(L,n,"getstructure");
 			case IAT_NAMESPACE:
 				return checkintern(L,n,"getnamespace");
+			case IAT_OPTIONS:
+				return checkintern(L,n,"getoptions");
 			case IAT_VOID:
 				return true;
 			case IAT_NIL:
@@ -105,17 +115,57 @@ namespace BuiltinProcs {
 	void converttolua(lua_State* L, InfArg res, InfArgType t) {
 		switch(t) {
 			case IAT_THEORY:
-				// TODO
+			{
+				AbstractTheory** ptr = (AbstractTheory**) lua_newuserdata(L,sizeof(AbstractTheory*));
+				(*ptr) = res._theory;
+				luaL_getmetatable (L,"theory");
+				lua_setmetatable(L,-2);
 				break;
+			}
 			case IAT_VOCABULARY:
-				// TODO
+			{
+				Vocabulary** ptr = (Vocabulary**) lua_newuserdata(L,sizeof(Vocabulary*));
+				(*ptr) = res._vocabulary;
+				luaL_getmetatable (L,"vocabulary");
+				lua_setmetatable(L,-2);
 				break;
+			}
 			case IAT_STRUCTURE:
-				// TODO
+			{
+				AbstractStructure** ptr = (AbstractStructure**) lua_newuserdata(L,sizeof(AbstractStructure*));
+				(*ptr) = res._structure;
+				luaL_getmetatable (L,"structure");
+				lua_setmetatable(L,-2);
 				break;
+			}
 			case IAT_NAMESPACE:
-				// TODO
+			{
+				Namespace** ptr = (Namespace**) lua_newuserdata(L,sizeof(Namespace*));
+				(*ptr) = res._namespace;
+				luaL_getmetatable (L,"namespace");
+				lua_setmetatable(L,-2);
 				break;
+			}
+			case IAT_OPTIONS:
+			{
+				InfOptions** ptr = (InfOptions**) lua_newuserdata(L,sizeof(InfOptions*));
+				(*ptr) = res._options;
+				luaL_getmetatable (L,"options");
+				lua_setmetatable(L,-2);
+				break;
+			}
+			case IAT_SET_OF_STRUCTURES:
+			{
+				vector<AbstractStructure*> vs = *(res._setofstructures);
+				lua_newtable(L);
+				for(unsigned int n = 0; n < vs.size(); ++n) {
+					lua_pushinteger(L,n+1);
+					InfArg a; a._structure = vs[n];
+					converttolua(L,a,IAT_STRUCTURE);
+					lua_settable(L,-3);
+				}
+				break;
+			}
 			case IAT_VOID:
 				break;
 			case IAT_NIL:
@@ -173,42 +223,77 @@ namespace BuiltinProcs {
 		switch(t) {
 			case IAT_THEORY:
 			{	
-				vector<string> vs = convertintern(L,n,"gettheory");
-				Namespace* ns = Namespace::global();
-				for(unsigned int m = 0; m < vs.size() -1; ++m) {
-					ns = ns->subspace(vs[m]);
+				if(lua_type(L,n) == LUA_TUSERDATA) {
+					a._theory = *((AbstractTheory**)lua_touserdata(L,n));
 				}
-				a._theory = ns->theory(vs[vs.size()-1]);
+				else {
+					vector<string> vs = convertintern(L,n,"gettheory");
+					Namespace* ns = Namespace::global();
+					for(unsigned int m = 0; m < vs.size() -1; ++m) {
+						ns = ns->subspace(vs[m]);
+					}
+					a._theory = ns->theory(vs[vs.size()-1]);
+				}
 				break;
 			}
 			case IAT_VOCABULARY:
 			{
-				vector<string> vs = convertintern(L,n,"getvocabulary");
-				Namespace* ns = Namespace::global();
-				for(unsigned int m = 0; m < vs.size() -1; ++m) {
-					ns = ns->subspace(vs[m]);
+				if(lua_type(L,n) == LUA_TUSERDATA) {
+					a._theory = *((AbstractTheory**)lua_touserdata(L,n));
 				}
-				a._vocabulary = ns->vocabulary(vs[vs.size()-1]);
+				else {
+					vector<string> vs = convertintern(L,n,"getvocabulary");
+					Namespace* ns = Namespace::global();
+					for(unsigned int m = 0; m < vs.size() -1; ++m) {
+						ns = ns->subspace(vs[m]);
+					}
+					a._vocabulary = ns->vocabulary(vs[vs.size()-1]);
+				}
 				break;
 			}
 			case IAT_STRUCTURE:
 			{
-				vector<string> vs = convertintern(L,n,"getstructure");
-				Namespace* ns = Namespace::global();
-				for(unsigned int m = 0; m < vs.size() -1; ++m) {
-					ns = ns->subspace(vs[m]);
+				if(lua_type(L,n) == LUA_TUSERDATA) {
+					a._theory = *((AbstractTheory**)lua_touserdata(L,n));
 				}
-				a._structure = ns->structure(vs[vs.size()-1]);
+				else {
+					vector<string> vs = convertintern(L,n,"getstructure");
+					Namespace* ns = Namespace::global();
+					for(unsigned int m = 0; m < vs.size() -1; ++m) {
+						ns = ns->subspace(vs[m]);
+					}
+					a._structure = ns->structure(vs[vs.size()-1]);
+				}
 				break;
 			}
 			case IAT_NAMESPACE:
 			{
-				vector<string> vs = convertintern(L,n,"getnamespace");
-				Namespace* ns = Namespace::global();
-				for(unsigned int m = 0; m < vs.size() -1; ++m) {
-					ns = ns->subspace(vs[m]);
+				if(lua_type(L,n) == LUA_TUSERDATA) {
+					a._theory = *((AbstractTheory**)lua_touserdata(L,n));
 				}
-				a._namespace = ns->subspace(vs[vs.size()-1]);
+				else {
+					vector<string> vs = convertintern(L,n,"getnamespace");
+					Namespace* ns = Namespace::global();
+					for(unsigned int m = 0; m < vs.size() -1; ++m) {
+						ns = ns->subspace(vs[m]);
+					}
+					a._namespace = ns->subspace(vs[vs.size()-1]);
+				}
+				break;
+			}
+			case IAT_OPTIONS:
+			{
+				if(lua_type(L,n) == LUA_TUSERDATA) {
+					a._theory = *((AbstractTheory**)lua_touserdata(L,n));
+				}
+				else {
+					vector<string> vs = convertintern(L,n,"getoptions");
+					Namespace* ns = Namespace::global();
+					for(unsigned int m = 0; m < vs.size() -1; ++m) {
+						ns = ns->subspace(vs[m]);
+					}
+					a._options = ns->option(vs[vs.size()-1]);
+				}
 				break;
 			}
 			case IAT_VOID:
@@ -316,7 +401,7 @@ InfArg PrintNamespace::execute(const vector<InfArg>& args) const {
 	// TODO
 	// string s = (args[0]._namespace)->to_string();
 	//cout << s;
-	InfArg a; a._string = IDPointer("");
+	InfArg a; a._string = IDPointer(string(""));
 	return a;
 }
 
@@ -394,19 +479,21 @@ InfArg GroundingWithResult::execute(const vector<InfArg>& args) const {
 	return a;
 }
 
-ModelExpansionInference::ModelExpansionInference() {
+ModelExpansionInference::ModelExpansionInference(bool opts) {
 	_intypes = vector<InfArgType>(2);
 	_intypes[0] = IAT_THEORY;
 	_intypes[1] = IAT_STRUCTURE;
-	_outtype = IAT_VOID;
+	if(opts) _intypes.push_back(IAT_OPTIONS);
+	_outtype = IAT_SET_OF_STRUCTURES;
 	_description = "Performs model expansion on the structure given the theory it should satisfy.";
 	_reload = false;
 }
 
 InfArg ModelExpansionInference::execute(const vector<InfArg>& args) const {
-	assert(args.size() == 2);
 	AbstractTheory* t = args[0]._theory;
 	AbstractStructure* s = args[1]._structure;
+	InfOptions* opts = Namespace::global()->option("DefaultOptions");
+	if(args.size() == 3) opts = args[2]._options;
 	TheoryUtils::move_functions(t);
 	NaiveGrounder ng(s);	
 	AbstractTheory* gr = ng.ground(t);
@@ -415,36 +502,38 @@ InfArg ModelExpansionInference::execute(const vector<InfArg>& args) const {
 	TheoryUtils::tseitin(gr);
 	EcnfTheory* ecnfgr = TheoryUtils::convert_to_ecnf(gr);
 	ECNF_mode modes;
-	modes.nbmodels = 1;
+	modes.nbmodels = opts->_nrmodels;
 	SATSolver* solver = new SATSolver(modes);
 	GroundPrinter* printer = new outputToSolver(solver);
 	ecnfgr->print(printer);
 	gr->recursiveDelete();
 	vector<vector<Literal> > models;
+	InfArg a; a._setofstructures = new vector<AbstractStructure*>();
 	bool sat = solver->solve(models);
-	//example use
 	if(sat){
 		for(int i=0; i<models.size(); i++){
-			cout <<"=== Model " << (i+1) << " ===\n";
-			for(int j=0; j<models[i].size(); j++){
-				if(models[i][j].getAtom().getValue() > 0) {
-					//cout <<models[i][j] <<" ";
-					cout << ecnfgr->translator()->symbol((models[i][j].getAtom().getValue())-1)->to_string() << '(';
-					vector<string> args = ecnfgr->translator()->args(models[i][j].getAtom().getValue()-1);
-					for(unsigned int n = 0; n < args.size(); ++n) {
-						cout << args[n];
-						if(n < args.size()-1) cout << ',';
+			AbstractStructure* mod = s->clone();
+			mod->forcetwovalued();
+			for(int j=0; j<models[i].size(); j++) {
+				if(!(models[i][j].getSign())) {
+					PFSymbol* pfs = ecnfgr->translator()->symbol((models[i][j].getAtom().getValue()));
+					if(pfs && mod->vocabulary()->contains(pfs)) {
+						//cout << pfs->to_string() << '(';
+						vector<TypedElement> args = ecnfgr->translator()->args(models[i][j].getAtom().getValue());
+						for(unsigned int n = 0; n < args.size(); ++n) {
+						//	cout << args[n];
+						//	if(n < args.size()-1) cout << ',';
+						}
+						//cout << "). ";
 					}
-					cout << "). ";
 				}
 			}
-			cout <<"\n\n";
+			a._setofstructures->push_back(mod);
 		}
 	}
 	delete(solver);
 	delete(ecnfgr);
 	delete(printer);
-	InfArg a;
 	return a;
 }
 

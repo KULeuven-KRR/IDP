@@ -54,7 +54,6 @@ extern string dtos(double);
 	char				chr;
 	double				dou;
 	string*				str;
-	InfArgType			iat;
 	compound*			cpo;
 
 	Sort*				sor;
@@ -916,8 +915,8 @@ instructions		: PROCEDURE_HEADER proc_name proc_sig '{' lua_block '}'		{ Insert:
 proc_name			: identifier	{ Insert::openproc(*$1,@1);	}
 					;
 
-proc_sig			: '(' ')'		{ Insert::luacode(string(")"));	}
-					| '(' args ')'	{ Insert::luacode(string(")"));	}
+proc_sig			: '(' ')'		{ Insert::luacloseargs();	}
+					| '(' args ')'	{ Insert::luacloseargs();	}
 					;
 
 lua_block			: /* empty */

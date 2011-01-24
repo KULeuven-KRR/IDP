@@ -1,3 +1,7 @@
+#options DefaultOptions {
+	nrmodels=1
+}
+
 #procedure parse(filename) {
 	return idp_intern.idpcall("load_file",filename)
 }
@@ -6,17 +10,13 @@
 	return idp_intern.idpcall("model_expand",Theo,Struct)
 }
 
-/*#procedure model_expand(Theo,Struct,Opt) {
+#procedure model_expand(Theo,Struct,Opt) {
 	return idp_intern.idpcall("model_expand",Theo,Struct,Opt)
-}*/
+}
 
 #procedure idptostring(obj) {
 	return idp_intern.idpcall("print",obj)
 }
-
-/*#procedure idpprint(Theo,Opt) {
-	return idp_intern.idpcall("print",Theo,Opt)
-}*/
 
 #namespace IDP_EXPERT {
 	
@@ -58,6 +58,10 @@
 
 	#procedure reduce(T,S) {
 		return idp_intern.idpcall("reduce",T,S)
+	}
+
+	#procedure totheory(S) {
+		return idp_intern.idpcall("convert_to_theory",S);
 	}
 
 }

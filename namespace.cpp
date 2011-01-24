@@ -104,7 +104,8 @@ LuaProcedure* Namespace::procedure(const string& lp) const {
 }
 
 void Namespace::add(LuaProcedure* lp) {
-	_procedures[lp->name()] = lp;
+	string str = lp->name() + "/" + itos(lp->arity());
+	_procedures[str] = lp;
 }
 
 /** Insert the namespace in lua **/
@@ -147,8 +148,7 @@ int Namespace::tolua(lua_State* L, const vector<string>& longname) const {
 		insertlongname(L,sublongname);
 		lua_pushinteger(L,it->second->arity());
 		luaL_dostring(L,((it->second)->code()).c_str());
-		lua_getglobal(L,"tempfunc");
-assert(lua_isfunction(L,-1));
+		lua_getglobal(L,"idp_intern_tempfunc");
 		lua_call(L,4,1);	// call idpprocedure
 		lua_call(L,1,1);	// call newnode
 		lua_remove(L,-2);	// remove idp_intern
@@ -205,10 +205,22 @@ assert(lua_isfunction(L,-1));
 			lua_getfield(L,-2,"getname");
 			lua_call(L,1,1);
 			const char* nm = lua_tostring(L,-1);
-			lua_pop(L,2);
-			lua_pushinteger(L,n);
-			lua_gettable(L,-2);
-			lua_setglobal(L,nm);
+			lua_getglobal(L,nm);
+			if(lua_isnil(L,-1)) {
+				lua_pop(L,3);
+				lua_pushinteger(L,n);
+				lua_gettable(L,-2);
+				lua_setglobal(L,nm);
+			}
+			else {
+				lua_getfield(L,-3,"mergenodes");
+				lua_getglobal(L,nm);
+				lua_pushinteger(L,n);
+				lua_gettable(L,-7);
+				lua_call(L,2,1);
+				lua_setglobal(L,nm);
+				lua_pop(L,3);
+			}
 		}
 		lua_pop(L,1);	// pop the table of the children
 	}
@@ -284,6 +296,17 @@ string Namespace::fullname() const {
 		else {
 			return _superspace->fullname() + "::" + _name;
 		}
+	}
+}
+
+vector<string> Namespace::fullnamevector() const {
+	if(isGlobal()) {
+		return vector<string>(0);
+	}
+	else {
+		vector<string> vs = _superspace->fullnamevector();
+		vs.push_back(_name);
+		return vs;
 	}
 }
 

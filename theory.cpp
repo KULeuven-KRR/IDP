@@ -908,11 +908,12 @@ void TheoryConvertor::visit(PredForm* pf) {
 		_rettype = ECTT_AGG;
 	}
 	else {	// A normal literal
-		vector<string> args(pf->symb()->nrsorts());
+		vector<TypedElement> args(pf->symb()->nrsorts());
 		for(unsigned int n = 0; n < pf->symb()->nrsorts(); ++n) {
 			assert(typeid(*(pf->subterm(n))) == typeid(DomainTerm));
 			DomainTerm* dt = dynamic_cast<DomainTerm*>(pf->subterm(n));
-			args[n] = ElementUtil::ElementToString(dt->value(),dt->type());
+			args[n]._element = dt->value();
+			args[n]._type = dt->type();
 		}
 		_curratom = _returnvalue->translator()->translate(pf->symb(),args);
 		if(!pf->sign()) _curratom = -_curratom;

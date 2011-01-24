@@ -29,7 +29,7 @@ class Namespace {
 		map<string,AbstractStructure*>	_structures;	// Map a name to the corresponding structure
 		map<string,AbstractTheory*>		_theories;		// Map a name to the corresponding theory
 		map<string,InfOptions*>			_options;		// Map a name to the corresponding options
-		map<string,LuaProcedure*>		_procedures;	// Map a name to the corresponding procedure
+		map<string,LuaProcedure*>		_procedures;	// Map a name+arity to the corresponding procedure
 		vector<Namespace*>				_subs;			// The children of the namespace in the namespace hierarchy
 		vector<Vocabulary*>				_vocs;			// The vocabularies in the namespace
 		vector<AbstractStructure*>		_structs;		// The structures in the namespace                   
@@ -55,6 +55,7 @@ class Namespace {
 		const ParseInfo&	pi()						const	{ return _pi;				}
 		bool				isGlobal()					const	{ return this == _global;	}
 		string				fullname()					const;	// return the full name of the namespace 
+		vector<string>		fullnamevector()			const;
 		bool				isSubspace(const string&)	const;
 		bool				isVocab(const string&)		const;
 		bool				isTheory(const string&)		const;

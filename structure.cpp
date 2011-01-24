@@ -15,6 +15,21 @@
 	Domains
 **************/
 
+/** constructors **/
+
+CopySortTable::CopySortTable(SortTable* s) : SortTable() { 
+	if(typeid(*s) == typeid(CopySortTable)) {
+		CopySortTable* cs = dynamic_cast<CopySortTable*>(s);
+		assert(typeid(*(cs->table())) != typeid(CopySortTable));
+		_table = cs->table();
+		cs->table()->addref();
+	}
+	else {
+		_table = s;
+		s->addref();	
+	}
+}
+
 /** add elements or intervals **/
 
 FiniteSortTable* FiniteSortTable::add(Element e, ElementType t) {
@@ -528,7 +543,7 @@ bool IntSortTable::contains(int n) const {
 	return (p != _table.size() && _table[p] == n);
 }
 
-bool StrSortTable::contains(int n) const {
+bool StrSortTable::contains(int) const {
 	return false;
 }
 
@@ -541,7 +556,7 @@ bool MixedSortTable::contains(double d) const {
 	return (p != _numtable.size() && _numtable[p] == d);
 }
 
-bool StrSortTable::contains(double d) const {
+bool StrSortTable::contains(double) const {
 	return false;
 }
 
@@ -728,6 +743,21 @@ string FloatSortTable::to_string(unsigned int spaces) const {
 	Predicate interpretations
 ********************************/
 
+/** Constructors **/
+
+CopyPredTable::CopyPredTable(PredTable* t) : PredTable() { 
+	if(typeid(*t) == typeid(CopyPredTable)) {
+		CopyPredTable* ct = dynamic_cast<CopyPredTable*>(t);
+		assert(typeid(*(ct->table())) != typeid(CopyPredTable));
+		_table = ct->table();
+		ct->table()->addref();
+	}
+	else {
+		_table = t;
+		t->addref();	
+	}
+}
+
 /** Inspectors **/
 
 vector<ElementType> PredTable::types() const {
@@ -803,7 +833,6 @@ bool FinitePredTable::contains(const vector<Element>& vi) const {
 
 void FinitePredTable::addRow(const vector<Element>& vi, const vector<ElementType>& vet) {
 	assert(vet.size() == _types.size());
-	unsigned int r = _table.size();
 	vector<Element> cvi(vi.size());
 	for(unsigned int n = 0; n < vet.size(); ++n) {
 		Element e = ElementUtil::convert(vi[n],vet[n],_types[n]);
@@ -828,6 +857,32 @@ void PredInter::replace(PredTable* pt, bool ctpf, bool c) {
 		_cfpt = pt;
 		_cf = c;
 	}
+}
+
+void PredInter::forcetwovalued() {
+	if(_ctpf != _cfpt) {
+		delete(_cfpt);
+		_cfpt = _ctpf;
+		_cf = !_ct;
+	}
+}
+
+PredInter* PredInter::clone() {
+	CopyPredTable* copyctpf1 = new CopyPredTable(_ctpf);
+	CopyPredTable* copyctpf2 = new CopyPredTable(_ctpf);
+	CopyPredTable* copycfpt1;
+	CopyPredTable* copycfpt2;
+	if(_ctpf == _cfpt) {
+		copycfpt1 = copyctpf1;
+		copycfpt2 = copyctpf2;
+	}
+	else {
+		copycfpt1 = new CopyPredTable(_cfpt);
+		copycfpt2 = new CopyPredTable(_cfpt);
+	}
+	_ctpf = copyctpf1;
+	_cfpt = copycfpt1;
+	return new PredInter(copyctpf2,copycfpt2,_ct,_cf);
 }
 
 PredInter::~PredInter() {
@@ -916,11 +971,36 @@ string PredInter::to_string(unsigned int spaces) const {
 	Function interpretations
 *******************************/
 
+CopyFuncTable::CopyFuncTable(FuncTable* t) : FuncTable() {
+	if(typeid(*t) == typeid(CopyFuncTable)) {
+		CopyFuncTable* ct = dynamic_cast<CopyFuncTable*>(t);
+		assert(typeid(*(ct->table())) != typeid(CopyFuncTable));
+		_table = ct->table();
+		ct->table()->addref();
+	}
+	else {
+		_table = t;
+		t->addref();	
+	}
+}
+
 FiniteFuncTable::FiniteFuncTable(FinitePredTable* ft) : FuncTable(), _ftable(ft) {
 	for(unsigned int n = 0; n < arity(); ++n) {
 		_order.addType(ft->type(n));
 		_equality.addType(ft->type(n));
 	}
+}
+
+FuncInter* FuncInter::clone() {
+	PredInter* piclone = _pinter->clone();
+	CopyFuncTable* cft1 = 0;
+	CopyFuncTable* cft2 = 0;
+	if(_ftable) {
+		cft1 = new CopyFuncTable(_ftable);
+		cft2 = new CopyFuncTable(_ftable);
+	}
+	_ftable = cft1;
+	return new FuncInter(cft2,piclone);
 }
 
 Element FiniteFuncTable::operator[](const vector<Element>& vi) const {
@@ -1021,6 +1101,7 @@ namespace TableUtils {
 				}
 			}
 		}
+		return fpt;
 	}
 }
 
@@ -1041,6 +1122,35 @@ Structure::~Structure() {
 
 /** Mutators **/
 
+void Structure::forcetwovalued() {
+	for(unsigned int n = 0; n < _predinter.size(); ++n) {
+		_predinter[n]->forcetwovalued();
+	}
+	for(unsigned int n = 0; n < _funcinter.size(); ++n) {
+		_funcinter[n]->forcetwovalued();
+	}
+}
+
+Structure* Structure::clone() {
+	Structure*	s = new Structure("",ParseInfo());
+	s->vocabulary(_vocabulary);
+	for(unsigned int n = 0; n < _sortinter.size(); ++n) {
+		CopySortTable* t1 = new CopySortTable(_sortinter[n]);
+		CopySortTable* t2 = new CopySortTable(_sortinter[n]);
+		_sortinter[n] = t1;
+		s->inter(_vocabulary->nbsort(n),t2);
+	}
+	for(unsigned int n = 0; n < _predinter.size(); ++n) {
+		PredInter* pic = _predinter[n]->clone();
+		s->inter(_vocabulary->nbpred(n),pic);
+	}
+	for(unsigned int n = 0; n < _funcinter.size(); ++n) {
+		FuncInter* fic = _funcinter[n]->clone();
+		s->inter(_vocabulary->nbfunc(n),fic);
+	}
+	return s;
+}
+
 void Structure::vocabulary(Vocabulary* v) {
 	_sortinter = vector<SortTable*>(v->nrNBSorts(),0);
 	_predinter = vector<PredInter*>(v->nrNBPreds(),0);
@@ -1058,6 +1168,17 @@ void Structure::inter(Predicate* p, PredInter* i) {
 
 void Structure::inter(Function* f, FuncInter* i) {
 	_funcinter[_vocabulary->index(f)] = i;
+}
+
+void computescore(Sort* s, map<Sort*,unsigned int>& scores) {
+	if(scores.find(s) == scores.end()) {
+		unsigned int sc = 0;
+		for(unsigned int n = 0; n < s->nrParents(); ++n) {
+			computescore(s->parent(n),scores);
+			if(scores[s->parent(n)] >= sc) sc = scores[s->parent(n)] + 1;
+		}
+		scores[s] = sc;
+	}
 }
 
 void Structure::autocomplete() {
@@ -1183,16 +1304,68 @@ void Structure::autocomplete() {
 			}
 		}
 	}
+
 	// Adding elements from subsorts to supersorts
-	// TODO
+	map<Sort*,unsigned int> scores;
+	for(unsigned int n = 0; n < _sortinter.size(); ++n) {
+		computescore(_vocabulary->nbsort(n),scores);
+	}
+	map<unsigned int,vector<Sort*> > invscores;
+	for(map<Sort*,unsigned int>::const_iterator it = scores.begin(); it != scores.end(); ++it) {
+		if(_vocabulary->contains(it->first)) {
+			invscores[it->second].push_back(it->first);
+		}
+	}
+	for(map<unsigned int,vector<Sort*> >::const_reverse_iterator it = invscores.rbegin(); it != invscores.rend(); ++it) {
+		for(unsigned int n = 0; n < (it->second).size(); ++n) {
+			Sort* s = (it->second)[n];
+			if(inter(s)->finite()) {
+				set<Sort*> notextend;
+				notextend.insert(s);
+				vector<unsigned int> toextend;
+				vector<Sort*> tocheck;
+				while(!(notextend.empty())) {
+					Sort* e = *(notextend.begin());
+					for(unsigned int p = 0; p < e->nrParents(); ++p) {
+						Sort* sp = e->parent(p);
+						if(_vocabulary->contains(sp)) {
+							if(sp->builtin()) tocheck.push_back(sp);
+							else toextend.push_back(_vocabulary->index(sp)); 
+						}
+						else {
+							notextend.insert(sp);
+						}
+					}
+					notextend.erase(e);
+				}
+				SortTable* st = inter(s);
+				for(unsigned int m = 0; m < st->size(); ++m) {
+					for(unsigned int k = 0; k < toextend.size(); ++k) {
+						if(!(_sortinter[toextend[k]]->contains(st->element(m),st->type()))) {
+							if(!message) {
+								cerr << "Completing structure " << _name << ".\n";
+								message = true;
+							}
+							addElement(st->element(m),st->type(),_vocabulary->nbsort(toextend[k]));
+						}
+					}
+					for(unsigned int k = 0; k < tocheck.size(); ++k) {
+						if(!inter(tocheck[k])->contains(st->element(m),st->type())) {
+							string el = ElementUtil::ElementToString(st->element(m),st->type());
+							Error::sortelnotinsort(el,s->name(),tocheck[k]->name(),_name);
+						}
+					}
+				}
+			}
+		}
+	}
 	
 	// Synchronizing sort predicates
-	// TODO: check sort predicates
 	for(unsigned int n = 0; n < _sortinter.size(); ++n) {
 		Predicate* p = _vocabulary->nbsort(n)->pred();
 		PredInter* pri = _predinter[_vocabulary->index(p)];
 		pri->replace(_sortinter[n],true,true);
-		pri->replace(_sortinter[n],false,true);
+		pri->replace(_sortinter[n],false,false);
 	}
 
 	// Sort the tables
@@ -1204,7 +1377,7 @@ void Structure::autocomplete() {
 
 void Structure::addElement(Element e, ElementType t, Sort* s) {
 	string el = ElementUtil::ElementToString(e,t);
-	Warning::addingeltosort(el,s->name());
+	Warning::addingeltosort(el,s->name(),_name);
 	int i = _vocabulary->index(s);
 	SortTable* oldstab = _sortinter[i];
 	_sortinter[i] = dynamic_cast<FiniteSortTable*>(oldstab)->add(e,t);
@@ -1212,54 +1385,50 @@ void Structure::addElement(Element e, ElementType t, Sort* s) {
 }
 
 void Structure::functioncheck() {
-	// TODO
-	/*Vocabulary* v = _currstructure->vocabulary();
-		for(unsigned int n = 0; n < v->nrFuncs(); ++n) {
-			Function* f = v->func(n);
-			FuncInter* ft = _currstructure->inter(f);
-			if(ft) {
-				PredInter* pt = ft->predinter();
-				PredTable* ct = pt->ctpf();
-				PredTable* cf = pt->cfpt();
-				// Check if the interpretation is indeed a function
-				bool isfunc = true;
-				if(ct) {
-					vector<ElementType> vet = ct->types(); vet.pop_back();
-					ElementEquality eq(vet);
-					for(unsigned int r = 1; r < ct->size(); ) {
-						if(eq(ct->tuple(r-1),ct->tuple(r))) {
-							vector<Element> vel = ct->tuple(r);
-							vector<string> vstr(vel.size()-1);
-							for(unsigned int c = 0; c < vel.size()-1; ++c) 
-								vstr[c] = ElementUtil::ElementToString(vel[c],ct->type(c));
-							Error::notfunction(f->name(),_currstructure->name(),vstr);
-							while(eq(ct->tuple(r-1),ct->tuple(r))) ++r;
-							isfunc = false;
-						}
-						else ++r;
+	for(unsigned int n = 0; n < _funcinter.size(); ++n) {
+		Function* f = _vocabulary->nbfunc(n);
+		FuncInter* ft = _funcinter[n];
+		if(ft) {
+			PredInter* pt = ft->predinter();
+			PredTable* ct = pt->ctpf();
+			PredTable* cf = pt->cfpt();
+			// Check if the interpretation is indeed a function
+			bool isfunc = true;
+			if(ct) {
+				vector<ElementType> vet = ct->types(); vet.pop_back();
+				ElementEquality eq(vet);
+				for(unsigned int r = 1; r < ct->size(); ) {
+					if(eq(ct->tuple(r-1),ct->tuple(r))) {
+						vector<Element> vel = ct->tuple(r);
+						vector<string> vstr(vel.size()-1);
+						for(unsigned int c = 0; c < vel.size()-1; ++c) 
+							vstr[c] = ElementUtil::ElementToString(vel[c],ct->type(c));
+						Error::notfunction(f->name(),name(),vstr);
+						while(eq(ct->tuple(r-1),ct->tuple(r))) ++r;
+						isfunc = false;
 					}
+					else ++r;
 				}
-				// Check if the interpretation is total
-				if(isfunc && !(f->partial()) && ct && (ct == cf || (!(pt->cf()) && cf->size() == 0))) {
-					unsigned int c = 0;
-					unsigned int s = 1;
-					for(; c < f->arity(); ++c) {
-						if(_currstructure->inter(f->insort(c))) {
-							s = s * _currstructure->inter(f->insort(c))->size();
-						}
-						else break;
+			}
+			// Check if the interpretation is total
+			if(isfunc && !(f->partial()) && ct && (ct == cf || (!(pt->cf()) && cf->size() == 0))) {
+				unsigned int c = 0;
+				unsigned int s = 1;
+				for(; c < f->arity(); ++c) {
+					if(inter(f->insort(c))) {
+						s = s * inter(f->insort(c))->size();
 					}
-					if(c == f->arity()) {
-						assert(ct->size() <= s);
-						if(ct->size() < s) {
-							Error::nottotal(f->name(),_currstructure->name());
-						}
+					else break;
+				}
+				if(c == f->arity()) {
+					assert(ct->size() <= s);
+					if(ct->size() < s) {
+						Error::nottotal(f->name(),name());
 					}
 				}
 			}
 		}
-		*/
-
+	}
 }
 
 
@@ -1419,7 +1588,6 @@ namespace StructUtils {
 		vector<SortTable*> tables;
 		vector<TypedElement> tuple;
 		vector<ElementType> types;
-		bool empty = false;
 		for(unsigned int n = 0; n < vs.size(); ++n) {
 			SortTable* st = s->inter(vs[n]);
 			assert(st);
