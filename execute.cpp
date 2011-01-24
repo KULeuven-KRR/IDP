@@ -501,25 +501,28 @@ InfArg ModelExpansionInference::execute(const vector<InfArg>& args) const {
 	TheoryUtils::reduce(gr,s);
 	TheoryUtils::tseitin(gr);
 	EcnfTheory* ecnfgr = TheoryUtils::convert_to_ecnf(gr);
-	ECNF_mode modes;
+	MinisatID::SolverOption modes;
 	modes.nbmodels = opts->_nrmodels;
 	SATSolver* solver = new SATSolver(modes);
 	GroundPrinter* printer = new outputToSolver(solver);
 	ecnfgr->print(printer);
 	gr->recursiveDelete();
-	vector<vector<Literal> > models;
+	vector<vector<MinisatID::Literal> > models;
 	InfArg a; a._setofstructures = new vector<AbstractStructure*>();
-	bool sat = solver->solve(models);
+	vector<MinisatID::Literal> assumpts;
+	MinisatID::Solution* sol = new MinisatID::Solution(false, true, true, modes.nbmodels, assumpts);
+	bool sat = solver->solve(sol);
+
 	if(sat){
-		for(int i=0; i<models.size(); i++){
+		for(int i=0; i<sol->getModels().size(); i++){
 			AbstractStructure* mod = s->clone();
 			mod->forcetwovalued();
-			for(int j=0; j<models[i].size(); j++) {
-				if(!(models[i][j].getSign())) {
-					PFSymbol* pfs = ecnfgr->translator()->symbol((models[i][j].getAtom().getValue()));
+			for(int j=0; j<sol->getModels[i].size(); j++) {
+				if(!(sol->getModels[i][j].getSign())) {
+					PFSymbol* pfs = ecnfgr->translator()->symbol((sol->getModels[i][j].getAtom().getValue()));
 					if(pfs && mod->vocabulary()->contains(pfs)) {
 						//cout << pfs->to_string() << '(';
-						vector<TypedElement> args = ecnfgr->translator()->args(models[i][j].getAtom().getValue());
+						vector<TypedElement> args = ecnfgr->translator()->args(sol->getModels[i][j].getAtom().getValue());
 						for(unsigned int n = 0; n < args.size(); ++n) {
 						//	cout << args[n];
 						//	if(n < args.size()-1) cout << ',';

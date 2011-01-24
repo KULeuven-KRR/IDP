@@ -37,7 +37,7 @@ AC_SUBST([LIBS])
 AC_CXXFLAGS=" "
 AC_LDFLAGS=" "
 
-AC_CXXFLAGS+="-ansi -pedantic -Wall -Wextra "
+AC_CXXFLAGS+="-Wall -Wextra "
 
 AC_ARG_ENABLE([build],
 [  --enable-build    Turn on debugging (debug), profiling (profile), release version(release), static release version (static) or code cover building (codecover)],
@@ -49,6 +49,14 @@ AC_ARG_ENABLE([build],
   codecover) AC_CXXFLAGS+="-O0 -fprofile-arcs -ftest-coverage -ggdb -D DEBUG " AC_LDFLAGS+="-ggdb " ;;
   *) AC_MSG_ERROR([bad value ${enableval} for --enable-build]) ;;
 esac],[		AC_CXXFLAGS+="-DNDEBUG -O3 " AC_LDFLAGS+=" "])
+
+AC_ARG_ENABLE([gmp],
+[  --enable-gmp    Turn on support for arbitrary size integer values],
+[case "${enableval}" in
+	no) AC_CXXFLAGS+=" -D NO_GMP " ;;
+	yes) AC_CXXFLAGS+=" -D GMP " AC_LDFLAGS+=" -lgmp -lgmpxx ";;
+	*) AC_MSG_ERROR([bad value ${enableval} for --enable-gmp]) ;;
+esac],[ AC_CXXFLAGS+=" -D NO_GMP " ])
 
 AC_ARG_ENABLE([sat],
 [  --enable-sat    Use minisat 2.0b(old), minisat 09z(hack) or minisat 2.2(new)],
@@ -90,27 +98,31 @@ AC_ARG_WITH(
 
 # Check for readline
 if test "x$use_readline" == "xyes"; then
-  AC_CHECK_LIB([readline], [readline], [lib=" -lncurses "], [use_readline=no], [-lncurses])
+  AC_CHECK_LIB([readline], [readline], [lib=" -ltermcap "], [use_readline=no], [-lncurses])
   if test "x$use_readline" == "xno"; then
-	AC_CHECK_LIB([readline], [readline], [lib=" -ltermcap "], [use_readline=no], [-ltermcap])
+	AC_CHECK_LIB([readline], [readline], [lib=" -lncurses "], [use_readline=no], [-ltermcap])
   fi
   AC_CHECK_LIB([readline], [readline], [], [use_readline=no], [$lib])
   AC_CHECK_HEADERS([readline/readline.h readline/history.h], [], [use_readline=no])
   if test "x$use_readline" == "xno"; then
     AC_MSG_WARN([readline headers could not be found, disabling readline support])
   else
-    AC_LDFLAGS+= " -lreadline $lib "
+    AC_LDFLAGS+=" -lreadline $lib "
   fi
 fi
 AM_CONDITIONAL([USEREADLINE],[test x$use_readline = xyes])
 AM_CONDITIONAL([USEINTERACTIVE],[test x$use_readline = xyes])
 
 # files to generate via autotools (.am or .in source files)
-ac_configure_args+=" --enable-shared=no " #IMPORTANT: the reason for this is that we want to force lua to compile only a static library, so we link statically with lua.
+ac_configure_args+=" --enable-shared=no " 
+	#IMPORTANT: the reason for this is that we want to force lua to compile only a static library, so we link statically with lua.
 	#in future, when we allow installing, we can remove this, and also it breaks the configure semantics, because it will also offer all options of subdir configure.ac to the
 	#top --help
-AC_CONFIG_SUBDIRS([lib/readline lib/lua])
-AC_CONFIG_FILES([Makefile lib/Makefile])
+AC_CONFIG_SUBDIRS([lib/lua pcsolver/tclap pcsolver/perftools])
+AC_CONFIG_FILES([Makefile lib/Makefile pcsolver/Makefile pcsolver/doc/Makefile pcsolver/src/Makefile pcsolver/src/pbsolver/Makefile\
+	pcsolver/src/satsolver/Makefile pcsolver/src/parser/Makefile pcsolver/src/modules/Makefile pcsolver/src/theorysolvers/Makefile\
+	pcsolver/src/solver3/Makefile pcsolver/src/solver3minisat/Makefile pcsolver/src/solver3minisat22/Makefile pcsolver/src/utils/Makefile\
+	pcsolver/src/external/Makefile pcsolver/src/mtlold/Makefile pcsolver/src/modules/aggsolver/Makefile])
 
 # generate the final Makefile etc.
 AC_OUTPUT
