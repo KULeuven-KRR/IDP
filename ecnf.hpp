@@ -9,7 +9,7 @@
 
 #include "theory.hpp"
 #include "ground.hpp"
-#include "pcsolver/solvers/external/ExternalInterface.hpp"
+#include "pcsolver/src/external/ExternalInterface.hpp"
 
 struct GroundFeatures {
 	bool	_containsDefinitions;
@@ -129,7 +129,7 @@ class outputHR : public GroundPrinter {
 
 };
 
-typedef PropositionalSolver SATSolver;
+typedef MinisatID::WrappedPCSolver SATSolver;
 
 class outputToSolver : public GroundPrinter {
 

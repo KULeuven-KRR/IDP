@@ -7,6 +7,8 @@
 #include "ecnf.hpp"
 #include <iostream>
 
+using namespace MinisatID;
+
 /******************
 	ECNF OUTPUT 
 ******************/
@@ -418,32 +420,32 @@ void outputToSolver::outputfdrule(int d, int h, const vector<int>& b, bool c){
 }
 
 void outputToSolver::outputmax(int h, bool defined, int setid, bool lowerthan, int bound) {
-	HdEq sem = defined?DEF:COMP;
-	Bound sign = lowerthan?UPPERBOUND:LOWERBOUND;
+	AggSem sem = defined?DEF:COMP;
+	AggSign sign = lowerthan?AGGSIGN_UB:AGGSIGN_LB;
 	solver()->addAggrExpr(Literal(h), setid, Weight(bound), sign, MAX, sem);
 }
 
 void outputToSolver::outputmin(int h, bool defined, int setid, bool lowerthan, int bound){
-	HdEq sem = defined?DEF:COMP;
-	Bound sign = lowerthan?UPPERBOUND:LOWERBOUND;
+	AggSem sem = defined?DEF:COMP;
+	AggSign sign = lowerthan?AGGSIGN_UB:AGGSIGN_LB;
 	solver()->addAggrExpr(Literal(h), setid, Weight(bound), sign, MIN, sem);
 }
 
 void outputToSolver::outputsum(int h, bool defined, int setid, bool lowerthan, int bound){
-	HdEq sem = defined?DEF:COMP;
-	Bound sign = lowerthan?UPPERBOUND:LOWERBOUND;
+	AggSem sem = defined?DEF:COMP;
+	AggSign sign = lowerthan?AGGSIGN_UB:AGGSIGN_LB;
 	solver()->addAggrExpr(Literal(h), setid, Weight(bound), sign, SUM, sem);
 }
 
 void outputToSolver::outputprod(int h, bool defined, int setid, bool lowerthan, int bound){
-	HdEq sem = defined?DEF:COMP;
-	Bound sign = lowerthan?UPPERBOUND:LOWERBOUND;
+	AggSem sem = defined?DEF:COMP;
+	AggSign sign = lowerthan?AGGSIGN_UB:AGGSIGN_LB;
 	solver()->addAggrExpr(Literal(h), setid, Weight(bound), sign, PROD, sem);
 }
 
 void outputToSolver::outputcard(int h, bool defined, int setid, bool lowerthan, int bound){
-	HdEq sem = defined?DEF:COMP;
-	Bound sign = lowerthan?UPPERBOUND:LOWERBOUND;
+	AggSem sem = defined?DEF:COMP;
+	AggSign sign = lowerthan?AGGSIGN_UB:AGGSIGN_LB;
 	solver()->addAggrExpr(Literal(h), setid, Weight(bound), sign, CARD, sem);
 }
 
@@ -460,13 +462,17 @@ void outputToSolver::outputamo(const vector<int>& b) {
 void outputToSolver::outputset(int setid, const vector<int>& lits) {
 	vector<Literal> l;
 	copyToVec(lits, l);
-	solver()->addSet(setid, l);
+	solver()->addSet(setid, l); //TODO check results of all functions!
 }
 
 void outputToSolver::outputwset(int setid, const vector<int>& lits, const vector<int>& weights) {
 	vector<Literal> l;
 	copyToVec(lits, l);
-	solver()->addSet(setid, l, weights);
+	vector<Weight> w;
+	for(vector<int>::const_iterator i=weights.begin(); i<weights.end(); i++){
+		w.push_back(Weight(*i));
+	}
+	solver()->addSet(setid, l, w);
 }
 
 void outputToSolver::outputfixpdef(int d, const vector<int>& sd, bool l) {

@@ -414,14 +414,16 @@ InfArg ModelExpansionInference::execute(const vector<InfArg>& args) const {
 	TheoryUtils::reduce(gr,s);
 	TheoryUtils::tseitin(gr);
 	EcnfTheory* ecnfgr = TheoryUtils::convert_to_ecnf(gr);
-	ECNF_mode modes;
+	MinisatID::SolverOption modes;
 	modes.nbmodels = 1;
 	SATSolver* solver = new SATSolver(modes);
 	GroundPrinter* printer = new outputToSolver(solver);
 	ecnfgr->print(printer);
 	gr->recursiveDelete();
-	vector<vector<Literal> > models;
-	bool sat = solver->solve(models);
+	vector<vector<MinisatID::Literal> > models;
+	vector<MinisatID::Literal> assumpts;
+	MinisatID::Solution* sol = new MinisatID::Solution(true, false, true, modes.nbmodels, assumpts);
+	bool sat = solver->solve(sol);
 	//example use
 	if(sat){
 		for(int i=0; i<models.size(); i++){
