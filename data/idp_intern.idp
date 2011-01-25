@@ -1,0 +1,68 @@
+#options DefaultOptions {
+	nrmodels=1
+}
+
+#procedure parse(filename) {
+	return idp_intern.idpcall("load_file",filename)
+}
+
+#procedure model_expand(Theo,Struct) {
+	return idp_intern.idpcall("model_expand",Theo,Struct)
+}
+
+#procedure model_expand(Theo,Struct,Opt) {
+	return idp_intern.idpcall("model_expand",Theo,Struct,Opt)
+}
+
+#procedure idptostring(obj) {
+	return idp_intern.idpcall("print",obj)
+}
+
+#namespace IDP_EXPERT {
+	
+	#procedure push_negations(T) {
+		return idp_intern.idpcall("push_negations",T)
+	}
+
+	#procedure move_functions(T) {
+		return idp_intern.idpcall("move_functions",T)
+	}
+
+	#procedure move_quantifiers(T) {
+		return idp_intern.idpcall("move_quantifiers",T)
+	}
+
+	#procedure remove_eqchains(T) {
+		return idp_intern.idpcall("remove_eqchains",T)
+	}
+
+	#procedure remove_equivalences(T) {
+		return idp_intern.idpcall("remove_equivalences",T)
+	}
+
+	#procedure tseitin(T) {
+		return idp_intern.idpcall("tseitin",T)
+	}
+
+	#procedure convert_to_theory(S) {
+		return idp_intern.idpcall("convert_to_theory",S)
+	}
+
+	#procedure flatten(T) {
+		return idp_intern.idpcall("flatten",T)
+	}
+
+	#procedure ground(T,S) {
+		return idp_intern.idpcall("ground",T,S)
+	}
+
+	#procedure reduce(T,S) {
+		return idp_intern.idpcall("reduce",T,S)
+	}
+
+	#procedure totheory(S) {
+		return idp_intern.idpcall("convert_to_theory",S);
+	}
+
+}
+

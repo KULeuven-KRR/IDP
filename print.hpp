@@ -11,11 +11,12 @@
 #include "vocabulary.hpp"
 #include "structure.hpp"
 #include <cstdio>
+#include <sstream>
 
 class Printer : public Visitor {
 
 	protected:
-		FILE* _out;
+		stringstream _out;
 		unsigned int _indent;
 		Printer(); 
 	
@@ -25,9 +26,9 @@ class Printer : public Visitor {
 		virtual ~Printer();
 
 		// Print methods
-		void print(Vocabulary* v);
-		void print(Theory* t);
-		void print(Structure* s);
+		string print(Vocabulary* v);
+		string print(Theory* t);
+		string print(Structure* s);
 
 		// Indentation
 		void indent();

@@ -99,8 +99,8 @@ class PredForm : public Formula {
 		unsigned int	nrQvars()				const { return 0;					}
 		unsigned int	nrSubforms()			const { return 0;					}
 		unsigned int	nrSubterms()			const { return _args.size();		}
-		Variable*		qvar(unsigned int n)	const { assert(false); return 0;	}
-		Formula*		subform(unsigned int n)	const { assert(false); return 0;	}
+		Variable*		qvar(unsigned int)		const { assert(false); return 0;	}
+		Formula*		subform(unsigned int)	const { assert(false); return 0;	}
 		Term*			subterm(unsigned int n)	const { return _args[n];			}
 		
 		// Visitor
@@ -151,8 +151,8 @@ class EqChainForm : public Formula {
 		unsigned int	nrQvars()					const	{ return 0;					}
 		unsigned int	nrSubforms()				const	{ return 0;					}
 		unsigned int	nrSubterms()				const	{ return _terms.size();		}
-		Variable*		qvar(unsigned int n)		const	{ assert(false); return 0;	}
-		Formula*		subform(unsigned int n)		const	{ assert(false); return 0;	}
+		Variable*		qvar(unsigned int)			const	{ assert(false); return 0;	}
+		Formula*		subform(unsigned int)		const	{ assert(false); return 0;	}
 		Term*			subterm(unsigned int n)		const	{ return _terms[n];			}
 
 		const vector<char>&	comps()		const	{ return _comps;	}
@@ -197,9 +197,9 @@ class EquivForm : public Formula {
 		unsigned int	nrQvars()				const { return 0;						}
 		unsigned int	nrSubforms()			const { return 2;						}
 		unsigned int	nrSubterms()			const { return 0;						}	
-		Variable*		qvar(unsigned int n)	const { assert(false); return 0;		}
+		Variable*		qvar(unsigned int)		const { assert(false); return 0;		}
 		Formula*		subform(unsigned int n)	const { return (n ? _left : _right);	}
-		Term*			subterm(unsigned int n) const { assert(false); return 0;	 	}
+		Term*			subterm(unsigned int)	const { assert(false); return 0;	 	}
 
 		// Visitor
 		void		accept(Visitor* v);
@@ -243,9 +243,9 @@ class BoolForm : public Formula {
 		unsigned int	nrQvars()				const	{ return 0;					}
 		unsigned int	nrSubforms()			const	{ return _subf.size();		}
 		unsigned int	nrSubterms()			const	{ return 0;					}
-		Variable*		qvar(unsigned int n)	const	{ assert(false); return 0;	}
+		Variable*		qvar(unsigned int)		const	{ assert(false); return 0;	}
 		Formula*		subform(unsigned int n)	const	{ return _subf[n];			}
-		Term*			subterm(unsigned int n)	const	{ assert(false); return 0; 	}
+		Term*			subterm(unsigned int)	const	{ assert(false); return 0; 	}
 		bool			trueformula()			const	{ return (_subf.empty() && _conj == _sign);	}
 		bool			falseformula()			const	{ return (_subf.empty() && _conj != _sign);	}
 
@@ -294,8 +294,8 @@ class QuantForm : public Formula {
 		unsigned int	nrSubforms()			const { return 1;					}
 		unsigned int	nrSubterms()			const { return 0;					}
 		Variable*		qvar(unsigned int n)	const { return _vars[n];			}
-		Formula*		subform(unsigned int n)	const { return	_subf;				}
-		Term*			subterm(unsigned int n)	const { assert(false); return 0;	}
+		Formula*		subform(unsigned int)	const { return	_subf;				}
+		Term*			subterm(unsigned int)	const { assert(false); return 0;	}
 		const vector<Variable*>&	qvars()		const { return _vars;				}
 
 		// Visitor
@@ -336,8 +336,8 @@ class AggForm : public Formula {
 		unsigned int	nrQvars()				const { return 0;						}
 		unsigned int	nrSubforms()			const { return 0;						}
 		unsigned int	nrSubterms()			const { return 2;						}
-		Variable*		qvar(unsigned int n)	const { assert(false); return 0;		}
-		Formula*		subform(unsigned int n)	const { assert(false); return 0;		}
+		Variable*		qvar(unsigned int)		const { assert(false); return 0;		}
+		Formula*		subform(unsigned int)	const { assert(false); return 0;		}
 		Term*			subterm(unsigned int n)	const { return (n ? _right : _left);	}
 		Term*			left()					const { return _left;					}
 		AggTerm*		right()					const { return _right;					}
@@ -383,9 +383,9 @@ class BracketForm : public Formula {
 		unsigned int	nrQvars()				const { return 0;					}
 		unsigned int	nrSubforms()			const { return 1;					}
 		unsigned int	nrSubterms()			const { return 0;					}
-		Variable*		qvar(unsigned int n)	const { assert(false); return 0;	}
-		Formula*		subform(unsigned int n)	const { return _subf;				}
-		Term*			subterm(unsigned int n)	const { assert(false); return 0;	}
+		Variable*		qvar(unsigned int)		const { assert(false); return 0;	}
+		Formula*		subform(unsigned int)	const { return _subf;				}
+		Term*			subterm(unsigned int)	const { assert(false); return 0;	}
 		
 		// Visitor
 		void		accept(Visitor* v);

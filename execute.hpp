@@ -8,13 +8,60 @@
 #define EXECUTE_HPP
 
 #include "namespace.hpp"
+#include <sstream>
+
+/*******************************************
+	Argument types for inference methods
+*******************************************/
+
+enum InfArgType { 
+	IAT_VOID, IAT_THEORY, IAT_STRUCTURE, IAT_VOCABULARY, IAT_NAMESPACE, IAT_OPTIONS, IAT_ERROR,
+	IAT_NIL, IAT_NUMBER, IAT_BOOLEAN, IAT_STRING, IAT_TABLE, IAT_FUNCTION, IAT_USERDATA, IAT_THREAD, IAT_LIGHTUSERDATA,
+	IAT_SET_OF_STRUCTURES
+};
+
+
+namespace BuiltinProcs {
+	void initialize();
+}
+
+/** Lua procedures **/
+
+class LuaProcedure {
+	private:
+		string				_name;
+		ParseInfo			_pi;
+		vector<string>		_innames;
+		stringstream		_code;
+	public:
+		LuaProcedure() { }
+		LuaProcedure(const string& name, const ParseInfo& pi) :
+			_name(name), _pi(pi), _innames(0) { }
+
+		// Mutators
+		void addarg(const string& name) { _innames.push_back(name);	}
+		void add(char* s) { _code << s;	}
+		void add(const string& s)	{ _code << s;	}
+		
+		// Inspectors
+		const ParseInfo&	pi()	const { return _pi;		}
+		const string&		name()	const { return _name;	}
+		unsigned int		arity()	const { return _innames.size();	}
+		string				code()	const { return _code.str();		}
+
+};
 
 /** Possible argument or return value of an execute statement **/
 union InfArg {
-	Vocabulary*			_vocabulary;
-	AbstractStructure*	_structure;
-	AbstractTheory*		_theory;
-	Namespace*			_namespace;
+	Vocabulary*					_vocabulary;
+	AbstractStructure*			_structure;
+	AbstractTheory*				_theory;
+	Namespace*					_namespace;
+	double						_number;
+	bool						_boolean;
+	string*						_string;
+	InfOptions*					_options;
+	vector<AbstractStructure*>*	_setofstructures;
 };
 
 /** An execute statement **/
@@ -23,53 +70,70 @@ class Inference {
 		vector<InfArgType>	_intypes;		// types of the input arguments
 		InfArgType			_outtype;		// type of the return value
 		string				_description;	// description of the inference
+		bool				_reload;		// true if after completing the inference,
+											// new components are added to the global namespace
 	public:
 		virtual ~Inference() { }
-		virtual void execute(const vector<InfArg>& args, const string& res,Namespace*) const = 0;	// execute the statement
+		virtual InfArg execute(const vector<InfArg>& args) const = 0;	// execute the statement
 		const vector<InfArgType>&	intypes()		const { return _intypes;		}
 		InfArgType					outtype()		const { return _outtype;		}
 		unsigned int				arity()			const { return _intypes.size();	}
 		string						description()	const { return _description;	}
+		bool						reload()		const { return _reload;			}
+};
+
+class LoadFile : public Inference {
+	public:
+		LoadFile() { _intypes = vector<InfArgType>(1,IAT_STRING);	
+					 _outtype = IAT_VOID;
+					 _description = "Load the given file";
+					 _reload = true;
+		}
+		InfArg execute(const vector<InfArg>& args) const;
 };
 
 class PrintTheory : public Inference {
 	public:
 		PrintTheory() { 
 			_intypes = vector<InfArgType>(1,IAT_THEORY); 
-			_outtype = IAT_VOID;
+			_outtype = IAT_STRING;
 			_description = "Print the theory";
+			_reload = false;
 		}
-		void execute(const vector<InfArg>& args, const string& res,Namespace*) const;
+		InfArg execute(const vector<InfArg>& args) const;
 };
 
 class PrintVocabulary : public Inference {
 	public:
 		PrintVocabulary() { 
 			_intypes = vector<InfArgType>(1,IAT_VOCABULARY); 
-			_outtype = IAT_VOID;	
+			_outtype = IAT_STRING;	
 			_description = "Print the vocabulary";
+			_reload = false;
 		}
-		void execute(const vector<InfArg>& args, const string& res,Namespace*) const;
+		InfArg execute(const vector<InfArg>& args) const;
 };
 
 class PrintStructure : public Inference {
 	public:
 		PrintStructure() { 
 			_intypes = vector<InfArgType>(1,IAT_STRUCTURE); 
-			_outtype = IAT_VOID;	
+			_outtype = IAT_STRING;	
 			_description = "Print the structure";
+			_reload = false;
 		}
-		void execute(const vector<InfArg>& args, const string& res,Namespace*) const;
+		InfArg execute(const vector<InfArg>& args) const;
 };
 
 class PrintNamespace : public Inference {
 	public:
 		PrintNamespace() { 
 			_intypes = vector<InfArgType>(1,IAT_NAMESPACE); 
-			_outtype = IAT_VOID;	
+			_outtype = IAT_STRING;	
 			_description = "Print the namespace";
+			_reload = false;
 		}
-		void execute(const vector<InfArg>& args, const string& res,Namespace*) const;
+		InfArg execute(const vector<InfArg>& args) const;
 };
 
 class PushNegations : public Inference {
@@ -78,8 +142,9 @@ class PushNegations : public Inference {
 			_intypes = vector<InfArgType>(1,IAT_THEORY); 
 			_outtype = IAT_VOID;	
 			_description = "Push all negations inside until they are in front of atoms";
+			_reload = false;
 		}
-		void execute(const vector<InfArg>& args, const string& res,Namespace*) const;
+		InfArg execute(const vector<InfArg>& args) const;
 };
 
 class RemoveEquivalences : public Inference {
@@ -88,8 +153,9 @@ class RemoveEquivalences : public Inference {
 			_intypes = vector<InfArgType>(1,IAT_THEORY); 
 			_outtype = IAT_VOID;	
 			_description = "Rewrite equivalences into pairs of implications";
+			_reload = false;
 		}
-		void execute(const vector<InfArg>& args, const string& res,Namespace*) const;
+		InfArg execute(const vector<InfArg>& args) const;
 };
 
 class RemoveEqchains : public Inference {
@@ -98,8 +164,9 @@ class RemoveEqchains : public Inference {
 			_intypes = vector<InfArgType>(1,IAT_THEORY); 
 			_outtype = IAT_VOID;	
 			_description = "Rewrite chains of (in)equalities to conjunctions of atoms";
+			_reload = false;
 		}
-		void execute(const vector<InfArg>& args, const string& res,Namespace*) const;
+		InfArg execute(const vector<InfArg>& args) const;
 
 };
 
@@ -109,26 +176,27 @@ class FlattenFormulas : public Inference {
 			_intypes = vector<InfArgType>(1,IAT_THEORY); 
 			_outtype = IAT_VOID;	
 			_description = "Rewrite ((A & B) & C) to (A & B & C), rewrite (! x : ! y : phi(x,y)) to (! x y : phi(x,y)), etc.";
+			_reload = false;
 		}
-		void execute(const vector<InfArg>& args, const string& res,Namespace*) const;
+		InfArg execute(const vector<InfArg>& args) const;
 };
 
 class GroundingInference : public Inference {
 	public:
 		GroundingInference();
-		void execute(const vector<InfArg>& args, const string& res,Namespace*) const;
+		InfArg execute(const vector<InfArg>& args) const;
 };
 
 class GroundingWithResult : public Inference {
 	public:
 		GroundingWithResult();
-		void execute(const vector<InfArg>& args, const string& res,Namespace*) const;
+		InfArg execute(const vector<InfArg>& args) const;
 };
 
 class ModelExpansionInference : public Inference {
 	public:
-		ModelExpansionInference();
-		void execute(const vector<InfArg>& args, const string& res,Namespace*) const;
+		ModelExpansionInference(bool opts);
+		InfArg execute(const vector<InfArg>& args) const;
 };
 
 class StructToTheory : public Inference {
@@ -137,8 +205,9 @@ class StructToTheory : public Inference {
 			_intypes = vector<InfArgType>(1,IAT_STRUCTURE); 
 			_outtype = IAT_THEORY;	
 			_description = "Rewrite a structure to a theory";
+			_reload = false;
 		}
-		void execute(const vector<InfArg>& args, const string& res,Namespace*) const;
+		InfArg execute(const vector<InfArg>& args) const;
 };
 
 class MoveQuantifiers : public Inference {
@@ -147,8 +216,9 @@ class MoveQuantifiers : public Inference {
 			_intypes = vector<InfArgType>(1,IAT_THEORY);
 			_outtype = IAT_VOID;
 			_description = "Move universal (existential) quantifiers inside conjunctions (disjunctions)";
+			_reload = false;
 		}
-		void execute(const vector<InfArg>& args, const string& res,Namespace*) const;
+		InfArg execute(const vector<InfArg>& args) const;
 };
 
 class ApplyTseitin : public Inference {
@@ -157,14 +227,15 @@ class ApplyTseitin : public Inference {
 			_intypes = vector<InfArgType>(1,IAT_THEORY);
 			_outtype = IAT_VOID;
 			_description = "Apply the tseitin transformation to a theory";
+			_reload = false;
 		}
-		void execute(const vector<InfArg>& args, const string& res,Namespace*) const;
+		InfArg execute(const vector<InfArg>& args) const;
 };
 
 class GroundReduce : public Inference {
 	public:
 		GroundReduce();
-		void execute(const vector<InfArg>& args, const string& res,Namespace*) const;
+		InfArg execute(const vector<InfArg>& args) const;
 };
 
 class MoveFunctions : public Inference {
@@ -173,8 +244,9 @@ class MoveFunctions : public Inference {
 			_intypes = vector<InfArgType>(1,IAT_THEORY);
 			_outtype = IAT_VOID;
 			_description = "Move functions until no functions are nested";
+			_reload = false;
 		}
-		void execute(const vector<InfArg>& args, const string& res,Namespace*) const;
+		InfArg execute(const vector<InfArg>& args) const;
 };
 
 

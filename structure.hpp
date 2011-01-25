@@ -17,16 +17,21 @@ typedef vector<vector<Element> > VVE;
 
 class PredTable {
 
+	private:
+		unsigned int	_nrofrefs;	// Number of references to this table
+
 	public:
 		
 		// Constructors
-		PredTable() { }
+		PredTable() : _nrofrefs(0) { }
 
 		// Destructor
 		virtual ~PredTable() { }
 
 		// Mutators
 		virtual void	sortunique() = 0;	// Sort and remove duplicates
+				void	removeref()	{ --_nrofrefs; if(!_nrofrefs) delete(this);	}
+				void	addref()	{ ++_nrofrefs;								}
 
 		// Inspectors
 		virtual bool				finite()				const = 0;	// true iff the table is finite
@@ -54,6 +59,43 @@ class PredTable {
 
 };
 
+class CopyPredTable : public PredTable {
+
+	private:
+		PredTable*	_table;
+
+	public:
+		
+		// Constructors
+		CopyPredTable(PredTable*);
+
+		// Destructor
+		~CopyPredTable() { _table->removeref(); }
+
+		// Mutators
+		void	sortunique() { _table->sortunique();	}
+
+		// Inspectors
+		PredTable*			table()					const { return _table;				}
+		bool				finite()				const { return _table->finite();	} 
+		bool				empty()					const { return _table->empty();		} 
+		unsigned int		arity()					const { return _table->arity();		} 
+		ElementType			type(unsigned int n)	const { return _table->type(n);		} 
+
+		// Check if the table contains a given tuple
+		bool	contains(const vector<Element>& ve)		const { return _table->contains(ve);	} 
+
+		// Inspectors for finite tables
+		unsigned int		size()									const { return _table->size();			}	 
+		vector<Element>		tuple(unsigned int n)					const { return _table->tuple(n);		} 
+		Element				element(unsigned int r,unsigned int c)	const { return _table->element(r,c);	} 
+
+		// Debugging
+		string to_string(unsigned int spaces = 0) const { return _table->to_string(spaces);	} 
+
+};
+
+
 /*****************************************************
 	Interpretations for sorts and unary predicates
 *****************************************************/
@@ -78,7 +120,7 @@ class SortTable : public PredTable {
 		virtual bool			empty()					const = 0;	// True iff the sort contains no elements
 		virtual ElementType		type()					const = 0;	// return the type of the elements in the table
 				unsigned int	arity()					const { return 1;		}
-				ElementType		type(unsigned int n)	const { return type();	}
+				ElementType		type(unsigned int )		const { return type();	}
 
 		// Check if the table contains a given element
 		//	precondition: the table is sorted and contains no duplicates
@@ -98,7 +140,7 @@ class SortTable : public PredTable {
 		virtual Element			element(unsigned int n)					const = 0;	// Return the n'th element
 				TypedElement	telement(unsigned int n)				const { TypedElement te(element(n),type()); return te;	}
 				vector<Element>	tuple(unsigned int n)					const { return vector<Element>(1,element(n));			}
-				Element			element(unsigned int r,unsigned int c)	const { return element(r);								}
+				Element			element(unsigned int r,unsigned int )	const { return element(r);								}
 		virtual unsigned int	position(Element,ElementType)			const = 0;	// Return the position of the given element
 				unsigned int	position(Element e)						const { return position(e,type());					}
 				unsigned int	position(TypedElement te)				const { return position(te._element,te._type);		}
@@ -108,6 +150,47 @@ class SortTable : public PredTable {
 
 		// Debugging
 		virtual string to_string(unsigned int spaces = 0) const = 0;
+
+};
+
+class CopySortTable : public SortTable {
+
+	private: 
+		SortTable*	_table;
+	
+	public:
+
+		// Constructors
+		CopySortTable(SortTable* s); 
+
+		// Destructor
+		~CopySortTable() { _table->removeref(); }
+
+		// Mutators
+		void sortunique() { _table->sortunique();	}
+
+		// Inspectors
+		SortTable*		table()					const { return _table;	}
+		bool			finite()				const { return _table->finite();	}
+		bool			empty()					const { return _table->empty();		}
+		ElementType		type()					const { return _table->type();		}
+
+		// Check if the table contains a given element
+		//	precondition: the table is sorted and contains no duplicates
+		bool	contains(string* s)		const { return _table->contains(s);	}
+		bool	contains(int n)			const { return _table->contains(n);	}
+		bool	contains(double d)		const { return _table->contains(d);	}
+		bool	contains(compound* c)	const { return _table->contains(c);	}
+
+
+		// Inspectors for finite tables
+		unsigned int	size()								const	{ return _table->size();		}
+		Element			element(unsigned int n)				const	{ return _table->element(n);	}
+		unsigned int	position(Element e,ElementType t)	const	{ return _table->position(e,t);	}
+
+		// Debugging
+		string to_string(unsigned int spaces = 0) const { return _table->to_string(spaces);	}
+
 
 };
 
@@ -190,13 +273,13 @@ class EmptySortTable : public FiniteSortTable {
 		bool			contains(int)						const { return false;						}	
 		bool			contains(double)					const { return false;						}	
 		bool			contains(compound*)					const { return false;						}
-		bool			contains(const TypedElement& te)	const { return false;						}
+		bool			contains(const TypedElement& )		const { return false;						}
 		unsigned int	size()								const { return 0;							}	
-		Element			element(unsigned int n)				const { assert(false); Element e; return e; } 
+		Element			element(unsigned int )				const { assert(false); Element e; return e; } 
 		unsigned int	position(Element,ElementType)		const { assert(false); return 0;			}
 															
 		// Debugging
-		string to_string(unsigned int spaces = 0) const { return "";	}
+		string to_string(unsigned int) const { return "";	}
 
 };
 
@@ -537,6 +620,9 @@ class PredInter {
 		void replace(PredTable* pt,bool ctpf, bool c);	// If ctpf is true, replace _ctpf by pt and set _ct to c
 														// Else, replace cfpt by pt and set _cf to c
 		void sortunique()	{ if(_ctpf) _ctpf->sortunique(); if(_cfpt && _ctpf != _cfpt) _cfpt->sortunique();	}
+		PredInter*	clone();
+		void	forcetwovalued();		// delete cfpt table and replace by ctpf
+
 
 		// Inspectors
 		PredTable*	ctpf()									const { return _ctpf;	}
@@ -565,13 +651,20 @@ class PredInter {
 
 class FuncTable {
 
+	private:
+		unsigned int	_nrofrefs;	// Number of references to this table
+
 	public:
 
 		// Constructor
-		FuncTable() { }
+		FuncTable() : _nrofrefs(0) { }
 
 		// Destructor
 		virtual ~FuncTable() { }
+	
+		// Mutators
+		void	removeref()	{ --_nrofrefs; if(!_nrofrefs) delete(this);	}
+		void	addref()	{ ++_nrofrefs;								}
 
 		// Inspectors
 		virtual bool			finite()								const = 0;	// true iff the table is finite
@@ -592,6 +685,37 @@ class FuncTable {
 
 };
 
+/** cloned function tables **/
+
+class CopyFuncTable : public FuncTable {
+
+	private:
+		FuncTable*	_table;
+
+	public:
+
+		// Constructor
+		CopyFuncTable(FuncTable*);
+
+		// Destructor
+		~CopyFuncTable() { _table->removeref();	}
+
+		// Inspectors
+		FuncTable*		table()									const { return _table;					}
+		bool			finite()								const { return _table->finite();		} 
+		bool			empty()									const { return _table->empty();			} 
+		unsigned int	arity()									const { return _table->arity();			} 
+		unsigned int	size()									const { return _table->size();			} 
+		ElementType		type(unsigned int n)					const { return _table->type(n);			} 
+		vector<Element>	tuple(unsigned int n)					const { return _table->tuple(n);		} 
+		Element			element(unsigned int r,unsigned int c)	const { return _table->element(r,c);	} 
+
+		Element	operator[](const vector<Element>& vi)		const	{ return (*_table)[vi];	}
+
+		// Debugging
+		string to_string(unsigned int spaces = 0) const { return _table->to_string();	} 
+
+};
 
 /** finite, enumerated functions **/
 class FiniteFuncTable : public FuncTable {
@@ -688,6 +812,8 @@ class FuncInter {
 
 		// Mutators
 		void sortunique() { if(_pinter) _pinter->sortunique(); }
+		FuncInter* clone();
+		void	forcetwovalued()	{ _pinter->forcetwovalued();	}
 
 		// Inspectors
 		PredInter*	predinter()	const { return _pinter;	}
@@ -747,6 +873,8 @@ class AbstractStructure {
 
 		// Mutators
 		virtual void	vocabulary(Vocabulary* v) { _vocabulary = v;	}	// set the vocabulary
+		virtual AbstractStructure*	clone() = 0;	// take a clone of this structure
+		virtual void	forcetwovalued() = 0;		// delete all cfpt tables and replace by ctpf
 
 		// Inspectors
 				const string&	name()						const { return _name;		}
@@ -793,9 +921,13 @@ class Structure : public AbstractStructure {
 		void	inter(Sort* s,SortTable* d);		// set the domain of s to d.
 		void	inter(Predicate* p, PredInter* i);	// set the interpretation of p to i.
 		void	inter(Function* f, FuncInter* i);	// set the interpretation of f to i.
-		void	close();							// set the interpretation of all predicates and functions that 
+		void	addElement(Element,ElementType,Sort*);	// add the given element to the interpretation of the given sort
+		void	functioncheck();					// check the correctness of the function tables
+		void	autocomplete();						// set the interpretation of all predicates and functions that 
 													// do not yet have an interpretation to the least precise 
 													// interpretation.
+		Structure*	clone();						// take a clone of this structure
+		void	forcetwovalued();		
 
 		// Inspectors
 		Vocabulary*		vocabulary()				const { return AbstractStructure::vocabulary();	}

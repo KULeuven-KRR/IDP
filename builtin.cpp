@@ -54,7 +54,7 @@ class BuiltInPredicate : public Predicate {
 
 		// Inspectors
 		bool		builtin()							const { return true;	}
-		PredInter*	inter(const AbstractStructure& s)	const { return _inter;	}
+		PredInter*	inter(const AbstractStructure&)		const { return _inter;	}
 	
 };
 
@@ -109,6 +109,7 @@ class ComparisonPredicate : public OverloadedPredicate {
 
 	// Inspectors
 	bool		contains(Predicate* p)				const { return p->name() == _name;	}
+	Predicate*	resolve(const vector<Sort*>& vs)		  { return disambiguate(vs,0);	}
 	Predicate*	disambiguate(const vector<Sort*>&,Vocabulary*);
 
 };
@@ -163,7 +164,7 @@ class BuiltInFunction : public Function {
 
 		// Inspectors
 		bool		builtin()							const { return true;	}
-		FuncInter*	inter(const AbstractStructure& s)	const { return _inter;	}
+		FuncInter*	inter(const AbstractStructure&)		const { return _inter;	}
 
 };
 
@@ -215,6 +216,7 @@ class ComparisonFunction : public OverloadedFunction {
 
 	// Inspectors
 	bool		contains(Function* f)				const { return f->name() == _name;	}
+	Function*	resolve(const vector<Sort*>& vs)		  { return disambiguate(vs,0);	}
 	Function*	disambiguate(const vector<Sort*>&, Vocabulary* v);
 
 };
@@ -266,6 +268,7 @@ class IntFloatFunction : public OverloadedFunction {
 
 	// Inspectors
 	bool		contains(Function* f)				const { return f->name() == _name;	}
+	Function*	disambiguate(const vector<Sort*>& vs)	  { return disambiguate(vs,0);	}
 	Function*	disambiguate(const vector<Sort*>&,Vocabulary* v);
 
 };
@@ -273,8 +276,8 @@ class IntFloatFunction : public OverloadedFunction {
 Function* IntFloatFunction::disambiguate(const vector<Sort*>& vs, Vocabulary* v) {
 	unsigned int intcount = 0;
 	bool hasfloat = false;
-	Sort* ints = (StdBuiltin::instance())->sort("int");
-	Sort* floats = (StdBuiltin::instance())->sort("float");
+	Sort* ints = *((StdBuiltin::instance())->sort("int")->begin());
+	Sort* floats = *((StdBuiltin::instance())->sort("float")->begin());
 	for(unsigned int n = 0; n < vs.size(); ++n) {
 		if(vs[n]) {
 			if(SortUtils::resolve(ints,vs[n],v) == ints) ++intcount;
@@ -332,7 +335,7 @@ class InfiniteSortTable : public SortTable {
 
 		// Inspectors for finite tables
 		unsigned int	size()							const { assert(false); return MAX_INT;		}
-		Element			element(unsigned int n)			const { assert(false); Element e; return e;	}
+		Element			element(unsigned int)			const { assert(false); Element e; return e;	}
 		unsigned int	position(Element,ElementType)	const { assert(false); return 0;			}
 
 		// Debugging
@@ -404,7 +407,7 @@ class AllStringSortTable : public InfiniteSortTable {
 		
 	public:
 		ElementType	type()				const { return ELSTRING;		}
-		bool		contains(string* s)	const { return true;			}
+		bool		contains(string*)	const { return true;			}
 		bool		contains(int)		const { return true;			}
 		bool		contains(double)	const { return true;			}
 		bool		contains(compound*)	const;
@@ -517,8 +520,8 @@ class EqualPredTable : public ComparisonPredTable {
 		bool	empty()								const { assert(false); return false; /* TODO */ }
 
 		unsigned int	size()					const { assert(false); return 0; /* TODO */ }
-		vector<Element>	tuple(unsigned int n)	const { assert(false); return vector<Element>(0); /* TODO */ }
-		Element			element(unsigned int r, unsigned int c)	const { assert(false); Element e; return e; /* TODO */ }
+		vector<Element>	tuple(unsigned int)		const { assert(false); return vector<Element>(0); /* TODO */ }
+		Element			element(unsigned int, unsigned int)		const { assert(false); Element e; return e; /* TODO */ }
 
 		string	to_string(unsigned int spaces = 0)	const { return tabstring(spaces) + "=/2";	}
 };
@@ -544,8 +547,8 @@ class StrLessThanPredTable : public ComparisonPredTable {
 		bool	empty()								const { assert(false); return false; /* TODO */ }
 
 		unsigned int	size()					const { assert(false); return 0; /* TODO */ }
-		vector<Element>	tuple(unsigned int n)	const { assert(false); return vector<Element>(0); /* TODO */ }
-		Element			element(unsigned int r, unsigned int c)	const { assert(false); Element e; return e; /* TODO */ }
+		vector<Element>	tuple(unsigned int)	const { assert(false); return vector<Element>(0); /* TODO */ }
+		Element			element(unsigned int, unsigned int)	const { assert(false); Element e; return e; /* TODO */ }
 		string	to_string(unsigned int spaces = 0)		const { return tabstring(spaces) + "</2";	}
 };
 
@@ -570,8 +573,8 @@ class StrGreaterThanPredTable : public ComparisonPredTable {
 		bool	empty()								const { assert(false); return false; /* TODO */ }
 
 		unsigned int	size()					const { assert(false); return 0; /* TODO */ }
-		vector<Element>	tuple(unsigned int n)	const { assert(false); return vector<Element>(0); /* TODO */ }
-		Element			element(unsigned int r, unsigned int c)	const { assert(false); Element e; return e; /* TODO */ }
+		vector<Element>	tuple(unsigned int)	const { assert(false); return vector<Element>(0); /* TODO */ }
+		Element			element(unsigned int, unsigned int)	const { assert(false); Element e; return e; /* TODO */ }
 		string	to_string(unsigned int spaces = 0)		const { return tabstring(spaces) + ">/2";	}
 };
 
@@ -582,7 +585,7 @@ bool StrGreaterThanPredTable::contains(const vector<Element>& ve) const {
 PredInter*	strgreaterinter(const vector<SortTable*>& vs) {
 	assert(vs.size() == 2);
 	PredTable* pt = new StrGreaterThanPredTable(vs[0],vs[1]);
-	assert(vs.size() == 2);
+	return new PredInter(pt,true);
 }
 
 /******************************
@@ -603,8 +606,8 @@ class InfiniteFuncTable : public FuncTable {
 				bool			finite()								const { return false;								}
 				bool			empty()									const { return false;								}
 				unsigned int	size()									const { assert(false); return MAX_INT;				}
-				vector<Element>	tuple(unsigned int n)					const { assert(false); return vector<Element>(0);	}
-				Element			element(unsigned int r,unsigned int c)	const { assert(false); Element e; return e;			}
+				vector<Element>	tuple(unsigned int)						const { assert(false); return vector<Element>(0);	}
+				Element			element(unsigned int,unsigned int)		const { assert(false); Element e; return e;			}
 		virtual unsigned int	arity()									const = 0;
 		virtual ElementType		type(unsigned int)						const = 0;
 
@@ -666,7 +669,7 @@ Element PlusFuncTable::operator[](const vector<Element>& vi) const {
 FuncInter* plusfuncinter(const vector<Sort*>& vs) {
 	assert(vs.size() == 3); assert(vs[0] == vs[1]); assert(vs[1] == vs[2]);
 	ElementType t = ELINT;
-	if(vs[0] == (StdBuiltin::instance())->sort("float")) t = ELDOUBLE;
+	if(vs[0] == *((StdBuiltin::instance())->sort("float")->begin())) t = ELDOUBLE;
 	FuncTable* ft = new PlusFuncTable(t);
 	PredTable* pt = new FuncPredTable(ft);
 	PredInter* pi = new PredInter(pt,true);
@@ -701,7 +704,7 @@ Element MinusFuncTable::operator[](const vector<Element>& vi) const {
 FuncInter* minusfuncinter(const vector<Sort*>& vs) {
 	assert(vs.size() == 3); assert(vs[0] == vs[1]); assert(vs[1] == vs[2]);
 	ElementType t = ELINT;
-	if(vs[0] == (StdBuiltin::instance())->sort("float")) t = ELDOUBLE;
+	if(vs[0] == *((StdBuiltin::instance())->sort("float")->begin())) t = ELDOUBLE;
 	FuncTable* ft = new MinusFuncTable(t);
 	PredTable* pt = new FuncPredTable(ft);
 	PredInter* pi = new PredInter(pt,true);
@@ -736,7 +739,7 @@ Element TimesFuncTable::operator[](const vector<Element>& vi) const {
 FuncInter* timesfuncinter(const vector<Sort*>& vs) {
 	assert(vs.size() == 3); assert(vs[0] == vs[1]); assert(vs[1] == vs[2]);
 	ElementType t = ELINT;
-	if(vs[0] == (StdBuiltin::instance())->sort("float")) t = ELDOUBLE;
+	if(vs[0] == *((StdBuiltin::instance())->sort("float")->begin())) t = ELDOUBLE;
 	FuncTable* ft = new TimesFuncTable(t);
 	PredTable* pt = new FuncPredTable(ft);
 	PredInter* pi = new PredInter(pt,true);
@@ -773,7 +776,7 @@ Element DivFuncTable::operator[](const vector<Element>& vi) const {
 FuncInter* divfuncinter(const vector<Sort*>& vs) {
 	assert(vs.size() == 3); assert(vs[0] == vs[1]); assert(vs[1] == vs[2]);
 	ElementType t = ELINT;
-	if(vs[0] == (StdBuiltin::instance())->sort("float")) t = ELDOUBLE;
+	if(vs[0] == *((StdBuiltin::instance())->sort("float")->begin())) t = ELDOUBLE;
 	FuncTable* ft = new DivFuncTable(t);
 	PredTable* pt = new FuncPredTable(ft);
 	PredInter* pi = new PredInter(pt,true);
@@ -787,7 +790,7 @@ class ModFuncTable : public InfiniteFuncTable {
 		ModFuncTable() : InfiniteFuncTable() { }
 		~ModFuncTable() { }
 		unsigned int arity()							const { return 2;	}
-		ElementType type(unsigned int n)				const { return ELINT;	}
+		ElementType type(unsigned int)					const { return ELINT;	}
 		Element operator[](const vector<Element>& vi)	const;
 		string to_string(unsigned int spaces = 0)		const { return tabstring(spaces) + "%/2";	}
 };
@@ -815,7 +818,7 @@ class ExpFuncTable : public InfiniteFuncTable {
 		ExpFuncTable() : InfiniteFuncTable() { }
 		~ExpFuncTable() { }
 		unsigned int arity()							const { return 2;			}
-		ElementType type(unsigned int n)				const { return ELDOUBLE;	}
+		ElementType type(unsigned int)					const { return ELDOUBLE;	}
 		Element operator[](const vector<Element>& vi)	const;
 		string to_string(unsigned int spaces = 0)		const { return tabstring(spaces) + "^/2";	}
 };
@@ -861,7 +864,7 @@ Element AbsFuncTable::operator[](const vector<Element>& vi) const {
 FuncInter* absfuncinter(const vector<Sort*>& vs) {
 	assert(vs.size() == 2); assert(vs[0] == vs[1]);
 	ElementType t = ELINT;
-	if(vs[0] == (StdBuiltin::instance())->sort("float")) t = ELDOUBLE;
+	if(vs[0] == *((StdBuiltin::instance())->sort("float")->begin())) t = ELDOUBLE;
 	FuncTable* ft = new AbsFuncTable(t);
 	PredTable* pt = new FuncPredTable(ft);
 	PredInter* pi = new PredInter(pt,true);
@@ -896,7 +899,7 @@ Element UMinFuncTable::operator[](const vector<Element>& vi) const {
 FuncInter* uminfuncinter(const vector<Sort*>& vs) {
 	assert(vs.size() == 2); assert(vs[0] == vs[1]);
 	ElementType t = ELINT;
-	if(vs[0] == (StdBuiltin::instance())->sort("float")) t = ELDOUBLE;
+	if(vs[0] == *((StdBuiltin::instance())->sort("float")->begin())) t = ELDOUBLE;
 	FuncTable* ft = new UMinFuncTable(t);
 	PredTable* pt = new FuncPredTable(ft);
 	PredInter* pi = new PredInter(pt,true);

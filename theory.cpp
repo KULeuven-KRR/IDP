@@ -449,6 +449,7 @@ namespace TVUtils {
 					case TV_FALSE: 
 						return TV_FALSE;
 				}
+			default: assert(false); return TV_UNKN;
 		}
 	}
 
@@ -466,6 +467,7 @@ namespace TVUtils {
 					case TV_UNKN: 
 						return TV_UNKN;
 				}
+			default: assert(false); return TV_UNKN;
 		}
 	}
 
@@ -906,11 +908,12 @@ void TheoryConvertor::visit(PredForm* pf) {
 		_rettype = ECTT_AGG;
 	}
 	else {	// A normal literal
-		vector<string> args(pf->symb()->nrSorts());
+		vector<TypedElement> args(pf->symb()->nrSorts());
 		for(unsigned int n = 0; n < pf->symb()->nrSorts(); ++n) {
 			assert(typeid(*(pf->subterm(n))) == typeid(DomainTerm));
 			DomainTerm* dt = dynamic_cast<DomainTerm*>(pf->subterm(n));
-			args[n] = ElementUtil::ElementToString(dt->value(),dt->type());
+			args[n]._element = dt->value();
+			args[n]._type = dt->type();
 		}
 		_curratom = _returnvalue->translator()->translate(pf->symb(),args);
 		if(!pf->sign()) _curratom = -_curratom;
@@ -970,14 +973,14 @@ void TheoryConvertor::visit(Rule* r) {
 	else {
 		if(_rettype == ECTT_ATOM) {
 			_currclause = vector<int>(1,_curratom);
-			_rettype == ECTT_CONJ;
+			_rettype = ECTT_CONJ;
 		}
 		if(_infixpdef) _currfixpdef.addRule(headatom,_currclause,_rettype==ECTT_CONJ,_returnvalue->translator());
 		else _currdefinition.addRule(headatom,_currclause,_rettype==ECTT_CONJ,_returnvalue->translator());
 	}
 }
 
-void TheoryConvertor::visit(QuantSetExpr* e) {
+void TheoryConvertor::visit(QuantSetExpr*) {
 	assert(false);
 }
 

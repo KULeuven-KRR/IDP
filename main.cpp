@@ -8,13 +8,16 @@
 #include "insert.hpp"
 #include "builtin.hpp"
 #include "namespace.hpp"
+#include "execute.hpp"
 #include "parse.h"
 #include "error.hpp"
 #include "options.hpp"
 #include "clconst.hpp"
+#include "lua.hpp"
 #include <cstdio>
 #include <iostream>
 #include <cstdlib>
+#include "interactive.hpp"
 
 // Parser stuff
 extern int yyparse();
@@ -22,10 +25,12 @@ extern FILE* yyin;
 extern map<string,CLConst*>	clconsts;
 extern void parsestring(const string&);
 
-extern void help_execute();
+// Lua stuff
+extern int idpcall(lua_State*);
 
 /** Initialize data structures **/
 void initialize() {
+	BuiltinProcs::initialize();
 	Insert::initialize();
 }
 
@@ -33,18 +38,16 @@ void initialize() {
 void usage() {
 	cout << "Usage:\n"
 		 << "   gidl [options] [filename [filename [...]]]\n\n";
-	cout << "Options:\n"
-		 << "    -i, --interactive	  run in interactive mode\n"
-		 << "    --statistics:        show statistics\n"
-		 << "    --verbose:           print additional information\n"
-		 << "    -c <name1>=<name2>:  substitute <name2> for <name1> in the input\n"
-		 << "    -I:                  read from stdin\n"
-		 << "    -W:                  suppress all warnings\n"
-		 << "    -o <filename>:       write the output to <filename> instead of stdout\n"
-		 << "    --format=<format>:   use specified format for the output\n"
-		 << "    -v, --version:       show version number and stop\n"
-		 << "    -h, --help:          show this help message\n"
-		 << "    --help-execute:      show all methods available in the execute block\n\n";
+	cout << "Options:\n";
+	cout << "    -i, --interactive    run in interactive mode\n";
+	cout << "    -e \"<proc>\"          run procedure <proc> after parsing\n"
+		 << "    --statistics         show statistics\n"
+		 << "    --verbose            print additional information\n"
+		 << "    -c <name1>=<name2>   substitute <name2> for <name1> in the input\n"
+		 << "    -I                   read from stdin\n"
+		 << "    -W                   suppress all warnings\n"
+		 << "    -v, --version        show version number and stop\n"
+		 << "    -h, --help           show this help message\n\n";
 	exit(0);
 }
 
@@ -72,9 +75,13 @@ vector<string> read_options(int argc, char* argv[]) {
 	while(argc) {
 		string str(argv[0]);
 		argc--; argv++;
-		if(str == "-i" || str == "--interactive")	{ _options._interactive = true;		}
-		else if(str == "--statistics")				{ _options._statistics = true;		}
-		else if(str == "--verbose")					{ _options._verbose = true;			}
+		if(str == "-e" || str == "--execute")  		{ _cloptions._exec = string(argv[0]); 
+														argc--; argv++;						}
+#ifdef USEINTERACTIVE
+		else if(str == "-i" || str == "--interactive")	{ _cloptions._interactive = true;	}
+#endif
+		else if(str == "--statistics")				{ _cloptions._statistics = true;		}
+		else if(str == "--verbose")					{ _cloptions._verbose = true;			}
 		else if(str == "-c")						{ str = argv[0];
 													  if(argc && (str.find('=') != string::npos)) {
 														  int p = str.find('=');
@@ -83,11 +90,11 @@ vector<string> read_options(int argc, char* argv[]) {
 														  setclconst(name1,name2); 
 													  }
 													  else Error::constsetexp();
-													  argc--; argv++;
+												  argc--; argv++;
 													}
-		else if(str == "-I")						{ _options._readfromstdin = true;	}
-		else if(str == "-W")						{ for(unsigned int n = 0; n < _options._warning.size(); ++n) {
-														  _options._warning[n] = false;
+		else if(str == "-I")						{ _cloptions._readfromstdin = true;	}
+		else if(str == "-W")						{ for(unsigned int n = 0; n < _cloptions._warning.size(); ++n) {
+														  _cloptions._warning[n] = false;
 													  }
 													}
 		else if(str == "-o")						{ FILE* test = fopen(argv[0],"w");
@@ -105,7 +112,6 @@ vector<string> read_options(int argc, char* argv[]) {
 													}
 		else if(str == "-v" || str == "--version")	{ cout << "GidL 2.0.1\n"; exit(0);	}
 		else if(str == "-h" || str == "--help")		{ usage(); exit(0);					}
-		else if(str == "--help-execute")			{ help_execute(); exit(0);			}
 		else if(str[0] == '-')						{ Error::unknoption(str);			}
 		else										{ inputfiles.push_back(str);		}
 	}
@@ -113,46 +119,128 @@ vector<string> read_options(int argc, char* argv[]) {
 }
 
 /** Parse input files **/
-void parse(const vector<string>& inputfiles) {
-	for(unsigned int n = 0; n < inputfiles.size(); ++n) {
-		yylloc.first_line = 1;
-		yylloc.first_column = 1;
-		yyin = fopen(inputfiles[n].c_str(),"r");
-		if(yyin) {
-			Insert::currfile(inputfiles[n]);
-			yyparse();	
-			fclose(yyin);
-			// TODO: de 'using' vocabularia van de global namespace uitvegen
-		}
-		else Error::unknfile(inputfiles[n]);
+void parsefile(const string& str) {
+	yylloc.first_line = 1;
+	yylloc.first_column = 1;
+	yyin = fopen(str.c_str(),"r");
+	if(yyin) {
+		Insert::currfile(str);
+		yyparse();	
+		fclose(yyin);
+		// TODO: de 'using' vocabularia van de global namespace uitvegen
+		// en er globale variabelen van maken...?
 	}
-	if(_options._readfromstdin) {
-		yyin = stdin;
-		Insert::currfile(0);
+	else Error::unknfile(str);
+}
+
+void parse(const vector<string>& inputfiles) {
+	// Parse standard input file
+	stringstream ss;
+	ss <<DATADIR <<"/std/idp_intern.idp";
+	yyin = fopen(ss.str().c_str(),"r");
+	if(yyin==NULL) Error::unknfile(ss.str());
+	else {
 		yyparse();
+		fclose(yyin);
+
+		// Parse files of the user
+		for(unsigned int n = 0; n < inputfiles.size(); ++n) {
+			parsefile(inputfiles[n]);
+		}
+		if(_cloptions._readfromstdin) {
+			yyin = stdin;
+			Insert::currfile(0);
+			yyparse();
+		}
+	}
+}
+
+/** Communication with lua **/
+
+void createmetatables(lua_State* L) {
+	luaL_newmetatable (L,"theory");
+	lua_pushboolean(L,true);
+	lua_setfield(L,-2,"gettheory");
+	lua_pop(L,1);
+
+	luaL_newmetatable (L,"structure");
+	lua_pushboolean(L,true);
+	lua_setfield(L,-2,"getstructure");
+	lua_pop(L,1);
+
+	luaL_newmetatable (L,"namespace");
+	lua_pushboolean(L,true);
+	lua_setfield(L,-2,"getnamespace");
+	lua_pop(L,1);
+
+	luaL_newmetatable (L,"vocabulary");
+	lua_pushboolean(L,true);
+	lua_setfield(L,-2,"getvocabulary");
+	lua_pop(L,1);
+
+	luaL_newmetatable (L,"options");
+	lua_pushboolean(L,true);
+	lua_setfield(L,-2,"getoptions");
+	lua_pop(L,1);
+}
+
+/** Execute a procecure **/
+
+void executeproc(lua_State* L, const string& proc) {
+	if(proc != "") {
+		string str = "##intern##{"+proc+'}';
+		parsestring(str);
+		LuaProcedure* proc = Insert::currproc();
+		luaL_loadstring(L,(proc->code()).c_str());
+		delete(proc);
+		int res = lua_pcall(L,0,0,0);
+		if(res) cerr << string(lua_tostring(L,1)) << endl; 
 	}
 }
 
 /** Interactive mode **/
-void interactive() {
+
+void interactive(lua_State* L) {
 	cout << "Running GidL in interactive mode.\n"
-		 << "  Type 'help' for help.\n"
 		 << "  Type 'exit' to quit.\n\n";
 
+#ifdef USEINTERACTIVE
 	while(true) {
-		cout << "> ";
-		string str;
-		getline(cin,str);
-		if(str == "exit") return;
-		else if(str == "help") {
-			help_execute();
+		char* userline = rl_gets();
+		if(userline) {
+			if(string(userline) == "exit") return;
+			else {
+				string str = "##intern##{"+string(userline)+'}';
+				parsestring(str);
+				LuaProcedure* proc = Insert::currproc();
+				luaL_loadstring(L,(proc->code()).c_str());
+				delete(proc);
+				int res = lua_pcall(L,0,0,0);
+				if(res) {
+				cerr << string(lua_tostring(L,1)) << endl;
+				}
+			}
 		}
-		else {
-			str = "#execute{ " + str + "}";
-			parsestring(str);
-		}
+		else cout << "\n";
 	}
+#else
+	cout << "> ";
+	string userline = cin.getline();
+	while(userline != "exit") {
+		string str = "##intern##{"+userline+'}';
+		parsestring(str);
+		LuaProcedure* proc = Insert::currproc();
+		luaL_loadstring(L,(proc->code()).c_str());
+		delete(proc);
+		int res = lua_pcall(L,0,0,0);
+		if(res) {
+			cerr << string(lua_tostring(L,1)) << endl;
+		}
+		userline = cin.getline();
+	}
+#endif
 }
+
 
 /** Delete all data **/
 void cleanup() {
@@ -162,10 +250,33 @@ void cleanup() {
 
 /** Main **/
 int main(int argc, char* argv[]) {
+
+	// Parse idp input
 	initialize();
 	vector<string> inputfiles = read_options(argc,argv);
 	parse(inputfiles);
-	if(_options._interactive) interactive();
+
+	// Run
+	if(!Error::nr_of_errors()) {
+		// Initialize communication with lua
+		lua_State* L = lua_open();
+		luaL_openlibs(L);
+		lua_pushcfunction(L,&idpcall);
+		lua_setglobal(L,"idpcall");
+		stringstream ss;
+		ss <<DATADIR <<"/std/idp_intern.lua";
+		luaL_dofile(L,ss.str().c_str());
+		Namespace::global()->tolua(L);
+
+		// Create metatables
+		createmetatables(L);
+
+		// Execute statements
+		executeproc(L,_cloptions._exec);
+		if(_cloptions._interactive) interactive(L);
+	}
+
+	// Exit
 	cleanup();
 	return Error::nr_of_errors();
 }

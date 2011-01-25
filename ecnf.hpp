@@ -9,7 +9,7 @@
 
 #include "theory.hpp"
 #include "ground.hpp"
-#include "pcsolver/solvers/external/ExternalInterface.hpp"
+#include "pcsolver/src/external/ExternalInterface.hpp"
 
 struct GroundFeatures {
 	bool	_containsDefinitions;
@@ -75,7 +75,7 @@ class outputECNF : public GroundPrinter {
 		~outputECNF();
 		void outputinit(GroundFeatures*);
 		void outputend();
-		void outputtseitin(int l){};
+		void outputtseitin(int){};
 		void outputunitclause(int l);
 		void outputclause(const vector<int>& l);
 		void outputunitrule(int h, int b);
@@ -105,7 +105,7 @@ class outputHR : public GroundPrinter {
 		~outputHR();
 		void outputinit(GroundFeatures*);
 		void outputend();
-		void outputtseitin(int l){};
+		void outputtseitin(int){};
 		void outputunitclause(int l);
 		void outputclause(const vector<int>& l);
 		void outputunitrule(int h, int b);
@@ -129,7 +129,7 @@ class outputHR : public GroundPrinter {
 
 };
 
-typedef PropositionalSolver SATSolver;
+typedef MinisatID::WrappedPCSolver SATSolver;
 
 class outputToSolver : public GroundPrinter {
 
@@ -143,7 +143,7 @@ class outputToSolver : public GroundPrinter {
 		~outputToSolver();
 		void outputinit(GroundFeatures*);
 		void outputend();
-		void outputtseitin(int l){};
+		void outputtseitin(int){};
 		void outputunitclause(int l);
 		void outputclause(const vector<int>& l);
 		void outputunitrule(int h, int b);
