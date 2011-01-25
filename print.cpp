@@ -317,7 +317,7 @@ void IDPPrinter::visit(Structure* s) {
 	fprintf(_out,"#structure %s",s->name().c_str());
 	if(s->vocabulary())
 		fprintf(_out," : %s",v->name().c_str());
-	fprintf(_out,"{\n");
+	fprintf(_out," {\n");
 	indent();
 	for(unsigned int n = 0; n < v->nrNBPreds(); ++n) {
 		_currsymbol = v->nbpred(n);
