@@ -233,3 +233,54 @@ function tostring(e)
 		return oldTostring(e)
 	end
 end
+
+local oldPrint = print
+local function print_with_options(list,opts)
+	local res = ""
+	for i=1,#list do
+		if type(list[i]) == "function" then
+			if list[i](isidp) == isidp then
+				res = res..idptostring(list[i],opts)
+			else
+				res = res..oldTostring(list[i])
+			end
+		elseif type(list[i]) == "userdata" then
+			res = res..idptostring(list[i],opts)
+		else
+			res = res..oldTostring(list[i])
+		end
+		res = res.."\t"
+	end
+	oldPrint(res)
+end
+
+function print(...) 
+	local arglist = {...}
+	if #arglist > 1 then
+		local opts = arglist[#arglist]
+		if type(opts) == "function" then
+			if opts(isidp) == isidp then
+				if opts(idp_intern.getoptions) then
+					arglist[#arglist] = nil
+					print_with_options(arglist,opts)
+				else 
+					oldPrint(...)
+				end
+			else
+				oldPrint(...)
+			end
+		elseif type(opts) == "userdata" then
+			local tab = getmetatable(opts)
+			if tab.getoptions then
+				arglist[#arglist] = nil
+				print_with_options(arglist,opts)
+			else
+				oldPrint(...)
+			end
+		else 
+			oldPrint(...) 
+		end
+	else
+		oldPrint(...)
+	end
+end

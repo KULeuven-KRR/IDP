@@ -10,6 +10,7 @@
 #include "visitor.hpp"
 #include "vocabulary.hpp"
 #include "structure.hpp"
+#include "options.hpp"
 #include <cstdio>
 #include <sstream>
 
@@ -22,7 +23,7 @@ class Printer : public Visitor {
 	
 	public:
 		// Factory method
-		static Printer* create();
+		static Printer* create(InfOptions* opts);
 
 		// Print methods
 		string print(Vocabulary* v);

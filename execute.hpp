@@ -94,8 +94,9 @@ class LoadFile : public Inference {
 
 class PrintTheory : public Inference {
 	public:
-		PrintTheory() { 
+		PrintTheory(bool opts) { 
 			_intypes = vector<InfArgType>(1,IAT_THEORY); 
+			if(opts) _intypes.push_back(IAT_OPTIONS);
 			_outtype = IAT_STRING;
 			_description = "Print the theory";
 			_reload = false;
@@ -105,8 +106,9 @@ class PrintTheory : public Inference {
 
 class PrintVocabulary : public Inference {
 	public:
-		PrintVocabulary() { 
+		PrintVocabulary(bool opts) { 
 			_intypes = vector<InfArgType>(1,IAT_VOCABULARY); 
+			if(opts) _intypes.push_back(IAT_OPTIONS);
 			_outtype = IAT_STRING;	
 			_description = "Print the vocabulary";
 			_reload = false;
@@ -116,8 +118,9 @@ class PrintVocabulary : public Inference {
 
 class PrintStructure : public Inference {
 	public:
-		PrintStructure() { 
+		PrintStructure(bool opts) { 
 			_intypes = vector<InfArgType>(1,IAT_STRUCTURE); 
+			if(opts) _intypes.push_back(IAT_OPTIONS);
 			_outtype = IAT_STRING;	
 			_description = "Print the structure";
 			_reload = false;
@@ -127,8 +130,9 @@ class PrintStructure : public Inference {
 
 class PrintNamespace : public Inference {
 	public:
-		PrintNamespace() { 
+		PrintNamespace(bool opts) { 
 			_intypes = vector<InfArgType>(1,IAT_NAMESPACE); 
+			if(opts) _intypes.push_back(IAT_OPTIONS);
 			_outtype = IAT_STRING;	
 			_description = "Print the namespace";
 			_reload = false;
