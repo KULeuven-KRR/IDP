@@ -380,14 +380,14 @@ string NSTuple::to_string() {
 		str = str + '[';
 		if(!_sorts.empty()) {
 			if(_func && _sorts.size() == 1) str = str + ':';
-			str = str + _sorts[0]->name();
+			if(_sorts[0]) str = str + _sorts[0]->name();
 			for(unsigned int n = 1; n < _sorts.size()-1; ++n) {
-				str = str + ',' + _sorts[n]->name();
+				if(_sorts[n]) str = str + ',' + _sorts[n]->name();
 			}
 			if(_sorts.size() > 1) {
 				if(_func) str = str + ':';
 				else str = str + ',';
-				str = str + _sorts[_sorts.size()-1]->name();
+				if(_sorts[_sorts.size()-1]) str = str + _sorts[_sorts.size()-1]->name();
 			}
 		}
 		str = str + ']';
