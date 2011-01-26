@@ -1,5 +1,5 @@
 /************************************
-	structure.cc
+	structure.cpp
 	this file belongs to GidL 2.0
 	(c) K.U.Leuven
 ************************************/
@@ -1062,6 +1062,32 @@ namespace TableUtils {
 		return leastFuncInter(vet);
 	}
 
+	PredTable* intersection(PredTable* pt1,PredTable* pt2) {
+		// this function may only be used in certain cases!
+		assert(pt1->arity() == pt2->arity());
+		assert(pt1->types() == pt2->types());
+		assert(pt1->finite());
+		FinitePredTable* upt = new FinitePredTable(pt1->types());
+		// add tuples from pt1 that are also in pt2
+		for(unsigned int n = 0; n < pt1->size(); ++n)
+			if(pt2->contains(pt1->tuple(n)))
+				upt->addRow(pt1->tuple(n),pt1->types());
+		return upt;
+    }
+
+	PredTable* difference(PredTable* pt1,PredTable* pt2) {
+		// this function may only be used in certain cases!
+		assert(pt1->arity() == pt2->arity());
+		assert(pt1->types() == pt2->types());
+		assert(pt1->finite());
+		FinitePredTable* upt = new FinitePredTable(pt1->types());
+		// add tuples from pt1 that are not in pt2
+		for(unsigned int n = 0; n < pt1->size(); ++n)
+			if(!pt2->contains(pt1->tuple(n)))
+				upt->addRow(pt1->tuple(n),pt1->types());
+		return upt;
+    }
+
 	FiniteSortTable* singletonSort(Element e, ElementType t) {
 		EmptySortTable est;
 		switch(t) {
@@ -1196,7 +1222,7 @@ void Structure::autocomplete() {
 		}
 	}
 	for(unsigned int n = 0; n < _funcinter.size(); ++n) {
-		vector<ElementType> vet(_vocabulary->nbfunc(n)->nrsorts(),ELINT);
+		vector<ElementType> vet(_vocabulary->nbfunc(n)->nrSorts(),ELINT);
 		if(!_funcinter[n]) _funcinter[n] = TableUtils::leastFuncInter(vet);
 		else if(!(_funcinter[n]->predinter()->ctpf())) {
 			PredTable* pt = new FinitePredTable(vet);
@@ -1529,7 +1555,7 @@ void StructConvertor::visit(Structure* s) {
 
 void StructConvertor::visit(PredInter* pt) {
 	if(pt->ct()) {
-		vector<Term*> vt(_currsymbol->nrsorts());
+		vector<Term*> vt(_currsymbol->nrSorts());
 		for(unsigned int r = 0; r < pt->ctpf()->size(); ++r) {
 			for(unsigned int c = 0; c < vt.size(); ++c) {
 				Element e = pt->ctpf()->element(r,c);
@@ -1540,7 +1566,7 @@ void StructConvertor::visit(PredInter* pt) {
 	}
 	else {
 		PredTable* comp = StructUtils::complement(pt->ctpf(),_currsymbol->sorts(),_structure);
-		vector<Term*> vt(_currsymbol->nrsorts());
+		vector<Term*> vt(_currsymbol->nrSorts());
 		for(unsigned int r = 0; r < comp->size(); ++r) {
 			for(unsigned int c = 0; c < vt.size(); ++c) {
 				Element e = comp->element(r,c);
@@ -1551,7 +1577,7 @@ void StructConvertor::visit(PredInter* pt) {
 		delete(comp);
 	}
 	if(pt->cf()) {
-		vector<Term*> vt(_currsymbol->nrsorts());
+		vector<Term*> vt(_currsymbol->nrSorts());
 		for(unsigned int r = 0; r < pt->cfpt()->size(); ++r) {
 			for(unsigned int c = 0; c < vt.size(); ++c) {
 				Element e = pt->cfpt()->element(r,c);
@@ -1562,7 +1588,7 @@ void StructConvertor::visit(PredInter* pt) {
 	}
 	else {
 		PredTable* comp = StructUtils::complement(pt->cfpt(),_currsymbol->sorts(),_structure);
-		vector<Term*> vt(_currsymbol->nrsorts());
+		vector<Term*> vt(_currsymbol->nrSorts());
 		for(unsigned int r = 0; r < comp->size(); ++r) {
 			for(unsigned int c = 0; c < vt.size(); ++c) {
 				Element e = comp->element(r,c);

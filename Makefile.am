@@ -39,7 +39,8 @@ gidl_SOURCES = \
 		lex.ll\
 		options.hpp\
 		clconst.hpp\
-		interactive.cpp interactive.hpp
+		interactive.cpp interactive.hpp\
+		print.hpp print.cpp
 
 #MINISATID PART, HEADERS ARE TAKEN CARE OF BY THE SUB MAKEFILE
 gidl_SOURCES += \

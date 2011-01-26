@@ -1,5 +1,5 @@
 /************************************
-	builtin.cc
+	builtin.cpp
 	this file belongs to GidL 2.0
 	(c) K.U.Leuven
 ************************************/
@@ -80,8 +80,8 @@ class SemiBuiltInPredicate : public Predicate {
 };
 
 PredInter* SemiBuiltInPredicate::inter(const AbstractStructure& s) const {
-	vector<SortTable*> vs(nrsorts());
-	for(unsigned int n = 0; n < nrsorts(); ++n) vs[n] = s.inter(sort(n));
+	vector<SortTable*> vs(nrSorts());
+	for(unsigned int n = 0; n < nrSorts(); ++n) vs[n] = s.inter(sort(n));
 	map<vector<SortTable*>,PredInter*>::const_iterator it = _inters.find(vs);
 	if(it != _inters.end()) return it->second;
 	else {
@@ -189,8 +189,8 @@ class SemiBuiltInFunction : public Function {
 };
 
 FuncInter* SemiBuiltInFunction::inter(const AbstractStructure& s) const {
-	vector<SortTable*> vs(nrsorts());
-	for(unsigned int n = 0; n < nrsorts(); ++n) vs[n] = s.inter(sort(n));
+	vector<SortTable*> vs(nrSorts());
+	for(unsigned int n = 0; n < nrSorts(); ++n) vs[n] = s.inter(sort(n));
 	map<vector<SortTable*>,FuncInter*>::const_iterator it = _inters.find(vs);
 	if(it != _inters.end()) return it->second;
 	else {
@@ -1078,9 +1078,9 @@ StdBuiltin::StdBuiltin() : Vocabulary("std") {
 	addSort(stringsort);
 
 	// Set sort hierarchy 
-	intsort->parent(floatsort);
-	natsort->parent(intsort);
-	charsort->parent(stringsort);
+	intsort->addParent(floatsort);
+	natsort->addParent(intsort);
+	charsort->addParent(stringsort);
 
 	// Built-in predicates
 	addPred(new ComparisonPredicate("=/2",2,&equalinter));

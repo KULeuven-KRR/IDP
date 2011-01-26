@@ -1,5 +1,5 @@
 /************************************
-	execute.cc
+	execute.cpp
 	this file belongs to GidL 2.0
 	(c) K.U.Leuven
 ************************************/
@@ -7,8 +7,7 @@
 #include "execute.hpp"
 #include "ground.hpp"
 #include "ecnf.hpp"
-#include <iostream>
-#include "options.hpp"
+#include "print.hpp"
 #include "data.hpp"
 #include "lua.hpp"
 #include "error.hpp"
@@ -22,10 +21,14 @@ namespace BuiltinProcs {
 	map<string,vector<Inference*> >	_inferences;	// All inference methods
 
 	void initialize() {
-		_inferences["print"].push_back(new PrintTheory());
-		_inferences["print"].push_back(new PrintVocabulary());
-		_inferences["print"].push_back(new PrintStructure());
-		_inferences["print"].push_back(new PrintNamespace());
+		_inferences["print"].push_back(new PrintTheory(false));
+		_inferences["print"].push_back(new PrintVocabulary(false));
+		_inferences["print"].push_back(new PrintStructure(false));
+		_inferences["print"].push_back(new PrintNamespace(false));
+		_inferences["print"].push_back(new PrintTheory(true));
+		_inferences["print"].push_back(new PrintVocabulary(true));
+		_inferences["print"].push_back(new PrintStructure(true));
+		_inferences["print"].push_back(new PrintNamespace(true));
 		_inferences["push_negations"].push_back(new PushNegations());
 		_inferences["remove_equivalences"].push_back(new RemoveEquivalences());
 		_inferences["remove_eqchains"].push_back(new RemoveEqchains());
@@ -370,34 +373,38 @@ InfArg LoadFile::execute(const vector<InfArg>& args) const {
 }
 
 InfArg PrintTheory::execute(const vector<InfArg>& args) const {
-	assert(args.size() == 1);
-	// TODO
-	string s = (args[0]._theory)->to_string();
-	//cout << s;
-	InfArg a; a._string = IDPointer(s);
+	InfOptions* opts = Namespace::global()->option("DefaultOptions");
+	if(args.size() == 2) opts = args[1]._options;
+	Printer* printer = Printer::create(opts);
+	Theory* t = dynamic_cast<Theory*>(args[0]._theory);
+	string str = printer->print(t);
+	delete(printer);
+	InfArg a; a._string = IDPointer(str);
 	return a;
 }
 
 InfArg PrintVocabulary::execute(const vector<InfArg>& args) const {
-	assert(args.size() == 1);
-	// TODO
-	string s = (args[0]._vocabulary)->to_string();
-	// cout << s;
-	InfArg a; a._string = IDPointer(s);
+	InfOptions* opts = Namespace::global()->option("DefaultOptions");
+	if(args.size() == 2) opts = args[1]._options;
+	Printer* printer = Printer::create(opts);
+	string str = printer->print(args[0]._vocabulary);
+	delete(printer);
+	InfArg a; a._string = IDPointer(str);
 	return a;
 }
 
 InfArg PrintStructure::execute(const vector<InfArg>& args) const {
-	assert(args.size() == 1);
-	// TODO
-	string s = (args[0]._structure)->to_string();
-	// cout << s;
-	InfArg a; a._string = IDPointer(s);
+	InfOptions* opts = Namespace::global()->option("DefaultOptions");
+	if(args.size() == 2) opts = args[1]._options;
+	Printer* printer = Printer::create(opts);
+	Structure* s = dynamic_cast<Structure*>(args[0]._structure);
+	string str = printer->print(s);
+	delete(printer);
+	InfArg a; a._string = IDPointer(str);
 	return a;
 }
 
 InfArg PrintNamespace::execute(const vector<InfArg>& args) const {
-	assert(args.size() == 1);
 	// TODO
 	// string s = (args[0]._namespace)->to_string();
 	//cout << s;

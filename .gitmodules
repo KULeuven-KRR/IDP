@@ -1,6 +1,6 @@
 [submodule "pcsolver"]
 	path = pcsolver
-	url = broes+git@server:/repos/minisatid
+	url = server:/repos/minisatid
 [submodule "autotoolized-lua"]
 	path = autotoolized-lua
 	url = https://github.com/akheron/autotoolized-lua.git

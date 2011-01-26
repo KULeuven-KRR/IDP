@@ -1,11 +1,11 @@
 /************************************
-	structure.h
+	structure.hpp
 	this file belongs to GidL 2.0
 	(c) K.U.Leuven
 ************************************/
 
-#ifndef STRUCTURE_H
-#define STRUCTURE_H
+#ifndef STRUCTURE_HPP
+#define STRUCTURE_HPP
 
 #include "vocabulary.hpp"
 #include "visitor.hpp"
@@ -144,6 +144,9 @@ class SortTable : public PredTable {
 		virtual unsigned int	position(Element,ElementType)			const = 0;	// Return the position of the given element
 				unsigned int	position(Element e)						const { return position(e,type());					}
 				unsigned int	position(TypedElement te)				const { return position(te._element,te._type);		}
+
+		// Visitor
+		void accept(Visitor*);
 
 		// Debugging
 		virtual string to_string(unsigned int spaces = 0) const = 0;
@@ -560,6 +563,10 @@ class FinitePredTable : public PredTable {
 		void				changeElType(unsigned int,ElementType);
 		vector<Element>&	operator[](unsigned int n)				{ return _table[n];	}
 
+		// Iterators
+		VVE::iterator		begin()									{ return _table.begin();	}
+		VVE::iterator		end()									{ return _table.end();		}
+
 		// Inspectors
 		bool				finite()								const { return true;			}
 		bool				empty()									const { return _table.empty();	}
@@ -626,6 +633,9 @@ class PredInter {
 		bool		isfalse(const vector<Element>& vi)		const { return (_cf ? _cfpt->contains(vi) : !(_cfpt->contains(vi)));	}
 		bool		istrue(const vector<TypedElement>& vi)	const;	// return true iff the given tuple is true or inconsistent
 		bool		isfalse(const vector<TypedElement>& vi)	const;	// return false iff the given tuple is false or inconsistent
+
+		// Visitor
+		void accept(Visitor*);
 
 		// Debugging
 		string to_string(unsigned int spaces = 0) const;
@@ -760,6 +770,10 @@ class FuncPredTable : public PredTable {
 		void sortunique() { }
 
 		// Inspectors
+//		virtual Element		operator[](const vector<Element>& vi)		const = 0;
+//				Element		operator[](const vector<TypedElement>& vi)	const;
+//		virtual PredInter*	predinter()									const = 0;
+
 		bool			finite()				const { return _ftable->finite();		}
 		bool			empty()					const { return _ftable->empty();		}
 		unsigned int	arity()					const { return _ftable->arity() + 1;	}
@@ -772,6 +786,9 @@ class FuncPredTable : public PredTable {
 		unsigned int		size()									const { return _ftable->size();			}
 		vector<Element>		tuple(unsigned int n)					const { return _ftable->tuple(n);		}
 		Element				element(unsigned int r,unsigned int c)	const { return _ftable->element(r,c);	}
+
+		// Visitor
+		void accept(Visitor*);
 
 		// Debugging
 		string to_string(unsigned int spaces = 0)	const { return _ftable->to_string(spaces);	}
@@ -805,6 +822,9 @@ class FuncInter {
 		// Debugging
 		string to_string(unsigned int spaces = 0) const;
 
+		// Visitor
+        void accept(Visitor*);
+
 };
 
 /************************
@@ -815,6 +835,8 @@ namespace TableUtils {
 
 	PredInter*	leastPredInter(unsigned int n);		// construct a new, least precise predicate interpretation with arity n
 	FuncInter*	leastFuncInter(unsigned int n);		// construct a new, least precise function interpretation with arity n
+	PredTable*	intersection(PredTable*,PredTable*);
+	PredTable*	difference(PredTable*,PredTable*);
 
 	FiniteSortTable*	singletonSort(Element,ElementType);	// construct a sort table containing only the given element
 	FiniteSortTable*	singletonSort(TypedElement);		// construct a sort table containing only the given element
@@ -924,7 +946,7 @@ class Structure : public AbstractStructure {
 		unsigned int	nrFuncInters()				const { return _funcinter.size();	}
 
 		// Visitor
-		void accept(Visitor* v)	{ v->visit(this);	}
+		void accept(Visitor* v);
 
 		// Debugging
 		string	to_string(unsigned int spaces = 0) const;

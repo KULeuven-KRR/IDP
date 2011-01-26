@@ -1,11 +1,11 @@
 /************************************
-	visitor.h
+	visitor.hpp
 	this file belongs to GidL 2.0
 	(c) K.U.Leuven
 ************************************/
 
-#ifndef VISITOR_H
-#define VISITOR_H
+#ifndef VISITOR_HPP
+#define VISITOR_HPP
 
 class Formula;
 class Term;
@@ -31,6 +31,10 @@ class SortTable;
 class PredInter;
 class FuncInter;
 class Structure;
+class Sort;
+class Predicate;
+class Function;
+class Vocabulary;
 class EcnfTheory;
 
 /*
@@ -52,8 +56,11 @@ class Visitor {
 		void traverse(SetExpr* s);
 		void traverse(Theory* t);
 		void traverse(Structure* s);
+		void traverse(Vocabulary* v);
 
 		/** Theories **/
+		virtual void visit(Theory* t);
+		virtual void visit(EcnfTheory* t);
 
 		// Formulas 
 		virtual void visit(PredForm* a);			
@@ -79,17 +86,17 @@ class Visitor {
 		virtual void visit(EnumSetExpr* a);
 		virtual void visit(QuantSetExpr* a);
 
-		// Theories
-		virtual void visit(Theory* t);
-		virtual void visit(EcnfTheory* t);
-
 		/** Structures **/
-
+		virtual void visit(Structure*);
 		virtual void visit(SortTable*);
 		virtual void visit(PredInter*);
 		virtual void visit(FuncInter*);
-		virtual void visit(Structure*);
 
+		/** Vocabularies **/
+		virtual void visit(Vocabulary*);
+		virtual void visit(Sort*);
+		virtual void visit(Predicate*);
+		virtual void visit(Function*);
 
 };
 

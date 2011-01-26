@@ -1,5 +1,5 @@
 /************************************
-	error.cc
+	error.cpp
 	this file belongs to GidL 2.0
 	(c) K.U.Leuven
 ************************************/
@@ -39,7 +39,7 @@ namespace Error {
 
 	void unknoption(const string& s) {
 		error();
-		cerr << s << " is an unknown option." << endl;
+		cerr << "'" << s << "' is an unknown option." << endl;
 	}
 
 	void unknfile(const string& s) {
@@ -76,6 +76,11 @@ namespace Error {
 
 	void unexistingfile(const string& s, const ParseInfo& pi) {
 		error(pi);
+		cerr << "Could not open file " << s << ".\n";
+	}
+
+	void unabletoopenfile(const string& s) {
+		error();
 		cerr << "Could not open file " << s << ".\n";
 	}
 
@@ -548,6 +553,11 @@ namespace Error {
 	void wrongvaluetype(const string& name, const ParseInfo& thisplace) {
 		error(thisplace);
 		cerr << "The value given to option " << name << " is of the wrong type.\n";
+	}
+
+	void wrongformat(const string& format, const ParseInfo& thisplace) {
+		error(thisplace);
+		cerr << format << " is not a valid output language.\n";
 	}
 
 	void posintexpected(const string& name, const ParseInfo& thisplace) {

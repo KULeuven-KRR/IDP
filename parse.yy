@@ -321,9 +321,9 @@ func_decl		: PARTIAL CONSTR full_func_decl			{ $$ = $3; if($$) { $$->partial(tru
 				| arit_func_decl						{ $$ = $1;														}
 				;
 
-full_func_decl	: identifier '(' sort_pointer_tuple ')' ':' sort_pointer	{ Insert::function(*$1,*$3,$6,@1);
+full_func_decl	: identifier '(' sort_pointer_tuple ')' ':' sort_pointer	{ $$ = Insert::function(*$1,*$3,$6,@1);
 																			  delete($3); }
-				| identifier ':' sort_pointer								{ Insert::function(*$1,$3,@1); }	
+				| identifier ':' sort_pointer								{ $$ = Insert::function(*$1,$3,@1); }	
 				; 														
 
 arit_func_decl	: '-' binary_arit_func_sorts				{ $$ = Insert::function("-/2",*$2,@1); delete($2);		}

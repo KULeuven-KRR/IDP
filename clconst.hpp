@@ -1,11 +1,11 @@
 /************************************
-	clconst.h
+	clconst.hpp
 	this file belongs to GidL 2.0
 	(c) K.U.Leuven
 ************************************/
 
-#ifndef CLCONST_H
-#define CLCONST_H
+#ifndef CLCONST_HPP
+#define CLCONST_HPP
 
 /************************************************
 	class to represent the different 

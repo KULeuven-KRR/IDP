@@ -18,6 +18,10 @@
 	return idp_intern.idpcall("print",obj)
 }
 
+#procedure idptostring(obj,opts) {
+	return idp_intern.idpcall("print",obj,opts)
+}
+
 #namespace IDP_EXPERT {
 	
 	#procedure push_negations(T) {

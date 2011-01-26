@@ -1,5 +1,5 @@
 /************************************
-	vocabulary.cc
+	vocabulary.cpp
 	this file belongs to GidL 2.0
 	(c) K.U.Leuven
 ************************************/
@@ -338,25 +338,25 @@ Sort::Sort(const string& name, const ParseInfo& pi) : _name(name), _pi(pi) {
 
 /** Mutators **/
 
-void Sort::parent(Sort* p) {
+void Sort::addParent(Sort* p) {
 	unsigned int n = 0;
 	for(; n < _parents.size(); ++n) {
 		if(p == _parents[n]) break;
 	}
 	if(n == _parents.size()) {
 		_parents.push_back(p);
-		p->child(this);
+		p->addChild(this);
 	}
 }
 
-void Sort::child(Sort* c) {
+void Sort::addChild(Sort* c) {
 	unsigned int n = 0;
 	for(; n < _children.size(); ++n) {
 		if(c == _children[n]) break;
 	}
 	if(n == _children.size()) {
 		_children.push_back(c);
-		c->parent(this);
+		c->addParent(this);
 	}
 }
 

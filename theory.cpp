@@ -1,5 +1,5 @@
 /************************************
-	theory.cc
+	theory.cpp
 	this file belongs to GidL 2.0
 	(c) K.U.Leuven
 ************************************/
@@ -908,8 +908,8 @@ void TheoryConvertor::visit(PredForm* pf) {
 		_rettype = ECTT_AGG;
 	}
 	else {	// A normal literal
-		vector<TypedElement> args(pf->symb()->nrsorts());
-		for(unsigned int n = 0; n < pf->symb()->nrsorts(); ++n) {
+		vector<TypedElement> args(pf->symb()->nrSorts());
+		for(unsigned int n = 0; n < pf->symb()->nrSorts(); ++n) {
 			assert(typeid(*(pf->subterm(n))) == typeid(DomainTerm));
 			DomainTerm* dt = dynamic_cast<DomainTerm*>(pf->subterm(n));
 			args[n]._element = dt->value();

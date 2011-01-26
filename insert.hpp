@@ -1,11 +1,11 @@
 /************************************
-	insert.h	
+	insert.hpp	
 	this file belongs to GidL 2.0
 	(c) K.U.Leuven
 ************************************/
 
-#ifndef INSERT_H
-#define INSERT_H
+#ifndef INSERT_HPP
+#define INSERT_HPP
 
 #include <utility>
 #include "theory.hpp"

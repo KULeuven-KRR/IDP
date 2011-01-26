@@ -1,11 +1,11 @@
 /************************************
-	theory.h
+	theory.hpp
 	this file belongs to GidL 2.0
 	(c) K.U.Leuven
 ************************************/
 
-#ifndef THEORY_H
-#define THEORY_H
+#ifndef THEORY_HPP
+#define THEORY_HPP
 
 #include "structure.hpp"
 #include "term.hpp"
@@ -147,6 +147,7 @@ class EqChainForm : public Formula {
 		bool			conj()						const	{ return _conj;				}
 		char			comp(unsigned int n)		const	{ return _comps[n];			}
 		bool			compsign(unsigned int n)	const	{ return _signs[n];			}
+		unsigned int	nrComps()					const	{ return _comps.size();		}
 		unsigned int	nrQvars()					const	{ return 0;					}
 		unsigned int	nrSubforms()				const	{ return 0;					}
 		unsigned int	nrSubterms()				const	{ return _terms.size();		}
@@ -493,9 +494,9 @@ class Definition {
 		void	defsyms();						// (Re)compute the list of defined symbols
 
 		// Inspectors
-		unsigned int	nrrules()				const { return _rules.size();		}
+		unsigned int	nrRules()				const { return _rules.size();		}
 		Rule*			rule(unsigned int n)	const { return _rules[n];			}
-		unsigned int	nrdefsyms()				const { return _defsyms.size();		}
+		unsigned int	nrDefsyms()				const { return _defsyms.size();		}
 		PFSymbol*		defsym(unsigned int n)	const { return _defsyms[n];			}
 
 		// Visitor
@@ -536,8 +537,8 @@ class FixpDef {
 
 		// Inspectors
 		bool			lfp()					const { return _lfp;			}
-		unsigned int	nrrules()				const { return _rules.size();	}
-		unsigned int	nrdefs()				const { return _defs.size();	}
+		unsigned int	nrRules()				const { return _rules.size();	}
+		unsigned int	nrDefs()				const { return _defs.size();	}
 		Rule*			rule(unsigned int n)	const { return _rules[n];		}
 		FixpDef*		def(unsigned int n)		const { return _defs[n];		}
 

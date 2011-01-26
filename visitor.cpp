@@ -1,5 +1,5 @@
 /************************************
-	Visitor::visitor.cc
+	Visitor::visitor.cpp
 	this file belongs to GidL 2.0
 	(c) K.U.Leuven
 ************************************/
@@ -28,8 +28,11 @@ void Visitor::visit(SortTable*)				{ }
 void Visitor::visit(PredInter*)				{ }
 void Visitor::visit(FuncInter*)				{ }
 void Visitor::visit(Structure* s)			{ traverse(s);	}
+void Visitor::visit(Sort*)					{ }
+void Visitor::visit(Predicate*)				{ }
+void Visitor::visit(Function*)				{ }
+void Visitor::visit(Vocabulary* v)			{ traverse(v); }
 void Visitor::visit(EcnfTheory*)			{ /* TODO */	}
-
 
 void Visitor::traverse(Formula* f) {
 	for(unsigned int n = 0; n < f->nrSubforms(); ++n) {
@@ -58,16 +61,16 @@ void Visitor::traverse(Rule* r) {
 }
 
 void Visitor::traverse(Definition* d) {
-	for(unsigned int n = 0; n < d->nrrules(); ++n) {
+	for(unsigned int n = 0; n < d->nrRules(); ++n) {
 		visit(d->rule(n));
 	}
 }
 
 void Visitor::traverse(FixpDef* d) {
-	for(unsigned int n = 0; n < d->nrrules(); ++n) {
+	for(unsigned int n = 0; n < d->nrRules(); ++n) {
 		visit(d->rule(n));
 	}
-	for(unsigned int n = 0; n < d->nrdefs(); ++n) {
+	for(unsigned int n = 0; n < d->nrDefs(); ++n) {
 		visit(d->def(n));
 	}
 }
@@ -99,6 +102,18 @@ void Visitor::traverse(Structure* s) {
 	}
 	for(unsigned int n = 0; n < s->vocabulary()->nrNBFuncs(); ++n) {
 		visit(s->funcinter(n));
+	}
+}
+
+void Visitor::traverse(Vocabulary* v) {
+	for(unsigned int n = 0; n < v->nrNBSorts(); ++n) {
+		visit(v->nbsort(n));
+	}
+	for(unsigned int n = 0; n < v->nrNBPreds(); ++n) {
+		visit(v->nbpred(n));
+	}
+	for(unsigned int n = 0; n < v->nrNBFuncs(); ++n) {
+		visit(v->nbfunc(n));
 	}
 }
 
@@ -178,6 +193,41 @@ void Theory::accept(Visitor* v) {
 	v->visit(this);
 }
 
+/** Structure **/
+
+void Structure::accept(Visitor* v) {
+	v->visit(this);
+}
+
+void SortTable::accept(Visitor* v) {
+	v->visit(this);
+}
+
+void PredInter::accept(Visitor* v) {
+	v->visit(this);
+}
+
+void FuncInter::accept(Visitor* v) {
+	v->visit(this);
+}
+
+/** Vocabulary **/
+
+void Vocabulary::accept(Visitor* v) {
+	v->visit(this);
+}
+
+void Sort::accept(Visitor* v) {
+	v->visit(this);
+}
+
+void Predicate::accept(Visitor* v) {
+	v->visit(this);
+}
+
+void Function::accept(Visitor* v) {
+	v->visit(this);
+}
 
 /***********************
 	Mutating visitor
@@ -292,7 +342,7 @@ Rule* MutatingVisitor::visit(Rule* r) {
 }
 
 Definition* MutatingVisitor::visit(Definition* d) {
-	for(unsigned int n = 0; n < d->nrrules(); ++n) {
+	for(unsigned int n = 0; n < d->nrRules(); ++n) {
 		Rule* r = d->rule(n)->accept(this);
 		if(r != d->rule(n)) {
 			delete(d->rule(n));
@@ -304,14 +354,14 @@ Definition* MutatingVisitor::visit(Definition* d) {
 }
 
 FixpDef* MutatingVisitor::visit(FixpDef* fd) {
-	for(unsigned int n = 0; n < fd->nrrules(); ++n) {
+	for(unsigned int n = 0; n < fd->nrRules(); ++n) {
 		Rule* r = fd->rule(n)->accept(this);
 		if(r != fd->rule(n)) {
 			delete(fd->rule(n));
 			fd->rule(n,r);
 		}
 	}
-	for(unsigned int n = 0; n < fd->nrdefs(); ++n) {
+	for(unsigned int n = 0; n < fd->nrDefs(); ++n) {
 		FixpDef* d = fd->def(n)->accept(this);
 		if(d != fd->def(n)) {
 			delete(fd->def(n));

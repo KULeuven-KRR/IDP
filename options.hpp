@@ -1,11 +1,11 @@
 /************************************
-	options.h
+	options.hpp
 	this file belongs to GidL 2.0
 	(c) K.U.Leuven
 ************************************/
 
-#ifndef OPTIONS_H
-#define OPTIONS_H
+#ifndef OPTIONS_HPP
+#define OPTIONS_HPP
 
 /** Command-line options **/
 
@@ -48,6 +48,8 @@ class CLOptions {
 
 /** Inference options **/
 
+enum OutputFormat { OF_TXT, OF_IDP };
+
 class InfOptions {
 	
 	public:
@@ -58,23 +60,27 @@ class InfOptions {
 
 		// Attributes
 		unsigned int	_nrmodels;	// the number of models to compute
+		OutputFormat	_format;	// use specified format for the output
 		
 		// Constructor (default options)
 		InfOptions(const string& name, const ParseInfo& pi) : 
 			_name(name), 
 			_pi(pi),
-			_nrmodels(1) 
+			_nrmodels(1),
+			_format(OF_IDP)
 			{ }
 
 		// Setters
 		void set(InfOptions* opt) {
-			_nrmodels = opt->_nrmodels;
+			_nrmodels 	= opt->_nrmodels;
+			_format 	= opt->_format;
 		}
 
 		// Inspectors
 		static bool isoption(const string& str) {
 			bool r = false;
 			if(str == "nrmodels") r = true;
+			else if(str == "language") r = true;
 			return r;
 		}
 		const string& name() const { return _name; }

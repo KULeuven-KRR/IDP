@@ -1,5 +1,5 @@
 /************************************
-	ground.cc
+	ground.cpp
 	this file belongs to GidL 2.0
 	(c) K.U.Leuven
 ************************************/
@@ -217,11 +217,11 @@ void NaiveGrounder::visit(Rule* r) {
 
 void NaiveGrounder::visit(Definition* d) {
 	Definition* grounddef = new Definition();
-	for(unsigned int n = 0; n < d->nrrules(); ++n) {
+	for(unsigned int n = 0; n < d->nrRules(); ++n) {
 		_returnDef = 0;
 		visit(d->rule(n));
 		assert(_returnDef);
-		for(unsigned int m = 0; m < _returnDef->nrrules(); ++m) {
+		for(unsigned int m = 0; m < _returnDef->nrRules(); ++m) {
 			grounddef->add(_returnDef->rule(m));
 		}
 		delete(_returnDef);
@@ -231,17 +231,17 @@ void NaiveGrounder::visit(Definition* d) {
 
 void NaiveGrounder::visit(FixpDef* d) {
 	FixpDef* grounddef = new FixpDef(d->lfp());
-	for(unsigned int n = 0; n < d->nrdefs(); ++n) {
+	for(unsigned int n = 0; n < d->nrDefs(); ++n) {
 		_returnFixpDef = 0;
 		visit(d->def(n));
 		assert(_returnFixpDef);
 		grounddef->add(_returnFixpDef);
 	}
-	for(unsigned int n = 0; n < d->nrrules(); ++n) {
+	for(unsigned int n = 0; n < d->nrRules(); ++n) {
 		_returnDef = 0;
 		visit(d->rule(n));
 		assert(_returnDef);
-		for(unsigned int m = 0; m < _returnDef->nrrules(); ++m) {
+		for(unsigned int m = 0; m < _returnDef->nrRules(); ++m) {
 			grounddef->add(_returnDef->rule(m));
 		}
 		delete(_returnDef);

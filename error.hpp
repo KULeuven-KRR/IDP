@@ -1,11 +1,11 @@
 /************************************
-	error.h
+	error.hpp
 	this file belongs to GidL 2.0
 	(c) K.U.Leuven
 ************************************/
 
-#ifndef ERROR_H
-#define ERROR_H
+#ifndef ERROR_HPP
+#define ERROR_HPP
 
 #include "namespace.hpp"
 
@@ -30,6 +30,7 @@ namespace Error {
 	/** File errors **/
 	void cyclicinclude(const string&, const ParseInfo& pi);
 	void unexistingfile(const string&, const ParseInfo& pi);
+	void unabletoopenfile(const string&);
 
 	/** Invalid ranges **/
 	void invalidrange(int n1, int n2, const ParseInfo& pi);
@@ -127,6 +128,7 @@ namespace Error {
 	void unkniat(const string& name, const ParseInfo& thisplace);
 	void wrongcommandargs(const string& name);
 	void wrongvaluetype(const string& name, const ParseInfo& thisplace);
+	void wrongformat(const string& format, const ParseInfo& thisplace);
 	void posintexpected(const string& name, const ParseInfo& thisplace);
 	void ambigcommand(const string& name);
 }

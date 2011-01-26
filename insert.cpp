@@ -1,5 +1,5 @@
 /************************************
-	insert.cc	
+	insert.cpp	
 	this file belongs to GidL 2.0
 	(c) K.U.Leuven
 ************************************/
@@ -39,7 +39,7 @@ class SortChecker : public Visitor {
 
 void SortChecker::visit(PredForm* pf) {
 	PFSymbol* s = pf->symb();
-	for(unsigned int n = 0; n < s->nrsorts(); ++n) {
+	for(unsigned int n = 0; n < s->nrSorts(); ++n) {
 		Sort* s1 = s->sort(n);
 		Sort* s2 = pf->subterm(n)->sort();
 		if(s1 && s2) {
@@ -171,7 +171,7 @@ void SortDeriver::visit(PredForm* pf) {
 	}
 
 	// Visit the children while asserting the sorts of the predicate
-	for(unsigned int n = 0; n < p->nrsorts(); ++n) {
+	for(unsigned int n = 0; n < p->nrSorts(); ++n) {
 		_assertsort = p->sort(n);
 		pf->subterm(n)->accept(this);
 	}
@@ -302,7 +302,7 @@ void SortDeriver::derivepreds() {
 	for(set<PredForm*>::iterator it = _overloadedatoms.begin(); it != _overloadedatoms.end(); ) {
 		set<PredForm*>::iterator jt = it; ++jt;
 		PFSymbol* p = (*it)->symb();
-		vector<Sort*> vs(p->nrsorts(),0);
+		vector<Sort*> vs(p->nrSorts(),0);
 		for(unsigned int n = 0; n < vs.size(); ++n) {
 			vs[n] = (*it)->subterm(n)->sort();
 		}
@@ -889,10 +889,15 @@ namespace Insert {
 		else Error::undeclopt(oneName(name),pi);
 	}
 
-	void option(const string& opt, const string&, YYLTYPE l) {
+	void option(const string& opt, const string& val, YYLTYPE l) {
 		ParseInfo pi = parseinfo(l);
 		if(InfOptions::isoption(opt)) {
-			Error::wrongvaluetype(opt,pi);
+			if(opt == "language") {
+				if(val == "txt") _curroptions->_format=OF_TXT;
+				else if(val == "idp") _curroptions->_format=OF_IDP;
+				else Error::wrongformat(val,pi);
+			}
+			else Error::wrongvaluetype(opt,pi);
 		}
 		else Error::unknopt(opt,pi);
 	}
@@ -1222,7 +1227,7 @@ namespace Insert {
 							}
 						}
 					}
-					s->parent(sups[n]);
+					s->addParent(sups[n]);
 				}
 			}
 			for(unsigned int n = 0; n < subs.size(); ++n) {
@@ -1234,7 +1239,7 @@ namespace Insert {
 							}
 						}
 					}
-					s->child(subs[n]);
+					s->addChild(subs[n]);
 				}
 			}
 		}

@@ -1,5 +1,5 @@
 /************************************
-	main.cc
+	main.cpp
 	this file belongs to GidL 2.0
 	(c) K.U.Leuven
 ************************************/
@@ -39,9 +39,7 @@ void usage() {
 	cout << "Usage:\n"
 		 << "   gidl [options] [filename [filename [...]]]\n\n";
 	cout << "Options:\n";
-#ifdef USEINTERACTIVE
 	cout << "    -i, --interactive    run in interactive mode\n";
-#endif	
 	cout << "    -e \"<proc>\"          run procedure <proc> after parsing\n"
 		 << "    --statistics         show statistics\n"
 		 << "    --verbose            print additional information\n"
@@ -92,12 +90,11 @@ vector<string> read_options(int argc, char* argv[]) {
 														  setclconst(name1,name2); 
 													  }
 													  else Error::constsetexp();
-												  argc--; argv++;
+													  argc--; argv++;
 													}
 		else if(str == "-I")						{ _cloptions._readfromstdin = true;	}
-		else if(str == "-W")						{ for(unsigned int n = 0; n < _cloptions._warning.size(); ++n) {
+		else if(str == "-W")						{ for(unsigned int n = 0; n < _cloptions._warning.size(); ++n)
 														  _cloptions._warning[n] = false;
-													  }
 													}
 		else if(str == "-v" || str == "--version")	{ cout << "GidL 2.0.1\n"; exit(0);	}
 		else if(str == "-h" || str == "--help")		{ usage(); exit(0);					}
@@ -114,7 +111,7 @@ void parsefile(const string& str) {
 	yyin = fopen(str.c_str(),"r");
 	if(yyin) {
 		Insert::currfile(str);
-		yyparse();	
+		yyparse();
 		fclose(yyin);
 		// TODO: de 'using' vocabularia van de global namespace uitvegen
 		// en er globale variabelen van maken...?

@@ -1,12 +1,13 @@
 /************************************
-0	vocabulary.h
+	vocabulary.hpp
 	this file belongs to GidL 2.0
 	(c) K.U.Leuven
 ************************************/
 
-#ifndef VOCABULARY_H
-#define VOCABULARY_H
+#ifndef VOCABULARY_HPP
+#define VOCABULARY_HPP
 
+#include "visitor.hpp"
 #include "common.hpp"
 #include <map>
 #include <set>
@@ -116,8 +117,8 @@ class Sort {
 							// Only delete sorts when all vocabularies where the sort occurs are deleted 
 
 		// Mutators
-		void	parent(Sort* p);	// Add p as a parent. Also add this as a child of p.
-		void	child(Sort* c);		// Add c as a child. Also add this as a parent of c.
+		void	addParent(Sort* p);	// Add p as a parent. Also add this as a child of p.
+		void	addChild(Sort* c);		// Add c as a child. Also add this as a parent of c.
 		void	pred(Predicate* p)	{ _pred = p;	}
 		
 		// Inspectors
@@ -136,6 +137,8 @@ class Sort {
 		virtual SortTable*	inter()		const	{ return 0;		}	// returns the built-in
 																				// interpretation for
 																				// built-in sorts
+		// Visitor
+        void accept(Visitor*);
 
 };
 
@@ -222,7 +225,7 @@ class PFSymbol {
 		// Inspectors
 		string					name()					const { return _name;							}
 		const ParseInfo&		pi()					const { return _pi;								}
-		unsigned int			nrsorts()				const { return _sorts.size();					}
+		unsigned int			nrSorts()				const { return _sorts.size();					}
 		Sort*					sort(unsigned int n)	const { return _sorts[n];						}
 		const vector<Sort*>&	sorts()					const { return _sorts;							}
 		string					to_string()				const { return _name.substr(0,_name.find('/'));	}
@@ -275,6 +278,9 @@ class Predicate : public PFSymbol {
 		virtual vector<Predicate*>	nonbuiltins();
 		virtual	vector<Sort*>		allsorts()							const;
 
+		// Visitor
+        void accept(Visitor*);
+
 };
 
 /** Overloaded predicate symbols **/
@@ -303,6 +309,12 @@ class OverloadedPredicate : public Predicate {
 				vector<Predicate*>	nonbuiltins();	//!< All non-builtin predicates 
 													//!< that are overloaded by the predicate
 				vector<Sort*>		allsorts()							const;
+
+		// Visitor
+		void 	accept(Visitor*);
+
+		// Debugging of GidL
+		void	inspect()	const;
 
 };
 
@@ -367,6 +379,9 @@ class Function : public PFSymbol {
 		virtual	vector<Function*>	nonbuiltins();	
 		virtual	vector<Sort*>		allsorts()				const;	
 
+		// Visitor
+        void accept(Visitor*);
+
 };
 
 /** Overloaded function symbols **/
@@ -395,6 +410,12 @@ class OverloadedFunction : public Function {
 				vector<Function*>	nonbuiltins();	//!< All non-builtin functions 
 													//!< that are overloaded by the function
 				vector<Sort*>		allsorts()							const;	
+
+		// Visitor
+		void 	accept(Visitor*);
+
+		// Debugging of GidL
+		void	inspect()	const;
 
 };
 
@@ -487,6 +508,10 @@ class Vocabulary {
 		vector<Predicate*>	pred_no_arity(const string&)	const;	// return all predicates with the given name (not including the arity)
 		vector<Function*>	func_no_arity(const string&)	const;	// return all functions with the given name (not including the arity)
 
+		// Visitor
+		void accept(Visitor*);
+
+        // Lua
 		int tolua(lua_State*,const vector<string>&) const;
 
 		// Debugging
