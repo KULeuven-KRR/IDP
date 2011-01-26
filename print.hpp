@@ -23,7 +23,6 @@ class Printer : public Visitor {
 	public:
 		// Factory method
 		static Printer* create();
-		virtual ~Printer();
 
 		// Print methods
 		string print(Vocabulary* v);

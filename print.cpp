@@ -9,7 +9,8 @@
 #include "vocabulary.hpp"
 #include "structure.hpp"
 #include "term.hpp"
-#include "data.hpp"
+//#include "data.hpp"
+#include "namespace.hpp"
 
 /**************
     Printer
@@ -20,13 +21,10 @@ Printer::Printer() {
 	_indent = 0;
 }
 
-//Printer::~Printer() {
-//	if(! _options._outputfile.empty())
-//		fclose(_out);
-//}
-
 Printer* Printer::create() {
-	switch(_options._format) {
+//TODO get the options from the current namespace...
+	InfOptions* opts = Namespace::global()->option("DefaultOptions");
+	switch(opts->_format) {
 		case OF_TXT:
 			return new SimplePrinter();
 		case OF_IDP:
