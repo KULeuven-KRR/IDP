@@ -42,6 +42,11 @@ namespace Error {
 		cerr << "'" << s << "' is an unknown option." << endl;
 	}
 
+	void unknfile(const string& s) {
+		error();
+		cerr << "'" << s << "' is not a valid file name or not readable." << endl;
+	}
+
 	void constsetexp() {
 		error();
 		cerr << "Constant assignment expected after '-c'." << endl;

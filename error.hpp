@@ -21,6 +21,7 @@ namespace Error {
 	/** Command line errors **/
 	void constnotset(const string&, const ParseInfo& pi);
 	void unknoption(const string&);
+	void unknfile(const string&);
 	void constsetexp();
 	void stringconsexp(const string&, const ParseInfo& pi);
 	void twicestdin(const ParseInfo& pi);

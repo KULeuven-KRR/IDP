@@ -90,25 +90,11 @@ vector<string> read_options(int argc, char* argv[]) {
 														  setclconst(name1,name2); 
 													  }
 													  else Error::constsetexp();
-												  argc--; argv++;
-													}
-		else if(str == "-I")						{ _cloptions._readfromstdin = true;	}
-		else if(str == "-W")						{ for(unsigned int n = 0; n < _cloptions._warning.size(); ++n) {
-														  _cloptions._warning[n] = false;
-													  }
-													}
-		else if(str == "-o")						{ FILE* test = fopen(argv[0],"w");
-													  if(!test) Error::unabletoopenfile(argv[0]);
-													  else { 
-														  fclose(test);
-														  _options._outputfile = argv[0];
-													  }
 													  argc--; argv++;
 													}
-		else if(str.substr(0,9) == "--format=")		{ string fmt = str.substr(9,str.length()-9);
-													  if (fmt == "txt")		_options._format = OF_TXT;
-													  else if(fmt == "idp")	_options._format = OF_IDP;
-													  else					Error::unknformat(fmt);
+		else if(str == "-I")						{ _cloptions._readfromstdin = true;	}
+		else if(str == "-W")						{ for(unsigned int n = 0; n < _cloptions._warning.size(); ++n)
+														  _cloptions._warning[n] = false;
 													}
 		else if(str == "-v" || str == "--version")	{ cout << "GidL 2.0.1\n"; exit(0);	}
 		else if(str == "-h" || str == "--help")		{ usage(); exit(0);					}
@@ -125,7 +111,7 @@ void parsefile(const string& str) {
 	yyin = fopen(str.c_str(),"r");
 	if(yyin) {
 		Insert::currfile(str);
-		yyparse();	
+		yyparse();
 		fclose(yyin);
 		// TODO: de 'using' vocabularia van de global namespace uitvegen
 		// en er globale variabelen van maken...?
