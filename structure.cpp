@@ -30,6 +30,54 @@ CopySortTable::CopySortTable(SortTable* s) : SortTable() {
 	}
 }
 
+UnionSortTable* UnionSortTable::clone() const {
+	UnionSortTable* ust = new UnionSortTable();
+	for(unsigned int n = 0; n < _tables.size(); ++n) {
+		ust->add(_tables[n]->clone());
+	}
+	ust->blacklist(_blacklist->clone());
+	return ust;
+}
+
+IntSortTable* IntSortTable::clone() const {
+	IntSortTable* ist = new IntSortTable();
+	ist->table(_table);
+	return ist;
+}
+
+FloatSortTable* FloatSortTable::clone() const {
+	FloatSortTable* fst = new FloatSortTable();
+	fst->table(_table);
+	return fst;
+}
+
+StrSortTable* StrSortTable::clone() const {
+	StrSortTable* sst = new StrSortTable();
+	sst->table(_table);
+	return sst;
+}
+
+MixedSortTable* MixedSortTable::clone() const {
+	MixedSortTable* mst = new MixedSortTable();
+	mst->numtable(_numtable);
+	mst->strtable(_strtable);
+	mst->comtable(_comtable);
+	return mst;
+}
+
+/** destructors **/
+UnionPredTable::~UnionPredTable() {
+	for(unsigned int n = 0; n < _tables.size(); ++n)
+		delete(_tables[n]);
+	delete(_blacklist);
+}
+
+UnionSortTable::~UnionSortTable() {
+	for(unsigned int n = 0; n < _tables.size(); ++n)
+		delete(_tables[n]);
+	delete(_blacklist);
+}
+
 /** add elements or intervals **/
 
 FiniteSortTable* FiniteSortTable::add(Element e, ElementType t) {
@@ -410,6 +458,144 @@ FiniteSortTable* EmptySortTable::add(compound* c) {
 	}
 }
 
+/** Mutators **/
+
+FiniteSortTable* RanSortTable::remove(const vector<TypedElement>& tuple) {
+	Element e = ElementUtil::convert(tuple[0],ELINT);
+	if(ElementUtil::exists(e,ELINT)) {
+		if(e._int == _first) _first = _first+1;
+		else if(e._int == _last) _last = _last-1;
+		else {
+			IntSortTable* ist = new IntSortTable();
+			for(int n = _first; n <= _last; ++n) {
+				if(n != e._int) ist = ist->add(n)
+			}
+			return ist;
+		}
+	}
+	return this;
+}
+
+IntSortTable* IntSortTable::remove(const vector<TypedElement>& tuple) {
+	bool deleted = false;
+
+	Element e = ElementUtil::convert(tuple[0],ELINT);
+	if(ElementUtil::exists(e,ELINT)) {
+		for(unsigned int n = 0; n < _table.size(); ++n) {
+			if(e._int == _table[n]) {
+				deleted = true;
+			}
+			else if(deleted) {
+				_table[n-1] = _table[n];
+			}
+		}
+		_table.pop_back();
+	}
+	return this;
+}
+
+FloatSortTable* FloatSortTable::remove(const vector<TypedElement>& tuple) {
+	bool deleted = false;
+
+	Element e = ElementUtil::convert(tuple[0],ELDOUBLE);
+	if(ElementUtil::exists(e,ELDOUBLE)) {
+		for(unsigned int n = 0; n < _table.size(); ++n) {
+			if(e._double == _table[n]) {
+				deleted = true;
+			}
+			else if(deleted) {
+				_table[n-1] = _table[n];
+			}
+		}
+		_table.pop_back();
+	}
+	return this;
+}
+
+StrSortTable* StrSortTable::remove(const vector<TypedElement>& tuple) {
+	bool deleted = false;
+
+	Element e = ElementUtil::convert(tuple[0],ELSTRING);
+	if(ElementUtil::exists(e,ELSTRING)) {
+		for(unsigned int n = 0; n < _table.size(); ++n) {
+			if(e._string == _table[n]) {
+				deleted = true;
+			}
+			else if(deleted) {
+				_table[n-1] = _table[n];
+			}
+		}
+		_table.pop_back();
+	}
+	return this;
+}
+
+FiniteSortTable* MixedSortTable::remove(const vector<TypedElement>& tuple) {
+	switch(tuple[0]._type) {
+		case ELINT: case ELDOUBLE:
+		{
+			bool deleted = false;
+			Element e = ElementUtil::convert(tuple[0],ELDOUBLE);
+			for(unsigned int n = 0; n < _numtable.size(); ++n) {
+				if(e._string == _numtable[n]) {
+					deleted = true;
+				}
+				else if(deleted) {
+					_numtable[n-1] = _numtable[n];
+				}
+			}
+			_numtable.pop_back();
+		}
+		break;
+		case ELSTRING:
+		{
+			bool deleted = false;
+			for(unsigned int n = 0; n < _numtable.size(); ++n) {
+				if(tuple[0]._string == _strtable[n]) {
+					deleted = true;
+				}
+				else if(deleted) {
+					_strtable[n-1] = _strtable[n];
+				}
+			}
+			_strtable.pop_back();
+		}
+		break;
+		case ELCOMPOUND:
+		{
+			bool deleted = false;
+			for(unsigned int n = 0; n < _comtable.size(); ++n) {
+				if(tuple[0]._compound == _comtable[n]) {
+					deleted = true;
+				}
+				else if(deleted) {
+					_comtable[n-1] = _comtable[n];
+				}
+			}
+			_comtable.pop_back();
+		}
+		break;
+	}
+	if(_comtable.empty()) {
+		if(_numtable.empty()) {
+			FiniteSortTable* fst = new EmptySortTable();
+			for(unsigned int n = 0; n < _numtable.size(); ++n) {
+				FiniteSortTable* nfst = fst->add(_numtable[n]);
+				if(nfst != fst) delete(fst);
+				fst = nfst;
+			}
+			return fst;
+		}
+		if(_strtable.empty()) {
+			return new StrSortTable(_strtable);
+		}
+	}
+	return this;
+}
+
+
+
+
 /** Sort and remove doubles **/
 
 void IntSortTable::sortunique() {
@@ -476,6 +662,40 @@ void MixedSortTable::sortunique() {
 	_comtable.erase(kt,_comtable.end());
 }
 
+void UnionSortTable::sortunique() {
+	for(unsigned int n = 0; n < _tables.size(); ++n) {
+		_tables[n]->sortunique();
+	}
+	_blacklist->sortunique();
+}
+
+UnionSortTable* UnionSortTable::add(const vector<TypedElement>& tuple) {
+	if(_blacklist->contains(tuple)) _blacklist->remove(tuple);
+	bool added = false;
+	for(unsigned int n = 0; n < _tables.size(); ++n) {
+		if(_tables[n]->contains(tuple)) {
+			added = true;
+			break;
+		}
+		else if(typeid(*(_tables[n])) == typeid(FiniteSortTable)) {
+			_tables[n]->add(tuple);
+			added = true;
+			break;
+		}
+	}
+	if(!added) {
+		FiniteSortTable* fpt = new FiniteSortTable();
+		fpt->add(tuple);
+		_tables.add(fpt);
+	}
+	return this;
+}
+
+UnionSortTable* UnionSortTable::remove(const vector<TypedElement>& tuple) {
+	if(!(_blacklist->contains(tuple))) _blacklist->add(tuple);
+	return this;
+}
+
 /** Check if the domains contains a given element **/
 
 bool SortTable::contains(Element e, ElementType t) const {
@@ -491,6 +711,13 @@ bool SortTable::contains(Element e, ElementType t) const {
 		default:
 			assert(false);
 	}
+	return false;
+}
+
+bool UnionSortTable::contains(string* s) const {
+	if(_blacklist->contains(s)) return false;
+	for(unsigned int n = 0; n < _tables.size(); ++n)
+		if(_tables[n]->contains(s)) return true;
 	return false;
 }
 
@@ -530,6 +757,13 @@ bool StrSortTable::contains(string* s) const {
 	return (p != _table.size() && _table[p] == s);
 }
 
+bool UnionSortTable::contains(int i) const {
+	if(_blacklist->contains(i)) return false;
+	for(unsigned int n = 0; n < _tables.size(); ++n)
+		if(_tables[n]->contains(i)) return true;
+	return false;
+}
+
 bool MixedSortTable::contains(int n) const {
 	return contains(double(n));
 }
@@ -549,6 +783,13 @@ bool StrSortTable::contains(int) const {
 
 bool FloatSortTable::contains(int n) const {
 	return contains(double(n));
+}
+
+bool UnionSortTable::contains(double d) const {
+	if(_blacklist->contains(d)) return false;
+	for(unsigned int n = 0; n < _tables.size(); ++n)
+		if(_tables[n]->contains(d)) return true;
+	return false;
 }
 
 bool MixedSortTable::contains(double d) const {
@@ -573,6 +814,13 @@ bool RanSortTable::contains(double d) const {
 bool FloatSortTable::contains(double d) const {
 	unsigned int p = lower_bound(_table.begin(),_table.end(),d) - _table.begin();
 	return (p != _table.size() && _table[p] == d);
+}
+
+bool UnionSortTable::contains(compound* c) const {
+	if(_blacklist->contains(c)) return false;
+	for(unsigned int n = 0; n < _tables.size(); ++n)
+		if(_tables[n]->contains(c)) return true;
+	return false;
 }
 
 bool MixedSortTable::contains(compound* c) const {
@@ -631,6 +879,22 @@ Element MixedSortTable::element(unsigned int n) const {
 		e._compound = _comtable[n-_numtable.size()-_strtable.size()];
 	}
 	return e;
+}
+
+bool UnionSortTable::empty() {
+	if(_tables.empty()) return true;
+	for(unsigned int n = 0; n < _tables.size(); ++n) {
+		if(!(_tables[n]->finite())) return false;
+	}
+	for(unsigned int n = 0; n < _tables.size(); ++n) {
+		TypedElement te;
+		te._type = _tables[n]->type();
+		for(unsigned int m = 0; m < _tables[n]->size(); ++m) {
+			te._element = _tables[n]->element(m);
+			if(!(_blacklist->contains(te))) return false;
+		}
+	}
+	return true;
 }
 
 /** Return the position of an element **/
@@ -698,6 +962,17 @@ unsigned int MixedSortTable::position(Element e, ElementType t) const {
 
 /** Debugging **/
 
+string UnionSortTable::to_string(unsigned int spaces = 0) const {
+	string tab = tabstring(spaces);
+	string s = tab + "All tuples in the following table: \n";
+	for(unsigned int n = 0; n < _tables.size(); ++n) {
+		s += _tables[n]->to_string(spaces+3);
+	}
+	s += tab + "except \n";
+	s += _blacklist->to_string(spaces+3);
+	return s;
+}
+
 string MixedSortTable::to_string(unsigned int spaces) const {
 	string s = tabstring(spaces);
 	for(unsigned int n = 0; n < _numtable.size(); ++n) s = s + dtos(_numtable[n]) + ' ';
@@ -758,12 +1033,157 @@ CopyPredTable::CopyPredTable(PredTable* t) : PredTable() {
 	}
 }
 
+/** Mutators **/
+
+SortTable* CopySortTable::add(const vector<TypedElement>& tuple) {
+	if(_table->nrofrefs() == 1) {
+		SortTable* old = _table;
+		_table = _table->add(tuple);
+		if(old != _table) {
+			delete(old);
+			_table->addref();
+		}
+		return _table;
+	}
+	else {
+		SortTable* pt = _table->clone();
+		return pt->add(tuple);
+	}
+}
+
+SortTable* CopySortTable::remove(const vector<TypedElement>& tuple) {
+	if(_table->nrofrefs() == 1) {
+		SortTable* old = _table;
+		_table = _table->remove(tuple);
+		if(old != _table) {
+			delete(old);
+			_table->addref();
+		}
+		return _table;
+	}
+	else {
+		SortTable* pt = _table->clone();
+		return pt->remove(tuple);
+	}
+}
+
+PredTable* CopyPredTable::add(const vector<TypedElement>& tuple) {
+	if(_table->nrofrefs() == 1) {
+		PredTable* old = _table;
+		_table = _table->add(tuple);
+		if(old != _table) {
+			delete(old);
+			_table->addref();
+		}
+		return _table;
+	}
+	else {
+		PredTable* pt = _table->clone();
+		return pt->add(tuple);
+	}
+}
+
+PredTable* CopyPredTable::remove(const vector<TypedElement>& tuple) {
+	if(_table->nrofrefs() == 1) {
+		PredTable* old = _table;
+		_table = _table->remove(tuple);
+		if(old != _table) {
+			delete(old);
+			_table->addref();
+		}
+		return _table;
+	}
+	else {
+		PredTable* pt = _table->clone();
+		return pt->remove(tuple);
+	}
+}
+
+FuncTable* CopyFuncTable::add(const vector<TypedElement>& tuple) {
+	if(_table->nrofrefs() == 1) {
+		FuncTable* old = _table;
+		_table = _table->add(tuple);
+		if(old != _table) {
+			delete(old);
+			_table->addref();
+		}
+		return _table;
+	}
+	else {
+		FuncTable* pt = _table->clone();
+		return pt->add(tuple);
+	}
+}
+
+FuncTable* CopyFuncTable::remove(const vector<TypedElement>& tuple) {
+	if(_table->nrofrefs() == 1) {
+		FuncTable* old = _table;
+		_table = _table->remove(tuple);
+		if(old != _table) {
+			delete(old);
+			_table->addref();
+		}
+		return _table;
+	}
+	else {
+		FuncTable* pt = _table->clone();
+		return pt->remove(tuple);
+	}
+}
+
+FiniteFuncTable* FiniteFuncTable::add(const vector<TypedElement>& tuple) {
+	FinitePredTable* fpt = _ftable->add(tuple);
+	if(fpt != _ftable) {
+		delete(_ftable);
+		_ftable = fpt;
+	}
+	return this;
+}
+
+FiniteFuncTable* FiniteFuncTable::remove(const vector<TypedElement>& tuple) {
+	FinitePredTable* fpt = _ftable->remove(tuple);
+	if(fpt != _ftable) {
+		delete(_ftable);
+		_ftable = fpt;
+	}
+	return this;
+}
+
+
 /** Inspectors **/
 
 vector<ElementType> PredTable::types() const {
 	vector<ElementType> vet(arity());
 	for(unsigned int n = 0; n < vet.size(); ++n) vet[n] = type(n);
 	return vet;
+}
+
+bool UnionPredTable::empty() {
+	if(_tables.empty()) return true;
+	for(unsigned int n = 0; n < _tables.size(); ++n) {
+		if(!(_tables[n]->finite())) return false;
+	}
+	for(unsigned int n = 0; n < _tables.size(); ++n) {
+		vector<TypedElement> vte(_tables[n]->arity());
+		for(unsigned int c = 0; c < vte.size(); ++c) vte[c]._type = _tables[n]->type(m);
+		for(unsigned int m = 0; m < _tables[n]->size(); ++m) {
+			for(unsigned int c = 0; c < vte.size(); ++c) vte[c]._element = _tables[n]->element(m,c);
+			if(!(_blacklist->contains(vte))) return false;
+		}
+	}
+	return true;
+}
+
+bool UnionPredTable::contains(const vector<Element>& tuple) const {
+	vector<TypedElement> vte(tuple.size());
+	for(unsigned int c = 0; c < vte.size(); ++c) {
+		vte[c]._type = ELCOMPOUND;
+		vte[c]._element = tuple[c];
+	}
+	if(_blacklist->contains(vte)) return false;
+	for(unsigned int n = 0; n < _tables.size(); ++n)
+		if(_tables[n]->contains(vte)) return true;
+	return false;
 }
 
 /** Finite tables **/
@@ -793,6 +1213,15 @@ FinitePredTable::FinitePredTable(const FiniteSortTable& t) :
 	}
 }
 
+UnionPredTable* UnionPredTable::clone() const {
+	UnionPredTable* upt = new UnionPredTable();
+	for(unsigned int n = 0; n < _tables.size(); ++n) {
+		upt->add(_tables[n]->clone());
+	}
+	upt->blacklist(_blacklist->clone());
+	return upt;
+}
+
 void FinitePredTable::sortunique() {
 	sort(_table.begin(),_table.end(),_order);
 	vector<unsigned int> doublepos;
@@ -806,6 +1235,13 @@ void FinitePredTable::sortunique() {
 		}
 	}
 	for(unsigned int n = 0; n < doublepos.size()-1; ++n) _table.pop_back();
+}
+
+void UnionPredTable::sortunique() {
+	for(unsigned int n = 0; n < _tables.size(); ++n) {
+		_tables[n]->sortunique();
+	}
+	_blacklist->sortunique();
 }
 
 void FinitePredTable::changeElType(unsigned int col, ElementType t) {
@@ -829,6 +1265,76 @@ void FinitePredTable::addColumn(ElementType t) {
 bool FinitePredTable::contains(const vector<Element>& vi) const {
 	vector<vector<Element> >::const_iterator it = lower_bound(_table.begin(),_table.end(),vi,_order);
 	return (it != _table.end() && _equality(*it,vi));
+}
+
+FinitePredTable* FinitePredTable::add(const vector<TypedElement>& tuple) {
+	vector<Element> ve(tuple.size());
+	vector<ElementType> vt(tuple.size());
+	for(unsigned int n = 0; n < tuple.size(); ++n) {
+		ve[n] = tuple[n]._element;
+		vt[n] = tuple[n]._type;
+	}
+	addRow(ve,vt);
+	return this;
+}
+
+FinitePredTable* FinitePredTable::remove(const vector<TypedElement>& tuple) {
+	bool deleted = false;
+	for(unsigned int n = 0; n < _table.size(); ++n) {
+		if(ElementUtil::equal(tuple,_table[n],_types)) {
+			deleted = true;
+		}
+		else if(deleted) {
+			_table[n-1] = _table[n];
+		}
+	}
+	_table.pop_back();
+	return this;
+}
+
+UnionPredTable* UnionPredTable::add(const vector<TypedElement>& tuple) {
+	if(_blacklist->contains(tuple)) _blacklist->remove(tuple);
+	bool added = false;
+	for(unsigned int n = 0; n < _tables.size(); ++n) {
+		if(_tables[n]->contains(tuple)) {
+			added = true;
+			break;
+		}
+		else if(typeid(*(_tables[n])) == typeid(FinitePredTable)) {
+			_tables[n]->add(tuple);
+			added = true;
+			break;
+		}
+	}
+	if(!added) {
+		FinitePredTable* fpt = new FinitePredTable();
+		fpt->add(tuple);
+		_tables.add(fpt);
+	}
+	return this;
+}
+
+UnionPredTable* UnionPredTable::remove(const vector<TypedElement>& tuple) {
+	if(!(_blacklist->contains(tuple))) _blacklist->add(tuple);
+	return this;
+}
+
+FuncPredTable* FuncPredTable::add(const vector<TypedElement>& tuple) {
+	FuncTable* ft = _ftable->add(tuple);
+	if(ft != _ftable) {
+		delete(_ftable);
+		_ftable = ft;
+	}
+	return this;
+}
+
+FuncPredTable* FuncPredTable::remove(const vector<TypedElement>& tuple) {
+	FuncTable* ft = _ftable->remove(tuple);
+	if(ft != _ftable) {
+		delete(_ftable);
+		_ftable = ft;
+	}
+	return this;
 }
 
 void FinitePredTable::addRow(const vector<Element>& vi, const vector<ElementType>& vet) {
@@ -856,6 +1362,29 @@ void PredInter::replace(PredTable* pt, bool ctpf, bool c) {
 		//if(_ctpf != _cfpt) delete(_cfpt);
 		_cfpt = pt;
 		_cf = c;
+	}
+}
+
+void PredInter::add(const vector<TypedElement>& tuple, bool ctpf, bool c) {
+	if(ctpf) {
+		PredTable* old = _ctpf;
+		if(c == _ct) {
+			_ctpf = _ctpf->add(tuple);	
+		}
+		else {
+			_ctpf = _ctpf->remove(tuple);
+		}
+		if(old != _ctpf) delete(old);
+	}
+	else {
+		PredTable* old = _cfpt;
+		if(c == _cf) {
+			_cfpt = _cfpt->add(tuple);
+		}
+		else {
+			_cfpt = _cfpt->remove(tuple);
+		}
+		if(old != _cfpt) delete(old);
 	}
 }
 
@@ -952,6 +1481,17 @@ string FinitePredTable::to_string(unsigned int spaces) const {
 		}
 		s = s + '\n';
 	}
+	return s;
+}
+
+string UnionPredTable::to_string(unsigned int spaces = 0) const {
+	string tab = tabstring(spaces);
+	string s = tab + "All tuples in the following table: \n";
+	for(unsigned int n = 0; n < _tables.size(); ++n) {
+		s += _tables[n]->to_string(spaces+3);
+	}
+	s += tab + "except \n";
+	s += _blacklist->to_string(spaces+3);
 	return s;
 }
 

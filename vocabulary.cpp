@@ -313,6 +313,12 @@ namespace ElementUtil {
 		return (strlessthan(e1,t1,e2,t2) || equal(e1,t1,e2,t2));
 	}
 
+	bool equal(const vector<TypedElement>& vte, const vector<Element>& ve, const vector<ElementType>& vt) {
+		for(unsigned int n = 0; n < vte.size(); ++n) {
+			if(!(equal(vte[n]._element,vte[n]._type,ve[n],vt[n]))) return false;
+		}
+		return true;
+	}
 }
 
 bool operator==(TypedElement e1, TypedElement e2)	{ return ElementUtil::equal(e1._element,e1._type,e2._element,e2._type);				}

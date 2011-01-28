@@ -343,12 +343,12 @@ void IDPPrinter::printInter(const char* pt1name,const char* pt2name,PredTable* p
 	string fullname = _currsymbol->name();
 	string shortname = fullname.substr(0,fullname.find('/'));
 	printtab();
-	_out << shortname << "[" << pt1name << "] = { ";
+	_out << shortname << "<" << pt1name << "> = { ";
 	if(pt1)
 		print(pt1);
 	_out << " }\n";
 	printtab();
-	_out << shortname << "[" << pt2name << "] = { ";
+	_out << shortname << "<" << pt2name << "> = { ";
 	if(pt2)
 		print(pt2);
 	_out << " }\n";

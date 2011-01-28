@@ -636,6 +636,9 @@ namespace ElementUtil {
 	bool	strlessthan(Element e1, ElementType t1, Element e2, ElementType t2);		// strictly less than
 	bool	lessthanorequal(Element e1, ElementType t1, Element e2, ElementType t2);	// less than or equal
 
+	// Compare tuples
+	bool	equal(const vector<TypedElement>&, const vector<Element>&, const vector<TypedElement>&);
+
 }
 
 bool operator==(TypedElement e1, TypedElement e2);

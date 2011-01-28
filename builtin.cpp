@@ -484,6 +484,7 @@ class ComparisonPredTable : public PredTable {
 		
 		// Constructor
 		ComparisonPredTable(SortTable* tl, SortTable* tr) : PredTable(), _leftsort(tl), _rightsort(tr) { }
+		virtual ComparisonPredTable* clone() const = 0;
 
 		// Destructor
 		virtual ~ComparisonPredTable() { }
@@ -514,6 +515,7 @@ class EqualPredTable : public ComparisonPredTable {
 	public:
 		EqualPredTable(SortTable* tl, SortTable* tr) : ComparisonPredTable(tl,tr) { }
 		~EqualPredTable() { }
+		EqualPredTable* clone() const { return new EqualPredTable(_leftsort,_rightsort);	}
 
 		bool	contains(const vector<Element>&)	const;
 		bool	finite()							const { return (_leftsort->finite() || _rightsort->finite()); }
@@ -542,6 +544,7 @@ class StrLessThanPredTable : public ComparisonPredTable {
 	public:
 		StrLessThanPredTable(SortTable* tl, SortTable* tr) : ComparisonPredTable(tl,tr) { }
 		~StrLessThanPredTable() { }
+		StrLessThanPredTable* clone() const { return new StrLessThanPredTable(_leftsort,_rightsort);	}
 		bool	contains(const vector<Element>&)		const;
 		bool	finite()							const { assert(false); return false; /* TODO */ }
 		bool	empty()								const { assert(false); return false; /* TODO */ }
@@ -568,6 +571,7 @@ class StrGreaterThanPredTable : public ComparisonPredTable {
 	public:
 		StrGreaterThanPredTable(SortTable* tl, SortTable* tr) : ComparisonPredTable(tl,tr) { }
 		~StrGreaterThanPredTable() { }
+		StrGreaterThanPredTable* clone() const { return new StrGreaterThanPredTable(_leftsort,_rightsort);	}
 		bool	contains(const vector<Element>&)		const;
 		bool	finite()							const { assert(false); return false; /* TODO */ }
 		bool	empty()								const { assert(false); return false; /* TODO */ }
@@ -598,6 +602,7 @@ class InfiniteFuncTable : public FuncTable {
 
 		// Constructors
 		InfiniteFuncTable() : FuncTable() { }
+		virtual InfiniteFuncTable* clone() const = 0;
 
 		// Destructor
 		virtual ~InfiniteFuncTable() { }
@@ -627,6 +632,7 @@ class AritFuncTable : public InfiniteFuncTable {
 
 		// Constructors
 		AritFuncTable(ElementType t) : InfiniteFuncTable(), _type(t) { }
+		virtual AritFuncTable* clone() const = 0; 
 
 		// Destructor
 		virtual ~AritFuncTable() { }
@@ -646,6 +652,7 @@ class AritFuncTable : public InfiniteFuncTable {
 class PlusFuncTable : public AritFuncTable { 
 	public:
 		PlusFuncTable(ElementType t) : AritFuncTable(t) { }
+		PlusFuncTable* clone() const { return new PlusFuncTable(_type);	}
 		~PlusFuncTable() { }
 		unsigned int arity()							const { return 2;	}
 		Element operator[](const vector<Element>& vi)	const;
@@ -681,6 +688,7 @@ FuncInter* plusfuncinter(const vector<Sort*>& vs) {
 class MinusFuncTable : public AritFuncTable {
 	public:
 		MinusFuncTable(ElementType t) : AritFuncTable(t) { }
+		MinusFuncTable* clone() const { return new MinusFuncTable(_type);	}
 		~MinusFuncTable() { }
 		unsigned int arity()							const { return 2;	}
 		Element operator[](const vector<Element>& vi)	const;
@@ -716,6 +724,7 @@ FuncInter* minusfuncinter(const vector<Sort*>& vs) {
 class TimesFuncTable : public AritFuncTable {
 	public:
 		TimesFuncTable(ElementType t) : AritFuncTable(t) { }
+		TimesFuncTable* clone() const { return new TimesFuncTable(_type);	}
 		~TimesFuncTable() { }
 		unsigned int arity()							const { return 2;	}
 		Element operator[](const vector<Element>& vi)	const;
@@ -751,6 +760,7 @@ FuncInter* timesfuncinter(const vector<Sort*>& vs) {
 class DivFuncTable : public AritFuncTable {
 	public:
 		DivFuncTable(ElementType t) : AritFuncTable(t) { }
+		DivFuncTable* clone() const { return new DivFuncTable(_type);	}
 		~DivFuncTable() { }
 		unsigned int arity()							const { return 2;	}
 		Element operator[](const vector<Element>& vi)	const;
@@ -788,6 +798,7 @@ FuncInter* divfuncinter(const vector<Sort*>& vs) {
 class ModFuncTable : public InfiniteFuncTable {
 	public:
 		ModFuncTable() : InfiniteFuncTable() { }
+		ModFuncTable* clone() const { return new ModFuncTable();	}
 		~ModFuncTable() { }
 		unsigned int arity()							const { return 2;	}
 		ElementType type(unsigned int)					const { return ELINT;	}
@@ -816,6 +827,7 @@ FuncInter* modfuncinter() {
 class ExpFuncTable : public InfiniteFuncTable {
 	public:
 		ExpFuncTable() : InfiniteFuncTable() { }
+		ExpFuncTable* clone() const { return new ExpFuncTable();	}
 		~ExpFuncTable() { }
 		unsigned int arity()							const { return 2;			}
 		ElementType type(unsigned int)					const { return ELDOUBLE;	}
@@ -841,6 +853,7 @@ FuncInter* expfuncinter() {
 class AbsFuncTable : public AritFuncTable {
 	public:
 		AbsFuncTable(ElementType t) : AritFuncTable(t) { }
+		AbsFuncTable* clone() const { return new AbsFuncTable(_type);	}
 		~AbsFuncTable() { }
 		unsigned int arity()							const { return 1;	}
 		Element operator[](const vector<Element>& vi)	const;
@@ -876,6 +889,7 @@ FuncInter* absfuncinter(const vector<Sort*>& vs) {
 class UMinFuncTable : public AritFuncTable {
 	public:
 		UMinFuncTable(ElementType t) : AritFuncTable(t) { }
+		UMinFuncTable* clone() const { return new UMinFuncTable(_type);	}
 		~UMinFuncTable() { }
 		unsigned int arity()							const { return 1;	}
 		Element operator[](const vector<Element>& vi)	const;
@@ -943,6 +957,7 @@ class SuccFuncTable : public FuncTable {
 
 		// Constructors
 		SuccFuncTable(SortTable* t, bool s) : FuncTable(), _table(t), _succ(s) { }
+		SuccFuncTable* clone() const { return new SuccFuncTable(_table,_succ);	}
 
 		// Destructor
 		~SuccFuncTable() { }

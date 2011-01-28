@@ -2,10 +2,12 @@
 	nrmodels=1
 }
 
+/** Parsing of files **/
 #procedure parse(filename) {
 	return idp_intern.idpcall("load_file",filename)
 }
 
+/** Model expansion **/
 #procedure model_expand(Theo,Struct) {
 	return idp_intern.idpcall("model_expand",Theo,Struct)
 }
@@ -14,6 +16,7 @@
 	return idp_intern.idpcall("model_expand",Theo,Struct,Opt)
 }
 
+/** Printing **/
 #procedure idptostring(obj) {
 	return idp_intern.idpcall("print",obj)
 }
@@ -22,7 +25,13 @@
 	return idp_intern.idpcall("print",obj,opts)
 }
 
-#namespace IDP_EXPERT {
+/** Copying **/
+#procedure clone(obj) {
+	return idp_intern.idpcall("clone",obj)
+}
+
+/** Procedures for advanced use of IDP **/
+#namespace IDP_ADVANCED {
 	
 	#procedure push_negations(T) {
 		return idp_intern.idpcall("push_negations",T)

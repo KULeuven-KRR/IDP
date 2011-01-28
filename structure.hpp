@@ -24,16 +24,20 @@ class PredTable {
 		
 		// Constructors
 		PredTable() : _nrofrefs(0) { }
+		virtual PredTable* clone() const = 0;
 
 		// Destructor
 		virtual ~PredTable() { }
 
 		// Mutators
-		virtual void	sortunique() = 0;	// Sort and remove duplicates
-				void	removeref()	{ --_nrofrefs; if(!_nrofrefs) delete(this);	}
-				void	addref()	{ ++_nrofrefs;								}
+		virtual void		sortunique() = 0;	// Sort and remove duplicates
+				void		removeref()	{ --_nrofrefs; if(!_nrofrefs) delete(this);	}
+				void		addref()	{ ++_nrofrefs;								}
+		virtual PredTable*	add(const vector<TypedElement>& tuple) = 0;
+		virtual PredTable*	remove(const vector<TypedElement>& tuple) = 0;	// NOTE: Expensive operation!
 
 		// Inspectors
+				unsigned int		nrofrefs()				const { return _nrofrefs;	}
 		virtual bool				finite()				const = 0;	// true iff the table is finite
 		virtual	bool				empty()					const = 0;	// true iff the table is empty
 		virtual	unsigned int		arity()					const = 0;	// the number of columns in the table
@@ -68,12 +72,15 @@ class CopyPredTable : public PredTable {
 		
 		// Constructors
 		CopyPredTable(PredTable*);
+		CopyPredTable* clone() const { return new CopyPredTable(_table);	}
 
 		// Destructor
 		~CopyPredTable() { _table->removeref(); }
 
 		// Mutators
 		void	sortunique() { _table->sortunique();	}
+		PredTable*	add(const vector<TypedElement>& tuple);
+		PredTable*	remove(const vector<TypedElement>& tuple);
 
 		// Inspectors
 		PredTable*			table()					const { return _table;				}
@@ -95,6 +102,55 @@ class CopyPredTable : public PredTable {
 
 };
 
+/*
+	A UnionPredTable contains all tuples that 
+		are in at least one of the table in _tables 
+		AND that are not in the blacklist.
+	
+	Invariant: _tables is not empty
+*/
+class UnionPredTable : public PredTable {
+
+	private:
+		vector<PredTable*>	_tables;
+		FinitePredTable*	_blacklist;
+
+	public:
+		
+		// Constructors
+		UnionPredTable() : PredTable() { }
+		UnionPredTable* clone() const;
+
+		// Destructor
+		~UnionPredTable();
+
+		// Mutators
+		void			add(PredTable* pt)			{ _tables.push_back(pt); }
+		void			blacklist(PredTable* pt)	{ _blacklist = pt; }
+		void			sortunique();	// Sort and remove duplicates
+		UnionPredTable*	add(const vector<TypedElement>& tuple);
+		UnionPredTable*	remove(const vector<TypedElement>& tuple);
+
+		// Inspectors
+		bool			finite()				const { return false;	}
+		bool			empty()					const;
+		unsigned int	arity()					const { return _tables[0]->arity();	}
+		ElementType		type(unsigned int n)	const { return ELCOMPOUND;			} //TODO try to assign more specific type?
+
+		// Check if the table contains a given tuple
+		//	precondition: the tables are sorted and contain no duplicates
+		bool	contains(const vector<Element>&)	const;
+
+		// Inspectors for finite tables
+		unsigned int	size()									const { assert(false); return 0;					}
+		vector<Element>	tuple(unsigned int n)					const { assert(false); return vector<Element>();	}
+		Element			element(unsigned int r,unsigned int c)	const { assert(false); Element e; return e;			}
+
+		// Debugging
+		string to_string(unsigned int spaces = 0)	const;
+
+};
+
 
 /*****************************************************
 	Interpretations for sorts and unary predicates
@@ -108,6 +164,7 @@ class SortTable : public PredTable {
 
 		// Constructors
 		SortTable() : PredTable() { }
+		virtual SortTable* clone() const = 0;
 
 		// Destructor
 		virtual ~SortTable() { }
@@ -153,6 +210,49 @@ class SortTable : public PredTable {
 
 };
 
+class UnionSortTable : public SortTable {
+	
+	private:
+		vector<SortTable*>	_tables;
+		FiniteSortTable*	_blacklist;
+
+	public:
+
+		// Constructors
+		UnionSortTable() : SortTable() { }
+		UnionSortTable* clone() const;
+
+		// Destructor
+		~UnionSortTable();
+
+		// Mutators
+		void			sortunique(); 
+		void			add(SortTable* pt)			{ _tables.push_back(pt); }
+		void			blacklist(SortTable* pt)	{ _blacklist = pt; }
+		UnionSortTable*	add(const vector<TypedElement>& tuple);
+		UnionSortTable*	remove(const vector<TypedElement>& tuple);
+
+		// Inspectors
+		bool			finite()	const { return false;		}
+		bool			empty()		const;
+		ElementType		type()		const { return ELCOMPOUND;	}
+
+		// Check if the table contains a given element
+		//	precondition: the table is sorted and contains no duplicates
+		bool	contains(string*)	const;
+		bool	contains(int)		const;
+		bool	contains(double)	const;
+		bool	contains(compound*)	const;
+
+		// Inspectors for finite tables
+		unsigned int	size()							const { assert(false); return 0;			}
+		Element			element(unsigned int n)			const { assert(false); Element e; return e; }
+		unsigned int	position(Element,ElementType)	const { assert(false); return 0; }
+		// Debugging
+		string to_string(unsigned int spaces = 0) const;
+
+};
+
 class CopySortTable : public SortTable {
 
 	private: 
@@ -162,12 +262,15 @@ class CopySortTable : public SortTable {
 
 		// Constructors
 		CopySortTable(SortTable* s); 
+		CopySortTable* clone() const { return new CopySortTable(_table);	}
 
 		// Destructor
 		~CopySortTable() { _table->removeref(); }
 
 		// Mutators
 		void sortunique() { _table->sortunique();	}
+		SortTable* add(const vector<TypedElement>& tuple);
+		SortTable* remove(const vector<TypedElement>& tuple);
 
 		// Inspectors
 		SortTable*		table()					const { return _table;	}
@@ -201,6 +304,7 @@ class FiniteSortTable : public SortTable {
 	
 		// Constructors
 		FiniteSortTable() : SortTable() { }
+		virtual FiniteSortTable* clone() const = 0;
 
 		// Destructor
 		virtual ~FiniteSortTable() { }
@@ -219,6 +323,8 @@ class FiniteSortTable : public SortTable {
 
 		// Mutators
 		virtual void sortunique() = 0; // Sort the table and remove duplicates.
+		FiniteSortTable* add(const vector<TypedElement>& tuple) { return add(tuple[0]._element,tuple[0]._type);	}
+		virtual FiniteSortTable* remove(const vector<TypedElement>& tuple) = 0;
 
 		// Inspectors
 		virtual bool			finite()	const { return true;	}
@@ -251,6 +357,7 @@ class EmptySortTable : public FiniteSortTable {
 
 		// Constructors
 		EmptySortTable() : FiniteSortTable() { }
+		EmptySortTable* clone() const { return new EmptySortTable();	}
 
 		// Destructor
 		virtual ~EmptySortTable() { }
@@ -265,6 +372,7 @@ class EmptySortTable : public FiniteSortTable {
 
 		// Mutators
 		void sortunique() { }
+		EmptySortTable* remove(const vector<TypedElement>& tuple) { return this;	}
 
 		// Inspectors
 		bool			empty()								const { return true;						}	
@@ -295,6 +403,7 @@ class RanSortTable : public FiniteSortTable {
 
 		// Constructors
 		RanSortTable(int f, int l) : FiniteSortTable(), _first(f), _last(l) { }
+		RanSortTable* clone() const { return new RanSortTable(_first,_last);	}
 
 		// Destructor
 		~RanSortTable() { }
@@ -308,7 +417,8 @@ class RanSortTable : public FiniteSortTable {
 		FiniteSortTable*	add(compound*);
 
 		// Mutators
-		void			sortunique() { }
+		void				sortunique() { }
+		FiniteSortTable*	remove(const vector<TypedElement>& tuple);
 
 		// Inspectors
 		bool			empty()								const { return _first > _last;	}
@@ -343,6 +453,7 @@ class IntSortTable : public FiniteSortTable {
 
 		// Constructors
 		IntSortTable() : FiniteSortTable(), _table(0) { }
+		IntSortTable* clone() const;
 
 		// Destructor
 		~IntSortTable() { }
@@ -356,7 +467,9 @@ class IntSortTable : public FiniteSortTable {
 		FiniteSortTable*	add(compound*);
 
 		// Mutators
-		void	sortunique();
+		void			sortunique();
+		void			table(const vector<int>& t)	{ _table = t;	}
+		IntSortTable*	remove(const vector<TypedElement>& tuple);
 
 		// Inspectors
 		bool			empty()								const { return _table.empty();	}
@@ -393,6 +506,7 @@ class FloatSortTable : public FiniteSortTable {
 
 		// Constructors
 		FloatSortTable() : FiniteSortTable(), _table(0) { }
+		FloatSortTable* clone() const;
 
 		// Destructor
 		~FloatSortTable() { }
@@ -406,7 +520,9 @@ class FloatSortTable : public FiniteSortTable {
 		FiniteSortTable*	add(compound*);
 
 		// Mutators
-		void	sortunique();
+		void			sortunique();
+		void			table(const vector<double>& t)	{ _table = t;	}
+		FloatSortTable*	remove(const vector<TypedElement>& tuple);
 
 		// Inspectors
 		bool			empty()								const { return _table.empty();		}
@@ -443,6 +559,8 @@ class StrSortTable : public FiniteSortTable {
 
 		// Constructors
 		StrSortTable() : _table(0) { }
+		StrSortTable(const vector<string*>& t) : _table(t) { }
+		StrSortTable* clone() const;
 
 		// Destructor
 		~StrSortTable() { }
@@ -456,7 +574,9 @@ class StrSortTable : public FiniteSortTable {
 		FiniteSortTable*	add(compound*);
 
 		// Cleanup
-		void	sortunique();
+		void			sortunique();
+		void			table(const vector<string*>& t) { _table = t;	}
+		StrSortTable*	remove(const vector<TypedElement>& tuple);
 
 		// Inspectors
 		bool			empty()								const { return _table.empty();		}
@@ -496,6 +616,7 @@ class MixedSortTable : public FiniteSortTable {
 		MixedSortTable() : _numtable(0), _strtable(0) { }
 		MixedSortTable(const vector<string*>& t) : _numtable(0), _strtable(t)	{ }
 		MixedSortTable(const vector<double>& t) : _numtable(t), _strtable(0)	{ }
+		MixedSortTable* clone() const;
 
 		// Destructor
 		~MixedSortTable() { }
@@ -509,7 +630,11 @@ class MixedSortTable : public FiniteSortTable {
 		FiniteSortTable*	add(compound*);
 
 		// Mutators
-		void			sortunique();
+		void				sortunique();
+		void				numtable(const vector<double>&	t)		{ _numtable = t;	}
+		void				strtable(const vector<string*>&	t)		{ _strtable = t;	}
+		void				comtable(const vector<compound*>& t)	{ _comtable = t;	}
+		FiniteSortTable*	remove(const vector<TypedElement>& tuple);
 
 		// Inspectors
 		bool			empty()								const { return (_numtable.empty() && _strtable.empty() && _comtable.empty()); }
@@ -549,12 +674,15 @@ class FinitePredTable : public PredTable {
 		FinitePredTable(const vector<ElementType>& t) : PredTable(), _types(t), _table(0), _order(t), _equality(t) { }
 		FinitePredTable(const FinitePredTable&);
 		FinitePredTable(const FiniteSortTable&);
+		FinitePredTable* clone() const { return new FinitePredTable(*this);	}
 
 		// Destructor
 		~FinitePredTable() { }
 
 		// Mutators
 		void	sortunique();
+		FinitePredTable*	add(const vector<TypedElement>& tuple);
+		FinitePredTable*	remove(const vector<TypedElement>& tuple);
 
 		// Parsing
 		void				addRow()								{ _table.push_back(vector<Element>(_types.size()));	}
@@ -622,6 +750,7 @@ class PredInter {
 		void sortunique()	{ if(_ctpf) _ctpf->sortunique(); if(_cfpt && _ctpf != _cfpt) _cfpt->sortunique();	}
 		PredInter*	clone();
 		void	forcetwovalued();		// delete cfpt table and replace by ctpf
+		void	add(const vector<TypedElement>& tuple, bool ctpf, bool c);
 
 
 		// Inspectors
@@ -658,6 +787,7 @@ class FuncTable {
 
 		// Constructor
 		FuncTable() : _nrofrefs(0) { }
+		virtual FuncTable* clone() const = 0;
 
 		// Destructor
 		virtual ~FuncTable() { }
@@ -665,6 +795,8 @@ class FuncTable {
 		// Mutators
 		void	removeref()	{ --_nrofrefs; if(!_nrofrefs) delete(this);	}
 		void	addref()	{ ++_nrofrefs;								}
+		virtual FuncTable*	add(const vector<TypedElement>& tuple) = 0;
+		virtual FuncTable*	remove(const vector<TypedElement>& tuple) = 0;
 
 		// Inspectors
 		virtual bool			finite()								const = 0;	// true iff the table is finite
@@ -696,9 +828,14 @@ class CopyFuncTable : public FuncTable {
 
 		// Constructor
 		CopyFuncTable(FuncTable*);
+		CopyFuncTable* clone() const { return new CopyFuncTable(_table);	}
 
 		// Destructor
 		~CopyFuncTable() { _table->removeref();	}
+
+		// Mutators
+		FuncTable*	add(const vector<TypedElement>& tuple);
+		FuncTable*	remove(const vector<TypedElement>& tuple);
 
 		// Inspectors
 		FuncTable*		table()									const { return _table;					}
@@ -731,9 +868,14 @@ class FiniteFuncTable : public FuncTable {
 		
 		// Constructors
 		FiniteFuncTable(FinitePredTable* ft);
+		FiniteFuncTable* clone() const { return new FiniteFuncTable(_ftable->clone());	}
 
 		// Destructor
 		~FiniteFuncTable() { }
+
+		// Mutators
+		FiniteFuncTable*	add(const vector<TypedElement>& tuple);
+		FiniteFuncTable*	remove(const vector<TypedElement>& tuple);
 
 		// Inspectors
 		bool				finite()								const { return true;					}
@@ -762,12 +904,15 @@ class FuncPredTable : public PredTable {
 
 		// Constructors
 		FuncPredTable(FuncTable* ft) : PredTable(), _ftable(ft) { }
+		FuncPredTable* clone() const { return new FuncPredTable(_ftable->clone());	}
 
 		// Destructor
 		~FuncPredTable() { }
 
 		// Mutators
 		void sortunique() { }
+		FuncPredTable*	add(const vector<TypedElement>& tuple);
+		FuncPredTable*	remove(const vector<TypedElement>& tuple);
 
 		// Inspectors
 //		virtual Element		operator[](const vector<Element>& vi)		const = 0;

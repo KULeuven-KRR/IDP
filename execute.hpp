@@ -253,5 +253,16 @@ class MoveFunctions : public Inference {
 		InfArg execute(const vector<InfArg>& args) const;
 };
 
+class CloneStructure : public Inference {
+	public:
+		CloneStructure() { 
+			_intypes = vector<InfArgType>(1,IAT_STRUCTURE);
+			_outtype = IAT_STRUCTURE;
+			_description = "Make a copy of this structure";
+			_reload = false;
+		}
+		InfArg execute(const vector<InfArg>& args) const;
+};
+
 
 #endif

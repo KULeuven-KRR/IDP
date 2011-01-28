@@ -42,6 +42,7 @@ namespace BuiltinProcs {
 		_inferences["model_expand"].push_back(new ModelExpansionInference(false));
 		_inferences["model_expand"].push_back(new ModelExpansionInference(true));
 		_inferences["load_file"].push_back(new LoadFile());
+		_inferences["clone"].push_back(new CloneStructure());
 	}
 
 	bool checkintern(lua_State* L, int n, const string& tp) {
@@ -531,6 +532,7 @@ InfArg ModelExpansionInference::execute(const vector<InfArg>& args) const {
 						//cout << pfs->to_string() << '(';
 						vector<TypedElement> args = ecnfgr->translator()->args(sol->getModels()[i][j].getAtom().getValue());
 						for(unsigned int n = 0; n < args.size(); ++n) {
+							mod->inter(pfs)->add(args);
 						//	cout << args[n];
 						//	if(n < args.size()-1) cout << ',';
 						}
@@ -584,5 +586,11 @@ InfArg GroundReduce::execute(const vector<InfArg>& args) const {
 InfArg MoveFunctions::execute(const vector<InfArg>& args) const {
 	TheoryUtils::move_functions(args[0]._theory);
 	InfArg a;
+	return a;
+}
+
+InfArg CloneStructure::execute(const vector<InfArg>& args) const {
+	InfArg a; 
+	a._structure = args[0]._structure->clone();
 	return a;
 }
