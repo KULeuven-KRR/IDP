@@ -112,7 +112,7 @@ FiniteSortTable* StrSortTable::add(int e) {
 	return mst;
 }
 
-FiniteSortTable* IntSortTable::add(int e) {
+IntSortTable* IntSortTable::add(int e) {
 	_table.push_back(e);
 	return this;
 }
@@ -468,7 +468,7 @@ FiniteSortTable* RanSortTable::remove(const vector<TypedElement>& tuple) {
 		else {
 			IntSortTable* ist = new IntSortTable();
 			for(int n = _first; n <= _last; ++n) {
-				if(n != e._int) ist = ist->add(n)
+				if(n != e._int) ist = ist->add(n);
 			}
 			return ist;
 		}
@@ -537,7 +537,7 @@ FiniteSortTable* MixedSortTable::remove(const vector<TypedElement>& tuple) {
 			bool deleted = false;
 			Element e = ElementUtil::convert(tuple[0],ELDOUBLE);
 			for(unsigned int n = 0; n < _numtable.size(); ++n) {
-				if(e._string == _numtable[n]) {
+				if(e._double == _numtable[n]) {
 					deleted = true;
 				}
 				else if(deleted) {
@@ -551,7 +551,7 @@ FiniteSortTable* MixedSortTable::remove(const vector<TypedElement>& tuple) {
 		{
 			bool deleted = false;
 			for(unsigned int n = 0; n < _numtable.size(); ++n) {
-				if(tuple[0]._string == _strtable[n]) {
+				if(tuple[0]._element._string == _strtable[n]) {
 					deleted = true;
 				}
 				else if(deleted) {
@@ -565,7 +565,7 @@ FiniteSortTable* MixedSortTable::remove(const vector<TypedElement>& tuple) {
 		{
 			bool deleted = false;
 			for(unsigned int n = 0; n < _comtable.size(); ++n) {
-				if(tuple[0]._compound == _comtable[n]) {
+				if(tuple[0]._element._compound == _comtable[n]) {
 					deleted = true;
 				}
 				else if(deleted) {
@@ -670,7 +670,7 @@ void UnionSortTable::sortunique() {
 }
 
 UnionSortTable* UnionSortTable::add(const vector<TypedElement>& tuple) {
-	if(_blacklist->contains(tuple)) _blacklist->remove(tuple);
+	if(_blacklist->contains(tuple[0])) _blacklist->remove(tuple);
 	bool added = false;
 	for(unsigned int n = 0; n < _tables.size(); ++n) {
 		if(_tables[n]->contains(tuple)) {
@@ -684,15 +684,17 @@ UnionSortTable* UnionSortTable::add(const vector<TypedElement>& tuple) {
 		}
 	}
 	if(!added) {
-		FiniteSortTable* fpt = new FiniteSortTable();
-		fpt->add(tuple);
-		_tables.add(fpt);
+		FiniteSortTable* fpt = new EmptySortTable();
+		FiniteSortTable* cp = fpt;
+		fpt = fpt->add(tuple);
+		if(fpt != cp) delete(cp);
+		_tables.push_back(fpt);
 	}
 	return this;
 }
 
 UnionSortTable* UnionSortTable::remove(const vector<TypedElement>& tuple) {
-	if(!(_blacklist->contains(tuple))) _blacklist->add(tuple);
+	if(!(_blacklist->contains(tuple[0]))) _blacklist->add(tuple);
 	return this;
 }
 
@@ -881,7 +883,7 @@ Element MixedSortTable::element(unsigned int n) const {
 	return e;
 }
 
-bool UnionSortTable::empty() {
+bool UnionSortTable::empty() const {
 	if(_tables.empty()) return true;
 	for(unsigned int n = 0; n < _tables.size(); ++n) {
 		if(!(_tables[n]->finite())) return false;
@@ -962,7 +964,7 @@ unsigned int MixedSortTable::position(Element e, ElementType t) const {
 
 /** Debugging **/
 
-string UnionSortTable::to_string(unsigned int spaces = 0) const {
+string UnionSortTable::to_string(unsigned int spaces) const {
 	string tab = tabstring(spaces);
 	string s = tab + "All tuples in the following table: \n";
 	for(unsigned int n = 0; n < _tables.size(); ++n) {
@@ -1099,7 +1101,7 @@ PredTable* CopyPredTable::remove(const vector<TypedElement>& tuple) {
 	}
 }
 
-FuncTable* CopyFuncTable::add(const vector<TypedElement>& tuple) {
+/*FuncTable* CopyFuncTable::add(const vector<TypedElement>& tuple) {
 	if(_table->nrofrefs() == 1) {
 		FuncTable* old = _table;
 		_table = _table->add(tuple);
@@ -1129,9 +1131,9 @@ FuncTable* CopyFuncTable::remove(const vector<TypedElement>& tuple) {
 		FuncTable* pt = _table->clone();
 		return pt->remove(tuple);
 	}
-}
+}*/
 
-FiniteFuncTable* FiniteFuncTable::add(const vector<TypedElement>& tuple) {
+/*FiniteFuncTable* FiniteFuncTable::add(const vector<TypedElement>& tuple) {
 	FinitePredTable* fpt = _ftable->add(tuple);
 	if(fpt != _ftable) {
 		delete(_ftable);
@@ -1147,7 +1149,7 @@ FiniteFuncTable* FiniteFuncTable::remove(const vector<TypedElement>& tuple) {
 		_ftable = fpt;
 	}
 	return this;
-}
+}*/
 
 
 /** Inspectors **/
@@ -1158,17 +1160,17 @@ vector<ElementType> PredTable::types() const {
 	return vet;
 }
 
-bool UnionPredTable::empty() {
+bool UnionPredTable::empty() const {
 	if(_tables.empty()) return true;
 	for(unsigned int n = 0; n < _tables.size(); ++n) {
 		if(!(_tables[n]->finite())) return false;
 	}
 	for(unsigned int n = 0; n < _tables.size(); ++n) {
 		vector<TypedElement> vte(_tables[n]->arity());
-		for(unsigned int c = 0; c < vte.size(); ++c) vte[c]._type = _tables[n]->type(m);
+		for(unsigned int c = 0; c < vte.size(); ++c) vte[c]._type = _tables[n]->type(c);
 		for(unsigned int m = 0; m < _tables[n]->size(); ++m) {
 			for(unsigned int c = 0; c < vte.size(); ++c) vte[c]._element = _tables[n]->element(m,c);
-			if(!(_blacklist->contains(vte))) return false;
+			if(!(_blacklist->PredTable::contains(vte))) return false;
 		}
 	}
 	return true;
@@ -1180,7 +1182,7 @@ bool UnionPredTable::contains(const vector<Element>& tuple) const {
 		vte[c]._type = ELCOMPOUND;
 		vte[c]._element = tuple[c];
 	}
-	if(_blacklist->contains(vte)) return false;
+	if(_blacklist->PredTable::contains(vte)) return false;
 	for(unsigned int n = 0; n < _tables.size(); ++n)
 		if(_tables[n]->contains(vte)) return true;
 	return false;
@@ -1293,7 +1295,7 @@ FinitePredTable* FinitePredTable::remove(const vector<TypedElement>& tuple) {
 }
 
 UnionPredTable* UnionPredTable::add(const vector<TypedElement>& tuple) {
-	if(_blacklist->contains(tuple)) _blacklist->remove(tuple);
+	if(_blacklist->PredTable::contains(tuple)) _blacklist->remove(tuple);
 	bool added = false;
 	for(unsigned int n = 0; n < _tables.size(); ++n) {
 		if(_tables[n]->contains(tuple)) {
@@ -1307,34 +1309,37 @@ UnionPredTable* UnionPredTable::add(const vector<TypedElement>& tuple) {
 		}
 	}
 	if(!added) {
-		FinitePredTable* fpt = new FinitePredTable();
+		vector<ElementType> vet(tuple.size(),ELINT);
+		FinitePredTable* fpt = new FinitePredTable(vet);
 		fpt->add(tuple);
-		_tables.add(fpt);
+		_tables.push_back(fpt);
 	}
 	return this;
 }
 
 UnionPredTable* UnionPredTable::remove(const vector<TypedElement>& tuple) {
-	if(!(_blacklist->contains(tuple))) _blacklist->add(tuple);
+	if(!(_blacklist->PredTable::contains(tuple))) _blacklist->add(tuple);
 	return this;
 }
 
-FuncPredTable* FuncPredTable::add(const vector<TypedElement>& tuple) {
-	FuncTable* ft = _ftable->add(tuple);
-	if(ft != _ftable) {
-		delete(_ftable);
-		_ftable = ft;
+PredTable* FuncPredTable::add(const vector<TypedElement>& tuple) {
+	if(!PredTable::contains(tuple)) {
+		UnionPredTable* upt = new UnionPredTable();
+		upt->add(this);
+		upt->add(tuple);
+		return upt;
 	}
-	return this;
+	else return this;
 }
 
-FuncPredTable* FuncPredTable::remove(const vector<TypedElement>& tuple) {
-	FuncTable* ft = _ftable->remove(tuple);
-	if(ft != _ftable) {
-		delete(_ftable);
-		_ftable = ft;
+PredTable* FuncPredTable::remove(const vector<TypedElement>& tuple) {
+	if(PredTable::contains(tuple)) {
+		UnionPredTable* upt = new UnionPredTable();
+		upt->add(this);
+		upt->remove(tuple);
+		return upt;
 	}
-	return this;
+	else return this;
 }
 
 void FinitePredTable::addRow(const vector<Element>& vi, const vector<ElementType>& vet) {
@@ -1374,7 +1379,9 @@ void PredInter::add(const vector<TypedElement>& tuple, bool ctpf, bool c) {
 		else {
 			_ctpf = _ctpf->remove(tuple);
 		}
-		if(old != _ctpf) delete(old);
+		if(old != _ctpf && old != _cfpt) {
+			delete(old);
+		}
 	}
 	else {
 		PredTable* old = _cfpt;
@@ -1384,7 +1391,7 @@ void PredInter::add(const vector<TypedElement>& tuple, bool ctpf, bool c) {
 		else {
 			_cfpt = _cfpt->remove(tuple);
 		}
-		if(old != _cfpt) delete(old);
+		if(old != _cfpt && old != _ctpf) delete(old);
 	}
 }
 
@@ -1484,7 +1491,7 @@ string FinitePredTable::to_string(unsigned int spaces) const {
 	return s;
 }
 
-string UnionPredTable::to_string(unsigned int spaces = 0) const {
+string UnionPredTable::to_string(unsigned int spaces) const {
 	string tab = tabstring(spaces);
 	string s = tab + "All tuples in the following table: \n";
 	for(unsigned int n = 0; n < _tables.size(); ++n) {
@@ -1541,6 +1548,16 @@ FuncInter* FuncInter::clone() {
 	}
 	_ftable = cft1;
 	return new FuncInter(cft2,piclone);
+}
+
+void FuncInter::add(const vector<TypedElement>& tuple, bool ctpf, bool c) {
+	if(_ftable) {
+		if(_ftable->finite()) {
+			delete(_ftable);
+		}
+		_ftable = 0;
+	}
+	_pinter->add(tuple,ctpf,c);
 }
 
 Element FiniteFuncTable::operator[](const vector<Element>& vi) const {

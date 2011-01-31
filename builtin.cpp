@@ -321,6 +321,8 @@ class InfiniteSortTable : public SortTable {
 
 		// Mutators
 		void sortunique() { }
+		SortTable*	add(const vector<TypedElement>& tuple);
+		SortTable*	remove(const vector<TypedElement>& tuple);
 		
 		// Inspectors
 				bool		finite()	const { return false;	}
@@ -343,6 +345,26 @@ class InfiniteSortTable : public SortTable {
 
 };
 
+SortTable* InfiniteSortTable::add(const vector<TypedElement>& tuple) {
+	if(!PredTable::contains(tuple)) {
+		UnionSortTable* ust = new UnionSortTable();
+		ust->add(this);
+		ust->add(tuple);
+		return ust;
+	}
+	else return this;
+}
+
+SortTable* InfiniteSortTable::remove(const vector<TypedElement>& tuple) {
+	if(PredTable::contains(tuple)) {
+		UnionSortTable* ust = new UnionSortTable();
+		ust->add(this);
+		ust->remove(tuple);
+		return ust;
+	}
+	else return this;
+}
+
 /** All natural numbers **/
 
 class AllNatSortTable : public InfiniteSortTable {
@@ -353,6 +375,8 @@ class AllNatSortTable : public InfiniteSortTable {
 		bool		contains(int n)		const { return n >= 0;									}
 		bool		contains(double d)	const { return (d >= 0 && isInt(d));					}
 		bool		contains(compound*)	const;
+
+		AllNatSortTable*	clone()	const	{ return new AllNatSortTable();	}
 
 		string		to_string(unsigned int n = 0)	const { return tabstring(n) + "all natural numbers (including 0)";		}
 	
@@ -373,6 +397,9 @@ class AllIntSortTable : public InfiniteSortTable {
 		bool		contains(int)		const { return true;			}
 		bool		contains(double d)	const { return isInt(d);		}
 		bool		contains(compound*)	const;
+
+		AllIntSortTable*	clone()	const	{ return new AllIntSortTable();	}
+
 		string		to_string(unsigned int n = 0)	const { return tabstring(n) + "all integers";	}
 		
 };
@@ -392,6 +419,9 @@ class AllFloatSortTable : public InfiniteSortTable {
 		bool		contains(int)		const { return true;			}
 		bool		contains(double)	const { return true;			}
 		bool		contains(compound*)	const;
+
+		AllFloatSortTable*	clone()	const	{ return new AllFloatSortTable();	}
+
 		string		to_string(unsigned int n = 0)	const { return tabstring(n) + "all floats";	}
 		
 };
@@ -411,6 +441,9 @@ class AllStringSortTable : public InfiniteSortTable {
 		bool		contains(int)		const { return true;			}
 		bool		contains(double)	const { return true;			}
 		bool		contains(compound*)	const;
+
+		AllStringSortTable*	clone()	const	{ return new AllStringSortTable();	}
+
 		string		to_string(unsigned int n  = 0)	const { return tabstring(n) + "all strings";	}
 		
 };
@@ -428,12 +461,16 @@ class AllCharSortTable : public SortTable {
 		
 		// Constructors
 		AllCharSortTable() : SortTable() { }
+		AllCharSortTable* clone() const { return new AllCharSortTable();	}
 
 		// Destructor
 		~AllCharSortTable() { }
 
 		// Mutators
 		void sortunique() { }
+		SortTable*	add(const vector<TypedElement>& tuple);
+		SortTable*	remove(const vector<TypedElement>& tuple);
+
 
 		// Inspectors
 		bool			finite()	const { return true;				}
@@ -455,6 +492,31 @@ class AllCharSortTable : public SortTable {
 		string	to_string(unsigned int n = 0)	const { return tabstring(n) + "all characters"; }
 		
 };
+
+SortTable* AllCharSortTable::add(const vector<TypedElement>& tuple) {
+	if(!PredTable::contains(tuple)) {
+		StrSortTable* sst = new StrSortTable();
+		for(unsigned int n = 0; n < size(); ++n) {
+			sst->add(element(n)._string);
+		}
+		sst->FiniteSortTable::add(tuple);
+		return sst;
+	}
+	else return this;
+}
+
+SortTable* AllCharSortTable::remove(const vector<TypedElement>& tuple) {
+	if(PredTable::contains(tuple)) {
+		Element e = ElementUtil::convert(tuple[0],ELSTRING);
+		StrSortTable* sst = new StrSortTable();
+		for(unsigned int n = 0; n < size(); ++n) {
+			Element e2 = element(n);
+			if(e._string != e2._string) sst->add(e2._string);
+		}
+		return sst;
+	}
+	else return this;
+}
 
 bool AllCharSortTable::contains(compound* c) const {
 	if(c->_function) return false;
@@ -491,6 +553,8 @@ class ComparisonPredTable : public PredTable {
 
 		// Mutators
 		void sortunique() { }
+		PredTable*	add(const vector<TypedElement>& tuple);
+		PredTable*	remove(const vector<TypedElement>& tuple);
 
 		// Inspectors
 		virtual	bool	finite()						const = 0;
@@ -508,6 +572,26 @@ class ComparisonPredTable : public PredTable {
 		virtual string	to_string(unsigned int spaces = 0)	const = 0;
 
 };
+
+PredTable* ComparisonPredTable::add(const vector<TypedElement>& tuple) {
+	if(!PredTable::contains(tuple)) {
+		UnionPredTable* upt = new UnionPredTable();
+		upt->add(this);
+		upt->add(tuple);
+		return upt;
+	}
+	else return this;
+}
+
+PredTable* ComparisonPredTable::remove(const vector<TypedElement>& tuple) {
+	if(PredTable::contains(tuple)) {
+		UnionPredTable* upt = new UnionPredTable();
+		upt->add(this);
+		upt->remove(tuple);
+		return upt;
+	}
+	else return this;
+}
 
 /** Equality **/
 
@@ -654,6 +738,7 @@ class PlusFuncTable : public AritFuncTable {
 		PlusFuncTable(ElementType t) : AritFuncTable(t) { }
 		PlusFuncTable* clone() const { return new PlusFuncTable(_type);	}
 		~PlusFuncTable() { }
+
 		unsigned int arity()							const { return 2;	}
 		Element operator[](const vector<Element>& vi)	const;
 		string to_string(unsigned int spaces = 0)		const { return tabstring(spaces) + "+/2";	}
@@ -691,6 +776,7 @@ class MinusFuncTable : public AritFuncTable {
 		MinusFuncTable* clone() const { return new MinusFuncTable(_type);	}
 		~MinusFuncTable() { }
 		unsigned int arity()							const { return 2;	}
+
 		Element operator[](const vector<Element>& vi)	const;
 		string to_string(unsigned int spaces = 0)		const { return tabstring(spaces) + "-/2";	}
 };
@@ -727,6 +813,7 @@ class TimesFuncTable : public AritFuncTable {
 		TimesFuncTable* clone() const { return new TimesFuncTable(_type);	}
 		~TimesFuncTable() { }
 		unsigned int arity()							const { return 2;	}
+
 		Element operator[](const vector<Element>& vi)	const;
 		string to_string(unsigned int spaces = 0)		const { return tabstring(spaces) + "*/2";	}
 };
@@ -762,6 +849,7 @@ class DivFuncTable : public AritFuncTable {
 		DivFuncTable(ElementType t) : AritFuncTable(t) { }
 		DivFuncTable* clone() const { return new DivFuncTable(_type);	}
 		~DivFuncTable() { }
+
 		unsigned int arity()							const { return 2;	}
 		Element operator[](const vector<Element>& vi)	const;
 		string to_string(unsigned int spaces = 0)		const { return tabstring(spaces) + "//2";	}
@@ -801,6 +889,7 @@ class ModFuncTable : public InfiniteFuncTable {
 		ModFuncTable* clone() const { return new ModFuncTable();	}
 		~ModFuncTable() { }
 		unsigned int arity()							const { return 2;	}
+
 		ElementType type(unsigned int)					const { return ELINT;	}
 		Element operator[](const vector<Element>& vi)	const;
 		string to_string(unsigned int spaces = 0)		const { return tabstring(spaces) + "%/2";	}
@@ -830,6 +919,7 @@ class ExpFuncTable : public InfiniteFuncTable {
 		ExpFuncTable* clone() const { return new ExpFuncTable();	}
 		~ExpFuncTable() { }
 		unsigned int arity()							const { return 2;			}
+
 		ElementType type(unsigned int)					const { return ELDOUBLE;	}
 		Element operator[](const vector<Element>& vi)	const;
 		string to_string(unsigned int spaces = 0)		const { return tabstring(spaces) + "^/2";	}
@@ -855,6 +945,7 @@ class AbsFuncTable : public AritFuncTable {
 		AbsFuncTable(ElementType t) : AritFuncTable(t) { }
 		AbsFuncTable* clone() const { return new AbsFuncTable(_type);	}
 		~AbsFuncTable() { }
+
 		unsigned int arity()							const { return 1;	}
 		Element operator[](const vector<Element>& vi)	const;
 		string to_string(unsigned int spaces = 0)		const { return tabstring(spaces) + "abs/1";	}
@@ -892,6 +983,7 @@ class UMinFuncTable : public AritFuncTable {
 		UMinFuncTable* clone() const { return new UMinFuncTable(_type);	}
 		~UMinFuncTable() { }
 		unsigned int arity()							const { return 1;	}
+
 		Element operator[](const vector<Element>& vi)	const;
 		string to_string(unsigned int spaces = 0)		const { return tabstring(spaces) + "-/1";	}
 };
@@ -961,6 +1053,10 @@ class SuccFuncTable : public FuncTable {
 
 		// Destructor
 		~SuccFuncTable() { }
+
+		// Mutators
+		FuncTable*	add(const vector<TypedElement>& tuple);
+		FuncTable*	remove(const vector<TypedElement>& tuple);
 
 		// Inspectors
 		bool			finite()								const { return _table->finite();	}

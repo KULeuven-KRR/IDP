@@ -129,6 +129,7 @@ namespace Error {
 	void wrongcommandargs(const string& name);
 	void wrongvaluetype(const string& name, const ParseInfo& thisplace);
 	void wrongformat(const string& format, const ParseInfo& thisplace);
+	void wrongmodelformat(const string& format, const ParseInfo& thisplace);
 	void posintexpected(const string& name, const ParseInfo& thisplace);
 	void ambigcommand(const string& name);
 }

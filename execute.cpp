@@ -524,23 +524,39 @@ InfArg ModelExpansionInference::execute(const vector<InfArg>& args) const {
 	if(sat){
 		for(int i=0; i<sol->getModels().size(); i++){
 			AbstractStructure* mod = s->clone();
-			mod->forcetwovalued();
+			set<PredInter*>	tobesorted1;
+			set<FuncInter*>	tobesorted2;
 			for(int j=0; j<sol->getModels()[i].size(); j++) {
-				if(!(sol->getModels()[i][j].hasSign())) {
-					PFSymbol* pfs = ecnfgr->translator()->symbol((sol->getModels()[i][j].getAtom().getValue()));
-					if(pfs && mod->vocabulary()->contains(pfs)) {
-						//cout << pfs->to_string() << '(';
-						vector<TypedElement> args = ecnfgr->translator()->args(sol->getModels()[i][j].getAtom().getValue());
-						for(unsigned int n = 0; n < args.size(); ++n) {
-							mod->inter(pfs)->add(args);
-						//	cout << args[n];
-						//	if(n < args.size()-1) cout << ',';
-						}
-						//cout << "). ";
+				PFSymbol* pfs = ecnfgr->translator()->symbol((sol->getModels()[i][j].getAtom().getValue()));
+				if(pfs && mod->vocabulary()->contains(pfs)) {
+					vector<TypedElement> args = ecnfgr->translator()->args(sol->getModels()[i][j].getAtom().getValue());
+					if(pfs->ispred()) {
+						mod->inter(pfs)->add(args,!(sol->getModels()[i][j].hasSign()),true);
+						tobesorted1.insert(mod->inter(pfs));
+					}
+					else {
+						Function* f = dynamic_cast<Function*>(pfs);
+						mod->inter(f)->add(args,!(sol->getModels()[i][j].hasSign()),true);
+						tobesorted2.insert(mod->inter(f));
 					}
 				}
 			}
-			a._setofstructures->push_back(mod);
+			for(set<PredInter*>::const_iterator it=tobesorted1.begin(); it != tobesorted1.end(); ++it)
+				(*it)->sortunique();
+			for(set<FuncInter*>::const_iterator it=tobesorted2.begin(); it != tobesorted2.end(); ++it)
+				(*it)->sortunique();
+
+			if(opts->_modelformat == MF_TWOVAL) {
+				mod->forcetwovalued();
+				a._setofstructures->push_back(mod);
+			}
+			else if(opts->_modelformat == MF_ALL) {
+				// TODO
+				a._setofstructures->push_back(mod);
+			}
+			else {
+				a._setofstructures->push_back(mod);
+			}
 		}
 	}
 	delete(solver);

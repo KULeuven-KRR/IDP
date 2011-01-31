@@ -897,6 +897,12 @@ namespace Insert {
 				else if(val == "idp") _curroptions->_format=OF_IDP;
 				else Error::wrongformat(val,pi);
 			}
+			else if(opt == "modelformat") {
+				if(val == "all") _curroptions->_modelformat=MF_ALL;
+				else if(val == "twovalued") _curroptions->_modelformat=MF_TWOVAL;
+				else if(val == "threevalued") _curroptions->_modelformat=MF_THREEVAL;
+				else Error::wrongmodelformat(val,pi);
+			}
 			else Error::wrongvaluetype(opt,pi);
 		}
 		else Error::unknopt(opt,pi);

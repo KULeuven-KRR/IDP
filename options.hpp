@@ -48,7 +48,8 @@ class CLOptions {
 
 /** Inference options **/
 
-enum OutputFormat { OF_TXT, OF_IDP };
+enum OutputFormat	{ OF_TXT, OF_IDP };
+enum ModelFormat	{ MF_THREEVAL, MF_TWOVAL, MF_ALL };
 
 class InfOptions {
 	
@@ -59,15 +60,17 @@ class InfOptions {
 		ParseInfo		_pi;		
 
 		// Attributes
-		unsigned int	_nrmodels;	// the number of models to compute
-		OutputFormat	_format;	// use specified format for the output
+		unsigned int	_nrmodels;		// the number of models to compute
+		OutputFormat	_format;		// use specified format for the output
+		ModelFormat		_modelformat;	// make results of MX twovalued
 		
 		// Constructor (default options)
 		InfOptions(const string& name, const ParseInfo& pi) : 
 			_name(name), 
 			_pi(pi),
 			_nrmodels(1),
-			_format(OF_IDP)
+			_format(OF_IDP),
+			_modelformat(MF_ALL)
 			{ }
 
 		// Setters
@@ -80,6 +83,7 @@ class InfOptions {
 		static bool isoption(const string& str) {
 			bool r = false;
 			if(str == "nrmodels") r = true;
+			else if(str == "modelformat") r = true;
 			else if(str == "language") r = true;
 			return r;
 		}

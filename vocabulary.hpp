@@ -637,7 +637,7 @@ namespace ElementUtil {
 	bool	lessthanorequal(Element e1, ElementType t1, Element e2, ElementType t2);	// less than or equal
 
 	// Compare tuples
-	bool	equal(const vector<TypedElement>&, const vector<Element>&, const vector<TypedElement>&);
+	bool	equal(const vector<TypedElement>&, const vector<Element>&, const vector<ElementType>&);
 
 }
 

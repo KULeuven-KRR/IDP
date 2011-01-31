@@ -560,6 +560,11 @@ namespace Error {
 		cerr << format << " is not a valid output language.\n";
 	}
 
+	void wrongmodelformat(const string& format, const ParseInfo& thisplace) {
+		error(thisplace);
+		cerr << format << " is not a valid model format.\n";
+	}
+
 	void posintexpected(const string& name, const ParseInfo& thisplace) {
 		error(thisplace);
 		cerr << "The value given to option " << name << " should be a positive integer.\n";
