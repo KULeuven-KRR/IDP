@@ -511,6 +511,7 @@ InfArg ModelExpansionInference::execute(const vector<InfArg>& args) const {
 	EcnfTheory* ecnfgr = TheoryUtils::convert_to_ecnf(gr);
 	MinisatID::SolverOption modes;
 	modes.nbmodels = opts->_nrmodels;
+	modes.verbosity = 0;
 	SATSolver* solver = new SATSolver(modes);
 	GroundPrinter* printer = new outputToSolver(solver);
 	ecnfgr->print(printer);

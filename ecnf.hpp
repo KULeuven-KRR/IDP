@@ -238,6 +238,7 @@ class EcnfTheory : public AbstractTheory {
 
 		// Constructor
 		EcnfTheory() : AbstractTheory("",ParseInfo()), _translator(new NaiveTranslator()) { }
+		EcnfTheory(Vocabulary* voc) : AbstractTheory("",voc,ParseInfo()), _translator(new NaiveTranslator()) { }
 
 		// Destructor
 		void recursiveDelete() { }

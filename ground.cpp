@@ -279,3 +279,62 @@ void NaiveGrounder::visit(Theory* t) {
 
 	_returnTheory = grounding;
 }
+
+/*************************************
+	Optimized grounding algorithm
+*************************************/
+
+int Grounder::_true = MAX_INT;
+int Grounder::_false = 0;
+
+
+int TheoryGrounder::run() {
+	for(unsigned int n = 0; n < _children.size(); ++n) {
+		int result = _children[n]->run();
+		if(result == _false) {
+			//TODO ecnftheory should be inconsistent!
+			return _false;
+		}
+	}
+	return _true
+}
+
+void GrounderFactory::visit(EcnfTheory* ecnf) {
+	_result = new EcnfGrounder(ecnf);
+}
+
+void GrounderFactory::visit(Theory* theory) {
+	EcnfTheory* result = new EcnfTheory(theory->vocabulary());
+	for(unsigned int n = 0; n < theory->nrDefinitions(); ++n)
+		grounders.push_back(GrounderFactory::create(theory->definition(n),structure,result));
+	for(unsigned int n = 0; n < theory->nrFixpDefs(); ++n)
+		grounders.push_back(GrounderFactory::create(theory->fixpdef(n),structure,result));
+	for(unsigned int n = 0; n < theory->nrSentences(); ++n)
+		grounders.push_back(GrounderFactory::create(theory->sentence(n),structure,result));
+	
+}
+
+EcnfTheory* ground(AbstractTheory* theory, AbstractStructure* structure) {
+	if(typeid(*theory) == typeid(EcnfTheory)) {
+		//TODO? can we simplify the theory using structure?
+		return dynamic_cast<EcnfTheory*> theory;
+	}
+	else {
+		EcnfTheory* result = new EcnfTheory(theory->vocabulary());
+		// TODO Order theory (Order definitions, etc)
+		// Create grounders
+		vector<Grounder*> grounders;
+		for(unsigned int n = 0; n < theory->nrDefinitions(); ++n)
+			grounders.push_back(GrounderFactory::create(theory->definition(n),structure,result));
+		for(unsigned int n = 0; n < theory->nrFixpDefs(); ++n)
+			grounders.push_back(GrounderFactory::create(theory->fixpdef(n),structure,result));
+		for(unsigned int n = 0; n < theory->nrSentences(); ++n)
+			grounders.push_back(GrounderFactory::create(theory->sentence(n),structure,result));
+		// TODO? Order grounders
+		// Run grounders
+		for(unsigned int n = 0; n < grounders.size(); ++n) {
+			int l = grounders[n]->run();
+			//TODO	
+		}
+		return result;
+}

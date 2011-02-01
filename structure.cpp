@@ -1963,8 +1963,8 @@ void Structure::addElement(Element e, ElementType t, Sort* s) {
 	Warning::addingeltosort(el,s->name(),_name);
 	int i = _vocabulary->index(s);
 	SortTable* oldstab = _sortinter[i];
-	_sortinter[i] = dynamic_cast<FiniteSortTable*>(oldstab)->add(e,t);
-	if(_sortinter[i] != oldstab) delete(oldstab);
+	_sortinter[i] = (dynamic_cast<FiniteSortTable*>(oldstab))->add(e,t);
+//	if(_sortinter[i] != oldstab) delete(oldstab);	TODO: geeft segfault op 15puzzle.idp
 }
 
 void Structure::functioncheck() {

@@ -18,7 +18,7 @@ class GroundTranslator {
 	public:
 		virtual int translate(PFSymbol*,const vector<TypedElement>&) = 0;	// translate an atom to an integer
 		virtual int nextTseitin() = 0;								// return a new tseitin atom
-		virtual PFSymbol*				symbol(unsigned int n)	const = 0; 
+		virtual PFSymbol*					symbol(unsigned int n)	const = 0; 
 		virtual const vector<TypedElement>&	args(unsigned int n)	const = 0; 
 };
 
@@ -82,6 +82,71 @@ class NaiveGrounder : public Visitor {
 		void visit(Rule*);
 		void visit(FixpDef*);
 		void visit(Definition*);
+		void visit(Theory*);
+
+};
+
+
+/************************************
+	Optimized grounding algorithm
+************************************/
+
+class Grounder {
+
+	protected:
+		EcnfTheory*			_grounding;
+		vector<Grounder*>	_children;
+
+		static int _true;
+		static int _false;
+
+	public:
+
+		// Constructor
+		Grounder(EcnfTheory* g): _grounding(g) { }
+
+		virtual int run() = 0;
+
+};
+
+class EcnfGrounder : public Grounder {
+	
+	public:
+		
+		// Constructor
+		EcnfGrounder(EcnfTheory* g): Grounder(g) { }
+
+		int run() { return _true; }
+
+};
+
+class TheoryGrounder : public Grounder {
+
+	public:
+		
+		// Constructor
+		TheoryGrounder(EcnfTheory* g): Grounder(g) { }
+
+		int run();
+
+};
+
+class GrounderFactory : public Visitor {
+	
+	private:
+		AbstractStructure*	_structure;
+		Grounder*			_result;
+
+	public:
+
+		// Constructor
+		GrounderFactory(AbstractStructure* structure): _structure(structure) { }
+
+		// Factory method
+		Grounder* create(AbstractTheory* theory) { theory->accept(this); return _result; }
+
+		// Visitors
+		void visit(EcnfTheory*);
 		void visit(Theory*);
 
 };
