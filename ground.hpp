@@ -105,7 +105,7 @@ class Grounder {
 		// Constructor
 		Grounder(EcnfTheory* g): _grounding(g) { }
 
-		virtual int run() = 0;
+		virtual int run() const = 0;
 
 };
 
@@ -116,7 +116,7 @@ class EcnfGrounder : public Grounder {
 		// Constructor
 		EcnfGrounder(EcnfTheory* g): Grounder(g) { }
 
-		int run() { return _true; }
+		int run() const { return _true; }
 
 };
 
@@ -125,17 +125,33 @@ class TheoryGrounder : public Grounder {
 	public:
 		
 		// Constructor
-		TheoryGrounder(EcnfTheory* g): Grounder(g) { }
+		TheoryGrounder(EcnfTheory* g, const vector<Grounder*>& vg): Grounder(g) { _children = vg;	}
 
-		int run();
+		int run() const;
 
+};
+
+class GroundFactGrounder : public Grounder {
+
+	private:
+		PFSymbol*				_symbol;
+		vector<TypedElement*>	_args;
+	
+	public:
+
+		// Constructor
+		GroundFactGrounder(EcnfTheory* g, PFSymbol* s, const vector<TypedElement*>& args) :
+			Grounder(g), _symbol(s), _args(args) { }
+
+		int run() const;
 };
 
 class GrounderFactory : public Visitor {
 	
 	private:
 		AbstractStructure*	_structure;
-		Grounder*			_result;
+		Grounder*			_grounder;
+		EcnfTheory*			_grounding;
 
 	public:
 
@@ -143,7 +159,7 @@ class GrounderFactory : public Visitor {
 		GrounderFactory(AbstractStructure* structure): _structure(structure) { }
 
 		// Factory method
-		Grounder* create(AbstractTheory* theory) { theory->accept(this); return _result; }
+		Grounder* create(AbstractTheory* theory) { theory->accept(this); return _grounder; }
 
 		// Visitors
 		void visit(EcnfTheory*);

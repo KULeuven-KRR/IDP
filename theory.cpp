@@ -1752,6 +1752,14 @@ Formula* AggMover::visit(EqChainForm* ef) {
 
 /** Theory utils **/
 
+TheoryComponent* AbstractTheory::component(unsigned int n = 0) {
+	if(n < nrSentences()) return sentence(n);
+	else if(n < nrSentences() + nrDefinitions()) {
+		return definition(n - nrSentences());
+	}
+	else return fixpdef(n - nrSentences() - nrDefinitions());
+}
+
 namespace TheoryUtils {
 	
 	/** Rewriting theories **/

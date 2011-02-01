@@ -288,53 +288,44 @@ int Grounder::_true = MAX_INT;
 int Grounder::_false = 0;
 
 
-int TheoryGrounder::run() {
+int TheoryGrounder::run() const {
 	for(unsigned int n = 0; n < _children.size(); ++n) {
 		int result = _children[n]->run();
 		if(result == _false) {
-			//TODO ecnftheory should be inconsistent!
+			//TODO ecnftheory should be made inconsistent!
 			return _false;
 		}
 	}
 	return _true
 }
 
+int GroundFactGrounder::run() const {
+	// TODO: check in table if the fact is certainly true/false
+	return _grounding->translator()->translate(_symbol,_args);
+}
+
 void GrounderFactory::visit(EcnfTheory* ecnf) {
-	_result = new EcnfGrounder(ecnf);
+	_grounder = new EcnfGrounder(ecnf);
 }
 
 void GrounderFactory::visit(Theory* theory) {
-	EcnfTheory* result = new EcnfTheory(theory->vocabulary());
-	for(unsigned int n = 0; n < theory->nrDefinitions(); ++n)
-		grounders.push_back(GrounderFactory::create(theory->definition(n),structure,result));
-	for(unsigned int n = 0; n < theory->nrFixpDefs(); ++n)
-		grounders.push_back(GrounderFactory::create(theory->fixpdef(n),structure,result));
-	for(unsigned int n = 0; n < theory->nrSentences(); ++n)
-		grounders.push_back(GrounderFactory::create(theory->sentence(n),structure,result));
-	
-}
 
-EcnfTheory* ground(AbstractTheory* theory, AbstractStructure* structure) {
-	if(typeid(*theory) == typeid(EcnfTheory)) {
-		//TODO? can we simplify the theory using structure?
-		return dynamic_cast<EcnfTheory*> theory;
+	// Allocate the theory to be returned by the grounder
+	_grounding = new EcnfTheory(theory->vocabulary());
+
+	// Collect components of the theory
+	vector<TheoryComponent*> components(theory->nrComponents());
+	for(unsigned int n = 0; n < theory->nrComponents(); ++n) 
+		components.push_back(theory->component(n));
+
+	// TODO: order components
+
+	// Create grounders for the components
+	vector<Grounder*> children(components.size());
+	for(unsigned int n = 0; n < components.size(); ++n) {
+		components[n]->accept(this);
+		children[n] = _grounder; 
 	}
-	else {
-		EcnfTheory* result = new EcnfTheory(theory->vocabulary());
-		// TODO Order theory (Order definitions, etc)
-		// Create grounders
-		vector<Grounder*> grounders;
-		for(unsigned int n = 0; n < theory->nrDefinitions(); ++n)
-			grounders.push_back(GrounderFactory::create(theory->definition(n),structure,result));
-		for(unsigned int n = 0; n < theory->nrFixpDefs(); ++n)
-			grounders.push_back(GrounderFactory::create(theory->fixpdef(n),structure,result));
-		for(unsigned int n = 0; n < theory->nrSentences(); ++n)
-			grounders.push_back(GrounderFactory::create(theory->sentence(n),structure,result));
-		// TODO? Order grounders
-		// Run grounders
-		for(unsigned int n = 0; n < grounders.size(); ++n) {
-			int l = grounders[n]->run();
-			//TODO	
-		}
-		return result;
+
+	_grounder = new TheoryGrounder(_grounding,children);
 }

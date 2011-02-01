@@ -13,13 +13,28 @@
 class GroundTranslator;
 class EcnfTheory;
 
+/**************************************************************************
+	Abstract base class for formulas, definitions and fixpoint defitions
+**************************************************************************/
+
+class TheoryComponent {
+
+	public:
+		// Constructor
+		TheoryComponent() { }
+
+		// Visitor
+		virtual void				accept(Visitor*) = 0;
+		virtual TheoryComponent*	accept(MutatingVisitor*) = 0;
+};
+
 /***************
 	Formulas
 ***************/
 
 /** Abstract base class **/
 
-class Formula {
+class Formula : public TheoryComponent {
 
 	protected:
 
@@ -470,7 +485,7 @@ class Rule {
 
 };
 
-class Definition {
+class Definition : public TheoryComponent {
 
 	private:
 		vector<Rule*>		_rules;		// The rules in the definition
@@ -508,7 +523,7 @@ class Definition {
 
 };
 
-class FixpDef {
+class FixpDef : public TheoryComponent {
 	
 	private:
 		bool				_lfp;		// True iff it is a least fixpoint definition
@@ -588,9 +603,11 @@ class AbstractTheory {
 		virtual	unsigned int		nrSentences()				const = 0;	// the number of sentences in the theory
 		virtual	unsigned int		nrDefinitions()				const = 0;	// the number of definitions in the theory
 		virtual unsigned int		nrFixpDefs()				const = 0;	// the number of fixpoind definitions in the theory
+				unsigned int		nrComponents()				const { return nrSentences() + nrDefinitions() + nrFixpDefs();	 }
 		virtual Formula*			sentence(unsigned int n)	const = 0;	// the n'th sentence in the theory
 		virtual Definition*			definition(unsigned int n)	const = 0;	// the n'th definition in the theory
 		virtual FixpDef*			fixpdef(unsigned int n)		const = 0;  // the n'th fixpoint definition in the theory
+				TheoryComponent*	component(unsigned int n)	const;
 
 		// Visitor
 		virtual void			accept(Visitor*) = 0;
