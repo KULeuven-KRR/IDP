@@ -244,6 +244,8 @@ class EcnfTheory : public AbstractTheory {
 		void recursiveDelete() { }
 
 		// Mutators
+		void addEmptyClause()						{ _clauses.push_back(EcnfClause(0));								}
+		void addUnitClause(int l)					{ _clauses.push_back(EcnfClause(1,l));								}
 		void addClause(const EcnfClause& vi)		{ _clauses.push_back(vi);											}
 		void addDefinition(const EcnfDefinition& d)	{ _definitions.push_back(d); 
 													  _features._containsDefinitions = true;	

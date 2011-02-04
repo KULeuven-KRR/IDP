@@ -711,7 +711,34 @@ void EcnfTheory::add(FixpDef* d) {
 }
 
 string EcnfTheory::to_string() const {
-	assert(false); // TODO: not yet implemented
+	string s;
+	for(unsigned int n = 0; n < _clauses.size(); ++n) {
+		if(_clauses[n].empty()) {
+			s += "false";
+		}
+		else {
+			for(unsigned int m = 0; m < _clauses[n].size(); ++m) {
+				if(_clauses[n][m] < 0) s += "~";
+				s += _translator->symbol(_clauses[n][m])->to_string();
+				if(!(_translator->args(_clauses[n][m])).empty()) {
+					s += "(";
+					for(unsigned int c = 0; c < _translator->args(_clauses[n][m]).size(); ++c) {
+						s += ElementUtil::ElementToString((_translator->args(_clauses[n][m]))[c]);
+						if(c !=  _translator->args(_clauses[n][m]).size()-1) s += ",";
+					}
+					s += ")";
+				}
+				if(m < _clauses[n].size()-1) s += " | ";
+			}
+		}
+		s += ". // ";
+		for(unsigned int m = 0; m < _clauses[n].size(); ++m) {
+			s += itos(_clauses[n][m]) + " ";
+		}
+		s += "0\n";
+	}
+	//TODO: repeat above for definitions etc...
+	return s;
 }
 
 Formula* EcnfTheory::sentence(unsigned int n) const{

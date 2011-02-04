@@ -26,6 +26,8 @@ class TheoryComponent {
 		// Visitor
 		virtual void				accept(Visitor*) = 0;
 		virtual TheoryComponent*	accept(MutatingVisitor*) = 0;
+
+		virtual string to_string(unsigned int spaces = 0)	const = 0;
 };
 
 /***************
@@ -81,7 +83,7 @@ class Formula : public TheoryComponent {
 		virtual Formula*	accept(MutatingVisitor* v) = 0;
 
 		// Debugging
-		virtual string to_string()	const = 0;
+		virtual string to_string(unsigned int spaces = 0)	const = 0;
 	
 };
 
@@ -123,7 +125,7 @@ class PredForm : public Formula {
 		Formula*	accept(MutatingVisitor* v);
 
 		// Debugging
-		string to_string() const;
+		string to_string(unsigned int spaces = 0) const;
 
 };
 
@@ -178,7 +180,7 @@ class EqChainForm : public Formula {
 		Formula*	accept(MutatingVisitor* v);
 
 		// Debugging
-		string to_string() const;
+		string to_string(unsigned int spaces = 0) const;
 
 };
 
@@ -221,7 +223,7 @@ class EquivForm : public Formula {
 		Formula*	accept(MutatingVisitor* v);
 
 		// Debuging
-		string to_string() const;
+		string to_string(unsigned int spaces = 0) const;
 
 };
 
@@ -270,7 +272,7 @@ class BoolForm : public Formula {
 		Formula*	accept(MutatingVisitor* v);
 
 		// Debugging
-		string to_string()	const;
+		string to_string(unsigned int spaces = 0)	const;
 
 };
 
@@ -318,7 +320,7 @@ class QuantForm : public Formula {
 		Formula*	accept(MutatingVisitor* v);
 
 		// Debugging
-		string to_string()	const;
+		string to_string(unsigned int spaces = 0)	const;
 
 };
 
@@ -362,7 +364,7 @@ class AggForm : public Formula {
 		Formula*	accept(MutatingVisitor* v);
 
 		// Debugging
-		string to_string()	const;
+		string to_string(unsigned int spaces = 0)	const;
 
 };
 
@@ -407,7 +409,7 @@ class BracketForm : public Formula {
 		Formula*	accept(MutatingVisitor* v);
 
 		// Debugging
-		string to_string() const;
+		string to_string(unsigned int spaces = 0) const;
 
 };
 /*

@@ -8,6 +8,7 @@
 #define GROUND_HPP
 
 #include "theory.hpp"
+#include "checker.hpp"
 
 /**********************************************
 	Translate from ground atoms to numbers
@@ -17,9 +18,10 @@ class GroundTranslator {
 
 	public:
 		virtual int translate(PFSymbol*,const vector<TypedElement>&) = 0;	// translate an atom to an integer
+				int translate(PFSymbol*,const vector<TypedElement*>&);	// translate an atom to an integer
 		virtual int nextTseitin() = 0;								// return a new tseitin atom
-		virtual PFSymbol*					symbol(unsigned int n)	const = 0; 
-		virtual const vector<TypedElement>&	args(unsigned int n)	const = 0; 
+		virtual PFSymbol*					symbol(int n)	const = 0; 
+		virtual const vector<TypedElement>&	args(int n)	const = 0; 
 };
 
 class NaiveTranslator : public GroundTranslator {
@@ -37,8 +39,8 @@ class NaiveTranslator : public GroundTranslator {
 
 		int							translate(PFSymbol*,const vector<TypedElement>&);
 		int							nextTseitin();	
-		PFSymbol*					symbol(unsigned int n)	const { return _backsymbtable[n-1];	}
-		const vector<TypedElement>&	args(unsigned int n)	const { return _backargstable[n-1];	}
+		PFSymbol*					symbol(int n)	const { return _backsymbtable[abs(n)-1];	}
+		const vector<TypedElement>&	args(int n)	const { return _backargstable[abs(n)-1];	}
 
 };
 
@@ -91,21 +93,67 @@ class NaiveGrounder : public Visitor {
 	Optimized grounding algorithm
 ************************************/
 
+class TermGrounder {
+	
+	protected:
+		TypedElement*			_result;
+
+	public:
+		TermGrounder(TypedElement* r) :
+			_result(r) { }
+
+		virtual void run() const = 0;
+};
+
+class VarTermGrounder : public TermGrounder {
+	
+	private:
+		SortTable*		_table;
+		TypedElement*	_arg;
+
+	public:
+		VarTermGrounder(TypedElement* r, SortTable* t, TypedElement* a) :
+			TermGrounder(r), _table(t), _arg(a) { }
+
+		void run() const;
+
+};
+
+class FuncTermGrounder : public TermGrounder {
+
+	private:
+		FuncTable*				_function;
+		vector<TypedElement*>	_args;
+		vector<TermGrounder*>	_subtermgrounders;
+
+	public:
+		FuncTermGrounder(TypedElement* r, const vector<TermGrounder*>& sub, FuncTable* f, const vector<TypedElement*>& a) :
+			TermGrounder(r), _function(f), _args(a), _subtermgrounders(sub) { }
+
+		void run() const;
+
+
+		// TODO? Optimisation:
+		//			Keep all values of the args + result of the previous call to calc().
+		//			If the values of the args did not change, return the result immediately instead of doing the
+		//			table lookup
+};
+
 class Grounder {
 
 	protected:
-		EcnfTheory*			_grounding;
-		vector<Grounder*>	_children;
+		EcnfTheory*	_grounding;
 
-		static int _true;
-		static int _false;
+		static int	_true;
+		static int	_false;
 
 	public:
 
 		// Constructor
-		Grounder(EcnfTheory* g): _grounding(g) { }
+		Grounder(EcnfTheory* g): _grounding(g) { 	}
 
-		virtual int run() const = 0;
+		virtual int			run()		const = 0;
+				EcnfTheory*	grounding()	const { return _grounding;	}
 
 };
 
@@ -122,26 +170,42 @@ class EcnfGrounder : public Grounder {
 
 class TheoryGrounder : public Grounder {
 
+	private:
+		vector<Grounder*>	_children;
+
 	public:
 		
 		// Constructor
-		TheoryGrounder(EcnfTheory* g, const vector<Grounder*>& vg): Grounder(g) { _children = vg;	}
+		TheoryGrounder(EcnfTheory* g, const vector<Grounder*>& vg): Grounder(g), _children(vg) { }
 
 		int run() const;
 
 };
 
-class GroundFactGrounder : public Grounder {
+class AtomGrounder : public Grounder {
 
 	private:
+		bool					_sign;
+		bool					_sentence;
 		PFSymbol*				_symbol;
 		vector<TypedElement*>	_args;
+		vector<TermGrounder*>	_subtermgrounders;
+		vector<SortTable*>		_tables;
+
+		InstanceChecker*		_pchecker;
+		InstanceChecker*		_cchecker;
+		int						_certainvalue;
+		bool					_poscontext;
+
 	
 	public:
 
 		// Constructor
-		GroundFactGrounder(EcnfTheory* g, PFSymbol* s, const vector<TypedElement*>& args) :
-			Grounder(g), _symbol(s), _args(args) { }
+		AtomGrounder(EcnfTheory* g, bool sign, bool sent, PFSymbol* s, const vector<TypedElement*>& args, 
+			const vector<TermGrounder*> sg, InstanceChecker* pic, InstanceChecker* cic, const vector<SortTable*>& vst, bool pc, bool c) :
+				Grounder(g), _sign(sign), _sentence(sent), _symbol(s), _args(args), _subtermgrounders(sg), 
+				_tables(vst), _poscontext(pc), _pchecker(pic), _cchecker(cic)
+				{ _certainvalue = c ? _true : _false; }
 
 		int run() const;
 };
@@ -150,8 +214,20 @@ class GrounderFactory : public Visitor {
 	
 	private:
 		AbstractStructure*	_structure;
-		Grounder*			_grounder;
 		EcnfTheory*			_grounding;
+
+		// Context
+		bool	_poscontext;
+		bool	_truegencontext;
+		bool	_sentence;
+
+		// Variable mapping
+		map<Variable*,TypedElement*>	_varmapping;
+
+		// Return values
+		Grounder*			_grounder;
+		TermGrounder*		_termgrounder;
+		TypedElement*		_value;
 
 	public:
 
@@ -164,6 +240,13 @@ class GrounderFactory : public Visitor {
 		// Visitors
 		void visit(EcnfTheory*);
 		void visit(Theory*);
+
+		void visit(PredForm*);
+
+		void visit(VarTerm*);
+		void visit(DomainTerm*);
+		void visit(FuncTerm*);
+		void visit(AggTerm*);
 
 };
 

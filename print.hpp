@@ -27,8 +27,8 @@ class Printer : public Visitor {
 
 		// Print methods
 		string print(Vocabulary* v);
-		string print(Theory* t);
-		string print(Structure* s);
+		string print(AbstractTheory* t);
+		string print(AbstractStructure* s);
 
 		// Indentation
 		void indent();
@@ -40,9 +40,9 @@ class Printer : public Visitor {
 class SimplePrinter : public Printer {
 
 	public:
-		void visit(Theory*);
-		void visit(Structure*);
 		void visit(Vocabulary*);
+		void visit(AbstractTheory*);
+		void visit(AbstractStructure*);
 
 };
 
@@ -57,6 +57,7 @@ class IDPPrinter : public Printer {
 	public:
 		/** Theories **/
 		void visit(Theory*);
+		void visit(EcnfTheory*);
 
 		// Formulas
 		void visit(PredForm*);

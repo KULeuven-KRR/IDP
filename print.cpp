@@ -6,6 +6,7 @@
 
 #include "print.hpp"
 #include "theory.hpp"
+#include "ecnf.hpp"
 #include "vocabulary.hpp"
 #include "structure.hpp"
 #include "term.hpp"
@@ -31,9 +32,9 @@ Printer* Printer::create(InfOptions* opts) {
 	}
 }
 
-string Printer::print(Vocabulary* v) 	{ v->accept(this); return _out.str(); }
-string Printer::print(Theory* t) 		{ t->accept(this); return _out.str(); }
-string Printer::print(Structure* s) 	{ s->accept(this); return _out.str(); }
+string Printer::print(Vocabulary* v)		{ v->accept(this); return _out.str(); }
+string Printer::print(AbstractTheory* t) 	{ t->accept(this); return _out.str(); }
+string Printer::print(AbstractStructure* s) { s->accept(this); return _out.str(); }
 
 void Printer::indent() 		{ _indent++; }
 void Printer::unindent()	{ _indent--; }
@@ -50,11 +51,11 @@ void SimplePrinter::visit(Vocabulary* v) {
 	_out << v->to_string();
 }
 
-void SimplePrinter::visit(Theory* t) {
+void SimplePrinter::visit(AbstractTheory* t) {
 	_out << t->to_string();
 }
 
-void SimplePrinter::visit(Structure* s) {
+void SimplePrinter::visit(AbstractStructure* s) {
 	_out << s->to_string();
 }
 
@@ -65,14 +66,6 @@ void SimplePrinter::visit(Structure* s) {
 /** Theory **/
 
 void IDPPrinter::visit(Theory* t) {
-//	_out << "#theory " << t->name();
-//	if(t->vocabulary()) {
-//		_out << " : " << t->vocabulary()->name();
-//		if(t->structure())
-//			_out << " " << t->structure()->name();
-//	}
-//	_out << " {\n";
-//	indent();
 	for(unsigned int n = 0; n < t->nrSentences(); ++n) {
 		printtab();
 		t->sentence(n)->accept(this);
@@ -84,8 +77,10 @@ void IDPPrinter::visit(Theory* t) {
 	for(unsigned int n = 0; n < t->nrFixpDefs(); ++n) {
 		t->fixpdef(n)->accept(this);
 	}
-//	unindent();
-//	_out << "}\n";
+}
+
+void IDPPrinter::visit(EcnfTheory* et) {
+	_out << et->to_string();
 }
 
 /** Formulas **/

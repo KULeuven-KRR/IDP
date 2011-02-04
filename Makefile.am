@@ -40,7 +40,8 @@ gidl_SOURCES = \
 		options.hpp\
 		clconst.hpp\
 		interactive.cpp interactive.hpp\
-		print.hpp print.cpp
+		print.hpp print.cpp\
+		checker.hpp
 
 #MINISATID PART, HEADERS ARE TAKEN CARE OF BY THE SUB MAKEFILE
 gidl_SOURCES += \

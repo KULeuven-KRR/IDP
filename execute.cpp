@@ -43,6 +43,7 @@ namespace BuiltinProcs {
 		_inferences["model_expand"].push_back(new ModelExpansionInference(true));
 		_inferences["load_file"].push_back(new LoadFile());
 		_inferences["clone"].push_back(new CloneStructure());
+		_inferences["fastground"].push_back(new FastGrounding());
 	}
 
 	bool checkintern(lua_State* L, int n, const string& tp) {
@@ -377,7 +378,7 @@ InfArg PrintTheory::execute(const vector<InfArg>& args) const {
 	InfOptions* opts = Namespace::global()->option("DefaultOptions");
 	if(args.size() == 2) opts = args[1]._options;
 	Printer* printer = Printer::create(opts);
-	Theory* t = dynamic_cast<Theory*>(args[0]._theory);
+	AbstractTheory* t = args[0]._theory;
 	string str = printer->print(t);
 	delete(printer);
 	InfArg a; a._string = IDPointer(str);
@@ -398,7 +399,7 @@ InfArg PrintStructure::execute(const vector<InfArg>& args) const {
 	InfOptions* opts = Namespace::global()->option("DefaultOptions");
 	if(args.size() == 2) opts = args[1]._options;
 	Printer* printer = Printer::create(opts);
-	Structure* s = dynamic_cast<Structure*>(args[0]._structure);
+	AbstractStructure* s = args[0]._structure;
 	string str = printer->print(s);
 	delete(printer);
 	InfArg a; a._string = IDPointer(str);
@@ -609,5 +610,23 @@ InfArg MoveFunctions::execute(const vector<InfArg>& args) const {
 InfArg CloneStructure::execute(const vector<InfArg>& args) const {
 	InfArg a; 
 	a._structure = args[0]._structure->clone();
+	return a;
+}
+
+FastGrounding::FastGrounding() {
+	_intypes = vector<InfArgType>(2);
+	_intypes[0] = IAT_THEORY; 
+	_intypes[1] = IAT_STRUCTURE;
+	_outtype = IAT_THEORY;	
+	_description = "Ground the theory and structure and store the grounding";
+	_reload = false;
+}
+
+InfArg FastGrounding::execute(const vector<InfArg>& args) const {
+	GrounderFactory factory(args[1]._structure);
+	Grounder* g = factory.create(args[0]._theory);
+	g->run();
+	InfArg a;
+	a._theory = g->grounding();
 	return a;
 }

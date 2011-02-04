@@ -52,6 +52,7 @@ class PredTable {
 				bool	contains(const vector<TypedElement>&)	const;		// true iff the table contains the tuple
 																			// works also if the types of the tuple do not
 																			// match the types of the table
+				bool	contains(const vector<TypedElement*>&)	const;
 
 		// Inspectors for finite tables
 		virtual	unsigned int		size()									const = 0;	// the size of the table
@@ -812,6 +813,7 @@ class FuncTable {
 																				// NOTE: the type of the n'th element in vi should be
 																				// the type of the n'th column in the table. 
 				Element	operator[](const vector<TypedElement>& vi)	const;		// return the value of vi according to the function
+				Element operator[](const vector<TypedElement*>& vi)	const;
 
 		// Debugging
 		virtual string to_string(unsigned int spaces = 0) const = 0;

@@ -69,6 +69,10 @@
 		return idp_intern.idpcall("ground",T,S)
 	}
 
+	#procedure fastground(T,S) {
+		return idp_intern.idpcall("fastground",T,S)
+	}
+
 	#procedure reduce(T,S) {
 		return idp_intern.idpcall("reduce",T,S)
 	}

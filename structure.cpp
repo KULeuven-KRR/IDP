@@ -1451,6 +1451,13 @@ bool PredTable::contains(const vector<TypedElement>& vte) const {
 	return result;
 }
 
+bool PredTable::contains(const vector<TypedElement*>& vte) const {
+	vector<Element> ve(vte.size());
+	for(unsigned int n = 0; n < vte.size(); ++n) {
+		ve[n] = ElementUtil::convert(*(vte[n]),type(n));
+	}
+	return contains(ve);
+}
 
 bool PredInter::isfalse(const vector<TypedElement>& vte) const {
 	vector<Element> ve(vte.size());
@@ -1573,6 +1580,16 @@ Element FuncTable::operator[](const vector<TypedElement>& vte) const {
 	}
 	Element result = operator[](ve);
 	return result;
+}
+
+Element FuncTable::operator[](const vector<TypedElement*>& vte) const {
+	vector<Element> ve(vte.size());
+	for(unsigned int n = 0; n < vte.size(); ++n) {
+		ve[n] = ElementUtil::convert(*(vte[n]),type(n));
+	}
+	Element result = operator[](ve);
+	return result;
+
 }
 
 bool FuncPredTable::contains(const vector<Element>& ve) const {

@@ -5,6 +5,7 @@
 ************************************/
 
 #include "ground.hpp"
+#include "ecnf.hpp"
 #include <typeinfo>
 #include <iostream>
 
@@ -22,6 +23,14 @@ int NaiveTranslator::translate(PFSymbol* s, const vector<TypedElement>& args) {
 	_backsymbtable.push_back(s);
 	_backargstable.push_back(args);
 	return _nextnumber++;
+}
+
+int GroundTranslator::translate(PFSymbol* s,const vector<TypedElement*>& args) {
+	vector<TypedElement> vte(args.size());
+	for(unsigned int n = 0; n < args.size(); ++n) {
+		vte[n] = *(args[n]);
+	}
+	return translate(s,vte);
 }
 
 int NaiveTranslator::nextTseitin() {
@@ -284,7 +293,7 @@ void NaiveGrounder::visit(Theory* t) {
 	Optimized grounding algorithm
 *************************************/
 
-int Grounder::_true = MAX_INT;
+int Grounder::_true = numeric_limits<int>::max();
 int Grounder::_false = 0;
 
 
@@ -292,40 +301,204 @@ int TheoryGrounder::run() const {
 	for(unsigned int n = 0; n < _children.size(); ++n) {
 		int result = _children[n]->run();
 		if(result == _false) {
-			//TODO ecnftheory should be made inconsistent!
+			_grounding->addEmptyClause();
 			return _false;
 		}
 	}
-	return _true
+	return _true;
 }
 
-int GroundFactGrounder::run() const {
-	// TODO: check in table if the fact is certainly true/false
-	return _grounding->translator()->translate(_symbol,_args);
+int AtomGrounder::run() const {
+	for(unsigned int n = 0; n < _subtermgrounders.size(); ++n) 
+		_subtermgrounders[n]->run();
+	
+	// Checking partial functions
+	for(unsigned int n = 0; n < _args.size(); ++n) {
+		//TODO: only check positions that can be out of bounds!
+		//TODO: produce a warning!
+		if(!ElementUtil::exists(*(_args[n]))) {
+			return _poscontext ? _true : _false;
+		}
+	}
+
+	// Checking out-of-bounds
+	for(unsigned int n = 0; n < _args.size(); ++n) {
+		if(!_tables[n]->contains(*(_args[n]))) 
+			return _sign ? _false : _true;
+	}
+
+	if(!(_pchecker->run())) return _certainvalue ? _false : _true;	// TODO: dit is lelijk
+	if(_cchecker->run()) return _certainvalue;
+	else {
+		int atom = _grounding->translator()->translate(_symbol,_args);
+		if(!_sign) atom = -atom;
+		if(_sentence) _grounding->addUnitClause(atom);
+		return atom;
+	}
+}
+
+/*void VarTermGrounder::run() const {
+	if(_table->contains(*_arg)) {
+		_result->_type = _arg->_type;
+		_result->_element = _arg->_element;
+	}
+	else {
+		_result->_type = _arg->_type;
+		_result->_element = ElementUtil::nonexist(_arg->_type);
+	}
+}*/
+
+void FuncTermGrounder::run() const {
+	for(unsigned int n = 0; n < _subtermgrounders.size(); ++n)
+		_subtermgrounders[n]->run();
+	_result->_type = _function->type(_function->arity());
+	_result->_element = (*_function)[_args];
+/*	if(!_table->contains(*_result)) {
+		_result->_element = ElementUtil::nonexist(_result->_type);
+	}*/
 }
 
 void GrounderFactory::visit(EcnfTheory* ecnf) {
-	_grounder = new EcnfGrounder(ecnf);
+	_grounder = new EcnfGrounder(ecnf);		// TODO: add the structure?
 }
 
 void GrounderFactory::visit(Theory* theory) {
 
-	// Allocate the theory to be returned by the grounder
-	_grounding = new EcnfTheory(theory->vocabulary());
-
 	// Collect components of the theory
 	vector<TheoryComponent*> components(theory->nrComponents());
-	for(unsigned int n = 0; n < theory->nrComponents(); ++n) 
-		components.push_back(theory->component(n));
+	for(unsigned int n = 0; n < theory->nrComponents(); ++n) {
+		components[n] = theory->component(n);
+	}
 
-	// TODO: order components
+	// TODO (OPTIMIZATION) order components
+
+	// Allocate the theory to be returned by the grounder
+	_grounding = new EcnfTheory(theory->vocabulary());
 
 	// Create grounders for the components
 	vector<Grounder*> children(components.size());
 	for(unsigned int n = 0; n < components.size(); ++n) {
+		_poscontext = true;
+		_truegencontext = false;
+		_sentence = true;
 		components[n]->accept(this);
 		children[n] = _grounder; 
 	}
 
 	_grounder = new TheoryGrounder(_grounding,children);
+}
+
+void GrounderFactory::visit(PredForm* pf) {
+	// Check if each of the arguments of pf evaluates to a single value 
+	PredForm* newpf = pf->clone();
+	Formula* transpf = newpf; // TODO: replace this by the appropriate rewriting
+
+	if(newpf == transpf) {	// all arguments indeed evaluate to a single value
+
+		// create grounders for the subterms
+		bool posc = _poscontext; bool truegc = _truegencontext; bool sent = _sentence;
+		vector<TermGrounder*> vtg;
+		vector<TypedElement*> vte;
+		vector<SortTable*>	  vst;
+		for(unsigned int n = 0; n < pf->nrSubterms(); ++n) {
+			pf->subterm(n)->accept(this);
+			if(_termgrounder) vtg.push_back(_termgrounder);
+			vte.push_back(_value);
+			vst.push_back(_structure->inter(pf->symb()->sort(n)));
+		}
+		_poscontext = posc; _truegencontext = truegc; _sentence = sent;
+
+		// create checker
+		InstanceChecker* pch;
+		InstanceChecker* cch;
+		PredInter* inter = _structure->inter(pf->symb());
+
+		if(_truegencontext == pf->sign()) {		// check according to ct-table
+
+			if(inter->cf()) {
+				if(inter->cfpt()->empty()) pch = new TrueInstanceChecker();
+				else pch = new InvTableInstanceChecker(inter->cfpt(),vte);
+			}
+			else {
+				if(inter->cfpt()->empty()) pch = new FalseInstanceChecker();
+				else pch = new TableInstanceChecker(inter->cfpt(),vte);
+			}
+
+			if(inter->ct()) {
+				if(inter->ctpf()->empty()) cch = new FalseInstanceChecker();
+				else cch = new TableInstanceChecker(inter->ctpf(),vte);
+			}
+			else {
+				if(inter->ctpf()->empty()) cch = new TrueInstanceChecker();
+				else cch = new InvTableInstanceChecker(inter->ctpf(),vte);
+			}
+		}
+		else {	// check according to cf-table
+
+			if(inter->ct()) {
+				if(inter->ctpf()->empty()) pch = new TrueInstanceChecker();
+				else pch = new InvTableInstanceChecker(inter->ctpf(),vte);
+			}
+			else {
+				if(inter->ctpf()->empty()) pch = new FalseInstanceChecker();
+				else pch = new TableInstanceChecker(inter->ctpf(),vte);
+			}
+
+			if(inter->cf()) {
+				if(inter->cfpt()->empty()) cch = new FalseInstanceChecker();
+				else cch = new TableInstanceChecker(inter->cfpt(),vte);
+			}
+			else {
+				if(inter->cfpt()->empty()) cch = new TrueInstanceChecker();
+				else cch = new InvTableInstanceChecker(inter->cfpt(),vte);
+			}
+		}
+		
+		// create the actual grounder
+		_grounder = new AtomGrounder(_grounding,pf->sign(),_sentence,pf->symb(),vte,vtg,pch,cch,vst,_poscontext,_truegencontext);
+	}
+	else {
+		transpf->accept(this);
+	}
+
+	// TODO: delete temporary values
+
+}
+
+void GrounderFactory::visit(VarTerm* t) {
+/*	_value = new TypedElement();
+	SortTable* table = _structure->inter(_currsort);
+	TypedElement* arg = (_varmapping.find(t->var()))->second;
+	_termgrounder = new VarTermGrounder(_value,table,arg);*/
+	_termgrounder = 0;
+	_value = _varmapping.find(t->var())->second;
+}
+
+void GrounderFactory::visit(DomainTerm* t) {
+	_termgrounder = 0;
+	// Check whether value is within bounds of the current position.
+//	if(_structure->inter(_currsort)->contains(t->value(),t->type()))
+		_value = new TypedElement(t->value(),t->type());
+//	else {
+//		_value = new TypedElement();
+//		_value->_type = t->type();
+//		_value->_element = ElementUtil::nonexist(t->type());
+//	}
+}
+
+void GrounderFactory::visit(FuncTerm* t) {
+	vector<TermGrounder*> sub;
+	vector<TypedElement*> args(t->func()->arity());
+	for(unsigned int n = 0; n < args.size(); ++n) {
+		t->subterm(n)->accept(this);
+		if(_termgrounder) sub.push_back(_termgrounder);
+		args[n] = _value;
+	}
+	FuncTable* ft = _structure->inter(t->func())->functable();
+	_value = new TypedElement();
+	_termgrounder = new FuncTermGrounder(_value,sub,ft,args);
+}
+
+void GrounderFactory::visit(AggTerm* t) {
+	// TODO
 }

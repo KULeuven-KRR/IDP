@@ -197,6 +197,12 @@ class GroundingWithResult : public Inference {
 		InfArg execute(const vector<InfArg>& args) const;
 };
 
+class FastGrounding : public Inference {
+	public:
+		FastGrounding();
+		InfArg execute(const vector<InfArg>& args) const;
+};
+
 class ModelExpansionInference : public Inference {
 	public:
 		ModelExpansionInference(bool opts);
