@@ -19,10 +19,11 @@ int NaiveTranslator::translate(PFSymbol* s, const vector<TypedElement>& args) {
 		map<vector<TypedElement>,int>::iterator jt = (it->second).find(args);
 		if(jt != (it->second).end()) return jt->second;
 	}
-	_table[s][args] = _nextnumber;
-	_backsymbtable.push_back(s);
-	_backargstable.push_back(args);
-	return _nextnumber++;
+	int nr = nextNumber();
+	_table[s][args] = nr;
+	_backsymbtable[nr] = s;
+	_backargstable[nr] = args;
+	return nr;
 }
 
 int GroundTranslator::translate(PFSymbol* s,const vector<TypedElement*>& args) {
@@ -33,11 +34,28 @@ int GroundTranslator::translate(PFSymbol* s,const vector<TypedElement*>& args) {
 	return translate(s,vte);
 }
 
-int NaiveTranslator::nextTseitin() {
-	_backsymbtable.push_back(0);
-	_backargstable.push_back(vector<TypedElement>(0));
-	return _nextnumber++;
+int NaiveTranslator::translate(const vector<int>& cl, bool conj, TsType tp) {
+	int nr = nextNumber();
+	TsBody& tb = _tsbodies[nr];
+	tb._body = cl;
+	tb._type = tp;
+	tb._conj = conj;
+	return nr;
 }
+
+int NaiveTranslator::nextNumber() {
+	if(_freenumbers.empty()) {
+		_backsymbtable.push_back(0);
+		_backargstable.push_back(vector<TypedElement>(0));
+		return _backsymbtable.size()-1;
+	}
+	else {
+		int nr = *(_freenumbers.begin());
+		_freenumbers.erase(_freenumbers.begin());
+		return nr;
+	}
+}
+
 
 /********************************************************
 	Basic top-down, non-optimized grounding algorithm
@@ -337,6 +355,62 @@ int AtomGrounder::run() const {
 	}
 }
 
+inline bool BoolGrounder::check1(int l) const {
+	return _conj ? l == _false : l == _true;
+}
+
+inline bool BoolGrounder::check2(int l) const {
+	return _conj ? l == _true : l == _false;
+}
+
+inline int BoolGrounder::result1() const {
+	return (_conj == _sign) ? _false : _true;
+}
+
+inline int BoolGrounder::result2() const {
+	return (_conj == _sign) ? _true : _false;
+}
+
+int BoolGrounder::run() const {
+	vector<int> cl;
+	for(unsigned int n = 0; n < _subgrounders.size(); ++n) {
+		int l = _subgrounders[n]->run();
+		if(check1(l)) return result1();
+		else if(! check2(l))
+			cl.push_back(l);
+	}
+	if(cl.empty())
+		return result2();
+	else if(cl.size() == 1) {
+		if(_sentence) {
+			_grounding->addUnitClause(_sign ? cl[0] : -cl[0]);
+			return _true;
+		}
+		else
+			return _sign ? cl[0] : -cl[0];
+	}
+	else if(_sentence) {
+		if(_conj == _sign) {
+			for(unsigned int n = 0; n < cl.size(); ++n)
+				_grounding->addUnitClause(_sign ? cl[n] : -cl[n]);
+		}
+		else {
+			if(! _sign) {
+				for(unsigned int n = 0; n < cl.size(); ++n)
+					cl[n] = -cl[n];
+			}
+			_grounding->addClause(cl);
+		}
+		return _true;
+	}	
+	else {
+		TsType tp = TS_IMPL;
+		if(_poscontext != _sign) tp = TS_RIMPL;
+		int ts = _grounding->translator()->translate(cl,_conj,tp);
+		return _sign ? ts : -ts;
+	}
+}
+
 /*void VarTermGrounder::run() const {
 	if(_table->contains(*_arg)) {
 		_result->_type = _arg->_type;
@@ -463,6 +537,24 @@ void GrounderFactory::visit(PredForm* pf) {
 
 	// TODO: delete temporary values
 
+}
+
+void GrounderFactory::visit(BoolForm* bf) { 
+	bool pos = _poscontext;
+	bool gen = _truegencontext;
+	bool sent = _sentence;
+	vector<Grounder*> sub(bf->nrSubforms());
+	for(unsigned int n = 0; n < bf->nrSubforms(); ++n) {
+		_sentence = false;
+		_poscontext = bf->sign() ? pos : !pos;
+		_truegencontext = bf->sign() ? gen : !gen;
+		bf->subform(n)->accept(this);
+		sub[n] = _grounder;
+	}
+	_sentence = sent;
+	_poscontext = pos;
+	_truegencontext = gen;
+	_grounder = new BoolGrounder(_grounding,sub,bf->sign(),sent,bf->conj(),_poscontext);
 }
 
 void GrounderFactory::visit(VarTerm* t) {

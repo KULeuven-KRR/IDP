@@ -228,6 +228,7 @@ class EcnfTheory : public AbstractTheory {
 		
 		GroundTranslator*		_translator;
 
+		set<int>				_printedtseitins;
 		vector<EcnfClause>		_clauses;	
 		vector<EcnfDefinition>	_definitions;
 		vector<EcnfAgg>			_aggregates;
@@ -245,8 +246,8 @@ class EcnfTheory : public AbstractTheory {
 
 		// Mutators
 		void addEmptyClause()						{ _clauses.push_back(EcnfClause(0));								}
-		void addUnitClause(int l)					{ _clauses.push_back(EcnfClause(1,l));								}
-		void addClause(const EcnfClause& vi)		{ _clauses.push_back(vi);											}
+		void addUnitClause(int l);
+		void addClause(const EcnfClause& vi, bool firstIsPrinted = false);
 		void addDefinition(const EcnfDefinition& d)	{ _definitions.push_back(d); 
 													  _features._containsDefinitions = true;	
 													  _features._containsAggregates = 

@@ -14,33 +14,48 @@
 	Translate from ground atoms to numbers
 **********************************************/
 
+enum TsType { TS_EQ, TS_RULE, TS_IMPL, TS_RIMPL };
+
+struct TsBody {
+	vector<int> _body;
+	TsType		_type;
+	bool		_conj;
+};
+
 class GroundTranslator {
 
 	public:
-		virtual int translate(PFSymbol*,const vector<TypedElement>&) = 0;	// translate an atom to an integer
-				int translate(PFSymbol*,const vector<TypedElement*>&);	// translate an atom to an integer
-		virtual int nextTseitin() = 0;								// return a new tseitin atom
-		virtual PFSymbol*					symbol(int n)	const = 0; 
+		virtual int			translate(PFSymbol*,const vector<TypedElement>&) = 0;		// translate an atom to an integer
+				int			translate(PFSymbol*,const vector<TypedElement*>&);			// translate an atom to an integer
+		virtual int			translate(const vector<int>& cl, bool conj, TsType tp) = 0;	// translate a clause to an integer
+		virtual int			nextNumber() = 0;
+		virtual bool		isTseitin(int l) const = 0;
+		virtual PFSymbol*	symbol(int n)	const = 0; 
 		virtual const vector<TypedElement>&	args(int n)	const = 0; 
+		virtual const TsBody&	tsbody(int l)	const = 0;
 };
 
 class NaiveTranslator : public GroundTranslator {
 
 	private:
-		int	_nextnumber;	// lowest number that currently has no corresponding atom
 
 		map<PFSymbol*,map<vector<TypedElement>,int> >	_table;			// maps atoms to integers
 		vector<PFSymbol*>								_backsymbtable;	// map integer to the symbol of its corresponding atom
 		vector<vector<TypedElement> >					_backargstable;	// map integer to the terms of its corresponding atom
+		set<int>										_freenumbers;	// keeps free numbers
+		map<int,TsBody>									_tsbodies;
 
 	public:
 		
-		NaiveTranslator() : _nextnumber(1) { }
+		NaiveTranslator() : _backsymbtable(1), _backargstable(1) { }
 
 		int							translate(PFSymbol*,const vector<TypedElement>&);
-		int							nextTseitin();	
-		PFSymbol*					symbol(int n)	const { return _backsymbtable[abs(n)-1];	}
-		const vector<TypedElement>&	args(int n)	const { return _backargstable[abs(n)-1];	}
+		int							translate(const vector<int>& cl, bool conj, TsType tp);
+		int							nextNumber();
+		PFSymbol*					symbol(int n)	const	{ return _backsymbtable[abs(n)];	}
+		const vector<TypedElement>&	args(int n)		const	{ return _backargstable[abs(n)];	}
+		bool						isTseitin(int l) const	{ return symbol(l) == 0;			}
+		const TsBody&				tsbody(int l)	const	{ return _tsbodies.find(abs(l))->second;			}
 
 };
 
@@ -210,6 +225,27 @@ class AtomGrounder : public Grounder {
 		int run() const;
 };
 
+class BoolGrounder : public Grounder {
+
+	private:
+		vector<Grounder*>	_subgrounders;
+		bool				_sign;
+		bool				_sentence;
+		bool				_conj;
+		bool				_poscontext;
+
+	public:
+		BoolGrounder(EcnfTheory* g, const vector<Grounder*> sub, bool sign, bool sen, bool conj, bool pos):
+			Grounder(g), _subgrounders(sub), _sign(sign), _sentence(sen), _conj(conj), _poscontext(pos) { }
+
+		int		run() const;
+		bool	check1(int l) const;
+		bool	check2(int l) const;
+		int		result1() const;
+		int		result2() const;
+
+};
+
 class GrounderFactory : public Visitor {
 	
 	private:
@@ -242,6 +278,7 @@ class GrounderFactory : public Visitor {
 		void visit(Theory*);
 
 		void visit(PredForm*);
+		void visit(BoolForm*);
 
 		void visit(VarTerm*);
 		void visit(DomainTerm*);

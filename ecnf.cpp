@@ -493,6 +493,56 @@ void outputToSolver::outputunsat(){
 	Ecnf definitions
 ***********************/
 
+void EcnfTheory::addUnitClause(int l) {
+	vector<int> vi(1,l);
+	addClause(vi);
+}
+
+
+void EcnfTheory::addClause(const EcnfClause& vi, bool firstIsPrinted) {
+	int n = 0;
+	if(firstIsPrinted) ++n;
+	for(; n < vi.size(); ++n) {
+		int atom = abs(vi[n]);
+		if(_translator->isTseitin(atom) && _printedtseitins.find(atom) == _printedtseitins.end()) {
+			_printedtseitins.insert(atom);
+			const TsBody& body = _translator->tsbody(atom);
+			if(body._type == TS_IMPL || body._type == TS_EQ) {
+				if(body._conj) {
+					for(unsigned int m = 0; m < body._body.size(); ++m) {
+						vector<int> cl(2,-atom);
+						cl[1] = body._body[m];
+						addClause(cl,true);	// NOTE: apply folding?
+					}
+				}
+				else {
+					vector<int> cl(body._body.size()+1,-atom);
+					for(unsigned int m = 0; m < body._body.size(); ++m) cl[m+1] = body._body[m];
+					addClause(cl,true);
+				}
+			}
+			if(body._type == TS_RIMPL || body._type == TS_EQ) {
+				if(body._conj) {
+					vector<int> cl(body._body.size()+1,atom);
+					for(unsigned int m = 0; m < body._body.size(); ++m) cl[m+1] = -body._body[m];
+					addClause(cl,true);
+				}
+				else {
+					for(unsigned int m = 0; m < body._body.size(); ++m) {
+						vector<int> cl(2,atom);
+						cl[1] = -body._body[m];
+						addClause(cl,true);	// NOTE: apply folding?
+					}
+				}
+			}
+			if(body._type == TS_RULE) {
+				assert(false); // TODO
+			}
+		}
+	}
+	_clauses.push_back(vi);
+}
+
 void EcnfDefinition::addRule(int head, const vector<int>& body, bool conj, GroundTranslator* t) {
 	map<int,RuleType>::iterator it = _ruletypes.find(head);
 	if(it == _ruletypes.end() || it->second == RT_FALSE) {	// no rule yet with the given head (or the rule with the given head is false)
@@ -533,7 +583,7 @@ void EcnfDefinition::addRule(int head, const vector<int>& body, bool conj, Groun
 					_bodies[head].push_back(temp);
 				}
 				else {
-					int ts = t->nextTseitin();
+					int ts = t->nextNumber();
 					_ruletypes[ts] = RT_CONJ;
 					_bodies[ts] = body;
 					_ruletypes[head] = RT_DISJ;
@@ -547,7 +597,7 @@ void EcnfDefinition::addRule(int head, const vector<int>& body, bool conj, Groun
 					for(unsigned int n = 0; n < body.size(); ++n) vi.push_back(body[n]);
 				}
 				else {
-					int ts = t->nextTseitin();
+					int ts = t->nextNumber();
 					_ruletypes[ts] = RT_CONJ;
 					_bodies[ts] = body;
 					_bodies[head].push_back(ts);
@@ -555,7 +605,7 @@ void EcnfDefinition::addRule(int head, const vector<int>& body, bool conj, Groun
 			}
 			case RT_CONJ:
 				if((!conj) || body.size() == 1) {
-					int ts = t->nextTseitin();
+					int ts = t->nextNumber();
 					_ruletypes[ts] = RT_CONJ;
 					_bodies[ts] = _bodies[head];
 					_ruletypes[head] = RT_DISJ;
@@ -563,8 +613,8 @@ void EcnfDefinition::addRule(int head, const vector<int>& body, bool conj, Groun
 					_bodies[head].push_back(ts);
 				}
 				else {
-					int ts1 = t->nextTseitin();
-					int ts2 = t->nextTseitin();
+					int ts1 = t->nextNumber();
+					int ts2 = t->nextNumber();
 					_ruletypes[ts1] = RT_CONJ;
 					_ruletypes[ts2] = RT_CONJ;
 					_ruletypes[head] = RT_DISJ;
@@ -576,7 +626,7 @@ void EcnfDefinition::addRule(int head, const vector<int>& body, bool conj, Groun
 				break;
 			case RT_AGG:
 				if((!conj) || body.size() == 1) {
-					int ts = t->nextTseitin();
+					int ts = t->nextNumber();
 					_ruletypes[ts] = RT_AGG;
 					EcnfAgg efa(_aggs[head]);
 					efa._head = ts;
@@ -587,8 +637,8 @@ void EcnfDefinition::addRule(int head, const vector<int>& body, bool conj, Groun
 					_bodies[head].push_back(ts);
 				}
 				else {
-					int ts1 = t->nextTseitin();
-					int ts2 = t->nextTseitin();
+					int ts1 = t->nextNumber();
+					int ts2 = t->nextNumber();
 					_ruletypes[ts1] = RT_AGG;
 					_ruletypes[ts2] = RT_CONJ;
 					_ruletypes[head] = RT_DISJ;
@@ -624,7 +674,7 @@ void EcnfDefinition::addAgg(const EcnfAgg& a, GroundTranslator* t) {
 				break;
 			case RT_UNARY:
 			{
-				int ts = t->nextTseitin();
+				int ts = t->nextNumber();
 				_ruletypes[head] = RT_DISJ;
 				_bodies[head].push_back(ts);
 				_ruletypes[ts] = RT_AGG;
@@ -634,7 +684,7 @@ void EcnfDefinition::addAgg(const EcnfAgg& a, GroundTranslator* t) {
 			}
 			case RT_DISJ:
 			{
-				int ts = t->nextTseitin();
+				int ts = t->nextNumber();
 				_bodies[head].push_back(ts);
 				_ruletypes[ts] = RT_AGG;
 				_aggs[ts] = a;
@@ -643,8 +693,8 @@ void EcnfDefinition::addAgg(const EcnfAgg& a, GroundTranslator* t) {
 			}
 			case RT_CONJ:
 			{
-				int ts1 = t->nextTseitin();
-				int ts2 = t->nextTseitin();
+				int ts1 = t->nextNumber();
+				int ts2 = t->nextNumber();
 				_ruletypes[ts1] = RT_CONJ;
 				_bodies[ts1] = _bodies[head];
 				_ruletypes[ts2] = RT_AGG;
@@ -657,8 +707,8 @@ void EcnfDefinition::addAgg(const EcnfAgg& a, GroundTranslator* t) {
 			}
 			case RT_AGG:
 			{
-				int ts1 = t->nextTseitin();
-				int ts2 = t->nextTseitin();
+				int ts1 = t->nextNumber();
+				int ts2 = t->nextNumber();
 				_ruletypes[ts1] = RT_AGG;
 				_aggs[ts1] = _aggs[head];
 				_aggs[ts1]._head = ts1;
@@ -719,15 +769,19 @@ string EcnfTheory::to_string() const {
 		else {
 			for(unsigned int m = 0; m < _clauses[n].size(); ++m) {
 				if(_clauses[n][m] < 0) s += "~";
-				s += _translator->symbol(_clauses[n][m])->to_string();
-				if(!(_translator->args(_clauses[n][m])).empty()) {
-					s += "(";
-					for(unsigned int c = 0; c < _translator->args(_clauses[n][m]).size(); ++c) {
-						s += ElementUtil::ElementToString((_translator->args(_clauses[n][m]))[c]);
-						if(c !=  _translator->args(_clauses[n][m]).size()-1) s += ",";
+				PFSymbol* pfs = _translator->symbol(_clauses[n][m]);
+				if(pfs) {
+					s += pfs->to_string();
+					if(!(_translator->args(_clauses[n][m])).empty()) {
+						s += "(";
+						for(unsigned int c = 0; c < _translator->args(_clauses[n][m]).size(); ++c) {
+							s += ElementUtil::ElementToString((_translator->args(_clauses[n][m]))[c]);
+							if(c !=  _translator->args(_clauses[n][m]).size()-1) s += ",";
+						}
+						s += ")";
 					}
-					s += ")";
 				}
+				else s += "tseitin_" + itos(abs(_clauses[n][m]));
 				if(m < _clauses[n].size()-1) s += " | ";
 			}
 		}
