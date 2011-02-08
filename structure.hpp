@@ -1073,6 +1073,9 @@ class Structure : public AbstractStructure {
 		PredInter*		inter(Predicate* p);	// Return the interpretation of p.
 		FuncInter*		inter(Function* f);		// Return the interpretation of f.
 		PredInter*		inter(PFSymbol* s);		// Return the interpretation of s.
+		bool			hasInter(Sort* s)		{ return _sortinter.find(s) != _sortinter.end();	}
+		bool			hasInter(Predicate* p)	{ return _predinter.find(p) != _predinter.end();	}
+		bool			hasInter(Function* f)	{ return _funcinter.find(f) != _funcinter.end();	}
 //		unsigned int	nrSortInters()				const { return _sortinter.size();	}
 //		unsigned int	nrPredInters()				const { return _predinter.size();	}
 //		unsigned int	nrFuncInters()				const { return _funcinter.size();	}

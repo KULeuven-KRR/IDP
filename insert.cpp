@@ -1507,7 +1507,7 @@ namespace Insert {
 		if(p && nst->_sortsincluded && (nst->_sorts).size() == t->arity()) p = p->resolve(nst->_sorts);
 		if(p) {
 			if(belongsToVoc(p)) {
-				if(_currstructure->inter(p)) Error::multpredinter(nst->to_string(),pi);
+				if(_currstructure->hasInter(p)) Error::multpredinter(nst->to_string(),pi);
 				else {
 					t->sortunique();
 					PredInter* pt = new PredInter(t,true);
@@ -1532,7 +1532,7 @@ namespace Insert {
 		if(f && nst->_sortsincluded && (nst->_sorts).size() == t->arity()) f = f->resolve(nst->_sorts);
 		if(f) {
 			if(belongsToVoc(f)) {
-				if(_currstructure->inter(f)) Error::multfuncinter(f->name(),pi);
+				if(_currstructure->hasInter(f)) Error::multfuncinter(f->name(),pi);
 				else {
 					t->sortunique();
 					PredInter* pt = new PredInter(t,true);
@@ -1612,26 +1612,28 @@ namespace Insert {
 							break;
 						case UTF_CT:
 						{	
-							PredInter* pt = _currstructure->inter(p);
-							if(pt) {
+							bool hasinter = _currstructure->hasInter(p);
+							if(hasinter) {
+								PredInter* pt = _currstructure->inter(p);
 								if(pt->ctpf()) Error::multctpredinter(p->name(),pi);
 								else pt->replace(t,true,true);
 							}
 							else {
-								pt = new PredInter(t,0,true,true);
+								PredInter* pt = new PredInter(t,0,true,true);
 								_currstructure->inter(p,pt);
 							}
 							break;
 						}
 						case UTF_CF:
 						{
-							PredInter* pt = _currstructure->inter(p);
-							if(pt) {
+							bool hasinter = _currstructure->hasInter(p);
+							if(hasinter) {
+								PredInter* pt = _currstructure->inter(p);
 								if(pt->cfpt()) Error::multcfpredinter(p->name(),pi);
 								else pt->replace(t,false,true);
 							}
 							else {
-								pt = new PredInter(0,t,true,true);
+								PredInter* pt = new PredInter(0,t,true,true);
 								_currstructure->inter(p,pt);
 							}
 							break;
@@ -1678,28 +1680,30 @@ namespace Insert {
 						break;
 					case UTF_CT:
 					{	
-						FuncInter* ft = _currstructure->inter(f);
-						if(ft) {
+						bool hasinter = _currstructure->hasInter(f);
+						if(hasinter) {
+							FuncInter* ft = _currstructure->inter(f);
 							if(ft->predinter()->ctpf()) Error::multctfuncinter(f->name(),pi);
 							else ft->predinter()->replace(t,true,true);
 						}
 						else {
 							PredInter* pt = new PredInter(t,0,true,true);
-							ft = new FuncInter(0,pt);
+							FuncInter* ft = new FuncInter(0,pt);
 							_currstructure->inter(f,ft);
 						}
 						break;
 					}
 					case UTF_CF:
 					{
-						FuncInter* ft = _currstructure->inter(f);
-						if(ft) {
+						bool hasinter = _currstructure->hasInter(f);
+						if(hasinter) {
+							FuncInter* ft = _currstructure->inter(f);
 							if(ft->predinter()->cfpt()) Error::multcffuncinter(f->name(),pi);
 							else ft->predinter()->replace(t,false,true);
 						}
 						else {
 							PredInter* pt = new PredInter(0,t,true,true);
-							ft = new FuncInter(0,pt);
+							FuncInter* ft = new FuncInter(0,pt);
 							_currstructure->inter(f,ft);
 						}
 						break;

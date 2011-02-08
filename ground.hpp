@@ -7,6 +7,7 @@
 #ifndef GROUND_HPP
 #define GROUND_HPP
 
+#include <tr1/unordered_map>
 #include "theory.hpp"
 #include "checker.hpp"
 #include "generator.hpp"
@@ -268,11 +269,28 @@ class QuantGrounder : public ClauseGrounder {
 		InstGenerator*			_generator;	
 
 	public:
-		QuantGrounder(EcnfTheory* g, Grounder* sub, bool sign, bool sen, bool conj, bool pos,InstGenerator* gen):
+		QuantGrounder(EcnfTheory* g, Grounder* sub, bool sign, bool sen, bool conj, bool pos, InstGenerator* gen):
 			ClauseGrounder(g,sign,sen,conj,pos), _subgrounder(sub), _generator(gen) { }
 
 		int	run() const;
 	
+};
+
+class EquivGrounder : public Grounder {
+
+	private:
+		Grounder*	_leftgrounder;
+		Grounder*	_rightgrounder;
+		bool		_sign;
+		bool		_sentence;
+		bool		_poscontext;
+	
+	public:
+		EquivGrounder(EcnfTheory* g, Grounder* lg, Grounder* rg, bool sign, bool sen, bool pos):
+			Grounder(g), _leftgrounder(lg), _rightgrounder(rg), _sign(sign), _sentence(sen), _poscontext(pos) { }
+
+		int run() const;
+
 };
 
 class GrounderFactory : public Visitor {
@@ -309,6 +327,7 @@ class GrounderFactory : public Visitor {
 		void visit(PredForm*);
 		void visit(BoolForm*);
 		void visit(QuantForm*);
+		void visit(EquivForm*);
 
 		void visit(VarTerm*);
 		void visit(DomainTerm*);

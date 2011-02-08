@@ -14,9 +14,9 @@
 **********************************************/
 
 int NaiveTranslator::translate(PFSymbol* s, const vector<TypedElement>& args) {
-	map<PFSymbol*,map<vector<TypedElement>,int> >::iterator it = _table.find(s);
+	map<PFSymbol*,std::tr1::unordered_map<vector<TypedElement>,int> >::iterator it = _table.find(s);
 	if(it != _table.end()) {
-		map<vector<TypedElement>,int>::iterator jt = (it->second).find(args);
+		std::tr1::unordered_map<vector<TypedElement>,int>::iterator jt = (it->second).find(args);
 		if(jt != (it->second).end()) return jt->second;
 	}
 	int nr = nextNumber();
@@ -429,6 +429,10 @@ int QuantGrounder::run() const {
 	return finish(cl);
 }
 
+int EquivGrounder::run() const {
+	//TODO
+}
+
 /*void VarTermGrounder::run() const {
 	if(_table->contains(*_arg)) {
 		_result->_type = _arg->_type;
@@ -576,7 +580,54 @@ void GrounderFactory::visit(BoolForm* bf) {
 }
 
 void GrounderFactory::visit(QuantForm* qf) {
-	// TODO
+	bool pos = _poscontext;
+	bool tgen = _truegencontext;
+	bool sent = _sentence;
+
+	InstGenerator* gen = 0;
+	GeneratorNode* node = 0;
+	for(unsigned int n = 0; n < qf->nrQvars(); ++n) {
+		TypedElement* tpe = new TypedElement();
+		_varmapping[qf->qvar(n)] = tpe;
+
+		vector<TypedElement*> vte(1,tpe);
+		SortTable* st = _structure->inter(qf->qvar(n)->sort());
+		assert(st->finite());	// TODO: produce an error message
+		TableInstGenerator* tig = new TableInstGenerator(st,vte);
+		if(qf->nrQvars() == 1) {
+			gen = tig;
+			break;
+		}
+		else if(n == 0)
+			node = new LeafGeneratorNode(tig);
+		else 
+			node = new OneChildGeneratorNode(tig,node);
+	}
+	if(!gen) gen = new TreeInstGenerator(node);
+	
+	_sentence = false;
+	_poscontext = qf->sign() ? pos : !pos;
+	_truegencontext = !(qf->univ()); 
+	qf->subf()->accept(this);
+	Grounder* sub = _grounder;
+
+	_sentence = sent;
+	_poscontext = pos;
+	_truegencontext = tgen;
+	_grounder = new QuantGrounder(_grounding,sub,qf->sign(),_sentence,qf->univ(),_poscontext,gen);
+}
+
+void GrounderFactory::visit(EquivForm* ef) {
+	//TODO: check for partial functions
+	bool pos = _poscontext;
+	bool tgen = _truegencontext;
+	bool sent = _sentence;
+	
+	
+
+	_poscontext = pos;
+	_truegencontext = tgen;
+	_sentence = sent;
 }
 
 void GrounderFactory::visit(VarTerm* t) {
