@@ -131,6 +131,7 @@ class Sort {
 		Sort*				child(unsigned int n)		const	{ return _children[n];		}
 		string				to_string()					const	{ return _name;				}
 		set<Sort*>			ancestors(Vocabulary* v)	const;
+		set<Sort*>			descendents(Vocabulary* v)	const;
 
 		// Built-in sorts
 		virtual bool		builtin()	const	{ return false;	}

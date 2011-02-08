@@ -377,6 +377,17 @@ set<Sort*> Sort::ancestors(Vocabulary* v) const {
 	return ss;
 }
 
+set<Sort*> Sort::descendents(Vocabulary* v) const {
+	set<Sort*> ss;
+	for(unsigned int n = 0; n < nrChildren(); ++n) {
+		if((!v) || v->contains(child(n))) ss.insert(child(n));
+		set<Sort*> temp = child(n)->descendents(v);
+		for(set<Sort*>::iterator it = temp.begin(); it != temp.end(); ++it)
+			ss.insert(*it);
+	}
+	return ss;
+}
+
 bool OverloadedPredicate::contains(Predicate* p) const {
 	for(unsigned int n = 0; n < _overpreds.size(); ++n) {
 		if(_overpreds[n]->contains(p)) return true;

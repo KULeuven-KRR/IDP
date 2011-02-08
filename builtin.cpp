@@ -73,15 +73,15 @@ class SemiBuiltInPredicate : public Predicate {
 		~SemiBuiltInPredicate() { }
 
 		// Inspector
-		bool		builtin()							const { return true;	}
-		PredInter*	inter(const AbstractStructure& s)	const;
+		bool		builtin()					const { return true;	}
+		PredInter*	inter(AbstractStructure* s)	const;
 
 
 };
 
-PredInter* SemiBuiltInPredicate::inter(const AbstractStructure& s) const {
+PredInter* SemiBuiltInPredicate::inter(AbstractStructure* s) const {
 	vector<SortTable*> vs(nrSorts());
-	for(unsigned int n = 0; n < nrSorts(); ++n) vs[n] = s.inter(sort(n));
+	for(unsigned int n = 0; n < nrSorts(); ++n) vs[n] = s->inter(sort(n));
 	map<vector<SortTable*>,PredInter*>::const_iterator it = _inters.find(vs);
 	if(it != _inters.end()) return it->second;
 	else {
@@ -184,13 +184,13 @@ class SemiBuiltInFunction : public Function {
 
 		// Inspector
 		bool		builtin()							const { return true;	}
-		FuncInter*	inter(const AbstractStructure& s)	const;
+		FuncInter*	inter(AbstractStructure* s)	const;
 
 };
 
-FuncInter* SemiBuiltInFunction::inter(const AbstractStructure& s) const {
+FuncInter* SemiBuiltInFunction::inter(AbstractStructure* s) const {
 	vector<SortTable*> vs(nrSorts());
-	for(unsigned int n = 0; n < nrSorts(); ++n) vs[n] = s.inter(sort(n));
+	for(unsigned int n = 0; n < nrSorts(); ++n) vs[n] = s->inter(sort(n));
 	map<vector<SortTable*>,FuncInter*>::const_iterator it = _inters.find(vs);
 	if(it != _inters.end()) return it->second;
 	else {

@@ -1413,7 +1413,7 @@ namespace Insert {
 	}
 
 	void closeaspstructure() {
-		for(unsigned int n = 0; n < _currstructure->nrSortInters(); ++n) {
+/*		for(unsigned int n = 0; n < _currstructure->nrSortInters(); ++n) {
 			SortTable* st = _currstructure->sortinter(n);
 			if(st) st->sortunique();
 		}
@@ -1444,12 +1444,15 @@ namespace Insert {
 				ft->predinter()->replace(ft->predinter()->ctpf(),false,false);
 			}
 			ft->sortunique();
-		}
+		} */
+		_currstructure->sortall();
+		Structure* tmp = _currstructure;
 		closestructure();
+		tmp->forcetwovalued();
 	}
 
 	void closeaspbelief() {
-		for(unsigned int n = 0; n < _currstructure->nrSortInters(); ++n) {
+/*		for(unsigned int n = 0; n < _currstructure->nrSortInters(); ++n) {
 			SortTable* st = _currstructure->sortinter(n);
 			if(st) st->sortunique();
 		}
@@ -1460,7 +1463,8 @@ namespace Insert {
 		for(unsigned int n = 0; n < _currstructure->nrFuncInters(); ++n) {
 			FuncInter* ft = _currstructure->funcinter(n);
 			if(ft) ft->sortunique();
-		}
+		} */
+		_currstructure->sortall();
 		closestructure();
 	}
 

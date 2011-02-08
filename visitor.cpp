@@ -95,13 +95,13 @@ void Visitor::traverse(Theory* t) {
 
 void Visitor::traverse(Structure* s) {
 	for(unsigned int n = 0; n < s->vocabulary()->nrNBSorts(); ++n) {
-		visit(s->sortinter(n));
+		visit(s->inter(s->vocabulary()->nbsort(n)));
 	}
 	for(unsigned int n = 0; n < s->vocabulary()->nrNBPreds(); ++n) {
-		visit(s->predinter(n));
+		visit(s->inter(s->vocabulary()->nbpred(n)));
 	}
 	for(unsigned int n = 0; n < s->vocabulary()->nrNBFuncs(); ++n) {
-		visit(s->funcinter(n));
+		visit(s->inter(s->vocabulary()->nbfunc(n)));
 	}
 }
 

@@ -298,13 +298,11 @@ void IDPPrinter::visit(Structure* s) {
 //	indent();
 	for(unsigned int n = 0; n < v->nrNBPreds(); ++n) {
 		_currsymbol = v->nbpred(n);
-		if(s->hasInter(v->nbpred(n)))
-			s->inter(v->nbpred(n))->accept(this);
+		s->inter(v->nbpred(n))->accept(this);
 	}
 	for(unsigned int n = 0; n < v->nrNBFuncs(); ++n) {
 		_currsymbol = v->nbfunc(n);
-		if(s->hasInter(v->nbfunc(n)))
-			s->inter(v->nbfunc(n))->accept(this);
+		s->inter(v->nbfunc(n))->accept(this);
 	}
 //	unindent();
 //	_out << "}\n";

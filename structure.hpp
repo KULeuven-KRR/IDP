@@ -1016,15 +1016,16 @@ class AbstractStructure {
 		virtual void	vocabulary(Vocabulary* v) { _vocabulary = v;	}	// set the vocabulary
 		virtual AbstractStructure*	clone() = 0;	// take a clone of this structure
 		virtual void	forcetwovalued() = 0;		// delete all cfpt tables and replace by ctpf
+		virtual void	sortall() = 0;				// sort all tables
 
 		// Inspectors
 				const string&	name()						const { return _name;		}
 				ParseInfo		pi()						const { return _pi;			}
 				Vocabulary*		vocabulary()				const { return _vocabulary;	}
-		virtual SortTable*		inter(Sort* s)				const = 0;	// Return the domain of s.
-		virtual PredInter*		inter(Predicate* p)			const = 0;	// Return the interpretation of p.
-		virtual FuncInter*		inter(Function* f)			const = 0;	// Return the interpretation of f.
-		virtual PredInter*		inter(PFSymbol* s)			const = 0;  // Return the interpretation of s.
+		virtual SortTable*		inter(Sort* s)				= 0;	// Return the domain of s.
+		virtual PredInter*		inter(Predicate* p)			= 0;	// Return the interpretation of p.
+		virtual FuncInter*		inter(Function* f)			= 0;	// Return the interpretation of f.
+		virtual PredInter*		inter(PFSymbol* s)			= 0;  // Return the interpretation of s.
 
 		// Visitor
 		virtual void accept(Visitor* v)	= 0;
@@ -1040,14 +1041,9 @@ class Structure : public AbstractStructure {
 
 	private:
 
-		vector<SortTable*>	_sortinter;		// The domains of the structure. 
-											// The domain for sort s is stored in _sortinter[n], 
-											// where n is the index of s in _vocabulary.
-											// If a sort has no domain, a null-pointer is stored.
-		vector<PredInter*>	_predinter;		// The interpretations of the predicate symbols.
-											// If a predicate has no interpretation, a null-pointer is stored.
-		vector<FuncInter*>	_funcinter;		// The interpretations of the function symbols.
-											// If a function has no interpretation, a null-pointer is stored.
+		map<Sort*,SortTable*>		_sortinter;		// The domains of the structure. 
+		map<Predicate*,PredInter*>	_predinter;		// The interpretations of the predicate symbols.
+		map<Function*,FuncInter*>	_funcinter;		// The interpretations of the function symbols.
 	
 	public:
 		
@@ -1069,22 +1065,17 @@ class Structure : public AbstractStructure {
 													// interpretation.
 		Structure*	clone();						// take a clone of this structure
 		void	forcetwovalued();		
+		void	sortall();
 
 		// Inspectors
 		Vocabulary*		vocabulary()				const { return AbstractStructure::vocabulary();	}
-		SortTable*		inter(Sort* s)				const;	// Return the domain of s.
-		PredInter*		inter(Predicate* p)			const;	// Return the interpretation of p.
-		FuncInter*		inter(Function* f)			const;	// Return the interpretation of f.
-		PredInter*		inter(PFSymbol* s)			const;  // Return the interpretation of s.
-		SortTable*		sortinter(unsigned int n)	const { return _sortinter[n];	}
-		PredInter*		predinter(unsigned int n)	const { return _predinter[n];	}
-		FuncInter*		funcinter(unsigned int n)	const { return _funcinter[n];	}
-		bool			hasInter(Sort* s)			const;	// True iff s has an interpretation
-		bool			hasInter(Predicate* p)		const;	// True iff p has an interpretation
-		bool			hasInter(Function* f)		const;	// True iff f has an interpretation
-		unsigned int	nrSortInters()				const { return _sortinter.size();	}
-		unsigned int	nrPredInters()				const { return _predinter.size();	}
-		unsigned int	nrFuncInters()				const { return _funcinter.size();	}
+		SortTable*		inter(Sort* s);			// Return the domain of s.
+		PredInter*		inter(Predicate* p);	// Return the interpretation of p.
+		FuncInter*		inter(Function* f);		// Return the interpretation of f.
+		PredInter*		inter(PFSymbol* s);		// Return the interpretation of s.
+//		unsigned int	nrSortInters()				const { return _sortinter.size();	}
+//		unsigned int	nrPredInters()				const { return _predinter.size();	}
+//		unsigned int	nrFuncInters()				const { return _funcinter.size();	}
 
 		// Visitor
 		void accept(Visitor* v);

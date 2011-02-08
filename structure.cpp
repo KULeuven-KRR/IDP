@@ -1712,10 +1712,10 @@ namespace TableUtils {
 /** Destructor **/
 
 Structure::~Structure() {
-	for(unsigned int n = 0; n < _predinter.size(); ++n) 
-		if(_predinter[n]) delete(_predinter[n]);
-	for(unsigned int n = 0; n < _funcinter.size(); ++n) 
-		if(_funcinter[n]) delete(_funcinter[n]);
+	for(map<Predicate*,PredInter*>::iterator it = _predinter.begin(); it != _predinter.end(); ++it)
+		delete(it->second);
+	for(map<Function*,FuncInter*>::iterator it = _funcinter.begin(); it != _funcinter.end(); ++it)
+		delete(it->second);
 	// NOTE: the interpretations of the sorts are deleted when 
 	// when the corresponding predicate interpretations are deleted
 }
@@ -1723,51 +1723,55 @@ Structure::~Structure() {
 /** Mutators **/
 
 void Structure::forcetwovalued() {
-	for(unsigned int n = 0; n < _predinter.size(); ++n) {
-		_predinter[n]->forcetwovalued();
-	}
-	for(unsigned int n = 0; n < _funcinter.size(); ++n) {
-		_funcinter[n]->forcetwovalued();
-	}
+	for(map<Predicate*,PredInter*>::iterator it = _predinter.begin(); it != _predinter.end(); ++it)
+		it->second->forcetwovalued();
+	for(map<Function*,FuncInter*>::iterator it = _funcinter.begin(); it != _funcinter.end(); ++it)
+		it->second->forcetwovalued();
+}
+
+void Structure::sortall() {
+	for(map<Sort*,SortTable*>::iterator it = _sortinter.begin(); it != _sortinter.end(); ++it)
+		it->second->sortunique();
+	for(map<Predicate*,PredInter*>::iterator it = _predinter.begin(); it != _predinter.end(); ++it)
+		it->second->sortunique();
+	for(map<Function*,FuncInter*>::iterator it = _funcinter.begin(); it != _funcinter.end(); ++it)
+		it->second->sortunique();
 }
 
 Structure* Structure::clone() {
 	Structure*	s = new Structure("",ParseInfo());
 	s->vocabulary(_vocabulary);
-	for(unsigned int n = 0; n < _sortinter.size(); ++n) {
-		CopySortTable* t1 = new CopySortTable(_sortinter[n]);
-		CopySortTable* t2 = new CopySortTable(_sortinter[n]);
-		_sortinter[n] = t1;
-		s->inter(_vocabulary->nbsort(n),t2);
+	for(map<Sort*,SortTable*>::iterator it = _sortinter.begin(); it != _sortinter.end(); ++it) {
+		CopySortTable* t1 = new CopySortTable(it->second);
+		CopySortTable* t2 = new CopySortTable(it->second);
+		inter(it->first,t1);
+		s->inter(it->first,t2);
 	}
-	for(unsigned int n = 0; n < _predinter.size(); ++n) {
-		PredInter* pic = _predinter[n]->clone();
-		s->inter(_vocabulary->nbpred(n),pic);
+	for(map<Predicate*,PredInter*>::iterator it = _predinter.begin(); it != _predinter.end(); ++it) {
+		PredInter* pic = it->second->clone();
+		s->inter(it->first,pic);
 	}
-	for(unsigned int n = 0; n < _funcinter.size(); ++n) {
-		FuncInter* fic = _funcinter[n]->clone();
-		s->inter(_vocabulary->nbfunc(n),fic);
+	for(map<Function*,FuncInter*>::iterator it = _funcinter.begin(); it != _funcinter.end(); ++it) {
+		FuncInter* fic = it->second->clone();
+		s->inter(it->first,fic);
 	}
 	return s;
 }
 
 void Structure::vocabulary(Vocabulary* v) {
-	_sortinter = vector<SortTable*>(v->nrNBSorts(),0);
-	_predinter = vector<PredInter*>(v->nrNBPreds(),0);
-	_funcinter = vector<FuncInter*>(v->nrNBFuncs(),0);
 	_vocabulary = v;
 }
 
 void Structure::inter(Sort* s, SortTable* d) {
-	_sortinter[_vocabulary->index(s)] = d;
+	_sortinter[s] = d;
 }
 
 void Structure::inter(Predicate* p, PredInter* i) {
-	_predinter[_vocabulary->index(p)] = i;
+	_predinter[p] = i;
 }
 
 void Structure::inter(Function* f, FuncInter* i) {
-	_funcinter[_vocabulary->index(f)] = i;
+	_funcinter[f] = i;
 }
 
 void computescore(Sort* s, map<Sort*,unsigned int>& scores) {
@@ -1783,7 +1787,7 @@ void computescore(Sort* s, map<Sort*,unsigned int>& scores) {
 
 void Structure::autocomplete() {
 	// Assign least tables to every symbol that has no interpretation
-	for(unsigned int n = 0; n < _predinter.size(); ++n) {
+/*	for(unsigned int n = 0; n < _predinter.size(); ++n) {
 		vector<ElementType> vet(_vocabulary->nbpred(n)->arity(),ELINT);
 		if(!_predinter[n]) _predinter[n] = TableUtils::leastPredInter(vet);
 		else if(!(_predinter[n]->ctpf())) {
@@ -1810,14 +1814,14 @@ void Structure::autocomplete() {
 	for(unsigned int n = 0; n < _sortinter.size(); ++n) {
 		if(!_sortinter[n]) _sortinter[n] = new EmptySortTable();
 	}
-
+*/
 	bool message = false;
 	// Adding elements from predicate interpretations to sorts
-	for(unsigned int n = 0; n < _predinter.size(); ++n) {
-		Predicate* p = _vocabulary->nbpred(n);
+	for(map<Predicate*,PredInter*>::const_iterator it = _predinter.begin(); it != _predinter.end(); ++it) {
+		Predicate* p = it->first;
 		vector<SortTable*> tables(p->arity());
 		for(unsigned int m = 0; m < p->arity(); ++m) tables[m] = inter(p->sort(m));
-		PredTable* pt = _predinter[n]->ctpf();
+		PredTable* pt = it->second->ctpf();
 		for(unsigned int r = 0; r < pt->size(); ++r) {
 			for(unsigned int c = 0; c < pt->arity(); ++c) {
 				if(!(tables[c]->contains(pt->element(r,c),pt->type(c)))) {
@@ -1836,8 +1840,8 @@ void Structure::autocomplete() {
 				}
 			}
 		}
-		if(_predinter[n]->ctpf() != _predinter[n]->cfpt()) {
-			pt = _predinter[n]->cfpt();
+		if(it->second->ctpf() != it->second->cfpt()) {
+			pt = it->second->cfpt();
 			for(unsigned int r = 0; r < pt->size(); ++r) {
 				for(unsigned int c = 0; c < pt->arity(); ++c) {
 					if(!(tables[c]->contains(pt->element(r,c),pt->type(c)))) {
@@ -1859,11 +1863,11 @@ void Structure::autocomplete() {
 		}
 	}
 	// Adding elements from function interpretations to sorts
-	for(unsigned int n = 0; n < _funcinter.size(); ++n) {
-		Function* f = _vocabulary->nbfunc(n);
+	for(map<Function*,FuncInter*>::const_iterator it = _funcinter.begin(); it != _funcinter.end(); ++it) {
+		Function* f = it->first;
 		vector<SortTable*> tables(f->arity()+1);
 		for(unsigned int m = 0; m < f->arity()+1; ++m) tables[m] = inter(f->sort(m));
-		PredTable* pt = _funcinter[n]->predinter()->ctpf();
+		PredTable* pt = it->second->predinter()->ctpf();
 		for(unsigned int r = 0; r < pt->size(); ++r) {
 			for(unsigned int c = 0; c < pt->arity(); ++c) {
 				if(!(tables[c]->contains(pt->element(r,c),pt->type(c)))) {
@@ -1882,8 +1886,8 @@ void Structure::autocomplete() {
 				}
 			}
 		}
-		if(_funcinter[n]->predinter()->ctpf() != _funcinter[n]->predinter()->cfpt()) {
-			pt = _funcinter[n]->predinter()->cfpt();
+		if(it->second->predinter()->ctpf() != it->second->predinter()->cfpt()) {
+			pt = it->second->predinter()->cfpt();
 			for(unsigned int r = 0; r < pt->size(); ++r) {
 				for(unsigned int c = 0; c < pt->arity(); ++c) {
 					if(!(tables[c]->contains(pt->element(r,c),pt->type(c)))) {
@@ -1907,7 +1911,7 @@ void Structure::autocomplete() {
 
 	// Adding elements from subsorts to supersorts
 	map<Sort*,unsigned int> scores;
-	for(unsigned int n = 0; n < _sortinter.size(); ++n) {
+	for(unsigned int n = 0; n < _vocabulary->nrNBSorts(); ++n) {
 		computescore(_vocabulary->nbsort(n),scores);
 	}
 	map<unsigned int,vector<Sort*> > invscores;
@@ -1922,7 +1926,7 @@ void Structure::autocomplete() {
 			if(inter(s)->finite()) {
 				set<Sort*> notextend;
 				notextend.insert(s);
-				vector<unsigned int> toextend;
+				vector<Sort*> toextend;
 				vector<Sort*> tocheck;
 				while(!(notextend.empty())) {
 					Sort* e = *(notextend.begin());
@@ -1930,7 +1934,7 @@ void Structure::autocomplete() {
 						Sort* sp = e->parent(p);
 						if(_vocabulary->contains(sp)) {
 							if(sp->builtin()) tocheck.push_back(sp);
-							else toextend.push_back(_vocabulary->index(sp)); 
+							else toextend.push_back(sp); 
 						}
 						else {
 							notextend.insert(sp);
@@ -1941,12 +1945,12 @@ void Structure::autocomplete() {
 				SortTable* st = inter(s);
 				for(unsigned int m = 0; m < st->size(); ++m) {
 					for(unsigned int k = 0; k < toextend.size(); ++k) {
-						if(!(_sortinter[toextend[k]]->contains(st->element(m),st->type()))) {
+						if(!(inter(toextend[k])->contains(st->element(m),st->type()))) {
 							if(!message) {
 								cerr << "Completing structure " << _name << ".\n";
 								message = true;
 							}
-							addElement(st->element(m),st->type(),_vocabulary->nbsort(toextend[k]));
+							addElement(st->element(m),st->type(),toextend[k]);
 						}
 					}
 					for(unsigned int k = 0; k < tocheck.size(); ++k) {
@@ -1961,16 +1965,16 @@ void Structure::autocomplete() {
 	}
 	
 	// Synchronizing sort predicates
-	for(unsigned int n = 0; n < _sortinter.size(); ++n) {
+	for(unsigned int n = 0; n < _vocabulary->nrNBSorts(); ++n) {
 		Predicate* p = _vocabulary->nbsort(n)->pred();
-		PredInter* pri = _predinter[_vocabulary->index(p)];
-		pri->replace(_sortinter[n],true,true);
-		pri->replace(_sortinter[n],false,false);
+		PredInter* pri = inter(p);
+		pri->replace(inter(_vocabulary->nbsort(n)),true,true);
+		pri->replace(inter(_vocabulary->nbsort(n)),false,false);
 	}
 
 	// Sort the tables
-	for(unsigned int n = 0; n < _sortinter.size(); ++n) {
-		_sortinter[n]->sortunique();
+	for(map<Sort*,SortTable*>::iterator it = _sortinter.begin(); it != _sortinter.end(); ++it) {
+		it->second->sortunique();
 	}
 	
 }
@@ -1978,16 +1982,16 @@ void Structure::autocomplete() {
 void Structure::addElement(Element e, ElementType t, Sort* s) {
 	string el = ElementUtil::ElementToString(e,t);
 	Warning::addingeltosort(el,s->name(),_name);
-	int i = _vocabulary->index(s);
-	SortTable* oldstab = _sortinter[i];
-	_sortinter[i] = (dynamic_cast<FiniteSortTable*>(oldstab))->add(e,t);
+	SortTable* oldstab = inter(s);
+	SortTable* newstab = (dynamic_cast<FiniteSortTable*>(oldstab))->add(e,t);
+	inter(s,newstab);
 //	if(_sortinter[i] != oldstab) delete(oldstab);	TODO: geeft segfault op 15puzzle.idp
 }
 
 void Structure::functioncheck() {
-	for(unsigned int n = 0; n < _funcinter.size(); ++n) {
-		Function* f = _vocabulary->nbfunc(n);
-		FuncInter* ft = _funcinter[n];
+	for(map<Function*,FuncInter*>::const_iterator it = _funcinter.begin(); it != _funcinter.end(); ++it) {
+		Function* f = it->first;
+		FuncInter* ft = it->second;
 		if(ft) {
 			PredInter* pt = ft->predinter();
 			PredTable* ct = pt->ctpf();
@@ -2034,36 +2038,55 @@ void Structure::functioncheck() {
 
 /** Inspectors **/
 
-SortTable* Structure::inter(Sort* s) const {
+SortTable* Structure::inter(Sort* s) {
 	if(s->builtin()) return s->inter();
-	return _sortinter[_vocabulary->index(s)];
+	map<Sort*,SortTable*>::const_iterator it = _sortinter.find(s);
+	if(it != _sortinter.end())
+		return it->second;
+	else {
+		FiniteSortTable* st = new EmptySortTable();
+		set<Sort*> ds = s->descendents(_vocabulary);
+		for(set<Sort*>::const_iterator it = ds.begin(); it != ds.end(); ++it) {
+			SortTable* di = inter(*it);
+			assert(di->finite());
+			for(unsigned int n = 0; n < di->size(); ++n) {
+				FiniteSortTable* tmp = st->add(di->element(n),di->type());
+				if(tmp != st) delete(st);
+				st = tmp;
+			}
+		}
+		inter(s,st);
+		return st;
+	}
 }
 
-PredInter* Structure::inter(Predicate* p) const {
+PredInter* Structure::inter(Predicate* p) {
 	if(p->builtin()) return p->inter(*this);
-	return _predinter[_vocabulary->index(p)];
+	map<Predicate*,PredInter*>::const_iterator it = _predinter.find(p);
+	if(it != _predinter.end())
+		return it->second;
+	else {
+		PredInter* pit = TableUtils::leastPredInter(p->arity());
+		inter(p,pit);
+		return pit;
+	}
 }
 
-FuncInter* Structure::inter(Function* f) const {
+FuncInter* Structure::inter(Function* f) {
 	if(f->builtin()) return f->inter(*this);
-	return _funcinter[_vocabulary->index(f)];
+	map<Function*,FuncInter*>::const_iterator it = _funcinter.find(f);
+	if(it != _funcinter.end())
+		return it->second;
+	else {
+		FuncInter* fit = TableUtils::leastFuncInter(f->arity()+1);
+		inter(f,fit);
+		return fit;
+	}
 }
 
-PredInter* Structure::inter(PFSymbol* s) const {
+PredInter* Structure::inter(PFSymbol* s) {
 	if(s->ispred()) return inter(dynamic_cast<Predicate*>(s));
 	else return inter(dynamic_cast<Function*>(s))->predinter();
-}
-
-bool Structure::hasInter(Sort* s) const {
-	return (inter(s) != 0);
-}
-
-bool Structure::hasInter(Predicate* p) const {
-	return (inter(p) != 0);
-}
-
-bool Structure::hasInter(Function* f) const {
-	return (inter(f) != 0);
 }
 
 /** Debugging **/
@@ -2072,22 +2095,19 @@ string Structure::to_string(unsigned int spaces) const {
 	string tab = tabstring(spaces);
 	string s = tab + "Structure " + _name + " over vocabulary " + _vocabulary->name() + ":\n";
 	s = s + tab + "  Sorts:\n";
-	for(unsigned int n = 0; n < _sortinter.size(); ++n) {
-		s = s + tab + "    " + _vocabulary->nbsort(n)->to_string() + '\n';
-		if(_sortinter[n]) s = s + tab + "      " + _sortinter[n]->to_string();
-		else s = s + tab + "      no domain\n";
+	for(map<Sort*,SortTable*>::const_iterator it = _sortinter.begin(); it != _sortinter.end(); ++it) {
+		s = s + tab + "    " + it->first->to_string() + '\n';
+		s = s + tab + "      " + it->second->to_string();
 	}
 	s = s + tab + "  Predicates:\n";
-	for(unsigned int n = 0; n < _predinter.size(); ++n) {
-		s = s + tab + "    " + _vocabulary->nbpred(n)->to_string() + '\n';
-		if(_predinter[n]) s = s + _predinter[n]->to_string(spaces+6);
-		else s = s + tab + "      no interpretation\n";
+	for(map<Predicate*,PredInter*>::const_iterator it = _predinter.begin(); it != _predinter.end(); ++it) {
+		s = s + tab + "    " + it->first->to_string() + '\n';
+		s = s + it->second->to_string(spaces+6);
 	}
 	s = s + tab + "  Functions:\n";
-	for(unsigned int n = 0; n < _funcinter.size(); ++n) {
-		s = s + tab + "    " + _vocabulary->nbfunc(n)->to_string() + '\n';
-		if(_funcinter[n]) s = s + _funcinter[n]->to_string(spaces+6);
-		else s = s + tab + "      no interpretation\n";
+	for(map<Function*,FuncInter*>::const_iterator it = _funcinter.begin(); it != _funcinter.end(); ++it) {
+		s = s + tab + "    " + it->first->to_string() + '\n';
+		s = s + it->second->to_string(spaces+6);
 	}
 	return s;
 }
@@ -2119,11 +2139,11 @@ void StructConvertor::visit(Structure* s) {
 	_returnvalue = new Theory("",s->vocabulary(),ParseInfo());
 	for(unsigned int n = 0; n < s->vocabulary()->nrNBPreds(); ++n) {
 		_currsymbol = s->vocabulary()->nbpred(n);
-		visit(s->predinter(n));
+		visit(s->inter(_currsymbol));
 	}
 	for(unsigned int n = 0; n < s->vocabulary()->nrNBFuncs(); ++n) {
 		_currsymbol = s->vocabulary()->nbfunc(n);
-		visit(s->funcinter(n));
+		visit(s->inter(_currsymbol));
 	}
 }
 

@@ -9,6 +9,7 @@
 
 #include "theory.hpp"
 #include "checker.hpp"
+#include "generator.hpp"
 
 /**********************************************
 	Translate from ground atoms to numbers
@@ -225,25 +226,53 @@ class AtomGrounder : public Grounder {
 		int run() const;
 };
 
-class BoolGrounder : public Grounder {
-
-	private:
-		vector<Grounder*>	_subgrounders;
+class ClauseGrounder : public Grounder {
+	
+	protected:
 		bool				_sign;
 		bool				_sentence;
 		bool				_conj;
 		bool				_poscontext;
 
 	public:
-		BoolGrounder(EcnfTheory* g, const vector<Grounder*> sub, bool sign, bool sen, bool conj, bool pos):
-			Grounder(g), _subgrounders(sub), _sign(sign), _sentence(sen), _conj(conj), _poscontext(pos) { }
 
-		int		run() const;
+		ClauseGrounder(EcnfTheory* g, bool sign, bool sen, bool conj, bool pos) : 
+			Grounder(g), _sign(sign), _sentence(sen), _conj(conj), _poscontext(pos) { }
+		
+		virtual int run() const = 0;
+
+		int		finish(vector<int>&) const;
 		bool	check1(int l) const;
 		bool	check2(int l) const;
 		int		result1() const;
 		int		result2() const;
+};
 
+class BoolGrounder : public ClauseGrounder {
+
+	private:
+		vector<Grounder*>	_subgrounders;
+
+	public:
+		BoolGrounder(EcnfTheory* g, const vector<Grounder*> sub, bool sign, bool sen, bool conj, bool pos):
+			ClauseGrounder(g,sign,sen,conj,pos), _subgrounders(sub) { }
+
+		int		run() const;
+
+};
+
+class QuantGrounder : public ClauseGrounder {
+	
+	private:
+		Grounder*				_subgrounder;
+		InstGenerator*			_generator;	
+
+	public:
+		QuantGrounder(EcnfTheory* g, Grounder* sub, bool sign, bool sen, bool conj, bool pos,InstGenerator* gen):
+			ClauseGrounder(g,sign,sen,conj,pos), _subgrounder(sub), _generator(gen) { }
+
+		int	run() const;
+	
 };
 
 class GrounderFactory : public Visitor {
@@ -279,6 +308,7 @@ class GrounderFactory : public Visitor {
 
 		void visit(PredForm*);
 		void visit(BoolForm*);
+		void visit(QuantForm*);
 
 		void visit(VarTerm*);
 		void visit(DomainTerm*);

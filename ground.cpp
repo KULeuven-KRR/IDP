@@ -355,30 +355,23 @@ int AtomGrounder::run() const {
 	}
 }
 
-inline bool BoolGrounder::check1(int l) const {
+inline bool ClauseGrounder::check1(int l) const {
 	return _conj ? l == _false : l == _true;
 }
 
-inline bool BoolGrounder::check2(int l) const {
+inline bool ClauseGrounder::check2(int l) const {
 	return _conj ? l == _true : l == _false;
 }
 
-inline int BoolGrounder::result1() const {
+inline int ClauseGrounder::result1() const {
 	return (_conj == _sign) ? _false : _true;
 }
 
-inline int BoolGrounder::result2() const {
+inline int ClauseGrounder::result2() const {
 	return (_conj == _sign) ? _true : _false;
 }
 
-int BoolGrounder::run() const {
-	vector<int> cl;
-	for(unsigned int n = 0; n < _subgrounders.size(); ++n) {
-		int l = _subgrounders[n]->run();
-		if(check1(l)) return result1();
-		else if(! check2(l))
-			cl.push_back(l);
-	}
+int ClauseGrounder::finish(vector<int>& cl) const {
 	if(cl.empty())
 		return result2();
 	else if(cl.size() == 1) {
@@ -409,6 +402,31 @@ int BoolGrounder::run() const {
 		int ts = _grounding->translator()->translate(cl,_conj,tp);
 		return _sign ? ts : -ts;
 	}
+}
+
+int BoolGrounder::run() const {
+	vector<int> cl;
+	for(unsigned int n = 0; n < _subgrounders.size(); ++n) {
+		int l = _subgrounders[n]->run();
+		if(check1(l)) return result1();
+		else if(! check2(l)) cl.push_back(l);
+	}
+	return finish(cl);
+}
+
+int QuantGrounder::run() const {
+	vector<int> cl;
+	if(_generator->first()) {
+		int l = _subgrounder->run();
+		if(check1(l)) return result1();
+		else if(! check2(l)) cl.push_back(l);
+		while(_generator->next()) {
+			l = _subgrounder->run();
+			if(check1(l)) return result1();
+			else if(! check2(l)) cl.push_back(l);
+		}
+	}
+	return finish(cl);
 }
 
 /*void VarTermGrounder::run() const {
@@ -555,6 +573,10 @@ void GrounderFactory::visit(BoolForm* bf) {
 	_poscontext = pos;
 	_truegencontext = gen;
 	_grounder = new BoolGrounder(_grounding,sub,bf->sign(),sent,bf->conj(),_poscontext);
+}
+
+void GrounderFactory::visit(QuantForm* qf) {
+	// TODO
 }
 
 void GrounderFactory::visit(VarTerm* t) {
