@@ -8,22 +8,42 @@
 #include "ecnf.hpp"
 #include <typeinfo>
 #include <iostream>
+#include <sstream>
 
 /**********************************************
 	Translate from ground atoms to numbers
 **********************************************/
 
+/*string makestring(const vector<TypedElement>& args) {
+	stringstream sstr;
+	for(unsigned int n = 0; n < args.size(); ++n) 
+		sstr << args[n]._type << ' ' << args[n]._element._string;
+	return sstr.str();
+}
+*/
 int NaiveTranslator::translate(PFSymbol* s, const vector<TypedElement>& args) {
-	map<PFSymbol*,std::tr1::unordered_map<vector<TypedElement>,int> >::iterator it = _table.find(s);
+	map<PFSymbol*,map<vector<TypedElement>,int> >::iterator it = _table.find(s);
+//	string str = makestring(args);
 	if(it != _table.end()) {
-		std::tr1::unordered_map<vector<TypedElement>,int>::iterator jt = (it->second).find(args);
-		if(jt != (it->second).end()) return jt->second;
+		map<vector<TypedElement>,int>::iterator jt = (it->second).lower_bound(args);
+		if(jt != it->second.end() && jt->first == args) {
+			return jt->second;
+		}
+		else {
+			int nr = nextNumber();
+			(it->second).insert(jt,pair<vector<TypedElement>,int>(args,nr));
+			_backsymbtable[nr] = s;
+			_backargstable[nr] = args;
+			return nr;
+		}
 	}
-	int nr = nextNumber();
-	_table[s][args] = nr;
-	_backsymbtable[nr] = s;
-	_backargstable[nr] = args;
-	return nr;
+	else {
+		int nr = nextNumber();
+		_table[s][args] = nr;
+		_backsymbtable[nr] = s;
+		_backargstable[nr] = args;
+		return nr;
+	}
 }
 
 int GroundTranslator::translate(PFSymbol* s,const vector<TypedElement*>& args) {
@@ -50,8 +70,8 @@ int NaiveTranslator::nextNumber() {
 		return _backsymbtable.size()-1;
 	}
 	else {
-		int nr = *(_freenumbers.begin());
-		_freenumbers.erase(_freenumbers.begin());
+		int nr = _freenumbers.front();
+		_freenumbers.pop();
 		return nr;
 	}
 }

@@ -190,7 +190,7 @@ namespace ElementUtil {
 		return convert(te._element,te._type,t);
 	}
 
-	bool equal(Element e1, ElementType t1, Element e2, ElementType t2) {
+	inline bool equal(Element e1, ElementType t1, Element e2, ElementType t2) {
 		switch(t1) {
 			case ELINT:
 				switch(t2) {
@@ -242,7 +242,7 @@ namespace ElementUtil {
 		}
 	}
 
-	bool strlessthan(Element e1, ElementType t1, Element e2, ElementType t2) {
+	inline bool strlessthan(Element e1, ElementType t1, Element e2, ElementType t2) {
 		switch(t1) {
 			case ELINT:
 				switch(t2) {
@@ -309,7 +309,7 @@ namespace ElementUtil {
 	}
 
 
-	bool lessthanorequal(Element e1, ElementType t1, Element e2, ElementType t2) {
+	inline bool lessthanorequal(Element e1, ElementType t1, Element e2, ElementType t2) {
 		return (strlessthan(e1,t1,e2,t2) || equal(e1,t1,e2,t2));
 	}
 

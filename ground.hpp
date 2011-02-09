@@ -7,7 +7,7 @@
 #ifndef GROUND_HPP
 #define GROUND_HPP
 
-#include <tr1/unordered_map>
+#include <queue>
 #include "theory.hpp"
 #include "checker.hpp"
 #include "generator.hpp"
@@ -44,7 +44,7 @@ class NaiveTranslator : public GroundTranslator {
 		map<PFSymbol*,map<vector<TypedElement>,int> >	_table;			// maps atoms to integers
 		vector<PFSymbol*>								_backsymbtable;	// map integer to the symbol of its corresponding atom
 		vector<vector<TypedElement> >					_backargstable;	// map integer to the terms of its corresponding atom
-		set<int>										_freenumbers;	// keeps free numbers
+		queue<int>										_freenumbers;	// keeps free numbers
 		map<int,TsBody>									_tsbodies;
 
 	public:

@@ -6,6 +6,7 @@
 
 #include "ecnf.hpp"
 #include <iostream>
+#include <sstream>
 
 using namespace MinisatID;
 
@@ -761,38 +762,38 @@ void EcnfTheory::add(FixpDef* d) {
 }
 
 string EcnfTheory::to_string() const {
-	string s;
+	stringstream s;
 	for(unsigned int n = 0; n < _clauses.size(); ++n) {
 		if(_clauses[n].empty()) {
-			s += "false";
+			s << "false";
 		}
 		else {
 			for(unsigned int m = 0; m < _clauses[n].size(); ++m) {
-				if(_clauses[n][m] < 0) s += "~";
+				if(_clauses[n][m] < 0) s << '~';
 				PFSymbol* pfs = _translator->symbol(_clauses[n][m]);
 				if(pfs) {
-					s += pfs->to_string();
+					s << pfs->to_string();
 					if(!(_translator->args(_clauses[n][m])).empty()) {
-						s += "(";
+						s << "(";
 						for(unsigned int c = 0; c < _translator->args(_clauses[n][m]).size(); ++c) {
-							s += ElementUtil::ElementToString((_translator->args(_clauses[n][m]))[c]);
-							if(c !=  _translator->args(_clauses[n][m]).size()-1) s += ",";
+							s << ElementUtil::ElementToString((_translator->args(_clauses[n][m]))[c]);
+							if(c !=  _translator->args(_clauses[n][m]).size()-1) s << ",";
 						}
-						s += ")";
+						s << ")";
 					}
 				}
-				else s += "tseitin_" + itos(abs(_clauses[n][m]));
-				if(m < _clauses[n].size()-1) s += " | ";
+				else s << "tseitin_" << abs(_clauses[n][m]);
+				if(m < _clauses[n].size()-1) s << " | ";
 			}
 		}
-		s += ". // ";
+		s << ". // ";
 		for(unsigned int m = 0; m < _clauses[n].size(); ++m) {
-			s += itos(_clauses[n][m]) + " ";
+			s << _clauses[n][m] << " ";
 		}
-		s += "0\n";
+		s << "0\n";
 	}
 	//TODO: repeat above for definitions etc...
-	return s;
+	return s.str();
 }
 
 Formula* EcnfTheory::sentence(unsigned int n) const{
