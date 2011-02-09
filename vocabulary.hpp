@@ -536,7 +536,6 @@ class Vocabulary {
  *
  */
 
-enum ElementType { ELINT, ELDOUBLE, ELSTRING, ELCOMPOUND };
 
 // A single domain element
 union Element {
@@ -572,6 +571,7 @@ struct compound {
 	compound(Function* f, const vector<TypedElement>& a) : _function(f), _args(a) { }
 	string to_string() const;
 };
+typedef compound* domelement;
 
 // Class that implements the relation 'less-than-or-equal' on tuples of domain elements with the same types
 class ElementWeakOrdering {
@@ -631,6 +631,7 @@ namespace ElementUtil {
 	// If this is impossible, the non-existing element of the requested type is returned
 	Element		convert(TypedElement,ElementType newtype);		
 	Element		convert(Element,ElementType oldtype,ElementType newtype);
+	vector<TypedElement> convert(const vector<domelement>&);
 
 	// Compare elements
 	bool	equal(Element e1, ElementType t1, Element e2, ElementType t2);				// equality

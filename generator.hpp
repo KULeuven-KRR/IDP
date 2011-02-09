@@ -14,10 +14,10 @@ class InstGenerator {
 class TableInstGenerator : public InstGenerator { 
 	private:
 		PredTable*				_table;
-		vector<TypedElement*>	_outvars;
+		vector<domelement*>		_outvars;
 		mutable int				_currpos;
 	public:
-		TableInstGenerator(PredTable* t, const vector<TypedElement*>& out) : _table(t), _outvars(out) { }
+		TableInstGenerator(PredTable* t, const vector<domelement*>& out) : _table(t), _outvars(out) { }
 		bool first() const;
 		bool next() const;
 };
@@ -87,17 +87,18 @@ class TwoChildGeneratorNode : public GeneratorNode {
 
 	private:
 		InstanceChecker*				_checker;
-		vector<TypedElement*>			_outvars;
+		vector<domelement*>				_outvars;
 		vector<SortTable*>				_tables;
 		mutable vector<unsigned int>	_currpositions;
+		mutable vector<domelement>		_currargs;
 		GeneratorNode*					_left;
 		GeneratorNode*					_right;
 	
 	public:
 
 		// Constructor
-		TwoChildGeneratorNode(InstanceChecker* t, const vector<TypedElement*>& ov, const vector<SortTable*>& tbs, GeneratorNode* l, GeneratorNode* r) :
-			GeneratorNode(), _checker(t), _outvars(ov), _tables(tbs), _currpositions(tbs.size()), _left(l), _right(r) { _left->parent(this); _right->parent(this);	}
+		TwoChildGeneratorNode(InstanceChecker* t, const vector<domelement*>& ov, const vector<SortTable*>& tbs, GeneratorNode* l, GeneratorNode* r) :
+			GeneratorNode(), _checker(t), _outvars(ov), _currargs(_outvars.size()), _tables(tbs), _currpositions(tbs.size()), _left(l), _right(r) { _left->parent(this); _right->parent(this);	}
 
 		// Generate instances
 		GeneratorNode*	first()	const;

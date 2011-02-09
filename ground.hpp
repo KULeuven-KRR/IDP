@@ -24,38 +24,31 @@ struct TsBody {
 	bool		_conj;
 };
 
-class GroundTranslator {
-
-	public:
-		virtual int			translate(PFSymbol*,const vector<TypedElement>&) = 0;		// translate an atom to an integer
-				int			translate(PFSymbol*,const vector<TypedElement*>&);			// translate an atom to an integer
-		virtual int			translate(const vector<int>& cl, bool conj, TsType tp) = 0;	// translate a clause to an integer
-		virtual int			nextNumber() = 0;
-		virtual bool		isTseitin(int l) const = 0;
-		virtual PFSymbol*	symbol(int n)	const = 0; 
-		virtual const vector<TypedElement>&	args(int n)	const = 0; 
-		virtual const TsBody&	tsbody(int l)	const = 0;
-};
-
-class NaiveTranslator : public GroundTranslator {
+class GroundTranslator  {
 
 	private:
 
-		map<PFSymbol*,map<vector<TypedElement>,int> >	_table;			// maps atoms to integers
-		vector<PFSymbol*>								_backsymbtable;	// map integer to the symbol of its corresponding atom
-		vector<vector<TypedElement> >					_backargstable;	// map integer to the terms of its corresponding atom
-		queue<int>										_freenumbers;	// keeps free numbers
-		map<int,TsBody>									_tsbodies;
+		//map<PFSymbol*,map<vector<TypedElement>,int> >	_table;			// maps atoms to integers
+		vector<map<vector<domelement>,int> >		_table;			// maps atoms to integers
+		vector<PFSymbol*>							_symboffsets;
+		vector<PFSymbol*>							_backsymbtable;	// map integer to the symbol of its corresponding atom
+		vector<vector<domelement> >					_backargstable;	// map integer to the terms of its corresponding atom
+		queue<int>									_freenumbers;	// keeps free numbers
+		map<int,TsBody>								_tsbodies;
 
 	public:
 		
-		NaiveTranslator() : _backsymbtable(1), _backargstable(1) { }
+		GroundTranslator() : _backsymbtable(1), _backargstable(1) { }
 
-		int							translate(PFSymbol*,const vector<TypedElement>&);
+//		int							translate(PFSymbol*,const vector<TypedElement>&);
+		int							translate(unsigned int,const vector<domelement>&);
+//		int							translate(PFSymbol*,const vector<TypedElement*>&);	// translate an atom to an integer
 		int							translate(const vector<int>& cl, bool conj, TsType tp);
 		int							nextNumber();
 		PFSymbol*					symbol(int n)	const	{ return _backsymbtable[abs(n)];	}
-		const vector<TypedElement>&	args(int n)		const	{ return _backargstable[abs(n)];	}
+//		const vector<TypedElement>&	args(int n)		const	{ return _backargstable[abs(n)];	}
+		const vector<domelement>&	args(int n)		const	{ return _backargstable[abs(n)];	}
+		unsigned int				addSymbol(PFSymbol* pfs);
 		bool						isTseitin(int l) const	{ return symbol(l) == 0;			}
 		const TsBody&				tsbody(int l)	const	{ return _tsbodies.find(abs(l))->second;			}
 
@@ -113,26 +106,33 @@ class NaiveGrounder : public Visitor {
 class TermGrounder {
 	
 	protected:
-		TypedElement*			_result;
+		//TypedElement*			_result;
 
 	public:
-		TermGrounder(TypedElement* r) :
-			_result(r) { }
+		TermGrounder() { }
 
-		virtual void run() const = 0;
+	//	virtual void run() const = 0;
+		virtual domelement run() const = 0;
+};
+
+class DomTermGrounder : public TermGrounder {
+	private:
+		domelement	_value;
+	public:
+		DomTermGrounder(domelement val) : _value(val) { }
+		domelement run() const { return _value;	}
 };
 
 class VarTermGrounder : public TermGrounder {
 	
 	private:
-		SortTable*		_table;
-		TypedElement*	_arg;
+//		SortTable*		_table;
+//		TypedElement*	_arg;
+		domelement*		_value;
 
 	public:
-		VarTermGrounder(TypedElement* r, SortTable* t, TypedElement* a) :
-			TermGrounder(r), _table(t), _arg(a) { }
-
-		void run() const;
+		VarTermGrounder(domelement* a) : _value(a) { }
+		domelement run() const { return *_value;	}
 
 };
 
@@ -140,14 +140,15 @@ class FuncTermGrounder : public TermGrounder {
 
 	private:
 		FuncTable*				_function;
-		vector<TypedElement*>	_args;
+//		vector<TypedElement*>	_args;
 		vector<TermGrounder*>	_subtermgrounders;
+		mutable vector<domelement>	_args;
 
 	public:
-		FuncTermGrounder(TypedElement* r, const vector<TermGrounder*>& sub, FuncTable* f, const vector<TypedElement*>& a) :
-			TermGrounder(r), _function(f), _args(a), _subtermgrounders(sub) { }
+		FuncTermGrounder(const vector<TermGrounder*>& sub, FuncTable* f) :
+			_function(f), _args(sub.size()), _subtermgrounders(sub) { }
 
-		void run() const;
+		domelement run() const;
 
 
 		// TODO? Optimisation:
@@ -202,27 +203,23 @@ class TheoryGrounder : public Grounder {
 class AtomGrounder : public Grounder {
 
 	private:
-		bool					_sign;
-		bool					_sentence;
-		PFSymbol*				_symbol;
-		vector<TypedElement*>	_args;
-		vector<TermGrounder*>	_subtermgrounders;
-		vector<SortTable*>		_tables;
+		bool						_sign;
+		bool						_sentence;
+		unsigned int				_symbol;
+		mutable vector<domelement>	_args;
+		vector<TermGrounder*>		_subtermgrounders;
+		vector<SortTable*>			_tables;
 
-		InstanceChecker*		_pchecker;
-		InstanceChecker*		_cchecker;
-		int						_certainvalue;
-		bool					_poscontext;
+		InstanceChecker*			_pchecker;
+		InstanceChecker*			_cchecker;
+		int							_certainvalue;
+		bool						_poscontext;
 
 	
 	public:
 
 		// Constructor
-		AtomGrounder(EcnfTheory* g, bool sign, bool sent, PFSymbol* s, const vector<TypedElement*>& args, 
-			const vector<TermGrounder*> sg, InstanceChecker* pic, InstanceChecker* cic, const vector<SortTable*>& vst, bool pc, bool c) :
-				Grounder(g), _sign(sign), _sentence(sent), _symbol(s), _args(args), _subtermgrounders(sg), 
-				_tables(vst), _poscontext(pc), _pchecker(pic), _cchecker(cic)
-				{ _certainvalue = c ? _true : _false; }
+		AtomGrounder(EcnfTheory* g, bool sign, bool sent, PFSymbol* s, const vector<TermGrounder*> sg, InstanceChecker* pic, InstanceChecker* cic, const vector<SortTable*>& vst, bool pc, bool c);
 
 		int run() const;
 };
@@ -305,12 +302,12 @@ class GrounderFactory : public Visitor {
 		bool	_sentence;
 
 		// Variable mapping
-		map<Variable*,TypedElement*>	_varmapping;
+		map<Variable*,domelement*>	_varmapping;
 
 		// Return values
 		Grounder*			_grounder;
 		TermGrounder*		_termgrounder;
-		TypedElement*		_value;
+//		domelement*			_value;
 
 	public:
 

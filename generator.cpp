@@ -7,8 +7,7 @@ bool TableInstGenerator::first() const {
 	else {
 		_currpos = 0;
 		for(unsigned int n = 0; n < _outvars.size(); ++n) {
-			_outvars[n]->_element = _table->element(_currpos,n);
-			_outvars[n]->_type = _table->type(n);
+			*(_outvars[n]) = _table->delement(_currpos,n);
 		}
 		return true;	
 	}
@@ -30,11 +29,11 @@ GeneratorNode* OneChildGeneratorNode::first() const {
 
 GeneratorNode* TwoChildGeneratorNode::first() const {
 	for(int n = 0; n < _outvars.size(); ++n) {
-		_outvars[n]->_element = _tables[n]->element(0);
-		_outvars[n]->_type = _tables[n]->type();
+		_currargs[n] = _tables[n]->delement(0);
+		*(_outvars[n]) = _currargs[n];
 		_currpositions[n] = 0;
 	}
-	if(_checker->run()) {
+	if(_checker->run(_currargs)) {
 		GeneratorNode* r = _right->first();
 		if(r) return r;
 	}
@@ -57,8 +56,7 @@ bool TableInstGenerator::next() const {
 	++_currpos;
 	if(_currpos < _table->size()) {
 		for(unsigned int n = 0; n < _outvars.size(); ++n) {
-			_outvars[n]->_element = _table->element(_currpos,n);
-			_outvars[n]->_type = _table->type(n);
+			*(_outvars[n]) = _table->delement(_currpos,n);
 		}
 		return true;
 	}
@@ -84,19 +82,19 @@ GeneratorNode*	TwoChildGeneratorNode::next() const {
 		for( ; n < _outvars.size(); ++n) {
 			if(_currpositions[n] < _tables[n]->size()) {
 				_currpositions[n]++;
-				_outvars[n]->_element = _tables[n]->element(_currpositions[n]);
-				_outvars[n]->_type = _tables[n]->type();
+				_currargs[n] = _tables[n]->delement(_currpositions[n]);
+				*(_outvars[n]) = _currargs[n];
 				break;
 			}
 			else {
 				_currpositions[n] = 0;
-				_outvars[n]->_element = _tables[n]->element(0);
-				_outvars[n]->_type = _tables[n]->type();
+				_currargs[n] = _tables[n]->delement(0);
+				*(_outvars[n]) = _currargs[n];
 			}
 		}
 		if(n == _outvars.size()) return 0;
 		else {
-			if(_checker->run()) {
+			if(_checker->run(_currargs)) {
 				GeneratorNode* r = _right->first();
 				if(r) return r;
 			}

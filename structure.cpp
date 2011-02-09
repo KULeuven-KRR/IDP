@@ -856,6 +856,12 @@ bool FloatSortTable::contains(compound* c) const {
 
 /** Inspectors **/
 
+domelement SortTable::delement(unsigned int n) const {
+	//TODO: Optimize by dynamic programming
+	Element e = element(n);
+	return CPPointer(e,type());
+}
+
 ElementType MixedSortTable::type() const {
 	assert(!(_strtable.empty() && _comtable.empty()));
 	return (_comtable.empty() ? ELSTRING : ELCOMPOUND);
@@ -1451,12 +1457,34 @@ bool PredTable::contains(const vector<TypedElement>& vte) const {
 	return result;
 }
 
+bool PredTable::contains(const vector<domelement>& vd) const {
+	// NOTE: OPTIMIZATION?? first check the invdyntable?
+	if(_dyntable.find(vd) != _dyntable.end()) return true;
+	else if(_invdyntable.find(vd) != _dyntable.end()) return false;
+	else {
+		if(contains(ElementUtil::convert(vd))) {
+			_dyntable.insert(vd);
+			return true;
+		}
+		else {
+			_invdyntable.insert(vd);
+			return false;
+		}
+	}
+}
+
 bool PredTable::contains(const vector<TypedElement*>& vte) const {
 	vector<Element> ve(vte.size());
 	for(unsigned int n = 0; n < vte.size(); ++n) {
 		ve[n] = ElementUtil::convert(*(vte[n]),type(n));
 	}
 	return contains(ve);
+}
+
+domelement PredTable::delement(unsigned int r, unsigned int c) const {
+	//TODO: OPTIMIZE by dynamic programming
+	Element e = element(r,c);
+	return CPPointer(e,type(c));
 }
 
 bool PredInter::isfalse(const vector<TypedElement>& vte) const {
@@ -1589,7 +1617,17 @@ Element FuncTable::operator[](const vector<TypedElement*>& vte) const {
 	}
 	Element result = operator[](ve);
 	return result;
+}
 
+domelement FuncTable::operator[](const vector<domelement>& vd) const {
+	map<vector<domelement>,domelement>::const_iterator it = _dyntable.find(vd);
+	if(it != _dyntable.end()) return it->second;
+	else {
+		Element e = operator[](ElementUtil::convert(vd));
+		domelement d = CPPointer(e,outtype());
+		_dyntable[vd] = d;
+		return d;
+	}
 }
 
 bool FuncPredTable::contains(const vector<Element>& ve) const {

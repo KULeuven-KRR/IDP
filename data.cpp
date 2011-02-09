@@ -24,6 +24,14 @@ string* DomainData::stringpointer(const string& s) {
 }
 
 compound* DomainData::compoundpointer(Function* f, const vector<TypedElement>& vte) {
+	if((!f) && vte[0]._type == ELINT && vte[0]._element._int < _sharedintcompounds.size()) {
+		compound* cp = _sharedintcompounds[vte[0]._element._int];
+		if(!cp) {
+			cp = new compound(f,vte);
+			_sharedintcompounds[vte[0]._element._int] = cp;
+		}
+		return cp;
+	}
 	MFMVTC::iterator it = _sharedcompounds.find(f);
 	if(it != _sharedcompounds.end()) {
 		MVTC::iterator jt = (it->second).find(vte);
@@ -62,6 +70,14 @@ DomainData* DomainData::instance() {
 string*		IDPointer(char* s)			{ return DomainData::instance()->stringpointer(string(s));						}
 string*		IDPointer(const string& s)	{ return DomainData::instance()->stringpointer(s);								}
 compound*	CPPointer(TypedElement e)	{ return DomainData::instance()->compoundpointer(0,vector<TypedElement>(1,e));	}
+
+compound*	CPPointer(Element e, ElementType t)	{ 
+	TypedElement te; 
+	te._type = t; 
+	te._element = e;
+	return DomainData::instance()->compoundpointer(0,vector<TypedElement>(1,te));	
+}
+
 compound*	CPPointer(Function* f, const vector<TypedElement>& vte)	{ 
 	return DomainData::instance()->compoundpointer(f,vte);
 }

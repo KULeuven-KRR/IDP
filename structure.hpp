@@ -18,7 +18,10 @@ typedef vector<vector<Element> > VVE;
 class PredTable {
 
 	private:
-		unsigned int	_nrofrefs;	// Number of references to this table
+		unsigned int					_nrofrefs;	// Number of references to this table
+		mutable	set<vector<compound*> >	_dyntable;
+		mutable	set<vector<compound*> >	_invdyntable;	// complement of _dyntable
+														// OPTIMIZATION? do not keep this table?
 
 	public:
 		
@@ -53,11 +56,13 @@ class PredTable {
 																			// works also if the types of the tuple do not
 																			// match the types of the table
 				bool	contains(const vector<TypedElement*>&)	const;
+				bool	contains(const vector<compound*>&)		const;
 
 		// Inspectors for finite tables
 		virtual	unsigned int		size()									const = 0;	// the size of the table
 		virtual	vector<Element>		tuple(unsigned int n)					const = 0;	// the n'th tuple
 		virtual Element				element(unsigned int r,unsigned int c)	const = 0;	// the element at position (r,c)
+				domelement			delement(unsigned int r,unsigned int c)	const;
 
 		// Debugging
 		virtual string to_string(unsigned int spaces = 0)	const = 0;
@@ -151,7 +156,8 @@ class SortTable : public PredTable {
 		virtual Element			element(unsigned int n)					const = 0;	// Return the n'th element
 				TypedElement	telement(unsigned int n)				const { TypedElement te(element(n),type()); return te;	}
 				vector<Element>	tuple(unsigned int n)					const { return vector<Element>(1,element(n));			}
-				Element			element(unsigned int r,unsigned int )	const { return element(r);								}
+				Element			element(unsigned int r,unsigned int c)	const { return element(r);								}
+				domelement		delement(unsigned int n)				const;
 		virtual unsigned int	position(Element,ElementType)			const = 0;	// Return the position of the given element
 				unsigned int	position(Element e)						const { return position(e,type());					}
 				unsigned int	position(TypedElement te)				const { return position(te._element,te._type);		}
@@ -785,6 +791,7 @@ class FuncTable {
 
 	private:
 		unsigned int	_nrofrefs;	// Number of references to this table
+		mutable	map<vector<domelement>,domelement>	_dyntable;
 
 	public:
 
@@ -806,6 +813,7 @@ class FuncTable {
 		virtual unsigned int	arity()									const = 0;	// arity of the table - 1
 		virtual unsigned int	size()									const = 0;	// size of the table
 		virtual ElementType		type(unsigned int n)					const = 0;	// type of the n'th column of the table
+				ElementType		outtype()								const { return type(arity());	}
 		virtual vector<Element>	tuple(unsigned int n)					const = 0;	// return the n'th tuple
 		virtual Element			element(unsigned int r,unsigned int c)	const = 0;	// return the element at row r and column c
 
@@ -814,6 +822,7 @@ class FuncTable {
 																				// the type of the n'th column in the table. 
 				Element	operator[](const vector<TypedElement>& vi)	const;		// return the value of vi according to the function
 				Element operator[](const vector<TypedElement*>& vi)	const;
+				domelement operator[](const vector<domelement>& vi)	const;
 
 		// Debugging
 		virtual string to_string(unsigned int spaces = 0) const = 0;

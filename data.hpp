@@ -29,8 +29,10 @@ extern CLOptions _cloptions;
 class DomainData {
 	private:
 		static DomainData*	_instance;
-		MSSP	_sharedstrings;		// map a string to its shared pointer
-		MFMVTC	_sharedcompounds;	// map a compund to its shared pointer
+		MSSP				_sharedstrings;			// map a string to its shared pointer
+		MFMVTC				_sharedcompounds;		// map a compound to its shared pointer
+		vector<compound*>	_sharedintcompounds;
+		DomainData(unsigned int n = 1001): _sharedintcompounds(n,0) { }
 		~DomainData();
 	public:
 		static DomainData*	instance();

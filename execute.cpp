@@ -531,7 +531,8 @@ InfArg ModelExpansionInference::execute(const vector<InfArg>& args) const {
 			for(int j=0; j<sol->getModels()[i].size(); j++) {
 				PFSymbol* pfs = ecnfgr->translator()->symbol((sol->getModels()[i][j].getAtom().getValue()));
 				if(pfs && mod->vocabulary()->contains(pfs)) {
-					vector<TypedElement> args = ecnfgr->translator()->args(sol->getModels()[i][j].getAtom().getValue());
+					vector<domelement> vd = ecnfgr->translator()->args(sol->getModels()[i][j].getAtom().getValue());
+					vector<TypedElement> args = ElementUtil::convert(vd);
 					if(pfs->ispred()) {
 						mod->inter(pfs)->add(args,!(sol->getModels()[i][j].hasSign()),true);
 						tobesorted1.insert(mod->inter(pfs));

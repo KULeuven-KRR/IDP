@@ -915,7 +915,7 @@ void TheoryConvertor::visit(PredForm* pf) {
 			args[n]._element = dt->value();
 			args[n]._type = dt->type();
 		}
-		_curratom = _returnvalue->translator()->translate(pf->symb(),args);
+		//_curratom = _returnvalue->translator()->translate(pf->symb(),args);
 		if(!pf->sign()) _curratom = -_curratom;
 		_rettype = ECTT_ATOM;
 	}

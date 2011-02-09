@@ -190,6 +190,18 @@ namespace ElementUtil {
 		return convert(te._element,te._type,t);
 	}
 
+	vector<TypedElement> convert(const vector<domelement>& vd) {
+		vector<TypedElement> vte(vd.size());
+		for(unsigned int n = 0; n < vd.size(); ++n) {
+			if(vd[n]->_function) {
+				vte[n]._type = ELCOMPOUND;
+				vte[n]._element._compound = vd[n];
+			}
+			else vte[n] = (vd[n]->_args)[0];
+		}
+		return vte;
+	}
+
 	inline bool equal(Element e1, ElementType t1, Element e2, ElementType t2) {
 		switch(t1) {
 			case ELINT:
