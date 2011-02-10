@@ -266,7 +266,6 @@ class BoolForm : public Formula {
 		bool			trueformula()			const	{ return (_subf.empty() && _conj == _sign);	}
 		bool			falseformula()			const	{ return (_subf.empty() && _conj != _sign);	}
 
-
 		// Visitor
 		void		accept(Visitor* v);
 		Formula*	accept(MutatingVisitor* v);
@@ -295,8 +294,8 @@ class QuantForm : public Formula {
 		QuantForm*	clone()									const;
 		QuantForm*	clone(const map<Variable*,Variable*>&)	const;
 
-	   // Destructor
-	   void recursiveDelete();
+		// Destructor
+		void recursiveDelete();
 
 		// Mutators
 		void	add(Variable* v)	{ _vars.push_back(v);	}
