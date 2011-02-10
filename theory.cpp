@@ -12,7 +12,6 @@
 #include "ground.hpp"
 #include <iostream>
 #include <set>
-
 #include <typeinfo>
 
 extern string tabstring(unsigned int);

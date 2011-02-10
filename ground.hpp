@@ -8,6 +8,7 @@
 #define GROUND_HPP
 
 #include <queue>
+#include <cstdlib> // abs
 #include "theory.hpp"
 #include "checker.hpp"
 #include "generator.hpp"

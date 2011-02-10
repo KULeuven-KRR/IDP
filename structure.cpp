@@ -10,6 +10,7 @@
 #include "error.hpp"
 #include <iostream>
 #include <algorithm>
+#include <typeinfo>
 
 /**************
 	Domains

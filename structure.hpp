@@ -9,6 +9,7 @@
 
 #include "vocabulary.hpp"
 #include "visitor.hpp"
+
 typedef vector<vector<Element> > VVE;
 
 /*************************************

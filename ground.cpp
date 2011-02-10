@@ -9,6 +9,7 @@
 #include <typeinfo>
 #include <iostream>
 #include <sstream>
+#include <limits> // numeric_limits
 
 /**********************************************
 	Translate from ground atoms to numbers
