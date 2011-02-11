@@ -39,7 +39,7 @@ int GroundTranslator::translate(PFSymbol* s, const vector<TypedElement>& args) {
 }
 */
 int GroundTranslator::translate(unsigned int n, const vector<domelement>& args) {
-	map<vector<domelement>,int>::iterator jt = _table[n].lower_bound(args);
+	map<vector<domelement>,int>::iterator jt = _table[n].upper_bound(args);
 	if(jt != _table[n].end() && jt->first == args) {
 		return jt->second;
 	}
@@ -97,7 +97,7 @@ int GroundTranslator::nextNumber() {
 	if(_freenumbers.empty()) {
 		_backsymbtable.push_back(0);
 		_backargstable.push_back(vector<domelement>(0));
-		return _backsymbtable.size()-1;
+		return ++_currnumber;
 	}
 	else {
 		int nr = _freenumbers.front();
@@ -651,11 +651,9 @@ void GrounderFactory::visit(QuantForm* qf) {
 	for(unsigned int n = 0; n < qf->nrQvars(); ++n) {
 		domelement* tpe = new domelement();
 		_varmapping[qf->qvar(n)] = tpe;
-
-		vector<domelement*> vte(1,tpe);
 		SortTable* st = _structure->inter(qf->qvar(n)->sort());
 		assert(st->finite());	// TODO: produce an error message
-		TableInstGenerator* tig = new TableInstGenerator(st,vte);
+		SortInstGenerator* tig = new SortInstGenerator(st,tpe);
 		if(qf->nrQvars() == 1) {
 			gen = tig;
 			break;

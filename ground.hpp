@@ -35,10 +35,11 @@ class GroundTranslator  {
 		vector<vector<domelement> >					_backargstable;	// map integer to the terms of its corresponding atom
 		queue<int>									_freenumbers;	// keeps free numbers
 		map<int,TsBody>								_tsbodies;
+		int											_currnumber;
 
 	public:
 		
-		GroundTranslator() : _backsymbtable(1), _backargstable(1) { }
+		GroundTranslator() : _backsymbtable(1), _backargstable(1), _currnumber(0) { }
 
 //		int							translate(PFSymbol*,const vector<TypedElement>&);
 		int							translate(unsigned int,const vector<domelement>&);

@@ -19,9 +19,6 @@ class PredTable {
 
 	private:
 		unsigned int					_nrofrefs;	// Number of references to this table
-		mutable	set<vector<compound*> >	_dyntable;
-		mutable	set<vector<compound*> >	_invdyntable;	// complement of _dyntable
-														// OPTIMIZATION? do not keep this table?
 
 	public:
 		
@@ -56,7 +53,7 @@ class PredTable {
 																			// works also if the types of the tuple do not
 																			// match the types of the table
 				bool	contains(const vector<TypedElement*>&)	const;
-				bool	contains(const vector<compound*>&)		const;
+		virtual	bool	contains(const vector<compound*>&)		const;
 
 		// Inspectors for finite tables
 		virtual	unsigned int		size()									const = 0;	// the size of the table
@@ -97,6 +94,7 @@ class CopyPredTable : public PredTable {
 
 		// Check if the table contains a given tuple
 		bool	contains(const vector<Element>& ve)		const { return _table->contains(ve);	} 
+		bool	contains(const vector<compound*>& vd)	const { return _table->contains(vd);	}
 
 		// Inspectors for finite tables
 		unsigned int		size()									const { return _table->size();			}	 
@@ -628,6 +626,9 @@ class FinitePredTable : public PredTable {
 		ElementWeakOrdering			_order;		// less-than-or-equal relation on the tuples of this table
 		ElementEquality				_equality;	// equality relation on the tuples of this table
 
+		mutable	set<vector<compound*> >	_dyntable;
+		mutable	set<vector<compound*> >	_invdyntable;	// complement of _dyntable
+														// OPTIMIZATION? do not keep this table?
 	public:
 
 		// Constructors 
@@ -668,6 +669,7 @@ class FinitePredTable : public PredTable {
 
 		// Check if the table contains a given tuple
 		bool	contains(const vector<Element>&)	const;
+		bool	contains(const vector<compound*>&)	const;
 
 		// Other inspectors
 		VVE::const_iterator		begin()									const { return _table.begin();	}

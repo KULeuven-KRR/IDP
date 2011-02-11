@@ -13,6 +13,15 @@ bool TableInstGenerator::first() const {
 	}
 }
 
+bool SortInstGenerator::first() const {
+	if(_table->empty()) return false;
+	else {
+		_currpos = 0;
+		*_outvar = _table->delement(_currpos);
+		return true;	
+	}
+}
+
 GeneratorNode* LeafGeneratorNode::first() const {
 	if(_generator->first()) return _this;
 	return 0;
@@ -58,6 +67,15 @@ bool TableInstGenerator::next() const {
 		for(unsigned int n = 0; n < _outvars.size(); ++n) {
 			*(_outvars[n]) = _table->delement(_currpos,n);
 		}
+		return true;
+	}
+	return false;
+}
+
+bool SortInstGenerator::next() const {
+	++_currpos;
+	if(_currpos < _table->size()) {
+		*_outvar = _table->delement(_currpos);
 		return true;
 	}
 	return false;

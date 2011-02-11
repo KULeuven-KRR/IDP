@@ -22,6 +22,17 @@ class TableInstGenerator : public InstGenerator {
 		bool next() const;
 };
 
+class SortInstGenerator : public InstGenerator { 
+	private:
+		SortTable*		_table;
+		domelement*		_outvar;
+		mutable int		_currpos;
+	public:
+		SortInstGenerator(SortTable* t, domelement* out) : _table(t), _outvar(out) { }
+		bool first() const;
+		bool next() const;
+};
+
 
 /********************************************
 	Tree structure for generating instances

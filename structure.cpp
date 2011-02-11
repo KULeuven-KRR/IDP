@@ -1458,11 +1458,20 @@ bool PredTable::contains(const vector<TypedElement>& vte) const {
 }
 
 bool PredTable::contains(const vector<domelement>& vd) const {
+	vector<TypedElement> vte(vd.size());
+	for(unsigned int n = 0; n < vd.size(); ++n) {
+		vte[n]._element._compound = vd[n];
+		vte[n]._type = ELCOMPOUND;
+	}
+	return contains(vte);
+}
+
+bool FinitePredTable::contains(const vector<domelement>& vd) const {
 	// NOTE: OPTIMIZATION?? first check the invdyntable?
 	if(_dyntable.find(vd) != _dyntable.end()) return true;
 	else if(_invdyntable.find(vd) != _dyntable.end()) return false;
 	else {
-		if(contains(ElementUtil::convert(vd))) {
+		if(PredTable::contains(ElementUtil::convert(vd))) {
 			_dyntable.insert(vd);
 			return true;
 		}
