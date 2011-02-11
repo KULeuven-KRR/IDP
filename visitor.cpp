@@ -33,6 +33,7 @@ void Visitor::visit(Predicate*)				{ }
 void Visitor::visit(Function*)				{ }
 void Visitor::visit(Vocabulary* v)			{ traverse(v); }
 void Visitor::visit(EcnfTheory*)			{ /* TODO */	}
+void Visitor::visit(SolverTheory*)			{ /* TODO */	}
 
 void Visitor::traverse(Formula* f) {
 	for(unsigned int n = 0; n < f->nrSubforms(); ++n) {
@@ -464,6 +465,11 @@ Theory* MutatingVisitor::visit(Theory* t) {
 }
 
 EcnfTheory* MutatingVisitor::visit(EcnfTheory* t) {
+	// TODO
+	return t;
+}
+
+SolverTheory* MutatingVisitor::visit(SolverTheory* t) {
 	// TODO
 	return t;
 }

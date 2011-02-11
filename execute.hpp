@@ -209,6 +209,12 @@ class ModelExpansionInference : public Inference {
 		InfArg execute(const vector<InfArg>& args) const;
 };
 
+class FastMXInference : public Inference {
+	public:
+		FastMXInference(bool opts);
+		InfArg execute(const vector<InfArg>& args) const;
+};
+
 class StructToTheory : public Inference {
 	public:
 		StructToTheory() {

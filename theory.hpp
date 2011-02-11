@@ -438,7 +438,8 @@ namespace FormulaUtils {
 	 *		- every free variable in the formula is interpreted by the given map
 	 */
 	TruthValue evaluate(Formula*,AbstractStructure*,const map<Variable*,TypedElement>&);	
-																				
+	
+	Formula* remove_eqchains(Formula*, Vocabulary*);	// Rewrite chains of equalities to a conjunction or disjunction of atoms.
 }
 
 

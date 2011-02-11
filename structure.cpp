@@ -1470,7 +1470,7 @@ bool PredTable::contains(const vector<domelement>& vd) const {
 bool FinitePredTable::contains(const vector<domelement>& vd) const {
 	// NOTE: OPTIMIZATION?? first check the invdyntable?
 	if(_dyntable.find(vd) != _dyntable.end()) return true;
-	else if(_invdyntable.find(vd) != _dyntable.end()) return false;
+	else if(_invdyntable.find(vd) != _invdyntable.end()) return false;
 	else {
 		if(PredTable::contains(ElementUtil::convert(vd))) {
 			_dyntable.insert(vd);

@@ -73,6 +73,14 @@
 		return idp_intern.idpcall("fastground",T,S)
 	}
 
+	#procedure fastmx(T,S) {
+		return idp_intern.idpcall("fastmx",T,S)
+	}
+
+	#procedure fastamx(T,S,Opt) {
+		return idp_intern.idpcall("fastmx",T,S,Opt)
+	}
+
 	#procedure reduce(T,S) {
 		return idp_intern.idpcall("reduce",T,S)
 	}

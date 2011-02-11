@@ -490,17 +490,11 @@ void outputToSolver::outputunsat(){
 	solver()->addClause(l2);
 }
 
-/***********************
-	Ecnf definitions
-***********************/
+/********************************
+	Ground theory definitions
+********************************/
 
-void EcnfTheory::addUnitClause(int l) {
-	vector<int> vi(1,l);
-	addClause(vi);
-}
-
-
-void EcnfTheory::addClause(const EcnfClause& vi, bool firstIsPrinted) {
+void GroundTheory::transformForAdd(EcnfClause& vi, bool firstIsPrinted) {
 	int n = 0;
 	if(firstIsPrinted) ++n;
 	for(; n < vi.size(); ++n) {
@@ -541,7 +535,15 @@ void EcnfTheory::addClause(const EcnfClause& vi, bool firstIsPrinted) {
 			}
 		}
 	}
-	_clauses.push_back(vi);
+}
+
+/******************************
+	Ecnf theory definitions
+******************************/
+
+void EcnfTheory::addClause(EcnfClause& cl, bool firstIsPrinted) {
+	transformForAdd(cl,firstIsPrinted);
+	_clauses.push_back(cl);
 }
 
 void EcnfDefinition::addRule(int head, const vector<int>& body, bool conj, GroundTranslator* t) {
@@ -749,18 +751,6 @@ void EcnfTheory::print(GroundPrinter* p) {
 	// TODO: definitions, aggregates, ...
 }
 
-void EcnfTheory::add(Formula* f) {
-	assert(false); // TODO not yet implemented
-}
-
-void EcnfTheory::add(Definition* d) {
-	assert(false); // TODO not yet implemented
-}
-
-void EcnfTheory::add(FixpDef* d) {
-	assert(false); // TODO not yet implemented
-}
-
 string EcnfTheory::to_string() const {
 	stringstream s;
 	for(unsigned int n = 0; n < _clauses.size(); ++n) {
@@ -806,3 +796,19 @@ Definition* EcnfTheory::definition(unsigned int n) const {
 FixpDef* EcnfTheory::fixpdef(unsigned int n) const {
 	assert(false); // TODO: not yet implemented
 }
+
+
+/********************************
+	Solver theory definitions
+********************************/
+
+void SolverTheory::addClause(EcnfClause& cl, bool firstIsPrinted){
+	transformForAdd(cl,firstIsPrinted);
+	vector<MinisatID::Literal> mcl;
+	for(unsigned int n = 0; n < cl.size(); ++n) {
+		MinisatID::Literal l(abs(cl[n]),cl[n]<0);
+		mcl.push_back(l);
+	}
+	_solver->addClause(mcl);
+}
+

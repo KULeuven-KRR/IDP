@@ -36,6 +36,7 @@ class Predicate;
 class Function;
 class Vocabulary;
 class EcnfTheory;
+class SolverTheory;
 
 /*
  *	class Visitor
@@ -61,6 +62,7 @@ class Visitor {
 		/** Theories **/
 		virtual void visit(Theory* t);
 		virtual void visit(EcnfTheory* t);
+		virtual void visit(SolverTheory* t);
 
 		// Formulas 
 		virtual void visit(PredForm* a);			
@@ -143,6 +145,7 @@ class MutatingVisitor {
 		// Theories
 		virtual Theory* visit(Theory* t);	
 		virtual EcnfTheory* visit(EcnfTheory* t);
+		virtual SolverTheory* visit(SolverTheory* t);
 
 
 };

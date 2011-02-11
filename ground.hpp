@@ -12,6 +12,8 @@
 #include "theory.hpp"
 #include "checker.hpp"
 #include "generator.hpp"
+#include "pcsolver/src/external/ExternalInterface.hpp"
+class GroundTheory;
 
 /**********************************************
 	Translate from ground atoms to numbers
@@ -152,17 +154,17 @@ class FuncTermGrounder : public TermGrounder {
 class Grounder {
 
 	protected:
-		EcnfTheory*	_grounding;
+		GroundTheory*	_grounding;
 
 		static int	_true;
 		static int	_false;
 
 	public:
 		// Constructor
-		Grounder(EcnfTheory* g): _grounding(g) { 	}
+		Grounder(GroundTheory* g): _grounding(g) { 	}
 
 		virtual int			run()		const = 0;
-				EcnfTheory*	grounding()	const { return _grounding;	}
+				GroundTheory*	grounding()	const { return _grounding;	}
 
 };
 
@@ -170,7 +172,7 @@ class EcnfGrounder : public Grounder {
 	
 	public:
 		// Constructor
-		EcnfGrounder(EcnfTheory* g): Grounder(g) { }
+		EcnfGrounder(GroundTheory* g): Grounder(g) { }
 
 		int run() const { return _true; }
 
@@ -183,7 +185,7 @@ class TheoryGrounder : public Grounder {
 
 	public:
 		// Constructor
-		TheoryGrounder(EcnfTheory* g, const vector<Grounder*>& vg): Grounder(g), _children(vg) { }
+		TheoryGrounder(GroundTheory* g, const vector<Grounder*>& vg): Grounder(g), _children(vg) { }
 
 		int run() const;
 
@@ -207,7 +209,7 @@ class AtomGrounder : public Grounder {
 	
 	public:
 		// Constructor
-		AtomGrounder(EcnfTheory* g, bool sign, bool sent, PFSymbol* s,
+		AtomGrounder(GroundTheory* g, bool sign, bool sent, PFSymbol* s,
 					const vector<TermGrounder*> sg, InstanceChecker* pic, InstanceChecker* cic,
 					const vector<SortTable*>& vst, bool pc, bool c);
 
@@ -224,7 +226,7 @@ class ClauseGrounder : public Grounder {
 		bool				_poscontext;
 
 	public:
-		ClauseGrounder(EcnfTheory* g, bool sign, bool sen, bool conj, bool pos) : 
+		ClauseGrounder(GroundTheory* g, bool sign, bool sen, bool conj, bool pos) : 
 			Grounder(g), _sign(sign), _sentence(sen), _conj(conj), _poscontext(pos) { }
 		
 		virtual int run() const = 0;
@@ -243,7 +245,7 @@ class BoolGrounder : public ClauseGrounder {
 		vector<Grounder*>	_subgrounders;
 
 	public:
-		BoolGrounder(EcnfTheory* g, const vector<Grounder*> sub, bool sign, bool sen, bool conj, bool pos):
+		BoolGrounder(GroundTheory* g, const vector<Grounder*> sub, bool sign, bool sen, bool conj, bool pos):
 			ClauseGrounder(g,sign,sen,conj,pos), _subgrounders(sub) { }
 
 		int		run() const;
@@ -257,7 +259,7 @@ class QuantGrounder : public ClauseGrounder {
 		InstGenerator*			_generator;	
 
 	public:
-		QuantGrounder(EcnfTheory* g, Grounder* sub, bool sign, bool sen, bool conj, bool pos, InstGenerator* gen):
+		QuantGrounder(GroundTheory* g, Grounder* sub, bool sign, bool sen, bool conj, bool pos, InstGenerator* gen):
 			ClauseGrounder(g,sign,sen,conj,pos), _subgrounder(sub), _generator(gen) { }
 
 		int	run() const;
@@ -274,7 +276,7 @@ class EquivGrounder : public Grounder {
 		bool		_poscontext;
 	
 	public:
-		EquivGrounder(EcnfTheory* g, Grounder* lg, Grounder* rg, bool sign, bool sen, bool pos):
+		EquivGrounder(GroundTheory* g, Grounder* lg, Grounder* rg, bool sign, bool sen, bool pos):
 			Grounder(g), _leftgrounder(lg), _rightgrounder(rg), _sign(sign), _sentence(sen), _poscontext(pos) { }
 
 		int run() const;
@@ -285,7 +287,7 @@ class GrounderFactory : public Visitor {
 	
 	private:
 		AbstractStructure*	_structure;
-		EcnfTheory*			_grounding;
+		GroundTheory*		_grounding;
 
 		// Context
 		bool	_poscontext;
@@ -304,7 +306,8 @@ class GrounderFactory : public Visitor {
 		GrounderFactory(AbstractStructure* structure): _structure(structure) { }
 
 		// Factory method
-		Grounder* create(AbstractTheory* theory) { theory->accept(this); return _grounder; }
+		Grounder* create(AbstractTheory* theory);
+		Grounder* create(AbstractTheory* theory, MinisatID::WrappedPCSolver* solver);
 
 		// Visitors
 		void visit(EcnfTheory*);
@@ -314,6 +317,7 @@ class GrounderFactory : public Visitor {
 		void visit(BoolForm*);
 		void visit(QuantForm*);
 		void visit(EquivForm*);
+		void visit(EqChainForm*);
 
 		void visit(VarTerm*);
 		void visit(DomainTerm*);

@@ -40,7 +40,7 @@ int GroundTranslator::translate(PFSymbol* s, const vector<TypedElement>& args) {
 }
 */
 int GroundTranslator::translate(unsigned int n, const vector<domelement>& args) {
-	map<vector<domelement>,int>::iterator jt = _table[n].upper_bound(args);
+	map<vector<domelement>,int>::iterator jt = _table[n].lower_bound(args);
 	if(jt != _table[n].end() && jt->first == args) {
 		return jt->second;
 	}
@@ -96,9 +96,10 @@ int GroundTranslator::translate(const vector<int>& cl, bool conj, TsType tp) {
 */
 int GroundTranslator::nextNumber() {
 	if(_freenumbers.empty()) {
+		int nr = _backsymbtable.size(); 
 		_backsymbtable.push_back(0);
 		_backargstable.push_back(vector<domelement>(0));
-		return ++_currnumber;
+		return nr;
 	}
 	else {
 		int nr = _freenumbers.front();
@@ -384,7 +385,7 @@ int TheoryGrounder::run() const {
 	return _true;
 }
 
-AtomGrounder::AtomGrounder(EcnfTheory* g, bool sign, bool sent, PFSymbol* s,
+AtomGrounder::AtomGrounder(GroundTheory* g, bool sign, bool sent, PFSymbol* s,
 							const vector<TermGrounder*> sg, InstanceChecker* pic, InstanceChecker* cic,
 							const vector<SortTable*>& vst, bool pc, bool c) :
 	Grounder(g), _sign(sign), _sentence(sent), _symbol(g->translator()->addSymbol(s)),
@@ -500,34 +501,53 @@ int EquivGrounder::run() const {
 	int left = _leftgrounder->run();
 	int right = _rightgrounder->run();
 
-	if(left == _true) {
-		if(right == _false) return _false;
-		else return right;
+	if(left == right) return _sign ? _true : _false;
+	else if(left == _true) {
+		if(right == _false) return _sign ? _false : _true;
+		else return _sign ? right : -right;
 	}
 	else if(left == _false) {
-		if(right == _true) return _false;
-		else return -right;
+		if(right == _true) return _sign ? _false : _true;
+		else return _sign ? -right : right;
 	}
-	else if(right == _true) return left;
-	else if(right == _false) return -left;
-	else {
-		// Add clauses to grounder when equivalence is a sentence of the theory
-		EcnfClause cl1;
-		EcnfClause cl2;
-		cl1.push_back(left);	cl1.push_back(-right);
-		cl2.push_back(-left);	cl2.push_back(right);
+	else if(right == _true) return _sign ? left : -left;
+	else if(right == _false) return _sign ? -left : left;
+	else if(_sign) {
+		EcnfClause cl1(2);
+		EcnfClause cl2(2);
+		cl1[0] = left;	cl1[1] = -right;
+		cl2[0] = -left;	cl2[1] = right;
 		if(_sentence) {
 			_grounding->addClause(cl1);
 			_grounding->addClause(cl2);
 			return _true;
 		}
 		else {
-			EcnfClause tcl;
-			int ts1 = _grounding->translator()->translate(cl1,true,TS_IMPL);
-			int ts2 = _grounding->translator()->translate(cl2,true,TS_IMPL);
-			tcl.push_back(ts1); tcl.push_back(ts2);
-			int ts = _grounding->translator()->translate(tcl,false,TS_EQ);
+			EcnfClause tcl(2);
+			TsType tp = _poscontext ? TS_IMPL : TS_RIMPL; 
+			int ts1 = _grounding->translator()->translate(cl1,false,tp);
+			int ts2 = _grounding->translator()->translate(cl2,false,tp);
+			tcl[0] = ts1; tcl[1] = ts2;
+			int ts = _grounding->translator()->translate(tcl,true,tp);
+			return ts;
+		}
+	}
+	else { // _sign = false
+		EcnfClause cl1(2);
+		EcnfClause cl2(2);
+		cl1[0] = left;	cl1[1] = -right;
+		cl2[0] = -left;	cl2[1] = right;
+		EcnfClause tcl(2);
+		TsType tp = _poscontext ? TS_IMPL : TS_RIMPL; 
+		int ts1 = _grounding->translator()->translate(cl1,true,tp);
+		int ts2 = _grounding->translator()->translate(cl2,true,tp);
+		tcl[0] = ts1; tcl[1] = ts2;
+		if(_sentence) {
 			_grounding->addClause(tcl);
+			return _true;
+		}
+		else {
+			int ts = _grounding->translator()->translate(tcl,false,tp);
 			return ts;
 		}
 	}
@@ -550,6 +570,22 @@ domelement FuncTermGrounder::run() const {
 	GrounderFactory methods
 ******************************/
 
+Grounder* GrounderFactory::create(AbstractTheory* theory) {
+	// Allocate an ecnf theory to be returned by the grounder
+	_grounding = new EcnfTheory(theory->vocabulary());
+	// Create grounder
+	theory->accept(this);
+	return _grounder;
+}
+
+Grounder* GrounderFactory::create(AbstractTheory* theory, SATSolver* solver) {
+	// Allocate a solver theory
+	_grounding = new SolverTheory(theory->vocabulary(), solver);
+	// Create grounder
+	theory->accept(this);
+	return _grounder;
+}
+
 void GrounderFactory::visit(EcnfTheory* ecnf) {
 	_grounder = new EcnfGrounder(ecnf);		// TODO: add the structure?
 }
@@ -562,9 +598,6 @@ void GrounderFactory::visit(Theory* theory) {
 	}
 
 	// TODO (OPTIMIZATION) order components
-
-	// Allocate the theory to be returned by the grounder
-	_grounding = new EcnfTheory(theory->vocabulary());
 
 	// Create grounders for the components
 	vector<Grounder*> children(components.size());
@@ -711,7 +744,7 @@ void GrounderFactory::visit(QuantForm* qf) {
 	if(!gen) gen = new TreeInstGenerator(node);
 	
 	// Create grounder for subformula
-	_sentence = false;
+	if(!(qf->univ())) _sentence = false;
 	_poscontext = qf->sign() ? pos : !pos;
 	_truegencontext = !(qf->univ()); 
 	qf->subf()->accept(this);
@@ -756,6 +789,13 @@ void GrounderFactory::visit(EquivForm* ef) {
 
 	// Create grounder
 	_grounder = new EquivGrounder(_grounding,leftg,rightg,ef->sign(),_sentence,_poscontext);
+}
+
+void GrounderFactory::visit(EqChainForm* ef) {
+	Formula* f = ef->clone();
+	f = FormulaUtils::remove_eqchains(f,_grounding->vocabulary());
+	f->accept(this);
+	f->recursiveDelete();
 }
 
 void GrounderFactory::visit(VarTerm* t) {

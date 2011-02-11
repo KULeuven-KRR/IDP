@@ -229,12 +229,12 @@ class PFSymbol {
 		unsigned int			nrSorts()				const { return _sorts.size();					}
 		Sort*					sort(unsigned int n)	const { return _sorts[n];						}
 		const vector<Sort*>&	sorts()					const { return _sorts;							}
-		string					to_string()				const { return _name.substr(0,_name.find('/'));	}
+		string					to_string()				const;
 		virtual bool			ispred()				const = 0;	// true iff the symbol is a predicate
 
 		// Built-in symbols 
 		virtual bool		builtin()							const { return false;	}
-		virtual PredInter*	predinter(const AbstractStructure&)	const { return 0;		}	// Returns the interpretation of the symbol if it is built-in
+		virtual PredInter*	predinter(AbstractStructure&)	const { return 0;		}	// Returns the interpretation of the symbol if it is built-in
 
 		// Overloaded symbols
 		virtual bool		overloaded()						const	{ return false;	}	// true iff the symbol 
@@ -269,8 +269,8 @@ class Predicate : public PFSymbol {
 				bool			ispred()	const { return true;			}
 
 		// Built-in symbols
-				PredInter*		predinter(const AbstractStructure& s)	const { return inter(s);	}
-		virtual	PredInter*		inter(const AbstractStructure&)			const { return 0;				}
+				PredInter*		predinter(AbstractStructure& s)	const { return inter(s);	}
+		virtual	PredInter*		inter(AbstractStructure&)			const { return 0;			}
 
 		// Overloaded symbols 
 		virtual bool				contains(Predicate* p)				const { return p == this;	}
@@ -370,8 +370,8 @@ class Function : public PFSymbol {
 				bool			ispred()				const { return false;					}
 
 		// Built-in symbols
-				PredInter*		predinter(const AbstractStructure& s)	const;
-		virtual	FuncInter*		inter(const AbstractStructure&)		const { return 0;		}
+				PredInter*		predinter(AbstractStructure& s)	const;
+		virtual	FuncInter*		inter(AbstractStructure&)		const { return 0;		}
 
 		// Overloaded symbols 
 		virtual bool				contains(Function* f)	const { return f == this;				}

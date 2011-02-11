@@ -44,6 +44,8 @@ namespace BuiltinProcs {
 		_inferences["load_file"].push_back(new LoadFile());
 		_inferences["clone"].push_back(new CloneStructure());
 		_inferences["fastground"].push_back(new FastGrounding());
+		_inferences["fastmx"].push_back(new FastMXInference(false));
+		_inferences["fastmx"].push_back(new FastMXInference(true));
 	}
 
 	bool checkintern(lua_State* L, int n, const string& tp) {
@@ -513,6 +515,7 @@ InfArg ModelExpansionInference::execute(const vector<InfArg>& args) const {
 	MinisatID::SolverOption modes;
 	modes.nbmodels = opts->_nrmodels;
 	modes.verbosity = 0;
+	modes.remap = false;
 	SATSolver* solver = new SATSolver(modes);
 	GroundPrinter* printer = new outputToSolver(solver);
 	ecnfgr->print(printer);
@@ -566,6 +569,88 @@ InfArg ModelExpansionInference::execute(const vector<InfArg>& args) const {
 	delete(ecnfgr);
 	delete(printer);
 	return a;
+}
+
+FastMXInference::FastMXInference(bool opts) {
+	_intypes = vector<InfArgType>(2);
+	_intypes[0] = IAT_THEORY;
+	_intypes[1] = IAT_STRUCTURE;
+	if(opts) _intypes.push_back(IAT_OPTIONS);
+	_outtype = IAT_SET_OF_STRUCTURES;
+	_description = "Performs model expansion on the structure given the theory it should satisfy.";
+	_reload = false;
+}
+
+InfArg FastMXInference::execute(const vector<InfArg>& args) const {
+	// Convert arguments
+	AbstractTheory* theory = args[0]._theory;
+	AbstractStructure* structure = args[1]._structure;
+	InfOptions* opts = Namespace::global()->option("DefaultOptions");
+	if(args.size() == 3) opts = args[2]._options;
+	
+	// Create solver
+	MinisatID::SolverOption modes;
+	modes.nbmodels = opts->_nrmodels;
+	modes.verbosity = 0;
+	modes.remap = false;
+	SATSolver* solver = new SATSolver(modes);
+
+	// Create grounder
+	GrounderFactory gf(structure);
+	Grounder* grounder = gf.create(theory,solver);
+
+	// Ground
+	grounder->run();
+	GroundTheory* ecnfgr = grounder->grounding();
+
+	// Solve
+	vector<MinisatID::Literal> assumpts;
+	MinisatID::Solution* sol = new MinisatID::Solution(false, true, true, modes.nbmodels, assumpts);
+	bool sat = solver->solve(sol);
+
+	// Translate
+	InfArg a; a._setofstructures = new vector<AbstractStructure*>();
+	if(sat){
+		for(int i=0; i<sol->getModels().size(); i++){
+			AbstractStructure* mod = structure->clone();
+			set<PredInter*>	tobesorted1;
+			set<FuncInter*>	tobesorted2;
+			for(int j=0; j<sol->getModels()[i].size(); j++) {
+				PFSymbol* pfs = ecnfgr->translator()->symbol((sol->getModels()[i][j].getAtom().getValue()));
+				if(pfs && mod->vocabulary()->contains(pfs)) {
+					vector<domelement> vd = ecnfgr->translator()->args(sol->getModels()[i][j].getAtom().getValue());
+					vector<TypedElement> args = ElementUtil::convert(vd);
+					if(pfs->ispred()) {
+						mod->inter(pfs)->add(args,!(sol->getModels()[i][j].hasSign()),true);
+						tobesorted1.insert(mod->inter(pfs));
+					}
+					else {
+						Function* f = dynamic_cast<Function*>(pfs);
+						mod->inter(f)->add(args,!(sol->getModels()[i][j].hasSign()),true);
+						tobesorted2.insert(mod->inter(f));
+					}
+				}
+			}
+			for(set<PredInter*>::const_iterator it=tobesorted1.begin(); it != tobesorted1.end(); ++it)
+				(*it)->sortunique();
+			for(set<FuncInter*>::const_iterator it=tobesorted2.begin(); it != tobesorted2.end(); ++it)
+				(*it)->sortunique();
+
+			if(opts->_modelformat == MF_TWOVAL) {
+				mod->forcetwovalued();
+				a._setofstructures->push_back(mod);
+			}
+			else if(opts->_modelformat == MF_ALL) {
+				// TODO
+				a._setofstructures->push_back(mod);
+			}
+			else {
+				a._setofstructures->push_back(mod);
+			}
+		}
+	}
+	return a;
+
 }
 
 InfArg StructToTheory::execute(const vector<InfArg>& args) const {

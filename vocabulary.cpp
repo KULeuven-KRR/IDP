@@ -664,7 +664,7 @@ Function* OverloadedFunction::disambiguate(const vector<Sort*>& vs,Vocabulary* v
 	return candidate;
 }
 
-PredInter* Function::predinter(const AbstractStructure& s) const {
+PredInter* Function::predinter(AbstractStructure& s) const {
 	FuncInter* fi = inter(s);
 	if(fi) return fi->predinter();
 	else return 0;
@@ -1017,6 +1017,17 @@ vector<Function*> Vocabulary::func_no_arity(const string& name) const {
 }
 
 /** Debugging **/
+
+string PFSymbol::to_string() const {
+	string s  = _name.substr(0,_name.find('/'));	
+	if(nrSorts()) {
+		s += "[" + sort(0)->to_string();
+		for(unsigned int n = 1; n < nrSorts(); ++n) 
+			s += "," + sort(n)->to_string();
+		s += "]";
+	}
+	return s;
+}
 
 string Vocabulary::to_string(unsigned int spaces) const {
 	string tab = tabstring(spaces);

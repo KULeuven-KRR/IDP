@@ -74,14 +74,14 @@ class SemiBuiltInPredicate : public Predicate {
 
 		// Inspector
 		bool		builtin()					const { return true;	}
-		PredInter*	inter(AbstractStructure* s)	const;
+		PredInter*	inter(AbstractStructure& s)	const;
 
 
 };
 
-PredInter* SemiBuiltInPredicate::inter(AbstractStructure* s) const {
+PredInter* SemiBuiltInPredicate::inter(AbstractStructure& s) const {
 	vector<SortTable*> vs(nrSorts());
-	for(unsigned int n = 0; n < nrSorts(); ++n) vs[n] = s->inter(sort(n));
+	for(unsigned int n = 0; n < nrSorts(); ++n) vs[n] = s.inter(sort(n));
 	map<vector<SortTable*>,PredInter*>::const_iterator it = _inters.find(vs);
 	if(it != _inters.end()) return it->second;
 	else {
@@ -602,11 +602,11 @@ class EqualPredTable : public ComparisonPredTable {
 		EqualPredTable* clone() const { return new EqualPredTable(_leftsort,_rightsort);	}
 
 		bool	contains(const vector<Element>&)	const;
-		bool	finite()							const { return (_leftsort->finite() || _rightsort->finite()); }
-		bool	empty()								const { assert(false); return false; /* TODO */ }
+		bool	finite()							const { return (_leftsort->finite() || _rightsort->finite());	}
+		bool	empty()								const { return (_leftsort->empty() || _rightsort->empty());		}
 
-		unsigned int	size()					const { assert(false); return 0; /* TODO */ }
-		vector<Element>	tuple(unsigned int)		const { assert(false); return vector<Element>(0); /* TODO */ }
+		unsigned int	size()						const { assert(false); return 0; /* TODO */ }
+		vector<Element>	tuple(unsigned int)			const { assert(false); return vector<Element>(0); /* TODO */ }
 		Element			element(unsigned int, unsigned int)		const { assert(false); Element e; return e; /* TODO */ }
 
 		string	to_string(unsigned int spaces = 0)	const { return tabstring(spaces) + "=/2";	}

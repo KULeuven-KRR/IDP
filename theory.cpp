@@ -620,13 +620,6 @@ void FormulaEvaluator::visit(QuantForm* qf) {
 	return;
 }
 
-namespace FormulaUtils {
-	TruthValue evaluate(Formula* f, AbstractStructure* s, const map<Variable*,TypedElement>& m) {
-		FormulaEvaluator fe(f,s,m);
-		return fe.returnvalue();
-	}
-}
-
 /*************************
 	Rewriting theories
 *************************/
@@ -774,6 +767,7 @@ class EqChainRemover : public MutatingVisitor {
 	public:
 		EqChainRemover(AbstractTheory* t)	: MutatingVisitor(), _vocab(t->vocabulary()) { t->accept(this);	}
 		EqChainRemover()	: MutatingVisitor(), _vocab(0) {	}
+		EqChainRemover(Vocabulary* v)	: MutatingVisitor(), _vocab(v) {	}
 
 		Formula* visit(EqChainForm*);
 
@@ -861,14 +855,21 @@ void TheoryConvertor::visit(Theory* t) {
 		t->sentence(n)->accept(this);
 		switch(_rettype) {
 			case ECTT_ATOM:
-				_returnvalue->addClause(vector<int>(1,_curratom));
+			{
+				vector<int> vi(1,_curratom);
+				_returnvalue->addClause(vi);
 				break;
+			}
 			case ECTT_CLAUSE:
-				_returnvalue->addClause(_currclause);
+			{
+				vector<int> vi(_currclause);
+				_returnvalue->addClause(vi);
 				break;
+			}
 			case ECTT_CONJ:
 				for(unsigned int m = 0; m < _currclause.size(); ++m) {
-					_returnvalue->addClause(vector<int>(1,_currclause[m]));
+					vector<int> vi(1,_currclause[m]);
+					_returnvalue->addClause(vi);
 				}
 			case ECTT_NOTHING:
 				break;
@@ -1748,6 +1749,22 @@ Formula* AggMover::visit(EqChainForm* ef) {
 
 // TODO: HIER BEZIG: Move Aggregates in terms and rules
 // TODO: functions moeten ook verplaatst worden uit de head van regels
+
+/** Formula utils **/
+
+namespace FormulaUtils {
+	TruthValue evaluate(Formula* f, AbstractStructure* s, const map<Variable*,TypedElement>& m) {
+		FormulaEvaluator fe(f,s,m);
+		return fe.returnvalue();
+	}
+
+	Formula* remove_eqchains(Formula* f, Vocabulary* v) {
+		EqChainRemover ecr(v);
+		Formula* nf = f->accept(&ecr);
+		if(nf != f) delete(f);
+		return nf;
+	}
+}
 
 /** Theory utils **/
 
