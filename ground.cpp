@@ -373,7 +373,6 @@ void NaiveGrounder::visit(Theory* t) {
 int Grounder::_true = numeric_limits<int>::max();
 int Grounder::_false = 0;
 
-
 int TheoryGrounder::run() const {
 	for(unsigned int n = 0; n < _children.size(); ++n) {
 		int result = _children[n]->run();
@@ -385,8 +384,12 @@ int TheoryGrounder::run() const {
 	return _true;
 }
 
-AtomGrounder::AtomGrounder(EcnfTheory* g, bool sign, bool sent, PFSymbol* s, const vector<TermGrounder*> sg, InstanceChecker* pic, InstanceChecker* cic, const vector<SortTable*>& vst, bool pc, bool c) :
-	Grounder(g), _sign(sign), _sentence(sent), _symbol(g->translator()->addSymbol(s)), _args(sg.size()), _subtermgrounders(sg), _tables(vst), _poscontext(pc), _pchecker(pic), _cchecker(cic)
+AtomGrounder::AtomGrounder(EcnfTheory* g, bool sign, bool sent, PFSymbol* s,
+							const vector<TermGrounder*> sg, InstanceChecker* pic, InstanceChecker* cic,
+							const vector<SortTable*>& vst, bool pc, bool c) :
+	Grounder(g), _sign(sign), _sentence(sent), _symbol(g->translator()->addSymbol(s)),
+	_args(sg.size()), _subtermgrounders(sg), _pchecker(pic), _cchecker(cic),
+	_tables(vst), _poscontext(pc)
 	{ _certainvalue = c ? _true : _false; }
 
 int AtomGrounder::run() const {
@@ -493,19 +496,42 @@ int QuantGrounder::run() const {
 }
 
 int EquivGrounder::run() const {
-	//TODO
-}
+	// Run subgrounders
+	int left = _leftgrounder->run();
+	int right = _rightgrounder->run();
 
-/*void VarTermGrounder::run() const {
-	if(_table->contains(*_arg)) {
-		_result->_type = _arg->_type;
-		_result->_element = _arg->_element;
+	if(left == _true) {
+		if(right == _false) return _false;
+		else return right;
 	}
+	else if(left == _false) {
+		if(right == _true) return _false;
+		else return -right;
+	}
+	else if(right == _true) return left;
+	else if(right == _false) return -left;
 	else {
-		_result->_type = _arg->_type;
-		_result->_element = ElementUtil::nonexist(_arg->_type);
+		// Add clauses to grounder when equivalence is a sentence of the theory
+		EcnfClause cl1;
+		EcnfClause cl2;
+		cl1.push_back(left);	cl1.push_back(-right);
+		cl2.push_back(-left);	cl2.push_back(right);
+		if(_sentence) {
+			_grounding->addClause(cl1);
+			_grounding->addClause(cl2);
+			return _true;
+		}
+		else {
+			EcnfClause tcl;
+			int ts1 = _grounding->translator()->translate(cl1,true,TS_IMPL);
+			int ts2 = _grounding->translator()->translate(cl2,true,TS_IMPL);
+			tcl.push_back(ts1); tcl.push_back(ts2);
+			int ts = _grounding->translator()->translate(tcl,false,TS_EQ);
+			_grounding->addClause(tcl);
+			return ts;
+		}
 	}
-}*/
+}
 
 domelement FuncTermGrounder::run() const {
 	for(unsigned int n = 0; n < _subtermgrounders.size(); ++n) {
@@ -519,12 +545,16 @@ domelement FuncTermGrounder::run() const {
 	}*/
 }
 
+
+/******************************
+	GrounderFactory methods
+******************************/
+
 void GrounderFactory::visit(EcnfTheory* ecnf) {
 	_grounder = new EcnfGrounder(ecnf);		// TODO: add the structure?
 }
 
 void GrounderFactory::visit(Theory* theory) {
-
 	// Collect components of the theory
 	vector<TheoryComponent*> components(theory->nrComponents());
 	for(unsigned int n = 0; n < theory->nrComponents(); ++n) {
@@ -546,6 +576,7 @@ void GrounderFactory::visit(Theory* theory) {
 		children[n] = _grounder; 
 	}
 
+	// Create grounder
 	_grounder = new TheoryGrounder(_grounding,children);
 }
 
@@ -555,9 +586,12 @@ void GrounderFactory::visit(PredForm* pf) {
 	Formula* transpf = newpf; // TODO: replace this by the appropriate rewriting
 
 	if(newpf == transpf) {	// all arguments indeed evaluate to a single value
+		// Save context
+		bool posc = _poscontext;
+		bool truegc = _truegencontext;
+		bool sent = _sentence;
 
-		// create grounders for the subterms
-		bool posc = _poscontext; bool truegc = _truegencontext; bool sent = _sentence;
+		// Create grounders for the subterms
 		vector<TermGrounder*> vtg;
 		vector<SortTable*>	  vst;
 		for(unsigned int n = 0; n < pf->nrSubterms(); ++n) {
@@ -565,15 +599,17 @@ void GrounderFactory::visit(PredForm* pf) {
 			if(_termgrounder) vtg.push_back(_termgrounder);
 			vst.push_back(_structure->inter(pf->symb()->sort(n)));
 		}
-		_poscontext = posc; _truegencontext = truegc; _sentence = sent;
+
+		// Restore context
+		_poscontext = posc;
+		_truegencontext = truegc;
+		_sentence = sent;
 
 		// create checker
 		InstanceChecker* pch;
 		InstanceChecker* cch;
 		PredInter* inter = _structure->inter(pf->symb());
-
 		if(_truegencontext == pf->sign()) {		// check according to ct-table
-
 			if(inter->cf()) {
 				if(inter->cfpt()->empty()) pch = new TrueInstanceChecker();
 				else pch = new InvTableInstanceChecker(inter->cfpt());
@@ -593,7 +629,6 @@ void GrounderFactory::visit(PredForm* pf) {
 			}
 		}
 		else {	// check according to cf-table
-
 			if(inter->ct()) {
 				if(inter->ctpf()->empty()) pch = new TrueInstanceChecker();
 				else pch = new InvTableInstanceChecker(inter->ctpf());
@@ -612,8 +647,8 @@ void GrounderFactory::visit(PredForm* pf) {
 				else cch = new InvTableInstanceChecker(inter->cfpt());
 			}
 		}
-		
-		// create the actual grounder
+
+		// Create the grounder
 		_grounder = new AtomGrounder(_grounding,pf->sign(),_sentence,pf->symb(),vtg,pch,cch,vst,_poscontext,_truegencontext);
 	}
 	else {
@@ -624,10 +659,13 @@ void GrounderFactory::visit(PredForm* pf) {
 
 }
 
-void GrounderFactory::visit(BoolForm* bf) { 
+void GrounderFactory::visit(BoolForm* bf) {
+	// Save context
 	bool pos = _poscontext;
 	bool gen = _truegencontext;
 	bool sent = _sentence;
+
+	// Create grounders for subformulas
 	vector<Grounder*> sub(bf->nrSubforms());
 	for(unsigned int n = 0; n < bf->nrSubforms(); ++n) {
 		_sentence = false;
@@ -636,27 +674,32 @@ void GrounderFactory::visit(BoolForm* bf) {
 		bf->subform(n)->accept(this);
 		sub[n] = _grounder;
 	}
+
+	// Restore context
 	_sentence = sent;
 	_poscontext = pos;
 	_truegencontext = gen;
+
+	// Create grounder
 	_grounder = new BoolGrounder(_grounding,sub,bf->sign(),sent,bf->conj(),_poscontext);
 }
 
 void GrounderFactory::visit(QuantForm* qf) {
+	// Save context
 	bool pos = _poscontext;
 	bool tgen = _truegencontext;
 	bool sent = _sentence;
 
+	// Create instance generator
 	InstGenerator* gen = 0;
 	GeneratorNode* node = 0;
 	for(unsigned int n = 0; n < qf->nrQvars(); ++n) {
-		domelement* tpe = new domelement();
-		_varmapping[qf->qvar(n)] = tpe;
-
-		vector<domelement*> vte(1,tpe);
+		domelement* d = new domelement();
+		_varmapping[qf->qvar(n)] = d;
+		vector<domelement*> vd(1,d);
 		SortTable* st = _structure->inter(qf->qvar(n)->sort());
 		assert(st->finite());	// TODO: produce an error message
-		TableInstGenerator* tig = new TableInstGenerator(st,vte);
+		TableInstGenerator* tig = new TableInstGenerator(st,vd);
 		if(qf->nrQvars() == 1) {
 			gen = tig;
 			break;
@@ -668,43 +711,63 @@ void GrounderFactory::visit(QuantForm* qf) {
 	}
 	if(!gen) gen = new TreeInstGenerator(node);
 	
+	// Create grounder for subformula
 	_sentence = false;
 	_poscontext = qf->sign() ? pos : !pos;
 	_truegencontext = !(qf->univ()); 
 	qf->subf()->accept(this);
 	Grounder* sub = _grounder;
 
+	// Restore context
 	_sentence = sent;
 	_poscontext = pos;
 	_truegencontext = tgen;
+
+	// Create grounder
 	_grounder = new QuantGrounder(_grounding,sub,qf->sign(),_sentence,qf->univ(),_poscontext,gen);
 }
 
 void GrounderFactory::visit(EquivForm* ef) {
 	//TODO: check for partial functions
+
+	// Save context
 	bool pos = _poscontext;
 	bool tgen = _truegencontext;
 	bool sent = _sentence;
-	
-	
 
+	// Create grounder for left subformula
+	_sentence = false;
+	ef->left()->accept(this);
+	Grounder* leftg = _grounder;
+
+	// Restore context before going right
 	_poscontext = pos;
 	_truegencontext = tgen;
 	_sentence = sent;
+
+	// Create grounder for right subformula
+	_sentence = false;
+	ef->right()->accept(this);
+	Grounder* rightg = _grounder;
+	
+	// Restore context
+	_poscontext = pos;
+	_truegencontext = tgen;
+	_sentence = sent;
+
+	// Create grounder
+	_grounder = new EquivGrounder(_grounding,leftg,rightg,ef->sign(),_sentence,_poscontext);
 }
 
 void GrounderFactory::visit(VarTerm* t) {
-/*	_value = new TypedElement();
-	SortTable* table = _structure->inter(_currsort);
-	TypedElement* arg = (_varmapping.find(t->var()))->second;
-	_termgrounder = new VarTermGrounder(_value,table,arg);*/
-/*	_termgrounder = 0;
-	_value = _varmapping.find(t->var())->second;*/
+	// Create termgrounder
 	_termgrounder = new VarTermGrounder(_varmapping.find(t->var())->second);
 }
 
 void GrounderFactory::visit(DomainTerm* t) {
+	// Create termgrounder
 	_termgrounder = new DomTermGrounder(CPPointer(t->value(),t->type()));
+
 	// Check whether value is within bounds of the current position.
 //	if(_structure->inter(_currsort)->contains(t->value(),t->type()))
 //		_value = new TypedElement(t->value(),t->type());
@@ -716,11 +779,14 @@ void GrounderFactory::visit(DomainTerm* t) {
 }
 
 void GrounderFactory::visit(FuncTerm* t) {
+	// Create grounders for subterms
 	vector<TermGrounder*> sub;
 	for(unsigned int n = 0; n < t->nrSubterms(); ++n) {
 		t->subterm(n)->accept(this);
 		if(_termgrounder) sub.push_back(_termgrounder);
 	}
+
+	// Create termgrounder
 	FuncTable* ft = _structure->inter(t->func())->functable();
 	_termgrounder = new FuncTermGrounder(sub,ft);
 }
