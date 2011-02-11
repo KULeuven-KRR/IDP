@@ -8,6 +8,7 @@
 #define GROUND_HPP
 
 #include <queue>
+#include <cstdlib> // abs
 #include "theory.hpp"
 #include "checker.hpp"
 #include "generator.hpp"
@@ -28,26 +29,22 @@ class GroundTranslator  {
 
 	private:
 
-		//map<PFSymbol*,map<vector<TypedElement>,int> >	_table;			// maps atoms to integers
-		vector<map<vector<domelement>,int> >		_table;			// maps atoms to integers
-		vector<PFSymbol*>							_symboffsets;
+		vector<map<vector<domelement>,int> >		_table;			// map atoms to integers
+		vector<PFSymbol*>							_symboffsets;	// map integer to symbol
 		vector<PFSymbol*>							_backsymbtable;	// map integer to the symbol of its corresponding atom
 		vector<vector<domelement> >					_backargstable;	// map integer to the terms of its corresponding atom
-		queue<int>									_freenumbers;	// keeps free numbers
-		map<int,TsBody>								_tsbodies;
+		queue<int>									_freenumbers;	// keeps numbers that were freed and can be used again
+		map<int,TsBody>								_tsbodies;		// keeps mapping between Tseitin numbers and bodies
 		int											_currnumber;
 
 	public:
 		
 		GroundTranslator() : _backsymbtable(1), _backargstable(1), _currnumber(0) { }
 
-//		int							translate(PFSymbol*,const vector<TypedElement>&);
 		int							translate(unsigned int,const vector<domelement>&);
-//		int							translate(PFSymbol*,const vector<TypedElement*>&);	// translate an atom to an integer
 		int							translate(const vector<int>& cl, bool conj, TsType tp);
 		int							nextNumber();
 		PFSymbol*					symbol(int n)	const	{ return _backsymbtable[abs(n)];	}
-//		const vector<TypedElement>&	args(int n)		const	{ return _backargstable[abs(n)];	}
 		const vector<domelement>&	args(int n)		const	{ return _backargstable[abs(n)];	}
 		unsigned int				addSymbol(PFSymbol* pfs);
 		bool						isTseitin(int l) const	{ return symbol(l) == 0;			}
@@ -106,19 +103,17 @@ class NaiveGrounder : public Visitor {
 
 class TermGrounder {
 	
-	protected:
-		//TypedElement*			_result;
-
 	public:
 		TermGrounder() { }
 
-	//	virtual void run() const = 0;
 		virtual domelement run() const = 0;
 };
 
 class DomTermGrounder : public TermGrounder {
+
 	private:
 		domelement	_value;
+
 	public:
 		DomTermGrounder(domelement val) : _value(val) { }
 		domelement run() const { return _value;	}
@@ -127,9 +122,7 @@ class DomTermGrounder : public TermGrounder {
 class VarTermGrounder : public TermGrounder {
 	
 	private:
-//		SortTable*		_table;
-//		TypedElement*	_arg;
-		domelement*		_value;
+		domelement*	_value;
 
 	public:
 		VarTermGrounder(domelement* a) : _value(a) { }
@@ -141,7 +134,6 @@ class FuncTermGrounder : public TermGrounder {
 
 	private:
 		FuncTable*				_function;
-//		vector<TypedElement*>	_args;
 		vector<TermGrounder*>	_subtermgrounders;
 		mutable vector<domelement>	_args;
 
@@ -150,7 +142,6 @@ class FuncTermGrounder : public TermGrounder {
 			_function(f), _args(sub.size()), _subtermgrounders(sub) { }
 
 		domelement run() const;
-
 
 		// TODO? Optimisation:
 		//			Keep all values of the args + result of the previous call to calc().
@@ -167,7 +158,6 @@ class Grounder {
 		static int	_false;
 
 	public:
-
 		// Constructor
 		Grounder(EcnfTheory* g): _grounding(g) { 	}
 
@@ -179,7 +169,6 @@ class Grounder {
 class EcnfGrounder : public Grounder {
 	
 	public:
-		
 		// Constructor
 		EcnfGrounder(EcnfTheory* g): Grounder(g) { }
 
@@ -193,7 +182,6 @@ class TheoryGrounder : public Grounder {
 		vector<Grounder*>	_children;
 
 	public:
-		
 		// Constructor
 		TheoryGrounder(EcnfTheory* g, const vector<Grounder*>& vg): Grounder(g), _children(vg) { }
 
@@ -218,11 +206,13 @@ class AtomGrounder : public Grounder {
 
 	
 	public:
-
 		// Constructor
-		AtomGrounder(EcnfTheory* g, bool sign, bool sent, PFSymbol* s, const vector<TermGrounder*> sg, InstanceChecker* pic, InstanceChecker* cic, const vector<SortTable*>& vst, bool pc, bool c);
+		AtomGrounder(EcnfTheory* g, bool sign, bool sent, PFSymbol* s,
+					const vector<TermGrounder*> sg, InstanceChecker* pic, InstanceChecker* cic,
+					const vector<SortTable*>& vst, bool pc, bool c);
 
 		int run() const;
+
 };
 
 class ClauseGrounder : public Grounder {
@@ -234,7 +224,6 @@ class ClauseGrounder : public Grounder {
 		bool				_poscontext;
 
 	public:
-
 		ClauseGrounder(EcnfTheory* g, bool sign, bool sen, bool conj, bool pos) : 
 			Grounder(g), _sign(sign), _sentence(sen), _conj(conj), _poscontext(pos) { }
 		
@@ -245,6 +234,7 @@ class ClauseGrounder : public Grounder {
 		bool	check2(int l) const;
 		int		result1() const;
 		int		result2() const;
+
 };
 
 class BoolGrounder : public ClauseGrounder {
@@ -308,10 +298,8 @@ class GrounderFactory : public Visitor {
 		// Return values
 		Grounder*			_grounder;
 		TermGrounder*		_termgrounder;
-//		domelement*			_value;
 
 	public:
-
 		// Constructor
 		GrounderFactory(AbstractStructure* structure): _structure(structure) { }
 
