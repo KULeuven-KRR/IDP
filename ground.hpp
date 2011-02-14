@@ -172,6 +172,7 @@ class SetGrounder : public Grounder {
 		virtual int run() const = 0;
 };
 
+struct EcnfDefinition;
 class RuleGrounder : public Grounder {
 	
 	private:

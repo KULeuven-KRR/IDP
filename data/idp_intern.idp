@@ -89,7 +89,7 @@
 		return idp_intern.idpcall("fastmx",T,S)
 	}
 
-	#procedure fastamx(T,S,Opt) {
+	#procedure fastmx(T,S,Opt) {
 		return idp_intern.idpcall("fastmx",T,S,Opt)
 	}
 
