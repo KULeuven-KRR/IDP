@@ -37,7 +37,7 @@ gidl_SOURCES = \
 		vocabulary.hpp vocabulary.cpp\
 		parse.yy\
 		lex.ll\
-		options.hpp\
+		options.cpp options.hpp\
 		clconst.hpp\
 		interactive.cpp interactive.hpp\
 		print.hpp print.cpp\

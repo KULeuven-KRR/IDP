@@ -16,6 +16,10 @@
 #include <list>
 #include <set>
 
+extern void setoption(InfOptions*,const string&, const string&, ParseInfo*);
+extern void setoption(InfOptions*,const string&, double, ParseInfo*);
+extern void setoption(InfOptions*,const string&, int, ParseInfo*);
+
 /********************
 	Sort checking
 ********************/
@@ -889,45 +893,17 @@ namespace Insert {
 		else Error::undeclopt(oneName(name),pi);
 	}
 
-	void option(const string& opt, const string& val, YYLTYPE l) {
+	void option(const string& opt, const string& val,YYLTYPE l) {
 		ParseInfo pi = parseinfo(l);
-		if(InfOptions::isoption(opt)) {
-			if(opt == "language") {
-				if(val == "txt") _curroptions->_format=OF_TXT;
-				else if(val == "idp") _curroptions->_format=OF_IDP;
-				else Error::wrongformat(val,pi);
-			}
-			else if(opt == "modelformat") {
-				if(val == "all") _curroptions->_modelformat=MF_ALL;
-				else if(val == "twovalued") _curroptions->_modelformat=MF_TWOVAL;
-				else if(val == "threevalued") _curroptions->_modelformat=MF_THREEVAL;
-				else Error::wrongmodelformat(val,pi);
-			}
-			else Error::wrongvaluetype(opt,pi);
-		}
-		else Error::unknopt(opt,pi);
+		setoption(_curroptions,opt,val,&pi);
 	}
-
-	void option(const string& opt, double, YYLTYPE l) {
+	void option(const string& opt, double val,YYLTYPE l) { 
 		ParseInfo pi = parseinfo(l);
-		if(InfOptions::isoption(opt)) {
-			Error::wrongvaluetype(opt,pi);
-		}
-		else Error::unknopt(opt,pi);
+		setoption(_curroptions,opt,val,&pi);
 	}
-
-	void option(const string& opt, int val, YYLTYPE l) {
+	void option(const string& opt, int val,YYLTYPE l) {
 		ParseInfo pi = parseinfo(l);
-		if(InfOptions::isoption(opt)) {
-			if(opt == "nrmodels") {
-				if(val >= 0) {
-					_curroptions->_nrmodels = val;
-				}
-				else Error::posintexpected(opt,pi);
-			}
-			else Error::wrongvaluetype(opt,pi);
-		}
-		else Error::unknopt(opt,pi);
+		setoption(_curroptions,opt,val,&pi);
 	}
 
 	/*****************

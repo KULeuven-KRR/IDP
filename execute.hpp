@@ -92,6 +92,12 @@ class LoadFile : public Inference {
 		InfArg execute(const vector<InfArg>& args) const;
 };
 
+class SetOption : public Inference {
+	public:
+		SetOption(InfArgType t);
+		InfArg execute(const vector<InfArg>& args) const;
+};
+
 class PrintTheory : public Inference {
 	public:
 		PrintTheory(bool opts) { 

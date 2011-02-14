@@ -124,13 +124,13 @@ namespace Error {
 	/** Unknown options or commands **/
 	void unkncommand(const string& name, const ParseInfo& thisplace);
 	void unkncommand(const string& name);
-	void unknopt(const string& name, const ParseInfo& thisplace);
+	void unknopt(const string& name, ParseInfo* thisplace);
 	void unkniat(const string& name, const ParseInfo& thisplace);
 	void wrongcommandargs(const string& name);
-	void wrongvaluetype(const string& name, const ParseInfo& thisplace);
-	void wrongformat(const string& format, const ParseInfo& thisplace);
-	void wrongmodelformat(const string& format, const ParseInfo& thisplace);
-	void posintexpected(const string& name, const ParseInfo& thisplace);
+	void wrongvaluetype(const string& name, ParseInfo* thisplace);
+	void wrongformat(const string& format, ParseInfo* thisplace);
+	void wrongmodelformat(const string& format, ParseInfo* thisplace);
+	void posintexpected(const string& name, ParseInfo* thisplace);
 	void ambigcommand(const string& name);
 }
 

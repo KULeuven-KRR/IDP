@@ -535,8 +535,8 @@ namespace Error {
 		cerr << "Procedure " << name << " does not exist." << endl;
 	}
 
-	void unknopt(const string& name, const ParseInfo& thisplace) {
-		error(thisplace);
+	void unknopt(const string& name, ParseInfo* thisplace) {
+		thisplace ? error(*thisplace) : error();
 		cerr << "Options " << name << " does not exist." << endl;
 	}
 
@@ -550,23 +550,23 @@ namespace Error {
 		cerr << "The arguments given to command " << name << " are either of the wrong type, or do not exist.\n";
 	}
 
-	void wrongvaluetype(const string& name, const ParseInfo& thisplace) {
-		error(thisplace);
+	void wrongvaluetype(const string& name, ParseInfo* thisplace) {
+		thisplace ? error(*thisplace) : error();
 		cerr << "The value given to option " << name << " is of the wrong type.\n";
 	}
 
-	void wrongformat(const string& format, const ParseInfo& thisplace) {
-		error(thisplace);
+	void wrongformat(const string& format, ParseInfo* thisplace) {
+		thisplace ? error(*thisplace) : error();
 		cerr << format << " is not a valid output language.\n";
 	}
 
-	void wrongmodelformat(const string& format, const ParseInfo& thisplace) {
-		error(thisplace);
+	void wrongmodelformat(const string& format, ParseInfo* thisplace) {
+		thisplace ? error(*thisplace) : error();
 		cerr << format << " is not a valid model format.\n";
 	}
 
-	void posintexpected(const string& name, const ParseInfo& thisplace) {
-		error(thisplace);
+	void posintexpected(const string& name, ParseInfo* thisplace) {
+		thisplace ? error(*thisplace) : error();
 		cerr << "The value given to option " << name << " should be a positive integer.\n";
 	}
 

@@ -46,6 +46,8 @@ namespace BuiltinProcs {
 		_inferences["fastground"].push_back(new FastGrounding());
 		_inferences["fastmx"].push_back(new FastMXInference(false));
 		_inferences["fastmx"].push_back(new FastMXInference(true));
+		_inferences["setoption"].push_back(new SetOption(IAT_STRING));
+		_inferences["setoption"].push_back(new SetOption(IAT_NUMBER));
 	}
 
 	bool checkintern(lua_State* L, int n, const string& tp) {
@@ -376,6 +378,45 @@ InfArg LoadFile::execute(const vector<InfArg>& args) const {
 	return a;
 }
 
+SetOption::SetOption(InfArgType t) {
+	_intypes = vector<InfArgType>(3);
+	_intypes[0] = IAT_OPTIONS;
+	_intypes[1] = IAT_STRING;
+	_intypes[2] = t;
+	_outtype = IAT_VOID;
+	_description = "Set the value of a single option";
+	_reload = false;
+}
+
+extern void setoption(InfOptions*,const string&, const string&, ParseInfo*);
+extern void setoption(InfOptions*,const string&, double, ParseInfo*);
+extern void setoption(InfOptions*,const string&, int, ParseInfo*);
+InfArg SetOption::execute(const vector<InfArg>& args) const {
+	InfOptions* opts = args[0]._options;
+	string optname = *(args[1]._string);
+	switch(_intypes[2]) {
+		case IAT_NUMBER:
+		{
+			if(isInt(args[2]._number)) {
+				setoption(opts,optname,int(args[2]._number),0);
+			}
+			else {
+				setoption(opts,optname,args[2]._number,0);
+			}
+			break;
+		}
+		case IAT_STRING:
+		{
+			setoption(opts,optname,*(args[2]._string),0);
+			break;
+		}
+		default:
+			assert(false);
+	}
+	InfArg a;
+	return a;
+}
+
 InfArg PrintTheory::execute(const vector<InfArg>& args) const {
 	InfOptions* opts = Namespace::global()->option("DefaultOptions");
 	if(args.size() == 2) opts = args[1]._options;
@@ -597,7 +638,7 @@ InfArg FastMXInference::execute(const vector<InfArg>& args) const {
 
 	// Create grounder
 	GrounderFactory gf(structure);
-	Grounder* grounder = gf.create(theory,solver);
+	AbstractTheoryGrounder* grounder = gf.create(theory,solver);
 
 	// Ground
 	grounder->run();
@@ -710,7 +751,7 @@ FastGrounding::FastGrounding() {
 
 InfArg FastGrounding::execute(const vector<InfArg>& args) const {
 	GrounderFactory factory(args[1]._structure);
-	Grounder* g = factory.create(args[0]._theory);
+	AbstractTheoryGrounder* g = factory.create(args[0]._theory);
 	g->run();
 	InfArg a;
 	a._theory = g->grounding();

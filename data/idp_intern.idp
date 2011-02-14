@@ -1,5 +1,17 @@
+/** Options **/
+
 #options DefaultOptions {
 	nrmodels=1
+	language=idp
+	modelformat=all
+}
+
+#procedure setoption(Opts,OptName,OptValue) {
+	return idp_intern.idpcall("setoption",Opts,OptName,OptValue)
+}
+
+#procedure setoption(OptName,OptValue) {
+	return setoption(DefaultOptions,OptName,OptValue)
 }
 
 /** Parsing of files **/
