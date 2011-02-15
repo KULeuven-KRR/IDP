@@ -352,25 +352,28 @@ int Grounder::_true = numeric_limits<int>::max();
 int Grounder::_false = 0;
 
 int TheoryGrounder::run() const {
-	for(unsigned int n = 0; n < _children.size(); ++n) {
-		int result = _children[n]->run();
+	// Run formula grounders
+	for(unsigned int n = 0; n < _formulagrounders.size(); ++n) {
+		int result = _formulagrounders[n]->run();
 		if(result == _false) {
 			_grounding->addEmptyClause();
 			return _false;
 		}
 	}
+	//TODO: Run definition grounders
 	return _true;
 }
 
-AtomGrounder::AtomGrounder(GroundTheory* g, bool sign, bool sent, PFSymbol* s,
+AtomGrounder::AtomGrounder(GroundTheory* gt, bool sign, bool sent, PFSymbol* s,
 							const vector<TermGrounder*> sg, InstanceChecker* pic, InstanceChecker* cic,
 							const vector<SortTable*>& vst, bool pc, bool c) :
-	FormulaGrounder(g), _sign(sign), _sentence(sent), _symbol(g->translator()->addSymbol(s)),
+	FormulaGrounder(gt), _sign(sign), _sentence(sent), _symbol(g->translator()->addSymbol(s)),
 	_args(sg.size()), _subtermgrounders(sg), _pchecker(pic), _cchecker(cic),
 	_tables(vst), _poscontext(pc)
 	{ _certainvalue = c ? _true : _false; }
 
 int AtomGrounder::run() const {
+	// Run subterm grounders
 	for(unsigned int n = 0; n < _subtermgrounders.size(); ++n) 
 		_args[n] = _subtermgrounders[n]->run();
 	
@@ -389,6 +392,7 @@ int AtomGrounder::run() const {
 			return _sign ? _false : _true;
 	}
 
+	// Run instance checkers and return grounding
 	if(!(_pchecker->run(_args))) return _certainvalue ? _false : _true;	// TODO: dit is lelijk
 	if(_cchecker->run(_args)) return _certainvalue;
 	else {
@@ -592,11 +596,11 @@ int EnumSetGrounder::run() const {
 	vector<double> trueweights;
 	for(unsigned int n = 0; n < _subgrounders.size(); ++n) {
 		int l = _subgrounders[n]->run();
-		if(l != Grounder::_false) {
+		if(l != _false) {
 			domelement d =  _subtermgrounders[n]->run();
 			Element e; e._compound = d;
 			Element w = ElementUtil::convert(e,ELCOMPOUND,ELDOUBLE);
-			if(l == Grounder::_true) trueweights.push_back(w._double);
+			if(l == _true) trueweights.push_back(w._double);
 			else {
 				weights.push_back(w._double);
 				literals.push_back(l);
@@ -613,10 +617,10 @@ int QuantSetGrounder::run() const {
 	vector<double> trueweights;
 	if(_generator->first()) {
 		int l = _subgrounder->run();
-		if(l != Grounder::_false) {
+		if(l != _false) {
 			Element e; e._compound = *_weight;
 			Element w = ElementUtil::convert(e,ELCOMPOUND,ELDOUBLE);
-			if(l == Grounder::_true) trueweights.push_back(w._double);
+			if(l == _true) trueweights.push_back(w._double);
 			else {
 				weights.push_back(w._double);
 				literals.push_back(l);
@@ -624,10 +628,10 @@ int QuantSetGrounder::run() const {
 		}
 		while(_generator->next()) {
 			l = _subgrounder->run();
-			if(l != Grounder::_false) {
+			if(l != _false) {
 				Element e; e._compound = *_weight;
 				Element w = ElementUtil::convert(e,ELCOMPOUND,ELDOUBLE);
-				if(l == Grounder::_true) trueweights.push_back(w._double);
+				if(l == _true) trueweights.push_back(w._double);
 				else {
 					weights.push_back(w._double);
 					literals.push_back(l);
@@ -640,12 +644,22 @@ int QuantSetGrounder::run() const {
 }
 
 bool RuleGrounder::run() const {
-	int headlit = _headgrounder->run();
-	int bodylit = _bodygrounder->run();
+	//TODO
+	if(_generator->first()) {	
+		int headlit = _headgrounder->run();
+		int bodylit = _bodygrounder->run();
+		while(_generator->next()) {
+			int headlit = _headgrounder->run();
+			int bodylit = _bodygrounder->run();
+		}
+	}
+	//TODO return succes?
 }
 
 int DefinitionGrounder::run() const {
-	//TODO
+	for(unsigned int n = 0; n < subgrounders.size(); ++n)
+		subgrounder[n]->run();
+	//TODO: return _grounding->translator()->translateDefinition(_definition) ??
 }
 
 
@@ -908,17 +922,21 @@ void GrounderFactory::visit(FuncTerm* t) {
 		if(_termgrounder) sub.push_back(_termgrounder);
 	}
 
-	// Create termgrounder
+	// Create term grounder
 	FuncTable* ft = _structure->inter(t->func())->functable();
 	_termgrounder = new FuncTermGrounder(sub,ft);
 }
 
 void GrounderFactory::visit(AggTerm* t) {
+	// Create set grounder
 	t->set()->accept(this);
+
+	// Create term grounder
 	_termgrounder = new AggTermGrounder(_grounding,t->type(),_setgrounder);
 }
 
 void GrounderFactory::visit(EnumSetExpr* s) {
+	// Create grounders for formulas and weights
 	vector<FormulaGrounder*> subgr;
 	vector<TermGrounder*> subtgr;
 	for(unsigned int n = 0; n < s->nrSubforms(); ++n) {
@@ -930,6 +948,8 @@ void GrounderFactory::visit(EnumSetExpr* s) {
 		s->subterm(n)->accept(this);
 		subtgr.push_back(_termgrounder);
 	}
+
+	// Create set grounder
 	_setgrounder = new EnumSetGrounder(_grounding,subgr,subtgr);
 }
 
@@ -963,4 +983,60 @@ void GrounderFactory::visit(QuantSetExpr* s) {
 
 	// Create grounder	
 	_setgrounder = new QuantSetGrounder(_grounding,sub,gen,_varmapping[s->qvar(0)]);
+}
+
+void GrounderFactory::visit(Definition* def) {
+	// Create new ground definition
+	_definition = new EcnfDefinition();
+
+	// Create rule grounders
+	vector<RuleGrounder*> subgr;
+	for(unsigned int n = 0; n < def->nrRules(); ++n) {
+		def->rule(n)->accept(this);
+		subgr.push_back(_rulegrounder);
+	}
+	
+	// Create definition grounder
+	_defgrounder = new DefinitionGrounder(_grounding,_definition,subgr);
+}
+
+void GrounderFactory::visit(Rule* rule) {
+	// Create instance generator
+	InstGenerator* gen = 0;
+	GeneratorNode* node = 0;
+	for(unsigned int n = 0; n < rule->nrQvars(); ++n) {
+		domelement* d = new domelement();
+		_varmapping[rule->qvar(n)] = d;
+		SortTable* st = _structure->inter(rule->qvar(n)->sort());
+		assert(st->finite());	// TODO: produce an error message
+		SortInstGenerator* tig = new SortInstGenerator(st,d);
+		if(rule->nrQvars() == 1) {
+			gen = tig;
+			break;
+		}
+		else if(n == 0)
+			node = new LeafGeneratorNode(tig);
+		else 
+			node = new OneChildGeneratorNode(tig,node);
+	}
+	if(!gen) gen = new TreeInstGenerator(node);
+	
+	// Create head grounder
+	_sentence = false;
+	_poscontext = true;
+	_truegencontext = true;
+	_rulecontext = true;
+	rule->head()->visit(this);
+	FormulaGrounder* hgr = _grounder;
+
+	// Create body grounder
+	_sentence = false;
+	_poscontext = true;
+	_truegencontext = true;
+	_rulecontext = true;
+	rule->body()->visit(this);
+	FormulaGrounder* bgr = _grounder;
+
+	// Create rule grounder
+	_rulegrounder = new RuleGrounder(_grounding,_definition,hgr,bgr,gen);
 }
