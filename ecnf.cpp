@@ -410,10 +410,14 @@ void outputToSolver::outputunitfdrule(int d, int h, int b) {
 }
 
 void outputToSolver::outputrule(int head, const vector<int>& b, bool c){
-	Literal h = Literal(abs(head), head<0);
-	vector<Literal> l;
-	copyToVec(b, l);
-	solver()->addRule(c, h, l);
+	Atom h = Atom(abs(head));
+	vector<Literal> lit;
+	copyToVec(b, lit);
+	if(c){
+		solver()->addConjRule(h, lit);
+	}else{
+		solver()->addDisjRule(h, lit);
+	}
 }
 
 void outputToSolver::outputfdrule(int d, int h, const vector<int>& b, bool c){
