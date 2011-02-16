@@ -348,26 +348,54 @@ void NaiveGrounder::visit(Theory* t) {
 	Optimized grounding algorithm
 *************************************/
 
-int Grounder::_true = numeric_limits<int>::max();
-int Grounder::_false = 0;
+int _true = numeric_limits<int>::max();
+int _false = 0;
 
-int TheoryGrounder::run() const {
-	// Run formula grounders
-	for(unsigned int n = 0; n < _formulagrounders.size(); ++n) {
-		int result = _formulagrounders[n]->run();
-		if(result == _false) {
-			_grounding->addEmptyClause();
-			return _false;
-		}
+bool TheoryGrounder::run() const {
+	for(unsigned int n = 0; n < _grounders.size(); ++n) {
+		bool b = _grounders[n]->run();
+		if(!b) return b;
 	}
-	//TODO: Run definition grounders
-	return _true;
+	return true;
 }
 
-AtomGrounder::AtomGrounder(GroundTheory* gt, bool sign, bool sent, PFSymbol* s,
+bool SentenceGrounder::run() const {
+	vector<int> cl;
+	_subgrounder->run(cl);
+	if(cl.empty()) return false;
+	else if(cl.size() == 1) {
+		if(cl[0] == _false) {
+			_grounding->addEmptyClause();
+			return false;
+		}
+		else if(cl[0] != _true) {
+			_grounding->addClause(cl);
+			return true;
+		}
+		else return true;
+	}
+	else {
+		_grounding->addClause(cl);
+		return true;
+	}
+}
+
+bool UnivSentGrounder::run() const {
+	if(_generator->first()) {
+		bool b = _subgrounder->run();
+		if(!b) return b;
+		while(_generator->next()) {
+			b = _subgrounder->run();
+			if(!b) return b;
+		}
+	}
+	return true;
+}
+
+AtomGrounder::AtomGrounder(GroundTranslator* gt, bool sign, PFSymbol* s,
 							const vector<TermGrounder*> sg, InstanceChecker* pic, InstanceChecker* cic,
 							const vector<SortTable*>& vst, bool pc, bool c) :
-	FormulaGrounder(gt), _sign(sign), _sentence(sent), _symbol(gt->translator()->addSymbol(s)),
+	FormulaGrounder(gt), _sign(sign), _symbol(gt->addSymbol(s)),
 	_args(sg.size()), _subtermgrounders(sg), _pchecker(pic), _cchecker(cic),
 	_tables(vst), _poscontext(pc)
 	{ _certainvalue = c ? _true : _false; }
@@ -396,11 +424,14 @@ int AtomGrounder::run() const {
 	if(!(_pchecker->run(_args))) return _certainvalue ? _false : _true;	// TODO: dit is lelijk
 	if(_cchecker->run(_args)) return _certainvalue;
 	else {
-		int atom = _grounding->translator()->translate(_symbol,_args);
+		int atom = _translator->translate(_symbol,_args);
 		if(!_sign) atom = -atom;
-		if(_sentence) _grounding->addUnitClause(atom);
 		return atom;
 	}
+}
+
+void AtomGrounder::run(vector<int>& clause) const {
+	clause.push_back(run());
 }
 
 inline bool ClauseGrounder::check1(int l) const {
@@ -423,14 +454,14 @@ int ClauseGrounder::finish(vector<int>& cl) const {
 	if(cl.empty())
 		return result2();
 	else if(cl.size() == 1) {
-		if(_sentence) {
+		/*if(_sentence) {
 			_grounding->addUnitClause(_sign ? cl[0] : -cl[0]);
 			return _true;
-		}
-		else
+		}*/
+		//else
 			return _sign ? cl[0] : -cl[0];
 	}
-	else if(_sentence) {
+/*	else if(_sentence) {
 		if(_conj == _sign) {
 			for(unsigned int n = 0; n < cl.size(); ++n)
 				_grounding->addUnitClause(_sign ? cl[n] : -cl[n]);
@@ -443,11 +474,11 @@ int ClauseGrounder::finish(vector<int>& cl) const {
 			_grounding->addClause(cl);
 		}
 		return _true;
-	}	
+	}	*/
 	else {
 		TsType tp = TS_IMPL;
 		if(_poscontext != _sign) tp = TS_RIMPL;
-		int ts = _grounding->translator()->translate(cl,_conj,tp);
+		int ts = _translator->translate(cl,_conj,tp);
 		return _sign ? ts : -ts;
 	}
 }
@@ -460,6 +491,18 @@ int BoolGrounder::run() const {
 		else if(! check2(l)) cl.push_back(l);
 	}
 	return finish(cl);
+}
+
+void BoolGrounder::run(vector<int>& clause) const {
+	for(unsigned int n = 0; n < _subgrounders.size(); ++n) {
+		int l = _subgrounders[n]->run();
+		if(check1(l)) {
+			clause.clear();
+			clause.push_back(result1());
+			return;
+		}
+		else if(!check2(l)) clause.push_back(_sign ? l : -l);
+	}
 }
 
 int QuantGrounder::run() const {
@@ -475,6 +518,27 @@ int QuantGrounder::run() const {
 		}
 	}
 	return finish(cl);
+}
+
+void QuantGrounder::run(vector<int>& clause) const {
+	if(_generator->first()) {
+		int l = _subgrounder->run();
+		if(check1(l)) {
+			clause.clear();
+			clause.push_back(result1());
+			return;
+		}
+		else if(! check2(l)) clause.push_back(_sign ? l : -l);
+		while(_generator->next()) {
+			l = _subgrounder->run();
+			if(check1(l)) {
+				clause.clear();
+				clause.push_back(result1());
+				return;
+			}
+			else if(! check2(l)) clause.push_back(_sign ? l : -l);
+		}
+	}
 }
 
 int EquivGrounder::run() const {
@@ -493,44 +557,53 @@ int EquivGrounder::run() const {
 	}
 	else if(right == _true) return _sign ? left : -left;
 	else if(right == _false) return _sign ? -left : left;
-	else if(_sign) {
+	else {
 		EcnfClause cl1(2);
 		EcnfClause cl2(2);
-		cl1[0] = left;	cl1[1] = -right;
-		cl2[0] = -left;	cl2[1] = right;
-		if(_sentence) {
+		cl1[0] = left;	cl1[1] = _sign ? -right : right;
+		cl2[0] = -left;	cl2[1] = _sign ? right : -right;
+/*		if(_sentence) {
 			_grounding->addClause(cl1);
 			_grounding->addClause(cl2);
 			return _true;
 		}
-		else {
+		else {*/
 			EcnfClause tcl(2);
 			TsType tp = _poscontext ? TS_IMPL : TS_RIMPL; 
-			int ts1 = _grounding->translator()->translate(cl1,false,tp);
-			int ts2 = _grounding->translator()->translate(cl2,false,tp);
+			int ts1 = _translator->translate(cl1,false,tp);
+			int ts2 = _translator->translate(cl2,false,tp);
 			tcl[0] = ts1; tcl[1] = ts2;
-			int ts = _grounding->translator()->translate(tcl,true,tp);
+			int ts = _translator->translate(tcl,true,tp);
 			return ts;
-		}
+	//	}
 	}
-	else { // _sign = false
+}
+
+void EquivGrounder::run(vector<int>& clause) const {
+	// Run subgrounders
+	int left = _leftgrounder->run();
+	int right = _rightgrounder->run();
+
+	if(left == right) { clause.push_back(_sign ? _true : _false); return;	}
+	else if(left == _true) {
+		if(right == _false) { clause.push_back(_sign ? _false : _true); return; }
+		else { clause.push_back(_sign ? right : -right); return; }
+	}
+	else if(left == _false) {
+		if(right == _true) { clause.push_back(_sign ? _false : _true); return; }
+		else { clause.push_back(_sign ? -right : right); return; }
+	}
+	else if(right == _true) { clause.push_back(_sign ? left : -left); return; }
+	else if(right == _false) { clause.push_back(_sign ? -left : left); return; }
+	else {
 		EcnfClause cl1(2);
 		EcnfClause cl2(2);
 		cl1[0] = left;	cl1[1] = -right;
 		cl2[0] = -left;	cl2[1] = right;
-		EcnfClause tcl(2);
 		TsType tp = _poscontext ? TS_IMPL : TS_RIMPL; 
-		int ts1 = _grounding->translator()->translate(cl1,true,tp);
-		int ts2 = _grounding->translator()->translate(cl2,true,tp);
-		tcl[0] = ts1; tcl[1] = ts2;
-		if(_sentence) {
-			_grounding->addClause(tcl);
-			return _true;
-		}
-		else {
-			int ts = _grounding->translator()->translate(tcl,false,tp);
-			return ts;
-		}
+		int ts1 = _translator->translate(cl1,!_sign,tp);
+		int ts2 = _translator->translate(cl2,!_sign,tp);
+		clause.push_back(ts1); clause.push_back(ts2);
 	}
 }
 
@@ -548,7 +621,7 @@ domelement FuncTermGrounder::run() const {
 
 domelement AggTermGrounder::run() const {
 	int setnr = _setgrounder->run();
-	const GroundSet& grs = _grounding->translator()->groundset(setnr);
+	const GroundSet& grs = _translator->groundset(setnr);
 	assert(grs._setlits.empty());
 	double value;
 	switch(_type) {
@@ -607,7 +680,7 @@ int EnumSetGrounder::run() const {
 			}
 		}
 	}
-	int s = _grounding->translator()->translateSet(literals,weights,trueweights);
+	int s = _translator->translateSet(literals,weights,trueweights);
 	return s;
 }
 
@@ -639,7 +712,7 @@ int QuantSetGrounder::run() const {
 			}
 		}
 	}
-	int s = _grounding->translator()->translateSet(literals,weights,trueweights);
+	int s = _translator->translateSet(literals,weights,trueweights);
 	return s;
 }
 
@@ -656,10 +729,12 @@ bool RuleGrounder::run() const {
 	//TODO return succes?
 }
 
-int DefinitionGrounder::run() const {
-	for(unsigned int n = 0; n < subgrounders.size(); ++n)
+bool DefinitionGrounder::run() const {
+	/*for(unsigned int n = 0; n < subgrounders.size(); ++n)
 		subgrounder[n]->run();
+*/
 	//TODO: return _grounding->translator()->translateDefinition(_definition) ??
+	return true;
 }
 
 
@@ -667,24 +742,24 @@ int DefinitionGrounder::run() const {
 	GrounderFactory methods
 ******************************/
 
-AbstractTheoryGrounder* GrounderFactory::create(AbstractTheory* theory) {
+TopLevelGrounder* GrounderFactory::create(AbstractTheory* theory) {
 	// Allocate an ecnf theory to be returned by the grounder
 	_grounding = new EcnfTheory(theory->vocabulary());
 	// Create grounder
 	theory->accept(this);
-	return _theogrounder;
+	return _toplevelgrounder;
 }
 
-AbstractTheoryGrounder* GrounderFactory::create(AbstractTheory* theory, SATSolver* solver) {
+TopLevelGrounder* GrounderFactory::create(AbstractTheory* theory, SATSolver* solver) {
 	// Allocate a solver theory
 	_grounding = new SolverTheory(theory->vocabulary(), solver);
 	// Create grounder
 	theory->accept(this);
-	return _theogrounder;
+	return _toplevelgrounder;
 }
 
 void GrounderFactory::visit(EcnfTheory* ecnf) {
-	_theogrounder = new EcnfGrounder(ecnf);		// TODO: add the structure?
+	_toplevelgrounder = new EcnfGrounder(ecnf);		// TODO: add the structure?
 }
 
 void GrounderFactory::visit(Theory* theory) {
@@ -697,17 +772,17 @@ void GrounderFactory::visit(Theory* theory) {
 	// TODO (OPTIMIZATION) order components
 
 	// Create grounders for the components
-	vector<FormulaGrounder*> children(components.size());
+	vector<TopLevelGrounder*> children(components.size());
 	for(unsigned int n = 0; n < components.size(); ++n) {
 		_poscontext = true;
 		_truegencontext = false;
 		_sentence = true;
 		components[n]->accept(this);
-		children[n] = _grounder; 
+		children[n] = _toplevelgrounder; 
 	}
 
 	// Create grounder
-	_theogrounder = new TheoryGrounder(_grounding,children);
+	_toplevelgrounder = new TheoryGrounder(_grounding,children);
 }
 
 void GrounderFactory::visit(PredForm* pf) {
@@ -779,7 +854,9 @@ void GrounderFactory::visit(PredForm* pf) {
 		}
 
 		// Create the grounder
-		_grounder = new AtomGrounder(_grounding,pf->sign(),_sentence,pf->symb(),vtg,pch,cch,vst,_poscontext,_truegencontext);
+		_grounder = new AtomGrounder(_grounding->translator(),pf->sign(),pf->symb(),vtg,pch,cch,vst,_poscontext,_truegencontext);
+		
+		if(_sentence) _toplevelgrounder = new SentenceGrounder(_grounding,_grounder);
 	}
 	else {
 		transpf->accept(this);
@@ -790,28 +867,43 @@ void GrounderFactory::visit(PredForm* pf) {
 }
 
 void GrounderFactory::visit(BoolForm* bf) {
-	// Save context
-	bool pos = _poscontext;
+
 	bool gen = _truegencontext;
-	bool sent = _sentence;
-
-	// Create grounders for subformulas
-	vector<FormulaGrounder*> sub(bf->nrSubforms());
-	for(unsigned int n = 0; n < bf->nrSubforms(); ++n) {
-		_sentence = false;
-		_poscontext = bf->sign() ? pos : !pos;
-		_truegencontext = bf->sign() ? gen : !gen;
-		bf->subform(n)->accept(this);
-		sub[n] = _grounder;
+	if(_sentence && bf->conj() && bf->sign()) {
+		vector<TopLevelGrounder*> sub(bf->nrSubforms());
+		for(unsigned int n = 0; n < bf->nrSubforms(); ++n) {
+			_sentence = true;
+			_poscontext = true;
+			_truegencontext = bf->sign() ? gen : !gen;
+			bf->subform(n)->accept(this);
+			sub[n] = _toplevelgrounder;
+		}
+		_toplevelgrounder = new TheoryGrounder(_grounding,sub);
 	}
+	else {
+		// Save context
+		bool pos = _poscontext;
+		bool sent = _sentence;
 
-	// Restore context
-	_sentence = sent;
-	_poscontext = pos;
-	_truegencontext = gen;
+		// Create grounders for subformulas
+		vector<FormulaGrounder*> sub(bf->nrSubforms());
+		for(unsigned int n = 0; n < bf->nrSubforms(); ++n) {
+			_sentence = false;
+			_poscontext = bf->sign() ? pos : !pos;
+			_truegencontext = bf->sign() ? gen : !gen;
+			bf->subform(n)->accept(this);
+			sub[n] = _grounder;
+		}
 
-	// Create grounder
-	_grounder = new BoolGrounder(_grounding,sub,bf->sign(),sent,bf->conj(),_poscontext);
+		// Restore context
+		_sentence = sent;
+		_poscontext = pos;
+		_truegencontext = gen;
+
+		// Create grounder
+		_grounder = new BoolGrounder(_grounding->translator(),sub,bf->sign(),bf->conj(),_poscontext);
+		if(_sentence) _toplevelgrounder = new SentenceGrounder(_grounding,_grounder);
+	}
 }
 
 void GrounderFactory::visit(QuantForm* qf) {
@@ -841,11 +933,10 @@ void GrounderFactory::visit(QuantForm* qf) {
 	if(!gen) gen = new TreeInstGenerator(node);
 	
 	// Create grounder for subformula
-	if(!(qf->univ())) _sentence = false;
+	if(!(qf->sign() && qf->univ())) _sentence = false;
 	_poscontext = qf->sign() ? pos : !pos;
 	_truegencontext = !(qf->univ()); 
 	qf->subf()->accept(this);
-	FormulaGrounder* sub = _grounder;
 
 	// Restore context
 	_sentence = sent;
@@ -853,7 +944,13 @@ void GrounderFactory::visit(QuantForm* qf) {
 	_truegencontext = tgen;
 
 	// Create grounder
-	_grounder = new QuantGrounder(_grounding,sub,qf->sign(),_sentence,qf->univ(),_poscontext,gen);
+	if(_sentence && qf->sign() && qf->univ()) {
+		_toplevelgrounder = new UnivSentGrounder(_grounding,_toplevelgrounder,gen);
+	}
+	else {
+		_grounder = new QuantGrounder(_grounding->translator(),_grounder,qf->sign(),qf->univ(),_poscontext,gen);
+		if(_sentence) _toplevelgrounder = new SentenceGrounder(_grounding,_grounder);
+	}
 }
 
 void GrounderFactory::visit(EquivForm* ef) {
@@ -885,7 +982,8 @@ void GrounderFactory::visit(EquivForm* ef) {
 	_sentence = sent;
 
 	// Create grounder
-	_grounder = new EquivGrounder(_grounding,leftg,rightg,ef->sign(),_sentence,_poscontext);
+	_grounder = new EquivGrounder(_grounding->translator(),leftg,rightg,ef->sign(),_poscontext);
+	if(_sentence) _toplevelgrounder = new SentenceGrounder(_grounding,_grounder);
 }
 
 void GrounderFactory::visit(EqChainForm* ef) {
@@ -932,7 +1030,7 @@ void GrounderFactory::visit(AggTerm* t) {
 	t->set()->accept(this);
 
 	// Create term grounder
-	_termgrounder = new AggTermGrounder(_grounding,t->type(),_setgrounder);
+	_termgrounder = new AggTermGrounder(_grounding->translator(),t->type(),_setgrounder);
 }
 
 void GrounderFactory::visit(EnumSetExpr* s) {
@@ -950,7 +1048,7 @@ void GrounderFactory::visit(EnumSetExpr* s) {
 	}
 
 	// Create set grounder
-	_setgrounder = new EnumSetGrounder(_grounding,subgr,subtgr);
+	_setgrounder = new EnumSetGrounder(_grounding->translator(),subgr,subtgr);
 }
 
 void GrounderFactory::visit(QuantSetExpr* s) {
@@ -982,7 +1080,7 @@ void GrounderFactory::visit(QuantSetExpr* s) {
 	FormulaGrounder* sub = _grounder;
 
 	// Create grounder	
-	_setgrounder = new QuantSetGrounder(_grounding,sub,gen,_varmapping[s->qvar(0)]);
+	_setgrounder = new QuantSetGrounder(_grounding->translator(),sub,gen,_varmapping[s->qvar(0)]);
 }
 
 void GrounderFactory::visit(Definition* def) {
@@ -1026,7 +1124,7 @@ void GrounderFactory::visit(Rule* rule) {
 	_poscontext = true;
 	_truegencontext = true;
 	_rulecontext = true;
-	rule->head()->visit(this);
+	rule->head()->accept(this);
 	FormulaGrounder* hgr = _grounder;
 
 	// Create body grounder
@@ -1034,9 +1132,9 @@ void GrounderFactory::visit(Rule* rule) {
 	_poscontext = true;
 	_truegencontext = true;
 	_rulecontext = true;
-	rule->body()->visit(this);
+	rule->body()->accept(this);
 	FormulaGrounder* bgr = _grounder;
 
 	// Create rule grounder
-	_rulegrounder = new RuleGrounder(_grounding,_definition,hgr,bgr,gen);
+	_rulegrounder = new RuleGrounder(_definition,hgr,bgr,gen);
 }

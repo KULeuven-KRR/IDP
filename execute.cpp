@@ -48,6 +48,9 @@ namespace BuiltinProcs {
 		_inferences["fastmx"].push_back(new FastMXInference(true));
 		_inferences["setoption"].push_back(new SetOption(IAT_STRING));
 		_inferences["setoption"].push_back(new SetOption(IAT_NUMBER));
+		_inferences["getoption"].push_back(new GetOption());
+		_inferences["newoptions"].push_back(new NewOption(true));
+		_inferences["newoptions"].push_back(new NewOption(false));
 	}
 
 	bool checkintern(lua_State* L, int n, const string& tp) {
@@ -388,9 +391,20 @@ SetOption::SetOption(InfArgType t) {
 	_reload = false;
 }
 
+GetOption::GetOption() {
+	_intypes = vector<InfArgType>(2);
+	_intypes[0] = IAT_OPTIONS;
+	_intypes[1] = IAT_STRING;
+	_outtype = IAT_STRING;
+	_description = "Get the value of a single option";
+	_reload = false;
+}
+
 extern void setoption(InfOptions*,const string&, const string&, ParseInfo*);
 extern void setoption(InfOptions*,const string&, double, ParseInfo*);
 extern void setoption(InfOptions*,const string&, int, ParseInfo*);
+extern string getoption(InfOptions*,const string&);
+
 InfArg SetOption::execute(const vector<InfArg>& args) const {
 	InfOptions* opts = args[0]._options;
 	string optname = *(args[1]._string);
@@ -414,6 +428,26 @@ InfArg SetOption::execute(const vector<InfArg>& args) const {
 			assert(false);
 	}
 	InfArg a;
+	return a;
+}
+
+InfArg GetOption::execute(const vector<InfArg>& args) const {
+	InfOptions* opts = args[0]._options;
+	string optname = *(args[1]._string);
+	InfArg a;
+	a._string = IDPointer(getoption(opts,optname));
+	return a;
+}
+
+InfArg NewOption::execute(const vector<InfArg>& args) const {
+	InfArg a;
+	if(args.empty()) {
+		a._options = new InfOptions("",ParseInfo());
+	}
+	else {
+		InfOptions* opts = args[0]._options;
+		a._options = new InfOptions(opts);
+	}
 	return a;
 }
 
@@ -638,7 +672,7 @@ InfArg FastMXInference::execute(const vector<InfArg>& args) const {
 
 	// Create grounder
 	GrounderFactory gf(structure);
-	AbstractTheoryGrounder* grounder = gf.create(theory,solver);
+	TopLevelGrounder* grounder = gf.create(theory,solver);
 
 	// Ground
 	grounder->run();
@@ -751,7 +785,7 @@ FastGrounding::FastGrounding() {
 
 InfArg FastGrounding::execute(const vector<InfArg>& args) const {
 	GrounderFactory factory(args[1]._structure);
-	AbstractTheoryGrounder* g = factory.create(args[0]._theory);
+	TopLevelGrounder* g = factory.create(args[0]._theory);
 	g->run();
 	InfArg a;
 	a._theory = g->grounding();

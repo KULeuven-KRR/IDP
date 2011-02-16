@@ -133,18 +133,14 @@ class NaiveGrounder : public Visitor {
 
 //TODO: Probably need some forward declarations here...
 
-class Grounder {
+/*class Grounder {
 	protected:
-		GroundTheory*	_grounding;
 		static int		_true;
 		static int		_false;
-
 	public:
-		Grounder(GroundTheory* gt) : _grounding(gt) { }
-		GroundTheory* grounding() const { return _grounding;	}
-};
+		Grounder() { }
+};*/
 
-class AbstractTheoryGrounder;
 class TermGrounder;
 class FormulaGrounder;
 class SetGrounder;
@@ -153,37 +149,55 @@ class DefinitionGrounder;
 
 struct EcnfDefinition;
 
-/*** Theory grounders ***/
+/*** Top level grounders ***/
 
-class AbstractTheoryGrounder : public Grounder {
+class TopLevelGrounder {
+	protected:
+		GroundTheory*	_grounding;
 	public:
-		AbstractTheoryGrounder(GroundTheory* gt) : Grounder(gt) { }
-		virtual int run() const = 0;
+		TopLevelGrounder(GroundTheory* gt) : _grounding(gt) { }
+		virtual bool run() const = 0;
+		GroundTheory* grounding() const { return _grounding;	}
 };
 
-class EcnfGrounder : public AbstractTheoryGrounder {
+class EcnfGrounder : public TopLevelGrounder {
 	public:
-		EcnfGrounder(GroundTheory* gt) : AbstractTheoryGrounder(gt) { }
-		int run() const { return _true; }
+		EcnfGrounder(GroundTheory* gt) : TopLevelGrounder(gt) { }
+		bool run() const { return true; }
 };
 
-class TheoryGrounder : public AbstractTheoryGrounder {
+class TheoryGrounder : public TopLevelGrounder {
 	private:
-		vector<FormulaGrounder*>	_formulagrounders;
-		vector<DefinitionGrounder*>	_definitiongrounders;
+		vector<TopLevelGrounder*>	_grounders;
 	public:
-		TheoryGrounder(GroundTheory* gt, const vector<FormulaGrounder*>& fgs, const vector<DefinitionGrounder*>& dgs) :
-			AbstractTheoryGrounder(gt), _formulagrounders(fgs), _definitiongrounders(dgs) { }
-		int run() const;
+		TheoryGrounder(GroundTheory* gt, const vector<TopLevelGrounder*>& fgs) :
+			TopLevelGrounder(gt), _grounders(fgs) { }
+		bool run() const;
 };
 
+class SentenceGrounder : public TopLevelGrounder {
+	private:
+		FormulaGrounder* _subgrounder;
+	public:
+		SentenceGrounder(GroundTheory* gt, FormulaGrounder* sub) : TopLevelGrounder(gt), _subgrounder(sub) { }
+		bool run() const;
+};
+
+class UnivSentGrounder : public TopLevelGrounder {
+	private:
+		TopLevelGrounder*	_subgrounder;
+		InstGenerator*		_generator;	
+	public:
+		UnivSentGrounder(GroundTheory* gt, TopLevelGrounder* sub, InstGenerator* gen) : 
+			TopLevelGrounder(gt), _subgrounder(sub), _generator(gen) { }
+		bool run() const;
+};
 
 /*** Term grounders ***/
 
-class TermGrounder : public Grounder {
+class TermGrounder {
 	public:
-		TermGrounder() : Grounder(0) { }
-		TermGrounder(GroundTheory* gt) : Grounder(gt) { }
+		TermGrounder() { }
 		virtual domelement run() const = 0;
 };
 
@@ -221,25 +235,24 @@ class FuncTermGrounder : public TermGrounder {
 
 class AggTermGrounder : public TermGrounder {
 	private:
-		AggType			_type;
-		SetGrounder*	_setgrounder;
+		AggType				_type;
+		SetGrounder*		_setgrounder;
+		GroundTranslator*	_translator;
 	public:
-		AggTermGrounder(GroundTheory* gt, AggType tp, SetGrounder* gr) : TermGrounder(gt), _type(tp), _setgrounder(gr) { }
+		AggTermGrounder(GroundTranslator* gt, AggType tp, SetGrounder* gr) : _type(tp), _setgrounder(gr), _translator(gt) { }
 		domelement run() const;
 };
 
 
 /*** Formula grounders ***/
 
-class FormulaGrounder : public Grounder {
-	private:
-		bool			_rulecontext;
-		EcnfDefinition* _definition;
-		int				_head;
+class FormulaGrounder {
+	protected:
+		GroundTranslator*	_translator;
 	public:
-		FormulaGrounder(GroundTheory* gt): Grounder(gt) { }
-		FormulaGrounder(EcnfDefinition* def, int head): Grounder(0), _definition(def), _head(head) { }  
-		virtual int	run() const = 0;
+		FormulaGrounder(GroundTranslator* gt): _translator(gt) { }
+		virtual int		run()				const = 0;
+		virtual void	run(vector<int>&)	const = 0;
 };
 
 class AtomGrounder : public FormulaGrounder {
@@ -251,40 +264,39 @@ class AtomGrounder : public FormulaGrounder {
 		mutable vector<domelement>	_args;
 		vector<SortTable*>			_tables;
 		bool						_sign;
-		bool						_sentence;
 		bool						_poscontext;
 		int							_certainvalue;
 	public:
-		AtomGrounder(GroundTheory* gt, bool sign, bool sent, PFSymbol* s,
+		AtomGrounder(GroundTranslator* gt, bool sign, PFSymbol* s,
 					const vector<TermGrounder*> sg, InstanceChecker* pic, InstanceChecker* cic,
 					const vector<SortTable*>& vst, bool pc, bool c);
-		int run() const;
+		int		run() const;
+		void	run(vector<int>&) const;
 };
 
 class ClauseGrounder : public FormulaGrounder {
 	protected:
 		bool				_sign;
-		bool				_sentence;
 		bool				_conj;
 		bool				_poscontext;
 	public:
-		ClauseGrounder(GroundTheory* gt, bool sign, bool sen, bool conj, bool pos) : 
-			FormulaGrounder(gt), _sign(sign), _sentence(sen), _conj(conj), _poscontext(pos) { }
+		ClauseGrounder(GroundTranslator* gt, bool sign, bool conj, bool pos) : 
+			FormulaGrounder(gt), _sign(sign), _conj(conj), _poscontext(pos) { }
 		int		finish(vector<int>&) const;
 		bool	check1(int l) const;
 		bool	check2(int l) const;
 		int		result1() const;
 		int		result2() const;
-		virtual int	run() const = 0;
 };
 
 class BoolGrounder : public ClauseGrounder {
 	private:
 		vector<FormulaGrounder*>	_subgrounders;
 	public:
-		BoolGrounder(GroundTheory* gt, const vector<FormulaGrounder*> sub, bool sign, bool sen, bool conj, bool pos):
-			ClauseGrounder(gt,sign,sen,conj,pos), _subgrounders(sub) { }
+		BoolGrounder(GroundTranslator* gt, const vector<FormulaGrounder*> sub, bool sign, bool conj, bool pos):
+			ClauseGrounder(gt,sign,conj,pos), _subgrounders(sub) { }
 		int	run() const;
+		void	run(vector<int>&) const;
 };
 
 class QuantGrounder : public ClauseGrounder {
@@ -292,9 +304,10 @@ class QuantGrounder : public ClauseGrounder {
 		FormulaGrounder*	_subgrounder;
 		InstGenerator*		_generator;	
 	public:
-		QuantGrounder(GroundTheory* gt, FormulaGrounder* sub, bool sign, bool sen, bool conj, bool pos, InstGenerator* gen):
-			ClauseGrounder(gt,sign,sen,conj,pos), _subgrounder(sub), _generator(gen) { }
+		QuantGrounder(GroundTranslator* gt, FormulaGrounder* sub, bool sign, bool conj, bool pos, InstGenerator* gen):
+			ClauseGrounder(gt,sign,conj,pos), _subgrounder(sub), _generator(gen) { }
 		int	run() const;
+		void	run(vector<int>&) const;
 };
 
 class EquivGrounder : public FormulaGrounder {
@@ -302,20 +315,22 @@ class EquivGrounder : public FormulaGrounder {
 		FormulaGrounder*	_leftgrounder;
 		FormulaGrounder*	_rightgrounder;
 		bool				_sign;
-		bool				_sentence;
 		bool				_poscontext;
 	public:
-		EquivGrounder(GroundTheory* gt, FormulaGrounder* lg, FormulaGrounder* rg, bool sign, bool sen, bool pos):
-			FormulaGrounder(gt), _leftgrounder(lg), _rightgrounder(rg), _sign(sign), _sentence(sen), _poscontext(pos) { }
+		EquivGrounder(GroundTranslator* gt, FormulaGrounder* lg, FormulaGrounder* rg, bool sign, bool pos):
+			FormulaGrounder(gt), _leftgrounder(lg), _rightgrounder(rg), _sign(sign), _poscontext(pos) { }
 		int run() const;
+		void	run(vector<int>&) const;
 };
 
 
 /*** Set grounders ***/
 
-class SetGrounder : public Grounder {
+class SetGrounder {
+	protected:
+		GroundTranslator*	_translator;
 	public:
-		SetGrounder(GroundTheory* gt) : Grounder(gt) { }
+		SetGrounder(GroundTranslator* gt) : _translator(gt) { }
 		virtual int run() const = 0;
 };
 
@@ -325,7 +340,7 @@ class QuantSetGrounder : public SetGrounder {
 		InstGenerator*		_generator;	
 		domelement*			_weight;
 	public:
-		QuantSetGrounder(GroundTheory* gt, FormulaGrounder* gr, InstGenerator* ig, domelement* w) :
+		QuantSetGrounder(GroundTranslator* gt, FormulaGrounder* gr, InstGenerator* ig, domelement* w) :
 			SetGrounder(gt), _subgrounder(gr), _generator(ig), _weight(w) { }
 		int run() const;
 };
@@ -335,7 +350,7 @@ class EnumSetGrounder : public SetGrounder {
 		vector<FormulaGrounder*>	_subgrounders;
 		vector<TermGrounder*>		_subtermgrounders;
 	public:
-		EnumSetGrounder(GroundTheory* gt, const vector<FormulaGrounder*>& subgr, const vector<TermGrounder*>& subtgr) :
+		EnumSetGrounder(GroundTranslator* gt, const vector<FormulaGrounder*>& subgr, const vector<TermGrounder*>& subtgr) :
 			SetGrounder(gt), _subgrounders(subgr), _subtermgrounders(subtgr) { }
 		int run() const;
 };
@@ -343,26 +358,26 @@ class EnumSetGrounder : public SetGrounder {
 
 /*** Definition grounders ***/
 
-class RuleGrounder : public Grounder {
+class RuleGrounder {
 	private:
 		EcnfDefinition*			_definition;
 		FormulaGrounder*		_headgrounder;
 		FormulaGrounder*		_bodygrounder;
 		InstGenerator*			_generator;	
 	public:
-		RuleGrounder(GroundTheory* gt, EcnfDefinition* def, FormulaGrounder* hgr, FormulaGrounder* bgr, InstGenerator* ig) :
-			Grounder(gt), _definition(def), _headgrounder(hgr), _bodygrounder(bgr), _generator(ig) { }
+		RuleGrounder(EcnfDefinition* def, FormulaGrounder* hgr, FormulaGrounder* bgr, InstGenerator* ig) :
+			_definition(def), _headgrounder(hgr), _bodygrounder(bgr), _generator(ig) { }
 		bool run() const;
 };
 
-class DefinitionGrounder : public Grounder {
+class DefinitionGrounder : public TopLevelGrounder {
 	private:
 		EcnfDefinition*			_definition;
 		vector<RuleGrounder*>	_subgrounders;
 	public:
 		DefinitionGrounder(GroundTheory* gt, EcnfDefinition* def, vector<RuleGrounder*> subgr) :
-			Grounder(gt), _definition(def), _subgrounders(subgr) { }
-		int run() const;
+			TopLevelGrounder(gt), _definition(def), _subgrounders(subgr) { }
+		bool run() const;
 };
 
 
@@ -392,7 +407,7 @@ class GrounderFactory : public Visitor {
 		FormulaGrounder*		_grounder;		//TODO: should be renamed to _formgrounder or something for consistency
 		TermGrounder*			_termgrounder;
 		SetGrounder*			_setgrounder;
-		AbstractTheoryGrounder*	_theogrounder;
+		TopLevelGrounder*		_toplevelgrounder;
 		RuleGrounder*			_rulegrounder;
 		DefinitionGrounder*		_defgrounder;
 
@@ -401,8 +416,8 @@ class GrounderFactory : public Visitor {
 		GrounderFactory(AbstractStructure* structure): _structure(structure) { }
 
 		// Factory method
-		AbstractTheoryGrounder* create(AbstractTheory* theory);
-		AbstractTheoryGrounder* create(AbstractTheory* theory, MinisatID::WrappedPCSolver* solver);
+		TopLevelGrounder* create(AbstractTheory* theory);
+		TopLevelGrounder* create(AbstractTheory* theory, MinisatID::WrappedPCSolver* solver);
 
 		// Visitors
 		void visit(EcnfTheory*);

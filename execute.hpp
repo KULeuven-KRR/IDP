@@ -98,6 +98,23 @@ class SetOption : public Inference {
 		InfArg execute(const vector<InfArg>& args) const;
 };
 
+class GetOption : public Inference {
+	public:
+		GetOption();
+		InfArg execute(const vector<InfArg>& args) const;
+};
+
+class NewOption : public Inference {
+	public:
+		NewOption(bool b) {	
+			_intypes = b ? vector<InfArgType>(1,IAT_OPTIONS) : vector<InfArgType>(0);
+			_outtype = IAT_OPTIONS;
+			_description = "Create a clone of the given options";
+			_reload = false;
+		}
+		InfArg execute(const vector<InfArg>& args) const;
+};
+
 class PrintTheory : public Inference {
 	public:
 		PrintTheory(bool opts) { 
