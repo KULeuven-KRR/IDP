@@ -39,4 +39,27 @@ void setoption(InfOptions* opts, const string& opt, int val, ParseInfo* pi) {
 	else Error::unknopt(opt,pi);
 }
 
-
+string getoption(InfOptions* opts, const string& opt) {
+	if(opt == "language") {
+		switch(opts->_format) {
+			case OF_IDP: return "idp";
+			case OF_TXT: return "txt";
+			default: assert(false); return "";
+		}
+	}
+	else if(opt == "modelformat") {
+		switch(opts->_modelformat) {
+			case MF_ALL: return "all";
+			case MF_TWOVAL: return "twovalued";
+			case MF_THREEVAL: return "threevalued";
+			default: assert(false); return "";
+		}
+	}
+	else if(opt == "nrmodels") {
+		return itos(opts->_nrmodels);
+	}
+	else {
+		Error::unknopt(opt,0);
+		return "";
+	}
+}

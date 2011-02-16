@@ -14,6 +14,28 @@
 	return setoption(DefaultOptions,OptName,OptValue)
 }
 
+#procedure getoption(Opts,OptName) {
+	local val = idp_intern.idpcall("getoption",Opts,OptName)
+	local numval = tonumber(val)
+	if numval then return numval
+	else return val
+	end
+}
+
+#procedure getoption(OptName) {
+	return getoption(DefaultOptions,OptName)
+}
+
+/** Create new blocks **/
+
+#procedure newoptions(Opts) {
+	return idp_intern.idpcall("newoptions",Opts)
+}
+
+#procedure newoptions() {
+	return idp_intern.idpcall("newoption")
+}
+
 /** Parsing of files **/
 #procedure parse(filename) {
 	return idp_intern.idpcall("load_file",filename)
@@ -26,6 +48,16 @@
 
 #procedure model_expand(Theo,Struct,Opt) {
 	return idp_intern.idpcall("model_expand",Theo,Struct,Opt)
+}
+
+/** Model checking **/
+#procedure model_check(Theo,Struct) {
+	// TODO: check if two-valued
+	// assert(twovalued(Struct),"Procedure modelcheck/2 requires a two-valued structure as second argument")
+	opts = newoptions()
+	setoption(opts,"nrmodels",1)
+	sols = model_expand(Theo,Struct,opts)
+	return #sols == 1
 }
 
 /** Printing **/

@@ -72,6 +72,13 @@ class InfOptions {
 			_format(OF_IDP),
 			_modelformat(MF_ALL)
 			{ }
+		InfOptions(InfOptions* opts) :
+			_name(""),
+			_pi(),
+			_nrmodels(opts->_nrmodels),
+			_format(opts->_format),
+			_modelformat(opts->_modelformat)
+			{ }
 
 		// Setters
 		void set(InfOptions* opt) {
