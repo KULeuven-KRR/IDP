@@ -212,6 +212,16 @@ struct EcnfDefinition {
 	bool containsAgg()	const { return !_aggs.empty();	}
 };
 
+/** Ground definitions **/
+struct GroundRuleBody {
+	RuleType	_type;
+	vector<int>	_body;
+};
+
+struct GroundDefinition {
+	map<int,GroundRuleBody>	_rules;		// maps a head to its corresponding body
+};
+
 /** Propositional fixpoint definition **/
 struct EcnfFixpDef {
 	EcnfDefinition		_rules;		// the direct subrules
@@ -248,6 +258,7 @@ class GroundTheory : public AbstractTheory {
 		virtual void addClause(EcnfClause& cl, bool firstIsPrinted = false) = 0;
 				void addEmptyClause()		{ EcnfClause c(0); addClause(c);	}
 				void addUnitClause(int l)	{ EcnfClause c(1,l); addClause(c);	}
+		virtual void addDefinition(const GroundDefinition&) = 0;
 
 
 
@@ -278,6 +289,7 @@ class EcnfTheory : public GroundTheory {
 													  _features._containsDefinitions = true;	
 													  _features._containsAggregates = 
 														_features._containsAggregates || d.containsAgg();				}
+		void addDefinition(const GroundDefinition&) { /* TODO */ }
 		void addFixpDef(const EcnfFixpDef& d)		{ _fixpdefs.push_back(d); 
 													  _features._containsFixpDefs = true;		
 													  _features._containsAggregates = 
@@ -322,7 +334,8 @@ class SolverTheory : public GroundTheory {
 			GroundTheory(voc), _solver(solver) { }
 
 		// Mutators
-		void			addClause(EcnfClause& cl, bool firstIsPrinted = false);
+		void	addClause(EcnfClause& cl, bool firstIsPrinted = false);
+		void	addDefinition(const GroundDefinition&);
 
 		// Inspectors
 		unsigned int	nrSentences()				const { assert(false); /*TODO*/	}

@@ -730,10 +730,11 @@ bool RuleGrounder::run() const {
 }
 
 bool DefinitionGrounder::run() const {
-	/*for(unsigned int n = 0; n < subgrounders.size(); ++n)
-		subgrounder[n]->run();
-*/
-	//TODO: return _grounding->translator()->translateDefinition(_definition) ??
+	for(unsigned int n = 0; n < _subgrounders.size(); ++n) {
+		bool b = _subgrounder[n]->run();
+		if(!b) return false;
+	}
+	_grounding->addDefinition(*_definition);
 	return true;
 }
 
