@@ -672,7 +672,7 @@ InfArg FastMXInference::execute(const vector<InfArg>& args) const {
 
 	// Create grounder
 	GrounderFactory gf(structure);
-	AbstractTheoryGrounder* grounder = gf.create(theory,solver);
+	TopLevelGrounder* grounder = gf.create(theory,solver);
 
 	// Ground
 	grounder->run();
@@ -785,7 +785,7 @@ FastGrounding::FastGrounding() {
 
 InfArg FastGrounding::execute(const vector<InfArg>& args) const {
 	GrounderFactory factory(args[1]._structure);
-	AbstractTheoryGrounder* g = factory.create(args[0]._theory);
+	TopLevelGrounder* g = factory.create(args[0]._theory);
 	g->run();
 	InfArg a;
 	a._theory = g->grounding();
