@@ -144,6 +144,14 @@ class Grounder {
 		GroundTheory* grounding() const { return _grounding;	}
 };
 
+class AbstractTheoryGrounder;
+class TermGrounder;
+class FormulaGrounder;
+class SetGrounder;
+class RuleGrounder;
+class DefinitionGrounder;
+
+struct EcnfDefinition;
 
 /*** Theory grounders ***/
 
@@ -334,8 +342,6 @@ class EnumSetGrounder : public SetGrounder {
 
 
 /*** Definition grounders ***/
-
-struct EcnfDefinition;
 
 class RuleGrounder : public Grounder {
 	private:

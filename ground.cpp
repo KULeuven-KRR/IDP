@@ -367,7 +367,7 @@ int TheoryGrounder::run() const {
 AtomGrounder::AtomGrounder(GroundTheory* gt, bool sign, bool sent, PFSymbol* s,
 							const vector<TermGrounder*> sg, InstanceChecker* pic, InstanceChecker* cic,
 							const vector<SortTable*>& vst, bool pc, bool c) :
-	FormulaGrounder(gt), _sign(sign), _sentence(sent), _symbol(g->translator()->addSymbol(s)),
+	FormulaGrounder(gt), _sign(sign), _sentence(sent), _symbol(gt->translator()->addSymbol(s)),
 	_args(sg.size()), _subtermgrounders(sg), _pchecker(pic), _cchecker(cic),
 	_tables(vst), _poscontext(pc)
 	{ _certainvalue = c ? _true : _false; }
