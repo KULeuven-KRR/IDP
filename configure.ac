@@ -118,11 +118,9 @@ ac_configure_args+=" --enable-shared=no "
 	#IMPORTANT: the reason for this is that we want to force lua to compile only a static library, so we link statically with lua.
 	#in future, when we allow installing, we can remove this, and also it breaks the configure semantics, because it will also offer all options of subdir configure.ac to the
 	#top --help
-AC_CONFIG_SUBDIRS([lib/lua pcsolver/tclap pcsolver/perftools])
-AC_CONFIG_FILES([Makefile lib/Makefile pcsolver/Makefile pcsolver/doc/Makefile pcsolver/src/Makefile pcsolver/src/pbsolver/Makefile\
-	pcsolver/src/satsolver/Makefile pcsolver/src/parser/Makefile pcsolver/src/modules/Makefile pcsolver/src/theorysolvers/Makefile\
-	pcsolver/src/solver3/Makefile pcsolver/src/solver3minisat/Makefile pcsolver/src/solver3minisat22/Makefile pcsolver/src/utils/Makefile\
-	pcsolver/src/external/Makefile pcsolver/src/mtlold/Makefile pcsolver/src/modules/aggsolver/Makefile])
+AC_CONFIG_SUBDIRS([lib/lua pcsolver/lib/tclap pcsolver/lib/perftools])
+AC_CONFIG_FILES([Makefile lib/Makefile pcsolver/Makefile pcsolver/doc/Makefile pcsolver/src/Makefile pcsolver/lib/Makefile\
+	pcsolver/src/parser/Makefile pcsolver/lib/pbsolver/Makefile])
 
 # generate the final Makefile etc.
 AC_OUTPUT
