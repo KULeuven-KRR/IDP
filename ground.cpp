@@ -362,7 +362,7 @@ bool TheoryGrounder::run() const {
 bool SentenceGrounder::run() const {
 	vector<int> cl;
 	_subgrounder->run(cl);
-	if(cl.empty()) return false;
+	if(cl.empty()) return _conj ? true : false;
 	else if(cl.size() == 1) {
 		if(cl[0] == _false) {
 			_grounding->addEmptyClause();
@@ -375,7 +375,13 @@ bool SentenceGrounder::run() const {
 		else return true;
 	}
 	else {
-		_grounding->addClause(cl);
+		if(_conj) {
+			_grounding->addClause(cl);
+		}
+		else {
+			for(unsigned int n = 0; n < cl.size(); ++n)
+				_grounding->addUnitClause(cl[n]);
+		}
 		return true;
 	}
 }
@@ -562,20 +568,13 @@ int EquivGrounder::run() const {
 		EcnfClause cl2(2);
 		cl1[0] = left;	cl1[1] = _sign ? -right : right;
 		cl2[0] = -left;	cl2[1] = _sign ? right : -right;
-/*		if(_sentence) {
-			_grounding->addClause(cl1);
-			_grounding->addClause(cl2);
-			return _true;
-		}
-		else {*/
-			EcnfClause tcl(2);
-			TsType tp = _poscontext ? TS_IMPL : TS_RIMPL; 
-			int ts1 = _translator->translate(cl1,false,tp);
-			int ts2 = _translator->translate(cl2,false,tp);
-			tcl[0] = ts1; tcl[1] = ts2;
-			int ts = _translator->translate(tcl,true,tp);
-			return ts;
-	//	}
+		EcnfClause tcl(2);
+		TsType tp = _poscontext ? TS_IMPL : TS_RIMPL; 
+		int ts1 = _translator->translate(cl1,false,tp);
+		int ts2 = _translator->translate(cl2,false,tp);
+		tcl[0] = ts1; tcl[1] = ts2;
+		int ts = _translator->translate(tcl,true,tp);
+		return ts;
 	}
 }
 
@@ -598,11 +597,11 @@ void EquivGrounder::run(vector<int>& clause) const {
 	else {
 		EcnfClause cl1(2);
 		EcnfClause cl2(2);
-		cl1[0] = left;	cl1[1] = -right;
-		cl2[0] = -left;	cl2[1] = right;
+		cl1[0] = left;	cl1[1] = _sign ? -right : right;
+		cl2[0] = -left;	cl2[1] = _sign ? right : -right;
 		TsType tp = _poscontext ? TS_IMPL : TS_RIMPL; 
-		int ts1 = _translator->translate(cl1,!_sign,tp);
-		int ts2 = _translator->translate(cl2,!_sign,tp);
+		int ts1 = _translator->translate(cl1,false,tp);
+		int ts2 = _translator->translate(cl2,false,tp);
 		clause.push_back(ts1); clause.push_back(ts2);
 	}
 }
@@ -716,17 +715,79 @@ int QuantSetGrounder::run() const {
 	return s;
 }
 
+HeadGrounder::HeadGrounder(GroundTheory* gt, InstanceChecker* pc, InstanceChecker* cc, PFSymbol* s, 
+			const vector<TermGrounder*>& sg, const vector<SortTable*>& vst) :
+	_grounding(gt), _subtermgrounders(sg), _truechecker(pc), _falsechecker(cc), _symbol(gt->translator()->addSymbol(s)),
+	_args(sg.size()), _tables(vst) { }
+
+int HeadGrounder::run() const {
+	// Run subterm grounders
+	for(unsigned int n = 0; n < _subtermgrounders.size(); ++n) 
+		_args[n] = _subtermgrounders[n]->run();
+	
+	// Checking partial functions
+	for(unsigned int n = 0; n < _args.size(); ++n) {
+		//TODO: only check positions that can be out of bounds or ...!
+		//TODO: produce a warning!
+		if(!ElementUtil::exists(_args[n])) return _false;
+		if(!_tables[n]->contains(_args[n])) return _false;
+	}
+
+	// Run instance checkers and return grounding
+	int atom = _grounding->translator()->translate(_symbol,_args);
+	if(_truechecker->run(_args)) {
+		_grounding->addUnitClause(atom);
+	}
+	else if(_falsechecker->run(_args)) {
+		_grounding->addUnitClause(-atom);
+	}
+	return atom;
+}
+
 bool RuleGrounder::run() const {
-	//TODO
-	if(_generator->first()) {	
-		int headlit = _headgrounder->run();
-		int bodylit = _bodygrounder->run();
+	if(_bodygenerator->first()) {	
+		vector<int>	body;
+		_bodygrounder->run(body);
+		bool falsebody = (body.empty() && !_conj) || (body.size() == 1 && body[0] == _false);
+		if(!falsebody) {
+			if(_headgenerator->first()) {
+				int h = _headgrounder->run();
+				assert(h != _true);
+				if(h != _false) {
+					_definition->addRule(h,body,_conj,_recursive);
+				}
+				while(_headgenerator->next()) {
+					h = _headgrounder->run();
+					assert(h != _true);
+					if(h != _false) {
+						_definition->addRule(h,body,_conj,_recursive);
+					}
+				}
+			}
+		}
 		while(_generator->next()) {
-			int headlit = _headgrounder->run();
-			int bodylit = _bodygrounder->run();
+			body.clear();
+			_bodygrounder->run(body);
+			bool falsebody = (body.empty() && !_conj) || (body.size() == 1 && body[0] == _false);
+			if(!falsebody) {
+				if(_headgenerator->first()) {
+					int h = _headgrounder->run();
+					assert(h != _true);
+					if(h != _false) {
+						_definition->addRule(h,body,_conj,_recursive);
+					}
+					while(_headgenerator->next()) {
+						h = _headgrounder->run();
+						assert(h != _true);
+						if(h != _false) {
+							_definition->addRule(h,body,_conj,_recursive);
+						}
+					}
+				}
+			}
 		}
 	}
-	//TODO return succes?
+	return true;
 }
 
 bool DefinitionGrounder::run() const {
@@ -812,52 +873,75 @@ void GrounderFactory::visit(PredForm* pf) {
 		_sentence = sent;
 
 		// create checker
-		InstanceChecker* pch;
-		InstanceChecker* cch;
 		PredInter* inter = _structure->inter(pf->symb());
-		if(_truegencontext == pf->sign()) {		// check according to ct-table
-			if(inter->cf()) {
-				if(inter->cfpt()->empty()) pch = new TrueInstanceChecker();
-				else pch = new InvTableInstanceChecker(inter->cfpt());
-			}
-			else {
-				if(inter->cfpt()->empty()) pch = new FalseInstanceChecker();
-				else pch = new TableInstanceChecker(inter->cfpt());
-			}
-
+		if(_ruleheadcontext) {
+			InstanceChecker* truech;
+			InstanceChecker* falsech;
 			if(inter->ct()) {
-				if(inter->ctpf()->empty()) cch = new FalseInstanceChecker();
-				else cch = new TableInstanceChecker(inter->ctpf());
+				if(inter->ctpf()->empty()) truech = new FalseInstanceChecker();
+				else truech = new TableInstanceChecker(inter->ctpf());
 			}
 			else {
-				if(inter->ctpf()->empty()) cch = new TrueInstanceChecker();
-				else cch = new InvTableInstanceChecker(inter->ctpf());
+				if(inter->ctpf()->empty()) truech = new TrueInstanceChecker();
+				else truech = new InvTableInstanceChecker(inter->ctpf());
 			}
-		}
-		else {	// check according to cf-table
-			if(inter->ct()) {
-				if(inter->ctpf()->empty()) pch = new TrueInstanceChecker();
-				else pch = new InvTableInstanceChecker(inter->ctpf());
-			}
-			else {
-				if(inter->ctpf()->empty()) pch = new FalseInstanceChecker();
-				else pch = new TableInstanceChecker(inter->ctpf());
-			}
-
 			if(inter->cf()) {
-				if(inter->cfpt()->empty()) cch = new FalseInstanceChecker();
-				else cch = new TableInstanceChecker(inter->cfpt());
+				if(inter->cfpt()->empty()) falsech = new FalseInstanceChecker();
+				else falsech = new TableInstanceChecker(inter->cfpt());
 			}
 			else {
-				if(inter->cfpt()->empty()) cch = new TrueInstanceChecker();
-				else cch = new InvTableInstanceChecker(inter->cfpt());
+				if(inter->cfpt()->empty()) falsech = new TrueInstanceChecker();
+				else falsech = new InvTableInstanceChecker(inter->cfpt());
 			}
+			_headgrounder = new HeadGrounder(_grounding,truech,falsech,pf->symb(),vtg,vst);
 		}
-
-		// Create the grounder
-		_grounder = new AtomGrounder(_grounding->translator(),pf->sign(),pf->symb(),vtg,pch,cch,vst,_poscontext,_truegencontext);
-		
-		if(_sentence) _toplevelgrounder = new SentenceGrounder(_grounding,_grounder);
+		else {
+			InstanceChecker* pch;
+			InstanceChecker* cch;
+			if(_truegencontext == pf->sign()) {		// check according to ct-table
+				if(inter->cf()) {
+					if(inter->cfpt()->empty()) pch = new TrueInstanceChecker();
+					else pch = new InvTableInstanceChecker(inter->cfpt());
+				}
+				else {
+					if(inter->cfpt()->empty()) pch = new FalseInstanceChecker();
+					else pch = new TableInstanceChecker(inter->cfpt());
+				}
+	
+				if(inter->ct()) {
+					if(inter->ctpf()->empty()) cch = new FalseInstanceChecker();
+					else cch = new TableInstanceChecker(inter->ctpf());
+				}
+				else {
+					if(inter->ctpf()->empty()) cch = new TrueInstanceChecker();
+					else cch = new InvTableInstanceChecker(inter->ctpf());
+				}
+			}
+			else {	// check according to cf-table
+				if(inter->ct()) {
+					if(inter->ctpf()->empty()) pch = new TrueInstanceChecker();
+					else pch = new InvTableInstanceChecker(inter->ctpf());
+				}
+				else {
+					if(inter->ctpf()->empty()) pch = new FalseInstanceChecker();
+					else pch = new TableInstanceChecker(inter->ctpf());
+				}
+	
+				if(inter->cf()) {
+					if(inter->cfpt()->empty()) cch = new FalseInstanceChecker();
+					else cch = new TableInstanceChecker(inter->cfpt());
+				}
+				else {
+					if(inter->cfpt()->empty()) cch = new TrueInstanceChecker();
+					else cch = new InvTableInstanceChecker(inter->cfpt());
+				}
+			}
+	
+			// Create the grounder
+			_grounder = new AtomGrounder(_grounding->translator(),pf->sign(),pf->symb(),vtg,pch,cch,vst,_poscontext,_truegencontext);
+			
+			if(_sentence) _toplevelgrounder = new SentenceGrounder(_grounding,_grounder,false);
+		}
 	}
 	else {
 		transpf->accept(this);
@@ -903,7 +987,7 @@ void GrounderFactory::visit(BoolForm* bf) {
 
 		// Create grounder
 		_grounder = new BoolGrounder(_grounding->translator(),sub,bf->sign(),bf->conj(),_poscontext);
-		if(_sentence) _toplevelgrounder = new SentenceGrounder(_grounding,_grounder);
+		if(_sentence) _toplevelgrounder = new SentenceGrounder(_grounding,_grounder,(bf->conj() == bf->sign()));
 	}
 }
 
@@ -950,7 +1034,7 @@ void GrounderFactory::visit(QuantForm* qf) {
 	}
 	else {
 		_grounder = new QuantGrounder(_grounding->translator(),_grounder,qf->sign(),qf->univ(),_poscontext,gen);
-		if(_sentence) _toplevelgrounder = new SentenceGrounder(_grounding,_grounder);
+		if(_sentence) _toplevelgrounder = new SentenceGrounder(_grounding,_grounder,(qf->univ() == qf->sign()));
 	}
 }
 
@@ -984,7 +1068,7 @@ void GrounderFactory::visit(EquivForm* ef) {
 
 	// Create grounder
 	_grounder = new EquivGrounder(_grounding->translator(),leftg,rightg,ef->sign(),_poscontext);
-	if(_sentence) _toplevelgrounder = new SentenceGrounder(_grounding,_grounder);
+	if(_sentence) _toplevelgrounder = new SentenceGrounder(_grounding,_grounder,true);
 }
 
 void GrounderFactory::visit(EqChainForm* ef) {
@@ -1086,7 +1170,7 @@ void GrounderFactory::visit(QuantSetExpr* s) {
 
 void GrounderFactory::visit(Definition* def) {
 	// Create new ground definition
-	_definition = new EcnfDefinition();
+	_definition = new GroundDefinition();
 
 	// Create rule grounders
 	vector<RuleGrounder*> subgr;
@@ -1100,39 +1184,68 @@ void GrounderFactory::visit(Definition* def) {
 }
 
 void GrounderFactory::visit(Rule* rule) {
-	// Create instance generator
-	InstGenerator* gen = 0;
-	GeneratorNode* node = 0;
+	// Split the quantified variables in two categories: 
+	//		1. the variables that only occur in the head
+	//		2. the variables that occur in the body (and possibly in the head)
+	vector<Variable*>	headvars;
+	vector<Variable*>	bodyvars;
 	for(unsigned int n = 0; n < rule->nrQvars(); ++n) {
+		if(rule->body()->contains(rule->qvar(n))) bodyvars.push_back(rule->qvar(n));
+		else headvars.push_back(rule->qvar(n));
+	}
+	// Create head instance generator
+	InstGenerator* hig = 0;
+	GeneratorNode* hnode = 0;
+	for(unsigned int n = 0; n < headvars; ++n) {
 		domelement* d = new domelement();
-		_varmapping[rule->qvar(n)] = d;
-		SortTable* st = _structure->inter(rule->qvar(n)->sort());
+		_varmapping[headvars[n]] = d;
+		SortTable* st = _structure->inter(headvars[n]->sort());
 		assert(st->finite());	// TODO: produce an error message
 		SortInstGenerator* tig = new SortInstGenerator(st,d);
-		if(rule->nrQvars() == 1) {
-			gen = tig;
+		if(headvars.size() == 1) {
+			hig = tig;
 			break;
 		}
 		else if(n == 0)
-			node = new LeafGeneratorNode(tig);
+			hnode = new LeafGeneratorNode(tig);
 		else 
-			node = new OneChildGeneratorNode(tig,node);
+			hnode = new OneChildGeneratorNode(tig,hnode);
 	}
-	if(!gen) gen = new TreeInstGenerator(node);
+	if(!hig) hig = new TreeInstGenerator(hnode);
+	
+	// Create body instance generator
+	InstGenerator* big = 0;
+	GeneratorNode* bnode = 0;
+	for(unsigned int n = 0; n < bodyvars; ++n) {
+		domelement* d = new domelement();
+		_varmapping[bodyvars[n]] = d;
+		SortTable* st = _structure->inter(bodyvars[n]->sort());
+		assert(st->finite());	// TODO: produce an error message
+		SortInstGenerator* tig = new SortInstGenerator(st,d);
+		if(bodyvars.size() == 1) {
+			big = tig;
+			break;
+		}
+		else if(n == 0)
+			bnode = new LeafGeneratorNode(tig);
+		else 
+			bnode = new OneChildGeneratorNode(tig,bnode);
+	}
+	if(!big) big = new TreeInstGenerator(bnode);
 	
 	// Create head grounder
 	_sentence = false;
-	_poscontext = true;
-	_truegencontext = true;
-	_rulecontext = true;
+	_ruleheadcontext = true;
+	_rulebodycontext = false;
 	rule->head()->accept(this);
-	FormulaGrounder* hgr = _grounder;
+	HeadGrounder* hgr = _headgrounder;
 
 	// Create body grounder
+	_poscontext = false;		// minimize truth value of rule bodies
+	_truegencontext = true;		// body instance generator corresponds to an existential quantifier
 	_sentence = false;
-	_poscontext = true;
-	_truegencontext = true;
-	_rulecontext = true;
+	_ruleheadcontext = false;
+	_rulebodycontext = true;
 	rule->body()->accept(this);
 	FormulaGrounder* bgr = _grounder;
 

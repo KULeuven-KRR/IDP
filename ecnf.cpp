@@ -550,6 +550,79 @@ void EcnfTheory::addClause(EcnfClause& cl, bool firstIsPrinted) {
 	_clauses.push_back(cl);
 }
 
+void GroundDefinition::addRule(int head, const vector<int>& body, bool conj, bool recursive) {
+	map<int,GroundRuleBody>::iterator it = _rules.find(head);
+	if(it == _rules.end() || (it->second)._type == RT_FALSE) {
+		GroundRuleBody& grb = (it == _rules.end() ? _rules[head] : it->second);
+		if(body.empty()) grb._type = (conj ? RT_TRUE : RT_FALSE);
+		else if(body.size() == 1) grb._type = RT_UNARY;
+		else grb._type = (conj ? RT_CONJ : RT_DISJ);
+		grb._body = body;
+	}
+	else if(body.empty()) {
+		if(conj) {
+			(it->second)._type = RT_TRUE;
+			(it->second)._body = body;
+		}
+	}
+	else {
+		GroundRuleBody& grb = it->second;
+		switch(grb._type) {
+			case RT_TRUE: break;
+			case RT_FALSE: assert(false); break;
+			case RT_UNARY:
+				if(body.size() == 1) {
+					grb._type = RT_DISJ;
+					grb._body.push_back(body[0]);
+				}
+				else if(!conj) {
+					grb._type = RT_DISJ;
+					int temp = grb._body[0];
+					grb._body = body;
+					grb._body.push_back(temp);
+				}
+				else {
+					int ts = _translator->translate(body,conj,(recursive ? TS_RULE : TS_EQ));
+					grb._type = RT_DISJ;
+					grb._body.push_back(ts);
+				}
+				if(recursive) grb._recursive = true;
+				break;
+			case RT_DISJ:
+			{
+				if((!conj) || body.size() == 1) {
+					for(unsigned int n = 0; n < body.size(); ++n) 
+						grb._body.push_back(body[n]);
+				}
+				else {
+					int ts = _translator->translate(body,conj,(recursive ? TS_RULE : TS_EQ));
+					grb._body.push_back(ts);
+				}
+				if(recursive) grb._recursive = true;
+				break;
+			}
+			case RT_CONJ:
+				if((!conj) || body.size() == 1) {
+					int ts = _translator->translate(grb._body,true,(grb._recursive ? TS_RULE : TS_EQ));
+					grb._type = RT_DISJ;
+					grb._body = body;
+					grb._body.push_back(ts);
+				}
+				else {
+					int ts1 = _translator->translate(grb._body,true,(grb._recursive ? TS_RULE : TS_EQ));
+					int ts2 = _translator->translate(body,conj,(recursive ? TS_RULE : TS_EQ));
+					grb._type = RT_DISJ;
+					vector<int> vi(2) ; vi[0] = ts1; vi[1] = ts2;
+					grb._body = vi;
+				}
+				if(recursive) grb._recursive = true;
+				break;
+			default:
+				assert(false);
+		}
+	}
+}
+
 void EcnfDefinition::addRule(int head, const vector<int>& body, bool conj, GroundTranslator* t) {
 	map<int,RuleType>::iterator it = _ruletypes.find(head);
 	if(it == _ruletypes.end() || it->second == RT_FALSE) {	// no rule yet with the given head (or the rule with the given head is false)

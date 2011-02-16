@@ -216,10 +216,13 @@ struct EcnfDefinition {
 struct GroundRuleBody {
 	RuleType	_type;
 	vector<int>	_body;
+	bool		_recursive;
 };
 
 struct GroundDefinition {
-	map<int,GroundRuleBody>	_rules;		// maps a head to its corresponding body
+	GroundTranslator*		_translator;
+	map<int,GroundRuleBody>	_rules;			// maps a head to its corresponding body
+	void addRule(int head, const vector<int>& body, bool conj);
 };
 
 /** Propositional fixpoint definition **/

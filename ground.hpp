@@ -177,9 +177,10 @@ class TheoryGrounder : public TopLevelGrounder {
 
 class SentenceGrounder : public TopLevelGrounder {
 	private:
-		FormulaGrounder* _subgrounder;
+		bool				_conj;	
+		FormulaGrounder*	_subgrounder;
 	public:
-		SentenceGrounder(GroundTheory* gt, FormulaGrounder* sub) : TopLevelGrounder(gt), _subgrounder(sub) { }
+		SentenceGrounder(GroundTheory* gt, FormulaGrounder* sub, bool _conj) : TopLevelGrounder(gt), _subgrounder(sub) { }
 		bool run() const;
 };
 
@@ -358,24 +359,43 @@ class EnumSetGrounder : public SetGrounder {
 
 /*** Definition grounders ***/
 
+class HeadGrounder {
+	private:
+		GroundTheory*				_grounding;
+		vector<TermGrounder*>		_subtermgrounders;
+		InstanceChecker*			_truechecker;
+		InstanceChecker*			_falsechecker;
+		unsigned int				_symbol;
+		mutable vector<domelement>	_args;
+		vector<SortTable*>			_tables;
+	public:
+		HeadGrounder(GroundTheory* gt, InstanceChecker* pc, InstanceChecker* cc, PFSymbol* s, 
+			const vector<TermGrounder*>&, const vector<SortTable*>&);
+		int	run()	const;
+
+};
+
 class RuleGrounder {
 	private:
-		EcnfDefinition*			_definition;
-		FormulaGrounder*		_headgrounder;
-		FormulaGrounder*		_bodygrounder;
-		InstGenerator*			_generator;	
+		GroundDefinition*	_definition;
+		HeadGrounder*		_headgrounder;
+		FormulaGrounder*	_bodygrounder;
+		InstGenerator*		_headgenerator;	
+		InstGenerator*		_bodygenerator;	
+		bool				_conj;
+		bool				_recursive;
 	public:
-		RuleGrounder(EcnfDefinition* def, FormulaGrounder* hgr, FormulaGrounder* bgr, InstGenerator* ig) :
-			_definition(def), _headgrounder(hgr), _bodygrounder(bgr), _generator(ig) { }
+		RuleGrounder(GroundDefinition* def, FormulaGrounder* hgr, FormulaGrounder* bgr, InstGenerator* hig, InstGenerator* big,bool conj, bool rec) :
+			_definition(def), _headgrounder(hgr), _bodygrounder(bgr), _headgenerator(hig), _bodygenerator(big), _conj(conj), _recursive(rec) { }
 		bool run() const;
 };
 
 class DefinitionGrounder : public TopLevelGrounder {
 	private:
-		EcnfDefinition*			_definition;
+		GroundDefinition*		_definition;
 		vector<RuleGrounder*>	_subgrounders;
 	public:
-		DefinitionGrounder(GroundTheory* gt, EcnfDefinition* def, vector<RuleGrounder*> subgr) :
+		DefinitionGrounder(GroundTheory* gt, GroundDefinition* def, vector<RuleGrounder*> subgr) :
 			TopLevelGrounder(gt), _definition(def), _subgrounders(subgr) { }
 		bool run() const;
 };
@@ -396,18 +416,20 @@ class GrounderFactory : public Visitor {
 		bool	_truegencontext;
 		bool	_sentence;
 		bool	_rulecontext;
+		TsType	_tseitincontext;
 
 		// Variable mapping
 		map<Variable*,domelement*>	_varmapping;
 
 		// Current ground definition
-		EcnfDefinition*			_definition;
+		GroundDefinition*		_definition;
 
 		// Return values
 		FormulaGrounder*		_grounder;		//TODO: should be renamed to _formgrounder or something for consistency
 		TermGrounder*			_termgrounder;
 		SetGrounder*			_setgrounder;
 		TopLevelGrounder*		_toplevelgrounder;
+		HeadGrounder*			_headgrounder;
 		RuleGrounder*			_rulegrounder;
 		DefinitionGrounder*		_defgrounder;
 
