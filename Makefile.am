@@ -15,7 +15,7 @@ LFLAGS =
 
 bin_PROGRAMS = gidl
 
-gidl_LDADD = -L$(builddir)/lib/lua/src/.libs/liblua.la
+gidl_LDADD = $(builddir)/lib/lua/src/.libs/liblua.la
 
 BUILT_SOURCES = parse.h
 
@@ -82,7 +82,7 @@ AM_CXXFLAGS+=-I $(top_srcdir)/pcsolver/src/ -I $(top_srcdir)/pcsolver/lib/tclap/
 #ESSENTIAL FOR INTTYPES USAGE 
 AM_CXXFLAGS+= -D __STDC_FORMAT_MACROS -D __STDC_LIMIT_MACROS
 
-gidl_LDADD+=-L$(top_builddir)/pcsolver/lib/pbsolver/.libs/libpbsolver-1.0.la
+gidl_LDADD+= $(top_builddir)/pcsolver/lib/pbsolver/libpbsolver-1.0.la
 
 #PBSOLVER
 gidl_SOURCES+=pbsolver/lib/PbSolver.h
