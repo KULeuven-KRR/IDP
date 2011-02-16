@@ -299,5 +299,15 @@ class CloneStructure : public Inference {
 		InfArg execute(const vector<InfArg>& args) const;
 };
 
+class ForceTwoValued : public Inference {
+	public:
+		ForceTwoValued() {
+			_intypes = vector<InfArgType>(1,IAT_STRUCTURE);
+			_outtype = IAT_STRUCTURE;
+			_description = "Force structure to be two-valued";
+			_reload = false;
+		}
+		InfArg execute(const vector<InfArg>& args) const;
+};
 
 #endif

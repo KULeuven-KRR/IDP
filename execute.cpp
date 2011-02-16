@@ -51,6 +51,7 @@ namespace BuiltinProcs {
 		_inferences["getoption"].push_back(new GetOption());
 		_inferences["newoptions"].push_back(new NewOption(true));
 		_inferences["newoptions"].push_back(new NewOption(false));
+		_inferences["forcetwovalued"].push_back(new ForceTwoValued());
 	}
 
 	bool checkintern(lua_State* L, int n, const string& tp) {
@@ -789,5 +790,11 @@ InfArg FastGrounding::execute(const vector<InfArg>& args) const {
 	g->run();
 	InfArg a;
 	a._theory = g->grounding();
+	return a;
+}
+
+InfArg ForceTwoValued::execute(const vector<InfArg>& args) const {
+	args[0]._structure->forcetwovalued();
+	InfArg a;
 	return a;
 }
