@@ -499,7 +499,7 @@ void outputToSolver::outputunsat(){
 ********************************/
 
 void GroundTheory::transformForAdd(EcnfClause& vi, bool firstIsPrinted) {
-	int n = 0;
+	unsigned int n = 0;
 	if(firstIsPrinted) ++n;
 	for(; n < vi.size(); ++n) {
 		int atom = abs(vi[n]);
@@ -889,18 +889,26 @@ void SolverTheory::addClause(EcnfClause& cl, bool firstIsPrinted){
 	_solver->addClause(mcl);
 }
 
-void SolverTheory::addDefinition(const Definition& d) {
+void SolverTheory::addDefinition(const GroundDefinition& d) {
 	// TODO: include definition ID
-	for(map<int,GroundRuleBody>::const iterator it = _rules.begin(); it != _rules.end(); ++it) {
-		switch((it->second)._type) {
+	for(map<int,GroundRuleBody>::const_iterator it = d._rules.begin(); it != d._rules.end(); ++it) {
+		const GroundRuleBody& grb = it->second;
+		MinisatID::Atom head(it->first);
+		vector<MinisatID::Literal> body;
+		for(unsigned int n = 0; n < grb._body.size(); ++n) {
+			MinisatID::Literal l(abs(grb._body[n]),grb._body[n]<0);
+			body.push_back(l);
+		}
+		switch(grb._type) {
 			case RT_CONJ:
-				_solver->addConjRule(it->first,(it->second)._body);	
+				_solver->addConjRule(head,body);	
 				break;
 			case RT_DISJ:
-				_solver->addDisjRule(it->first,(it->second)._body);	
+				_solver->addDisjRule(head,body);	
 				break;
 			default:
 				assert(false);
+		}
 	}
 }
 

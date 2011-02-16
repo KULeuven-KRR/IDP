@@ -131,8 +131,6 @@ class NaiveGrounder : public Visitor {
 	Optimized grounding algorithm
 ************************************/
 
-//TODO: Probably need some forward declarations here...
-
 /*class Grounder {
 	protected:
 		static int		_true;
@@ -147,7 +145,7 @@ class SetGrounder;
 class RuleGrounder;
 class DefinitionGrounder;
 
-struct EcnfDefinition;
+struct GroundDefinition;
 
 /*** Top level grounders ***/
 
@@ -385,7 +383,7 @@ class RuleGrounder {
 		bool				_conj;
 		bool				_recursive;
 	public:
-		RuleGrounder(GroundDefinition* def, FormulaGrounder* hgr, FormulaGrounder* bgr, InstGenerator* hig, InstGenerator* big,bool conj, bool rec) :
+		RuleGrounder(GroundDefinition* def, HeadGrounder* hgr, FormulaGrounder* bgr, InstGenerator* hig, InstGenerator* big, bool conj, bool rec) :
 			_definition(def), _headgrounder(hgr), _bodygrounder(bgr), _headgenerator(hig), _bodygenerator(big), _conj(conj), _recursive(rec) { }
 		bool run() const;
 };
@@ -415,13 +413,14 @@ class GrounderFactory : public Visitor {
 		bool	_poscontext;
 		bool	_truegencontext;
 		bool	_sentence;
-		bool	_rulecontext;
+		bool	_ruleheadcontext;
+		bool	_rulebodycontext;
 		TsType	_tseitincontext;
 
 		// Variable mapping
 		map<Variable*,domelement*>	_varmapping;
 
-		// Current ground definition
+		// Ground definition
 		GroundDefinition*		_definition;
 
 		// Return values

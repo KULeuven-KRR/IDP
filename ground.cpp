@@ -765,7 +765,7 @@ bool RuleGrounder::run() const {
 				}
 			}
 		}
-		while(_generator->next()) {
+		while(_headgenerator->next()) {
 			body.clear();
 			_bodygrounder->run(body);
 			bool falsebody = (body.empty() && !_conj) || (body.size() == 1 && body[0] == _false);
@@ -792,7 +792,7 @@ bool RuleGrounder::run() const {
 
 bool DefinitionGrounder::run() const {
 	for(unsigned int n = 0; n < _subgrounders.size(); ++n) {
-		bool b = _subgrounder[n]->run();
+		bool b = _subgrounders[n]->run();
 		if(!b) return false;
 	}
 	_grounding->addDefinition(*_definition);
@@ -1196,7 +1196,7 @@ void GrounderFactory::visit(Rule* rule) {
 	// Create head instance generator
 	InstGenerator* hig = 0;
 	GeneratorNode* hnode = 0;
-	for(unsigned int n = 0; n < headvars; ++n) {
+	for(unsigned int n = 0; n < headvars.size(); ++n) {
 		domelement* d = new domelement();
 		_varmapping[headvars[n]] = d;
 		SortTable* st = _structure->inter(headvars[n]->sort());
@@ -1216,7 +1216,7 @@ void GrounderFactory::visit(Rule* rule) {
 	// Create body instance generator
 	InstGenerator* big = 0;
 	GeneratorNode* bnode = 0;
-	for(unsigned int n = 0; n < bodyvars; ++n) {
+	for(unsigned int n = 0; n < bodyvars.size(); ++n) {
 		domelement* d = new domelement();
 		_varmapping[bodyvars[n]] = d;
 		SortTable* st = _structure->inter(bodyvars[n]->sort());
@@ -1249,6 +1249,10 @@ void GrounderFactory::visit(Rule* rule) {
 	rule->body()->accept(this);
 	FormulaGrounder* bgr = _grounder;
 
+	// TODO: conjunction? recursive?
+	bool conj;
+	bool rec;
+
 	// Create rule grounder
-	_rulegrounder = new RuleGrounder(_definition,hgr,bgr,gen);
+	_rulegrounder = new RuleGrounder(_definition,hgr,bgr,hig,big,conj,rec);
 }
