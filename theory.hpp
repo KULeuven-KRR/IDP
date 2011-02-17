@@ -439,7 +439,11 @@ namespace FormulaUtils {
 	 */
 	TruthValue evaluate(Formula*,AbstractStructure*,const map<Variable*,TypedElement>&);	
 	
-	Formula* remove_eqchains(Formula*, Vocabulary*);// Rewrite chains of equalities to a conjunction or disjunction of atoms.
+	Formula* remove_eqchains(Formula*, Vocabulary*);	// Rewrite chains of equalities to a 
+														// conjunction or disjunction of atoms.
+	Formula* moveThreeValTerms(PredForm*,AbstractStructure*,bool);	// non-recursively moves functions and aggregates
+																	// that are three-valued in the given structure
+																	// outside of the given atom
 }
 
 

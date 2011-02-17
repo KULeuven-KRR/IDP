@@ -1764,6 +1764,28 @@ namespace FormulaUtils {
 		if(nf != f) delete(f);
 		return nf;
 	}
+
+	/* 
+	 * Formula* moveThreeValTerms(PredForm* pf, AbstractStructure* str, bool poscontext)
+	 * DESCRIPTION
+	 *		Non-recursively moves terms that are three-valued according to a given structure
+	 *		outside a given atom. The applied rewriting depends on the given context:
+	 *			positive context:
+	 *				P(t) becomes	! x : t = x => P(x).
+	 *			negative context:
+	 *				P(t) becomes	? x : t = x & P(x).
+	 *		The fact that the rewriting is non-recursive means that in the above example, t can still contain
+	 *
+	 * PARAMETERS
+	 *		pf			- the given atom
+	 *		str			- the given structure
+	 *		poscontext	- true iff we are in a positive context
+	 * RETURNS
+	 *		The rewritten formula. If no re
+	 *		
+	 */
+	Formula* moveThreeValTerms(PredForm* pf, AbstractStructure* str, bool poscontext) {
+	}
 }
 
 /** Theory utils **/
