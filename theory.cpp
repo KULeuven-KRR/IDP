@@ -835,7 +835,7 @@ class TheoryConvertor : public Visitor {
 	public:
 		
 		TheoryConvertor(AbstractTheory* t) : 
-			Visitor(), _returnvalue(new EcnfTheory()) { t->accept(this); }
+			Visitor(), _returnvalue(new EcnfTheory(0)) { t->accept(this); }
 
 		void visit(PredForm*);
 		void visit(EqChainForm*);
@@ -1753,6 +1753,97 @@ Formula* AggMover::visit(EqChainForm* ef) {
 // TODO: HIER BEZIG: Move Aggregates in terms and rules
 // TODO: functions moeten ook verplaatst worden uit de head van regels
 
+class ThreeValTermMover : public MutatingVisitor {
+	private:
+		AbstractStructure*	_structure;
+		bool				_poscontext;
+		vector<Formula*>	_termgraphs;
+		vector<Variable*>	_variables;
+	public:
+		ThreeValTermMover(AbstractStructure* str, bool posc) : _structure(str), _poscontext(posc) { }
+		Formula*	visit(PredForm* pf);
+		Term*		visit(FuncTerm* ft);
+		Term*		visit(AggTerm*	at);
+};
+
+Term* ThreeValTermMover::visit(FuncTerm* ft) {
+	// Get the function and its interpretation
+	Function* f = ft->func();
+	FuncInter* finter = _structure->inter(f);
+
+
+	if(finter->fasttwovalued()) { // The function is two-valued. Visit the children.
+		for(unsigned int n = 0; n < ft->nrSubterms(); ++n) {
+			Term* nt = ft->subterm(n)->accept(this);
+			if(nt != ft->subterm(n)) {
+				delete(ft->subterm(n));
+				ft->arg(n,nt);
+			}
+		}
+		ft->setfvars();
+		return ft;
+
+	}
+	else { // The function is three-valued. Create a new variable and an equation
+		Variable* v = new Variable(f->outsort());
+		VarTerm* vt = new VarTerm(v,ParseInfo());
+		vector<Term*> args;
+		for(unsigned int n = 0; n < f->arity(); ++n) args.push_back(ft->subterm(n));
+		args.push_back(vt);
+		PredForm* pf = new PredForm(true,f,args,FormParseInfo());
+		_termgraphs.push_back(pf);
+		_variables.push_back(v);
+		return vt->clone();
+	}
+}
+
+Term* ThreeValTermMover::visit(AggTerm* at) {
+	bool twovalued = SetUtils::isTwoValued(at->set(),_structure);
+	if(twovalued) return at;
+	else {
+		Variable* v = new Variable(at->sort());
+		VarTerm* vt = new VarTerm(v,ParseInfo());
+		AggTerm* newat = new AggTerm(at->set(),at->type(),ParseInfo());
+		AggForm* af = new AggForm(true,'=',vt,newat,FormParseInfo());
+		_termgraphs.push_back(af);
+		_variables.push_back(v);
+		return vt->clone();
+	}
+};
+
+Formula* ThreeValTermMover::visit(PredForm* pf) {
+	
+	// Visit the subterms
+	for(unsigned int n = 0; n < pf->nrSubterms(); ++n) {
+		Term* nt = pf->subterm(n)->accept(this);
+		if(nt != pf->subterm(n)) {
+			delete(pf->subterm(n));
+			pf->arg(n,nt);
+		}
+	}
+
+	if(_termgraphs.empty()) {	// No rewriting was needed, simply return the given atom
+		return pf;
+	}
+	else {	// Rewriting was needed
+		
+		// In a positive context, the equations are negated
+		if(_poscontext) {
+			for(unsigned int n = 0; n < _termgraphs.size(); ++n)
+				_termgraphs[n]->swapsign();
+		}
+
+		// Memory management for the original atom
+		PredForm* npf = new PredForm(pf->sign(),pf->symb(),pf->args(),FormParseInfo());
+		_termgraphs.push_back(npf);
+
+		// Create and return the rewriting
+		BoolForm* bf = new BoolForm(true,!_poscontext,_termgraphs,FormParseInfo());
+		QuantForm* qf = new QuantForm(true,_poscontext,_variables,bf,FormParseInfo());
+		return qf;
+	}
+}
+
 /** Formula utils **/
 
 namespace FormulaUtils {
@@ -1777,17 +1868,24 @@ namespace FormulaUtils {
 	 *				P(t) becomes	! x : t = x => P(x).
 	 *			negative context:
 	 *				P(t) becomes	? x : t = x & P(x).
-	 *		The fact that the rewriting is non-recursive means that in the above example, t can still contain
+	 *		The fact that the rewriting is non-recursive means that in the above example, term t 
+	 *		can still contain term that are three-valued according to the structure.
 	 *
 	 * PARAMETERS
 	 *		pf			- the given atom
 	 *		str			- the given structure
 	 *		poscontext	- true iff we are in a positive context
+	 * POSTCONDITIONS
+	 *		In the rewriting, the atom does not contain any three-valued terms anymore
 	 * RETURNS
-	 *		The rewritten formula. If no re
+	 *		The rewritten formula. If no rewriting was needed, it is the same pointer as pf.
+	 *		If rewriting was needed, pf can be deleted, but not recursively.
 	 *		
 	 */
 	Formula* moveThreeValTerms(PredForm* pf, AbstractStructure* str, bool poscontext) {
+		ThreeValTermMover tvtm(str,poscontext);
+		Formula* rewriting = pf->accept(&tvtm);
+		return rewriting;
 	}
 }
 

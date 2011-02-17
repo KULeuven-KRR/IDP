@@ -136,4 +136,22 @@ bool TreeInstGenerator::next() const {
 	return true;
 }
 
+/**************
+	Factory
+**************/
 
+InstGenerator* GeneratorFactory::create(const vector<domelement*>& vars, const vector<SortTable*>& tabs) {
+	InstGenerator* gen = 0;
+	GeneratorNode* node = 0;
+	for(unsigned int n = 0; n < vars.size(); ++n) {
+		SortInstGenerator* tig = new SortInstGenerator(tabs[n],vars[n]);
+		if(vars.size() == 1) {
+			gen = tig;
+			break;
+		}
+		else if(n == 0) node = new LeafGeneratorNode(tig);
+		else node = new OneChildGeneratorNode(tig,node);
+	}
+	if(!gen) gen = new TreeInstGenerator(node);
+	return gen;
+}

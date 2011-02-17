@@ -342,6 +342,11 @@ class QuantSetExpr : public SetExpr {
 
 };
 
+class AbstractStructure;
+namespace SetUtils {
+	bool isTwoValued(SetExpr*,AbstractStructure*);
+}
+
 /** Aggregate types **/
 enum AggType { AGGCARD, AGGSUM, AGGPROD, AGGMIN, AGGMAX };
 

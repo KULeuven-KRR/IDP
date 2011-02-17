@@ -41,7 +41,7 @@ gidl_SOURCES = \
 		clconst.hpp\
 		interactive.cpp interactive.hpp\
 		print.hpp print.cpp\
-		checker.hpp\
+		checker.cpp checker.hpp\
 		generator.cpp generator.hpp 
 
 #MINISATID PART, HEADERS ARE TAKEN CARE OF BY THE SUB MAKEFILE

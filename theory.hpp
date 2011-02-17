@@ -113,14 +113,15 @@ class PredForm : public Formula {
 		void	arg(unsigned int n, Term* t)	{ _args[n] = t;	}
 
 		// Inspectors
-		PFSymbol*		symb()					const { return _symb;				}
-		unsigned int	nrQvars()				const { return 0;					}
-		unsigned int	nrSubforms()			const { return 0;					}
-		unsigned int	nrSubterms()			const { return _args.size();		}
-		Variable*		qvar(unsigned int)		const { assert(false); return 0;	}
-		Formula*		subform(unsigned int)	const { assert(false); return 0;	}
-		Term*			subterm(unsigned int n)	const { return _args[n];			}
-		bool			contains(PFSymbol* s)	const { return _symb == s;			}
+		PFSymbol*				symb()					const { return _symb;				}
+		unsigned int			nrQvars()				const { return 0;					}
+		unsigned int			nrSubforms()			const { return 0;					}
+		unsigned int			nrSubterms()			const { return _args.size();		}
+		Variable*				qvar(unsigned int)		const { assert(false); return 0;	}
+		Formula*				subform(unsigned int)	const { assert(false); return 0;	}
+		Term*					subterm(unsigned int n)	const { return _args[n];			}
+		const vector<Term*>&	args()					const { return _args;				}
+		bool					contains(PFSymbol* s)	const { return _symb == s;			}
 		
 		// Visitor
 		void		accept(Visitor* v);
@@ -449,7 +450,7 @@ namespace FormulaUtils {
 	
 	Formula* remove_eqchains(Formula*, Vocabulary*);	// Rewrite chains of equalities to a 
 														// conjunction or disjunction of atoms.
-	Formula* moveThreeValTerms(PredForm*,AbstractStructure*,bool);	// non-recursively moves functions and aggregates
+	Formula* moveThreeValTerms(PredForm*,AbstractStructure*,bool);	// non-recursively moves terms 
 																	// that are three-valued in the given structure
 																	// outside of the given atom
 }

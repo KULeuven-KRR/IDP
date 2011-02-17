@@ -8,6 +8,7 @@
 #define GROUND_HPP
 
 #include <queue>
+#include <stack>
 #include <cstdlib> // abs
 #include "theory.hpp"
 #include "checker.hpp"
@@ -137,6 +138,21 @@ class SetGrounder;
 class RuleGrounder;
 class DefinitionGrounder;
 struct GroundDefinition;
+
+/** Grounding context **/
+enum CompContext { CC_SENTENCE, CC_HEAD, CC_BODY, CC_FORMULA };
+enum PosContext { PC_POSITIVE, PC_NEGATIVE, PC_BOTH };
+
+struct GroundingContext {
+	bool		_truegen;	// Indicates whether the variables are instantiated in order to obtain
+							// a ground formula that is possibly true.
+	PosContext	_positive;	// Indicates whether the visited part of the theory occurs in the scope
+							// of an even number of negations.
+	CompContext	_component;	// Indicates the context of the visited formula
+	TsType		_tseitin;	// Indicates the type of tseitin definition that needs to be used.
+	bool		_recursive; // Indicates whether the visited rule is recursive.
+};
+
 
 /*** Top level grounders ***/
 
@@ -286,7 +302,7 @@ class BoolGrounder : public ClauseGrounder {
 		vector<FormulaGrounder*>	_subgrounders;
 	public:
 		BoolGrounder(GroundTranslator* gt, const vector<FormulaGrounder*> sub, bool sign, bool conj, const GroundingContext& ct):
-			ClauseGrounder(gt,sign,conj,pos,ct), _subgrounders(sub) { }
+			ClauseGrounder(gt,sign,conj,ct), _subgrounders(sub) { }
 		int	run() const;
 		void	run(vector<int>&) const;
 };
@@ -297,7 +313,7 @@ class QuantGrounder : public ClauseGrounder {
 		InstGenerator*		_generator;	
 	public:
 		QuantGrounder(GroundTranslator* gt, FormulaGrounder* sub, bool sign, bool conj, InstGenerator* gen, const GroundingContext& ct):
-			ClauseGrounder(gt,sign,conj,pos,ct), _subgrounder(sub), _generator(gen) { }
+			ClauseGrounder(gt,sign,conj,ct), _subgrounder(sub), _generator(gen) { }
 		int	run() const;
 		void	run(vector<int>&) const;
 };
@@ -399,18 +415,6 @@ class DefinitionGrounder : public TopLevelGrounder {
 	Grounder Factory
 ***********************/
 
-enum CompContext { CC_SENTENCE, CC_HEAD, CC_BODY, CC_FORMULA };
-
-struct GroundingContext {
-	bool		_positive;	// Indicates whether the visited part of the theory occurs in the scope
-							// of an even number of negations.
-	bool		_truegen;	// Indicates whether the variables are instantiated in order to obtain
-							// a ground formula that is possibly true.
-	CompContext	_component;	// Indicates the context of the visited formula.
-	TsType		_tseitin;	// Indicates the type of tseitin definition that needs to be used.
-	bool		_recursive; // Indicates whether the visited rule is recursive.
-}
-
 /*
  * Class to produce grounders 
  */
@@ -428,6 +432,7 @@ class GrounderFactory : public Visitor {
 		void	InitContext();		// Initialize the context 
 		void	SaveContext();		// Push the current context onto the stack
 		void	RestoreContext();	// Set _context to the top of the stack and pop the stack
+		void	DeeperContext(bool);
 
 		// Variable mapping
 		map<Variable*,domelement*>	_varmapping;	// Maps variables to their counterpart during grounding.

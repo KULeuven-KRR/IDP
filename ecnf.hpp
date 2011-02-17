@@ -286,7 +286,7 @@ class EcnfTheory : public GroundTheory {
 	public:
 
 		// Constructor
-		EcnfTheory(AbstractTheory* str) : GroundTheory(str) { }
+		EcnfTheory(AbstractStructure* str) : GroundTheory(str) { }
 		EcnfTheory(Vocabulary* voc, AbstractStructure* str) : GroundTheory(voc,str)	{ }
 
 		// Mutators

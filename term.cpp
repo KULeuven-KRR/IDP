@@ -503,6 +503,49 @@ namespace TermUtils {
 	}
 }
 
+class TwoValChecker : public Visitor {
+	private:
+		AbstractStructure*	_structure;
+		bool				_returnvalue;
+	public:
+		TwoValChecker(AbstractStructure* str) : _structure(str), _returnvalue(true) { }
+		bool	returnvalue()	const { return _returnvalue;	}
+		void	visit(PredForm*);
+		void	visit(FuncTerm*);
+};
+
+void TwoValChecker::visit(PredForm* pf) {
+	PredInter* inter = _structure->inter(pf->symb());
+	if(inter->fasttwovalued()) {
+		for(unsigned int n = 0; n < pf->nrSubterms(); ++n) {
+			pf->subterm(n)->accept(this);
+			if(!_returnvalue) return;
+		}
+	}
+	else _returnvalue = false;
+}
+
+void TwoValChecker::visit(FuncTerm* ft) {
+	FuncInter* inter = _structure->inter(ft->func());
+	if(inter->fasttwovalued()) {
+		for(unsigned int n = 0; n < ft->nrSubterms(); ++n) {
+			ft->subterm(n)->accept(this);
+			if(!_returnvalue) return;
+		}
+	}
+	else _returnvalue = false;
+}
+
+namespace SetUtils {
+
+	bool isTwoValued(SetExpr* exp, AbstractStructure* str) {
+		TwoValChecker tvc(str);
+		exp->accept(&tvc);
+		return tvc.returnvalue();
+	}
+
+}
+
 namespace AggUtils {
 
 	double compute(AggType agg, const vector<double>& args) {
