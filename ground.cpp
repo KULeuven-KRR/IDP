@@ -422,7 +422,7 @@ int AtomGrounder::run() const {
 		//TODO: only check positions that can be out of bounds!
 		//TODO: produce a warning!
 		if(!ElementUtil::exists(_args[n])) {
-			return _poscontext ? _true : _false;
+			return _context._positive ? _true : _false;
 		}
 	}
 
@@ -489,7 +489,7 @@ int ClauseGrounder::finish(vector<int>& cl) const {
 	}	*/
 	else {
 		TsType tp = TS_IMPL;
-		if(_poscontext != _sign) tp = TS_RIMPL;
+		if(_context._positive != _sign) tp = TS_RIMPL;
 		int ts = _translator->translate(cl,_conj,tp);
 		return _sign ? ts : -ts;
 	}
@@ -575,7 +575,7 @@ int EquivGrounder::run() const {
 		cl1[0] = left;	cl1[1] = _sign ? -right : right;
 		cl2[0] = -left;	cl2[1] = _sign ? right : -right;
 		EcnfClause tcl(2);
-		TsType tp = _poscontext ? TS_IMPL : TS_RIMPL; 
+		TsType tp = _context._positive ? TS_IMPL : TS_RIMPL; 
 		int ts1 = _translator->translate(cl1,false,tp);
 		int ts2 = _translator->translate(cl2,false,tp);
 		tcl[0] = ts1; tcl[1] = ts2;
@@ -605,7 +605,7 @@ void EquivGrounder::run(vector<int>& clause) const {
 		EcnfClause cl2(2);
 		cl1[0] = left;	cl1[1] = _sign ? -right : right;
 		cl2[0] = -left;	cl2[1] = _sign ? right : -right;
-		TsType tp = _poscontext ? TS_IMPL : TS_RIMPL; 
+		TsType tp = _context._positive ? TS_IMPL : TS_RIMPL; 
 		int ts1 = _translator->translate(cl1,false,tp);
 		int ts2 = _translator->translate(cl2,false,tp);
 		clause.push_back(ts1); clause.push_back(ts2);
@@ -757,16 +757,16 @@ bool RuleGrounder::run() const {
 		bool falsebody = (body.empty() && !_conj) || (body.size() == 1 && body[0] == _false);
 		if(!falsebody) {
 			if(_headgenerator->first()) {
-				int h = _headgrounder->run();
-				assert(h != _true);
-				if(h != _false) {
-					_definition->addRule(h,body,_conj,_recursive);
+				int head = _headgrounder->run();
+				assert(head != _true);
+				if(head != _false) {
+					_definition->addRule(head,body,_conj,_context._recursive);
 				}
 				while(_headgenerator->next()) {
-					h = _headgrounder->run();
-					assert(h != _true);
-					if(h != _false) {
-						_definition->addRule(h,body,_conj,_recursive);
+					head = _headgrounder->run();
+					assert(head != _true);
+					if(head != _false) {
+						_definition->addRule(head,body,_conj,_context._recursive);
 					}
 				}
 			}
@@ -777,16 +777,16 @@ bool RuleGrounder::run() const {
 			bool falsebody = (body.empty() && !_conj) || (body.size() == 1 && body[0] == _false);
 			if(!falsebody) {
 				if(_headgenerator->first()) {
-					int h = _headgrounder->run();
-					assert(h != _true);
-					if(h != _false) {
-						_definition->addRule(h,body,_conj,_recursive);
+					int head = _headgrounder->run();
+					assert(head != _true);
+					if(head != _false) {
+						_definition->addRule(head,body,_conj,_context._recursive);
 					}
 					while(_headgenerator->next()) {
-						h = _headgrounder->run();
-						assert(h != _true);
-						if(h != _false) {
-							_definition->addRule(h,body,_conj,_recursive);
+						head = _headgrounder->run();
+						assert(head != _true);
+						if(head != _false) {
+							_definition->addRule(head,body,_conj,_context._recursive);
 						}
 					}
 				}
@@ -820,6 +820,7 @@ void GrounderFactory::InitContext() {
 	_context._truegen		= false;
 	_context._component		= CC_SENTENCE;
 	_context._tseitin		= TS_IMPL;
+	_context._recursive		= false;
 }
 
 /*
@@ -844,7 +845,7 @@ void GrounderFactory::RestoreContext() {
 /*
  * void GrounderFactory::descend(Term* t)
  * DESCRIPTION
- *		Visits term a term and ensures the context is restored to the value before the visit.
+ *		Visits a term and ensures the context is restored to the value before the visit.
  * PARAMETERS
  *		t	- the visited term
  */
@@ -857,7 +858,7 @@ void GrounderFactory::descend(Term* t) {
 /*
  * void GrounderFactory::descend(Formula* f)
  * DESCRIPTION
- *		Visits term a formula and ensures the context is restored to the value before the visit.
+ *		Visits a formula and ensures the context is restored to the value before the visit.
  * PARAMETERS
  *		f	- the visited formula
  */
@@ -888,7 +889,7 @@ TopLevelGrounder* GrounderFactory::create(AbstractTheory* theory) {
 
 	// Create the grounder
 	theory->accept(this);
-	return _toplevelgrounder;
+	_conj(conj), return _toplevelgrounder;
 }
 
 /*
@@ -979,6 +980,8 @@ void GrounderFactory::visit(Theory* theory) {
  *			CC_FORMULA:		_formgrounder
  */
 void GrounderFactory::visit(PredForm* pf) {
+	// This formula will not be grounded to a conjunction.
+	_conjunction = false;
 
 	// Move all functions and aggregates that are three-valued according 
 	// to _structure outside the atom. To avoid changing the original atom, 
@@ -1032,6 +1035,8 @@ void GrounderFactory::visit(PredForm* pf) {
 }
 
 void GrounderFactory::visit(BoolForm* bf) {
+	// Find out whether this formula will be grounded to a conjunction.
+	_conjunction = bf->conj() == bf->sign();
 
 	bool gen = _truegencontext;
 	if(_sentence && bf->conj() && bf->sign()) {
@@ -1072,6 +1077,9 @@ void GrounderFactory::visit(BoolForm* bf) {
 }
 
 void GrounderFactory::visit(QuantForm* qf) {
+	// Find out whether this formula will be grounded to a conjunction.
+	_conjunction = qf->univ() == qf->sign();
+
 	// Save context
 	bool pos = _poscontext;
 	bool tgen = _truegencontext;
@@ -1119,6 +1127,9 @@ void GrounderFactory::visit(QuantForm* qf) {
 }
 
 void GrounderFactory::visit(EquivForm* ef) {
+	// This formula will be grounded to a conjunction.
+	_conjunction = true;
+
 	//TODO: check for partial functions
 
 	// Save context
@@ -1253,14 +1264,21 @@ void GrounderFactory::visit(Definition* def) {
 	_definition = new GroundDefinition();
 
 	// Create rule grounders
-	vector<RuleGrounder*> subgr;
+	vector<RuleGrounder*> subgrounders;
 	for(unsigned int n = 0; n < def->nrRules(); ++n) {
-		def->rule(n)->accept(this);
-		subgr.push_back(_rulegrounder);
+		//TODO: Check if rule is recursive
+		for(unsigned int m; m < def->nrDefsyms(); ++m) {
+			if(def->rule(n)->body()->contains(def->defsym(m))) {
+				_context._recursive = true;
+				break;
+			}
+		}
+		descend(def->rule(n));
+		subgrounders.push_back(_rulegrounder);
 	}
 	
 	// Create definition grounder
-	_defgrounder = new DefinitionGrounder(_grounding,_definition,subgr);
+	_defgrounder = new DefinitionGrounder(_grounding,_definition,subgrounders);
 }
 
 void GrounderFactory::visit(Rule* rule) {
@@ -1274,7 +1292,7 @@ void GrounderFactory::visit(Rule* rule) {
 		else headvars.push_back(rule->qvar(n));
 	}
 	// Create head instance generator
-	InstGenerator* hig = 0;
+	InstGenerator* headgen = 0;
 	GeneratorNode* hnode = 0;
 	for(unsigned int n = 0; n < headvars.size(); ++n) {
 		domelement* d = new domelement();
@@ -1283,18 +1301,16 @@ void GrounderFactory::visit(Rule* rule) {
 		assert(st->finite());	// TODO: produce an error message
 		SortInstGenerator* tig = new SortInstGenerator(st,d);
 		if(headvars.size() == 1) {
-			hig = tig;
+			headgen = tig;
 			break;
 		}
-		else if(n == 0)
-			hnode = new LeafGeneratorNode(tig);
-		else 
-			hnode = new OneChildGeneratorNode(tig,hnode);
+		else if(n == 0) hnode = new LeafGeneratorNode(tig);
+		else 			hnode = new OneChildGeneratorNode(tig,hnode);
 	}
-	if(!hig) hig = new TreeInstGenerator(hnode);
+	if(!headgen) headgen = new TreeInstGenerator(hnode);
 	
 	// Create body instance generator
-	InstGenerator* big = 0;
+	InstGenerator* bodygen = 0;
 	GeneratorNode* bnode = 0;
 	for(unsigned int n = 0; n < bodyvars.size(); ++n) {
 		domelement* d = new domelement();
@@ -1303,36 +1319,26 @@ void GrounderFactory::visit(Rule* rule) {
 		assert(st->finite());	// TODO: produce an error message
 		SortInstGenerator* tig = new SortInstGenerator(st,d);
 		if(bodyvars.size() == 1) {
-			big = tig;
+			bodygen = tig;
 			break;
 		}
-		else if(n == 0)
-			bnode = new LeafGeneratorNode(tig);
-		else 
-			bnode = new OneChildGeneratorNode(tig,bnode);
+		else if(n == 0) bnode = new LeafGeneratorNode(tig);
+		else 			bnode = new OneChildGeneratorNode(tig,bnode);
 	}
-	if(!big) big = new TreeInstGenerator(bnode);
+	if(!bodygen) bodygen = new TreeInstGenerator(bnode);
 	
 	// Create head grounder
-	_sentence = false;
-	_ruleheadcontext = true;
-	_rulebodycontext = false;
-	rule->head()->accept(this);
-	HeadGrounder* hgr = _headgrounder;
+	_context._component = CC_HEAD;
+	descend(rule->head());
+	HeadGrounder* headgr = _headgrounder;
 
 	// Create body grounder
-	_poscontext = false;		// minimize truth value of rule bodies
-	_truegencontext = true;		// body instance generator corresponds to an existential quantifier
-	_sentence = false;
-	_ruleheadcontext = false;
-	_rulebodycontext = true;
-	rule->body()->accept(this);
-	FormulaGrounder* bgr = _grounder;
-
-	// TODO: conjunction? recursive?
-	bool conj;
-	bool rec;
+	_context._component = CC_BODY;
+	_context._positive = false;		// minimize truth value of rule bodies
+	_context._truegen = true;		// body instance generator corresponds to an existential quantifier
+	descend(rule->body());
+	FormulaGrounder* bodygr = _grounder;
 
 	// Create rule grounder
-	_rulegrounder = new RuleGrounder(_definition,hgr,bgr,hig,big,conj,rec);
+	_rulegrounder = new RuleGrounder(_definition,headgr,bodygr,headgen,bodygen,_conjunction,_context);
 }

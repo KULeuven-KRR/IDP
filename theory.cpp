@@ -257,15 +257,18 @@ void FixpDef::defsyms() {
 ***************************/
 
 bool Formula::contains(Variable* v) const {
-	for(unsigned int n = 0; n < nrQvars(); ++n) {
+	for(unsigned int n = 0; n < nrQvars(); ++n)
 		if(qvar(n) == v) return true;
-	}
-	for(unsigned int n = 0; n < nrSubterms(); ++n) {
+	for(unsigned int n = 0; n < nrSubterms(); ++n)
 		if(subterm(n)->contains(v)) return true;
-	}
-	for(unsigned int n = 0; n < nrSubforms(); ++n) {
+	for(unsigned int n = 0; n < nrSubforms(); ++n)
 		if(subform(n)->contains(v)) return true;
-	}
+	return false;
+}
+
+bool BoolForm::contains(PFSymbol* s) const {
+	for(unsigned int n = 0; n < nrSubforms(); ++n) 
+		if(subform(n)->contains(s)) return true;
 	return false;
 }
 

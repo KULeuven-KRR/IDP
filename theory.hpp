@@ -75,6 +75,7 @@ class Formula : public TheoryComponent {
 		virtual	Formula*				subform(unsigned int n)	const = 0;	// the n'th direct subformula
 		virtual	Term*					subterm(unsigned int n)	const = 0;	// the n'th direct subterm
 				bool					contains(Variable*)		const;		// true iff the formula contains the variable
+		virtual	bool					contains(PFSymbol*)		const = 0;	// true iff the formula contains the symbol
 		virtual	bool					trueformula()			const { return false;	}
 		virtual	bool					falseformula()			const { return false;	}
 
@@ -119,6 +120,7 @@ class PredForm : public Formula {
 		Variable*		qvar(unsigned int)		const { assert(false); return 0;	}
 		Formula*		subform(unsigned int)	const { assert(false); return 0;	}
 		Term*			subterm(unsigned int n)	const { return _args[n];			}
+		bool			contains(PFSymbol* s)	const { return _symb == s;			}
 		
 		// Visitor
 		void		accept(Visitor* v);
@@ -171,6 +173,7 @@ class EqChainForm : public Formula {
 		Variable*		qvar(unsigned int)			const	{ assert(false); return 0;	}
 		Formula*		subform(unsigned int)		const	{ assert(false); return 0;	}
 		Term*			subterm(unsigned int n)		const	{ return _terms[n];			}
+		bool			contains(PFSymbol* s)		const	{ return false;				}
 
 		const vector<char>&	comps()		const	{ return _comps;	}
 		const vector<bool>& compsigns()	const	{ return _signs;	}
@@ -217,6 +220,7 @@ class EquivForm : public Formula {
 		Variable*		qvar(unsigned int)		const { assert(false); return 0;		}
 		Formula*		subform(unsigned int n)	const { return (n ? _left : _right);	}
 		Term*			subterm(unsigned int)	const { assert(false); return 0;	 	}
+		bool			contains(PFSymbol* s)	const { return _left->contains(s) || _right->contains(s);	}
 
 		// Visitor
 		void		accept(Visitor* v);
@@ -265,6 +269,7 @@ class BoolForm : public Formula {
 		Term*			subterm(unsigned int)	const	{ assert(false); return 0; 	}
 		bool			trueformula()			const	{ return (_subf.empty() && _conj == _sign);	}
 		bool			falseformula()			const	{ return (_subf.empty() && _conj != _sign);	}
+		bool			contains(PFSymbol* s)	const;
 
 		// Visitor
 		void		accept(Visitor* v);
@@ -313,6 +318,7 @@ class QuantForm : public Formula {
 		Formula*		subform(unsigned int)	const { return	_subf;				}
 		Term*			subterm(unsigned int)	const { assert(false); return 0;	}
 		const vector<Variable*>&	qvars()		const { return _vars;				}
+		bool			contains(PFSymbol* s)	const { return _subf->contains(s);	}
 
 		// Visitor
 		void		accept(Visitor* v);
@@ -357,6 +363,7 @@ class AggForm : public Formula {
 		Term*			subterm(unsigned int n)	const { return (n ? _right : _left);	}
 		Term*			left()					const { return _left;					}
 		AggTerm*		right()					const { return _right;					}
+		bool			contains(PFSymbol* s)	const { return false;					}
 
 		// Visitor
 		void		accept(Visitor* v);
@@ -402,6 +409,7 @@ class BracketForm : public Formula {
 		Variable*		qvar(unsigned int)		const { assert(false); return 0;	}
 		Formula*		subform(unsigned int)	const { return _subf;				}
 		Term*			subterm(unsigned int)	const { assert(false); return 0;	}
+		bool			contains(PFSymbol* s)	const { return _subf->contains(s);	}
 		
 		// Visitor
 		void		accept(Visitor* v);
