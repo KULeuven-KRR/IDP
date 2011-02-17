@@ -136,6 +136,7 @@ class FormulaGrounder;
 class SetGrounder;
 class RuleGrounder;
 class DefinitionGrounder;
+struct GroundDefinition;
 
 /*** Top level grounders ***/
 
@@ -241,8 +242,9 @@ class AggTermGrounder : public TermGrounder {
 class FormulaGrounder {
 	protected:
 		GroundTranslator*	_translator;
+		GroundingContext	_context;
 	public:
-		FormulaGrounder(GroundTranslator* gt): _translator(gt) { }
+		FormulaGrounder(GroundTranslator* gt, const GroundingContext& ct): _translator(gt), _context(ct) { }
 		virtual int		run()				const = 0;
 		virtual void	run(vector<int>&)	const = 0;
 };
@@ -256,12 +258,11 @@ class AtomGrounder : public FormulaGrounder {
 		mutable vector<domelement>	_args;
 		vector<SortTable*>			_tables;
 		bool						_sign;
-		bool						_poscontext;
 		int							_certainvalue;
 	public:
 		AtomGrounder(GroundTranslator* gt, bool sign, PFSymbol* s,
 					const vector<TermGrounder*> sg, InstanceChecker* pic, InstanceChecker* cic,
-					const vector<SortTable*>& vst, bool pc, bool c);
+					const vector<SortTable*>& vst, const GroundingContext&);
 		int		run() const;
 		void	run(vector<int>&) const;
 };
@@ -270,10 +271,9 @@ class ClauseGrounder : public FormulaGrounder {
 	protected:
 		bool				_sign;
 		bool				_conj;
-		bool				_poscontext;
 	public:
-		ClauseGrounder(GroundTranslator* gt, bool sign, bool conj, bool pos) : 
-			FormulaGrounder(gt), _sign(sign), _conj(conj), _poscontext(pos) { }
+		ClauseGrounder(GroundTranslator* gt, bool sign, bool conj, const GroundingContext& ct) : 
+			FormulaGrounder(gt,ct), _sign(sign), _conj(conj) { }
 		int		finish(vector<int>&) const;
 		bool	check1(int l) const;
 		bool	check2(int l) const;
@@ -285,8 +285,8 @@ class BoolGrounder : public ClauseGrounder {
 	private:
 		vector<FormulaGrounder*>	_subgrounders;
 	public:
-		BoolGrounder(GroundTranslator* gt, const vector<FormulaGrounder*> sub, bool sign, bool conj, bool pos):
-			ClauseGrounder(gt,sign,conj,pos), _subgrounders(sub) { }
+		BoolGrounder(GroundTranslator* gt, const vector<FormulaGrounder*> sub, bool sign, bool conj, const GroundingContext& ct):
+			ClauseGrounder(gt,sign,conj,pos,ct), _subgrounders(sub) { }
 		int	run() const;
 		void	run(vector<int>&) const;
 };
@@ -296,8 +296,8 @@ class QuantGrounder : public ClauseGrounder {
 		FormulaGrounder*	_subgrounder;
 		InstGenerator*		_generator;	
 	public:
-		QuantGrounder(GroundTranslator* gt, FormulaGrounder* sub, bool sign, bool conj, bool pos, InstGenerator* gen):
-			ClauseGrounder(gt,sign,conj,pos), _subgrounder(sub), _generator(gen) { }
+		QuantGrounder(GroundTranslator* gt, FormulaGrounder* sub, bool sign, bool conj, InstGenerator* gen, const GroundingContext& ct):
+			ClauseGrounder(gt,sign,conj,pos,ct), _subgrounder(sub), _generator(gen) { }
 		int	run() const;
 		void	run(vector<int>&) const;
 };
@@ -307,10 +307,9 @@ class EquivGrounder : public FormulaGrounder {
 		FormulaGrounder*	_leftgrounder;
 		FormulaGrounder*	_rightgrounder;
 		bool				_sign;
-		bool				_poscontext;
 	public:
-		EquivGrounder(GroundTranslator* gt, FormulaGrounder* lg, FormulaGrounder* rg, bool sign, bool pos):
-			FormulaGrounder(gt), _leftgrounder(lg), _rightgrounder(rg), _sign(sign), _poscontext(pos) { }
+		EquivGrounder(GroundTranslator* gt, FormulaGrounder* lg, FormulaGrounder* rg, bool sign, const GroundingContext& ct):
+			FormulaGrounder(gt,ct), _leftgrounder(lg), _rightgrounder(rg), _sign(sign), _poscontext(pos) { }
 		int run() const;
 		void	run(vector<int>&) const;
 };
@@ -378,7 +377,7 @@ class RuleGrounder {
 		bool				_conj;
 		bool				_recursive;
 	public:
-		RuleGrounder(GroundDefinition* def, FormulaGrounder* hgr, FormulaGrounder* bgr, InstGenerator* hig, InstGenerator* big,bool conj, bool rec) :
+		RuleGrounder(GroundDefinition* def, HeadGrounder* hgr, FormulaGrounder* bgr, InstGenerator* hig, InstGenerator* big, bool conj, bool rec) :
 			_definition(def), _headgrounder(hgr), _bodygrounder(bgr), _headgenerator(hig), _bodygenerator(big), _conj(conj), _recursive(rec) { }
 		bool run() const;
 };
@@ -435,7 +434,6 @@ class GrounderFactory : public Visitor {
 		// Current ground definition
 		GroundDefinition*		_definition;	// The ground definition that will be produced by the 
 												// currently constructed definition grounder.
-
 		// Return values
 		FormulaGrounder*		_formgrounder;
 		TermGrounder*			_termgrounder;

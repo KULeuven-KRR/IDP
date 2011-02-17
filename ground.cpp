@@ -406,11 +406,11 @@ bool UnivSentGrounder::run() const {
 
 AtomGrounder::AtomGrounder(GroundTranslator* gt, bool sign, PFSymbol* s,
 							const vector<TermGrounder*> sg, InstanceChecker* pic, InstanceChecker* cic,
-							const vector<SortTable*>& vst, bool pc, bool c) :
-	FormulaGrounder(gt), _sign(sign), _symbol(gt->addSymbol(s)),
+							const vector<SortTable*>& vst, const GroundingContext& ct) :
+	FormulaGrounder(gt,ct), _sign(sign), _symbol(gt->addSymbol(s)),
 	_args(sg.size()), _subtermgrounders(sg), _pchecker(pic), _cchecker(cic),
-	_tables(vst), _poscontext(pc)
-	{ _certainvalue = c ? _true : _false; }
+	_tables(vst)
+	{ _certainvalue = ct._truegen ? _true : _false; }
 
 int AtomGrounder::run() const {
 	// Run subterm grounders
@@ -771,7 +771,7 @@ bool RuleGrounder::run() const {
 				}
 			}
 		}
-		while(_generator->next()) {
+		while(_headgenerator->next()) {
 			body.clear();
 			_bodygrounder->run(body);
 			bool falsebody = (body.empty() && !_conj) || (body.size() == 1 && body[0] == _false);
@@ -798,7 +798,7 @@ bool RuleGrounder::run() const {
 
 bool DefinitionGrounder::run() const {
 	for(unsigned int n = 0; n < _subgrounders.size(); ++n) {
-		bool b = _subgrounder[n]->run();
+		bool b = _subgrounders[n]->run();
 		if(!b) return false;
 	}
 	_grounding->addDefinition(*_definition);
@@ -1001,75 +1001,31 @@ void GrounderFactory::visit(PredForm* pf) {
 			argsorttables.push_back(_structure->inter(pf->symb()->sort(n)));
 		}
 
-		// Create checkers
+		// Create checkers and grounder
 		PredInter* inter = _structure->inter(pf->symb());
-		if(_ruleheadcontext) {
-			InstanceChecker* truech;
-			InstanceChecker* falsech;
-			if(inter->ct()) {
-				if(inter->ctpf()->empty()) truech = new FalseInstanceChecker();
-				else truech = new TableInstanceChecker(inter->ctpf());
-			}
-			else {
-				if(inter->ctpf()->empty()) truech = new TrueInstanceChecker();
-				else truech = new InvTableInstanceChecker(inter->ctpf());
-			}
-			if(inter->cf()) {
-				if(inter->cfpt()->empty()) falsech = new FalseInstanceChecker();
-				else falsech = new TableInstanceChecker(inter->cfpt());
-			}
-			else {
-				if(inter->cfpt()->empty()) falsech = new TrueInstanceChecker();
-				else falsech = new InvTableInstanceChecker(inter->cfpt());
-			}
-			_headgrounder = new HeadGrounder(_grounding,truech,falsech,pf->symb(),vtg,vst);
+		CheckerFactory checkfactory;
+		if(_context._component == CC_HEAD) {
+			InstanceChecker* truech = checkfactory.create(inter,true,true);
+			InstanceChecker* falsech = checkfactory.create(inter,false,true);
+			_headgrounder = new HeadGrounder(_grounding,truech,falsech,pf->symb(),subtermgrounders,argsorttables);
 		}
 		else {
-			InstanceChecker* pch;
-			InstanceChecker* cch;
-			if(_truegencontext == pf->sign()) {		// check according to ct-table
-				if(inter->cf()) {
-					if(inter->cfpt()->empty()) pch = new TrueInstanceChecker();
-					else pch = new InvTableInstanceChecker(inter->cfpt());
-				}
-				else {
-					if(inter->cfpt()->empty()) pch = new FalseInstanceChecker();
-					else pch = new TableInstanceChecker(inter->cfpt());
-				}
-	
-				if(inter->ct()) {
-					if(inter->ctpf()->empty()) cch = new FalseInstanceChecker();
-					else cch = new TableInstanceChecker(inter->ctpf());
-				}
-				else {
-					if(inter->ctpf()->empty()) cch = new TrueInstanceChecker();
-					else cch = new InvTableInstanceChecker(inter->ctpf());
-				}
+			InstanceChecker* possch;
+			InstanceChecker* certainch;
+			if(_truegencontext == pf->sign()) {	
+				possch = checkfactory.create(inter,false,false);
+				certainch = checkfactory.create(inter,true,true);
 			}
-			else {	// check according to cf-table
-				if(inter->ct()) {
-					if(inter->ctpf()->empty()) pch = new TrueInstanceChecker();
-					else pch = new InvTableInstanceChecker(inter->ctpf());
-				}
-				else {
-					if(inter->ctpf()->empty()) pch = new FalseInstanceChecker();
-					else pch = new TableInstanceChecker(inter->ctpf());
-				}
-	
-				if(inter->cf()) {
-					if(inter->cfpt()->empty()) cch = new FalseInstanceChecker();
-					else cch = new TableInstanceChecker(inter->cfpt());
-				}
-				else {
-					if(inter->cfpt()->empty()) cch = new TrueInstanceChecker();
-					else cch = new InvTableInstanceChecker(inter->cfpt());
-				}
+			else {	
+				possch = checkfactory.create(inter,true,false);
+				certainch = checkfactory.create(inter,false,true);
 			}
 	
 			// Create the grounder
-			_grounder = new AtomGrounder(_grounding->translator(),pf->sign(),pf->symb(),vtg,pch,cch,vst,_poscontext,_truegencontext);
-			
-			if(_sentence) _toplevelgrounder = new SentenceGrounder(_grounding,_grounder,false);
+			_formgrounder = new AtomGrounder(_grounding->translator(),pf->sign(),pf->symb(),
+								 subtermgrounders,possch,certainch,argsorttables,_context);
+			if(_context._component == CC_SENTENCE) 
+				_toplevelgrounder = new SentenceGrounder(_grounding,_grounder,false);
 		}
 	}
 	transpf->recursiveDelete();
@@ -1320,7 +1276,7 @@ void GrounderFactory::visit(Rule* rule) {
 	// Create head instance generator
 	InstGenerator* hig = 0;
 	GeneratorNode* hnode = 0;
-	for(unsigned int n = 0; n < headvars; ++n) {
+	for(unsigned int n = 0; n < headvars.size(); ++n) {
 		domelement* d = new domelement();
 		_varmapping[headvars[n]] = d;
 		SortTable* st = _structure->inter(headvars[n]->sort());
@@ -1340,7 +1296,7 @@ void GrounderFactory::visit(Rule* rule) {
 	// Create body instance generator
 	InstGenerator* big = 0;
 	GeneratorNode* bnode = 0;
-	for(unsigned int n = 0; n < bodyvars; ++n) {
+	for(unsigned int n = 0; n < bodyvars.size(); ++n) {
 		domelement* d = new domelement();
 		_varmapping[bodyvars[n]] = d;
 		SortTable* st = _structure->inter(bodyvars[n]->sort());
@@ -1373,6 +1329,10 @@ void GrounderFactory::visit(Rule* rule) {
 	rule->body()->accept(this);
 	FormulaGrounder* bgr = _grounder;
 
+	// TODO: conjunction? recursive?
+	bool conj;
+	bool rec;
+
 	// Create rule grounder
-	_rulegrounder = new RuleGrounder(_definition,hgr,bgr,gen);
+	_rulegrounder = new RuleGrounder(_definition,hgr,bgr,hig,big,conj,rec);
 }

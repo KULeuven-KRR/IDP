@@ -222,7 +222,7 @@ struct GroundRuleBody {
 struct GroundDefinition {
 	GroundTranslator*		_translator;
 	map<int,GroundRuleBody>	_rules;			// maps a head to its corresponding body
-	void addRule(int head, const vector<int>& body, bool conj);
+	void addRule(int head, const vector<int>& body, bool conj, bool recursive);
 };
 
 /** Propositional fixpoint definition **/

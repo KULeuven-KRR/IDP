@@ -39,4 +39,10 @@ class InvTableInstanceChecker : public InstanceChecker {
 		bool run(const vector<domelement>& vd)	const { return !(_table->contains(vd));	}
 };
 
+class CheckerFactory {
+	
+	public:
+		InstanceChecker*	create(PredInter*, bool ctpf, bool c);
+};
+
 #endif

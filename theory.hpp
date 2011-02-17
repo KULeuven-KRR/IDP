@@ -439,7 +439,7 @@ namespace FormulaUtils {
 	 */
 	TruthValue evaluate(Formula*,AbstractStructure*,const map<Variable*,TypedElement>&);	
 	
-	Formula* remove_eqchains(Formula*, Vocabulary*);	// Rewrite chains of equalities to a conjunction or disjunction of atoms.
+	Formula* remove_eqchains(Formula*, Vocabulary*);// Rewrite chains of equalities to a conjunction or disjunction of atoms.
 }
 
 
