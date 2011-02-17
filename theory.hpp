@@ -75,6 +75,7 @@ class Formula : public TheoryComponent {
 		virtual	Formula*				subform(unsigned int n)	const = 0;	// the n'th direct subformula
 		virtual	Term*					subterm(unsigned int n)	const = 0;	// the n'th direct subterm
 				bool					contains(Variable*)		const;		// true iff the formula contains the variable
+				bool					contains(PFSymbol*)		const;		// true iff the formula contains the symbol
 		virtual	bool					trueformula()			const { return false;	}
 		virtual	bool					falseformula()			const { return false;	}
 

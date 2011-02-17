@@ -257,16 +257,28 @@ void FixpDef::defsyms() {
 ***************************/
 
 bool Formula::contains(Variable* v) const {
-	for(unsigned int n = 0; n < nrQvars(); ++n) {
+	for(unsigned int n = 0; n < nrQvars(); ++n)
 		if(qvar(n) == v) return true;
-	}
-	for(unsigned int n = 0; n < nrSubterms(); ++n) {
+	for(unsigned int n = 0; n < nrSubterms(); ++n)
 		if(subterm(n)->contains(v)) return true;
-	}
-	for(unsigned int n = 0; n < nrSubforms(); ++n) {
+	for(unsigned int n = 0; n < nrSubforms(); ++n)
 		if(subform(n)->contains(v)) return true;
-	}
 	return false;
+}
+
+class ContainmentChecker : public Visitor {
+	private:
+		PFSymbol* 	_symbol;
+		bool		_contains;
+	public:
+		ContainmentChecker(Formula* f, PFSymbol* s) : Visitor(), _symbol(s) { f->accept(this); }
+		void visit(PredForm* pf) { _contains = (pf->symb() == _symbol); }
+		bool result();
+};
+
+bool Formula::contains(PFSymbol* s) const {
+	ContainmentChecker cc(this,s);
+	return cc.result();
 }
 
 /****************

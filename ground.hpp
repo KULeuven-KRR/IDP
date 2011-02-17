@@ -150,6 +150,7 @@ struct GroundingContext {
 							// of an even number of negations.
 	CompContext	_component;	// Indicates the context of the visited formula
 	TsType		_tseitin;	// Indicates the type of tseitin definition that needs to be used.
+	bool		_recursive; // Indicates whether the visited rule is recursive.
 };
 
 
@@ -402,11 +403,12 @@ class RuleGrounder {
 		FormulaGrounder*	_bodygrounder;
 		InstGenerator*		_headgenerator;	
 		InstGenerator*		_bodygenerator;	
+		GroundingContext	_context;
 		bool				_conj;
-		bool				_recursive;
+//		bool				_recursive;
 	public:
-		RuleGrounder(GroundDefinition* def, HeadGrounder* hgr, FormulaGrounder* bgr, InstGenerator* hig, InstGenerator* big, bool conj, bool rec) :
-			_definition(def), _headgrounder(hgr), _bodygrounder(bgr), _headgenerator(hig), _bodygenerator(big), _conj(conj), _recursive(rec) { }
+		RuleGrounder(GroundDefinition* def, HeadGrounder* hgr, FormulaGrounder* bgr, InstGenerator* hig, InstGenerator* big, bool conj, GroundingContext& ct) :
+			_definition(def), _headgrounder(hgr), _bodygrounder(bgr), _headgenerator(hig), _bodygenerator(big), _conj(conj), _context(ct) { }
 		bool run() const;
 };
 
@@ -441,7 +443,7 @@ class GrounderFactory : public Visitor {
 		stack<GroundingContext>	_contextstack;
 
 		void	InitContext();		// Initialize the context 
-		void	SaveContext();		// Push the current context from the stack
+		void	SaveContext();		// Push the current context onto the stack
 		void	RestoreContext();	// Set _context to the top of the stack and pop the stack
 		void	DeeperContext(bool);
 
@@ -452,6 +454,10 @@ class GrounderFactory : public Visitor {
 		// Current ground definition
 		GroundDefinition*		_definition;	// The ground definition that will be produced by the 
 												// currently constructed definition grounder.
+
+		// Is last visited formula a conjunction?
+		bool	_conjunction;
+
 		// Return values
 		FormulaGrounder*		_formgrounder;
 		TermGrounder*			_termgrounder;
