@@ -283,6 +283,17 @@ class AtomGrounder : public FormulaGrounder {
 		void	run(vector<int>&) const;
 };
 
+class AggGrounder : public FormulaGrounder {
+	private:
+		AggType			_type;
+		SetGrounder*	_setgrounder;
+	public:
+		AggGrounder(GroundTranslator* tr, GroundingContext gc, AggType tp, SetGrounder* sg) :
+			FormulaGrounder(tr,gc), _type(tp), _setgrounder(sg) { }
+		int		run()				const;
+		void	run(vector<int>&)	const;
+};
+
 class ClauseGrounder : public FormulaGrounder {
 	protected:
 		bool				_sign;
@@ -306,6 +317,7 @@ class BoolGrounder : public ClauseGrounder {
 		int	run() const;
 		void	run(vector<int>&) const;
 };
+
 
 class QuantGrounder : public ClauseGrounder {
 	private:

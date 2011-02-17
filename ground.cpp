@@ -449,6 +449,14 @@ void AtomGrounder::run(vector<int>& clause) const {
 	clause.push_back(run());
 }
 
+int AggGrounder::run() const {
+	// TODO
+}
+
+void AggGrounder::run(vector<int>&) const {
+	// TODO
+}
+
 inline bool ClauseGrounder::check1(int l) const {
 	return _conj ? l == _false : l == _true;
 }
