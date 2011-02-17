@@ -187,7 +187,8 @@ class SentenceGrounder : public TopLevelGrounder {
 		bool				_conj;	
 		FormulaGrounder*	_subgrounder;
 	public:
-		SentenceGrounder(GroundTheory* gt, FormulaGrounder* sub, bool _conj) : TopLevelGrounder(gt), _subgrounder(sub) { }
+		SentenceGrounder(GroundTheory* gt, FormulaGrounder* sub, bool conj) : 
+			TopLevelGrounder(gt), _subgrounder(sub), _conj(conj) { }
 		bool run() const;
 };
 

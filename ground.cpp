@@ -382,11 +382,11 @@ bool SentenceGrounder::run() const {
 	}
 	else {
 		if(_conj) {
-			_grounding->addClause(cl);
-		}
-		else {
 			for(unsigned int n = 0; n < cl.size(); ++n)
 				_grounding->addUnitClause(cl[n]);
+		}
+		else {
+			_grounding->addClause(cl);
 		}
 		return true;
 	}
@@ -1122,14 +1122,10 @@ void GrounderFactory::visit(QuantForm* qf) {
 
 	// Handle top-level universal quantifiers efficiently
 	if(_context._component == CC_SENTENCE && (qf->sign() == qf->univ())) {
-		QuantForm* newqf = qf->clone();
-		if(!(newqf->univ())) {
-			newqf->univ(true);
-			newqf->swapsign();
-			newqf->subf()->swapsign();
-		}
-		descend(newqf->subf());
-		newqf->recursiveDelete();
+		Formula* newsub = qf->subf()->clone();
+		if(!(qf->univ())) newsub->swapsign();
+		descend(newsub);
+		newsub->recursiveDelete();
 		_toplevelgrounder = new UnivSentGrounder(_grounding,_toplevelgrounder,gen);
 	}
 	else {
@@ -1189,6 +1185,7 @@ void GrounderFactory::visit(EqChainForm* ef) {
 }
 
 void GrounderFactory::visit(VarTerm* t) {
+	assert(_varmapping.find(t->var()) != _varmapping.end());
 	_termgrounder = new VarTermGrounder(_varmapping.find(t->var())->second);
 }
 
