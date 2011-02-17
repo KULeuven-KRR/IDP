@@ -55,7 +55,7 @@ class Term {
 		virtual bool				contains(Variable*)		const;		// true iff the term contains the variable
 
 		// Visitor
-		virtual void	accept(Visitor*)			= 0;
+		virtual void	accept(Visitor*) const		= 0;
 		virtual Term*	accept(MutatingVisitor*)	= 0;
 
 		// Debugging
@@ -102,7 +102,7 @@ class VarTerm : public Term {
 		bool			contains(Variable* v)	const	{ return _var == v;			}	
 
 		// Visitor
-		void	accept(Visitor* v);
+		void	accept(Visitor* v) const;
 		Term*	accept(MutatingVisitor* v);
 
 		// Output
@@ -152,7 +152,7 @@ class FuncTerm : public Term {
 		unsigned int	nrQvars()				const	{ return 0;					}
 
 		// Visitor
-		void	accept(Visitor* v);
+		void	accept(Visitor* v) const;
 		Term*	accept(MutatingVisitor* v);
 
 		// Debugging
@@ -201,7 +201,7 @@ class DomainTerm : public Term {
 		ElementType		type()					const { return _type;				}
 
 		// Visitor
-		void	accept(Visitor* v);
+		void	accept(Visitor* v) const;
 		Term*	accept(MutatingVisitor* v);
 
 		// Debugging
@@ -249,7 +249,7 @@ class SetExpr {
 		virtual	Sort*			firstargsort()			const = 0;	// Sort of the first element in any tuple in the set
 
 		// Visitor
-		virtual void		accept(Visitor* v) = 0;
+		virtual void		accept(Visitor* v) const = 0;
 		virtual SetExpr*	accept(MutatingVisitor* v) = 0;
 
 		// Debugging
@@ -291,7 +291,7 @@ class EnumSetExpr : public SetExpr {
 		Sort*			firstargsort()			const;
 
 		// Visitor
-		void		accept(Visitor* v);
+		void		accept(Visitor* v) const;
 		SetExpr*	accept(MutatingVisitor* v);
 
 		// Debugging
@@ -334,7 +334,7 @@ class QuantSetExpr : public SetExpr {
 		const vector<Variable*>&	qvars()		const	{ return _vars;				}
 
 		// Visitor
-		void		accept(Visitor* v);
+		void		accept(Visitor* v) const;
 		SetExpr*	accept(MutatingVisitor* v);
 
 		// Debugging
@@ -391,7 +391,7 @@ class AggTerm : public Term {
 		AggType			type()					const	{ return _type;					}
 
 		// Visitor
-		void	accept(Visitor* v);
+		void	accept(Visitor* v) const;
 		Term*	accept(MutatingVisitor* v);
 
 		// Debugging

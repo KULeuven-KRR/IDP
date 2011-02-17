@@ -314,7 +314,7 @@ class EcnfTheory : public GroundTheory {
 		FixpDef*			fixpdef(unsigned int n)		const;
 
 		// Visitor
-		void			accept(Visitor* v)			{ v->visit(this);			}
+		void			accept(Visitor* v) const	{ v->visit(this);			}
 		AbstractTheory*	accept(MutatingVisitor* v)	{ return v->visit(this);	}
 
 		// Debugging
@@ -352,7 +352,7 @@ class SolverTheory : public GroundTheory {
 		FixpDef*		fixpdef(unsigned int n)		const { assert(false); /*TODO*/	}
 
 		// Visitor
-		void			accept(Visitor* v)			{ v->visit(this);			}
+		void			accept(Visitor* v) const	{ v->visit(this);			}
 		AbstractTheory*	accept(MutatingVisitor* v)	{ return v->visit(this);	}
 
 		// Debugging

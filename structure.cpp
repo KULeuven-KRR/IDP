@@ -2086,7 +2086,7 @@ void Structure::functioncheck() {
 
 /** Inspectors **/
 
-SortTable* Structure::inter(Sort* s) {
+SortTable* Structure::inter(Sort* s) const {
 	if(s->builtin()) return s->inter();
 	map<Sort*,SortTable*>::const_iterator it = _sortinter.find(s);
 	if(it != _sortinter.end())
@@ -2108,7 +2108,7 @@ SortTable* Structure::inter(Sort* s) {
 	}
 }
 
-PredInter* Structure::inter(Predicate* p) {
+PredInter* Structure::inter(Predicate* p) const {
 	if(p->builtin()) return p->inter(*this);
 	map<Predicate*,PredInter*>::const_iterator it = _predinter.find(p);
 	if(it != _predinter.end())
@@ -2120,7 +2120,7 @@ PredInter* Structure::inter(Predicate* p) {
 	}
 }
 
-FuncInter* Structure::inter(Function* f) {
+FuncInter* Structure::inter(Function* f) const {
 	if(f->builtin()) return f->inter(*this);
 	map<Function*,FuncInter*>::const_iterator it = _funcinter.find(f);
 	if(it != _funcinter.end())
@@ -2132,7 +2132,7 @@ FuncInter* Structure::inter(Function* f) {
 	}
 }
 
-PredInter* Structure::inter(PFSymbol* s) {
+PredInter* Structure::inter(PFSymbol* s) const {
 	if(s->ispred()) return inter(dynamic_cast<Predicate*>(s));
 	else return inter(dynamic_cast<Function*>(s))->predinter();
 }

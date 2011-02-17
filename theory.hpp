@@ -24,7 +24,7 @@ class TheoryComponent {
 		TheoryComponent() { }
 
 		// Visitor
-		virtual void				accept(Visitor*) = 0;
+		virtual void				accept(Visitor*) const = 0;
 		virtual TheoryComponent*	accept(MutatingVisitor*) = 0;
 
 		virtual string to_string(unsigned int spaces = 0)	const = 0;
@@ -80,8 +80,8 @@ class Formula : public TheoryComponent {
 		virtual	bool					falseformula()			const { return false;	}
 
 		// Visitor
-		virtual void		accept(Visitor* v) = 0;
-		virtual Formula*	accept(MutatingVisitor* v) = 0;
+		virtual void		accept(Visitor* v) const	= 0;
+		virtual Formula*	accept(MutatingVisitor* v)	= 0;
 
 		// Debugging
 		virtual string to_string(unsigned int spaces = 0)	const = 0;
@@ -123,7 +123,7 @@ class PredForm : public Formula {
 		const vector<Term*>&	args()					const { return _args;				}
 		
 		// Visitor
-		void		accept(Visitor* v);
+		void		accept(Visitor* v) const;
 		Formula*	accept(MutatingVisitor* v);
 
 		// Debugging
@@ -178,7 +178,7 @@ class EqChainForm : public Formula {
 		const vector<bool>& compsigns()	const	{ return _signs;	}
 
 		// Visitor
-		void		accept(Visitor* v);
+		void		accept(Visitor* v) const;
 		Formula*	accept(MutatingVisitor* v);
 
 		// Debugging
@@ -221,7 +221,7 @@ class EquivForm : public Formula {
 		Term*			subterm(unsigned int)	const { assert(false); return 0;	 	}
 
 		// Visitor
-		void		accept(Visitor* v);
+		void		accept(Visitor* v) const;
 		Formula*	accept(MutatingVisitor* v);
 
 		// Debuging
@@ -269,7 +269,7 @@ class BoolForm : public Formula {
 		bool			falseformula()			const	{ return (_subf.empty() && _conj != _sign);	}
 
 		// Visitor
-		void		accept(Visitor* v);
+		void		accept(Visitor* v) const;
 		Formula*	accept(MutatingVisitor* v);
 
 		// Debugging
@@ -317,7 +317,7 @@ class QuantForm : public Formula {
 		const vector<Variable*>&	qvars()		const { return _vars;				}
 
 		// Visitor
-		void		accept(Visitor* v);
+		void		accept(Visitor* v) const;
 		Formula*	accept(MutatingVisitor* v);
 
 		// Debugging
@@ -361,7 +361,7 @@ class AggForm : public Formula {
 		AggTerm*		right()					const { return _right;					}
 
 		// Visitor
-		void		accept(Visitor* v);
+		void		accept(Visitor* v) const;
 		Formula*	accept(MutatingVisitor* v);
 
 		// Debugging
@@ -406,7 +406,7 @@ class BracketForm : public Formula {
 		Term*			subterm(unsigned int)	const { assert(false); return 0;	}
 		
 		// Visitor
-		void		accept(Visitor* v);
+		void		accept(Visitor* v) const;
 		Formula*	accept(MutatingVisitor* v);
 
 		// Debugging
@@ -485,7 +485,7 @@ class Rule {
 		const vector<Variable*>&	qvars()			const { return _vars;			}
 
 		// Visitor
-		void	accept(Visitor* v);
+		void	accept(Visitor* v) const;
 		Rule*	accept(MutatingVisitor* v);
 
 		// Debug
@@ -523,7 +523,7 @@ class Definition : public TheoryComponent {
 		PFSymbol*		defsym(unsigned int n)	const { return _defsyms[n];			}
 
 		// Visitor
-		void		accept(Visitor* v);
+		void		accept(Visitor* v) const;
 		Definition*	accept(MutatingVisitor* v);
 
 		// Debug
@@ -566,7 +566,7 @@ class FixpDef : public TheoryComponent {
 		FixpDef*		def(unsigned int n)		const { return _defs[n];		}
 
 		// Visitor
-		void		accept(Visitor* v);
+		void		accept(Visitor* v) const;
 		FixpDef*	accept(MutatingVisitor* v);
 
 		// Debug
@@ -618,8 +618,8 @@ class AbstractTheory {
 				TheoryComponent*	component(unsigned int n)	const;
 
 		// Visitor
-		virtual void			accept(Visitor*) = 0;
-		virtual AbstractTheory*	accept(MutatingVisitor*) = 0;
+		virtual void			accept(Visitor*) const		= 0;
+		virtual AbstractTheory*	accept(MutatingVisitor*)	= 0;
 
 		// Debugging
 		virtual string to_string() const = 0;
@@ -668,7 +668,7 @@ class Theory : public AbstractTheory {
 		FixpDef*		fixpdef(unsigned int n)		const { return _fixpdefs[n];		}
 
 		// Visitor
-		void	accept(Visitor*);
+		void	accept(Visitor*) const;
 		Theory*	accept(MutatingVisitor*);
 
 		// Debugging

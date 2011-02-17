@@ -139,7 +139,7 @@ class Sort {
 																				// interpretation for
 																				// built-in sorts
 		// Visitor
-        void accept(Visitor*);
+        void accept(Visitor*) const;
 
 };
 
@@ -280,7 +280,7 @@ class Predicate : public PFSymbol {
 		virtual	vector<Sort*>		allsorts()							const;
 
 		// Visitor
-        void accept(Visitor*);
+        void accept(Visitor*) const;
 
 };
 
@@ -312,7 +312,7 @@ class OverloadedPredicate : public Predicate {
 				vector<Sort*>		allsorts()							const;
 
 		// Visitor
-		void 	accept(Visitor*);
+		void 	accept(Visitor*) const;
 
 		// Debugging of GidL
 		void	inspect()	const;
@@ -381,7 +381,7 @@ class Function : public PFSymbol {
 		virtual	vector<Sort*>		allsorts()				const;	
 
 		// Visitor
-        void accept(Visitor*);
+        void accept(Visitor*) const;
 
 };
 
@@ -413,7 +413,7 @@ class OverloadedFunction : public Function {
 				vector<Sort*>		allsorts()							const;	
 
 		// Visitor
-		void 	accept(Visitor*);
+		void 	accept(Visitor*) const;
 
 		// Debugging of GidL
 		void	inspect()	const;
@@ -510,7 +510,7 @@ class Vocabulary {
 		vector<Function*>	func_no_arity(const string&)	const;	// return all functions with the given name (not including the arity)
 
 		// Visitor
-		void accept(Visitor*);
+		void accept(Visitor*) const;
 
         // Lua
 		int tolua(lua_State*,const vector<string>&) const;

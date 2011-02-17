@@ -162,7 +162,7 @@ class SortTable : public PredTable {
 				unsigned int	position(TypedElement te)				const { return position(te._element,te._type);		}
 
 		// Visitor
-		void accept(Visitor*);
+		void accept(Visitor*) const;
 
 		// Debugging
 		virtual string to_string(unsigned int spaces = 0) const = 0;
@@ -777,7 +777,7 @@ class PredInter {
 		bool		fasttwovalued()							const { return _ctpf == _cfpt;	}
 
 		// Visitor
-		void accept(Visitor*);
+		void accept(Visitor*) const;
 
 		// Debugging
 		string to_string(unsigned int spaces = 0) const;
@@ -941,7 +941,7 @@ class FuncPredTable : public PredTable {
 		Element				element(unsigned int r,unsigned int c)	const { return _ftable->element(r,c);	}
 
 		// Visitor
-		void accept(Visitor*);
+		void accept(Visitor*) const;
 
 		// Debugging
 		string to_string(unsigned int spaces = 0)	const { return _ftable->to_string(spaces);	}
@@ -978,7 +978,7 @@ class FuncInter {
 		string to_string(unsigned int spaces = 0) const;
 
 		// Visitor
-        void accept(Visitor*);
+        void accept(Visitor*) const;
 
 };
 
@@ -1036,13 +1036,13 @@ class AbstractStructure {
 				const string&	name()						const { return _name;		}
 				ParseInfo		pi()						const { return _pi;			}
 				Vocabulary*		vocabulary()				const { return _vocabulary;	}
-		virtual SortTable*		inter(Sort* s)				= 0;	// Return the domain of s.
-		virtual PredInter*		inter(Predicate* p)			= 0;	// Return the interpretation of p.
-		virtual FuncInter*		inter(Function* f)			= 0;	// Return the interpretation of f.
-		virtual PredInter*		inter(PFSymbol* s)			= 0;  // Return the interpretation of s.
+		virtual SortTable*		inter(Sort* s)				const = 0;	// Return the domain of s.
+		virtual PredInter*		inter(Predicate* p)			const = 0;	// Return the interpretation of p.
+		virtual FuncInter*		inter(Function* f)			const = 0;	// Return the interpretation of f.
+		virtual PredInter*		inter(PFSymbol* s)			const = 0;	// Return the interpretation of s.
 
 		// Visitor
-		virtual void accept(Visitor* v)	= 0;
+		virtual void accept(Visitor* v) const	= 0;
 
 		// Debugging
 		virtual string	to_string(unsigned int spaces = 0) const = 0;
@@ -1055,9 +1055,10 @@ class Structure : public AbstractStructure {
 
 	private:
 
-		map<Sort*,SortTable*>		_sortinter;		// The domains of the structure. 
-		map<Predicate*,PredInter*>	_predinter;		// The interpretations of the predicate symbols.
-		map<Function*,FuncInter*>	_funcinter;		// The interpretations of the function symbols.
+		//TODO: these should not be mutable!
+		mutable map<Sort*,SortTable*>		_sortinter;		// The domains of the structure. 
+		mutable map<Predicate*,PredInter*>	_predinter;		// The interpretations of the predicate symbols.
+		mutable map<Function*,FuncInter*>	_funcinter;		// The interpretations of the function symbols.
 	
 	public:
 		
@@ -1083,10 +1084,10 @@ class Structure : public AbstractStructure {
 
 		// Inspectors
 		Vocabulary*		vocabulary()				const { return AbstractStructure::vocabulary();	}
-		SortTable*		inter(Sort* s);			// Return the domain of s.
-		PredInter*		inter(Predicate* p);	// Return the interpretation of p.
-		FuncInter*		inter(Function* f);		// Return the interpretation of f.
-		PredInter*		inter(PFSymbol* s);		// Return the interpretation of s.
+		SortTable*		inter(Sort* s)				const; // Return the domain of s.
+		PredInter*		inter(Predicate* p)			const; // Return the interpretation of p.
+		FuncInter*		inter(Function* f)			const; // Return the interpretation of f.
+		PredInter*		inter(PFSymbol* s)			const; // Return the interpretation of s.
 		bool			hasInter(Sort* s)		{ return _sortinter.find(s) != _sortinter.end();	}
 		bool			hasInter(Predicate* p)	{ return _predinter.find(p) != _predinter.end();	}
 		bool			hasInter(Function* f)	{ return _funcinter.find(f) != _funcinter.end();	}
@@ -1095,7 +1096,7 @@ class Structure : public AbstractStructure {
 //		unsigned int	nrFuncInters()				const { return _funcinter.size();	}
 
 		// Visitor
-		void accept(Visitor* v);
+		void accept(Visitor* v) const;
 
 		// Debugging
 		string	to_string(unsigned int spaces = 0) const;

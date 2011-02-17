@@ -271,7 +271,7 @@ class ContainmentChecker : public Visitor {
 		PFSymbol* 	_symbol;
 		bool		_contains;
 	public:
-		ContainmentChecker(Formula* f, PFSymbol* s) : Visitor(), _symbol(s) { f->accept(this); }
+		ContainmentChecker(const Formula* f, PFSymbol* s) : Visitor(), _symbol(s) { f->accept(this); }
 		void visit(PredForm* pf) { _contains = (pf->symb() == _symbol); }
 		bool result();
 };
@@ -507,15 +507,15 @@ class FormulaEvaluator : public Visitor {
 		
 		TruthValue returnvalue()	const { return _returnvalue;	}
 
-		void visit(PredForm*);
-		void visit(BoolForm*);
-		void visit(EqChainForm*);
-		void visit(EquivForm*);
-		void visit(QuantForm*);
+		void visit(const PredForm*);
+		void visit(const BoolForm*);
+		void visit(const EqChainForm*);
+		void visit(const EquivForm*);
+		void visit(const QuantForm*);
 		
 };
 
-void FormulaEvaluator::visit(PredForm* pf) {
+void FormulaEvaluator::visit(const PredForm* pf) {
 	// Evaluate the terms
 	vector<SortTable*> argvalues(pf->nrSubterms());
 	vector<TypedElement> currvalue(pf->nrSubterms());
@@ -561,7 +561,7 @@ void FormulaEvaluator::visit(PredForm* pf) {
 	for(unsigned int n = 0; n < argvalues.size(); ++n) delete(argvalues[n]);
 }
 
-void FormulaEvaluator::visit(EquivForm* ef) {
+void FormulaEvaluator::visit(const EquivForm* ef) {
 	// NOTE: evaluating an equivalence in a three-valued structure/context with partial functions
 	//		 leads to ambiguities! TODO: give a warning!
 	ef->left()->accept(this);
@@ -575,7 +575,7 @@ void FormulaEvaluator::visit(EquivForm* ef) {
 	if(!ef->sign()) _returnvalue = TVUtils::swaptruthvalue(_returnvalue);
 }
 
-void FormulaEvaluator::visit(EqChainForm* ef) {
+void FormulaEvaluator::visit(const EqChainForm* ef) {
 	vector<Formula*> vf(ef->nrSubterms()-1);
 	for(unsigned int n = 0; n < vf.size(); ++n) {
 		vector<Term*> vt(2); vt[0] = ef->subterm(n); vt[1] = ef->subterm(n+1);
@@ -588,7 +588,7 @@ void FormulaEvaluator::visit(EqChainForm* ef) {
 	delete(bf);
 }
 
-void FormulaEvaluator::visit(BoolForm* bf) {
+void FormulaEvaluator::visit(const BoolForm* bf) {
 	if(!bf->sign()) _context = !_context;
 	TruthValue result;
 	if(bf->conj()) result = TV_TRUE;
@@ -606,7 +606,7 @@ void FormulaEvaluator::visit(BoolForm* bf) {
 	return;
 }
 
-void FormulaEvaluator::visit(QuantForm* qf) {
+void FormulaEvaluator::visit(const QuantForm* qf) {
 	if(!qf->sign()) _context = !_context;
 	TruthValue result = (qf->univ()) ? TV_TRUE : TV_FALSE;
 	SortTableTupleIterator vti(qf->qvars(),_structure);
@@ -637,66 +637,81 @@ void FormulaEvaluator::visit(QuantForm* qf) {
 *************************/
 
 void Theory::add(AbstractTheory* t) {
-	for(unsigned int n = 0; n < t->nrDefinitions(); ++n) {
+	for(unsigned int n = 0; n < t->nrDefinitions(); ++n)
 		_definitions.push_back(t->definition(n));
-	}
-	for(unsigned int n = 0; n < t->nrFixpDefs(); ++n) {
+	for(unsigned int n = 0; n < t->nrFixpDefs(); ++n)
 		_fixpdefs.push_back(t->fixpdef(n));
-	}
-	for(unsigned int n = 0; n < t->nrSentences(); ++n) {
+	for(unsigned int n = 0; n < t->nrSentences(); ++n)
 		_sentences.push_back(t->sentence(n));
-	}
-
 }
 
 /** Push negations inside **/
 
-class NegationPush : public Visitor {
+class NegationPush : public MutatingVisitor {
 
 	public:
-		NegationPush(AbstractTheory* t)	: Visitor() { t->accept(this);	}
+		NegationPush(AbstractTheory* t)	: MutatingVisitor() { t->accept(this);	}
 
-		void visit(EqChainForm*);
-		void visit(EquivForm*);
-		void visit(BoolForm*);
-		void visit(QuantForm*);
+		Formula*	visit(EqChainForm*);
+		Formula* 	visit(EquivForm*);
+		Formula* 	visit(BoolForm*);
+		Formula* 	visit(QuantForm*);
+
+		Formula*	traverse(Formula*);
+		Term*		traverse(Term*);
 
 };
 
-void NegationPush::visit(EqChainForm* f) {
+Formula* NegationPush::traverse(Formula* f) {
+	for(unsigned int n = 0; n < f->nrSubforms(); ++n)
+		f->subform(n)->accept(this);
+	for(unsigned int n = 0; n < f->nrSubterms(); ++n)
+		f->subterm(n)->accept(this);
+	return f;
+}
+
+Term* NegationPush::traverse(Term* t) {
+	for(unsigned int n = 0; n < t->nrSubforms(); ++n)
+		t->subform(n)->accept(this);
+	for(unsigned int n = 0; n < t->nrSubterms(); ++n)
+		t->subterm(n)->accept(this);
+	return t;
+}
+
+Formula* NegationPush::visit(EqChainForm* f) {
 	if(!f->sign()) {
 		f->swapsign();
 		f->conj(!f->conj());
 		for(unsigned int n = 0; n < f->nrSubterms()-1; ++n)  f->compsign(n,!f->compsign(n));
 	}
-	traverse(f);
+	return traverse(f);
 }
 
-void NegationPush::visit(EquivForm* f) {
+Formula* NegationPush::visit(EquivForm* f) {
 	if(!f->sign()) {
 		f->swapsign();
 		f->right()->swapsign();
 	}
-	traverse(f);
+	return traverse(f);
 }
 
-void NegationPush::visit(BoolForm* f) {
+Formula* NegationPush::visit(BoolForm* f) {
 	if(!f->sign()) {
 		f->swapsign();
 		for(unsigned int n = 0; n < f->nrSubforms(); ++n) 
 			f->subform(n)->swapsign();
 		f->conj(!f->conj());
 	}
-	traverse(f);
+	return traverse(f);
 }
 
-void NegationPush::visit(QuantForm* f) {
+Formula* NegationPush::visit(QuantForm* f) {
 	if(!f->sign()) {
 		f->swapsign();
 		f->subf()->swapsign();
 		f->univ(!f->univ());
 	}
-	traverse(f);
+	return traverse(f);
 }
 
 /** Rewrite A <=> B to (A => B) & (B => A) **/
@@ -729,17 +744,36 @@ BoolForm* EquivRemover::visit(EquivForm* ef) {
 
 /** Rewrite (! x : ! y : phi) to (! x y : phi), rewrite ((A & B) & C) to (A & B & C), etc. **/
 
-class Flattener : public Visitor {
+class Flattener : public MutatingVisitor {
 
 	public:
-		Flattener(AbstractTheory* t) : Visitor() { t->accept(this);	}
+		Flattener(AbstractTheory* t) : MutatingVisitor() { t->accept(this);	}
 
-		void visit(BoolForm*);
-		void visit(QuantForm*);
+		Formula*	visit(BoolForm*);
+		Formula* 	visit(QuantForm*);
+
+		Formula*	traverse(Formula*);
+		Term*		traverse(Term*);
 
 };
 
-void Flattener::visit(BoolForm* bf) {
+Formula* Flattener::traverse(Formula* f) {
+	for(unsigned int n = 0; n < f->nrSubforms(); ++n)
+		f->subform(n)->accept(this);
+	for(unsigned int n = 0; n < f->nrSubterms(); ++n)
+		f->subterm(n)->accept(this);
+	return f;
+}
+
+Term* Flattener::traverse(Term* t) {
+	for(unsigned int n = 0; n < t->nrSubforms(); ++n)
+		t->subform(n)->accept(this);
+	for(unsigned int n = 0; n < t->nrSubterms(); ++n)
+		t->subterm(n)->accept(this);
+	return t;
+}
+
+Formula* Flattener::visit(BoolForm* bf) {
 	vector<Formula*> newsubf;
 	traverse(bf);
 	for(unsigned int n = 0; n < bf->nrSubforms(); ++n) {
@@ -754,9 +788,10 @@ void Flattener::visit(BoolForm* bf) {
 		else newsubf.push_back(bf->subform(n));
 	}
 	bf->subf(newsubf);
+	return bf;
 }
 
-void Flattener::visit(QuantForm* qf) {
+Formula* Flattener::visit(QuantForm* qf) {
 	traverse(qf);	
 	if(typeid(*(qf->subf())) == typeid(QuantForm)) {
 		QuantForm* sqf = dynamic_cast<QuantForm*>(qf->subf());
@@ -767,6 +802,7 @@ void Flattener::visit(QuantForm* qf) {
 			delete(sqf);
 		}
 	}
+	return qf;
 }
 
 /**  Rewrite chains of equalities to a conjunction or disjunction of atoms **/
@@ -843,24 +879,24 @@ class TheoryConvertor : public Visitor {
 
 	public:
 		
-		TheoryConvertor(AbstractTheory* t) : 
+		TheoryConvertor(const AbstractTheory* t) : 
 			Visitor(), _returnvalue(new EcnfTheory(0)) { t->accept(this); }
 
-		void visit(PredForm*);
-		void visit(EqChainForm*);
-		void visit(EquivForm*);
-		void visit(BoolForm*);
-		void visit(QuantForm*);
-		void visit(Rule*);
-		void visit(Theory*);
-		void visit(QuantSetExpr*);
-		void visit(EnumSetExpr*);
+		void visit(const PredForm*);
+		void visit(const EqChainForm*);
+		void visit(const EquivForm*);
+		void visit(const BoolForm*);
+		void visit(const QuantForm*);
+		void visit(const Rule*);
+		void visit(const Theory*);
+		void visit(const QuantSetExpr*);
+		void visit(const EnumSetExpr*);
 
 		EcnfTheory*	returnvalue()	const { return _returnvalue;	}
 
 };
 
-void TheoryConvertor::visit(Theory* t) {
+void TheoryConvertor::visit(const Theory* t) {
 	// sentences
 	for(unsigned int n = 0; n < t->nrSentences(); ++n) {
 		_indef = false; _infixpdef = false;
@@ -905,7 +941,7 @@ void TheoryConvertor::visit(Theory* t) {
 	}
 }
 
-void TheoryConvertor::visit(PredForm* pf) {
+void TheoryConvertor::visit(const PredForm* pf) {
 	if(pf->symb()->builtin()) {	// An aggregate literal
 		assert(pf->symb()->name() == "</2" || pf->symb()->name() == ">/2");
 		assert(!pf->sign());
@@ -933,11 +969,11 @@ void TheoryConvertor::visit(PredForm* pf) {
 	}
 }
 
-void TheoryConvertor::visit(EqChainForm*) {
+void TheoryConvertor::visit(const EqChainForm*) {
 	assert(false);
 }
 
-void TheoryConvertor::visit(EquivForm* ef) {
+void TheoryConvertor::visit(const EquivForm* ef) {
 	assert(ef->sign());
 
 	ef->left()->accept(this);
@@ -951,7 +987,7 @@ void TheoryConvertor::visit(EquivForm* ef) {
 	_rettype = ECTT_NOTHING;
 }
 
-void TheoryConvertor::visit(BoolForm* bf) {
+void TheoryConvertor::visit(const BoolForm* bf) {
 	assert(bf->sign());
 	vector<int> literals;
 	for(unsigned int n = 0; n < bf->nrSubforms(); ++n) {
@@ -969,11 +1005,11 @@ void TheoryConvertor::visit(BoolForm* bf) {
 	_rettype = (bf->conj() ? ECTT_CONJ : ECTT_CLAUSE);
 }
 
-void TheoryConvertor::visit(QuantForm*) {
+void TheoryConvertor::visit(const QuantForm*) {
 	assert(false);
 }
 
-void TheoryConvertor::visit(Rule* r) {
+void TheoryConvertor::visit(const Rule* r) {
 	r->head()->accept(this);
 	int headatom = _curratom;
 	r->body()->accept(this);
@@ -992,11 +1028,11 @@ void TheoryConvertor::visit(Rule* r) {
 	}
 }
 
-void TheoryConvertor::visit(QuantSetExpr*) {
+void TheoryConvertor::visit(const QuantSetExpr*) {
 	assert(false);
 }
 
-void TheoryConvertor::visit(EnumSetExpr* e) {
+void TheoryConvertor::visit(const EnumSetExpr* e) {
 	vector<int> literals;
 	vector<double> weights;
 	for(unsigned int n = 0; n < e->nrSubforms(); ++n) {

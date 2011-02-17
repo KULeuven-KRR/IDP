@@ -49,56 +49,56 @@ class Visitor {
 		virtual ~Visitor() { }
 
 		// Traverse the parse tree
-		void traverse(Formula* f);
-		void traverse(Term* t);
-		void traverse(Rule* r);
-		void traverse(Definition* d);
-		void traverse(FixpDef* f);
-		void traverse(SetExpr* s);
-		void traverse(Theory* t);
-		void traverse(Structure* s);
-		void traverse(Vocabulary* v);
+		void traverse(const Formula* f);
+		void traverse(const Term* t);
+		void traverse(const Rule* r);
+		void traverse(const Definition* d);
+		void traverse(const FixpDef* f);
+		void traverse(const SetExpr* s);
+		void traverse(const Theory* t);
+		void traverse(const Structure* s);
+		void traverse(const Vocabulary* v);
 
 		/** Theories **/
-		virtual void visit(Theory* t);
-		virtual void visit(EcnfTheory* t);
-		virtual void visit(SolverTheory* t);
+		virtual void visit(const Theory* t);
+		virtual void visit(const EcnfTheory* t);
+		virtual void visit(const SolverTheory* t);
 
-		// Formulas 
-		virtual void visit(PredForm* a);			
-		virtual void visit(BracketForm* a);			
-		virtual void visit(EqChainForm* a);
-		virtual void visit(EquivForm* a);
-		virtual void visit(BoolForm* a);
-		virtual void visit(QuantForm* a);
-		virtual void visit(AggForm* a);
+		// Formulas     
+		virtual void visit(const PredForm* a);			
+		virtual void visit(const BracketForm* a);			
+		virtual void visit(const EqChainForm* a);
+		virtual void visit(const EquivForm* a);
+		virtual void visit(const BoolForm* a);
+		virtual void visit(const QuantForm* a);
+		virtual void visit(const AggForm* a);
 
 		// Definitions 
-		virtual void visit(Rule* a);
-		virtual void visit(Definition* a);
-		virtual void visit(FixpDef* a);
+		virtual void visit(const Rule* a);
+		virtual void visit(const Definition* a);
+		virtual void visit(const FixpDef* a);
 
 		// Terms
-		virtual void visit(VarTerm* a);
-		virtual void visit(FuncTerm* a);
-		virtual void visit(DomainTerm* a);
-		virtual void visit(AggTerm* a);
+		virtual void visit(const VarTerm* a);
+		virtual void visit(const FuncTerm* a);
+		virtual void visit(const DomainTerm* a);
+		virtual void visit(const AggTerm* a);
 
 		// Set expressions
-		virtual void visit(EnumSetExpr* a);
-		virtual void visit(QuantSetExpr* a);
+		virtual void visit(const EnumSetExpr* a);
+		virtual void visit(const QuantSetExpr* a);
 
 		/** Structures **/
-		virtual void visit(Structure*);
-		virtual void visit(SortTable*);
-		virtual void visit(PredInter*);
-		virtual void visit(FuncInter*);
+		virtual void visit(const Structure*);
+		virtual void visit(const SortTable*);
+		virtual void visit(const PredInter*);
+		virtual void visit(const FuncInter*);
 
 		/** Vocabularies **/
-		virtual void visit(Vocabulary*);
-		virtual void visit(Sort*);
-		virtual void visit(Predicate*);
-		virtual void visit(Function*);
+		virtual void visit(const Vocabulary*);
+		virtual void visit(const Sort*);
+		virtual void visit(const Predicate*);
+		virtual void visit(const Function*);
 
 };
 
