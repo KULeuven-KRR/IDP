@@ -774,6 +774,7 @@ class PredInter {
 		bool		isfalse(const vector<Element>& vi)		const { return (_cf ? _cfpt->contains(vi) : !(_cfpt->contains(vi)));	}
 		bool		istrue(const vector<TypedElement>& vi)	const;	// return true iff the given tuple is true or inconsistent
 		bool		isfalse(const vector<TypedElement>& vi)	const;	// return false iff the given tuple is false or inconsistent
+		bool		fasttwovalued()							const { return _ctpf == _cfpt;	}
 
 		// Visitor
 		void accept(Visitor*);
@@ -969,8 +970,9 @@ class FuncInter {
 		void	add(const vector<TypedElement>& tuple,bool ctpf,bool c);	// IMPORTANT NOTE: This method deletes _ftable if it is finite!
 
 		// Inspectors
-		PredInter*	predinter()	const { return _pinter;	}
-		FuncTable*	functable()	const { return _ftable;	}
+		PredInter*	predinter()		const { return _pinter;			}
+		FuncTable*	functable()		const { return _ftable;			}
+		bool		fasttwovalued()	const { return _ftable != 0;	}
 
 		// Debugging
 		string to_string(unsigned int spaces = 0) const;
