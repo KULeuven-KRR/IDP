@@ -266,10 +266,19 @@ bool Formula::contains(Variable* v) const {
 	return false;
 }
 
-bool BoolForm::contains(PFSymbol* s) const {
-	for(unsigned int n = 0; n < nrSubforms(); ++n) 
-		if(subform(n)->contains(s)) return true;
-	return false;
+class ContainmentChecker : public Visitor {
+	private:
+		PFSymbol* 	_symbol;
+		bool		_contains;
+	public:
+		ContainmentChecker(Formula* f, PFSymbol* s) : Visitor(), _symbol(s) { f->accept(this); }
+		void visit(PredForm* pf) { _contains = (pf->symb() == _symbol); }
+		bool result();
+};
+
+bool Formula::contains(PFSymbol* s) const {
+	ContainmentChecker cc(this,s);
+	return cc.result();
 }
 
 /****************
