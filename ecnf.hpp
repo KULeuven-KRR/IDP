@@ -237,15 +237,18 @@ struct EcnfFixpDef {
 class GroundTheory : public AbstractTheory {
 
 	protected:
-		GroundTranslator*	_translator;	// Link between ground atoms and SAT-solver literals
-		set<int>			_printedtseitins;
+		GroundTranslator*	_translator;		// Link between ground atoms and SAT-solver literals
+		set<int>			_printedtseitins;	// Tseitin atoms produced by the translator that occur 
+												// in the theory.
+		AbstractStructure*	_structure;			// The ground theory may be partially reduced with respect
+												// to this structure. 
 
 	public:
 		// Constructors 
-		GroundTheory() : 
-			AbstractTheory("",ParseInfo()), _translator(new GroundTranslator()) { }
-		GroundTheory(Vocabulary* voc) : 
-			AbstractTheory("",voc,ParseInfo()), _translator(new GroundTranslator()) { }
+		GroundTheory(AbstractStructure* str) : 
+			AbstractTheory("",ParseInfo()), _translator(new GroundTranslator()), _structure(str) { }
+		GroundTheory(Vocabulary* voc, AbstractStructure* str) : 
+			AbstractTheory("",voc,ParseInfo()), _translator(new GroundTranslator()), _structure(str) { }
 
 		// Destructor
 		virtual void recursiveDelete()	{ delete(this);			}
@@ -283,8 +286,8 @@ class EcnfTheory : public GroundTheory {
 	public:
 
 		// Constructor
-		EcnfTheory() : GroundTheory() { }
-		EcnfTheory(Vocabulary* voc) : GroundTheory(voc)	{ }
+		EcnfTheory(AbstractTheory* str) : GroundTheory(str) { }
+		EcnfTheory(Vocabulary* voc, AbstractStructure* str) : GroundTheory(voc,str)	{ }
 
 		// Mutators
 		void addClause(EcnfClause& cl, bool firstIsPrinted = false);
@@ -331,10 +334,10 @@ class SolverTheory : public GroundTheory {
 
 	public:
 		// Constructors 
-		SolverTheory(SATSolver* solver) : 
-			GroundTheory(), _solver(solver) { }
-		SolverTheory(Vocabulary* voc, SATSolver* solver) : 
-			GroundTheory(voc), _solver(solver) { }
+		SolverTheory(SATSolver* solver,AbstractStructure* str) : 
+			GroundTheory(str), _solver(solver) { }
+		SolverTheory(Vocabulary* voc, SATSolver* solver, AbstractStructure* str) : 
+			GroundTheory(voc,str), _solver(solver) { }
 
 		// Mutators
 		void	addClause(EcnfClause& cl, bool firstIsPrinted = false);

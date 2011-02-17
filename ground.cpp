@@ -348,8 +348,14 @@ void NaiveGrounder::visit(Theory* t) {
 	Optimized grounding algorithm
 *************************************/
 
+/** The two built-in literals 'true' and 'false' **/
 int _true = numeric_limits<int>::max();
 int _false = 0;
+
+bool EcnfGrounder::run() const {
+	// TODO TODO TODO
+	return true;
+}
 
 bool TheoryGrounder::run() const {
 	for(unsigned int n = 0; n < _grounders.size(); ++n) {
@@ -804,75 +810,198 @@ bool DefinitionGrounder::run() const {
 	GrounderFactory methods
 ******************************/
 
+/*
+ * void GrounderFactory::InitContext() 
+ * DESCRIPTION
+ *		Initializes the context of the GrounderFactory before visiting a sentence
+ */
+void GrounderFactory::InitContext() {
+	_context._positive		= true;
+	_context._truegen		= false;
+	_context._component		= CC_SENTENCE;
+	_context._tseitin		= TS_IMPL;
+}
+
+/*
+ *	void GrounderFactory::SaveContext() 
+ *	DESCRIPTION
+ *		Pushes the current context on a stack 
+ */
+void GrounderFactory::SaveContext() {
+	_contextstack.push(_context);
+}
+
+/*
+ * void GrounderFactory::RestoreContext()
+ * DESCRIPTION
+ *		Restores the context to the top of the stack and pops the stack
+ */
+void GrounderFactory::RestoreContext() {
+	_context = _contextstack.top();
+	_contextstack.pop();
+}
+
+/*
+ * void GrounderFactory::descend(Term* t)
+ * DESCRIPTION
+ *		Visits term a term and ensures the context is restored to the value before the visit.
+ * PARAMETERS
+ *		t	- the visited term
+ */
+void GrounderFactory::descend(Term* t) {
+	SaveContext();
+	t->accept(this);
+	RestoreContext();
+}
+
+/*
+ * void GrounderFactory::descend(Formula* f)
+ * DESCRIPTION
+ *		Visits term a formula and ensures the context is restored to the value before the visit.
+ * PARAMETERS
+ *		f	- the visited formula
+ */
+void GrounderFactory::descend(Formula* f) {
+	SaveContext();
+	f->accept(this);
+	RestoreContext();
+}
+
+/*
+ * TopLevelGrounder* GrounderFactory::create(AbstractTheory* theory)
+ * DESCRIPTION
+ *		Creates a grounder for the given theory. The grounding produced by that grounder
+ *		will be (partially) reduced with respect to the structure _structure of the GrounderFactory.
+ *		The produced grounding is not passed to a solver, but stored internally as a EcnfTheory.
+ * PARAMETERS
+ *		theory	- the theory for which a grounder will be created
+ * PRECONDITIONS
+ *		The vocabulary of theory is a subset of the vocabulary of the structure of the GrounderFactory.
+ * RETURNS
+ *		A grounder such that calling run() on it produces a grounding.
+ *		This grounding can then be obtained by calling grounding() on the grounder.
+ */
 TopLevelGrounder* GrounderFactory::create(AbstractTheory* theory) {
+
 	// Allocate an ecnf theory to be returned by the grounder
-	_grounding = new EcnfTheory(theory->vocabulary());
-	// Create grounder
+	_grounding = new EcnfTheory(theory->vocabulary(),_structure->clone());
+
+	// Create the grounder
 	theory->accept(this);
 	return _toplevelgrounder;
 }
 
+/*
+ * TopLevelGrounder* GrounderFactory::create(AbstractTheory* theory, SATSolver* solver)
+ * DESCRIPTION
+ *		Creates a grounder for the given theory. The grounding produced by that grounder
+ *		will be (partially) reduced with respect to the structure _structure of the GrounderFactory.
+ *		The produced grounding is directly passed to the given solver. 
+ * PARAMETERS
+ *		theory	- the theory for which a grounder will be created.
+ *		solver	- the solver to which the grounding will be passed.
+ * PRECONDITIONS
+ *		The vocabulary of theory is a subset of the vocabulary of the structure of the GrounderFactory.
+ * RETURNS
+ *		A grounder such that calling run() on it produces a grounding.
+ *		This grounding can then be obtained by calling grounding() on the grounder.
+ *		One or more models of the ground theory can be obtained by calling solve() on
+ *		the solver.
+ */
 TopLevelGrounder* GrounderFactory::create(AbstractTheory* theory, SATSolver* solver) {
+
 	// Allocate a solver theory
-	_grounding = new SolverTheory(theory->vocabulary(), solver);
-	// Create grounder
+	_grounding = new SolverTheory(theory->vocabulary(),solver,_structure->clone());
+
+	// Create the grounder
 	theory->accept(this);
 	return _toplevelgrounder;
 }
 
+/*
+ * void GrounderFactory::visit(EcnfTheory* ecnf)
+ * DESCRIPTION
+ *		Creates a grounder for a ground ecnf theory. This grounder returns a (reduced) copy of the ecnf theory.
+ * PARAMETERS
+ *		ecnf	- the given ground ecnf theory
+ * POSTCONDITIONS
+ *		_toplevelgrounder is equal to the created grounder.
+ */
 void GrounderFactory::visit(EcnfTheory* ecnf) {
-	_toplevelgrounder = new EcnfGrounder(ecnf);		// TODO: add the structure?
+	_toplevelgrounder = new EcnfGrounder(ecnf);	
 }
 
+/*
+ * void GrounderFactory::visit(Theory* theory)
+ * DESCRIPTION
+ *		Creates a grounder for a non-ground theory.
+ * PARAMETERS
+ *		theory	- the non-ground theory
+ * POSTCONDITIONS
+ *		_toplevelgrounder is equal to the created grounder
+ */
 void GrounderFactory::visit(Theory* theory) {
-	// Collect components of the theory
+
+	// Collect all components (sentences, definitions, and fixpoint definitions) of the theory
 	vector<TheoryComponent*> components(theory->nrComponents());
 	for(unsigned int n = 0; n < theory->nrComponents(); ++n) {
 		components[n] = theory->component(n);
 	}
 
-	// TODO (OPTIMIZATION) order components
+	// Order components the components to optimize the grounding process
+	// TODO
 
-	// Create grounders for the components
+	// Create grounders for all components
 	vector<TopLevelGrounder*> children(components.size());
 	for(unsigned int n = 0; n < components.size(); ++n) {
-		_poscontext = true;
-		_truegencontext = false;
-		_sentence = true;
+		InitContext();
 		components[n]->accept(this);
 		children[n] = _toplevelgrounder; 
 	}
 
-	// Create grounder
+	// Create the grounder
 	_toplevelgrounder = new TheoryGrounder(_grounding,children);
 }
 
+/*
+ * void GrounderFactory::visit(PredForm* pf) 
+ * DESCRIPTION
+ *		Creates a grounder for an atomic formula
+ * PARAMETERS
+ *		pf	- the atomic formula
+ * PRECONDITIONS
+ *		Each free variable that occurs in pf occurs in _varmapping.
+ * POSTCONDITIONS
+ *		According to _context, the created grounder is assigned to
+ *			CC_SENTENCE:	_toplevelgrounder
+ *			CC_HEAD:		_headgrounder
+ *			CC_BODY:		_formgrounder
+ *			CC_FORMULA:		_formgrounder
+ */
 void GrounderFactory::visit(PredForm* pf) {
-	// Check if each of the arguments of pf evaluates to a single value 
-	PredForm* newpf = pf->clone();
-	Formula* transpf = newpf; // TODO: replace this by the appropriate rewriting
 
-	if(newpf == transpf) {	// all arguments indeed evaluate to a single value
-		// Save context
-		bool posc = _poscontext;
-		bool truegc = _truegencontext;
-		bool sent = _sentence;
+	// Move all functions and aggregates that are three-valued according 
+	// to _structure outside the atom. To avoid changing the original atom, 
+	// we first clone it.
+	PredForm* newpf = pf->clone();
+	Formula* transpf = FormulaUtil::moveThreeValTerms(newpf,_structure,_context._positive);
+
+	if(newpf != transpf) {	// The rewriting changed the atom
+		delete(newpf);
+		transpf->accept(this);
+	}
+	else {	// The rewriting did not change the atom
 
 		// Create grounders for the subterms
-		vector<TermGrounder*> vtg;
-		vector<SortTable*>	  vst;
+		vector<TermGrounder*> subtermgrounders;
+		vector<SortTable*>	  argsorttables;
 		for(unsigned int n = 0; n < pf->nrSubterms(); ++n) {
-			pf->subterm(n)->accept(this);
-			if(_termgrounder) vtg.push_back(_termgrounder);
-			vst.push_back(_structure->inter(pf->symb()->sort(n)));
+			descend(pf->subterm(n));
+			subtermgrounders.push_back(_termgrounder);
+			argsorttables.push_back(_structure->inter(pf->symb()->sort(n)));
 		}
 
-		// Restore context
-		_poscontext = posc;
-		_truegencontext = truegc;
-		_sentence = sent;
-
-		// create checker
+		// Create checkers
 		PredInter* inter = _structure->inter(pf->symb());
 		if(_ruleheadcontext) {
 			InstanceChecker* truech;
@@ -943,12 +1072,7 @@ void GrounderFactory::visit(PredForm* pf) {
 			if(_sentence) _toplevelgrounder = new SentenceGrounder(_grounding,_grounder,false);
 		}
 	}
-	else {
-		transpf->accept(this);
-	}
-
-	// TODO: delete temporary values
-
+	transpf->recursiveDelete();
 }
 
 void GrounderFactory::visit(BoolForm* bf) {

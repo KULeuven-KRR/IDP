@@ -131,23 +131,11 @@ class NaiveGrounder : public Visitor {
 	Optimized grounding algorithm
 ************************************/
 
-//TODO: Probably need some forward declarations here...
-
-/*class Grounder {
-	protected:
-		static int		_true;
-		static int		_false;
-	public:
-		Grounder() { }
-};*/
-
 class TermGrounder;
 class FormulaGrounder;
 class SetGrounder;
 class RuleGrounder;
 class DefinitionGrounder;
-
-struct EcnfDefinition;
 
 /*** Top level grounders ***/
 
@@ -156,14 +144,17 @@ class TopLevelGrounder {
 		GroundTheory*	_grounding;
 	public:
 		TopLevelGrounder(GroundTheory* gt) : _grounding(gt) { }
-		virtual bool run() const = 0;
-		GroundTheory* grounding() const { return _grounding;	}
+
+		virtual bool			run()		const = 0;
+				GroundTheory*	grounding()	const { return _grounding;	}
 };
 
 class EcnfGrounder : public TopLevelGrounder {
+	private:
+		EcnfTheory*		_original;
 	public:
-		EcnfGrounder(GroundTheory* gt) : TopLevelGrounder(gt) { }
-		bool run() const { return true; }
+		EcnfGrounder(GroundTheory* gt, EcnfTheory* orig) : TopLevelGrounder(gt), _original(orig) { }
+		bool run() const;
 };
 
 class TheoryGrounder : public TopLevelGrounder {
@@ -359,6 +350,7 @@ class EnumSetGrounder : public SetGrounder {
 
 /*** Definition grounders ***/
 
+/** Grounder for a head of a rule **/
 class HeadGrounder {
 	private:
 		GroundTheory*				_grounding;
@@ -375,6 +367,7 @@ class HeadGrounder {
 
 };
 
+/** Grounder for a single rule **/
 class RuleGrounder {
 	private:
 		GroundDefinition*	_definition;
@@ -390,10 +383,11 @@ class RuleGrounder {
 		bool run() const;
 };
 
+/** Grounder for a definition **/
 class DefinitionGrounder : public TopLevelGrounder {
 	private:
-		GroundDefinition*		_definition;
-		vector<RuleGrounder*>	_subgrounders;
+		GroundDefinition*		_definition;	// The ground definition that will be produced by running the grounder.
+		vector<RuleGrounder*>	_subgrounders;	// Grounders for the rules of the definition.
 	public:
 		DefinitionGrounder(GroundTheory* gt, GroundDefinition* def, vector<RuleGrounder*> subgr) :
 			TopLevelGrounder(gt), _definition(def), _subgrounders(subgr) { }
@@ -405,27 +399,45 @@ class DefinitionGrounder : public TopLevelGrounder {
 	Grounder Factory
 ***********************/
 
+enum CompContext { CC_SENTENCE, CC_HEAD, CC_BODY, CC_FORMULA };
+
+struct GroundingContext {
+	bool		_positive;	// Indicates whether the visited part of the theory occurs in the scope
+							// of an even number of negations.
+	bool		_truegen;	// Indicates whether the variables are instantiated in order to obtain
+							// a ground formula that is possibly true.
+	CompContext	_component;	// Indicates the context of the visited formula
+	TsType		_tseitin;	// Indicates the type of tseitin definition that needs to be used.
+}
+
+/*
+ * Class to produce grounders 
+ */
 class GrounderFactory : public Visitor {
+
 	private:
 		// Data
-		AbstractStructure*	_structure;
-		GroundTheory*		_grounding;
+		AbstractStructure*	_structure;		// The structure that will be used to reduce the grounding
+		GroundTheory*		_grounding;		// The ground theory that will be produced
 
 		// Context
-		bool	_poscontext;
-		bool	_truegencontext;
-		bool	_sentence;
-		bool	_rulecontext;
-		TsType	_tseitincontext;
+		GroundingContext		_context;
+		stack<GroundingContext>	_contextstack;
+
+		void	InitContext();		// Initialize the context 
+		void	SaveContext();		// Push the current context from the stack
+		void	RestoreContext();	// Set _context to the top of the stack and pop the stack
 
 		// Variable mapping
-		map<Variable*,domelement*>	_varmapping;
+		map<Variable*,domelement*>	_varmapping;	// Maps variables to their counterpart during grounding.
+													// That is, the corresponding domelement* acts as a variable+value.
 
 		// Current ground definition
-		GroundDefinition*		_definition;
+		GroundDefinition*		_definition;	// The ground definition that will be produced by the 
+												// currently constructed definition grounder.
 
 		// Return values
-		FormulaGrounder*		_grounder;		//TODO: should be renamed to _formgrounder or something for consistency
+		FormulaGrounder*		_formgrounder;
 		TermGrounder*			_termgrounder;
 		SetGrounder*			_setgrounder;
 		TopLevelGrounder*		_toplevelgrounder;
@@ -433,6 +445,10 @@ class GrounderFactory : public Visitor {
 		RuleGrounder*			_rulegrounder;
 		DefinitionGrounder*		_defgrounder;
 
+		// Descend in the parse tree while taking care of the context
+		void	descend(Formula* f); 
+		void	descend(Term* t);
+		
 	public:
 		// Constructor
 		GrounderFactory(AbstractStructure* structure): _structure(structure) { }
