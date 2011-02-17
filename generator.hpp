@@ -139,6 +139,13 @@ class TreeInstGenerator : public InstGenerator {
 
 };
 
+/**************
+	Factory
+**************/
 
+class GeneratorFactory {
+	public:
+		InstGenerator*	create(const vector<domelement*>&, const vector<SortTable*>&);
+};
 
 #endif

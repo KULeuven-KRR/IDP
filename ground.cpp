@@ -420,9 +420,12 @@ int AtomGrounder::run() const {
 	// Checking partial functions
 	for(unsigned int n = 0; n < _args.size(); ++n) {
 		//TODO: only check positions that can be out of bounds!
-		//TODO: produce a warning!
 		if(!ElementUtil::exists(_args[n])) {
-			return _poscontext ? _true : _false;
+			//TODO: produce a warning!
+			if(_context._positive == PC_BOTH) {
+				// TODO: produce an error
+			}
+			return _context._positive != PC_NEGATIVE  ? _true : _false;
 		}
 	}
 
@@ -488,8 +491,11 @@ int ClauseGrounder::finish(vector<int>& cl) const {
 		return _true;
 	}	*/
 	else {
-		TsType tp = TS_IMPL;
-		if(_poscontext != _sign) tp = TS_RIMPL;
+		TsType tp = _context._tseitin;
+		if(!_sign) {
+			if(tp == TS_IMPL) tp = TS_RIMPL;
+			else if(tp == TS_RIMPL) tp = TS_IMPL;
+		}
 		int ts = _translator->translate(cl,_conj,tp);
 		return _sign ? ts : -ts;
 	}
@@ -575,7 +581,7 @@ int EquivGrounder::run() const {
 		cl1[0] = left;	cl1[1] = _sign ? -right : right;
 		cl2[0] = -left;	cl2[1] = _sign ? right : -right;
 		EcnfClause tcl(2);
-		TsType tp = _poscontext ? TS_IMPL : TS_RIMPL; 
+		TsType tp = _context._tseitin;
 		int ts1 = _translator->translate(cl1,false,tp);
 		int ts2 = _translator->translate(cl2,false,tp);
 		tcl[0] = ts1; tcl[1] = ts2;
@@ -605,7 +611,7 @@ void EquivGrounder::run(vector<int>& clause) const {
 		EcnfClause cl2(2);
 		cl1[0] = left;	cl1[1] = _sign ? -right : right;
 		cl2[0] = -left;	cl2[1] = _sign ? right : -right;
-		TsType tp = _poscontext ? TS_IMPL : TS_RIMPL; 
+		TsType tp = _context._tseitin;
 		int ts1 = _translator->translate(cl1,false,tp);
 		int ts2 = _translator->translate(cl2,false,tp);
 		clause.push_back(ts1); clause.push_back(ts2);
@@ -628,35 +634,7 @@ domelement AggTermGrounder::run() const {
 	int setnr = _setgrounder->run();
 	const GroundSet& grs = _translator->groundset(setnr);
 	assert(grs._setlits.empty());
-	double value;
-	switch(_type) {
-		case AGGCARD:
-		{
-			Element e; e._int = grs._trueweights.size();
-			return CPPointer(e,ELINT);
-		}
-		case AGGSUM:
-			value = 0;
-			for(unsigned int n = 0; n < grs._trueweights.size(); ++n) 
-				value += grs._trueweights[n];
-			break;
-		case AGGPROD:
-			value = 1;
-			for(unsigned int n = 0; n < grs._trueweights.size(); ++n) 
-				value *= grs._trueweights[n];
-			break;
-		case AGGMIN:
-			value = numeric_limits<double>::max();
-			for(unsigned int n = 0; n < grs._trueweights.size(); ++n) 
-				value = grs._trueweights[n] < value ? grs._trueweights[n] : value;
-			break;
-		case AGGMAX:
-			value = numeric_limits<double>::min();
-			for(unsigned int n = 0; n < grs._trueweights.size(); ++n) 
-				value = grs._trueweights[n] > value ? grs._trueweights[n] : value;
-			break;
-	}
-
+	double value = AggUtils::compute(_type,grs._trueweights);
 	Element e;
 	if(isInt(value)) {
 		e._int = int(value);
@@ -816,8 +794,8 @@ bool DefinitionGrounder::run() const {
  *		Initializes the context of the GrounderFactory before visiting a sentence
  */
 void GrounderFactory::InitContext() {
-	_context._positive		= true;
 	_context._truegen		= false;
+	_context._positive		= PC_POSITIVE;
 	_context._component		= CC_SENTENCE;
 	_context._tseitin		= TS_IMPL;
 }
@@ -839,6 +817,30 @@ void GrounderFactory::SaveContext() {
 void GrounderFactory::RestoreContext() {
 	_context = _contextstack.top();
 	_contextstack.pop();
+}
+
+/*
+ * void GrounderFactory::DeeperContext(bool sign)
+ * DESCRIPTION
+ *		Adapts the context to go one level deeper, and inverting some values if sign is negative
+ * PARAMETERS
+ *		sign	- the sign
+ */
+void GrounderFactory::DeeperContext(bool sign) {
+	// One level deeper
+	if(_context._component == CC_SENTENCE) _context._component = CC_FORMULA;
+	// Swap positive, truegen and tseitin according to sign
+	if(!sign) {
+
+		_context._truegen = !_context._truegen;
+
+		if(_context._positive == PC_POSITIVE) _context._positive = PC_NEGATIVE;
+		else if(_context._positive == PC_NEGATIVE) _context._positive = PC_POSITIVE;
+
+		if(_context._tseitin == TS_IMPL) _context._tseitin = TS_RIMPL;
+		else if(_context._tseitin == TS_RIMPL) _context._tseitin = TS_IMPL;
+
+	}
 }
 
 /*
@@ -928,7 +930,7 @@ TopLevelGrounder* GrounderFactory::create(AbstractTheory* theory, SATSolver* sol
  *		_toplevelgrounder is equal to the created grounder.
  */
 void GrounderFactory::visit(EcnfTheory* ecnf) {
-	_toplevelgrounder = new EcnfGrounder(ecnf);	
+	_toplevelgrounder = new EcnfGrounder(_grounding,ecnf);	
 }
 
 /*
@@ -984,7 +986,7 @@ void GrounderFactory::visit(PredForm* pf) {
 	// to _structure outside the atom. To avoid changing the original atom, 
 	// we first clone it.
 	PredForm* newpf = pf->clone();
-	Formula* transpf = FormulaUtil::moveThreeValTerms(newpf,_structure,_context._positive);
+	Formula* transpf = FormulaUtils::moveThreeValTerms(newpf,_structure,_context._positive != PC_NEGATIVE);
 
 	if(newpf != transpf) {	// The rewriting changed the atom
 		delete(newpf);
@@ -1012,7 +1014,7 @@ void GrounderFactory::visit(PredForm* pf) {
 		else {
 			InstanceChecker* possch;
 			InstanceChecker* certainch;
-			if(_truegencontext == pf->sign()) {	
+			if(_context._truegen == pf->sign()) {	
 				possch = checkfactory.create(inter,false,false);
 				certainch = checkfactory.create(inter,true,true);
 			}
@@ -1025,130 +1027,158 @@ void GrounderFactory::visit(PredForm* pf) {
 			_formgrounder = new AtomGrounder(_grounding->translator(),pf->sign(),pf->symb(),
 								 subtermgrounders,possch,certainch,argsorttables,_context);
 			if(_context._component == CC_SENTENCE) 
-				_toplevelgrounder = new SentenceGrounder(_grounding,_grounder,false);
+				_toplevelgrounder = new SentenceGrounder(_grounding,_formgrounder,false);
 		}
 	}
 	transpf->recursiveDelete();
 }
 
+/*
+ * void GrounderFactory::visit(BoolForm* bf)
+ * DESCRIPTION
+ *		Creates a grounding for a conjunction or disjunction of formulas
+ * PARAMETERS
+ *		bf	- the conjunction or disjunction
+ * PRECONDITIONS
+ *		Each free variable that occurs in bf occurs in _varmapping.
+ * POSTCONDITIONS
+ *		According to _context, the created grounder is assigned to
+ *			CC_SENTENCE:	_toplevelgrounder
+ *			CC_BODY:		_formgrounder
+ *			CC_FORMULA:		_formgrounder
+ *			CC_HEAD is not possible
+ */
 void GrounderFactory::visit(BoolForm* bf) {
 
-	bool gen = _truegencontext;
-	if(_sentence && bf->conj() && bf->sign()) {
-		vector<TopLevelGrounder*> sub(bf->nrSubforms());
-		for(unsigned int n = 0; n < bf->nrSubforms(); ++n) {
-			_sentence = true;
-			_poscontext = true;
-			_truegencontext = bf->sign() ? gen : !gen;
-			bf->subform(n)->accept(this);
+	// Handle a top-level conjunction without creating tseitin atoms
+	if(_context._component == CC_SENTENCE && (bf->conj() == bf->sign())) {
+		// If bf is a negated disjunction, push the negation one level deeper.
+		// Take a clone to avoid changing bf;
+		BoolForm* newbf = bf->clone();
+		if(!(newbf->conj())) {
+			newbf->conj(true);
+			newbf->swapsign();
+			for(unsigned int n = 0; n < newbf->nrSubforms(); ++n) newbf->subform(n)->swapsign();
+		}
+
+		// Visit the subformulas
+		vector<TopLevelGrounder*> sub(newbf->nrSubforms());
+		for(unsigned int n = 0; n < newbf->nrSubforms(); ++n) {
+			descend(newbf->subform(n));
 			sub[n] = _toplevelgrounder;
 		}
+		newbf->recursiveDelete();
 		_toplevelgrounder = new TheoryGrounder(_grounding,sub);
 	}
-	else {
-		// Save context
-		bool pos = _poscontext;
-		bool sent = _sentence;
+	else {	// Formula bf is not a top-level conjunction
 
 		// Create grounders for subformulas
+		SaveContext();
+		DeeperContext(bf->sign());
 		vector<FormulaGrounder*> sub(bf->nrSubforms());
 		for(unsigned int n = 0; n < bf->nrSubforms(); ++n) {
-			_sentence = false;
-			_poscontext = bf->sign() ? pos : !pos;
-			_truegencontext = bf->sign() ? gen : !gen;
-			bf->subform(n)->accept(this);
-			sub[n] = _grounder;
+			descend(bf->subform(n));
+			sub[n] = _formgrounder;
 		}
-
-		// Restore context
-		_sentence = sent;
-		_poscontext = pos;
-		_truegencontext = gen;
+		RestoreContext();
 
 		// Create grounder
-		_grounder = new BoolGrounder(_grounding->translator(),sub,bf->sign(),bf->conj(),_poscontext);
-		if(_sentence) _toplevelgrounder = new SentenceGrounder(_grounding,_grounder,(bf->conj() == bf->sign()));
+		_formgrounder = new BoolGrounder(_grounding->translator(),sub,bf->sign(),bf->conj(),_context);
+		if(_context._component == CC_SENTENCE) _toplevelgrounder = new SentenceGrounder(_grounding,_formgrounder,false);
+
 	}
 }
 
+/*
+ * void GrounderFactory::visit(QuantForm* qf)
+ * DESCRIPTION
+ *		Creates a grounding for a quantified formula
+ * PARAMETERS
+ *		qf	- the quantified formula
+ * PRECONDITIONS
+ *		Each free variable that occurs in qf occurs in _varmapping.
+ * POSTCONDITIONS
+ *		According to _context, the created grounder is assigned to
+ *			CC_SENTENCE:	_toplevelgrounder
+ *			CC_BODY:		_formgrounder
+ *			CC_FORMULA:		_formgrounder
+ *			CC_HEAD is not possible
+ */
 void GrounderFactory::visit(QuantForm* qf) {
-	// Save context
-	bool pos = _poscontext;
-	bool tgen = _truegencontext;
-	bool sent = _sentence;
 
 	// Create instance generator
-	InstGenerator* gen = 0;
-	GeneratorNode* node = 0;
+	vector<domelement*> vars;
+	vector<SortTable*>	tables;
 	for(unsigned int n = 0; n < qf->nrQvars(); ++n) {
 		domelement* d = new domelement();
 		_varmapping[qf->qvar(n)] = d;
+		vars.push_back(d);
 		SortTable* st = _structure->inter(qf->qvar(n)->sort());
 		assert(st->finite());	// TODO: produce an error message
-		SortInstGenerator* tig = new SortInstGenerator(st,d);
-		if(qf->nrQvars() == 1) {
-			gen = tig;
-			break;
-		}
-		else if(n == 0)
-			node = new LeafGeneratorNode(tig);
-		else 
-			node = new OneChildGeneratorNode(tig,node);
+		tables.push_back(st);
 	}
-	if(!gen) gen = new TreeInstGenerator(node);
-	
-	// Create grounder for subformula
-	if(!(qf->sign() && qf->univ())) _sentence = false;
-	_poscontext = qf->sign() ? pos : !pos;
-	_truegencontext = !(qf->univ()); 
-	qf->subf()->accept(this);
+	GeneratorFactory gf;
+	InstGenerator* gen = gf.create(vars,tables);
 
-	// Restore context
-	_sentence = sent;
-	_poscontext = pos;
-	_truegencontext = tgen;
-
-	// Create grounder
-	if(_sentence && qf->sign() && qf->univ()) {
+	// Handle top-level universal quantifiers efficiently
+	if(_context._component == CC_SENTENCE && (qf->sign() == qf->univ())) {
+		QuantForm* newqf = qf->clone();
+		if(!(newqf->univ())) {
+			newqf->univ(true);
+			newqf->swapsign();
+			newqf->subf()->swapsign();
+		}
+		descend(newqf->subf());
+		newqf->recursiveDelete();
 		_toplevelgrounder = new UnivSentGrounder(_grounding,_toplevelgrounder,gen);
 	}
 	else {
-		_grounder = new QuantGrounder(_grounding->translator(),_grounder,qf->sign(),qf->univ(),_poscontext,gen);
-		if(_sentence) _toplevelgrounder = new SentenceGrounder(_grounding,_grounder,(qf->univ() == qf->sign()));
+
+		// Create grounder for subformula
+		SaveContext();
+		DeeperContext(qf->sign());
+		_context._truegen = !(qf->univ()); 
+		descend(qf->subf());
+		RestoreContext();
+
+		// Create the grounder
+		_formgrounder = new QuantGrounder(_grounding->translator(),_formgrounder,qf->sign(),qf->univ(),gen,_context);
+		if(_context._component == CC_SENTENCE) _toplevelgrounder = new SentenceGrounder(_grounding,_formgrounder,false);
+
 	}
 }
 
+/*
+ * void GrounderFactory::visit(EquivForm* ef)
+ * DESCRIPTION
+ *		Creates a grounding for an equivalence.
+ * PARAMETERS
+ *		ef	- the equivalence
+ * PRECONDITIONS
+ *		Each free variable that occurs in qf occurs in _varmapping.
+ * POSTCONDITIONS
+ *		According to _context, the created grounder is assigned to
+ *			CC_SENTENCE:	_toplevelgrounder
+ *			CC_BODY:		_formgrounder
+ *			CC_FORMULA:		_formgrounder
+ *			CC_HEAD is not possible
+ */
 void GrounderFactory::visit(EquivForm* ef) {
-	//TODO: check for partial functions
 
-	// Save context
-	bool pos = _poscontext;
-	bool tgen = _truegencontext;
-	bool sent = _sentence;
+	// Create grounders for the subformulas
+	SaveContext();
+	DeeperContext(ef->sign());
+	_context._positive = PC_BOTH;
+	_context._tseitin = TS_EQ;
+	descend(ef->left());
+	FormulaGrounder* leftg = _formgrounder;
+	descend(ef->right());
+	FormulaGrounder* rightg = _formgrounder;
+	RestoreContext();
 
-	// Create grounder for left subformula
-	_sentence = false;
-	ef->left()->accept(this);
-	FormulaGrounder* leftg = _grounder;
-
-	// Restore context before going right
-	_poscontext = pos;
-	_truegencontext = tgen;
-	_sentence = sent;
-
-	// Create grounder for right subformula
-	_sentence = false;
-	ef->right()->accept(this);
-	FormulaGrounder* rightg = _grounder;
-	
-	// Restore context
-	_poscontext = pos;
-	_truegencontext = tgen;
-	_sentence = sent;
-
-	// Create grounder
-	_grounder = new EquivGrounder(_grounding->translator(),leftg,rightg,ef->sign(),_poscontext);
-	if(_sentence) _toplevelgrounder = new SentenceGrounder(_grounding,_grounder,true);
+	// Create the grounder
+	_formgrounder = new EquivGrounder(_grounding->translator(),leftg,rightg,ef->sign(),_context);
+	if(_context._component == CC_SENTENCE) _toplevelgrounder = new SentenceGrounder(_grounding,_formgrounder,true);
 }
 
 void GrounderFactory::visit(EqChainForm* ef) {
@@ -1159,22 +1189,11 @@ void GrounderFactory::visit(EqChainForm* ef) {
 }
 
 void GrounderFactory::visit(VarTerm* t) {
-	// Create termgrounder
 	_termgrounder = new VarTermGrounder(_varmapping.find(t->var())->second);
 }
 
 void GrounderFactory::visit(DomainTerm* t) {
-	// Create termgrounder
 	_termgrounder = new DomTermGrounder(CPPointer(t->value(),t->type()));
-
-	// Check whether value is within bounds of the current position.
-//	if(_structure->inter(_currsort)->contains(t->value(),t->type()))
-//		_value = new TypedElement(t->value(),t->type());
-//	else {
-//		_value = new TypedElement();
-//		_value->_type = t->type();
-//		_value->_element = ElementUtil::nonexist(t->type());
-//	}
 }
 
 void GrounderFactory::visit(FuncTerm* t) {
@@ -1202,15 +1221,16 @@ void GrounderFactory::visit(EnumSetExpr* s) {
 	// Create grounders for formulas and weights
 	vector<FormulaGrounder*> subgr;
 	vector<TermGrounder*> subtgr;
+	SaveContext();
+	InitContext();
+	_context._component = CC_FORMULA;
 	for(unsigned int n = 0; n < s->nrSubforms(); ++n) {
-		_sentence = false;
-		_poscontext = true;
-		_truegencontext = true;
-		s->subform(n)->accept(this);
-		subgr.push_back(_grounder);
-		s->subterm(n)->accept(this);
+		descend(s->subform(n));
+		subgr.push_back(_formgrounder);
+		descend(s->subterm(n));
 		subtgr.push_back(_termgrounder);
 	}
+	RestoreContext();
 
 	// Create set grounder
 	_setgrounder = new EnumSetGrounder(_grounding->translator(),subgr,subtgr);
@@ -1238,11 +1258,11 @@ void GrounderFactory::visit(QuantSetExpr* s) {
 	if(!gen) gen = new TreeInstGenerator(node);
 	
 	// Create grounder for subformula
-	_sentence = false;
-	_poscontext = true;
-	_truegencontext = true; 
-	s->subf()->accept(this);
-	FormulaGrounder* sub = _grounder;
+	SaveContext();
+	InitContext();
+	_context._component = CC_FORMULA;
+	descend(s->subf());
+	FormulaGrounder* sub = _formgrounder;
 
 	// Create grounder	
 	_setgrounder = new QuantSetGrounder(_grounding->translator(),sub,gen,_varmapping[s->qvar(0)]);
@@ -1314,20 +1334,16 @@ void GrounderFactory::visit(Rule* rule) {
 	if(!big) big = new TreeInstGenerator(bnode);
 	
 	// Create head grounder
-	_sentence = false;
-	_ruleheadcontext = true;
-	_rulebodycontext = false;
+	_context._component = CC_HEAD;
 	rule->head()->accept(this);
 	HeadGrounder* hgr = _headgrounder;
 
 	// Create body grounder
-	_poscontext = false;		// minimize truth value of rule bodies
-	_truegencontext = true;		// body instance generator corresponds to an existential quantifier
-	_sentence = false;
-	_ruleheadcontext = false;
-	_rulebodycontext = true;
+	_context._positive = PC_NEGATIVE;	// minimize truth value of rule bodies
+	_context._truegen = true;				// body instance generator corresponds to an existential quantifier
+	_context._component = CC_BODY;
 	rule->body()->accept(this);
-	FormulaGrounder* bgr = _grounder;
+	FormulaGrounder* bgr = _formgrounder;
 
 	// TODO: conjunction? recursive?
 	bool conj;

@@ -832,7 +832,7 @@ class TheoryConvertor : public Visitor {
 	public:
 		
 		TheoryConvertor(AbstractTheory* t) : 
-			Visitor(), _returnvalue(new EcnfTheory()) { t->accept(this); }
+			Visitor(), _returnvalue(new EcnfTheory(0)) { t->accept(this); }
 
 		void visit(PredForm*);
 		void visit(EqChainForm*);
@@ -1763,20 +1763,23 @@ class ThreeValTermMover : public MutatingVisitor {
 		Term*		visit(AggTerm*	at);
 };
 
-Term* visit(FuncTerm* ft) {
+Term* ThreeValTermMover::visit(FuncTerm* ft) {
 	// Get the function and its interpretation
 	Function* f = ft->func();
 	FuncInter* finter = _structure->inter(f);
 
 
 	if(finter->fasttwovalued()) { // The function is two-valued. Visit the children.
-		Term* nt = ft->subterm(n)->accept(this);
-		if(nt != ft->subterm(n)) {
-			delete(ft->subterm(n));
-			ft->arg(n,nt);
+		for(unsigned int n = 0; n < ft->nrSubterms(); ++n) {
+			Term* nt = ft->subterm(n)->accept(this);
+			if(nt != ft->subterm(n)) {
+				delete(ft->subterm(n));
+				ft->arg(n,nt);
+			}
 		}
 		ft->setfvars();
 		return ft;
+
 	}
 	else { // The function is three-valued. Create a new variable and an equation
 		Variable* v = new Variable(f->outsort());
@@ -1791,13 +1794,13 @@ Term* visit(FuncTerm* ft) {
 	}
 }
 
-Term* visit(AggTerm* at) {
+Term* ThreeValTermMover::visit(AggTerm* at) {
 	bool twovalued = SetUtils::isTwoValued(at->set(),_structure);
 	if(twovalued) return at;
 	else {
 		Variable* v = new Variable(at->sort());
 		VarTerm* vt = new VarTerm(v,ParseInfo());
-		AggTerm* newat = new AggTerm(at->set(),at->type,ParseInfo());
+		AggTerm* newat = new AggTerm(at->set(),at->type(),ParseInfo());
 		AggForm* af = new AggForm(true,'=',vt,newat,FormParseInfo());
 		_termgraphs.push_back(af);
 		_variables.push_back(v);
@@ -1805,7 +1808,7 @@ Term* visit(AggTerm* at) {
 	}
 };
 
-Formula* visit(PredForm* pf) {
+Formula* ThreeValTermMover::visit(PredForm* pf) {
 	
 	// Visit the subterms
 	for(unsigned int n = 0; n < pf->nrSubterms(); ++n) {
@@ -1816,24 +1819,24 @@ Formula* visit(PredForm* pf) {
 		}
 	}
 
-	if(_funcgraphs.empty()) {	// No rewriting was needed, simply return the given atom
+	if(_termgraphs.empty()) {	// No rewriting was needed, simply return the given atom
 		return pf;
 	}
 	else {	// Rewriting was needed
 		
 		// In a positive context, the equations are negated
 		if(_poscontext) {
-			for(unsigned int n = 0; n < _funcgraphs.size(); ++n)
-				_funcgraphs[n]->swapsign();
+			for(unsigned int n = 0; n < _termgraphs.size(); ++n)
+				_termgraphs[n]->swapsign();
 		}
 
 		// Memory management for the original atom
 		PredForm* npf = new PredForm(pf->sign(),pf->symb(),pf->args(),FormParseInfo());
-		_funcgraphs.push_back(npf);
+		_termgraphs.push_back(npf);
 
 		// Create and return the rewriting
-		BoolForm* bf = new BoolForm(true,!_poscontext,_funcgraphs,FormParseInfo());
-		QuantForm* qf = new QuantForm(true,_poscontext,_newvars,bf,FormParseInfo());
+		BoolForm* bf = new BoolForm(true,!_poscontext,_termgraphs,FormParseInfo());
+		QuantForm* qf = new QuantForm(true,_poscontext,_variables,bf,FormParseInfo());
 		return qf;
 	}
 }
@@ -1878,7 +1881,7 @@ namespace FormulaUtils {
 	 */
 	Formula* moveThreeValTerms(PredForm* pf, AbstractStructure* str, bool poscontext) {
 		ThreeValTermMover tvtm(str,poscontext);
-		Formula* rewriting = pf->accept(tvtm);
+		Formula* rewriting = pf->accept(&tvtm);
 		return rewriting;
 	}
 }

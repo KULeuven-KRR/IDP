@@ -540,7 +540,7 @@ namespace SetUtils {
 
 	bool isTwoValued(SetExpr* exp, AbstractStructure* str) {
 		TwoValChecker tvc(str);
-		exp->accept(tvc);
+		exp->accept(&tvc);
 		return tvc.returnvalue();
 	}
 
