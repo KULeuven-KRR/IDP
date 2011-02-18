@@ -37,7 +37,7 @@ GeneratorNode* OneChildGeneratorNode::first() const {
 }
 
 GeneratorNode* TwoChildGeneratorNode::first() const {
-	for(int n = 0; n < _outvars.size(); ++n) {
+	for(unsigned int n = 0; n < _outvars.size(); ++n) {
 		_currargs[n] = _tables[n]->delement(0);
 		*(_outvars[n]) = _currargs[n];
 		_currpositions[n] = 0;
@@ -54,6 +54,7 @@ GeneratorNode* TwoChildGeneratorNode::first() const {
 }
 
 bool TreeInstGenerator::first() const {
+	if(!_root) return true; //FIXME probably not correct in every situation
 	_curr = _root->first(); 
 	return (_curr ? true : false);
 }
@@ -96,7 +97,7 @@ GeneratorNode* OneChildGeneratorNode::next() const {
 
 GeneratorNode*	TwoChildGeneratorNode::next() const {
 	while(true) {
-		int n = 0;
+		unsigned int n = 0;
 		for( ; n < _outvars.size(); ++n) {
 			if(_currpositions[n] < _tables[n]->size()) {
 				_currpositions[n]++;
@@ -125,6 +126,7 @@ GeneratorNode*	TwoChildGeneratorNode::next() const {
 }
 
 bool TreeInstGenerator::next() const {
+	if(!_root) return false; //FIXME probably not correct in every situation...
 	assert(_curr);
 	GeneratorNode* temp = 0;
 	while(!temp) {

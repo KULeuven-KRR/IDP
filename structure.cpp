@@ -1810,15 +1810,15 @@ void Structure::vocabulary(Vocabulary* v) {
 	_vocabulary = v;
 }
 
-void Structure::inter(Sort* s, SortTable* d) {
+void Structure::inter(Sort* s, SortTable* d) const {
 	_sortinter[s] = d;
 }
 
-void Structure::inter(Predicate* p, PredInter* i) {
+void Structure::inter(Predicate* p, PredInter* i) const {
 	_predinter[p] = i;
 }
 
-void Structure::inter(Function* f, FuncInter* i) {
+void Structure::inter(Function* f, FuncInter* i) const {
 	_funcinter[f] = i;
 }
 
@@ -2169,21 +2169,21 @@ string Structure::to_string(unsigned int spaces) const {
 class StructConvertor : public Visitor {
 
 	private:
-		PFSymbol*			_currsymbol;
-		AbstractTheory*		_returnvalue;
-		AbstractStructure*	_structure;
+		PFSymbol*					_currsymbol;
+		AbstractTheory*				_returnvalue;
+		const AbstractStructure*	_structure;
 
 	public:
-		StructConvertor(AbstractStructure* s) : Visitor(), _currsymbol(0), _returnvalue(0), _structure(s) { s->accept(this);	}
+		StructConvertor(const AbstractStructure* s) : Visitor(), _currsymbol(0), _returnvalue(0), _structure(s) { s->accept(this);	}
 
-		void			visit(Structure*);
-		void			visit(PredInter*);
-		void			visit(FuncInter*);
+		void			visit(const Structure*);
+		void			visit(const PredInter*);
+		void			visit(const FuncInter*);
 		AbstractTheory*	returnvalue()	const { return _returnvalue;	}
 		
 };
 
-void StructConvertor::visit(Structure* s) {
+void StructConvertor::visit(const Structure* s) {
 	_returnvalue = new Theory("",s->vocabulary(),ParseInfo());
 	for(unsigned int n = 0; n < s->vocabulary()->nrNBPreds(); ++n) {
 		_currsymbol = s->vocabulary()->nbpred(n);
@@ -2195,7 +2195,7 @@ void StructConvertor::visit(Structure* s) {
 	}
 }
 
-void StructConvertor::visit(PredInter* pt) {
+void StructConvertor::visit(const PredInter* pt) {
 	if(pt->ct()) {
 		vector<Term*> vt(_currsymbol->nrSorts());
 		for(unsigned int r = 0; r < pt->ctpf()->size(); ++r) {
@@ -2242,7 +2242,7 @@ void StructConvertor::visit(PredInter* pt) {
 	}
 }
 
-void StructConvertor::visit(FuncInter* ft) {
+void StructConvertor::visit(const FuncInter* ft) {
 	visit(ft->predinter());
 	// TODO: do something smarter here ...
 }
@@ -2250,9 +2250,9 @@ void StructConvertor::visit(FuncInter* ft) {
 /** Structure utils **/
 
 namespace StructUtils {
-	AbstractTheory*		convert_to_theory(AbstractStructure* s) { StructConvertor sc(s); return sc.returnvalue();	}
+	AbstractTheory*		convert_to_theory(const AbstractStructure* s) { StructConvertor sc(s); return sc.returnvalue();	}
 
-	PredTable*	complement(PredTable* pt,const vector<Sort*>& vs, AbstractStructure* s) {
+	PredTable*	complement(const PredTable* pt, const vector<Sort*>& vs, const AbstractStructure* s) {
 		vector<SortTable*> tables;
 		vector<TypedElement> tuple;
 		vector<ElementType> types;

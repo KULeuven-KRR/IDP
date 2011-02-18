@@ -98,18 +98,18 @@ unsigned int GroundTranslator::addSymbol(PFSymbol* pfs) {
 	Basic top-down, non-optimized grounding algorithm
 ********************************************************/
 
-void NaiveGrounder::visit(VarTerm* vt) {
+void NaiveGrounder::visit(const VarTerm* vt) {
 	assert(_varmapping.find(vt->var()) != _varmapping.end());
 	TypedElement te = _varmapping[vt->var()];
 	Element e = te._element;
 	_returnTerm = new DomainTerm(vt->sort(),te._type,e,ParseInfo());
 }
 
-void NaiveGrounder::visit(DomainTerm* dt) {
+void NaiveGrounder::visit(const DomainTerm* dt) {
 	_returnTerm = dt->clone();
 }
 
-void NaiveGrounder::visit(FuncTerm* ft) {
+void NaiveGrounder::visit(const FuncTerm* ft) {
 	vector<Term*> vt;
 	for(unsigned int n = 0; n < ft->nrSubterms(); ++n) {
 		_returnTerm = 0;
@@ -120,14 +120,14 @@ void NaiveGrounder::visit(FuncTerm* ft) {
 	_returnTerm = new FuncTerm(ft->func(),vt,ParseInfo());
 }
 
-void NaiveGrounder::visit(AggTerm* at) {
+void NaiveGrounder::visit(const AggTerm* at) {
 	_returnSet = 0;
 	at->set()->accept(this);
 	assert(_returnSet);
 	_returnTerm = new AggTerm(_returnSet,at->type(),ParseInfo());
 }
 
-void NaiveGrounder::visit(EnumSetExpr* s) {
+void NaiveGrounder::visit(const EnumSetExpr* s) {
 	vector<Formula*> vf;
 	for(unsigned int n = 0; n < s->nrSubforms(); ++n) {
 		_returnFormula = 0;
@@ -145,7 +145,7 @@ void NaiveGrounder::visit(EnumSetExpr* s) {
 	_returnSet = new EnumSetExpr(vf,vt,ParseInfo());
 }
 
-void NaiveGrounder::visit(QuantSetExpr* s) {
+void NaiveGrounder::visit(const QuantSetExpr* s) {
 	SortTableTupleIterator stti(s->qvars(),_structure);
 	vector<SortTable*> tables;
 	vector<Formula*> vf(0);
@@ -175,7 +175,7 @@ void NaiveGrounder::visit(QuantSetExpr* s) {
 	}
 }
 
-void NaiveGrounder::visit(PredForm* pf) {
+void NaiveGrounder::visit(const PredForm* pf) {
 	vector<Term*> vt;
 	for(unsigned int n = 0; n < pf->nrSubterms(); ++n) {
 		_returnTerm = 0;
@@ -186,7 +186,7 @@ void NaiveGrounder::visit(PredForm* pf) {
 	_returnFormula = new PredForm(pf->sign(),pf->symb(),vt,FormParseInfo());
 }
 
-void NaiveGrounder::visit(EquivForm* ef) {
+void NaiveGrounder::visit(const EquivForm* ef) {
 	_returnFormula = 0;
 	ef->left()->accept(this);
 	assert(_returnFormula);
@@ -198,7 +198,7 @@ void NaiveGrounder::visit(EquivForm* ef) {
 	_returnFormula = new EquivForm(ef->sign(),nl,nr,FormParseInfo());
 }
 
-void NaiveGrounder::visit(EqChainForm* ef) {
+void NaiveGrounder::visit(const EqChainForm* ef) {
 	vector<Term*> vt;
 	for(unsigned int n = 0; n < ef->nrSubterms(); ++n) {
 		_returnTerm = 0;
@@ -209,7 +209,7 @@ void NaiveGrounder::visit(EqChainForm* ef) {
 	_returnFormula = new EqChainForm(ef->sign(),ef->conj(),vt,ef->comps(),ef->compsigns(),FormParseInfo());
 }
 
-void NaiveGrounder::visit(BoolForm* bf) {
+void NaiveGrounder::visit(const BoolForm* bf) {
 	vector<Formula*> vf;
 	for(unsigned int n = 0; n < bf->nrSubforms(); ++n) {
 		_returnFormula = 0;
@@ -220,7 +220,7 @@ void NaiveGrounder::visit(BoolForm* bf) {
 	_returnFormula = new BoolForm(bf->sign(),bf->conj(),vf,FormParseInfo());
 }
 
-void NaiveGrounder::visit(QuantForm* qf) {
+void NaiveGrounder::visit(const QuantForm* qf) {
 	SortTableTupleIterator stti(qf->qvars(),_structure);
 	vector<Formula*> vf(0);
 	for(unsigned int n = 0; n < qf->nrQvars(); ++n) {
@@ -245,7 +245,7 @@ void NaiveGrounder::visit(QuantForm* qf) {
 	}
 }
 
-void NaiveGrounder::visit(Rule* r) {
+void NaiveGrounder::visit(const Rule* r) {
 	SortTableTupleIterator stti(r->qvars(),_structure);
 	Definition* d = new Definition();
 	for(unsigned int n = 0; n < r->nrQvars(); ++n) {
@@ -279,7 +279,7 @@ void NaiveGrounder::visit(Rule* r) {
 	_returnDef = d;
 }
 
-void NaiveGrounder::visit(Definition* d) {
+void NaiveGrounder::visit(const Definition* d) {
 	Definition* grounddef = new Definition();
 	for(unsigned int n = 0; n < d->nrRules(); ++n) {
 		_returnDef = 0;
@@ -293,7 +293,7 @@ void NaiveGrounder::visit(Definition* d) {
 	_returnDef = grounddef;
 }
 
-void NaiveGrounder::visit(FixpDef* d) {
+void NaiveGrounder::visit(const FixpDef* d) {
 	FixpDef* grounddef = new FixpDef(d->lfp());
 	for(unsigned int n = 0; n < d->nrDefs(); ++n) {
 		_returnFixpDef = 0;
@@ -313,7 +313,7 @@ void NaiveGrounder::visit(FixpDef* d) {
 	_returnFixpDef = grounddef;
 }
 
-void NaiveGrounder::visit(Theory* t) {
+void NaiveGrounder::visit(const Theory* t) {
 	Theory* grounding = new Theory("",t->vocabulary(),ParseInfo());
 
 	// Ground the theory
@@ -757,7 +757,7 @@ bool RuleGrounder::run() const {
 				}
 			}
 		}
-		while(_headgenerator->next()) {
+		while(_bodygenerator->next()) {
 			body.clear();
 			_bodygrounder->run(body);
 			bool falsebody = (body.empty() && !_conj) || (body.size() == 1 && body[0] == _false);
@@ -879,6 +879,19 @@ void GrounderFactory::descend(Formula* f) {
 }
 
 /*
+ * void GrounderFactory::descend(Rule* r)
+ * DESCRIPTION
+ *		Visits a rule and ensures the context is restored to the value before the visit.
+ * PARAMETERS
+ *		r	- the visited rule
+ */
+void GrounderFactory::descend(Rule* r) {
+	SaveContext();
+	r->accept(this);
+	RestoreContext();
+}
+
+/*
  * TopLevelGrounder* GrounderFactory::create(AbstractTheory* theory)
  * DESCRIPTION
  *		Creates a grounder for the given theory. The grounding produced by that grounder
@@ -892,14 +905,14 @@ void GrounderFactory::descend(Formula* f) {
  *		A grounder such that calling run() on it produces a grounding.
  *		This grounding can then be obtained by calling grounding() on the grounder.
  */
-TopLevelGrounder* GrounderFactory::create(AbstractTheory* theory) {
+TopLevelGrounder* GrounderFactory::create(const AbstractTheory* theory) {
 
 	// Allocate an ecnf theory to be returned by the grounder
 	_grounding = new EcnfTheory(theory->vocabulary(),_structure->clone());
 
 	// Create the grounder
 	theory->accept(this);
-	_conj(conj), return _toplevelgrounder;
+	return _toplevelgrounder;
 }
 
 /*
@@ -919,7 +932,7 @@ TopLevelGrounder* GrounderFactory::create(AbstractTheory* theory) {
  *		One or more models of the ground theory can be obtained by calling solve() on
  *		the solver.
  */
-TopLevelGrounder* GrounderFactory::create(AbstractTheory* theory, SATSolver* solver) {
+TopLevelGrounder* GrounderFactory::create(const AbstractTheory* theory, SATSolver* solver) {
 
 	// Allocate a solver theory
 	_grounding = new SolverTheory(theory->vocabulary(),solver,_structure->clone());
@@ -938,7 +951,7 @@ TopLevelGrounder* GrounderFactory::create(AbstractTheory* theory, SATSolver* sol
  * POSTCONDITIONS
  *		_toplevelgrounder is equal to the created grounder.
  */
-void GrounderFactory::visit(EcnfTheory* ecnf) {
+void GrounderFactory::visit(const EcnfTheory* ecnf) {
 	_toplevelgrounder = new EcnfGrounder(_grounding,ecnf);	
 }
 
@@ -951,7 +964,7 @@ void GrounderFactory::visit(EcnfTheory* ecnf) {
  * POSTCONDITIONS
  *		_toplevelgrounder is equal to the created grounder
  */
-void GrounderFactory::visit(Theory* theory) {
+void GrounderFactory::visit(const Theory* theory) {
 
 	// Collect all components (sentences, definitions, and fixpoint definitions) of the theory
 	vector<TheoryComponent*> components(theory->nrComponents());
@@ -989,7 +1002,7 @@ void GrounderFactory::visit(Theory* theory) {
  *			CC_BODY:		_formgrounder
  *			CC_FORMULA:		_formgrounder
  */
-void GrounderFactory::visit(PredForm* pf) {
+void GrounderFactory::visit(const PredForm* pf) {
 	// This formula will not be grounded to a conjunction.
 	_conjunction = false;
 
@@ -1059,7 +1072,7 @@ void GrounderFactory::visit(PredForm* pf) {
  *			CC_FORMULA:		_formgrounder
  *			CC_HEAD is not possible
  */
-void GrounderFactory::visit(BoolForm* bf) {
+void GrounderFactory::visit(const BoolForm* bf) {
 	// Find out whether this formula will be grounded to a conjunction.
 	_conjunction = bf->conj() == bf->sign();
 
@@ -1117,7 +1130,7 @@ void GrounderFactory::visit(BoolForm* bf) {
  *			CC_FORMULA:		_formgrounder
  *			CC_HEAD is not possible
  */
-void GrounderFactory::visit(QuantForm* qf) {
+void GrounderFactory::visit(const QuantForm* qf) {
 	// Find out whether this formula will be grounded to a conjunction.
 	_conjunction = qf->univ() == qf->sign();
 
@@ -1172,7 +1185,7 @@ void GrounderFactory::visit(QuantForm* qf) {
  *			CC_FORMULA:		_formgrounder
  *			CC_HEAD is not possible
  */
-void GrounderFactory::visit(EquivForm* ef) {
+void GrounderFactory::visit(const EquivForm* ef) {
 	// This formula will be grounded to a conjunction.
 	_conjunction = true;
 
@@ -1192,23 +1205,23 @@ void GrounderFactory::visit(EquivForm* ef) {
 	if(_context._component == CC_SENTENCE) _toplevelgrounder = new SentenceGrounder(_grounding,_formgrounder,true);
 }
 
-void GrounderFactory::visit(EqChainForm* ef) {
+void GrounderFactory::visit(const EqChainForm* ef) {
 	Formula* f = ef->clone();
 	f = FormulaUtils::remove_eqchains(f,_grounding->vocabulary());
 	f->accept(this);
 	f->recursiveDelete();
 }
 
-void GrounderFactory::visit(VarTerm* t) {
+void GrounderFactory::visit(const VarTerm* t) {
 	assert(_varmapping.find(t->var()) != _varmapping.end());
 	_termgrounder = new VarTermGrounder(_varmapping.find(t->var())->second);
 }
 
-void GrounderFactory::visit(DomainTerm* t) {
+void GrounderFactory::visit(const DomainTerm* t) {
 	_termgrounder = new DomTermGrounder(CPPointer(t->value(),t->type()));
 }
 
-void GrounderFactory::visit(FuncTerm* t) {
+void GrounderFactory::visit(const FuncTerm* t) {
 	// Create grounders for subterms
 	vector<TermGrounder*> sub;
 	for(unsigned int n = 0; n < t->nrSubterms(); ++n) {
@@ -1221,7 +1234,7 @@ void GrounderFactory::visit(FuncTerm* t) {
 	_termgrounder = new FuncTermGrounder(sub,ft);
 }
 
-void GrounderFactory::visit(AggTerm* t) {
+void GrounderFactory::visit(const AggTerm* t) {
 	// Create set grounder
 	t->set()->accept(this);
 
@@ -1229,7 +1242,7 @@ void GrounderFactory::visit(AggTerm* t) {
 	_termgrounder = new AggTermGrounder(_grounding->translator(),t->type(),_setgrounder);
 }
 
-void GrounderFactory::visit(EnumSetExpr* s) {
+void GrounderFactory::visit(const EnumSetExpr* s) {
 	// Create grounders for formulas and weights
 	vector<FormulaGrounder*> subgr;
 	vector<TermGrounder*> subtgr;
@@ -1248,7 +1261,7 @@ void GrounderFactory::visit(EnumSetExpr* s) {
 	_setgrounder = new EnumSetGrounder(_grounding->translator(),subgr,subtgr);
 }
 
-void GrounderFactory::visit(QuantSetExpr* s) {
+void GrounderFactory::visit(const QuantSetExpr* s) {
 	// Create instance generator
 	InstGenerator* gen = 0;
 	GeneratorNode* node = 0;
@@ -1262,10 +1275,8 @@ void GrounderFactory::visit(QuantSetExpr* s) {
 			gen = tig;
 			break;
 		}
-		else if(n == 0)
-			node = new LeafGeneratorNode(tig);
-		else 
-			node = new OneChildGeneratorNode(tig,node);
+		else if(n == 0)	node = new LeafGeneratorNode(tig);
+		else node = new OneChildGeneratorNode(tig,node);
 	}
 	if(!gen) gen = new TreeInstGenerator(node);
 	
@@ -1280,7 +1291,7 @@ void GrounderFactory::visit(QuantSetExpr* s) {
 	_setgrounder = new QuantSetGrounder(_grounding->translator(),sub,gen,_varmapping[s->qvar(0)]);
 }
 
-void GrounderFactory::visit(Definition* def) {
+void GrounderFactory::visit(const Definition* def) {
 	// Create new ground definition
 	_definition = new GroundDefinition();
 
@@ -1288,7 +1299,7 @@ void GrounderFactory::visit(Definition* def) {
 	vector<RuleGrounder*> subgrounders;
 	for(unsigned int n = 0; n < def->nrRules(); ++n) {
 		//TODO: Check if rule is recursive
-		for(unsigned int m; m < def->nrDefsyms(); ++m) {
+		for(unsigned int m = 0; m < def->nrDefsyms(); ++m) {
 			if(def->rule(n)->body()->contains(def->defsym(m))) {
 				_context._recursive = true;
 				break;
@@ -1299,54 +1310,67 @@ void GrounderFactory::visit(Definition* def) {
 	}
 	
 	// Create definition grounder
-	_defgrounder = new DefinitionGrounder(_grounding,_definition,subgrounders);
+	_toplevelgrounder = new DefinitionGrounder(_grounding,_definition,subgrounders);
 }
 
-void GrounderFactory::visit(Rule* rule) {
+void GrounderFactory::visit(const Rule* rule) {
+//cerr << "Creating grounder for rule " << rule->to_string() << endl;
+//cerr << " -- head = " << rule->head()->to_string() << endl;
+//cerr << " -- body = " << rule->body()->to_string() << endl;
 	// Split the quantified variables in two categories: 
 	//		1. the variables that only occur in the head
 	//		2. the variables that occur in the body (and possibly in the head)
 	vector<Variable*>	headvars;
 	vector<Variable*>	bodyvars;
+//cerr << " -- nr of qvars = " << rule->nrQvars() << endl;
 	for(unsigned int n = 0; n < rule->nrQvars(); ++n) {
-		if(rule->body()->contains(rule->qvar(n))) bodyvars.push_back(rule->qvar(n));
-		else headvars.push_back(rule->qvar(n));
+		if(rule->body()->contains(rule->qvar(n)))
+			bodyvars.push_back(rule->qvar(n));
+		else
+			headvars.push_back(rule->qvar(n));
 	}
+
 	// Create head instance generator
 	InstGenerator* headgen = 0;
 	GeneratorNode* hnode = 0;
+//cerr << " -- nr of headvars = " << headvars.size() << endl;
 	for(unsigned int n = 0; n < headvars.size(); ++n) {
 		domelement* d = new domelement();
 		_varmapping[headvars[n]] = d;
 		SortTable* st = _structure->inter(headvars[n]->sort());
 		assert(st->finite());	// TODO: produce an error message
-		SortInstGenerator* tig = new SortInstGenerator(st,d);
+		SortInstGenerator* sig = new SortInstGenerator(st,d);
 		if(headvars.size() == 1) {
-			headgen = tig;
+			headgen = sig;
 			break;
 		}
-		else if(n == 0) hnode = new LeafGeneratorNode(tig);
-		else 			hnode = new OneChildGeneratorNode(tig,hnode);
+		else if(n == 0) hnode = new LeafGeneratorNode(sig);
+		else hnode = new OneChildGeneratorNode(sig,hnode);
 	}
-	if(!headgen) headgen = new TreeInstGenerator(hnode);
+//cerr << "  hnode = " << hnode << endl;
+	if(/*!headvars.empty() && */!headgen) headgen = new TreeInstGenerator(hnode);
+//cerr << "  headgen = " << headgen << endl;
 	
 	// Create body instance generator
 	InstGenerator* bodygen = 0;
 	GeneratorNode* bnode = 0;
+//cerr << " -- nr of bodyvars = " << bodyvars.size() << endl;
 	for(unsigned int n = 0; n < bodyvars.size(); ++n) {
 		domelement* d = new domelement();
 		_varmapping[bodyvars[n]] = d;
 		SortTable* st = _structure->inter(bodyvars[n]->sort());
 		assert(st->finite());	// TODO: produce an error message
-		SortInstGenerator* tig = new SortInstGenerator(st,d);
+		SortInstGenerator* sig = new SortInstGenerator(st,d);
 		if(bodyvars.size() == 1) {
-			bodygen = tig;
+			bodygen = sig;
 			break;
 		}
-		else if(n == 0) bnode = new LeafGeneratorNode(tig);
-		else 			bnode = new OneChildGeneratorNode(tig,bnode);
+		else if(n == 0) bnode = new LeafGeneratorNode(sig);
+		else bnode = new OneChildGeneratorNode(sig,bnode);
 	}
-	if(!bodygen) bodygen = new TreeInstGenerator(bnode);
+//cerr << "  bnode = " << bnode << endl;
+	if(/*!headvars.empty() && */!bodygen) bodygen = new TreeInstGenerator(bnode);
+//cerr << "  bodygen = " << bodygen << endl;
 	
 	// Create head grounder
 	_context._component = CC_HEAD;
@@ -1358,7 +1382,7 @@ void GrounderFactory::visit(Rule* rule) {
 	_context._truegen = true;				// body instance generator corresponds to an existential quantifier
 	_context._component = CC_BODY;
 	descend(rule->body());
-	FormulaGrounder* bodygr = _grounder;
+	FormulaGrounder* bodygr = _formgrounder;
 
 	// Create rule grounder
 	_rulegrounder = new RuleGrounder(_definition,headgr,bodygr,headgen,bodygen,_conjunction,_context);

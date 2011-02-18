@@ -36,24 +36,19 @@ void Visitor::visit(const EcnfTheory*)			{ /* TODO */	}
 void Visitor::visit(const SolverTheory*)		{ /* TODO */	}
 
 void Visitor::traverse(const Formula* f) {
-	for(unsigned int n = 0; n < f->nrSubforms(); ++n) {
+	for(unsigned int n = 0; n < f->nrSubforms(); ++n)
 		f->subform(n)->accept(this);
-	}
-	for(unsigned int n = 0; n < f->nrSubterms(); ++n) {
+	for(unsigned int n = 0; n < f->nrSubterms(); ++n)
 		f->subterm(n)->accept(this);
-	}
 }
 
 void Visitor::traverse(const Term* t) {
-	for(unsigned int n = 0; n < t->nrSubforms(); ++n) {
+	for(unsigned int n = 0; n < t->nrSubforms(); ++n)
 		t->subform(n)->accept(this);
-	}
-	for(unsigned int n = 0; n < t->nrSubterms(); ++n) {
+	for(unsigned int n = 0; n < t->nrSubterms(); ++n)
 		t->subterm(n)->accept(this);
-	}
-	for(unsigned int n = 0; n < t->nrSubsets(); ++n) {
+	for(unsigned int n = 0; n < t->nrSubsets(); ++n)
 		t->subset(n)->accept(this);
-	}
 }
 
 void Visitor::traverse(const Rule* r) {

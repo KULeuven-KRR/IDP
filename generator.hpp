@@ -44,7 +44,6 @@ class GeneratorNode {
 		GeneratorNode*	_parent;
 
 	public:
-		
 		// Constructors
 		GeneratorNode() : _parent(0) { }
 
@@ -67,7 +66,6 @@ class LeafGeneratorNode : public GeneratorNode {
 		GeneratorNode*	_this;		//	equal to 'this'
 	
 	public:
-		
 		// Constructor
 		LeafGeneratorNode(InstGenerator* gt) : GeneratorNode(), _generator(gt) { _this = this;	}
 
@@ -84,7 +82,6 @@ class OneChildGeneratorNode : public GeneratorNode {
 		GeneratorNode*	_child;
 	
 	public:
-
 		// Constructor
 		OneChildGeneratorNode(InstGenerator* gt, GeneratorNode* c) : GeneratorNode(), _generator(gt), _child(c) { _child->parent(this);	}
 
@@ -106,10 +103,10 @@ class TwoChildGeneratorNode : public GeneratorNode {
 		GeneratorNode*					_right;
 	
 	public:
-
 		// Constructor
 		TwoChildGeneratorNode(InstanceChecker* t, const vector<domelement*>& ov, const vector<SortTable*>& tbs, GeneratorNode* l, GeneratorNode* r) :
-			GeneratorNode(), _checker(t), _outvars(ov), _currargs(_outvars.size()), _tables(tbs), _currpositions(tbs.size()), _left(l), _right(r) { _left->parent(this); _right->parent(this);	}
+			GeneratorNode(), _checker(t), _outvars(ov), _currargs(_outvars.size()), _tables(tbs), _currpositions(tbs.size()), _left(l), _right(r) 
+			{ _left->parent(this); _right->parent(this); }
 
 		// Generate instances
 		GeneratorNode*	first()	const;
@@ -129,7 +126,6 @@ class TreeInstGenerator : public InstGenerator {
 		mutable	GeneratorNode*	_curr;	// Remember the last position of a match
 
 	public:
-
 		// Constructor
 		TreeInstGenerator(GeneratorNode* r) : _root(r), _curr(0) { }
 

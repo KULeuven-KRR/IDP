@@ -40,19 +40,19 @@ class Term {
 		virtual void	sort(Sort*)	{ }	// Set the sort of the term (only does something for VarTerm and DomainTerm)
 
 		// Inspectors
-		virtual	Sort*				sort()					const = 0;	// The sort of the term
-		virtual	unsigned int		nrSubforms()			const = 0;	// number of direct subformulas
-		virtual	unsigned int		nrSubterms()			const = 0;	// number of direct subterms
-		virtual	unsigned int		nrSubsets()				const = 0;	// number of direct subsets
-				unsigned int		nrFvars()				const { return _fvars.size();	}
-		virtual	unsigned int		nrQvars()				const = 0;	// the number of variables quantified by the term
-		virtual	Formula*			subform(unsigned int n)	const = 0;	// the n'th direct subformula
-		virtual	Term*				subterm(unsigned int n)	const = 0;	// the n'th direct subterm
-		virtual	SetExpr*			subset(unsigned int n)	const = 0;	// the n'th direct subset
-		virtual	Variable*			fvar(unsigned int n)	const { return _fvars[n];		}
-		virtual Variable*			qvar(unsigned int n)	const = 0;	// the n'th quantified variable of the term
-				const ParseInfo&	pi()					const { return _pi;				}
-		virtual bool				contains(Variable*)		const;		// true iff the term contains the variable
+		virtual	Sort*				sort()						const = 0;	// The sort of the term
+		virtual	unsigned int		nrSubforms()				const = 0;	// number of direct subformulas
+		virtual	unsigned int		nrSubterms()				const = 0;	// number of direct subterms
+		virtual	unsigned int		nrSubsets()					const = 0;	// number of direct subsets
+				unsigned int		nrFvars()					const { return _fvars.size();	}
+		virtual	unsigned int		nrQvars()					const = 0;	// the number of variables quantified by the term
+		virtual	Formula*			subform(unsigned int n)		const = 0;	// the n'th direct subformula
+		virtual	Term*				subterm(unsigned int n)		const = 0;	// the n'th direct subterm
+		virtual	SetExpr*			subset(unsigned int n)		const = 0;	// the n'th direct subset
+		virtual	Variable*			fvar(unsigned int n)		const { return _fvars[n];		}
+		virtual Variable*			qvar(unsigned int n)		const = 0;	// the n'th quantified variable of the term
+				const ParseInfo&	pi()						const { return _pi;				}
+		virtual bool				contains(const Variable*)	const;		// true iff the term contains the variable
 
 		// Visitor
 		virtual void	accept(Visitor*) const		= 0;
@@ -89,17 +89,17 @@ class VarTerm : public Term {
 		void	sort(Sort* s)	{ _var->sort(s);	}
 
 		// Inspectors
-		Sort*			sort()					const	{ return _var->sort();		}
-		Variable*		var()					const	{ return _var;				}
-		unsigned int	nrSubforms()			const	{ return 0;					}
-		unsigned int	nrSubterms()			const	{ return 0;					}
-		unsigned int	nrSubsets()				const	{ return 0;					}
-		unsigned int	nrQvars()				const	{ return 0;					}
-		Formula*		subform(unsigned int)	const	{ assert(false); return 0;	}
-		Term*			subterm(unsigned int)	const	{ assert(false); return 0;	}
-		SetExpr*		subset(unsigned int)	const	{ assert(false); return 0;	}
-		Variable*		qvar(unsigned int)		const	{ assert(false); return 0;	}
-		bool			contains(Variable* v)	const	{ return _var == v;			}	
+		Sort*			sort()						const	{ return _var->sort();		}
+		Variable*		var()						const	{ return _var;				}
+		unsigned int	nrSubforms()				const	{ return 0;					}
+		unsigned int	nrSubterms()				const	{ return 0;					}
+		unsigned int	nrSubsets()					const	{ return 0;					}
+		unsigned int	nrQvars()					const	{ return 0;					}
+		Formula*		subform(unsigned int)		const	{ assert(false); return 0;	}
+		Term*			subterm(unsigned int)		const	{ assert(false); return 0;	}
+		SetExpr*		subset(unsigned int)		const	{ assert(false); return 0;	}
+		Variable*		qvar(unsigned int)			const	{ assert(false); return 0;	}
+		bool			contains(const Variable* v)	const	{ return _var == v;			}	
 
 		// Visitor
 		void	accept(Visitor* v) const;
@@ -416,10 +416,10 @@ class TermEvaluator : public Visitor {
 
 		FiniteSortTable* returnvalue()	{ return _returnvalue;	}
 
-		void visit(VarTerm* vt);
-		void visit(FuncTerm* ft);
-		void visit(DomainTerm* dt);
-		void visit(AggTerm* at);
+		void visit(const VarTerm* vt);
+		void visit(const FuncTerm* ft);
+		void visit(const DomainTerm* dt);
+		void visit(const AggTerm* at);
 		
 };
 

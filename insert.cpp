@@ -34,14 +34,14 @@ class SortChecker : public Visitor {
 		SortChecker(Definition* d,Vocabulary* v)	: Visitor(), _vocab(v) { d->accept(this);	}
 		SortChecker(FixpDef* d,Vocabulary* v)		: Visitor(), _vocab(v) { d->accept(this);	}
 
-		void visit(PredForm*);
-		void visit(EqChainForm*);
-		void visit(FuncTerm*);
-		void visit(AggTerm*);
+		void visit(const PredForm*);
+		void visit(const EqChainForm*);
+		void visit(const FuncTerm*);
+		void visit(const AggTerm*);
 
 };
 
-void SortChecker::visit(PredForm* pf) {
+void SortChecker::visit(const PredForm* pf) {
 	PFSymbol* s = pf->symb();
 	for(unsigned int n = 0; n < s->nrSorts(); ++n) {
 		Sort* s1 = s->sort(n);
@@ -55,7 +55,7 @@ void SortChecker::visit(PredForm* pf) {
 	traverse(pf);
 }
 
-void SortChecker::visit(FuncTerm* ft) {
+void SortChecker::visit(const FuncTerm* ft) {
 	Function* f = ft->func();
 	for(unsigned int n = 0; n < f->arity(); ++n) {
 		Sort* s1 = f->insort(n);
@@ -69,7 +69,7 @@ void SortChecker::visit(FuncTerm* ft) {
 	traverse(ft);
 }
 
-void SortChecker::visit(EqChainForm* ef) {
+void SortChecker::visit(const EqChainForm* ef) {
 	Sort* s = 0;
 	unsigned int n = 0;
 	while(!s && n < ef->nrSubterms()) {
@@ -87,7 +87,7 @@ void SortChecker::visit(EqChainForm* ef) {
 	traverse(ef);
 }
 
-void SortChecker::visit(AggTerm* at) {
+void SortChecker::visit(const AggTerm* at) {
 	if(at->type() != AGGCARD) {
 		SetExpr* s = at->set();
 		if(s->nrQvars() && s->qvar(0)->sort()) {
@@ -108,7 +108,7 @@ void SortChecker::visit(AggTerm* at) {
 	Sort derivation
 **********************/
 
-class SortDeriver : public Visitor {
+class SortDeriver : public MutatingVisitor {
 
 	private:
 		map<Variable*,set<Sort*> >	_untyped;			// The untyped variables, with their possible types
@@ -121,30 +121,31 @@ class SortDeriver : public Visitor {
 		Vocabulary*					_vocab;
 
 	public:
-
 		// Constructor
-		SortDeriver(Formula* f,Vocabulary* v) : Visitor(), _vocab(v) { run(f); }
-		SortDeriver(Rule* r,Vocabulary* v)	: Visitor(), _vocab(v) { run(r); }
+		SortDeriver(Formula* f,Vocabulary* v) : MutatingVisitor(), _vocab(v) { run(f); }
+		SortDeriver(Rule* r,Vocabulary* v)	: MutatingVisitor(), _vocab(v) { run(r); }
 
 		// Run sort derivation 
 		void run(Formula*);
 		void run(Rule*);
 
 		// Visit 
-		void visit(QuantForm*);
-		void visit(PredForm*);
-		void visit(EqChainForm*);
+		Formula*	visit(QuantForm*);
+		Formula*	visit(PredForm*);
+		Formula*	visit(EqChainForm*);
+		Rule*		visit(Rule*);
+		Term*		visit(VarTerm*);
+		Term*		visit(DomainTerm*);
+		Term*		visit(FuncTerm*);
+		SetExpr*	visit(QuantSetExpr*);
 
-		void visit(Rule*);
-
-		void visit(VarTerm*);
-		void visit(DomainTerm*);
-		void visit(FuncTerm*);
-
-		void visit(QuantSetExpr*);
+		// Traversal
+		Formula*	traverse(Formula*);
+		Rule*		traverse(Rule*);
+		Term*		traverse(Term*);
+		SetExpr*	traverse(SetExpr*);
 
 	private:
-
 		// Auxiliary methods
 		void derivesorts();		// derive the sorts of the variables, based on the sorts in _untyped
 		void derivefuncs();		// disambiguate the overloaded functions
@@ -155,17 +156,47 @@ class SortDeriver : public Visitor {
 		
 };
 
-void SortDeriver::visit(QuantForm* qf) {
+Formula* SortDeriver::traverse(Formula* f) {
+	for(unsigned int n = 0; n < f->nrSubforms(); ++n)
+		f->subform(n)->accept(this);
+	for(unsigned int n = 0; n < f->nrSubterms(); ++n)
+		f->subterm(n)->accept(this);
+	return f;
+}
+
+Rule* SortDeriver::traverse(Rule* r) {
+	r->head()->accept(this);
+	r->body()->accept(this);
+	return r;
+}
+
+Term* SortDeriver::traverse(Term* t) {
+	for(unsigned int n = 0; n < t->nrSubforms(); ++n)
+		t->subform(n)->accept(this);
+	for(unsigned int n = 0; n < t->nrSubterms(); ++n)
+		t->subterm(n)->accept(this);
+	return t;
+}
+
+SetExpr* SortDeriver::traverse(SetExpr* s) {
+	for(unsigned int n = 0; n < s->nrSubforms(); ++n)
+		s->subform(n)->accept(this);
+	for(unsigned int n = 0; n < s->nrSubterms(); ++n)
+		s->subterm(n)->accept(this);
+	return s;
+}
+
+Formula* SortDeriver::visit(QuantForm* qf) {
 	if(_firstvisit) {
 		for(unsigned int n = 0; n < qf->nrQvars(); ++n) {
 			if(!(qf->qvar(n)->sort())) _untyped[qf->qvar(n)] = set<Sort*>();
 			_changed = true;
 		}
 	}
-	traverse(qf);
+	return traverse(qf);
 }
 
-void SortDeriver::visit(PredForm* pf) {
+Formula* SortDeriver::visit(PredForm* pf) {
 	PFSymbol* p = pf->symb();
 
 	// At first visit, insert the atoms over overloaded predicates
@@ -179,9 +210,10 @@ void SortDeriver::visit(PredForm* pf) {
 		_assertsort = p->sort(n);
 		pf->subterm(n)->accept(this);
 	}
+	return pf;
 }
 
-void SortDeriver::visit(EqChainForm* ef) {
+Formula* SortDeriver::visit(EqChainForm* ef) {
 	Sort* s = 0;
 	if(!_firstvisit) {
 		for(unsigned int n = 0; n < ef->nrSubterms(); ++n) {
@@ -196,25 +228,27 @@ void SortDeriver::visit(EqChainForm* ef) {
 		_assertsort = s;
 		ef->subterm(n)->accept(this);
 	}
+	return ef;
 }
 
-void SortDeriver::visit(Rule* r) {
+Rule* SortDeriver::visit(Rule* r) {
 	if(_firstvisit) {
 		for(unsigned int n = 0; n < r->nrQvars(); ++n) {
 			if(!(r->qvar(n)->sort())) _untyped[r->qvar(n)] = set<Sort*>();
 			_changed = true;
 		}
 	}
-	traverse(r);
+	return traverse(r);
 }
 
-void SortDeriver::visit(VarTerm* vt) {
+Term* SortDeriver::visit(VarTerm* vt) {
 	if((!(vt->sort())) && _assertsort) {
 		_untyped[vt->var()].insert(_assertsort);
 	}
+	return vt;
 }
 
-void SortDeriver::visit(DomainTerm* dt) {
+Term* SortDeriver::visit(DomainTerm* dt) {
 	if(_firstvisit && (!(dt->sort()))) {
 		_domelements.insert(dt);
 	}
@@ -224,9 +258,10 @@ void SortDeriver::visit(DomainTerm* dt) {
 		_changed = true;
 		_domelements.erase(dt);
 	}
+	return dt;
 }
 
-void SortDeriver::visit(FuncTerm* ft) {
+Term* SortDeriver::visit(FuncTerm* ft) {
 	Function* f = ft->func();
 
 	// At first visit, insert the terms over overloaded functions
@@ -242,9 +277,10 @@ void SortDeriver::visit(FuncTerm* ft) {
 		_assertsort = f->insort(n);
 		ft->subterm(n)->accept(this);
 	}
+	return ft;
 }
 
-void SortDeriver::visit(QuantSetExpr* qs) {
+SetExpr* SortDeriver::visit(QuantSetExpr* qs) {
 	if(_firstvisit) {
 		for(unsigned int n = 0; n < qs->nrQvars(); ++n) {
 			if(!(qs->qvar(n)->sort())) {
@@ -253,7 +289,7 @@ void SortDeriver::visit(QuantSetExpr* qs) {
 			}
 		}
 	}
-	traverse(qs);
+	return traverse(qs);
 }
 
 void SortDeriver::derivesorts() {

@@ -99,7 +99,6 @@ class FormParseInfo : public ParseInfo {
 class Sort {
 
 	private:
-
 		string			_name;		// name of the sort
 		vector<Sort*>	_parents;	// the parent sorts of the sort in the sort hierarchy
 		vector<Sort*>	_children;	// the children of the sort in the sort hierarchy 
@@ -107,7 +106,6 @@ class Sort {
 		ParseInfo		_pi;		// the place where the sort was declared 
 
 	public:
-
 		// Constructors
 		Sort(const string& name);
 		Sort(const string& name, const ParseInfo& pi);  
@@ -136,8 +134,8 @@ class Sort {
 		// Built-in sorts
 		virtual bool		builtin()	const	{ return false;	}
 		virtual SortTable*	inter()		const	{ return 0;		}	// returns the built-in
-																				// interpretation for
-																				// built-in sorts
+																	// interpretation for
+																	// built-in sorts
 		// Visitor
         void accept(Visitor*) const;
 
@@ -234,7 +232,7 @@ class PFSymbol {
 
 		// Built-in symbols 
 		virtual bool		builtin()							const { return false;	}
-		virtual PredInter*	predinter(AbstractStructure&)	const { return 0;		}	// Returns the interpretation of the symbol if it is built-in
+		virtual PredInter*	predinter(const AbstractStructure&)	const { return 0;		}	// Returns the interpretation of the symbol if it is built-in
 
 		// Overloaded symbols
 		virtual bool		overloaded()						const	{ return false;	}	// true iff the symbol 
@@ -269,8 +267,8 @@ class Predicate : public PFSymbol {
 				bool			ispred()	const { return true;			}
 
 		// Built-in symbols
-				PredInter*		predinter(AbstractStructure& s)	const { return inter(s);	}
-		virtual	PredInter*		inter(AbstractStructure&)			const { return 0;			}
+				PredInter*		predinter(const AbstractStructure& s)	const { return inter(s);	}
+		virtual	PredInter*		inter(const AbstractStructure&)			const { return 0;			}
 
 		// Overloaded symbols 
 		virtual bool				contains(Predicate* p)				const { return p == this;	}
@@ -370,8 +368,8 @@ class Function : public PFSymbol {
 				bool			ispred()				const { return false;					}
 
 		// Built-in symbols
-				PredInter*		predinter(AbstractStructure& s)	const;
-		virtual	FuncInter*		inter(AbstractStructure&)		const { return 0;		}
+				PredInter*		predinter(const AbstractStructure& s)	const;
+		virtual	FuncInter*		inter(const AbstractStructure&)			const { return 0;		}
 
 		// Overloaded symbols 
 		virtual bool				contains(Function* f)	const { return f == this;				}

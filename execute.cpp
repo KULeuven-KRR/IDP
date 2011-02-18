@@ -603,11 +603,11 @@ InfArg ModelExpansionInference::execute(const vector<InfArg>& args) const {
 	bool sat = solver->solve(sol);
 
 	if(sat){
-		for(int i=0; i<sol->getModels().size(); i++){
+		for(unsigned int i=0; i<sol->getModels().size(); i++){
 			AbstractStructure* mod = s->clone();
 			set<PredInter*>	tobesorted1;
 			set<FuncInter*>	tobesorted2;
-			for(int j=0; j<sol->getModels()[i].size(); j++) {
+			for(unsigned int j=0; j<sol->getModels()[i].size(); j++) {
 				PFSymbol* pfs = ecnfgr->translator()->symbol((sol->getModels()[i][j].getAtom().getValue()));
 				if(pfs && mod->vocabulary()->contains(pfs)) {
 					vector<domelement> vd = ecnfgr->translator()->args(sol->getModels()[i][j].getAtom().getValue());
@@ -687,11 +687,11 @@ InfArg FastMXInference::execute(const vector<InfArg>& args) const {
 	// Translate
 	InfArg a; a._setofstructures = new vector<AbstractStructure*>();
 	if(sat){
-		for(int i=0; i<sol->getModels().size(); i++){
+		for(unsigned int i=0; i<sol->getModels().size(); i++){
 			AbstractStructure* mod = structure->clone();
 			set<PredInter*>	tobesorted1;
 			set<FuncInter*>	tobesorted2;
-			for(int j=0; j<sol->getModels()[i].size(); j++) {
+			for(unsigned int j=0; j<sol->getModels()[i].size(); j++) {
 				PFSymbol* pfs = ecnfgr->translator()->symbol((sol->getModels()[i][j].getAtom().getValue()));
 				if(pfs && mod->vocabulary()->contains(pfs)) {
 					vector<domelement> vd = ecnfgr->translator()->args(sol->getModels()[i][j].getAtom().getValue());

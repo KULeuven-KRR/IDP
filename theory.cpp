@@ -256,7 +256,7 @@ void FixpDef::defsyms() {
 	Containment checking
 ***************************/
 
-bool Formula::contains(Variable* v) const {
+bool Formula::contains(const Variable* v) const {
 	for(unsigned int n = 0; n < nrQvars(); ++n)
 		if(qvar(n) == v) return true;
 	for(unsigned int n = 0; n < nrSubterms(); ++n)
@@ -268,15 +268,15 @@ bool Formula::contains(Variable* v) const {
 
 class ContainmentChecker : public Visitor {
 	private:
-		PFSymbol* 	_symbol;
-		bool		_contains;
+		const PFSymbol*	_symbol;
+		bool			_result;
 	public:
-		ContainmentChecker(const Formula* f, PFSymbol* s) : Visitor(), _symbol(s) { f->accept(this); }
-		void visit(PredForm* pf) { _contains = (pf->symb() == _symbol); }
-		bool result();
+		ContainmentChecker(const Formula* f, const PFSymbol* s) : Visitor(), _symbol(s), _result(false) { f->accept(this); }
+		void visit(const PredForm* pf) { _result = (pf->symb() == _symbol); }
+		bool result() { return _result; }
 };
 
-bool Formula::contains(PFSymbol* s) const {
+bool Formula::contains(const PFSymbol* s) const {
 	ContainmentChecker cc(this,s);
 	return cc.result();
 }
@@ -1914,7 +1914,7 @@ namespace FormulaUtils {
 	 *			negative context:
 	 *				P(t) becomes	? x : t = x & P(x).
 	 *		The fact that the rewriting is non-recursive means that in the above example, term t 
-	 *		can still contain term that are three-valued according to the structure.
+	 *		can still contain terms that are three-valued according to the structure.
 	 *
 	 * PARAMETERS
 	 *		pf			- the given atom

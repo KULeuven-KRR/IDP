@@ -64,20 +64,20 @@ class Formula : public TheoryComponent {
 		void	swapsign()	{ _sign = !_sign;	}
 
 		// Inspectors
-				bool					sign()					const { return _sign;			}
-				unsigned int			nrFvars()				const { return _fvars.size();	}
-				Variable*				fvar(unsigned int n)	const { return _fvars[n];		}
-				const FormParseInfo&	pi()					const { return _pi;				}
-		virtual	unsigned int			nrQvars()				const = 0;	// number of variables quantified by the formula
-		virtual	unsigned int			nrSubforms()			const = 0;	// number of direct subformulas
-		virtual	unsigned int			nrSubterms()			const = 0;  // number of direct subterms
-		virtual	Variable*				qvar(unsigned int n)	const = 0;	// the n'th quantified variable
-		virtual	Formula*				subform(unsigned int n)	const = 0;	// the n'th direct subformula
-		virtual	Term*					subterm(unsigned int n)	const = 0;	// the n'th direct subterm
-				bool					contains(Variable*)		const;		// true iff the formula contains the variable
-				bool					contains(PFSymbol*)		const;		// true iff the formula contains the symbol
-		virtual	bool					trueformula()			const { return false;	}
-		virtual	bool					falseformula()			const { return false;	}
+				bool					sign()						const { return _sign;			}
+				unsigned int			nrFvars()					const { return _fvars.size();	}
+				Variable*				fvar(unsigned int n)		const { return _fvars[n];		}
+				const FormParseInfo&	pi()						const { return _pi;				}
+		virtual	unsigned int			nrQvars()					const = 0;	// number of variables quantified by the formula
+		virtual	unsigned int			nrSubforms()				const = 0;	// number of direct subformulas
+		virtual	unsigned int			nrSubterms()				const = 0;  // number of direct subterms
+		virtual	Variable*				qvar(unsigned int n)		const = 0;	// the n'th quantified variable
+		virtual	Formula*				subform(unsigned int n)		const = 0;	// the n'th direct subformula
+		virtual	Term*					subterm(unsigned int n)		const = 0;	// the n'th direct subterm
+				bool					contains(const Variable*)	const;		// true iff the formula contains the variable
+				bool					contains(const PFSymbol*)	const;		// true iff the formula contains the symbol
+		virtual	bool					trueformula()				const { return false;	}
+		virtual	bool					falseformula()				const { return false;	}
 
 		// Visitor
 		virtual void		accept(Visitor* v) const	= 0;

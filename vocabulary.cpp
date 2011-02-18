@@ -664,7 +664,7 @@ Function* OverloadedFunction::disambiguate(const vector<Sort*>& vs,Vocabulary* v
 	return candidate;
 }
 
-PredInter* Function::predinter(AbstractStructure& s) const {
+PredInter* Function::predinter(const AbstractStructure& s) const {
 	FuncInter* fi = inter(s);
 	if(fi) return fi->predinter();
 	else return 0;

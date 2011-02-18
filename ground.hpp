@@ -106,24 +106,24 @@ class NaiveGrounder : public Visitor {
 
 		AbstractTheory* ground(AbstractTheory* t) { t->accept(this); return _returnTheory;	}
 
-		void visit(VarTerm*);
-		void visit(DomainTerm*);
-		void visit(FuncTerm*);
-		void visit(AggTerm*);
+		void visit(const VarTerm*);
+		void visit(const DomainTerm*);
+		void visit(const FuncTerm*);
+		void visit(const AggTerm*);
 
-		void visit(EnumSetExpr*);
-		void visit(QuantSetExpr*);
+		void visit(const EnumSetExpr*);
+		void visit(const QuantSetExpr*);
 
-		void visit(PredForm*);
-		void visit(EqChainForm*);
-		void visit(EquivForm*);
-		void visit(QuantForm*);
-		void visit(BoolForm*);
+		void visit(const PredForm*);
+		void visit(const EqChainForm*);
+		void visit(const EquivForm*);
+		void visit(const QuantForm*);
+		void visit(const BoolForm*);
 
-		void visit(Rule*);
-		void visit(FixpDef*);
-		void visit(Definition*);
-		void visit(Theory*);
+		void visit(const Rule*);
+		void visit(const FixpDef*);
+		void visit(const Definition*);
+		void visit(const Theory*);
 
 };
 
@@ -168,9 +168,9 @@ class TopLevelGrounder {
 
 class EcnfGrounder : public TopLevelGrounder {
 	private:
-		EcnfTheory*		_original;
+		const EcnfTheory*		_original;
 	public:
-		EcnfGrounder(GroundTheory* gt, EcnfTheory* orig) : TopLevelGrounder(gt), _original(orig) { }
+		EcnfGrounder(GroundTheory* gt, const EcnfTheory* orig) : TopLevelGrounder(gt), _original(orig) { }
 		bool run() const;
 };
 
@@ -390,8 +390,8 @@ class HeadGrounder {
 		vector<SortTable*>			_tables;
 	public:
 		HeadGrounder(GroundTheory* gt, InstanceChecker* pc, InstanceChecker* cc, PFSymbol* s, 
-			const vector<TermGrounder*>&, const vector<SortTable*>&);
-		int	run()	const;
+					const vector<TermGrounder*>&, const vector<SortTable*>&);
+		int	run() const;
 
 };
 
@@ -407,8 +407,10 @@ class RuleGrounder {
 		bool				_conj;
 //		bool				_recursive;
 	public:
-		RuleGrounder(GroundDefinition* def, HeadGrounder* hgr, FormulaGrounder* bgr, InstGenerator* hig, InstGenerator* big, bool conj, GroundingContext& ct) :
-			_definition(def), _headgrounder(hgr), _bodygrounder(bgr), _headgenerator(hig), _bodygenerator(big), _conj(conj), _context(ct) { }
+		RuleGrounder(GroundDefinition* def, HeadGrounder* hgr, FormulaGrounder* bgr,
+					InstGenerator* hig, InstGenerator* big, bool conj, GroundingContext& ct) :
+			_definition(def), _headgrounder(hgr), _bodygrounder(bgr), _headgenerator(hig),
+			_bodygenerator(big), _conj(conj), _context(ct) { }
 		bool run() const;
 };
 
@@ -447,6 +449,11 @@ class GrounderFactory : public Visitor {
 		void	RestoreContext();	// Set _context to the top of the stack and pop the stack
 		void	DeeperContext(bool);
 
+		// Descend in the parse tree while taking care of the context
+		void	descend(Formula* f); 
+		void	descend(Term* t);
+		void	descend(Rule* r);
+		
 		// Variable mapping
 		map<Variable*,domelement*>	_varmapping;	// Maps variables to their counterpart during grounding.
 													// That is, the corresponding domelement* acts as a variable+value.
@@ -465,40 +472,35 @@ class GrounderFactory : public Visitor {
 		TopLevelGrounder*		_toplevelgrounder;
 		HeadGrounder*			_headgrounder;
 		RuleGrounder*			_rulegrounder;
-		DefinitionGrounder*		_defgrounder;
 
-		// Descend in the parse tree while taking care of the context
-		void	descend(Formula* f); 
-		void	descend(Term* t);
-		
 	public:
 		// Constructor
 		GrounderFactory(AbstractStructure* structure): _structure(structure) { }
 
 		// Factory method
-		TopLevelGrounder* create(AbstractTheory* theory);
-		TopLevelGrounder* create(AbstractTheory* theory, MinisatID::WrappedPCSolver* solver);
+		TopLevelGrounder* create(const AbstractTheory* theory);
+		TopLevelGrounder* create(const AbstractTheory* theory, MinisatID::WrappedPCSolver* solver);
 
 		// Visitors
-		void visit(EcnfTheory*);
-		void visit(Theory*);
+		void visit(const EcnfTheory*);
+		void visit(const Theory*);
 
-		void visit(PredForm*);
-		void visit(BoolForm*);
-		void visit(QuantForm*);
-		void visit(EquivForm*);
-		void visit(EqChainForm*);
+		void visit(const PredForm*);
+		void visit(const BoolForm*);
+		void visit(const QuantForm*);
+		void visit(const EquivForm*);
+		void visit(const EqChainForm*);
 
-		void visit(VarTerm*);
-		void visit(DomainTerm*);
-		void visit(FuncTerm*);
-		void visit(AggTerm*);
+		void visit(const VarTerm*);
+		void visit(const DomainTerm*);
+		void visit(const FuncTerm*);
+		void visit(const AggTerm*);
 
-		void visit(EnumSetExpr*);
-		void visit(QuantSetExpr*);
+		void visit(const EnumSetExpr*);
+		void visit(const QuantSetExpr*);
 
-		void visit(Definition*);
-		void visit(Rule*);
+		void visit(const Definition*);
+		void visit(const Rule*);
 
 };
 

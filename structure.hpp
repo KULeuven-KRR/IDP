@@ -1069,11 +1069,11 @@ class Structure : public AbstractStructure {
 		~Structure();
 
 		// Mutators
-		void	vocabulary(Vocabulary* v);			// set the vocabulary
-		void	inter(Sort* s,SortTable* d);		// set the domain of s to d.
-		void	inter(Predicate* p, PredInter* i);	// set the interpretation of p to i.
-		void	inter(Function* f, FuncInter* i);	// set the interpretation of f to i.
-		void	addElement(Element,ElementType,Sort*);	// add the given element to the interpretation of the given sort
+		void	vocabulary(Vocabulary* v);					// set the vocabulary
+		void	inter(Sort* s,SortTable* d) const;			// set the domain of s to d. TODO: should not be const!
+		void	inter(Predicate* p, PredInter* i) const;	// set the interpretation of p to i. TODO: should not be const!
+		void	inter(Function* f, FuncInter* i) const;		// set the interpretation of f to i. TODO: should not be const!
+		void	addElement(Element,ElementType,Sort*);		// add the given element to the interpretation of the given sort
 		void	functioncheck();					// check the correctness of the function tables
 		void	autocomplete();						// set the interpretation of all predicates and functions that 
 													// do not yet have an interpretation to the least precise 
@@ -1107,10 +1107,10 @@ class AbstractTheory;
 namespace StructUtils {
 
 	// Make a theory containing all literals that are true according to the given structure
-	AbstractTheory*		convert_to_theory(AbstractStructure*);	
+	AbstractTheory*		convert_to_theory(const AbstractStructure*);	
 
 	// Compute the complement of the given table in the given structure
-	PredTable*	complement(PredTable*,const vector<Sort*>&, AbstractStructure*);
+	PredTable*	complement(const PredTable*,const vector<Sort*>&,const AbstractStructure*);
 
 }
 
