@@ -901,10 +901,10 @@ void SolverTheory::addDefinition(const GroundDefinition& d) {
 		}
 		switch(grb._type) {
 			case RT_CONJ:
-				_solver->addConjRule(head,body);	
+				_solver->addConjRule(head,body);
 				break;
 			case RT_DISJ:
-				_solver->addDisjRule(head,body);	
+				_solver->addDisjRule(head,body);
 				break;
 			default:
 				assert(false);

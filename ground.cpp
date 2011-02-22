@@ -1314,15 +1314,11 @@ void GrounderFactory::visit(const Definition* def) {
 }
 
 void GrounderFactory::visit(const Rule* rule) {
-//cerr << "Creating grounder for rule " << rule->to_string() << endl;
-//cerr << " -- head = " << rule->head()->to_string() << endl;
-//cerr << " -- body = " << rule->body()->to_string() << endl;
 	// Split the quantified variables in two categories: 
 	//		1. the variables that only occur in the head
 	//		2. the variables that occur in the body (and possibly in the head)
 	vector<Variable*>	headvars;
 	vector<Variable*>	bodyvars;
-//cerr << " -- nr of qvars = " << rule->nrQvars() << endl;
 	for(unsigned int n = 0; n < rule->nrQvars(); ++n) {
 		if(rule->body()->contains(rule->qvar(n)))
 			bodyvars.push_back(rule->qvar(n));
@@ -1333,7 +1329,6 @@ void GrounderFactory::visit(const Rule* rule) {
 	// Create head instance generator
 	InstGenerator* headgen = 0;
 	GeneratorNode* hnode = 0;
-//cerr << " -- nr of headvars = " << headvars.size() << endl;
 	for(unsigned int n = 0; n < headvars.size(); ++n) {
 		domelement* d = new domelement();
 		_varmapping[headvars[n]] = d;
@@ -1347,14 +1342,11 @@ void GrounderFactory::visit(const Rule* rule) {
 		else if(n == 0) hnode = new LeafGeneratorNode(sig);
 		else hnode = new OneChildGeneratorNode(sig,hnode);
 	}
-//cerr << "  hnode = " << hnode << endl;
-	if(/*!headvars.empty() && */!headgen) headgen = new TreeInstGenerator(hnode);
-//cerr << "  headgen = " << headgen << endl;
+	if(!headgen) headgen = new TreeInstGenerator(hnode);
 	
 	// Create body instance generator
 	InstGenerator* bodygen = 0;
 	GeneratorNode* bnode = 0;
-//cerr << " -- nr of bodyvars = " << bodyvars.size() << endl;
 	for(unsigned int n = 0; n < bodyvars.size(); ++n) {
 		domelement* d = new domelement();
 		_varmapping[bodyvars[n]] = d;
@@ -1368,9 +1360,7 @@ void GrounderFactory::visit(const Rule* rule) {
 		else if(n == 0) bnode = new LeafGeneratorNode(sig);
 		else bnode = new OneChildGeneratorNode(sig,bnode);
 	}
-//cerr << "  bnode = " << bnode << endl;
-	if(/*!headvars.empty() && */!bodygen) bodygen = new TreeInstGenerator(bnode);
-//cerr << "  bodygen = " << bodygen << endl;
+	if(!bodygen) bodygen = new TreeInstGenerator(bnode);
 	
 	// Create head grounder
 	_context._component = CC_HEAD;
