@@ -497,27 +497,8 @@ int ClauseGrounder::finish(vector<int>& cl) const {
 	if(cl.empty())
 		return result2();
 	else if(cl.size() == 1) {
-		/*if(_sentence) {
-			_grounding->addUnitClause(_sign ? cl[0] : -cl[0]);
-			return _true;
-		}*/
-		//else
-			return _sign ? cl[0] : -cl[0];
+		return _sign ? cl[0] : -cl[0];
 	}
-/*	else if(_sentence) {
-		if(_conj == _sign) {
-			for(unsigned int n = 0; n < cl.size(); ++n)
-				_grounding->addUnitClause(_sign ? cl[n] : -cl[n]);
-		}
-		else {
-			if(! _sign) {
-				for(unsigned int n = 0; n < cl.size(); ++n)
-					cl[n] = -cl[n];
-			}
-			_grounding->addClause(cl);
-		}
-		return _true;
-	}	*/
 	else {
 		TsType tp = _context._tseitin;
 		if(!_sign) {
@@ -1102,6 +1083,9 @@ void GrounderFactory::visit(const BoolForm* bf) {
 	// Find out whether this formula will be grounded to a conjunction.
 	_conjunction = bf->conj() == bf->sign();
 
+	// Make tseitin rules when in recursive definition.
+	if(_context._recursive) _context._tseitin = TS_RULE;
+
 	// Handle a top-level conjunction without creating tseitin atoms
 	if(_context._component == CC_SENTENCE && (bf->conj() == bf->sign())) {
 		// If bf is a negated disjunction, push the negation one level deeper.
@@ -1174,6 +1158,9 @@ void GrounderFactory::visit(const QuantForm* qf) {
 	GeneratorFactory gf;
 	InstGenerator* gen = gf.create(vars,tables);
 
+	// Make tseitin rules when in recursive definition.
+	if(_context._recursive) _context._tseitin = TS_RULE;
+
 	// Handle top-level universal quantifiers efficiently
 	if(_context._component == CC_SENTENCE && (qf->sign() == qf->univ())) {
 		Formula* newsub = qf->subf()->clone();
@@ -1219,7 +1206,7 @@ void GrounderFactory::visit(const EquivForm* ef) {
 	SaveContext();
 	DeeperContext(ef->sign());
 	_context._positive = PC_BOTH;
-	_context._tseitin = TS_EQ;
+	_context._tseitin = _context._recursive ? TS_RULE : TS_EQ;
 	descend(ef->left());
 	FormulaGrounder* leftg = _formgrounder;
 	descend(ef->right());
