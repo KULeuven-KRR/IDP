@@ -93,7 +93,27 @@ unsigned int GroundTranslator::addSymbol(PFSymbol* pfs) {
 	return _symboffsets.size()-1;
 }
 
-
+string GroundTranslator::printatom(int nr) const {
+	stringstream s;
+	nr = abs(nr);
+	if(nr >= _backsymbtable.size()) {
+		return "error";
+	}
+	PFSymbol* pfs = symbol(nr);
+	if(pfs) {
+		s << pfs->to_string();
+		if(!(args(nr).empty())) {
+			s << "(";
+			for(unsigned int c = 0; c < args(nr).size(); ++c) {
+				s << ElementUtil::ElementToString((args(nr))[c]);
+				if(c !=  args(nr).size()-1) s << ",";
+			}
+			s << ")";
+		}
+	}
+	else s << "tseitin_" << nr;
+	return s.str();
+}
 /********************************************************
 	Basic top-down, non-optimized grounding algorithm
 ********************************************************/
@@ -742,17 +762,20 @@ bool RuleGrounder::run() const {
 		_bodygrounder->run(body);
 		bool falsebody = (body.empty() && !_conj) || (body.size() == 1 && body[0] == _false);
 		if(!falsebody) {
+			bool truebody = (body.empty() && _conj) || (body.size() == 1 && body[0] == _true);
 			if(_headgenerator->first()) {
 				int head = _headgrounder->run();
 				assert(head != _true);
 				if(head != _false) {
-					_definition->addRule(head,body,_conj,_context._recursive);
+					if(truebody) _definition->addTrueRule(head);
+					else _definition->addRule(head,body,_conj,_context._recursive);
 				}
 				while(_headgenerator->next()) {
 					head = _headgrounder->run();
 					assert(head != _true);
 					if(head != _false) {
-						_definition->addRule(head,body,_conj,_context._recursive);
+						if(truebody) _definition->addTrueRule(head);
+						else _definition->addRule(head,body,_conj,_context._recursive);
 					}
 				}
 			}
@@ -762,17 +785,20 @@ bool RuleGrounder::run() const {
 			_bodygrounder->run(body);
 			bool falsebody = (body.empty() && !_conj) || (body.size() == 1 && body[0] == _false);
 			if(!falsebody) {
+				bool truebody = (body.empty() && _conj) || (body.size() == 1 && body[0] == _true);
 				if(_headgenerator->first()) {
 					int head = _headgrounder->run();
 					assert(head != _true);
 					if(head != _false) {
-						_definition->addRule(head,body,_conj,_context._recursive);
+						if(truebody) _definition->addTrueRule(head);
+						else _definition->addRule(head,body,_conj,_context._recursive);
 					}
 					while(_headgenerator->next()) {
 						head = _headgrounder->run();
 						assert(head != _true);
 						if(head != _false) {
-							_definition->addRule(head,body,_conj,_context._recursive);
+							if(truebody) _definition->addTrueRule(head);
+							else _definition->addRule(head,body,_conj,_context._recursive);
 						}
 					}
 				}
@@ -1293,15 +1319,14 @@ void GrounderFactory::visit(const QuantSetExpr* s) {
 
 void GrounderFactory::visit(const Definition* def) {
 	// Create new ground definition
-	_definition = new GroundDefinition();
+	_definition = new GroundDefinition(_grounding->translator());
 
 	// Create rule grounders
 	vector<RuleGrounder*> subgrounders;
 	for(unsigned int n = 0; n < def->nrRules(); ++n) {
-		//TODO: Check if rule is recursive
 		for(unsigned int m = 0; m < def->nrDefsyms(); ++m) {
 			if(def->rule(n)->body()->contains(def->defsym(m))) {
-				_context._recursive = true;
+				_context._recursive = true;		// TODO: more fine-grained recursive context
 				break;
 			}
 		}
@@ -1320,10 +1345,12 @@ void GrounderFactory::visit(const Rule* rule) {
 	vector<Variable*>	headvars;
 	vector<Variable*>	bodyvars;
 	for(unsigned int n = 0; n < rule->nrQvars(); ++n) {
-		if(rule->body()->contains(rule->qvar(n)))
+		if(rule->body()->contains(rule->qvar(n))) {
 			bodyvars.push_back(rule->qvar(n));
-		else
+		}
+		else {
 			headvars.push_back(rule->qvar(n));
+		}
 	}
 
 	// Create head instance generator
