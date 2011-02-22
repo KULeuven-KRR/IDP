@@ -541,6 +541,66 @@ void GroundTheory::transformForAdd(EcnfClause& vi, bool firstIsPrinted) {
 	}
 }
 
+void GroundTheory::transformForAdd(GroundRuleBody& grb, vector<int>& heads, vector<GroundRuleBody>& bodies) {
+	for(unsigned int n = 0; n < grb._body.size(); ++n) {
+		int atom = abs(grb._body[n]);
+		if(_translator->isTseitin(atom) && _printedtseitins.find(atom) == _printedtseitins.end()) {
+			_printedtseitins.insert(atom);
+			const TsBody& body = _translator->tsbody(atom);
+			if(body._type == TS_IMPL || body._type == TS_EQ) {
+				if(body._conj) {
+					for(unsigned int m = 0; m < body._body.size(); ++m) {
+						vector<int> cl(2,-atom);
+						cl[1] = body._body[m];
+						addClause(cl,true);	// NOTE: apply folding?
+					}
+				}
+				else {
+					vector<int> cl(body._body.size()+1,-atom);
+					for(unsigned int m = 0; m < body._body.size(); ++m)
+						cl[m+1] = body._body[m];
+					addClause(cl,true);
+				}
+			}
+			if(body._type == TS_RIMPL || body._type == TS_EQ) {
+				if(body._conj) {
+					vector<int> cl(body._body.size()+1,atom);
+					for(unsigned int m = 0; m < body._body.size(); ++m) cl[m+1] = -body._body[m];
+					addClause(cl,true);
+				}
+				else {
+					for(unsigned int m = 0; m < body._body.size(); ++m) {
+						vector<int> cl(2,atom);
+						cl[1] = -body._body[m];
+						addClause(cl,true);	// NOTE: apply folding?
+					}
+				}
+			}
+			if(body._type == TS_RULE) {
+				heads.push_back(atom);
+				GroundRuleBody rb;
+				rb._body = body._body;
+				rb._recursive = true;
+				rb._type = body._conj ? RT_CONJ : RT_DISJ;
+				bodies.push_back(rb);
+				transformForAdd(rb,heads,bodies);
+			}
+		}	
+	}
+}
+
+void GroundTheory::transformForAdd(GroundDefinition& d) {
+	vector<int> heads;
+	vector<GroundRuleBody> bodies;
+	for(map<int,GroundRuleBody>::iterator it = d._rules.begin(); it != d._rules.end(); ++it) {
+		transformForAdd(it->second,heads,bodies);
+	}
+	for(unsigned int n = 0; n < heads.size(); ++n) {
+		d._rules[heads[n]] = bodies[n];
+	}
+}
+
+
 /******************************
 	Ecnf theory definitions
 ******************************/
@@ -548,6 +608,12 @@ void GroundTheory::transformForAdd(EcnfClause& vi, bool firstIsPrinted) {
 void EcnfTheory::addClause(EcnfClause& cl, bool firstIsPrinted) {
 	transformForAdd(cl,firstIsPrinted);
 	_clauses.push_back(cl);
+}
+
+void GroundDefinition::addTrueRule(int head) {
+	GroundRuleBody& grb = _rules[head];
+	grb._type = RT_TRUE;
+	grb._body = vector<int>(0);
 }
 
 void GroundDefinition::addRule(int head, const vector<int>& body, bool conj, bool recursive) {
@@ -837,19 +903,7 @@ string EcnfTheory::to_string() const {
 		else {
 			for(unsigned int m = 0; m < _clauses[n].size(); ++m) {
 				if(_clauses[n][m] < 0) s << '~';
-				PFSymbol* pfs = _translator->symbol(_clauses[n][m]);
-				if(pfs) {
-					s << pfs->to_string();
-					if(!(_translator->args(_clauses[n][m])).empty()) {
-						s << "(";
-						for(unsigned int c = 0; c < _translator->args(_clauses[n][m]).size(); ++c) {
-							s << ElementUtil::ElementToString((_translator->args(_clauses[n][m]))[c]);
-							if(c !=  _translator->args(_clauses[n][m]).size()-1) s << ",";
-						}
-						s << ")";
-					}
-				}
-				else s << "tseitin_" << abs(_clauses[n][m]);
+				s << _translator->printatom(_clauses[n][m]);
 				if(m < _clauses[n].size()-1) s << " | ";
 			}
 		}
@@ -859,7 +913,44 @@ string EcnfTheory::to_string() const {
 		}
 		s << "0\n";
 	}
-	//TODO: repeat above for definitions etc...
+
+	for(unsigned int n = 0; n < _definitions.size(); ++n) {
+		s << _definitions[n].to_string();
+	}
+	//TODO: repeat above for fixpoint definitions
+	return s.str();
+}
+
+string GroundDefinition::to_string() const {
+	stringstream s;
+	s << "{";
+	for(map<int,GroundRuleBody>::const_iterator it = _rules.begin(); it != _rules.end(); ++it) {
+		s << _translator->printatom(it->first) << " <- ";
+		const GroundRuleBody& body = it->second;
+		if(body._type == RT_TRUE) s << "true.";
+		else if(body._type == RT_FALSE) s << "false.";
+		else if(body._type == RT_AGG) {
+			// TODO
+			assert(false);
+		}
+		else {
+			char c = body._type == RT_CONJ ? '&' : '|';
+			for(unsigned int n = 0; n < body._body.size(); ++n) {
+				if(body._body[n] < 0) s << '~';
+				s << _translator->printatom(body._body[n]) << ' ' << c << ' ';
+			}
+			s << ". ";
+		}
+		s << "// ";
+		if(body._type == RT_TRUE || body._type == RT_CONJ || body._type == RT_UNARY) s << "C ";
+		else if(body._type == RT_FALSE || body._type == RT_DISJ) s << "D "; 
+		else /* TODO */ assert(false);
+		s << it->first << ' ';
+		for(unsigned int n = 0; n < body._body.size(); ++n) 
+			s << body._body[n] << ' ';
+		s << "0\n";
+	}
+	s << "}";
 	return s.str();
 }
 
@@ -889,7 +980,8 @@ void SolverTheory::addClause(EcnfClause& cl, bool firstIsPrinted){
 	_solver->addClause(mcl);
 }
 
-void SolverTheory::addDefinition(const GroundDefinition& d) {
+void SolverTheory::addDefinition(GroundDefinition& d) {
+	transformForAdd(d);
 	// TODO: include definition ID
 	for(map<int,GroundRuleBody>::const_iterator it = d._rules.begin(); it != d._rules.end(); ++it) {
 		const GroundRuleBody& grb = it->second;

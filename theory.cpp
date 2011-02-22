@@ -864,7 +864,7 @@ class TheoryConvertor : public Visitor {
 		// Intermediate return values
 		int					_curratom;			// Returned atom
 		EcnfClause			_currclause;		// Returned set of literals
-		EcnfDefinition		_currdefinition;	// Returned definition
+		GroundDefinition	_currdefinition;	// Returned definition
 		EcnfFixpDef			_currfixpdef;		// Returned fixpoint definitionn
 
 		// Intermediate return value is an aggregate expression
@@ -928,7 +928,7 @@ void TheoryConvertor::visit(const Theory* t) {
 	// definitions
 	for(unsigned int n = 0; n < t->nrDefinitions(); ++n) {
 		_indef = true; _infixpdef = false;
-		_currdefinition = EcnfDefinition();
+		_currdefinition = GroundDefinition();
 		t->definition(n)->accept(this);
 		_returnvalue->addDefinition(_currdefinition);
 	}

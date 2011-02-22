@@ -222,7 +222,13 @@ struct GroundRuleBody {
 struct GroundDefinition {
 	GroundTranslator*		_translator;
 	map<int,GroundRuleBody>	_rules;			// maps a head to its corresponding body
+
+	GroundDefinition() { }
+	GroundDefinition(GroundTranslator* tr) : _translator(tr) { }
+	void addTrueRule(int head);
 	void addRule(int head, const vector<int>& body, bool conj, bool recursive);
+	void addAgg(const EcnfAgg& a, GroundTranslator* t) { /* TODO */ }
+	string to_string() const;
 };
 
 /** Propositional fixpoint definition **/
@@ -260,11 +266,13 @@ class GroundTheory : public AbstractTheory {
 				void add(FixpDef* fd)		{ assert(false);	}
 
 				void transformForAdd(EcnfClause& cl, bool firstIsPrinted = false);
+				void transformForAdd(GroundDefinition& d);
+				void transformForAdd(GroundRuleBody& grb, vector<int>& heads, vector<GroundRuleBody>& bodies);
 
 		virtual void addClause(EcnfClause& cl, bool firstIsPrinted = false) = 0;
 				void addEmptyClause()		{ EcnfClause c(0); addClause(c);	}
 				void addUnitClause(int l)	{ EcnfClause c(1,l); addClause(c);	}
-		virtual void addDefinition(const GroundDefinition&) = 0;
+		virtual void addDefinition(GroundDefinition&) = 0;
 
 
 
@@ -277,11 +285,11 @@ class EcnfTheory : public GroundTheory {
 	private:
 		GroundFeatures			_features;
 		
-		vector<EcnfClause>		_clauses;	
-		vector<EcnfDefinition>	_definitions;
-		vector<EcnfAgg>			_aggregates;
-		vector<EcnfFixpDef>		_fixpdefs;
-		vector<EcnfSet>			_sets;
+		vector<EcnfClause>			_clauses;	
+		vector<GroundDefinition>	_definitions;
+		vector<EcnfAgg>				_aggregates;
+		vector<EcnfFixpDef>			_fixpdefs;
+		vector<EcnfSet>				_sets;
 
 	public:
 
@@ -291,11 +299,12 @@ class EcnfTheory : public GroundTheory {
 
 		// Mutators
 		void addClause(EcnfClause& cl, bool firstIsPrinted = false);
-		void addDefinition(const EcnfDefinition& d)	{ _definitions.push_back(d); 
+/*		void addDefinition(const EcnfDefinition& d)	{ _definitions.push_back(d); 
 													  _features._containsDefinitions = true;	
 													  _features._containsAggregates = 
-														_features._containsAggregates || d.containsAgg();				}
-		void addDefinition(const GroundDefinition&) { /* TODO */ }
+														_features._containsAggregates || d.containsAgg();				}*/
+		void addDefinition(GroundDefinition& d)		{ transformForAdd(d);
+													  _definitions.push_back(d); }
 		void addFixpDef(const EcnfFixpDef& d)		{ _fixpdefs.push_back(d); 
 													  _features._containsFixpDefs = true;		
 													  _features._containsAggregates = 
@@ -341,7 +350,7 @@ class SolverTheory : public GroundTheory {
 
 		// Mutators
 		void	addClause(EcnfClause& cl, bool firstIsPrinted = false);
-		void	addDefinition(const GroundDefinition&);
+		void	addDefinition(GroundDefinition&);
 
 		// Inspectors
 		unsigned int	nrSentences()				const { assert(false); /*TODO*/	}

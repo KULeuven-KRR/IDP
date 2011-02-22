@@ -81,6 +81,8 @@ class GroundTranslator  {
 		const TsBody&				tsbody(int l)	const	{ return _tsbodies.find(abs(l))->second;			}
 		const GroundSet&			groundset(int nr)	const	{ return _sets[nr];				}
 
+		string						printatom(int nr)	const;
+
 };
 
 
