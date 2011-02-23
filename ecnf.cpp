@@ -927,17 +927,22 @@ string GroundDefinition::to_string() const {
 	for(map<int,GroundRuleBody>::const_iterator it = _rules.begin(); it != _rules.end(); ++it) {
 		s << _translator->printatom(it->first) << " <- ";
 		const GroundRuleBody& body = it->second;
-		if(body._type == RT_TRUE) s << "true.";
-		else if(body._type == RT_FALSE) s << "false.";
+		if(body._type == RT_TRUE) s << "true. ";
+		else if(body._type == RT_FALSE) s << "false. ";
 		else if(body._type == RT_AGG) {
 			// TODO
 			assert(false);
 		}
 		else {
 			char c = body._type == RT_CONJ ? '&' : '|';
-			for(unsigned int n = 0; n < body._body.size(); ++n) {
-				if(body._body[n] < 0) s << '~';
-				s << _translator->printatom(body._body[n]) << ' ' << c << ' ';
+			if(!body._body.empty()) {
+				if(body._body[0] < 0) s << '~';
+				s << _translator->printatom(body._body[0]);
+				for(unsigned int n = 1; n < body._body.size(); ++n) {
+					s << ' ' << c << ' ';
+					if(body._body[n] < 0) s << '~';
+					s << _translator->printatom(body._body[n]);
+				}
 			}
 			s << ". ";
 		}
@@ -997,6 +1002,18 @@ void SolverTheory::addDefinition(GroundDefinition& d) {
 				break;
 			case RT_DISJ:
 				_solver->addDisjRule(head,body);
+				break;
+			case RT_TRUE:
+				_solver->addConjRule(head,body);
+				break;
+			case RT_FALSE:
+				_solver->addDisjRule(head,body);
+				break;
+			case RT_UNARY:
+				_solver->addConjRule(head,body);
+				break;
+			case RT_AGG:
+				assert(false);
 				break;
 			default:
 				assert(false);

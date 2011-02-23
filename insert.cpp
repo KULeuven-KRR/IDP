@@ -2318,6 +2318,7 @@ namespace Insert {
 			}
 			// Create a new rule
 			if(!(bv.empty())) body = new QuantForm(true,false,bv,body,FormParseInfo((body->pi())));
+cerr << "body = " << body->to_string() << endl;
 			Rule* r = new Rule(hv,head,body,pi);
 			// Sort derivation
 			SortDeriver sd(r,_currvocab);
@@ -2437,7 +2438,7 @@ namespace Insert {
 				YYLTYPE l; 
 				l.first_line = (nst->_pi).line();
 				l.first_column = (nst->_pi).col();
-				v = quantifiedvar((nst->_name)[0],l);
+				v = quantifiedvar(name,l);
 				t = new VarTerm(v,nst->_pi);
 			}
 			delete(nst);
