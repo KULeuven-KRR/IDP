@@ -359,6 +359,7 @@ class AggForm : public Formula {
 		Term*			subterm(unsigned int n)	const { return (n ? _right : _left);	}
 		Term*			left()					const { return _left;					}
 		AggTerm*		right()					const { return _right;					}
+		char			comp()					const { return _comp;					}
 
 		// Visitor
 		void		accept(Visitor* v) const;
@@ -467,7 +468,7 @@ class Rule {
 		Rule(const vector<Variable*>& vv, PredForm* h, Formula* b, const ParseInfo& pi) : 
 			_head(h), _body(b), _vars(vv), _pi(pi) { }
 
-		Rule*	clone()									const;
+		Rule*	clone()	const;
 
 		// Destructor
 		~Rule() { }
@@ -616,6 +617,7 @@ class AbstractTheory {
 		virtual Definition*			definition(unsigned int n)	const = 0;	// the n'th definition in the theory
 		virtual FixpDef*			fixpdef(unsigned int n)		const = 0;  // the n'th fixpoint definition in the theory
 				TheoryComponent*	component(unsigned int n)	const;
+		virtual AbstractTheory*		clone()						const = 0;
 
 		// Visitor
 		virtual void			accept(Visitor*) const		= 0;

@@ -2437,7 +2437,7 @@ namespace Insert {
 				YYLTYPE l; 
 				l.first_line = (nst->_pi).line();
 				l.first_column = (nst->_pi).col();
-				v = quantifiedvar((nst->_name)[0],l);
+				v = quantifiedvar(name,l);
 				t = new VarTerm(v,nst->_pi);
 			}
 			delete(nst);

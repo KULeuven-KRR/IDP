@@ -33,11 +33,25 @@ enum TsType { TS_EQ, TS_RULE, TS_IMPL, TS_RIMPL };
 /*
  * A complete definition of a tseitin atom
 */
-struct TsBody {
-	vector<int> _body;	// the literals in the subformula replaced by the tseitin
-	bool		_conj;	// if true, the replaced subformula is the conjunction of the literals in _body,
-						// if false, the replaced subformula is the disjunction of the literals in _body
-	TsType		_type;	// the type of "tseitin definition"
+class TsBody {
+	public:
+		TsType		_type;	// the type of "tseitin definition"
+		virtual ~TsBody() {}
+};
+
+class PCTsBody : public TsBody {
+	public:
+		vector<int> _body;	// the literals in the subformula replaced by the tseitin
+		bool		_conj;	// if true, the replaced subformula is the conjunction of the literals in _body,
+							// if false, the replaced subformula is the disjunction of the literals in _body
+};
+
+class AggTsBody : public TsBody {
+	public:
+		int		_setnr;
+		AggType	_aggtype;
+		bool	_lower;
+		double	_bound;
 };
 
 /*
@@ -62,7 +76,7 @@ class GroundTranslator  {
 		queue<int>									_freesetnumbers;	// keeps set numbers that were freed
 																		// and can be used again
 
-		map<int,TsBody>								_tsbodies;		// keeps mapping between Tseitin numbers and bodies
+		map<int,TsBody*>							_tsbodies;		// keeps mapping between Tseitin numbers and bodies
 
 		vector<GroundSet>							_sets;			// keeps mapping between Set numbers and sets
 
@@ -71,6 +85,7 @@ class GroundTranslator  {
 
 		int							translate(unsigned int,const vector<domelement>&);
 		int							translate(const vector<int>& cl, bool conj, TsType tp);
+		int							translate(int setnr, AggType tp, char comp, double bound, TsType tp);
 		int							translate(PFSymbol*,const vector<TypedElement>&);
 		int							translateSet(const vector<int>&,const vector<double>&,const vector<double>&);
 		int							nextNumber();
@@ -78,7 +93,7 @@ class GroundTranslator  {
 		const vector<domelement>&	args(int n)		const	{ return _backargstable[abs(n)];	}
 		unsigned int				addSymbol(PFSymbol* pfs);
 		bool						isTseitin(int l) const	{ return symbol(l) == 0;			}
-		const TsBody&				tsbody(int l)	const	{ return _tsbodies.find(abs(l))->second;			}
+		TsBody*						tsbody(int l)	const	{ return _tsbodies.find(abs(l))->second;			}
 		const GroundSet&			groundset(int nr)	const	{ return _sets[nr];				}
 
 		string						printatom(int nr)	const;
@@ -288,13 +303,17 @@ class AtomGrounder : public FormulaGrounder {
 
 class AggGrounder : public FormulaGrounder {
 	private:
-		AggType			_type;
 		SetGrounder*	_setgrounder;
+		TermGrounder*	_boundgrounder;
+		AggType			_type;
+		char			_comp;
+		bool			_sign;
 	public:
-		AggGrounder(GroundTranslator* tr, GroundingContext gc, AggType tp, SetGrounder* sg) :
-			FormulaGrounder(tr,gc), _type(tp), _setgrounder(sg) { }
+		AggGrounder(GroundTranslator* tr, GroundingContext gc, AggType tp, SetGrounder* sg, TermGrounder* bg, char c,bool s) :
+			FormulaGrounder(tr,gc), _setgrounder(sg), _boundgrounder(bg), _type(tp), _comp(c), _sign(s) { }
 		int		run()				const;
 		void	run(vector<int>&)	const;
+		int		finishCard(double,double,int) const;
 };
 
 class ClauseGrounder : public FormulaGrounder {
@@ -455,6 +474,7 @@ class GrounderFactory : public Visitor {
 		void	descend(Formula* f); 
 		void	descend(Term* t);
 		void	descend(Rule* r);
+		void	descend(SetExpr* s);
 		
 		// Variable mapping
 		map<Variable*,domelement*>	_varmapping;	// Maps variables to their counterpart during grounding.
@@ -492,6 +512,7 @@ class GrounderFactory : public Visitor {
 		void visit(const QuantForm*);
 		void visit(const EquivForm*);
 		void visit(const EqChainForm*);
+		void visit(const AggForm*);
 
 		void visit(const VarTerm*);
 		void visit(const DomainTerm*);

@@ -42,12 +42,15 @@
 }
 
 /** Model expansion **/
-#procedure model_expand(Theo,Struct) {
-	return idp_intern.idpcall("model_expand",Theo,Struct)
+#procedure model_expand(Theo,Struct,Opt) {
+	local clonetheo = clone(Theo)
+	IDP_ADVANCED::push_negations(clonetheo)
+	IDP_ADVANCED::flatten(clonetheo)
+	return idp_intern.idpcall("fastmx",clonetheo,Struct,Opt)
 }
 
-#procedure model_expand(Theo,Struct,Opt) {
-	return idp_intern.idpcall("model_expand",Theo,Struct,Opt)
+#procedure model_expand(Theo,Struct) {
+	return model_expand(Theo,Struct,DefaultOptions)
 }
 
 /** Model checking **/
@@ -123,6 +126,14 @@
 
 	#procedure fastmx(T,S,Opt) {
 		return idp_intern.idpcall("fastmx",T,S,Opt)
+	}
+
+	#procedure naivemx(T,S) {
+		return idp_intern.idpcall("naivemx",T,S)
+	}
+
+	#procedure naivemx(T,S,Opt) {
+		return idp_intern.idpcall("naivemx",T,S,Opt)
 	}
 
 	#procedure reduce(T,S) {
