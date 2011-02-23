@@ -698,11 +698,9 @@ int EquivGrounder::run() const {
 		cl2[0] = -left;	cl2[1] = _sign ? right : -right;
 		EcnfClause tcl(2);
 		TsType tp = _context._tseitin;
-		int ts1 = _translator->translate(cl1,false,tp);
-		int ts2 = _translator->translate(cl2,false,tp);
-		tcl[0] = ts1; tcl[1] = ts2;
-		int ts = _translator->translate(tcl,true,tp);
-		return ts;
+		tcl[0] = _translator->translate(cl1,false,tp);
+		tcl[1] = _translator->translate(cl2,false,tp);
+		return _translator->translate(tcl,true,tp);
 	}
 }
 

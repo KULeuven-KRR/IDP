@@ -1558,6 +1558,7 @@ Formula* Reducer::visit(EqChainForm* ef) {
 
 class FuncGrapher : public MutatingVisitor {
 	public:
+		FuncGrapher() { }
 		FuncGrapher(AbstractTheory* t) : MutatingVisitor() { t->accept(this);	}
 		Formula*	visit(PredForm* pf);
 		Formula*	visit(EqChainForm* ef);
@@ -1902,28 +1903,16 @@ Formula* ThreeValTermMover::visit(PredForm* pf) {
 		Term* right = pf->subterm(1);
 		if(typeid(*left) == typeid(FuncTerm)) {
 			FuncTerm* ft = dynamic_cast<FuncTerm*>(left);
-			Function* f = ft->func();
-			FuncInter* finter = _structure->inter(f);
-			if(!finter->fasttwovalued()) { 
-				vector<Sort*> sorts = f->sorts();
-				Predicate* symbol = new Predicate(sorts); //TODO: What to do with name?
-				vector<Term*> args = ft->args();
-				args.push_back(right);
-				PredForm* gf = new PredForm(pf->sign(),symbol,args,FormParseInfo());
-				return gf->accept(this);
+			if(!_structure->inter(ft->func())->fasttwovalued()) { 
+				Formula* newpf = FormulaUtils::graph_functions(pf);
+				return newpf->accept(this);
 			}
 		}
 		else if(typeid(*right) == typeid(FuncTerm)) {
 			FuncTerm* ft = dynamic_cast<FuncTerm*>(right);
-			Function* f = ft->func();
-			FuncInter* finter = _structure->inter(f);
-			if(!finter->fasttwovalued()) { 
-				vector<Sort*> sorts = f->sorts();
-				Predicate* symbol = new Predicate(sorts); //TODO: What to do with name?
-				vector<Term*> args = ft->args();
-				args.push_back(left);
-				PredForm* gf = new PredForm(pf->sign(),symbol,args,FormParseInfo());
-				return gf->accept(this);
+			if(!_structure->inter(ft->func())->fasttwovalued()) { 
+				Formula* newpf = FormulaUtils::graph_functions(pf);
+				return newpf->accept(this);
 			}
 		}
 		else if(typeid(*left) == typeid(AggTerm)) { //TODO: merge with cases for < and >
@@ -1997,9 +1986,16 @@ namespace FormulaUtils {
 
 	Formula* remove_eqchains(Formula* f, Vocabulary* v) {
 		EqChainRemover ecr(v);
-		Formula* nf = f->accept(&ecr);
-		if(nf != f) delete(f);
-		return nf;
+		Formula* newf = f->accept(&ecr);
+		if(newf != f) delete(f);
+		return newf;
+	}
+
+	Formula* graph_functions(Formula* f) {
+		FuncGrapher fg;
+		Formula* newf = f->accept(&fg);
+		if(newf != f) delete(f);
+		return newf;
 	}
 
 	/* 
