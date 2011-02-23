@@ -141,6 +141,7 @@ class FuncTerm : public Term {
 		// Inspectors
 		Sort*			sort()					const	{ return _func->outsort();	}
 		Function*		func()					const	{ return _func;				}
+		const vector<Term*>&	args()			const	{ return _args;				}
 		Term*			arg(unsigned int n)		const	{ return _args[n];			}
 		Formula*		subform(unsigned int)	const	{ assert(false); return 0;	}
 		Term*			subterm(unsigned int n)	const	{ return _args[n];			}

@@ -442,7 +442,7 @@ namespace FormulaUtils {
 	 */
 	TruthValue evaluate(Formula*,AbstractStructure*,const map<Variable*,TypedElement>&);	
 	
-	Formula* remove_eqchains(Formula*, Vocabulary*);	// Rewrite chains of equalities to a 
+	Formula* remove_eqchains(Formula*,Vocabulary*);	// Rewrite chains of equalities to a 
 														// conjunction or disjunction of atoms.
 	Formula* moveThreeValTerms(PredForm*,AbstractStructure*,bool);	// non-recursively moves terms 
 																	// that are three-valued in the given structure
@@ -685,8 +685,8 @@ namespace TheoryUtils {
 	void remove_equiv(AbstractTheory*);		// Rewrite A <=> B to (A => B) & (B => A)
 	void flatten(AbstractTheory*);			// Rewrite (! x : ! y : phi) to (! x y : phi), rewrite ((A & B) & C) to (A & B & C), etc.
 	void remove_eqchains(AbstractTheory*);	// Rewrite chains of equalities to a conjunction or disjunction of atoms.
-	void move_quantifiers(AbstractTheory* t);	// Rewrite (! x : phi & chi) to ((! x : phi) & (!x : chi)), and similarly for ?.
-	void move_functions(AbstractTheory* t);
+	void move_quantifiers(AbstractTheory*);	// Rewrite (! x : phi & chi) to ((! x : phi) & (!x : chi)), and similarly for ?.
+	void move_functions(AbstractTheory*);
 	// TODO  Merge definitions
 
 	/** Tseitin transformation **/
@@ -694,7 +694,7 @@ namespace TheoryUtils {
 	void tseitin(AbstractTheory*);	
 	
 	/** Reduce theories **/
-	void reduce(AbstractTheory* t, AbstractStructure* s);		// Replace ground atoms by their truth value in s
+	void reduce(AbstractTheory*, AbstractStructure*);		// Replace ground atoms by their truth value in s
 
 	/** Completion **/
 	// TODO  Compute completion of definitions

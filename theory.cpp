@@ -1855,7 +1855,6 @@ Term* ThreeValTermMover::visit(FuncTerm* ft) {
 	Function* f = ft->func();
 	FuncInter* finter = _structure->inter(f);
 
-
 	if(finter->fasttwovalued()) { // The function is two-valued. Visit the children.
 		for(unsigned int n = 0; n < ft->nrSubterms(); ++n) {
 			Term* nt = ft->subterm(n)->accept(this);
@@ -1896,34 +1895,64 @@ Term* ThreeValTermMover::visit(AggTerm* at) {
 };
 
 Formula* ThreeValTermMover::visit(PredForm* pf) {
-
+	// Handle built-in predicates
 	string symbname = pf->symb()->name();
 	if(symbname == "=/2") {
 		Term* left = pf->subterm(0);
 		Term* right = pf->subterm(1);
 		if(typeid(*left) == typeid(FuncTerm)) {
-			// TODO
+			FuncTerm* ft = dynamic_cast<FuncTerm*>(left);
+			Function* f = ft->func();
+			FuncInter* finter = _structure->inter(f);
+			if(!finter->fasttwovalued()) { 
+				vector<Sort*> sorts = f->sorts();
+				Predicate* symbol = new Predicate(sorts); //TODO: What to do with name?
+				vector<Term*> args = ft->args();
+				args.push_back(right);
+				PredForm* gf = new PredForm(pf->sign(),symbol,args,FormParseInfo());
+				return gf->accept(this);
+			}
 		}
 		else if(typeid(*right) == typeid(FuncTerm)) {
-			// TODO
+			FuncTerm* ft = dynamic_cast<FuncTerm*>(right);
+			Function* f = ft->func();
+			FuncInter* finter = _structure->inter(f);
+			if(!finter->fasttwovalued()) { 
+				vector<Sort*> sorts = f->sorts();
+				Predicate* symbol = new Predicate(sorts); //TODO: What to do with name?
+				vector<Term*> args = ft->args();
+				args.push_back(left);
+				PredForm* gf = new PredForm(pf->sign(),symbol,args,FormParseInfo());
+				return gf->accept(this);
+			}
 		}
-		else if(typeid(*left) == typeid(AggTerm)) {
-			// TODO
+		else if(typeid(*left) == typeid(AggTerm)) { //TODO: merge with cases for < and >
+			AggTerm* agt = dynamic_cast<AggTerm*>(left);
+			AggForm* af = new AggForm(pf->sign(),'=',right,agt,FormParseInfo());
+			return af->accept(this);
 		}
-		else if(typeid(*right) == typeid(AggTerm)) {
+		else if(typeid(*right) == typeid(AggTerm)) { //TODO: merge with cases for < and >
 			AggTerm* agt = dynamic_cast<AggTerm*>(right);
 			AggForm* af = new AggForm(pf->sign(),'=',left,agt,FormParseInfo());
 			return af->accept(this);
 		}
 	}
 	else if(symbname == "</2" || symbname == ">/2") {
+		//TODO: Check whether handled correctly when both sides are AggTerms!!
 		Term* left = pf->subterm(0);
 		Term* right = pf->subterm(1);
+		char c;
 		if(typeid(*left) == typeid(AggTerm)) {
-			// TODO
+			AggTerm* agt = dynamic_cast<AggTerm*>(left);
+			c = (symbname == "</2") ? '>' : '<';
+			AggForm* af = new AggForm(pf->sign(),c,right,agt,FormParseInfo());
+			return af->accept(this);
 		}
 		else if(typeid(*right) == typeid(AggTerm)) {
-			// TODO
+			AggTerm* agt = dynamic_cast<AggTerm*>(right);
+			c = (symbname == "</2") ? '<' : '>';
+			AggForm* af = new AggForm(pf->sign(),c,left,agt,FormParseInfo());
+			return af->accept(this);
 		}
 	}
 	

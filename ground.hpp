@@ -89,12 +89,12 @@ class GroundTranslator  {
 		int							translate(PFSymbol*,const vector<TypedElement>&);
 		int							translateSet(const vector<int>&,const vector<double>&,const vector<double>&);
 		int							nextNumber();
-		PFSymbol*					symbol(int n)	const	{ return _backsymbtable[abs(n)];	}
-		const vector<domelement>&	args(int n)		const	{ return _backargstable[abs(n)];	}
 		unsigned int				addSymbol(PFSymbol* pfs);
-		bool						isTseitin(int l) const	{ return symbol(l) == 0;			}
-		TsBody*						tsbody(int l)	const	{ return _tsbodies.find(abs(l))->second;			}
-		const GroundSet&			groundset(int nr)	const	{ return _sets[nr];				}
+		PFSymbol*					symbol(int nr)		const	{ return _backsymbtable[abs(nr)];			}
+		const vector<domelement>&	args(int nr)		const	{ return _backargstable[abs(nr)];			}
+		bool						isTseitin(int l) 	const	{ return symbol(l) == 0;					}
+		TsBody*						tsbody(int l)		const	{ return _tsbodies.find(abs(l))->second;	}
+		const GroundSet&			groundset(int nr)	const	{ return _sets[nr];							}
 
 		string						printatom(int nr)	const;
 
