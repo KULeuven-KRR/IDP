@@ -645,6 +645,43 @@ void Theory::add(AbstractTheory* t) {
 		_sentences.push_back(t->sentence(n));
 }
 
+Theory* Theory::clone() const {
+	Theory* newtheory = new Theory(_name,_vocabulary,ParseInfo());
+	for(unsigned int n = 0; n < _sentences.size(); ++n) 
+		newtheory->add(_sentences[n]->clone());
+	for(unsigned int n = 0; n < _definitions.size(); ++n) 
+		newtheory->add(_definitions[n]->clone());
+	for(unsigned int n = 0; n < _fixpdefs.size(); ++n) 
+		newtheory->add(_fixpdefs[n]->clone());
+	return newtheory;
+}
+
+Definition* Definition::clone() const {
+	Definition* newdef = new Definition();
+	for(unsigned int n = 0; n < _rules.size(); ++n) newdef->add(_rules[n]->clone());
+	newdef->defsyms();
+	return newdef;
+}
+
+FixpDef* FixpDef::clone() const {
+	FixpDef* newfd = new FixpDef(_lfp);
+	for(unsigned int n = 0; n < _defs.size(); ++n) newfd->add(_defs[n]->clone());
+	for(unsigned int n = 0; n < _rules.size(); ++n) newfd->add(_rules[n]->clone());
+	newfd->defsyms();
+	return newfd;
+}
+
+Rule* Rule::clone() const {
+	map<Variable*,Variable*> mvv;
+	vector<Variable*> newqv;
+	for(unsigned int n = 0; n < _vars.size(); ++n) {
+		Variable* v = new Variable(_vars[n]->name(),_vars[n]->sort(),ParseInfo());
+		mvv[_vars[n]] = v;
+		newqv.push_back(v);
+	}
+	return new Rule(newqv,_head->clone(mvv),_body->clone(mvv),ParseInfo());
+}
+
 /** Push negations inside **/
 
 class NegationPush : public MutatingVisitor {
@@ -983,7 +1020,7 @@ void TheoryConvertor::visit(const EquivForm* ef) {
 	ef->right()->accept(this);
 	assert(_rettype == ECTT_AGG);
 
-	_returnvalue->addAgg(EcnfAgg(_curragg,_lowerbound,EHA_EQUIV,lhs,_currset,_currbound));
+	_returnvalue->addAgg(EcnfAgg(_curragg,_lowerbound,TS_EQ,lhs,_currset,_currbound));
 	_rettype = ECTT_NOTHING;
 }
 
@@ -994,7 +1031,7 @@ void TheoryConvertor::visit(const BoolForm* bf) {
 		bf->subform(n)->accept(this);
 		if(n == 1 && _rettype == ECTT_AGG) {
 			assert(bf->nrSubforms() == 2);
-			_returnvalue->addAgg(EcnfAgg(_curragg,_lowerbound,EHA_IMPLIES,-literals[0],_currset,_currbound));
+			_returnvalue->addAgg(EcnfAgg(_curragg,_lowerbound,TS_IMPL,-literals[0],_currset,_currbound));
 			_rettype = ECTT_NOTHING;
 			return;
 		}
@@ -1014,7 +1051,7 @@ void TheoryConvertor::visit(const Rule* r) {
 	int headatom = _curratom;
 	r->body()->accept(this);
 	if(_rettype == ECTT_AGG) {
-		EcnfAgg efa(_curragg,_lowerbound,EHA_DEFINED,headatom,_currset,_currbound);
+		EcnfAgg efa(_curragg,_lowerbound,TS_RULE,headatom,_currset,_currbound);
 		if(_infixpdef) _currfixpdef.addAgg(efa,_returnvalue->translator());
 		else _currdefinition.addAgg(efa,_returnvalue->translator());
 	}
@@ -1044,7 +1081,9 @@ void TheoryConvertor::visit(const EnumSetExpr* e) {
 		if(dt->type() == ELINT) weights.push_back(double((dt->value())._int));
 		else weights.push_back((dt->value())._double);
 	}
-	_currset = _returnvalue->addSet(literals,weights);
+	vector<double> truew;
+	_currset = _returnvalue->translator()->translateSet(literals,weights,truew);
+	_returnvalue->addSet(_currset,true);
 }
 
 /** Move quantifiers **/
@@ -1857,6 +1896,36 @@ Term* ThreeValTermMover::visit(AggTerm* at) {
 };
 
 Formula* ThreeValTermMover::visit(PredForm* pf) {
+
+	string symbname = pf->symb()->name();
+	if(symbname == "=/2") {
+		Term* left = pf->subterm(0);
+		Term* right = pf->subterm(1);
+		if(typeid(*left) == typeid(FuncTerm)) {
+			// TODO
+		}
+		else if(typeid(*right) == typeid(FuncTerm)) {
+			// TODO
+		}
+		else if(typeid(*left) == typeid(AggTerm)) {
+			// TODO
+		}
+		else if(typeid(*right) == typeid(AggTerm)) {
+			AggTerm* agt = dynamic_cast<AggTerm*>(right);
+			AggForm* af = new AggForm(pf->sign(),'=',left,agt,FormParseInfo());
+			return af->accept(this);
+		}
+	}
+	else if(symbname == "</2" || symbname == ">/2") {
+		Term* left = pf->subterm(0);
+		Term* right = pf->subterm(1);
+		if(typeid(*left) == typeid(AggTerm)) {
+			// TODO
+		}
+		else if(typeid(*right) == typeid(AggTerm)) {
+			// TODO
+		}
+	}
 	
 	// Visit the subterms
 	for(unsigned int n = 0; n < pf->nrSubterms(); ++n) {

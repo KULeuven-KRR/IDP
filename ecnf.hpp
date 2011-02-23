@@ -173,9 +173,10 @@ typedef vector<int> EcnfClause;	// vector of all literals in a clause
 
 /** Propositional set **/
 struct EcnfSet {
+	int	_setnr;
 	vector<int>	_set;
 	vector<double> _weights;
-	EcnfSet(const vector<int>& s, const vector<double>& w) : _set(s), _weights(w) { }
+	EcnfSet(int setnr, const vector<int>& s, const vector<double>& w) : _setnr(setnr), _set(s), _weights(w) { }
 };
 
 /** Propositional expression of one of the following forms
@@ -186,15 +187,14 @@ struct EcnfSet {
 		(e) head => agg(set) =< bound
 		(f) head => bound =< agg(set)
 **/
-enum EcnfHeadAgg { EHA_DEFINED, EHA_EQUIV, EHA_IMPLIES }; // cases (a,b), (c,d), and (e,f), respectively.
 struct EcnfAgg {
 	AggType			_type;		// the aggregate
 	bool			_lower;		// true in cases (b) and (d)
-	EcnfHeadAgg		_eha;		// the relation between head and aggregate expression
+	TsType			_eha;		// the relation between head and aggregate expression
 	int				_head;		// head atom
 	unsigned int	_set;		// the set id
 	double			_bound;		// the bound
-	EcnfAgg(AggType t, bool l, EcnfHeadAgg e, int h, unsigned int s, double b) :
+	EcnfAgg(AggType t, bool l, TsType e, int h, unsigned int s, double b) :
 		_type(t), _lower(l), _eha(e), _head(h), _set(s), _bound(b) { }
 	EcnfAgg(const EcnfAgg& efa) : 
 		_type(efa._type), _lower(efa._lower), _eha(efa._eha), _head(efa._head), _set(efa._set), _bound(efa._bound) { }
@@ -246,6 +246,7 @@ class GroundTheory : public AbstractTheory {
 		GroundTranslator*	_translator;		// Link between ground atoms and SAT-solver literals
 		set<int>			_printedtseitins;	// Tseitin atoms produced by the translator that occur 
 												// in the theory.
+		set<int>			_printedsets;		
 		AbstractStructure*	_structure;			// The ground theory may be partially reduced with respect
 												// to this structure. 
 
@@ -273,11 +274,14 @@ class GroundTheory : public AbstractTheory {
 				void addEmptyClause()		{ EcnfClause c(0); addClause(c);	}
 				void addUnitClause(int l)	{ EcnfClause c(1,l); addClause(c);	}
 		virtual void addDefinition(GroundDefinition&) = 0;
+		virtual	void addAgg(int head, AggTsBody& body) = 0;
+		virtual void addSet(int setnr, bool weighted) = 0;
 
 
 
 		// Inspectors
 				GroundTranslator*	translator()	const { return _translator;	}
+				GroundTheory*		clone()			const { assert(false); /* TODO */	}
 };
 
 class EcnfTheory : public GroundTheory {
@@ -310,9 +314,11 @@ class EcnfTheory : public GroundTheory {
 													  _features._containsAggregates = 
 														_features._containsAggregates || d.containsAgg();				} 
 		void addAgg(const EcnfAgg& a)				{ _aggregates.push_back(a); _features._containsAggregates = true;	}
+		void addAgg(int head, AggTsBody& body);
 
-		unsigned int addSet(const vector<int>& lits, const vector<double>& weights)
-													{ _sets.push_back(EcnfSet(lits,weights)); return _sets.size() - 1;	}
+		void addSet(int setnr, const vector<int>& lits, const vector<double>& weights)
+													{ _sets.push_back(EcnfSet(setnr,lits,weights));	}
+		void addSet(int setnr, bool weighted);
 
 		// Inspectors
 		unsigned int		nrSentences()				const { return _clauses.size() + _aggregates.size();	}
@@ -351,6 +357,8 @@ class SolverTheory : public GroundTheory {
 		// Mutators
 		void	addClause(EcnfClause& cl, bool firstIsPrinted = false);
 		void	addDefinition(GroundDefinition&);
+		void	addAgg(int head, AggTsBody& body);
+		void	addSet(int setnr, bool weighted);
 
 		// Inspectors
 		unsigned int	nrSentences()				const { assert(false); /*TODO*/	}

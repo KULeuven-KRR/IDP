@@ -40,11 +40,32 @@ int GroundTranslator::translate(PFSymbol* s, const vector<TypedElement>& args) {
 
 int GroundTranslator::translate(const vector<int>& cl, bool conj, TsType tp) {
 	int nr = nextNumber();
-	TsBody& tb = _tsbodies[nr];
-	tb._body = cl;
-	tb._type = tp;
-	tb._conj = conj;
+	PCTsBody* tb = new PCTsBody();
+	tb->_body = cl;
+	tb->_type = tp;
+	tb->_conj = conj;
+	_tsbodies[nr] = tb;
 	return nr;
+}
+
+int GroundTranslator::translate(int setnr, AggType atp, char comp, double bound, TsType ttp) {
+	if(comp == '=') {
+		vector<int> cl(2);
+		cl[0] = translate(setnr,atp,'<',bound,ttp);
+		cl[1] = translate(setnr,atp,'>',bound,ttp);
+		return translate(cl,true,ttp);
+	}
+	else {
+		int nr = nextNumber();
+		AggTsBody* tb = new AggTsBody();
+		tb->_type = ttp;
+		tb->_setnr = setnr;
+		tb->_aggtype = atp;
+		tb->_lower = (comp == '<');
+		tb->_bound = bound;
+		_tsbodies[nr] = tb;
+		return nr;
+	}
 }
 
 int GroundTranslator::translateSet(const vector<int>& lits, const vector<double>& weights, const vector<double>& trueweights) {
@@ -469,12 +490,98 @@ void AtomGrounder::run(vector<int>& clause) const {
 	clause.push_back(run());
 }
 
-int AggGrounder::run() const {
-	// TODO
+int AggGrounder::finishCard(double truevalue, double boundvalue, int setnr) const {
+	int leftvalue = int(boundvalue - truevalue);
+	const GroundSet& grs = _translator->groundset(setnr);
+	int maxposscard = grs._setlits.size();
+	TsType tp = _context._tseitin;	// TODO
+	switch(_comp) {
+		case '=':
+			if(leftvalue < 0 || leftvalue > maxposscard) {
+				return _sign ? _false : _true;
+			}
+			else if(leftvalue == 0) {
+				int tseitin = _translator->translate(grs._setlits,false,tp);
+				return _sign ? -tseitin : tseitin;
+			}
+			else if(leftvalue == maxposscard) {
+				int tseitin = _translator->translate(grs._setlits,true,tp);
+				return _sign ? tseitin : -tseitin;
+			}
+			break;
+		case '<':
+			if(leftvalue < 0) {
+				return _sign ? _true : _false;
+			}
+			else if(leftvalue == 0) {
+				int tseitin = _translator->translate(grs._setlits,false,tp);
+				return _sign ? tseitin : -tseitin;
+			}
+			else if(leftvalue == maxposscard-1) {
+				int tseitin = _translator->translate(grs._setlits,true,tp);
+				return _sign ? tseitin : -tseitin;
+			}
+			else if(leftvalue >= maxposscard) {
+				return _sign ? _false : _true;
+			}
+			break;
+		case '>':
+			if(leftvalue <= 0) {
+				return _sign ? _false : _true;
+			}
+			else if(leftvalue == 1) {
+				int tseitin = _translator->translate(grs._setlits,false,tp);
+				return _sign ? -tseitin : tseitin;
+			}
+			else if(leftvalue == maxposscard) {
+				int tseitin = _translator->translate(grs._setlits,true,tp);
+				return _sign ? -tseitin : tseitin;
+			}
+			else if(leftvalue > maxposscard) {
+				return _sign ? _true : _false;
+			}
+			break;
+	}
+	int tseitin = _translator->translate(setnr,AGGCARD,_comp,double(leftvalue),tp);
+	return _sign ? tseitin : -tseitin;
 }
 
-void AggGrounder::run(vector<int>&) const {
-	// TODO
+int AggGrounder::run() const {
+	int setnr = _setgrounder->run();
+	domelement bound = _boundgrounder->run();
+	const GroundSet& grs = _translator->groundset(setnr);
+
+	double truevalue = AggUtils::compute(_type,grs._trueweights);
+	double boundvalue = ElementUtil::convert(bound->_args[0],ELDOUBLE)._double;
+	int ts;
+	switch(_type) {
+		case AGGCARD: 
+			ts = finishCard(truevalue,boundvalue,setnr);
+			break;
+		case AGGSUM:
+			// TODO
+			assert(false);
+			break;
+		case AGGPROD:
+			assert(false);
+			// TODO
+			break;
+		case AGGMIN:
+			assert(false);
+			// TODO
+			break;
+		case AGGMAX:
+			assert(false);
+			// TODO
+			break;
+		default:
+			assert(false);
+	}
+	return ts;
+}
+
+void AggGrounder::run(vector<int>& clause) const {
+	clause.push_back(run());	
 }
 
 inline bool ClauseGrounder::check1(int l) const {
@@ -873,6 +980,19 @@ void GrounderFactory::descend(Term* t) {
 }
 
 /*
+ * void GrounderFactory::descend(SetExpr* s)
+ * DESCRIPTION
+ *		Visits a set and ensures the context is restored to the value before the visit.
+ * PARAMETERS
+ *		s	- the visited set
+ */
+void GrounderFactory::descend(SetExpr* s) {
+	SaveContext();
+	s->accept(this);
+	RestoreContext();
+}
+
+/*
  * void GrounderFactory::descend(Formula* f)
  * DESCRIPTION
  *		Visits a formula and ensures the context is restored to the value before the visit.
@@ -1215,6 +1335,15 @@ void GrounderFactory::visit(const EquivForm* ef) {
 
 	// Create the grounder
 	_formgrounder = new EquivGrounder(_grounding->translator(),leftg,rightg,ef->sign(),_context);
+	if(_context._component == CC_SENTENCE) _toplevelgrounder = new SentenceGrounder(_grounding,_formgrounder,true);
+}
+
+void GrounderFactory::visit(const AggForm* af) {
+	descend(af->left());
+	TermGrounder* boundgr = _termgrounder;
+	descend(af->right()->set());
+	SetGrounder* setgr = _setgrounder;
+	_formgrounder = new AggGrounder(_grounding->translator(),_context,af->right()->type(),setgr,boundgr,af->comp(),af->sign());
 	if(_context._component == CC_SENTENCE) _toplevelgrounder = new SentenceGrounder(_grounding,_formgrounder,true);
 }
 

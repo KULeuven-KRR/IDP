@@ -299,6 +299,17 @@ class CloneStructure : public Inference {
 		InfArg execute(const vector<InfArg>& args) const;
 };
 
+class CloneTheory : public Inference {
+	public:
+		CloneTheory() { 
+			_intypes = vector<InfArgType>(1,IAT_THEORY);
+			_outtype = IAT_THEORY;
+			_description = "Make a copy of this theory";
+			_reload = false;
+		}
+		InfArg execute(const vector<InfArg>& args) const;
+};
+
 class ForceTwoValued : public Inference {
 	public:
 		ForceTwoValued() {

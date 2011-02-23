@@ -39,10 +39,11 @@ namespace BuiltinProcs {
 		_inferences["tseitin"].push_back(new ApplyTseitin());
 		_inferences["reduce"].push_back(new GroundReduce());
 		_inferences["move_functions"].push_back(new MoveFunctions());
-		_inferences["model_expand"].push_back(new ModelExpansionInference(false));
-		_inferences["model_expand"].push_back(new ModelExpansionInference(true));
+		_inferences["naivemx"].push_back(new ModelExpansionInference(false));
+		_inferences["naivemx"].push_back(new ModelExpansionInference(true));
 		_inferences["load_file"].push_back(new LoadFile());
 		_inferences["clone"].push_back(new CloneStructure());
+		_inferences["clone"].push_back(new CloneTheory());
 		_inferences["fastground"].push_back(new FastGrounding());
 		_inferences["fastmx"].push_back(new FastMXInference(false));
 		_inferences["fastmx"].push_back(new FastMXInference(true));
@@ -772,6 +773,12 @@ InfArg MoveFunctions::execute(const vector<InfArg>& args) const {
 InfArg CloneStructure::execute(const vector<InfArg>& args) const {
 	InfArg a; 
 	a._structure = args[0]._structure->clone();
+	return a;
+}
+
+InfArg CloneTheory::execute(const vector<InfArg>& args) const {
+	InfArg a;
+	a._theory = args[0]._theory->clone();
 	return a;
 }
 

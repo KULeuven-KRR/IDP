@@ -2318,7 +2318,6 @@ namespace Insert {
 			}
 			// Create a new rule
 			if(!(bv.empty())) body = new QuantForm(true,false,bv,body,FormParseInfo((body->pi())));
-cerr << "body = " << body->to_string() << endl;
 			Rule* r = new Rule(hv,head,body,pi);
 			// Sort derivation
 			SortDeriver sd(r,_currvocab);
