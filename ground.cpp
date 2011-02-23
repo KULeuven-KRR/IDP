@@ -813,7 +813,7 @@ void GrounderFactory::InitContext() {
 	_context._positive		= PC_POSITIVE;
 	_context._component		= CC_SENTENCE;
 	_context._tseitin		= TS_IMPL;
-	_context._recursive		= false;
+	_context._recursive		= false; //TODO: Should keep a list of symbols that are recursively defined
 }
 
 /*
@@ -1084,7 +1084,8 @@ void GrounderFactory::visit(const BoolForm* bf) {
 	_conjunction = bf->conj() == bf->sign();
 
 	// Make tseitin rules when in recursive definition.
-	if(_context._recursive) _context._tseitin = TS_RULE;
+	if(_context._recursive) _context._tseitin = TS_RULE; 	//TODO: Check whether there are recursively defined symbols in this formula
+															// if so, set tseitin type to TS_RULE, otherwise leave as it is. 
 
 	// Handle a top-level conjunction without creating tseitin atoms
 	if(_context._component == CC_SENTENCE && (bf->conj() == bf->sign())) {
@@ -1159,7 +1160,9 @@ void GrounderFactory::visit(const QuantForm* qf) {
 	InstGenerator* gen = gf.create(vars,tables);
 
 	// Make tseitin rules when in recursive definition.
-	if(_context._recursive) _context._tseitin = TS_RULE;
+	if(_context._recursive) _context._tseitin = TS_RULE; 	//TODO: Check whether there are recursively defined symbols in this formula
+															// if so, set tseitin type to TS_RULE, otherwise leave as it is. 
+
 
 	// Handle top-level universal quantifiers efficiently
 	if(_context._component == CC_SENTENCE && (qf->sign() == qf->univ())) {
@@ -1206,7 +1209,9 @@ void GrounderFactory::visit(const EquivForm* ef) {
 	SaveContext();
 	DeeperContext(ef->sign());
 	_context._positive = PC_BOTH;
-	_context._tseitin = _context._recursive ? TS_RULE : TS_EQ;
+	_context._tseitin = _context._recursive ? TS_RULE : TS_EQ; 	//TODO: Check whether there are recursively defined symbols in this formula
+																// if so, set tseitin type to TS_RULE, set to TS_EQ.
+
 	descend(ef->left());
 	FormulaGrounder* leftg = _formgrounder;
 	descend(ef->right());
