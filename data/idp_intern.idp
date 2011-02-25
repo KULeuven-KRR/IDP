@@ -53,6 +53,14 @@
 	return model_expand(Theo,Struct,DefaultOptions)
 }
 
+/** Grounding **/
+#procedure ground(Theo,Struct) {
+	local clonetheo = clone(Theo)
+	IDP_ADVANCED::push_negations(clonetheo)
+	IDP_ADVANCED::flatten(clonetheo)
+	return idp_intern.idpcall("fastground",clonetheo,Struct)
+}
+
 /** Model checking **/
 #procedure model_check(Theo,Struct) {
 	// TODO: check if two-valued
@@ -112,7 +120,7 @@
 		return idp_intern.idpcall("flatten",T)
 	}
 
-	#procedure ground(T,S) {
+	#procedure naiveground(T,S) {
 		return idp_intern.idpcall("ground",T,S)
 	}
 

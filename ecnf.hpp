@@ -287,7 +287,7 @@ class GroundTheory : public AbstractTheory {
 class EcnfTheory : public GroundTheory {
 	
 	private:
-		GroundFeatures			_features;
+		GroundFeatures				_features;
 		
 		vector<EcnfClause>			_clauses;	
 		vector<GroundDefinition>	_definitions;

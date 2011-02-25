@@ -34,6 +34,12 @@ void setoption(InfOptions* opts, const string& opt, int val, ParseInfo* pi) {
 			}
 			else Error::posintexpected(opt,pi);
 		}
+		else if(opt == "satverbosity") {
+			if(val >= 0) {
+				opts->_satverbosity = val;
+			}
+			else Error::posintexpected(opt,pi);
+		}
 		else Error::wrongvaluetype(opt,pi);
 	}
 	else Error::unknopt(opt,pi);
@@ -57,6 +63,9 @@ string getoption(InfOptions* opts, const string& opt) {
 	}
 	else if(opt == "nrmodels") {
 		return itos(opts->_nrmodels);
+	}
+	else if(opt == "satverbosity") {
+		return itos(opts->_satverbosity);
 	}
 	else {
 		Error::unknopt(opt,0);

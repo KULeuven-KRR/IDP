@@ -2260,8 +2260,8 @@ namespace Insert {
 			QuantSetExpr* qse = new QuantSetExpr(vv,f,pi);
 			vector<Term*> vt(2);
 			Element en; en._int = n;
-			vt[0] = new DomainTerm(*(StdBuiltin::instance()->sort("int")->begin()),ELINT,en,pi);
-			vt[1] = new AggTerm(qse,AGGCARD,pi);
+			vt[1] = new DomainTerm(*(StdBuiltin::instance()->sort("int")->begin()),ELINT,en,pi);
+			vt[0] = new AggTerm(qse,AGGCARD,pi);
 			Predicate* p = StdBuiltin::instance()->pred(string(1,c) + "/2");
 			return new PredForm(b,p,vt,pi);	// TODO adapt formparseinfo
 		}

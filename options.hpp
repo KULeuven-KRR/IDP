@@ -32,6 +32,7 @@ class CLOptions {
 		  vector<bool>		_warning;			// _warning[n] = true means that warnings of type n are not suppressed
 		  vector<bool>		_style;				// _style[n] = true means that style option n is enforced
 		  string			_exec;				// the procedure called from the command line
+		  int				_satverbosity;
 
 		  // Constructor (default options)
 		  CLOptions() {
@@ -63,6 +64,7 @@ class InfOptions {
 		unsigned int	_nrmodels;		// the number of models to compute
 		OutputFormat	_format;		// use specified format for the output
 		ModelFormat		_modelformat;	// make results of MX twovalued
+		int				_satverbosity;
 		
 		// Constructor (default options)
 		InfOptions(const string& name, const ParseInfo& pi) : 
@@ -70,20 +72,17 @@ class InfOptions {
 			_pi(pi),
 			_nrmodels(1),
 			_format(OF_IDP),
-			_modelformat(MF_ALL)
+			_modelformat(MF_ALL),
+			_satverbosity(0)
 			{ }
-		InfOptions(InfOptions* opts) :
-			_name(""),
-			_pi(),
-			_nrmodels(opts->_nrmodels),
-			_format(opts->_format),
-			_modelformat(opts->_modelformat)
-			{ }
+		InfOptions(InfOptions* opts) : _name(""), _pi() { set(opts);	}
 
 		// Setters
 		void set(InfOptions* opt) {
-			_nrmodels 	= opt->_nrmodels;
-			_format 	= opt->_format;
+			_nrmodels		= opt->_nrmodels;
+			_format			= opt->_format;
+			_modelformat	= opt->_modelformat;
+			_satverbosity	= opt->_satverbosity;
 		}
 
 		// Inspectors
@@ -92,6 +91,7 @@ class InfOptions {
 			if(str == "nrmodels") r = true;
 			else if(str == "modelformat") r = true;
 			else if(str == "language") r = true;
+			else if(str == "satverbosity") r = true;
 			return r;
 		}
 		const string& name() const { return _name; }

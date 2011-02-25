@@ -961,13 +961,45 @@ string EcnfTheory::to_string() const {
 	for(unsigned int n = 0; n < _definitions.size(); ++n) {
 		s << _definitions[n].to_string();
 	}
+
+	for(unsigned int n = 0; n < _sets.size(); ++n) {
+		s << "Set nr. " << _sets[n]._setnr << " = { ";
+		for(unsigned int m = 0; m < _sets[n]._set.size(); ++m) {
+			s << _translator->printatom(_sets[n]._set[m]);
+			s << _sets[n]._weights[m];
+		}
+		s << "}\n";
+	}
+
+	for(unsigned int n = 0; n < _aggregates.size(); ++n) {
+		const EcnfAgg& agg = _aggregates[n];
+		s << _translator->printatom(agg._head);
+		switch(agg._eha) {
+			case TS_RULE: s << " <- "; break;
+			case TS_IMPL: s << " => "; break;
+			case TS_RIMPL: s << " <= "; break;
+			case TS_EQ: s << " <=> "; break;
+			default: assert(false);
+		}
+		s << agg._bound;
+		s << (agg._lower ? " =< " : " >= ");
+		switch(agg._type) {
+			case AGGCARD: s << "card("; break;
+			case AGGSUM: s << "sum("; break;
+			case AGGPROD: s << "prod("; break;
+			case AGGMIN: s << "min("; break;
+			case AGGMAX: s << "max("; break;
+			default: assert(false);
+		}
+		s << agg._set << ")\n";
+	}
 	//TODO: repeat above for fixpoint definitions
 	return s.str();
 }
 
 string GroundDefinition::to_string() const {
 	stringstream s;
-	s << "{";
+	s << "{\n";
 	for(map<int,GroundRuleBody>::const_iterator it = _rules.begin(); it != _rules.end(); ++it) {
 		s << _translator->printatom(it->first) << " <- ";
 		const GroundRuleBody& body = it->second;
@@ -999,7 +1031,7 @@ string GroundDefinition::to_string() const {
 			s << body._body[n] << ' ';
 		s << "0\n";
 	}
-	s << "}";
+	s << "}\n";
 	return s.str();
 }
 
@@ -1052,7 +1084,7 @@ void SolverTheory::addSet(int setnr,bool weighted) {
 
 void SolverTheory::addAgg(int head, AggTsBody& body) {
 	addSet(body._setnr,body._aggtype != AGGCARD);
-	MinisatID::AggSign sg = body._lower ? AGGSIGN_UB : AGGSIGN_LB;
+	MinisatID::AggSign sg = body._lower ? AGGSIGN_LB : AGGSIGN_UB;
 	MinisatID::AggType tp;
 	switch(body._aggtype) {
 		case AGGCARD: tp = CARD; break;

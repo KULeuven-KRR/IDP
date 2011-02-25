@@ -51,20 +51,22 @@ int GroundTranslator::translate(const vector<int>& cl, bool conj, TsType tp) {
 int GroundTranslator::translate(int setnr, AggType atp, char comp, double bound, TsType ttp) {
 	if(comp == '=') {
 		vector<int> cl(2);
-		cl[0] = translate(setnr,atp,'<',bound,ttp);
-		cl[1] = translate(setnr,atp,'>',bound,ttp);
+		cl[0] = -(translate(setnr,atp,'<',bound,ttp));
+		cl[1] = -(translate(setnr,atp,'>',bound,ttp));
 		return translate(cl,true,ttp);
 	}
 	else {
 		int nr = nextNumber();
 		AggTsBody* tb = new AggTsBody();
-		tb->_type = ttp;
+		if(ttp == TS_IMPL) tb->_type = TS_RIMPL;
+		else if(ttp == TS_RIMPL) tb->_type = TS_IMPL;
+		else tb->_type = ttp;
 		tb->_setnr = setnr;
 		tb->_aggtype = atp;
-		tb->_lower = (comp == '<');
+		tb->_lower = (comp == '>');
 		tb->_bound = bound;
 		_tsbodies[nr] = tb;
-		return nr;
+		return -nr;
 	}
 }
 

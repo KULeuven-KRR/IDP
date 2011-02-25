@@ -668,7 +668,7 @@ InfArg FastMXInference::execute(const vector<InfArg>& args) const {
 	// Create solver
 	MinisatID::SolverOption modes;
 	modes.nbmodels = opts->_nrmodels;
-	modes.verbosity = 0;
+	modes.verbosity = opts->_satverbosity;
 	modes.remap = false;
 	SATSolver* solver = new SATSolver(modes);
 
