@@ -621,8 +621,8 @@ class StrLessThanPredTable : public ComparisonPredTable {
 		~StrLessThanPredTable() { }
 		StrLessThanPredTable* clone() const { return new StrLessThanPredTable(_leftsort,_rightsort);	}
 		bool	contains(const vector<Element>&)		const;
-		bool	finite()							const { assert(false); return false; /* TODO */ }
-		bool	empty()								const { assert(false); return false; /* TODO */ }
+		bool	finite()	const { return (_leftsort->finite() && _rightsort->finite());assert(false); return false; }
+		bool	empty()		const { return (_leftsort->empty() && _rightsort->empty());		}
 
 		unsigned int	size()					const { assert(false); return 0; /* TODO */ }
 		vector<Element>	tuple(unsigned int)	const { assert(false); return vector<Element>(0); /* TODO */ }
@@ -648,8 +648,8 @@ class StrGreaterThanPredTable : public ComparisonPredTable {
 		~StrGreaterThanPredTable() { }
 		StrGreaterThanPredTable* clone() const { return new StrGreaterThanPredTable(_leftsort,_rightsort);	}
 		bool	contains(const vector<Element>&)		const;
-		bool	finite()							const { assert(false); return false; /* TODO */ }
-		bool	empty()								const { assert(false); return false; /* TODO */ }
+		bool	finite()	const { return (_leftsort->finite() && _rightsort->finite());assert(false); return false; }
+		bool	empty()		const { return (_leftsort->empty() && _rightsort->empty());		}
 
 		unsigned int	size()					const { assert(false); return 0; /* TODO */ }
 		vector<Element>	tuple(unsigned int)	const { assert(false); return vector<Element>(0); /* TODO */ }

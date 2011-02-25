@@ -191,10 +191,14 @@ void interactive(lua_State* L) {
 		 << "  Type 'exit' to quit.\n\n";
 
 #ifdef USEINTERACTIVE
+	idp_rl_start();
 	while(true) {
 		char* userline = rl_gets();
 		if(userline) {
-			if(string(userline) == "exit") return;
+			if(string(userline) == "exit") {
+				idp_rl_end();
+				return;
+			}
 			else {
 				string str = "##intern##{"+string(userline)+'}';
 				parsestring(str);

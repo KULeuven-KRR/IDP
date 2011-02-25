@@ -8,6 +8,8 @@
 #define INTERACTIVE_H
 
 char* rl_gets();
+void	idp_rl_start();
+void	idp_rl_end();
 
 #endif
 
