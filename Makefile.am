@@ -15,7 +15,7 @@ LFLAGS =
 
 bin_PROGRAMS = gidl
 
-gidl_LDADD = -L$(builddir)/lib/lua/src/.libs -llua
+gidl_LDADD = $(builddir)/lib/lua/src/.libs/liblua.la
 
 BUILT_SOURCES = parse.h
 
@@ -37,50 +37,56 @@ gidl_SOURCES = \
 		vocabulary.hpp vocabulary.cpp\
 		parse.yy\
 		lex.ll\
-		options.hpp\
+		options.cpp options.hpp\
 		clconst.hpp\
 		interactive.cpp interactive.hpp\
-		print.hpp print.cpp
+		print.hpp print.cpp\
+		checker.cpp checker.hpp\
+		generator.cpp generator.hpp 
 
 #MINISATID PART, HEADERS ARE TAKEN CARE OF BY THE SUB MAKEFILE
 gidl_SOURCES += \
-		pcsolver/src/satsolver/SATSolver.cpp pcsolver/src/satsolver/SATUtils.cpp\
-		pcsolver/src/theorysolvers/PCSolver.cpp pcsolver/src/theorysolvers/SOSolver.cpp\
-		pcsolver/src/modules/DPLLTmodule.cpp pcsolver/src/modules/IDSolver.cpp pcsolver/src/modules/AggSolver.cpp pcsolver/src/modules/ModSolver.cpp\
-		pcsolver/src/modules/aggsolver/AggTransform.cpp pcsolver/src/modules/aggsolver/AggUtils.cpp pcsolver/src/modules/aggsolver/AggPrint.cpp\
-		pcsolver/src/modules/aggsolver/FullyWatched.cpp\
-		pcsolver/src/modules/aggsolver/GenPartiallyWatched.cpp\
-		pcsolver/src/modules/aggsolver/AggProp.cpp\
-		pcsolver/src/external/ExternalInterface.cpp pcsolver/src/external/ExternalUtils.cpp\
-		pcsolver/src/utils/Print.cpp pcsolver/src/utils/Utils.cpp pcsolver/src/utils/PrintMessage.cpp \
-		pcsolver/src/parser/ResourceManager.cpp pcsolver/src/parser/Lparseread.cpp pcsolver/src/parser/PBread.cpp pcsolver/src/parser/ParseOptions.cpp\
-		pcsolver/src/Unittests.cpp\
-		pcsolver/src/satsolver/SATSolver.hpp pcsolver/src/satsolver/SATUtils.hpp\
-		pcsolver/src/modules/DPLLTmodule.hpp pcsolver/src/modules/IDSolver.hpp pcsolver/src/modules/AggSolver.hpp pcsolver/src/modules/ModSolver.hpp\
-		pcsolver/src/modules/aggsolver/AggTransform.hpp pcsolver/src/modules/aggsolver/AggUtils.hpp\
-		pcsolver/src/modules/aggsolver/AggPrint.hpp pcsolver/src/modules/aggsolver/FullyWatched.hpp\
-		pcsolver/src/modules/aggsolver/PartiallyWatched.hpp\
-		pcsolver/src/modules/aggsolver/AggProp.hpp\
-		pcsolver/src/theorysolvers/LogicSolver.hpp pcsolver/src/theorysolvers/PCSolver.hpp pcsolver/src/theorysolvers/SOSolver.hpp\
-		pcsolver/src/external/ExternalInterface.hpp pcsolver/src/external/ExternalUtils.hpp\
-		pcsolver/src/utils/Print.hpp pcsolver/src/utils/Utils.hpp pcsolver/src/utils/PrintMessage.hpp pcsolver/src/utils/IntTypes.h\
-		pcsolver/src/parser/ResourceManager.hpp pcsolver/src/parser/Lparseread.hpp pcsolver/src/parser/PBread.hpp\
-		pcsolver/src/parser/ParseOptions.hpp\
-		pcsolver/src/tclap/CmdLine.h\
-		pcsolver/src/external/Translator.hpp pcsolver/src/external/Translator.cpp\
-		pcsolver/src/Unittests.hpp
+		pcsolver/src/satsolver/SATSolver.hpp				pcsolver/src/satsolver/SATSolver.cpp\
+		pcsolver/src/satsolver/SATUtils.hpp					pcsolver/src/satsolver/SATUtils.cpp\
+		pcsolver/src/modules/DPLLTmodule.hpp 				pcsolver/src/modules/DPLLTmodule.cpp\
+		pcsolver/src/modules/ModSolver.hpp	 				pcsolver/src/modules/ModSolver.cpp\
+		pcsolver/src/modules/IDSolver.hpp 					pcsolver/src/modules/IDSolver.cpp\
+		pcsolver/src/modules/AggSolver.hpp 					pcsolver/src/modules/AggSolver.cpp\
+		pcsolver/src/modules/aggsolver/AggTransform.hpp 	pcsolver/src/modules/aggsolver/AggTransform.cpp\
+		pcsolver/src/modules/aggsolver/AggUtils.hpp 		pcsolver/src/modules/aggsolver/AggUtils.cpp\
+		pcsolver/src/modules/aggsolver/AggPrint.hpp 		pcsolver/src/modules/aggsolver/AggPrint.cpp\
+		pcsolver/src/modules/aggsolver/FullyWatched.hpp 	pcsolver/src/modules/aggsolver/FullyWatched.cpp\
+		pcsolver/src/modules/aggsolver/PartiallyWatched.hpp pcsolver/src/modules/aggsolver/GenPartiallyWatched.cpp\
+		pcsolver/src/modules/aggsolver/AggProp.hpp 			pcsolver/src/modules/aggsolver/AggProp.cpp\
+		pcsolver/src/theorysolvers/LogicSolver.hpp\
+		pcsolver/src/theorysolvers/PCSolver.hpp 			pcsolver/src/theorysolvers/PCSolver.cpp\
+		pcsolver/src/theorysolvers/SOSolver.hpp 			pcsolver/src/theorysolvers/SOSolver.cpp\
+		pcsolver/src/utils/IntTypes.h\
+		pcsolver/src/utils/Print.hpp 						pcsolver/src/utils/Print.cpp\
+		pcsolver/src/utils/Utils.hpp 						pcsolver/src/utils/Utils.cpp\
+		pcsolver/src/utils/PrintMessage.hpp 				pcsolver/src/utils/PrintMessage.cpp\
+		pcsolver/src/parser/ResourceManager.hpp 			pcsolver/src/parser/ResourceManager.cpp\
+		pcsolver/src/parser/Lparseread.hpp 					pcsolver/src/parser/Lparseread.cpp\
+		pcsolver/src/parser/PBread.hpp 						pcsolver/src/parser/PBread.cpp\
+		pcsolver/src/parser/ParseOptions.hpp 				pcsolver/src/parser/ParseOptions.cpp\
+		pcsolver/src/external/ExternalInterface.hpp 		pcsolver/src/external/ExternalInterface.cpp\
+		pcsolver/src/external/ExternalUtils.hpp\
+		pcsolver/src/external/Translator.hpp 				pcsolver/src/external/Translator.cpp\
+		pcsolver/src/external/InterfaceImpl.hpp 			pcsolver/src/external/InterfaceImpl.cpp\
+		pcsolver/src/GeneralUtils.hpp 						pcsolver/src/GeneralUtils.cpp\
+		pcsolver/src/Unittests.hpp 							pcsolver/src/Unittests.cpp
 
-AM_CXXFLAGS+=-I $(top_srcdir)/pcsolver/src -I $(top_srcdir)/pcsolver/tclap/include/ #-std=gnu++0x 
-AM_LDFLAGS+=-pthread  -L$(top_builddir)/pcsolver/perftools/ -ltcmalloc_minimal # -lprofiler
+
+AM_CXXFLAGS+=-I $(top_srcdir)/pcsolver/src/ -I $(top_srcdir)/pcsolver/lib/tclap/include/ #-std=gnu++0x 
 
 #ESSENTIAL FOR INTTYPES USAGE 
 AM_CXXFLAGS+= -D __STDC_FORMAT_MACROS -D __STDC_LIMIT_MACROS
 
-gidl_LDADD+=-L$(top_builddir)/pcsolver/src/pbsolver -lpbsolver-1.0
+gidl_LDADD+= $(top_builddir)/pcsolver/lib/pbsolver/libpbsolver-1.0.la
 
 #PBSOLVER
-gidl_SOURCES+=pbsolver/PbSolver.h
-AM_CXXFLAGS+=-I$(top_srcdir)/pcsolver/src/pbsolver/ -I$(top_srcdir)/pcsolver/src/pbsolver/pbbase/h/ -I$(top_srcdir)/pcsolver/src/pbsolver/ADTs/
+gidl_SOURCES+=pbsolver/lib/PbSolver.h
+AM_CXXFLAGS+=-I$(top_srcdir)/pcsolver/lib/pbsolver/ -I$(top_srcdir)/pcsolver/lib/pbsolver/pbbase/h/ -I$(top_srcdir)/pcsolver/lib/pbsolver/ADTs/
 
 
 #MINISAT 2.07 09z
@@ -104,7 +110,7 @@ gidl_SOURCES +=\
 		pcsolver/src/solver3minisat22/mtl/Sort.h pcsolver/src/solver3minisat22/mtl/XAlloc.h\
 		pcsolver/src/solver3minisat22/utils/ParseUtils.h pcsolver/src/solver3minisat22/utils/Options.h\
 		pcsolver/src/solver3minisat22/zconf.h pcsolver/src/solver3minisat22/zlib.h
-AM_CXXFLAGS+= -D USEMINISAT22 -I$(srcdir)/pcsolver/src/solver3minisat22/
+AM_CXXFLAGS+= -D USEMINISAT22 -I$(top_srcdir)/pcsolver/src/solver3minisat22/
 #necessary if not used by minisatid itself! AM_CXXFLAGS+= -D __STDC_FORMAT_MACROS -D __STDC_LIMIT_MACROS 
 endif
 

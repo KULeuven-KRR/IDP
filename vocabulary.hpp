@@ -99,7 +99,6 @@ class FormParseInfo : public ParseInfo {
 class Sort {
 
 	private:
-
 		string			_name;		// name of the sort
 		vector<Sort*>	_parents;	// the parent sorts of the sort in the sort hierarchy
 		vector<Sort*>	_children;	// the children of the sort in the sort hierarchy 
@@ -107,7 +106,6 @@ class Sort {
 		ParseInfo		_pi;		// the place where the sort was declared 
 
 	public:
-
 		// Constructors
 		Sort(const string& name);
 		Sort(const string& name, const ParseInfo& pi);  
@@ -131,14 +129,15 @@ class Sort {
 		Sort*				child(unsigned int n)		const	{ return _children[n];		}
 		string				to_string()					const	{ return _name;				}
 		set<Sort*>			ancestors(Vocabulary* v)	const;
+		set<Sort*>			descendents(Vocabulary* v)	const;
 
 		// Built-in sorts
 		virtual bool		builtin()	const	{ return false;	}
 		virtual SortTable*	inter()		const	{ return 0;		}	// returns the built-in
-																				// interpretation for
-																				// built-in sorts
+																	// interpretation for
+																	// built-in sorts
 		// Visitor
-        void accept(Visitor*);
+        void accept(Visitor*) const;
 
 };
 
@@ -228,7 +227,7 @@ class PFSymbol {
 		unsigned int			nrSorts()				const { return _sorts.size();					}
 		Sort*					sort(unsigned int n)	const { return _sorts[n];						}
 		const vector<Sort*>&	sorts()					const { return _sorts;							}
-		string					to_string()				const { return _name.substr(0,_name.find('/'));	}
+		string					to_string()				const;
 		virtual bool			ispred()				const = 0;	// true iff the symbol is a predicate
 
 		// Built-in symbols 
@@ -269,7 +268,7 @@ class Predicate : public PFSymbol {
 
 		// Built-in symbols
 				PredInter*		predinter(const AbstractStructure& s)	const { return inter(s);	}
-		virtual	PredInter*		inter(const AbstractStructure&)			const { return 0;				}
+		virtual	PredInter*		inter(const AbstractStructure&)			const { return 0;			}
 
 		// Overloaded symbols 
 		virtual bool				contains(Predicate* p)				const { return p == this;	}
@@ -279,7 +278,7 @@ class Predicate : public PFSymbol {
 		virtual	vector<Sort*>		allsorts()							const;
 
 		// Visitor
-        void accept(Visitor*);
+        void accept(Visitor*) const;
 
 };
 
@@ -311,7 +310,7 @@ class OverloadedPredicate : public Predicate {
 				vector<Sort*>		allsorts()							const;
 
 		// Visitor
-		void 	accept(Visitor*);
+		void 	accept(Visitor*) const;
 
 		// Debugging of GidL
 		void	inspect()	const;
@@ -370,7 +369,7 @@ class Function : public PFSymbol {
 
 		// Built-in symbols
 				PredInter*		predinter(const AbstractStructure& s)	const;
-		virtual	FuncInter*		inter(const AbstractStructure&)		const { return 0;		}
+		virtual	FuncInter*		inter(const AbstractStructure&)			const { return 0;		}
 
 		// Overloaded symbols 
 		virtual bool				contains(Function* f)	const { return f == this;				}
@@ -380,7 +379,7 @@ class Function : public PFSymbol {
 		virtual	vector<Sort*>		allsorts()				const;	
 
 		// Visitor
-        void accept(Visitor*);
+        void accept(Visitor*) const;
 
 };
 
@@ -412,7 +411,7 @@ class OverloadedFunction : public Function {
 				vector<Sort*>		allsorts()							const;	
 
 		// Visitor
-		void 	accept(Visitor*);
+		void 	accept(Visitor*) const;
 
 		// Debugging of GidL
 		void	inspect()	const;
@@ -509,7 +508,7 @@ class Vocabulary {
 		vector<Function*>	func_no_arity(const string&)	const;	// return all functions with the given name (not including the arity)
 
 		// Visitor
-		void accept(Visitor*);
+		void accept(Visitor*) const;
 
         // Lua
 		int tolua(lua_State*,const vector<string>&) const;
@@ -535,7 +534,6 @@ class Vocabulary {
  *
  */
 
-enum ElementType { ELINT, ELDOUBLE, ELSTRING, ELCOMPOUND };
 
 // A single domain element
 union Element {
@@ -571,6 +569,7 @@ struct compound {
 	compound(Function* f, const vector<TypedElement>& a) : _function(f), _args(a) { }
 	string to_string() const;
 };
+typedef compound* domelement;
 
 // Class that implements the relation 'less-than-or-equal' on tuples of domain elements with the same types
 class ElementWeakOrdering {
@@ -630,6 +629,7 @@ namespace ElementUtil {
 	// If this is impossible, the non-existing element of the requested type is returned
 	Element		convert(TypedElement,ElementType newtype);		
 	Element		convert(Element,ElementType oldtype,ElementType newtype);
+	vector<TypedElement> convert(const vector<domelement>&);
 
 	// Compare elements
 	bool	equal(Element e1, ElementType t1, Element e2, ElementType t2);				// equality

@@ -24,8 +24,10 @@ class TheoryComponent {
 		TheoryComponent() { }
 
 		// Visitor
-		virtual void				accept(Visitor*) = 0;
+		virtual void				accept(Visitor*) const = 0;
 		virtual TheoryComponent*	accept(MutatingVisitor*) = 0;
+
+		virtual string to_string(unsigned int spaces = 0)	const = 0;
 };
 
 /***************
@@ -62,26 +64,27 @@ class Formula : public TheoryComponent {
 		void	swapsign()	{ _sign = !_sign;	}
 
 		// Inspectors
-				bool					sign()					const { return _sign;			}
-				unsigned int			nrFvars()				const { return _fvars.size();	}
-				Variable*				fvar(unsigned int n)	const { return _fvars[n];		}
-				const FormParseInfo&	pi()					const { return _pi;				}
-		virtual	unsigned int			nrQvars()				const = 0;	// number of variables quantified by the formula
-		virtual	unsigned int			nrSubforms()			const = 0;	// number of direct subformulas
-		virtual	unsigned int			nrSubterms()			const = 0;  // number of direct subterms
-		virtual	Variable*				qvar(unsigned int n)	const = 0;	// the n'th quantified variable
-		virtual	Formula*				subform(unsigned int n)	const = 0;	// the n'th direct subformula
-		virtual	Term*					subterm(unsigned int n)	const = 0;	// the n'th direct subterm
-				bool					contains(Variable*)		const;		// true iff the formula contains the variable
-		virtual	bool					trueformula()			const { return false;	}
-		virtual	bool					falseformula()			const { return false;	}
+				bool					sign()						const { return _sign;			}
+				unsigned int			nrFvars()					const { return _fvars.size();	}
+				Variable*				fvar(unsigned int n)		const { return _fvars[n];		}
+				const FormParseInfo&	pi()						const { return _pi;				}
+		virtual	unsigned int			nrQvars()					const = 0;	// number of variables quantified by the formula
+		virtual	unsigned int			nrSubforms()				const = 0;	// number of direct subformulas
+		virtual	unsigned int			nrSubterms()				const = 0;  // number of direct subterms
+		virtual	Variable*				qvar(unsigned int n)		const = 0;	// the n'th quantified variable
+		virtual	Formula*				subform(unsigned int n)		const = 0;	// the n'th direct subformula
+		virtual	Term*					subterm(unsigned int n)		const = 0;	// the n'th direct subterm
+				bool					contains(const Variable*)	const;		// true iff the formula contains the variable
+				bool					contains(const PFSymbol*)	const;		// true iff the formula contains the symbol
+		virtual	bool					trueformula()				const { return false;	}
+		virtual	bool					falseformula()				const { return false;	}
 
 		// Visitor
-		virtual void		accept(Visitor* v) = 0;
-		virtual Formula*	accept(MutatingVisitor* v) = 0;
+		virtual void		accept(Visitor* v) const	= 0;
+		virtual Formula*	accept(MutatingVisitor* v)	= 0;
 
 		// Debugging
-		virtual string to_string()	const = 0;
+		virtual string to_string(unsigned int spaces = 0)	const = 0;
 	
 };
 
@@ -110,20 +113,21 @@ class PredForm : public Formula {
 		void	arg(unsigned int n, Term* t)	{ _args[n] = t;	}
 
 		// Inspectors
-		PFSymbol*		symb()					const { return _symb;				}
-		unsigned int	nrQvars()				const { return 0;					}
-		unsigned int	nrSubforms()			const { return 0;					}
-		unsigned int	nrSubterms()			const { return _args.size();		}
-		Variable*		qvar(unsigned int)		const { assert(false); return 0;	}
-		Formula*		subform(unsigned int)	const { assert(false); return 0;	}
-		Term*			subterm(unsigned int n)	const { return _args[n];			}
+		PFSymbol*				symb()					const { return _symb;				}
+		unsigned int			nrQvars()				const { return 0;					}
+		unsigned int			nrSubforms()			const { return 0;					}
+		unsigned int			nrSubterms()			const { return _args.size();		}
+		Variable*				qvar(unsigned int)		const { assert(false); return 0;	}
+		Formula*				subform(unsigned int)	const { assert(false); return 0;	}
+		Term*					subterm(unsigned int n)	const { return _args[n];			}
+		const vector<Term*>&	args()					const { return _args;				}
 		
 		// Visitor
-		void		accept(Visitor* v);
+		void		accept(Visitor* v) const;
 		Formula*	accept(MutatingVisitor* v);
 
 		// Debugging
-		string to_string() const;
+		string to_string(unsigned int spaces = 0) const;
 
 };
 
@@ -174,11 +178,11 @@ class EqChainForm : public Formula {
 		const vector<bool>& compsigns()	const	{ return _signs;	}
 
 		// Visitor
-		void		accept(Visitor* v);
+		void		accept(Visitor* v) const;
 		Formula*	accept(MutatingVisitor* v);
 
 		// Debugging
-		string to_string() const;
+		string to_string(unsigned int spaces = 0) const;
 
 };
 
@@ -217,11 +221,11 @@ class EquivForm : public Formula {
 		Term*			subterm(unsigned int)	const { assert(false); return 0;	 	}
 
 		// Visitor
-		void		accept(Visitor* v);
+		void		accept(Visitor* v) const;
 		Formula*	accept(MutatingVisitor* v);
 
 		// Debuging
-		string to_string() const;
+		string to_string(unsigned int spaces = 0) const;
 
 };
 
@@ -264,13 +268,12 @@ class BoolForm : public Formula {
 		bool			trueformula()			const	{ return (_subf.empty() && _conj == _sign);	}
 		bool			falseformula()			const	{ return (_subf.empty() && _conj != _sign);	}
 
-
 		// Visitor
-		void		accept(Visitor* v);
+		void		accept(Visitor* v) const;
 		Formula*	accept(MutatingVisitor* v);
 
 		// Debugging
-		string to_string()	const;
+		string to_string(unsigned int spaces = 0)	const;
 
 };
 
@@ -293,8 +296,8 @@ class QuantForm : public Formula {
 		QuantForm*	clone()									const;
 		QuantForm*	clone(const map<Variable*,Variable*>&)	const;
 
-	   // Destructor
-	   void recursiveDelete();
+		// Destructor
+		void recursiveDelete();
 
 		// Mutators
 		void	add(Variable* v)	{ _vars.push_back(v);	}
@@ -314,11 +317,11 @@ class QuantForm : public Formula {
 		const vector<Variable*>&	qvars()		const { return _vars;				}
 
 		// Visitor
-		void		accept(Visitor* v);
+		void		accept(Visitor* v) const;
 		Formula*	accept(MutatingVisitor* v);
 
 		// Debugging
-		string to_string()	const;
+		string to_string(unsigned int spaces = 0)	const;
 
 };
 
@@ -356,13 +359,14 @@ class AggForm : public Formula {
 		Term*			subterm(unsigned int n)	const { return (n ? _right : _left);	}
 		Term*			left()					const { return _left;					}
 		AggTerm*		right()					const { return _right;					}
+		char			comp()					const { return _comp;					}
 
 		// Visitor
-		void		accept(Visitor* v);
+		void		accept(Visitor* v) const;
 		Formula*	accept(MutatingVisitor* v);
 
 		// Debugging
-		string to_string()	const;
+		string to_string(unsigned int spaces = 0)	const;
 
 };
 
@@ -403,11 +407,11 @@ class BracketForm : public Formula {
 		Term*			subterm(unsigned int)	const { assert(false); return 0;	}
 		
 		// Visitor
-		void		accept(Visitor* v);
+		void		accept(Visitor* v) const;
 		Formula*	accept(MutatingVisitor* v);
 
 		// Debugging
-		string to_string() const;
+		string to_string(unsigned int spaces = 0) const;
 
 };
 /*
@@ -437,7 +441,14 @@ namespace FormulaUtils {
 	 *		- every free variable in the formula is interpreted by the given map
 	 */
 	TruthValue evaluate(Formula*,AbstractStructure*,const map<Variable*,TypedElement>&);	
-																				
+	
+	Formula* remove_eqchains(Formula*,Vocabulary*);	// Rewrite chains of equalities to a 
+													// conjunction or disjunction of atoms.
+	Formula* graph_functions(Formula* f);	// Rewrite a function F(x) = y in an equality as a predicate F(x,y)
+
+	Formula* moveThreeValTerms(PredForm*,AbstractStructure*,bool);	// non-recursively moves terms 
+																	// that are three-valued in the given structure
+																	// outside of the given atom
 }
 
 
@@ -459,7 +470,7 @@ class Rule {
 		Rule(const vector<Variable*>& vv, PredForm* h, Formula* b, const ParseInfo& pi) : 
 			_head(h), _body(b), _vars(vv), _pi(pi) { }
 
-		Rule*	clone()									const;
+		Rule*	clone()	const;
 
 		// Destructor
 		~Rule() { }
@@ -477,7 +488,7 @@ class Rule {
 		const vector<Variable*>&	qvars()			const { return _vars;			}
 
 		// Visitor
-		void	accept(Visitor* v);
+		void	accept(Visitor* v) const;
 		Rule*	accept(MutatingVisitor* v);
 
 		// Debug
@@ -515,7 +526,7 @@ class Definition : public TheoryComponent {
 		PFSymbol*		defsym(unsigned int n)	const { return _defsyms[n];			}
 
 		// Visitor
-		void		accept(Visitor* v);
+		void		accept(Visitor* v) const;
 		Definition*	accept(MutatingVisitor* v);
 
 		// Debug
@@ -558,7 +569,7 @@ class FixpDef : public TheoryComponent {
 		FixpDef*		def(unsigned int n)		const { return _defs[n];		}
 
 		// Visitor
-		void		accept(Visitor* v);
+		void		accept(Visitor* v) const;
 		FixpDef*	accept(MutatingVisitor* v);
 
 		// Debug
@@ -608,10 +619,11 @@ class AbstractTheory {
 		virtual Definition*			definition(unsigned int n)	const = 0;	// the n'th definition in the theory
 		virtual FixpDef*			fixpdef(unsigned int n)		const = 0;  // the n'th fixpoint definition in the theory
 				TheoryComponent*	component(unsigned int n)	const;
+		virtual AbstractTheory*		clone()						const = 0;
 
 		// Visitor
-		virtual void			accept(Visitor*) = 0;
-		virtual AbstractTheory*	accept(MutatingVisitor*) = 0;
+		virtual void			accept(Visitor*) const		= 0;
+		virtual AbstractTheory*	accept(MutatingVisitor*)	= 0;
 
 		// Debugging
 		virtual string to_string() const = 0;
@@ -660,7 +672,7 @@ class Theory : public AbstractTheory {
 		FixpDef*		fixpdef(unsigned int n)		const { return _fixpdefs[n];		}
 
 		// Visitor
-		void	accept(Visitor*);
+		void	accept(Visitor*) const;
 		Theory*	accept(MutatingVisitor*);
 
 		// Debugging
@@ -675,8 +687,8 @@ namespace TheoryUtils {
 	void remove_equiv(AbstractTheory*);		// Rewrite A <=> B to (A => B) & (B => A)
 	void flatten(AbstractTheory*);			// Rewrite (! x : ! y : phi) to (! x y : phi), rewrite ((A & B) & C) to (A & B & C), etc.
 	void remove_eqchains(AbstractTheory*);	// Rewrite chains of equalities to a conjunction or disjunction of atoms.
-	void move_quantifiers(AbstractTheory* t);	// Rewrite (! x : phi & chi) to ((! x : phi) & (!x : chi)), and similarly for ?.
-	void move_functions(AbstractTheory* t);
+	void move_quantifiers(AbstractTheory*);	// Rewrite (! x : phi & chi) to ((! x : phi) & (!x : chi)), and similarly for ?.
+	void move_functions(AbstractTheory*);
 	// TODO  Merge definitions
 
 	/** Tseitin transformation **/
@@ -684,7 +696,7 @@ namespace TheoryUtils {
 	void tseitin(AbstractTheory*);	
 	
 	/** Reduce theories **/
-	void reduce(AbstractTheory* t, AbstractStructure* s);		// Replace ground atoms by their truth value in s
+	void reduce(AbstractTheory*, AbstractStructure*);		// Replace ground atoms by their truth value in s
 
 	/** Completion **/
 	// TODO  Compute completion of definitions

@@ -9,6 +9,7 @@
 
 #include "vocabulary.hpp"
 #include "visitor.hpp"
+
 typedef vector<vector<Element> > VVE;
 
 /*************************************
@@ -18,7 +19,7 @@ typedef vector<vector<Element> > VVE;
 class PredTable {
 
 	private:
-		unsigned int	_nrofrefs;	// Number of references to this table
+		unsigned int					_nrofrefs;	// Number of references to this table
 
 	public:
 		
@@ -52,11 +53,14 @@ class PredTable {
 				bool	contains(const vector<TypedElement>&)	const;		// true iff the table contains the tuple
 																			// works also if the types of the tuple do not
 																			// match the types of the table
+				bool	contains(const vector<TypedElement*>&)	const;
+		virtual	bool	contains(const vector<compound*>&)		const;
 
 		// Inspectors for finite tables
 		virtual	unsigned int		size()									const = 0;	// the size of the table
 		virtual	vector<Element>		tuple(unsigned int n)					const = 0;	// the n'th tuple
 		virtual Element				element(unsigned int r,unsigned int c)	const = 0;	// the element at position (r,c)
+				domelement			delement(unsigned int r,unsigned int c)	const;
 
 		// Debugging
 		virtual string to_string(unsigned int spaces = 0)	const = 0;
@@ -91,6 +95,7 @@ class CopyPredTable : public PredTable {
 
 		// Check if the table contains a given tuple
 		bool	contains(const vector<Element>& ve)		const { return _table->contains(ve);	} 
+		bool	contains(const vector<compound*>& vd)	const { return _table->contains(vd);	}
 
 		// Inspectors for finite tables
 		unsigned int		size()									const { return _table->size();			}	 
@@ -150,13 +155,14 @@ class SortTable : public PredTable {
 		virtual Element			element(unsigned int n)					const = 0;	// Return the n'th element
 				TypedElement	telement(unsigned int n)				const { TypedElement te(element(n),type()); return te;	}
 				vector<Element>	tuple(unsigned int n)					const { return vector<Element>(1,element(n));			}
-				Element			element(unsigned int r,unsigned int )	const { return element(r);								}
+				Element			element(unsigned int r,unsigned int c)	const { return element(r);								}
+				domelement		delement(unsigned int n)				const;
 		virtual unsigned int	position(Element,ElementType)			const = 0;	// Return the position of the given element
 				unsigned int	position(Element e)						const { return position(e,type());					}
 				unsigned int	position(TypedElement te)				const { return position(te._element,te._type);		}
 
 		// Visitor
-		void accept(Visitor*);
+		void accept(Visitor*) const;
 
 		// Debugging
 		virtual string to_string(unsigned int spaces = 0) const = 0;
@@ -621,6 +627,9 @@ class FinitePredTable : public PredTable {
 		ElementWeakOrdering			_order;		// less-than-or-equal relation on the tuples of this table
 		ElementEquality				_equality;	// equality relation on the tuples of this table
 
+		mutable	set<vector<compound*> >	_dyntable;
+		mutable	set<vector<compound*> >	_invdyntable;	// complement of _dyntable
+														// OPTIMIZATION? do not keep this table?
 	public:
 
 		// Constructors 
@@ -661,6 +670,7 @@ class FinitePredTable : public PredTable {
 
 		// Check if the table contains a given tuple
 		bool	contains(const vector<Element>&)	const;
+		bool	contains(const vector<compound*>&)	const;
 
 		// Other inspectors
 		VVE::const_iterator		begin()									const { return _table.begin();	}
@@ -764,9 +774,10 @@ class PredInter {
 		bool		isfalse(const vector<Element>& vi)		const { return (_cf ? _cfpt->contains(vi) : !(_cfpt->contains(vi)));	}
 		bool		istrue(const vector<TypedElement>& vi)	const;	// return true iff the given tuple is true or inconsistent
 		bool		isfalse(const vector<TypedElement>& vi)	const;	// return false iff the given tuple is false or inconsistent
+		bool		fasttwovalued()							const { return _ctpf == _cfpt;	}
 
 		// Visitor
-		void accept(Visitor*);
+		void accept(Visitor*) const;
 
 		// Debugging
 		string to_string(unsigned int spaces = 0) const;
@@ -784,6 +795,7 @@ class FuncTable {
 
 	private:
 		unsigned int	_nrofrefs;	// Number of references to this table
+		mutable	map<vector<domelement>,domelement>	_dyntable;
 
 	public:
 
@@ -805,6 +817,7 @@ class FuncTable {
 		virtual unsigned int	arity()									const = 0;	// arity of the table - 1
 		virtual unsigned int	size()									const = 0;	// size of the table
 		virtual ElementType		type(unsigned int n)					const = 0;	// type of the n'th column of the table
+				ElementType		outtype()								const { return type(arity());	}
 		virtual vector<Element>	tuple(unsigned int n)					const = 0;	// return the n'th tuple
 		virtual Element			element(unsigned int r,unsigned int c)	const = 0;	// return the element at row r and column c
 
@@ -812,6 +825,8 @@ class FuncTable {
 																				// NOTE: the type of the n'th element in vi should be
 																				// the type of the n'th column in the table. 
 				Element	operator[](const vector<TypedElement>& vi)	const;		// return the value of vi according to the function
+				Element operator[](const vector<TypedElement*>& vi)	const;
+				domelement operator[](const vector<domelement>& vi)	const;
 
 		// Debugging
 		virtual string to_string(unsigned int spaces = 0) const = 0;
@@ -926,7 +941,7 @@ class FuncPredTable : public PredTable {
 		Element				element(unsigned int r,unsigned int c)	const { return _ftable->element(r,c);	}
 
 		// Visitor
-		void accept(Visitor*);
+		void accept(Visitor*) const;
 
 		// Debugging
 		string to_string(unsigned int spaces = 0)	const { return _ftable->to_string(spaces);	}
@@ -955,14 +970,15 @@ class FuncInter {
 		void	add(const vector<TypedElement>& tuple,bool ctpf,bool c);	// IMPORTANT NOTE: This method deletes _ftable if it is finite!
 
 		// Inspectors
-		PredInter*	predinter()	const { return _pinter;	}
-		FuncTable*	functable()	const { return _ftable;	}
+		PredInter*	predinter()		const { return _pinter;			}
+		FuncTable*	functable()		const { return _ftable;			}
+		bool		fasttwovalued()	const { return _ftable != 0;	}
 
 		// Debugging
 		string to_string(unsigned int spaces = 0) const;
 
 		// Visitor
-        void accept(Visitor*);
+        void accept(Visitor*) const;
 
 };
 
@@ -1014,6 +1030,7 @@ class AbstractStructure {
 		virtual void	vocabulary(Vocabulary* v) { _vocabulary = v;	}	// set the vocabulary
 		virtual AbstractStructure*	clone() = 0;	// take a clone of this structure
 		virtual void	forcetwovalued() = 0;		// delete all cfpt tables and replace by ctpf
+		virtual void	sortall() = 0;				// sort all tables
 
 		// Inspectors
 				const string&	name()						const { return _name;		}
@@ -1022,10 +1039,10 @@ class AbstractStructure {
 		virtual SortTable*		inter(Sort* s)				const = 0;	// Return the domain of s.
 		virtual PredInter*		inter(Predicate* p)			const = 0;	// Return the interpretation of p.
 		virtual FuncInter*		inter(Function* f)			const = 0;	// Return the interpretation of f.
-		virtual PredInter*		inter(PFSymbol* s)			const = 0;  // Return the interpretation of s.
+		virtual PredInter*		inter(PFSymbol* s)			const = 0;	// Return the interpretation of s.
 
 		// Visitor
-		virtual void accept(Visitor* v)	= 0;
+		virtual void accept(Visitor* v) const	= 0;
 
 		// Debugging
 		virtual string	to_string(unsigned int spaces = 0) const = 0;
@@ -1038,14 +1055,10 @@ class Structure : public AbstractStructure {
 
 	private:
 
-		vector<SortTable*>	_sortinter;		// The domains of the structure. 
-											// The domain for sort s is stored in _sortinter[n], 
-											// where n is the index of s in _vocabulary.
-											// If a sort has no domain, a null-pointer is stored.
-		vector<PredInter*>	_predinter;		// The interpretations of the predicate symbols.
-											// If a predicate has no interpretation, a null-pointer is stored.
-		vector<FuncInter*>	_funcinter;		// The interpretations of the function symbols.
-											// If a function has no interpretation, a null-pointer is stored.
+		//TODO: these should not be mutable!
+		mutable map<Sort*,SortTable*>		_sortinter;		// The domains of the structure. 
+		mutable map<Predicate*,PredInter*>	_predinter;		// The interpretations of the predicate symbols.
+		mutable map<Function*,FuncInter*>	_funcinter;		// The interpretations of the function symbols.
 	
 	public:
 		
@@ -1056,36 +1069,34 @@ class Structure : public AbstractStructure {
 		~Structure();
 
 		// Mutators
-		void	vocabulary(Vocabulary* v);			// set the vocabulary
-		void	inter(Sort* s,SortTable* d);		// set the domain of s to d.
-		void	inter(Predicate* p, PredInter* i);	// set the interpretation of p to i.
-		void	inter(Function* f, FuncInter* i);	// set the interpretation of f to i.
-		void	addElement(Element,ElementType,Sort*);	// add the given element to the interpretation of the given sort
+		void	vocabulary(Vocabulary* v);					// set the vocabulary
+		void	inter(Sort* s,SortTable* d) const;			// set the domain of s to d. TODO: should not be const!
+		void	inter(Predicate* p, PredInter* i) const;	// set the interpretation of p to i. TODO: should not be const!
+		void	inter(Function* f, FuncInter* i) const;		// set the interpretation of f to i. TODO: should not be const!
+		void	addElement(Element,ElementType,Sort*);		// add the given element to the interpretation of the given sort
 		void	functioncheck();					// check the correctness of the function tables
 		void	autocomplete();						// set the interpretation of all predicates and functions that 
 													// do not yet have an interpretation to the least precise 
 													// interpretation.
 		Structure*	clone();						// take a clone of this structure
 		void	forcetwovalued();		
+		void	sortall();
 
 		// Inspectors
 		Vocabulary*		vocabulary()				const { return AbstractStructure::vocabulary();	}
-		SortTable*		inter(Sort* s)				const;	// Return the domain of s.
-		PredInter*		inter(Predicate* p)			const;	// Return the interpretation of p.
-		FuncInter*		inter(Function* f)			const;	// Return the interpretation of f.
-		PredInter*		inter(PFSymbol* s)			const;  // Return the interpretation of s.
-		SortTable*		sortinter(unsigned int n)	const { return _sortinter[n];	}
-		PredInter*		predinter(unsigned int n)	const { return _predinter[n];	}
-		FuncInter*		funcinter(unsigned int n)	const { return _funcinter[n];	}
-		bool			hasInter(Sort* s)			const;	// True iff s has an interpretation
-		bool			hasInter(Predicate* p)		const;	// True iff p has an interpretation
-		bool			hasInter(Function* f)		const;	// True iff f has an interpretation
-		unsigned int	nrSortInters()				const { return _sortinter.size();	}
-		unsigned int	nrPredInters()				const { return _predinter.size();	}
-		unsigned int	nrFuncInters()				const { return _funcinter.size();	}
+		SortTable*		inter(Sort* s)				const; // Return the domain of s.
+		PredInter*		inter(Predicate* p)			const; // Return the interpretation of p.
+		FuncInter*		inter(Function* f)			const; // Return the interpretation of f.
+		PredInter*		inter(PFSymbol* s)			const; // Return the interpretation of s.
+		bool			hasInter(Sort* s)		{ return _sortinter.find(s) != _sortinter.end();	}
+		bool			hasInter(Predicate* p)	{ return _predinter.find(p) != _predinter.end();	}
+		bool			hasInter(Function* f)	{ return _funcinter.find(f) != _funcinter.end();	}
+//		unsigned int	nrSortInters()				const { return _sortinter.size();	}
+//		unsigned int	nrPredInters()				const { return _predinter.size();	}
+//		unsigned int	nrFuncInters()				const { return _funcinter.size();	}
 
 		// Visitor
-		void accept(Visitor* v);
+		void accept(Visitor* v) const;
 
 		// Debugging
 		string	to_string(unsigned int spaces = 0) const;
@@ -1096,10 +1107,10 @@ class AbstractTheory;
 namespace StructUtils {
 
 	// Make a theory containing all literals that are true according to the given structure
-	AbstractTheory*		convert_to_theory(AbstractStructure*);	
+	AbstractTheory*		convert_to_theory(const AbstractStructure*);	
 
 	// Compute the complement of the given table in the given structure
-	PredTable*	complement(PredTable*,const vector<Sort*>&, AbstractStructure*);
+	PredTable*	complement(const PredTable*,const vector<Sort*>&,const AbstractStructure*);
 
 }
 

@@ -17,6 +17,18 @@ char* rl_gets() {
 	if (line_read && *line_read) add_history(line_read);
 	return (line_read);
 }
+
+void idp_rl_start() {
+	read_history(NULL);
+}
+
+void idp_rl_end() {
+	append_history(20,NULL);
+	history_truncate_file(NULL,20);
+}
+
 #else
-char* rl_gets() {}
+char*	rl_gets()		{	}
+void	idp_rl_start()	{	}
+void	idp_rl_end()	{	}
 #endif

@@ -103,7 +103,7 @@ local function createnode(nodedata)
 			elseif argone == doinsert then
 				if (nodedata.children)[argtable[2](getname)] then
 					(nodedata.children)[argtable[2](getname)] = 
-						mergenodes((nodedata.children)[argtable[2](getname)],argtable[2])
+						idp_intern.mergenodes((nodedata.children)[argtable[2](getname)],argtable[2])
 				else
 					(nodedata.children)[argtable[2](getname)] = argtable[2]
 				end

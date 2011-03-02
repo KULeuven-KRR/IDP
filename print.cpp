@@ -6,6 +6,7 @@
 
 #include "print.hpp"
 #include "theory.hpp"
+#include "ecnf.hpp"
 #include "vocabulary.hpp"
 #include "structure.hpp"
 #include "term.hpp"
@@ -31,9 +32,9 @@ Printer* Printer::create(InfOptions* opts) {
 	}
 }
 
-string Printer::print(Vocabulary* v) 	{ v->accept(this); return _out.str(); }
-string Printer::print(Theory* t) 		{ t->accept(this); return _out.str(); }
-string Printer::print(Structure* s) 	{ s->accept(this); return _out.str(); }
+string Printer::print(const Vocabulary* v)			{ v->accept(this); return _out.str(); }
+string Printer::print(const AbstractTheory* t)		{ t->accept(this); return _out.str(); }
+string Printer::print(const AbstractStructure* s)	{ s->accept(this); return _out.str(); }
 
 void Printer::indent() 		{ _indent++; }
 void Printer::unindent()	{ _indent--; }
@@ -46,15 +47,15 @@ void Printer::printtab() {
     SimplePrinter
 *******************/
 
-void SimplePrinter::visit(Vocabulary* v) {
+void SimplePrinter::visit(const Vocabulary* v) {
 	_out << v->to_string();
 }
 
-void SimplePrinter::visit(Theory* t) {
+void SimplePrinter::visit(const AbstractTheory* t) {
 	_out << t->to_string();
 }
 
-void SimplePrinter::visit(Structure* s) {
+void SimplePrinter::visit(const AbstractStructure* s) {
 	_out << s->to_string();
 }
 
@@ -64,15 +65,7 @@ void SimplePrinter::visit(Structure* s) {
 
 /** Theory **/
 
-void IDPPrinter::visit(Theory* t) {
-//	_out << "#theory " << t->name();
-//	if(t->vocabulary()) {
-//		_out << " : " << t->vocabulary()->name();
-//		if(t->structure())
-//			_out << " " << t->structure()->name();
-//	}
-//	_out << " {\n";
-//	indent();
+void IDPPrinter::visit(const Theory* t) {
 	for(unsigned int n = 0; n < t->nrSentences(); ++n) {
 		printtab();
 		t->sentence(n)->accept(this);
@@ -84,13 +77,15 @@ void IDPPrinter::visit(Theory* t) {
 	for(unsigned int n = 0; n < t->nrFixpDefs(); ++n) {
 		t->fixpdef(n)->accept(this);
 	}
-//	unindent();
-//	_out << "}\n";
+}
+
+void IDPPrinter::visit(const EcnfTheory* et) {
+	_out << et->to_string();
 }
 
 /** Formulas **/
 
-void IDPPrinter::visit(PredForm* f) {
+void IDPPrinter::visit(const PredForm* f) {
 	if(! f->sign())
 		_out << "~";
 	string fullname = f->symb()->name();
@@ -106,7 +101,7 @@ void IDPPrinter::visit(PredForm* f) {
 	}
 }
 
-void IDPPrinter::visit(EqChainForm* f) {
+void IDPPrinter::visit(const EqChainForm* f) {
 	if(! f->sign())
 		_out << "~";
 	_out << "(";
@@ -135,7 +130,7 @@ void IDPPrinter::visit(EqChainForm* f) {
 	_out << ")";
 }
 
-void IDPPrinter::visit(EquivForm* f) {
+void IDPPrinter::visit(const EquivForm* f) {
 	_out << "(";
 	f->left()->accept(this);
 	_out << " <=> ";
@@ -143,7 +138,7 @@ void IDPPrinter::visit(EquivForm* f) {
 	_out << ")";
 }
 
-void IDPPrinter::visit(BoolForm* f) {
+void IDPPrinter::visit(const BoolForm* f) {
 	if(! f->nrSubforms()) {
 		if(f->sign() == f->conj())
 			_out << "true";
@@ -165,7 +160,7 @@ void IDPPrinter::visit(BoolForm* f) {
 	}
 }
 
-void IDPPrinter::visit(QuantForm* f) {
+void IDPPrinter::visit(const QuantForm* f) {
 	if(! f->sign())
 		_out << "~";
 	_out << "(";
@@ -186,7 +181,7 @@ void IDPPrinter::visit(QuantForm* f) {
 
 /** Definitions **/
 
-void IDPPrinter::visit(Rule* r) {
+void IDPPrinter::visit(const Rule* r) {
 	printtab();
 	if(r->nrQvars()) {
 		_out << "!";
@@ -203,7 +198,7 @@ void IDPPrinter::visit(Rule* r) {
 	_out << ".";
 }
 
-void IDPPrinter::visit(Definition* d) {
+void IDPPrinter::visit(const Definition* d) {
 	printtab();
 	_out << "{\n";
 	indent();
@@ -216,7 +211,7 @@ void IDPPrinter::visit(Definition* d) {
 	_out << "}\n";
 }
 
-void IDPPrinter::visit(FixpDef* d) {
+void IDPPrinter::visit(const FixpDef* d) {
 	printtab();
 	_out << (d->lfp() ? "LFD" : "GFD") << " [\n";
 	indent();
@@ -234,11 +229,11 @@ void IDPPrinter::visit(FixpDef* d) {
 
 /** Terms **/
 
-void IDPPrinter::visit(VarTerm* t) {
+void IDPPrinter::visit(const VarTerm* t) {
 	_out << t->var()->name();
 }
 
-void IDPPrinter::visit(FuncTerm* t) {
+void IDPPrinter::visit(const FuncTerm* t) {
 	string fullname = t->func()->name();
 	_out << fullname.substr(0,fullname.find('/'));
 	if(t->nrSubterms()) {
@@ -252,11 +247,11 @@ void IDPPrinter::visit(FuncTerm* t) {
 	}
 }
 
-void IDPPrinter::visit(DomainTerm* t) {
+void IDPPrinter::visit(const DomainTerm* t) {
 	_out << ElementUtil::ElementToString(t->value(),t->type());
 }
 
-void IDPPrinter::visit(AggTerm* t) {
+void IDPPrinter::visit(const AggTerm* t) {
 	string AggTypeNames[5] = { "#", "sum", "prod", "min", "max" };
 	_out << AggTypeNames[t->type()];
 	t->set()->accept(this);
@@ -264,7 +259,7 @@ void IDPPrinter::visit(AggTerm* t) {
 
 /** Sets **/
 
-void IDPPrinter::visit(EnumSetExpr* s) {
+void IDPPrinter::visit(const EnumSetExpr* s) {
 	_out << "[ ";
 	if(s->nrSubforms()) {
 		s->subform(0)->accept(this);
@@ -276,7 +271,7 @@ void IDPPrinter::visit(EnumSetExpr* s) {
 	_out << " ]";
 }
 
-void IDPPrinter::visit(QuantSetExpr* s) {
+void IDPPrinter::visit(const QuantSetExpr* s) {
 	_out << "{";
 	for(unsigned int n = 0; n < s->nrQvars(); ++n) {
 		_out << " ";
@@ -293,7 +288,7 @@ void IDPPrinter::visit(QuantSetExpr* s) {
     Structures
 *****************/
 
-void IDPPrinter::visit(Structure* s) {
+void IDPPrinter::visit(const Structure* s) {
 	_currstructure = s;
 	Vocabulary* v = s->vocabulary();
 //	_out << "#structure " << s->name();
@@ -303,19 +298,17 @@ void IDPPrinter::visit(Structure* s) {
 //	indent();
 	for(unsigned int n = 0; n < v->nrNBPreds(); ++n) {
 		_currsymbol = v->nbpred(n);
-		if(s->hasInter(v->nbpred(n)))
-			s->inter(v->nbpred(n))->accept(this);
+		s->inter(v->nbpred(n))->accept(this);
 	}
 	for(unsigned int n = 0; n < v->nrNBFuncs(); ++n) {
 		_currsymbol = v->nbfunc(n);
-		if(s->hasInter(v->nbfunc(n)))
-			s->inter(v->nbfunc(n))->accept(this);
+		s->inter(v->nbfunc(n))->accept(this);
 	}
 //	unindent();
 //	_out << "}\n";
 }
 
-void IDPPrinter::visit(SortTable* t) {
+void IDPPrinter::visit(const SortTable* t) {
 	for(unsigned int n = 0; n < t->size(); ++n) {
 		_out << ElementUtil::ElementToString(t->element(n),t->type());
 		if(n < t->size()-1)
@@ -323,7 +316,7 @@ void IDPPrinter::visit(SortTable* t) {
 	}
 }
 
-void IDPPrinter::print(PredTable* t) {
+void IDPPrinter::print(const PredTable* t) {
 	for(unsigned int r = 0; r < t->size(); ++r) {
 		for(unsigned int c = 0; c < t->arity(); ++c) {
 			_out << ElementUtil::ElementToString(t->element(r,c),t->type(c));
@@ -339,7 +332,7 @@ void IDPPrinter::print(PredTable* t) {
 	}
 }
 
-void IDPPrinter::printInter(const char* pt1name,const char* pt2name,PredTable* pt1,PredTable* pt2) {
+void IDPPrinter::printInter(const char* pt1name,const char* pt2name,const PredTable* pt1,const PredTable* pt2) {
 	string fullname = _currsymbol->name();
 	string shortname = fullname.substr(0,fullname.find('/'));
 	printtab();
@@ -354,7 +347,7 @@ void IDPPrinter::printInter(const char* pt1name,const char* pt2name,PredTable* p
 	_out << " }\n";
 }
 
-void IDPPrinter::visit(PredInter* p) {
+void IDPPrinter::visit(const PredInter* p) {
 	string fullname = _currsymbol->name();
 	string shortname = fullname.substr(0,fullname.find('/'));
 	if(_currsymbol->nrSorts() == 0) { // proposition
@@ -406,7 +399,7 @@ void IDPPrinter::visit(PredInter* p) {
 	}
 }
 
-void IDPPrinter::visit(FuncInter* f) {
+void IDPPrinter::visit(const FuncInter* f) {
 	//TODO Currently, function interpretation is handled as predicate interpretation
 	f->predinter()->accept(this);	
 }
@@ -415,7 +408,7 @@ void IDPPrinter::visit(FuncInter* f) {
     Vocabularies
 *******************/
 
-void IDPPrinter::visit(Vocabulary* v) {
+void IDPPrinter::visit(const Vocabulary* v) {
 //	_out << "#vocabulary " << v->name() << " {\n";
 //	indent();
 	traverse(v);
@@ -423,7 +416,7 @@ void IDPPrinter::visit(Vocabulary* v) {
 //	_out << "}\n";
 }
 
-void IDPPrinter::visit(Sort* s) {
+void IDPPrinter::visit(const Sort* s) {
 //	printtab();
 	_out << "type " << s->name();
 	if(s->nrParents() > 0)
@@ -433,7 +426,7 @@ void IDPPrinter::visit(Sort* s) {
 	_out << "\n";
 }
 
-void IDPPrinter::visit(Predicate* p) {
+void IDPPrinter::visit(const Predicate* p) {
 //	printtab();
 	_out << p->name().substr(0,p->name().find('/'));
 	if(p->arity() > 0) {
@@ -445,7 +438,7 @@ void IDPPrinter::visit(Predicate* p) {
 	_out << "\n";
 }
 
-void IDPPrinter::visit(Function* f) {
+void IDPPrinter::visit(const Function* f) {
 //	printtab();
 	if(f->partial())
 		_out << "partial ";

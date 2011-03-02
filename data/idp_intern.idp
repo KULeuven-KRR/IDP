@@ -1,5 +1,39 @@
+/** Options **/
+
 #options DefaultOptions {
 	nrmodels=1
+	language=idp
+	modelformat=all
+}
+
+#procedure setoption(Opts,OptName,OptValue) {
+	return idp_intern.idpcall("setoption",Opts,OptName,OptValue)
+}
+
+#procedure setoption(OptName,OptValue) {
+	return setoption(DefaultOptions,OptName,OptValue)
+}
+
+#procedure getoption(Opts,OptName) {
+	local val = idp_intern.idpcall("getoption",Opts,OptName)
+	local numval = tonumber(val)
+	if numval then return numval
+	else return val
+	end
+}
+
+#procedure getoption(OptName) {
+	return getoption(DefaultOptions,OptName)
+}
+
+/** Create new blocks **/
+
+#procedure newoptions(Opts) {
+	return idp_intern.idpcall("newoptions",Opts)
+}
+
+#procedure newoptions() {
+	return idp_intern.idpcall("newoption")
 }
 
 /** Parsing of files **/
@@ -8,12 +42,33 @@
 }
 
 /** Model expansion **/
-#procedure model_expand(Theo,Struct) {
-	return idp_intern.idpcall("model_expand",Theo,Struct)
+#procedure model_expand(Theo,Struct,Opt) {
+	local clonetheo = clone(Theo)
+	IDP_ADVANCED::push_negations(clonetheo)
+	IDP_ADVANCED::flatten(clonetheo)
+	return idp_intern.idpcall("fastmx",clonetheo,Struct,Opt)
 }
 
-#procedure model_expand(Theo,Struct,Opt) {
-	return idp_intern.idpcall("model_expand",Theo,Struct,Opt)
+#procedure model_expand(Theo,Struct) {
+	return model_expand(Theo,Struct,DefaultOptions)
+}
+
+/** Grounding **/
+#procedure ground(Theo,Struct) {
+	local clonetheo = clone(Theo)
+	IDP_ADVANCED::push_negations(clonetheo)
+	IDP_ADVANCED::flatten(clonetheo)
+	return idp_intern.idpcall("fastground",clonetheo,Struct)
+}
+
+/** Model checking **/
+#procedure model_check(Theo,Struct) {
+	// TODO: check if two-valued
+	// assert(twovalued(Struct),"Procedure modelcheck/2 requires a two-valued structure as second argument")
+	opts = newoptions()
+	setoption(opts,"nrmodels",1)
+	sols = model_expand(Theo,Struct,opts)
+	return #sols == 1
 }
 
 /** Printing **/
@@ -65,8 +120,28 @@
 		return idp_intern.idpcall("flatten",T)
 	}
 
-	#procedure ground(T,S) {
+	#procedure naiveground(T,S) {
 		return idp_intern.idpcall("ground",T,S)
+	}
+
+	#procedure fastground(T,S) {
+		return idp_intern.idpcall("fastground",T,S)
+	}
+
+	#procedure fastmx(T,S) {
+		return idp_intern.idpcall("fastmx",T,S)
+	}
+
+	#procedure fastmx(T,S,Opt) {
+		return idp_intern.idpcall("fastmx",T,S,Opt)
+	}
+
+	#procedure naivemx(T,S) {
+		return idp_intern.idpcall("naivemx",T,S)
+	}
+
+	#procedure naivemx(T,S,Opt) {
+		return idp_intern.idpcall("naivemx",T,S,Opt)
 	}
 
 	#procedure reduce(T,S) {
@@ -75,6 +150,10 @@
 
 	#procedure totheory(S) {
 		return idp_intern.idpcall("convert_to_theory",S);
+	}
+
+	#procedure forcetowovalued(S) {
+		return idp_intern.idpcall("forcetowvalued",S);
 	}
 
 }

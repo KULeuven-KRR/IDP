@@ -17,11 +17,9 @@
 class BuiltInSort : public Sort {
 	
 	private:
-
 		SortTable*	_inter;		// The interpretation of the sort
 
 	public:
-
 		// Constructors
 		BuiltInSort(const string& name, SortTable* t) : Sort(name), _inter(t) { }
 
@@ -44,7 +42,6 @@ class BuiltInPredicate : public Predicate {
 		PredInter*	_inter;	
 
 	public:
-
 		// Constructors
 		BuiltInPredicate(const string& n, const vector<Sort*>& vs, PredInter* it) : 
 			Predicate(n,vs) { _inter = it; }
@@ -76,7 +73,6 @@ class SemiBuiltInPredicate : public Predicate {
 		bool		builtin()							const { return true;	}
 		PredInter*	inter(const AbstractStructure& s)	const;
 
-
 };
 
 PredInter* SemiBuiltInPredicate::inter(const AbstractStructure& s) const {
@@ -107,10 +103,10 @@ class ComparisonPredicate : public OverloadedPredicate {
 			OverloadedPredicate(name,ar) { _inter = inter;	}
 		~ComparisonPredicate() { }
 
-	// Inspectors
-	bool		contains(Predicate* p)				const { return p->name() == _name;	}
-	Predicate*	resolve(const vector<Sort*>& vs)		  { return disambiguate(vs,0);	}
-	Predicate*	disambiguate(const vector<Sort*>&,Vocabulary*);
+		// Inspectors
+		bool		contains(Predicate* p)				const { return p->name() == _name;	}
+		Predicate*	resolve(const vector<Sort*>& vs)		  { return disambiguate(vs,0);	}
+		Predicate*	disambiguate(const vector<Sort*>&,Vocabulary*);
 
 };
 
@@ -152,7 +148,6 @@ class BuiltInFunction : public Function {
 		FuncInter*	_inter;	
 
 	public:
-
 		// Constructors
 		BuiltInFunction(const string& n, const vector<Sort*>& is, Sort* os, FuncInter* ft) : 
 			Function(n,is,os), _inter(ft) { }
@@ -214,10 +209,10 @@ class ComparisonFunction : public OverloadedFunction {
 			OverloadedFunction(name,ar) { _inter = inter; partial(ar == 1);	}
 		~ComparisonFunction() { }
 
-	// Inspectors
-	bool		contains(Function* f)				const { return f->name() == _name;	}
-	Function*	resolve(const vector<Sort*>& vs)		  { return disambiguate(vs,0);	}
-	Function*	disambiguate(const vector<Sort*>&, Vocabulary* v);
+		// Inspectors
+		bool		contains(Function* f)				const { return f->name() == _name;	}
+		Function*	resolve(const vector<Sort*>& vs)		  { return disambiguate(vs,0);	}
+		Function*	disambiguate(const vector<Sort*>&, Vocabulary* v);
 
 };
 
@@ -261,15 +256,14 @@ class IntFloatFunction : public OverloadedFunction {
 		FuncInter*	(*_inter)(const vector<Sort*>&);
 
 	public:
-		
-	IntFloatFunction(const string& name, unsigned int ar, FuncInter* (*inter)(const vector<Sort*>&)) : 
-		OverloadedFunction(name,ar) { _inter = inter;	}
-	~IntFloatFunction() { }
+		IntFloatFunction(const string& name, unsigned int ar, FuncInter* (*inter)(const vector<Sort*>&)) : 
+			OverloadedFunction(name,ar) { _inter = inter;	}
+		~IntFloatFunction() { }
 
-	// Inspectors
-	bool		contains(Function* f)				const { return f->name() == _name;	}
-	Function*	disambiguate(const vector<Sort*>& vs)	  { return disambiguate(vs,0);	}
-	Function*	disambiguate(const vector<Sort*>&,Vocabulary* v);
+		// Inspectors
+		bool		contains(Function* f)				const { return f->name() == _name;	}
+		Function*	disambiguate(const vector<Sort*>& vs)	  { return disambiguate(vs,0);	}
+		Function*	disambiguate(const vector<Sort*>&,Vocabulary* v);
 
 };
 
@@ -312,7 +306,6 @@ Function* IntFloatFunction::disambiguate(const vector<Sort*>& vs, Vocabulary* v)
 class InfiniteSortTable : public SortTable {
 
 	public: 
-
 		// Constructors
 		InfiniteSortTable() : SortTable() { }
 
@@ -458,7 +451,6 @@ bool AllStringSortTable::contains(compound* c) const {
 class AllCharSortTable : public SortTable {
 		
 	public:
-		
 		// Constructors
 		AllCharSortTable() : SortTable() { }
 		AllCharSortTable* clone() const { return new AllCharSortTable();	}
@@ -543,7 +535,6 @@ class ComparisonPredTable : public PredTable {
 		SortTable*	_rightsort;
 
 	public:
-		
 		// Constructor
 		ComparisonPredTable(SortTable* tl, SortTable* tr) : PredTable(), _leftsort(tl), _rightsort(tr) { }
 		virtual ComparisonPredTable* clone() const = 0;
@@ -602,11 +593,11 @@ class EqualPredTable : public ComparisonPredTable {
 		EqualPredTable* clone() const { return new EqualPredTable(_leftsort,_rightsort);	}
 
 		bool	contains(const vector<Element>&)	const;
-		bool	finite()							const { return (_leftsort->finite() || _rightsort->finite()); }
-		bool	empty()								const { assert(false); return false; /* TODO */ }
+		bool	finite()							const { return (_leftsort->finite() || _rightsort->finite());	}
+		bool	empty()								const { return (_leftsort->empty() || _rightsort->empty());		}
 
-		unsigned int	size()					const { assert(false); return 0; /* TODO */ }
-		vector<Element>	tuple(unsigned int)		const { assert(false); return vector<Element>(0); /* TODO */ }
+		unsigned int	size()						const { assert(false); return 0; /* TODO */ }
+		vector<Element>	tuple(unsigned int)			const { assert(false); return vector<Element>(0); /* TODO */ }
 		Element			element(unsigned int, unsigned int)		const { assert(false); Element e; return e; /* TODO */ }
 
 		string	to_string(unsigned int spaces = 0)	const { return tabstring(spaces) + "=/2";	}
@@ -630,8 +621,8 @@ class StrLessThanPredTable : public ComparisonPredTable {
 		~StrLessThanPredTable() { }
 		StrLessThanPredTable* clone() const { return new StrLessThanPredTable(_leftsort,_rightsort);	}
 		bool	contains(const vector<Element>&)		const;
-		bool	finite()							const { assert(false); return false; /* TODO */ }
-		bool	empty()								const { assert(false); return false; /* TODO */ }
+		bool	finite()	const { return (_leftsort->finite() && _rightsort->finite());assert(false); return false; }
+		bool	empty()		const { return (_leftsort->empty() && _rightsort->empty());		}
 
 		unsigned int	size()					const { assert(false); return 0; /* TODO */ }
 		vector<Element>	tuple(unsigned int)	const { assert(false); return vector<Element>(0); /* TODO */ }
@@ -657,8 +648,8 @@ class StrGreaterThanPredTable : public ComparisonPredTable {
 		~StrGreaterThanPredTable() { }
 		StrGreaterThanPredTable* clone() const { return new StrGreaterThanPredTable(_leftsort,_rightsort);	}
 		bool	contains(const vector<Element>&)		const;
-		bool	finite()							const { assert(false); return false; /* TODO */ }
-		bool	empty()								const { assert(false); return false; /* TODO */ }
+		bool	finite()	const { return (_leftsort->finite() && _rightsort->finite());assert(false); return false; }
+		bool	empty()		const { return (_leftsort->empty() && _rightsort->empty());		}
 
 		unsigned int	size()					const { assert(false); return 0; /* TODO */ }
 		vector<Element>	tuple(unsigned int)	const { assert(false); return vector<Element>(0); /* TODO */ }
@@ -683,7 +674,6 @@ PredInter*	strgreaterinter(const vector<SortTable*>& vs) {
 class InfiniteFuncTable : public FuncTable {
 
 	public:
-
 		// Constructors
 		InfiniteFuncTable() : FuncTable() { }
 		virtual InfiniteFuncTable* clone() const = 0;
@@ -713,7 +703,6 @@ class AritFuncTable : public InfiniteFuncTable {
 		ElementType _type;	// int or double
 
 	public:
-
 		// Constructors
 		AritFuncTable(ElementType t) : InfiniteFuncTable(), _type(t) { }
 		virtual AritFuncTable* clone() const = 0; 

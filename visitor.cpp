@@ -7,84 +7,75 @@
 #include "theory.hpp"
 #include <iostream>
 
-void Visitor::visit(PredForm* a)			{ traverse(a);	}
-void Visitor::visit(BracketForm* a)			{ traverse(a);	}
-void Visitor::visit(EqChainForm* a)			{ traverse(a);	}
-void Visitor::visit(EquivForm* a)			{ traverse(a);	}
-void Visitor::visit(BoolForm* a)			{ traverse(a);	}
-void Visitor::visit(QuantForm* a)			{ traverse(a);	}
-void Visitor::visit(AggForm* a)				{ traverse(a);	}
-void Visitor::visit(Rule* a)				{ traverse(a);	}
-void Visitor::visit(Definition* a)			{ traverse(a);	}
-void Visitor::visit(FixpDef* a)				{ traverse(a);	}
-void Visitor::visit(VarTerm* a)				{ traverse(a);	}
-void Visitor::visit(FuncTerm* a)			{ traverse(a);	}
-void Visitor::visit(DomainTerm* a)			{ traverse(a);	}
-void Visitor::visit(AggTerm* a)				{ traverse(a);	}
-void Visitor::visit(EnumSetExpr* a)			{ traverse(a);	}
-void Visitor::visit(QuantSetExpr* a)		{ traverse(a);	}
-void Visitor::visit(Theory* t)				{ traverse(t);	}
-void Visitor::visit(SortTable*)				{ }
-void Visitor::visit(PredInter*)				{ }
-void Visitor::visit(FuncInter*)				{ }
-void Visitor::visit(Structure* s)			{ traverse(s);	}
-void Visitor::visit(Sort*)					{ }
-void Visitor::visit(Predicate*)				{ }
-void Visitor::visit(Function*)				{ }
-void Visitor::visit(Vocabulary* v)			{ traverse(v); }
-void Visitor::visit(EcnfTheory*)			{ /* TODO */	}
+void Visitor::visit(const PredForm* a)			{ traverse(a);	}
+void Visitor::visit(const BracketForm* a)		{ traverse(a);	}
+void Visitor::visit(const EqChainForm* a)		{ traverse(a);	}
+void Visitor::visit(const EquivForm* a)			{ traverse(a);	}
+void Visitor::visit(const BoolForm* a)			{ traverse(a);	}
+void Visitor::visit(const QuantForm* a)			{ traverse(a);	}
+void Visitor::visit(const AggForm* a)			{ traverse(a);	}
+void Visitor::visit(const Rule* a)				{ traverse(a);	}
+void Visitor::visit(const Definition* a)		{ traverse(a);	}
+void Visitor::visit(const FixpDef* a)			{ traverse(a);	}
+void Visitor::visit(const VarTerm* a)			{ traverse(a);	}
+void Visitor::visit(const FuncTerm* a)			{ traverse(a);	}
+void Visitor::visit(const DomainTerm* a)		{ traverse(a);	}
+void Visitor::visit(const AggTerm* a)			{ traverse(a);	}
+void Visitor::visit(const EnumSetExpr* a)		{ traverse(a);	}
+void Visitor::visit(const QuantSetExpr* a)		{ traverse(a);	}
+void Visitor::visit(const Theory* t)			{ traverse(t);	}
+void Visitor::visit(const SortTable*)			{ }
+void Visitor::visit(const PredInter*)			{ }
+void Visitor::visit(const FuncInter*)			{ }
+void Visitor::visit(const Structure* s)			{ traverse(s);	}
+void Visitor::visit(const Sort*)				{ }
+void Visitor::visit(const Predicate*)			{ }
+void Visitor::visit(const Function*)			{ }
+void Visitor::visit(const Vocabulary* v)		{ traverse(v); }
+void Visitor::visit(const EcnfTheory*)			{ /* TODO */	}
+void Visitor::visit(const SolverTheory*)		{ /* TODO */	}
 
-void Visitor::traverse(Formula* f) {
-	for(unsigned int n = 0; n < f->nrSubforms(); ++n) {
+void Visitor::traverse(const Formula* f) {
+	for(unsigned int n = 0; n < f->nrSubforms(); ++n)
 		f->subform(n)->accept(this);
-	}
-	for(unsigned int n = 0; n < f->nrSubterms(); ++n) {
+	for(unsigned int n = 0; n < f->nrSubterms(); ++n)
 		f->subterm(n)->accept(this);
-	}
 }
 
-void Visitor::traverse(Term* t) {
-	for(unsigned int n = 0; n < t->nrSubforms(); ++n) {
+void Visitor::traverse(const Term* t) {
+	for(unsigned int n = 0; n < t->nrSubforms(); ++n)
 		t->subform(n)->accept(this);
-	}
-	for(unsigned int n = 0; n < t->nrSubterms(); ++n) {
+	for(unsigned int n = 0; n < t->nrSubterms(); ++n)
 		t->subterm(n)->accept(this);
-	}
-	for(unsigned int n = 0; n < t->nrSubsets(); ++n) {
+	for(unsigned int n = 0; n < t->nrSubsets(); ++n)
 		t->subset(n)->accept(this);
-	}
 }
 
-void Visitor::traverse(Rule* r) {
+void Visitor::traverse(const Rule* r) {
 	r->head()->accept(this);
 	r->body()->accept(this);
 }
 
-void Visitor::traverse(Definition* d) {
-	for(unsigned int n = 0; n < d->nrRules(); ++n) {
+void Visitor::traverse(const Definition* d) {
+	for(unsigned int n = 0; n < d->nrRules(); ++n)
 		visit(d->rule(n));
-	}
 }
 
-void Visitor::traverse(FixpDef* d) {
-	for(unsigned int n = 0; n < d->nrRules(); ++n) {
+void Visitor::traverse(const FixpDef* d) {
+	for(unsigned int n = 0; n < d->nrRules(); ++n)
 		visit(d->rule(n));
-	}
-	for(unsigned int n = 0; n < d->nrDefs(); ++n) {
+	for(unsigned int n = 0; n < d->nrDefs(); ++n)
 		visit(d->def(n));
-	}
 }
 
-void Visitor::traverse(SetExpr* s) {
-	for(unsigned int n = 0; n < s->nrSubforms(); ++n) {
+void Visitor::traverse(const SetExpr* s) {
+	for(unsigned int n = 0; n < s->nrSubforms(); ++n)
 		s->subform(n)->accept(this);
-	}
-	for(unsigned int n = 0; n < s->nrSubterms(); ++n) {
+	for(unsigned int n = 0; n < s->nrSubterms(); ++n)
 		s->subterm(n)->accept(this);
-	}
 }
 
-void Visitor::traverse(Theory* t) {
+void Visitor::traverse(const Theory* t) {
 	for(unsigned int n = 0; n < t->nrSentences(); ++n) 
 		t->sentence(n)->accept(this);
 	for(unsigned int n = 0; n < t->nrDefinitions(); ++n) 
@@ -93,55 +84,49 @@ void Visitor::traverse(Theory* t) {
 		t->fixpdef(n)->accept(this);
 }
 
-void Visitor::traverse(Structure* s) {
-	for(unsigned int n = 0; n < s->vocabulary()->nrNBSorts(); ++n) {
-		visit(s->sortinter(n));
-	}
-	for(unsigned int n = 0; n < s->vocabulary()->nrNBPreds(); ++n) {
-		visit(s->predinter(n));
-	}
-	for(unsigned int n = 0; n < s->vocabulary()->nrNBFuncs(); ++n) {
-		visit(s->funcinter(n));
-	}
+void Visitor::traverse(const Structure* s) {
+	for(unsigned int n = 0; n < s->vocabulary()->nrNBSorts(); ++n)
+		visit(s->inter(s->vocabulary()->nbsort(n)));
+	for(unsigned int n = 0; n < s->vocabulary()->nrNBPreds(); ++n)
+		visit(s->inter(s->vocabulary()->nbpred(n)));
+	for(unsigned int n = 0; n < s->vocabulary()->nrNBFuncs(); ++n)
+		visit(s->inter(s->vocabulary()->nbfunc(n)));
 }
 
-void Visitor::traverse(Vocabulary* v) {
-	for(unsigned int n = 0; n < v->nrNBSorts(); ++n) {
+void Visitor::traverse(const Vocabulary* v) {
+	for(unsigned int n = 0; n < v->nrNBSorts(); ++n)
 		visit(v->nbsort(n));
-	}
-	for(unsigned int n = 0; n < v->nrNBPreds(); ++n) {
+	for(unsigned int n = 0; n < v->nrNBPreds(); ++n)
 		visit(v->nbpred(n));
-	}
-	for(unsigned int n = 0; n < v->nrNBFuncs(); ++n) {
+	for(unsigned int n = 0; n < v->nrNBFuncs(); ++n)
 		visit(v->nbfunc(n));
-	}
 }
 
 /******************
 	Visit terms
 ******************/
 
-void VarTerm::accept(Visitor* v) {
+void VarTerm::accept(Visitor* v) const {
 	v->visit(this);
 }
 
-void FuncTerm::accept(Visitor* v) {
+void FuncTerm::accept(Visitor* v) const {
 	v->visit(this);
 }
 
-void DomainTerm::accept(Visitor* v) {
+void DomainTerm::accept(Visitor* v) const {
 	v->visit(this);
 }
 
-void AggTerm::accept(Visitor* v) {
+void AggTerm::accept(Visitor* v) const {
 	v->visit(this);
 }
 
-void QuantSetExpr::accept(Visitor* v) {
+void QuantSetExpr::accept(Visitor* v) const {
 	v->visit(this);
 }
 
-void EnumSetExpr::accept(Visitor* v) {
+void EnumSetExpr::accept(Visitor* v) const {
 	v->visit(this);
 }
 
@@ -149,83 +134,83 @@ void EnumSetExpr::accept(Visitor* v) {
 	Visit theory
 ********************/
 
-void PredForm::accept(Visitor* v) {
+void PredForm::accept(Visitor* v) const {
 	v->visit(this);
 }
 
-void BracketForm::accept(Visitor* v) {
+void BracketForm::accept(Visitor* v) const {
 	v->visit(this);
 }
 
-void EquivForm::accept(Visitor* v) {
+void EquivForm::accept(Visitor* v) const {
 	v->visit(this);
 }
 
-void EqChainForm::accept(Visitor* v) {
+void EqChainForm::accept(Visitor* v) const {
 	v->visit(this);
 }
 
-void BoolForm::accept(Visitor* v) {
+void BoolForm::accept(Visitor* v) const {
 	v->visit(this);
 }
 
-void QuantForm::accept(Visitor* v) {
+void QuantForm::accept(Visitor* v) const {
 	v->visit(this);
 }
 
-void AggForm::accept(Visitor* v) {
+void AggForm::accept(Visitor* v) const {
 	v->visit(this);
 }
 
-void Rule::accept(Visitor* v) {
+void Rule::accept(Visitor* v) const {
 	v->visit(this);
 }
 
-void Definition::accept(Visitor* v) {
+void Definition::accept(Visitor* v) const {
 	v->visit(this);
 }
 
-void FixpDef::accept(Visitor* v) {
+void FixpDef::accept(Visitor* v) const {
 	v->visit(this);
 }
 
-void Theory::accept(Visitor* v) {
+void Theory::accept(Visitor* v) const {
 	v->visit(this);
 }
 
 /** Structure **/
 
-void Structure::accept(Visitor* v) {
+void Structure::accept(Visitor* v) const {
 	v->visit(this);
 }
 
-void SortTable::accept(Visitor* v) {
+void SortTable::accept(Visitor* v) const {
 	v->visit(this);
 }
 
-void PredInter::accept(Visitor* v) {
+void PredInter::accept(Visitor* v) const {
 	v->visit(this);
 }
 
-void FuncInter::accept(Visitor* v) {
+void FuncInter::accept(Visitor* v) const {
 	v->visit(this);
 }
 
 /** Vocabulary **/
 
-void Vocabulary::accept(Visitor* v) {
+void Vocabulary::accept(Visitor* v) const {
 	v->visit(this);
 }
 
-void Sort::accept(Visitor* v) {
+void Sort::accept(Visitor* v) const {
 	v->visit(this);
 }
 
-void Predicate::accept(Visitor* v) {
+void Predicate::accept(Visitor* v) const {
 	v->visit(this);
 }
 
-void Function::accept(Visitor* v) {
+void Function::accept(Visitor* v) const {
 	v->visit(this);
 }
 
@@ -464,6 +449,11 @@ Theory* MutatingVisitor::visit(Theory* t) {
 }
 
 EcnfTheory* MutatingVisitor::visit(EcnfTheory* t) {
+	// TODO
+	return t;
+}
+
+SolverTheory* MutatingVisitor::visit(SolverTheory* t) {
 	// TODO
 	return t;
 }

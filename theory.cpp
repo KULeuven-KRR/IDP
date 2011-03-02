@@ -12,7 +12,6 @@
 #include "ground.hpp"
 #include <iostream>
 #include <set>
-
 #include <typeinfo>
 
 extern string tabstring(unsigned int);
@@ -257,24 +256,36 @@ void FixpDef::defsyms() {
 	Containment checking
 ***************************/
 
-bool Formula::contains(Variable* v) const {
-	for(unsigned int n = 0; n < nrQvars(); ++n) {
+bool Formula::contains(const Variable* v) const {
+	for(unsigned int n = 0; n < nrQvars(); ++n)
 		if(qvar(n) == v) return true;
-	}
-	for(unsigned int n = 0; n < nrSubterms(); ++n) {
+	for(unsigned int n = 0; n < nrSubterms(); ++n)
 		if(subterm(n)->contains(v)) return true;
-	}
-	for(unsigned int n = 0; n < nrSubforms(); ++n) {
+	for(unsigned int n = 0; n < nrSubforms(); ++n)
 		if(subform(n)->contains(v)) return true;
-	}
 	return false;
+}
+
+class ContainmentChecker : public Visitor {
+	private:
+		const PFSymbol*	_symbol;
+		bool			_result;
+	public:
+		ContainmentChecker(const Formula* f, const PFSymbol* s) : Visitor(), _symbol(s), _result(false) { f->accept(this); }
+		void visit(const PredForm* pf) { _result = (pf->symb() == _symbol); }
+		bool result() { return _result; }
+};
+
+bool Formula::contains(const PFSymbol* s) const {
+	ContainmentChecker cc(this,s);
+	return cc.result();
 }
 
 /****************
 	Debugging
 ****************/
 
-string PredForm::to_string() const {
+string PredForm::to_string(unsigned int spaces) const {
 	string s;
 	if(!_sign) s = s + '~';
 	s = s + _symb->to_string();
@@ -288,14 +299,14 @@ string PredForm::to_string() const {
 	return s;
 }
 
-string BracketForm::to_string() const {
+string BracketForm::to_string(unsigned int spaces) const {
 	string s;
 	if(!_sign) s = s+ '~';
 	s = s + "(" + _subf->to_string() + ")";
 	return s;
 }
 
-string EqChainForm::to_string() const {
+string EqChainForm::to_string(unsigned int spaces) const {
 	string s;
 	if(!_sign) s = s + '~';
 	s = s + "(" + _terms[0]->to_string();
@@ -321,12 +332,12 @@ string EqChainForm::to_string() const {
 	return s;
 }
 
-string EquivForm::to_string() const {
+string EquivForm::to_string(unsigned int spaces) const {
 	string s = '(' + _left->to_string() + " <=> " + _right->to_string() + ')';
 	return s;
 }
 
-string BoolForm::to_string() const {
+string BoolForm::to_string(unsigned int spaces) const {
 	string s;
 	if(_subf.empty()) {
 		if(_sign == _conj) return "true";
@@ -342,7 +353,7 @@ string BoolForm::to_string() const {
 	return s + ')';
 }
 
-string QuantForm::to_string() const {
+string QuantForm::to_string(unsigned int spaces) const {
 	string s;
 	if(!_sign) s = s + '~';
 	s = s + '(';
@@ -356,7 +367,7 @@ string QuantForm::to_string() const {
 	return s + ')';
 }
 
-string AggForm::to_string() const {
+string AggForm::to_string(unsigned int spaces) const {
 	string s;
 	if(!_sign) s = s + '~';
 	s = s + '(' + _left->to_string() + _comp + _right->to_string() + ')';
@@ -496,15 +507,15 @@ class FormulaEvaluator : public Visitor {
 		
 		TruthValue returnvalue()	const { return _returnvalue;	}
 
-		void visit(PredForm*);
-		void visit(BoolForm*);
-		void visit(EqChainForm*);
-		void visit(EquivForm*);
-		void visit(QuantForm*);
+		void visit(const PredForm*);
+		void visit(const BoolForm*);
+		void visit(const EqChainForm*);
+		void visit(const EquivForm*);
+		void visit(const QuantForm*);
 		
 };
 
-void FormulaEvaluator::visit(PredForm* pf) {
+void FormulaEvaluator::visit(const PredForm* pf) {
 	// Evaluate the terms
 	vector<SortTable*> argvalues(pf->nrSubterms());
 	vector<TypedElement> currvalue(pf->nrSubterms());
@@ -550,7 +561,7 @@ void FormulaEvaluator::visit(PredForm* pf) {
 	for(unsigned int n = 0; n < argvalues.size(); ++n) delete(argvalues[n]);
 }
 
-void FormulaEvaluator::visit(EquivForm* ef) {
+void FormulaEvaluator::visit(const EquivForm* ef) {
 	// NOTE: evaluating an equivalence in a three-valued structure/context with partial functions
 	//		 leads to ambiguities! TODO: give a warning!
 	ef->left()->accept(this);
@@ -564,7 +575,7 @@ void FormulaEvaluator::visit(EquivForm* ef) {
 	if(!ef->sign()) _returnvalue = TVUtils::swaptruthvalue(_returnvalue);
 }
 
-void FormulaEvaluator::visit(EqChainForm* ef) {
+void FormulaEvaluator::visit(const EqChainForm* ef) {
 	vector<Formula*> vf(ef->nrSubterms()-1);
 	for(unsigned int n = 0; n < vf.size(); ++n) {
 		vector<Term*> vt(2); vt[0] = ef->subterm(n); vt[1] = ef->subterm(n+1);
@@ -577,7 +588,7 @@ void FormulaEvaluator::visit(EqChainForm* ef) {
 	delete(bf);
 }
 
-void FormulaEvaluator::visit(BoolForm* bf) {
+void FormulaEvaluator::visit(const BoolForm* bf) {
 	if(!bf->sign()) _context = !_context;
 	TruthValue result;
 	if(bf->conj()) result = TV_TRUE;
@@ -595,7 +606,7 @@ void FormulaEvaluator::visit(BoolForm* bf) {
 	return;
 }
 
-void FormulaEvaluator::visit(QuantForm* qf) {
+void FormulaEvaluator::visit(const QuantForm* qf) {
 	if(!qf->sign()) _context = !_context;
 	TruthValue result = (qf->univ()) ? TV_TRUE : TV_FALSE;
 	SortTableTupleIterator vti(qf->qvars(),_structure);
@@ -621,78 +632,123 @@ void FormulaEvaluator::visit(QuantForm* qf) {
 	return;
 }
 
-namespace FormulaUtils {
-	TruthValue evaluate(Formula* f, AbstractStructure* s, const map<Variable*,TypedElement>& m) {
-		FormulaEvaluator fe(f,s,m);
-		return fe.returnvalue();
-	}
-}
-
 /*************************
 	Rewriting theories
 *************************/
 
 void Theory::add(AbstractTheory* t) {
-	for(unsigned int n = 0; n < t->nrDefinitions(); ++n) {
+	for(unsigned int n = 0; n < t->nrDefinitions(); ++n)
 		_definitions.push_back(t->definition(n));
-	}
-	for(unsigned int n = 0; n < t->nrFixpDefs(); ++n) {
+	for(unsigned int n = 0; n < t->nrFixpDefs(); ++n)
 		_fixpdefs.push_back(t->fixpdef(n));
-	}
-	for(unsigned int n = 0; n < t->nrSentences(); ++n) {
+	for(unsigned int n = 0; n < t->nrSentences(); ++n)
 		_sentences.push_back(t->sentence(n));
-	}
+}
 
+Theory* Theory::clone() const {
+	Theory* newtheory = new Theory(_name,_vocabulary,ParseInfo());
+	for(unsigned int n = 0; n < _sentences.size(); ++n) 
+		newtheory->add(_sentences[n]->clone());
+	for(unsigned int n = 0; n < _definitions.size(); ++n) 
+		newtheory->add(_definitions[n]->clone());
+	for(unsigned int n = 0; n < _fixpdefs.size(); ++n) 
+		newtheory->add(_fixpdefs[n]->clone());
+	return newtheory;
+}
+
+Definition* Definition::clone() const {
+	Definition* newdef = new Definition();
+	for(unsigned int n = 0; n < _rules.size(); ++n) newdef->add(_rules[n]->clone());
+	newdef->defsyms();
+	return newdef;
+}
+
+FixpDef* FixpDef::clone() const {
+	FixpDef* newfd = new FixpDef(_lfp);
+	for(unsigned int n = 0; n < _defs.size(); ++n) newfd->add(_defs[n]->clone());
+	for(unsigned int n = 0; n < _rules.size(); ++n) newfd->add(_rules[n]->clone());
+	newfd->defsyms();
+	return newfd;
+}
+
+Rule* Rule::clone() const {
+	map<Variable*,Variable*> mvv;
+	vector<Variable*> newqv;
+	for(unsigned int n = 0; n < _vars.size(); ++n) {
+		Variable* v = new Variable(_vars[n]->name(),_vars[n]->sort(),ParseInfo());
+		mvv[_vars[n]] = v;
+		newqv.push_back(v);
+	}
+	return new Rule(newqv,_head->clone(mvv),_body->clone(mvv),ParseInfo());
 }
 
 /** Push negations inside **/
 
-class NegationPush : public Visitor {
+class NegationPush : public MutatingVisitor {
 
 	public:
-		NegationPush(AbstractTheory* t)	: Visitor() { t->accept(this);	}
+		NegationPush(AbstractTheory* t)	: MutatingVisitor() { t->accept(this);	}
 
-		void visit(EqChainForm*);
-		void visit(EquivForm*);
-		void visit(BoolForm*);
-		void visit(QuantForm*);
+		Formula*	visit(EqChainForm*);
+		Formula* 	visit(EquivForm*);
+		Formula* 	visit(BoolForm*);
+		Formula* 	visit(QuantForm*);
+
+		Formula*	traverse(Formula*);
+		Term*		traverse(Term*);
 
 };
 
-void NegationPush::visit(EqChainForm* f) {
+Formula* NegationPush::traverse(Formula* f) {
+	for(unsigned int n = 0; n < f->nrSubforms(); ++n)
+		f->subform(n)->accept(this);
+	for(unsigned int n = 0; n < f->nrSubterms(); ++n)
+		f->subterm(n)->accept(this);
+	return f;
+}
+
+Term* NegationPush::traverse(Term* t) {
+	for(unsigned int n = 0; n < t->nrSubforms(); ++n)
+		t->subform(n)->accept(this);
+	for(unsigned int n = 0; n < t->nrSubterms(); ++n)
+		t->subterm(n)->accept(this);
+	return t;
+}
+
+Formula* NegationPush::visit(EqChainForm* f) {
 	if(!f->sign()) {
 		f->swapsign();
 		f->conj(!f->conj());
 		for(unsigned int n = 0; n < f->nrSubterms()-1; ++n)  f->compsign(n,!f->compsign(n));
 	}
-	traverse(f);
+	return traverse(f);
 }
 
-void NegationPush::visit(EquivForm* f) {
+Formula* NegationPush::visit(EquivForm* f) {
 	if(!f->sign()) {
 		f->swapsign();
 		f->right()->swapsign();
 	}
-	traverse(f);
+	return traverse(f);
 }
 
-void NegationPush::visit(BoolForm* f) {
+Formula* NegationPush::visit(BoolForm* f) {
 	if(!f->sign()) {
 		f->swapsign();
 		for(unsigned int n = 0; n < f->nrSubforms(); ++n) 
 			f->subform(n)->swapsign();
 		f->conj(!f->conj());
 	}
-	traverse(f);
+	return traverse(f);
 }
 
-void NegationPush::visit(QuantForm* f) {
+Formula* NegationPush::visit(QuantForm* f) {
 	if(!f->sign()) {
 		f->swapsign();
 		f->subf()->swapsign();
 		f->univ(!f->univ());
 	}
-	traverse(f);
+	return traverse(f);
 }
 
 /** Rewrite A <=> B to (A => B) & (B => A) **/
@@ -725,17 +781,36 @@ BoolForm* EquivRemover::visit(EquivForm* ef) {
 
 /** Rewrite (! x : ! y : phi) to (! x y : phi), rewrite ((A & B) & C) to (A & B & C), etc. **/
 
-class Flattener : public Visitor {
+class Flattener : public MutatingVisitor {
 
 	public:
-		Flattener(AbstractTheory* t) : Visitor() { t->accept(this);	}
+		Flattener(AbstractTheory* t) : MutatingVisitor() { t->accept(this);	}
 
-		void visit(BoolForm*);
-		void visit(QuantForm*);
+		Formula*	visit(BoolForm*);
+		Formula* 	visit(QuantForm*);
+
+		Formula*	traverse(Formula*);
+		Term*		traverse(Term*);
 
 };
 
-void Flattener::visit(BoolForm* bf) {
+Formula* Flattener::traverse(Formula* f) {
+	for(unsigned int n = 0; n < f->nrSubforms(); ++n)
+		f->subform(n)->accept(this);
+	for(unsigned int n = 0; n < f->nrSubterms(); ++n)
+		f->subterm(n)->accept(this);
+	return f;
+}
+
+Term* Flattener::traverse(Term* t) {
+	for(unsigned int n = 0; n < t->nrSubforms(); ++n)
+		t->subform(n)->accept(this);
+	for(unsigned int n = 0; n < t->nrSubterms(); ++n)
+		t->subterm(n)->accept(this);
+	return t;
+}
+
+Formula* Flattener::visit(BoolForm* bf) {
 	vector<Formula*> newsubf;
 	traverse(bf);
 	for(unsigned int n = 0; n < bf->nrSubforms(); ++n) {
@@ -750,9 +825,10 @@ void Flattener::visit(BoolForm* bf) {
 		else newsubf.push_back(bf->subform(n));
 	}
 	bf->subf(newsubf);
+	return bf;
 }
 
-void Flattener::visit(QuantForm* qf) {
+Formula* Flattener::visit(QuantForm* qf) {
 	traverse(qf);	
 	if(typeid(*(qf->subf())) == typeid(QuantForm)) {
 		QuantForm* sqf = dynamic_cast<QuantForm*>(qf->subf());
@@ -763,6 +839,7 @@ void Flattener::visit(QuantForm* qf) {
 			delete(sqf);
 		}
 	}
+	return qf;
 }
 
 /**  Rewrite chains of equalities to a conjunction or disjunction of atoms **/
@@ -775,6 +852,7 @@ class EqChainRemover : public MutatingVisitor {
 	public:
 		EqChainRemover(AbstractTheory* t)	: MutatingVisitor(), _vocab(t->vocabulary()) { t->accept(this);	}
 		EqChainRemover()	: MutatingVisitor(), _vocab(0) {	}
+		EqChainRemover(Vocabulary* v)	: MutatingVisitor(), _vocab(v) {	}
 
 		Formula* visit(EqChainForm*);
 
@@ -823,7 +901,7 @@ class TheoryConvertor : public Visitor {
 		// Intermediate return values
 		int					_curratom;			// Returned atom
 		EcnfClause			_currclause;		// Returned set of literals
-		EcnfDefinition		_currdefinition;	// Returned definition
+		GroundDefinition	_currdefinition;	// Returned definition
 		EcnfFixpDef			_currfixpdef;		// Returned fixpoint definitionn
 
 		// Intermediate return value is an aggregate expression
@@ -838,38 +916,45 @@ class TheoryConvertor : public Visitor {
 
 	public:
 		
-		TheoryConvertor(AbstractTheory* t) : 
-			Visitor(), _returnvalue(new EcnfTheory()) { t->accept(this); }
+		TheoryConvertor(const AbstractTheory* t) : 
+			Visitor(), _returnvalue(new EcnfTheory(0)) { t->accept(this); }
 
-		void visit(PredForm*);
-		void visit(EqChainForm*);
-		void visit(EquivForm*);
-		void visit(BoolForm*);
-		void visit(QuantForm*);
-		void visit(Rule*);
-		void visit(Theory*);
-		void visit(QuantSetExpr*);
-		void visit(EnumSetExpr*);
+		void visit(const PredForm*);
+		void visit(const EqChainForm*);
+		void visit(const EquivForm*);
+		void visit(const BoolForm*);
+		void visit(const QuantForm*);
+		void visit(const Rule*);
+		void visit(const Theory*);
+		void visit(const QuantSetExpr*);
+		void visit(const EnumSetExpr*);
 
 		EcnfTheory*	returnvalue()	const { return _returnvalue;	}
 
 };
 
-void TheoryConvertor::visit(Theory* t) {
+void TheoryConvertor::visit(const Theory* t) {
 	// sentences
 	for(unsigned int n = 0; n < t->nrSentences(); ++n) {
 		_indef = false; _infixpdef = false;
 		t->sentence(n)->accept(this);
 		switch(_rettype) {
 			case ECTT_ATOM:
-				_returnvalue->addClause(vector<int>(1,_curratom));
+			{
+				vector<int> vi(1,_curratom);
+				_returnvalue->addClause(vi);
 				break;
+			}
 			case ECTT_CLAUSE:
-				_returnvalue->addClause(_currclause);
+			{
+				vector<int> vi(_currclause);
+				_returnvalue->addClause(vi);
 				break;
+			}
 			case ECTT_CONJ:
 				for(unsigned int m = 0; m < _currclause.size(); ++m) {
-					_returnvalue->addClause(vector<int>(1,_currclause[m]));
+					vector<int> vi(1,_currclause[m]);
+					_returnvalue->addClause(vi);
 				}
 			case ECTT_NOTHING:
 				break;
@@ -880,7 +965,7 @@ void TheoryConvertor::visit(Theory* t) {
 	// definitions
 	for(unsigned int n = 0; n < t->nrDefinitions(); ++n) {
 		_indef = true; _infixpdef = false;
-		_currdefinition = EcnfDefinition();
+		_currdefinition = GroundDefinition();
 		t->definition(n)->accept(this);
 		_returnvalue->addDefinition(_currdefinition);
 	}
@@ -893,7 +978,7 @@ void TheoryConvertor::visit(Theory* t) {
 	}
 }
 
-void TheoryConvertor::visit(PredForm* pf) {
+void TheoryConvertor::visit(const PredForm* pf) {
 	if(pf->symb()->builtin()) {	// An aggregate literal
 		assert(pf->symb()->name() == "</2" || pf->symb()->name() == ">/2");
 		assert(!pf->sign());
@@ -921,11 +1006,11 @@ void TheoryConvertor::visit(PredForm* pf) {
 	}
 }
 
-void TheoryConvertor::visit(EqChainForm*) {
+void TheoryConvertor::visit(const EqChainForm*) {
 	assert(false);
 }
 
-void TheoryConvertor::visit(EquivForm* ef) {
+void TheoryConvertor::visit(const EquivForm* ef) {
 	assert(ef->sign());
 
 	ef->left()->accept(this);
@@ -935,18 +1020,18 @@ void TheoryConvertor::visit(EquivForm* ef) {
 	ef->right()->accept(this);
 	assert(_rettype == ECTT_AGG);
 
-	_returnvalue->addAgg(EcnfAgg(_curragg,_lowerbound,EHA_EQUIV,lhs,_currset,_currbound));
+	_returnvalue->addAgg(EcnfAgg(_curragg,_lowerbound,TS_EQ,lhs,_currset,_currbound));
 	_rettype = ECTT_NOTHING;
 }
 
-void TheoryConvertor::visit(BoolForm* bf) {
+void TheoryConvertor::visit(const BoolForm* bf) {
 	assert(bf->sign());
 	vector<int> literals;
 	for(unsigned int n = 0; n < bf->nrSubforms(); ++n) {
 		bf->subform(n)->accept(this);
 		if(n == 1 && _rettype == ECTT_AGG) {
 			assert(bf->nrSubforms() == 2);
-			_returnvalue->addAgg(EcnfAgg(_curragg,_lowerbound,EHA_IMPLIES,-literals[0],_currset,_currbound));
+			_returnvalue->addAgg(EcnfAgg(_curragg,_lowerbound,TS_IMPL,-literals[0],_currset,_currbound));
 			_rettype = ECTT_NOTHING;
 			return;
 		}
@@ -957,16 +1042,16 @@ void TheoryConvertor::visit(BoolForm* bf) {
 	_rettype = (bf->conj() ? ECTT_CONJ : ECTT_CLAUSE);
 }
 
-void TheoryConvertor::visit(QuantForm*) {
+void TheoryConvertor::visit(const QuantForm*) {
 	assert(false);
 }
 
-void TheoryConvertor::visit(Rule* r) {
+void TheoryConvertor::visit(const Rule* r) {
 	r->head()->accept(this);
 	int headatom = _curratom;
 	r->body()->accept(this);
 	if(_rettype == ECTT_AGG) {
-		EcnfAgg efa(_curragg,_lowerbound,EHA_DEFINED,headatom,_currset,_currbound);
+		EcnfAgg efa(_curragg,_lowerbound,TS_RULE,headatom,_currset,_currbound);
 		if(_infixpdef) _currfixpdef.addAgg(efa,_returnvalue->translator());
 		else _currdefinition.addAgg(efa,_returnvalue->translator());
 	}
@@ -980,11 +1065,11 @@ void TheoryConvertor::visit(Rule* r) {
 	}
 }
 
-void TheoryConvertor::visit(QuantSetExpr*) {
+void TheoryConvertor::visit(const QuantSetExpr*) {
 	assert(false);
 }
 
-void TheoryConvertor::visit(EnumSetExpr* e) {
+void TheoryConvertor::visit(const EnumSetExpr* e) {
 	vector<int> literals;
 	vector<double> weights;
 	for(unsigned int n = 0; n < e->nrSubforms(); ++n) {
@@ -996,7 +1081,9 @@ void TheoryConvertor::visit(EnumSetExpr* e) {
 		if(dt->type() == ELINT) weights.push_back(double((dt->value())._int));
 		else weights.push_back((dt->value())._double);
 	}
-	_currset = _returnvalue->addSet(literals,weights);
+	vector<double> truew;
+	_currset = _returnvalue->translator()->translateSet(literals,weights,truew);
+	_returnvalue->addSet(_currset,true);
 }
 
 /** Move quantifiers **/
@@ -1471,6 +1558,7 @@ Formula* Reducer::visit(EqChainForm* ef) {
 
 class FuncGrapher : public MutatingVisitor {
 	public:
+		FuncGrapher() { }
 		FuncGrapher(AbstractTheory* t) : MutatingVisitor() { t->accept(this);	}
 		Formula*	visit(PredForm* pf);
 		Formula*	visit(EqChainForm* ef);
@@ -1750,9 +1838,199 @@ Formula* AggMover::visit(EqChainForm* ef) {
 // TODO: HIER BEZIG: Move Aggregates in terms and rules
 // TODO: functions moeten ook verplaatst worden uit de head van regels
 
+class ThreeValTermMover : public MutatingVisitor {
+	private:
+		AbstractStructure*	_structure;
+		bool				_poscontext;
+		vector<Formula*>	_termgraphs;
+		vector<Variable*>	_variables;
+	public:
+		ThreeValTermMover(AbstractStructure* str, bool posc) : _structure(str), _poscontext(posc) { }
+		Formula*	visit(PredForm* pf);
+		Term*		visit(FuncTerm* ft);
+		Term*		visit(AggTerm*	at);
+};
+
+Term* ThreeValTermMover::visit(FuncTerm* ft) {
+	// Get the function and its interpretation
+	Function* f = ft->func();
+	FuncInter* finter = _structure->inter(f);
+
+	if(finter->fasttwovalued()) { // The function is two-valued. Visit the children.
+		for(unsigned int n = 0; n < ft->nrSubterms(); ++n) {
+			Term* nt = ft->subterm(n)->accept(this);
+			if(nt != ft->subterm(n)) {
+				delete(ft->subterm(n));
+				ft->arg(n,nt);
+			}
+		}
+		ft->setfvars();
+		return ft;
+
+	}
+	else { // The function is three-valued. Create a new variable and an equation
+		Variable* v = new Variable(f->outsort());
+		VarTerm* vt = new VarTerm(v,ParseInfo());
+		vector<Term*> args;
+		for(unsigned int n = 0; n < f->arity(); ++n) args.push_back(ft->subterm(n));
+		args.push_back(vt);
+		PredForm* pf = new PredForm(true,f,args,FormParseInfo());
+		_termgraphs.push_back(pf);
+		_variables.push_back(v);
+		return vt->clone();
+	}
+}
+
+Term* ThreeValTermMover::visit(AggTerm* at) {
+	bool twovalued = SetUtils::isTwoValued(at->set(),_structure);
+	if(twovalued) return at;
+	else {
+		Variable* v = new Variable(at->sort());
+		VarTerm* vt = new VarTerm(v,ParseInfo());
+		AggTerm* newat = new AggTerm(at->set(),at->type(),ParseInfo());
+		AggForm* af = new AggForm(true,'=',vt,newat,FormParseInfo());
+		_termgraphs.push_back(af);
+		_variables.push_back(v);
+		return vt->clone();
+	}
+};
+
+Formula* ThreeValTermMover::visit(PredForm* pf) {
+	// Handle built-in predicates
+	string symbname = pf->symb()->name();
+	if(symbname == "=/2") {
+		Term* left = pf->subterm(0);
+		Term* right = pf->subterm(1);
+		if(typeid(*left) == typeid(FuncTerm)) {
+			FuncTerm* ft = dynamic_cast<FuncTerm*>(left);
+			if(!_structure->inter(ft->func())->fasttwovalued()) { 
+				Formula* newpf = FormulaUtils::graph_functions(pf);
+				return newpf->accept(this);
+			}
+		}
+		else if(typeid(*right) == typeid(FuncTerm)) {
+			FuncTerm* ft = dynamic_cast<FuncTerm*>(right);
+			if(!_structure->inter(ft->func())->fasttwovalued()) { 
+				Formula* newpf = FormulaUtils::graph_functions(pf);
+				return newpf->accept(this);
+			}
+		}
+		else if(typeid(*left) == typeid(AggTerm)) { //TODO: merge with cases for < and >
+			AggTerm* agt = dynamic_cast<AggTerm*>(left);
+			AggForm* af = new AggForm(pf->sign(),'=',right,agt,FormParseInfo());
+			return af->accept(this);
+		}
+		else if(typeid(*right) == typeid(AggTerm)) { //TODO: merge with cases for < and >
+			AggTerm* agt = dynamic_cast<AggTerm*>(right);
+			AggForm* af = new AggForm(pf->sign(),'=',left,agt,FormParseInfo());
+			return af->accept(this);
+		}
+	}
+	else if(symbname == "</2" || symbname == ">/2") {
+		//TODO: Check whether handled correctly when both sides are AggTerms!!
+		Term* left = pf->subterm(0);
+		Term* right = pf->subterm(1);
+		char c;
+		if(typeid(*left) == typeid(AggTerm)) {
+			AggTerm* agt = dynamic_cast<AggTerm*>(left);
+			c = (symbname == "</2") ? '>' : '<';
+			AggForm* af = new AggForm(pf->sign(),c,right,agt,FormParseInfo());
+			return af->accept(this);
+		}
+		else if(typeid(*right) == typeid(AggTerm)) {
+			AggTerm* agt = dynamic_cast<AggTerm*>(right);
+			c = (symbname == "</2") ? '<' : '>';
+			AggForm* af = new AggForm(pf->sign(),c,left,agt,FormParseInfo());
+			return af->accept(this);
+		}
+	}
+	
+	// Visit the subterms
+	for(unsigned int n = 0; n < pf->nrSubterms(); ++n) {
+		Term* nt = pf->subterm(n)->accept(this);
+		if(nt != pf->subterm(n)) {
+			delete(pf->subterm(n));
+			pf->arg(n,nt);
+		}
+	}
+
+	if(_termgraphs.empty()) {	// No rewriting was needed, simply return the given atom
+		return pf;
+	}
+	else {	// Rewriting was needed
+		
+		// In a positive context, the equations are negated
+		if(_poscontext) {
+			for(unsigned int n = 0; n < _termgraphs.size(); ++n)
+				_termgraphs[n]->swapsign();
+		}
+
+		// Memory management for the original atom
+		PredForm* npf = new PredForm(pf->sign(),pf->symb(),pf->args(),FormParseInfo());
+		_termgraphs.push_back(npf);
+
+		// Create and return the rewriting
+		BoolForm* bf = new BoolForm(true,!_poscontext,_termgraphs,FormParseInfo());
+		QuantForm* qf = new QuantForm(true,_poscontext,_variables,bf,FormParseInfo());
+		return qf;
+	}
+}
+
+/** Formula utils **/
+
+namespace FormulaUtils {
+	TruthValue evaluate(Formula* f, AbstractStructure* s, const map<Variable*,TypedElement>& m) {
+		FormulaEvaluator fe(f,s,m);
+		return fe.returnvalue();
+	}
+
+	Formula* remove_eqchains(Formula* f, Vocabulary* v) {
+		EqChainRemover ecr(v);
+		Formula* newf = f->accept(&ecr);
+		if(newf != f) delete(f);
+		return newf;
+	}
+
+	Formula* graph_functions(Formula* f) {
+		FuncGrapher fg;
+		Formula* newf = f->accept(&fg);
+		if(newf != f) delete(f);
+		return newf;
+	}
+
+	/* 
+	 * Formula* moveThreeValTerms(PredForm* pf, AbstractStructure* str, bool poscontext)
+	 * DESCRIPTION
+	 *		Non-recursively moves terms that are three-valued according to a given structure
+	 *		outside a given atom. The applied rewriting depends on the given context:
+	 *			positive context:
+	 *				P(t) becomes	! x : t = x => P(x).
+	 *			negative context:
+	 *				P(t) becomes	? x : t = x & P(x).
+	 *		The fact that the rewriting is non-recursive means that in the above example, term t 
+	 *		can still contain terms that are three-valued according to the structure.
+	 *
+	 * PARAMETERS
+	 *		pf			- the given atom
+	 *		str			- the given structure
+	 *		poscontext	- true iff we are in a positive context
+	 * POSTCONDITIONS
+	 *		In the rewriting, the atom does not contain any three-valued terms anymore
+	 * RETURNS
+	 *		The rewritten formula. If no rewriting was needed, it is the same pointer as pf.
+	 *		If rewriting was needed, pf can be deleted, but not recursively.
+	 *		
+	 */
+	Formula* moveThreeValTerms(PredForm* pf, AbstractStructure* str, bool poscontext) {
+		ThreeValTermMover tvtm(str,poscontext);
+		Formula* rewriting = pf->accept(&tvtm);
+		return rewriting;
+	}
+}
+
 /** Theory utils **/
 
-TheoryComponent* AbstractTheory::component(unsigned int n = 0) {
+TheoryComponent* AbstractTheory::component(unsigned int n) const {
 	if(n < nrSentences()) return sentence(n);
 	else if(n < nrSentences() + nrDefinitions()) {
 		return definition(n - nrSentences());

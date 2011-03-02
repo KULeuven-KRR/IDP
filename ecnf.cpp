@@ -6,6 +6,7 @@
 
 #include "ecnf.hpp"
 #include <iostream>
+#include <sstream>
 
 using namespace MinisatID;
 
@@ -409,10 +410,14 @@ void outputToSolver::outputunitfdrule(int d, int h, int b) {
 }
 
 void outputToSolver::outputrule(int head, const vector<int>& b, bool c){
-	Literal h = Literal(abs(head), head<0);
-	vector<Literal> l;
-	copyToVec(b, l);
-	solver()->addRule(c, h, l);
+	Atom h = Atom(abs(head));
+	vector<Literal> lit;
+	copyToVec(b, lit);
+	if(c){
+		solver()->addConjRule(h, lit);
+	}else{
+		solver()->addDisjRule(h, lit);
+	}
 }
 
 void outputToSolver::outputfdrule(int d, int h, const vector<int>& b, bool c){
@@ -489,9 +494,244 @@ void outputToSolver::outputunsat(){
 	solver()->addClause(l2);
 }
 
-/***********************
-	Ecnf definitions
-***********************/
+/********************************
+	Ground theory definitions
+********************************/
+
+void GroundTheory::transformForAdd(EcnfClause& vi, bool firstIsPrinted) {
+	unsigned int n = 0;
+	if(firstIsPrinted) ++n;
+	for(; n < vi.size(); ++n) {
+		int atom = abs(vi[n]);
+		if(_translator->isTseitin(atom) && _printedtseitins.find(atom) == _printedtseitins.end()) {
+			_printedtseitins.insert(atom);
+			TsBody* tsbody = _translator->tsbody(atom);
+			if(typeid(*tsbody) == typeid(PCTsBody)) {
+				PCTsBody& body = dynamic_cast<PCTsBody&>(*tsbody);
+				if(body._type == TS_IMPL || body._type == TS_EQ) {
+					if(body._conj) {
+						for(unsigned int m = 0; m < body._body.size(); ++m) {
+							vector<int> cl(2,-atom);
+							cl[1] = body._body[m];
+							addClause(cl,true);	// NOTE: apply folding?
+						}
+					}
+					else {
+						vector<int> cl(body._body.size()+1,-atom);
+						for(unsigned int m = 0; m < body._body.size(); ++m) cl[m+1] = body._body[m];
+						addClause(cl,true);
+					}
+				}
+				if(body._type == TS_RIMPL || body._type == TS_EQ) {
+					if(body._conj) {
+						vector<int> cl(body._body.size()+1,atom);
+						for(unsigned int m = 0; m < body._body.size(); ++m) cl[m+1] = -body._body[m];
+						addClause(cl,true);
+					}
+					else {
+						for(unsigned int m = 0; m < body._body.size(); ++m) {
+							vector<int> cl(2,atom);
+							cl[1] = -body._body[m];
+							addClause(cl,true);	// NOTE: apply folding?
+						}
+					}
+				}
+				if(body._type == TS_RULE) {
+					assert(false); // TODO
+				}
+			}
+			else {	// body of the tseitin is an aggregate expression
+				AggTsBody& body = dynamic_cast<AggTsBody&>(*tsbody);
+				if(body._type != TS_RULE) {
+					addAgg(atom,body);
+				}
+				else {
+					assert(false); // TODO
+				}
+			}
+		}
+	}
+}
+
+void GroundTheory::transformForAdd(GroundRuleBody& grb, vector<int>& heads, vector<GroundRuleBody>& bodies) {
+	for(unsigned int n = 0; n < grb._body.size(); ++n) {
+		int atom = abs(grb._body[n]);
+		if(_translator->isTseitin(atom) && _printedtseitins.find(atom) == _printedtseitins.end()) {
+			_printedtseitins.insert(atom);
+			TsBody* tsbody = _translator->tsbody(atom);
+			if(typeid(*tsbody) == typeid(PCTsBody)) {
+				const PCTsBody& body = dynamic_cast<PCTsBody&>(*tsbody);
+				if(body._type == TS_IMPL || body._type == TS_EQ) {
+					if(body._conj) {
+						for(unsigned int m = 0; m < body._body.size(); ++m) {
+							vector<int> cl(2,-atom);
+							cl[1] = body._body[m];
+							addClause(cl,true);	// NOTE: apply folding?
+						}
+					}
+					else {
+						vector<int> cl(body._body.size()+1,-atom);
+						for(unsigned int m = 0; m < body._body.size(); ++m)
+							cl[m+1] = body._body[m];
+						addClause(cl,true);
+					}
+				}
+				if(body._type == TS_RIMPL || body._type == TS_EQ) {
+					if(body._conj) {
+						vector<int> cl(body._body.size()+1,atom);
+						for(unsigned int m = 0; m < body._body.size(); ++m) cl[m+1] = -body._body[m];
+						addClause(cl,true);
+					}
+					else {
+						for(unsigned int m = 0; m < body._body.size(); ++m) {
+							vector<int> cl(2,atom);
+							cl[1] = -body._body[m];
+							addClause(cl,true);	// NOTE: apply folding?
+						}
+					}
+				}
+				if(body._type == TS_RULE) {
+					heads.push_back(atom);
+					GroundRuleBody rb;
+					rb._body = body._body;
+					rb._recursive = true;
+					rb._type = body._conj ? RT_CONJ : RT_DISJ;
+					bodies.push_back(rb);
+					transformForAdd(rb,heads,bodies);
+				}
+			}
+			else {	// tseitin body is an aggregate expression
+				AggTsBody& body = dynamic_cast<AggTsBody&>(*tsbody);
+				if(body._type != TS_RULE) {
+					addAgg(atom,body);
+				}
+				else {
+					assert(false); // TODO
+				}
+			}
+		}	
+	}
+}
+
+void GroundTheory::transformForAdd(GroundDefinition& d) {
+	vector<int> heads;
+	vector<GroundRuleBody> bodies;
+	for(map<int,GroundRuleBody>::iterator it = d._rules.begin(); it != d._rules.end(); ++it) {
+		transformForAdd(it->second,heads,bodies);
+	}
+	for(unsigned int n = 0; n < heads.size(); ++n) {
+		d._rules[heads[n]] = bodies[n];
+	}
+}
+
+
+/******************************
+	Ecnf theory definitions
+******************************/
+
+void EcnfTheory::addClause(EcnfClause& cl, bool firstIsPrinted) {
+	transformForAdd(cl,firstIsPrinted);
+	_clauses.push_back(cl);
+}
+
+void EcnfTheory::addSet(int setnr, bool weighted) {
+	if(_printedsets.find(setnr) != _printedsets.end()) {
+		_printedsets.insert(setnr);
+		const GroundSet& grs = _translator->groundset(setnr);
+		addSet(setnr,grs._setlits,grs._litweights);
+	}
+}
+
+void EcnfTheory::addAgg(int head, AggTsBody& body) {
+	addSet(body._setnr,body._aggtype != AGGCARD);
+	EcnfAgg agg;
+	agg._type = body._aggtype;
+	agg._lower = body._lower;
+	agg._eha = body._type;
+	agg._head = head;
+	agg._set = body._setnr;
+	agg._bound = body._bound;
+	addAgg(agg);
+}
+
+void GroundDefinition::addTrueRule(int head) {
+	GroundRuleBody& grb = _rules[head];
+	grb._type = RT_TRUE;
+	grb._body = vector<int>(0);
+}
+
+void GroundDefinition::addRule(int head, const vector<int>& body, bool conj, bool recursive) {
+	map<int,GroundRuleBody>::iterator it = _rules.find(head);
+	if(it == _rules.end() || (it->second)._type == RT_FALSE) {
+		GroundRuleBody& grb = (it == _rules.end() ? _rules[head] : it->second);
+		if(body.empty()) grb._type = (conj ? RT_TRUE : RT_FALSE);
+		else if(body.size() == 1) grb._type = RT_UNARY;
+		else grb._type = (conj ? RT_CONJ : RT_DISJ);
+		grb._body = body;
+	}
+	else if(body.empty()) {
+		if(conj) {
+			(it->second)._type = RT_TRUE;
+			(it->second)._body = body;
+		}
+	}
+	else {
+		GroundRuleBody& grb = it->second;
+		switch(grb._type) {
+			case RT_TRUE: break;
+			case RT_FALSE: assert(false); break;
+			case RT_UNARY:
+				if(body.size() == 1) {
+					grb._type = RT_DISJ;
+					grb._body.push_back(body[0]);
+				}
+				else if(!conj) {
+					grb._type = RT_DISJ;
+					int temp = grb._body[0];
+					grb._body = body;
+					grb._body.push_back(temp);
+				}
+				else {
+					int ts = _translator->translate(body,conj,(recursive ? TS_RULE : TS_EQ));
+					grb._type = RT_DISJ;
+					grb._body.push_back(ts);
+				}
+				if(recursive) grb._recursive = true;
+				break;
+			case RT_DISJ:
+			{
+				if((!conj) || body.size() == 1) {
+					for(unsigned int n = 0; n < body.size(); ++n) 
+						grb._body.push_back(body[n]);
+				}
+				else {
+					int ts = _translator->translate(body,conj,(recursive ? TS_RULE : TS_EQ));
+					grb._body.push_back(ts);
+				}
+				if(recursive) grb._recursive = true;
+				break;
+			}
+			case RT_CONJ:
+				if((!conj) || body.size() == 1) {
+					int ts = _translator->translate(grb._body,true,(grb._recursive ? TS_RULE : TS_EQ));
+					grb._type = RT_DISJ;
+					grb._body = body;
+					grb._body.push_back(ts);
+				}
+				else {
+					int ts1 = _translator->translate(grb._body,true,(grb._recursive ? TS_RULE : TS_EQ));
+					int ts2 = _translator->translate(body,conj,(recursive ? TS_RULE : TS_EQ));
+					grb._type = RT_DISJ;
+					vector<int> vi(2) ; vi[0] = ts1; vi[1] = ts2;
+					grb._body = vi;
+				}
+				if(recursive) grb._recursive = true;
+				break;
+			default:
+				assert(false);
+		}
+	}
+}
 
 void EcnfDefinition::addRule(int head, const vector<int>& body, bool conj, GroundTranslator* t) {
 	map<int,RuleType>::iterator it = _ruletypes.find(head);
@@ -533,7 +773,7 @@ void EcnfDefinition::addRule(int head, const vector<int>& body, bool conj, Groun
 					_bodies[head].push_back(temp);
 				}
 				else {
-					int ts = t->nextTseitin();
+					int ts = t->nextNumber();
 					_ruletypes[ts] = RT_CONJ;
 					_bodies[ts] = body;
 					_ruletypes[head] = RT_DISJ;
@@ -547,7 +787,7 @@ void EcnfDefinition::addRule(int head, const vector<int>& body, bool conj, Groun
 					for(unsigned int n = 0; n < body.size(); ++n) vi.push_back(body[n]);
 				}
 				else {
-					int ts = t->nextTseitin();
+					int ts = t->nextNumber();
 					_ruletypes[ts] = RT_CONJ;
 					_bodies[ts] = body;
 					_bodies[head].push_back(ts);
@@ -555,7 +795,7 @@ void EcnfDefinition::addRule(int head, const vector<int>& body, bool conj, Groun
 			}
 			case RT_CONJ:
 				if((!conj) || body.size() == 1) {
-					int ts = t->nextTseitin();
+					int ts = t->nextNumber();
 					_ruletypes[ts] = RT_CONJ;
 					_bodies[ts] = _bodies[head];
 					_ruletypes[head] = RT_DISJ;
@@ -563,8 +803,8 @@ void EcnfDefinition::addRule(int head, const vector<int>& body, bool conj, Groun
 					_bodies[head].push_back(ts);
 				}
 				else {
-					int ts1 = t->nextTseitin();
-					int ts2 = t->nextTseitin();
+					int ts1 = t->nextNumber();
+					int ts2 = t->nextNumber();
 					_ruletypes[ts1] = RT_CONJ;
 					_ruletypes[ts2] = RT_CONJ;
 					_ruletypes[head] = RT_DISJ;
@@ -576,7 +816,7 @@ void EcnfDefinition::addRule(int head, const vector<int>& body, bool conj, Groun
 				break;
 			case RT_AGG:
 				if((!conj) || body.size() == 1) {
-					int ts = t->nextTseitin();
+					int ts = t->nextNumber();
 					_ruletypes[ts] = RT_AGG;
 					EcnfAgg efa(_aggs[head]);
 					efa._head = ts;
@@ -587,8 +827,8 @@ void EcnfDefinition::addRule(int head, const vector<int>& body, bool conj, Groun
 					_bodies[head].push_back(ts);
 				}
 				else {
-					int ts1 = t->nextTseitin();
-					int ts2 = t->nextTseitin();
+					int ts1 = t->nextNumber();
+					int ts2 = t->nextNumber();
 					_ruletypes[ts1] = RT_AGG;
 					_ruletypes[ts2] = RT_CONJ;
 					_ruletypes[head] = RT_DISJ;
@@ -624,7 +864,7 @@ void EcnfDefinition::addAgg(const EcnfAgg& a, GroundTranslator* t) {
 				break;
 			case RT_UNARY:
 			{
-				int ts = t->nextTseitin();
+				int ts = t->nextNumber();
 				_ruletypes[head] = RT_DISJ;
 				_bodies[head].push_back(ts);
 				_ruletypes[ts] = RT_AGG;
@@ -634,7 +874,7 @@ void EcnfDefinition::addAgg(const EcnfAgg& a, GroundTranslator* t) {
 			}
 			case RT_DISJ:
 			{
-				int ts = t->nextTseitin();
+				int ts = t->nextNumber();
 				_bodies[head].push_back(ts);
 				_ruletypes[ts] = RT_AGG;
 				_aggs[ts] = a;
@@ -643,8 +883,8 @@ void EcnfDefinition::addAgg(const EcnfAgg& a, GroundTranslator* t) {
 			}
 			case RT_CONJ:
 			{
-				int ts1 = t->nextTseitin();
-				int ts2 = t->nextTseitin();
+				int ts1 = t->nextNumber();
+				int ts2 = t->nextNumber();
 				_ruletypes[ts1] = RT_CONJ;
 				_bodies[ts1] = _bodies[head];
 				_ruletypes[ts2] = RT_AGG;
@@ -657,8 +897,8 @@ void EcnfDefinition::addAgg(const EcnfAgg& a, GroundTranslator* t) {
 			}
 			case RT_AGG:
 			{
-				int ts1 = t->nextTseitin();
-				int ts2 = t->nextTseitin();
+				int ts1 = t->nextNumber();
+				int ts2 = t->nextNumber();
 				_ruletypes[ts1] = RT_AGG;
 				_aggs[ts1] = _aggs[head];
 				_aggs[ts1]._head = ts1;
@@ -698,20 +938,101 @@ void EcnfTheory::print(GroundPrinter* p) {
 	// TODO: definitions, aggregates, ...
 }
 
-void EcnfTheory::add(Formula* f) {
-	assert(false); // TODO not yet implemented
-}
-
-void EcnfTheory::add(Definition* d) {
-	assert(false); // TODO not yet implemented
-}
-
-void EcnfTheory::add(FixpDef* d) {
-	assert(false); // TODO not yet implemented
-}
-
 string EcnfTheory::to_string() const {
-	assert(false); // TODO: not yet implemented
+	stringstream s;
+	for(unsigned int n = 0; n < _clauses.size(); ++n) {
+		if(_clauses[n].empty()) {
+			s << "false";
+		}
+		else {
+			for(unsigned int m = 0; m < _clauses[n].size(); ++m) {
+				if(_clauses[n][m] < 0) s << '~';
+				s << _translator->printatom(_clauses[n][m]);
+				if(m < _clauses[n].size()-1) s << " | ";
+			}
+		}
+		s << ". // ";
+		for(unsigned int m = 0; m < _clauses[n].size(); ++m) {
+			s << _clauses[n][m] << " ";
+		}
+		s << "0\n";
+	}
+
+	for(unsigned int n = 0; n < _definitions.size(); ++n) {
+		s << _definitions[n].to_string();
+	}
+
+	for(unsigned int n = 0; n < _sets.size(); ++n) {
+		s << "Set nr. " << _sets[n]._setnr << " = { ";
+		for(unsigned int m = 0; m < _sets[n]._set.size(); ++m) {
+			s << _translator->printatom(_sets[n]._set[m]);
+			s << _sets[n]._weights[m];
+		}
+		s << "}\n";
+	}
+
+	for(unsigned int n = 0; n < _aggregates.size(); ++n) {
+		const EcnfAgg& agg = _aggregates[n];
+		s << _translator->printatom(agg._head);
+		switch(agg._eha) {
+			case TS_RULE: s << " <- "; break;
+			case TS_IMPL: s << " => "; break;
+			case TS_RIMPL: s << " <= "; break;
+			case TS_EQ: s << " <=> "; break;
+			default: assert(false);
+		}
+		s << agg._bound;
+		s << (agg._lower ? " =< " : " >= ");
+		switch(agg._type) {
+			case AGGCARD: s << "card("; break;
+			case AGGSUM: s << "sum("; break;
+			case AGGPROD: s << "prod("; break;
+			case AGGMIN: s << "min("; break;
+			case AGGMAX: s << "max("; break;
+			default: assert(false);
+		}
+		s << agg._set << ")\n";
+	}
+	//TODO: repeat above for fixpoint definitions
+	return s.str();
+}
+
+string GroundDefinition::to_string() const {
+	stringstream s;
+	s << "{\n";
+	for(map<int,GroundRuleBody>::const_iterator it = _rules.begin(); it != _rules.end(); ++it) {
+		s << _translator->printatom(it->first) << " <- ";
+		const GroundRuleBody& body = it->second;
+		if(body._type == RT_TRUE) s << "true. ";
+		else if(body._type == RT_FALSE) s << "false. ";
+		else if(body._type == RT_AGG) {
+			// TODO
+			assert(false);
+		}
+		else {
+			char c = body._type == RT_CONJ ? '&' : '|';
+			if(!body._body.empty()) {
+				if(body._body[0] < 0) s << '~';
+				s << _translator->printatom(body._body[0]);
+				for(unsigned int n = 1; n < body._body.size(); ++n) {
+					s << ' ' << c << ' ';
+					if(body._body[n] < 0) s << '~';
+					s << _translator->printatom(body._body[n]);
+				}
+			}
+			s << ". ";
+		}
+		s << "// ";
+		if(body._type == RT_TRUE || body._type == RT_CONJ || body._type == RT_UNARY) s << "C ";
+		else if(body._type == RT_FALSE || body._type == RT_DISJ) s << "D "; 
+		else /* TODO */ assert(false);
+		s << it->first << ' ';
+		for(unsigned int n = 0; n < body._body.size(); ++n) 
+			s << body._body[n] << ' ';
+		s << "0\n";
+	}
+	s << "}\n";
+	return s.str();
 }
 
 Formula* EcnfTheory::sentence(unsigned int n) const{
@@ -724,3 +1045,97 @@ Definition* EcnfTheory::definition(unsigned int n) const {
 FixpDef* EcnfTheory::fixpdef(unsigned int n) const {
 	assert(false); // TODO: not yet implemented
 }
+
+
+/********************************
+	Solver theory definitions
+********************************/
+
+void SolverTheory::addClause(EcnfClause& cl, bool firstIsPrinted){
+	transformForAdd(cl,firstIsPrinted);
+	vector<MinisatID::Literal> mcl;
+	for(unsigned int n = 0; n < cl.size(); ++n) {
+		MinisatID::Literal l(abs(cl[n]),cl[n]<0);
+		mcl.push_back(l);
+	}
+	_solver->addClause(mcl);
+}
+
+void SolverTheory::addSet(int setnr,bool weighted) {
+	if(_printedsets.find(setnr) == _printedsets.end()) {
+		_printedsets.insert(setnr);
+		const GroundSet& grs = _translator->groundset(setnr);
+		vector<MinisatID::Literal> lits;
+		for(unsigned int n = 0; n < grs._setlits.size(); ++n) {
+			MinisatID::Literal l(abs(grs._setlits[n]),grs._setlits[n]<0);
+			lits.push_back(l);
+		}
+		if(!weighted) _solver->addSet(setnr,lits);
+		else {
+			vector<MinisatID::Weight> weights;
+			for(unsigned int n = 0; n < grs._litweights.size(); ++n) {
+				MinisatID::Weight w(int(grs._litweights[n]));	// TODO: remove cast if supported by the solver
+				weights.push_back(w);
+			}
+			_solver->addSet(setnr,lits,weights);
+		}
+	}
+}
+
+void SolverTheory::addAgg(int head, AggTsBody& body) {
+	addSet(body._setnr,body._aggtype != AGGCARD);
+	MinisatID::AggSign sg = body._lower ? AGGSIGN_LB : AGGSIGN_UB;
+	MinisatID::AggType tp;
+	switch(body._aggtype) {
+		case AGGCARD: tp = CARD; break;
+		case AGGSUM: tp = SUM; break;
+		case AGGPROD: tp = PROD; break;
+		case AGGMIN: tp = MIN; break;
+		case AGGMAX: tp = MAX; break;
+	}
+	MinisatID::AggSem sem;
+	switch(body._type) {
+		case TS_EQ: case TS_IMPL: case TS_RIMPL: sem = COMP; break;
+		case TS_RULE: sem = DEF; break;
+	}
+	MinisatID::Literal headlit(head,false);
+	MinisatID::Weight weight(int(body._bound));		// TODO: remove cast if supported by the solver
+	_solver->addAggrExpr(headlit,body._setnr,weight,sg,tp,sem);
+}
+
+void SolverTheory::addDefinition(GroundDefinition& d) {
+	transformForAdd(d);
+	// TODO: include definition ID
+	for(map<int,GroundRuleBody>::const_iterator it = d._rules.begin(); it != d._rules.end(); ++it) {
+		const GroundRuleBody& grb = it->second;
+		MinisatID::Atom head(it->first);
+		vector<MinisatID::Literal> body;
+		for(unsigned int n = 0; n < grb._body.size(); ++n) {
+			MinisatID::Literal l(abs(grb._body[n]),grb._body[n]<0);
+			body.push_back(l);
+		}
+		switch(grb._type) {
+			case RT_CONJ:
+				_solver->addConjRule(head,body);
+				break;
+			case RT_DISJ:
+				_solver->addDisjRule(head,body);
+				break;
+			case RT_TRUE:
+				_solver->addConjRule(head,body);
+				break;
+			case RT_FALSE:
+				_solver->addDisjRule(head,body);
+				break;
+			case RT_UNARY:
+				_solver->addConjRule(head,body);
+				break;
+			case RT_AGG:
+				assert(false);
+				break;
+			default:
+				assert(false);
+		}
+	}
+}
+

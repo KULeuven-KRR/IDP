@@ -164,18 +164,19 @@ class outputToSolver : public GroundPrinter {
 
 };
 
-/*****************************
-	Internal ecnf theories
-*****************************/
+/***********************
+	Ground theories
+***********************/
 
 /** Propositional clause **/
 typedef vector<int> EcnfClause;	// vector of all literals in a clause
 
 /** Propositional set **/
 struct EcnfSet {
+	int	_setnr;
 	vector<int>	_set;
 	vector<double> _weights;
-	EcnfSet(const vector<int>& s, const vector<double>& w) : _set(s), _weights(w) { }
+	EcnfSet(int setnr, const vector<int>& s, const vector<double>& w) : _setnr(setnr), _set(s), _weights(w) { }
 };
 
 /** Propositional expression of one of the following forms
@@ -186,15 +187,14 @@ struct EcnfSet {
 		(e) head => agg(set) =< bound
 		(f) head => bound =< agg(set)
 **/
-enum EcnfHeadAgg { EHA_DEFINED, EHA_EQUIV, EHA_IMPLIES }; // cases (a,b), (c,d), and (e,f), respectively.
 struct EcnfAgg {
 	AggType			_type;		// the aggregate
 	bool			_lower;		// true in cases (b) and (d)
-	EcnfHeadAgg		_eha;		// the relation between head and aggregate expression
+	TsType			_eha;		// the relation between head and aggregate expression
 	int				_head;		// head atom
 	unsigned int	_set;		// the set id
 	double			_bound;		// the bound
-	EcnfAgg(AggType t, bool l, EcnfHeadAgg e, int h, unsigned int s, double b) :
+	EcnfAgg(AggType t, bool l, TsType e, int h, unsigned int s, double b) :
 		_type(t), _lower(l), _eha(e), _head(h), _set(s), _bound(b) { }
 	EcnfAgg(const EcnfAgg& efa) : 
 		_type(efa._type), _lower(efa._lower), _eha(efa._eha), _head(efa._head), _set(efa._set), _bound(efa._bound) { }
@@ -212,6 +212,25 @@ struct EcnfDefinition {
 	bool containsAgg()	const { return !_aggs.empty();	}
 };
 
+/** Ground definitions **/
+struct GroundRuleBody {
+	RuleType	_type;
+	vector<int>	_body;
+	bool		_recursive;
+};
+
+struct GroundDefinition {
+	GroundTranslator*		_translator;
+	map<int,GroundRuleBody>	_rules;			// maps a head to its corresponding body
+
+	GroundDefinition() { }
+	GroundDefinition(GroundTranslator* tr) : _translator(tr) { }
+	void addTrueRule(int head);
+	void addRule(int head, const vector<int>& body, bool conj, bool recursive);
+	void addAgg(const EcnfAgg& a, GroundTranslator* t) { /* TODO */ }
+	string to_string() const;
+};
+
 /** Propositional fixpoint definition **/
 struct EcnfFixpDef {
 	EcnfDefinition		_rules;		// the direct subrules
@@ -221,46 +240,85 @@ struct EcnfFixpDef {
 	bool containsAgg()	const;
 };
 
-class EcnfTheory : public AbstractTheory {
+class GroundTheory : public AbstractTheory {
+
+	protected:
+		GroundTranslator*	_translator;		// Link between ground atoms and SAT-solver literals
+		set<int>			_printedtseitins;	// Tseitin atoms produced by the translator that occur 
+												// in the theory.
+		set<int>			_printedsets;		
+		AbstractStructure*	_structure;			// The ground theory may be partially reduced with respect
+												// to this structure. 
+
+	public:
+		// Constructors 
+		GroundTheory(AbstractStructure* str) : 
+			AbstractTheory("",ParseInfo()), _translator(new GroundTranslator()), _structure(str) { }
+		GroundTheory(Vocabulary* voc, AbstractStructure* str) : 
+			AbstractTheory("",voc,ParseInfo()), _translator(new GroundTranslator()), _structure(str) { }
+
+		// Destructor
+		virtual void recursiveDelete()	{ delete(this);			}
+		virtual	~GroundTheory()			{ delete(_translator);	}
+
+		// Mutators
+				void add(Formula* f)		{ assert(false);	}
+				void add(Definition* d)		{ assert(false);	}
+				void add(FixpDef* fd)		{ assert(false);	}
+
+				void transformForAdd(EcnfClause& cl, bool firstIsPrinted = false);
+				void transformForAdd(GroundDefinition& d);
+				void transformForAdd(GroundRuleBody& grb, vector<int>& heads, vector<GroundRuleBody>& bodies);
+
+		virtual void addClause(EcnfClause& cl, bool firstIsPrinted = false) = 0;
+				void addEmptyClause()		{ EcnfClause c(0); addClause(c);	}
+				void addUnitClause(int l)	{ EcnfClause c(1,l); addClause(c);	}
+		virtual void addDefinition(GroundDefinition&) = 0;
+		virtual	void addAgg(int head, AggTsBody& body) = 0;
+		virtual void addSet(int setnr, bool weighted) = 0;
+
+
+
+		// Inspectors
+				GroundTranslator*	translator()	const { return _translator;	}
+				GroundTheory*		clone()			const { assert(false); /* TODO */	}
+};
+
+class EcnfTheory : public GroundTheory {
 	
 	private:
-		GroundFeatures			_features;
+		GroundFeatures				_features;
 		
-		GroundTranslator*		_translator;
-
-		vector<EcnfClause>		_clauses;	
-		vector<EcnfDefinition>	_definitions;
-		vector<EcnfAgg>			_aggregates;
-		vector<EcnfFixpDef>		_fixpdefs;
-		vector<EcnfSet>			_sets;
+		vector<EcnfClause>			_clauses;	
+		vector<GroundDefinition>	_definitions;
+		vector<EcnfAgg>				_aggregates;
+		vector<EcnfFixpDef>			_fixpdefs;
+		vector<EcnfSet>				_sets;
 
 	public:
 
 		// Constructor
-		EcnfTheory() : AbstractTheory("",ParseInfo()), _translator(new NaiveTranslator()) { }
-		EcnfTheory(Vocabulary* voc) : AbstractTheory("",voc,ParseInfo()), _translator(new NaiveTranslator()) { }
-
-		// Destructor
-		void recursiveDelete() { }
+		EcnfTheory(AbstractStructure* str) : GroundTheory(str) { }
+		EcnfTheory(Vocabulary* voc, AbstractStructure* str) : GroundTheory(voc,str)	{ }
 
 		// Mutators
-		void addClause(const EcnfClause& vi)		{ _clauses.push_back(vi);											}
-		void addDefinition(const EcnfDefinition& d)	{ _definitions.push_back(d); 
+		void addClause(EcnfClause& cl, bool firstIsPrinted = false);
+/*		void addDefinition(const EcnfDefinition& d)	{ _definitions.push_back(d); 
 													  _features._containsDefinitions = true;	
 													  _features._containsAggregates = 
-														_features._containsAggregates || d.containsAgg();				}
+														_features._containsAggregates || d.containsAgg();				}*/
+		void addDefinition(GroundDefinition& d)		{ transformForAdd(d);
+													  _definitions.push_back(d); }
 		void addFixpDef(const EcnfFixpDef& d)		{ _fixpdefs.push_back(d); 
 													  _features._containsFixpDefs = true;		
 													  _features._containsAggregates = 
 														_features._containsAggregates || d.containsAgg();				} 
 		void addAgg(const EcnfAgg& a)				{ _aggregates.push_back(a); _features._containsAggregates = true;	}
+		void addAgg(int head, AggTsBody& body);
 
-		unsigned int addSet(const vector<int>& lits, const vector<double>& weights)
-													{ _sets.push_back(EcnfSet(lits,weights)); return _sets.size() - 1;	}
-
-		void add(Formula* f);	
-		void add(Definition* d);
-		void add(FixpDef* fd);	
+		void addSet(int setnr, const vector<int>& lits, const vector<double>& weights)
+													{ _sets.push_back(EcnfSet(setnr,lits,weights));	}
+		void addSet(int setnr, bool weighted);
 
 		// Inspectors
 		unsigned int		nrSentences()				const { return _clauses.size() + _aggregates.size();	}
@@ -269,10 +327,9 @@ class EcnfTheory : public AbstractTheory {
 		Formula*			sentence(unsigned int n)	const;
 		Definition*			definition(unsigned int n)	const;
 		FixpDef*			fixpdef(unsigned int n)		const;
-		GroundTranslator*	translator()				const { return _translator;	}
 
 		// Visitor
-		void			accept(Visitor* v)			{ v->visit(this);			}
+		void			accept(Visitor* v) const	{ v->visit(this);			}
 		AbstractTheory*	accept(MutatingVisitor* v)	{ return v->visit(this);	}
 
 		// Debugging
@@ -280,6 +337,43 @@ class EcnfTheory : public AbstractTheory {
 
 		// Output
 		void print(GroundPrinter*);
+
+};
+
+/* SolverTheory acts as an interface to the theory of a SAT solver
+*/
+class SolverTheory : public GroundTheory {
+
+	private:
+		SATSolver*			_solver;		// SAT solver
+
+	public:
+		// Constructors 
+		SolverTheory(SATSolver* solver,AbstractStructure* str) : 
+			GroundTheory(str), _solver(solver) { }
+		SolverTheory(Vocabulary* voc, SATSolver* solver, AbstractStructure* str) : 
+			GroundTheory(voc,str), _solver(solver) { }
+
+		// Mutators
+		void	addClause(EcnfClause& cl, bool firstIsPrinted = false);
+		void	addDefinition(GroundDefinition&);
+		void	addAgg(int head, AggTsBody& body);
+		void	addSet(int setnr, bool weighted);
+
+		// Inspectors
+		unsigned int	nrSentences()				const { assert(false); /*TODO*/	}
+		unsigned int	nrDefinitions()				const { assert(false); /*TODO*/	}
+		unsigned int	nrFixpDefs()				const { assert(false); /*TODO*/	}
+		Formula*		sentence(unsigned int n)	const { assert(false); /*TODO*/	}
+		Definition*		definition(unsigned int n)	const { assert(false); /*TODO*/	}
+		FixpDef*		fixpdef(unsigned int n)		const { assert(false); /*TODO*/	}
+
+		// Visitor
+		void			accept(Visitor* v) const	{ v->visit(this);			}
+		AbstractTheory*	accept(MutatingVisitor* v)	{ return v->visit(this);	}
+
+		// Debugging
+		string to_string() const { assert(false); /*TODO*/	}
 
 };
 

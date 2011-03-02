@@ -16,6 +16,10 @@
 #include <list>
 #include <set>
 
+extern void setoption(InfOptions*,const string&, const string&, ParseInfo*);
+extern void setoption(InfOptions*,const string&, double, ParseInfo*);
+extern void setoption(InfOptions*,const string&, int, ParseInfo*);
+
 /********************
 	Sort checking
 ********************/
@@ -30,14 +34,14 @@ class SortChecker : public Visitor {
 		SortChecker(Definition* d,Vocabulary* v)	: Visitor(), _vocab(v) { d->accept(this);	}
 		SortChecker(FixpDef* d,Vocabulary* v)		: Visitor(), _vocab(v) { d->accept(this);	}
 
-		void visit(PredForm*);
-		void visit(EqChainForm*);
-		void visit(FuncTerm*);
-		void visit(AggTerm*);
+		void visit(const PredForm*);
+		void visit(const EqChainForm*);
+		void visit(const FuncTerm*);
+		void visit(const AggTerm*);
 
 };
 
-void SortChecker::visit(PredForm* pf) {
+void SortChecker::visit(const PredForm* pf) {
 	PFSymbol* s = pf->symb();
 	for(unsigned int n = 0; n < s->nrSorts(); ++n) {
 		Sort* s1 = s->sort(n);
@@ -51,7 +55,7 @@ void SortChecker::visit(PredForm* pf) {
 	traverse(pf);
 }
 
-void SortChecker::visit(FuncTerm* ft) {
+void SortChecker::visit(const FuncTerm* ft) {
 	Function* f = ft->func();
 	for(unsigned int n = 0; n < f->arity(); ++n) {
 		Sort* s1 = f->insort(n);
@@ -65,7 +69,7 @@ void SortChecker::visit(FuncTerm* ft) {
 	traverse(ft);
 }
 
-void SortChecker::visit(EqChainForm* ef) {
+void SortChecker::visit(const EqChainForm* ef) {
 	Sort* s = 0;
 	unsigned int n = 0;
 	while(!s && n < ef->nrSubterms()) {
@@ -83,7 +87,7 @@ void SortChecker::visit(EqChainForm* ef) {
 	traverse(ef);
 }
 
-void SortChecker::visit(AggTerm* at) {
+void SortChecker::visit(const AggTerm* at) {
 	if(at->type() != AGGCARD) {
 		SetExpr* s = at->set();
 		if(s->nrQvars() && s->qvar(0)->sort()) {
@@ -104,7 +108,7 @@ void SortChecker::visit(AggTerm* at) {
 	Sort derivation
 **********************/
 
-class SortDeriver : public Visitor {
+class SortDeriver : public MutatingVisitor {
 
 	private:
 		map<Variable*,set<Sort*> >	_untyped;			// The untyped variables, with their possible types
@@ -117,30 +121,31 @@ class SortDeriver : public Visitor {
 		Vocabulary*					_vocab;
 
 	public:
-
 		// Constructor
-		SortDeriver(Formula* f,Vocabulary* v) : Visitor(), _vocab(v) { run(f); }
-		SortDeriver(Rule* r,Vocabulary* v)	: Visitor(), _vocab(v) { run(r); }
+		SortDeriver(Formula* f,Vocabulary* v) : MutatingVisitor(), _vocab(v) { run(f); }
+		SortDeriver(Rule* r,Vocabulary* v)	: MutatingVisitor(), _vocab(v) { run(r); }
 
 		// Run sort derivation 
 		void run(Formula*);
 		void run(Rule*);
 
 		// Visit 
-		void visit(QuantForm*);
-		void visit(PredForm*);
-		void visit(EqChainForm*);
+		Formula*	visit(QuantForm*);
+		Formula*	visit(PredForm*);
+		Formula*	visit(EqChainForm*);
+		Rule*		visit(Rule*);
+		Term*		visit(VarTerm*);
+		Term*		visit(DomainTerm*);
+		Term*		visit(FuncTerm*);
+		SetExpr*	visit(QuantSetExpr*);
 
-		void visit(Rule*);
-
-		void visit(VarTerm*);
-		void visit(DomainTerm*);
-		void visit(FuncTerm*);
-
-		void visit(QuantSetExpr*);
+		// Traversal
+		Formula*	traverse(Formula*);
+		Rule*		traverse(Rule*);
+		Term*		traverse(Term*);
+		SetExpr*	traverse(SetExpr*);
 
 	private:
-
 		// Auxiliary methods
 		void derivesorts();		// derive the sorts of the variables, based on the sorts in _untyped
 		void derivefuncs();		// disambiguate the overloaded functions
@@ -151,17 +156,47 @@ class SortDeriver : public Visitor {
 		
 };
 
-void SortDeriver::visit(QuantForm* qf) {
+Formula* SortDeriver::traverse(Formula* f) {
+	for(unsigned int n = 0; n < f->nrSubforms(); ++n)
+		f->subform(n)->accept(this);
+	for(unsigned int n = 0; n < f->nrSubterms(); ++n)
+		f->subterm(n)->accept(this);
+	return f;
+}
+
+Rule* SortDeriver::traverse(Rule* r) {
+	r->head()->accept(this);
+	r->body()->accept(this);
+	return r;
+}
+
+Term* SortDeriver::traverse(Term* t) {
+	for(unsigned int n = 0; n < t->nrSubforms(); ++n)
+		t->subform(n)->accept(this);
+	for(unsigned int n = 0; n < t->nrSubterms(); ++n)
+		t->subterm(n)->accept(this);
+	return t;
+}
+
+SetExpr* SortDeriver::traverse(SetExpr* s) {
+	for(unsigned int n = 0; n < s->nrSubforms(); ++n)
+		s->subform(n)->accept(this);
+	for(unsigned int n = 0; n < s->nrSubterms(); ++n)
+		s->subterm(n)->accept(this);
+	return s;
+}
+
+Formula* SortDeriver::visit(QuantForm* qf) {
 	if(_firstvisit) {
 		for(unsigned int n = 0; n < qf->nrQvars(); ++n) {
 			if(!(qf->qvar(n)->sort())) _untyped[qf->qvar(n)] = set<Sort*>();
 			_changed = true;
 		}
 	}
-	traverse(qf);
+	return traverse(qf);
 }
 
-void SortDeriver::visit(PredForm* pf) {
+Formula* SortDeriver::visit(PredForm* pf) {
 	PFSymbol* p = pf->symb();
 
 	// At first visit, insert the atoms over overloaded predicates
@@ -175,9 +210,10 @@ void SortDeriver::visit(PredForm* pf) {
 		_assertsort = p->sort(n);
 		pf->subterm(n)->accept(this);
 	}
+	return pf;
 }
 
-void SortDeriver::visit(EqChainForm* ef) {
+Formula* SortDeriver::visit(EqChainForm* ef) {
 	Sort* s = 0;
 	if(!_firstvisit) {
 		for(unsigned int n = 0; n < ef->nrSubterms(); ++n) {
@@ -192,25 +228,27 @@ void SortDeriver::visit(EqChainForm* ef) {
 		_assertsort = s;
 		ef->subterm(n)->accept(this);
 	}
+	return ef;
 }
 
-void SortDeriver::visit(Rule* r) {
+Rule* SortDeriver::visit(Rule* r) {
 	if(_firstvisit) {
 		for(unsigned int n = 0; n < r->nrQvars(); ++n) {
 			if(!(r->qvar(n)->sort())) _untyped[r->qvar(n)] = set<Sort*>();
 			_changed = true;
 		}
 	}
-	traverse(r);
+	return traverse(r);
 }
 
-void SortDeriver::visit(VarTerm* vt) {
+Term* SortDeriver::visit(VarTerm* vt) {
 	if((!(vt->sort())) && _assertsort) {
 		_untyped[vt->var()].insert(_assertsort);
 	}
+	return vt;
 }
 
-void SortDeriver::visit(DomainTerm* dt) {
+Term* SortDeriver::visit(DomainTerm* dt) {
 	if(_firstvisit && (!(dt->sort()))) {
 		_domelements.insert(dt);
 	}
@@ -220,9 +258,10 @@ void SortDeriver::visit(DomainTerm* dt) {
 		_changed = true;
 		_domelements.erase(dt);
 	}
+	return dt;
 }
 
-void SortDeriver::visit(FuncTerm* ft) {
+Term* SortDeriver::visit(FuncTerm* ft) {
 	Function* f = ft->func();
 
 	// At first visit, insert the terms over overloaded functions
@@ -238,9 +277,10 @@ void SortDeriver::visit(FuncTerm* ft) {
 		_assertsort = f->insort(n);
 		ft->subterm(n)->accept(this);
 	}
+	return ft;
 }
 
-void SortDeriver::visit(QuantSetExpr* qs) {
+SetExpr* SortDeriver::visit(QuantSetExpr* qs) {
 	if(_firstvisit) {
 		for(unsigned int n = 0; n < qs->nrQvars(); ++n) {
 			if(!(qs->qvar(n)->sort())) {
@@ -249,7 +289,7 @@ void SortDeriver::visit(QuantSetExpr* qs) {
 			}
 		}
 	}
-	traverse(qs);
+	return traverse(qs);
 }
 
 void SortDeriver::derivesorts() {
@@ -889,45 +929,17 @@ namespace Insert {
 		else Error::undeclopt(oneName(name),pi);
 	}
 
-	void option(const string& opt, const string& val, YYLTYPE l) {
+	void option(const string& opt, const string& val,YYLTYPE l) {
 		ParseInfo pi = parseinfo(l);
-		if(InfOptions::isoption(opt)) {
-			if(opt == "language") {
-				if(val == "txt") _curroptions->_format=OF_TXT;
-				else if(val == "idp") _curroptions->_format=OF_IDP;
-				else Error::wrongformat(val,pi);
-			}
-			else if(opt == "modelformat") {
-				if(val == "all") _curroptions->_modelformat=MF_ALL;
-				else if(val == "twovalued") _curroptions->_modelformat=MF_TWOVAL;
-				else if(val == "threevalued") _curroptions->_modelformat=MF_THREEVAL;
-				else Error::wrongmodelformat(val,pi);
-			}
-			else Error::wrongvaluetype(opt,pi);
-		}
-		else Error::unknopt(opt,pi);
+		setoption(_curroptions,opt,val,&pi);
 	}
-
-	void option(const string& opt, double, YYLTYPE l) {
+	void option(const string& opt, double val,YYLTYPE l) { 
 		ParseInfo pi = parseinfo(l);
-		if(InfOptions::isoption(opt)) {
-			Error::wrongvaluetype(opt,pi);
-		}
-		else Error::unknopt(opt,pi);
+		setoption(_curroptions,opt,val,&pi);
 	}
-
-	void option(const string& opt, int val, YYLTYPE l) {
+	void option(const string& opt, int val,YYLTYPE l) {
 		ParseInfo pi = parseinfo(l);
-		if(InfOptions::isoption(opt)) {
-			if(opt == "nrmodels") {
-				if(val >= 0) {
-					_curroptions->_nrmodels = val;
-				}
-				else Error::posintexpected(opt,pi);
-			}
-			else Error::wrongvaluetype(opt,pi);
-		}
-		else Error::unknopt(opt,pi);
+		setoption(_curroptions,opt,val,&pi);
 	}
 
 	/*****************
@@ -1413,7 +1425,7 @@ namespace Insert {
 	}
 
 	void closeaspstructure() {
-		for(unsigned int n = 0; n < _currstructure->nrSortInters(); ++n) {
+/*		for(unsigned int n = 0; n < _currstructure->nrSortInters(); ++n) {
 			SortTable* st = _currstructure->sortinter(n);
 			if(st) st->sortunique();
 		}
@@ -1444,12 +1456,15 @@ namespace Insert {
 				ft->predinter()->replace(ft->predinter()->ctpf(),false,false);
 			}
 			ft->sortunique();
-		}
+		} */
+		_currstructure->sortall();
+		Structure* tmp = _currstructure;
 		closestructure();
+		tmp->forcetwovalued();
 	}
 
 	void closeaspbelief() {
-		for(unsigned int n = 0; n < _currstructure->nrSortInters(); ++n) {
+/*		for(unsigned int n = 0; n < _currstructure->nrSortInters(); ++n) {
 			SortTable* st = _currstructure->sortinter(n);
 			if(st) st->sortunique();
 		}
@@ -1460,7 +1475,8 @@ namespace Insert {
 		for(unsigned int n = 0; n < _currstructure->nrFuncInters(); ++n) {
 			FuncInter* ft = _currstructure->funcinter(n);
 			if(ft) ft->sortunique();
-		}
+		} */
+		_currstructure->sortall();
 		closestructure();
 	}
 
@@ -1503,7 +1519,7 @@ namespace Insert {
 		if(p && nst->_sortsincluded && (nst->_sorts).size() == t->arity()) p = p->resolve(nst->_sorts);
 		if(p) {
 			if(belongsToVoc(p)) {
-				if(_currstructure->inter(p)) Error::multpredinter(nst->to_string(),pi);
+				if(_currstructure->hasInter(p)) Error::multpredinter(nst->to_string(),pi);
 				else {
 					t->sortunique();
 					PredInter* pt = new PredInter(t,true);
@@ -1528,7 +1544,7 @@ namespace Insert {
 		if(f && nst->_sortsincluded && (nst->_sorts).size() == t->arity()) f = f->resolve(nst->_sorts);
 		if(f) {
 			if(belongsToVoc(f)) {
-				if(_currstructure->inter(f)) Error::multfuncinter(f->name(),pi);
+				if(_currstructure->hasInter(f)) Error::multfuncinter(f->name(),pi);
 				else {
 					t->sortunique();
 					PredInter* pt = new PredInter(t,true);
@@ -1608,26 +1624,28 @@ namespace Insert {
 							break;
 						case UTF_CT:
 						{	
-							PredInter* pt = _currstructure->inter(p);
-							if(pt) {
+							bool hasinter = _currstructure->hasInter(p);
+							if(hasinter) {
+								PredInter* pt = _currstructure->inter(p);
 								if(pt->ctpf()) Error::multctpredinter(p->name(),pi);
 								else pt->replace(t,true,true);
 							}
 							else {
-								pt = new PredInter(t,0,true,true);
+								PredInter* pt = new PredInter(t,0,true,true);
 								_currstructure->inter(p,pt);
 							}
 							break;
 						}
 						case UTF_CF:
 						{
-							PredInter* pt = _currstructure->inter(p);
-							if(pt) {
+							bool hasinter = _currstructure->hasInter(p);
+							if(hasinter) {
+								PredInter* pt = _currstructure->inter(p);
 								if(pt->cfpt()) Error::multcfpredinter(p->name(),pi);
 								else pt->replace(t,false,true);
 							}
 							else {
-								pt = new PredInter(0,t,true,true);
+								PredInter* pt = new PredInter(0,t,true,true);
 								_currstructure->inter(p,pt);
 							}
 							break;
@@ -1674,28 +1692,30 @@ namespace Insert {
 						break;
 					case UTF_CT:
 					{	
-						FuncInter* ft = _currstructure->inter(f);
-						if(ft) {
+						bool hasinter = _currstructure->hasInter(f);
+						if(hasinter) {
+							FuncInter* ft = _currstructure->inter(f);
 							if(ft->predinter()->ctpf()) Error::multctfuncinter(f->name(),pi);
 							else ft->predinter()->replace(t,true,true);
 						}
 						else {
 							PredInter* pt = new PredInter(t,0,true,true);
-							ft = new FuncInter(0,pt);
+							FuncInter* ft = new FuncInter(0,pt);
 							_currstructure->inter(f,ft);
 						}
 						break;
 					}
 					case UTF_CF:
 					{
-						FuncInter* ft = _currstructure->inter(f);
-						if(ft) {
+						bool hasinter = _currstructure->hasInter(f);
+						if(hasinter) {
+							FuncInter* ft = _currstructure->inter(f);
 							if(ft->predinter()->cfpt()) Error::multcffuncinter(f->name(),pi);
 							else ft->predinter()->replace(t,false,true);
 						}
 						else {
 							PredInter* pt = new PredInter(0,t,true,true);
-							ft = new FuncInter(0,pt);
+							FuncInter* ft = new FuncInter(0,pt);
 							_currstructure->inter(f,ft);
 						}
 						break;
@@ -2240,8 +2260,8 @@ namespace Insert {
 			QuantSetExpr* qse = new QuantSetExpr(vv,f,pi);
 			vector<Term*> vt(2);
 			Element en; en._int = n;
-			vt[0] = new DomainTerm(*(StdBuiltin::instance()->sort("int")->begin()),ELINT,en,pi);
-			vt[1] = new AggTerm(qse,AGGCARD,pi);
+			vt[1] = new DomainTerm(*(StdBuiltin::instance()->sort("int")->begin()),ELINT,en,pi);
+			vt[0] = new AggTerm(qse,AGGCARD,pi);
 			Predicate* p = StdBuiltin::instance()->pred(string(1,c) + "/2");
 			return new PredForm(b,p,vt,pi);	// TODO adapt formparseinfo
 		}
@@ -2417,7 +2437,7 @@ namespace Insert {
 				YYLTYPE l; 
 				l.first_line = (nst->_pi).line();
 				l.first_column = (nst->_pi).col();
-				v = quantifiedvar((nst->_name)[0],l);
+				v = quantifiedvar(name,l);
 				t = new VarTerm(v,nst->_pi);
 			}
 			delete(nst);

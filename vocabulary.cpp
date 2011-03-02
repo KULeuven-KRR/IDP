@@ -190,7 +190,19 @@ namespace ElementUtil {
 		return convert(te._element,te._type,t);
 	}
 
-	bool equal(Element e1, ElementType t1, Element e2, ElementType t2) {
+	vector<TypedElement> convert(const vector<domelement>& vd) {
+		vector<TypedElement> vte(vd.size());
+		for(unsigned int n = 0; n < vd.size(); ++n) {
+			if(vd[n]->_function) {
+				vte[n]._type = ELCOMPOUND;
+				vte[n]._element._compound = vd[n];
+			}
+			else vte[n] = (vd[n]->_args)[0];
+		}
+		return vte;
+	}
+
+	inline bool equal(Element e1, ElementType t1, Element e2, ElementType t2) {
 		switch(t1) {
 			case ELINT:
 				switch(t2) {
@@ -242,7 +254,7 @@ namespace ElementUtil {
 		}
 	}
 
-	bool strlessthan(Element e1, ElementType t1, Element e2, ElementType t2) {
+	inline bool strlessthan(Element e1, ElementType t1, Element e2, ElementType t2) {
 		switch(t1) {
 			case ELINT:
 				switch(t2) {
@@ -309,7 +321,7 @@ namespace ElementUtil {
 	}
 
 
-	bool lessthanorequal(Element e1, ElementType t1, Element e2, ElementType t2) {
+	inline bool lessthanorequal(Element e1, ElementType t1, Element e2, ElementType t2) {
 		return (strlessthan(e1,t1,e2,t2) || equal(e1,t1,e2,t2));
 	}
 
@@ -371,6 +383,17 @@ set<Sort*> Sort::ancestors(Vocabulary* v) const {
 	for(unsigned int n = 0; n < nrParents(); ++n) {
 		if((!v) || v->contains(parent(n))) ss.insert(parent(n));
 		set<Sort*> temp = parent(n)->ancestors(v);
+		for(set<Sort*>::iterator it = temp.begin(); it != temp.end(); ++it)
+			ss.insert(*it);
+	}
+	return ss;
+}
+
+set<Sort*> Sort::descendents(Vocabulary* v) const {
+	set<Sort*> ss;
+	for(unsigned int n = 0; n < nrChildren(); ++n) {
+		if((!v) || v->contains(child(n))) ss.insert(child(n));
+		set<Sort*> temp = child(n)->descendents(v);
 		for(set<Sort*>::iterator it = temp.begin(); it != temp.end(); ++it)
 			ss.insert(*it);
 	}
@@ -994,6 +1017,17 @@ vector<Function*> Vocabulary::func_no_arity(const string& name) const {
 }
 
 /** Debugging **/
+
+string PFSymbol::to_string() const {
+	string s  = _name.substr(0,_name.find('/'));	
+	if(nrSorts()) {
+		s += "[" + sort(0)->to_string();
+		for(unsigned int n = 1; n < nrSorts(); ++n) 
+			s += "," + sort(n)->to_string();
+		s += "]";
+	}
+	return s;
+}
 
 string Vocabulary::to_string(unsigned int spaces) const {
 	string tab = tabstring(spaces);

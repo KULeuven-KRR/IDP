@@ -92,6 +92,29 @@ class LoadFile : public Inference {
 		InfArg execute(const vector<InfArg>& args) const;
 };
 
+class SetOption : public Inference {
+	public:
+		SetOption(InfArgType t);
+		InfArg execute(const vector<InfArg>& args) const;
+};
+
+class GetOption : public Inference {
+	public:
+		GetOption();
+		InfArg execute(const vector<InfArg>& args) const;
+};
+
+class NewOption : public Inference {
+	public:
+		NewOption(bool b) {	
+			_intypes = b ? vector<InfArgType>(1,IAT_OPTIONS) : vector<InfArgType>(0);
+			_outtype = IAT_OPTIONS;
+			_description = "Create a clone of the given options";
+			_reload = false;
+		}
+		InfArg execute(const vector<InfArg>& args) const;
+};
+
 class PrintTheory : public Inference {
 	public:
 		PrintTheory(bool opts) { 
@@ -197,9 +220,21 @@ class GroundingWithResult : public Inference {
 		InfArg execute(const vector<InfArg>& args) const;
 };
 
+class FastGrounding : public Inference {
+	public:
+		FastGrounding();
+		InfArg execute(const vector<InfArg>& args) const;
+};
+
 class ModelExpansionInference : public Inference {
 	public:
 		ModelExpansionInference(bool opts);
+		InfArg execute(const vector<InfArg>& args) const;
+};
+
+class FastMXInference : public Inference {
+	public:
+		FastMXInference(bool opts);
 		InfArg execute(const vector<InfArg>& args) const;
 };
 
@@ -264,5 +299,26 @@ class CloneStructure : public Inference {
 		InfArg execute(const vector<InfArg>& args) const;
 };
 
+class CloneTheory : public Inference {
+	public:
+		CloneTheory() { 
+			_intypes = vector<InfArgType>(1,IAT_THEORY);
+			_outtype = IAT_THEORY;
+			_description = "Make a copy of this theory";
+			_reload = false;
+		}
+		InfArg execute(const vector<InfArg>& args) const;
+};
+
+class ForceTwoValued : public Inference {
+	public:
+		ForceTwoValued() {
+			_intypes = vector<InfArgType>(1,IAT_STRUCTURE);
+			_outtype = IAT_STRUCTURE;
+			_description = "Force structure to be two-valued";
+			_reload = false;
+		}
+		InfArg execute(const vector<InfArg>& args) const;
+};
 
 #endif

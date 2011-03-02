@@ -213,16 +213,13 @@ Sort* AggTerm::sort() const {
 	Containment checking
 ***************************/
 
-bool Term::contains(Variable* v) const {
-	for(unsigned int n = 0; n < nrQvars(); ++n) {
+bool Term::contains(const Variable* v) const {
+	for(unsigned int n = 0; n < nrQvars(); ++n)
 		if(qvar(n) == v) return true;
-	}
-	for(unsigned int n = 0; n < nrSubterms(); ++n) {
+	for(unsigned int n = 0; n < nrSubterms(); ++n)
 		if(subterm(n)->contains(v)) return true;
-	}
-	for(unsigned int n = 0; n < nrSubforms(); ++n) {
+	for(unsigned int n = 0; n < nrSubforms(); ++n)
 		if(subform(n)->contains(v)) return true;
-	}
 	return false;
 }
 
@@ -309,12 +306,12 @@ class SetEvaluator : public Visitor {
 		const vector<SortTable*>& truevalues()	const	{ return _truevalues;	}
 		const vector<SortTable*>& unknvalues()	const	{ return _unknvalues;	}
 
-		void visit(EnumSetExpr*);
-		void visit(QuantSetExpr*);
+		void visit(const EnumSetExpr*);
+		void visit(const QuantSetExpr*);
 
 };
 
-void SetEvaluator::visit(EnumSetExpr* e) {
+void SetEvaluator::visit(const EnumSetExpr* e) {
 	for(unsigned int n = 0; n < e->nrSubforms(); ++n) {
 		TruthValue tv = FormulaUtils::evaluate(e->subform(n),_structure,_varmapping);
 		switch(tv) {
@@ -340,7 +337,7 @@ void SetEvaluator::visit(EnumSetExpr* e) {
 	}
 }
 
-void SetEvaluator::visit(QuantSetExpr* e)	{
+void SetEvaluator::visit(const QuantSetExpr* e)	{
 	SortTableTupleIterator vti(e->qvars(),_structure);
 	if(!vti.empty()) {
 		for(unsigned int n; n < e->nrQvars(); ++n) {
@@ -373,16 +370,16 @@ TermEvaluator::TermEvaluator(AbstractStructure* s,const map<Variable*,TypedEleme
 TermEvaluator::TermEvaluator(Term* t,AbstractStructure* s,const map<Variable*,TypedElement> m) : 
 	Visitor(), _structure(s), _varmapping(m) { t->accept(this);	}
 
-void TermEvaluator::visit(VarTerm* vt) {
+void TermEvaluator::visit(const VarTerm* vt) {
 	assert(_varmapping.find(vt->var()) != _varmapping.end());
 	_returnvalue = TableUtils::singletonSort(_varmapping[vt->var()]);
 }
 
-void TermEvaluator::visit(DomainTerm* dt) {
+void TermEvaluator::visit(const DomainTerm* dt) {
 	_returnvalue = TableUtils::singletonSort(dt->value(),dt->type());
 }
 
-void TermEvaluator::visit(FuncTerm* ft) {
+void TermEvaluator::visit(const FuncTerm* ft) {
 	// Calculate the value of the subterms
 	vector<SortTable*> argvalues;
 	for(unsigned int n = 0; n < ft->nrSubterms(); ++n) {
@@ -448,7 +445,7 @@ void TermEvaluator::visit(FuncTerm* ft) {
 	for(unsigned int n = 0; n < argvalues.size(); ++n) delete(argvalues[n]);
 }
 
-void TermEvaluator::visit(AggTerm* at) {
+void TermEvaluator::visit(const AggTerm* at) {
 	SetEvaluator sev(at->set(),_structure,_varmapping);
 	if(at->type() == AGGCARD) {
 		int tv = sev.truevalues().size();
@@ -501,6 +498,49 @@ namespace TermUtils {
 		TermEvaluator te(t,s,m);
 		return te.returnvalue();
 	}
+}
+
+class TwoValChecker : public Visitor {
+	private:
+		AbstractStructure*	_structure;
+		bool				_returnvalue;
+	public:
+		TwoValChecker(AbstractStructure* str) : _structure(str), _returnvalue(true) { }
+		bool	returnvalue()	const { return _returnvalue;	}
+		void	visit(const PredForm*);
+		void	visit(const FuncTerm*);
+};
+
+void TwoValChecker::visit(const PredForm* pf) {
+	PredInter* inter = _structure->inter(pf->symb());
+	if(inter->fasttwovalued()) {
+		for(unsigned int n = 0; n < pf->nrSubterms(); ++n) {
+			pf->subterm(n)->accept(this);
+			if(!_returnvalue) return;
+		}
+	}
+	else _returnvalue = false;
+}
+
+void TwoValChecker::visit(const FuncTerm* ft) {
+	FuncInter* inter = _structure->inter(ft->func());
+	if(inter->fasttwovalued()) {
+		for(unsigned int n = 0; n < ft->nrSubterms(); ++n) {
+			ft->subterm(n)->accept(this);
+			if(!_returnvalue) return;
+		}
+	}
+	else _returnvalue = false;
+}
+
+namespace SetUtils {
+
+	bool isTwoValued(SetExpr* exp, AbstractStructure* str) {
+		TwoValChecker tvc(str);
+		exp->accept(&tvc);
+		return tvc.returnvalue();
+	}
+
 }
 
 namespace AggUtils {

@@ -26,9 +26,9 @@ class Printer : public Visitor {
 		static Printer* create(InfOptions* opts);
 
 		// Print methods
-		string print(Vocabulary* v);
-		string print(Theory* t);
-		string print(Structure* s);
+		string print(const Vocabulary* v);
+		string print(const AbstractTheory* t);
+		string print(const AbstractStructure* s);
 
 		// Indentation
 		void indent();
@@ -40,57 +40,58 @@ class Printer : public Visitor {
 class SimplePrinter : public Printer {
 
 	public:
-		void visit(Theory*);
-		void visit(Structure*);
-		void visit(Vocabulary*);
+		void visit(const Vocabulary*);
+		void visit(const AbstractTheory*);
+		void visit(const AbstractStructure*);
 
 };
 
 class IDPPrinter : public Printer {
 
 	private:
-		PFSymbol* 	_currsymbol;
-		Structure* 	_currstructure;
-		void print(PredTable*);
-		void printInter(const char*,const char*,PredTable*,PredTable*);
+		const PFSymbol* 	_currsymbol;
+		const Structure* 	_currstructure;
+		void print(const PredTable*);
+		void printInter(const char*,const char*,const PredTable*,const PredTable*);
 
 	public:
 		/** Theories **/
-		void visit(Theory*);
+		void visit(const Theory*);
+		void visit(const EcnfTheory*);
 
 		// Formulas
-		void visit(PredForm*);
-		void visit(EqChainForm*);
-		void visit(EquivForm*);
-		void visit(BoolForm*);
-		void visit(QuantForm*);
+		void visit(const PredForm*);
+		void visit(const EqChainForm*);
+		void visit(const EquivForm*);
+		void visit(const BoolForm*);
+		void visit(const QuantForm*);
 
 		// Definitions
-		void visit(Rule*);
-		void visit(Definition*);
-		void visit(FixpDef*);
+		void visit(const Rule*);
+		void visit(const Definition*);
+		void visit(const FixpDef*);
 
 		// Terms
-		void visit(VarTerm*);
-		void visit(FuncTerm*);
-		void visit(DomainTerm*);
-		void visit(AggTerm*);
+		void visit(const VarTerm*);
+		void visit(const FuncTerm*);
+		void visit(const DomainTerm*);
+		void visit(const AggTerm*);
 
 		// Set expressions
-		void visit(EnumSetExpr*);
-		void visit(QuantSetExpr*);
+		void visit(const EnumSetExpr*);
+		void visit(const QuantSetExpr*);
 
 		/** Structures **/
-		void visit(Structure*);
-		void visit(SortTable*);
-		void visit(PredInter*);
-		void visit(FuncInter*);
+		void visit(const Structure*);
+		void visit(const SortTable*);
+		void visit(const PredInter*);
+		void visit(const FuncInter*);
 
 		/** Vocabularies **/
-		void visit(Vocabulary*);
-		void visit(Sort*);
-		void visit(Predicate*);
-		void visit(Function*);
+		void visit(const Vocabulary*);
+		void visit(const Sort*);
+		void visit(const Predicate*);
+		void visit(const Function*);
 
 };
 
