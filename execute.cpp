@@ -599,8 +599,12 @@ InfArg ModelExpansionInference::execute(const vector<InfArg>& args) const {
 	gr->recursiveDelete();
 	vector<vector<MinisatID::Literal> > models;
 	InfArg a; a._setofstructures = new vector<AbstractStructure*>();
-	vector<MinisatID::Literal> assumpts;
-	MinisatID::Solution* sol = new MinisatID::Solution(false, true, true, modes.nbmodels, assumpts);
+	MinisatID::ModelExpandOptions options;
+	options.nbmodelstofind = modes.nbmodels;
+	options.printmodels = MinisatID::PRINT_NONE;
+	options.savemodels = MinisatID::SAVE_ALL;
+	options.search = MinisatID::MODELEXPAND;
+	MinisatID::Solution* sol = new MinisatID::Solution(options);
 	bool sat = solver->solve(sol);
 
 	if(sat){
@@ -682,7 +686,12 @@ InfArg FastMXInference::execute(const vector<InfArg>& args) const {
 
 	// Solve
 	vector<MinisatID::Literal> assumpts;
-	MinisatID::Solution* sol = new MinisatID::Solution(false, true, true, modes.nbmodels, assumpts);
+	MinisatID::ModelExpandOptions options;
+	options.nbmodelstofind = modes.nbmodels;
+	options.printmodels = MinisatID::PRINT_NONE;
+	options.savemodels = MinisatID::SAVE_ALL;
+	options.search = MinisatID::MODELEXPAND;
+	MinisatID::Solution* sol = new MinisatID::Solution(options);
 	bool sat = solver->solve(sol);
 
 	// Translate

@@ -16,6 +16,8 @@ LFLAGS =
 bin_PROGRAMS = gidl
 
 gidl_LDADD = $(builddir)/lib/lua/src/.libs/liblua.la
+gidl_LDADD += $(builddir)/pcsolver/src/libminisatid-2.0.la
+
 
 BUILT_SOURCES = parse.h
 
@@ -44,85 +46,7 @@ gidl_SOURCES = \
 		checker.cpp checker.hpp\
 		generator.cpp generator.hpp 
 
-#MINISATID PART, HEADERS ARE TAKEN CARE OF BY THE SUB MAKEFILE
-gidl_SOURCES += \
-		pcsolver/src/satsolver/SATSolver.hpp				pcsolver/src/satsolver/SATSolver.cpp\
-		pcsolver/src/satsolver/SATUtils.hpp					pcsolver/src/satsolver/SATUtils.cpp\
-		pcsolver/src/modules/DPLLTmodule.hpp 				pcsolver/src/modules/DPLLTmodule.cpp\
-		pcsolver/src/modules/ModSolver.hpp	 				pcsolver/src/modules/ModSolver.cpp\
-		pcsolver/src/modules/IDSolver.hpp 					pcsolver/src/modules/IDSolver.cpp\
-		pcsolver/src/modules/AggSolver.hpp 					pcsolver/src/modules/AggSolver.cpp\
-		pcsolver/src/modules/aggsolver/AggTransform.hpp 	pcsolver/src/modules/aggsolver/AggTransform.cpp\
-		pcsolver/src/modules/aggsolver/AggUtils.hpp 		pcsolver/src/modules/aggsolver/AggUtils.cpp\
-		pcsolver/src/modules/aggsolver/AggPrint.hpp 		pcsolver/src/modules/aggsolver/AggPrint.cpp\
-		pcsolver/src/modules/aggsolver/FullyWatched.hpp 	pcsolver/src/modules/aggsolver/FullyWatched.cpp\
-		pcsolver/src/modules/aggsolver/PartiallyWatched.hpp pcsolver/src/modules/aggsolver/GenPartiallyWatched.cpp\
-		pcsolver/src/modules/aggsolver/AggProp.hpp 			pcsolver/src/modules/aggsolver/AggProp.cpp\
-		pcsolver/src/theorysolvers/LogicSolver.hpp\
-		pcsolver/src/theorysolvers/PCSolver.hpp 			pcsolver/src/theorysolvers/PCSolver.cpp\
-		pcsolver/src/theorysolvers/SOSolver.hpp 			pcsolver/src/theorysolvers/SOSolver.cpp\
-		pcsolver/src/utils/IntTypes.h\
-		pcsolver/src/utils/Print.hpp 						pcsolver/src/utils/Print.cpp\
-		pcsolver/src/utils/Utils.hpp 						pcsolver/src/utils/Utils.cpp\
-		pcsolver/src/utils/PrintMessage.hpp 				pcsolver/src/utils/PrintMessage.cpp\
-		pcsolver/src/parser/ResourceManager.hpp 			pcsolver/src/parser/ResourceManager.cpp\
-		pcsolver/src/parser/Lparseread.hpp 					pcsolver/src/parser/Lparseread.cpp\
-		pcsolver/src/parser/PBread.hpp 						pcsolver/src/parser/PBread.cpp\
-		pcsolver/src/parser/ParseOptions.hpp 				pcsolver/src/parser/ParseOptions.cpp\
-		pcsolver/src/external/ExternalInterface.hpp 		pcsolver/src/external/ExternalInterface.cpp\
-		pcsolver/src/external/ExternalUtils.hpp\
-		pcsolver/src/external/Translator.hpp 				pcsolver/src/external/Translator.cpp\
-		pcsolver/src/external/InterfaceImpl.hpp 			pcsolver/src/external/InterfaceImpl.cpp\
-		pcsolver/src/GeneralUtils.hpp 						pcsolver/src/GeneralUtils.cpp\
-		pcsolver/src/Unittests.hpp 							pcsolver/src/Unittests.cpp
-
-
-AM_CXXFLAGS+=-I $(top_srcdir)/pcsolver/src/ -I $(top_srcdir)/pcsolver/lib/tclap/include/ #-std=gnu++0x 
-
-#ESSENTIAL FOR INTTYPES USAGE 
-AM_CXXFLAGS+= -D __STDC_FORMAT_MACROS -D __STDC_LIMIT_MACROS
-
-gidl_LDADD+= $(top_builddir)/pcsolver/lib/pbsolver/libpbsolver-1.0.la
-
-#PBSOLVER
-gidl_SOURCES+=pbsolver/lib/PbSolver.h
-AM_CXXFLAGS+=-I$(top_srcdir)/pcsolver/lib/pbsolver/ -I$(top_srcdir)/pcsolver/lib/pbsolver/pbbase/h/ -I$(top_srcdir)/pcsolver/lib/pbsolver/ADTs/
-
-
-#MINISAT 2.07 09z
-if USEMINISAT09Z
-gidl_SOURCES +=\
-		pcsolver/src/solver3/Solver.cpp\
-		pcsolver/src/solver3/Solver.hpp pcsolver/src/solver3/SolverTypes.hpp\
-		pcsolver/src/mtlold/Vec.h pcsolver/src/mtlold/Queue.h pcsolver/src/mtlold/Alg.h pcsolver/src/mtlold/Heap.h pcsolver/src/mtlold/Map.h pcsolver/src/mtlold/Sort.h
-AM_CXXFLAGS+= -D USEMINISAT09Z
-endif
-
-
-#MINISAT 2.2
-if USEMINISAT22
-gidl_SOURCES +=\
-		pcsolver/src/solver3minisat22/core/Solver.cc\
-		pcsolver/src/solver3minisat22/core/Solver.h pcsolver/src/solver3minisat22/core/SolverTypes.h \
-		pcsolver/src/solver3minisat22/mtl/IntTypes.h pcsolver/src/solver3minisat22/mtl/Alg.h pcsolver/src/solver3minisat22/mtl/Vec.h\
-		pcsolver/src/solver3minisat22/mtl/Map.h pcsolver/src/solver3minisat22/mtl/Alloc.h\
-		pcsolver/src/solver3minisat22/mtl/Queue.h pcsolver/src/solver3minisat22/mtl/Heap.h\
-		pcsolver/src/solver3minisat22/mtl/Sort.h pcsolver/src/solver3minisat22/mtl/XAlloc.h\
-		pcsolver/src/solver3minisat22/utils/ParseUtils.h pcsolver/src/solver3minisat22/utils/Options.h\
-		pcsolver/src/solver3minisat22/zconf.h pcsolver/src/solver3minisat22/zlib.h
-AM_CXXFLAGS+= -D USEMINISAT22 -I$(top_srcdir)/pcsolver/src/solver3minisat22/
-#necessary if not used by minisatid itself! AM_CXXFLAGS+= -D __STDC_FORMAT_MACROS -D __STDC_LIMIT_MACROS 
-endif
-
-#MINISAT 2.07
-if USEMINISAT
-gidl_SOURCES +=\
-		pcsolver/src/solver3minisat/Solver.C\
-		pcsolver/src/solver3minisat/Solver.h pcsolver/src/solver3minisat/SolverTypes.h\
-		pcsolver/src/mtlold/Vec.h pcsolver/src/mtlold/Queue.h pcsolver/src/mtlold/Alg.h pcsolver/src/mtlold/Heap.h pcsolver/src/mtlold/Map.h mtlold/Sort.h
-AM_CXXFLAGS+= -D USEMINISAT
-endif
-
+AM_CXXFLAGS+=-I $(top_srcdir)/pcsolver/src/ 
 
 dist_doc_DATA = README
 

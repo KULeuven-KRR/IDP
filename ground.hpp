@@ -85,7 +85,7 @@ class GroundTranslator  {
 
 		int							translate(unsigned int,const vector<domelement>&);
 		int							translate(const vector<int>& cl, bool conj, TsType tp);
-		int							translate(int setnr, AggType tp, char comp, double bound, TsType tp);
+		int							translate(int setnr, AggType aggtype, char comp, double bound, TsType tstype);
 		int							translate(PFSymbol*,const vector<TypedElement>&);
 		int							translateSet(const vector<int>&,const vector<double>&,const vector<double>&);
 		int							nextNumber();
