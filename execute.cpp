@@ -53,6 +53,19 @@ namespace BuiltinProcs {
 		_inferences["newoptions"].push_back(new NewOption(true));
 		_inferences["newoptions"].push_back(new NewOption(false));
 		_inferences["forcetwovalued"].push_back(new ForceTwoValued());
+		_inferences["delete"].push_back(new DeleteData(IAT_THEORY));
+		_inferences["delete"].push_back(new DeleteData(IAT_STRUCTURE));
+		_inferences["delete"].push_back(new DeleteData(IAT_VOCABULARY));
+		_inferences["delete"].push_back(new DeleteData(IAT_NAMESPACE));
+		_inferences["delete"].push_back(new DeleteData(IAT_OPTIONS));
+	}
+
+	void cleanup() {
+		for(map<string,vector<Inference*> >::iterator it = _inferences.begin(); it != _inferences.end(); ++it) {
+			for(unsigned int n = 0; n < it->second.size(); ++n) {
+				delete(it->second[n]);
+			}
+		}
 	}
 
 	bool checkintern(lua_State* L, int n, const string& tp) {
@@ -383,6 +396,30 @@ InfArg LoadFile::execute(const vector<InfArg>& args) const {
 	return a;
 }
 
+InfArg DeleteData::execute(const vector<InfArg>& args) const {
+	switch(_intypes[0]) {
+		case IAT_THEORY:
+			delete(args[0]._theory);
+			break;
+		case IAT_STRUCTURE:
+			delete(args[0]._structure);
+			break;
+		case IAT_NAMESPACE:
+			delete(args[0]._namespace);
+			break;
+		case IAT_VOCABULARY:
+			delete(args[0]._vocabulary);
+			break;
+		case IAT_OPTIONS:
+			delete(args[0]._options);
+			break;
+		default:
+			assert(false);
+	}
+	InfArg a;
+	return a;
+}
+
 SetOption::SetOption(InfArgType t) {
 	_intypes = vector<InfArgType>(3);
 	_intypes[0] = IAT_OPTIONS;
@@ -485,7 +522,7 @@ InfArg PrintStructure::execute(const vector<InfArg>& args) const {
 	return a;
 }
 
-InfArg PrintNamespace::execute(const vector<InfArg>& args) const {
+InfArg PrintNamespace::execute(const vector<InfArg>&) const {
 	// TODO
 	// string s = (args[0]._namespace)->to_string();
 	//cout << s;

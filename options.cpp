@@ -19,7 +19,7 @@ void setoption(InfOptions* opts, const string& opt, const string& val, ParseInfo
 	else Error::unknopt(opt,pi);
 }
 
-void setoption(InfOptions* opts, const string& opt, double, ParseInfo* pi) {
+void setoption(InfOptions*, const string& opt, double, ParseInfo* pi) {
 	if(InfOptions::isoption(opt)) {
 		Error::wrongvaluetype(opt,pi);
 	}

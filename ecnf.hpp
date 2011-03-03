@@ -227,7 +227,7 @@ struct GroundDefinition {
 	GroundDefinition(GroundTranslator* tr) : _translator(tr) { }
 	void addTrueRule(int head);
 	void addRule(int head, const vector<int>& body, bool conj, bool recursive);
-	void addAgg(const EcnfAgg& a, GroundTranslator* t) { /* TODO */ }
+	void addAgg(const EcnfAgg& , GroundTranslator* ) { /* TODO */ }
 	string to_string() const;
 };
 
@@ -262,9 +262,9 @@ class GroundTheory : public AbstractTheory {
 		virtual	~GroundTheory()			{ delete(_translator);	}
 
 		// Mutators
-				void add(Formula* f)		{ assert(false);	}
-				void add(Definition* d)		{ assert(false);	}
-				void add(FixpDef* fd)		{ assert(false);	}
+				void add(Formula* )		{ assert(false);	}
+				void add(Definition* )	{ assert(false);	}
+				void add(FixpDef* )		{ assert(false);	}
 
 				void transformForAdd(EcnfClause& cl, bool firstIsPrinted = false);
 				void transformForAdd(GroundDefinition& d);
@@ -364,9 +364,9 @@ class SolverTheory : public GroundTheory {
 		unsigned int	nrSentences()				const { assert(false); /*TODO*/	}
 		unsigned int	nrDefinitions()				const { assert(false); /*TODO*/	}
 		unsigned int	nrFixpDefs()				const { assert(false); /*TODO*/	}
-		Formula*		sentence(unsigned int n)	const { assert(false); /*TODO*/	}
-		Definition*		definition(unsigned int n)	const { assert(false); /*TODO*/	}
-		FixpDef*		fixpdef(unsigned int n)		const { assert(false); /*TODO*/	}
+		Formula*		sentence(unsigned int )		const { assert(false); /*TODO*/	}
+		Definition*		definition(unsigned int )	const { assert(false); /*TODO*/	}
+		FixpDef*		fixpdef(unsigned int )		const { assert(false); /*TODO*/	}
 
 		// Visitor
 		void			accept(Visitor* v) const	{ v->visit(this);			}

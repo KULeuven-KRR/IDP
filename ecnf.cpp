@@ -43,7 +43,7 @@ void outputECNF::outputclause(const vector<int>& vi){
 	fprintf(_out,"0\n");
 }
 
-void outputECNF::outputunitrule(int h, int b) {
+void outputECNF::outputunitrule(int , int ) {	// int h, int b
 	// TODO
 	// vector<int> v;
 	//if(!Ground::isTrue(b)){
@@ -65,7 +65,7 @@ void outputECNF::outputrule(int h, const vector<int>& b, bool c){
 	fprintf(_out,"0\n");
 }
 
-void outputECNF::outputunitfdrule(int d, int h, int b) {
+void outputECNF::outputunitfdrule(int , int , int ) { // int d, h b
 	// TODO
 	/*vector<int> v;
 	if(!Ground::isTrue(b)){
@@ -87,7 +87,8 @@ void outputECNF::outputfdrule(int d, int h, const vector<int>& b, bool c) {
 	fprintf(_out,"0\n");
 }
 
-void outputECNF::outputmax(int h, bool defined, int setid, bool lowerthan, int bound) {
+void outputECNF::outputmax(int , bool , int , bool , int ) {
+// Argnames: h defined setid lowerthan bound
 	/*fprintf(_out,"Max %d " ,h);
 	for(unsigned int n = 0; n < b.size(); ++n){
 		fprintf(_out,"%d ",b[n]);
@@ -95,7 +96,8 @@ void outputECNF::outputmax(int h, bool defined, int setid, bool lowerthan, int b
 	fprintf(_out,"0\n");*/
 }
 
-void outputECNF::outputmin(int h, bool defined, int setid, bool lowerthan, int bound){
+void outputECNF::outputmin(int , bool , int , bool , int ){
+// Argnames: h defined setid lowerthan bound
 	/*fprintf(_out,"Min %d " ,h);
 	for(unsigned int n = 0; n < b.size(); ++n){
 		fprintf(_out,"%d ",b[n]);
@@ -103,7 +105,8 @@ void outputECNF::outputmin(int h, bool defined, int setid, bool lowerthan, int b
 	fprintf(_out,"0\n");*/
 }
 
-void outputECNF::outputsum(int h, bool defined, int setid, bool lowerthan, int bound){
+void outputECNF::outputsum(int , bool , int , bool , int ){
+// Argnames: h defined setid lowerthan bound
 	/*fprintf(_out,"Sum %d " ,h);
 	for(unsigned int n = 0; n < b.size(); ++n){
 		fprintf(_out,"%d ",b[n]);
@@ -111,7 +114,8 @@ void outputECNF::outputsum(int h, bool defined, int setid, bool lowerthan, int b
 	fprintf(_out,"0\n");*/
 }
 
-void outputECNF::outputprod(int h, bool defined, int setid, bool lowerthan, int bound){
+void outputECNF::outputprod(int , bool , int , bool , int ){
+// Argnames: h defined setid lowerthan bound
 	/*fprintf(_out,"Prod %d " ,h);
 	for(unsigned int n = 0; n < b.size(); ++n){
 		fprintf(_out,"%d ",b[n]);
@@ -119,7 +123,8 @@ void outputECNF::outputprod(int h, bool defined, int setid, bool lowerthan, int 
 	fprintf(_out,"0\n");*/
 }
 
-void outputECNF::outputcard(int h, bool defined, int setid, bool lowerthan, int bound){
+void outputECNF::outputcard(int , bool , int , bool , int ){
+// Argnames: h defined setid lowerthan bound
 	/*fprintf(_out,"Card %d " ,h);
 	for(unsigned int n = 0; n < b.size(); ++n){
 		fprintf(_out,"%d ",b[n]);
@@ -177,7 +182,7 @@ void outputECNF::outputunsat(){
 outputHR::outputHR(FILE* f) : _out(f) { }
 outputHR::~outputHR(){ }
 
-string toHR(int l) {
+string toHR(int) {	// l
 	// TODO
 /*	int al = abs(l);
 	if(!l) {
@@ -253,7 +258,7 @@ void outputHR::outputclause(const vector<int>& vi){
 	fprintf(_out,".\n");
 }
 
-void outputHR::outputunitrule(int h, int b) {
+void outputHR::outputunitrule(int , int ) {	// h b
 	// TODO
 /*	if(Ground::isTrue(b)){
 		fprintf(_out,"%s <- True.\n",toHR(h).c_str());
@@ -405,7 +410,7 @@ void outputToSolver::outputunitrule(int h, int b) {
 	outputrule(h, body, true);
 }
 
-void outputToSolver::outputunitfdrule(int d, int h, int b) {
+void outputToSolver::outputunitfdrule(int , int , int ) {	// d h b
 	//TODO later
 }
 
@@ -420,7 +425,7 @@ void outputToSolver::outputrule(int head, const vector<int>& b, bool c){
 	}
 }
 
-void outputToSolver::outputfdrule(int d, int h, const vector<int>& b, bool c){
+void outputToSolver::outputfdrule(int , int , const vector<int>& , bool ){ // d h b c 
 	//TODO
 }
 
@@ -455,12 +460,12 @@ void outputToSolver::outputcard(int h, bool defined, int setid, bool lowerthan, 
 }
 
 //Not supported by solver
-void outputToSolver::outputeu(const vector<int>& b) {
+void outputToSolver::outputeu(const vector<int>& ) {	// b
 	assert(false);
 }
 
 //Not supported by solver
-void outputToSolver::outputamo(const vector<int>& b) {
+void outputToSolver::outputamo(const vector<int>& ) {	// b
 	assert(false);
 }
 
@@ -480,7 +485,7 @@ void outputToSolver::outputwset(int setid, const vector<int>& lits, const vector
 	solver()->addSet(setid, l, w);
 }
 
-void outputToSolver::outputfixpdef(int d, const vector<int>& sd, bool l) {
+void outputToSolver::outputfixpdef(int , const vector<int>& , bool ) {	// d sd l
 	//TODO later
 }
 
@@ -634,7 +639,7 @@ void EcnfTheory::addClause(EcnfClause& cl, bool firstIsPrinted) {
 	_clauses.push_back(cl);
 }
 
-void EcnfTheory::addSet(int setnr, bool weighted) {
+void EcnfTheory::addSet(int setnr, bool) {
 	if(_printedsets.find(setnr) != _printedsets.end()) {
 		_printedsets.insert(setnr);
 		const GroundSet& grs = _translator->groundset(setnr);
@@ -1035,15 +1040,18 @@ string GroundDefinition::to_string() const {
 	return s.str();
 }
 
-Formula* EcnfTheory::sentence(unsigned int n) const{
+Formula* EcnfTheory::sentence(unsigned int) const{
 	assert(false); // TODO: not yet implemented
+	return 0;
 }
 
-Definition* EcnfTheory::definition(unsigned int n) const {
+Definition* EcnfTheory::definition(unsigned int) const {
 	assert(false); // TODO: not yet implemented
+	return 0;
 }
-FixpDef* EcnfTheory::fixpdef(unsigned int n) const {
+FixpDef* EcnfTheory::fixpdef(unsigned int) const {
 	assert(false); // TODO: not yet implemented
+	return 0;
 }
 
 

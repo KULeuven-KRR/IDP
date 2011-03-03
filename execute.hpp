@@ -23,6 +23,7 @@ enum InfArgType {
 
 namespace BuiltinProcs {
 	void initialize();
+	void cleanup();
 }
 
 /** Lua procedures **/
@@ -316,6 +317,17 @@ class ForceTwoValued : public Inference {
 			_intypes = vector<InfArgType>(1,IAT_STRUCTURE);
 			_outtype = IAT_STRUCTURE;
 			_description = "Force structure to be two-valued";
+			_reload = false;
+		}
+		InfArg execute(const vector<InfArg>& args) const;
+};
+
+class DeleteData : public Inference {
+	public:
+		DeleteData(InfArgType t) {
+			_intypes = vector<InfArgType>(1,t);
+			_outtype = IAT_VOID; 
+			_description = "Delete"; 
 			_reload = false;
 		}
 		InfArg execute(const vector<InfArg>& args) const;

@@ -285,7 +285,7 @@ bool Formula::contains(const PFSymbol* s) const {
 	Debugging
 ****************/
 
-string PredForm::to_string(unsigned int spaces) const {
+string PredForm::to_string(unsigned int) const {
 	string s;
 	if(!_sign) s = s + '~';
 	s = s + _symb->to_string();
@@ -299,14 +299,14 @@ string PredForm::to_string(unsigned int spaces) const {
 	return s;
 }
 
-string BracketForm::to_string(unsigned int spaces) const {
+string BracketForm::to_string(unsigned int) const {
 	string s;
 	if(!_sign) s = s+ '~';
 	s = s + "(" + _subf->to_string() + ")";
 	return s;
 }
 
-string EqChainForm::to_string(unsigned int spaces) const {
+string EqChainForm::to_string(unsigned int) const {
 	string s;
 	if(!_sign) s = s + '~';
 	s = s + "(" + _terms[0]->to_string();
@@ -332,12 +332,12 @@ string EqChainForm::to_string(unsigned int spaces) const {
 	return s;
 }
 
-string EquivForm::to_string(unsigned int spaces) const {
+string EquivForm::to_string(unsigned int) const {
 	string s = '(' + _left->to_string() + " <=> " + _right->to_string() + ')';
 	return s;
 }
 
-string BoolForm::to_string(unsigned int spaces) const {
+string BoolForm::to_string(unsigned int) const {
 	string s;
 	if(_subf.empty()) {
 		if(_sign == _conj) return "true";
@@ -353,7 +353,7 @@ string BoolForm::to_string(unsigned int spaces) const {
 	return s + ')';
 }
 
-string QuantForm::to_string(unsigned int spaces) const {
+string QuantForm::to_string(unsigned int) const {
 	string s;
 	if(!_sign) s = s + '~';
 	s = s + '(';
@@ -367,7 +367,7 @@ string QuantForm::to_string(unsigned int spaces) const {
 	return s + ')';
 }
 
-string AggForm::to_string(unsigned int spaces) const {
+string AggForm::to_string(unsigned int) const {
 	string s;
 	if(!_sign) s = s + '~';
 	s = s + '(' + _left->to_string() + _comp + _right->to_string() + ')';
@@ -1994,7 +1994,7 @@ namespace FormulaUtils {
 	Formula* graph_functions(Formula* f) {
 		FuncGrapher fg;
 		Formula* newf = f->accept(&fg);
-		if(newf != f) delete(f);
+//		if(newf != f) delete(f);
 		return newf;
 	}
 

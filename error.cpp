@@ -251,7 +251,7 @@ namespace Error {
 	}
 
 
-	void threevalsort(const string& s, const ParseInfo& pi) {
+	void threevalsort(const string& , const ParseInfo& pi) {
 		error(pi);
 		cerr << "Not allowed to assign a three-valued interpretation to a sort.\n";
 	}

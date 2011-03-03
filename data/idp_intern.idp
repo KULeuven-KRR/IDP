@@ -42,15 +42,15 @@
 }
 
 /** Model expansion **/
-#procedure model_expand(Theo,Struct,Opt) {
+#procedure modelexpand(Theo,Struct,Opt) {
 	local clonetheo = clone(Theo)
 	IDP_ADVANCED::push_negations(clonetheo)
 	IDP_ADVANCED::flatten(clonetheo)
 	return idp_intern.idpcall("fastmx",clonetheo,Struct,Opt)
 }
 
-#procedure model_expand(Theo,Struct) {
-	return model_expand(Theo,Struct,DefaultOptions)
+#procedure modelexpand(Theo,Struct) {
+	return modelexpand(Theo,Struct,DefaultOptions)
 }
 
 /** Grounding **/
@@ -62,12 +62,12 @@
 }
 
 /** Model checking **/
-#procedure model_check(Theo,Struct) {
+#procedure modelcheck(Theo,Struct) {
 	// TODO: check if two-valued
 	// assert(twovalued(Struct),"Procedure modelcheck/2 requires a two-valued structure as second argument")
 	opts = newoptions()
 	setoption(opts,"nrmodels",1)
-	sols = model_expand(Theo,Struct,opts)
+	sols = modelexpand(Theo,Struct,opts)
 	return #sols == 1
 }
 

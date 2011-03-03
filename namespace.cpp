@@ -45,6 +45,8 @@ Namespace::~Namespace() {
 	for(unsigned int n = 0; n < _vocs.size(); ++n) delete(_vocs[n]);
 	for(unsigned int n = 0; n < _structs.size(); ++n) delete(_structs[n]);
 	for(unsigned int n = 0; n < _theos.size(); ++n) _theos[n]->recursiveDelete();
+	for(map<string,InfOptions*>::iterator it = _options.begin(); it != _options.end(); ++it) delete(it->second);
+	for(map<string,LuaProcedure*>::iterator it = _procedures.begin(); it != _procedures.end(); ++it) delete(it->second);
 }
 
 /** Find subparts **/
@@ -314,36 +316,50 @@ vector<string> Namespace::fullnamevector() const {
 
 set<Sort*> Namespace::allSorts() const {
 	set<Sort*> ss;
-/*	for(unsigned int n = 0; n < _vocs.size(); ++n) {
-		for(unsigned int m = 0; m < _vocs[n]->nrSorts(); ++m) ss.insert(_vocs[n]->sort(m));
+	for(unsigned int n = 0; n < _vocs.size(); ++n) {
+		for(map<string,set<Sort*> >::iterator it = _vocs[n]->firstsort(); it != _vocs[n]->lastsort(); ++it) {
+			ss.insert(it->second.begin(),it->second.end());
+		}
 	}
 	for(unsigned int n = 0; n < _subs.size(); ++n) {
 		set<Sort*> temp = _subs[n]->allSorts();
 		ss.insert(temp.begin(),temp.end());
-	}*/
+	}
 	return ss;
 }
 
 set<Predicate*> Namespace::allPreds() const {
 	set<Predicate*> sp;
-/*	for(unsigned int n = 0; n < _vocs.size(); ++n) {
-		for(unsigned int m = 0; m < _vocs[n]->nrPreds(); ++m) sp.insert(_vocs[n]->pred(m));
+	for(unsigned int n = 0; n < _vocs.size(); ++n) {
+		for(map<string,Predicate*>::iterator it = _vocs[n]->firstpred(); it != _vocs[n]->lastpred(); ++it) {
+			sp.insert(it->second);
+			if(it->second->overloaded()) {
+				OverloadedPredicate* olp = dynamic_cast<OverloadedPredicate*>(it->second);
+				sp.insert(olp->overpreds().begin(),olp->overpreds().end());
+			}
+		}
 	}
 	for(unsigned int n = 0; n < _subs.size(); ++n) {
 		set<Predicate*> temp = _subs[n]->allPreds();
 		sp.insert(temp.begin(),temp.end());
-	}*/
+	}
 	return sp;
 }
 
 set<Function*> Namespace::allFuncs() const {
 	set<Function*> sf;
-/*	for(unsigned int n = 0; n < _vocs.size(); ++n) {
-		for(unsigned int m = 0; m < _vocs[n]->nrFuncs(); ++m) sf.insert(_vocs[n]->func(m));
+	for(unsigned int n = 0; n < _vocs.size(); ++n) {
+		for(map<string,Function*>::iterator it = _vocs[n]->firstfunc(); it != _vocs[n]->lastfunc(); ++it) {
+			sf.insert(it->second);
+			if(it->second->overloaded()) {
+				OverloadedFunction* olf = dynamic_cast<OverloadedFunction*>(it->second);
+				sf.insert(olf->overfuncs().begin(),olf->overfuncs().end());
+			}
+		}
 	}
 	for(unsigned int n = 0; n < _subs.size(); ++n) {
 		set<Function*> temp = _subs[n]->allFuncs();
 		sf.insert(temp.begin(),temp.end());
-	}*/
+	}
 	return sf;
 }

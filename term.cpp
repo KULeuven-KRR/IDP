@@ -72,7 +72,7 @@ FuncTerm* FuncTerm::clone(const map<Variable*,Variable*>& mvv) const {
 	return new FuncTerm(_func,na,_pi);
 }
 
-DomainTerm* DomainTerm::clone(const map<Variable*,Variable*>& mvv) const {
+DomainTerm* DomainTerm::clone(const map<Variable*,Variable*>&) const {
 	return new DomainTerm(_sort,_type,_value,_pi);
 }
 

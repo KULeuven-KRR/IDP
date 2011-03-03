@@ -33,9 +33,9 @@ class DomainData {
 		MFMVTC				_sharedcompounds;		// map a compound to its shared pointer
 		vector<compound*>	_sharedintcompounds;
 		DomainData(unsigned int n = 1001): _sharedintcompounds(n,0) { }
-		~DomainData();
 	public:
 		static DomainData*	instance();
+		~DomainData();
 		string*		stringpointer(const string&);							// get the shared pointer of a string
 		compound*	compoundpointer(Function*,const vector<TypedElement>&);	// get the shared pointer of a compound
 };

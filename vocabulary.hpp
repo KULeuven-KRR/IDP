@@ -301,12 +301,13 @@ class OverloadedPredicate : public Predicate {
 		void	overpred(Predicate* p);	
 
 		// Inspectors
-				bool				overloaded()						const { return true;	}
+				bool				overloaded()						const { return true;		}
 		virtual bool				contains(Predicate* p)				const;
 		virtual Predicate*			resolve(const vector<Sort*>&);
 		virtual Predicate*			disambiguate(const vector<Sort*>&,Vocabulary*);
 				vector<Predicate*>	nonbuiltins();	//!< All non-builtin predicates 
 													//!< that are overloaded by the predicate
+		const	vector<Predicate*>&	overpreds()							const { return _overpreds;	}
 				vector<Sort*>		allsorts()							const;
 
 		// Visitor
@@ -402,12 +403,13 @@ class OverloadedFunction : public Function {
 		void	overfunc(Function* f);
 
 		// Inspectors
-				bool				overloaded()						const { return true;	}
+				bool				overloaded()						const { return true;		}
 		virtual bool				contains(Function* f)				const;
 		virtual Function*			resolve(const vector<Sort*>&);
 		virtual Function*			disambiguate(const vector<Sort*>&,Vocabulary*);
 				vector<Function*>	nonbuiltins();	//!< All non-builtin functions 
 													//!< that are overloaded by the function
+		const	vector<Function*>&	overfuncs()							const { return _overfuncs;	}
 				vector<Sort*>		allsorts()							const;	
 
 		// Visitor

@@ -206,7 +206,7 @@ class SentenceGrounder : public TopLevelGrounder {
 		FormulaGrounder*	_subgrounder;
 	public:
 		SentenceGrounder(GroundTheory* gt, FormulaGrounder* sub, bool conj) : 
-			TopLevelGrounder(gt), _subgrounder(sub), _conj(conj) { }
+			TopLevelGrounder(gt), _conj(conj), _subgrounder(sub) { }
 		bool run() const;
 };
 
@@ -251,7 +251,7 @@ class FuncTermGrounder : public TermGrounder {
 		mutable vector<domelement>	_args;
 	public:
 		FuncTermGrounder(const vector<TermGrounder*>& sub, FuncTable* f) :
-			_function(f), _args(sub.size()), _subtermgrounders(sub) { }
+			_function(f), _subtermgrounders(sub), _args(sub.size()) { }
 		domelement run() const;
 
 		// TODO? Optimisation:
@@ -313,7 +313,8 @@ class AggGrounder : public FormulaGrounder {
 			FormulaGrounder(tr,gc), _setgrounder(sg), _boundgrounder(bg), _type(tp), _comp(c), _sign(s) { }
 		int		run()				const;
 		void	run(vector<int>&)	const;
-		int		finishCard(double,double,int) const;
+		int		finishCard(double,double,int)	const;
+		int		finishSum(double,double,int)	const;
 };
 
 class ClauseGrounder : public FormulaGrounder {
@@ -431,7 +432,7 @@ class RuleGrounder {
 		RuleGrounder(GroundDefinition* def, HeadGrounder* hgr, FormulaGrounder* bgr,
 					InstGenerator* hig, InstGenerator* big, bool conj, GroundingContext& ct) :
 			_definition(def), _headgrounder(hgr), _bodygrounder(bgr), _headgenerator(hig),
-			_bodygenerator(big), _conj(conj), _context(ct) { }
+			_bodygenerator(big), _context(ct), _conj(conj) { }
 		bool run() const;
 };
 

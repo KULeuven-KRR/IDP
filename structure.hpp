@@ -155,7 +155,7 @@ class SortTable : public PredTable {
 		virtual Element			element(unsigned int n)					const = 0;	// Return the n'th element
 				TypedElement	telement(unsigned int n)				const { TypedElement te(element(n),type()); return te;	}
 				vector<Element>	tuple(unsigned int n)					const { return vector<Element>(1,element(n));			}
-				Element			element(unsigned int r,unsigned int c)	const { return element(r);								}
+				Element			element(unsigned int r,unsigned int)	const { return element(r);								}
 				domelement		delement(unsigned int n)				const;
 		virtual unsigned int	position(Element,ElementType)			const = 0;	// Return the position of the given element
 				unsigned int	position(Element e)						const { return position(e,type());					}
@@ -288,7 +288,7 @@ class EmptySortTable : public FiniteSortTable {
 
 		// Mutators
 		void sortunique() { }
-		EmptySortTable* remove(const vector<TypedElement>& tuple) { return this;	}
+		EmptySortTable* remove(const vector<TypedElement>&) { return this;	}
 
 		// Inspectors
 		bool			empty()								const { return true;						}	
@@ -605,7 +605,7 @@ class UnionSortTable : public SortTable {
 
 		// Inspectors for finite tables
 		unsigned int	size()							const { assert(false); return 0;			}
-		Element			element(unsigned int n)			const { assert(false); Element e; return e; }
+		Element			element(unsigned int)			const { assert(false); Element e; return e; }
 		unsigned int	position(Element,ElementType)	const { assert(false); return 0; }
 		// Debugging
 		string to_string(unsigned int spaces = 0) const;
@@ -714,16 +714,16 @@ class UnionPredTable : public PredTable {
 		bool			finite()				const { return false;	}
 		bool			empty()					const;
 		unsigned int	arity()					const { return _tables[0]->arity();	}
-		ElementType		type(unsigned int n)	const { return ELCOMPOUND;			} //TODO try to assign more specific type?
+		ElementType		type(unsigned int)		const { return ELCOMPOUND;			} //TODO try to assign more specific type?
 
 		// Check if the table contains a given tuple
 		//	precondition: the tables are sorted and contain no duplicates
 		bool	contains(const vector<Element>&)	const;
 
 		// Inspectors for finite tables
-		unsigned int	size()									const { assert(false); return 0;					}
-		vector<Element>	tuple(unsigned int n)					const { assert(false); return vector<Element>();	}
-		Element			element(unsigned int r,unsigned int c)	const { assert(false); Element e; return e;			}
+		unsigned int	size()								const { assert(false); return 0;					}
+		vector<Element>	tuple(unsigned int)					const { assert(false); return vector<Element>();	}
+		Element			element(unsigned int,unsigned int)	const { assert(false); Element e; return e;			}
 
 		// Debugging
 		string to_string(unsigned int spaces = 0)	const;
@@ -862,7 +862,7 @@ class CopyFuncTable : public FuncTable {
 		Element	operator[](const vector<Element>& vi)		const	{ return (*_table)[vi];	}
 
 		// Debugging
-		string to_string(unsigned int spaces = 0) const { return _table->to_string();	} 
+		string to_string(unsigned int spaces = 0) const { return _table->to_string(spaces);	} 
 
 };
 

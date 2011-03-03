@@ -144,29 +144,44 @@ void parse(const vector<string>& inputfiles) {
 /** Communication with lua **/
 
 void createmetatables(lua_State* L) {
+	luaL_dostring(L,"idp_intern.delete = function(obj) idp_intern.idpcall(\"delete\",obj) end");
+	lua_getglobal(L,"idp_intern");
+
 	luaL_newmetatable (L,"theory");
 	lua_pushboolean(L,true);
 	lua_setfield(L,-2,"gettheory");
+	lua_getfield(L,-2,"delete");
+	lua_setfield(L,-2,"__gc");
 	lua_pop(L,1);
 
 	luaL_newmetatable (L,"structure");
 	lua_pushboolean(L,true);
 	lua_setfield(L,-2,"getstructure");
+	lua_getfield(L,-2,"delete");
+	lua_setfield(L,-2,"__gc");
 	lua_pop(L,1);
 
 	luaL_newmetatable (L,"namespace");
 	lua_pushboolean(L,true);
 	lua_setfield(L,-2,"getnamespace");
+	lua_getfield(L,-2,"delete");
+	lua_setfield(L,-2,"__gc");
 	lua_pop(L,1);
 
 	luaL_newmetatable (L,"vocabulary");
 	lua_pushboolean(L,true);
 	lua_setfield(L,-2,"getvocabulary");
+	lua_getfield(L,-2,"delete");
+	lua_setfield(L,-2,"__gc");
 	lua_pop(L,1);
 
 	luaL_newmetatable (L,"options");
 	lua_pushboolean(L,true);
 	lua_setfield(L,-2,"getoptions");
+	lua_getfield(L,-2,"delete");
+	lua_setfield(L,-2,"__gc");
+	lua_pop(L,1);
+
 	lua_pop(L,1);
 }
 
@@ -196,6 +211,7 @@ void interactive(lua_State* L) {
 		char* userline = rl_gets();
 		if(userline) {
 			if(string(userline) == "exit") {
+				free(userline);
 				idp_rl_end();
 				return;
 			}
@@ -235,6 +251,9 @@ void interactive(lua_State* L) {
 /** Delete all data **/
 void cleanup() {
 	Insert::cleanup();
+	BuiltinProcs::cleanup();
+	delete(Namespace::global());
+	delete(DomainData::instance());
 	for(map<string,CLConst*>::iterator it = clconsts.begin(); it != clconsts.end(); ++it) delete(it->second);
 }
 
@@ -264,6 +283,7 @@ int main(int argc, char* argv[]) {
 		// Execute statements
 		executeproc(L,_cloptions._exec);
 		if(_cloptions._interactive) interactive(L);
+		lua_close(L);
 	}
 
 	// Exit

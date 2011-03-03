@@ -15,7 +15,7 @@ class TableInstGenerator : public InstGenerator {
 	private:
 		PredTable*				_table;
 		vector<domelement*>		_outvars;
-		mutable int				_currpos;
+		mutable unsigned int	_currpos;
 	public:
 		TableInstGenerator(PredTable* t, const vector<domelement*>& out) : _table(t), _outvars(out) { }
 		bool first() const;
@@ -24,9 +24,9 @@ class TableInstGenerator : public InstGenerator {
 
 class SortInstGenerator : public InstGenerator { 
 	private:
-		SortTable*		_table;
-		domelement*		_outvar;
-		mutable int		_currpos;
+		SortTable*				_table;
+		domelement*				_outvar;
+		mutable unsigned int	_currpos;
 	public:
 		SortInstGenerator(SortTable* t, domelement* out) : _table(t), _outvar(out) { }
 		bool first() const;
@@ -105,7 +105,7 @@ class TwoChildGeneratorNode : public GeneratorNode {
 	public:
 		// Constructor
 		TwoChildGeneratorNode(InstanceChecker* t, const vector<domelement*>& ov, const vector<SortTable*>& tbs, GeneratorNode* l, GeneratorNode* r) :
-			GeneratorNode(), _checker(t), _outvars(ov), _currargs(_outvars.size()), _tables(tbs), _currpositions(tbs.size()), _left(l), _right(r) 
+			GeneratorNode(), _checker(t), _outvars(ov), _tables(tbs), _currpositions(tbs.size()), _currargs(_outvars.size()), _left(l), _right(r) 
 			{ _left->parent(this); _right->parent(this); }
 
 		// Generate instances

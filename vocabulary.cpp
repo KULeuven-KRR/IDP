@@ -1063,4 +1063,5 @@ int Vocabulary::tolua(lua_State* L, const vector<string>& longname) const {
 	lua_call(L,2,1);
 	lua_call(L,1,1);
 	lua_remove(L,-2);
+	return 0;
 }

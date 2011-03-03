@@ -22,6 +22,7 @@ class StdBuiltin : public Vocabulary {
 		StdBuiltin();
 	public:
 		static StdBuiltin* instance();
+		~StdBuiltin() { }
 };
 
 

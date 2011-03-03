@@ -119,7 +119,7 @@ unsigned int GroundTranslator::addSymbol(PFSymbol* pfs) {
 string GroundTranslator::printatom(int nr) const {
 	stringstream s;
 	nr = abs(nr);
-	if(nr >= _backsymbtable.size()) {
+	if(nr >= int(_backsymbtable.size())) {
 		return "error";
 	}
 	PFSymbol* pfs = symbol(nr);
@@ -450,9 +450,7 @@ bool UnivSentGrounder::run() const {
 AtomGrounder::AtomGrounder(GroundTranslator* gt, bool sign, PFSymbol* s,
 							const vector<TermGrounder*> sg, InstanceChecker* pic, InstanceChecker* cic,
 							const vector<SortTable*>& vst, const GroundingContext& ct) :
-	FormulaGrounder(gt,ct), _sign(sign), _symbol(gt->addSymbol(s)),
-	_args(sg.size()), _subtermgrounders(sg), _pchecker(pic), _cchecker(cic),
-	_tables(vst)
+	FormulaGrounder(gt,ct), _subtermgrounders(sg), _pchecker(pic), _cchecker(cic), _symbol(gt->addSymbol(s)), _args(sg.size()), _tables(vst), _sign(sign)
 	{ _certainvalue = ct._truegen ? _true : _false; }
 
 int AtomGrounder::run() const {
@@ -548,6 +546,51 @@ int AggGrounder::finishCard(double truevalue, double boundvalue, int setnr) cons
 	return _sign ? tseitin : -tseitin;
 }
 
+int AggGrounder::finishSum(double truevalue, double boundvalue, int setnr) const {
+	const GroundSet& grs = _translator->groundset(setnr);
+
+	// Compute the minimal and maximal possible value of the sum
+	double minposssum = truevalue;
+	double maxposssum = truevalue;
+	bool containszeros = false;
+	for(unsigned int n = 0; n < grs._litweights.size(); ++n) {
+		if(grs._litweights[n] > 0) maxposssum += grs._litweights[n];
+		else if(grs._litweights[n] < 0) minposssum += grs._litweights[n];
+		else containszeros = true;
+	}
+
+	TsType tp = _context._tseitin;	// TODO
+	switch(_comp) {
+		case '=':
+			if(minposssum > boundvalue || maxposssum < boundvalue) {
+				return _sign ? _false : _true;
+			}
+			// TODO: more complicated propagation is possible!
+			break;
+		case '<':
+			if(boundvalue < minposssum) {
+				return _sign ? _true : _false;
+			}
+			else if(boundvalue >= maxposssum) {
+				return _sign ? _false : _true;
+			}
+			// TODO: more complicated propagation is possible!
+			break;
+		case '>':
+			if(boundvalue > maxposssum) {
+				return _sign ? _true : _false;
+			}
+			else if(boundvalue <= minposssum) {
+				return _sign ? _false : _true;
+			}
+			// TODO: more complicated propagation is possible!
+			break;
+	}
+	int tseitin = _translator->translate(setnr,AGGSUM,_comp,boundvalue+truevalue,tp);
+	return _sign ? tseitin : -tseitin;
+
+}
+
 int AggGrounder::run() const {
 	int setnr = _setgrounder->run();
 	domelement bound = _boundgrounder->run();
@@ -561,8 +604,7 @@ int AggGrounder::run() const {
 			ts = finishCard(truevalue,boundvalue,setnr);
 			break;
 		case AGGSUM:
-			// TODO
-			assert(false);
+			ts = finishSum(truevalue,boundvalue,setnr);
 			break;
 		case AGGPROD:
 			assert(false);
@@ -1140,7 +1182,7 @@ void GrounderFactory::visit(const PredForm* pf) {
 	Formula* transpf = FormulaUtils::moveThreeValTerms(newpf,_structure,_context._positive != PC_NEGATIVE);
 
 	if(newpf != transpf) {	// The rewriting changed the atom
-		delete(newpf);
+		//delete(newpf); TODO: produces a segfault??
 		transpf->accept(this);
 	}
 	else {	// The rewriting did not change the atom
