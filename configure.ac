@@ -89,6 +89,16 @@ AC_ARG_ENABLE([bits],
 	*) AC_MSG_ERROR([bad value ${enableval} for --enable-bits]) ;;
 esac],[])
 
+AC_ARG_ENABLE([perftools],
+[  --enable-perftools=false    Use the google perftools library for memory allocation],
+[case "${enableval}" in
+	no) perftools=false ;;
+	yes) perftools=true ;;
+	*) AC_MSG_ERROR([bad value ${enableval} for --enable-perftools]) ;;
+esac],[ perftools=false ])
+
+AM_CONDITIONAL([USEPERFTOOLS],[test x$perftools = xtrue])
+
 AC_ARG_WITH(
   [readline],
   [AC_HELP_STRING([--with-readline], [Use readline for interpreter input [default=yes]])],
@@ -113,14 +123,7 @@ fi
 AM_CONDITIONAL([USEREADLINE],[test x$use_readline = xyes])
 AM_CONDITIONAL([USEINTERACTIVE],[test x$use_readline = xyes])
 
-# files to generate via autotools (.am or .in source files)
-ac_configure_args+=" --enable-shared=no " 
-	#IMPORTANT: the reason for this is that we want to force lua to compile only a static library, so we link statically with lua.
-	#in future, when we allow installing, we can remove this, and also it breaks the configure semantics, because it will also offer all options of subdir configure.ac to the
-	#top --help
-AC_CONFIG_SUBDIRS([lib/lua pcsolver/lib/tclap pcsolver/lib/perftools])
-AC_CONFIG_FILES([Makefile lib/Makefile pcsolver/Makefile pcsolver/doc/Makefile pcsolver/src/Makefile pcsolver/lib/Makefile\
-	pcsolver/src/parser/Makefile pcsolver/lib/pbsolver/Makefile])
+AC_CONFIG_SUBDIRS([lib/lua pcsolver])
+AC_CONFIG_FILES([Makefile lib/Makefile ])
 
-# generate the final Makefile etc.
 AC_OUTPUT
