@@ -49,6 +49,7 @@ namespace BuiltinProcs {
 		_inferences["fastmx"].push_back(new FastMXInference(true));
 		_inferences["setoption"].push_back(new SetOption(IAT_STRING));
 		_inferences["setoption"].push_back(new SetOption(IAT_NUMBER));
+		_inferences["setoption"].push_back(new SetOption(IAT_BOOLEAN));
 		_inferences["getoption"].push_back(new GetOption());
 		_inferences["newoptions"].push_back(new NewOption(true));
 		_inferences["newoptions"].push_back(new NewOption(false));
@@ -58,6 +59,7 @@ namespace BuiltinProcs {
 		_inferences["delete"].push_back(new DeleteData(IAT_VOCABULARY));
 		_inferences["delete"].push_back(new DeleteData(IAT_NAMESPACE));
 		_inferences["delete"].push_back(new DeleteData(IAT_OPTIONS));
+		_inferences["changevoc"].push_back(new ChangeVoc());
 	}
 
 	void cleanup() {
@@ -442,6 +444,7 @@ GetOption::GetOption() {
 extern void setoption(InfOptions*,const string&, const string&, ParseInfo*);
 extern void setoption(InfOptions*,const string&, double, ParseInfo*);
 extern void setoption(InfOptions*,const string&, int, ParseInfo*);
+extern void setoption(InfOptions*,const string&, bool, ParseInfo*);
 extern string getoption(InfOptions*,const string&);
 
 InfArg SetOption::execute(const vector<InfArg>& args) const {
@@ -461,6 +464,11 @@ InfArg SetOption::execute(const vector<InfArg>& args) const {
 		case IAT_STRING:
 		{
 			setoption(opts,optname,*(args[2]._string),0);
+			break;
+		}
+		case IAT_BOOLEAN:
+		{
+			setoption(opts,optname,args[2]._boolean,0);
 			break;
 		}
 		default:
@@ -721,6 +729,9 @@ InfArg FastMXInference::execute(const vector<InfArg>& args) const {
 	grounder->run();
 	GroundTheory* ecnfgr = grounder->grounding();
 
+	// Add function constraints
+	ecnfgr->addFuncConstraints();
+
 	// Solve
 	vector<MinisatID::Literal> assumpts;
 	MinisatID::ModelExpandOptions options;
@@ -851,3 +862,21 @@ InfArg ForceTwoValued::execute(const vector<InfArg>& args) const {
 	InfArg a;
 	return a;
 }
+
+ChangeVoc::ChangeVoc() {
+	_intypes.push_back(IAT_STRUCTURE);
+	_intypes.push_back(IAT_VOCABULARY);
+	_outtype = IAT_VOID;
+	_description = "Change the vocabulary of a structure";
+	_reload = true;
+}
+
+InfArg ChangeVoc::execute(const vector<InfArg>& args) const {
+	AbstractStructure* str = args[0]._structure;
+	Vocabulary* v = args[1]._vocabulary;
+	StructUtils::changevoc(str,v);
+	InfArg a;
+	return a;
+}
+
+

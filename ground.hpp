@@ -83,18 +83,22 @@ class GroundTranslator  {
 	public:
 		GroundTranslator() : _backsymbtable(1), _backargstable(1), _sets(1) { }
 
-		int							translate(unsigned int,const vector<domelement>&);
-		int							translate(const vector<int>& cl, bool conj, TsType tp);
-		int							translate(int setnr, AggType aggtype, char comp, double bound, TsType tstype);
-		int							translate(PFSymbol*,const vector<TypedElement>&);
-		int							translateSet(const vector<int>&,const vector<double>&,const vector<double>&);
-		int							nextNumber();
-		unsigned int				addSymbol(PFSymbol* pfs);
-		PFSymbol*					symbol(int nr)		const	{ return _backsymbtable[abs(nr)];			}
-		const vector<domelement>&	args(int nr)		const	{ return _backargstable[abs(nr)];			}
-		bool						isTseitin(int l) 	const	{ return symbol(l) == 0;					}
-		TsBody*						tsbody(int l)		const	{ return _tsbodies.find(abs(l))->second;	}
-		const GroundSet&			groundset(int nr)	const	{ return _sets[nr];							}
+		int								translate(unsigned int,const vector<domelement>&);
+		int								translate(const vector<int>& cl, bool conj, TsType tp);
+		int								translate(int setnr, AggType aggtype, char comp, double bound, TsType tstype);
+		int								translate(PFSymbol*,const vector<TypedElement>&);
+		int								translateSet(const vector<int>&,const vector<double>&,const vector<double>&);
+		int								nextNumber();
+		unsigned int					addSymbol(PFSymbol* pfs);
+
+		PFSymbol*							symbol(int nr)				const	{ return _backsymbtable[abs(nr)];		}
+		const vector<domelement>&			args(int nr)				const	{ return _backargstable[abs(nr)];		}
+		bool								isTseitin(int l)			const	{ return symbol(l) == 0;				}
+		TsBody*								tsbody(int l)				const	{ return _tsbodies.find(abs(l))->second;}
+		const GroundSet&					groundset(int nr)			const	{ return _sets[nr];						}
+		unsigned int						nrOffsets()					const	{ return _symboffsets.size();			}
+		PFSymbol*							getSymbol(unsigned int n)	const	{ return _symboffsets[n];				}
+		const map<vector<domelement>,int>&	getTuples(unsigned int n)	const	{ return _table[n];						}
 
 		string						printatom(int nr)	const;
 

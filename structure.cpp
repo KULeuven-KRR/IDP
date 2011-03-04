@@ -1808,6 +1808,21 @@ Structure* Structure::clone() {
 
 void Structure::vocabulary(Vocabulary* v) {
 	_vocabulary = v;
+	for(map<Sort*,SortTable*>::iterator it = _sortinter.begin(); it != _sortinter.end(); ) {
+		map<Sort*,SortTable*>::iterator jt = it;
+		++it;
+		if(!v->contains(jt->first)) _sortinter.erase(jt);
+	}
+	for(map<Predicate*,PredInter*>::iterator it = _predinter.begin(); it != _predinter.end(); ) {
+		map<Predicate*,PredInter*>::iterator jt = it;
+		++it;
+		if(!v->contains(jt->first)) _predinter.erase(jt);
+	}
+	for(map<Function*,FuncInter*>::iterator it = _funcinter.begin(); it != _funcinter.end(); ) {
+		map<Function*,FuncInter*>::iterator jt = it;
+		++it;
+		if(!v->contains(jt->first)) _funcinter.erase(jt);
+	}
 }
 
 void Structure::inter(Sort* s, SortTable* d) const {
@@ -2251,6 +2266,10 @@ void StructConvertor::visit(const FuncInter* ft) {
 
 namespace StructUtils {
 	AbstractTheory*		convert_to_theory(const AbstractStructure* s) { StructConvertor sc(s); return sc.returnvalue();	}
+
+	void changevoc(AbstractStructure* s, Vocabulary* v) {
+		s->vocabulary(v);
+	}
 
 	PredTable*	complement(const PredTable* pt, const vector<Sort*>& vs, const AbstractStructure* s) {
 		vector<SortTable*> tables;

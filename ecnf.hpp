@@ -276,6 +276,7 @@ class GroundTheory : public AbstractTheory {
 		virtual void addDefinition(GroundDefinition&) = 0;
 		virtual	void addAgg(int head, AggTsBody& body) = 0;
 		virtual void addSet(int setnr, bool weighted) = 0;
+		virtual void addFuncConstraints() = 0;
 
 
 
@@ -319,6 +320,7 @@ class EcnfTheory : public GroundTheory {
 		void addSet(int setnr, const vector<int>& lits, const vector<double>& weights)
 													{ _sets.push_back(EcnfSet(setnr,lits,weights));	}
 		void addSet(int setnr, bool weighted);
+		void	addFuncConstraints()				{	/* TODO??  */}
 
 		// Inspectors
 		unsigned int		nrSentences()				const { return _clauses.size() + _aggregates.size();	}
@@ -359,6 +361,7 @@ class SolverTheory : public GroundTheory {
 		void	addDefinition(GroundDefinition&);
 		void	addAgg(int head, AggTsBody& body);
 		void	addSet(int setnr, bool weighted);
+		void	addFuncConstraints();
 
 		// Inspectors
 		unsigned int	nrSentences()				const { assert(false); /*TODO*/	}

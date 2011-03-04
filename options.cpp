@@ -26,6 +26,16 @@ void setoption(InfOptions*, const string& opt, double, ParseInfo* pi) {
 	else Error::unknopt(opt,pi);
 }
 
+void setoption(InfOptions* opts, const string& opt, bool val, ParseInfo* pi) {
+	if(InfOptions::isoption(opt)) {
+		if(opt == "printtypes") {
+			opts->_printtypes = val;
+		}
+		else Error::wrongvaluetype(opt,pi);
+	}
+	else Error::unknopt(opt,pi);
+}
+
 void setoption(InfOptions* opts, const string& opt, int val, ParseInfo* pi) {
 	if(InfOptions::isoption(opt)) {
 		if(opt == "nrmodels") {
@@ -66,6 +76,9 @@ string getoption(InfOptions* opts, const string& opt) {
 	}
 	else if(opt == "satverbosity") {
 		return itos(opts->_satverbosity);
+	}
+	else if(opt == "printtypes") {
+		return opts->_printtypes ? "true" : "false";
 	}
 	else {
 		Error::unknopt(opt,0);

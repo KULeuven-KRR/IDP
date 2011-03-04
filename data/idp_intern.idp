@@ -17,8 +17,14 @@
 #procedure getoption(Opts,OptName) {
 	local val = idp_intern.idpcall("getoption",Opts,OptName)
 	local numval = tonumber(val)
-	if numval then return numval
-	else return val
+	if numval then 
+		return numval
+	elseif numval == "true" then 
+		return true
+	elseif numval == "false" then 
+		return false
+	else 
+		return val
 	end
 }
 
@@ -34,6 +40,16 @@
 
 #procedure newoptions() {
 	return idp_intern.idpcall("newoption")
+}
+
+#procedure clone(obj) {
+	return idp_intern.idpcall("clone",obj)
+}
+
+/** Vocabulary **/
+
+#procedure changevoc(Struct,Voc) {
+	return idp_intern.idpcall("changevoc",Struct,Voc)
 }
 
 /** Parsing of files **/
@@ -78,11 +94,6 @@
 
 #procedure idptostring(obj,opts) {
 	return idp_intern.idpcall("print",obj,opts)
-}
-
-/** Copying **/
-#procedure clone(obj) {
-	return idp_intern.idpcall("clone",obj)
 }
 
 /** Procedures for advanced use of IDP **/

@@ -26,7 +26,7 @@ Printer* Printer::create(InfOptions* opts) {
 		case OF_TXT:
 			return new SimplePrinter();
 		case OF_IDP:
-			return new IDPPrinter();
+			return new IDPPrinter(opts->_printtypes);
 		default:
 			assert(false);
 	}
@@ -298,7 +298,9 @@ void IDPPrinter::visit(const Structure* s) {
 //	indent();
 	for(unsigned int n = 0; n < v->nrNBPreds(); ++n) {
 		_currsymbol = v->nbpred(n);
-		s->inter(v->nbpred(n))->accept(this);
+		if(_printtypes || _currsymbol->nrSorts() != 1 || _currsymbol != _currsymbol->sort(0)->pred()) {
+			s->inter(v->nbpred(n))->accept(this);
+		}
 	}
 	for(unsigned int n = 0; n < v->nrNBFuncs(); ++n) {
 		_currsymbol = v->nbfunc(n);

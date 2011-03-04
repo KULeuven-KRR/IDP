@@ -1147,3 +1147,56 @@ void SolverTheory::addDefinition(GroundDefinition& d) {
 	}
 }
 
+class DomelementEquality {
+	private:
+		unsigned int	_arity;
+	public:
+		DomelementEquality(unsigned int arity) : _arity(arity) { }
+		bool operator()(const vector<domelement>& v1, const vector<domelement>& v2) {
+			for(unsigned int n = 0; n < _arity; ++n) {
+				if(v1[n] != v2[n]) return false;
+			}
+			return true;
+		}
+};
+
+/*
+ * void SolverTheory::addFuncConstraints()
+ * DESCRIPTION
+ *		Adds constraints to the theory that state that each of the functions that occur in the theory is indeed a function.
+ *		This method should be called before running the SAT solver and after grounding.
+ */
+void SolverTheory::addFuncConstraints() {
+	
+	for(unsigned int n = 0; n < _translator->nrOffsets(); ++n) {
+		PFSymbol* pfs = _translator->getSymbol(n);
+		const map<vector<domelement>,int>& tuples = _translator->getTuples(n);
+		if(!(pfs->ispred()) && !(tuples.empty())) {
+			Function* f = dynamic_cast<Function*>(pfs);
+			SortTable* st = _structure->inter(f->outsort());
+			DomelementEquality de(f->arity());
+			vector<vector<int> > sets(1);
+			map<vector<domelement>,int>::const_iterator pit = tuples.begin();
+			for(map<vector<domelement>,int>::const_iterator it = tuples.begin(); it != tuples.end(); ++it) {
+				if(de(it->first,pit->first)) sets.back().push_back(it->second);
+				else sets.push_back(vector<int>(1,it->second));
+				pit = it;
+			}
+			for(unsigned int s = 0; s < sets.size(); ++s) {
+				vector<double> lw(sets[s].size(),1);
+				vector<double> tw(0);
+				int setnr = _translator->translateSet(sets[s],lw,tw);
+				int tseitin;
+				if(f->partial() || !(st->finite()) || st->size() != sets[s].size()) {
+					tseitin = _translator->translate(setnr,AGGCARD,'>',2,TS_IMPL);
+				}
+				else {
+					tseitin = _translator->translate(setnr,AGGCARD,'=',1,TS_IMPL);
+				}
+				addUnitClause(tseitin);
+			}
+		}
+	}
+	
+}
+

@@ -221,10 +221,7 @@ void Function::accept(Visitor* v) const {
 Formula* MutatingVisitor::visit(PredForm* pf) {
 	for(unsigned int n = 0; n < pf->nrSubterms(); ++n) {
 		Term* nt = pf->subterm(n)->accept(this);
-		if(nt != pf->subterm(n)) {
-			delete(pf->subterm(n));
-			pf->arg(n,nt);
-		}
+		pf->arg(n,nt);
 	}
 	pf->setfvars();
 	return pf;
@@ -232,10 +229,7 @@ Formula* MutatingVisitor::visit(PredForm* pf) {
 
 Formula* MutatingVisitor::visit(BracketForm* bf) {
 	Formula* f = bf->subf()->accept(this);
-	if(f != bf->subf()) {
-		delete(bf->subf());
-		bf->subf(f);
-	}
+	bf->subf(f);
 	bf->setfvars();
 	return bf;
 }
@@ -243,10 +237,7 @@ Formula* MutatingVisitor::visit(BracketForm* bf) {
 Formula* MutatingVisitor::visit(EqChainForm* ef) {
 	for(unsigned int n = 0; n < ef->nrSubterms(); ++n) {
 		Term* nt = ef->subterm(n)->accept(this);
-		if(nt != ef->subterm(n)) {
-			delete(ef->subterm(n));
-			ef->term(n,nt);
-		}
+		ef->term(n,nt);
 	}
 	ef->setfvars();
 	return ef;
@@ -255,14 +246,8 @@ Formula* MutatingVisitor::visit(EqChainForm* ef) {
 Formula* MutatingVisitor::visit(EquivForm* ef) {
 	Formula* nl = ef->left()->accept(this);
 	Formula* nr = ef->right()->accept(this);
-	if(nl != ef->left()) {
-		delete(ef->left());
-		ef->left(nl);
-	}
-	if(nr != ef->right()) {
-		delete(ef->right());
-		ef->right(nr);
-	}
+	ef->left(nl);
+	ef->right(nr);
 	ef->setfvars();
 	return ef;
 }
@@ -270,10 +255,7 @@ Formula* MutatingVisitor::visit(EquivForm* ef) {
 Formula* MutatingVisitor::visit(BoolForm* bf) {
 	for(unsigned int n = 0; n < bf->nrSubforms(); ++n) {
 		Formula* nf = bf->subform(n)->accept(this);
-		if(nf != bf->subform(n)) {
-			delete(bf->subform(n));
-			bf->subf(n,nf);
-		}
+		bf->subf(n,nf);
 	}
 	bf->setfvars();
 	return bf;
@@ -281,58 +263,43 @@ Formula* MutatingVisitor::visit(BoolForm* bf) {
 
 Formula* MutatingVisitor::visit(QuantForm* qf) {
 	Formula* ns = qf->subf()->accept(this);
-	if(ns != qf->subf()) {
-		delete(qf->subf());
-		qf->subf(ns);
-	}
+	qf->subf(ns);
 	qf->setfvars();
 	return qf;
 }
 
 Formula* MutatingVisitor::visit(AggForm* af) {
 	Term* nl = af->left()->accept(this);
-	if(nl != af->left()) {
-		delete(af->left());
-		af->left(nl);
-	}
+	af->left(nl);
 	SetExpr* s = af->right()->set()->accept(this);
-	if(s != af->right()->set()) {
-		delete(af->right()->set());
-		af->right()->set(s);
-	}
+	af->right()->set(s);
 	af->setfvars();
 	return af;
 }
 
 Rule* MutatingVisitor::visit(Rule* r) {
 	Formula* nb = r->body()->accept(this);
-	if(nb != r->body()) {
-		// Check if the new body has free variables that do not occur in the head
-		vector<Variable*> vv;
-		for(unsigned int n = 0; n < nb->nrFvars(); ++n) {
-			unsigned int m = 0; 
-			for(; m < r->nrQvars(); ++m) {
-				if(r->qvar(m) == nb->fvar(n)) break;
-			}
-			if(m == r->nrQvars()) vv.push_back(nb->fvar(n));
+	// Check if the new body has free variables that do not occur in the head
+	vector<Variable*> vv;
+	for(unsigned int n = 0; n < nb->nrFvars(); ++n) {
+		unsigned int m = 0; 
+		for(; m < r->nrQvars(); ++m) {
+			if(r->qvar(m) == nb->fvar(n)) break;
 		}
-		if(!vv.empty()) {
-			nb = new QuantForm(true,false,vv,nb,nb->pi());
-		}
-		// Replace the body
-		delete(r->body());
-		r->body(nb);
+		if(m == r->nrQvars()) vv.push_back(nb->fvar(n));
 	}
+	if(!vv.empty()) {
+		nb = new QuantForm(true,false,vv,nb,nb->pi());
+	}
+	// Replace the body
+	r->body(nb);
 	return r;
 }
 
 Definition* MutatingVisitor::visit(Definition* d) {
 	for(unsigned int n = 0; n < d->nrRules(); ++n) {
 		Rule* r = d->rule(n)->accept(this);
-		if(r != d->rule(n)) {
-			delete(d->rule(n));
-			d->rule(n,r);
-		}
+		d->rule(n,r);
 	}
 	d->defsyms();
 	return d;
@@ -341,17 +308,11 @@ Definition* MutatingVisitor::visit(Definition* d) {
 FixpDef* MutatingVisitor::visit(FixpDef* fd) {
 	for(unsigned int n = 0; n < fd->nrRules(); ++n) {
 		Rule* r = fd->rule(n)->accept(this);
-		if(r != fd->rule(n)) {
-			delete(fd->rule(n));
-			fd->rule(n,r);
-		}
+		fd->rule(n,r);
 	}
 	for(unsigned int n = 0; n < fd->nrDefs(); ++n) {
 		FixpDef* d = fd->def(n)->accept(this);
-		if(d != fd->def(n)) {
-			delete(fd->def(n));
-			fd->def(n,d);
-		}
+		fd->def(n,d);
 	}
 	fd->defsyms();
 	return fd;
@@ -364,10 +325,7 @@ Term* MutatingVisitor::visit(VarTerm* vt) {
 Term* MutatingVisitor::visit(FuncTerm* ft) {
 	for(unsigned int n = 0; n < ft->nrSubterms(); ++n) {
 		Term* nt = ft->subterm(n)->accept(this);
-		if(nt != ft->subterm(n)) {
-			delete(ft->subterm(n));
-			ft->arg(n,nt);
-		}
+		ft->arg(n,nt);
 	}
 	ft->setfvars();
 	return ft;
@@ -379,10 +337,7 @@ Term* MutatingVisitor::visit(DomainTerm* dt) {
 
 Term* MutatingVisitor::visit(AggTerm* at) {
 	SetExpr* nst = at->set()->accept(this);
-	if(nst != at->set()) {
-		delete(at->set());
-		at->set(nst);
-	}
+	at->set(nst);
 	at->setfvars();
 	return at;
 }
@@ -390,17 +345,11 @@ Term* MutatingVisitor::visit(AggTerm* at) {
 SetExpr* MutatingVisitor::visit(EnumSetExpr* es) {
 	for(unsigned int n = 0; n < es->nrSubterms(); ++n) {
 		Term* nt = es->subterm(n)->accept(this);
-		if(nt != es->subterm(n)) {
-			delete(es->subterm(n));
-			es->weight(n,nt);
-		}
+		es->weight(n,nt);
 	}
 	for(unsigned int n = 0; n < es->nrSubforms(); ++n) {
 		Formula* nf = es->subform(n)->accept(this);
-		if(nf != es->subform(n)) {
-			delete(es->subform(n));
-			es->subf(n,nf);
-		}
+		es->subf(n,nf);
 	}
 	es->setfvars();
 	return es;
@@ -408,10 +357,7 @@ SetExpr* MutatingVisitor::visit(EnumSetExpr* es) {
 
 SetExpr* MutatingVisitor::visit(QuantSetExpr* qs) {
 	Formula* ns = qs->subf()->accept(this);
-	if(ns != qs->subf()) {
-		delete(qs->subf());
-		qs->subf(ns);
-	}
+	qs->subf(ns);
 	qs->setfvars();
 	return qs;
 }
@@ -419,31 +365,22 @@ SetExpr* MutatingVisitor::visit(QuantSetExpr* qs) {
 Theory* MutatingVisitor::visit(Theory* t) {
 	for(unsigned int n = 0; n < t->nrSentences(); ++n) {
 		Formula* f = t->sentence(n)->accept(this);
-		if(f != t->sentence(n)) {
-			vector<Variable*> vv;
-			for(unsigned int m = 0; m < f->nrFvars(); ++m) {
-				vv.push_back(f->fvar(m));
-			}
-			if(!vv.empty()) {
-				f = new QuantForm(true,true,vv,f,f->pi());
-			}
-			delete(t->sentence(n));
-			t->sentence(n,f);
+		vector<Variable*> vv;
+		for(unsigned int m = 0; m < f->nrFvars(); ++m) {
+			vv.push_back(f->fvar(m));
 		}
+		if(!vv.empty()) {
+			f = new QuantForm(true,true,vv,f,f->pi());
+		}
+		t->sentence(n,f);
 	}
 	for(unsigned int n = 0; n < t->nrDefinitions(); ++n) {
 		Definition* d = t->definition(n)->accept(this);
-		if(d != t->definition(n)) {
-			delete(t->definition(n));
-			t->definition(n,d);
-		}
+		t->definition(n,d);
 	}
 	for(unsigned int n = 0; n < t->nrFixpDefs(); ++n) {
 		FixpDef* fd = t->fixpdef(n)->accept(this);
-		if(fd != t->fixpdef(n)) {
-			delete(t->fixpdef(n));
-			t->fixpdef(n,fd);
-		}
+		t->fixpdef(n,fd);
 	}
 	return t;
 }

@@ -54,7 +54,12 @@ class IDPPrinter : public Printer {
 		void print(const PredTable*);
 		void printInter(const char*,const char*,const PredTable*,const PredTable*);
 
+		bool _printtypes;
+
 	public:
+
+		IDPPrinter(bool printtypes) : _printtypes(printtypes) { }
+
 		/** Theories **/
 		void visit(const Theory*);
 		void visit(const EcnfTheory*);

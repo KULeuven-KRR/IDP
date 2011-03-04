@@ -1109,6 +1109,9 @@ namespace StructUtils {
 	// Make a theory containing all literals that are true according to the given structure
 	AbstractTheory*		convert_to_theory(const AbstractStructure*);	
 
+	// Change the vocabulary of a structure
+	void	changevoc(AbstractStructure*,Vocabulary*);
+
 	// Compute the complement of the given table in the given structure
 	PredTable*	complement(const PredTable*,const vector<Sort*>&,const AbstractStructure*);
 

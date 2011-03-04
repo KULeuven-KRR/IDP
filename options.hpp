@@ -65,6 +65,7 @@ class InfOptions {
 		OutputFormat	_format;		// use specified format for the output
 		ModelFormat		_modelformat;	// make results of MX twovalued
 		int				_satverbosity;
+		bool			_printtypes;
 		
 		// Constructor (default options)
 		InfOptions(const string& name, const ParseInfo& pi) : 
@@ -73,7 +74,8 @@ class InfOptions {
 			_nrmodels(1),
 			_format(OF_IDP),
 			_modelformat(MF_ALL),
-			_satverbosity(0)
+			_satverbosity(0),
+			_printtypes(true)
 			{ }
 		InfOptions(InfOptions* opts) : _name(""), _pi() { set(opts);	}
 
@@ -83,6 +85,7 @@ class InfOptions {
 			_format			= opt->_format;
 			_modelformat	= opt->_modelformat;
 			_satverbosity	= opt->_satverbosity;
+			_printtypes		= opt->_printtypes;
 		}
 
 		// Inspectors
@@ -92,6 +95,7 @@ class InfOptions {
 			else if(str == "modelformat") r = true;
 			else if(str == "language") r = true;
 			else if(str == "satverbosity") r = true;
+			else if(str == "printtypes") r = true;
 			return r;
 		}
 		const string& name() const { return _name; }

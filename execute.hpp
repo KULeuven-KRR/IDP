@@ -267,7 +267,7 @@ class ApplyTseitin : public Inference {
 			_intypes = vector<InfArgType>(1,IAT_THEORY);
 			_outtype = IAT_VOID;
 			_description = "Apply the tseitin transformation to a theory";
-			_reload = false;
+			_reload = true;
 		}
 		InfArg execute(const vector<InfArg>& args) const;
 };
@@ -330,6 +330,12 @@ class DeleteData : public Inference {
 			_description = "Delete"; 
 			_reload = false;
 		}
+		InfArg execute(const vector<InfArg>& args) const;
+};
+
+class ChangeVoc : public Inference {
+	public:
+		ChangeVoc();
 		InfArg execute(const vector<InfArg>& args) const;
 };
 
