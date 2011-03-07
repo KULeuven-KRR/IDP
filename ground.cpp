@@ -674,6 +674,8 @@ int BoolGrounder::run() const {
 void BoolGrounder::run(vector<int>& clause) const {
 	for(unsigned int n = 0; n < _subgrounders.size(); ++n) {
 		int l = _subgrounders[n]->run();
+if(l == _true) cerr << "TRUE" << endl;
+else if(l == _false) cerr << "FALSE" << endl;
 		if(check1(l)) {
 			clause.clear();
 			clause.push_back(result1());
@@ -1565,5 +1567,5 @@ void GrounderFactory::visit(const Rule* rule) {
 	FormulaGrounder* bodygr = _formgrounder;
 
 	// Create rule grounder
-	_rulegrounder = new RuleGrounder(_definition,headgr,bodygr,headgen,bodygen,_conjunction,_context);
+	_rulegrounder = new RuleGrounder(_definition,headgr,bodygr,headgen,bodygen,true,_context);
 }

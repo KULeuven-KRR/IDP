@@ -731,6 +731,7 @@ InfArg FastMXInference::execute(const vector<InfArg>& args) const {
 
 	// Add function constraints
 	ecnfgr->addFuncConstraints();
+	ecnfgr->addFalseDefineds();
 
 	// Solve
 	vector<MinisatID::Literal> assumpts;
