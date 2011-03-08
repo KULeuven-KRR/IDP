@@ -246,9 +246,12 @@ class GroundTheory : public AbstractTheory {
 		GroundTranslator*	_translator;		// Link between ground atoms and SAT-solver literals
 		set<int>			_printedtseitins;	// Tseitin atoms produced by the translator that occur 
 												// in the theory.
-		set<int>			_printedsets;		
+		set<int>			_printedsets;		// Set numbers produced by the translator that occur in the theory
+
 		AbstractStructure*	_structure;			// The ground theory may be partially reduced with respect
 												// to this structure. 
+		map<PFSymbol*,set<int> >	_defined;	// Symbols that are defined in the theory. This set is used to
+												// communicate to the solver which ground atoms should be considered defined.
 
 	public:
 		// Constructors 

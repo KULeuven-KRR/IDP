@@ -187,6 +187,10 @@ function using(obj)
 	end
 end
 
+local function idpmain()
+	if main then main() end
+end
+
 idp_intern = {
 	descend			= descend,			
     getchildren		= getchildren,
@@ -216,7 +220,8 @@ idp_intern = {
 	idpvocabulary	= idpvocabulary,
 
 	newnode			= newnode,
-	idpcall			= idpcall
+	idpcall			= idpcall,
+	main			= idpmain
 }
 
 local oldTostring = tostring

@@ -1144,6 +1144,8 @@ void SolverTheory::addDefinition(GroundDefinition& d) {
 			default:
 				assert(false);
 		}
+		// add head to set of defined atoms
+		_defined[_translator->symbol(it->first)].insert(it->first);
 	}
 }
 
@@ -1201,6 +1203,15 @@ void SolverTheory::addFuncConstraints() {
 }
 
 void SolverTheory::addFalseDefineds() {
-	// TODO TODO TODO
+	for(unsigned int n = 0; n < _translator->nrOffsets(); ++n) {
+		PFSymbol* s = _translator->getSymbol(n);
+		map<PFSymbol*,set<int> >::const_iterator it = _defined.find(s);
+		if(it != _defined.end()) {
+			const map<vector<domelement>,int>& tuples = _translator->getTuples(n);
+			for(map<vector<domelement>,int>::const_iterator jt = tuples.begin(); jt != tuples.end(); ++jt) {
+				if(it->second.find(jt->second) == it->second.end()) addUnitClause(-jt->second);
+			}
+		}
+	}
 }
 

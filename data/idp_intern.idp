@@ -163,8 +163,8 @@
 		return idp_intern.idpcall("convert_to_theory",S);
 	}
 
-	#procedure forcetowovalued(S) {
-		return idp_intern.idpcall("forcetowvalued",S);
+	#procedure forcetwovalued(S) {
+		return idp_intern.idpcall("forcetwovalued",S);
 	}
 
 }

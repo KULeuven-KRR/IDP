@@ -1021,10 +1021,31 @@ vector<Function*> Vocabulary::func_no_arity(const string& name) const {
 string PFSymbol::to_string() const {
 	string s  = _name.substr(0,_name.find('/'));	
 	if(nrSorts()) {
-		s += "[" + sort(0)->to_string();
-		for(unsigned int n = 1; n < nrSorts(); ++n) 
-			s += "," + sort(n)->to_string();
+		if(sort(0)) s += "[" + sort(0)->to_string();
+		else s += "[0";
+		for(unsigned int n = 1; n < nrSorts(); ++n) {
+			if(sort(n)) s += "," + sort(n)->to_string();
+			else s += ",0";
+		}
 		s += "]";
+	}
+	return s;
+}
+
+string OverloadedPredicate::to_string() const {
+	string s = " ";
+	for(unsigned int n = 0; n < _overpreds.size(); ++n) {
+		s += _overpreds[n]->to_string();
+		s += ' ';
+	}
+	return s;
+}
+
+string OverloadedFunction::to_string() const {
+	string s = " ";
+	for(unsigned int n = 0; n < _overfuncs.size(); ++n) {
+		s += _overfuncs[n]->to_string();
+		s += ' ';
 	}
 	return s;
 }
@@ -1035,16 +1056,16 @@ string Vocabulary::to_string(unsigned int spaces) const {
 	s = s + tab + "  Sorts:\n";
 	for(map<string,set<Sort*> >::const_iterator it = _name2sort.begin(); it != _name2sort.end(); ++it) {
 		for(set<Sort*>::const_iterator jt = (it->second).begin(); jt != (it->second).end(); ++jt) {
-			s = s + tab + "    " + (*jt)->name() + '\n';
+			s = s + tab + "    " + (*jt)->to_string() + '\n';
 		}
 	}
 	s = s + tab + "  Predicates:\n";
 	for(map<string,Predicate*>::const_iterator it = _name2pred.begin(); it != _name2pred.end(); ++it) {
-		s = s + tab + "    " + it->second->name() + '\n';
+		s = s + tab + "    " + it->second->to_string() + '\n';
 	}
 	s = s + tab + "  Functions:\n";
 	for(map<string,Function*>::const_iterator it = _name2func.begin(); it != _name2func.end(); ++it) {
-		s = s + tab + "    " + it->second->name() + '\n';
+		s = s + tab + "    " + it->second->to_string() + '\n';
 	}
 	return s;
 }

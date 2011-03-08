@@ -227,9 +227,18 @@ class UnivSentGrounder : public TopLevelGrounder {
 /*** Term grounders ***/
 
 class TermGrounder {
+	protected:
+#ifndef NDEBUG
+		const Term*	_origterm;
+		map<Variable*,domelement*> _varmap;
+		void printorig() const;
+#endif
 	public:
 		TermGrounder() { }
 		virtual domelement run() const = 0;
+#ifndef NDEBUG
+		void setorig(const Term* t, const map<Variable*,domelement*>& mvd); 
+#endif
 };
 
 class DomTermGrounder : public TermGrounder {
@@ -245,7 +254,7 @@ class VarTermGrounder : public TermGrounder {
 		domelement*	_value;
 	public:
 		VarTermGrounder(domelement* a) : _value(a) { }
-		domelement run() const { return *_value;	}
+		domelement run() const; 
 };
 
 class FuncTermGrounder : public TermGrounder {
@@ -279,12 +288,21 @@ class AggTermGrounder : public TermGrounder {
 
 class FormulaGrounder {
 	protected:
+#ifndef NDEBUG
+		const Formula*				_origform;
+		map<Variable*,domelement*>	_varmap;
+		void printorig() const;
+#endif
 		GroundTranslator*	_translator;
 		GroundingContext	_context;
 	public:
 		FormulaGrounder(GroundTranslator* gt, const GroundingContext& ct): _translator(gt), _context(ct) { }
 		virtual int		run()				const = 0;
 		virtual void	run(vector<int>&)	const = 0;
+		virtual bool	conjunctive()		const = 0;
+#ifndef NDEBUG
+		void setorig(const Formula* f, const map<Variable*,domelement*>& mvd);
+#endif
 };
 
 class AtomGrounder : public FormulaGrounder {
@@ -303,6 +321,7 @@ class AtomGrounder : public FormulaGrounder {
 					const vector<SortTable*>& vst, const GroundingContext&);
 		int		run() const;
 		void	run(vector<int>&) const;
+		bool	conjunctive() const { return true;	}
 };
 
 class AggGrounder : public FormulaGrounder {
@@ -319,6 +338,7 @@ class AggGrounder : public FormulaGrounder {
 		void	run(vector<int>&)	const;
 		int		finishCard(double,double,int)	const;
 		int		finishSum(double,double,int)	const;
+		bool	conjunctive() const { return true;	}
 };
 
 class ClauseGrounder : public FormulaGrounder {
@@ -333,6 +353,7 @@ class ClauseGrounder : public FormulaGrounder {
 		bool	check2(int l) const;
 		int		result1() const;
 		int		result2() const;
+		bool	conjunctive() const { return _conj;	}
 };
 
 class BoolGrounder : public ClauseGrounder {
@@ -367,6 +388,7 @@ class EquivGrounder : public FormulaGrounder {
 			FormulaGrounder(gt,ct), _leftgrounder(lg), _rightgrounder(rg), _sign(sign) { }
 		int run() const;
 		void	run(vector<int>&) const;
+		bool	conjunctive() const { return true;	}
 };
 
 
@@ -430,13 +452,11 @@ class RuleGrounder {
 		InstGenerator*		_headgenerator;	
 		InstGenerator*		_bodygenerator;	
 		GroundingContext	_context;
-		bool				_conj;
-//		bool				_recursive;
 	public:
 		RuleGrounder(GroundDefinition* def, HeadGrounder* hgr, FormulaGrounder* bgr,
-					InstGenerator* hig, InstGenerator* big, bool conj, GroundingContext& ct) :
+					InstGenerator* hig, InstGenerator* big, GroundingContext& ct) :
 			_definition(def), _headgrounder(hgr), _bodygrounder(bgr), _headgenerator(hig),
-			_bodygenerator(big), _context(ct), _conj(conj) { }
+			_bodygenerator(big), _context(ct) { }
 		bool run() const;
 };
 
@@ -488,9 +508,6 @@ class GrounderFactory : public Visitor {
 		// Current ground definition
 		GroundDefinition*		_definition;	// The ground definition that will be produced by the 
 												// currently constructed definition grounder.
-
-		// Is last visited formula a conjunction?
-		bool	_conjunction;
 
 		// Return values
 		FormulaGrounder*		_formgrounder;

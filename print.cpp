@@ -88,8 +88,12 @@ void IDPPrinter::visit(const EcnfTheory* et) {
 void IDPPrinter::visit(const PredForm* f) {
 	if(! f->sign())
 		_out << "~";
+#ifndef NDEBUG
+	_out << f->symb()->to_string();
+#else
 	string fullname = f->symb()->name();
 	_out << fullname.substr(0,fullname.find('/'));
+#endif
 	if(f->nrSubterms()) {
 		_out << "(";
 		f->subterm(0)->accept(this);
@@ -234,8 +238,12 @@ void IDPPrinter::visit(const VarTerm* t) {
 }
 
 void IDPPrinter::visit(const FuncTerm* t) {
+#ifndef NDEBUG
+	_out << t->func()->to_string();
+#else
 	string fullname = t->func()->name();
 	_out << fullname.substr(0,fullname.find('/'));
+#endif
 	if(t->nrSubterms()) {
 		_out << "(";
 		t->arg(0)->accept(this);

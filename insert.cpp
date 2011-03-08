@@ -1304,11 +1304,10 @@ namespace Insert {
 
 	Function* function(const string& name, const vector<Sort*>& sorts, YYLTYPE l) {
 		ParseInfo pi = parseinfo(l);
-		string nar = string(name) + '/' + itos(sorts.size());
 		for(unsigned int n = 0; n < sorts.size(); ++n) {
 			if(!sorts[n]) return 0;
 		}
-		Function* f = new Function(nar,sorts,pi);
+		Function* f = new Function(name,sorts,pi);
 		_currvocab->addFunc(f);
 		return f;
 	}

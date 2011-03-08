@@ -283,6 +283,7 @@ int main(int argc, char* argv[]) {
 		// Execute statements
 		executeproc(L,_cloptions._exec);
 		if(_cloptions._interactive) interactive(L);
+		else if(_cloptions._exec == "") executeproc(L,"idp_intern.main()");
 		lua_close(L);
 	}
 

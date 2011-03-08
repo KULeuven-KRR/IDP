@@ -227,7 +227,7 @@ class PFSymbol {
 		unsigned int			nrSorts()				const { return _sorts.size();					}
 		Sort*					sort(unsigned int n)	const { return _sorts[n];						}
 		const vector<Sort*>&	sorts()					const { return _sorts;							}
-		string					to_string()				const;
+		virtual string			to_string()				const;
 		virtual bool			ispred()				const = 0;	// true iff the symbol is a predicate
 
 		// Built-in symbols 
@@ -315,6 +315,7 @@ class OverloadedPredicate : public Predicate {
 
 		// Debugging of GidL
 		void	inspect()	const;
+		virtual string	to_string()	const;
 
 };
 
@@ -417,6 +418,8 @@ class OverloadedFunction : public Function {
 
 		// Debugging of GidL
 		void	inspect()	const;
+		virtual string	to_string()	const;
+
 
 };
 
@@ -616,8 +619,8 @@ namespace ElementUtil {
 	ElementType reduce(TypedElement);
 
 	// Convert a domain element to a string
-	string		ElementToString(Element,ElementType);
-	string		ElementToString(TypedElement);
+	string	ElementToString(Element,ElementType);
+	string	ElementToString(TypedElement);
 
 	// Return the unique non-existing domain element of a given type. 
 	//Non-existing domain elements are used as return value when a partial function is applied on elements outside its domain

@@ -658,18 +658,20 @@ InfArg ModelExpansionInference::execute(const vector<InfArg>& args) const {
 			set<PredInter*>	tobesorted1;
 			set<FuncInter*>	tobesorted2;
 			for(unsigned int j=0; j<sol->getModels()[i].size(); j++) {
-				PFSymbol* pfs = ecnfgr->translator()->symbol((sol->getModels()[i][j].getAtom().getValue()));
-				if(pfs && mod->vocabulary()->contains(pfs)) {
-					vector<domelement> vd = ecnfgr->translator()->args(sol->getModels()[i][j].getAtom().getValue());
-					vector<TypedElement> args = ElementUtil::convert(vd);
-					if(pfs->ispred()) {
-						mod->inter(pfs)->add(args,!(sol->getModels()[i][j].hasSign()),true);
-						tobesorted1.insert(mod->inter(pfs));
-					}
-					else {
-						Function* f = dynamic_cast<Function*>(pfs);
-						mod->inter(f)->add(args,!(sol->getModels()[i][j].hasSign()),true);
-						tobesorted2.insert(mod->inter(f));
+				if(opts->_modelformat != MF_TWOVAL || !sol->getModels()[i][j].hasSign()) {
+					PFSymbol* pfs = ecnfgr->translator()->symbol((sol->getModels()[i][j].getAtom().getValue()));
+					if(pfs && mod->vocabulary()->contains(pfs)) {
+						vector<domelement> vd = ecnfgr->translator()->args(sol->getModels()[i][j].getAtom().getValue());
+						vector<TypedElement> args = ElementUtil::convert(vd);
+						if(pfs->ispred()) {
+							mod->inter(pfs)->add(args,!(sol->getModels()[i][j].hasSign()),true);
+							tobesorted1.insert(mod->inter(pfs));
+						}
+						else {
+							Function* f = dynamic_cast<Function*>(pfs);
+							mod->inter(f)->add(args,!(sol->getModels()[i][j].hasSign()),true);
+							tobesorted2.insert(mod->inter(f));
+						}
 					}
 				}
 			}
@@ -677,6 +679,8 @@ InfArg ModelExpansionInference::execute(const vector<InfArg>& args) const {
 				(*it)->sortunique();
 			for(set<FuncInter*>::const_iterator it=tobesorted2.begin(); it != tobesorted2.end(); ++it)
 				(*it)->sortunique();
+
+			// TODO: defined predicates should always be forced two-valued if their definition was grounded completely.
 
 			if(opts->_modelformat == MF_TWOVAL) {
 				mod->forcetwovalued();
