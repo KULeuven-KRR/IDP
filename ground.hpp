@@ -161,17 +161,17 @@ class DefinitionGrounder;
 struct GroundDefinition;
 
 /** Grounding context **/
-enum CompContext { CC_SENTENCE, CC_HEAD, CC_BODY, CC_FORMULA };
+enum CompContext { CC_SENTENCE, CC_HEAD, CC_FORMULA };
 enum PosContext { PC_POSITIVE, PC_NEGATIVE, PC_BOTH };
 
 struct GroundingContext {
-	bool		_truegen;	// Indicates whether the variables are instantiated in order to obtain
-							// a ground formula that is possibly true.
-	PosContext	_positive;	// Indicates whether the visited part of the theory occurs in the scope
-							// of an even number of negations.
-	CompContext	_component;	// Indicates the context of the visited formula
-	TsType		_tseitin;	// Indicates the type of tseitin definition that needs to be used.
-	bool		_recursive; // Indicates whether the visited rule is recursive.
+	bool			_truegen;	// Indicates whether the variables are instantiated in order to obtain
+								// a ground formula that is possibly true.
+	PosContext		_positive;	// Indicates whether the visited part of the theory occurs in the scope
+								// of an even number of negations.
+	CompContext		_component;	// Indicates the context of the visited formula
+	TsType			_tseitin;	// Indicates the type of tseitin definition that needs to be used.
+	set<PFSymbol*>	_defined;	// Indicates whether the visited rule is recursive.
 };
 
 
@@ -491,6 +491,7 @@ class GrounderFactory : public Visitor {
 		stack<GroundingContext>	_contextstack;
 
 		void	InitContext();		// Initialize the context 
+		void	AggContext();	
 		void	SaveContext();		// Push the current context onto the stack
 		void	RestoreContext();	// Set _context to the top of the stack and pop the stack
 		void	DeeperContext(bool);
@@ -524,6 +525,9 @@ class GrounderFactory : public Visitor {
 		// Factory method
 		TopLevelGrounder* create(const AbstractTheory* theory);
 		TopLevelGrounder* create(const AbstractTheory* theory, MinisatID::WrappedPCSolver* solver);
+
+		// Recursive check
+		bool recursive(const Formula*);
 
 		// Visitors
 		void visit(const EcnfTheory*);

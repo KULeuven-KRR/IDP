@@ -277,13 +277,16 @@ bool IntFloatFunction::contains(Function* f) const {
 		if(f == _overfuncs[n]) return true;
 	}
 
+	Sort* nats = *((StdBuiltin::instance())->sort("nat")->begin());
 	Sort* ints = *((StdBuiltin::instance())->sort("int")->begin());
 	Sort* floats = *((StdBuiltin::instance())->sort("float")->begin());
 	for(unsigned int n = 0; n < f->nrSorts(); ++n) {
 		if(f->sort(n)) {
-			if(SortUtils::resolve(ints,f->sort(n),0) != ints) {
-				if(SortUtils::resolve(floats,f->sort(n),0) != floats) {
-					return false;
+			if(f->sort(n) != nats) {
+				if(f->sort(n) != ints) {
+					if(f->sort(n) != floats) {
+						return false;
+					}
 				}
 			}
 		}

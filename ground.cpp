@@ -1082,14 +1082,14 @@ bool RuleGrounder::run() const {
 				assert(head != _true);
 				if(head != _false) {
 					if(truebody) _definition->addTrueRule(head);
-					else _definition->addRule(head,body,conj,_context._recursive);
+					else _definition->addRule(head,body,conj,_context._tseitin == TS_RULE);
 				}
 				while(_headgenerator->next()) {
 					head = _headgrounder->run();
 					assert(head != _true);
 					if(head != _false) {
 						if(truebody) _definition->addTrueRule(head);
-						else _definition->addRule(head,body,conj,_context._recursive);
+						else _definition->addRule(head,body,conj,_context._tseitin == TS_RULE);
 					}
 				}
 			}
@@ -1105,14 +1105,14 @@ bool RuleGrounder::run() const {
 					assert(head != _true);
 					if(head != _false) {
 						if(truebody) _definition->addTrueRule(head);
-						else _definition->addRule(head,body,conj,_context._recursive);
+						else _definition->addRule(head,body,conj,_context._tseitin == TS_RULE);
 					}
 					while(_headgenerator->next()) {
 						head = _headgrounder->run();
 						assert(head != _true);
 						if(head != _false) {
 							if(truebody) _definition->addTrueRule(head);
-							else _definition->addRule(head,body,conj,_context._recursive);
+							else _definition->addRule(head,body,conj,_context._tseitin == TS_RULE);
 						}
 					}
 				}
@@ -1136,6 +1136,13 @@ bool DefinitionGrounder::run() const {
 	GrounderFactory methods
 ******************************/
 
+bool GrounderFactory::recursive(const Formula* f) {
+	for(set<PFSymbol*>::const_iterator it = _context._defined.begin(); it != _context._defined.end(); ++it) {
+		if(f->contains(*it)) return true;
+	}
+	return false;
+}
+
 /*
  * void GrounderFactory::InitContext() 
  * DESCRIPTION
@@ -1146,7 +1153,14 @@ void GrounderFactory::InitContext() {
 	_context._positive		= PC_POSITIVE;
 	_context._component		= CC_SENTENCE;
 	_context._tseitin		= TS_IMPL;
-	_context._recursive		= false; //TODO: Should keep a list of symbols that are recursively defined
+	_context._defined.clear();
+}
+
+void GrounderFactory::AggContext() {
+	_context._truegen = false;
+	_context._positive = PC_POSITIVE;
+	_context._tseitin = TS_IMPL;
+	_context._component = CC_FORMULA;
 }
 
 /*
@@ -1352,7 +1366,6 @@ void GrounderFactory::visit(const Theory* theory) {
  *		According to _context, the created grounder is assigned to
  *			CC_SENTENCE:	_toplevelgrounder
  *			CC_HEAD:		_headgrounder
- *			CC_BODY:		_formgrounder
  *			CC_FORMULA:		_formgrounder
  */
 void GrounderFactory::visit(const PredForm* pf) {
@@ -1421,14 +1434,10 @@ void GrounderFactory::visit(const PredForm* pf) {
  * POSTCONDITIONS
  *		According to _context, the created grounder is assigned to
  *			CC_SENTENCE:	_toplevelgrounder
- *			CC_BODY:		_formgrounder
  *			CC_FORMULA:		_formgrounder
  *			CC_HEAD is not possible
  */
 void GrounderFactory::visit(const BoolForm* bf) {
-	// Make tseitin rules when in recursive definition.
-	if(_context._recursive) _context._tseitin = TS_RULE; 	//TODO: Check whether there are recursively defined symbols in this formula
-															// if so, set tseitin type to TS_RULE, otherwise leave as it is. 
 
 	// Handle a top-level conjunction without creating tseitin atoms
 	if(_context._component == CC_SENTENCE && (bf->conj() == bf->sign())) {
@@ -1463,7 +1472,10 @@ void GrounderFactory::visit(const BoolForm* bf) {
 		RestoreContext();
 
 		// Create grounder
+		SaveContext();
+		if(recursive(bf)) _context._tseitin = TS_RULE;
 		_formgrounder = new BoolGrounder(_grounding->translator(),sub,bf->sign(),bf->conj(),_context);
+		RestoreContext();
 #ifndef NDEBUG
 		_formgrounder->setorig(bf,_varmapping);
 #endif	
@@ -1483,7 +1495,6 @@ void GrounderFactory::visit(const BoolForm* bf) {
  * POSTCONDITIONS
  *		According to _context, the created grounder is assigned to
  *			CC_SENTENCE:	_toplevelgrounder
- *			CC_BODY:		_formgrounder
  *			CC_FORMULA:		_formgrounder
  *			CC_HEAD is not possible
  */
@@ -1502,11 +1513,6 @@ void GrounderFactory::visit(const QuantForm* qf) {
 	GeneratorFactory gf;
 	InstGenerator* gen = gf.create(vars,tables);
 
-	// Make tseitin rules when in recursive definition.
-	if(_context._recursive) _context._tseitin = TS_RULE; 	//TODO: Check whether there are recursively defined symbols in this formula
-															// if so, set tseitin type to TS_RULE, otherwise leave as it is. 
-
-
 	// Handle top-level universal quantifiers efficiently
 	if(_context._component == CC_SENTENCE && (qf->sign() == qf->univ())) {
 		Formula* newsub = qf->subf()->clone();
@@ -1524,7 +1530,10 @@ void GrounderFactory::visit(const QuantForm* qf) {
 		RestoreContext();
 
 		// Create the grounder
+		SaveContext();
+		if(recursive(qf)) _context._tseitin = TS_RULE;
 		_formgrounder = new QuantGrounder(_grounding->translator(),_formgrounder,qf->sign(),qf->univ(),gen,_context);
+		RestoreContext();
 #ifndef NDEBUG
 		_formgrounder->setorig(qf,_varmapping);
 #endif	
@@ -1543,7 +1552,6 @@ void GrounderFactory::visit(const QuantForm* qf) {
  * POSTCONDITIONS
  *		According to _context, the created grounder is assigned to
  *			CC_SENTENCE:	_toplevelgrounder
- *			CC_BODY:		_formgrounder
  *			CC_FORMULA:		_formgrounder
  *			CC_HEAD is not possible
  */
@@ -1552,8 +1560,7 @@ void GrounderFactory::visit(const EquivForm* ef) {
 	SaveContext();
 	DeeperContext(ef->sign());
 	_context._positive = PC_BOTH;
-	_context._tseitin = _context._recursive ? TS_RULE : TS_EQ; 	//TODO: Check whether there are recursively defined symbols in this formula
-																// if so, set tseitin type to TS_RULE, set to TS_EQ.
+	_context._tseitin = TS_EQ; 
 
 	descend(ef->left());
 	FormulaGrounder* leftg = _formgrounder;
@@ -1562,7 +1569,10 @@ void GrounderFactory::visit(const EquivForm* ef) {
 	RestoreContext();
 
 	// Create the grounder
+	SaveContext();
+	if(recursive(ef)) _context._tseitin = TS_RULE;
 	_formgrounder = new EquivGrounder(_grounding->translator(),leftg,rightg,ef->sign(),_context);
+	RestoreContext();
 	if(_context._component == CC_SENTENCE) _toplevelgrounder = new SentenceGrounder(_grounding,_formgrounder,true);
 }
 
@@ -1571,7 +1581,11 @@ void GrounderFactory::visit(const AggForm* af) {
 	TermGrounder* boundgr = _termgrounder;
 	descend(af->right()->set());
 	SetGrounder* setgr = _setgrounder;
+
+	SaveContext();
+	if(recursive(af)) _context._tseitin = TS_RULE;
 	_formgrounder = new AggGrounder(_grounding->translator(),_context,af->right()->type(),setgr,boundgr,af->comp(),af->sign());
+	RestoreContext();
 	if(_context._component == CC_SENTENCE) _toplevelgrounder = new SentenceGrounder(_grounding,_formgrounder,true);
 }
 
@@ -1629,8 +1643,7 @@ void GrounderFactory::visit(const EnumSetExpr* s) {
 	vector<FormulaGrounder*> subgr;
 	vector<TermGrounder*> subtgr;
 	SaveContext();
-	InitContext();
-	_context._component = CC_FORMULA;
+	AggContext();
 	for(unsigned int n = 0; n < s->nrSubforms(); ++n) {
 		descend(s->subform(n));
 		subgr.push_back(_formgrounder);
@@ -1664,8 +1677,7 @@ void GrounderFactory::visit(const QuantSetExpr* s) {
 	
 	// Create grounder for subformula
 	SaveContext();
-	InitContext();
-	_context._component = CC_FORMULA;
+	AggContext();
 	descend(s->subf());
 	FormulaGrounder* sub = _formgrounder;
 	RestoreContext();
@@ -1678,22 +1690,22 @@ void GrounderFactory::visit(const Definition* def) {
 	// Create new ground definition
 	_definition = new GroundDefinition(_grounding->translator());
 
+	// Store defined predicates
+	for(unsigned int m = 0; m < def->nrDefsyms(); ++m) {
+		_context._defined.insert(def->defsym(m));
+	}
+	
 	// Create rule grounders
 	vector<RuleGrounder*> subgrounders;
 	for(unsigned int n = 0; n < def->nrRules(); ++n) {
-		InitContext();
-		for(unsigned int m = 0; m < def->nrDefsyms(); ++m) {
-			if(def->rule(n)->body()->contains(def->defsym(m))) {
-				_context._recursive = true;		// TODO: more fine-grained recursive context
-				break;
-			}
-		}
 		descend(def->rule(n));
 		subgrounders.push_back(_rulegrounder);
 	}
 	
 	// Create definition grounder
 	_toplevelgrounder = new DefinitionGrounder(_grounding,_definition,subgrounders);
+
+	_context._defined.clear();
 }
 
 void GrounderFactory::visit(const Rule* rule) {
@@ -1748,18 +1760,26 @@ void GrounderFactory::visit(const Rule* rule) {
 	if(!bodygen) bodygen = new TreeInstGenerator(bnode);
 	
 	// Create head grounder
+	SaveContext();
 	_context._component = CC_HEAD;
 	descend(rule->head());
 	HeadGrounder* headgr = _headgrounder;
+	RestoreContext();
 
 	// Create body grounder
+	SaveContext();
 	_context._positive = PC_NEGATIVE;		// minimize truth value of rule bodies
 	_context._truegen = true;				// body instance generator corresponds to an existential quantifier
-	_context._component = CC_BODY;
+	_context._component = CC_FORMULA;
+	_context._tseitin = TS_EQ;
 	descend(rule->body());
 	FormulaGrounder* bodygr = _formgrounder;
+	RestoreContext();
 
 	// Create rule grounder
+	SaveContext();
+	if(recursive(rule->body())) _context._tseitin = TS_RULE;
 	_rulegrounder = new RuleGrounder(_definition,headgr,bodygr,headgen,bodygen,_context);
+	RestoreContext();
 
 }
