@@ -607,12 +607,7 @@ void GroundTheory::transformForAdd(GroundRuleBody& grb, vector<int>& heads, vect
 			}
 			else {	// tseitin body is an aggregate expression
 				AggTsBody& body = dynamic_cast<AggTsBody&>(*tsbody);
-				if(body._type != TS_RULE) {
-					addAgg(atom,body);
-				}
-				else {
-					assert(false); // TODO
-				}
+				addAgg(atom,body);	// TODO: dit loopt mis???
 			}
 		}	
 	}
@@ -1190,10 +1185,10 @@ void SolverTheory::addFuncConstraints() {
 				int setnr = _translator->translateSet(sets[s],lw,tw);
 				int tseitin;
 				if(f->partial() || !(st->finite()) || st->size() != sets[s].size()) {
-					tseitin = _translator->translate(setnr,AGGCARD,'>',2,TS_IMPL);
+					tseitin = _translator->translate(setnr,AGGCARD,'>',false,1,TS_IMPL);
 				}
 				else {
-					tseitin = _translator->translate(setnr,AGGCARD,'=',1,TS_IMPL);
+					tseitin = _translator->translate(setnr,AGGCARD,'=',true,1,TS_IMPL);
 				}
 				addUnitClause(tseitin);
 			}

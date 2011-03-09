@@ -272,7 +272,8 @@ class ContainmentChecker : public Visitor {
 		bool			_result;
 	public:
 		ContainmentChecker(const Formula* f, const PFSymbol* s) : Visitor(), _symbol(s), _result(false) { f->accept(this); }
-		void visit(const PredForm* pf) { _result = (pf->symb() == _symbol); }
+		void visit(const PredForm* pf) { _result = (pf->symb() == _symbol); traverse(pf);	}
+		void visit(const FuncTerm* ft) { _result = (ft->func() == _symbol); traverse(ft);	}
 		bool result() { return _result; }
 };
 
@@ -2010,10 +2011,62 @@ namespace FormulaUtils {
 	 *		If rewriting was needed, pf can be deleted, but not recursively.
 	 *		
 	 */
-	Formula* moveThreeValTerms(PredForm* pf, AbstractStructure* str, bool poscontext) {
+	Formula* moveThreeValTerms(Formula* f, AbstractStructure* str, bool poscontext) {
 		ThreeValTermMover tvtm(str,poscontext);
-		Formula* rewriting = pf->accept(&tvtm);
+		Formula* rewriting = f->accept(&tvtm);
 		return rewriting;
+	}
+
+	bool monotone(const AggForm* af) {
+		switch(af->comp()) {
+			case '=' : return false;
+			case '<' : {
+				switch(af->right()->type()) {
+					case AGGCARD : case AGGMAX: return af->sign();
+					case AGGMIN : return !af->sign();
+					case AGGSUM : return af->sign(); //FIXME: Asserts that weights are positive! Not correct otherwise.
+					case AGGPROD : return af->sign();//FIXME: Asserts that weights are larger than one! Not correct otherwise.
+				}
+				break;
+			}
+			case '>' : { 
+				switch(af->right()->type()) {
+					case AGGCARD : case AGGMAX: return !af->sign();
+					case AGGMIN : return af->sign();
+					case AGGSUM : return !af->sign(); //FIXME: Asserts that weights are positive! Not correct otherwise.
+					case AGGPROD : return !af->sign();//FIXME: Asserts that weights are larger than one! Not correct otherwise.
+				}
+				break;
+			}
+			default : assert(false);
+		}
+		return false;
+	}
+
+	bool antimonotone(const AggForm* af) {
+		switch(af->comp()) {
+			case '=' : return false;
+			case '<' : { 
+				switch(af->right()->type()) {
+					case AGGCARD : case AGGMAX: return !af->sign();
+					case AGGMIN : return af->sign();
+					case AGGSUM : return !af->sign(); //FIXME: Asserts that weights are positive! Not correct otherwise.
+					case AGGPROD : return !af->sign();//FIXME: Asserts that weights are larger than one! Not correct otherwise.
+				}
+				break;
+			}
+			case '>' : {
+				switch(af->right()->type()) {
+					case AGGCARD : case AGGMAX: return af->sign();
+					case AGGMIN : return !af->sign();
+					case AGGSUM : return af->sign(); //FIXME: Asserts that weights are positive! Not correct otherwise.
+					case AGGPROD : return af->sign();//FIXME: Asserts that weights are larger than one! Not correct otherwise.
+				}
+				break;
+			}
+			default : assert(false);
+		}
+		return false;
 	}
 }
 
