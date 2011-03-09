@@ -55,25 +55,27 @@ int GroundTranslator::translate(const vector<int>& cl, bool conj, TsType tp) {
 	return nr;
 }
 
-int GroundTranslator::translate(int setnr, AggType atp, char comp, double bound, TsType ttp) {
+int GroundTranslator::translate(int setnr, AggType atp, char comp, bool strict, double bound, TsType ttp) {
 	if(comp == '=') {
 		vector<int> cl(2);
-		cl[0] = -(translate(setnr,atp,'<',bound,ttp));
-		cl[1] = -(translate(setnr,atp,'>',bound,ttp));
+		cl[0] = translate(setnr,atp,'<',false,bound,ttp);
+		cl[1] = translate(setnr,atp,'>',false,bound,ttp);
 		return translate(cl,true,ttp);
 	}
 	else {
 		int nr = nextNumber();
 		AggTsBody* tb = new AggTsBody();
-		if(ttp == TS_IMPL) tb->_type = TS_RIMPL;
-		else if(ttp == TS_RIMPL) tb->_type = TS_IMPL;
-		else tb->_type = ttp;
+		tb->_type = ttp;
 		tb->_setnr = setnr;
 		tb->_aggtype = atp;
-		tb->_lower = (comp == '>');
-		tb->_bound = bound;
+		tb->_lower = (comp == '<');
+		if(strict) {
+			// FIXME: This is wrong if floating point weights are allowed!
+			tb->_bound = (comp == '<') ? bound + 1 : bound - 1;	
+		} 
+		else tb->_bound = bound;
 		_tsbodies[nr] = tb;
-		return -nr;
+		return nr;
 	}
 }
 
@@ -500,17 +502,17 @@ int AtomGrounder::run() const {
 		//TODO: only check positions that can be out of bounds!
 		if(!ElementUtil::exists(_args[n])) {
 			//TODO: produce a warning!
-			if(_context._positive == PC_BOTH) {
+			if(_context._funccontext == PC_BOTH) {
 				// TODO: produce an error
 			}
 #ifndef NDEBUG
 			if(_cloptions._verbose) {
 				printorig();
 				cerr << "Partial function went out of bounds\n";
-				cerr << "Result is " << (_context._positive != PC_NEGATIVE  ? "true" : "false") << endl;
+				cerr << "Result is " << (_context._funccontext != PC_NEGATIVE  ? "true" : "false") << endl;
 			}
 #endif
-			return _context._positive != PC_NEGATIVE  ? _true : _false;
+			return _context._funccontext != PC_NEGATIVE  ? _true : _false;
 		}
 	}
 
@@ -577,19 +579,28 @@ int AggGrounder::finishCard(double truevalue, double boundvalue, int setnr) cons
 	int leftvalue = int(boundvalue - truevalue);
 	const GroundSet& grs = _translator->groundset(setnr);
 	int maxposscard = grs._setlits.size();
-	TsType tp = _context._tseitin;	// TODO
+	TsType tp = _context._tseitin;
+	bool simplify = false;
+	bool conj;
+	//bool swaptseitin;
+	bool negateset;
 	switch(_comp) {
 		case '=':
 			if(leftvalue < 0 || leftvalue > maxposscard) {
 				return _sign ? _false : _true;
 			}
 			else if(leftvalue == 0) {
-				int tseitin = _translator->translate(grs._setlits,false,tp);
-				return _sign ? -tseitin : tseitin;
+				simplify = true;
+				//conj = false;
+				//swaptseitin = _sign;
+				conj = true;
+				negateset = true;
 			}
 			else if(leftvalue == maxposscard) {
-				int tseitin = _translator->translate(grs._setlits,true,tp);
-				return _sign ? tseitin : -tseitin;
+				simplify = true;
+				conj = true;
+				//swaptseitin = !_sign;
+				negateset = false;
 			}
 			break;
 		case '<':
@@ -597,12 +608,16 @@ int AggGrounder::finishCard(double truevalue, double boundvalue, int setnr) cons
 				return _sign ? _true : _false;
 			}
 			else if(leftvalue == 0) {
-				int tseitin = _translator->translate(grs._setlits,false,tp);
-				return _sign ? tseitin : -tseitin;
+				simplify = true;
+				conj = false;
+				//swaptseitin = !_sign;
+				negateset = false;
 			}
 			else if(leftvalue == maxposscard-1) {
-				int tseitin = _translator->translate(grs._setlits,true,tp);
-				return _sign ? tseitin : -tseitin;
+				simplify = true;
+				conj = true;
+				//swaptseitin = !_sign;
+				negateset = false;
 			}
 			else if(leftvalue >= maxposscard) {
 				return _sign ? _false : _true;
@@ -613,23 +628,128 @@ int AggGrounder::finishCard(double truevalue, double boundvalue, int setnr) cons
 				return _sign ? _false : _true;
 			}
 			else if(leftvalue == 1) {
-				int tseitin = _translator->translate(grs._setlits,false,tp);
-				return _sign ? -tseitin : tseitin;
+				simplify = true;
+				//conj = false;
+				//swaptseitin = _sign;
+				conj = true;
+				negateset = true;
 			}
 			else if(leftvalue == maxposscard) {
-				int tseitin = _translator->translate(grs._setlits,true,tp);
-				return _sign ? -tseitin : tseitin;
+				simplify = true;
+				//conj = true;
+				//swaptseitin = _sign;
+				conj = false;
+				negateset = true;
 			}
 			else if(leftvalue > maxposscard) {
 				return _sign ? _true : _false;
 			}
 			break;
 	}
-	int tseitin = _translator->translate(setnr,AGGCARD,_comp,double(leftvalue),tp);
-	return _sign ? tseitin : -tseitin;
+	
+	if(simplify) {
+		if(_doublenegtseitin) {
+			if(negateset) {
+				int tseitin = _translator->translate(grs._setlits,!conj,tp);
+				return _sign ? -tseitin : tseitin;
+			}
+			else {
+				vector<int> newsetlits(grs._setlits.size());
+				for(unsigned int n = 0; n < grs._setlits.size(); ++n) newsetlits[n] = -grs._setlits[n];
+				int tseitin = _translator->translate(newsetlits,!conj,tp);
+				return _sign ? -tseitin : tseitin;
+			}
+		}
+		else {
+			if(negateset) {
+				vector<int> newsetlits(grs._setlits.size());
+				for(unsigned int n = 0; n < grs._setlits.size(); ++n) newsetlits[n] = -grs._setlits[n];
+				int tseitin = _translator->translate(newsetlits,conj,tp);
+				return _sign ? tseitin : -tseitin;
+			}
+			else {
+				int tseitin = _translator->translate(grs._setlits,conj,tp);
+				return _sign ? tseitin : -tseitin;
+			}
+			//int tseitin = _translator->translate(grs._setlits,conj,tp);
+			//return swaptseitin ? -tseitin : tseitin;
+		}
+	}
+	else {
+		if(_doublenegtseitin) {
+			bool newcomp;
+			switch(_comp) {
+				case '<' : newcomp = '>'; break;
+				case '>' : newcomp = '<'; break;
+				case '=' : assert(false); break;
+				default : assert(false); break;
+			}
+			int tseitin = _translator->translate(setnr,AGGCARD,newcomp,false,double(leftvalue),tp);
+			return _sign ? -tseitin : tseitin;
+		}
+		else {
+			int tseitin = _translator->translate(setnr,AGGCARD,_comp,true,double(leftvalue),tp);
+			return _sign ? tseitin : -tseitin;
+		}
+	}
 }
 
 int AggGrounder::finishSum(double truevalue, double boundvalue, int setnr) const {
+	const GroundSet& grs = _translator->groundset(setnr);
+
+	// Compute the minimal and maximal possible value of the sum
+	double minposssum = truevalue;
+	double maxposssum = truevalue;
+	for(unsigned int n = 0; n < grs._litweights.size(); ++n) {
+		if(grs._litweights[n] > 0) maxposssum += grs._litweights[n];
+		else if(grs._litweights[n] < 0) minposssum += grs._litweights[n];
+	}
+
+	TsType tp = _context._tseitin;	// TODO
+	switch(_comp) {
+		case '=':
+			if(minposssum > boundvalue || maxposssum < boundvalue) {
+				return _sign ? _false : _true;
+			}
+			// TODO: more complicated propagation is possible!
+			break;
+		case '<':
+			if(boundvalue < minposssum) {
+				return _sign ? _true : _false;
+			}
+			else if(boundvalue >= maxposssum) {
+				return _sign ? _false : _true;
+			}
+			// TODO: more complicated propagation is possible!
+			break;
+		case '>':
+			if(boundvalue > maxposssum) {
+				return _sign ? _true : _false;
+			}
+			else if(boundvalue <= minposssum) {
+				return _sign ? _false : _true;
+			}
+			// TODO: more complicated propagation is possible!
+			break;
+	}
+	if(_doublenegtseitin) {
+		bool newcomp;
+		switch(_comp) {
+			case '<' : newcomp = '>'; break;
+			case '>' : newcomp = '<'; break;
+			case '=' : assert(false); break;
+			default : assert(false); break;
+		}
+		int tseitin = _translator->translate(setnr,AGGSUM,newcomp,false,boundvalue+truevalue,tp);
+		return _sign ? -tseitin : tseitin;
+	}
+	else {
+		int tseitin = _translator->translate(setnr,AGGSUM,_comp,true,boundvalue+truevalue,tp);
+		return _sign ? tseitin : -tseitin;
+	}
+}
+
+/*int AggGrounder::finishProduct(double truevalue, double boundvalue, int setnr) const {
 	const GroundSet& grs = _translator->groundset(setnr);
 
 	// Compute the minimal and maximal possible value of the sum
@@ -672,7 +792,7 @@ int AggGrounder::finishSum(double truevalue, double boundvalue, int setnr) const
 	int tseitin = _translator->translate(setnr,AGGSUM,_comp,boundvalue+truevalue,tp);
 	return _sign ? tseitin : -tseitin;
 
-}
+}*/
 
 int AggGrounder::run() const {
 	int setnr = _setgrounder->run();
@@ -681,6 +801,17 @@ int AggGrounder::run() const {
 
 	double truevalue = AggUtils::compute(_type,grs._trueweights);
 	double boundvalue = ElementUtil::convert(bound->_args[0],ELDOUBLE)._double;
+
+	if(grs._setlits.empty()) {
+		bool returnvalue;
+		switch(_comp) {
+			case '<' : returnvalue = boundvalue < truevalue; break;
+			case '>' : returnvalue = boundvalue > truevalue; break;
+			case '=' : returnvalue = boundvalue == truevalue; break;
+			default: assert(false);
+		}
+		return _sign == returnvalue ? _true : _false;
+	}
 	int ts;
 	switch(_type) {
 		case AGGCARD: 
@@ -752,7 +883,21 @@ int ClauseGrounder::finish(vector<int>& cl) const {
 			if(tp == TS_IMPL) tp = TS_RIMPL;
 			else if(tp == TS_RIMPL) tp = TS_IMPL;
 		}
-		int ts = _translator->translate(cl,_conj,tp);
+		if(_doublenegtseitin) {
+			for(unsigned int n = 0; n < cl.size(); ++n) cl[n] = -cl[n];
+			int ts = _translator->translate(cl,!_conj,tp);
+#ifndef NDEBUG
+			if(_cloptions._verbose) {
+				printorig();
+				cerr << "Result = " << (_sign ? "" : "~");
+				cerr << _translator->printatom(cl[0]) << ' ';
+				for(unsigned int n = 1; n < cl.size(); ++n) cerr << (!_conj ? "& " : "| ") << _translator->printatom(cl[n]) << ' ';
+			}
+#endif
+			return _sign ? -ts : ts;
+		}
+		else {
+			int ts = _translator->translate(cl,_conj,tp);
 #ifndef NDEBUG
 			if(_cloptions._verbose) {
 				printorig();
@@ -761,7 +906,8 @@ int ClauseGrounder::finish(vector<int>& cl) const {
 				for(unsigned int n = 1; n < cl.size(); ++n) cerr << (_conj ? "& " : "| ") << _translator->printatom(cl[n]) << ' ';
 			}
 #endif
-		return _sign ? ts : -ts;
+			return _sign ? ts : -ts;
+		}
 	}
 }
 
@@ -1150,7 +1296,8 @@ bool GrounderFactory::recursive(const Formula* f) {
  */
 void GrounderFactory::InitContext() {
 	_context._truegen		= false;
-	_context._positive		= PC_POSITIVE;
+	_context._funccontext	= PC_POSITIVE;
+	_context._monotone		= PC_POSITIVE;
 	_context._component		= CC_SENTENCE;
 	_context._tseitin		= TS_IMPL;
 	_context._defined.clear();
@@ -1158,8 +1305,8 @@ void GrounderFactory::InitContext() {
 
 void GrounderFactory::AggContext() {
 	_context._truegen = false;
-	_context._positive = PC_POSITIVE;
-	_context._tseitin = TS_IMPL;
+	_context._funccontext = PC_POSITIVE;
+	_context._tseitin = (_context._tseitin == TS_RULE) ? TS_RULE : TS_EQ;
 	_context._component = CC_FORMULA;
 }
 
@@ -1197,8 +1344,10 @@ void GrounderFactory::DeeperContext(bool sign) {
 
 		_context._truegen = !_context._truegen;
 
-		if(_context._positive == PC_POSITIVE) _context._positive = PC_NEGATIVE;
-		else if(_context._positive == PC_NEGATIVE) _context._positive = PC_POSITIVE;
+		if(_context._funccontext == PC_POSITIVE) _context._funccontext = PC_NEGATIVE;
+		else if(_context._funccontext == PC_NEGATIVE) _context._funccontext = PC_POSITIVE;
+		if(_context._monotone == PC_POSITIVE) _context._monotone = PC_NEGATIVE;
+		else if(_context._monotone == PC_NEGATIVE) _context._monotone = PC_POSITIVE;
 
 		if(_context._tseitin == TS_IMPL) _context._tseitin = TS_RIMPL;
 		else if(_context._tseitin == TS_RIMPL) _context._tseitin = TS_IMPL;
@@ -1373,7 +1522,7 @@ void GrounderFactory::visit(const PredForm* pf) {
 	// to _structure outside the atom. To avoid changing the original atom, 
 	// we first clone it.
 	PredForm* newpf = pf->clone();
-	Formula* transpf = FormulaUtils::moveThreeValTerms(newpf,_structure,_context._positive != PC_NEGATIVE);
+	Formula* transpf = FormulaUtils::moveThreeValTerms(newpf,_structure,_context._funccontext != PC_NEGATIVE);
 
 	if(newpf != transpf) {	// The rewriting changed the atom
 		//delete(newpf); TODO: produces a segfault??
@@ -1559,7 +1708,8 @@ void GrounderFactory::visit(const EquivForm* ef) {
 	// Create grounders for the subformulas
 	SaveContext();
 	DeeperContext(ef->sign());
-	_context._positive = PC_BOTH;
+	_context._funccontext = PC_BOTH;
+	_context._monotone = PC_BOTH;
 	_context._tseitin = TS_EQ; 
 
 	descend(ef->left());
@@ -1577,16 +1727,34 @@ void GrounderFactory::visit(const EquivForm* ef) {
 }
 
 void GrounderFactory::visit(const AggForm* af) {
-	descend(af->left());
-	TermGrounder* boundgr = _termgrounder;
-	descend(af->right()->set());
-	SetGrounder* setgr = _setgrounder;
+	AggForm* newaf = af->clone();
+	Formula* transaf = FormulaUtils::moveThreeValTerms(newaf,_structure,_context._funccontext != PC_NEGATIVE);
 
-	SaveContext();
-	if(recursive(af)) _context._tseitin = TS_RULE;
-	_formgrounder = new AggGrounder(_grounding->translator(),_context,af->right()->type(),setgr,boundgr,af->comp(),af->sign());
-	RestoreContext();
-	if(_context._component == CC_SENTENCE) _toplevelgrounder = new SentenceGrounder(_grounding,_formgrounder,true);
+	if(newaf != transaf) {	// The rewriting changed the atom
+		//delete(newaf); TODO: produces a segfault??
+		transaf->accept(this);
+	}
+	else {	// The rewriting did not change the atom
+		// Create grounder for the bound
+		descend(af->left());
+		TermGrounder* boundgr = _termgrounder;
+	
+		// Create grounder for the set
+		SaveContext();
+		if(recursive(af)) assert(FormulaUtils::monotone(af) || FormulaUtils::antimonotone(af));
+		DeeperContext(!FormulaUtils::antimonotone(af));
+		descend(af->right()->set());
+		SetGrounder* setgr = _setgrounder;
+		RestoreContext();
+	
+		// Create aggregate grounder
+		SaveContext();
+		if(recursive(af)) _context._tseitin = TS_RULE;
+		_formgrounder = new AggGrounder(_grounding->translator(),_context,af->right()->type(),setgr,boundgr,af->comp(),af->sign());
+		RestoreContext();
+		if(_context._component == CC_SENTENCE) _toplevelgrounder = new SentenceGrounder(_grounding,_formgrounder,true);
+	}
+	transaf->recursiveDelete();
 }
 
 void GrounderFactory::visit(const EqChainForm* ef) {
@@ -1768,7 +1936,8 @@ void GrounderFactory::visit(const Rule* rule) {
 
 	// Create body grounder
 	SaveContext();
-	_context._positive = PC_NEGATIVE;		// minimize truth value of rule bodies
+	_context._funccontext = PC_NEGATIVE;		// minimize truth value of rule bodies
+	_context._monotone = PC_POSITIVE;
 	_context._truegen = true;				// body instance generator corresponds to an existential quantifier
 	_context._component = CC_FORMULA;
 	_context._tseitin = TS_EQ;

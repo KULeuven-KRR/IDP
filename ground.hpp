@@ -83,13 +83,13 @@ class GroundTranslator  {
 	public:
 		GroundTranslator() : _backsymbtable(1), _backargstable(1), _sets(1) { }
 
-		int								translate(unsigned int,const vector<domelement>&);
-		int								translate(const vector<int>& cl, bool conj, TsType tp);
-		int								translate(int setnr, AggType aggtype, char comp, double bound, TsType tstype);
-		int								translate(PFSymbol*,const vector<TypedElement>&);
-		int								translateSet(const vector<int>&,const vector<double>&,const vector<double>&);
-		int								nextNumber();
-		unsigned int					addSymbol(PFSymbol* pfs);
+		int				translate(unsigned int,const vector<domelement>&);
+		int				translate(const vector<int>& cl, bool conj, TsType tp);
+		int				translate(int setnr, AggType aggtype, char comp, bool strict, double bound, TsType tstype);
+		int				translate(PFSymbol*,const vector<TypedElement>&);
+		int				translateSet(const vector<int>&,const vector<double>&,const vector<double>&);
+		int				nextNumber();
+		unsigned int	addSymbol(PFSymbol* pfs);
 
 		PFSymbol*							symbol(int nr)				const	{ return _backsymbtable[abs(nr)];		}
 		const vector<domelement>&			args(int nr)				const	{ return _backargstable[abs(nr)];		}
@@ -165,13 +165,13 @@ enum CompContext { CC_SENTENCE, CC_HEAD, CC_FORMULA };
 enum PosContext { PC_POSITIVE, PC_NEGATIVE, PC_BOTH };
 
 struct GroundingContext {
-	bool			_truegen;	// Indicates whether the variables are instantiated in order to obtain
-								// a ground formula that is possibly true.
-	PosContext		_positive;	// Indicates whether the visited part of the theory occurs in the scope
-								// of an even number of negations.
-	CompContext		_component;	// Indicates the context of the visited formula
-	TsType			_tseitin;	// Indicates the type of tseitin definition that needs to be used.
-	set<PFSymbol*>	_defined;	// Indicates whether the visited rule is recursive.
+	bool			_truegen;		// Indicates whether the variables are instantiated in order to obtain
+									// a ground formula that is possibly true.
+	PosContext		_funccontext;	
+	PosContext		_monotone;
+	CompContext		_component;		// Indicates the context of the visited formula
+	TsType			_tseitin;		// Indicates the type of tseitin definition that needs to be used.
+	set<PFSymbol*>	_defined;		// Indicates whether the visited rule is recursive.
 };
 
 
@@ -331,9 +331,12 @@ class AggGrounder : public FormulaGrounder {
 		AggType			_type;
 		char			_comp;
 		bool			_sign;
+		bool			_doublenegtseitin;
 	public:
 		AggGrounder(GroundTranslator* tr, GroundingContext gc, AggType tp, SetGrounder* sg, TermGrounder* bg, char c,bool s) :
-			FormulaGrounder(tr,gc), _setgrounder(sg), _boundgrounder(bg), _type(tp), _comp(c), _sign(s) { }
+			FormulaGrounder(tr,gc), _setgrounder(sg), _boundgrounder(bg), _type(tp), _comp(c), _sign(s) { 
+				_doublenegtseitin = gc._tseitin == TS_RULE && ((gc._monotone == PC_POSITIVE && !s) || (gc._monotone == PC_NEGATIVE && s));	
+			}
 		int		run()				const;
 		void	run(vector<int>&)	const;
 		int		finishCard(double,double,int)	const;
@@ -343,17 +346,20 @@ class AggGrounder : public FormulaGrounder {
 
 class ClauseGrounder : public FormulaGrounder {
 	protected:
-		bool				_sign;
-		bool				_conj;
+		bool	_sign;
+		bool	_conj;
+		bool	_doublenegtseitin;
 	public:
 		ClauseGrounder(GroundTranslator* gt, bool sign, bool conj, const GroundingContext& ct) : 
-			FormulaGrounder(gt,ct), _sign(sign), _conj(conj) { }
+			FormulaGrounder(gt,ct), _sign(sign), _conj(conj) { 
+				_doublenegtseitin = ct._tseitin == TS_RULE && ((ct._monotone == PC_POSITIVE && !sign) || (ct._monotone == PC_NEGATIVE && sign));	
+			}
 		int		finish(vector<int>&) const;
 		bool	check1(int l) const;
 		bool	check2(int l) const;
 		int		result1() const;
 		int		result2() const;
-		bool	conjunctive() const { return _conj;	}
+		bool	conjunctive() const { return _conj == _sign;	}
 };
 
 class BoolGrounder : public ClauseGrounder {
