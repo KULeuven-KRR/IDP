@@ -227,7 +227,6 @@ struct GroundDefinition {
 	GroundDefinition(GroundTranslator* tr) : _translator(tr) { }
 	void addTrueRule(int head);
 	void addRule(int head, const vector<int>& body, bool conj, bool recursive);
-	void addAgg(const EcnfAgg& , GroundTranslator* ) { /* TODO */ }
 	string to_string() const;
 };
 
@@ -277,7 +276,7 @@ class GroundTheory : public AbstractTheory {
 				void addEmptyClause()		{ EcnfClause c(0); addClause(c);	}
 				void addUnitClause(int l)	{ EcnfClause c(1,l); addClause(c);	}
 		virtual void addDefinition(GroundDefinition&) = 0;
-		virtual	void addAgg(int head, AggTsBody& body) = 0;
+		virtual	void addAggregate(int head, AggTsBody& body) = 0;
 		virtual void addSet(int setnr, bool weighted) = 0;
 		virtual void addFuncConstraints() = 0;
 		virtual void addFalseDefineds() = 0;
@@ -308,24 +307,24 @@ class EcnfTheory : public GroundTheory {
 
 		// Mutators
 		void addClause(EcnfClause& cl, bool firstIsPrinted = false);
-/*		void addDefinition(const EcnfDefinition& d)	{ _definitions.push_back(d); 
+/*		void addDefinition(const EcnfDefinition& d)	{ _definitions.push_back(d);
 													  _features._containsDefinitions = true;	
 													  _features._containsAggregates = 
-														_features._containsAggregates || d.containsAgg();				}*/
+														_features._containsAggregates || d.containsAgg();				}*/ //TODO: remove this method?
 		void addDefinition(GroundDefinition& d)		{ transformForAdd(d);
 													  _definitions.push_back(d); }
-		void addFixpDef(const EcnfFixpDef& d)		{ _fixpdefs.push_back(d); 
+/*		void addFixpDef(const EcnfFixpDef& d)		{ _fixpdefs.push_back(d);
 													  _features._containsFixpDefs = true;		
 													  _features._containsAggregates = 
-														_features._containsAggregates || d.containsAgg();				} 
-		void addAgg(const EcnfAgg& a)				{ _aggregates.push_back(a); _features._containsAggregates = true;	}
-		void addAgg(int head, AggTsBody& body);
+														_features._containsAggregates || d.containsAgg();				} */ //TODO: remove this method?
+/*		void addAggregate(const EcnfAgg& a)			{ _aggregates.push_back(a); _features._containsAggregates = true;	} */ //TODO: remove this method?
+		void addAggregate(int head, AggTsBody& body);
 
 		void addSet(int setnr, const vector<int>& lits, const vector<double>& weights)
 													{ _sets.push_back(EcnfSet(setnr,lits,weights));	}
 		void addSet(int setnr, bool weighted);
-		void	addFuncConstraints()				{	/* TODO??  */	}
-		void	addFalseDefineds()					{	/* TODO??	*/	}
+		void addFuncConstraints()					{	/* TODO??  */	}
+		void addFalseDefineds()						{	/* TODO??	*/	}
 
 		// Inspectors
 		unsigned int		nrSentences()				const { return _clauses.size() + _aggregates.size();	}
@@ -364,7 +363,7 @@ class SolverTheory : public GroundTheory {
 		// Mutators
 		void	addClause(EcnfClause& cl, bool firstIsPrinted = false);
 		void	addDefinition(GroundDefinition&);
-		void	addAgg(int head, AggTsBody& body);
+		void	addAggregate(int head, AggTsBody& body);
 		void	addSet(int setnr, bool weighted);
 		void	addFuncConstraints();
 		void	addFalseDefineds();

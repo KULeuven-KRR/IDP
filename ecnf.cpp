@@ -548,7 +548,7 @@ void GroundTheory::transformForAdd(EcnfClause& vi, bool firstIsPrinted) {
 			else {	// body of the tseitin is an aggregate expression
 				AggTsBody& body = dynamic_cast<AggTsBody&>(*tsbody);
 				if(body._type != TS_RULE) {
-					addAgg(atom,body);
+					addAggregate(atom,body);
 				}
 				else {
 					assert(false); // TODO
@@ -605,10 +605,18 @@ void GroundTheory::transformForAdd(GroundRuleBody& grb, vector<int>& heads, vect
 					transformForAdd(rb,heads,bodies);
 				}
 			}
-			else {	// tseitin body is an aggregate expression
+			else if(typeid(*tsbody) == typeid(AggTsBody)) {	// tseitin body is an aggregate expression
 				AggTsBody& body = dynamic_cast<AggTsBody&>(*tsbody);
-				addAgg(atom,body);	// TODO: dit loopt mis???
+				if(body._type != TS_RULE) {
+					// Then it is part of a definition
+					addAggregate(atom,body);
+				}
+				else {
+					// Then what?
+					assert(false); // TODO
+				}
 			}
+			else assert(false);
 		}	
 	}
 }
@@ -642,7 +650,7 @@ void EcnfTheory::addSet(int setnr, bool) {
 	}
 }
 
-void EcnfTheory::addAgg(int head, AggTsBody& body) {
+void EcnfTheory::addAggregate(int head, AggTsBody& body) {
 	addSet(body._setnr,body._aggtype != AGGCARD);
 	EcnfAgg agg;
 	agg._type = body._aggtype;
@@ -651,7 +659,7 @@ void EcnfTheory::addAgg(int head, AggTsBody& body) {
 	agg._head = head;
 	agg._set = body._setnr;
 	agg._bound = body._bound;
-	addAgg(agg);
+	addAggregate(agg);
 }
 
 void GroundDefinition::addTrueRule(int head) {
@@ -727,6 +735,8 @@ void GroundDefinition::addRule(int head, const vector<int>& body, bool conj, boo
 				}
 				if(recursive) grb._recursive = true;
 				break;
+			case RT_AGG:
+				assert(false); //TODO? Waarom komen we hier niet terecht? TODO
 			default:
 				assert(false);
 		}
@@ -1085,7 +1095,7 @@ void SolverTheory::addSet(int setnr,bool weighted) {
 	}
 }
 
-void SolverTheory::addAgg(int head, AggTsBody& body) {
+void SolverTheory::addAggregate(int head, AggTsBody& body) {
 	addSet(body._setnr,body._aggtype != AGGCARD);
 	MinisatID::AggSign sg = body._lower ? AGGSIGN_LB : AGGSIGN_UB;
 	MinisatID::AggType tp;
