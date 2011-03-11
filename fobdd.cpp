@@ -68,7 +68,7 @@ FOBDDQuantKernel* FOBDDManager::getQuantKernel(Sort* sort,FOBDD* bdd) {
 	// TODO: simplification
 
 	// Lookup
-	QuantGrounder::const_iterator it = _quantkerneltable.find(sort);
+	QuantKernelTable::const_iterator it = _quantkerneltable.find(sort);
 	if(it != _quantkerneltable.end()) {
 		MBDDQK::const_iterator jt = it->second.find(bdd);
 		if(jt != it->second.end()) {
@@ -112,7 +112,6 @@ FOBDDDeBruijnIndex* FOBDDManager::getDeBruijnIndex(Sort* sort, unsigned int inde
 			return jt->second;
 		}
 	}
-
 	// Lookup failed, create a new De Bruijn index
 	return addDeBruijnIndex(sort,index);
 }
@@ -121,4 +120,23 @@ FOBDDDeBruijnIndex* FOBDDManager::addDeBruijnIndex(Sort* sort, unsigned int inde
 	FOBDDDeBruijnIndex* newindex = new FOBDDDeBruijnIndex(sort,index);
 	_debruijntable[sort][index] = newindex;
 	return newindex;
+}
+
+FOBDDFuncTerm* FOBDDManager::getFuncTerm(Function* func, const vector<FOBDDArgument*>& args) {
+	// Lookup
+	FuncTermTable::const_iterator it = _functermtable.find(sort);
+	if(it != _functermtable.end()) {
+		MVAFT::const_iterator jt = it->second.find(args);
+		if(jt != it->second.end()) {
+			return jt->second;
+		}
+	}
+	// Lookup failed, create a new funcion term
+	return addFuncTerm(func,args);
+}
+
+FOBDDFuncTerm* FOBDDManager::addFuncTerm(Function* func, const vector<FOBDDArgument*>& args) {
+	FOBDDFuncTerm* newarg = new FOBDDFuncTerm(func,args);
+	_functermtable[func][args] = newarg;
+	return newarg;
 }
