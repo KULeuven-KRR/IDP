@@ -33,14 +33,11 @@ namespace BuiltinProcs {
 		_inferences["remove_equivalences"].push_back(new RemoveEquivalences());
 		_inferences["remove_eqchains"].push_back(new RemoveEqchains());
 		_inferences["flatten"].push_back(new FlattenFormulas());
-		_inferences["ground"].push_back(new GroundingWithResult());
 		_inferences["convert_to_theory"].push_back(new StructToTheory());
 		_inferences["move_quantifiers"].push_back(new MoveQuantifiers());
 		_inferences["tseitin"].push_back(new ApplyTseitin());
 		_inferences["reduce"].push_back(new GroundReduce());
 		_inferences["move_functions"].push_back(new MoveFunctions());
-		_inferences["naivemx"].push_back(new ModelExpansionInference(false));
-		_inferences["naivemx"].push_back(new ModelExpansionInference(true));
 		_inferences["load_file"].push_back(new LoadFile());
 		_inferences["clone"].push_back(new CloneStructure());
 		_inferences["clone"].push_back(new CloneTheory());
@@ -566,141 +563,6 @@ InfArg RemoveEqchains::execute(const vector<InfArg>& args) const {
 	return a;
 }
 
-GroundingInference::GroundingInference() { 
-	_intypes = vector<InfArgType>(2);
-	_intypes[0] = IAT_THEORY; 
-	_intypes[1] = IAT_STRUCTURE;
-	_outtype = IAT_VOID;	
-	_description = "Ground the theory and structure and print the grounding";
-	_reload = false;
-}
-
-InfArg GroundingInference::execute(const vector<InfArg>& args) const {
-	assert(args.size() == 2);
-	AbstractTheory* t = args[0]._theory;
-	AbstractStructure* s = args[1]._structure;
-	TheoryUtils::move_functions(t);
-	NaiveGrounder ng(s);	
-	AbstractTheory* gr = ng.ground(t);
-	TheoryUtils::remove_eqchains(gr);
-	TheoryUtils::reduce(gr,s);
-	TheoryUtils::tseitin(gr);
-	EcnfTheory* ecnfgr = TheoryUtils::convert_to_ecnf(gr);
-	GroundPrinter* printer = new outputECNF(stdout);
-	ecnfgr->print(printer);
-	gr->recursiveDelete();
-	delete(ecnfgr);
-	delete(printer);
-	InfArg a;
-	return a;
-}
-
-GroundingWithResult::GroundingWithResult() { 
-	_intypes = vector<InfArgType>(2);
-	_intypes[0] = IAT_THEORY; 
-	_intypes[1] = IAT_STRUCTURE;
-	_outtype = IAT_THEORY;	
-	_description = "Ground the theory and structure and store the grounding";
-	_reload = false;
-}
-
-InfArg GroundingWithResult::execute(const vector<InfArg>& args) const {
-	assert(args.size() == 2);
-	NaiveGrounder ng(args[1]._structure);
-	AbstractTheory* gr = ng.ground(args[0]._theory);
-	InfArg a; a._theory = gr;
-	return a;
-}
-
-ModelExpansionInference::ModelExpansionInference(bool opts) {
-	_intypes = vector<InfArgType>(2);
-	_intypes[0] = IAT_THEORY;
-	_intypes[1] = IAT_STRUCTURE;
-	if(opts) _intypes.push_back(IAT_OPTIONS);
-	_outtype = IAT_SET_OF_STRUCTURES;
-	_description = "Performs model expansion on the structure given the theory it should satisfy.";
-	_reload = false;
-}
-
-InfArg ModelExpansionInference::execute(const vector<InfArg>& args) const {
-	AbstractTheory* t = args[0]._theory;
-	AbstractStructure* s = args[1]._structure;
-	InfOptions* opts = Namespace::global()->option("DefaultOptions");
-	if(args.size() == 3) opts = args[2]._options;
-	TheoryUtils::move_functions(t);
-	NaiveGrounder ng(s);	
-	AbstractTheory* gr = ng.ground(t);
-	TheoryUtils::remove_eqchains(gr);
-	TheoryUtils::reduce(gr,s);
-	TheoryUtils::tseitin(gr);
-	EcnfTheory* ecnfgr = TheoryUtils::convert_to_ecnf(gr);
-	MinisatID::SolverOption modes;
-	modes.nbmodels = opts->_nrmodels;
-	modes.verbosity = 0;
-	modes.remap = false;
-	SATSolver* solver = new SATSolver(modes);
-	GroundPrinter* printer = new outputToSolver(solver);
-	ecnfgr->print(printer);
-	gr->recursiveDelete();
-	vector<vector<MinisatID::Literal> > models;
-	InfArg a; a._setofstructures = new vector<AbstractStructure*>();
-	MinisatID::ModelExpandOptions options;
-	options.nbmodelstofind = modes.nbmodels;
-	options.printmodels = MinisatID::PRINT_NONE;
-	options.savemodels = MinisatID::SAVE_ALL;
-	options.search = MinisatID::MODELEXPAND;
-	MinisatID::Solution* sol = new MinisatID::Solution(options);
-	bool sat = solver->solve(sol);
-
-	if(sat){
-		for(unsigned int i=0; i<sol->getModels().size(); i++){
-			AbstractStructure* mod = s->clone();
-			set<PredInter*>	tobesorted1;
-			set<FuncInter*>	tobesorted2;
-			for(unsigned int j=0; j<sol->getModels()[i].size(); j++) {
-				if(opts->_modelformat != MF_TWOVAL || !sol->getModels()[i][j].hasSign()) {
-					PFSymbol* pfs = ecnfgr->translator()->symbol((sol->getModels()[i][j].getAtom().getValue()));
-					if(pfs && mod->vocabulary()->contains(pfs)) {
-						vector<domelement> vd = ecnfgr->translator()->args(sol->getModels()[i][j].getAtom().getValue());
-						vector<TypedElement> args = ElementUtil::convert(vd);
-						if(pfs->ispred()) {
-							mod->inter(pfs)->add(args,!(sol->getModels()[i][j].hasSign()),true);
-							tobesorted1.insert(mod->inter(pfs));
-						}
-						else {
-							Function* f = dynamic_cast<Function*>(pfs);
-							mod->inter(f)->add(args,!(sol->getModels()[i][j].hasSign()),true);
-							tobesorted2.insert(mod->inter(f));
-						}
-					}
-				}
-			}
-			for(set<PredInter*>::const_iterator it=tobesorted1.begin(); it != tobesorted1.end(); ++it)
-				(*it)->sortunique();
-			for(set<FuncInter*>::const_iterator it=tobesorted2.begin(); it != tobesorted2.end(); ++it)
-				(*it)->sortunique();
-
-			// TODO: defined predicates should always be forced two-valued if their definition was grounded completely.
-
-			if(opts->_modelformat == MF_TWOVAL) {
-				mod->forcetwovalued();
-				a._setofstructures->push_back(mod);
-			}
-			else if(opts->_modelformat == MF_ALL) {
-				// TODO
-				a._setofstructures->push_back(mod);
-			}
-			else {
-				a._setofstructures->push_back(mod);
-			}
-		}
-	}
-	delete(solver);
-	delete(ecnfgr);
-	delete(printer);
-	return a;
-}
-
 FastMXInference::FastMXInference(bool opts) {
 	_intypes = vector<InfArgType>(2);
 	_intypes[0] = IAT_THEORY;
@@ -712,6 +574,7 @@ FastMXInference::FastMXInference(bool opts) {
 }
 
 InfArg FastMXInference::execute(const vector<InfArg>& args) const {
+
 	// Convert arguments
 	AbstractTheory* theory = args[0]._theory;
 	AbstractStructure* structure = args[1]._structure;
@@ -731,11 +594,12 @@ InfArg FastMXInference::execute(const vector<InfArg>& args) const {
 
 	// Ground
 	grounder->run();
-	GroundTheory* ecnfgr = grounder->grounding();
+	assert(typeid(*(grounder->grounding())) == typeid(SolverTheory));
+	SolverTheory* grounding = dynamic_cast<SolverTheory*>(grounder->grounding());
 
 	// Add function constraints
-	ecnfgr->addFuncConstraints();
-	ecnfgr->addFalseDefineds();
+	grounding->addFuncConstraints();
+	grounding->addFalseDefineds();
 
 	// Solve
 	vector<MinisatID::Literal> assumpts;
@@ -755,9 +619,9 @@ InfArg FastMXInference::execute(const vector<InfArg>& args) const {
 			set<PredInter*>	tobesorted1;
 			set<FuncInter*>	tobesorted2;
 			for(unsigned int j=0; j<sol->getModels()[i].size(); j++) {
-				PFSymbol* pfs = ecnfgr->translator()->symbol((sol->getModels()[i][j].getAtom().getValue()));
+				PFSymbol* pfs = grounding->translator()->symbol((sol->getModels()[i][j].getAtom().getValue()));
 				if(pfs && mod->vocabulary()->contains(pfs)) {
-					vector<domelement> vd = ecnfgr->translator()->args(sol->getModels()[i][j].getAtom().getValue());
+					vector<domelement> vd = grounding->translator()->args(sol->getModels()[i][j].getAtom().getValue());
 					vector<TypedElement> args = ElementUtil::convert(vd);
 					if(pfs->ispred()) {
 						mod->inter(pfs)->add(args,!(sol->getModels()[i][j].hasSign()),true);

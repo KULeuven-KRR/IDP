@@ -8,164 +8,147 @@
 #include <iostream>
 #include <sstream>
 
-using namespace MinisatID;
-
 /*************************
 	Ground definitions
 *************************/
 
 void GroundDefinition::addTrueRule(int head) {
-	//FIXME: Probably have to be more careful and check (it->second)._type for RT_AGG and act appropriately!!
-	PCGroundRuleBody& grb(RT_TRUE,vector<int>(0));
-	_rules[head] = grb;
-//	GroundRuleBody& grb = _rules[head];
-//	grb._type = RT_TRUE;
-//	grb._body = vector<int>(0);
+	addPCRule(head,vector<int>(0),true,false);
 }
 
-void GroundDefinition::addRule(int head, const vector<int>& body, bool conj, bool recursive) {
-	map<int,GroundRuleBody>::iterator it = _rules.find(head);
-	//FIXME: Probably have to be more careful and check (it->second)._type for RT_AGG and act appropriately!!
-	if(it == _rules.end() || (it->second)._type == RT_FALSE) {
-		PCGroundRuleBody& grb = (it == _rules.end() ? _rules[head] : it->second);
-		if(body.empty()) grb._type = (conj ? RT_TRUE : RT_FALSE);
-		else if(body.size() == 1) grb._type = RT_UNARY;
-		else grb._type = (conj ? RT_CONJ : RT_DISJ);
-		grb._body = body;
+void GroundDefinition::addFalseRule(int head) {
+	addPCRule(head,vector<int>(0),false,false);
+}
+
+void GroundDefinition::addPCRule(int head, const vector<int>& body, bool conj, bool recursive) {
+	// Search for a rule with the same head
+	map<int,GroundRuleBody*>::iterator it = _rules.find(head);
+
+	if(it == _rules.end()) {	// There is not yet a rule with the same head
+		_rules[head] = new PCGroundRuleBody((conj ? RT_CONJ : RT_DISJ), body, recursive);
 	}
-	else if(body.empty()) {
+	else if((it->second)->isFalse()) { // The existing rule is false
+		PCGroundRuleBody* grb = dynamic_cast<PCGroundRuleBody*>(it->second);
+		grb->_type = (conj ? RT_CONJ : RT_DISJ);
+		grb->_body = body;
+		grb->_recursive = recursive;
+	}
+	else if(body.empty()) {	// We are adding a rule with a true or false body
 		if(conj) {
-			PCGroundRuleBody& newgrb(RT_TRUE,body);
-			_rules[head] = newgrb;
+			delete(it->second);
+			it->second = new PCGroundRuleBody(RT_CONJ,body,false);
 		}
 	}
-	else {
-		switch(it->second._type) {
-			case RT_TRUE: break;
-			case RT_FALSE: assert(false); break;
-			case RT_UNARY:
-				PCGroundRuleBody& grb = it->second;
-				if(body.size() == 1) {
-					grb._type = RT_DISJ;
-					grb._body.push_back(body[0]);
-				}
-				else if(!conj) {
-					grb._type = RT_DISJ;
-					int temp = grb._body[0];
-					grb._body = body;
-					grb._body.push_back(temp);
-				}
-				else {
-					int ts = _translator->translate(body,conj,(recursive ? TS_RULE : TS_EQ));
-					grb._type = RT_DISJ;
-					grb._body.push_back(ts);
-				}
-				if(recursive) grb._recursive = true;
-				break;
+	else if(!(it->second)->isTrue()) {	// There is a rule with the same head, and it is not true or false
+		switch(it->second->_type) {
 			case RT_DISJ:
-				PCGroundRuleBody& grb = it->second;
+			{
+				PCGroundRuleBody* grb = dynamic_cast<PCGroundRuleBody*>(it->second);
 				if((!conj) || body.size() == 1) {
-					for(unsigned int n = 0; n < body.size(); ++n) 
-						grb._body.push_back(body[n]);
+					for(unsigned int n = 0; n < body.size(); ++n) grb->_body.push_back(body[n]);
+				}
+				else if(grb->_body.size() == 1) {
+					grb->_type = RT_CONJ;
+					for(unsigned int n = 0; n < body.size(); ++n) grb->_body.push_back(body[n]);
 				}
 				else {
 					int ts = _translator->translate(body,conj,(recursive ? TS_RULE : TS_EQ));
-					grb._body.push_back(ts);
+					grb->_body.push_back(ts);
 				}
-				if(recursive) grb._recursive = true;
+				grb->_recursive = grb->_recursive || recursive;
 				break;
+			}
 			case RT_CONJ:
-				PCGroundRuleBody& grb = it->second;
+			{
+				PCGroundRuleBody* grb = dynamic_cast<PCGroundRuleBody*>(it->second);
+				if(grb->_body.size() == 1) {
+					grb->_type = conj ? RT_CONJ : RT_DISJ;
+					for(unsigned int n = 0; n < body.size(); ++n) grb->_body.push_back(body[n]);
+				}
 				if((!conj) || body.size() == 1) {
-					int ts = _translator->translate(grb._body,true,(grb._recursive ? TS_RULE : TS_EQ));
-					grb._type = RT_DISJ;
-					grb._body = body;
-					grb._body.push_back(ts);
+					int ts = _translator->translate(grb->_body,true,(grb->_recursive ? TS_RULE : TS_EQ));
+					grb->_type = RT_DISJ;
+					grb->_body = body;
+					grb->_body.push_back(ts);
 				}
 				else {
-					int ts1 = _translator->translate(grb._body,true,(grb._recursive ? TS_RULE : TS_EQ));
+					int ts1 = _translator->translate(grb->_body,true,(grb->_recursive ? TS_RULE : TS_EQ));
 					int ts2 = _translator->translate(body,conj,(recursive ? TS_RULE : TS_EQ));
-					grb._type = RT_DISJ;
-					vector<int> vi(2) ; vi[0] = ts1; vi[1] = ts2;
-					grb._body = vi;
+					grb->_type = RT_DISJ;
+					vector<int> vi(2); vi[0] = ts1; vi[1] = ts2;
+					grb->_body = vi;
 				}
-				if(recursive) grb._recursive = true;
+				grb->_recursive = grb->_recursive || recursive;
 				break;
+			}
 			case RT_AGG:
-				AggGroundRuleBody& grb = it->second;
+			{
+				AggGroundRuleBody* grb = dynamic_cast<AggGroundRuleBody*>(it->second);
 				if((!conj) || body.size() == 1) {
-					int ts = _translator->translate(grb._body,true,(grb._recursive ? TS_RULE : TS_EQ));
-					PCGroundRuleBody& pcgrb(RT_DISJ,body);
-					pcgrb._body.push_back(ts);
-					_rules[head] = pcgrb;
+					int ts = _translator->translate(grb->_bound,(grb->_lower ? '<' : '>'),false,grb->_setnr,grb->_aggtype,grb->_recursive ? TS_RULE : TS_EQ);
+					PCGroundRuleBody* newgrb = new PCGroundRuleBody(RT_DISJ,body,recursive || grb->_recursive);
+					newgrb->_body.push_back(ts);
+					delete(grb);
+					it->second = newgrb;
 				}
 				else {
-					int ts1 = _translator->translate(grb._body,true,(grb._recursive ? TS_RULE : TS_EQ));
+					int ts1 = _translator->translate(grb->_bound,(grb->_lower ? '<' : '>'),false,grb->_setnr,grb->_aggtype,grb->_recursive ? TS_RULE : TS_EQ);
 					int ts2 = _translator->translate(body,conj,(recursive ? TS_RULE : TS_EQ));
-					vector<int> vi(2) ; vi[0] = ts1; vi[1] = ts2;
-					PCGroundRuleBody& pcgrb(RT_DISJ,body);
-					pcgrb._body = vi;
-					_rules[head] = pcgrb;
+					vector<int> vi(2); vi[0] = ts1; vi[1] = ts2;
+					it->second = new PCGroundRuleBody(RT_DISJ,vi,recursive || grb->_recursive);
+					delete(grb);
 				}
-				if(recursive) grb._recursive = true;
 				break;
+			}
 			default:
 				assert(false);
 		}
 	}
 }
 
-void GroundDefinition::addAgg(int head, int setnr, AggType aggtype, bool lower, double bound, bool recursive) {
-	map<int,GroundRuleBody>::iterator it = _rules.find(head);
-	if(it == _rules.end() || (it->second)._type == RT_FALSE) {
-		AggGroundRuleBody& agggrb(setnr,aggtype,lower,bound);
-		_rules[head] = agggbr;
+void GroundDefinition::addAggRule(int head, int setnr, AggType aggtype, bool lower, double bound, bool recursive) {
+	// Check if there exists a rule with the same head
+	map<int,GroundRuleBody*>::iterator it = _rules.find(head);
+
+	if(it == _rules.end()) {
+		_rules[head] = new AggGroundRuleBody(setnr,aggtype,lower,bound,recursive);
 	}
-	else {
-		GroundRuleBody& grb = it->second;
-		switch(grb.type) {
-			case RT_TRUE: break;
-			case RT_FALSE: assert(false); break;
-			case RT_UNARY: {
-				PCGroundRuleBody& pcgrb = dynamic_cast<PCGroundRuleBody&>(grb);
-				int ts = _translator->translate(bound,(lower ? '<' : '>'),false,setnr,aggtype,(recursive ? TS_RULE : TS_EQ));
-				pcgrb._type = RT_DISJ;
-				pcgrb._body.push_back(ts);
-//				AggGroundRuleBody& agggrb(setnr,aggtype,lower,bound);
-//				_rules[ts] = aggrb;
-				break;
-			}
+	else if((it->second)->isFalse()) {
+		delete(it->second);
+		it->second = new AggGroundRuleBody(setnr,aggtype,lower,bound,recursive);
+	}
+	else if(!(it->second->isTrue())) {
+		switch(it->second->_type) {
 			case RT_DISJ: {
-				PCGroundRuleBody& pcgrb = dynamic_cast<PCGroundRuleBody&>(grb);
+				PCGroundRuleBody* grb = dynamic_cast<PCGroundRuleBody*>(it->second);
 				int ts = _translator->translate(bound,(lower ? '<' : '>'),false,setnr,aggtype,(recursive ? TS_RULE : TS_EQ));
-				pcgrb._body.push_back(ts);
-//				AggGroundRuleBody& agggrb(setnr,aggtype,lower,bound);
-//				_rules[ts] = aggrb;
+				grb->_body.push_back(ts);
+				grb->_recursive = grb->_recursive || recursive;
 				break;
 			}
 			case RT_CONJ: {
-				PCGroundRuleBody& pcgrb = dynamic_cast<PCGroundRuleBody&>(grb);
-				int ts1 = _translator->translate(pcgrb._body,true,(grb._recursive ? TS_RULE : TS_EQ));
+				PCGroundRuleBody* grb = dynamic_cast<PCGroundRuleBody*>(it->second);
 				int ts2 = _translator->translate(bound,(lower ? '<' : '>'),false,setnr,aggtype,(recursive ? TS_RULE : TS_EQ));
-//				PCGroundRuleBody& newpcgrb(pcgrb);
-//				_rules[ts1] = newpcgrb;
-//				AggGroundRuleBody& agggrb(setnr,aggtype,lower,bound);
-//				_rules[ts2] = aggrb;
-				vector<int> vi(2); vi[0] = ts1; vi[1] = ts2;
-				pcgrb._type = RT_DISJ;
-				pcgrb._body = vi;
+				if(grb->_body.size() == 1) {
+					grb->_type = RT_DISJ;
+					grb->_body.push_back(ts2);
+				}
+				else {
+					int ts1 = _translator->translate(grb->_body,true,(grb->_recursive ? TS_RULE : TS_EQ));
+					vector<int> vi(2); vi[0] = ts1; vi[1] = ts2;
+					grb->_type = RT_DISJ;
+					grb->_body = vi;
+				}
+				grb->_recursive = grb->_recursive || recursive;
 				break;
 			}
 			case RT_AGG: {
-				AggGroundRuleBody& agggrb = dynamic_cast<AggGroundRuleBody&>(grb);
-				int ts1 = _translator->translate(agggrb._body,true,(grb._recursive ? TS_RULE : TS_EQ));
+				AggGroundRuleBody* grb = dynamic_cast<AggGroundRuleBody*>(it->second);
+				int ts1 = _translator->translate(grb->_bound,(grb->_lower ? '<' : '>'),false,grb->_setnr,grb->_aggtype,(grb->_recursive ? TS_RULE : TS_EQ));
 				int ts2 = _translator->translate(bound,(lower ? '<' : '>'),false,setnr,aggtype,(recursive ? TS_RULE : TS_EQ));
-//				_rules[ts1] = agggrb;
-//				AggGroundRuleBody& newagggrb(setnr,aggtype,lower,bound);
-//				_rules[ts2] = newaggrb;
 				vector<int> vi(2); vi[0] = ts1; vi[1] = ts2;
-				PCGroundRuleBody& newpcgrb(RT_DISJ,vi);
-				_rules[head] = newpcgrb;
+				it->second = new PCGroundRuleBody(RT_DISJ,vi,recursive || grb->_recursive);
+				delete(grb);
 				break;
 			}
 		}
@@ -175,36 +158,37 @@ void GroundDefinition::addAgg(int head, int setnr, AggType aggtype, bool lower, 
 string GroundDefinition::to_string() const {
 	stringstream s;
 	s << "{\n";
-	for(map<int,GroundRuleBody>::const_iterator it = _rules.begin(); it != _rules.end(); ++it) {
+	for(map<int,GroundRuleBody*>::const_iterator it = _rules.begin(); it != _rules.end(); ++it) {
 		s << _translator->printatom(it->first) << " <- ";
-		const GroundRuleBody& body = it->second;
-		if(body._type == RT_TRUE) s << "true. ";
-		else if(body._type == RT_FALSE) s << "false. ";
-		else if(body._type == RT_AGG) {
-			// TODO
-			assert(false);
+		const GroundRuleBody* body = it->second;
+		if(body->_type == RT_AGG) {
+			const AggGroundRuleBody* grb = dynamic_cast<const AggGroundRuleBody*>(body);
+			s << grb->_bound << (grb->_lower ? " =< " : " >= ");
+			switch(grb->_aggtype) {
+				case AGGCARD: s << "#"; break;
+				case AGGSUM: s << "sum"; break;
+				case AGGPROD: s << "prod"; break;
+				case AGGMIN: s << "min"; break;
+				case AGGMAX: s << "max"; break;
+			}
+			s << grb->_setnr << ".\n";
 		}
 		else {
-			char c = body._type == RT_CONJ ? '&' : '|';
-			if(!body._body.empty()) {
-				if(body._body[0] < 0) s << '~';
-				s << _translator->printatom(body._body[0]);
-				for(unsigned int n = 1; n < body._body.size(); ++n) {
+			const PCGroundRuleBody* grb = dynamic_cast<const PCGroundRuleBody*>(body);
+			char c = grb->_type == RT_CONJ ? '&' : '|';
+			if(!grb->_body.empty()) {
+				if(grb->_body[0] < 0) s << '~';
+				s << _translator->printatom(grb->_body[0]);
+				for(unsigned int n = 1; n < grb->_body.size(); ++n) {
 					s << ' ' << c << ' ';
-					if(body._body[n] < 0) s << '~';
-					s << _translator->printatom(body._body[n]);
+					if(grb->_body[n] < 0) s << '~';
+					s << _translator->printatom(grb->_body[n]);
 				}
 			}
-			s << ". ";
+			else if(grb->_type == RT_CONJ) s << "true";
+			else s << "false";
+			s << ".\n";
 		}
-		s << "// ";
-		if(body._type == RT_TRUE || body._type == RT_CONJ || body._type == RT_UNARY) s << "C ";
-		else if(body._type == RT_FALSE || body._type == RT_DISJ) s << "D "; 
-		else /* TODO */ assert(false);
-		s << it->first << ' ';
-		for(unsigned int n = 0; n < body._body.size(); ++n) 
-			s << body._body[n] << ' ';
-		s << "0\n";
 	}
 	s << "}\n";
 	return s.str();
@@ -229,7 +213,7 @@ const int _nodef = -1;
  * TODO
  *		implement unfolding
  */
-void AbstractGroundTheory::transformForAdd(vector<int>& vi, VIType vit, int defnr, bool skipfirst) {
+void AbstractGroundTheory::transformForAdd(vector<int>& vi, VIType /*vit*/, int defnr, bool skipfirst) {
 	unsigned int n = 0;
 	if(skipfirst) ++n;
 	for(; n < vi.size(); ++n) {
@@ -238,44 +222,44 @@ void AbstractGroundTheory::transformForAdd(vector<int>& vi, VIType vit, int defn
 			_printedtseitins.insert(atom);
 			TsBody* tsbody = _translator->tsbody(atom);
 			if(typeid(*tsbody) == typeid(PCTsBody)) {
-				PCTsBody& body = dynamic_cast<PCTsBody&>(*tsbody);
-				if(body._type == TS_IMPL || body._type == TS_EQ) {
-					if(body._conj) {
-						for(unsigned int m = 0; m < body._body.size(); ++m) {
+				PCTsBody* body = dynamic_cast<PCTsBody*>(tsbody);
+				if(body->_type == TS_IMPL || body->_type == TS_EQ) {
+					if(body->_conj) {
+						for(unsigned int m = 0; m < body->_body.size(); ++m) {
 							vector<int> cl(2,-atom);
-							cl[1] = body._body[m];
+							cl[1] = body->_body[m];
 							addClause(cl,true);	
 						}
 					}
 					else {
-						vector<int> cl(body._body.size()+1,-atom);
-						for(unsigned int m = 0; m < body._body.size(); ++m) cl[m+1] = body._body[m];
+						vector<int> cl(body->_body.size()+1,-atom);
+						for(unsigned int m = 0; m < body->_body.size(); ++m) cl[m+1] = body->_body[m];
 						addClause(cl,true);
 					}
 				}
-				if(body._type == TS_RIMPL || body._type == TS_EQ) {
-					if(body._conj) {
-						vector<int> cl(body._body.size()+1,atom);
-						for(unsigned int m = 0; m < body._body.size(); ++m) cl[m+1] = -body._body[m];
+				if(body->_type == TS_RIMPL || body->_type == TS_EQ) {
+					if(body->_conj) {
+						vector<int> cl(body->_body.size()+1,atom);
+						for(unsigned int m = 0; m < body->_body.size(); ++m) cl[m+1] = -body->_body[m];
 						addClause(cl,true);
 					}
 					else {
-						for(unsigned int m = 0; m < body._body.size(); ++m) {
+						for(unsigned int m = 0; m < body->_body.size(); ++m) {
 							vector<int> cl(2,atom);
-							cl[1] = -body._body[m];
+							cl[1] = -body->_body[m];
 							addClause(cl,true);
 						}
 					}
 				}
-				if(body._type == TS_RULE) {
+				if(body->_type == TS_RULE) {
 					assert(defnr != _nodef);
 					addPCRule(defnr,atom,body);
 				}
 			}
 			else {	// body of the tseitin is an aggregate expression
-				assert(typeid(tsbody) == typeid(AggTsBody));
-				AggTsBody& body = dynamic_cast<AggTsBody&>(*tsbody);
-				if(body._type == TS_RULE) {
+				assert(typeid(*tsbody) == typeid(AggTsBody));
+				AggTsBody* body = dynamic_cast<AggTsBody*>(tsbody);
+				if(body->_type == TS_RULE) {
 					assert(defnr != _nodef);
 					addAggRule(defnr,atom,body);
 				}
@@ -300,54 +284,53 @@ void GroundTheory::addClause(GroundClause& cl, bool skipfirst) {
 void GroundTheory::addDefinition(GroundDefinition& d) {
 	int defnr = _definitions.size();
 	_definitions.push_back(d);
-	for(map<int,GroundRuleBody>::iterator it = d._rules.begin(); it != d._rules.end(); ++it) {
+	for(map<int,GroundRuleBody*>::iterator it = d._rules.begin(); it != d._rules.end(); ++it) {
 		int head = it->first;
 		if(_printedtseitins.find(head) == _printedtseitins.end()) {
-			GroundRuleBody grb = it->second;
-			if(typeid(grb) == typeid(PCGroundRuleBody)) {
-				PCGroundRuleBody& pcgrb = dynamic_cast<PCGroundRuleBody&>(grb);
-				transformForAdd(pcgrb._body,pcgrb._conj ? VIT_CONJ : VIT_DISJ,defnr);
+			GroundRuleBody* grb = it->second;
+			if(typeid(*grb) == typeid(PCGroundRuleBody)) {
+				PCGroundRuleBody* pcgrb = dynamic_cast<PCGroundRuleBody*>(grb);
+				transformForAdd(pcgrb->_body,pcgrb->_type == RT_CONJ ? VIT_CONJ : VIT_DISJ,defnr);
 			}
 			else {
-				assert(typeid(grb) == typeid(AggGroundRuleBody));
-				AggGroundRuleBody& agggrb = dynamic_cast<AggGroundRuleBody&>(grb);
-				addSet(agggrb._setnr,defnr,agggrb._aggtype != AGGCARD);
+				assert(typeid(*grb) == typeid(AggGroundRuleBody));
+				AggGroundRuleBody* agggrb = dynamic_cast<AggGroundRuleBody*>(grb);
+				addSet(agggrb->_setnr,defnr,agggrb->_aggtype != AGGCARD);
 			}
 		}
 	}
 }
 
-void GroundTheory::addFixpDef(GroundFixpDef& d) {
+void GroundTheory::addFixpDef(GroundFixpDef& ) {
 	assert(false);
 	/* TODO */
 }
 
-void GroundTheory::addAggregate(GroundAggregate& agg) {
-	addSet(agg._set,_nodef,agg._type != AGGCARD);
-	_aggregates.push_back(agg);
-}
-
-void GroundTheory::addAggregate(int head, AggTsBody& body) {
-	addSet(body._setnr,_nodef,body._aggtype != AGGCARD);
-	GroundAggregate agg(body._aggtype,body._lower,body._type,head,body._setnr,body._bound);
+void GroundTheory::addAggregate(int head, AggTsBody* body) {
+	addSet(body->_setnr,_nodef,body->_aggtype != AGGCARD);
+	GroundAggregate agg(body->_aggtype,body->_lower,body->_type,head,body->_setnr,body->_bound);
 	_aggregates.push_back(agg);
 }
 
 void GroundTheory::addSet(int setnr, int defnr, bool) {
 	if(_printedsets.find(setnr) == _printedsets.end()) {
 		_printedsets.insert(setnr);
-		const GroundSet& grs = _translator->groundset(setnr);
+		TsSet& grs = _translator->groundset(setnr);
 		transformForAdd(grs._setlits,VIT_SET,defnr);
 		_sets.push_back(GroundSet(setnr,grs._setlits,grs._litweights));
 	}
 }
 
-void GroundTheory::addPCRule(int defnr, int head, PCTsBody& body) {
-	_definitions[defnr].addRule(head,body._body,body._conj,true);
+void GroundTheory::addPCRule(int defnr, int tseitin, PCTsBody* body) {
+	assert(_definitions[defnr]._rules.find(tseitin) == _definitions[defnr]._rules.end());
+	transformForAdd(body->_body,body->_conj ? VIT_CONJ : VIT_DISJ, defnr);
+	_definitions[defnr].addPCRule(tseitin,body->_body,body->_conj,true);
 }
 
-void GroundTheory::addAggRule(int defnr, int head, AggTsBody& body) {
-	_definitions[defnr].addAgg(head,body._setnr,body._aggtype,body._lower,body._bound,true);
+void GroundTheory::addAggRule(int defnr, int tseitin, AggTsBody* body) {
+	assert(_definitions[defnr]._rules.find(tseitin) == _definitions[defnr]._rules.end());
+	addSet(body->_setnr,defnr,body->_aggtype != AGGCARD);
+	_definitions[defnr].addAggRule(tseitin,body->_setnr,body->_aggtype,body->_lower,body->_bound,true);
 }
 
 string GroundTheory::to_string() const {
@@ -374,16 +357,16 @@ string GroundTheory::to_string() const {
 	}
 	for(unsigned int n = 0; n < _sets.size(); ++n) {
 		s << "Set nr. " << _sets[n]._setnr << " = { ";
-		for(unsigned int m = 0; m < _sets[n]._set.size(); ++m) {
-			s << _translator->printatom(_sets[n]._set[m]);
-			s << _sets[n]._weights[m];
+		for(unsigned int m = 0; m < _sets[n]._setlits.size(); ++m) {
+			s << _translator->printatom(_sets[n]._setlits[m]);
+			s << _sets[n]._litweights[m];
 		}
 		s << "}\n";
 	}
 	for(unsigned int n = 0; n < _aggregates.size(); ++n) {
 		const GroundAggregate& agg = _aggregates[n];
 		s << _translator->printatom(agg._head);
-		switch(agg._eha) {
+		switch(agg._arrow) {
 			case TS_RULE: s << " <- "; break;
 			case TS_IMPL: s << " => "; break;
 			case TS_RIMPL: s << " <= "; break;
@@ -438,7 +421,7 @@ void SolverTheory::addClause(GroundClause& cl, bool skipfirst) {
 void SolverTheory::addSet(int setnr, int defnr, bool weighted) {
 	if(_printedsets.find(setnr) == _printedsets.end()) {
 		_printedsets.insert(setnr);
-		const GroundSet& grs = _translator->groundset(setnr);
+		TsSet& grs = _translator->groundset(setnr);
 		transformForAdd(grs._setlits,VIT_SET,defnr);
 		vector<MinisatID::Literal> lits;
 		for(unsigned int n = 0; n < grs._setlits.size(); ++n) {
@@ -457,99 +440,110 @@ void SolverTheory::addSet(int setnr, int defnr, bool weighted) {
 	}
 }
 
-void SolverTheory::addAggregate(GroundAggregate& agg) {
-	addSet(agg._set,_nodef,agg._type != AGGCARD);
-	MinisatID::AggSign sg = agg._lower ? AGGSIGN_LB : AGGSIGN_UB;
-	MinisatID::AggType tp;
-	switch(body._type) {
-		case AGGCARD: tp = CARD; break;
-		case AGGSUM: tp = SUM; break;
-		case AGGPROD: tp = PROD; break;
-		case AGGMIN: tp = MIN; break;
-		case AGGMAX: tp = MAX; break;
-	}
-	MinisatID::AggSem sem;
-	switch(agg._eha) {
-		case TS_EQ: case TS_IMPL: case TS_RIMPL: sem = COMP; break;
-		case TS_RULE: sem = DEF; break;
-	}
-	MinisatID::Literal headlit(agg._head,false);
-	MinisatID::Weight weight(int(agg._bound));		// TODO: remove cast if supported by the solver
-	_solver->addAggrExpr(headlit,agg._set,weight,sg,tp,sem);
+void SolverTheory::addFixpDef(GroundFixpDef& ) {
+	// TODO
+	assert(false);
 }
 
-void SolverTheory::addAggregate(int head, AggTsBody& body) {
-	addSet(body._setnr,_nodef,body._aggtype != AGGCARD);
-	MinisatID::AggSign sg = body._lower ? AGGSIGN_LB : AGGSIGN_UB;
+void SolverTheory::addAggregate(int head, AggTsBody* body) {
+	addSet(body->_setnr,_nodef,body->_aggtype != AGGCARD);
+	MinisatID::AggSign sg = body->_lower ? MinisatID::AGGSIGN_LB : MinisatID::AGGSIGN_UB;
 	MinisatID::AggType tp;
-	switch(body._aggtype) {
-		case AGGCARD: tp = CARD; break;
-		case AGGSUM: tp = SUM; break;
-		case AGGPROD: tp = PROD; break;
-		case AGGMIN: tp = MIN; break;
-		case AGGMAX: tp = MAX; break;
+	switch(body->_aggtype) {
+		case AGGCARD: tp = MinisatID::CARD; break;
+		case AGGSUM: tp = MinisatID::SUM; break;
+		case AGGPROD: tp = MinisatID::PROD; break;
+		case AGGMIN: tp = MinisatID::MIN; break;
+		case AGGMAX: tp = MinisatID::MAX; break;
 	}
 	MinisatID::AggSem sem;
-	switch(body._type) {
-		case TS_EQ: case TS_IMPL: case TS_RIMPL: sem = COMP; break;
-		case TS_RULE: sem = DEF; break;
+	switch(body->_type) {
+		case TS_EQ: case TS_IMPL: case TS_RIMPL: sem = MinisatID::COMP; break;
+		case TS_RULE: sem = MinisatID::DEF; break;
 	}
 	MinisatID::Literal headlit(head,false);
-	MinisatID::Weight weight(int(body._bound));		// TODO: remove cast if supported by the solver
-	_solver->addAggrExpr(headlit,body._setnr,weight,sg,tp,sem);
+	MinisatID::Weight weight(int(body->_bound));		// TODO: remove cast if supported by the solver
+	_solver->addAggrExpr(headlit,body->_setnr,weight,sg,tp,sem);
 }
 
 void SolverTheory::addDefinition(GroundDefinition& d) {
 	int defnr = 1; //FIXME: We should ask the solver to give us the next number
-	// TODO: include definition ID
-	for(map<int,GroundRuleBody>::iterator it = d._rules.begin(); it != d._rules.end(); ++it) {
-		GroundRuleBody& grb = it->second;
-		if(typeid(grb) == typeid(PCGroundRuleBody)) {
-			PCGroundRuleBody& pcgrb = dynamic_cast<PCGroundRuleBody&>(grb);
-			transformForAdd(pcgrb._body,(pcgrb._conj ? VIT_CONJ : VIT_DISJ),defnr);
-			PCTsBody tsbody(TS_RULE,pcgrb._body,pcgrb._conj);
-			addPCRule(defnr,it->first,tsbody);
+	for(map<int,GroundRuleBody*>::iterator it = d._rules.begin(); it != d._rules.end(); ++it) {
+		GroundRuleBody* grb = it->second;
+		if(typeid(*grb) == typeid(PCGroundRuleBody)) {
+			PCGroundRuleBody* pcgrb = static_cast<PCGroundRuleBody*>(grb);
+			addPCRule(defnr,it->first,pcgrb);
 		}
 		else {
-			assert(typeid(grb) == typeid(AggGroundRuleBody));
-			AggGroundRuleBody& agggrb = dynamic_cast<AggGroundRuleBody&>(grb);
-			addSet(agggrb._setnr,defnr,agggrb._aggtype != AGGCARD);
-			AggTsBody tsbody(TS_RULE,agggrb._setnr,agggrb._aggtype,agggrb._lower,agggrb._bound);
-			addAggRule(defnr,it->first,tsbody);
+			assert(typeid(*grb) == typeid(AggGroundRuleBody));
+			AggGroundRuleBody* agggrb = dynamic_cast<AggGroundRuleBody*>(grb);
+			addAggRule(defnr,it->first,agggrb);
 		}
 		// add head to set of defined atoms
 		_defined[_translator->symbol(it->first)].insert(it->first);
 	}
 }
 
-void SolverTheory::addPCRule(int defnr, int head, PCTsBody& tsb) {
+void SolverTheory::addPCRule(int defnr, int head, PCGroundRuleBody* grb) {
+	transformForAdd(grb->_body,(grb->_type == RT_CONJ ? VIT_CONJ : VIT_DISJ),defnr);
 	MinisatID::Atom mhead(head);
 	vector<MinisatID::Literal> mbody;
-	for(unsigned int n = 0; n < tsb._body.size(); ++n) {
-		MinisatID::Literal l(abs(tsb._body[n]),tsb._body[n]<0);
+	for(unsigned int n = 0; n < grb->_body.size(); ++n) {
+		MinisatID::Literal l(abs(grb->_body[n]),grb->_body[n]<0);
 		mbody.push_back(l);
 	}
-	if(tsb._conj)
+	if(grb->_type == RT_CONJ)
 		_solver->addConjRule(mhead,mbody);
 	else
 		_solver->addDisjRule(mhead,mbody);
 }
 
-void SolverTheory::addAggRule(int defnr, int head, AggTsBody& body) {
-	addSet(body._setnr,defnr,body._aggtype != AGGCARD);
-	MinisatID::AggSign sg = body._lower ? AGGSIGN_LB : AGGSIGN_UB;
+void SolverTheory::addAggRule(int defnr, int head, AggGroundRuleBody* grb) {
+	addSet(grb->_setnr,defnr,grb->_aggtype != AGGCARD);
+	MinisatID::AggSign sg = grb->_lower ? MinisatID::AGGSIGN_LB : MinisatID::AGGSIGN_UB;
 	MinisatID::AggType tp;
-	switch(body._aggtype) {
-		case AGGCARD: tp = CARD; break;
-		case AGGSUM: tp = SUM; break;
-		case AGGPROD: tp = PROD; break;
-		case AGGMIN: tp = MIN; break;
-		case AGGMAX: tp = MAX; break;
+	switch(grb->_aggtype) {
+		case AGGCARD: tp = MinisatID::CARD; break;
+		case AGGSUM: tp = MinisatID::SUM; break;
+		case AGGPROD: tp = MinisatID::PROD; break;
+		case AGGMIN: tp = MinisatID::MIN; break;
+		case AGGMAX: tp = MinisatID::MAX; break;
 	}
-	MinisatID::AggSem sem = DEF;
+	MinisatID::AggSem sem = MinisatID::DEF;
 	MinisatID::Literal headlit(head,false);
-	MinisatID::Weight weight(int(body._bound));		// TODO: remove cast if supported by the solver
-	_solver->addAggrExpr(headlit,body._setnr,weight,sg,tp,sem);
+	MinisatID::Weight weight(int(grb->_bound));		// TODO: remove cast if supported by the solver
+	_solver->addAggrExpr(headlit,grb->_setnr,weight,sg,tp,sem);
+}
+
+void SolverTheory::addPCRule(int defnr, int head, PCTsBody* tsb) {
+	transformForAdd(tsb->_body,(tsb->_conj ? VIT_CONJ : VIT_DISJ),defnr);
+	MinisatID::Atom mhead(head);
+	vector<MinisatID::Literal> mbody;
+	for(unsigned int n = 0; n < tsb->_body.size(); ++n) {
+		MinisatID::Literal l(abs(tsb->_body[n]),tsb->_body[n]<0);
+		mbody.push_back(l);
+	}
+	if(tsb->_conj)
+		_solver->addConjRule(mhead,mbody);
+	else
+		_solver->addDisjRule(mhead,mbody);
+}
+
+void SolverTheory::addAggRule(int defnr, int head, AggTsBody* body) {
+	addSet(body->_setnr,defnr,body->_aggtype != AGGCARD);
+	MinisatID::AggSign sg = body->_lower ? MinisatID::AGGSIGN_LB : MinisatID::AGGSIGN_UB;
+	MinisatID::AggType tp;
+	switch(body->_aggtype) {
+		case AGGCARD: tp = MinisatID::CARD; break;
+		case AGGSUM: tp = MinisatID::SUM; break;
+		case AGGPROD: tp = MinisatID::PROD; break;
+		case AGGMIN: tp = MinisatID::MIN; break;
+		case AGGMAX: tp = MinisatID::MAX; break;
+	}
+	MinisatID::AggSem sem = MinisatID::DEF;
+	MinisatID::Literal headlit(head,false);
+	MinisatID::Weight weight(int(body->_bound));		// TODO: remove cast if supported by the solver
+	_solver->addAggrExpr(headlit,body->_setnr,weight,sg,tp,sem);
 }
 
 class DomelementEquality {
@@ -593,10 +587,10 @@ void SolverTheory::addFuncConstraints() {
 				int setnr = _translator->translateSet(sets[s],lw,tw);
 				int tseitin;
 				if(f->partial() || !(st->finite()) || st->size() != sets[s].size()) {
-					tseitin = _translator->translate(setnr,AGGCARD,'>',false,1,TS_IMPL);
+					tseitin = _translator->translate(1,'>',false,setnr,AGGCARD,TS_IMPL);
 				}
 				else {
-					tseitin = _translator->translate(setnr,AGGCARD,'=',true,1,TS_IMPL);
+					tseitin = _translator->translate(1,'=',true,setnr,AGGCARD,TS_IMPL);
 				}
 				addUnitClause(tseitin);
 			}
@@ -617,6 +611,3 @@ void SolverTheory::addFalseDefineds() {
 		}
 	}
 }
-
-		void addDefinition(GroundDefinition& d)		{ transformForAdd(d);
-													  _definitions.push_back(d); }

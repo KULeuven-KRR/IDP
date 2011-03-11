@@ -47,10 +47,7 @@ int GroundTranslator::translate(PFSymbol* s, const vector<TypedElement>& args) {
 
 int GroundTranslator::translate(const vector<int>& cl, bool conj, TsType tp) {
 	int nr = nextNumber();
-	PCTsBody* tb = new PCTsBody();
-	tb->_body = cl;
-	tb->_type = tp;
-	tb->_conj = conj;
+	PCTsBody* tb = new PCTsBody(tp,cl,conj);
 	_tsbodies[nr] = tb;
 	return nr;
 }
@@ -58,17 +55,13 @@ int GroundTranslator::translate(const vector<int>& cl, bool conj, TsType tp) {
 int	GroundTranslator::translate(double bound, char comp, bool strict, int setnr, AggType aggtype, TsType tstype) {
 	if(comp == '=') {
 		vector<int> cl(2);
-		cl[0] = translate(bound,'<',false,setnr,atp,ttp);
-		cl[1] = translate(bound,'>',false,setnr,atp,ttp);
-		return translate(cl,true,ttp);
+		cl[0] = translate(bound,'<',false,setnr,aggtype,tstype);
+		cl[1] = translate(bound,'>',false,setnr,aggtype,tstype);
+		return translate(cl,true,tstype);
 	}
 	else {
 		int nr = nextNumber();
-		AggTsBody* tb = new AggTsBody();
-		tb->_type = ttp;
-		tb->_setnr = setnr;
-		tb->_aggtype = atp;
-		tb->_lower = (comp == '<');
+		AggTsBody* tb = new AggTsBody(tstype,setnr,aggtype,(comp == '<'),bound);
 		if(strict) {
 			// FIXME: This is wrong if floating point weights are allowed!
 			tb->_bound = (comp == '<') ? bound + 1 : bound - 1;	
@@ -82,10 +75,10 @@ int	GroundTranslator::translate(double bound, char comp, bool strict, int setnr,
 int GroundTranslator::translateSet(const vector<int>& lits, const vector<double>& weights, const vector<double>& trueweights) {
 	int setnr;
 	if(_freesetnumbers.empty()) {
-		GroundSet newset;
+		TsSet newset;
 		setnr = _sets.size();
 		_sets.push_back(newset);
-		GroundSet& grset = _sets.back();
+		TsSet& grset = _sets.back();
 
 		grset._setlits = lits;
 		grset._litweights = weights;
@@ -94,7 +87,7 @@ int GroundTranslator::translateSet(const vector<int>& lits, const vector<double>
 	else {
 		setnr = _freesetnumbers.front();
 		_freesetnumbers.pop();
-		GroundSet& grset = _sets[setnr];
+		TsSet& grset = _sets[setnr];
 
 		grset._setlits = lits;
 		grset._litweights = weights;
@@ -148,262 +141,13 @@ string GroundTranslator::printatom(int nr) const {
 	else s << "tseitin_" << nr;
 	return s.str();
 }
-/********************************************************
-	Basic top-down, non-optimized grounding algorithm
-********************************************************/
-
-void NaiveGrounder::visit(const VarTerm* vt) {
-	assert(_varmapping.find(vt->var()) != _varmapping.end());
-	TypedElement te = _varmapping[vt->var()];
-	Element e = te._element;
-	_returnTerm = new DomainTerm(vt->sort(),te._type,e,ParseInfo());
-}
-
-void NaiveGrounder::visit(const DomainTerm* dt) {
-	_returnTerm = dt->clone();
-}
-
-void NaiveGrounder::visit(const FuncTerm* ft) {
-	vector<Term*> vt;
-	for(unsigned int n = 0; n < ft->nrSubterms(); ++n) {
-		_returnTerm = 0;
-		ft->subterm(n)->accept(this);
-		assert(_returnTerm);
-		vt.push_back(_returnTerm);
-	}
-	_returnTerm = new FuncTerm(ft->func(),vt,ParseInfo());
-}
-
-void NaiveGrounder::visit(const AggTerm* at) {
-	_returnSet = 0;
-	at->set()->accept(this);
-	assert(_returnSet);
-	_returnTerm = new AggTerm(_returnSet,at->type(),ParseInfo());
-}
-
-void NaiveGrounder::visit(const EnumSetExpr* s) {
-	vector<Formula*> vf;
-	for(unsigned int n = 0; n < s->nrSubforms(); ++n) {
-		_returnFormula = 0;
-		s->subform(n)->accept(this);
-		assert(_returnFormula);
-		vf.push_back(_returnFormula);
-	}
-	vector<Term*> vt;
-	for(unsigned int n = 0; n < s->nrSubterms(); ++n) {
-		_returnTerm = 0;
-		s->subterm(n)->accept(this);
-		assert(_returnTerm);
-		vt.push_back(_returnTerm);
-	}
-	_returnSet = new EnumSetExpr(vf,vt,ParseInfo());
-}
-
-void NaiveGrounder::visit(const QuantSetExpr* s) {
-	SortTableTupleIterator stti(s->qvars(),_structure);
-	vector<SortTable*> tables;
-	vector<Formula*> vf(0);
-	vector<Term*> vt(0);
-	for(unsigned int n = 0; n < s->nrQvars(); ++n) {
-		TypedElement e; 
-		e._type = stti.type(n); 
-		_varmapping[s->qvar(n)] = e;
-	}
-	if(stti.empty()) {
-		_returnSet = new EnumSetExpr(vf,vt,ParseInfo());
-	}
-	else {
-		ElementType weighttype = tables[0]->type();
-		do {
-			Element weight = stti.value(0);
-			for(unsigned int n = 0; n < s->nrQvars(); ++n) {
-				_varmapping[s->qvar(n)]._element = stti.value(n);
-			}
-			_returnFormula = 0;
-			s->subf()->accept(this);
-			assert(_returnFormula);
-			vf.push_back(_returnFormula);
-			vt.push_back(new DomainTerm(s->qvar(0)->sort(),weighttype,weight,ParseInfo()));
-		} while(stti.nextvalue());
-		_returnSet = new EnumSetExpr(vf,vt,ParseInfo());
-	}
-}
-
-void NaiveGrounder::visit(const PredForm* pf) {
-	vector<Term*> vt;
-	for(unsigned int n = 0; n < pf->nrSubterms(); ++n) {
-		_returnTerm = 0;
-		pf->subterm(n)->accept(this);
-		assert(_returnTerm);
-		vt.push_back(_returnTerm);
-	}
-	_returnFormula = new PredForm(pf->sign(),pf->symb(),vt,FormParseInfo());
-}
-
-void NaiveGrounder::visit(const EquivForm* ef) {
-	_returnFormula = 0;
-	ef->left()->accept(this);
-	assert(_returnFormula);
-	Formula* nl = _returnFormula;
-	_returnFormula = 0;
-	ef->right()->accept(this);
-	assert(_returnFormula);
-	Formula* nr = _returnFormula;
-	_returnFormula = new EquivForm(ef->sign(),nl,nr,FormParseInfo());
-}
-
-void NaiveGrounder::visit(const EqChainForm* ef) {
-	vector<Term*> vt;
-	for(unsigned int n = 0; n < ef->nrSubterms(); ++n) {
-		_returnTerm = 0;
-		ef->subterm(n)->accept(this);
-		assert(_returnTerm);
-		vt.push_back(_returnTerm);
-	}
-	_returnFormula = new EqChainForm(ef->sign(),ef->conj(),vt,ef->comps(),ef->compsigns(),FormParseInfo());
-}
-
-void NaiveGrounder::visit(const BoolForm* bf) {
-	vector<Formula*> vf;
-	for(unsigned int n = 0; n < bf->nrSubforms(); ++n) {
-		_returnFormula = 0;
-		bf->subform(n)->accept(this);
-		assert(_returnFormula);
-		vf.push_back(_returnFormula);
-	}
-	_returnFormula = new BoolForm(bf->sign(),bf->conj(),vf,FormParseInfo());
-}
-
-void NaiveGrounder::visit(const QuantForm* qf) {
-	SortTableTupleIterator stti(qf->qvars(),_structure);
-	vector<Formula*> vf(0);
-	for(unsigned int n = 0; n < qf->nrQvars(); ++n) {
-		TypedElement e; 
-		e._type = stti.type(n); 
-		_varmapping[qf->qvar(n)] = e;
-	}
-	if(stti.empty()) {
-		_returnFormula = new BoolForm(qf->sign(),qf->univ(),vf,FormParseInfo());
-	}
-	else {
-		do {
-			for(unsigned int n = 0; n < qf->nrQvars(); ++n) {
-				_varmapping[qf->qvar(n)]._element = stti.value(n);
-			}
-			_returnFormula = 0;
-			qf->subf()->accept(this);
-			assert(_returnFormula);
-			vf.push_back(_returnFormula);
-		} while(stti.nextvalue());
-		_returnFormula = new BoolForm(qf->sign(),qf->univ(),vf,FormParseInfo());
-	}
-}
-
-void NaiveGrounder::visit(const Rule* r) {
-	SortTableTupleIterator stti(r->qvars(),_structure);
-	Definition* d = new Definition();
-	for(unsigned int n = 0; n < r->nrQvars(); ++n) {
-		TypedElement e; 
-		e._type = stti.type(n); 
-		_varmapping[r->qvar(n)] = e;
-	}
-	if(!stti.empty()) {
-		do {
-			for(unsigned int n = 0; n < r->nrQvars(); ++n) {
-				_varmapping[r->qvar(n)]._element = stti.value(n);
-			}
-			Formula* nb;
-			PredForm* nh;
-
-			_returnFormula = 0;
-			r->head()->accept(this);
-			assert(_returnFormula);
-			assert(typeid(*_returnFormula) == typeid(PredForm));
-			nh = dynamic_cast<PredForm*>(_returnFormula);
-
-			_returnFormula = 0;
-			r->body()->accept(this);
-			assert(_returnFormula);
-			nb = _returnFormula;
-
-			d->add(new Rule(vector<Variable*>(0),nh,nb,ParseInfo()));
-
-		} while(stti.nextvalue());
-	}
-	_returnDef = d;
-}
-
-void NaiveGrounder::visit(const Definition* d) {
-	Definition* grounddef = new Definition();
-	for(unsigned int n = 0; n < d->nrRules(); ++n) {
-		_returnDef = 0;
-		visit(d->rule(n));
-		assert(_returnDef);
-		for(unsigned int m = 0; m < _returnDef->nrRules(); ++m) {
-			grounddef->add(_returnDef->rule(m));
-		}
-		delete(_returnDef);
-	}
-	_returnDef = grounddef;
-}
-
-void NaiveGrounder::visit(const FixpDef* d) {
-	FixpDef* grounddef = new FixpDef(d->lfp());
-	for(unsigned int n = 0; n < d->nrDefs(); ++n) {
-		_returnFixpDef = 0;
-		visit(d->def(n));
-		assert(_returnFixpDef);
-		grounddef->add(_returnFixpDef);
-	}
-	for(unsigned int n = 0; n < d->nrRules(); ++n) {
-		_returnDef = 0;
-		visit(d->rule(n));
-		assert(_returnDef);
-		for(unsigned int m = 0; m < _returnDef->nrRules(); ++m) {
-			grounddef->add(_returnDef->rule(m));
-		}
-		delete(_returnDef);
-	}
-	_returnFixpDef = grounddef;
-}
-
-void NaiveGrounder::visit(const Theory* t) {
-	Theory* grounding = new Theory("",t->vocabulary(),ParseInfo());
-
-	// Ground the theory
-	for(unsigned int n = 0; n < t->nrDefinitions(); ++n) {
-		_returnDef = 0;
-		t->definition(n)->accept(this);
-		assert(_returnDef);
-		grounding->add(_returnDef);
-	}
-	for(unsigned int n = 0; n < t->nrFixpDefs(); ++n) {
-		_returnFixpDef = 0;
-		t->fixpdef(n)->accept(this);
-		assert(_returnFixpDef);
-		grounding->add(_returnFixpDef);
-	}
-	for(unsigned int n = 0; n < t->nrSentences(); ++n) {
-		_returnFormula = 0;
-		t->sentence(n)->accept(this);
-		assert(_returnFormula);
-		grounding->add(_returnFormula);
-	}
-	
-	// Add the structure
-	AbstractTheory* structtheo = StructUtils::convert_to_theory(_structure);
-	grounding->add(structtheo);
-	delete(structtheo);
-
-	_returnTheory = grounding;
-}
 
 /*************************************
 	Optimized grounding algorithm
 *************************************/
 
 
-bool EcnfGrounder::run() const {
+bool CopyGrounder::run() const {
 	// TODO TODO TODO
 	return true;
 }
@@ -577,7 +321,7 @@ if(_cloptions._verbose) {
 
 int AggGrounder::finishCard(double truevalue, double boundvalue, int setnr) const {
 	int leftvalue = int(boundvalue - truevalue);
-	const GroundSet& grs = _translator->groundset(setnr);
+	const TsSet& grs = _translator->groundset(setnr);
 	int maxposscard = grs._setlits.size();
 	TsType tp = _context._tseitin;
 	bool simplify = false;
@@ -695,7 +439,7 @@ int AggGrounder::finishCard(double truevalue, double boundvalue, int setnr) cons
 }
 
 int AggGrounder::finishSum(double truevalue, double boundvalue, int setnr) const {
-	const GroundSet& grs = _translator->groundset(setnr);
+	const TsSet& grs = _translator->groundset(setnr);
 
 	// Compute the minimal and maximal possible value of the sum
 	double minposssum = truevalue;
@@ -750,7 +494,7 @@ int AggGrounder::finishSum(double truevalue, double boundvalue, int setnr) const
 }
 
 /*int AggGrounder::finishProduct(double truevalue, double boundvalue, int setnr) const {
-	const GroundSet& grs = _translator->groundset(setnr);
+	const TsSet& grs = _translator->groundset(setnr);
 
 	// Compute the minimal and maximal possible value of the sum
 	double minposssum = truevalue;
@@ -797,7 +541,7 @@ int AggGrounder::finishSum(double truevalue, double boundvalue, int setnr) const
 int AggGrounder::run() const {
 	int setnr = _setgrounder->run();
 	domelement bound = _boundgrounder->run();
-	const GroundSet& grs = _translator->groundset(setnr);
+	const TsSet& grs = _translator->groundset(setnr);
 
 	double truevalue = AggUtils::compute(_type,grs._trueweights);
 	double boundvalue = ElementUtil::convert(bound->_args[0],ELDOUBLE)._double;
@@ -1025,11 +769,11 @@ int EquivGrounder::run() const {
 	else if(right == _true) return _sign ? left : -left;
 	else if(right == _false) return _sign ? -left : left;
 	else {
-		EcnfClause cl1(2);
-		EcnfClause cl2(2);
+		GroundClause cl1(2);
+		GroundClause cl2(2);
 		cl1[0] = left;	cl1[1] = _sign ? -right : right;
 		cl2[0] = -left;	cl2[1] = _sign ? right : -right;
-		EcnfClause tcl(2);
+		GroundClause tcl(2);
 		TsType tp = _context._tseitin;
 		tcl[0] = _translator->translate(cl1,false,tp);
 		tcl[1] = _translator->translate(cl2,false,tp);
@@ -1054,8 +798,8 @@ void EquivGrounder::run(vector<int>& clause) const {
 	else if(right == _true) { clause.push_back(_sign ? left : -left); return; }
 	else if(right == _false) { clause.push_back(_sign ? -left : left); return; }
 	else {
-		EcnfClause cl1(2);
-		EcnfClause cl2(2);
+		GroundClause cl1(2);
+		GroundClause cl2(2);
 		cl1[0] = left;	cl1[1] = _sign ? -right : right;
 		cl2[0] = -left;	cl2[1] = _sign ? right : -right;
 		TsType tp = _context._tseitin;
@@ -1107,7 +851,7 @@ if(_cloptions._verbose) {
 
 domelement AggTermGrounder::run() const {
 	int setnr = _setgrounder->run();
-	const GroundSet& grs = _translator->groundset(setnr);
+	const TsSet& grs = _translator->groundset(setnr);
 	assert(grs._setlits.empty());
 	double value = AggUtils::compute(_type,grs._trueweights);
 	Element e;
@@ -1186,7 +930,7 @@ int QuantSetGrounder::run() const {
 	return s;
 }
 
-HeadGrounder::HeadGrounder(GroundTheory* gt, InstanceChecker* pc, InstanceChecker* cc, PFSymbol* s, 
+HeadGrounder::HeadGrounder(AbstractGroundTheory* gt, InstanceChecker* pc, InstanceChecker* cc, PFSymbol* s, 
 			const vector<TermGrounder*>& sg, const vector<SortTable*>& vst) :
 	_grounding(gt), _subtermgrounders(sg), _truechecker(pc), _falsechecker(cc), _symbol(gt->translator()->addSymbol(s)),
 	_args(sg.size()), _tables(vst) { }
@@ -1228,14 +972,14 @@ bool RuleGrounder::run() const {
 				assert(head != _true);
 				if(head != _false) {
 					if(truebody) _definition->addTrueRule(head);
-					else _definition->addRule(head,body,conj,_context._tseitin == TS_RULE);
+					else _definition->addPCRule(head,body,conj,_context._tseitin == TS_RULE);
 				}
 				while(_headgenerator->next()) {
 					head = _headgrounder->run();
 					assert(head != _true);
 					if(head != _false) {
 						if(truebody) _definition->addTrueRule(head);
-						else _definition->addRule(head,body,conj,_context._tseitin == TS_RULE);
+						else _definition->addPCRule(head,body,conj,_context._tseitin == TS_RULE);
 					}
 				}
 			}
@@ -1251,14 +995,14 @@ bool RuleGrounder::run() const {
 					assert(head != _true);
 					if(head != _false) {
 						if(truebody) _definition->addTrueRule(head);
-						else _definition->addRule(head,body,conj,_context._tseitin == TS_RULE);
+						else _definition->addPCRule(head,body,conj,_context._tseitin == TS_RULE);
 					}
 					while(_headgenerator->next()) {
 						head = _headgrounder->run();
 						assert(head != _true);
 						if(head != _false) {
 							if(truebody) _definition->addTrueRule(head);
-							else _definition->addRule(head,body,conj,_context._tseitin == TS_RULE);
+							else _definition->addPCRule(head,body,conj,_context._tseitin == TS_RULE);
 						}
 					}
 				}
@@ -1424,7 +1168,7 @@ void GrounderFactory::descend(Rule* r) {
 TopLevelGrounder* GrounderFactory::create(const AbstractTheory* theory) {
 
 	// Allocate an ecnf theory to be returned by the grounder
-	_grounding = new EcnfTheory(theory->vocabulary(),_structure->clone());
+	_grounding = new GroundTheory(theory->vocabulary(),_structure->clone());
 
 	// Create the grounder
 	theory->accept(this);
@@ -1467,8 +1211,8 @@ TopLevelGrounder* GrounderFactory::create(const AbstractTheory* theory, SATSolve
  * POSTCONDITIONS
  *		_toplevelgrounder is equal to the created grounder.
  */
-void GrounderFactory::visit(const EcnfTheory* ecnf) {
-	_toplevelgrounder = new EcnfGrounder(_grounding,ecnf);	
+void GrounderFactory::visit(const GroundTheory* ecnf) {
+	_toplevelgrounder = new CopyGrounder(_grounding,ecnf);	
 }
 
 /*

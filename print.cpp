@@ -79,7 +79,7 @@ void IDPPrinter::visit(const Theory* t) {
 	}
 }
 
-void IDPPrinter::visit(const EcnfTheory* et) {
+void IDPPrinter::visit(const GroundTheory* et) {
 	_out << et->to_string();
 }
 

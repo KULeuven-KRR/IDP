@@ -15,8 +15,7 @@
 #include "generator.hpp"
 #include "pcsolver/src/external/ExternalInterface.hpp"
 
-class GroundTheory;
-struct GroundSet;
+class AbstractGroundTheory;
 
 /**********************************************
 	Translate from ground atoms to numbers
@@ -64,11 +63,11 @@ class AggTsBody : public TsBody {
 /*
  * Ground sets
  */ 
-//struct GroundSet {
-//	vector<int>		_setlits;		// All literals in the ground set
-//	vector<double>	_litweights;	// For each literal a corresponding weight
-//	vector<double>	_trueweights;	// The weights of the true literals in the set
-//};
+struct TsSet {
+	vector<int>		_setlits;		// All literals in the ground set
+	vector<double>	_litweights;	// For each literal a corresponding weight
+	vector<double>	_trueweights;	// The weights of the true literals in the set
+};
 
 /*
  * Ground translator 
@@ -88,10 +87,10 @@ class GroundTranslator  {
 
 		map<int,TsBody*>							_tsbodies;		// keeps mapping between Tseitin numbers and bodies
 
-		vector<GroundSet>							_sets;			// keeps mapping between Set numbers and sets
+		vector<TsSet>								_sets;			// keeps mapping between Set numbers and sets
 
 	public:
-//		GroundTranslator() : _backsymbtable(1), _backargstable(1), _sets(1) { }
+		GroundTranslator() : _backsymbtable(1), _backargstable(1), _sets(1) { }
 
 		int				translate(unsigned int,const vector<domelement>&);
 		int				translate(const vector<int>& cl, bool conj, TsType tp);
@@ -105,56 +104,13 @@ class GroundTranslator  {
 		const vector<domelement>&			args(int nr)				const	{ return _backargstable[abs(nr)];		}
 		bool								isTseitin(int l)			const	{ return symbol(l) == 0;				}
 		TsBody*								tsbody(int l)				const	{ return _tsbodies.find(abs(l))->second;}
-		const GroundSet&					groundset(int nr)			const	{ return _sets[nr];						}
+		const TsSet&						groundset(int nr)			const	{ return _sets[nr];						}
+		TsSet&								groundset(int nr)					{ return _sets[nr];						}
 		unsigned int						nrOffsets()					const	{ return _symboffsets.size();			}
 		PFSymbol*							getSymbol(unsigned int n)	const	{ return _symboffsets[n];				}
 		const map<vector<domelement>,int>&	getTuples(unsigned int n)	const	{ return _table[n];						}
 
 		string						printatom(int nr)	const;
-
-};
-
-
-/********************************************************
-	Basic top-down, non-optimized grounding algorithm
-********************************************************/
-
-class NaiveGrounder : public Visitor {
-
-	private:
-		AbstractStructure*			_structure;		// The structure to ground
-		map<Variable*,TypedElement>	_varmapping;	// The current assignment of domain elements to variables
-
-		Formula*					_returnFormula;	// The return value when grounding a formula
-		SetExpr*					_returnSet;		// The return value when grounding a set
-		Term*						_returnTerm;	// The return value when grounding a term
-		Definition*					_returnDef;		// The return value when grounding a definition
-		FixpDef*					_returnFixpDef;	// The return value when grounding a fixpoint definition
-		AbstractTheory*				_returnTheory;	// The return value when grounding a theory
-
-	public:
-		NaiveGrounder(AbstractStructure* s) : Visitor(), _structure(s) { }
-
-		AbstractTheory* ground(AbstractTheory* t) { t->accept(this); return _returnTheory;	}
-
-		void visit(const VarTerm*);
-		void visit(const DomainTerm*);
-		void visit(const FuncTerm*);
-		void visit(const AggTerm*);
-
-		void visit(const EnumSetExpr*);
-		void visit(const QuantSetExpr*);
-
-		void visit(const PredForm*);
-		void visit(const EqChainForm*);
-		void visit(const EquivForm*);
-		void visit(const QuantForm*);
-		void visit(const BoolForm*);
-
-		void visit(const Rule*);
-		void visit(const FixpDef*);
-		void visit(const Definition*);
-		void visit(const Theory*);
 
 };
 
@@ -189,19 +145,19 @@ struct GroundingContext {
 
 class TopLevelGrounder {
 	protected:
-		GroundTheory*	_grounding;
+		AbstractGroundTheory*	_grounding;
 	public:
-		TopLevelGrounder(GroundTheory* gt) : _grounding(gt) { }
+		TopLevelGrounder(AbstractGroundTheory* gt) : _grounding(gt) { }
 
-		virtual bool			run()		const = 0;
-				GroundTheory*	grounding()	const { return _grounding;	}
+		virtual bool					run()		const = 0;
+				AbstractGroundTheory*	grounding()	const { return _grounding;	}
 };
 
-class EcnfGrounder : public TopLevelGrounder {
+class CopyGrounder : public TopLevelGrounder {
 	private:
-		const EcnfTheory*		_original;
+		const GroundTheory*		_original;
 	public:
-		EcnfGrounder(GroundTheory* gt, const EcnfTheory* orig) : TopLevelGrounder(gt), _original(orig) { }
+		CopyGrounder(AbstractGroundTheory* gt, const GroundTheory* orig) : TopLevelGrounder(gt), _original(orig) { }
 		bool run() const;
 };
 
@@ -209,7 +165,7 @@ class TheoryGrounder : public TopLevelGrounder {
 	private:
 		vector<TopLevelGrounder*>	_grounders;
 	public:
-		TheoryGrounder(GroundTheory* gt, const vector<TopLevelGrounder*>& fgs) :
+		TheoryGrounder(AbstractGroundTheory* gt, const vector<TopLevelGrounder*>& fgs) :
 			TopLevelGrounder(gt), _grounders(fgs) { }
 		bool run() const;
 };
@@ -219,7 +175,7 @@ class SentenceGrounder : public TopLevelGrounder {
 		bool				_conj;	
 		FormulaGrounder*	_subgrounder;
 	public:
-		SentenceGrounder(GroundTheory* gt, FormulaGrounder* sub, bool conj) : 
+		SentenceGrounder(AbstractGroundTheory* gt, FormulaGrounder* sub, bool conj) : 
 			TopLevelGrounder(gt), _conj(conj), _subgrounder(sub) { }
 		bool run() const;
 };
@@ -229,7 +185,7 @@ class UnivSentGrounder : public TopLevelGrounder {
 		TopLevelGrounder*	_subgrounder;
 		InstGenerator*		_generator;	
 	public:
-		UnivSentGrounder(GroundTheory* gt, TopLevelGrounder* sub, InstGenerator* gen) : 
+		UnivSentGrounder(AbstractGroundTheory* gt, TopLevelGrounder* sub, InstGenerator* gen) : 
 			TopLevelGrounder(gt), _subgrounder(sub), _generator(gen) { }
 		bool run() const;
 };
@@ -445,7 +401,7 @@ class EnumSetGrounder : public SetGrounder {
 /** Grounder for a head of a rule **/
 class HeadGrounder {
 	private:
-		GroundTheory*				_grounding;
+		AbstractGroundTheory*		_grounding;
 		vector<TermGrounder*>		_subtermgrounders;
 		InstanceChecker*			_truechecker;
 		InstanceChecker*			_falsechecker;
@@ -453,7 +409,7 @@ class HeadGrounder {
 		mutable vector<domelement>	_args;
 		vector<SortTable*>			_tables;
 	public:
-		HeadGrounder(GroundTheory* gt, InstanceChecker* pc, InstanceChecker* cc, PFSymbol* s, 
+		HeadGrounder(AbstractGroundTheory* gt, InstanceChecker* pc, InstanceChecker* cc, PFSymbol* s, 
 					const vector<TermGrounder*>&, const vector<SortTable*>&);
 		int	run() const;
 
@@ -482,7 +438,7 @@ class DefinitionGrounder : public TopLevelGrounder {
 		GroundDefinition*		_definition;	// The ground definition that will be produced by running the grounder.
 		vector<RuleGrounder*>	_subgrounders;	// Grounders for the rules of the definition.
 	public:
-		DefinitionGrounder(GroundTheory* gt, GroundDefinition* def, vector<RuleGrounder*> subgr) :
+		DefinitionGrounder(AbstractGroundTheory* gt, GroundDefinition* def, vector<RuleGrounder*> subgr) :
 			TopLevelGrounder(gt), _definition(def), _subgrounders(subgr) { }
 		bool run() const;
 };
@@ -500,7 +456,7 @@ class GrounderFactory : public Visitor {
 	private:
 		// Data
 		AbstractStructure*	_structure;		// The structure that will be used to reduce the grounding
-		GroundTheory*		_grounding;		// The ground theory that will be produced
+		AbstractGroundTheory*		_grounding;		// The ground theory that will be produced
 
 		// Context
 		GroundingContext		_context;
@@ -546,7 +502,7 @@ class GrounderFactory : public Visitor {
 		bool recursive(const Formula*);
 
 		// Visitors
-		void visit(const EcnfTheory*);
+		void visit(const GroundTheory*);
 		void visit(const Theory*);
 
 		void visit(const PredForm*);

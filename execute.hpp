@@ -209,27 +209,9 @@ class FlattenFormulas : public Inference {
 		InfArg execute(const vector<InfArg>& args) const;
 };
 
-class GroundingInference : public Inference {
-	public:
-		GroundingInference();
-		InfArg execute(const vector<InfArg>& args) const;
-};
-
-class GroundingWithResult : public Inference {
-	public:
-		GroundingWithResult();
-		InfArg execute(const vector<InfArg>& args) const;
-};
-
 class FastGrounding : public Inference {
 	public:
 		FastGrounding();
-		InfArg execute(const vector<InfArg>& args) const;
-};
-
-class ModelExpansionInference : public Inference {
-	public:
-		ModelExpansionInference(bool opts);
 		InfArg execute(const vector<InfArg>& args) const;
 };
 

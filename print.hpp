@@ -62,7 +62,7 @@ class IDPPrinter : public Printer {
 
 		/** Theories **/
 		void visit(const Theory*);
-		void visit(const EcnfTheory*);
+		void visit(const GroundTheory*);
 
 		// Formulas
 		void visit(const PredForm*);

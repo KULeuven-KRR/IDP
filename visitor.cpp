@@ -32,7 +32,7 @@ void Visitor::visit(const Sort*)				{ }
 void Visitor::visit(const Predicate*)			{ }
 void Visitor::visit(const Function*)			{ }
 void Visitor::visit(const Vocabulary* v)		{ traverse(v); }
-void Visitor::visit(const EcnfTheory*)			{ /* TODO */	}
+void Visitor::visit(const GroundTheory*)		{ /* TODO */	}
 void Visitor::visit(const SolverTheory*)		{ /* TODO */	}
 
 void Visitor::traverse(const Formula* f) {
@@ -385,7 +385,7 @@ Theory* MutatingVisitor::visit(Theory* t) {
 	return t;
 }
 
-EcnfTheory* MutatingVisitor::visit(EcnfTheory* t) {
+GroundTheory* MutatingVisitor::visit(GroundTheory* t) {
 	// TODO
 	return t;
 }

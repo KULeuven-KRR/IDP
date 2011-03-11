@@ -131,30 +131,6 @@
 		return idp_intern.idpcall("flatten",T)
 	}
 
-	#procedure naiveground(T,S) {
-		return idp_intern.idpcall("ground",T,S)
-	}
-
-	#procedure fastground(T,S) {
-		return idp_intern.idpcall("fastground",T,S)
-	}
-
-	#procedure fastmx(T,S) {
-		return idp_intern.idpcall("fastmx",T,S)
-	}
-
-	#procedure fastmx(T,S,Opt) {
-		return idp_intern.idpcall("fastmx",T,S,Opt)
-	}
-
-	#procedure naivemx(T,S) {
-		return idp_intern.idpcall("naivemx",T,S)
-	}
-
-	#procedure naivemx(T,S,Opt) {
-		return idp_intern.idpcall("naivemx",T,S,Opt)
-	}
-
 	#procedure reduce(T,S) {
 		return idp_intern.idpcall("reduce",T,S)
 	}
