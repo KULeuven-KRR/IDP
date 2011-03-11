@@ -27,7 +27,16 @@ class FOBDDVariable : public FOBDDArgument {
 };
 
 class FOBDDDeBruijnIndex : public FOBDDArgument {
+	private:
+		Sort*			_sort;
+		unsigned int	_index;
 
+		FOBDDDeBruijnIndex(Sort* sort, unsigned int index) :
+			_sort(sort), _index(index) { }
+
+	public:
+
+	friend FOBDDDeBruijnIndex* FOBDDManager::addDeBruijnIndex(Sort* sort, unsigned int index);
 };
 
 
@@ -97,22 +106,39 @@ typedef map<PFSymbol*,MVAGAK>							AtomKernelTable;
 typedef map<FOBDD*,FOBDDQuantKernel*>					MBDDQK;
 typedef map<Sort*,MBDDQK>								QuantKernelTable;
 
+typedef map<Variable*,FOBDDVariable*>			VariableTable;
+typedef map<unsigned int,FOBDDDeBruijnIndex*>	MUIDB;
+typedef map<Sort*,MUIDB>						DeBruijnIndexTable;
+
 class FOBDDManager {
 
 	private:
+		// Leaf nodes
+		FOBDD*				_truenode;
+		FOBDD*				_falsenode;
+
+		// Global tables
 		BDDTable			_bddtable;
 		AtomKernelTable		_atomkerneltable;
 		QuantKernelTable	_quantkerneltable;
+		VariableTable		_variabletable;
+		DeBruijnIndexTable	_debruijntable;
 
 		FOBDD*				addBDD(FOBDDKernel* kernel,FOBDD* falsebranch,FOBDD* truebranch);
 		FOBDDAtomKernel*	addAtomKernel(PFSymbol* symbol,const vector<FOBDDArgument*>& args);
 		FOBDDQuantKernel*	addQuantKernel(Sort* sort, FOBDD* bdd);
+		FOBDDVariable*		addVariable(Variable* var);
+		FOBDDDeBruijnIndex* addDeBruijnIndex(Sort* sort, unsigned int index);
 
 	public:
+
+		FOBDDManager();
 
 		FOBDD*				getBDD(FOBDDKernel* kernel,FOBDD* falsebranch,FOBDD* truebranch);
 		FOBDDAtomKernel*	getAtomKernel(PFSymbol* symbol,const vector<FOBDDArgument*>& args);
 		FOBDDQuantKernel*	getQuantKernel(Sort* sort, FOBDD* bdd);
+		FOBDDVariable*		getVariable(Variable* var);
+		FOBDDDeBruijnIndex* getDeBruijnIndex(Sort* sort, unsigned int index);
 		
 };
 
