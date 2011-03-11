@@ -362,7 +362,17 @@ void IDPPrinter::visit(const PredInter* p) {
 	string shortname = fullname.substr(0,fullname.find('/'));
 	if(_currsymbol->nrSorts() == 0) { // proposition
 		printtab();
-		_out << shortname << " = " << (p->ctpf()->empty() ? (p->cfpt()->empty() ? "unknown" : "false") : "true") << "\n";
+		_out << shortname << " = "; 
+		if(p->ct() != p->ctpf()->empty()) {
+			assert(p->cf() == p->cfpt()->empty());
+			_out << "true";
+		}
+		else if(p->cf() != p->cfpt()->empty()) {
+			assert(p->ct() == p->ctpf()->empty());
+			_out << "false";
+		}
+		else _out << "unknown";
+		_out << "\n";	
 	}
 	else if(!_currsymbol->ispred() && _currsymbol->nrSorts() == 1) { // constant
 		printtab();
