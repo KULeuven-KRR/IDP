@@ -10,6 +10,10 @@
 	BDD manager
 ******************/
 
+FOBDDManager::FOBDDManager() {
+	// TODO
+}
+
 FOBDD* FOBDDManager::getBDD(FOBDDKernel* kernel,FOBDD* falsebranch,FOBDD* truebranch) {
 	// Simplification
 	// TODO: extra tests (see old grounder)
@@ -72,7 +76,7 @@ FOBDDQuantKernel* FOBDDManager::getQuantKernel(Sort* sort,FOBDD* bdd) {
 		}
 	}
 
-	// Lookup failed, create a new atom kernel
+	// Lookup failed, create a new quantified kernel
 	return addQuantKernel(sort,bdd);
 }
 
@@ -80,4 +84,41 @@ FOBDDQuantKernel* FOBDDManager::addQuantKernel(Sort* sort,FOBDD* bdd) {
 	FOBDDQuantKernel* newkernel = new FOBDDQuantKernel(sort,bdd);
 	_quantkerneltable[sort][bdd] = newkernel;
 	return newkernel;
+}
+
+FOBDDVariable* FOBDDManager::getVariable(Variable* var) {
+	// Lookup
+	VariableTable::const_iterator it = _variabletable.find(var);
+	if(it != _variabletable.end()) {
+		return it->second;
+	}
+
+	// Lookup failed, create a new variable
+	return addVariable(var);
+}
+
+FOBDDVariable* FOBDDManager::addVariable(Variable* var) {
+	FOBDDVariable* newvariable = new FOBDDVariable(var);
+	_variabletable[var] = newvariable;
+	return newvariable;
+}
+
+FOBDDDeBruijnIndex* FOBDDManager::getDeBruijnIndex(Sort* sort, unsigned int index) {
+	// Lookup
+	DeBruijnIndexTable::const_iterator it = _debruijntable.find(sort);
+	if(it != _debruijntable.end()) {
+		MUIDB::const_iterator jt = it->second.find(index);
+		if(jt != it->second.end()) {
+			return jt->second;
+		}
+	}
+
+	// Lookup failed, create a new De Bruijn index
+	return addDeBruijnIndex(sort,index);
+}
+
+FOBDDDeBruijnIndex* FOBDDManager::addDeBruijnIndex(Sort* sort, unsigned int index) {
+	FOBDDDeBruijnIndex* newindex = new FOBDDDeBruijnIndex(sort,index);
+	_debruijntable[sort][index] = newindex;
+	return newindex;
 }
