@@ -898,13 +898,13 @@ enum ECNFCONVRTT { ECTT_ATOM, ECTT_CLAUSE, ECTT_CONJ, ECTT_AGG, ECTT_NOTHING };
 class TheoryConvertor : public Visitor {
 	
 	private:
-		EcnfTheory*			_returnvalue;		// The resulting ecnf theory
+		GroundTheory*		_returnvalue;		// The resulting ground theory
 
 		// Intermediate return values
 		int					_curratom;			// Returned atom
-		EcnfClause			_currclause;		// Returned set of literals
+		GroundClause		_currclause;		// Returned set of literals
 		GroundDefinition	_currdefinition;	// Returned definition
-		EcnfFixpDef			_currfixpdef;		// Returned fixpoint definitionn
+		GroundFixpDef		_currfixpdef;		// Returned fixpoint definitionn
 
 		// Intermediate return value is an aggregate expression
 		double				_currbound;			// The bound in the returned aggregate expression
@@ -919,7 +919,7 @@ class TheoryConvertor : public Visitor {
 	public:
 		
 		TheoryConvertor(const AbstractTheory* t) : 
-			Visitor(), _returnvalue(new EcnfTheory(0)) { t->accept(this); }
+			Visitor(), _returnvalue(new GroundTheory(0)) { t->accept(this); }
 
 		void visit(const PredForm*);
 		void visit(const EqChainForm*);
@@ -931,7 +931,7 @@ class TheoryConvertor : public Visitor {
 		void visit(const QuantSetExpr*);
 		void visit(const EnumSetExpr*);
 
-		EcnfTheory*	returnvalue()	const { return _returnvalue;	}
+		GroundTheory*	returnvalue()	const { return _returnvalue;	}
 
 };
 
@@ -974,7 +974,7 @@ void TheoryConvertor::visit(const Theory* t) {
 	// fixpoint definitions
 	for(unsigned int n = 0; n < t->nrFixpDefs(); ++n) {
 		_indef = false; _infixpdef = true;
-		_currfixpdef = EcnfFixpDef();
+		_currfixpdef = GroundFixpDef();
 		t->fixpdef(n)->accept(this);
 		_returnvalue->addFixpDef(_currfixpdef);
 	}
@@ -1022,7 +1022,7 @@ void TheoryConvertor::visit(const EquivForm* ef) {
 	ef->right()->accept(this);
 	assert(_rettype == ECTT_AGG);
 
-	_returnvalue->addAgg(EcnfAgg(_curragg,_lowerbound,TS_EQ,lhs,_currset,_currbound));
+	_returnvalue->addAggregate(GroundAggregate(_curragg,_lowerbound,TS_EQ,lhs,_currset,_currbound));
 	_rettype = ECTT_NOTHING;
 }
 
@@ -1033,7 +1033,7 @@ void TheoryConvertor::visit(const BoolForm* bf) {
 		bf->subform(n)->accept(this);
 		if(n == 1 && _rettype == ECTT_AGG) {
 			assert(bf->nrSubforms() == 2);
-			_returnvalue->addAgg(EcnfAgg(_curragg,_lowerbound,TS_IMPL,-literals[0],_currset,_currbound));
+			_returnvalue->addAggregate(GroundAggregate(_curragg,_lowerbound,TS_IMPL,-literals[0],_currset,_currbound));
 			_rettype = ECTT_NOTHING;
 			return;
 		}
@@ -1053,7 +1053,7 @@ void TheoryConvertor::visit(const Rule* r) {
 	int headatom = _curratom;
 	r->body()->accept(this);
 	if(_rettype == ECTT_AGG) {
-		EcnfAgg efa(_curragg,_lowerbound,TS_RULE,headatom,_currset,_currbound);
+		GroundAggregate efa(_curragg,_lowerbound,TS_RULE,headatom,_currset,_currbound);
 		if(_infixpdef) _currfixpdef.addAgg(efa,_returnvalue->translator());
 		else _currdefinition.addAgg(efa,_returnvalue->translator());
 	}
@@ -2098,6 +2098,6 @@ namespace TheoryUtils {
 	void reduce(AbstractTheory* t, AbstractStructure* s)	{ Reducer sf(t,s);	}
 	
 	/** ECNF **/
-	EcnfTheory*	convert_to_ecnf(AbstractTheory* t)	{ TheoryConvertor tc(t); return tc.returnvalue();	}
+	GroundTheory*	convert_to_ecnf(AbstractTheory* t)	{ TheoryConvertor tc(t); return tc.returnvalue();	}
 
 }

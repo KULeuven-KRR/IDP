@@ -16,6 +16,7 @@
 #include "pcsolver/src/external/ExternalInterface.hpp"
 
 class GroundTheory;
+struct GroundSet;
 
 /**********************************************
 	Translate from ground atoms to numbers
@@ -37,6 +38,8 @@ class TsBody {
 	public:
 		TsType		_type;	// the type of "tseitin definition"
 		virtual ~TsBody() {}
+	protected:
+		TsBody(TsType type): _type(type) { }
 };
 
 class PCTsBody : public TsBody {
@@ -44,6 +47,8 @@ class PCTsBody : public TsBody {
 		vector<int> _body;	// the literals in the subformula replaced by the tseitin
 		bool		_conj;	// if true, the replaced subformula is the conjunction of the literals in _body,
 							// if false, the replaced subformula is the disjunction of the literals in _body
+		PCTsBody(TsType type, const vector<int>& body, bool conj):
+			TsBody(type), _body(body), _conj(conj) { }
 };
 
 class AggTsBody : public TsBody {
@@ -52,17 +57,22 @@ class AggTsBody : public TsBody {
 		AggType	_aggtype;
 		bool	_lower;
 		double	_bound;
+		AggTsBody(TsType type, int setnr, AggType at, bool lower, double bound):
+			TsBody(type), _setnr(setnr), _aggtype(at), _lower(lower), _bound(bound) { }
 };
 
 /*
- *	Ground sets
+ * Ground sets
  */ 
-struct GroundSet {
-	vector<int>		_setlits;		// All literals in the ground set
-	vector<double>	_litweights;	// For each literal a corresponding weight
-	vector<double>	_trueweights;	// The weights of the true literals in the set
-};
+//struct GroundSet {
+//	vector<int>		_setlits;		// All literals in the ground set
+//	vector<double>	_litweights;	// For each literal a corresponding weight
+//	vector<double>	_trueweights;	// The weights of the true literals in the set
+//};
 
+/*
+ * Ground translator 
+ */
 class GroundTranslator  {
 
 	private:
@@ -81,11 +91,11 @@ class GroundTranslator  {
 		vector<GroundSet>							_sets;			// keeps mapping between Set numbers and sets
 
 	public:
-		GroundTranslator() : _backsymbtable(1), _backargstable(1), _sets(1) { }
+//		GroundTranslator() : _backsymbtable(1), _backargstable(1), _sets(1) { }
 
 		int				translate(unsigned int,const vector<domelement>&);
 		int				translate(const vector<int>& cl, bool conj, TsType tp);
-		int				translate(int setnr, AggType aggtype, char comp, bool strict, double bound, TsType tstype);
+		int				translate(double bound, char comp, bool strict, int setnr, AggType aggtype, TsType tstype);
 		int				translate(PFSymbol*,const vector<TypedElement>&);
 		int				translateSet(const vector<int>&,const vector<double>&,const vector<double>&);
 		int				nextNumber();

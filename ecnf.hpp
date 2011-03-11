@@ -21,16 +21,26 @@ typedef vector<int> GroundClause;
 /* Enumeration used in GroundTheory::transformForAdd */
 enum VIType { VIT_DISJ, VIT_CONJ, VIT_SET };
 
+/* Enumeration type for rules */
+enum RuleType { RT_TRUE, RT_FALSE, RT_UNARY, RT_CONJ, RT_DISJ, RT_AGG };
+
 /** Ground definitions **/
 class GroundRuleBody {
 	public:
 		RuleType	_type;
 		bool		_recursive;
+		virtual ~GroundRuleBody() { }
+	protected:
+		GroundRuleBody(RuleType type): _type(type) { }
 };
 
 class PCGroundRuleBody : public GroundRuleBody {
 	public:
 		vector<int>	_body;
+		PCGroundRuleBody(RuleType type, const vector<int>& body) :
+			GroundRuleBody(type), _body(body) { }
+		PCGroundRuleBody(const PCGroundRuleBody& grb):
+			GroundRuleBody(grb._type), _body(grb._body) { }
 };
 
 class AggGroundRuleBody : public GroundRuleBody {
@@ -39,6 +49,10 @@ class AggGroundRuleBody : public GroundRuleBody {
 		AggType _aggtype;
 		bool	_lower;
 		double	_bound;
+		AggGroundRuleBody(int setnr, AggType at, bool lower, double bound):
+			GroundRuleBody(RT_AGG), _setnr(setnr), _aggtype(at), _lower(lower), _bound(bound) { }
+		AggGroundRuleBody(const AggGroundRuleBody& grb):
+			GroundRuleBody(RT_AGG), _setnr(grb._setnr), _aggtype(grb._aggtype), _lower(grb._lower), _bound(grb._bound) { }
 };
 
 struct GroundDefinition {
@@ -49,11 +63,16 @@ struct GroundDefinition {
 	GroundDefinition(GroundTranslator* tr) : _translator(tr) { }
 	void addTrueRule(int head);
 	void addRule(int head, const vector<int>& body, bool conj, bool recursive);
-	void addAgg(int head, int setnr, AggType aggtype, bool lower, double bound, bool recursive) { /* TODO */ }
+	void addAgg(int head, int setnr, AggType aggtype, bool lower, double bound, bool recursive);
 	string to_string() const;
 };
 
-/** Ground Aggregates
+/** Ground fixpoint defintions **/
+struct GroundFixpDef {
+	//TODO
+};
+
+/** Ground aggregates
  * Propositional expression of one of the following forms
 		(a) head <- agg(set) =< bound
 		(b) head <- bound =< agg(set)
@@ -71,17 +90,24 @@ struct GroundAggregate {
 	double			_bound;		// the bound
 	GroundAggregate(AggType t, bool l, TsType e, int h, unsigned int s, double b) :
 		_type(t), _lower(l), _eha(e), _head(h), _set(s), _bound(b) { }
-	GroundAggregate(const EcnfAgg& efa) : 
+	GroundAggregate(const GroundAggregate& efa) : 
 		_type(efa._type), _lower(efa._lower), _eha(efa._eha), _head(efa._head), _set(efa._set), _bound(efa._bound) { }
 	GroundAggregate() { }
 };
 
-/** Ground set **/
+/** Ground sets **/
 struct GroundSet {
-	int	_setnr;
-	vector<int>	_set;
-	vector<double> _weights;
-	GroundSet(int setnr, const vector<int>& s, const vector<double>& w) : _setnr(setnr), _set(s), _weights(w) { }
+//	int				_setnr;
+	vector<int>		_setlits;		// All literals in the ground set
+	vector<double>	_litweights;	// For each literal a corresponding weight
+	vector<double>	_trueweights;	// The weights of the true literals in the set
+	GroundSet() { }
+//	GroundSet(int setnr, const vector<int>& s, const vector<double>& w) :
+//		_setnr(setnr), _setlits(s), _litweights(w) { }
+	GroundSet(const vector<int>& s, const vector<double>& lw) :
+		_setlits(s), _litweights(lw) { }
+	GroundSet(const vector<int>& s, const vector<double>& lw, const vector<double>& tw) :
+		_setlits(s), _litweights(lw), _trueweights(tw) { }
 };
 
 /*
@@ -99,9 +125,6 @@ class AbstractGroundTheory : public AbstractTheory {
 														// in the theory.
 		set<int>					_printedsets;		// Set numbers produced by the translator that occur in the theory
 
-		map<PFSymbol*,set<int> >	_defined;	// Symbols that are defined in the theory. This set is used to
-												// communicate to the solver which ground atoms should be considered defined.
-
 	public:
 		// Constructors 
 		AbstractGroundTheory(AbstractStructure* str) : 
@@ -111,7 +134,7 @@ class AbstractGroundTheory : public AbstractTheory {
 
 		// Destructor
 		virtual void recursiveDelete()	{ delete(this);			}
-		virtual	~GroundTheory()			{ delete(_translator);	}
+		virtual	~AbstractGroundTheory()	{ delete(_translator);	}
 
 		// Mutators
 				void add(Formula* )		{ assert(false);	}
@@ -124,11 +147,13 @@ class AbstractGroundTheory : public AbstractTheory {
 				void addUnitClause(int l)	{ GroundClause c(1,l); addClause(c);	}
 		virtual void addClause(GroundClause& cl, bool skipfirst = false)	= 0;
 		virtual void addDefinition(GroundDefinition&)						= 0;
-		virtual	void addAggregate(int head, AggTsBody& body)				= 0;
+		virtual void addFixpDef(GroundFixpDef&)								= 0;
+		virtual void addAggregate(GroundAggregate&)							= 0;
 		virtual void addSet(int setnr, int defnr, bool weighted)			= 0;
 
-//		virtual void addPCRule(int defnr, int head, PCTsBody& body)			= 0;
-//		virtual void addAggRule(int defnr, int head, AggTsBody& body)		= 0;
+		virtual	void addAggregate(int head, AggTsBody& body)				= 0; // TODO: heads in these three rules are tseitins right?
+		virtual void addPCRule(int defnr, int head, PCTsBody& body)			= 0; //  maybe we should call the variable tseitin for clarity...
+		virtual void addAggRule(int defnr, int head, AggTsBody& body)		= 0; //
 
 		// Inspectors
 		GroundTranslator*		translator()	const { return _translator;	}
@@ -141,7 +166,9 @@ class AbstractGroundTheory : public AbstractTheory {
 class SolverTheory : public AbstractGroundTheory {
 
 	private:
-		SATSolver*		_solver;		// SAT solver
+		SATSolver*					_solver;	// SAT solver
+		map<PFSymbol*,set<int> >	_defined;	// Symbols that are defined in the theory. This set is used to
+												// communicate to the solver which ground atoms should be considered defined.
 
 	public:
 		// Constructors 
@@ -153,11 +180,13 @@ class SolverTheory : public AbstractGroundTheory {
 		// Mutators
 		void	addClause(GroundClause& cl, bool skipfirst = false);
 		void	addDefinition(GroundDefinition&);
-		void	addAggregate(int head, AggTsBody& body);
+		void	addFixpDef(GroundFixpDef&) 								{ assert(false); /* TODO */ }
+		void 	addAggregate(GroundAggregate&);
 		void	addSet(int setnr, int defnr, bool weighted);
 
-//		void	addPCRule(int defnr, int head, PCTsBody& body);
-//		void	addAggRule(int defnr, int head, AggTsBody& body);
+		void	addAggregate(int head, AggTsBody& body);
+		void	addPCRule(int defnr, int head, PCTsBody& body);
+		void	addAggRule(int defnr, int head, AggTsBody& body);
 
 		void	addFuncConstraints();
 		void	addFalseDefineds();
@@ -197,11 +226,12 @@ class GroundTheory : public AbstractGroundTheory {
 		// Mutators
 		void	addClause(GroundClause& cl, bool skipfirst = false);
 		void	addDefinition(GroundDefinition&);
+		void	addFixpDef(GroundFixpDef&) 								{ assert(false); /* TODO */ }
 		void	addAggregate(int head, AggTsBody& body);
 		void	addSet(int setnr, int defnr, bool weighted);
 
-//		void	addPCRule(int defnr, int head, PCTsBody& body);
-//		void	addAggRule(int defnr, int head, AggTsBody& body);
+		void	addPCRule(int defnr, int head, PCTsBody& body);
+		void	addAggRule(int defnr, int head, AggTsBody& body);
 
 		// Inspectors
 		unsigned int		nrSentences()				const { return _clauses.size() + _aggregates.size();	}
@@ -258,7 +288,6 @@ struct EcnfAgg {
 };
 
 /** Propositional definition **/
-enum RuleType { RT_TRUE, RT_FALSE, RT_UNARY, RT_CONJ, RT_DISJ, RT_AGG };
 struct EcnfDefinition {
 	map<int,RuleType>		_ruletypes;	// map a head to its current ruletype
 	map<int,vector<int> >	_bodies;	// map a head to its body (conjunctive and disjunctive rules)

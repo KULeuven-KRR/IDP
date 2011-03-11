@@ -35,7 +35,7 @@ class Sort;
 class Predicate;
 class Function;
 class Vocabulary;
-class EcnfTheory;
+class GroundTheory;
 class SolverTheory;
 
 /*
@@ -61,7 +61,7 @@ class Visitor {
 
 		/** Theories **/
 		virtual void visit(const Theory* t);
-		virtual void visit(const EcnfTheory* t);
+		virtual void visit(const GroundTheory* t);
 		virtual void visit(const SolverTheory* t);
 
 		// Formulas     
@@ -144,7 +144,7 @@ class MutatingVisitor {
 
 		// Theories
 		virtual Theory* visit(Theory* t);	
-		virtual EcnfTheory* visit(EcnfTheory* t);
+		virtual GroundTheory* visit(GroundTheory* t);
 		virtual SolverTheory* visit(SolverTheory* t);
 
 
