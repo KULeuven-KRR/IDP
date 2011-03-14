@@ -4,101 +4,40 @@
 	(c) K.U.Leuven
 ************************************/
 
-#ifndef FOBDD
-#define FOBDD
+#include "theory.hpp"
 
-/************
-	Terms
-************/
+#ifndef FOBDD_HPP
+#define FOBDD_HPP
 
-class FOBDDArgument {
-};
+/*******************
+	Kernel order
+*******************/
 
-class FOBDDVariable : public FOBDDArgument {
-	private:
-		Variable*	_variable;
-	
-		FOBDDVariable(Variable* var) :
-			_variable(var) { }
-	
-	public:
-
-	friend FOBDDVariable* FOBDDManager::addVariable(Variable* var);
-};
-
-class FOBDDDeBruijnIndex : public FOBDDArgument {
-	private:
-		Sort*			_sort;
-		unsigned int	_index;
-
-		FOBDDDeBruijnIndex(Sort* sort, unsigned int index) :
-			_sort(sort), _index(index) { }
-
-	public:
-
-	friend FOBDDDeBruijnIndex* FOBDDManager::addDeBruijnIndex(Sort* sort, unsigned int index);
-};
-
-
-/**************
-	Kernels
-**************/
-
-class FOBDDKernel {
-};
-
-class FOBDDAtomKernel : public FOBDDKernel {
-
-	private:
-		PFSymbol*				_symbol;
-		vector<FOBDDArgument*>	_args;
-
-		FOBDDAtomKernel(PFSymbol* symbol, const vector<FOBDDArgument*>& args) :
-			_symbol(symbol), _args(args) { }
-
-	public:
-	
-	friend FOBDDAtomKernel*	FOBDDManager::addAtomKernel(PFSymbol* symbol,const vector<FOBDDArgument*>& args);
-};
-
-class FOBDDQuantKernel : public FOBDDKernel {
-	private:
-		Sort*	_sort;	
-		FOBDD*	_bdd;
-
-		FOBDDQuantKernel(Sort* sort, FOBDD* bdd) :
-			_sort(sort), _bdd(bdd) { }
-	
-	public:
-
-	friend FOBDDQuantKernel* FOBDDManager::addQuantKernel(Sort* sort, FOBDD* bdd);
-};
-
-/***********
-	BDDs
-***********/
-
-class FOBDD {
-
-	private:
-		FOBDDKernel*	_kernel;
-		FOBDD*			_falsebranch;
-		FOBDD*			_truebranch;
-
-		FOBDD(FOBDDKernel* kernel, FOBDD* falsebranch, FOBDD* truebranch) :
-			_kernel(kernel), _falsebranch(falsebranch), _truebranch(truebranch) { }
-
-	public:
-
-	friend FOBDD* FOBDDManager::addBDD(FOBDDKernel* kernel,FOBDD* falsebranch,FOBDD* truebranch);
+struct KernelOrder {
+	unsigned int	_category;
+	unsigned int	_number;
+	KernelOrder(unsigned int c, unsigned int n) : _category(c), _number(n) { }
+	KernelOrder(const KernelOrder& order) : _category(order._category), _number(order._number) { }
 };
 
 /******************
 	BDD manager
 ******************/
 
+
+class FOBDDArgument;
+class FOBDDVariable;
+class FOBDDFuncTerm;
+class FOBDDDeBruijnIndex;
+class FOBDDDomainTerm;
+
+class FOBDDKernel;
+class FOBDDAtomKernel;
+class FOBDDQuantKernel;
+class FOBDD;
+
 typedef map<FOBDD*,FOBDD*>				MBDDBDD;				
-typedef map<FOBDD*,MBDDMBDD>			MBDDMBDDBDD;	
+typedef map<FOBDD*,MBDDBDD>				MBDDMBDDBDD;	
 typedef map<FOBDDKernel*,MBDDMBDDBDD>	BDDTable;
 
 typedef map<vector<FOBDDArgument*>,FOBDDAtomKernel*>	MVAGAK;
@@ -106,16 +45,27 @@ typedef map<PFSymbol*,MVAGAK>							AtomKernelTable;
 typedef map<FOBDD*,FOBDDQuantKernel*>					MBDDQK;
 typedef map<Sort*,MBDDQK>								QuantKernelTable;
 
-typedef map<Variable*,FOBDDVariable*>			VariableTable;
-typedef map<unsigned int,FOBDDDeBruijnIndex*>	MUIDB;
-typedef map<Sort*,MUIDB>						DeBruijnIndexTable;
+typedef map<Variable*,FOBDDVariable*>					VariableTable;
+typedef map<unsigned int,FOBDDDeBruijnIndex*>			MUIDB;
+typedef map<Sort*,MUIDB>								DeBruijnIndexTable;
+typedef map<TypedElement,FOBDDDomainTerm*>				MTEDT;
+typedef map<Sort*,MTEDT>								DomainTermTable;
+typedef map<vector<FOBDDArgument*>,FOBDDFuncTerm*>		MVAFT;
+typedef map<Function*,MVAFT>							FuncTermTable;
 
 class FOBDDManager {
 
 	private:
 		// Leaf nodes
-		FOBDD*				_trueleaf;
-		FOBDD*				_falseleaf;
+		FOBDD*	_truebdd;
+		FOBDD*	_falsebdd;
+
+		// Order
+		map<unsigned int,unsigned int>	_nextorder;
+
+		KernelOrder newOrder(unsigned int category);
+		KernelOrder	newOrder(const vector<FOBDDArgument*>& args);
+		KernelOrder newOrder(FOBDD* bdd);
 
 		// Global tables
 		BDDTable			_bddtable;
@@ -123,27 +73,49 @@ class FOBDDManager {
 		QuantKernelTable	_quantkerneltable;
 		VariableTable		_variabletable;
 		DeBruijnIndexTable	_debruijntable;
+		FuncTermTable		_functermtable;
+		DomainTermTable		_domaintermtable;
 
 		FOBDD*				addBDD(FOBDDKernel* kernel,FOBDD* falsebranch,FOBDD* truebranch);
 		FOBDDAtomKernel*	addAtomKernel(PFSymbol* symbol,const vector<FOBDDArgument*>& args);
 		FOBDDQuantKernel*	addQuantKernel(Sort* sort, FOBDD* bdd);
 		FOBDDVariable*		addVariable(Variable* var);
 		FOBDDDeBruijnIndex* addDeBruijnIndex(Sort* sort, unsigned int index);
+		FOBDDFuncTerm* 		addFuncTerm(Function* func, const vector<FOBDDArgument*>& args);
+		FOBDDDomainTerm*	addDomainTerm(Sort* sort, TypedElement value);
 
-		FOBDDAtomKernel*	getKernel(PredForm* pf);
+		FOBDD*				quantify(Sort* sort, FOBDD* bdd);
+		FOBDD*				bump(FOBDDVariable* var, FOBDD* bdd, unsigned int depth = 0);
+		FOBDDKernel*		bump(FOBDDVariable* var, FOBDDKernel* kernel, unsigned int depth);
+		FOBDDArgument*		bump(FOBDDVariable* var, FOBDDArgument* arg, unsigned int depth);
 
 	public:
 
 		FOBDDManager();
+
+		FOBDD*				truebdd()	const	{ return _truebdd;	}
+		FOBDD*				falsebdd()	const	{ return _falsebdd;	}
 
 		FOBDD*				getBDD(FOBDDKernel* kernel,FOBDD* falsebranch,FOBDD* truebranch);
 		FOBDDAtomKernel*	getAtomKernel(PFSymbol* symbol,const vector<FOBDDArgument*>& args);
 		FOBDDQuantKernel*	getQuantKernel(Sort* sort, FOBDD* bdd);
 		FOBDDVariable*		getVariable(Variable* var);
 		FOBDDDeBruijnIndex* getDeBruijnIndex(Sort* sort, unsigned int index);
+		FOBDDFuncTerm* 		getFuncTerm(Function* func, const vector<FOBDDArgument*>& args);
+		FOBDDDomainTerm*	getDomainTerm(Sort* sort, TypedElement value);
 
-		FOBDD*				getBDD(PredForm* pf);
+		FOBDD*	negation(FOBDD*);
+		FOBDD*	conjunction(FOBDD*,FOBDD*);
+		FOBDD*	disjunction(FOBDD*,FOBDD*);
+		FOBDD*	univquantify(FOBDDVariable*,FOBDD*);
+		// TODO quantify multiple variables at once
+		FOBDD*	existsquantify(FOBDDVariable*,FOBDD*);
+		FOBDD*	ifthenelse(FOBDDKernel*, FOBDD* truebranch, FOBDD* falsebranch);
 		
+		string	to_string(FOBDD*,unsigned int spaces = 0) const;
+		string	to_string(FOBDDKernel*,unsigned int spaces = 0) const;
+		string	to_string(FOBDDArgument*) const;
+
 };
 
 class FOBDDFactory : public Visitor {
@@ -161,8 +133,177 @@ class FOBDDFactory : public Visitor {
 
 		FOBDD*	bdd() const { return _bdd;	}
 
-		void visit(const PredForm* pf);
+		void	visit(const VarTerm* vt);
+		void	visit(const DomainTerm* dt);
+		void	visit(const FuncTerm* ft);
+		void	visit(const AggTerm* at);
+
+		void	visit(const PredForm* pf);
+		void	visit(const BoolForm* bf);
+		void	visit(const QuantForm* qf);
+		void	visit(const EqChainForm* ef);
+		void	visit(const AggForm* af);
 	
+};
+
+
+/************
+	Terms
+************/
+
+class FOBDDArgument {
+	public:
+		virtual bool containsDeBruijnIndex(unsigned int index)	const = 0;
+				bool containsFreeDeBruijnIndex()				const { return containsDeBruijnIndex(0);	}
+};
+
+class FOBDDVariable : public FOBDDArgument {
+	private:
+		Variable*	_variable;
+	
+		FOBDDVariable(Variable* var) :
+			_variable(var) { }
+	
+	public:
+
+			bool containsDeBruijnIndex(unsigned int)	const { return false;	}
+
+			Variable*	variable()	const { return _variable;	}
+
+	friend class FOBDDManager;
+};
+
+class FOBDDDeBruijnIndex : public FOBDDArgument {
+	private:
+		Sort*			_sort;
+		unsigned int	_index;
+
+		FOBDDDeBruijnIndex(Sort* sort, unsigned int index) :
+			_sort(sort), _index(index) { }
+
+	public:
+
+			bool containsDeBruijnIndex(unsigned int index)	const { return _index == index;	}
+
+			Sort*			sort()	const { return _sort;	}
+			unsigned int	index()	const { return _index;	}
+
+	friend class FOBDDManager;
+};
+
+class FOBDDDomainTerm : public FOBDDArgument {
+	private:
+		Sort*			_sort;
+		TypedElement	_value;
+
+		FOBDDDomainTerm(Sort* sort, TypedElement value) :
+			_sort(sort), _value(value) { }
+
+	public:
+
+		bool containsDeBruijnIndex(unsigned int)	const { return false;	}
+
+		Sort*			sort()	const { return _sort;	}	
+		TypedElement	value()	const { return _value;	}
+
+	friend class  FOBDDManager;
+	
+};
+
+class FOBDDFuncTerm : public FOBDDArgument {
+	private:
+		Function*				_function;
+		vector<FOBDDArgument*>	_args;
+
+		FOBDDFuncTerm(Function* func, const vector<FOBDDArgument*>& args) :
+			_function(func), _args(args) { }
+
+	public:
+
+			bool containsDeBruijnIndex(unsigned int index)	const;
+
+			Function*		func()					const	{ return _function;		}
+			FOBDDArgument*	args(unsigned int n)	const	{ return _args[n];		}
+
+	friend class FOBDDManager;
+};
+
+/**************
+	Kernels
+**************/
+
+class FOBDDKernel {
+	private:
+		KernelOrder	_order;
+	public:
+		FOBDDKernel(const KernelOrder& order) : _order(order) { }
+
+				bool containsFreeDeBruijnIndex()			const { return containsDeBruijnIndex(0);	}
+		virtual bool containsDeBruijnIndex(unsigned int)	const { return false;						}
+				unsigned int category()						const { return _order._category;			}
+
+		bool operator<(const FOBDDKernel&) const;
+		bool operator>(const FOBDDKernel&) const;
+};
+
+class FOBDDAtomKernel : public FOBDDKernel {
+
+	private:
+		PFSymbol*				_symbol;
+		vector<FOBDDArgument*>	_args;
+
+		FOBDDAtomKernel(PFSymbol* symbol, const vector<FOBDDArgument*>& args, const KernelOrder& order) :
+			FOBDDKernel(order), _symbol(symbol), _args(args) { }
+
+	public:
+		bool containsDeBruijnIndex(unsigned int index)	const;
+
+		PFSymbol*		symbol()				const { return _symbol;		}
+		FOBDDArgument*	args(unsigned int n)	const { return _args[n];	}
+
+	friend class FOBDDManager;
+};
+
+class FOBDDQuantKernel : public FOBDDKernel {
+	private:
+		Sort*	_sort;	
+		FOBDD*	_bdd;
+
+		FOBDDQuantKernel(Sort* sort, FOBDD* bdd, const KernelOrder& order) :
+			FOBDDKernel(order), _sort(sort), _bdd(bdd) { }
+	
+	public:
+		bool containsDeBruijnIndex(unsigned int index)	const;
+
+		Sort*	sort()	const { return _sort;	}
+		FOBDD*	bdd()	const { return _bdd;	}
+
+	friend class FOBDDManager;
+};
+
+/***********
+	BDDs
+***********/
+
+class FOBDD {
+
+	private:
+		FOBDDKernel*	_kernel;
+		FOBDD*			_truebranch;
+		FOBDD*			_falsebranch;
+
+		FOBDD(FOBDDKernel* kernel, FOBDD* truebranch, FOBDD* falsebranch) :
+			_kernel(kernel), _truebranch(truebranch), _falsebranch(falsebranch) { }
+
+	public:
+		bool containsFreeDeBruijnIndex()				const { return containsDeBruijnIndex(0);	}
+		bool containsDeBruijnIndex(unsigned int index)	const;
+
+		FOBDDKernel*	kernel()		const { return _kernel;			}
+		FOBDD*			falsebranch()	const { return _falsebranch;	}
+		FOBDD*			truebranch()	const { return _truebranch;		}
+
+	friend class FOBDDManager;
 };
 
 #endif

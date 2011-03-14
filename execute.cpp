@@ -11,6 +11,7 @@
 #include "data.hpp"
 #include "lua.hpp"
 #include "error.hpp"
+#include "fobdd.hpp"
 
 /*
 	Connection with lua
@@ -57,6 +58,7 @@ namespace BuiltinProcs {
 		_inferences["delete"].push_back(new DeleteData(IAT_NAMESPACE));
 		_inferences["delete"].push_back(new DeleteData(IAT_OPTIONS));
 		_inferences["changevoc"].push_back(new ChangeVoc());
+		_inferences["getbdds"].push_back(new BDDPrinter());
 	}
 
 	void cleanup() {
@@ -748,4 +750,18 @@ InfArg ChangeVoc::execute(const vector<InfArg>& args) const {
 	return a;
 }
 
+InfArg BDDPrinter::execute(const vector<InfArg>& args) const {
+	FOBDDManager manager;
+	FOBDDFactory factory(&manager);
+	AbstractTheory* theory = args[0]._theory;
+	FOBDD* result = manager.truebdd();
+	for(unsigned int n = 0; n < theory->nrSentences(); ++n) {
+		theory->sentence(n)->accept(&factory);
+		result = manager.conjunction(result,factory.bdd());
+	}
+	// TODO: assert that there are no definitions and no fixpoint definitions
+	InfArg a;
+	a._string = new string(manager.to_string(result));
+	return a;
+}
 

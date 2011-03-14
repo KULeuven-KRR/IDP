@@ -143,5 +143,9 @@
 		return idp_intern.idpcall("forcetwovalued",S);
 	}
 
+	#procedure getbdds(T) {
+		return idp_intern.idpcall("getbdds",T);
+	}
+
 }
 

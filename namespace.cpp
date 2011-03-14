@@ -363,3 +363,21 @@ set<Function*> Namespace::allFuncs() const {
 	}
 	return sf;
 }
+
+/*****************************
+	Communication with Lua
+*****************************/
+
+GlobalName* GlobalName::subname(const string& str) const {
+	assert(isSubname(str));
+	map<string,GlobalName*>::const_iterator it = _subnames.find(str);
+	return it->second;
+}
+
+void Namespace::toLuaGlobal(lua_State* ) const {
+	// TODO
+}
+
+void Namespace::toLuaLocal(lua_State* ) const {
+	// TODO
+}

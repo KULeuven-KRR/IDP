@@ -321,4 +321,15 @@ class ChangeVoc : public Inference {
 		InfArg execute(const vector<InfArg>& args) const;
 };
 
+class BDDPrinter : public Inference {
+	public:
+		BDDPrinter() {
+			_intypes = vector<InfArgType>(1,IAT_THEORY);
+			_outtype = IAT_STRING;
+			_description = "Show the given theory as a bdd";
+			_reload = false;
+		}
+		InfArg execute(const vector<InfArg>& args) const;
+};
+
 #endif

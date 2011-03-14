@@ -144,8 +144,19 @@ void parse(const vector<string>& inputfiles) {
 /** Communication with lua **/
 
 void createmetatables(lua_State* L) {
+
+	luaL_dostring(L,"idp_intern.index = function(obj) idp_intern.idpcall(\"index\",obj) end");
+	luaL_dostring(L,"idp_intern.call = function(obj) idp_intern.idpcall(\"execute\",obj) end");
 	luaL_dostring(L,"idp_intern.delete = function(obj) idp_intern.idpcall(\"delete\",obj) end");
+
 	lua_getglobal(L,"idp_intern");
+
+	luaL_newmetatable(L,"idpobject");
+	lua_getfield(L,-2,"index");
+	lua_setfield(L,-2,"__index");
+	lua_getfield(L,-2,"call");
+	lua_setfield(L,-2,"__call");
+	lua_pop(L,1);
 
 	luaL_newmetatable (L,"theory");
 	lua_pushboolean(L,true);

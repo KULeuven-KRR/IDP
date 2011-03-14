@@ -356,12 +356,13 @@ string GroundTheory::to_string() const {
 		s << _definitions[n].to_string();
 	}
 	for(unsigned int n = 0; n < _sets.size(); ++n) {
-		s << "Set nr. " << _sets[n]._setnr << " = { ";
+		s << "Set nr. " << _sets[n]._setnr << " = [ ";
 		for(unsigned int m = 0; m < _sets[n]._setlits.size(); ++m) {
-			s << _translator->printatom(_sets[n]._setlits[m]);
-			s << _sets[n]._litweights[m];
+			s << "(" << _translator->printatom(_sets[n]._setlits[m]);
+			s << " = " << _sets[n]._litweights[m] << ")";
+			if(m < _sets[n]._setlits.size()-1) s << "; ";
 		}
-		s << "}\n";
+		s << "]\n";
 	}
 	for(unsigned int n = 0; n < _aggregates.size(); ++n) {
 		const GroundAggregate& agg = _aggregates[n];
