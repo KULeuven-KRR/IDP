@@ -122,3 +122,18 @@ FOBDDDeBruijnIndex* FOBDDManager::addDeBruijnIndex(Sort* sort, unsigned int inde
 	_debruijntable[sort][index] = newindex;
 	return newindex;
 }
+
+/********************
+	FOBDD Factory
+********************/
+
+void FOBDDFactory::visit(PredForm* pf) {
+	vector<FOBDDArgument*> args(pf->symb()->nrSorts());
+	for(unsigned int n = 0; n < args; ++n) {
+		pf->subterm(n)->accept(this);
+		args[n] = _argument;
+	}
+	_kernel = _manager->getAtomKernel(pf->symb(),args);
+	if(pf->sign()) _bdd = _manager->getBDD(kernel,_falseleaf,_trueleaf);
+	else  _bdd = _manager->getBDD(kernel,_trueleaf,_falseleaf);
+}

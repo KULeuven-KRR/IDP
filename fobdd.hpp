@@ -114,8 +114,8 @@ class FOBDDManager {
 
 	private:
 		// Leaf nodes
-		FOBDD*				_truenode;
-		FOBDD*				_falsenode;
+		FOBDD*				_trueleaf;
+		FOBDD*				_falseleaf;
 
 		// Global tables
 		BDDTable			_bddtable;
@@ -130,6 +130,8 @@ class FOBDDManager {
 		FOBDDVariable*		addVariable(Variable* var);
 		FOBDDDeBruijnIndex* addDeBruijnIndex(Sort* sort, unsigned int index);
 
+		FOBDDAtomKernel*	getKernel(PredForm* pf);
+
 	public:
 
 		FOBDDManager();
@@ -139,7 +141,28 @@ class FOBDDManager {
 		FOBDDQuantKernel*	getQuantKernel(Sort* sort, FOBDD* bdd);
 		FOBDDVariable*		getVariable(Variable* var);
 		FOBDDDeBruijnIndex* getDeBruijnIndex(Sort* sort, unsigned int index);
+
+		FOBDD*				getBDD(PredForm* pf);
 		
+};
+
+class FOBDDFactory : public Visitor {
+
+	private:
+		FOBDDManager*	_manager;
+		
+		// Return values
+		FOBDD*			_bdd;
+		FOBDDKernel*	_kernel;
+		FOBDDArgument*	_argument;
+
+	public:
+		FOBDDFactory(FOBDDManager* m) : _manager(m) { }
+
+		FOBDD*	bdd() const { return _bdd;	}
+
+		void visit(const PredForm* pf);
+	
 };
 
 #endif
