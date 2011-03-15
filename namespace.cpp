@@ -368,16 +368,155 @@ set<Function*> Namespace::allFuncs() const {
 	Communication with Lua
 *****************************/
 
-GlobalName* GlobalName::subname(const string& str) const {
-	assert(isSubname(str));
-	map<string,GlobalName*>::const_iterator it = _subnames.find(str);
-	return it->second;
+/*
+ * void Namespace::toLuaGlobal(lua_State* L) const {
+ * DESCRIPTION
+ *		Loads all objects of the namespaces as global variables in a given lua state.
+ * PARAMETERS
+ *		L	- the given lua state
+ */
+void Namespace::toLuaGlobal(lua_State* L) const {
+
+	set<string> doublenames = doubleNames();
+	map<string,overloadedObject*> doubleobjects;
+	for(set<string>::const_iterator it = doublenames.begin(); it != doublenames.end(); ++it) 
+		doubleobjects[*it] = new overloadedObject();
+
+	for(unsigned int n = 0; n < nrSubs(); ++n) {
+		if(doublenames.find(subspace(n)->name()) == doublenames.end()) {
+			Namespace** ptr = (Namespace**) lua_newuserdata(L,sizeof(Namespace*));
+			(*ptr) = subspace(n);
+			luaL_getmetatable (L,"namespace");
+			lua_setmetatable(L,-2);
+			lua_setglobal(L,subspace(n)->name().c_str());
+		}
+		else doubleobjects[subspace(n)->name()]->makenamespace(subspace(n));
+	}
+
+	for(unsigned int n = 0; n < nrVocs(); ++n) {
+		if(doublenames.find(vocabulary(n)->name()) == doublenames.end()) {
+			Vocabulary** ptr = (Vocabulary**) lua_newuserdata(L,sizeof(Vocabulary*));
+			(*ptr) = vocabulary(n);
+			luaL_getmetatable (L,"vocabulary");
+			lua_setmetatable(L,-2);
+			lua_setglobal(L,vocabulary(n)->name().c_str());
+		}
+		else doubleobjects[vocabulary(n)->name()]->makevocabulary(vocabulary(n));
+	}
+
+	for(unsigned int n = 0; n < nrStructs(); ++n) {
+		if(doublenames.find(structure(n)->name()) == doublenames.end()) {
+			AbstractStructure** ptr = (AbstractStructure**) lua_newuserdata(L,sizeof(AbstractStructure*));
+			(*ptr) = structure(n);
+			luaL_getmetatable (L,"structure");
+			lua_setmetatable(L,-2);
+			lua_setglobal(L,structure(n)->name().c_str());
+		}
+		else doubleobjects[structure(n)->name()]->makestructure(structure(n));
+	}
+
+	for(unsigned int n = 0; n < nrTheos(); ++n) {
+		if(doublenames.find(theory(n)->name()) == doublenames.end()) {
+			AbstractTheory** ptr = (AbstractTheory**) lua_newuserdata(L,sizeof(AbstractTheory*));
+			(*ptr) = theory(n);
+			luaL_getmetatable (L,"theory");
+			lua_setmetatable(L,-2);
+			lua_setglobal(L,theory(n)->name().c_str());
+		}
+		else doubleobjects[theory(n)->name()]->maketheory(theory(n));
+	}
+
+	for(map<string,InfOptions*>::const_iterator it = _options.begin(); it != _options.end(); ++it) {
+		if(doublenames.find(it->first) == doublenames.end()) {
+			InfOptions** ptr = (InfOptions**) lua_newuserdata(L,sizeof(InfOptions*));
+			(*ptr) = it->second;
+			luaL_getmetatable (L,"options");
+			lua_setmetatable(L,-2);
+			lua_setglobal(L,it->first.c_str());
+		}
+		else doubleobjects[it->first]->makeoptions(it->second);
+	}
+
+	for(map<string,LuaProcedure*>::const_iterator it = _procedures.begin(); it != _procedures.end(); ++it) {
+		if(doublenames.find(it->second->name()) == doublenames.end()) {
+			stringstream ss;
+			ss << it->second->name() << " = " << it->second->code();
+			luaL_dostring(L,ss.str().c_str());
+		}
+		else {
+			doubleobjects[it->second->name()]->makeprocedure(it->second);
+		}
+	}
+
+	for(map<string,overloadedObject*>::const_iterator it = doubleobjects.begin(); it != doubleobjects.end(); ++it) {
+cerr << "counting " << it->first << endl;
+		if(it->second->single()) {
+			assert(it->second->isProcedure());
+			LuaProcedure* proc = it->second->getProcedure();
+			stringstream ss;
+			ss << proc->name() << " = " << proc->code();
+			luaL_dostring(L,ss.str().c_str());
+cerr << "added function " << ss.str() << endl;
+		}
+		else {
+			overloadedObject** ptr = (overloadedObject**) lua_newuserdata(L,sizeof(overloadedObject*));
+			(*ptr) = it->second;
+			luaL_getmetatable(L,"overloaded");
+			lua_setmetatable(L,-2);
+			lua_setglobal(L,it->first.c_str());
+		}
+	}
 }
 
-void Namespace::toLuaGlobal(lua_State* ) const {
-	// TODO
+/*
+ * set<string> Namespace::doubleNames() const {
+ * DESCRIPTION
+ *		Collects the object names that occur more than once in the namespace
+ */
+set<string> Namespace::doubleNames() const {
+	set<string> allnames;
+	set<string> doublenames;
+	for(unsigned int n = 0; n < nrSubs(); ++n) {
+		if(allnames.find(subspace(n)->name()) == allnames.end()) allnames.insert(subspace(n)->name());
+		else doublenames.insert(subspace(n)->name());
+	}
+	for(unsigned int n = 0; n < nrVocs(); ++n) {
+		if(allnames.find(vocabulary(n)->name()) == allnames.end()) allnames.insert(vocabulary(n)->name());
+		else doublenames.insert(vocabulary(n)->name());
+	}
+	for(unsigned int n = 0; n < nrStructs(); ++n) {
+		if(allnames.find(structure(n)->name()) == allnames.end()) allnames.insert(structure(n)->name());
+		else doublenames.insert(structure(n)->name());
+	}
+	for(unsigned int n = 0; n < nrTheos(); ++n) {
+		if(allnames.find(theory(n)->name()) == allnames.end()) allnames.insert(theory(n)->name());
+		else doublenames.insert(theory(n)->name());
+	}
+	for(map<string,InfOptions*>::const_iterator it = _options.begin(); it != _options.end(); ++it) {
+		if(allnames.find(it->first) == allnames.end()) allnames.insert(it->first);
+		else doublenames.insert(it->first);
+	}
+	for(map<string,LuaProcedure*>::const_iterator it = _procedures.begin(); it != _procedures.end(); ++it) {
+		if(allnames.find(it->second->name()) == allnames.end()) allnames.insert(it->second->name());
+		else doublenames.insert(it->second->name());
+	}
+	return doublenames;
 }
 
 void Namespace::toLuaLocal(lua_State* ) const {
 	// TODO
 }
+
+overloadedObject* Namespace::getObject(const string& str) const {
+	overloadedObject* obj = new overloadedObject();
+	if(isSubspace(str)) obj->makenamespace(subspace(str));
+	if(isVocab(str)) obj->makevocabulary(vocabulary(str));
+	if(isTheory(str)) obj->maketheory(theory(str));
+	if(isOption(str)) obj->makeoptions(option(str));
+	for(map<string,LuaProcedure*>::const_iterator it = _procedures.begin(); it != _procedures.end(); ++it) {
+		if(it->second->name() == str) obj->makeprocedure(it->second);
+	}
+	return obj;
+}
+
+

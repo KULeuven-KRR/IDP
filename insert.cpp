@@ -962,7 +962,7 @@ namespace Insert {
 		_currproc = new LuaProcedure(name,pi);
 		_nrvocabs.push_back(0);
 		_nrspaces.push_back(0);
-		_currproc->add(string("idp_intern_tempfunc = function ("));
+		_currproc->add(string("function ("));
 	}
 
 	void closeproc() {
@@ -983,7 +983,7 @@ namespace Insert {
 	void luacloseargs() {
 		_currproc->add(string(")"));
 		// include using namespace statements
-		for(unsigned int n = 1; n < _usingspace.size(); ++n) {	// n=1 to skip over the global namespace
+/*		for(unsigned int n = 1; n < _usingspace.size(); ++n) {	// n=1 to skip over the global namespace
 			Namespace* ns = _usingspace[n];
 			vector<string> fn = ns->fullnamevector();
 			stringstream common;
@@ -1025,6 +1025,7 @@ namespace Insert {
 		}
 		// include using vocabulary statements
 		// TODO
+		*/
 	}
 
 	void luacode(char* s) {
@@ -1039,9 +1040,8 @@ namespace Insert {
 		assert(!vs.empty());
 		_currproc->add(vs[0]);
 		for(unsigned int n = 1; n < vs.size(); ++n) {
-			_currproc->add(string("(idp_intern.descend,\""));
+			_currproc->add(string("."));
 			_currproc->add(vs[n]);
-			_currproc->add(string("\")"));
 		}
 	}
 

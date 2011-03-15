@@ -13,6 +13,7 @@
 #include <set>
 
 class LuaProcedure;
+class overloadedObject;
 
 /*****************
 	Namespaces
@@ -37,6 +38,9 @@ class Namespace {
 		ParseInfo						_pi;			// the place where the namespace was parsed
 
 		static Namespace*				_global;		// The global namespace
+
+
+		set<string> doubleNames() const;
 
 	public:
 
@@ -92,63 +96,11 @@ class Namespace {
 		int tolua(lua_State*,const vector<string>&) const;
 		int	tolua(lua_State*) const;
 
-		void	toLuaGlobal(lua_State*) const;
-		void	toLuaLocal(lua_State*) const;
+		void				toLuaGlobal(lua_State*) const;
+		void				toLuaLocal(lua_State*) const;
+		overloadedObject*	getObject(const string& str) const;
 };
 
-
-/*
-	class GlobalName
-	
-	This class is used to communicate all userdata from the input files to lua
-*/
-class GlobalName {
-	private:
-		Namespace*					_namespace;
-		Vocabulary*					_vocabulary;
-		AbstractTheory*				_theory;
-		AbstractStructure*			_structure;
-		InfOptions*					_options;
-		LuaProcedure*				_procedure;
-		Predicate*					_predicate;
-		Function*					_function;
-		Sort*						_sort;
-		
-		map<string,GlobalName*>		_subnames;
-	public:
-
-		// Constructor
-		GlobalName() : 
-			_namespace(0), _vocabulary(0), _theory(0), _structure(0), _options(0), _procedure(0),
-			_predicate(0), _function(0), _sort(0) { }
-
-		// Mutators
-		void	makenamespace(Namespace* n)			{ _namespace = n;	}
-		void	makevocabulary(Vocabulary* v)		{ _vocabulary = v;	}
-		void	maketheory(AbstractTheory* t)		{ _theory = t;		}
-		void	makestructure(AbstractStructure* s) { _structure = s;	}
-		void	makeoptions(InfOptions* o)			{ _options = o;		}
-		void	makeprocedure(LuaProcedure* p)		{ _procedure = p;	}
-		void	makepredicate(Predicate* p)			{ _predicate = p;	}
-		void	makefunction(Function* f)			{ _function = f;	}
-		void	makesort(Sort* s)					{ _sort = s;		}
-
-		void	makesubname(const string& str, GlobalName*	g)	{ _subnames[str] = g;	}
-
-		// Inspectors
-		bool	isNamespace()	const { return (_namespace != 0);		}
-		bool	isVocabulary()	const { return (_vocabulary != 0);		}
-		bool	isTheory()		const { return (_theory != 0);			}
-		bool	isStructure()	const { return (_structure != 0);		}
-		bool	isOptions()		const { return (_options != 0);			}
-		bool	isProcedure()	const { return (_procedure != 0);		}
-		bool	isPredicate()	const { return (_predicate != 0);		}
-		bool	isFunction()	const { return (_function != 0);		}
-		bool	isSort()		const { return (_sort != 0);			}
-
-		bool		isSubname(const string& str)	const { return _subnames.find(str) != _subnames.end();	}
-		GlobalName*	subname(const string& str)		const;
-};
 
 #endif
 

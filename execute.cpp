@@ -45,20 +45,37 @@ namespace BuiltinProcs {
 		_inferences["fastground"].push_back(new FastGrounding());
 		_inferences["fastmx"].push_back(new FastMXInference(false));
 		_inferences["fastmx"].push_back(new FastMXInference(true));
-		_inferences["setoption"].push_back(new SetOption(IAT_STRING));
-		_inferences["setoption"].push_back(new SetOption(IAT_NUMBER));
-		_inferences["setoption"].push_back(new SetOption(IAT_BOOLEAN));
-		_inferences["getoption"].push_back(new GetOption());
+
 		_inferences["newoptions"].push_back(new NewOption(true));
 		_inferences["newoptions"].push_back(new NewOption(false));
+
 		_inferences["forcetwovalued"].push_back(new ForceTwoValued());
+		_inferences["changevoc"].push_back(new ChangeVoc());
+		_inferences["getbdds"].push_back(new BDDPrinter());
+
 		_inferences["delete"].push_back(new DeleteData(IAT_THEORY));
 		_inferences["delete"].push_back(new DeleteData(IAT_STRUCTURE));
 		_inferences["delete"].push_back(new DeleteData(IAT_VOCABULARY));
 		_inferences["delete"].push_back(new DeleteData(IAT_NAMESPACE));
 		_inferences["delete"].push_back(new DeleteData(IAT_OPTIONS));
-		_inferences["changevoc"].push_back(new ChangeVoc());
-		_inferences["getbdds"].push_back(new BDDPrinter());
+
+		_inferences["index"].push_back(new GetIndex(IAT_STRUCTURE,IAT_PREDICATE));
+		_inferences["index"].push_back(new GetIndex(IAT_STRUCTURE,IAT_FUNCTION));
+		_inferences["index"].push_back(new GetIndex(IAT_STRUCTURE,IAT_SORT));
+		_inferences["index"].push_back(new GetIndex(IAT_NAMESPACE,IAT_STRING));
+		_inferences["index"].push_back(new GetIndex(IAT_VOCABULARY,IAT_STRING));
+		_inferences["index"].push_back(new GetIndex(IAT_OPTIONS,IAT_STRING));
+
+		_inferences["newindex"].push_back(new SetIndex(IAT_STRUCTURE,IAT_PREDICATE,IAT_TABLE));
+		_inferences["newindex"].push_back(new SetIndex(IAT_STRUCTURE,IAT_FUNCTION,IAT_TABLE));
+		_inferences["newindex"].push_back(new SetIndex(IAT_STRUCTURE,IAT_SORT,IAT_TABLE));
+		_inferences["newindex"].push_back(new SetIndex(IAT_STRUCTURE,IAT_PREDICATE,IAT_PROCEDURE));
+		_inferences["newindex"].push_back(new SetIndex(IAT_STRUCTURE,IAT_FUNCTION,IAT_PROCEDURE));
+		_inferences["newindex"].push_back(new SetIndex(IAT_STRUCTURE,IAT_SORT,IAT_PROCEDURE));
+		_inferences["newindex"].push_back(new SetIndex(IAT_OPTIONS,IAT_STRING,IAT_INT));
+		_inferences["newindex"].push_back(new SetIndex(IAT_OPTIONS,IAT_STRING,IAT_DOUBLE));
+		_inferences["newindex"].push_back(new SetIndex(IAT_OPTIONS,IAT_STRING,IAT_BOOLEAN));
+		_inferences["newindex"].push_back(new SetIndex(IAT_OPTIONS,IAT_STRING,IAT_STRING));
 	}
 
 	void cleanup() {
@@ -69,74 +86,95 @@ namespace BuiltinProcs {
 		}
 	}
 
-	bool checkintern(lua_State* L, int n, const string& tp) {
-		if(lua_type(L,n) == LUA_TUSERDATA) {
-			bool ret = luaL_getmetafield(L,n,tp.c_str());
-			if(ret) {
-				if(lua_isboolean(L,-1)) ret = lua_toboolean(L,-1);
-				lua_pop(L,1);
-			}
-			return ret;
-		}
-		if(lua_type(L,n) == LUA_TFUNCTION) {
-			lua_getglobal(L,"idp_intern");
-			lua_pushvalue(L,n);
-			lua_getfield(L,-2,tp.c_str());
-			int r = lua_pcall(L,1,1,0);
-			if(!r) {
-				if(lua_type(L,-1) == LUA_TNIL) {
-					lua_pop(L,2);
-					return false;
-				}
-				else {
-					lua_pop(L,2);
-					return true;
-				}
-			}
-			else {
-				lua_pop(L,2);
-				return false;
-			}
-		}
-		else return false;
-	}
-
-	bool checkarg(lua_State* L, int n, InfArgType t) {
+	string typestring(InfArgType t) {
 		switch(t) {
-			case IAT_THEORY:
-				return checkintern(L,n,"gettheory");
-			case IAT_VOCABULARY:
-				return checkintern(L,n,"getvocabulary");
-			case IAT_STRUCTURE:
-				return checkintern(L,n,"getstructure");
-			case IAT_NAMESPACE:
-				return checkintern(L,n,"getnamespace");
-			case IAT_OPTIONS:
-				return checkintern(L,n,"getoptions");
-			case IAT_VOID:
-				return true;
-			case IAT_NIL:
-				return lua_type(L,n) == LUA_TNIL;
-			case IAT_NUMBER:
-				return lua_type(L,n) == LUA_TNUMBER;
-			case IAT_BOOLEAN:
-				return lua_type(L,n) == LUA_TBOOLEAN;
-			case IAT_STRING:
-				return lua_type(L,n) == LUA_TSTRING;
-			case IAT_TABLE:
-				assert(false);
+			case IAT_THEORY: 
+				return("theory");
+			case IAT_STRUCTURE: 
+				return("structure");
+			case IAT_VOCABULARY: 
+				return("vocabulary");
+			case IAT_NAMESPACE: 
+				return("namespace");
+			case IAT_OPTIONS: 
+				return("options");
+			case IAT_NIL: 
+				return("nil");
+			case IAT_INT: 
+				return("number");
+			case IAT_DOUBLE:
+				return("number");
+			case IAT_BOOLEAN: 
+				return("boolean");
+			case IAT_STRING: 
+				return("string");
+			case IAT_TABLE: 
+				return("table");
+			case IAT_PROCEDURE: 
+				return("function");
+			case IAT_IDPOBJECT: 
+				return("overloaded");
+			case IAT_SORT:
+				return("sort");
+			case IAT_PREDICATE: 
+				return("predicate");
 			case IAT_FUNCTION:
-				assert(false);
-			case IAT_USERDATA:
-				assert(false);
-			case IAT_THREAD:
-				assert(false);
-			case IAT_LIGHTUSERDATA:
-				assert(false);
+				return("idpfunction");
 			default:
 				assert(false);
 		}
-		return false;
+	}
+
+	string typestring(lua_State* L, int index) {
+		lua_getglobal(L,"type");
+		lua_pushvalue(L,index);
+		lua_call(L,1,1);
+		string str = string(lua_tostring(L,-1));
+		lua_pop(L,1);
+		return str;
+	}
+
+
+	bool checkarg(lua_State* L, int n, InfArgType t) {
+		string typestr = typestring(t);
+		string nstr = typestring(L,n);
+		if(nstr == typestr) return true;
+		else if(nstr == "overloaded") {
+			overloadedObject* obj = *((overloadedObject**)lua_touserdata(L,n));
+			switch(t) {
+				case IAT_THEORY:
+					return obj->isTheory();
+				case IAT_STRUCTURE:
+					return obj->isStructure();
+				case IAT_VOCABULARY:
+					return obj->isVocabulary();
+				case IAT_NAMESPACE:
+					return obj->isNamespace();
+				case IAT_OPTIONS:
+					return obj->isOptions();
+				case IAT_INT:
+					return obj->isInt();
+				case IAT_DOUBLE:
+					return obj->isDouble();
+				case IAT_BOOLEAN:
+					return (obj->isBool());
+				case IAT_STRING:
+					return (obj->isString());
+				case IAT_PROCEDURE:
+					return (obj->isProcedure());
+				case IAT_SORT:
+					return (obj->isSort());
+				case IAT_PREDICATE:
+					return (obj->isPredicate());
+				case IAT_FUNCTION:
+					return (obj->isFunction());
+				case IAT_TABLE:
+					// TODO
+				default:
+					return false;
+			}
+		}
+		else return false;
 	}
 
 
@@ -182,25 +220,14 @@ namespace BuiltinProcs {
 				lua_setmetatable(L,-2);
 				break;
 			}
-			case IAT_SET_OF_STRUCTURES:
-			{
-				vector<AbstractStructure*> vs = *(res._setofstructures);
-				lua_newtable(L);
-				for(unsigned int n = 0; n < vs.size(); ++n) {
-					lua_pushinteger(L,n+1);
-					InfArg a; a._structure = vs[n];
-					converttolua(L,a,IAT_STRUCTURE);
-					lua_settable(L,-3);
-				}
-				break;
-			}
-			case IAT_VOID:
-				break;
 			case IAT_NIL:
 				lua_pushnil(L);
 				break;
-			case IAT_NUMBER:
-				lua_pushnumber(L,res._number);
+			case IAT_INT:
+				lua_pushnumber(L,double(res._int));
+				break;
+			case IAT_DOUBLE:
+				lua_pushnumber(L,res._double);
 				break;
 			case IAT_BOOLEAN:
 				lua_pushboolean(L,res._boolean);
@@ -209,136 +236,182 @@ namespace BuiltinProcs {
 				lua_pushstring(L,res._string->c_str());
 				break;
 			case IAT_TABLE:
+				// TODO
 				assert(false);
-			case IAT_FUNCTION:
+			case IAT_PROCEDURE:
+				// TODO
 				assert(false);
-			case IAT_USERDATA:
-				assert(false);
-			case IAT_THREAD:
-				assert(false);
-			case IAT_LIGHTUSERDATA:
-				assert(false);
+			case IAT_IDPOBJECT:
+			{
+				overloadedObject* obj = res._overloaded;
+				if(obj->single()) {
+					InfArg newarg;
+					if(obj->isNamespace())	{ 
+						newarg._namespace = obj->getNamespace(); 
+						converttolua(L,newarg,IAT_NAMESPACE);	
+					}
+					if(obj->isVocabulary()) { 
+						newarg._vocabulary = obj->getVocabulary(); 
+						converttolua(L,newarg,IAT_VOCABULARY);	
+					}
+					if(obj->isTheory()) { 
+						newarg._theory = obj->getTheory(); 
+						converttolua(L,newarg,IAT_THEORY);	
+					}
+					if(obj->isStructure()) { 
+						newarg._structure = obj->getStructure(); 
+						converttolua(L,newarg,IAT_STRUCTURE);	
+					}
+					if(obj->isOptions()) { 
+						newarg._options = obj->getOptions(); 
+						converttolua(L,newarg,IAT_OPTIONS);	
+					}
+					if(obj->isProcedure()) {
+						newarg._procedure = obj->getProcedure();
+						converttolua(L,newarg,IAT_PROCEDURE);	
+					}
+					if(obj->isPredicate()) {
+						newarg._predicate = obj->getPredicate();
+						converttolua(L,newarg,IAT_PREDICATE);	
+					}
+					if(obj->isFunction()) {
+						newarg._function = obj->getFunction();
+						converttolua(L,newarg,IAT_FUNCTION);	
+					}
+					if(obj->isSort()) {
+						newarg._sort = obj->getSort();
+						converttolua(L,newarg,IAT_SORT);
+					}
+					if(obj->isString()) {
+						newarg._string = obj->getString();
+						converttolua(L,newarg,IAT_STRING);
+					}
+					if(obj->isBool()) {
+						newarg._boolean = obj->getBool();
+						converttolua(L,newarg,IAT_BOOLEAN);
+					}
+					if(obj->isDouble()) {
+						newarg._double = obj->getDouble();
+						converttolua(L,newarg,IAT_DOUBLE);
+					}
+					if(obj->isInt()) {
+						newarg._int = obj->getInt();
+						converttolua(L,newarg,IAT_INT);
+					}
+				}
+				else {
+					overloadedObject** ptr = (overloadedObject**) lua_newuserdata(L,sizeof(overloadedObject*));
+					(*ptr) = obj;
+					luaL_getmetatable(L,"overloaded");
+					lua_setmetatable(L,-2);
+				}
+				break;
+			}
 			default:
 				assert(false);
 		}
-	}
-
-	vector<string> convertintern(lua_State* L,int n, const string& str) {
-		lua_getglobal(L,"idp_intern");
-		lua_pushvalue(L,n);
-		lua_getfield(L,-2,str.c_str());
-		lua_call(L,1,1);
-		assert(lua_type(L,-1) == LUA_TTABLE);
-		lua_getglobal(L,"table");
-		lua_getfield(L,-1,"maxn");
-		lua_pushvalue(L,-3);
-		lua_call(L,1,1);
-		int tabsize = int(lua_tonumber(L,-1));
-		lua_pop(L,2);
-		vector<string> res;
-		for(int a = 1; a <= tabsize; ++a) {
-			lua_pushinteger(L,a);
-			lua_gettable(L,-2);
-			res.push_back(string(lua_tostring(L,-1)));
-			lua_pop(L,1);
-		}
-		lua_pop(L,2);
-		return res;
 	}
 
 	InfArg convertarg(lua_State* L, int n, InfArgType t) {
+		string nstr = typestring(L,n);
 		InfArg a;
-		switch(t) {
-			case IAT_THEORY:
-			{	
-				if(lua_type(L,n) == LUA_TUSERDATA) {
+		if(nstr != "overloaded") {
+			switch(t) {
+				case IAT_THEORY:
 					a._theory = *((AbstractTheory**)lua_touserdata(L,n));
-				}
-				else {
-					vector<string> vs = convertintern(L,n,"gettheory");
-					Namespace* ns = Namespace::global();
-					for(unsigned int m = 0; m < vs.size() -1; ++m) {
-						ns = ns->subspace(vs[m]);
-					}
-					a._theory = ns->theory(vs[vs.size()-1]);
-				}
-				break;
+					break;
+				case IAT_STRUCTURE:
+					a._structure = *((AbstractStructure**)lua_touserdata(L,n));
+					break;
+				case IAT_VOCABULARY:
+					a._vocabulary = *((Vocabulary**)lua_touserdata(L,n));
+					break;
+				case IAT_NAMESPACE:
+					a._namespace = *((Namespace**)lua_touserdata(L,n));
+					break;
+				case IAT_OPTIONS:
+					a._options = *((InfOptions**)lua_touserdata(L,n));
+					break;
+				case IAT_INT:
+					a._int = int(lua_tonumber(L,n));
+					break;
+				case IAT_DOUBLE:
+					a._double = lua_tonumber(L,n);
+					break;
+				case IAT_BOOLEAN:
+					a._boolean = lua_toboolean(L,n);
+					break;
+				case IAT_STRING:
+					a._string = IDPointer(lua_tostring(L,n));
+					break;
+				case IAT_SORT:
+					a._sort = *((Sort**)lua_touserdata(L,n));
+					break;
+				case IAT_PREDICATE:
+					a._predicate = *((Predicate**)lua_touserdata(L,n));
+					break;
+				case IAT_FUNCTION:
+					a._function = *((Function**)lua_touserdata(L,n));
+					break;
+				case IAT_TABLE:
+					// TODO
+					assert(false);
+				case IAT_PROCEDURE:
+					// TODO
+					assert(false);
+				default:
+					assert(false);
 			}
-			case IAT_VOCABULARY:
-			{
-				if(lua_type(L,n) == LUA_TUSERDATA) {
-					a._theory = *((AbstractTheory**)lua_touserdata(L,n));
-				}
-				else {
-					vector<string> vs = convertintern(L,n,"getvocabulary");
-					Namespace* ns = Namespace::global();
-					for(unsigned int m = 0; m < vs.size() -1; ++m) {
-						ns = ns->subspace(vs[m]);
-					}
-					a._vocabulary = ns->vocabulary(vs[vs.size()-1]);
-				}
-				break;
+		}
+		else {
+			overloadedObject* obj = *((overloadedObject**)lua_touserdata(L,n)); 
+			switch(t) {
+				case IAT_THEORY:
+					a._theory = obj->getTheory();
+					break;
+				case IAT_STRUCTURE:
+					a._structure = obj->getStructure();
+					break;
+				case IAT_VOCABULARY:
+					a._vocabulary = obj->getVocabulary();
+					break;
+				case IAT_NAMESPACE:
+					a._namespace = obj->getNamespace();
+					break;
+				case IAT_OPTIONS:
+					a._options = obj->getOptions();
+					break;
+				case IAT_INT:
+					a._int = obj->getInt();
+					break;
+				case IAT_DOUBLE:
+					a._double = obj->getDouble();
+					break;
+				case IAT_BOOLEAN:
+					a._boolean = obj->getBool();
+					break;
+				case IAT_STRING:
+					a._string = obj->getString();
+					break;
+				case IAT_SORT:
+					a._sort = obj->getSort();
+					break;
+				case IAT_PREDICATE:
+					a._predicate = obj->getPredicate();
+					break;
+				case IAT_FUNCTION:
+					a._function = obj->getFunction();
+					break;
+				case IAT_PROCEDURE:
+					a._procedure = obj->getProcedure();
+					break;
+				case IAT_TABLE:
+					// TODO
+					assert(false);
+				default:
+					assert(false);
 			}
-			case IAT_STRUCTURE:
-			{
-				if(lua_type(L,n) == LUA_TUSERDATA) {
-					a._theory = *((AbstractTheory**)lua_touserdata(L,n));
-				}
-				else {
-					vector<string> vs = convertintern(L,n,"getstructure");
-					Namespace* ns = Namespace::global();
-					for(unsigned int m = 0; m < vs.size() -1; ++m) {
-						ns = ns->subspace(vs[m]);
-					}
-					a._structure = ns->structure(vs[vs.size()-1]);
-				}
-				break;
-			}
-			case IAT_NAMESPACE:
-			{
-				if(lua_type(L,n) == LUA_TUSERDATA) {
-					a._theory = *((AbstractTheory**)lua_touserdata(L,n));
-				}
-				else {
-					vector<string> vs = convertintern(L,n,"getnamespace");
-					Namespace* ns = Namespace::global();
-					for(unsigned int m = 0; m < vs.size() -1; ++m) {
-						ns = ns->subspace(vs[m]);
-					}
-					a._namespace = ns->subspace(vs[vs.size()-1]);
-				}
-				break;
-			}
-			case IAT_OPTIONS:
-			{
-				if(lua_type(L,n) == LUA_TUSERDATA) {
-					a._theory = *((AbstractTheory**)lua_touserdata(L,n));
-				}
-				else {
-					vector<string> vs = convertintern(L,n,"getoptions");
-					Namespace* ns = Namespace::global();
-					for(unsigned int m = 0; m < vs.size() -1; ++m) {
-						ns = ns->subspace(vs[m]);
-					}
-					a._options = ns->option(vs[vs.size()-1]);
-				}
-				break;
-			}
-			case IAT_VOID:
-				break;
-			case IAT_NIL:
-				break;
-			case IAT_NUMBER:
-				a._number = lua_tonumber(L,n);
-				break;
-			case IAT_BOOLEAN:
-				a._boolean = lua_toboolean(L,n);
-				break;
-			case IAT_STRING:
-				a._string = IDPointer(lua_tostring(L,n));
-				break;
-			default:
-				assert(false);
+
 		}
 		return a;
 	}
@@ -357,6 +430,11 @@ int idpcall(lua_State* L) {
 	for(unsigned int n = 0; n < pvi.size(); ++n) {
 		if(nrargs == pvi[n]->arity()) vi.push_back(pvi[n]);
 	}
+	if(vi.empty()) {
+		name += "/" + itos(nrargs);
+		Error::unkncommand(name);
+		return 0;
+	}
 	vector<Inference*> vi2;
 	for(unsigned int n = 0; n < vi.size(); ++n) {
 		bool ok = true;
@@ -366,22 +444,23 @@ int idpcall(lua_State* L) {
 		}
 		if(ok) vi2.push_back(vi[n]);
 	}
-	if(vi2.empty()) Error::wrongcommandargs(name + '/' + itos(nrargs));
+	if(vi2.empty()) {
+		Error::wrongcommandargs(name + '/' + itos(nrargs));
+		return 0;
+	}
 	else if(vi2.size() == 1) {
 		vector<InfArg> via;
 		for(unsigned int m = 1; m <= nrargs; ++m)
 			via.push_back(BuiltinProcs::convertarg(L,m,(vi2[0]->intypes())[m-1]));
 		InfArg res = vi2[0]->execute(via);
 		if(vi2[0]->reload()) (Namespace::global())->tolua(L);
-		if(vi2[0]->outtype() == IAT_VOID) return 0;
-		else {
-			BuiltinProcs::converttolua(L,res,vi2[0]->outtype());
-			return 1;
-		}
+		BuiltinProcs::converttolua(L,res,vi2[0]->outtype());
+		return 1;
 	}
-	else Error::ambigcommand(name + '/' + itos(nrargs));
-
-	return 0;
+	else {
+		Error::ambigcommand(name + '/' + itos(nrargs));
+		return 0;
+	}
 }
 
 
@@ -426,7 +505,7 @@ SetOption::SetOption(InfArgType t) {
 	_intypes[0] = IAT_OPTIONS;
 	_intypes[1] = IAT_STRING;
 	_intypes[2] = t;
-	_outtype = IAT_VOID;
+	_outtype = IAT_NIL;
 	_description = "Set the value of a single option";
 	_reload = false;
 }
@@ -435,7 +514,7 @@ GetOption::GetOption() {
 	_intypes = vector<InfArgType>(2);
 	_intypes[0] = IAT_OPTIONS;
 	_intypes[1] = IAT_STRING;
-	_outtype = IAT_STRING;
+	_outtype = IAT_IDPOBJECT;
 	_description = "Get the value of a single option";
 	_reload = false;
 }
@@ -450,14 +529,14 @@ InfArg SetOption::execute(const vector<InfArg>& args) const {
 	InfOptions* opts = args[0]._options;
 	string optname = *(args[1]._string);
 	switch(_intypes[2]) {
-		case IAT_NUMBER:
+		case IAT_INT:
 		{
-			if(isInt(args[2]._number)) {
-				setoption(opts,optname,int(args[2]._number),0);
-			}
-			else {
-				setoption(opts,optname,args[2]._number,0);
-			}
+			setoption(opts,optname,args[2]._int,0);
+			break;
+		}
+		case IAT_DOUBLE:
+		{
+			setoption(opts,optname,args[2]._double,0);
 			break;
 		}
 		case IAT_STRING:
@@ -570,7 +649,7 @@ FastMXInference::FastMXInference(bool opts) {
 	_intypes[0] = IAT_THEORY;
 	_intypes[1] = IAT_STRUCTURE;
 	if(opts) _intypes.push_back(IAT_OPTIONS);
-	_outtype = IAT_SET_OF_STRUCTURES;
+	_outtype = IAT_TABLE;
 	_description = "Performs model expansion on the structure given the theory it should satisfy.";
 	_reload = false;
 }
@@ -614,7 +693,7 @@ InfArg FastMXInference::execute(const vector<InfArg>& args) const {
 	bool sat = solver->solve(sol);
 
 	// Translate
-	InfArg a; a._setofstructures = new vector<AbstractStructure*>();
+	InfArg a; a._table = new vector<TypedInfArg>();
 	if(sat){
 		for(unsigned int i=0; i<sol->getModels().size(); i++){
 			AbstractStructure* mod = structure->clone();
@@ -643,14 +722,17 @@ InfArg FastMXInference::execute(const vector<InfArg>& args) const {
 
 			if(opts->_modelformat == MF_TWOVAL) {
 				mod->forcetwovalued();
-				a._setofstructures->push_back(mod);
+				TypedInfArg b; b._value._structure = mod; b._type = IAT_STRUCTURE;
+				a._table->push_back(b);
 			}
 			else if(opts->_modelformat == MF_ALL) {
 				// TODO
-				a._setofstructures->push_back(mod);
+				TypedInfArg b; b._value._structure = mod; b._type = IAT_STRUCTURE;
+				a._table->push_back(b);
 			}
 			else {
-				a._setofstructures->push_back(mod);
+				TypedInfArg b; b._value._structure = mod; b._type = IAT_STRUCTURE;
+				a._table->push_back(b);
 			}
 		}
 	}
@@ -681,7 +763,7 @@ GroundReduce::GroundReduce() {
 	_intypes = vector<InfArgType>(2);
 	_intypes[0] = IAT_THEORY;
 	_intypes[1] = IAT_STRUCTURE;
-	_outtype = IAT_VOID;
+	_outtype = IAT_NIL;
 	_description = "Replace ground atoms in the theory by their truth value in the structure";
 	_reload = false;
 }
@@ -737,7 +819,7 @@ InfArg ForceTwoValued::execute(const vector<InfArg>& args) const {
 ChangeVoc::ChangeVoc() {
 	_intypes.push_back(IAT_STRUCTURE);
 	_intypes.push_back(IAT_VOCABULARY);
-	_outtype = IAT_VOID;
+	_outtype = IAT_NIL;
 	_description = "Change the vocabulary of a structure";
 	_reload = true;
 }
@@ -747,6 +829,31 @@ InfArg ChangeVoc::execute(const vector<InfArg>& args) const {
 	Vocabulary* v = args[1]._vocabulary;
 	StructUtils::changevoc(str,v);
 	InfArg a;
+	return a;
+}
+
+InfArg GetIndex::execute(const vector<InfArg>& args) const {
+	InfArg a;
+	switch(_intypes[0]) {
+		case IAT_STRUCTURE:
+			// TODO
+			break;
+		case IAT_NAMESPACE:
+		{
+			Namespace* nsp = args[0]._namespace;
+			string str = *(args[1]._string);
+			a._overloaded = nsp->getObject(str);
+			break;
+		}
+		case IAT_VOCABULARY:
+			// TODO
+			break;
+		case IAT_OPTIONS:
+			// TODO
+			break;
+		default:
+			assert(false);
+	}
 	return a;
 }
 
@@ -765,3 +872,62 @@ InfArg BDDPrinter::execute(const vector<InfArg>& args) const {
 	return a;
 }
 
+SetIndex::SetIndex(InfArgType table, InfArgType key, InfArgType value) {
+	_intypes = vector<InfArgType>(3);
+	_intypes[0] = table; _intypes[1] = key; _intypes[2] = value;
+	_outtype = IAT_NIL;
+	_description = "newindex";
+	_reload = false;
+}
+
+InfArg SetIndex::execute(const vector<InfArg>& args) const {
+	// TODO
+	assert(false);
+	InfArg a;
+	return a;
+}
+
+bool overloadedObject::single() const {
+	unsigned int count = 0;
+	if(isNamespace()) ++count;
+	if(isVocabulary()) ++count;
+	if(isTheory()) ++count;	
+	if(isStructure()) ++count;
+	if(isOptions()) ++count;		
+	if(isProcedure()) ++count;	
+	if(isPredicate()) ++count;	
+	if(isFunction()) ++count;	
+	if(isSort()) ++count;		
+cerr << "count=" << count << endl;
+	return count <= 1;
+}
+
+void overloadedObject::makeprocedure(LuaProcedure* proc) {
+	if(!isProcedure()) {
+		_procedure = proc;
+	}
+	else if(typeid(*_procedure) == typeid(OverloadedLuaProcedure)) {
+		OverloadedLuaProcedure* olp = dynamic_cast<OverloadedLuaProcedure*>(_procedure);
+		olp->addproc(proc);
+	}
+	else {
+		OverloadedLuaProcedure* olp = new OverloadedLuaProcedure(_procedure->name());
+		olp->addproc(_procedure);
+		olp->addproc(proc);
+		_procedure = olp;
+	}
+}
+
+string OverloadedLuaProcedure::code() const {
+	stringstream ss;
+	ss << " function(...)\n";
+	ss << "local idp_intern_tab = {...}\n";
+	for(unsigned int n = 0; n < _subprocedures.size(); ++n) {
+		ss << "local idp_intern_tempfunc" << n << " = " << _subprocedures[n]->code() << "\n";
+	}
+	for(unsigned int n = 0; n < _subprocedures.size(); ++n) {
+		ss << "if #idp_intern_tab == " << _subprocedures[n]->arity() << " then return idp_intern_tempfunc" << n << "(...) end\n";
+	}
+	ss << "end\n";
+	return ss.str();
+}
