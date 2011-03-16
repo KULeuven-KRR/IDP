@@ -637,7 +637,7 @@ void FormulaEvaluator::visit(const QuantForm* qf) {
 	Rewriting theories
 *************************/
 
-void Theory::add(AbstractTheory* t) {
+void Theory::add(Theory* t) {
 	for(unsigned int n = 0; n < t->nrDefinitions(); ++n)
 		_definitions.push_back(t->definition(n));
 	for(unsigned int n = 0; n < t->nrFixpDefs(); ++n)

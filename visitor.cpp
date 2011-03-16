@@ -5,7 +5,19 @@
 ************************************/
 
 #include "theory.hpp"
+#include "ecnf.hpp"
 #include <iostream>
+
+/**************
+	Visitor
+**************/
+
+/** Standard visiting behavior **/
+
+void Visitor::visit(const Theory* t)			{ traverse(t);	}
+void Visitor::visit(const Definition* a)		{ traverse(a);	}
+void Visitor::visit(const Rule* a)				{ traverse(a);	}
+void Visitor::visit(const FixpDef* a)			{ traverse(a);	}
 
 void Visitor::visit(const PredForm* a)			{ traverse(a);	}
 void Visitor::visit(const BracketForm* a)		{ traverse(a);	}
@@ -14,26 +26,33 @@ void Visitor::visit(const EquivForm* a)			{ traverse(a);	}
 void Visitor::visit(const BoolForm* a)			{ traverse(a);	}
 void Visitor::visit(const QuantForm* a)			{ traverse(a);	}
 void Visitor::visit(const AggForm* a)			{ traverse(a);	}
-void Visitor::visit(const Rule* a)				{ traverse(a);	}
-void Visitor::visit(const Definition* a)		{ traverse(a);	}
-void Visitor::visit(const FixpDef* a)			{ traverse(a);	}
+
 void Visitor::visit(const VarTerm* a)			{ traverse(a);	}
 void Visitor::visit(const FuncTerm* a)			{ traverse(a);	}
 void Visitor::visit(const DomainTerm* a)		{ traverse(a);	}
 void Visitor::visit(const AggTerm* a)			{ traverse(a);	}
 void Visitor::visit(const EnumSetExpr* a)		{ traverse(a);	}
 void Visitor::visit(const QuantSetExpr* a)		{ traverse(a);	}
-void Visitor::visit(const Theory* t)			{ traverse(t);	}
+
+void Visitor::visit(const Structure* s)			{ traverse(s);	}
 void Visitor::visit(const SortTable*)			{ }
 void Visitor::visit(const PredInter*)			{ }
 void Visitor::visit(const FuncInter*)			{ }
-void Visitor::visit(const Structure* s)			{ traverse(s);	}
+
+void Visitor::visit(const Vocabulary* v)		{ traverse(v);	}
 void Visitor::visit(const Sort*)				{ }
 void Visitor::visit(const Predicate*)			{ }
 void Visitor::visit(const Function*)			{ }
-void Visitor::visit(const Vocabulary* v)		{ traverse(v); }
-void Visitor::visit(const GroundTheory*)		{ /* TODO */	}
-void Visitor::visit(const SolverTheory*)		{ /* TODO */	}
+
+void Visitor::visit(const GroundTheory* t)		{ traverse(t);	}
+void Visitor::visit(const SolverTheory* t)		{ traverse(t);	}
+void Visitor::visit(const GroundDefinition* d) 	{ traverse(d);	}
+void Visitor::visit(const PCGroundRuleBody*)	{ }
+void Visitor::visit(const AggGroundRuleBody*)	{ }
+void Visitor::visit(const GroundAggregate*)		{ }
+void Visitor::visit(const GroundSet*)			{ }
+
+/** Standard traversing behavior **/
 
 void Visitor::traverse(const Formula* f) {
 	for(unsigned int n = 0; n < f->nrSubforms(); ++n)
@@ -102,117 +121,62 @@ void Visitor::traverse(const Vocabulary* v) {
 		visit(v->nbfunc(n));
 }
 
-/******************
-	Visit terms
-******************/
-
-void VarTerm::accept(Visitor* v) const {
-	v->visit(this);
+void Visitor::traverse(const GroundTheory* t) {
+	//TODO
 }
 
-void FuncTerm::accept(Visitor* v) const {
-	v->visit(this);
+void Visitor::traverse(const SolverTheory* t) {
+	//TODO
 }
 
-void DomainTerm::accept(Visitor* v) const {
-	v->visit(this);
+void Visitor::traverse(const GroundDefinition* d) {
+	//TODO
 }
 
-void AggTerm::accept(Visitor* v) const {
-	v->visit(this);
+void Visitor::traverse(const GroundSet* s) {
+	//TODO
 }
 
-void QuantSetExpr::accept(Visitor* v) const {
-	v->visit(this);
-}
+/** Standard visitor acceptance behavior **/
 
-void EnumSetExpr::accept(Visitor* v) const {
-	v->visit(this);
-}
+void Theory::accept(Visitor* v) 			const { v->visit(this);	}
+void Definition::accept(Visitor* v) 		const { v->visit(this);	}
+void Rule::accept(Visitor* v) 				const { v->visit(this);	}
+void FixpDef::accept(Visitor* v) 			const { v->visit(this);	}
 
-/********************
-	Visit theory
-********************/
+void PredForm::accept(Visitor* v) 			const { v->visit(this);	}
+void BracketForm::accept(Visitor* v) 		const { v->visit(this); }
+void EquivForm::accept(Visitor* v) 			const { v->visit(this);	}
+void EqChainForm::accept(Visitor* v) 		const { v->visit(this);	}
+void BoolForm::accept(Visitor* v) 			const { v->visit(this);	}
+void QuantForm::accept(Visitor* v) 			const { v->visit(this);	}
+void AggForm::accept(Visitor* v) 			const { v->visit(this);	}
 
-void PredForm::accept(Visitor* v) const {
-	v->visit(this);
-}
+void VarTerm::accept(Visitor* v) 			const { v->visit(this);	}
+void FuncTerm::accept(Visitor* v) 			const { v->visit(this); }
+void DomainTerm::accept(Visitor* v)			const { v->visit(this);	}
+void AggTerm::accept(Visitor* v)			const { v->visit(this);	}
+void QuantSetExpr::accept(Visitor* v)		const { v->visit(this);	}
+void EnumSetExpr::accept(Visitor* v)		const { v->visit(this); }
 
-void BracketForm::accept(Visitor* v) const {
-	v->visit(this);
-}
+void Structure::accept(Visitor* v) 			const { v->visit(this);	}
+void SortTable::accept(Visitor* v) 			const { v->visit(this);	}
+void PredInter::accept(Visitor* v) 			const { v->visit(this);	}
+void FuncInter::accept(Visitor* v) 			const { v->visit(this);	}
 
-void EquivForm::accept(Visitor* v) const {
-	v->visit(this);
-}
+void Vocabulary::accept(Visitor* v) 		const { v->visit(this);	}
+void Sort::accept(Visitor* v) 				const { v->visit(this);	}
+void Predicate::accept(Visitor* v) 			const { v->visit(this);	}
+void Function::accept(Visitor* v) 			const { v->visit(this);	}
 
-void EqChainForm::accept(Visitor* v) const {
-	v->visit(this);
-}
+void SolverTheory::accept(Visitor* v)		const { v->visit(this);	}
+void GroundTheory::accept(Visitor* v)		const { v->visit(this);	}
+void GroundDefinition::accept(Visitor* v)	const { v->visit(this);	}
+void PCGroundRuleBody::accept(Visitor* v) 	const { v->visit(this);	}
+void AggGroundRuleBody::accept(Visitor* v) 	const { v->visit(this);	}
+void GroundAggregate::accept(Visitor* v)	const { v->visit(this);	}
+void GroundSet::accept(Visitor* v)			const { v->visit(this);	}
 
-void BoolForm::accept(Visitor* v) const {
-	v->visit(this);
-}
-
-void QuantForm::accept(Visitor* v) const {
-	v->visit(this);
-}
-
-void AggForm::accept(Visitor* v) const {
-	v->visit(this);
-}
-
-void Rule::accept(Visitor* v) const {
-	v->visit(this);
-}
-
-void Definition::accept(Visitor* v) const {
-	v->visit(this);
-}
-
-void FixpDef::accept(Visitor* v) const {
-	v->visit(this);
-}
-
-void Theory::accept(Visitor* v) const {
-	v->visit(this);
-}
-
-/** Structure **/
-
-void Structure::accept(Visitor* v) const {
-	v->visit(this);
-}
-
-void SortTable::accept(Visitor* v) const {
-	v->visit(this);
-}
-
-void PredInter::accept(Visitor* v) const {
-	v->visit(this);
-}
-
-void FuncInter::accept(Visitor* v) const {
-	v->visit(this);
-}
-
-/** Vocabulary **/
-
-void Vocabulary::accept(Visitor* v) const {
-	v->visit(this);
-}
-
-void Sort::accept(Visitor* v) const {
-	v->visit(this);
-}
-
-void Predicate::accept(Visitor* v) const {
-	v->visit(this);
-}
-
-void Function::accept(Visitor* v) const {
-	v->visit(this);
-}
 
 /***********************
 	Mutating visitor
@@ -385,80 +349,44 @@ Theory* MutatingVisitor::visit(Theory* t) {
 	return t;
 }
 
-GroundTheory* MutatingVisitor::visit(GroundTheory* t) {
+AbstractTheory* MutatingVisitor::visit(GroundTheory* t) {
 	// TODO
 	return t;
 }
 
-SolverTheory* MutatingVisitor::visit(SolverTheory* t) {
+AbstractTheory* MutatingVisitor::visit(SolverTheory* t) {
 	// TODO
 	return t;
 }
 
-Term* VarTerm::accept(MutatingVisitor* v) {
-	return v->visit(this);
+AbstractDefinition* MutatingVisitor::visit(GroundDefinition* d) {
+	//TODO
+	return d;
 }
 
-Term* FuncTerm::accept(MutatingVisitor* v) {
-	return v->visit(this);
-}
+/** Standard mutating visitor acceptance behavior **/
 
-Term* DomainTerm::accept(MutatingVisitor* v) {
-	return v->visit(this);
-}
+Theory* Theory::accept(MutatingVisitor* v) 							{ return v->visit(this); }
+Definition* Definition::accept(MutatingVisitor* v) 					{ return v->visit(this); }
+Rule* Rule::accept(MutatingVisitor* v) 								{ return v->visit(this); }
+FixpDef* FixpDef::accept(MutatingVisitor* v) 						{ return v->visit(this); }
 
-Term* AggTerm::accept(MutatingVisitor* v) {
-	return v->visit(this);
-}
+Formula* PredForm::accept(MutatingVisitor* v) 						{ return v->visit(this); }
+Formula* BracketForm::accept(MutatingVisitor* v) 					{ return v->visit(this); }
+Formula* EquivForm::accept(MutatingVisitor* v) 						{ return v->visit(this); }
+Formula* EqChainForm::accept(MutatingVisitor* v) 					{ return v->visit(this); }
+Formula* BoolForm::accept(MutatingVisitor* v) 						{ return v->visit(this); }
+Formula* QuantForm::accept(MutatingVisitor* v) 						{ return v->visit(this); }
+Formula* AggForm::accept(MutatingVisitor* v) 						{ return v->visit(this); }
 
-SetExpr* QuantSetExpr::accept(MutatingVisitor* v) {
-	return v->visit(this);
-}
+Term* VarTerm::accept(MutatingVisitor* v) 							{ return v->visit(this); }
+Term* FuncTerm::accept(MutatingVisitor* v) 							{ return v->visit(this); }
+Term* DomainTerm::accept(MutatingVisitor* v) 						{ return v->visit(this); }
+Term* AggTerm::accept(MutatingVisitor* v) 							{ return v->visit(this); }
 
-SetExpr* EnumSetExpr::accept(MutatingVisitor* v) {
-	return v->visit(this);
-}
+SetExpr* QuantSetExpr::accept(MutatingVisitor* v)					{ return v->visit(this); }
+SetExpr* EnumSetExpr::accept(MutatingVisitor* v) 					{ return v->visit(this); }
 
-Formula* PredForm::accept(MutatingVisitor* v) {
-	return v->visit(this);
-}
-
-Formula* BracketForm::accept(MutatingVisitor* v) {
-	return v->visit(this);
-}
-
-Formula* EquivForm::accept(MutatingVisitor* v) {
-	return v->visit(this);
-}
-
-Formula* EqChainForm::accept(MutatingVisitor* v) {
-	return v->visit(this);
-}
-
-Formula* BoolForm::accept(MutatingVisitor* v) {
-	return v->visit(this);
-}
-
-Formula* QuantForm::accept(MutatingVisitor* v) {
-	return v->visit(this);
-}
-
-Formula* AggForm::accept(MutatingVisitor* v) {
-	return v->visit(this);
-}
-
-Rule* Rule::accept(MutatingVisitor* v) {
-	return v->visit(this);
-}
-
-Definition* Definition::accept(MutatingVisitor* v) {
-	return v->visit(this);
-}
-
-FixpDef* FixpDef::accept(MutatingVisitor* v) {
-	return v->visit(this);
-}
-
-Theory* Theory::accept(MutatingVisitor* v) {
-	return v->visit(this);
-}
+AbstractTheory* SolverTheory::accept(MutatingVisitor* v)			{ return v->visit(this); }
+AbstractTheory* GroundTheory::accept(MutatingVisitor* v)			{ return v->visit(this); }
+AbstractDefinition* GroundDefinition::accept(MutatingVisitor* v)	{ return v->visit(this); }

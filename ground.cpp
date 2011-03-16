@@ -78,20 +78,20 @@ int GroundTranslator::translateSet(const vector<int>& lits, const vector<double>
 		TsSet newset;
 		setnr = _sets.size();
 		_sets.push_back(newset);
-		TsSet& grset = _sets.back();
+		TsSet& tsset = _sets.back();
 
-		grset._setlits = lits;
-		grset._litweights = weights;
-		grset._trueweights = trueweights;
+		tsset._setlits = lits;
+		tsset._litweights = weights;
+		tsset._trueweights = trueweights;
 	}
 	else {
 		setnr = _freesetnumbers.front();
 		_freesetnumbers.pop();
-		TsSet& grset = _sets[setnr];
+		TsSet& tsset = _sets[setnr];
 
-		grset._setlits = lits;
-		grset._litweights = weights;
-		grset._trueweights = trueweights;
+		tsset._setlits = lits;
+		tsset._litweights = weights;
+		tsset._trueweights = trueweights;
 	}
 	return setnr;
 }
@@ -321,8 +321,8 @@ if(_cloptions._verbose) {
 
 int AggGrounder::finishCard(double truevalue, double boundvalue, int setnr) const {
 	int leftvalue = int(boundvalue - truevalue);
-	const TsSet& grs = _translator->groundset(setnr);
-	int maxposscard = grs._setlits.size();
+	const TsSet& tsset = _translator->groundset(setnr);
+	int maxposscard = tsset.size();
 	TsType tp = _context._tseitin;
 	bool simplify = false;
 	bool conj;
@@ -394,28 +394,28 @@ int AggGrounder::finishCard(double truevalue, double boundvalue, int setnr) cons
 	if(simplify) {
 		if(_doublenegtseitin) {
 			if(negateset) {
-				int tseitin = _translator->translate(grs._setlits,!conj,tp);
+				int tseitin = _translator->translate(tsset.literals(),!conj,tp);
 				return _sign ? -tseitin : tseitin;
 			}
 			else {
-				vector<int> newsetlits(grs._setlits.size());
-				for(unsigned int n = 0; n < grs._setlits.size(); ++n) newsetlits[n] = -grs._setlits[n];
+				vector<int> newsetlits(tsset.size());
+				for(unsigned int n = 0; n < tsset.size(); ++n) newsetlits[n] = -tsset.literal(n);
 				int tseitin = _translator->translate(newsetlits,!conj,tp);
 				return _sign ? -tseitin : tseitin;
 			}
 		}
 		else {
 			if(negateset) {
-				vector<int> newsetlits(grs._setlits.size());
-				for(unsigned int n = 0; n < grs._setlits.size(); ++n) newsetlits[n] = -grs._setlits[n];
+				vector<int> newsetlits(tsset.size());
+				for(unsigned int n = 0; n < tsset.size(); ++n) newsetlits[n] = -tsset.literal(n);
 				int tseitin = _translator->translate(newsetlits,conj,tp);
 				return _sign ? tseitin : -tseitin;
 			}
 			else {
-				int tseitin = _translator->translate(grs._setlits,conj,tp);
+				int tseitin = _translator->translate(tsset.literals(),conj,tp);
 				return _sign ? tseitin : -tseitin;
 			}
-			//int tseitin = _translator->translate(grs._setlits,conj,tp);
+			//int tseitin = _translator->translate(tsset.literals(),conj,tp);
 			//return swaptseitin ? -tseitin : tseitin;
 		}
 	}
@@ -439,14 +439,14 @@ int AggGrounder::finishCard(double truevalue, double boundvalue, int setnr) cons
 }
 
 int AggGrounder::finishSum(double truevalue, double boundvalue, int setnr) const {
-	const TsSet& grs = _translator->groundset(setnr);
+	const TsSet& tsset = _translator->groundset(setnr);
 
 	// Compute the minimal and maximal possible value of the sum
 	double minposssum = truevalue;
 	double maxposssum = truevalue;
-	for(unsigned int n = 0; n < grs._litweights.size(); ++n) {
-		if(grs._litweights[n] > 0) maxposssum += grs._litweights[n];
-		else if(grs._litweights[n] < 0) minposssum += grs._litweights[n];
+	for(unsigned int n = 0; n < tsset.size(); ++n) {
+		if(tsset.weight(n) > 0) maxposssum += tsset.weight(n);
+		else if(tsset.weight(n) < 0) minposssum += tsset.weight(n);
 	}
 
 	TsType tp = _context._tseitin;	// TODO
@@ -494,15 +494,15 @@ int AggGrounder::finishSum(double truevalue, double boundvalue, int setnr) const
 }
 
 /*int AggGrounder::finishProduct(double truevalue, double boundvalue, int setnr) const {
-	const TsSet& grs = _translator->groundset(setnr);
+	const TsSet& tsset = _translator->groundset(setnr);
 
 	// Compute the minimal and maximal possible value of the sum
 	double minposssum = truevalue;
 	double maxposssum = truevalue;
 	bool containszeros = false;
-	for(unsigned int n = 0; n < grs._litweights.size(); ++n) {
-		if(grs._litweights[n] > 0) maxposssum += grs._litweights[n];
-		else if(grs._litweights[n] < 0) minposssum += grs._litweights[n];
+	for(unsigned int n = 0; n < tsset.size(); ++n) {
+		if(tsset.weights(n) > 0) maxposssum += tsset.weight(n);
+		else if(tsset.weight(n) < 0) minposssum += tsset.weight(n);
 		else containszeros = true;
 	}
 
@@ -541,12 +541,12 @@ int AggGrounder::finishSum(double truevalue, double boundvalue, int setnr) const
 int AggGrounder::run() const {
 	int setnr = _setgrounder->run();
 	domelement bound = _boundgrounder->run();
-	const TsSet& grs = _translator->groundset(setnr);
+	const TsSet& tsset = _translator->groundset(setnr);
 
-	double truevalue = AggUtils::compute(_type,grs._trueweights);
+	double truevalue = AggUtils::compute(_type,tsset.trueweights());
 	double boundvalue = ElementUtil::convert(bound->_args[0],ELDOUBLE)._double;
 
-	if(grs._setlits.empty()) {
+	if(tsset.literals().empty()) {
 		bool returnvalue;
 		switch(_comp) {
 			case '<' : returnvalue = boundvalue < truevalue; break;
@@ -851,9 +851,9 @@ if(_cloptions._verbose) {
 
 domelement AggTermGrounder::run() const {
 	int setnr = _setgrounder->run();
-	const TsSet& grs = _translator->groundset(setnr);
-	assert(grs._setlits.empty());
-	double value = AggUtils::compute(_type,grs._trueweights);
+	const TsSet& tsset = _translator->groundset(setnr);
+	assert(tsset.empty());
+	double value = AggUtils::compute(_type,tsset.trueweights());
 	Element e;
 	if(isInt(value)) {
 		e._int = int(value);
@@ -1017,7 +1017,7 @@ bool DefinitionGrounder::run() const {
 		bool b = _subgrounders[n]->run();
 		if(!b) return false;
 	}
-	_grounding->addDefinition(*_definition);
+	_grounding->addDefinition(_definition);
 	return true;
 }
 

@@ -14,8 +14,13 @@
 #include <cstdio>
 #include <sstream>
 
-class Printer : public Visitor {
+class GroundTranslator;
 
+/*************************
+	Printer base class
+*************************/
+
+class Printer : public Visitor {
 	protected:
 		stringstream _out;
 		unsigned int _indent;
@@ -26,43 +31,54 @@ class Printer : public Visitor {
 		static Printer* create(InfOptions* opts);
 
 		// Print methods
-		string print(const Vocabulary* v);
-		string print(const AbstractTheory* t);
-		string print(const AbstractStructure* s);
+		string print(const Vocabulary*);
+		string print(const AbstractTheory*);
+		string print(const AbstractStructure*);
+//TODO	string print(const Namespace*);
 
 		// Indentation
 		void indent();
 		void unindent();
 		void printtab();
-
 };
+
+/*********************
+	Simple printer
+*********************/
 
 class SimplePrinter : public Printer {
-
 	public:
 		void visit(const Vocabulary*);
-		void visit(const AbstractTheory*);
-		void visit(const AbstractStructure*);
-
+		void visit(const Theory*);
+		void visit(const GroundTheory*);
+		void visit(const Structure*);
 };
 
-class IDPPrinter : public Printer {
+/******************
+	IDP printer
+******************/
 
+class IDPPrinter : public Printer {
 	private:
-		const PFSymbol* 	_currsymbol;
-		const Structure* 	_currstructure;
+		bool 					_printtypes;
+		const PFSymbol* 		_currsymbol;
+		const Structure* 		_currstructure;
+		const GroundTranslator*	_translator;
+
 		void print(const PredTable*);
 		void printInter(const char*,const char*,const PredTable*,const PredTable*);
 
-		bool _printtypes;
-
 	public:
-
+		IDPPrinter() : _printtypes(false) { }
 		IDPPrinter(bool printtypes) : _printtypes(printtypes) { }
 
 		/** Theories **/
 		void visit(const Theory*);
-		void visit(const GroundTheory*);
+
+		// Definitions
+		void visit(const Definition*);
+		void visit(const Rule*);
+		void visit(const FixpDef*);
 
 		// Formulas
 		void visit(const PredForm*);
@@ -70,11 +86,6 @@ class IDPPrinter : public Printer {
 		void visit(const EquivForm*);
 		void visit(const BoolForm*);
 		void visit(const QuantForm*);
-
-		// Definitions
-		void visit(const Rule*);
-		void visit(const Definition*);
-		void visit(const FixpDef*);
 
 		// Terms
 		void visit(const VarTerm*);
@@ -98,6 +109,19 @@ class IDPPrinter : public Printer {
 		void visit(const Predicate*);
 		void visit(const Function*);
 
+		/** Grounding **/
+		void visit(const GroundTheory*);
+		void visit(const GroundDefinition*);
+		void visit(const GroundAggregate*);
+		void visit(const GroundSet*);
 };
+
+class EcnfPrinter : public Printer {
+	public:
+		void visit(const GroundTheory*);
+		void visit(const GroundDefinition*);
+		void visit(const GroundAggregate*);
+		void visit(const GroundSet*);
+}; 
 
 #endif

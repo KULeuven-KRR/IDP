@@ -34,7 +34,7 @@ Printer* Printer::create(InfOptions* opts) {
 
 string Printer::print(const Vocabulary* v)			{ v->accept(this); return _out.str(); }
 string Printer::print(const AbstractTheory* t)		{ t->accept(this); return _out.str(); }
-string Printer::print(const AbstractStructure* s)	{ s->accept(this); return _out.str(); }
+string Printer::print(const AbstractStructure* s)	{ s->accept(this); return _out.str(); }	
 
 void Printer::indent() 		{ _indent++; }
 void Printer::unindent()	{ _indent--; }
@@ -43,27 +43,13 @@ void Printer::printtab() {
 		_out << "  ";
 }
 
-/*******************
-    SimplePrinter
-*******************/
+/***************
+    Theories
+***************/
 
-void SimplePrinter::visit(const Vocabulary* v) {
-	_out << v->to_string();
-}
-
-void SimplePrinter::visit(const AbstractTheory* t) {
+void SimplePrinter::visit(const Theory* t) {
 	_out << t->to_string();
 }
-
-void SimplePrinter::visit(const AbstractStructure* s) {
-	_out << s->to_string();
-}
-
-/*****************
-    IDPPrinter
-*****************/
-
-/** Theory **/
 
 void IDPPrinter::visit(const Theory* t) {
 	for(unsigned int n = 0; n < t->nrSentences(); ++n) {
@@ -71,16 +57,116 @@ void IDPPrinter::visit(const Theory* t) {
 		t->sentence(n)->accept(this);
 		_out << ".\n";
 	}
-	for(unsigned int n = 0; n < t->nrDefinitions(); ++n) {
+	for(unsigned int n = 0; n < t->nrDefinitions(); ++n)
 		t->definition(n)->accept(this);
-	}
-	for(unsigned int n = 0; n < t->nrFixpDefs(); ++n) {
+	for(unsigned int n = 0; n < t->nrFixpDefs(); ++n)
 		t->fixpdef(n)->accept(this);
-	}
 }
 
-void IDPPrinter::visit(const GroundTheory* et) {
-	_out << et->to_string();
+void SimplePrinter::visit(const GroundTheory* g) {
+	_out << g->to_string();
+}
+
+void IDPPrinter::visit(const GroundTheory* g) {
+	_translator = g->translator();
+	for(unsigned int n = 0; n < g->nrClauses(); ++n) {
+//TODO visitor for GroundClause?
+		if(g->clause(n).empty()) {
+			_out << "false";
+		}
+		else {
+			for(unsigned int m = 0; m < g->clause(n).size(); ++m) {
+				if(g->clause(n)[m] < 0) _out << '~';
+				_out << g->translator()->printatom(g->clause(n)[m]);
+				if(m < g->clause(n).size()-1) _out << " | ";
+			}
+		}
+		_out << ".";
+	}
+	for(unsigned int n = 0; n < g->nrDefinitions(); ++n)
+		g->definition(n)->accept(this);
+	for(unsigned int n = 0; n < g->nrSets(); ++n)
+		g->set(n)->accept(this);
+	for(unsigned int n = 0; n < g->nrAggregates(); ++n)
+		g->aggregate(n)->accept(this);
+	//TODO: repeat above for fixpoint definitions
+}
+
+/** Grounding **/
+
+void IDPPrinter::visit(const GroundDefinition* d) {
+//TODO visitors for ground rule bodies?
+	printtab();
+	_out << "{\n";
+	indent();
+	for(GroundDefinition::const_ruleiterator it = d->begin(); it != d->end(); ++it) {
+		printtab();
+		_out << _translator->printatom(it->first) << " <- ";
+		const GroundRuleBody* body = it->second;
+		if(body->type() == RT_AGG) {
+			const AggGroundRuleBody* grb = dynamic_cast<const AggGroundRuleBody*>(body);
+			_out << grb->bound() << (grb->lower() ? " =< " : " >= ");
+			switch(grb->aggtype()) {
+				case AGGCARD: 	_out << "#"; break;
+				case AGGSUM: 	_out << "sum"; break;
+				case AGGPROD: 	_out << "prod"; break;
+				case AGGMIN: 	_out << "min"; break;
+				case AGGMAX: 	_out << "max"; break;
+			}
+			_out << grb->setnr() << ".\n";
+		}
+		else {
+			const PCGroundRuleBody* grb = dynamic_cast<const PCGroundRuleBody*>(body);
+			char c = (grb->type() == RT_CONJ ? '&' : '|');
+			if(!grb->empty()) {
+				if(grb->literal(0) < 0) _out << '~';
+				_out << _translator->printatom(grb->literal(0));
+				for(unsigned int n = 1; n < grb->size(); ++n) {
+					_out << ' ' << c << ' ';
+					if(grb->literal(n) < 0) _out << '~';
+					_out << _translator->printatom(grb->literal(n));
+				}
+			}
+			else if(grb->type() == RT_CONJ) _out << "true";
+			else _out << "false";
+			_out << ".\n";
+		}
+	}
+	unindent();
+	_out << "}\n";
+}
+
+void IDPPrinter::visit(const GroundAggregate* a) {
+	//FIXME GroundAggregate has no pointer to translator... put it there? Or keep a pointer in the printer?
+	_out << _translator->printatom(a->head());
+	switch(a->arrow()) {
+		case TS_RULE: 	_out << " <- "; break;
+		case TS_IMPL: 	_out << " => "; break;
+		case TS_RIMPL: 	_out << " <= "; break;
+		case TS_EQ: 	_out << " <=> "; break;
+		default: assert(false);
+	}
+	_out << a->bound();
+	_out << (a->lower() ? " =< " : " >= ");
+	switch(a->type()) {
+		case AGGCARD:	_out << "card("; break;
+		case AGGSUM: 	_out << "sum("; break;
+		case AGGPROD: 	_out << "prod("; break;
+		case AGGMIN: 	_out << "min("; break;
+		case AGGMAX: 	_out << "max("; break;
+		default: assert(false);
+	}
+	_out << a->setnr() << ")\n";
+}
+
+void IDPPrinter::visit(const GroundSet* s) {
+	_out << "Set nr. " << s->setnr() << " = [ ";
+	for(unsigned int m = 0; m < s->size(); ++m) {
+		_out << "(" << _translator->printatom(s->literal(m));
+		_out << " = " << s->weight(m) << ")";
+		if(m < s->size()-1) _out << "; ";
+	}
+	_out << " ]\n";
 }
 
 /** Formulas **/
@@ -296,6 +382,10 @@ void IDPPrinter::visit(const QuantSetExpr* s) {
     Structures
 *****************/
 
+void SimplePrinter::visit(const Structure* s) {
+	_out << s->to_string();
+}
+
 void IDPPrinter::visit(const Structure* s) {
 	_currstructure = s;
 	Vocabulary* v = s->vocabulary();
@@ -427,6 +517,10 @@ void IDPPrinter::visit(const FuncInter* f) {
 /*******************
     Vocabularies
 *******************/
+
+void SimplePrinter::visit(const Vocabulary* v) {
+	_out << v->to_string();
+}
 
 void IDPPrinter::visit(const Vocabulary* v) {
 //	_out << "#vocabulary " << v->name() << " {\n";

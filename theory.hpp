@@ -11,11 +11,11 @@
 #include "term.hpp"
 
 class GroundTranslator;
-class EcnfTheory;
+class GroundTheory;
 
-/**************************************************************************
-	Abstract base class for formulas, definitions and fixpoint defitions
-**************************************************************************/
+/*****************************************************************************
+	Abstract base class for formulas, definitions and fixpoint definitions
+*****************************************************************************/
 
 class TheoryComponent {
 
@@ -24,10 +24,12 @@ class TheoryComponent {
 		TheoryComponent() { }
 
 		// Visitor
-		virtual void				accept(Visitor*) const = 0;
-		virtual TheoryComponent*	accept(MutatingVisitor*) = 0;
+		virtual void				accept(Visitor*) const 		= 0;
+		virtual TheoryComponent*	accept(MutatingVisitor*) 	= 0;
 
-		virtual string to_string(unsigned int spaces = 0)	const = 0;
+		// Debugging
+		virtual string to_string(unsigned int spaces = 0) const = 0;
+
 };
 
 /***************
@@ -39,13 +41,11 @@ class TheoryComponent {
 class Formula : public TheoryComponent {
 
 	protected:
-
 		bool				_sign;	// true iff the formula does not start with a negation
 		vector<Variable*>	_fvars;	// free variables of the formula
 		FormParseInfo		_pi;	// the place where the formula was parsed (0 for non user-defined formulas)
 
 	public:
-
 		// Constructor
 		Formula(bool sign) : _sign(sign) { }
 		Formula(bool sign, const FormParseInfo& pi):   _sign(sign), _pi(pi)  { }
@@ -97,7 +97,6 @@ class PredForm : public Formula {
 		vector<Term*>	_args;		// the arguments
 
 	public:
-
 		// Constructors
 		PredForm(bool sign, PFSymbol* p, const vector<Term*>& a, const FormParseInfo& pi) : 
 			Formula(sign,pi), _symb(p), _args(a) { setfvars(); }
@@ -143,7 +142,6 @@ class EqChainForm : public Formula {
 		vector<bool>	_signs;		// The signs of the consecutive comparisons
 
 	public:
-
 		// Constructors
 		EqChainForm(bool sign, bool c, Term* t, const FormParseInfo& pi) : 
 			Formula(sign,pi), _conj(c), _terms(1,t), _comps(0), _signs(0) { setfvars(); }
@@ -195,7 +193,6 @@ class EquivForm : public Formula {
 		Formula*	_right;		// right-hand side formula
 
 	public:
-		
 		// Constructors
 		EquivForm(bool sign, Formula* lf, Formula* rt, const FormParseInfo& pi) : 
 			Formula(sign,pi), _left(lf), _right(rt) { setfvars(); }
@@ -240,7 +237,6 @@ class BoolForm : public Formula {
 									// formulas in _subf
 									
 	public:
-
 		// Constructors
 		BoolForm(bool sign, bool c, const vector<Formula*>& sb, const FormParseInfo& pi) :
 			Formula(sign,pi), _subf(sb), _conj(c) { setfvars(); }
@@ -288,7 +284,6 @@ class QuantForm : public Formula {
 		bool				_univ;	// true (false) if the quantifier is universal (existential)
 
 	public:
-
 		// Constructors
 		QuantForm(bool sign, bool u, const vector<Variable*>& v, Formula* sf, const FormParseInfo& pi) : 
 			Formula(sign,pi), _vars(v), _subf(sf), _univ(u) { setfvars(); }
@@ -336,7 +331,6 @@ class AggForm : public Formula {
 		AggTerm*	_right;
 
 	public:
-
 		// Constructors
 		AggForm(bool sign, char c, Term* l, AggTerm* r, const FormParseInfo& pi) : 
 			Formula(sign,pi), _comp(c), _left(l), _right(r) { setfvars(); }
@@ -383,7 +377,6 @@ class BracketForm : public Formula {
 		Formula*		_subf;		// the subformula
 
 	public:
-
 		// Constructors
 		BracketForm(bool sign, Formula* subf) : 
 			Formula(sign), _subf(subf) { setfvars(); }
@@ -468,7 +461,6 @@ class Rule {
 		ParseInfo			_pi;
 
 	public:
-
 		// Constructors
 		Rule(const vector<Variable*>& vv, PredForm* h, Formula* b, const ParseInfo& pi) : 
 			_head(h), _body(b), _vars(vv), _pi(pi) { }
@@ -499,14 +491,27 @@ class Rule {
 
 };
 
-class Definition : public TheoryComponent {
+class AbstractDefinition : public TheoryComponent {
+
+	public:
+		virtual AbstractDefinition* clone() const = 0;
+
+		// Destructor
+		virtual ~AbstractDefinition() { }
+
+		// Visitor
+		virtual void				accept(Visitor* v) const	= 0;
+		virtual AbstractDefinition*	accept(MutatingVisitor* v)	= 0;
+
+};
+
+class Definition : public AbstractDefinition {
 
 	private:
 		vector<Rule*>		_rules;		// The rules in the definition
 		vector<PFSymbol*>	_defsyms;	// Symbols defined by the definition
 
 	public:
-
 		// Constructors
 		Definition() : _rules(0), _defsyms(0) { } 
 
@@ -537,7 +542,7 @@ class Definition : public TheoryComponent {
 
 };
 
-class FixpDef : public TheoryComponent {
+class FixpDef : public AbstractDefinition {
 	
 	private:
 		bool				_lfp;		// True iff it is a least fixpoint definition
@@ -546,7 +551,6 @@ class FixpDef : public TheoryComponent {
 		vector<PFSymbol*>	_defsyms;	// The predicates in heads of rules in _rules
 
 	public:
-
 		// Constructors
 		FixpDef(bool lfp) : _lfp(lfp), _defs(0), _rules(0) { }
 
@@ -588,16 +592,16 @@ class FixpDef : public TheoryComponent {
 class AbstractTheory {
 
 	protected:
-
 		string				_name;
 		Vocabulary*			_vocabulary;
 		ParseInfo			_pi;
 
 	public:
-
 		// Constructors 
 		AbstractTheory(const string& name, const ParseInfo& pi) : _name(name), _vocabulary(0), _pi(pi) { }
 		AbstractTheory(const string& name, Vocabulary* voc, const ParseInfo& pi) : _name(name), _vocabulary(voc), _pi(pi) { }
+
+		virtual AbstractTheory* clone() const = 0;
 
 		// Destructor
 		virtual void recursiveDelete() = 0;
@@ -619,10 +623,9 @@ class AbstractTheory {
 		virtual unsigned int		nrFixpDefs()				const = 0;	// the number of fixpoind definitions in the theory
 				unsigned int		nrComponents()				const { return nrSentences() + nrDefinitions() + nrFixpDefs();	 }
 		virtual Formula*			sentence(unsigned int n)	const = 0;	// the n'th sentence in the theory
-		virtual Definition*			definition(unsigned int n)	const = 0;	// the n'th definition in the theory
-		virtual FixpDef*			fixpdef(unsigned int n)		const = 0;  // the n'th fixpoint definition in the theory
+		virtual AbstractDefinition*	definition(unsigned int n)	const = 0;	// the n'th definition in the theory
+		virtual AbstractDefinition*	fixpdef(unsigned int n)		const = 0;  // the n'th fixpoint definition in the theory
 				TheoryComponent*	component(unsigned int n)	const;
-		virtual AbstractTheory*		clone()						const = 0;
 
 		// Visitor
 		virtual void			accept(Visitor*) const		= 0;
@@ -631,19 +634,16 @@ class AbstractTheory {
 		// Debugging
 		virtual string to_string() const = 0;
 
-
 };
 
 class Theory : public AbstractTheory {
 	
 	private:
-
 		vector<Formula*>	_sentences;
 		vector<Definition*>	_definitions;
 		vector<FixpDef*>	_fixpdefs;
 
 	public:
-
 		// Constructors 
 		Theory(const string& name, const ParseInfo& pi) : AbstractTheory(name,pi) { }
 		Theory(const string& name, Vocabulary* voc, const ParseInfo& pi) : AbstractTheory(name,voc,pi) { }
@@ -657,7 +657,7 @@ class Theory : public AbstractTheory {
 		void	add(Formula* f)								{ _sentences.push_back(f);		}
 		void	add(Definition* d)							{ _definitions.push_back(d);	}
 		void	add(FixpDef* fd)							{ _fixpdefs.push_back(fd);		}
-		void	add(AbstractTheory* t);
+		void	add(Theory* t);
 		void	sentence(unsigned int n, Formula* f)		{ _sentences[n] = f;			}
 		void	definition(unsigned int n, Definition* d)	{ _definitions[n] = d;			}
 		void	fixpdef(unsigned int n, FixpDef* d)			{ _fixpdefs[n] = d;				}
@@ -720,7 +720,7 @@ namespace TheoryUtils {
 	//				(atom <=> aggatom)		NOTE: (aggatom <=> atom) is not allowed
 	//				(~atom | aggatom)		NOTE: (aggatom | ~atom) is not allowed
 	//				atom <- aggatom
-	EcnfTheory*	convert_to_ecnf(AbstractTheory*);
+	GroundTheory* convert_to_ecnf(AbstractTheory*);
 	
 }
 
