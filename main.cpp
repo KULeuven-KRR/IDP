@@ -27,6 +27,7 @@ extern void parsestring(const string&);
 
 // Lua stuff
 extern int idpcall(lua_State*);
+extern int overloadcall(lua_State*);
 
 /** Initialize data structures **/
 void initialize() {
@@ -143,15 +144,15 @@ void parse(const vector<string>& inputfiles) {
 
 /** Communication with lua **/
 
-void fillmetatable(lua_State* L, bool index, bool call, const string& type) {
+void fillmetatable(lua_State* L, bool index, bool newindex, const string& type) {
 
 	if(index) {
 		lua_getglobal(L,"idp_intern_index");
 		lua_setfield(L,-2,"__index");
 	}
-	if(call) {
-		lua_getglobal(L,"idp_intern_exec");
-		lua_setfield(L,-2,"__call");
+	if(newindex) {
+		lua_getglobal(L,"idp_intern_newindex");
+		lua_setfield(L,-2,"__newindex");
 	}
 
 	lua_getglobal(L,"idp_intern_delete");
@@ -165,6 +166,8 @@ void createmetatables(lua_State* L) {
 
 	luaL_newmetatable(L,"overloaded");
 	fillmetatable(L,true,true,"overloaded");
+	lua_getglobal(L,"idp_intern_overloadcall");
+	lua_setfield(L,-2,"__call");
 	lua_pop(L,1);
 
 	luaL_newmetatable (L,"theory");
@@ -172,7 +175,7 @@ void createmetatables(lua_State* L) {
 	lua_pop(L,1);
 
 	luaL_newmetatable (L,"structure");
-	fillmetatable(L,true,false,"structure");
+	fillmetatable(L,true,true,"structure");
 	lua_pop(L,1);
 
 	luaL_newmetatable (L,"namespace");
@@ -184,7 +187,7 @@ void createmetatables(lua_State* L) {
 	lua_pop(L,1);
 
 	luaL_newmetatable (L,"options");
-	fillmetatable(L,true,false,"options");
+	fillmetatable(L,true,true,"options");
 	lua_pop(L,1);
 }
 
@@ -198,8 +201,9 @@ lua_State* initLua() {
 	// Create the main communication functions
 	lua_pushcfunction(L,&idpcall);
 	lua_setglobal(L,"idp_intern_idpcall");
-	luaL_dostring(L,"idp_intern_index = function(t,k) idp_intern_idpcall(\"index\",t,k) end");
-	luaL_dostring(L,"idp_intern_exec = function(f,a) idp_intern_idpcall(\"call\",f,a) end");
+	lua_pushcfunction(L,&overloadcall);
+	lua_setglobal(L,"idp_intern_overloadcall");
+	luaL_dostring(L,"idp_intern_index = function(t,k) return idp_intern_idpcall(\"index\",t,k) end");
 	luaL_dostring(L,"idp_intern_delete = function(obj) idp_intern_idpcall(\"delete\",obj) end");
 	luaL_dostring(L,"idp_intern_newindex = function(t,k,v) idp_intern_idpcall(\"newindex\",t,k,v) end");
 
@@ -227,7 +231,10 @@ void executeproc(lua_State* L, const string& proc) {
 		luaL_loadstring(L,(proc->code()).c_str());
 		delete(proc);
 		int res = lua_pcall(L,0,0,0);
-		if(res) cerr << string(lua_tostring(L,1)) << endl; 
+		if(res) {
+			cerr << string(lua_tostring(L,1)) << endl; 
+			lua_pop(L,1);
+		}
 	}
 }
 

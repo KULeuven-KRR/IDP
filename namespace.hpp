@@ -13,7 +13,8 @@
 #include <set>
 
 class LuaProcedure;
-class overloadedObject;
+class OverloadedObject;
+struct TypedInfArg;
 
 /*****************
 	Namespaces
@@ -93,12 +94,9 @@ class Namespace {
 		void	add(LuaProcedure* l);
 
 		// Lua communication
-		int tolua(lua_State*,const vector<string>&) const;
-		int	tolua(lua_State*) const;
-
-		void				toLuaGlobal(lua_State*) const;
-		void				toLuaLocal(lua_State*) const;
-		overloadedObject*	getObject(const string& str) const;
+		void		toLuaGlobal(lua_State*) const;
+		void		toLuaLocal(lua_State*) const;
+		TypedInfArg	getObject(const string& str, lua_State*) const;
 };
 
 

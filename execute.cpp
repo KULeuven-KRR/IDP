@@ -22,14 +22,10 @@ namespace BuiltinProcs {
 	map<string,vector<Inference*> >	_inferences;	// All inference methods
 
 	void initialize() {
-		_inferences["print"].push_back(new PrintTheory(false));
-		_inferences["print"].push_back(new PrintVocabulary(false));
-		_inferences["print"].push_back(new PrintStructure(false));
-		_inferences["print"].push_back(new PrintNamespace(false));
-		_inferences["print"].push_back(new PrintTheory(true));
-		_inferences["print"].push_back(new PrintVocabulary(true));
-		_inferences["print"].push_back(new PrintStructure(true));
-		_inferences["print"].push_back(new PrintNamespace(true));
+		_inferences["print"].push_back(new PrintTheory());
+		_inferences["print"].push_back(new PrintVocabulary());
+		_inferences["print"].push_back(new PrintStructure());
+		_inferences["print"].push_back(new PrintNamespace());
 		_inferences["push_negations"].push_back(new PushNegations());
 		_inferences["remove_equivalences"].push_back(new RemoveEquivalences());
 		_inferences["remove_eqchains"].push_back(new RemoveEqchains());
@@ -43,11 +39,9 @@ namespace BuiltinProcs {
 		_inferences["clone"].push_back(new CloneStructure());
 		_inferences["clone"].push_back(new CloneTheory());
 		_inferences["fastground"].push_back(new FastGrounding());
-		_inferences["fastmx"].push_back(new FastMXInference(false));
-		_inferences["fastmx"].push_back(new FastMXInference(true));
+		_inferences["fastmx"].push_back(new FastMXInference());
 
-		_inferences["newoptions"].push_back(new NewOption(true));
-		_inferences["newoptions"].push_back(new NewOption(false));
+		_inferences["newoptions"].push_back(new NewOption());
 
 		_inferences["forcetwovalued"].push_back(new ForceTwoValued());
 		_inferences["changevoc"].push_back(new ChangeVoc());
@@ -72,7 +66,6 @@ namespace BuiltinProcs {
 		_inferences["newindex"].push_back(new SetIndex(IAT_STRUCTURE,IAT_PREDICATE,IAT_PROCEDURE));
 		_inferences["newindex"].push_back(new SetIndex(IAT_STRUCTURE,IAT_FUNCTION,IAT_PROCEDURE));
 		_inferences["newindex"].push_back(new SetIndex(IAT_STRUCTURE,IAT_SORT,IAT_PROCEDURE));
-		_inferences["newindex"].push_back(new SetIndex(IAT_OPTIONS,IAT_STRING,IAT_INT));
 		_inferences["newindex"].push_back(new SetIndex(IAT_OPTIONS,IAT_STRING,IAT_DOUBLE));
 		_inferences["newindex"].push_back(new SetIndex(IAT_OPTIONS,IAT_STRING,IAT_BOOLEAN));
 		_inferences["newindex"].push_back(new SetIndex(IAT_OPTIONS,IAT_STRING,IAT_STRING));
@@ -112,7 +105,7 @@ namespace BuiltinProcs {
 				return("table");
 			case IAT_PROCEDURE: 
 				return("function");
-			case IAT_IDPOBJECT: 
+			case IAT_OVERLOADED: 
 				return("overloaded");
 			case IAT_SORT:
 				return("sort");
@@ -134,13 +127,32 @@ namespace BuiltinProcs {
 		return str;
 	}
 
+	InfArgType typeenum(lua_State* L, int index) {
+		string strtype = typestring(L,index);
+		if(strtype == "theory") return IAT_THEORY;
+		if(strtype == "structure") return IAT_STRUCTURE;
+		if(strtype == "vocabulary") return IAT_VOCABULARY;
+		if(strtype == "namespace") return IAT_NAMESPACE;
+		if(strtype == "options") return IAT_OPTIONS;
+		if(strtype == "nil") return IAT_NIL;
+		if(strtype == "number") return IAT_DOUBLE;
+		if(strtype == "boolean") return IAT_BOOLEAN;
+		if(strtype == "string") return IAT_STRING;
+		if(strtype == "table") return IAT_TABLE;
+		if(strtype == "function") return IAT_PROCEDURE;
+		if(strtype == "overloaded") return IAT_OVERLOADED;
+		if(strtype == "sort") return IAT_SORT;
+		if(strtype == "predicate") return IAT_PREDICATE;
+		if(strtype == "idpfunction") return IAT_FUNCTION;
+		assert(false); return IAT_INT;
+	}
 
 	bool checkarg(lua_State* L, int n, InfArgType t) {
 		string typestr = typestring(t);
 		string nstr = typestring(L,n);
 		if(nstr == typestr) return true;
 		else if(nstr == "overloaded") {
-			overloadedObject* obj = *((overloadedObject**)lua_touserdata(L,n));
+			OverloadedObject* obj = *((OverloadedObject**)lua_touserdata(L,n));
 			switch(t) {
 				case IAT_THEORY:
 					return obj->isTheory();
@@ -169,7 +181,7 @@ namespace BuiltinProcs {
 				case IAT_FUNCTION:
 					return (obj->isFunction());
 				case IAT_TABLE:
-					// TODO
+					return (obj->isTable());
 				default:
 					return false;
 			}
@@ -236,14 +248,21 @@ namespace BuiltinProcs {
 				lua_pushstring(L,res._string->c_str());
 				break;
 			case IAT_TABLE:
-				// TODO
-				assert(false);
+				lua_newtable(L);
+				for(unsigned int n = 0; n < res._table->size(); ++n) {
+					lua_pushinteger(L,n+1);
+					converttolua(L,(*(res._table))[n]._value,(*(res._table))[n]._type);
+					lua_settable(L,-3);
+				}
+				break;
 			case IAT_PROCEDURE:
-				// TODO
-				assert(false);
-			case IAT_IDPOBJECT:
 			{
-				overloadedObject* obj = res._overloaded;
+				lua_getfield(L,LUA_REGISTRYINDEX,res._procedure->c_str());
+				break;
+			}
+			case IAT_OVERLOADED:
+			{
+				OverloadedObject* obj = res._overloaded;
 				if(obj->single()) {
 					InfArg newarg;
 					if(obj->isNamespace())	{ 
@@ -300,7 +319,7 @@ namespace BuiltinProcs {
 					}
 				}
 				else {
-					overloadedObject** ptr = (overloadedObject**) lua_newuserdata(L,sizeof(overloadedObject*));
+					OverloadedObject** ptr = (OverloadedObject**) lua_newuserdata(L,sizeof(OverloadedObject*));
 					(*ptr) = obj;
 					luaL_getmetatable(L,"overloaded");
 					lua_setmetatable(L,-2);
@@ -310,6 +329,18 @@ namespace BuiltinProcs {
 			default:
 				assert(false);
 		}
+	}
+
+	InfArg convertarg(lua_State* L, int n, InfArgType t);
+
+	TypedInfArg convertarg(lua_State* L, int n) {
+		TypedInfArg result;
+		result._type = typeenum(L,n);
+		if(result._type == IAT_DOUBLE) {
+			if(isInt(lua_tonumber(L,n))) result._type = IAT_INT;
+		}
+		result._value = convertarg(L,n,result._type);
+		return result;
 	}
 
 	InfArg convertarg(lua_State* L, int n, InfArgType t) {
@@ -354,8 +385,22 @@ namespace BuiltinProcs {
 					a._function = *((Function**)lua_touserdata(L,n));
 					break;
 				case IAT_TABLE:
-					// TODO
-					assert(false);
+				{
+					a._table = new vector<TypedInfArg>;
+					for(unsigned int i = 1; ; ++i) {
+						lua_pushinteger(L,i);
+						lua_gettable(L,n);
+						if(lua_isnil(L,-1)) {
+							lua_pop(L,1);
+							break;
+						}
+						else {
+							a._table->push_back(convertarg(L,-1));
+							lua_pop(L,1);
+						}
+					}
+					break;
+				}
 				case IAT_PROCEDURE:
 					// TODO
 					assert(false);
@@ -364,7 +409,7 @@ namespace BuiltinProcs {
 			}
 		}
 		else {
-			overloadedObject* obj = *((overloadedObject**)lua_touserdata(L,n)); 
+			OverloadedObject* obj = *((OverloadedObject**)lua_touserdata(L,n)); 
 			switch(t) {
 				case IAT_THEORY:
 					a._theory = obj->getTheory();
@@ -406,8 +451,11 @@ namespace BuiltinProcs {
 					a._procedure = obj->getProcedure();
 					break;
 				case IAT_TABLE:
-					// TODO
-					assert(false);
+					a._table = obj->getTable();
+					break;
+				case IAT_OVERLOADED:
+					a._overloaded = obj;
+					break;
 				default:
 					assert(false);
 			}
@@ -418,13 +466,28 @@ namespace BuiltinProcs {
 
 }
 
+int overloadcall(lua_State* L) {
+	InfArg a = BuiltinProcs::convertarg(L,1,IAT_OVERLOADED);
+	if(a._overloaded->isProcedure()) {
+		lua_getfield(L,LUA_REGISTRYINDEX,a._overloaded->getProcedure()->c_str());
+		lua_replace(L,1);
+		int nrargs = lua_gettop(L) -1; 
+		lua_call(L,nrargs,LUA_MULTRET);
+		return lua_gettop(L);
+	}
+	else {
+		Error::notcommand();
+		return 0;
+	}
+}
+
 int idpcall(lua_State* L) {
 	// Collect name
 	string name = string(lua_tostring(L,1));
 	lua_remove(L,1);
-	vector<Inference*> pvi = BuiltinProcs::_inferences[name];
 
 	// Try to find correct inference 
+	vector<Inference*> pvi = BuiltinProcs::_inferences[name];
 	unsigned int nrargs = lua_gettop(L); 
 	vector<Inference*> vi;
 	for(unsigned int n = 0; n < pvi.size(); ++n) {
@@ -452,9 +515,8 @@ int idpcall(lua_State* L) {
 		vector<InfArg> via;
 		for(unsigned int m = 1; m <= nrargs; ++m)
 			via.push_back(BuiltinProcs::convertarg(L,m,(vi2[0]->intypes())[m-1]));
-		InfArg res = vi2[0]->execute(via);
-		if(vi2[0]->reload()) (Namespace::global())->tolua(L);
-		BuiltinProcs::converttolua(L,res,vi2[0]->outtype());
+		TypedInfArg res = vi2[0]->execute(via,L);
+		BuiltinProcs::converttolua(L,res._value,res._type);
 		return 1;
 	}
 	else {
@@ -470,197 +532,124 @@ int idpcall(lua_State* L) {
 */
 
 extern void parsefile(const string&);
-InfArg LoadFile::execute(const vector<InfArg>& args) const {
+TypedInfArg LoadFile::execute(const vector<InfArg>& args, lua_State* L) const {
 	parsefile(*(args[0]._string));
-	InfArg a; 
+	Namespace::global()->toLuaGlobal(L);
+	TypedInfArg a; a._type = IAT_NIL; 
 	return a;
 }
 
-InfArg DeleteData::execute(const vector<InfArg>& args) const {
+TypedInfArg DeleteData::execute(const vector<InfArg>& args, lua_State*) const {
 	switch(_intypes[0]) {
 		case IAT_THEORY:
-			delete(args[0]._theory);
+			if(!(args[0]._theory->pi().line())) delete(args[0]._theory);
 			break;
 		case IAT_STRUCTURE:
-			delete(args[0]._structure);
+			if(!(args[0]._structure->pi().line())) delete(args[0]._structure);
 			break;
 		case IAT_NAMESPACE:
-			delete(args[0]._namespace);
+			if(!(args[0]._namespace->pi().line())) delete(args[0]._namespace);
 			break;
 		case IAT_VOCABULARY:
-			delete(args[0]._vocabulary);
+			if(!(args[0]._vocabulary->pi().line())) {
+				if(args[0]._vocabulary != Namespace::global()->vocabulary("std")) delete(args[0]._vocabulary);
+			}
 			break;
 		case IAT_OPTIONS:
-			delete(args[0]._options);
+			if(!(args[0]._options->pi().line())) delete(args[0]._options);
 			break;
 		default:
 			assert(false);
 	}
-	InfArg a;
+	TypedInfArg a; a._type = IAT_NIL;
 	return a;
 }
 
-SetOption::SetOption(InfArgType t) {
-	_intypes = vector<InfArgType>(3);
-	_intypes[0] = IAT_OPTIONS;
-	_intypes[1] = IAT_STRING;
-	_intypes[2] = t;
-	_outtype = IAT_NIL;
-	_description = "Set the value of a single option";
-	_reload = false;
-}
-
-GetOption::GetOption() {
-	_intypes = vector<InfArgType>(2);
-	_intypes[0] = IAT_OPTIONS;
-	_intypes[1] = IAT_STRING;
-	_outtype = IAT_IDPOBJECT;
-	_description = "Get the value of a single option";
-	_reload = false;
-}
-
-extern void setoption(InfOptions*,const string&, const string&, ParseInfo*);
-extern void setoption(InfOptions*,const string&, double, ParseInfo*);
-extern void setoption(InfOptions*,const string&, int, ParseInfo*);
-extern void setoption(InfOptions*,const string&, bool, ParseInfo*);
-extern string getoption(InfOptions*,const string&);
-
-InfArg SetOption::execute(const vector<InfArg>& args) const {
-	InfOptions* opts = args[0]._options;
-	string optname = *(args[1]._string);
-	switch(_intypes[2]) {
-		case IAT_INT:
-		{
-			setoption(opts,optname,args[2]._int,0);
-			break;
-		}
-		case IAT_DOUBLE:
-		{
-			setoption(opts,optname,args[2]._double,0);
-			break;
-		}
-		case IAT_STRING:
-		{
-			setoption(opts,optname,*(args[2]._string),0);
-			break;
-		}
-		case IAT_BOOLEAN:
-		{
-			setoption(opts,optname,args[2]._boolean,0);
-			break;
-		}
-		default:
-			assert(false);
-	}
-	InfArg a;
+TypedInfArg NewOption::execute(const vector<InfArg>&, lua_State*) const {
+	TypedInfArg a; a._type = IAT_OPTIONS;
+	a._value._options = new InfOptions("",ParseInfo());
 	return a;
 }
 
-InfArg GetOption::execute(const vector<InfArg>& args) const {
-	InfOptions* opts = args[0]._options;
-	string optname = *(args[1]._string);
-	InfArg a;
-	a._string = IDPointer(getoption(opts,optname));
-	return a;
-}
-
-InfArg NewOption::execute(const vector<InfArg>& args) const {
-	InfArg a;
-	if(args.empty()) {
-		a._options = new InfOptions("",ParseInfo());
-	}
-	else {
-		InfOptions* opts = args[0]._options;
-		a._options = new InfOptions(opts);
-	}
-	return a;
-}
-
-InfArg PrintTheory::execute(const vector<InfArg>& args) const {
-	InfOptions* opts = Namespace::global()->option("DefaultOptions");
-	if(args.size() == 2) opts = args[1]._options;
+TypedInfArg PrintTheory::execute(const vector<InfArg>& args, lua_State*) const {
+	InfOptions* opts = args[1]._options;
 	Printer* printer = Printer::create(opts);
 	AbstractTheory* t = args[0]._theory;
 	string str = printer->print(t);
 	delete(printer);
-	InfArg a; a._string = IDPointer(str);
+	TypedInfArg a; a._type = IAT_STRING; a._value._string = IDPointer(str);
 	return a;
 }
 
-InfArg PrintVocabulary::execute(const vector<InfArg>& args) const {
-	InfOptions* opts = Namespace::global()->option("DefaultOptions");
-	if(args.size() == 2) opts = args[1]._options;
+TypedInfArg PrintVocabulary::execute(const vector<InfArg>& args, lua_State*) const {
+	InfOptions* opts = args[1]._options;
 	Printer* printer = Printer::create(opts);
 	string str = printer->print(args[0]._vocabulary);
 	delete(printer);
-	InfArg a; a._string = IDPointer(str);
+	TypedInfArg a; a._type = IAT_STRING; a._value._string = IDPointer(str);
 	return a;
 }
 
-InfArg PrintStructure::execute(const vector<InfArg>& args) const {
-	InfOptions* opts = Namespace::global()->option("DefaultOptions");
-	if(args.size() == 2) opts = args[1]._options;
+TypedInfArg PrintStructure::execute(const vector<InfArg>& args, lua_State*) const {
+	InfOptions* opts = args[1]._options;
 	Printer* printer = Printer::create(opts);
 	AbstractStructure* s = args[0]._structure;
 	string str = printer->print(s);
 	delete(printer);
-	InfArg a; a._string = IDPointer(str);
+	TypedInfArg a; a._type = IAT_STRING; a._value._string = IDPointer(str);
 	return a;
 }
 
-InfArg PrintNamespace::execute(const vector<InfArg>&) const {
+TypedInfArg PrintNamespace::execute(const vector<InfArg>&, lua_State*) const {
 	// TODO
-	// string s = (args[0]._namespace)->to_string();
-	//cout << s;
-	InfArg a; a._string = IDPointer(string(""));
+	assert(false);
+	string str = string("printing of namespaces is not yet implemented");
+	TypedInfArg a; a._type = IAT_STRING; a._value._string = IDPointer(str);
 	return a;
 }
 
-InfArg PushNegations::execute(const vector<InfArg>& args) const {
+TypedInfArg PushNegations::execute(const vector<InfArg>& args, lua_State*) const {
 	assert(args.size() == 1);
 	TheoryUtils::push_negations(args[0]._theory);
-	InfArg a;
+	TypedInfArg a; a._type = IAT_NIL;
 	return a;
 }
 
-InfArg RemoveEquivalences::execute(const vector<InfArg>& args) const {
+TypedInfArg RemoveEquivalences::execute(const vector<InfArg>& args, lua_State*) const {
 	assert(args.size() == 1);
 	TheoryUtils::remove_equiv(args[0]._theory);
-	InfArg a;
+	TypedInfArg a; a._type = IAT_NIL;
 	return a;
 }
 
-InfArg FlattenFormulas::execute(const vector<InfArg>& args) const {
+TypedInfArg FlattenFormulas::execute(const vector<InfArg>& args, lua_State*) const {
 	assert(args.size() == 1);
 	TheoryUtils::flatten(args[0]._theory);
-	InfArg a;
+	TypedInfArg a; a._type = IAT_NIL;
 	return a;
 }
 
-InfArg RemoveEqchains::execute(const vector<InfArg>& args) const {
+TypedInfArg RemoveEqchains::execute(const vector<InfArg>& args, lua_State*) const {
 	assert(args.size() == 1);
 	TheoryUtils::remove_eqchains(args[0]._theory);
-	InfArg a;
+	TypedInfArg a; a._type = IAT_NIL;
 	return a;
 }
 
-FastMXInference::FastMXInference(bool opts) {
-	_intypes = vector<InfArgType>(2);
+FastMXInference::FastMXInference() {
+	_intypes = vector<InfArgType>(3);
 	_intypes[0] = IAT_THEORY;
 	_intypes[1] = IAT_STRUCTURE;
-	if(opts) _intypes.push_back(IAT_OPTIONS);
-	_outtype = IAT_TABLE;
+	_intypes[2] = IAT_OPTIONS;
 	_description = "Performs model expansion on the structure given the theory it should satisfy.";
-	_reload = false;
 }
 
-InfArg FastMXInference::execute(const vector<InfArg>& args) const {
+TypedInfArg FastMXInference::execute(const vector<InfArg>& args, lua_State*) const {
 
 	// Convert arguments
 	AbstractTheory* theory = args[0]._theory;
 	AbstractStructure* structure = args[1]._structure;
-	InfOptions* opts = Namespace::global()->option("DefaultOptions");
-	if(args.size() == 3) opts = args[2]._options;
+	InfOptions* opts = args[2]._options;
 	
 	// Create solver
 	MinisatID::SolverOption modes;
@@ -693,7 +682,7 @@ InfArg FastMXInference::execute(const vector<InfArg>& args) const {
 	bool sat = solver->solve(sol);
 
 	// Translate
-	InfArg a; a._table = new vector<TypedInfArg>();
+	TypedInfArg a; a._type = IAT_TABLE; a._value._table = new vector<TypedInfArg>();
 	if(sat){
 		for(unsigned int i=0; i<sol->getModels().size(); i++){
 			AbstractStructure* mod = structure->clone();
@@ -723,16 +712,16 @@ InfArg FastMXInference::execute(const vector<InfArg>& args) const {
 			if(opts->_modelformat == MF_TWOVAL) {
 				mod->forcetwovalued();
 				TypedInfArg b; b._value._structure = mod; b._type = IAT_STRUCTURE;
-				a._table->push_back(b);
+				a._value._table->push_back(b);
 			}
 			else if(opts->_modelformat == MF_ALL) {
 				// TODO
 				TypedInfArg b; b._value._structure = mod; b._type = IAT_STRUCTURE;
-				a._table->push_back(b);
+				a._value._table->push_back(b);
 			}
 			else {
 				TypedInfArg b; b._value._structure = mod; b._type = IAT_STRUCTURE;
-				a._table->push_back(b);
+				a._value._table->push_back(b);
 			}
 		}
 	}
@@ -740,22 +729,22 @@ InfArg FastMXInference::execute(const vector<InfArg>& args) const {
 
 }
 
-InfArg StructToTheory::execute(const vector<InfArg>& args) const {
+TypedInfArg StructToTheory::execute(const vector<InfArg>& args, lua_State*) const {
 	assert(args.size() == 1);
 	AbstractTheory* t = StructUtils::convert_to_theory(args[0]._structure);
-	InfArg a; a._theory = t;
+	TypedInfArg a; a._type = IAT_THEORY; a._value._theory = t;
 	return a;
 }
 
-InfArg MoveQuantifiers::execute(const vector<InfArg>& args) const {
+TypedInfArg MoveQuantifiers::execute(const vector<InfArg>& args, lua_State*) const {
 	TheoryUtils::move_quantifiers(args[0]._theory);
-	InfArg a;
+	TypedInfArg a; a._type = IAT_NIL;
 	return a;
 }
 
-InfArg ApplyTseitin::execute(const vector<InfArg>& args) const {
+TypedInfArg ApplyTseitin::execute(const vector<InfArg>& args, lua_State*) const {
 	TheoryUtils::tseitin(args[0]._theory);
-	InfArg a;
+	TypedInfArg a; a._type = IAT_NIL;
 	return a;
 }
 
@@ -763,32 +752,30 @@ GroundReduce::GroundReduce() {
 	_intypes = vector<InfArgType>(2);
 	_intypes[0] = IAT_THEORY;
 	_intypes[1] = IAT_STRUCTURE;
-	_outtype = IAT_NIL;
 	_description = "Replace ground atoms in the theory by their truth value in the structure";
-	_reload = false;
 }
 
-InfArg GroundReduce::execute(const vector<InfArg>& args) const {
+TypedInfArg GroundReduce::execute(const vector<InfArg>& args, lua_State*) const {
 	TheoryUtils::reduce(args[0]._theory,args[1]._structure);
-	InfArg a;
+	TypedInfArg a; a._type = IAT_NIL;
 	return a;
 }
 
-InfArg MoveFunctions::execute(const vector<InfArg>& args) const {
+TypedInfArg MoveFunctions::execute(const vector<InfArg>& args, lua_State*) const {
 	TheoryUtils::move_functions(args[0]._theory);
-	InfArg a;
+	TypedInfArg a; a._type = IAT_NIL;
 	return a;
 }
 
-InfArg CloneStructure::execute(const vector<InfArg>& args) const {
-	InfArg a; 
-	a._structure = args[0]._structure->clone();
+TypedInfArg CloneStructure::execute(const vector<InfArg>& args, lua_State*) const {
+	TypedInfArg a; 
+	a._type = IAT_STRUCTURE; a._value._structure = args[0]._structure->clone();
 	return a;
 }
 
-InfArg CloneTheory::execute(const vector<InfArg>& args) const {
-	InfArg a;
-	a._theory = args[0]._theory->clone();
+TypedInfArg CloneTheory::execute(const vector<InfArg>& args, lua_State*) const {
+	TypedInfArg a;
+	a._type = IAT_THEORY; a._value._theory = args[0]._theory->clone();
 	return a;
 }
 
@@ -796,44 +783,40 @@ FastGrounding::FastGrounding() {
 	_intypes = vector<InfArgType>(2);
 	_intypes[0] = IAT_THEORY; 
 	_intypes[1] = IAT_STRUCTURE;
-	_outtype = IAT_THEORY;	
 	_description = "Ground the theory and structure and store the grounding";
-	_reload = false;
 }
 
-InfArg FastGrounding::execute(const vector<InfArg>& args) const {
+TypedInfArg FastGrounding::execute(const vector<InfArg>& args, lua_State*) const {
 	GrounderFactory factory(args[1]._structure);
 	TopLevelGrounder* g = factory.create(args[0]._theory);
 	g->run();
-	InfArg a;
-	a._theory = g->grounding();
+	TypedInfArg a; a._type = IAT_THEORY;
+	a._value._theory = g->grounding();
 	return a;
 }
 
-InfArg ForceTwoValued::execute(const vector<InfArg>& args) const {
+TypedInfArg ForceTwoValued::execute(const vector<InfArg>& args, lua_State*) const {
 	args[0]._structure->forcetwovalued();
-	InfArg a;
+	TypedInfArg a; a._type = IAT_NIL;
 	return a;
 }
 
 ChangeVoc::ChangeVoc() {
 	_intypes.push_back(IAT_STRUCTURE);
 	_intypes.push_back(IAT_VOCABULARY);
-	_outtype = IAT_NIL;
 	_description = "Change the vocabulary of a structure";
-	_reload = true;
 }
 
-InfArg ChangeVoc::execute(const vector<InfArg>& args) const {
+TypedInfArg ChangeVoc::execute(const vector<InfArg>& args, lua_State*) const {
 	AbstractStructure* str = args[0]._structure;
 	Vocabulary* v = args[1]._vocabulary;
 	StructUtils::changevoc(str,v);
-	InfArg a;
+	TypedInfArg a; a._type = IAT_NIL;
 	return a;
 }
 
-InfArg GetIndex::execute(const vector<InfArg>& args) const {
-	InfArg a;
+TypedInfArg GetIndex::execute(const vector<InfArg>& args, lua_State* L) const {
+	TypedInfArg a;
 	switch(_intypes[0]) {
 		case IAT_STRUCTURE:
 			// TODO
@@ -842,14 +825,14 @@ InfArg GetIndex::execute(const vector<InfArg>& args) const {
 		{
 			Namespace* nsp = args[0]._namespace;
 			string str = *(args[1]._string);
-			a._overloaded = nsp->getObject(str);
+			a = nsp->getObject(str,L);
 			break;
 		}
 		case IAT_VOCABULARY:
 			// TODO
 			break;
 		case IAT_OPTIONS:
-			// TODO
+			a = args[0]._options->get(*(args[1]._string));
 			break;
 		default:
 			assert(false);
@@ -857,7 +840,7 @@ InfArg GetIndex::execute(const vector<InfArg>& args) const {
 	return a;
 }
 
-InfArg BDDPrinter::execute(const vector<InfArg>& args) const {
+TypedInfArg BDDPrinter::execute(const vector<InfArg>& args, lua_State*) const {
 	FOBDDManager manager;
 	FOBDDFactory factory(&manager);
 	AbstractTheory* theory = args[0]._theory;
@@ -867,27 +850,55 @@ InfArg BDDPrinter::execute(const vector<InfArg>& args) const {
 		result = manager.conjunction(result,factory.bdd());
 	}
 	// TODO: assert that there are no definitions and no fixpoint definitions
-	InfArg a;
-	a._string = new string(manager.to_string(result));
+	TypedInfArg a; a._type = IAT_STRING;
+	a._value._string = new string(manager.to_string(result));
 	return a;
 }
 
 SetIndex::SetIndex(InfArgType table, InfArgType key, InfArgType value) {
 	_intypes = vector<InfArgType>(3);
 	_intypes[0] = table; _intypes[1] = key; _intypes[2] = value;
-	_outtype = IAT_NIL;
 	_description = "newindex";
-	_reload = false;
 }
 
-InfArg SetIndex::execute(const vector<InfArg>& args) const {
-	// TODO
-	assert(false);
-	InfArg a;
+TypedInfArg SetIndex::execute(const vector<InfArg>& args, lua_State*) const {
+	switch(_intypes[0]) {
+		case IAT_OPTIONS:
+			switch(_intypes[2]) {
+				case IAT_DOUBLE:
+					if(isInt(args[2]._double)) {
+						args[0]._options->set(*(args[1]._string),int(args[2]._double));
+					}
+					else {
+						args[0]._options->set(*(args[1]._string),args[2]._double);
+					}
+					break;
+				case IAT_STRING:
+					args[0]._options->set(*(args[1]._string),*(args[2]._string));
+					break;
+				case IAT_BOOLEAN:
+					args[0]._options->set(*(args[1]._string),args[2]._boolean);
+					break;
+				default:
+					assert(false);
+			}
+			break;
+		case IAT_STRUCTURE:
+			// TODO
+			assert(false);
+			break;
+		default:
+			assert(false);
+	}
+	TypedInfArg a; a._type = IAT_NIL;
 	return a;
 }
 
-bool overloadedObject::single() const {
+/*************************
+	Overloaded objects
+*************************/
+
+bool OverloadedObject::single() const {
 	unsigned int count = 0;
 	if(isNamespace()) ++count;
 	if(isVocabulary()) ++count;
@@ -898,36 +909,114 @@ bool overloadedObject::single() const {
 	if(isPredicate()) ++count;	
 	if(isFunction()) ++count;	
 	if(isSort()) ++count;		
-cerr << "count=" << count << endl;
+	if(isString()) ++count;
+	if(isInt()) ++count;
+	if(isBool()) ++count;
+	if(isDouble()) ++count;
+	if(isTable()) ++count;
 	return count <= 1;
 }
 
-void overloadedObject::makeprocedure(LuaProcedure* proc) {
-	if(!isProcedure()) {
-		_procedure = proc;
-	}
-	else if(typeid(*_procedure) == typeid(OverloadedLuaProcedure)) {
-		OverloadedLuaProcedure* olp = dynamic_cast<OverloadedLuaProcedure*>(_procedure);
-		olp->addproc(proc);
-	}
-	else {
-		OverloadedLuaProcedure* olp = new OverloadedLuaProcedure(_procedure->name());
-		olp->addproc(_procedure);
-		olp->addproc(proc);
-		_procedure = olp;
+/*********************
+	Lua Procedures
+*********************/
+
+int LuaProcCompileNumber = 0;
+
+void LuaProcedure::compile(lua_State* L) {
+	if(!iscompiled()) {
+		stringstream ss;
+		ss << "local " << _name << " = ";
+		ss << code() << "\n";
+		ss << "return " << _name << "(...)\n";
+		luaL_loadstring(L,ss.str().c_str());
+		_registryindex = "idp_compiled_procedure_" + itos(LuaProcCompileNumber);
+		++LuaProcCompileNumber;
+		lua_setfield(L,LUA_REGISTRYINDEX,_registryindex.c_str());
 	}
 }
 
-string OverloadedLuaProcedure::code() const {
-	stringstream ss;
-	ss << " function(...)\n";
-	ss << "local idp_intern_tab = {...}\n";
-	for(unsigned int n = 0; n < _subprocedures.size(); ++n) {
-		ss << "local idp_intern_tempfunc" << n << " = " << _subprocedures[n]->code() << "\n";
+TypedInfArg InfOptions::get(const string& opt) const {
+	TypedInfArg tia;
+	if(opt == "language") {
+		tia._type = IAT_STRING;
+		switch(_format) {
+			case OF_IDP: tia._value._string = IDPointer(string("idp")); break;
+			case OF_TXT: tia._value._string = IDPointer(string("txt")); break;
+			default: assert(false); tia._type = IAT_NIL; break;
+		}
 	}
-	for(unsigned int n = 0; n < _subprocedures.size(); ++n) {
-		ss << "if #idp_intern_tab == " << _subprocedures[n]->arity() << " then return idp_intern_tempfunc" << n << "(...) end\n";
+	else if(opt == "modelformat") {
+		tia._type = IAT_STRING;
+		switch(_modelformat) {
+			case MF_ALL: tia._value._string = IDPointer(string("all")); break;
+			case MF_TWOVAL: tia._value._string = IDPointer(string("twovalued")); break;
+			case MF_THREEVAL: tia._value._string = IDPointer(string("threevalued")); break;
+			default: assert(false); tia._type = IAT_NIL; break;
+		}
 	}
-	ss << "end\n";
-	return ss.str();
+	else if(opt == "nrmodels") {
+		tia._type = IAT_INT;
+		tia._value._int = _nrmodels;
+	}
+	else if(opt == "satverbosity") {
+		tia._type = IAT_INT;
+		tia._value._int = _satverbosity;
+	}
+	else if(opt == "printtypes") {
+		tia._type = IAT_BOOLEAN;
+		tia._value._boolean = _printtypes ? true : false;
+	}
+	else {
+		Error::unknopt(opt,0);
+		tia._type = IAT_NIL;
+	}
+	return tia;
+}
+
+TypedInfArg Namespace::getObject(const string& str, lua_State* L) const {
+	TypedInfArg a;
+	OverloadedObject* obj = new OverloadedObject();
+	if(isSubspace(str)) obj->makenamespace(subspace(str));
+	if(isVocab(str)) obj->makevocabulary(vocabulary(str));
+	if(isTheory(str)) obj->maketheory(theory(str));
+	if(isStructure(str)) obj->makestructure(structure(str));
+	if(isOption(str)) obj->makeoptions(option(str));
+	if(isProc(str)) {
+		LuaProcedure* proc = procedure(str);
+		proc->compile(L);
+		obj->makeprocedure(&(proc->registryindex()));
+	}
+	if(obj->single()) {
+		if(obj->isTheory()) {
+			a._type = IAT_THEORY;
+			a._value._theory = obj->getTheory();
+		}
+		if(obj->isVocabulary()) {
+			a._type = IAT_VOCABULARY;
+			a._value._vocabulary = obj->getVocabulary();
+		}
+		if(obj->isStructure()) {
+			a._type = IAT_STRUCTURE;
+			a._value._structure = obj->getStructure();
+		}
+		if(obj->isNamespace()) {
+			a._type = IAT_NAMESPACE;
+			a._value._namespace = obj->getNamespace();
+		}
+		if(obj->isOptions()) {
+			a._type = IAT_OPTIONS;
+			a._value._options = obj->getOptions();
+		}
+		if(obj->isProcedure()) {
+			a._type = IAT_PROCEDURE;
+			a._value._procedure = obj->getProcedure();
+		}
+		delete(obj);
+	}
+	else {
+		a._type = IAT_OVERLOADED;
+		a._value._overloaded = obj;
+	}
+	return a;
 }

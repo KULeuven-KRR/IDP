@@ -7,6 +7,8 @@
 #ifndef OPTIONS_HPP
 #define OPTIONS_HPP
 
+struct TypedInfArg;
+
 /** Command-line options **/
 
 enum WarningTypes { 
@@ -87,6 +89,10 @@ class InfOptions {
 			_satverbosity	= opt->_satverbosity;
 			_printtypes		= opt->_printtypes;
 		}
+		void set(const string& optname,const string& val, ParseInfo* pi = 0);
+		void set(const string& optname,double, ParseInfo* pi = 0);
+		void set(const string& optname,bool, ParseInfo* pi = 0);
+		void set(const string& optname,int, ParseInfo* pi = 0);
 
 		// Inspectors
 		static bool isoption(const string& str) {
@@ -99,6 +105,11 @@ class InfOptions {
 			return r;
 		}
 		const string& name() const { return _name; }
+
+		const ParseInfo& pi() const { return _pi;	}
+
+		TypedInfArg	get(const string& optname) const;
+
 
 };
 

@@ -16,8 +16,13 @@ end
 
 local oldTostring = tostring
 function tostring(e) 
-	if getmetatable(e).idptype then
-		return idptostring(e)
+	local t = getmetatable(e)
+	if t then
+		if getmetatable(e).idptype then
+			return idptostring(e)
+		else
+			return oldTostring(e)
+		end
 	else
 		return oldTostring(e)
 	end

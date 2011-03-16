@@ -525,6 +525,11 @@ namespace Error {
 
 	/** Unknown commands or options **/
 
+	void notcommand() {
+		error();
+		cerr << "Attempt to call a non-function value." << endl;
+	}
+
 	void unkncommand(const string& name, const ParseInfo& thisplace) {
 		error(thisplace);
 		cerr << "Procedure " << name << " does not exist." << endl;

@@ -1075,14 +1075,6 @@ string Vocabulary::to_string(unsigned int spaces) const {
 extern void insertlongname(lua_State*, const vector<string>&);
 
 int Vocabulary::tolua(lua_State* L, const vector<string>& longname) const {
-	// TODO insert sorts, functions and predicates
-	lua_getglobal(L,"idp_intern");
-	lua_getfield(L,-1,"newnode");
-	lua_getfield(L,-2,"idpvocabulary");
-	lua_pushstring(L,_name.c_str());
-	insertlongname(L,longname);
-	lua_call(L,2,1);
-	lua_call(L,1,1);
-	lua_remove(L,-2);
+	// TODO 
 	return 0;
 }

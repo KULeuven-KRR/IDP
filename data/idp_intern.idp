@@ -1,46 +1,18 @@
 /** Options **/
 
-#options DefaultOptions {
+#options stdoptions {
 	nrmodels=1
 	language=idp
 	modelformat=all
 }
 
-#procedure setoption(Opts,OptName,OptValue) {
-	return idp_intern_idpcall("setoption",Opts,OptName,OptValue)
-}
-
-#procedure setoption(OptName,OptValue) {
-	return setoption(DefaultOptions,OptName,OptValue)
-}
-
-#procedure getoption(Opts,OptName) {
-	local val = idp_intern_idpcall("getoption",Opts,OptName)
-	local numval = tonumber(val)
-	if numval then 
-		return numval
-	elseif numval == "true" then 
-		return true
-	elseif numval == "false" then 
-		return false
-	else 
-		return val
-	end
-}
-
-#procedure getoption(OptName) {
-	return getoption(DefaultOptions,OptName)
-}
-
 /** Create new blocks **/
 
-#procedure newoptions(Opts) {
-	return idp_intern_idpcall("newoptions",Opts)
+#procedure newoptions() {
+	return idp_intern_idpcall("newoptions")
 }
 
-#procedure newoptions() {
-	return idp_intern_idpcall("newoption")
-}
+/** Copy blocks **/
 
 #procedure clone(obj) {
 	return idp_intern_idpcall("clone",obj)
@@ -62,11 +34,8 @@
 	local clonetheo = clone(Theo)
 	IDP_ADVANCED::push_negations(clonetheo)
 	IDP_ADVANCED::flatten(clonetheo)
+	if not Opt then Opt = stdoptions end
 	return idp_intern_idpcall("fastmx",clonetheo,Struct,Opt)
-}
-
-#procedure modelexpand(Theo,Struct) {
-	return modelexpand(Theo,Struct,DefaultOptions)
 }
 
 /** Grounding **/
@@ -88,11 +57,9 @@
 }
 
 /** Printing **/
-#procedure idptostring(obj) {
-	return idp_intern_idpcall("print",obj)
-}
 
 #procedure idptostring(obj,opts) {
+	if not opts then opts = stdoptions end
 	return idp_intern_idpcall("print",obj,opts)
 }
 
