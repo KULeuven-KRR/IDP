@@ -4,6 +4,7 @@
 	(c) K.U.Leuven
 ************************************/
 
+#include "namespace.hpp"
 #include "theory.hpp"
 #include "ecnf.hpp"
 #include <iostream>
@@ -13,6 +14,8 @@
 **************/
 
 /** Standard visiting behavior **/
+
+void Visitor::visit(const Namespace* s)			{ traverse(s);	}
 
 void Visitor::visit(const Theory* t)			{ traverse(t);	}
 void Visitor::visit(const Definition* a)		{ traverse(a);	}
@@ -53,6 +56,18 @@ void Visitor::visit(const GroundAggregate*)		{ }
 void Visitor::visit(const GroundSet*)			{ }
 
 /** Standard traversing behavior **/
+
+void Visitor::traverse(const Namespace* s) {
+	for(unsigned int n = 0; n < s->nrVocs(); ++n)
+		s->vocabulary(n)->accept(this);
+	for(unsigned int n = 0; n < s->nrTheos(); ++n)
+		s->theory(n)->accept(this);
+	for(unsigned int n = 0; n < s->nrStructs(); ++n)
+		s->structure(n)->accept(this);
+	for(unsigned int n = 0; n < s->nrSubs(); ++n)
+		s->subspace(n)->accept(this);
+	//TODO traverse procedures and options
+}
 
 void Visitor::traverse(const Formula* f) {
 	for(unsigned int n = 0; n < f->nrSubforms(); ++n)
@@ -138,6 +153,8 @@ void Visitor::traverse(const GroundSet* s) {
 }
 
 /** Standard visitor acceptance behavior **/
+
+void Namespace::accept(Visitor* v) 			const { v->visit(this);	}
 
 void Theory::accept(Visitor* v) 			const { v->visit(this);	}
 void Definition::accept(Visitor* v) 		const { v->visit(this);	}

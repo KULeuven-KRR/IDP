@@ -34,7 +34,7 @@ class Printer : public Visitor {
 		string print(const Vocabulary*);
 		string print(const AbstractTheory*);
 		string print(const AbstractStructure*);
-//TODO	string print(const Namespace*);
+		string print(const Namespace*);
 
 		// Indentation
 		void indent();
@@ -71,6 +71,9 @@ class IDPPrinter : public Printer {
 	public:
 		IDPPrinter() : _printtypes(false) { }
 		IDPPrinter(bool printtypes) : _printtypes(printtypes) { }
+
+		/** Namespace **/
+		void visit(const Namespace*); //TODO procedures and options are not printed yet..
 
 		/** Theories **/
 		void visit(const Theory*);

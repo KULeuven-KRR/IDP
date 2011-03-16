@@ -568,3 +568,48 @@ void IDPPrinter::visit(const Function* f) {
 	_out << " : " << f->outsort()->name() << "\n";
 }
 
+/*****************
+	Namespaces
+*****************/
+
+void IDPPrinter::visit(const Namespace* s) {
+	for(unsigned int n = 0; n < s->nrVocs(); ++n) {
+		printtab();
+		_out << "#vocabulary " << s->vocabulary(n)->name() << " {\n";
+		indent();
+		s->vocabulary(n)->accept(this);
+		unindent();
+		printtab();
+		_out << "}\n";
+	}
+	for(unsigned int n = 0; n < s->nrTheos(); ++n) {
+		printtab();
+		_out << "#theory " << s->theory(n)->name();
+		_out << " : " << s->theory(n)->vocabulary()->name() << " {\n";
+		indent();
+		s->theory(n)->accept(this);
+		unindent();
+		printtab();
+		_out << "}\n";
+	}
+	for(unsigned int n = 0; n < s->nrStructs(); ++n) {
+		printtab();
+		_out << "#structure " << s->structure(n)->name(); 
+		_out << " : " << s->structure(n)->vocabulary()->name() << " {\n";
+		indent();
+		s->structure(n)->accept(this);
+		unindent();
+		printtab();
+		_out << "}\n";
+	} 
+	for(unsigned int n = 0; n < s->nrSubs(); ++n) {
+		printtab();
+		_out << "#namespace " << s->subspace(n)->name() << " {\n"; 
+		indent();
+		s->subspace(n)->accept(this);
+		unindent();
+		printtab();
+		_out << "}\n";
+	}
+	//TODO Print procedures and options?
+}

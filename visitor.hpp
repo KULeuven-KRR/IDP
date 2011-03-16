@@ -7,6 +7,7 @@
 #ifndef VISITOR_HPP
 #define VISITOR_HPP
 
+class Namespace;
 class Formula;
 class Term;
 class Rule;
@@ -56,20 +57,24 @@ class Visitor {
 		virtual ~Visitor() { }
 
 		// Traverse the parse tree
-		void traverse(const Formula* f);
-		void traverse(const Term* t);
-		void traverse(const Rule* r);
-		void traverse(const Definition* d);
-		void traverse(const FixpDef* f);
-		void traverse(const SetExpr* s);
-		void traverse(const Theory* t);
-		void traverse(const Structure* s);
-		void traverse(const Vocabulary* v);
-		void traverse(const GroundTheory* t);
-		void traverse(const SolverTheory* t);
-		void traverse(const GroundDefinition* d);
-		void traverse(const GroundSet* s);
+		void traverse(const Formula*);
+		void traverse(const Term*);
+		void traverse(const Rule*);
+		void traverse(const Definition*);
+		void traverse(const FixpDef*);
+		void traverse(const SetExpr*);
+		void traverse(const Theory*);
+		void traverse(const Structure*);
+		void traverse(const Vocabulary*);
+		void traverse(const GroundTheory*);
+		void traverse(const SolverTheory*);
+		void traverse(const GroundDefinition*);
+		void traverse(const GroundSet*);
+		void traverse(const Namespace*);
 
+		/** Namespaces **/
+		virtual void visit(const Namespace*);
+	
 		/** Theories **/
 		virtual void visit(const Theory*);
 		virtual void visit(const GroundTheory*);
