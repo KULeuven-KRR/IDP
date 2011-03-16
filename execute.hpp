@@ -47,6 +47,7 @@ class LuaProcedure {
 		vector<string>		_innames;
 		stringstream		_code;
 		string				_registryindex;
+
 	public:
 		LuaProcedure() { }
 		LuaProcedure(const string& name, const ParseInfo& pi) :
@@ -70,9 +71,9 @@ class LuaProcedure {
 
 /** class OverloadedObject **/
 struct TypedInfArg;
+
 class OverloadedObject {
 	private:
-
 		Namespace*			_namespace;
 		Vocabulary*			_vocabulary;
 		AbstractTheory*		_theory;
@@ -92,7 +93,6 @@ class OverloadedObject {
 		vector<TypedInfArg>*	_table;
 
 	public:
-
 		// Constructor
 		OverloadedObject() : 
 			_namespace(0), _vocabulary(0), _theory(0), _structure(0), _options(0), _procedure(0),
@@ -177,7 +177,6 @@ struct TypedInfArg {
 };
 
 
-
 /** An execute statement **/
 class Inference {
 	protected:
@@ -193,8 +192,9 @@ class Inference {
 
 class LoadFile : public Inference {
 	public:
-		LoadFile() { _intypes = vector<InfArgType>(1,IAT_STRING);	
-					 _description = "Load the given file";
+		LoadFile() {
+			_intypes = vector<InfArgType>(1,IAT_STRING);	
+			_description = "Load the given file";
 		}
 		TypedInfArg execute(const vector<InfArg>& args, lua_State*) const;
 };

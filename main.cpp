@@ -291,7 +291,6 @@ void interactive(lua_State* L) {
 void cleanup() {
 	Insert::cleanup();
 	BuiltinProcs::cleanup();
-	delete(Namespace::global());
 	delete(DomainData::instance());
 	for(map<string,CLConst*>::iterator it = clconsts.begin(); it != clconsts.end(); ++it) delete(it->second);
 }

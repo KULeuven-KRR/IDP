@@ -94,8 +94,7 @@ class Namespace {
 		void	add(LuaProcedure* l);
 
 		// Lua communication
-		void		toLuaGlobal(lua_State*) const;
-		void		toLuaLocal(lua_State*) const;
+		void		toLuaGlobal(lua_State*);
 		TypedInfArg	getObject(const string& str, lua_State*) const;
 
 		// Visitors

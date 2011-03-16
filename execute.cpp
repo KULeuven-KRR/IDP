@@ -574,8 +574,7 @@ TypedInfArg NewOption::execute(const vector<InfArg>&, lua_State*) const {
 TypedInfArg PrintTheory::execute(const vector<InfArg>& args, lua_State*) const {
 	InfOptions* opts = args[1]._options;
 	Printer* printer = Printer::create(opts);
-	AbstractTheory* t = args[0]._theory;
-	string str = printer->print(t);
+	string str = printer->print(args[0]._theory);
 	delete(printer);
 	TypedInfArg a; a._type = IAT_STRING; a._value._string = IDPointer(str);
 	return a;
@@ -593,17 +592,16 @@ TypedInfArg PrintVocabulary::execute(const vector<InfArg>& args, lua_State*) con
 TypedInfArg PrintStructure::execute(const vector<InfArg>& args, lua_State*) const {
 	InfOptions* opts = args[1]._options;
 	Printer* printer = Printer::create(opts);
-	AbstractStructure* s = args[0]._structure;
-	string str = printer->print(s);
+	string str = printer->print(args[0]._structure);
 	delete(printer);
 	TypedInfArg a; a._type = IAT_STRING; a._value._string = IDPointer(str);
 	return a;
 }
 
-TypedInfArg PrintNamespace::execute(const vector<InfArg>&, lua_State*) const {
-	// TODO
-	assert(false);
-	string str = string("printing of namespaces is not yet implemented");
+TypedInfArg PrintNamespace::execute(const vector<InfArg>& args, lua_State*) const {
+	InfOptions* opts = args[1]._options;
+	Printer* printer = Printer::create(opts);
+	string str = printer->print(args[0]._namespace);
 	TypedInfArg a; a._type = IAT_STRING; a._value._string = IDPointer(str);
 	return a;
 }

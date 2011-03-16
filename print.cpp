@@ -32,6 +32,7 @@ Printer* Printer::create(InfOptions* opts) {
 	}
 }
 
+string Printer::print(const Namespace* n)			{ n->accept(this); return _out.str(); }
 string Printer::print(const Vocabulary* v)			{ v->accept(this); return _out.str(); }
 string Printer::print(const AbstractTheory* t)		{ t->accept(this); return _out.str(); }
 string Printer::print(const AbstractStructure* s)	{ s->accept(this); return _out.str(); }	
@@ -525,15 +526,11 @@ void SimplePrinter::visit(const Vocabulary* v) {
 }
 
 void IDPPrinter::visit(const Vocabulary* v) {
-//	_out << "#vocabulary " << v->name() << " {\n";
-//	indent();
 	traverse(v);
-//	unindent();
-//	_out << "}\n";
 }
 
 void IDPPrinter::visit(const Sort* s) {
-//	printtab();
+	printtab();
 	_out << "type " << s->name();
 	if(s->nrParents() > 0)
 		_out << " isa " << s->parent(0)->name();
@@ -543,7 +540,7 @@ void IDPPrinter::visit(const Sort* s) {
 }
 
 void IDPPrinter::visit(const Predicate* p) {
-//	printtab();
+	printtab();
 	_out << p->name().substr(0,p->name().find('/'));
 	if(p->arity() > 0) {
 		_out << "(" << p->sort(0)->name();
@@ -555,7 +552,7 @@ void IDPPrinter::visit(const Predicate* p) {
 }
 
 void IDPPrinter::visit(const Function* f) {
-//	printtab();
+	printtab();
 	if(f->partial())
 		_out << "partial ";
 	_out << f->name().substr(0,f->name().find('/'));
