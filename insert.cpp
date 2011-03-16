@@ -16,10 +16,6 @@
 #include <list>
 #include <set>
 
-extern void setoption(InfOptions*,const string&, const string&, ParseInfo*);
-extern void setoption(InfOptions*,const string&, double, ParseInfo*);
-extern void setoption(InfOptions*,const string&, int, ParseInfo*);
-
 /********************
 	Sort checking
 ********************/
@@ -931,15 +927,15 @@ namespace Insert {
 
 	void option(const string& opt, const string& val,YYLTYPE l) {
 		ParseInfo pi = parseinfo(l);
-		setoption(_curroptions,opt,val,&pi);
+		_curroptions->set(opt,val,&pi);
 	}
 	void option(const string& opt, double val,YYLTYPE l) { 
 		ParseInfo pi = parseinfo(l);
-		setoption(_curroptions,opt,val,&pi);
+		_curroptions->set(opt,val,&pi);
 	}
 	void option(const string& opt, int val,YYLTYPE l) {
 		ParseInfo pi = parseinfo(l);
-		setoption(_curroptions,opt,val,&pi);
+		_curroptions->set(opt,val,&pi);
 	}
 
 	/*****************
@@ -962,12 +958,11 @@ namespace Insert {
 		_currproc = new LuaProcedure(name,pi);
 		_nrvocabs.push_back(0);
 		_nrspaces.push_back(0);
-		_currproc->add(string("idp_intern_tempfunc = function ("));
+		_currproc->add(string("function ("));
 	}
 
 	void closeproc() {
-		string str = _currproc->name() + '/' + itos(_currproc->arity());
-		LuaProcedure* lp = procInScope(str,_currproc->pi());
+		LuaProcedure* lp = procInScope(_currproc->name(),_currproc->pi());
 		if(lp) Error::multdeclproc(_currproc->name(),_currproc->pi(),lp->pi());
 		_currproc->add(string("end"));
 		_currspace->add(_currproc);
@@ -983,7 +978,7 @@ namespace Insert {
 	void luacloseargs() {
 		_currproc->add(string(")"));
 		// include using namespace statements
-		for(unsigned int n = 1; n < _usingspace.size(); ++n) {	// n=1 to skip over the global namespace
+/*		for(unsigned int n = 1; n < _usingspace.size(); ++n) {	// n=1 to skip over the global namespace
 			Namespace* ns = _usingspace[n];
 			vector<string> fn = ns->fullnamevector();
 			stringstream common;
@@ -1025,6 +1020,7 @@ namespace Insert {
 		}
 		// include using vocabulary statements
 		// TODO
+		*/
 	}
 
 	void luacode(char* s) {
@@ -1039,9 +1035,8 @@ namespace Insert {
 		assert(!vs.empty());
 		_currproc->add(vs[0]);
 		for(unsigned int n = 1; n < vs.size(); ++n) {
-			_currproc->add(string("(idp_intern.descend,\""));
+			_currproc->add(string("."));
 			_currproc->add(vs[n]);
-			_currproc->add(string("\")"));
 		}
 	}
 

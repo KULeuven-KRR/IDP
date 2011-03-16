@@ -27,6 +27,7 @@ extern void parsestring(const string&);
 
 // Lua stuff
 extern int idpcall(lua_State*);
+extern int overloadcall(lua_State*);
 
 /** Initialize data structures **/
 void initialize() {
@@ -143,57 +144,81 @@ void parse(const vector<string>& inputfiles) {
 
 /** Communication with lua **/
 
+void fillmetatable(lua_State* L, bool index, bool newindex, const string& type) {
+
+	if(index) {
+		lua_getglobal(L,"idp_intern_index");
+		lua_setfield(L,-2,"__index");
+	}
+	if(newindex) {
+		lua_getglobal(L,"idp_intern_newindex");
+		lua_setfield(L,-2,"__newindex");
+	}
+
+	lua_getglobal(L,"idp_intern_delete");
+	lua_setfield(L,-2,"__gc");
+
+	lua_pushstring(L,type.c_str());
+	lua_setfield(L,-2,"idptype");
+}
+
 void createmetatables(lua_State* L) {
 
-	luaL_dostring(L,"idp_intern.index = function(obj) idp_intern.idpcall(\"index\",obj) end");
-	luaL_dostring(L,"idp_intern.call = function(obj) idp_intern.idpcall(\"execute\",obj) end");
-	luaL_dostring(L,"idp_intern.delete = function(obj) idp_intern.idpcall(\"delete\",obj) end");
-
-	lua_getglobal(L,"idp_intern");
-
-	luaL_newmetatable(L,"idpobject");
-	lua_getfield(L,-2,"index");
-	lua_setfield(L,-2,"__index");
-	lua_getfield(L,-2,"call");
+	luaL_newmetatable(L,"overloaded");
+	fillmetatable(L,true,true,"overloaded");
+	lua_getglobal(L,"idp_intern_overloadcall");
 	lua_setfield(L,-2,"__call");
 	lua_pop(L,1);
 
 	luaL_newmetatable (L,"theory");
-	lua_pushboolean(L,true);
-	lua_setfield(L,-2,"gettheory");
-	lua_getfield(L,-2,"delete");
-	lua_setfield(L,-2,"__gc");
+	fillmetatable(L,false,false,"theory");
 	lua_pop(L,1);
 
 	luaL_newmetatable (L,"structure");
-	lua_pushboolean(L,true);
-	lua_setfield(L,-2,"getstructure");
-	lua_getfield(L,-2,"delete");
-	lua_setfield(L,-2,"__gc");
+	fillmetatable(L,true,true,"structure");
 	lua_pop(L,1);
 
 	luaL_newmetatable (L,"namespace");
-	lua_pushboolean(L,true);
-	lua_setfield(L,-2,"getnamespace");
-	lua_getfield(L,-2,"delete");
-	lua_setfield(L,-2,"__gc");
+	fillmetatable(L,true,false,"namespace");
 	lua_pop(L,1);
 
 	luaL_newmetatable (L,"vocabulary");
-	lua_pushboolean(L,true);
-	lua_setfield(L,-2,"getvocabulary");
-	lua_getfield(L,-2,"delete");
-	lua_setfield(L,-2,"__gc");
+	fillmetatable(L,true,false,"vocabulary");
 	lua_pop(L,1);
 
 	luaL_newmetatable (L,"options");
-	lua_pushboolean(L,true);
-	lua_setfield(L,-2,"getoptions");
-	lua_getfield(L,-2,"delete");
-	lua_setfield(L,-2,"__gc");
+	fillmetatable(L,true,true,"options");
 	lua_pop(L,1);
+}
 
-	lua_pop(L,1);
+
+lua_State* initLua() {
+		
+	// Create the lua state
+	lua_State* L = lua_open();
+	luaL_openlibs(L);
+
+	// Create the main communication functions
+	lua_pushcfunction(L,&idpcall);
+	lua_setglobal(L,"idp_intern_idpcall");
+	lua_pushcfunction(L,&overloadcall);
+	lua_setglobal(L,"idp_intern_overloadcall");
+	luaL_dostring(L,"idp_intern_index = function(t,k) return idp_intern_idpcall(\"index\",t,k) end");
+	luaL_dostring(L,"idp_intern_delete = function(obj) idp_intern_idpcall(\"delete\",obj) end");
+	luaL_dostring(L,"idp_intern_newindex = function(t,k,v) idp_intern_idpcall(\"newindex\",t,k,v) end");
+
+	// Create metatables for the different userdata
+	createmetatables(L);
+
+	// Overwrite some standard lua procedures
+	stringstream ss;
+	ss << DATADIR << "/std/idp_intern.lua";
+	luaL_dofile(L,ss.str().c_str());
+
+	// Make the objects in the global namespace global variables in lua 
+	Namespace::global()->toLuaGlobal(L);
+
+	return L;
 }
 
 /** Execute a procecure **/
@@ -206,7 +231,10 @@ void executeproc(lua_State* L, const string& proc) {
 		luaL_loadstring(L,(proc->code()).c_str());
 		delete(proc);
 		int res = lua_pcall(L,0,0,0);
-		if(res) cerr << string(lua_tostring(L,1)) << endl; 
+		if(res) {
+			cerr << string(lua_tostring(L,1)) << endl; 
+			lua_pop(L,1);
+		}
 	}
 }
 
@@ -278,23 +306,16 @@ int main(int argc, char* argv[]) {
 
 	// Run
 	if(!Error::nr_of_errors()) {
-		// Initialize communication with lua
-		lua_State* L = lua_open();
-		luaL_openlibs(L);
-		lua_pushcfunction(L,&idpcall);
-		lua_setglobal(L,"idpcall");
-		stringstream ss;
-		ss <<DATADIR <<"/std/idp_intern.lua";
-		luaL_dofile(L,ss.str().c_str());
-		Namespace::global()->tolua(L);
 
-		// Create metatables
-		createmetatables(L);
+		// Initialize communication with lua
+		lua_State* L = initLua();
 
 		// Execute statements
 		executeproc(L,_cloptions._exec);
 		if(_cloptions._interactive) interactive(L);
-		else if(_cloptions._exec == "") executeproc(L,"idp_intern.main()");
+		else if(_cloptions._exec == "") executeproc(L,"idp_intern_main()");
+
+		// End lua communication
 		lua_close(L);
 	}
 

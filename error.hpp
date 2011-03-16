@@ -122,6 +122,7 @@ namespace Error {
 	void wrongsort(const string&, const string&, const string&, const ParseInfo&);
 
 	/** Unknown options or commands **/
+	void notcommand();
 	void unkncommand(const string& name, const ParseInfo& thisplace);
 	void unkncommand(const string& name);
 	void unknopt(const string& name, ParseInfo* thisplace);
