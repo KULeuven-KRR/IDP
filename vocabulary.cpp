@@ -1021,13 +1021,13 @@ vector<Function*> Vocabulary::func_no_arity(const string& name) const {
 string PFSymbol::to_string() const {
 	string s  = _name.substr(0,_name.find('/'));	
 	if(nrSorts()) {
-		if(sort(0)) s += "[" + sort(0)->to_string();
-		else s += "[0";
+		if(sort(0)) s += '[' + sort(0)->to_string();
+		else s += '[';
 		for(unsigned int n = 1; n < nrSorts(); ++n) {
-			if(sort(n)) s += "," + sort(n)->to_string();
-			else s += ",0";
+			if(sort(n)) s += ',' + sort(n)->to_string();
+			else s += ',';
 		}
-		s += "]";
+		s += ']';
 	}
 	return s;
 }

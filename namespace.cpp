@@ -193,18 +193,24 @@ set<Function*> Namespace::allFuncs() const {
 *****************************/
 
 /*
- * void Namespace::toLuaGlobal(lua_State* L) const {
+ * void Namespace::toLuaGlobal(lua_State* L) {
  * DESCRIPTION
  *		Loads all objects of the namespaces as global variables in a given lua state.
  * PARAMETERS
  *		L	- the given lua state
  */
-void Namespace::toLuaGlobal(lua_State* L) const {
+void Namespace::toLuaGlobal(lua_State* L) {
 
 	set<string> doublenames = doubleNames();
 	map<string,OverloadedObject*> doubleobjects;
 	for(set<string>::const_iterator it = doublenames.begin(); it != doublenames.end(); ++it) 
 		doubleobjects[*it] = new OverloadedObject();
+
+	Namespace** ptr = (Namespace**) lua_newuserdata(L,sizeof(Namespace*));
+	(*ptr) = this;
+	luaL_getmetatable (L,"namespace");
+	lua_setmetatable(L,-2);
+	lua_setglobal(L,name().c_str());
 
 	for(unsigned int n = 0; n < nrSubs(); ++n) {
 		if(doublenames.find(subspace(n)->name()) == doublenames.end()) {
@@ -315,9 +321,5 @@ set<string> Namespace::doubleNames() const {
 		else doublenames.insert(it->second->name());
 	}
 	return doublenames;
-}
-
-void Namespace::toLuaLocal(lua_State* ) const {
-	// TODO
 }
 

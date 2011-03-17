@@ -34,39 +34,63 @@ enum TsType { TS_EQ, TS_RULE, TS_IMPL, TS_RIMPL };
  * A complete definition of a tseitin atom
 */
 class TsBody {
-	public:
-		TsType		_type;	// the type of "tseitin definition"
-		virtual ~TsBody() {}
 	protected:
+		TsType _type;	// the type of "tseitin definition"
 		TsBody(TsType type): _type(type) { }
+		virtual ~TsBody() {}
+	public:
+		TsType type() const { return _type; }
+	friend class GroundTranslator;
 };
 
 class PCTsBody : public TsBody {
-	public:
+	private:
 		vector<int> _body;	// the literals in the subformula replaced by the tseitin
 		bool		_conj;	// if true, the replaced subformula is the conjunction of the literals in _body,
 							// if false, the replaced subformula is the disjunction of the literals in _body
+	public:
 		PCTsBody(TsType type, const vector<int>& body, bool conj):
 			TsBody(type), _body(body), _conj(conj) { }
+		vector<int> 	body() 					const { return _body; 			}
+		unsigned int	size()					const { return _body.size();	}
+		int				literal(unsigned int n)	const { return _body[n];		}
+		bool			conj()					const { return _conj; 			}
+	friend class GroundTranslator;
 };
 
 class AggTsBody : public TsBody {
-	public:
+	private:
 		int		_setnr;
 		AggType	_aggtype;
 		bool	_lower;
 		double	_bound;
-		AggTsBody(TsType type, int setnr, AggType at, bool lower, double bound):
+	public:
+		AggTsBody(TsType type, double bound, bool lower, AggType at, int setnr):
 			TsBody(type), _setnr(setnr), _aggtype(at), _lower(lower), _bound(bound) { }
+		int		setnr()		const { return _setnr; 		}
+		AggType	aggtype()	const { return _aggtype;	}
+		bool	lower()		const { return _lower;		}
+		double	bound()		const { return _bound;		}
+	friend class GroundTranslator;
 };
 
 /*
  * Ground sets
  */ 
-struct TsSet {
-	vector<int>		_setlits;		// All literals in the ground set
-	vector<double>	_litweights;	// For each literal a corresponding weight
-	vector<double>	_trueweights;	// The weights of the true literals in the set
+class TsSet {
+	private:
+		vector<int>		_setlits;		// All literals in the ground set
+		vector<double>	_litweights;	// For each literal a corresponding weight
+		vector<double>	_trueweights;	// The weights of the true literals in the set
+	public:
+		vector<int>		literals()				const { return _setlits; 			}
+		vector<double>	weights()				const { return _litweights;			}
+		vector<double>	trueweights()			const { return _trueweights;		}
+		unsigned int	size() 					const { return _setlits.size();		}
+		bool			empty()					const { return _setlits.empty();	}
+		int				literal(unsigned int n)	const { return _setlits[n];			}
+		double			weight(unsigned int n)	const { return _litweights[n];		}
+	friend class GroundTranslator;
 };
 
 /*
@@ -94,7 +118,7 @@ class GroundTranslator  {
 
 		int				translate(unsigned int,const vector<domelement>&);
 		int				translate(const vector<int>& cl, bool conj, TsType tp);
-		int				translate(double bound, char comp, bool strict, int setnr, AggType aggtype, TsType tstype);
+		int				translate(double bound, char comp, bool strict, AggType aggtype, int setnr, TsType tstype);
 		int				translate(PFSymbol*,const vector<TypedElement>&);
 		int				translateSet(const vector<int>&,const vector<double>&,const vector<double>&);
 		int				nextNumber();
