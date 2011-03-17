@@ -1074,7 +1074,7 @@ string Vocabulary::to_string(unsigned int spaces) const {
 
 extern void insertlongname(lua_State*, const vector<string>&);
 
-int Vocabulary::tolua(lua_State* L, const vector<string>& longname) const {
+int Vocabulary::tolua(lua_State*, const vector<string>&) const {
 	// TODO 
 	return 0;
 }

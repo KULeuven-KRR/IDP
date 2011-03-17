@@ -52,16 +52,16 @@ int GroundTranslator::translate(const vector<int>& cl, bool conj, TsType tp) {
 	return nr;
 }
 
-int	GroundTranslator::translate(double bound, char comp, bool strict, int setnr, AggType aggtype, TsType tstype) {
+int	GroundTranslator::translate(double bound, char comp, bool strict, AggType aggtype, int setnr, TsType tstype) {
 	if(comp == '=') {
 		vector<int> cl(2);
-		cl[0] = translate(bound,'<',false,setnr,aggtype,tstype);
-		cl[1] = translate(bound,'>',false,setnr,aggtype,tstype);
+		cl[0] = translate(bound,'<',false,aggtype,setnr,tstype);
+		cl[1] = translate(bound,'>',false,aggtype,setnr,tstype);
 		return translate(cl,true,tstype);
 	}
 	else {
 		int nr = nextNumber();
-		AggTsBody* tb = new AggTsBody(tstype,setnr,aggtype,(comp == '<'),bound);
+		AggTsBody* tb = new AggTsBody(tstype,bound,(comp == '<'),aggtype,setnr);
 		if(strict) {
 			// FIXME: This is wrong if floating point weights are allowed!
 			tb->_bound = (comp == '<') ? bound + 1 : bound - 1;	
@@ -428,11 +428,11 @@ int AggGrounder::finishCard(double truevalue, double boundvalue, int setnr) cons
 				case '=' : assert(false); break;
 				default : assert(false); break;
 			}
-			int tseitin = _translator->translate(double(leftvalue),newcomp,false,setnr,AGGCARD,tp);
+			int tseitin = _translator->translate(double(leftvalue),newcomp,false,AGGCARD,setnr,tp);
 			return _sign ? -tseitin : tseitin;
 		}
 		else {
-			int tseitin = _translator->translate(double(leftvalue),_comp,true,setnr,AGGCARD,tp);
+			int tseitin = _translator->translate(double(leftvalue),_comp,true,AGGCARD,setnr,tp);
 			return _sign ? tseitin : -tseitin;
 		}
 	}
@@ -484,11 +484,11 @@ int AggGrounder::finishSum(double truevalue, double boundvalue, int setnr) const
 			case '=' : assert(false); break;
 			default : assert(false); break;
 		}
-		int tseitin = _translator->translate(boundvalue+truevalue,newcomp,false,setnr,AGGSUM,tp);
+		int tseitin = _translator->translate(boundvalue+truevalue,newcomp,false,AGGSUM,setnr,tp);
 		return _sign ? -tseitin : tseitin;
 	}
 	else {
-		int tseitin = _translator->translate(boundvalue+truevalue,_comp,true,setnr,AGGSUM,tp);
+		int tseitin = _translator->translate(boundvalue+truevalue,_comp,true,AGGSUM,setnr,tp);
 		return _sign ? tseitin : -tseitin;
 	}
 }
@@ -533,7 +533,7 @@ int AggGrounder::finishSum(double truevalue, double boundvalue, int setnr) const
 			// TODO: more complicated propagation is possible!
 			break;
 	}
-	int tseitin = _translator->translate(boundvalue+truevalue,_comp,setnr,AGGSUM,tp);
+	int tseitin = _translator->translate(boundvalue+truevalue,_comp,AGGSUM,setnr,tp);
 	return _sign ? tseitin : -tseitin;
 
 }*/

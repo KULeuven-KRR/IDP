@@ -65,7 +65,7 @@ class AggTsBody : public TsBody {
 		bool	_lower;
 		double	_bound;
 	public:
-		AggTsBody(TsType type, int setnr, AggType at, bool lower, double bound):
+		AggTsBody(TsType type, double bound, bool lower, AggType at, int setnr):
 			TsBody(type), _setnr(setnr), _aggtype(at), _lower(lower), _bound(bound) { }
 		int		setnr()		const { return _setnr; 		}
 		AggType	aggtype()	const { return _aggtype;	}
@@ -118,7 +118,7 @@ class GroundTranslator  {
 
 		int				translate(unsigned int,const vector<domelement>&);
 		int				translate(const vector<int>& cl, bool conj, TsType tp);
-		int				translate(double bound, char comp, bool strict, int setnr, AggType aggtype, TsType tstype);
+		int				translate(double bound, char comp, bool strict, AggType aggtype, int setnr, TsType tstype);
 		int				translate(PFSymbol*,const vector<TypedElement>&);
 		int				translateSet(const vector<int>&,const vector<double>&,const vector<double>&);
 		int				nextNumber();

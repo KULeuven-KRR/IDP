@@ -13,6 +13,8 @@
 
 typedef MinisatID::WrappedPCSolver SATSolver;
 
+// Enumeration used in GroundTheory::transformForAdd 
+enum VIType { VIT_DISJ, VIT_CONJ, VIT_SET };
 
 /*********************
 	Ground clauses
@@ -46,13 +48,12 @@ class GroundSet {
 		void accept(Visitor* v) const;
 };
 
-
 /********************************
 	Ground aggregate formulas
 ********************************/
 
 /*
- * struct GroundAggregate
+ * class GroundAggregate
  *		This class represents ground formulas of the form
  *			head ARROW bound COMP agg(set)
  *		where 
@@ -60,7 +61,7 @@ class GroundSet {
  *			ARROW is <=, =>, or <=>
  *			bound is an integer or floating point number
  *			COMP is either =< or >=
- *			agg is an aggregate function
+ *			type is an aggregate function
  *			set is a ground set
  */
 class GroundAggregate {
@@ -100,9 +101,6 @@ class GroundAggregate {
 /*************************
 	Ground definitions
 *************************/
-
-// Enumeration used in GroundTheory::transformForAdd 
-enum VIType { VIT_DISJ, VIT_CONJ, VIT_SET };
 
 // Enumeration type for rules
 // RM enum RuleType { RT_TRUE, RT_FALSE, RT_UNARY, RT_CONJ, RT_DISJ, RT_AGG };

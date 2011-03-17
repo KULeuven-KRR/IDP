@@ -61,12 +61,13 @@ class SimplePrinter : public Printer {
 class IDPPrinter : public Printer {
 	private:
 		bool 					_printtypes;
-		const PFSymbol* 		_currsymbol;
-		const Structure* 		_currstructure;
+		const PFSymbol* 		_currentsymbol;
+		const Structure* 		_currentstructure;
 		const GroundTranslator*	_translator;
 
 		void print(const PredTable*);
 		void printInter(const char*,const char*,const PredTable*,const PredTable*);
+		void printAtom(int literal);
 
 	public:
 		IDPPrinter() : _printtypes(false) { }
@@ -115,15 +116,22 @@ class IDPPrinter : public Printer {
 		/** Grounding **/
 		void visit(const GroundTheory*);
 		void visit(const GroundDefinition*);
+		void visit(const PCGroundRuleBody*);
+		void visit(const AggGroundRuleBody*);
 		void visit(const GroundAggregate*);
 		void visit(const GroundSet*);
 };
 
 class EcnfPrinter : public Printer {
+	private:
+		int	_currenthead;
+
 	public:
 		void visit(const GroundTheory*);
 		void visit(const GroundDefinition*);
-		void visit(const GroundAggregate*);
+		void visit(const PCGroundRuleBody*);
+		void visit(const AggGroundRuleBody*); //TODO Not implemented yet
+		void visit(const GroundAggregate*); //TODO Not implemented yet
 		void visit(const GroundSet*);
 }; 
 

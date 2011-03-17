@@ -6,6 +6,7 @@ void InfOptions::set(const string& opt, const string& val, ParseInfo* pi) {
 		if(opt == "language") {
 			if(val == "txt") _format=OF_TXT;
 			else if(val == "idp") _format=OF_IDP;
+			else if(val == "ecnf") _format=OF_ECNF;
 			else Error::wrongformat(val,pi);
 		}
 		else if(opt == "modelformat") {

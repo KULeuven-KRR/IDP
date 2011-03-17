@@ -51,7 +51,7 @@ class CLOptions {
 
 /** Inference options **/
 
-enum OutputFormat	{ OF_TXT, OF_IDP };
+enum OutputFormat	{ OF_TXT, OF_IDP, OF_ECNF };
 enum ModelFormat	{ MF_THREEVAL, MF_TWOVAL, MF_ALL };
 
 class InfOptions {
@@ -109,7 +109,6 @@ class InfOptions {
 		const ParseInfo& pi() const { return _pi;	}
 
 		TypedInfArg	get(const string& optname) const;
-
 
 };
 
