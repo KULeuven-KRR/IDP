@@ -124,14 +124,15 @@ class IDPPrinter : public Printer {
 
 class EcnfPrinter : public Printer {
 	private:
-		int	_currenthead;
+		int				_currenthead;
+		unsigned int 	_currentdefnr;
 
 	public:
 		void visit(const GroundTheory*);
 		void visit(const GroundDefinition*);
 		void visit(const PCGroundRuleBody*);
-		void visit(const AggGroundRuleBody*); //TODO Not implemented yet
-		void visit(const GroundAggregate*); //TODO Not implemented yet
+		void visit(const AggGroundRuleBody*);
+		void visit(const GroundAggregate*);
 		void visit(const GroundSet*);
 }; 
 

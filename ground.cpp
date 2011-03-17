@@ -884,7 +884,7 @@ int EnumSetGrounder::run() const {
 	for(unsigned int n = 0; n < _subgrounders.size(); ++n) {
 		int l = _subgrounders[n]->run();
 		if(l != _false) {
-			domelement d =  _subtermgrounders[n]->run();
+			domelement d = _subtermgrounders[n]->run();
 			Element e; e._compound = d;
 			Element w = ElementUtil::convert(e,ELCOMPOUND,ELDOUBLE);
 			if(l == _true) trueweights.push_back(w._double);

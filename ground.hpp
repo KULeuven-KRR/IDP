@@ -97,7 +97,6 @@ class TsSet {
  * Ground translator 
  */
 class GroundTranslator  {
-
 	private:
 		vector<map<vector<domelement>,int> >		_table;			// map atoms to integers
 		vector<PFSymbol*>							_symboffsets;	// map integer to symbol

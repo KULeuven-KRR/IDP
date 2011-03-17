@@ -348,15 +348,18 @@ void IDPPrinter::visit(const GroundTheory* g) {
 }
 
 void EcnfPrinter::visit(const GroundTheory* g) {
+	_out << "p ecnf def aggr\n";
 	for(unsigned int n = 0; n < g->nrClauses(); ++n) {
 		for(unsigned int m = 0; m < g->clause(n).size(); ++n)
 			_out << g->clause(n)[m] << ' ';
 		_out << "0\n";
 	}
-	for(unsigned int n = 0; n < g->nrDefinitions(); ++n)
-		g->definition(n)->accept(this);
-	for(unsigned int n = 0; n < g->nrSets(); ++n)
+	for(unsigned int n = 0; n < g->nrSets(); ++n) //NOTE: Print sets before aggregates!!
 		g->set(n)->accept(this);
+	for(unsigned int n = 0; n < g->nrDefinitions(); ++n) {
+		_currentdefnr = n+1; //NOTE: Ecnf parsers do not like identifiers to be zero.
+		g->definition(n)->accept(this);
+	}
 	for(unsigned int n = 0; n < g->nrAggregates(); ++n)
 		g->aggregate(n)->accept(this);
 	//TODO: repeat above for fixpoint definitions
@@ -404,9 +407,9 @@ void IDPPrinter::visit(const PCGroundRuleBody* b) {
 
 void EcnfPrinter::visit(const PCGroundRuleBody* b) {
 	_out << (b->type() == RT_CONJ ? "C " : "D ");
-	_out << _currenthead;
+	_out << "<- " << _currentdefnr << ' ' << _currenthead << ' ';
 	for(unsigned int n = 0; n < b->size(); ++n)
-		_out << ' ' << b->literal(n);
+		_out << b->literal(n) << ' ';
 	_out << "0\n";
 }
 
@@ -423,9 +426,17 @@ void IDPPrinter::visit(const AggGroundRuleBody* b) {
 	_out << "set_" << b->setnr() << ").\n";
 }
 
-void EcnfPrinter::visit(const AggGroundRuleBody*) {
-	//TODO
-	assert(false);
+void EcnfPrinter::visit(const AggGroundRuleBody* b) {
+	switch(b->aggtype()) {
+		case AGGCARD: 	_out << "Card "; break;
+		case AGGSUM: 	_out << "Sum "; break;
+		case AGGPROD: 	_out << "Prod "; break;
+		case AGGMIN: 	_out << "Min "; break;
+		case AGGMAX: 	_out << "Max "; break;
+		default: assert(false);
+	}
+	_out << "<- " << _currentdefnr << ' ' << (b->lower() ? "L " : "G ");
+	_out << _currenthead << ' ' << b->setnr() << ' ' << b->bound() << " 0\n";
 }
 
 void IDPPrinter::visit(const GroundAggregate* a) {
@@ -449,9 +460,21 @@ void IDPPrinter::visit(const GroundAggregate* a) {
 	_out << "set_" << a->setnr() << ").\n";
 }
 
-void EcnfPrinter::visit(const GroundAggregate*) {
-	//TODO
-	assert(false);
+void EcnfPrinter::visit(const GroundAggregate* a) {
+	switch(a->type()) {
+		case AGGCARD: 	_out << "Card "; break;
+		case AGGSUM: 	_out << "Sum "; break;
+		case AGGPROD: 	_out << "Prod "; break;
+		case AGGMIN: 	_out << "Min "; break;
+		case AGGMAX: 	_out << "Max "; break;
+		default: assert(false);
+	}
+	switch(a->arrow()) {
+		case TS_EQ: _out << "C ";
+		case TS_IMPL: case TS_RIMPL: /* Not supported by solver yet*/ assert(false); break;
+		case TS_RULE: default: assert(false);
+	}
+	_out << (a->lower() ? "L " : "G ") << a->head() << " " << a->setnr() << " " << a->bound() << " 0\n";
 }
 
 void IDPPrinter::visit(const GroundSet* s) {

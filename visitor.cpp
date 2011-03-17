@@ -137,19 +137,24 @@ void Visitor::traverse(const Vocabulary* v) {
 }
 
 void Visitor::traverse(const GroundTheory* t) {
-	//TODO
+	//TODO Visit clauses?
+	for(unsigned int n = 0; n < t->nrDefinitions(); ++n)
+		t->definition(n)->accept(this);
+	for(unsigned int n = 0; n < t->nrSets(); ++n)
+		t->set(n)->accept(this);
+	for(unsigned int n = 0; n < t->nrAggregates(); ++n)
+		t->aggregate(n)->accept(this);
+	//TODO: repeat above for fixpoint definitions
 }
 
-void Visitor::traverse(const SolverTheory* t) {
+void Visitor::traverse(const SolverTheory*) {
 	//TODO
+	assert(false);
 }
 
 void Visitor::traverse(const GroundDefinition* d) {
-	//TODO
-}
-
-void Visitor::traverse(const GroundSet* s) {
-	//TODO
+	for(GroundDefinition::const_ruleiterator it = d->begin(); it != d->end(); ++it)
+		(it->second)->accept(this);
 }
 
 /** Standard visitor acceptance behavior **/
