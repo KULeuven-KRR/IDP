@@ -579,6 +579,27 @@ namespace Error {
 		error();
 		cerr << "Ambiguous call to overloaded command " << name << ".\n";
 	}
+
+	void indexoverloadedfunc() {
+		error();
+		cerr << "Indexing a structure with an overloaded function.\n";
+	}
+
+	void indexoverloadedpred() {
+		error();
+		cerr << "Indexing a structure with an overloaded predicate.\n";
+	}
+
+	void indexoverloadedsort() {
+		error();
+		cerr << "Indexing a structure with an overloaded sort.\n";
+	}
+
+	void threevalcall() {
+		error();
+		cerr << "Calling a three-valued function.\n";
+	}
+
 }
 
 namespace Warning {

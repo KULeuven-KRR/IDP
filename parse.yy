@@ -209,7 +209,7 @@ extern string dtos(double);
 *********************/
 
 idporblock		: idp
-				| execstatement	
+				| execstatement
 				;
 
 idp		        : /* empty */
@@ -932,15 +932,14 @@ args				: args ',' identifier	{ Insert::procarg(*$3);		}
 					| identifier			{ Insert::procarg(*$1);		}
 					;
 
-execstatement	: EXEC_HEADER openexec lua_block closeexec	
-				;
+execstatement		: EXEC_HEADER openexec lua_block closeexec	
+					;
 
-openexec		: '{'											{ Insert::openexec();	}
-				;
+openexec			: '{'											{ Insert::openexec();	}
+					;
 
-closeexec		: '}'
-				;
-
+closeexec			: '}'
+					;
 
 /**************
 	Options

@@ -36,6 +36,8 @@ class Namespace {
 		vector<Vocabulary*>				_vocs;			// The vocabularies in the namespace
 		vector<AbstractStructure*>		_structs;		// The structures in the namespace                   
 		vector<AbstractTheory*>			_theos;			// The theories in the namespace                           
+		vector<InfOptions*>				_opts;	
+		vector<LuaProcedure*>			_procs;
 		ParseInfo						_pi;			// the place where the namespace was parsed
 
 		static Namespace*				_global;		// The global namespace
@@ -77,10 +79,14 @@ class Namespace {
 		unsigned int		nrVocs()					const { return _vocs.size();	}
 		unsigned int		nrStructs()					const { return _structs.size();	}
 		unsigned int		nrTheos()					const { return _theos.size();	}
+		unsigned int		nrOpts()					const { return _opts.size();	}
+		unsigned int		nrProcs()					const { return _procs.size();	}
 		Namespace*			subspace(unsigned int n)	const { return _subs[n];		}
 		Vocabulary*			vocabulary(unsigned int n)	const { return _vocs[n];		}
 		AbstractTheory*		theory(unsigned int n)		const { return _theos[n];		}
 		AbstractStructure*	structure(unsigned int n)	const { return _structs[n];		}
+		InfOptions*			options(unsigned int n)		const { return _opts[n];		}
+		LuaProcedure*		procedure(unsigned int n)	const { return _procs[n];		}
 		set<Sort*>			allSorts()					const;
 		set<Predicate*>		allPreds()					const;
 		set<Function*>		allFuncs()					const;
@@ -90,7 +96,7 @@ class Namespace {
 		void	add(Namespace* n)			{ _subspaces[n->name()] = n; _subs.push_back(n);		}
 		void	add(AbstractStructure* s)	{ _structures[s->name()] = s; _structs.push_back(s);	}
 		void	add(AbstractTheory* t)		{ _theories[t->name()] = t; _theos.push_back(t);		}
-		void	add(InfOptions* o)			{ _options[o->_name] = o;								}
+		void	add(InfOptions* o)			{ _options[o->_name] = o; _opts.push_back(o);			}
 		void	add(LuaProcedure* l);
 
 		// Lua communication

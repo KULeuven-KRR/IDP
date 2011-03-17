@@ -133,6 +133,11 @@ namespace Error {
 	void wrongmodelformat(const string& format, ParseInfo* thisplace);
 	void posintexpected(const string& name, ParseInfo* thisplace);
 	void ambigcommand(const string& name);
+
+	void indexoverloadedfunc();
+	void indexoverloadedpred();
+	void indexoverloadedsort();
+	void threevalcall();
 }
 
 namespace Warning {

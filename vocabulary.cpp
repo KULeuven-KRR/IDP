@@ -1069,12 +1069,3 @@ string Vocabulary::to_string(unsigned int spaces) const {
 	}
 	return s;
 }
-
-/** Conversion to lua **/
-
-extern void insertlongname(lua_State*, const vector<string>&);
-
-int Vocabulary::tolua(lua_State* L, const vector<string>& longname) const {
-	// TODO 
-	return 0;
-}

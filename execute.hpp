@@ -30,7 +30,11 @@ enum InfArgType {
 	IAT_OVERLOADED, 
 	IAT_SORT,
 	IAT_PREDICATE, 
-	IAT_FUNCTION
+	IAT_FUNCTION,
+	IAT_PREDTABLE,
+	IAT_PREDINTER,
+	IAT_FUNCINTER,
+	IAT_TUPLE
 };
 
 namespace BuiltinProcs {
@@ -80,23 +84,16 @@ class OverloadedObject {
 		InfOptions*			_options;
 		const string*		_procedure;
 
-		Predicate*			_predicate;
-		Function*			_function;
-		Sort*				_sort;
-
-		string*				_string;
-		bool*				_bool;
-		double*				_double;
-		int*				_int;
-		
-		vector<TypedInfArg>*	_table;
+		set<Predicate*>*	_predicate;
+		set<Function*>*		_function;
+		set<Sort*>*			_sort;
 
 	public:
 
 		// Constructor
 		OverloadedObject() : 
 			_namespace(0), _vocabulary(0), _theory(0), _structure(0), _options(0), _procedure(0),
-			_predicate(0), _function(0), _sort(0), _string(0), _bool(0), _double(0), _int(0), _table(0) { }
+			_predicate(0), _function(0), _sort(0) { }
 
 		// Mutators
 		void	makenamespace(Namespace* n)			{ _namespace = n;				}
@@ -105,14 +102,12 @@ class OverloadedObject {
 		void	makestructure(AbstractStructure* s) { _structure = s;				}
 		void	makeoptions(InfOptions* o)			{ _options = o;					}
 		void	makeprocedure(const string* p)		{ _procedure = p;				}
-		void	makepredicate(Predicate* p)			{ _predicate = p;				}
-		void	makefunction(Function* f)			{ _function = f;				}
-		void	makesort(Sort* s)					{ _sort = s;					}
-		void	makestring(string* s)				{ _string = s;					}
-		void	makebool(bool b)					{ _bool = new bool(b);			}
-		void	makedouble(double d)				{ _double = new double(d);		}
-		void	makeint(int i)						{ _int = new int(i);			}
-		void	maketable(vector<TypedInfArg>* v)	{ _table = v;					}
+		void	makepredicate(Predicate* p);	
+		void	makefunction(Function* f);	
+		void	makesort(Sort* s);		
+
+		void	setpredicate(set<Predicate*>* s)	{ _predicate = s;	}
+		void	setfunction(set<Function*>* s)		{ _function = s;	}
 
 		// Inspectors
 		bool	isNamespace()	const { return (_namespace != 0);		}
@@ -121,14 +116,9 @@ class OverloadedObject {
 		bool	isStructure()	const { return (_structure != 0);		}
 		bool	isOptions()		const { return (_options != 0);			}
 		bool	isProcedure()	const { return (_procedure != 0);		}
-		bool	isPredicate()	const { return (_predicate != 0);		}
-		bool	isFunction()	const { return (_function != 0);		}
-		bool	isSort()		const { return (_sort != 0);			}
-		bool	isString()		const { return (_string != 0);			}
-		bool	isBool()		const { return (_bool != 0);			}
-		bool	isDouble()		const { return (_double != 0);			}
-		bool	isInt()			const { return (_int != 0);				}
-		bool	isTable()		const { return (_table != 0);			}
+		bool	isPredicate()	const;
+		bool	isFunction()	const;
+		bool	isSort()		const;
 
 		bool	single()	const;
 
@@ -138,14 +128,9 @@ class OverloadedObject {
 		AbstractStructure*			getStructure()		const	{ return _structure;	}
 		InfOptions*					getOptions()		const	{ return _options;		}
 		const string*				getProcedure()		const	{ return _procedure;	}
-		Predicate*					getPredicate()		const	{ return _predicate;	}
-		Function*					getFunction()		const	{ return _function;		}
-		Sort*						getSort()			const	{ return _sort;			}
-		string*						getString()			const	{ return _string;		}
-		int							getInt()			const	{ return *_int;			}
-		bool						getBool()			const	{ return *_bool;		}
-		double						getDouble()			const	{ return *_double;		}
-		vector<TypedInfArg>*		getTable()			const	{ return _table;		}
+		set<Predicate*>*			getPredicate()		const	{ return _predicate;	}
+		set<Function*>*				getFunction()		const	{ return _function;		}
+		set<Sort*>*					getSort()			const	{ return _sort;			}
 
 };
 
@@ -153,22 +138,32 @@ class OverloadedObject {
 /** Possible argument or return value of an execute statement **/
 struct TypedInfArg;
 
+struct PredTableTuple {
+	PredTable*	_table;
+	int			_index;
+	PredTableTuple(PredTable* table, int index) : _table(table), _index(index) { }
+};
+
 union InfArg {
-	Vocabulary*					_vocabulary;
-	AbstractStructure*			_structure;
-	AbstractTheory*				_theory;
-	Namespace*					_namespace;
-	double						_double;
-	int							_int;
-	bool						_boolean;
-	string*						_string;
-	InfOptions*					_options;
-	const string*				_procedure;		// contains the registry index of a procedure
-	OverloadedObject*			_overloaded;
-	Predicate*					_predicate;
-	Function*					_function;
-	Sort*						_sort;
-	vector<TypedInfArg>*		_table;
+	Vocabulary*				_vocabulary;
+	AbstractStructure*		_structure;
+	AbstractTheory*			_theory;
+	Namespace*				_namespace;
+	double					_double;
+	int						_int;
+	bool					_boolean;
+	string*					_string;
+	InfOptions*				_options;
+	const string*			_procedure;		// contains the registry index of a procedure
+	OverloadedObject*		_overloaded;
+	set<Predicate*>*		_predicate;
+	set<Function*>*			_function;
+	set<Sort*>*				_sort;
+	vector<TypedInfArg>*	_table;
+	PredInter*				_predinter;
+	FuncInter*				_funcinter;
+	PredTable*				_predtable;
+	PredTableTuple*			_tuple;
 };
 
 struct TypedInfArg {
@@ -394,6 +389,33 @@ class GetIndex : public Inference {
 class SetIndex : public Inference {
 	public:
 		SetIndex(InfArgType table, InfArgType key, InfArgType value);
+		TypedInfArg execute(const vector<InfArg>& args, lua_State*) const;
+};
+
+class LenghtOperator : public Inference {
+	public:
+		LenghtOperator(InfArgType t) {
+			_intypes = vector<InfArgType>(1,t);
+			_description = "# operator";
+		}
+		TypedInfArg execute(const vector<InfArg>& args, lua_State*) const;
+};
+
+class CastOperator : public Inference {
+	public:
+		CastOperator() {
+			_intypes = vector<InfArgType>(2); _intypes[0] = IAT_OVERLOADED; _intypes[1] = IAT_STRING;
+			_description = "disambiguate overloaded object";
+		}
+		TypedInfArg execute(const vector<InfArg>& args, lua_State*) const;
+};
+
+class ArityCastOperator : public Inference {
+	public:
+		ArityCastOperator(InfArgType t) {
+			_intypes = vector<InfArgType>(2); _intypes[0] = t; _intypes[1] = IAT_INT;
+			_description = "disambiguate overloaded object";
+		}
 		TypedInfArg execute(const vector<InfArg>& args, lua_State*) const;
 };
 

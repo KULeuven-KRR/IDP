@@ -50,7 +50,7 @@ Namespace::~Namespace() {
 }
 
 void Namespace::add(LuaProcedure* l) { 
-	_procedures[l->name()] = l;
+	_procedures[l->name()] = l; _procs.push_back(l);
 }
 
 /** Find subparts **/

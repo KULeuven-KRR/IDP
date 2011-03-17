@@ -931,6 +931,7 @@ class FuncPredTable : public PredTable {
 		bool			empty()					const { return _ftable->empty();		}
 		unsigned int	arity()					const { return _ftable->arity() + 1;	}
 		ElementType		type(unsigned int n)	const { return _ftable->type(n);		}
+		FuncTable*		ftable()				const { return _ftable;					}
 
 		// Check if the table contains a given tuple
 		bool	contains(const vector<Element>&)	const;
@@ -966,7 +967,7 @@ class FuncInter {
 		// Mutators
 		void sortunique() { if(_pinter) _pinter->sortunique(); }
 		FuncInter* clone();
-		void	forcetwovalued()	{ _pinter->forcetwovalued();	}
+		void	forcetwovalued();
 		void	add(const vector<TypedElement>& tuple,bool ctpf,bool c);	// IMPORTANT NOTE: This method deletes _ftable if it is finite!
 
 		// Inspectors
@@ -1040,6 +1041,11 @@ class AbstractStructure {
 		virtual PredInter*		inter(Predicate* p)			const = 0;	// Return the interpretation of p.
 		virtual FuncInter*		inter(Function* f)			const = 0;	// Return the interpretation of f.
 		virtual PredInter*		inter(PFSymbol* s)			const = 0;	// Return the interpretation of s.
+
+		// Lua
+		TypedInfArg		getObject(set<Sort*>*)	const;
+		TypedInfArg		getObject(set<Predicate*>* predicate) const;
+		TypedInfArg		getObject(set<Function*>* function) const;
 
 		// Visitor
 		virtual void accept(Visitor* v) const	= 0;

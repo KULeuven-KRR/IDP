@@ -978,49 +978,36 @@ namespace Insert {
 	void luacloseargs() {
 		_currproc->add(string(")"));
 		// include using namespace statements
-/*		for(unsigned int n = 1; n < _usingspace.size(); ++n) {	// n=1 to skip over the global namespace
+		for(unsigned int n = 1; n < _usingspace.size(); ++n) {	// n=1 to skip over the global namespace
 			Namespace* ns = _usingspace[n];
 			vector<string> fn = ns->fullnamevector();
 			stringstream common;
-			common << fn[0];
-			for(unsigned int m = 1; m < fn.size(); ++m) {
-				cerr << "m=" << m << endl;
-				common << "(idp_intern.descend,\"" << fn[m] << "\")";
+			for(unsigned int m = 0; m < fn.size(); ++m) {
+				common << fn[m] << ".";
 			}
 			string comstr = common.str();
+			stringstream toadd;
 			for(unsigned int m = 0; m < ns->nrSubs(); ++m) {
-				Namespace* nns = ns->subspace(m);
-				stringstream toadd;
-				toadd << "local " << nns->name() << " = idp_intern.mergenodes("
-					  << nns->name() << "," << comstr << "(idp_intern.descend,\"" << nns->name() << "\"))\n";
-				_currproc->add(toadd.str());
+				toadd << "local " << ns->subspace(m)->name() << " = " << comstr << ns->subspace(m)->name() << "\n";
 			}
 			for(unsigned int m = 0; m < ns->nrVocs(); ++m) {
-				Vocabulary* nns = ns->vocabulary(m);
-				stringstream toadd;
-				toadd << "local " << nns->name() << " = idp_intern.mergenodes("
-					  << nns->name() << "," << comstr << "(idp_intern.descend,\"" << nns->name() << "\"))\n";
-				_currproc->add(toadd.str());
+				toadd << "local " << ns->vocabulary(m)->name() << " = " << comstr << ns->vocabulary(m)->name() << "\n";
 			}
 			for(unsigned int m = 0; m < ns->nrStructs(); ++m) {
-				AbstractStructure* nns = ns->structure(m);
-				stringstream toadd;
-				toadd << "local " << nns->name() << " = idp_intern.mergenodes("
-					  << nns->name() << "," << comstr << "(idp_intern.descend,\"" << nns->name() << "\"))\n";
-				_currproc->add(toadd.str());
+				toadd << "local " << ns->structure(m)->name() << " = " << comstr << ns->structure(m)->name() << "\n";
 			}
 			for(unsigned int m = 0; m < ns->nrTheos(); ++m) {
-				AbstractTheory* nns = ns->theory(m);
-				stringstream toadd;
-				toadd << "local " << nns->name() << " = idp_intern.mergenodes("
-					  << nns->name() << "," << comstr << "(idp_intern.descend,\"" << nns->name() << "\"))\n";
-				_currproc->add(toadd.str());
+				toadd << "local " << ns->theory(m)->name() << " = " << comstr << ns->theory(m)->name() << "\n";
 			}
-			// TODO: options and procedures
+			for(unsigned int m = 0; m < ns->nrProcs(); ++m) {
+				toadd << "local " << ns->procedure(m)->name() << " = " << comstr << ns->procedure(m)->name() << "\n";
+			}
 		}
 		// include using vocabulary statements
-		// TODO
-		*/
+		for(unsigned int n = 0; n < _usingvocab.size(); ++n) {	
+			// TODO
+			cerr << "WARNING: using vocabulary statements not yet supported in lua\n";
+		}
 	}
 
 	void luacode(char* s) {

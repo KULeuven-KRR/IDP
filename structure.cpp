@@ -1410,6 +1410,40 @@ void PredInter::forcetwovalued() {
 	}
 }
 
+void FuncInter::forcetwovalued() { 
+	_pinter->forcetwovalued();	
+	if(!_ftable) {
+		if(_pinter->ct()) {
+			PredTable* pt = _pinter->ctpf();
+			if(pt->finite()) {
+				if(typeid(*pt) == typeid(CopyPredTable)) {
+					pt = dynamic_cast<CopyPredTable*>(pt)->table();
+				}
+				if(typeid(*pt) == typeid(FinitePredTable)) {
+					_ftable = new FiniteFuncTable(dynamic_cast<FinitePredTable*>(pt)->clone());
+				}
+				else {
+					FinitePredTable* npt = new FinitePredTable(pt->types());
+					for(unsigned int row = 0; row < pt->size(); ++row) {
+						npt->addRow();
+						for(unsigned int col = 0; col < pt->arity(); ++col) {
+							(*npt)[row][col] = pt->element(row,col);
+						}
+					}
+					_ftable = new FiniteFuncTable(npt);
+				}
+			}
+			else {
+				assert(false); // TODO
+			}
+		}
+		else {
+			assert(false); // TODO
+		}
+	}
+}
+
+
 PredInter* PredInter::clone() {
 	CopyPredTable* copyctpf1 = new CopyPredTable(_ctpf);
 	CopyPredTable* copyctpf2 = new CopyPredTable(_ctpf);

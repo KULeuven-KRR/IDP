@@ -18,6 +18,20 @@
 	return idp_intern_idpcall("clone",obj)
 }
 
+/** Casting **/
+
+#procedure cast(obj,newtype) {
+	if type(obj) == newtype then 
+		return obj
+	elseif type(obj) == "overloaded" then
+		return idp_intern_idpcall("cast",obj,newtype)
+	elseif type(obj) == "structure" and newtype == "theory" then
+		return idp_intern_idpcall("convert_to_theory",S)
+	else 
+		print("Error: impossible cast")
+	end
+}
+
 /** Vocabulary **/
 
 #procedure changevoc(Struct,Voc) {
@@ -88,10 +102,6 @@
 
 	#procedure tseitin(T) {
 		return idp_intern_idpcall("tseitin",T)
-	}
-
-	#procedure convert_to_theory(S) {
-		return idp_intern_idpcall("convert_to_theory",S)
 	}
 
 	#procedure flatten(T) {

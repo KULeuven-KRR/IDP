@@ -28,6 +28,9 @@ extern void parsestring(const string&);
 // Lua stuff
 extern int idpcall(lua_State*);
 extern int overloadcall(lua_State*);
+extern int idpfunccall(lua_State*);
+extern int idppredcall(lua_State*);
+extern int overloaddiv(lua_State*);
 
 /** Initialize data structures **/
 void initialize() {
@@ -168,6 +171,8 @@ void createmetatables(lua_State* L) {
 	fillmetatable(L,true,true,"overloaded");
 	lua_getglobal(L,"idp_intern_overloadcall");
 	lua_setfield(L,-2,"__call");
+	lua_getglobal(L,"idp_intern_overloaddiv");
+	lua_setfield(L,-2,"__div");
 	lua_pop(L,1);
 
 	luaL_newmetatable (L,"theory");
@@ -189,6 +194,47 @@ void createmetatables(lua_State* L) {
 	luaL_newmetatable (L,"options");
 	fillmetatable(L,true,true,"options");
 	lua_pop(L,1);
+
+	luaL_newmetatable(L,"sort");
+	fillmetatable(L,false,false,"sort");
+	lua_pop(L,1);
+
+	luaL_newmetatable(L,"predicate_symbol");
+	fillmetatable(L,true,false,"predicate_symbol");
+	lua_getglobal(L,"idp_intern_div");
+	lua_setfield(L,-2,"__div");
+	lua_pop(L,1);
+
+	luaL_newmetatable(L,"function_symbol");
+	fillmetatable(L,true,false,"function_symbol");
+	lua_getglobal(L,"idp_intern_div");
+	lua_setfield(L,-2,"__div");
+	lua_pop(L,1);
+
+	luaL_newmetatable(L,"function_interpretation");
+	fillmetatable(L,true,true,"function_interpretation");
+	lua_getglobal(L,"idp_intern_funccall");
+	lua_setfield(L,-2,"__call");
+	lua_pop(L,1);
+
+	luaL_newmetatable(L,"predicate_interpretation");
+	fillmetatable(L,true,true,"predicate_interpretation");
+	lua_pop(L,1);
+
+	luaL_newmetatable(L,"predicate_table");
+	fillmetatable(L,true,true,"predicate_table");
+	lua_getglobal(L,"idp_intern_len");
+	lua_setfield(L,-2,"__len");
+	lua_getglobal(L,"idp_intern_predcall");
+	lua_setfield(L,-2,"__call");
+	lua_pop(L,1);
+
+	luaL_newmetatable(L,"tuple");
+	fillmetatable(L,true,true,"tuple");
+	lua_getglobal(L,"idp_intern_len");
+	lua_setfield(L,-2,"__len");
+	lua_pop(L,1);
+	
 }
 
 
@@ -203,7 +249,17 @@ lua_State* initLua() {
 	lua_setglobal(L,"idp_intern_idpcall");
 	lua_pushcfunction(L,&overloadcall);
 	lua_setglobal(L,"idp_intern_overloadcall");
+	lua_pushcfunction(L,&idpfunccall);
+	lua_setglobal(L,"idp_intern_funccall");
+	lua_pushcfunction(L,&idppredcall);
+	lua_setglobal(L,"idp_intern_predcall");
+	lua_pushcfunction(L,&overloaddiv);
+	lua_setglobal(L,"idp_intern_overloaddiv");
+
 	luaL_dostring(L,"idp_intern_index = function(t,k) return idp_intern_idpcall(\"index\",t,k) end");
+	luaL_dostring(L,"idp_intern_len = function(t) return idp_intern_idpcall(\"len\",t) end");
+	luaL_dostring(L,"idp_intern_div = function(o,a) return idp_intern_idpcall(\"aritycast\",o,a) end");
+
 	luaL_dostring(L,"idp_intern_delete = function(obj) idp_intern_idpcall(\"delete\",obj) end");
 	luaL_dostring(L,"idp_intern_newindex = function(t,k,v) idp_intern_idpcall(\"newindex\",t,k,v) end");
 

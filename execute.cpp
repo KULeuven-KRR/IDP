@@ -17,6 +17,9 @@
 	Connection with lua
 */
 
+int LuaProcCompileNumber = 0;
+int LuaArgProcNumber = 0;
+
 namespace BuiltinProcs {
 
 	map<string,vector<Inference*> >	_inferences;	// All inference methods
@@ -52,6 +55,13 @@ namespace BuiltinProcs {
 		_inferences["delete"].push_back(new DeleteData(IAT_VOCABULARY));
 		_inferences["delete"].push_back(new DeleteData(IAT_NAMESPACE));
 		_inferences["delete"].push_back(new DeleteData(IAT_OPTIONS));
+		_inferences["delete"].push_back(new DeleteData(IAT_PREDICATE));
+		_inferences["delete"].push_back(new DeleteData(IAT_FUNCTION));
+		_inferences["delete"].push_back(new DeleteData(IAT_SORT));
+		_inferences["delete"].push_back(new DeleteData(IAT_PREDINTER));
+		_inferences["delete"].push_back(new DeleteData(IAT_FUNCINTER));
+		_inferences["delete"].push_back(new DeleteData(IAT_PREDTABLE));
+		_inferences["delete"].push_back(new DeleteData(IAT_TUPLE));
 
 		_inferences["index"].push_back(new GetIndex(IAT_STRUCTURE,IAT_PREDICATE));
 		_inferences["index"].push_back(new GetIndex(IAT_STRUCTURE,IAT_FUNCTION));
@@ -59,6 +69,10 @@ namespace BuiltinProcs {
 		_inferences["index"].push_back(new GetIndex(IAT_NAMESPACE,IAT_STRING));
 		_inferences["index"].push_back(new GetIndex(IAT_VOCABULARY,IAT_STRING));
 		_inferences["index"].push_back(new GetIndex(IAT_OPTIONS,IAT_STRING));
+		_inferences["index"].push_back(new GetIndex(IAT_PREDINTER,IAT_STRING));
+		_inferences["index"].push_back(new GetIndex(IAT_FUNCINTER,IAT_STRING));
+		_inferences["index"].push_back(new GetIndex(IAT_PREDTABLE,IAT_INT));
+		_inferences["index"].push_back(new GetIndex(IAT_TUPLE,IAT_INT));
 
 		_inferences["newindex"].push_back(new SetIndex(IAT_STRUCTURE,IAT_PREDICATE,IAT_TABLE));
 		_inferences["newindex"].push_back(new SetIndex(IAT_STRUCTURE,IAT_FUNCTION,IAT_TABLE));
@@ -69,6 +83,13 @@ namespace BuiltinProcs {
 		_inferences["newindex"].push_back(new SetIndex(IAT_OPTIONS,IAT_STRING,IAT_DOUBLE));
 		_inferences["newindex"].push_back(new SetIndex(IAT_OPTIONS,IAT_STRING,IAT_BOOLEAN));
 		_inferences["newindex"].push_back(new SetIndex(IAT_OPTIONS,IAT_STRING,IAT_STRING));
+
+		_inferences["len"].push_back(new LenghtOperator(IAT_PREDTABLE));
+		_inferences["len"].push_back(new LenghtOperator(IAT_TUPLE));
+
+		_inferences["cast"].push_back(new CastOperator());
+		_inferences["aritycast"].push_back(new ArityCastOperator(IAT_PREDICATE));
+		_inferences["aritycast"].push_back(new ArityCastOperator(IAT_FUNCTION));
 	}
 
 	void cleanup() {
@@ -110,9 +131,17 @@ namespace BuiltinProcs {
 			case IAT_SORT:
 				return("sort");
 			case IAT_PREDICATE: 
-				return("predicate");
+				return("predicate_symbol");
 			case IAT_FUNCTION:
-				return("idpfunction");
+				return("function_symbol");
+			case IAT_PREDTABLE:
+				return("predicate_table");
+			case IAT_PREDINTER:
+				return("predicate_interpretation");
+			case IAT_FUNCINTER:
+				return("function_interpretation");
+			case IAT_TUPLE:
+				return("tuple");
 			default:
 				assert(false);
 		}
@@ -127,8 +156,7 @@ namespace BuiltinProcs {
 		return str;
 	}
 
-	InfArgType typeenum(lua_State* L, int index) {
-		string strtype = typestring(L,index);
+	InfArgType typeenum(const string& strtype) {
 		if(strtype == "theory") return IAT_THEORY;
 		if(strtype == "structure") return IAT_STRUCTURE;
 		if(strtype == "vocabulary") return IAT_VOCABULARY;
@@ -139,12 +167,21 @@ namespace BuiltinProcs {
 		if(strtype == "boolean") return IAT_BOOLEAN;
 		if(strtype == "string") return IAT_STRING;
 		if(strtype == "table") return IAT_TABLE;
+		if(strtype == "predicate_table") return IAT_PREDTABLE;
 		if(strtype == "function") return IAT_PROCEDURE;
 		if(strtype == "overloaded") return IAT_OVERLOADED;
 		if(strtype == "sort") return IAT_SORT;
-		if(strtype == "predicate") return IAT_PREDICATE;
-		if(strtype == "idpfunction") return IAT_FUNCTION;
+		if(strtype == "predicate_symbol") return IAT_PREDICATE;
+		if(strtype == "function_symbol") return IAT_FUNCTION;
+		if(strtype == "predicate_interpretation") return IAT_PREDINTER;
+		if(strtype == "function_interpretation") return IAT_FUNCINTER;
+		if(strtype == "tuple") return IAT_TUPLE;
 		assert(false); return IAT_INT;
+	}
+
+	InfArgType typeenum(lua_State* L, int index) {
+		string strtype = typestring(L,index);
+		return typeenum(strtype);
 	}
 
 	bool checkarg(lua_State* L, int n, InfArgType t) {
@@ -164,14 +201,6 @@ namespace BuiltinProcs {
 					return obj->isNamespace();
 				case IAT_OPTIONS:
 					return obj->isOptions();
-				case IAT_INT:
-					return obj->isInt();
-				case IAT_DOUBLE:
-					return obj->isDouble();
-				case IAT_BOOLEAN:
-					return (obj->isBool());
-				case IAT_STRING:
-					return (obj->isString());
 				case IAT_PROCEDURE:
 					return (obj->isProcedure());
 				case IAT_SORT:
@@ -180,8 +209,6 @@ namespace BuiltinProcs {
 					return (obj->isPredicate());
 				case IAT_FUNCTION:
 					return (obj->isFunction());
-				case IAT_TABLE:
-					return (obj->isTable());
 				default:
 					return false;
 			}
@@ -229,6 +256,62 @@ namespace BuiltinProcs {
 				InfOptions** ptr = (InfOptions**) lua_newuserdata(L,sizeof(InfOptions*));
 				(*ptr) = res._options;
 				luaL_getmetatable (L,"options");
+				lua_setmetatable(L,-2);
+				break;
+			}
+			case IAT_SORT:
+			{
+				set<Sort*>** ptr = (set<Sort*>**) lua_newuserdata(L,sizeof(set<Sort*>*));
+				(*ptr) = res._sort;
+				luaL_getmetatable (L,"sort");
+				lua_setmetatable(L,-2);
+				break;
+			}
+			case IAT_PREDICATE:
+			{
+				set<Predicate*>** ptr = (set<Predicate*>**) lua_newuserdata(L,sizeof(set<Predicate*>*));
+				(*ptr) = res._predicate;
+				luaL_getmetatable (L,"predicate_symbol");
+				lua_setmetatable(L,-2);
+				break;
+			}
+			case IAT_FUNCTION:
+			{
+				set<Function*>** ptr = (set<Function*>**) lua_newuserdata(L,sizeof(set<Function*>*));
+				(*ptr) = res._function;
+				luaL_getmetatable (L,"function_symbol");
+				lua_setmetatable(L,-2);
+				break;
+			}
+			case IAT_PREDINTER:
+			{
+				PredInter** ptr = (PredInter**) lua_newuserdata(L,sizeof(set<PredInter*>*));
+				(*ptr) = res._predinter;
+				luaL_getmetatable (L,"predicate_interpretation");
+				lua_setmetatable(L,-2);
+				break;
+			}
+			case IAT_FUNCINTER:
+			{
+				FuncInter** ptr = (FuncInter**) lua_newuserdata(L,sizeof(set<FuncInter*>*));
+				(*ptr) = res._funcinter;
+				luaL_getmetatable (L,"function_interpretation");
+				lua_setmetatable(L,-2);
+				break;
+			}
+			case IAT_PREDTABLE:
+			{
+				PredTable** ptr = (PredTable**) lua_newuserdata(L,sizeof(set<PredTable*>*));
+				(*ptr) = res._predtable;
+				luaL_getmetatable (L,"predicate_table");
+				lua_setmetatable(L,-2);
+				break;
+			}
+			case IAT_TUPLE:
+			{
+				PredTableTuple** ptr = (PredTableTuple**) lua_newuserdata(L,sizeof(set<PredTableTuple*>*));
+				(*ptr) = res._tuple;
+				luaL_getmetatable (L,"tuple");
 				lua_setmetatable(L,-2);
 				break;
 			}
@@ -301,22 +384,6 @@ namespace BuiltinProcs {
 						newarg._sort = obj->getSort();
 						converttolua(L,newarg,IAT_SORT);
 					}
-					if(obj->isString()) {
-						newarg._string = obj->getString();
-						converttolua(L,newarg,IAT_STRING);
-					}
-					if(obj->isBool()) {
-						newarg._boolean = obj->getBool();
-						converttolua(L,newarg,IAT_BOOLEAN);
-					}
-					if(obj->isDouble()) {
-						newarg._double = obj->getDouble();
-						converttolua(L,newarg,IAT_DOUBLE);
-					}
-					if(obj->isInt()) {
-						newarg._int = obj->getInt();
-						converttolua(L,newarg,IAT_INT);
-					}
 				}
 				else {
 					OverloadedObject** ptr = (OverloadedObject**) lua_newuserdata(L,sizeof(OverloadedObject*));
@@ -376,13 +443,25 @@ namespace BuiltinProcs {
 					a._string = IDPointer(lua_tostring(L,n));
 					break;
 				case IAT_SORT:
-					a._sort = *((Sort**)lua_touserdata(L,n));
+					a._sort = *((set<Sort*>**)lua_touserdata(L,n));
 					break;
 				case IAT_PREDICATE:
-					a._predicate = *((Predicate**)lua_touserdata(L,n));
+					a._predicate = *((set<Predicate*>**)lua_touserdata(L,n));
 					break;
 				case IAT_FUNCTION:
-					a._function = *((Function**)lua_touserdata(L,n));
+					a._function = *((set<Function*>**)lua_touserdata(L,n));
+					break;
+				case IAT_PREDINTER:
+					a._predinter = *((PredInter**)lua_touserdata(L,n));
+					break;
+				case IAT_FUNCINTER:
+					a._funcinter = *((FuncInter**)lua_touserdata(L,n));
+					break;
+				case IAT_PREDTABLE:
+					a._predtable = *((PredTable**)lua_touserdata(L,n));
+					break;
+				case IAT_TUPLE:
+					a._tuple = *((PredTableTuple**)lua_touserdata(L,n));
 					break;
 				case IAT_TABLE:
 				{
@@ -402,8 +481,13 @@ namespace BuiltinProcs {
 					break;
 				}
 				case IAT_PROCEDURE:
-					// TODO
-					assert(false);
+				{
+					string registryindex = "idp_argument_procedure" + itos(LuaArgProcNumber);
+					++LuaArgProcNumber;
+					lua_pushvalue(L,n);
+					lua_setfield(L,LUA_REGISTRYINDEX,registryindex.c_str());
+					break;
+				}
 				default:
 					assert(false);
 			}
@@ -426,18 +510,6 @@ namespace BuiltinProcs {
 				case IAT_OPTIONS:
 					a._options = obj->getOptions();
 					break;
-				case IAT_INT:
-					a._int = obj->getInt();
-					break;
-				case IAT_DOUBLE:
-					a._double = obj->getDouble();
-					break;
-				case IAT_BOOLEAN:
-					a._boolean = obj->getBool();
-					break;
-				case IAT_STRING:
-					a._string = obj->getString();
-					break;
 				case IAT_SORT:
 					a._sort = obj->getSort();
 					break;
@@ -450,9 +522,6 @@ namespace BuiltinProcs {
 				case IAT_PROCEDURE:
 					a._procedure = obj->getProcedure();
 					break;
-				case IAT_TABLE:
-					a._table = obj->getTable();
-					break;
 				case IAT_OVERLOADED:
 					a._overloaded = obj;
 					break;
@@ -464,6 +533,52 @@ namespace BuiltinProcs {
 		return a;
 	}
 
+}
+
+int overloaddiv(lua_State* L) {
+	InfArg a = BuiltinProcs::convertarg(L,1,IAT_OVERLOADED);
+	OverloadedObject* obj = a._overloaded;
+	InfArg b = BuiltinProcs::convertarg(L,2,IAT_INT);
+	int div = b._int;
+	set<Predicate*>* sp = 0;
+	set<Function*>* sf = 0;
+	if(obj->isPredicate()) {
+		for(set<Predicate*>::iterator it = obj->getPredicate()->begin(); it != obj->getPredicate()->end(); ++it) {
+			if((*it)->arity() == div) {
+				if(!sp) sp = new set<Predicate*>();
+				sp->insert(*it);
+			}
+		}
+	}
+	if(obj->isFunction()) {
+		for(set<Function*>::iterator it = obj->getFunction()->begin(); it != obj->getFunction()->end(); ++it) {
+			if((*it)->arity() == div) {
+				if(!sf) sf = new set<Function*>();
+				sf->insert(*it);
+			}
+		}
+	}
+	if(sp) {
+		if(sf) {
+			OverloadedObject* newobj = new OverloadedObject();
+			newobj->setpredicate(sp);
+			newobj->setfunction(sf);
+			InfArg res; res._overloaded = newobj;
+			BuiltinProcs::converttolua(L,res,IAT_OVERLOADED);
+		}
+		else {
+			InfArg res; res._predicate = sp;
+			BuiltinProcs::converttolua(L,res,IAT_PREDICATE);
+		}
+	}
+	else if(sf) {
+		InfArg res; res._function = sf;
+		BuiltinProcs::converttolua(L,res,IAT_FUNCTION);
+	}
+	else {
+		lua_pushnil(L);
+	}
+	return 1;
 }
 
 int overloadcall(lua_State* L) {
@@ -479,6 +594,112 @@ int overloadcall(lua_State* L) {
 		Error::notcommand();
 		return 0;
 	}
+}
+
+int idppredcall(lua_State* L) {
+	InfArg a = BuiltinProcs::convertarg(L,1,IAT_PREDTABLE);
+	PredTable* pt = a._predtable;
+	vector<TypedElement> args;
+	lua_remove(L,1);
+	unsigned int nrargs = lua_gettop(L);
+	for(unsigned int n = 1; n <= nrargs; ++n) {
+		TypedInfArg tia = BuiltinProcs::convertarg(L,n);
+		TypedElement te;
+		switch(tia._type) {
+			case IAT_INT:
+				te._type = ELINT;
+				te._element._int = tia._value._int;
+				break;
+			case IAT_DOUBLE:
+				te._type = ELDOUBLE;
+				te._element._double = tia._value._double;
+				break;
+			case IAT_STRING:
+				te._type = ELSTRING;
+				te._element._string = tia._value._string;
+				break;
+			default:
+				te._type = ELINT;
+				te._element = ElementUtil::nonexist(ELINT);
+				break;
+		}
+		args.push_back(te);
+		}
+		while(args.size() > pt->arity()) args.pop_back();
+		while(args.size() < pt->arity()) {
+			TypedElement te;
+			te._type = ELINT;
+			te._element = ElementUtil::nonexist(ELINT);
+			args.push_back(te);
+		}
+		if(pt->contains(args)) lua_pushboolean(L,1);
+		else lua_pushboolean(L,0);
+		return 1;
+}
+
+int idpfunccall(lua_State* L) {
+	InfArg a = BuiltinProcs::convertarg(L,1,IAT_FUNCINTER);
+	FuncTable* ft = a._funcinter->functable();
+	if(ft) {
+		vector<TypedElement> args;
+		lua_remove(L,1);
+		unsigned int nrargs = lua_gettop(L);
+		for(unsigned int n = 1; n <= nrargs; ++n) {
+			TypedInfArg tia = BuiltinProcs::convertarg(L,n);
+			TypedElement te;
+			switch(tia._type) {
+				case IAT_INT:
+					te._type = ELINT;
+					te._element._int = tia._value._int;
+					break;
+				case IAT_DOUBLE:
+					te._type = ELDOUBLE;
+					te._element._double = tia._value._double;
+					break;
+				case IAT_STRING:
+					te._type = ELSTRING;
+					te._element._string = tia._value._string;
+					break;
+				default:
+					te._type = ELINT;
+					te._element = ElementUtil::nonexist(ELINT);
+					break;
+			}
+			args.push_back(te);
+		}
+		while(args.size() > ft->arity()) args.pop_back();
+		while(args.size() < ft->arity()) {
+			TypedElement te;
+			te._type = ELINT;
+			te._element = ElementUtil::nonexist(ELINT);
+			args.push_back(te);
+		}
+		Element e = (*ft)[args];
+		if(ElementUtil::exists(e,ft->outtype())) {
+			switch(ft->outtype()) {
+				case ELINT:
+					lua_pushinteger(L,e._int);
+					break;
+				case ELDOUBLE:
+					lua_pushnumber(L,e._double);
+					break;
+				case ELSTRING:
+					lua_pushstring(L,e._string->c_str());
+					break;
+				case ELCOMPOUND:
+					lua_pushstring(L,IDPointer(ElementUtil::ElementToString(e,ELCOMPOUND))->c_str());
+					break;
+				default:
+					assert(false);
+			}
+		}
+		else lua_pushnil(L);
+	}
+	else {
+		Error::threevalcall();
+		lua_pushnil(L);
+	}
+	return 1;
 }
 
 int idpcall(lua_State* L) {
@@ -557,6 +778,21 @@ TypedInfArg DeleteData::execute(const vector<InfArg>& args, lua_State*) const {
 			break;
 		case IAT_OPTIONS:
 			if(!(args[0]._options->pi().line())) delete(args[0]._options);
+			break;
+		case IAT_PREDICATE: case IAT_FUNCTION: case IAT_SORT:
+			// do nothing
+			break;
+		case IAT_TUPLE:
+			delete(args[0]._tuple);
+			break;
+		case IAT_PREDINTER:
+			// TODO
+			break;
+		case IAT_FUNCINTER:
+			// TODO
+			break;
+		case IAT_PREDTABLE:
+			// TODO
 			break;
 		default:
 			assert(false);
@@ -819,8 +1055,23 @@ TypedInfArg GetIndex::execute(const vector<InfArg>& args, lua_State* L) const {
 	TypedInfArg a;
 	switch(_intypes[0]) {
 		case IAT_STRUCTURE:
-			// TODO
+		{
+			AbstractStructure* as = args[0]._structure;
+			switch(_intypes[1]) {
+				case IAT_SORT:
+					a = as->getObject(args[1]._sort);
+					break;
+				case IAT_PREDICATE:
+					a = as->getObject(args[1]._predicate);
+					break;
+				case IAT_FUNCTION:
+					a = as->getObject(args[1]._function);
+					break;
+				default:
+					assert(false);
+			}
 			break;
+		}
 		case IAT_NAMESPACE:
 		{
 			Namespace* nsp = args[0]._namespace;
@@ -829,11 +1080,140 @@ TypedInfArg GetIndex::execute(const vector<InfArg>& args, lua_State* L) const {
 			break;
 		}
 		case IAT_VOCABULARY:
-			// TODO
+		{
+			Vocabulary* voc = args[0]._vocabulary;
+			string str = *(args[1]._string);
+			a = voc->getObject(str);
 			break;
+		}
 		case IAT_OPTIONS:
 			a = args[0]._options->get(*(args[1]._string));
 			break;
+		case IAT_PREDINTER:
+		{
+			PredInter* pinter = args[0]._predinter;
+			string str = *(args[1]._string);
+			a._type = IAT_PREDTABLE;
+			if(str == "ct") {
+				if(pinter->ct()) a._value._predtable = pinter->ctpf();
+				else {
+					// TODO
+					assert(false);
+				}
+			}
+			else if(str == "cf") {
+				if(pinter->cf()) a._value._predtable = pinter->cfpt();
+				else {
+					// TODO
+					assert(false);
+				}
+			}
+			else if(str == "pt") {
+				if(!(pinter->cf())) a._value._predtable = pinter->cfpt();
+				else {
+					// TODO
+					assert(false);
+				}
+			}
+			else if(str == "pf") {
+				if(!(pinter->ct())) a._value._predtable = pinter->ctpf();
+				else {
+					// TODO
+					assert(false);
+				}
+			}
+			else {
+				// TODO Error message
+				a._type = IAT_NIL;
+			}
+			break;
+		}
+		case IAT_FUNCINTER:
+		{
+			FuncInter* finter = args[0]._funcinter;
+			string str = *(args[1]._string);
+			if(str == "graph") {
+				a._type = IAT_PREDINTER;
+				a._value._predinter = finter->predinter();
+			}
+			else {
+				// TODO Error message
+				a._type = IAT_NIL;
+			}
+			break;
+		}
+		case IAT_PREDTABLE:
+		{
+			PredTable* pt = args[0]._predtable;
+			int index = args[1]._int - 1;
+			if(pt->finite() && index < pt->size()) {
+				if(pt->arity() == 1) {
+					Element e = pt->element(index,0);
+					switch(pt->type(0)) {
+						case ELINT: 
+							a._type = IAT_INT;
+							a._value._int = e._int;
+							break;
+						case ELDOUBLE: 
+							a._type = IAT_DOUBLE;
+							a._value._int = e._double;
+							break;
+						case ELSTRING:
+							a._type = IAT_STRING;
+							a._value._string = e._string;
+							break;
+						case ELCOMPOUND:
+							a._type = IAT_STRING;
+							a._value._string = IDPointer(ElementUtil::ElementToString(e,ELCOMPOUND));
+							break;
+						default:
+							assert(false);
+					}
+				}
+				else {
+					a._type = IAT_TUPLE;
+					a._value._tuple = new PredTableTuple(pt,index);
+				}
+			}
+			else {
+				// TODO Error message
+				a._type = IAT_NIL;
+			}
+			break;
+		}
+		case IAT_TUPLE:
+		{
+			PredTableTuple* ptt = args[0]._tuple;
+			int column = args[1]._int - 1;
+			if(column < ptt->_table->size()) {
+				Element e = ptt->_table->element(ptt->_index,column);
+				switch(ptt->_table->type(column)) {
+					case ELINT: 
+						a._type = IAT_INT;
+						a._value._int = e._int;
+						break;
+					case ELDOUBLE: 
+						a._type = IAT_DOUBLE;
+						a._value._int = e._double;
+						break;
+					case ELSTRING:
+						a._type = IAT_STRING;
+						a._value._string = e._string;
+						break;
+					case ELCOMPOUND:
+						a._type = IAT_STRING;
+						a._value._string = IDPointer(ElementUtil::ElementToString(e,ELCOMPOUND));
+						break;
+					default:
+						assert(false);
+				}
+			}
+			else {
+				// TODO Error message
+				a._type = IAT_NIL;
+			}
+			break;
+		}
 		default:
 			assert(false);
 	}
@@ -894,9 +1274,165 @@ TypedInfArg SetIndex::execute(const vector<InfArg>& args, lua_State*) const {
 	return a;
 }
 
+TypedInfArg LenghtOperator::execute(const vector<InfArg>& args, lua_State*) const {
+	TypedInfArg a;
+	a._type = IAT_INT;
+	if(_intypes[0] == IAT_PREDTABLE) {
+		if(args[0]._predtable->finite()) {
+			a._value._int = args[0]._predtable->size();
+		}
+		else {
+			a._value._string = IDPointer(string("infinite"));
+			a._type = IAT_STRING;
+		}
+	}
+	else {
+		a._value._int = args[0]._tuple->_table->arity();
+	}
+	return a;
+}
+
+TypedInfArg ArityCastOperator::execute(const vector<InfArg>& args, lua_State*) const {
+	TypedInfArg result; result._type = IAT_NIL;
+	int arity = args[1]._int;
+	switch(_intypes[0]) {
+		case IAT_PREDICATE:
+		{
+			set<Predicate*>* preds = args[0]._predicate;
+			set<Predicate*>* newpreds = 0;
+			for(set<Predicate*>::iterator it = preds->begin(); it != preds->end(); ++it) {
+				if((*it)->arity() == arity) {
+					if(!newpreds) {
+						newpreds = new set<Predicate*>();
+						result._type = IAT_PREDICATE;
+						result._value._predicate = newpreds;
+					}
+					newpreds->insert(*it);
+				}
+			}
+			break;
+		}
+		case IAT_FUNCTION:
+		{
+			set<Function*>* funcs = args[0]._function;
+			set<Function*>* newfuncs = 0;
+			for(set<Function*>::iterator it = funcs->begin(); it != funcs->end(); ++it) {
+				if((*it)->arity() == arity) {
+					if(!newfuncs) {
+						newfuncs = new set<Function*>();
+						result._type = IAT_FUNCTION;
+						result._value._function = newfuncs;
+					}
+					newfuncs->insert(*it);
+				}
+			}
+			break;
+		}
+		default:
+			break;
+	}
+	return result;
+}
+
+TypedInfArg CastOperator::execute(const vector<InfArg>& args, lua_State*) const {
+	OverloadedObject* obj = args[0]._overloaded;
+	InfArgType newtype = BuiltinProcs::typeenum(*(args[1]._string));
+	TypedInfArg result;
+	result._type = IAT_NIL;
+	switch(newtype) {
+		case IAT_THEORY:
+			if(obj->isTheory()) {
+				result._type = IAT_THEORY;
+				result._value._theory = obj->getTheory();
+			}
+			break;
+		case IAT_STRUCTURE: 
+			if(obj->isTheory()) {
+				result._type = IAT_STRUCTURE;
+				result._value._structure = obj->getStructure();
+			}
+			break;
+		case IAT_VOCABULARY:
+			if(obj->isVocabulary()) {
+				result._type = IAT_VOCABULARY;
+				result._value._vocabulary = obj->getVocabulary();
+			}
+			break;
+		case IAT_NAMESPACE: 
+			if(obj->isNamespace()) {
+				result._type = IAT_NAMESPACE;
+				result._value._namespace = obj->getNamespace();
+			}
+			break;
+		case IAT_OPTIONS:
+			if(obj->isOptions()) {
+				result._type = IAT_OPTIONS;
+				result._value._options = obj->getOptions();
+			}
+			break;
+		case IAT_PROCEDURE:
+			if(obj->isProcedure()) {
+				result._type = IAT_PROCEDURE;
+				result._value._procedure = obj->getProcedure();
+			}
+			break;
+		case IAT_SORT:
+			if(obj->isSort()) {
+				result._type = IAT_SORT;
+				result._value._sort = obj->getSort();
+			}
+			break;
+		case IAT_PREDICATE:
+			if(obj->isPredicate()) {
+				result._type = IAT_PREDICATE;
+				result._value._predicate = obj->getPredicate();
+			}
+			break;
+		case IAT_FUNCTION:
+			if(obj->isFunction()) {
+				result._type = IAT_FUNCTION;
+				result._value._function = obj->getFunction();
+			}
+			break;
+		default:
+			break;
+	}
+	return result;
+}
+
 /*************************
 	Overloaded objects
 *************************/
+
+void OverloadedObject::makepredicate(Predicate* p) {
+	if(!_predicate) _predicate = new set<Predicate*>();
+	_predicate->insert(p);
+}
+
+void OverloadedObject::makefunction(Function* f) {
+	if(!_function) _function = new set<Function*>();
+	_function->insert(f);
+}
+
+void OverloadedObject::makesort(Sort* s) {
+	if(!_sort) _sort = new set<Sort*>();
+	_sort->insert(s);
+}
+
+bool OverloadedObject::isPredicate() const {
+	if(_predicate) return (!(_predicate->empty()));
+	else return false;
+}
+
+bool OverloadedObject::isFunction() const {
+	if(_function) return (!(_function->empty()));
+	else return false;
+}
+
+bool OverloadedObject::isSort() const {
+	if(_sort) return (!(_sort->empty()));
+	else return false;
+}
 
 bool OverloadedObject::single() const {
 	unsigned int count = 0;
@@ -909,11 +1445,6 @@ bool OverloadedObject::single() const {
 	if(isPredicate()) ++count;	
 	if(isFunction()) ++count;	
 	if(isSort()) ++count;		
-	if(isString()) ++count;
-	if(isInt()) ++count;
-	if(isBool()) ++count;
-	if(isDouble()) ++count;
-	if(isTable()) ++count;
 	return count <= 1;
 }
 
@@ -921,7 +1452,6 @@ bool OverloadedObject::single() const {
 	Lua Procedures
 *********************/
 
-int LuaProcCompileNumber = 0;
 
 void LuaProcedure::compile(lua_State* L) {
 	if(!iscompiled()) {
@@ -974,6 +1504,87 @@ TypedInfArg InfOptions::get(const string& opt) const {
 	return tia;
 }
 
+TypedInfArg AbstractStructure::getObject(set<Sort*>* sort) const {
+	TypedInfArg a;
+	if(sort->size() == 1) {
+		a._type = IAT_PREDTABLE;
+		a._value._predtable = inter(*(sort->begin()));
+	}
+	else {
+		Error::indexoverloadedsort();
+		a._type = IAT_NIL;
+	}
+	return a;
+}
+
+TypedInfArg AbstractStructure::getObject(set<Predicate*>* predicate) const {
+	TypedInfArg a;
+	if(predicate->size() == 1) {
+		a._type = IAT_PREDINTER;
+		a._value._predinter = inter(*(predicate->begin()));
+	}
+	else {
+		Error::indexoverloadedpred();
+		a._type = IAT_NIL;
+	}
+	return a;
+}
+
+TypedInfArg AbstractStructure::getObject(set<Function*>* function) const {
+	TypedInfArg a;
+	if(function->size() == 1) {
+		a._type = IAT_FUNCINTER;
+		a._value._funcinter = inter(*(function->begin()));
+	}
+	else {
+		Error::indexoverloadedfunc();
+		a._type = IAT_NIL;
+	}
+	return a;
+}
+
+TypedInfArg Vocabulary::getObject(const string& str) const {
+	TypedInfArg a;
+	OverloadedObject* obj = new OverloadedObject();
+	vector<Predicate*> vp = pred_no_arity(str);
+	vector<Function*> vf = func_no_arity(str);
+	const set<Sort*>* ss = sort(str);
+	for(vector<Predicate*>::const_iterator it = vp.begin(); it != vp.end(); ++it) {
+		obj->makepredicate(*it);
+	}
+	for(vector<Function*>::const_iterator it = vf.begin(); it != vf.end(); ++it) {
+		obj->makefunction(*it);
+	}
+	if(ss) {
+		for(set<Sort*>::const_iterator it = ss->begin(); it != ss->end(); ++it) {
+			obj->makesort(*it);
+		}
+	}
+	if(obj->single()) {
+		if(obj->isPredicate()) {
+			a._type = IAT_PREDICATE;
+			a._value._predicate = obj->getPredicate();
+		}
+		else if(obj->isFunction()) {
+			a._type = IAT_FUNCTION;
+			a._value._function = obj->getFunction();
+		}
+		else if(obj->isSort()) {
+			a._type = IAT_SORT;
+			a._value._sort = obj->getSort();
+		}
+		else {
+			a._type = IAT_NIL;
+		}
+		delete(obj);
+	}
+	else {
+		a._type = IAT_OVERLOADED;
+		a._value._overloaded = obj;
+	}
+	return a;
+}
+
 TypedInfArg Namespace::getObject(const string& str, lua_State* L) const {
 	TypedInfArg a;
 	OverloadedObject* obj = new OverloadedObject();
@@ -992,25 +1603,28 @@ TypedInfArg Namespace::getObject(const string& str, lua_State* L) const {
 			a._type = IAT_THEORY;
 			a._value._theory = obj->getTheory();
 		}
-		if(obj->isVocabulary()) {
+		else if(obj->isVocabulary()) {
 			a._type = IAT_VOCABULARY;
 			a._value._vocabulary = obj->getVocabulary();
 		}
-		if(obj->isStructure()) {
+		else if(obj->isStructure()) {
 			a._type = IAT_STRUCTURE;
 			a._value._structure = obj->getStructure();
 		}
-		if(obj->isNamespace()) {
+		else if(obj->isNamespace()) {
 			a._type = IAT_NAMESPACE;
 			a._value._namespace = obj->getNamespace();
 		}
-		if(obj->isOptions()) {
+		else if(obj->isOptions()) {
 			a._type = IAT_OPTIONS;
 			a._value._options = obj->getOptions();
 		}
-		if(obj->isProcedure()) {
+		else if(obj->isProcedure()) {
 			a._type = IAT_PROCEDURE;
 			a._value._procedure = obj->getProcedure();
+		}
+		else {
+			a._type = IAT_NIL;
 		}
 		delete(obj);
 	}

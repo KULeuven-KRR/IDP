@@ -22,6 +22,7 @@ class FuncInter;
 class AbstractStructure;
 class Vocabulary;
 struct compound;
+struct TypedInfArg;
 
 /***************************************
 	Parse location of parsed objects	
@@ -516,7 +517,7 @@ class Vocabulary {
 		void accept(Visitor*) const;
 
         // Lua
-		int tolua(lua_State*,const vector<string>&) const;
+		TypedInfArg getObject(const string& str) const;
 
 		// Debugging
 		string to_string(unsigned int spaces = 0) const;
