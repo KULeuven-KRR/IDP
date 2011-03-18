@@ -45,7 +45,8 @@ gidl_SOURCES = \
 		print.hpp print.cpp\
 		checker.cpp checker.hpp\
 		generator.cpp generator.hpp\
-		fobdd.cpp fobdd.hpp
+		fobdd.cpp fobdd.hpp\
+		propagate.cpp propagate.hpp
 
 AM_CXXFLAGS+=-I $(top_srcdir)/pcsolver/src/ 
 

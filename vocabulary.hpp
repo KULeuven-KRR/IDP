@@ -189,11 +189,15 @@ class Variable {
 };
 
 namespace VarUtils {
-
-	/*
-	 * Sort and remove duplicates from a given vector of variables
+	/**
+	 * Sort and remove duplicates from a given vector of variables.
 	 */
 	void sortunique(vector<Variable*>& vv);
+
+	/**
+ 	 * Make a vector of fresh variables of given sorts.
+ 	 */
+	vector<Variable*> makeNewVariables(const vector<Sort*>&);
 }
 
 

@@ -478,6 +478,13 @@ void VarUtils::sortunique(vector<Variable*>& vv) {
 	vv.erase(it,vv.end());
 }
 
+vector<Variable*> VarUtils::makeNewVariables(const vector<Sort*>& sorts) {
+	vector<Variable*> vars;
+	for(vector<Sort*>::iterator it = sorts.begin(); it != sorts.end(); ++it)
+		vars.push_back(new Variable(*it));
+	return vars;
+}
+
 /*******************************
 	Predicates and functions
 *******************************/

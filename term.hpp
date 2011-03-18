@@ -425,14 +425,25 @@ class TermEvaluator : public Visitor {
 };
 
 namespace TermUtils {
-	// evaluate the given term in the given structure under the given variable mapping
-	//		in case of a three-valued function, this may result in multiple values of the term
-	//		in case of a partial function, the term may have no value
-	//	NOTE: This method works for general terms and structures. Therefore, it is rather slow.
-	//		  Faster methods exist if the structure is two-valued and the term contains no partial functions
-	//	Precondition: all bounded variables in the term range over a finite domain in the given structure
-	//	Precondition: all free variables of the term are interpreted by the given map
+	/**
+	 * DESCRIPTION
+	 *	evaluate the given term in the given structure under the given variable mapping
+	 *		in case of a three-valued function, this may result in multiple values of the term
+	 *		in case of a partial function, the term may have no value
+	 * NOTE 
+	 *	This method works for general terms and structures. Therefore, it is rather slow.
+	 *	Faster methods exist if the structure is two-valued and the term contains no partial functions
+	 * PRECONDITION
+	 *	- all bounded variables in the term range over a finite domain in the given structure
+	 *	- all free variables of the term are interpreted by the given map
+	 */
 	FiniteSortTable*	evaluate(Term*,AbstractStructure*,const map<Variable*,TypedElement>&);	
+
+	/**
+	 * DESCRIPTION
+	 * 	Make a vector of fresh variable terms.
+	 */ 
+	vector<Term*> 		makeNewVarTerms(const vector<Variable*>&);
 }
 
 
