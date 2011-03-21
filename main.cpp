@@ -4,6 +4,7 @@
 	(c) K.U.Leuven
 ************************************/
 
+
 #include "data.hpp"
 #include "insert.hpp"
 #include "builtin.hpp"
@@ -19,6 +20,8 @@
 #include <cstdlib>
 #include "interactive.hpp"
 
+
+
 // Parser stuff
 extern int yyparse();
 extern FILE* yyin;
@@ -31,6 +34,7 @@ extern int overloadcall(lua_State*);
 extern int idpfunccall(lua_State*);
 extern int idppredcall(lua_State*);
 extern int overloaddiv(lua_State*);
+
 
 /** Initialize data structures **/
 void initialize() {

@@ -7,6 +7,345 @@
 #ifndef STRUCTURE_HPP
 #define STRUCTURE_HPP
 
+/**
+ * \file structure.hpp
+ * DESCRIPTION
+ *		This file contains the classes concerning structures:
+ *		- tables and interpretations for sorts, predicate, and function symbols
+ *		- classes to represent a structure, i.e., a mapping from symbols of a 
+ *		  vocabulary to corresponding interpretations of the correct type.
+ *
+ * NAMING CONVENTION
+ *		- 'Interpretation' means a possibly three-valued, or even four-valued interpretation for a symbol.
+ *		- 'Table' means a two-value table
+ *		- if a name of a methods begins with 'approx', the method is fast, but provides a under approximation of
+ *		  the desired result.
+ */
+
+/**********************
+	Domain elements
+**********************/
+
+class Compound;
+class DomainElementFactory;
+
+/**
+ * DESCRIPTION
+ *		The different types of domain elements
+ *		- DET_INT: integers
+ *		- DET_DOUBLE: floating point numbers
+ *		- DET_STRING: strings
+ *		- DET_COMPOUND: a function applied to domain elements
+ */
+enum DomainElementType { DET_INT, DET_DOUBLE, DET_STRING, DET_COMPOUND };
+
+/**
+ * DESCRIPTION
+ *		A value for a single domain element. 
+ */
+union DomainElementValue {
+	int				_int;		//!< Value if the domain element is an integer
+	double			_double;	//!< Value if the domain element is a floating point number
+	const string*	_string;	//!< Value if the domein element is a string
+	const Compound*	_compound;	//!< Value if the domain element is a function applied to domain elements
+};
+
+/**
+ * DESCRIPTION
+ *		A domain element
+ */
+class DomainElement {
+	private:
+		DomainElementType	_type;		//!< The type of the domain element
+		DomainElementValue	_value;		//!< The value of the domain element
+
+		DomainElement(int value);
+		DomainElement(double value);
+		DomainElement(string* value);
+		DomainElement(Compound* value);
+
+	public:
+		~DomainElement();
+
+		DomainElementType	type()	const	{ return _type;		}
+		DomainElementValue	value()	const	{ return _value;	}
+
+		friend class DomainElementFactory;
+};
+
+/**
+ * DESCRIPTION
+ *		The value of a domain element that consists of a function applied to domain elements.
+ */
+class Compound {
+	private:
+		Function*				_function;
+		vector<DomainElement*>	_arguments;
+
+		Compound(Function* function, const vector<DomainElement*> arguments) : 
+			_function(function), _arguments(arguments) { assert(function != 0); }
+	public:
+		~Compound();
+};
+
+/**
+ * DESCRIPTION
+ *		Class to create domain elements. This class is a singleton class that ensures all domain elements
+ *		with the same value are stored at the same address in memory. As a result, two domain elements are equal
+ *		iff they have the same address.
+ *
+ *		Obtaining the address of a domain element with a given value and type should take logaritmic time in the number
+ *		of created domain elements of that type. For a specified integer range, obtaining the address is optimized to
+ *		constant time.
+ */
+class DomainElementFactory {
+	private:
+		static DomainElementFactory*	_instance;			//!< The single instance of DomainElementFactory
+		
+		int								_firstfastint;		//!< The first integer in the optimized range
+		int								_lastfastint;		//!< One past the last integer in the optimized range
+		vector<DomainElement*>			_fastintelements;	//!< Stores pointers to integers in the optimized range.
+															//!< The domain element with value n is stored at
+															//!< _fastintelements[n+_firstfastint]
+
+		map<int,DomainElement*>			_intelements;		//!< Maps an integer outside of the optimized range to its corresponding doman element address.
+		map<double,DomainElement*>		_doubleelements;	//!< Maps a floating point number to its corresponding domain element address.
+		map<string*,DomainElement*>		_stringelements;	//!< Maps a string pointer to its corresponding domain element address.
+		map<Compound*,DomainElement*>	_compoundelements;	//!< Maps a compound pointer to its corresponding domain element address.
+		
+		DomainElementFactory(int firstfastint = 0, int lastfastint = 10001);
+
+	public:
+		~DomainElementFactory();
+
+		static DomainElementFactory*	instance();
+
+		DomainElement*	create(int value);
+		DomainElement*	create(double value, bool certnotint = false);
+		DomainElement*	create(const string* value, bool certnotdouble = false);
+		DomainElement*	create(const Compound* value);
+};
+
+
+/*********************************
+	Tables for logical symbols
+*********************************/
+
+typedef vector<vector<DomainElement*> >	ElementTable;
+
+/**
+ * DESCRIPTION
+ *		This class implements the common functionality of tables for sorts, predicate and function symbols.
+ */
+class AbstractTable {
+	private:
+	protected:
+	public:
+		virtual	ElementType		type(unsigned int col)	const = 0;	//!< Returns the type of elements in a column of the table
+		virtual bool			finite()				const = 0;	//!< Returns true iff the table is finite
+		virtual	bool			empty()					const = 0;	//!< Returns true iff the table is empty
+		virtual	unsigned int	arity()					const = 0;	//!< Returns the number of columns in the table
+
+		virtual const vector<ElementType>&	types()	const = 0;	//!< Returns all types of the table
+
+		virtual bool	approxfinite()			const = 0;	
+			//!< Returns false if the table size is infinite. May return true if the table size is finite.
+		virtual bool	approxempty()			const = 0;
+			//!< Returns false if the table is non-empty. May return true if the table is empty.
+
+		virtual	bool	contains(const vector<Element>& tuple)		const = 0;	
+			//!< Returns true iff the table contains the tuple. 
+			//!< The types of the elements in the tuple should be the same as the types 
+			//!< of the corresponding columns in the table
+				bool	contains(const vector<TypedElement>& tuple)	const;	//!< Returns true iff the table contains the tuple
+};
+
+/***********************************
+	Tables for predicate symbols
+***********************************/
+
+/**
+ * DESCRIPTION
+ *		This class implements a concrete two-dimensional table
+ */
+class InternalPredTable {
+	private:
+		vector<ElementType>	_types;		//!< the types of elements in the columns
+	proteced:
+	public:
+		ElementType					type(unsigned int col)	const { return _types[col];		}
+		const vector<ElementType>&	types()					const { return _types;			}
+		unsigned int				arity()					const { return _types.size();	}	
+		virtual bool				finite()				const = 0;	//!< Returns true iff the table is finite
+		virtual	bool				empty()					const = 0;	//!< Returns true iff the table is empty
+
+		virtual bool				approxfinite()			const = 0;
+			//!< Returns false if the table size is infinite. May return true if the table size is finite.
+		virtual bool				approxempty()			const = 0;
+			//!< Returns false if the table is non-empty. May return true if the table is empty.
+
+		virtual	bool	contains(const vector<Element>& tuple) = 0;	
+			//!< Returns true iff the table contains the tuple. 
+			//!< The types of the elements in the tuple should be the same as the types 
+			//!< of the corresponding columns in the table
+};
+
+/**
+ * DESCRIPTION
+ *		This class implements a finite, enumerated InternalPredTable
+ */
+class EnumeratedInternalPredTable : public InternalPredTable {
+	private:
+		ElementTable		_table;		//!< the actual table
+
+		ElementWeakOrdering	_smaller;	//!< less-than-or-equal relation on the tuples of the table
+		ElementEquality		_equality;	//!< equality relation on the tuples of the table
+
+		bool				_sorted;	//!< true iff it is certain that the table is sorted and does not contain duplicates
+
+	protected:
+	public:
+		bool	finite()				const { return true;			}
+		bool	empty()					const { return _table.empty();	}
+		bool	approxfinite()			const { return true;			}
+		bool	approxempty()			const { return _table.empty();	}
+		bool	contains(const vector<Element>& tuple);
+		void	sortunique();	
+};
+
+/**
+ * DESCRIPTION
+ *		Abstract base class for implementing InternalPredTable for '=/2', '</2', and '>/2'
+ */
+class ComparisonInternalPredTable : public InternalPredTable {
+	private:
+	protected:
+		SortTable*	_lefttable;		//!< the elements that possibly occur in the first column of the table
+		SortTable*	_righttable;	//!< the elements that possibly occur in the second column of the table
+	public:
+}
+
+/**
+ * DESCRIPTION
+ *		Internal table for '=/2'
+ */
+class EqualInternalPredTable : public ComparisonInternalPredTable {
+	private:
+	protected:
+	public:
+		bool	contains(const vector<Element>&)	const;
+		bool	finite()							const;
+		bool	empty()								const;
+		bool	approxfinite()						const;
+		bool	approxempty()						const;
+};
+
+/**
+ * DESCRIPTION
+ *		This class implements tables for predicate symbols.
+ */
+class PredTable : public AbstractTable {
+	private:
+		InternalPredTable*	_table;	//!< Points to the actual table
+	protected:
+	public:
+		ElementType		type(unsigned int col)	const	{ return _table->type(col);			}
+		bool			finite()				const	{ return _table->finite();			}
+		bool			empty()					const	{ return _table->empty();			}
+		unsigned int	arity()					const	{ return _table->arity();			}
+		bool			approxfinite()			const	{ return _table->approxfinite();	}
+		bool			approxempty()			const	{ return _table->approxfinite();	}
+
+		const vector<ElementType>&	types()	const { return _table->types();	}
+
+		bool	contains(const vector<Element>& tuple)	const	{ return _table->contains(tuple);	}
+};
+
+/***********************
+	Tables for sorts
+***********************/
+
+/**
+ * DESCRIPTION
+ *		This class implements a concrete one-dimensional table
+ */
+class InternalSortTable : public InternalPredTable {
+	private:
+	proteced:
+	public:
+		virtual ElementType	type()	const = 0;	//!< Returns the type of the elements in the table
+};
+
+/**
+ * DESCRIPTION
+ *		This class implements tables for sorts
+ */
+class SortTable : public AbstractTable {
+	private:
+		InternalSortTable*	_table;	//!< Points to the actual table
+	protected:
+	public:
+		ElementType		type(unsigned int col)	const	{ return _table->type(col);			}
+		ElementType		type()					const	{ return _table->type();			}
+		bool			finite()				const	{ return _table->finite();			}
+		bool			empty()					const	{ return _table->empty();			}
+		unsigned int	arity()					const	{ return 1;							}
+		bool			approxfinite()			const	{ return _table->approxfinite();	}
+		bool			approxempty()			const	{ return _table->approxfinite();	}
+
+		bool	contains(const vector<Element>& tuple)	const	{ return _table->contains(tuple);	}
+};
+
+/**********************************
+	Tables for function symbols
+**********************************/
+
+/**
+ * DESCRIPTION
+ *		This class implements a concrete associative array mapping tuples of elements to elements
+ */
+class InternalFuncTable {
+	private:
+	proteced:
+	public:
+		virtual	ElementType		type(unsigned int col)	const = 0;	//!< Return the type of elements in a column of the table
+		virtual bool			finite()				const = 0;	//!< Returns true iff the table is finite
+		virtual	bool			empty()					const = 0;	//!< Returns true iff the table is empty
+		virtual	unsigned int	arity()					const = 0;	//!< Returns the number of columns in the table
+
+		virtual Element operator[](const vector<Element>& tuple)	const = 0;	
+			//!< Returns the value of the tuple according to the array.
+			//!< The types of the elements in the tuple should be the same as the types of the corresponding
+			//!< tables of the array.
+};
+
+
+/**
+ * DESCRIPTION
+ *		This class implements tables for function symbols
+ */
+class FuncTable : public AbstractTable {
+	private:
+		InternalFuncTable*	_table;	//!< Points to the actual table
+	protected:
+	public:
+		ElementType		type(unsigned int col)	const	{ return _table->type(col);			}
+		bool			finite()				const	{ return _table->finite();			}
+		bool			empty()					const	{ return _table->empty();			}
+		unsigned int	arity()					const	{ return _table->arity();			}
+		bool			approxfinite()			const	{ return _table->approxfinite();	}
+		bool			approxempty()			const	{ return _table->approxfinite();	}
+
+		Element	operator[](const vector<Element>& tuple)		const	{ return (*_table)[tuple];	}
+		Element	operator[](const vector<TypedElement>& tuple)	const;	
+
+		bool	contains(const vector<Element>& tuple)	const;
+
+};
+
+
+/********************* VANAF HIER OUD ******************/
+
 #include "vocabulary.hpp"
 #include "visitor.hpp"
 
@@ -16,29 +355,31 @@ typedef vector<vector<Element> > VVE;
 	Interpretations for predicates
 *************************************/
 
-class PredTable {
+/** 
+ * DESCRIPTION
+ *		This class implements common functionality of tables for sorts and predicate symbols.
+ */
+class PredTable : public AbstractTable {
 
 	private:
-		unsigned int					_nrofrefs;	// Number of references to this table
+		bool	_sorted;	///< _sorted is true iff it is certain that the table is sorted and does not contain duplicates.
+
+	protected:
+		PredTable(bool sorted = false) : AbstractTable(), _sorted(sorted) { }
 
 	public:
-		
-		// Constructors
-		PredTable() : _nrofrefs(0) { }
-		virtual PredTable* clone() const = 0;
-
-		// Destructor
 		virtual ~PredTable() { }
 
 		// Mutators
 		virtual void		sortunique() = 0;	// Sort and remove duplicates
-				void		removeref()	{ --_nrofrefs; if(!_nrofrefs) delete(this);	}
-				void		addref()	{ ++_nrofrefs;								}
 		virtual PredTable*	add(const vector<TypedElement>& tuple) = 0;
 		virtual PredTable*	remove(const vector<TypedElement>& tuple) = 0;	// NOTE: Expensive operation!
 
+		// Constructors
+		virtual PredTable* clone() const = 0;
+
 		// Inspectors
-				unsigned int		nrofrefs()				const { return _nrofrefs;	}
+		//		unsigned int		nrofrefs()				const { return _nrofrefs;	}
 		virtual bool				finite()				const = 0;	// true iff the table is finite
 		virtual	bool				empty()					const = 0;	// true iff the table is empty
 		virtual	unsigned int		arity()					const = 0;	// the number of columns in the table

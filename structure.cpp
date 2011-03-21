@@ -4,6 +4,350 @@
 	(c) K.U.Leuven
 ************************************/
 
+/**********************
+	Domain elements
+**********************/
+
+/**
+ * DESCRIPTION
+ *		Destructor for domain elements. Deletes its value only if it is a compound. 
+ *		Strings are deleted via the shared string manager.
+ */
+DomainElement::~DomainElement() {
+	if(_type == DET_COMPOUND) delete(_value._compound);
+}
+
+/**
+ * DESCRIPTION
+ *		Constructor for domain elements that are integers
+ */
+DomainElement::DomainElement(int value) : _type(DET_INT) {
+	_value._int = value;
+}
+
+/**
+ * DESCRIPTION
+ *		Constructor for domain elements that are floating point numbers but not integers
+ */
+DomainElement::DomainElement(double value) : _type(DET_DOUBLE) {
+	assert(!isInt(value));
+	_value._double = value;
+}
+
+/**
+ * DESCRIPTION
+ *		Constructor for domain elements that are strings but not floating point numbers
+ */
+DomainElement::DomainElement(const string* value) : _type(DET_STRING) {
+	assert(!isDouble(*value));
+	_value._string = string;
+}
+
+/**
+ * DESCRIPTION
+ *		Constructor for domain elements that are compounds
+ */
+DomainElement::DomainElement(const compound* value) : _type(DET_COMPOUND) {
+	_value._compound = value;
+}
+
+/**
+ * DESCRIPTION
+ *		Destructor for compound domain element values.
+ *		Recursively deletes the arguments of the function.
+ */
+Compound::~Compound() {
+	for(vector<DomainElement*>::iterator it = _arguments.begin(); it != _arguments.end(); ++it) {
+		delete(*it);
+	}
+}
+
+/**
+ * DESCRIPTION
+ *		Constructor for a domain element factory. The constructor gets two arguments, 
+ *		specifying the range of integer for which creation of domain elements is optimized.
+ *
+ * PARAMETERS
+ *		- firstfastint:	the lowest 'efficient' integer
+ *		- lastfastint:	one past the highest 'efficient' integer
+ */
+DomainElementFactory::DomainElementFactory(int firstfastint, int lastfastint) : 
+	_firstfastint(firstfastint), _lastfastint(lastfastint) {
+	assert(firstfastint < lastfastint);
+	_fastintelements = vector<DomainElement*>(lastfastint - firstfastint,0);
+}
+
+DomainElementFactory* DomainElementFactory::_instance = 0;
+
+/**
+ * DESCRIPTION
+ *		Returns the unique instance of DomainElementFactory
+ */
+DomainElementFactory* DomainElementFactory::instance() {
+	if(!_instance) _instance = new DomainElementFactory();
+	return _instance;
+}
+
+/**
+ * DESCRIPTION
+ *		Returns the unique domain element of type int that has a given value
+ *
+ * PARAMETERS
+ *		- value: the given value
+ */
+DomainElement* DomainElementFactory::create(int value) {
+	DomainElement* element = 0;
+	// Check if the value is within the efficient range
+	if(value >= _firstfastint && value < _lastfastint) {
+		int lookupvalue = value + _firstfastint;
+		element = _fastintelements[lookupvalue];
+		if(element) return element;
+		else {
+			element = new DomainElement(value);
+			_fastintelements[lookupvalue] = element;
+		}
+	}
+	else { // The value is not within the efficient range
+		map<int,DomainElement*>::const_iterator it = _intelements.find(value);
+		if(it == _intelements.end()) {
+			element = new DomainElement(value);
+			_intelements[value] = element;
+		}
+		else {
+			element = it->second;
+		}
+	}
+	return element;
+}
+
+/**
+ * DESCRIPTION
+ *		Returns the unique domain element that has a given floating point value
+ *
+ * PARAMETERS
+ *		- value:		the given value
+ *		- certnotint:	true iff the caller of this method asserts that the value is not an integer
+ */
+DomainElement* DomainElementFactory::create(double value, bool certnotint) {
+	if(!certnotint && isInt(value)) return create(int(value));
+
+	DomainElement* element;
+	map<double,DomainElement*>::const_iterator it = _doubleelements.find(value);
+	if(it == _doubleelements.end()) {
+		element = new DomainElement(value);
+		_doubleelements[value] = element;
+	}
+	else {
+		element = it->second;
+	}
+	return element;
+}
+
+/**
+ * DESCRIPTION
+ *		Returns the unique domain element that has a given string value
+ *
+ * PARAMETERS
+ *		- value:			the given value
+ *		- certnotdouble:	true iff the caller of this method asserts that the value is not a floating point number
+ */
+DomainElement* DomainElementFactory::create(const string* value, bool certnotdouble) {
+	if(!certnotdouble && isDouble(value)) return create(stod(value),false);
+
+	DomainElement* element;
+	map<string*,DomainElement*>::const_iterator it = _stringelements.find(value);
+	if(it == _stringelements.end()) {
+		element = new DomainElement(value);
+		_stringelements[value] = element;
+	}
+	else {
+		element = it->second;
+	}
+	return element;
+}
+
+/**
+ * DESCRIPTION
+ *		Returns the unique domain element that has a given compound value
+ *
+ * PARAMETERS
+ *		- value:	the given value
+ */
+DomainElement* DomainElementFactory::create(const Compound* value, bool certnotdouble) {
+	DomainElement* element;
+	map<string*,DomainElement*>::const_iterator it = _compoundelements.find(value);
+	if(it == _compoundelements.end()) {
+		element = new DomainElement(value);
+		_compoundelements[value] = element;
+	}
+	else {
+		element = it->second;
+	}
+	return element;
+}
+
+
+/********************
+	AbstractTable
+********************/
+
+/**
+ * DESCRIPTION
+ *		Returns true iff the table contains a given tuple.
+ *
+ * PARAMETERS
+ *		tuple	- the given tuple
+ *
+ * NOTE
+ *		If possible, use 'bool contains(const vector<Element>& tuple)' instead of this procedure.
+ */		
+bool AbstractTable::contains(const vector<TypedElement>& tuple) const {
+	vector<Element> elementtuple = ElementUtil::convert(tuple,types());
+	return contains(ve);
+}
+
+/****************
+	PredTable
+****************/
+
+/**
+ * DESCRIPTION
+ *		Returns true iff the table contains a given tuple
+ * PARAMETERS
+ *		tuple	- the given tuple
+ * PRECONDITION
+ *		The type of each of the elements of the tuple should be the same as the type of the corresponding
+ *		columns of the table.
+ */
+bool EnumeratedInternalPredTable::contains(const vector<Element>& tuple) {
+	assert(tuple.size() == arity());
+	if(!sorted()) sortunique();
+	ElementTable::const_iterator it = lower_bound(_table.begin(),_table.end(),tuple,_strictsmaller);
+	return (it != _table.end() && _equality(*it,vi));
+}
+
+/**
+ * DESCRIPTION
+ *		Sorts the table and remove all duplicates
+ * POSTCONDITION
+ *		_sorted = true
+ */
+void EnumeratedInternalPredTable::sortunique() {
+	sort(_table.begin(),_table.end(),_order);
+	ElementTable::iterator it = unique(_table.begin(),_table.end());
+	_table.erase(it,_table.end());
+	_sorted = true;
+}
+
+/**
+ * DESCRIPTION
+ *		Returns true iff the table contains a given tuple
+ * PARAMETERS
+ *		tuple	- the given tuple
+ * PRECONDITION
+ *		The type of each of the elements of the tuple should be the same as the type of the corresponding
+ *		columns of the table.
+ */
+bool EqualInternalPredTable::contains(const vector<Element>& tuple) const {
+	assert(tuple.size() == 2);
+	return ElementUtil::equal(tuple[0],_lefttable->type(),tuple[1],_righttable->type());
+}
+
+/**
+ * DESCRIPTION
+ *		Returns true iff the table is finite
+ */
+bool EqualInternalPredTable::finite() const {
+	if(approxfinite()) return true;
+	else {
+		if(_lefttable->finite() || _righttable->finite()) return true;
+		else {
+			notyetimplemented();	// TODO 
+			assert(false);
+		}
+	}
+}
+
+/**
+ * DESCRIPTION
+ *		Returns true iff the table is empty
+ */
+bool EqualInternalPredTable::empty() const {
+	if(approxempty()) return true;
+	else {
+		if(_lefttable->empty() || _righttable->empty()) return true;
+		else if(_lefttable->finite()) {
+			for(SortTable::const_iterator it = _lefttable->begin(); it != _lefttable->end(); ++it) {
+				if(_righttable->contains(*it,_lefttable->type())) return false;
+			}
+			return true;
+		}
+		else if(_righttable->finite()) {
+			for(SortTable::const_iterator it = _righttable->begin(); it != _righttable->end(); ++it) {
+				if(_lefttable->contains(*it,_lefttable->type())) return false;
+			}
+			return true;
+		}
+		else {
+			notyetimplemented();	// TODO 
+			assert(false);
+		}
+	}
+}
+
+/**
+ * DESCRIPTION
+ *		Returns false if the table is infinite. May return true if the table is finite.
+ */
+inline bool EqualInternalPredTable::approxfinite() const {
+	return (_lefttable->approxfinite() || _righttable->approxfinite());
+}
+
+/**
+ * DESCRIPTION
+ *		Returns false if the table is not empty. May return true if the table is empty.
+ */
+inline bool EqualInternalPredTable::approxempty() const {
+	return (_lefttable->approxempty() || _righttable->approxempty());
+}
+
+/****************
+	FuncTable
+****************/
+
+/**
+ * DESCRIPTION
+ *		Return the value of a given tuple according to the function.
+ * PARAMETERS
+ *		tuple	- the given tuple
+ * NOTE
+ *		If possible, use 'Element operator[](const vector<Element>& tuple)' instead of this procedure.
+ */
+Element operator[](const vector<TypedElement>& tuple) const {
+	vector<Element> elementtuple = ElementUtil::convert(tuple,intypes());
+	return operator[](elementtuple);
+}
+
+/**
+ * DESCRIPTION
+ *		Given a tuple (a_1,...,a_{n-1},a_n), this procedure returns true iff the value of
+ *		(a_1,...,a_{n-1}) according to the function is equal to a_n
+ * PARAMETERS
+ *		tuple	- the given tuple
+ * PRECONDITION
+ *		The type of each of the elements of the tuple should be the same as the type of the corresponding
+ *		columns of the table.
+ */
+bool FuncTable::contains(const vector<Element>& tuple) const {
+	assert(tuple.size() == arity()+1);
+	vector<Element> key = tuple;
+	Element value = key.back();
+	key.pop_back();
+	Element computedvalue = operator[](key);
+	return value == computedvalue;
+}
+
+/********************* VANAF HIER OUD ******************/
 #include "theory.hpp"
 #include "builtin.hpp"
 #include "common.hpp"
