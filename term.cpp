@@ -501,7 +501,7 @@ namespace TermUtils {
 
 	vector<Term*> makeNewVarTerms(const vector<Variable*>& vars) {
 		vector<Term*> varterms;
-		for(vector<Variable*>::iterator it = vars.begin(); it != vars.end(); ++it)
+		for(vector<Variable*>::const_iterator it = vars.begin(); it != vars.end(); ++it)
 			varterms.push_back(new VarTerm(*it,ParseInfo()));
 		return varterms;
 	}

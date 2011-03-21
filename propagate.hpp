@@ -7,6 +7,21 @@
 #ifndef PROPAGATE_HPP
 #define PROPAGATE_HPP
 
+#include <vector>
+#include <queue>
+#include <map>
+#include <cassert>
+
+#include "visitor.hpp"
+
+class Variable;
+class PFSymbol;
+class FOBDD;
+class FOPropagation;
+class FOPropDomain;
+class FOBDDManager;
+class AbstractStructure;
+
 /**
  * \file propagate.hpp
  * DESCRIPTION
@@ -21,7 +36,7 @@ enum FOPropDirection { UP, DOWN };
  */
 class FOPropScheduler {
 	private:
-		queue<FOPropagation*>	_queue;
+		std::queue<FOPropagation*>	_queue;
 	public:
 		// Mutators
 		void			add(FOPropagation*);
@@ -37,11 +52,13 @@ class FOPropScheduler {
  */
 class FOPropagation {
 	private:
-		Formula* 		_formula;
+		Formula* 		_parent;
 		FOPropDirection	_direction;
 		bool			_ct;
+		Formula*		_child;
 	public:
-		FOPropagation(Formula* f, FOPropDirection dir, bool ct): _formula(f), _direction(dir), _ct(ct) { }
+		FOPropagation(Formula* p, FOPropDirection dir, bool ct, Formula* c = 0):
+			_parent(p), _direction(dir), _ct(ct), _child(c) { }
 	friend class FOPropagator;
 };
 
@@ -50,36 +67,50 @@ class FOPropagation {
  * 	Class representing domains for formulas.
  */
 class FOPropDomain {
+	public:
+		virtual FOPropDomain* clone() const = 0;
 };
 
 class FOPropBDDDomain : public FOPropDomain {
 	private:
 		FOBDD* _bdd;
 	public:
-		FOPropBDDDomain(bdd): _bdd(bdd) { }
+		FOPropBDDDomain(FOBDD* bdd): _bdd(bdd) { }
+		FOPropBDDDomain* clone() const { return new FOPropBDDDomain(_bdd);	}
+		FOBDD*	bdd() const { return _bdd;	}
 };
 
 
 class FOPropDomainFactory {
 	public:
-		virtual FOPropDomain* trueDomain() 				const = 0;
-		virtual FOPropDomain* falseDomain() 			const = 0;
-		virtual FOPropDomain* ctDomain(const PredForm*)	const = 0;
-		virtual FOPropDomain* cfDomain(const PredForm*)	const = 0;
-		virtual FOPropDomain* domain(const PredForm*) 	const = 0;
-		virtual FOPropDomain* exists(FOPropDomain*, const vector<Variable*>&) const = 0;
+		virtual FOPropDomain* trueDomain()					const = 0;
+		virtual FOPropDomain* falseDomain()					const = 0;
+		virtual FOPropDomain* ctDomain(const PredForm*)		const = 0;
+		virtual FOPropDomain* cfDomain(const PredForm*)		const = 0;
+		virtual FOPropDomain* domain(const PredForm*)		const = 0;
+		virtual FOPropDomain* domain(const EqChainForm*) 	const = 0;
+		virtual FOPropDomain* exists(FOPropDomain*, const std::vector<Variable*>&) const = 0;
+		virtual FOPropDomain* forall(FOPropDomain*, const std::vector<Variable*>&) const = 0;
+		virtual FOPropDomain* conjunction(FOPropDomain*,FOPropDomain*) const = 0;
+		virtual FOPropDomain* disjunction(FOPropDomain*,FOPropDomain*) const = 0;
+		virtual FOPropDomain* substitute(FOPropDomain*,const std::map<Variable*,Variable*>&) const = 0;
 };
 
 class FOPropBDDDomainFactory : public FOPropDomainFactory {
 	private:
 		FOBDDManager* _manager;
 	public:
-		FOPropBDDDomain* trueDomain() 				const;
-		FOPropBDDDomain* falseDomain() 				const;
-		FOPropBDDDomain* ctDomain(const PredForm*)	const;
-		FOPropBDDDomain* cfDomain(const PredForm*)	const;
-		FOPropBDDDomain* domain(const PredForm*) 	const;
-		FOPropBDDDomain* exists(FOPropDomain*, const vector<Variable*>&) const;
+		FOPropBDDDomain* trueDomain()					const;
+		FOPropBDDDomain* falseDomain()					const;
+		FOPropBDDDomain* ctDomain(const PredForm*)		const;
+		FOPropBDDDomain* cfDomain(const PredForm*)		const;
+		FOPropBDDDomain* domain(const PredForm*)		const;
+		FOPropBDDDomain* domain(const EqChainForm*) 	const;
+		FOPropBDDDomain* exists(FOPropDomain*, const std::vector<Variable*>&) const;
+		FOPropBDDDomain* forall(FOPropDomain*, const std::vector<Variable*>&) const;
+		FOPropBDDDomain* conjunction(FOPropDomain*,FOPropDomain*) const;
+		FOPropBDDDomain* disjunction(FOPropDomain*,FOPropDomain*) const;
+		FOPropBDDDomain* substitute(FOPropDomain*,const std::map<Variable*,Variable*>&) const;
 };
 
 
@@ -92,6 +123,7 @@ struct ThreeValuedDomain {
 	FOPropDomain* 	_ctdomain;
 	FOPropDomain* 	_cfdomain;
 	bool			_twovalued;
+	ThreeValuedDomain() : _ctdomain(0), _cfdomain(0), _twovalued(false) { assert(false);	}
 	ThreeValuedDomain(const FOPropDomainFactory*, bool ctdom, bool cfdom);
 	ThreeValuedDomain(const FOPropDomainFactory*, PredForm*, bool twovalued);
 };
@@ -102,12 +134,20 @@ struct ThreeValuedDomain {
  */
 class FOPropagator : public Visitor {
 	private:
-		FOPropDomainFactory*				_factory;
-		FOPropScheduler* 					_scheduler;
-		map<Formula*,ThreeValuedDomain>		_domains;
-		map<Formula*,vector<Variable*> >	_quantvars;
-		FOPropDirection						_direction;
-		bool								_ct;
+		FOPropDomainFactory*								_factory;
+		FOPropScheduler*									_scheduler;
+		std::map<const Formula*,ThreeValuedDomain>			_domains;
+		std::map<const Formula*,std::vector<Variable*> >	_quantvars;
+		FOPropDirection										_direction;
+		bool												_ct;
+		Formula*											_child;
+
+		FOPropDomain* addToConjunction(FOPropDomain* conjunction, FOPropDomain* newconjunct);
+		FOPropDomain* addToDisjunction(FOPropDomain* disjunction, FOPropDomain* newdisjunct);
+		FOPropDomain* addToExists(FOPropDomain* exists, const std::vector<Variable*>&);
+		FOPropDomain* addToForall(FOPropDomain* forall, const std::vector<Variable*>&);
+
+		void updateDomain(const Formula* tobeupdated,FOPropDirection,bool ct,FOPropDomain* newdomain,const Formula* child = 0);
 	public:
 		// Constructor
 		FOPropagator(FOPropDomainFactory* f, FOPropScheduler* s): _factory(f), _scheduler(s) { }; 
@@ -132,20 +172,20 @@ class FOPropagator : public Visitor {
  */
 class FOPropagatorFactory : public Visitor {
 	private:
-		AbstractStructure* 			_structure;
-		FOPropagator* 				_propagator;
-		map<PFSymbol*,PredForm*>	_leafconnectors;
-		bool						_assertsentences;
+		const AbstractStructure*		_structure;
+		FOPropagator*					_propagator;
+		std::map<PFSymbol*,PredForm*>	_leafconnectors;
+		bool							_assertsentences;
 		
 	public:
 		// Constructors
-		FOPropagatorFactory(FOPropagatorFactory* f, const AbstractStructure* s = 0);
+		FOPropagatorFactory(FOPropDomainFactory* f, FOPropScheduler*, const AbstractStructure* s = 0);
 
 		// Factory methods
 		FOPropagator* create(const AbstractTheory* t);
 	
 		// Mutators
-		initFalse(const Formula*);
+		void initFalse(const Formula*);
 
 		// Visitor	
 		void visit(const Theory*);

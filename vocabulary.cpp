@@ -480,7 +480,7 @@ void VarUtils::sortunique(vector<Variable*>& vv) {
 
 vector<Variable*> VarUtils::makeNewVariables(const vector<Sort*>& sorts) {
 	vector<Variable*> vars;
-	for(vector<Sort*>::iterator it = sorts.begin(); it != sorts.end(); ++it)
+	for(vector<Sort*>::const_iterator it = sorts.begin(); it != sorts.end(); ++it)
 		vars.push_back(new Variable(*it));
 	return vars;
 }

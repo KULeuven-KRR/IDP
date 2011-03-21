@@ -224,6 +224,14 @@ FOBDDVariable* FOBDDManager::getVariable(Variable* var) {
 	return addVariable(var);
 }
 
+vector<FOBDDVariable*> FOBDDManager::getVariables(const vector<Variable*>& vars) {
+	vector<FOBDDVariable*> bddvars;
+	for(vector<Variable*>::const_iterator it = vars.begin(); it != vars.end(); ++it) {
+		bddvars.push_back(getVariable(*it));
+	}
+	return bddvars;
+}
+
 FOBDDVariable* FOBDDManager::addVariable(Variable* var) {
 	FOBDDVariable* newvariable = new FOBDDVariable(var);
 	_variabletable[var] = newvariable;
@@ -423,10 +431,24 @@ FOBDD* FOBDDManager::univquantify(FOBDDVariable* var, FOBDD* bdd) {
 	return negation(quantbdd);
 }
 
+FOBDD* FOBDDManager::univquantify(const vector<FOBDDVariable*>& qvars, FOBDD* bdd) {
+	FOBDD* negatedbdd = negation(bdd);
+	FOBDD* quantbdd = existsquantify(qvars,negatedbdd);
+	return negation(quantbdd);
+}
+
 FOBDD* FOBDDManager::existsquantify(FOBDDVariable* var, FOBDD* bdd) {
 	// TODO dynamic programming
 	FOBDD* bumped = bump(var,bdd);
 	return quantify(var->variable()->sort(),bumped);
+}
+
+FOBDD* FOBDDManager::existsquantify(const vector<FOBDDVariable*>& qvars, FOBDD* bdd) {
+	FOBDD* result = bdd;
+	for(vector<FOBDDVariable*>::const_iterator it = qvars.begin(); it != qvars.end(); ++it) {
+		result = existsquantify(*it,result);
+	}
+	return result;
 }
 
 FOBDD* FOBDDManager::quantify(Sort* sort, FOBDD* bdd) {
@@ -448,6 +470,53 @@ FOBDD* FOBDDManager::quantify(Sort* sort, FOBDD* bdd) {
 		return getBDD(kernel,_truebdd,_falsebdd);
 	}
 }
+
+FOBDD* FOBDDManager::substitute(FOBDD* bdd,const map<FOBDDVariable*,FOBDDVariable*>& mvv) {
+	FOBDD* newfalse = substitute(bdd->falsebranch(),mvv);
+	FOBDD* newtrue = substitute(bdd->truebranch(),mvv);
+	FOBDDKernel* newkernel = substitute(bdd->kernel(),mvv);
+	FOBDD* result = ifthenelse(newkernel,newtrue,newfalse);
+	return result;
+}
+
+
+FOBDDKernel* FOBDDManager::substitute(FOBDDKernel* kernel,const map<FOBDDVariable*,FOBDDVariable*>& mvv) {
+	if(typeid(*kernel) == typeid(FOBDDAtomKernel)) {
+		FOBDDAtomKernel* atomkernel = dynamic_cast<FOBDDAtomKernel*>(kernel);
+		vector<FOBDDArgument*> newargs;
+		for(unsigned int n = 0; n < atomkernel->symbol()->nrSorts(); ++n) {
+			FOBDDArgument* newarg = substitute(atomkernel->args(n),mvv);
+			newargs.push_back(newarg);
+		}
+		return getAtomKernel(atomkernel->symbol(),newargs);
+	}
+	else {
+		assert(typeid(*kernel) == typeid(FOBDDQuantKernel));
+		FOBDDQuantKernel* quantkernel = dynamic_cast<FOBDDQuantKernel*>(kernel);
+		FOBDD* newbdd = substitute(quantkernel->bdd(),mvv);
+		return getQuantKernel(quantkernel->sort(),newbdd);
+	}
+}
+
+FOBDDArgument* FOBDDManager::substitute(FOBDDArgument* arg,const map<FOBDDVariable*,FOBDDVariable*>& mvv) {
+	if(typeid(*arg) == typeid(FOBDDVariable)) {
+		FOBDDVariable* variable = dynamic_cast<FOBDDVariable*>(arg);
+		map<FOBDDVariable*,FOBDDVariable*>::const_iterator it = mvv.find(variable);
+		if(it != mvv.end()) return it->second;
+		else return arg;
+	}
+	else if(typeid(*arg) == typeid(FOBDDFuncTerm)) {
+		FOBDDFuncTerm* functerm = dynamic_cast<FOBDDFuncTerm*>(arg);
+		vector<FOBDDArgument*> newargs;
+		for(unsigned int n = 0; n < functerm->func()->arity(); ++n) {
+			FOBDDArgument* newarg = substitute(functerm->args(n),mvv);
+			newargs.push_back(newarg);
+		}
+		return getFuncTerm(functerm->func(),newargs);
+	}
+	else return arg;
+}
+
 
 /********************
 	FOBDD Factory
@@ -520,9 +589,11 @@ void FOBDDFactory::visit(const QuantForm* qf) {
 	_bdd = qf->sign() ? qbdd : _manager->negation(qbdd);
 }
 
-void FOBDDFactory::visit(const EqChainForm* ) {
-	// TODO
-	assert(false);
+void FOBDDFactory::visit(const EqChainForm* ef) {
+	EqChainForm* efclone = ef->clone();
+	Formula* f = FormulaUtils::remove_eqchains(efclone,_vocabulary);
+	f->accept(this);
+	f->recursiveDelete();
 }
 
 void FOBDDFactory::visit(const AggForm* ) {

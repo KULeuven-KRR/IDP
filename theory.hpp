@@ -435,8 +435,8 @@ namespace FormulaUtils {
 	 */
 	TruthValue evaluate(Formula*,AbstractStructure*,const map<Variable*,TypedElement>&);	
 	
-	Formula* remove_eqchains(Formula*,Vocabulary*);	// Rewrite chains of equalities to a 
-													// conjunction or disjunction of atoms.
+	Formula* remove_eqchains(Formula*,Vocabulary* v = 0);	// Rewrite chains of equalities to a 
+															// conjunction or disjunction of atoms.
 	Formula* graph_functions(Formula* f);	// Rewrite a function F(x) = y in an equality as a predicate F(x,y)
 
 	Formula* moveThreeValTerms(Formula*,AbstractStructure*,bool);	// non-recursively moves terms 

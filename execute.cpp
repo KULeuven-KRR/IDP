@@ -1219,9 +1219,9 @@ TypedInfArg GetIndex::execute(const vector<InfArg>& args, lua_State* L) const {
 }
 
 TypedInfArg BDDPrinter::execute(const vector<InfArg>& args, lua_State*) const {
-	FOBDDManager manager;
-	FOBDDFactory factory(&manager);
 	AbstractTheory* theory = args[0]._theory;
+	FOBDDManager manager;
+	FOBDDFactory factory(&manager,theory->vocabulary());
 	FOBDD* result = manager.truebdd();
 	for(unsigned int n = 0; n < theory->nrSentences(); ++n) {
 		theory->sentence(n)->accept(&factory);

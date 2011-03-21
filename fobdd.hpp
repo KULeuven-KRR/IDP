@@ -104,14 +104,21 @@ class FOBDDManager {
 		FOBDDFuncTerm* 		getFuncTerm(Function* func, const vector<FOBDDArgument*>& args);
 		FOBDDDomainTerm*	getDomainTerm(Sort* sort, TypedElement value);
 
+		vector<FOBDDVariable*>	getVariables(const vector<Variable*>& vars);
+
 		FOBDD*	negation(FOBDD*);
 		FOBDD*	conjunction(FOBDD*,FOBDD*);
 		FOBDD*	disjunction(FOBDD*,FOBDD*);
 		FOBDD*	univquantify(FOBDDVariable*,FOBDD*);
-		// TODO quantify multiple variables at once
 		FOBDD*	existsquantify(FOBDDVariable*,FOBDD*);
+		FOBDD*	univquantify(const vector<FOBDDVariable*>&,FOBDD*);
+		FOBDD*	existsquantify(const vector<FOBDDVariable*>&,FOBDD*);
 		FOBDD*	ifthenelse(FOBDDKernel*, FOBDD* truebranch, FOBDD* falsebranch);
+		FOBDD*	substitute(FOBDD*,const map<FOBDDVariable*,FOBDDVariable*>&);
 		
+		FOBDDKernel*	substitute(FOBDDKernel*,const map<FOBDDVariable*,FOBDDVariable*>&);
+		FOBDDArgument*	substitute(FOBDDArgument*,const map<FOBDDVariable*,FOBDDVariable*>&);
+
 		string	to_string(FOBDD*,unsigned int spaces = 0) const;
 		string	to_string(FOBDDKernel*,unsigned int spaces = 0) const;
 		string	to_string(FOBDDArgument*) const;
@@ -122,6 +129,7 @@ class FOBDDFactory : public Visitor {
 
 	private:
 		FOBDDManager*	_manager;
+		Vocabulary*		_vocabulary;
 		
 		// Return values
 		FOBDD*			_bdd;
@@ -129,7 +137,7 @@ class FOBDDFactory : public Visitor {
 		FOBDDArgument*	_argument;
 
 	public:
-		FOBDDFactory(FOBDDManager* m) : _manager(m) { }
+		FOBDDFactory(FOBDDManager* m, Vocabulary* v = 0) : _manager(m), _vocabulary(v) { }
 
 		FOBDD*	bdd() const { return _bdd;	}
 
