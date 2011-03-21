@@ -73,6 +73,13 @@ class DomainElement {
 		friend class DomainElementFactory;
 };
 
+bool operator<(const DomainElement&,const DomainElement&);
+bool operator>(const DomainElement&,const DomainElement&);
+bool operator==(const DomainElement&,const DomainElement&);
+bool operator!=(const DomainElement&,const DomainElement&);
+bool operator<=(const DomainElement&,const DomainElement&);
+bool operator>=(const DomainElement&,const DomainElement&);
+
 /**
  * DESCRIPTION
  *		The value of a domain element that consists of a function applied to domain elements.
@@ -131,8 +138,6 @@ class DomainElementFactory {
 	Tables for logical symbols
 *********************************/
 
-typedef vector<vector<DomainElement*> >	ElementTable;
-
 /**
  * DESCRIPTION
  *		This class implements the common functionality of tables for sorts, predicate and function symbols.
@@ -141,23 +146,19 @@ class AbstractTable {
 	private:
 	protected:
 	public:
-		virtual	ElementType		type(unsigned int col)	const = 0;	//!< Returns the type of elements in a column of the table
+		virtual ~AbstractTable();
+
 		virtual bool			finite()				const = 0;	//!< Returns true iff the table is finite
 		virtual	bool			empty()					const = 0;	//!< Returns true iff the table is empty
 		virtual	unsigned int	arity()					const = 0;	//!< Returns the number of columns in the table
-
-		virtual const vector<ElementType>&	types()	const = 0;	//!< Returns all types of the table
 
 		virtual bool	approxfinite()			const = 0;	
 			//!< Returns false if the table size is infinite. May return true if the table size is finite.
 		virtual bool	approxempty()			const = 0;
 			//!< Returns false if the table is non-empty. May return true if the table is empty.
 
-		virtual	bool	contains(const vector<Element>& tuple)		const = 0;	
+		virtual	bool contains(const vector<DomainElement*>& tuple)	const = 0;	
 			//!< Returns true iff the table contains the tuple. 
-			//!< The types of the elements in the tuple should be the same as the types 
-			//!< of the corresponding columns in the table
-				bool	contains(const vector<TypedElement>& tuple)	const;	//!< Returns true iff the table contains the tuple
 };
 
 /***********************************
@@ -170,25 +171,24 @@ class AbstractTable {
  */
 class InternalPredTable {
 	private:
-		vector<ElementType>	_types;		//!< the types of elements in the columns
 	proteced:
 	public:
-		ElementType					type(unsigned int col)	const { return _types[col];		}
-		const vector<ElementType>&	types()					const { return _types;			}
-		unsigned int				arity()					const { return _types.size();	}	
-		virtual bool				finite()				const = 0;	//!< Returns true iff the table is finite
-		virtual	bool				empty()					const = 0;	//!< Returns true iff the table is empty
+		virtual ~InternalPredTable();
 
-		virtual bool				approxfinite()			const = 0;
+		virtual unsigned int	arity()		const = 0;
+		virtual bool			finite()	const = 0;	//!< Returns true iff the table is finite
+		virtual	bool			empty()		const = 0;	//!< Returns true iff the table is empty
+
+		virtual bool	approxfinite()	const = 0;
 			//!< Returns false if the table size is infinite. May return true if the table size is finite.
-		virtual bool				approxempty()			const = 0;
+		virtual bool	approxempty()	const = 0;
 			//!< Returns false if the table is non-empty. May return true if the table is empty.
 
-		virtual	bool	contains(const vector<Element>& tuple) = 0;	
+		virtual	bool	contains(const vector<DomainElement*>& tuple) = 0;	
 			//!< Returns true iff the table contains the tuple. 
-			//!< The types of the elements in the tuple should be the same as the types 
-			//!< of the corresponding columns in the table
 };
+
+typedef vector<vector<DomainElement*> >	ElementTable;
 
 /**
  * DESCRIPTION
@@ -196,20 +196,18 @@ class InternalPredTable {
  */
 class EnumeratedInternalPredTable : public InternalPredTable {
 	private:
-		ElementTable		_table;		//!< the actual table
-
-		ElementWeakOrdering	_smaller;	//!< less-than-or-equal relation on the tuples of the table
-		ElementEquality		_equality;	//!< equality relation on the tuples of the table
-
-		bool				_sorted;	//!< true iff it is certain that the table is sorted and does not contain duplicates
+		ElementTable	_table;		//!< the actual table
+		bool			_sorted;	//!< true iff it is certain that the table is sorted and does not contain duplicates
 
 	protected:
 	public:
+		~EnumeratedInternalPredTable();
+
 		bool	finite()				const { return true;			}
 		bool	empty()					const { return _table.empty();	}
 		bool	approxfinite()			const { return true;			}
 		bool	approxempty()			const { return _table.empty();	}
-		bool	contains(const vector<Element>& tuple);
+		bool	contains(const vector<DomainElement*>& tuple);
 		void	sortunique();	
 };
 
@@ -223,6 +221,7 @@ class ComparisonInternalPredTable : public InternalPredTable {
 		SortTable*	_lefttable;		//!< the elements that possibly occur in the first column of the table
 		SortTable*	_righttable;	//!< the elements that possibly occur in the second column of the table
 	public:
+		~ComparisonInternalPredTable();
 }
 
 /**
@@ -233,11 +232,13 @@ class EqualInternalPredTable : public ComparisonInternalPredTable {
 	private:
 	protected:
 	public:
-		bool	contains(const vector<Element>&)	const;
-		bool	finite()							const;
-		bool	empty()								const;
-		bool	approxfinite()						const;
-		bool	approxempty()						const;
+		~EqualInternalPredTable();
+
+		bool	contains(const vector<DomainElement*>&)	const;
+		bool	finite()								const;
+		bool	empty()									const;
+		bool	approxfinite()							const;
+		bool	approxempty()							const;
 };
 
 /**
@@ -249,16 +250,14 @@ class PredTable : public AbstractTable {
 		InternalPredTable*	_table;	//!< Points to the actual table
 	protected:
 	public:
-		ElementType		type(unsigned int col)	const	{ return _table->type(col);			}
+		~PredTable();
+
 		bool			finite()				const	{ return _table->finite();			}
 		bool			empty()					const	{ return _table->empty();			}
 		unsigned int	arity()					const	{ return _table->arity();			}
 		bool			approxfinite()			const	{ return _table->approxfinite();	}
 		bool			approxempty()			const	{ return _table->approxfinite();	}
-
-		const vector<ElementType>&	types()	const { return _table->types();	}
-
-		bool	contains(const vector<Element>& tuple)	const	{ return _table->contains(tuple);	}
+		bool			contains(const vector<DomainElement*>& tuple)	const	{ return _table->contains(tuple);	}
 };
 
 /***********************
@@ -273,7 +272,7 @@ class InternalSortTable : public InternalPredTable {
 	private:
 	proteced:
 	public:
-		virtual ElementType	type()	const = 0;	//!< Returns the type of the elements in the table
+		virtual ~InternalSortTable();
 };
 
 /**
@@ -285,15 +284,15 @@ class SortTable : public AbstractTable {
 		InternalSortTable*	_table;	//!< Points to the actual table
 	protected:
 	public:
-		ElementType		type(unsigned int col)	const	{ return _table->type(col);			}
-		ElementType		type()					const	{ return _table->type();			}
+		~SortTable();
+
 		bool			finite()				const	{ return _table->finite();			}
 		bool			empty()					const	{ return _table->empty();			}
-		unsigned int	arity()					const	{ return 1;							}
 		bool			approxfinite()			const	{ return _table->approxfinite();	}
 		bool			approxempty()			const	{ return _table->approxfinite();	}
+		unsigned int	arity()					const	{ return 1;							}
 
-		bool	contains(const vector<Element>& tuple)	const	{ return _table->contains(tuple);	}
+		bool	contains(const vector<DomainElement*>& tuple)	const	{ return _table->contains(tuple);	}
 };
 
 /**********************************
@@ -308,15 +307,14 @@ class InternalFuncTable {
 	private:
 	proteced:
 	public:
-		virtual	ElementType		type(unsigned int col)	const = 0;	//!< Return the type of elements in a column of the table
+		virtual ~InternalFuncTable();
+
 		virtual bool			finite()				const = 0;	//!< Returns true iff the table is finite
 		virtual	bool			empty()					const = 0;	//!< Returns true iff the table is empty
 		virtual	unsigned int	arity()					const = 0;	//!< Returns the number of columns in the table
 
-		virtual Element operator[](const vector<Element>& tuple)	const = 0;	
+		virtual Element operator[](const vector<DomainElement*>& tuple)	const = 0;	
 			//!< Returns the value of the tuple according to the array.
-			//!< The types of the elements in the tuple should be the same as the types of the corresponding
-			//!< tables of the array.
 };
 
 
@@ -329,17 +327,16 @@ class FuncTable : public AbstractTable {
 		InternalFuncTable*	_table;	//!< Points to the actual table
 	protected:
 	public:
-		ElementType		type(unsigned int col)	const	{ return _table->type(col);			}
+		~FuncTable();
+
 		bool			finite()				const	{ return _table->finite();			}
 		bool			empty()					const	{ return _table->empty();			}
 		unsigned int	arity()					const	{ return _table->arity();			}
 		bool			approxfinite()			const	{ return _table->approxfinite();	}
 		bool			approxempty()			const	{ return _table->approxfinite();	}
 
-		Element	operator[](const vector<Element>& tuple)		const	{ return (*_table)[tuple];	}
-		Element	operator[](const vector<TypedElement>& tuple)	const;	
-
-		bool	contains(const vector<Element>& tuple)	const;
+		Element	operator[](const vector<DomainElement*>& tuple)	const	{ return (*_table)[tuple];	}
+		bool	contains(const vector<DomainElement*>& tuple)	const;
 
 };
 

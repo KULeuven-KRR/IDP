@@ -4,9 +4,54 @@
 	(c) K.U.Leuven
 ************************************/
 
+#include "structure.hpp"
+
 /**********************
 	Domain elements
 **********************/
+
+bool operator<(const DomainElement& d1, const DomainElement& d2) {
+	switch(d1.type()) {
+		case DET_INT:
+			switch(d2._type()) {
+				// TODO
+			}
+			break;
+		case DET_DOUBLE:
+			break;
+		case DET_STRING:
+			break;
+		case DET_COMPOUND:
+			break;
+		default:
+			assert(false);
+	}
+}
+
+bool operator>(const DomainElement& d1, const DomainElement& d2) {
+	switch(d1.type()) {
+		// TODO
+	}
+}
+
+bool operator==(const DomainElement& d1, const DomainElement& d2) {
+	return &d1 == &d2;
+}
+
+bool operator!=(const DomainElement& d1, const DomainElement& d2) {
+	return &d1 != &d2;
+}
+
+bool operator<=(const DomainElement& d1, const DomainElement& d2) {
+	if(d1 == d2) return true;
+	else return d1 < d2;
+}
+
+bool operator>=(const DomainElement& d1, const DomainElement& d2) {
+	if(d1 == d2) return true;
+	else return d1 > d2;
+}
+
 
 /**
  * DESCRIPTION
@@ -187,25 +232,6 @@ DomainElement* DomainElementFactory::create(const Compound* value, bool certnotd
 }
 
 
-/********************
-	AbstractTable
-********************/
-
-/**
- * DESCRIPTION
- *		Returns true iff the table contains a given tuple.
- *
- * PARAMETERS
- *		tuple	- the given tuple
- *
- * NOTE
- *		If possible, use 'bool contains(const vector<Element>& tuple)' instead of this procedure.
- */		
-bool AbstractTable::contains(const vector<TypedElement>& tuple) const {
-	vector<Element> elementtuple = ElementUtil::convert(tuple,types());
-	return contains(ve);
-}
-
 /****************
 	PredTable
 ****************/
@@ -215,15 +241,12 @@ bool AbstractTable::contains(const vector<TypedElement>& tuple) const {
  *		Returns true iff the table contains a given tuple
  * PARAMETERS
  *		tuple	- the given tuple
- * PRECONDITION
- *		The type of each of the elements of the tuple should be the same as the type of the corresponding
- *		columns of the table.
  */
-bool EnumeratedInternalPredTable::contains(const vector<Element>& tuple) {
+bool EnumeratedInternalPredTable::contains(const vector<DomainElement*>& tuple) {
 	assert(tuple.size() == arity());
 	if(!sorted()) sortunique();
-	ElementTable::const_iterator it = lower_bound(_table.begin(),_table.end(),tuple,_strictsmaller);
-	return (it != _table.end() && _equality(*it,vi));
+	ElementTable::const_iterator it = lower_bound(_table.begin(),_table.end(),tuple,_strictsmaller); HIER BEZIG
+	return (it != _table.end());
 }
 
 /**
