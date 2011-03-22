@@ -22,6 +22,9 @@ gidl_LDADD += $(builddir)/pcsolver/src/libminisatid-2.0.la
 BUILT_SOURCES = parse.h
 
 gidl_SOURCES = \
+		parseinfo.hpp\
+		vocabulary.hpp vocabulary.cpp\
+		structure.hpp structure.cpp\
 		builtin.hpp builtin.cpp\
 		insert.hpp insert.cpp\
 		namespace.hpp namespace.cpp\
@@ -36,7 +39,6 @@ gidl_SOURCES = \
 		term.hpp term.cpp\
 		data.hpp data.cpp\
 		error.hpp error.cpp\
-		vocabulary.hpp vocabulary.cpp\
 		parse.yy\
 		lex.ll\
 		options.cpp options.hpp\

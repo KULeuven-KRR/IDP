@@ -4,424 +4,115 @@
 	(c) K.U.Leuven
 ************************************/
 
-#include "data.hpp"
-#include "namespace.hpp"
-#include "builtin.hpp"
-#include <iostream>
-#include <algorithm>
-
-/**********************
-	Domain elements
-**********************/
-
-string compound::to_string() const {
-	if(_function) {
-		string s = _function->to_string();
-		if(!_args.empty()) {
-			s = s + '(' + ElementUtil::ElementToString(_args[0]);
-			for(unsigned int n = 1; n < _args.size(); ++n) {
-				s = s + ',' + ElementUtil::ElementToString(_args[n]);
-			}
-			s = s + ')';
-		}
-		return s;
-	}
-	else {
-		assert(_args.size() == 1);
-		return ElementUtil::ElementToString(_args[0]);
-	}
-}
-
-namespace ElementUtil {
-
-	ElementType resolve(ElementType t1, ElementType t2) {
-		return (t1 < t2) ? t2 : t1;
-	}
-
-	ElementType leasttype() { return ELINT;	}
-
-	ElementType reduce(Element e, ElementType t) {
-		switch(t) {
-			case ELINT: 
-				break;
-			case ELDOUBLE:
-				if(double(int(e._double)) == e._double) return ELINT;
-				break;
-			case ELSTRING:
-				if(isInt(*(e._string))) return ELINT;
-				else if(isDouble(*(e._string))) return ELDOUBLE;
-				break;
-			case ELCOMPOUND:
-				if(!(e._compound->_function)) return reduce((e._compound->_args)[0]._element,(e._compound->_args)[0]._type);
-				break;
-			default:
-				assert(false);
-		}
-		return t;
-	}
-
-	ElementType reduce(TypedElement te) {
-		return reduce(te._element,te._type);
-	}
-
-	string ElementToString(Element e, ElementType t) {
-		switch(t) {
-			case ELINT:
-				return itos(e._int);
-			case ELDOUBLE:
-				return dtos(e._double);
-			case ELSTRING:
-				return *(e._string);
-			case ELCOMPOUND:
-				return e._compound->to_string();
-			default:
-				assert(false); return "???";
-		}
-	}
-
-	string ElementToString(TypedElement e) {
-		return ElementToString(e._element,e._type);
-	}
-
-	Element nonexist(ElementType t) {
-		Element e;
-		switch(t) {
-			case ELINT:
-				e._int = MAX_INT;
-				break;
-			case ELDOUBLE:
-				e._double = MAX_DOUBLE;
-				break;
-			case ELSTRING:
-				e._string = 0;
-				break;
-			case ELCOMPOUND:
-				e._compound = 0;
-				break;
-			default:
-				assert(false);
-		}
-		return e;
-	}
-
-	bool exists(Element e, ElementType t) {
-		switch(t) {
-			case ELINT:
-				return e._int != MAX_INT;
-			case ELDOUBLE:
-				return e._double != MAX_DOUBLE;
-			case ELSTRING:
-				return e._string != 0;
-			case ELCOMPOUND:
-				return e._compound != 0;
-			default:
-				assert(false); return false;
-		}
-	}
-	
-	bool exists(TypedElement e) {
-		return exists(e._element,e._type);
-	}
-
-	Element convert(Element e, ElementType oldtype, ElementType newtype) {
-		if(oldtype == newtype) return e;
-		Element ne;
-		switch(oldtype) {
-			case ELINT:
-				if(newtype == ELSTRING) {
-					ne._string = IDPointer(itos(e._int));
-				}
-				else if(newtype == ELDOUBLE) {
-					ne._double = double(e._int);
-				}
-				else {
-					assert(newtype == ELCOMPOUND);
-					TypedElement te(e,oldtype);
-					ne._compound = CPPointer(te);
-				}
-				break;
-			case ELDOUBLE:
-				if(newtype == ELINT) {
-					if(isInt(e._double)) {
-						ne._int = int(e._double);
-					}
-					else return nonexist(newtype);
-				}
-				else if(newtype == ELSTRING) {
-					ne._string = IDPointer(dtos(e._double));
-				}
-				else {
-					assert(newtype == ELCOMPOUND);
-					TypedElement te(e,oldtype);
-					ne._compound = CPPointer(te);
-				}
-				break;
-			case ELSTRING:
-				if(newtype == ELINT) {
-					if(isInt(*(e._string))) {
-						ne._int = stoi(*(e._string));
-					}
-					else return nonexist(newtype);
-				}
-				else if(newtype == ELDOUBLE) {
-					if(isDouble(*(e._string))) {
-						ne._double = stod(*(e._string));
-					}
-					else return nonexist(newtype);
-				}
-				else {
-					assert(newtype == ELCOMPOUND);
-					TypedElement te(e,oldtype);
-					ne._compound = CPPointer(te);
-				}
-				break;
-			case ELCOMPOUND:
-				if(e._compound->_function == 0) 
-					return convert((e._compound->_args)[0],newtype);
-				else return nonexist(newtype);
-				break;
-			default:
-				assert(false);
-		}
-		return ne;
-	}
-
-	Element	convert(TypedElement te, ElementType t) {
-		return convert(te._element,te._type,t);
-	}
-
-	vector<TypedElement> convert(const vector<domelement>& vd) {
-		vector<TypedElement> vte(vd.size());
-		for(unsigned int n = 0; n < vd.size(); ++n) {
-			if(vd[n]->_function) {
-				vte[n]._type = ELCOMPOUND;
-				vte[n]._element._compound = vd[n];
-			}
-			else vte[n] = (vd[n]->_args)[0];
-		}
-		return vte;
-	}
-
-	inline bool equal(Element e1, ElementType t1, Element e2, ElementType t2) {
-		switch(t1) {
-			case ELINT:
-				switch(t2) {
-					case ELINT: return e1._int == e2._int;
-					case ELDOUBLE: return double(e1._int) == e2._double;
-					case ELSTRING: return (isInt(*(e2._string)) && e1._int == stoi(*(e2._string)));
-					case ELCOMPOUND: return ((e2._compound)->_function == 0 && 
-											  equal(e1,t1,((e2._compound)->_args)[0]._element,((e2._compound)->_args)[0]._type));
-					default: assert(false); return false;
-				}
-			case ELDOUBLE:
-				switch(t2) {
-					case ELINT: return e1._double == double(e2._int);
-					case ELDOUBLE: return e1._double == e2._double;
-					case ELSTRING: return (isDouble(*(e2._string)) && e1._double == stod(*(e2._string)));
-					case ELCOMPOUND: return ((e2._compound)->_function == 0 && 
-											  equal(e1,t1,((e2._compound)->_args)[0]._element,((e2._compound)->_args)[0]._type));
-					default: assert(false); return false;
-				}
-			case ELSTRING:
-				switch(t2) {
-					case ELINT: return (isInt(*(e1._string)) && e2._int == stoi(*(e1._string)));
-					case ELDOUBLE: return (isDouble(*(e1._string)) && e2._double == stod(*(e1._string)));
-					case ELSTRING: return e1._string == e2._string;
-					case ELCOMPOUND: return ((e2._compound)->_function == 0 && 
-											  equal(e1,t1,((e2._compound)->_args)[0]._element,((e2._compound)->_args)[0]._type));
-					default: assert(false); return false;
-				}
-			case ELCOMPOUND:
-				switch(t2) {
-					case ELINT: return ((e1._compound)->_function == 0 && 
-											  equal(e2,t2,((e1._compound)->_args)[0]._element,((e1._compound)->_args)[0]._type));
-					case ELDOUBLE: return ((e1._compound)->_function == 0 && 
-											  equal(e2,t2,((e1._compound)->_args)[0]._element,((e1._compound)->_args)[0]._type));
-					case ELSTRING: return ((e1._compound)->_function == 0 && 
-											  equal(e2,t2,((e1._compound)->_args)[0]._element,((e1._compound)->_args)[0]._type));
-					case ELCOMPOUND: 
-						if((e1._compound)->_function != (e2._compound)->_function) return false;
-						else {
-							for(unsigned int n = 0; n < (e1._compound)->_function->arity(); ++n) {
-								if(!(((e1._compound)->_args)[n] ==  ((e2._compound)->_args)[n])) return false;
-							}
-							return true;
-						}
-					default: assert(false); return false;
-				}
-			default:
-				assert(false); return false;
-		}
-	}
-
-	inline bool strlessthan(Element e1, ElementType t1, Element e2, ElementType t2) {
-		switch(t1) {
-			case ELINT:
-				switch(t2) {
-					case ELINT: return e1._int < e2._int;
-					case ELDOUBLE: return double(e1._int) < e2._double;
-					case ELSTRING: return ((!isDouble(*(e2._string))) || double(e1._int) < stod(*(e2._string)));
-					case ELCOMPOUND: return ((e2._compound)->_function != 0 || 
-											  strlessthan(e1,t1,((e2._compound)->_args)[0]._element,((e2._compound)->_args)[0]._type));
-					default: assert(false); return false;
-				}
-			case ELDOUBLE:
-				switch(t2) {
-					case ELINT: return e1._double < double(e2._int);
-					case ELDOUBLE: return e1._double < e2._double;
-					case ELSTRING: return ((!isDouble(*(e2._string))) || e1._double < stod(*(e2._string)));
-					case ELCOMPOUND: return ((e2._compound)->_function != 0 || 
-											  strlessthan(e1,t1,((e2._compound)->_args)[0]._element,((e2._compound)->_args)[0]._type));
-					default: assert(false); return false;
-				}
-			case ELSTRING:
-				switch(t2) {
-					case ELINT: return (isDouble(*(e1._string)) && stod(*(e1._string)) < double(e2._int));
-					case ELDOUBLE: return (isDouble(*(e1._string)) && stod(*(e1._string)) < e2._double);
-					case ELSTRING: {
-						if(isDouble(*(e1._string))) {
-							if(isDouble(*(e2._string))) return stod(*(e1._string)) < stod(*(e2._string));
-							else return true;
-						}
-						else if(isDouble(*(e2._string))) return false;
-						else return e1._string < e2._string;
-					}
-					case ELCOMPOUND: return ((e2._compound)->_function != 0 || 
-											  strlessthan(e1,t1,((e2._compound)->_args)[0]._element,((e2._compound)->_args)[0]._type));
-					default: assert(false); return false;
-				}
-			case ELCOMPOUND:
-				switch(t2) {
-					case ELINT: return ((e1._compound)->_function == 0 && 
-											  strlessthan(((e1._compound)->_args)[0]._element,((e1._compound)->_args)[0]._type,e2,t2));
-					case ELDOUBLE: return ((e1._compound)->_function == 0 && 
-											  strlessthan(((e1._compound)->_args)[0]._element,((e1._compound)->_args)[0]._type,e2,t2));
-					case ELSTRING: return ((e1._compound)->_function == 0 && 
-											  strlessthan(((e1._compound)->_args)[0]._element,((e1._compound)->_args)[0]._type,e2,t2));
-					case ELCOMPOUND: 
-						if((e1._compound)->_function == 0) {
-							if((e2._compound)->_function == 0) return ((e1._compound)->_args)[0] < ((e2._compound)->_args)[0];
-							else return true;
-						}
-						else if((e2._compound)->_function == 0) return false;
-						else if((e1._compound)->_function < (e2._compound)->_function) return true;
-						else if((e1._compound)->_function > (e2._compound)->_function) return false;
-						else {
-							for(unsigned int n = 0; n < (e1._compound)->_function->arity(); ++n) {
-								if((((e1._compound)->_args)[n] <  ((e2._compound)->_args)[n])) return true;
-								if((((e2._compound)->_args)[n] <  ((e1._compound)->_args)[n])) return false;
-							}
-							return false;
-						}
-					default: assert(false); return false;
-				}
-			default:
-				assert(false); return false;
-		}
-	}
-
-
-	inline bool lessthanorequal(Element e1, ElementType t1, Element e2, ElementType t2) {
-		return (strlessthan(e1,t1,e2,t2) || equal(e1,t1,e2,t2));
-	}
-
-	bool equal(const vector<TypedElement>& vte, const vector<Element>& ve, const vector<ElementType>& vt) {
-		for(unsigned int n = 0; n < vte.size(); ++n) {
-			if(!(equal(vte[n]._element,vte[n]._type,ve[n],vt[n]))) return false;
-		}
-		return true;
-	}
-}
-
-bool operator==(TypedElement e1, TypedElement e2)	{ return ElementUtil::equal(e1._element,e1._type,e2._element,e2._type);				}
-bool operator!=(TypedElement e1, TypedElement e2)	{ return !(e1==e2);	}
-bool operator<=(TypedElement e1, TypedElement e2)	{ return ElementUtil::lessthanorequal(e1._element,e1._type,e2._element,e2._type);	}
-bool operator<(TypedElement e1, TypedElement e2)	{ return ElementUtil::strlessthan(e1._element,e1._type,e2._element,e2._type);		}
+#include "vocabulary.hpp"
+using namespace std;
 
 /************
 	Sorts
 ************/
 
 Sort::Sort(const string& name) : _name(name), _pi() { 
-	_parents = vector<Sort*>(0); 
-	_children = vector<Sort*>(0);
-	_pred = 0;
+	string predname = name + "/1";
+	vector<Sort*> predsorts(1,this);
+	_pred = new Predicate(predname,predsorts,_pi);
 }
 
 Sort::Sort(const string& name, const ParseInfo& pi) : _name(name), _pi(pi) { 
-	_parents = vector<Sort*>(0);
-	_children = vector<Sort*>(0);
-	_pred = 0;
+	string predname = name + "/1";
+	vector<Sort*> predsorts(1,this);
+	_pred = new Predicate(predname,predsorts,_pi);
 }
 
-/** Mutators **/
+Sort::~Sort() {
+	for(set<Sort*>::iterator it = _parents.begin(); it != _parents.end(); ++it)
+		(*it)->removeChild(this);
+	for(set<Sort*>::iterator it = _children.begin(); it != _children.end(); ++it)
+		(*it)->removeParent(this);
+	delete(_pred);	
+	if(_interpretation) delete(_interpretation);
+}
 
 void Sort::addParent(Sort* p) {
-	unsigned int n = 0;
-	for(; n < _parents.size(); ++n) {
-		if(p == _parents[n]) break;
-	}
-	if(n == _parents.size()) {
-		_parents.push_back(p);
-		p->addChild(this);
-	}
+	pair<set<Sort*>::iterator,bool> changed = _parents.insert(p);
+	if(changed.second) p->addChild(this);
 }
 
 void Sort::addChild(Sort* c) {
-	unsigned int n = 0;
-	for(; n < _children.size(); ++n) {
-		if(c == _children[n]) break;
-	}
-	if(n == _children.size()) {
-		_children.push_back(c);
-		c->addParent(this);
-	}
+	pair<set<Sort*>::iterator,bool> changed = _children.insert(c);
+	if(changed.second) c->addParent(this);
 }
 
-set<Sort*> Sort::ancestors(Vocabulary* v) const {
-	set<Sort*> ss;
-	for(unsigned int n = 0; n < nrParents(); ++n) {
-		if((!v) || v->contains(parent(n))) ss.insert(parent(n));
-		set<Sort*> temp = parent(n)->ancestors(v);
-		for(set<Sort*>::iterator it = temp.begin(); it != temp.end(); ++it)
-			ss.insert(*it);
+/**
+ * DESCRIPTION
+ *		Compute all ancestors of the sort in the sort hierarchy
+ *
+ * PARAMETERS
+ *		- vocabulary:	if this is not a null-pointer, the set of ancestors is restricted to the ancestors in vocabulary
+ */
+set<Sort*> Sort::ancestors(Vocabulary* vocabulary) const {
+	set<Sort*> ancest;
+	for(set<Sort*>::const_iterator it = _parents.begin(); it != _parents.end(); ++it) {
+		if((!vocabulary) || vocabulary->contains(*it)) ancest.insert(*it);
+		set<Sort*> temp = (*it)->ancestors(vocabulary);
+		ancest.insert(temp.begin(),temp.end());
 	}
-	return ss;
+	return ancest;
 }
 
-set<Sort*> Sort::descendents(Vocabulary* v) const {
-	set<Sort*> ss;
-	for(unsigned int n = 0; n < nrChildren(); ++n) {
-		if((!v) || v->contains(child(n))) ss.insert(child(n));
-		set<Sort*> temp = child(n)->descendents(v);
-		for(set<Sort*>::iterator it = temp.begin(); it != temp.end(); ++it)
-			ss.insert(*it);
+/**
+ * DESCRIPTION
+ *		Compute all ancestors of the sort in the sort hierarchy
+ *
+ * PARAMETERS
+ *		- vocabulary:	if this is not a null-pointer, the set of descendents is restricted to the descendents in vocabulary
+ */
+set<Sort*> Sort::descendents(Vocabulary* vocabulary) const {
+	set<Sort*> descend;
+	for(set<Sort*>::const_iterator it = _children.begin(); it != _children.end(); ++it) {
+		if((!vocabulary) || vocabulary->contains(*it)) descend.insert(*it);
+		set<Sort*> temp = (*it)->descendents(vocabulary);
+		descend.insert(temp.begin(),temp.end());
 	}
-	return ss;
+	return descend;
 }
 
-bool OverloadedPredicate::contains(Predicate* p) const {
-	for(unsigned int n = 0; n < _overpreds.size(); ++n) {
-		if(_overpreds[n]->contains(p)) return true;
+ostream& Sort::put(ostream& output) const {
+	for(set<Vocabulary*>::iterator it = _vocabularies.begin(); it != _vocabularies.end(); ++it) {
+		if((*it)->sort(_name)->size() == 1) {
+			output << **it;
+			break;
+		}
 	}
-	return false;
+	output << _name;
+	return output;
 }
 
-bool OverloadedFunction::contains(Function* f) const {
-	for(unsigned int n = 0; n < _overfuncs.size(); ++n) {
-		if(_overfuncs[n]->contains(f)) return true;
-	}
-	return false;
+string Sort::to_string() const {
+	ostream output;
+	put(output);
+	return output.str();
 }
 
-/** Utils **/
+ostream& operator<< (ostream& output, const Sort& sort) { return sort->put(output);	}
 
 namespace SortUtils {
 
-	// Return the smallest common ancestor of two sorts, if there is an unique one
-	Sort* resolve(Sort* s1, Sort* s2, Vocabulary* v) {
-		set<Sort*> ss1 = s1->ancestors(v); ss1.insert(s1);
-		set<Sort*> ss2 = s2->ancestors(v); ss2.insert(s2);
+	/**
+	 * DESCRIPTION
+	 *		Return the unique nearest common ancestor of two sorts. 
+	 *
+	 * PARAMETERS
+	 *		- s1:			the first sort
+	 *		- s2:			the second sort
+	 *		- vocabulary:	if not 0, search for the nearest common ancestor in the projection of the sort hiearchy on
+	 *						this vocabulary
+	 *
+	 * RETURNS
+	 *		The unique nearest common ancestor if it exists, a null-pointer otherwise.
+	 */ 
+	Sort* resolve(Sort* s1, Sort* s2, Vocabulary* vocabulary) {
+		set<Sort*> ss1 = s1->ancestors(vocabulary); ss1.insert(s1);
+		set<Sort*> ss2 = s2->ancestors(vocabulary); ss2.insert(s2);
 		set<Sort*> ss;
 		for(set<Sort*>::iterator it = ss1.begin(); it != ss1.end(); ++it) {
 			if(ss2.find(*it) != ss2.end()) ss.insert(*it);
@@ -438,14 +129,6 @@ namespace SortUtils {
 			if(vs.size() == 1) return vs[0];
 			else return 0;
 		}
-		//	if(s1->base() != s2->base()) return 0;
-		//	while(s1 != s2 && (s1->depth() || s2->depth())) {
-		//		if(s1->depth() > s2->depth()) s1 = s1->parent();
-		//		else if(s2->depth() > s1->depth()) s2 = s2->parent();
-		//		else { s1 = s1->parent(); s2 = s2->parent(); }
-		//	}
-		//	assert(s1 == s2);
-		//	return s1;
 	}
 
 }
@@ -456,28 +139,47 @@ namespace SortUtils {
 
 int Variable::_nvnr = 0;
 
-/** Constructor for internal variables **/ 
-
+/** 
+ * DESCRIPTION
+ *		Constructor for internal variables
+ */
 Variable::Variable(Sort* s) : _sort(s) {
 	_name = "_var_" + s->name() + "_" + itos(Variable::_nvnr);
 	++_nvnr;
 }
 
-/** Debugging **/
+ostream& Variable::put(ostream& output) const {
+	output << _name;
+	if(_sort) output << '[' << *sort << ']';
+	return output;
+}
 
 string Variable::to_string() const {
-	return _name;
+	ostream output;
+	put(output);
+	return output.str();
+}
+
+ostream& operator<< (ostream& output, const Variable& var) { return var.put(output);	}
+
+
+/**** old ****/
+bool OverloadedPredicate::contains(Predicate* p) const {
+	for(unsigned int n = 0; n < _overpreds.size(); ++n) {
+		if(_overpreds[n]->contains(p)) return true;
+	}
+	return false;
+}
+
+bool OverloadedFunction::contains(Function* f) const {
+	for(unsigned int n = 0; n < _overfuncs.size(); ++n) {
+		if(_overfuncs[n]->contains(f)) return true;
+	}
+	return false;
 }
 
 
-/** Utils **/
-
-void VarUtils::sortunique(vector<Variable*>& vv) {
-	sort(vv.begin(),vv.end());
-	vector<Variable*>::iterator it = unique(vv.begin(),vv.end());
-	vv.erase(it,vv.end());
-}
-
+/***** old ******/
 /*******************************
 	Predicates and functions
 *******************************/

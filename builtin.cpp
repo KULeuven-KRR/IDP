@@ -10,28 +10,6 @@
 #include "builtin.hpp"
 #include "data.hpp"
 
-/************************* 
-	Built-in sorts 
-*************************/
-
-class BuiltInSort : public Sort {
-	
-	private:
-		SortTable*	_inter;		// The interpretation of the sort
-
-	public:
-		// Constructors
-		BuiltInSort(const string& name, SortTable* t) : Sort(name), _inter(t) { }
-
-		// Destructor
-		~BuiltInSort() { delete(_inter);	}
-
-		// Inspectors
-		bool		builtin()	const { return true;	}
-		SortTable*	inter()		const { return _inter;	}
-
-};
-
 /************************** 
 	Built-in predicates
 **************************/

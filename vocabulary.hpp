@@ -7,208 +7,139 @@
 #ifndef VOCABULARY_HPP
 #define VOCABULARY_HPP
 
-#include "visitor.hpp"
-#include "common.hpp"
-#include <map>
+#include <vector>
 #include <set>
-#include <cassert>
-#include "lua.hpp"
+#include <ostream>
+#include "parseinfo.hpp"
 
-class Formula;
-class Predicate;
-class SortTable;
-class PredInter;
-class FuncInter;
-class AbstractStructure;
-class Vocabulary;
-struct compound;
-struct TypedInfArg;
-
-/***************************************
-	Parse location of parsed objects	
-***************************************/
-
-/*
- *		A ParseInfo contains a line number, a column number and a file. 
- *
- *		Almost every object that can be written by a user has a ParseInfo object as attribute. 
- *		The ParseInfo stores where the object was parsed. This is used for producing precise error and warning messages.
- *		Objects that are not parsed (e.g., internally created variables) have line number 0 in their ParseInfo.
- *
+/**
+ * \file vocabulary.hpp
+ * DESCRIPTION
+ *		This file contains the classes concerning vocabularies:
+ *		- sorts, variables, predicate, and function symbols
+ *		- class to represent a vocabulary.
  */
-class ParseInfo {
-
-	private:
-
-		unsigned int	_line;	// line number where the object is declared (0 for non-parsed objects)
-		unsigned int	_col;	// column number where the object is declared
-		string*			_file;	// file name where the object is declared
-								// NOTE: _file == 0 when parsed on stdin
-	
-	public:
-
-		// Constructors
-		ParseInfo() : _line(0), _col(0), _file(0) { }
-		ParseInfo(unsigned int line, unsigned int col, string* file) : _line(line), _col(col), _file(file) { }
-		ParseInfo(const ParseInfo& p) : _line(p.line()), _col(p.col()), _file(p.file()) { }
-
-		// Destructor
-		virtual ~ParseInfo() { }
-
-		// Inspectors
-		unsigned int	line()		const { return _line;		}
-		unsigned int	col()		const { return _col;		}
-		string*			file()		const { return _file;		}
-		bool			isParsed()	const { return _line != 0;	}
-
-};
-
-/*
- *		ParseInfo for formulas.
- *		
- *		Besides the attributes of a ParseInfo object, it contains also the originally parsed formula
- *
- */
-class FormParseInfo : public ParseInfo {
-
-	private:
-		Formula*	_original;	// The original formula written by the user
-								// Null-pointer when associated to an internally created formula with no
-								// corresponding original formula
-
-	public:
-
-		// Constructors
-		FormParseInfo() : ParseInfo(), _original(0) { }
-		FormParseInfo(unsigned int line, unsigned int col, string* file, Formula* orig) : 
-			ParseInfo(line,col,file), _original(orig) { }
-		FormParseInfo(const FormParseInfo& p) : ParseInfo(p.line(),p.col(),p.file()), _original(p.original()) { }
-
-		// Destructor
-		~FormParseInfo() { }
-
-		// Inspectors
-		Formula*	original()	const { return _original;	}
-
-};
-
 
 /*************
 	Sorts
 *************/
 
+class Predicate;
+class Vocabulary;
+class SortTable;
+
+/**
+ * DESCRIPTION
+ *		Class to represent sorts
+ */
 class Sort {
 
 	private:
-		string			_name;		// name of the sort
-		vector<Sort*>	_parents;	// the parent sorts of the sort in the sort hierarchy
-		vector<Sort*>	_children;	// the children of the sort in the sort hierarchy 
-		Predicate*		_pred;		// the predicate that corresponds to the sort
-		ParseInfo		_pi;		// the place where the sort was declared 
+		std::string				_name;			//!< name of the sort
+		std::set<Vocabulary*>	_vocabularies;	//!< all vocabularies the sort belongs to 
+
+		std::set<Sort*>			_parents;		//!< the parent sorts of the sort in the sort hierarchy
+		std::set<Sort*>			_children;		//!< the children of the sort in the sort hierarchy 
+	
+		Predicate*				_pred;			//!< the predicate that corresponds to the sort
+		ParseInfo				_pi;			//!< the place where the sort was declared 
+
+		SortTable*				_interpretation;	//!< the interpretation of the sort if it is built-in. 
+													//!< a null-pointer otherwise.
+		~Sort();
+		void removeParent(Sort* p);	//!< Removes parent p
+		void removeChild(Sort* c);	//!< Removes child c
 
 	public:
 		// Constructors
-		Sort(const string& name);
-		Sort(const string& name, const ParseInfo& pi);  
-
-		// Destructor
-		virtual ~Sort() { }	// NOTE: deleting a sort creates dangling pointers
-							// Only delete sorts when all vocabularies where the sort occurs are deleted 
+		Sort(const std::string& name);						//!< create an internal sort 
+		Sort(const std::string& name, const ParseInfo& pi);  //!< create a user-declared sort
 
 		// Mutators
-		void	addParent(Sort* p);	// Add p as a parent. Also add this as a child of p.
-		void	addChild(Sort* c);		// Add c as a child. Also add this as a parent of c.
-		void	pred(Predicate* p)	{ _pred = p;	}
+		void	addParent(Sort* p);	//!< Adds p as a parent. Also adds this as a child of p.
+		void	addChild(Sort* c);	//!< Adds c as a child. Also add this as a parent of c.
 		
 		// Inspectors
-		string				name()						const	{ return _name;				} 
-		const ParseInfo&	pi()						const	{ return _pi;				}
-		unsigned int		nrParents()					const	{ return _parents.size();	}
-		Sort*				parent(unsigned int n)		const	{ return _parents[n];		}
-		Predicate*			pred()						const	{ return _pred;				}
-		unsigned int		nrChildren()				const	{ return _children.size();	}
-		Sort*				child(unsigned int n)		const	{ return _children[n];		}
-		string				to_string()					const	{ return _name;				}
-		set<Sort*>			ancestors(Vocabulary* v)	const;
-		set<Sort*>			descendents(Vocabulary* v)	const;
+		const std::string&	name()							const	{ return _name;		} 
+		const ParseInfo&	pi()							const	{ return _pi;		}
+		Predicate*			pred()							const	{ return _pred;		}
+		std::set<Sort*>		ancestors(Vocabulary* v = 0)	const;	//!< Returns the ancestor of the sort
+		std::set<Sort*>		descendents(Vocabulary* v = 0)	const;	//!< Returns the descendents of the sort
+		SortTable*			interpretation()				const	{ return _interpretation;		}	
+			//!< returns the interpretation for built-in sorts
+		bool				builtin()						const	{ return _interpretation != 0;	}
 
-		// Built-in sorts
-		virtual bool		builtin()	const	{ return false;	}
-		virtual SortTable*	inter()		const	{ return 0;		}	// returns the built-in
-																	// interpretation for
-																	// built-in sorts
-		// Visitor
-        void accept(Visitor*) const;
-
+		// Output
+		std::ostream&	put(std::ostream&)	const;
+		std::string		to_string()		const;
 };
 
+std::ostream& operator<< (std::ostream&,const Sort&);
+
 namespace SortUtils {
-
-	/**
-	 * return the common ancestor with maximum depth of the given sorts. 
-	 * Return 0 if such an ancestor does not exist.
-	 */ 
-	Sort* resolve(Sort* s1, Sort* s2, Vocabulary* v);
-
+	Sort* resolve(Sort* s1, Sort* s2, Vocabulary* v);	//!< Return the unique nearest common ancestor of two sorts
 }
-
 
 /****************
 	Variables	
 ****************/
 
+/**
+ * DESCRIPTION
+ *		Class to represent variables.
+ */
 class Variable {
 
 	private:
-		string		_name;	// name of the variable
-		Sort*		_sort;	// sort of the variable (0 if the sort is not derived)
-		static int	_nvnr;	// used to create unique new names for internal variables
-		ParseInfo	_pi;	// the place where the variable was quantified 
-
-	public:
-
-		// Constructors
-		Variable(const string& name, Sort* sort, const ParseInfo& pi) : _name(name), _sort(sort), _pi(pi) { }
-		Variable(Sort* s);	// constructor for an internal variable 
+		string			_name;	//!< name of the variable
+		const Sort*		_sort;	//!< sort of the variable (0 if the sort is not derived)
+		static int		_nvnr;	//!< used to create unique new names for internal variables
+		ParseInfo		_pi;	//!< the place where the variable was quantified 
 
 		// Destructor
 		~Variable() { }	// NOTE: deleting variables creates dangling pointers
 						// Only delete a variable when deleting its quantifier!
+	public:
+
+		// Constructors
+		Variable(const string& name, const Sort* sort, const ParseInfo& pi) : _name(name), _sort(sort), _pi(pi) { }
+		Variable(const Sort* s);	// constructor for an internal variable 
 
 		// Mutators
-		void	sort(Sort* s)	{ _sort = s; }
+		void	sort(const Sort* s)	{ _sort = s; }
 
 		// Inspectors
-		string				name()	const { return _name;	}
-		Sort*				sort()	const { return _sort;	}
+		const std::string&	name()	const { return _name;	}
+		const Sort*			sort()	const { return _sort;	}
 		const ParseInfo&	pi()	const { return _pi;		}
 
-		// Debugging
-		string	to_string()		const;
+		// Output
+		std::ostream&	put(std::ostream&)	const;
+		std::string		to_string()			const;
 
 };
 
-namespace VarUtils {
-
-	/*
-	 * Sort and remove duplicates from a given vector of variables
-	 */
-	void sortunique(vector<Variable*>& vv);
-}
+std::ostream& operator<< (std::ostream&,const Variable&);
 
 
-/*******************************
-	Predicates and functions
-*******************************/
+/*************************************
+	Predicate and function symbols
+*************************************/
 
-/** Abstract base class **/
-
+/** 
+ * DESCRIPTION
+ *		Abstract base class to represent predicate and function symbols
+ */
 class PFSymbol {
 	
 	protected:
-		string				_name;	// Name of the symbol (ending with the /arity)
-		vector<Sort*>		_sorts;	// Sorts of the arguments
-		ParseInfo			_pi;	// the place where the symbol was declared 
+		string				_name;	//!< Name of the symbol (ending with the /arity)
+		std::vector<Sort*>	_sorts;	//!< Sorts of the arguments. For a function symbol, the last sort is the output sort.
+		ParseInfo			_pi;	//!< the place where the symbol was declared 
+
+		// Destructor
+		virtual ~PFSymbol() { }		// NOTE: deleting a PFSymbol creates dangling pointers
+									// Only delete a PFSymbol if the global namespace is deleted
 
 	public:
 
@@ -218,34 +149,29 @@ class PFSymbol {
 		PFSymbol(const string& name, const vector<Sort*>& sorts, const ParseInfo& pi) : 
 			_name(name), _sorts(sorts), _pi(pi) { }
 
-		// Destructor
-		virtual ~PFSymbol() { }		// NOTE: deleting a PFSymbol creates dangling pointers
-									// Only delete a PFSymbol if the global namespace is deleted
-
 		// Inspectors
-		string					name()					const { return _name;							}
-		const ParseInfo&		pi()					const { return _pi;								}
-		unsigned int			nrSorts()				const { return _sorts.size();					}
-		Sort*					sort(unsigned int n)	const { return _sorts[n];						}
-		const vector<Sort*>&	sorts()					const { return _sorts;							}
-		virtual string			to_string()				const;
-		virtual bool			ispred()				const = 0;	// true iff the symbol is a predicate
+		const string&			name()					const { return _name;			}
+		const ParseInfo&		pi()					const { return _pi;				}
+		unsigned int			nrSorts()				const { return _sorts.size();	}
+		Sort*					sort(unsigned int n)	const { return _sorts[n];		}
+		const vector<Sort*>&	sorts()					const { return _sorts;			}
 
-		// Built-in symbols 
-		virtual bool		builtin()							const { return false;	}
-		virtual PredInter*	predinter(const AbstractStructure&)	const { return 0;		}	// Returns the interpretation of the symbol if it is built-in
+		// Built-in and overloaded symbols 
+		virtual bool		builtin()										const = 0;
+		virtual PredInter*	predinter(const AbstractStructure&)				const = 0;
+		virtual bool		overloaded()									const = 0;
+		virtual PFSymbol*	resolve(const vector<Sort*>&)					const = 0;
+		virtual PFSymbol*	disambiguate(const vector<Sort*>&,Vocabulary*)  const = 0;
 
-		// Overloaded symbols
-		virtual bool		overloaded()						const	{ return false;	}	// true iff the symbol 
-																							// is overloaded.
-		virtual PFSymbol*	resolve(const vector<Sort*>&) = 0;
-		virtual PFSymbol*	disambiguate(const vector<Sort*>&,Vocabulary*)  = 0;	// this method tries to
-																			// disambiguate 
-																			// overloaded symbols.
-
+		// Output
+		virtual std::ostream&	put(std::ostream&)	const = 0;
+				string			to_string()			const;
+		virtual	bool			infix()				const = 0;
 };
 
+std::ostream& operator<< (std::ostream&,const PFSymbol&);
 
+#ifdef OLD
 /** Predicate symbols **/
 
 class Predicate : public PFSymbol {
@@ -652,4 +578,5 @@ bool operator!=(TypedElement e1, TypedElement e2);
 bool operator<=(TypedElement e1, TypedElement e2);
 bool operator<(TypedElement e1, TypedElement e2);
 
+#endif
 #endif

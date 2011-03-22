@@ -485,6 +485,28 @@ bool EqualInternalPredTable::contains(const ElementTuple& tuple) const {
 
 /**
  * DESCRIPTION
+ *		Returns true iff the table contains a given tuple
+ * PARAMETERS
+ *		tuple	- the given tuple
+ */
+bool StrLessInternalPredTable::contains(const ElementTuple& tuple) const {
+	assert(tuple.size() == 2);
+	return *(tuple[0]) < *(tuple[1]);
+}
+
+/**
+ * DESCRIPTION
+ *		Returns true iff the table contains a given tuple
+ * PARAMETERS
+ *		tuple	- the given tuple
+ */
+bool StrGreaterInternalPredTable::contains(const ElementTuple& tuple) const {
+	assert(tuple.size() == 2);
+	return *(tuple[0]) > *(tuple[1]);
+}
+
+/**
+ * DESCRIPTION
  *		Returns true iff the table is finite
  */
 bool EqualInternalPredTable::finite() const {
@@ -493,6 +515,36 @@ bool EqualInternalPredTable::finite() const {
 		if(_lefttable->finite() || _righttable->finite()) return true;
 		else {
 			notyetimplemented("Exact finiteness test on equality predicate tables");	
+			return approxifinite();
+		}
+	}
+}
+
+/**
+ * DESCRIPTION
+ *		Returns true iff the table is finite
+ */
+bool StrLessInternalPredTable::finite() const {
+	if(approxfinite() || empty()) return true;
+	else {
+		if(_lefttable->finite() && _righttable->finite()) return true;
+		else {
+			notyetimplemented("Exact finiteness test on </2 predicate tables");	
+			return approxifinite();
+		}
+	}
+}
+
+/**
+ * DESCRIPTION
+ *		Returns true iff the table is finite
+ */
+bool StrGreaterInternalPredTable::finite() const {
+	if(approxfinite() || empty()) return true;
+	else {
+		if(_lefttable->finite() && _righttable->finite()) return true;
+		else {
+			notyetimplemented("Exact finiteness test on >/2 predicate tables");	
 			return approxifinite();
 		}
 	}
@@ -527,10 +579,42 @@ bool EqualInternalPredTable::empty() const {
 
 /**
  * DESCRIPTION
+ *		Returns true iff the table is empty
+ */
+bool StrLessInternalPredTable::empty() const {
+	return approxempty();
+}
+
+/**
+ * DESCRIPTION
+ *		Returns true iff the table is empty
+ */
+bool StrGreaterInternalPredTable::empty() const {
+	return approxempty();
+}
+
+/**
+ * DESCRIPTION
  *		Returns false if the table is infinite. May return true if the table is finite.
  */
 inline bool EqualInternalPredTable::approxfinite() const {
 	return (_lefttable->approxfinite() || _righttable->approxfinite());
+}
+
+/**
+ * DESCRIPTION
+ *		Returns false if the table is infinite. May return true if the table is finite.
+ */
+inline bool StrLessInternalPredTable::approxfinite() const {
+	return (_lefttable->approxfinite() && _righttable->approxfinite());
+}
+
+/**
+ * DESCRIPTION
+ *		Returns false if the table is infinite. May return true if the table is finite.
+ */
+inline bool StrGreaterInternalPredTable::approxfinite() const {
+	return (_lefttable->approxfinite() && _righttable->approxfinite());
 }
 
 /**
@@ -540,6 +624,278 @@ inline bool EqualInternalPredTable::approxfinite() const {
 inline bool EqualInternalPredTable::approxempty() const {
 	return (_lefttable->approxempty() || _righttable->approxempty());
 }
+
+/**
+ * DESCRIPTION
+ *		Returns false if the table is infinite. May return true if the table is finite.
+ */
+inline bool StrLessInternalPredTable::approxempty() const {
+	return *(_lefttable->front()) >= *(_righttable->back());
+}
+
+/**
+ * DESCRIPTION
+ *		Returns false if the table is infinite. May return true if the table is finite.
+ */
+inline bool StrGreaterInternalPredTable::approxempty() const {
+	return *(_lefttable->back()) <= *(_righttable->front());
+}
+
+/**
+ * DESCRIPTION
+ *		Returns true iff the table is finite
+ */
+bool InverseInternalPredTable::finite() const {
+	if(approxfinite()) return true;
+	bool containsInfiniteSort = false;
+	for(vector<SortTable*>::const_iterator it = _universe.begin(); it != _universe.end(); ++it) {
+		if(!(*it)->finite()) containsInfiniteSort = true;
+		if((*it)->empty()) return true;
+	}
+	if(!containsInfiniteSort) return true;
+	else if(_invtable->finite()) return false;
+	else {
+		notyetimplemented("Exact finiteness test on inverse predicate tables");	
+		return approxempty();
+	}
+}
+
+/**
+ * DESCRIPTION
+ *		Returns true iff the table is empty
+ */
+bool InverseInternalPredTable::empty() const {
+	if(approxempty()) return true;
+	for(vector<SortTable*>::const_iterator it = _universe.begin(); it != _universe.end(); ++it) {
+		if((*it)->empty()) return true;
+	}
+	if(finite()) {
+		assert(false); // TODO: check of all tuples in the cartesian product of _universe belong to _table;
+	}
+	else {
+		notyetimplemented("Exact emptyness test on inverse predicate tables");	
+		return approxempty();
+	}
+}
+
+/**
+ * DESCRIPTION
+ *		Returns false if the table is infinite. May return true if the table is finite.
+ */
+bool InverseInternalPredTable::approxfinite() const {
+	bool containsInfiniteSort = false;
+	for(vector<SortTable*>::const_iterator it = _universe.begin(); it != _universe.end(); ++it) {
+		if(!(*it)->approxfinite()) containsInfiniteSort = true;
+		if((*it)->approxempty()) return true;
+	}
+	return !containsInfiniteSort;
+}
+
+/**
+ * DESCRIPTION
+ *		Returns false if the table is non-empty. May return true if the table is empty.
+ */
+bool InverseInternalPredTable::approxempty() const {
+	for(vector<SortTable*>::const_iterator it = _universe.begin(); it != _universe.end(); ++it) {
+		if((*it)->approxempty()) return true;
+	}
+	return false;
+}
+
+/**
+ * DESCRIPTION
+ *		Returns true iff the table contains a given tuple
+ * PARAMETERS
+ *		tuple	- the given tuple
+ */
+bool InverseInternalPredTable::contains(const ElementTuple& tuple) {
+	if(_table->contains(tuple)) return false;
+	else {
+		for(unsigned int col = 0; col < tuple.size(); ++col) {
+			if(!(_universe[col]->contains(tuple[col]))) return false;
+		}
+		return true;
+	}
+}
+
+/**
+ * DESCRIPTION
+ *		Add a tuple to the table. 
+ * 
+ * PARAMETERS
+ *		- tuple: the tuple
+ *
+ * RETURNS
+ *		A pointer to the updated table
+ */
+InternalPredTable* InverseInternalPredTable::add(const ElementTuple& tuple) {
+	if(_table->contains(tuple)) {
+		InternalPredTable* temp = _table->remove(tuple);
+		if(temp != _table) { delete(_table); _table = temp;	}
+		return this;
+	}
+	else if(contains(tuple)) {
+		return this;
+	}
+	else {
+		for(unsigned int n = 0; n < tuple.size(); ++n) {
+			_universe[n]->add(tuple[n]);
+		}
+	}
+}
+
+/**
+ * DESCRIPTION
+ *		Remove a tuple from the table. 
+ * 
+ * PARAMETERS
+ *		- tuple: the tuple
+ *
+ * RETURNS
+ *		A pointer to the updated table
+ */
+InternalPredTable* InverseInternalPredTable::remove(const ElementTuple& tuple) {
+	InternalPredTable* temp = _table->add(tuple);
+	if(temp != _table) { delete(_table); _table = temp;	}
+	return this;
+}
+
+/**
+ * DESCRIPTION
+ *		Destructor for union predicate tables
+ */
+UnionInternalPredTable::~UnionInternalPredTable {
+	for(vector<InternalPredTable*>::iterator it = _intables.begin(); it != _intables.end(); ++it)
+		delete(*it);
+	for(vector<InternalPredTable*>::iterator it = _outtables.begin(); it != _outtables.end(); ++it)
+		delete(*it);
+}
+
+/**
+ * DESCRIPTION
+ *		Returns the number of columns in the table
+ */
+unsigned int UnionInternalPredTable::arity() const {
+	if(!_intables.empty()) return _intables[0]->arity();
+	else if(!_outtables.empty()) return _outtables[0]->arity();
+	else {
+		assert(false);
+		return 0;
+	}
+}
+
+/**
+ * DESCRIPTION
+ *		Returns true iff the table contains a given tuple
+ * PARAMETERS
+ *		tuple	- the given tuple
+ */
+bool UnionInternalPredTable::contains(const ElementTuple& tuple) {
+	bool in = false;
+	for(vector<InternalPredTable*>::iterator it = _intables.begin(); it != _intables.end(); ++it) {
+		if((*it)->contains(tuple)) { in = true; break;	}
+	}
+	if(!in) return false;
+
+	bool out = false;
+	for(vector<InternalPredTable*>::iterator it = _outtables.begin(); it != _outtables.end(); ++it) {
+		if((*it)->contains(tuple)) { out = true; break;	}
+	}
+	return !out;
+}
+
+/**
+ * DESCRIPTION
+ *		Returns true iff the table contains a given tuple
+ * PARAMETERS
+ *		tuple	- the given tuple
+ */
+bool UnionInternalPredTable::contains(const ElementTuple& tuple) {
+	bool in = false;
+	for(vector<InternalPredTable*>::iterator it = _intables.begin(); it != _intables.end(); ++it) {
+		if((*it)->contains(tuple)) { in = true; break;	}
+	}
+	if(!in) return false;
+
+	bool out = false;
+	for(vector<InternalPredTable*>::iterator it = _outtables.begin(); it != _outtables.end(); ++it) {
+		if((*it)->contains(tuple)) { out = true; break;	}
+	}
+	return !out;
+}
+
+/**
+ * DESCRIPTION
+ *		Add a tuple to the table. 
+ * 
+ * PARAMETERS
+ *		- tuple: the tuple
+ *
+ * RETURNS
+ *		A pointer to the updated table
+ */
+InternalPredTable* UnionInternalPredTable::add(const ElementTuple& tuple) {
+	bool in = false;
+	unsigned int finitetab = _intables.size();
+	for(unsigned int n = 0; n < _intables.size(); ++n) {
+		if(_intables[n]->contains(tuple)) { in = true; break;	}
+		if(_intables[n]->approxfinite()) finitetab = n;
+	}
+	if(!in) {
+		if(finitetab < _intables.size()) {
+			InternalPredTable* temp = _intables[finitetab]->add(tuple);
+			if(temp != _intables[finitetab]) {
+				delete(_intables[finitetab]);
+				_intables[finitetab] = temp;
+			}
+		}
+		else {
+			EnumeratedInternalPredTable* newintable = new EnumeratedInternalPredTable();
+			InternalPredTable* temp = newintable->add(tuple);
+			if(temp != newintable) { delete(newintable); newintable = temp;	}
+			_intables.push_back(newintable);
+		}
+	}
+
+	for(unsigned int n = 0; n < _outtables.size(); ++n) {
+		InternalPredTable* temp = _outtables[n]->remove(tuple);
+		if(temp != _outtables[n]) {
+			delete(_outtables[n]);
+			_outtables[n] = temp;
+		}
+	}
+
+	return this;
+}
+
+/**
+ * DESCRIPTION
+ *		Remove a tuple from the table. 
+ * 
+ * PARAMETERS
+ *		- tuple: the tuple
+ *
+ * RETURNS
+ *		A pointer to the updated table
+ */
+InternalPredTable* UnionInternalPredTable::remove(const ElementTuple& tuple) {
+	for(unsigned int n = 0; n < _outtables.size(); ++n) {
+		if(_outtables[n]->approxfinite()) {
+			InternalPredTable* temp = _outtables[n]->add(tuple);
+			if(temp != _outtables[n]) {
+				delete(_outtables[n]);
+				_outtables[n] = temp;
+				return this;
+			}
+		}
+	}
+	EnumeratedInternalPredTable* newouttable = new EnumeratedInternalPredTable();
+	InternalPredTable* temp = newouttable->add(tuple);
+	if(temp != newouttable) { delete(newouttable); newouttable = temp;	}
+	_outtables.push_back(newouttable);
+}
+
+
 
 /****************
 	FuncTable
