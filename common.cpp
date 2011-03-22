@@ -4,6 +4,12 @@
 	(c) K.U.Leuven
 ************************************/
 
+void notyetimplemented(const string& message) {
+	cerr << "ERROR: The following feature is not yet implemented:\n"
+		 << '\t' << message << '\n'
+		 << "Please send an e-mail to krr@cs.kuleuven.be if you really need this feature.\n";
+}
+
 #include <string>
 #include <limits>
 #include <iostream>

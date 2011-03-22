@@ -10,28 +10,102 @@
 	Domain elements
 **********************/
 
+bool operator<(const Compound& c1, const Compound& c2) {
+	if(c1.function() < c2.function()) return true;
+	else if(c1.function() > c2.function()) return false;
+	else {
+		for(unsigned int n = 0; n < c1.function()->arity(); ++n) {
+			if(c1.arg(n) < c2.arg(n)) return true;
+			else if(c1.arg(n) > c2.arg(n)) return false;
+		}
+	}
+	return false;
+}
+
+bool operator>(const Compound& c1, const Compound& c2) {
+	return c2 < c1;
+}
+
+bool operator==(const Compound& c1,const Compound& c2) {
+	if(c1.function() != c2.function()) return false;
+	for(unsigned int n = 0; n < c1.function()->arity(); ++n) {
+		if(c1.arg(n) != c2.arg(n)) return false;
+	}
+	return true;
+}
+
+bool operator!=(const Compound& c1,const Compound& c2) {
+	return !(c1 == c2);
+}
+
+bool operator<=(const Compound& c1,const Compound& c2) {
+	return (c1 == c2 || c1 < c2);
+}
+
+bool operator>=(const Compound& c1,const Compound& c2) {
+	return (c1 == c2 || c2 < c1);
+}
+
+
 bool operator<(const DomainElement& d1, const DomainElement& d2) {
 	switch(d1.type()) {
 		case DET_INT:
 			switch(d2._type()) {
-				// TODO
+				case DET_INT:
+					return d1.value()._int < d2.value()._int;
+				case DET_DOUBLE:
+					return double(d1.value()._int) < d2.value()._double;
+				case DET_STRING:
+				case DET_COMPOUND:
+					return true;
+				default:
+					assert(false);
+			}
+		case DET_DOUBLE:
+			switch(d2._type()) {
+				case DET_INT:
+					return d1.value()._double < double(d2.value()._int);
+				case DET_DOUBLE:
+					return d1.value()._double < d2.value()._double;
+				case DET_STRING:
+				case DET_COMPOUND:
+					return true;
+				default:
+					assert(false);
+			}
+		case DET_STRING:
+			switch(d2._type()) {
+				case DET_INT:
+				case DET_DOUBLE:
+					return false;
+				case DET_STRING:
+					return *(d1.value()._string) < *(d2.value()._string);
+				case DET_COMPOUND:
+					return true;
+				default:
+					assert(false);
 			}
 			break;
-		case DET_DOUBLE:
-			break;
-		case DET_STRING:
-			break;
 		case DET_COMPOUND:
+			switch(d2._type()) {
+				case DET_INT:
+				case DET_DOUBLE:
+				case DET_STRING:
+					return false;
+				case DET_COMPOUND:
+					return *(d1.value()._compound) < *(d2.value()._compound);
+				default:
+					assert(false);
+			}
 			break;
 		default:
 			assert(false);
 	}
+	return false;
 }
 
 bool operator>(const DomainElement& d1, const DomainElement& d2) {
-	switch(d1.type()) {
-		// TODO
-	}
+	return d2 < d1;
 }
 
 bool operator==(const DomainElement& d1, const DomainElement& d2) {
@@ -55,12 +129,9 @@ bool operator>=(const DomainElement& d1, const DomainElement& d2) {
 
 /**
  * DESCRIPTION
- *		Destructor for domain elements. Deletes its value only if it is a compound. 
- *		Strings are deleted via the shared string manager.
+ *		Destructor for domain elements. Does not delete its value.
  */
-DomainElement::~DomainElement() {
-	if(_type == DET_COMPOUND) delete(_value._compound);
-}
+DomainElement::~DomainElement() { }
 
 /**
  * DESCRIPTION
@@ -98,14 +169,9 @@ DomainElement::DomainElement(const compound* value) : _type(DET_COMPOUND) {
 
 /**
  * DESCRIPTION
- *		Destructor for compound domain element values.
- *		Recursively deletes the arguments of the function.
+ *		Destructor for compound domain element values. Does not delete its arguments.
  */
-Compound::~Compound() {
-	for(vector<DomainElement*>::iterator it = _arguments.begin(); it != _arguments.end(); ++it) {
-		delete(*it);
-	}
-}
+Compound::~Compound() { }
 
 /**
  * DESCRIPTION
@@ -131,6 +197,47 @@ DomainElementFactory* DomainElementFactory::_instance = 0;
 DomainElementFactory* DomainElementFactory::instance() {
 	if(!_instance) _instance = new DomainElementFactory();
 	return _instance;
+}
+
+/**
+ * DESCRIPTION
+ *		Destructor for DomainElementFactory. Deletes all domain elements and compounds it created.
+ */
+DomainElementFactory::~DomainElementFactory {
+	for(vector<DomainElement*>::iterator it = _fastintelements.begin(); it != _fastintelements.end(); ++it) 
+		delete(*it);
+	for(map<int,DomainElement*>::iterator it = _intelements.begin(); it != _intelements.end(); ++it) 
+		delete(it->second);
+	for(map<double,DomainElement*>::iterator it = _doubleelements.begin(); it != _doubleelements.end(); ++it) 
+		delete(it->second);
+	for(map<const string*,DomainElement*>::iterator it = _stringelements.begin(); it != _stringelements.end(); ++it) 
+		delete(it->second);
+	for(map<const Compound*,DomainElement*>::iterator it = _compoundelements.begin(); it != _compoundelements.end(); ++it) 
+		delete(it->second);
+	for(map<const Function*,map<vector<DomainElement*>,Compound*> >::iterator it = _compounds.begin(); it != _compounds.end(); ++it) {
+		for(map<vector<DomainElement*>,Compound*>::iterator jt = it->second.begin(); jt != it->second.end(); ++jt) {
+			delete(jt->second);
+		}
+	}
+}
+
+/**
+ * DESCRIPTION
+ *		Return the unique compound that consists of the given function and arguments.
+ * 
+ * PARAMETERS
+ *		- function:	the given function
+ *		- args:		the given arguments
+ */
+Compound* DomainElementFactory::compound(const Function* function, const ElementTuple& args) {
+	map<const Function*,map<ElementTuple,Compound*> >::const_iterator it = _compounds.find(function);
+	if(it != _compounds.end()) {
+		map<ElementTuple,Compound*>::const_iterator jt = it->second.find(args); 
+		if(jt != it->second.end()) return jt->second;
+	}
+	Compound* newcompound = new Compound(function,args);
+	_compounds[function][args] = newcompound;
+	return newcompound;
 }
 
 /**
@@ -200,7 +307,7 @@ DomainElement* DomainElementFactory::create(const string* value, bool certnotdou
 	if(!certnotdouble && isDouble(value)) return create(stod(value),false);
 
 	DomainElement* element;
-	map<string*,DomainElement*>::const_iterator it = _stringelements.find(value);
+	map<const string*,DomainElement*>::const_iterator it = _stringelements.find(value);
 	if(it == _stringelements.end()) {
 		element = new DomainElement(value);
 		_stringelements[value] = element;
@@ -220,7 +327,7 @@ DomainElement* DomainElementFactory::create(const string* value, bool certnotdou
  */
 DomainElement* DomainElementFactory::create(const Compound* value, bool certnotdouble) {
 	DomainElement* element;
-	map<string*,DomainElement*>::const_iterator it = _compoundelements.find(value);
+	map<const Compound*,DomainElement*>::const_iterator it = _compoundelements.find(value);
 	if(it == _compoundelements.end()) {
 		element = new DomainElement(value);
 		_compoundelements[value] = element;
@@ -231,6 +338,19 @@ DomainElement* DomainElementFactory::create(const Compound* value, bool certnotd
 	return element;
 }
 
+/**
+ * DESCRIPTION
+ *		Returns the unique domain element that has a given compound value
+ *
+ * PARAMETERS
+ *		- function:	the function of the given compound value
+ *		- args:		the arguments of the given compound value
+ */
+DomainElement* DomainElementFactory::create(const Function* function, const ElementTuple& args) {
+	assert(function != 0);
+	Compound* value = compound(function,args);
+	return create(value,true);
+}
 
 /****************
 	PredTable
@@ -238,14 +358,28 @@ DomainElement* DomainElementFactory::create(const Compound* value, bool certnotd
 
 /**
  * DESCRIPTION
+ *		Strict weak ordering on tuples of domain elements.
+ *		Used as parameter for algorithms of the standard library.
+ */
+bool strictWeakOrdering(const ElementTuple& t1, const ElementTuple& t2) {
+	assert(t1.size() == t2.size());
+	for(unsigned int n = 0; n < t1.size(); ++n) {
+		if(*(t1[n]) < *(t2[n])) return true;
+		else if(*(t1[n] > *(t2[n]))) return false;
+	}
+	return false;
+}
+
+/**
+ * DESCRIPTION
  *		Returns true iff the table contains a given tuple
  * PARAMETERS
  *		tuple	- the given tuple
  */
-bool EnumeratedInternalPredTable::contains(const vector<DomainElement*>& tuple) {
+bool EnumeratedInternalPredTable::contains(const ElementTuple& tuple) {
 	assert(tuple.size() == arity());
 	if(!sorted()) sortunique();
-	ElementTable::const_iterator it = lower_bound(_table.begin(),_table.end(),tuple,_strictsmaller); HIER BEZIG
+	ElementTable::const_iterator it = lower_bound(_table.begin(),_table.end(),tuple,&strictWeakOrdering); 
 	return (it != _table.end());
 }
 
@@ -256,7 +390,7 @@ bool EnumeratedInternalPredTable::contains(const vector<DomainElement*>& tuple) 
  *		_sorted = true
  */
 void EnumeratedInternalPredTable::sortunique() {
-	sort(_table.begin(),_table.end(),_order);
+	sort(_table.begin(),_table.end(),&strictWeakOrdering);
 	ElementTable::iterator it = unique(_table.begin(),_table.end());
 	_table.erase(it,_table.end());
 	_sorted = true;
@@ -264,16 +398,89 @@ void EnumeratedInternalPredTable::sortunique() {
 
 /**
  * DESCRIPTION
+ *		Add a tuple to the table. 
+ * 
+ * PARAMETERS
+ *		- tuple: the tuple
+ *
+ * RETURNS
+ *		A pointer to the updated table
+ */
+EnumeratedInternalPredTable* EnumeratedInternalPredTable::add(const ElementTuple& tuple) {
+	_sorted = false;
+	_table.push_back(tuple);
+	return this;
+}
+
+/**
+ * DESCRIPTION
+ *		Remove a tuple from the table. 
+ * 
+ * PARAMETERS
+ *		- tuple: the tuple
+ *
+ * RETURNS
+ *		A pointer to the updated table
+ */
+EnumeratedInternalPredTable* EnumeratedInternalPredTable::remove(const ElementTuple& tuple) {
+	ElementTable::iterator it = lower_bound(_table.begin(),_table.end(),&strictWeakOrdering);
+	if((*it) == tuple) _table.erase(tuple);
+	return this;
+}
+
+/**
+ * DESCRIPTION
+ *		Add a tuple to the table. 
+ * 
+ * PARAMETERS
+ *		- tuple: the tuple
+ *
+ * RETURNS
+ *		A pointer to the updated table
+ */
+InternalPredTable* ComparisonInternalPredTable::add(const ElementTuple& tuple) {
+	if(!contains(tuple)) {
+		UnionInternalPredTable* upt = new UnionInternalPredTable();
+		InternalPredTable* temp1 = upt->add(this);
+		if(temp1 != upt) delete(upt);
+		InternalPredTable* temp2 = temp1->add(tuple);
+		if(temp1 != temp2) delete(temp1);
+		return temp2;
+	}
+	else return this;
+}
+
+/**
+ * DESCRIPTION
+ *		Remove a tuple from the table. 
+ * 
+ * PARAMETERS
+ *		- tuple: the tuple
+ *
+ * RETURNS
+ *		A pointer to the updated table
+ */
+InternalPredTable* ComparisonInternalPredTable::remove(const ElementTuple& tuple) {
+	if(PredTable::contains(tuple)) {
+		UnionInternalPredTable* upt = new UnionInternalPredTable();
+		InternalPredTable* temp1 = upt->add(this);
+		if(temp1 != upt) delete(upt);
+		InternalPredTable* temp2 = temp1->remove(tuple);
+		if(temp1 != temp2) delete(temp1);
+		return temp2;
+	}
+	else return this;
+}
+
+/**
+ * DESCRIPTION
  *		Returns true iff the table contains a given tuple
  * PARAMETERS
  *		tuple	- the given tuple
- * PRECONDITION
- *		The type of each of the elements of the tuple should be the same as the type of the corresponding
- *		columns of the table.
  */
-bool EqualInternalPredTable::contains(const vector<Element>& tuple) const {
+bool EqualInternalPredTable::contains(const ElementTuple& tuple) const {
 	assert(tuple.size() == 2);
-	return ElementUtil::equal(tuple[0],_lefttable->type(),tuple[1],_righttable->type());
+	return tuple[0] == tuple[1];
 }
 
 /**
@@ -285,8 +492,8 @@ bool EqualInternalPredTable::finite() const {
 	else {
 		if(_lefttable->finite() || _righttable->finite()) return true;
 		else {
-			notyetimplemented();	// TODO 
-			assert(false);
+			notyetimplemented("Exact finiteness test on equality predicate tables");	
+			return approxifinite();
 		}
 	}
 }
@@ -301,19 +508,19 @@ bool EqualInternalPredTable::empty() const {
 		if(_lefttable->empty() || _righttable->empty()) return true;
 		else if(_lefttable->finite()) {
 			for(SortTable::const_iterator it = _lefttable->begin(); it != _lefttable->end(); ++it) {
-				if(_righttable->contains(*it,_lefttable->type())) return false;
+				if(_righttable->contains(*it)) return false;
 			}
 			return true;
 		}
 		else if(_righttable->finite()) {
 			for(SortTable::const_iterator it = _righttable->begin(); it != _righttable->end(); ++it) {
-				if(_lefttable->contains(*it,_lefttable->type())) return false;
+				if(_lefttable->contains(*it)) return false;
 			}
 			return true;
 		}
 		else {
-			notyetimplemented();	// TODO 
-			assert(false);
+			notyetimplemented("Exact emptyness test on equality predicate tables");	
+			return approxempty();
 		}
 	}
 }
@@ -340,19 +547,6 @@ inline bool EqualInternalPredTable::approxempty() const {
 
 /**
  * DESCRIPTION
- *		Return the value of a given tuple according to the function.
- * PARAMETERS
- *		tuple	- the given tuple
- * NOTE
- *		If possible, use 'Element operator[](const vector<Element>& tuple)' instead of this procedure.
- */
-Element operator[](const vector<TypedElement>& tuple) const {
-	vector<Element> elementtuple = ElementUtil::convert(tuple,intypes());
-	return operator[](elementtuple);
-}
-
-/**
- * DESCRIPTION
  *		Given a tuple (a_1,...,a_{n-1},a_n), this procedure returns true iff the value of
  *		(a_1,...,a_{n-1}) according to the function is equal to a_n
  * PARAMETERS
@@ -361,12 +555,12 @@ Element operator[](const vector<TypedElement>& tuple) const {
  *		The type of each of the elements of the tuple should be the same as the type of the corresponding
  *		columns of the table.
  */
-bool FuncTable::contains(const vector<Element>& tuple) const {
+bool FuncTable::contains(const ElementTuple& tuple) const {
 	assert(tuple.size() == arity()+1);
-	vector<Element> key = tuple;
-	Element value = key.back();
+	ElementTuple key = tuple;
+	DomainElement* value = key.back();
 	key.pop_back();
-	Element computedvalue = operator[](key);
+	DomainElement* computedvalue = operator[](key);
 	return value == computedvalue;
 }
 

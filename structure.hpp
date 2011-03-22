@@ -80,26 +80,42 @@ bool operator!=(const DomainElement&,const DomainElement&);
 bool operator<=(const DomainElement&,const DomainElement&);
 bool operator>=(const DomainElement&,const DomainElement&);
 
+typedef vector<DomainElement*>	ElementTuple;
+typedef vector<ElementTuple>	ElementTable;
+
 /**
  * DESCRIPTION
  *		The value of a domain element that consists of a function applied to domain elements.
  */
 class Compound {
 	private:
-		Function*				_function;
-		vector<DomainElement*>	_arguments;
+		Function*		_function;
+		ElementTuple	_arguments;
 
 		Compound(Function* function, const vector<DomainElement*> arguments) : 
 			_function(function), _arguments(arguments) { assert(function != 0); }
 	public:
 		~Compound();
+
+		const Function*			function()				const { return _function;			}
+		const DomainElement&	arg(unsigned int n)		const { return *(_arguments[n]);	}
+
+		friend class DomainElementFactory;
 };
+
+bool operator< (const Compound&,const Compound&);
+bool operator> (const Compound&,const Compound&);
+bool operator==(const Compound&,const Compound&);
+bool operator!=(const Compound&,const Compound&);
+bool operator<=(const Compound&,const Compound&);
+bool operator>=(const Compound&,const Compound&);
 
 /**
  * DESCRIPTION
  *		Class to create domain elements. This class is a singleton class that ensures all domain elements
  *		with the same value are stored at the same address in memory. As a result, two domain elements are equal
- *		iff they have the same address.
+ *		iff they have the same address. It also ensures that all Compounds with the same function and arguments are
+ *		stored at the same address.
  *
  *		Obtaining the address of a domain element with a given value and type should take logaritmic time in the number
  *		of created domain elements of that type. For a specified integer range, obtaining the address is optimized to
@@ -109,18 +125,23 @@ class DomainElementFactory {
 	private:
 		static DomainElementFactory*	_instance;			//!< The single instance of DomainElementFactory
 		
-		int								_firstfastint;		//!< The first integer in the optimized range
-		int								_lastfastint;		//!< One past the last integer in the optimized range
-		vector<DomainElement*>			_fastintelements;	//!< Stores pointers to integers in the optimized range.
+		map<const Function*,map<ElementTuple,Compound*> >	_compounds;	//!< Maps a function and tuple of elements to the
+																		//!< corresponding compound.
+																
+		int						_firstfastint;		//!< The first integer in the optimized range
+		int						_lastfastint;		//!< One past the last integer in the optimized range
+		vector<DomainElement*>	_fastintelements;	//!< Stores pointers to integers in the optimized range.
 															//!< The domain element with value n is stored at
 															//!< _fastintelements[n+_firstfastint]
 
-		map<int,DomainElement*>			_intelements;		//!< Maps an integer outside of the optimized range to its corresponding doman element address.
-		map<double,DomainElement*>		_doubleelements;	//!< Maps a floating point number to its corresponding domain element address.
-		map<string*,DomainElement*>		_stringelements;	//!< Maps a string pointer to its corresponding domain element address.
-		map<Compound*,DomainElement*>	_compoundelements;	//!< Maps a compound pointer to its corresponding domain element address.
+		map<int,DomainElement*>				_intelements;		//!< Maps an integer outside of the optimized range to its corresponding doman element address.
+		map<double,DomainElement*>			_doubleelements;	//!< Maps a floating point number to its corresponding domain element address.
+		map<const string*,DomainElement*>	_stringelements;	//!< Maps a string pointer to its corresponding domain element address.
+		map<const Compound*,DomainElement*>	_compoundelements;	//!< Maps a compound pointer to its corresponding domain element address.
 		
 		DomainElementFactory(int firstfastint = 0, int lastfastint = 10001);
+
+		Compound*		compound(const Function*,const ElementTuple&);
 
 	public:
 		~DomainElementFactory();
@@ -131,6 +152,7 @@ class DomainElementFactory {
 		DomainElement*	create(double value, bool certnotint = false);
 		DomainElement*	create(const string* value, bool certnotdouble = false);
 		DomainElement*	create(const Compound* value);
+		DomainElement*	create(const Function*,const ElementTuple&);
 };
 
 
@@ -146,19 +168,23 @@ class AbstractTable {
 	private:
 	protected:
 	public:
-		virtual ~AbstractTable();
+		virtual ~AbstractTable() { }
 
-		virtual bool			finite()				const = 0;	//!< Returns true iff the table is finite
-		virtual	bool			empty()					const = 0;	//!< Returns true iff the table is empty
-		virtual	unsigned int	arity()					const = 0;	//!< Returns the number of columns in the table
+		virtual bool			finite()		const = 0;	//!< Returns true iff the table is finite
+		virtual	bool			empty()			const = 0;	//!< Returns true iff the table is empty
+		virtual	unsigned int	arity()			const = 0;	//!< Returns the number of columns in the table
 
 		virtual bool	approxfinite()			const = 0;	
 			//!< Returns false if the table size is infinite. May return true if the table size is finite.
 		virtual bool	approxempty()			const = 0;
 			//!< Returns false if the table is non-empty. May return true if the table is empty.
 
-		virtual	bool contains(const vector<DomainElement*>& tuple)	const = 0;	
+		virtual	bool	contains(const ElementTuple& tuple)	const = 0;	
 			//!< Returns true iff the table contains the tuple. 
+			
+		virtual void	add(const ElementTuple& tuple)		= 0;	//!< Add a tuple to the table
+		virtual void	remove(const ElementTuple& tuple)	= 0;	//!< Remove a tuple from the table
+
 };
 
 /***********************************
@@ -170,10 +196,8 @@ class AbstractTable {
  *		This class implements a concrete two-dimensional table
  */
 class InternalPredTable {
-	private:
-	proteced:
 	public:
-		virtual ~InternalPredTable();
+		virtual ~InternalPredTable() { }
 
 		virtual unsigned int	arity()		const = 0;
 		virtual bool			finite()	const = 0;	//!< Returns true iff the table is finite
@@ -184,11 +208,12 @@ class InternalPredTable {
 		virtual bool	approxempty()	const = 0;
 			//!< Returns false if the table is non-empty. May return true if the table is empty.
 
-		virtual	bool	contains(const vector<DomainElement*>& tuple) = 0;	
-			//!< Returns true iff the table contains the tuple. 
+		virtual	bool	contains(const ElementTuple& tuple) = 0;	//!< Returns true iff the table contains the tuple. 
+
+		virtual InternalPredTable*	add(const ElementTuple& tuple) = 0;		//!< Add a tuple to the table
+		virtual InternalPredTable*	remove(const ElementTuple& tuple) = 0;	//!< Remove a tuple from the table
 };
 
-typedef vector<vector<DomainElement*> >	ElementTable;
 
 /**
  * DESCRIPTION
@@ -201,14 +226,17 @@ class EnumeratedInternalPredTable : public InternalPredTable {
 
 	protected:
 	public:
-		~EnumeratedInternalPredTable();
+		~EnumeratedInternalPredTable() { }
 
 		bool	finite()				const { return true;			}
 		bool	empty()					const { return _table.empty();	}
 		bool	approxfinite()			const { return true;			}
 		bool	approxempty()			const { return _table.empty();	}
-		bool	contains(const vector<DomainElement*>& tuple);
+		bool	contains(const ElementTuple& tuple);
 		void	sortunique();	
+
+		EnumeratedInternalPredTable*	add(const ElementTuple& tuple);
+		EnumeratedInternalPredTable*	remove(const ElementTuple& tuple);
 };
 
 /**
@@ -216,30 +244,54 @@ class EnumeratedInternalPredTable : public InternalPredTable {
  *		Abstract base class for implementing InternalPredTable for '=/2', '</2', and '>/2'
  */
 class ComparisonInternalPredTable : public InternalPredTable {
-	private:
 	protected:
 		SortTable*	_lefttable;		//!< the elements that possibly occur in the first column of the table
 		SortTable*	_righttable;	//!< the elements that possibly occur in the second column of the table
 	public:
-		~ComparisonInternalPredTable();
-}
+		virtual ~ComparisonInternalPredTable() { }
+
+		InternalPredTable*	add(const ElementTuple& tuple);
+		InternalPredTable*	remove(const ElementTuple& tuple);
+};
 
 /**
  * DESCRIPTION
  *		Internal table for '=/2'
  */
 class EqualInternalPredTable : public ComparisonInternalPredTable {
-	private:
-	protected:
 	public:
-		~EqualInternalPredTable();
+		~EqualInternalPredTable() { }
 
-		bool	contains(const vector<DomainElement*>&)	const;
-		bool	finite()								const;
-		bool	empty()									const;
-		bool	approxfinite()							const;
-		bool	approxempty()							const;
+		bool	contains(const ElementTuple&)	const;
+		bool	finite()						const;
+		bool	empty()							const;
+		bool	approxfinite()					const;
+		bool	approxempty()					const;
 };
+
+// TODO HIER BEZIG
+class UnionInternalPredTable : public PredTable {
+
+	private:
+		vector<InternalPredTable*>	_tables;
+		EnuFinitePredTable*	_blacklist;
+
+	public:
+		~UnionInternalPredTable();
+
+		unsigned int	arity()			const;
+		bool			finite()		const;
+		bool			empty()			const;
+		bool			approxfinite()	const;
+		bool			approxempty()	const;
+
+		bool	contains(const ElementTuple& tuple);	
+
+		InternalPredTable*	add(const ElementTuple& tuple);		
+		InternalPredTable*	remove(const ElementTuple& tuple);	
+	
+};
+
 
 /**
  * DESCRIPTION
@@ -248,16 +300,17 @@ class EqualInternalPredTable : public ComparisonInternalPredTable {
 class PredTable : public AbstractTable {
 	private:
 		InternalPredTable*	_table;	//!< Points to the actual table
-	protected:
 	public:
 		~PredTable();
 
-		bool			finite()				const	{ return _table->finite();			}
-		bool			empty()					const	{ return _table->empty();			}
-		unsigned int	arity()					const	{ return _table->arity();			}
-		bool			approxfinite()			const	{ return _table->approxfinite();	}
-		bool			approxempty()			const	{ return _table->approxfinite();	}
-		bool			contains(const vector<DomainElement*>& tuple)	const	{ return _table->contains(tuple);	}
+		bool			finite()							const	{ return _table->finite();			}
+		bool			empty()								const	{ return _table->empty();			}
+		unsigned int	arity()								const	{ return _table->arity();			}
+		bool			approxfinite()						const	{ return _table->approxfinite();	}
+		bool			approxempty()						const	{ return _table->approxfinite();	}
+		bool			contains(const ElementTuple& tuple)	const	{ return _table->contains(tuple);	}
+		void			add(const ElementTuple& tuple);
+		void			remove(const ElementTuple& tuple);
 };
 
 /***********************
@@ -269,8 +322,6 @@ class PredTable : public AbstractTable {
  *		This class implements a concrete one-dimensional table
  */
 class InternalSortTable : public InternalPredTable {
-	private:
-	proteced:
 	public:
 		virtual ~InternalSortTable();
 };
@@ -282,17 +333,20 @@ class InternalSortTable : public InternalPredTable {
 class SortTable : public AbstractTable {
 	private:
 		InternalSortTable*	_table;	//!< Points to the actual table
-	protected:
 	public:
 		~SortTable();
 
-		bool			finite()				const	{ return _table->finite();			}
-		bool			empty()					const	{ return _table->empty();			}
-		bool			approxfinite()			const	{ return _table->approxfinite();	}
-		bool			approxempty()			const	{ return _table->approxfinite();	}
-		unsigned int	arity()					const	{ return 1;							}
-
-		bool	contains(const vector<DomainElement*>& tuple)	const	{ return _table->contains(tuple);	}
+		bool			finite()							const	{ return _table->finite();			}
+		bool			empty()								const	{ return _table->empty();			}
+		bool			approxfinite()						const	{ return _table->approxfinite();	}
+		bool			approxempty()						const	{ return _table->approxfinite();	}
+		unsigned int	arity()								const	{ return 1;							}
+		bool			contains(const ElementTuple& tuple)	const	{ return _table->contains(tuple);	}
+		bool			contains(const DomainElement* el)	const	{ return _table->contains(el);		}
+		void			add(const ElementTuple& tuple)				{ _table = _table->add(tuple);		}
+		void			add(const DomainElement* el)				{ _table = _table->add(el);			}
+		void			remove(const ElementTuple& tuple)			{ _table = _table->remove(tuple);	}
+		void			remove(const DomainElement* el)				{ _table = _table->remove(el);		}
 };
 
 /**********************************
@@ -304,14 +358,17 @@ class SortTable : public AbstractTable {
  *		This class implements a concrete associative array mapping tuples of elements to elements
  */
 class InternalFuncTable {
-	private:
-	proteced:
 	public:
 		virtual ~InternalFuncTable();
 
 		virtual bool			finite()				const = 0;	//!< Returns true iff the table is finite
 		virtual	bool			empty()					const = 0;	//!< Returns true iff the table is empty
 		virtual	unsigned int	arity()					const = 0;	//!< Returns the number of columns in the table
+
+		virtual bool			approxfinite()			const = 0;
+			//!< Returns false if the table size is infinite. May return true if the table size is finite.
+		virtual bool			approxempty()			const = 0;
+			//!< Returns false if the table is non-empty. May return true if the table is empty.
 
 		virtual Element operator[](const vector<DomainElement*>& tuple)	const = 0;	
 			//!< Returns the value of the tuple according to the array.
@@ -337,14 +394,16 @@ class FuncTable : public AbstractTable {
 
 		Element	operator[](const vector<DomainElement*>& tuple)	const	{ return (*_table)[tuple];	}
 		bool	contains(const vector<DomainElement*>& tuple)	const;
+		void	add(const ElementTuple& tuple)							{ _table = _table->add(tuple);		}
+		void	remove(const ElementTuple& tuple)						{ _table = _table->remove(tuple);	}
 
 };
 
 
 /********************* VANAF HIER OUD ******************/
 
-#include "vocabulary.hpp"
-#include "visitor.hpp"
+
+#ifdef HEEL_OUD
 
 typedef vector<vector<Element> > VVE;
 
@@ -352,23 +411,6 @@ typedef vector<vector<Element> > VVE;
 	Interpretations for predicates
 *************************************/
 
-/** 
- * DESCRIPTION
- *		This class implements common functionality of tables for sorts and predicate symbols.
- */
-class PredTable : public AbstractTable {
-
-	private:
-		bool	_sorted;	///< _sorted is true iff it is certain that the table is sorted and does not contain duplicates.
-
-	protected:
-		PredTable(bool sorted = false) : AbstractTable(), _sorted(sorted) { }
-
-	public:
-		virtual ~PredTable() { }
-
-		// Mutators
-		virtual void		sortunique() = 0;	// Sort and remove duplicates
 		virtual PredTable*	add(const vector<TypedElement>& tuple) = 0;
 		virtual PredTable*	remove(const vector<TypedElement>& tuple) = 0;	// NOTE: Expensive operation!
 
@@ -1484,5 +1526,7 @@ class SortTableTupleIterator {
 		Element		value(unsigned int n)	const;	// Get the n'th element in the current tuple
 
 };
+
+#endif
 
 #endif
