@@ -127,7 +127,6 @@ class FOBDDManager {
 		std::string	to_string(FOBDD*,unsigned int spaces = 0) const;
 		std::string	to_string(FOBDDKernel*,unsigned int spaces = 0) const;
 		std::string	to_string(FOBDDArgument*) const;
-
 };
 
 class FOBDDFactory : public Visitor {
@@ -155,7 +154,6 @@ class FOBDDFactory : public Visitor {
 		void	visit(const QuantForm* qf);
 		void	visit(const EqChainForm* ef);
 		void	visit(const AggForm* af);
-	
 };
 
 
