@@ -9,6 +9,8 @@
 #include "builtin.hpp"
 #include "namespace.hpp"
 
+using namespace std;
+
 /******************************************
 	Shared pointers for domain elements
 ******************************************/

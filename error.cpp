@@ -4,10 +4,14 @@
 	(c) K.U.Leuven
 ************************************/
 
-#include <iostream>
 #include "error.hpp"
+
+#include <iostream>
+
 #include "options.hpp"
 #include "data.hpp"
+
+using namespace std;
 
 namespace Error {
 	

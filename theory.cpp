@@ -4,15 +4,20 @@
 	(c) K.U.Leuven
 ************************************/
 
-#include "data.hpp"
 #include "theory.hpp"
+
+#include <iostream>
+#include <typeinfo>
+#include <set>
+
+#include "structure.hpp"
+#include "data.hpp"
 #include "visitor.hpp"
 #include "builtin.hpp"
 #include "ecnf.hpp"
 #include "ground.hpp"
-#include <iostream>
-#include <set>
-#include <typeinfo>
+
+using namespace std;
 
 extern string tabstring(unsigned int);
 extern bool nexttuple(vector<unsigned int>&,const vector<unsigned int>&);

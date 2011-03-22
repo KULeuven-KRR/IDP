@@ -8,7 +8,6 @@
 #define BUILTIN_HPP
 
 #include "vocabulary.hpp"
-#include "structure.hpp"
 
 /* 
  * The standard builtin vocabulary
@@ -24,6 +23,5 @@ class StdBuiltin : public Vocabulary {
 		static StdBuiltin* instance();
 		~StdBuiltin() { }
 };
-
 
 #endif

@@ -7,6 +7,11 @@
 #ifndef OPTIONS_HPP
 #define OPTIONS_HPP
 
+#include <vector>
+#include <string>
+
+#include "vocabulary.hpp" //FIXME: need include for ParseInfo
+
 struct TypedInfArg;
 
 /** Command-line options **/
@@ -24,16 +29,15 @@ enum StyleOptions {
 };
 
 class CLOptions {
-
 	public:
 		  // Attributes
 		  bool				_statistics;		// print statistics on stderr iff _statistics=true
 		  bool				_verbose;			// print extra information on stderr iff _verbose=true
 		  bool				_readfromstdin;		// expect input from stdin iff _readfromstdin=true
 		  bool				_interactive;		// interactive mode if _interactive is true
-		  vector<bool>		_warning;			// _warning[n] = true means that warnings of type n are not suppressed
-		  vector<bool>		_style;				// _style[n] = true means that style option n is enforced
-		  string			_exec;				// the procedure called from the command line
+		  std::vector<bool>	_warning;			// _warning[n] = true means that warnings of type n are not suppressed
+		  std::vector<bool>	_style;				// _style[n] = true means that style option n is enforced
+		  std::string		_exec;				// the procedure called from the command line
 		  int				_satverbosity;
 
 		  // Constructor (default options)
@@ -42,24 +46,30 @@ class CLOptions {
 				_verbose = false;
 				_readfromstdin = false;
 				_interactive = false;
-				_warning = vector<bool>(5,true);
-				_style = vector<bool>(1,false);
+				_warning = std::vector<bool>(5,true);
+				_style = std::vector<bool>(1,false);
 				_exec = "";
 		  }
-
 };
 
 /** Inference options **/
 
-enum OutputFormat	{ OF_TXT, OF_IDP, OF_ECNF };
-enum ModelFormat	{ MF_THREEVAL, MF_TWOVAL, MF_ALL };
+enum OutputFormat {
+	OF_TXT,
+	OF_IDP,
+	OF_ECNF
+};
+
+enum ModelFormat {
+	MF_THREEVAL,
+	MF_TWOVAL,
+	MF_ALL
+};
 
 class InfOptions {
-	
 	public:
-
 		// Name and place
-		string			_name;		// the name of the options
+		std::string		_name;		// the name of the options
 		ParseInfo		_pi;		
 
 		// Attributes
@@ -70,7 +80,7 @@ class InfOptions {
 		bool			_printtypes;
 		
 		// Constructor (default options)
-		InfOptions(const string& name, const ParseInfo& pi) : 
+		InfOptions(const std::string& name, const ParseInfo& pi) : 
 			_name(name), 
 			_pi(pi),
 			_nrmodels(1),
@@ -89,13 +99,13 @@ class InfOptions {
 			_satverbosity	= opt->_satverbosity;
 			_printtypes		= opt->_printtypes;
 		}
-		void set(const string& optname,const string& val, ParseInfo* pi = 0);
-		void set(const string& optname,double, ParseInfo* pi = 0);
-		void set(const string& optname,bool, ParseInfo* pi = 0);
-		void set(const string& optname,int, ParseInfo* pi = 0);
+		void set(const std::string& optname,const std::string& val, ParseInfo* pi = 0);
+		void set(const std::string& optname,double, ParseInfo* pi = 0);
+		void set(const std::string& optname,bool, ParseInfo* pi = 0);
+		void set(const std::string& optname,int, ParseInfo* pi = 0);
 
 		// Inspectors
-		static bool isoption(const string& str) {
+		static bool isoption(const std::string& str) {
 			bool r = false;
 			if(str == "nrmodels") r = true;
 			else if(str == "modelformat") r = true;
@@ -104,12 +114,9 @@ class InfOptions {
 			else if(str == "printtypes") r = true;
 			return r;
 		}
-		const string& name() const { return _name; }
-
-		const ParseInfo& pi() const { return _pi;	}
-
-		TypedInfArg	get(const string& optname) const;
-
+		const std::string&	name() 	const { return _name; 	}
+		const ParseInfo& 	pi() 	const { return _pi;		}
+		TypedInfArg	get(const std::string& optname) const;
 };
 
 #endif

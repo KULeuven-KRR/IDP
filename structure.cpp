@@ -4,13 +4,18 @@
 	(c) K.U.Leuven
 ************************************/
 
-#include "theory.hpp"
-#include "builtin.hpp"
-#include "common.hpp"
-#include "error.hpp"
+#include "structure.hpp"
+
 #include <iostream>
 #include <algorithm>
 #include <typeinfo>
+
+#include "theory.hpp"
+//#include "builtin.hpp"
+//#include "common.hpp"
+#include "error.hpp"
+
+using namespace std;
 
 /**************
 	Domains

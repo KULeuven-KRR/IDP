@@ -4,12 +4,12 @@
 	(c) K.U.Leuven
 ************************************/
 
-#include <string>
+#include "common.hpp"
+
 #include <limits>
-#include <iostream>
 #include <sstream>
-#include <vector>
 #include <stdlib.h>
+
 using namespace std;
 
 // Extreme numbers

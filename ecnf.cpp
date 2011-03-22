@@ -5,8 +5,13 @@
 ************************************/
 
 #include "ecnf.hpp"
+
 #include <iostream>
 #include <sstream>
+
+#include "structure.hpp"
+
+using namespace std;
 
 /*************************
 	Ground definitions

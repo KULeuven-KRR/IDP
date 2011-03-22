@@ -4,11 +4,16 @@
 	(c) K.U.Leuven
 ************************************/
 
+#include <string>
 #include <typeinfo>
-#include <cstdlib> //contains abs for ints
+#include <cstdlib>
 #include <cmath>
+
 #include "builtin.hpp"
+#include "structure.hpp"
 #include "data.hpp"
+
+using namespace std;
 
 /************************* 
 	Built-in sorts 

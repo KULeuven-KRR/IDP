@@ -6,9 +6,17 @@
 
 %{
 
+#include <utility>
+#include <string>
+#include <vector>
 #include <iostream>
+
 #include "insert.hpp"
 #include "error.hpp"
+#include "namespace.hpp"
+#include "vocabulary.hpp"
+#include "theory.hpp"
+#include "structure.hpp"
 #include "builtin.hpp"
 
 // Lexer
@@ -22,24 +30,24 @@ bool				_wrongarity = false;
 void				addEmpty();
 void				addInt(int,YYLTYPE);
 void				addFloat(double,YYLTYPE);
-void				addString(string*,YYLTYPE);
+void				addString(std::string*,YYLTYPE);
 void				addCompound(compound*,YYLTYPE);
 void				closeRow(YYLTYPE);
 void				closeTable();
 
 // Parsing ASP structures efficiently
-vector<Element>				_currelements;
-vector<FiniteSortTable*>	_currranges;
-vector<ElementType>			_currtypes;
-vector<bool>				_iselement;
-void						closeTuple();
+std::vector<Element>			_currelements;
+std::vector<FiniteSortTable*>	_currranges;
+std::vector<ElementType>		_currtypes;
+std::vector<bool>				_iselement;
+void							closeTuple();
 
 // Errors
 void yyerror(const char* s);
 
 // Common 
-extern string itos(int);
-extern string dtos(double);
+extern std::string itos(int);
+extern std::string dtos(double);
 
 %}
 
@@ -53,7 +61,7 @@ extern string dtos(double);
 	int					nmr;
 	char				chr;
 	double				dou;
-	string*				str;
+	std::string*		str;
 	compound*			cpo;
 
 	Sort*				sor;
@@ -72,18 +80,18 @@ extern string dtos(double);
 	NSTuple*			nst;
 	SetExpr*			set;
 
-	vector<int>*			vint;
-	vector<char>*			vcha;
-	vector<string>*			vstr;
-	vector<Sort*>*			vsor;
-	vector<Variable*>*		vvar;
-	vector<Term*>*			vter;
-	vector<Formula*>*		vfom;
-	vector<Rule*>*			vrul;
-	vector<FTTuple*>*		vftt;
-	vector<TypedElement*>*	vtpe;
+	std::vector<int>*			vint;
+	std::vector<char>*			vcha;
+	std::vector<std::string>*	vstr;
+	std::vector<Sort*>*			vsor;
+	std::vector<Variable*>*		vvar;
+	std::vector<Term*>*			vter;
+	std::vector<Formula*>*		vfom;
+	std::vector<Rule*>*			vrul;
+	std::vector<FTTuple*>*		vftt;
+	std::vector<TypedElement*>*	vtpe;
 
-	vector<pair<Rule*,FixpDef*> >*	vprf;
+	std::vector<std::pair<Rule*,FixpDef*> >*	vprf;
 }
 
 /** Headers  **/
@@ -336,14 +344,14 @@ arit_func_decl	: '-' binary_arit_func_sorts				{ $$ = Insert::function("-/2",*$2
                 | ABS unary_arit_func_sorts					{ $$ = Insert::function("abs/1",*$2,@1); delete($2);	}
 				;
 
-binary_arit_func_sorts	: '(' sort_pointer ',' sort_pointer ')' ':' sort_pointer	{ $$ = new vector<Sort*>(3);
+binary_arit_func_sorts	: '(' sort_pointer ',' sort_pointer ')' ':' sort_pointer	{ $$ = new std::vector<Sort*>(3);
 																					  (*$$)[0] = $2;
 																					  (*$$)[1] = $4;
 																					  (*$$)[2] = $7;
 																					}
 						;
 
-unary_arit_func_sorts	: '(' sort_pointer ')' ':' sort_pointer	{ $$ = new vector<Sort*>(2);
+unary_arit_func_sorts	: '(' sort_pointer ')' ':' sort_pointer	{ $$ = new std::vector<Sort*>(2);
 																  (*$$)[0] = $2; (*$$)[1] = $5;
 																}
 						;
@@ -368,7 +376,7 @@ intern_pointer		: pointer_name '[' sort_pointer_tuple ']'	{ $$ = Insert::internp
 					;
 
 pointer_name		: pointer_name "::" identifier	{ $$ = $1; $$->push_back(*$3); 		}
-					| identifier					{ $$ = new vector<string>(1,*$1);	}
+					| identifier					{ $$ = new std::vector<std::string>(1,*$1);	}
 					;
 
 /*************
@@ -406,7 +414,7 @@ definition	: '{' rules '}'		{ $$ = Insert::definition(*$2); delete($2);	}
 			;
 
 rules		: rules rule '.'	{ $$ = $1; $1->push_back($2);	}				
-			| rule '.'			{ $$ = new vector<Rule*>(1,$1);	}			
+			| rule '.'			{ $$ = new std::vector<Rule*>(1,$1);	}			
 			;
 
 rule		: '!' variables ':' head "<-" formula	{ $$ = Insert::rule(*$2,$4,$6,@1); delete($2);	}
@@ -430,10 +438,10 @@ fixpdef		: LFD '[' fd_rules ']'		{ $$ = Insert::fixpdef(true,*$3); delete($3);	}
 			| GFD '[' fd_rules ']'		{ $$ = Insert::fixpdef(false,*$3); delete($3);	}
 			;
 
-fd_rules	: fd_rules rule	'.'			{ $$ = $1; $$->push_back(pair<Rule*,FixpDef*>($2,0));					}
-			| fd_rules fixpdef			{ $$ = $1; $$->push_back(pair<Rule*,FixpDef*>(0,$2));					}
-			| rule '.'					{ $$ = new vector<pair<Rule*,FixpDef*> >(1,pair<Rule*,FixpDef*>($1,0));	}
-			| fixpdef					{ $$ = new vector<pair<Rule*,FixpDef*> >(1,pair<Rule*,FixpDef*>(0,$1));	}
+fd_rules	: fd_rules rule	'.'			{ $$ = $1; $$->push_back(std::pair<Rule*,FixpDef*>($2,0));					}
+			| fd_rules fixpdef			{ $$ = $1; $$->push_back(std::pair<Rule*,FixpDef*>(0,$2));					}
+			| rule '.'					{ $$ = new std::vector<std::pair<Rule*,FixpDef*> >(1,std::pair<Rule*,FixpDef*>($1,0));	}
+			| fixpdef					{ $$ = new std::vector<std::pair<Rule*,FixpDef*> >(1,std::pair<Rule*,FixpDef*>(0,$1));	}
 			;	
 
 /** Formulas **/
@@ -485,7 +493,7 @@ eq_chain	: eq_chain '='  term	{ $$ = Insert::eqchain('=',true,$1,$3,@1);	}
 			;
 
 variables   : variables variable	{ $$ = $1; $$->push_back($2);		}		
-            | variable				{ $$ = new vector<Variable*>(1,$1);	}
+            | variable				{ $$ = new std::vector<Variable*>(1,$1);	}
 			;
 
 variable	: identifier							{ $$ = Insert::quantifiedvar(*$1,@1);		}
@@ -624,7 +632,7 @@ elements		: elements ';' charrange			{ $$ = $1->add((*$3)[0],(*$3)[1]); delete($
 
 strelement		: identifier	{ $$ = $1;	}
 				| STRINGCONS	{ $$ = $1;	}
-				| CHARCONS		{ $$ = IDPointer(string(1,$1));	}
+				| CHARCONS		{ $$ = IDPointer(std::string(1,$1));	}
 				;
 
 /** Interpretations with arity not 1 **/
@@ -657,7 +665,7 @@ ptuple			: ptuple ',' pelement
 
 pelement		: integer		{ addInt($1,@1);											}
 				| identifier	{ addString($1,@1);											}
-				| CHARCONS		{ string* str = IDPointer(string(1,$1)); addString(str,@1);	}
+				| CHARCONS		{ std::string* str = IDPointer(std::string(1,$1)); addString(str,@1);	}
 				| STRINGCONS	{ addString($1,@1);											}
 				| floatnr		{ addFloat($1,@1);											}
 				| compound		{ addCompound($1,@1);										}
@@ -723,7 +731,7 @@ threefunc_inter	: intern_pointer '<' identifier '>' '=' '{' ftuples_es '}'	{ if(
 
 /** Ranges **/
 
-intrange	: integer ".." integer			{ $$ = new vector<int>(2,$1); 
+intrange	: integer ".." integer			{ $$ = new std::vector<int>(2,$1); 
 											  if($1 > $3) { 
 												  ParseInfo pi(@1.first_line,@1.first_column,Insert::currfile());
 												  Error::invalidrange($1,$3,pi); 
@@ -732,14 +740,14 @@ intrange	: integer ".." integer			{ $$ = new vector<int>(2,$1);
 											}
 			;
 
-charrange	: CHARACTER ".." CHARACTER		{ $$ = new vector<char>(2,$1); 
+charrange	: CHARACTER ".." CHARACTER		{ $$ = new std::vector<char>(2,$1); 
 											  if($1 > $3) { 
 												  ParseInfo pi(@1.first_line,@1.first_column,Insert::currfile());
 												  Error::invalidrange($1,$3,pi); 
 											  }
 											  else { (*$$)[1] = $3; }
 											}	
-			| CHARCONS ".." CHARCONS		{ $$ = new vector<char>(2,$1); 
+			| CHARCONS ".." CHARCONS		{ $$ = new std::vector<char>(2,$1); 
 											  if($1 > $3) { 
 												  ParseInfo pi(@1.first_line,@1.first_column,Insert::currfile());
 												  Error::invalidrange($1,$3,pi); 
@@ -763,13 +771,13 @@ compound_args	: compound_args ',' floatnr		{ TypedElement* t = new TypedElement(
 				| compound_args ',' compound	{ TypedElement* t = new TypedElement($3);	
 												  $$->push_back(t);							}
 				| floatnr						{ TypedElement* t = new TypedElement($1);
-												  $$ = new vector<TypedElement*>(1,t);		}
+												  $$ = new std::vector<TypedElement*>(1,t);		}
 				| integer						{ TypedElement* t = new TypedElement($1);
-												  $$ = new vector<TypedElement*>(1,t);		}
+												  $$ = new std::vector<TypedElement*>(1,t);		}
 				| strelement					{ TypedElement* t = new TypedElement($1);
-												  $$ = new vector<TypedElement*>(1,t);		}
+												  $$ = new std::vector<TypedElement*>(1,t);		}
 				| compound						{ TypedElement* t = new TypedElement($1);
-												  $$ = new vector<TypedElement*>(1,t);		}
+												  $$ = new std::vector<TypedElement*>(1,t);		}
 				;
 	         
 /** Terminals **/
@@ -783,9 +791,9 @@ floatnr			: FLNUMBER			{ $$ = $1;		}
 				;
 
 identifier		: IDENTIFIER	{ $$ = $1;	}
-				| CHARACTER		{ $$ = IDPointer(string(1,$1)); } 
-				| VOCABULARY	{ $$ = IDPointer(string("vocabulary"));	}
-				| NAMESPACE		{ $$ = IDPointer(string("namespace"));	}
+				| CHARACTER		{ $$ = IDPointer(std::string(1,$1)); } 
+				| VOCABULARY	{ $$ = IDPointer(std::string("vocabulary"));	}
+				| NAMESPACE		{ $$ = IDPointer(std::string("namespace"));	}
 				;
 
 /********************
@@ -881,25 +889,25 @@ domain_element	: strelement	{ Element e; e._string = $1;
 /** Tuples **/
 
 term_tuple		: term_tuple ',' term						{ $$ = $1; $$->push_back($3);		}	
-				| term										{ $$ = new vector<Term*>(1,$1);		}	
+				| term										{ $$ = new std::vector<Term*>(1,$1);		}	
 				;
 
-sort_pointer_tuple	: /* empty */							{ $$ = new vector<Sort*>(0);		}
+sort_pointer_tuple	: /* empty */							{ $$ = new std::vector<Sort*>(0);		}
 					| nonempty_spt							{ $$ = $1;							}
 					;
 					
 nonempty_spt		: sort_pointer_tuple ',' sort_pointer	{ $$ = $1; $$->push_back($3);		}
-					| sort_pointer							{ $$ = new vector<Sort*>(1,$1);		}
+					| sort_pointer							{ $$ = new std::vector<Sort*>(1,$1);		}
 					;
 
 /** Lists **/
 
 form_list		: form_list ';' formula						{ $$ = $1; $$->push_back($3);		}
-				| formula									{ $$ = new vector<Formula*>(1,$1);	}		
+				| formula									{ $$ = new std::vector<Formula*>(1,$1);	}		
 				;
 
 form_term_list	: form_term_list ';' form_term_tuple		{ $$ = $1; $$->push_back($3);		}
-				| form_term_tuple							{ $$ = new vector<FTTuple*>(1,$1);	}
+				| form_term_tuple							{ $$ = new std::vector<FTTuple*>(1,$1);	}
 				;
 
 form_term_tuple	: '(' formula ',' term ')'					{ $$ = Insert::fttuple($2,$4);		}
@@ -921,8 +929,8 @@ proc_sig			: '(' ')'		{ Insert::luacloseargs();	}
 
 lua_block			: /* empty */
 					| lua_block identifier		{ Insert::luacode(*$2);	}
-					| lua_block STRINGCONS		{ string str = string("\"") + *$2 + string("\""); Insert::luacode(str);	}
-					| lua_block CHARCONS		{ string str = string("'") + $2 + string("'"); Insert::luacode(str);	}
+					| lua_block STRINGCONS		{ std::string str = std::string("\"") + *$2 + std::string("\""); Insert::luacode(str);	}
+					| lua_block CHARCONS		{ std::string str = std::string("'") + $2 + std::string("'"); Insert::luacode(str);	}
 					| lua_block INTEGER			{ Insert::luacode(itos($2));							}
 					| lua_block FLNUMBER		{ Insert::luacode(dtos($2));							}
 					| lua_block pointer_name "::" identifier	{ $2->push_back(*$4); Insert::luacode(*$2); delete($2);	}
@@ -993,13 +1001,13 @@ void closeTuple() {
 }
 
 void addEmpty() {
-	if(!_currtable) _currtable = new FinitePredTable(vector<ElementType>(0));
+	if(!_currtable) _currtable = new FinitePredTable(std::vector<ElementType>(0));
 	_currtable->addRow();
 }
 
 void addInt(int n, YYLTYPE l) {
 	if(!_currtable) // we start parsing a new table
-		_currtable = new FinitePredTable(vector<ElementType>(0)); 
+		_currtable = new FinitePredTable(std::vector<ElementType>(0)); 
 	if(_currrow) {	// the table already contains at least one row
 		if(!_currcol)	// start parsing a new row 
 			_currtable->addRow();
@@ -1037,9 +1045,9 @@ void addInt(int n, YYLTYPE l) {
 	_currcol++;
 }
 
-void addString(string* s, YYLTYPE l) {
+void addString(std::string* s, YYLTYPE l) {
 	if(!_currtable) // we start parsing a new table
-		_currtable = new FinitePredTable(vector<ElementType>(0)); 
+		_currtable = new FinitePredTable(std::vector<ElementType>(0)); 
 	if(_currrow) {	// the table already contains at least one row
 		if(!_currcol)	// start parsing a new row 
 			_currtable->addRow();
@@ -1078,7 +1086,7 @@ void addString(string* s, YYLTYPE l) {
 
 void addCompound(compound* s, YYLTYPE l) {
 	if(!_currtable) // we start parsing a new table
-		_currtable = new FinitePredTable(vector<ElementType>(0)); 
+		_currtable = new FinitePredTable(std::vector<ElementType>(0)); 
 	if(_currrow) {	// the table already contains at least one row
 		if(!_currcol)	// start parsing a new row 
 			_currtable->addRow();
@@ -1112,7 +1120,7 @@ void addCompound(compound* s, YYLTYPE l) {
 
 void addFloat(double d, YYLTYPE l) {
 	if(!_currtable) // we start parsing a new table
-		_currtable = new FinitePredTable(vector<ElementType>(0)); 
+		_currtable = new FinitePredTable(std::vector<ElementType>(0)); 
 	if(_currrow) {	// the table already contains at least one row
 		if(!_currcol)	// start parsing a new row 
 			_currtable->addRow();
@@ -1156,5 +1164,5 @@ void addFloat(double d, YYLTYPE l) {
 void yyerror(const char* s) {
 	ParseInfo pi(yylloc.first_line,yylloc.first_column,Insert::currfile());
 	Error::error(pi);
-	cerr << s << endl;
+	std::cerr << s << std::endl;
 }

@@ -4,12 +4,18 @@
 	(c) K.U.Leuven
 ************************************/
 
-#include "data.hpp"
 #include "namespace.hpp"
+
+#include <iostream>
+
+#include "structure.hpp"
+#include "theory.hpp"
+#include "data.hpp"
 #include "execute.hpp"
 #include "options.hpp"
 #include "builtin.hpp"
-#include <iostream>
+
+using namespace std;
 
 /** Global namespace **/
 
@@ -49,9 +55,14 @@ Namespace::~Namespace() {
 	for(map<string,LuaProcedure*>::iterator it = _procedures.begin(); it != _procedures.end(); ++it) delete(it->second);
 }
 
-void Namespace::add(LuaProcedure* l) { 
-	_procedures[l->name()] = l; _procs.push_back(l);
-}
+/** Mutators **/
+//TODO make inline?
+void Namespace::add(Vocabulary* v) 			{ _vocabularies[v->name()] = v;	_vocs.push_back(v);		}
+void Namespace::add(Namespace* n)			{ _subspaces[n->name()] = n; _subs.push_back(n);		}
+void Namespace::add(AbstractStructure* s)	{ _structures[s->name()] = s; _structs.push_back(s);	}
+void Namespace::add(AbstractTheory* t)		{ _theories[t->name()] = t; _theos.push_back(t);		}
+void Namespace::add(InfOptions* o)			{ _options[o->_name] = o; _opts.push_back(o);			}
+void Namespace::add(LuaProcedure* l)		{ _procedures[l->name()] = l; _procs.push_back(l);		}
 
 /** Find subparts **/
 

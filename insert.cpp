@@ -4,17 +4,25 @@
 	(c) K.U.Leuven
 ************************************/
 
-#include "data.hpp"
-#include "namespace.hpp"
-#include "execute.hpp"
-#include "error.hpp"
-#include "visitor.hpp"
-#include "insert.hpp"
-#include "parse.h"
-#include "builtin.hpp"
 #include <iostream>
 #include <list>
 #include <set>
+
+#include "insert.hpp"
+#include "namespace.hpp"
+#include "vocabulary.hpp"
+#include "theory.hpp"
+#include "structure.hpp"
+#include "builtin.hpp"
+#include "term.hpp"
+#include "options.hpp"
+#include "execute.hpp"
+#include "data.hpp"
+#include "error.hpp"
+#include "visitor.hpp"
+#include "parse.h"
+
+using namespace std;
 
 /********************
 	Sort checking

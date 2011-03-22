@@ -7,28 +7,34 @@
 #ifndef TERM_HPP
 #define TERM_HPP
 
-#include "vocabulary.hpp"
+#include <vector>
+#include <string>
+#include <map>
+#include <cassert>
+
+#include "common.hpp"
+#include "vocabulary.hpp" //FIXME: need this include for ParseInfo
 #include "visitor.hpp"
+
+class Variable;
+class FiniteSortTable;
 
 /*******************************
 	Abstract base class term
 *******************************/
 
 class Term {
-
 	protected:
-
-		vector<Variable*>	_fvars;	// Free variables of the term
-		ParseInfo			_pi;	// the place where the term was parsed
+		std::vector<Variable*>	_fvars;	// Free variables of the term
+		ParseInfo				_pi;	// the place where the term was parsed
 
 	public:
-
 		// Constructors
 		Term(const ParseInfo& pi) : _pi(pi) { }
 
 		// Virtual constructors
-		virtual Term* clone()									const = 0;	// create a copy of the term while keeping the free variables
-		virtual Term* clone(const map<Variable*,Variable*>&)	const = 0;	// create a copy of the term and substitute the
+		virtual Term* clone()										const = 0;	// create a copy of the term while keeping the free variables
+		virtual Term* clone(const std::map<Variable*,Variable*>&)	const = 0;	// create a copy of the term and substitute the
 																			// free variables according to the given map
 
 		// Destructor
@@ -59,8 +65,7 @@ class Term {
 		virtual Term*	accept(MutatingVisitor*)	= 0;
 
 		// Debugging
-		virtual	string	to_string()	const = 0;	
-
+		virtual	std::string	to_string()	const = 0;	
 };
 
 
@@ -69,17 +74,15 @@ class Term {
 *******************************/
 
 class VarTerm : public Term {
-	
 	private:
 		Variable* _var;	// the variable of the term
 
 	public:
-
 		// Constructors
 		VarTerm(Variable* v, const ParseInfo& pi);
 
-		VarTerm* clone()								const;
-		VarTerm* clone(const map<Variable*,Variable*>&)	const;
+		VarTerm* clone()										const;
+		VarTerm* clone(const std::map<Variable*,Variable*>&)	const;
 
 		// Destructor
 		void recursiveDelete() { delete(this);	}
@@ -106,8 +109,7 @@ class VarTerm : public Term {
 		Term*	accept(MutatingVisitor* v);
 
 		// Output
-		string to_string()	const { return _var->to_string();	}
-
+		std::string to_string()	const { return _var->to_string();	}
 };
 
 
@@ -117,19 +119,16 @@ class VarTerm : public Term {
 ***********************************************************************/
 
 class FuncTerm : public Term {
-	
 	private:
-
-		Function*		_func;		// the function
-		vector<Term*>	_args;		// the arguments of the function
+		Function*			_func;		// the function
+		std::vector<Term*>	_args;		// the arguments of the function
 
 	public:
-
 		// Constructors
-		FuncTerm(Function* f, const vector<Term*>& a, const ParseInfo& pi);
+		FuncTerm(Function* f, const std::vector<Term*>& a, const ParseInfo& pi);
 
-		FuncTerm* clone()									const;
-		FuncTerm* clone(const map<Variable*,Variable*>&)	const;
+		FuncTerm* clone()										const;
+		FuncTerm* clone(const std::map<Variable*,Variable*>&)	const;
 
 		// Destructor
 		void recursiveDelete();
@@ -141,7 +140,7 @@ class FuncTerm : public Term {
 		// Inspectors
 		Sort*			sort()					const	{ return _func->outsort();	}
 		Function*		func()					const	{ return _func;				}
-		const vector<Term*>&	args()			const	{ return _args;				}
+		const std::vector<Term*>&	args()		const	{ return _args;				}
 		Term*			arg(unsigned int n)		const	{ return _args[n];			}
 		Formula*		subform(unsigned int)	const	{ assert(false); return 0;	}
 		Term*			subterm(unsigned int n)	const	{ return _args[n];			}
@@ -157,8 +156,7 @@ class FuncTerm : public Term {
 		Term*	accept(MutatingVisitor* v);
 
 		// Debugging
-		string to_string() const;
-
+		std::string to_string() const;
 };
 
 /**********************
@@ -166,21 +164,18 @@ class FuncTerm : public Term {
 **********************/
 
 class DomainTerm : public Term {
-
 	private:
 		Sort*		_sort;		// The sort of the domain element
 		ElementType	_type;		// Whether the term is an int, double, string, or compound
 		Element		_value;		// The value of the domain element
-		
 
 	public:
-
 		// Constructors
 		DomainTerm(Sort* s, ElementType t, Element v, const ParseInfo& pi) : 
 			Term(pi), _sort(s), _type(t), _value(v) { assert(s); setfvars(); }
 
-		DomainTerm* clone()								const;
-		DomainTerm* clone(const map<Variable*,Variable*>&)	const;
+		DomainTerm* clone()										const;
+		DomainTerm* clone(const std::map<Variable*,Variable*>&)	const;
 
 		// Destructor
 		void recursiveDelete();
@@ -206,8 +201,7 @@ class DomainTerm : public Term {
 		Term*	accept(MutatingVisitor* v);
 
 		// Debugging
-		string	to_string()	const;	
-
+		std::string	to_string()	const;	
 };
 
 
@@ -217,19 +211,16 @@ class DomainTerm : public Term {
 
 /** Abstract base class for set expressions **/
 class SetExpr {
-
 	protected:
-		
-		vector<Variable*>	_fvars;	// The free variables of the set expression
-		ParseInfo			_pi;	// the place where the set was parsed
+		std::vector<Variable*>	_fvars;	// The free variables of the set expression
+		ParseInfo				_pi;	// the place where the set was parsed
 
 	public:
-
 		// Constructors
 		SetExpr(const ParseInfo& pi) : _pi(pi) { }
 
-		virtual SetExpr* clone()								const = 0;
-		virtual SetExpr* clone(const map<Variable*,Variable*>&)	const = 0;
+		virtual SetExpr* clone()										const = 0;
+		virtual SetExpr* clone(const std::map<Variable*,Variable*>&)	const = 0;
 
 		// Destructor
 		virtual void recursiveDelete() = 0;	// Delete the set and its subformulas and subterms
@@ -254,26 +245,22 @@ class SetExpr {
 		virtual SetExpr*	accept(MutatingVisitor* v) = 0;
 
 		// Debugging
-		virtual string	to_string()	const = 0;
-
+		virtual std::string	to_string()	const = 0;
 };
 
 /** Set expression of the form [ (phi1,w1); ... ; (phin,wn) ] **/
 class EnumSetExpr : public SetExpr {
-
 	private:
-		
-		vector<Formula*>	_subf;		// the subformulas
-		vector<Term*>		_weights;	// the associated weights
+		std::vector<Formula*>	_subf;		// the subformulas
+		std::vector<Term*>		_weights;	// the associated weights
 
 	public:
-
 		// Constructors
-		EnumSetExpr(const vector<Formula*>& s, const vector<Term*>& w, const ParseInfo& pi) : 
+		EnumSetExpr(const std::vector<Formula*>& s, const std::vector<Term*>& w, const ParseInfo& pi) : 
 			SetExpr(pi), _subf(s), _weights(w) { setfvars(); }
 
 		EnumSetExpr* clone()								const;
-		EnumSetExpr* clone(const map<Variable*,Variable*>&)	const;
+		EnumSetExpr* clone(const std::map<Variable*,Variable*>&)	const;
 
 		// Destructor
 		void recursiveDelete();
@@ -296,26 +283,22 @@ class EnumSetExpr : public SetExpr {
 		SetExpr*	accept(MutatingVisitor* v);
 
 		// Debugging
-		string	to_string()	const;	
-
+		std::string	to_string()	const;	
 };
 
 /** Set expression of the form { x1 ... xn : phi } **/
 class QuantSetExpr : public SetExpr {
-
 	private:
-
-		Formula*			_subf;	// the direct subformula
-		vector<Variable*>	_vars;	// the quantified variables
+		Formula*				_subf;	// the direct subformula
+		std::vector<Variable*>	_vars;	// the quantified variables
 
 	public:
-
 		// Constructors
-		QuantSetExpr(const vector<Variable*>& v, Formula* s, const ParseInfo& pi) : 
+		QuantSetExpr(const std::vector<Variable*>& v, Formula* s, const ParseInfo& pi) : 
 			SetExpr(pi), _subf(s), _vars(v) { setfvars(); }
 
 		QuantSetExpr* clone()									const;
-		QuantSetExpr* clone(const map<Variable*,Variable*>&)	const;
+		QuantSetExpr* clone(const std::map<Variable*,Variable*>&)	const;
 
 		// Destructor
 		void recursiveDelete();
@@ -332,15 +315,14 @@ class QuantSetExpr : public SetExpr {
 		Variable*		qvar(unsigned int n)	const	{ return _vars[n];			}
 		Formula*		subf()					const	{ return _subf;				}
 		Sort*			firstargsort()			const;
-		const vector<Variable*>&	qvars()		const	{ return _vars;				}
+		const std::vector<Variable*>&	qvars()	const	{ return _vars;				}
 
 		// Visitor
 		void		accept(Visitor* v) const;
 		SetExpr*	accept(MutatingVisitor* v);
 
 		// Debugging
-		string	to_string()	const;	
-
+		std::string	to_string()	const;	
 };
 
 class AbstractStructure;
@@ -349,28 +331,23 @@ namespace SetUtils {
 }
 
 /** Aggregate types **/
-enum AggType { AGGCARD, AGGSUM, AGGPROD, AGGMIN, AGGMAX };
-
 namespace AggUtils {
-	double compute(AggType,const vector<double>&);	// apply the aggregate on the given set of doubles 
+	double compute(AggType,const std::vector<double>&);	// apply the aggregate on the given set of doubles 
 }
 
 /** Aggregate term **/
 class AggTerm : public Term {
-
 	private:
-		
 		SetExpr*	_set;
 		AggType		_type;
 
 	public:
-
 		// Constructors
 		AggTerm(SetExpr* s, AggType t, const ParseInfo& pi) : 
 			Term(pi), _set(s), _type(t) { setfvars(); }
 
-		AggTerm* clone()								const;
-		AggTerm* clone(const map<Variable*,Variable*>&)	const;
+		AggTerm* clone()										const;
+		AggTerm* clone(const std::map<Variable*,Variable*>&)	const;
 
 		// Destructor
 		void recursiveDelete() { _set->recursiveDelete(); delete(this);	}
@@ -396,8 +373,7 @@ class AggTerm : public Term {
 		Term*	accept(MutatingVisitor* v);
 
 		// Debugging
-		string	to_string()	const;	
-
+		std::string	to_string()	const;	
 };
 
 /***********************
@@ -405,15 +381,14 @@ class AggTerm : public Term {
 ***********************/
 
 class TermEvaluator : public Visitor {
-
 	private:
-		FiniteSortTable*			_returnvalue;
-		AbstractStructure*			_structure;
-		map<Variable*,TypedElement>	_varmapping;
+		FiniteSortTable*					_returnvalue;
+		AbstractStructure*					_structure;
+		std::map<Variable*,TypedElement>	_varmapping;
 
 	public:
-		TermEvaluator(AbstractStructure* s,const map<Variable*,TypedElement> m);
-		TermEvaluator(Term* t,AbstractStructure* s,const map<Variable*,TypedElement> m);
+		TermEvaluator(AbstractStructure* s,const std::map<Variable*,TypedElement> m);
+		TermEvaluator(Term* t,AbstractStructure* s,const std::map<Variable*,TypedElement> m);
 
 		FiniteSortTable* returnvalue()	{ return _returnvalue;	}
 
@@ -421,7 +396,6 @@ class TermEvaluator : public Visitor {
 		void visit(const FuncTerm* ft);
 		void visit(const DomainTerm* dt);
 		void visit(const AggTerm* at);
-		
 };
 
 namespace TermUtils {
@@ -437,15 +411,13 @@ namespace TermUtils {
 	 *	- all bounded variables in the term range over a finite domain in the given structure
 	 *	- all free variables of the term are interpreted by the given map
 	 */
-	FiniteSortTable*	evaluate(Term*,AbstractStructure*,const map<Variable*,TypedElement>&);	
+	FiniteSortTable*	evaluate(Term*,AbstractStructure*,const std::map<Variable*,TypedElement>&);	
 
 	/**
 	 * DESCRIPTION
 	 * 	Make a vector of fresh variable terms.
 	 */ 
-	vector<Term*> 		makeNewVarTerms(const vector<Variable*>&);
+	std::vector<Term*> 		makeNewVarTerms(const std::vector<Variable*>&);
 }
-
-
 
 #endif 

@@ -8,18 +8,18 @@
 #define DATA_H
 
 #include <string>
+#include <vector>
+#include <map>
 #include <tr1/unordered_map>
 #include <tr1/memory>
-#include <map>
-#include "vocabulary.hpp"
-#include "options.hpp"
-using namespace std;
-using namespace std::tr1;
 
-typedef unordered_map<string,string*>			MSSP;
-typedef map<vector<TypedElement>,compound*>		MVTC;
-typedef map<Function*,MVTC>						MFMVTC;
+#include "common.hpp"
 
+typedef std::tr1::unordered_map<std::string,std::string*>	MSSP;
+typedef std::map<std::vector<TypedElement>,compound*>		MVTC;
+typedef std::map<Function*,MVTC>							MFMVTC;
+
+class CLOptions;
 extern CLOptions _cloptions;
 
 /******************************************
@@ -28,16 +28,16 @@ extern CLOptions _cloptions;
 
 class DomainData {
 	private:
-		static DomainData*	_instance;
-		MSSP				_sharedstrings;			// map a string to its shared pointer
-		MFMVTC				_sharedcompounds;		// map a compound to its shared pointer
-		vector<compound*>	_sharedintcompounds;
+		static DomainData*		_instance;
+		MSSP					_sharedstrings;			// map a string to its shared pointer
+		MFMVTC					_sharedcompounds;		// map a compound to its shared pointer
+		std::vector<compound*>	_sharedintcompounds;
 		DomainData(unsigned int n = 1001): _sharedintcompounds(n,0) { }
 	public:
 		static DomainData*	instance();
 		~DomainData();
-		string*		stringpointer(const string&);							// get the shared pointer of a string
-		compound*	compoundpointer(Function*,const vector<TypedElement>&);	// get the shared pointer of a compound
+		std::string*	stringpointer(const std::string&);								// get the shared pointer of a string
+		compound*		compoundpointer(Function*,const std::vector<TypedElement>&);	// get the shared pointer of a compound
 };
 
 #endif

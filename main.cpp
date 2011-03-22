@@ -4,6 +4,10 @@
 	(c) K.U.Leuven
 ************************************/
 
+#include <cstdio>
+#include <iostream>
+#include <cstdlib>
+
 #include "data.hpp"
 #include "insert.hpp"
 #include "builtin.hpp"
@@ -14,10 +18,9 @@
 #include "options.hpp"
 #include "clconst.hpp"
 #include "lua.hpp"
-#include <cstdio>
-#include <iostream>
-#include <cstdlib>
 #include "interactive.hpp"
+
+using namespace std;
 
 // Parser stuff
 extern int yyparse();

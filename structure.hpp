@@ -7,22 +7,25 @@
 #ifndef STRUCTURE_HPP
 #define STRUCTURE_HPP
 
-#include "vocabulary.hpp"
+#include <vector>
+#include <set>
+#include <map>
+#include <string>
+
+#include "vocabulary.hpp" //FIXME: need include for ParseInfo
 #include "visitor.hpp"
 
-typedef vector<vector<Element> > VVE;
+typedef std::vector<std::vector<Element> > VVE;
 
 /*************************************
 	Interpretations for predicates
 *************************************/
 
 class PredTable {
-
 	private:
-		unsigned int					_nrofrefs;	// Number of references to this table
+		unsigned int	_nrofrefs;	// Number of references to this table
 
 	public:
-		
 		// Constructors
 		PredTable() : _nrofrefs(0) { }
 		virtual PredTable* clone() const = 0;
@@ -34,46 +37,43 @@ class PredTable {
 		virtual void		sortunique() = 0;	// Sort and remove duplicates
 				void		removeref()	{ --_nrofrefs; if(!_nrofrefs) delete(this);	}
 				void		addref()	{ ++_nrofrefs;								}
-		virtual PredTable*	add(const vector<TypedElement>& tuple) = 0;
-		virtual PredTable*	remove(const vector<TypedElement>& tuple) = 0;	// NOTE: Expensive operation!
+		virtual PredTable*	add(const std::vector<TypedElement>& tuple) = 0;
+		virtual PredTable*	remove(const std::vector<TypedElement>& tuple) = 0;	// NOTE: Expensive operation!
 
 		// Inspectors
-				unsigned int		nrofrefs()				const { return _nrofrefs;	}
-		virtual bool				finite()				const = 0;	// true iff the table is finite
-		virtual	bool				empty()					const = 0;	// true iff the table is empty
-		virtual	unsigned int		arity()					const = 0;	// the number of columns in the table
-		virtual	ElementType			type(unsigned int n)	const = 0;	// the type of elements in the n'th column
-				vector<ElementType>	types()					const;		// all types of the table
+				unsigned int				nrofrefs()				const { return _nrofrefs;	}
+		virtual bool						finite()				const = 0;	// true iff the table is finite
+		virtual	bool						empty()					const = 0;	// true iff the table is empty
+		virtual	unsigned int				arity()					const = 0;	// the number of columns in the table
+		virtual	ElementType					type(unsigned int n)	const = 0;	// the type of elements in the n'th column
+				std::vector<ElementType>	types()					const;		// all types of the table
 
 		// Check if the table contains a given tuple
 		//	precondition: the table is sorted and contains no duplicates
-		virtual	bool	contains(const vector<Element>&)		const = 0;	// true iff the table contains the tuple
-																			// precondition: the given tuple has the same
-																			// types as the types of the table
-				bool	contains(const vector<TypedElement>&)	const;		// true iff the table contains the tuple
-																			// works also if the types of the tuple do not
-																			// match the types of the table
-				bool	contains(const vector<TypedElement*>&)	const;
-		virtual	bool	contains(const vector<compound*>&)		const;
+		virtual	bool	contains(const std::vector<Element>&)		const = 0;	// true iff the table contains the tuple
+																				// precondition: the given tuple has the same
+																				// types as the types of the table
+				bool	contains(const std::vector<TypedElement>&)	const;		// true iff the table contains the tuple
+																				// works also if the types of the tuple do not
+																				// match the types of the table
+				bool	contains(const std::vector<TypedElement*>&)	const;
+		virtual	bool	contains(const std::vector<compound*>&)		const;
 
 		// Inspectors for finite tables
-		virtual	unsigned int		size()									const = 0;	// the size of the table
-		virtual	vector<Element>		tuple(unsigned int n)					const = 0;	// the n'th tuple
-		virtual Element				element(unsigned int r,unsigned int c)	const = 0;	// the element at position (r,c)
-				domelement			delement(unsigned int r,unsigned int c)	const;
+		virtual	unsigned int			size()									const = 0;	// the size of the table
+		virtual	std::vector<Element>	tuple(unsigned int n)					const = 0;	// the n'th tuple
+		virtual Element					element(unsigned int r,unsigned int c)	const = 0;	// the element at position (r,c)
+				domelement				delement(unsigned int r,unsigned int c)	const;
 
 		// Debugging
-		virtual string to_string(unsigned int spaces = 0)	const = 0;
-
+		virtual std::string to_string(unsigned int spaces = 0)	const = 0;
 };
 
 class CopyPredTable : public PredTable {
-
 	private:
 		PredTable*	_table;
 
 	public:
-		
 		// Constructors
 		CopyPredTable(PredTable*);
 		CopyPredTable* clone() const { return new CopyPredTable(_table);	}
@@ -82,29 +82,28 @@ class CopyPredTable : public PredTable {
 		~CopyPredTable() { _table->removeref(); }
 
 		// Mutators
-		void	sortunique() { _table->sortunique();	}
-		PredTable*	add(const vector<TypedElement>& tuple);
-		PredTable*	remove(const vector<TypedElement>& tuple);
+		void		sortunique() { _table->sortunique();	}
+		PredTable*	add(const std::vector<TypedElement>& tuple);
+		PredTable*	remove(const std::vector<TypedElement>& tuple);
 
 		// Inspectors
-		PredTable*			table()					const { return _table;				}
-		bool				finite()				const { return _table->finite();	} 
-		bool				empty()					const { return _table->empty();		} 
-		unsigned int		arity()					const { return _table->arity();		} 
-		ElementType			type(unsigned int n)	const { return _table->type(n);		} 
+		PredTable*		table()					const { return _table;				}
+		bool			finite()				const { return _table->finite();	} 
+		bool			empty()					const { return _table->empty();		} 
+		unsigned int	arity()					const { return _table->arity();		} 
+		ElementType		type(unsigned int n)	const { return _table->type(n);		} 
 
 		// Check if the table contains a given tuple
-		bool	contains(const vector<Element>& ve)		const { return _table->contains(ve);	} 
-		bool	contains(const vector<compound*>& vd)	const { return _table->contains(vd);	}
+		bool	contains(const std::vector<Element>& ve)	const { return _table->contains(ve);	} 
+		bool	contains(const std::vector<compound*>& vd)	const { return _table->contains(vd);	}
 
 		// Inspectors for finite tables
-		unsigned int		size()									const { return _table->size();			}	 
-		vector<Element>		tuple(unsigned int n)					const { return _table->tuple(n);		} 
-		Element				element(unsigned int r,unsigned int c)	const { return _table->element(r,c);	} 
+		unsigned int			size()									const { return _table->size();			}	 
+		std::vector<Element>	tuple(unsigned int n)					const { return _table->tuple(n);		} 
+		Element					element(unsigned int r,unsigned int c)	const { return _table->element(r,c);	} 
 
 		// Debugging
-		string to_string(unsigned int spaces = 0) const { return _table->to_string(spaces);	} 
-
+		std::string to_string(unsigned int spaces = 0) const { return _table->to_string(spaces);	} 
 };
 
 
@@ -115,9 +114,7 @@ class CopyPredTable : public PredTable {
 /** Abstract base class **/
 
 class SortTable : public PredTable {
-	
 	public:
-
 		// Constructors
 		SortTable() : PredTable() { }
 		virtual SortTable* clone() const = 0;
@@ -127,8 +124,8 @@ class SortTable : public PredTable {
 
 		// Mutators
 		virtual void sortunique() = 0; 
-		virtual SortTable*	add(const vector<TypedElement>& tuple) = 0;
-		virtual SortTable*	remove(const vector<TypedElement>& tuple) = 0;
+		virtual SortTable*	add(const std::vector<TypedElement>& tuple) = 0;
+		virtual SortTable*	remove(const std::vector<TypedElement>& tuple) = 0;
 
 		// Inspectors
 		virtual bool			finite()				const = 0;	// Return true iff the size of the table is finite
@@ -139,43 +136,40 @@ class SortTable : public PredTable {
 
 		// Check if the table contains a given element
 		//	precondition: the table is sorted and contains no duplicates
-				bool	contains(const vector<Element>& ve)			const { return contains(ve[0]);	}
-				bool	contains(const vector<TypedElement>& ve)	const { return contains(ve[0]);	}	
-		virtual	bool	contains(string*)							const = 0;	// true iff the table contains the string.
-		virtual bool	contains(int)								const = 0;	// true iff the table contains the integer
-		virtual bool	contains(double)							const = 0;	// true iff the table contains the double
-		virtual	bool	contains(compound*)							const = 0;	// true iff the table contains the compound
-				bool	contains(Element,ElementType)				const;		// true iff the table contains the element
-				bool	contains(Element e)							const { return contains(e,type());				}
-				bool	contains(const TypedElement& te)			const { return contains(te._element,te._type);	}
-
+				bool	contains(const std::vector<Element>& ve)		const { return contains(ve[0]);	}
+				bool	contains(const std::vector<TypedElement>& ve)	const { return contains(ve[0]);	}	
+		virtual	bool	contains(std::string*)							const = 0;	// true iff the table contains the string.
+		virtual bool	contains(int)									const = 0;	// true iff the table contains the integer
+		virtual bool	contains(double)								const = 0;	// true iff the table contains the double
+		virtual	bool	contains(compound*)								const = 0;	// true iff the table contains the compound
+				bool	contains(Element,ElementType)					const;		// true iff the table contains the element
+				bool	contains(Element e)								const { return contains(e,type());				}
+				bool	contains(const TypedElement& te)				const { return contains(te._element,te._type);	}
 
 		// Inspectors for finite tables
-		virtual unsigned int	size()									const = 0;	// Returns the number of elements.
-		virtual Element			element(unsigned int n)					const = 0;	// Return the n'th element
-				TypedElement	telement(unsigned int n)				const { TypedElement te(element(n),type()); return te;	}
-				vector<Element>	tuple(unsigned int n)					const { return vector<Element>(1,element(n));			}
-				Element			element(unsigned int r,unsigned int)	const { return element(r);								}
-				domelement		delement(unsigned int n)				const;
-		virtual unsigned int	position(Element,ElementType)			const = 0;	// Return the position of the given element
-				unsigned int	position(Element e)						const { return position(e,type());					}
-				unsigned int	position(TypedElement te)				const { return position(te._element,te._type);		}
+		virtual unsigned int			size()									const = 0;	// Returns the number of elements.
+		virtual Element					element(unsigned int n)					const = 0;	// Return the n'th element
+				TypedElement			telement(unsigned int n)				const { TypedElement te(element(n),type()); return te;	}
+				std::vector<Element>	tuple(unsigned int n)					const { return std::vector<Element>(1,element(n));			}
+				Element					element(unsigned int r,unsigned int)	const { return element(r);								}
+				domelement				delement(unsigned int n)				const;
+		virtual unsigned int			position(Element,ElementType)			const = 0;	// Return the position of the given element
+				unsigned int			position(Element e)						const { return position(e,type());					}
+				unsigned int			position(TypedElement te)				const { return position(te._element,te._type);		}
 
 		// Visitor
-		void accept(Visitor*) const;
+				void accept(Visitor*) const;
 
 		// Debugging
-		virtual string to_string(unsigned int spaces = 0) const = 0;
+		virtual std::string to_string(unsigned int spaces = 0) const = 0;
 
 };
 
 class CopySortTable : public SortTable {
-
 	private: 
 		SortTable*	_table;
 	
 	public:
-
 		// Constructors
 		CopySortTable(SortTable* s); 
 		CopySortTable* clone() const { return new CopySortTable(_table);	}
@@ -184,40 +178,35 @@ class CopySortTable : public SortTable {
 		~CopySortTable() { _table->removeref(); }
 
 		// Mutators
-		void sortunique() { _table->sortunique();	}
-		SortTable* add(const vector<TypedElement>& tuple);
-		SortTable* remove(const vector<TypedElement>& tuple);
+		void 		sortunique() { _table->sortunique();	}
+		SortTable*	add(const std::vector<TypedElement>& tuple);
+		SortTable*	remove(const std::vector<TypedElement>& tuple);
 
 		// Inspectors
-		SortTable*		table()					const { return _table;	}
-		bool			finite()				const { return _table->finite();	}
-		bool			empty()					const { return _table->empty();		}
-		ElementType		type()					const { return _table->type();		}
+		SortTable*	table()		const { return _table;	}
+		bool		finite()	const { return _table->finite();	}
+		bool		empty()		const { return _table->empty();		}
+		ElementType	type()		const { return _table->type();		}
 
 		// Check if the table contains a given element
 		//	precondition: the table is sorted and contains no duplicates
-		bool	contains(string* s)		const { return _table->contains(s);	}
-		bool	contains(int n)			const { return _table->contains(n);	}
-		bool	contains(double d)		const { return _table->contains(d);	}
-		bool	contains(compound* c)	const { return _table->contains(c);	}
-
+		bool	contains(std::string* s)	const { return _table->contains(s);	}
+		bool	contains(int n)				const { return _table->contains(n);	}
+		bool	contains(double d)			const { return _table->contains(d);	}
+		bool	contains(compound* c)		const { return _table->contains(c);	}
 
 		// Inspectors for finite tables
-		unsigned int	size()								const	{ return _table->size();		}
-		Element			element(unsigned int n)				const	{ return _table->element(n);	}
-		unsigned int	position(Element e,ElementType t)	const	{ return _table->position(e,t);	}
+		unsigned int	size()								const { return _table->size();			}
+		Element			element(unsigned int n)				const { return _table->element(n);		}
+		unsigned int	position(Element e,ElementType t)	const { return _table->position(e,t);	}
 
 		// Debugging
-		string to_string(unsigned int spaces = 0) const { return _table->to_string(spaces);	}
-
-
+		std::string to_string(unsigned int spaces = 0) const { return _table->to_string(spaces);	}
 };
 
 /** Abstract class for finite unary tables **/
 class FiniteSortTable : public SortTable {
-
 	public:
-	
 		// Constructors
 		FiniteSortTable() : SortTable() { }
 		virtual FiniteSortTable* clone() const = 0;
@@ -230,17 +219,17 @@ class FiniteSortTable : public SortTable {
 		// neccessarily the case. No pointers are deleted when calling these methods.
 		// The result of add(...) is not necessarily sorted and may contain duplicates.
 				FiniteSortTable*	add(Element,ElementType);
-		virtual FiniteSortTable*	add(int)		= 0;	// Add an integer to the table.
-		virtual FiniteSortTable*	add(double)		= 0;	// Add a floating point number to the table
-		virtual FiniteSortTable*	add(string*)	= 0;	// Add a string to the table.
-		virtual FiniteSortTable*	add(int,int)	= 0;	// Add a range of integers to the table.
-		virtual FiniteSortTable*	add(char,char)	= 0;	// Add a range of characters to the table.
-		virtual FiniteSortTable*	add(compound*)	= 0;	// Add a compound element to the table
+		virtual FiniteSortTable*	add(int)			= 0;	// Add an integer to the table.
+		virtual FiniteSortTable*	add(double)			= 0;	// Add a floating point number to the table
+		virtual FiniteSortTable*	add(std::string*)	= 0;	// Add a string to the table.
+		virtual FiniteSortTable*	add(int,int)		= 0;	// Add a range of integers to the table.
+		virtual FiniteSortTable*	add(char,char)		= 0;	// Add a range of characters to the table.
+		virtual FiniteSortTable*	add(compound*)		= 0;	// Add a compound element to the table
 
 		// Mutators
-		virtual void sortunique() = 0; // Sort the table and remove duplicates.
-		FiniteSortTable* add(const vector<TypedElement>& tuple) { return add(tuple[0]._element,tuple[0]._type);	}
-		virtual FiniteSortTable* remove(const vector<TypedElement>& tuple) = 0;
+		virtual void 				sortunique() = 0; // Sort the table and remove duplicates.
+				FiniteSortTable*	add(const std::vector<TypedElement>& tuple) { return add(tuple[0]._element,tuple[0]._type);	}
+		virtual FiniteSortTable*	remove(const std::vector<TypedElement>& tuple) = 0;
 
 		// Inspectors
 		virtual bool			finite()	const { return true;	}
@@ -249,7 +238,7 @@ class FiniteSortTable : public SortTable {
 
 		// Check if the table contains a given element
 		//	precondition: the table is sorted and contains no duplicates
-		virtual	bool	contains(string*)					const = 0;
+		virtual	bool	contains(std::string*)				const = 0;
 		virtual bool	contains(int)						const = 0;
 		virtual bool	contains(double)					const = 0;
 		virtual	bool	contains(compound*)					const = 0;
@@ -261,16 +250,13 @@ class FiniteSortTable : public SortTable {
 		virtual unsigned int	position(Element,ElementType)	const = 0;	// returns the position of the given element
 
 		// Debugging
-		virtual string to_string(unsigned int spaces = 0) const = 0;
-
+		virtual std::string to_string(unsigned int spaces = 0) const = 0;
 };
 
 /** Empty table **/
 
 class EmptySortTable : public FiniteSortTable {
-
 	public:
-
 		// Constructors
 		EmptySortTable() : FiniteSortTable() { }
 		EmptySortTable* clone() const { return new EmptySortTable();	}
@@ -281,42 +267,39 @@ class EmptySortTable : public FiniteSortTable {
 		// Add elements to a table
 		FiniteSortTable*	add(int);	
 		FiniteSortTable*	add(double);	
-		FiniteSortTable*	add(string*);	
+		FiniteSortTable*	add(std::string*);	
 		FiniteSortTable*	add(int,int);	
 		FiniteSortTable*	add(char,char);	
 		FiniteSortTable*	add(compound*);
 
 		// Mutators
 		void sortunique() { }
-		EmptySortTable* remove(const vector<TypedElement>&) { return this;	}
+		EmptySortTable* remove(const std::vector<TypedElement>&) { return this;	}
 
 		// Inspectors
-		bool			empty()								const { return true;						}	
-		ElementType		type()								const { return ElementUtil::leasttype();	}
-		bool			contains(string*)					const { return false;						}	
-		bool			contains(int)						const { return false;						}	
-		bool			contains(double)					const { return false;						}	
-		bool			contains(compound*)					const { return false;						}
-		bool			contains(const TypedElement& )		const { return false;						}
-		unsigned int	size()								const { return 0;							}	
-		Element			element(unsigned int )				const { assert(false); Element e; return e; } 
-		unsigned int	position(Element,ElementType)		const { assert(false); return 0;			}
+		bool			empty()							const { return true;						}	
+		ElementType		type()							const { return ElementUtil::leasttype();	}
+		bool			contains(std::string*)			const { return false;						}	
+		bool			contains(int)					const { return false;						}	
+		bool			contains(double)				const { return false;						}	
+		bool			contains(compound*)				const { return false;						}
+		bool			contains(const TypedElement&)	const { return false;						}
+		unsigned int	size()							const { return 0;							}	
+		Element			element(unsigned int )			const { assert(false); Element e; return e; } 
+		unsigned int	position(Element,ElementType)	const { assert(false); return 0;			}
 															
 		// Debugging
-		string to_string(unsigned int) const { return "";	}
-
+		std::string to_string(unsigned int) const { return "";	}
 };
 
 /** Domain is an interval of integers **/
 
 class RanSortTable : public FiniteSortTable {
-	
 	private:
 		int _first;		// first element in the range
 		int _last;		// last element in the range
 
 	public:
-
 		// Constructors
 		RanSortTable(int f, int l) : FiniteSortTable(), _first(f), _last(l) { }
 		RanSortTable* clone() const { return new RanSortTable(_first,_last);	}
@@ -326,7 +309,7 @@ class RanSortTable : public FiniteSortTable {
 
 		// Add elements to the table
 		FiniteSortTable*	add(int);
-		FiniteSortTable*	add(string*);
+		FiniteSortTable*	add(std::string*);
 		FiniteSortTable*	add(double);
 		FiniteSortTable*	add(int,int);
 		FiniteSortTable*	add(char,char);
@@ -334,12 +317,12 @@ class RanSortTable : public FiniteSortTable {
 
 		// Mutators
 		void				sortunique() { }
-		FiniteSortTable*	remove(const vector<TypedElement>& tuple);
+		FiniteSortTable*	remove(const std::vector<TypedElement>& tuple);
 
 		// Inspectors
 		bool			empty()								const { return _first > _last;	}
 		ElementType		type()								const { return ELINT;			}
-		bool			contains(string*)					const;
+		bool			contains(std::string*)				const;
 		bool			contains(int)						const;
 		bool			contains(double)					const;
 		bool			contains(compound*)					const;
@@ -353,20 +336,16 @@ class RanSortTable : public FiniteSortTable {
 		int	last()						const { return _last;		}
 
 		// Debugging
-		string to_string(unsigned int spaces = 0) const;
-
+		std::string to_string(unsigned int spaces = 0) const;
 };
-
 
 /** Domain is a set of integers, but not necessarily an interval **/
 
 class IntSortTable : public FiniteSortTable {
-	
 	private:
-		vector<int> _table;
+		std::vector<int> _table;
 
 	public:
-
 		// Constructors
 		IntSortTable() : FiniteSortTable(), _table(0) { }
 		IntSortTable* clone() const;
@@ -376,7 +355,7 @@ class IntSortTable : public FiniteSortTable {
 
 		// Add elements to the table
 		IntSortTable*		add(int);
-		FiniteSortTable*	add(string*);
+		FiniteSortTable*	add(std::string*);
 		FiniteSortTable*	add(double);
 		FiniteSortTable*	add(int,int);
 		FiniteSortTable*	add(char,char);
@@ -384,13 +363,13 @@ class IntSortTable : public FiniteSortTable {
 
 		// Mutators
 		void			sortunique();
-		void			table(const vector<int>& t)	{ _table = t;	}
-		IntSortTable*	remove(const vector<TypedElement>& tuple);
+		void			table(const std::vector<int>& t)	{ _table = t;	}
+		IntSortTable*	remove(const std::vector<TypedElement>& tuple);
 
 		// Inspectors
 		bool			empty()								const { return _table.empty();	}
 		ElementType		type()								const { return ELINT;			}
-		bool			contains(string*)					const;
+		bool			contains(std::string*)				const;
 		bool			contains(int)						const;
 		bool			contains(double)					const;
 		bool			contains(compound*)					const;
@@ -404,8 +383,7 @@ class IntSortTable : public FiniteSortTable {
 		int	last()						const { return _table.back();		}
 
 		// Debugging
-		string to_string(unsigned int spaces = 0) const;
-
+		std::string to_string(unsigned int spaces = 0) const;
 };
 
 /*
@@ -414,12 +392,10 @@ class IntSortTable : public FiniteSortTable {
  *
  */
 class FloatSortTable : public FiniteSortTable {
-	
 	private:
-		vector<double> _table;
+		std::vector<double> _table;
 
 	public:
-
 		// Constructors
 		FloatSortTable() : FiniteSortTable(), _table(0) { }
 		FloatSortTable* clone() const;
@@ -429,7 +405,7 @@ class FloatSortTable : public FiniteSortTable {
 
 		// Add elements to the table
 		FiniteSortTable*	add(int);
-		FiniteSortTable*	add(string*);
+		FiniteSortTable*	add(std::string*);
 		FiniteSortTable*	add(double);
 		FiniteSortTable*	add(int,int);
 		FiniteSortTable*	add(char,char);
@@ -437,13 +413,13 @@ class FloatSortTable : public FiniteSortTable {
 
 		// Mutators
 		void			sortunique();
-		void			table(const vector<double>& t)	{ _table = t;	}
-		FloatSortTable*	remove(const vector<TypedElement>& tuple);
+		void			table(const std::vector<double>& t)	{ _table = t;	}
+		FloatSortTable*	remove(const std::vector<TypedElement>& tuple);
 
 		// Inspectors
 		bool			empty()								const { return _table.empty();		}
 		ElementType		type()								const { return ELDOUBLE;			}
-		bool			contains(string*)					const;
+		bool			contains(std::string*)				const;
 		bool			contains(int)						const;
 		bool			contains(double)					const;
 		bool			contains(compound*)					const;
@@ -457,25 +433,21 @@ class FloatSortTable : public FiniteSortTable {
 		double	last()						const { return _table.back();		}
 
 		// Debugging
-		string to_string(unsigned int spaces = 0) const;
-
+		std::string to_string(unsigned int spaces = 0) const;
 };
-
 
 /*
  * Domain is a set of strings
  *		Invariant: no string in the table is a number (int or double)
  */
 class StrSortTable : public FiniteSortTable {
-	
 	private:
-		vector<string*> _table;
+		std::vector<std::string*> _table;
 
 	public:
-
 		// Constructors
 		StrSortTable() : _table(0) { }
-		StrSortTable(const vector<string*>& t) : _table(t) { }
+		StrSortTable(const std::vector<std::string*>& t) : _table(t) { }
 		StrSortTable* clone() const;
 
 		// Destructor
@@ -483,7 +455,7 @@ class StrSortTable : public FiniteSortTable {
 
 		// Add elements to the table
 		FiniteSortTable*	add(int);
-		FiniteSortTable*	add(string*);
+		FiniteSortTable*	add(std::string*);
 		FiniteSortTable*	add(double);
 		FiniteSortTable*	add(int,int);
 		FiniteSortTable*	add(char,char);
@@ -491,28 +463,27 @@ class StrSortTable : public FiniteSortTable {
 
 		// Cleanup
 		void			sortunique();
-		void			table(const vector<string*>& t) { _table = t;	}
-		StrSortTable*	remove(const vector<TypedElement>& tuple);
+		void			table(const std::vector<std::string*>& t) { _table = t;	}
+		StrSortTable*	remove(const std::vector<TypedElement>& tuple);
 
 		// Inspectors
 		bool			empty()								const { return _table.empty();		}
 		ElementType		type()								const { return ELSTRING;			}
 		bool			contains(int)						const;
 		bool			contains(double)					const;
-		bool			contains(string*)					const;
+		bool			contains(std::string*)				const;
 		bool			contains(compound*)					const;
 		bool			contains(const TypedElement& te)	const { return SortTable::contains(te);	}
 		unsigned int	size()								const { return _table.size();		}
 		Element			element(unsigned int n)				const { Element e; e._string = _table[n]; return e;	}
 		unsigned int	position(Element,ElementType)		const;
 
-		string*	operator[](unsigned int n)	const { return _table[n];			}
-		string*	first()						const { return _table.front();		}
-		string*	last()						const { return _table.back();		}
+		std::string*	operator[](unsigned int n)	const { return _table[n];			}
+		std::string*	first()						const { return _table.front();		}
+		std::string*	last()						const { return _table.back();		}
 
 		// Debugging
-		string to_string(unsigned int spaces = 0) const;
-
+		std::string to_string(unsigned int spaces = 0) const;
 };
 
 /*
@@ -520,18 +491,16 @@ class StrSortTable : public FiniteSortTable {
  *		Invariant: there are compounds or both numbers and strings in the table
  */
 class MixedSortTable : public FiniteSortTable {
-	
 	private:
-		vector<double>		_numtable;
-		vector<string*>		_strtable;
-		vector<compound*>	_comtable;
+		std::vector<double>			_numtable;
+		std::vector<std::string*>	_strtable;
+		std::vector<compound*>		_comtable;
 
 	public:
-
 		// Constructors
 		MixedSortTable() : _numtable(0), _strtable(0) { }
-		MixedSortTable(const vector<string*>& t) : _numtable(0), _strtable(t)	{ }
-		MixedSortTable(const vector<double>& t) : _numtable(t), _strtable(0)	{ }
+		MixedSortTable(const std::vector<std::string*>& t) : _numtable(0), _strtable(t)	{ }
+		MixedSortTable(const std::vector<double>& t) : _numtable(t), _strtable(0)	{ }
 		MixedSortTable* clone() const;
 
 		// Destructor
@@ -539,7 +508,7 @@ class MixedSortTable : public FiniteSortTable {
 
 		// Add elements to the table
 		FiniteSortTable*	add(int);
-		FiniteSortTable*	add(string*);
+		FiniteSortTable*	add(std::string*);
 		FiniteSortTable*	add(double);
 		FiniteSortTable*	add(int,int);
 		FiniteSortTable*	add(char,char);
@@ -547,17 +516,17 @@ class MixedSortTable : public FiniteSortTable {
 
 		// Mutators
 		void				sortunique();
-		void				numtable(const vector<double>&	t)		{ _numtable = t;	}
-		void				strtable(const vector<string*>&	t)		{ _strtable = t;	}
-		void				comtable(const vector<compound*>& t)	{ _comtable = t;	}
-		FiniteSortTable*	remove(const vector<TypedElement>& tuple);
+		void				numtable(const std::vector<double>&	t)			{ _numtable = t;	}
+		void				strtable(const std::vector<std::string*>& t)	{ _strtable = t;	}
+		void				comtable(const std::vector<compound*>& t)		{ _comtable = t;	}
+		FiniteSortTable*	remove(const std::vector<TypedElement>& tuple);
 
 		// Inspectors
 		bool			empty()								const { return (_numtable.empty() && _strtable.empty() && _comtable.empty()); }
 		ElementType		type()								const;
 		bool			contains(int)						const;
 		bool			contains(double)					const;
-		bool			contains(string*)					const;
+		bool			contains(std::string*)				const;
 		bool			contains(compound*)					const;
 		bool			contains(const TypedElement& te)	const { return SortTable::contains(te);	}
 		unsigned int	size()								const { return _numtable.size() + _strtable.size() + _comtable.size();	}
@@ -565,18 +534,15 @@ class MixedSortTable : public FiniteSortTable {
 		unsigned int	position(Element,ElementType)		const;
 
 		// Debugging
-		string to_string(unsigned int spaces = 0) const;
-
+		std::string to_string(unsigned int spaces = 0) const;
 };
 
 class UnionSortTable : public SortTable {
-	
 	private:
-		vector<SortTable*>	_tables;
-		FiniteSortTable*	_blacklist;
+		std::vector<SortTable*>	_tables;
+		FiniteSortTable*		_blacklist;
 
 	public:
-
 		// Constructors
 		UnionSortTable() : SortTable() { }
 		UnionSortTable* clone() const;
@@ -588,8 +554,8 @@ class UnionSortTable : public SortTable {
 		void			sortunique(); 
 		void			add(SortTable* pt)				{ _tables.push_back(pt);	}
 		void			blacklist(FiniteSortTable* pt)	{ _blacklist = pt;			}
-		UnionSortTable*	add(const vector<TypedElement>& tuple);
-		UnionSortTable*	remove(const vector<TypedElement>& tuple);
+		UnionSortTable*	add(const std::vector<TypedElement>& tuple);
+		UnionSortTable*	remove(const std::vector<TypedElement>& tuple);
 
 		// Inspectors
 		bool			finite()	const { return false;		}
@@ -598,7 +564,7 @@ class UnionSortTable : public SortTable {
 
 		// Check if the table contains a given element
 		//	precondition: the table is sorted and contains no duplicates
-		bool	contains(string*)	const;
+		bool	contains(std::string*)	const;
 		bool	contains(int)		const;
 		bool	contains(double)	const;
 		bool	contains(compound*)	const;
@@ -607,9 +573,9 @@ class UnionSortTable : public SortTable {
 		unsigned int	size()							const { assert(false); return 0;			}
 		Element			element(unsigned int)			const { assert(false); Element e; return e; }
 		unsigned int	position(Element,ElementType)	const { assert(false); return 0; }
-		// Debugging
-		string to_string(unsigned int spaces = 0) const;
 
+		// Debugging
+		std::string to_string(unsigned int spaces = 0) const;
 };
 
 
@@ -620,20 +586,18 @@ class UnionSortTable : public SortTable {
 /** Finite, enumerated tables  **/
 
 class FinitePredTable : public PredTable {
-	
 	private:
-		vector<ElementType>			_types;		// the types of elements in the columns
-		vector<vector<Element> >	_table;		// the actual table
-		ElementWeakOrdering			_order;		// less-than-or-equal relation on the tuples of this table
-		ElementEquality				_equality;	// equality relation on the tuples of this table
+		std::vector<ElementType>			_types;		// the types of elements in the columns
+		std::vector<std::vector<Element> >	_table;		// the actual table
+		ElementWeakOrdering					_order;		// less-than-or-equal relation on the tuples of this table
+		ElementEquality						_equality;	// equality relation on the tuples of this table
 
-		mutable	set<vector<compound*> >	_dyntable;
-		mutable	set<vector<compound*> >	_invdyntable;	// complement of _dyntable
-														// OPTIMIZATION? do not keep this table?
+		mutable	std::set<std::vector<compound*> >	_dyntable;
+		mutable	std::set<std::vector<compound*> >	_invdyntable;	// complement of _dyntable
+																	// OPTIMIZATION? do not keep this table?
 	public:
-
 		// Constructors 
-		FinitePredTable(const vector<ElementType>& t) : PredTable(), _types(t), _table(0), _order(t), _equality(t) { }
+		FinitePredTable(const std::vector<ElementType>& t) : PredTable(), _types(t), _table(0), _order(t), _equality(t) { }
 		FinitePredTable(const FinitePredTable&);
 		FinitePredTable(const FiniteSortTable&);
 		FinitePredTable* clone() const { return new FinitePredTable(*this);	}
@@ -643,42 +607,40 @@ class FinitePredTable : public PredTable {
 
 		// Mutators
 		void	sortunique();
-		FinitePredTable*	add(const vector<TypedElement>& tuple);
-		FinitePredTable*	remove(const vector<TypedElement>& tuple);
+		FinitePredTable*	add(const std::vector<TypedElement>& tuple);
+		FinitePredTable*	remove(const std::vector<TypedElement>& tuple);
 
 		// Parsing
-		void				addRow()								{ _table.push_back(vector<Element>(_types.size()));	}
-		void				addRow(const vector<Element>& ve, const vector<ElementType>&);
-		void				addColumn(ElementType);
-		void				changeElType(unsigned int,ElementType);
-		vector<Element>&	operator[](unsigned int n)				{ return _table[n];	}
+		void					addRow()					{ _table.push_back(std::vector<Element>(_types.size()));	}
+		void					addRow(const std::vector<Element>& ve, const std::vector<ElementType>&);
+		void					addColumn(ElementType);
+		void					changeElType(unsigned int,ElementType);
+		std::vector<Element>&	operator[](unsigned int n)	{ return _table[n];	}
 
 		// Iterators
-		VVE::iterator		begin()									{ return _table.begin();	}
-		VVE::iterator		end()									{ return _table.end();		}
+		VVE::iterator			begin()	{ return _table.begin();	}
+		VVE::iterator			end()	{ return _table.end();		}
 
+		VVE::const_iterator		begin()	const { return _table.begin();	}
+		VVE::const_iterator		end()  	const { return _table.end();	}
+		
 		// Inspectors
-		bool				finite()								const { return true;			}
-		bool				empty()									const { return _table.empty();	}
-		unsigned int		arity()									const { return _types.size();	}	
-		ElementType			type(unsigned int n)					const { return _types[n];		}
-		unsigned int		size()									const { return _table.size();	}
-		vector<Element>		tuple(unsigned int n)					const { return _table[n];		}
-		Element				element(unsigned int r,unsigned int c)	const { return _table[r][c];	}
-
-		const vector<vector<Element> >& table()	const { return _table;	}
+		const std::vector<std::vector<Element> >&	table()						const { return _table;		}
+		const std::vector<Element>&					operator[](unsigned int n)	const { return _table[n];	}
+		bool					finite()								const { return true;			}
+		bool					empty()									const { return _table.empty();	}
+		unsigned int			arity()									const { return _types.size();	}	
+		ElementType				type(unsigned int n)					const { return _types[n];		}
+		unsigned int			size()									const { return _table.size();	}
+		std::vector<Element>	tuple(unsigned int n)					const { return _table[n];		}
+		Element					element(unsigned int r,unsigned int c)	const { return _table[r][c];	}
 
 		// Check if the table contains a given tuple
-		bool	contains(const vector<Element>&)	const;
-		bool	contains(const vector<compound*>&)	const;
+		bool	contains(const std::vector<Element>&)	const;
+		bool	contains(const std::vector<compound*>&)	const;
 
-		// Other inspectors
-		VVE::const_iterator		begin()									const { return _table.begin();	}
-		VVE::const_iterator		end()									const { return _table.end();	}
-		const vector<Element>&	operator[](unsigned int n)				const { return _table[n];		}
-		
 		// Debugging
-		string to_string(unsigned int spaces = 0)	const;
+		std::string to_string(unsigned int spaces = 0)	const;
 };
 
 /*
@@ -689,13 +651,11 @@ class FinitePredTable : public PredTable {
 	Invariant: _tables is not empty
 */
 class UnionPredTable : public PredTable {
-
 	private:
-		vector<PredTable*>	_tables;
-		FinitePredTable*	_blacklist;
+		std::vector<PredTable*>	_tables;
+		FinitePredTable*		_blacklist;
 
 	public:
-		
 		// Constructors
 		UnionPredTable() : PredTable() { }
 		UnionPredTable* clone() const;
@@ -707,27 +667,26 @@ class UnionPredTable : public PredTable {
 		void			add(PredTable* pt)				{ _tables.push_back(pt);	}
 		void			blacklist(FinitePredTable* pt)	{ _blacklist = pt;			}
 		void			sortunique();	// Sort and remove duplicates
-		UnionPredTable*	add(const vector<TypedElement>& tuple);
-		UnionPredTable*	remove(const vector<TypedElement>& tuple);
+		UnionPredTable*	add(const std::vector<TypedElement>& tuple);
+		UnionPredTable*	remove(const std::vector<TypedElement>& tuple);
 
 		// Inspectors
-		bool			finite()				const { return false;	}
+		bool			finite()				const { return false;				}
 		bool			empty()					const;
 		unsigned int	arity()					const { return _tables[0]->arity();	}
 		ElementType		type(unsigned int)		const { return ELCOMPOUND;			} //TODO try to assign more specific type?
 
 		// Check if the table contains a given tuple
 		//	precondition: the tables are sorted and contain no duplicates
-		bool	contains(const vector<Element>&)	const;
+		bool	contains(const std::vector<Element>&)	const;
 
 		// Inspectors for finite tables
-		unsigned int	size()								const { assert(false); return 0;					}
-		vector<Element>	tuple(unsigned int)					const { assert(false); return vector<Element>();	}
-		Element			element(unsigned int,unsigned int)	const { assert(false); Element e; return e;			}
+		unsigned int			size()								const { assert(false); return 0;						}
+		std::vector<Element>	tuple(unsigned int)					const { assert(false); return std::vector<Element>();	}
+		Element					element(unsigned int,unsigned int)	const { assert(false); Element e; return e;				}
 
 		// Debugging
-		string to_string(unsigned int spaces = 0)	const;
-
+		std::string to_string(unsigned int spaces = 0)	const;
 };
 
 
@@ -740,7 +699,6 @@ class UnionPredTable : public PredTable {
  *	If the two pointers are equal and _ct != _cf, the interpretation is certainly two-valued.
  */ 
 class PredInter {
-	
 	private:
 		PredTable*	_ctpf;	// stores certainly true or possibly false tuples
 		PredTable*	_cfpt;	// stores certainly false or possibly true tuples
@@ -748,10 +706,11 @@ class PredInter {
 		bool		_cf;	// ture iff _cfpt stores certainly false tuples, false iff _cfpt stores possibly true tuples
 
 	public:
-		
 		// Constructors
 		PredInter(PredTable* p1,PredTable* p2,bool b1, bool b2) : _ctpf(p1), _cfpt(p2), _ct(b1), _cf(b2) { }
 		PredInter(PredTable* p, bool b) : _ctpf(p), _cfpt(p), _ct(b), _cf(!b) { }
+
+		PredInter*	clone();
 
 		// Destructor
 		~PredInter();
@@ -760,28 +719,25 @@ class PredInter {
 		void replace(PredTable* pt,bool ctpf, bool c);	// If ctpf is true, replace _ctpf by pt and set _ct to c
 														// Else, replace cfpt by pt and set _cf to c
 		void sortunique()	{ if(_ctpf) _ctpf->sortunique(); if(_cfpt && _ctpf != _cfpt) _cfpt->sortunique();	}
-		PredInter*	clone();
-		void	forcetwovalued();		// delete cfpt table and replace by ctpf
-		void	add(const vector<TypedElement>& tuple, bool ctpf, bool c);
-
+		void forcetwovalued();	// delete cfpt table and replace by ctpf
+		void add(const std::vector<TypedElement>& tuple, bool ctpf, bool c);
 
 		// Inspectors
-		PredTable*	ctpf()									const { return _ctpf;	}
-		PredTable*	cfpt()									const { return _cfpt;	}
-		bool		ct()									const { return _ct;		}
-		bool		cf()									const { return _cf;		}
-		bool		istrue(const vector<Element>& vi)		const { return (_ct ? _ctpf->contains(vi) : !(_ctpf->contains(vi)));	}
-		bool		isfalse(const vector<Element>& vi)		const { return (_cf ? _cfpt->contains(vi) : !(_cfpt->contains(vi)));	}
-		bool		istrue(const vector<TypedElement>& vi)	const;	// return true iff the given tuple is true or inconsistent
-		bool		isfalse(const vector<TypedElement>& vi)	const;	// return false iff the given tuple is false or inconsistent
-		bool		fasttwovalued()							const { return _ctpf == _cfpt;	}
+		PredTable*	ctpf()											const { return _ctpf;	}
+		PredTable*	cfpt()											const { return _cfpt;	}
+		bool		ct()											const { return _ct;		}
+		bool		cf()											const { return _cf;		}
+		bool		istrue(const std::vector<Element>& vi)			const { return (_ct ? _ctpf->contains(vi) : !(_ctpf->contains(vi)));	}
+		bool		isfalse(const std::vector<Element>& vi)			const { return (_cf ? _cfpt->contains(vi) : !(_cfpt->contains(vi)));	}
+		bool		istrue(const std::vector<TypedElement>& vi)		const;	// return true iff the given tuple is true or inconsistent
+		bool		isfalse(const std::vector<TypedElement>& vi)	const;	// return false iff the given tuple is false or inconsistent
+		bool		fasttwovalued()									const { return _ctpf == _cfpt;	}
 
 		// Visitor
 		void accept(Visitor*) const;
 
 		// Debugging
-		string to_string(unsigned int spaces = 0) const;
-
+		std::string to_string(unsigned int spaces = 0) const;
 };
 
 
@@ -792,13 +748,11 @@ class PredInter {
 /** abstract base class **/
 
 class FuncTable {
-
 	private:
-		unsigned int	_nrofrefs;	// Number of references to this table
-		mutable	map<vector<domelement>,domelement>	_dyntable;
+		unsigned int											_nrofrefs;	// Number of references to this table
+		mutable	std::map<std::vector<domelement>,domelement>	_dyntable;
 
 	public:
-
 		// Constructor
 		FuncTable() : _nrofrefs(0) { }
 		virtual FuncTable* clone() const = 0;
@@ -807,41 +761,38 @@ class FuncTable {
 		virtual ~FuncTable() { }
 	
 		// Mutators
-		void	removeref()	{ --_nrofrefs; if(!_nrofrefs) delete(this);	}
-		void	addref()	{ ++_nrofrefs;								}
+				void	removeref()	{ --_nrofrefs; if(!_nrofrefs) delete(this);	}
+				void	addref()	{ ++_nrofrefs;								}
 
 		// Inspectors
-				unsigned int	nrofrefs()								const { return _nrofrefs;	}
-		virtual bool			finite()								const = 0;	// true iff the table is finite
-		virtual bool			empty()									const = 0;	// true iff the table is empty
-		virtual unsigned int	arity()									const = 0;	// arity of the table - 1
-		virtual unsigned int	size()									const = 0;	// size of the table
-		virtual ElementType		type(unsigned int n)					const = 0;	// type of the n'th column of the table
-				ElementType		outtype()								const { return type(arity());	}
-		virtual vector<Element>	tuple(unsigned int n)					const = 0;	// return the n'th tuple
-		virtual Element			element(unsigned int r,unsigned int c)	const = 0;	// return the element at row r and column c
+				unsigned int			nrofrefs()								const { return _nrofrefs;	}
+		virtual bool					finite()								const = 0;	// true iff the table is finite
+		virtual bool					empty()									const = 0;	// true iff the table is empty
+		virtual unsigned int			arity()									const = 0;	// arity of the table - 1
+		virtual unsigned int			size()									const = 0;	// size of the table
+		virtual ElementType				type(unsigned int n)					const = 0;	// type of the n'th column of the table
+				ElementType				outtype()								const { return type(arity());	}
+		virtual std::vector<Element>	tuple(unsigned int n)					const = 0;	// return the n'th tuple
+		virtual Element					element(unsigned int r,unsigned int c)	const = 0;	// return the element at row r and column c
 
-		virtual	Element	operator[](const vector<Element>& vi)		const = 0;	// return the value of vi according to the function 
-																				// NOTE: the type of the n'th element in vi should be
-																				// the type of the n'th column in the table. 
-				Element	operator[](const vector<TypedElement>& vi)	const;		// return the value of vi according to the function
-				Element operator[](const vector<TypedElement*>& vi)	const;
-				domelement operator[](const vector<domelement>& vi)	const;
+		virtual	Element	operator[](const std::vector<Element>& vi)				const = 0;	// return the value of vi according to the function 
+																							// NOTE: the type of the n'th element in vi should be
+																							// the type of the n'th column in the table. 
+				Element	operator[](const std::vector<TypedElement>& vi)			const;		// return the value of vi according to the function
+				Element operator[](const std::vector<TypedElement*>& vi)		const;
+				domelement operator[](const std::vector<domelement>& vi)		const;
 
 		// Debugging
-		virtual string to_string(unsigned int spaces = 0) const = 0;
-
+		virtual std::string to_string(unsigned int spaces = 0) const = 0;
 };
 
 /** cloned function tables **/
 
 class CopyFuncTable : public FuncTable {
-
 	private:
 		FuncTable*	_table;
 
 	public:
-
 		// Constructor
 		CopyFuncTable(FuncTable*);
 		CopyFuncTable* clone() const { return new CopyFuncTable(_table);	}
@@ -850,25 +801,22 @@ class CopyFuncTable : public FuncTable {
 		~CopyFuncTable() { _table->removeref();	}
 
 		// Inspectors
-		FuncTable*		table()									const { return _table;					}
-		bool			finite()								const { return _table->finite();		} 
-		bool			empty()									const { return _table->empty();			} 
-		unsigned int	arity()									const { return _table->arity();			} 
-		unsigned int	size()									const { return _table->size();			} 
-		ElementType		type(unsigned int n)					const { return _table->type(n);			} 
-		vector<Element>	tuple(unsigned int n)					const { return _table->tuple(n);		} 
-		Element			element(unsigned int r,unsigned int c)	const { return _table->element(r,c);	} 
-
-		Element	operator[](const vector<Element>& vi)		const	{ return (*_table)[vi];	}
+		FuncTable*				table()										const { return _table;					}
+		bool					finite()									const { return _table->finite();		} 
+		bool					empty()										const { return _table->empty();			} 
+		unsigned int			arity()										const { return _table->arity();			} 
+		unsigned int			size()										const { return _table->size();			} 
+		ElementType				type(unsigned int n)						const { return _table->type(n);			} 
+		std::vector<Element>	tuple(unsigned int n)						const { return _table->tuple(n);		} 
+		Element					element(unsigned int r,unsigned int c)		const { return _table->element(r,c);	} 
+		Element					operator[](const std::vector<Element>& vi)	const { return (*_table)[vi];	}
 
 		// Debugging
-		string to_string(unsigned int spaces = 0) const { return _table->to_string(spaces);	} 
-
+		std::string to_string(unsigned int spaces = 0) const { return _table->to_string(spaces);	} 
 };
 
 /** finite, enumerated functions **/
 class FiniteFuncTable : public FuncTable {
-
 	private:
 		FinitePredTable*	_ftable;	// the actual table
 		ElementWeakOrdering	_order;		// less-than-or-equal on a tuple of domain elements with arity n = (_ftable->arity() - 1)
@@ -877,7 +825,6 @@ class FiniteFuncTable : public FuncTable {
 										// and types (_ftable->type(0),...,_ftable->type(n)).
 
 	public:
-		
 		// Constructors
 		FiniteFuncTable(FinitePredTable* ft);
 		FiniteFuncTable* clone() const { return new FiniteFuncTable(_ftable->clone());	}
@@ -886,30 +833,26 @@ class FiniteFuncTable : public FuncTable {
 		~FiniteFuncTable() { }
 
 		// Inspectors
-		bool				finite()								const { return true;					}
-		bool				empty()									const { return _ftable->finite();		}
-		unsigned int		arity()									const { return _ftable->arity() - 1;	}
-		unsigned int		size()									const { return _ftable->size();			}
-		FinitePredTable*	ftable()								const { return _ftable;					}
-		ElementType			type(unsigned int n)					const { return _ftable->type(n);		}
-		vector<Element>		tuple(unsigned int n)					const { return _ftable->tuple(n);		}
-		Element				element(unsigned int r,unsigned int c)	const { return _ftable->element(r,c);	}
-
-		Element		operator[](const vector<Element>& vi)		const;
+		bool					finite()									const { return true;					}
+		bool					empty()										const { return _ftable->finite();		}
+		unsigned int			arity()										const { return _ftable->arity() - 1;	}
+		unsigned int			size()										const { return _ftable->size();			}
+		FinitePredTable*		ftable()									const { return _ftable;					}
+		ElementType				type(unsigned int n)						const { return _ftable->type(n);		}
+		std::vector<Element>	tuple(unsigned int n)						const { return _ftable->tuple(n);		}
+		Element					element(unsigned int r,unsigned int c)		const { return _ftable->element(r,c);	}
+		Element					operator[](const std::vector<Element>& vi)	const;
 
 		// Debugging
-		string to_string(unsigned int spaces = 0) const;
-
+		std::string to_string(unsigned int spaces = 0) const;
 };
 
 /** predicate table derived from function table **/
 class FuncPredTable : public PredTable {
-
 	private:
 		FuncTable* _ftable;
 
 	public:
-
 		// Constructors
 		FuncPredTable(FuncTable* ft) : PredTable(), _ftable(ft) { }
 		FuncPredTable* clone() const { return new FuncPredTable(_ftable->clone());	}
@@ -919,12 +862,12 @@ class FuncPredTable : public PredTable {
 
 		// Mutators
 		void sortunique() { }
-		PredTable*	add(const vector<TypedElement>& tuple);
-		PredTable*	remove(const vector<TypedElement>& tuple);
+		PredTable*	add(const std::vector<TypedElement>& tuple);
+		PredTable*	remove(const std::vector<TypedElement>& tuple);
 
 		// Inspectors
-//		virtual Element		operator[](const vector<Element>& vi)		const = 0;
-//				Element		operator[](const vector<TypedElement>& vi)	const;
+//		virtual Element		operator[](const std::vector<Element>& vi)		const = 0;
+//				Element		operator[](const std::vector<TypedElement>& vi)	const;
 //		virtual PredInter*	predinter()									const = 0;
 
 		bool			finite()				const { return _ftable->finite();		}
@@ -934,41 +877,39 @@ class FuncPredTable : public PredTable {
 		FuncTable*		ftable()				const { return _ftable;					}
 
 		// Check if the table contains a given tuple
-		bool	contains(const vector<Element>&)	const;
+		bool	contains(const std::vector<Element>&)	const;
 
 		// Inspectors for finite tables
-		unsigned int		size()									const { return _ftable->size();			}
-		vector<Element>		tuple(unsigned int n)					const { return _ftable->tuple(n);		}
-		Element				element(unsigned int r,unsigned int c)	const { return _ftable->element(r,c);	}
+		unsigned int			size()									const { return _ftable->size();			}
+		std::vector<Element>	tuple(unsigned int n)					const { return _ftable->tuple(n);		}
+		Element					element(unsigned int r,unsigned int c)	const { return _ftable->element(r,c);	}
 
 		// Visitor
 		void accept(Visitor*) const;
 
 		// Debugging
-		string to_string(unsigned int spaces = 0)	const { return _ftable->to_string(spaces);	}
-
+		std::string to_string(unsigned int spaces = 0)	const { return _ftable->to_string(spaces);	}
 };
 
 /** four-valued function interpretations **/
 class FuncInter {
-
 	private:
 		FuncTable*	_ftable;	// the function (if it is two-valued, nullpointer otherwise).
 		PredInter*	_pinter;	// the interpretation for the graph of the function
 
 	public:
-		
 		// Constructors
 		FuncInter(FuncTable* ft, PredInter* pt) : _ftable(ft), _pinter(pt) { }
+
+		FuncInter* clone();
 
 		// Destructor
 		~FuncInter() { if(_ftable) delete(_ftable); delete(_pinter); }
 
 		// Mutators
-		void sortunique() { if(_pinter) _pinter->sortunique(); }
-		FuncInter* clone();
+		void 	sortunique() { if(_pinter) _pinter->sortunique(); }
 		void	forcetwovalued();
-		void	add(const vector<TypedElement>& tuple,bool ctpf,bool c);	// IMPORTANT NOTE: This method deletes _ftable if it is finite!
+		void	add(const std::vector<TypedElement>& tuple,bool ctpf,bool c);	// IMPORTANT NOTE: This method deletes _ftable if it is finite!
 
 		// Inspectors
 		PredInter*	predinter()		const { return _pinter;			}
@@ -976,11 +917,10 @@ class FuncInter {
 		bool		fasttwovalued()	const { return _ftable != 0;	}
 
 		// Debugging
-		string to_string(unsigned int spaces = 0) const;
+		std::string to_string(unsigned int spaces = 0) const;
 
 		// Visitor
         void accept(Visitor*) const;
-
 };
 
 /************************
@@ -988,7 +928,6 @@ class FuncInter {
 ************************/
 
 namespace TableUtils {
-
 	PredInter*	leastPredInter(unsigned int n);		// construct a new, least precise predicate interpretation with arity n
 	FuncInter*	leastFuncInter(unsigned int n);		// construct a new, least precise function interpretation with arity n
 	PredTable*	intersection(PredTable*,PredTable*);
@@ -1002,7 +941,7 @@ namespace TableUtils {
 	//		AND	(a_1,...,a_m) is a tuple of pt
 	//		AND for every 1 <= j <= m, if vb[j] = true, then vet[j] = a_j
 	//	Precondition: pt is finite and sorted
-	PredTable*	project(PredTable* pt,const vector<TypedElement>& vet, const vector<bool>& vb);
+	PredTable*	project(PredTable* pt,const std::vector<TypedElement>& vet, const std::vector<bool>& vb);
 }
 
 /*****************
@@ -1012,17 +951,14 @@ namespace TableUtils {
 /** Abstract base class **/
 
 class AbstractStructure {
-
 	protected:
-
-		string			_name;			// The name of the structure
+		std::string		_name;			// The name of the structure
 		ParseInfo		_pi;			// The place where this structure was parsed.
 		Vocabulary*		_vocabulary;	// The vocabulary of the structure.
 
 	public:
-
 		// Constructors
-		AbstractStructure(string name, const ParseInfo& pi) : _name(name), _pi(pi), _vocabulary(0) { }
+		AbstractStructure(std::string name, const ParseInfo& pi) : _name(name), _pi(pi), _vocabulary(0) { }
 
 		// Destructor
 		virtual ~AbstractStructure() { }
@@ -1034,42 +970,38 @@ class AbstractStructure {
 		virtual void	sortall() = 0;				// sort all tables
 
 		// Inspectors
-				const string&	name()						const { return _name;		}
-				ParseInfo		pi()						const { return _pi;			}
-				Vocabulary*		vocabulary()				const { return _vocabulary;	}
-		virtual SortTable*		inter(Sort* s)				const = 0;	// Return the domain of s.
-		virtual PredInter*		inter(Predicate* p)			const = 0;	// Return the interpretation of p.
-		virtual FuncInter*		inter(Function* f)			const = 0;	// Return the interpretation of f.
-		virtual PredInter*		inter(PFSymbol* s)			const = 0;	// Return the interpretation of s.
+				const std::string&	name()						const { return _name;		}
+				ParseInfo			pi()						const { return _pi;			}
+				Vocabulary*			vocabulary()				const { return _vocabulary;	}
+		virtual SortTable*			inter(Sort* s)				const = 0;	// Return the domain of s.
+		virtual PredInter*			inter(Predicate* p)			const = 0;	// Return the interpretation of p.
+		virtual FuncInter*			inter(Function* f)			const = 0;	// Return the interpretation of f.
+		virtual PredInter*			inter(PFSymbol* s)			const = 0;	// Return the interpretation of s.
 
 		// Lua
-		TypedInfArg		getObject(set<Sort*>*)	const;
-		TypedInfArg		getObject(set<Predicate*>* predicate) const;
-		TypedInfArg		getObject(set<Function*>* function) const;
+				TypedInfArg		getObject(std::set<Sort*>*)	const;
+				TypedInfArg		getObject(std::set<Predicate*>* predicate) const;
+				TypedInfArg		getObject(std::set<Function*>* function) const;
 
 		// Visitor
 		virtual void accept(Visitor* v) const	= 0;
 
 		// Debugging
-		virtual string	to_string(unsigned int spaces = 0) const = 0;
-
+		virtual std::string	to_string(unsigned int spaces = 0) const = 0;
 };
 
 /** Structures as constructed by the parser **/
 
 class Structure : public AbstractStructure {
-
 	private:
-
 		//TODO: these should not be mutable!
-		mutable map<Sort*,SortTable*>		_sortinter;		// The domains of the structure. 
-		mutable map<Predicate*,PredInter*>	_predinter;		// The interpretations of the predicate symbols.
-		mutable map<Function*,FuncInter*>	_funcinter;		// The interpretations of the function symbols.
+		mutable std::map<Sort*,SortTable*>		_sortinter;		// The domains of the structure. 
+		mutable std::map<Predicate*,PredInter*>	_predinter;		// The interpretations of the predicate symbols.
+		mutable std::map<Function*,FuncInter*>	_funcinter;		// The interpretations of the function symbols.
 	
 	public:
-		
 		// Constructors
-		Structure(const string& name, const ParseInfo& pi) : AbstractStructure(name,pi) { }
+		Structure(const std::string& name, const ParseInfo& pi) : AbstractStructure(name,pi) { }
 
 		// Destructor
 		~Structure();
@@ -1105,13 +1037,11 @@ class Structure : public AbstractStructure {
 		void accept(Visitor* v) const;
 
 		// Debugging
-		string	to_string(unsigned int spaces = 0) const;
-
+		std::string	to_string(unsigned int spaces = 0) const;
 };
 
 class AbstractTheory;
 namespace StructUtils {
-
 	// Make a theory containing all literals that are true according to the given structure
 	AbstractTheory*		convert_to_theory(const AbstractStructure*);	
 
@@ -1119,8 +1049,7 @@ namespace StructUtils {
 	void	changevoc(AbstractStructure*,Vocabulary*);
 
 	// Compute the complement of the given table in the given structure
-	PredTable*	complement(const PredTable*,const vector<Sort*>&,const AbstractStructure*);
-
+	PredTable*	complement(const PredTable*,const std::vector<Sort*>&,const AbstractStructure*);
 }
 
 /**
@@ -1128,17 +1057,16 @@ namespace StructUtils {
  *		Precondition: all tables in the tuple are finite
  */
 class SortTableTupleIterator {
-	
 	private:
-		vector<unsigned int>	_currvalue;
-		vector<unsigned int>	_limits;
-		vector<SortTable*>		_tables;
+		std::vector<unsigned int>	_currvalue;
+		std::vector<unsigned int>	_limits;
+		std::vector<SortTable*>		_tables;
 
 	public:
-		SortTableTupleIterator(const vector<SortTable*>&);
-		SortTableTupleIterator(const vector<Variable*>&, AbstractStructure*);	// tuple of tables are the tables
-																				// for the sorts of the given variables
-																				// in the given structure
+		SortTableTupleIterator(const std::vector<SortTable*>&);
+		SortTableTupleIterator(const std::vector<Variable*>&, AbstractStructure*);	// tuple of tables are the tables
+																					// for the sorts of the given variables
+																					// in the given structure
 		bool nextvalue();							// go to the next value. Returns false iff there is no next value.
 		bool empty()						const;	// true iff the cross product is empty
 		bool singleton()					const;  // true iff the cross product is a singleton

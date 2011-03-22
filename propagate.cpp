@@ -6,6 +6,8 @@
 
 #include "propagate.hpp"
 #include "fobdd.hpp"
+#include "theory.hpp"
+#include "structure.hpp"
 
 using namespace std;
 

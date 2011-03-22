@@ -4,11 +4,15 @@
 	(c) K.U.Leuven
 ************************************/
 
-#include "data.hpp"
-#include "namespace.hpp"
-#include "builtin.hpp"
+#include "vocabulary.hpp"
 #include <iostream>
 #include <algorithm>
+#include "data.hpp"
+#include "namespace.hpp"
+#include "structure.hpp"
+#include "builtin.hpp"
+
+using namespace std;
 
 /**********************
 	Domain elements

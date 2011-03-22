@@ -5,6 +5,10 @@
 ************************************/
 
 #include "fobdd.hpp"
+#include "term.hpp"
+#include "theory.hpp"
+
+using namespace std;
 
 /*******************
 	Kernel order

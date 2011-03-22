@@ -1,5 +1,13 @@
-#include "error.hpp"
+/************************************
+	options.cpp
+	this file belongs to GidL 2.0
+	(c) K.U.Leuven
+************************************/
+
 #include "options.hpp"
+#include "error.hpp"
+
+using namespace std;
 
 void InfOptions::set(const string& opt, const string& val, ParseInfo* pi) {
 	if(InfOptions::isoption(opt)) {

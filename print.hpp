@@ -7,14 +7,17 @@
 #ifndef PRINT_HPP
 #define PRINT_HPP
 
-#include "visitor.hpp"
-#include "vocabulary.hpp"
-#include "structure.hpp"
-#include "options.hpp"
 #include <cstdio>
 #include <sstream>
+#include <string>
 
+#include "visitor.hpp"
+
+class PFSymbol;
+class AbstractStructure;
+class PredTable;
 class GroundTranslator;
+class InfOptions;
 
 /*************************
 	Printer base class
@@ -22,7 +25,7 @@ class GroundTranslator;
 
 class Printer : public Visitor {
 	protected:
-		stringstream _out;
+		std::stringstream _out;
 		unsigned int _indent;
 		Printer(); 
 	
@@ -31,10 +34,10 @@ class Printer : public Visitor {
 		static Printer* create(InfOptions* opts);
 
 		// Print methods
-		string print(const Vocabulary*);
-		string print(const AbstractTheory*);
-		string print(const AbstractStructure*);
-		string print(const Namespace*);
+		std::string print(const Vocabulary*);
+		std::string print(const AbstractTheory*);
+		std::string print(const AbstractStructure*);
+		std::string print(const Namespace*);
 
 		// Indentation
 		void indent();

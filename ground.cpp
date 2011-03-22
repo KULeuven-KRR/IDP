@@ -5,12 +5,19 @@
 ************************************/
 
 #include "ground.hpp"
-#include "ecnf.hpp"
+
 #include <typeinfo>
 #include <iostream>
 #include <sstream>
-#include <limits> // numeric_limits
+#include <limits>
+
+#include "structure.hpp"
+#include "ecnf.hpp"
 #include "options.hpp"
+#include "generator.hpp"
+#include "checker.hpp"
+
+using namespace std;
 
 /** The two built-in literals 'true' and 'false' **/
 int _true = numeric_limits<int>::max();

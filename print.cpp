@@ -5,12 +5,15 @@
 ************************************/
 
 #include "print.hpp"
-#include "theory.hpp"
 #include "ecnf.hpp"
+#include "namespace.hpp"
 #include "vocabulary.hpp"
+#include "theory.hpp"
 #include "structure.hpp"
 #include "term.hpp"
-#include "namespace.hpp"
+#include "options.hpp"
+
+using namespace std;
 
 /**************
     Printer

@@ -5,13 +5,18 @@
 ************************************/
 
 #include "execute.hpp"
+#include "namespace.hpp"
+#include "structure.hpp"
 #include "ground.hpp"
 #include "ecnf.hpp"
 #include "print.hpp"
 #include "data.hpp"
+#include "options.hpp"
 #include "lua.hpp"
 #include "error.hpp"
 #include "fobdd.hpp"
+
+using namespace std;
 
 /*
 	Connection with lua

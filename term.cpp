@@ -4,14 +4,19 @@
 	(c) K.U.Leuven
 ************************************/
 
+#include "term.hpp"
 #include "data.hpp"
 #include "namespace.hpp"
+#include "vocabulary.hpp"
+#include "theory.hpp"
+#include "structure.hpp"
 #include "builtin.hpp"
 #include "visitor.hpp"
 
+using namespace std;
+
 extern string itos(int);
 extern string dtos(double);
-
 
 /*******************
 	Constructors
