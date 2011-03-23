@@ -214,7 +214,13 @@ string GroundDefinition::to_string(unsigned int) const {
 	Abstract Ground theories
 *******************************/
 
-const int _nodef = -1;
+const int NODEF = -1;
+
+AbstractGroundTheory::AbstractGroundTheory(AbstractStructure* str) : 
+	AbstractTheory("",ParseInfo()), _structure(str), _translator(new GroundTranslator()) { }
+
+AbstractGroundTheory::AbstractGroundTheory(Vocabulary* voc, AbstractStructure* str) : 
+	AbstractTheory("",voc,ParseInfo()), _structure(str), _translator(new GroundTranslator()) { }
 
 /*
  * AbstractGroundTheory::transformForAdd(vector<int>& vi, VIType vit, int defnr, bool skipfirst)
@@ -224,7 +230,7 @@ const int _nodef = -1;
  * PARAMETERS
  *		vi			- given vector of literals
  *		vit			- indicates whether vi represents a disjunction, conjunction or set of literals
- *		defnr		- number of the definition vi belongs to. Is _nodef when vi does not belong to a definition
+ *		defnr		- number of the definition vi belongs to. Is NODEF when vi does not belong to a definition
  *		skipfirst	- if true, the defining rule for the first literal is not added to the ground theory
  * TODO
  *		implement unfolding
@@ -270,7 +276,7 @@ void AbstractGroundTheory::transformForAdd(const vector<int>& vi, VIType /*vit*/
 					}
 				}
 				if(body->type() == TS_RULE) {
-					assert(defnr != _nodef);
+					assert(defnr != NODEF);
 					addPCRule(defnr,atom,body);
 				}
 			}
@@ -278,7 +284,7 @@ void AbstractGroundTheory::transformForAdd(const vector<int>& vi, VIType /*vit*/
 				assert(typeid(*tsbody) == typeid(AggTsBody));
 				AggTsBody* body = dynamic_cast<AggTsBody*>(tsbody);
 				if(body->type() == TS_RULE) {
-					assert(defnr != _nodef);
+					assert(defnr != NODEF);
 					addAggRule(defnr,atom,body);
 				}
 				else {
@@ -295,7 +301,7 @@ void AbstractGroundTheory::transformForAdd(const vector<int>& vi, VIType /*vit*/
 *******************************/
 
 void GroundTheory::addClause(GroundClause& cl, bool skipfirst) {
-	transformForAdd(cl,VIT_DISJ,_nodef,skipfirst);
+	transformForAdd(cl,VIT_DISJ,NODEF,skipfirst);
 	_clauses.push_back(cl);
 }
 
@@ -325,7 +331,7 @@ void GroundTheory::addFixpDef(GroundFixpDef*) {
 }
 
 void GroundTheory::addAggregate(int head, AggTsBody* body) {
-	addSet(body->setnr(),_nodef,(body->aggtype() != AGGCARD));
+	addSet(body->setnr(),NODEF,(body->aggtype() != AGGCARD));
 	_aggregates.push_back(new GroundAggregate(body->aggtype(),body->lower(),body->type(),head,body->setnr(),body->bound()));
 }
 
@@ -418,7 +424,7 @@ string GroundTheory::to_string() const {
 **********************/
 
 void SolverTheory::addClause(GroundClause& cl, bool skipfirst) {
-	transformForAdd(cl,VIT_DISJ,_nodef,skipfirst);
+	transformForAdd(cl,VIT_DISJ,NODEF,skipfirst);
 	vector<MinisatID::Literal> mcl;
 	for(unsigned int n = 0; n < cl.size(); ++n) {
 		MinisatID::Literal l(abs(cl[n]),cl[n]<0);
@@ -456,7 +462,7 @@ void SolverTheory::addFixpDef(GroundFixpDef*) {
 }
 
 void SolverTheory::addAggregate(int head, AggTsBody* body) {
-	addSet(body->setnr(),_nodef,(body->aggtype() != AGGCARD));
+	addSet(body->setnr(),NODEF,(body->aggtype() != AGGCARD));
 	MinisatID::AggSign sg = (body->lower() ? MinisatID::AGGSIGN_LB : MinisatID::AGGSIGN_UB);
 	MinisatID::AggType tp;
 	switch(body->aggtype()) {

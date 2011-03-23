@@ -10,17 +10,36 @@
 #include <utility>
 #include <string>
 #include <vector>
+#include <cassert>
 
 #include "common.hpp" // FIXME: need include for enum AggType
-#include "vocabulary.hpp" //FIXME: need include for ParseInfo
+#include "parseinfo.hpp"
+//#include "theory.hpp" //FIXME: forward declaration instead?
 
 class Formula;
 class Term;
 class Sort;
+class Variable;
+class Predicate;
+class Function;
+class Definition;
+class FixpDef;
+class Rule;
+class PredForm;
+class BoolForm;
+class EquivForm;
+class QuantForm;
+class EqChainForm;
+class FuncTerm;
+class AggTerm;
+class DomainTerm;
+class SetExpr;
+class QuantSetExpr;
+class EnumSetExpr;
 class FiniteSortTable;
 class FinitePredTable;
-
 class LuaProcedure;
+class Visitor;
 
 struct YYLTYPE;
 

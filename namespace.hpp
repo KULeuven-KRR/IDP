@@ -12,16 +12,17 @@
 #include <map>
 #include <set>
 
-#include "vocabulary.hpp" //FIXME? need include for ParseInfo
+#include "parseinfo.hpp"
 #include "lua.hpp"
 
 class Vocabulary;
 class AbstractStructure;
 class AbstractTheory;
-
+class Sort;
+class Predicate;
+class Function;
 class LuaProcedure;
 class OverloadedObject;
-
 class InfOptions;
 struct TypedInfArg;
 

@@ -10,7 +10,7 @@
 #include <vector>
 #include <string>
 
-#include "vocabulary.hpp" //FIXME: need include for ParseInfo
+#include "parseinfo.hpp"
 
 struct TypedInfArg;
 

@@ -12,7 +12,7 @@
 #include <map>
 
 #include "theory.hpp"
-#include "ground.hpp" //FIXME: need include for GroundTranslate and enum TsType
+#include "ground.hpp" //FIXME: need include for enum TsType
 #include "pcsolver/src/external/ExternalInterface.hpp"
 
 typedef MinisatID::WrappedPCSolver SATSolver;
@@ -276,10 +276,8 @@ class AbstractGroundTheory : public AbstractTheory {
 
 	public:
 		// Constructors 
-		AbstractGroundTheory(AbstractStructure* str) : 
-			AbstractTheory("",ParseInfo()), _structure(str), _translator(new GroundTranslator()) { }
-		AbstractGroundTheory(Vocabulary* voc, AbstractStructure* str) : 
-			AbstractTheory("",voc,ParseInfo()), _structure(str), _translator(new GroundTranslator()) { }
+		AbstractGroundTheory(AbstractStructure* str); 
+		AbstractGroundTheory(Vocabulary* voc, AbstractStructure* str);
 
 		// Destructor
 		virtual void recursiveDelete()	{ delete(this);			}

@@ -12,7 +12,7 @@
 #include <map>
 #include <string>
 
-#include "vocabulary.hpp" //FIXME: need include for ParseInfo
+#include "parseinfo.hpp"
 #include "visitor.hpp"
 
 typedef std::vector<std::vector<Element> > VVE;

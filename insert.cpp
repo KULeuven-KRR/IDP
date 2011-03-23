@@ -2425,7 +2425,7 @@ namespace Insert {
 			else {
 				YYLTYPE l; 
 				l.first_line = (nst->_pi).line();
-				l.first_column = (nst->_pi).col();
+				l.first_column = (nst->_pi).column();
 				v = quantifiedvar(name,l);
 				t = new VarTerm(v,nst->_pi);
 			}

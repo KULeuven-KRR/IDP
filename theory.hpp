@@ -11,7 +11,7 @@
 #include <vector>
 #include <map>
 
-#include "term.hpp" //FIXME: include needed for Term* AggForm::subterm(int)
+#include "term.hpp" //FIXME: include needed for Term* AggForm::subterm(int). Why?
 
 class GroundTranslator;
 class GroundTheory;

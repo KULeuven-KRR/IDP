@@ -12,7 +12,7 @@
 #include <vector>
 #include <set>
 
-#include "vocabulary.hpp" //FIXME: need include for ParseInfo
+#include "parseinfo.hpp"
 #include "lua.hpp"
 
 class Namespace;

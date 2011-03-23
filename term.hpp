@@ -13,11 +13,12 @@
 #include <cassert>
 
 #include "common.hpp"
-#include "vocabulary.hpp" //FIXME: need this include for ParseInfo
+#include "parseinfo.hpp"
 #include "visitor.hpp"
 
 class Variable;
 class FiniteSortTable;
+class AbstractStructure;
 
 /*******************************
 	Abstract base class term
@@ -325,7 +326,6 @@ class QuantSetExpr : public SetExpr {
 		std::string	to_string()	const;	
 };
 
-class AbstractStructure;
 namespace SetUtils {
 	bool isTwoValued(SetExpr*,AbstractStructure*);
 }
