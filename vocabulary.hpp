@@ -9,6 +9,7 @@
 
 #include <vector>
 #include <set>
+#include <map>
 #include <ostream>
 #include "parseinfo.hpp"
 
@@ -35,49 +36,53 @@ class SortTable;
 class Sort {
 
 	private:
-		std::string				_name;			//!< name of the sort
-		std::set<Vocabulary*>	_vocabularies;	//!< all vocabularies the sort belongs to 
-
-		std::set<Sort*>			_parents;		//!< the parent sorts of the sort in the sort hierarchy
-		std::set<Sort*>			_children;		//!< the children of the sort in the sort hierarchy 
-	
-		Predicate*				_pred;			//!< the predicate that corresponds to the sort
-		ParseInfo				_pi;			//!< the place where the sort was declared 
-
-		SortTable*				_interpretation;	//!< the interpretation of the sort if it is built-in. 
-													//!< a null-pointer otherwise.
-		~Sort();
+		std::string					_name;				//!< Name of the sort
+		std::set<const Vocabulary*>	_vocabularies;		//!< All vocabularies the sort belongs to 
+		std::set<Sort*>				_parents;			//!< The parent sorts of the sort in the sort hierarchy
+		std::set<Sort*>				_children;			//!< The children of the sort in the sort hierarchy 
+		Predicate*					_pred;				//!< The predicate that corresponds to the sort
+		ParseInfo					_pi;				//!< The place where the sort was declared 
+		SortTable*					_interpretation;	//!< The interpretation of the sort if it is built-in. 
+														//!< A null-pointer otherwise.
+														
+		~Sort();					//!< Destructor
 		void removeParent(Sort* p);	//!< Removes parent p
 		void removeChild(Sort* c);	//!< Removes child c
+		void generatePred();		//!< Generate the predicate that corresponds to the sort
+
+		void removeVocabulary(const Vocabulary*);	//!< Removes a vocabulary from the list of vocabularies
+		void addVocabulary(const Vocabulary*);		//!< Add a vocabulary to the list of vocabularies
 
 	public:
 		// Constructors
-		Sort(const std::string& name);						//!< create an internal sort 
-		Sort(const std::string& name, const ParseInfo& pi);  //!< create a user-declared sort
+		Sort(const std::string& name,SortTable* inter = 0);							//!< Create an internal sort 
+		Sort(const std::string& name, const ParseInfo& pi, SortTable* inter = 0);	//!< Create a user-declared sort
 
 		// Mutators
 		void	addParent(Sort* p);	//!< Adds p as a parent. Also adds this as a child of p.
 		void	addChild(Sort* c);	//!< Adds c as a child. Also add this as a parent of c.
 		
 		// Inspectors
-		const std::string&	name()							const	{ return _name;		} 
-		const ParseInfo&	pi()							const	{ return _pi;		}
-		Predicate*			pred()							const	{ return _pred;		}
-		std::set<Sort*>		ancestors(Vocabulary* v = 0)	const;	//!< Returns the ancestor of the sort
-		std::set<Sort*>		descendents(Vocabulary* v = 0)	const;	//!< Returns the descendents of the sort
-		SortTable*			interpretation()				const	{ return _interpretation;		}	
-			//!< returns the interpretation for built-in sorts
-		bool				builtin()						const	{ return _interpretation != 0;	}
+		const std::string&		name()									const;	//!< Returns the name of the sort
+		const ParseInfo&		pi()									const;	//!< Returns the parse info of the sort
+		Predicate*				pred()									const;	//!< Returns the corresponding predicate
+		std::set<Sort*>	ancestors(const Vocabulary* v = 0)		const;	//!< Returns the ancestor of the sort
+		std::set<Sort*>	descendents(const Vocabulary* v = 0)	const;	//!< Returns the descendents of the sort
+		bool					builtin()								const;  //!< True iff the sort is built-in
+		const SortTable*		interpretation()						const;	
+			//!< Returns the interpretaion for built-in sorts
 
 		// Output
 		std::ostream&	put(std::ostream&)	const;
-		std::string		to_string()		const;
+		std::string		to_string()			const;
+
+		friend class Vocabulary;
 };
 
 std::ostream& operator<< (std::ostream&,const Sort&);
 
 namespace SortUtils {
-	Sort* resolve(Sort* s1, Sort* s2, Vocabulary* v);	//!< Return the unique nearest common ancestor of two sorts
+	Sort* resolve(Sort* s1, Sort* s2, const Vocabulary* v);	//!< Return the unique nearest common ancestor of two sorts
 }
 
 /****************
@@ -91,27 +96,29 @@ namespace SortUtils {
 class Variable {
 
 	private:
-		string			_name;	//!< name of the variable
-		const Sort*		_sort;	//!< sort of the variable (0 if the sort is not derived)
-		static int		_nvnr;	//!< used to create unique new names for internal variables
-		ParseInfo		_pi;	//!< the place where the variable was quantified 
+		std::string		_name;	//!< Name of the variable
+		const Sort*		_sort;	//!< Sort of the variable (0 if the sort is not derived)
+		static int		_nvnr;	//!< Used to create unique new names for internal variables
+		ParseInfo		_pi;	//!< The place where the variable was quantified 
 
-		// Destructor
-		~Variable() { }	// NOTE: deleting variables creates dangling pointers
-						// Only delete a variable when deleting its quantifier!
+		~Variable();	//!< Destructor
+
+
 	public:
 
 		// Constructors
-		Variable(const string& name, const Sort* sort, const ParseInfo& pi) : _name(name), _sort(sort), _pi(pi) { }
-		Variable(const Sort* s);	// constructor for an internal variable 
+		Variable(const std::string& name, const Sort* sort, const ParseInfo& pi);	
+			//!< Constructor for a named variable
+		Variable(const Sort* s);	
+			//!< Constructor for an internal variable 
 
 		// Mutators
-		void	sort(const Sort* s)	{ _sort = s; }
+		void	sort(const Sort* s);	//!< Change the sort of the variable
 
 		// Inspectors
-		const std::string&	name()	const { return _name;	}
-		const Sort*			sort()	const { return _sort;	}
-		const ParseInfo&	pi()	const { return _pi;		}
+		const std::string&	name()	const;	//!< Returns the name of the variable 
+		const Sort*			sort()	const;	//!< Returns the sort of the variable (null-pointer if the variable has no sort)
+		const ParseInfo&	pi()	const;	//!< Returns the parse info of the variable
 
 		// Output
 		std::ostream&	put(std::ostream&)	const;
@@ -133,221 +140,237 @@ std::ostream& operator<< (std::ostream&,const Variable&);
 class PFSymbol {
 	
 	protected:
-		string				_name;	//!< Name of the symbol (ending with the /arity)
-		std::vector<Sort*>	_sorts;	//!< Sorts of the arguments. For a function symbol, the last sort is the output sort.
-		ParseInfo			_pi;	//!< the place where the symbol was declared 
+		std::string					_name;			//!< Name of the symbol (ending with the /arity)
+		ParseInfo					_pi;			//!< The place where the symbol was declared 
+		std::set<const Vocabulary*>	_vocabularies;	//!< All vocabularies the symbol belongs to 
+		unsigned int				_binding;		//!< Binding strength of infix symbols. 0 for prefix symbols.
+		std::vector<Sort*>			_sorts;			//!< Sorts of the arguments. 
+													//!< For a function symbol, the last sort is the output sort.
 
 		// Destructor
-		virtual ~PFSymbol() { }		// NOTE: deleting a PFSymbol creates dangling pointers
-									// Only delete a PFSymbol if the global namespace is deleted
+		virtual ~PFSymbol();	//!< Destructor
+
+		void removeVocabulary(const Vocabulary*);	//!< Removes a vocabulary from the list of vocabularies
+		void addVocabulary(const Vocabulary*);		//!< Add a vocabulary to the list of vocabularies
+		virtual std::set<Sort*> allsorts() const = 0;	//!< Return all sorts that occur in the (overloaded) symbol(s)
 
 	public:
 
 		// Constructors
-		PFSymbol(const string& name, const vector<Sort*>& sorts) : 
-			_name(name), _sorts(sorts) { }
-		PFSymbol(const string& name, const vector<Sort*>& sorts, const ParseInfo& pi) : 
-			_name(name), _sorts(sorts), _pi(pi) { }
+		PFSymbol(const std::string& name, unsigned int nrsorts, unsigned int binding = 0);
+		PFSymbol(const std::string& name, const std::vector<Sort*>& sorts, unsigned int binding = 0); 
+		PFSymbol(const std::string& name, const std::vector<Sort*>& sorts, const ParseInfo& pi, unsigned int binding = 0);  
 
 		// Inspectors
-		const string&			name()					const { return _name;			}
-		const ParseInfo&		pi()					const { return _pi;				}
-		unsigned int			nrSorts()				const { return _sorts.size();	}
-		Sort*					sort(unsigned int n)	const { return _sorts[n];		}
-		const vector<Sort*>&	sorts()					const { return _sorts;			}
+		const std::string&				name()					const;	//!< Returns the name of the symbol (ends on /arity)
+		const ParseInfo&				pi()					const;	//!< Returns the parse info of the symbol
+		unsigned int					nrSorts()				const;	//!< Returns the number of sorts of the symbol
+																		//!< (arity for predicates, arity+1 for functions)
+		Sort*							sort(unsigned int n)	const;	//!< Returns the n'th sort of the symbol
+		const std::vector<Sort*>&		sorts()					const;	//!< Returns the sorts of the symbol
+		bool							infix()					const;  //!< True iff the symbol is infix
+		unsigned int					binding()				const;  //!< Returns binding strength (0 for prefix symbols)
+		bool							hasVocabularies()		const;	//!< Returns true iff the symbol occurs in a 
+																		//!< vocabulary
 
-		// Built-in and overloaded symbols 
-		virtual bool		builtin()										const = 0;
-		virtual PredInter*	predinter(const AbstractStructure&)				const = 0;
-		virtual bool		overloaded()									const = 0;
-		virtual PFSymbol*	resolve(const vector<Sort*>&)					const = 0;
-		virtual PFSymbol*	disambiguate(const vector<Sort*>&,Vocabulary*)  const = 0;
+		virtual bool			builtin()		const = 0;	//!< Returns true iff the symbol is built-in
+		virtual bool			overloaded()	const = 0;	//!< Returns true iff the symbol is in fact a set of overloaded
+															//!< symbols
+
+		// Disambiguate overloaded symbols
+		virtual const PFSymbol*	resolve(const std::vector<Sort*>&)									const = 0;
+		virtual const PFSymbol*	disambiguate(const std::vector<Sort*>&, const Vocabulary* v = 0)	const = 0;
 
 		// Output
 		virtual std::ostream&	put(std::ostream&)	const = 0;
-				string			to_string()			const;
-		virtual	bool			infix()				const = 0;
+				std::string		to_string()			const;
+
+		friend class Vocabulary;
 };
 
-std::ostream& operator<< (std::ostream&,const PFSymbol&);
+class PredGenerator;
+class PredInter;
+class PredInterGenerator;
+class AbstractStructure;
 
-#ifdef OLD
-/** Predicate symbols **/
-
+/**
+ * DESCRIPTION
+ *		Class to represent predicate symbols
+ */
 class Predicate : public PFSymbol {
 
 	private:
-		static int	_npnr;	// used to create unique new names for internal predicates
+		static int				_npnr;				//!< Used to create unique new names for internal predicates
+		PredInterGenerator*		_interpretation;	//!< The interpretation if the predicate is built-in, a null-pointer
+													//!< otherwise.
+		std::set<Predicate*>	_overpreds;			//!< The overloaded predicates. Empty vector if the predicate is not
+													//!< overloaded.
+		PredGenerator*			_overpredgenerator;	//!< Generates new built-in, overloaded predicates. 
+													//!< Null-pointer if the predicate is not overloaded.
+
+		std::set<Sort*> allsorts() const;
 
 	public:
 
 		// Constructors
-		Predicate(const string& name,const vector<Sort*>& sorts, const ParseInfo& pi) : PFSymbol(name,sorts,pi) { }
-		Predicate(const string& name,const vector<Sort*>& sorts) : PFSymbol(name,sorts) { }
-		Predicate(const vector<Sort*>& sorts);	// constructor for internal/tseitin predicates
+		Predicate(const std::string& name,const std::vector<Sort*>& sorts, const ParseInfo& pi, unsigned int binding = 0);
+		Predicate(const std::string& name,const std::vector<Sort*>& sorts, unsigned int binding = 0);
+		Predicate(const std::set<Predicate*>& overpreds);	//!< constructor for overloaded predicates 
+		Predicate(const std::vector<Sort*>& sorts);	//!< constructor for internal/tseitin predicates
+		Predicate(const std::string& name, const std::vector<Sort*>& sorts, PredInterGenerator* inter, unsigned int binding);
 
-		// Destructors
-		virtual ~Predicate() { }
+		~Predicate();	//!< Destructor
 
 		// Inspectors
-				unsigned int	arity()		const { return _sorts.size();	}
-				bool			ispred()	const { return true;			}
+		unsigned int	arity()			const;	//!< Returns the arity of the predicate
+		bool			builtin()		const;	
+		bool			overloaded()	const;			
 
 		// Built-in symbols
-				PredInter*		predinter(const AbstractStructure& s)	const { return inter(s);	}
-		virtual	PredInter*		inter(const AbstractStructure&)			const { return 0;			}
+		PredInter*	interpretation(const AbstractStructure&)	const;
 
 		// Overloaded symbols 
-		virtual bool				contains(Predicate* p)				const { return p == this;	}
-		virtual Predicate*			resolve(const vector<Sort*>&);
-		virtual Predicate*			disambiguate(const vector<Sort*>&,Vocabulary*);
-		virtual vector<Predicate*>	nonbuiltins();
-		virtual	vector<Sort*>		allsorts()							const;
+		bool				contains(const Predicate* p)											const;
+		const Predicate*	resolve(const std::vector<Sort*>&)								const;
+		const Predicate*	disambiguate(const std::vector<Sort*>&,const Vocabulary* v = 0)	const;
 
-		// Visitor
-        void accept(Visitor*) const;
+		// Output
+		std::ostream&	put(std::ostream&)	const;
 
+		friend class Sort;
+		friend class Vocabulary;
 };
 
-/** Overloaded predicate symbols **/
+std::ostream& operator<< (std::ostream&,const Predicate&);
 
-class OverloadedPredicate : public Predicate {
-
+/**
+ * Class to generate new predicates.
+ * Used to represent the infinite number of predicates that are overloaded by some built-in predicates (e.g. =/2)
+ */
+class PredGenerator {
 	protected:
-		vector<Predicate*>	_overpreds;	// the overloaded predicates
-
+		std::string		_name;	//!< The name of the generated predicates
 	public:
+		virtual ~PredGenerator() { }
 
-		// Constructors
-		OverloadedPredicate(const string& n, unsigned int ar) : Predicate(n,vector<Sort*>(ar,0)) { }
+		PredGenerator(const std::string& name);
+		virtual				bool contains(const Predicate* predicate)									const = 0;
+		virtual const Predicate* resolve(const std::vector<Sort*>&)								const = 0;
+		virtual const Predicate* disambiguate(const std::vector<Sort*>&, const Vocabulary* v = 0)	const = 0;
+};
 
-		// Destructor
-		~OverloadedPredicate() { }
+class PredInterGeneratorGenerator; 
 
-		// Mutators
-		void	overpred(Predicate* p);	
+/**
+ * Class to generate new predicates that are overloaded by </2, >/2, or =/2
+ */
+class ComparisonPredGenerator : public PredGenerator {
+	private:
+		mutable std::map<Sort*,Predicate*>	_overpreds;
+		PredInterGeneratorGenerator*				_interpretation;
+		unsigned int								_binding;
+	public:
+		ComparisonPredGenerator(const std::string& name,PredInterGeneratorGenerator* inter,unsigned int binding);
+		~ComparisonPredGenerator();
 
-		// Inspectors
-				bool				overloaded()						const { return true;		}
-		virtual bool				contains(Predicate* p)				const;
-		virtual Predicate*			resolve(const vector<Sort*>&);
-		virtual Predicate*			disambiguate(const vector<Sort*>&,Vocabulary*);
-				vector<Predicate*>	nonbuiltins();	//!< All non-builtin predicates 
-													//!< that are overloaded by the predicate
-		const	vector<Predicate*>&	overpreds()							const { return _overpreds;	}
-				vector<Sort*>		allsorts()							const;
+		bool contains(const Predicate* predicate)									const;
 
-		// Visitor
-		void 	accept(Visitor*) const;
-
-		// Debugging of GidL
-		void	inspect()	const;
-		virtual string	to_string()	const;
-
+		const Predicate* resolve(const std::vector<Sort*>&)								const;
+		const Predicate* disambiguate(const std::vector<Sort*>&, const Vocabulary* v = 0)	const;
 };
 
 namespace PredUtils {
 	
 	/**
-	 * return a new overloaded predicate containing the two given predicates
+	 * \brief Return a new overloaded predicate containing the two given predicates
 	 */
 	Predicate* overload(Predicate* p1, Predicate* p2);
 
 	/**
-	 * return a new overloaded predicate containing the given predicates
+	 * \brief Return a new overloaded predicate containing the given predicates
 	 */
-	Predicate* overload(const vector<Predicate*>&);
+	Predicate* overload(const std::set<Predicate*>&);
 
 }
 
-/** Functions **/
+class FuncGenerator;
+class FuncInter;
+class FuncInterGenerator;
 
+/**
+ * DESCRIPTION
+ *		Class to represent function symbols
+ */
 class Function : public PFSymbol {
 
-	protected:
-		bool	_partial;		// true iff the function is declared as partial function
-		bool	_constructor;	// true iff the function generates new domain elements
+	private:
+		bool				_partial;			//!< true iff the function is declared as partial function
+		std::vector<Sort*>	_insorts;			//!< the input sorts of the function symbol
+		Sort*				_outsort;			//!< the output sort of the function symbol
+		FuncInterGenerator*	_interpretation;	//!< the interpretation if the function is built-in, a null-pointer
+														//!< otherwise
+		std::set<Function*>	_overfuncs;			//!< the overloaded function. Empty vector if the function is not
+														//!< overloaded
+		FuncGenerator*		_overfuncgenerator;	//!< generates new built-in, overloaded functions. 
+														//!< Null-pointer if the function is not overloaded.
+
+		std::set<Sort*> allsorts() const;
 
 	public:
 
 		// Constructors
-		Function(const string& name, const vector<Sort*>& is, Sort* os, const ParseInfo& pi) : 
-			PFSymbol(name,is,pi), _partial(false), _constructor(false) { _sorts.push_back(os); }
-		Function(const string& name, const vector<Sort*>& sorts, const ParseInfo& pi) : 
-			PFSymbol(name,sorts,pi), _partial(false), _constructor(false) { }
-		Function(const string& name, const vector<Sort*>& is, Sort* os) : 
-			PFSymbol(name,is), _partial(false), _constructor(false) { _sorts.push_back(os); }
-		Function(const string& name, const vector<Sort*>& sorts) : 
-			PFSymbol(name,sorts), _partial(false), _constructor(false) { }
+		Function(const std::string& name, const std::vector<Sort*>& is, Sort* os, const ParseInfo& pi);
+		Function(const std::string& name, const std::vector<Sort*>& sorts, const ParseInfo& pi);
+		Function(const std::string& name, const std::vector<Sort*>& is, Sort* os);
+		Function(const std::string& name, const std::vector<Sort*>& sorts);
+		Function(const std::set<Function*>& overfuncs);	//!< constructor for overloaded functions 
+		Function(const std::string& name, const std::vector<Sort*>& sorts, FuncInterGenerator*, unsigned int binding);
 
-		// Destructors
-		virtual ~Function() { }
+		~Function();
 
 		// Mutators
-		void	partial(const bool& b)		{ _partial = b;		}
-		void	constructor(const bool& b)	{ _constructor = b;	}
+		void	partial(bool b);	//!< Make the function total/partial if b is false/true
 	
 		// Inspectors
-				vector<Sort*>	insorts()				const;	// returns the input sorts of the function
-				unsigned int	arity()					const { return _sorts.size()-1;			}
-				Sort*			insort(const int& n)	const { return _sorts[n];				}
-				Sort*			outsort()				const { return _sorts.back();			}
-				bool			partial()				const { return _partial;				}
-				bool			constructor()			const { return _constructor;			}
-				bool			ispred()				const { return false;					}
+		const std::vector<Sort*>&	insorts()				const;	//!< Return the input sorts of the function
+		unsigned int				arity()					const;	//!< Returns the arity of the function
+		Sort*						insort(unsigned int n)	const;	//!< Returns the n'th input sort of the function
+		Sort*						outsort()				const;	//!< Returns the output sort of the function
+		bool						partial()				const;	//!< Returns true iff the function is partial
+		bool						builtin()				const;
+		bool						overloaded()			const;
 
 		// Built-in symbols
-				PredInter*		predinter(const AbstractStructure& s)	const;
-		virtual	FuncInter*		inter(const AbstractStructure&)			const { return 0;		}
+		FuncInter*	interpretation(const AbstractStructure&)	const; 
 
 		// Overloaded symbols 
-		virtual bool				contains(Function* f)	const { return f == this;				}
-		virtual Function*			resolve(const vector<Sort*>&);
-		virtual Function*			disambiguate(const vector<Sort*>&,Vocabulary*);
-		virtual	vector<Function*>	nonbuiltins();	
-		virtual	vector<Sort*>		allsorts()				const;	
+		bool				contains(const Function* f)										const;
+		const Function*		resolve(const std::vector<Sort*>&)						const;
+		const Function*		disambiguate(const std::vector<Sort*>&,const Vocabulary*)	const;
 
-		// Visitor
-        void accept(Visitor*) const;
+		// Output
+		std::ostream&	put(std::ostream&)	const;
+
+		friend class Vocabulary;
 
 };
 
-/** Overloaded function symbols **/
+std::ostream& operator<< (std::ostream&, const Function&);
 
-class OverloadedFunction : public Function {
-
+/**
+ * Class to generate new function.
+ * Used to represent the infinite number of function that are overloaded by some built-in functions (e.g. SUCC/1)
+ */
+class FuncGenerator {
 	protected:
-		vector<Function*>	_overfuncs;	// the overloaded functions
-
+		std::string		_name;	//!< The name of the generated functions
 	public:
+		virtual ~FuncGenerator() { }
 
-		// Constructors
-		OverloadedFunction(const string& n, unsigned int ar) : Function(n,vector<Sort*>(ar+1,0)) { }
-
-		// Destructor
-		~OverloadedFunction() { }
-
-		// Mutators
-		void	overfunc(Function* f);
-
-		// Inspectors
-				bool				overloaded()						const { return true;		}
-		virtual bool				contains(Function* f)				const;
-		virtual Function*			resolve(const vector<Sort*>&);
-		virtual Function*			disambiguate(const vector<Sort*>&,Vocabulary*);
-				vector<Function*>	nonbuiltins();	//!< All non-builtin functions 
-													//!< that are overloaded by the function
-		const	vector<Function*>&	overfuncs()							const { return _overfuncs;	}
-				vector<Sort*>		allsorts()							const;	
-
-		// Visitor
-		void 	accept(Visitor*) const;
-
-		// Debugging of GidL
-		void	inspect()	const;
-		virtual string	to_string()	const;
-
-
+		FuncGenerator(const std::string& name);
+		virtual				bool contains(const Function* function)										const = 0;
+		virtual const Function* resolve(const std::vector<Sort*>&)								const = 0;
+		virtual const Function* disambiguate(const std::vector<Sort*>&, const Vocabulary* v = 0)	const = 0;
 };
 
 namespace FuncUtils {
@@ -358,225 +381,91 @@ namespace FuncUtils {
 	Function* overload(Function* p1, Function* p2);
 
 	/**
-	 * return a new overloaded predicate containing the given predicates
+	 * return a new overloaded function containing the given functions
 	 */
-	Function* overload(const vector<Function*>&);
+	Function* overload(const std::set<Function*>&);
 
 }
-
-
 
 /*****************
 	Vocabulary
 *****************/
 
+class InfArg;
+
 class Vocabulary {
 
 	private:
 
-		string		_name;	//<! name of the vocabulary. Default name is the empty string
-		ParseInfo	_pi;	//<! place where the vocabulary was parsed
+		std::string	_name;	//<! Name of the vocabulary. Default name is the empty string.
+		ParseInfo	_pi;	//<! Place where the vocabulary was parsed
 
-		// map a name to a symbol of the vocabulary
-		// NOTE: the strings that map to predicates and functions end on /arity
-		// NOTE: if there is more than one sort/predicate/function with the same name and arity,
-		// this maps to an overloaded sort/predicate/function
-		map<string,set<Sort*> >	_name2sort;
-		map<string,Predicate*>	_name2pred;
-		map<string,Function*>	_name2func;
-
-		// map non-builtin, non-overloaded symbols of the vocabulary to a unique index and vice versa
-		map<Sort*,unsigned int>			_sort2index;		
-		map<Predicate*,unsigned int>	_predicate2index;
-		map<Function*,unsigned int>		_function2index;
-		vector<Sort*>					_index2sort;
-		vector<Predicate*>				_index2predicate;
-		vector<Function*>				_index2function;
+		std::map<std::string,std::set<Sort*> >	_name2sort;	//!< Map a name to the sorts having that name in the vocabulary
+		std::map<std::string,Predicate*>		_name2pred; //!< Map a name to the (overloaded) predicate having 
+															//!< that name in the vocabulary. Name should end on /arity.
+		std::map<std::string,Function*>			_name2func; //!< Map a name to the (overloaded) function having 
+															//!< that name in the vocabulary. Name should end on /arity.
 
 	public:
 
 		// Constructors
-		Vocabulary(const string& name); 
-		Vocabulary(const string& name, const ParseInfo& pi); 
+		Vocabulary(const std::string& name); 
+		Vocabulary(const std::string& name, const ParseInfo& pi); 
 
 		// Destructor
-		virtual ~Vocabulary() { }
+		~Vocabulary();
 
 		// Mutators
-		void addSort(Sort*);		 //!< Add the given sort (and its ancestors) to the vocabulary
-		void addPred(Predicate*);	 //!< Add the given predicate (and its sorts) to the vocabulary
-		void addFunc(Function*);	 //!< Add the given function (and its sorts) to the vocabulary
-		void addVocabulary(Vocabulary*);
+		void addSort(Sort*);				//!< Add the given sort (and its ancestors) to the vocabulary
+		void addPred(Predicate*);			//!< Add the given predicate (and its sorts) to the vocabulary
+		void addFunc(Function*);			//!< Add the given function (and its sorts) to the vocabulary
+		void addVocabulary(Vocabulary*);	//!< Add all symbols of a given vocabulary to the vocabulary
 
 		// Inspectors
-		const string&		name()					const { return _name;					}
+		static Vocabulary*	std();	//!< Returns the standard vocabulary
+		const std::string&	name()					const { return _name;					}
 		const ParseInfo&	pi()					const { return _pi;						}
 		bool				contains(Sort* s)		const;	//!< true if the vocabulary contains the sort
 		bool				contains(Predicate* p)	const;	//!< true if the vocabulary contains the predicate
 		bool				contains(Function* f)	const;	//!< true if the vocabulary contains the function
 		bool				contains(PFSymbol* s)	const; 	//!< true if the vocabulary contains the symbol
-		unsigned int		index(Sort*)			const;	//!< return the index of the given sort
-		unsigned int		index(Predicate*)		const;	//!< return the index of the given predicate
-		unsigned int		index(Function*)		const;	//!< return the index of the given function
-		unsigned int		nrNBSorts()				const { return _index2sort.size();	}
-		unsigned int		nrNBPreds()				const { return _index2predicate.size();	}
-		unsigned int		nrNBFuncs()				const { return _index2function.size();	}
-		Sort*				nbsort(unsigned int n)	const { return _index2sort[n];			}
-		Predicate*			nbpred(unsigned int n)	const { return _index2predicate[n];		}
-		Function*			nbfunc(unsigned int n)	const { return _index2function[n];		}
 
-		map<string,set<Sort*> >::iterator	firstsort()	{ return _name2sort.begin();	}
-		map<string,Predicate*>::iterator	firstpred()	{ return _name2pred.begin();	}
-		map<string,Function*>::iterator		firstfunc()	{ return _name2func.begin();	}
-		map<string,set<Sort*> >::iterator	lastsort()	{ return _name2sort.end();		}
-		map<string,Predicate*>::iterator	lastpred()	{ return _name2pred.end();		}
-		map<string,Function*>::iterator		lastfunc()	{ return _name2func.end();		}
+		std::map<std::string,std::set<Sort*> >::iterator	firstsort()	{ return _name2sort.begin();	}
+		std::map<std::string,Predicate*>::iterator			firstpred()	{ return _name2pred.begin();	}
+		std::map<std::string,Function*>::iterator			firstfunc()	{ return _name2func.begin();	}
+		std::map<std::string,std::set<Sort*> >::iterator	lastsort()	{ return _name2sort.end();		}
+		std::map<std::string,Predicate*>::iterator			lastpred()	{ return _name2pred.end();		}
+		std::map<std::string,Function*>::iterator			lastfunc()	{ return _name2func.end();		}
 
-		const set<Sort*>*	sort(const string&)	const;	// return the sorts with the given name
-		Predicate*			pred(const string&)	const;	// return the predicate with the given name (ending on /arity)
-		Function*			func(const string&)	const;	// return the function with the given name (ending on /arity)
+		std::map<std::string,std::set<Sort*> >::const_iterator	firstsort()	const { return _name2sort.begin();	}
+		std::map<std::string,Predicate*>::const_iterator		firstpred()	const { return _name2pred.begin();	}
+		std::map<std::string,Function*>::const_iterator			firstfunc()	const { return _name2func.begin();	}
+		std::map<std::string,std::set<Sort*> >::const_iterator	lastsort()	const { return _name2sort.end();	}
+		std::map<std::string,Predicate*>::const_iterator		lastpred()	const { return _name2pred.end();	}
+		std::map<std::string,Function*>::const_iterator			lastfunc()	const { return _name2func.end();	}
 
-		vector<Predicate*>	pred_no_arity(const string&)	const;	// return all predicates with the given name (not including the arity)
-		vector<Function*>	func_no_arity(const string&)	const;	// return all functions with the given name (not including the arity)
+		const std::set<Sort*>*	sort(const std::string&)	const;	
+			//!< return the sorts with the given name
+		Predicate*				pred(const std::string&)	const;	
+			//!< return the predicate with the given name (ending on /arity)
+		Function*				func(const std::string&)	const;	
+			//!< return the function with the given name (ending on /arity)
 
-		// Visitor
-		void accept(Visitor*) const;
+		std::set<Predicate*>	pred_no_arity(const std::string&)	const;	
+			//!< return all predicates with the given name (not including the arity)
+		std::set<Function*>		func_no_arity(const std::string&)	const;	
+			//!< return all functions with the given name (not including the arity)
 
         // Lua
-		TypedInfArg getObject(const string& str) const;
+		InfArg getObject(const std::string& str) const;
 
-		// Debugging
-		string to_string(unsigned int spaces = 0) const;
-
-};
-
-
-/**********************
-	Domain elements
-**********************/
-
-/*
- * The four different types of domain elements 
- *		ELINT: an integer 
- *		ELDOUBLE: a floating point number 
- *		ELSTRING: a string (characters are strings of length 1)
- *		ELCOMPOUND: a constructor function applied to a number of domain elements
- *
- *		These types form a hierarchy: ints are also doubles, doubles are also strings, strings are also compounds.
- *
- */
-
-
-// A single domain element
-union Element {
-	int			_int;
-	double		_double;
-	string*		_string;
-	compound*	_compound;
-};
-
-// A pair of a domain element and its type
-struct TypedElement {
-	Element		_element;
-	ElementType	_type;
-	TypedElement(Element e, ElementType t) : _element(e), _type(t) { }
-	TypedElement(int n) : _type(ELINT) { _element._int = n;	}
-	TypedElement(double d) : _type(ELDOUBLE) { _element._double = d;	}
-	TypedElement(string* s) : _type(ELSTRING) { _element._string = s;	}
-	TypedElement(compound* c) : _type(ELCOMPOUND) { _element._compound = c;	}
-	TypedElement() : _type(ELINT) { }
-};
-
-/*
- *		Compound domain elements
- *		
- *		NOTE: sometimes, an int/double/string is represented as a compound domain element
- *		in that case, _function==0 and the only element in _args is the int/double/string
- *
- */
-struct compound {
-	Function*				_function;
-	vector<TypedElement>	_args;
-
-	compound(Function* f, const vector<TypedElement>& a) : _function(f), _args(a) { }
-	string to_string() const;
-};
-typedef compound* domelement;
-
-// Class that implements the relation 'less-than-or-equal' on tuples of domain elements with the same types
-class ElementWeakOrdering {
-	
-	private:
-		vector<ElementType>	_types;	// the types of the two tuples that are compared
-
-	public:
-		ElementWeakOrdering() { }
-		ElementWeakOrdering(const vector<ElementType>& t) : _types(t) { }
-		bool operator()(const vector<Element>&,const vector<Element>&) const;
-		void addType(ElementType t) { _types.push_back(t);	}
-		void changeType(unsigned int n, ElementType t) { _types[n] = t;	}
-};
-
-// Class that implements the relation 'equal' on tuples of domain elements with the same types
-class ElementEquality {
-
-	private:
-		vector<ElementType>	_types;	// the types of the two tuples that are compared
-
-	public:
-		ElementEquality() { }
-		ElementEquality(const vector<ElementType>& t) : _types(t) { }
-		bool operator()(const vector<Element>&,const vector<Element>&) const;
-		void addType(ElementType t) { _types.push_back(t);	}
-		void changeType(unsigned int n, ElementType t) { _types[n] = t;	}
+		// Output
+		std::ostream& putname(std::ostream&)			const;
+		std::ostream& put(std::ostream&)				const;
+		std::string to_string(unsigned int spaces = 0)	const;
 
 };
 
-// Useful functions on domain elements
-namespace ElementUtil {
-	
-	// Return the least precise elementtype of the two given types
-	ElementType	resolve(ElementType,ElementType);
+std::ostream& operator<< (std::ostream&,const Vocabulary&);
 
-	// Return the most precise elementtype
-	ElementType leasttype(); 
-
-	// Return the most precise type of the given element
-	ElementType reduce(Element,ElementType);
-	ElementType reduce(TypedElement);
-
-	// Convert a domain element to a string
-	string	ElementToString(Element,ElementType);
-	string	ElementToString(TypedElement);
-
-	// Return the unique non-existing domain element of a given type. 
-	//Non-existing domain elements are used as return value when a partial function is applied on elements outside its domain
-	Element	nonexist(ElementType);				
-
-	// Checks if the element exists, i.e., if it is not equal to the unique non-existing element
-	bool		exists(Element,ElementType);	
-	bool		exists(TypedElement);					
-
-	// Convert an element from one type to another
-	// If this is impossible, the non-existing element of the requested type is returned
-	Element		convert(TypedElement,ElementType newtype);		
-	Element		convert(Element,ElementType oldtype,ElementType newtype);
-	vector<TypedElement> convert(const vector<domelement>&);
-
-	// Compare elements
-	bool	equal(Element e1, ElementType t1, Element e2, ElementType t2);				// equality
-	bool	strlessthan(Element e1, ElementType t1, Element e2, ElementType t2);		// strictly less than
-	bool	lessthanorequal(Element e1, ElementType t1, Element e2, ElementType t2);	// less than or equal
-
-	// Compare tuples
-	bool	equal(const vector<TypedElement>&, const vector<Element>&, const vector<ElementType>&);
-
-}
-
-bool operator==(TypedElement e1, TypedElement e2);
-bool operator!=(TypedElement e1, TypedElement e2);
-bool operator<=(TypedElement e1, TypedElement e2);
-bool operator<(TypedElement e1, TypedElement e2);
-
-#endif
 #endif

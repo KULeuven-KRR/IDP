@@ -7,10 +7,18 @@
 #ifndef IDP_COMMON_H
 #define IDP_COMMON_H
 
+#include <string>
+
+extern std::string	itos(int);					//!< convert int to string
+extern std::string	dtos(double);				//!< convert double to string
+extern int			stoi(const std::string&);	//!< convert string to int
+extern double		stod(const std::string&);	//!< convert string to double
+
+
+#ifdef OLD
 #include <iostream>
 
 #include <vector>
-#include <string>
 using namespace std;
 struct compound;
 struct TypedElement;
@@ -46,12 +54,6 @@ extern int nrOfChars();
 //	NOTE: this is useful, e.g., when iterating over all values of a tuple of variables.
 extern bool nexttuple(vector<unsigned int>& tuple, const vector<unsigned int>& limits);
 
-/** Conversions **/
-extern string	itos(int);				// int to string
-extern string	dtos(double);			// double to string
-extern int		stoi(const string&);	// string to int
-extern double	stod(const string&);	// string to double
-
 /** Type checking **/
 extern bool isInt(const string&);
 extern bool isInt(double);
@@ -62,4 +64,5 @@ extern bool isDouble(const string&);
 /** Return a string of n spaces **/
 extern string tabstring(unsigned int n);
 
+#endif
 #endif

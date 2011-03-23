@@ -7,6 +7,11 @@
 #ifndef STRUCTURE_HPP
 #define STRUCTURE_HPP
 
+#include <string>
+#include <vector>
+#include <map>
+#include <cassert>
+
 /**
  * \file structure.hpp
  * DESCRIPTION
@@ -45,10 +50,10 @@ enum DomainElementType { DET_INT, DET_DOUBLE, DET_STRING, DET_COMPOUND };
  *		A value for a single domain element. 
  */
 union DomainElementValue {
-	int				_int;		//!< Value if the domain element is an integer
-	double			_double;	//!< Value if the domain element is a floating point number
-	const string*	_string;	//!< Value if the domein element is a string
-	const Compound*	_compound;	//!< Value if the domain element is a function applied to domain elements
+	int					_int;		//!< Value if the domain element is an integer
+	double				_double;	//!< Value if the domain element is a floating point number
+	const std::string*	_string;	//!< Value if the domein element is a string
+	const Compound*		_compound;	//!< Value if the domain element is a function applied to domain elements
 };
 
 /**
@@ -62,7 +67,7 @@ class DomainElement {
 
 		DomainElement(int value);
 		DomainElement(double value);
-		DomainElement(string* value);
+		DomainElement(std::string* value);
 		DomainElement(Compound* value);
 
 	public:
@@ -81,8 +86,10 @@ bool operator!=(const DomainElement&,const DomainElement&);
 bool operator<=(const DomainElement&,const DomainElement&);
 bool operator>=(const DomainElement&,const DomainElement&);
 
-typedef vector<DomainElement*>	ElementTuple;
-typedef vector<ElementTuple>	ElementTable;
+typedef std::vector<DomainElement*>	ElementTuple;
+typedef std::vector<ElementTuple>	ElementTable;
+
+class Function;
 
 /**
  * DESCRIPTION
@@ -93,7 +100,7 @@ class Compound {
 		Function*		_function;
 		ElementTuple	_arguments;
 
-		Compound(Function* function, const vector<DomainElement*> arguments) : 
+		Compound(Function* function, const std::vector<DomainElement*> arguments) : 
 			_function(function), _arguments(arguments) { assert(function != 0); }
 	public:
 		~Compound();
@@ -126,19 +133,19 @@ class DomainElementFactory {
 	private:
 		static DomainElementFactory*	_instance;			//!< The single instance of DomainElementFactory
 		
-		map<const Function*,map<ElementTuple,Compound*> >	_compounds;	//!< Maps a function and tuple of elements to the
-																		//!< corresponding compound.
+		std::map<const Function*,std::map<ElementTuple,Compound*> >	_compounds;	
+			//!< Maps a function and tuple of elements to the corresponding compound.
 																
-		int						_firstfastint;		//!< The first integer in the optimized range
-		int						_lastfastint;		//!< One past the last integer in the optimized range
-		vector<DomainElement*>	_fastintelements;	//!< Stores pointers to integers in the optimized range.
+		int							_firstfastint;		//!< The first integer in the optimized range
+		int							_lastfastint;		//!< One past the last integer in the optimized range
+		std::vector<DomainElement*>	_fastintelements;	//!< Stores pointers to integers in the optimized range.
 															//!< The domain element with value n is stored at
 															//!< _fastintelements[n+_firstfastint]
 
-		map<int,DomainElement*>				_intelements;		//!< Maps an integer outside of the optimized range to its corresponding doman element address.
-		map<double,DomainElement*>			_doubleelements;	//!< Maps a floating point number to its corresponding domain element address.
-		map<const string*,DomainElement*>	_stringelements;	//!< Maps a string pointer to its corresponding domain element address.
-		map<const Compound*,DomainElement*>	_compoundelements;	//!< Maps a compound pointer to its corresponding domain element address.
+		std::map<int,DomainElement*>				_intelements;		//!< Maps an integer outside of the optimized range to its corresponding doman element address.
+		std::map<double,DomainElement*>				_doubleelements;	//!< Maps a floating point number to its corresponding domain element address.
+		std::map<const std::string*,DomainElement*>	_stringelements;	//!< Maps a string pointer to its corresponding domain element address.
+		std::map<const Compound*,DomainElement*>	_compoundelements;	//!< Maps a compound pointer to its corresponding domain element address.
 		
 		DomainElementFactory(int firstfastint = 0, int lastfastint = 10001);
 
@@ -151,7 +158,7 @@ class DomainElementFactory {
 
 		DomainElement*	create(int value);
 		DomainElement*	create(double value, bool certnotint = false);
-		DomainElement*	create(const string* value, bool certnotdouble = false);
+		DomainElement*	create(const std::string* value, bool certnotdouble = false);
 		DomainElement*	create(const Compound* value);
 		DomainElement*	create(const Function*,const ElementTuple&);
 };
@@ -191,6 +198,8 @@ class AbstractTable {
 /***********************************
 	Tables for predicate symbols
 ***********************************/
+
+class SortTable;
 
 /**
  * DESCRIPTION
@@ -331,9 +340,9 @@ class StrGreaterInternalPredTable : public ComparisonInternalPredTable {
  */
 class InverseInternalPredTable : public InternalPredTable {
 	private:
-		InternalPredTable*	_invtable;	//!< the inverse of the actual table
-		vector<SortTable*>	_universe;	//!< the actual table is the complement of _table with respect to 
-										//!< the cartesian product of the tables in _universe
+		InternalPredTable*		_invtable;	//!< the inverse of the actual table
+		std::vector<SortTable*>	_universe;	//!< the actual table is the complement of _table with respect to 
+											//!< the cartesian product of the tables in _universe
 
 	public:
 		~InverseInternalPredTable() { delete(_invtable);	}
@@ -357,8 +366,10 @@ class InverseInternalPredTable : public InternalPredTable {
  */
 class UnionInternalPredTable : public InternalPredTable {
 	private:
-		vector<InternalPredTable*>	_intables;	//!< a tuple of the table does belong to at least one of the tables in _intables
-		vector<InternalPredTable*>	_outtables;	//!< a tuple of the table does not belong to any of the tables in _outtables
+		std::vector<InternalPredTable*>	_intables;	
+			//!< a tuple of the table does belong to at least one of the tables in _intables
+		std::vector<InternalPredTable*>	_outtables;	
+			//!< a tuple of the table does not belong to any of the tables in _outtables
 
 	public:
 		~UnionInternalPredTable();
@@ -447,7 +458,7 @@ class IntRangeInternalSortTable : public InternalSortTable {
  */
 class EnumeratedInternalSortTable : public InternalSortTable {
 	private:
-		vector<DomainElement*>	_table;
+		std::vector<DomainElement*>	_table;
 };
 
 /**
@@ -496,7 +507,7 @@ class InternalFuncTable {
 		virtual bool			approxempty()			const = 0;
 			//!< Returns false if the table is non-empty. May return true if the table is empty.
 
-		virtual Element operator[](const vector<DomainElement*>& tuple)	const = 0;	
+		virtual DomainElement* operator[](const std::vector<DomainElement*>& tuple)	const = 0;	
 			//!< Returns the value of the tuple according to the array.
 
 		virtual	InternalFuncTable*	add(const ElementTuple&)	const = 0;	//!< Add a tuple to the table
@@ -509,7 +520,7 @@ class InternalFuncTable {
  */
 class EnumeratedInternalFuncTable : public InternalFuncTable {
 	private:
-		map<ElementTuple,DomainElement*>	_table;
+		std::map<ElementTuple,DomainElement*>	_table;
 };
 
 /**
@@ -529,10 +540,10 @@ class FuncTable : public AbstractTable {
 		bool			approxfinite()			const	{ return _table->approxfinite();	}
 		bool			approxempty()			const	{ return _table->approxfinite();	}
 
-		Element	operator[](const vector<DomainElement*>& tuple)	const	{ return (*_table)[tuple];	}
-		bool	contains(const vector<DomainElement*>& tuple)	const;
-		void	add(const ElementTuple& tuple)							{ _table = _table->add(tuple);		}
-		void	remove(const ElementTuple& tuple)						{ _table = _table->remove(tuple);	}
+		DomainElement*	operator[](const std::vector<DomainElement*>& tuple)	const	{ return (*_table)[tuple];	}
+		bool			contains(const std::vector<DomainElement*>& tuple)		const;
+		void			add(const ElementTuple& tuple)							{ _table = _table->add(tuple);		}
+		void			remove(const ElementTuple& tuple)						{ _table = _table->remove(tuple);	}
 
 };
 
@@ -584,6 +595,17 @@ class PredInter {
 
 };
 
+class AbstractStructure;
+
+class PredInterGenerator {
+	public:
+		virtual PredInter* get(const AbstractStructure& structure) = 0;
+};
+
+class PredInterGeneratorGenerator {
+	public:
+		virtual PredInterGenerator* get(const std::vector<Sort*>&) = 0;
+};
 
 /**
  * DESCRIPTION
@@ -606,6 +628,17 @@ class FuncInter {
 		bool		approxtwovalued()	const { return _functable != 0;		}
 
 };
+
+class FuncInterGenerator {
+	public:
+		virtual FuncInter* get(const AbstractStructure& structure) = 0;
+};
+
+class FuncInterGeneratorGenerator {
+	public:
+		virtual FuncInterGenerator* get(const std::vector<Sort*>&) = 0;
+};
+
 
 /************************
 	Auxiliary methods
@@ -631,6 +664,7 @@ namespace TableUtils {
 }
 */
 
+#ifdef OLD
 /*****************
 	Structures
 *****************/
@@ -641,14 +675,14 @@ class AbstractStructure {
 
 	protected:
 
-		string			_name;			// The name of the structure
+		std::string		_name;			// The name of the structure
 		ParseInfo		_pi;			// The place where this structure was parsed.
 		Vocabulary*		_vocabulary;	// The vocabulary of the structure.
 
 	public:
 
 		// Constructors
-		AbstractStructure(string name, const ParseInfo& pi) : _name(name), _pi(pi), _vocabulary(0) { }
+		AbstractStructure(std::string name, const ParseInfo& pi) : _name(name), _pi(pi), _vocabulary(0) { }
 
 		// Destructor
 		virtual ~AbstractStructure() { }
@@ -660,13 +694,13 @@ class AbstractStructure {
 		virtual void	sortall() = 0;				// sort all tables
 
 		// Inspectors
-				const string&	name()						const { return _name;		}
-				ParseInfo		pi()						const { return _pi;			}
-				Vocabulary*		vocabulary()				const { return _vocabulary;	}
-		virtual SortTable*		inter(Sort* s)				const = 0;	// Return the domain of s.
-		virtual PredInter*		inter(Predicate* p)			const = 0;	// Return the interpretation of p.
-		virtual FuncInter*		inter(Function* f)			const = 0;	// Return the interpretation of f.
-		virtual PredInter*		inter(PFSymbol* s)			const = 0;	// Return the interpretation of s.
+				const std::string&	name()						const { return _name;		}
+				ParseInfo			pi()						const { return _pi;			}
+				Vocabulary*			vocabulary()				const { return _vocabulary;	}
+		virtual SortTable*			inter(Sort* s)				const = 0;	// Return the domain of s.
+		virtual PredInter*			inter(Predicate* p)			const = 0;	// Return the interpretation of p.
+		virtual FuncInter*			inter(Function* f)			const = 0;	// Return the interpretation of f.
+		virtual PredInter*			inter(PFSymbol* s)			const = 0;	// Return the interpretation of s.
 
 		// Lua
 		TypedInfArg		getObject(set<Sort*>*)	const;
@@ -773,5 +807,6 @@ class SortTableTupleIterator {
 
 };
 
+#endif
 #endif
 

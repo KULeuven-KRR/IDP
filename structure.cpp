@@ -4,6 +4,7 @@
 	(c) K.U.Leuven
 ************************************/
 
+#include "vocabulary.hpp"
 #include "structure.hpp"
 
 /**********************
@@ -50,7 +51,7 @@ bool operator>=(const Compound& c1,const Compound& c2) {
 bool operator<(const DomainElement& d1, const DomainElement& d2) {
 	switch(d1.type()) {
 		case DET_INT:
-			switch(d2._type()) {
+			switch(d2.type()) {
 				case DET_INT:
 					return d1.value()._int < d2.value()._int;
 				case DET_DOUBLE:
@@ -62,7 +63,7 @@ bool operator<(const DomainElement& d1, const DomainElement& d2) {
 					assert(false);
 			}
 		case DET_DOUBLE:
-			switch(d2._type()) {
+			switch(d2.type()) {
 				case DET_INT:
 					return d1.value()._double < double(d2.value()._int);
 				case DET_DOUBLE:
@@ -74,7 +75,7 @@ bool operator<(const DomainElement& d1, const DomainElement& d2) {
 					assert(false);
 			}
 		case DET_STRING:
-			switch(d2._type()) {
+			switch(d2.type()) {
 				case DET_INT:
 				case DET_DOUBLE:
 					return false;
@@ -87,7 +88,7 @@ bool operator<(const DomainElement& d1, const DomainElement& d2) {
 			}
 			break;
 		case DET_COMPOUND:
-			switch(d2._type()) {
+			switch(d2.type()) {
 				case DET_INT:
 				case DET_DOUBLE:
 				case DET_STRING:

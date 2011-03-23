@@ -17,7 +17,6 @@
 class BuiltInPredicate : public Predicate {
 
 	private:
-		PredInter*	_inter;	
 
 	public:
 		// Constructors
