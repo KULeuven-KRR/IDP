@@ -24,6 +24,7 @@ class Function;
 class LuaProcedure;
 class OverloadedObject;
 class InfOptions;
+class Visitor;
 struct TypedInfArg;
 
 /*****************

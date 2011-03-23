@@ -12,6 +12,7 @@
 #include <map>
 #include <string>
 
+#include "element.hpp"
 #include "parseinfo.hpp"
 #include "visitor.hpp"
 

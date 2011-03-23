@@ -12,7 +12,7 @@
 #include <map>
 #include <cassert>
 
-#include "common.hpp"
+#include "element.hpp"
 #include "parseinfo.hpp"
 #include "visitor.hpp"
 

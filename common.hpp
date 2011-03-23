@@ -4,8 +4,8 @@
 	(c) K.U.Leuven
 ************************************/
 
-#ifndef IDP_COMMON_H
-#define IDP_COMMON_H
+#ifndef COMMON_HPP
+#define COMMON_HPP
 
 #include <iostream>
 #include <vector>
@@ -16,8 +16,11 @@ struct TypedElement;
 union Element;
 class Function;
 
+/** Domain element **/
+//typedef compound* domelement;
+
 /** Enumeration types **/
-enum ElementType { ELINT, ELDOUBLE, ELSTRING, ELCOMPOUND };
+//enum ElementType { ELINT, ELDOUBLE, ELSTRING, ELCOMPOUND };
 enum AggType { AGGCARD, AGGSUM, AGGPROD, AGGMIN, AGGMAX };
 
 /** Memory management **/
