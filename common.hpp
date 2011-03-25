@@ -11,17 +11,12 @@
 #include <vector>
 #include <string>
 
+#include "fotypes.hpp"
+
 struct compound;
 struct TypedElement;
 union Element;
 class Function;
-
-/** Domain element **/
-//typedef compound* domelement;
-
-/** Enumeration types **/
-//enum ElementType { ELINT, ELDOUBLE, ELSTRING, ELCOMPOUND };
-enum AggType { AGGCARD, AGGSUM, AGGPROD, AGGMIN, AGGMAX };
 
 /** Memory management **/
 // The functions below implement shared pointers to strings and compound elements. All user defined strings should be created by a call to one of these functions. Similarly for all compound elements.

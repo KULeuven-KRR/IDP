@@ -11,10 +11,14 @@
 #include <set>
 #include <map>
 #include <string>
+#include <cassert>
 
 #include "element.hpp"
 #include "parseinfo.hpp"
 #include "visitor.hpp"
+
+class PFSymbol;
+class Variable;
 
 typedef std::vector<std::vector<Element> > VVE;
 

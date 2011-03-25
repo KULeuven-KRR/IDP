@@ -90,10 +90,10 @@ class VarTerm : public Term {
 
 		// Mutators
 		void	setfvars();
-		void	sort(Sort* s)	{ _var->sort(s);	}
+		void	sort(Sort* s);
 
 		// Inspectors
-		Sort*			sort()						const	{ return _var->sort();		}
+		Sort*			sort()						const;
 		Variable*		var()						const	{ return _var;				}
 		unsigned int	nrSubforms()				const	{ return 0;					}
 		unsigned int	nrSubterms()				const	{ return 0;					}

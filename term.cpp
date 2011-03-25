@@ -195,6 +195,16 @@ void SetExpr::setfvars() {
 	VarUtils::sortunique(_fvars);
 }
 
+/** Accessing sorts **/
+
+void VarTerm::sort(Sort* s) {
+	_var->sort(s);
+}
+
+Sort* VarTerm::sort() const {
+	return _var->sort();
+}
+
 /************************
 	Sort of aggregates
 ************************/

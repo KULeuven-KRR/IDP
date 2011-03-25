@@ -10,18 +10,15 @@
 #include <string>
 #include <vector>
 
+#include "fotypes.hpp"
+
 class Function;
 
 /**********************
 	Domain elements
 **********************/
 
-enum ElementType { ELINT, ELDOUBLE, ELSTRING, ELCOMPOUND };
-
-struct compound;
-typedef compound* domelement;
-
-/*
+/** \file element.hpp
  * The four different types of domain elements 
  *		ELINT: an integer 
  *		ELDOUBLE: a floating point number 
