@@ -11,42 +11,47 @@
 	Domain elements
 **********************/
 
-bool operator<(const Compound& c1, const Compound& c2) {
-	if(c1.function() < c2.function()) return true;
-	else if(c1.function() > c2.function()) return false;
-	else {
-		for(unsigned int n = 0; n < c1.function()->arity(); ++n) {
-			if(c1.arg(n) < c2.arg(n)) return true;
-			else if(c1.arg(n) > c2.arg(n)) return false;
-		}
-	}
-	return false;
+/**
+ *	Constructor for domain elements that are integers
+ */
+DomainElement::DomainElement(int value) : _type(DET_INT) {
+	_value._int = value;
 }
 
-bool operator>(const Compound& c1, const Compound& c2) {
-	return c2 < c1;
+/**
+ *	Constructor for domain elements that are floating point numbers but not integers
+ */
+DomainElement::DomainElement(double value) : _type(DET_DOUBLE) {
+	assert(!isInt(value));
+	_value._double = value;
 }
 
-bool operator==(const Compound& c1,const Compound& c2) {
-	if(c1.function() != c2.function()) return false;
-	for(unsigned int n = 0; n < c1.function()->arity(); ++n) {
-		if(c1.arg(n) != c2.arg(n)) return false;
-	}
-	return true;
+/**
+ *	Constructor for domain elements that are strings but not floating point numbers
+ */
+DomainElement::DomainElement(const string* value) : _type(DET_STRING) {
+	assert(!isDouble(*value));
+	_value._string = string;
 }
 
-bool operator!=(const Compound& c1,const Compound& c2) {
-	return !(c1 == c2);
+/**
+ *	Constructor for domain elements that are compounds
+ */
+DomainElement::DomainElement(const compound* value) : _type(DET_COMPOUND) {
+	_value._compound = value;
 }
 
-bool operator<=(const Compound& c1,const Compound& c2) {
-	return (c1 == c2 || c1 < c2);
+
+DomainElement::~DomainElement() { 
 }
 
-bool operator>=(const Compound& c1,const Compound& c2) {
-	return (c1 == c2 || c2 < c1);
+inline DomainElementType DomainElement::type() const {
+	return _type;
 }
 
+inline DomainElementValue DomainElement::value() const {
+	return _value;
+}
 
 bool operator<(const DomainElement& d1, const DomainElement& d2) {
 	switch(d1.type()) {
@@ -127,57 +132,63 @@ bool operator>=(const DomainElement& d1, const DomainElement& d2) {
 	else return d1 > d2;
 }
 
-
-/**
- * DESCRIPTION
- *		Destructor for domain elements. Does not delete its value.
- */
-DomainElement::~DomainElement() { }
-
-/**
- * DESCRIPTION
- *		Constructor for domain elements that are integers
- */
-DomainElement::DomainElement(int value) : _type(DET_INT) {
-	_value._int = value;
+Compound::Compound(Function* function, const std::vector<const DomainElement*> arguments) :
+	_function(function), _arguments(arguments) { 
+	assert(function != 0); 
 }
 
 /**
- * DESCRIPTION
- *		Constructor for domain elements that are floating point numbers but not integers
+ *	\brief Destructor for compound domain element values. Does not delete its arguments.
  */
-DomainElement::DomainElement(double value) : _type(DET_DOUBLE) {
-	assert(!isInt(value));
-	_value._double = value;
+Compound::~Compound() { 
+}
+
+inline Function* Compound::function() const {
+	return _function;
+}
+
+inline const DomainElement* Compound::arg(unsigned int n) const {
+	return _arguments[n];
 }
 
 /**
- * DESCRIPTION
- *		Constructor for domain elements that are strings but not floating point numbers
+ * \brief Comparison of two compound domain element values
  */
-DomainElement::DomainElement(const string* value) : _type(DET_STRING) {
-	assert(!isDouble(*value));
-	_value._string = string;
+bool operator<(const Compound& c1, const Compound& c2) {
+	if(c1.function() < c2.function()) return true;
+	else if(c1.function() > c2.function()) return false;
+	else {
+		for(unsigned int n = 0; n < c1.function()->arity(); ++n) {
+			if(c1.arg(n) < c2.arg(n)) return true;
+			else if(c1.arg(n) > c2.arg(n)) return false;
+		}
+	}
+	return false;
+}
+
+bool operator>(const Compound& c1, const Compound& c2) {
+	return c2 < c1;
+}
+
+bool operator==(const Compound& c1,const Compound& c2) {
+	return &c1 == &c2;
+}
+
+bool operator!=(const Compound& c1,const Compound& c2) {
+	return &c1 != &c2;
+}
+
+bool operator<=(const Compound& c1,const Compound& c2) {
+	return (c1 == c2 || c1 < c2);
+}
+
+bool operator>=(const Compound& c1,const Compound& c2) {
+	return (c1 == c2 || c2 < c1);
 }
 
 /**
- * DESCRIPTION
- *		Constructor for domain elements that are compounds
- */
-DomainElement::DomainElement(const compound* value) : _type(DET_COMPOUND) {
-	_value._compound = value;
-}
-
-/**
- * DESCRIPTION
- *		Destructor for compound domain element values. Does not delete its arguments.
- */
-Compound::~Compound() { }
-
-/**
- * DESCRIPTION
- *		Constructor for a domain element factory. The constructor gets two arguments, 
- *		specifying the range of integer for which creation of domain elements is optimized.
+ *	Constructor for a domain element factory. The constructor gets two arguments, 
+ *	specifying the range of integer for which creation of domain elements is optimized.
  *
  * PARAMETERS
  *		- firstfastint:	the lowest 'efficient' integer
@@ -192,8 +203,7 @@ DomainElementFactory::DomainElementFactory(int firstfastint, int lastfastint) :
 DomainElementFactory* DomainElementFactory::_instance = 0;
 
 /**
- * DESCRIPTION
- *		Returns the unique instance of DomainElementFactory
+ *	\brief Returns the unique instance of DomainElementFactory
  */
 DomainElementFactory* DomainElementFactory::instance() {
 	if(!_instance) _instance = new DomainElementFactory();
@@ -201,8 +211,7 @@ DomainElementFactory* DomainElementFactory::instance() {
 }
 
 /**
- * DESCRIPTION
- *		Destructor for DomainElementFactory. Deletes all domain elements and compounds it created.
+ *	\brief Destructor for DomainElementFactory. Deletes all domain elements and compounds it created.
  */
 DomainElementFactory::~DomainElementFactory {
 	for(vector<DomainElement*>::iterator it = _fastintelements.begin(); it != _fastintelements.end(); ++it) 
@@ -223,8 +232,7 @@ DomainElementFactory::~DomainElementFactory {
 }
 
 /**
- * DESCRIPTION
- *		Return the unique compound that consists of the given function and arguments.
+ * \brief Returns the unique compound that consists of the given function and arguments.
  * 
  * PARAMETERS
  *		- function:	the given function
@@ -242,8 +250,7 @@ Compound* DomainElementFactory::compound(const Function* function, const Element
 }
 
 /**
- * DESCRIPTION
- *		Returns the unique domain element of type int that has a given value
+ * \brief Returns the unique domain element of type int that has a given value
  *
  * PARAMETERS
  *		- value: the given value
@@ -274,8 +281,7 @@ DomainElement* DomainElementFactory::create(int value) {
 }
 
 /**
- * DESCRIPTION
- *		Returns the unique domain element that has a given floating point value
+ * \brief Returns the unique domain element that has a given floating point value
  *
  * PARAMETERS
  *		- value:		the given value
@@ -297,8 +303,7 @@ DomainElement* DomainElementFactory::create(double value, bool certnotint) {
 }
 
 /**
- * DESCRIPTION
- *		Returns the unique domain element that has a given string value
+ * \brief Returns the unique domain element that has a given string value
  *
  * PARAMETERS
  *		- value:			the given value
@@ -320,8 +325,7 @@ DomainElement* DomainElementFactory::create(const string* value, bool certnotdou
 }
 
 /**
- * DESCRIPTION
- *		Returns the unique domain element that has a given compound value
+ * \brief Returns the unique domain element that has a given compound value
  *
  * PARAMETERS
  *		- value:	the given value
@@ -340,8 +344,7 @@ DomainElement* DomainElementFactory::create(const Compound* value, bool certnotd
 }
 
 /**
- * DESCRIPTION
- *		Returns the unique domain element that has a given compound value
+ * \brief Returns the unique domain element that has a given compound value
  *
  * PARAMETERS
  *		- function:	the function of the given compound value
@@ -356,6 +359,26 @@ DomainElement* DomainElementFactory::create(const Function* function, const Elem
 /****************
 	PredTable
 ****************/
+
+PredTable::PredTable(InternalPredTable* table) : _table(table) {
+	table->incrementRef();
+}
+
+PredTable::~PredTable() {
+	_table->decrementRef();
+}
+
+void PredTable::add(const ElementTuple& tuple) {
+	InternalPredTable* temp = _table;
+	_table = _table->add(tuple);
+	if(temp != _table) temp->decrementRef();
+}
+
+void PredTable::remove(const ElementTuple& tuple) {
+	InternalPredTable* temp = _table;
+	_table = _table->remove(tuple);
+	if(temp != _table) temp->decrementRef();
+}
 
 /**
  * DESCRIPTION

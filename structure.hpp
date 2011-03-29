@@ -14,7 +14,7 @@
 
 /**
  * \file structure.hpp
- * DESCRIPTION
+ *
  *		This file contains the classes concerning structures:
  *		- domain elements
  *		- tables and interpretations for sorts, predicate, and function symbols
@@ -36,18 +36,16 @@ class Compound;
 class DomainElementFactory;
 
 /**
- * DESCRIPTION
- *		The different types of domain elements
- *		- DET_INT: integers
- *		- DET_DOUBLE: floating point numbers
- *		- DET_STRING: strings
- *		- DET_COMPOUND: a function applied to domain elements
+ *	The different types of domain elements
+ *	- DET_INT: integers
+ *	- DET_DOUBLE: floating point numbers
+ *	- DET_STRING: strings
+ *	- DET_COMPOUND: a function applied to domain elements
  */
 enum DomainElementType { DET_INT, DET_DOUBLE, DET_STRING, DET_COMPOUND };
 
 /**
- * DESCRIPTION
- *		A value for a single domain element. 
+ *	A value for a single domain element. 
  */
 union DomainElementValue {
 	int					_int;		//!< Value if the domain element is an integer
@@ -57,8 +55,7 @@ union DomainElementValue {
 };
 
 /**
- * DESCRIPTION
- *		A domain element
+ *	A domain element
  */
 class DomainElement {
 	private:
@@ -71,10 +68,10 @@ class DomainElement {
 		DomainElement(Compound* value);
 
 	public:
-		~DomainElement();
+		~DomainElement();	//!< Destructor (does not delete the value of the domain element)
 
-		DomainElementType	type()	const	{ return _type;		}
-		DomainElementValue	value()	const	{ return _value;	}
+		DomainElementType	type()	const;	//!< Returns the type of the element
+		DomainElementValue	value()	const;	//!< Returns the value of the element
 
 		friend class DomainElementFactory;
 };
@@ -92,21 +89,20 @@ typedef std::vector<ElementTuple>			ElementTable;
 class Function;
 
 /**
- * DESCRIPTION
- *		The value of a domain element that consists of a function applied to domain elements.
+ *	The value of a domain element that consists of a function applied to domain elements.
  */
 class Compound {
 	private:
 		Function*		_function;
 		ElementTuple	_arguments;
 
-		Compound(Function* function, const std::vector<const DomainElement*> arguments) : 
-			_function(function), _arguments(arguments) { assert(function != 0); }
+		Compound(Function* function, const std::vector<const DomainElement*> arguments);
+
 	public:
 		~Compound();
 
-		const Function*			function()				const { return _function;		}
-		const DomainElement*	arg(unsigned int n)		const { return _arguments[n];	}
+		Function*				function()				const;	//!< Returns the function of the compound
+		const DomainElement*	arg(unsigned int n)		const;	//!< Returns the n'th argument of the compound
 
 		friend class DomainElementFactory;
 };
@@ -119,15 +115,14 @@ bool operator<=(const Compound&,const Compound&);
 bool operator>=(const Compound&,const Compound&);
 
 /**
- * DESCRIPTION
- *		Class to create domain elements. This class is a singleton class that ensures all domain elements
- *		with the same value are stored at the same address in memory. As a result, two domain elements are equal
- *		iff they have the same address. It also ensures that all Compounds with the same function and arguments are
- *		stored at the same address.
+ *	Class to create domain elements. This class is a singleton class that ensures all domain elements
+ *	with the same value are stored at the same address in memory. As a result, two domain elements are equal
+ *	iff they have the same address. It also ensures that all Compounds with the same function and arguments are
+ *	stored at the same address.
  *
- *		Obtaining the address of a domain element with a given value and type should take logaritmic time in the number
- *		of created domain elements of that type. For a specified integer range, obtaining the address is optimized to
- *		constant time.
+ *	Obtaining the address of a domain element with a given value and type should take logaritmic time in the number
+ *	of created domain elements of that type. For a specified integer range, obtaining the address is optimized to
+ *	constant time.
  */
 class DomainElementFactory {
 	private:
@@ -139,13 +134,17 @@ class DomainElementFactory {
 		int							_firstfastint;		//!< The first integer in the optimized range
 		int							_lastfastint;		//!< One past the last integer in the optimized range
 		std::vector<DomainElement*>	_fastintelements;	//!< Stores pointers to integers in the optimized range.
-															//!< The domain element with value n is stored at
-															//!< _fastintelements[n+_firstfastint]
+														//!< The domain element with value n is stored at
+														//!< _fastintelements[n+_firstfastint]
 
-		std::map<int,DomainElement*>				_intelements;		//!< Maps an integer outside of the optimized range to its corresponding doman element address.
-		std::map<double,DomainElement*>				_doubleelements;	//!< Maps a floating point number to its corresponding domain element address.
-		std::map<const std::string*,DomainElement*>	_stringelements;	//!< Maps a string pointer to its corresponding domain element address.
-		std::map<const Compound*,DomainElement*>	_compoundelements;	//!< Maps a compound pointer to its corresponding domain element address.
+		std::map<int,DomainElement*>				_intelements;		
+			//!< Maps an integer outside of the optimized range to its corresponding doman element address.
+		std::map<double,DomainElement*>				_doubleelements;	
+			//!< Maps a floating point number to its corresponding domain element address.
+		std::map<const std::string*,DomainElement*>	_stringelements;	
+			//!< Maps a string pointer to its corresponding domain element address.
+		std::map<const Compound*,DomainElement*>	_compoundelements;	
+			//!< Maps a compound pointer to its corresponding domain element address.
 		
 		DomainElementFactory(int firstfastint = 0, int lastfastint = 10001);
 
@@ -168,23 +167,23 @@ class DomainElementFactory {
 	Tables for logical symbols
 *********************************/
 
+class TableIterator;
+class ConstTableIterator;
+
 /**
- * DESCRIPTION
- *		This class implements the common functionality of tables for sorts, predicate and function symbols.
+ *	This class implements the common functionality of tables for sorts, predicate, and function symbols.
  */
 class AbstractTable {
-	private:
-	protected:
 	public:
 		virtual ~AbstractTable() { }
 
-		virtual bool			finite()		const = 0;	//!< Returns true iff the table is finite
-		virtual	bool			empty()			const = 0;	//!< Returns true iff the table is empty
-		virtual	unsigned int	arity()			const = 0;	//!< Returns the number of columns in the table
+		virtual bool			finite()	const = 0;	//!< Returns true iff the table is finite
+		virtual	bool			empty()		const = 0;	//!< Returns true iff the table is empty
+		virtual	unsigned int	arity()		const = 0;	//!< Returns the number of columns in the table
 
-		virtual bool	approxfinite()			const = 0;	
+		virtual bool	approxfinite()		const = 0;	
 			//!< Returns false if the table size is infinite. May return true if the table size is finite.
-		virtual bool	approxempty()			const = 0;
+		virtual bool	approxempty()		const = 0;
 			//!< Returns false if the table is non-empty. May return true if the table is empty.
 
 		virtual	bool	contains(const ElementTuple& tuple)	const = 0;	
@@ -193,21 +192,47 @@ class AbstractTable {
 		virtual void	add(const ElementTuple& tuple)		= 0;	//!< Add a tuple to the table
 		virtual void	remove(const ElementTuple& tuple)	= 0;	//!< Remove a tuple from the table
 
+		virtual TableIterator		begin()	= 0;
+		virtual ConstTableIterator	begin() const = 0;
+
 };
 
 /***********************************
 	Tables for predicate symbols
 ***********************************/
 
-class SortTable;
+class InternalPredTable;
 
 /**
- * DESCRIPTION
- *		This class implements a concrete two-dimensional table
+ *	This class implements tables for predicate symbols.
+ */
+class PredTable : public AbstractTable {
+	private:
+		InternalPredTable*	_table;	//!< Points to the actual table
+	public:
+		PredTable(InternalPredTable* table);
+		~PredTable();
+
+		bool			finite()							const	{ return _table->finite();			}
+		bool			empty()								const	{ return _table->empty();			}
+		unsigned int	arity()								const	{ return _table->arity();			}
+		bool			approxfinite()						const	{ return _table->approxfinite();	}
+		bool			approxempty()						const	{ return _table->approxfinite();	}
+		bool			contains(const ElementTuple& tuple)	const	{ return _table->contains(tuple);	}
+		void			add(const ElementTuple& tuple);
+		void			remove(const ElementTuple& tuple);
+};
+
+/**
+ *	This class implements a concrete two-dimensional table
  */
 class InternalPredTable {
-	public:
+	private:
+		unsigned int	_nrRefs;	//!< The number of references to this table
+	protected:
+		InternalPredTable() : _nrRefs(0) { }
 		virtual ~InternalPredTable() { }
+	public:
 
 		virtual unsigned int	arity()		const = 0;
 		virtual bool			finite()	const = 0;	//!< Returns true iff the table is finite
@@ -390,26 +415,6 @@ class UnionInternalPredTable : public InternalPredTable {
 	
 };
 
-
-/**
- * DESCRIPTION
- *		This class implements tables for predicate symbols.
- */
-class PredTable : public AbstractTable {
-	private:
-		InternalPredTable*	_table;	//!< Points to the actual table
-	public:
-		~PredTable();
-
-		bool			finite()							const	{ return _table->finite();			}
-		bool			empty()								const	{ return _table->empty();			}
-		unsigned int	arity()								const	{ return _table->arity();			}
-		bool			approxfinite()						const	{ return _table->approxfinite();	}
-		bool			approxempty()						const	{ return _table->approxfinite();	}
-		bool			contains(const ElementTuple& tuple)	const	{ return _table->contains(tuple);	}
-		void			add(const ElementTuple& tuple);
-		void			remove(const ElementTuple& tuple);
-};
 
 /***********************
 	Tables for sorts
@@ -1075,4 +1080,24 @@ class SortTableTupleIterator {
 
 #endif
 #endif
+/**
+ * Iterator over tables for sorts, predicate, and function symbols.
+ */
+class TableIterator {
+	public:
+		bool			hasNext()	const;
+		ElementTuple&	operator*()	const;
+		TableIterator&	operator++();
+};
+
+/**
+ * Constant iterator over tables for sorts, predicates, and function symbols
+ */
+class ConstTableIterator {
+	public:
+		bool				hasNext()	const;
+		const ElementTuple&	operator*()	const;
+		TableIterator&		operator++();
+};
+
 

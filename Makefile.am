@@ -25,12 +25,10 @@ gidl_SOURCES = \
 		parseinfo.hpp\
 		vocabulary.hpp vocabulary.cpp\
 		structure.hpp structure.cpp\
-		builtin.hpp builtin.cpp\
-		insert.hpp insert.cpp\
-		namespace.hpp namespace.cpp\
 		theory.hpp theory.cpp\
+		namespace.hpp namespace.cpp\
+		insert.hpp insert.cpp\
 		execute.hpp execute.cpp\
-		structure.hpp structure.cpp\
 		common.hpp common.cpp\
 		ecnf.hpp ecnf.cpp\
 		visitor.hpp visitor.cpp\
