@@ -86,8 +86,8 @@ bool operator!=(const DomainElement&,const DomainElement&);
 bool operator<=(const DomainElement&,const DomainElement&);
 bool operator>=(const DomainElement&,const DomainElement&);
 
-typedef std::vector<DomainElement*>	ElementTuple;
-typedef std::vector<ElementTuple>	ElementTable;
+typedef std::vector<const DomainElement*>	ElementTuple;
+typedef std::vector<ElementTuple>			ElementTable;
 
 class Function;
 
@@ -100,13 +100,13 @@ class Compound {
 		Function*		_function;
 		ElementTuple	_arguments;
 
-		Compound(Function* function, const std::vector<DomainElement*> arguments) : 
+		Compound(Function* function, const std::vector<const DomainElement*> arguments) : 
 			_function(function), _arguments(arguments) { assert(function != 0); }
 	public:
 		~Compound();
 
-		const Function*			function()				const { return _function;			}
-		const DomainElement&	arg(unsigned int n)		const { return *(_arguments[n]);	}
+		const Function*			function()				const { return _function;		}
+		const DomainElement*	arg(unsigned int n)		const { return _arguments[n];	}
 
 		friend class DomainElementFactory;
 };
@@ -156,11 +156,11 @@ class DomainElementFactory {
 
 		static DomainElementFactory*	instance();
 
-		DomainElement*	create(int value);
-		DomainElement*	create(double value, bool certnotint = false);
-		DomainElement*	create(const std::string* value, bool certnotdouble = false);
-		DomainElement*	create(const Compound* value);
-		DomainElement*	create(const Function*,const ElementTuple&);
+		const DomainElement*	create(int value);
+		const DomainElement*	create(double value, bool certnotint = false);
+		const DomainElement*	create(const std::string* value, bool certnotdouble = false);
+		const DomainElement*	create(const Compound* value);
+		const DomainElement*	create(const Function*,const ElementTuple&);
 };
 
 
@@ -422,10 +422,10 @@ class PredTable : public AbstractTable {
 class InternalSortTable : public InternalPredTable {
 	public:
 		virtual ~InternalSortTable() { }
-		virtual DomainElement*	front()	const = 0;
-		virtual DomainElement*	back()	const = 0;
+		virtual const DomainElement*	front()	const = 0;
+		virtual const DomainElement*	back()	const = 0;
 
-		virtual bool	contains(const DomainElement*)		= 0;
+		virtual bool	contains(const DomainElement*) const = 0;
 				bool	contains(const ElementTuple& tuple)	{ return contains(tuple[0]);	}
 
 		virtual InternalSortTable*	add(const DomainElement*)			= 0;
@@ -434,6 +434,96 @@ class InternalSortTable : public InternalPredTable {
 				InternalSortTable*	remove(const ElementTuple& tuple)	{ return remove(tuple[0]);	}
 
 		unsigned int arity()	const	{ return 1;	}
+};
+
+/**
+ *	All natural numbers
+ */
+class AllNaturalNumbers : public InternalSortTable {
+	public:
+		~AllNaturalNumbers() { }
+		const DomainElement*	front()							const;
+		const DomainElement*	back()							const;
+		bool					contains(const DomainElement*)	const;
+		InternalSortTable*		add(const DomainElement*);
+		InternalSortTable*		remove(const DomainElement*);
+
+		bool	finite()		const { return false;	}
+		bool	empty()			const { return false;	}
+		bool	approxfinite()	const { return false;	}
+		bool	approxempty()	const { return false;	}
+};
+
+/**
+ * All integers
+ */
+class AllIntegers : public InternalSortTable {
+	public:
+		~AllIntegers() { }
+		const DomainElement*	front()							const;
+		const DomainElement*	back()							const;
+		bool					contains(const DomainElement*)	const;
+		InternalSortTable*		add(const DomainElement*);
+		InternalSortTable*		remove(const DomainElement*);
+
+		bool	finite()		const { return false;	}
+		bool	empty()			const { return false;	}
+		bool	approxfinite()	const { return false;	}
+		bool	approxempty()	const { return false;	}
+};
+
+/**
+ * All floating point numbers
+ */
+class AllFloats : public InternalSortTable {
+	public:
+		~AllFloats() { }
+		const DomainElement*	front()							const;
+		const DomainElement*	back()							const;
+		bool					contains(const DomainElement*)	const;
+		InternalSortTable*		add(const DomainElement*);
+		InternalSortTable*		remove(const DomainElement*);
+
+		bool	finite()		const { return false;	}
+		bool	empty()			const { return false;	}
+		bool	approxfinite()	const { return false;	}
+		bool	approxempty()	const { return false;	}
+};
+
+/**
+ * All strings
+ */
+class AllStrings : public InternalSortTable {
+	public:
+		~AllStrings() { }
+		const DomainElement*	front()							const;
+		const DomainElement*	back()							const;
+		bool					contains(const DomainElement*)	const;
+		InternalSortTable*		add(const DomainElement*);
+		InternalSortTable*		remove(const DomainElement*);
+
+		bool	finite()		const { return false;	}
+		bool	empty()			const { return false;	}
+		bool	approxfinite()	const { return false;	}
+		bool	approxempty()	const { return false;	}
+};
+
+/**
+ * All characters
+ */
+class AllChars : public InternalSortTable {
+	public:
+		~AllChars() { }
+		const DomainElement*	front()							const;
+		const DomainElement*	back()							const;
+		bool					contains(const DomainElement*)	const;
+		InternalSortTable*		add(const DomainElement*);
+		InternalSortTable*		remove(const DomainElement*);
+
+		bool	finite()		const { return true;	}
+		bool	empty()			const { return false;	}
+		bool	approxfinite()	const { return true;	}
+		bool	approxempty()	const { return false;	}
 };
 
 /**
@@ -469,6 +559,7 @@ class SortTable : public AbstractTable {
 	private:
 		InternalSortTable*	_table;	//!< Points to the actual table
 	public:
+		SortTable(InternalSortTable* table) : _table(table) { }
 		~SortTable();
 
 		bool			finite()							const	{ return _table->finite();			}
@@ -482,8 +573,9 @@ class SortTable : public AbstractTable {
 		void			add(const DomainElement* el)				{ _table = _table->add(el);			}
 		void			remove(const ElementTuple& tuple)			{ _table = _table->remove(tuple);	}
 		void			remove(const DomainElement* el)				{ _table = _table->remove(el);		}
-		DomainElement*	front()								const	{ return _table->front();			}
-		DomainElement*	back()								const	{ return _table->back();			}
+
+		const DomainElement*	front()								const	{ return _table->front();			}
+		const DomainElement*	back()								const	{ return _table->back();			}
 };
 
 /**********************************
@@ -507,7 +599,7 @@ class InternalFuncTable {
 		virtual bool			approxempty()			const = 0;
 			//!< Returns false if the table is non-empty. May return true if the table is empty.
 
-		virtual DomainElement* operator[](const std::vector<DomainElement*>& tuple)	const = 0;	
+		virtual const DomainElement* operator[](const std::vector<const DomainElement*>& tuple)	const = 0;	
 			//!< Returns the value of the tuple according to the array.
 
 		virtual	InternalFuncTable*	add(const ElementTuple&)	const = 0;	//!< Add a tuple to the table
@@ -523,6 +615,95 @@ class EnumeratedInternalFuncTable : public InternalFuncTable {
 		std::map<ElementTuple,DomainElement*>	_table;
 };
 
+class IntFloatInternalFuncTable : public InternalFuncTable {
+	private:
+		bool	_int;
+	public:
+
+		IntFloatInternalFuncTable(bool);
+
+				bool			finite()		const { return false;	}
+				bool			empty()			const { return false;	}
+				bool			approxfinite()	const { return false;	}
+				bool			approxempty()	const { return false;	}
+		virtual	unsigned int	arity()			const = 0;
+
+		virtual const DomainElement*	operator[](const std::vector<const DomainElement*>&	)	const = 0;
+
+		InternalFuncTable*	add(const ElementTuple&)	const;
+		InternalFuncTable*	remove(const ElementTuple&)	const;
+
+};
+
+class PlusInternalFuncTable : public IntFloatInternalFuncTable {
+	public:
+		PlusInternalFuncTable(bool);
+		unsigned int arity()	const { return 2;	}
+		const DomainElement*	operator[](const std::vector<const DomainElement*>&	)	const;
+};
+
+class MinusInternalFuncTable : public IntFloatInternalFuncTable {
+	public:
+		MinusInternalFuncTable(bool);
+		unsigned int arity()	const { return 2;	}
+		const DomainElement*	operator[](const std::vector<const DomainElement*>&	)	const;
+};
+
+class TimesInternalFuncTable : public IntFloatInternalFuncTable {
+	public:
+		TimesInternalFuncTable(bool);
+		unsigned int arity()	const { return 2;	}
+		const DomainElement*	operator[](const std::vector<const DomainElement*>&	)	const;
+};
+
+class DivInternalFuncTable : public IntFloatInternalFuncTable {
+	public:
+		DivInternalFuncTable(bool);
+		unsigned int arity()	const { return 2;	}
+		const DomainElement*	operator[](const std::vector<const DomainElement*>&	)	const;
+};
+
+class AbsInternalFuncTable : public IntFloatInternalFuncTable {
+	public:
+		AbsInternalFuncTable(bool);
+		unsigned int arity()	const { return 1;	}
+		const DomainElement*	operator[](const std::vector<const DomainElement*>&	)	const;
+};
+
+class UminInternalFuncTable : public IntFloatInternalFuncTable {
+	public:
+		UminInternalFuncTable(bool);
+		unsigned int arity()	const { return 1;	}
+		const DomainElement*	operator[](const std::vector<const DomainElement*>&	)	const;
+};
+
+class ExpInternalFuncTable : public InternalFuncTable {
+	public:
+		bool			finite()		const { return false;	}
+		bool			empty()			const { return false;	}
+		bool			approxfinite()	const { return false;	}
+		bool			approxempty()	const { return false;	}
+		unsigned int	arity()			const { return 2;		}
+		const DomainElement*	operator[](const std::vector<const DomainElement*>&	)	const;
+
+		InternalFuncTable*	add(const ElementTuple&)	const;
+		InternalFuncTable*	remove(const ElementTuple&)	const;
+};
+
+class ModInternalFuncTable : public InternalFuncTable {
+	public:
+		bool			finite()		const { return false;	}
+		bool			empty()			const { return false;	}
+		bool			approxfinite()	const { return false;	}
+		bool			approxempty()	const { return false;	}
+		unsigned int	arity()			const { return 2;		}
+		const DomainElement*	operator[](const std::vector<const DomainElement*>&	)	const;
+
+		InternalFuncTable*	add(const ElementTuple&)	const;
+		InternalFuncTable*	remove(const ElementTuple&)	const;
+};
+
+
 /**
  * DESCRIPTION
  *		This class implements tables for function symbols
@@ -532,6 +713,7 @@ class FuncTable : public AbstractTable {
 		InternalFuncTable*	_table;	//!< Points to the actual table
 	protected:
 	public:
+		FuncTable(InternalFuncTable* table) : _table(table) { }
 		~FuncTable();
 
 		bool			finite()				const	{ return _table->finite();			}
@@ -540,10 +722,10 @@ class FuncTable : public AbstractTable {
 		bool			approxfinite()			const	{ return _table->approxfinite();	}
 		bool			approxempty()			const	{ return _table->approxfinite();	}
 
-		DomainElement*	operator[](const std::vector<DomainElement*>& tuple)	const	{ return (*_table)[tuple];	}
-		bool			contains(const std::vector<DomainElement*>& tuple)		const;
-		void			add(const ElementTuple& tuple)							{ _table = _table->add(tuple);		}
-		void			remove(const ElementTuple& tuple)						{ _table = _table->remove(tuple);	}
+		const DomainElement*	operator[](const std::vector<const DomainElement*>& tuple)	const	{ return (*_table)[tuple];	}
+		bool					contains(const std::vector<const DomainElement*>& tuple)		const;
+		void					add(const ElementTuple& tuple)							{ _table = _table->add(tuple);		}
+		void					remove(const ElementTuple& tuple)						{ _table = _table->remove(tuple);	}
 
 };
 
@@ -602,9 +784,45 @@ class PredInterGenerator {
 		virtual PredInter* get(const AbstractStructure& structure) = 0;
 };
 
+class EqualInterGenerator : public PredInterGenerator {
+	private:
+		Sort*	_sort;
+	public:
+		PredInter* get(const AbstractStructure& structure);
+};
+
+class StrLessThanInterGenerator : public PredInterGenerator {
+	private:
+		Sort*	_sort;
+	public:
+		PredInter* get(const AbstractStructure& structure);
+};
+
+class StrGreaterThanInterGenerator : public PredInterGenerator {
+	private:
+		Sort*	_sort;
+	public:
+		PredInter* get(const AbstractStructure& structure);
+};
+
 class PredInterGeneratorGenerator {
 	public:
 		virtual PredInterGenerator* get(const std::vector<Sort*>&) = 0;
+};
+
+class EqualInterGeneratorGenerator : public PredInterGeneratorGenerator {
+	public:
+		 EqualInterGenerator* get(const std::vector<Sort*>&);
+};
+
+class StrGreaterThanInterGeneratorGenerator : public PredInterGeneratorGenerator {
+	public:
+		 StrGreaterThanInterGenerator* get(const std::vector<Sort*>&);
+};
+
+class StrLessThanInterGeneratorGenerator : public PredInterGeneratorGenerator {
+	public:
+		 StrLessThanInterGenerator* get(const std::vector<Sort*>&);
 };
 
 /**
@@ -619,7 +837,8 @@ class FuncInter {
 
 	public:
 		
-		FuncInter(FuncTable* ft, PredInter* pt) : _functable(ft), _graphinter(pt) { }
+		FuncInter(FuncTable* ft);
+		FuncInter(PredInter* pt) : _functable(0), _graphinter(pt) { }
 
 		~FuncInter();
 
@@ -634,11 +853,58 @@ class FuncInterGenerator {
 		virtual FuncInter* get(const AbstractStructure& structure) = 0;
 };
 
+class SingleFuncInterGenerator : public FuncInterGenerator {
+	private:
+		FuncInter*	_inter;
+	public:
+		SingleFuncInterGenerator(FuncInter* inter) : _inter(inter) { }
+		FuncInter* get(const AbstractStructure& ) { return _inter;	}
+};
+
+class MinInterGenerator : public FuncInterGenerator {
+	public:
+		FuncInter* get(const AbstractStructure& structure);
+};
+
+class MaxInterGenerator : public FuncInterGenerator {
+	public:
+		FuncInter* get(const AbstractStructure& structure);
+};
+
+class SuccInterGenerator : public FuncInterGenerator {
+	public:
+		FuncInter* get(const AbstractStructure& structure);
+};
+
+class InvSuccInterGenerator : public FuncInterGenerator {
+	public:
+		FuncInter* get(const AbstractStructure& structure);
+};
+
 class FuncInterGeneratorGenerator {
 	public:
 		virtual FuncInterGenerator* get(const std::vector<Sort*>&) = 0;
 };
 
+class MinInterGeneratorGenerator : public FuncInterGeneratorGenerator {
+	public:
+		 MinInterGenerator* get(const std::vector<Sort*>&);
+};
+
+class MaxInterGeneratorGenerator : public FuncInterGeneratorGenerator {
+	public:
+		 MaxInterGenerator* get(const std::vector<Sort*>&);
+};
+
+class SuccInterGeneratorGenerator : public FuncInterGeneratorGenerator {
+	public:
+		 SuccInterGenerator* get(const std::vector<Sort*>&);
+};
+
+class InvSuccInterGeneratorGenerator : public FuncInterGeneratorGenerator {
+	public:
+		 InvSuccInterGenerator* get(const std::vector<Sort*>&);
+};
 
 /************************
 	Auxiliary methods

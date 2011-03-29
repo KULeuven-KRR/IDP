@@ -8,12 +8,14 @@
 #define IDP_COMMON_H
 
 #include <string>
+#include <ostream>
 
 extern std::string	itos(int);					//!< convert int to string
 extern std::string	dtos(double);				//!< convert double to string
 extern int			stoi(const std::string&);	//!< convert string to int
 extern double		stod(const std::string&);	//!< convert string to double
 
+extern void	printtabs(std::ostream&,unsigned int tabs);	//!< write a given number of tabs
 
 #ifdef OLD
 #include <iostream>

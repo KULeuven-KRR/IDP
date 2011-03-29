@@ -10,6 +10,8 @@
 #include "vocabulary.hpp"
 #include "visitor.hpp"
 
+using namespace std;
+
 /*******************************
 	Abstract base class term
 *******************************/

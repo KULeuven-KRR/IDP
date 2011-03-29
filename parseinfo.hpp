@@ -11,7 +11,7 @@
 
 /**
  * \file parseinfo.hpp
- * DESCRIPTION
+ *
  *		This file contains the classes to represent error, warning, and debugging information 
  */
 
@@ -20,7 +20,6 @@
 ***************************************/
 
 /**
- * DESCRIPTION
  *		A ParseInfo contains a line number, a column number and a file. 
  *
  *		Almost every object that can be written by a user has a ParseInfo object as attribute. 
@@ -45,47 +44,15 @@ class ParseInfo {
 		virtual ~ParseInfo() { }
 
 		// Inspectors
-		unsigned int	line()		const { return _line;		}
-		unsigned int	col()		const { return _col;		}
-		std::string*	file()		const { return _file;		}
-		bool			isParsed()	const { return _line != 0;	}
+		unsigned int	line()		const { return _line;		}	//!< Returns the line number
+		unsigned int	col()		const { return _col;		}	//!< Returns the column number
+		std::string*	file()		const { return _file;		}	//!< Returns the file name (0 for stdin)
+		bool			isParsed()	const { return _line != 0;	}	//!< Returns true iff the object was declared by the user
 };
 
 class Formula;
 
 /**
- * DESCRIPTION
- *		ParseInfo for formulas.
- *		
- *		Besides the attributes of a ParseInfo object, it contains also the originally parsed formula
- *
- */
-class FormParseInfo : public ParseInfo {
-
-	private:
-		Formula*	_original;	//!< The original formula written by the user
-								//!< Null-pointer when associated to an internally created formula with no
-								//!< corresponding original formula
-
-	public:
-
-		// Constructors
-		FormParseInfo() : ParseInfo(), _original(0) { }
-		FormParseInfo(unsigned int line, unsigned int col, std::string* file, Formula* orig) : 
-			ParseInfo(line,col,file), _original(orig) { }
-		FormParseInfo(const FormParseInfo& p) : ParseInfo(p.line(),p.col(),p.file()), _original(p.original()) { }
-
-		// Destructor
-		~FormParseInfo() { }
-
-		// Inspectors
-		Formula*	original()	const { return _original;	}
-
-};
-
-
-/**
- * DESCRIPTION
  *		ParseInfo for formulas.
  *		
  *		Besides the attributes of a ParseInfo object, it contains also the originally parsed formula
@@ -104,15 +71,14 @@ class FormulaParseInfo : public ParseInfo {
 		FormulaParseInfo() : ParseInfo(), _original(0) { }
 		FormulaParseInfo(unsigned int line, unsigned int col, std::string* file, Formula* orig) : 
 			ParseInfo(line,col,file), _original(orig) { }
-		FormulaParseInfo(const FormParseInfo& p) : ParseInfo(p.line(),p.col(),p.file()), _original(p.original()) { }
+		FormulaParseInfo(const FormulaParseInfo& p) : ParseInfo(p.line(),p.col(),p.file()), _original(p.original()) { }
 
 		// Destructor
 		~FormulaParseInfo() { }
 
 		// Inspectors
-		Formula*	original()	const { return _original;	}
+		Formula*	original()	const { return _original;	}	//!< Returns the original formula
 
 };
-
 
 #endif
