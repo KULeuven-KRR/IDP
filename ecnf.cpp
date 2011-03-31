@@ -269,8 +269,8 @@ void AbstractGroundTheory::transformForAdd(const vector<int>& vi, VIType /*vit*/
 					addPCRule(defnr,atom,body);
 				}
 			}
-			else {	// body of the tseitin is an aggregate expression
-				assert(typeid(*tsbody) == typeid(AggTsBody));
+			else if(typeid(*tsbody) == typeid(AggTsBody)) {
+				// body of the tseitin is an aggregate expression
 				AggTsBody* body = dynamic_cast<AggTsBody*>(tsbody);
 				if(body->type() == TS_RULE) {
 					assert(defnr != _nodef);
@@ -278,6 +278,18 @@ void AbstractGroundTheory::transformForAdd(const vector<int>& vi, VIType /*vit*/
 				}
 				else {
 					addAggregate(atom,body);
+				}
+			}
+			else {
+				assert(typeid(*tsbody) == typeid(CPTsBody));
+				
+				CPTsBody* body = dynamic_cast<CPTsBody*>(tsbody);
+				if(body->type() == TS_RULE) {
+					assert(false);
+					//TODO
+				}
+				else {
+					addCPReification(atom,body);
 				}
 			}
 		}
@@ -319,9 +331,13 @@ void GroundTheory::addFixpDef(GroundFixpDef*) {
 	/* TODO */
 }
 
-void GroundTheory::addAggregate(int head, AggTsBody* body) {
+void GroundTheory::addAggregate(int tseitin, AggTsBody* body) {
 	addSet(body->setnr(),_nodef,(body->aggtype() != AGGCARD));
-	_aggregates.push_back(new GroundAggregate(body->aggtype(),body->lower(),body->type(),head,body->setnr(),body->bound()));
+	_aggregates.push_back(new GroundAggregate(body->aggtype(),body->lower(),body->type(),tseitin,body->setnr(),body->bound()));
+}
+
+void GroundTheory::addCPReification(int tseitin, CPTsBody* body) {
+	_cpreifications.push_back(new CPReification(tseitin,body));
 }
 
 void GroundTheory::addSet(int setnr, int defnr, bool) {
@@ -374,7 +390,7 @@ string GroundTheory::to_string() const {
 			s << " = " << _sets[n]->weight(m) << ")";
 			if(m < _sets[n]->size()-1) s << "; ";
 		}
-		s << "]\n";
+		s << "].\n";
 	}
 	for(unsigned int n = 0; n < _aggregates.size(); ++n) {
 		const GroundAggregate* agg = _aggregates[n];
@@ -396,9 +412,59 @@ string GroundTheory::to_string() const {
 			case AGGMAX: 	s << "max("; break;
 			default: assert(false);
 		}
-		s << agg->setnr() << ")\n";
+		s << agg->setnr() << ").\n";
 	}
 	//TODO: repeat above for fixpoint definitions
+	for(vector<CPReification*>::const_iterator it = _cpreifications.begin(); it != _cpreifications.end(); ++it) {
+		CPReification* cpr = *it;
+		s << _translator->printatom(cpr->_head);
+		switch(cpr->_body->type()) {
+			case TS_RULE: 	s << " <- "; break;
+			case TS_IMPL: 	s << " => "; break;
+			case TS_RIMPL: 	s << " <= "; break;
+			case TS_EQ: 	s << " <=> "; break;
+			default: assert(false);
+		}
+		CPTerm* left = cpr->_body->left();
+		if(typeid(*left) == typeid(CPSumTerm)) {
+			CPSumTerm* cpt = dynamic_cast<CPSumTerm*>(left);
+			s << "sum[ ";
+			for(vector<unsigned int>::const_iterator vit = cpt->_varids.begin(); vit != cpt->_varids.end(); ++vit) {
+				s << _termtranslator->printterm(*vit);
+				if(*vit != cpt->_varids.back()) s << "; ";
+			}
+			s << " ]";
+		}
+		else if(typeid(*left) == typeid(CPWSumTerm)) {
+			CPWSumTerm* cpt = dynamic_cast<CPWSumTerm*>(left);
+			vector<unsigned int>::const_iterator vit;
+			vector<int>::const_iterator wit;
+			s << "wsum[ ";
+			for(vit = cpt->_varids.begin(), wit = cpt->_weights.begin(); vit != cpt->_varids.end() && wit != cpt->_weights.end(); ++vit, ++wit) {
+				s << "(" << _termtranslator->printterm(*vit) << "=" << *wit << ")";
+				if(*vit != cpt->_varids.back()) s << "; ";
+			}
+			s << " ]";
+		}
+		else {
+			assert(typeid(*left) == typeid(CPVarTerm));
+			CPVarTerm* cpt = dynamic_cast<CPVarTerm*>(left);
+			s << _termtranslator->printterm(cpt->_varid);
+		}
+		switch(cpr->_body->comp()) {
+			case CT_EQ:		s << " = "; break;
+			case CT_NEQ:	s << " ~= "; break;
+			case CT_LEQ:	s << " =< "; break;
+			case CT_GEQ:	s << " >= "; break;
+			case CT_LT:		s << " < "; break;
+			case CT_GT:		s << " > "; break;
+			default: assert(false);
+		}
+		CPBound right = cpr->_body->right();
+		if(right._isvarid) s << _termtranslator->printterm(right._value._varid);
+		else s << right._value._bound;
+		s << ".\n";
+	}
 	return s.str();
 }
 
@@ -490,6 +556,11 @@ void SolverTheory::addDefinition(GroundDefinition* d) {
 		// Add the rule's head to set of defined atoms
 		_defined[_translator->symbol(head)].insert(head);
 	}
+}
+
+void SolverTheory::addCPReification(int tseitin, CPTsBody* body) {
+	assert(false);
+	//TODO
 }
 
 void SolverTheory::addPCRule(int defnr, int head, PCGroundRuleBody* grb) {

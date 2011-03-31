@@ -74,6 +74,53 @@ class AggTsBody : public TsBody {
 	friend class GroundTranslator;
 };
 
+class CPTerm {
+	protected:
+		virtual ~CPTerm() {};
+};
+
+class CPVarTerm : public CPTerm {
+	public:
+		unsigned int _varid;
+};
+
+class CPSumTerm : public CPTerm {
+	public:
+		vector<unsigned int> _varids; 
+};
+
+class CPWSumTerm : public CPTerm {
+	public:
+		vector<unsigned int> 	_varids; 
+		vector<int>				_weights;
+};
+
+enum CompType { CT_EQ, CT_NEQ, CT_LEQ, CT_GEQ, CT_LT, CT_GT };
+
+struct CPBound {
+	bool _isvarid;
+	union { 
+		int _bound;
+		unsigned int _varid;
+	} _value;
+	CPBound(bool isvarid, int bound): _isvarid(isvarid) { _value._bound = bound; }
+	CPBound(bool isvarid, unsigned int varid): _isvarid(isvarid) { _value._varid = varid; }
+};
+
+class CPTsBody : public TsBody {
+	private:
+		CPTerm*		_left;
+		CompType	_comp;
+		CPBound		_right;
+	public:
+		CPTsBody(TsType type, CPTerm* left, CompType comp, const CPBound& right) :
+			TsBody(type), _left(left), _comp(comp), _right(right) { }
+		CPTerm*		left()	const { return _left;	}
+		CompType	comp()	const { return _comp;	}
+		CPBound		right()	const { return _right;	}
+	friend class GroundTranslator;
+};
+
 /*
  * Ground sets
  */ 
@@ -96,7 +143,7 @@ class TsSet {
 /*
  * Ground translator 
  */
-class GroundTranslator  {
+class GroundTranslator {
 	private:
 		vector<map<vector<domelement>,int> >		_table;			// map atoms to integers
 		vector<PFSymbol*>							_symboffsets;	// map integer to symbol
@@ -118,10 +165,11 @@ class GroundTranslator  {
 		int				translate(unsigned int,const vector<domelement>&);
 		int				translate(const vector<int>& cl, bool conj, TsType tp);
 		int				translate(double bound, char comp, bool strict, AggType aggtype, int setnr, TsType tstype);
-		int				translate(PFSymbol*,const vector<TypedElement>&);
-		int				translateSet(const vector<int>&,const vector<double>&,const vector<double>&);
+		int				translate(PFSymbol*, const vector<TypedElement>&);
+		int				translate(CPTerm*, CompType, const CPBound&, TsType);
 		int				nextNumber();
 		unsigned int	addSymbol(PFSymbol* pfs);
+		int				translateSet(const vector<int>&,const vector<double>&,const vector<double>&);
 
 		PFSymbol*							symbol(int nr)				const	{ return _backsymbtable[abs(nr)];		}
 		const vector<domelement>&			args(int nr)				const	{ return _backargstable[abs(nr)];		}
@@ -135,6 +183,32 @@ class GroundTranslator  {
 
 		string						printatom(int nr)	const;
 
+};
+
+/*
+ * Ground term translator
+ */
+class GroundTermTranslator {
+	private:
+		vector<map<vector<domelement>,unsigned int> >	_table;			// map terms to integers
+		vector<Function*>								_backfunctable;	// map integer to the symbol of its corresponding term
+		vector<vector<domelement> >						_backargstable;	// map integer to the terms of its corresponding term
+		
+		vector<Function*>				_offset2function;
+		map<Function*,unsigned int>		_function2offset;
+
+	public:
+		GroundTermTranslator() : _backfunctable(1), _backargstable(1) { }
+
+		unsigned int	translate(unsigned int,const vector<domelement>&);
+		unsigned int	translate(Function*,const vector<TypedElement>&);
+		unsigned int	nextNumber();
+		unsigned int	addFunction(Function*);
+
+		Function*					function(unsigned int nr)		const { return _backfunctable[nr];		}
+		const vector<domelement>&	args(unsigned int nr)			const { return _backargstable[nr];		}
+		Function*					getFunction(unsigned int nr)	const { return _offset2function[nr]; 		}
+		string						printterm(unsigned int nr)		const;
 };
 
 
@@ -478,8 +552,11 @@ class GrounderFactory : public Visitor {
 
 	private:
 		// Data
-		AbstractStructure*	_structure;		// The structure that will be used to reduce the grounding
-		AbstractGroundTheory*		_grounding;		// The ground theory that will be produced
+		AbstractStructure*		_structure;		// The structure that will be used to reduce the grounding
+		AbstractGroundTheory*	_grounding;		// The ground theory that will be produced
+
+		// Options
+		bool	_usingcp;
 
 		// Context
 		GroundingContext		_context;
@@ -515,7 +592,7 @@ class GrounderFactory : public Visitor {
 
 	public:
 		// Constructor
-		GrounderFactory(AbstractStructure* structure): _structure(structure) { }
+		GrounderFactory(AbstractStructure* structure, bool usingcp): _structure(structure), _usingcp(usingcp) { }
 
 		// Factory method
 		TopLevelGrounder* create(const AbstractTheory* theory);

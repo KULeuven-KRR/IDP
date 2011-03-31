@@ -253,6 +253,17 @@ class GroundFixpDef : public AbstractDefinition {
 
 
 /**********************
+	CP reifications
+**********************/
+
+struct CPReification {
+	int 		_head;
+	CPTsBody* 	_body;
+	CPReification(int head, CPTsBody* body): _head(head), _body(body) { }
+	string to_string(unsigned int spaces = 0) const;
+};
+
+/**********************
 	Ground theories
 **********************/
 
@@ -263,9 +274,10 @@ class GroundFixpDef : public AbstractDefinition {
 class AbstractGroundTheory : public AbstractTheory {
 
 	protected:
-		AbstractStructure*			_structure;		// The ground theory may be partially reduced with respect
-													// to this structure. 
-		GroundTranslator*			_translator;	// Link between ground atoms and SAT-solver literals
+		AbstractStructure*			_structure;			// The ground theory may be partially reduced with respect
+														// to this structure. 
+		GroundTranslator*			_translator;		// Link between ground atoms and SAT-solver literals
+		GroundTermTranslator*		_termtranslator;	// Link between ground terms and SAT-solver literals
 
 		set<int>					_printedtseitins;	// Tseitin atoms produced by the translator that occur 
 														// in the theory.
@@ -297,7 +309,8 @@ class AbstractGroundTheory : public AbstractTheory {
 				void addEmptyClause()		{ GroundClause c(0); addClause(c);		}
 				void addUnitClause(int l)	{ GroundClause c(1,l); addClause(c);	}
 
-		virtual	void addAggregate(int tseitin, AggTsBody* body)			= 0; 
+		virtual	void addAggregate(int tseitin, AggTsBody* body)				= 0; 
+		virtual void addCPReification(int tseitin, CPTsBody* body)			= 0;
 		virtual void addPCRule(int defnr, int tseitin, PCTsBody* body)		= 0; 
 		virtual void addAggRule(int defnr, int tseitin, AggTsBody* body)	= 0; 
 
@@ -330,7 +343,8 @@ class SolverTheory : public AbstractGroundTheory {
 		void	addDefinition(GroundDefinition*);
 		void	addFixpDef(GroundFixpDef*);
 		void	addSet(int setnr, int defnr, bool weighted);
-		void	addAggregate(int head, AggTsBody* body);
+		void	addAggregate(int tseitin, AggTsBody* body);
+		void 	addCPReification(int tseitin, CPTsBody* body);
 
 		void	addPCRule(int defnr, int tseitin, PCTsBody* body);
 		void	addAggRule(int defnr, int tseitin, AggTsBody* body);
@@ -369,6 +383,7 @@ class GroundTheory : public AbstractGroundTheory {
 		vector<GroundAggregate*>	_aggregates;
 		vector<GroundFixpDef*>		_fixpdefs;
 		vector<GroundSet*>			_sets;
+		vector<CPReification*>		_cpreifications;
 
 	public:
 
@@ -382,6 +397,7 @@ class GroundTheory : public AbstractGroundTheory {
 		void	addFixpDef(GroundFixpDef*);
 		void	addSet(int setnr, int defnr, bool weighted);
 		void	addAggregate(int head, AggTsBody* body);
+		void 	addCPReification(int tseitin, CPTsBody* body);
 
 		void	addPCRule(int defnr, int tseitin, PCTsBody* body);
 		void	addAggRule(int defnr, int tseitin, AggTsBody* body);

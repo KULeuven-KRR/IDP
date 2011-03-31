@@ -72,6 +72,13 @@ int	GroundTranslator::translate(double bound, char comp, bool strict, AggType ag
 	}
 }
 
+int GroundTranslator::translate(CPTerm* left, CompType comp, const CPBound& right, TsType tstype) {
+	int nr = nextNumber();
+	CPTsBody* tb = new CPTsBody(tstype,left,comp,right);
+	_tsbodies[nr] = tb;
+	return nr;
+}
+
 int GroundTranslator::translateSet(const vector<int>& lits, const vector<double>& weights, const vector<double>& trueweights) {
 	int setnr;
 	if(_freesetnumbers.empty()) {
@@ -142,10 +149,74 @@ string GroundTranslator::printatom(int nr) const {
 	return s.str();
 }
 
+
+
+unsigned int GroundTermTranslator::translate(unsigned int offset, const vector<domelement>& args) {
+	map<vector<domelement>,unsigned int>::iterator jt = _table[offset].lower_bound(args);
+	if(jt != _table[offset].end() && jt->first == args) {
+		return jt->second;
+	}
+	else {
+		unsigned int nr = nextNumber();
+		_table[offset].insert(jt,pair<vector<domelement>,unsigned int>(args,nr));
+		_backfunctable[nr] = _offset2function[offset];
+		_backargstable[nr] = args;
+		return nr;
+	}
+}
+
+unsigned int GroundTermTranslator::translate(Function* func, const vector<TypedElement>& args) {
+	unsigned int offset = addFunction(func);
+	vector<domelement> newargs(args.size());
+	for(unsigned int n = 0; n < args.size(); ++n) {
+		newargs[n] = CPPointer(args[n]);
+	}
+	return translate(offset,newargs);
+}
+
+unsigned int GroundTermTranslator::nextNumber() {
+	unsigned int nr = _backfunctable.size(); 
+	_backfunctable.push_back(0);
+	_backargstable.push_back(vector<domelement>(0));
+	return nr;
+}
+
+unsigned int GroundTermTranslator::addFunction(Function* func) {
+	map<Function*,unsigned int>::const_iterator found = _function2offset.find(func);
+	if(found != _function2offset.end())
+		// Simply return number when function is already known
+		return found->second;
+	else {
+		// Add function and number when function is unknown
+		unsigned int offset = _offset2function.size();
+		_function2offset[func] = offset; 
+		_offset2function.push_back(func);
+		return offset;	
+	}
+}
+
+string GroundTermTranslator::printterm(unsigned int nr) const {
+	stringstream s;
+	if(nr >= _backfunctable.size()) {
+		return "error";
+	}
+	Function* func = function(nr);
+	s << func->to_string();
+	if(!(args(nr).empty())) {
+		s << "(";
+		for(unsigned int c = 0; c < args(nr).size(); ++c) {
+			s << ElementUtil::ElementToString((args(nr))[c]);
+			if(c != args(nr).size()-1) s << ",";
+		}
+		s << ")";
+	}
+	return s.str();
+}
+
+
 /*************************************
 	Optimized grounding algorithm
 *************************************/
-
 
 bool CopyGrounder::run() const {
 	// TODO TODO TODO
