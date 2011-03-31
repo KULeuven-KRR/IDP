@@ -10,6 +10,11 @@
 #include <string>
 #include <ostream>
 
+extern void notyetimplemented(const std::string&);
+
+extern bool	isInt(double);					//!< true iff the given double is an integer
+extern bool isDouble(const std::string&);	//!< true iff the given string is a double
+
 extern std::string	itos(int);					//!< convert int to string
 extern std::string	dtos(double);				//!< convert double to string
 extern int			stoi(const std::string&);	//!< convert string to int

@@ -4,8 +4,10 @@
 	(c) K.U.Leuven
 ************************************/
 
+#include "common.hpp"
 #include "vocabulary.hpp"
 #include "structure.hpp"
+using namespace std;
 
 /**********************
 	Domain elements
@@ -31,13 +33,13 @@ DomainElement::DomainElement(double value) : _type(DET_DOUBLE) {
  */
 DomainElement::DomainElement(const string* value) : _type(DET_STRING) {
 	assert(!isDouble(*value));
-	_value._string = string;
+	_value._string = value;
 }
 
 /**
  *	Constructor for domain elements that are compounds
  */
-DomainElement::DomainElement(const compound* value) : _type(DET_COMPOUND) {
+DomainElement::DomainElement(const Compound* value) : _type(DET_COMPOUND) {
 	_value._compound = value;
 }
 
@@ -213,7 +215,7 @@ DomainElementFactory* DomainElementFactory::instance() {
 /**
  *	\brief Destructor for DomainElementFactory. Deletes all domain elements and compounds it created.
  */
-DomainElementFactory::~DomainElementFactory {
+DomainElementFactory::~DomainElementFactory() {
 	for(vector<DomainElement*>::iterator it = _fastintelements.begin(); it != _fastintelements.end(); ++it) 
 		delete(*it);
 	for(map<int,DomainElement*>::iterator it = _intelements.begin(); it != _intelements.end(); ++it) 
@@ -224,8 +226,8 @@ DomainElementFactory::~DomainElementFactory {
 		delete(it->second);
 	for(map<const Compound*,DomainElement*>::iterator it = _compoundelements.begin(); it != _compoundelements.end(); ++it) 
 		delete(it->second);
-	for(map<const Function*,map<vector<DomainElement*>,Compound*> >::iterator it = _compounds.begin(); it != _compounds.end(); ++it) {
-		for(map<vector<DomainElement*>,Compound*>::iterator jt = it->second.begin(); jt != it->second.end(); ++jt) {
+	for(map<Function*,map<vector<const DomainElement*>,Compound*> >::iterator it = _compounds.begin(); it != _compounds.end(); ++it) {
+		for(map<vector<const DomainElement*>,Compound*>::iterator jt = it->second.begin(); jt != it->second.end(); ++jt) {
 			delete(jt->second);
 		}
 	}
@@ -238,8 +240,8 @@ DomainElementFactory::~DomainElementFactory {
  *		- function:	the given function
  *		- args:		the given arguments
  */
-Compound* DomainElementFactory::compound(const Function* function, const ElementTuple& args) {
-	map<const Function*,map<ElementTuple,Compound*> >::const_iterator it = _compounds.find(function);
+Compound* DomainElementFactory::compound(Function* function, const ElementTuple& args) {
+	map<Function*,map<ElementTuple,Compound*> >::const_iterator it = _compounds.find(function);
 	if(it != _compounds.end()) {
 		map<ElementTuple,Compound*>::const_iterator jt = it->second.find(args); 
 		if(jt != it->second.end()) return jt->second;
@@ -255,7 +257,7 @@ Compound* DomainElementFactory::compound(const Function* function, const Element
  * PARAMETERS
  *		- value: the given value
  */
-DomainElement* DomainElementFactory::create(int value) {
+const DomainElement* DomainElementFactory::create(int value) {
 	DomainElement* element = 0;
 	// Check if the value is within the efficient range
 	if(value >= _firstfastint && value < _lastfastint) {
@@ -287,7 +289,7 @@ DomainElement* DomainElementFactory::create(int value) {
  *		- value:		the given value
  *		- certnotint:	true iff the caller of this method asserts that the value is not an integer
  */
-DomainElement* DomainElementFactory::create(double value, bool certnotint) {
+const DomainElement* DomainElementFactory::create(double value, bool certnotint) {
 	if(!certnotint && isInt(value)) return create(int(value));
 
 	DomainElement* element;
@@ -309,8 +311,8 @@ DomainElement* DomainElementFactory::create(double value, bool certnotint) {
  *		- value:			the given value
  *		- certnotdouble:	true iff the caller of this method asserts that the value is not a floating point number
  */
-DomainElement* DomainElementFactory::create(const string* value, bool certnotdouble) {
-	if(!certnotdouble && isDouble(value)) return create(stod(value),false);
+const DomainElement* DomainElementFactory::create(const string* value, bool certnotdouble) {
+	if(!certnotdouble && isDouble(*value)) return create(stod(*value),false);
 
 	DomainElement* element;
 	map<const string*,DomainElement*>::const_iterator it = _stringelements.find(value);
@@ -330,7 +332,7 @@ DomainElement* DomainElementFactory::create(const string* value, bool certnotdou
  * PARAMETERS
  *		- value:	the given value
  */
-DomainElement* DomainElementFactory::create(const Compound* value, bool certnotdouble) {
+const DomainElement* DomainElementFactory::create(const Compound* value) {
 	DomainElement* element;
 	map<const Compound*,DomainElement*>::const_iterator it = _compoundelements.find(value);
 	if(it == _compoundelements.end()) {
@@ -350,10 +352,974 @@ DomainElement* DomainElementFactory::create(const Compound* value, bool certnotd
  *		- function:	the function of the given compound value
  *		- args:		the arguments of the given compound value
  */
-DomainElement* DomainElementFactory::create(const Function* function, const ElementTuple& args) {
+const DomainElement* DomainElementFactory::create(Function* function, const ElementTuple& args) {
 	assert(function != 0);
 	Compound* value = compound(function,args);
-	return create(value,true);
+	return create(value);
+}
+
+/****************
+	Iterators
+****************/
+
+TableIterator::TableIterator(const TableIterator& tab) {
+	_iterator = tab.iterator()->clone();
+}
+
+TableIterator& TableIterator::operator=(const TableIterator& tab) {
+	if(this != &tab) {
+		delete(_iterator);
+		_iterator = tab.iterator()->clone();
+
+	}
+	return *this;
+}
+
+inline bool TableIterator::hasNext() const {
+	return _iterator->hasNext();
+}
+
+inline const ElementTuple& TableIterator::operator*() const {
+	return _iterator->operator*();
+}
+
+TableIterator::~TableIterator() {
+	delete(_iterator);
+}
+
+SortIterator::SortIterator(const SortIterator& si) {
+	_iterator = si.iterator()->clone();
+}
+
+SortIterator& SortIterator::operator=(const SortIterator& si) {
+	if(this != &si) {
+		delete(_iterator);
+		_iterator = si.iterator()->clone();
+	}
+	return *this;
+}
+
+inline bool SortIterator::hasNext() const {
+	return _iterator->hasNext();
+}
+
+inline const DomainElement* SortIterator::operator*() const {
+	return _iterator->operator*();
+}
+
+SortIterator::~SortIterator() {
+	delete(_iterator);
+}
+
+SortInternalTableIterator::~SortInternalTableIterator() {
+	delete(_iter);
+}
+
+inline bool SortInternalTableIterator::hasNext() const {
+	return _iter->hasNext();
+}
+
+inline const ElementTuple& SortInternalTableIterator::operator*() const {
+	ElementTuple tuple(1,*(*_iter));
+	_deref.push_back(tuple);
+	return _deref.back();
+}
+
+inline void	SortInternalTableIterator::operator++() {
+	++_iter;
+}
+
+SortInternalTableIterator* SortInternalTableIterator::clone() const {
+	return new SortInternalTableIterator(_iter->clone());
+}
+
+EnumInternalIterator* EnumInternalIterator::clone() const {
+	return new EnumInternalIterator(_iter,_end);
+}
+
+const ElementTuple& EnumInternalFuncIterator::operator*() const {
+	ElementTuple tuple = _iter->first;
+	tuple.push_back(_iter->second);
+	_deref.push_back(tuple);
+	return _deref.back();
+}
+
+EnumInternalFuncIterator* EnumInternalFuncIterator::clone() const {
+	return new EnumInternalFuncIterator(_iter,_end);
+}
+
+bool UnionInternalIterator::contains(const ElementTuple& tuple) const {
+	for(vector<PredTable*>::const_iterator it = _outtables.begin(); it != _outtables.end(); ++it) {
+		if((*it)->contains(tuple)) return false;
+	}
+	return true;
+}
+
+void UnionInternalIterator::setcurriterator() {
+	_curriterator = _iterators.begin();
+	for(; _curriterator != _iterators.end(); ) {
+		if(_curriterator->hasNext()) {
+			if(contains(*(*_curriterator))) break;
+			else  ++(*_curriterator); 
+		}
+		else ++_curriterator;
+	}
+	if(_curriterator->hasNext()) {
+		vector<TableIterator>::iterator jt = _curriterator; ++jt;
+		for(; jt != _iterators.end(); ) {
+			if(jt->hasNext()) {
+				if(contains(*(*jt))) {
+					StrictWeakTupleOrdering swto;
+					if(swto(*(*jt),*(*_curriterator))) _curriterator = jt;
+					else if(!swto(*(*_curriterator),*(*jt))) {
+						++(*jt);
+						++jt;
+					}
+				}
+				else ++(*jt); 
+			}
+			else ++jt;
+		}
+	}
+}
+
+UnionInternalIterator::UnionInternalIterator(const vector<TableIterator>& its, const vector<PredTable*>& outs) :
+	_iterators(its), _outtables(outs) {
+	setcurriterator();
+}
+
+UnionInternalIterator* UnionInternalIterator::clone() const {
+	return new UnionInternalIterator(_iterators,_outtables);
+}
+
+bool UnionInternalIterator::hasNext() const {
+	return _curriterator != _iterators.end();
+}
+
+const ElementTuple& UnionInternalIterator::operator*() const {
+	assert(_curriterator->hasNext());
+	return *(*_curriterator);
+}
+
+void UnionInternalIterator::operator++() {
+	++(*_curriterator);
+	setcurriterator();
+}
+
+InverseInternalIterator::InverseInternalIterator(const vector<SortIterator>& its, PredTable* out) :
+	_curr(its), _lowest(its), _outtable(out), _end(false), _currtuple(its.size()) {
+	for(unsigned int n = 0; n < _curr.size(); ++n) {
+		if(_curr[n].hasNext()) _currtuple[n] = *(_curr[n]);
+		else _end = true; break;
+	}
+	if((!_end) && _outtable->contains(_currtuple)) operator++();
+}
+
+InverseInternalIterator::InverseInternalIterator(const vector<SortIterator>& curr, const vector<SortIterator>& low, PredTable* out, bool end) :
+	_curr(curr), _lowest(low), _outtable(out), _end(end), _currtuple(curr.size()) {
+	for(unsigned int n = 0; n < _curr.size(); ++n) {
+		if(_curr[n].hasNext()) _currtuple[n] = *(_curr[n]);
+	}
+}
+
+InverseInternalIterator* InverseInternalIterator::clone() const {
+	return new InverseInternalIterator(_curr,_lowest,_outtable,_end);
+}
+
+bool InverseInternalIterator::hasNext() const {
+	return !_end;
+}
+
+const ElementTuple& InverseInternalIterator::operator*() const {
+	_deref.push_back(_currtuple);
+	return _deref.back();
+}
+
+void InverseInternalIterator::operator++() {
+	int pos = _curr.size() - 1;
+	do {
+		for(vector<SortIterator>::reverse_iterator it = _curr.rbegin(); it != _curr.rend(); ++it, --pos) {
+			assert(it->hasNext());
+			++(*it);
+			if(it->hasNext()) {
+				_currtuple[pos] = *(*it);
+				break;
+			}
+			else {
+				_curr[pos] = _lowest[pos];
+				assert(_curr[pos].hasNext());
+				_currtuple[pos] = *(_curr[pos]);
+			}
+		}
+		if(pos < 0) _end = true;
+	} while((!_end) && _outtable->contains(_currtuple));
+}
+
+EqualInternalIterator::EqualInternalIterator(const SortIterator& iter) 
+	: _iterator(iter) {
+}
+
+bool EqualInternalIterator::hasNext() const {
+	return _iterator.hasNext();
+}
+
+const ElementTuple& EqualInternalIterator::operator*() const {
+	_deref.push_back(ElementTuple(2,*_iterator));
+	return _deref.back();
+}
+
+void EqualInternalIterator::operator++() {
+	++_iterator;
+}
+
+EqualInternalIterator* EqualInternalIterator::clone() const {
+	return new EqualInternalIterator(_iterator);
+}
+
+StrLessThanInternalIterator::StrLessThanInternalIterator(const SortIterator& si) :
+	_leftiterator(si), _rightiterator(si) {
+	if(_rightiterator.hasNext()) ++_rightiterator;
+}	
+
+bool StrLessThanInternalIterator::hasNext() const {
+	return (_leftiterator.hasNext() && _rightiterator.hasNext());
+}
+
+const ElementTuple& StrLessThanInternalIterator::operator*() const {
+	ElementTuple tuple(2); tuple[0] = *_leftiterator; tuple[1] = *_rightiterator;
+	_deref.push_back(tuple);
+	return _deref.back();
+}
+
+void StrLessThanInternalIterator::operator++() {
+	if(_rightiterator.hasNext()) ++_rightiterator;
+	if(_rightiterator.hasNext()) return;
+	else if(_leftiterator.hasNext()) {
+		++_leftiterator;
+		_rightiterator = _leftiterator;
+		if(_rightiterator.hasNext()) ++_rightiterator;
+	}
+}
+
+StrLessThanInternalIterator* StrLessThanInternalIterator::clone() const {
+	return new StrLessThanInternalIterator(_leftiterator,_rightiterator);
+}
+
+StrGreaterThanInternalIterator::StrGreaterThanInternalIterator(const SortIterator& si) :
+	_leftiterator(si), _rightiterator(si), _lowest(si) {
+	if(_leftiterator.hasNext()) ++_leftiterator;
+}	
+
+bool StrGreaterThanInternalIterator::hasNext() const {
+	return (_leftiterator.hasNext() && _rightiterator.hasNext());
+}
+
+const ElementTuple& StrGreaterThanInternalIterator::operator*() const {
+	ElementTuple tuple(2); tuple[0] = *_leftiterator; tuple[1] = *_rightiterator;
+	_deref.push_back(tuple);
+	return _deref.back();
+}
+
+void StrGreaterThanInternalIterator::operator++() {
+	if(_rightiterator.hasNext()) ++_rightiterator;
+	if(_leftiterator.hasNext() && _rightiterator.hasNext()) {
+		if(*(*_leftiterator) > *(*_rightiterator)) return;
+		else {
+			++_leftiterator;
+			_rightiterator = _lowest;
+		}
+	}
+}
+
+UnionInternalSortIterator::UnionInternalSortIterator(const vector<SortIterator>& vsi, const vector<SortTable*>& tabs) :
+	_iterators(vsi), _outtables(tabs) {
+	setcurriterator();
+}
+
+bool UnionInternalSortIterator::contains(const DomainElement* d) const {
+	for(vector<SortTable*>::const_iterator it = _outtables.begin(); it != _outtables.end(); ++it) {
+		if((*it)->contains(d)) return false;
+	}
+	return true;
+}
+
+void UnionInternalSortIterator::setcurriterator() {
+	_curriterator = _iterators.begin();
+	for(; _curriterator != _iterators.end(); ) {
+		if(_curriterator->hasNext()) {
+			if(contains(*(*_curriterator))) break;
+			else  ++(*_curriterator); 
+		}
+		else ++_curriterator;
+	}
+	if(_curriterator->hasNext()) {
+		vector<SortIterator>::iterator jt = _curriterator; ++jt;
+		for(; jt != _iterators.end(); ) {
+			if(jt->hasNext()) {
+				if(contains(*(*jt))) {
+					if(*(*(*jt))< *(*(*_curriterator))) _curriterator = jt;
+					else if(*(*_curriterator) == *(*jt)) {
+						++(*jt);
+						++jt;
+					}
+				}
+				else ++(*jt); 
+			}
+			else ++jt;
+		}
+	}
+}
+
+bool UnionInternalSortIterator::hasNext() const {
+	return _curriterator != _iterators.end();
+}
+
+const DomainElement* UnionInternalSortIterator::operator*() const {
+	assert(_curriterator->hasNext());
+	return *(*_curriterator);
+}
+
+void UnionInternalSortIterator::operator++() {
+	++(*_curriterator);
+	setcurriterator();
+}
+
+/*************************
+	Internal predtable
+*************************/
+
+bool StrictWeakTupleOrdering::operator()(const ElementTuple& t1, const ElementTuple& t2) const {
+	assert(t1.size() == t2.size());
+	for(unsigned int n = 0; n < t1.size(); ++n) {
+		if(*(t1[n]) < *(t2[n])) return true;
+		else if(*(t1[n]) > *(t2[n])) return false;
+	}
+	return false;
+}
+
+UnionInternalPredTable::UnionInternalPredTable(unsigned int arity)  { 
+	_intables.push_back(new PredTable(new EnumeratedInternalPredTable(arity)));
+	_outtables.push_back(new PredTable(new EnumeratedInternalPredTable(arity)));
+}
+
+/**
+ *	Destructor for union predicate tables
+ */
+UnionInternalPredTable::~UnionInternalPredTable() {
+	for(vector<PredTable*>::iterator it = _intables.begin(); it != _intables.end(); ++it)
+		delete(*it);
+	for(vector<PredTable*>::iterator it = _outtables.begin(); it != _outtables.end(); ++it)
+		delete(*it);
+}
+
+unsigned int UnionInternalPredTable::arity() const {
+	assert(!_intables.empty());
+	return _intables[0]->arity();
+}
+
+bool UnionInternalPredTable::finite() const {
+	if(approxfinite()) return true;
+	else {
+		notyetimplemented("Exact finiteness test on union predicate tables");	
+		return approxfinite();
+	}
+}
+
+bool UnionInternalPredTable::empty() const {
+	if(approxempty()) return true;
+	else {
+		notyetimplemented("Exact emptyness test on union predicate tables");	
+		return approxempty();
+	}
+}
+
+bool UnionInternalPredTable::approxfinite() const {
+	for(vector<PredTable*>::const_iterator it = _intables.begin(); it != _intables.end(); ++it) {
+		if(!(*it)->approxfinite()) return false;
+	}
+	return true;
+}
+
+bool UnionInternalPredTable::approxempty() const {
+	for(vector<PredTable*>::const_iterator it = _intables.begin(); it != _intables.end(); ++it) {
+		if(!(*it)->approxempty()) return false;
+	}
+	return true;
+}
+
+/**
+ * \brief	Returns true iff the table contains a given tuple
+ *
+ * PARAMETERS
+ *		tuple	- the given tuple
+ */
+bool UnionInternalPredTable::contains(const ElementTuple& tuple) const {
+	bool in = false;
+	for(vector<PredTable*>::const_iterator it = _intables.begin(); it != _intables.end(); ++it) {
+		if((*it)->contains(tuple)) { in = true; break;	}
+	}
+	if(!in) return false;
+
+	bool out = false;
+	for(vector<PredTable*>::const_iterator it = _outtables.begin(); it != _outtables.end(); ++it) {
+		if((*it)->contains(tuple)) { out = true; break;	}
+	}
+	return !out;
+}
+
+/**
+ * \brief Add a tuple to the table. 
+ * 
+ * PARAMETERS
+ *		- tuple: the tuple
+ *
+ * RETURNS
+ *		A pointer to the updated table
+ */
+InternalPredTable* UnionInternalPredTable::add(const ElementTuple& tuple) {
+	if(!contains(tuple)) {
+		if(_nrRefs > 1) {
+			vector<PredTable*> newin;
+			vector<PredTable*> newout;
+			for(vector<PredTable*>::iterator it = _intables.begin(); it != _intables.end(); ++it) {
+				newin.push_back(new PredTable((*it)->interntable()));
+			}
+			for(vector<PredTable*>::iterator it = _outtables.begin(); it != _outtables.end(); ++it) {
+				newout.push_back(new PredTable((*it)->interntable()));
+			}
+			UnionInternalPredTable* newtable = new UnionInternalPredTable(_arity,newin,newout);
+			InternalPredTable* temp = newtable->add(tuple); assert(temp == newtable);
+			return newtable;
+		}
+		else {
+			bool in = false;
+			for(unsigned int n = 0; n < _intables.size(); ++n) {
+				if(_intables[n]->contains(tuple)) { in = true; break;	}
+			}
+			if(in) {
+				for(unsigned int n = 0; n < _outtables.size(); ++n) 
+					_outtables[n]->remove(tuple);
+			}
+			else {
+				assert(!_intables.empty());
+				_intables[0]->add(tuple);
+			}
+			return this;
+		}
+	}
+	else return this;
+}
+
+/**
+ * \brief Remove a tuple from the table. 
+ * 
+ * PARAMETERS
+ *		- tuple: the tuple
+ *
+ * RETURNS
+ *		A pointer to the updated table
+ */
+InternalPredTable* UnionInternalPredTable::remove(const ElementTuple& tuple) {
+	assert(!_outtables.empty());
+	if(_nrRefs > 1) {
+		vector<PredTable*> newin;
+		vector<PredTable*> newout;
+		for(vector<PredTable*>::iterator it = _intables.begin(); it != _intables.end(); ++it) {
+			newin.push_back(new PredTable((*it)->interntable()));
+		}
+		for(vector<PredTable*>::iterator it = _outtables.begin(); it != _outtables.end(); ++it) {
+			newout.push_back(new PredTable((*it)->interntable()));
+		}
+		UnionInternalPredTable* newtable = new UnionInternalPredTable(_arity,newin,newout);
+		InternalPredTable* temp = newtable->remove(tuple); assert(temp == newtable);
+		return newtable;
+	}
+	else {
+		_outtables[0]->add(tuple);
+		return this;
+	}
+}
+
+InternalTableIterator* UnionInternalPredTable::begin() const {
+	vector<TableIterator> vti;
+	for(vector<PredTable*>::const_iterator it = _intables.begin(); it != _intables.end(); ++it) {
+		vti.push_back((*it)->begin());
+	}
+	return new UnionInternalIterator(vti,_outtables);
+}
+
+
+/**
+ * \brief	Returns true iff the table contains a given tuple
+ *
+ * PARAMETERS
+ *		tuple	- the given tuple
+ */
+bool EnumeratedInternalPredTable::contains(const ElementTuple& tuple) const {
+	assert(tuple.size() == arity());
+	return _table.find(tuple) != _table.end();
+}
+
+/**
+ * Add a tuple to the table. 
+ * 
+ * PARAMETERS
+ *		- tuple: the tuple
+ *
+ * RETURNS
+ *		A pointer to the updated table
+ */
+EnumeratedInternalPredTable* EnumeratedInternalPredTable::add(const ElementTuple& tuple) {
+	if(contains(tuple)) return this;
+	else {
+		if(_nrRefs == 1) {
+			_table.insert(tuple);
+			return this;
+		}
+		else {
+			SortedElementTable newtable = _table;
+			newtable.insert(tuple);
+			return new EnumeratedInternalPredTable(newtable,_arity);
+		}
+	}
+}
+
+/**
+ * Remove a tuple from the table. 
+ * 
+ * PARAMETERS
+ *		- tuple: the tuple
+ *
+ * RETURNS
+ *		A pointer to the updated table
+ */
+EnumeratedInternalPredTable* EnumeratedInternalPredTable::remove(const ElementTuple& tuple) {
+	SortedElementTable::iterator it = _table.find(tuple);
+	if(it != _table.end()) {
+		if(_nrRefs == 1) {
+			_table.erase(it);
+			return this;
+		}
+		else {
+			SortedElementTable newtable = _table;
+			SortedElementTable::iterator nt = newtable.find(tuple);
+			newtable.erase(nt);
+			return new EnumeratedInternalPredTable(newtable,_arity);
+		}
+	}
+	else return this;
+}
+
+/**
+ * \brief Returns an iterator on the first tuple of the table
+ */
+InternalTableIterator* EnumeratedInternalPredTable::begin() const {
+	return new EnumInternalIterator(_table.begin(),_table.end());
+}
+
+ComparisonInternalPredTable::ComparisonInternalPredTable(InternalSortTable* t) {
+	_table = t;
+}
+
+ComparisonInternalPredTable::~ComparisonInternalPredTable() {
+}
+
+InternalPredTable* ComparisonInternalPredTable::add(const ElementTuple& tuple) {
+	if(!contains(tuple)) {
+		UnionInternalPredTable* upt = new UnionInternalPredTable(tuple.size());
+		upt->addInTable(new PredTable(this));
+		InternalPredTable* temp = upt->add(tuple);
+		if(temp != upt) delete(upt);
+		return temp;
+	}
+	else return this;
+}
+
+InternalPredTable* ComparisonInternalPredTable::remove(const ElementTuple& tuple) {
+	if(contains(tuple)) {
+		UnionInternalPredTable* upt = new UnionInternalPredTable(tuple.size());
+		upt->addInTable(new PredTable(this));
+		InternalPredTable* temp = upt->remove(tuple);
+		if(temp != upt) delete(upt);
+		return temp;
+	}
+	else return this;
+}
+
+/**
+ * \brief Returns true iff the table contains a given tuple
+ *
+ * PARAMETERS
+ *		tuple	- the given tuple
+ */
+bool EqualInternalPredTable::contains(const ElementTuple& tuple) const {
+	assert(tuple.size() == 2);
+	return (tuple[0] == tuple[1] && _table->contains(tuple[0]));
+}
+
+/**
+ * \brief	Returns true iff the table is finite
+ */
+bool EqualInternalPredTable::finite() const {
+	if(approxfinite()) return true;
+	else if(_table->finite()) return true;
+	else return false;
+}
+
+/**
+ * \brief Returns true iff the table is empty
+ */
+bool EqualInternalPredTable::empty() const {
+	if(approxempty()) return true;
+	else if(_table->empty()) return true;
+	else return false;
+}
+
+/**
+ * \brief Returns false if the table is infinite. May return true if the table is finite.
+ */
+inline bool EqualInternalPredTable::approxfinite() const {
+	return _table->approxfinite();
+}
+
+/**
+ * \brief Returns false if the table is not empty. May return true if the table is empty.
+ */
+inline bool EqualInternalPredTable::approxempty() const {
+	return _table->approxempty();
+}
+
+InternalTableIterator* EqualInternalPredTable::begin() const {
+	return new EqualInternalIterator(_table->sortbegin());
+}
+
+/**
+ * \brief Returns true iff the table contains a given tuple
+ *
+ * PARAMETERS
+ *		tuple	- the given tuple
+ */
+bool StrLessInternalPredTable::contains(const ElementTuple& tuple) const {
+	assert(tuple.size() == 2);
+	return (*(tuple[0]) < *(tuple[1]) && _table->contains(tuple[0]) && _table->contains(tuple[1]));
+}
+
+/**
+ * \brief Returns true iff the table is finite
+ */
+bool StrLessInternalPredTable::finite() const {
+	if(approxfinite()) return true;
+	else return _table->finite();
+}
+
+/**
+ * \brief Returns true iff the table is empty
+ */
+bool StrLessInternalPredTable::empty() const {
+	InternalSortIterator* isi = _table->sortbegin();
+	if(isi->hasNext()) {
+		++(*isi);
+		if(isi->hasNext()) return false;
+	}
+	return true;
+}
+
+/**
+ * \brief Returns false if the table is infinite. May return true if the table is finite.
+ */
+inline bool StrLessInternalPredTable::approxfinite() const {
+	return (_table->approxfinite());
+}
+
+/**
+ * \brief Returns false if the table is infinite. May return true if the table is finite.
+ */
+inline bool StrLessInternalPredTable::approxempty() const {
+	InternalSortIterator* isi = _table->sortbegin();
+	if(isi->hasNext()) {
+		++(*isi);
+		if(isi->hasNext()) return false;
+	}
+	return true;
+}
+
+InternalTableIterator* StrLessInternalPredTable::begin() const {
+	return new StrLessThanInternalIterator(_table->sortbegin());
+}
+
+/**
+ * \brief Returns true iff the table contains a given tuple
+ *
+ * PARAMETERS
+ *		tuple	- the given tuple
+ */
+bool StrGreaterInternalPredTable::contains(const ElementTuple& tuple) const {
+	assert(tuple.size() == 2);
+	return (*(tuple[0]) > *(tuple[1]) && _table->contains(tuple[0]) && _table->contains(tuple[1]));
+}
+
+/**
+ * \brief Returns true iff the table is finite
+ */
+bool StrGreaterInternalPredTable::finite() const {
+	if(approxfinite()) return true;
+	else return _table->finite(); 
+}
+
+/**
+ * \brief Returns true iff the table is empty
+ */
+bool StrGreaterInternalPredTable::empty() const {
+	InternalSortIterator* isi = _table->sortbegin();
+	if(isi->hasNext()) {
+		++(*isi);
+		if(isi->hasNext()) return false;
+	}
+	return true;
+}
+
+/**
+ * \brief Returns false if the table is infinite. May return true if the table is finite.
+ */
+inline bool StrGreaterInternalPredTable::approxfinite() const {
+	return (_table->approxfinite());
+}
+
+/**
+ * \brief Returns false if the table is infinite. May return true if the table is finite.
+ */
+inline bool StrGreaterInternalPredTable::approxempty() const {
+	InternalSortIterator* isi = _table->sortbegin();
+	if(isi->hasNext()) {
+		++(*isi);
+		if(isi->hasNext()) return false;
+	}
+	return true;
+}
+
+InternalTableIterator* StrGreaterInternalPredTable::begin() const {
+	return new StrGreaterThanInternalIterator(_table->sortbegin());
+}
+
+/*************************
+	Internal sorttable
+*************************/
+
+InternalTableIterator* InternalSortTable::begin() const {
+	return new SortInternalTableIterator(sortbegin());
+}
+
+UnionInternalSortTable::UnionInternalSortTable() {
+	_intables.push_back(new SortTable(new EnumeratedInternalSortTable()));
+	_outtables.push_back(new SortTable(new EnumeratedInternalSortTable()));
+}
+
+UnionInternalSortTable::~UnionInternalSortTable() {
+	for(vector<SortTable*>::iterator it = _intables.begin(); it != _intables.end(); ++it)
+		delete(*it);
+	for(vector<SortTable*>::iterator it = _outtables.begin(); it != _outtables.end(); ++it)
+		delete(*it);
+}
+
+bool UnionInternalSortTable::finite() const {
+	if(approxfinite()) return true;
+	else {
+		notyetimplemented("Exact finiteness test on union sort tables");	
+		return approxfinite();
+	}
+}
+
+bool UnionInternalSortTable::empty() const {
+	if(approxempty()) return true;
+	else {
+		notyetimplemented("Exact emptyness test on union sort tables");	
+		return approxempty();
+	}
+}
+
+bool UnionInternalSortTable::approxfinite() const {
+	for(vector<SortTable*>::const_iterator it = _intables.begin(); it != _intables.end(); ++it) {
+		if(!(*it)->approxfinite()) return false;
+	}
+	return true;
+}
+
+bool UnionInternalSortTable::approxempty() const {
+	for(vector<SortTable*>::const_iterator it = _intables.begin(); it != _intables.end(); ++it) {
+		if(!(*it)->approxempty()) return false;
+	}
+	return true;
+}
+
+bool UnionInternalSortTable::contains(const DomainElement* d) const {
+	bool in = false;
+	for(vector<SortTable*>::const_iterator it = _intables.begin(); it != _intables.end(); ++it) {
+		if((*it)->contains(d)) { in = true; break;	}
+	}
+	if(!in) return false;
+
+	bool out = false;
+	for(vector<SortTable*>::const_iterator it = _outtables.begin(); it != _outtables.end(); ++it) {
+		if((*it)->contains(d)) { out = true; break;	}
+	}
+	return !out;
+}
+
+InternalSortTable* UnionInternalSortTable::add(const DomainElement* d) {
+	if(!contains(d)) {
+		if(_nrRefs > 1) {
+			vector<SortTable*> newin;
+			vector<SortTable*> newout;
+			for(vector<SortTable*>::iterator it = _intables.begin(); it != _intables.end(); ++it) {
+				newin.push_back(new SortTable((*it)->interntable()));
+			}
+			for(vector<SortTable*>::iterator it = _outtables.begin(); it != _outtables.end(); ++it) {
+				newout.push_back(new SortTable((*it)->interntable()));
+			}
+			UnionInternalSortTable* newtable = new UnionInternalSortTable(newin,newout);
+			InternalSortTable* temp = newtable->add(d); assert(temp == newtable);
+			return newtable;
+		}
+		else {
+			bool in = false;
+			for(unsigned int n = 0; n < _intables.size(); ++n) {
+				if(_intables[n]->contains(d)) { in = true; break;	}
+			}
+			if(in) {
+				for(unsigned int n = 0; n < _outtables.size(); ++n) 
+					_outtables[n]->remove(d);
+			}
+			else {
+				assert(!_intables.empty());
+				_intables[0]->add(d);
+			}
+			return this;
+		}
+	}
+	else return this;
+}
+
+InternalSortTable* UnionInternalSortTable::remove(const DomainElement* d) {
+	assert(!_outtables.empty());
+	if(_nrRefs > 1) {
+		vector<SortTable*> newin;
+		vector<SortTable*> newout;
+		for(vector<SortTable*>::iterator it = _intables.begin(); it != _intables.end(); ++it) {
+			newin.push_back(new SortTable((*it)->interntable()));
+		}
+		for(vector<SortTable*>::iterator it = _outtables.begin(); it != _outtables.end(); ++it) {
+			newout.push_back(new SortTable((*it)->interntable()));
+		}
+		UnionInternalSortTable* newtable = new UnionInternalSortTable(newin,newout);
+		InternalSortTable* temp = newtable->remove(d); assert(temp == newtable);
+		return newtable;
+	}
+	else {
+		_outtables[0]->add(d);
+		return this;
+	}
+}
+
+InternalSortIterator* UnionInternalSortTable::sortbegin() const {
+	vector<SortIterator> vsi;
+	for(vector<SortTable*>::const_iterator it = _intables.begin(); it != _intables.end(); ++it) {
+		vsi.push_back((*it)->sortbegin());
+	}
+	return new UnionInternalSortIterator(vsi,_outtables);
+}
+
+InternalSortTable* InfiniteInternalSortTable::add(const DomainElement* d) {
+	if(!contains(d)) {
+		UnionInternalSortTable* upt = new UnionInternalSortTable();
+		upt->addInTable(new SortTable(this));
+		InternalSortTable* temp = upt->add(d);
+		if(temp != upt) delete(upt);
+		return temp;
+	}
+	else return this;
+}
+
+InternalSortTable* InfiniteInternalSortTable::remove(const DomainElement* d) {
+	if(contains(d)) {
+		UnionInternalSortTable* upt = new UnionInternalSortTable();
+		upt->addOutTable(new SortTable(this));
+		InternalSortTable* temp = upt->remove(d);
+		if(temp != upt) delete(upt);
+		return temp;
+	}
+	else return this;
+}
+
+bool AllNaturalNumbers::contains(const DomainElement* d) const {
+	if(d->type() == DET_INT) return d->value()._int >= 0;
+	else return false;
+}
+
+InternalSortIterator* AllNaturalNumbers::sortbegin() const {
+	return new NatInternalSortIterator();
+}
+
+/*************************
+	Internal functable
+*************************/
+
+inline void InternalFuncTable::incrementRef() {
+	++_nrRefs;
+}
+
+inline void InternalFuncTable::decrementRef() {
+	--_nrRefs;
+	if(_nrRefs == 0) delete(this);
+}
+
+const DomainElement* EnumeratedInternalFuncTable::operator[](const ElementTuple& tuple) const {
+	ElementFunc::const_iterator it = _table.find(tuple);
+	if(it != _table.end()) return it->second;
+	else return 0;
+}
+
+InternalFuncTable* EnumeratedInternalFuncTable::add(const ElementTuple& tuple) {
+	ElementTuple key = tuple;
+	const DomainElement* value = key.back(); 
+	key.pop_back();
+	const DomainElement* computedvalue = operator[](key);
+	if(computedvalue != 0) {
+		if(computedvalue == value) return this;
+		else assert(false);
+	}
+	else {
+		if(_nrRefs > 1) {
+			ElementFunc newtable = _table;
+			newtable[key] = value;
+			return new EnumeratedInternalFuncTable(_arity,newtable);
+		}
+		else {
+			_table[key] = value;
+			return this;
+		}
+	}
+}
+
+InternalFuncTable* EnumeratedInternalFuncTable::remove(const ElementTuple& tuple) {
+	ElementTuple key = tuple;
+	const DomainElement* value = key.back(); 
+	key.pop_back();
+	const DomainElement* computedvalue = operator[](key);
+	if(computedvalue == value) {
+		if(_nrRefs > 1) {
+			ElementFunc newtable = _table;
+			newtable.erase(key);
+			return new EnumeratedInternalFuncTable(_arity,newtable);
+		}
+		else {
+			_table.erase(key);
+		}
+	}
+	else return this;
+}
+
+InternalTableIterator* EnumeratedInternalFuncTable::begin() const {
+	return new EnumInternalFuncIterator(_table.begin(),_table.end());
 }
 
 /****************
@@ -371,302 +1337,47 @@ PredTable::~PredTable() {
 void PredTable::add(const ElementTuple& tuple) {
 	InternalPredTable* temp = _table;
 	_table = _table->add(tuple);
-	if(temp != _table) temp->decrementRef();
+	if(temp != _table) {
+		temp->decrementRef();
+		_table->incrementRef();
+	}
 }
 
 void PredTable::remove(const ElementTuple& tuple) {
 	InternalPredTable* temp = _table;
 	_table = _table->remove(tuple);
-	if(temp != _table) temp->decrementRef();
-}
-
-/**
- * DESCRIPTION
- *		Strict weak ordering on tuples of domain elements.
- *		Used as parameter for algorithms of the standard library.
- */
-bool strictWeakOrdering(const ElementTuple& t1, const ElementTuple& t2) {
-	assert(t1.size() == t2.size());
-	for(unsigned int n = 0; n < t1.size(); ++n) {
-		if(*(t1[n]) < *(t2[n])) return true;
-		else if(*(t1[n] > *(t2[n]))) return false;
-	}
-	return false;
-}
-
-/**
- * DESCRIPTION
- *		Returns true iff the table contains a given tuple
- * PARAMETERS
- *		tuple	- the given tuple
- */
-bool EnumeratedInternalPredTable::contains(const ElementTuple& tuple) {
-	assert(tuple.size() == arity());
-	if(!sorted()) sortunique();
-	ElementTable::const_iterator it = lower_bound(_table.begin(),_table.end(),tuple,&strictWeakOrdering); 
-	return (it != _table.end());
-}
-
-/**
- * DESCRIPTION
- *		Sorts the table and remove all duplicates
- * POSTCONDITION
- *		_sorted = true
- */
-void EnumeratedInternalPredTable::sortunique() {
-	sort(_table.begin(),_table.end(),&strictWeakOrdering);
-	ElementTable::iterator it = unique(_table.begin(),_table.end());
-	_table.erase(it,_table.end());
-	_sorted = true;
-}
-
-/**
- * DESCRIPTION
- *		Add a tuple to the table. 
- * 
- * PARAMETERS
- *		- tuple: the tuple
- *
- * RETURNS
- *		A pointer to the updated table
- */
-EnumeratedInternalPredTable* EnumeratedInternalPredTable::add(const ElementTuple& tuple) {
-	_sorted = false;
-	_table.push_back(tuple);
-	return this;
-}
-
-/**
- * DESCRIPTION
- *		Remove a tuple from the table. 
- * 
- * PARAMETERS
- *		- tuple: the tuple
- *
- * RETURNS
- *		A pointer to the updated table
- */
-EnumeratedInternalPredTable* EnumeratedInternalPredTable::remove(const ElementTuple& tuple) {
-	ElementTable::iterator it = lower_bound(_table.begin(),_table.end(),&strictWeakOrdering);
-	if((*it) == tuple) _table.erase(tuple);
-	return this;
-}
-
-/**
- * DESCRIPTION
- *		Add a tuple to the table. 
- * 
- * PARAMETERS
- *		- tuple: the tuple
- *
- * RETURNS
- *		A pointer to the updated table
- */
-InternalPredTable* ComparisonInternalPredTable::add(const ElementTuple& tuple) {
-	if(!contains(tuple)) {
-		UnionInternalPredTable* upt = new UnionInternalPredTable();
-		InternalPredTable* temp1 = upt->add(this);
-		if(temp1 != upt) delete(upt);
-		InternalPredTable* temp2 = temp1->add(tuple);
-		if(temp1 != temp2) delete(temp1);
-		return temp2;
-	}
-	else return this;
-}
-
-/**
- * DESCRIPTION
- *		Remove a tuple from the table. 
- * 
- * PARAMETERS
- *		- tuple: the tuple
- *
- * RETURNS
- *		A pointer to the updated table
- */
-InternalPredTable* ComparisonInternalPredTable::remove(const ElementTuple& tuple) {
-	if(PredTable::contains(tuple)) {
-		UnionInternalPredTable* upt = new UnionInternalPredTable();
-		InternalPredTable* temp1 = upt->add(this);
-		if(temp1 != upt) delete(upt);
-		InternalPredTable* temp2 = temp1->remove(tuple);
-		if(temp1 != temp2) delete(temp1);
-		return temp2;
-	}
-	else return this;
-}
-
-/**
- * DESCRIPTION
- *		Returns true iff the table contains a given tuple
- * PARAMETERS
- *		tuple	- the given tuple
- */
-bool EqualInternalPredTable::contains(const ElementTuple& tuple) const {
-	assert(tuple.size() == 2);
-	return tuple[0] == tuple[1];
-}
-
-/**
- * DESCRIPTION
- *		Returns true iff the table contains a given tuple
- * PARAMETERS
- *		tuple	- the given tuple
- */
-bool StrLessInternalPredTable::contains(const ElementTuple& tuple) const {
-	assert(tuple.size() == 2);
-	return *(tuple[0]) < *(tuple[1]);
-}
-
-/**
- * DESCRIPTION
- *		Returns true iff the table contains a given tuple
- * PARAMETERS
- *		tuple	- the given tuple
- */
-bool StrGreaterInternalPredTable::contains(const ElementTuple& tuple) const {
-	assert(tuple.size() == 2);
-	return *(tuple[0]) > *(tuple[1]);
-}
-
-/**
- * DESCRIPTION
- *		Returns true iff the table is finite
- */
-bool EqualInternalPredTable::finite() const {
-	if(approxfinite()) return true;
-	else {
-		if(_lefttable->finite() || _righttable->finite()) return true;
-		else {
-			notyetimplemented("Exact finiteness test on equality predicate tables");	
-			return approxifinite();
-		}
+	if(temp != _table) {
+		temp->decrementRef();
+		_table->incrementRef();
 	}
 }
 
-/**
- * DESCRIPTION
- *		Returns true iff the table is finite
- */
-bool StrLessInternalPredTable::finite() const {
-	if(approxfinite() || empty()) return true;
-	else {
-		if(_lefttable->finite() && _righttable->finite()) return true;
-		else {
-			notyetimplemented("Exact finiteness test on </2 predicate tables");	
-			return approxifinite();
-		}
+TableIterator PredTable::begin() const {
+	TableIterator ti(_table->begin());
+	return ti;
+}
+
+void InternalPredTable::decrementRef() {
+	--_nrRefs;
+	if(_nrRefs == 0) delete(this);
+}
+
+void InternalPredTable::incrementRef() {
+	++_nrRefs;
+}
+
+InverseInternalPredTable::~InverseInternalPredTable() {
+	delete(_invtable);
+	for(vector<SortTable*>::iterator it = _universe.begin(); it != _universe.end(); ++it) {
+		delete(*it);
 	}
 }
 
-/**
- * DESCRIPTION
- *		Returns true iff the table is finite
- */
-bool StrGreaterInternalPredTable::finite() const {
-	if(approxfinite() || empty()) return true;
-	else {
-		if(_lefttable->finite() && _righttable->finite()) return true;
-		else {
-			notyetimplemented("Exact finiteness test on >/2 predicate tables");	
-			return approxifinite();
-		}
-	}
+unsigned int InverseInternalPredTable::arity() const {
+	return _universe.size();
 }
 
 /**
- * DESCRIPTION
- *		Returns true iff the table is empty
- */
-bool EqualInternalPredTable::empty() const {
-	if(approxempty()) return true;
-	else {
-		if(_lefttable->empty() || _righttable->empty()) return true;
-		else if(_lefttable->finite()) {
-			for(SortTable::const_iterator it = _lefttable->begin(); it != _lefttable->end(); ++it) {
-				if(_righttable->contains(*it)) return false;
-			}
-			return true;
-		}
-		else if(_righttable->finite()) {
-			for(SortTable::const_iterator it = _righttable->begin(); it != _righttable->end(); ++it) {
-				if(_lefttable->contains(*it)) return false;
-			}
-			return true;
-		}
-		else {
-			notyetimplemented("Exact emptyness test on equality predicate tables");	
-			return approxempty();
-		}
-	}
-}
-
-/**
- * DESCRIPTION
- *		Returns true iff the table is empty
- */
-bool StrLessInternalPredTable::empty() const {
-	return approxempty();
-}
-
-/**
- * DESCRIPTION
- *		Returns true iff the table is empty
- */
-bool StrGreaterInternalPredTable::empty() const {
-	return approxempty();
-}
-
-/**
- * DESCRIPTION
- *		Returns false if the table is infinite. May return true if the table is finite.
- */
-inline bool EqualInternalPredTable::approxfinite() const {
-	return (_lefttable->approxfinite() || _righttable->approxfinite());
-}
-
-/**
- * DESCRIPTION
- *		Returns false if the table is infinite. May return true if the table is finite.
- */
-inline bool StrLessInternalPredTable::approxfinite() const {
-	return (_lefttable->approxfinite() && _righttable->approxfinite());
-}
-
-/**
- * DESCRIPTION
- *		Returns false if the table is infinite. May return true if the table is finite.
- */
-inline bool StrGreaterInternalPredTable::approxfinite() const {
-	return (_lefttable->approxfinite() && _righttable->approxfinite());
-}
-
-/**
- * DESCRIPTION
- *		Returns false if the table is not empty. May return true if the table is empty.
- */
-inline bool EqualInternalPredTable::approxempty() const {
-	return (_lefttable->approxempty() || _righttable->approxempty());
-}
-
-/**
- * DESCRIPTION
- *		Returns false if the table is infinite. May return true if the table is finite.
- */
-inline bool StrLessInternalPredTable::approxempty() const {
-	return *(_lefttable->front()) >= *(_righttable->back());
-}
-
-/**
- * DESCRIPTION
- *		Returns false if the table is infinite. May return true if the table is finite.
- */
-inline bool StrGreaterInternalPredTable::approxempty() const {
-	return *(_lefttable->back()) <= *(_righttable->front());
-}
-
-/**
- * DESCRIPTION
  *		Returns true iff the table is finite
  */
 bool InverseInternalPredTable::finite() const {
@@ -685,7 +1396,6 @@ bool InverseInternalPredTable::finite() const {
 }
 
 /**
- * DESCRIPTION
  *		Returns true iff the table is empty
  */
 bool InverseInternalPredTable::empty() const {
@@ -694,7 +1404,8 @@ bool InverseInternalPredTable::empty() const {
 		if((*it)->empty()) return true;
 	}
 	if(finite()) {
-		assert(false); // TODO: check of all tuples in the cartesian product of _universe belong to _table;
+		TableIterator ti = TableIterator(begin());
+		return !(ti.hasNext());
 	}
 	else {
 		notyetimplemented("Exact emptyness test on inverse predicate tables");	
@@ -703,7 +1414,6 @@ bool InverseInternalPredTable::empty() const {
 }
 
 /**
- * DESCRIPTION
  *		Returns false if the table is infinite. May return true if the table is finite.
  */
 bool InverseInternalPredTable::approxfinite() const {
@@ -716,7 +1426,6 @@ bool InverseInternalPredTable::approxfinite() const {
 }
 
 /**
- * DESCRIPTION
  *		Returns false if the table is non-empty. May return true if the table is empty.
  */
 bool InverseInternalPredTable::approxempty() const {
@@ -727,13 +1436,13 @@ bool InverseInternalPredTable::approxempty() const {
 }
 
 /**
- * DESCRIPTION
- *		Returns true iff the table contains a given tuple
+ *	Returns true iff the table contains a given tuple
+ *
  * PARAMETERS
  *		tuple	- the given tuple
  */
-bool InverseInternalPredTable::contains(const ElementTuple& tuple) {
-	if(_table->contains(tuple)) return false;
+bool InverseInternalPredTable::contains(const ElementTuple& tuple) const {
+	if(_invtable->contains(tuple)) return false;
 	else {
 		for(unsigned int col = 0; col < tuple.size(); ++col) {
 			if(!(_universe[col]->contains(tuple[col]))) return false;
@@ -743,8 +1452,7 @@ bool InverseInternalPredTable::contains(const ElementTuple& tuple) {
 }
 
 /**
- * DESCRIPTION
- *		Add a tuple to the table. 
+ * Add a tuple to the table. 
  * 
  * PARAMETERS
  *		- tuple: the tuple
@@ -753,24 +1461,30 @@ bool InverseInternalPredTable::contains(const ElementTuple& tuple) {
  *		A pointer to the updated table
  */
 InternalPredTable* InverseInternalPredTable::add(const ElementTuple& tuple) {
-	if(_table->contains(tuple)) {
-		InternalPredTable* temp = _table->remove(tuple);
-		if(temp != _table) { delete(_table); _table = temp;	}
-		return this;
-	}
-	else if(contains(tuple)) {
-		return this;
-	}
-	else {
-		for(unsigned int n = 0; n < tuple.size(); ++n) {
-			_universe[n]->add(tuple[n]);
+	if(!contains(tuple)) {
+		if(_nrRefs > 1) {
+			PredTable* newinv = new PredTable(_invtable->interntable());
+			vector<SortTable*> newuniv;
+			for(vector<SortTable*>::iterator it = _universe.begin(); it != _universe.end(); ++it) {
+				newuniv.push_back(new SortTable((*it)->interntable()));
+			}
+			InverseInternalPredTable* newtable = new InverseInternalPredTable(newinv,newuniv);
+			InternalPredTable* temp = newtable->add(tuple); assert(temp == newtable);
+			return newtable;
+		}
+		else {
+			_invtable->remove(tuple);
+			for(unsigned int n = 0; n < tuple.size(); ++n) {
+				_universe[n]->add(tuple[n]);
+			}
+			return this;
 		}
 	}
+	else return this;
 }
 
 /**
- * DESCRIPTION
- *		Remove a tuple from the table. 
+ * Remove a tuple from the table. 
  * 
  * PARAMETERS
  *		- tuple: the tuple
@@ -779,169 +1493,81 @@ InternalPredTable* InverseInternalPredTable::add(const ElementTuple& tuple) {
  *		A pointer to the updated table
  */
 InternalPredTable* InverseInternalPredTable::remove(const ElementTuple& tuple) {
-	InternalPredTable* temp = _table->add(tuple);
-	if(temp != _table) { delete(_table); _table = temp;	}
-	return this;
-}
-
-/**
- * DESCRIPTION
- *		Destructor for union predicate tables
- */
-UnionInternalPredTable::~UnionInternalPredTable {
-	for(vector<InternalPredTable*>::iterator it = _intables.begin(); it != _intables.end(); ++it)
-		delete(*it);
-	for(vector<InternalPredTable*>::iterator it = _outtables.begin(); it != _outtables.end(); ++it)
-		delete(*it);
-}
-
-/**
- * DESCRIPTION
- *		Returns the number of columns in the table
- */
-unsigned int UnionInternalPredTable::arity() const {
-	if(!_intables.empty()) return _intables[0]->arity();
-	else if(!_outtables.empty()) return _outtables[0]->arity();
+	if(_nrRefs > 1) {
+		PredTable* newinv = new PredTable(_invtable->interntable());
+		vector<SortTable*> newuniv;
+		for(vector<SortTable*>::iterator it = _universe.begin(); it != _universe.end(); ++it) {
+			newuniv.push_back(new SortTable((*it)->interntable()));
+		}
+		InverseInternalPredTable* newtable = new InverseInternalPredTable(newinv,newuniv);
+		InternalPredTable* temp = newtable->remove(tuple); assert(temp == newtable);
+		return newtable;
+	}
 	else {
-		assert(false);
-		return 0;
+		_invtable->add(tuple);
+		return this;
 	}
 }
 
-/**
- * DESCRIPTION
- *		Returns true iff the table contains a given tuple
- * PARAMETERS
- *		tuple	- the given tuple
- */
-bool UnionInternalPredTable::contains(const ElementTuple& tuple) {
-	bool in = false;
-	for(vector<InternalPredTable*>::iterator it = _intables.begin(); it != _intables.end(); ++it) {
-		if((*it)->contains(tuple)) { in = true; break;	}
+InternalTableIterator* InverseInternalPredTable::begin() const {
+	vector<SortIterator> vsi;
+	for(vector<SortTable*>::const_iterator it = _universe.begin(); it != _universe.end(); ++it) {
+		vsi.push_back((*it)->sortbegin());
 	}
-	if(!in) return false;
-
-	bool out = false;
-	for(vector<InternalPredTable*>::iterator it = _outtables.begin(); it != _outtables.end(); ++it) {
-		if((*it)->contains(tuple)) { out = true; break;	}
-	}
-	return !out;
+	return new InverseInternalIterator(vsi,_invtable);
 }
 
-/**
- * DESCRIPTION
- *		Returns true iff the table contains a given tuple
- * PARAMETERS
- *		tuple	- the given tuple
- */
-bool UnionInternalPredTable::contains(const ElementTuple& tuple) {
-	bool in = false;
-	for(vector<InternalPredTable*>::iterator it = _intables.begin(); it != _intables.end(); ++it) {
-		if((*it)->contains(tuple)) { in = true; break;	}
-	}
-	if(!in) return false;
+/****************
+	SortTable
+****************/
 
-	bool out = false;
-	for(vector<InternalPredTable*>::iterator it = _outtables.begin(); it != _outtables.end(); ++it) {
-		if((*it)->contains(tuple)) { out = true; break;	}
-	}
-	return !out;
+SortTable::SortTable(InternalSortTable* table) : _table(table) {
+	_table->incrementRef();
 }
 
-/**
- * DESCRIPTION
- *		Add a tuple to the table. 
- * 
- * PARAMETERS
- *		- tuple: the tuple
- *
- * RETURNS
- *		A pointer to the updated table
- */
-InternalPredTable* UnionInternalPredTable::add(const ElementTuple& tuple) {
-	bool in = false;
-	unsigned int finitetab = _intables.size();
-	for(unsigned int n = 0; n < _intables.size(); ++n) {
-		if(_intables[n]->contains(tuple)) { in = true; break;	}
-		if(_intables[n]->approxfinite()) finitetab = n;
-	}
-	if(!in) {
-		if(finitetab < _intables.size()) {
-			InternalPredTable* temp = _intables[finitetab]->add(tuple);
-			if(temp != _intables[finitetab]) {
-				delete(_intables[finitetab]);
-				_intables[finitetab] = temp;
-			}
-		}
-		else {
-			EnumeratedInternalPredTable* newintable = new EnumeratedInternalPredTable();
-			InternalPredTable* temp = newintable->add(tuple);
-			if(temp != newintable) { delete(newintable); newintable = temp;	}
-			_intables.push_back(newintable);
-		}
-	}
-
-	for(unsigned int n = 0; n < _outtables.size(); ++n) {
-		InternalPredTable* temp = _outtables[n]->remove(tuple);
-		if(temp != _outtables[n]) {
-			delete(_outtables[n]);
-			_outtables[n] = temp;
-		}
-	}
-
-	return this;
+SortTable::~SortTable() {
+	_table->decrementRef();
 }
 
-/**
- * DESCRIPTION
- *		Remove a tuple from the table. 
- * 
- * PARAMETERS
- *		- tuple: the tuple
- *
- * RETURNS
- *		A pointer to the updated table
- */
-InternalPredTable* UnionInternalPredTable::remove(const ElementTuple& tuple) {
-	for(unsigned int n = 0; n < _outtables.size(); ++n) {
-		if(_outtables[n]->approxfinite()) {
-			InternalPredTable* temp = _outtables[n]->add(tuple);
-			if(temp != _outtables[n]) {
-				delete(_outtables[n]);
-				_outtables[n] = temp;
-				return this;
-			}
-		}
-	}
-	EnumeratedInternalPredTable* newouttable = new EnumeratedInternalPredTable();
-	InternalPredTable* temp = newouttable->add(tuple);
-	if(temp != newouttable) { delete(newouttable); newouttable = temp;	}
-	_outtables.push_back(newouttable);
+TableIterator SortTable::begin() const {
+	return TableIterator(_table->begin());
 }
 
-
+SortIterator SortTable::sortbegin() const {
+	return SortIterator(_table->sortbegin());
+}
 
 /****************
 	FuncTable
 ****************/
 
+FuncTable::FuncTable(InternalFuncTable* table) : _table(table) {
+	_table->incrementRef();
+}
+
+FuncTable::~FuncTable() {
+	_table->decrementRef();
+}
+
 /**
- * DESCRIPTION
- *		Given a tuple (a_1,...,a_{n-1},a_n), this procedure returns true iff the value of
- *		(a_1,...,a_{n-1}) according to the function is equal to a_n
+ * Given a tuple (a_1,...,a_{n-1},a_n), this procedure returns true iff the value of
+ * (a_1,...,a_{n-1}) according to the function is equal to a_n
+ *
  * PARAMETERS
  *		tuple	- the given tuple
- * PRECONDITION
- *		The type of each of the elements of the tuple should be the same as the type of the corresponding
- *		columns of the table.
  */
 bool FuncTable::contains(const ElementTuple& tuple) const {
 	assert(tuple.size() == arity()+1);
 	ElementTuple key = tuple;
-	DomainElement* value = key.back();
+	const DomainElement* value = key.back();
 	key.pop_back();
-	DomainElement* computedvalue = operator[](key);
+	const DomainElement* computedvalue = operator[](key);
 	return value == computedvalue;
+}
+
+TableIterator FuncTable::begin() const {
+	TableIterator ti(_table->begin());
+	return ti;
 }
 
 /********************* VANAF HIER OUD ******************/
