@@ -6,6 +6,8 @@
 
 #include "fobdd.hpp"
 
+#include <typeinfo>
+
 /*******************
 	Kernel order
 *******************/
