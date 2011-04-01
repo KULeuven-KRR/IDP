@@ -270,7 +270,6 @@ void AbstractGroundTheory::transformForAdd(const vector<int>& vi, VIType /*vit*/
 				}
 			}
 			else if(typeid(*tsbody) == typeid(AggTsBody)) {
-				// body of the tseitin is an aggregate expression
 				AggTsBody* body = dynamic_cast<AggTsBody*>(tsbody);
 				if(body->type() == TS_RULE) {
 					assert(defnr != _nodef);
@@ -282,7 +281,6 @@ void AbstractGroundTheory::transformForAdd(const vector<int>& vi, VIType /*vit*/
 			}
 			else {
 				assert(typeid(*tsbody) == typeid(CPTsBody));
-				
 				CPTsBody* body = dynamic_cast<CPTsBody*>(tsbody);
 				if(body->type() == TS_RULE) {
 					assert(false);
@@ -516,7 +514,7 @@ void SolverTheory::addFixpDef(GroundFixpDef*) {
 	assert(false);
 }
 
-void SolverTheory::addAggregate(int head, AggTsBody* body) {
+void SolverTheory::addAggregate(int tseitin, AggTsBody* body) {
 	addSet(body->setnr(),_nodef,(body->aggtype() != AGGCARD));
 	MinisatID::AggSign sg = (body->lower() ? MinisatID::AGGSIGN_LB : MinisatID::AGGSIGN_UB);
 	MinisatID::AggType tp;
@@ -530,9 +528,9 @@ void SolverTheory::addAggregate(int head, AggTsBody* body) {
 	MinisatID::AggSem sem;
 	switch(body->type()) {
 		case TS_EQ: case TS_IMPL: case TS_RIMPL: sem = MinisatID::COMP; break;
-		case TS_RULE: sem = MinisatID::DEF; break;
+		case TS_RULE: default: assert(false); break;
 	}
-	MinisatID::Literal headlit(head,false);
+	MinisatID::Literal headlit(tseitin,false);
 	MinisatID::Weight weight(int(body->bound()));		// TODO: remove cast if supported by the solver
 	// Pass the aggregate to the solver
 	_solver->addAggrExpr(headlit,body->setnr(),weight,sg,tp,sem);
@@ -645,7 +643,6 @@ class DomelementEquality {
  *		This method should be called before running the SAT solver and after grounding.
  */
 void SolverTheory::addFuncConstraints() {
-	
 	for(unsigned int n = 0; n < _translator->nrOffsets(); ++n) {
 		PFSymbol* pfs = _translator->getSymbol(n);
 		const map<vector<domelement>,int>& tuples = _translator->getTuples(n);
@@ -675,7 +672,6 @@ void SolverTheory::addFuncConstraints() {
 			}
 		}
 	}
-	
 }
 
 void SolverTheory::addFalseDefineds() {

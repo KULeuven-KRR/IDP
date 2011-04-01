@@ -305,12 +305,12 @@ class AbstractGroundTheory : public AbstractTheory {
 		virtual void addDefinition(GroundDefinition*)						= 0;
 		virtual void addFixpDef(GroundFixpDef*)								= 0;
 		virtual void addSet(int setnr, int defnr, bool weighted)			= 0;
+		virtual	void addAggregate(int tseitin, AggTsBody* body)				= 0; 
+		virtual void addCPReification(int tseitin, CPTsBody* body)			= 0;
 
 				void addEmptyClause()		{ GroundClause c(0); addClause(c);		}
 				void addUnitClause(int l)	{ GroundClause c(1,l); addClause(c);	}
 
-		virtual	void addAggregate(int tseitin, AggTsBody* body)				= 0; 
-		virtual void addCPReification(int tseitin, CPTsBody* body)			= 0;
 		virtual void addPCRule(int defnr, int tseitin, PCTsBody* body)		= 0; 
 		virtual void addAggRule(int defnr, int tseitin, AggTsBody* body)	= 0; 
 
@@ -396,7 +396,7 @@ class GroundTheory : public AbstractGroundTheory {
 		void	addDefinition(GroundDefinition*);
 		void	addFixpDef(GroundFixpDef*);
 		void	addSet(int setnr, int defnr, bool weighted);
-		void	addAggregate(int head, AggTsBody* body);
+		void	addAggregate(int tseitin, AggTsBody* body);
 		void 	addCPReification(int tseitin, CPTsBody* body);
 
 		void	addPCRule(int defnr, int tseitin, PCTsBody* body);
