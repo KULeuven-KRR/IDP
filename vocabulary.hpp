@@ -229,7 +229,7 @@ class Predicate : public PFSymbol {
 		std::set<Sort*> allsorts()		const;
 
 		// Built-in symbols
-		PredInter*	interpretation(const AbstractStructure&)	const;
+		PredInter*	interpretation(AbstractStructure*)	const;
 
 		// Overloaded symbols 
 		bool		contains(const Predicate* p)									const;
@@ -378,7 +378,7 @@ class Function : public PFSymbol {
 		std::set<Sort*>				allsorts()				const;
 
 		// Built-in symbols
-		FuncInter*	interpretation(const AbstractStructure&)	const; 
+		FuncInter*	interpretation(AbstractStructure*)	const; 
 
 		// Overloaded symbols 
 		bool		contains(const Function* f)										const;

@@ -377,7 +377,7 @@ inline bool Predicate::overloaded() const {
  *		 needed to generate the interpretation for =/2. The structure contains the interpretation of the 
  *		 relevant sorts.
  */
-PredInter* Predicate::interpretation(const AbstractStructure& structure) const {
+PredInter* Predicate::interpretation(AbstractStructure* structure) const {
 	if(_interpretation) return _interpretation->get(structure);
 	else return 0;
 }
@@ -735,7 +735,7 @@ inline unsigned int Function::binding() const {
  *		 needed to generate the interpretation for //2. The structure contains the interpretation of the 
  *		 relevant sorts.
  */
-FuncInter* Function::interpretation(const AbstractStructure& structure) const {
+FuncInter* Function::interpretation(AbstractStructure* structure) const {
 	if(_interpretation) return _interpretation->get(structure);
 	else return 0;
 }
@@ -1183,10 +1183,15 @@ Vocabulary* Vocabulary::std() {
 		_std->addPred(new Predicate(gtpgen));
 
 		// Create function interpretations
+		vector<SortTable*> twointtables(2,allints);
+		vector<SortTable*> twofloattables(2,allfloats);
+		vector<SortTable*> threeinttables(3,allints);
+		vector<SortTable*> threefloattables(3,allfloats);
+
 		SingleFuncInterGenerator* modgen = 
-			new SingleFuncInterGenerator(new FuncInter(new FuncTable(new ModInternalFuncTable())));
+			new SingleFuncInterGenerator(new FuncInter(new FuncTable(new ModInternalFuncTable()),threeinttables));
 		SingleFuncInterGenerator* expgen = 
-			new SingleFuncInterGenerator(new FuncInter(new FuncTable(new ExpInternalFuncTable())));
+			new SingleFuncInterGenerator(new FuncInter(new FuncTable(new ExpInternalFuncTable()),threefloattables));
 
 		vector<Sort*> twoints(2,intsort);
 		vector<Sort*> twofloats(2,floatsort);
@@ -1194,44 +1199,44 @@ Vocabulary* Vocabulary::std() {
 		vector<Sort*> threefloats(3,floatsort);
 
 		SingleFuncInterGenerator* intplusgen =
-			new SingleFuncInterGenerator(new FuncInter(new FuncTable(new PlusInternalFuncTable(true))));
+			new SingleFuncInterGenerator(new FuncInter(new FuncTable(new PlusInternalFuncTable(true)),threeinttables));
 		SingleFuncInterGenerator* floatplusgen =
-			new SingleFuncInterGenerator(new FuncInter(new FuncTable(new PlusInternalFuncTable(false))));
+			new SingleFuncInterGenerator(new FuncInter(new FuncTable(new PlusInternalFuncTable(false)),threefloattables));
 		Function* intplus = new Function("+/2",threeints,intplusgen,200);
 		Function* floatplus = new Function("+/2",threefloats,floatplusgen,200);
 
 		SingleFuncInterGenerator* intminusgen =
-			new SingleFuncInterGenerator(new FuncInter(new FuncTable(new MinusInternalFuncTable(true))));
+			new SingleFuncInterGenerator(new FuncInter(new FuncTable(new MinusInternalFuncTable(true)),threeinttables));
 		SingleFuncInterGenerator* floatminusgen =
-			new SingleFuncInterGenerator(new FuncInter(new FuncTable(new MinusInternalFuncTable(false))));
+			new SingleFuncInterGenerator(new FuncInter(new FuncTable(new MinusInternalFuncTable(false)),threefloattables));
 		Function* intminus = new Function("-/2",threeints,intminusgen,200);
 		Function* floatminus = new Function("-/2",threefloats,floatminusgen,200);
 
 		SingleFuncInterGenerator* inttimesgen =
-			new SingleFuncInterGenerator(new FuncInter(new FuncTable(new TimesInternalFuncTable(true))));
+			new SingleFuncInterGenerator(new FuncInter(new FuncTable(new TimesInternalFuncTable(true)),threeinttables));
 		SingleFuncInterGenerator* floattimesgen =
-			new SingleFuncInterGenerator(new FuncInter(new FuncTable(new TimesInternalFuncTable(false))));
+			new SingleFuncInterGenerator(new FuncInter(new FuncTable(new TimesInternalFuncTable(false)),threefloattables));
 		Function* inttimes = new Function("*/2",threeints,inttimesgen,300);
 		Function* floattimes = new Function("*/2",threefloats,floattimesgen,300);
 
 		SingleFuncInterGenerator* intdivgen =
-			new SingleFuncInterGenerator(new FuncInter(new FuncTable(new DivInternalFuncTable(true))));
+			new SingleFuncInterGenerator(new FuncInter(new FuncTable(new DivInternalFuncTable(true)),threeinttables));
 		SingleFuncInterGenerator* floatdivgen =
-			new SingleFuncInterGenerator(new FuncInter(new FuncTable(new DivInternalFuncTable(false))));
+			new SingleFuncInterGenerator(new FuncInter(new FuncTable(new DivInternalFuncTable(false)),threefloattables));
 		Function* intdiv = new Function("//2",threeints,intdivgen,300);
 		Function* floatdiv = new Function("//2",threefloats,floatdivgen,300);
 
 		SingleFuncInterGenerator* intabsgen =
-			new SingleFuncInterGenerator(new FuncInter(new FuncTable(new AbsInternalFuncTable(true))));
+			new SingleFuncInterGenerator(new FuncInter(new FuncTable(new AbsInternalFuncTable(true)),twointtables));
 		SingleFuncInterGenerator* floatabsgen =
-			new SingleFuncInterGenerator(new FuncInter(new FuncTable(new AbsInternalFuncTable(false))));
+			new SingleFuncInterGenerator(new FuncInter(new FuncTable(new AbsInternalFuncTable(false)),twofloattables));
 		Function* intabs = new Function("abs/1",twoints,intabsgen,0);
 		Function* floatabs = new Function("abs/1",twofloats,floatabsgen,0);
 
 		SingleFuncInterGenerator* intumingen =
-			new SingleFuncInterGenerator(new FuncInter(new FuncTable(new UminInternalFuncTable(true))));
+			new SingleFuncInterGenerator(new FuncInter(new FuncTable(new UminInternalFuncTable(true)),twointtables));
 		SingleFuncInterGenerator* floatumingen =
-			new SingleFuncInterGenerator(new FuncInter(new FuncTable(new UminInternalFuncTable(false))));
+			new SingleFuncInterGenerator(new FuncInter(new FuncTable(new UminInternalFuncTable(false)),twofloattables));
 		Function* intumin = new Function("-/1",twoints,intumingen,500);
 		Function* floatumin = new Function("-/1",twofloats,floatumingen,500);
 

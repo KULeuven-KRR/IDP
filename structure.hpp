@@ -448,6 +448,55 @@ class InternalPredTable {
 	friend class SortTable;
 };
 
+class SortInternalPredTable : public InternalPredTable {
+	private:
+		SortTable*	_table;
+		bool		_linked;
+	public:
+		SortInternalPredTable(SortTable* table, bool linked) : _table(table), _linked(linked) { }
+
+		unsigned int	arity()			const;
+		bool			finite()		const;
+		bool			empty()			const;
+		bool			approxfinite()	const;
+		bool			approxempty()	const;
+
+		bool	contains(const ElementTuple& tuple)		const;
+
+		InternalPredTable*	add(const ElementTuple& tuple);		//!< Add a tuple to the table
+		InternalPredTable*	remove(const ElementTuple& tuple);	//!< Remove a tuple from the table
+
+		InternalTableIterator*	begin()	const;
+
+		~SortInternalPredTable();
+
+};
+
+class FuncTable;
+
+class FuncInternalPredTable : public InternalPredTable {
+	private:
+		FuncTable*	_table;
+		bool		_linked;
+	public:
+		FuncInternalPredTable(FuncTable* table, bool linked) : _table(table), _linked(linked) { }
+
+		unsigned int	arity()			const;
+		bool			finite()		const;
+		bool			empty()			const;
+		bool			approxfinite()	const;
+		bool			approxempty()	const;
+
+		bool	contains(const ElementTuple& tuple)		const;
+
+		InternalPredTable*	add(const ElementTuple& tuple);		//!< Add a tuple to the table
+		InternalPredTable*	remove(const ElementTuple& tuple);	//!< Remove a tuple from the table
+
+		InternalTableIterator*	begin()	const;
+
+		~FuncInternalPredTable();
+};
+
 class PredTable;
 
 /**
@@ -521,9 +570,10 @@ class InternalSortTable;
  */
 class ComparisonInternalPredTable : public InternalPredTable {
 	protected:
-		InternalSortTable*	_table;		//!< the elements that possibly occur in the columns of the table
+		SortTable*	_table;		//!< the elements that possibly occur in the columns of the table
+		bool		_linked;	//!< if true, _table is not deleted when the table is deleted
 	public:
-		ComparisonInternalPredTable(InternalSortTable* t);
+		ComparisonInternalPredTable(SortTable* t, bool linked);
 		virtual ~ComparisonInternalPredTable();
 		unsigned int		arity()	const { return 2;	}
 		InternalPredTable*	add(const ElementTuple& tuple);
@@ -535,6 +585,7 @@ class ComparisonInternalPredTable : public InternalPredTable {
  */
 class EqualInternalPredTable : public ComparisonInternalPredTable {
 	public:
+		EqualInternalPredTable(SortTable* s, bool l) : ComparisonInternalPredTable(s,l) { } 
 		~EqualInternalPredTable() { }
 
 		bool	contains(const ElementTuple&)	const;
@@ -551,6 +602,7 @@ class EqualInternalPredTable : public ComparisonInternalPredTable {
  */
 class StrLessInternalPredTable : public ComparisonInternalPredTable {
 	public:
+		StrLessInternalPredTable(SortTable* s, bool l) : ComparisonInternalPredTable(s,l) { } 
 		~StrLessInternalPredTable() { }
 
 		bool	contains(const ElementTuple&)	const;
@@ -567,6 +619,7 @@ class StrLessInternalPredTable : public ComparisonInternalPredTable {
  */
 class StrGreaterInternalPredTable : public ComparisonInternalPredTable {
 	public:
+		StrGreaterInternalPredTable(SortTable* s, bool l) : ComparisonInternalPredTable(s,l) { } 
 		~StrGreaterInternalPredTable() { }
 
 		bool	contains(const ElementTuple&)	const;
@@ -583,13 +636,15 @@ class StrGreaterInternalPredTable : public ComparisonInternalPredTable {
  */
 class InverseInternalPredTable : public InternalPredTable {
 	private:
-		PredTable*				_invtable;	//!< the inverse of the actual table
-		std::vector<SortTable*>	_universe;	//!< the actual table is the complement of _table with respect to 
-											//!< the cartesian product of the tables in _universe
+		PredTable*				_invtable;		//!< the inverse of the actual table
+		std::vector<SortTable*>	_universe;		//!< the actual table is the complement of _table with respect to 
+												//!< the cartesian product of the tables in _universe
+		bool					_invlinked;		//!< if true, _invtable will not be deleted when the table is deleted
+		std::vector<bool>		_univlinked;	//!< if _univlinked[n] is true, _universe[n] will not be deleted
 
 	public:
-		InverseInternalPredTable(PredTable* inv, const std::vector<SortTable*>& univ) :
-			_invtable(inv), _universe(univ) { }
+		InverseInternalPredTable(PredTable* inv, const std::vector<SortTable*>& univ, bool linked, const std::vector<bool>& univlinked) :
+			_invtable(inv), _universe(univ), _invlinked(linked), _univlinked(univlinked) { }
 		~InverseInternalPredTable();
 
 		unsigned int	arity()					const;
@@ -1046,45 +1101,34 @@ class FuncTable : public AbstractTable {
 *********************/
 
 /**
- * DESCRIPTION
- *		Class to represent a four-valued interpretation for a predicate
+ *	Class to represent a four-valued interpretation for a predicate
  */
 class PredInter {
 	
 	private:
-		PredTable*	_ctpf;	//!< stores certainly true or possibly false tuples
-		PredTable*	_cfpt;	//!< stores certainly false or possibly true tuples
-		bool		_ct;	//!< true iff _ctpf stores certainly true tuples, false iff _ctpf stores possibly false tuples
-		bool		_cf;	//!< ture iff _cfpt stores certainly false tuples, false iff _cfpt stores possibly true tuples
+		PredTable*	_ct;	//!< stores certainly true tuples
+		PredTable*	_cf;	//!< stores certainly false tuples
+		PredTable*	_pt;	//!< stores possibly true tuples
+		PredTable*	_pf;	//!< stores possibly false tuples
 
 	public:
 		
-		PredInter(PredTable* ctpf,PredTable* cfpt,bool ct, bool cf) : _ctpf(ctpf), _cfpt(cfpt), _ct(ct), _cf(cf) { }
-		PredInter(PredTable* ctpf, bool ct) : _ctpf(ctpf), _cfpt(ctpf), _ct(ct), _cf(!ct) { }
+		PredInter(PredTable* ctpf,PredTable* cfpt,bool ct, bool cf, const std::vector<SortTable*>& univ);
+		PredInter(PredTable* ctpf, bool ct, const std::vector<SortTable*>& univ);
 
 		// Destructor
 		~PredInter();
 
-		// Mutators
-		void replace(PredTable* pt,bool ctpf, bool c);	//!< If ctpf is true, replace _ctpf by pt and set _ct to c
-														//!< Else, replace cfpt by pt and set _cf to c
-		PredInter*	clone();
-		void		makecertainlytrue(const ElementTuple& tuple);
-		void		makecertainlyfalse(const ElementTuple& tuple);
-		void		makepossiblytrue(const ElementTuple& tuple);
-		void		makepossiblyfalse(const ElementTuple& tuple);
-
 		// Inspectors
-		PredTable*	ctpf()										const { return _ctpf;	}
-		PredTable*	cfpt()										const { return _cfpt;	}
-		bool		ct()										const { return _ct;		}
-		bool		cf()										const { return _cf;		}
+		PredTable*	ct()										const { return _ct;	}
+		PredTable*	cf()										const { return _cf;	}
+		PredTable*	pt()										const { return _pt;	}
+		PredTable*	pf()										const { return _pf;	}
 		bool		istrue(const ElementTuple& tuple)			const;
 		bool		isfalse(const ElementTuple& tuple)			const;
 		bool		isunknown(const ElementTuple& tuple)		const;
 		bool		isinconsistent(const ElementTuple& tuple)	const;
-
-		bool		approxtwovalued()							const { return _ctpf == _cfpt;	}
+		bool		approxtwovalued()							const;
 
 };
 
@@ -1092,28 +1136,31 @@ class AbstractStructure;
 
 class PredInterGenerator {
 	public:
-		virtual PredInter* get(const AbstractStructure& structure) = 0;
+		virtual PredInter* get(AbstractStructure* structure) = 0;
 };
 
 class EqualInterGenerator : public PredInterGenerator {
 	private:
 		Sort*	_sort;
 	public:
-		PredInter* get(const AbstractStructure& structure);
+		EqualInterGenerator(Sort* sort) : _sort(sort) { }
+		PredInter* get(AbstractStructure* structure);
 };
 
 class StrLessThanInterGenerator : public PredInterGenerator {
 	private:
 		Sort*	_sort;
 	public:
-		PredInter* get(const AbstractStructure& structure);
+		StrLessThanInterGenerator(Sort* sort) : _sort(sort) { }
+		PredInter* get(AbstractStructure* structure);
 };
 
 class StrGreaterThanInterGenerator : public PredInterGenerator {
 	private:
 		Sort*	_sort;
 	public:
-		PredInter* get(const AbstractStructure& structure);
+		StrGreaterThanInterGenerator(Sort* sort) : _sort(sort) { }
+		PredInter* get(AbstractStructure* structure);
 };
 
 class PredInterGeneratorGenerator {
@@ -1137,8 +1184,7 @@ class StrLessThanInterGeneratorGenerator : public PredInterGeneratorGenerator {
 };
 
 /**
- * DESCRIPTION
- *		Class to represent a four-valued interpretation for functions
+ *	Class to represent a four-valued interpretation for functions
  */
 class FuncInter {
 
@@ -1148,7 +1194,7 @@ class FuncInter {
 
 	public:
 		
-		FuncInter(FuncTable* ft);
+		FuncInter(FuncTable* ft, const std::vector<SortTable*>& univ);
 		FuncInter(PredInter* pt) : _functable(0), _graphinter(pt) { }
 
 		~FuncInter();
@@ -1161,7 +1207,7 @@ class FuncInter {
 
 class FuncInterGenerator {
 	public:
-		virtual FuncInter* get(const AbstractStructure& structure) = 0;
+		virtual FuncInter* get(AbstractStructure* structure) = 0;
 };
 
 class SingleFuncInterGenerator : public FuncInterGenerator {
@@ -1169,27 +1215,38 @@ class SingleFuncInterGenerator : public FuncInterGenerator {
 		FuncInter*	_inter;
 	public:
 		SingleFuncInterGenerator(FuncInter* inter) : _inter(inter) { }
-		FuncInter* get(const AbstractStructure& ) { return _inter;	}
+		FuncInter* get(AbstractStructure* ) { return _inter;	}
 };
 
-class MinInterGenerator : public FuncInterGenerator {
+class OneSortInterGenerator : public FuncInterGenerator {
+	protected:
+		Sort*	_sort;
 	public:
-		FuncInter* get(const AbstractStructure& structure);
+		OneSortInterGenerator(Sort* sort) : _sort(sort) { }
 };
 
-class MaxInterGenerator : public FuncInterGenerator {
+class MinInterGenerator : public OneSortInterGenerator {
 	public:
-		FuncInter* get(const AbstractStructure& structure);
+		MinInterGenerator(Sort* sort) : OneSortInterGenerator(sort) { }
+		FuncInter* get(AbstractStructure* structure);
 };
 
-class SuccInterGenerator : public FuncInterGenerator {
+class MaxInterGenerator : public OneSortInterGenerator {
 	public:
-		FuncInter* get(const AbstractStructure& structure);
+		MaxInterGenerator(Sort* sort) : OneSortInterGenerator(sort) { }
+		FuncInter* get(AbstractStructure* structure);
 };
 
-class InvSuccInterGenerator : public FuncInterGenerator {
+class SuccInterGenerator : public OneSortInterGenerator {
 	public:
-		FuncInter* get(const AbstractStructure& structure);
+		SuccInterGenerator(Sort* sort) : OneSortInterGenerator(sort) { }
+		FuncInter* get(AbstractStructure* structure);
+};
+
+class InvSuccInterGenerator : public OneSortInterGenerator {
+	public:
+		InvSuccInterGenerator(Sort* sort) : OneSortInterGenerator(sort) { }
+		FuncInter* get(AbstractStructure* structure);
 };
 
 class FuncInterGeneratorGenerator {
@@ -1217,31 +1274,6 @@ class InvSuccInterGeneratorGenerator : public FuncInterGeneratorGenerator {
 		 InvSuccInterGenerator* get(const std::vector<Sort*>&);
 };
 
-/************************
-	Auxiliary methods
-************************/
-
-/*
-namespace TableUtils {
-
-	PredInter*	leastPredInter(unsigned int n);		// construct a new, least precise predicate interpretation with arity n
-	FuncInter*	leastFuncInter(unsigned int n);		// construct a new, least precise function interpretation with arity n
-	PredTable*	intersection(PredTable*,PredTable*);
-	PredTable*	difference(PredTable*,PredTable*);
-
-	FiniteSortTable*	singletonSort(Element,ElementType);	// construct a sort table containing only the given element
-	FiniteSortTable*	singletonSort(TypedElement);		// construct a sort table containing only the given element
-
-	// Return a table containing all tuples (a_i1,...,a_in) such that
-	//			vb[ik] is false for every 1 <= k <= n	
-	//		AND	(a_1,...,a_m) is a tuple of pt
-	//		AND for every 1 <= j <= m, if vb[j] = true, then vet[j] = a_j
-	//	Precondition: pt is finite and sorted
-	PredTable*	project(PredTable* pt,const vector<TypedElement>& vet, const vector<bool>& vb);
-}
-*/
-
-#ifdef OLD
 /*****************
 	Structures
 *****************/
@@ -1267,8 +1299,6 @@ class AbstractStructure {
 		// Mutators
 		virtual void	vocabulary(Vocabulary* v) { _vocabulary = v;	}	// set the vocabulary
 		virtual AbstractStructure*	clone() = 0;	// take a clone of this structure
-		virtual void	forcetwovalued() = 0;		// delete all cfpt tables and replace by ctpf
-		virtual void	sortall() = 0;				// sort all tables
 
 		// Inspectors
 				const std::string&	name()						const { return _name;		}
@@ -1279,17 +1309,6 @@ class AbstractStructure {
 		virtual FuncInter*			inter(Function* f)			const = 0;	// Return the interpretation of f.
 		virtual PredInter*			inter(PFSymbol* s)			const = 0;	// Return the interpretation of s.
 
-		// Lua
-		TypedInfArg		getObject(set<Sort*>*)	const;
-		TypedInfArg		getObject(set<Predicate*>* predicate) const;
-		TypedInfArg		getObject(set<Function*>* function) const;
-
-		// Visitor
-		virtual void accept(Visitor* v) const	= 0;
-
-		// Debugging
-		virtual string	to_string(unsigned int spaces = 0) const = 0;
-
 };
 
 /** Structures as constructed by the parser **/
@@ -1297,68 +1316,44 @@ class AbstractStructure {
 class Structure : public AbstractStructure {
 
 	private:
-
-		//TODO: these should not be mutable!
-		mutable map<Sort*,SortTable*>		_sortinter;		// The domains of the structure. 
-		mutable map<Predicate*,PredInter*>	_predinter;		// The interpretations of the predicate symbols.
-		mutable map<Function*,FuncInter*>	_funcinter;		// The interpretations of the function symbols.
+		std::map<Sort*,SortTable*>		_sortinter;		//!< The domains of the structure. 
+		std::map<Predicate*,PredInter*>	_predinter;		//!< The interpretations of the predicate symbols.
+		std::map<Function*,FuncInter*>	_funcinter;		//!< The interpretations of the function symbols.
 	
+		void	functioncheck();	//!< check the correctness of the function tables
+		void	autocomplete();		//!< make the domains consistent with the predicate and function tables				
+
 	public:
 		
 		// Constructors
-		Structure(const string& name, const ParseInfo& pi) : AbstractStructure(name,pi) { }
+		Structure(const std::string& name, const ParseInfo& pi) : AbstractStructure(name,pi) { }
 
 		// Destructor
 		~Structure();
 
 		// Mutators
-		void	vocabulary(Vocabulary* v);					// set the vocabulary
-		void	inter(Sort* s,SortTable* d) const;			// set the domain of s to d. TODO: should not be const!
-		void	inter(Predicate* p, PredInter* i) const;	// set the interpretation of p to i. TODO: should not be const!
-		void	inter(Function* f, FuncInter* i) const;		// set the interpretation of f to i. TODO: should not be const!
-		void	addElement(Element,ElementType,Sort*);		// add the given element to the interpretation of the given sort
-		void	functioncheck();					// check the correctness of the function tables
-		void	autocomplete();						// set the interpretation of all predicates and functions that 
-													// do not yet have an interpretation to the least precise 
-													// interpretation.
-		Structure*	clone();						// take a clone of this structure
-		void	forcetwovalued();		
-		void	sortall();
+		void	vocabulary(Vocabulary* v);			//!< set the vocabulary of the structure
+		void	inter(Sort* s,SortTable* d);		//!< set the domain of s to d
+		void	inter(Predicate* p, PredInter* i);	//!< set the interpretation of p to i
+		void	inter(Function* f, FuncInter* i);	//!< set the interpretation of f to i
+		Structure*	clone();						//!< take a clone of this structure
 
 		// Inspectors
-		Vocabulary*		vocabulary()				const { return AbstractStructure::vocabulary();	}
-		SortTable*		inter(Sort* s)				const; // Return the domain of s.
-		PredInter*		inter(Predicate* p)			const; // Return the interpretation of p.
-		FuncInter*		inter(Function* f)			const; // Return the interpretation of f.
-		PredInter*		inter(PFSymbol* s)			const; // Return the interpretation of s.
-		bool			hasInter(Sort* s)		{ return _sortinter.find(s) != _sortinter.end();	}
-		bool			hasInter(Predicate* p)	{ return _predinter.find(p) != _predinter.end();	}
-		bool			hasInter(Function* f)	{ return _funcinter.find(f) != _funcinter.end();	}
-//		unsigned int	nrSortInters()				const { return _sortinter.size();	}
-//		unsigned int	nrPredInters()				const { return _predinter.size();	}
-//		unsigned int	nrFuncInters()				const { return _funcinter.size();	}
-
-		// Visitor
-		void accept(Visitor* v) const;
-
-		// Debugging
-		string	to_string(unsigned int spaces = 0) const;
-
+		SortTable*		inter(Sort* s)				const; //!< Return the domain of s.
+		PredInter*		inter(Predicate* p)			const; //!< Return the interpretation of p.
+		FuncInter*		inter(Function* f)			const; //!< Return the interpretation of f.
+		PredInter*		inter(PFSymbol* s)			const; //!< Return the interpretation of s.
 };
 
-class AbstractTheory;
-namespace StructUtils {
+/************************
+	Auxiliary methods
+************************/
 
-	// Make a theory containing all literals that are true according to the given structure
-	AbstractTheory*		convert_to_theory(const AbstractStructure*);	
-
-	// Change the vocabulary of a structure
-	void	changevoc(AbstractStructure*,Vocabulary*);
-
-	// Compute the complement of the given table in the given structure
-	PredTable*	complement(const PredTable*,const vector<Sort*>&,const AbstractStructure*);
-
+namespace TableUtils {
+	PredInter*	leastPredInter(const std::vector<SortTable*>& sorts);	
+		//!< construct a new, least precise predicate interpretation
+	FuncInter*	leastFuncInter(const std::vector<SortTable*>& sorts);		
+		//!< construct a new, least precise function interpretation
 }
 
-#endif
 #endif
