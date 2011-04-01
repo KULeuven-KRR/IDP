@@ -315,9 +315,10 @@ class AbstractGroundTheory : public AbstractTheory {
 		virtual void addAggRule(int defnr, int tseitin, AggTsBody* body)	= 0; 
 
 		// Inspectors
-		GroundTranslator*		translator()	const { return _translator;			}
-		AbstractStructure*		structure()		const { return _structure;			}
-		AbstractGroundTheory*	clone()			const { assert(false); /* TODO */	}
+		GroundTranslator*		translator()		const { return _translator;			}
+		GroundTermTranslator*	termtranslator()	const { return _termtranslator; 	}
+		AbstractStructure*		structure()			const { return _structure;			}
+		AbstractGroundTheory*	clone()				const { assert(false); /* TODO */	}
 };
 
 /* 

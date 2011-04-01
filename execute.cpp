@@ -1014,7 +1014,7 @@ TypedInfArg CloneTheory::execute(const vector<InfArg>& args, lua_State*) const {
 }
 
 FastGrounding::FastGrounding() {
-	_intypes = vector<InfArgType>(2);
+	_intypes = vector<InfArgType>(3);
 	_intypes[0] = IAT_THEORY; 
 	_intypes[1] = IAT_STRUCTURE;
 	_intypes[2] = IAT_OPTIONS;
