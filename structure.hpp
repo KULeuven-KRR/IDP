@@ -887,7 +887,7 @@ class FiniteFuncTable : public FuncTable {
 
 		// Inspectors
 		bool				finite()								const { return true;					}
-		bool				empty()									const { return _ftable->finite();		}
+		bool				empty()									const { return _ftable->empty();		}
 		unsigned int		arity()									const { return _ftable->arity() - 1;	}
 		unsigned int		size()									const { return _ftable->size();			}
 		FinitePredTable*	ftable()								const { return _ftable;					}

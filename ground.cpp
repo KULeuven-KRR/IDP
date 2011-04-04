@@ -191,6 +191,7 @@ unsigned int GroundTermTranslator::addFunction(Function* func) {
 		unsigned int offset = _offset2function.size();
 		_function2offset[func] = offset; 
 		_offset2function.push_back(func);
+		_table.push_back(map<vector<domelement>,unsigned int>());
 		return offset;	
 	}
 }
@@ -468,7 +469,6 @@ int AggGrounder::finishCard(double truevalue, double boundvalue, int setnr) cons
 	TsType tp = _context._tseitin;
 	bool simplify = false;
 	bool conj;
-	//bool swaptseitin;
 	bool negateset;
 	switch(_comp) {
 		case '=':
@@ -477,15 +477,12 @@ int AggGrounder::finishCard(double truevalue, double boundvalue, int setnr) cons
 			}
 			else if(leftvalue == 0) {
 				simplify = true;
-				//conj = false;
-				//swaptseitin = _sign;
 				conj = true;
 				negateset = true;
 			}
 			else if(leftvalue == maxposscard) {
 				simplify = true;
 				conj = true;
-				//swaptseitin = !_sign;
 				negateset = false;
 			}
 			break;
@@ -496,13 +493,11 @@ int AggGrounder::finishCard(double truevalue, double boundvalue, int setnr) cons
 			else if(leftvalue == 0) {
 				simplify = true;
 				conj = false;
-				//swaptseitin = !_sign;
 				negateset = false;
 			}
 			else if(leftvalue == maxposscard-1) {
 				simplify = true;
 				conj = true;
-				//swaptseitin = !_sign;
 				negateset = false;
 			}
 			else if(leftvalue >= maxposscard) {
@@ -515,15 +510,11 @@ int AggGrounder::finishCard(double truevalue, double boundvalue, int setnr) cons
 			}
 			else if(leftvalue == 1) {
 				simplify = true;
-				//conj = false;
-				//swaptseitin = _sign;
 				conj = true;
 				negateset = true;
 			}
 			else if(leftvalue == maxposscard) {
 				simplify = true;
-				//conj = true;
-				//swaptseitin = _sign;
 				conj = false;
 				negateset = true;
 			}
@@ -557,8 +548,6 @@ int AggGrounder::finishCard(double truevalue, double boundvalue, int setnr) cons
 				int tseitin = _translator->translate(tsset.literals(),conj,tp);
 				return _sign ? tseitin : -tseitin;
 			}
-			//int tseitin = _translator->translate(tsset.literals(),conj,tp);
-			//return swaptseitin ? -tseitin : tseitin;
 		}
 	}
 	else {
@@ -991,6 +980,34 @@ if(_cloptions._verbose) {
 	return (*_function)[_args];
 }
 
+domelement ThreeValuedFuncTermGrounder::run() const {
+	for(unsigned int n = 0; n < _subtermgrounders.size(); ++n) {
+		_args[n] = _subtermgrounders[n]->run();
+		if(!ElementUtil::exists(_args[n]) || !_tables[n]->contains(_args[n])) return 0;
+	}
+	domelement result = (*_functable)[_args];
+	if(ElementUtil::exists(result)) {
+#ifndef NDEBUG
+if(_cloptions._verbose) {
+	printorig();
+	Element e; e._compound = result;
+	cerr << "Result is " << ElementUtil::ElementToString(e,ELCOMPOUND) << endl;
+}
+#endif
+		return result;
+	}
+	else {
+#ifndef NDEBUG
+if(_cloptions._verbose) {
+	printorig();
+	Element e; e._compound = CPPointer(_function,_args);
+	cerr << "Result is " << ElementUtil::ElementToString(e,ELCOMPOUND) << endl;
+}
+#endif
+		return CPPointer(_function,_args);
+	}
+}
+
 domelement AggTermGrounder::run() const {
 	int setnr = _setgrounder->run();
 	const TsSet& tsset = _translator->groundset(setnr);
@@ -1016,20 +1033,6 @@ if(_cloptions._verbose) {
 }
 #endif
 		return CPPointer(e,ELDOUBLE);
-	}
-}
-
-domelement ThreeValuedFuncTermGrounder::run() const {
-	for(unsigned int n = 0; n < _subtermgrounders.size(); ++n) {
-		_args[n] = _subtermgrounders[n]->run();
-		if(!ElementUtil::exists(_args[n]) || !_tables[n]->contains(_args[n])) return 0;
-	}
-	domelement result = (*_functable)[_args];
-	if(ElementUtil::exists(result)) {
-		return result;
-	}
-	else {
-		return CPPointer(_function,_args);
 	}
 }
 

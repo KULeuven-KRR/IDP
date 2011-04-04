@@ -76,24 +76,29 @@ class AggTsBody : public TsBody {
 
 class CPTerm {
 	protected:
-		virtual ~CPTerm() {};
+		virtual ~CPTerm() {	}
+	public:
+		virtual void accept(Visitor*) const = 0;
 };
 
 class CPVarTerm : public CPTerm {
 	public:
 		unsigned int _varid;
 		CPVarTerm(unsigned int varid) : _varid(varid) { }
+		void accept(Visitor*) const;
 };
 
 class CPSumTerm : public CPTerm {
 	public:
 		vector<unsigned int> _varids; 
+		void accept(Visitor*) const;
 };
 
 class CPWSumTerm : public CPTerm {
 	public:
 		vector<unsigned int> 	_varids; 
 		vector<int>				_weights;
+		void accept(Visitor*) const;
 };
 
 enum CompType { CT_EQ, CT_NEQ, CT_LEQ, CT_GEQ, CT_LT, CT_GT };
