@@ -105,6 +105,13 @@ inline Predicate* Sort::pred() const {
 	return _pred;
 }
 
+inline const std::set<Sort*>& Sort::parents() const { 
+	return _parents;
+}
+
+inline const std::set<Sort*>& Sort::children() const { 
+	return _children;
+}
 
 /**
  * Compute all ancestors of the sort in the sort hierarchy
@@ -142,7 +149,7 @@ inline bool Sort::builtin() const {
 	return _interpretation != 0;
 }
 
-inline const SortTable* Sort::interpretation() const {
+inline SortTable* Sort::interpretation() const {
 	return _interpretation;
 }
 
@@ -377,7 +384,7 @@ inline bool Predicate::overloaded() const {
  *		 needed to generate the interpretation for =/2. The structure contains the interpretation of the 
  *		 relevant sorts.
  */
-PredInter* Predicate::interpretation(AbstractStructure* structure) const {
+PredInter* Predicate::interpretation(const AbstractStructure* structure) const {
 	if(_interpretation) return _interpretation->get(structure);
 	else return 0;
 }
@@ -735,7 +742,7 @@ inline unsigned int Function::binding() const {
  *		 needed to generate the interpretation for //2. The structure contains the interpretation of the 
  *		 relevant sorts.
  */
-FuncInter* Function::interpretation(AbstractStructure* structure) const {
+FuncInter* Function::interpretation(const AbstractStructure* structure) const {
 	if(_interpretation) return _interpretation->get(structure);
 	else return 0;
 }

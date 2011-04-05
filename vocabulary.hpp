@@ -15,7 +15,7 @@
 
 /**
  * \file vocabulary.hpp
- * DESCRIPTION
+ * 
  *		This file contains the classes concerning vocabularies:
  *		- sorts, variables, predicate, and function symbols
  *		- class to represent a vocabulary.
@@ -66,10 +66,12 @@ class Sort {
 		const std::string&		name()									const;	//!< Returns the name of the sort
 		const ParseInfo&		pi()									const;	//!< Returns the parse info of the sort
 		Predicate*				pred()									const;	//!< Returns the corresponding predicate
-		std::set<Sort*>	ancestors(const Vocabulary* v = 0)		const;	//!< Returns the ancestor of the sort
-		std::set<Sort*>	descendents(const Vocabulary* v = 0)	const;	//!< Returns the descendents of the sort
+		const std::set<Sort*>&	parents()								const;
+		const std::set<Sort*>&	children()								const;
+		std::set<Sort*>			ancestors(const Vocabulary* v = 0)		const;	//!< Returns the ancestor of the sort
+		std::set<Sort*>			descendents(const Vocabulary* v = 0)	const;	//!< Returns the descendents of the sort
 		bool					builtin()								const;  //!< True iff the sort is built-in
-		const SortTable*		interpretation()						const;	
+		SortTable*				interpretation()						const;	
 			//!< Returns the interpretaion for built-in sorts
 
 		// Output
@@ -229,7 +231,7 @@ class Predicate : public PFSymbol {
 		std::set<Sort*> allsorts()		const;
 
 		// Built-in symbols
-		PredInter*	interpretation(AbstractStructure*)	const;
+		PredInter*	interpretation(const AbstractStructure*)	const;
 
 		// Overloaded symbols 
 		bool		contains(const Predicate* p)									const;
@@ -378,7 +380,7 @@ class Function : public PFSymbol {
 		std::set<Sort*>				allsorts()				const;
 
 		// Built-in symbols
-		FuncInter*	interpretation(AbstractStructure*)	const; 
+		FuncInter*	interpretation(const AbstractStructure*)	const; 
 
 		// Overloaded symbols 
 		bool		contains(const Function* f)										const;

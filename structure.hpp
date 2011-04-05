@@ -11,6 +11,7 @@
 #include <vector>
 #include <map>
 #include <cassert>
+#include <ostream>
 
 /**
  * \file structure.hpp
@@ -73,6 +74,9 @@ class DomainElement {
 		DomainElementType	type()	const;	//!< Returns the type of the element
 		DomainElementValue	value()	const;	//!< Returns the value of the element
 
+		std::ostream& put(std::ostream&)	const;
+		std::string to_string()				const;
+
 		friend class DomainElementFactory;
 };
 
@@ -82,6 +86,8 @@ bool operator==(const DomainElement&,const DomainElement&);
 bool operator!=(const DomainElement&,const DomainElement&);
 bool operator<=(const DomainElement&,const DomainElement&);
 bool operator>=(const DomainElement&,const DomainElement&);
+
+std::ostream& operator<< (std::ostream&,const DomainElement&);
 
 typedef std::vector<const DomainElement*>	ElementTuple;
 typedef std::vector<ElementTuple>			ElementTable;
@@ -97,6 +103,12 @@ struct StrictWeakTupleOrdering {
 typedef std::set<ElementTuple,StrictWeakTupleOrdering>	SortedElementTable;
 
 typedef std::map<ElementTuple,const DomainElement*,StrictWeakTupleOrdering>	ElementFunc;
+
+struct StrictWeakNTupleEquality {
+	unsigned int _arity;
+	StrictWeakNTupleEquality(unsigned int arity) : _arity(arity) { }
+	bool operator()(const ElementTuple&, const ElementTuple&) const;
+};
 
 class Function;
 
@@ -116,6 +128,9 @@ class Compound {
 		Function*				function()				const;	//!< Returns the function of the compound
 		const DomainElement*	arg(unsigned int n)		const;	//!< Returns the n'th argument of the compound
 
+		std::ostream&	put(std::ostream&)	const;
+		std::string		to_string()			const;
+
 		friend class DomainElementFactory;
 };
 
@@ -125,6 +140,8 @@ bool operator==(const Compound&,const Compound&);
 bool operator!=(const Compound&,const Compound&);
 bool operator<=(const Compound&,const Compound&);
 bool operator>=(const Compound&,const Compound&);
+
+std::ostream& operator<< (std::ostream&,const Compound&);
 
 /**
  *	Class to create domain elements. This class is a singleton class that ensures all domain elements
@@ -188,10 +205,10 @@ class InternalSortIterator;
 class TableIterator {
 	private:
 		InternalTableIterator*	_iterator;
-		TableIterator& operator=(const TableIterator&);
 	public:
 		TableIterator(const TableIterator&);
 		TableIterator(InternalTableIterator* iter) : _iterator(iter) { }
+		TableIterator& operator=(const TableIterator&);
 		bool					hasNext()	const;
 		const ElementTuple&		operator*()	const;
 		TableIterator&			operator++();
@@ -469,6 +486,31 @@ class SortInternalPredTable : public InternalPredTable {
 		InternalTableIterator*	begin()	const;
 
 		~SortInternalPredTable();
+
+};
+
+class CartesianInternalPredTable : public InternalPredTable {
+	private:
+		std::vector<SortTable*>		_tables;
+		std::vector<bool>			_linked;
+	public:
+		CartesianInternalPredTable(const std::vector<SortTable*>& tables, const std::vector<bool>& linked) :
+			_tables(tables), _linked(linked) { }
+
+		unsigned int	arity()			const { return _tables.size();	}
+		bool			finite()		const;
+		bool			empty()			const;
+		bool			approxfinite()	const;
+		bool			approxempty()	const;
+
+		bool	contains(const ElementTuple& tuple)		const;
+
+		InternalPredTable*	add(const ElementTuple& tuple);		//!< Add a tuple to the table
+		InternalPredTable*	remove(const ElementTuple& tuple);	//!< Remove a tuple from the table
+
+		InternalTableIterator*	begin()	const;
+
+		~CartesianInternalPredTable();
 
 };
 
@@ -1136,7 +1178,7 @@ class AbstractStructure;
 
 class PredInterGenerator {
 	public:
-		virtual PredInter* get(AbstractStructure* structure) = 0;
+		virtual PredInter* get(const AbstractStructure* structure) = 0;
 };
 
 class EqualInterGenerator : public PredInterGenerator {
@@ -1144,7 +1186,7 @@ class EqualInterGenerator : public PredInterGenerator {
 		Sort*	_sort;
 	public:
 		EqualInterGenerator(Sort* sort) : _sort(sort) { }
-		PredInter* get(AbstractStructure* structure);
+		PredInter* get(const AbstractStructure* structure);
 };
 
 class StrLessThanInterGenerator : public PredInterGenerator {
@@ -1152,7 +1194,7 @@ class StrLessThanInterGenerator : public PredInterGenerator {
 		Sort*	_sort;
 	public:
 		StrLessThanInterGenerator(Sort* sort) : _sort(sort) { }
-		PredInter* get(AbstractStructure* structure);
+		PredInter* get(const AbstractStructure* structure);
 };
 
 class StrGreaterThanInterGenerator : public PredInterGenerator {
@@ -1160,7 +1202,7 @@ class StrGreaterThanInterGenerator : public PredInterGenerator {
 		Sort*	_sort;
 	public:
 		StrGreaterThanInterGenerator(Sort* sort) : _sort(sort) { }
-		PredInter* get(AbstractStructure* structure);
+		PredInter* get(const AbstractStructure* structure);
 };
 
 class PredInterGeneratorGenerator {
@@ -1207,7 +1249,7 @@ class FuncInter {
 
 class FuncInterGenerator {
 	public:
-		virtual FuncInter* get(AbstractStructure* structure) = 0;
+		virtual FuncInter* get(const AbstractStructure* structure) = 0;
 };
 
 class SingleFuncInterGenerator : public FuncInterGenerator {
@@ -1215,7 +1257,7 @@ class SingleFuncInterGenerator : public FuncInterGenerator {
 		FuncInter*	_inter;
 	public:
 		SingleFuncInterGenerator(FuncInter* inter) : _inter(inter) { }
-		FuncInter* get(AbstractStructure* ) { return _inter;	}
+		FuncInter* get(const AbstractStructure* ) { return _inter;	}
 };
 
 class OneSortInterGenerator : public FuncInterGenerator {
@@ -1228,25 +1270,25 @@ class OneSortInterGenerator : public FuncInterGenerator {
 class MinInterGenerator : public OneSortInterGenerator {
 	public:
 		MinInterGenerator(Sort* sort) : OneSortInterGenerator(sort) { }
-		FuncInter* get(AbstractStructure* structure);
+		FuncInter* get(const AbstractStructure* structure);
 };
 
 class MaxInterGenerator : public OneSortInterGenerator {
 	public:
 		MaxInterGenerator(Sort* sort) : OneSortInterGenerator(sort) { }
-		FuncInter* get(AbstractStructure* structure);
+		FuncInter* get(const AbstractStructure* structure);
 };
 
 class SuccInterGenerator : public OneSortInterGenerator {
 	public:
 		SuccInterGenerator(Sort* sort) : OneSortInterGenerator(sort) { }
-		FuncInter* get(AbstractStructure* structure);
+		FuncInter* get(const AbstractStructure* structure);
 };
 
 class InvSuccInterGenerator : public OneSortInterGenerator {
 	public:
 		InvSuccInterGenerator(Sort* sort) : OneSortInterGenerator(sort) { }
-		FuncInter* get(AbstractStructure* structure);
+		FuncInter* get(const AbstractStructure* structure);
 };
 
 class FuncInterGeneratorGenerator {

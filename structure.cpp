@@ -4,9 +4,11 @@
 	(c) K.U.Leuven
 ************************************/
 
+#include <sstream>
 #include "common.hpp"
 #include "vocabulary.hpp"
 #include "structure.hpp"
+#include "error.hpp"
 using namespace std;
 
 /**********************
@@ -53,6 +55,32 @@ inline DomainElementType DomainElement::type() const {
 
 inline DomainElementValue DomainElement::value() const {
 	return _value;
+}
+
+ostream& DomainElement::put(ostream& output) const {
+	switch(_type) {
+		case DET_INT:
+			output << itos(_value._int);
+		case DET_DOUBLE:
+			output << dtos(_value._double);
+		case DET_STRING:
+			output << *(_value._string);
+		case DET_COMPOUND:
+			_value._compound->put(output);
+		default:
+			assert(false); 
+	}
+	return output;
+}
+
+string DomainElement::to_string() const {
+	stringstream sstr;
+	put(sstr);
+	return sstr.str();
+}
+
+ostream& operator<<(ostream& output, const DomainElement& d) {
+	return d.put(output);
 }
 
 bool operator<(const DomainElement& d1, const DomainElement& d2) {
@@ -153,6 +181,28 @@ inline const DomainElement* Compound::arg(unsigned int n) const {
 	return _arguments[n];
 }
 
+ostream& Compound::put(ostream& output) const {
+	output << *_function;
+	if(_function->arity() > 0) {
+		output << '(' << *_arguments[0];
+		for(unsigned int n = 1; n < _function->arity(); ++n) {
+			output << ',' << *_arguments[n];
+		}
+		output << ')';
+	}
+	return output;
+}
+
+string Compound::to_string() const {
+	stringstream sstr;
+	put(sstr);
+	return sstr.str();
+}
+
+ostream& operator<<(ostream& output, const Compound& c) {
+	return c.put(output);
+}
+
 /**
  * \brief Comparison of two compound domain element values
  */
@@ -199,7 +249,7 @@ bool operator>=(const Compound& c1,const Compound& c2) {
 DomainElementFactory::DomainElementFactory(int firstfastint, int lastfastint) : 
 	_firstfastint(firstfastint), _lastfastint(lastfastint) {
 	assert(firstfastint < lastfastint);
-	_fastintelements = vector<DomainElement*>(lastfastint - firstfastint,0);
+	_fastintelements = vector<DomainElement*>(lastfastint - firstfastint,(DomainElement*)0);
 }
 
 DomainElementFactory* DomainElementFactory::_instance = 0;
@@ -697,6 +747,15 @@ bool StrictWeakTupleOrdering::operator()(const ElementTuple& t1, const ElementTu
 	return false;
 }
 
+bool StrictWeakNTupleEquality::operator()(const ElementTuple& t1, const ElementTuple& t2) const {
+	assert(t1.size() == t2.size());
+	for(unsigned int n = 0; n < _arity; ++n) {
+		if(t1[n] != t2[n]) return false;
+	}
+	return true;
+}
+
+
 FuncInternalPredTable::~FuncInternalPredTable() {
 	if(!_linked) delete(_table);
 }
@@ -729,9 +788,11 @@ InternalPredTable* FuncInternalPredTable::add(const ElementTuple& tuple) {
 	if(!contains(tuple)) {
 		if(_nrRefs > 1) {
 			// TODO
+			return 0;
 		}
 		else {
 			// TODO
+			return 0;
 		}
 	}
 	else return this;
@@ -741,6 +802,7 @@ InternalPredTable* FuncInternalPredTable::remove(const ElementTuple& tuple) {
 	if(contains(tuple)) {
 		if(_nrRefs > 1) {
 			// TODO
+			return 0;
 		}
 		else {
 			_table->remove(tuple);
@@ -752,6 +814,7 @@ InternalPredTable* FuncInternalPredTable::remove(const ElementTuple& tuple) {
 
 InternalTableIterator* FuncInternalPredTable::begin() const {
 	// TODO
+	return 0;
 }
 
 SortInternalPredTable::~SortInternalPredTable() {
@@ -786,9 +849,11 @@ InternalPredTable* SortInternalPredTable::add(const ElementTuple& tuple) {
 	if(!contains(tuple)) {
 		if(_nrRefs > 1) {
 			// TODO
+			return 0;
 		}
 		else {
 			// TODO
+			return 0;
 		}
 	}
 	else return this;
@@ -798,9 +863,11 @@ InternalPredTable* SortInternalPredTable::remove(const ElementTuple& tuple) {
 	if(contains(tuple)) {
 		if(_nrRefs > 1) {
 			// TODO
+			return 0;
 		}
 		else {
 			// TODO
+			return 0;
 		}
 	}
 	else return this;
@@ -808,6 +875,7 @@ InternalPredTable* SortInternalPredTable::remove(const ElementTuple& tuple) {
 
 InternalTableIterator* SortInternalPredTable::begin() const {
 	// TODO
+	return 0;
 }
 
 
@@ -1427,6 +1495,7 @@ InternalFuncTable* EnumeratedInternalFuncTable::remove(const ElementTuple& tuple
 		}
 		else {
 			_table.erase(key);
+			return this;
 		}
 	}
 	else return this;
@@ -1778,7 +1847,7 @@ inline bool PredInter::approxtwovalued() const {
 	return _ct == _pt;
 }
 
-PredInter* EqualInterGenerator::get(AbstractStructure* structure) {
+PredInter* EqualInterGenerator::get(const AbstractStructure* structure) {
 	SortTable* st = structure->inter(_sort);
 	EqualInternalPredTable* eip = new EqualInternalPredTable(st,true);
 	vector<SortTable*> univ(2,st);
@@ -1786,7 +1855,7 @@ PredInter* EqualInterGenerator::get(AbstractStructure* structure) {
 	return new PredInter(ct,true,univ);
 }
 
-PredInter* StrLessThanInterGenerator::get(AbstractStructure* structure) {
+PredInter* StrLessThanInterGenerator::get(const AbstractStructure* structure) {
 	SortTable* st = structure->inter(_sort);
 	StrLessInternalPredTable* eip = new StrLessInternalPredTable(st,true);
 	vector<SortTable*> univ(2,st);
@@ -1794,7 +1863,7 @@ PredInter* StrLessThanInterGenerator::get(AbstractStructure* structure) {
 	return new PredInter(ct,true,univ);
 }
 
-PredInter* StrGreaterThanInterGenerator::get(AbstractStructure* structure) {
+PredInter* StrGreaterThanInterGenerator::get(const AbstractStructure* structure) {
 	SortTable* st = structure->inter(_sort);
 	StrGreaterInternalPredTable* eip = new StrGreaterInternalPredTable(st,true);
 	vector<SortTable*> univ(2,st);
@@ -1828,7 +1897,7 @@ FuncInter::~FuncInter() {
 	delete(_graphinter);
 }
 
-FuncInter* MinInterGenerator::get(AbstractStructure* structure) {
+FuncInter* MinInterGenerator::get(const AbstractStructure* structure) {
 	SortTable* st = structure->inter(_sort);
 	vector<SortTable*> univ(1,st);
 	FuncTable* ft; // TODO
@@ -1889,6 +1958,7 @@ Structure* Structure::clone() {
 	Structure*	s = new Structure("",ParseInfo());
 	s->vocabulary(_vocabulary);
 	// TODO
+	return 0;
 }
 
 /**
@@ -1958,47 +2028,19 @@ void Structure::inter(Function* f, FuncInter* i) {
 	_funcinter[f] = i;
 }
 
+/*
 void computescore(Sort* s, map<Sort*,unsigned int>& scores) {
 	if(scores.find(s) == scores.end()) {
 		unsigned int sc = 0;
-		for(unsigned int n = 0; n < s->nrParents(); ++n) {
-			computescore(s->parent(n),scores);
-			if(scores[s->parent(n)] >= sc) sc = scores[s->parent(n)] + 1;
+		for(set<Sort*>::const_iterator it = s->parents().begin(); it != s->parents().end(); ++it) {
+			computescore(*it,scores);
+			if(scores[*it] >= sc) sc = scores[*it] + 1;
 		}
 		scores[s] = sc;
 	}
 }
 
 void Structure::autocomplete() {
-	// Assign least tables to every symbol that has no interpretation
-/*	for(unsigned int n = 0; n < _predinter.size(); ++n) {
-		vector<ElementType> vet(_vocabulary->nbpred(n)->arity(),ELINT);
-		if(!_predinter[n]) _predinter[n] = TableUtils::leastPredInter(vet);
-		else if(!(_predinter[n]->ctpf())) {
-			PredTable* pt = new FinitePredTable(vet);
-			_predinter[n]->replace(pt,true,true);
-		}
-		else if(!(_predinter[n]->cfpt())) {
-			PredTable* pt = new FinitePredTable(vet);
-			_predinter[n]->replace(pt,false,true);
-		}
-	}
-	for(unsigned int n = 0; n < _funcinter.size(); ++n) {
-		vector<ElementType> vet(_vocabulary->nbfunc(n)->nrSorts(),ELINT);
-		if(!_funcinter[n]) _funcinter[n] = TableUtils::leastFuncInter(vet);
-		else if(!(_funcinter[n]->predinter()->ctpf())) {
-			PredTable* pt = new FinitePredTable(vet);
-			_funcinter[n]->predinter()->replace(pt,true,true);
-		}
-		else if(!(_funcinter[n]->predinter()->cfpt())) {
-			PredTable* pt = new FinitePredTable(vet);
-			_funcinter[n]->predinter()->replace(pt,false,true);
-		}
-	}
-	for(unsigned int n = 0; n < _sortinter.size(); ++n) {
-		if(!_sortinter[n]) _sortinter[n] = new EmptySortTable();
-	}
-*/
 	bool message = false;
 	// Adding elements from predicate interpretations to sorts
 	for(map<Predicate*,PredInter*>::const_iterator it = _predinter.begin(); it != _predinter.end(); ++it) {
@@ -2147,74 +2189,57 @@ void Structure::autocomplete() {
 			}
 		}
 	}
-	
-	// Synchronizing sort predicates
-	for(unsigned int n = 0; n < _vocabulary->nrNBSorts(); ++n) {
-		Predicate* p = _vocabulary->nbsort(n)->pred();
-		PredInter* pri = inter(p);
-		pri->replace(inter(_vocabulary->nbsort(n)),true,true);
-		pri->replace(inter(_vocabulary->nbsort(n)),false,false);
-	}
-
-	// Sort the tables
-	for(map<Sort*,SortTable*>::iterator it = _sortinter.begin(); it != _sortinter.end(); ++it) {
-		it->second->sortunique();
-	}
-	
 }
-
+*/
 void Structure::functioncheck() {
 	for(map<Function*,FuncInter*>::const_iterator it = _funcinter.begin(); it != _funcinter.end(); ++it) {
 		Function* f = it->first;
 		FuncInter* ft = it->second;
 		if(ft) {
-			PredInter* pt = ft->predinter();
-			PredTable* ct = pt->ctpf();
-			PredTable* cf = pt->cfpt();
+			PredInter* pt = ft->graphinter();
+			PredTable* ct = pt->ct();
 			// Check if the interpretation is indeed a function
 			bool isfunc = true;
-			if(ct) {
-				vector<ElementType> vet = ct->types(); vet.pop_back();
-				ElementEquality eq(vet);
-				for(unsigned int r = 1; r < ct->size(); ) {
-					if(eq(ct->tuple(r-1),ct->tuple(r))) {
-						vector<Element> vel = ct->tuple(r);
-						vector<string> vstr(vel.size()-1);
-						for(unsigned int c = 0; c < vel.size()-1; ++c) 
-							vstr[c] = ElementUtil::ElementToString(vel[c],ct->type(c));
-						Error::notfunction(f->name(),name(),vstr);
-						while(eq(ct->tuple(r-1),ct->tuple(r))) ++r;
-						isfunc = false;
-					}
-					else ++r;
+			StrictWeakNTupleEquality eq(f->arity());
+			TableIterator it = ct->begin();
+			TableIterator jt = ct->begin(); ++jt;
+			for(; jt.hasNext(); ++it, ++jt) {
+				if(eq(*it,*jt)) {
+					const ElementTuple& tuple = *it;
+					vector<string> vstr;
+					for(unsigned int c = 0; c < f->arity(); ++c) 
+						vstr.push_back(tuple[c]->to_string());
+					Error::notfunction(f->name(),name(),vstr);
+					do { ++it; ++jt; } while(jt.hasNext() && eq(*it,*jt));
+					isfunc = false;
 				}
 			}
 			// Check if the interpretation is total
-			if(isfunc && !(f->partial()) && ct && (ct == cf || (!(pt->cf()) && cf->size() == 0))) {
-				unsigned int c = 0;
-				unsigned int s = 1;
-				for(; c < f->arity(); ++c) {
-					if(inter(f->insort(c))) {
-						s = s * inter(f->insort(c))->size();
-					}
-					else break;
+			if(isfunc && !(f->partial()) && ft->approxtwovalued() && ct->approxfinite()) {
+				vector<SortTable*> vst;
+				vector<bool> linked;
+				for(unsigned int c = 0; c < f->arity(); ++c) {
+					vst.push_back(inter(f->insort(c)));
+					linked.push_back(true);
 				}
-				if(c == f->arity()) {
-					assert(ct->size() <= s);
-					if(ct->size() < s) {
-						Error::nottotal(f->name(),name());
+				PredTable spt(new CartesianInternalPredTable(vst,linked));
+				it = spt.begin();
+				jt = ct->begin();
+				for(; it.hasNext() && jt.hasNext(); ++it, ++jt) {
+					if(!eq(*it,*jt)) {
+						break;
 					}
+				}
+				if(it.hasNext() || jt.hasNext()) {
+					Error::nottotal(f->name(),name());
 				}
 			}
 		}
 	}
 }
 
-
-/** Inspectors **/
-
 SortTable* Structure::inter(Sort* s) const {
-	if(s->builtin()) return s->inter();
+	if(s->builtin()) return s->interpretation();
 	else {
 		map<Sort*,SortTable*>::const_iterator it = _sortinter.find(s);
 		assert(it != _sortinter.end());
@@ -2223,7 +2248,7 @@ SortTable* Structure::inter(Sort* s) const {
 }
 
 PredInter* Structure::inter(Predicate* p) const {
-	if(p->builtin()) return p->inter(*this);
+	if(p->builtin()) return p->interpretation(this);
 	else {
 		map<Predicate*,PredInter*>::const_iterator it = _predinter.find(p);
 		assert(it != _predinter.end());
@@ -2232,7 +2257,7 @@ PredInter* Structure::inter(Predicate* p) const {
 }
 
 FuncInter* Structure::inter(Function* f) const {
-	if(f->builtin()) return f->inter(*this);
+	if(f->builtin()) return f->interpretation(this);
 	else {
 		map<Function*,FuncInter*>::const_iterator it = _funcinter.find(f);
 		assert(it != _funcinter.end());
@@ -2241,6 +2266,6 @@ FuncInter* Structure::inter(Function* f) const {
 }
 
 PredInter* Structure::inter(PFSymbol* s) const {
-	if(s->ispred()) return inter(dynamic_cast<Predicate*>(s));
+	if(typeid(*s) == typeid(Predicate)) return inter(dynamic_cast<Predicate*>(s));
 	else return inter(dynamic_cast<Function*>(s))->graphinter();
 }
