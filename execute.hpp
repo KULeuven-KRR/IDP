@@ -30,7 +30,9 @@ enum InfArgType {
 	IAT_OVERLOADED, 
 	IAT_SORT,
 	IAT_PREDICATE, 
-	IAT_FUNCTION
+	IAT_FUNCTION,
+	IAT_MULT,
+	IAT_REGISTRY
 };
 
 namespace BuiltinProcs {

@@ -35,7 +35,8 @@
 	IDP_ADVANCED::push_negations(clonetheo)
 	IDP_ADVANCED::flatten(clonetheo)
 	if not Opt then Opt = stdoptions end
-	return idp_intern_idpcall("fastmx",clonetheo,Struct,Opt)
+	local solutions, trace =  idp_intern_idpcall("fastmx",clonetheo,Struct,Opt) 
+	return solutions, trace
 }
 
 /** Grounding **/
