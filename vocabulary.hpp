@@ -440,6 +440,11 @@ namespace FuncUtils {
 	 */
 	Function* overload(const vector<Function*>&);
 
+	/**
+	 * Check whether the output sort of a function is integer.
+	 */
+	bool isIntFunc(const Function*, Vocabulary*);
+
 }
 
 

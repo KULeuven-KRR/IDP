@@ -1763,7 +1763,10 @@ void GrounderFactory::visit(const AggTerm* t) {
 	t->set()->accept(this);
 
 	// Create term grounder
-	_termgrounder = new AggTermGrounder(_grounding->translator(),t->type(),_setgrounder);
+	if(SetUtils::isTwoValued(t->set(),_structure))
+		_termgrounder = new AggTermGrounder(_grounding->translator(),t->type(),_setgrounder);
+	else //TODO
+		_termgrounder = new ThreeValuedAggTermGrounder(_grounding->translator(),t->type(),_setgrounder);
 #ifndef NDEBUG
 	_termgrounder->setorig(t,_varmapping);
 #endif
