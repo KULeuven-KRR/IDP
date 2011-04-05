@@ -9,8 +9,10 @@
 
 #include "theory.hpp"
 #include "ground.hpp"
-#include "pcsolver/src/external/ExternalInterface.hpp"
 
+namespace MinisatID{
+ 	 class WrappedPCSolver;
+}
 typedef MinisatID::WrappedPCSolver SATSolver;
 
 // Enumeration used in GroundTheory::transformForAdd 
@@ -285,6 +287,9 @@ class AbstractGroundTheory : public AbstractTheory {
 														// in the theory.
 		set<int>					_printedsets;		// Set numbers produced by the translator that occur in the theory
 
+		const 	GroundTranslator& getTranslator() const	{ return *_translator; }
+				GroundTranslator& getTranslator() 		{ return *_translator; }
+
 	public:
 		// Constructors 
 		AbstractGroundTheory(AbstractStructure* str) : 
@@ -333,13 +338,16 @@ class SolverTheory : public AbstractGroundTheory {
 		SATSolver*					_solver;	// The SAT solver
 		map<PFSymbol*,set<int> >	_defined;	// Symbols that are defined in the theory. This set is used to
 												// communicate to the solver which ground atoms should be considered defined.
+		const 	SATSolver& getSolver() const	{ return *_solver; }
+				SATSolver& getSolver() 			{ return *_solver; }
+
+		void 	addAggregate(int definitionID, int head, bool lowerbound, int setnr, AggType aggtype, TsType sem, double bound);
+		void 	addPCRule(int defnr, int head, vector<int> body, bool conjunctive);
 
 	public:
 		// Constructors 
-		SolverTheory(SATSolver* solver,AbstractStructure* str) : 
-			AbstractGroundTheory(str), _solver(solver) { }
-		SolverTheory(Vocabulary* voc, SATSolver* solver, AbstractStructure* str) : 
-			AbstractGroundTheory(voc,str), _solver(solver) { }
+		SolverTheory(SATSolver* solver,AbstractStructure* str);
+		SolverTheory(Vocabulary* voc, SATSolver* solver, AbstractStructure* str);
 
 		// Mutators
 		void	addClause(GroundClause& cl, bool skipfirst = false);

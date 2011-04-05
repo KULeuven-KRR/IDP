@@ -50,6 +50,12 @@ gidl_SOURCES = \
 
 AM_CXXFLAGS+=-I $(top_srcdir)/pcsolver/src/ 
 
+LIBSRCDIR = $(srcdir)/lib
+LIBBLDDIR = $(builddir)/lib
+
+# CALLBACK FRAMEWORK
+AM_CXXFLAGS += -I $(LIBSRCDIR)/pluscallback1.7/
+
 dist_doc_DATA = README
 
 data_stddir = $(datadir)/std
