@@ -13,6 +13,9 @@
 #include "error.hpp"
 #include "fobdd.hpp"
 
+
+#include "external/MonitorInterface.hpp"
+
 /*
 	Connection with lua
 */
@@ -878,6 +881,16 @@ FastMXInference::FastMXInference() {
 	_description = "Performs model expansion on the structure given the theory it should satisfy.";
 }
 
+class Temp{
+public:
+	void func(int a){
+		clog <<"Callback called with " <<a <<"\n";
+	}
+	void func(MinisatID::Literal a, int b){
+		clog <<"Callback called with " <<a.getValue() <<" and " <<b <<"\n";
+	}
+};
+
 TypedInfArg FastMXInference::execute(const vector<InfArg>& args, lua_State*) const {
 
 	// Convert arguments
@@ -891,9 +904,16 @@ TypedInfArg FastMXInference::execute(const vector<InfArg>& args, lua_State*) con
 	modes.verbosity = opts->_satverbosity;
 	modes.remap = false;
 	SATSolver* solver = new SATSolver(modes);
+	MinisatID::Monitor* m = new MinisatID::Monitor();
+	Temp t;
+	cb::Callback1<void, int> callbackback(&t, &Temp::func);
+	cb::Callback2<void, MinisatID::Literal, int> callbackprop(&t, &Temp::func);
+	m->setBacktrackCB(callbackback);
+	m->setPropagateCB(callbackprop);
+	solver->addMonitor(m);
 
 	// Create grounder
-	GrounderFactory gf(structure);
+	GrounderFactory gf(structure,opts->_usingcp);
 	TopLevelGrounder* grounder = gf.create(theory,solver);
 
 	// Ground
@@ -913,11 +933,11 @@ TypedInfArg FastMXInference::execute(const vector<InfArg>& args, lua_State*) con
 	options.savemodels = MinisatID::SAVE_ALL;
 	options.search = MinisatID::MODELEXPAND;
 	MinisatID::Solution* sol = new MinisatID::Solution(options);
-	bool sat = solver->solve(sol);
+	solver->solve(sol);
 
 	// Translate
 	TypedInfArg a; a._type = IAT_TABLE; a._value._table = new vector<TypedInfArg>();
-	if(sat){
+	if(sol->isSat()){
 		for(unsigned int i=0; i<sol->getModels().size(); i++){
 			AbstractStructure* mod = structure->clone();
 			set<PredInter*>	tobesorted1;
@@ -1014,14 +1034,15 @@ TypedInfArg CloneTheory::execute(const vector<InfArg>& args, lua_State*) const {
 }
 
 FastGrounding::FastGrounding() {
-	_intypes = vector<InfArgType>(2);
+	_intypes = vector<InfArgType>(3);
 	_intypes[0] = IAT_THEORY; 
 	_intypes[1] = IAT_STRUCTURE;
+	_intypes[2] = IAT_OPTIONS;
 	_description = "Ground the theory and structure and store the grounding";
 }
 
 TypedInfArg FastGrounding::execute(const vector<InfArg>& args, lua_State*) const {
-	GrounderFactory factory(args[1]._structure);
+	GrounderFactory factory(args[1]._structure,args[2]._options->_usingcp);
 	TopLevelGrounder* g = factory.create(args[0]._theory);
 	g->run();
 	TypedInfArg a; a._type = IAT_THEORY;

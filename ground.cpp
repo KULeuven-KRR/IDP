@@ -72,6 +72,13 @@ int	GroundTranslator::translate(double bound, char comp, bool strict, AggType ag
 	}
 }
 
+int GroundTranslator::translate(CPTerm* left, CompType comp, const CPBound& right, TsType tstype) {
+	int nr = nextNumber();
+	CPTsBody* tb = new CPTsBody(tstype,left,comp,right);
+	_tsbodies[nr] = tb;
+	return nr;
+}
+
 int GroundTranslator::translateSet(const vector<int>& lits, const vector<double>& weights, const vector<double>& trueweights) {
 	int setnr;
 	if(_freesetnumbers.empty()) {
@@ -118,7 +125,7 @@ unsigned int GroundTranslator::addSymbol(PFSymbol* pfs) {
 	return _symboffsets.size()-1;
 }
 
-string GroundTranslator::printatom(int nr) const {
+string GroundTranslator::printAtom(int nr) const {
 	stringstream s;
 	nr = abs(nr);
 	if(nr == _true) return "true";
@@ -142,10 +149,75 @@ string GroundTranslator::printatom(int nr) const {
 	return s.str();
 }
 
+
+
+unsigned int GroundTermTranslator::translate(unsigned int offset, const vector<domelement>& args) {
+	map<vector<domelement>,unsigned int>::iterator jt = _table[offset].lower_bound(args);
+	if(jt != _table[offset].end() && jt->first == args) {
+		return jt->second;
+	}
+	else {
+		unsigned int nr = nextNumber();
+		_table[offset].insert(jt,pair<vector<domelement>,unsigned int>(args,nr));
+		_backfunctable[nr] = _offset2function[offset];
+		_backargstable[nr] = args;
+		return nr;
+	}
+}
+
+unsigned int GroundTermTranslator::translate(Function* func, const vector<TypedElement>& args) {
+	unsigned int offset = addFunction(func);
+	vector<domelement> newargs(args.size());
+	for(unsigned int n = 0; n < args.size(); ++n) {
+		newargs[n] = CPPointer(args[n]);
+	}
+	return translate(offset,newargs);
+}
+
+unsigned int GroundTermTranslator::nextNumber() {
+	unsigned int nr = _backfunctable.size(); 
+	_backfunctable.push_back(0);
+	_backargstable.push_back(vector<domelement>(0));
+	return nr;
+}
+
+unsigned int GroundTermTranslator::addFunction(Function* func) {
+	map<Function*,unsigned int>::const_iterator found = _function2offset.find(func);
+	if(found != _function2offset.end())
+		// Simply return number when function is already known
+		return found->second;
+	else {
+		// Add function and number when function is unknown
+		unsigned int offset = _offset2function.size();
+		_function2offset[func] = offset; 
+		_offset2function.push_back(func);
+		_table.push_back(map<vector<domelement>,unsigned int>());
+		return offset;	
+	}
+}
+
+string GroundTermTranslator::printTerm(unsigned int nr) const {
+	stringstream s;
+	if(nr >= _backfunctable.size()) {
+		return "error";
+	}
+	Function* func = function(nr);
+	s << func->to_string();
+	if(!(args(nr).empty())) {
+		s << "(";
+		for(unsigned int c = 0; c < args(nr).size(); ++c) {
+			s << ElementUtil::ElementToString((args(nr))[c]);
+			if(c != args(nr).size()-1) s << ",";
+		}
+		s << ")";
+	}
+	return s.str();
+}
+
+
 /*************************************
 	Optimized grounding algorithm
 *************************************/
-
 
 bool CopyGrounder::run() const {
 	// TODO TODO TODO
@@ -290,7 +362,7 @@ int AtomGrounder::run() const {
 		if(_cloptions._verbose) {
 			printorig();
 			cerr << "Certain checker succeeded\n";
-			cerr << "Result is " << _translator->printatom(_certainvalue) << endl;
+			cerr << "Result is " << _translator->printAtom(_certainvalue) << endl;
 		}
 #endif
 		return _certainvalue;
@@ -302,7 +374,7 @@ int AtomGrounder::run() const {
 		if(_cloptions._verbose) {
 			printorig();
 			cerr << "Term value out of predicate type\n";
-			cerr << "Result is " << _translator->printatom(atom) << endl;
+			cerr << "Result is " << _translator->printAtom(atom) << endl;
 		}
 #endif
 		return atom;
@@ -314,9 +386,80 @@ void AtomGrounder::run(vector<int>& clause) const {
 #ifndef NDEBUG
 if(_cloptions._verbose) {
 	printorig();
-	cerr << "Result = " << _translator->printatom(clause.back()) << endl;
+	cerr << "Result = " << _translator->printAtom(clause.back()) << endl;
 }
 #endif
+}
+
+CompType invertcpcomp(CompType ct) {
+	switch(ct) {
+		case CT_EQ: return CT_EQ;
+		case CT_NEQ: return CT_NEQ;
+		case CT_LEQ: return CT_GEQ;
+		case CT_GEQ: return CT_LEQ;
+		case CT_LT: return CT_GT;
+		case CT_GT: return CT_LT;
+		default: assert(false);
+	}
+}
+
+int CPGrounder::run() const {
+	domelement left = _lefttermgrounder->run();
+	domelement right = _righttermgrounder->run();
+	if(!ElementUtil::exists(left) || !ElementUtil::exists(right)) {
+		return _context._funccontext != PC_NEGATIVE  ? _true : _false;
+	}
+	// TODO??? out-of-bounds check. Can out-of-bounds ever occur on </2, >/2, =/2???
+	
+	if(left->_function) {
+		unsigned int leftvarid = _termtranslator->translate(left->_function,left->_args);	// TODO: try to use the faster translate function 
+		CPTerm* leftterm = new CPVarTerm(leftvarid);
+		if(right->_function) {
+			unsigned int rightvarid = _termtranslator->translate(right->_function,right->_args);	// TODO: try to use the faster translate function 
+			CPBound rightbound(true,rightvarid);
+			return _translator->translate(leftterm,_comparator,rightbound,_context._tseitin);
+		}	
+		else {
+			assert(right->_args[0]._type == ELINT);
+			int rightvalue = right->_args[0]._element._int;
+			CPBound rightbound(false,rightvalue);
+			return _translator->translate(leftterm,_comparator,rightbound,_context._tseitin);
+		}
+	}
+	else {
+		assert(left->_args[0]._type == ELINT);
+		int leftvalue = left->_args[0]._element._int;
+		if(right->_function) {
+			unsigned int rightvarid = _termtranslator->translate(right->_function,right->_args);	// TODO: try to use the faster translate function 
+			CPTerm* rightterm = new CPVarTerm(rightvarid);
+			CPBound leftbound(false,leftvalue);
+			return _translator->translate(rightterm,invertcpcomp(_comparator),leftbound,_context._tseitin);
+		}	
+		else {
+			assert(right->_args[0]._type == ELINT);
+			int rightvalue = right->_args[0]._element._int;
+			switch(_comparator) {
+				case CT_EQ:
+					return leftvalue == rightvalue ? _true : _false;
+				case CT_NEQ:
+					return leftvalue != rightvalue ? _true : _false;
+				case CT_LEQ:
+					return leftvalue <= rightvalue ? _true : _false;
+				case CT_GEQ:
+					return leftvalue >= rightvalue ? _true : _false;
+				case CT_LT:
+					return leftvalue < rightvalue ? _true : _false;
+				case CT_GT:	
+					return leftvalue > rightvalue ? _true : _false;
+				default: assert(false); return _false;
+			}
+		}
+	}
+	assert(false); return _false;
+}
+
+void CPGrounder::run(vector<int>& clause) const {
+	clause.push_back(run());
 }
 
 int AggGrounder::finishCard(double truevalue, double boundvalue, int setnr) const {
@@ -326,7 +469,6 @@ int AggGrounder::finishCard(double truevalue, double boundvalue, int setnr) cons
 	TsType tp = _context._tseitin;
 	bool simplify = false;
 	bool conj;
-	//bool swaptseitin;
 	bool negateset;
 	switch(_comp) {
 		case '=':
@@ -335,15 +477,12 @@ int AggGrounder::finishCard(double truevalue, double boundvalue, int setnr) cons
 			}
 			else if(leftvalue == 0) {
 				simplify = true;
-				//conj = false;
-				//swaptseitin = _sign;
 				conj = true;
 				negateset = true;
 			}
 			else if(leftvalue == maxposscard) {
 				simplify = true;
 				conj = true;
-				//swaptseitin = !_sign;
 				negateset = false;
 			}
 			break;
@@ -354,13 +493,11 @@ int AggGrounder::finishCard(double truevalue, double boundvalue, int setnr) cons
 			else if(leftvalue == 0) {
 				simplify = true;
 				conj = false;
-				//swaptseitin = !_sign;
 				negateset = false;
 			}
 			else if(leftvalue == maxposscard-1) {
 				simplify = true;
 				conj = true;
-				//swaptseitin = !_sign;
 				negateset = false;
 			}
 			else if(leftvalue >= maxposscard) {
@@ -373,15 +510,11 @@ int AggGrounder::finishCard(double truevalue, double boundvalue, int setnr) cons
 			}
 			else if(leftvalue == 1) {
 				simplify = true;
-				//conj = false;
-				//swaptseitin = _sign;
 				conj = true;
 				negateset = true;
 			}
 			else if(leftvalue == maxposscard) {
 				simplify = true;
-				//conj = true;
-				//swaptseitin = _sign;
 				conj = false;
 				negateset = true;
 			}
@@ -415,8 +548,6 @@ int AggGrounder::finishCard(double truevalue, double boundvalue, int setnr) cons
 				int tseitin = _translator->translate(tsset.literals(),conj,tp);
 				return _sign ? tseitin : -tseitin;
 			}
-			//int tseitin = _translator->translate(tsset.literals(),conj,tp);
-			//return swaptseitin ? -tseitin : tseitin;
 		}
 	}
 	else {
@@ -607,7 +738,7 @@ int ClauseGrounder::finish(vector<int>& cl) const {
 #ifndef NDEBUG
 			if(_cloptions._verbose) {
 				printorig();
-				cerr << "Result = " << _translator->printatom(result2()) << endl;
+				cerr << "Result = " << _translator->printAtom(result2()) << endl;
 			}
 #endif
 		return result2();
@@ -616,7 +747,7 @@ int ClauseGrounder::finish(vector<int>& cl) const {
 #ifndef NDEBUG
 			if(_cloptions._verbose) {
 				printorig();
-				cerr << "Result = " << (_sign ? _translator->printatom(cl[0]) : _translator->printatom(-cl[0])) << endl;
+				cerr << "Result = " << (_sign ? _translator->printAtom(cl[0]) : _translator->printAtom(-cl[0])) << endl;
 			}
 #endif
 		return _sign ? cl[0] : -cl[0];
@@ -634,8 +765,8 @@ int ClauseGrounder::finish(vector<int>& cl) const {
 			if(_cloptions._verbose) {
 				printorig();
 				cerr << "Result = " << (_sign ? "" : "~");
-				cerr << _translator->printatom(cl[0]) << ' ';
-				for(unsigned int n = 1; n < cl.size(); ++n) cerr << (!_conj ? "& " : "| ") << _translator->printatom(cl[n]) << ' ';
+				cerr << _translator->printAtom(cl[0]) << ' ';
+				for(unsigned int n = 1; n < cl.size(); ++n) cerr << (!_conj ? "& " : "| ") << _translator->printAtom(cl[n]) << ' ';
 			}
 #endif
 			return _sign ? -ts : ts;
@@ -646,8 +777,8 @@ int ClauseGrounder::finish(vector<int>& cl) const {
 			if(_cloptions._verbose) {
 				printorig();
 				cerr << "Result = " << (_sign ? "" : "~");
-				cerr << _translator->printatom(cl[0]) << ' ';
-				for(unsigned int n = 1; n < cl.size(); ++n) cerr << (_conj ? "& " : "| ") << _translator->printatom(cl[n]) << ' ';
+				cerr << _translator->printAtom(cl[0]) << ' ';
+				for(unsigned int n = 1; n < cl.size(); ++n) cerr << (_conj ? "& " : "| ") << _translator->printAtom(cl[n]) << ' ';
 			}
 #endif
 			return _sign ? ts : -ts;
@@ -685,7 +816,7 @@ int QuantGrounder::run() const {
 #ifndef NDEBUG
 			if(_cloptions._verbose) {
 				printorig();
-				cerr << "Result = " << _translator->printatom(result1()) << endl;
+				cerr << "Result = " << _translator->printAtom(result1()) << endl;
 			}
 #endif
 			return result1();
@@ -697,7 +828,7 @@ int QuantGrounder::run() const {
 #ifndef NDEBUG
 				if(_cloptions._verbose) {
 					printorig();
-					cerr << "Result = " << _translator->printatom(result1()) << endl;
+					cerr << "Result = " << _translator->printAtom(result1()) << endl;
 				}
 #endif
 				return result1();
@@ -717,7 +848,7 @@ void QuantGrounder::run(vector<int>& clause) const {
 #ifndef NDEBUG
 			if(_cloptions._verbose) {
 				printorig();
-				cerr << "Result = " << _translator->printatom(result1()) << endl;
+				cerr << "Result = " << _translator->printAtom(result1()) << endl;
 			}
 #endif
 			return;
@@ -731,7 +862,7 @@ void QuantGrounder::run(vector<int>& clause) const {
 #ifndef NDEBUG
 				if(_cloptions._verbose) {
 					printorig();
-					cerr << "Result = " << _translator->printatom(result1()) << endl;
+					cerr << "Result = " << _translator->printAtom(result1()) << endl;
 				}
 #endif
 				return;
@@ -745,8 +876,8 @@ void QuantGrounder::run(vector<int>& clause) const {
 		cerr << "Result = " << (_sign ? "" : "~");
 		if(clause.empty()) cerr << (_conj ? "true" : "false") << endl;
 		else {
-			cerr << _translator->printatom(clause[0]) << ' ';
-			for(unsigned int n = 1; n < clause.size(); ++n) cerr << (_conj ? "& " : "| ") << _translator->printatom(clause[n]) << ' ';
+			cerr << _translator->printAtom(clause[0]) << ' ';
+			for(unsigned int n = 1; n < clause.size(); ++n) cerr << (_conj ? "& " : "| ") << _translator->printAtom(clause[n]) << ' ';
 		}
 	}
 #endif
@@ -849,6 +980,34 @@ if(_cloptions._verbose) {
 	return (*_function)[_args];
 }
 
+domelement ThreeValuedFuncTermGrounder::run() const {
+	for(unsigned int n = 0; n < _subtermgrounders.size(); ++n) {
+		_args[n] = _subtermgrounders[n]->run();
+		if(!ElementUtil::exists(_args[n]) || !_tables[n]->contains(_args[n])) return 0;
+	}
+	domelement result = (*_functable)[_args];
+	if(ElementUtil::exists(result)) {
+#ifndef NDEBUG
+if(_cloptions._verbose) {
+	printorig();
+	Element e; e._compound = result;
+	cerr << "Result is " << ElementUtil::ElementToString(e,ELCOMPOUND) << endl;
+}
+#endif
+		return result;
+	}
+	else {
+#ifndef NDEBUG
+if(_cloptions._verbose) {
+	printorig();
+	Element e; e._compound = CPPointer(_function,_args);
+	cerr << "Result is " << ElementUtil::ElementToString(e,ELCOMPOUND) << endl;
+}
+#endif
+		return CPPointer(_function,_args);
+	}
+}
+
 domelement AggTermGrounder::run() const {
 	int setnr = _setgrounder->run();
 	const TsSet& tsset = _translator->groundset(setnr);
@@ -875,6 +1034,11 @@ if(_cloptions._verbose) {
 #endif
 		return CPPointer(e,ELDOUBLE);
 	}
+}
+
+domelement ThreeValuedAggTermGrounder::run() const {
+	//TODO
+	assert(false);
 }
 
 int EnumSetGrounder::run() const {
@@ -1266,7 +1430,7 @@ void GrounderFactory::visit(const PredForm* pf) {
 	// to _structure outside the atom. To avoid changing the original atom, 
 	// we first clone it.
 	PredForm* newpf = pf->clone();
-	Formula* transpf = FormulaUtils::moveThreeValTerms(newpf,_structure,_context._funccontext != PC_NEGATIVE);
+	Formula* transpf = FormulaUtils::moveThreeValTerms(newpf,_structure,(_context._funccontext != PC_NEGATIVE),_usingcp);
 
 	if(newpf != transpf) {	// The rewriting changed the atom
 		//delete(newpf); TODO: produces a segfault??
@@ -1275,42 +1439,78 @@ void GrounderFactory::visit(const PredForm* pf) {
 	else {	// The rewriting did not change the atom
 
 		// Create grounders for the subterms
+		bool cpsubterms = false;
 		vector<TermGrounder*> subtermgrounders;
 		vector<SortTable*>	  argsorttables;
 		for(unsigned int n = 0; n < pf->nrSubterms(); ++n) {
 			descend(pf->subterm(n));
 			subtermgrounders.push_back(_termgrounder);
+			cpsubterms = cpsubterms || _termgrounder->canReturnCPVar();
 			argsorttables.push_back(_structure->inter(pf->symb()->sort(n)));
 		}
 
 		// Create checkers and grounder
-		PredInter* inter = _structure->inter(pf->symb());
-		CheckerFactory checkfactory;
-		if(_context._component == CC_HEAD) {
-			InstanceChecker* truech = checkfactory.create(inter,true,true);
-			InstanceChecker* falsech = checkfactory.create(inter,false,true);
-			_headgrounder = new HeadGrounder(_grounding,truech,falsech,pf->symb(),subtermgrounders,argsorttables);
+		if(cpsubterms) {
+			if(_context._component == CC_HEAD) {
+				assert(false);
+				//TODO
+			}
+			else {
+				if(pf->symb()->ispred()) {
+					CompType comp;
+					if(pf->symb()->name() == "=/2") {
+						comp = pf->sign() ? CT_EQ : CT_NEQ;
+					}
+					else if(pf->symb()->name() == "</2") {
+						comp = pf->sign() ? CT_LT : CT_GEQ;
+					}
+					else if(pf->symb()->name() == ">/2") {
+						comp = pf->sign() ? CT_GT : CT_LEQ;
+					}
+					else assert(false);
+					_formgrounder = new CPGrounder(_grounding->translator(),_grounding->termtranslator(),
+											subtermgrounders[0],comp,subtermgrounders[1],_context);
+				}
+				else {
+					CompType comp = pf->sign() ? CT_EQ : CT_NEQ;
+					TermGrounder* righttermgrounder = subtermgrounders.back();
+					subtermgrounders.pop_back();
+					TermGrounder* lefttermgrounder;
+					//TODO construct lefttermgrounder
+				}
+				if(_context._component == CC_SENTENCE) 
+					_toplevelgrounder = new SentenceGrounder(_grounding,_formgrounder,false);
+			}
 		}
 		else {
-			InstanceChecker* possch;
-			InstanceChecker* certainch;
-			if(_context._truegen == pf->sign()) {	
-				possch = checkfactory.create(inter,false,false);
-				certainch = checkfactory.create(inter,true,true);
+			PredInter* inter = _structure->inter(pf->symb());
+			CheckerFactory checkfactory;
+			if(_context._component == CC_HEAD) {
+				InstanceChecker* truech = checkfactory.create(inter,true,true);
+				InstanceChecker* falsech = checkfactory.create(inter,false,true);
+				_headgrounder = new HeadGrounder(_grounding,truech,falsech,pf->symb(),subtermgrounders,argsorttables);
 			}
-			else {	
-				possch = checkfactory.create(inter,true,false);
-				certainch = checkfactory.create(inter,false,true);
-			}
-	
-			// Create the grounder
-			_formgrounder = new AtomGrounder(_grounding->translator(),pf->sign(),pf->symb(),
-								 subtermgrounders,possch,certainch,argsorttables,_context);
+			else {
+				InstanceChecker* possch;
+				InstanceChecker* certainch;
+				if(_context._truegen == pf->sign()) {	
+					possch = checkfactory.create(inter,false,false);
+					certainch = checkfactory.create(inter,true,true);
+				}
+				else {	
+					possch = checkfactory.create(inter,true,false);
+					certainch = checkfactory.create(inter,false,true);
+				}
+		
+				// Create the grounder
+				_formgrounder = new AtomGrounder(_grounding->translator(),pf->sign(),pf->symb(),
+									 subtermgrounders,possch,certainch,argsorttables,_context);
 #ifndef NDEBUG
-			_formgrounder->setorig(pf,_varmapping);
+				_formgrounder->setorig(pf,_varmapping);
 #endif
-			if(_context._component == CC_SENTENCE) 
-				_toplevelgrounder = new SentenceGrounder(_grounding,_formgrounder,false);
+				if(_context._component == CC_SENTENCE) 
+					_toplevelgrounder = new SentenceGrounder(_grounding,_formgrounder,false);
+			}
 		}
 	}
 	transpf->recursiveDelete();
@@ -1472,7 +1672,7 @@ void GrounderFactory::visit(const EquivForm* ef) {
 
 void GrounderFactory::visit(const AggForm* af) {
 	AggForm* newaf = af->clone();
-	Formula* transaf = FormulaUtils::moveThreeValTerms(newaf,_structure,_context._funccontext != PC_NEGATIVE);
+	Formula* transaf = FormulaUtils::moveThreeValTerms(newaf,_structure,(_context._funccontext != PC_NEGATIVE),_usingcp);
 
 	if(newaf != transaf) {	// The rewriting changed the atom
 		//delete(newaf); TODO: produces a segfault??
@@ -1532,8 +1732,27 @@ void GrounderFactory::visit(const FuncTerm* t) {
 	}
 
 	// Create term grounder
-	FuncTable* ft = _structure->inter(t->func())->functable();
-	_termgrounder = new FuncTermGrounder(sub,ft);
+	Function* func = t->func();
+	if(_structure->inter(func)->fasttwovalued()) {
+		FuncTable* ft = _structure->inter(func)->functable();
+		_termgrounder = new FuncTermGrounder(sub,ft);
+	}
+	else {
+		vector<SortTable*> vst;
+		for(unsigned int n = 0; n < func->arity(); ++n) {
+			vst.push_back(_structure->inter(func->sort(n)));
+		}
+		FuncTable* ft; 
+		PredInter* pinter = _structure->inter(func)->predinter();
+		if(pinter->ct() && typeid(*(pinter->ctpf())) == typeid(FinitePredTable)) {
+			ft = new FiniteFuncTable(dynamic_cast<FinitePredTable*>(pinter->ctpf()));
+		}
+		else {
+			vector<ElementType> vet(func->nrSorts(),ELINT);
+			ft = new FiniteFuncTable(new FinitePredTable(vet));
+		}
+		_termgrounder = new ThreeValuedFuncTermGrounder(sub,func,ft,vst);
+	}
 #ifndef NDEBUG
 	_termgrounder->setorig(t,_varmapping);
 #endif

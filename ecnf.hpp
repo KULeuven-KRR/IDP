@@ -9,8 +9,10 @@
 
 #include "theory.hpp"
 #include "ground.hpp"
-#include "pcsolver/src/external/ExternalInterface.hpp"
 
+namespace MinisatID{
+ 	 class WrappedPCSolver;
+}
 typedef MinisatID::WrappedPCSolver SATSolver;
 
 // Enumeration used in GroundTheory::transformForAdd 
@@ -45,7 +47,7 @@ class GroundSet {
 		double			weight(unsigned int n)	const { return _litweights[n];	}
 
 		// Visitor
-		void accept(Visitor* v) const;
+		void accept(Visitor*) const;
 };
 
 /********************************
@@ -94,7 +96,7 @@ class GroundAggregate {
 		unsigned int	setnr()	const { return _set; 	}
 
 		// Visitor
-		void accept(Visitor* v) const;
+		void accept(Visitor*) const;
 };
 
 
@@ -157,7 +159,7 @@ class PCGroundRuleBody : public GroundRuleBody {
 		bool			isTrue()				const { return (_body.empty() && _type == RT_CONJ);	}
 
 		// Visitor
-		void accept(Visitor* v) const;
+		void accept(Visitor*) const;
 
 		// Friends
 		friend class GroundDefinition;
@@ -190,7 +192,7 @@ class AggGroundRuleBody : public GroundRuleBody {
 		bool			isTrue()	const { return false;		}
 
 		// Visitor
-		void accept(Visitor* v) const;
+		void accept(Visitor*) const;
 
 		// Friends
 		friend class GroundDefinition;
@@ -231,8 +233,8 @@ class GroundDefinition : public AbstractDefinition {
 		const_ruleiterator	end()			const { return _rules.end();		}
 
 		// Visitor
-		void 				accept(Visitor* v) const;
-		AbstractDefinition*	accept(MutatingVisitor* v);
+		void 				accept(Visitor*) const;
+		AbstractDefinition*	accept(MutatingVisitor*);
 
 		// Debugging
 		string to_string(unsigned int spaces = 0) const;
@@ -253,6 +255,19 @@ class GroundFixpDef : public AbstractDefinition {
 
 
 /**********************
+	CP reifications
+**********************/
+
+class CPReification { //TODO
+	public:
+		int 		_head;
+		CPTsBody* 	_body;
+		CPReification(int head, CPTsBody* body): _head(head), _body(body) { }
+		string to_string(unsigned int spaces = 0) const;
+		void accept(Visitor*) const;
+};
+
+/**********************
 	Ground theories
 **********************/
 
@@ -263,20 +278,24 @@ class GroundFixpDef : public AbstractDefinition {
 class AbstractGroundTheory : public AbstractTheory {
 
 	protected:
-		AbstractStructure*			_structure;		// The ground theory may be partially reduced with respect
-													// to this structure. 
-		GroundTranslator*			_translator;	// Link between ground atoms and SAT-solver literals
+		AbstractStructure*			_structure;			// The ground theory may be partially reduced with respect
+														// to this structure. 
+		GroundTranslator*			_translator;		// Link between ground atoms and SAT-solver literals
+		GroundTermTranslator*		_termtranslator;	// Link between ground terms and SAT-solver literals
 
 		set<int>					_printedtseitins;	// Tseitin atoms produced by the translator that occur 
 														// in the theory.
 		set<int>					_printedsets;		// Set numbers produced by the translator that occur in the theory
 
+		const 	GroundTranslator& getTranslator() const	{ return *_translator; }
+				GroundTranslator& getTranslator() 		{ return *_translator; }
+
 	public:
 		// Constructors 
 		AbstractGroundTheory(AbstractStructure* str) : 
-			AbstractTheory("",ParseInfo()), _structure(str), _translator(new GroundTranslator()) { }
+			AbstractTheory("",ParseInfo()), _structure(str), _translator(new GroundTranslator()), _termtranslator(new GroundTermTranslator()) { }
 		AbstractGroundTheory(Vocabulary* voc, AbstractStructure* str) : 
-			AbstractTheory("",voc,ParseInfo()), _structure(str), _translator(new GroundTranslator()) { }
+			AbstractTheory("",voc,ParseInfo()), _structure(str), _translator(new GroundTranslator()), _termtranslator(new GroundTermTranslator()) { }
 
 		// Destructor
 		virtual void recursiveDelete()	{ delete(this);			}
@@ -293,18 +312,20 @@ class AbstractGroundTheory : public AbstractTheory {
 		virtual void addDefinition(GroundDefinition*)						= 0;
 		virtual void addFixpDef(GroundFixpDef*)								= 0;
 		virtual void addSet(int setnr, int defnr, bool weighted)			= 0;
+		virtual	void addAggregate(int tseitin, AggTsBody* body)				= 0; 
+		virtual void addCPReification(int tseitin, CPTsBody* body)			= 0;
 
 				void addEmptyClause()		{ GroundClause c(0); addClause(c);		}
 				void addUnitClause(int l)	{ GroundClause c(1,l); addClause(c);	}
 
-		virtual	void addAggregate(int tseitin, AggTsBody* body)			= 0; 
 		virtual void addPCRule(int defnr, int tseitin, PCTsBody* body)		= 0; 
 		virtual void addAggRule(int defnr, int tseitin, AggTsBody* body)	= 0; 
 
 		// Inspectors
-		GroundTranslator*		translator()	const { return _translator;			}
-		AbstractStructure*		structure()		const { return _structure;			}
-		AbstractGroundTheory*	clone()			const { assert(false); /* TODO */	}
+		GroundTranslator*		translator()		const { return _translator;			}
+		GroundTermTranslator*	termtranslator()	const { return _termtranslator; 	}
+		AbstractStructure*		structure()			const { return _structure;			}
+		AbstractGroundTheory*	clone()				const { assert(false); /* TODO */	}
 };
 
 /* 
@@ -317,20 +338,24 @@ class SolverTheory : public AbstractGroundTheory {
 		SATSolver*					_solver;	// The SAT solver
 		map<PFSymbol*,set<int> >	_defined;	// Symbols that are defined in the theory. This set is used to
 												// communicate to the solver which ground atoms should be considered defined.
+		const 	SATSolver& getSolver() const	{ return *_solver; }
+				SATSolver& getSolver() 			{ return *_solver; }
+
+		void 	addAggregate(int definitionID, int head, bool lowerbound, int setnr, AggType aggtype, TsType sem, double bound);
+		void 	addPCRule(int defnr, int head, vector<int> body, bool conjunctive);
 
 	public:
 		// Constructors 
-		SolverTheory(SATSolver* solver,AbstractStructure* str) : 
-			AbstractGroundTheory(str), _solver(solver) { }
-		SolverTheory(Vocabulary* voc, SATSolver* solver, AbstractStructure* str) : 
-			AbstractGroundTheory(voc,str), _solver(solver) { }
+		SolverTheory(SATSolver* solver,AbstractStructure* str);
+		SolverTheory(Vocabulary* voc, SATSolver* solver, AbstractStructure* str);
 
 		// Mutators
 		void	addClause(GroundClause& cl, bool skipfirst = false);
 		void	addDefinition(GroundDefinition*);
 		void	addFixpDef(GroundFixpDef*);
 		void	addSet(int setnr, int defnr, bool weighted);
-		void	addAggregate(int head, AggTsBody* body);
+		void	addAggregate(int tseitin, AggTsBody* body);
+		void 	addCPReification(int tseitin, CPTsBody* body);
 
 		void	addPCRule(int defnr, int tseitin, PCTsBody* body);
 		void	addAggRule(int defnr, int tseitin, AggTsBody* body);
@@ -349,8 +374,8 @@ class SolverTheory : public AbstractGroundTheory {
 		GroundFixpDef*		fixpdef(unsigned int)		const { assert(false); /*TODO*/	}
 
 		// Visitor
-		void			accept(Visitor* v) const;
-		AbstractTheory*	accept(MutatingVisitor* v);
+		void			accept(Visitor*) const;
+		AbstractTheory*	accept(MutatingVisitor*);
 
 		// Debugging
 		string to_string() const { assert(false); /*TODO*/	}
@@ -369,6 +394,7 @@ class GroundTheory : public AbstractGroundTheory {
 		vector<GroundAggregate*>	_aggregates;
 		vector<GroundFixpDef*>		_fixpdefs;
 		vector<GroundSet*>			_sets;
+		vector<CPReification*>		_cpreifications;
 
 	public:
 
@@ -381,28 +407,31 @@ class GroundTheory : public AbstractGroundTheory {
 		void	addDefinition(GroundDefinition*);
 		void	addFixpDef(GroundFixpDef*);
 		void	addSet(int setnr, int defnr, bool weighted);
-		void	addAggregate(int head, AggTsBody* body);
+		void	addAggregate(int tseitin, AggTsBody* body);
+		void 	addCPReification(int tseitin, CPTsBody* body);
 
 		void	addPCRule(int defnr, int tseitin, PCTsBody* body);
 		void	addAggRule(int defnr, int tseitin, AggTsBody* body);
 
 		// Inspectors
-		unsigned int		nrSentences()				const { return _clauses.size() + _aggregates.size();	}
-		unsigned int		nrClauses()					const { return _clauses.size();							}
-		unsigned int		nrDefinitions()				const { return _definitions.size();						}
-		unsigned int		nrFixpDefs()				const { return _fixpdefs.size();						}
-		unsigned int		nrAggregates()				const { return _aggregates.size();						}
-		unsigned int		nrSets()					const { return _sets.size();							}
-		Formula*			sentence(unsigned int)		const { assert(false); /* TODO */						}
-		GroundClause		clause(unsigned int n)		const { return _clauses[n];								}
-		GroundDefinition*	definition(unsigned int n)	const { return _definitions[n];							}
-		GroundAggregate*	aggregate(unsigned int n)	const { return _aggregates[n];							}
-		GroundFixpDef*		fixpdef(unsigned int n)		const { return _fixpdefs[n];							}
-		GroundSet*			set(unsigned int n)			const { return _sets[n];								}
+		unsigned int		nrSentences()					const { return _clauses.size() + _aggregates.size();	}
+		unsigned int		nrClauses()						const { return _clauses.size();							}
+		unsigned int		nrDefinitions()					const { return _definitions.size();						}
+		unsigned int		nrFixpDefs()					const { return _fixpdefs.size();						}
+		unsigned int		nrAggregates()					const { return _aggregates.size();						}
+		unsigned int		nrSets()						const { return _sets.size();							}
+		unsigned int 		nrCPReifications()				const { return _cpreifications.size();					}
+		Formula*			sentence(unsigned int)			const { assert(false); /* TODO */						}
+		GroundClause		clause(unsigned int n)			const { return _clauses[n];								}
+		GroundDefinition*	definition(unsigned int n)		const { return _definitions[n];							}
+		GroundAggregate*	aggregate(unsigned int n)		const { return _aggregates[n];							}
+		GroundFixpDef*		fixpdef(unsigned int n)			const { return _fixpdefs[n];							}
+		GroundSet*			set(unsigned int n)				const { return _sets[n];								}
+		CPReification*		cpreification(unsigned int n)	const { return _cpreifications[n];						}
 
 		// Visitor
-		void			accept(Visitor* v) const;
-		AbstractTheory*	accept(MutatingVisitor* v);
+		void			accept(Visitor*) const;
+		AbstractTheory*	accept(MutatingVisitor*);
 
 		// Debugging
 		string to_string() const;
