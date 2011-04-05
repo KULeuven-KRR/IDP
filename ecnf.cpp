@@ -170,7 +170,7 @@ string GroundDefinition::to_string(unsigned int) const {
 	stringstream s;
 	s << "{\n";
 	for(map<int,GroundRuleBody*>::const_iterator it = _rules.begin(); it != _rules.end(); ++it) {
-		s << _translator->printatom(it->first) << " <- ";
+		s << _translator->printAtom(it->first) << " <- ";
 		const GroundRuleBody* body = it->second;
 		if(body->_type == RT_AGG) {
 			const AggGroundRuleBody* grb = dynamic_cast<const AggGroundRuleBody*>(body);
@@ -189,11 +189,11 @@ string GroundDefinition::to_string(unsigned int) const {
 			char c = grb->_type == RT_CONJ ? '&' : '|';
 			if(!grb->_body.empty()) {
 				if(grb->_body[0] < 0) s << '~';
-				s << _translator->printatom(grb->_body[0]);
+				s << _translator->printAtom(grb->_body[0]);
 				for(unsigned int n = 1; n < grb->_body.size(); ++n) {
 					s << ' ' << c << ' ';
 					if(grb->_body[n] < 0) s << '~';
-					s << _translator->printatom(grb->_body[n]);
+					s << _translator->printAtom(grb->_body[n]);
 				}
 			}
 			else if(grb->_type == RT_CONJ) s << "true";
@@ -368,7 +368,7 @@ string GroundTheory::to_string() const {
 		else {
 			for(unsigned int m = 0; m < _clauses[n].size(); ++m) {
 				if(_clauses[n][m] < 0) s << '~';
-				s << _translator->printatom(_clauses[n][m]);
+				s << _translator->printAtom(_clauses[n][m]);
 				if(m < _clauses[n].size()-1) s << " | ";
 			}
 		}
@@ -384,7 +384,7 @@ string GroundTheory::to_string() const {
 	for(unsigned int n = 0; n < _sets.size(); ++n) {
 		s << "Set nr. " << _sets[n]->setnr() << " = [ ";
 		for(unsigned int m = 0; m < _sets[n]->size(); ++m) {
-			s << "(" << _translator->printatom(_sets[n]->literal(m));
+			s << "(" << _translator->printAtom(_sets[n]->literal(m));
 			s << " = " << _sets[n]->weight(m) << ")";
 			if(m < _sets[n]->size()-1) s << "; ";
 		}
@@ -392,7 +392,7 @@ string GroundTheory::to_string() const {
 	}
 	for(unsigned int n = 0; n < _aggregates.size(); ++n) {
 		const GroundAggregate* agg = _aggregates[n];
-		s << _translator->printatom(agg->head());
+		s << _translator->printAtom(agg->head());
 		switch(agg->arrow()) {
 			case TS_RULE: 	s << " <- "; break;
 			case TS_IMPL: 	s << " => "; break;
@@ -415,7 +415,7 @@ string GroundTheory::to_string() const {
 	//TODO: repeat above for fixpoint definitions
 	for(vector<CPReification*>::const_iterator it = _cpreifications.begin(); it != _cpreifications.end(); ++it) {
 		CPReification* cpr = *it;
-		s << _translator->printatom(cpr->_head);
+		s << _translator->printAtom(cpr->_head);
 		switch(cpr->_body->type()) {
 			case TS_RULE: 	s << " <- "; break;
 			case TS_IMPL: 	s << " => "; break;
@@ -428,7 +428,7 @@ string GroundTheory::to_string() const {
 			CPSumTerm* cpt = dynamic_cast<CPSumTerm*>(left);
 			s << "sum[ ";
 			for(vector<unsigned int>::const_iterator vit = cpt->_varids.begin(); vit != cpt->_varids.end(); ++vit) {
-				s << _termtranslator->printterm(*vit);
+				s << _termtranslator->printTerm(*vit);
 				if(*vit != cpt->_varids.back()) s << "; ";
 			}
 			s << " ]";
@@ -439,7 +439,7 @@ string GroundTheory::to_string() const {
 			vector<int>::const_iterator wit;
 			s << "wsum[ ";
 			for(vit = cpt->_varids.begin(), wit = cpt->_weights.begin(); vit != cpt->_varids.end() && wit != cpt->_weights.end(); ++vit, ++wit) {
-				s << "(" << _termtranslator->printterm(*vit) << "=" << *wit << ")";
+				s << "(" << _termtranslator->printTerm(*vit) << "=" << *wit << ")";
 				if(*vit != cpt->_varids.back()) s << "; ";
 			}
 			s << " ]";
@@ -447,7 +447,7 @@ string GroundTheory::to_string() const {
 		else {
 			assert(typeid(*left) == typeid(CPVarTerm));
 			CPVarTerm* cpt = dynamic_cast<CPVarTerm*>(left);
-			s << _termtranslator->printterm(cpt->_varid);
+			s << _termtranslator->printTerm(cpt->_varid);
 		}
 		switch(cpr->_body->comp()) {
 			case CT_EQ:		s << " = "; break;
@@ -459,7 +459,7 @@ string GroundTheory::to_string() const {
 			default: assert(false);
 		}
 		CPBound right = cpr->_body->right();
-		if(right._isvarid) s << _termtranslator->printterm(right._value._varid);
+		if(right._isvarid) s << _termtranslator->printTerm(right._value._varid);
 		else s << right._value._bound;
 		s << ".\n";
 	}

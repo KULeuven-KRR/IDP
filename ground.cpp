@@ -125,7 +125,7 @@ unsigned int GroundTranslator::addSymbol(PFSymbol* pfs) {
 	return _symboffsets.size()-1;
 }
 
-string GroundTranslator::printatom(int nr) const {
+string GroundTranslator::printAtom(int nr) const {
 	stringstream s;
 	nr = abs(nr);
 	if(nr == _true) return "true";
@@ -196,7 +196,7 @@ unsigned int GroundTermTranslator::addFunction(Function* func) {
 	}
 }
 
-string GroundTermTranslator::printterm(unsigned int nr) const {
+string GroundTermTranslator::printTerm(unsigned int nr) const {
 	stringstream s;
 	if(nr >= _backfunctable.size()) {
 		return "error";
@@ -362,7 +362,7 @@ int AtomGrounder::run() const {
 		if(_cloptions._verbose) {
 			printorig();
 			cerr << "Certain checker succeeded\n";
-			cerr << "Result is " << _translator->printatom(_certainvalue) << endl;
+			cerr << "Result is " << _translator->printAtom(_certainvalue) << endl;
 		}
 #endif
 		return _certainvalue;
@@ -374,7 +374,7 @@ int AtomGrounder::run() const {
 		if(_cloptions._verbose) {
 			printorig();
 			cerr << "Term value out of predicate type\n";
-			cerr << "Result is " << _translator->printatom(atom) << endl;
+			cerr << "Result is " << _translator->printAtom(atom) << endl;
 		}
 #endif
 		return atom;
@@ -386,7 +386,7 @@ void AtomGrounder::run(vector<int>& clause) const {
 #ifndef NDEBUG
 if(_cloptions._verbose) {
 	printorig();
-	cerr << "Result = " << _translator->printatom(clause.back()) << endl;
+	cerr << "Result = " << _translator->printAtom(clause.back()) << endl;
 }
 #endif
 }
@@ -738,7 +738,7 @@ int ClauseGrounder::finish(vector<int>& cl) const {
 #ifndef NDEBUG
 			if(_cloptions._verbose) {
 				printorig();
-				cerr << "Result = " << _translator->printatom(result2()) << endl;
+				cerr << "Result = " << _translator->printAtom(result2()) << endl;
 			}
 #endif
 		return result2();
@@ -747,7 +747,7 @@ int ClauseGrounder::finish(vector<int>& cl) const {
 #ifndef NDEBUG
 			if(_cloptions._verbose) {
 				printorig();
-				cerr << "Result = " << (_sign ? _translator->printatom(cl[0]) : _translator->printatom(-cl[0])) << endl;
+				cerr << "Result = " << (_sign ? _translator->printAtom(cl[0]) : _translator->printAtom(-cl[0])) << endl;
 			}
 #endif
 		return _sign ? cl[0] : -cl[0];
@@ -765,8 +765,8 @@ int ClauseGrounder::finish(vector<int>& cl) const {
 			if(_cloptions._verbose) {
 				printorig();
 				cerr << "Result = " << (_sign ? "" : "~");
-				cerr << _translator->printatom(cl[0]) << ' ';
-				for(unsigned int n = 1; n < cl.size(); ++n) cerr << (!_conj ? "& " : "| ") << _translator->printatom(cl[n]) << ' ';
+				cerr << _translator->printAtom(cl[0]) << ' ';
+				for(unsigned int n = 1; n < cl.size(); ++n) cerr << (!_conj ? "& " : "| ") << _translator->printAtom(cl[n]) << ' ';
 			}
 #endif
 			return _sign ? -ts : ts;
@@ -777,8 +777,8 @@ int ClauseGrounder::finish(vector<int>& cl) const {
 			if(_cloptions._verbose) {
 				printorig();
 				cerr << "Result = " << (_sign ? "" : "~");
-				cerr << _translator->printatom(cl[0]) << ' ';
-				for(unsigned int n = 1; n < cl.size(); ++n) cerr << (_conj ? "& " : "| ") << _translator->printatom(cl[n]) << ' ';
+				cerr << _translator->printAtom(cl[0]) << ' ';
+				for(unsigned int n = 1; n < cl.size(); ++n) cerr << (_conj ? "& " : "| ") << _translator->printAtom(cl[n]) << ' ';
 			}
 #endif
 			return _sign ? ts : -ts;
@@ -816,7 +816,7 @@ int QuantGrounder::run() const {
 #ifndef NDEBUG
 			if(_cloptions._verbose) {
 				printorig();
-				cerr << "Result = " << _translator->printatom(result1()) << endl;
+				cerr << "Result = " << _translator->printAtom(result1()) << endl;
 			}
 #endif
 			return result1();
@@ -828,7 +828,7 @@ int QuantGrounder::run() const {
 #ifndef NDEBUG
 				if(_cloptions._verbose) {
 					printorig();
-					cerr << "Result = " << _translator->printatom(result1()) << endl;
+					cerr << "Result = " << _translator->printAtom(result1()) << endl;
 				}
 #endif
 				return result1();
@@ -848,7 +848,7 @@ void QuantGrounder::run(vector<int>& clause) const {
 #ifndef NDEBUG
 			if(_cloptions._verbose) {
 				printorig();
-				cerr << "Result = " << _translator->printatom(result1()) << endl;
+				cerr << "Result = " << _translator->printAtom(result1()) << endl;
 			}
 #endif
 			return;
@@ -862,7 +862,7 @@ void QuantGrounder::run(vector<int>& clause) const {
 #ifndef NDEBUG
 				if(_cloptions._verbose) {
 					printorig();
-					cerr << "Result = " << _translator->printatom(result1()) << endl;
+					cerr << "Result = " << _translator->printAtom(result1()) << endl;
 				}
 #endif
 				return;
@@ -876,8 +876,8 @@ void QuantGrounder::run(vector<int>& clause) const {
 		cerr << "Result = " << (_sign ? "" : "~");
 		if(clause.empty()) cerr << (_conj ? "true" : "false") << endl;
 		else {
-			cerr << _translator->printatom(clause[0]) << ' ';
-			for(unsigned int n = 1; n < clause.size(); ++n) cerr << (_conj ? "& " : "| ") << _translator->printatom(clause[n]) << ' ';
+			cerr << _translator->printAtom(clause[0]) << ' ';
+			for(unsigned int n = 1; n < clause.size(); ++n) cerr << (_conj ? "& " : "| ") << _translator->printAtom(clause[n]) << ' ';
 		}
 	}
 #endif
@@ -1034,6 +1034,11 @@ if(_cloptions._verbose) {
 #endif
 		return CPPointer(e,ELDOUBLE);
 	}
+}
+
+domelement ThreeValuedAggTermGrounder::run() const {
+	//TODO
+	assert(false);
 }
 
 int EnumSetGrounder::run() const {

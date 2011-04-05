@@ -101,8 +101,6 @@ class CPWSumTerm : public CPTerm {
 		void accept(Visitor*) const;
 };
 
-enum CompType { CT_EQ, CT_NEQ, CT_LEQ, CT_GEQ, CT_LT, CT_GT };
-
 struct CPBound {
 	bool _isvarid;
 	union { 
@@ -112,6 +110,8 @@ struct CPBound {
 	CPBound(bool isvarid, int bound): _isvarid(isvarid) { _value._bound = bound; }
 	CPBound(bool isvarid, unsigned int varid): _isvarid(isvarid) { _value._varid = varid; }
 };
+
+enum CompType { CT_EQ, CT_NEQ, CT_LEQ, CT_GEQ, CT_LT, CT_GT };
 
 class CPTsBody : public TsBody {
 	private:
@@ -128,7 +128,7 @@ class CPTsBody : public TsBody {
 };
 
 /*
- * Ground sets
+ * Set corresponding to a tseitin
  */ 
 class TsSet {
 	private:
@@ -187,7 +187,7 @@ class GroundTranslator {
 		PFSymbol*							getSymbol(unsigned int n)	const	{ return _symboffsets[n];				}
 		const map<vector<domelement>,int>&	getTuples(unsigned int n)	const	{ return _table[n];						}
 
-		string						printatom(int nr)	const;
+		string	printAtom(int nr)	const;
 
 };
 
@@ -214,7 +214,7 @@ class GroundTermTranslator {
 		Function*					function(unsigned int nr)		const { return _backfunctable[nr];		}
 		const vector<domelement>&	args(unsigned int nr)			const { return _backargstable[nr];		}
 		Function*					getFunction(unsigned int nr)	const { return _offset2function[nr]; 		}
-		string						printterm(unsigned int nr)		const;
+		string						printTerm(unsigned int nr)		const;
 };
 
 
@@ -352,7 +352,8 @@ class AggTermGrounder : public TermGrounder {
 		SetGrounder*		_setgrounder;
 		GroundTranslator*	_translator;
 	public:
-		AggTermGrounder(GroundTranslator* gt, AggType tp, SetGrounder* gr) : _type(tp), _setgrounder(gr), _translator(gt) { }
+		AggTermGrounder(GroundTranslator* gt, AggType tp, SetGrounder* gr):
+			_type(tp), _setgrounder(gr), _translator(gt) { }
 		domelement run() const;
 		bool canReturnCPVar() const { return false; }
 };
@@ -374,8 +375,14 @@ class ThreeValuedFuncTermGrounder : public TermGrounder {
 };
 
 class ThreeValuedAggTermGrounder : public TermGrounder {
-	//TODO
+	private:
+		AggType				_type;
+		SetGrounder*		_setgrounder;
+		GroundTranslator*	_translator;
 	public:
+		ThreeValuedAggTermGrounder(GroundTranslator* gt, AggType tp, SetGrounder* gr):
+			_type(tp), _setgrounder(gr), _translator(gt) { } 
+		domelement run() const;
 		bool canReturnCPVar() const { return true; }
 };
 
