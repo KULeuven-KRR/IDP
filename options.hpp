@@ -69,6 +69,7 @@ class InfOptions {
 		int				_satverbosity;
 		bool			_printtypes;
 		bool			_usingcp;
+		bool			_trace;
 		
 		// Constructor (default options)
 		InfOptions(const string& name, const ParseInfo& pi) : 
@@ -79,7 +80,8 @@ class InfOptions {
 			_modelformat(MF_ALL),
 			_satverbosity(0),
 			_printtypes(true),
-			_usingcp(true)
+			_usingcp(true),
+			_trace(false)
 			{ }
 		InfOptions(InfOptions* opts) : _name(""), _pi() { set(opts);	}
 
@@ -91,6 +93,7 @@ class InfOptions {
 			_satverbosity	= opt->_satverbosity;
 			_printtypes		= opt->_printtypes;
 			_usingcp		= opt->_usingcp;
+			_trace			= opt->_trace;
 		}
 		void set(const string& optname,const string& val, ParseInfo* pi = 0);
 		void set(const string& optname,double, ParseInfo* pi = 0);
@@ -106,6 +109,7 @@ class InfOptions {
 			else if(str == "satverbosity") r = true;
 			else if(str == "printtypes") r = true;
 			else if(str == "usingcp") r = true;
+			else if(str == "trace") r = true;
 			return r;
 		}
 		const string& name() const { return _name; }

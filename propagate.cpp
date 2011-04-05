@@ -171,14 +171,14 @@ void FOPropagator::updateDomain(const Formula* f, FOPropDirection dir, bool ct,F
 
 void FOPropagator::visit(const PredForm* pf) {
 	LeafConnectData* lcd = _leafconnectdata[pf];
-	PredForm* connector = lcd._connector;
+	PredForm* connector = lcd->_connector;
 	FOPropDomain* deriveddomain;
 	FOPropDomain* temp;
 	if(_direction == DOWN) {
 		deriveddomain = _ct ? _domains[pf]._ctdomain : _domains[pf]._cfdomain;
-		deriveddomain = _factory->conjunction(deriveddomain,lcd._equalities);
+		deriveddomain = _factory->conjunction(deriveddomain,lcd->_equalities);
 		temp = deriveddomain;
-		deriveddomain = _factory->substitute(deriveddomain,lcd._leaftoconnector);
+		deriveddomain = _factory->substitute(deriveddomain,lcd->_leaftoconnector);
 		delete(temp);
 		vector<Variable*> freevars;
 		map<Variable*,Variable*> mvv;
@@ -196,9 +196,9 @@ void FOPropagator::visit(const PredForm* pf) {
 	else {
 		assert(_direction == UP);
 		deriveddomain = _ct ? _domains[connector]._ctdomain : _domains[connector]._cfdomain;
-		deriveddomain = _factory->conjunction(deriveddomain,lcd._equalities);
+		deriveddomain = _factory->conjunction(deriveddomain,lcd->_equalities);
 		temp = deriveddomain;
-		deriveddomain = _factory->substitute(deriveddomain,lcd._connectortoleaf);
+		deriveddomain = _factory->substitute(deriveddomain,lcd->_connectortoleaf);
 		delete(temp);
 		vector<Variable*> freevars;
 		map<Variable*,Variable*> mvv;
@@ -229,7 +229,7 @@ void FOPropagator::visit(const EquivForm* ef) {
 	Formula* otherchild = _child == ef->left() ? ef->right() : ef->left();
 	if(_direction == DOWN) {
 		const ThreeValuedDomain& tvd = _domains[_child];
-		parentdomain = _ct ? _domains[ef]._ctdomain : _domains[ef]._cfdomain;
+		FOPropDomain* parentdomain = _ct ? _domains[ef]._ctdomain : _domains[ef]._cfdomain;
 		FOPropDomain* domain1 = _factory->conjunction(parentdomain,tvd._ctdomain);
 		FOPropDomain* domain2 = _factory->conjunction(parentdomain,tvd._cfdomain);
 		const vector<Variable*>& qvars = _quantvars[_child];

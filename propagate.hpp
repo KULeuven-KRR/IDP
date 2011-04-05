@@ -135,7 +135,7 @@ struct LeafConnectData {
 	FOPropDomain*					_equalities;
 	std::map<Variable*,Variable*>	_leaftoconnector;
 	std::map<Variable*,Variable*>	_connectortoleaf;
-}
+};
 
 /**
  * DESCRIPTION
@@ -147,7 +147,7 @@ class FOPropagator : public Visitor {
 		FOPropScheduler*									_scheduler;
 		std::map<const Formula*,ThreeValuedDomain>			_domains;
 		std::map<const Formula*,std::vector<Variable*> >	_quantvars;
-		std::map<const PredForm*,LeafConnectData*> >		_leafconnectdata;
+		std::map<const PredForm*,LeafConnectData*>			_leafconnectdata;
 		FOPropDirection										_direction;
 		bool												_ct;
 		Formula*											_child;
