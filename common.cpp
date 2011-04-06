@@ -12,10 +12,9 @@ void notyetimplemented(const string& message) {
 
 #include <string>
 #include <limits>
-#include <iostream>
 #include <sstream>
-#include <vector>
 #include <stdlib.h>
+
 using namespace std;
 
 // Extreme numbers

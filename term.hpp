@@ -32,7 +32,6 @@ class DomainElement;
  * Abstract class to represent terms
  */
 class Term {
-
 	protected:
 
 		std::set<Variable*>		_freevars;		//!< the set of free variables of the term
@@ -77,7 +76,6 @@ std::ostream& operator<<(std::ostream&,const Term&);
  *	\brief Class to represent terms that are variables
  */
 class VarTerm : public Term {
-	
 	private:
 		Variable*	_var;	//!< the variable of the term
 
@@ -109,7 +107,6 @@ class VarTerm : public Term {
  *
  */
 class FuncTerm : public Term {
-	
 	private:
 
 		Function*		_function;		//!< the function
@@ -139,7 +136,6 @@ class FuncTerm : public Term {
  *
  */
 class DomainTerm : public Term {
-
 	private:
 		Sort*					_sort;		//!< the sort of the domain element
 		const DomainElement*	_value;		//!< the actual domain element
@@ -201,7 +197,6 @@ class AggTerm : public Term {
  *
  */
 class SetExpr {
-
 	protected:
 		
 		std::set<Variable*>		_freevars;		//!< The free variables of the set expression
@@ -235,13 +230,12 @@ std::ostream& operator<<(std::ostream&,const SetExpr&);
 class EnumSetExpr : public SetExpr {
 
 	public:
-
 		// Constructors
-		EnumSetExpr(const vector<Formula*>& s, const vector<Term*>& w, const ParseInfo& pi) : 
+		EnumSetExpr(const std::vector<Formula*>& s, const std::vector<Term*>& w, const ParseInfo& pi) : 
 			SetExpr(pi), _subf(s), _weights(w) { setfvars(); }
 
 		EnumSetExpr* clone()								const;
-		EnumSetExpr* clone(const map<Variable*,Variable*>&)	const;
+		EnumSetExpr* clone(const std::map<Variable*,Variable*>&)	const;
 
 		// Destructor
 		void recursiveDelete();
@@ -264,8 +258,7 @@ class EnumSetExpr : public SetExpr {
 		SetExpr*	accept(MutatingVisitor* v);
 
 		// Debugging
-		string	to_string()	const;	
-
+		std::string	to_string()	const;	
 };
 
 /** 
@@ -274,13 +267,12 @@ class EnumSetExpr : public SetExpr {
 class QuantSetExpr : public SetExpr {
 
 	public:
-
 		// Constructors
-		QuantSetExpr(const vector<Variable*>& v, Formula* s, const ParseInfo& pi) : 
+		QuantSetExpr(const std::vector<Variable*>& v, Formula* s, const ParseInfo& pi) : 
 			SetExpr(pi), _subf(s), _vars(v) { setfvars(); }
 
 		QuantSetExpr* clone()									const;
-		QuantSetExpr* clone(const map<Variable*,Variable*>&)	const;
+		QuantSetExpr* clone(const std::map<Variable*,Variable*>&)	const;
 
 		// Destructor
 		void recursiveDelete();
@@ -297,27 +289,23 @@ class QuantSetExpr : public SetExpr {
 		Variable*		qvar(unsigned int n)	const	{ return _vars[n];			}
 		Formula*		subf()					const	{ return _subf;				}
 		Sort*			firstargsort()			const;
-		const vector<Variable*>&	qvars()		const	{ return _vars;				}
+		const std::vector<Variable*>&	qvars()	const	{ return _vars;				}
 
 		// Visitor
 		void		accept(Visitor* v) const;
 		SetExpr*	accept(MutatingVisitor* v);
 
 		// Debugging
-		string	to_string()	const;	
-
+		std::string	to_string()	const;	
 };
 
-class AbstractStructure;
 namespace SetUtils {
 	bool isTwoValued(SetExpr*,AbstractStructure*);
 }
 
 /** Aggregate types **/
-enum AggType { AGGCARD, AGGSUM, AGGPROD, AGGMIN, AGGMAX };
-
 namespace AggUtils {
-	double compute(AggType,const vector<double>&);	// apply the aggregate on the given set of doubles 
+	double compute(AggType,const std::vector<double>&);	// apply the aggregate on the given set of doubles 
 }
 
 /***********************
@@ -325,15 +313,14 @@ namespace AggUtils {
 ***********************/
 
 class TermEvaluator : public Visitor {
-
 	private:
-		FiniteSortTable*			_returnvalue;
-		AbstractStructure*			_structure;
-		map<Variable*,TypedElement>	_varmapping;
+		FiniteSortTable*					_returnvalue;
+		AbstractStructure*					_structure;
+		std::map<Variable*,TypedElement>	_varmapping;
 
 	public:
-		TermEvaluator(AbstractStructure* s,const map<Variable*,TypedElement> m);
-		TermEvaluator(Term* t,AbstractStructure* s,const map<Variable*,TypedElement> m);
+		TermEvaluator(AbstractStructure* s,const std::map<Variable*,TypedElement> m);
+		TermEvaluator(Term* t,AbstractStructure* s,const std::map<Variable*,TypedElement> m);
 
 		FiniteSortTable* returnvalue()	{ return _returnvalue;	}
 
@@ -341,7 +328,6 @@ class TermEvaluator : public Visitor {
 		void visit(const FuncTerm* ft);
 		void visit(const DomainTerm* dt);
 		void visit(const AggTerm* at);
-		
 };
 
 namespace TermUtils {
@@ -357,15 +343,13 @@ namespace TermUtils {
 	 *	- all bounded variables in the term range over a finite domain in the given structure
 	 *	- all free variables of the term are interpreted by the given map
 	 */
-	FiniteSortTable*	evaluate(Term*,AbstractStructure*,const map<Variable*,TypedElement>&);	
+	FiniteSortTable*	evaluate(Term*,AbstractStructure*,const std::map<Variable*,TypedElement>&);	
 
 	/**
 	 * DESCRIPTION
 	 * 	Make a vector of fresh variable terms.
 	 */ 
-	vector<Term*> 		makeNewVarTerms(const vector<Variable*>&);
+	std::vector<Term*> 		makeNewVarTerms(const std::vector<Variable*>&);
 }
-
-
 
 #endif 

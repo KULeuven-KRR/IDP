@@ -4,10 +4,17 @@
 	(c) K.U.Leuven
 ************************************/
 
-#include "namespace.hpp"
-#include "theory.hpp"
-#include "ecnf.hpp"
+#include "visitor.hpp"
+
 #include <iostream>
+
+#include "namespace.hpp"
+#include "vocabulary.hpp"
+#include "theory.hpp"
+#include "structure.hpp"
+#include "ecnf.hpp"
+
+using namespace std;
 
 /**************
 	Visitor

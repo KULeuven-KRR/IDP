@@ -7,8 +7,13 @@
 #ifndef THEORY_HPP
 #define THEORY_HPP
 
-#include "structure.hpp"
-#include "term.hpp"
+#include <string>
+#include <vector>
+#include <map>
+
+#include "term.hpp" //FIXME: include needed for Term* AggForm::subterm(int). Why?
+
+class PFSymbol;
 
 class GroundTranslator;
 class GroundTheory;
@@ -18,7 +23,6 @@ class GroundTheory;
 *****************************************************************************/
 
 class TheoryComponent {
-
 	public:
 		// Constructor
 		TheoryComponent() { }
@@ -28,8 +32,7 @@ class TheoryComponent {
 		virtual TheoryComponent*	accept(MutatingVisitor*) 	= 0;
 
 		// Debugging
-		virtual string to_string(unsigned int spaces = 0) const = 0;
-
+		virtual std::string to_string(unsigned int spaces = 0) const = 0;
 };
 
 /***************
@@ -39,11 +42,10 @@ class TheoryComponent {
 /** Abstract base class **/
 
 class Formula : public TheoryComponent {
-
 	protected:
-		bool				_sign;	// true iff the formula does not start with a negation
-		vector<Variable*>	_fvars;	// free variables of the formula
-		FormParseInfo		_pi;	// the place where the formula was parsed (0 for non user-defined formulas)
+		bool					_sign;	// true iff the formula does not start with a negation
+		std::vector<Variable*>	_fvars;	// free variables of the formula
+		FormParseInfo			_pi;	// the place where the formula was parsed (0 for non user-defined formulas)
 
 	public:
 		// Constructor
@@ -51,9 +53,9 @@ class Formula : public TheoryComponent {
 		Formula(bool sign, const FormParseInfo& pi):   _sign(sign), _pi(pi)  { }
 
 		// Virtual constructors
-		virtual	Formula*	clone()									const = 0;	// copy the formula while keeping the free variables
-		virtual	Formula*	clone(const map<Variable*,Variable*>&)	const = 0;	// copy the formulas, and replace the free variables
-																				// as inidicated by the map
+		virtual	Formula*	clone()										const = 0;	// copy the formula while keeping the free variables
+		virtual	Formula*	clone(const std::map<Variable*,Variable*>&)	const = 0;	// copy the formulas, and replace the free variables
+																					// as inidicated by the map
 
 		// Destructor
 		virtual void recursiveDelete() = 0;	// delete the formula and all its children (subformulas, subterms, etc)
@@ -84,25 +86,23 @@ class Formula : public TheoryComponent {
 		virtual Formula*	accept(MutatingVisitor* v)	= 0;
 
 		// Debugging
-		virtual string to_string(unsigned int spaces = 0)	const = 0;
-	
+		virtual std::string to_string(unsigned int spaces = 0)	const = 0;
 };
 
 /** Atoms **/
 
 class PredForm : public Formula {
-	
 	private:
-		PFSymbol*		_symb;		// the predicate or function
-		vector<Term*>	_args;		// the arguments
+		PFSymbol*			_symb;		// the predicate or function
+		std::vector<Term*>	_args;		// the arguments
 
 	public:
 		// Constructors
-		PredForm(bool sign, PFSymbol* p, const vector<Term*>& a, const FormParseInfo& pi) : 
+		PredForm(bool sign, PFSymbol* p, const std::vector<Term*>& a, const FormParseInfo& pi) : 
 			Formula(sign,pi), _symb(p), _args(a) { setfvars(); }
 
 		PredForm*	clone()									const;
-		PredForm*	clone(const map<Variable*,Variable*>&)	const;
+		PredForm*	clone(const std::map<Variable*,Variable*>&)	const;
 
 	    // Destructor
 		void recursiveDelete();
@@ -112,44 +112,41 @@ class PredForm : public Formula {
 		void	arg(unsigned int n, Term* t)	{ _args[n] = t;	}
 
 		// Inspectors
-		PFSymbol*				symb()					const { return _symb;				}
-		unsigned int			nrQvars()				const { return 0;					}
-		unsigned int			nrSubforms()			const { return 0;					}
-		unsigned int			nrSubterms()			const { return _args.size();		}
-		Variable*				qvar(unsigned int)		const { assert(false); return 0;	}
-		Formula*				subform(unsigned int)	const { assert(false); return 0;	}
-		Term*					subterm(unsigned int n)	const { return _args[n];			}
-		const vector<Term*>&	args()					const { return _args;				}
+		PFSymbol*					symb()					const { return _symb;				}
+		unsigned int				nrQvars()				const { return 0;					}
+		unsigned int				nrSubforms()			const { return 0;					}
+		unsigned int				nrSubterms()			const { return _args.size();		}
+		Variable*					qvar(unsigned int)		const { assert(false); return 0;	}
+		Formula*					subform(unsigned int)	const { assert(false); return 0;	}
+		Term*						subterm(unsigned int n)	const { return _args[n];			}
+		const std::vector<Term*>&	args()					const { return _args;				}
 		
 		// Visitor
 		void		accept(Visitor* v) const;
 		Formula*	accept(MutatingVisitor* v);
 
 		// Debugging
-		string to_string(unsigned int spaces = 0) const;
-
+		std::string to_string(unsigned int spaces = 0) const;
 };
-
 
 /** Chains of equalities and inequalities **/
 
 class EqChainForm : public Formula {
-
 	private:
-		bool			_conj;		// Indicates whether the chain is a conjunction or disjunction of (in)equalties
-		vector<Term*>	_terms;		// The consecutive terms in the chain
-		vector<char>	_comps;		// The consecutive comparisons ('=', '>' or '<') in the chain
-		vector<bool>	_signs;		// The signs of the consecutive comparisons
+		bool				_conj;		// Indicates whether the chain is a conjunction or disjunction of (in)equalties
+		std::vector<Term*>	_terms;		// The consecutive terms in the chain
+		std::vector<char>	_comps;		// The consecutive comparisons ('=', '>' or '<') in the chain
+		std::vector<bool>	_signs;		// The signs of the consecutive comparisons
 
 	public:
 		// Constructors
 		EqChainForm(bool sign, bool c, Term* t, const FormParseInfo& pi) : 
 			Formula(sign,pi), _conj(c), _terms(1,t), _comps(0), _signs(0) { setfvars(); }
-		EqChainForm(bool sign, bool c, const vector<Term*>& vt, const vector<char>& vc, const vector<bool>& vs, const FormParseInfo& pi) :
+		EqChainForm(bool sign, bool c, const std::vector<Term*>& vt, const std::vector<char>& vc, const std::vector<bool>& vs, const FormParseInfo& pi) :
 			Formula(sign,pi), _conj(c), _terms(vt), _comps(vc), _signs(vs) { setfvars();	}
 
 		EqChainForm*	clone()									const;
-		EqChainForm*	clone(const map<Variable*,Variable*>&)	const;
+		EqChainForm*	clone(const std::map<Variable*,Variable*>&)	const;
 
 	    // Destructor
 		void recursiveDelete();
@@ -172,22 +169,20 @@ class EqChainForm : public Formula {
 		Formula*		subform(unsigned int)		const	{ assert(false); return 0;	}
 		Term*			subterm(unsigned int n)		const	{ return _terms[n];			}
 
-		const vector<char>&	comps()		const	{ return _comps;	}
-		const vector<bool>& compsigns()	const	{ return _signs;	}
+		const std::vector<char>&	comps()		const	{ return _comps;	}
+		const std::vector<bool>& compsigns()	const	{ return _signs;	}
 
 		// Visitor
 		void		accept(Visitor* v) const;
 		Formula*	accept(MutatingVisitor* v);
 
 		// Debugging
-		string to_string(unsigned int spaces = 0) const;
-
+		std::string to_string(unsigned int spaces = 0) const;
 };
 
 /** Equivalences **/
 
 class EquivForm : public Formula {
-	
 	protected:
 		Formula*	_left;		// left-hand side formula
 		Formula*	_right;		// right-hand side formula
@@ -197,8 +192,8 @@ class EquivForm : public Formula {
 		EquivForm(bool sign, Formula* lf, Formula* rt, const FormParseInfo& pi) : 
 			Formula(sign,pi), _left(lf), _right(rt) { setfvars(); }
 
-		EquivForm*	clone()									const;
-		EquivForm*	clone(const map<Variable*,Variable*>&)	const;
+		EquivForm*	clone()										const;
+		EquivForm*	clone(const std::map<Variable*,Variable*>&)	const;
 
 	    // Destructor
 		void recursiveDelete();
@@ -222,35 +217,32 @@ class EquivForm : public Formula {
 		Formula*	accept(MutatingVisitor* v);
 
 		// Debuging
-		string to_string(unsigned int spaces = 0) const;
-
+		std::string to_string(unsigned int spaces = 0) const;
 };
-
 
 /** Conjunctions and disjunctions **/
 
 class BoolForm : public Formula {
-	
 	private:
-		vector<Formula*>	_subf;	// the direct subformulas
-		bool				_conj;	// true (false) if the formula is the conjunction (disjunction) of the 
-									// formulas in _subf
+		std::vector<Formula*>	_subf;	// the direct subformulas
+		bool					_conj;	// true (false) if the formula is the conjunction (disjunction) of the 
+										// formulas in _subf
 									
 	public:
 		// Constructors
-		BoolForm(bool sign, bool c, const vector<Formula*>& sb, const FormParseInfo& pi) :
+		BoolForm(bool sign, bool c, const std::vector<Formula*>& sb, const FormParseInfo& pi) :
 			Formula(sign,pi), _subf(sb), _conj(c) { setfvars(); }
 
-		BoolForm*	clone()									const;
-		BoolForm*	clone(const map<Variable*,Variable*>&)	const;
+		BoolForm*	clone()										const;
+		BoolForm*	clone(const std::map<Variable*,Variable*>&)	const;
 
 	    // Destructor
 		void recursiveDelete();
 
 		// Mutators
-		void	conj(bool b)						{ _conj = b;	}
-		void	subf(unsigned int n, Formula* f)	{ _subf[n] = f;	}
-		void	subf(const vector<Formula*>& s)		{ _subf = s;	}
+		void	conj(bool b)							{ _conj = b;	}
+		void	subf(unsigned int n, Formula* f)		{ _subf[n] = f;	}
+		void	subf(const std::vector<Formula*>& s)	{ _subf = s;	}
 
 		// Inspectors
 		bool			conj()					const	{ return _conj;				}
@@ -269,27 +261,24 @@ class BoolForm : public Formula {
 		Formula*	accept(MutatingVisitor* v);
 
 		// Debugging
-		string to_string(unsigned int spaces = 0)	const;
-
+		std::string to_string(unsigned int spaces = 0)	const;
 };
-
 
 /** Universally and existentially quantified formulas **/
 
 class QuantForm : public Formula {
-
 	private:
-		vector<Variable*>	_vars;	// the quantified variables
-		Formula*			_subf;	// the direct subformula
-		bool				_univ;	// true (false) if the quantifier is universal (existential)
+		std::vector<Variable*>	_vars;	// the quantified variables
+		Formula*				_subf;	// the direct subformula
+		bool					_univ;	// true (false) if the quantifier is universal (existential)
 
 	public:
 		// Constructors
-		QuantForm(bool sign, bool u, const vector<Variable*>& v, Formula* sf, const FormParseInfo& pi) : 
+		QuantForm(bool sign, bool u, const std::vector<Variable*>& v, Formula* sf, const FormParseInfo& pi) : 
 			Formula(sign,pi), _vars(v), _subf(sf), _univ(u) { setfvars(); }
 
-		QuantForm*	clone()									const;
-		QuantForm*	clone(const map<Variable*,Variable*>&)	const;
+		QuantForm*	clone()										const;
+		QuantForm*	clone(const std::map<Variable*,Variable*>&)	const;
 
 		// Destructor
 		void recursiveDelete();
@@ -309,22 +298,19 @@ class QuantForm : public Formula {
 		Variable*		qvar(unsigned int n)	const { return _vars[n];			}
 		Formula*		subform(unsigned int)	const { return	_subf;				}
 		Term*			subterm(unsigned int)	const { assert(false); return 0;	}
-		const vector<Variable*>&	qvars()		const { return _vars;				}
+		const std::vector<Variable*>&	qvars()	const { return _vars;				}
 
 		// Visitor
 		void		accept(Visitor* v) const;
 		Formula*	accept(MutatingVisitor* v);
 
 		// Debugging
-		string to_string(unsigned int spaces = 0)	const;
-
+		std::string to_string(unsigned int spaces = 0)	const;
 };
-
 
 /** Aggregate atoms **/
 
 class AggForm : public Formula {
-
 	private:
 		char		_comp;	// '=', '<', or '>'
 		Term*		_left;
@@ -335,8 +321,8 @@ class AggForm : public Formula {
 		AggForm(bool sign, char c, Term* l, AggTerm* r, const FormParseInfo& pi) : 
 			Formula(sign,pi), _comp(c), _left(l), _right(r) { setfvars(); }
 
-		AggForm*	clone()									const;
-		AggForm*	clone(const map<Variable*,Variable*>&)	const;
+		AggForm*	clone()										const;
+		AggForm*	clone(const std::map<Variable*,Variable*>&)	const;
 
 		// Destructor
 		void recursiveDelete();
@@ -360,8 +346,7 @@ class AggForm : public Formula {
 		Formula*	accept(MutatingVisitor* v);
 
 		// Debugging
-		string to_string(unsigned int spaces = 0)	const;
-
+		std::string to_string(unsigned int spaces = 0)	const;
 };
 
 /*******************************************
@@ -370,9 +355,7 @@ class AggForm : public Formula {
 		in parseinfo objects
 *******************************************/
 
-
 class BracketForm : public Formula {
-
 	private:
 		Formula*		_subf;		// the subformula
 
@@ -381,8 +364,8 @@ class BracketForm : public Formula {
 		BracketForm(bool sign, Formula* subf) : 
 			Formula(sign), _subf(subf) { setfvars(); }
 
-		BracketForm*	clone()									const;
-		BracketForm*	clone(const map<Variable*,Variable*>&)	const;
+		BracketForm*	clone()										const;
+		BracketForm*	clone(const std::map<Variable*,Variable*>&)	const;
 
 	    // Destructor
 		void recursiveDelete();
@@ -404,8 +387,7 @@ class BracketForm : public Formula {
 		Formula*	accept(MutatingVisitor* v);
 
 		// Debugging
-		string to_string(unsigned int spaces = 0) const;
-
+		std::string to_string(unsigned int spaces = 0) const;
 };
 /*
 class ImplicationFormula : public Formula {
@@ -425,7 +407,6 @@ class NegatedFormula : public Formula {
 enum TruthValue { TV_TRUE, TV_FALSE, TV_UNKN };
 
 namespace FormulaUtils {
-	
 	/*
 	 * Evaluate a formula in a structure under the given variable mapping
 	 *	Preconditions: 
@@ -433,7 +414,7 @@ namespace FormulaUtils {
 	 *		- the sort of every quantified variable in the formula should have a finite domain in the given structure
 	 *		- every free variable in the formula is interpreted by the given map
 	 */
-	TruthValue evaluate(Formula*,AbstractStructure*,const map<Variable*,TypedElement>&);	
+	TruthValue evaluate(Formula*,AbstractStructure*,const std::map<Variable*,TypedElement>&);	
 	
 	Formula* remove_eqchains(Formula*,Vocabulary* v = 0);	// Rewrite chains of equalities to a 
 															// conjunction or disjunction of atoms.
@@ -453,16 +434,15 @@ namespace FormulaUtils {
 ******************/
 
 class Rule {
-
 	private:
-		PredForm*			_head;
-		Formula*			_body;
-		vector<Variable*>	_vars;	// The universally quantified variables
-		ParseInfo			_pi;
+		PredForm*				_head;
+		Formula*				_body;
+		std::vector<Variable*>	_vars;	// The universally quantified variables
+		ParseInfo				_pi;
 
 	public:
 		// Constructors
-		Rule(const vector<Variable*>& vv, PredForm* h, Formula* b, const ParseInfo& pi) : 
+		Rule(const std::vector<Variable*>& vv, PredForm* h, Formula* b, const ParseInfo& pi) : 
 			_head(h), _body(b), _vars(vv), _pi(pi) { }
 
 		Rule*	clone()	const;
@@ -475,24 +455,22 @@ class Rule {
 		void	body(Formula* f)	{ _body = f;	}
 
 		// Inspectors
-		PredForm*			head()					const { return _head;			}
-		Formula*			body()					const { return _body;			}
-		const ParseInfo&	pi()					const { return _pi;				}
-		unsigned int		nrQvars()				const { return _vars.size();	}
-		Variable*			qvar(unsigned int n)	const { return _vars[n];		}
-		const vector<Variable*>&	qvars()			const { return _vars;			}
+		PredForm*						head()					const { return _head;			}
+		Formula*						body()					const { return _body;			}
+		const ParseInfo&				pi()					const { return _pi;				}
+		unsigned int					nrQvars()				const { return _vars.size();	}
+		Variable*						qvar(unsigned int n)	const { return _vars[n];		}
+		const std::vector<Variable*>&	qvars()					const { return _vars;			}
 
 		// Visitor
 		void	accept(Visitor* v) const;
 		Rule*	accept(MutatingVisitor* v);
 
 		// Debug
-		string to_string() const;
-
+		std::string to_string() const;
 };
 
 class AbstractDefinition : public TheoryComponent {
-
 	public:
 		virtual AbstractDefinition* clone() const = 0;
 
@@ -502,14 +480,12 @@ class AbstractDefinition : public TheoryComponent {
 		// Visitor
 		virtual void				accept(Visitor* v) const	= 0;
 		virtual AbstractDefinition*	accept(MutatingVisitor* v)	= 0;
-
 };
 
 class Definition : public AbstractDefinition {
-
 	private:
-		vector<Rule*>		_rules;		// The rules in the definition
-		vector<PFSymbol*>	_defsyms;	// Symbols defined by the definition
+		std::vector<Rule*>		_rules;		// The rules in the definition
+		std::vector<PFSymbol*>	_defsyms;	// Symbols defined by the definition
 
 	public:
 		// Constructors
@@ -538,17 +514,15 @@ class Definition : public AbstractDefinition {
 		Definition*	accept(MutatingVisitor* v);
 
 		// Debug
-		string to_string(unsigned int spaces = 0) const;
-
+		std::string to_string(unsigned int spaces = 0) const;
 };
 
 class FixpDef : public AbstractDefinition {
-	
 	private:
-		bool				_lfp;		// True iff it is a least fixpoint definition
-		vector<FixpDef*>	_defs;		// The direct subdefinitions  of the definition
-		vector<Rule*>		_rules;		// The rules of the definition
-		vector<PFSymbol*>	_defsyms;	// The predicates in heads of rules in _rules
+		bool					_lfp;		// True iff it is a least fixpoint definition
+		std::vector<FixpDef*>	_defs;		// The direct subdefinitions  of the definition
+		std::vector<Rule*>		_rules;		// The rules of the definition
+		std::vector<PFSymbol*>	_defsyms;	// The predicates in heads of rules in _rules
 
 	public:
 		// Constructors
@@ -580,8 +554,7 @@ class FixpDef : public AbstractDefinition {
 		FixpDef*	accept(MutatingVisitor* v);
 
 		// Debug
-		string to_string(unsigned int spaces = 0) const;
-
+		std::string to_string(unsigned int spaces = 0) const;
 };
 
 
@@ -590,16 +563,15 @@ class FixpDef : public AbstractDefinition {
 ***************/
 
 class AbstractTheory {
-
 	protected:
-		string				_name;
-		Vocabulary*			_vocabulary;
-		ParseInfo			_pi;
+		std::string		_name;
+		Vocabulary*		_vocabulary;
+		ParseInfo		_pi;
 
 	public:
 		// Constructors 
-		AbstractTheory(const string& name, const ParseInfo& pi) : _name(name), _vocabulary(0), _pi(pi) { }
-		AbstractTheory(const string& name, Vocabulary* voc, const ParseInfo& pi) : _name(name), _vocabulary(voc), _pi(pi) { }
+		AbstractTheory(const std::string& name, const ParseInfo& pi) : _name(name), _vocabulary(0), _pi(pi) { }
+		AbstractTheory(const std::string& name, Vocabulary* voc, const ParseInfo& pi) : _name(name), _vocabulary(voc), _pi(pi) { }
 
 		virtual AbstractTheory* clone() const = 0;
 
@@ -609,13 +581,13 @@ class AbstractTheory {
 
 		// Mutators
 				void	vocabulary(Vocabulary* v)	{ _vocabulary = v;	}
-				void	name(const string& n)		{ _name = n;		}
+				void	name(const std::string& n)	{ _name = n;		}
 		virtual	void	add(Formula* f)				= 0;	// Add a formula to the theory
 		virtual void	add(Definition* d)			= 0;	// Add a definition to the theory
 		virtual void	add(FixpDef* fd)			= 0;	// Add a fixpoint definition to the theory
 
 		// Inspectors
-				const string&		name()						const { return _name;				}
+				const std::string&	name()						const { return _name;				}
 				Vocabulary*			vocabulary()				const { return _vocabulary;			}
 				const ParseInfo&	pi()						const { return _pi;					}
 		virtual	unsigned int		nrSentences()				const = 0;	// the number of sentences in the theory
@@ -632,21 +604,19 @@ class AbstractTheory {
 		virtual AbstractTheory*	accept(MutatingVisitor*)	= 0;
 
 		// Debugging
-		virtual string to_string() const = 0;
-
+		virtual std::string to_string() const = 0;
 };
 
 class Theory : public AbstractTheory {
-	
 	private:
-		vector<Formula*>	_sentences;
-		vector<Definition*>	_definitions;
-		vector<FixpDef*>	_fixpdefs;
+		std::vector<Formula*>		_sentences;
+		std::vector<Definition*>	_definitions;
+		std::vector<FixpDef*>		_fixpdefs;
 
 	public:
 		// Constructors 
-		Theory(const string& name, const ParseInfo& pi) : AbstractTheory(name,pi) { }
-		Theory(const string& name, Vocabulary* voc, const ParseInfo& pi) : AbstractTheory(name,voc,pi) { }
+		Theory(const std::string& name, const ParseInfo& pi) : AbstractTheory(name,pi) { }
+		Theory(const std::string& name, Vocabulary* voc, const ParseInfo& pi) : AbstractTheory(name,voc,pi) { }
 
 		Theory*	clone()	const;
 
@@ -679,12 +649,10 @@ class Theory : public AbstractTheory {
 		Theory*	accept(MutatingVisitor*);
 
 		// Debugging
-		string to_string() const;
-
+		std::string to_string() const;
 };
 
 namespace TheoryUtils {
-
 	/** Rewriting theories **/
 	void push_negations(AbstractTheory*);	// Push negations inside
 	void remove_equiv(AbstractTheory*);		// Rewrite A <=> B to (A => B) & (B => A)
@@ -721,7 +689,6 @@ namespace TheoryUtils {
 	//				(~atom | aggatom)		NOTE: (aggatom | ~atom) is not allowed
 	//				atom <- aggatom
 	GroundTheory* convert_to_ecnf(AbstractTheory*);
-	
 }
 
 #endif

@@ -269,6 +269,22 @@ void SetExpr::setfvars() {
 	VarUtils::sortunique(_fvars);
 }
 
+/**********************
+	Accessing sorts
+**********************/
+
+void VarTerm::sort(Sort* s) {
+	_var->sort(s);
+}
+
+Sort* VarTerm::sort() const {
+	return _var->sort();
+}
+
+Sort* FuncTerm::sort() const {
+	return _func->outsort();
+}
+
 /************************
 	Sort of aggregates
 ************************/
@@ -291,6 +307,10 @@ Sort* QuantSetExpr::firstargsort() const {
 /****************
 	Debugging
 ****************/
+
+string VarTerm::to_string() const {
+	return _var->to_string();
+}
 
 string FuncTerm::to_string() const {
 	string s = _func->to_string();

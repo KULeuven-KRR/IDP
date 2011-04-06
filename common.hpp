@@ -4,8 +4,8 @@
 	(c) K.U.Leuven
 ************************************/
 
-#ifndef IDP_COMMON_H
-#define IDP_COMMON_H
+#ifndef COMMON_HPP
+#define COMMON_HPP
 
 #include <string>
 #include <ostream>
@@ -27,20 +27,23 @@ extern void	printtabs(std::ostream&,unsigned int tabs);	//!< write a given numbe
 
 #include <vector>
 using namespace std;
+#include <string>
+
+#include "commontypes.hpp"
+
 struct compound;
 struct TypedElement;
 union Element;
 class Function;
-enum ElementType { ELINT, ELDOUBLE, ELSTRING, ELCOMPOUND };
 
 /** Memory management **/
 // The functions below implement shared pointers to strings and compound elements. All user defined strings should be created by a call to one of these functions. Similarly for all compound elements.
-extern string*		IDPointer(char* s);			// return a 'shared' pointer to s;
-extern string*		IDPointer(const string& s);	// return a 'shared' pointer to s;
-extern compound*	CPPointer(TypedElement e);	// return a 'shared' pointer to compound 0(e);
-extern compound*	CPPointer(Element e, ElementType t);	// return a 'shared' pointer to compound 0(e);
-extern compound*	CPPointer(Function* f,const vector<TypedElement>& v);	// return a 'shared' pointer to compound f(v);
-extern compound*	CPPointer(Function* f,const vector<compound*>& v);	// return a 'shared' pointer to compound f(v);
+extern std::string*	IDPointer(char* s);											// return a 'shared' pointer to s;
+extern std::string*	IDPointer(const std::string& s);							// return a 'shared' pointer to s;
+extern compound*	CPPointer(TypedElement e);									// return a 'shared' pointer to compound 0(e);
+extern compound*	CPPointer(Element e, ElementType t);						// return a 'shared' pointer to compound 0(e);
+extern compound*	CPPointer(Function* f, const std::vector<TypedElement>& v);	// return a 'shared' pointer to compound f(v);
+extern compound*	CPPointer(Function* f,const std::vector<compound*>& v);			// return a 'shared' pointer to compound f(v);
 
 /** Extreme numbers **/
 extern int MAX_INT;			// maximum integer value
@@ -60,17 +63,23 @@ extern int nrOfChars();
 //		etc.
 //		if all elements are set to 0, return false.
 //	NOTE: this is useful, e.g., when iterating over all values of a tuple of variables.
-extern bool nexttuple(vector<unsigned int>& tuple, const vector<unsigned int>& limits);
+extern bool nexttuple(std::vector<unsigned int>& tuple, const std::vector<unsigned int>& limits);
+
+/** Conversions **/
+extern std::string	itos(int);					// int to string
+extern std::string	dtos(double);				// double to string
+extern int			stoi(const std::string&);	// string to int
+extern double		stod(const std::string&);	// string to double
 
 /** Type checking **/
-extern bool isInt(const string&);
+extern bool isInt(const std::string&);
 extern bool isInt(double);
 extern bool isChar(int);
 extern bool isChar(double);
-extern bool isDouble(const string&);
+extern bool isDouble(const std::string&);
 
 /** Return a string of n spaces **/
-extern string tabstring(unsigned int n);
+extern std::string tabstring(unsigned int n);
 
 #endif
 #endif

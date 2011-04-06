@@ -4,10 +4,18 @@
 	(c) K.U.Leuven
 ************************************/
 
-#include "theory.hpp"
-
 #ifndef FOBDD_HPP
 #define FOBDD_HPP
+
+#include <vector>
+#include <map>
+#include <string>
+
+#include "element.hpp"
+#include "visitor.hpp"
+
+class PFSymbol;
+class Variable;
 
 /*******************
 	Kernel order
@@ -24,7 +32,6 @@ struct KernelOrder {
 	BDD manager
 ******************/
 
-
 class FOBDDArgument;
 class FOBDDVariable;
 class FOBDDFuncTerm;
@@ -36,35 +43,34 @@ class FOBDDAtomKernel;
 class FOBDDQuantKernel;
 class FOBDD;
 
-typedef map<FOBDD*,FOBDD*>				MBDDBDD;				
-typedef map<FOBDD*,MBDDBDD>				MBDDMBDDBDD;	
-typedef map<FOBDDKernel*,MBDDMBDDBDD>	BDDTable;
+typedef std::map<FOBDD*,FOBDD*>				MBDDBDD;				
+typedef std::map<FOBDD*,MBDDBDD>			MBDDMBDDBDD;	
+typedef std::map<FOBDDKernel*,MBDDMBDDBDD>	BDDTable;
 
-typedef map<vector<FOBDDArgument*>,FOBDDAtomKernel*>	MVAGAK;
-typedef map<PFSymbol*,MVAGAK>							AtomKernelTable;
-typedef map<FOBDD*,FOBDDQuantKernel*>					MBDDQK;
-typedef map<Sort*,MBDDQK>								QuantKernelTable;
+typedef std::map<std::vector<FOBDDArgument*>,FOBDDAtomKernel*>	MVAGAK;
+typedef std::map<PFSymbol*,MVAGAK>								AtomKernelTable;
+typedef std::map<FOBDD*,FOBDDQuantKernel*>						MBDDQK;
+typedef std::map<Sort*,MBDDQK>									QuantKernelTable;
 
-typedef map<Variable*,FOBDDVariable*>					VariableTable;
-typedef map<unsigned int,FOBDDDeBruijnIndex*>			MUIDB;
-typedef map<Sort*,MUIDB>								DeBruijnIndexTable;
-typedef map<TypedElement,FOBDDDomainTerm*>				MTEDT;
-typedef map<Sort*,MTEDT>								DomainTermTable;
-typedef map<vector<FOBDDArgument*>,FOBDDFuncTerm*>		MVAFT;
-typedef map<Function*,MVAFT>							FuncTermTable;
+typedef std::map<Variable*,FOBDDVariable*>						VariableTable;
+typedef std::map<unsigned int,FOBDDDeBruijnIndex*>				MUIDB;
+typedef std::map<Sort*,MUIDB>									DeBruijnIndexTable;
+typedef std::map<TypedElement,FOBDDDomainTerm*>					MTEDT;
+typedef std::map<Sort*,MTEDT>									DomainTermTable;
+typedef std::map<std::vector<FOBDDArgument*>,FOBDDFuncTerm*>	MVAFT;
+typedef std::map<Function*,MVAFT>								FuncTermTable;
 
 class FOBDDManager {
-
 	private:
 		// Leaf nodes
 		FOBDD*	_truebdd;
 		FOBDD*	_falsebdd;
 
 		// Order
-		map<unsigned int,unsigned int>	_nextorder;
+		std::map<unsigned int,unsigned int>	_nextorder;
 
 		KernelOrder newOrder(unsigned int category);
-		KernelOrder	newOrder(const vector<FOBDDArgument*>& args);
+		KernelOrder	newOrder(const std::vector<FOBDDArgument*>& args);
 		KernelOrder newOrder(FOBDD* bdd);
 
 		// Global tables
@@ -77,11 +83,11 @@ class FOBDDManager {
 		DomainTermTable		_domaintermtable;
 
 		FOBDD*				addBDD(FOBDDKernel* kernel,FOBDD* falsebranch,FOBDD* truebranch);
-		FOBDDAtomKernel*	addAtomKernel(PFSymbol* symbol,const vector<FOBDDArgument*>& args);
+		FOBDDAtomKernel*	addAtomKernel(PFSymbol* symbol,const std::vector<FOBDDArgument*>& args);
 		FOBDDQuantKernel*	addQuantKernel(Sort* sort, FOBDD* bdd);
 		FOBDDVariable*		addVariable(Variable* var);
 		FOBDDDeBruijnIndex* addDeBruijnIndex(Sort* sort, unsigned int index);
-		FOBDDFuncTerm* 		addFuncTerm(Function* func, const vector<FOBDDArgument*>& args);
+		FOBDDFuncTerm* 		addFuncTerm(Function* func, const std::vector<FOBDDArgument*>& args);
 		FOBDDDomainTerm*	addDomainTerm(Sort* sort, TypedElement value);
 
 		FOBDD*				quantify(Sort* sort, FOBDD* bdd);
@@ -90,43 +96,40 @@ class FOBDDManager {
 		FOBDDArgument*		bump(FOBDDVariable* var, FOBDDArgument* arg, unsigned int depth);
 
 	public:
-
 		FOBDDManager();
 
 		FOBDD*				truebdd()	const	{ return _truebdd;	}
 		FOBDD*				falsebdd()	const	{ return _falsebdd;	}
 
 		FOBDD*				getBDD(FOBDDKernel* kernel,FOBDD* falsebranch,FOBDD* truebranch);
-		FOBDDAtomKernel*	getAtomKernel(PFSymbol* symbol,const vector<FOBDDArgument*>& args);
+		FOBDDAtomKernel*	getAtomKernel(PFSymbol* symbol,const std::vector<FOBDDArgument*>& args);
 		FOBDDQuantKernel*	getQuantKernel(Sort* sort, FOBDD* bdd);
 		FOBDDVariable*		getVariable(Variable* var);
 		FOBDDDeBruijnIndex* getDeBruijnIndex(Sort* sort, unsigned int index);
-		FOBDDFuncTerm* 		getFuncTerm(Function* func, const vector<FOBDDArgument*>& args);
+		FOBDDFuncTerm* 		getFuncTerm(Function* func, const std::vector<FOBDDArgument*>& args);
 		FOBDDDomainTerm*	getDomainTerm(Sort* sort, TypedElement value);
 
-		vector<FOBDDVariable*>	getVariables(const vector<Variable*>& vars);
+		std::vector<FOBDDVariable*>	getVariables(const std::vector<Variable*>& vars);
 
 		FOBDD*	negation(FOBDD*);
 		FOBDD*	conjunction(FOBDD*,FOBDD*);
 		FOBDD*	disjunction(FOBDD*,FOBDD*);
 		FOBDD*	univquantify(FOBDDVariable*,FOBDD*);
 		FOBDD*	existsquantify(FOBDDVariable*,FOBDD*);
-		FOBDD*	univquantify(const vector<FOBDDVariable*>&,FOBDD*);
-		FOBDD*	existsquantify(const vector<FOBDDVariable*>&,FOBDD*);
+		FOBDD*	univquantify(const std::vector<FOBDDVariable*>&,FOBDD*);
+		FOBDD*	existsquantify(const std::vector<FOBDDVariable*>&,FOBDD*);
 		FOBDD*	ifthenelse(FOBDDKernel*, FOBDD* truebranch, FOBDD* falsebranch);
-		FOBDD*	substitute(FOBDD*,const map<FOBDDVariable*,FOBDDVariable*>&);
+		FOBDD*	substitute(FOBDD*,const std::map<FOBDDVariable*,FOBDDVariable*>&);
 		
-		FOBDDKernel*	substitute(FOBDDKernel*,const map<FOBDDVariable*,FOBDDVariable*>&);
-		FOBDDArgument*	substitute(FOBDDArgument*,const map<FOBDDVariable*,FOBDDVariable*>&);
+		FOBDDKernel*	substitute(FOBDDKernel*,const std::map<FOBDDVariable*,FOBDDVariable*>&);
+		FOBDDArgument*	substitute(FOBDDArgument*,const std::map<FOBDDVariable*,FOBDDVariable*>&);
 
-		string	to_string(FOBDD*,unsigned int spaces = 0) const;
-		string	to_string(FOBDDKernel*,unsigned int spaces = 0) const;
-		string	to_string(FOBDDArgument*) const;
-
+		std::string	to_string(FOBDD*,unsigned int spaces = 0) const;
+		std::string	to_string(FOBDDKernel*,unsigned int spaces = 0) const;
+		std::string	to_string(FOBDDArgument*) const;
 };
 
 class FOBDDFactory : public Visitor {
-
 	private:
 		FOBDDManager*	_manager;
 		Vocabulary*		_vocabulary;
@@ -151,7 +154,6 @@ class FOBDDFactory : public Visitor {
 		void	visit(const QuantForm* qf);
 		void	visit(const EqChainForm* ef);
 		void	visit(const AggForm* af);
-	
 };
 
 
@@ -173,10 +175,9 @@ class FOBDDVariable : public FOBDDArgument {
 			_variable(var) { }
 	
 	public:
+		bool containsDeBruijnIndex(unsigned int)	const { return false;	}
 
-			bool containsDeBruijnIndex(unsigned int)	const { return false;	}
-
-			Variable*	variable()	const { return _variable;	}
+		Variable*	variable()	const { return _variable;	}
 
 	friend class FOBDDManager;
 };
@@ -190,11 +191,10 @@ class FOBDDDeBruijnIndex : public FOBDDArgument {
 			_sort(sort), _index(index) { }
 
 	public:
+		bool containsDeBruijnIndex(unsigned int index)	const { return _index == index;	}
 
-			bool containsDeBruijnIndex(unsigned int index)	const { return _index == index;	}
-
-			Sort*			sort()	const { return _sort;	}
-			unsigned int	index()	const { return _index;	}
+		Sort*			sort()	const { return _sort;	}
+		unsigned int	index()	const { return _index;	}
 
 	friend class FOBDDManager;
 };
@@ -208,30 +208,27 @@ class FOBDDDomainTerm : public FOBDDArgument {
 			_sort(sort), _value(value) { }
 
 	public:
-
 		bool containsDeBruijnIndex(unsigned int)	const { return false;	}
 
 		Sort*			sort()	const { return _sort;	}	
 		TypedElement	value()	const { return _value;	}
 
 	friend class  FOBDDManager;
-	
 };
 
 class FOBDDFuncTerm : public FOBDDArgument {
 	private:
-		Function*				_function;
-		vector<FOBDDArgument*>	_args;
+		Function*					_function;
+		std::vector<FOBDDArgument*>	_args;
 
-		FOBDDFuncTerm(Function* func, const vector<FOBDDArgument*>& args) :
+		FOBDDFuncTerm(Function* func, const std::vector<FOBDDArgument*>& args) :
 			_function(func), _args(args) { }
 
 	public:
+		bool containsDeBruijnIndex(unsigned int index)	const;
 
-			bool containsDeBruijnIndex(unsigned int index)	const;
-
-			Function*		func()					const	{ return _function;		}
-			FOBDDArgument*	args(unsigned int n)	const	{ return _args[n];		}
+		Function*		func()					const	{ return _function;		}
+		FOBDDArgument*	args(unsigned int n)	const	{ return _args[n];		}
 
 	friend class FOBDDManager;
 };
@@ -255,12 +252,11 @@ class FOBDDKernel {
 };
 
 class FOBDDAtomKernel : public FOBDDKernel {
-
 	private:
-		PFSymbol*				_symbol;
-		vector<FOBDDArgument*>	_args;
+		PFSymbol*					_symbol;
+		std::vector<FOBDDArgument*>	_args;
 
-		FOBDDAtomKernel(PFSymbol* symbol, const vector<FOBDDArgument*>& args, const KernelOrder& order) :
+		FOBDDAtomKernel(PFSymbol* symbol, const std::vector<FOBDDArgument*>& args, const KernelOrder& order) :
 			FOBDDKernel(order), _symbol(symbol), _args(args) { }
 
 	public:
@@ -294,7 +290,6 @@ class FOBDDQuantKernel : public FOBDDKernel {
 ***********/
 
 class FOBDD {
-
 	private:
 		FOBDDKernel*	_kernel;
 		FOBDD*			_truebranch;

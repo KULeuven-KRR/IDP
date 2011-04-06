@@ -6,8 +6,11 @@
 
 #include "data.hpp"
 #include "options.hpp"
+#include "element.hpp"
 #include "builtin.hpp"
 #include "namespace.hpp"
+
+using namespace std;
 
 /******************************************
 	Shared pointers for domain elements

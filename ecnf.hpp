@@ -4,11 +4,16 @@
 	(c) K.U.Leuven
 ************************************/
 
-#ifndef ECNF_H
-#define ECNF_H
+#ifndef ECNF_HPP
+#define ECNF_HPP
+
+#include <string>
+#include <vector>
+#include <map>
 
 #include "theory.hpp"
-#include "ground.hpp"
+#include "ground.hpp" //FIXME: need include for enum TsType
+#include "pcsolver/src/external/ExternalInterface.hpp"
 
 namespace MinisatID{
  	 class WrappedPCSolver;
@@ -22,7 +27,7 @@ enum VIType { VIT_DISJ, VIT_CONJ, VIT_SET };
 	Ground clauses
 *********************/
 
-typedef vector<int> GroundClause;
+typedef std::vector<int> GroundClause;
 
 /****************** 
 	Ground sets 
@@ -30,14 +35,14 @@ typedef vector<int> GroundClause;
 
 class GroundSet {
 	private:
-		unsigned int	_setnr;
-		vector<int>		_setlits;		// All literals in the ground set
-		vector<double>	_litweights;	// For each literal a corresponding weight
+		unsigned int		_setnr;
+		std::vector<int>	_setlits;		// All literals in the ground set
+		std::vector<double>	_litweights;	// For each literal a corresponding weight
 
 	public:
 		// Constructors
 		GroundSet() { }
-		GroundSet(int setnr, const vector<int>& s, const vector<double>& lw) :
+		GroundSet(int setnr, const std::vector<int>& s, const std::vector<double>& lw) :
 			_setnr(setnr), _setlits(s), _litweights(lw) { }
 
 		// Inspectors
@@ -143,15 +148,15 @@ class GroundRuleBody {
  */
 class PCGroundRuleBody : public GroundRuleBody {
 	private:
-		vector<int>	_body;	// The literals in the body
+		std::vector<int>	_body;	// The literals in the body
 
 	public:
 		// Constructors
-		PCGroundRuleBody(RuleType type, const vector<int>& body, bool rec) : GroundRuleBody(type,rec), _body(body) { }
+		PCGroundRuleBody(RuleType type, const std::vector<int>& body, bool rec) : GroundRuleBody(type,rec), _body(body) { }
 		PCGroundRuleBody(const PCGroundRuleBody& grb): GroundRuleBody(grb._type,grb._recursive), _body(grb._body) { }
 
 		// Inspectors
-		vector<int>		body()					const { return _body;								}
+		std::vector<int>		body()					const { return _body;								}
 		unsigned int	size()					const { return _body.size();						}
 		bool			empty()					const { return _body.empty();						}
 		int				literal(unsigned int n)	const { return _body[n];							}
@@ -204,8 +209,8 @@ class AggGroundRuleBody : public GroundRuleBody {
  */
 class GroundDefinition : public AbstractDefinition {
 	private:
-		GroundTranslator*			_translator;
-		map<int,GroundRuleBody*>	_rules;			// Maps a head to its corresponding body
+		GroundTranslator*				_translator;
+		std::map<int,GroundRuleBody*>	_rules;			// Maps a head to its corresponding body
 
 	public:
 		// Constructors
@@ -215,10 +220,10 @@ class GroundDefinition : public AbstractDefinition {
 		// Mutators
 		void addTrueRule(int head);
 		void addFalseRule(int head);
-		void addPCRule(int head, const vector<int>& body, bool conj, bool recursive);
+		void addPCRule(int head, const std::vector<int>& body, bool conj, bool recursive);
 		void addAggRule(int head, int setnr, AggType aggtype, bool lower, double bound, bool recursive);
 
-		typedef map<int,GroundRuleBody*>::iterator	ruleiterator;
+		typedef std::map<int,GroundRuleBody*>::iterator	ruleiterator;
 		ruleiterator	rule(int head)	{ return _rules.find(head);	}
 		ruleiterator	begin()			{ return _rules.begin();	}
 		ruleiterator	end()			{ return _rules.end();		}
@@ -227,7 +232,7 @@ class GroundDefinition : public AbstractDefinition {
 		GroundTranslator*	translator()	const { return _translator;			}
 		unsigned int		nrRules() 		const { return _rules.size();		}
 
-		typedef map<int,GroundRuleBody*>::const_iterator	const_ruleiterator;
+		typedef std::map<int,GroundRuleBody*>::const_iterator	const_ruleiterator;
 		const_ruleiterator	rule(int head)	const { return _rules.find(head);	}
 		const_ruleiterator	begin()			const { return _rules.begin();		}
 		const_ruleiterator	end()			const { return _rules.end();		}
@@ -237,7 +242,7 @@ class GroundDefinition : public AbstractDefinition {
 		AbstractDefinition*	accept(MutatingVisitor*);
 
 		// Debugging
-		string to_string(unsigned int spaces = 0) const;
+		std::string to_string(unsigned int spaces = 0) const;
 };
 
 
@@ -247,8 +252,8 @@ class GroundDefinition : public AbstractDefinition {
 
 class GroundFixpDef : public AbstractDefinition {
 	private:
-		map<int,GroundRuleBody*>	_rules;		// the direct subrules
-		vector<GroundFixpDef*>		_subdefs;	// the direct subdefinitions
+		std::map<int,GroundRuleBody*>	_rules;		// the direct subrules
+		std::vector<GroundFixpDef*>		_subdefs;	// the direct subdefinitions
 	public:
 		//TODO
 };
@@ -263,7 +268,7 @@ class CPReification { //TODO
 		int 		_head;
 		CPTsBody* 	_body;
 		CPReification(int head, CPTsBody* body): _head(head), _body(body) { }
-		string to_string(unsigned int spaces = 0) const;
+		std::string to_string(unsigned int spaces = 0) const;
 		void accept(Visitor*) const;
 };
 
@@ -276,26 +281,23 @@ class CPReification { //TODO
  *		Implements base class for ground theories
  */
 class AbstractGroundTheory : public AbstractTheory {
-
 	protected:
 		AbstractStructure*			_structure;			// The ground theory may be partially reduced with respect
 														// to this structure. 
 		GroundTranslator*			_translator;		// Link between ground atoms and SAT-solver literals
 		GroundTermTranslator*		_termtranslator;	// Link between ground terms and SAT-solver literals
 
-		set<int>					_printedtseitins;	// Tseitin atoms produced by the translator that occur 
-														// in the theory.
-		set<int>					_printedsets;		// Set numbers produced by the translator that occur in the theory
+		std::set<int>			_printedtseitins;	// Tseitin atoms produced by the translator that occur 
+													// in the theory.
+		std::set<int>			_printedsets;		// Set numbers produced by the translator that occur in the theory
 
 		const 	GroundTranslator& getTranslator() const	{ return *_translator; }
 				GroundTranslator& getTranslator() 		{ return *_translator; }
 
 	public:
 		// Constructors 
-		AbstractGroundTheory(AbstractStructure* str) : 
-			AbstractTheory("",ParseInfo()), _structure(str), _translator(new GroundTranslator()), _termtranslator(new GroundTermTranslator()) { }
-		AbstractGroundTheory(Vocabulary* voc, AbstractStructure* str) : 
-			AbstractTheory("",voc,ParseInfo()), _structure(str), _translator(new GroundTranslator()), _termtranslator(new GroundTermTranslator()) { }
+		AbstractGroundTheory(AbstractStructure* str); 
+		AbstractGroundTheory(Vocabulary* voc, AbstractStructure* str);
 
 		// Destructor
 		virtual void recursiveDelete()	{ delete(this);			}
@@ -306,7 +308,7 @@ class AbstractGroundTheory : public AbstractTheory {
 				void add(Definition* )	{ assert(false);	}
 				void add(FixpDef* )		{ assert(false);	}
 
-				void transformForAdd(const vector<int>& vi, VIType vit, int defnr, bool skipfirst = false);
+				void transformForAdd(const std::vector<int>& vi, VIType vit, int defnr, bool skipfirst = false);
 
 		virtual void addClause(GroundClause& cl, bool skipfirst = false)	= 0;
 		virtual void addDefinition(GroundDefinition*)						= 0;
@@ -333,16 +335,15 @@ class AbstractGroundTheory : public AbstractTheory {
  *		A SolverTheory is a ground theory, stored as an instance of a SAT solver
  */
 class SolverTheory : public AbstractGroundTheory {
-
 	private:
-		SATSolver*					_solver;	// The SAT solver
-		map<PFSymbol*,set<int> >	_defined;	// Symbols that are defined in the theory. This set is used to
-												// communicate to the solver which ground atoms should be considered defined.
+		SATSolver*							_solver;	// The SAT solver
+		std::map<PFSymbol*,std::set<int> >	_defined;	// Symbols that are defined in the theory. This set is used to
+														// communicate to the solver which ground atoms should be considered defined.
 		const 	SATSolver& getSolver() const	{ return *_solver; }
 				SATSolver& getSolver() 			{ return *_solver; }
 
 		void 	addAggregate(int definitionID, int head, bool lowerbound, int setnr, AggType aggtype, TsType sem, double bound);
-		void 	addPCRule(int defnr, int head, vector<int> body, bool conjunctive);
+		void 	addPCRule(int defnr, int head, std::vector<int> body, bool conjunctive);
 
 	public:
 		// Constructors 
@@ -378,7 +379,7 @@ class SolverTheory : public AbstractGroundTheory {
 		AbstractTheory*	accept(MutatingVisitor*);
 
 		// Debugging
-		string to_string() const { assert(false); /*TODO*/	}
+		std::string to_string() const { assert(false); /*TODO*/	}
 
 };
 
@@ -387,14 +388,13 @@ class SolverTheory : public AbstractGroundTheory {
  *		This class implements ground theories
  */
 class GroundTheory : public AbstractGroundTheory {
-	
 	private:
-		vector<GroundClause>		_clauses;	
-		vector<GroundDefinition*>	_definitions;
-		vector<GroundAggregate*>	_aggregates;
-		vector<GroundFixpDef*>		_fixpdefs;
-		vector<GroundSet*>			_sets;
-		vector<CPReification*>		_cpreifications;
+		std::vector<GroundClause>		_clauses;	
+		std::vector<GroundDefinition*>	_definitions;
+		std::vector<GroundAggregate*>	_aggregates;
+		std::vector<GroundFixpDef*>		_fixpdefs;
+		std::vector<GroundSet*>			_sets;
+		std::vector<CPReification*>		_cpreifications;
 
 	public:
 
@@ -434,8 +434,7 @@ class GroundTheory : public AbstractGroundTheory {
 		AbstractTheory*	accept(MutatingVisitor*);
 
 		// Debugging
-		string to_string() const;
-
+		std::string to_string() const;
 };
 
 #endif

@@ -1,4 +1,14 @@
+/************************************
+	generator.hpp
+	this file belongs to GidL 2.0
+	(c) K.U.Leuven
+************************************/
+
 #include "generator.hpp"
+#include "structure.hpp"
+#include "checker.hpp"
+
+using namespace std;
 
 /** First instance **/
 

@@ -8,7 +8,8 @@
 #define ERROR_HPP
 
 #include <string>
-	#include <vector>
+#include <vector>
+
 class ParseInfo;
 
 namespace Error {

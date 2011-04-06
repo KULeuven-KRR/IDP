@@ -4,23 +4,11 @@
 	(c) K.U.Leuven
 ************************************/
 
-
-#include "data.hpp"
-#include "insert.hpp"
-#include "builtin.hpp"
-#include "namespace.hpp"
-#include "execute.hpp"
-#include "parse.h"
-#include "error.hpp"
-#include "options.hpp"
-#include "clconst.hpp"
-#include "lua.hpp"
 #include <cstdio>
 #include <iostream>
 #include <cstdlib>
-#include "interactive.hpp"
 
-
+using namespace std;
 
 // Parser stuff
 extern int yyparse();

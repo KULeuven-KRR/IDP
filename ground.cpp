@@ -5,12 +5,21 @@
 ************************************/
 
 #include "ground.hpp"
-#include "ecnf.hpp"
+
 #include <typeinfo>
 #include <iostream>
 #include <sstream>
-#include <limits> // numeric_limits
+#include <limits>
+
+#include "element.hpp"
+#include "vocabulary.hpp"
+#include "structure.hpp"
+#include "ecnf.hpp"
 #include "options.hpp"
+#include "generator.hpp"
+#include "checker.hpp"
+
+using namespace std;
 
 /** The two built-in literals 'true' and 'false' **/
 int _true = numeric_limits<int>::max();
@@ -1763,7 +1772,10 @@ void GrounderFactory::visit(const AggTerm* t) {
 	t->set()->accept(this);
 
 	// Create term grounder
-	_termgrounder = new AggTermGrounder(_grounding->translator(),t->type(),_setgrounder);
+	if(SetUtils::isTwoValued(t->set(),_structure))
+		_termgrounder = new AggTermGrounder(_grounding->translator(),t->type(),_setgrounder);
+	else //TODO
+		_termgrounder = new ThreeValuedAggTermGrounder(_grounding->translator(),t->type(),_setgrounder);
 #ifndef NDEBUG
 	_termgrounder->setorig(t,_varmapping);
 #endif

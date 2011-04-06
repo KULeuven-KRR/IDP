@@ -4,10 +4,9 @@
 	(c) K.U.Leuven
 ************************************/
 
-#include <typeinfo>
-#include <cstdlib> //contains abs for ints
-#include <cmath>
 #include "builtin.hpp"
+#include "element.hpp"
+#include "structure.hpp"
 #include "data.hpp"
 
 /***************************************************************************
@@ -15,7 +14,6 @@
 ***************************************************************************/
 
 class ComparisonFunction : public OverloadedFunction {
-
 	private:
 		FuncInter* (*_inter)(const vector<SortTable*>&);
 
@@ -30,7 +28,6 @@ class ComparisonFunction : public OverloadedFunction {
 		Function*	disambiguate(const vector<Sort*>&, Vocabulary* v);
 
 		string to_string() const { return "builtin"+_name;	}
-
 };
 
 Function* ComparisonFunction::disambiguate(const vector<Sort*>& vs, Vocabulary* v) {
@@ -68,7 +65,6 @@ Function* ComparisonFunction::disambiguate(const vector<Sort*>& vs, Vocabulary* 
 ***********************/
 
 class IntFloatFunction : public OverloadedFunction {
-
 	private:
 		FuncInter*	(*_inter)(const vector<Sort*>&);
 
@@ -144,7 +140,6 @@ Function* IntFloatFunction::disambiguate(const vector<Sort*>& vs, Vocabulary* v)
 /** Infinite built-in sort tables **/
 
 class InfiniteSortTable : public SortTable {
-
 	public: 
 		// Constructors
 		InfiniteSortTable() : SortTable() { }
@@ -175,7 +170,6 @@ class InfiniteSortTable : public SortTable {
 
 		// Debugging
 		virtual string to_string(unsigned int n=0) const = 0;
-
 };
 
 SortTable* InfiniteSortTable::add(const vector<TypedElement>& tuple) {
@@ -201,7 +195,6 @@ SortTable* InfiniteSortTable::remove(const vector<TypedElement>& tuple) {
 /** All natural numbers **/
 
 class AllNatSortTable : public InfiniteSortTable {
-
 	public:
 		ElementType	type()				const { return ELINT;									}
 		bool		contains(string* s)	const { return isInt(*s) ? contains(stoi(*s)): false;	}
@@ -212,7 +205,6 @@ class AllNatSortTable : public InfiniteSortTable {
 		AllNatSortTable*	clone()	const	{ return new AllNatSortTable();	}
 
 		string		to_string(unsigned int n = 0)	const { return tabstring(n) + "all natural numbers (including 0)";		}
-	
 };
 
 bool AllNatSortTable::contains(compound* c) const {
@@ -223,7 +215,6 @@ bool AllNatSortTable::contains(compound* c) const {
 /** All integers **/
 
 class AllIntSortTable : public InfiniteSortTable {
-
 	public:
 		ElementType	type()				const { return ELINT;			}
 		bool		contains(string* s)	const { return isInt(*s);		}
@@ -234,7 +225,6 @@ class AllIntSortTable : public InfiniteSortTable {
 		AllIntSortTable*	clone()	const	{ return new AllIntSortTable();	}
 
 		string		to_string(unsigned int n = 0)	const { return tabstring(n) + "all integers";	}
-		
 };
 
 bool AllIntSortTable::contains(compound* c) const {
@@ -245,7 +235,6 @@ bool AllIntSortTable::contains(compound* c) const {
 /** All floating point numbers **/
 
 class AllFloatSortTable : public InfiniteSortTable {
-	
 	public:
 		ElementType	type()				const { return ELDOUBLE;		}
 		bool		contains(string* s)	const { return isDouble(*s);	}
@@ -256,7 +245,6 @@ class AllFloatSortTable : public InfiniteSortTable {
 		AllFloatSortTable*	clone()	const	{ return new AllFloatSortTable();	}
 
 		string		to_string(unsigned int n = 0)	const { return tabstring(n) + "all floats";	}
-		
 };
 
 bool AllFloatSortTable::contains(compound* c) const {
@@ -267,7 +255,6 @@ bool AllFloatSortTable::contains(compound* c) const {
 /** All strings **/
 
 class AllStringSortTable : public InfiniteSortTable {
-		
 	public:
 		ElementType	type()				const { return ELSTRING;		}
 		bool		contains(string*)	const { return true;			}
@@ -278,7 +265,6 @@ class AllStringSortTable : public InfiniteSortTable {
 		AllStringSortTable*	clone()	const	{ return new AllStringSortTable();	}
 
 		string		to_string(unsigned int n  = 0)	const { return tabstring(n) + "all strings";	}
-		
 };
 
 bool AllStringSortTable::contains(compound* c) const {
@@ -289,7 +275,6 @@ bool AllStringSortTable::contains(compound* c) const {
 /** All characters **/
 
 class AllCharSortTable : public SortTable {
-		
 	public:
 		// Constructors
 		AllCharSortTable() : SortTable() { }
@@ -302,7 +287,6 @@ class AllCharSortTable : public SortTable {
 		void sortunique() { }
 		SortTable*	add(const vector<TypedElement>& tuple);
 		SortTable*	remove(const vector<TypedElement>& tuple);
-
 
 		// Inspectors
 		bool			finite()	const { return true;				}
@@ -322,7 +306,6 @@ class AllCharSortTable : public SortTable {
 
 		// Debugging
 		string	to_string(unsigned int n = 0)	const { return tabstring(n) + "all characters"; }
-		
 };
 
 SortTable* AllCharSortTable::add(const vector<TypedElement>& tuple) {
@@ -369,7 +352,6 @@ unsigned int AllCharSortTable::position(Element e,ElementType t) const {
 /** Comparisons **/
 
 class ComparisonPredTable : public PredTable {
-
 	protected:
 		SortTable*	_leftsort;
 		SortTable*	_rightsort;
@@ -401,7 +383,6 @@ class ComparisonPredTable : public PredTable {
 
 		// Debugging
 		virtual string	to_string(unsigned int spaces = 0)	const = 0;
-
 };
 
 PredTable* ComparisonPredTable::add(const vector<TypedElement>& tuple) {
@@ -512,7 +493,6 @@ PredInter*	strgreaterinter(const vector<SortTable*>& vs) {
 ******************************/
 
 class InfiniteFuncTable : public FuncTable {
-
 	public:
 		// Constructors
 		InfiniteFuncTable() : FuncTable() { }
@@ -534,11 +514,9 @@ class InfiniteFuncTable : public FuncTable {
 
 		// Debugging
 		virtual string to_string(unsigned int spaces = 0) const = 0;
-
 };
 
 class AritFuncTable : public InfiniteFuncTable {
-
 	protected:
 		ElementType _type;	// int or double
 
@@ -557,7 +535,6 @@ class AritFuncTable : public InfiniteFuncTable {
 
 		// Debugging
 		virtual string to_string(unsigned int spaces = 0) const = 0;
-
 };
 
 /** Addition **/
@@ -869,13 +846,11 @@ FuncInter* maximumfuncinter(const vector<SortTable*>& vs) {
 /** Successor and predecessor **/
 
 class SuccFuncTable : public FuncTable {
-
 	private:
 		SortTable*	_table;
 		bool		_succ;
 
 	public:
-
 		// Constructors
 		SuccFuncTable(SortTable* t, bool s) : FuncTable(), _table(t), _succ(s) { }
 		SuccFuncTable* clone() const { return new SuccFuncTable(_table,_succ);	}
@@ -899,7 +874,6 @@ class SuccFuncTable : public FuncTable {
 
 		// Debugging
 		string to_string(unsigned int spaces = 0) const;
-
 };
 
 string SuccFuncTable::to_string(unsigned int spaces) const {
@@ -1002,7 +976,6 @@ StdBuiltin* StdBuiltin::instance() {
 }
 
 StdBuiltin::StdBuiltin() : Vocabulary("std") {
-
 	// Create sorts
 	Sort* natsort		= new BuiltInSort("nat",new AllNatSortTable());
 	Sort* intsort		= new BuiltInSort("int",new AllIntSortTable()); 
@@ -1047,5 +1020,4 @@ StdBuiltin::StdBuiltin() : Vocabulary("std") {
 	addFunc(new ComparisonFunction("MAX/0",0,&maximumfuncinter));
 	addFunc(new ComparisonFunction("SUCC/1",1,&succfuncinter));
 	addFunc(new ComparisonFunction("PRED/1",1,&predfuncinter));
-
 }

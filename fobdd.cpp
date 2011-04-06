@@ -5,8 +5,14 @@
 ************************************/
 
 #include "fobdd.hpp"
+#include "element.hpp"
+#include "vocabulary.hpp"
+#include "term.hpp"
+#include "theory.hpp"
 
 #include <typeinfo>
+
+using namespace std;
 
 /*******************
 	Kernel order

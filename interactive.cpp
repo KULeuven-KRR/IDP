@@ -1,3 +1,9 @@
+/************************************
+	interactive.cpp	
+	this file belongs to GidL 2.0
+	(c) K.U.Leuven
+************************************/
+
 #include "interactive.hpp"
 
 /** Interactive mode **/

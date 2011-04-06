@@ -1323,7 +1323,6 @@ class InvSuccInterGeneratorGenerator : public FuncInterGeneratorGenerator {
 /** Abstract base class **/
 
 class AbstractStructure {
-
 	protected:
 
 		std::string		_name;			// The name of the structure
@@ -1331,7 +1330,6 @@ class AbstractStructure {
 		Vocabulary*		_vocabulary;	// The vocabulary of the structure.
 
 	public:
-
 		// Constructors
 		AbstractStructure(std::string name, const ParseInfo& pi) : _name(name), _pi(pi), _vocabulary(0) { }
 
@@ -1356,7 +1354,6 @@ class AbstractStructure {
 /** Structures as constructed by the parser **/
 
 class Structure : public AbstractStructure {
-
 	private:
 		std::map<Sort*,SortTable*>		_sortinter;		//!< The domains of the structure. 
 		std::map<Predicate*,PredInter*>	_predinter;		//!< The interpretations of the predicate symbols.
@@ -1366,7 +1363,6 @@ class Structure : public AbstractStructure {
 		void	autocomplete();		//!< make the domains consistent with the predicate and function tables				
 
 	public:
-		
 		// Constructors
 		Structure(const std::string& name, const ParseInfo& pi) : AbstractStructure(name,pi) { }
 

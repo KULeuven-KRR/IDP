@@ -5,10 +5,15 @@
 ************************************/
 
 #include "ecnf.hpp"
+
 #include <iostream>
 #include <sstream>
 
+#include "vocabulary.hpp"
+#include "structure.hpp"
 #include "pcsolver/src/external/ExternalInterface.hpp"
+
+using namespace std;
 
 /*************************
 	Ground definitions
@@ -213,6 +218,12 @@ string GroundDefinition::to_string(unsigned int) const {
 
 const int ID_FOR_UNDEFINED = -1;
 
+AbstractGroundTheory::AbstractGroundTheory(AbstractStructure* str) : 
+	AbstractTheory("",ParseInfo()), _structure(str), _translator(new GroundTranslator()), _termtranslator(new GroundTermTranslator()) { }
+
+AbstractGroundTheory::AbstractGroundTheory(Vocabulary* voc, AbstractStructure* str) : 
+	AbstractTheory("",voc,ParseInfo()), _structure(str), _translator(new GroundTranslator()), _termtranslator(new GroundTermTranslator()) { }
+
 /*
  * AbstractGroundTheory::transformForAdd(vector<int>& vi, VIType vit, int defnr, bool skipfirst)
  * DESCRIPTION
@@ -221,7 +232,7 @@ const int ID_FOR_UNDEFINED = -1;
  * PARAMETERS
  *		vi			- given vector of literals
  *		vit			- indicates whether vi represents a disjunction, conjunction or set of literals
- *		defnr		- number of the definition vi belongs to. Is _nodef when vi does not belong to a definition
+ *		defnr		- number of the definition vi belongs to. Is NODEF when vi does not belong to a definition
  *		skipfirst	- if true, the defining rule for the first literal is not added to the ground theory
  * TODO
  *		implement unfolding
@@ -541,7 +552,6 @@ void SolverTheory::addAggregate(int definitionID, int head, bool lowerbound, int
 	MinisatID::Aggregate agg;
 	agg.sign = lowerbound ? MinisatID::AGGSIGN_LB : MinisatID::AGGSIGN_UB;
 	agg.setID = setnr;
-
 	switch (aggtype) {
 		case AGGCARD:
 			agg.type = MinisatID::CARD;

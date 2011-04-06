@@ -34,7 +34,6 @@ class SortTable;
  *		Class to represent sorts
  */
 class Sort {
-
 	private:
 		std::string					_name;				//!< Name of the sort
 		std::set<const Vocabulary*>	_vocabularies;		//!< All vocabularies the sort belongs to 
@@ -95,11 +94,9 @@ namespace SortUtils {
 ****************/
 
 /**
- * DESCRIPTION
- *		Class to represent variables.
+ *	\brief	Class to represent variables.
  */
 class Variable {
-
 	private:
 		std::string		_name;	//!< Name of the variable
 		Sort*			_sort;	//!< Sort of the variable (0 if the sort is not derived)
@@ -108,9 +105,7 @@ class Variable {
 
 		~Variable();	//!< Destructor
 
-
 	public:
-
 		// Constructors
 		Variable(const std::string& name, Sort* sort, const ParseInfo& pi);	
 			//!< Constructor for a named variable
@@ -145,11 +140,9 @@ namespace VarUtils {
 *************************************/
 
 /** 
- * DESCRIPTION
- *		Abstract base class to represent predicate and function symbols
+ *	\brief	Abstract base class to represent predicate and function symbols
  */
 class PFSymbol {
-	
 	protected:
 		std::string					_name;			//!< Name of the symbol (ending with the /arity)
 		ParseInfo					_pi;			//!< The place where the symbol was declared 
@@ -162,7 +155,6 @@ class PFSymbol {
 		virtual ~PFSymbol();	//!< Destructor
 
 	public:
-
 		// Constructors
 		PFSymbol(const std::string& name, unsigned int nrsorts, bool infix = false);
 		PFSymbol(const std::string& name, const std::vector<Sort*>& sorts, bool infix = false); 
@@ -205,11 +197,9 @@ class PredInterGenerator;
 class AbstractStructure;
 
 /**
- * DESCRIPTION
- *		Class to represent predicate symbols
+ * \brief	Class to represent predicate symbols
  */
 class Predicate : public PFSymbol {
-
 	private:
 		static int				_npnr;				//!< Used to create unique new names for internal predicates
 		PredInterGenerator*		_interpretation;	//!< The interpretation if the predicate is built-in, a null-pointer
@@ -219,7 +209,6 @@ class Predicate : public PFSymbol {
 
 
 	public:
-
 		// Constructors
 		Predicate(const std::string& name,const std::vector<Sort*>& sorts, const ParseInfo& pi, bool infix = false);
 		Predicate(const std::string& name,const std::vector<Sort*>& sorts, bool infix = false);
@@ -326,7 +315,6 @@ class ComparisonPredGenerator : public PredGenerator {
 };
 
 namespace PredUtils {
-	
 	/**
 	 * \brief Return a new overloaded predicate containing the two given predicates
 	 */
@@ -344,8 +332,7 @@ class FuncInter;
 class FuncInterGenerator;
 
 /**
- * DESCRIPTION
- *		Class to represent function symbols
+ * \brief	Class to represent function symbols
  */
 class Function : public PFSymbol {
 
@@ -361,7 +348,6 @@ class Function : public PFSymbol {
 
 
 	public:
-
 		// Constructors
 		Function(const std::string& name, const std::vector<Sort*>& is, Sort* os, const ParseInfo& pi, unsigned int binding = 0);
 		Function(const std::string& name, const std::vector<Sort*>& sorts, const ParseInfo& pi, unsigned int binding = 0);
@@ -496,7 +482,6 @@ class OrderFuncGenerator : public FuncGenerator {
 };
 
 namespace FuncUtils {
-	
 	/**
 	 * return an new overloaded function containing the two given functions
 	 */
@@ -507,6 +492,10 @@ namespace FuncUtils {
 	 */
 	Function* overload(const std::set<Function*>&);
 
+	/**
+	 * Check whether the output sort of a function is integer.
+	 */
+	bool isIntFunc(const Function*, Vocabulary*);
 }
 
 /*****************
@@ -517,7 +506,6 @@ class InfArg;
 class Namespace;
 
 class Vocabulary {
-
 	private:
 
 		std::string	_name;	//!< Name of the vocabulary. Default name is the empty string.
@@ -535,7 +523,6 @@ class Vocabulary {
 		~Vocabulary();
 
 	public:
-
 		// Constructors
 		Vocabulary(const std::string& name); 
 		Vocabulary(const std::string& name, const ParseInfo& pi); 

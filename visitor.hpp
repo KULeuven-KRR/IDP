@@ -50,8 +50,8 @@ class CPSumTerm;
 class CPWSumTerm;
 class CPVarTerm;
 
-/*
- *	class Visitor
+/** \class Visitor
+ * DESCRIPTION
  *		This class implements a visitor pattern for namespaces, theories, etc.
  *		By default, if 'visit' is called on an object A, then A is traversed depth-first, from left to right.
  */
@@ -134,8 +134,8 @@ class Visitor {
 		virtual void visit(const CPVarTerm*);
 };
 
-/*
- *	class MutatingVisitor
+/** \*	class MutatingVisitor
+ * DESCRIPTION
  *		This class implements a visitor pattern for namespaces, theories, etc. that changes the object it visits.
  *		By default, if 'visit' is called on an object A, then A is traversed depth-first, from left to right.
  *		During the traversal, a call of 'visit' to a direct child B of A gives a returnvalue B'. 

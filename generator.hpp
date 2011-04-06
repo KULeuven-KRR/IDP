@@ -1,8 +1,19 @@
-#ifndef INSTGENERATOR_H
-#define INSTGENERATOR_H
+/************************************
+	generator.hpp
+	this file belongs to GidL 2.0
+	(c) K.U.Leuven
+************************************/
 
-#include "structure.hpp"
-#include "checker.hpp"
+#ifndef INSTGENERATOR_HPP
+#define INSTGENERATOR_HPP
+
+#include <vector>
+
+class PredTable;
+class SortTable;
+class InstanceChecker;
+class compound;
+typedef compound* domelement;
 
 class InstGenerator {
 	public:
@@ -13,11 +24,11 @@ class InstGenerator {
 
 class TableInstGenerator : public InstGenerator { 
 	private:
-		PredTable*				_table;
-		vector<domelement*>		_outvars;
-		mutable unsigned int	_currpos;
+		PredTable*					_table;
+		std::vector<domelement*>	_outvars;
+		mutable unsigned int		_currpos;
 	public:
-		TableInstGenerator(PredTable* t, const vector<domelement*>& out) : _table(t), _outvars(out) { }
+		TableInstGenerator(PredTable* t, const std::vector<domelement*>& out) : _table(t), _outvars(out) { }
 		bool first() const;
 		bool next() const;
 };
@@ -39,7 +50,6 @@ class SortInstGenerator : public InstGenerator {
 ********************************************/
 
 class GeneratorNode {
-
 	protected:
 		GeneratorNode*	_parent;
 
@@ -56,11 +66,9 @@ class GeneratorNode {
 		// Generate instances
 		virtual	GeneratorNode*	first()	const = 0;
 		virtual	GeneratorNode*	next()	const = 0;
-
 };
 
 class LeafGeneratorNode : public GeneratorNode {
-
 	private:
 		InstGenerator*	_generator;
 		GeneratorNode*	_this;		//	equal to 'this'
@@ -72,11 +80,9 @@ class LeafGeneratorNode : public GeneratorNode {
 		// Generate instances
 		GeneratorNode*	first()	const;
 		GeneratorNode*	next()	const;
-
 };
 
 class OneChildGeneratorNode : public GeneratorNode {
-
 	private:
 		InstGenerator*	_generator;
 		GeneratorNode*	_child;
@@ -88,30 +94,27 @@ class OneChildGeneratorNode : public GeneratorNode {
 		// Generate instances
 		GeneratorNode*	first()	const;
 		GeneratorNode*	next()	const;
-
 };
 
 class TwoChildGeneratorNode : public GeneratorNode {
-
 	private:
-		InstanceChecker*				_checker;
-		vector<domelement*>				_outvars;
-		vector<SortTable*>				_tables;
-		mutable vector<unsigned int>	_currpositions;
-		mutable vector<domelement>		_currargs;
-		GeneratorNode*					_left;
-		GeneratorNode*					_right;
+		InstanceChecker*					_checker;
+		std::vector<domelement*>			_outvars;
+		std::vector<SortTable*>				_tables;
+		mutable std::vector<unsigned int>	_currpositions;
+		mutable std::vector<domelement>		_currargs;
+		GeneratorNode*						_left;
+		GeneratorNode*						_right;
 	
 	public:
 		// Constructor
-		TwoChildGeneratorNode(InstanceChecker* t, const vector<domelement*>& ov, const vector<SortTable*>& tbs, GeneratorNode* l, GeneratorNode* r) :
+		TwoChildGeneratorNode(InstanceChecker* t, const std::vector<domelement*>& ov, const std::vector<SortTable*>& tbs, GeneratorNode* l, GeneratorNode* r) :
 			GeneratorNode(), _checker(t), _outvars(ov), _tables(tbs), _currpositions(tbs.size()), _currargs(_outvars.size()), _left(l), _right(r) 
 			{ _left->parent(this); _right->parent(this); }
 
 		// Generate instances
 		GeneratorNode*	first()	const;
 		GeneratorNode*	next()	const;
-
 };
 
 
@@ -120,7 +123,6 @@ class TwoChildGeneratorNode : public GeneratorNode {
 ***************************************/
 
 class TreeInstGenerator : public InstGenerator {
-	
 	private:
 				GeneratorNode*	_root;
 		mutable	GeneratorNode*	_curr;	// Remember the last position of a match
@@ -132,7 +134,6 @@ class TreeInstGenerator : public InstGenerator {
 		// Generate instances
 		bool	first()	const;
 		bool	next()	const;
-
 };
 
 /**************
@@ -141,7 +142,7 @@ class TreeInstGenerator : public InstGenerator {
 
 class GeneratorFactory {
 	public:
-		InstGenerator*	create(const vector<domelement*>&, const vector<SortTable*>&);
+		InstGenerator*	create(const std::vector<domelement*>&, const std::vector<SortTable*>&);
 };
 
 #endif

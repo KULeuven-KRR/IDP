@@ -4,15 +4,20 @@
 	(c) K.U.Leuven
 ************************************/
 
-#include "data.hpp"
 #include "theory.hpp"
+
+#include <iostream>
+#include <typeinfo>
+#include <set>
+
+#include "structure.hpp"
+#include "data.hpp"
 #include "visitor.hpp"
 #include "builtin.hpp"
 #include "ecnf.hpp"
 #include "ground.hpp"
-#include <iostream>
-#include <set>
-#include <typeinfo>
+
+using namespace std;
 
 extern string tabstring(unsigned int);
 extern bool nexttuple(vector<unsigned int>&,const vector<unsigned int>&);
@@ -1632,7 +1637,13 @@ Term* ThreeValTermMover::visit(FuncTerm* ft) {
 	Function* f = ft->func();
 	FuncInter* finter = _structure->inter(f);
 
-	if(finter->fasttwovalued() || (_cpcontext && _istoplevelterm)) { // The function is two-valued. Visit the children.
+	//TODO check whether function's outsort is over integers
+	Vocabulary* voc = _structure->vocabulary();
+	Sort* ints = *(voc->sort("int")->begin());
+	bool isIntFunc = (SortUtils::resolve(f->outsort(),ints,voc) != 0);
+
+	if(finter->fasttwovalued() || (_cpcontext && _istoplevelterm && isIntFunc)) {
+		// The function is two-valued or we want to pass it to the constraint solver. Leave as is, just visit its children.
 		for(unsigned int n = 0; n < ft->nrSubterms(); ++n) {
 			_istoplevelterm = false;
 			Term* nt = ft->subterm(n)->accept(this);
@@ -1641,7 +1652,8 @@ Term* ThreeValTermMover::visit(FuncTerm* ft) {
 		ft->setfvars();
 		return ft;
 	}
-	else { // The function is three-valued. Create a new variable and an equation
+	else {
+		// The function is three-valued. Move it: create a new variable and an equation.
 		Variable* v = new Variable(f->outsort());
 		VarTerm* vt = new VarTerm(v,ParseInfo());
 		vector<Term*> args;
