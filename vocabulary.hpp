@@ -83,7 +83,7 @@ class Sort {
 std::ostream& operator<< (std::ostream&,const Sort&);
 
 namespace SortUtils {
-	Sort*	resolve(Sort* s1, Sort* s2, const Vocabulary* v);	
+	Sort*	resolve(Sort* s1, Sort* s2, const Vocabulary* v = 0);	
 		//!< Return the unique nearest common ancestor of two sorts
 	bool	isSubsort(Sort* a, Sort* b); 
 		//!< returns true iff sort a is a subsort of sort b
@@ -103,14 +103,15 @@ class Variable {
 		static int		_nvnr;	//!< Used to create unique new names for internal variables
 		ParseInfo		_pi;	//!< The place where the variable was quantified 
 
-		~Variable();	//!< Destructor
-
 	public:
 		// Constructors
 		Variable(const std::string& name, Sort* sort, const ParseInfo& pi);	
 			//!< Constructor for a named variable
 		Variable(Sort* s);	
 			//!< Constructor for an internal variable 
+
+		// Destructors
+		~Variable();	//!< Destructor
 
 		// Mutators
 		void	sort(Sort* s);	//!< Change the sort of the variable

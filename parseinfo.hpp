@@ -8,6 +8,7 @@
 #define PARSEINFO_HPP
 
 #include <string>
+#include <map>
 
 /**
  * \file parseinfo.hpp
@@ -50,6 +51,7 @@ class ParseInfo {
 		bool			isParsed()	const { return _line != 0;	}	//!< Returns true iff the object was declared by the user
 };
 
+class Variable;
 class Term;
 
 /**
@@ -70,6 +72,9 @@ class TermParseInfo : public ParseInfo {
 		TermParseInfo(unsigned int line, unsigned int col, std::string* file, Term* orig) : 
 			ParseInfo(line,col,file), _original(orig) { }
 		TermParseInfo(const TermParseInfo& p) : ParseInfo(p.line(),p.col(),p.file()), _original(p.original()) { }
+
+		TermParseInfo clone()										const;
+		TermParseInfo clone(const std::map<Variable*,Variable*>&)	const;
 
 		// Destructor
 		~TermParseInfo();
@@ -100,6 +105,9 @@ class SetParseInfo : public ParseInfo {
 		SetParseInfo(unsigned int line, unsigned int col, std::string* file, SetExpr* orig) : 
 			ParseInfo(line,col,file), _original(orig) { }
 		SetParseInfo(const SetParseInfo& p) : ParseInfo(p.line(),p.col(),p.file()), _original(p.original()) { }
+
+		SetParseInfo clone()										const;
+		SetParseInfo clone(const std::map<Variable*,Variable*>&)	const;
 
 		// Destructor
 		~SetParseInfo();
@@ -133,6 +141,9 @@ class FormulaParseInfo : public ParseInfo {
 		FormulaParseInfo(unsigned int line, unsigned int col, std::string* file, Formula* orig) : 
 			ParseInfo(line,col,file), _original(orig) { }
 		FormulaParseInfo(const FormulaParseInfo& p) : ParseInfo(p.line(),p.col(),p.file()), _original(p.original()) { }
+
+		FormulaParseInfo clone()										const;
+		FormulaParseInfo clone(const std::map<Variable*,Variable*>&)	const;
 
 		// Destructor
 		~FormulaParseInfo();

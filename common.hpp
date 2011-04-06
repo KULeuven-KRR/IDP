@@ -9,6 +9,8 @@
 
 #include <string>
 #include <ostream>
+#include <vector>
+#include "commontypes.hpp"
 
 extern void notyetimplemented(const std::string&);
 
@@ -21,6 +23,8 @@ extern int			stoi(const std::string&);	//!< convert string to int
 extern double		stod(const std::string&);	//!< convert string to double
 
 extern void	printtabs(std::ostream&,unsigned int tabs);	//!< write a given number of tabs
+
+extern double applyAgg(AggFunction,const std::vector<double>& args);	//!< apply an aggregate function to arguments
 
 #ifdef OLD
 #include <iostream>

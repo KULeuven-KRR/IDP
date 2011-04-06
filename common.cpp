@@ -10,6 +10,33 @@ void notyetimplemented(const string& message) {
 		 << "Please send an e-mail to krr@cs.kuleuven.be if you really need this feature.\n";
 }
 
+double applyAgg(AggFunction agg, const vector<double>& args) {
+	double d;
+	switch(agg) {
+		case AGG_CARD:
+			d = double(args.size());
+			break;
+		case AGG_SUM:
+			d = 0;
+			for(unsigned int n = 0; n < args.size(); ++n) d += args[n];
+			break;
+		case AGG_PROD:
+			d = 1;
+			for(unsigned int n = 0; n < args.size(); ++n) d = d * args[n];
+			break;
+		case AGG_MIN:
+			d = MAX_DOUBLE;
+			for(unsigned int n = 0; n < args.size(); ++n) d = (d <= args[n] ? d : args[n]);
+			break;
+		case AGG_MAX:
+			d = MIN_DOUBLE;
+			for(unsigned int n = 0; n < args.size(); ++n) d = (d >= args[n] ? d : args[n]);
+			break;
+	}
+	return d;
+}
+
+
 #include <string>
 #include <limits>
 #include <sstream>

@@ -7,274 +7,244 @@
 #ifndef THEORY_HPP
 #define THEORY_HPP
 
-#include <string>
+#include <set>
 #include <vector>
-#include <map>
-
-#include "term.hpp" //FIXME: include needed for Term* AggForm::subterm(int). Why?
-
-class PFSymbol;
-
-class GroundTranslator;
-class GroundTheory;
+#include "parseinfo.hpp"
 
 /*****************************************************************************
 	Abstract base class for formulas, definitions and fixpoint definitions
 *****************************************************************************/
 
+class TheoryVisitor;
+class TheoryMutatingVisitor;
+
+/**
+ *	Abstract base class to represent formulas, definitions, and fixpoint definitions.
+ */
 class TheoryComponent {
+
 	public:
 		// Constructor
 		TheoryComponent() { }
 
-		// Visitor
-		virtual void				accept(Visitor*) const 		= 0;
-		virtual TheoryComponent*	accept(MutatingVisitor*) 	= 0;
+		// Cloning
+		virtual TheoryComponent*	clone()	const = 0;	//!< Construct a deep copy of the component
 
-		// Debugging
-		virtual std::string to_string(unsigned int spaces = 0) const = 0;
+		// Visitor
+		virtual void				accept(TheoryVisitor*)			const = 0;
+		virtual TheoryComponent*	accept(TheoryMutatingVisitor*) 	= 0;
+
+		// Output
+		virtual std::ostream& put(std::ostream&, unsigned int spaces = 0)	const = 0;
+				std::string to_string(unsigned int spaces = 0)				const;
 };
 
 /***************
 	Formulas
 ***************/
 
-/** Abstract base class **/
-
+/**
+ * Abstract base class to represent formulas
+ */
 class Formula : public TheoryComponent {
+
 	protected:
-		bool					_sign;	// true iff the formula does not start with a negation
-		std::vector<Variable*>	_fvars;	// free variables of the formula
-		FormParseInfo			_pi;	// the place where the formula was parsed (0 for non user-defined formulas)
+		bool					_sign;			//!< true iff the formula does not start with a negation
+		std::set<Variable*>		_freevars;		//!< the free variables of the formula
+		std::set<Variable*>		_quantvars;		//!< the quantified variables of the formula
+		std::vector<Term*>		_subterms;		//!< the direct subterms of the formula
+		std::vector<Formula*>	_subformulas;	//!< the direct subformulas of the formula
+		FormulaParseInfo		_pi;			//!< the place where the formula was parsed 
+
+		void	setfvars();		//!< compute the free variables of the formula
 
 	public:
+
 		// Constructor
 		Formula(bool sign) : _sign(sign) { }
-		Formula(bool sign, const FormParseInfo& pi):   _sign(sign), _pi(pi)  { }
+		Formula(bool sign, const FormulaParseInfo& pi): _sign(sign), _pi(pi)  { }
 
 		// Virtual constructors
-		virtual	Formula*	clone()										const = 0;	// copy the formula while keeping the free variables
-		virtual	Formula*	clone(const std::map<Variable*,Variable*>&)	const = 0;	// copy the formulas, and replace the free variables
-																					// as inidicated by the map
+		virtual	Formula*	clone()										const = 0;	
+			//!< copy the formula while keeping the free variables
+		virtual	Formula*	clone(const std::map<Variable*,Variable*>&)	const = 0;	
+			//!< copy the formulas, and replace the free variables as inidicated by the map
 
 		// Destructor
-		virtual void recursiveDelete() = 0;	// delete the formula and all its children (subformulas, subterms, etc)
-		virtual ~Formula() { }				// delete the formula, but not its children
+				void recursiveDelete();	//!< delete the formula and all its children (subformulas, subterms, etc)
+		virtual ~Formula() { }			//!< delete the formula, but not its children
 
 		// Mutators
-		void	setfvars();		// compute the free variables
-		void	swapsign()	{ _sign = !_sign;	}
+		void	swapsign()	{ _sign = !_sign;	}	//!< swap the sign of the formula
 
 		// Inspectors
 				bool					sign()						const { return _sign;			}
-				unsigned int			nrFvars()					const { return _fvars.size();	}
-				Variable*				fvar(unsigned int n)		const { return _fvars[n];		}
-				const FormParseInfo&	pi()						const { return _pi;				}
-		virtual	unsigned int			nrQvars()					const = 0;	// number of variables quantified by the formula
-		virtual	unsigned int			nrSubforms()				const = 0;	// number of direct subformulas
-		virtual	unsigned int			nrSubterms()				const = 0;  // number of direct subterms
-		virtual	Variable*				qvar(unsigned int n)		const = 0;	// the n'th quantified variable
-		virtual	Formula*				subform(unsigned int n)		const = 0;	// the n'th direct subformula
-		virtual	Term*					subterm(unsigned int n)		const = 0;	// the n'th direct subterm
-				bool					contains(const Variable*)	const;		// true iff the formula contains the variable
-				bool					contains(const PFSymbol*)	const;		// true iff the formula contains the symbol
-		virtual	bool					trueformula()				const { return false;	}
+				const FormulaParseInfo&	pi()						const { return _pi;				}
+				bool					contains(const Variable*)	const;	//!< true iff the formula contains the variable
+				bool					contains(const PFSymbol*)	const;	//!< true iff the formula contains the symbol
+		virtual	bool					trueformula()				const { return false;	}	
+			//!< true iff the formula is the empty conjunction
 		virtual	bool					falseformula()				const { return false;	}
+			//!< true iff the formula is the empty disjunction
 
 		// Visitor
-		virtual void		accept(Visitor* v) const	= 0;
-		virtual Formula*	accept(MutatingVisitor* v)	= 0;
+		virtual void		accept(TheoryVisitor* v)			const = 0;
+		virtual Formula*	accept(TheoryMutatingVisitor* v)	= 0;
 
-		// Debugging
-		virtual std::string to_string(unsigned int spaces = 0)	const = 0;
+		// Output
+		virtual std::ostream& to_string(std::ostream&, unsigned int spaces = 0)	const = 0;
 };
 
-/** Atoms **/
-
+/** 
+ * Class to represent atomic formulas, that is, a predicate or function symbol applied to a tuple of terms.
+ * If F is a function symbol, the atomic formula F(t_1,...,t_n) represents the formula F(t_1,...,t_n-1) = t_n.
+ */
 class PredForm : public Formula {
 	private:
-		PFSymbol*			_symb;		// the predicate or function
-		std::vector<Term*>	_args;		// the arguments
+		PFSymbol*			_symbol;		//!< the predicate or function symbol
 
 	public:
 		// Constructors
-		PredForm(bool sign, PFSymbol* p, const std::vector<Term*>& a, const FormParseInfo& pi) : 
-			Formula(sign,pi), _symb(p), _args(a) { setfvars(); }
+		PredForm(bool sign, PFSymbol* s, const std::vector<Term*>& a, const FormulaParseInfo& pi) : 
+			Formula(sign,pi), _symbol(s) { _subterms = a; setfvars(); }
 
-		PredForm*	clone()									const;
+		PredForm*	clone()										const;
 		PredForm*	clone(const std::map<Variable*,Variable*>&)	const;
 
-	    // Destructor
-		void recursiveDelete();
+		~PredForm() { }
 
 		// Mutators
-		void	symb(PFSymbol* s)				{ _symb = s;	}
-		void	arg(unsigned int n, Term* t)	{ _args[n] = t;	}
+		void	symbol(PFSymbol* s)				{ _symbol = s;					}
+		void	arg(unsigned int n, Term* t)	{ _subterms[n] = t;	setfvars(); }
 
 		// Inspectors
-		PFSymbol*					symb()					const { return _symb;				}
-		unsigned int				nrQvars()				const { return 0;					}
-		unsigned int				nrSubforms()			const { return 0;					}
-		unsigned int				nrSubterms()			const { return _args.size();		}
-		Variable*					qvar(unsigned int)		const { assert(false); return 0;	}
-		Formula*					subform(unsigned int)	const { assert(false); return 0;	}
-		Term*						subterm(unsigned int n)	const { return _args[n];			}
-		const std::vector<Term*>&	args()					const { return _args;				}
+		PFSymbol*					symbol()	const { return _symbol;		}
+		const std::vector<Term*>&	args()		const { return _subterms;	}
 		
 		// Visitor
-		void		accept(Visitor* v) const;
-		Formula*	accept(MutatingVisitor* v);
+		void		accept(TheoryVisitor* v) const;
+		Formula*	accept(TheoryMutatingVisitor* v);
 
-		// Debugging
-		std::string to_string(unsigned int spaces = 0) const;
+		// Output
+		std::ostream& put(std::ostream&,unsigned int spaces = 0) const;
 };
 
-/** Chains of equalities and inequalities **/
-
+/** 
+ * Class to represent chains of equalities and inequalities 
+ */
 class EqChainForm : public Formula {
 	private:
-		bool				_conj;		// Indicates whether the chain is a conjunction or disjunction of (in)equalties
-		std::vector<Term*>	_terms;		// The consecutive terms in the chain
-		std::vector<char>	_comps;		// The consecutive comparisons ('=', '>' or '<') in the chain
-		std::vector<bool>	_signs;		// The signs of the consecutive comparisons
+		bool					_conj;	//!< Indicates whether the chain is a conjunction or disjunction of (in)equalties
+		std::vector<CompType>	_comps;	//!< The consecutive comparisons in the chain
 
 	public:
 		// Constructors
-		EqChainForm(bool sign, bool c, Term* t, const FormParseInfo& pi) : 
-			Formula(sign,pi), _conj(c), _terms(1,t), _comps(0), _signs(0) { setfvars(); }
-		EqChainForm(bool sign, bool c, const std::vector<Term*>& vt, const std::vector<char>& vc, const std::vector<bool>& vs, const FormParseInfo& pi) :
-			Formula(sign,pi), _conj(c), _terms(vt), _comps(vc), _signs(vs) { setfvars();	}
+		EqChainForm(bool sign, bool c, Term* t, const FormulaParseInfo& pi) : 
+			Formula(sign,pi), _conj(c), _comps(0) { _subterms = std::vector<Term*>(1,t); setfvars(); }
+		EqChainForm(bool s,bool c,const std::vector<Term*>& vt,const std::vector<CompType>& vc,const FormulaParseInfo& pi) :
+			Formula(s,pi), _conj(c), _comps(vc) { _subterms = vt; setfvars();	}
 
-		EqChainForm*	clone()									const;
+		EqChainForm*	clone()										const;
 		EqChainForm*	clone(const std::map<Variable*,Variable*>&)	const;
 
 	    // Destructor
-		void recursiveDelete();
+		~EqChainForm() { }
 
 		// Mutators
-		void add(char c, bool s, Term* t)		{ _comps.push_back(c); _signs.push_back(s); _terms.push_back(t);	}
-		void conj(bool b)						{ _conj = b;														}
-		void compsign(unsigned int n, bool b)	{ _signs[n] = b;													}
-		void term(unsigned int n, Term* t)		{ _terms[n] = t;													}
+		void add(CompType ct, Term* t)		{ _comps.push_back(ct); _subterms.push_back(t);	setfvars();	}
+		void conj(bool b)					{ _conj = b;												}
+		void term(unsigned int n, Term* t)	{ _subterms[n] = t; setfvars();								}
 
 		// Inspectors
-		bool			conj()						const	{ return _conj;				}
-		char			comp(unsigned int n)		const	{ return _comps[n];			}
-		bool			compsign(unsigned int n)	const	{ return _signs[n];			}
-		unsigned int	nrComps()					const	{ return _comps.size();		}
-		unsigned int	nrQvars()					const	{ return 0;					}
-		unsigned int	nrSubforms()				const	{ return 0;					}
-		unsigned int	nrSubterms()				const	{ return _terms.size();		}
-		Variable*		qvar(unsigned int)			const	{ assert(false); return 0;	}
-		Formula*		subform(unsigned int)		const	{ assert(false); return 0;	}
-		Term*			subterm(unsigned int n)		const	{ return _terms[n];			}
-
-		const std::vector<char>&	comps()		const	{ return _comps;	}
-		const std::vector<bool>& compsigns()	const	{ return _signs;	}
+		bool							conj()	const { return _conj;	}
+		const std::vector<CompType>&	comps()	const { return _comps;	}
 
 		// Visitor
-		void		accept(Visitor* v) const;
-		Formula*	accept(MutatingVisitor* v);
+		void		accept(TheoryVisitor* v) const;
+		Formula*	accept(TheoryMutatingVisitor* v);
 
-		// Debugging
-		std::string to_string(unsigned int spaces = 0) const;
+		// Output
+		std::ostream& put(std::ostream&, unsigned int spaces = 0) const;
 };
 
-/** Equivalences **/
-
+/** 
+ * Equivalences 
+ */
 class EquivForm : public Formula {
-	protected:
-		Formula*	_left;		// left-hand side formula
-		Formula*	_right;		// right-hand side formula
 
 	public:
 		// Constructors
-		EquivForm(bool sign, Formula* lf, Formula* rt, const FormParseInfo& pi) : 
-			Formula(sign,pi), _left(lf), _right(rt) { setfvars(); }
+		EquivForm(bool sign, Formula* lf, Formula* rf, const FormulaParseInfo& pi) : 
+			Formula(sign,pi) { _subformulas.push_back(lf); _subformulas.push_back(rf); setfvars(); }
 
 		EquivForm*	clone()										const;
 		EquivForm*	clone(const std::map<Variable*,Variable*>&)	const;
 
 	    // Destructor
-		void recursiveDelete();
+		~EquivForm() { }	
 
 		// Mutators
-		void left(Formula* f)	{ _left = f;	}
-		void right(Formula* f)	{ _right = f;	}
+		void left(Formula* f)	{ _subformulas[0] = f; setfvars();	}
+		void right(Formula* f)	{ _subformulas[1] = f; setfvars();	}
 
 		// Inspectors
-		Formula*		left()					const { return _left;					}
-		Formula*		right()					const { return _right;					}
-		unsigned int	nrQvars()				const { return 0;						}
-		unsigned int	nrSubforms()			const { return 2;						}
-		unsigned int	nrSubterms()			const { return 0;						}	
-		Variable*		qvar(unsigned int)		const { assert(false); return 0;		}
-		Formula*		subform(unsigned int n)	const { return (n ? _left : _right);	}
-		Term*			subterm(unsigned int)	const { assert(false); return 0;	 	}
+		Formula*		left()					const { return _subformulas.front();	}
+		Formula*		right()					const { return _subformulas.back();		}
 
 		// Visitor
-		void		accept(Visitor* v) const;
-		Formula*	accept(MutatingVisitor* v);
+		void		accept(TheoryVisitor* v) const;
+		Formula*	accept(TheoryMutatingVisitor* v);
 
-		// Debuging
-		std::string to_string(unsigned int spaces = 0) const;
+		// Output
+		std::ostream& put(std::ostream&,unsigned int spaces = 0) const;
 };
 
-/** Conjunctions and disjunctions **/
-
+/** 
+ * Conjunctions and disjunctions 
+ */
 class BoolForm : public Formula {
 	private:
-		std::vector<Formula*>	_subf;	// the direct subformulas
-		bool					_conj;	// true (false) if the formula is the conjunction (disjunction) of the 
-										// formulas in _subf
+		bool	_conj;	//!< true (false) if the formula is a conjunction (disjunction)
 									
 	public:
 		// Constructors
-		BoolForm(bool sign, bool c, const std::vector<Formula*>& sb, const FormParseInfo& pi) :
-			Formula(sign,pi), _subf(sb), _conj(c) { setfvars(); }
+		BoolForm(bool sign, bool c, const std::vector<Formula*>& sb, const FormulaParseInfo& pi) :
+			Formula(sign,pi), _conj(c) { _subformulas = sb; setfvars(); }
 
 		BoolForm*	clone()										const;
 		BoolForm*	clone(const std::map<Variable*,Variable*>&)	const;
 
 	    // Destructor
-		void recursiveDelete();
+		~BoolForm() { }
 
 		// Mutators
-		void	conj(bool b)							{ _conj = b;	}
-		void	subf(unsigned int n, Formula* f)		{ _subf[n] = f;	}
-		void	subf(const std::vector<Formula*>& s)	{ _subf = s;	}
+		void	conj(bool b)							{ _conj = b;						}
+		void	subf(unsigned int n, Formula* f)		{ _subformulas[n] = f; setfvars();	}
+		void	subf(const std::vector<Formula*>& s)	{ _subformulas = s;	setfvars();		}
 
 		// Inspectors
-		bool			conj()					const	{ return _conj;				}
-		Formula*		subf(unsigned int n)	const	{ return _subf[n];			}
-		unsigned int	nrQvars()				const	{ return 0;					}
-		unsigned int	nrSubforms()			const	{ return _subf.size();		}
-		unsigned int	nrSubterms()			const	{ return 0;					}
-		Variable*		qvar(unsigned int)		const	{ assert(false); return 0;	}
-		Formula*		subform(unsigned int n)	const	{ return _subf[n];			}
-		Term*			subterm(unsigned int)	const	{ assert(false); return 0; 	}
-		bool			trueformula()			const	{ return (_subf.empty() && _conj == _sign);	}
-		bool			falseformula()			const	{ return (_subf.empty() && _conj != _sign);	}
+		bool			conj()					const	{ return _conj;										}
+		bool			trueformula()			const	{ return (_subformulas.empty() && _conj == _sign);	}
+		bool			falseformula()			const	{ return (_subformulas.empty() && _conj != _sign);	}
 
 		// Visitor
-		void		accept(Visitor* v) const;
-		Formula*	accept(MutatingVisitor* v);
+		void		accept(TheoryVisitor* v) const;
+		Formula*	accept(TheoryMutatingVisitor* v);
 
 		// Debugging
-		std::string to_string(unsigned int spaces = 0)	const;
+		std::ostream& put(std::ostream&, unsigned int spaces = 0)	const;
 };
 
-/** Universally and existentially quantified formulas **/
-
+/** 
+ *	Universally and existentially quantified formulas 
+ */	
 class QuantForm : public Formula {
 	private:
-		std::vector<Variable*>	_vars;	// the quantified variables
-		Formula*				_subf;	// the direct subformula
-		bool					_univ;	// true (false) if the quantifier is universal (existential)
+		bool	_univ;	// true (false) if the quantifier is universal (existential)
 
 	public:
 		// Constructors
-		QuantForm(bool sign, bool u, const std::vector<Variable*>& v, Formula* sf, const FormParseInfo& pi) : 
+		QuantForm(bool sign, bool u, const std::vector<Variable*>& v, Formula* sf, const FormulaParseInfo& pi) : 
 			Formula(sign,pi), _vars(v), _subf(sf), _univ(u) { setfvars(); }
 
 		QuantForm*	clone()										const;
@@ -318,7 +288,7 @@ class AggForm : public Formula {
 
 	public:
 		// Constructors
-		AggForm(bool sign, char c, Term* l, AggTerm* r, const FormParseInfo& pi) : 
+		AggForm(bool sign, char c, Term* l, AggTerm* r, const FormulaParseInfo& pi) : 
 			Formula(sign,pi), _comp(c), _left(l), _right(r) { setfvars(); }
 
 		AggForm*	clone()										const;

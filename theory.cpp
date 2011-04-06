@@ -5,22 +5,267 @@
 ************************************/
 
 #include "theory.hpp"
-
-#include <iostream>
-#include <typeinfo>
-#include <set>
-
-#include "structure.hpp"
-#include "data.hpp"
-#include "visitor.hpp"
-#include "builtin.hpp"
-#include "ecnf.hpp"
-#include "ground.hpp"
-
 using namespace std;
 
-extern string tabstring(unsigned int);
-extern bool nexttuple(vector<unsigned int>&,const vector<unsigned int>&);
+/**********************
+	TheoryComponent
+**********************/
+
+string TheoryComponent::to_string(unsigned int spaces) const {
+	stringstream sstr;
+	put(sstr,spaces);
+	return sstr.str();
+}
+
+/**************
+	Formula
+**************/
+
+void Formula::setfvars() {
+	_freevars.clear();
+	for(vector<Term*>::const_iterator it = _subterms.begin(); it != _subterms.end(); ++it) {
+		_freevars.insert((*it)->freevars().begin(),(*it)->freevars().end());
+	}
+	for(vector<Formula*>::const_iterator it = _subformulas.begin(); it != _subformulas.end(); ++it) {
+		_freevars.insert((*it)->freevars().begin(),(*it)->freevars().end());
+	}
+	_freevars.erase(_quantvars.begin(),_quantvars.end());
+}
+
+void Formula::recursiveDelete() {
+	for(vector<Term*>::iterator it = _subterms.begin(); it != _subterms.end(); ++it) {
+		(*it)->recursiveDelete();
+	}
+	for(vector<Formula*>::iterator it = _subformulas.begin(); it != _subformulas.end(); ++it) {
+		(*it)->recursiveDelete();
+	}
+	for(set<Variable*>::iterator it = _quantvars.begin(); it != _quantvars.end(); ++it) {
+		delete(*it);
+	}
+}
+
+bool Formula::contains(const Variable* v) const {
+	for(set<Variable*>::const_iterator it = _freevars.begin(); it != _freevars.end(); ++it) {
+		if(*it == v) return true;
+	}
+	for(set<Variable*>::const_iterator it = _quantvars.begin(); it != _quantvars.end(); ++it) {
+		if(*it == v) return true;
+	}
+	for(vector<Term*>::const_iterator it = _subterms.begin(); it != _subterms.end(); ++it) {
+		if((*it)->contains(v)) return true;
+	}
+	for(vector<Formula*>::const_iterator it = _subformulas.begin(); it != _subformulas.end(); ++it) {
+		if((*it)->contains(v)) return true;
+	}
+	return false;
+}
+
+class ContainmentChecker : public TheoryVisitor {
+	private:
+		const PFSymbol*	_symbol;
+		bool			_result;
+
+		void visit(const PredForm* pf) { 
+			if(pf->symbol() == _symbol) {
+				_result = true;
+				return;
+			}
+			else traverse(pf);	
+		}
+
+		void visit(const FuncTerm* ft) { 
+			if(ft->function() == _symbol) {
+				_result = true;
+				return;
+			}
+			else traverse(ft);
+		}
+
+	public:
+		ContainmentChecker(const PFSymbol* s) : 
+			TheoryVisitor(), _symbol(s) { }
+
+		bool run(const Formula* f) { 
+			_result = false;
+			f->accept(this);
+			return _result;
+		}
+
+};
+
+bool Formula::contains(const PFSymbol* s) const {
+	ContainmentChecker cc(s);
+	return cc.run(this);
+}
+
+/***************
+	PredForm
+***************/
+
+PredForm* PredForm::clone() const {
+	map<Variable*,Variable*> mvv;
+	return clone(mvv);
+}
+
+PredForm* PredForm::clone(const map<Variable*,Variable*>& mvv) const {
+	vector<Term*> na;
+	for(vector<Term*>::const_iterator it = _subterms.begin(); it != _subterms.end(); ++it) 
+		na.push_back((*it)->clone(mvv));
+	PredForm* pf = new PredForm(_sign,_symbol,na,_pi.clone(mvv));
+	return pf;
+}
+
+void PredForm::accept(TheoryVisitor* v) const {
+	v->visit(this);
+}
+
+Formula* PredForm::accept(TheoryMutatingVisitor* v) {
+	return v->visit(this);
+}
+
+ostream& PredForm::put(ostream& output, unsigned int spaces) const {
+	printtabs(output,spaces);
+	if(!_sign) output << '~';
+	output << *_symbol;
+	if(typeid(*_symbol) == typeid(Predicate)) {
+		if(!_subterms.empty()) {
+			output << '(' << *_subterms[0];
+			for(unsigned int n = 1; n < _subterms.size(); ++n) {
+				output << ',' << *_subterms[n];
+			output << ')';
+		}
+	}
+	else {
+		if(_subterms.size() > 1) {
+			output << '(' << *_subterms[0];
+			for(unsigned int n = 1; n < _subterms.size()-1; ++n) {
+				output << ',' << *_subterms[n];
+			output << ')';
+		}
+		output << " = " << *_subterms.back();
+	}
+	return output;
+}
+
+/******************
+	EqChainForm
+******************/
+
+EqChainForm* EqChainForm::clone() const {
+	map<Variable*,Variable*> mvv;
+	return clone(mvv);
+}
+
+EqChainForm* EqChainForm::clone(const map<Variable*,Variable*>& mvv) const {
+	vector<Term*> nt;
+	for(vector<Term*>::const_iterator it = _subterms.begin(); it != _subterms.end(); ++it) 
+		nt.push_back((*it)->clone(mvv));
+	EqChainForm* ef = new EqChainForm(_sign,_conj,nt,_comps,_pi.clone(mvv));
+	return ef;
+}
+
+void EqChainForm::accept(TheoryVisitor* v) const {
+	v->visit(this);
+}
+
+Formula* EqChainForm::accept(TheoryMutatingVisitor* v) {
+	return v->accept(this);
+}
+
+ostream& EqChainForm::put(ostream& output, unsigned int spaces) const {
+	printtabs(output,spaces);
+	if(!_sign) output << '~';
+	output << '(' << *_subterms[0];
+	for(unsigned int n = 0; n < _comps.size(); ++n) {
+		switch(_comps[n]) {
+			case CT_EQ: output << " = "; break;
+			case CT_NEQ: output << " ~= "; break;
+			case CT_LT: output << " < "; break;
+			case CT_GT: output << " > "; break;
+			case CT_LEQ: output << " =< "; break;
+			case CT_GEQ: output << " >= "; break;
+			default: assert(false);
+		}
+		output << *_subterms[n+1];
+		if(!_conj && n+1 < _comps.size()) output << " | " << *_subterms[n+1];
+	}
+	output << ')';
+	return output;
+}
+
+/****************
+	EquivForm
+****************/
+
+EquivForm* EquivForm::clone() const {
+	map<Variable*,Variable*> mvv;
+	return clone(mvv);
+}
+
+EquivForm* EquivForm::clone(const map<Variable*,Variable*>& mvv) const {
+	Formula* nl = left()->clone(mvv);
+	Formula* nr = right()->clone(mvv);
+	EquivForm* ef =  new EquivForm(_sign,nl,nr,_pi.clone(mvv));
+	return ef;
+}
+
+void EquivForm::accept(TheoryVisitor* v) const {
+	v->visit(this);
+}
+
+Formula* EquivForm::accept(TheoryMutatingVisitor* v) {
+	return v->accept(this);
+}
+
+ostream& EquivForm::put(ostream& output, unsigned int spaces) const {
+	printtabs(output,spaces);
+	output << '(' + *left() << " <=> " *right() << ')';
+	return output;
+}
+
+/***************
+	BoolForm
+***************/
+
+BoolForm* BoolForm::clone() const {
+	map<Variable*,Variable*> mvv;
+	return clone(mvv);
+}
+
+BoolForm* BoolForm::clone(const map<Variable*,Variable*>& mvv) const {
+	vector<Formula*> ns;
+	for(vector<Formula*>::const_iterator it = _subformulas.begin(); it != _subformulas.end(); ++it) 
+		ns.push_back((*it)->clone(mvv));
+	BoolForm* bf = new BoolForm(_sign,_conj,ns,_pi.clone(mvv));
+	return bf;
+}
+
+void BoolForm::accept(TheoryVisitor* v) const {
+	v->visit(this);
+}
+
+Formula* BoolForm::accept(TheoryMutatingVisitor* v) {
+	return v->accept(this);
+}
+
+ostream& BoolForm::put(ostream& output, unsigned int spaces) const {
+	if(_subformulas.empty()) {
+		if(_sign == _conj) output << "true";
+		else output << "false";
+	}
+	else {
+		if(!_sign) output << '~';
+		output << '(' << *_subformulas[0];
+		for(unsigned int n = 1; n < _subformulas.size(); ++n) {
+			if(_conj) output << " & ";
+			else output <<  " | ";
+			output << *_subformulas[n]; 
+		}
+		output << ')';
+	}
+	return output;
+}
+
 
 /*******************
 	Constructors
@@ -28,27 +273,7 @@ extern bool nexttuple(vector<unsigned int>&,const vector<unsigned int>&);
 
 /** Cloning while keeping free variables **/
 
-PredForm* PredForm::clone() const {
-	map<Variable*,Variable*> mvv;
-	return clone(mvv);
-}
-
 BracketForm* BracketForm::clone() const {
-	map<Variable*,Variable*> mvv;
-	return clone(mvv);
-}
-
-EqChainForm* EqChainForm::clone() const {
-	map<Variable*,Variable*> mvv;
-	return clone(mvv);
-}
-
-EquivForm* EquivForm::clone() const {
-	map<Variable*,Variable*> mvv;
-	return clone(mvv);
-}
-
-BoolForm* BoolForm::clone() const {
 	map<Variable*,Variable*> mvv;
 	return clone(mvv);
 }
@@ -65,37 +290,9 @@ AggForm* AggForm::clone() const {
 
 /** Cloning while substituting free variables **/
 
-PredForm* PredForm::clone(const map<Variable*,Variable*>& mvv) const {
-	vector<Term*> na(_args.size());
-	for(unsigned int n = 0; n < _args.size(); ++n) na[n] = _args[n]->clone(mvv);
-	PredForm* pf = new PredForm(_sign,_symb,na,_pi);
-	return pf;
-}
-
 BracketForm* BracketForm::clone(const map<Variable*,Variable*>& mvv) const {
 	Formula* nf = _subf->clone(mvv);
 	return new BracketForm(_sign,nf);
-}
-
-EqChainForm* EqChainForm::clone(const map<Variable*,Variable*>& mvv) const {
-	vector<Term*> nt(_terms.size());
-	for(unsigned int n = 0; n < _terms.size(); ++n) nt[n] = _terms[n]->clone(mvv);
-	EqChainForm* ef = new EqChainForm(_sign,_conj,nt,_comps,_signs,_pi);
-	return ef;
-}
-
-EquivForm* EquivForm::clone(const map<Variable*,Variable*>& mvv) const {
-	Formula* nl = _left->clone(mvv);
-	Formula* nr = _right->clone(mvv);
-	EquivForm* ef =  new EquivForm(_sign,nl,nr,_pi);
-	return ef;
-}
-
-BoolForm* BoolForm::clone(const map<Variable*,Variable*>& mvv) const {
-	vector<Formula*> ns(_subf.size());
-	for(unsigned int n = 0; n < _subf.size(); ++n) ns[n] = _subf[n]->clone(mvv);
-	BoolForm* bf = new BoolForm(_sign,_conj,ns,_pi);
-	return bf;
 }
 
 QuantForm* QuantForm::clone(const map<Variable*,Variable*>& mvv) const {
@@ -121,29 +318,8 @@ AggForm* AggForm::clone(const map<Variable*,Variable*>& mvv) const {
 	Destructors
 *****************/
 
-void PredForm::recursiveDelete() {
-	for(unsigned int n = 0; n < _args.size(); ++n) _args[n]->recursiveDelete();
-	delete(this);
-}
-
 void BracketForm::recursiveDelete() {
 	_subf->recursiveDelete();
-	delete(this);
-}
-
-void EqChainForm::recursiveDelete() {
-	for(unsigned int n = 0; n < _terms.size(); ++n) _terms[n]->recursiveDelete();
-	delete(this);
-}
-
-void EquivForm::recursiveDelete() {
-	_left->recursiveDelete();
-	_right->recursiveDelete();
-	delete(this);
-}
-
-void BoolForm::recursiveDelete() {
-	for(unsigned int n = 0; n < _subf.size(); ++n) _subf[n]->recursiveDelete();
 	delete(this);
 }
 
@@ -188,33 +364,6 @@ void Theory::recursiveDelete() {
 	Computing free variables
 *******************************/
 
-void Formula::setfvars() {
-	_fvars.clear();
-	for(unsigned int n = 0; n < nrSubterms(); ++n) {
-		Term* t = subterm(n);
-		t->setfvars();
-		for(unsigned int m = 0; m < t->nrFvars(); ++m) { 
-			unsigned int k = 0;
-			for(; k < nrQvars(); ++k) {
-				if(qvar(k) == t->fvar(m)) break;
-			}
-			if(k == nrQvars()) _fvars.push_back(t->fvar(m));
-		}
-	}
-	for(unsigned int n = 0; n < nrSubforms(); ++n) {
-		Formula* f = subform(n);
-		f->setfvars();
-		for(unsigned int m = 0; m < f->nrFvars(); ++m) {
-			unsigned int k = 0;
-			for(; k < nrQvars(); ++k) {
-				if(qvar(k) == f->fvar(m)) break;
-			}
-			if(k == nrQvars()) _fvars.push_back(f->fvar(m));
-		}
-	}
-	VarUtils::sortunique(_fvars);
-}
-
 /***********************************
 	Adding rules and definitions
 ***********************************/
@@ -257,106 +406,15 @@ void FixpDef::defsyms() {
 		add(_rules[n]->head()->symb());
 }
 
-/***************************
-	Containment checking
-***************************/
-
-bool Formula::contains(const Variable* v) const {
-	for(unsigned int n = 0; n < nrQvars(); ++n)
-		if(qvar(n) == v) return true;
-	for(unsigned int n = 0; n < nrSubterms(); ++n)
-		if(subterm(n)->contains(v)) return true;
-	for(unsigned int n = 0; n < nrSubforms(); ++n)
-		if(subform(n)->contains(v)) return true;
-	return false;
-}
-
-class ContainmentChecker : public Visitor {
-	private:
-		const PFSymbol*	_symbol;
-		bool			_result;
-	public:
-		ContainmentChecker(const Formula* f, const PFSymbol* s) : Visitor(), _symbol(s), _result(false) { f->accept(this); }
-		void visit(const PredForm* pf) { _result = (pf->symb() == _symbol); traverse(pf);	}
-		void visit(const FuncTerm* ft) { _result = (ft->func() == _symbol); traverse(ft);	}
-		bool result() { return _result; }
-};
-
-bool Formula::contains(const PFSymbol* s) const {
-	ContainmentChecker cc(this,s);
-	return cc.result();
-}
-
 /****************
 	Debugging
 ****************/
-
-string PredForm::to_string(unsigned int) const {
-	string s;
-	if(!_sign) s = s + '~';
-	s = s + _symb->to_string();
-	if(_args.size()) {
-		s = s + '(' + _args[0]->to_string();
-		for(unsigned int n = 1; n < _args.size(); ++n) {
-			s = s + ',' + _args[n]->to_string();
-		}
-		s = s + ')';
-	}
-	return s;
-}
 
 string BracketForm::to_string(unsigned int) const {
 	string s;
 	if(!_sign) s = s+ '~';
 	s = s + "(" + _subf->to_string() + ")";
 	return s;
-}
-
-string EqChainForm::to_string(unsigned int) const {
-	string s;
-	if(!_sign) s = s + '~';
-	s = s + "(" + _terms[0]->to_string();
-	for(unsigned int n = 0; n < _comps.size(); ++n) {
-		switch(_comps[n]) {
-			case '=':
-				if(_signs[n]) s = s + " = ";
-				else s = s + " ~= ";
-				break;
-			case '<':
-				if(_signs[n]) s = s + " < ";
-				else s = s + " >= ";
-				break;
-			case '>':
-				if(_signs[n]) s = s + " > ";
-				else s = s + " =< ";
-				break;
-		}
-		s = s + _terms[n+1]->to_string();
-		if(!_conj && n+1 < _comps.size()) s = s + " | " + _terms[n+1]->to_string();
-	}
-	s = s + ")";
-	return s;
-}
-
-string EquivForm::to_string(unsigned int) const {
-	string s = '(' + _left->to_string() + " <=> " + _right->to_string() + ')';
-	return s;
-}
-
-string BoolForm::to_string(unsigned int) const {
-	string s;
-	if(_subf.empty()) {
-		if(_sign == _conj) return "true";
-		else return "false";
-	}
-	if(!_sign) s = '~';
-	s = s + '(' + _subf[0]->to_string();
-	for(unsigned int n = 1; n < _subf.size(); ++n) {
-		if(_conj) s = s + " & ";
-		else s = s +  " | ";
-		s = s + _subf[n]->to_string(); 
-	}
-	return s + ')';
 }
 
 string QuantForm::to_string(unsigned int) const {

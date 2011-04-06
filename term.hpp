@@ -186,6 +186,10 @@ class AggTerm : public Term {
 
 };
 
+namespace TermUtils {
+	std::vector<Term*> 	makeNewVarTerms(const std::vector<Variable*>&);	//!< Make a vector of fresh variable terms
+}
+
 
 /**********************
 	Set expressions
@@ -205,20 +209,26 @@ class SetExpr {
 		std::vector<Term*>		_subterms;		//!< The direct subterms of the set expression
 		SetParseInfo			_pi;			//!< the place where the set was parsed
 
-		void	setfvars();
+		void	setfvars();	//!< Compute the free variables of the set
 
 	public:
 
 		SetExpr(const SetParseInfo& pi) : _pi(pi) { }
 
 		virtual SetExpr* clone()										const = 0;
+			//!< create a copy of the set while keeping the free variables
 		virtual SetExpr* clone(const std::map<Variable*,Variable*>&)	const = 0;
+			//!< create a copy of the set and substitute the free variables according to the given map
 
-		virtual ~SetExpr() { }		// Delete the set, but not 
-		void	recursiveDelete();	// Delete the set and its subformulas and subterms
+		virtual ~SetExpr() { }		//!< Delete the set, but not 
+		void	recursiveDelete();	//!< Delete the set and its subformulas and subterms
 
-		std::ostream	put(std::ostream&)	const;
-		std::string		to_string()			const;
+		virtual Sort*						sort()						const = 0;	//!< Returns the sort of the set
+				const std::set<Variable*>&	freevars()					const { return _freevars;	}
+				bool						contains(const Variable*)	const;
+
+		virtual std::ostream&	put(std::ostream&)	const = 0;
+				std::string		to_string()			const;
 
 };
 
@@ -231,34 +241,17 @@ class EnumSetExpr : public SetExpr {
 
 	public:
 		// Constructors
-		EnumSetExpr(const std::vector<Formula*>& s, const std::vector<Term*>& w, const ParseInfo& pi) : 
-			SetExpr(pi), _subf(s), _weights(w) { setfvars(); }
+		EnumSetExpr(const std::vector<Formula*>& s, const std::vector<Term*>& w, const SetParseInfo& pi);
+			
 
 		EnumSetExpr* clone()								const;
 		EnumSetExpr* clone(const std::map<Variable*,Variable*>&)	const;
 
-		// Destructor
-		void recursiveDelete();
+		~EnumSetExpr() { }
 
-		// Mutators
-		void	subf(unsigned int n, Formula* f)	{ _subf[n] = f;		}
-		void	weight(unsigned int n, Term* t)		{ _weights[n] = t;	}
+		Sort*	sort()	const;
 
-		// Inspectors
-		unsigned int	nrSubforms()			const	{ return _subf.size();		}	
-		unsigned int	nrSubterms()			const	{ return _weights.size();	}
-		unsigned int	nrQvars()				const	{ return 0;					}
-		Formula*		subform(unsigned int n)	const	{ return _subf[n];			}
-		Term*			subterm(unsigned int n)	const	{ return _weights[n];		}
-		Variable*		qvar(unsigned int)		const	{ assert(false); return 0;	}
-		Sort*			firstargsort()			const;
-
-		// Visitor
-		void		accept(Visitor* v) const;
-		SetExpr*	accept(MutatingVisitor* v);
-
-		// Debugging
-		std::string	to_string()	const;	
+		std::ostream& put(std::ostream&) const;
 };
 
 /** 
@@ -267,89 +260,25 @@ class EnumSetExpr : public SetExpr {
 class QuantSetExpr : public SetExpr {
 
 	public:
-		// Constructors
-		QuantSetExpr(const std::vector<Variable*>& v, Formula* s, const ParseInfo& pi) : 
-			SetExpr(pi), _subf(s), _vars(v) { setfvars(); }
+		QuantSetExpr(const std::set<Variable*>& v, Term* t, Formula* s, const SetParseInfo& pi);
 
-		QuantSetExpr* clone()									const;
+		QuantSetExpr* clone()										const;
 		QuantSetExpr* clone(const std::map<Variable*,Variable*>&)	const;
 
-		// Destructor
-		void recursiveDelete();
+		~QuantSetExpr() { }
 
-		// Mutators
-		void	subf(Formula* f)	{ _subf = f;	}
+		Sort*	sort()	const;
 
-		// Inspectors
-		unsigned int	nrSubforms()			const	{ return 1;					}	
-		unsigned int	nrSubterms()			const	{ return 0;					}
-		unsigned int	nrQvars()				const	{ return _vars.size();		}
-		Formula*		subform(unsigned int)	const	{ return _subf;				}
-		Term*			subterm(unsigned int)	const	{ assert(false); return 0;	}
-		Variable*		qvar(unsigned int n)	const	{ return _vars[n];			}
-		Formula*		subf()					const	{ return _subf;				}
-		Sort*			firstargsort()			const;
-		const std::vector<Variable*>&	qvars()	const	{ return _vars;				}
-
-		// Visitor
-		void		accept(Visitor* v) const;
-		SetExpr*	accept(MutatingVisitor* v);
-
-		// Debugging
-		std::string	to_string()	const;	
+		std::ostream&	put(std::ostream&)	const;	
 };
+
+class AbstractStructure;
 
 namespace SetUtils {
-	bool isTwoValued(SetExpr*,AbstractStructure*);
-}
-
-/** Aggregate types **/
-namespace AggUtils {
-	double compute(AggType,const std::vector<double>&);	// apply the aggregate on the given set of doubles 
-}
-
-/***********************
-	Evaluating terms
-***********************/
-
-class TermEvaluator : public Visitor {
-	private:
-		FiniteSortTable*					_returnvalue;
-		AbstractStructure*					_structure;
-		std::map<Variable*,TypedElement>	_varmapping;
-
-	public:
-		TermEvaluator(AbstractStructure* s,const std::map<Variable*,TypedElement> m);
-		TermEvaluator(Term* t,AbstractStructure* s,const std::map<Variable*,TypedElement> m);
-
-		FiniteSortTable* returnvalue()	{ return _returnvalue;	}
-
-		void visit(const VarTerm* vt);
-		void visit(const FuncTerm* ft);
-		void visit(const DomainTerm* dt);
-		void visit(const AggTerm* at);
-};
-
-namespace TermUtils {
-	/**
-	 * DESCRIPTION
-	 *	evaluate the given term in the given structure under the given variable mapping
-	 *		in case of a three-valued function, this may result in multiple values of the term
-	 *		in case of a partial function, the term may have no value
-	 * NOTE 
-	 *	This method works for general terms and structures. Therefore, it is rather slow.
-	 *	Faster methods exist if the structure is two-valued and the term contains no partial functions
-	 * PRECONDITION
-	 *	- all bounded variables in the term range over a finite domain in the given structure
-	 *	- all free variables of the term are interpreted by the given map
-	 */
-	FiniteSortTable*	evaluate(Term*,AbstractStructure*,const std::map<Variable*,TypedElement>&);	
-
-	/**
-	 * DESCRIPTION
-	 * 	Make a vector of fresh variable terms.
-	 */ 
-	std::vector<Term*> 		makeNewVarTerms(const std::vector<Variable*>&);
+	bool approxTwoValued(SetExpr*,AbstractStructure*);	
+		//!< Returns false if the set expression is not two-valued in the given structure. May return true
+		//!< if the set expression is two-valued in the structure.
+											
 }
 
 #endif 
