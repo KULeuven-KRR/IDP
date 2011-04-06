@@ -50,6 +50,67 @@ class ParseInfo {
 		bool			isParsed()	const { return _line != 0;	}	//!< Returns true iff the object was declared by the user
 };
 
+class Term;
+
+/**
+ *		ParseInfo for terms.
+ *
+ *		Besides the attributes of a ParseInfo object, it contains also the originally parsed term
+ */
+class TermParseInfo : public ParseInfo {
+	private:
+		Term*	_original;	//!< The original term written by the user
+							//!< Null-pointer when associated to an internally created formula with no
+							//!< corresponding original formula
+
+	public:
+
+		// Constructors
+		TermParseInfo() : ParseInfo(), _original(0) { }
+		TermParseInfo(unsigned int line, unsigned int col, std::string* file, Term* orig) : 
+			ParseInfo(line,col,file), _original(orig) { }
+		TermParseInfo(const TermParseInfo& p) : ParseInfo(p.line(),p.col(),p.file()), _original(p.original()) { }
+
+		// Destructor
+		~TermParseInfo();
+
+		// Inspectors
+		Term*	original()	const { return _original;	}	//!< Returns the original formula
+
+
+};
+
+class SetExpr;
+
+/**
+ *		ParseInfo for sets.
+ *
+ *		Besides the attributes of a ParseInfo object, it contains also the originally parsed set
+ */
+class SetParseInfo : public ParseInfo {
+	private:
+		SetExpr*	_original;	//!< The original term written by the user
+								//!< Null-pointer when associated to an internally created formula with no
+								//!< corresponding original formula
+
+	public:
+
+		// Constructors
+		SetParseInfo() : ParseInfo(), _original(0) { }
+		SetParseInfo(unsigned int line, unsigned int col, std::string* file, SetExpr* orig) : 
+			ParseInfo(line,col,file), _original(orig) { }
+		SetParseInfo(const SetParseInfo& p) : ParseInfo(p.line(),p.col(),p.file()), _original(p.original()) { }
+
+		// Destructor
+		~SetParseInfo();
+
+		// Inspectors
+		SetExpr*	original()	const { return _original;	}	//!< Returns the original formula
+
+
+};
+
+
 class Formula;
 
 /**
@@ -74,7 +135,7 @@ class FormulaParseInfo : public ParseInfo {
 		FormulaParseInfo(const FormulaParseInfo& p) : ParseInfo(p.line(),p.col(),p.file()), _original(p.original()) { }
 
 		// Destructor
-		~FormulaParseInfo() { }
+		~FormulaParseInfo();
 
 		// Inspectors
 		Formula*	original()	const { return _original;	}	//!< Returns the original formula

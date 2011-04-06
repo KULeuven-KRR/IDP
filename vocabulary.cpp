@@ -258,6 +258,12 @@ string Variable::to_string() const {
 
 ostream& operator<< (ostream& output, const Variable& var) { return var.put(output);	}
 
+vector<Variable*> VarUtils::makeNewVariables(const vector<Sort*>& sorts) {
+	vector<Variable*> vars;
+	for(vector<Sort*>::const_iterator it = sorts.begin(); it != sorts.end(); ++it)
+		vars.push_back(new Variable(*it));
+	return vars;
+}
 
 /*******************************
 	Predicates and functions

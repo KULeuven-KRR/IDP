@@ -84,7 +84,10 @@ class Sort {
 std::ostream& operator<< (std::ostream&,const Sort&);
 
 namespace SortUtils {
-	Sort* resolve(Sort* s1, Sort* s2, const Vocabulary* v);	//!< Return the unique nearest common ancestor of two sorts
+	Sort*	resolve(Sort* s1, Sort* s2, const Vocabulary* v);	
+		//!< Return the unique nearest common ancestor of two sorts
+	bool	isSubsort(Sort* a, Sort* b); 
+		//!< returns true iff sort a is a subsort of sort b
 }
 
 /****************
@@ -130,6 +133,12 @@ class Variable {
 
 std::ostream& operator<< (std::ostream&,const Variable&);
 
+namespace VarUtils {
+	/**
+ 	 * Make a vector of fresh variables of given sorts.
+ 	 */
+	std::vector<Variable*> makeNewVariables(const std::vector<Sort*>&);
+}
 
 /*************************************
 	Predicate and function symbols
@@ -585,5 +594,13 @@ class Vocabulary {
 };
 
 std::ostream& operator<< (std::ostream&,const Vocabulary&);
+
+namespace VocabularyUtils {
+	Sort*	natsort();		//!< returns the sort 'nat' of the standard vocabulary
+	Sort*	intsort();		//!< returns the sort 'int' of the standard vocabulary
+	Sort*	floatsort();	//!< returns the sort 'float' of the standard vocabulary
+	Sort*	stringsort();	//!< returns the sort 'string' of the standard vocabulary
+	Sort*	charsort();		//!< returns the sort 'char' of the standard vocabulary
+}
 
 #endif

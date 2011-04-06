@@ -45,6 +45,10 @@ class GroundAggregate;
 class GroundSet;
 class PCGroundRuleBody;
 class AggGroundRuleBody;
+class CPReification;
+class CPSumTerm;
+class CPWSumTerm;
+class CPVarTerm;
 
 /*
  *	class Visitor
@@ -122,6 +126,12 @@ class Visitor {
 		virtual void visit(const GroundSet*);
 		virtual void visit(const PCGroundRuleBody*);
 		virtual void visit(const AggGroundRuleBody*);
+
+		/* Constraint Programming */
+		virtual void visit(const CPReification*);
+		virtual void visit(const CPSumTerm*);
+		virtual void visit(const CPWSumTerm*);
+		virtual void visit(const CPVarTerm*);
 };
 
 /*

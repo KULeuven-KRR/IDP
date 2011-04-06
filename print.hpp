@@ -15,6 +15,7 @@
 #include <sstream>
 
 class GroundTranslator;
+class GroundTermTranslator;
 
 /*************************
 	Printer base class
@@ -60,14 +61,16 @@ class SimplePrinter : public Printer {
 
 class IDPPrinter : public Printer {
 	private:
-		bool 					_printtypes;
-		const PFSymbol* 		_currentsymbol;
-		const Structure* 		_currentstructure;
-		const GroundTranslator*	_translator;
+		bool 						_printtypes;
+		const PFSymbol* 			_currentsymbol;
+		const Structure* 			_currentstructure;
+		const GroundTranslator*		_translator;
+		const GroundTermTranslator*	_termtranslator;
 
 		void print(const PredTable*);
 		void printInter(const char*,const char*,const PredTable*,const PredTable*);
-		void printAtom(int literal);
+		void printAtom(int atomnr);
+		void printTerm(unsigned int termnr);
 
 	public:
 		IDPPrinter() : _printtypes(false) { }
@@ -120,18 +123,25 @@ class IDPPrinter : public Printer {
 		void visit(const AggGroundRuleBody*);
 		void visit(const GroundAggregate*);
 		void visit(const GroundSet*);
+
+		/* Constraint Programming */
+		void visit(const CPReification*);
+		void visit(const CPSumTerm*);
+		void visit(const CPWSumTerm*);
+		void visit(const CPVarTerm*);
 };
 
 class EcnfPrinter : public Printer {
 	private:
-		int	_currenthead;
+		int				_currenthead;
+		unsigned int 	_currentdefnr;
 
 	public:
 		void visit(const GroundTheory*);
 		void visit(const GroundDefinition*);
 		void visit(const PCGroundRuleBody*);
-		void visit(const AggGroundRuleBody*); //TODO Not implemented yet
-		void visit(const GroundAggregate*); //TODO Not implemented yet
+		void visit(const AggGroundRuleBody*);
+		void visit(const GroundAggregate*);
 		void visit(const GroundSet*);
 }; 
 

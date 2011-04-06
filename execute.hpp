@@ -34,7 +34,9 @@ enum InfArgType {
 	IAT_PREDTABLE,
 	IAT_PREDINTER,
 	IAT_FUNCINTER,
-	IAT_TUPLE
+	IAT_TUPLE,
+	IAT_MULT,
+	IAT_REGISTRY
 };
 
 namespace BuiltinProcs {

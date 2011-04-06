@@ -4,33 +4,99 @@
 	(c) K.U.Leuven
 ************************************/
 
-#include "data.hpp"
-#include "namespace.hpp"
-#include "builtin.hpp"
-#include "visitor.hpp"
+#include "term.hpp"
+using namespace std;
 
-extern string itos(int);
-extern string dtos(double);
+/*********************
+	Abstract terms
+*********************/
 
-
-/*******************
-	Constructors
-*******************/
-
-VarTerm::VarTerm(Variable* v, const ParseInfo& pi) : Term(pi), _var(v) {
-	setfvars();
+void Term::setfvars() {
+	_freevars.clear();
+	for(vector<Term*>::const_iterator it = _subterms.begin(); it != _subterms.end(); ++it) {
+		_freevars.insert((*it)->freevars().begin(),(*it)->freevars().end());
+	}
+	for(vector<Set*>::const_iterator it = _subsets.begin(); it != _subsets.end(); ++it) {
+		_freevars.insert((*it)->freevars().begin(),(*it)->freevars().end());
+	}
 }
 
-FuncTerm::FuncTerm(Function* f, const vector<Term*>& a, const ParseInfo& pi) : Term(pi), _func(f), _args(a) { 
-	setfvars();
+void Term::recursiveDelete() {
+	for(vector<Term*>::iterator it = _subterms.begin(); it != _subterms.end(); ++it) {
+		(*it)->recursiveDelete();
+	}
+	for(vector<Set*>::iterator it = _subsets.begin(); it != _subsets.end(); ++it) {
+		(*it)->recursiveDelete();
+	}
+	delete(this);
 }
 
+bool Term::contains(const Variable* v) const {
+	for(set<Variable*>::iterator it = _freevars.begin(); it != _freevars.end(); ++it) {
+		if(*it == v) return true;
+	}
+	for(vector<Term*>::iterator it = _subterms.begin(); it != _subterms.end(); ++it) {
+		if((*it)->contains(v)) return true;
+	}
+	for(vector<Set*>::iterator it = _subsets.begin(); it != _subsets.end(); ++it) {
+		if((*it)->contains(v)) return true;
+	}
+	return false;
+}
 
-/** Cloning while keeping free variables **/
+string Term::to_string() const {
+	stringstream sstr;
+	put(sstr);
+	return sstr.str();
+}
+
+ostream& opreator<<(ostream& output, const Term& t) {
+	return t.put(output);
+}
+
+/***************
+	VarTerm
+***************/
+
+void VarTerm::setfvars() {
+	_freevars.clear();
+	_freevars.insert(_var);
+}
+
+void VarTerm::sort(Sort* s) {
+	_var->sort(s);
+}
+
+VarTerm::VarTerm(Variable* v, const TermParseInfo& pi) : Term(pi), _var(v) {
+	setfvars();
+}
 
 VarTerm* VarTerm::clone() const {
-	map<Variable*,Variable*> mvv;
-	return clone(mvv);
+	return new VarTerm(_var,_pi->clone());
+}
+
+VarTerm* VarTerm::clone(const map<Variable*,Variable*>& mvv) const {
+	map<Variable*,Variable*>::const_iterator it = mvv.find(_var);
+	if(it != mvv.end()) return new VarTerm(it->second,_pi);
+	else return new VarTerm(_var,_pi->clone(mvv));
+}
+
+inline Sort* VarTerm::sort() const {
+	return _var->sort();
+}
+
+ostream& VarTerm::put(std::ostream& output) const {
+	output << *_var;
+}
+
+/*****************
+	FuncTerm
+*****************/
+
+FuncTerm::FuncTerm(Function* func, const vector<Term*>& args, const TermParseInfo& pi) : 
+	Term(pi), _function(func) { 
+	_subterms = args;
+	setfvars();
 }
 
 FuncTerm* FuncTerm::clone() const {
@@ -38,15 +104,92 @@ FuncTerm* FuncTerm::clone() const {
 	return clone(mvv);
 }
 
+FuncTerm* FuncTerm::clone(const map<Variable*,Variable*>& mvv) const {
+	vector<Term*> newargs;
+	for(vector<Term*>::const_iterator it = _subterms.begin(); it != _subterms.end(); ++it)
+		newargs.push_back((*it)->clone(mvv));
+	return new FuncTerm(_function,newargs,_pi->clone(mvv));
+}
+
+Sort* FuncTerm::sort() const { 
+	return _function->outsort();
+}
+
+ostream& FuncTerm::put(ostream& output) const {
+	output << *_function;
+	if(!_subterms.empty()) {
+		output << '(' << *_subterms[0];
+		for(unsigned int n = 1; n < _subterms.size(); ++n) {
+			output << ',' << *_subterms[n];
+		}
+		output << ')';
+	}
+	return output; 
+}
+
+/*****************
+	DomainTerm
+*****************/
+
+DomainTerm::DomainTerm(Sort* sort, const DomainElement* value, const TermParseInfo& pi) :
+	Term(pi), _sort(s), _value(value) {
+	
+}
+
 DomainTerm* DomainTerm::clone() const {
-	map<Variable*,Variable*> mvv;
-	return clone(mvv);
+	return new DomainTerm(_sort,_value,_pi->clone());
+}
+
+DomainTerm* DomainTerm::clone(const map<Variable*,Variable*>& mvv) const {
+	return new DomainTerm(_sort,_value,_pi->clone(mvv));
+}
+
+ostream& DomainTerm::put(ostream& output) const {
+	output << *_value;
+	return output;
+}
+
+/**************
+	AggTerm
+**************/
+
+AggTerm(SetExpr* set, AggFunction function, const TermParseInfo& pi) :
+	Term(pi), _function(function) {
+	_subsets.push_back(set);
 }
 
 AggTerm* AggTerm::clone() const {
 	map<Variable*,Variable*> mvv;
 	return clone(mvv);
 }
+
+AggTerm* AggTerm::clone(const map<Variable*,Variable*>& mvv) const {
+	SetExpr* newset = _set->clone(mvv);
+	return new AggTerm(newset,_function,_pi->clone(mvv));
+}
+
+Sort* AggTerm::sort() const {
+	if(_function == AGG_CARD) {
+		return VocabularyUtils::natsort();
+	}
+	else {
+		return set()->sort();
+	}
+}
+
+ostream& AggTerm::put(ostream& output) const {
+	switch(_function) {
+		case AGG_CARD:	output << '#'; break;
+		case AGG_SUM:	output << "sum"; break;
+		case AGG_PROD:	output << "prod"; break;
+		case AGG_MIN:	output << "min"; break;
+		case AGG_MAX:	output << "max"; break;
+	}
+	output << *(*_subsets.begin());
+	return output;
+}
+
+
 
 EnumSetExpr* EnumSetExpr::clone() const {
 	map<Variable*,Variable*> mvv;
@@ -59,27 +202,6 @@ QuantSetExpr* QuantSetExpr::clone() const {
 }
 
 /** Cloning while substituting free variables **/
-
-VarTerm* VarTerm::clone(const map<Variable*,Variable*>& mvv) const {
-	map<Variable*,Variable*>::const_iterator it = mvv.find(_var);
-	if(it != mvv.end()) return new VarTerm(it->second,_pi);
-	else return new VarTerm(_var,_pi);
-}
-
-FuncTerm* FuncTerm::clone(const map<Variable*,Variable*>& mvv) const {
-	vector<Term*> na(_args.size());
-	for(unsigned int n = 0; n < _args.size(); ++n) na[n] = _args[n]->clone(mvv);
-	return new FuncTerm(_func,na,_pi);
-}
-
-DomainTerm* DomainTerm::clone(const map<Variable*,Variable*>&) const {
-	return new DomainTerm(_sort,_type,_value,_pi);
-}
-
-AggTerm* AggTerm::clone(const map<Variable*,Variable*>& mvv) const {
-	SetExpr* ns = _set->clone(mvv);
-	return new AggTerm(ns,_type,_pi);
-}
 
 EnumSetExpr* EnumSetExpr::clone(const map<Variable*,Variable*>& mvv) const {
 	vector<Formula*> nf(_subf.size());
@@ -131,49 +253,6 @@ void QuantSetExpr::recursiveDelete() {
 
 /** Compute free variables  **/
 
-void Term::setfvars() {
-	_fvars.clear();
-	for(unsigned int n = 0; n < nrSubterms(); ++n) {
-		Term* t = subterm(n);
-		t->setfvars();
-		for(unsigned int m = 0; m < t->nrFvars(); ++m) { 
-			unsigned int k = 0;
-			for(; k < nrQvars(); ++k) {
-				if(qvar(k) == t->fvar(m)) break;
-			}
-			if(k == nrQvars()) _fvars.push_back(t->fvar(m));
-		}
-	}
-	for(unsigned int n = 0; n < nrSubforms(); ++n) {
-		Formula* f = subform(n);
-		f->setfvars();
-		for(unsigned int m = 0; m < f->nrFvars(); ++m) {
-			unsigned int k = 0;
-			for(; k < nrQvars(); ++k) {
-				if(qvar(k) == f->fvar(m)) break;
-			}
-			if(k == nrQvars()) _fvars.push_back(f->fvar(m));
-		}
-	}
-	for(unsigned int n = 0; n < nrSubsets(); ++n) {
-		SetExpr* s = subset(n);
-		s->setfvars();
-		for(unsigned int m = 0; m < s->nrFvars(); ++m) {
-			unsigned int k = 0;
-			for(; k < nrQvars(); ++k) {
-				if(qvar(k) == s->fvar(m)) break;
-			}
-			if(k == nrQvars()) _fvars.push_back(s->fvar(m));
-		}
-	}
-	VarUtils::sortunique(_fvars);
-}
-
-void VarTerm::setfvars() {
-	_fvars.clear();
-	_fvars = vector<Variable*>(1,_var);
-}
-
 void SetExpr::setfvars() {
 	_fvars.clear();
 	for(unsigned int n = 0; n < nrSubforms(); ++n) {
@@ -204,24 +283,9 @@ Sort* QuantSetExpr::firstargsort() const {
 	else return _vars[0]->sort();
 }
 
-Sort* AggTerm::sort() const {
-	if(_type == AGGCARD) return *(StdBuiltin::instance()->sort("nat")->begin());
-	else return _set->firstargsort();
-}
-
 /***************************
 	Containment checking
 ***************************/
-
-bool Term::contains(const Variable* v) const {
-	for(unsigned int n = 0; n < nrQvars(); ++n)
-		if(qvar(n) == v) return true;
-	for(unsigned int n = 0; n < nrSubterms(); ++n)
-		if(subterm(n)->contains(v)) return true;
-	for(unsigned int n = 0; n < nrSubforms(); ++n)
-		if(subform(n)->contains(v)) return true;
-	return false;
-}
 
 
 /****************
@@ -497,6 +561,13 @@ namespace TermUtils {
 	FiniteSortTable* evaluate(Term* t,AbstractStructure* s,const map<Variable*,TypedElement> m) {
 		TermEvaluator te(t,s,m);
 		return te.returnvalue();
+	}
+
+	vector<Term*> makeNewVarTerms(const vector<Variable*>& vars) {
+		vector<Term*> varterms;
+		for(vector<Variable*>::const_iterator it = vars.begin(); it != vars.end(); ++it)
+			varterms.push_back(new VarTerm(*it,ParseInfo()));
+		return varterms;
 	}
 }
 

@@ -13,6 +13,9 @@
 #include "error.hpp"
 #include "fobdd.hpp"
 
+
+#include "external/MonitorInterface.hpp"
+
 /*
 	Connection with lua
 */
@@ -142,6 +145,10 @@ namespace BuiltinProcs {
 				return("function_interpretation");
 			case IAT_TUPLE:
 				return("tuple");
+			case IAT_MULT:
+				assert(false); return "mult";
+			case IAT_REGISTRY:
+				assert(false); return "registry";
 			default:
 				assert(false);
 		}
@@ -176,6 +183,8 @@ namespace BuiltinProcs {
 		if(strtype == "predicate_interpretation") return IAT_PREDINTER;
 		if(strtype == "function_interpretation") return IAT_FUNCINTER;
 		if(strtype == "tuple") return IAT_TUPLE;
+		if(strtype == "mult") return IAT_MULT;
+		if(strtype == "registry") return IAT_REGISTRY;
 		assert(false); return IAT_INT;
 	}
 
@@ -217,7 +226,7 @@ namespace BuiltinProcs {
 	}
 
 
-	void converttolua(lua_State* L, InfArg res, InfArgType t) {
+	int converttolua(lua_State* L, InfArg res, InfArgType t) {
 		switch(t) {
 			case IAT_THEORY:
 			{
@@ -343,6 +352,19 @@ namespace BuiltinProcs {
 				lua_getfield(L,LUA_REGISTRYINDEX,res._procedure->c_str());
 				break;
 			}
+			case IAT_MULT:
+			{
+				int nrres = 0;
+				for(unsigned int n = 0; n < res._table->size(); ++n) {
+					nrres += converttolua(L,(*(res._table))[n]._value,(*(res._table))[n]._type);
+				}
+				return nrres;
+			}
+			case IAT_REGISTRY:
+			{
+				lua_getfield(L,LUA_REGISTRYINDEX,res._string->c_str());
+				break;
+			}
 			case IAT_OVERLOADED:
 			{
 				OverloadedObject* obj = res._overloaded;
@@ -396,6 +418,7 @@ namespace BuiltinProcs {
 			default:
 				assert(false);
 		}
+		return 1;
 	}
 
 	InfArg convertarg(lua_State* L, int n, InfArgType t);
@@ -737,8 +760,7 @@ int idpcall(lua_State* L) {
 		for(unsigned int m = 1; m <= nrargs; ++m)
 			via.push_back(BuiltinProcs::convertarg(L,m,(vi2[0]->intypes())[m-1]));
 		TypedInfArg res = vi2[0]->execute(via,L);
-		BuiltinProcs::converttolua(L,res._value,res._type);
-		return 1;
+		return BuiltinProcs::converttolua(L,res._value,res._type);
 	}
 	else {
 		Error::ambigcommand(name + '/' + itos(nrargs));
@@ -878,7 +900,62 @@ FastMXInference::FastMXInference() {
 	_description = "Performs model expansion on the structure given the theory it should satisfy.";
 }
 
-TypedInfArg FastMXInference::execute(const vector<InfArg>& args, lua_State*) const {
+class TraceWriter {
+	private:
+		GroundTranslator*	_translator;
+		lua_State*			L;
+		string*				_registryindex;
+		static int			_tracenr;
+		int					_timepoint;
+
+	public:
+		TraceWriter(GroundTranslator* trans, lua_State* Ls) : _translator(trans), L(Ls), _timepoint(1) { 
+			++_tracenr;
+			_registryindex = IDPointer(string("trace") + itos(_tracenr));
+			lua_newtable(L);
+			lua_setfield(L,LUA_REGISTRYINDEX,_registryindex->c_str());
+		}
+
+		void backtrack(int a){
+			lua_getfield(L,LUA_REGISTRYINDEX,_registryindex->c_str());
+			lua_pushinteger(L,_timepoint);
+			++_timepoint;
+			lua_newtable(L);
+			lua_pushstring(L,"backtrack");
+			lua_setfield(L,-2,"type");
+			lua_pushinteger(L,a);
+			lua_setfield(L,-2,"dl");
+			lua_settable(L,-3);
+			lua_pop(L,1);
+		}
+
+		void propagate(MinisatID::Literal a, int b){
+			lua_getfield(L,LUA_REGISTRYINDEX,_registryindex->c_str());
+			lua_pushinteger(L,_timepoint);
+			++_timepoint;
+			lua_newtable(L);
+			lua_pushstring(L,"assign");
+			lua_setfield(L,-2,"type");
+			lua_pushinteger(L,b);
+			lua_setfield(L,-2,"dl");
+			lua_pushboolean(L,!a.hasSign());
+			lua_setfield(L,-2,"value");
+			// TODO: change next two lines to push real atoms
+			lua_pushstring(L,_translator->printAtom(a.getAtom().getValue()).c_str());
+			lua_setfield(L,-2,"atom");
+			lua_settable(L,-3);
+			lua_pop(L,1);
+		}
+
+		TypedInfArg trace() const {
+			TypedInfArg trace; trace._type = IAT_REGISTRY; trace._value._string = _registryindex;	
+			return trace;
+		}
+};
+
+int TraceWriter::_tracenr = 0;
+
+TypedInfArg FastMXInference::execute(const vector<InfArg>& args, lua_State* L) const {
 
 	// Convert arguments
 	AbstractTheory* theory = args[0]._theory;
@@ -893,13 +970,24 @@ TypedInfArg FastMXInference::execute(const vector<InfArg>& args, lua_State*) con
 	SATSolver* solver = new SATSolver(modes);
 
 	// Create grounder
-	GrounderFactory gf(structure);
+	GrounderFactory gf(structure,opts->_usingcp);
 	TopLevelGrounder* grounder = gf.create(theory,solver);
 
 	// Ground
 	grounder->run();
 	assert(typeid(*(grounder->grounding())) == typeid(SolverTheory));
 	SolverTheory* grounding = dynamic_cast<SolverTheory*>(grounder->grounding());
+
+	// Create monitor
+	TraceWriter tracewriter(grounding->translator(),L);
+	if(opts->_trace) {
+		cb::Callback1<void, int> callbackback(&tracewriter, &TraceWriter::backtrack);
+		cb::Callback2<void, MinisatID::Literal, int> callbackprop(&tracewriter, &TraceWriter::propagate);
+		MinisatID::Monitor* m = new MinisatID::Monitor();
+		m->setBacktrackCB(callbackback);
+		m->setPropagateCB(callbackprop);
+		solver->addMonitor(m);
+	}
 
 	// Add function constraints
 	grounding->addFuncConstraints();
@@ -913,11 +1001,11 @@ TypedInfArg FastMXInference::execute(const vector<InfArg>& args, lua_State*) con
 	options.savemodels = MinisatID::SAVE_ALL;
 	options.search = MinisatID::MODELEXPAND;
 	MinisatID::Solution* sol = new MinisatID::Solution(options);
-	bool sat = solver->solve(sol);
+	solver->solve(sol);
 
 	// Translate
 	TypedInfArg a; a._type = IAT_TABLE; a._value._table = new vector<TypedInfArg>();
-	if(sat){
+	if(sol->isSat()){
 		for(unsigned int i=0; i<sol->getModels().size(); i++){
 			AbstractStructure* mod = structure->clone();
 			set<PredInter*>	tobesorted1;
@@ -959,8 +1047,14 @@ TypedInfArg FastMXInference::execute(const vector<InfArg>& args, lua_State*) con
 			}
 		}
 	}
-	return a;
-
+	if(opts->_trace) {
+		TypedInfArg b; b._type = IAT_MULT; b._value._table = new vector<TypedInfArg>(1,a);
+		b._value._table->push_back(tracewriter.trace());
+		return b;
+	}
+	else {
+		return a;
+	}
 }
 
 TypedInfArg StructToTheory::execute(const vector<InfArg>& args, lua_State*) const {
@@ -1014,14 +1108,15 @@ TypedInfArg CloneTheory::execute(const vector<InfArg>& args, lua_State*) const {
 }
 
 FastGrounding::FastGrounding() {
-	_intypes = vector<InfArgType>(2);
+	_intypes = vector<InfArgType>(3);
 	_intypes[0] = IAT_THEORY; 
 	_intypes[1] = IAT_STRUCTURE;
+	_intypes[2] = IAT_OPTIONS;
 	_description = "Ground the theory and structure and store the grounding";
 }
 
 TypedInfArg FastGrounding::execute(const vector<InfArg>& args, lua_State*) const {
-	GrounderFactory factory(args[1]._structure);
+	GrounderFactory factory(args[1]._structure,args[2]._options->_usingcp);
 	TopLevelGrounder* g = factory.create(args[0]._theory);
 	g->run();
 	TypedInfArg a; a._type = IAT_THEORY;
@@ -1219,9 +1314,9 @@ TypedInfArg GetIndex::execute(const vector<InfArg>& args, lua_State* L) const {
 }
 
 TypedInfArg BDDPrinter::execute(const vector<InfArg>& args, lua_State*) const {
-	FOBDDManager manager;
-	FOBDDFactory factory(&manager);
 	AbstractTheory* theory = args[0]._theory;
+	FOBDDManager manager;
+	FOBDDFactory factory(&manager,theory->vocabulary());
 	FOBDD* result = manager.truebdd();
 	for(unsigned int n = 0; n < theory->nrSentences(); ++n) {
 		theory->sentence(n)->accept(&factory);

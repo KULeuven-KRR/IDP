@@ -55,6 +55,11 @@ void Visitor::visit(const AggGroundRuleBody*)	{ }
 void Visitor::visit(const GroundAggregate*)		{ }
 void Visitor::visit(const GroundSet*)			{ }
 
+void Visitor::visit(const CPReification*)		{ }
+void Visitor::visit(const CPSumTerm*)			{ }
+void Visitor::visit(const CPWSumTerm*)			{ }
+void Visitor::visit(const CPVarTerm*)			{ }
+
 /** Standard traversing behavior **/
 
 void Visitor::traverse(const Namespace* s) {
@@ -137,19 +142,26 @@ void Visitor::traverse(const Vocabulary* v) {
 }
 
 void Visitor::traverse(const GroundTheory* t) {
-	//TODO
+	//TODO Visit clauses?
+	for(unsigned int n = 0; n < t->nrDefinitions(); ++n)
+		t->definition(n)->accept(this);
+	for(unsigned int n = 0; n < t->nrSets(); ++n)
+		t->set(n)->accept(this);
+	for(unsigned int n = 0; n < t->nrAggregates(); ++n)
+		t->aggregate(n)->accept(this);
+	//TODO: repeat above for fixpoint definitions
+	for(unsigned int n = 0; n < t->nrCPReifications(); ++n)
+		t->cpreification(n)->accept(this);
 }
 
-void Visitor::traverse(const SolverTheory* t) {
+void Visitor::traverse(const SolverTheory*) {
 	//TODO
+	assert(false);
 }
 
 void Visitor::traverse(const GroundDefinition* d) {
-	//TODO
-}
-
-void Visitor::traverse(const GroundSet* s) {
-	//TODO
+	for(GroundDefinition::const_ruleiterator it = d->begin(); it != d->end(); ++it)
+		(it->second)->accept(this);
 }
 
 /** Standard visitor acceptance behavior **/
@@ -194,6 +206,10 @@ void AggGroundRuleBody::accept(Visitor* v) 	const { v->visit(this);	}
 void GroundAggregate::accept(Visitor* v)	const { v->visit(this);	}
 void GroundSet::accept(Visitor* v)			const { v->visit(this);	}
 
+void CPReification::accept(Visitor* v)		const { v->visit(this);	}
+void CPSumTerm::accept(Visitor* v)			const { v->visit(this);	}
+void CPWSumTerm::accept(Visitor* v)			const { v->visit(this);	}
+void CPVarTerm::accept(Visitor* v)			const { v->visit(this);	}
 
 /***********************
 	Mutating visitor

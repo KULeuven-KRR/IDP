@@ -25,6 +25,7 @@ gidl_SOURCES = \
 		parseinfo.hpp\
 		vocabulary.hpp vocabulary.cpp\
 		structure.hpp structure.cpp\
+		term.hpp term.cpp\
 		theory.hpp theory.cpp\
 		namespace.hpp namespace.cpp\
 		insert.hpp insert.cpp\
@@ -34,7 +35,6 @@ gidl_SOURCES = \
 		visitor.hpp visitor.cpp\
 		ground.hpp ground.cpp\
 		main.cpp\
-		term.hpp term.cpp\
 		data.hpp data.cpp\
 		error.hpp error.cpp\
 		parse.yy\
@@ -45,9 +45,16 @@ gidl_SOURCES = \
 		print.hpp print.cpp\
 		checker.cpp checker.hpp\
 		generator.cpp generator.hpp\
-		fobdd.cpp fobdd.hpp
+		fobdd.cpp fobdd.hpp\
+		propagate.cpp propagate.hpp
 
 AM_CXXFLAGS+=-I $(top_srcdir)/pcsolver/src/ 
+
+LIBSRCDIR = $(srcdir)/lib
+LIBBLDDIR = $(builddir)/lib
+
+# CALLBACK FRAMEWORK
+AM_CXXFLAGS += -I $(LIBSRCDIR)/pluscallback1.7/
 
 dist_doc_DATA = README
 
