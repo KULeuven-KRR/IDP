@@ -40,6 +40,12 @@ void InfOptions::set(const string& opt, bool val, ParseInfo* pi) {
 		if(opt == "printtypes") {
 			_printtypes = val;
 		}
+		else if(opt == "usingcp") {
+			_usingcp = val;
+		}
+		else if(opt == "trace") {
+			_trace = val;
+		}
 		else Error::wrongvaluetype(opt,pi);
 	}
 	else Error::unknopt(opt,pi);

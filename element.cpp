@@ -5,6 +5,10 @@
 ************************************/
 
 #include "element.hpp"
+#include "vocabulary.hpp"
+#include "common.hpp"
+
+#include <cassert>
 
 using namespace std;
 

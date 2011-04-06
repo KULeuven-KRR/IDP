@@ -1622,8 +1622,10 @@ class ThreeValTermMover : public MutatingVisitor {
 		bool				_poscontext;
 		vector<Formula*>	_termgraphs;
 		vector<Variable*>	_variables;
+		bool				_cpcontext;
+		bool				_istoplevelterm;
 	public:
-		ThreeValTermMover(AbstractStructure* str, bool posc) : _structure(str), _poscontext(posc) { }
+		ThreeValTermMover(AbstractStructure* str, bool posc, bool cpc=false) : _structure(str), _poscontext(posc), _cpcontext(cpc) { }
 		Formula*	visit(PredForm* pf);
 		Formula*	visit(AggForm* af);
 		Term*		visit(FuncTerm* ft);
@@ -1635,16 +1637,23 @@ Term* ThreeValTermMover::visit(FuncTerm* ft) {
 	Function* f = ft->func();
 	FuncInter* finter = _structure->inter(f);
 
-	if(finter->fasttwovalued()) { // The function is two-valued. Visit the children.
+	//TODO check whether function's outsort is over integers
+	Vocabulary* voc = _structure->vocabulary();
+	Sort* ints = *(voc->sort("int")->begin());
+	bool isIntFunc = (SortUtils::resolve(f->outsort(),ints,voc) != 0);
+
+	if(finter->fasttwovalued() || (_cpcontext && _istoplevelterm && isIntFunc)) {
+		// The function is two-valued or we want to pass it to the constraint solver. Leave as is, just visit its children.
 		for(unsigned int n = 0; n < ft->nrSubterms(); ++n) {
+			_istoplevelterm = false;
 			Term* nt = ft->subterm(n)->accept(this);
 			ft->arg(n,nt);
 		}
 		ft->setfvars();
 		return ft;
-
 	}
-	else { // The function is three-valued. Create a new variable and an equation
+	else {
+		// The function is three-valued. Move it: create a new variable and an equation.
 		Variable* v = new Variable(f->outsort());
 		VarTerm* vt = new VarTerm(v,ParseInfo());
 		vector<Term*> args;
@@ -1660,7 +1669,7 @@ Term* ThreeValTermMover::visit(FuncTerm* ft) {
 
 Term* ThreeValTermMover::visit(AggTerm* at) {
 	bool twovalued = SetUtils::isTwoValued(at->set(),_structure);
-	if(twovalued) return at;
+	if(twovalued || (_cpcontext && _istoplevelterm)) return at;
 	else {
 		Variable* v = new Variable(at->sort());
 		VarTerm* vt = new VarTerm(v,ParseInfo());
@@ -1676,59 +1685,61 @@ Term* ThreeValTermMover::visit(AggTerm* at) {
 Formula* ThreeValTermMover::visit(PredForm* pf) {
 	// Handle built-in predicates
 	string symbname = pf->symb()->name();
-	if(symbname == "=/2") {
-		Term* left = pf->subterm(0);
-		Term* right = pf->subterm(1);
-		if(typeid(*left) == typeid(FuncTerm)) {
-			FuncTerm* ft = dynamic_cast<FuncTerm*>(left);
-			if(!_structure->inter(ft->func())->fasttwovalued()) { 
-				Formula* newpf = FormulaUtils::graph_functions(pf);
-				return newpf->accept(this);
+	if(! _cpcontext) {
+		if(symbname == "=/2") {
+			Term* left = pf->subterm(0);
+			Term* right = pf->subterm(1);
+			if(typeid(*left) == typeid(FuncTerm)) {
+				FuncTerm* ft = dynamic_cast<FuncTerm*>(left);
+				if(!_structure->inter(ft->func())->fasttwovalued()) { 
+					Formula* newpf = FormulaUtils::graph_functions(pf);
+					return newpf->accept(this);
+				}
+			}
+			else if(typeid(*right) == typeid(FuncTerm)) {
+				FuncTerm* ft = dynamic_cast<FuncTerm*>(right);
+				if(!_structure->inter(ft->func())->fasttwovalued()) { 
+					Formula* newpf = FormulaUtils::graph_functions(pf);
+					return newpf->accept(this);
+				}
+			}
+			else if(typeid(*left) == typeid(AggTerm)) { //TODO: merge with cases for < and >
+				AggTerm* agt = dynamic_cast<AggTerm*>(left);
+				AggForm* af = new AggForm(pf->sign(),'=',right,agt,FormParseInfo());
+				delete(pf);
+				return af->accept(this);
+			}
+			else if(typeid(*right) == typeid(AggTerm)) { //TODO: merge with cases for < and >
+				AggTerm* agt = dynamic_cast<AggTerm*>(right);
+				AggForm* af = new AggForm(pf->sign(),'=',left,agt,FormParseInfo());
+				delete(pf);
+				return af->accept(this);
 			}
 		}
-		else if(typeid(*right) == typeid(FuncTerm)) {
-			FuncTerm* ft = dynamic_cast<FuncTerm*>(right);
-			if(!_structure->inter(ft->func())->fasttwovalued()) { 
-				Formula* newpf = FormulaUtils::graph_functions(pf);
-				return newpf->accept(this);
+		else if(symbname == "</2" || symbname == ">/2") {
+			//TODO: Check whether handled correctly when both sides are AggTerms!!
+			Term* left = pf->subterm(0);
+			Term* right = pf->subterm(1);
+			char c;
+			if(typeid(*left) == typeid(AggTerm)) {
+				AggTerm* agt = dynamic_cast<AggTerm*>(left);
+				c = (symbname == "</2") ? '>' : '<';
+				AggForm* af = new AggForm(pf->sign(),c,right,agt,FormParseInfo());
+				delete(pf);
+				return af->accept(this);
+			}
+			else if(typeid(*right) == typeid(AggTerm)) {
+				AggTerm* agt = dynamic_cast<AggTerm*>(right);
+				c = (symbname == "</2") ? '<' : '>';
+				AggForm* af = new AggForm(pf->sign(),c,left,agt,FormParseInfo());
+				delete(pf);
+				return af->accept(this);
 			}
 		}
-		else if(typeid(*left) == typeid(AggTerm)) { //TODO: merge with cases for < and >
-			AggTerm* agt = dynamic_cast<AggTerm*>(left);
-			AggForm* af = new AggForm(pf->sign(),'=',right,agt,FormParseInfo());
-			delete(pf);
-			return af->accept(this);
-		}
-		else if(typeid(*right) == typeid(AggTerm)) { //TODO: merge with cases for < and >
-			AggTerm* agt = dynamic_cast<AggTerm*>(right);
-			AggForm* af = new AggForm(pf->sign(),'=',left,agt,FormParseInfo());
-			delete(pf);
-			return af->accept(this);
-		}
 	}
-	else if(symbname == "</2" || symbname == ">/2") {
-		//TODO: Check whether handled correctly when both sides are AggTerms!!
-		Term* left = pf->subterm(0);
-		Term* right = pf->subterm(1);
-		char c;
-		if(typeid(*left) == typeid(AggTerm)) {
-			AggTerm* agt = dynamic_cast<AggTerm*>(left);
-			c = (symbname == "</2") ? '>' : '<';
-			AggForm* af = new AggForm(pf->sign(),c,right,agt,FormParseInfo());
-			delete(pf);
-			return af->accept(this);
-		}
-		else if(typeid(*right) == typeid(AggTerm)) {
-			AggTerm* agt = dynamic_cast<AggTerm*>(right);
-			c = (symbname == "</2") ? '<' : '>';
-			AggForm* af = new AggForm(pf->sign(),c,left,agt,FormParseInfo());
-			delete(pf);
-			return af->accept(this);
-		}
-	}
-	
 	// Visit the subterms
 	for(unsigned int n = 0; n < pf->nrSubterms(); ++n) {
+		_istoplevelterm = (pf->symb()->ispred() || n == pf->nrSubterms()-1);
 		Term* nt = pf->subterm(n)->accept(this);
 		pf->arg(n,nt);
 	}
@@ -1757,6 +1768,7 @@ Formula* ThreeValTermMover::visit(PredForm* pf) {
 }
 
 Formula* ThreeValTermMover::visit(AggForm* af) {
+	_istoplevelterm = true;
 	af->left(af->left()->accept(this));
 	if(_termgraphs.empty()) {	// No rewriting was needed, simply return the given atom
 		return af;
@@ -1776,6 +1788,7 @@ Formula* ThreeValTermMover::visit(AggForm* af) {
 		return qf;
 	}
 }
+
 /** Formula utils **/
 
 namespace FormulaUtils {
@@ -1819,8 +1832,8 @@ namespace FormulaUtils {
 	 *		If rewriting was needed, pf can be deleted, but not recursively.
 	 *		
 	 */
-	Formula* moveThreeValTerms(Formula* f, AbstractStructure* str, bool poscontext) {
-		ThreeValTermMover tvtm(str,poscontext);
+	Formula* moveThreeValTerms(Formula* f, AbstractStructure* str, bool poscontext, bool usingcp) {
+		ThreeValTermMover tvtm(str,poscontext,usingcp);
 		Formula* rewriting = f->accept(&tvtm);
 		return rewriting;
 	}

@@ -1,4 +1,5 @@
 AC_INIT([gidl],[2.0.0],[krr@cs.kuleuven.be])
+AC_CONFIG_HEADERS([config.h])
 
 #this is not an ideal solution, but it overrides the default cxxflags, so those set later are not invalid
 if test -z $CXXFLAGS; then
@@ -14,20 +15,15 @@ AM_INIT_AUTOMAKE([foreign subdir-objects]) #silent-rules FROM VERSION 1.11 #-ffl
 AC_LANG([C++])
 
 #check for the necessary headers
+#check for the necessary headers
 AC_HEADER_STDC
-AC_CHECK_HEADERS([string])
-AC_CHECK_HEADERS([vector])
-AC_CHECK_HEADERS([set])
-AC_CHECK_HEADERS([map])
-AC_CHECK_HEADERS([cstdlib])
-AC_CHECK_HEADERS([limits])
-AC_CHECK_HEADERS([assert])
-AC_CHECK_HEADERS([cmath])
-AC_CHECK_HEADERS([iostream])
-AC_CHECK_HEADERS([tr1/memory])
-
-# Checks for typedefs, structures, and compiler characteristics.
+AC_CHECK_HEADERS([\
+	algorithm assert.h cassert cerrno cstdio cstdlib cstring ctime exception float.h \
+	fstream inttypes.h iostream limits limits.h list map queue \
+	set sstream stack stdexcept stdint.h stdio.h stdlib.h string \
+	tr1/memory vector])
 AC_TYPE_SIZE_T
+
 
 # distribute additional compiler and linker flags
 AC_SUBST([AC_CXXFLAGS])

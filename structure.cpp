@@ -10,9 +10,10 @@
 #include <algorithm>
 #include <typeinfo>
 
+#include "element.hpp"
+#include "vocabulary.hpp"
 #include "theory.hpp"
-//#include "builtin.hpp"
-//#include "common.hpp"
+#include "common.hpp"
 #include "error.hpp"
 
 using namespace std;
@@ -1644,9 +1645,9 @@ void FuncInter::add(const vector<TypedElement>& tuple, bool ctpf, bool c) {
 	_pinter->add(tuple,ctpf,c);
 }
 
-Element FiniteFuncTable::operator[](const vector<Element>& vi) const {
-	VVE::const_iterator it = lower_bound(_ftable->begin(),_ftable->end(),vi,_order);
-	if(it != _ftable->end() && _equality(*it,vi)) return it->back();
+Element FiniteFuncTable::operator[](const vector<Element>& ve) const {
+	VVE::const_iterator it = lower_bound(_ftable->begin(),_ftable->end(),ve,_order);
+	if(it != _ftable->end() && _equality(*it,ve)) return it->back();
 	else return ElementUtil::nonexist(type(arity()));
 }
 
@@ -1673,9 +1674,12 @@ domelement FuncTable::operator[](const vector<domelement>& vd) const {
 	if(it != _dyntable.end()) return it->second;
 	else {
 		Element e = operator[](ElementUtil::convert(vd));
-		domelement d = CPPointer(e,outtype());
-		_dyntable[vd] = d;
-		return d;
+		if(ElementUtil::exists(e,outtype())) {
+			domelement d = CPPointer(e,outtype());
+			_dyntable[vd] = d;
+			return d;
+		}
+		else return 0; //FIXME Non-existing domelement. 
 	}
 }
 

@@ -6,6 +6,7 @@
 
 #include "term.hpp"
 #include "data.hpp"
+#include "element.hpp"
 #include "namespace.hpp"
 #include "vocabulary.hpp"
 #include "theory.hpp"
@@ -134,8 +135,6 @@ void QuantSetExpr::recursiveDelete() {
 	Computing free variables
 *******************************/
 
-/** Compute free variables  **/
-
 void Term::setfvars() {
 	_fvars.clear();
 	for(unsigned int n = 0; n < nrSubterms(); ++n) {
@@ -195,7 +194,9 @@ void SetExpr::setfvars() {
 	VarUtils::sortunique(_fvars);
 }
 
-/** Accessing sorts **/
+/**********************
+	Accessing sorts
+**********************/
 
 void VarTerm::sort(Sort* s) {
 	_var->sort(s);
@@ -203,6 +204,10 @@ void VarTerm::sort(Sort* s) {
 
 Sort* VarTerm::sort() const {
 	return _var->sort();
+}
+
+Sort* FuncTerm::sort() const {
+	return _func->outsort();
 }
 
 /************************
@@ -242,6 +247,10 @@ bool Term::contains(const Variable* v) const {
 /****************
 	Debugging
 ****************/
+
+string VarTerm::to_string() const {
+	return _var->to_string();
+}
 
 string FuncTerm::to_string() const {
 	string s = _func->to_string();

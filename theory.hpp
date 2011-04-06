@@ -13,6 +13,8 @@
 
 #include "term.hpp" //FIXME: include needed for Term* AggForm::subterm(int). Why?
 
+class PFSymbol;
+
 class GroundTranslator;
 class GroundTheory;
 
@@ -418,9 +420,9 @@ namespace FormulaUtils {
 															// conjunction or disjunction of atoms.
 	Formula* graph_functions(Formula* f);	// Rewrite a function F(x) = y in an equality as a predicate F(x,y)
 
-	Formula* moveThreeValTerms(Formula*,AbstractStructure*,bool);	// non-recursively moves terms 
-																	// that are three-valued in the given structure
-																	// outside of the given atom
+	Formula* moveThreeValTerms(Formula*,AbstractStructure*,bool positive,bool usingcp=false);	// non-recursively moves terms 
+																								// that are three-valued in the given structure
+																								// outside of the given atom
 
 	bool monotone(const AggForm* af);
 	bool antimonotone(const AggForm* af);

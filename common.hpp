@@ -11,7 +11,7 @@
 #include <vector>
 #include <string>
 
-#include "fotypes.hpp"
+#include "commontypes.hpp"
 
 struct compound;
 struct TypedElement;
@@ -25,6 +25,7 @@ extern std::string*	IDPointer(const std::string& s);							// return a 'shared' 
 extern compound*	CPPointer(TypedElement e);									// return a 'shared' pointer to compound 0(e);
 extern compound*	CPPointer(Element e, ElementType t);						// return a 'shared' pointer to compound 0(e);
 extern compound*	CPPointer(Function* f, const std::vector<TypedElement>& v);	// return a 'shared' pointer to compound f(v);
+extern compound*	CPPointer(Function* f,const std::vector<compound*>& v);			// return a 'shared' pointer to compound f(v);
 
 /** Extreme numbers **/
 extern int MAX_INT;			// maximum integer value

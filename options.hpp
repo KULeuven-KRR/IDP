@@ -78,6 +78,8 @@ class InfOptions {
 		ModelFormat		_modelformat;	// make results of MX twovalued
 		int				_satverbosity;
 		bool			_printtypes;
+		bool			_usingcp;
+		bool			_trace;
 		
 		// Constructor (default options)
 		InfOptions(const std::string& name, const ParseInfo& pi) : 
@@ -87,7 +89,9 @@ class InfOptions {
 			_format(OF_IDP),
 			_modelformat(MF_ALL),
 			_satverbosity(0),
-			_printtypes(true)
+			_printtypes(true),
+			_usingcp(true),
+			_trace(false)
 			{ }
 		InfOptions(InfOptions* opts) : _name(""), _pi() { set(opts);	}
 
@@ -98,6 +102,8 @@ class InfOptions {
 			_modelformat	= opt->_modelformat;
 			_satverbosity	= opt->_satverbosity;
 			_printtypes		= opt->_printtypes;
+			_usingcp		= opt->_usingcp;
+			_trace			= opt->_trace;
 		}
 		void set(const std::string& optname,const std::string& val, ParseInfo* pi = 0);
 		void set(const std::string& optname,double, ParseInfo* pi = 0);
@@ -112,6 +118,8 @@ class InfOptions {
 			else if(str == "language") r = true;
 			else if(str == "satverbosity") r = true;
 			else if(str == "printtypes") r = true;
+			else if(str == "usingcp") r = true;
+			else if(str == "trace") r = true;
 			return r;
 		}
 		const std::string&	name() 	const { return _name; 	}

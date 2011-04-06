@@ -11,7 +11,7 @@
 #include <map>
 #include <string>
 
-#include "vocabulary.hpp" //FIXME: we need this include for struct TypedElement
+#include "element.hpp"
 #include "visitor.hpp"
 
 class PFSymbol;

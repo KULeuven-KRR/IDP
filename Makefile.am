@@ -42,14 +42,22 @@ gidl_SOURCES = \
 		parseinfo.hpp\
 		options.cpp options.hpp\
 		clconst.hpp\
-		interactive.cpp interactive.hpp\
+		interactive.hpp interactive.cpp\
 		print.hpp print.cpp\
-		checker.cpp checker.hpp\
-		generator.cpp generator.hpp\
-		fobdd.cpp fobdd.hpp\
-		propagate.cpp propagate.hpp
+		checker.hpp checker.cpp\
+		generator.hpp generator.cpp\
+		fobdd.hpp fobdd.cpp\
+		propagate.hpp propagate.cpp\
+		element.hpp element.cpp\
+		commontypes.hpp
 
 AM_CXXFLAGS+=-I $(top_srcdir)/pcsolver/src/ 
+
+LIBSRCDIR = $(srcdir)/lib
+LIBBLDDIR = $(builddir)/lib
+
+# CALLBACK FRAMEWORK
+AM_CXXFLAGS += -I $(LIBSRCDIR)/pluscallback1.7/
 
 dist_doc_DATA = README
 

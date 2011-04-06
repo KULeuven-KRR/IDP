@@ -128,6 +128,15 @@ struct ThreeValuedDomain {
 	ThreeValuedDomain(const FOPropDomainFactory*, PredForm*, bool twovalued);
 };
 
+
+
+struct LeafConnectData {
+	PredForm*						_connector;
+	FOPropDomain*					_equalities;
+	std::map<Variable*,Variable*>	_leaftoconnector;
+	std::map<Variable*,Variable*>	_connectortoleaf;
+};
+
 /**
  * DESCRIPTION
  * 	TODO
@@ -138,6 +147,7 @@ class FOPropagator : public Visitor {
 		FOPropScheduler*									_scheduler;
 		std::map<const Formula*,ThreeValuedDomain>			_domains;
 		std::map<const Formula*,std::vector<Variable*> >	_quantvars;
+		std::map<const PredForm*,LeafConnectData*>			_leafconnectdata;
 		FOPropDirection										_direction;
 		bool												_ct;
 		Formula*											_child;
@@ -161,6 +171,7 @@ class FOPropagator : public Visitor {
 		void visit(const EquivForm*);
 		void visit(const BoolForm*);
 		void visit(const QuantForm*);
+		void visit(const AggForm*);
 
 	friend class FOPropagatorFactory;
 };

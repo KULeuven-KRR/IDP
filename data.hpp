@@ -14,6 +14,7 @@
 #include <tr1/memory>
 
 #include "common.hpp"
+#include "element.hpp"
 
 typedef std::tr1::unordered_map<std::string,std::string*>	MSSP;
 typedef std::map<std::vector<TypedElement>,compound*>		MVTC;

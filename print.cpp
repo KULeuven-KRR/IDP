@@ -6,6 +6,7 @@
 
 #include "print.hpp"
 #include "ecnf.hpp"
+#include "element.hpp"
 #include "namespace.hpp"
 #include "vocabulary.hpp"
 #include "theory.hpp"
@@ -280,13 +281,13 @@ void IDPPrinter::visit(const QuantSetExpr* s) {
 	Grounding
 ****************/
 
-void IDPPrinter::printAtom(int literal) {
+void IDPPrinter::printAtom(int atomnr) {
 	// Make sure there is a translator.
 	assert(_translator);
 	// The sign of the literal is handled on higher level.
-	int atom = abs(literal);
+	atomnr = abs(atomnr);
 	// Get the atom's symbol from the translator.
-	PFSymbol* pfs = _translator->symbol(atom);
+	PFSymbol* pfs = _translator->symbol(atomnr);
 	if(pfs) {
 		// Print the symbol's name.
 		_out << pfs->name().substr(0,pfs->name().find('/'));
@@ -302,7 +303,7 @@ void IDPPrinter::printAtom(int literal) {
 			_out << ']';
 		}
 		// Get the atom's arguments for the translator.
-		const vector<domelement>& args = _translator->args(atom);
+		const vector<domelement>& args = _translator->args(atomnr);
 		// Print the atom's arguments.
 		if(! args.empty()) {
 			_out << "(";
@@ -316,10 +317,42 @@ void IDPPrinter::printAtom(int literal) {
 	else {
 		// If there was no symbol, then the atom is a tseitin.
 		assert(! pfs);
-		_out << "tseitin_" << atom;
+		_out << "tseitin_" << atomnr;
 	}
 }
 
+void IDPPrinter::printTerm(unsigned int termnr) { 
+	// Make sure there is a translator.
+	assert(_termtranslator);
+	// Get information from the term translator.
+	Function* func = _termtranslator->function(termnr);
+	if(func) {
+		// Print the symbol's name.
+		_out << func->name().substr(0,func->name().find('/'));
+		// Print the symbol's sorts.
+		if(func->nrSorts()) {
+			_out << '[';
+			for(unsigned int n = 0; n < func->nrSorts(); ++n) {
+				if(func->sort(n)) {
+					_out << func->sort(n)->name();
+					if(n != func->nrSorts()-1) _out << ',';
+				}
+			}
+			_out << ']';
+		}
+		// Get the arguments from the translator.
+		const vector<domelement>& args = _termtranslator->args(termnr);
+		// Print the arguments.
+		if(not args.empty()) {
+			_out << "(";
+			for(unsigned int c = 0; c < args.size(); ++c) {
+				_out << ElementUtil::ElementToString(args[c]);
+				if(c != args.size()-1) _out << ",";
+			}
+			_out << ")";
+		}
+	}
+}
 
 void SimplePrinter::visit(const GroundTheory* g) {
 	_out << g->to_string();
@@ -327,6 +360,7 @@ void SimplePrinter::visit(const GroundTheory* g) {
 
 void IDPPrinter::visit(const GroundTheory* g) {
 	_translator = g->translator();
+	_termtranslator = g->termtranslator();
 	for(unsigned int n = 0; n < g->nrClauses(); ++n) {
 //TODO visitor for GroundClause?
 		if(g->clause(n).empty()) {
@@ -348,6 +382,8 @@ void IDPPrinter::visit(const GroundTheory* g) {
 	for(unsigned int n = 0; n < g->nrAggregates(); ++n)
 		g->aggregate(n)->accept(this);
 	//TODO: repeat above for fixpoint definitions
+	for(unsigned int n = 0; n < g->nrCPReifications(); ++n)
+		g->cpreification(n)->accept(this);
 }
 
 void EcnfPrinter::visit(const GroundTheory* g) {
@@ -496,6 +532,56 @@ void EcnfPrinter::visit(const GroundSet* s) {
 		_out << " " << s->literal(n) << "=" << s->weight(n);
 	_out << " 0\n";
 }
+
+void IDPPrinter::visit(const CPReification* cpr) {
+	printAtom(cpr->_head);
+	switch(cpr->_body->type()) {
+		case TS_RULE: 	_out << " <- "; break;
+		case TS_IMPL: 	_out << " => "; break;
+		case TS_RIMPL: 	_out << " <= "; break;
+		case TS_EQ: 	_out << " <=> "; break;
+		default: assert(false);
+	}
+	cpr->_body->left()->accept(this);
+	switch(cpr->_body->comp()) {
+		case CT_EQ:		_out << " = "; break;
+		case CT_NEQ:	_out << " ~= "; break;
+		case CT_LEQ:	_out << " =< "; break;
+		case CT_GEQ:	_out << " >= "; break;
+		case CT_LT:		_out << " < "; break;
+		case CT_GT:		_out << " > "; break;
+		default: assert(false);
+	}
+	CPBound right = cpr->_body->right();
+	if(right._isvarid) printTerm(right._value._varid);
+	else _out << right._value._bound;
+	_out << ".\n";
+}
+
+void IDPPrinter::visit(const CPSumTerm* cpt) {
+	_out << "sum[ ";
+	for(vector<unsigned int>::const_iterator vit = cpt->_varids.begin(); vit != cpt->_varids.end(); ++vit) {
+		printTerm(*vit);
+		if(*vit != cpt->_varids.back()) _out << "; ";
+	}
+	_out << " ]";
+}
+
+void IDPPrinter::visit(const CPWSumTerm* cpt) {
+	vector<unsigned int>::const_iterator vit;
+	vector<int>::const_iterator wit;
+	_out << "wsum[ ";
+	for(vit = cpt->_varids.begin(), wit = cpt->_weights.begin(); vit != cpt->_varids.end() && wit != cpt->_weights.end(); ++vit, ++wit) {
+		_out << "("; printTerm(*vit); _out << "=" << *wit << ")";
+		if(*vit != cpt->_varids.back()) _out << "; ";
+	}
+	_out << " ]";
+}
+
+void IDPPrinter::visit(const CPVarTerm* cpt) {
+	printTerm(cpt->_varid);
+}
+
 
 /*****************
     Structures

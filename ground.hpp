@@ -86,8 +86,61 @@ class AggTsBody : public TsBody {
 	friend class GroundTranslator;
 };
 
+class CPTerm {
+	protected:
+		virtual ~CPTerm() {	}
+	public:
+		virtual void accept(Visitor*) const = 0;
+};
+
+class CPVarTerm : public CPTerm {
+	public:
+		unsigned int _varid;
+		CPVarTerm(unsigned int varid) : _varid(varid) { }
+		void accept(Visitor*) const;
+};
+
+class CPSumTerm : public CPTerm {
+	public:
+		std::vector<unsigned int> _varids; 
+		void accept(Visitor*) const;
+};
+
+class CPWSumTerm : public CPTerm {
+	public:
+		std::vector<unsigned int> 	_varids; 
+		std::vector<int>			_weights;
+		void accept(Visitor*) const;
+};
+
+struct CPBound {
+	bool _isvarid;
+	union { 
+		int _bound;
+		unsigned int _varid;
+	} _value;
+	CPBound(bool isvarid, int bound): _isvarid(isvarid) { _value._bound = bound; }
+	CPBound(bool isvarid, unsigned int varid): _isvarid(isvarid) { _value._varid = varid; }
+};
+
+enum CompType { CT_EQ, CT_NEQ, CT_LEQ, CT_GEQ, CT_LT, CT_GT };
+
+class CPTsBody : public TsBody {
+	private:
+		CPTerm*		_left;
+		CompType	_comp;
+		CPBound		_right;
+	public:
+		CPTsBody(TsType type, CPTerm* left, CompType comp, const CPBound& right) :
+			TsBody(type), _left(left), _comp(comp), _right(right) { }
+		CPTerm*		left()	const { return _left;	}
+		CompType	comp()	const { return _comp;	}
+		CPBound		right()	const { return _right;	}
+	friend class GroundTranslator;
+};
+
 /*
- * Ground sets
+ * Set corresponding to a tseitin
  */ 
 class TsSet {
 	private:
@@ -108,7 +161,7 @@ class TsSet {
 /*
  * Ground translator 
  */
-class GroundTranslator  {
+class GroundTranslator {
 	private:
 		std::vector<std::map<std::vector<domelement>,int> >	_table;			// map atoms to integers
 		std::vector<PFSymbol*>								_symboffsets;	// map integer to symbol
@@ -131,21 +184,48 @@ class GroundTranslator  {
 		int				translate(const std::vector<int>& cl, bool conj, TsType tp);
 		int				translate(double bound, char comp, bool strict, AggType aggtype, int setnr, TsType tstype);
 		int				translate(PFSymbol*,const std::vector<TypedElement>&);
-		int				translateSet(const std::vector<int>&,const std::vector<double>&,const std::vector<double>&);
+		int				translate(CPTerm*, CompType, const CPBound&, TsType);
 		int				nextNumber();
 		unsigned int	addSymbol(PFSymbol* pfs);
+		int				translateSet(const std::vector<int>&,const std::vector<double>&,const std::vector<double>&);
 
-		PFSymbol*							symbol(int nr)				const	{ return _backsymbtable[abs(nr)];		}
-		const std::vector<domelement>&		args(int nr)				const	{ return _backargstable[abs(nr)];		}
-		bool								isTseitin(int l)			const	{ return symbol(l) == 0;				}
-		TsBody*								tsbody(int l)				const	{ return _tsbodies.find(abs(l))->second;}
-		const TsSet&						groundset(int nr)			const	{ return _sets[nr];						}
-		TsSet&								groundset(int nr)					{ return _sets[nr];						}
-		unsigned int						nrOffsets()					const	{ return _symboffsets.size();			}
-		PFSymbol*							getSymbol(unsigned int n)	const	{ return _symboffsets[n];				}
+		PFSymbol*										symbol(int nr)				const	{ return _backsymbtable[abs(nr)];		}
+		const std::vector<domelement>&					args(int nr)				const	{ return _backargstable[abs(nr)];		}
+		bool											isTseitin(int l)			const	{ return symbol(l) == 0;				}
+		TsBody*											tsbody(int l)				const	{ return _tsbodies.find(abs(l))->second;}
+		const TsSet&									groundset(int nr)			const	{ return _sets[nr];						}
+		TsSet&											groundset(int nr)					{ return _sets[nr];						}
+		unsigned int									nrOffsets()					const	{ return _symboffsets.size();			}
+		PFSymbol*										getSymbol(unsigned int n)	const	{ return _symboffsets[n];				}
 		const std::map<std::vector<domelement>,int>&	getTuples(unsigned int n)	const	{ return _table[n];						}
 
-		std::string	printatom(int nr)	const;
+		std::string	printAtom(int nr)	const;
+};
+
+/*
+ * Ground term translator
+ */
+class GroundTermTranslator {
+	private:
+		std::vector<std::map<std::vector<domelement>,unsigned int> >	_table;			// map terms to integers
+		std::vector<Function*>											_backfunctable;	// map integer to the symbol of its corresponding term
+		std::vector<std::vector<domelement> >							_backargstable;	// map integer to the terms of its corresponding term
+		
+		std::vector<Function*>				_offset2function;
+		std::map<Function*,unsigned int>	_function2offset;
+
+	public:
+		GroundTermTranslator() : _backfunctable(1), _backargstable(1) { }
+
+		unsigned int	translate(unsigned int,const std::vector<domelement>&);
+		unsigned int	translate(Function*,const std::vector<TypedElement>&);
+		unsigned int	nextNumber();
+		unsigned int	addFunction(Function*);
+
+		Function*						function(unsigned int nr)		const { return _backfunctable[nr];		}
+		const std::vector<domelement>&	args(unsigned int nr)			const { return _backargstable[nr];		}
+		Function*						getFunction(unsigned int nr)	const { return _offset2function[nr]; 		}
+		std::string						printTerm(unsigned int nr)		const;
 };
 
 
@@ -236,6 +316,7 @@ class TermGrounder {
 	public:
 		TermGrounder() { }
 		virtual domelement run() const = 0;
+		virtual bool canReturnCPVar() const = 0;
 #ifndef NDEBUG
 		void setorig(const Term* t, const std::map<Variable*,domelement*>& mvd); 
 #endif
@@ -247,6 +328,7 @@ class DomTermGrounder : public TermGrounder {
 	public:
 		DomTermGrounder(domelement val) : _value(val) { }
 		domelement run() const { return _value;	}
+		bool canReturnCPVar() const { return false; }
 };
 
 class VarTermGrounder : public TermGrounder {
@@ -255,6 +337,7 @@ class VarTermGrounder : public TermGrounder {
 	public:
 		VarTermGrounder(domelement* a) : _value(a) { }
 		domelement run() const; 
+		bool canReturnCPVar() const { return false; }
 };
 
 class FuncTermGrounder : public TermGrounder {
@@ -266,6 +349,7 @@ class FuncTermGrounder : public TermGrounder {
 		FuncTermGrounder(const std::vector<TermGrounder*>& sub, FuncTable* f) :
 			_function(f), _subtermgrounders(sub), _args(sub.size()) { }
 		domelement run() const;
+		bool canReturnCPVar() const { return false; }
 
 		// TODO? Optimisation:
 		//			Keep all values of the args + result of the previous call to calc().
@@ -279,10 +363,39 @@ class AggTermGrounder : public TermGrounder {
 		SetGrounder*		_setgrounder;
 		GroundTranslator*	_translator;
 	public:
-		AggTermGrounder(GroundTranslator* gt, AggType tp, SetGrounder* gr) : _type(tp), _setgrounder(gr), _translator(gt) { }
+		AggTermGrounder(GroundTranslator* gt, AggType tp, SetGrounder* gr):
+			_type(tp), _setgrounder(gr), _translator(gt) { }
 		domelement run() const;
+		bool canReturnCPVar() const { return false; }
 };
 
+/*** Three-valued term grounders ***/
+
+class ThreeValuedFuncTermGrounder : public TermGrounder {
+	private:
+		std::vector<TermGrounder*>		_subtermgrounders;
+		Function*						_function;
+		FuncTable*						_functable;
+		mutable std::vector<domelement>	_args;
+		std::vector<SortTable*>			_tables;
+	public:
+		ThreeValuedFuncTermGrounder(const std::vector<TermGrounder*>& sub, Function* f, FuncTable* ft, const std::vector<SortTable*>& vst):
+			_subtermgrounders(sub), _function(f), _functable(ft), _args(sub.size()), _tables(vst) { }
+		domelement run() const;
+		bool canReturnCPVar() const { return true; }
+};
+
+class ThreeValuedAggTermGrounder : public TermGrounder {
+	private:
+		AggType				_type;
+		SetGrounder*		_setgrounder;
+		GroundTranslator*	_translator;
+	public:
+		ThreeValuedAggTermGrounder(GroundTranslator* gt, AggType tp, SetGrounder* gr):
+			_type(tp), _setgrounder(gr), _translator(gt) { } 
+		domelement run() const;
+		bool canReturnCPVar() const { return true; }
+};
 
 /*** Formula grounders ***/
 
@@ -319,6 +432,20 @@ class AtomGrounder : public FormulaGrounder {
 		AtomGrounder(GroundTranslator* gt, bool sign, PFSymbol* s,
 					const std::vector<TermGrounder*> sg, InstanceChecker* pic, InstanceChecker* cic,
 					const std::vector<SortTable*>& vst, const GroundingContext&);
+		int		run() const;
+		void	run(std::vector<int>&) const;
+		bool	conjunctive() const { return true;	}
+};
+
+class CPGrounder : public FormulaGrounder {
+	private:
+		GroundTermTranslator* 	_termtranslator;
+		TermGrounder*			_lefttermgrounder;
+		TermGrounder*			_righttermgrounder;
+		CompType				_comparator;
+	public:
+		CPGrounder(GroundTranslator* gt, GroundTermTranslator* tt, TermGrounder* left, CompType comp, TermGrounder* right, const GroundingContext& gc):
+			FormulaGrounder(gt,gc), _termtranslator(tt), _lefttermgrounder(left), _righttermgrounder(right), _comparator(comp) { } 
 		int		run() const;
 		void	run(std::vector<int>&) const;
 		bool	conjunctive() const { return true;	}
@@ -490,6 +617,9 @@ class GrounderFactory : public Visitor {
 		AbstractStructure*		_structure;		// The structure that will be used to reduce the grounding
 		AbstractGroundTheory*	_grounding;		// The ground theory that will be produced
 
+		// Options
+		bool	_usingcp;
+
 		// Context
 		GroundingContext				_context;
 		std::stack<GroundingContext>	_contextstack;
@@ -524,7 +654,7 @@ class GrounderFactory : public Visitor {
 
 	public:
 		// Constructor
-		GrounderFactory(AbstractStructure* structure): _structure(structure) { }
+		GrounderFactory(AbstractStructure* structure, bool usingcp): _structure(structure), _usingcp(usingcp) { }
 
 		// Factory method
 		TopLevelGrounder* create(const AbstractTheory* theory);

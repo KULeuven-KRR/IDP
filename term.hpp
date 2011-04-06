@@ -110,7 +110,7 @@ class VarTerm : public Term {
 		Term*	accept(MutatingVisitor* v);
 
 		// Output
-		std::string to_string()	const { return _var->to_string();	}
+		std::string to_string()	const;
 };
 
 
@@ -139,7 +139,7 @@ class FuncTerm : public Term {
 		void arg(unsigned int n, Term* t)	{ _args[n] = t;	}
 
 		// Inspectors
-		Sort*			sort()					const	{ return _func->outsort();	}
+		Sort*			sort()					const;
 		Function*		func()					const	{ return _func;				}
 		const std::vector<Term*>&	args()		const	{ return _args;				}
 		Term*			arg(unsigned int n)		const	{ return _args[n];			}

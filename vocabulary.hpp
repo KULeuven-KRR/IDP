@@ -345,6 +345,11 @@ namespace FuncUtils {
 	 * return a new overloaded predicate containing the given predicates
 	 */
 	Function* overload(const std::vector<Function*>&);
+
+	/**
+	 * Check whether the output sort of a function is integer.
+	 */
+	bool isIntFunc(const Function*, Vocabulary*);
 }
 
 

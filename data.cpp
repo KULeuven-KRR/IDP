@@ -6,6 +6,7 @@
 
 #include "data.hpp"
 #include "options.hpp"
+#include "element.hpp"
 #include "builtin.hpp"
 #include "namespace.hpp"
 
@@ -80,7 +81,21 @@ compound*	CPPointer(Element e, ElementType t)	{
 	return DomainData::instance()->compoundpointer(0,vector<TypedElement>(1,te));	
 }
 
-compound*	CPPointer(Function* f, const vector<TypedElement>& vte)	{ 
+compound* CPPointer(Function* f, const vector<TypedElement>& vte) { 
+	return DomainData::instance()->compoundpointer(f,vte);
+}
+
+compound* CPPointer(Function* f, const vector<compound*>& vc) {
+	vector<TypedElement> vte(vc.size());
+	for(unsigned int n = 0; n < vc.size(); ++n) {
+		if(vc[n]->_function) {
+			vte[n]._type = ELCOMPOUND;
+			vte[n]._element._compound = vc[n];
+		}
+		else {
+			vte[n] = vc[n]->_args[0];
+		}
+	}
 	return DomainData::instance()->compoundpointer(f,vte);
 }
 

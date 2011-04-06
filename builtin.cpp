@@ -4,14 +4,15 @@
 	(c) K.U.Leuven
 ************************************/
 
+#include "builtin.hpp"
+#include "element.hpp"
+#include "structure.hpp"
+#include "data.hpp"
+
 #include <string>
 #include <typeinfo>
 #include <cstdlib>
 #include <cmath>
-
-#include "builtin.hpp"
-#include "structure.hpp"
-#include "data.hpp"
 
 using namespace std;
 

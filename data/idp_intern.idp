@@ -49,15 +49,17 @@
 	IDP_ADVANCED::push_negations(clonetheo)
 	IDP_ADVANCED::flatten(clonetheo)
 	if not Opt then Opt = stdoptions end
-	return idp_intern_idpcall("fastmx",clonetheo,Struct,Opt)
+	local solutions, trace =  idp_intern_idpcall("fastmx",clonetheo,Struct,Opt) 
+	return solutions, trace
 }
 
 /** Grounding **/
-#procedure ground(Theo,Struct) {
+#procedure ground(Theo,Struct,Opt) {
 	local clonetheo = clone(Theo)
 	IDP_ADVANCED::push_negations(clonetheo)
 	IDP_ADVANCED::flatten(clonetheo)
-	return idp_intern_idpcall("fastground",clonetheo,Struct)
+	if not Opt then Opt = stdoptions end
+	return idp_intern_idpcall("fastground",clonetheo,Struct,Opt)
 }
 
 /** Model checking **/
@@ -71,7 +73,6 @@
 }
 
 /** Printing **/
-
 #procedure idptostring(obj,opts) {
 	if not opts then opts = stdoptions end
 	return idp_intern_idpcall("print",obj,opts)

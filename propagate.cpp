@@ -6,6 +6,7 @@
 
 #include "propagate.hpp"
 #include "fobdd.hpp"
+#include "vocabulary.hpp"
 #include "theory.hpp"
 #include "structure.hpp"
 
@@ -171,16 +172,84 @@ void FOPropagator::updateDomain(const Formula* f, FOPropDirection dir, bool ct,F
 	// TODO
 }
 
-void FOPropagator::visit(const PredForm*) {
-	//TODO
+void FOPropagator::visit(const PredForm* pf) {
+	LeafConnectData* lcd = _leafconnectdata[pf];
+	PredForm* connector = lcd->_connector;
+	FOPropDomain* deriveddomain;
+	FOPropDomain* temp;
+	if(_direction == DOWN) {
+		deriveddomain = _ct ? _domains[pf]._ctdomain : _domains[pf]._cfdomain;
+		deriveddomain = _factory->conjunction(deriveddomain,lcd->_equalities);
+		temp = deriveddomain;
+		deriveddomain = _factory->substitute(deriveddomain,lcd->_leaftoconnector);
+		delete(temp);
+		vector<Variable*> freevars;
+		map<Variable*,Variable*> mvv;
+		for(unsigned int n = 0; n < pf->nrFvars(); ++n) {
+			Variable* clone = new Variable(pf->fvar(n)->sort());
+			freevars.push_back(clone);
+			mvv[pf->fvar(n)] = clone;
+		}
+		temp = deriveddomain;
+		deriveddomain = _factory->substitute(deriveddomain,mvv);
+		delete(temp);
+		deriveddomain = addToExists(deriveddomain,freevars);
+		updateDomain(connector,DOWN,(_ct == pf->sign()),deriveddomain,pf);
+	}
+	else {
+		assert(_direction == UP);
+		deriveddomain = _ct ? _domains[connector]._ctdomain : _domains[connector]._cfdomain;
+		deriveddomain = _factory->conjunction(deriveddomain,lcd->_equalities);
+		temp = deriveddomain;
+		deriveddomain = _factory->substitute(deriveddomain,lcd->_connectortoleaf);
+		delete(temp);
+		vector<Variable*> freevars;
+		map<Variable*,Variable*> mvv;
+		for(unsigned int n = 0; n < connector->nrFvars(); ++n) {
+			Variable* clone = new Variable(connector->fvar(n)->sort());
+			freevars.push_back(clone);
+			mvv[connector->fvar(n)] = clone;
+		}
+		temp = deriveddomain;
+		deriveddomain = _factory->substitute(deriveddomain,mvv);
+		delete(temp);
+		deriveddomain = addToExists(deriveddomain,freevars);
+		updateDomain(pf,UP,(_ct == pf->sign()),deriveddomain);
+	}
 }
 
 void FOPropagator::visit(const EqChainForm*) {
-	//TODO
+	if(_direction == DOWN) {
+		//TODO
+	}
+	else {
+		assert(_direction == UP);
+		//TODO
+	}
 }
 
-void FOPropagator::visit(const EquivForm*) {
-	//TODO
+void FOPropagator::visit(const EquivForm* ef) {
+	Formula* otherchild = _child == ef->left() ? ef->right() : ef->left();
+	if(_direction == DOWN) {
+		const ThreeValuedDomain& tvd = _domains[_child];
+		FOPropDomain* parentdomain = _ct ? _domains[ef]._ctdomain : _domains[ef]._cfdomain;
+		FOPropDomain* domain1 = _factory->conjunction(parentdomain,tvd._ctdomain);
+		FOPropDomain* domain2 = _factory->conjunction(parentdomain,tvd._cfdomain);
+		const vector<Variable*>& qvars = _quantvars[_child];
+		domain1 = addToExists(domain1,qvars);
+		domain2 = addToExists(domain2,qvars);
+		updateDomain(otherchild,DOWN,(_ct == ef->sign()),domain1);
+		updateDomain(otherchild,DOWN,(_ct != ef->sign()),domain2);
+	}
+	else {
+		assert(_direction == UP);
+		const ThreeValuedDomain& tvd = _domains[otherchild];
+		FOPropDomain* childdomain = _ct ? _domains[_child]._ctdomain : _domains[_child]._cfdomain;
+		FOPropDomain* domain1 = _factory->conjunction(childdomain,tvd._ctdomain);
+		FOPropDomain* domain2 = _factory->conjunction(childdomain,tvd._cfdomain);
+		updateDomain(ef,UP,(_ct == ef->sign()),domain1,_child);
+		updateDomain(ef,UP,(_ct != ef->sign()),domain2,_child);
+	}
 }
 
 void FOPropagator::visit(const BoolForm* bf) {
@@ -194,7 +263,6 @@ void FOPropagator::visit(const BoolForm* bf) {
 				subdomains.push_back(_ct == bf->sign() ? subfdomain._cfdomain : subfdomain._ctdomain);
 			}
 		}
-
 		for(unsigned int n = 0; n < bf->nrSubforms(); ++n) {
 			Formula* subform = bf->subform(n);
 			if(subform != _child) {
@@ -214,7 +282,6 @@ void FOPropagator::visit(const BoolForm* bf) {
 				}
 			}
 		}
-
 	}
 	else {
 		assert(_direction == UP);
@@ -270,6 +337,10 @@ void FOPropagator::visit(const QuantForm* qf) {
 		else deriveddomain = addToExists(deriveddomain,qf->qvars());
 		updateDomain(qf,UP,(_ct == qf->sign()),deriveddomain);
 	}
+}
+
+void FOPropagator::visit(const AggForm*) {
+	//TODO
 }
 
 FOPropagatorFactory::FOPropagatorFactory(FOPropDomainFactory* factory, FOPropScheduler* scheduler, const AbstractStructure* s): _structure(s) {
