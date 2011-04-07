@@ -23,26 +23,33 @@ class Sort;
 class Variable;
 class Function;
 class DomainElement;
+class TheoryVisitor;
+class TheoryMutatingVisitor;
 
 /************
 	Terms
 ************/
 
+class VarTerm;
+
 /**
  * Abstract class to represent terms
  */
 class Term {
-	protected:
+	private:
 
 		std::set<Variable*>		_freevars;		//!< the set of free variables of the term
 		std::vector<Term*>		_subterms;		//!< the subterms of the term
 		std::vector<SetExpr*>	_subsets;		//!< the subsets of the term
-		TermParseInfo			_pi;			//!< the place where the term was parsed
 
 		virtual	void	setfvars();		//!< Compute the free variables of the term
 
+	protected:
+		TermParseInfo			_pi;			//!< the place where the term was parsed
+
 	public:
 
+		// Constructors
 		Term(const TermParseInfo& pi) : _pi(pi) { }
 
 		virtual Term* clone()										const = 0;	
@@ -50,13 +57,18 @@ class Term {
 		virtual Term* clone(const std::map<Variable*,Variable*>&)	const = 0;	
 			//!< create a copy of the term and substitute the free variables according to the given map
 
-		virtual ~Term() { }	
-			//!< Shallow destructor. Does not delete subterms and subsets of the term.
-		void recursiveDelete();		
-			//!< Delete the term, its subterms, and subsets.
+		// Destructors
+		virtual ~Term() { }			//!< Shallow destructor. Does not delete subterms and subsets of the term.
+		void recursiveDelete();		//!< Delete the term, its subterms, and subsets.
 
+		// Mutators
 		virtual void	sort(Sort*) { }	//!< Set the sort of the term (only does something for VarTerm and DomainTerm)
 
+		void addset(SetExpr* s)						{ _subsets.push_back(s); setfvars();	}
+		void subterm(unsigned int n, Term* t)		{ _subterms[n] = t; setfvars();			}
+		void subterms(const std::vector<Term*>& vt) { _subterms = vt; setfvars();			}
+
+		// Inspectors
 				const ParseInfo&	pi()						const { return _pi;				}
 		virtual	Sort*							sort()			const = 0;	//!< Returns the sort of the term
 				const std::set<Variable*>&		freevars()		const { return _freevars;		}
@@ -65,9 +77,15 @@ class Term {
 
 		bool	contains(const Variable*)	const;		//!< true iff the term contains the variable
 
+		// Visitor
+		virtual void	accept(TheoryVisitor*)			const = 0;
+		virtual Term*	accept(TheoryMutatingVisitor*)  = 0;
+
+		// Output
 		virtual std::ostream&	put(std::ostream&)	const = 0;
 				std::string		to_string()			const;	
 
+	friend class VarTerm;
 };
 
 std::ostream& operator<<(std::ostream&,const Term&);
@@ -94,6 +112,9 @@ class VarTerm : public Term {
 
 		Sort*		sort()	const;
 		Variable*	var()	const	{ return _var;	}
+
+		void	accept(TheoryVisitor*)	const;
+		Term*	accept(TheoryMutatingVisitor*);
 
 		std::ostream&	put(std::ostream&)	const;
 
@@ -123,8 +144,11 @@ class FuncTerm : public Term {
 		void function(Function* f)	{ _function = f;	}
 
 		Sort*						sort()			const;
-		Function*					function()		const	{ return _function;			}
-		const std::vector<Term*>&	args()			const	{ return _subterms;			}
+		Function*					function()		const	{ return _function;		}
+		const std::vector<Term*>&	args()			const	{ return subterms();	}
+
+		void	accept(TheoryVisitor*)	const;
+		Term*	accept(TheoryMutatingVisitor*);
 
 		std::ostream&	put(std::ostream&)	const;
 
@@ -155,6 +179,9 @@ class DomainTerm : public Term {
 		Sort*					sort()		const { return _sort;	}
 		const DomainElement*	value()		const { return _value;	}
 
+		void	accept(TheoryVisitor*)	const;
+		Term*	accept(TheoryMutatingVisitor*);
+
 		std::ostream&	put(std::ostream&)	const;	
 
 };
@@ -179,8 +206,11 @@ class AggTerm : public Term {
 		~AggTerm() { }
 
 		Sort*		sort()		const;
-		SetExpr*	set()		const	{ return *(_subsets.begin());	}
-		AggFunction	function()	const	{ return _function;				}
+		SetExpr*	set()		const	{ return subsets()[0];	}
+		AggFunction	function()	const	{ return _function;		}
+
+		void	accept(TheoryVisitor*)	const;
+		Term*	accept(TheoryMutatingVisitor*);
 
 		std::ostream&	put(std::ostream&)	const;
 
@@ -227,6 +257,9 @@ class SetExpr {
 				const std::set<Variable*>&	freevars()					const { return _freevars;	}
 				bool						contains(const Variable*)	const;
 
+		virtual void	accept(TheoryVisitor*)			const = 0;
+		virtual Term*	accept(TheoryMutatingVisitor*)	= 0;
+
 		virtual std::ostream&	put(std::ostream&)	const = 0;
 				std::string		to_string()			const;
 
@@ -251,6 +284,9 @@ class EnumSetExpr : public SetExpr {
 
 		Sort*	sort()	const;
 
+		void	accept(TheoryVisitor*)	const;
+		Term*	accept(TheoryMutatingVisitor*);
+
 		std::ostream& put(std::ostream&) const;
 };
 
@@ -268,6 +304,9 @@ class QuantSetExpr : public SetExpr {
 		~QuantSetExpr() { }
 
 		Sort*	sort()	const;
+
+		void	accept(TheoryVisitor*)	const;
+		Term*	accept(TheoryMutatingVisitor*);
 
 		std::ostream&	put(std::ostream&)	const;	
 };

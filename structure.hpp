@@ -284,6 +284,7 @@ class EnumInternalFuncIterator : public InternalTableIterator {
 
 };
 
+class SortTable;
 class PredTable;
 
 class UnionInternalIterator : public InternalTableIterator {
@@ -383,7 +384,7 @@ class UnionInternalSortIterator : public InternalSortIterator {
 	private:
 		std::vector<SortIterator>				_iterators;
 		std::vector<SortTable*>					_outtables;
-		std::vector<SortIterator>::iterator	_curriterator;
+		std::vector<SortIterator>::iterator		_curriterator;
 
 		bool contains(const DomainElement*)	const;
 		void setcurriterator();

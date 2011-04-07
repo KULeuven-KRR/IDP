@@ -192,6 +192,8 @@ class PFSymbol {
 		friend class Vocabulary;
 };
 
+std::ostream& operator<<(std::ostream&,const PFSymbol&);
+
 class PredGenerator;
 class PredInter;
 class PredInterGenerator;

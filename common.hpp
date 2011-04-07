@@ -25,6 +25,7 @@ extern double		stod(const std::string&);	//!< convert string to double
 extern void	printtabs(std::ostream&,unsigned int tabs);	//!< write a given number of tabs
 
 extern double applyAgg(AggFunction,const std::vector<double>& args);	//!< apply an aggregate function to arguments
+extern CompType	invert(CompType);
 
 #ifdef OLD
 #include <iostream>

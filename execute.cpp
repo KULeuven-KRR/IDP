@@ -4,21 +4,8 @@
 	(c) K.U.Leuven
 ************************************/
 
+#include <cassert>
 #include "execute.hpp"
-#include "namespace.hpp"
-#include "element.hpp"
-#include "vocabulary.hpp"
-#include "structure.hpp"
-#include "ground.hpp"
-#include "ecnf.hpp"
-#include "print.hpp"
-#include "data.hpp"
-#include "options.hpp"
-#include "lua.hpp"
-#include "error.hpp"
-#include "fobdd.hpp"
-#include "external/MonitorInterface.hpp"
-
 using namespace std;
 
 /*

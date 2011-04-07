@@ -114,7 +114,7 @@ class Namespace {
 		// Visitors
 		void	accept(Visitor*) const;
 
-		ostream& putname(ostream&) const;
+		std::ostream& putname(std::ostream&) const;
 };
 
 #endif

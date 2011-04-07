@@ -100,8 +100,7 @@ ostream& VarTerm::put(std::ostream& output) const {
 
 FuncTerm::FuncTerm(Function* func, const vector<Term*>& args, const TermParseInfo& pi) : 
 	Term(pi), _function(func) { 
-	_subterms = args;
-	setfvars();
+	subterms(args);
 }
 
 FuncTerm* FuncTerm::clone() const {
@@ -111,7 +110,7 @@ FuncTerm* FuncTerm::clone() const {
 
 FuncTerm* FuncTerm::clone(const map<Variable*,Variable*>& mvv) const {
 	vector<Term*> newargs;
-	for(vector<Term*>::const_iterator it = _subterms.begin(); it != _subterms.end(); ++it)
+	for(vector<Term*>::const_iterator it = subterms().begin(); it != subterms().end(); ++it)
 		newargs.push_back((*it)->clone(mvv));
 	return new FuncTerm(_function,newargs,_pi.clone(mvv));
 }
@@ -122,10 +121,10 @@ Sort* FuncTerm::sort() const {
 
 ostream& FuncTerm::put(ostream& output) const {
 	output << *_function;
-	if(!_subterms.empty()) {
-		output << '(' << *_subterms[0];
-		for(unsigned int n = 1; n < _subterms.size(); ++n) {
-			output << ',' << *_subterms[n];
+	if(!subterms().empty()) {
+		output << '(' << *subterms()[0];
+		for(unsigned int n = 1; n < subterms().size(); ++n) {
+			output << ',' << *subterms()[n];
 		}
 		output << ')';
 	}
@@ -160,7 +159,7 @@ ostream& DomainTerm::put(ostream& output) const {
 
 AggTerm::AggTerm(SetExpr* set, AggFunction function, const TermParseInfo& pi) :
 	Term(pi), _function(function) {
-	_subsets.push_back(set);
+	addset(set);
 }
 
 AggTerm* AggTerm::clone() const {
@@ -169,7 +168,7 @@ AggTerm* AggTerm::clone() const {
 }
 
 AggTerm* AggTerm::clone(const map<Variable*,Variable*>& mvv) const {
-	SetExpr* newset = (*_subsets.begin())->clone(mvv);
+	SetExpr* newset = subsets()[0]->clone(mvv);
 	return new AggTerm(newset,_function,_pi.clone(mvv));
 }
 
@@ -190,7 +189,7 @@ ostream& AggTerm::put(ostream& output) const {
 		case AGG_MIN:	output << "min"; break;
 		case AGG_MAX:	output << "max"; break;
 	}
-	output << *(*_subsets.begin());
+	output << *subsets()[0];
 	return output;
 }
 
@@ -201,7 +200,7 @@ ostream& AggTerm::put(ostream& output) const {
 void SetExpr::setfvars() {
 	_freevars.clear();
 	for(vector<Formula*>::const_iterator it = _subformulas.begin(); it != _subformulas.end(); ++it) {
-		_freevars.insert((*it)->freevars.begin(),(*it)->freevars.end());
+		_freevars.insert((*it)->freevars().begin(),(*it)->freevars().end());
 	}
 	for(vector<Term*>::const_iterator it = _subterms.begin(); it != _subterms.end(); ++it) {
 		_freevars.insert((*it)->freevars().begin(),(*it)->freevars().end());

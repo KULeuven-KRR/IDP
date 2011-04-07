@@ -27,19 +27,17 @@ gidl_SOURCES = \
 		structure.hpp structure.cpp\
 		term.hpp term.cpp\
 		theory.hpp theory.cpp\
+		execute.hpp execute.cpp\
 		namespace.hpp namespace.cpp\
 		insert.hpp insert.cpp\
-		execute.hpp execute.cpp\
 		common.hpp common.cpp\
 		ecnf.hpp ecnf.cpp\
-		visitor.hpp visitor.cpp\
 		ground.hpp ground.cpp\
 		main.cpp\
 		data.hpp data.cpp\
 		error.hpp error.cpp\
 		parse.yy\
 		lex.ll\
-		parseinfo.hpp\
 		options.cpp options.hpp\
 		clconst.hpp\
 		interactive.hpp interactive.cpp\
@@ -48,7 +46,6 @@ gidl_SOURCES = \
 		generator.hpp generator.cpp\
 		fobdd.hpp fobdd.cpp\
 		propagate.hpp propagate.cpp\
-		element.hpp element.cpp\
 		commontypes.hpp
 
 AM_CXXFLAGS+=-I $(top_srcdir)/pcsolver/src/ 
