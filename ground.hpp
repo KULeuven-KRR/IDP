@@ -15,7 +15,7 @@
 #include <stack>
 #include <cstdlib>
 
-#include "common.hpp" //FIXME: need include for AggType
+#include "commontypes.hpp"
 #include "visitor.hpp"
 #include "pcsolver/src/external/ExternalInterface.hpp"
 
@@ -27,20 +27,13 @@ class AbstractGroundTheory;
 class InstGenerator;
 class InstanceChecker;
 
+struct TypedElement;
+
 typedef compound* domelement; //repeated from vocabulary.hpp
 
 /**********************************************
 	Translate from ground atoms to numbers
 **********************************************/
-
-/*
- * Enumeration for the possible ways to define a tseitin atom in terms of the subformula it replaces.
- *		TS_EQ:		tseitin <=> subformula
- *		TS_RULE:	tseitin <- subformula
- *		TS_IMPL:	tseitin => subformula
- *		TS_RIMPL:	tseitin <= subformula
- */
-enum TsType { TS_EQ, TS_RULE, TS_IMPL, TS_RIMPL };
 
 /*
  * A complete definition of a tseitin atom
@@ -217,14 +210,15 @@ class GroundTermTranslator {
 	public:
 		GroundTermTranslator() : _backfunctable(1), _backargstable(1) { }
 
-		unsigned int	translate(unsigned int,const std::vector<domelement>&);
-		unsigned int	translate(Function*,const std::vector<TypedElement>&);
+		unsigned int	translate(unsigned int offset,const std::vector<domelement>& args);
+		unsigned int	translate(Function*,const std::vector<TypedElement>& args);
 		unsigned int	nextNumber();
 		unsigned int	addFunction(Function*);
 
 		Function*						function(unsigned int nr)		const { return _backfunctable[nr];		}
 		const std::vector<domelement>&	args(unsigned int nr)			const { return _backargstable[nr];		}
-		Function*						getFunction(unsigned int nr)	const { return _offset2function[nr]; 		}
+		unsigned int					nrOffsets()						const { return _offset2function.size();	}
+		Function*						getFunction(unsigned int nr)	const { return _offset2function[nr]; 	}
 		std::string						printTerm(unsigned int nr)		const;
 };
 
@@ -638,7 +632,7 @@ class GrounderFactory : public Visitor {
 		
 		// Variable mapping
 		std::map<Variable*,domelement*>	_varmapping;	// Maps variables to their counterpart during grounding.
-													// That is, the corresponding domelement* acts as a variable+value.
+														// That is, the corresponding domelement* acts as a variable+value.
 
 		// Current ground definition
 		GroundDefinition*		_definition;	// The ground definition that will be produced by the 

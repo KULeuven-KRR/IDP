@@ -11,6 +11,7 @@
 
 #include "vocabulary.hpp"
 #include "structure.hpp"
+#include "ground.hpp"
 #include "pcsolver/src/external/ExternalInterface.hpp"
 
 using namespace std;
@@ -223,6 +224,11 @@ AbstractGroundTheory::AbstractGroundTheory(AbstractStructure* str) :
 
 AbstractGroundTheory::AbstractGroundTheory(Vocabulary* voc, AbstractStructure* str) : 
 	AbstractTheory("",voc,ParseInfo()), _structure(str), _translator(new GroundTranslator()), _termtranslator(new GroundTermTranslator()) { }
+
+AbstractGroundTheory::~AbstractGroundTheory() {
+	delete(_translator);
+	delete(_termtranslator);
+}
 
 /*
  * AbstractGroundTheory::transformForAdd(vector<int>& vi, VIType vit, int defnr, bool skipfirst)
@@ -530,7 +536,8 @@ void SolverTheory::addSet(int setnr, int defnr, bool weighted) {
 				set.literals.push_back(createLiteral(tsset.literal(n)));
 			}
 			getSolver().add(set);
-		}else{
+		}
+		else {
 			MinisatID::WSet set;
 			set.setID = setnr;
 			for(unsigned int n = 0; n < tsset.size(); ++n) {
@@ -618,8 +625,126 @@ void SolverTheory::addDefinition(GroundDefinition* d) {
 }
 
 void SolverTheory::addCPReification(int tseitin, CPTsBody* body) {
-	assert(false);
-	//TODO
+	MinisatID::EqType comp;
+	switch(body->comp()) {
+		case CT_EQ:		comp = MinisatID::MEQ; break; 
+		case CT_NEQ:	comp = MinisatID::MNEQ; break; 
+		case CT_LEQ:	comp = MinisatID::MLEQ; break; 
+		case CT_GEQ:	comp = MinisatID::MGEQ; break; 
+		case CT_LT:		comp = MinisatID::ML; break; 
+		case CT_GT:		comp = MinisatID::MG; break;
+		default: assert(false);
+	} 
+	CPTerm* left = body->left();
+	CPBound right = body->right();
+	if(typeid(*left) == typeid(CPVarTerm)) {
+		CPVarTerm* term = dynamic_cast<CPVarTerm*>(left);
+		addCPVariable(term->_varid);
+		if(right._isvarid) {
+			addCPVariable(right._value._varid);
+			MinisatID::CPBinaryRelVar sentence;
+			sentence.head = createAtom(tseitin);
+			sentence.lhsvarID = term->_varid;
+			sentence.rhsvarID = right._value._varid;
+			sentence.rel = comp;
+			getSolver().add(sentence);
+		}
+		else {
+			MinisatID::CPBinaryRel sentence;
+			sentence.head = createAtom(tseitin);
+			sentence.varID = term->_varid;
+			sentence.bound = right._value._bound;
+			sentence.rel = comp;
+			getSolver().add(sentence);
+		}
+	}
+	else if(typeid(*left) == typeid(CPSumTerm)) {
+		CPSumTerm* term = dynamic_cast<CPSumTerm*>(left);
+		addCPVariables(term->_varids);
+		if(right._isvarid) {
+			addCPVariable(right._value._varid);
+			MinisatID::CPSumWithVar sentence;
+			sentence.head = createAtom(tseitin);
+			sentence.varIDs = term->_varids;
+			sentence.rhsvarID = right._value._varid;
+			sentence.rel = comp;
+			getSolver().add(sentence);
+		}
+		else {
+			MinisatID::CPSum sentence;
+			sentence.head = createAtom(tseitin);
+			sentence.varIDs = term->_varids;
+			sentence.bound = right._value._bound;
+			sentence.rel = comp;
+			getSolver().add(sentence);
+		}
+	}
+	else {
+		assert(typeid(*left) == typeid(CPWSumTerm));
+		CPWSumTerm* term = dynamic_cast<CPWSumTerm*>(left);
+		addCPVariables(term->_varids);
+		if(right._isvarid) {
+			addCPVariable(right._value._varid);
+			MinisatID::CPSumWeightedWithVar sentence;
+			sentence.head = createAtom(tseitin);
+			sentence.varIDs = term->_varids;
+			sentence.weights = term->_weights;
+			sentence.rhsvarID = right._value._varid;
+			sentence.rel = comp;
+			getSolver().add(sentence);
+		}
+		else {
+			MinisatID::CPSumWeighted sentence;
+			sentence.head = createAtom(tseitin);
+			sentence.varIDs = term->_varids;
+			sentence.weights = term->_weights;
+			sentence.bound = right._value._bound;
+			sentence.rel = comp;
+			getSolver().add(sentence);
+		}
+	}
+}
+
+void SolverTheory::addCPVariables(const vector<unsigned int>& varids) {
+	for(vector<unsigned int>::const_iterator it = varids.begin(); it != varids.end(); ++it)
+		addCPVariable(*it);
+}
+
+void SolverTheory::addCPVariable(unsigned int varid) {
+	if(_addedvarids.find(varid) == _addedvarids.end()) {
+		Function* function = _termtranslator->function(varid);
+//cerr << "func = " << function->name();
+		SortTable* domain = _structure->inter(function->outsort());
+		assert(domain->finite()); //TODO Right?
+		assert(domain->type() == ELINT); //FIXME For this kind of table first() and last() are always defined?
+		Element first = domain->element(0); 				//FIXME domain->first() ?
+		int minvalue = first._int;
+		Element last = domain->element(domain->size()-1);	//FIXME domain->last() ?
+		int maxvalue = last._int;
+		if((maxvalue - minvalue + 1) == domain->size()) {
+//cerr << " domain = [" << minvalue << "," << maxvalue << "]" << endl;
+			// the domain is a complete range from minvalue to maxvalue.
+			MinisatID::CPIntVarRange cpvar;
+			cpvar.varID = varid;
+			cpvar.minvalue = minvalue;
+			cpvar.maxvalue = maxvalue;
+			getSolver().add(cpvar);
+		}
+		else {
+			// the domain is not a complete range.
+			MinisatID::CPIntVarEnum cpvar;
+			cpvar.varID = varid;
+//cerr << " domain = { ";
+			for(unsigned int m = 0; m < domain->size(); ++m) {
+				Element element = domain->element(m);
+				int value = element._int;
+//cerr << value << "; ";
+				cpvar.values.push_back(value);
+			}
+//cerr << " }" << endl;
+			getSolver().add(cpvar);
+		}
+	}
 }
 
 void SolverTheory::addPCRule(int defnr, int head, vector<int> body, bool conjunctive){

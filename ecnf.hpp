@@ -10,10 +10,18 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <set>
+#include <cassert>
 
 #include "theory.hpp"
-#include "ground.hpp" //FIXME: need include for enum TsType
+#include "commontypes.hpp"
 #include "pcsolver/src/external/ExternalInterface.hpp"
+
+class GroundTranslator;
+class GroundTermTranslator;
+class PCTsBody;
+class AggTsBody;
+class CPTsBody;
 
 namespace MinisatID{
  	 class WrappedPCSolver;
@@ -300,8 +308,8 @@ class AbstractGroundTheory : public AbstractTheory {
 		AbstractGroundTheory(Vocabulary* voc, AbstractStructure* str);
 
 		// Destructor
-		virtual void recursiveDelete()	{ delete(this);			}
-		virtual	~AbstractGroundTheory()	{ delete(_translator);	}
+		virtual void recursiveDelete()	{ delete(this);	}
+		virtual	~AbstractGroundTheory();
 
 		// Mutators
 				void add(Formula* )		{ assert(false);	}
@@ -336,9 +344,11 @@ class AbstractGroundTheory : public AbstractTheory {
  */
 class SolverTheory : public AbstractGroundTheory {
 	private:
-		SATSolver*							_solver;	// The SAT solver
-		std::map<PFSymbol*,std::set<int> >	_defined;	// Symbols that are defined in the theory. This set is used to
-														// communicate to the solver which ground atoms should be considered defined.
+		SATSolver*							_solver;		// The SAT solver
+		std::map<PFSymbol*,std::set<int> >	_defined;		// Symbols that are defined in the theory. This set is used to
+															// communicate to the solver which ground atoms should be considered defined.
+		std::set<unsigned int> 				_addedvarids;	// Variable ids that have already been added, together with their domain.
+
 		const 	SATSolver& getSolver() const	{ return *_solver; }
 				SATSolver& getSolver() 			{ return *_solver; }
 
@@ -357,6 +367,8 @@ class SolverTheory : public AbstractGroundTheory {
 		void	addSet(int setnr, int defnr, bool weighted);
 		void	addAggregate(int tseitin, AggTsBody* body);
 		void 	addCPReification(int tseitin, CPTsBody* body);
+		void	addCPVariable(unsigned int varids);
+		void	addCPVariables(const std::vector<unsigned int>& varids);
 
 		void	addPCRule(int defnr, int tseitin, PCTsBody* body);
 		void	addAggRule(int defnr, int tseitin, AggTsBody* body);

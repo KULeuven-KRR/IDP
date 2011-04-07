@@ -13,6 +13,7 @@
 #include "structure.hpp"
 #include "term.hpp"
 #include "options.hpp"
+#include "ground.hpp"
 
 using namespace std;
 

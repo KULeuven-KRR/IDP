@@ -12,6 +12,7 @@
 #include "vocabulary.hpp"
 #include "theory.hpp"
 #include "structure.hpp"
+#include "ground.hpp"
 #include "ecnf.hpp"
 
 using namespace std;
