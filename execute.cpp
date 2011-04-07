@@ -5,6 +5,7 @@
 ************************************/
 
 #include <cassert>
+#include "common.hpp"
 #include "execute.hpp"
 using namespace std;
 
