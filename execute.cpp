@@ -4,17 +4,225 @@
 	(c) K.U.Leuven
 ************************************/
 
-#include <cassert>
+#include <set>
+#include "lua.hpp"
 #include "common.hpp"
+#include "vocabulary.hpp"
+#include "structure.hpp"
+#include "term.hpp"
+#include "theory.hpp"
 #include "execute.hpp"
 using namespace std;
+
+class Options;	// FIXME replace by include "options"
+
+/******************************
+	User defined procedures
+******************************/
+
+int UserProcedure::_compilenumber = 0;
+
+void UserProcedure::compile(lua_State* L) {
+	if(!iscompiled()) {
+		// Compose function header, body, and return statement
+		stringstream ss;
+		ss << "local function " << _name << "(";
+		if(!_argnames.empty()) {
+			vector<string>::iterator it = _argnames.begin();
+			ss << *it; ++it;
+			for(; it != _argnames.end(); ++it) ss << ',' << *it;
+		}		
+		ss << ')' << _code.str() << "end\n";
+		ss << "return " << _name << "(...)\n";
+
+		// Compile 
+		luaL_loadstring(L,ss.str().c_str());
+		_registryindex = "idp_compiled_procedure_" + itos(UserProcedure::_compilenumber);
+		++UserProcedure::_compilenumber;
+		lua_setfield(L,LUA_REGISTRYINDEX,_registryindex.c_str());
+	}
+}
+
+/**************************
+	Internal procedures
+**************************/
+
+/**
+ * Types of arguments given to, or results produced by internal procedures
+ */
+enum ArgType {
+
+	// Vocabulary
+	AT_SORT,			//!< a sort
+	AT_PREDICATE,		//!< a predicate symbol
+	AT_FUNCTION,		//!< a function symbol
+	AT_VOCABULARY,		//!< a vocabulary
+
+	// Structure
+	AT_PREDINTER,		//!< a predicate interpretation
+	AT_FUNCINTER,		//!< a function interpretation
+	AT_STRUCTURE,		//!< a structure
+
+	// Theory
+	AT_THEORY,			//!< a theory
+
+	// Options
+	AT_OPTIONS,		//!< an options block
+
+	// Namespace
+	AT_NAMESPACE,		//!< a namespace
+
+	// Lua types
+	AT_NIL,			//!< a nil value
+	AT_INT,			//!< an integer
+	AT_DOUBLE,			//!< a double
+	AT_BOOLEAN,		//!< a boolean
+	AT_STRING,			//!< a string
+	AT_TABLE,			//!< a table
+	AT_PROCEDURE,		//!< a procedure
+
+	// TODO: check these
+//	AT_OVERLOADED,
+//	AT_PREDTABLE,
+//	AT_TUPLE,
+
+	// Additional return values
+	AT_MULT,			//!< multiple arguments	(only used as return value)
+	AT_REGISTRY		//!< a value stored in the registry of the lua state
+};
+
+struct InternalArgument {
+	ArgType		_type;
+	union {
+		std::set<Predicate*>*			_predicate;
+		std::set<Function*>*			_function;
+		std::set<Sort*>*				_sort;
+		Vocabulary*						_vocabulary;
+
+		PredInter*						_predinter;
+		FuncInter*						_funcinter;
+		AbstractStructure*				_structure;
+
+		AbstractTheory*					_theory;
+		Options*						_options;
+		Namespace*						_namespace;
+
+		int								_int;
+		double							_double;
+		bool							_boolean;
+		std::string*					_string;
+		std::vector<InternalArgument>*	_table;
+
+//		OverloadedObject*			_overloaded;
+//		PredTable*					_predtable;
+//		PredTableTuple*				_tuple;
+	} _value;
+
+	// Constructors
+	InternalArgument(Vocabulary* v)						: _type(AT_VOCABULARY)	{ _value._vocabulary = v;	}
+	InternalArgument(PredInter* p)						: _type(AT_PREDINTER)	{ _value._predinter = p;	}
+	InternalArgument(FuncInter* f)						: _type(AT_FUNCINTER)	{ _value._funcinter = f;	}
+	InternalArgument(AbstractStructure* s)				: _type(AT_STRUCTURE)	{ _value._structure = s;	}
+	InternalArgument(AbstractTheory* t)					: _type(AT_THEORY)		{ _value._theory = t;		}
+	InternalArgument(Options* o)						: _type(AT_OPTIONS)		{ _value._options = o;		}
+	InternalArgument(Namespace* n)						: _type(AT_NAMESPACE)	{ _value._namespace = n;	}
+	InternalArgument(int i)								: _type(AT_INT)			{ _value._int = i;			}
+	InternalArgument(double d)							: _type(AT_DOUBLE)		{ _value._double = d;		}
+	InternalArgument(std::string* s)					: _type(AT_STRING)		{ _value._string = s;		}
+	InternalArgument(std::vector<InternalArgument>* t)	: _type(AT_TABLE)		{ _value._table = t;		}
+};
+
+
+/**
+ * Class to represent internal procedures
+ */
+class InternalProcedure {
+	private:
+		std::vector<ArgType>	_argtypes;	//!< types of the input arguments
+		InternalArgument		(*_execute)(const std::vector<InternalArgument>&, lua_State*);
+
+		InternalProcedure(const std::vector<ArgType>& argtypes, 
+						  InternalArgument (*execute)(const std::vector<InternalArgument>&, lua_State*)) :
+			_argtypes(argtypes) { _execute = execute;	}
+		~InternalProcedure() { }
+		void operator()(lua_State*) const;
+};
+
+void InternalProcedure::operator()(lua_State* L) const {
+	vector<InternalArgument> args;
+	for(unsigned int arg = 1; n <= lua_gettop(L); ++n) {
+		args.push_back(InternalArgument(arg,L));
+	}
+	InternalArgument result = _execute(args,L);
+	return convertToLua(result);
+}
+
+namespace LuaConnection {
+
+	/**
+	 *	Call to internal procedure
+	 */
+	int internalCall(lua_State* L) {
+		// TODO
+	}
+
+	/**
+	 * Create metatable for internal procedures
+	 */
+	void internProcMetaTable(lua_State* L) {
+		int ok = luaL_newmetatable(L,"internalprocedure"); assert(ok);
+		lua_pushcfunction(L,&internalCall);
+		lua_setfield(L,-2,"__call");
+		lua_pop(L,1);
+	}
+
+	/**
+	 * Create all metatables
+	 */
+	void createMetaTables(lua_State* L) {
+		internMetaTable(L);
+	}
+
+	/**
+	 * map interal procedure names to the actual procedures
+	 */
+	map<string,set<InternalProcedure> >	_internalprocedures;
+	
+	/**
+	 *	\brief Add a new internal procedure
+	 *
+	 *	\param name			the name of the internal procedure 
+	 *	\param argtypes		the type of the arguments of the procedure
+	 *	\param execute		the implementation of the procedure
+	 *
+	 */
+	void addInternalProcedure(const string& name, 
+					   const vector<ArgType>& argtypes, 
+					   InternalArgument (*execute)(const std::vector<InternalArgument>&, lua_State*)) {
+		InternalProcedure proc(argtypes,execute);
+		_internalprocedures[name].insert(proc);
+	}
+
+	/**
+	 * Adds all internal procedures
+	 */
+	void addInternProcs() {
+		// TODO
+	}
+
+	/**
+	 * Establish the connection with lua. 
+	 */
+	void makeLuaConnection() {
+		// TODO
+	}
+
+}
 
 /*
 	Connection with lua
 */
 
-int LuaProcCompileNumber = 0;
-int LuaArgProcNumber = 0;
 
 namespace BuiltinProcs {
 
@@ -1538,19 +1746,6 @@ bool OverloadedObject::single() const {
 	Lua Procedures
 *********************/
 
-
-void LuaProcedure::compile(lua_State* L) {
-	if(!iscompiled()) {
-		stringstream ss;
-		ss << "local " << _name << " = ";
-		ss << code() << "\n";
-		ss << "return " << _name << "(...)\n";
-		luaL_loadstring(L,ss.str().c_str());
-		_registryindex = "idp_compiled_procedure_" + itos(LuaProcCompileNumber);
-		++LuaProcCompileNumber;
-		lua_setfield(L,LUA_REGISTRYINDEX,_registryindex.c_str());
-	}
-}
 
 TypedInfArg InfOptions::get(const string& opt) const {
 	TypedInfArg tia;

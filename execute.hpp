@@ -7,93 +7,64 @@
 #ifndef EXECUTE_HPP
 #define EXECUTE_HPP
 
-#include <sstream>
+/**
+ * \file execute.hpp
+ *
+ * This file contains the classes concerning inference methods and communication with lua
+ *
+ */
+
 #include <string>
 #include <vector>
-#include <set>
-
+#include <sstream>
 #include "parseinfo.hpp"
-#include "lua.hpp"
 
-class Namespace;
-class Vocabulary;
-class AbstractTheory;
-class AbstractStructure;
-class InfOptions;
-class Predicate;
-class Function;
-class Sort;
-class PredTable;
-class PredInter;
-class FuncInter;
+/******************************
+	User defined procedures
+******************************/
 
-/*******************************************
-	Argument types for inference methods
-*******************************************/
+class lua_State;
 
-enum InfArgType { 
-	IAT_THEORY, 
-	IAT_STRUCTURE, 
-	IAT_VOCABULARY, 
-	IAT_NAMESPACE, 
-	IAT_OPTIONS, 
-	IAT_NIL, 
-	IAT_INT, 
-	IAT_DOUBLE,
-	IAT_BOOLEAN, 
-	IAT_STRING, 
-	IAT_TABLE, 
-	IAT_PROCEDURE, 
-	IAT_OVERLOADED, 
-	IAT_SORT,
-	IAT_PREDICATE, 
-	IAT_FUNCTION,
-	IAT_PREDTABLE,
-	IAT_PREDINTER,
-	IAT_FUNCINTER,
-	IAT_TUPLE,
-	IAT_MULT,
-	IAT_REGISTRY
-};
-
-namespace BuiltinProcs {
-	void initialize();
-	void cleanup();
-}
-
-/** Lua procedures **/
-
-class LuaProcedure {
+/**
+ * Class to represent user-defined procedures
+ */
+class UserProcedure {
 	protected:
-		std::string					_name;		// name without arity
-		ParseInfo					_pi;
-		std::vector<std::string>	_innames;
-		std::stringstream			_code;
-		std::string					_registryindex;
+		std::string					_name;				//!< name of the procedure
+		ParseInfo					_pi;				//!< place where the procedure was parsed
+		std::vector<std::string>	_argnames;			//!< names of the arguments of the procedure
+		std::stringstream			_code;				//!< body of the procedure. Empty string if the procedure is not
+														//!< yet compiled.
+		std::string					_registryindex;		//!< place where the compiled version of the 
+														//!< procedure is stored in the registry of the lua state
+		static int					_compilenumber;		//!< used to create unique registryindexes
 
 	public:
-		LuaProcedure() { }
-		LuaProcedure(const std::string& name, const ParseInfo& pi) :
-			_name(name), _pi(pi), _innames(0), _registryindex("") { }
+		// Constructors
+		UserProcedure(const std::string& name, const ParseInfo& pi) :
+			_name(name), _pi(pi), _registryindex("") { }
 
 		// Mutators
-		void addarg(const std::string& name)	{ _innames.push_back(name);	}
-		void add(char* s)						{ _code << s;				}
-		void add(const std::string& s)			{ _code << s;				}
-		void compile(lua_State*);
+		void compile(lua_State*);	//!< compile the procedure
+
+		void addarg(const std::string& name)	{ _argnames.push_back(name);	}	//!< add an argument to the procedure
+
+		void add(char* s)				{ _code << s;	}	//!< add a c-style string to the body of the procedure
+		void add(const std::string& s)	{ _code << s;	}	//!< add a string to the body of the procedure
 		
 		// Inspectors
 		const ParseInfo&	pi()			const { return _pi;						}
 		const std::string&	name()			const { return _name;					}
-		unsigned int		arity()			const { return _innames.size();			}
-		virtual std::string	code()			const { return _code.str();				}
+		unsigned int		arity()			const { return _argnames.size();		}
 		bool				iscompiled()	const { return _registryindex != "";	}
 		const std::string&	registryindex()	const { return _registryindex;			}
 };
 
-/** class OverloadedObject **/
-struct TypedInfArg;
+#endif
 
+
+
+#ifdef OLD
 class OverloadedObject {
 	private:
 		Namespace*			_namespace;
@@ -161,46 +132,12 @@ struct PredTableTuple {
 	PredTableTuple(PredTable* table, int index) : _table(table), _index(index) { }
 };
 
-union InfArg {
-	Vocabulary*					_vocabulary;
-	AbstractStructure*			_structure;
-	AbstractTheory*				_theory;
-	Namespace*					_namespace;
-	double						_double;
-	int							_int;
-	bool						_boolean;
-	std::string*				_string;
-	InfOptions*					_options;
-	const std::string*			_procedure;		// contains the registry index of a procedure
-	OverloadedObject*			_overloaded;
-	std::set<Predicate*>*		_predicate;
-	std::set<Function*>*		_function;
-	std::set<Sort*>*			_sort;
-	std::vector<TypedInfArg>*	_table;
-	PredInter*					_predinter;
-	FuncInter*					_funcinter;
-	PredTable*					_predtable;
-	PredTableTuple*				_tuple;
-};
 
 struct TypedInfArg {
 	InfArg		_value;
 	InfArgType	_type;
 };
 
-
-/** An execute statement **/
-class Inference {
-	protected:
-		std::vector<InfArgType>	_intypes;		// types of the input arguments
-		std::string				_description;	// description of the inference
-	public:
-		virtual ~Inference() { }
-		virtual	TypedInfArg 	execute(const std::vector<InfArg>& args, lua_State*) const = 0;	// execute the statement
-				const std::vector<InfArgType>&	intypes()		const { return _intypes;		}
-				unsigned int					arity()			const { return _intypes.size();	}
-				std::string						description()	const { return _description;	}
-};
 
 class LoadFile : public Inference {
 	public:
