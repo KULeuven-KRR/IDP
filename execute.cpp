@@ -1011,24 +1011,37 @@ TypedInfArg FastMXInference::execute(const vector<InfArg>& args, lua_State* L) c
 	// Translate
 	TypedInfArg a; a._type = IAT_TABLE; a._value._table = new vector<TypedInfArg>();
 	if(sol->isSat()){
-		for(unsigned int i=0; i<sol->getModels().size(); i++){
+		for(vector<MinisatID::Model*>::const_iterator modelit = sol->getModels().begin(); modelit != sol->getModels().end(); ++modelit) {
 			AbstractStructure* mod = structure->clone();
 			set<PredInter*>	tobesorted1;
 			set<FuncInter*>	tobesorted2;
-			for(unsigned int j=0; j<sol->getModels()[i].size(); j++) {
-				PFSymbol* pfs = grounding->translator()->symbol((sol->getModels()[i][j].getAtom().getValue()));
+			for(vector<MinisatID::Literal>::const_iterator literalit = (*modelit)->literalinterpretations.begin();
+					literalit != (*modelit)->literalinterpretations.end(); ++literalit) {
+				PFSymbol* pfs = grounding->translator()->symbol(((*literalit).getAtom().getValue()));
 				if(pfs && mod->vocabulary()->contains(pfs)) {
-					vector<domelement> vd = grounding->translator()->args(sol->getModels()[i][j].getAtom().getValue());
+					vector<domelement> vd = grounding->translator()->args((*literalit).getAtom().getValue());
 					vector<TypedElement> args = ElementUtil::convert(vd);
 					if(pfs->ispred()) {
-						mod->inter(pfs)->add(args,!(sol->getModels()[i][j].hasSign()),true);
+						mod->inter(pfs)->add(args,!((*literalit).hasSign()),true);
 						tobesorted1.insert(mod->inter(pfs));
 					}
 					else {
 						Function* f = dynamic_cast<Function*>(pfs);
-						mod->inter(f)->add(args,!(sol->getModels()[i][j].hasSign()),true);
+						mod->inter(f)->add(args,!((*literalit).hasSign()),true);
 						tobesorted2.insert(mod->inter(f));
 					}
+				}
+			}
+			for(vector<MinisatID::VariableEqValue>::const_iterator cpvarit = (*modelit)->variableassignments.begin();
+					cpvarit != (*modelit)->variableassignments.end(); ++cpvarit) {
+				Function* function = grounding->termtranslator()->function((*cpvarit).variable);
+				if(function && mod->vocabulary()->contains(function)) {
+					vector<domelement> vd = grounding->termtranslator()->args((*cpvarit).variable);
+					vector<TypedElement> args = ElementUtil::convert(vd);
+					TypedElement value((*cpvarit).value);
+					args.push_back(value);
+					mod->inter(function)->add(args,true,true);
+					tobesorted2.insert(mod->inter(function));
 				}
 			}
 			for(set<PredInter*>::const_iterator it=tobesorted1.begin(); it != tobesorted1.end(); ++it)

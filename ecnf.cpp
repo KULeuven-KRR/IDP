@@ -582,9 +582,9 @@ void SolverTheory::addAggregate(int definitionID, int head, bool lowerbound, int
 			break;
 		case TS_RULE:
 			agg.sem = MinisatID::DEF;
-			agg.defID = definitionID;
 			break;
 	}
+	agg.defID = definitionID;
 	agg.head = createAtom(head);
 	agg.bound = createWeight(bound);
 	getSolver().add(agg);
@@ -712,6 +712,7 @@ void SolverTheory::addCPVariables(const vector<unsigned int>& varids) {
 
 void SolverTheory::addCPVariable(unsigned int varid) {
 	if(_addedvarids.find(varid) == _addedvarids.end()) {
+		_addedvarids.insert(varid);
 		Function* function = _termtranslator->function(varid);
 //cerr << "func = " << function->name();
 		SortTable* domain = _structure->inter(function->outsort());

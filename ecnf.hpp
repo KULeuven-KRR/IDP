@@ -353,7 +353,7 @@ class SolverTheory : public AbstractGroundTheory {
 				SATSolver& getSolver() 			{ return *_solver; }
 
 		void 	addAggregate(int definitionID, int head, bool lowerbound, int setnr, AggType aggtype, TsType sem, double bound);
-		void 	addPCRule(int defnr, int head, std::vector<int> body, bool conjunctive);
+		void 	addPCRule(int definitionID, int head, std::vector<int> body, bool conjunctive);
 
 	public:
 		// Constructors 

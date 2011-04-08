@@ -1199,6 +1199,31 @@ bool DefinitionGrounder::run() const {
 	GrounderFactory methods
 ******************************/
 
+/**
+ * vector<Function*> GrounderFactory::findCPFunctions()
+ * DESCRIPTION
+ * 		TODO
+ * 		Finds out which functions occuring in the theory...
+ */
+vector<Function*> GrounderFactory::findCPFunctions() {
+	assert(false);
+	//TODO
+
+
+
+	// Check whether function's outsort is over integers
+	//Vocabulary* voc = _structure->vocabulary();
+	//Sort* ints = *(voc->sort("int")->begin());
+	//bool isIntFunc = (SortUtils::resolve(f->outsort(),ints,voc) != 0);
+
+}
+
+
+/**
+ * bool GrounderFactory::recursive(const Formula*)
+ * DESCRIPTION
+ * 		Finds out whether a formula contains recursively defined symbols.
+ */
 bool GrounderFactory::recursive(const Formula* f) {
 	for(set<PFSymbol*>::const_iterator it = _context._defined.begin(); it != _context._defined.end(); ++it) {
 		if(f->contains(*it)) return true;
@@ -1206,10 +1231,10 @@ bool GrounderFactory::recursive(const Formula* f) {
 	return false;
 }
 
-/*
+/**
  * void GrounderFactory::InitContext() 
  * DESCRIPTION
- *		Initializes the context of the GrounderFactory before visiting a sentence
+ *		Initializes the context of the GrounderFactory before visiting a sentence.
  */
 void GrounderFactory::InitContext() {
 	_context._truegen		= false;
@@ -1227,7 +1252,7 @@ void GrounderFactory::AggContext() {
 	_context._component = CC_FORMULA;
 }
 
-/*
+/**
  *	void GrounderFactory::SaveContext() 
  *	DESCRIPTION
  *		Pushes the current context on a stack 
@@ -1236,7 +1261,7 @@ void GrounderFactory::SaveContext() {
 	_contextstack.push(_context);
 }
 
-/*
+/**
  * void GrounderFactory::RestoreContext()
  * DESCRIPTION
  *		Restores the context to the top of the stack and pops the stack
@@ -1246,7 +1271,7 @@ void GrounderFactory::RestoreContext() {
 	_contextstack.pop();
 }
 
-/*
+/**
  * void GrounderFactory::DeeperContext(bool sign)
  * DESCRIPTION
  *		Adapts the context to go one level deeper, and inverting some values if sign is negative
@@ -1272,7 +1297,7 @@ void GrounderFactory::DeeperContext(bool sign) {
 	}
 }
 
-/*
+/**
  * void GrounderFactory::descend(Term* t)
  * DESCRIPTION
  *		Visits a term and ensures the context is restored to the value before the visit.
@@ -1285,7 +1310,7 @@ void GrounderFactory::descend(Term* t) {
 	RestoreContext();
 }
 
-/*
+/**
  * void GrounderFactory::descend(SetExpr* s)
  * DESCRIPTION
  *		Visits a set and ensures the context is restored to the value before the visit.
@@ -1298,7 +1323,7 @@ void GrounderFactory::descend(SetExpr* s) {
 	RestoreContext();
 }
 
-/*
+/**
  * void GrounderFactory::descend(Formula* f)
  * DESCRIPTION
  *		Visits a formula and ensures the context is restored to the value before the visit.
@@ -1311,7 +1336,7 @@ void GrounderFactory::descend(Formula* f) {
 	RestoreContext();
 }
 
-/*
+/**
  * void GrounderFactory::descend(Rule* r)
  * DESCRIPTION
  *		Visits a rule and ensures the context is restored to the value before the visit.
@@ -1324,7 +1349,7 @@ void GrounderFactory::descend(Rule* r) {
 	RestoreContext();
 }
 
-/*
+/**
  * TopLevelGrounder* GrounderFactory::create(AbstractTheory* theory)
  * DESCRIPTION
  *		Creates a grounder for the given theory. The grounding produced by that grounder
@@ -1348,7 +1373,7 @@ TopLevelGrounder* GrounderFactory::create(const AbstractTheory* theory) {
 	return _toplevelgrounder;
 }
 
-/*
+/**
  * TopLevelGrounder* GrounderFactory::create(AbstractTheory* theory, SATSolver* solver)
  * DESCRIPTION
  *		Creates a grounder for the given theory. The grounding produced by that grounder
@@ -1375,7 +1400,7 @@ TopLevelGrounder* GrounderFactory::create(const AbstractTheory* theory, SATSolve
 	return _toplevelgrounder;
 }
 
-/*
+/**
  * void GrounderFactory::visit(EcnfTheory* ecnf)
  * DESCRIPTION
  *		Creates a grounder for a ground ecnf theory. This grounder returns a (reduced) copy of the ecnf theory.
@@ -1388,7 +1413,7 @@ void GrounderFactory::visit(const GroundTheory* ecnf) {
 	_toplevelgrounder = new CopyGrounder(_grounding,ecnf);	
 }
 
-/*
+/**
  * void GrounderFactory::visit(Theory* theory)
  * DESCRIPTION
  *		Creates a grounder for a non-ground theory.
@@ -1420,7 +1445,7 @@ void GrounderFactory::visit(const Theory* theory) {
 	_toplevelgrounder = new TheoryGrounder(_grounding,children);
 }
 
-/*
+/**
  * void GrounderFactory::visit(PredForm* pf) 
  * DESCRIPTION
  *		Creates a grounder for an atomic formula
@@ -1525,7 +1550,7 @@ void GrounderFactory::visit(const PredForm* pf) {
 	transpf->recursiveDelete();
 }
 
-/*
+/**
  * void GrounderFactory::visit(BoolForm* bf)
  * DESCRIPTION
  *		Creates a grounding for a conjunction or disjunction of formulas
@@ -1586,7 +1611,7 @@ void GrounderFactory::visit(const BoolForm* bf) {
 	}
 }
 
-/*
+/**
  * void GrounderFactory::visit(QuantForm* qf)
  * DESCRIPTION
  *		Creates a grounding for a quantified formula
@@ -1643,7 +1668,7 @@ void GrounderFactory::visit(const QuantForm* qf) {
 	}
 }
 
-/*
+/**
  * void GrounderFactory::visit(EquivForm* ef)
  * DESCRIPTION
  *		Creates a grounding for an equivalence.

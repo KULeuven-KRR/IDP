@@ -1613,9 +1613,6 @@ Formula* AggMover::visit(EqChainForm* ef) {
 	return nf;
 }
 
-// TODO: HIER BEZIG: Move Aggregates in terms and rules
-// TODO: functions moeten ook verplaatst worden uit de head van regels
-
 class ThreeValTermMover : public MutatingVisitor {
 	private:
 		AbstractStructure*	_structure;

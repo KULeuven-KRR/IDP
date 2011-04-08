@@ -611,9 +611,6 @@ class GrounderFactory : public Visitor {
 		AbstractStructure*		_structure;		// The structure that will be used to reduce the grounding
 		AbstractGroundTheory*	_grounding;		// The ground theory that will be produced
 
-		// Options
-		bool	_usingcp;
-
 		// Context
 		GroundingContext				_context;
 		std::stack<GroundingContext>	_contextstack;
@@ -630,6 +627,10 @@ class GrounderFactory : public Visitor {
 		void	descend(Rule* r);
 		void	descend(SetExpr* s);
 		
+		// Grounding to CP
+		bool					_usingcp;
+		std::vector<Function*>	_cpfunctions;
+
 		// Variable mapping
 		std::map<Variable*,domelement*>	_varmapping;	// Maps variables to their counterpart during grounding.
 														// That is, the corresponding domelement* acts as a variable+value.
@@ -653,6 +654,9 @@ class GrounderFactory : public Visitor {
 		// Factory method
 		TopLevelGrounder* create(const AbstractTheory* theory);
 		TopLevelGrounder* create(const AbstractTheory* theory, MinisatID::WrappedPCSolver* solver);
+
+		// Determine what should be grounded to CP
+		std::vector<Function*> findCPFunctions();
 
 		// Recursive check
 		bool recursive(const Formula*);
