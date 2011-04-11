@@ -67,28 +67,28 @@ enum ArgType {
 	AT_THEORY,			//!< a theory
 
 	// Options
-	AT_OPTIONS,		//!< an options block
+	AT_OPTIONS,			//!< an options block
 
 	// Namespace
 	AT_NAMESPACE,		//!< a namespace
 
 	// Lua types
-	AT_NIL,			//!< a nil value
-	AT_INT,			//!< an integer
+	AT_NIL,				//!< a nil value
+	AT_INT,				//!< an integer
 	AT_DOUBLE,			//!< a double
-	AT_BOOLEAN,		//!< a boolean
+	AT_BOOLEAN,			//!< a boolean
 	AT_STRING,			//!< a string
 	AT_TABLE,			//!< a table
 	AT_PROCEDURE,		//!< a procedure
-
+   
+	AT_OVERLOADED,
 	// TODO: check these
-//	AT_OVERLOADED,
 //	AT_PREDTABLE,
 //	AT_TUPLE,
 
 	// Additional return values
 	AT_MULT,			//!< multiple arguments	(only used as return value)
-	AT_REGISTRY		//!< a value stored in the registry of the lua state
+	AT_REGISTRY			//!< a value stored in the registry of the lua state
 };
 
 struct InternalArgument {
@@ -145,12 +145,12 @@ class InternalProcedure {
 						  InternalArgument (*execute)(const std::vector<InternalArgument>&, lua_State*)) :
 			_argtypes(argtypes) { _execute = execute;	}
 		~InternalProcedure() { }
-		void operator()(lua_State*) const;
+		int operator()(lua_State*) const;
 };
 
-void InternalProcedure::operator()(lua_State* L) const {
+int InternalProcedure::operator()(lua_State* L) const {
 	vector<InternalArgument> args;
-	for(unsigned int arg = 1; n <= lua_gettop(L); ++n) {
+	for(unsigned int arg = 1; arg <= lua_gettop(L); ++arg) {
 		args.push_back(InternalArgument(arg,L));
 	}
 	InternalArgument result = _execute(args,L);
@@ -160,10 +160,55 @@ void InternalProcedure::operator()(lua_State* L) const {
 namespace LuaConnection {
 
 	/**
+	 * Get all argument types of an object on the lua stack
+	 *
+	 * \param arg	the index in the lua stack
+	 */
+	vector<ArgType> getArgTypes(lua_State* L, unsigned int arg) {
+		vector<ArgType> result;
+		switch(lua_type(L,arg)) {
+			case LUA_TNIL: result.push_back(AT_NIL); break;
+			case LUA_TBOOLEAN: result.push_back(AT_BOOLEAN); break;
+			case LUA_TSTRING: result.push_back(AT_STRING); break;
+			case LUA_TTABLE: result.push_back(AT_TABLE); break;
+			case LUA_TFUNCTION: result.push_back(AT_PROCEDURE); break;
+			case LUA_TNUMBER: {
+				if(isInt(lua_tonumber(L,arg))) result.push_back(AT_INT);
+				else result.push_back(AT_DOUBLE);
+				break;
+			}
+			case LUA_TUSERDATA: {
+				lua_getmetatable(L,arg);
+				lua_getfield(L,-1,"type");
+				ArgType type = lua_tointeger(L,-1);
+				if(type != AT_OVERLOADED) result.push_back(type);
+				else {
+					// TODO handle overloaded objects
+				}
+				lua_pop(L,2);
+				break;
+			}
+			case LUA_TTHREAD: assert(false); break; 
+			case LUA_TLIGHTUSERDATA: assert(false); break;
+			case LUA_TNONE: assert(false); break;
+		}
+		return result;
+	}
+
+	/**
 	 *	Call to internal procedure
 	 */
 	int internalCall(lua_State* L) {
-		// TODO
+		// get the list of possible procedures
+		map<vector<ArgType>,InternalProcedure>* procs = (map<vector<ArgType>,InternalProcedure>*)lua_touserdata(L,1);
+		lua_remove(L,1);
+
+		// get the list of possible argument types
+		vector<vector<ArgType> > argtypes(lua_gettop(L));
+		for(unsigned int arg = 1; arg <= lua_gettop(); ++arg) 
+			argtypes[arg-1] = getArgTypes(L,arg);
+
+		// TODO HIER BEZIG
 	}
 
 	/**
