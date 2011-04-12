@@ -557,7 +557,7 @@ namespace Error {
 
 	void wrongcommandargs(const string& name) {
 		error();
-		cerr << "The arguments given to command " << name << " are either of the wrong type, or do not exist.\n";
+		cerr << "The arguments given to procedure " << name << " are either of the wrong type, or do not exist.\n";
 	}
 
 	void wrongvaluetype(const string& name, ParseInfo* thisplace) {
@@ -582,7 +582,7 @@ namespace Error {
 
 	void ambigcommand(const string& name) {
 		error();
-		cerr << "Ambiguous call to overloaded command " << name << ".\n";
+		cerr << "Ambiguous call to overloaded procedure " << name << ".\n";
 	}
 
 	void indexoverloadedfunc() {

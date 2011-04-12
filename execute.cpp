@@ -12,6 +12,7 @@
 #include "term.hpp"
 #include "theory.hpp"
 #include "execute.hpp"
+#include "error.hpp"
 using namespace std;
 
 class Options;	// FIXME replace by include "options"
@@ -56,9 +57,13 @@ enum ArgType {
 	AT_SORT,			//!< a sort
 	AT_PREDICATE,		//!< a predicate symbol
 	AT_FUNCTION,		//!< a function symbol
+	AT_SYMBOL,			//!< a symbol of a vocabulary
 	AT_VOCABULARY,		//!< a vocabulary
 
 	// Structure
+	AT_COMPOUND,		//!< a compound domain element
+	AT_TUPLE,			//!< a tuple in a predicate or function table
+	AT_PREDTABLE,		//!< a predicate table
 	AT_PREDINTER,		//!< a predicate interpretation
 	AT_FUNCINTER,		//!< a function interpretation
 	AT_STRUCTURE,		//!< a structure
@@ -81,24 +86,62 @@ enum ArgType {
 	AT_TABLE,			//!< a table
 	AT_PROCEDURE,		//!< a procedure
    
-	AT_OVERLOADED,
-	// TODO: check these
-//	AT_PREDTABLE,
-//	AT_TUPLE,
+	AT_OVERLOADED,		//!< an overloaded object
 
 	// Additional return values
 	AT_MULT,			//!< multiple arguments	(only used as return value)
 	AT_REGISTRY			//!< a value stored in the registry of the lua state
 };
 
+/**
+ * Objects to overload sorts, predicate, and function symbols
+ */
+class OverloadedSymbol {
+	private:
+		set<Sort*>		_sorts;
+		set<Function*>	_funcs;
+		set<Predicate*>	_preds;
+	public:
+		void insert(Sort* s)		{ _sorts.insert(s);	}
+		void insert(Function* f)	{ _funcs.insert(f);	}
+		void insert(Predicate* p)	{ _preds.insert(p);	}
+
+		set<Sort*>*	sorts()			{ return &_sorts;	}
+		set<Predicate*>* preds()	{ return &_preds;	}
+		set<Function*>* funcs()		{ return &_funcs;	}
+
+		vector<ArgType>	types() {
+			vector<ArgType> result;
+			if(!_sorts.empty()) result.push_back(AT_SORT);
+			if(!_preds.empty()) result.push_back(AT_PREDICATE);
+			if(!_funcs.empty()) result.push_back(AT_FUNCTION);
+			return result;
+		}
+};
+
+/**
+ * Overloaded objects
+ */
+class OverloadedObject {
+	public:
+		vector<ArgType> types() {
+			vector<ArgType> result;
+			// TODO
+			return result;
+		}
+};
+
 struct InternalArgument {
 	ArgType		_type;
 	union {
-		std::set<Predicate*>*			_predicate;
-		std::set<Function*>*			_function;
-		std::set<Sort*>*				_sort;
+		set<Sort*>*						_sort;
+		set<Predicate*>*				_predicate;
+		set<Function*>*					_function;
 		Vocabulary*						_vocabulary;
 
+		const Compound*					_compound;
+		ElementTuple*					_tuple;
+		PredTable*						_predtable;
 		PredInter*						_predinter;
 		FuncInter*						_funcinter;
 		AbstractStructure*				_structure;
@@ -110,12 +153,11 @@ struct InternalArgument {
 		int								_int;
 		double							_double;
 		bool							_boolean;
-		std::string*					_string;
-		std::vector<InternalArgument>*	_table;
+		string*							_string;
+		vector<InternalArgument>*		_table;
 
-//		OverloadedObject*			_overloaded;
-//		PredTable*					_predtable;
-//		PredTableTuple*				_tuple;
+		OverloadedSymbol*				_symbol;
+		OverloadedObject*				_overloaded;
 	} _value;
 
 	// Constructors
@@ -128,9 +170,141 @@ struct InternalArgument {
 	InternalArgument(Namespace* n)						: _type(AT_NAMESPACE)	{ _value._namespace = n;	}
 	InternalArgument(int i)								: _type(AT_INT)			{ _value._int = i;			}
 	InternalArgument(double d)							: _type(AT_DOUBLE)		{ _value._double = d;		}
-	InternalArgument(std::string* s)					: _type(AT_STRING)		{ _value._string = s;		}
-	InternalArgument(std::vector<InternalArgument>* t)	: _type(AT_TABLE)		{ _value._table = t;		}
+	InternalArgument(string* s)							: _type(AT_STRING)		{ _value._string = s;		}
+	InternalArgument(vector<InternalArgument>* t)		: _type(AT_TABLE)		{ _value._table = t;		}
+	InternalArgument(set<Sort*>* s)						: _type(AT_SORT)		{ _value._sort = s;			} 
+	InternalArgument(set<Predicate*>* p)				: _type(AT_PREDICATE)	{ _value._predicate = p;	} 
+	InternalArgument(set<Function*>* f)					: _type(AT_FUNCTION)	{ _value._function = f;		} 
+	InternalArgument(OverloadedSymbol* s)				: _type(AT_SYMBOL)		{ _value._symbol = s;		}
+	InternalArgument(PredTable* t)						: _type(AT_PREDTABLE)	{ _value._predtable = t;	}
+	InternalArgument(const Compound* c)					: _type(AT_COMPOUND)	{ _value._compound = c;		}
+
+	InternalArgument(int arg, lua_State* L);
+
+	// Inspectors
+	set<Sort*>*	sort() const { 
+		if(_type == AT_SORT) return _value._sort;
+		else if(_type == AT_SYMBOL) {
+			return _value._symbol->sorts();
+		}
+		else {
+			assert(false);
+			return 0;
+		}
+	}
+
 };
+
+int ArgProcNumber = 0;						//!< Number to create unique registry indexes
+static const char* _typefield = "type";		//!< Field index containing the type of userdata
+
+/**
+ * Constructor to convert an element on the lua stack to an InternalArgument
+ */
+InternalArgument::InternalArgument(int arg, lua_State* L) {
+	switch(lua_type(L,arg)) {
+		case LUA_TNIL: 
+			_type = AT_NIL; 
+			break;
+		case LUA_TBOOLEAN: 
+			_type = AT_BOOLEAN; 
+			_value._boolean = lua_toboolean(L,arg); 
+			break;
+		case LUA_TSTRING: 
+			_type = AT_STRING; 
+			_value._string = StringPointer(lua_tostring(L,arg)); 
+			break;
+		case LUA_TTABLE: 
+			_type = AT_TABLE; 
+			_value._table = new vector<InternalArgument>();
+			lua_pushnil(L);
+			while(lua_next(L,arg) != 0) {
+				_value._table->push_back(InternalArgument(-1,L));
+				lua_pop(L,1);
+			}
+			break;
+		case LUA_TFUNCTION: 
+		{
+			_type = AT_PROCEDURE;
+			string* registryindex = StringPointer(string("idp_argument_procedure_" + itos(ArgProcNumber)));
+			++ArgProcNumber;
+			lua_pushvalue(L,arg);
+			lua_setfield(L,LUA_REGISTRYINDEX,registryindex->c_str());
+			_value._string = registryindex;
+			break;
+		}
+		case LUA_TNUMBER: {
+			if(isInt(lua_tonumber(L,arg))) {
+				_type = AT_INT;
+				_value._int = lua_tointeger(L,arg);
+			}
+			else {
+				_type = AT_DOUBLE;
+				_value._double = lua_tonumber(L,arg);
+			}
+			break;
+		}
+		case LUA_TUSERDATA: {
+			lua_getmetatable(L,arg);
+			lua_getfield(L,-1,_typefield);
+			_type = (ArgType)lua_tointeger(L,-1); assert(_type != AT_NIL);
+			lua_pop(L,2);
+			switch(_type) {
+				case AT_SORT:
+					_value._sort = *(set<Sort*>**)lua_touserdata(L,arg);
+					break;
+				case AT_PREDICATE:
+					_value._predicate = *(set<Predicate*>**)lua_touserdata(L,arg);
+					break;
+				case AT_FUNCTION:		
+					_value._function = *(set<Function*>**)lua_touserdata(L,arg);
+					break;
+				case AT_SYMBOL:
+					_value._symbol = *(OverloadedSymbol**)lua_touserdata(L,arg);
+					break;
+				case AT_VOCABULARY:		
+					_value._vocabulary = *(Vocabulary**)lua_touserdata(L,arg);
+					break;
+				case AT_COMPOUND:
+					_value._compound = *(Compound**)lua_touserdata(L,arg);
+					break;
+				case AT_TUPLE:
+					_value._tuple = *(ElementTuple**)lua_touserdata(L,arg);
+					break;
+				case AT_PREDTABLE:
+					_value._predtable = *(PredTable**)lua_touserdata(L,arg);
+					break;
+				case AT_PREDINTER:		
+					_value._predinter = *(PredInter**)lua_touserdata(L,arg);
+					break;
+				case AT_FUNCINTER:		
+					_value._funcinter = *(FuncInter**)lua_touserdata(L,arg);
+					break;
+				case AT_STRUCTURE:		
+					_value._structure = *(AbstractStructure**)lua_touserdata(L,arg);
+					break;
+				case AT_THEORY:			
+					_value._theory = *(AbstractTheory**)lua_touserdata(L,arg);
+					break;
+				case AT_OPTIONS:		
+					_value._options = *(Options**)lua_touserdata(L,arg);
+					break;
+				case AT_NAMESPACE:
+					_value._namespace = *(Namespace**)lua_touserdata(L,arg);
+					break;
+				case AT_OVERLOADED:
+					// TODO
+					break;
+				default:
+					assert(false);
+			}
+			break;
+		}
+		case LUA_TTHREAD: assert(false); break; 
+		case LUA_TLIGHTUSERDATA: assert(false); break;
+		case LUA_TNONE: assert(false); break;
+	}
+}
 
 
 /**
@@ -138,26 +312,231 @@ struct InternalArgument {
  */
 class InternalProcedure {
 	private:
-		std::vector<ArgType>	_argtypes;	//!< types of the input arguments
-		InternalArgument		(*_execute)(const std::vector<InternalArgument>&, lua_State*);
+		string				_name;		//!< the name of the procedure
+		vector<ArgType>		_argtypes;	//!< types of the input arguments
+		InternalArgument	(*_execute)(const vector<InternalArgument>&, lua_State*);
 
-		InternalProcedure(const std::vector<ArgType>& argtypes, 
-						  InternalArgument (*execute)(const std::vector<InternalArgument>&, lua_State*)) :
-			_argtypes(argtypes) { _execute = execute;	}
+	public:
+		InternalProcedure(const string& name, const vector<ArgType>& argtypes, 
+						  InternalArgument (*execute)(const vector<InternalArgument>&, lua_State*)) :
+			_name(name), _argtypes(argtypes), _execute(execute) { }
 		~InternalProcedure() { }
 		int operator()(lua_State*) const;
+		const string& name() const { return _name;	}
 };
 
-int InternalProcedure::operator()(lua_State* L) const {
-	vector<InternalArgument> args;
-	for(unsigned int arg = 1; arg <= lua_gettop(L); ++arg) {
-		args.push_back(InternalArgument(arg,L));
-	}
-	InternalArgument result = _execute(args,L);
-	return convertToLua(result);
-}
-
 namespace LuaConnection {
+
+	/**
+	 * Push a domain element to the lua stack
+	 */
+	int convertToLua(lua_State* L, const DomainElement* d) {
+		switch(d->type()) {
+			case DET_INT:
+				lua_pushinteger(L,d->value()._int);
+				return 1;
+			case DET_DOUBLE:
+				lua_pushnumber(L,d->value()._double);
+				return 1;
+			case DET_STRING:
+				lua_pushstring(L,d->value()._string->c_str());
+				return 1;
+			case DET_COMPOUND:
+			{
+				const Compound** ptr = (const Compound**)lua_newuserdata(L,sizeof(Compound*));
+				(*ptr) = d->value()._compound;
+				luaL_getmetatable(L,"compound");
+				lua_setmetatable(L,-2);
+				return 1;
+			}
+			default:
+				assert(false);
+				return 0;
+		}
+	}
+
+	/**
+	 * Push an internal argument to the lua stack
+	 */
+	int convertToLua(lua_State* L, InternalArgument arg) {
+		switch(arg._type) {
+			case AT_SORT:
+			{
+				set<Sort*>** ptr = (set<Sort*>**)lua_newuserdata(L,sizeof(set<Sort*>*));
+				(*ptr) = arg._value._sort;
+				luaL_getmetatable (L,"sort");
+				lua_setmetatable(L,-2);
+				return 1;
+			}
+			case AT_PREDICATE:
+			{
+				set<Predicate*>** ptr = (set<Predicate*>**)lua_newuserdata(L,sizeof(set<Predicate*>*));
+				(*ptr) = arg._value._predicate;
+				luaL_getmetatable(L,"predicate_symbol");
+				lua_setmetatable(L,-2);
+				return 1;
+			}
+			case AT_FUNCTION:
+			{
+				set<Function*>** ptr = (set<Function*>**)lua_newuserdata(L,sizeof(set<Function*>*));
+				(*ptr) = arg._value._function;
+				luaL_getmetatable(L,"function_symbol");
+				lua_setmetatable(L,-2);
+				return 1;
+			}
+			case AT_SYMBOL:
+			{
+				OverloadedSymbol** ptr = (OverloadedSymbol**)lua_newuserdata(L,sizeof(OverloadedSymbol*));
+				(*ptr) = arg._value._symbol;
+				luaL_getmetatable(L,"symbol");
+				lua_setmetatable(L,-2);
+				return 1;
+			}
+			case AT_VOCABULARY:
+			{
+				Vocabulary** ptr = (Vocabulary**)lua_newuserdata(L,sizeof(Vocabulary*));
+				(*ptr) = arg._value._vocabulary;
+				luaL_getmetatable(L,"vocabulary");
+				lua_setmetatable(L,-2);
+				return 1;
+			}
+			case AT_COMPOUND:
+			{
+				const Compound** ptr = (const Compound**)lua_newuserdata(L,sizeof(Compound*));
+				(*ptr) = arg._value._compound;
+				luaL_getmetatable(L,"compound");
+				lua_setmetatable(L,-2);
+				return 1;
+			}
+			case AT_TUPLE:
+			{
+				ElementTuple** ptr = (ElementTuple**)lua_newuserdata(L,sizeof(ElementTuple*));
+				(*ptr) = arg._value._tuple;
+				luaL_getmetatable(L,"tuple");
+				lua_setmetatable(L,-2);
+				return 1;
+			}
+			case AT_PREDTABLE:
+			{
+				PredTable** ptr = (PredTable**)lua_newuserdata(L,sizeof(PredTable*));
+				(*ptr) = arg._value._predtable;
+				luaL_getmetatable(L,"predtable");
+				lua_setmetatable(L,-2);
+				return 1;
+			}
+			case AT_PREDINTER:
+			{
+				PredInter** ptr = (PredInter**)lua_newuserdata(L,sizeof(PredInter*));
+				(*ptr) = arg._value._predinter;
+				luaL_getmetatable(L,"predinter");
+				lua_setmetatable(L,-2);
+				return 1;
+			}
+			case AT_FUNCINTER:
+			{
+				FuncInter** ptr = (FuncInter**)lua_newuserdata(L,sizeof(FuncInter*));
+				(*ptr) = arg._value._funcinter;
+				luaL_getmetatable(L,"funcinter");
+				lua_setmetatable(L,-2);
+				return 1;
+			}
+			case AT_STRUCTURE:
+			{
+				AbstractStructure** ptr = (AbstractStructure**)lua_newuserdata(L,sizeof(AbstractStructure*));
+				(*ptr) = arg._value._structure;
+				luaL_getmetatable(L,"structure");
+				lua_setmetatable(L,-2);
+				return 1;
+			}
+			case AT_THEORY:
+			{
+				AbstractTheory** ptr = (AbstractTheory**)lua_newuserdata(L,sizeof(AbstractTheory*));
+				(*ptr) = arg._value._theory;
+				luaL_getmetatable(L,"theory");
+				lua_setmetatable(L,-2);
+				return 1;
+			}
+			case AT_OPTIONS:
+			{
+				Options** ptr = (Options**)lua_newuserdata(L,sizeof(Options*));
+				(*ptr) = arg._value._options;
+				luaL_getmetatable(L,"options");
+				lua_setmetatable(L,-2);
+				return 1;
+			}
+			case AT_NAMESPACE:
+			{
+				Namespace** ptr = (Namespace**)lua_newuserdata(L,sizeof(Namespace*));
+				(*ptr) = arg._value._namespace;
+				luaL_getmetatable(L,"namespace");
+				lua_setmetatable(L,-2);
+				return 1;
+			}
+			case AT_NIL:
+			{
+				lua_pushnil(L);
+				return 1;
+			}
+			case AT_INT:
+			{
+				lua_pushinteger(L,arg._value._int);
+				return 1;
+			}
+			case AT_DOUBLE:
+			{
+				lua_pushnumber(L,arg._value._double);
+				return 1;
+			}
+			case AT_BOOLEAN:
+			{
+				lua_pushboolean(L,arg._value._boolean);
+				return 1;
+			}
+			case AT_STRING:
+			{
+				lua_pushstring(L,arg._value._string->c_str());
+				return 1;
+			}
+			case AT_TABLE:
+			{
+				lua_newtable(L);
+				for(unsigned int n = 0; n < arg._value._table->size(); ++n) {
+					lua_pushinteger(L,n+1);
+					convertToLua(L,(*(arg._value._table))[n]);
+					lua_settable(L,-3);
+				}
+				return 1;
+			}
+			case AT_PROCEDURE:
+			{
+				lua_getfield(L,LUA_REGISTRYINDEX,arg._value._string->c_str());
+				return 1;
+			}
+			case AT_OVERLOADED:
+			{
+				OverloadedObject** ptr = (OverloadedObject**)lua_newuserdata(L,sizeof(OverloadedObject*));
+				(*ptr) = arg._value._overloaded;
+				luaL_getmetatable(L,"overloaded");
+				lua_setmetatable(L,-2);
+				return 1;
+			}
+			case AT_MULT:
+			{
+				int nrres = 0;
+				for(unsigned int n = 0; n < arg._value._table->size(); ++n) {
+					nrres += convertToLua(L,(*(arg._value._table))[n]);
+				}
+				return nrres;
+			}
+			case AT_REGISTRY:
+			{
+				lua_getfield(L,LUA_REGISTRYINDEX,arg._value._string->c_str());
+				return 1;
+			}
+			default:
+				assert(false); return 0;
+		}
+	}
 
 	/**
 	 * Get all argument types of an object on the lua stack
@@ -179,12 +558,17 @@ namespace LuaConnection {
 			}
 			case LUA_TUSERDATA: {
 				lua_getmetatable(L,arg);
-				lua_getfield(L,-1,"type");
-				ArgType type = lua_tointeger(L,-1);
-				if(type != AT_OVERLOADED) result.push_back(type);
-				else {
-					// TODO handle overloaded objects
+				lua_getfield(L,-1,_typefield);
+				ArgType type = (ArgType)lua_tointeger(L,-1);
+				if(type == AT_OVERLOADED) {
+					OverloadedObject* oo = *(OverloadedObject**)lua_touserdata(L,arg);
+					result = oo->types();
 				}
+				else if(type == AT_SYMBOL) {
+					OverloadedSymbol* os = *(OverloadedSymbol**)lua_touserdata(L,arg);
+					result = os->types();
+				}
+				else  result.push_back(type);
 				lua_pop(L,2);
 				break;
 			}
@@ -200,15 +584,631 @@ namespace LuaConnection {
 	 */
 	int internalCall(lua_State* L) {
 		// get the list of possible procedures
-		map<vector<ArgType>,InternalProcedure>* procs = (map<vector<ArgType>,InternalProcedure>*)lua_touserdata(L,1);
+		map<vector<ArgType>,InternalProcedure>* procs = *(map<vector<ArgType>,InternalProcedure>**)lua_touserdata(L,1);
 		lua_remove(L,1);
 
 		// get the list of possible argument types
 		vector<vector<ArgType> > argtypes(lua_gettop(L));
-		for(unsigned int arg = 1; arg <= lua_gettop(); ++arg) 
+		for(int arg = 1; arg <= lua_gettop(L); ++arg) 
 			argtypes[arg-1] = getArgTypes(L,arg);
 
-		// TODO HIER BEZIG
+		// find the right procedure
+		InternalProcedure proc = procs->begin()->second;
+		bool procfound = false;
+		vector<vector<ArgType>::iterator> carry(argtypes.size());
+		for(unsigned int n = 0; n < argtypes.size(); ++n) carry[n] = argtypes[n].begin();
+		while(true) {
+			vector<ArgType> currtypes(argtypes.size());
+			for(unsigned int n = 0; n < argtypes.size(); ++n) currtypes[n] = *(carry[n]);
+			if(procs->find(currtypes) != procs->end()) {
+				if(!procfound) {
+					procfound = true;
+					proc = (*procs)[currtypes];
+				}
+				else { Error::ambigcommand(proc.name()); return 0; }
+			}
+			unsigned int c = 0;
+			for(; c < argtypes.size(); ++c) {
+				++(carry[c]);
+				if(carry[c] != argtypes[c].end()) break;
+				else carry[c] = argtypes[c].begin();
+			}
+			if(c == argtypes.size()) break;
+		}
+
+		// Execute the procedure
+		if(procfound) return proc(L);
+		else { Error::wrongcommandargs(proc.name()); return 0; }
+	}
+
+	/**
+	 * Garbage collection for sorts
+	 */
+	int gcSort(lua_State* L) {
+		set<Sort*>* sort = *(set<Sort*>**)lua_touserdata(L,1);
+		delete(sort);
+		return 0;
+	}
+
+	/**
+	 * Garbage collection for predicates
+	 */
+	int gcPredicate(lua_State* L) {
+		set<Predicate*>* pred = *(set<Predicate*>**)lua_touserdata(L,1);
+		delete(pred);
+		return 0;
+	}
+
+	/**
+	 * Garbage collection for functions
+	 */
+	int gcFunction(lua_State* L) {
+		set<Function*>* func = *(set<Function*>**)lua_touserdata(L,1);
+		delete(func);
+		return 0;
+	}
+
+	/**
+	 * Garbage collection for symbols
+	 */
+	int gcSymbol(lua_State* L) {
+		OverloadedSymbol* symb = *(OverloadedSymbol**)lua_touserdata(L,1);
+		delete(symb);
+		return 0;
+	}
+
+	/**
+	 * Garbage collection for vocabularies
+	 */
+	int gcVocabulary(lua_State* ) {
+		return 0;
+	}
+
+	/**
+	 * Garbage collection for compounds
+	 */
+	int gcCompound(lua_State* ) {
+		return 0;
+	}
+
+	/**
+	 * Garbage collection for tuples
+	 */
+	int gcTuple(lua_State* ) {
+		return 0;
+	}
+
+	/**
+	 * Garbage collection for predicate tables
+	 */
+	int gcPredTable(lua_State* ) {
+		return 0;
+	}
+
+	/**
+	 * Garbage collection for predicate interpretations
+	 */
+	int gcPredInter(lua_State* ) {
+		return 0;
+	}
+
+	/**
+	 * Garbage collection for function interpretations
+	 */
+	int gcFuncInter(lua_State* ) {
+		return 0;
+	}
+
+	/**
+	 * Garbage collection for structures
+	 */
+	int gcStructure(lua_State* ) {
+		return 0;
+	}
+
+	/**
+	 * Garbage collection for theories
+	 */
+	int gcTheory(lua_State* ) {
+		return 0;
+	}
+
+	/**
+	 * Garbage collection for options
+	 */
+	int gcOptions(lua_State* ) {
+		return 0;
+	}
+
+	/**
+	 * Garbage collection for namespaces
+	 */
+	int gcNamespace(lua_State* ) {
+		return 0;
+	}
+
+	/**
+	 * Garbage collection for overloaded objects
+	 */
+	int gcOverloaded(lua_State* L) {
+		OverloadedObject* obj = *(OverloadedObject**)lua_touserdata(L,1);
+		delete(obj);
+		return 0;
+	}
+
+	/**
+	 * Index function for predicate symbols
+	 */
+	int predicateIndex(lua_State* L) {
+		set<Predicate*>* pred = *(set<Predicate*>**)lua_touserdata(L,1);
+		InternalArgument index(2,L);
+		if(index._type == AT_SORT) {
+			set<Sort*>* sort = index.sort();
+			set<Predicate*>* newpred = new set<Predicate*>();
+			for(set<Sort*>::const_iterator it = sort->begin(); it != sort->end(); ++it) {
+				for(set<Predicate*>::const_iterator jt = pred->begin(); jt != pred->end(); ++jt) {
+					if((*jt)->arity() == 1) {
+						if((*jt)->resolve(vector<Sort*>(1,(*it)))) newpred->insert(*jt);
+					}
+				}
+			}
+			InternalArgument np(newpred);
+			return convertToLua(L,np);
+		}
+		else if(index._type == AT_TABLE) {
+			vector<InternalArgument>* table = index._value._table;
+			for(vector<InternalArgument>::const_iterator it =table->begin(); it != table->end(); ++it) {
+				if(it->_type != AT_SORT) {
+					lua_pushstring(L,"A predicate can only be indexed by a tuple of sorts");
+					return lua_error(L);
+				}
+			}
+			set<Predicate*>* newpred = new set<Predicate*>();
+			vector<set<Sort*>::iterator> carry(table->size());
+			for(unsigned int n = 0; n < table->size(); ++n) carry[n] = (*table)[n].sort()->begin();
+			while(true) {
+				vector<Sort*> currsorts(table->size());
+				for(unsigned int n = 0; table->size(); ++n) currsorts[n] = *(carry[n]);
+				for(set<Predicate*>::const_iterator it = pred->begin(); it != pred->end(); ++it) {
+					if((*it)->arity() == table->size()) {
+						if((*it)->resolve(currsorts)) newpred->insert(*it);
+					}
+				}
+				unsigned int c = 0;
+				for(; c < table->size(); ++c) {
+					++(carry[c]);
+					if(carry[c] != (*table)[c].sort()->end()) break;
+					else carry[c] = (*table)[c].sort()->begin();
+				}
+				if(c == table->size()) break;
+			}
+			InternalArgument np(newpred);
+			return convertToLua(L,np);
+		}
+		else {
+			lua_pushstring(L,"A predicate can only be indexed by a tuple of sorts");
+			return lua_error(L);
+		}
+	}
+
+	/**
+	 * Index function for function symbols
+	 */
+	int functionIndex(lua_State* L) {
+		set<Function*>* func = *(set<Function*>**)lua_touserdata(L,1);
+		InternalArgument index(2,L);
+		if(index._type == AT_TABLE) {
+			vector<InternalArgument>* table = index._value._table;
+			vector<InternalArgument> newtable;
+			if(table->size() < 2) {
+				lua_pushstring(L,"Invalid function symbol index");
+				return lua_error(L);
+			}
+			for(unsigned int n = 0; n < table->size(); ++n) {
+				if(n == table->size()-2) {
+					if((*table)[n]._type != AT_PROCEDURE) {
+						lua_pushstring(L,"Expected a colon in a function symbol index");
+						return lua_error(L);
+					}
+				}
+				else {
+					if((*table)[n]._type == AT_SORT) {
+						newtable.push_back((*table)[n]);
+					}
+					else {
+						lua_pushstring(L,"A function symbol can only be indexed by a tuple of sorts");
+						return lua_error(L);
+					}
+				}
+			}
+			set<Function*>* newfunc = new set<Function*>();
+			vector<set<Sort*>::iterator> carry(newtable.size());
+			for(unsigned int n = 0; n < newtable.size(); ++n) carry[n] = newtable[n].sort()->begin();
+			while(true) {
+				vector<Sort*> currsorts(newtable.size());
+				for(unsigned int n = 0; newtable.size(); ++n) currsorts[n] = *(carry[n]);
+				for(set<Function*>::const_iterator it = func->begin(); it != func->end(); ++it) {
+					if((*it)->arity() == newtable.size()) {
+						if((*it)->resolve(currsorts)) newfunc->insert(*it);
+					}
+				}
+				unsigned int c = 0;
+				for(; c < newtable.size(); ++c) {
+					++(carry[c]);
+					if(carry[c] != newtable[c].sort()->end()) break;
+					else carry[c] = newtable[c].sort()->begin();
+				}
+				if(c == newtable.size()) break;
+			}
+			InternalArgument nf(newfunc);
+			return convertToLua(L,nf);
+		}
+		else {
+			lua_pushstring(L,"A function can only be indexed by a tuple of sorts");
+			return lua_error(L);
+		}
+	}
+
+	/**
+	 * Index function for symbols
+	 */
+	int symbolIndex(lua_State* L) {
+		OverloadedSymbol* symb = *(OverloadedSymbol**)lua_touserdata(L,1);
+		InternalArgument index(2,L);
+		if(index._type == AT_TABLE) {
+			if(index._value._table->size() > 2 && 
+				(*(index._value._table))[index._value._table->size()-2]._type == AT_PROCEDURE) {
+				convertToLua(L,InternalArgument(new set<Function*>(*(symb->funcs()))));
+				lua_replace(L,1);
+				return functionIndex(L);
+			}
+			else {
+				convertToLua(L,InternalArgument(new set<Predicate*>(*(symb->preds()))));
+				lua_replace(L,1);
+				return predicateIndex(L);
+			}
+		}
+		else {
+			lua_pushstring(L,"A symbol can only be indexed by a tuple of sorts");
+			return lua_error(L);
+		}
+	}
+
+	/**
+	 * Index function for vocabularies
+	 */
+	int vocabularyIndex(lua_State* L) {
+		Vocabulary* voc = *(Vocabulary**)lua_touserdata(L,1);
+		InternalArgument index(2,L);
+		if(index._type == AT_STRING) {
+			unsigned int emptycounter = 0;
+			const set<Sort*>* sorts = voc->sort(*(index._value._string));
+			if(sorts->empty()) ++emptycounter;
+			set<Predicate*> preds = voc->pred_no_arity(*(index._value._string));
+			if(preds.empty()) ++emptycounter;
+			set<Function*> funcs = voc->func_no_arity(*(index._value._string));
+			if(funcs.empty()) ++emptycounter;
+			if(emptycounter == 3) return 0;
+			else if(emptycounter == 2) {
+				if(!sorts->empty()) {
+					set<Sort*>* newsorts = new set<Sort*>(*sorts);
+					InternalArgument ns(newsorts);
+					return convertToLua(L,ns);
+				}
+				else if(!preds.empty()) {
+					set<Predicate*>* newpreds = new set<Predicate*>(preds);
+					InternalArgument np(newpreds);
+					return convertToLua(L,np);
+				}
+				else {
+					assert(!funcs.empty());
+					set<Function*>* newfuncs = new set<Function*>(funcs);
+					InternalArgument nf(newfuncs);
+					return convertToLua(L,nf);
+				}
+			}
+			else {
+				OverloadedSymbol* os = new OverloadedSymbol();
+				for(set<Sort*>::const_iterator it = sorts->begin(); it != sorts->end(); ++it) os->insert(*it);
+				for(set<Predicate*>::const_iterator it = preds.begin(); it != preds.end(); ++it) os->insert(*it);
+				for(set<Function*>::const_iterator it = funcs.begin(); it != funcs.end(); ++it) os->insert(*it);
+				InternalArgument s(os);
+				return convertToLua(L,s);
+			}
+		}
+		else {
+			lua_pushstring(L,"A vocabulary can only be indexed by a string");
+			return lua_error(L);
+		}
+	}
+
+	/**
+	 * Index function for tuples
+	 */
+	int tupleIndex(lua_State* L) {
+		ElementTuple* tuple = *(ElementTuple**)lua_touserdata(L,1);
+		InternalArgument index(2,L);
+		if(index._type == AT_INT) {
+			const DomainElement* element = (*tuple)[index._value._int];
+			return convertToLua(L,element);
+		}
+		else {
+			lua_pushstring(L,"A tuple can only be indexed by an integer");
+			return lua_error(L);
+		}
+	}
+
+	/**
+	 * Index function for predicate interpretations
+	 */
+	int predinterIndex(lua_State* L) {
+		PredInter* predinter = *(PredInter**)lua_touserdata(L,1);
+		InternalArgument index = InternalArgument(2,L);
+		if(index._type == AT_STRING) {
+			string str = *(index._value._string);
+			if(str == "ct") {
+				InternalArgument tab(predinter->ct());
+				return convertToLua(L,tab);
+			}
+			else if(str == "pt") {
+				InternalArgument tab(predinter->pt());
+				return convertToLua(L,tab);
+			}
+			else if(str == "cf") {
+				InternalArgument tab(predinter->cf());
+				return convertToLua(L,tab);
+			}
+			else if(str == "pf") {
+				InternalArgument tab(predinter->pf());
+				return convertToLua(L,tab);
+			}
+			else {
+				lua_pushstring(L,"A predicate interpretation can only be indexed by \"ct\", \"cf\", \"pt\", and \"pf\"");
+				return lua_error(L);
+			}
+		}
+		else {
+			lua_pushstring(L,"A predicate interpretation can only be indexed by a string");
+			return lua_error(L);
+		}
+	}
+
+	/**
+	 * Index function for function interpretations
+	 */
+	int funcinterIndex(lua_State* L) {
+		FuncInter* funcinter = *(FuncInter**)lua_touserdata(L,1);
+		InternalArgument index = InternalArgument(2,L);
+		if(index._type == AT_STRING) {
+			if(*(index._value._string) == "graph") {
+				InternalArgument predinter(funcinter->graphinter());
+				return convertToLua(L,predinter);
+			}
+			else {
+				lua_pushstring(L,"A function interpretation can only be indexed by \"graph\"");
+				return lua_error(L);
+			}
+		}
+		else {
+			lua_pushstring(L,"A function interpretation can only be indexed by a string");
+			return lua_error(L);
+		}
+	}
+
+	PredTable* toPredTable(vector<InternalArgument>* table, lua_State* L) {
+		EnumeratedInternalPredTable* ipt;
+		ipt = new EnumeratedInternalPredTable(0);
+		for(vector<InternalArgument>::const_iterator it = table->begin(); it != table->end(); ++it) {
+			if(it->_type == AT_TABLE) {
+				ElementTuple tuple;
+				for(vector<InternalArgument>::const_iterator jt = it->_value._table->begin(); 
+					jt != it->_value._table->end(); ++jt) {
+					switch(jt->_type) {
+						case AT_INT:
+							tuple.push_back(DomainElementFactory::instance()->create(jt->_value._int)); break;
+						case AT_DOUBLE:
+							tuple.push_back(DomainElementFactory::instance()->create(jt->_value._double)); break;
+						case AT_STRING:
+							tuple.push_back(DomainElementFactory::instance()->create(jt->_value._string)); break;
+						case AT_COMPOUND:
+							tuple.push_back(DomainElementFactory::instance()->create(jt->_value._compound)); break;
+						default:
+							lua_pushstring(L,"Only numbers, strings, and compounds are allowed in a predicate table");
+							lua_error(L);
+							return 0;
+					}
+				}
+				ipt->add(tuple);
+			}
+			else if(it->_type == AT_TUPLE) ipt->add(*(it->_value._tuple));
+			else {
+				lua_pushstring(L,"Expected a two-dimensional table");
+				lua_error(L);
+				return 0;
+			}
+		}
+		PredTable* pt = new PredTable(ipt);
+		return pt;
+	}
+
+	/**
+	 * NewIndex function for predicate interpretations
+	 */
+	int predinterNewIndex(lua_State* L) {
+		PredInter* predinter = *(PredInter**)lua_touserdata(L,1);
+		InternalArgument index = InternalArgument(2,L);
+		InternalArgument value = InternalArgument(3,L);
+		if(index._type == AT_STRING) {
+			PredTable* pt = 0;
+			if(value._type == AT_PREDTABLE) {
+				pt = value._value._predtable;
+			}
+			else if(value._type == AT_TABLE) {
+				pt = toPredTable(value._value._table,L);
+			}
+			else {
+				lua_pushstring(L,"Wrong argument to __newindex procedure of a predicate interpretation");
+				return lua_error(L);
+			}
+			assert(pt);
+			string str = *(index._value._string);
+			if(str == "ct") predinter->ct(pt);
+			else if(str == "pt") predinter->pt(pt);
+			else if(str == "cf") predinter->cf(pt);
+			else if(str == "pf") predinter->pf(pt);
+			else {
+				lua_pushstring(L,"A predicate interpretation can only be indexed by \"ct\", \"cf\", \"pt\", and \"pf\"");
+				return lua_error(L);
+			}
+			return 0;
+		}
+		else {
+			lua_pushstring(L,"A predicate interpretation can only be indexed by a string");
+			return lua_error(L);
+		}
+	}
+
+	/**
+	 * NewIndex function for function interpretations
+	 */
+	int funcinterNewIndex(lua_State* L) {
+		FuncInter* funcinter = *(FuncInter**)lua_touserdata(L,1);
+		InternalArgument index = InternalArgument(2,L);
+		InternalArgument value = InternalArgument(3,L);
+		if(index._type == AT_STRING) {
+			if((*(index._value._string)) == "graph") {
+				if(value._type == AT_PREDINTER) {
+					funcinter->graphinter(value._value._predinter);
+					return 0;
+				}
+				else {
+					lua_pushstring(L,"Expected a predicate interpretation");
+					return lua_error(L);
+				}
+			}
+			else {
+				lua_pushstring(L,"A function interpretation can only be indexed by \"graph\"");
+				return lua_error(L);
+			}
+		}
+		else {
+			lua_pushstring(L,"A function interpretation can only be indexed by a string");
+			return lua_error(L);
+		}
+	}
+
+	/**
+	 * Call function for function interpretations
+	 */
+	int funcinterCall(lua_State* L) {
+		FuncInter* funcinter = *(FuncInter**)lua_touserdata(L,1);
+		if(funcinter->approxtwovalued()) {
+			FuncTable* ft = funcinter->functable();
+			lua_remove(L,1);
+			unsigned int nrargs = lua_gettop(L);
+			if(nrargs == 1) {
+				InternalArgument argone(1,L);
+				if(argone._type == AT_TUPLE) {
+					ElementTuple tuple = *(argone._value._tuple);
+					while(tuple.size() > ft->arity()) tuple.pop_back();
+					while(tuple.size() < ft->arity()) tuple.push_back(0);
+					const DomainElement* d = (*ft)[tuple];
+					return convertToLua(L,d);
+				}
+			}
+			for(unsigned int n = 1; n <= nrargs; ++n) {
+				ElementTuple tuple;
+				InternalArgument arg(n,L);
+				switch(arg._type) {
+					case AT_INT:
+						tuple.push_back(DomainElementFactory::instance()->create(arg._value._int)); break;
+					case AT_DOUBLE:
+						tuple.push_back(DomainElementFactory::instance()->create(arg._value._double)); break;
+					case AT_STRING:
+						tuple.push_back(DomainElementFactory::instance()->create(arg._value._string)); break;
+					case AT_COMPOUND:
+						tuple.push_back(DomainElementFactory::instance()->create(arg._value._compound)); break;
+					default:
+						lua_pushstring(L,"Only numbers, strings, and compounds as arguments of a function interpretation");
+						lua_error(L);
+						return 0;
+				}
+				while(tuple.size() > ft->arity()) tuple.pop_back();
+				while(tuple.size() < ft->arity()) tuple.push_back(0);
+				const DomainElement* d = (*ft)[tuple];
+				return convertToLua(L,d);
+			}
+
+		}
+		else {
+			lua_pushstring(L,"Only two-valued function interpretations can be called");
+			return lua_error(L);
+		}
+	}
+
+	/**
+	 * Arity function for predicate symbols
+	 */
+	int predicateArity(lua_State* L) {
+		set<Predicate*>* pred = *(set<Predicate*>**)lua_touserdata(L,1);
+		InternalArgument arity(2,L);
+		if(arity._type == AT_INT) {
+			set<Predicate*>* newpred = new set<Predicate*>();
+			for(set<Predicate*>::const_iterator it = pred->begin(); it != pred->end(); ++it) {
+				if((int)(*it)->arity() == arity._value._int) newpred->insert(*it);
+			}
+			InternalArgument np(newpred);
+			return convertToLua(L,np);
+		}
+		else {
+			lua_pushstring(L,"The arity of a predicate must be an integer");
+			return lua_error(L);
+		}
+	}
+
+	/**
+	 * Arity function for function symbols
+	 */
+	int functionArity(lua_State* L) {
+		set<Function*>* func = *(set<Function*>**)lua_touserdata(L,1);
+		InternalArgument arity(2,L);
+		if(arity._type == AT_TABLE) {
+			if(arity._value._table->size() > 0) {
+				if((*(arity._value._table))[0]._type == AT_INT) {
+					int ar = (*(arity._value._table))[0]._value._int;
+					set<Function*>* newfunc = new set<Function*>();
+					for(set<Function*>::const_iterator it = func->begin(); it != func->end(); ++it) {
+						if((int)(*it)->arity() == ar) newfunc->insert(*it);
+					}
+					InternalArgument nf(newfunc);
+					return convertToLua(L,nf);
+				}
+			}
+		}
+		lua_pushstring(L,"The arity of a function must be of the form \'integer : 1\'");
+		return lua_error(L);
+	}
+
+	/**
+	 * Arity function for symbols
+	 */
+	int symbolArity(lua_State* L) {
+		OverloadedSymbol* symb = *(OverloadedSymbol**)lua_touserdata(L,1);
+		InternalArgument arity(2,L);
+		if(arity._type == AT_TABLE) {
+			convertToLua(L,InternalArgument(new set<Function*>(*(symb->funcs()))));
+			lua_replace(L,1);
+			return functionArity(L);
+		}
+		else if(arity._type == AT_INT) {
+			convertToLua(L,InternalArgument(new set<Predicate*>(*(symb->preds()))));
+			lua_replace(L,1);
+			return predicateIndex(L);
+		}
+		else {
+			lua_pushstring(L,"The arity of a symbol must be an integer or of the form \'integer : 1\'");
+			return lua_error(L);
+		}
 	}
 
 	/**
@@ -221,11 +1221,254 @@ namespace LuaConnection {
 		lua_pop(L,1);
 	}
 
+	/** 
+	 * Create metatable for sorts
+	 */
+	void sortMetaTable(lua_State* L) {
+		int ok = luaL_newmetatable(L,"sort"); assert(ok);
+		lua_pushinteger(L,(int)AT_SORT);
+		lua_setfield(L,-2,_typefield);
+		lua_pushcfunction(L,&gcSort);
+		lua_setfield(L,-2,"__gc");
+		lua_pop(L,1);
+	}
+
+	/** 
+	 * Create metatable for predicate symbols
+	 */
+	void predicateMetaTable(lua_State* L) {
+		int ok = luaL_newmetatable(L,"predicate_symbol"); assert(ok);
+		lua_pushinteger(L,(int)AT_PREDICATE);
+		lua_setfield(L,-2,_typefield);
+		lua_pushcfunction(L,&gcPredicate);
+		lua_setfield(L,-2,"__gc");
+		lua_pushcfunction(L,&predicateIndex);
+		lua_setfield(L,-2,"__index");
+		lua_pushcfunction(L,&predicateArity);
+		lua_setfield(L,-2,"__div");
+		lua_pop(L,1);
+	}
+
+	/** 
+	 * Create metatable for function symbols
+	 */
+	void functionMetaTable(lua_State* L) {
+		int ok = luaL_newmetatable(L,"function_symbol"); assert(ok);
+		lua_pushinteger(L,(int)AT_FUNCTION);
+		lua_setfield(L,-2,_typefield);
+		lua_pushcfunction(L,&gcFunction);
+		lua_setfield(L,-2,"__gc");
+		lua_pushcfunction(L,&functionIndex);
+		lua_setfield(L,-2,"__index");
+		lua_pushcfunction(L,&functionArity);
+		lua_setfield(L,-2,"__div");
+		lua_pop(L,1);
+	}
+
+	/**
+	 * Create metatale for overloaded symbols
+	 */
+	void symbolMetaTable(lua_State* L) {
+		int ok = luaL_newmetatable(L,"symbol"); assert(ok);
+		lua_pushinteger(L,(int)AT_SYMBOL);
+		lua_setfield(L,-2,_typefield);
+		lua_pushcfunction(L,&gcSymbol);
+		lua_setfield(L,-2,"__gc");
+		lua_pushcfunction(L,&symbolIndex);
+		lua_setfield(L,-2,"__index");
+		lua_pushcfunction(L,&symbolArity);
+		lua_setfield(L,-2,"__div");
+		lua_pop(L,1);
+	}
+
+	/** 
+	 * Create metatable for vocabularies
+	 */
+	void vocabularyMetaTable(lua_State* L) {
+		int ok = luaL_newmetatable(L,"vocabulary"); assert(ok);
+		lua_pushinteger(L,(int)AT_VOCABULARY);
+		lua_setfield(L,-2,_typefield);
+		lua_pushcfunction(L,&gcVocabulary);
+		lua_setfield(L,-2,"__gc");
+		lua_pushcfunction(L,&vocabularyIndex);
+		lua_setfield(L,-2,"__index");
+		lua_pop(L,1);
+	}
+
+	/**
+	 * Create metatable for compounds
+	 */
+	void compoundMetaTable(lua_State* L) {
+		int ok = luaL_newmetatable(L,"compound"); assert(ok);
+		lua_pushinteger(L,(int)AT_COMPOUND);
+		lua_setfield(L,-2,_typefield);
+		lua_pushcfunction(L,&gcCompound);
+		lua_setfield(L,-2,"__gc");
+		lua_pop(L,1);
+	}
+
+	/**
+	 * Create metatable for tuples
+	 */
+	void tupleMetaTable(lua_State* L) {
+		int ok = luaL_newmetatable(L,"tuple"); assert(ok);
+		lua_pushinteger(L,(int)AT_TUPLE);
+		lua_setfield(L,-2,_typefield);
+		lua_pushcfunction(L,&gcTuple);
+		lua_setfield(L,-2,"__gc");
+		lua_pushcfunction(L,&tupleIndex);
+		lua_setfield(L,-2,"__index");
+		lua_pop(L,1);
+	}
+
+	/**
+	 * Create metatable for predicate tables
+	 */
+	void predtableMetaTable(lua_State* L) {
+		int ok = luaL_newmetatable(L,"predtable"); assert(ok);
+		lua_pushinteger(L,(int)AT_PREDTABLE);
+		lua_setfield(L,-2,_typefield);
+		lua_pushcfunction(L,&gcPredTable);
+		lua_setfield(L,-2,"__gc");
+		lua_pop(L,1);
+	}
+
+	/** 
+	 * Create metatable for predicate interpretations
+	 */
+	void predinterMetaTable(lua_State* L) {
+		int ok = luaL_newmetatable(L,"predinter"); assert(ok);
+		lua_pushinteger(L,(int)AT_PREDINTER);
+		lua_setfield(L,-2,_typefield);
+		lua_pushcfunction(L,&gcPredInter);
+		lua_setfield(L,-2,"__gc");
+		lua_pushcfunction(L,&predinterIndex);
+		lua_setfield(L,-2,"__index");
+		lua_pushcfunction(L,&predinterNewIndex);
+		lua_setfield(L,-2,"__newindex");
+		lua_pop(L,1);
+	}
+
+	/** 
+	 * Create metatable for function interpretations
+	 */
+	void funcinterMetaTable(lua_State* L) {
+		int ok = luaL_newmetatable(L,"funcinter"); assert(ok);
+		lua_pushinteger(L,(int)AT_FUNCINTER);
+		lua_setfield(L,-2,_typefield);
+		lua_pushcfunction(L,&gcFuncInter);
+		lua_setfield(L,-2,"__gc");
+		lua_pushcfunction(L,&funcinterIndex);
+		lua_setfield(L,-2,"__index");
+		lua_pushcfunction(L,&funcinterNewIndex);
+		lua_setfield(L,-2,"__newindex");
+		lua_pushcfunction(L,&funcinterCall);
+		lua_setfield(L,-2,"__call");
+		lua_pop(L,1);
+	}
+
+	/**
+	 * Create metatable for structures
+	 */
+	void structureMetaTable(lua_State* L) {
+		int ok = luaL_newmetatable(L,"structure"); assert(ok);
+		lua_pushinteger(L,(int)AT_STRUCTURE);
+		lua_setfield(L,-2,_typefield);
+		lua_pushcfunction(L,&gcStructure);
+		lua_setfield(L,-2,"__gc");
+		lua_pushcfunction(L,&structureIndex);
+		lua_setfield(L,-2,"__index");
+		lua_pushcfunction(L,&structureNewIndex);
+		lua_setfield(L,-2,"__newindex");
+		lua_pop(L,1);
+	}
+
+	/**
+	 * Create metatable for theories
+	 */
+	void theoryMetaTable(lua_State* L) {
+		int ok = luaL_newmetatable(L,"theory"); assert(ok);
+		lua_pushinteger(L,(int)AT_THEORY);
+		lua_setfield(L,-2,_typefield);
+		lua_pushcfunction(L,&gcTheory);
+		lua_setfield(L,-2,"__gc");
+		lua_pop(L,1);
+	}
+
+	/**
+	 * Create metatable for options
+	 */
+	void optionsMetaTable(lua_State* L) {
+		int ok = luaL_newmetatable(L,"options"); assert(ok);
+		lua_pushinteger(L,(int)AT_OPTIONS);
+		lua_setfield(L,-2,_typefield);
+		lua_pushcfunction(L,&gcOptions);
+		lua_setfield(L,-2,"__gc");
+		lua_pushcfunction(L,&optionsIndex);
+		lua_setfield(L,-2,"__index");
+		lua_pushcfunction(L,&optionsNewIndex);
+		lua_setfield(L,-2,"__newindex");
+		lua_pop(L,1);
+	}
+
+	/**
+	 * Create metatable for namespaces
+	 */
+	void namespaceMetaTable(lua_State* L) {
+		int ok = luaL_newmetatable(L,"namespace"); assert(ok);
+		lua_pushinteger(L,(int)AT_NAMESPACE);
+		lua_setfield(L,-2,_typefield);
+		lua_pushcfunction(L,&gcNamespace);
+		lua_setfield(L,-2,"__gc");
+		lua_pushcfunction(L,&namespaceIndex);
+		lua_setfield(L,-2,"__index");
+		lua_pop(L,1);
+	}
+
+	/**
+	 * Create metatable for overloaded objects
+	 */
+	void overloadedMetaTable(lua_State* L) {
+		int ok = luaL_newmetatable(L,"overloaded"); assert(ok);
+		lua_pushinteger(L,(int)AT_OVERLOADED);
+		lua_setfield(L,-2,_typefield);
+		lua_pushcfunction(L,&gcOverloaded);
+		lua_setfield(L,-2,"__gc");
+		lua_pushcfunction(L,&overloadedIndex);
+		lua_setfield(L,-2,"__index");
+		lua_pushcfunction(L,&overloadedNewIndex);
+		lua_setfield(L,-2,"__newindex");
+		lua_pushcfunction(L,&overloadedCall);
+		lua_setfield(L,-2,"__call");
+		lua_pushcfunction(L,&overloadedDiv);
+		lua_setfield(L,-2,"__div");
+		lua_pop(L,1);
+	}
+
 	/**
 	 * Create all metatables
 	 */
 	void createMetaTables(lua_State* L) {
-		internMetaTable(L);
+		internProcMetaTable(L);
+
+		sortMetaTable(L);
+		predicateMetaTable(L);
+		functionMetaTable(L);
+		symbolMetaTable(L);
+		vocabularyMetaTable(L);
+
+		compoundMetaTable(L);
+		tupleMetaTable(L);
+		predtableMetaTable(L);
+		predinterMetaTable(L);
+		funcinterMetaTable(L);
+		structureMetaTable(L);
+
+		theoryMetaTable(L);
+		optionsMetaTable(L);
+		namespaceMetaTable(L);
+
+		overloadedMetaTable(L);
 	}
 
 	/**
@@ -243,26 +1486,70 @@ namespace LuaConnection {
 	 */
 	void addInternalProcedure(const string& name, 
 					   const vector<ArgType>& argtypes, 
-					   InternalArgument (*execute)(const std::vector<InternalArgument>&, lua_State*)) {
-		InternalProcedure proc(argtypes,execute);
+					   InternalArgument (*execute)(const vector<InternalArgument>&, lua_State*)) {
+		InternalProcedure proc(name,argtypes,execute);
 		_internalprocedures[name].insert(proc);
 	}
 
 	/**
 	 * Adds all internal procedures
 	 */
-	void addInternProcs() {
+	void addInternProcs(L) {
+		vector<ArgType> vtheo(1,AT_THEORY);
+		vector<ArgType> vstruct(1,AT_STRUCTURE);
+		// TODO
+
+		addInternalProcedure("print",vtheo,&printtheory);
+		addInternalProcedure("print",vstruct,&printstructure);
 		// TODO
 	}
 
 	/**
 	 * Establish the connection with lua. 
 	 */
-	void makeLuaConnection() {
+	lua_State* makeLuaConnection() {
+		// Create the lua state
+		lua_State* L = lua_open();
+		luaL_openlibs(L);
+
+		// Create all metatables
+		createMetaTables(L);
+
+		// Create the global table idp_intern
+		lua_newtable(L);
+		lua_setglobal(L,"idp_intern");
+
 		// TODO
+		addInternProcs(L);
+		// TODO
+		return L;
+	}
+
+	/**
+	 * End the connection with lua
+	 */
+	void closeLuaConnection(lua_State* L) {
+		lua_close(L);
+		// TODO?
 	}
 
 }
+
+int InternalProcedure::operator()(lua_State* L) const {
+	vector<InternalArgument> args;
+	for(int arg = 1; arg <= lua_gettop(L); ++arg) {
+		args.push_back(InternalArgument(arg,L));
+	}
+	InternalArgument result = _execute(args,L);
+	return LuaConnection::convertToLua(L,result);
+}
+
+
+
+
+
+
+
 
 /*
 	Connection with lua

@@ -593,8 +593,6 @@ class EnumeratedInternalPredTable : public InternalPredTable {
 
 		bool			contains(const ElementTuple& tuple) const;
 
-		EnumeratedInternalPredTable*	add(const ElementTuple& tuple);
-		EnumeratedInternalPredTable*	remove(const ElementTuple& tuple);
 
 		InternalTableIterator*		begin() const;
 
@@ -604,6 +602,8 @@ class EnumeratedInternalPredTable : public InternalPredTable {
 		EnumeratedInternalPredTable(unsigned int arity) : 
 			_arity(arity) { }
 		~EnumeratedInternalPredTable() { }
+		EnumeratedInternalPredTable*	add(const ElementTuple& tuple);
+		EnumeratedInternalPredTable*	remove(const ElementTuple& tuple);
 };
 
 class InternalSortTable;
@@ -1162,6 +1162,12 @@ class PredInter {
 		// Destructor
 		~PredInter();
 
+		// Mutators
+		void ct(PredTable*);
+		void cf(PredTable*);
+		void pt(PredTable*);
+		void pf(PredTable*);
+
 		// Inspectors
 		PredTable*	ct()										const { return _ct;	}
 		PredTable*	cf()										const { return _cf;	}
@@ -1241,6 +1247,8 @@ class FuncInter {
 		FuncInter(PredInter* pt) : _functable(0), _graphinter(pt) { }
 
 		~FuncInter();
+
+		void	graphinter(PredInter*);
 
 		PredInter*	graphinter()		const { return _graphinter;			}
 		FuncTable*	functable()			const { return _functable;			}

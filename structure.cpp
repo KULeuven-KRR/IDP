@@ -1054,6 +1054,7 @@ bool EnumeratedInternalPredTable::contains(const ElementTuple& tuple) const {
 EnumeratedInternalPredTable* EnumeratedInternalPredTable::add(const ElementTuple& tuple) {
 	if(contains(tuple)) return this;
 	else {
+		if(_table.empty() && _arity == 0) _arity = tuple.size();
 		if(_nrRefs == 1) {
 			_table.insert(tuple);
 			return this;
