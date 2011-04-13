@@ -19,7 +19,12 @@
 class PFSymbol;
 class Vocabulary;
 class AbstractStructure;
+class VarTerm;
+class FuncTerm;
+class DomainTerm;
 class AggTerm;
+class EnumSetExpr;
+class QuantSetExpr;
 class TheoryVisitor;
 class TheoryMutatingVisitor;
 

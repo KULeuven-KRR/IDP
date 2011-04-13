@@ -5,10 +5,8 @@ end
 local oldType = type
 function type(obj) 
 	if oldType(obj) == "userdata" then
-		local idptype = getmetatable(obj).idptype
-		if idptype then return idptype
-		else return "userdata"
-		end
+		local idptype = getmetatable(obj)["type"]
+		return idp_intern.idptype(idptype)
 	else
 		return oldType(obj)
 	end

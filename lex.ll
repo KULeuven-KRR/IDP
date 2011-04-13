@@ -6,18 +6,9 @@
 
 %{
 
-#include <typeinfo>
-#include <string>
-#include <vector>
-#include <map>
-#include "common.hpp"
-#include "data.hpp"
-#include "insert.hpp"
-#include "error.hpp"
-#include "parse.h"
-#include "clconst.hpp"
-
 using namespace std;
+#include <string>
+#include "parse.tab.hh"
 
 extern YYSTYPE yylval;
 extern YYLTYPE yylloc;

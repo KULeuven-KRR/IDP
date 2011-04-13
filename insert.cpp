@@ -4,6 +4,154 @@
 	(c) K.U.Leuven
 ************************************/
 
+/*************
+	NSPair
+*************/
+
+void NSPair::includePredArity() {
+	assert(_sortsincluded && !_arityincluded); 
+	_name.back() = _name.back() + '/' + itos(_sorts.size());	
+	_arityincluded = true;
+}
+
+void NSPair::includeFuncArity() {
+	assert(_sortsincluded && !_arityincluded); 
+	_name.back() = _name.back() + '/' + itos(_sorts.size() - 1);	
+	_arityincluded = true;
+}
+
+void NSPair::includeArity(unsigned int n) {
+	assert(!_arityincluded); 
+	_name.back() = _name.back() + '/' + itos(n);	
+	_arityincluded = true;
+}
+
+/*************
+	Insert
+*************/
+
+Insert::Insert() {
+	openblock();
+	_currfile = 0;
+	_currspace = Namespace::global();
+	usenamespace(_currspace);
+}
+
+ParseInfo Insert::parseinfo(YYLTYPE l) { 
+	return ParseInfo(l.first_line,l.first_column,_currfile);	
+}
+
+void Insert::usenamespace(Namespace* s) {
+	++_nrspaces.back();
+	_usingspace.push_back(s);
+}
+
+void Insert::usevocabulary(Vocabulary* v) {
+	++_nrvocabs.back();
+	_usingvocabs.push_back(v);
+}
+
+void Insert::usingvocab(const longname& vs, YYLTYPE l) {
+	ParseInfo pi = parseinfo(l);
+	Vocabulary* v = vocabularyInScope(vs,pi);
+	if(v) usevocabulary(v);
+	else Error::undeclvoc(oneName(vs),pi);
+}
+
+void usingspace(const longname& vs, YYLTYPE l) {
+	ParseInfo pi = parseinfo(l);
+	Namespace* s = namespaceInScope(vs,pi);
+	if(s) usenamespace(s);
+	else Error::undeclspace(oneName(vs),pi);
+}
+
+void Insert::openblock() {
+	_nrvocabs.push_back(0);
+	_nrspaces.push_back(0);
+}
+
+void Insert::closeblock() {
+	for(unsigned int n = 0; n < _nrvocabs.back(); ++n) _usingvocab.pop_back();
+	for(unsigned int n = 0; n < _nrspaces.back(); ++n) _usingspace.pop_back();
+	_nrvocabs.pop_back();
+	_nrspaces.pop_back();
+	_currvocabulary = 0;
+	_currtheory = 0;
+	_currstructure = 0;
+	_curroptions = 0;
+	_currprocedure = 0;
+}
+
+void Insert::openspace(const string& sname, YYLTYPE l) {
+	openblock();
+	ParseInfo pi = parseinfo(l);
+	Namespace* ns = new Namespace(sname,_currspace,pi);
+	_currspace = ns;
+	usenamespace(ns);
+}
+
+void closespace() {
+	if(_currspace->super()->isGlobal()) LuaConnection::addGlobal(L,_currspace);
+	_currspace = _currspace->super(); assert(_currspace);
+	closeblock();
+}
+
+void Insert::openvocab(const string& vname, YYLTYPE l) {
+	openblock();
+	ParseInfo pi = parseinfo(l);
+	Vocabulary* v = new Vocabulary(vname,pi);
+	_currvocab = v;	
+	_currspace->add(v);
+	usevocabulary(v);
+}
+
+void Insert::assignvocab(const InternalArgument& arg, YYLTYPE l) {
+	if(arg._type == AT_VOCABULARY) {
+		_currvocab->addVocabulary(arg.vocabulary());
+	}
+	else {
+		ParseInfo pi = parseinfo(l);
+		Error::vocabexpected(pi);
+	}
+}
+
+void Insert::closevocab() {
+	assert(_currvocab);
+	if(_currspace->isGlobal()) LuaConnection::addGlobal(L,_currvocab);
+	closeblock();
+}
+
+void Insert::setvocab(const longname& vs, YYLTYPE l) {
+	ParseInfo pi = parseinfo(l);
+	Vocabulary* v = vocabInScope(vs,pi);
+	if(v) {
+		usevocabulary(v);
+		_currvocab = v;
+		if(_currstructure) _currstructure->vocabulary(v);
+		else if(_currtheory) _currtheory->vocabulary(v);
+		else assert(false);
+	}
+	else {
+		Error::undeclvoc(oneName(vs),pi);
+		_currvocab = Vocabulary::std();
+		if(_currstructure) _currstructure->vocabulary(Vocabulary::std());
+		else if(_currtheory) _currtheory->vocabulary(Vocabulary::std());
+		else assert(false);
+	}
+}
+
+void Insert::externvocab(const vector<string>& vname, YYLTYPE l) {
+	ParseInfo pi = parseinfo(l);
+	Vocabulary* v = vocabInScope(vname,pi);
+	if(v) _currvocab->addVocabulary(v); 
+	else Error::undeclvoc(oneName(vname),pi);
+}
+
+Sort* Insert::sort(Sort* s) {
+	if(s) _currvocab->addSort(s);
+	return s;
+}
+
 #include <iostream>
 #include <list>
 #include <set>
@@ -461,22 +609,12 @@ namespace Insert {
 	vector<unsigned int>	_nrspaces;		// The number of using namespace statements in the current block
 
 	void closeblock() {
-		for(unsigned int n = 0; n < _nrvocabs.back(); ++n) _usingvocab.pop_back();
-		for(unsigned int n = 0; n < _nrspaces.back(); ++n) _usingspace.pop_back();
-		_nrvocabs.pop_back();
-		_nrspaces.pop_back();
-		_currvocab = 0;
-		_currtheory = 0;
-		_currstructure = 0;
-		_curroptions = 0;
-		_currproc = 0;
 	}
 
 
 	string*		currfile()					{ return _currfile;	}
 	void		currfile(const string& s)	{ _allfiles.push_back(_currfile); _currfile = new string(s);	}
 	void		currfile(string* s)			{ _allfiles.push_back(_currfile); if(s) _currfile = new string(*s); else _currfile = 0;	}
-	ParseInfo		parseinfo(YYLTYPE l)		{ return ParseInfo(l.first_line,l.first_column,_currfile);	}
 	FormParseInfo	formparseinfo(Formula* f, YYLTYPE l)	{ return FormParseInfo(l.first_line,l.first_column,_currfile,f);	}
 	FormParseInfo	formparseinfo(YYLTYPE l)	{ return FormParseInfo(l.first_line,l.first_column,_currfile,0);	}
 
@@ -890,23 +1028,6 @@ namespace Insert {
 		if(_currfile) delete(_currfile);
 	}
 
-	void closespace() {
-		closeblock();
-		_currspace = _currspace->super();
-		assert(_currspace);
-	}
-
-	void openspace(const string& sname, YYLTYPE l) {
-		Info::print("Parsing namespace " + sname);
-		ParseInfo pi = parseinfo(l);
-		Namespace* ns = new Namespace(sname,_currspace,pi);
-		_nrvocabs.push_back(0);
-		_currspace = ns;
-		_usingspace.push_back(ns);
-		_nrvocabs.push_back(0);
-		_nrspaces.push_back(1);
-	}
-
 	/*************
 		Options
 	*************/
@@ -1041,55 +1162,6 @@ namespace Insert {
 
 	/** Open and close vocabularies **/
 
-	void openvocab(const string& vname, YYLTYPE l) {
-		Info::print("Parsing vocabulary " + vname);
-		ParseInfo pi = parseinfo(l);
-		Vocabulary* v = new Vocabulary(vname,pi);
-		_currspace->add(v);
-		_currvocab = v;	
-		_usingvocab.push_back(v);
-		_nrvocabs.push_back(1);
-		_nrspaces.push_back(0);
-	}
-
-	void closevocab() {
-		closeblock();
-	}
-
-	void usingvocab(const vector<string>& vs, YYLTYPE l) {
-		ParseInfo pi = parseinfo(l);
-		Vocabulary* v = vocabInScope(vs,pi);
-		if(v) {
-			_usingvocab.push_back(v);
-			_nrvocabs.back() = _nrvocabs.back()+1;
-		}
-		else Error::undeclvoc(oneName(vs),pi);
-	}
-
-	void usingspace(const vector<string>& vs, YYLTYPE l) {
-		ParseInfo pi = parseinfo(l);
-		Namespace* s = namespaceInScope(vs,pi);
-		if(s) {
-			_usingspace.push_back(s);
-			_nrspaces.back() = _nrspaces.back() + 1;
-		}
-		else Error::undeclspace(oneName(vs),pi);
-	}
-
-	void setvocab(const vector<string>& vs, YYLTYPE l) {
-		ParseInfo pi = parseinfo(l);
-		Vocabulary* v = vocabInScope(vs,pi);
-		if(v) {
-			_usingvocab.push_back(v);
-			_nrvocabs.back() = _nrvocabs.back()+1;
-			if(_currstructure) _currstructure->vocabulary(v);
-			else if(_currtheory) _currtheory->vocabulary(v);
-			_currvocab = v;
-		}
-		else {
-			Error::undeclvoc(oneName(vs),pi);
-		}
-	}
 
 	/** Pointers to symbols **/
 
@@ -1168,29 +1240,6 @@ namespace Insert {
 
 	/** Add symbols to the current vocabulary **/
 
-	void externvocab(const vector<string>& vname, YYLTYPE l) {
-		ParseInfo pi = parseinfo(l);
-		Vocabulary* v = vocabInScope(vname,pi);
-		if(v) {
-			for(map<string,std::set<Sort*> >::iterator it = v->firstsort(); it != v->lastsort(); ++it) {
-				for(std::set<Sort*>::iterator jt = (it->second).begin(); jt != (it->second).end(); ++jt) {
-					_currvocab->addSort(*jt);
-				}
-			}
-			for(map<string,Predicate*>::iterator it = v->firstpred(); it != v->lastpred(); ++it) {
-				_currvocab->addPred(it->second);
-			}
-			for(map<string,Function*>::iterator it = v->firstfunc(); it != v->lastfunc(); ++it) {
-				_currvocab->addFunc(it->second);
-			}
-		}
-		else Error::undeclvoc(oneName(vname),pi);
-	}
-
-	Sort* sort(Sort* s) {
-		if(s) _currvocab->addSort(s);
-		return s;
-	}
 
 	Sort* sort(const string& name, YYLTYPE l) {
 		ParseInfo pi = parseinfo(l);

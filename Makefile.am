@@ -22,31 +22,30 @@ gidl_LDADD += $(builddir)/pcsolver/src/libminisatid-2.0.la
 BUILT_SOURCES = parse.h
 
 gidl_SOURCES = \
+		commontypes.hpp\
 		parseinfo.hpp\
 		vocabulary.hpp vocabulary.cpp\
 		structure.hpp structure.cpp\
 		term.hpp term.cpp\
 		theory.hpp theory.cpp\
+		options.cpp options.hpp\
 		execute.hpp execute.cpp\
 		namespace.hpp namespace.cpp\
+		parse.yy\
+		lex.ll\
 		insert.hpp insert.cpp\
 		common.hpp common.cpp\
 		ecnf.hpp ecnf.cpp\
 		ground.hpp ground.cpp\
 		main.cpp\
-		data.hpp data.cpp\
 		error.hpp error.cpp\
-		parse.yy\
-		lex.ll\
-		options.cpp options.hpp\
 		clconst.hpp\
 		interactive.hpp interactive.cpp\
 		print.hpp print.cpp\
 		checker.hpp checker.cpp\
 		generator.hpp generator.cpp\
 		fobdd.hpp fobdd.cpp\
-		propagate.hpp propagate.cpp\
-		commontypes.hpp
+		propagate.hpp propagate.cpp
 
 AM_CXXFLAGS+=-I $(top_srcdir)/pcsolver/src/ 
 

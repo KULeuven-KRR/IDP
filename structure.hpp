@@ -9,6 +9,7 @@
 
 #include <string>
 #include <vector>
+#include <set>
 #include <map>
 #include <cassert>
 #include <ostream>
@@ -856,6 +857,8 @@ class EnumeratedInternalSortTable : public InternalSortTable {
 		bool approxempty()	const { return _table.empty();	}
 	protected:
 		~EnumeratedInternalSortTable() { }
+	public:
+		EnumeratedInternalSortTable() { }
 };
 
 /**
@@ -1188,6 +1191,8 @@ class PredInterGenerator {
 		virtual PredInter* get(const AbstractStructure* structure) = 0;
 };
 
+class Sort;
+
 class EqualInterGenerator : public PredInterGenerator {
 	private:
 		Sort*	_sort;
@@ -1348,6 +1353,10 @@ class AbstractStructure {
 		// Mutators
 		virtual void	vocabulary(Vocabulary* v) { _vocabulary = v;	}	// set the vocabulary
 		virtual AbstractStructure*	clone() = 0;	// take a clone of this structure
+
+		virtual void	inter(Sort* s,SortTable* d) = 0;		//!< set the domain of s to d
+		virtual void	inter(Predicate* p, PredInter* i) = 0;	//!< set the interpretation of p to i
+		virtual void	inter(Function* f, FuncInter* i) = 0;	//!< set the interpretation of f to i
 
 		// Inspectors
 				const std::string&	name()						const { return _name;		}

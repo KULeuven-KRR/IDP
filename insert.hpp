@@ -7,84 +7,97 @@
 #ifndef INSERT_HPP
 #define INSERT_HPP
 
-#include <utility>
-#include <string>
 #include <vector>
-#include <cassert>
-
-#include "common.hpp" // FIXME: need include for enum AggType
+#include "commontypes.hpp" 
 #include "parseinfo.hpp"
-//#include "theory.hpp" //FIXME: forward declaration instead?
-
-class Formula;
-class Term;
-class Sort;
-class Variable;
-class Predicate;
-class Function;
-class Definition;
-class FixpDef;
-class Rule;
-class PredForm;
-class BoolForm;
-class EquivForm;
-class QuantForm;
-class EqChainForm;
-class FuncTerm;
-class AggTerm;
-class DomainTerm;
-class SetExpr;
-class QuantSetExpr;
-class EnumSetExpr;
-class FiniteSortTable;
-class FinitePredTable;
-class LuaProcedure;
-class Visitor;
 
 struct YYLTYPE;
+class lua_State;
+class Options;
+class UserProcedure;
+class InternalArgument;
 
+typedef std::vector<std::string> longname;
 
-// Pair of formulas and terms
-struct FTTuple {
+/**
+ * Pair of a formula and a tuple
+ */
+struct FTPair {
 	Formula* _formula;
 	Term*	 _term;
-	FTTuple(Formula* f, Term* t) : _formula(f), _term(t) { }
+	FTPair(Formula* f, Term* t) : _formula(f), _term(t) { }
 };
 
-// Pair of name and sorts
-struct NSTuple {
-	std::vector<std::string>	_name;
-	std::vector<Sort*>			_sorts;
-	bool						_arityincluded;	// true iff the name ends on /arity
-	bool						_sortsincluded;	// true iff the sorts are initialized
-	bool						_func;			// true if the pointer points to a function
-	ParseInfo					_pi;
+/**
+ * Pair of name and sorts
+ */
+struct NSPair {
+	longname			_name;		//!< the name
+	std::vector<Sort*>	_sorts;		//!< the sorts
 
-	NSTuple(const std::vector<std::string>& n, const std::vector<Sort*>& s, bool ari, const ParseInfo& pi) :
+	bool		_arityincluded;	//!< true iff the name ends on /arity
+	bool		_sortsincluded;	//!< true iff the sorts are initialized
+	bool		_func;			//!< true if the name is a pointer to a function
+	ParseInfo	_pi;			//!< place where the pair was parsed
+
+	NSPair(const longname& n, const std::vector<Sort*>& s, bool ari, const ParseInfo& pi) :
 		_name(n), _sorts(s), _arityincluded(ari), _sortsincluded(true), _func(false), _pi(pi) { }
-	NSTuple(const std::vector<std::string>& n, bool ari, const ParseInfo& pi) :
+	NSPair(const longname& n, bool ari, const ParseInfo& pi) :
 		_name(n), _sorts(0), _arityincluded(ari), _sortsincluded(false), _func(false), _pi(pi) { }
-	void func(bool b) { _func = b; }
-	void includePredArity() { 
-		assert(_sortsincluded && !_arityincluded); 
-		_name.back() = _name.back() + '/' + itos(_sorts.size());	
-		_arityincluded = true;
-	}
-	void includeFuncArity() {
-		assert(_sortsincluded && !_arityincluded); 
-		_name.back() = _name.back() + '/' + itos(_sorts.size() - 1);	
-		_arityincluded = true;
-	}
-	void includeArity(unsigned int n) {
-		assert(!_arityincluded); 
-		_name.back() = _name.back() + '/' + itos(n);	
-		_arityincluded = true;
-	}
-	std::string to_string();
+
+	void includePredArity();
+	void includeFuncArity();
+	void includeArity(unsigned int n);
 };
 
-namespace Insert {
+class Insert {
 
+	private:
+		lua_State*		_state;		//!< the lua state objects are added to
+
+		std::string*	_currfile;	//!< the file that is currently being parsed
+		Namespace*		_currspace;	//!< the namespace that is currently being parsed
+
+		Vocabulary*		_currvocabulary;	//!< the vocabulary that is currently being parsed
+		Theory*			_currtheory;		//!< the theory that is currently being parsed
+		Structure*		_currstructure;		//!< the structure that is currently being parsed
+		Options*		_curroptions;		//!< the options that is currently being parsed
+		UserProcedure*	_currprocedure;		//!< the procedure that is currently being parsed
+
+		std::vector<Vocabulary*>	_usingvocab;	//!< the vocabularies currently used to parse
+		std::vector<Namespace*>		_usingspace;	//!< the namespaces currently used to parse
+
+		std::vector<unsigned int>	_nrvocabs;		//!< the number of 'using vocabulary' statements in the current block
+		std::vector<unsigned int>	_nrspaces;		//!< the number of 'using namespace' statements in the current block
+
+		ParseInfo	parseinfo(YYLTYPE l);	//!< Convert a bison parse location to a parseinfo object
+
+		void usenamespace(Namespace*);		//!< add a using namespace statement
+		void usevocabulary(Vocabulary*);	//!< add a using vocabulary statement
+
+		void openblock();	//!< open a new block
+		void closeblock();	//!< close the current block
+
+
+	public:
+		Insert();
+
+		void openspace(const std::string& name,YYLTYPE);	//!< Open a new namespace;
+		void openvocab(const std::string& name,YYLTYPE);	//!< Open a new vocabulary
+		void closespace();									//!< Close the current namespace
+		void closevocab();									//!< Close the current vocabulary
+
+		void usingvocab(const longname& vname, YYLTYPE);	//!< use vocabulary 'vname' when parsing
+		void usingspace(const longname& sname, YYLTYPE);	//!< use namespace 'sname' when parsing
+
+		void assignvocab(const InternalArgument&, YYLTYPE);	//!< set the current vocabulary to the given vocabulary
+		void setvocab(const longname& vname, YYLTYPE);		//!< set the vocabulary of the current theory or structure 
+		void externvocab(const longname& vname, YYLTYPE);	//!< add all symbols of 'vname' to the current vocabulary
+
+		Sort*	sort(Sort* s);	//!< add an existing sort to the current vocabulary
+};
+
+#ifdef OLD
 	/** Input files **/
 	std::string*	currfile();						// return the current filename
 	void			currfile(const std::string& s);	// set the current file to s
@@ -95,9 +108,6 @@ namespace Insert {
 	void cleanup();		
 
 	/** Namespaces **/
-	void closespace();	// set current namespace to its parent
-	void openspace(const std::string& sname,YYLTYPE);	// set the current namespace to its subspace with name 'sname'
-	void usingspace(const std::vector<std::string>& sname, YYLTYPE);
 
 	/** Options **/
 	void openoptions(const std::string& name, YYLTYPE);
@@ -120,18 +130,12 @@ namespace Insert {
 	void luacode(const std::vector<std::string>&);
 
 	/** Vocabulary **/
-	void openvocab(const std::string& vname, YYLTYPE);	// create a new vocabulary with name 'vname' in the current namespace
-	void closevocab();								// stop parsing a vocabulary
-	void usingvocab(const std::vector<std::string>& vname, YYLTYPE);	// use vocabulary 'vname' when parsing
-	void setvocab(const std::vector<std::string>& vname, YYLTYPE);	// set the vocabulary of the current theory or structure 
-	void externvocab(const std::vector<std::string>& vname, YYLTYPE);	// add an existing vocabulary
 
 	// Create new sorts
 	Sort*	sort(const std::string& name, YYLTYPE);						
 	Sort*	sort(const std::string& name, const std::vector<Sort*> supbs, bool p, YYLTYPE);
 	Sort*	sort(const std::string& name, const std::vector<Sort*> sups, const std::vector<Sort*> subs, YYLTYPE);
 
-	Sort*		sort(Sort* s);											// add an existing sort
 	Predicate*	predicate(Predicate* p);								// add an existing predicate 
 	Function*	function(Function* f);									// add an existing function 
 	Predicate*	predicate(const std::string& name, const std::vector<Sort*>& sorts, YYLTYPE);	// create a new predicate
@@ -167,12 +171,12 @@ namespace Insert {
 	void emptythreeinter(NSTuple*, const std::string& utf);
 
 	// asp atoms
-	void predatom(NSTuple*, const std::vector<Element>&, const std::vector<FiniteSortTable*>&, const std::vector<ElementType>&, const std::vector<bool>&,bool);
-	void funcatom(NSTuple*, const std::vector<Element>&, const std::vector<FiniteSortTable*>&, const std::vector<ElementType>&, const std::vector<bool>&,bool);
+//	void predatom(NSTuple*, const std::vector<const DomainElement*>&, const std::vector<FiniteSortTable*>&, const std::vector<ElementType>&, const std::vector<bool>&,bool);
+//	void funcatom(NSTuple*, const std::vector<Element>&, const std::vector<FiniteSortTable*>&, const std::vector<ElementType>&, const std::vector<bool>&,bool);
 
 	// compound elements
-	compound* makecompound(NSTuple*, const std::vector<TypedElement*>& vte);
-	compound* makecompound(NSTuple*);
+	//Compound* makecompound(NSTuple*, const std::vector<TypedElement*>& vte);
+	//Compound* makecompound(NSTuple*);
 
 	/** Theory **/
 	void opentheory(const std::string& tname, YYLTYPE);
@@ -244,6 +248,7 @@ namespace Insert {
 	NSTuple*	internpointer(const std::vector<std::string>& name, const std::vector<Sort*>& sorts, YYLTYPE l);
 	NSTuple*	internpointer(const std::vector<std::string>& name, YYLTYPE l);
 
-}
+};
 
+#endif 
 #endif

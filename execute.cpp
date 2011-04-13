@@ -11,11 +11,12 @@
 #include "structure.hpp"
 #include "term.hpp"
 #include "theory.hpp"
+#include "options.hpp"
+#include "namespace.hpp"
 #include "execute.hpp"
 #include "error.hpp"
+#include "print.hpp"
 using namespace std;
-
-class Options;	// FIXME replace by include "options"
 
 /******************************
 	User defined procedures
@@ -63,6 +64,7 @@ enum ArgType {
 	// Structure
 	AT_COMPOUND,		//!< a compound domain element
 	AT_TUPLE,			//!< a tuple in a predicate or function table
+	AT_DOMAIN,			//!< a domain of a sort
 	AT_PREDTABLE,		//!< a predicate table
 	AT_PREDINTER,		//!< a predicate interpretation
 	AT_FUNCINTER,		//!< a function interpretation
@@ -120,13 +122,48 @@ class OverloadedSymbol {
 };
 
 /**
- * Overloaded objects
+ * Objects to overload members of namespaces and vocabularies
  */
 class OverloadedObject {
+	private:
+		Namespace*			_namespace;
+		Vocabulary*			_vocabulary;
+		AbstractTheory*		_theory;
+		AbstractStructure*	_structure;
+		Options*			_options;
+		UserProcedure*		_procedure;
+
+		set<Predicate*>		_predicate;
+		set<Function*>		_function;
+		set<Sort*>			_sort;
+
 	public:
+		// Constructor
+		OverloadedObject() : 
+			_namespace(0), _vocabulary(0), _theory(0), _structure(0), _options(0), _procedure(0) { }
+
+		void insert(Namespace* n)			{ _namespace = n;	}
+		void insert(Vocabulary* n)			{ _vocabulary = n;	}
+		void insert(AbstractTheory* n)		{ _theory = n;		}
+		void insert(AbstractStructure* n)	{ _structure = n;	}
+		void insert(Options* n)				{ _options = n;		}
+		void insert(UserProcedure* n)		{ _procedure = n;	}
+
+		AbstractStructure*	structure()	const { return _structure;	}
+		AbstractTheory*		theory()	const { return _theory;		}
+		Options*			options()	const { return _options;	}
+
 		vector<ArgType> types() {
 			vector<ArgType> result;
-			// TODO
+			if(_namespace) result.push_back(AT_NAMESPACE);
+			if(_vocabulary) result.push_back(AT_VOCABULARY);
+			if(_theory) result.push_back(AT_THEORY);
+			if(_structure) result.push_back(AT_STRUCTURE);
+			if(_options) result.push_back(AT_OPTIONS);
+			if(_procedure) result.push_back(AT_PROCEDURE);
+			if(!_predicate.empty()) result.push_back(AT_PREDICATE);
+			if(!_function.empty()) result.push_back(AT_FUNCTION);
+			if(!_sort.empty()) result.push_back(AT_SORT);
 			return result;
 		}
 };
@@ -141,6 +178,7 @@ struct InternalArgument {
 
 		const Compound*					_compound;
 		ElementTuple*					_tuple;
+		SortTable*						_domain;
 		PredTable*						_predtable;
 		PredInter*						_predinter;
 		FuncInter*						_funcinter;
@@ -161,6 +199,7 @@ struct InternalArgument {
 	} _value;
 
 	// Constructors
+	InternalArgument() { }
 	InternalArgument(Vocabulary* v)						: _type(AT_VOCABULARY)	{ _value._vocabulary = v;	}
 	InternalArgument(PredInter* p)						: _type(AT_PREDINTER)	{ _value._predinter = p;	}
 	InternalArgument(FuncInter* f)						: _type(AT_FUNCINTER)	{ _value._funcinter = f;	}
@@ -177,7 +216,9 @@ struct InternalArgument {
 	InternalArgument(set<Function*>* f)					: _type(AT_FUNCTION)	{ _value._function = f;		} 
 	InternalArgument(OverloadedSymbol* s)				: _type(AT_SYMBOL)		{ _value._symbol = s;		}
 	InternalArgument(PredTable* t)						: _type(AT_PREDTABLE)	{ _value._predtable = t;	}
+	InternalArgument(SortTable* t)						: _type(AT_DOMAIN)		{ _value._domain = t;		}
 	InternalArgument(const Compound* c)					: _type(AT_COMPOUND)	{ _value._compound = c;		}
+	InternalArgument(OverloadedObject* o)				: _type(AT_OVERLOADED)	{ _value._overloaded = o;	}
 
 	InternalArgument(int arg, lua_State* L);
 
@@ -187,6 +228,33 @@ struct InternalArgument {
 		else if(_type == AT_SYMBOL) {
 			return _value._symbol->sorts();
 		}
+		else {
+			assert(false);
+			return 0;
+		}
+	}
+
+	AbstractTheory* theory() const {
+		if(_type == AT_THEORY) return _value._theory;
+		else if(_type == AT_OVERLOADED) return _value._overloaded->theory();
+		else {
+			assert(false);
+			return 0;
+		}
+	}
+
+	AbstractStructure* structure() const {
+		if(_type == AT_STRUCTURE) return _value._structure;
+		else if(_type == AT_OVERLOADED) return _value._overloaded->structure();
+		else {
+			assert(false);
+			return 0;
+		}
+	}
+
+	Options* options() const {
+		if(_type == AT_OPTIONS) return _value._options;
+		else if(_type == AT_OVERLOADED) return _value._overloaded->options();
 		else {
 			assert(false);
 			return 0;
@@ -271,6 +339,9 @@ InternalArgument::InternalArgument(int arg, lua_State* L) {
 				case AT_TUPLE:
 					_value._tuple = *(ElementTuple**)lua_touserdata(L,arg);
 					break;
+				case AT_DOMAIN:
+					_value._domain = *(SortTable**)lua_touserdata(L,arg);
+					break;
 				case AT_PREDTABLE:
 					_value._predtable = *(PredTable**)lua_touserdata(L,arg);
 					break;
@@ -293,7 +364,8 @@ InternalArgument::InternalArgument(int arg, lua_State* L) {
 					_value._namespace = *(Namespace**)lua_touserdata(L,arg);
 					break;
 				case AT_OVERLOADED:
-					// TODO
+					_value._overloaded = *(OverloadedObject**)lua_touserdata(L,arg);
+					break;
 					break;
 				default:
 					assert(false);
@@ -325,6 +397,87 @@ class InternalProcedure {
 		const string& name() const { return _name;	}
 };
 
+/********************************************
+	Implementation of internal procedures
+********************************************/
+
+InternalArgument idptype(const vector<InternalArgument>& args, lua_State*) {
+	ArgType tp = (ArgType)args[0]._value._int;
+	switch(tp) {
+		case AT_SORT:
+			return InternalArgument(StringPointer("sort"));
+		case AT_PREDICATE:
+			return InternalArgument(StringPointer("predicate_symbol"));
+		case AT_FUNCTION:
+			return InternalArgument(StringPointer("function_symbol"));
+		case AT_SYMBOL:
+			return InternalArgument(StringPointer("symbol"));
+		case AT_VOCABULARY:
+			return InternalArgument(StringPointer("vocabulary"));
+		case AT_COMPOUND:
+			return InternalArgument(StringPointer("compound"));
+		case AT_TUPLE:
+			return InternalArgument(StringPointer("tuple"));
+		case AT_DOMAIN:
+			return InternalArgument(StringPointer("domain"));
+		case AT_PREDTABLE:
+			return InternalArgument(StringPointer("predicate_table"));
+		case AT_PREDINTER:
+			return InternalArgument(StringPointer("predicate_interpretation"));
+		case AT_FUNCINTER:
+			return InternalArgument(StringPointer("function_interpretation"));
+		case AT_STRUCTURE:
+			return InternalArgument(StringPointer("structure"));
+		case AT_THEORY:
+			return InternalArgument(StringPointer("theory"));
+		case AT_OPTIONS:
+			return InternalArgument(StringPointer("options"));
+		case AT_NAMESPACE:
+			return InternalArgument(StringPointer("namespace"));
+		case AT_OVERLOADED:
+			return InternalArgument(StringPointer("overloaded"));
+		case AT_NIL:
+		case AT_INT:
+		case AT_DOUBLE:
+		case AT_BOOLEAN:
+		case AT_STRING:
+		case AT_TABLE:
+		case AT_PROCEDURE:
+		case AT_MULT:
+		case AT_REGISTRY:
+			assert(false);
+	}
+	InternalArgument ia;
+	return ia;
+}
+
+InternalArgument printtheory(const vector<InternalArgument>& args, lua_State* ) {
+	AbstractTheory* theory = args[0].theory();
+	Options* opts = args[1].options();
+
+	Printer* printer = Printer::create(opts);
+	string str = printer->print(theory);
+	delete(printer);
+
+	InternalArgument result(StringPointer(str));
+	return result;
+}
+
+InternalArgument printstructure(const vector<InternalArgument>& args, lua_State* ) {
+	AbstractStructure* structure = args[0].structure();
+	Options* opts = args[1].options();
+
+	Printer* printer = Printer::create(opts);
+	string str = printer->print(structure);
+	delete(printer);
+
+	InternalArgument result(StringPointer(str));
+	return result;
+}
+
+/**************************
+	Connection with Lua
+**************************/
 namespace LuaConnection {
 
 	/**
@@ -413,6 +566,14 @@ namespace LuaConnection {
 				ElementTuple** ptr = (ElementTuple**)lua_newuserdata(L,sizeof(ElementTuple*));
 				(*ptr) = arg._value._tuple;
 				luaL_getmetatable(L,"tuple");
+				lua_setmetatable(L,-2);
+				return 1;
+			}
+			case AT_DOMAIN:
+			{
+				SortTable** ptr = (SortTable**)lua_newuserdata(L,sizeof(SortTable*));
+				(*ptr) = arg._value._domain;
+				luaL_getmetatable(L,"domain");
 				lua_setmetatable(L,-2);
 				return 1;
 			}
@@ -584,7 +745,7 @@ namespace LuaConnection {
 	 */
 	int internalCall(lua_State* L) {
 		// get the list of possible procedures
-		map<vector<ArgType>,InternalProcedure>* procs = *(map<vector<ArgType>,InternalProcedure>**)lua_touserdata(L,1);
+		map<vector<ArgType>,InternalProcedure*>* procs = *(map<vector<ArgType>,InternalProcedure*>**)lua_touserdata(L,1);
 		lua_remove(L,1);
 
 		// get the list of possible argument types
@@ -593,19 +754,17 @@ namespace LuaConnection {
 			argtypes[arg-1] = getArgTypes(L,arg);
 
 		// find the right procedure
-		InternalProcedure proc = procs->begin()->second;
-		bool procfound = false;
+		InternalProcedure* proc = 0;
 		vector<vector<ArgType>::iterator> carry(argtypes.size());
 		for(unsigned int n = 0; n < argtypes.size(); ++n) carry[n] = argtypes[n].begin();
 		while(true) {
 			vector<ArgType> currtypes(argtypes.size());
 			for(unsigned int n = 0; n < argtypes.size(); ++n) currtypes[n] = *(carry[n]);
 			if(procs->find(currtypes) != procs->end()) {
-				if(!procfound) {
-					procfound = true;
+				if(!proc) {
 					proc = (*procs)[currtypes];
 				}
-				else { Error::ambigcommand(proc.name()); return 0; }
+				else { Error::ambigcommand(proc->name()); return 0; }
 			}
 			unsigned int c = 0;
 			for(; c < argtypes.size(); ++c) {
@@ -617,8 +776,17 @@ namespace LuaConnection {
 		}
 
 		// Execute the procedure
-		if(procfound) return proc(L);
-		else { Error::wrongcommandargs(proc.name()); return 0; }
+		if(proc) return (*proc)(L);
+		else { Error::wrongcommandargs(proc->name()); return 0; }
+	}
+
+	/**
+	 * Garbage collection for internal procedures
+	 */
+	int gcInternProc(lua_State* L) {
+		set<InternalProcedure*>* proc = *(set<InternalProcedure*>**)lua_touserdata(L,1);
+		delete(proc);
+		return 0;
 	}
 
 	/**
@@ -675,6 +843,13 @@ namespace LuaConnection {
 	 * Garbage collection for tuples
 	 */
 	int gcTuple(lua_State* ) {
+		return 0;
+	}
+
+	/**
+	 * Garbage collection for domains
+	 */
+	int gcDomain(lua_State* ) {
 		return 0;
 	}
 
@@ -994,10 +1169,144 @@ namespace LuaConnection {
 			return lua_error(L);
 		}
 	}
+	/**
+	 * Index function for structures
+	 */
+	int structureIndex(lua_State* L) {
+		AbstractStructure* structure = *(AbstractStructure**)lua_touserdata(L,1);
+		InternalArgument symbol(2,L);
+		switch(symbol._type) {
+			case AT_SORT:
+			{
+				set<Sort*>* ss = symbol._value._sort;
+				if(ss->size() == 1) {
+					Sort* s = *(ss->begin());
+					SortTable* result = structure->inter(s);
+					return convertToLua(L,InternalArgument(result));
+				}
+				break;
+			}
+			case AT_PREDICATE:
+			{
+				set<Predicate*>* sp = symbol._value._predicate;
+				if(sp->size() == 1) {
+					Predicate* p = *(sp->begin());
+					PredInter* result = structure->inter(p);
+					return convertToLua(L,InternalArgument(result));
+				}
+				break;
+			}
+			case AT_FUNCTION:
+			{
+				set<Function*>* sf = symbol._value._function;
+				if(sf->size() == 1) {
+					Function* f = *(sf->begin());
+					FuncInter* result = structure->inter(f);
+					return convertToLua(L,InternalArgument(result));
+				}
+				break;
+			}
+			default:
+				break;
+		}
+		lua_pushstring(L,"A structure can only be indexed by a single sort, predicate, or function symbol");
+		return lua_error(L);
+	}
+
+	/**
+	 * Index function for options
+	 */
+	int optionsIndex(lua_State* L) {
+		Options* opts = *(Options**)lua_touserdata(L,1);
+		InternalArgument index(2,L);
+		if(index._type == AT_STRING) {
+			return convertToLua(L,opts->getvalue(*(index._value._string)));
+		}
+		else {
+			lua_pushstring(L,"Options can only be indexed by a string");
+			return lua_error(L);
+		}
+	}
+
+	/**
+	 * Index function for namespaces
+	 */
+	int namespaceIndex(lua_State* L) {
+		Namespace* ns = *(Namespace**)lua_touserdata(L,1);
+		InternalArgument index(2,L);
+		if(index._type == AT_STRING) {
+			string str = *(index._value._string);
+			unsigned int counter = 0;
+			Namespace* subsp = 0;
+			if(ns->isSubspace(str)) { subsp = ns->subspace(str); ++counter; }
+			Vocabulary* vocab = 0;
+			if(ns->isVocab(str)) { vocab = ns->vocabulary(str); ++counter; }
+			AbstractTheory* theo = 0;
+			if(ns->isTheory(str)) { theo = ns->theory(str); ++counter; }
+			AbstractStructure* structure = 0;
+			if(ns->isStructure(str)) { structure = ns->structure(str); ++counter; }
+			Options* opts = 0;
+			if(ns->isOptions(str)) { opts = ns->options(str); ++counter; }
+			UserProcedure* proc = 0;
+			if(ns->isProc(str)) { proc = ns->procedure(str); ++counter; }
+
+			if(counter == 0) return 0;
+			else if(counter == 1) {
+				if(subsp) return convertToLua(L,InternalArgument(subsp));
+				if(vocab) return convertToLua(L,InternalArgument(vocab));
+				if(theo) return convertToLua(L,InternalArgument(theo));
+				if(structure) return convertToLua(L,InternalArgument(structure));
+				if(opts) return convertToLua(L,InternalArgument(opts));
+				if(proc) {
+					proc->compile(L);
+					lua_pushstring(L,proc->registryindex().c_str());
+					return 1;
+				}
+				assert(false);
+				return 0;
+			}
+			else {
+				OverloadedObject* oo = new OverloadedObject();
+				oo->insert(subsp);
+				oo->insert(vocab);
+				oo->insert(theo);
+				oo->insert(structure);
+				oo->insert(opts);
+				oo->insert(proc);
+				return convertToLua(L,InternalArgument(oo));
+			}
+		}
+		else {
+			lua_pushstring(L,"Namespaces can only be indexed by strings");
+			return lua_error(L);
+		}
+	}
+
+	SortTable* toDomain(vector<InternalArgument>* table, lua_State* L) {
+		EnumeratedInternalSortTable* ist = new EnumeratedInternalSortTable();
+		SortTable* st = new SortTable(ist);
+		for(vector<InternalArgument>::const_iterator it = table->begin(); it != table->end(); ++it) {
+			switch(it->_type) {
+				case AT_INT:
+					st->add(DomainElementFactory::instance()->create(it->_value._int)); break;
+				case AT_DOUBLE:
+					st->add(DomainElementFactory::instance()->create(it->_value._double)); break;
+				case AT_STRING:
+					st->add(DomainElementFactory::instance()->create(it->_value._string)); break;
+				case AT_COMPOUND:
+					st->add(DomainElementFactory::instance()->create(it->_value._compound)); break;
+				default:
+					delete(st);
+					lua_pushstring(L,"Only numbers, strings, and compounds are allowed in a predicate table");
+					lua_error(L);
+					return 0;
+			}
+		}
+		return st;
+	}
 
 	PredTable* toPredTable(vector<InternalArgument>* table, lua_State* L) {
-		EnumeratedInternalPredTable* ipt;
-		ipt = new EnumeratedInternalPredTable(0);
+		EnumeratedInternalPredTable* ipt = new EnumeratedInternalPredTable(0);
 		for(vector<InternalArgument>::const_iterator it = table->begin(); it != table->end(); ++it) {
 			if(it->_type == AT_TABLE) {
 				ElementTuple tuple;
@@ -1098,6 +1407,133 @@ namespace LuaConnection {
 	}
 
 	/**
+	 * NewIndex function for structures
+	 */
+	int structureNewIndex(lua_State* L) {
+		AbstractStructure* structure = *(AbstractStructure**)lua_touserdata(L,1);
+		InternalArgument index = InternalArgument(2,L);
+		InternalArgument value = InternalArgument(3,L);
+		switch(index._type) {
+			case AT_SORT:
+			{
+				set<Sort*>* ss = index._value._sort;
+				if(ss->size() == 1) {
+					Sort* s = *(ss->begin());
+					if(value._type == AT_DOMAIN) {
+						structure->inter(s,value._value._domain);
+						return 0;
+					}
+					else if(value._type == AT_TABLE) {
+						SortTable* dom = toDomain(value._value._table,L);
+						structure->inter(s,dom);
+						return 0;
+					}
+					else {
+						lua_pushstring(L,"Expected a table or a domain");
+						return lua_error(L);
+					}
+				}
+				break;
+			}
+			case AT_PREDICATE:
+			{
+				set<Predicate*>* sp = index._value._predicate;
+				if(sp->size() == 1) {
+					Predicate* p = *(sp->begin());
+					if(value._type == AT_PREDINTER) {
+						structure->inter(p,value._value._predinter);
+						return 0;
+					}
+					else {
+						lua_pushstring(L,"Expected a predicate interpretation");
+						return lua_error(L);
+					}
+				}
+				break;
+			}
+			case AT_FUNCTION:
+			{
+				set<Function*>* sf = index._value._function;
+				if(sf->size() == 1) {
+					Function* f = *(sf->begin());
+					if(value._type == AT_FUNCINTER) {
+						structure->inter(f,value._value._funcinter);
+						return 0;
+					}
+					else {
+						lua_pushstring(L,"Expected a function interpretation");
+						return lua_error(L);
+					}
+				}
+				break;
+			}
+			default:
+				break;
+		}
+		lua_pushstring(L,"A structure can only be indexed by a single sort, predicate, or function symbol");
+		return lua_error(L);
+	}
+
+	/**
+	 * NewIndex function for options
+	 */
+	int optionsNewIndex(lua_State* L) {
+		Options* opts = *(Options**)lua_touserdata(L,1);
+		InternalArgument index(2,L);
+		InternalArgument value(3,L);
+		if(index._type == AT_STRING) {
+			string str = *(index._value._string);
+			switch(value._type) {
+				case AT_INT: opts->setvalue(str,value._value._int); break;
+				case AT_DOUBLE: opts->setvalue(str,value._value._double); break;
+				case AT_STRING: opts->setvalue(str,*(value._value._string)); break;
+				case AT_BOOLEAN: opts->setvalue(str,value._value._boolean); break;
+				default:
+					lua_pushstring(L,"Wrong option value");
+					return lua_error(L);
+			}
+			return 0;
+		}
+		else {
+			lua_pushstring(L,"Options can only be indexed by a string");
+			return lua_error(L);
+		}
+	}
+
+	/**
+	 * Call function for predicate tables
+	 */
+	int predtableCall(lua_State* L) {
+		PredTable* predtable = *(PredTable**)lua_touserdata(L,1);
+		lua_remove(L,1);
+		ElementTuple tuple;
+		for(int n = 1; n <= lua_gettop(L); ++n) {
+			InternalArgument currarg(n,L);
+			switch(currarg._type) {
+				case AT_INT:
+					tuple.push_back(DomainElementFactory::instance()->create(currarg._value._int)); break;
+				case AT_DOUBLE:
+					tuple.push_back(DomainElementFactory::instance()->create(currarg._value._double)); break;
+				case AT_STRING:
+					tuple.push_back(DomainElementFactory::instance()->create(currarg._value._string)); break;
+				case AT_COMPOUND:
+					tuple.push_back(DomainElementFactory::instance()->create(currarg._value._compound)); break;
+				case AT_TUPLE:
+					if(n == 1 && lua_gettop(L) == 1) {
+						tuple = *(currarg._value._tuple);
+						break;
+					}
+				default:
+					lua_pushstring(L,"Only numbers, strings, and compounds as arguments of a function interpretation");
+					lua_error(L);
+					return 0;
+			}
+		}
+		lua_pushboolean(L,predtable->contains(tuple));
+		return 1;
+	}
+
+	/**
 	 * Call function for function interpretations
 	 */
 	int funcinterCall(lua_State* L) {
@@ -1116,8 +1552,8 @@ namespace LuaConnection {
 					return convertToLua(L,d);
 				}
 			}
+			ElementTuple tuple;
 			for(unsigned int n = 1; n <= nrargs; ++n) {
-				ElementTuple tuple;
 				InternalArgument arg(n,L);
 				switch(arg._type) {
 					case AT_INT:
@@ -1133,12 +1569,11 @@ namespace LuaConnection {
 						lua_error(L);
 						return 0;
 				}
-				while(tuple.size() > ft->arity()) tuple.pop_back();
-				while(tuple.size() < ft->arity()) tuple.push_back(0);
-				const DomainElement* d = (*ft)[tuple];
-				return convertToLua(L,d);
 			}
-
+			while(tuple.size() > ft->arity()) tuple.pop_back();
+			while(tuple.size() < ft->arity()) tuple.push_back(0);
+			const DomainElement* d = (*ft)[tuple];
+			return convertToLua(L,d);
 		}
 		else {
 			lua_pushstring(L,"Only two-valued function interpretations can be called");
@@ -1216,6 +1651,8 @@ namespace LuaConnection {
 	 */
 	void internProcMetaTable(lua_State* L) {
 		int ok = luaL_newmetatable(L,"internalprocedure"); assert(ok);
+		lua_pushcfunction(L,&gcInternProc);
+		lua_setfield(L,-2,"__gc");
 		lua_pushcfunction(L,&internalCall);
 		lua_setfield(L,-2,"__call");
 		lua_pop(L,1);
@@ -1322,6 +1759,18 @@ namespace LuaConnection {
 	}
 
 	/**
+	 * Create metatable for domains
+	 */
+	void domainMetaTable(lua_State* L) {
+		int ok = luaL_newmetatable(L,"domain"); assert(ok);
+		lua_pushinteger(L,(int)AT_DOMAIN);
+		lua_setfield(L,-2,_typefield);
+		lua_pushcfunction(L,&gcDomain);
+		lua_setfield(L,-2,"__gc");
+		lua_pop(L,1);
+	}
+
+	/**
 	 * Create metatable for predicate tables
 	 */
 	void predtableMetaTable(lua_State* L) {
@@ -1330,6 +1779,8 @@ namespace LuaConnection {
 		lua_setfield(L,-2,_typefield);
 		lua_pushcfunction(L,&gcPredTable);
 		lua_setfield(L,-2,"__gc");
+		lua_pushcfunction(L,&predtableCall);
+		lua_setfield(L,-2,"__call");
 		lua_pop(L,1);
 	}
 
@@ -1434,14 +1885,6 @@ namespace LuaConnection {
 		lua_setfield(L,-2,_typefield);
 		lua_pushcfunction(L,&gcOverloaded);
 		lua_setfield(L,-2,"__gc");
-		lua_pushcfunction(L,&overloadedIndex);
-		lua_setfield(L,-2,"__index");
-		lua_pushcfunction(L,&overloadedNewIndex);
-		lua_setfield(L,-2,"__newindex");
-		lua_pushcfunction(L,&overloadedCall);
-		lua_setfield(L,-2,"__call");
-		lua_pushcfunction(L,&overloadedDiv);
-		lua_setfield(L,-2,"__div");
 		lua_pop(L,1);
 	}
 
@@ -1459,6 +1902,7 @@ namespace LuaConnection {
 
 		compoundMetaTable(L);
 		tupleMetaTable(L);
+		domainMetaTable(L);
 		predtableMetaTable(L);
 		predinterMetaTable(L);
 		funcinterMetaTable(L);
@@ -1474,7 +1918,7 @@ namespace LuaConnection {
 	/**
 	 * map interal procedure names to the actual procedures
 	 */
-	map<string,set<InternalProcedure> >	_internalprocedures;
+	map<string,set<InternalProcedure*> >	_internalprocedures;
 	
 	/**
 	 *	\brief Add a new internal procedure
@@ -1487,21 +1931,37 @@ namespace LuaConnection {
 	void addInternalProcedure(const string& name, 
 					   const vector<ArgType>& argtypes, 
 					   InternalArgument (*execute)(const vector<InternalArgument>&, lua_State*)) {
-		InternalProcedure proc(name,argtypes,execute);
+		InternalProcedure* proc = new InternalProcedure(name,argtypes,execute);
 		_internalprocedures[name].insert(proc);
 	}
 
 	/**
 	 * Adds all internal procedures
 	 */
-	void addInternProcs(L) {
-		vector<ArgType> vtheo(1,AT_THEORY);
-		vector<ArgType> vstruct(1,AT_STRUCTURE);
+	void addInternProcs(lua_State* L) {
+		// arguments of internal procedures
+		vector<ArgType> vint(1,AT_INT);
+		vector<ArgType> vtheoopt(2); vtheoopt[0] = AT_THEORY; vtheoopt[1] = AT_OPTIONS;
+		vector<ArgType> vstructopt(2); vtheoopt[0] = AT_STRUCTURE; vtheoopt[1] = AT_OPTIONS;
 		// TODO
 
-		addInternalProcedure("print",vtheo,&printtheory);
-		addInternalProcedure("print",vstruct,&printstructure);
+		// Create internal procedures
+		addInternalProcedure("idptype",vint,&idptype);
+		addInternalProcedure("print",vtheoopt,&printtheory);
+		addInternalProcedure("print",vstructopt,&printstructure);
 		// TODO
+		
+		// Add the internal procedures to lua
+		lua_getglobal(L,"idp_intern");
+		for(map<string,set<InternalProcedure*> >::iterator it =	_internalprocedures.begin();
+			it != _internalprocedures.end(); ++it) {
+			set<InternalProcedure*>** ptr = (set<InternalProcedure*>**)lua_newuserdata(L,sizeof(set<InternalProcedure*>*));
+			(*ptr) = new set<InternalProcedure*>(it->second);
+			luaL_getmetatable (L,"internalprocedure");
+			lua_setmetatable(L,-2);
+			lua_setfield(L,-2,it->first.c_str());
+		}
+		lua_pop(L,1);
 	}
 
 	/**
@@ -1519,9 +1979,14 @@ namespace LuaConnection {
 		lua_newtable(L);
 		lua_setglobal(L,"idp_intern");
 
-		// TODO
+		// Add internal procedures
 		addInternProcs(L);
-		// TODO
+		
+		// Overwrite some standard lua procedures
+		stringstream ss;
+		ss << DATADIR << "/std/idp_intern.lua";
+		luaL_dofile(L,ss.str().c_str());
+
 		return L;
 	}
 
@@ -1530,7 +1995,12 @@ namespace LuaConnection {
 	 */
 	void closeLuaConnection(lua_State* L) {
 		lua_close(L);
-		// TODO?
+		for(map<string,set<InternalProcedure*> >::iterator it =	_internalprocedures.begin(); 
+			it != _internalprocedures.end(); ++it) {
+			for(set<InternalProcedure*>::iterator jt = it->second.begin(); jt != it->second.end(); ++jt) {
+				delete(*jt);
+			}
+		}
 	}
 
 }
@@ -1544,10 +2014,31 @@ int InternalProcedure::operator()(lua_State* L) const {
 	return LuaConnection::convertToLua(L,result);
 }
 
+InternalArgument Options::getvalue(const string& opt) const {
+	map<string,bool>::const_iterator bit = _booloptions.find(opt);
+	if(bit != _booloptions.end()) {
+		return InternalArgument(bit->second);
+	}
+	map<string,IntOption*>::const_iterator iit = _intoptions.find(opt);
+	if(iit != _intoptions.end()) {
+		return InternalArgument(iit->second->value());
+	}
+	map<string,FloatOption*>::const_iterator fit = _floatoptions.find(opt);
+	if(fit != _floatoptions.end()) {
+		return InternalArgument(fit->second->value());
+	}
+	map<string,StringOption*>::const_iterator sit = _stringoptions.find(opt);
+	if(sit != _stringoptions.end()) {
+		return InternalArgument(StringPointer(sit->second->value()));
+	}
+	
+	InternalArgument ia; ia._type = AT_NIL;
+	return ia;
+}
 
 
 
-
+#ifdef OLD
 
 
 
@@ -3247,3 +3738,139 @@ TypedInfArg Namespace::getObject(const string& str, lua_State* L) const {
 	}
 	return a;
 }
+
+
+
+/*
+ * void Namespace::toLuaGlobal(lua_State* L) {
+ * DESCRIPTION
+ *		Loads all objects of the namespaces as global variables in a given lua state.
+ * PARAMETERS
+ *		L	- the given lua state
+ */
+void Namespace::toLuaGlobal(lua_State* L) {
+
+	set<string> doublenames = doubleNames();
+	map<string,OverloadedObject*> doubleobjects;
+	for(set<string>::const_iterator it = doublenames.begin(); it != doublenames.end(); ++it) 
+		doubleobjects[*it] = new OverloadedObject();
+
+	Namespace** ptr = (Namespace**) lua_newuserdata(L,sizeof(Namespace*));
+	(*ptr) = this;
+	luaL_getmetatable (L,"namespace");
+	lua_setmetatable(L,-2);
+	lua_setglobal(L,name().c_str());
+
+	for(unsigned int n = 0; n < nrSubs(); ++n) {
+		if(doublenames.find(subspace(n)->name()) == doublenames.end()) {
+			Namespace** ptr = (Namespace**) lua_newuserdata(L,sizeof(Namespace*));
+			(*ptr) = subspace(n);
+			luaL_getmetatable (L,"namespace");
+			lua_setmetatable(L,-2);
+			lua_setglobal(L,subspace(n)->name().c_str());
+		}
+		else doubleobjects[subspace(n)->name()]->makenamespace(subspace(n));
+	}
+
+	for(unsigned int n = 0; n < nrVocs(); ++n) {
+		if(doublenames.find(vocabulary(n)->name()) == doublenames.end()) {
+			Vocabulary** ptr = (Vocabulary**) lua_newuserdata(L,sizeof(Vocabulary*));
+			(*ptr) = vocabulary(n);
+			luaL_getmetatable (L,"vocabulary");
+			lua_setmetatable(L,-2);
+			lua_setglobal(L,vocabulary(n)->name().c_str());
+		}
+		else doubleobjects[vocabulary(n)->name()]->makevocabulary(vocabulary(n));
+	}
+
+	for(unsigned int n = 0; n < nrStructs(); ++n) {
+		if(doublenames.find(structure(n)->name()) == doublenames.end()) {
+			AbstractStructure** ptr = (AbstractStructure**) lua_newuserdata(L,sizeof(AbstractStructure*));
+			(*ptr) = structure(n);
+			luaL_getmetatable (L,"structure");
+			lua_setmetatable(L,-2);
+			lua_setglobal(L,structure(n)->name().c_str());
+		}
+		else doubleobjects[structure(n)->name()]->makestructure(structure(n));
+	}
+
+	for(unsigned int n = 0; n < nrTheos(); ++n) {
+		if(doublenames.find(theory(n)->name()) == doublenames.end()) {
+			AbstractTheory** ptr = (AbstractTheory**) lua_newuserdata(L,sizeof(AbstractTheory*));
+			(*ptr) = theory(n);
+			luaL_getmetatable (L,"theory");
+			lua_setmetatable(L,-2);
+			lua_setglobal(L,theory(n)->name().c_str());
+		}
+		else doubleobjects[theory(n)->name()]->maketheory(theory(n));
+	}
+
+	for(map<string,Options*>::const_iterator it = _options.begin(); it != _options.end(); ++it) {
+		if(doublenames.find(it->first) == doublenames.end()) {
+			Options** ptr = (Options**) lua_newuserdata(L,sizeof(Options*));
+			(*ptr) = it->second;
+			luaL_getmetatable (L,"options");
+			lua_setmetatable(L,-2);
+			lua_setglobal(L,it->first.c_str());
+		}
+		else doubleobjects[it->first]->makeoptions(it->second);
+	}
+
+	for(map<string,UserProcedure*>::const_iterator it = _procedures.begin(); it != _procedures.end(); ++it) {
+		if(doublenames.find(it->second->name()) == doublenames.end()) {
+			it->second->compile(L);
+			lua_getfield(L,LUA_REGISTRYINDEX,it->second->registryindex().c_str());
+			lua_setglobal(L,it->second->name().c_str());
+		}
+		else {
+			it->second->compile(L);
+			doubleobjects[it->second->name()]->makeprocedure(new string(it->second->registryindex()));
+		}
+	}
+
+	for(map<string,OverloadedObject*>::const_iterator it = doubleobjects.begin(); it != doubleobjects.end(); ++it) {
+		OverloadedObject** ptr = (OverloadedObject**) lua_newuserdata(L,sizeof(OverloadedObject*));
+		(*ptr) = it->second;
+		luaL_getmetatable(L,"overloaded");
+		lua_setmetatable(L,-2);
+		lua_setglobal(L,it->first.c_str());
+	}
+}
+
+/*
+ * set<string> Namespace::doubleNames() const {
+ * DESCRIPTION
+ *		Collects the object names that occur more than once in the namespace
+ */
+set<string> Namespace::doubleNames() const {
+	set<string> allnames;
+	set<string> doublenames;
+	for(unsigned int n = 0; n < nrSubs(); ++n) {
+		if(allnames.find(subspace(n)->name()) == allnames.end()) allnames.insert(subspace(n)->name());
+		else doublenames.insert(subspace(n)->name());
+	}
+	for(unsigned int n = 0; n < nrVocs(); ++n) {
+		if(allnames.find(vocabulary(n)->name()) == allnames.end()) allnames.insert(vocabulary(n)->name());
+		else doublenames.insert(vocabulary(n)->name());
+	}
+	for(unsigned int n = 0; n < nrStructs(); ++n) {
+		if(allnames.find(structure(n)->name()) == allnames.end()) allnames.insert(structure(n)->name());
+		else doublenames.insert(structure(n)->name());
+	}
+	for(unsigned int n = 0; n < nrTheos(); ++n) {
+		if(allnames.find(theory(n)->name()) == allnames.end()) allnames.insert(theory(n)->name());
+		else doublenames.insert(theory(n)->name());
+	}
+	for(map<string,Options*>::const_iterator it = _options.begin(); it != _options.end(); ++it) {
+		if(allnames.find(it->first) == allnames.end()) allnames.insert(it->first);
+		else doublenames.insert(it->first);
+	}
+	for(map<string,UserProcedure*>::const_iterator it = _procedures.begin(); it != _procedures.end(); ++it) {
+		if(allnames.find(it->second->name()) == allnames.end()) allnames.insert(it->second->name());
+		else doublenames.insert(it->second->name());
+	}
+	return doublenames;
+}
+
+
+#endif

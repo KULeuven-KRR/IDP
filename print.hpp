@@ -17,7 +17,7 @@ class PFSymbol;
 class AbstractStructure;
 class PredTable;
 class GroundTranslator;
-class InfOptions;
+class Options;
 class GroundTermTranslator;
 
 /*************************
@@ -32,7 +32,7 @@ class Printer : public Visitor {
 	
 	public:
 		// Factory method
-		static Printer* create(InfOptions* opts);
+		static Printer* create(Options* opts);
 
 		// Print methods
 		std::string print(const Vocabulary*);
