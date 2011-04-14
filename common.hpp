@@ -63,4 +63,9 @@ extern bool isDouble(const std::string&);
 /** Return a string of n spaces **/
 extern std::string tabstring(unsigned int n);
 
+/** Output operators for enum types **/
+extern std::ostream& operator<<(std::ostream&, const ElementType&);
+extern std::ostream& operator<<(std::ostream&, const AggType&);
+extern std::ostream& operator<<(std::ostream&, const TsType&);
+
 #endif

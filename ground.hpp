@@ -141,6 +141,9 @@ class TsSet {
 		std::vector<double>	_litweights;	// For each literal a corresponding weight
 		std::vector<double>	_trueweights;	// The weights of the true literals in the set
 	public:
+		// Modifiers
+		void	setWeight(unsigned int n, double w)	{ _litweights[n] = w;	}
+		// Inspectors
 		std::vector<int>	literals()				const { return _setlits; 			}
 		std::vector<double>	weights()				const { return _litweights;			}
 		std::vector<double>	trueweights()			const { return _trueweights;		}
@@ -453,16 +456,21 @@ class AggGrounder : public FormulaGrounder {
 		char			_comp;
 		bool			_sign;
 		bool			_doublenegtseitin;
+		int	handleDoubleNegation(double boundvalue,int setnr) const;
+		int	finishCard(double truevalue,double boundvalue,int setnr) 	const;
+		int	finishSum(double truevalue,double boundvalue,int setnr)		const;
+		int	finishProduct(double truevalue,double boundvalue,int setnr)	const;
+		int	finishMaximum(double truevalue,double boundvalue,int setnr)	const;
+		int	finishMinimum(double truevalue,double boundvalue,int setnr)	const;
+		int finish(double boundvalue,double newboundvalue,double maxpossvalue,double minpossvalue,int setnr) const;
 	public:
 		AggGrounder(GroundTranslator* tr, GroundingContext gc, AggType tp, SetGrounder* sg, TermGrounder* bg, char c,bool s) :
 			FormulaGrounder(tr,gc), _setgrounder(sg), _boundgrounder(bg), _type(tp), _comp(c), _sign(s) { 
-				_doublenegtseitin = gc._tseitin == TS_RULE && ((gc._monotone == PC_POSITIVE && !s) || (gc._monotone == PC_NEGATIVE && s));	
+				_doublenegtseitin = (gc._tseitin == TS_RULE) && ((gc._monotone == PC_POSITIVE && !s) || (gc._monotone == PC_NEGATIVE && s));	
 			}
-		int		run()				const;
-		void	run(std::vector<int>&)	const;
-		int		finishCard(double,double,int)	const;
-		int		finishSum(double,double,int)	const;
-		bool	conjunctive() const { return true;	}
+		int		run()								const;
+		void	run(std::vector<int>&)				const;
+		bool	conjunctive() 						const { return true;	}
 };
 
 class ClauseGrounder : public FormulaGrounder {
@@ -628,8 +636,8 @@ class GrounderFactory : public Visitor {
 		void	descend(SetExpr* s);
 		
 		// Grounding to CP
-		bool					_usingcp;
-		std::vector<Function*>	_cpfunctions;
+		bool						_usingcp;
+		std::set<const Function*>	_cpfunctions;
 
 		// Variable mapping
 		std::map<Variable*,domelement*>	_varmapping;	// Maps variables to their counterpart during grounding.
@@ -652,11 +660,11 @@ class GrounderFactory : public Visitor {
 		GrounderFactory(AbstractStructure* structure, bool usingcp): _structure(structure), _usingcp(usingcp) { }
 
 		// Factory method
-		TopLevelGrounder* create(const AbstractTheory* theory);
-		TopLevelGrounder* create(const AbstractTheory* theory, MinisatID::WrappedPCSolver* solver);
+		TopLevelGrounder* create(const AbstractTheory*);
+		TopLevelGrounder* create(const AbstractTheory*, MinisatID::WrappedPCSolver*);
 
 		// Determine what should be grounded to CP
-		std::vector<Function*> findCPFunctions();
+		std::set<const Function*> findCPFunctions(const AbstractTheory*);
 
 		// Recursive check
 		bool recursive(const Formula*);

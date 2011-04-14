@@ -5,6 +5,7 @@
 ************************************/
 
 #include "print.hpp"
+#include "common.hpp"
 #include "ecnf.hpp"
 #include "element.hpp"
 #include "namespace.hpp"
@@ -246,8 +247,7 @@ void IDPPrinter::visit(const DomainTerm* t) {
 }
 
 void IDPPrinter::visit(const AggTerm* t) {
-	string AggTypeNames[5] = { "#", "sum", "prod", "min", "max" };
-	_out << AggTypeNames[t->type()];
+	_out << t->type();
 	t->set()->accept(this);
 }
 
@@ -258,7 +258,7 @@ void IDPPrinter::visit(const EnumSetExpr* s) {
 	if(s->nrSubforms()) {
 		s->subform(0)->accept(this);
 		for(unsigned int n = 1; n < s->nrSubforms(); ++n) {
-			_out << ",";
+			_out << ";";
 			s->subform(n)->accept(this);
 		}
 	}
@@ -306,13 +306,27 @@ void IDPPrinter::printAtom(int atomnr) {
 		// Get the atom's arguments for the translator.
 		const vector<domelement>& args = _translator->args(atomnr);
 		// Print the atom's arguments.
-		if(! args.empty()) {
-			_out << "(";
-			for(unsigned int n = 0; n < args.size(); ++n) {
-				_out << ElementUtil::ElementToString(args[n]);
-				if(n != args.size()-1) _out << ",";
+		if(pfs->ispred()) {
+			if(not args.empty()) {
+				_out << "(";
+				for(unsigned int n = 0; n < args.size(); ++n) {
+					_out << ElementUtil::ElementToString(args[n]);
+					if(n != args.size()-1) _out << ",";
+				}
+				_out << ")";
 			}
-			_out << ")";
+		}
+		else {
+			assert(not pfs->ispred());
+			if(args.size() > 1) {
+				_out << "(";
+				for(unsigned int n = 0; n < args.size()-1; ++n) {
+					_out << ElementUtil::ElementToString(args[n]);
+					if(n != args.size()-2) _out << ",";
+				}
+				_out << ")";
+			}
+			_out << " = " << ElementUtil::ElementToString(args.back());
 		}
 	}
 	else {

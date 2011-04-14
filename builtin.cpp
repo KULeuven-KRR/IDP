@@ -240,10 +240,10 @@ Function* ComparisonFunction::disambiguate(const vector<Sort*>& vs, Vocabulary* 
 	return f;
 }
 
-/***********************
+/****************************************
 	IntFloatFunction
 	Used for +, -, *, /, abs, and -/1
-***********************/
+****************************************/
 
 class IntFloatFunction : public OverloadedFunction {
 	private:

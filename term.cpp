@@ -588,7 +588,7 @@ namespace AggUtils {
 				break;
 			case AGGPROD:
 				d = 1;
-				for(unsigned int n = 0; n < args.size(); ++n) d = d * args[n];
+				for(unsigned int n = 0; n < args.size(); ++n) d *= args[n];
 				break;
 			case AGGMIN:
 				d = MAX_DOUBLE;

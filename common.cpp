@@ -4,11 +4,13 @@
 	(c) K.U.Leuven
 ************************************/
 
-#include "common.hpp"
-
 #include <limits>
+#include <vector>
+#include <string>
 #include <sstream>
+#include <iostream>
 #include <stdlib.h>
+#include "commontypes.hpp"
 
 using namespace std;
 
@@ -99,3 +101,19 @@ string tabstring(unsigned int n) {
 		tab = tab + ' ';
 	return tab;
 }
+
+ostream& operator<<(ostream& out, const AggType& aggtype) {
+	string AggTypeNames[5] = { "#", "sum", "prod", "min", "max" };
+	return out << AggTypeNames[aggtype];
+}
+
+ostream& operator<<(ostream& out, const ElementType& elementtype) {
+	string ElementTypeNames[4] = { "int", "double", "string", "compound" };
+	return out << ElementTypeNames[elementtype];
+}
+
+ostream& operator<<(ostream& out, const TsType& tstype) {
+	string TsTypeNames[4] = { "<=>", "<-", "=>", "<=" };
+	return out << TsTypeNames[tstype];
+}
+

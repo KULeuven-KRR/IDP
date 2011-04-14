@@ -10,6 +10,7 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <set>
 
 #include "term.hpp" //FIXME: include needed for Term* AggForm::subterm(int). Why?
 
@@ -407,7 +408,7 @@ class NegatedFormula : public Formula {
 enum TruthValue { TV_TRUE, TV_FALSE, TV_UNKN };
 
 namespace FormulaUtils {
-	/*
+	/**
 	 * Evaluate a formula in a structure under the given variable mapping
 	 *	Preconditions: 
 	 *		- for all subterms, the preconditions of evaluate(Term*,Structure*,const map<Variable*,TypedElement>&) must hold
@@ -420,9 +421,11 @@ namespace FormulaUtils {
 															// conjunction or disjunction of atoms.
 	Formula* graph_functions(Formula* f);	// Rewrite a function F(x) = y in an equality as a predicate F(x,y)
 
-	Formula* moveThreeValTerms(Formula*,AbstractStructure*,bool positive,bool usingcp=false);	// non-recursively moves terms 
-																								// that are three-valued in the given structure
-																								// outside of the given atom
+	/**
+	 * Non-recursively move terms that are three-valued in a given structure outside of the given atom.
+	 */
+	Formula* moveThreeValTerms(Formula*,AbstractStructure*,bool positive,bool usingcp=false,
+								const std::set<const Function*> cpfunctions=std::set<const Function*>());
 
 	bool monotone(const AggForm* af);
 	bool antimonotone(const AggForm* af);

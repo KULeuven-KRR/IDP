@@ -1615,52 +1615,64 @@ Formula* AggMover::visit(EqChainForm* ef) {
 
 class ThreeValTermMover : public MutatingVisitor {
 	private:
-		AbstractStructure*	_structure;
-		bool				_poscontext;
-		vector<Formula*>	_termgraphs;
-		vector<Variable*>	_variables;
-		bool				_cpcontext;
-		bool				_istoplevelterm;
+		AbstractStructure*			_structure;
+		bool						_poscontext;
+		bool						_cpcontext;
+		const set<const Function*>	_cpfunctions;
+		vector<Formula*>			_termgraphs;
+		vector<Variable*>			_variables;
+		bool						_istoplevelterm;
+		bool isCPFunction(const Function* func) const { return _cpfunctions.find(func) != _cpfunctions.end(); }
 	public:
-		ThreeValTermMover(AbstractStructure* str, bool posc, bool cpc=false) : _structure(str), _poscontext(posc), _cpcontext(cpc) { }
+		ThreeValTermMover(AbstractStructure* str, bool posc, bool cpc=false, const set<const Function*>& cpfuncs=set<const Function*>()):
+			_structure(str), _poscontext(posc), _cpcontext(cpc), _cpfunctions(cpfuncs) { }
 		Formula*	visit(PredForm* pf);
 		Formula*	visit(AggForm* af);
 		Term*		visit(FuncTerm* ft);
 		Term*		visit(AggTerm*	at);
 };
 
-Term* ThreeValTermMover::visit(FuncTerm* ft) {
+Term* ThreeValTermMover::visit(FuncTerm* functerm) {
 	// Get the function and its interpretation
-	Function* f = ft->func();
-	FuncInter* finter = _structure->inter(f);
+	Function* func = functerm->func();
+	FuncInter* funcinter = _structure->inter(func);
 
-	//TODO check whether function's outsort is over integers
-	Vocabulary* voc = _structure->vocabulary();
-	Sort* ints = *(voc->sort("int")->begin());
-	bool isIntFunc = (SortUtils::resolve(f->outsort(),ints,voc) != 0);
-
-	if(finter->fasttwovalued() || (_cpcontext && _istoplevelterm && isIntFunc)) {
+	if(funcinter->fasttwovalued() || (_cpcontext && _istoplevelterm && isCPFunction(func))) {
 		// The function is two-valued or we want to pass it to the constraint solver. Leave as is, just visit its children.
-		for(unsigned int n = 0; n < ft->nrSubterms(); ++n) {
+		for(unsigned int n = 0; n < functerm->nrSubterms(); ++n) {
 			_istoplevelterm = false;
-			Term* nt = ft->subterm(n)->accept(this);
-			ft->arg(n,nt);
+			Term* nterm = functerm->subterm(n)->accept(this);
+			functerm->arg(n,nterm);
 		}
-		ft->setfvars();
-		return ft;
+		functerm->setfvars();
+		return functerm;
 	}
+//	else if(_cpcontext && _istoplevelterm && (func->name() == "+/2")) {
+//		for(unsigned int n = 0; functerm->nrSubterms(); ++n) {
+//			if(typeid(*(functerm->subterm(n))) == typeid(FuncTerm*)) {
+//				Functerm* subterm = dynamic_cast<FuncTerm*>(functerm->subterm(n));
+//				if(subterm->func()->name() != "+/2") _istoplevelterm = false;
+//			}
+//			else _istoplevelterm = false;
+//			Term* nterm = functerm->subterm(n)->accept(this);
+//			functerm->arg(n,nterm);
+//		}
+//		functerm->setfvars();
+//		return functerm;
+//	}
 	else {
 		// The function is three-valued. Move it: create a new variable and an equation.
-		Variable* v = new Variable(f->outsort());
-		VarTerm* vt = new VarTerm(v,ParseInfo());
+		Variable* var = new Variable(func->outsort());
+		VarTerm* varterm = new VarTerm(var,ParseInfo());
 		vector<Term*> args;
-		for(unsigned int n = 0; n < f->arity(); ++n) args.push_back(ft->subterm(n));
-		args.push_back(vt);
-		PredForm* pf = new PredForm(true,f,args,FormParseInfo());
-		_termgraphs.push_back(pf);
-		_variables.push_back(v);
-		delete(ft);
-		return vt->clone();
+		for(unsigned int n = 0; n < func->arity(); ++n)
+			args.push_back(functerm->subterm(n));
+		args.push_back(varterm);
+		PredForm* predform = new PredForm(true,func,args,FormParseInfo());
+		_termgraphs.push_back(predform);
+		_variables.push_back(var);
+		delete(functerm);
+		return varterm->clone();
 	}
 }
 
@@ -1806,7 +1818,7 @@ namespace FormulaUtils {
 		return newf;
 	}
 
-	/* 
+	/** 
 	 * Formula* moveThreeValTerms(PredForm* pf, AbstractStructure* str, bool poscontext)
 	 * DESCRIPTION
 	 *		Non-recursively moves terms that are three-valued according to a given structure
@@ -1829,8 +1841,8 @@ namespace FormulaUtils {
 	 *		If rewriting was needed, pf can be deleted, but not recursively.
 	 *		
 	 */
-	Formula* moveThreeValTerms(Formula* f, AbstractStructure* str, bool poscontext, bool usingcp) {
-		ThreeValTermMover tvtm(str,poscontext,usingcp);
+	Formula* moveThreeValTerms(Formula* f, AbstractStructure* str, bool poscontext, bool usingcp, const set<const Function*> cpfunctions) {
+		ThreeValTermMover tvtm(str,poscontext,usingcp,cpfunctions);
 		Formula* rewriting = f->accept(&tvtm);
 		return rewriting;
 	}

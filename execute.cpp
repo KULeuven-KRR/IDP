@@ -1012,9 +1012,11 @@ TypedInfArg FastMXInference::execute(const vector<InfArg>& args, lua_State* L) c
 	TypedInfArg a; a._type = IAT_TABLE; a._value._table = new vector<TypedInfArg>();
 	if(sol->isSat()){
 		for(vector<MinisatID::Model*>::const_iterator modelit = sol->getModels().begin(); modelit != sol->getModels().end(); ++modelit) {
+//cerr << "---Building new model---" << endl;
 			AbstractStructure* mod = structure->clone();
 			set<PredInter*>	tobesorted1;
 			set<FuncInter*>	tobesorted2;
+//cerr << "-Normal SAT part-" << endl;
 			for(vector<MinisatID::Literal>::const_iterator literalit = (*modelit)->literalinterpretations.begin();
 					literalit != (*modelit)->literalinterpretations.end(); ++literalit) {
 				PFSymbol* pfs = grounding->translator()->symbol(((*literalit).getAtom().getValue()));
@@ -1026,12 +1028,15 @@ TypedInfArg FastMXInference::execute(const vector<InfArg>& args, lua_State* L) c
 						tobesorted1.insert(mod->inter(pfs));
 					}
 					else {
-						Function* f = dynamic_cast<Function*>(pfs);
-						mod->inter(f)->add(args,!((*literalit).hasSign()),true);
-						tobesorted2.insert(mod->inter(f));
+						Function* function = dynamic_cast<Function*>(pfs);
+//if(!((*literalit).hasSign())) cerr << "Adding value " << args.back()._element._int << " for function " << function->name() << endl;
+//else cerr << "Adding impossible value " << args.back()._element._int << " for function " << function->name() << endl;
+						mod->inter(function)->add(args,!((*literalit).hasSign()),true);
+						tobesorted2.insert(mod->inter(function));
 					}
 				}
 			}
+//cerr << "-CP part-" << endl;
 			for(vector<MinisatID::VariableEqValue>::const_iterator cpvarit = (*modelit)->variableassignments.begin();
 					cpvarit != (*modelit)->variableassignments.end(); ++cpvarit) {
 				Function* function = grounding->termtranslator()->function((*cpvarit).variable);
@@ -1040,6 +1045,7 @@ TypedInfArg FastMXInference::execute(const vector<InfArg>& args, lua_State* L) c
 					vector<TypedElement> args = ElementUtil::convert(vd);
 					TypedElement value((*cpvarit).value);
 					args.push_back(value);
+//cerr << "Adding value " << args.back()._element._int << " for function " << function->name() << endl;
 					mod->inter(function)->add(args,true,true);
 					tobesorted2.insert(mod->inter(function));
 				}

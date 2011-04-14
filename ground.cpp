@@ -10,6 +10,7 @@
 #include <iostream>
 #include <sstream>
 #include <limits>
+#include <cmath>
 
 #include "element.hpp"
 #include "vocabulary.hpp"
@@ -72,7 +73,7 @@ int	GroundTranslator::translate(double bound, char comp, bool strict, AggType ag
 		int nr = nextNumber();
 		AggTsBody* tb = new AggTsBody(tstype,bound,(comp == '<'),aggtype,setnr);
 		if(strict) {
-			// FIXME: This is wrong if floating point weights are allowed!
+			#warning "This is wrong if floating point weights are allowed!";
 			tb->_bound = (comp == '<') ? bound + 1 : bound - 1;	
 		} 
 		else tb->_bound = bound;
@@ -159,6 +160,9 @@ string GroundTranslator::printAtom(int nr) const {
 }
 
 
+/*********************************************
+	Translate from ground terms to numbers
+*********************************************/
 
 unsigned int GroundTermTranslator::translate(unsigned int offset, const vector<domelement>& args) {
 	map<vector<domelement>,unsigned int>::iterator jt = _table[offset].lower_bound(args);
@@ -382,7 +386,6 @@ int AtomGrounder::run() const {
 #ifndef NDEBUG
 		if(_cloptions._verbose) {
 			printorig();
-			cerr << "Term value out of predicate type\n";
 			cerr << "Result is " << _translator->printAtom(atom) << endl;
 		}
 #endif
@@ -460,17 +463,38 @@ int CPGrounder::run() const {
 					return leftvalue < rightvalue ? _true : _false;
 				case CT_GT:	
 					return leftvalue > rightvalue ? _true : _false;
-				default: assert(false); return _false;
+				default: assert(false);
 			}
 		}
 	}
-	assert(false); return _false;
+	assert(false);
 }
 
 void CPGrounder::run(vector<int>& clause) const {
 	clause.push_back(run());
 }
 
+/**
+ * int AggGrounder::handleDoubleNegation(double boundvalue, int setnr) const
+ * DESCRIPTION
+ * 		Invert the comparator and the sign of the tseitin when the aggregate is in a doubly negated context. 
+ */
+int AggGrounder::handleDoubleNegation(double boundvalue, int setnr) const {
+	bool newcomp;
+	switch(_comp) {
+		case '<' : newcomp = '>'; break;
+		case '>' : newcomp = '<'; break;
+		case '=' : assert(false); break;
+		default : assert(false); break;
+	}
+	TsType tp = _context._tseitin;
+	int tseitin = _translator->translate(boundvalue,newcomp,false,_type,setnr,tp);
+	return _sign ? -tseitin : tseitin;
+}
+
+/**
+ * int AggGrounder::finishCard(double truevalue, double boundvalue, int setnr) const
+ */
 int AggGrounder::finishCard(double truevalue, double boundvalue, int setnr) const {
 	int leftvalue = int(boundvalue - truevalue);
 	const TsSet& tsset = _translator->groundset(setnr);
@@ -532,7 +556,6 @@ int AggGrounder::finishCard(double truevalue, double boundvalue, int setnr) cons
 			}
 			break;
 	}
-	
 	if(simplify) {
 		if(_doublenegtseitin) {
 			if(negateset) {
@@ -560,17 +583,7 @@ int AggGrounder::finishCard(double truevalue, double boundvalue, int setnr) cons
 		}
 	}
 	else {
-		if(_doublenegtseitin) {
-			bool newcomp;
-			switch(_comp) {
-				case '<' : newcomp = '>'; break;
-				case '>' : newcomp = '<'; break;
-				case '=' : assert(false); break;
-				default : assert(false); break;
-			}
-			int tseitin = _translator->translate(double(leftvalue),newcomp,false,AGGCARD,setnr,tp);
-			return _sign ? -tseitin : tseitin;
-		}
+		if(_doublenegtseitin) return handleDoubleNegation(double(leftvalue),setnr);
 		else {
 			int tseitin = _translator->translate(double(leftvalue),_comp,true,AGGCARD,setnr,tp);
 			return _sign ? tseitin : -tseitin;
@@ -578,114 +591,68 @@ int AggGrounder::finishCard(double truevalue, double boundvalue, int setnr) cons
 	}
 }
 
-int AggGrounder::finishSum(double truevalue, double boundvalue, int setnr) const {
-	const TsSet& tsset = _translator->groundset(setnr);
-
-	// Compute the minimal and maximal possible value of the sum
-	double minposssum = truevalue;
-	double maxposssum = truevalue;
-	for(unsigned int n = 0; n < tsset.size(); ++n) {
-		if(tsset.weight(n) > 0) maxposssum += tsset.weight(n);
-		else if(tsset.weight(n) < 0) minposssum += tsset.weight(n);
-	}
-
-	TsType tp = _context._tseitin;	// TODO
-	switch(_comp) {
+/**
+ * int AggGrounder::finish(double boundvalue, double newboundvalue, double minpossvalue, double maxpossvalue, int setnr) const
+ * DESCRIPTION
+ * 		General finish method for grounding of sum, product, minimum and maximum aggregates.
+ * 		Checks whether the aggregate will be certainly true or false, based on minimum and maximum possible values and the given bound;
+ * 		and creates a tseitin, handling double negation when necessary;
+ */
+int AggGrounder::finish(double boundvalue, double newboundvalue, double minpossvalue, double maxpossvalue, int setnr) const {
+	// Check minimal and maximal possible values against the given bound
+	switch(_comp) { //TODO more complicated propagation is possible!
 		case '=':
-			if(minposssum > boundvalue || maxposssum < boundvalue) {
+			if(minpossvalue > boundvalue || maxpossvalue < boundvalue)
 				return _sign ? _false : _true;
-			}
-			// TODO: more complicated propagation is possible!
 			break;
 		case '<':
-			if(boundvalue < minposssum) {
+			if(boundvalue < minpossvalue)
 				return _sign ? _true : _false;
-			}
-			else if(boundvalue >= maxposssum) {
+			else if(boundvalue >= maxpossvalue)
 				return _sign ? _false : _true;
-			}
-			// TODO: more complicated propagation is possible!
 			break;
 		case '>':
-			if(boundvalue > maxposssum) {
+			if(boundvalue > maxpossvalue)
 				return _sign ? _true : _false;
-			}
-			else if(boundvalue <= minposssum) {
+			else if(boundvalue <= minpossvalue)
 				return _sign ? _false : _true;
-			}
-			// TODO: more complicated propagation is possible!
 			break;
 	}
-	if(_doublenegtseitin) {
-		bool newcomp;
-		switch(_comp) {
-			case '<' : newcomp = '>'; break;
-			case '>' : newcomp = '<'; break;
-			case '=' : assert(false); break;
-			default : assert(false); break;
-		}
-		int tseitin = _translator->translate(boundvalue+truevalue,newcomp,false,AGGSUM,setnr,tp);
-		return _sign ? -tseitin : tseitin;
-	}
+	if(_doublenegtseitin)
+		return handleDoubleNegation(newboundvalue,setnr);
 	else {
-		int tseitin = _translator->translate(boundvalue+truevalue,_comp,true,AGGSUM,setnr,tp);
+		int tseitin;
+		TsType tp = _context._tseitin;
+		if((_type == AGGMIN) && (_comp == '=')) // Only use lower bound
+			tseitin = _translator->translate(newboundvalue,'<',false,AGGMIN,setnr,tp);
+		else if((_type == AGGMAX) && (_comp == '=')) // Only use upper bound
+			tseitin = _translator->translate(newboundvalue,'>',false,AGGMAX,setnr,tp);
+		else
+			tseitin = _translator->translate(newboundvalue,_comp,true,_type,setnr,tp);
 		return _sign ? tseitin : -tseitin;
 	}
 }
 
-/*int AggGrounder::finishProduct(double truevalue, double boundvalue, int setnr) const {
-	const TsSet& tsset = _translator->groundset(setnr);
-
-	// Compute the minimal and maximal possible value of the sum
-	double minposssum = truevalue;
-	double maxposssum = truevalue;
-	bool containszeros = false;
-	for(unsigned int n = 0; n < tsset.size(); ++n) {
-		if(tsset.weights(n) > 0) maxposssum += tsset.weight(n);
-		else if(tsset.weight(n) < 0) minposssum += tsset.weight(n);
-		else containszeros = true;
-	}
-
-	TsType tp = _context._tseitin;	// TODO
-	switch(_comp) {
-		case '=':
-			if(minposssum > boundvalue || maxposssum < boundvalue) {
-				return _sign ? _false : _true;
-			}
-			// TODO: more complicated propagation is possible!
-			break;
-		case '<':
-			if(boundvalue < minposssum) {
-				return _sign ? _true : _false;
-			}
-			else if(boundvalue >= maxposssum) {
-				return _sign ? _false : _true;
-			}
-			// TODO: more complicated propagation is possible!
-			break;
-		case '>':
-			if(boundvalue > maxposssum) {
-				return _sign ? _true : _false;
-			}
-			else if(boundvalue <= minposssum) {
-				return _sign ? _false : _true;
-			}
-			// TODO: more complicated propagation is possible!
-			break;
-	}
-	int tseitin = _translator->translate(boundvalue+truevalue,_comp,AGGSUM,setnr,tp);
-	return _sign ? tseitin : -tseitin;
-
-}*/
-
+/**
+ * int AggGrounder::run() const
+ * DESCRIPTION
+ * 		Run the aggregate grounder.
+ */
 int AggGrounder::run() const {
+	// Run subgrounders
 	int setnr = _setgrounder->run();
 	domelement bound = _boundgrounder->run();
-	const TsSet& tsset = _translator->groundset(setnr);
 
-	double truevalue = AggUtils::compute(_type,tsset.trueweights());
+	// Retrieve the set, note that weights might be changed when handling min and max aggregates.
+	TsSet& tsset = _translator->groundset(setnr);
+
+	// Retrieve the value of the bound
 	double boundvalue = ElementUtil::convert(bound->_args[0],ELDOUBLE)._double;
 
+	// Compute the value of the aggregate based on weights of literals that are certainly true.	
+	double truevalue = AggUtils::compute(_type,tsset.trueweights());
+
+	// When the set is empty, return an answer based on the current value of the aggregate.
 	if(tsset.literals().empty()) {
 		bool returnvalue;
 		switch(_comp) {
@@ -696,30 +663,64 @@ int AggGrounder::run() const {
 		}
 		return _sign == returnvalue ? _true : _false;
 	}
-	int ts;
+
+	// Handle specific aggregates.
+	int tseitin;
+	double minpossvalue = truevalue;
+	double maxpossvalue = truevalue;
 	switch(_type) {
-		case AGGCARD: 
-			ts = finishCard(truevalue,boundvalue,setnr);
+		case AGGCARD: { 
+			tseitin = finishCard(truevalue,boundvalue,setnr);
 			break;
-		case AGGSUM:
-			ts = finishSum(truevalue,boundvalue,setnr);
+		}
+		case AGGSUM: {
+			// Compute the minimal and maximal possible value of the sum.
+			for(unsigned int n = 0; n < tsset.size(); ++n) {
+				if(tsset.weight(n) > 0) maxpossvalue += tsset.weight(n);
+				else if(tsset.weight(n) < 0) minpossvalue += tsset.weight(n);
+			}
+			// Finish
+			tseitin = finish(boundvalue,(boundvalue-truevalue),minpossvalue,maxpossvalue,setnr);
 			break;
-		case AGGPROD:
-			assert(false);
-			// TODO
+		}
+		case AGGPROD: {
+			// Compute the minimal and maximal possible value of the product.
+			bool containsneg = false;
+			for(unsigned int n = 0; n < tsset.size(); ++n) {
+				maxpossvalue *= abs(tsset.weight(n));
+				if(tsset.weight(n) < 0) containsneg = true;
+			}
+			if(containsneg) minpossvalue = -maxpossvalue;
+			// Finish
+			tseitin = finish(boundvalue,(boundvalue/truevalue),minpossvalue,maxpossvalue,setnr);
 			break;
-		case AGGMIN:
-			assert(false);
-			// TODO
+		}
+		case AGGMIN: {
+			// Compute the minimal possible value of the set.
+			for(unsigned int n = 0; n < tsset.size(); ++n) {
+				minpossvalue = (tsset.weight(n) < minpossvalue) ? tsset.weight(n) : minpossvalue;
+				// Decrease all weights greater than truevalue to truevalue.
+				if(tsset.weight(n) > truevalue) tsset.setWeight(n,truevalue);
+			}
+			// Finish
+			tseitin = finish(boundvalue,boundvalue,minpossvalue,maxpossvalue,setnr);
 			break;
-		case AGGMAX:
-			assert(false);
-			// TODO
+		}
+		case AGGMAX: {
+			// Compute the maximal possible value of the set.
+			for(unsigned int n = 0; n < tsset.size(); ++n) {
+				maxpossvalue = (tsset.weight(n) > maxpossvalue) ? tsset.weight(n) : maxpossvalue;
+				// Increase all weights less than truevalue to truevalue.
+				if(tsset.weight(n) < truevalue) tsset.setWeight(n,truevalue);
+			}
+			// Finish
+			tseitin = finish(boundvalue,boundvalue,minpossvalue,maxpossvalue,setnr);
 			break;
-		default:
+		}
+		default: 
 			assert(false);
 	}
-	return ts;
+	return tseitin;
 }
 
 void AggGrounder::run(vector<int>& clause) const {
@@ -1200,24 +1201,29 @@ bool DefinitionGrounder::run() const {
 ******************************/
 
 /**
- * vector<Function*> GrounderFactory::findCPFunctions()
+ * set<Function*> GrounderFactory::findCPFunctions()
  * DESCRIPTION
- * 		TODO
- * 		Finds out which functions occuring in the theory...
+ * 		Finds out which functions can be passed to the constraint solver.
  */
-vector<Function*> GrounderFactory::findCPFunctions() {
-	assert(false);
-	//TODO
-
-
-
-	// Check whether function's outsort is over integers
-	//Vocabulary* voc = _structure->vocabulary();
-	//Sort* ints = *(voc->sort("int")->begin());
-	//bool isIntFunc = (SortUtils::resolve(f->outsort(),ints,voc) != 0);
-
+set<const Function*> GrounderFactory::findCPFunctions(const AbstractTheory* theory) {
+	Vocabulary* vocabulary = theory->vocabulary();
+	for(map<string,Function*>::const_iterator funcit = vocabulary->firstfunc(); funcit != vocabulary->lastfunc(); ++funcit) {
+		Function* function = funcit->second;
+		bool groundtocp = false;
+		// Check whether the (user-defined) function's outsort is over integers
+		Sort* intsort = *(vocabulary->sort("int")->begin());
+		if(function->overloaded()) {
+			vector<Function*> nonbuiltins = function->nonbuiltins();
+			for(vector<Function*>::const_iterator nbfit = nonbuiltins.begin(); nbfit != nonbuiltins.end(); ++nbfit) {
+				groundtocp = (SortUtils::resolve(function->outsort(),intsort,vocabulary) == intsort);
+			}
+		} else if(!function->builtin()) {
+			groundtocp = (SortUtils::resolve(function->outsort(),intsort,vocabulary) == intsort);
+		}
+		if(groundtocp) _cpfunctions.insert(function);
+	}
+	return _cpfunctions;
 }
-
 
 /**
  * bool GrounderFactory::recursive(const Formula*)
@@ -1350,7 +1356,7 @@ void GrounderFactory::descend(Rule* r) {
 }
 
 /**
- * TopLevelGrounder* GrounderFactory::create(AbstractTheory* theory)
+ * TopLevelGrounder* GrounderFactory::create(const AbstractTheory* theory)
  * DESCRIPTION
  *		Creates a grounder for the given theory. The grounding produced by that grounder
  *		will be (partially) reduced with respect to the structure _structure of the GrounderFactory.
@@ -1364,9 +1370,11 @@ void GrounderFactory::descend(Rule* r) {
  *		This grounding can then be obtained by calling grounding() on the grounder.
  */
 TopLevelGrounder* GrounderFactory::create(const AbstractTheory* theory) {
-
 	// Allocate an ecnf theory to be returned by the grounder
 	_grounding = new GroundTheory(theory->vocabulary(),_structure->clone());
+
+	// Find function that can be passed to CP solver.
+	if(_usingcp) findCPFunctions(theory);
 
 	// Create the grounder
 	theory->accept(this);
@@ -1374,7 +1382,7 @@ TopLevelGrounder* GrounderFactory::create(const AbstractTheory* theory) {
 }
 
 /**
- * TopLevelGrounder* GrounderFactory::create(AbstractTheory* theory, SATSolver* solver)
+ * TopLevelGrounder* GrounderFactory::create(const AbstractTheory* theory, SATSolver* solver)
  * DESCRIPTION
  *		Creates a grounder for the given theory. The grounding produced by that grounder
  *		will be (partially) reduced with respect to the structure _structure of the GrounderFactory.
@@ -1391,9 +1399,11 @@ TopLevelGrounder* GrounderFactory::create(const AbstractTheory* theory) {
  *		the solver.
  */
 TopLevelGrounder* GrounderFactory::create(const AbstractTheory* theory, SATSolver* solver) {
-
 	// Allocate a solver theory
 	_grounding = new SolverTheory(theory->vocabulary(),solver,_structure->clone());
+
+	// Find function that can be passed to CP solver.
+	if(_usingcp) findCPFunctions(theory);
 
 	// Create the grounder
 	theory->accept(this);
@@ -1401,7 +1411,7 @@ TopLevelGrounder* GrounderFactory::create(const AbstractTheory* theory, SATSolve
 }
 
 /**
- * void GrounderFactory::visit(EcnfTheory* ecnf)
+ * void GrounderFactory::visit(const EcnfTheory* ecnf)
  * DESCRIPTION
  *		Creates a grounder for a ground ecnf theory. This grounder returns a (reduced) copy of the ecnf theory.
  * PARAMETERS
@@ -1414,7 +1424,7 @@ void GrounderFactory::visit(const GroundTheory* ecnf) {
 }
 
 /**
- * void GrounderFactory::visit(Theory* theory)
+ * void GrounderFactory::visit(const Theory* theory)
  * DESCRIPTION
  *		Creates a grounder for a non-ground theory.
  * PARAMETERS
@@ -1423,7 +1433,6 @@ void GrounderFactory::visit(const GroundTheory* ecnf) {
  *		_toplevelgrounder is equal to the created grounder
  */
 void GrounderFactory::visit(const Theory* theory) {
-
 	// Collect all components (sentences, definitions, and fixpoint definitions) of the theory
 	vector<TheoryComponent*> components(theory->nrComponents());
 	for(unsigned int n = 0; n < theory->nrComponents(); ++n) {
@@ -1446,9 +1455,9 @@ void GrounderFactory::visit(const Theory* theory) {
 }
 
 /**
- * void GrounderFactory::visit(PredForm* pf) 
+ * void GrounderFactory::visit(const PredForm* pf) 
  * DESCRIPTION
- *		Creates a grounder for an atomic formula
+ *		Creates a grounder for an atomic formula.
  * PARAMETERS
  *		pf	- the atomic formula
  * PRECONDITIONS
@@ -1464,7 +1473,7 @@ void GrounderFactory::visit(const PredForm* pf) {
 	// to _structure outside the atom. To avoid changing the original atom, 
 	// we first clone it.
 	PredForm* newpf = pf->clone();
-	Formula* transpf = FormulaUtils::moveThreeValTerms(newpf,_structure,(_context._funccontext != PC_NEGATIVE),_usingcp);
+	Formula* transpf = FormulaUtils::moveThreeValTerms(newpf,_structure,(_context._funccontext != PC_NEGATIVE),_usingcp,_cpfunctions);
 
 	if(newpf != transpf) {	// The rewriting changed the atom
 		//delete(newpf); TODO: produces a segfault??
@@ -1506,10 +1515,11 @@ void GrounderFactory::visit(const PredForm* pf) {
 											subtermgrounders[0],comp,subtermgrounders[1],_context);
 				}
 				else {
-					CompType comp = pf->sign() ? CT_EQ : CT_NEQ;
-					TermGrounder* righttermgrounder = subtermgrounders.back();
-					subtermgrounders.pop_back();
-					TermGrounder* lefttermgrounder;
+					assert(false);
+					//CompType comp = pf->sign() ? CT_EQ : CT_NEQ;
+					//TermGrounder* righttermgrounder = subtermgrounders.back();
+					//subtermgrounders.pop_back();
+					//TermGrounder* lefttermgrounder;
 					//TODO construct lefttermgrounder
 				}
 				if(_context._component == CC_SENTENCE) 
@@ -1551,9 +1561,9 @@ void GrounderFactory::visit(const PredForm* pf) {
 }
 
 /**
- * void GrounderFactory::visit(BoolForm* bf)
+ * void GrounderFactory::visit(const BoolForm* bf)
  * DESCRIPTION
- *		Creates a grounding for a conjunction or disjunction of formulas
+ *		Creates a grounder for a conjunction or disjunction of formulas
  * PARAMETERS
  *		bf	- the conjunction or disjunction
  * PRECONDITIONS
@@ -1612,9 +1622,9 @@ void GrounderFactory::visit(const BoolForm* bf) {
 }
 
 /**
- * void GrounderFactory::visit(QuantForm* qf)
+ * void GrounderFactory::visit(const QuantForm* qf)
  * DESCRIPTION
- *		Creates a grounding for a quantified formula
+ *		Creates a grounder for a quantified formula
  * PARAMETERS
  *		qf	- the quantified formula
  * PRECONDITIONS
@@ -1669,13 +1679,13 @@ void GrounderFactory::visit(const QuantForm* qf) {
 }
 
 /**
- * void GrounderFactory::visit(EquivForm* ef)
+ * void GrounderFactory::visit(const EquivForm* ef)
  * DESCRIPTION
- *		Creates a grounding for an equivalence.
+ *		Creates a grounder for an equivalence.
  * PARAMETERS
  *		ef	- the equivalence
  * PRECONDITIONS
- *		Each free variable that occurs in qf occurs in _varmapping.
+ *		Each free variable that occurs in ef occurs in _varmapping.
  * POSTCONDITIONS
  *		According to _context, the created grounder is assigned to
  *			CC_SENTENCE:	_toplevelgrounder
@@ -1704,9 +1714,14 @@ void GrounderFactory::visit(const EquivForm* ef) {
 	if(_context._component == CC_SENTENCE) _toplevelgrounder = new SentenceGrounder(_grounding,_formgrounder,true);
 }
 
+/**
+ * void GrounderFactory::visit(const AggForm* af)
+ * DESCRIPTION
+ * 		Creates a grounder for an aggregate.
+ */
 void GrounderFactory::visit(const AggForm* af) {
 	AggForm* newaf = af->clone();
-	Formula* transaf = FormulaUtils::moveThreeValTerms(newaf,_structure,(_context._funccontext != PC_NEGATIVE),_usingcp);
+	Formula* transaf = FormulaUtils::moveThreeValTerms(newaf,_structure,(_context._funccontext != PC_NEGATIVE),_usingcp,_cpfunctions);
 
 	if(newaf != transaf) {	// The rewriting changed the atom
 		//delete(newaf); TODO: produces a segfault??
@@ -1735,6 +1750,11 @@ void GrounderFactory::visit(const AggForm* af) {
 	transaf->recursiveDelete();
 }
 
+/**
+ * void GrounderFactory::visit(const EqChainForm* ef)
+ * DESCRIPTION
+ * 		Creates a grounder for an equation chain.
+ */
 void GrounderFactory::visit(const EqChainForm* ef) {
 	Formula* f = ef->clone();
 	f = FormulaUtils::remove_eqchains(f,_grounding->vocabulary());
@@ -1742,6 +1762,11 @@ void GrounderFactory::visit(const EqChainForm* ef) {
 	f->recursiveDelete();
 }
 
+/**
+ * void GrounderFactory::visit(const VarTerm* t)
+ * DESCRIPTION
+ * 		Creates a grounder for a variable term.
+ */
 void GrounderFactory::visit(const VarTerm* t) {
 	assert(_varmapping.find(t->var()) != _varmapping.end());
 	_termgrounder = new VarTermGrounder(_varmapping.find(t->var())->second);
@@ -1750,6 +1775,11 @@ void GrounderFactory::visit(const VarTerm* t) {
 #endif
 }
 
+/**
+ * void GrounderFactory::visit(const DomainTerm* t)
+ * DESCRIPTION
+ * 		Creates a grounder for a domain term.
+ */
 void GrounderFactory::visit(const DomainTerm* t) {
 	_termgrounder = new DomTermGrounder(CPPointer(t->value(),t->type()));
 #ifndef NDEBUG
@@ -1757,6 +1787,11 @@ void GrounderFactory::visit(const DomainTerm* t) {
 #endif
 }
 
+/**
+ * void GrounderFactory::visit(const FuncTerm* t)
+ * DESCRIPTION
+ * 		Creates a grounder for a function term.
+ */
 void GrounderFactory::visit(const FuncTerm* t) {
 	// Create grounders for subterms
 	vector<TermGrounder*> sub;
@@ -1792,6 +1827,11 @@ void GrounderFactory::visit(const FuncTerm* t) {
 #endif
 }
 
+/**
+ * void GrounderFactory::visit(const AggTerm* at)
+ * DESCRIPTION
+ * 		Creates a grounder for a aggregate term.
+ */
 void GrounderFactory::visit(const AggTerm* t) {
 	// Create set grounder
 	t->set()->accept(this);
@@ -1806,6 +1846,11 @@ void GrounderFactory::visit(const AggTerm* t) {
 #endif
 }
 
+/**
+ * void GrounderFactory::visit(const EnumSetExpr* s)
+ * DESCRIPTION
+ * 		Creates a grounder for an enumarated set.
+ */
 void GrounderFactory::visit(const EnumSetExpr* s) {
 	// Create grounders for formulas and weights
 	vector<FormulaGrounder*> subgr;
@@ -1824,6 +1869,11 @@ void GrounderFactory::visit(const EnumSetExpr* s) {
 	_setgrounder = new EnumSetGrounder(_grounding->translator(),subgr,subtgr);
 }
 
+/**
+ * void GrounderFactory::visit(const QuantSetExpr* s)
+ * DESCRIPTION
+ * 		Creates a grounder for a quantified set.
+ */
 void GrounderFactory::visit(const QuantSetExpr* s) {
 	// Create instance generator
 	InstGenerator* gen = 0;
@@ -1854,6 +1904,11 @@ void GrounderFactory::visit(const QuantSetExpr* s) {
 	_setgrounder = new QuantSetGrounder(_grounding->translator(),sub,gen,_varmapping[s->qvar(0)]);
 }
 
+/**
+ * void GrounderFactory::visit(const Definition* def)
+ * DESCRIPTION
+ * 		Creates a grounder for a definition.
+ */
 void GrounderFactory::visit(const Definition* def) {
 	// Create new ground definition
 	_definition = new GroundDefinition(_grounding->translator());
@@ -1876,6 +1931,11 @@ void GrounderFactory::visit(const Definition* def) {
 	_context._defined.clear();
 }
 
+/**
+ * void GrounderFactory::visit(const Rule* rule)
+ * DESCRIPTION
+ * 		Creates a grounder for a definitional rule.
+ */
 void GrounderFactory::visit(const Rule* rule) {
 	// Split the quantified variables in two categories: 
 	//		1. the variables that only occur in the head
