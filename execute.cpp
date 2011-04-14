@@ -972,10 +972,11 @@ TypedInfArg FastMXInference::execute(const vector<InfArg>& args, lua_State* L) c
 	modes.nbmodels = opts->_nrmodels;
 	modes.verbosity = opts->_satverbosity;
 	modes.remap = false;
+	//TODO pass other solver options from opts->_solveroptions
 	SATSolver* solver = new SATSolver(modes);
 
 	// Create grounder
-	GrounderFactory gf(structure,opts->_usingcp);
+	GrounderFactory gf(structure,opts->_cpsupport);
 	TopLevelGrounder* grounder = gf.create(theory,solver);
 
 	// Ground
@@ -1140,7 +1141,7 @@ FastGrounding::FastGrounding() {
 }
 
 TypedInfArg FastGrounding::execute(const vector<InfArg>& args, lua_State*) const {
-	GrounderFactory factory(args[1]._structure,args[2]._options->_usingcp);
+	GrounderFactory factory(args[1]._structure,args[2]._options->_cpsupport);
 	TopLevelGrounder* g = factory.create(args[0]._theory);
 	g->run();
 	TypedInfArg a; a._type = IAT_THEORY;

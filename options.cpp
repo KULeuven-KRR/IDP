@@ -12,16 +12,19 @@ using namespace std;
 void InfOptions::set(const string& opt, const string& val, ParseInfo* pi) {
 	if(InfOptions::isoption(opt)) {
 		if(opt == "language") {
-			if(val == "txt") _format=OF_TXT;
-			else if(val == "idp") _format=OF_IDP;
-			else if(val == "ecnf") _format=OF_ECNF;
+			if(val == "txt") 		_format = OF_TXT;
+			else if(val == "idp") 	_format = OF_IDP;
+			else if(val == "ecnf") 	_format = OF_ECNF;
 			else Error::wrongformat(val,pi);
 		}
 		else if(opt == "modelformat") {
-			if(val == "all") _modelformat=MF_ALL;
-			else if(val == "twovalued") _modelformat=MF_TWOVAL;
-			else if(val == "threevalued") _modelformat=MF_THREEVAL;
+			if(val == "all") 				_modelformat = MF_ALL;
+			else if(val == "twovalued") 	_modelformat = MF_TWOVAL;
+			else if(val == "threevalued") 	_modelformat = MF_THREEVAL;
 			else Error::wrongmodelformat(val,pi);
+		}
+		else if(opt == "solveroptions") {
+			_solveroptions = val;
 		}
 		else Error::wrongvaluetype(opt,pi);
 	}
@@ -40,8 +43,8 @@ void InfOptions::set(const string& opt, bool val, ParseInfo* pi) {
 		if(opt == "printtypes") {
 			_printtypes = val;
 		}
-		else if(opt == "usingcp") {
-			_usingcp = val;
+		else if(opt == "cpsupport") {
+			_cpsupport = val;
 		}
 		else if(opt == "trace") {
 			_trace = val;
