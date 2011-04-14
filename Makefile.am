@@ -33,19 +33,13 @@ gidl_SOURCES = \
 		namespace.hpp namespace.cpp\
 		parse.yy\
 		lex.ll\
-		insert.hpp insert.cpp\
-		common.hpp common.cpp\
-		ecnf.hpp ecnf.cpp\
-		ground.hpp ground.cpp\
-		main.cpp\
-		error.hpp error.cpp\
 		clconst.hpp\
+		insert.hpp insert.cpp\
+		error.hpp error.cpp\
+		common.hpp common.cpp\
 		interactive.hpp interactive.cpp\
 		print.hpp print.cpp\
-		checker.hpp checker.cpp\
-		generator.hpp generator.cpp\
-		fobdd.hpp fobdd.cpp\
-		propagate.hpp propagate.cpp
+		main.cpp
 
 AM_CXXFLAGS+=-I $(top_srcdir)/pcsolver/src/ 
 

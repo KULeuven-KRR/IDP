@@ -7,26 +7,38 @@
 #ifndef INSERT_HPP
 #define INSERT_HPP
 
+#include <set>
 #include <vector>
 #include "commontypes.hpp" 
 #include "parseinfo.hpp"
 
-struct YYLTYPE;
-class lua_State;
+class Sort;
+class Predicate;
+class Function;
+class Vocabulary;
+class DomainElement;
+class Compound;
+class SortTable;
+class PredTable;
+class FuncTable;
+class Structure;
+class Term;
+class SetExpr;
+class EnumSetExpr;
+class Formula;
+class Rule;
+class Definition;
+class FixpDef;
+class Theory;
 class Options;
 class UserProcedure;
+class Namespace;
+
+struct YYLTYPE;
+class lua_State;
 class InternalArgument;
 
 typedef std::vector<std::string> longname;
-
-/**
- * Pair of a formula and a tuple
- */
-struct FTPair {
-	Formula* _formula;
-	Term*	 _term;
-	FTPair(Formula* f, Term* t) : _formula(f), _term(t) { }
-};
 
 /**
  * Pair of name and sorts
@@ -49,6 +61,23 @@ struct NSPair {
 	void includeFuncArity();
 	void includeArity(unsigned int n);
 };
+
+enum ElRangeEnum { ERE_EL, ERE_INT, ERE_CHAR };
+
+/**
+ * Union of a domain element or range
+ */
+struct ElRange {
+	ElRangeEnum _type;
+	union {
+		const DomainElement*	_element;
+		std::pair<int,int>*		_intrange;
+		std::pair<char,char>*	_charrange;
+	} _value;
+	ElRange(const DomainElement* e) : _type(ERE_EL) { _value._element = e;	}
+	ElRange(std::pair<int,int>* r) : _type(ERE_INT) { _value._intrange = e;	}
+	ElRange(std::pair<char,char>* r) : _type(ERE_CHAR) { _value._charrange = e;	}
+}
 
 class Insert {
 
@@ -82,20 +111,218 @@ class Insert {
 	public:
 		Insert();
 
-		void openspace(const std::string& name,YYLTYPE);	//!< Open a new namespace;
-		void openvocab(const std::string& name,YYLTYPE);	//!< Open a new vocabulary
-		void closespace();									//!< Close the current namespace
-		void closevocab();									//!< Close the current vocabulary
+		void openspace(const std::string& name,YYLTYPE);		//!< Open a new namespace
+		void openvocab(const std::string& name,YYLTYPE);		//!< Open a new vocabulary
+		void opentheory(const std::string& tname, YYLTYPE);		//!< Open a new theory
+		void openstructure(const std::string& name, YYLTYPE);	//!< Open a new structure
+		void closespace();										//!< Close the current namespace
+		void closevocab();										//!< Close the current vocabulary
+		void closetheory();										//!< Close the current theory
+		void closestructure();									//!< Close the current structure
 
 		void usingvocab(const longname& vname, YYLTYPE);	//!< use vocabulary 'vname' when parsing
 		void usingspace(const longname& sname, YYLTYPE);	//!< use namespace 'sname' when parsing
 
-		void assignvocab(const InternalArgument&, YYLTYPE);	//!< set the current vocabulary to the given vocabulary
+		void assignvocab(InternalArgument*, YYLTYPE);		//!< set the current vocabulary to the given vocabulary
+		void assigntheory(InternalArgument*, YYLTYPE);		//!< set the current theory to the given theory
+		void assignstructure(InternalArgument*, YYLTYPE);	//!< set the current structure to the given structure
+
 		void setvocab(const longname& vname, YYLTYPE);		//!< set the vocabulary of the current theory or structure 
 		void externvocab(const longname& vname, YYLTYPE);	//!< add all symbols of 'vname' to the current vocabulary
 
-		Sort*	sort(Sort* s);	//!< add an existing sort to the current vocabulary
+		Sort*		sort(Sort* s);				//!< add an existing sort to the current vocabulary
+		Predicate*	predicate(Predicate* p);	//!< add an existing predicate to the current vocabulary
+		Function*	function(Function* f);		//!< add an existing function to the current vocabulary
+
+		Sort*		sortpointer(const longname&, YYLTYPE);	
+			//!< return the sort with the given name
+		Predicate*	predpointer(longname&, const std::vector<Sort*>&, YYLTYPE);
+			//!< return the predicate with the given name and sorts
+		Predicate*	predpointer(longname&, int arity, YYLTYPE);	
+			//!< return the predicate with the given name and arity
+		Function*	funcpointer(longname&, const std::vector<Sort*>&, YYLTYPE);	
+			//!< return the function with the given name and sorts
+		Function*	funcpointer(longname&, int arity, YYLTYPE);	
+			//!< return the function with the given name and arity
+
+		NSPair*	internpredpointer(const longname&, const std::vector<Sort*>&, YYLTYPE);
+		NSPair*	internfuncpointer(const longname&, const std::vector<Sort*>&, Sort*, YYLTYPE);
+		NSPair*	internpointer(const longname& name, YYLTYPE);
+
+		Sort*	sort(const std::string& name, YYLTYPE);						
+		Sort*	sort(const std::string& name, const std::vector<Sort*> supbs, bool p, YYLTYPE);
+		Sort*	sort(const std::string& name, const std::vector<Sort*> sups, const std::vector<Sort*> subs, YYLTYPE);
+
+		Predicate*	predicate(const std::string& name, const std::vector<Sort*>& sorts, YYLTYPE);	
+			//!< create a new predicate with the given sorts in the current vocabulary
+		Predicate*	predicate(const std::string& name, YYLTYPE);	
+			//!< create a new 0-ary predicate in the current vocabulary
+			
+		Function*	function(const std::string& name, const std::vector<Sort*>& insorts, Sort* outsort, YYLTYPE);	
+			//!< create a new function in the current vocabulary
+		Function*	function(const std::string& name, Sort* outsort, YYLTYPE);	
+			//!< create a new constant in the current vocabulary
+		Function*	aritfunction(const std::string& name, const std::vector<Sort*>& sorts, YYLTYPE);	
+			//!< create a new arithmetic function in the current vocabulary
+			
+		void	partial(Function* f);
+			//!< make a function partial
+
+		InternalArgument* call(const longname& proc, const std::vector<longname>& args, YYLTYPE);
+			//!< call a procedure
+		InternalArgument* call(const longname& proc, YYLTYPE);
+			//!< call a procedure
+
+		void definition(Definition* d);		//!< add a definition to the current theory
+		void sentence(Formula* f);			//!< add a sentence to the current theory
+		void fixpdef(FixpDef* d);			//!< add a fixpoint defintion to the current theory
+
+
+		Definition*	definition(const std::vector<Rule*>& r); //!< create a new definition
+			
+		Rule*	rule(const std::set<Variable*>&,Formula* h, Formula* b, YYLTYPE);
+			//!< create a new rule 
+		Rule*	rule(const std::set<Variable*>&,Formula* h, YYLTYPE);
+			//!< create a new rule with an empty body
+		Rule*	rule(Formula* h, Formula* b, YYLTYPE);
+			//!< create a rule without quantified variables
+		Rule*	rule(Formula* h, YYLTYPE);
+			//!< create a rule without quantified variables and with an empty body
+			
+		void		addRule(FixpDef*, Rule*);	//!< add a rule to a fixpoint definition
+		void		addDef(FixpDef*,FixpDef*);	//!< add a fixpoint definition to a fixpoint definition
+		FixpDef*	createFD();					//!< create a new fixpoint definition
+		void		makeLFD(FixpDef*,bool);		//!< make the fixpointdefinition a least or greatest fixpoint definition
+
+		Formula*	trueform(YYLTYPE);		
+			//!< create a new true formula 
+		Formula*	falseform(YYLTYPE);	
+			//!< create a new false formula 
+		Formula*	funcgraphform(NSPair*, const std::vector<Term*>&, Term*, YYLTYPE);
+			//!< create a new formula of the form F(t1,...,tn) = t
+		Formula*	funcgraphform(NSPair*, Term*, YYLTYPE);
+			//!< create a new formula of the form C = t
+		Formula*	predform(NSPair*, const std::vector<Term*>&, YYLTYPE);
+			//!< create a new formula of the form P(t1,...,tn)
+		Formula*	predform(NSPair*, YYLTYPE);
+			//!< create a new formula of the form P
+		Formula*	equivform(Formula*,Formula*,YYLTYPE);
+			//!< create a new formula of the form (phi1 <=> phi2)
+		Formula*	disjform(Formula*,Formula*,YYLTYPE);
+			//!< create a new formula of the form (phi1 | phi2)
+		Formula*	conjform(Formula*,Formula*,YYLTYPE);
+			//!< create a new formula of the form (phi1 & phi2)
+		Formula*	implform(Formula*,Formula*,YYLTYPE);
+			//!< create a new formula of the form (phi1 => phi2)
+		Formula*	revimplform(Formula*,Formula*,YYLTYPE);
+			//!< create a new formula of the form (phi1 <= phi2)
+		Formula*	univform(const std::set<Variable*>&, Formula*, YYLTYPE l); 
+			//!< create a new formula of the form (! x1 ... xn : phi)
+		Formula*	existform(const std::set<Variable*>&, Formula*, YYLTYPE l); 
+			//!< create a new formula of the form (? x1 ... xn : phi)
+		Formula*	bexform(CompType, int, const std::set<Variable*>&, Formula*, YYLTYPE);
+			//!< create a new formula of the form (?_op_n x1 ... xn : phi)
+		Formula*	eqchain(CompType,Formula*,Term*,YYLTYPE);
+			//!< add a term to an equation chain
+		Formula*	eqchain(CompType,Term*,Term*,YYLTYPE);
+			//!< create a new equation chain
+		void negate(Formula*); 
+			//!< negate a formula
+			
+		Variable*	quantifiedvar(const std::string& name, YYLTYPE l); 
+			//!< create a new quantified variable
+		Variable*	quantifiedvar(const std::string& name, Sort* sort, YYLTYPE l);
+			//!< create a new quantified variable with a given sort
+		Sort*		theosortpointer(const longname& vs, YYLTYPE l);
+			//!< get a sort with a given name in the current vocabulary
+
+		Term*	functerm(NSPair*, const std::vector<Term*>&);	//!< create a new function term
+		Term*	functerm(NSPair*);								//!< create a new constant term
+		Term*	arterm(char,Term*,Term*,YYLTYPE);				//!< create a new binary arithmetic term
+		Term*	arterm(const std::string&,Term*,YYLTYPE);		//!< create a new unary arithmetic term
+		Term*	domterm(int,YYLTYPE);							//!< create a new domain element term
+		Term*	domterm(double,YYLTYPE);						//!< create a new domain element term
+		Term*	domterm(std::string*,YYLTYPE);					//!< create a new domain element term
+		Term*	domterm(char,YYLTYPE);							//!< create a new domain element term
+		Term*	domterm(std::string*,Sort*,YYLTYPE);			//!< create a new domain element term of a given sort
+		Term*	aggregate(AggFunction, SetExpr*, YYLTYPE);		//!< create a new aggregate term
+
+		SetExpr*	set(const std::set<Variable*>&, Formula*, YYLTYPE);
+			//!< Create a new set of the form { x1 ... xn : phi }
+		SetExpr*	set(const std::set<Variable*>&, Formula*, Term*, YYLTYPE);
+			//!< Create a new set of the form { x1 ... xn : phi : t }
+		SetExpr*	set(EnumSetExpr*);
+			//!< Cast EnumSetExpr to SetExpr
+
+		EnumSetExpr*	createEnum();
+			//!< Create a new EnumSetExpr
+		void			addFormula(EnumSetExpr*,Formula*);
+			//!< Add a tuple (phi,1) to an EnumSetExpr
+		void			addFT(EnumSetExpr*,Formula*,Term*);
+			//!< Add a tuple (phi,t) to an EnumSetExpr
+
+		void emptyinter(NSPair*);				//!< Assign the empty interpretation
+		void sortinter(NSPair*, SortTable* t);	//!< Assign a one dimensional table
+		void predinter(NSPair*, PredTable* t);	//!< Assign a predicate table
+		void funcinter(NSPair*, FuncTable* t);	//!< Assign a function table
+		void truepredinter(NSPair*);			//!< Assign true
+		void falsepredinter(NSPair*);			//!< Assign false
+		void inter(NSPair*,InternalArgument*,YYLTYPE);	//!< Assign the result of a procedural call
+
+		void threepredinter(NSPair*, const std::string& utf, PredTable* t);
+		void threepredinter(NSPair*, const std::string& utf, SortTable* t);
+		void truethreepredinter(NSPair*, const std::string& utf);
+		void falsethreepredinter(NSPair*, const std::string& utf);
+		void threefuncinter(NSPair*, const std::string& utf, FuncTable* t);
+		void emptythreeinter(NSPair*, const std::string& utf);
+
+		SortTable*	createSortTable();
+		void	addElement(SortTable*,int);
+		void	addElement(SortTable*,double);
+		void	addElement(SortTable*,std::string*);
+		void	addElement(SortTable*,const Compound*);
+		void	addElement(SortTable*,int,int);
+		void	addElement(SortTable*,char,char);
+
+		PredTable*	createPredTable();
+		void	addTuple(PredTable*, std::vector<const DomainElement*>&, YYLTYPE);
+		void	addTuple(PredTable*, YYLTYPE);
+
+		FuncTable*	createFuncTable();
+		void	addTupleVal(FuncTable*, std::vector<const DomainElement*>&, YYLTYPE);
+		void	addTupleVal(FuncTable*, const DomainElement*, YYLTYPE);
+
+		const DomainElement*	element(int);
+		const DomainElement*	element(double);
+		const DomainElement*	element(char);
+		const DomainElement*	element(std::string*);
+		const DomainElement*	element(const Compound*);
+
+		std::pair<int,int>*		range(int,int);
+		std::pair<char,char>*	range(char,char);
+
+		const Compound*	compound(NSPair*);
+		const Compound*	compound(NSPair*,const std::vector<const DomainElement*>&);
+
+		void predatom(NSPair*, const std::vector<const DomainElement*>&, const std::vector<FiniteSortTable*>&, const std::vector<ElementType>&, const std::vector<bool>&,bool);
+		void funcatom(NSPair*, const std::vector<Element>&, const std::vector<FiniteSortTable*>&, const std::vector<ElementType>&, const std::vector<bool>&,bool);
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #ifdef OLD
 	/** Input files **/
@@ -129,124 +356,30 @@ class Insert {
 	void luacode(const std::string&);
 	void luacode(const std::vector<std::string>&);
 
-	/** Vocabulary **/
-
-	// Create new sorts
-	Sort*	sort(const std::string& name, YYLTYPE);						
-	Sort*	sort(const std::string& name, const std::vector<Sort*> supbs, bool p, YYLTYPE);
-	Sort*	sort(const std::string& name, const std::vector<Sort*> sups, const std::vector<Sort*> subs, YYLTYPE);
-
-	Predicate*	predicate(Predicate* p);								// add an existing predicate 
-	Function*	function(Function* f);									// add an existing function 
-	Predicate*	predicate(const std::string& name, const std::vector<Sort*>& sorts, YYLTYPE);	// create a new predicate
-	Predicate*	predicate(const std::string& name, YYLTYPE);								// create a new 0-ary predicate
-	Function*	function(const std::string& name, const std::vector<Sort*>& insorts, Sort* outsort, YYLTYPE);	// create a new function
-	Function*	function(const std::string& name, const std::vector<Sort*>& insorts, YYLTYPE);	// create a new function
-	Function*	function(const std::string& name, Sort* outsort, YYLTYPE);									// create a new constant
-
-	Sort*		copysort(const std::string& name, Sort*, YYLTYPE);		// copy a sort
-	Predicate*	copypred(const std::string& name, Predicate*, YYLTYPE);	// copy a predicate
-	Function*	copyfunc(const std::string& name, Function*, YYLTYPE);	// copy a function
-
 	/** Structure **/
-	void openstructure(const std::string& name, YYLTYPE);
 	void closestructure();
 	void closeaspstructure();
 	void closeaspbelief();
 
 	// two-valued interpretations
-	void sortinter(NSTuple*, FiniteSortTable* t);
-	void predinter(NSTuple*, FinitePredTable* t);
-	void funcinter(NSTuple*, FinitePredTable* t);
-	void emptyinter(NSTuple*);
-	void truepredinter(NSTuple*);
-	void falsepredinter(NSTuple*);
 
 	// three-valued interpretations
-	void threepredinter(NSTuple*, const std::string& utf, FinitePredTable* t);
-	void truethreepredinter(NSTuple*, const std::string& utf);
-	void falsethreepredinter(NSTuple*, const std::string& utf);
-	void threefuncinter(NSTuple*, const std::string& utf, FinitePredTable* t);
-	void threeinter(NSTuple*, const std::string& utf, FiniteSortTable* t);
-	void emptythreeinter(NSTuple*, const std::string& utf);
 
 	// asp atoms
-//	void predatom(NSTuple*, const std::vector<const DomainElement*>&, const std::vector<FiniteSortTable*>&, const std::vector<ElementType>&, const std::vector<bool>&,bool);
-//	void funcatom(NSTuple*, const std::vector<Element>&, const std::vector<FiniteSortTable*>&, const std::vector<ElementType>&, const std::vector<bool>&,bool);
 
 	// compound elements
-	//Compound* makecompound(NSTuple*, const std::vector<TypedElement*>& vte);
-	//Compound* makecompound(NSTuple*);
+	//Compound* makecompound(NSPair*, const std::vector<TypedElement*>& vte);
+	//Compound* makecompound(NSPair*);
 
 	/** Theory **/
-	void opentheory(const std::string& tname, YYLTYPE);
-	void closetheory();
 
-	void definition(Definition* d);		// add a definition to the current theory
-	void sentence(Formula* f);			// add a sentence to the current theory
-	void fixpdef(FixpDef* d);			// add a fixpoint defintion to the current theory
 
-	Rule*		rule(const std::vector<Variable*>&,PredForm* h, Formula* b, YYLTYPE);
-	Rule*		rule(const std::vector<Variable*>&,PredForm* h, YYLTYPE);
-	Rule*		rule(PredForm* h, Formula* b, YYLTYPE);
-	Rule*		rule(PredForm* h, YYLTYPE);
-	Definition*	definition(const std::vector<Rule*>& r);
-	FixpDef*	fixpdef(bool,const std::vector<std::pair<Rule*,FixpDef*> >&);
-
-	BoolForm*		trueform(YYLTYPE);		// the formula TRUE
-	BoolForm*		falseform(YYLTYPE);		// the formula FALSE
-	PredForm*		funcgraphform(NSTuple*, const std::vector<Term*>&, Term*, YYLTYPE);
-	PredForm*		funcgraphform(NSTuple*, Term*, YYLTYPE);
-	PredForm*		predform(NSTuple*, const std::vector<Term*>&, YYLTYPE);
-	PredForm*		predform(NSTuple*, YYLTYPE);
-	EquivForm*		equivform(Formula*,Formula*,YYLTYPE);
-	BoolForm*		disjform(Formula*,Formula*,YYLTYPE);
-	BoolForm*		conjform(Formula*,Formula*,YYLTYPE);
-	BoolForm*		implform(Formula*,Formula*,YYLTYPE);
-	BoolForm*		revimplform(Formula*,Formula*,YYLTYPE);
-	QuantForm*		univform(const std::vector<Variable*>&, Formula*, YYLTYPE l); 
-	QuantForm*		existform(const std::vector<Variable*>&, Formula*, YYLTYPE l); 
-	PredForm*		bexform(char,bool,int,const std::vector<Variable*>&, Formula*, YYLTYPE l); 
-	EqChainForm*	eqchain(char,bool,Term*,Term*,YYLTYPE l);
-	EqChainForm*	eqchain(char,bool,EqChainForm*,Term*,YYLTYPE l);
-
-	Variable*		quantifiedvar(const std::string& name, YYLTYPE l);
-	Variable*		quantifiedvar(const std::string& name, Sort* sort, YYLTYPE l);
-
-	FuncTerm*		functerm(NSTuple*, const std::vector<Term*>&);
-	Term*			functerm(NSTuple*);
-	Term*			arterm(char,Term*,Term*,YYLTYPE);
-	Term*			arterm(const std::string&,Term*,YYLTYPE);
-
-	AggTerm*		aggregate(AggType, SetExpr*, YYLTYPE);
 	FTTuple*		fttuple(Formula* f, Term* t);
-	QuantSetExpr*	set(const std::vector<Variable*>&, Formula*, YYLTYPE);
-	EnumSetExpr*	set(const std::vector<FTTuple*>&, YYLTYPE);
-	EnumSetExpr*	set(const std::vector<Formula*>&, YYLTYPE);
 
-	DomainTerm*		domterm(int,YYLTYPE);
-	DomainTerm*		domterm(double,YYLTYPE);
-	DomainTerm*		domterm(std::string*,YYLTYPE);
-	DomainTerm*		domterm(char,YYLTYPE);
-	DomainTerm*		domterm(std::string*,Sort*,YYLTYPE);
 
 	/** Pointers to symbols **/
 
-	// Return the sort with the given name
-	Sort*	sortpointer(const std::vector<std::string>& sname, YYLTYPE);	
-
-	// Return the predicate with the given name and sorts
-	Predicate*	predpointer(const std::vector<std::string>& pname, const std::vector<Sort*>&, YYLTYPE);
-	Predicate*	predpointer(const std::vector<std::string>& pname, YYLTYPE);	
-
-	// Return the function with the given name and sorts
-	Function*	funcpointer(const std::vector<std::string>& fname, const std::vector<Sort*>&, YYLTYPE);	
-	Function*	funcpointer(const std::vector<std::string>& fname, YYLTYPE);	
-
 	/** Pointers to symbols in the current vocabulary **/
-	Sort*		theosortpointer(const std::vector<std::string>& vs, YYLTYPE l);
-	NSTuple*	internpointer(const std::vector<std::string>& name, const std::vector<Sort*>& sorts, YYLTYPE l);
-	NSTuple*	internpointer(const std::vector<std::string>& name, YYLTYPE l);
 
 };
 

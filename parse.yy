@@ -7,14 +7,10 @@
 %{
 
 #include <string>
-#include "vocabulary.hpp"
-#include "structure.hpp"
-#include "term.hpp"
-#include "theory.hpp"
+#include "common.hpp"
 #include "insert.hpp"
 
 class InternalArgument;
-class SortDescription;
 
 // Lexer
 extern int yylex();
@@ -22,27 +18,6 @@ extern int yylex();
 // Inserter
 extern Insert insert;
 
-// Parsing tables efficiently
-/*FinitePredTable*	_currtable = 0;
-unsigned int		_currrow(0);
-unsigned int		_currcol(0);
-bool				_wrongarity = false;
-void				addEmpty();
-void				addInt(int,YYLTYPE);
-void				addFloat(double,YYLTYPE);
-void				addString(std::string*,YYLTYPE);
-void				addCompound(compound*,YYLTYPE);
-void				closeRow(YYLTYPE);
-void				closeTable();
-
-*/
-// Parsing ASP structures efficiently
-/*std::vector<Element>			_currelements;
-std::vector<FiniteSortTable*>	_currranges;
-std::vector<ElementType>		_currtypes;
-std::vector<bool>				_iselement;
-void							closeTuple();
-*/
 // Errors
 void yyerror(const char* s);
 
@@ -59,44 +34,43 @@ extern std::string dtos(double);
 
 /** Data structures **/
 %union{
-	int					nmr;
-	char				chr;
-	double				dou;
-	std::string*		str;
+	int						nmr;
+	char					chr;
+	double					dou;
+	std::string*			str;
 
-	InternalArgument*	arg;
-	SortDescription*	sde;
-/*	const Compound*		cpo;*/
+	InternalArgument*		arg;
 
-	Sort*				sor;
-	Predicate*			pre;
-	Function*			fun;
-/*	Term*				ter;
-	PredForm*			prf;
-	Formula*			fom;
-	EqChainForm*		eqc;
-	Rule*				rul;
-	FiniteSortTable*	sta;
-	FixpDef*			fpd;
-	Definition*			def;
-	Variable*			var;
-	FTTuple*			ftt;
-	NSTuple*			nst;
-	SetExpr*			set;
-*/
-/*	std::vector<int>*			vint;
-	std::vector<char>*			vcha;*/
-	std::vector<std::string>*	vstr;
-/*	std::vector<Sort*>*			vsor;
-	std::vector<Variable*>*		vvar;
-	std::vector<Term*>*			vter;
-	std::vector<Formula*>*		vfom;
-	std::vector<Rule*>*			vrul;
-	std::vector<FTTuple*>*		vftt;
-	std::vector<TypedElement*>*	vtpe;
+	Sort*					sor;
+	Predicate*				pre;
+	Function*				fun;
+	const Compound*			cpo;
+	Term*					ter;
+	Rule*					rul;
+	FixpDef*				fpd;
+	Definition*				def;
+	Formula*				fom;
+	Variable*				var;
+	SetExpr*				set;
+	EnumSetExpr*			est;
+	NSPair*					nsp;
+	SortTable*				sta;
+	PredTable*				pta;
+	FuncTable*				fta;
+	const DomainElement*	dom;
 
-	std::vector<std::pair<Rule*,FixpDef*> >*	vprf;
-	*/
+	std::vector<std::string>*			vstr;
+	std::vector<Sort*>*					vsor;
+	std::set<Variable*>*				svar;
+	std::vector<Term*>*					vter;
+	std::vector<Formula*>*				vfom;
+	std::vector<Rule*>*					vrul;
+	std::pair<int,int>*					vint;
+	std::pair<char,char>*				vcha;
+	std::vector<const DomainElement*>*	vdom;
+	std::vector<ElRange>*				vera;
+
+	std::vector<std::vector<std::string> >* vvstr;
 }
 
 /** Headers  **/
@@ -104,7 +78,6 @@ extern std::string dtos(double);
 %token THEORY_HEADER
 %token STRUCT_HEADER
 %token ASP_HEADER
-%token ASP_BELIEF
 %token NAMESPACE_HEADER
 %token PROCEDURE_HEADER
 %token OPTION_HEADER
@@ -113,7 +86,6 @@ extern std::string dtos(double);
 /** Keywords **/
 %token VOCABULARY
 %token NAMESPACE
-%token PROCEDURE
 %token OPTIONS
 %token PARTIAL
 %token EXTENDS
@@ -132,12 +104,6 @@ extern std::string dtos(double);
 %token SOM 
 %token LFD
 %token GFD
-
-/** Nederlands **/
-%token NL_TAG
-%token NL_ZN
-%token NL_GENUS
-%token NL_MV
 
 /** Other Terminals **/
 %token <nmr> INTEGER
@@ -185,7 +151,7 @@ extern std::string dtos(double);
 %type <sor> sort_decl
 %type <sor> theosort_pointer
 %type <pre> pred_decl
-%type <nst>	intern_pointer
+%type <nsp>	intern_pointer
 %type <fun> func_decl
 %type <fun> full_func_decl
 %type <fun> arit_func_decl
@@ -194,36 +160,46 @@ extern std::string dtos(double);
 %type <ter> function
 %type <ter> arterm
 %type <ter> aggterm
-%type <prf> predicate
-%type <prf> head
+%type <fom> predicate
+%type <fom> head
 %type <fom> formula
-%type <eqc>	eq_chain
+%type <fom>	eq_chain
 %type <rul> rule
 %type <sta> elements_es
 %type <sta> elements
 %type <fpd> fixpdef
+%type <fpd> fd_rules
 %type <def> definition
-%type <ftt> form_term_tuple
-%type <set> set
+%type <set> formulaset
+%type <set> termset
+%type <est> form_list
+%type <est> form_term_list
 %type <cpo> compound
 %type <arg> function_call
-%type <sde> sortdescription
+%type <pta>	ptuples
+%type <pta>	ptuples_es
+%type <fta> ftuples
+%type <fta> ftuples_es
+%type <dom>	pelement
+%type <dom>	domain_element
 
-%type <vint> intrange
-%type <vcha> charrange
-%type <vter> term_tuple
-%type <vvar> variables
-%type <vfom> form_list
-%type <vrul> rules
-%type <vstr> pointer_name
-%type <vsor> sort_pointer_tuple
-%type <vsor> nonempty_spt
-%type <vsor> binary_arit_func_sorts
-%type <vsor> unary_arit_func_sorts
-%type <vprf> fd_rules
-%type <vftt> form_term_list
-%type <vtpe> compound_args
+%type <vint>	intrange
+%type <vcha>	charrange
+%type <vera>	domain_range
+%type <vter>	term_tuple
+%type <svar>	variables
+%type <vrul>	rules
+%type <vstr>	pointer_name
+%type <vsor>	sort_pointer_tuple
+%type <vsor>	nonempty_spt
+%type <vsor>	binary_arit_func_sorts
+%type <vsor>	unary_arit_func_sorts
+%type <vdom>	compound_args
+%type <vdom>	ptuple	
+%type <vdom>	ftuple	
+%type <vera>	domain_tuple
 
+%type <vvstr> pointer_names
 %%
 
 /*********************
@@ -263,7 +239,7 @@ using			: USING VOCABULARY pointer_name					{ insert.usingvocab(*$3,@1); delete(
 /** Structure of vocabulary declaration **/
 
 vocabulary			: VOCAB_HEADER vocab_name '{' vocab_content '}'		{ insert.closevocab();	}	
-					| VOCAB_HEADER vocab_name '=' function_call			{ insert.assignvocab(*$4,@2);
+					| VOCAB_HEADER vocab_name '=' function_call			{ insert.assignvocab($4,@2);
 																		  insert.closevocab();	}
 					;
 
@@ -295,63 +271,39 @@ extern_sort			: TYPE sort_pointer	{ insert.sort($2);			}
 					;
 
 extern_predicate	: pointer_name '[' sort_pointer_tuple ']'	{ insert.predicate(insert.predpointer(*$1,*$3,@1));
-																  delete($1); delete($3);
-																}
-					| pointer_name '/' INTEGER					{ $1->back() = $1->back() + '/' + itos($3);
-																  insert.predicate(insert.predpointer(*$1,@1));
-																  delete($1);
-																}
+																  delete($1); delete($3); }
+					| pointer_name '/' INTEGER					{ insert.predicate(insert.predpointer(*$1,$3,@1));
+																  delete($1); }
 					;
 
 extern_function		: pointer_name '[' sort_pointer_tuple ':' sort_pointer ']' 
 																	{ insert.function(insert.funcpointer(*$1,*$3,@1));
-																	  delete($1); delete($3);
-																	}
-					| pointer_name '/' INTEGER ':' INTEGER			{ $1->back() = $1->back() + '/' + itos($3 - 1);
-																	  insert.function(insert.funcpointer(*$1,@1));
-																	  delete($1);
-																	}
+																	  delete($1); delete($3); }
+					| pointer_name '/' INTEGER ':' INTEGER			{ insert.function(insert.funcpointer(*$1,$3,@1));
+																	  delete($1); }
 					;
 
 /** Symbol declarations **/
 
-sort_decl		: TYPE identifier											{ $$ = insert.sort(*$2,@2);		
-																			}
+sort_decl		: TYPE identifier											{ $$ = insert.sort(*$2,@2);		}
 				| TYPE identifier ISA nonempty_spt							{ $$ = insert.sort(*$2,*$4,true,@2);	
-																			  delete($4);
-																			}
+																			  delete($4); }
 				| TYPE identifier EXTENDS nonempty_spt						{ $$ = insert.sort(*$2,*$4,false,@2);	
-																			  delete($4);
-																			}
+																			  delete($4); }
 				| TYPE identifier ISA nonempty_spt EXTENDS nonempty_spt		{ $$ = insert.sort(*$2,*$4,*$6,@2);		
-																			  delete($4); delete($6);
-																			}
+																			  delete($4); delete($6); }
 				| TYPE identifier EXTENDS nonempty_spt ISA nonempty_spt		{ $$ = insert.sort(*$2,*$6,*$4,@2);		
-																			  delete($4); delete($6);
-																			}
-				| sort_decl sortdescription									{ insert.sortdescription($1,$2);
-																			}
+																			  delete($4); delete($6); }
 				;
-
-sortdescription	: nlsortdescription
-				;
-
-nlsortdescription	: NL_TAG '{' zelfstandig_naamwoord '}'
-					;
-
-zelfstandig_naamwoord	: NL_ZN NL_GENUS NL_MV identifier
-						;
 
 pred_decl		: identifier '(' sort_pointer_tuple ')'	{ insert.predicate(*$1,*$3,@1); delete($3); }
 				| identifier							{ insert.predicate(*$1,@1);  }
 				;
 
-func_decl		: PARTIAL CONSTR full_func_decl			{ $$ = $3; if($$) { $$->partial(true); $$->constructor(true); }	}
-				| PARTIAL full_func_decl				{ $$ = $2; if($$) $$->partial(true);							}
-				| CONSTR full_func_decl					{ $$ = $2; if($$) $$->constructor(true);						}
-				| full_func_decl						{ $$ = $1;														}
-				| PARTIAL arit_func_decl				{ $$ = $2; if($$) $$->partial(true);							}
-				| arit_func_decl						{ $$ = $1;														}
+func_decl		: PARTIAL full_func_decl				{ $$ = $2; insert.partial($$);	}
+				| full_func_decl						{ $$ = $1;								}
+				| PARTIAL arit_func_decl				{ $$ = $2; insert.partial($$);	}
+				| arit_func_decl						{ $$ = $1;								}
 				;
 
 full_func_decl	: identifier '(' sort_pointer_tuple ')' ':' sort_pointer	{ $$ = insert.function(*$1,*$3,$6,@1);
@@ -359,26 +311,22 @@ full_func_decl	: identifier '(' sort_pointer_tuple ')' ':' sort_pointer	{ $$ = i
 				| identifier ':' sort_pointer								{ $$ = insert.function(*$1,$3,@1); }	
 				; 														
 
-arit_func_decl	: '-' binary_arit_func_sorts				{ $$ = insert.function("-/2",*$2,@1); delete($2);		}
-                | '+' binary_arit_func_sorts				{ $$ = insert.function("+/2",*$2,@1); delete($2);		}
-                | '*' binary_arit_func_sorts				{ $$ = insert.function("*/2",*$2,@1); delete($2);		}
-                | '/' binary_arit_func_sorts				{ $$ = insert.function("//2",*$2,@1); delete($2);		}
-                | '%' binary_arit_func_sorts				{ $$ = insert.function("%/2",*$2,@1); delete($2);		}
-                | '^' binary_arit_func_sorts				{ $$ = insert.function("^/2",*$2,@1); delete($2);		}
-                | '-' unary_arit_func_sorts  %prec UMINUS	{ $$ = insert.function("-/1",*$2,@1); delete($2);		}
-                | ABS unary_arit_func_sorts					{ $$ = insert.function("abs/1",*$2,@1); delete($2);	}
+arit_func_decl	: '-' binary_arit_func_sorts				{ $$ = insert.aritfunction("-/2",*$2,@1); delete($2);	}
+                | '+' binary_arit_func_sorts				{ $$ = insert.aritfunction("+/2",*$2,@1); delete($2);	}
+                | '*' binary_arit_func_sorts				{ $$ = insert.aritfunction("*/2",*$2,@1); delete($2);	}
+                | '/' binary_arit_func_sorts				{ $$ = insert.aritfunction("//2",*$2,@1); delete($2);	}
+                | '%' binary_arit_func_sorts				{ $$ = insert.aritfunction("%/2",*$2,@1); delete($2);	}
+                | '^' binary_arit_func_sorts				{ $$ = insert.aritfunction("^/2",*$2,@1); delete($2);	}
+                | '-' unary_arit_func_sorts  %prec UMINUS	{ $$ = insert.aritfunction("-/1",*$2,@1); delete($2);	}
+                | ABS unary_arit_func_sorts					{ $$ = insert.aritfunction("abs/1",*$2,@1); delete($2);	}
 				;
 
-binary_arit_func_sorts	: '(' sort_pointer ',' sort_pointer ')' ':' sort_pointer	{ $$ = new std::vector<Sort*>(3);
-																					  (*$$)[0] = $2;
-																					  (*$$)[1] = $4;
-																					  (*$$)[2] = $7;
-																					}
+binary_arit_func_sorts	: '(' sort_pointer ',' sort_pointer ')' ':' sort_pointer	
+							{ $$ = new std::vector<Sort*>(3); (*$$)[0] = $2; (*$$)[1] = $4; (*$$)[2] = $7; }
 						;
 
-unary_arit_func_sorts	: '(' sort_pointer ')' ':' sort_pointer	{ $$ = new std::vector<Sort*>(2);
-																  (*$$)[0] = $2; (*$$)[1] = $5;
-																}
+unary_arit_func_sorts	: '(' sort_pointer ')' ':' sort_pointer	
+							{ $$ = new std::vector<Sort*>(2); (*$$)[0] = $2; (*$$)[1] = $5; }
 						;
 
 /** Symbol pointers **/
@@ -386,18 +334,13 @@ unary_arit_func_sorts	: '(' sort_pointer ')' ':' sort_pointer	{ $$ = new std::ve
 sort_pointer		: pointer_name				{ $$ = insert.sortpointer(*$1,@1); delete($1); }
 					;
 
-intern_pointer		: pointer_name '[' sort_pointer_tuple ']'	{ $$ = insert.internpointer(*$1,*$3,@1);
-																  delete($1); delete($3);
-																}
+intern_pointer		: pointer_name '[' sort_pointer_tuple ']'	{ $$ = insert.internpredpointer(*$1,*$3,@1);
+																  delete($1); delete($3); }
 					| pointer_name '[' sort_pointer_tuple ':' sort_pointer ']'	
-																{ $3->push_back($5);
-																  $$ = insert.internpointer(*$1,*$3,@1);
-																  $$->func(true);
-																  delete($1); delete($3);
-																}
+																{ $$ = insert.internfuncpointer(*$1,*$3,$5,@1);
+																  delete($1); delete($3); }
 					| pointer_name								{ $$ = insert.internpointer(*$1,@1);
-																  delete($1); 
-																}
+																  delete($1); }
 					;
 
 pointer_name		: pointer_name "::" identifier	{ $$ = $1; $$->push_back(*$3); 		}
@@ -409,19 +352,21 @@ pointer_name		: pointer_name "::" identifier	{ $$ = $1; $$->push_back(*$3); 		}
 *************/
 
 theory		: THEORY_HEADER theory_name ':' vocab_pointer '{' def_forms '}'		{ insert.closetheory();	}
-			| THEORY_HEADER theory_name '=' function_call						{ /* TODO */ 
+			| THEORY_HEADER theory_name '=' function_call						{ insert.assigntheory($4,@2); 
 																				  insert.closetheory();	}
 			;
 
 theory_name	: identifier	{ insert.opentheory(*$1,@1);  }
 			;
 
-function_call	: pointer_name '(' pointer_names ')'	/* TODO */
-				| pointer_name '(' ')'					/* TODO */
+function_call	: pointer_name '(' pointer_names ')'	{ $$ = insert.call(*$1,*$3,@1); delete($1); delete($3);	}
+				| pointer_name '(' ')'					{ $$ = insert.call(*$1,@1); delete($1);					}
 				;
 
-pointer_names	: pointer_names ',' pointer_name	/* TODO */
-				| pointer_name						/* TODO */
+pointer_names	: pointer_names ',' pointer_name	{ $$ = $1; $$->push_back(*$3);
+													  delete($3); }
+				| pointer_name						{ $$ = new std::vector<std::vector<std::string> >(1,*$1);
+													  delete($1); }
 				;
 
 def_forms	: /* empty */
@@ -450,7 +395,7 @@ rule		: '!' variables ':' head "<-" formula	{ $$ = insert.rule(*$2,$4,$6,@1); de
 			| head									{ $$ = insert.rule($1,@1);		}
 			;
 
-head		: predicate										{ $$ = $1;	}				
+head		: predicate										{ $$ = $1;												}
 			| intern_pointer '(' term_tuple ')' '=' term	{ $$ = insert.funcgraphform($1,*$3,$6,@1); delete($3);	}
 			| intern_pointer '(' ')' '=' term				{ $$ = insert.funcgraphform($1,$5,@1);					}
 			| intern_pointer '=' term						{ $$ = insert.funcgraphform($1,$3,@1);					}
@@ -459,33 +404,33 @@ head		: predicate										{ $$ = $1;	}
 
 /** Fixpoint definitions **/
 
-fixpdef		: LFD '[' fd_rules ']'		{ $$ = insert.fixpdef(true,*$3); delete($3);	}
-			| GFD '[' fd_rules ']'		{ $$ = insert.fixpdef(false,*$3); delete($3);	}
+fixpdef		: LFD '[' fd_rules ']'		{ $$ = $3; insert.makeLFD($3,true); 	}
+			| GFD '[' fd_rules ']'		{ $$ = $3; insert.makeLFD($3,false);	}
 			;
 
-fd_rules	: fd_rules rule	'.'			{ $$ = $1; $$->push_back(std::pair<Rule*,FixpDef*>($2,0));					}
-			| fd_rules fixpdef			{ $$ = $1; $$->push_back(std::pair<Rule*,FixpDef*>(0,$2));					}
-			| rule '.'					{ $$ = new std::vector<std::pair<Rule*,FixpDef*> >(1,std::pair<Rule*,FixpDef*>($1,0));	}
-			| fixpdef					{ $$ = new std::vector<std::pair<Rule*,FixpDef*> >(1,std::pair<Rule*,FixpDef*>(0,$1));	}
+fd_rules	: fd_rules rule	'.'			{ $$ = $1; insert.addRule($$,$2);					}
+			| fd_rules fixpdef			{ $$ = $1; insert.addDef($$,$2);					}
+			| rule '.'					{ $$ = insert.createFD(); insert.addRule($$,$1);	}
+			| fixpdef					{ $$ = insert.createFD(); insert.addDef($$,$1);		}
 			;	
 
 /** Formulas **/
 
 formula		: '!' variables ':' formula					{ $$ = insert.univform(*$2,$4,@1); delete($2);		}
             | '?' variables ':' formula					{ $$ = insert.existform(*$2,$4,@1); delete($2);	}
-			| '?' INTEGER  variables ':' formula		{ $$ = insert.bexform('=',true,$2,*$3,$5,@1);
+			| '?' INTEGER  variables ':' formula		{ $$ = insert.bexform(CT_EQ,$2,*$3,$5,@1);
 														  delete($3);										}
-			| '?' '=' INTEGER variables ':' formula		{ $$ = insert.bexform('=',true,$3,*$4,$6,@1);
+			| '?' '=' INTEGER variables ':' formula		{ $$ = insert.bexform(CT_EQ,$3,*$4,$6,@1);
 														  delete($4);										}
-			| '?' '<' INTEGER variables ':' formula		{ $$ = insert.bexform('<',true,$3,*$4,$6,@1);
+			| '?' '<' INTEGER variables ':' formula		{ $$ = insert.bexform(CT_LT,$3,*$4,$6,@1);
 														  delete($4);										}
-			| '?' '>' INTEGER variables ':' formula		{ $$ = insert.bexform('>',true,$3,*$4,$6,@1);
+			| '?' '>' INTEGER variables ':' formula		{ $$ = insert.bexform(CT_GT,$3,*$4,$6,@1);
 														  delete($4);										}
-			| '?' "=<" INTEGER variables ':' formula	{ $$ = insert.bexform('>',false,$3,*$4,$6,@1);
+			| '?' "=<" INTEGER variables ':' formula	{ $$ = insert.bexform(CT_LEQ,$3,*$4,$6,@1);
 														  delete($4);										}
-			| '?' ">=" INTEGER variables ':' formula	{ $$ = insert.bexform('<',false,$3,*$4,$6,@1);
+			| '?' ">=" INTEGER variables ':' formula	{ $$ = insert.bexform(CT_GEQ,$3,*$4,$6,@1);
 														  delete($4);										}
-			| '~' formula								{ $$ = $2; $$->swapsign();							}
+			| '~' formula								{ $$ = $2; insert.negate($$);						}
             | formula '&' formula						{ $$ = insert.conjform($1,$3,@1);					}
             | formula '|' formula						{ $$ = insert.disjform($1,$3,@1);					}
             | formula "=>" formula						{ $$ = insert.implform($1,$3,@1);					}
@@ -503,22 +448,22 @@ predicate   : intern_pointer							{ $$ = insert.predform($1,@1);					}
             | intern_pointer '(' term_tuple ')'			{ $$ = insert.predform($1,*$3,@1); delete($3); }
             ;
 
-eq_chain	: eq_chain '='  term	{ $$ = insert.eqchain('=',true,$1,$3,@1);	}
-			| eq_chain "~=" term	{ $$ = insert.eqchain('=',false,$1,$3,@1);	}
-			| eq_chain '<'  term	{ $$ = insert.eqchain('<',true,$1,$3,@1);	}	
-			| eq_chain '>'  term    { $$ = insert.eqchain('>',true,$1,$3,@1);	}
-			| eq_chain "=<" term	{ $$ = insert.eqchain('>',false,$1,$3,@1);	}		
-			| eq_chain ">=" term	{ $$ = insert.eqchain('<',false,$1,$3,@1);	}		
-			| term '='  term		{ $$ = insert.eqchain('=',true,$1,$3,@1);	}
-            | term "~=" term		{ $$ = insert.eqchain('=',false,$1,$3,@1);	}
-            | term '<'  term		{ $$ = insert.eqchain('<',true,$1,$3,@1);	}
-            | term '>'  term		{ $$ = insert.eqchain('>',true,$1,$3,@1);	}
-            | term "=<" term		{ $$ = insert.eqchain('>',false,$1,$3,@1);	}
-            | term ">=" term		{ $$ = insert.eqchain('<',false,$1,$3,@1);	}
+eq_chain	: eq_chain '='  term	{ $$ = insert.eqchain(CT_EQ,$1,$3,@1);	}
+			| eq_chain "~=" term	{ $$ = insert.eqchain(CT_NEQ,$1,$3,@1);	}
+			| eq_chain '<'  term	{ $$ = insert.eqchain(CT_LT,$1,$3,@1);	}	
+			| eq_chain '>'  term    { $$ = insert.eqchain(CT_GT,$1,$3,@1);	}
+			| eq_chain "=<" term	{ $$ = insert.eqchain(CT_LEQ,$1,$3,@1);	}		
+			| eq_chain ">=" term	{ $$ = insert.eqchain(CT_GEQ,$1,$3,@1);	}		
+			| term '='  term		{ $$ = insert.eqchain(CT_EQ,$1,$3,@1);	}
+            | term "~=" term		{ $$ = insert.eqchain(CT_NEQ,$1,$3,@1);	}
+            | term '<'  term		{ $$ = insert.eqchain(CT_LT,$1,$3,@1);	}
+            | term '>'  term		{ $$ = insert.eqchain(CT_GT,$1,$3,@1);	}
+            | term "=<" term		{ $$ = insert.eqchain(CT_LEQ,$1,$3,@1);	}
+            | term ">=" term		{ $$ = insert.eqchain(CT_GEQ,$1,$3,@1);	}
 			;
 
-variables   : variables variable	{ $$ = $1; $$->push_back($2);		}		
-            | variable				{ $$ = new std::vector<Variable*>(1,$1);	}
+variables   : variables variable	{ $$ = $1; $$->insert($2);						}		
+            | variable				{ $$ = new std::set<Variable*>;	$$->insert($1);	}
 			;
 
 variable	: identifier							{ $$ = insert.quantifiedvar(*$1,@1);		}
@@ -560,17 +505,28 @@ domterm		: INTEGER									{ $$ = insert.domterm($1,@1);		}
 			| '@' identifier							{ $$ = insert.domterm($2,0,@1);	}
 			;
 
-aggterm		: CARD set							{ $$ = insert.aggregate(AGGCARD,$2,@1);	}
-			| SOM set							{ $$ = insert.aggregate(AGGSUM,$2,@1);		}
-			| PROD set							{ $$ = insert.aggregate(AGGPROD,$2,@1);	}
-			| MINAGG set						{ $$ = insert.aggregate(AGGMIN,$2,@1);		}
-			| MAXAGG set						{ $$ = insert.aggregate(AGGMAX,$2,@1);		}
+aggterm		: CARD formulaset	{ $$ = insert.aggregate(AGG_CARD,$2,@1);	}
+			| SOM termset		{ $$ = insert.aggregate(AGG_SUM,$2,@1);		}
+			| PROD termset		{ $$ = insert.aggregate(AGG_PROD,$2,@1);	}
+			| MINAGG termset	{ $$ = insert.aggregate(AGG_MIN,$2,@1);		}
+			| MAXAGG termset	{ $$ = insert.aggregate(AGG_MAX,$2,@1);		}
 			;
 
-set			: '{' variables ':' formula '}'		{ $$ = insert.set(*$2,$4,@1); delete($2);	}	
-			| '[' form_term_list ']'			{ $$ = insert.set(*$2,@1); delete($2);		}
-			| '[' form_list ']'					{ $$ = insert.set(*$2,@1); delete($2);		}
-			;
+formulaset		: '{' variables ':' formula '}'				{ $$ = insert.set(*$2,$4,@1); delete($2);	}
+				| '[' form_list ']'							{ $$ = insert.set($2);						}
+				;
+
+termset			: '{' variables ':' formula ':' term '}'	{ $$ = insert.set(*$2,$4,$6,@1); delete($2);	}	
+				| '[' form_term_list ']'					{ $$ = insert.set($2);							}
+				;
+
+form_list		: form_list ';' formula						{ $$ = $1; insert.addFormula($$,$3);					}
+				| formula									{ $$ = insert.createEnum();	insert.addFormula($$,$1);	}		
+				;
+
+form_term_list	: form_term_list ';' '(' formula ',' term ')'	{ $$ = $1; insert.addFT($$,$4,$6);					}
+				| '(' formula ',' term ')'						{ $$ = insert.createEnum(); insert.addFT($$,$2,$4);	}
+				;
 
 
 /**********************
@@ -578,7 +534,7 @@ set			: '{' variables ':' formula '}'		{ $$ = insert.set(*$2,$4,@1); delete($2);
 **********************/
 
 structure		: STRUCT_HEADER struct_name ':' vocab_pointer '{' interpretations '}'	{ insert.closestructure();	}
-				| STRUCT_HEADER struct_name '=' function_call							{ /* TODO */ 
+				| STRUCT_HEADER struct_name '=' function_call							{ insert.assignstructure($4,@2);
 																						  insert.closestructure();	}
 				;
 
@@ -613,116 +569,95 @@ elements_es		: elements ';'						{ $$ = $1;	}
 				| elements							{ $$ = $1;	}
 				;
 
-elements		: elements ';' charrange			{ $$ = $1->add((*$3)[0],(*$3)[1]); delete($3);
-													  if($$ != $1) delete($1);
-													}
-				| elements ';' intrange				{ $$ = $1->add((*$3)[0],(*$3)[1]); delete($3);	
-													  if($$ != $1) delete($1);
-													}
-				| elements ';' '(' strelement ')'	{ $$ = $1->add($4);				
-													  if($$ != $1) delete($1);
-													}
-				| elements ';' '(' integer ')'		{ $$ = $1->add($4);								
-													  if($$ != $1) delete($1);
-													}
-				| elements ';' '(' compound ')'		{ $$ = $1->add($4);
-													  if($$ != $1) delete($1);
-													}
-				| elements ';' '(' floatnr ')'		{ $$ = $1->add($4);
-													  if($$ != $1) delete($1);
-													}
-				| elements ';' integer				{ $$ = $1->add($3);								
-													  if($$ != $1) delete($1);
-													}
-				| elements ';' strelement			{ $$ = $1->add($3);
-													  if($$ != $1) delete($1);
-													}
-				| elements ';' floatnr				{ $$ = $1->add($3); 
-													  if($$ != $1) delete($1);
-													}
-				| elements ';' compound				{ $$ = $1->add($3);
-													  if($$ != $1) delete($1);
-													}
-				| charrange							{ $$ = new StrSortTable(); $$ = $$->add((*$1)[0],(*$1)[1]); delete($1);	}
-				| intrange							{ $$ = new RanSortTable((*$1)[0],(*$1)[1]); delete($1);					}
-				| '(' strelement ')'				{ $$ = new StrSortTable(); $$ = $$->add($2);							}
-				| '(' integer ')'					{ $$ = new IntSortTable(); $$ = $$->add($2);							}
-				| '(' floatnr ')'                   { $$ = new FloatSortTable(); $$ = $$->add($2);							}
-				| '(' compound ')'					{ $$ = new MixedSortTable(); $$ = $$->add($2);							}
-				| strelement						{ $$ = new StrSortTable(); $$ = $$->add($1);							}
-				| integer							{ $$ = new IntSortTable(); $$ = $$->add($1);							}
-				| floatnr							{ $$ = new FloatSortTable(); $$ = $$->add($1);							}
-				| compound							{ $$ = new MixedSortTable(); $$ = $$->add($1);							}
+elements		: elements ';' charrange			{ $$ = $1; insert.addElement($$,$3->first,$3->second);		}
+				| elements ';' intrange				{ $$ = $1; insert.addElement($$,$3->first,$3->second);		}
+				| elements ';' '(' strelement ')'	{ $$ = $1; insert.addElement($$,$4);						}
+				| elements ';' '(' integer ')'		{ $$ = $1; insert.addElement($$,$4);						}
+				| elements ';' '(' compound ')'		{ $$ = $1; insert.addElement($$,$4);						}
+				| elements ';' '(' floatnr ')'		{ $$ = $1; insert.addElement($$,$4);						}
+				| elements ';' integer				{ $$ = $1; insert.addElement($$,$3);						}
+				| elements ';' strelement			{ $$ = $1; insert.addElement($$,$3);						}
+				| elements ';' floatnr				{ $$ = $1; insert.addElement($$,$3);						}
+				| elements ';' compound				{ $$ = $1; insert.addElement($$,$3);						}
+				| charrange							{ $$ = insert.createSortTable(); 
+													  insert.addElement($$,$1->first,$1->second);				}
+				| intrange							{ $$ = insert.createSortTable(); 
+													  insert.addElement($$,$1->first,$1->second);				}
+				| '(' strelement ')'				{ $$ = insert.createSortTable(); insert.addElement($$,$2);	}
+				| '(' integer ')'					{ $$ = insert.createSortTable(); insert.addElement($$,$2);	}
+				| '(' floatnr ')'                   { $$ = insert.createSortTable(); insert.addElement($$,$2);	}
+				| '(' compound ')'					{ $$ = insert.createSortTable(); insert.addElement($$,$2);	}
+				| strelement						{ $$ = insert.createSortTable(); insert.addElement($$,$1);	}
+				| integer							{ $$ = insert.createSortTable(); insert.addElement($$,$1);	}
+				| floatnr							{ $$ = insert.createSortTable(); insert.addElement($$,$1);	}
+				| compound							{ $$ = insert.createSortTable(); insert.addElement($$,$1);	}
 				;
 
-strelement		: identifier	{ $$ = $1;	}
-				| STRINGCONS	{ $$ = $1;	}
-				| CHARCONS		{ $$ = IDPointer(std::string(1,$1));	}
+strelement		: identifier	{ $$ = $1;									}
+				| STRINGCONS	{ $$ = $1;									}
+				| CHARCONS		{ $$ = StringPointer(std::string(1,$1));	}
 				;
 
 /** Interpretations with arity not 1 **/
 
-pred_inter		: intern_pointer '=' '{' ptuples_es '}'		{ if(!_wrongarity) insert.predinter($1,_currtable);
-															  closeTable();
-															}
+pred_inter		: intern_pointer '=' '{' ptuples_es '}'		{ insert.predinter($1,$4);		}
 				| intern_pointer '=' TRUE					{ insert.truepredinter($1);		}
 				| intern_pointer '=' FALSE					{ insert.falsepredinter($1);	}
 				;
 
-ptuples_es		: ptuples ';'						
-				| ptuples
+ptuples_es		: ptuples ';'					{ $$ = $1;	}	
+				| ptuples						{ $$ = $1;	}
 				;
 
-ptuples			: ptuples ';' '(' ptuple ')'	{ closeRow(@4);	}
-				| ptuples ';' ptuple			{ closeRow(@3);	}
-				| ptuples ';' emptyptuple		{ addEmpty(); closeRow(@3);	}
-				| '(' ptuple ')'				{ closeRow(@2);	}
-				| ptuple						{ closeRow(@1);	}
-				| emptyptuple					{ addEmpty(); closeRow(@1);	}				
+ptuples			: ptuples ';' '(' ptuple ')'	{ $$ = $1; insert.addTuple($$,*$4,@4); delete($4);	}
+				| ptuples ';' ptuple			{ $$ = $1; insert.addTuple($$,*$3,@3); delete($3);	}
+				| ptuples ';' emptyptuple		{ $$ = $1; insert.addTuple($$,@3);					}
+				| '(' ptuple ')'				{ $$ = insert.createPredTable(); insert.addTuple($$,*$2,@2); delete($2);	}
+				| ptuple						{ $$ = insert.createPredTable(); insert.addTuple($$,*$1,@1); delete($1);	}
+				| emptyptuple					{ $$ = insert.createPredTable(); insert.addTuple($$,@1);					}
 				;
 
 emptyptuple		: '(' ')'										
 				;
 
-ptuple			: ptuple ',' pelement						
-				| pelement ',' pelement	
+ptuple			: ptuple ',' pelement			{ $$ = $1; $$->push_back($3);	}			
+				| pelement ',' pelement			{ $$ = new std::vector<const DomainElement*>(); 
+												  $$->push_back($1); $$->push_back($3); }
 				;
 
-pelement		: integer		{ addInt($1,@1);											}
-				| identifier	{ addString($1,@1);											}
-				| CHARCONS		{ std::string* str = IDPointer(std::string(1,$1)); addString(str,@1);	}
-				| STRINGCONS	{ addString($1,@1);											}
-				| floatnr		{ addFloat($1,@1);											}
-				| compound		{ addCompound($1,@1);										}
+pelement		: integer		{ $$ = insert.element($1);	}
+				| identifier	{ $$ = insert.element($1);	}
+				| CHARCONS		{ $$ = insert.element($1);	}
+				| STRINGCONS	{ $$ = insert.element($1);	}
+				| floatnr		{ $$ = insert.element($1);	}
+				| compound		{ $$ = insert.element($1);	}
 				;
 
 /** Interpretations for functions **/
 
-func_inter	: intern_pointer '=' '{' ftuples_es '}'	{ if(!_wrongarity) insert.funcinter($1,_currtable);
-													  closeTable();	
-													}	
-			| intern_pointer '=' pelement			{ if(!_wrongarity) insert.funcinter($1,_currtable);
-													  closeTable();
-													}
+func_inter	: intern_pointer '=' '{' ftuples_es '}'	{ insert.funcinter($1,$4); }	
+			| intern_pointer '=' pelement			{ FuncTable* ft = insert.createFuncTable();
+													  insert.addTupleVal(ft,$3,@3);
+													  insert.funcinter($1,ft); }
 			;
 
-ftuples_es		: ftuples ';'
-				| ftuples
+ftuples_es		: ftuples ';'					{ $$ = $1;	}
+				| ftuples						{ $$ = $1;	}
 				;
 
-ftuples			: ftuples ';' ftuple			{ closeRow(@3);	}	
-				| ftuple						{ closeRow(@1);	}	
+ftuples			: ftuples ';' ftuple			{ $$ = $1; insert.addTupleVal($$,*$3,@3); delete($3);					    }
+				| ftuple						{ $$ = insert.createFuncTable(); insert.addTupleVal($$,*$1,@1);	delete($1);	}
 				;
 
-ftuple			: ptuple "->" pelement						
-				| pelement "->" pelement
-				| emptyptuple "->" pelement				
-				| "->" pelement
+ftuple			: ptuple "->" pelement			{ $$ = $1; $$->push_back($3);	}			
+				| pelement "->" pelement		{ $$ = new std::vector<const DomainElement*>(1,$1); $$->push_back($3);	}
+				| emptyptuple "->" pelement		{ $$ = new std::vector<const DomainElement*>(1,$3);	}		
+				| "->" pelement					{ $$ = new std::vector<const DomainElement*>(1,$2);	}
 				;
 
 /** Procedural interpretations **/
 
-proc_inter		: intern_pointer '=' PROCEDURE pointer_name		/* TODO */
+proc_inter		: intern_pointer '=' function_call	{ insert.inter($1,$3,@1);	}
 				;
 
 /** Three-valued interpretations **/
@@ -735,74 +670,40 @@ three_inter		: threepred_inter
 threeempty_inter	: intern_pointer '<' identifier '>' '=' '{' '}'			{ insert.emptythreeinter($1,*$3); }
 					;
 
-threepred_inter : intern_pointer '<' identifier '>' '=' '{' ptuples_es '}'	{ if(!_wrongarity) 
-																			    insert.threepredinter($1,*$3,_currtable);
-																			  closeTable(); 
-																			}
-				| intern_pointer '<' identifier '>' '=' '{' elements_es '}'	{ insert.threeinter($1,*$3,$7); }
+threepred_inter : intern_pointer '<' identifier '>' '=' '{' ptuples_es '}'	{ insert.threepredinter($1,*$3,$7);		}
+				| intern_pointer '<' identifier '>' '=' '{' elements_es '}'	{ insert.threepredinter($1,*$3,$7);		}
 				| intern_pointer '<' identifier '>' '=' TRUE				{ insert.truethreepredinter($1,*$3);	}
 				| intern_pointer '<' identifier '>' '=' FALSE				{ insert.falsethreepredinter($1,*$3);	}
 				;
 
-threefunc_inter	: intern_pointer '<' identifier '>' '=' '{' ftuples_es '}'	{ if(!_wrongarity) 
-																				insert.threefuncinter($1,*$3,_currtable);
-																			  closeTable();	
-																			}
-				| intern_pointer '<' identifier '>' '=' pelement			{ if(!_wrongarity) 
-																				insert.threefuncinter($1,*$3,_currtable);
-																			  closeTable();	
-																			}
+threefunc_inter	: intern_pointer '<' identifier '>' '=' '{' ftuples_es '}'	{ insert.threefuncinter($1,*$3,$7);		}
+				| intern_pointer '<' identifier '>' '=' pelement			{ FuncTable* ft = insert.createFuncTable();
+																			  insert.addTupleVal(ft,$6,@6);
+																			  insert.threefuncinter($1,*$3,ft);		}
 				;
 
 /** Ranges **/
 
-intrange	: integer ".." integer			{ $$ = new std::vector<int>(2,$1); 
-											  if($1 > $3) { 
-												  ParseInfo pi(@1.first_line,@1.first_column,insert.currfile());
-												  Error::invalidrange($1,$3,pi); 
-											  }
-											  else { (*$$)[1] = $3; }
-											}
+intrange	: integer ".." integer			{ $$ = insert.range($1,$3); }
 			;
-
-charrange	: CHARACTER ".." CHARACTER		{ $$ = new std::vector<char>(2,$1); 
-											  if($1 > $3) { 
-												  ParseInfo pi(@1.first_line,@1.first_column,insert.currfile());
-												  Error::invalidrange($1,$3,pi); 
-											  }
-											  else { (*$$)[1] = $3; }
-											}	
-			| CHARCONS ".." CHARCONS		{ $$ = new std::vector<char>(2,$1); 
-											  if($1 > $3) { 
-												  ParseInfo pi(@1.first_line,@1.first_column,insert.currfile());
-												  Error::invalidrange($1,$3,pi); 
-											  }
-											  else { (*$$)[1] = $3; }
-											}
+charrange	: CHARACTER ".." CHARACTER		{ $$ = insert.range($1,$3);	}
+			| CHARCONS ".." CHARCONS		{ $$ = insert.range($1,$3);	}
 			;
 
 /** Compound elements **/
 
-compound	: intern_pointer '(' compound_args ')'	{ $$ = insert.makecompound($1,*$3); delete($3);	}
-			| intern_pointer '(' ')'				{ $$ = insert.makecompound($1);					}
+compound	: intern_pointer '(' compound_args ')'	{ $$ = insert.compound($1,*$3); delete($3);	}
+			| intern_pointer '(' ')'				{ $$ = insert.compound($1);					}
 			;
 
-compound_args	: compound_args ',' floatnr		{ TypedElement* t = new TypedElement($3);	
-												  $$->push_back(t);							}
-				| compound_args ',' integer		{ TypedElement* t = new TypedElement($3);	
-												  $$->push_back(t);							}
-				| compound_args ',' strelement	{ TypedElement* t = new TypedElement($3);	
-												  $$->push_back(t);							}
-				| compound_args ',' compound	{ TypedElement* t = new TypedElement($3);	
-												  $$->push_back(t);							}
-				| floatnr						{ TypedElement* t = new TypedElement($1);
-												  $$ = new std::vector<TypedElement*>(1,t);		}
-				| integer						{ TypedElement* t = new TypedElement($1);
-												  $$ = new std::vector<TypedElement*>(1,t);		}
-				| strelement					{ TypedElement* t = new TypedElement($1);
-												  $$ = new std::vector<TypedElement*>(1,t);		}
-				| compound						{ TypedElement* t = new TypedElement($1);
-												  $$ = new std::vector<TypedElement*>(1,t);		}
+compound_args	: compound_args ',' floatnr		{ $$ = $1; $$->push_back(insert.element($3));	}
+				| compound_args ',' integer		{ $$ = $1; $$->push_back(insert.element($3));	}
+				| compound_args ',' strelement	{ $$ = $1; $$->push_back(insert.element($3));	}
+				| compound_args ',' compound	{ $$ = $1; $$->push_back(insert.element($3));	}
+				| floatnr						{ $$ = new std::vector<const DomainElement*>(1,insert.element($1));	}
+				| integer						{ $$ = new std::vector<const DomainElement*>(1,insert.element($1));	}
+				| strelement					{ $$ = new std::vector<const DomainElement*>(1,insert.element($1));	}
+				| compound						{ $$ = new std::vector<const DomainElement*>(1,insert.element($1));	}
 				;
 	         
 /** Terminals **/
@@ -816,17 +717,16 @@ floatnr			: FLNUMBER			{ $$ = $1;		}
 				;
 
 identifier		: IDENTIFIER	{ $$ = $1;	}
-				| CHARACTER		{ $$ = IDPointer(std::string(1,$1)); } 
-				| VOCABULARY	{ $$ = IDPointer(std::string("vocabulary"));	}
-				| NAMESPACE		{ $$ = IDPointer(std::string("namespace"));	}
+				| CHARACTER		{ $$ = StringPointer(std::string(1,$1)); } 
+				| VOCABULARY	{ $$ = StringPointer(std::string("vocabulary"));	}
+				| NAMESPACE		{ $$ = StringPointer(std::string("namespace"));	}
 				;
 
 /********************
 	ASP structure
 ********************/
 
-asp_structure	: ASP_HEADER struct_name ':' vocab_pointer '{' atoms '}'	{ insert.closeaspstructure();	}
-				| ASP_BELIEF struct_name ':' vocab_pointer '{' atoms '}'	{ insert.closeaspbelief();		}
+asp_structure	: ASP_HEADER struct_name ':' vocab_pointer '{' atoms '}'	{ insert.closestructure();	}
 				;
 
 atoms	: /* empty */
@@ -838,80 +738,37 @@ atom	: predatom
 		| funcatom
 		;
 
-predatom	: intern_pointer '(' domain_tuple ')'	
-					{ insert.predatom($1,_currelements,_currranges,_currtypes,_iselement,true); closeTuple(); }
-			| intern_pointer '(' ')'				
-					{ insert.predatom($1,_currelements,_currranges,_currtypes,_iselement,true);	}
-			| intern_pointer						
-					{ insert.predatom($1,_currelements,_currranges,_currtypes,_iselement,true);	}
-			| '-' intern_pointer '(' domain_tuple ')'	
-					{ insert.predatom($2,_currelements,_currranges,_currtypes,_iselement,false); closeTuple(); }
-			| '-' intern_pointer '(' ')'				
-					{ insert.predatom($2,_currelements,_currranges,_currtypes,_iselement,false);	}
-			| '-' intern_pointer						
-					{ insert.predatom($2,_currelements,_currranges,_currtypes,_iselement,false);	}
+predatom	: intern_pointer '(' domain_tuple ')'		{ insert.predatom($1,$3,true);	}
+			| intern_pointer '(' ')'					{ insert.predatom($1,true);		}
+			| intern_pointer							{ insert.predatom($1,true);		}
+			| '-' intern_pointer '(' domain_tuple ')'	{ insert.predatom($2,$4,false);	}
+			| '-' intern_pointer '(' ')'				{ insert.predatom($2,false);	}
+			| '-' intern_pointer						{ insert.predatom($2,false);	}
 			; 
 
-funcatom	: intern_pointer '(' domain_tuple ')' '=' domain_element	
-					{ insert.funcatom($1,_currelements,_currranges,_currtypes,_iselement,true); closeTuple(); }
-			| intern_pointer '(' ')' '=' domain_element				
-					{ insert.funcatom($1,_currelements,_currranges,_currtypes,_iselement,true); closeTuple(); }
-			| intern_pointer '=' domain_element						
-					{ insert.funcatom($1,_currelements,_currranges,_currtypes,_iselement,true); closeTuple(); }
-			| '-' intern_pointer '(' domain_tuple ')' '=' domain_element	
-					{ insert.funcatom($2,_currelements,_currranges,_currtypes,_iselement,false); closeTuple(); }
-			| '-' intern_pointer '(' ')' '=' domain_element				
-					{ insert.funcatom($2,_currelements,_currranges,_currtypes,_iselement,false); closeTuple(); }
-			| '-' intern_pointer '=' domain_element						
-					{ insert.funcatom($2,_currelements,_currranges,_currtypes,_iselement,false); closeTuple(); }
+funcatom	: intern_pointer '(' domain_tuple ')' '=' domain_element		{ insert.funcatom($1,$3,$6,true);	}
+			| intern_pointer '(' ')' '=' domain_element				        { insert.funcatom($1,$5,true);		}
+			| intern_pointer '=' domain_element						        { insert.funcatom($1,$3,true);		}
+			| '-' intern_pointer '(' domain_tuple ')' '=' domain_element	{ insert.funcatom($2,$4,$7,false);	}
+			| '-' intern_pointer '(' ')' '=' domain_element				    { insert.funcatom($2,$6,false);		}
+			| '-' intern_pointer '=' domain_element						    { insert.funcatom($2,$4,false);		}
 			;
 
-domain_tuple	: domain_tuple ',' domain_element
-				| domain_tuple ',' domain_range
-				| domain_element
-				| domain_range	
+domain_tuple	: domain_tuple ',' domain_element	{ $$ = insert.domaintuple($1,$3);	}
+				| domain_tuple ',' domain_range		{ $$ = insert.domaintuple($1,$3);	}
+				| domain_element					{ $$ = insert.domaintuple($1);		}
+				| domain_range						{ $$ = insert.domaintuple($1);		}
 				;
 
-domain_range	: intrange		{ RanSortTable* rst = new RanSortTable((*$1)[0],(*$1)[1]);
-								  _currranges.push_back(rst);
-								  _iselement.push_back(false);
-								  delete($1);
-								}
-				| charrange		{ StrSortTable* sst = new StrSortTable();
-								  sst->add((*$1)[0],(*$1)[1]);
-								  _currranges.push_back(sst);
-								  _iselement.push_back(false);
-								  delete($1);
-								}
+domain_range	: intrange		{ $$ = $1; }
+				| charrange		{ $$ = $1; }
 				;
 
-domain_element	: strelement	{ Element e; e._string = $1;
-								  _currelements.push_back(e);
-								  _currtypes.push_back(ELSTRING);
-								  _iselement.push_back(true);
-								}
-				| integer		{ Element e; e._int = $1; 
-								  _currelements.push_back(e);
-								  _currtypes.push_back(ELINT);
-								  _iselement.push_back(true);
-								}
-				| floatnr		{ Element e; e._double = $1; 
-								  _currelements.push_back(e);
-								  _currtypes.push_back(ELDOUBLE);
-								  _iselement.push_back(true);
-								}
-				| compound		{ Element e; e._compound = $1;
-								  _currelements.push_back(e);
-								  _currtypes.push_back(ELCOMPOUND);
-								  _iselement.push_back(true);
-								}
+domain_element	: strelement	{ $$ = insert.element($1); }
+				| integer		{ $$ = insert.element($1); }
+				| floatnr		{ $$ = insert.element($1); }
+				| compound		{ $$ = insert.element($1); }
 				;
-
-/*********************
-	Lists and Tuples
-*********************/
-
-/** Tuples **/
 
 term_tuple		: term_tuple ',' term						{ $$ = $1; $$->push_back($3);		}	
 				| term										{ $$ = new std::vector<Term*>(1,$1);		}	
@@ -925,18 +782,6 @@ nonempty_spt		: sort_pointer_tuple ',' sort_pointer	{ $$ = $1; $$->push_back($3)
 					| sort_pointer							{ $$ = new std::vector<Sort*>(1,$1);		}
 					;
 
-/** Lists **/
-
-form_list		: form_list ';' formula						{ $$ = $1; $$->push_back($3);		}
-				| formula									{ $$ = new std::vector<Formula*>(1,$1);	}		
-				;
-
-form_term_list	: form_term_list ';' form_term_tuple		{ $$ = $1; $$->push_back($3);		}
-				| form_term_tuple							{ $$ = new std::vector<FTTuple*>(1,$1);	}
-				;
-
-form_term_tuple	: '(' formula ',' term ')'					{ $$ = insert.fttuple($2,$4);		}
-				;
 
 /*******************
 	Instructions
@@ -968,7 +813,7 @@ args				: args ',' identifier	{ insert.procarg(*$3);		}
 execstatement		: EXEC_HEADER openexec lua_block closeexec	
 					;
 
-openexec			: '{'											{ insert.openexec();	}
+openexec			: '{'				{ insert.openexec();	}
 					;
 
 closeexec			: '}'
@@ -996,195 +841,6 @@ optassign	: identifier '=' strelement		{ insert.option(*$1,*$3,@1);	}
 
 
 %%
-
-/** Parsing tables **/
-
-void closeRow(YYLTYPE l) {
-	++_currrow;
-	if(_currcol != _currtable->arity()) {
-		if(!_wrongarity) {
-			ParseInfo pi(l.first_line,l.first_column,insert.currfile());
-			Error::wrongarity(pi);
-			_wrongarity = true;
-		}
-	}
-	_currcol = 0;
-}
-
-void closeTable() {
-	_currtable = 0;
-	_currrow = 0;
-	_currcol = 0;
-	_wrongarity = false;
-}
-
-void closeTuple() {
-	_currelements.clear();
-	_currtypes.clear();
-	_currranges.clear();
-	_iselement.clear();
-}
-
-void addEmpty() {
-	if(!_currtable) _currtable = new FinitePredTable(std::vector<ElementType>(0));
-	_currtable->addRow();
-}
-
-void addInt(int n, YYLTYPE l) {
-	if(!_currtable) // we start parsing a new table
-		_currtable = new FinitePredTable(std::vector<ElementType>(0)); 
-	if(_currrow) {	// the table already contains at least one row
-		if(!_currcol)	// start parsing a new row 
-			_currtable->addRow();
-		if(_currcol < _currtable->arity()) {	// OK, we are within the number of columns of the table
-			switch(_currtable->type(_currcol)) {
-				case ELINT:
-					(*_currtable)[_currrow][_currcol]._int = n;
-					break;
-				case ELDOUBLE:
-					(*_currtable)[_currrow][_currcol]._double = double(n);
-					break;
-				case ELSTRING:
-					(*_currtable)[_currrow][_currcol]._string = IDPointer(itos(n));
-					break;
-				case ELCOMPOUND:
-					(*_currtable)[_currrow][_currcol]._compound = CPPointer(TypedElement(n));
-					break;
-				default:
-					assert(false);
-			}
-		}
-		else {	// tuple with an incompatible arity
-			if(!_wrongarity) {
-				ParseInfo pi(l.first_line,l.first_column,insert.currfile());
-				Error::wrongarity(pi);
-				_wrongarity = true;
-			}
-		}
-	}
-	else {	// we are parsing the first row of the table
-		if(!_currcol) _currtable->addRow();
-		_currtable->addColumn(ELINT);
-		(*_currtable)[0][_currcol]._int = n;
-	}
-	_currcol++;
-}
-
-void addString(std::string* s, YYLTYPE l) {
-	if(!_currtable) // we start parsing a new table
-		_currtable = new FinitePredTable(std::vector<ElementType>(0)); 
-	if(_currrow) {	// the table already contains at least one row
-		if(!_currcol)	// start parsing a new row 
-			_currtable->addRow();
-		if(_currcol < _currtable->arity()) {	// OK, we are within the number of columns of the table
-			switch(_currtable->type(_currcol)) {
-				case ELINT:
-				case ELDOUBLE:
-					_currtable->changeElType(_currcol,ELSTRING);
-					(*_currtable)[_currrow][_currcol]._string = s;
-					break;
-				case ELSTRING:
-					(*_currtable)[_currrow][_currcol]._string = s;
-					break;
-				case ELCOMPOUND:
-					(*_currtable)[_currrow][_currcol]._compound = CPPointer(TypedElement(s));
-					break;
-				default:
-					assert(false);
-			}
-		}
-		else {	// tuple with an incompatible arity
-			if(!_wrongarity) {
-				ParseInfo pi(l.first_line,l.first_column,insert.currfile());
-				Error::wrongarity(pi);
-				_wrongarity = true;
-			}
-		}
-	}
-	else {	// we are parsing the first row of the table
-		if(!_currcol) _currtable->addRow();
-		_currtable->addColumn(ELSTRING);
-		(*_currtable)[0][_currcol]._string = s;
-	}
-	_currcol++;
-}
-
-void addCompound(compound* s, YYLTYPE l) {
-	if(!_currtable) // we start parsing a new table
-		_currtable = new FinitePredTable(std::vector<ElementType>(0)); 
-	if(_currrow) {	// the table already contains at least one row
-		if(!_currcol)	// start parsing a new row 
-			_currtable->addRow();
-		if(_currcol < _currtable->arity()) {	// OK, we are within the number of columns of the table
-			switch(_currtable->type(_currcol)) {
-				case ELINT:
-				case ELDOUBLE:
-				case ELSTRING:
-					_currtable->changeElType(_currcol,ELCOMPOUND);
-					break;
-				case ELCOMPOUND:
-					break;
-			}
-			(*_currtable)[_currrow][_currcol]._compound = s;
-		}
-		else {	// tuple with an incompatible arity
-			if(!_wrongarity) {
-				ParseInfo pi(l.first_line,l.first_column,insert.currfile());
-				Error::wrongarity(pi);
-				_wrongarity = true;
-			}
-		}
-	}
-	else {	// we are parsing the first row of the table
-		if(!_currcol) _currtable->addRow();
-		_currtable->addColumn(ELCOMPOUND);
-		(*_currtable)[0][_currcol]._compound = s;
-	}
-	_currcol++;
-}
-
-void addFloat(double d, YYLTYPE l) {
-	if(!_currtable) // we start parsing a new table
-		_currtable = new FinitePredTable(std::vector<ElementType>(0)); 
-	if(_currrow) {	// the table already contains at least one row
-		if(!_currcol)	// start parsing a new row 
-			_currtable->addRow();
-		if(_currcol < _currtable->arity()) {	// OK, we are within the number of columns of the table
-			switch(_currtable->type(_currcol)) {
-				case ELINT:
-					_currtable->changeElType(_currcol,ELDOUBLE);
-					(*_currtable)[_currrow][_currcol]._double = d;
-					break;
-				case ELDOUBLE:
-					(*_currtable)[_currrow][_currcol]._double = d;
-					break;
-				case ELSTRING:
-					(*_currtable)[_currrow][_currcol]._string = IDPointer(dtos(d));
-					break;
-				case ELCOMPOUND:
-					(*_currtable)[_currrow][_currcol]._compound = CPPointer(TypedElement(d));
-					break;
-				default:
-					assert(false);
-			}
-		}
-		else {	// tuple with an incompatible arity
-			if(!_wrongarity) {
-				ParseInfo pi(l.first_line,l.first_column,insert.currfile());
-				Error::wrongarity(pi);
-				_wrongarity = true;
-			}
-		}
-	}
-	else {	// we are parsing the first row of the table
-		if(!_currcol) _currtable->addRow();
-		_currtable->addColumn(ELDOUBLE);
-		(*_currtable)[0][_currcol]._double = d;
-	}
-	_currcol++;
-}
-
-/** Error messages **/
 
 void yyerror(const char* s) {
 	ParseInfo pi(yylloc.first_line,yylloc.first_column,insert.currfile());

@@ -474,7 +474,7 @@ class FixpDef : public AbstractFixpDef {
 
 	public:
 		// Constructors
-		FixpDef(bool lfp) : _lfp(lfp) { }
+		FixpDef(bool lfp = false) : _lfp(lfp) { }
 
 		FixpDef*	clone()	const;
 
@@ -483,6 +483,7 @@ class FixpDef : public AbstractFixpDef {
 		void recursiveDelete();
 
 		// Mutators
+		void	lfp(bool b)						{ _lfp = b;				}
 		void	add(Rule* r);												//!< add a rule
 		void	add(FixpDef* d)					{ _defs.push_back(d);	}	//!< add a direct subdefinition
 		void	rule(unsigned int n, Rule* r);								//!< replace the n'th rule

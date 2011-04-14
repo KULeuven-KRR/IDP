@@ -241,9 +241,6 @@ COMMENTLINE		"//".*
 <*>"#asp_structure"			{ BEGIN(aspstructure);
 							  advancecol();
 							  return ASP_HEADER;		}
-<*>"#asp_belief"			{ BEGIN(aspstructure);
-							  advancecol();
-							  return ASP_BELIEF;		}
 <*>"#namespace"				{ BEGIN(INITIAL);
 							  advancecol();
 							  return NAMESPACE_HEADER;	}
@@ -386,8 +383,6 @@ COMMENTLINE		"//".*
 							  return TRUE;				}
 <structure>"false"			{ advancecol();
 							  return FALSE;				}
-<structure>"procedure"		{ advancecol();
-							  return PROCEDURE;			}
 <aspstructure>"%".*			{							}
 <aspstructure>".."			{ advancecol();
 							  return RANGE;				}
