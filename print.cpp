@@ -404,7 +404,7 @@ void IDPPrinter::visit(const GroundTheory* g) {
 void EcnfPrinter::visit(const GroundTheory* g) {
 	_out << "p ecnf def aggr\n";
 	for(unsigned int n = 0; n < g->nrClauses(); ++n) {
-		for(unsigned int m = 0; m < g->clause(n).size(); ++n)
+		for(unsigned int m = 0; m < g->clause(n).size(); ++m)
 			_out << g->clause(n)[m] << ' ';
 		_out << "0\n";
 	}
@@ -523,9 +523,11 @@ void EcnfPrinter::visit(const GroundAggregate* a) {
 		case AGGMAX: 	_out << "Max "; break;
 		default: assert(false);
 	}
+	#warning "Danger?! Replacing implication by equivalence...";
 	switch(a->arrow()) {
-		case TS_EQ: _out << "C ";
-		case TS_IMPL: case TS_RIMPL: /* Not supported by solver yet*/ assert(false); break;
+		case TS_EQ: _out << "C "; break;
+		case TS_IMPL: _out << "C "; break;
+		case TS_RIMPL: /* Not supported by solver yet*/ assert(false); break;
 		case TS_RULE: default: assert(false);
 	}
 	_out << (a->lower() ? "L " : "G ") << a->head() << " " << a->setnr() << " " << a->bound() << " 0\n";

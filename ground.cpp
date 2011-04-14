@@ -55,10 +55,10 @@ int GroundTranslator::translate(PFSymbol* s, const vector<TypedElement>& args) {
 	return translate(offset,newargs);
 }
 
-int GroundTranslator::translate(const vector<int>& cl, bool conj, TsType tp) {
+int GroundTranslator::translate(const vector<int>& clause, bool conj, TsType tstype) {
 	int nr = nextNumber();
-	PCTsBody* tb = new PCTsBody(tp,cl,conj);
-	_tsbodies[nr] = tb;
+	PCTsBody* tsbody = new PCTsBody(tstype,clause,conj);
+	_tsbodies[nr] = tsbody;
 	return nr;
 }
 
@@ -71,13 +71,13 @@ int	GroundTranslator::translate(double bound, char comp, bool strict, AggType ag
 	}
 	else {
 		int nr = nextNumber();
-		AggTsBody* tb = new AggTsBody(tstype,bound,(comp == '<'),aggtype,setnr);
+		AggTsBody* tsbody = new AggTsBody(tstype,bound,(comp == '<'),aggtype,setnr);
 		if(strict) {
 			#warning "This is wrong if floating point weights are allowed!";
-			tb->_bound = (comp == '<') ? bound + 1 : bound - 1;	
+			tsbody->_bound = (comp == '<') ? bound + 1 : bound - 1;	
 		} 
-		else tb->_bound = bound;
-		_tsbodies[nr] = tb;
+		else tsbody->_bound = bound;
+		_tsbodies[nr] = tsbody;
 		return nr;
 	}
 }
