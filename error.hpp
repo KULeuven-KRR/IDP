@@ -141,6 +141,10 @@ namespace Error {
 	void indexoverloadedpred();
 	void indexoverloadedsort();
 	void threevalcall();
+
+	void vocabexpected(const ParseInfo&);
+	void theoryexpected(const ParseInfo&);
+	void structureexpected(const ParseInfo&);
 }
 
 namespace Warning {

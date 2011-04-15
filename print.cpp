@@ -5,8 +5,6 @@
 ************************************/
 
 #include "print.hpp"
-#include "ecnf.hpp"
-#include "element.hpp"
 #include "namespace.hpp"
 #include "vocabulary.hpp"
 #include "theory.hpp"
@@ -25,7 +23,7 @@ Printer::Printer() {
 	_indent = 0;
 }
 
-Printer* Printer::create(InfOptions* opts) {
+Printer* Printer::create(Options* opts) {
 	switch(opts->_format) {
 		case OF_TXT:
 			return new SimplePrinter();

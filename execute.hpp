@@ -60,6 +60,21 @@ class UserProcedure {
 		const std::string&	registryindex()	const { return _registryindex;			}
 };
 
+namespace LuaConnection {
+	void addGlobal(Vocabulary*);
+	void addGlobal(AbstractStructure*);
+	void addGlobal(AbstractTheory*);
+	void addGlobal(Options*);
+	void addGlobal(UserProcedure*);
+	void addGlobal(Namespace*);
+
+	Vocabulary*			vocabulary(InternalArgument*);
+	AbstractTheory*		theory(InternalArgument*);
+	AbstractStructure*	structure(InternalArgument*);
+
+	InternalArgument*	call(const std::vector<std::string>&, const std::vector<std::vector<std::string> >, const ParseInfo&);
+}
+
 #endif
 
 

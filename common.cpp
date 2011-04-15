@@ -4,6 +4,13 @@
 	(c) K.U.Leuven
 ************************************/
 
+#include <iostream>
+#include <string>
+#include <vector>
+#include <limits>
+#include "commontypes.hpp"
+using namespace std;
+
 void notyetimplemented(const string& message) {
 	cerr << "ERROR: The following feature is not yet implemented:\n"
 		 << '\t' << message << '\n'
@@ -25,11 +32,11 @@ double applyAgg(AggFunction agg, const vector<double>& args) {
 			for(unsigned int n = 0; n < args.size(); ++n) d = d * args[n];
 			break;
 		case AGG_MIN:
-			d = MAX_DOUBLE;
+			d = numeric_limits<double>::max();
 			for(unsigned int n = 0; n < args.size(); ++n) d = (d <= args[n] ? d : args[n]);
 			break;
 		case AGG_MAX:
-			d = MIN_DOUBLE;
+			d = numeric_limits<double>::min();
 			for(unsigned int n = 0; n < args.size(); ++n) d = (d >= args[n] ? d : args[n]);
 			break;
 	}
@@ -37,6 +44,7 @@ double applyAgg(AggFunction agg, const vector<double>& args) {
 }
 
 
+#ifdef OLD
 #include <string>
 #include <limits>
 #include <sstream>
@@ -131,3 +139,4 @@ string tabstring(unsigned int n) {
 		tab = tab + ' ';
 	return tab;
 }
+#endif

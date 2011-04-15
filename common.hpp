@@ -15,6 +15,7 @@
 extern void notyetimplemented(const std::string&);
 
 extern bool	isInt(double);					//!< true iff the given double is an integer
+extern bool isInt(const std::string&);		//!< true iff the given string is an integer
 extern bool isDouble(const std::string&);	//!< true iff the given string is a double
 
 extern std::string	itos(int);					//!< convert int to string

@@ -352,6 +352,11 @@ namespace FormulaUtils {
 
 	/** \brief Returns true iff the aggregate formula is anti-monotone **/
 	bool antimonotone(const AggForm* af);
+
+	/** \brief Create the formula 'true' **/
+	BoolForm*	trueform();
+	/** \brief Create the formula 'false' **/
+	BoolForm*	falseform();
 }
 
 
@@ -579,6 +584,7 @@ class Theory : public AbstractTheory {
 		void	add(Formula* f)								{ _sentences.push_back(f);		}
 		void	add(Definition* d)							{ _definitions.push_back(d);	}
 		void	add(FixpDef* fd)							{ _fixpdefs.push_back(fd);		}
+		void	addTheory(AbstractTheory*);
 		void	sentence(unsigned int n, Formula* f)		{ _sentences[n] = f;			}
 		void	definition(unsigned int n, Definition* d)	{ _definitions[n] = d;			}
 		void	fixpdef(unsigned int n, FixpDef* d)			{ _fixpdefs[n] = d;				}

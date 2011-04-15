@@ -7,7 +7,11 @@
 #include <cstdio>
 #include <iostream>
 #include <cstdlib>
-
+#include <map>
+#include "clconst.hpp"
+#include "common.hpp"
+#include "error.hpp"
+#include "execute.hpp"
 using namespace std;
 
 // Parser stuff
@@ -23,25 +27,15 @@ extern int idpfunccall(lua_State*);
 extern int idppredcall(lua_State*);
 extern int overloaddiv(lua_State*);
 
-
-/** Initialize data structures **/
-void initialize() {
-	BuiltinProcs::initialize();
-	Insert::initialize();
-}
-
 /** Help message **/
 void usage() {
 	cout << "Usage:\n"
 		 << "   gidl [options] [filename [filename [...]]]\n\n";
 	cout << "Options:\n";
 	cout << "    -i, --interactive    run in interactive mode\n";
-	cout << "    -e \"<proc>\"          run procedure <proc> after parsing\n"
-		 << "    --statistics         show statistics\n"
-		 << "    --verbose            print additional information\n"
+	cout << "    -e \"<proc>\"        run procedure <proc> after parsing\n"
 		 << "    -c <name1>=<name2>   substitute <name2> for <name1> in the input\n"
 		 << "    -I                   read from stdin\n"
-		 << "    -W                   suppress all warnings\n"
 		 << "    -v, --version        show version number and stop\n"
 		 << "    -h, --help           show this help message\n\n";
 	exit(0);
@@ -64,20 +58,24 @@ void setclconst(string name1, string name2) {
 	clconsts[name1] = c;
 }
 
+struct CLOptions {
+	string	_exec;
+	bool	_interactive;
+	bool	_readfromstdin;
+};
+
 /** Parse command line options **/
-vector<string> read_options(int argc, char* argv[]) {
+vector<string> read_options(int argc, char* argv[], CLOptions& cloptions) {
 	vector<string> inputfiles;
 	argc--; argv++;
 	while(argc) {
 		string str(argv[0]);
 		argc--; argv++;
-		if(str == "-e" || str == "--execute")  		{ _cloptions._exec = string(argv[0]); 
+		if(str == "-e" || str == "--execute")  		{ cloptions._exec = string(argv[0]); 
 														argc--; argv++;						}
 #ifdef USEINTERACTIVE
-		else if(str == "-i" || str == "--interactive")	{ _cloptions._interactive = true;	}
+		else if(str == "-i" || str == "--interactive")	{ cloptions._interactive = true;	}
 #endif
-		else if(str == "--statistics")				{ _cloptions._statistics = true;		}
-		else if(str == "--verbose")					{ _cloptions._verbose = true;			}
 		else if(str == "-c")						{ str = argv[0];
 													  if(argc && (str.find('=') != string::npos)) {
 														  int p = str.find('=');
@@ -88,10 +86,7 @@ vector<string> read_options(int argc, char* argv[]) {
 													  else Error::constsetexp();
 													  argc--; argv++;
 													}
-		else if(str == "-I")						{ _cloptions._readfromstdin = true;	}
-		else if(str == "-W")						{ for(unsigned int n = 0; n < _cloptions._warning.size(); ++n)
-														  _cloptions._warning[n] = false;
-													}
+		else if(str == "-I")						{ cloptions._readfromstdin = true;	}
 		else if(str == "-v" || str == "--version")	{ cout << "GidL 2.0.1\n"; exit(0);	}
 		else if(str == "-h" || str == "--help")		{ usage(); exit(0);					}
 		else if(str[0] == '-')						{ Error::unknoption(str);			}
@@ -346,77 +341,26 @@ void cleanup() {
 /** Main **/
 int main(int argc, char* argv[]) {
 
+	// Make lua connection
+	lua_State* L = LuaConnection::makeLuaConnection();
+
 	// Parse idp input
-	initialize();
-	vector<string> inputfiles = read_options(argc,argv);
+	CLOptions cloptions;
+	vector<string> inputfiles = read_options(argc,argv,cloptions);
 	parse(inputfiles);
 
 	// Run
 	if(!Error::nr_of_errors()) {
-
-		// Initialize communication with lua
-		lua_State* L = initLua();
-
 		// Execute statements
 		executeproc(L,_cloptions._exec);
 		if(_cloptions._interactive) interactive(L);
 		else if(_cloptions._exec == "") executeproc(L,"idp_intern_main()");
 
-		// End lua communication
-		lua_close(L);
 	}
 
+	// Close lua communication
+	LuaConnection::closeLuaConnection(L);
+
 	// Exit
-	cleanup();
 	return Error::nr_of_errors();
 }
-
-
-
-#ifdef OLD
-
-#include <vector>
-#include <string>
-
-#include "parseinfo.hpp"
-
-struct TypedInfArg;
-
-/** Command-line options **/
-
-enum WarningTypes { 
-	WT_FREE_VARS=0,		// warning if free variables are detected
-	WT_VARORCONST=1,	// warning if it is ambiguous whether some term is a variable or a constant
-	WT_SORTDERIVE=2,	// warning if some (probably unexpected) sorts are derived for a variable
-	WT_STDIN=3,			// warning if trying to read from the stdin
-	WT_AUTOCOMPL=4		// warning if structure is completed automatically
-};
-
-enum StyleOptions {
-	SO_CASE=0	// variables start with lowercase, all other symbols with uppercase
-};
-
-class CLOptions {
-	public:
-		  // Attributes
-		  bool				_statistics;		// print statistics on stderr iff _statistics=true
-		  bool				_verbose;			// print extra information on stderr iff _verbose=true
-		  bool				_readfromstdin;		// expect input from stdin iff _readfromstdin=true
-		  bool				_interactive;		// interactive mode if _interactive is true
-		  std::vector<bool>	_warning;			// _warning[n] = true means that warnings of type n are not suppressed
-		  std::vector<bool>	_style;				// _style[n] = true means that style option n is enforced
-		  std::string		_exec;				// the procedure called from the command line
-
-		  // Constructor (default options)
-		  CLOptions() {
-				_statistics = false;
-				_verbose = false;
-				_readfromstdin = false;
-				_interactive = false;
-				_warning = std::vector<bool>(5,true);
-				_style = std::vector<bool>(1,false);
-				_exec = "";
-		  }
-};
-
-#endif

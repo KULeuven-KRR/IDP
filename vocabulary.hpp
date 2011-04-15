@@ -523,12 +523,14 @@ class Vocabulary {
 
 		static Vocabulary* _std;	//!< The standard vocabulary
 
-		~Vocabulary();
 
 	public:
 		// Constructors
 		Vocabulary(const std::string& name); 
 		Vocabulary(const std::string& name, const ParseInfo& pi); 
+
+		// Destructor
+		~Vocabulary();
 
 		// Mutators
 		void addSort(Sort*);				//!< Add the given sort (and its ancestors) to the vocabulary

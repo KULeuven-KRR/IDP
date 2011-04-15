@@ -9,6 +9,8 @@
 
 #include <set>
 #include <vector>
+#include <list>
+#include <sstream>
 #include "commontypes.hpp" 
 #include "parseinfo.hpp"
 
@@ -30,6 +32,7 @@ class Rule;
 class Definition;
 class FixpDef;
 class Theory;
+class AbstractTheory;
 class Options;
 class UserProcedure;
 class Namespace;
@@ -60,6 +63,8 @@ struct NSPair {
 	void includePredArity();
 	void includeFuncArity();
 	void includeArity(unsigned int n);
+
+	std::string to_string();
 };
 
 enum ElRangeEnum { ERE_EL, ERE_INT, ERE_CHAR };
@@ -75,9 +80,15 @@ struct ElRange {
 		std::pair<char,char>*	_charrange;
 	} _value;
 	ElRange(const DomainElement* e) : _type(ERE_EL) { _value._element = e;	}
-	ElRange(std::pair<int,int>* r) : _type(ERE_INT) { _value._intrange = e;	}
-	ElRange(std::pair<char,char>* r) : _type(ERE_CHAR) { _value._charrange = e;	}
-}
+	ElRange(std::pair<int,int>* r) : _type(ERE_INT) { _value._intrange = r;	}
+	ElRange(std::pair<char,char>* r) : _type(ERE_CHAR) { _value._charrange = r;	}
+};
+
+struct VarName {
+	std::string	_name;
+	Variable*	_var;
+	VarName(const std::string& n, Variable* v) : _name(n), _var(v) { }
+};
 
 class Insert {
 
@@ -93,13 +104,20 @@ class Insert {
 		Options*		_curroptions;		//!< the options that is currently being parsed
 		UserProcedure*	_currprocedure;		//!< the procedure that is currently being parsed
 
+		std::list<VarName>	curr_vars;
+
 		std::vector<Vocabulary*>	_usingvocab;	//!< the vocabularies currently used to parse
 		std::vector<Namespace*>		_usingspace;	//!< the namespaces currently used to parse
 
 		std::vector<unsigned int>	_nrvocabs;		//!< the number of 'using vocabulary' statements in the current block
 		std::vector<unsigned int>	_nrspaces;		//!< the number of 'using namespace' statements in the current block
 
-		ParseInfo	parseinfo(YYLTYPE l);	//!< Convert a bison parse location to a parseinfo object
+		ParseInfo			parseinfo(YYLTYPE l);	//!< Convert a bison parse location to a parseinfo object
+		FormulaParseInfo	formparseinfo(Formula*,YYLTYPE);
+
+		std::set<Variable*>	freevars(const ParseInfo&);					//!< Return all currently free variables
+		void				remove_vars(const std::set<Variable*>&);	//!< Remove the given variables from the 
+																		//!< list of free variables
 
 		void usenamespace(Namespace*);		//!< add a using namespace statement
 		void usevocabulary(Vocabulary*);	//!< add a using vocabulary statement
@@ -108,17 +126,41 @@ class Insert {
 		void closeblock();	//!< close the current block
 
 
+		Sort*			sortInScope(const longname&, const ParseInfo&);
+		Predicate*		predInScope(const longname&, const ParseInfo&);
+		Function*		funcInScope(const longname&, const ParseInfo&);
+		Vocabulary*		vocabularyInScope(const std::string&, const ParseInfo&);
+		Vocabulary*		vocabularyInScope(const longname&, const ParseInfo&);
+		Namespace*		namespaceInScope(const longname&, const ParseInfo&);
+		AbstractTheory*	theoryInScope(const std::string&, const ParseInfo&);
+		AbstractTheory*	theoryInScope(const longname&, const ParseInfo&);
+
+		bool	belongsToVoc(Predicate*);
+		bool	belongsToVoc(Function*);
+
+		Formula*	boolform(bool,Formula*,Formula*,YYLTYPE);
+		Formula*	quantform(bool,const std::set<Variable*>&, Formula*, YYLTYPE);
+
 	public:
 		Insert();
+
+		std::string*	currfile() const;				//!< return the current filename
+		void			currfile(const std::string& s);	//!< set the current filename
+		void			currfile(std::string* s);		//!< set the current filename
 
 		void openspace(const std::string& name,YYLTYPE);		//!< Open a new namespace
 		void openvocab(const std::string& name,YYLTYPE);		//!< Open a new vocabulary
 		void opentheory(const std::string& tname, YYLTYPE);		//!< Open a new theory
 		void openstructure(const std::string& name, YYLTYPE);	//!< Open a new structure
+		void openprocedure(const std::string& name, YYLTYPE);	//!< Open a procedure
+		void openoptions(const std::string& name, YYLTYPE);		//!< Open a new options block
+		void openexec();										//!< Start parsing a command
 		void closespace();										//!< Close the current namespace
 		void closevocab();										//!< Close the current vocabulary
 		void closetheory();										//!< Close the current theory
 		void closestructure();									//!< Close the current structure
+		void closeprocedure(std::stringstream*);				//!< Close the current procedure
+		void closeoptions();									//!< Close the current options
 
 		void usingvocab(const longname& vname, YYLTYPE);	//!< use vocabulary 'vname' when parsing
 		void usingspace(const longname& sname, YYLTYPE);	//!< use namespace 'sname' when parsing
@@ -129,6 +171,8 @@ class Insert {
 
 		void setvocab(const longname& vname, YYLTYPE);		//!< set the vocabulary of the current theory or structure 
 		void externvocab(const longname& vname, YYLTYPE);	//!< add all symbols of 'vname' to the current vocabulary
+		
+		void externoption(const std::vector<std::string>& name, YYLTYPE);
 
 		Sort*		sort(Sort* s);				//!< add an existing sort to the current vocabulary
 		Predicate*	predicate(Predicate* p);	//!< add an existing predicate to the current vocabulary
@@ -269,6 +313,7 @@ class Insert {
 		void falsepredinter(NSPair*);			//!< Assign false
 		void inter(NSPair*,InternalArgument*,YYLTYPE);	//!< Assign the result of a procedural call
 
+		void threeprocinter(NSPair*, const std::string& utf, InternalArgument*);
 		void threepredinter(NSPair*, const std::string& utf, PredTable* t);
 		void threepredinter(NSPair*, const std::string& utf, SortTable* t);
 		void truethreepredinter(NSPair*, const std::string& utf);
@@ -304,8 +349,25 @@ class Insert {
 		const Compound*	compound(NSPair*);
 		const Compound*	compound(NSPair*,const std::vector<const DomainElement*>&);
 
-		void predatom(NSPair*, const std::vector<const DomainElement*>&, const std::vector<FiniteSortTable*>&, const std::vector<ElementType>&, const std::vector<bool>&,bool);
-		void funcatom(NSPair*, const std::vector<Element>&, const std::vector<FiniteSortTable*>&, const std::vector<ElementType>&, const std::vector<bool>&,bool);
+		void predatom(NSPair*, const std::vector<ElRange>&, bool);
+		void predatom(NSPair*, bool);
+		void funcatom(NSPair*, const std::vector<ElRange>&, const DomainElement*, bool);
+		void funcatom(NSPair*, const DomainElement*, bool);
+
+		std::vector<ElRange>* domaintuple(const DomainElement*);
+		std::vector<ElRange>* domaintuple(std::pair<int,int>*);
+		std::vector<ElRange>* domaintuple(std::pair<char,char>*);
+		std::vector<ElRange>* domaintuple(std::vector<ElRange>*,const DomainElement*);
+		std::vector<ElRange>* domaintuple(std::vector<ElRange>*,std::pair<int,int>*);
+		std::vector<ElRange>* domaintuple(std::vector<ElRange>*,std::pair<char,char>*);
+
+		void procarg(const std::string&);	//!< Add an argument to the current procedure
+
+		void exec(std::stringstream*);
+
+		void option(const std::string& opt, const std::string& val,YYLTYPE);
+		void option(const std::string& opt, double val,YYLTYPE);
+		void option(const std::string& opt, int val,YYLTYPE);
 };
 
 
@@ -337,12 +399,6 @@ class Insert {
 	/** Namespaces **/
 
 	/** Options **/
-	void openoptions(const std::string& name, YYLTYPE);
-	void closeoptions();
-	void externoption(const std::vector<std::string>& name, YYLTYPE);
-	void option(const std::string& opt, const std::string& val,YYLTYPE);
-	void option(const std::string& opt, double val,YYLTYPE);
-	void option(const std::string& opt, int val,YYLTYPE);
 
 	/** Procedures **/
 	void			openexec();

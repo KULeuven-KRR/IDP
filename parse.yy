@@ -6,11 +6,9 @@
 
 %{
 
-#include <string>
+#include <sstream>
 #include "common.hpp"
 #include "insert.hpp"
-
-class InternalArgument;
 
 // Lexer
 extern int yylex();
@@ -24,6 +22,9 @@ void yyerror(const char* s);
 // Common 
 extern std::string itos(int);
 extern std::string dtos(double);
+
+typedef std::pair<int,std::string*> isp;
+typedef std::list<isp>				lisp;
 
 %}
 
@@ -69,8 +70,10 @@ extern std::string dtos(double);
 	std::pair<char,char>*				vcha;
 	std::vector<const DomainElement*>*	vdom;
 	std::vector<ElRange>*				vera;
+	std::stringstream*					sstr;
 
 	std::vector<std::vector<std::string> >* vvstr;
+
 }
 
 /** Headers  **/
@@ -86,13 +89,13 @@ extern std::string dtos(double);
 /** Keywords **/
 %token VOCABULARY
 %token NAMESPACE
+%token PROCEDURE
 %token OPTIONS
 %token PARTIAL
 %token EXTENDS
 %token EXTERN
 %token MINAGG
 %token MAXAGG
-%token CONSTR
 %token FALSE
 %token USING
 %token CARD
@@ -112,6 +115,7 @@ extern std::string dtos(double);
 %token <chr> CHARCONS
 %token <str> IDENTIFIER
 %token <str> STRINGCONS
+%token <sstr>	LUACHUNK
 
 /** Aliases **/
 %token <operator> MAPS			"->"
@@ -120,6 +124,7 @@ extern std::string dtos(double);
 %token <operator> RIMPL			"<="
 %token <operator> DEFIMP		"<-"
 %token <operator> NEQ			"~="
+%token <operator> EQ			"=="
 %token <operator> LEQ			"=<"
 %token <operator> GEQ			">="
 %token <operator> RANGE			".."
@@ -185,7 +190,6 @@ extern std::string dtos(double);
 
 %type <vint>	intrange
 %type <vcha>	charrange
-%type <vera>	domain_range
 %type <vter>	term_tuple
 %type <svar>	variables
 %type <vrul>	rules
@@ -200,6 +204,7 @@ extern std::string dtos(double);
 %type <vera>	domain_tuple
 
 %type <vvstr> pointer_names
+
 %%
 
 /*********************
@@ -657,7 +662,7 @@ ftuple			: ptuple "->" pelement			{ $$ = $1; $$->push_back($3);	}
 
 /** Procedural interpretations **/
 
-proc_inter		: intern_pointer '=' function_call	{ insert.inter($1,$3,@1);	}
+proc_inter		: intern_pointer '=' PROCEDURE function_call	{ insert.inter($1,$4,@1);	}
 				;
 
 /** Three-valued interpretations **/
@@ -665,6 +670,10 @@ proc_inter		: intern_pointer '=' function_call	{ insert.inter($1,$3,@1);	}
 three_inter		: threepred_inter
 				| threefunc_inter
 				| threeempty_inter
+				| threeproc_inter
+				;
+
+threeproc_inter : intern_pointer '<' identifier '>' '=' PROCEDURE function_call	{ insert.threeprocinter($1,*$3,$7);	}
 				;
 
 threeempty_inter	: intern_pointer '<' identifier '>' '=' '{' '}'			{ insert.emptythreeinter($1,*$3); }
@@ -738,30 +747,28 @@ atom	: predatom
 		| funcatom
 		;
 
-predatom	: intern_pointer '(' domain_tuple ')'		{ insert.predatom($1,$3,true);	}
-			| intern_pointer '(' ')'					{ insert.predatom($1,true);		}
-			| intern_pointer							{ insert.predatom($1,true);		}
-			| '-' intern_pointer '(' domain_tuple ')'	{ insert.predatom($2,$4,false);	}
-			| '-' intern_pointer '(' ')'				{ insert.predatom($2,false);	}
-			| '-' intern_pointer						{ insert.predatom($2,false);	}
+predatom	: intern_pointer '(' domain_tuple ')'		{ insert.predatom($1,*$3,true);	delete($3);		}
+			| intern_pointer '(' ')'					{ insert.predatom($1,true);						}
+			| intern_pointer							{ insert.predatom($1,true);						}
+			| '-' intern_pointer '(' domain_tuple ')'	{ insert.predatom($2,*$4,false); delete($4);	}
+			| '-' intern_pointer '(' ')'				{ insert.predatom($2,false);					}
+			| '-' intern_pointer						{ insert.predatom($2,false);					}
 			; 
 
-funcatom	: intern_pointer '(' domain_tuple ')' '=' domain_element		{ insert.funcatom($1,$3,$6,true);	}
+funcatom	: intern_pointer '(' domain_tuple ')' '=' domain_element		{ insert.funcatom($1,*$3,$6,true); delete($3);	}
 			| intern_pointer '(' ')' '=' domain_element				        { insert.funcatom($1,$5,true);		}
 			| intern_pointer '=' domain_element						        { insert.funcatom($1,$3,true);		}
-			| '-' intern_pointer '(' domain_tuple ')' '=' domain_element	{ insert.funcatom($2,$4,$7,false);	}
+			| '-' intern_pointer '(' domain_tuple ')' '=' domain_element	{ insert.funcatom($2,*$4,$7,false);	delete($4);	}
 			| '-' intern_pointer '(' ')' '=' domain_element				    { insert.funcatom($2,$6,false);		}
 			| '-' intern_pointer '=' domain_element						    { insert.funcatom($2,$4,false);		}
 			;
 
 domain_tuple	: domain_tuple ',' domain_element	{ $$ = insert.domaintuple($1,$3);	}
-				| domain_tuple ',' domain_range		{ $$ = insert.domaintuple($1,$3);	}
+				| domain_tuple ',' intrange			{ $$ = insert.domaintuple($1,$3);	}
+				| domain_tuple ',' charrange		{ $$ = insert.domaintuple($1,$3);	}
 				| domain_element					{ $$ = insert.domaintuple($1);		}
-				| domain_range						{ $$ = insert.domaintuple($1);		}
-				;
-
-domain_range	: intrange		{ $$ = $1; }
-				| charrange		{ $$ = $1; }
+				| intrange							{ $$ = insert.domaintuple($1);		}
+				| charrange							{ $$ = insert.domaintuple($1);		}
 				;
 
 domain_element	: strelement	{ $$ = insert.element($1); }
@@ -787,37 +794,23 @@ nonempty_spt		: sort_pointer_tuple ',' sort_pointer	{ $$ = $1; $$->push_back($3)
 	Instructions
 *******************/
 
-instructions		: PROCEDURE_HEADER proc_name proc_sig '{' lua_block '}'		{ insert.closeproc();	}
+execstatement		: EXEC_HEADER '{' LUACHUNK '}'		{ insert.exec($3);	}
 					;
 
-proc_name			: identifier	{ insert.openproc(*$1,@1);	}
+instructions		: PROCEDURE_HEADER proc_name proc_sig '{' LUACHUNK '}'		{ insert.closeprocedure($5);	}
 					;
 
-proc_sig			: '(' ')'		{ insert.luacloseargs();	}
-					| '(' args ')'	{ insert.luacloseargs();	}
+proc_name			: identifier	{ insert.openprocedure(*$1,@1);	}
 					;
 
-lua_block			: /* empty */
-					| lua_block identifier		{ insert.luacode(*$2);	}
-					| lua_block STRINGCONS		{ std::string str = std::string("\"") + *$2 + std::string("\""); insert.luacode(str);	}
-					| lua_block CHARCONS		{ std::string str = std::string("'") + $2 + std::string("'"); insert.luacode(str);	}
-					| lua_block INTEGER			{ insert.luacode(itos($2));							}
-					| lua_block FLNUMBER		{ insert.luacode(dtos($2));							}
-					| lua_block pointer_name "::" identifier	{ $2->push_back(*$4); insert.luacode(*$2); delete($2);	}
+proc_sig			: '(' ')'		
+					| '(' args ')'
 					;
 
 args				: args ',' identifier	{ insert.procarg(*$3);		}
 					| identifier			{ insert.procarg(*$1);		}
 					;
 
-execstatement		: EXEC_HEADER openexec lua_block closeexec	
-					;
-
-openexec			: '{'				{ insert.openexec();	}
-					;
-
-closeexec			: '}'
-					;
 
 /**************
 	Options
@@ -841,6 +834,9 @@ optassign	: identifier '=' strelement		{ insert.option(*$1,*$3,@1);	}
 
 
 %%
+
+#include <iostream>
+#include "error.hpp"
 
 void yyerror(const char* s) {
 	ParseInfo pi(yylloc.first_line,yylloc.first_column,insert.currfile());
