@@ -311,7 +311,6 @@ void FormulaGrounder::printorig() const {
 		cerr << ElementUtil::ElementToString(e,ELCOMPOUND) << ' ';
 	}
 	cerr << endl;
-
 }
 #endif
 
@@ -599,7 +598,7 @@ int AggGrounder::finishCard(double truevalue, double boundvalue, int setnr) cons
  * 		and creates a tseitin, handling double negation when necessary;
  */
 int AggGrounder::finish(double boundvalue, double newboundvalue, double minpossvalue, double maxpossvalue, int setnr) const {
-	// Check minimal and maximal possible values against the given bound
+	// Check minimum and maximum possible values against the given bound
 	switch(_comp) { //TODO more complicated propagation is possible!
 		case '=':
 			if(minpossvalue > boundvalue || maxpossvalue < boundvalue)
@@ -674,7 +673,7 @@ int AggGrounder::run() const {
 			break;
 		}
 		case AGGSUM: {
-			// Compute the minimal and maximal possible value of the sum.
+			// Compute the minimum and maximum possible value of the sum.
 			for(unsigned int n = 0; n < tsset.size(); ++n) {
 				if(tsset.weight(n) > 0) maxpossvalue += tsset.weight(n);
 				else if(tsset.weight(n) < 0) minpossvalue += tsset.weight(n);
@@ -684,7 +683,7 @@ int AggGrounder::run() const {
 			break;
 		}
 		case AGGPROD: {
-			// Compute the minimal and maximal possible value of the product.
+			// Compute the minimum and maximum possible value of the product.
 			bool containsneg = false;
 			for(unsigned int n = 0; n < tsset.size(); ++n) {
 				maxpossvalue *= abs(tsset.weight(n));
@@ -696,7 +695,7 @@ int AggGrounder::run() const {
 			break;
 		}
 		case AGGMIN: {
-			// Compute the minimal possible value of the set.
+			// Compute the minimum possible value of the set.
 			for(unsigned int n = 0; n < tsset.size(); ++n) {
 				minpossvalue = (tsset.weight(n) < minpossvalue) ? tsset.weight(n) : minpossvalue;
 				// Decrease all weights greater than truevalue to truevalue.
@@ -707,7 +706,7 @@ int AggGrounder::run() const {
 			break;
 		}
 		case AGGMAX: {
-			// Compute the maximal possible value of the set.
+			// Compute the maximum possible value of the set.
 			for(unsigned int n = 0; n < tsset.size(); ++n) {
 				maxpossvalue = (tsset.weight(n) > maxpossvalue) ? tsset.weight(n) : maxpossvalue;
 				// Increase all weights less than truevalue to truevalue.
@@ -1480,7 +1479,6 @@ void GrounderFactory::visit(const PredForm* pf) {
 		transpf->accept(this);
 	}
 	else {	// The rewriting did not change the atom
-
 		// Create grounders for the subterms
 		bool cpsubterms = false;
 		vector<TermGrounder*> subtermgrounders;
@@ -1491,7 +1489,6 @@ void GrounderFactory::visit(const PredForm* pf) {
 			cpsubterms = cpsubterms || _termgrounder->canReturnCPVar();
 			argsorttables.push_back(_structure->inter(pf->symb()->sort(n)));
 		}
-
 		// Create checkers and grounder
 		if(cpsubterms) {
 			if(_context._component == CC_HEAD) {

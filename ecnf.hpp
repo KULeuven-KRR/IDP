@@ -67,7 +67,7 @@ class GroundSet {
 	Ground aggregate formulas
 ********************************/
 
-/*
+/**
  * class GroundAggregate
  *		This class represents ground formulas of the form
  *			head ARROW bound COMP agg(set)
@@ -121,7 +121,7 @@ class GroundAggregate {
 // RM enum RuleType { RT_TRUE, RT_FALSE, RT_UNARY, RT_CONJ, RT_DISJ, RT_AGG };
 enum RuleType { RT_CONJ, RT_DISJ, RT_AGG };
 
-/*
+/**
  * class GroundRuleBody
  *		This class represents a ground rule body, where literals are represented by integers.
  */ 
@@ -150,7 +150,7 @@ class GroundRuleBody {
 		friend class GroundDefinition;
 };
 
-/*
+/**
  * class PCGroundRuleBody
  *		This class represents ground rule bodies that are conjunctions or disjunctions of literals.
  */
@@ -178,7 +178,7 @@ class PCGroundRuleBody : public GroundRuleBody {
 		friend class GroundDefinition;
 };
 
-/*
+/**
  * class AggGroundRuleBody
  *		This class represents ground rule bodies that are aggregates.
  */
@@ -211,7 +211,7 @@ class AggGroundRuleBody : public GroundRuleBody {
 		friend class GroundDefinition;
 };
 
-/*
+/**
  * class GroundDefinition
  *		This class represents ground definitions.
  */
@@ -271,6 +271,10 @@ class GroundFixpDef : public AbstractDefinition {
 	CP reifications
 **********************/
 
+/**
+ * class CPReification
+ * 		This class represents CP constraints.
+ */
 class CPReification { //TODO
 	public:
 		int 		_head;
@@ -284,7 +288,7 @@ class CPReification { //TODO
 	Ground theories
 **********************/
 
-/*
+/**
  * class AbstractGroundTheory
  *		Implements base class for ground theories
  */
@@ -338,7 +342,7 @@ class AbstractGroundTheory : public AbstractTheory {
 		AbstractGroundTheory*	clone()				const { assert(false); /* TODO */	}
 };
 
-/* 
+/**
  * class SolverTheory 
  *		A SolverTheory is a ground theory, stored as an instance of a SAT solver
  */
@@ -395,7 +399,7 @@ class SolverTheory : public AbstractGroundTheory {
 
 };
 
-/*
+/**
  * class GroundTheory
  *		This class implements ground theories
  */

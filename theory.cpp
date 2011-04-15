@@ -1752,20 +1752,12 @@ Formula* ThreeValTermMover::visit(PredForm* pf) {
 		Term* nt = pf->subterm(n)->accept(this);
 		pf->arg(n,nt);
 	}
-
 	if(_termgraphs.empty()) {	// No rewriting was needed, simply return the given atom
 		return pf;
 	}
 	else {	// Rewriting was needed
-		
-		// In a positive context, the equations are negated
-		if(_poscontext) {
-			for(unsigned int n = 0; n < _termgraphs.size(); ++n)
-				_termgraphs[n]->swapsign();
-		}
-
-		// Memory management for the original atom
-		PredForm* npf = new PredForm(pf->sign(),pf->symb(),pf->args(),FormParseInfo());
+		// Memory management for the original atom (Note: invert sign in positive context)
+		PredForm* npf = new PredForm((_poscontext ? !pf->sign() : pf->sign()),pf->symb(),pf->args(),FormParseInfo());
 		_termgraphs.push_back(npf);
 
 		// Create and return the rewriting
@@ -1788,7 +1780,6 @@ Formula* ThreeValTermMover::visit(AggForm* af) {
 			for(unsigned int n = 0; n < _termgraphs.size(); ++n)
 				_termgraphs[n]->swapsign();
 		}
-
 		_termgraphs.push_back(af);
 
 		// Create and return the rewriting

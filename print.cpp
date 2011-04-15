@@ -523,21 +523,19 @@ void EcnfPrinter::visit(const GroundAggregate* a) {
 		case AGGMAX: 	_out << "Max "; break;
 		default: assert(false);
 	}
-	#warning "Danger?! Replacing implication by equivalence...";
+	#warning "Simply replacing implication by equivalence...";
 	switch(a->arrow()) {
-		case TS_EQ: _out << "C "; break;
-		case TS_IMPL: _out << "C "; break;
-		case TS_RIMPL: /* Not supported by solver yet*/ assert(false); break;
+		case TS_EQ: case TS_IMPL: case TS_RIMPL: _out << "C "; break; /* (Reverse) implication is not supported by solver (yet)*/
 		case TS_RULE: default: assert(false);
 	}
-	_out << (a->lower() ? "L " : "G ") << a->head() << " " << a->setnr() << " " << a->bound() << " 0\n";
+	_out << (a->lower() ? "L " : "G ") << a->head() << ' ' << a->setnr() << ' ' << a->bound() << " 0\n";
 }
 
 void IDPPrinter::visit(const GroundSet* s) {
 	_out << "set_" << s->setnr() << " = [ ";
 	for(unsigned int n = 0; n < s->size(); ++n) {
-		_out << "("; printAtom(s->literal(n));
-		_out << " = " << s->weight(n) << ")";
+		_out << '('; printAtom(s->literal(n));
+		_out << ',' << s->weight(n) << ')';
 		if(n < s->size()-1) _out << "; ";
 	}
 	_out << " ]\n";
@@ -546,7 +544,7 @@ void IDPPrinter::visit(const GroundSet* s) {
 void EcnfPrinter::visit(const GroundSet* s) {
 	_out << "WSet " << s->setnr();
 	for(unsigned int n = 0; n < s->size(); ++n)
-		_out << " " << s->literal(n) << "=" << s->weight(n);
+		_out << ' ' << s->literal(n) << '=' << s->weight(n);
 	_out << " 0\n";
 }
 
@@ -589,7 +587,7 @@ void IDPPrinter::visit(const CPWSumTerm* cpt) {
 	vector<int>::const_iterator wit;
 	_out << "wsum[ ";
 	for(vit = cpt->_varids.begin(), wit = cpt->_weights.begin(); vit != cpt->_varids.end() && wit != cpt->_weights.end(); ++vit, ++wit) {
-		_out << "("; printTerm(*vit); _out << "=" << *wit << ")";
+		_out << '('; printTerm(*vit); _out << ',' << *wit << ')';
 		if(*vit != cpt->_varids.back()) _out << "; ";
 	}
 	_out << " ]";
