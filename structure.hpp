@@ -13,6 +13,7 @@
 #include <map>
 #include <cassert>
 #include <ostream>
+#include <limits>
 
 /**
  * \file structure.hpp
@@ -349,7 +350,8 @@ class StrLessThanInternalIterator : public InternalTableIterator {
 		void					operator++();	
 	public:
 		StrLessThanInternalIterator(const SortIterator& si);
-		StrLessThanInternalIterator(const SortIterator& l, const SortIterator& r);
+		StrLessThanInternalIterator(const SortIterator& l, const SortIterator& r) :
+			_leftiterator(l), _rightiterator(r) { }
 		~StrLessThanInternalIterator() { }
 		StrLessThanInternalIterator*	clone()	const;
 };
@@ -406,9 +408,62 @@ class NatInternalSortIterator : public InternalSortIterator {
 		const DomainElement*	operator*()		const	{ return DomainElementFactory::instance()->create(_iter);	}
 		void					operator++()			{ ++_iter;		}	
 	public:
-		NatInternalSortIterator() : _iter(0) { }
+		NatInternalSortIterator(int iter = 0) : _iter(iter) { }
 		~NatInternalSortIterator() { }
-		NatInternalSortIterator* clone()	const;
+		NatInternalSortIterator* clone()	const { return new NatInternalSortIterator(_iter);	}
+};
+
+class IntInternalSortIterator : public InternalSortIterator {
+	private:
+		int _iter;
+		bool					hasNext()	const { return true;	}
+		const DomainElement*	operator*()		const	{ return DomainElementFactory::instance()->create(_iter);	}
+		void					operator++()			{ ++_iter;		}	
+	public:
+		IntInternalSortIterator(int iter = std::numeric_limits<int>::min()) : _iter(iter) { }
+		~IntInternalSortIterator() { }
+		IntInternalSortIterator* clone()	const { return new IntInternalSortIterator(_iter);	}
+
+};
+
+class FloatInternalSortIterator : public InternalSortIterator {
+	private:
+		double _iter;
+		bool					hasNext()		const { return true;	}
+		const DomainElement*	operator*()		const	{ return DomainElementFactory::instance()->create(_iter);	}
+		void					operator++()	{ ++_iter;	}
+	public:
+		FloatInternalSortIterator(double iter = std::numeric_limits<double>::min()) : _iter(iter) { }
+		~FloatInternalSortIterator() { }
+		FloatInternalSortIterator* clone()	const { return new FloatInternalSortIterator(_iter);	}
+
+};
+
+class StringInternalSortIterator : public InternalSortIterator {
+	private:
+		std::string _iter;
+		bool					hasNext()		const { return true;	}
+		const DomainElement*	operator*()		const;	
+		void					operator++();
+	public:
+		StringInternalSortIterator(const std::string& iter = "") : _iter(iter) { }
+		~StringInternalSortIterator() { }
+		StringInternalSortIterator* clone()	const { return new StringInternalSortIterator(_iter);	}
+
+};
+
+class CharInternalSortIterator : public InternalSortIterator {
+	private:
+		char _iter;
+		bool _end;
+		bool					hasNext()		const { return !_end;	}
+		const DomainElement*	operator*()		const;	
+		void					operator++();
+	public:
+		CharInternalSortIterator(char iter = std::numeric_limits<char>::min(), bool end = false) : _iter(iter), _end(end) { }
+		~CharInternalSortIterator() { }
+		CharInternalSortIterator* clone()	const { return new CharInternalSortIterator(_iter);	}
+
 };
 
 class EnumInternalSortIterator : public InternalSortIterator {
@@ -768,7 +823,7 @@ class InfiniteInternalSortTable : public InternalSortTable {
 		bool	approxfinite()	const { return false;	}
 		bool	approxempty()	const { return false;	}
 	protected:
-		~InfiniteInternalSortTable() { }
+		virtual ~InfiniteInternalSortTable() { }
 };
 
 /**
@@ -846,8 +901,6 @@ class EnumeratedInternalSortTable : public InternalSortTable {
 		SortedElementTuple	_table;
 
 		bool					contains(const DomainElement*)	const;
-		InternalSortTable*		add(const DomainElement*);
-		InternalSortTable*		remove(const DomainElement*);
 
 		InternalSortIterator*	sortbegin()	const;
 
@@ -859,6 +912,9 @@ class EnumeratedInternalSortTable : public InternalSortTable {
 		~EnumeratedInternalSortTable() { }
 	public:
 		EnumeratedInternalSortTable() { }
+		EnumeratedInternalSortTable(const SortedElementTuple& d) : _table(d) { }
+		InternalSortTable*		add(const DomainElement*);
+		InternalSortTable*		remove(const DomainElement*);
 };
 
 /**
@@ -902,7 +958,8 @@ class InternalFuncTable {
 			//!< Returns false if the table size is infinite. May return true if the table size is finite.
 		virtual bool			approxempty()			const = 0;
 			//!< Returns false if the table is non-empty. May return true if the table is empty.
-
+		
+				bool				 contains(const ElementTuple& tuple)	const;
 		virtual const DomainElement* operator[](const ElementTuple& tuple)	const = 0;	
 			//!< Returns the value of the tuple according to the array.
 
@@ -938,11 +995,11 @@ class EnumeratedInternalFuncTable : public InternalFuncTable {
 };
 
 class IntFloatInternalFuncTable : public InternalFuncTable {
-	private:
+	protected:
 		bool	_int;
 	public:
 
-		IntFloatInternalFuncTable(bool);
+		IntFloatInternalFuncTable(bool i) : _int(i) { }
 
 				bool			finite()		const { return false;	}
 				bool			empty()			const { return false;	}
@@ -953,50 +1010,56 @@ class IntFloatInternalFuncTable : public InternalFuncTable {
 		InternalFuncTable*	add(const ElementTuple&);
 		InternalFuncTable*	remove(const ElementTuple&);
 
-		InternalTableIterator*	begin()	const;
+		virtual InternalTableIterator*	begin()	const = 0;
 
 };
 
 class PlusInternalFuncTable : public IntFloatInternalFuncTable {
 	public:
-		PlusInternalFuncTable(bool);
+		PlusInternalFuncTable(bool i) : IntFloatInternalFuncTable(i) { }
 		unsigned int arity()	const { return 2;	}
 		const DomainElement*	operator[](const std::vector<const DomainElement*>&	)	const;
+		InternalTableIterator*	begin()	const;
 };
 
 class MinusInternalFuncTable : public IntFloatInternalFuncTable {
 	public:
-		MinusInternalFuncTable(bool);
+		MinusInternalFuncTable(bool i) : IntFloatInternalFuncTable(i) { }
 		unsigned int arity()	const { return 2;	}
 		const DomainElement*	operator[](const std::vector<const DomainElement*>&	)	const;
+		InternalTableIterator*	begin()	const;
 };
 
 class TimesInternalFuncTable : public IntFloatInternalFuncTable {
 	public:
-		TimesInternalFuncTable(bool);
+		TimesInternalFuncTable(bool i) : IntFloatInternalFuncTable(i) { }
 		unsigned int arity()	const { return 2;	}
 		const DomainElement*	operator[](const std::vector<const DomainElement*>&	)	const;
+		InternalTableIterator*	begin()	const;
 };
 
 class DivInternalFuncTable : public IntFloatInternalFuncTable {
 	public:
-		DivInternalFuncTable(bool);
+		DivInternalFuncTable(bool i) : IntFloatInternalFuncTable(i) { }
 		unsigned int arity()	const { return 2;	}
 		const DomainElement*	operator[](const std::vector<const DomainElement*>&	)	const;
+		InternalTableIterator*	begin()	const;
 };
 
 class AbsInternalFuncTable : public IntFloatInternalFuncTable {
 	public:
-		AbsInternalFuncTable(bool);
+		AbsInternalFuncTable(bool i) : IntFloatInternalFuncTable(i) { }
 		unsigned int arity()	const { return 1;	}
 		const DomainElement*	operator[](const std::vector<const DomainElement*>&	)	const;
+		InternalTableIterator*	begin()	const;
 };
 
 class UminInternalFuncTable : public IntFloatInternalFuncTable {
 	public:
-		UminInternalFuncTable(bool);
+		UminInternalFuncTable(bool i) : IntFloatInternalFuncTable(i) { }
 		unsigned int arity()	const { return 1;	}
 		const DomainElement*	operator[](const std::vector<const DomainElement*>&	)	const;
+		InternalTableIterator*	begin()	const;
 };
 
 class ExpInternalFuncTable : public InternalFuncTable {
@@ -1016,12 +1079,13 @@ class ExpInternalFuncTable : public InternalFuncTable {
 
 class ModInternalFuncTable : public InternalFuncTable {
 	public:
+		~ModInternalFuncTable() { }
 		bool			finite()		const { return false;	}
 		bool			empty()			const { return false;	}
 		bool			approxfinite()	const { return false;	}
 		bool			approxempty()	const { return false;	}
 		unsigned int	arity()			const { return 2;		}
-		const DomainElement*	operator[](const std::vector<const DomainElement*>&	)	const;
+		const DomainElement*	operator[](const ElementTuple&	)	const;
 
 		InternalFuncTable*	add(const ElementTuple&);
 		InternalFuncTable*	remove(const ElementTuple&);
@@ -1152,10 +1216,11 @@ class FuncTable : public AbstractTable {
 class PredInter {
 	
 	private:
-		PredTable*	_ct;	//!< stores certainly true tuples
-		PredTable*	_cf;	//!< stores certainly false tuples
-		PredTable*	_pt;	//!< stores possibly true tuples
-		PredTable*	_pf;	//!< stores possibly false tuples
+		std::vector<SortTable*>	_univ;	//!< all tuples in the interpretation belong to this cartesian product
+		PredTable*	_ct;				//!< stores certainly true tuples
+		PredTable*	_cf;				//!< stores certainly false tuples
+		PredTable*	_pt;				//!< stores possibly true tuples
+		PredTable*	_pf;				//!< stores possibly false tuples
 
 	public:
 		

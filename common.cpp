@@ -6,10 +6,41 @@
 
 #include <iostream>
 #include <string>
+#include <sstream>
 #include <vector>
 #include <limits>
+#include <cassert>
 #include "commontypes.hpp"
 using namespace std;
+
+string itos(int n) {
+	stringstream sst;
+	sst << n;
+	return sst.str();
+}
+
+string dtos(double d) {
+	stringstream s;
+	s << d;
+	return s.str();
+}
+
+double stod(const string& s) {
+	stringstream i(s);
+	double d;
+	if(!(i >> d)) return 0;
+	else return d;
+}
+
+bool isInt(double d) {
+	return (double(int(d)) == d);
+}
+
+bool isDouble(const string& s) {
+	stringstream i(s);
+	double d;
+	return (i >> d);
+}
 
 void notyetimplemented(const string& message) {
 	cerr << "ERROR: The following feature is not yet implemented:\n"
@@ -43,6 +74,77 @@ double applyAgg(AggFunction agg, const vector<double>& args) {
 	return d;
 }
 
+void printtabs(ostream& output, unsigned int tabs) {
+	for(unsigned int n = 0; n < tabs; ++n) 
+		output << ' ';
+}
+
+/*********************
+	Shared strings
+*********************/
+
+#include <tr1/unordered_map>
+typedef std::tr1::unordered_map<std::string,std::string*>	MSSP;
+class StringPointers {
+	private:
+		MSSP	_sharedstrings;		//!< map a string to its shared pointer
+	public:
+		~StringPointers();
+		string*	stringpointer(const std::string&);	//!< get the shared pointer of a string
+};
+
+StringPointers::~StringPointers() {
+	for(MSSP::iterator it = _sharedstrings.begin(); it != _sharedstrings.end(); ++it) {
+		delete(it->second);
+	}
+}
+
+string* StringPointers::stringpointer(const string& s) {
+	MSSP::iterator it = _sharedstrings.find(s);
+	if(it != _sharedstrings.end()) return it->second;
+	else {
+		string* sp = new string(s);
+		_sharedstrings[s] = sp;
+		return sp;
+	}
+}
+
+StringPointers sharedstrings;
+
+string* StringPointer(const char* str) {
+	return sharedstrings.stringpointer(string(str));
+}
+
+string* StringPointer(const string& str) {
+	return sharedstrings.stringpointer(str);
+}
+
+CompType invertct(CompType ct) {
+	switch(ct) {
+		case CT_EQ: case CT_NEQ: return ct;
+		case CT_LT: return CT_GT;
+		case CT_GT: return CT_LT;
+		case CT_LEQ: return CT_GEQ;
+		case CT_GEQ: return CT_LEQ;
+		default:
+			assert(false);
+			return CT_EQ;
+	}
+}
+
+CompType negatect(CompType ct) {
+	switch(ct) {
+		case CT_EQ: return CT_NEQ;
+		case CT_NEQ: return CT_EQ;
+		case CT_LT: return CT_GEQ;
+		case CT_GT: return CT_LEQ;
+		case CT_LEQ: return CT_GT;
+		case CT_GEQ: return CT_LT;
+		default:
+			assert(false);
+			return CT_EQ;
+	}
+}
 
 #ifdef OLD
 #include <string>
@@ -74,11 +176,6 @@ bool nexttuple(vector<unsigned int>& tuple, const vector<unsigned int>& limits) 
 }
 
 // Convert integer to string
-string itos(int n) {
-	stringstream sst;
-	sst << n;
-	return sst.str();
-}
 
 // Convert string to integer 
 // (returns 0 when the string is not an integer)
@@ -90,37 +187,15 @@ int stoi(const string& s) {
 }
 
 // Convert double to string 
-string dtos(double d) {
-	stringstream s;
-	s << d;
-	return s.str();
-}
 
 // Convert string to double 
 // (returns 0 if the input string is not a double)
-double stod(const string& s) {
-	stringstream i(s);
-	double d;
-	if(!(i >> d)) return 0;
-	else return d;
-}
-
 // Test if something is a char, double or int
-
-bool isDouble(const string& s) {
-	stringstream i(s);
-	double d;
-	return (i >> d);
-}
 
 bool isInt(const string& s) {
 	stringstream i(s);
 	int n;
 	return (i >> n);
-}
-
-bool isInt(double d) {
-	return (double(int(d)) == d);
 }
 
 bool isChar(int n) {
@@ -132,11 +207,4 @@ bool isChar(double d) {
 	else return false;
 }
 
-// Return a string of n spaces
-string tabstring(unsigned int n) {
-	string tab;
-	for(unsigned int m = 0; m < n; ++m) 
-		tab = tab + ' ';
-	return tab;
-}
 #endif

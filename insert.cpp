@@ -151,7 +151,39 @@ Insert::Insert() {
 	usenamespace(_currspace);
 }
 
-ParseInfo Insert::parseinfo(YYLTYPE l) { 
+string* Insert::currfile() const {
+	return _currfile;
+}
+
+void Insert::currfile(const string& s) {
+	_currfile = StringPointer(s);
+}
+
+void Insert::currfile(string* s) {
+	_currfile = s;
+}
+
+void Insert::partial(Function* f) const {
+	f->partial(true);
+}
+
+void Insert::makeLFD(FixpDef* d, bool lfp) const {
+	if(d) d->lfp(lfp);
+}
+
+void Insert::addRule(FixpDef* d, Rule* r) const {
+	if(d && r) d->add(r);
+}
+
+void Insert::addDef(FixpDef* d, FixpDef* sd) const {
+	if(d && sd) d->add(sd);
+}
+
+FixpDef* Insert::createFD() const {
+	return new FixpDef;
+}
+
+ParseInfo Insert::parseinfo(YYLTYPE l) const { 
 	return ParseInfo(l.first_line,l.first_column,_currfile);	
 }
 
@@ -279,7 +311,7 @@ void Insert::setvocab(const longname& vs, YYLTYPE l) {
 	}
 }
 
-void Insert::externvocab(const vector<string>& vname, YYLTYPE l) {
+void Insert::externvocab(const vector<string>& vname, YYLTYPE l) const {
 	ParseInfo pi = parseinfo(l);
 	Vocabulary* v = vocabularyInScope(vname,pi);
 	if(v) _currvocabulary->addVocabulary(v); 
@@ -310,29 +342,29 @@ void Insert::closetheory() {
 	closeblock();
 }
 
-Sort* Insert::sort(Sort* s) {
+Sort* Insert::sort(Sort* s) const {
 	if(s) _currvocabulary->addSort(s);
 	return s;
 }
 
-Predicate* Insert::predicate(Predicate* p) {
+Predicate* Insert::predicate(Predicate* p) const {
 	if(p) _currvocabulary->addPred(p);
 	return p;
 }
 
-Function* Insert::function(Function* f) {
+Function* Insert::function(Function* f) const {
 	if(f) _currvocabulary->addFunc(f);
 	return f;
 }
 
-Sort* Insert::sortpointer(const longname& vs, YYLTYPE l) {
+Sort* Insert::sortpointer(const longname& vs, YYLTYPE l) const {
 	ParseInfo pi = parseinfo(l);
 	Sort* s = sortInScope(vs,pi);
 	if(!s) Error::undeclsort(oneName(vs),pi);
 	return s;
 }
 
-Predicate* Insert::predpointer(longname& vs, int arity, YYLTYPE l) {
+Predicate* Insert::predpointer(longname& vs, int arity, YYLTYPE l) const {
 	ParseInfo pi = parseinfo(l);
 	vs.back() = vs.back() + '/' + itos(arity);
 	Predicate* p = predInScope(vs,pi);
@@ -340,7 +372,7 @@ Predicate* Insert::predpointer(longname& vs, int arity, YYLTYPE l) {
 	return p;
 }
 
-Predicate* Insert::predpointer(longname& vs, const vector<Sort*>& va, YYLTYPE l) {
+Predicate* Insert::predpointer(longname& vs, const vector<Sort*>& va, YYLTYPE l) const {
 	ParseInfo pi = parseinfo(l);
 	longname copyvs = vs;
 	Predicate* p = predpointer(copyvs,va.size(),l);
@@ -349,7 +381,7 @@ Predicate* Insert::predpointer(longname& vs, const vector<Sort*>& va, YYLTYPE l)
 	return p;
 }
 
-Function* Insert::funcpointer(longname& vs, int arity, YYLTYPE l) {
+Function* Insert::funcpointer(longname& vs, int arity, YYLTYPE l) const {
 	ParseInfo pi = parseinfo(l);
 	vs.back() = vs.back() + '/' + itos(arity);
 	Function* f = funcInScope(vs,pi);
@@ -357,7 +389,7 @@ Function* Insert::funcpointer(longname& vs, int arity, YYLTYPE l) {
 	return f;
 }
 
-Function* Insert::funcpointer(longname& vs, const vector<Sort*>& va, YYLTYPE l) {
+Function* Insert::funcpointer(longname& vs, const vector<Sort*>& va, YYLTYPE l) const {
 	ParseInfo pi = parseinfo(l);
 	longname copyvs = vs;
 	Function* f = funcpointer(copyvs,va.size()-1,l);
@@ -366,12 +398,12 @@ Function* Insert::funcpointer(longname& vs, const vector<Sort*>& va, YYLTYPE l) 
 	return f;
 }
 
-NSPair* Insert::internpredpointer(const vector<string>& name, const vector<Sort*>& sorts, YYLTYPE l) {
+NSPair* Insert::internpredpointer(const vector<string>& name, const vector<Sort*>& sorts, YYLTYPE l) const {
 	ParseInfo pi = parseinfo(l);
 	return new NSPair(name,sorts,false,pi);
 }
 
-NSPair* Insert::internfuncpointer(const vector<string>& name, const vector<Sort*>& insorts, Sort* outsort, YYLTYPE l) {
+NSPair* Insert::internfuncpointer(const vector<string>& name, const vector<Sort*>& insorts, Sort* outsort, YYLTYPE l) const {
 	ParseInfo pi = parseinfo(l);
 	NSPair* nsp = new NSPair(name,insorts,false,pi);
 	nsp->_sorts.push_back(outsort);
@@ -379,7 +411,7 @@ NSPair* Insert::internfuncpointer(const vector<string>& name, const vector<Sort*
 	return nsp;
 }
 
-NSPair* Insert::internpointer(const vector<string>& name, YYLTYPE l) {
+NSPair* Insert::internpointer(const vector<string>& name, YYLTYPE l) const {
 	ParseInfo pi = parseinfo(l);
 	return new NSPair(name,false,pi);
 }
@@ -391,7 +423,7 @@ NSPair* Insert::internpointer(const vector<string>& name, YYLTYPE l) {
  * \param sups		the supersorts of the new sort
  * \param subs		the subsorts of the new sort
  */
-Sort* Insert::sort(const string& name, const vector<Sort*> sups, const vector<Sort*> subs, YYLTYPE l) {
+Sort* Insert::sort(const string& name, const vector<Sort*> sups, const vector<Sort*> subs, YYLTYPE l) const {
 	ParseInfo pi = parseinfo(l);
 
 	// Create the sort
@@ -451,7 +483,7 @@ Sort* Insert::sort(const string& name, const vector<Sort*> sups, const vector<So
  *
  * \param name	the name of the sort
  */
-Sort* Insert::sort(const string& name, YYLTYPE l) {
+Sort* Insert::sort(const string& name, YYLTYPE l) const {
 	vector<Sort*> vs(0);
 	return sort(name,vs,vs,l);
 }
@@ -463,14 +495,14 @@ Sort* Insert::sort(const string& name, YYLTYPE l) {
  * \param supbs		the super- or subsorts of the sort
  * \param p			true if supbs are the supersorts, false if supbs are the subsorts
  */
-Sort* Insert::sort(const string& name, const vector<Sort*> supbs, bool p, YYLTYPE l) {
+Sort* Insert::sort(const string& name, const vector<Sort*> supbs, bool p, YYLTYPE l) const {
 	vector<Sort*> vs(0);
 	if(p) return sort(name,supbs,vs,l);
 	else return sort(name,vs,supbs,l);
 }
 
 
-Predicate* Insert::predicate(const string& name, const vector<Sort*>& sorts, YYLTYPE l) {
+Predicate* Insert::predicate(const string& name, const vector<Sort*>& sorts, YYLTYPE l) const {
 	ParseInfo pi = parseinfo(l);
 	string nar = string(name) + '/' + itos(sorts.size());
 	for(unsigned int n = 0; n < sorts.size(); ++n) {
@@ -481,12 +513,12 @@ Predicate* Insert::predicate(const string& name, const vector<Sort*>& sorts, YYL
 	return p;
 }
 
-Predicate* Insert::predicate(const string& name, YYLTYPE l) {
+Predicate* Insert::predicate(const string& name, YYLTYPE l) const {
 	vector<Sort*> vs(0);
 	return predicate(name,vs,l);
 }
 
-Function* Insert::function(const string& name, const vector<Sort*>& insorts, Sort* outsort, YYLTYPE l) {
+Function* Insert::function(const string& name, const vector<Sort*>& insorts, Sort* outsort, YYLTYPE l) const {
 	ParseInfo pi = parseinfo(l);
 	string nar = string(name) + '/' + itos(insorts.size());
 	for(unsigned int n = 0; n < insorts.size(); ++n) {
@@ -498,12 +530,12 @@ Function* Insert::function(const string& name, const vector<Sort*>& insorts, Sor
 	return f;
 }
 
-Function* Insert::function(const string& name, Sort* outsort, YYLTYPE l) {
+Function* Insert::function(const string& name, Sort* outsort, YYLTYPE l) const {
 	vector<Sort*> vs(0);
 	return function(name,vs,outsort,l);
 }
 
-Function* Insert::aritfunction(const string& name, const vector<Sort*>& sorts, YYLTYPE l) {
+Function* Insert::aritfunction(const string& name, const vector<Sort*>& sorts, YYLTYPE l) const {
 	ParseInfo pi = parseinfo(l);
 	for(unsigned int n = 0; n < sorts.size(); ++n) {
 		if(!sorts[n]) return 0;
@@ -515,17 +547,17 @@ Function* Insert::aritfunction(const string& name, const vector<Sort*>& sorts, Y
 	return f;
 }
 
-InternalArgument* Insert::call(const longname& proc, const vector<longname>& args, YYLTYPE l) {
+InternalArgument* Insert::call(const longname& proc, const vector<longname>& args, YYLTYPE l) const {
 	ParseInfo pi = parseinfo(l);
 	return LuaConnection::call(proc,args,pi);
 }
 
-InternalArgument* Insert::call(const longname& proc, YYLTYPE l) {
+InternalArgument* Insert::call(const longname& proc, YYLTYPE l) const {
 	vector<longname> vl(0);
 	return call(proc,vl,l);
 }
 
-void Insert::definition(Definition* d) {
+void Insert::definition(Definition* d) const {
 	if(d) _currtheory->add(d);
 }
 
@@ -543,11 +575,11 @@ void Insert::sentence(Formula* f) {
 	else curr_vars.clear();
 }
 
-void Insert::fixpdef(FixpDef* d) {
+void Insert::fixpdef(FixpDef* d) const {
 	if(d) _currtheory->add(d);
 }
 
-Definition* Insert::definition(const vector<Rule*>& rules) {
+Definition* Insert::definition(const vector<Rule*>& rules) const {
 	Definition* d = new Definition();
 	for(unsigned int n = 0; n < rules.size(); ++n) {
 		if(rules[n]) d->add(rules[n]);
@@ -607,19 +639,19 @@ Rule* Insert::rule(Formula* head,YYLTYPE l) {
 	return rule(head,body,l);
 }
 
-Formula* Insert::trueform(YYLTYPE l) {
+Formula* Insert::trueform(YYLTYPE l) const {
 	vector<Formula*> vf(0);
 	FormulaParseInfo pi = formparseinfo(new BoolForm(true,true,vf,FormulaParseInfo()),l);
 	return new BoolForm(true,true,vf,pi);
 }
 
-Formula* Insert::falseform(YYLTYPE l) {
+Formula* Insert::falseform(YYLTYPE l) const {
 	vector<Formula*> vf(0);
 	FormulaParseInfo pi = formparseinfo(new BoolForm(true,false,vf,FormulaParseInfo()),l);
 	return new BoolForm(true,false,vf,pi);
 }
 
-Formula* Insert::predform(NSPair* nst, const vector<Term*>& vt, YYLTYPE l) {
+Formula* Insert::predform(NSPair* nst, const vector<Term*>& vt, YYLTYPE l) const {
 	if(nst->_sortsincluded) {
 		if((nst->_sorts).size() != vt.size()) Error::incompatiblearity(nst->to_string(),nst->_pi);
 		if(nst->_func) Error::prednameexpected(nst->_pi);
@@ -656,12 +688,12 @@ Formula* Insert::predform(NSPair* nst, const vector<Term*>& vt, YYLTYPE l) {
 	return pf;
 }
 
-Formula* Insert::predform(NSPair* t, YYLTYPE l) {
+Formula* Insert::predform(NSPair* t, YYLTYPE l) const {
 	vector<Term*> vt(0);
 	return predform(t,vt,l);
 }
 
-Formula* Insert::funcgraphform(NSPair* nst, const vector<Term*>& vt, Term* t, YYLTYPE l) {
+Formula* Insert::funcgraphform(NSPair* nst, const vector<Term*>& vt, Term* t, YYLTYPE l) const {
 	if(nst->_sortsincluded) {
 		if((nst->_sorts).size() != vt.size() + 1) Error::incompatiblearity(nst->to_string(),nst->_pi);
 		if(!nst->_func) Error::funcnameexpected(nst->_pi);
@@ -700,12 +732,12 @@ Formula* Insert::funcgraphform(NSPair* nst, const vector<Term*>& vt, Term* t, YY
 	return pf;
 }
 
-Formula* Insert::funcgraphform(NSPair* nst, Term* t, YYLTYPE l) {
+Formula* Insert::funcgraphform(NSPair* nst, Term* t, YYLTYPE l) const {
 	vector<Term*> vt;
 	return funcgraphform(nst,vt,t,l);
 }
 
-Formula* Insert::equivform(Formula* lf, Formula* rf, YYLTYPE l) {
+Formula* Insert::equivform(Formula* lf, Formula* rf, YYLTYPE l) const {
 	if(lf && rf) {
 		Formula* lfpi = lf->pi().original() ? lf->pi().original()->clone() : lf->clone();
 		Formula* rfpi = rf->pi().original() ? rf->pi().original()->clone() : rf->clone();
@@ -719,7 +751,7 @@ Formula* Insert::equivform(Formula* lf, Formula* rf, YYLTYPE l) {
 	}
 }
 
-Formula* Insert::boolform(bool conj, Formula* lf, Formula* rf, YYLTYPE l) {
+Formula* Insert::boolform(bool conj, Formula* lf, Formula* rf, YYLTYPE l) const {
 	if(lf && rf) {
 		vector<Formula*> vf(2);
 		vector<Formula*> pivf(2);
@@ -736,20 +768,20 @@ Formula* Insert::boolform(bool conj, Formula* lf, Formula* rf, YYLTYPE l) {
 	}
 }
 
-Formula* Insert::disjform(Formula* lf, Formula* rf, YYLTYPE l) {
+Formula* Insert::disjform(Formula* lf, Formula* rf, YYLTYPE l) const {
 	return boolform(false,lf,rf,l);
 }
 
-Formula* Insert::conjform(Formula* lf, Formula* rf, YYLTYPE l) {
+Formula* Insert::conjform(Formula* lf, Formula* rf, YYLTYPE l) const {
 	return boolform(true,lf,rf,l);
 }
 
-Formula* Insert::implform(Formula* lf, Formula* rf, YYLTYPE l) {
+Formula* Insert::implform(Formula* lf, Formula* rf, YYLTYPE l) const {
 	if(lf) lf->swapsign();
 	return boolform(false,lf,rf,l);
 }
 
-Formula* Insert::revimplform(Formula* lf, Formula* rf, YYLTYPE l) {
+Formula* Insert::revimplform(Formula* lf, Formula* rf, YYLTYPE l) const {
 	if(rf) rf->swapsign();
 	return boolform(false,rf,lf,l);
 }
@@ -783,10 +815,29 @@ Formula* Insert::existform(const std::set<Variable*>& vv, Formula* f, YYLTYPE l)
 	return quantform(false,vv,f,l);
 }
 
+Formula* Insert::bexform(CompType c, int bound, const std::set<Variable*>& vv, Formula* f, YYLTYPE l) {
+	if(f) {
+		SetExpr* se = set(vv,f,l);
+		AggTerm* a = dynamic_cast<AggTerm*>(aggregate(AGG_CARD,se,l));
+		Term* b = domterm(bound,l);
+		AggTerm* pia = a->pi().original() ? dynamic_cast<AggTerm*>(a->pi().original()->clone()) : a->clone();
+		Term* pib = b->pi().original() ? b->pi().original()->clone() : b->clone();
+		FormulaParseInfo pi = formparseinfo(new AggForm(true,pib,c,pia,FormulaParseInfo()),l);
+		return new AggForm(true,b,c,a,pi);
+	}
+	else return 0;
+}
+
+void Insert::negate(Formula* f) const {
+	f->swapsign();
+}
 
 
-
-
+Formula* Insert::eqchain(CompType c, Formula* f, Term* t, YYLTYPE l) {
+	if(f && t) {
+		// TODO HIER BEZIG
+	}
+}
 
 
 
@@ -2442,32 +2493,6 @@ namespace Insert {
 		else {
 			for(unsigned int n = 0; n < vv.size(); ++n) delete(vv[n]);
 			delete(f);
-			return 0;
-		}
-	}
-
-	EqChainForm* eqchain(char c, bool b, Term* lt, Term* rt, YYLTYPE l) {
-		if(lt && rt) {
-			FormulaParseInfo pi = formparseinfo(l);	// TODO adapt formparseinfo
-			EqChainForm* ecf = new EqChainForm(true,true,lt,pi);
-			ecf->add(c,b,rt);
-			return ecf;
-		}
-		else {
-			if(lt) delete(lt);
-			if(rt) delete(rt);
-			return 0;
-		}
-	}
-
-	EqChainForm* eqchain(char c, bool b, EqChainForm* ecf, Term* rt, YYLTYPE) {
-		if(ecf && rt) {
-			ecf->add(c,b,rt);
-			return ecf;
-		}
-		else {
-			if(ecf) delete(ecf);
-			if(rt) delete(rt);
 			return 0;
 		}
 	}

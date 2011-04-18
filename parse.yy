@@ -14,7 +14,7 @@
 extern int yylex();
 
 // Inserter
-extern Insert insert;
+Insert insert;
 
 // Errors
 void yyerror(const char* s);
@@ -838,8 +838,29 @@ optassign	: identifier '=' strelement		{ insert.option(*$1,*$3,@1);	}
 #include <iostream>
 #include "error.hpp"
 
+extern FILE* yyin;
+
 void yyerror(const char* s) {
 	ParseInfo pi(yylloc.first_line,yylloc.first_column,insert.currfile());
 	Error::error(pi);
 	std::cerr << s << std::endl;
 }
+
+void parsefile(const std::string& str) {
+	yylloc.first_line = 1;
+	yylloc.first_column = 1;
+	yyin = fopen(str.c_str(),"r");
+	if(yyin) {
+		insert.currfile(str);
+		yyparse();
+		fclose(yyin);
+	}
+	else Error::unknfile(str);
+}
+
+void parsestdin() {
+	yyin = stdin;
+	insert.currfile(0);
+	yyparse();
+}
+

@@ -27,7 +27,8 @@ extern void	printtabs(std::ostream&,unsigned int tabs);	//!< write a given numbe
 
 extern double applyAgg(AggFunction,const std::vector<double>& args);	//!< apply an aggregate function to arguments
 
-extern CompType	invert(CompType);	//!< Invert a comparison operator
+extern CompType	invertct(CompType);	//!< Invert a comparison operator
+extern CompType	negatect(CompType);	//!< Negate a comparison operator
 
 extern std::string* StringPointer(const char* str);			//!< Returns a shared pointer to the given string
 extern std::string* StringPointer(const std::string& str);	//!< Returns a shared pointer to the given string

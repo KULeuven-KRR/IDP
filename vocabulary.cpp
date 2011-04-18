@@ -145,11 +145,11 @@ set<Sort*> Sort::descendents(const Vocabulary* vocabulary) const {
 	return descend;
 }
 
-inline bool Sort::builtin() const {
+bool Sort::builtin() const {
 	return _interpretation != 0;
 }
 
-inline SortTable* Sort::interpretation() const {
+SortTable* Sort::interpretation() const {
 	return _interpretation;
 }
 
@@ -176,17 +176,14 @@ ostream& operator<< (ostream& output, const Sort& sort) { return sort.put(output
 namespace SortUtils {
 
 	/**
-	 * DESCRIPTION
-	 *		Return the unique nearest common ancestor of two sorts. 
+	 *	\brief	Return the unique nearest common ancestor of two sorts. 
 	 *
-	 * PARAMETERS
-	 *		- s1:			the first sort
-	 *		- s2:			the second sort
-	 *		- vocabulary:	if not 0, search for the nearest common ancestor in the projection of the sort hiearchy on
+	 *	\param s1			the first sort
+	 *	\param s2			the second sort
+	 *	\param vocabulary	if not 0, search for the nearest common ancestor in the projection of the sort hiearchy on
 	 *						this vocabulary
 	 *
-	 * RETURNS
-	 *		The unique nearest common ancestor if it exists, a null-pointer otherwise.
+	 *	\return	The unique nearest common ancestor if it exists, a null-pointer otherwise.
 	 */ 
 	Sort* resolve(Sort* s1, Sort* s2, const Vocabulary* vocabulary) {
 		set<Sort*> ss1 = s1->ancestors(vocabulary); ss1.insert(s1);
@@ -209,6 +206,10 @@ namespace SortUtils {
 		}
 	}
 
+	bool isSubsort(Sort* a, Sort* b) {
+		return resolve(a,b) == b;
+	}
+
 }
 
 /****************
@@ -228,19 +229,19 @@ Variable::Variable(Sort* s) : _sort(s) {
 	++_nvnr;
 }
 
-inline void Variable::sort(Sort* s) {
+void Variable::sort(Sort* s) {
 	_sort = s;
 }
 
-inline const string& Variable::name() const {
+const string& Variable::name() const {
 	return _name;
 }
 
-inline Sort* Variable::sort() const {
+Sort* Variable::sort() const {
 	return _sort;
 }
 
-inline const ParseInfo& Variable::pi() const {
+const ParseInfo& Variable::pi() const {
 	return _pi;
 }
 
@@ -316,6 +317,10 @@ string PFSymbol::to_string() const {
 	stringstream output;
 	put(output);
 	return output.str();
+}
+
+ostream& operator<<(ostream& output, const PFSymbol& s) {
+	return s.put(output);
 }
 
 int Predicate::_npnr = 0;
@@ -724,7 +729,7 @@ inline Sort* Function::outsort() const {
 	return _outsort;
 }
 
-inline bool Function::partial() const {
+bool Function::partial() const {
 	return _partial;
 }
 
@@ -1294,7 +1299,7 @@ Vocabulary* Vocabulary::std() {
 	return _std;
 }
 
-inline const string& Vocabulary::name() const {
+const string& Vocabulary::name() const {
 	return _name;
 }
 
@@ -1414,4 +1419,14 @@ string Vocabulary::to_string(unsigned int tabs) const {
 
 ostream& operator<< (ostream& output,const Vocabulary& voc) {
 	return voc.put(output);
+}
+
+namespace VocabularyUtils {
+
+	Sort* natsort() { return *(Vocabulary::std()->sort("nat")->begin()); }
+	Sort* intsort() { return *(Vocabulary::std()->sort("int")->begin()); }
+	Sort* floatsort() { return *(Vocabulary::std()->sort("float")->begin()); }
+	Sort* stringsort() { return *(Vocabulary::std()->sort("string")->begin()); }
+	Sort* charsort() { return *(Vocabulary::std()->sort("char")->begin()); }
+
 }

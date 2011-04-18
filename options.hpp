@@ -24,7 +24,7 @@ class IntOption {
 	public:
 		IntOption(int l, int u, int v) : _value(v), _lower(l), _upper(u) { }
 		bool	value(int v);
-		int		value()	const;
+		int		value()	const { return _value;	}
 };
 
 /**
@@ -38,7 +38,7 @@ class FloatOption {
 	public:
 		FloatOption(double l, double u, double v) : _value(v), _lower(l), _upper(u) { }
 		bool	value(double v);
-		double	value()	const;
+		double	value()	const { return _value;	}
 };
 
 /**

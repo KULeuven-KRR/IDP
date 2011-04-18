@@ -263,7 +263,7 @@ COMMENTLINE		"//".*
 								}
 <include>"<"[a-zA-Z0-9_/]*">"	{ advancecol();
 								  char* temp = yytext; ++temp;
-								  string str = string(DATADIR) + string(temp,yyleng-2);
+								  string str = string(DATADIR) + string(temp,yyleng-2) + ".idp";
 								  start_include(str);	
 								  BEGIN(includecaller);
 								}

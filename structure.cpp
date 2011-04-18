@@ -4,6 +4,7 @@
 	(c) K.U.Leuven
 ************************************/
 
+#include <cmath>
 #include <sstream>
 #include "common.hpp"
 #include "vocabulary.hpp"
@@ -437,6 +438,11 @@ TableIterator::~TableIterator() {
 	delete(_iterator);
 }
 
+TableIterator& TableIterator::operator++() {
+	_iterator->operator++();
+	return *this;
+}
+
 SortIterator::SortIterator(const SortIterator& si) {
 	_iterator = si.iterator()->clone();
 }
@@ -459,6 +465,11 @@ inline const DomainElement* SortIterator::operator*() const {
 
 SortIterator::~SortIterator() {
 	delete(_iterator);
+}
+
+SortIterator& SortIterator::operator++() {
+	_iterator->operator++();
+	return *this;
 }
 
 SortInternalTableIterator::~SortInternalTableIterator() {
@@ -734,6 +745,38 @@ void UnionInternalSortIterator::operator++() {
 	setcurriterator();
 }
 
+void StringInternalSortIterator::operator++() {
+	int n = _iter.size() - 1;
+	for(; n >= 0; --n) {
+		++_iter[n];
+		if(_iter[n] != numeric_limits<char>::min()) break;
+	}
+	if(n < 0) {
+		_iter = string(_iter.size()+1,numeric_limits<char>::min());
+	}
+}
+
+const DomainElement* StringInternalSortIterator::operator*() const {
+	return DomainElementFactory::instance()->create(StringPointer(_iter));
+}
+
+const DomainElement* CharInternalSortIterator::operator*() const {
+	if('0' <= _iter && _iter <= '9') {
+		int i = _iter - '0';
+		return DomainElementFactory::instance()->create(i);
+	}
+	else {
+		string* s = StringPointer(string(1,_iter));
+		return DomainElementFactory::instance()->create(s);
+	}
+}
+
+void CharInternalSortIterator::operator++() {
+	if(_iter == numeric_limits<char>::max()) _end = true;
+	else ++_iter;
+}
+
+
 /*************************
 	Internal predtable
 *************************/
@@ -813,6 +856,56 @@ InternalPredTable* FuncInternalPredTable::remove(const ElementTuple& tuple) {
 }
 
 InternalTableIterator* FuncInternalPredTable::begin() const {
+	// TODO
+	return 0;
+}
+
+bool CartesianInternalPredTable::finite() const {
+	for(vector<SortTable*>::const_iterator it = _tables.begin(); it != _tables.end(); ++it) {
+		if(!(*it)->finite()) return false;
+	}
+	return true;
+}
+
+bool CartesianInternalPredTable::empty() const {
+	for(vector<SortTable*>::const_iterator it = _tables.begin(); it != _tables.end(); ++it) {
+		if((*it)->empty()) return true;
+	}
+	return false;
+}
+
+bool CartesianInternalPredTable::approxfinite() const {
+	for(vector<SortTable*>::const_iterator it = _tables.begin(); it != _tables.end(); ++it) {
+		if(!(*it)->approxfinite()) return false;
+	}
+	return true;
+}
+
+bool CartesianInternalPredTable::approxempty() const {
+	for(vector<SortTable*>::const_iterator it = _tables.begin(); it != _tables.end(); ++it) {
+		if((*it)->approxempty()) return true;
+	}
+	return false;
+}
+
+bool CartesianInternalPredTable::contains(const ElementTuple& tuple) const {
+	for(unsigned int col = 0; col < _tables.size(); ++col) {
+		if(!_tables[col]->contains(tuple[col])) return false;
+	}
+	return true;
+}
+
+InternalPredTable* CartesianInternalPredTable::add(const ElementTuple& ) {
+	// TODO
+	return 0;
+}
+
+InternalPredTable* CartesianInternalPredTable::remove(const ElementTuple& ) {
+	// TODO
+	return 0;
+}
+
+InternalTableIterator* CartesianInternalPredTable::begin() const {
 	// TODO
 	return 0;
 }
@@ -1292,6 +1385,46 @@ InternalTableIterator* InternalSortTable::begin() const {
 	return new SortInternalTableIterator(sortbegin());
 }
 
+bool EnumeratedInternalSortTable::contains(const DomainElement* d) const {
+	return _table.find(d) != _table.end();
+}
+
+InternalSortIterator* EnumeratedInternalSortTable::sortbegin() const {
+	// TODO
+	return 0;
+}
+
+InternalSortTable* EnumeratedInternalSortTable::add(const DomainElement* d) {
+	if(contains(d)) return this;
+	else {
+		if(_nrRefs > 1) {
+			EnumeratedInternalSortTable* ist = new EnumeratedInternalSortTable(_table);
+			ist->add(d);
+			return ist;
+		}
+		else {
+			_table.insert(d);
+			return this;
+		}
+	}
+}
+
+InternalSortTable* EnumeratedInternalSortTable::remove(const DomainElement* d) {
+	if(!contains(d)) return this;
+	else {
+		if(_nrRefs > 1) {
+			EnumeratedInternalSortTable* ist = new EnumeratedInternalSortTable(_table);
+			ist->remove(d);
+			return ist;
+		}
+		else {
+			_table.erase(d);
+			return this;
+		}
+	}
+}
+
+
 UnionInternalSortTable::UnionInternalSortTable() {
 	_intables.push_back(new SortTable(new EnumeratedInternalSortTable()));
 	_outtables.push_back(new SortTable(new EnumeratedInternalSortTable()));
@@ -1442,6 +1575,78 @@ InternalSortIterator* AllNaturalNumbers::sortbegin() const {
 	return new NatInternalSortIterator();
 }
 
+bool AllIntegers::contains(const DomainElement* d) const {
+	return (d->type() == DET_INT);
+}
+
+InternalSortIterator* AllIntegers::sortbegin() const {
+	return new IntInternalSortIterator();
+}
+
+bool AllFloats::contains(const DomainElement* d) const {
+	return (d->type() == DET_INT || d->type() == DET_DOUBLE);
+}
+
+InternalSortIterator* AllFloats::sortbegin() const {
+	return new FloatInternalSortIterator();
+}
+
+bool AllStrings::contains(const DomainElement* d) const {
+	return d->type() != DET_COMPOUND;
+}
+
+InternalSortIterator* AllStrings::sortbegin() const {
+	return new StringInternalSortIterator();
+}
+
+bool AllChars::contains(const DomainElement* d) const {
+	if(d->type() == DET_INT) return (d->value()._int >= 0 && d->value()._int < 10);
+	else if(d->type() == DET_STRING) return (d->value()._string->size() == 1);
+	else return false;
+}
+
+InternalSortTable* AllChars::add(const DomainElement* d) {
+	if(contains(d)) return this;
+	else {
+		EnumeratedInternalSortTable* ist = new EnumeratedInternalSortTable;
+		for(char c = numeric_limits<char>::min(); c <= numeric_limits<char>::max(); ++c) {
+			if('0' <= c && c <= '9') {
+				int i = c - '0';
+				ist->add(DomainElementFactory::instance()->create(i));
+			}
+			else {
+				string* s = StringPointer(string(1,c));
+				ist->add(DomainElementFactory::instance()->create(s));
+			}
+		}
+		ist->add(d);
+		return ist;
+	}
+}
+
+InternalSortTable* AllChars::remove(const DomainElement* d) {
+	if(!contains(d)) return this;
+	else {
+		EnumeratedInternalSortTable* ist = new EnumeratedInternalSortTable;
+		for(char c = numeric_limits<char>::min(); c <= numeric_limits<char>::max(); ++c) {
+			if('0' <= c && c <= '9') {
+				int i = c - '0';
+				ist->add(DomainElementFactory::instance()->create(i));
+			}
+			else {
+				string* s = StringPointer(string(1,c));
+				ist->add(DomainElementFactory::instance()->create(s));
+			}
+		}
+		ist->remove(d);
+		return ist;
+	}
+}
+
+InternalSortIterator* AllChars::sortbegin() const {
+	return new CharInternalSortIterator();
+}
+
 /*************************
 	Internal functable
 *************************/
@@ -1453,6 +1658,14 @@ inline void InternalFuncTable::incrementRef() {
 inline void InternalFuncTable::decrementRef() {
 	--_nrRefs;
 	if(_nrRefs == 0) delete(this);
+}
+
+bool InternalFuncTable::contains(const ElementTuple& tuple) const {
+	ElementTuple input = tuple;
+	const DomainElement* output = tuple.back();
+	input.pop_back();
+	const DomainElement* computedoutput = operator[](input);
+	return output == computedoutput;
 }
 
 const DomainElement* EnumeratedInternalFuncTable::operator[](const ElementTuple& tuple) const {
@@ -1504,6 +1717,176 @@ InternalFuncTable* EnumeratedInternalFuncTable::remove(const ElementTuple& tuple
 
 InternalTableIterator* EnumeratedInternalFuncTable::begin() const {
 	return new EnumInternalFuncIterator(_table.begin(),_table.end());
+}
+
+const DomainElement* ModInternalFuncTable::operator[](const vector<const DomainElement*>& tuple) const {
+	int a1 = tuple[0]->value()._int;
+	int a2 = tuple[1]->value()._int;
+	return DomainElementFactory::instance()->create(a1 % a2);
+}
+
+InternalFuncTable* ModInternalFuncTable::add(const ElementTuple& tuple) {
+	if(contains(tuple)) return this;
+	else {
+		// TODO
+		return 0;
+	}
+}
+
+InternalFuncTable* ModInternalFuncTable::remove(const ElementTuple& tuple) {
+	if(!contains(tuple)) return this;
+	else {
+		// TODO
+		return 0;
+	}
+}
+
+InternalTableIterator* ModInternalFuncTable::begin() const {
+	// TODO
+	return 0;
+}
+
+const DomainElement* ExpInternalFuncTable::operator[](const vector<const DomainElement*>& tuple) const {
+	double a1 = tuple[0]->type() == DET_DOUBLE ? tuple[0]->value()._double : double(tuple[0]->value()._int);
+	double a2 = tuple[1]->type() == DET_DOUBLE ? tuple[1]->value()._double : double(tuple[1]->value()._int);
+	return DomainElementFactory::instance()->create(pow(a1,a2),false);
+}
+
+InternalFuncTable* ExpInternalFuncTable::add(const ElementTuple& tuple) {
+	if(contains(tuple)) return this;
+	else {
+		// TODO
+		return 0;
+	}
+}
+
+InternalFuncTable* ExpInternalFuncTable::remove(const ElementTuple& tuple) {
+	if(!contains(tuple)) return this;
+	else {
+		// TODO
+		return 0;
+	}
+}
+
+InternalTableIterator* ExpInternalFuncTable::begin() const {
+	// TODO
+	return 0;
+}
+
+InternalFuncTable* IntFloatInternalFuncTable::add(const ElementTuple& tuple) {
+	if(contains(tuple)) return this;
+	else {
+		// TODO
+		return 0;
+	}
+}
+
+InternalFuncTable* IntFloatInternalFuncTable::remove(const ElementTuple& tuple) {
+	if(!contains(tuple)) return this;
+	else {
+		// TODO
+		return 0;
+	}
+}
+
+const DomainElement* PlusInternalFuncTable::operator[](const ElementTuple& tuple) const {
+	if(_int) {
+		int a1 = tuple[0]->value()._int;
+		int a2 = tuple[1]->value()._int;
+		return DomainElementFactory::instance()->create(a1 + a2);
+	}
+	else {
+		double a1 = tuple[0]->type() == DET_DOUBLE ? tuple[0]->value()._double : double(tuple[0]->value()._int);
+		double a2 = tuple[1]->type() == DET_DOUBLE ? tuple[1]->value()._double : double(tuple[1]->value()._int);
+		return DomainElementFactory::instance()->create(a1 + a2,false);
+	}
+}
+
+InternalTableIterator* PlusInternalFuncTable::begin() const {
+	// TODO
+	return 0;
+}
+
+const DomainElement* MinusInternalFuncTable::operator[](const ElementTuple& tuple) const {
+	if(_int) {
+		int a1 = tuple[0]->value()._int;
+		int a2 = tuple[1]->value()._int;
+		return DomainElementFactory::instance()->create(a1 - a2);
+	}
+	else {
+		double a1 = tuple[0]->type() == DET_DOUBLE ? tuple[0]->value()._double : double(tuple[0]->value()._int);
+		double a2 = tuple[1]->type() == DET_DOUBLE ? tuple[1]->value()._double : double(tuple[1]->value()._int);
+		return DomainElementFactory::instance()->create(a1 - a2,false);
+	}
+}
+
+InternalTableIterator* MinusInternalFuncTable::begin() const {
+	// TODO
+	return 0;
+}
+
+const DomainElement* TimesInternalFuncTable::operator[](const ElementTuple& tuple) const {
+	if(_int) {
+		int a1 = tuple[0]->value()._int;
+		int a2 = tuple[1]->value()._int;
+		return DomainElementFactory::instance()->create(a1 * a2);
+	}
+	else {
+		double a1 = tuple[0]->type() == DET_DOUBLE ? tuple[0]->value()._double : double(tuple[0]->value()._int);
+		double a2 = tuple[1]->type() == DET_DOUBLE ? tuple[1]->value()._double : double(tuple[1]->value()._int);
+		return DomainElementFactory::instance()->create(a1 * a2,false);
+	}
+}
+
+InternalTableIterator* TimesInternalFuncTable::begin() const {
+	// TODO
+	return 0;
+}
+
+const DomainElement* DivInternalFuncTable::operator[](const ElementTuple& tuple) const {
+	if(_int) {
+		int a1 = tuple[0]->value()._int;
+		int a2 = tuple[1]->value()._int;
+		return DomainElementFactory::instance()->create(a1 / a2);
+	}
+	else {
+		double a1 = tuple[0]->type() == DET_DOUBLE ? tuple[0]->value()._double : double(tuple[0]->value()._int);
+		double a2 = tuple[1]->type() == DET_DOUBLE ? tuple[1]->value()._double : double(tuple[1]->value()._int);
+		return DomainElementFactory::instance()->create(a1 / a2,false);
+	}
+}
+
+InternalTableIterator* DivInternalFuncTable::begin() const {
+	// TODO
+	return 0;
+}
+
+const DomainElement* AbsInternalFuncTable::operator[](const ElementTuple& tuple) const {
+	if(tuple[0]->type() == DET_INT) {
+		return DomainElementFactory::instance()->create(abs(tuple[0]->value()._int));
+	}
+	else {
+		return DomainElementFactory::instance()->create(abs(tuple[0]->value()._double),true);
+	}
+}
+
+InternalTableIterator* AbsInternalFuncTable::begin() const {
+	// TODO
+	return 0;
+}
+
+const DomainElement* UminInternalFuncTable::operator[](const ElementTuple& tuple) const {
+	if(tuple[0]->type() == DET_INT) {
+		return DomainElementFactory::instance()->create(-(tuple[0]->value()._int));
+	}
+	else {
+		return DomainElementFactory::instance()->create(-(tuple[0]->value()._double),true);
+	}
+}
+
+InternalTableIterator* UminInternalFuncTable::begin() const {
+	// TODO
+	return 0;
 }
 
 /****************
@@ -1773,7 +2156,8 @@ TableIterator FuncTable::begin() const {
  *	- cf	: if true (false), ctpf stores the certainly false (possibly true) tuples
  *	- univ	: all possible domain elements of the sorts of the columns of the table
  */
-PredInter::PredInter(PredTable* ctpf, PredTable* cfpt, bool ct, bool cf, const vector<SortTable*>& univ) {
+PredInter::PredInter(PredTable* ctpf, PredTable* cfpt, bool ct, bool cf, const vector<SortTable*>& univ) :
+	_univ(univ) {
 	vector<bool> univlinked(ctpf->arity(),true);
 	PredTable* inverseCtpf = new PredTable(new InverseInternalPredTable(ctpf,univ,true,univlinked));
 	PredTable* inverseCfpt = new PredTable(new InverseInternalPredTable(cfpt,univ,true,univlinked));
@@ -1789,7 +2173,8 @@ PredInter::PredInter(PredTable* ctpf, PredTable* cfpt, bool ct, bool cf, const v
  *	- ct	: if true (false), ctpf stores the certainly true (possibly false) tuples
  *	- univ	: all possible domain elements of the sorts of the columns of the table
  */
-PredInter::PredInter(PredTable* ctpf, bool ct, const vector<SortTable*>& univ) {
+PredInter::PredInter(PredTable* ctpf, bool ct, const vector<SortTable*>& univ) : 
+	_univ(univ) {
 	vector<bool> univlinked(ctpf->arity(),true);
 	PredTable* inverseCtpf = new PredTable(new InverseInternalPredTable(ctpf,univ,true,univlinked));
 	if(ct) {
@@ -1811,23 +2196,35 @@ PredInter::~PredInter() {
  * \brief Returns true iff the tuple is true or inconsistent according to the predicate interpretation
  */
 inline bool PredInter::istrue(const ElementTuple& tuple) const {
-	return _ct->contains(tuple);
+	if(_ct->contains(tuple)) {
+		for(unsigned int col = 0; col < tuple.size(); ++col) {
+			if(!_univ[col]->contains(tuple[col])) return false;
+		}
+		return true;
+	}
+	else return false;
 }
 
 /**
  * \brief Returns true iff the tuple is false or inconsistent according to the predicate interpretation
  */
 inline bool PredInter::isfalse(const ElementTuple& tuple) const {
-	return _cf->contains(tuple);
+	if(!_cf->contains(tuple)) {
+		for(unsigned int col = 0; col < tuple.size(); ++col) {
+			if(!_univ[col]->contains(tuple[col])) return true;
+		}
+		return false;
+	}
+	return true;
 }
 
 /**
  * \brief Returns true iff the tuple is unknown according to the predicate interpretation
  */
 inline bool PredInter::isunknown(const ElementTuple& tuple) const {
-	if(approxtwovalued()) return !(_ct->contains(tuple));
+	if(approxtwovalued()) return false;
 	else {
-		return !(_ct->contains(tuple) || _cf->contains(tuple));
+		return !(isfalse(tuple) || istrue(tuple));
 	}
 }
 
@@ -1836,7 +2233,7 @@ inline bool PredInter::isunknown(const ElementTuple& tuple) const {
  */
 inline bool PredInter::isinconsistent(const ElementTuple& tuple) const {
 	if(approxtwovalued()) return false;
-	else return (_ct->contains(tuple) && _cf->contains(tuple));
+	else return (isfalse(tuple) && istrue(tuple));
 }
 
 /**
@@ -1844,8 +2241,40 @@ inline bool PredInter::isinconsistent(const ElementTuple& tuple) const {
  *
  * NOTE: Simple check if _ct == _pt
  */
-inline bool PredInter::approxtwovalued() const {
+bool PredInter::approxtwovalued() const {
 	return _ct == _pt;
+}
+
+void PredInter::ct(PredTable* t) {
+	if(_ct != _pt) delete(_ct);
+	_ct = t;
+	delete(_pf);
+	vector<bool> univlinked(t->arity(),true);
+	_pf = new PredTable(new InverseInternalPredTable(t,_univ,true,univlinked));
+}
+
+void PredInter::cf(PredTable* t) {
+	if(_cf != _pf) delete(_cf);
+	_cf = t;
+	delete(_pt);
+	vector<bool> univlinked(t->arity(),true);
+	_pt = new PredTable(new InverseInternalPredTable(t,_univ,true,univlinked));
+}
+
+void PredInter::pt(PredTable* t) {
+	if(_pt != _ct) delete(_pt);
+	_pt = t;
+	delete(_cf);
+	vector<bool> univlinked(t->arity(),true);
+	_cf = new PredTable(new InverseInternalPredTable(t,_univ,true,univlinked));
+}
+
+void PredInter::pf(PredTable* t) {
+	if(_pf != _cf) delete(_pf);
+	_pf = t;
+	delete(_ct);
+	vector<bool> univlinked(t->arity(),true);
+	_ct = new PredTable(new InverseInternalPredTable(t,_univ,true,univlinked));
 }
 
 PredInter* EqualInterGenerator::get(const AbstractStructure* structure) {
@@ -1898,9 +2327,40 @@ FuncInter::~FuncInter() {
 	delete(_graphinter);
 }
 
+void FuncInter::graphinter(PredInter* pt) {
+	delete(_graphinter);
+	_graphinter = pt;
+	if(_functable) delete(_functable);
+	_functable = 0;
+}
+
 FuncInter* MinInterGenerator::get(const AbstractStructure* structure) {
 	SortTable* st = structure->inter(_sort);
 	vector<SortTable*> univ(1,st);
+	ElementTuple t;
+	ElementFunc ef; ef[t] = *(st->sortbegin());
+	EnumeratedInternalFuncTable* ift = new EnumeratedInternalFuncTable(0,ef);
+	FuncTable* ft = new FuncTable(ift);
+	return new FuncInter(ft,univ);
+}
+
+FuncInter* MaxInterGenerator::get(const AbstractStructure* structure) {
+	SortTable* st = structure->inter(_sort);
+	vector<SortTable*> univ(1,st);
+	FuncTable* ft; // TODO
+	return new FuncInter(ft,univ);
+}
+
+FuncInter* SuccInterGenerator::get(const AbstractStructure* structure) {
+	SortTable* st = structure->inter(_sort);
+	vector<SortTable*> univ(2,st);
+	FuncTable* ft; // TODO
+	return new FuncInter(ft,univ);
+}
+
+FuncInter* InvSuccInterGenerator::get(const AbstractStructure* structure) {
+	SortTable* st = structure->inter(_sort);
+	vector<SortTable*> univ(2,st);
 	FuncTable* ft; // TODO
 	return new FuncInter(ft,univ);
 }

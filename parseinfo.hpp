@@ -29,7 +29,7 @@
  */
 class ParseInfo {
 
-	private:
+	protected:
 		unsigned int	_line;	//!< line number where the object is declared (0 for non-parsed objects)
 		unsigned int	_col;	//!< column number where the object is declared
 		std::string*	_file;	//!< file name where the object is declared. _file == 0 when parsed on stdin
@@ -81,7 +81,6 @@ class TermParseInfo : public ParseInfo {
 
 		// Inspectors
 		Term*	original()	const { return _original;	}	//!< Returns the original formula
-
 
 };
 

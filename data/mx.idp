@@ -1,0 +1,42 @@
+namespace mx {
+
+	/**
+	 * Returns a structure that is a solution to the model expansion problem with input theory t and structure s
+	 */
+	procedure one(t,s,opts) {
+		if (not opts) then opts = stdoptions end
+		local oldnrmodels = opts.nrmodels
+		opts.nrmodels = 1
+		local solutions = modelexpand(t,s,opts)
+		opts.nrmodels = oldnrmodels
+		return solutions[1]
+	}
+
+
+	/**
+	 * Returns all solutions to the model expansion problem with input theory t and structure s
+	 */
+	procedure all(t,s,opts) {
+		if (not opts) then opts = stdoptions end
+		local oldnrmodels = opts.nrmodels
+		opts.nrmodels = 0
+		local solutions = modelexpand(t,s,opts)
+		opts.nrmodels = oldnrmodels
+		return solutions
+	}
+
+	/**
+	 * Prints the solutions to the model expansion problem with input theory t, structure s, and options opts,
+	 */
+	procedure printsol(t,s,opts) {
+		local sols = modelexpand(t,s,opts)
+		for k,v in ipairs(sols) do
+			print("Model "..k)
+			kstr = tostring(k)
+			str = "======"
+			for i=1,string.len(kstr) do str = str.."=" end
+			print(str)
+			print(v)
+		end
+	}
+}

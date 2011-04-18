@@ -451,25 +451,29 @@ InternalArgument idptype(const vector<InternalArgument>& args, lua_State*) {
 	return ia;
 }
 
-InternalArgument printtheory(const vector<InternalArgument>& args, lua_State* ) {
-	AbstractTheory* theory = args[0].theory();
-	Options* opts = args[1].options();
+InternalArgument printtheory(const vector<InternalArgument>& , lua_State* ) {
+	// FIXME: uncomment
+	//AbstractTheory* theory = args[0].theory();
+	//Options* opts = args[1].options();
 
-	Printer* printer = Printer::create(opts);
-	string str = printer->print(theory);
-	delete(printer);
+	//Printer* printer = Printer::create(opts);
+	//string str = printer->print(theory);
+	//delete(printer);
+	string str;
 
 	InternalArgument result(StringPointer(str));
 	return result;
 }
 
-InternalArgument printstructure(const vector<InternalArgument>& args, lua_State* ) {
-	AbstractStructure* structure = args[0].structure();
-	Options* opts = args[1].options();
+InternalArgument printstructure(const vector<InternalArgument>& , lua_State* ) {
+	// FIXME: uncomment
+	//AbstractStructure* structure = args[0].structure();
+	//Options* opts = args[1].options();
 
-	Printer* printer = Printer::create(opts);
-	string str = printer->print(structure);
-	delete(printer);
+	//Printer* printer = Printer::create(opts);
+	//string str = printer->print(structure);
+	//delete(printer);
+	string str;
 
 	InternalArgument result(StringPointer(str));
 	return result;
@@ -478,7 +482,10 @@ InternalArgument printstructure(const vector<InternalArgument>& args, lua_State*
 /**************************
 	Connection with Lua
 **************************/
+
 namespace LuaConnection {
+
+	lua_State* _state;
 
 	/**
 	 * Push a domain element to the lua stack
@@ -1947,8 +1954,8 @@ namespace LuaConnection {
 
 		// Create internal procedures
 		addInternalProcedure("idptype",vint,&idptype);
-		addInternalProcedure("print",vtheoopt,&printtheory);
-		addInternalProcedure("print",vstructopt,&printstructure);
+		addInternalProcedure("tostring",vtheoopt,&printtheory);
+		addInternalProcedure("tostring",vstructopt,&printstructure);
 		// TODO
 		
 		// Add the internal procedures to lua
@@ -1967,34 +1974,32 @@ namespace LuaConnection {
 	/**
 	 * Establish the connection with lua. 
 	 */
-	lua_State* makeLuaConnection() {
+	void makeLuaConnection() {
 		// Create the lua state
-		lua_State* L = lua_open();
-		luaL_openlibs(L);
+		_state = lua_open();
+		luaL_openlibs(_state);
 
 		// Create all metatables
-		createMetaTables(L);
+		createMetaTables(_state);
 
 		// Create the global table idp_intern
-		lua_newtable(L);
-		lua_setglobal(L,"idp_intern");
+		lua_newtable(_state);
+		lua_setglobal(_state,"idp_intern");
 
 		// Add internal procedures
-		addInternProcs(L);
+		addInternProcs(_state);
 		
 		// Overwrite some standard lua procedures
 		stringstream ss;
 		ss << DATADIR << "/std/idp_intern.lua";
-		luaL_dofile(L,ss.str().c_str());
-
-		return L;
+		luaL_dofile(_state,ss.str().c_str());
 	}
 
 	/**
 	 * End the connection with lua
 	 */
-	void closeLuaConnection(lua_State* L) {
-		lua_close(L);
+	void closeLuaConnection() {
+		lua_close(_state);
 		for(map<string,set<InternalProcedure*> >::iterator it =	_internalprocedures.begin(); 
 			it != _internalprocedures.end(); ++it) {
 			for(set<InternalProcedure*>::iterator jt = it->second.begin(); jt != it->second.end(); ++jt) {

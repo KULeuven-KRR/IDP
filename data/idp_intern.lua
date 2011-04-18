@@ -1,10 +1,26 @@
-function idp_intern_main()
-	if main then main() end
+idp_intern.main = function() 
+	if main then return main() end
 end
 
 local oldType = type
-function type(obj) 
+
+idp_intern.isIdp = function(obj) 
 	if oldType(obj) == "userdata" then
+		local t = getmetatable(obj)
+		if t then
+			if t.type then return true
+			else return false
+			end
+		else
+			return false
+		end
+	else 
+		return false
+	end
+end
+
+function type(obj) 
+	if idp_intern.isIdp(obj) then
 		local idptype = getmetatable(obj)["type"]
 		return idp_intern.idptype(idptype)
 	else
@@ -13,14 +29,9 @@ function type(obj)
 end
 
 local oldTostring = tostring
-function tostring(e) 
-	local t = getmetatable(e)
-	if t then
-		if getmetatable(e).idptype then
-			return idptostring(e)
-		else
-			return oldTostring(e)
-		end
+function tostring(e,opts) 
+	if isIdp(e) then
+		return idp_intern.tostring(e,opts)
 	else
 		return oldTostring(e)
 	end
@@ -30,12 +41,7 @@ local oldPrint = print
 local function print_with_options(list,opts)
 	local res = ""
 	for i=1,#list do
-		if getmetatable(list[i]).idptype then
-			res = res..idptostring(list[i],opts)
-		else
-			res = res..oldTostring(list[i])
-		end
-		res = res.."\t"
+		res = res..tostring(list[i],opts).."\t"
 	end
 	oldPrint(res)
 end

@@ -112,8 +112,8 @@ class Insert {
 		std::vector<unsigned int>	_nrvocabs;		//!< the number of 'using vocabulary' statements in the current block
 		std::vector<unsigned int>	_nrspaces;		//!< the number of 'using namespace' statements in the current block
 
-		ParseInfo			parseinfo(YYLTYPE l);	//!< Convert a bison parse location to a parseinfo object
-		FormulaParseInfo	formparseinfo(Formula*,YYLTYPE);
+		ParseInfo			parseinfo(YYLTYPE l) const;	//!< Convert a bison parse location to a parseinfo object
+		FormulaParseInfo	formparseinfo(Formula*,YYLTYPE) const;
 
 		std::set<Variable*>	freevars(const ParseInfo&);					//!< Return all currently free variables
 		void				remove_vars(const std::set<Variable*>&);	//!< Remove the given variables from the 
@@ -126,19 +126,19 @@ class Insert {
 		void closeblock();	//!< close the current block
 
 
-		Sort*			sortInScope(const longname&, const ParseInfo&);
-		Predicate*		predInScope(const longname&, const ParseInfo&);
-		Function*		funcInScope(const longname&, const ParseInfo&);
-		Vocabulary*		vocabularyInScope(const std::string&, const ParseInfo&);
-		Vocabulary*		vocabularyInScope(const longname&, const ParseInfo&);
-		Namespace*		namespaceInScope(const longname&, const ParseInfo&);
-		AbstractTheory*	theoryInScope(const std::string&, const ParseInfo&);
-		AbstractTheory*	theoryInScope(const longname&, const ParseInfo&);
+		Sort*			sortInScope(const longname&, const ParseInfo&) const;
+		Predicate*		predInScope(const longname&, const ParseInfo&) const;
+		Function*		funcInScope(const longname&, const ParseInfo&) const;
+		Vocabulary*		vocabularyInScope(const std::string&, const ParseInfo&) const;
+		Vocabulary*		vocabularyInScope(const longname&, const ParseInfo&) const;
+		Namespace*		namespaceInScope(const longname&, const ParseInfo&) const;
+		AbstractTheory*	theoryInScope(const std::string&, const ParseInfo&) const;
+		AbstractTheory*	theoryInScope(const longname&, const ParseInfo&) const;
 
-		bool	belongsToVoc(Predicate*);
-		bool	belongsToVoc(Function*);
+		bool	belongsToVoc(Predicate*) const;
+		bool	belongsToVoc(Function*) const;
 
-		Formula*	boolform(bool,Formula*,Formula*,YYLTYPE);
+		Formula*	boolform(bool,Formula*,Formula*,YYLTYPE) const;
 		Formula*	quantform(bool,const std::set<Variable*>&, Formula*, YYLTYPE);
 
 	public:
@@ -169,60 +169,60 @@ class Insert {
 		void assigntheory(InternalArgument*, YYLTYPE);		//!< set the current theory to the given theory
 		void assignstructure(InternalArgument*, YYLTYPE);	//!< set the current structure to the given structure
 
-		void setvocab(const longname& vname, YYLTYPE);		//!< set the vocabulary of the current theory or structure 
-		void externvocab(const longname& vname, YYLTYPE);	//!< add all symbols of 'vname' to the current vocabulary
+		void setvocab(const longname& vname, YYLTYPE);			//!< set the vocabulary of the current theory or structure 
+		void externvocab(const longname& vname, YYLTYPE) const;	//!< add all symbols of 'vname' to the current vocabulary
 		
-		void externoption(const std::vector<std::string>& name, YYLTYPE);
+		void externoption(const std::vector<std::string>& name, YYLTYPE) const;
 
-		Sort*		sort(Sort* s);				//!< add an existing sort to the current vocabulary
-		Predicate*	predicate(Predicate* p);	//!< add an existing predicate to the current vocabulary
-		Function*	function(Function* f);		//!< add an existing function to the current vocabulary
+		Sort*		sort(Sort* s) const;			//!< add an existing sort to the current vocabulary
+		Predicate*	predicate(Predicate* p) const;	//!< add an existing predicate to the current vocabulary
+		Function*	function(Function* f) const;	//!< add an existing function to the current vocabulary
 
-		Sort*		sortpointer(const longname&, YYLTYPE);	
+		Sort*		sortpointer(const longname&, YYLTYPE) const;	
 			//!< return the sort with the given name
-		Predicate*	predpointer(longname&, const std::vector<Sort*>&, YYLTYPE);
+		Predicate*	predpointer(longname&, const std::vector<Sort*>&, YYLTYPE) const;
 			//!< return the predicate with the given name and sorts
-		Predicate*	predpointer(longname&, int arity, YYLTYPE);	
+		Predicate*	predpointer(longname&, int arity, YYLTYPE) const;	
 			//!< return the predicate with the given name and arity
-		Function*	funcpointer(longname&, const std::vector<Sort*>&, YYLTYPE);	
+		Function*	funcpointer(longname&, const std::vector<Sort*>&, YYLTYPE) const;	
 			//!< return the function with the given name and sorts
-		Function*	funcpointer(longname&, int arity, YYLTYPE);	
+		Function*	funcpointer(longname&, int arity, YYLTYPE) const;	
 			//!< return the function with the given name and arity
 
-		NSPair*	internpredpointer(const longname&, const std::vector<Sort*>&, YYLTYPE);
-		NSPair*	internfuncpointer(const longname&, const std::vector<Sort*>&, Sort*, YYLTYPE);
-		NSPair*	internpointer(const longname& name, YYLTYPE);
+		NSPair*	internpredpointer(const longname&, const std::vector<Sort*>&, YYLTYPE) const;
+		NSPair*	internfuncpointer(const longname&, const std::vector<Sort*>&, Sort*, YYLTYPE) const;
+		NSPair*	internpointer(const longname& name, YYLTYPE) const;
 
-		Sort*	sort(const std::string& name, YYLTYPE);						
-		Sort*	sort(const std::string& name, const std::vector<Sort*> supbs, bool p, YYLTYPE);
-		Sort*	sort(const std::string& name, const std::vector<Sort*> sups, const std::vector<Sort*> subs, YYLTYPE);
+		Sort*	sort(const std::string& name, YYLTYPE) const;						
+		Sort*	sort(const std::string& name, const std::vector<Sort*> supbs, bool p, YYLTYPE) const;
+		Sort*	sort(const std::string& name, const std::vector<Sort*> sups, const std::vector<Sort*> subs, YYLTYPE) const;
 
-		Predicate*	predicate(const std::string& name, const std::vector<Sort*>& sorts, YYLTYPE);	
+		Predicate*	predicate(const std::string& name, const std::vector<Sort*>& sorts, YYLTYPE) const;	
 			//!< create a new predicate with the given sorts in the current vocabulary
-		Predicate*	predicate(const std::string& name, YYLTYPE);	
+		Predicate*	predicate(const std::string& name, YYLTYPE) const;	
 			//!< create a new 0-ary predicate in the current vocabulary
 			
-		Function*	function(const std::string& name, const std::vector<Sort*>& insorts, Sort* outsort, YYLTYPE);	
+		Function*	function(const std::string& name, const std::vector<Sort*>& insorts, Sort* outsort, YYLTYPE) const;	
 			//!< create a new function in the current vocabulary
-		Function*	function(const std::string& name, Sort* outsort, YYLTYPE);	
+		Function*	function(const std::string& name, Sort* outsort, YYLTYPE) const;	
 			//!< create a new constant in the current vocabulary
-		Function*	aritfunction(const std::string& name, const std::vector<Sort*>& sorts, YYLTYPE);	
+		Function*	aritfunction(const std::string& name, const std::vector<Sort*>& sorts, YYLTYPE) const;	
 			//!< create a new arithmetic function in the current vocabulary
 			
-		void	partial(Function* f);
+		void	partial(Function* f) const;
 			//!< make a function partial
 
-		InternalArgument* call(const longname& proc, const std::vector<longname>& args, YYLTYPE);
+		InternalArgument* call(const longname& proc, const std::vector<longname>& args, YYLTYPE) const;
 			//!< call a procedure
-		InternalArgument* call(const longname& proc, YYLTYPE);
+		InternalArgument* call(const longname& proc, YYLTYPE) const;
 			//!< call a procedure
 
-		void definition(Definition* d);		//!< add a definition to the current theory
-		void sentence(Formula* f);			//!< add a sentence to the current theory
-		void fixpdef(FixpDef* d);			//!< add a fixpoint defintion to the current theory
+		void definition(Definition* d) const;		//!< add a definition to the current theory
+		void sentence(Formula* f);					//!< add a sentence to the current theory
+		void fixpdef(FixpDef* d) const;				//!< add a fixpoint defintion to the current theory
 
 
-		Definition*	definition(const std::vector<Rule*>& r); //!< create a new definition
+		Definition*	definition(const std::vector<Rule*>& r) const; //!< create a new definition
 			
 		Rule*	rule(const std::set<Variable*>&,Formula* h, Formula* b, YYLTYPE);
 			//!< create a new rule 
@@ -233,32 +233,32 @@ class Insert {
 		Rule*	rule(Formula* h, YYLTYPE);
 			//!< create a rule without quantified variables and with an empty body
 			
-		void		addRule(FixpDef*, Rule*);	//!< add a rule to a fixpoint definition
-		void		addDef(FixpDef*,FixpDef*);	//!< add a fixpoint definition to a fixpoint definition
-		FixpDef*	createFD();					//!< create a new fixpoint definition
-		void		makeLFD(FixpDef*,bool);		//!< make the fixpointdefinition a least or greatest fixpoint definition
+		void		addRule(FixpDef*, Rule*) const ;	//!< add a rule to a fixpoint definition
+		void		addDef(FixpDef*,FixpDef*) const;	//!< add a fixpoint definition to a fixpoint definition
+		FixpDef*	createFD() const;					//!< create a new fixpoint definition
+		void		makeLFD(FixpDef*,bool) const;	//!< make the fixpointdefinition a least or greatest fixpoint definition
 
-		Formula*	trueform(YYLTYPE);		
+		Formula*	trueform(YYLTYPE) const;		
 			//!< create a new true formula 
-		Formula*	falseform(YYLTYPE);	
+		Formula*	falseform(YYLTYPE) const;	
 			//!< create a new false formula 
-		Formula*	funcgraphform(NSPair*, const std::vector<Term*>&, Term*, YYLTYPE);
+		Formula*	funcgraphform(NSPair*, const std::vector<Term*>&, Term*, YYLTYPE) const;
 			//!< create a new formula of the form F(t1,...,tn) = t
-		Formula*	funcgraphform(NSPair*, Term*, YYLTYPE);
+		Formula*	funcgraphform(NSPair*, Term*, YYLTYPE) const;
 			//!< create a new formula of the form C = t
-		Formula*	predform(NSPair*, const std::vector<Term*>&, YYLTYPE);
+		Formula*	predform(NSPair*, const std::vector<Term*>&, YYLTYPE) const;
 			//!< create a new formula of the form P(t1,...,tn)
-		Formula*	predform(NSPair*, YYLTYPE);
+		Formula*	predform(NSPair*, YYLTYPE) const;
 			//!< create a new formula of the form P
-		Formula*	equivform(Formula*,Formula*,YYLTYPE);
+		Formula*	equivform(Formula*,Formula*,YYLTYPE) const;
 			//!< create a new formula of the form (phi1 <=> phi2)
-		Formula*	disjform(Formula*,Formula*,YYLTYPE);
+		Formula*	disjform(Formula*,Formula*,YYLTYPE) const;
 			//!< create a new formula of the form (phi1 | phi2)
-		Formula*	conjform(Formula*,Formula*,YYLTYPE);
+		Formula*	conjform(Formula*,Formula*,YYLTYPE) const;
 			//!< create a new formula of the form (phi1 & phi2)
-		Formula*	implform(Formula*,Formula*,YYLTYPE);
+		Formula*	implform(Formula*,Formula*,YYLTYPE) const;
 			//!< create a new formula of the form (phi1 => phi2)
-		Formula*	revimplform(Formula*,Formula*,YYLTYPE);
+		Formula*	revimplform(Formula*,Formula*,YYLTYPE) const;
 			//!< create a new formula of the form (phi1 <= phi2)
 		Formula*	univform(const std::set<Variable*>&, Formula*, YYLTYPE l); 
 			//!< create a new formula of the form (! x1 ... xn : phi)
@@ -266,30 +266,30 @@ class Insert {
 			//!< create a new formula of the form (? x1 ... xn : phi)
 		Formula*	bexform(CompType, int, const std::set<Variable*>&, Formula*, YYLTYPE);
 			//!< create a new formula of the form (?_op_n x1 ... xn : phi)
-		Formula*	eqchain(CompType,Formula*,Term*,YYLTYPE);
+		Formula*	eqchain(CompType,Formula*,Term*,YYLTYPE) const;
 			//!< add a term to an equation chain
-		Formula*	eqchain(CompType,Term*,Term*,YYLTYPE);
+		Formula*	eqchain(CompType,Term*,Term*,YYLTYPE) const;
 			//!< create a new equation chain
-		void negate(Formula*); 
+		void negate(Formula*) const; 
 			//!< negate a formula
 			
 		Variable*	quantifiedvar(const std::string& name, YYLTYPE l); 
 			//!< create a new quantified variable
 		Variable*	quantifiedvar(const std::string& name, Sort* sort, YYLTYPE l);
 			//!< create a new quantified variable with a given sort
-		Sort*		theosortpointer(const longname& vs, YYLTYPE l);
+		Sort*		theosortpointer(const longname& vs, YYLTYPE l) const;
 			//!< get a sort with a given name in the current vocabulary
 
-		Term*	functerm(NSPair*, const std::vector<Term*>&);	//!< create a new function term
-		Term*	functerm(NSPair*);								//!< create a new constant term
-		Term*	arterm(char,Term*,Term*,YYLTYPE);				//!< create a new binary arithmetic term
-		Term*	arterm(const std::string&,Term*,YYLTYPE);		//!< create a new unary arithmetic term
-		Term*	domterm(int,YYLTYPE);							//!< create a new domain element term
-		Term*	domterm(double,YYLTYPE);						//!< create a new domain element term
-		Term*	domterm(std::string*,YYLTYPE);					//!< create a new domain element term
-		Term*	domterm(char,YYLTYPE);							//!< create a new domain element term
-		Term*	domterm(std::string*,Sort*,YYLTYPE);			//!< create a new domain element term of a given sort
-		Term*	aggregate(AggFunction, SetExpr*, YYLTYPE);		//!< create a new aggregate term
+		Term*	functerm(NSPair*, const std::vector<Term*>&) const;	//!< create a new function term
+		Term*	functerm(NSPair*) const;								//!< create a new constant term
+		Term*	arterm(char,Term*,Term*,YYLTYPE) const;				//!< create a new binary arithmetic term
+		Term*	arterm(const std::string&,Term*,YYLTYPE) const;		//!< create a new unary arithmetic term
+		Term*	domterm(int,YYLTYPE) const;							//!< create a new domain element term
+		Term*	domterm(double,YYLTYPE) const;						//!< create a new domain element term
+		Term*	domterm(std::string*,YYLTYPE) const;					//!< create a new domain element term
+		Term*	domterm(char,YYLTYPE) const;							//!< create a new domain element term
+		Term*	domterm(std::string*,Sort*,YYLTYPE) const;			//!< create a new domain element term of a given sort
+		Term*	aggregate(AggFunction, SetExpr*, YYLTYPE) const;		//!< create a new aggregate term
 
 		SetExpr*	set(const std::set<Variable*>&, Formula*, YYLTYPE);
 			//!< Create a new set of the form { x1 ... xn : phi }
@@ -298,76 +298,76 @@ class Insert {
 		SetExpr*	set(EnumSetExpr*);
 			//!< Cast EnumSetExpr to SetExpr
 
-		EnumSetExpr*	createEnum();
+		EnumSetExpr*	createEnum() const;
 			//!< Create a new EnumSetExpr
-		void			addFormula(EnumSetExpr*,Formula*);
+		void			addFormula(EnumSetExpr*,Formula*) const;
 			//!< Add a tuple (phi,1) to an EnumSetExpr
-		void			addFT(EnumSetExpr*,Formula*,Term*);
+		void			addFT(EnumSetExpr*,Formula*,Term*) const;
 			//!< Add a tuple (phi,t) to an EnumSetExpr
 
-		void emptyinter(NSPair*);				//!< Assign the empty interpretation
-		void sortinter(NSPair*, SortTable* t);	//!< Assign a one dimensional table
-		void predinter(NSPair*, PredTable* t);	//!< Assign a predicate table
-		void funcinter(NSPair*, FuncTable* t);	//!< Assign a function table
-		void truepredinter(NSPair*);			//!< Assign true
-		void falsepredinter(NSPair*);			//!< Assign false
-		void inter(NSPair*,InternalArgument*,YYLTYPE);	//!< Assign the result of a procedural call
+		void emptyinter(NSPair*) const;							//!< Assign the empty interpretation
+		void sortinter(NSPair*, SortTable* t) const;			//!< Assign a one dimensional table
+		void predinter(NSPair*, PredTable* t) const;			//!< Assign a predicate table
+		void funcinter(NSPair*, FuncTable* t) const;			//!< Assign a function table
+		void truepredinter(NSPair*) const;						//!< Assign true
+		void falsepredinter(NSPair*) const;						//!< Assign false
+		void inter(NSPair*,InternalArgument*,YYLTYPE) const;	//!< Assign the result of a procedural call
 
-		void threeprocinter(NSPair*, const std::string& utf, InternalArgument*);
-		void threepredinter(NSPair*, const std::string& utf, PredTable* t);
-		void threepredinter(NSPair*, const std::string& utf, SortTable* t);
-		void truethreepredinter(NSPair*, const std::string& utf);
-		void falsethreepredinter(NSPair*, const std::string& utf);
-		void threefuncinter(NSPair*, const std::string& utf, FuncTable* t);
-		void emptythreeinter(NSPair*, const std::string& utf);
+		void threeprocinter(NSPair*, const std::string& utf, InternalArgument*)	const;
+		void threepredinter(NSPair*, const std::string& utf, PredTable* t)		const;
+		void threepredinter(NSPair*, const std::string& utf, SortTable* t)		const;
+		void truethreepredinter(NSPair*, const std::string& utf)				const;
+		void falsethreepredinter(NSPair*, const std::string& utf)				const;
+		void threefuncinter(NSPair*, const std::string& utf, FuncTable* t)		const;
+		void emptythreeinter(NSPair*, const std::string& utf)					const;
 
-		SortTable*	createSortTable();
-		void	addElement(SortTable*,int);
-		void	addElement(SortTable*,double);
-		void	addElement(SortTable*,std::string*);
-		void	addElement(SortTable*,const Compound*);
-		void	addElement(SortTable*,int,int);
-		void	addElement(SortTable*,char,char);
+		SortTable*	createSortTable()					const;
+		void	addElement(SortTable*,int)				const;
+		void	addElement(SortTable*,double)			const;
+		void	addElement(SortTable*,std::string*)		const;
+		void	addElement(SortTable*,const Compound*)	const;
+		void	addElement(SortTable*,int,int)			const;
+		void	addElement(SortTable*,char,char)		const;
 
-		PredTable*	createPredTable();
-		void	addTuple(PredTable*, std::vector<const DomainElement*>&, YYLTYPE);
-		void	addTuple(PredTable*, YYLTYPE);
+		PredTable*	createPredTable()												const;
+		void	addTuple(PredTable*, std::vector<const DomainElement*>&, YYLTYPE)	const;
+		void	addTuple(PredTable*, YYLTYPE)										const;
 
-		FuncTable*	createFuncTable();
-		void	addTupleVal(FuncTable*, std::vector<const DomainElement*>&, YYLTYPE);
-		void	addTupleVal(FuncTable*, const DomainElement*, YYLTYPE);
+		FuncTable*	createFuncTable()													const;
+		void	addTupleVal(FuncTable*, std::vector<const DomainElement*>&, YYLTYPE)	const;
+		void	addTupleVal(FuncTable*, const DomainElement*, YYLTYPE)					const;
 
-		const DomainElement*	element(int);
-		const DomainElement*	element(double);
-		const DomainElement*	element(char);
-		const DomainElement*	element(std::string*);
-		const DomainElement*	element(const Compound*);
+		const DomainElement*	element(int)					const;
+		const DomainElement*	element(double)					const;
+		const DomainElement*	element(char)					const;
+		const DomainElement*	element(std::string*)			const;
+		const DomainElement*	element(const Compound*)		const;
 
-		std::pair<int,int>*		range(int,int);
-		std::pair<char,char>*	range(char,char);
+		std::pair<int,int>*		range(int,int)		const;
+		std::pair<char,char>*	range(char,char)	const;
 
-		const Compound*	compound(NSPair*);
-		const Compound*	compound(NSPair*,const std::vector<const DomainElement*>&);
+		const Compound*	compound(NSPair*)											const;
+		const Compound*	compound(NSPair*,const std::vector<const DomainElement*>&)	const;
 
-		void predatom(NSPair*, const std::vector<ElRange>&, bool);
-		void predatom(NSPair*, bool);
-		void funcatom(NSPair*, const std::vector<ElRange>&, const DomainElement*, bool);
-		void funcatom(NSPair*, const DomainElement*, bool);
+		void predatom(NSPair*, const std::vector<ElRange>&, bool)							const;
+		void predatom(NSPair*, bool)														const;
+		void funcatom(NSPair*, const std::vector<ElRange>&, const DomainElement*, bool)		const;
+		void funcatom(NSPair*, const DomainElement*, bool)									const;
 
-		std::vector<ElRange>* domaintuple(const DomainElement*);
-		std::vector<ElRange>* domaintuple(std::pair<int,int>*);
-		std::vector<ElRange>* domaintuple(std::pair<char,char>*);
-		std::vector<ElRange>* domaintuple(std::vector<ElRange>*,const DomainElement*);
-		std::vector<ElRange>* domaintuple(std::vector<ElRange>*,std::pair<int,int>*);
-		std::vector<ElRange>* domaintuple(std::vector<ElRange>*,std::pair<char,char>*);
+		std::vector<ElRange>* domaintuple(const DomainElement*)								const;
+		std::vector<ElRange>* domaintuple(std::pair<int,int>*)								const;
+		std::vector<ElRange>* domaintuple(std::pair<char,char>*)							const;
+		std::vector<ElRange>* domaintuple(std::vector<ElRange>*,const DomainElement*)		const;
+		std::vector<ElRange>* domaintuple(std::vector<ElRange>*,std::pair<int,int>*)		const;
+		std::vector<ElRange>* domaintuple(std::vector<ElRange>*,std::pair<char,char>*)		const;
 
-		void procarg(const std::string&);	//!< Add an argument to the current procedure
+		void procarg(const std::string&)	const;	//!< Add an argument to the current procedure
 
-		void exec(std::stringstream*);
+		void exec(std::stringstream*)	const;
 
-		void option(const std::string& opt, const std::string& val,YYLTYPE);
-		void option(const std::string& opt, double val,YYLTYPE);
-		void option(const std::string& opt, int val,YYLTYPE);
+		void option(const std::string& opt, const std::string& val,YYLTYPE)	const;
+		void option(const std::string& opt, double val,YYLTYPE)				const;
+		void option(const std::string& opt, int val,YYLTYPE)				const;
 };
 
 

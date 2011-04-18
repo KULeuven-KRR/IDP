@@ -350,34 +350,33 @@ ostream& QuantSetExpr::put(ostream& output) const {
 	return output;
 }
 
-/* FIXME uncomment
-class TwoValChecker : public TheoryVisitor {
+class ApproxTwoValChecker : public TheoryVisitor {
 	private:
 		AbstractStructure*	_structure;
 		bool				_returnvalue;
 	public:
-		TwoValChecker(AbstractStructure* str) : _structure(str), _returnvalue(true) { }
+		ApproxTwoValChecker(AbstractStructure* str) : _structure(str), _returnvalue(true) { }
 		bool	returnvalue()	const { return _returnvalue;	}
 		void	visit(const PredForm*);
 		void	visit(const FuncTerm*);
 };
 
-void TwoValChecker::visit(const PredForm* pf) {
-	PredInter* inter = _structure->inter(pf->symb());
-	if(inter->fasttwovalued()) {
-		for(unsigned int n = 0; n < pf->nrSubterms(); ++n) {
-			pf->subterm(n)->accept(this);
+void ApproxTwoValChecker::visit(const PredForm* pf) {
+	PredInter* inter = _structure->inter(pf->symbol());
+	if(inter->approxtwovalued()) {
+		for(vector<Term*>::const_iterator it = pf->subterms().begin(); it != pf->subterms().end(); ++it) {
+			(*it)->accept(this);
 			if(!_returnvalue) return;
 		}
 	}
 	else _returnvalue = false;
 }
 
-void TwoValChecker::visit(const FuncTerm* ft) {
-	FuncInter* inter = _structure->inter(ft->func());
-	if(inter->fasttwovalued()) {
-		for(unsigned int n = 0; n < ft->nrSubterms(); ++n) {
-			ft->subterm(n)->accept(this);
+void ApproxTwoValChecker::visit(const FuncTerm* ft) {
+	FuncInter* inter = _structure->inter(ft->function());
+	if(inter->approxtwovalued()) {
+		for(vector<Term*>::const_iterator it = ft->subterms().begin(); it != ft->subterms().end(); ++it) {
+			(*it)->accept(this);
 			if(!_returnvalue) return;
 		}
 	}
@@ -386,11 +385,11 @@ void TwoValChecker::visit(const FuncTerm* ft) {
 
 namespace SetUtils {
 
-	bool isTwoValued(SetExpr* exp, AbstractStructure* str) {
-		TwoValChecker tvc(str);
+	bool approxTwoValued(SetExpr* exp, AbstractStructure* str) {
+		ApproxTwoValChecker tvc(str);
 		exp->accept(&tvc);
 		return tvc.returnvalue();
 	}
 
 }
-*/
+

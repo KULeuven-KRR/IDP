@@ -89,7 +89,8 @@ class Formula : public TheoryComponent {
 		virtual ~Formula() { }			//!< delete the formula, but not its children
 
 		// Mutators
-		void	swapsign()	{ _sign = !_sign;				}	//!< swap the sign of the formula
+		void	swapsign()	{ _sign = !_sign; if(_pi.original()) _pi.original()->swapsign();		}	
+			//!< swap the sign of the formula
 
 		void	addsubterm(Term* t)								{ _subterms.push_back(t); setfvars();		}
 		void	addsubformula(Formula* f)						{ _subformulas.push_back(f); setfvars();	}
@@ -386,6 +387,7 @@ class Rule {
 		void recursiveDelete();	//!< Delete the rule and its components
 
 		// Mutators
+		void	head(PredForm* h)	{ _head = h;	}	//!< Replace the head of the rule
 		void	body(Formula* f)	{ _body = f;	}	//!< Replace the body of the rule
 
 		// Inspectors
@@ -439,8 +441,8 @@ class Definition : public AbstractDefinition {
 		void recursiveDelete();
 
 		// Mutators
-		void	add(Rule*);						//!< add a rule to the definition
-		void	rule(unsigned int n, Rule* r);	//!< Replace the n'th rule of the definition
+		void					add(Rule*);						//!< add a rule to the definition
+		void					rule(unsigned int n, Rule* r);	//!< Replace the n'th rule of the definition
 
 		// Inspectors
 		const std::vector<Rule*>&		rules()			const { return _rules;		}
@@ -589,10 +591,14 @@ class Theory : public AbstractTheory {
 		void	definition(unsigned int n, Definition* d)	{ _definitions[n] = d;			}
 		void	fixpdef(unsigned int n, FixpDef* d)			{ _fixpdefs[n] = d;				}
 
+		std::vector<Formula*>&		sentences()		{ return _sentences;	}
+		std::vector<Definition*>&	definitions()	{ return _definitions;	}
+		std::vector<FixpDef*>&		fixpdefs()		{ return _fixpdefs;		}
+
 		// Inspectors
-		const std::vector<Formula*>&		sentences()		{ return _sentences;	}
-		const std::vector<Definition*>&		definitions()	{ return _definitions;	}
-		const std::vector<FixpDef*>&		fixpdefs()		{ return _fixpdefs;		}
+		const std::vector<Formula*>&		sentences()		const { return _sentences;	}
+		const std::vector<Definition*>&		definitions()	const { return _definitions;	}
+		const std::vector<FixpDef*>&		fixpdefs()		const { return _fixpdefs;		}
 
 		// Visitor
 		void	accept(TheoryVisitor*) const;
@@ -632,9 +638,6 @@ class SolverTheory;
  */
 class TheoryVisitor {
 	public:
-		// Traversal
-		void traverse(const Term*);
-		void traverse(const Formula*);
 
 		// Theories
 		virtual void visit(const Theory*);
@@ -642,6 +645,7 @@ class TheoryVisitor {
 		virtual void visit(const SolverTheory*);
 
 		// Formulas     
+				void traverse(const Formula*);
 		virtual void visit(const PredForm*);			
 		virtual void visit(const EqChainForm*);
 		virtual void visit(const EquivForm*);
@@ -655,12 +659,14 @@ class TheoryVisitor {
 		virtual void visit(const FixpDef*);
 
 		// Terms
+				void traverse(const Term*);
 		virtual void visit(const VarTerm*);
 		virtual void visit(const FuncTerm*);
 		virtual void visit(const DomainTerm*);
 		virtual void visit(const AggTerm*);
 
 		// Set expressions
+				void traverse(const SetExpr*);
 		virtual void visit(const EnumSetExpr*);
 		virtual void visit(const QuantSetExpr*);
 
@@ -674,12 +680,14 @@ class TheoryMutatingVisitor {
 		virtual SolverTheory* visit(SolverTheory*);
 
 		// Formulas     
+				Formula* traverse(Formula*);
 		virtual Formula* visit(PredForm*);			
 		virtual Formula* visit(EqChainForm*);
 		virtual Formula* visit(EquivForm*);
 		virtual Formula* visit(BoolForm*);
 		virtual Formula* visit(QuantForm*);
 		virtual Formula* visit(AggForm*);
+	
 
 		// Definitions 
 		virtual Rule*		visit(Rule*);
@@ -687,12 +695,14 @@ class TheoryMutatingVisitor {
 		virtual FixpDef*	visit(FixpDef*);
 
 		// Terms
+				Term* traverse(Term*);
 		virtual Term* visit(VarTerm*);
 		virtual Term* visit(FuncTerm*);
 		virtual Term* visit(DomainTerm*);
 		virtual Term* visit(AggTerm*);
 
 		// Set expressions
+				SetExpr* traverse(SetExpr*);
 		virtual SetExpr* visit(EnumSetExpr*);
 		virtual SetExpr* visit(QuantSetExpr*);
 };

@@ -23,7 +23,7 @@ BUILT_SOURCES = parse.h
 
 gidl_SOURCES = \
 		commontypes.hpp\
-		parseinfo.hpp\
+		parseinfo.hpp parseinfo.cpp\
 		vocabulary.hpp vocabulary.cpp\
 		structure.hpp structure.cpp\
 		term.hpp term.cpp\

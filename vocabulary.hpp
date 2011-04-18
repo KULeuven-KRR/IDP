@@ -407,7 +407,8 @@ class FuncGenerator {
 	public:
 		virtual ~FuncGenerator() { }
 
-		FuncGenerator(const std::string& name, unsigned int arity, unsigned int binding);
+		FuncGenerator(const std::string& name, unsigned int arity, unsigned int binding) :
+			_name(name), _arity(arity), _binding(binding) { }
 
 		const std::string&	name()		const;	//!< Returns the name of the generated functions
 		unsigned int		arity()		const;	//!< Returns the arity of the generated functions

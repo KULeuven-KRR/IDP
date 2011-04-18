@@ -66,6 +66,7 @@ class Term {
 
 		void addset(SetExpr* s)						{ _subsets.push_back(s); setfvars();	}
 		void subterm(unsigned int n, Term* t)		{ _subterms[n] = t; setfvars();			}
+		void subset(unsigned int n, SetExpr* s)		{ _subsets[n] = s; setfvars();			}
 		void subterms(const std::vector<Term*>& vt) { _subterms = vt; setfvars();			}
 
 		// Inspectors
@@ -243,6 +244,7 @@ class SetExpr {
 
 	public:
 
+		// Constructors
 		SetExpr(const SetParseInfo& pi) : _pi(pi) { }
 
 		virtual SetExpr* clone()										const = 0;
@@ -250,16 +252,26 @@ class SetExpr {
 		virtual SetExpr* clone(const std::map<Variable*,Variable*>&)	const = 0;
 			//!< create a copy of the set and substitute the free variables according to the given map
 
+		// Destructors
 		virtual ~SetExpr() { }		//!< Delete the set, but not 
 		void	recursiveDelete();	//!< Delete the set and its subformulas and subterms
 
-		virtual Sort*						sort()						const = 0;	//!< Returns the sort of the set
-				const std::set<Variable*>&	freevars()					const { return _freevars;	}
-				bool						contains(const Variable*)	const;
+		// Mutators
+		void subterm(unsigned int n, Term* t)		{ _subterms[n] = t; setfvars();		}
+		void subformula(unsigned int n, Formula* f)	{ _subformulas[n] = f; setfvars();	}
+		
+		// Inspectors
+		virtual Sort*							sort()						const = 0;	//!< Returns the sort of the set
+				const std::set<Variable*>&		freevars()					const { return _freevars;	}
+				bool							contains(const Variable*)	const;
+				const std::vector<Formula*>&	subformulas()				const { return _subformulas;	}
+				const std::vector<Term*>&		subterms()					const { return _subterms;		}
 
-		virtual void	accept(TheoryVisitor*)			const = 0;
-		virtual Term*	accept(TheoryMutatingVisitor*)	= 0;
+		// Visitor
+		virtual void		accept(TheoryVisitor*)			const = 0;
+		virtual SetExpr*	accept(TheoryMutatingVisitor*)	= 0;
 
+		// Output
 		virtual std::ostream&	put(std::ostream&)	const = 0;
 				std::string		to_string()			const;
 
@@ -284,8 +296,8 @@ class EnumSetExpr : public SetExpr {
 
 		Sort*	sort()	const;
 
-		void	accept(TheoryVisitor*)	const;
-		Term*	accept(TheoryMutatingVisitor*);
+		void		accept(TheoryVisitor*)	const;
+		SetExpr*	accept(TheoryMutatingVisitor*);
 
 		std::ostream& put(std::ostream&) const;
 };
@@ -305,8 +317,8 @@ class QuantSetExpr : public SetExpr {
 
 		Sort*	sort()	const;
 
-		void	accept(TheoryVisitor*)	const;
-		Term*	accept(TheoryMutatingVisitor*);
+		void		accept(TheoryVisitor*)	const;
+		SetExpr*	accept(TheoryMutatingVisitor*);
 
 		std::ostream&	put(std::ostream&)	const;	
 };
