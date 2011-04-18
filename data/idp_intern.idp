@@ -1,26 +1,69 @@
-/** Options **/
+/**********************
+	Default options 
+**********************/
 
-#options stdoptions {
+options stdoptions {
 	nrmodels=1
 	language=idp
 	modelformat=all
 }
 
-/** Create new blocks **/
+/************************
+	Create new objects 
+************************/
 
-#procedure newoptions() {
-	return idp_intern_idpcall("newoptions")
+/**
+ * Create a new structure over a given vocabulary voc. 
+ * The created structure assigns the least precise interpretation to every symbol of its vocabulary.
+ */
+procedure newstructure(voc) {
+	return idp_intern.newstructure(voc)
 }
 
-/** Copy blocks **/
-
-#procedure clone(obj) {
-	return idp_intern_idpcall("clone",obj)
+/**
+ * Create a new, empty theory over a given vocabulary voc
+ */
+procedure newtheory(voc) {
+	return idp_intern.newtheory(voc)
 }
+
+/**
+ * Create a new block of options
+ */
+procedure newoptions() {
+	return idp_intern.newoptions()
+}
+
+/**
+ * Create a copy of the object obj
+ */
+procedure clone(obj) {
+	return idp_intern.clone(obj)
+}
+
+/**********************
+	Basic inference
+**********************/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 /** Casting **/
 
-#procedure cast(obj,newtype) {
+procedure cast(obj,newtype) {
 	if type(obj) == newtype then 
 		return obj
 	elseif type(obj) == "overloaded" then
@@ -34,17 +77,17 @@
 
 /** Vocabulary **/
 
-#procedure changevoc(Struct,Voc) {
+procedure changevoc(Struct,Voc) {
 	return idp_intern_idpcall("changevoc",Struct,Voc)
 }
 
 /** Parsing of files **/
-#procedure parse(filename) {
+procedure parse(filename) {
 	return idp_intern_idpcall("load_file",filename)
 }
 
 /** Model expansion **/
-#procedure modelexpand(Theo,Struct,Opt) {
+procedure modelexpand(Theo,Struct,Opt) {
 	local clonetheo = clone(Theo)
 	IDP_ADVANCED::push_negations(clonetheo)
 	IDP_ADVANCED::flatten(clonetheo)
@@ -54,7 +97,7 @@
 }
 
 /** Grounding **/
-#procedure ground(Theo,Struct,Opt) {
+procedure ground(Theo,Struct,Opt) {
 	local clonetheo = clone(Theo)
 	IDP_ADVANCED::push_negations(clonetheo)
 	IDP_ADVANCED::flatten(clonetheo)
@@ -63,7 +106,7 @@
 }
 
 /** Model checking **/
-#procedure modelcheck(Theo,Struct) {
+procedure modelcheck(Theo,Struct) {
 	// TODO: check if two-valued
 	// assert(twovalued(Struct),"Procedure modelcheck/2 requires a two-valued structure as second argument")
 	opts = newoptions()
@@ -73,55 +116,55 @@
 }
 
 /** Printing **/
-#procedure idptostring(obj,opts) {
+procedure idptostring(obj,opts) {
 	if not opts then opts = stdoptions end
 	return idp_intern_idpcall("print",obj,opts)
 }
 
 /** Procedures for advanced use of IDP **/
-#namespace IDP_ADVANCED {
+namespace IDP_ADVANCED {
 	
-	#procedure push_negations(T) {
+	procedure push_negations(T) {
 		return idp_intern_idpcall("push_negations",T)
 	}
 
-	#procedure move_functions(T) {
+	procedure move_functions(T) {
 		return idp_intern_idpcall("move_functions",T)
 	}
 
-	#procedure move_quantifiers(T) {
+	procedure move_quantifiers(T) {
 		return idp_intern_idpcall("move_quantifiers",T)
 	}
 
-	#procedure remove_eqchains(T) {
+	procedure remove_eqchains(T) {
 		return idp_intern_idpcall("remove_eqchains",T)
 	}
 
-	#procedure remove_equivalences(T) {
+	procedure remove_equivalences(T) {
 		return idp_intern_idpcall("remove_equivalences",T)
 	}
 
-	#procedure tseitin(T) {
+	procedure tseitin(T) {
 		return idp_intern_idpcall("tseitin",T)
 	}
 
-	#procedure flatten(T) {
+	procedure flatten(T) {
 		return idp_intern_idpcall("flatten",T)
 	}
 
-	#procedure reduce(T,S) {
+	procedure reduce(T,S) {
 		return idp_intern_idpcall("reduce",T,S)
 	}
 
-	#procedure totheory(S) {
+	procedure totheory(S) {
 		return idp_intern_idpcall("convert_to_theory",S);
 	}
 
-	#procedure forcetwovalued(S) {
+	procedure forcetwovalued(S) {
 		return idp_intern_idpcall("forcetwovalued",S);
 	}
 
-	#procedure getbdds(T) {
+	procedure getbdds(T) {
 		return idp_intern_idpcall("getbdds",T);
 	}
 
