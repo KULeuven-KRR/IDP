@@ -132,16 +132,18 @@ class Insert {
 		void closeblock();	//!< close the current block
 
 
-		Sort*				sortInScope(const longname&, const ParseInfo&) const;
-		Predicate*			predInScope(const longname&, const ParseInfo&) const;
-		Function*			funcInScope(const longname&, const ParseInfo&) const;
-		Vocabulary*			vocabularyInScope(const std::string&, const ParseInfo&) const;
-		Vocabulary*			vocabularyInScope(const longname&, const ParseInfo&) const;
-		Namespace*			namespaceInScope(const longname&, const ParseInfo&) const;
-		AbstractTheory*		theoryInScope(const std::string&, const ParseInfo&) const;
-		AbstractTheory*		theoryInScope(const longname&, const ParseInfo&) const;
-		AbstractStructure*	structureInScope(const std::string&, const ParseInfo&) const;
-		AbstractStructure*	structureInScope(const longname&, const ParseInfo&) const;
+		Sort*					sortInScope(const longname&, const ParseInfo&) const;
+		Predicate*				predInScope(const longname&, const ParseInfo&) const;
+		Function*				funcInScope(const longname&, const ParseInfo&) const;
+		std::set<Predicate*>	noArPredInScope(const std::string& name, const ParseInfo&) const;
+		std::set<Predicate*>	noArPredInScope(const longname& name, const ParseInfo&) const;
+		Vocabulary*				vocabularyInScope(const std::string&, const ParseInfo&) const;
+		Vocabulary*				vocabularyInScope(const longname&, const ParseInfo&) const;
+		Namespace*				namespaceInScope(const longname&, const ParseInfo&) const;
+		AbstractTheory*			theoryInScope(const std::string&, const ParseInfo&) const;
+		AbstractTheory*			theoryInScope(const longname&, const ParseInfo&) const;
+		AbstractStructure*		structureInScope(const std::string&, const ParseInfo&) const;
+		AbstractStructure*		structureInScope(const longname&, const ParseInfo&) const;
 
 		bool	belongsToVoc(Predicate*)	const;
 		bool	belongsToVoc(Function*)		const;
@@ -150,6 +152,8 @@ class Insert {
 		Formula*	boolform(bool,Formula*,Formula*,YYLTYPE) const;
 		Formula*	quantform(bool,const std::set<Variable*>&, Formula*, YYLTYPE);
 
+		std::map<Predicate*,PredTable*>	_unknownpredtables;
+		std::map<Function*,PredTable*>	_unknownfunctables;
 		void	assignunknowntables();
 
 	public:
@@ -324,13 +328,13 @@ class Insert {
 		void falsepredinter(NSPair*) const;						//!< Assign false
 		void inter(NSPair*, const longname& ,YYLTYPE) const;	//!< Assign a procedure
 
-		void threeprocinter(NSPair*, const std::string& utf, InternalArgument*)	const;
-		void threepredinter(NSPair*, const std::string& utf, PredTable* t)		const;
-		void threepredinter(NSPair*, const std::string& utf, SortTable* t)		const;
-		void truethreepredinter(NSPair*, const std::string& utf)				const;
-		void falsethreepredinter(NSPair*, const std::string& utf)				const;
-		void threefuncinter(NSPair*, const std::string& utf, FuncTable* t)		const;
-		void emptythreeinter(NSPair*, const std::string& utf)					const;
+		void threeprocinter(NSPair*, const std::string& utf, InternalArgument*);
+		void threepredinter(NSPair*, const std::string& utf, PredTable* t);
+		void threepredinter(NSPair*, const std::string& utf, SortTable* t);
+		void truethreepredinter(NSPair*, const std::string& utf);
+		void falsethreepredinter(NSPair*, const std::string& utf);
+		void threefuncinter(NSPair*, const std::string& utf, PredTable* t);
+		void emptythreeinter(NSPair*, const std::string& utf);
 
 		SortTable*	createSortTable()					const;
 		void	addElement(SortTable*,int)				const;
@@ -354,8 +358,8 @@ class Insert {
 		const DomainElement*	element(std::string*)			const;
 		const DomainElement*	element(const Compound*)		const;
 
-		std::pair<int,int>*		range(int,int)		const;
-		std::pair<char,char>*	range(char,char)	const;
+		std::pair<int,int>*		range(int,int,YYLTYPE)		const;
+		std::pair<char,char>*	range(char,char,YYLTYPE)	const;
 
 		const Compound*	compound(NSPair*)											const;
 		const Compound*	compound(NSPair*,const std::vector<const DomainElement*>&)	const;

@@ -179,7 +179,6 @@ class DomainElementFactory {
 		
 		DomainElementFactory(int firstfastint = 0, int lastfastint = 10001);
 
-		Compound*		compound(Function*,const ElementTuple&);
 
 	public:
 		~DomainElementFactory();
@@ -191,6 +190,8 @@ class DomainElementFactory {
 		const DomainElement*	create(const std::string* value, bool certnotdouble = false);
 		const DomainElement*	create(const Compound* value);
 		const DomainElement*	create(Function*,const ElementTuple&);
+		
+		const Compound*		compound(Function*,const ElementTuple&);
 };
 
 

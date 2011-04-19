@@ -185,6 +185,8 @@ typedef std::list<isp>				lisp;
 %type <pta>	ptuples_es
 %type <fta> ftuples
 %type <fta> ftuples_es
+%type <pta> f3tuples
+%type <pta> f3tuples_es
 %type <dom>	pelement
 %type <dom>	domain_element
 
@@ -660,6 +662,14 @@ ftuple			: ptuple "->" pelement			{ $$ = $1; $$->push_back($3);	}
 				| "->" pelement					{ $$ = new std::vector<const DomainElement*>(1,$2);	}
 				;
 
+f3tuples_es		: f3tuples ';'					{ $$ = $1;	}
+				| f3tuples						{ $$ = $1;	}
+				;
+
+f3tuples		: f3tuples ';' ftuple			{ $$ = $1; insert.addTuple($$,*$3,@3); delete($3);							}
+				| ftuple						{ $$ = insert.createPredTable(); insert.addTuple($$,*$1,@1); delete($1);	}
+				;
+
 /** Procedural interpretations **/
 
 proc_inter		: intern_pointer '=' PROCEDURE pointer_name	{ insert.inter($1,*$4,@1); delete($4);	}
@@ -685,18 +695,19 @@ threepred_inter : intern_pointer '<' identifier '>' '=' '{' ptuples_es '}'	{ ins
 				| intern_pointer '<' identifier '>' '=' FALSE				{ insert.falsethreepredinter($1,*$3);	}
 				;
 
-threefunc_inter	: intern_pointer '<' identifier '>' '=' '{' ftuples_es '}'	{ insert.threefuncinter($1,*$3,$7);		}
-				| intern_pointer '<' identifier '>' '=' pelement			{ FuncTable* ft = insert.createFuncTable();
-																			  insert.addTupleVal(ft,$6,@6);
+threefunc_inter	: intern_pointer '<' identifier '>' '=' '{' f3tuples_es '}'	{ insert.threefuncinter($1,*$3,$7);		}
+				| intern_pointer '<' identifier '>' '=' pelement			{ PredTable* ft = insert.createPredTable();
+																			  std::vector<const DomainElement*> vd(1,$6);
+																			  insert.addTuple(ft,vd,@6);
 																			  insert.threefuncinter($1,*$3,ft);		}
 				;
 
 /** Ranges **/
 
-intrange	: integer ".." integer			{ $$ = insert.range($1,$3); }
+intrange	: integer ".." integer			{ $$ = insert.range($1,$3,@1); }
 			;
-charrange	: CHARACTER ".." CHARACTER		{ $$ = insert.range($1,$3);	}
-			| CHARCONS ".." CHARCONS		{ $$ = insert.range($1,$3);	}
+charrange	: CHARACTER ".." CHARACTER		{ $$ = insert.range($1,$3,@1);	}
+			| CHARCONS ".." CHARCONS		{ $$ = insert.range($1,$3,@1);	}
 			;
 
 /** Compound elements **/

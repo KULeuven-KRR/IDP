@@ -291,7 +291,7 @@ DomainElementFactory::~DomainElementFactory() {
  *		- function:	the given function
  *		- args:		the given arguments
  */
-Compound* DomainElementFactory::compound(Function* function, const ElementTuple& args) {
+const Compound* DomainElementFactory::compound(Function* function, const ElementTuple& args) {
 	map<Function*,map<ElementTuple,Compound*> >::const_iterator it = _compounds.find(function);
 	if(it != _compounds.end()) {
 		map<ElementTuple,Compound*>::const_iterator jt = it->second.find(args); 
@@ -405,7 +405,7 @@ const DomainElement* DomainElementFactory::create(const Compound* value) {
  */
 const DomainElement* DomainElementFactory::create(Function* function, const ElementTuple& args) {
 	assert(function != 0);
-	Compound* value = compound(function,args);
+	const Compound* value = compound(function,args);
 	return create(value);
 }
 
