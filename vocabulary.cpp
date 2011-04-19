@@ -93,15 +93,15 @@ void Sort::addChild(Sort* c) {
 	if(changed.second) c->addParent(this);
 }
 
-inline const string& Sort::name() const { 
+const string& Sort::name() const { 
 	return _name;	
 }
 
-inline const ParseInfo& Sort::pi() const { 
+const ParseInfo& Sort::pi() const { 
 	return _pi;		
 }
 
-inline Predicate* Sort::pred() const {
+Predicate* Sort::pred() const {
 	return _pred;
 }
 
@@ -1303,7 +1303,7 @@ const string& Vocabulary::name() const {
 	return _name;
 }
 
-inline const ParseInfo& Vocabulary::pi() const {
+const ParseInfo& Vocabulary::pi() const {
 	return _pi;
 }
 

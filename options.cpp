@@ -57,6 +57,14 @@ Options::Options(const string& name, const ParseInfo& pi) : _name(name), _pi(pi)
 	_stringoptions["modelformat"]	= new EnumeratedStringOption(mf,"threevalued");
 }
 
+bool Options::isoption(const string& optname) const {
+	if(_stringoptions.find(optname) != _stringoptions.end())	return true;
+	if(_booloptions.find(optname) != _booloptions.end())		return true;
+	if(_intoptions.find(optname) != _intoptions.end())			return true;
+	if(_floatoptions.find(optname) != _floatoptions.end())		return true;
+	return false;
+}
+
 bool Options::setvalue(const string& opt, const string& val) {
 	map<string,StringOption*>::iterator it = _stringoptions.find(opt);
 	if(it != _stringoptions.end()) {

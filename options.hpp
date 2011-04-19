@@ -59,7 +59,7 @@ class Options {
 		ParseInfo		_pi;	//!< The place where the options were parsed
 
 		std::map<std::string,bool>			_booloptions;	//!< Options that have a boolean value
-		std::map<std::string,IntOption*>		_intoptions;	//!< Options that have an integer value
+		std::map<std::string,IntOption*>	_intoptions;	//!< Options that have an integer value
 		std::map<std::string,FloatOption*>	_floatoptions;	//!< Options that have a floating point number value
 		std::map<std::string,StringOption*>	_stringoptions;	//!< Options that have a string value
 
@@ -71,6 +71,8 @@ class Options {
 		const std::string&	name()							const	{ return _name;	}
 		const ParseInfo&	pi()							const	{ return _pi;	}
 
+		bool	isoption(const std::string&) const;
+		bool	setvalues(Options*);
 		bool	setvalue(const std::string&,bool);
 		bool	setvalue(const std::string&,int);
 		bool	setvalue(const std::string&,double);

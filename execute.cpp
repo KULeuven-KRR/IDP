@@ -5,6 +5,7 @@
 ************************************/
 
 #include <set>
+#include <iostream>
 #include "lua.hpp"
 #include "common.hpp"
 #include "vocabulary.hpp"
@@ -38,10 +39,17 @@ void UserProcedure::compile(lua_State* L) {
 		ss << "return " << _name << "(...)\n";
 
 		// Compile 
-		luaL_loadstring(L,ss.str().c_str());
-		_registryindex = "idp_compiled_procedure_" + itos(UserProcedure::_compilenumber);
-		++UserProcedure::_compilenumber;
-		lua_setfield(L,LUA_REGISTRYINDEX,_registryindex.c_str());
+		int err = luaL_loadstring(L,ss.str().c_str());
+		if(err) {
+			Error::error(_pi);
+			cerr << string(lua_tostring(L,-1));
+			lua_pop(L,1);
+		}
+		else {
+			_registryindex = "idp_compiled_procedure_" + itos(UserProcedure::_compilenumber);
+			++UserProcedure::_compilenumber;
+			lua_setfield(L,LUA_REGISTRYINDEX,_registryindex.c_str());
+		}
 	}
 }
 
@@ -2005,6 +2013,110 @@ namespace LuaConnection {
 			for(set<InternalProcedure*>::iterator jt = it->second.begin(); jt != it->second.end(); ++jt) {
 				delete(*jt);
 			}
+		}
+	}
+
+	void execute(stringstream* chunk) {
+		int err = luaL_dostring(_state,chunk->str().c_str());
+		if(err) {
+			Error::error();
+			cerr << string(lua_tostring(_state,-1));
+			lua_pop(_state,1);
+		}
+	}
+
+	void pushglobal(const vector<string>& name, const ParseInfo& pi) {
+		lua_getglobal(_state,name[0].c_str());
+		for(unsigned int n = 1; n < name.size(); ++n) {
+			if(lua_istable(_state,-1)) {
+				lua_getfield(_state,-1,name[n].c_str());
+				lua_remove(_state,-2);
+			}
+			else {
+				Error::error(pi);
+				cerr << "unknown object" << endl;
+			}
+		}
+	}
+
+	InternalArgument* call(const vector<string>& proc, const vector<vector<string> >& args, const ParseInfo& pi) {
+		pushglobal(proc,pi);
+		for(unsigned int n = 0; n < args.size(); ++n) pushglobal(args[n],pi);
+		int err = lua_pcall(_state,args.size(),1,0);
+		if(err) {
+			Error::error(pi);
+			cerr << lua_tostring(_state,-1);
+			lua_pop(_state,1);
+			return 0;
+		}
+		else {
+			InternalArgument* ia = new InternalArgument(-1,_state);
+			lua_pop(_state,1);
+			return ia;
+		}
+	}
+
+	void addGlobal(Vocabulary* v) {
+		convertToLua(_state,InternalArgument(v));
+		lua_setglobal(_state,v->name().c_str());
+	}
+
+	void addGlobal(AbstractStructure* s) {
+		convertToLua(_state,InternalArgument(s));
+		lua_setglobal(_state,s->name().c_str());
+	}
+
+	void addGlobal(AbstractTheory* t) {
+		convertToLua(_state,InternalArgument(t));
+		lua_setglobal(_state,t->name().c_str());
+	}
+
+	void addGlobal(Options* o) {
+		convertToLua(_state,InternalArgument(o));
+		lua_setglobal(_state,o->name().c_str());
+	}
+
+	void addGlobal(UserProcedure* p) {
+		InternalArgument ia;
+		ia._type = AT_PROCEDURE;
+		ia._value._string = StringPointer(p->registryindex());
+		convertToLua(_state,ia);
+		lua_setglobal(_state,p->name().c_str());
+	}
+
+	void addGlobal(Namespace* n) {
+		convertToLua(_state,InternalArgument(n));
+		lua_setglobal(_state,n->name().c_str());
+	}
+
+	void compile(UserProcedure* proc) {
+		proc->compile(_state);
+	}
+
+	AbstractStructure* structure(InternalArgument* arg) {
+		switch(arg->_type) {
+			case AT_STRUCTURE:
+				return arg->_value._structure;
+			default:
+				return 0;
+		}
+	}
+
+	AbstractTheory* theory(InternalArgument* arg) {
+		switch(arg->_type) {
+			case AT_THEORY:
+				return arg->_value._theory;
+			default:
+				return 0;
+		}
+	}
+
+	Vocabulary* vocabulary(InternalArgument* arg) {
+		switch(arg->_type) {
+			case AT_VOCABULARY:
+				return arg->_value._vocabulary;
+			default:
+				return 0;
 		}
 	}
 

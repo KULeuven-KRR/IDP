@@ -680,10 +680,6 @@ proc_inter		: intern_pointer '=' PROCEDURE pointer_name	{ insert.inter($1,*$4,@1
 three_inter		: threepred_inter
 				| threefunc_inter
 				| threeempty_inter
-				| threeproc_inter
-				;
-
-threeproc_inter : intern_pointer '<' identifier '>' '=' PROCEDURE function_call	{ insert.threeprocinter($1,*$3,$7);	}
 				;
 
 threeempty_inter	: intern_pointer '<' identifier '>' '=' '{' '}'			{ insert.emptythreeinter($1,*$3); }
@@ -839,8 +835,10 @@ optassigns	: /* empty */
 			;
 
 optassign	: identifier '=' strelement		{ insert.option(*$1,*$3,@1);	}
-			| identifier '=' floatnr		{ insert.option(*$1,$3,@1);	}
-			| identifier '=' integer		{ insert.option(*$1,$3,@1);	}
+			| identifier '=' floatnr		{ insert.option(*$1,$3,@1);		}
+			| identifier '=' integer		{ insert.option(*$1,$3,@1);		}
+			| identifier '=' TRUE			{ insert.option(*$1,true,@1);	}
+			| identifier '=' FALSE			{ insert.option(*$1,false,@1);	}
 			;
 
 

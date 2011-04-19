@@ -80,6 +80,7 @@ struct ElRange {
 		std::pair<int,int>*		_intrange;
 		std::pair<char,char>*	_charrange;
 	} _value;
+	ElRange() : _type(ERE_EL) { _value._element = 0;	}
 	ElRange(const DomainElement* e) : _type(ERE_EL) { _value._element = e;	}
 	ElRange(std::pair<int,int>* r) : _type(ERE_INT) { _value._intrange = r;	}
 	ElRange(std::pair<char,char>* r) : _type(ERE_CHAR) { _value._charrange = r;	}
@@ -132,18 +133,26 @@ class Insert {
 		void closeblock();	//!< close the current block
 
 
+		Sort*					sortInScope(const std::string&, const ParseInfo&) const;
 		Sort*					sortInScope(const longname&, const ParseInfo&) const;
+		Predicate*				predInScope(const std::string&) const;
 		Predicate*				predInScope(const longname&, const ParseInfo&) const;
+		Function*				funcInScope(const std::string&) const;
 		Function*				funcInScope(const longname&, const ParseInfo&) const;
 		std::set<Predicate*>	noArPredInScope(const std::string& name, const ParseInfo&) const;
 		std::set<Predicate*>	noArPredInScope(const longname& name, const ParseInfo&) const;
 		Vocabulary*				vocabularyInScope(const std::string&, const ParseInfo&) const;
 		Vocabulary*				vocabularyInScope(const longname&, const ParseInfo&) const;
+		Namespace*				namespaceInScope(const std::string&, const ParseInfo&) const;
 		Namespace*				namespaceInScope(const longname&, const ParseInfo&) const;
 		AbstractTheory*			theoryInScope(const std::string&, const ParseInfo&) const;
 		AbstractTheory*			theoryInScope(const longname&, const ParseInfo&) const;
 		AbstractStructure*		structureInScope(const std::string&, const ParseInfo&) const;
 		AbstractStructure*		structureInScope(const longname&, const ParseInfo&) const;
+		UserProcedure*			procedureInScope(const std::string&, const ParseInfo&) const;
+		UserProcedure*			procedureInScope(const longname&, const ParseInfo&) const;
+		Options*				optionsInScope(const std::string&, const ParseInfo&) const;
+		Options*				optionsInScope(const longname&, const ParseInfo&) const;
 
 		bool	belongsToVoc(Predicate*)	const;
 		bool	belongsToVoc(Function*)		const;
@@ -328,7 +337,6 @@ class Insert {
 		void falsepredinter(NSPair*) const;						//!< Assign false
 		void inter(NSPair*, const longname& ,YYLTYPE) const;	//!< Assign a procedure
 
-		void threeprocinter(NSPair*, const std::string& utf, InternalArgument*);
 		void threepredinter(NSPair*, const std::string& utf, PredTable* t);
 		void threepredinter(NSPair*, const std::string& utf, SortTable* t);
 		void truethreepredinter(NSPair*, const std::string& utf);
@@ -383,6 +391,7 @@ class Insert {
 		void option(const std::string& opt, const std::string& val,YYLTYPE)	const;
 		void option(const std::string& opt, double val,YYLTYPE)				const;
 		void option(const std::string& opt, int val,YYLTYPE)				const;
+		void option(const std::string& opt, bool val, YYLTYPE)				const;
 };
 
 

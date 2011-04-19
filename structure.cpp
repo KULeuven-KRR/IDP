@@ -2680,6 +2680,15 @@ void Structure::autocomplete() {
 	}
 }
 */
+
+void Structure::autocomplete() {
+	// TODO
+}
+
+void Structure::addStructure(AbstractStructure* ) {
+	// TODO
+}
+
 void Structure::functioncheck() {
 	for(map<Function*,FuncInter*>::const_iterator it = _funcinter.begin(); it != _funcinter.end(); ++it) {
 		Function* f = it->first;

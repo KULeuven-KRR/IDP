@@ -322,6 +322,11 @@ COMMENTLINE		"//".*
 								  return EXTERN;			}
 <option>"options"				{ advancecol();	
 								  return OPTIONS;			}
+<option>"true"					{ advancecol();
+								  return TRUE;				}
+<option>"false"					{ advancecol();
+								  return FALSE;				}
+
 
 	/*************
 		Theory

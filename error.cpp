@@ -42,6 +42,16 @@ namespace Error {
 		cerr << "'" << s << "' is an unknown option." << endl;
 	}
 
+	void unknoption(const string& s, const ParseInfo& pi) {
+		error(pi);
+		cerr << "'" << s << "' is an unknown option." << endl;
+	}
+
+	void wrongvalue(const string& optname, const string& val, const ParseInfo& pi) {
+		error(pi);
+		cerr << "'" << val << "' is not a valid value for option '" << optname << "'\n";
+	}
+
 	void unknfile(const string& s) {
 		error();
 		cerr << "'" << s << "' is not a valid file name or not readable." << endl;
@@ -598,6 +608,21 @@ namespace Error {
 	void threevalcall() {
 		error();
 		cerr << "Calling a three-valued function.\n";
+	}
+
+	void structureexpected(const ParseInfo& pi) {
+		error(pi);
+		cerr << "Expected a structure.\n";
+	}
+
+	void theoryexpected(const ParseInfo& pi) {
+		error(pi);
+		cerr << "Expected a theory.\n";
+	}
+
+	void vocabexpected(const ParseInfo& pi) {
+		error(pi);
+		cerr << "Expected a vocabulary.\n";
 	}
 
 }

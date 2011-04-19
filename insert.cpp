@@ -15,6 +15,7 @@
 #include "namespace.hpp"
 #include "parse.tab.hh"
 #include "error.hpp"
+#include "options.hpp"
 #include "execute.hpp"
 using namespace std;
 
@@ -140,9 +141,294 @@ void NSPair::includeArity(unsigned int n) {
 	_arityincluded = true;
 }
 
+string NSPair::to_string() {
+	assert(!_name.empty());
+	string str = _name[0];
+	for(unsigned int n = 1; n < _name.size(); ++n) str = str + "::" + _name[n];
+	if(_sortsincluded) {
+		if(_arityincluded) str = str.substr(0,str.find('/'));
+		str = str + '[';
+		if(!_sorts.empty()) {
+			if(_func && _sorts.size() == 1) str = str + ':';
+			if(_sorts[0]) str = str + _sorts[0]->name();
+			for(unsigned int n = 1; n < _sorts.size()-1; ++n) {
+				if(_sorts[n]) str = str + ',' + _sorts[n]->name();
+			}
+			if(_sorts.size() > 1) {
+				if(_func) str = str + ':';
+				else str = str + ',';
+				if(_sorts[_sorts.size()-1]) str = str + _sorts[_sorts.size()-1]->name();
+			}
+		}
+		str = str + ']';
+	}
+	return str;
+}
+
 /*************
 	Insert
 *************/
+
+Function* Insert::funcInScope(const string& name) const {
+	std::set<Function*> vf;
+	for(unsigned int n = 0; n < _usingvocab.size(); ++n) {
+		Function* f = _usingvocab[n]->func(name);
+		if(f) vf.insert(f);
+	}
+	if(vf.empty()) return 0;
+	else return FuncUtils::overload(vf);
+}
+
+Function* Insert::funcInScope(const vector<string>& vs, const ParseInfo& pi) const {
+	assert(!vs.empty());
+	if(vs.size() == 1) {
+		return funcInScope(vs[0]);
+	}
+	else { 
+		vector<string> vv(vs.size()-1);
+		for(unsigned int n = 0; n < vv.size(); ++n) vv[n] = vs[n];
+		Vocabulary* v = vocabularyInScope(vv,pi);
+		if(v) return v->func(vs.back());
+		else return 0;
+	}
+}
+
+Predicate* Insert::predInScope(const string& name) const {
+	std::set<Predicate*> vp;
+	for(unsigned int n = 0; n < _usingvocab.size(); ++n) {
+		Predicate* p = _usingvocab[n]->pred(name);
+		if(p) vp.insert(p);
+	}
+	if(vp.empty()) return 0;
+	else return PredUtils::overload(vp);
+}
+
+Predicate* Insert::predInScope(const vector<string>& vs, const ParseInfo& pi) const {
+	assert(!vs.empty());
+	if(vs.size() == 1) {
+		return predInScope(vs[0]);
+	}
+	else { 
+		vector<string> vv(vs.size()-1);
+		for(unsigned int n = 0; n < vv.size(); ++n) vv[n] = vs[n];
+		Vocabulary* v = vocabularyInScope(vv,pi);
+		if(v) return v->pred(vs.back());
+		else return 0;
+	}
+}
+
+Sort* Insert::sortInScope(const string& name, const ParseInfo& pi) const {
+	Sort* s = 0;
+	for(unsigned int n = 0; n < _usingvocab.size(); ++n) {
+		const std::set<Sort*>* temp = _usingvocab[n]->sort(name);
+		if(temp) {
+			if(s) {
+				Error::overloadedsort(s->name(),s->pi(),(*(temp->begin()))->pi(),pi);
+			}
+			else if(temp->size() > 1) {
+				std::set<Sort*>::iterator it = temp->begin();
+				Sort* s1 = *it; ++it; Sort* s2 = *it;
+				Error::overloadedsort(s1->name(),s1->pi(),s2->pi(),pi);
+			}
+			else s = *(temp->begin());
+		}
+	}
+	return s;
+}
+
+Sort* Insert::sortInScope(const vector<string>& vs, const ParseInfo& pi) const {
+	assert(!vs.empty());
+	if(vs.size() == 1) {
+		return sortInScope(vs[0],pi);
+	}
+	else { 
+		vector<string> vv(vs.size()-1);
+		for(unsigned int n = 0; n < vv.size(); ++n) vv[n] = vs[n];
+		Vocabulary* v = vocabularyInScope(vv,pi);
+		if(v) {
+			const std::set<Sort*>* ss = v->sort(vs.back());
+			if(ss) {
+				if(ss->size() > 1) {
+					std::set<Sort*>::iterator it = ss->begin();
+					Sort* s1 = *it; ++it; Sort* s2 = *it;
+					Error::overloadedsort(s1->name(),s1->pi(),s2->pi(),pi);
+				}
+				return *(ss->begin());
+			}
+			else return 0;
+		}
+		else return 0;
+	}
+}
+
+Namespace* Insert::namespaceInScope(const string& name, const ParseInfo& pi) const {
+	Namespace* ns = 0;
+	for(unsigned int n = 0; n < _usingspace.size(); ++n) {
+		if(_usingspace[n]->isSubspace(name)) {
+			if(ns) Error::overloadedspace(name,_usingspace[n]->pi(),ns->pi(),pi);
+			else ns = _usingspace[n]->subspace(name);
+		}
+	}
+	return ns;
+}
+
+Namespace* Insert::namespaceInScope(const vector<string>& vs, const ParseInfo& pi) const {
+	assert(!vs.empty());
+	if(vs.size() == 1) {
+		return namespaceInScope(vs[0],pi);
+	}
+	else {
+		Namespace* ns = namespaceInScope(vs[0],pi);
+		for(unsigned int n = 1; n < vs.size(); ++n) {
+			if(ns->isSubspace(vs[n])) {
+				ns = ns->subspace(vs[n]);
+			}
+			else return 0;
+		}
+		return ns;
+	}
+}
+
+Vocabulary* Insert::vocabularyInScope(const string& name, const ParseInfo& pi) const {
+	Vocabulary* v = 0;
+	for(unsigned int n = 0; n < _usingspace.size(); ++n) {
+		if(_usingspace[n]->isVocab(name)) {
+			if(v) Error::overloadedvocab(name,_usingspace[n]->vocabulary(name)->pi(),v->pi(),pi);
+			else v = _usingspace[n]->vocabulary(name);
+		}
+	}
+	return v;
+}
+
+Vocabulary* Insert::vocabularyInScope(const vector<string>& vs, const ParseInfo& pi) const {
+	assert(!vs.empty());
+	if(vs.size() == 1) {
+		return vocabularyInScope(vs[0],pi);
+	}
+	else {
+		Namespace* ns = namespaceInScope(vs[0],pi);
+		if(ns) {
+			for(unsigned int n = 1; n < (vs.size()-1); ++n) {
+				if(ns->isSubspace(vs[n])) {
+					ns = ns->subspace(vs[n]);
+				}
+				else return 0;
+			}
+			if(ns->isVocab(vs.back())) {
+				return ns->vocabulary(vs.back());
+			}
+			else return 0;
+		}
+		else return 0;
+	}
+}
+
+AbstractStructure* Insert::structureInScope(const string& name, const ParseInfo& pi) const {
+	AbstractStructure* s = 0;
+	for(unsigned int n = 0; n < _usingspace.size(); ++n) {
+		if(_usingspace[n]->isStructure(name)) {
+			if(s) Error::overloadedstructure(name,_usingspace[n]->structure(name)->pi(),s->pi(),pi);
+			else s = _usingspace[n]->structure(name);
+		}
+	}
+	return s;
+}
+
+AbstractStructure* Insert::structureInScope(const vector<string>& vs, const ParseInfo& pi) const {
+	assert(!vs.empty());
+	if(vs.size() == 1) {
+		return structureInScope(vs[0],pi);
+	}
+	else {
+		Namespace* ns = namespaceInScope(vs[0],pi);
+		for(unsigned int n = 1; n < (vs.size()-1); ++n) {
+			if(ns->isSubspace(vs[n])) {
+				ns = ns->subspace(vs[n]);
+			}
+			else return 0;
+		}
+		if(ns->isStructure(vs.back())) {
+			return ns->structure(vs.back());
+		}
+		else return 0;
+	}
+}
+
+AbstractTheory* Insert::theoryInScope(const string& name, const ParseInfo& pi) const {
+	AbstractTheory* th = 0;
+	for(unsigned int n = 0; n < _usingspace.size(); ++n) {
+		if(_usingspace[n]->isTheory(name)) {
+			if(th) Error::overloadedtheory(name,_usingspace[n]->theory(name)->pi(),th->pi(),pi);
+			else th = _usingspace[n]->theory(name);
+		}
+	}
+	return th;
+}
+
+UserProcedure* Insert::procedureInScope(const string& name, const ParseInfo& pi) const {
+	UserProcedure* lp = 0;
+	for(unsigned int n = 0; n < _usingspace.size(); ++n) {
+		if(_usingspace[n]->isProc(name)) {
+			if(lp) Error::overloadedproc(name,_usingspace[n]->procedure(name)->pi(),lp->pi(),pi);
+			else lp = _usingspace[n]->procedure(name);
+		}
+	}
+	return lp;
+}
+
+UserProcedure* Insert::procedureInScope(const vector<string>& vs, const ParseInfo& pi) const {
+	assert(!vs.empty());
+	if(vs.size() == 1) {
+		return procedureInScope(vs[0],pi);
+	}
+	else {
+		Namespace* ns = namespaceInScope(vs[0],pi);
+		for(unsigned int n = 1; n < (vs.size()-1); ++n) {
+			if(ns->isSubspace(vs[n])) {
+				ns = ns->subspace(vs[n]);
+			}
+			else return 0;
+		}
+		if(ns->isProc(vs.back())) {
+			return ns->procedure(vs.back());
+		}
+		else return 0;
+	}
+}
+
+Options* Insert::optionsInScope(const string& name, const ParseInfo& pi) const {
+	Options* opt = 0;
+	for(unsigned int n = 0; n < _usingspace.size(); ++n) {
+		if(_usingspace[n]->isOptions(name)) {
+			if(opt) Error::overloadedopt(name,_usingspace[n]->options(name)->pi(),opt->pi(),pi);
+			else opt = _usingspace[n]->options(name);
+		}
+	}
+	return opt;
+}
+
+Options* Insert::optionsInScope(const vector<string>& vs, const ParseInfo& pi) const {
+	assert(!vs.empty());
+	if(vs.size() == 1) {
+		return optionsInScope(vs[0],pi);
+	}
+	else {
+		Namespace* ns = namespaceInScope(vs[0],pi);
+		if(ns) {
+			for(unsigned int n = 1; n < (vs.size()-1); ++n) {
+				if(ns->isSubspace(vs[n])) {
+					ns = ns->subspace(vs[n]);
+				}
+				else return 0;
+			}
+			if(ns->isOptions(vs.back())) {
+				return ns->options(vs.back());
+			}
+			else return 0;
+		}
+		else return 0;
+	}
+}
 
 enum UTF { UTF_UNKNOWN, UTF_CT, UTF_CF, UTF_ERROR };
 
@@ -209,6 +495,10 @@ TermParseInfo Insert::termparseinfo(Term* t, YYLTYPE l) const {
 
 TermParseInfo Insert::termparseinfo(Term* t, const ParseInfo& l) const {
 	return TermParseInfo(l.line(),l.col(),l.file(),t);
+}
+
+SetParseInfo Insert::setparseinfo(SetExpr* s, YYLTYPE l) const {
+	return SetParseInfo(l.first_line,l.first_column,_currfile,s);
 }
 
 set<Variable*> Insert::freevars(const ParseInfo& pi) {
@@ -390,6 +680,37 @@ void Insert::closestructure() {
 	_currstructure->autocomplete();
 	_currstructure->functioncheck();
 	if(_currspace->isGlobal()) LuaConnection::addGlobal(_currstructure);
+	closeblock();
+}
+
+void Insert::openprocedure(const string& name, YYLTYPE l) {
+	openblock();
+	ParseInfo pi = parseinfo(l);
+	UserProcedure* p = procedureInScope(name,pi);
+	if(p) Error::multdeclproc(name,pi,p->pi());
+	_currprocedure = new UserProcedure(name,pi);
+	// TODO: take using declarations into account
+	_currspace->add(_currprocedure);
+}
+
+void Insert::closeprocedure(stringstream* chunk) {
+	_currprocedure->add(chunk->str());
+	LuaConnection::compile(_currprocedure);
+	if(_currspace->isGlobal()) LuaConnection::addGlobal(_currprocedure);
+	closeblock();
+}
+
+void Insert::openoptions(const string& name, YYLTYPE l) {
+	openblock();
+	ParseInfo pi = parseinfo(l);
+	Options* o = optionsInScope(name,pi);
+	if(o) Error::multdeclproc(name,pi,o->pi());
+	_curroptions = new Options(name,pi);
+	_currspace->add(_curroptions);
+}
+
+void Insert::closeoptions() {
+	if(_currspace->isGlobal()) LuaConnection::addGlobal(_curroptions);
 	closeblock();
 }
 
@@ -1700,7 +2021,114 @@ void Insert::funcatom(NSPair* nst, const DomainElement* d, bool t) const {
 	funcatom(nst,ver,d,t);
 }
 	
+vector<ElRange>* Insert::domaintuple(vector<ElRange>* dt, const DomainElement* d) const {
+	dt->push_back(ElRange(d));
+	return dt;
+}
 
+vector<ElRange>* Insert::domaintuple(vector<ElRange>* dt, pair<int,int>* p) const {
+	dt->push_back(ElRange(p));
+	return dt;
+}
+
+vector<ElRange>* Insert::domaintuple(vector<ElRange>* dt, pair<char,char>* p) const {
+	dt->push_back(ElRange(p));
+	return dt;
+}
+
+vector<ElRange>* Insert::domaintuple(const DomainElement* d) const {
+	vector<ElRange>* dt = new vector<ElRange>(0);
+	dt->push_back(ElRange(d));
+	return dt;
+}
+
+vector<ElRange>* Insert::domaintuple(pair<int,int>* p) const {
+	vector<ElRange>* dt = new vector<ElRange>(0);
+	dt->push_back(ElRange(p));
+	return dt;
+}
+
+vector<ElRange>* Insert::domaintuple(pair<char,char>* p) const {
+	vector<ElRange>* dt = new vector<ElRange>(0);
+	dt->push_back(ElRange(p));
+	return dt;
+}
+
+void Insert::exec(stringstream* chunk) const {
+	LuaConnection::execute(chunk);
+}
+
+void Insert::procarg(const string& argname) const {
+	_currprocedure->addarg(argname);
+}
+
+void Insert::externoption(const vector<string>& name, YYLTYPE l) const {
+	ParseInfo pi = parseinfo(l);
+	Options* opt = optionsInScope(name,pi);
+	if(opt) _curroptions->setvalues(opt);
+	else Error::undeclopt(oneName(name),pi);
+}
+
+void Insert::option(const string& opt, const string& val,YYLTYPE l) const {
+	ParseInfo pi = parseinfo(l);
+	if(_curroptions->isoption(opt)) {
+		if(_curroptions->setvalue(opt,val)) { } // do nothing
+		else Error::wrongvalue(opt,val,pi);
+	}
+	else Error::unknoption(opt,pi);
+}
+
+void Insert::option(const string& opt, double val,YYLTYPE l) const { 
+	ParseInfo pi = parseinfo(l);
+	if(_curroptions->isoption(opt)) {
+		if(_curroptions->setvalue(opt,val)) { } // do nothing
+		else Error::wrongvalue(opt,dtos(val),pi);
+	}
+	else Error::unknoption(opt,pi);
+}
+
+void Insert::option(const string& opt, int val,YYLTYPE l) const {
+	ParseInfo pi = parseinfo(l);
+	if(_curroptions->isoption(opt)) {
+		if(_curroptions->setvalue(opt,val)) { } // do nothing
+		else Error::wrongvalue(opt,itos(val),pi);
+	}
+	else Error::unknoption(opt,pi);
+}
+
+void Insert::option(const string& opt, bool val,YYLTYPE l) const {
+	ParseInfo pi = parseinfo(l);
+	if(_curroptions->isoption(opt)) {
+		if(_curroptions->setvalue(opt,val)) { } // do nothing
+		else Error::wrongvalue(opt,val ? "true" : "false",pi);
+	}
+	else Error::unknoption(opt,pi);
+}
+
+void Insert::assignunknowntables() {
+	// Assign the unknown predicate interpretations
+	for(map<Predicate*,PredTable*>::iterator it = _unknownpredtables.begin(); it != _unknownpredtables.end(); ++it) {
+		PredInter* pt = _currstructure->inter(it->first);
+		TableIterator tit = it->second->begin();
+		for( ; tit.hasNext(); ++tit) {
+			pt->ct()->remove(*tit);
+			pt->cf()->remove(*tit);
+		}
+		delete(it->second);
+	}
+	// Assign the unknown function interpretations
+	for(map<Function*,PredTable*>::iterator it = _unknownfunctables.begin(); it != _unknownfunctables.end(); ++it) {
+		PredInter* ft = _currstructure->inter(it->first)->graphinter();
+		TableIterator tit = it->second->begin();
+		for( ; tit.hasNext(); ++tit) {
+			ft->ct()->remove(*tit);
+			ft->cf()->remove(*tit);
+		}
+		delete(it->second);
+	}
+	_unknownpredtables.clear();
+	_unknownfunctables.clear();
+}
 
 
 
@@ -2056,30 +2484,6 @@ void SortDeriver::check() {
 	Parsing
 **************/
 
-string NSPair::to_string() {
-	assert(!_name.empty());
-	string str = _name[0];
-	for(unsigned int n = 1; n < _name.size(); ++n) str = str + "::" + _name[n];
-	if(_sortsincluded) {
-		if(_arityincluded) str = str.substr(0,str.find('/'));
-		str = str + '[';
-		if(!_sorts.empty()) {
-			if(_func && _sorts.size() == 1) str = str + ':';
-			if(_sorts[0]) str = str + _sorts[0]->name();
-			for(unsigned int n = 1; n < _sorts.size()-1; ++n) {
-				if(_sorts[n]) str = str + ',' + _sorts[n]->name();
-			}
-			if(_sorts.size() > 1) {
-				if(_func) str = str + ':';
-				else str = str + ',';
-				if(_sorts[_sorts.size()-1]) str = str + _sorts[_sorts.size()-1]->name();
-			}
-		}
-		str = str + ']';
-	}
-	return str;
-}
-
 namespace Insert {
 
 	/***********
@@ -2092,8 +2496,8 @@ namespace Insert {
 	Vocabulary*				_currvocabulary;		// The current vocabulary
 	Theory*					_currtheory;	// The current theory
 	Structure*				_currstructure;	// The current structure
-	InfOptions*				_curroptions;	// The current options
-	LuaProcedure*			_currproc;		// The current procedure
+	Options*				_curroptions;	// The current options
+	UserProcedure*			_currproc;		// The current procedure
 
 	vector<Vocabulary*>		_usingvocab;	// The vocabularies currently used to parse
 	vector<unsigned int>	_nrvocabs;		// The number of using vocabulary statements in the current block
@@ -2140,243 +2544,6 @@ namespace Insert {
 		return false;
 	}
 
-	Namespace* namespaceInScope(const string& name, const ParseInfo& pi) {
-		Namespace* ns = 0;
-		for(unsigned int n = 0; n < _usingspace.size(); ++n) {
-			if(_usingspace[n]->isSubspace(name)) {
-				if(ns) Error::overloadedspace(name,_usingspace[n]->pi(),ns->pi(),pi);
-				else ns = _usingspace[n]->subspace(name);
-			}
-		}
-		return ns;
-	}
-
-	AbstractTheory* theoInScope(const string& name, const ParseInfo& pi) {
-		AbstractTheory* th = 0;
-		for(unsigned int n = 0; n < _usingspace.size(); ++n) {
-			if(_usingspace[n]->isTheory(name)) {
-				if(th) Error::overloadedtheory(name,_usingspace[n]->theory(name)->pi(),th->pi(),pi);
-				else th = _usingspace[n]->theory(name);
-			}
-		}
-		return th;
-	}
-
-	Vocabulary* vocabInScope(const string& name, const ParseInfo& pi) {
-		Vocabulary* v = 0;
-		for(unsigned int n = 0; n < _usingspace.size(); ++n) {
-			if(_usingspace[n]->isVocab(name)) {
-				if(v) Error::overloadedvocab(name,_usingspace[n]->vocabulary(name)->pi(),v->pi(),pi);
-				else v = _usingspace[n]->vocabulary(name);
-			}
-		}
-		return v;
-	}
-
-	AbstractStructure* structInScope(const string& name, const ParseInfo& pi) {
-		AbstractStructure* s = 0;
-		for(unsigned int n = 0; n < _usingspace.size(); ++n) {
-			if(_usingspace[n]->isStructure(name)) {
-				if(s) Error::overloadedstructure(name,_usingspace[n]->structure(name)->pi(),s->pi(),pi);
-				else s = _usingspace[n]->structure(name);
-			}
-		}
-		return s;
-	}
-
-	InfOptions* optionsInScope(const string& name, const ParseInfo& pi) {
-		InfOptions* opt = 0;
-		for(unsigned int n = 0; n < _usingspace.size(); ++n) {
-			if(_usingspace[n]->isOption(name)) {
-				if(opt) Error::overloadedopt(name,_usingspace[n]->option(name)->_pi,opt->_pi,pi);
-				else opt = _usingspace[n]->option(name);
-			}
-		}
-		return opt;
-	}
-
-	LuaProcedure* procInScope(const string& name, const ParseInfo& pi) {
-		LuaProcedure* lp = 0;
-		for(unsigned int n = 0; n < _usingspace.size(); ++n) {
-			if(_usingspace[n]->isProc(name)) {
-				if(lp) Error::overloadedproc(name,_usingspace[n]->procedure(name)->pi(),lp->pi(),pi);
-				else lp = _usingspace[n]->procedure(name);
-			}
-		}
-		return lp;
-	}
-
-	Namespace* namespaceInScope(const vector<string>& vs, const ParseInfo& pi) {
-		assert(!vs.empty());
-		if(vs.size() == 1) {
-			return namespaceInScope(vs[0],pi);
-		}
-		else {
-			Namespace* ns = namespaceInScope(vs[0],pi);
-			for(unsigned int n = 1; n < vs.size(); ++n) {
-				if(ns->isSubspace(vs[n])) {
-					ns = ns->subspace(vs[n]);
-				}
-				else return 0;
-			}
-			return ns;
-		}
-	}
-
-	Vocabulary* vocabInScope(const vector<string>& vs, const ParseInfo& pi) {
-		assert(!vs.empty());
-		if(vs.size() == 1) {
-			return vocabInScope(vs[0],pi);
-		}
-		else {
-			Namespace* ns = namespaceInScope(vs[0],pi);
-			if(ns) {
-				for(unsigned int n = 1; n < (vs.size()-1); ++n) {
-					if(ns->isSubspace(vs[n])) {
-						ns = ns->subspace(vs[n]);
-					}
-					else return 0;
-				}
-				if(ns->isVocab(vs.back())) {
-					return ns->vocabulary(vs.back());
-				}
-				else return 0;
-			}
-			else return 0;
-		}
-	}
-
-	AbstractStructure* structInScope(const vector<string>& vs, const ParseInfo& pi) {
-		assert(!vs.empty());
-		if(vs.size() == 1) {
-			return structInScope(vs[0],pi);
-		}
-		else {
-			Namespace* ns = namespaceInScope(vs[0],pi);
-			for(unsigned int n = 1; n < (vs.size()-1); ++n) {
-				if(ns->isSubspace(vs[n])) {
-					ns = ns->subspace(vs[n]);
-				}
-				else return 0;
-			}
-			if(ns->isStructure(vs.back())) {
-				return ns->structure(vs.back());
-			}
-			else return 0;
-		}
-	}
-
-	InfOptions* optionsInScope(const vector<string>& vs, const ParseInfo& pi) {
-		assert(!vs.empty());
-		if(vs.size() == 1) {
-			return optionsInScope(vs[0],pi);
-		}
-		else {
-			Namespace* ns = namespaceInScope(vs[0],pi);
-			if(ns) {
-				for(unsigned int n = 1; n < (vs.size()-1); ++n) {
-					if(ns->isSubspace(vs[n])) {
-						ns = ns->subspace(vs[n]);
-					}
-					else return 0;
-				}
-				if(ns->isOption(vs.back())) {
-					return ns->option(vs.back());
-				}
-				else return 0;
-			}
-			else return 0;
-		}
-	}
-
-	LuaProcedure* procInScope(const vector<string>& vs, const ParseInfo& pi) {
-		assert(!vs.empty());
-		if(vs.size() == 1) {
-			return procInScope(vs[0],pi);
-		}
-		else {
-			Namespace* ns = namespaceInScope(vs[0],pi);
-			for(unsigned int n = 1; n < (vs.size()-1); ++n) {
-				if(ns->isSubspace(vs[n])) {
-					ns = ns->subspace(vs[n]);
-				}
-				else return 0;
-			}
-			if(ns->isProc(vs.back())) {
-				return ns->procedure(vs.back());
-			}
-			else return 0;
-		}
-	}
-
-	Sort* sortInScope(const string& name, const ParseInfo& pi) {
-		Sort* s = 0;
-		for(unsigned int n = 0; n < _usingvocab.size(); ++n) {
-			const std::set<Sort*>* temp = _usingvocab[n]->sort(name);
-			if(temp) {
-				if(s) {
-					Error::overloadedsort(s->name(),s->pi(),(*(temp->begin()))->pi(),pi);
-				}
-				else if(temp->size() > 1) {
-					std::set<Sort*>::iterator it = temp->begin();
-					Sort* s1 = *it; ++it; Sort* s2 = *it;
-					Error::overloadedsort(s1->name(),s1->pi(),s2->pi(),pi);
-				}
-				else s = *(temp->begin());
-			}
-		}
-		return s;
-	}
-
-	Sort* sortInScope(const vector<string>& vs, const ParseInfo& pi) {
-		assert(!vs.empty());
-		if(vs.size() == 1) {
-			return sortInScope(vs[0],pi);
-		}
-		else { 
-			vector<string> vv(vs.size()-1);
-			for(unsigned int n = 0; n < vv.size(); ++n) vv[n] = vs[n];
-			Vocabulary* v = vocabInScope(vv,pi);
-			if(v) {
-				const std::set<Sort*>* ss = v->sort(vs.back());
-				if(ss) {
-					if(ss->size() > 1) {
-						std::set<Sort*>::iterator it = ss->begin();
-						Sort* s1 = *it; ++it; Sort* s2 = *it;
-						Error::overloadedsort(s1->name(),s1->pi(),s2->pi(),pi);
-					}
-					return *(ss->begin());
-				}
-				else return 0;
-			}
-			else return 0;
-		}
-	}
-
-	Predicate* predInScope(const string& name) {
-		vector<Predicate*> vp;
-		for(unsigned int n = 0; n < _usingvocab.size(); ++n) {
-			Predicate* p = _usingvocab[n]->pred(name);
-			if(p) vp.push_back(p);
-		}
-		if(vp.empty()) return 0;
-		else return PredUtils::overload(vp);
-	}
-
-	Predicate* predInScope(const vector<string>& vs, const ParseInfo& pi) {
-		assert(!vs.empty());
-		if(vs.size() == 1) {
-			return predInScope(vs[0]);
-		}
-		else { 
-			vector<string> vv(vs.size()-1);
-			for(unsigned int n = 0; n < vv.size(); ++n) vv[n] = vs[n];
-			Vocabulary* v = vocabInScope(vv,pi);
-			if(v) return v->pred(vs.back());
-			else return 0;
-		}
-	}
-
 	vector<Predicate*> noArPredInScope(const string& name) {
 		vector<Predicate*> vp;
 		for(unsigned int n = 0; n < _usingvocab.size(); ++n) {
@@ -2397,30 +2564,6 @@ namespace Insert {
 			Vocabulary* v = vocabInScope(vv,pi);
 			if(v) return v->pred_no_arity(vs.back());
 			else return vector<Predicate*>(0);
-		}
-	}
-
-	Function* funcInScope(const string& name) {
-		vector<Function*> vf;
-		for(unsigned int n = 0; n < _usingvocab.size(); ++n) {
-			Function* f = _usingvocab[n]->func(name);
-			if(f) vf.push_back(f);
-		}
-		if(vf.empty()) return 0;
-		else return FuncUtils::overload(vf);
-	}
-
-	Function* funcInScope(const vector<string>& vs, const ParseInfo& pi) {
-		assert(!vs.empty());
-		if(vs.size() == 1) {
-			return funcInScope(vs[0]);
-		}
-		else { 
-			vector<string> vv(vs.size()-1);
-			for(unsigned int n = 0; n < vv.size(); ++n) vv[n] = vs[n];
-			Vocabulary* v = vocabInScope(vv,pi);
-			if(v) return v->func(vs.back());
-			else return 0;
 		}
 	}
 
@@ -2481,9 +2624,9 @@ namespace Insert {
 	void openoptions(const string& name, YYLTYPE l) {
 		Info::print("Parsing options " + name);
 		ParseInfo pi = parseinfo(l);
-		InfOptions* opt = optionsInScope(name,pi);
+		Options* opt = optionsInScope(name,pi);
 		if(opt) Error::multdeclopt(name,pi,opt->_pi);
-		_curroptions = new InfOptions(name,pi);
+		_curroptions = new Options(name,pi);
 		_currspace->add(_curroptions);
 		_nrvocabs.push_back(0);
 		_nrspaces.push_back(0);
@@ -2495,7 +2638,7 @@ namespace Insert {
 
 	void externoption(const vector<string>& name, YYLTYPE l) {
 		ParseInfo pi = parseinfo(l);
-		InfOptions* opt = optionsInScope(name,pi);
+		Options* opt = optionsInScope(name,pi);
 		if(opt) _curroptions->set(opt);
 		else Error::undeclopt(oneName(name),pi);
 	}
@@ -2518,11 +2661,11 @@ namespace Insert {
 	*****************/
 
 	void openexec() {
-		_currproc = new LuaProcedure();
+		_currproc = new UserProcedure();
 	}
 
-	LuaProcedure* currproc() {
-		LuaProcedure* r = _currproc;
+	UserProcedure* currproc() {
+		UserProcedure* r = _currproc;
 		_currproc = 0;
 		return r;
 	}
@@ -2530,14 +2673,14 @@ namespace Insert {
 	void openproc(const string& name, YYLTYPE l) {
 		Info::print("Parsing procedure " + name);
 		ParseInfo pi = parseinfo(l);
-		_currproc = new LuaProcedure(name,pi);
+		_currproc = new UserProcedure(name,pi);
 		_nrvocabs.push_back(0);
 		_nrspaces.push_back(0);
 		_currproc->add(string("function ("));
 	}
 
 	void closeproc() {
-		LuaProcedure* lp = procInScope(_currproc->name(),_currproc->pi());
+		UserProcedure* lp = procInScope(_currproc->name(),_currproc->pi());
 		if(lp) Error::multdeclproc(_currproc->name(),_currproc->pi(),lp->pi());
 		_currproc->add(string("end"));
 		_currspace->add(_currproc);
@@ -2630,85 +2773,6 @@ namespace Insert {
 		_currspace->add(_currstructure);
 		_nrvocabs.push_back(0);
 		_nrspaces.push_back(0);
-	}
-
-	void assignunknowntables() {
-		// Assign the unknown predicate interpretations
-		for(map<Predicate*,FinitePredTable*>::iterator it = _unknownpredtables.begin(); it != _unknownpredtables.end(); ++it) {
-			PredInter* pt = _currstructure->inter(it->first);
-			if(pt) {
-				if(pt->ctpf()) {
-					if(pt->cfpt()) {
-						Error::threethreepred(it->first->name(),_currstructure->name());
-						delete(it->second);
-					}
-					else {
-						assert(pt->ct()); 
-						assert(pt->ctpf()->finite());
-						FinitePredTable* fpt = it->second;
-						for(unsigned int n = 0; n < pt->ctpf()->size(); ++n) {
-							fpt->addRow(pt->ctpf()->tuple(n),pt->ctpf()->types());
-						}
-						fpt->sortunique();
-						pt->replace(fpt,false,false);
-					}
-				}
-				else {
-					assert(pt->cfpt()); 
-					assert(pt->cf()); 
-					assert(pt->cfpt()->finite());
-					FinitePredTable* fpt = it->second;
-					for(unsigned int n = 0; n < pt->cfpt()->size(); ++n) {
-						fpt->addRow(pt->cfpt()->tuple(n),pt->cfpt()->types());
-					}
-					fpt->sortunique();
-					pt->replace(fpt,true,false);
-				}
-			}
-			else {
-				Error::onethreepred(it->first->name(),_currstructure->name());
-				delete(it->second);
-			}
-		}
-		// Assign the unknown function interpretations
-		for(map<Function*,FinitePredTable*>::iterator it = _unknownfunctables.begin(); it != _unknownfunctables.end(); ++it) {
-			FuncInter* ft = _currstructure->inter(it->first);
-			PredInter* pt = 0;
-			if(ft) pt = ft->predinter();
-			if(pt) {
-				if(pt->ctpf()) {
-					if(pt->cfpt()) {
-						Error::threethreefunc(it->first->name(),_currstructure->name());
-						delete(it->second);
-					}
-					else {
-						assert(pt->ct()); 
-						assert(pt->ctpf()->finite());
-						FinitePredTable* fpt = it->second;
-						for(unsigned int n = 0; n < pt->ctpf()->size(); ++n) {
-							fpt->addRow(pt->ctpf()->tuple(n),pt->ctpf()->types());
-						}
-						fpt->sortunique();
-						pt->replace(fpt,false,false);
-					}
-				}
-				else {
-					assert(pt->cfpt()); 
-					assert(pt->cf()); 
-					assert(pt->cfpt()->finite());
-					FinitePredTable* fpt = it->second;
-					for(unsigned int n = 0; n < pt->cfpt()->size(); ++n) {
-						fpt->addRow(pt->cfpt()->tuple(n),pt->cfpt()->types());
-					}
-					fpt->sortunique();
-					pt->replace(fpt,true,false);
-				}
-			}
-			else {
-				Error::onethreefunc(it->first->name(),_currstructure->name());
-				delete(it->second);
-			}
-		}
 	}
 
 	void closestructure() {

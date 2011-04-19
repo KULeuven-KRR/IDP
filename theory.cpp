@@ -545,6 +545,10 @@ Theory* Theory::clone() const {
 	return newtheory;
 }
 
+void Theory::addTheory(AbstractTheory* ) {
+	// TODO
+}
+
 void Theory::recursiveDelete() {
 	for(vector<Formula*>::iterator it = _sentences.begin(); it != _sentences.end(); ++it)
 		(*it)->recursiveDelete();
@@ -1037,6 +1041,14 @@ Formula* FuncGrapher::visit(EqChainForm* ef) {
 
 
 namespace FormulaUtils {
+
+	BoolForm* trueform() {
+		return new BoolForm(true,true,vector<Formula*>(0),FormulaParseInfo());
+	}
+
+	BoolForm* falseform() {
+		return new BoolForm(true,false,vector<Formula*>(0),FormulaParseInfo());
+	}
 
 	Formula* remove_eqchains(Formula* f, Vocabulary* v) {
 		EqChainRemover ecr(v);

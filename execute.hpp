@@ -64,7 +64,6 @@ class Vocabulary;
 class AbstractStructure;
 class AbstractTheory;
 class Options;
-class UserProcedure;
 class Namespace;
 
 namespace LuaConnection {
@@ -82,9 +81,12 @@ namespace LuaConnection {
 	AbstractTheory*		theory(InternalArgument*);
 	AbstractStructure*	structure(InternalArgument*);
 
-	InternalArgument*	call(const std::vector<std::string>&, const std::vector<std::vector<std::string> >, const ParseInfo&);
+	InternalArgument*	call(const std::vector<std::string>&, const std::vector<std::vector<std::string> >&, const ParseInfo&);
 
-	std::string*	getProcedure(const std::vector<std::string>&, const ParseInfo&);
+	std::string*		getProcedure(const std::vector<std::string>&, const ParseInfo&);
+
+	void				execute(std::stringstream* chunk);
+	void				compile(UserProcedure*);
 }
 
 #endif
