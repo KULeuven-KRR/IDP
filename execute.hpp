@@ -83,6 +83,8 @@ namespace LuaConnection {
 	AbstractStructure*	structure(InternalArgument*);
 
 	InternalArgument*	call(const std::vector<std::string>&, const std::vector<std::vector<std::string> >, const ParseInfo&);
+
+	std::string*	getProcedure(const std::vector<std::string>&, const ParseInfo&);
 }
 
 #endif

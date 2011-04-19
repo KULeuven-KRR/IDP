@@ -2108,6 +2108,12 @@ SortIterator SortTable::sortbegin() const {
 	return SortIterator(_table->sortbegin());
 }
 
+void SortTable::interntable(InternalSortTable* table) {
+	_table->decrementRef();
+	_table = table;
+	_table->incrementRef();
+}
+
 /****************
 	FuncTable
 ****************/
@@ -2277,6 +2283,19 @@ void PredInter::pf(PredTable* t) {
 	_ct = new PredTable(new InverseInternalPredTable(t,_univ,true,univlinked));
 }
 
+void PredInter::ctpt(PredTable* t) {
+	delete(_ct);
+	if(_ct != _pt) delete(_pt);
+	_ct = t;
+	_pt = t;
+	delete(_cf);
+	if(_cf != _pf) delete(_pf);
+	vector<bool> univlinked(t->arity(),true);
+	PredTable* inv = new PredTable(new InverseInternalPredTable(t,_univ,true,univlinked));
+	_cf = inv;
+	_pf = inv;
+}
+
 PredInter* EqualInterGenerator::get(const AbstractStructure* structure) {
 	SortTable* st = structure->inter(_sort);
 	EqualInternalPredTable* eip = new EqualInternalPredTable(st,true);
@@ -2332,6 +2351,15 @@ void FuncInter::graphinter(PredInter* pt) {
 	_graphinter = pt;
 	if(_functable) delete(_functable);
 	_functable = 0;
+}
+
+void FuncInter::functable(FuncTable* ft) {
+	vector<SortTable*> univ = _graphinter->univ();
+	delete(_functable);
+	delete(_graphinter);
+	_functable = ft;
+	PredTable* ct = new PredTable(new FuncInternalPredTable(ft,true));
+	_graphinter = new PredInter(ct,true,univ);
 }
 
 FuncInter* MinInterGenerator::get(const AbstractStructure* structure) {

@@ -257,8 +257,10 @@ class SetExpr {
 		void	recursiveDelete();	//!< Delete the set and its subformulas and subterms
 
 		// Mutators
-		void subterm(unsigned int n, Term* t)		{ _subterms[n] = t; setfvars();		}
-		void subformula(unsigned int n, Formula* f)	{ _subformulas[n] = f; setfvars();	}
+		void subterm(unsigned int n, Term* t)		{ _subterms[n] = t; setfvars();				}
+		void subformula(unsigned int n, Formula* f)	{ _subformulas[n] = f; setfvars();			}
+		void addterm(Term* t)						{ _subterms.push_back(t); setfvars();		}
+		void addformula(Formula* f)					{ _subformulas.push_back(f); setfvars();	}
 		
 		// Inspectors
 		virtual Sort*							sort()						const = 0;	//!< Returns the sort of the set
@@ -266,6 +268,7 @@ class SetExpr {
 				bool							contains(const Variable*)	const;
 				const std::vector<Formula*>&	subformulas()				const { return _subformulas;	}
 				const std::vector<Term*>&		subterms()					const { return _subterms;		}
+				const SetParseInfo&				pi()						const { return _pi;				}
 
 		// Visitor
 		virtual void		accept(TheoryVisitor*)			const = 0;
@@ -286,10 +289,11 @@ class EnumSetExpr : public SetExpr {
 
 	public:
 		// Constructors
+		EnumSetExpr(const SetParseInfo& pi) : SetExpr(pi) { }
 		EnumSetExpr(const std::vector<Formula*>& s, const std::vector<Term*>& w, const SetParseInfo& pi);
 			
 
-		EnumSetExpr* clone()								const;
+		EnumSetExpr* clone()										const;
 		EnumSetExpr* clone(const std::map<Variable*,Variable*>&)	const;
 
 		~EnumSetExpr() { }

@@ -24,6 +24,7 @@ class SortTable;
 class PredTable;
 class FuncTable;
 class Structure;
+class AbstractStructure;
 class Term;
 class SetExpr;
 class EnumSetExpr;
@@ -104,7 +105,7 @@ class Insert {
 		Options*		_curroptions;		//!< the options that is currently being parsed
 		UserProcedure*	_currprocedure;		//!< the procedure that is currently being parsed
 
-		std::list<VarName>	curr_vars;
+		std::list<VarName>	_curr_vars;
 
 		std::vector<Vocabulary*>	_usingvocab;	//!< the vocabularies currently used to parse
 		std::vector<Namespace*>		_usingspace;	//!< the namespaces currently used to parse
@@ -114,7 +115,12 @@ class Insert {
 
 		ParseInfo			parseinfo(YYLTYPE l) const;	//!< Convert a bison parse location to a parseinfo object
 		FormulaParseInfo	formparseinfo(Formula*,YYLTYPE) const;
+		TermParseInfo		termparseinfo(Term*,const ParseInfo&) const;
+		TermParseInfo		termparseinfo(Term*, YYLTYPE) const;
+		SetParseInfo		setparseinfo(SetExpr*, YYLTYPE) const;
 
+		Variable*			getVar(const std::string&) const;			//!< Returns the quantified variable with
+																		//!< given name in the current scope
 		std::set<Variable*>	freevars(const ParseInfo&);					//!< Return all currently free variables
 		void				remove_vars(const std::set<Variable*>&);	//!< Remove the given variables from the 
 																		//!< list of free variables
@@ -126,20 +132,25 @@ class Insert {
 		void closeblock();	//!< close the current block
 
 
-		Sort*			sortInScope(const longname&, const ParseInfo&) const;
-		Predicate*		predInScope(const longname&, const ParseInfo&) const;
-		Function*		funcInScope(const longname&, const ParseInfo&) const;
-		Vocabulary*		vocabularyInScope(const std::string&, const ParseInfo&) const;
-		Vocabulary*		vocabularyInScope(const longname&, const ParseInfo&) const;
-		Namespace*		namespaceInScope(const longname&, const ParseInfo&) const;
-		AbstractTheory*	theoryInScope(const std::string&, const ParseInfo&) const;
-		AbstractTheory*	theoryInScope(const longname&, const ParseInfo&) const;
+		Sort*				sortInScope(const longname&, const ParseInfo&) const;
+		Predicate*			predInScope(const longname&, const ParseInfo&) const;
+		Function*			funcInScope(const longname&, const ParseInfo&) const;
+		Vocabulary*			vocabularyInScope(const std::string&, const ParseInfo&) const;
+		Vocabulary*			vocabularyInScope(const longname&, const ParseInfo&) const;
+		Namespace*			namespaceInScope(const longname&, const ParseInfo&) const;
+		AbstractTheory*		theoryInScope(const std::string&, const ParseInfo&) const;
+		AbstractTheory*		theoryInScope(const longname&, const ParseInfo&) const;
+		AbstractStructure*	structureInScope(const std::string&, const ParseInfo&) const;
+		AbstractStructure*	structureInScope(const longname&, const ParseInfo&) const;
 
-		bool	belongsToVoc(Predicate*) const;
-		bool	belongsToVoc(Function*) const;
+		bool	belongsToVoc(Predicate*)	const;
+		bool	belongsToVoc(Function*)		const;
+		bool	belongsToVoc(Sort*)			const;
 
 		Formula*	boolform(bool,Formula*,Formula*,YYLTYPE) const;
 		Formula*	quantform(bool,const std::set<Variable*>&, Formula*, YYLTYPE);
+
+		void	assignunknowntables();
 
 	public:
 		Insert();
@@ -280,25 +291,25 @@ class Insert {
 		Sort*		theosortpointer(const longname& vs, YYLTYPE l) const;
 			//!< get a sort with a given name in the current vocabulary
 
-		Term*	functerm(NSPair*, const std::vector<Term*>&) const;	//!< create a new function term
-		Term*	functerm(NSPair*) const;								//!< create a new constant term
+		Term*	functerm(NSPair*, const std::vector<Term*>&);		//!< create a new function term
+		Term*	functerm(NSPair*);									//!< create a new constant term
 		Term*	arterm(char,Term*,Term*,YYLTYPE) const;				//!< create a new binary arithmetic term
 		Term*	arterm(const std::string&,Term*,YYLTYPE) const;		//!< create a new unary arithmetic term
 		Term*	domterm(int,YYLTYPE) const;							//!< create a new domain element term
 		Term*	domterm(double,YYLTYPE) const;						//!< create a new domain element term
-		Term*	domterm(std::string*,YYLTYPE) const;					//!< create a new domain element term
-		Term*	domterm(char,YYLTYPE) const;							//!< create a new domain element term
+		Term*	domterm(std::string*,YYLTYPE) const;				//!< create a new domain element term
+		Term*	domterm(char,YYLTYPE) const;						//!< create a new domain element term
 		Term*	domterm(std::string*,Sort*,YYLTYPE) const;			//!< create a new domain element term of a given sort
-		Term*	aggregate(AggFunction, SetExpr*, YYLTYPE) const;		//!< create a new aggregate term
+		Term*	aggregate(AggFunction, SetExpr*, YYLTYPE) const;	//!< create a new aggregate term
 
 		SetExpr*	set(const std::set<Variable*>&, Formula*, YYLTYPE);
 			//!< Create a new set of the form { x1 ... xn : phi }
 		SetExpr*	set(const std::set<Variable*>&, Formula*, Term*, YYLTYPE);
 			//!< Create a new set of the form { x1 ... xn : phi : t }
-		SetExpr*	set(EnumSetExpr*);
+		SetExpr*	set(EnumSetExpr*) const;
 			//!< Cast EnumSetExpr to SetExpr
 
-		EnumSetExpr*	createEnum() const;
+		EnumSetExpr*	createEnum(YYLTYPE) const;
 			//!< Create a new EnumSetExpr
 		void			addFormula(EnumSetExpr*,Formula*) const;
 			//!< Add a tuple (phi,1) to an EnumSetExpr
@@ -311,7 +322,7 @@ class Insert {
 		void funcinter(NSPair*, FuncTable* t) const;			//!< Assign a function table
 		void truepredinter(NSPair*) const;						//!< Assign true
 		void falsepredinter(NSPair*) const;						//!< Assign false
-		void inter(NSPair*,InternalArgument*,YYLTYPE) const;	//!< Assign the result of a procedural call
+		void inter(NSPair*, const longname& ,YYLTYPE) const;	//!< Assign a procedure
 
 		void threeprocinter(NSPair*, const std::string& utf, InternalArgument*)	const;
 		void threepredinter(NSPair*, const std::string& utf, PredTable* t)		const;

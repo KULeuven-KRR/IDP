@@ -522,6 +522,33 @@ class InternalPredTable {
 	friend class SortTable;
 };
 
+class ProcInternalPredTable : public InternalPredTable {
+	private:
+		std::string*			_procedure;
+		std::vector<SortTable*>	_universe;		//!< the actual table is the intersection of the procedure
+												//!< with the cartesian product of the tables in _universe
+		std::vector<bool>		_univlinked;	//!< if _univlinked[n] is true, _universe[n] will not be deleted
+	public:
+		ProcInternalPredTable(std::string* proc, const std::vector<SortTable*>& univ, const std::vector<bool>& link) :
+			_procedure(proc), _universe(univ), _univlinked(link) { }
+
+		unsigned int	arity()			const { return _universe.size();	}
+		bool			finite()		const;
+		bool			empty()			const;
+		bool			approxfinite()	const;
+		bool			approxempty()	const;
+
+		bool	contains(const ElementTuple& tuple)		const;
+
+		InternalPredTable*	add(const ElementTuple& tuple);		//!< Add a tuple to the table
+		InternalPredTable*	remove(const ElementTuple& tuple);	//!< Remove a tuple from the table
+
+		InternalTableIterator*	begin()	const;
+
+		~ProcInternalPredTable();
+
+};
+
 class SortInternalPredTable : public InternalPredTable {
 	private:
 		SortTable*	_table;
@@ -778,6 +805,7 @@ class InternalSortTable : public InternalPredTable {
 				InternalSortTable*	add(const ElementTuple& tuple)		{ return add(tuple[0]);		}
 		virtual InternalSortTable*	remove(const DomainElement*)		= 0;
 				InternalSortTable*	remove(const ElementTuple& tuple)	{ return remove(tuple[0]);	}
+		virtual InternalSortTable*	add(int i1, int i2)					= 0;
 
 		virtual InternalSortIterator*	sortbegin() const = 0;
 				InternalTableIterator*	begin()		const;
@@ -811,12 +839,14 @@ class UnionInternalSortTable : public InternalSortTable {
 		void	addOutTable(SortTable* t)	{ _outtables.push_back(t);	}
 		InternalSortTable*	add(const DomainElement*);		
 		InternalSortTable*	remove(const DomainElement*);	
+		InternalSortTable*	add(int i1, int i2);
 	
 };
 
 class InfiniteInternalSortTable : public InternalSortTable {
 	private:
 		InternalSortTable*	add(const DomainElement*);
+		InternalSortTable*	add(int i1, int i2);
 		InternalSortTable*	remove(const DomainElement*);
 		bool	finite()		const { return false;	}
 		bool	empty()			const { return false;	}
@@ -882,6 +912,7 @@ class AllChars : public InternalSortTable {
 		bool					contains(const DomainElement*)	const;
 		InternalSortTable*		add(const DomainElement*);
 		InternalSortTable*		remove(const DomainElement*);
+		InternalSortTable*		add(int i1, int i2);
 
 		InternalSortIterator*	sortbegin()	const;
 
@@ -915,6 +946,7 @@ class EnumeratedInternalSortTable : public InternalSortTable {
 		EnumeratedInternalSortTable(const SortedElementTuple& d) : _table(d) { }
 		InternalSortTable*		add(const DomainElement*);
 		InternalSortTable*		remove(const DomainElement*);
+		InternalSortTable*		add(int i1, int i2);
 };
 
 /**
@@ -926,10 +958,13 @@ class IntRangeInternalSortTable : public InternalSortTable {
 		int _first;		//!< first element in the range
 		int _last;		//!< last element in the range
 	public:
-		bool			finite()		const	{ return approxfinite();	}
-		bool			empty()			const	{ return approxempty();		}
-		bool			approxfinite()	const	{ return true;				}
-		bool			approxempty()	const	{ return _first > _last;	}
+		bool				finite()		const	{ return approxfinite();	}
+		bool				empty()			const	{ return approxempty();		}
+		bool				approxfinite()	const	{ return true;				}
+		bool				approxempty()	const	{ return _first > _last;	}
+		InternalSortTable*	add(const DomainElement*);
+		InternalSortTable*	remove(const DomainElement*);
+		InternalSortTable*	add(int i1, int i2);
 
 };
 
@@ -969,6 +1004,31 @@ class InternalFuncTable {
 		virtual InternalTableIterator*	begin()	const = 0;
 };
 
+class ProcInternalFuncTable : public InternalFuncTable {
+	private:
+		std::string*			_procedure;
+		std::vector<SortTable*>	_universe;		//!< the actual domain of the function is the intersection of the procedure
+												//!< with the cartesian product of the tables in _universe
+		std::vector<bool>		_univlinked;	//!< if _univlinked[n] is true, _universe[n] will not be deleted
+	public:
+		ProcInternalFuncTable(std::string* proc, const std::vector<SortTable*>& univ, const std::vector<bool>& link) :
+			_procedure(proc), _universe(univ), _univlinked(link) { }
+
+		~ProcInternalFuncTable();
+
+		unsigned int	arity()	const { return _universe.size();	}
+		bool	finite()		const;
+		bool	empty()			const; 
+		bool	approxfinite()	const;
+		bool	approxempty()	const; 
+		
+		const DomainElement*	operator[](const ElementTuple& tuple) const;
+		InternalFuncTable*		add(const ElementTuple&);	
+		InternalFuncTable*		remove(const ElementTuple&);
+
+		InternalTableIterator*	begin()	const;
+};
+
 /**
  *		A finite, enumerated InternalFuncTable
  */
@@ -977,6 +1037,7 @@ class EnumeratedInternalFuncTable : public InternalFuncTable {
 		unsigned int _arity;
 		ElementFunc	_table;
 	public:
+		EnumeratedInternalFuncTable(unsigned int arity) : _arity(arity) { }
 		EnumeratedInternalFuncTable(unsigned int arity, const ElementFunc& tab) : 
 			_arity(arity), _table(tab) { }
 		~EnumeratedInternalFuncTable() { }
@@ -1161,6 +1222,8 @@ class SortTable : public AbstractTable {
 		SortTable(InternalSortTable* table); 
 		~SortTable();
 
+		void	interntable(InternalSortTable*);
+
 		bool			finite()							const	{ return _table->finite();			}
 		bool			empty()								const	{ return _table->empty();			}
 		bool			approxfinite()						const	{ return _table->approxfinite();	}
@@ -1170,6 +1233,7 @@ class SortTable : public AbstractTable {
 		bool			contains(const DomainElement* el)	const	{ return _table->contains(el);		}
 		void			add(const ElementTuple& tuple)				{ _table = _table->add(tuple);		}
 		void			add(const DomainElement* el)				{ _table = _table->add(el);			}
+		void			add(int i1, int i2)							{ _table = _table->add(i1,i2);		}
 		void			remove(const ElementTuple& tuple)			{ _table = _table->remove(tuple);	}
 		void			remove(const DomainElement* el)				{ _table = _table->remove(el);		}
 		TableIterator 	begin()								const;
@@ -1235,12 +1299,14 @@ class PredInter {
 		void cf(PredTable*);
 		void pt(PredTable*);
 		void pf(PredTable*);
+		void ctpt(PredTable*);
 
 		// Inspectors
-		PredTable*	ct()										const { return _ct;	}
-		PredTable*	cf()										const { return _cf;	}
-		PredTable*	pt()										const { return _pt;	}
-		PredTable*	pf()										const { return _pf;	}
+		PredTable*	ct()										const { return _ct;		}
+		PredTable*	cf()										const { return _cf;		}
+		PredTable*	pt()										const { return _pt;		}
+		PredTable*	pf()										const { return _pf;		}
+		const std::vector<SortTable*>&	univ()					const { return _univ;	}
 		bool		istrue(const ElementTuple& tuple)			const;
 		bool		isfalse(const ElementTuple& tuple)			const;
 		bool		isunknown(const ElementTuple& tuple)		const;
@@ -1319,6 +1385,7 @@ class FuncInter {
 		~FuncInter();
 
 		void	graphinter(PredInter*);
+		void	functable(FuncTable*);
 
 		PredInter*	graphinter()		const { return _graphinter;			}
 		FuncTable*	functable()			const { return _functable;			}
@@ -1442,8 +1509,6 @@ class Structure : public AbstractStructure {
 		std::map<Predicate*,PredInter*>	_predinter;		//!< The interpretations of the predicate symbols.
 		std::map<Function*,FuncInter*>	_funcinter;		//!< The interpretations of the function symbols.
 	
-		void	functioncheck();	//!< check the correctness of the function tables
-		void	autocomplete();		//!< make the domains consistent with the predicate and function tables				
 
 	public:
 		// Constructors
@@ -1458,6 +1523,10 @@ class Structure : public AbstractStructure {
 		void	inter(Predicate* p, PredInter* i);	//!< set the interpretation of p to i
 		void	inter(Function* f, FuncInter* i);	//!< set the interpretation of f to i
 		Structure*	clone();						//!< take a clone of this structure
+		void	addStructure(AbstractStructure*);	
+
+		void	functioncheck();	//!< check the correctness of the function tables
+		void	autocomplete();		//!< make the domains consistent with the predicate and function tables				
 
 		// Inspectors
 		SortTable*		inter(Sort* s)				const; //!< Return the domain of s.

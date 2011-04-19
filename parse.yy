@@ -525,12 +525,12 @@ termset			: '{' variables ':' formula ':' term '}'	{ $$ = insert.set(*$2,$4,$6,@
 				| '[' form_term_list ']'					{ $$ = insert.set($2);							}
 				;
 
-form_list		: form_list ';' formula						{ $$ = $1; insert.addFormula($$,$3);					}
-				| formula									{ $$ = insert.createEnum();	insert.addFormula($$,$1);	}		
+form_list		: form_list ';' formula						{ $$ = $1; insert.addFormula($$,$3);						}
+				| formula									{ $$ = insert.createEnum(@1);	insert.addFormula($$,$1);	}		
 				;
 
-form_term_list	: form_term_list ';' '(' formula ',' term ')'	{ $$ = $1; insert.addFT($$,$4,$6);					}
-				| '(' formula ',' term ')'						{ $$ = insert.createEnum(); insert.addFT($$,$2,$4);	}
+form_term_list	: form_term_list ';' '(' formula ',' term ')'	{ $$ = $1; insert.addFT($$,$4,$6);						}
+				| '(' formula ',' term ')'						{ $$ = insert.createEnum(@1); insert.addFT($$,$2,$4);	}
 				;
 
 
@@ -662,7 +662,7 @@ ftuple			: ptuple "->" pelement			{ $$ = $1; $$->push_back($3);	}
 
 /** Procedural interpretations **/
 
-proc_inter		: intern_pointer '=' PROCEDURE function_call	{ insert.inter($1,$4,@1);	}
+proc_inter		: intern_pointer '=' PROCEDURE pointer_name	{ insert.inter($1,*$4,@1); delete($4);	}
 				;
 
 /** Three-valued interpretations **/
