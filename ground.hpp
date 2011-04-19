@@ -42,8 +42,8 @@ class TsBody {
 	protected:
 		TsType _type;	// the type of "tseitin definition"
 		TsBody(TsType type): _type(type) { }
-		virtual ~TsBody() {}
 	public:
+		virtual ~TsBody() { }
 		TsType type() const { return _type; }
 	friend class GroundTranslator;
 };
@@ -228,7 +228,7 @@ class GroundTermTranslator {
 
 /************************************
 	Optimized grounding algorithm
-************************************/
+******************************domain******/
 
 class TermGrounder;
 class FormulaGrounder;
@@ -259,6 +259,7 @@ class TopLevelGrounder {
 		AbstractGroundTheory*	_grounding;
 	public:
 		TopLevelGrounder(AbstractGroundTheory* gt) : _grounding(gt) { }
+		virtual ~TopLevelGrounder() { }
 
 		virtual bool					run()		const = 0;
 				AbstractGroundTheory*	grounding()	const { return _grounding;	}
@@ -312,6 +313,7 @@ class TermGrounder {
 #endif
 	public:
 		TermGrounder() { }
+		virtual ~TermGrounder() { }
 		virtual domelement run() const = 0;
 		virtual bool canReturnCPVar() const = 0;
 #ifndef NDEBUG
@@ -407,6 +409,7 @@ class FormulaGrounder {
 		GroundingContext	_context;
 	public:
 		FormulaGrounder(GroundTranslator* gt, const GroundingContext& ct): _translator(gt), _context(ct) { }
+		virtual ~FormulaGrounder() { }
 		virtual int		run()					const = 0;
 		virtual void	run(std::vector<int>&)	const = 0;
 		virtual bool	conjunctive()			const = 0;
@@ -533,6 +536,7 @@ class SetGrounder {
 		GroundTranslator*	_translator;
 	public:
 		SetGrounder(GroundTranslator* gt) : _translator(gt) { }
+		virtual ~SetGrounder() { }
 		virtual int run() const = 0;
 };
 
@@ -636,7 +640,7 @@ class GrounderFactory : public Visitor {
 		void	descend(SetExpr* s);
 		
 		// Grounding to CP
-		bool						_usingcp;
+		bool						_cpsupport;
 		std::set<const Function*>	_cpfunctions;
 
 		// Variable mapping
@@ -657,7 +661,7 @@ class GrounderFactory : public Visitor {
 
 	public:
 		// Constructor
-		GrounderFactory(AbstractStructure* structure, bool usingcp): _structure(structure), _usingcp(usingcp) { }
+		GrounderFactory(AbstractStructure* structure, bool cpsupport): _structure(structure), _cpsupport(cpsupport) { }
 
 		// Factory method
 		TopLevelGrounder* create(const AbstractTheory*);

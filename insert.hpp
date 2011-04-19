@@ -12,9 +12,8 @@
 #include <vector>
 #include <cassert>
 
-#include "common.hpp" // FIXME: need include for enum AggType
+#include "common.hpp"
 #include "parseinfo.hpp"
-//#include "theory.hpp" //FIXME: forward declaration instead?
 
 class Formula;
 class Term;

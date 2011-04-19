@@ -1471,7 +1471,8 @@ PredInter* PredInter::clone() {
 PredInter::~PredInter() {
 	if(_ctpf) {
 		if(_ctpf == _cfpt) {
-			delete(_ctpf); return;
+			delete(_ctpf);
+			return;
 		}
 		else delete(_ctpf);
 	}
@@ -1830,7 +1831,7 @@ void Structure::sortall() {
 }
 
 Structure* Structure::clone() {
-	Structure*	s = new Structure("",ParseInfo());
+	Structure* s = new Structure("",ParseInfo());
 	s->vocabulary(_vocabulary);
 	for(map<Sort*,SortTable*>::iterator it = _sortinter.begin(); it != _sortinter.end(); ++it) {
 		CopySortTable* t1 = new CopySortTable(it->second);

@@ -567,7 +567,7 @@ int overloaddiv(lua_State* L) {
 	InfArg a = BuiltinProcs::convertarg(L,1,IAT_OVERLOADED);
 	OverloadedObject* obj = a._overloaded;
 	InfArg b = BuiltinProcs::convertarg(L,2,IAT_INT);
-	int div = b._int;
+	unsigned int div = b._int;
 	set<Predicate*>* sp = 0;
 	set<Function*>* sf = 0;
 	if(obj->isPredicate()) {
@@ -1072,6 +1072,8 @@ TypedInfArg FastMXInference::execute(const vector<InfArg>& args, lua_State* L) c
 			}
 		}
 	}
+
+	// Return answer
 	if(opts->_trace) {
 		TypedInfArg b; b._type = IAT_MULT; b._value._table = new vector<TypedInfArg>(1,a);
 		b._value._table->push_back(tracewriter.trace());
@@ -1142,10 +1144,10 @@ FastGrounding::FastGrounding() {
 
 TypedInfArg FastGrounding::execute(const vector<InfArg>& args, lua_State*) const {
 	GrounderFactory factory(args[1]._structure,args[2]._options->_cpsupport);
-	TopLevelGrounder* g = factory.create(args[0]._theory);
-	g->run();
+	TopLevelGrounder* grounder = factory.create(args[0]._theory);
+	grounder->run();
 	TypedInfArg a; a._type = IAT_THEORY;
-	a._value._theory = g->grounding();
+	a._value._theory = grounder->grounding();
 	return a;
 }
 
@@ -1263,7 +1265,7 @@ TypedInfArg GetIndex::execute(const vector<InfArg>& args, lua_State* L) const {
 		case IAT_PREDTABLE:
 		{
 			PredTable* pt = args[0]._predtable;
-			int index = args[1]._int - 1;
+			unsigned int index = args[1]._int - 1;
 			if(pt->finite() && index < pt->size()) {
 				if(pt->arity() == 1) {
 					Element e = pt->element(index,0);
@@ -1302,7 +1304,7 @@ TypedInfArg GetIndex::execute(const vector<InfArg>& args, lua_State* L) const {
 		case IAT_TUPLE:
 		{
 			PredTableTuple* ptt = args[0]._tuple;
-			int column = args[1]._int - 1;
+			unsigned int column = args[1]._int - 1;
 			if(column < ptt->_table->size()) {
 				Element e = ptt->_table->element(ptt->_index,column);
 				switch(ptt->_table->type(column)) {
@@ -1412,7 +1414,7 @@ TypedInfArg LenghtOperator::execute(const vector<InfArg>& args, lua_State*) cons
 
 TypedInfArg ArityCastOperator::execute(const vector<InfArg>& args, lua_State*) const {
 	TypedInfArg result; result._type = IAT_NIL;
-	int arity = args[1]._int;
+	unsigned int arity = args[1]._int;
 	switch(_intypes[0]) {
 		case IAT_PREDICATE:
 		{

@@ -45,7 +45,7 @@ class Sort {
 
 		// Mutators
 		void	addParent(Sort* p);	// Add p as a parent. Also add this as a child of p.
-		void	addChild(Sort* c);		// Add c as a child. Also add this as a parent of c.
+		void	addChild(Sort* c);	// Add c as a child. Also add this as a parent of c.
 		void	pred(Predicate* p)	{ _pred = p;	}
 		
 		// Inspectors

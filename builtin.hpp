@@ -22,6 +22,12 @@ class StdBuiltin : public Vocabulary {
 	public:
 		static StdBuiltin* instance();
 		~StdBuiltin() { }
+
+		Sort* natsort() 	const { return *(sort("nat")->begin()); 	}
+		Sort* intsort() 	const { return *(sort("int")->begin()); 	}
+		Sort* floatsort()	const { return *(sort("float")->begin()); 	}
+		Sort* charsort() 	const { return *(sort("char")->begin()); 	}
+		Sort* stringsort() 	const { return *(sort("string")->begin()); 	}
 };
 
 #endif

@@ -225,8 +225,23 @@ Sort* QuantSetExpr::firstargsort() const {
 }
 
 Sort* AggTerm::sort() const {
-	if(_type == AGGCARD) return *(StdBuiltin::instance()->sort("nat")->begin());
-	else return _set->firstargsort();
+	StdBuiltin* builtinvoc = StdBuiltin::instance();
+	Sort* natsort = builtinvoc->natsort();
+	Sort* intsort = builtinvoc->intsort();
+	Sort* floatsort = builtinvoc->floatsort();
+
+	// Cardinality is a natural number
+	if(_type == AGGCARD) return natsort; 
+
+	// Determine sort of the sum or product based on sort of the input
+	Sort* insort = _set->firstargsort();
+	if(_type == AGGSUM || _type == AGGPROD) {
+		if(SortUtils::resolve(insort,natsort,0) == natsort) return natsort;
+		if(SortUtils::resolve(insort,intsort,0) == intsort) return intsort;
+		if(SortUtils::resolve(insort,floatsort,0) == floatsort) return floatsort;	
+	}
+	// In all other situation, simply return sort of first argument
+	return insort;
 }
 
 /***************************

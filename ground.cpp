@@ -979,14 +979,15 @@ domelement FuncTermGrounder::run() const {
 	for(unsigned int n = 0; n < _subtermgrounders.size(); ++n) {
 		_args[n] = _subtermgrounders[n]->run();
 	}
+	domelement result = (*_function)[_args];
 #ifndef NDEBUG
-if(_cloptions._verbose) {
-	printorig();
-	Element e; e._compound = (*_function)[_args];
-	cerr << "Result is " << ElementUtil::ElementToString(e,ELCOMPOUND) << endl;
-}
+	if(_cloptions._verbose) {
+		printorig();
+		Element e; e._compound = result;
+		cerr << "Result is " << ElementUtil::ElementToString(e,ELCOMPOUND) << endl;
+	}
 #endif
-	return (*_function)[_args];
+	return result;
 }
 
 domelement ThreeValuedFuncTermGrounder::run() const {
@@ -997,21 +998,21 @@ domelement ThreeValuedFuncTermGrounder::run() const {
 	domelement result = (*_functable)[_args];
 	if(ElementUtil::exists(result)) {
 #ifndef NDEBUG
-if(_cloptions._verbose) {
-	printorig();
-	Element e; e._compound = result;
-	cerr << "Result is " << ElementUtil::ElementToString(e,ELCOMPOUND) << endl;
-}
+		if(_cloptions._verbose) {
+			printorig();
+			Element e; e._compound = result;
+			cerr << "Result is " << ElementUtil::ElementToString(e,ELCOMPOUND) << endl;
+		}
 #endif
 		return result;
 	}
 	else {
 #ifndef NDEBUG
-if(_cloptions._verbose) {
-	printorig();
-	Element e; e._compound = CPPointer(_function,_args);
-	cerr << "Result is " << ElementUtil::ElementToString(e,ELCOMPOUND) << endl;
-}
+		if(_cloptions._verbose) {
+			printorig();
+			Element e; e._compound = CPPointer(_function,_args);
+			cerr << "Result is " << ElementUtil::ElementToString(e,ELCOMPOUND) << endl;
+		}
 #endif
 		return CPPointer(_function,_args);
 	}
@@ -1026,20 +1027,20 @@ domelement AggTermGrounder::run() const {
 	if(isInt(value)) {
 		e._int = int(value);
 #ifndef NDEBUG
-if(_cloptions._verbose) {
-	printorig();
-	cerr << "Result is " << ElementUtil::ElementToString(e,ELINT) << endl;
-}
+		if(_cloptions._verbose) {
+			printorig();
+			cerr << "Result is " << ElementUtil::ElementToString(e,ELINT) << endl;
+		}
 #endif
 		return CPPointer(e,ELINT);
 	}
 	else {
 		e._double = value;
 #ifndef NDEBUG
-if(_cloptions._verbose) {
-	printorig();
-	cerr << "Result is " << ElementUtil::ElementToString(e,ELDOUBLE) << endl;
-}
+		if(_cloptions._verbose) {
+			printorig();
+			cerr << "Result is " << ElementUtil::ElementToString(e,ELDOUBLE) << endl;
+		}
 #endif
 		return CPPointer(e,ELDOUBLE);
 	}
@@ -1373,7 +1374,7 @@ TopLevelGrounder* GrounderFactory::create(const AbstractTheory* theory) {
 	_grounding = new GroundTheory(theory->vocabulary(),_structure->clone());
 
 	// Find function that can be passed to CP solver.
-	if(_usingcp) findCPFunctions(theory);
+	if(_cpsupport) findCPFunctions(theory);
 
 	// Create the grounder
 	theory->accept(this);
@@ -1402,7 +1403,7 @@ TopLevelGrounder* GrounderFactory::create(const AbstractTheory* theory, SATSolve
 	_grounding = new SolverTheory(theory->vocabulary(),solver,_structure->clone());
 
 	// Find function that can be passed to CP solver.
-	if(_usingcp) findCPFunctions(theory);
+	if(_cpsupport) findCPFunctions(theory);
 
 	// Create the grounder
 	theory->accept(this);
@@ -1472,7 +1473,7 @@ void GrounderFactory::visit(const PredForm* pf) {
 	// to _structure outside the atom. To avoid changing the original atom, 
 	// we first clone it.
 	PredForm* newpf = pf->clone();
-	Formula* transpf = FormulaUtils::moveThreeValTerms(newpf,_structure,(_context._funccontext != PC_NEGATIVE),_usingcp,_cpfunctions);
+	Formula* transpf = FormulaUtils::moveThreeValTerms(newpf,_structure,(_context._funccontext != PC_NEGATIVE),_cpsupport,_cpfunctions);
 
 	if(newpf != transpf) {	// The rewriting changed the atom
 		//delete(newpf); TODO: produces a segfault??
@@ -1718,7 +1719,7 @@ void GrounderFactory::visit(const EquivForm* ef) {
  */
 void GrounderFactory::visit(const AggForm* af) {
 	AggForm* newaf = af->clone();
-	Formula* transaf = FormulaUtils::moveThreeValTerms(newaf,_structure,(_context._funccontext != PC_NEGATIVE),_usingcp,_cpfunctions);
+	Formula* transaf = FormulaUtils::moveThreeValTerms(newaf,_structure,(_context._funccontext != PC_NEGATIVE),_cpsupport,_cpfunctions);
 
 	if(newaf != transaf) {	// The rewriting changed the atom
 		//delete(newaf); TODO: produces a segfault??
@@ -1799,7 +1800,7 @@ void GrounderFactory::visit(const FuncTerm* t) {
 
 	// Create term grounder
 	Function* func = t->func();
-	if(_structure->inter(func)->fasttwovalued()) {
+	if(_structure->inter(func)->fasttwovalued() || not _cpsupport) {
 		FuncTable* ft = _structure->inter(func)->functable();
 		_termgrounder = new FuncTermGrounder(sub,ft);
 	}
@@ -1834,7 +1835,7 @@ void GrounderFactory::visit(const AggTerm* t) {
 	t->set()->accept(this);
 
 	// Create term grounder
-	if(SetUtils::isTwoValued(t->set(),_structure))
+	if(SetUtils::isTwoValued(t->set(),_structure) || not _cpsupport)
 		_termgrounder = new AggTermGrounder(_grounding->translator(),t->type(),_setgrounder);
 	else //TODO
 		_termgrounder = new ThreeValuedAggTermGrounder(_grounding->translator(),t->type(),_setgrounder);

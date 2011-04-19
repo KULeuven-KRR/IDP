@@ -28,6 +28,12 @@ GroundDefinition* GroundDefinition::clone() const {
 	return newdef;
 }
 
+void GroundDefinition::recursiveDelete() {
+	for(ruleiterator it = begin(); it != end(); ++it)
+		delete(it->second);
+	delete(this);
+}
+
 void GroundDefinition::addTrueRule(int head) {
 	addPCRule(head,vector<int>(0),true,false);
 }
@@ -103,15 +109,16 @@ void GroundDefinition::addPCRule(int head, const vector<int>& body, bool conj, b
 			case RT_AGG:
 			{
 				AggGroundRuleBody* grb = dynamic_cast<AggGroundRuleBody*>(it->second);
+				char comp = (grb->_lower ? '<' : '>');
 				if((!conj) || body.size() == 1) {
-					int ts = _translator->translate(grb->_bound,(grb->_lower ? '<' : '>'),false,grb->_aggtype,grb->_setnr,(grb->_recursive ? TS_RULE : TS_EQ));
+					int ts = _translator->translate(grb->_bound,comp,false,grb->_aggtype,grb->_setnr,(grb->_recursive ? TS_RULE : TS_EQ));
 					PCGroundRuleBody* newgrb = new PCGroundRuleBody(RT_DISJ,body,(recursive || grb->_recursive));
 					newgrb->_body.push_back(ts);
 					delete(grb);
 					it->second = newgrb;
 				}
 				else {
-					int ts1 = _translator->translate(grb->_bound,(grb->_lower ? '<' : '>'),false,grb->_aggtype,grb->_setnr,(grb->_recursive ? TS_RULE : TS_EQ));
+					int ts1 = _translator->translate(grb->_bound,comp,false,grb->_aggtype,grb->_setnr,(grb->_recursive ? TS_RULE : TS_EQ));
 					int ts2 = _translator->translate(body,conj,(recursive ? TS_RULE : TS_EQ));
 					vector<int> vi(2); vi[0] = ts1; vi[1] = ts2;
 					it->second = new PCGroundRuleBody(RT_DISJ,vi,(recursive || grb->_recursive));
@@ -226,8 +233,13 @@ AbstractGroundTheory::AbstractGroundTheory(Vocabulary* voc, AbstractStructure* s
 	AbstractTheory("",voc,ParseInfo()), _structure(str), _translator(new GroundTranslator()), _termtranslator(new GroundTermTranslator()) { }
 
 AbstractGroundTheory::~AbstractGroundTheory() {
+	delete(_structure);
 	delete(_translator);
 	delete(_termtranslator);
+}
+
+void AbstractGroundTheory::recursiveDelete() {
+	delete(this);
 }
 
 /*
@@ -317,6 +329,26 @@ void AbstractGroundTheory::transformForAdd(const vector<int>& vi, VIType /*vit*/
 /*******************************
 	Internal ground theories
 *******************************/
+
+void GroundTheory::recursiveDelete() {
+	for(vector<GroundDefinition*>::iterator defit = _definitions.begin(); defit != _definitions.end(); ++defit) {
+		(*defit)->recursiveDelete();
+		delete(*defit);
+	}
+	for(vector<GroundAggregate*>::iterator aggit = _aggregates.begin(); aggit != _aggregates.end(); ++aggit) {
+		delete(*aggit);
+	}
+	for(vector<GroundSet*>::iterator setit = _sets.begin(); setit != _sets.end(); ++setit) {
+		delete(*setit);
+	}
+	//for(vector<GroundFixpDef*>::iterator fdefit = _fixpdefs.begin(); fdefit != _fixpdefs.end(); ++fdefit) {
+	//	(*defit)->recursiveDelete();
+	//	delete(*defit);
+	//}
+	for(vector<CPReification*>::iterator cprit = _cpreifications.begin(); cprit != _cpreifications.end(); ++cprit) {
+		delete(*cprit);
+	}
+}
 
 void GroundTheory::addClause(GroundClause& cl, bool skipfirst) {
 	transformForAdd(cl,VIT_DISJ,ID_FOR_UNDEFINED,skipfirst);

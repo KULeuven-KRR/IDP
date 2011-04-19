@@ -118,7 +118,6 @@ class GroundAggregate {
 *************************/
 
 // Enumeration type for rules
-// RM enum RuleType { RT_TRUE, RT_FALSE, RT_UNARY, RT_CONJ, RT_DISJ, RT_AGG };
 enum RuleType { RT_CONJ, RT_DISJ, RT_AGG };
 
 /**
@@ -224,6 +223,7 @@ class GroundDefinition : public AbstractDefinition {
 		// Constructors
 		GroundDefinition(GroundTranslator* tr) : _translator(tr) { }
 		GroundDefinition* clone() const;
+		void recursiveDelete();
 
 		// Mutators
 		void addTrueRule(int head);
@@ -260,8 +260,8 @@ class GroundDefinition : public AbstractDefinition {
 
 class GroundFixpDef : public AbstractDefinition {
 	private:
-		std::map<int,GroundRuleBody*>	_rules;		// the direct subrules
-		std::vector<GroundFixpDef*>		_subdefs;	// the direct subdefinitions
+//		std::map<int,GroundRuleBody*>	_rules;		// the direct subrules
+//		std::vector<GroundFixpDef*>		_subdefs;	// the direct subdefinitions
 	public:
 		//TODO
 };
@@ -294,14 +294,12 @@ class CPReification { //TODO
  */
 class AbstractGroundTheory : public AbstractTheory {
 	protected:
-		AbstractStructure*			_structure;			// The ground theory may be partially reduced with respect
-														// to this structure. 
-		GroundTranslator*			_translator;		// Link between ground atoms and SAT-solver literals
-		GroundTermTranslator*		_termtranslator;	// Link between ground terms and SAT-solver literals
+		AbstractStructure*		_structure;			// The ground theory may be partially reduced with respect to this structure. 
+		GroundTranslator*		_translator;		// Link between ground atoms and SAT-solver literals.
+		GroundTermTranslator*	_termtranslator;	// Link between ground terms and SAT-solver literals.
 
-		std::set<int>			_printedtseitins;	// Tseitin atoms produced by the translator that occur 
-													// in the theory.
-		std::set<int>			_printedsets;		// Set numbers produced by the translator that occur in the theory
+		std::set<int>			_printedtseitins;	// Tseitin atoms produced by the translator that occur in the theory.
+		std::set<int>			_printedsets;		// Set numbers produced by the translator that occur in the theory.
 
 		const 	GroundTranslator& getTranslator() const	{ return *_translator; }
 				GroundTranslator& getTranslator() 		{ return *_translator; }
@@ -312,7 +310,7 @@ class AbstractGroundTheory : public AbstractTheory {
 		AbstractGroundTheory(Vocabulary* voc, AbstractStructure* str);
 
 		// Destructor
-		virtual void recursiveDelete()	{ delete(this);	}
+		virtual void recursiveDelete();
 		virtual	~AbstractGroundTheory();
 
 		// Mutators
@@ -413,10 +411,10 @@ class GroundTheory : public AbstractGroundTheory {
 		std::vector<CPReification*>		_cpreifications;
 
 	public:
-
-		// Constructor
+		// Constructors
 		GroundTheory(AbstractStructure* str) : AbstractGroundTheory(str) { }
 		GroundTheory(Vocabulary* voc, AbstractStructure* str) : AbstractGroundTheory(voc,str)	{ }
+		void recursiveDelete();
 
 		// Mutators
 		void	addClause(GroundClause& cl, bool skipfirst = false);

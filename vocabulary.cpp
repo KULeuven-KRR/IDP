@@ -489,7 +489,7 @@ namespace FuncUtils {
 
 	bool isIntFunc(const Function* func, Vocabulary* voc) {
 		Sort* ints = *(voc->sort("int")->begin());
-		return SortUtils::resolve(func->outsort(),ints,voc) != 0;
+		return SortUtils::resolve(func->outsort(),ints,voc) == ints;
 	}
 
 }
