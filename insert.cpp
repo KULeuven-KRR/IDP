@@ -6,6 +6,7 @@
 
 #include <cassert>
 #include <sstream>
+#include <iostream>
 #include "common.hpp"
 #include "insert.hpp"
 #include "vocabulary.hpp"

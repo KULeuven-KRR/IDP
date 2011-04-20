@@ -42,11 +42,10 @@ Namespace::~Namespace() {
 		delete(it->second);
 	for(map<string,UserProcedure*>::iterator it = _procedures.begin(); it != _procedures.end(); ++it) 
 		delete(it->second);
-	delete(this);
 }
 
 /** Mutators **/
-void Namespace::add(Vocabulary* v) 			{ _vocabularies[v->name()] = v;		}
+void Namespace::add(Vocabulary* v) 			{ _vocabularies[v->name()] = v;	v->setnamespace(this);	}
 void Namespace::add(Namespace* n)			{ _subspaces[n->name()] = n; 		}
 void Namespace::add(AbstractStructure* s)	{ _structures[s->name()] = s;		}
 void Namespace::add(AbstractTheory* t)		{ _theories[t->name()] = t; 		}

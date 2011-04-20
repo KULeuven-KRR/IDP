@@ -4,13 +4,13 @@
 	(c) K.U.Leuven
 ************************************/
 
-#include "print.hpp"
-#include "namespace.hpp"
 #include "vocabulary.hpp"
-#include "theory.hpp"
 #include "structure.hpp"
 #include "term.hpp"
+#include "theory.hpp"
 #include "options.hpp"
+#include "namespace.hpp"
+#include "print.hpp"
 
 using namespace std;
 
@@ -26,20 +26,22 @@ Printer::Printer() {
 Printer* Printer::create(Options* opts) {
 	switch(opts->language()) {
 		case LAN_TXT:
-			return new SimplePrinter();
+			// FIXME
+			//return new SimplePrinter();
 		case LAN_IDP:
 			return new IDPPrinter(opts->printtypes());
 		case LAN_ECNF:
-			return new EcnfPrinter();
+			// FIXME
+			//return new EcnfPrinter();
 		default:
 			assert(false);
 	}
 }
 
-string Printer::print(const Namespace* n)			{ n->accept(this); return _out.str(); }
-string Printer::print(const Vocabulary* v)			{ v->accept(this); return _out.str(); }
+string Printer::print(const Namespace* )			{ /* FIXME n->accept(this); return _out.str();*/ }
+string Printer::print(const Vocabulary* v)			{ return v->to_string(); /* FIXME v->accept(this); return _out.str();*/ }
 string Printer::print(const AbstractTheory* t)		{ t->accept(this); return _out.str(); }
-string Printer::print(const AbstractStructure* s)	{ s->accept(this); return _out.str(); }	
+string Printer::print(const AbstractStructure* )	{ /* FIXME s->accept(this); return _out.str();*/ }	
 
 void Printer::indent() 		{ _indent++; }
 void Printer::unindent()	{ _indent--; }
@@ -52,20 +54,20 @@ void Printer::printtab() {
     Theories
 ***************/
 
-void SimplePrinter::visit(const Theory* t) {
-	_out << t->to_string();
-}
+//void SimplePrinter::visit(const Theory* ) {
+//	/* FIXME _out << t->to_string(); */
+//}
 
 void IDPPrinter::visit(const Theory* t) {
-	for(unsigned int n = 0; n < t->nrSentences(); ++n) {
-		printtab();
-		t->sentence(n)->accept(this);
-		_out << ".\n";
+	for(vector<Formula*>::const_iterator it = t->sentences().begin(); it != t->sentences().end(); ++it) {
+		(*it)->accept(this); _out << ".\n";
 	}
-	for(unsigned int n = 0; n < t->nrDefinitions(); ++n)
-		t->definition(n)->accept(this);
-	for(unsigned int n = 0; n < t->nrFixpDefs(); ++n)
-		t->fixpdef(n)->accept(this);
+	for(vector<Definition*>::const_iterator it = t->definitions().begin(); it != t->definitions().end(); ++it) {
+		(*it)->accept(this);
+	}
+	for(vector<FixpDef*>::const_iterator it = t->fixpdefs().begin(); it != t->fixpdefs().end(); ++it) {
+		(*it)->accept(this);
+	}
 }
 
 /** Formulas **/
@@ -73,17 +75,17 @@ void IDPPrinter::visit(const Theory* t) {
 void IDPPrinter::visit(const PredForm* f) {
 	if(! f->sign())	_out << "~";
 #ifndef NDEBUG
-	_out << f->symb()->to_string();
+	_out << f->symbol()->to_string();
 #else
-	string fullname = f->symb()->name();
+	string fullname = f->symbol()->name();
 	_out << fullname.substr(0,fullname.find('/'));
 #endif
-	if(f->nrSubterms()) {
+	if(!f->subterms().empty()) {
 		_out << "(";
-		f->subterm(0)->accept(this);
-		for(unsigned int n = 1; n < f->nrSubterms(); ++n) {
+		f->subterms()[0]->accept(this);
+		for(unsigned int n = 1; n < f->subterms().size(); ++n) {
 			_out << ",";
-			f->subterm(n)->accept(this);
+			f->subterms()[n]->accept(this);
 		}
 		_out << ")";
 	}
@@ -92,26 +94,32 @@ void IDPPrinter::visit(const PredForm* f) {
 void IDPPrinter::visit(const EqChainForm* f) {
 	if(! f->sign())	_out << "~";
 	_out << "(";
-	f->subterm(0)->accept(this);
-	for(unsigned int n = 0; n < f->nrComps(); ++n) {
-		switch(f->comp(n)) {
-			case '=':
-				if(f->compsign(n)) _out << " = ";
-				else _out << " ~= ";
+	f->subterms()[0]->accept(this);
+	for(unsigned int n = 0; n < f->comps().size(); ++n) {
+		switch(f->comps()[n]) {
+			case CT_EQ:
+				_out << " = ";
 				break;
-			case '<':
-				if(f->compsign(n)) _out << " < ";
-				else _out << " >= ";
+			case CT_NEQ:
+				_out << " ~= ";
 				break;
-			case '>':
-				if(f->compsign(n)) _out << " > ";
-				else _out << " =< ";
+			case CT_LEQ:
+				_out << " =< ";
+				break;
+			case CT_GEQ:
+				_out << " >= ";
+				break;
+			case CT_LT:
+				_out << " < ";
+				break;
+			case CT_GT:
+				_out << " > ";
 				break;
 		}
-		f->subterm(n+1)->accept(this);
-		if(! f->conj() && n+1 < f->nrComps()) {
+		f->subterms()[n+1]->accept(this);
+		if(! f->conj() && n+1 < f->comps().size()) {
 			_out << " | ";
-			f->subterm(n+1)->accept(this);
+			f->subterms()[n+1]->accept(this);
 		}
 	}
 	_out << ")";
@@ -127,7 +135,7 @@ void IDPPrinter::visit(const EquivForm* f) {
 }
 
 void IDPPrinter::visit(const BoolForm* f) {
-	if(! f->nrSubforms()) {
+	if(f->subformulas().empty()) {
 		if(f->sign() == f->conj())
 			_out << "true";
 		else
@@ -136,13 +144,13 @@ void IDPPrinter::visit(const BoolForm* f) {
 	else {
 		if(! f->sign())	_out << "~";
 		_out << "(";
-		f->subform(0)->accept(this);
-		for(unsigned int n = 1; n < f->nrSubforms(); ++n) {
+		f->subformulas()[0]->accept(this);
+		for(unsigned int n = 1; n < f->subformulas().size(); ++n) {
 			if(f->conj())
 				_out << " & ";
 			else
 				_out << " | ";
-			f->subform(n)->accept(this);
+			f->subformulas()[n]->accept(this);
 		}
 		_out << ")";
 	}
@@ -155,14 +163,14 @@ void IDPPrinter::visit(const QuantForm* f) {
 		_out << "!";
 	else
 		_out << "?";
-	for(unsigned int n = 0; n < f->nrQvars(); ++n) {
+	for(set<Variable*>::const_iterator it = f->quantvars().begin(); it != f->quantvars().end(); ++it) {
 		_out << " ";
-		_out << f->qvar(n)->name();
-		if(f->qvar(n)->sort())
-			_out << "[" << f->qvar(n)->sort()->name() << "]";
+		_out << (*it)->name();
+		if((*it)->sort())
+			_out << "[" << (*it)->sort()->name() << "]";
 	}
 	_out << " : ";
-	f->subform(0)->accept(this);
+	f->subformulas()[0]->accept(this);
 	_out << ")";
 }
 
@@ -170,12 +178,12 @@ void IDPPrinter::visit(const QuantForm* f) {
 
 void IDPPrinter::visit(const Rule* r) {
 	printtab();
-	if(r->nrQvars()) {
+	if(!r->quantvars().empty()) {
 		_out << "!";
-		for(unsigned int n = 0; n < r->nrQvars(); ++n) {
-			_out << " " << r->qvar(n)->name();
-			if(r->qvar(n)->sort())
-				_out << "[" << r->qvar(n)->sort()->name() << "]";
+		for(set<Variable*>::const_iterator it = r->quantvars().begin(); it != r->quantvars().end(); ++it) {
+			_out << " " << (*it)->name();
+			if((*it)->sort())
+				_out << "[" << (*it)->sort()->name() << "]";
 		}
 		_out << " : ";
 	}
@@ -189,8 +197,8 @@ void IDPPrinter::visit(const Definition* d) {
 	printtab();
 	_out << "{\n";
 	indent();
-	for(unsigned int n = 0; n < d->nrRules(); ++n) {
-		d->rule(n)->accept(this);
+	for(vector<Rule*>::const_iterator it = d->rules().begin(); it != d->rules().end(); ++it) {
+		(*it)->accept(this);
 		_out << "\n";
 	}
 	unindent();
@@ -202,12 +210,12 @@ void IDPPrinter::visit(const FixpDef* d) {
 	printtab();
 	_out << (d->lfp() ? "LFD" : "GFD") << " [\n";
 	indent();
-	for(unsigned int n = 0; n < d->nrRules(); ++n) {
-		d->rule(n)->accept(this);
+	for(vector<Rule*>::const_iterator it = d->rules().begin(); it != d->rules().end(); ++it) {
+		(*it)->accept(this);
 		_out << "\n";
 	}
-	for(unsigned int n = 0; n < d->nrDefs(); ++n) {
-		d->def(n)->accept(this);
+	for(vector<FixpDef*>::const_iterator it = d->defs().begin(); it != d->defs().end(); ++it) {
+		(*it)->accept(this);
 	}
 	unindent();
 	printtab();
@@ -222,29 +230,41 @@ void IDPPrinter::visit(const VarTerm* t) {
 
 void IDPPrinter::visit(const FuncTerm* t) {
 #ifndef NDEBUG
-	_out << t->func()->to_string();
+	_out << t->function()->to_string();
 #else
-	string fullname = t->func()->name();
+	string fullname = t->function()->name();
 	_out << fullname.substr(0,fullname.find('/'));
 #endif
-	if(t->nrSubterms()) {
+	if(!t->subterms().empty()) {
 		_out << "(";
-		t->arg(0)->accept(this);
-		for(unsigned int n = 1; n < t->nrSubterms(); ++n) {
+		t->subterms()[0]->accept(this);
+		for(unsigned int n = 1; n < t->subterms().size(); ++n) {
 			_out << ",";
-			t->arg(n)->accept(this);
+			t->subterms()[n]->accept(this);
 		}
 		_out << ")";
 	}
 }
 
 void IDPPrinter::visit(const DomainTerm* t) {
-	_out << ElementUtil::ElementToString(t->value(),t->type());
+	string str = t->value()->to_string();
+	if(t->sort()) {
+		if(SortUtils::isSubsort(t->sort(),VocabularyUtils::charsort())) {
+			_out << '\'' << str << '\'';
+		}
+		else if(SortUtils::isSubsort(t->sort(),VocabularyUtils::stringsort())) {
+			_out << '\"' << str << '\"';
+		}
+		else {
+			_out << str;
+		}
+	}
+	else _out << '@' << str; 
 }
 
 void IDPPrinter::visit(const AggTerm* t) {
 	string AggTypeNames[5] = { "#", "sum", "prod", "min", "max" };
-	_out << AggTypeNames[t->type()];
+	_out << AggTypeNames[t->function()];
 	t->set()->accept(this);
 }
 
@@ -252,11 +272,11 @@ void IDPPrinter::visit(const AggTerm* t) {
 
 void IDPPrinter::visit(const EnumSetExpr* s) {
 	_out << "[ ";
-	if(s->nrSubforms()) {
-		s->subform(0)->accept(this);
-		for(unsigned int n = 1; n < s->nrSubforms(); ++n) {
+	if(!s->subformulas().empty()) {
+		s->subformulas()[0]->accept(this);
+		for(unsigned int n = 1; n < s->subformulas().size(); ++n) {
 			_out << ",";
-			s->subform(n)->accept(this);
+			s->subformulas()[n]->accept(this);
 		}
 	}
 	_out << " ]";
@@ -264,21 +284,23 @@ void IDPPrinter::visit(const EnumSetExpr* s) {
 
 void IDPPrinter::visit(const QuantSetExpr* s) {
 	_out << "{";
-	for(unsigned int n = 0; n < s->nrQvars(); ++n) {
+	for(set<Variable*>::const_iterator it = s->quantvars().begin(); it != s->quantvars().end(); ++it) {
 		_out << " ";
-		_out << s->qvar(n)->name();
-		if(s->firstargsort())
-			_out << "[" << s->qvar(n)->sort()->name() << "]";
+		_out << (*it)->name();
+		if((*it)->sort())
+			_out << "[" << (*it)->sort()->name() << "]";
 	}
 	_out << ": ";
-	s->subform(0)->accept(this);
+	s->subformulas()[0]->accept(this);
+	_out << ": ";
+	s->subterms()[0]->accept(this);
 	_out << " }";
 }
 
 /****************
 	Grounding
 ****************/
-
+/*
 void IDPPrinter::printAtom(int atomnr) {
 	// Make sure there is a translator.
 	assert(_translator);
@@ -355,9 +377,9 @@ void IDPPrinter::printTerm(unsigned int termnr) {
 void SimplePrinter::visit(const GroundTheory* g) {
 	_out << g->to_string();
 }
-
-void IDPPrinter::visit(const GroundTheory* g) {
-	_translator = g->translator();
+*/
+void IDPPrinter::visit(const GroundTheory* ) {
+/*	_translator = g->translator();
 	_termtranslator = g->termtranslator();
 	for(unsigned int n = 0; n < g->nrClauses(); ++n) {
 //TODO visitor for GroundClause?
@@ -382,8 +404,9 @@ void IDPPrinter::visit(const GroundTheory* g) {
 	//TODO: repeat above for fixpoint definitions
 	for(unsigned int n = 0; n < g->nrCPReifications(); ++n)
 		g->cpreification(n)->accept(this);
+		*/
 }
-
+/*
 void EcnfPrinter::visit(const GroundTheory* g) {
 	_out << "p ecnf def aggr\n";
 	for(unsigned int n = 0; n < g->nrClauses(); ++n) {
@@ -508,7 +531,8 @@ void EcnfPrinter::visit(const GroundAggregate* a) {
 	}
 	switch(a->arrow()) {
 		case TS_EQ: _out << "C ";
-		case TS_IMPL: case TS_RIMPL: /* Not supported by solver yet*/ assert(false); break;
+		case TS_IMPL: case TS_RIMPL: // Not supported by solver yet 
+			assert(false); break;
 		case TS_RULE: default: assert(false);
 	}
 	_out << (a->lower() ? "L " : "G ") << a->head() << " " << a->setnr() << " " << a->bound() << " 0\n";
@@ -579,14 +603,14 @@ void IDPPrinter::visit(const CPWSumTerm* cpt) {
 void IDPPrinter::visit(const CPVarTerm* cpt) {
 	printTerm(cpt->_varid);
 }
-
+*/
 
 /*****************
     Structures
 *****************/
-
-void SimplePrinter::visit(const Structure* s) {
-	_out << s->to_string();
+/*
+void SimplePrinter::visit(const Structure* ) {
+	// FIXME _out << s->to_string();
 }
 
 void IDPPrinter::visit(const Structure* s) {
@@ -709,11 +733,11 @@ void IDPPrinter::visit(const FuncInter* f) {
 	//TODO Currently, function interpretation is handled as predicate interpretation
 	f->predinter()->accept(this);	
 }
-
+*/
 /*******************
     Vocabularies
 *******************/
-
+/*
 void SimplePrinter::visit(const Vocabulary* v) {
 	_out << v->to_string();
 }
@@ -757,11 +781,11 @@ void IDPPrinter::visit(const Function* f) {
 	}
 	_out << " : " << f->outsort()->name() << "\n";
 }
-
+*/
 /*****************
 	Namespaces
 *****************/
-
+/*
 void IDPPrinter::visit(const Namespace* s) {
 	for(unsigned int n = 0; n < s->nrVocs(); ++n) {
 		printtab();
@@ -803,3 +827,4 @@ void IDPPrinter::visit(const Namespace* s) {
 	}
 	//TODO Print procedures and options?
 }
+*/

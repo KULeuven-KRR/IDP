@@ -1400,6 +1400,7 @@ class FuncInter {
 class FuncInterGenerator {
 	public:
 		virtual FuncInter* get(const AbstractStructure* structure) = 0;
+		virtual ~FuncInterGenerator() { }
 };
 
 class SingleFuncInterGenerator : public FuncInterGenerator {
@@ -1407,6 +1408,7 @@ class SingleFuncInterGenerator : public FuncInterGenerator {
 		FuncInter*	_inter;
 	public:
 		SingleFuncInterGenerator(FuncInter* inter) : _inter(inter) { }
+		~SingleFuncInterGenerator() { delete(_inter);	}
 		FuncInter* get(const AbstractStructure* ) { return _inter;	}
 };
 

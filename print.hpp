@@ -10,12 +10,31 @@
 #include <cstdio>
 #include <sstream>
 #include <string>
+#include "theory.hpp"
 
-/*************************
-	Printer base class
-*************************/
+class Options;
+class PredTable;
+class Structure;
+class Namespace;
+class GroundTranslator;
+class GroundTermTranslator;
+class GroundTheory;
+class GroundDefinition;
+class PCGroundRuleBody;
+class AggGroundRuleBody;
+class GroundAggregate;
+class GroundSet;
+class CPVarTerm;
+class CPWSumTerm;
+class CPReification;
+class CPSumTerm;
 
-class Printer : public Visitor {
+
+/***************************
+	Printer base classes
+***************************/
+
+class Printer : public TheoryVisitor {
 	protected:
 		std::stringstream _out;
 		unsigned int _indent;
@@ -41,6 +60,7 @@ class Printer : public Visitor {
 	Simple printer
 *********************/
 
+/*
 class SimplePrinter : public Printer {
 	public:
 		void visit(const Vocabulary*);
@@ -48,7 +68,7 @@ class SimplePrinter : public Printer {
 		void visit(const GroundTheory*);
 		void visit(const Structure*);
 };
-
+*/
 /******************
 	IDP printer
 ******************/
@@ -124,7 +144,7 @@ class IDPPrinter : public Printer {
 		void visit(const CPWSumTerm*);
 		void visit(const CPVarTerm*);
 };
-
+/*
 class EcnfPrinter : public Printer {
 	private:
 		int				_currenthead;
@@ -138,5 +158,5 @@ class EcnfPrinter : public Printer {
 		void visit(const GroundAggregate*);
 		void visit(const GroundSet*);
 }; 
-
+*/
 #endif

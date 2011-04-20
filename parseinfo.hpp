@@ -71,7 +71,7 @@ class TermParseInfo : public ParseInfo {
 		TermParseInfo() : ParseInfo(), _original(0) { }
 		TermParseInfo(unsigned int line, unsigned int col, std::string* file, Term* orig) : 
 			ParseInfo(line,col,file), _original(orig) { }
-		TermParseInfo(const TermParseInfo& p) : ParseInfo(p.line(),p.col(),p.file()), _original(p.original()) { }
+		TermParseInfo(const TermParseInfo& p);
 
 		TermParseInfo clone()										const;
 		TermParseInfo clone(const std::map<Variable*,Variable*>&)	const;
@@ -103,7 +103,7 @@ class SetParseInfo : public ParseInfo {
 		SetParseInfo() : ParseInfo(), _original(0) { }
 		SetParseInfo(unsigned int line, unsigned int col, std::string* file, SetExpr* orig) : 
 			ParseInfo(line,col,file), _original(orig) { }
-		SetParseInfo(const SetParseInfo& p) : ParseInfo(p.line(),p.col(),p.file()), _original(p.original()) { }
+		SetParseInfo(const SetParseInfo& p);
 
 		SetParseInfo clone()										const;
 		SetParseInfo clone(const std::map<Variable*,Variable*>&)	const;
@@ -139,7 +139,7 @@ class FormulaParseInfo : public ParseInfo {
 		FormulaParseInfo() : ParseInfo(), _original(0) { }
 		FormulaParseInfo(unsigned int line, unsigned int col, std::string* file, Formula* orig) : 
 			ParseInfo(line,col,file), _original(orig) { }
-		FormulaParseInfo(const FormulaParseInfo& p) : ParseInfo(p.line(),p.col(),p.file()), _original(p.original()) { }
+		FormulaParseInfo(const FormulaParseInfo& p);
 
 		FormulaParseInfo clone()										const;
 		FormulaParseInfo clone(const std::map<Variable*,Variable*>&)	const;

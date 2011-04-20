@@ -25,7 +25,6 @@ Sort::~Sort() {
 		(*it)->removeChild(this);
 	for(set<Sort*>::iterator it = _children.begin(); it != _children.end(); ++it)
 		(*it)->removeParent(this);
-	delete(_pred);	
 	if(_interpretation) delete(_interpretation);
 }
 
@@ -1085,25 +1084,25 @@ namespace FuncUtils {
 	Vocabulary
 *****************/
 
-Vocabulary::Vocabulary(const string& name) : _name(name) {
+Vocabulary::Vocabulary(const string& name) : _name(name), _namespace(0) {
 	if(_name != "std") addVocabulary(Vocabulary::std());
 }
 
-Vocabulary::Vocabulary(const string& name, const ParseInfo& pi) : _name(name), _pi(pi) {
+Vocabulary::Vocabulary(const string& name, const ParseInfo& pi) : _name(name), _pi(pi), _namespace(0) {
 	if(_name != "std") addVocabulary(Vocabulary::std());
 }
 
 Vocabulary::~Vocabulary() {
-	for(map<string,set<Sort*> >::iterator it = _name2sort.begin(); it != _name2sort.end(); ++it) {
-		for(set<Sort*>::iterator jt = it->second.begin(); jt != it->second.end(); ++jt) {
-			(*jt)->removeVocabulary(this);
-		}
-	}
 	for(map<string,Predicate*>::iterator it = _name2pred.begin(); it != _name2pred.end(); ++it) {
 		it->second->removeVocabulary(this);
 	}
 	for(map<string,Function*>::iterator it = _name2func.begin(); it != _name2func.end(); ++it) {
 		it->second->removeVocabulary(this);
+	}
+	for(map<string,set<Sort*> >::iterator it = _name2sort.begin(); it != _name2sort.end(); ++it) {
+		for(set<Sort*>::iterator jt = it->second.begin(); jt != it->second.end(); ++jt) {
+			(*jt)->removeVocabulary(this);
+		}
 	}
 }
 

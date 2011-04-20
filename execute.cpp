@@ -800,7 +800,7 @@ namespace LuaConnection {
 	 * Garbage collection for internal procedures
 	 */
 	int gcInternProc(lua_State* L) {
-		set<InternalProcedure*>* proc = *(set<InternalProcedure*>**)lua_touserdata(L,1);
+		map<vector<ArgType>,InternalProcedure*>* proc = *(map<vector<ArgType>,InternalProcedure*>**)lua_touserdata(L,1);
 		delete(proc);
 		return 0;
 	}
@@ -2016,6 +2016,7 @@ namespace LuaConnection {
 				delete(jt->second);
 			}
 		}
+		delete(Namespace::global());
 	}
 
 	void execute(stringstream* chunk) {

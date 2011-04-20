@@ -46,6 +46,7 @@ class FloatOption {
  */
 class StringOption {
 	public:
+		virtual ~StringOption() { }
 		virtual bool				value(const std::string& v)	= 0;
 		virtual const std::string&	value()						const = 0;
 };
@@ -68,6 +69,7 @@ class Options {
 	public:
 
 		Options(const std::string& name, const ParseInfo& pi);
+		~Options();
 
 		InternalArgument	getvalue(const std::string&)		const;
 

@@ -538,6 +538,7 @@ class Vocabulary {
 		void addPred(Predicate*);			//!< Add the given predicate (and its sorts) to the vocabulary
 		void addFunc(Function*);			//!< Add the given function (and its sorts) to the vocabulary
 		void addVocabulary(Vocabulary*);	//!< Add all symbols of a given vocabulary to the vocabulary
+		void setnamespace(Namespace* n)		{ _namespace = n;	}
 
 		// Inspectors
 		static Vocabulary*	std();	//!< Returns the standard vocabulary
