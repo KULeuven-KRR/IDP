@@ -533,6 +533,8 @@ class ProcInternalPredTable : public InternalPredTable {
 		ProcInternalPredTable(std::string* proc, const std::vector<SortTable*>& univ, const std::vector<bool>& link) :
 			_procedure(proc), _universe(univ), _univlinked(link) { }
 
+		~ProcInternalPredTable();
+
 		unsigned int	arity()			const { return _universe.size();	}
 		bool			finite()		const;
 		bool			empty()			const;
@@ -545,8 +547,6 @@ class ProcInternalPredTable : public InternalPredTable {
 		InternalPredTable*	remove(const ElementTuple& tuple);	//!< Remove a tuple from the table
 
 		InternalTableIterator*	begin()	const;
-
-		~ProcInternalPredTable();
 
 };
 
@@ -847,7 +847,6 @@ class UnionInternalSortTable : public InternalSortTable {
 class InfiniteInternalSortTable : public InternalSortTable {
 	private:
 		InternalSortTable*	add(const DomainElement*);
-		InternalSortTable*	add(int i1, int i2);
 		InternalSortTable*	remove(const DomainElement*);
 		bool	finite()		const { return false;	}
 		bool	empty()			const { return false;	}
@@ -867,6 +866,7 @@ class AllNaturalNumbers : public InfiniteInternalSortTable {
 
 	protected:
 		~AllNaturalNumbers() { }
+		InternalSortTable*	add(int i1, int i2);
 };
 
 /**
@@ -879,6 +879,7 @@ class AllIntegers : public InfiniteInternalSortTable {
 
 	protected:
 		~AllIntegers() { }
+		InternalSortTable*	add(int i1, int i2);
 };
 
 /**
@@ -891,6 +892,7 @@ class AllFloats : public InfiniteInternalSortTable {
 
 	protected:
 		~AllFloats() { }
+		InternalSortTable*	add(int i1, int i2);
 };
 
 /**
@@ -903,6 +905,7 @@ class AllStrings : public InfiniteInternalSortTable {
 
 	protected:
 		~AllStrings() { }
+		InternalSortTable*	add(int i1, int i2);
 };
 
 /**

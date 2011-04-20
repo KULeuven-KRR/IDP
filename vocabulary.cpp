@@ -105,11 +105,11 @@ Predicate* Sort::pred() const {
 	return _pred;
 }
 
-inline const std::set<Sort*>& Sort::parents() const { 
+const std::set<Sort*>& Sort::parents() const { 
 	return _parents;
 }
 
-inline const std::set<Sort*>& Sort::children() const { 
+const std::set<Sort*>& Sort::children() const { 
 	return _children;
 }
 
@@ -285,31 +285,31 @@ PFSymbol::PFSymbol(const string& name, const vector<Sort*>& sorts, const ParseIn
 	_name(name), _pi(pi), _sorts(sorts), _infix(infix) { 
 }
 
-inline const string& PFSymbol::name() const {
+const string& PFSymbol::name() const {
 	return _name;
 }
 
-inline const ParseInfo& PFSymbol::pi() const {
+const ParseInfo& PFSymbol::pi() const {
 	return _pi;
 }
 
-inline unsigned	int PFSymbol::nrSorts() const {
+unsigned	int PFSymbol::nrSorts() const {
 	return _sorts.size();
 }
 
-inline Sort* PFSymbol::sort(unsigned int n) const {
+Sort* PFSymbol::sort(unsigned int n) const {
 	return _sorts[n];
 }
 
-inline const vector<Sort*>& PFSymbol::sorts() const {
+const vector<Sort*>& PFSymbol::sorts() const {
 	return _sorts;
 }
 
-inline bool PFSymbol::infix() const {
+bool PFSymbol::infix() const {
 	return _infix;
 }
 
-inline bool PFSymbol::hasVocabularies() const {
+bool PFSymbol::hasVocabularies() const {
 	return !(_vocabularies.empty());
 }
 
@@ -375,15 +375,15 @@ Predicate::Predicate(PredGenerator* generator) :
 	PFSymbol(generator->name(),generator->arity(),generator->infix()), _interpretation(0), _overpredgenerator(generator) {
 }
 
-inline unsigned int Predicate::arity() const {
+unsigned int Predicate::arity() const {
 	return _sorts.size();	
 }
 
-inline bool Predicate::builtin() const {
+bool Predicate::builtin() const {
 	return _interpretation != 0;
 }
 
-inline bool Predicate::overloaded() const {
+bool Predicate::overloaded() const {
 	return (_overpredgenerator != 0);
 }
 
@@ -473,15 +473,15 @@ ostream& operator<< (ostream& output, const Predicate& p) { return p.put(output)
 PredGenerator::PredGenerator(const string& name, unsigned int arity, bool infix) : _name(name), _arity(arity), _infix(infix) {
 }
 
-inline const string& PredGenerator::name() const {
+const string& PredGenerator::name() const {
 	return _name;
 }
 
-inline unsigned int PredGenerator::arity() const {
+unsigned int PredGenerator::arity() const {
 	return _arity;
 }
 
-inline bool PredGenerator::infix() const {
+bool PredGenerator::infix() const {
 	return _infix;
 }
 
@@ -709,23 +709,23 @@ void Function::addVocabulary(const Vocabulary* vocabulary) {
 	if(overloaded()) _overfuncgenerator->addVocabulary(vocabulary);
 }
 
-inline void Function::partial(bool b) {
+void Function::partial(bool b) {
 	_partial = b;
 }
 
-inline const vector<Sort*>& Function::insorts() const {
+const vector<Sort*>& Function::insorts() const {
 	return _insorts;
 }
 
-inline unsigned int Function::arity() const {
+unsigned int Function::arity() const {
 	return _insorts.size();
 }
 
-inline Sort* Function::insort(unsigned int n) const {
+Sort* Function::insort(unsigned int n) const {
 	return _insorts[n];
 }
 
-inline Sort* Function::outsort() const {
+Sort* Function::outsort() const {
 	return _outsort;
 }
 
@@ -733,15 +733,15 @@ bool Function::partial() const {
 	return _partial;
 }
 
-inline bool Function::builtin() const {
+bool Function::builtin() const {
 	return _interpretation != 0;
 }
 
-inline bool Function::overloaded() const {
+bool Function::overloaded() const {
 	return (_overfuncgenerator != 0);
 }
 
-inline unsigned int Function::binding() const {
+unsigned int Function::binding() const {
 	return _binding;
 }
 
@@ -829,15 +829,15 @@ ostream& Function::put(ostream& output) const {
 
 ostream& operator<< (ostream& output, const Function& f) { return f.put(output); }
 
-inline const string& FuncGenerator::name() const {
+const string& FuncGenerator::name() const {
 	return _name;
 }
 
-inline unsigned	int FuncGenerator::arity() const {
+unsigned	int FuncGenerator::arity() const {
 	return _arity;
 }
 
-inline unsigned int FuncGenerator::binding() const {
+unsigned int FuncGenerator::binding() const {
 	return _binding;
 }
 

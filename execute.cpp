@@ -2120,6 +2120,16 @@ namespace LuaConnection {
 		}
 	}
 
+	string*	getProcedure(const std::vector<std::string>& name, const ParseInfo& pi) {
+		pushglobal(name,pi);
+		InternalArgument ia(-1,_state);
+		lua_pop(_state,1);
+		if(ia._type == AT_PROCEDURE) {
+			return ia._value._string;
+		}
+		else return 0;
+	}
+
 }
 
 int InternalProcedure::operator()(lua_State* L) const {

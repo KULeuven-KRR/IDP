@@ -65,12 +65,19 @@ bool Options::isoption(const string& optname) const {
 	return false;
 }
 
-bool Options::setvalue(const string& opt, const string& val) {
-	map<string,StringOption*>::iterator it = _stringoptions.find(opt);
-	if(it != _stringoptions.end()) {
-		return it->second->value(val);
+void Options::setvalues(Options* opts) {
+	for(map<string,StringOption*>::const_iterator it = opts->stringoptions().begin(); it != opts->stringoptions().end(); ++it) {
+		setvalue(it->first,it->second->value());
 	}
-	else return false;
+	for(map<string,IntOption*>::const_iterator it = opts->intoptions().begin(); it != opts->intoptions().end(); ++it) {
+		setvalue(it->first,it->second->value());
+	}
+	for(map<string,FloatOption*>::const_iterator it = opts->floatoptions().begin(); it != opts->floatoptions().end(); ++it) {
+		setvalue(it->first,it->second->value());
+	}
+	for(map<string,bool>::const_iterator it = opts->booloptions().begin(); it != opts->booloptions().end(); ++it) {
+		setvalue(it->first,it->second);
+	}
 }
 
 bool Options::setvalue(const string& opt, int val) {
@@ -84,6 +91,14 @@ bool Options::setvalue(const string& opt, int val) {
 bool Options::setvalue(const string& opt, double val) {
 	map<string,FloatOption*>::iterator it = _floatoptions.find(opt);
 	if(it != _floatoptions.end()) {
+		return it->second->value(val);
+	}
+	else return false;
+}
+
+bool Options::setvalue(const string& opt, const string& val) {
+	map<string,StringOption*>::iterator it = _stringoptions.find(opt);
+	if(it != _stringoptions.end()) {
 		return it->second->value(val);
 	}
 	else return false;

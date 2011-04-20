@@ -67,12 +67,18 @@ class Options {
 
 		Options(const std::string& name, const ParseInfo& pi);
 
-		InternalArgument	getvalue(const std::string&)	const;
+		InternalArgument	getvalue(const std::string&)		const;
+
 		const std::string&	name()							const	{ return _name;	}
 		const ParseInfo&	pi()							const	{ return _pi;	}
 
+		const std::map<std::string,bool>&			booloptions()		const { return _booloptions;	}
+		const std::map<std::string,IntOption*>&		intoptions()		const { return _intoptions;		}
+		const std::map<std::string,FloatOption*>&	floatoptions()		const { return _floatoptions;	}
+		const std::map<std::string,StringOption*>&	stringoptions()		const { return _stringoptions;	}
+
 		bool	isoption(const std::string&) const;
-		bool	setvalues(Options*);
+		void	setvalues(Options*);
 		bool	setvalue(const std::string&,bool);
 		bool	setvalue(const std::string&,int);
 		bool	setvalue(const std::string&,double);

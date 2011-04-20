@@ -139,7 +139,7 @@ class Insert {
 		Predicate*				predInScope(const longname&, const ParseInfo&) const;
 		Function*				funcInScope(const std::string&) const;
 		Function*				funcInScope(const longname&, const ParseInfo&) const;
-		std::set<Predicate*>	noArPredInScope(const std::string& name, const ParseInfo&) const;
+		std::set<Predicate*>	noArPredInScope(const std::string& name) const;
 		std::set<Predicate*>	noArPredInScope(const longname& name, const ParseInfo&) const;
 		Vocabulary*				vocabularyInScope(const std::string&, const ParseInfo&) const;
 		Vocabulary*				vocabularyInScope(const longname&, const ParseInfo&) const;

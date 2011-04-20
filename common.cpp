@@ -19,6 +19,13 @@ string itos(int n) {
 	return sst.str();
 }
 
+int stoi(const string& s) {
+	stringstream i(s);
+	int n;
+	if(!(i >> n)) return 0;
+	else return n;
+}
+
 string dtos(double d) {
 	stringstream s;
 	s << d;
@@ -34,6 +41,12 @@ double stod(const string& s) {
 
 bool isInt(double d) {
 	return (double(int(d)) == d);
+}
+
+bool isInt(const string& s) {
+	stringstream i(s);
+	int n;
+	return (i >> n);
 }
 
 bool isDouble(const string& s) {
@@ -179,24 +192,11 @@ bool nexttuple(vector<unsigned int>& tuple, const vector<unsigned int>& limits) 
 
 // Convert string to integer 
 // (returns 0 when the string is not an integer)
-int stoi(const string& s) {
-	stringstream i(s);
-	int n;
-	if(!(i >> n)) return 0;
-	else return n;
-}
-
 // Convert double to string 
 
 // Convert string to double 
 // (returns 0 if the input string is not a double)
 // Test if something is a char, double or int
-
-bool isInt(const string& s) {
-	stringstream i(s);
-	int n;
-	return (i >> n);
-}
 
 bool isChar(int n) {
 	return (0 <= n && n < 10);

@@ -50,12 +50,6 @@ class SortDeriver : public TheoryMutatingVisitor {
 		Term*		visit(FuncTerm*);
 		SetExpr*	visit(QuantSetExpr*);
 
-		// Traversal
-		Formula*	traverse(Formula*);
-		Rule*		traverse(Rule*);
-		Term*		traverse(Term*);
-		SetExpr*	traverse(SetExpr*);
-
 	private:
 		// Auxiliary methods
 		void derivesorts();		// derive the sorts of the variables, based on the sorts in _untyped
@@ -66,6 +60,235 @@ class SortDeriver : public TheoryMutatingVisitor {
 		void check();
 		
 };
+
+Formula* SortDeriver::visit(QuantForm* qf) {
+	if(_firstvisit) {
+		for(std::set<Variable*>::const_iterator it = qf->quantvars().begin(); it != qf->quantvars().end(); ++it) {
+			if(!((*it)->sort())) {
+				_untyped[*it] = set<Sort*>();
+				_changed = true;
+			}
+		}
+	}
+	return traverse(qf);
+}
+
+Formula* SortDeriver::visit(PredForm* pf) {
+	PFSymbol* p = pf->symbol();
+
+	// At first visit, insert the atoms over overloaded predicates
+	if(_firstvisit && p->overloaded()) {
+		_overloadedatoms.insert(pf);
+		_changed = true;
+	}
+
+	// Visit the children while asserting the sorts of the predicate
+	vector<Sort*>::const_iterator it = p->sorts().begin();
+	vector<Term*>::const_iterator jt = pf->subterms().begin();
+	for(; it != p->sorts().end(); ++it, ++jt) {
+		_assertsort = *it;
+		(*jt)->accept(this);
+	}
+	return pf;
+}
+
+Formula* SortDeriver::visit(EqChainForm* ef) {
+	Sort* s = 0;
+	if(!_firstvisit) {
+		for(vector<Term*>::const_iterator it = ef->subterms().begin(); it != ef->subterms().end(); ++it) {
+			Sort* temp = (*it)->sort();
+			if(temp && temp->parents().empty() && temp->children().empty()) {
+				s = temp;
+				break;
+			}
+		}
+	}
+	for(vector<Term*>::const_iterator it = ef->subterms().begin(); it != ef->subterms().end(); ++it) {
+		_assertsort = s;
+		(*it)->accept(this);
+	}
+	return ef;
+}
+
+Rule* SortDeriver::visit(Rule* r) {
+	if(_firstvisit) {
+		for(set<Variable*>::const_iterator it = r->quantvars().begin(); it != r->quantvars().end(); ++it) {
+			if(!((*it)->sort())) _untyped[*it] = set<Sort*>();
+			_changed = true;
+		}
+	}
+	traverse(r->body());
+	return r;
+}
+
+Term* SortDeriver::visit(VarTerm* vt) {
+	if((!(vt->sort())) && _assertsort) {
+		_untyped[vt->var()].insert(_assertsort);
+	}
+	return vt;
+}
+
+Term* SortDeriver::visit(DomainTerm* dt) {
+	if(_firstvisit && (!(dt->sort()))) {
+		_domelements.insert(dt);
+	}
+
+	if((!(dt->sort())) && _assertsort) {
+		dt->sort(_assertsort);
+		_changed = true;
+		_domelements.erase(dt);
+	}
+	return dt;
+}
+
+Term* SortDeriver::visit(FuncTerm* ft) {
+	Function* f = ft->function();
+
+	// At first visit, insert the terms over overloaded functions
+	if(f->overloaded()) {
+		if(_firstvisit || _assertsort != _overloadedterms[ft]) {
+			_changed = true;
+			_overloadedterms[ft] = _assertsort;
+		}
+	}
+
+	// Visit the children while asserting the sorts of the predicate
+	vector<Sort*>::const_iterator it = f->insorts().begin();
+	vector<Term*>::const_iterator jt = ft->subterms().begin();
+	for(; it != f->insorts().end(); ++it, ++jt) {
+		_assertsort = *it;
+		(*jt)->accept(this);
+	}
+	return ft;
+}
+
+SetExpr* SortDeriver::visit(QuantSetExpr* qs) {
+	if(_firstvisit) {
+		for(std::set<Variable*>::const_iterator it = qs->quantvars().begin(); it != qs->quantvars().end(); ++it) {
+			if(!((*it)->sort())) {
+				_untyped[*it] = set<Sort*>();
+				_changed = true;
+			}
+		}
+	}
+	return traverse(qs);
+}
+
+void SortDeriver::derivesorts() {
+	for(map<Variable*,std::set<Sort*> >::iterator it = _untyped.begin(); it != _untyped.end(); ) {
+		map<Variable*,std::set<Sort*> >::iterator jt = it; ++jt;
+		if(!((it->second).empty())) {
+			std::set<Sort*>::iterator kt = (it->second).begin(); 
+			Sort* s = *kt;
+			++kt;
+			for(; kt != (it->second).end(); ++kt) {
+				s = SortUtils::resolve(s,*kt,_vocab);
+				if(!s) { // In case of conflicting sorts, assign the first sort. 
+						 // Error message will be given during final check.
+					s = *((it->second).begin());
+					break;
+				}
+			}
+			assert(s);
+			if((it->second).size() > 1 || s->builtin()) {	// Warning when the sort was resolved or builtin
+				Warning::derivevarsort(it->first->name(),s->name(),it->first->pi());
+			}
+			it->first->sort(s);
+			_untyped.erase(it);
+			_changed = true;
+		}
+		it = jt;
+	}
+}
+
+void SortDeriver::derivefuncs() {
+	for(map<FuncTerm*,Sort*>::iterator it = _overloadedterms.begin(); it != _overloadedterms.end(); ) {
+		map<FuncTerm*,Sort*>::iterator jt = it; ++jt;
+		Function* f = it->first->function();
+		vector<Sort*> vs;
+		for(vector<Term*>::const_iterator kt = it->first->subterms().begin(); kt != it->first->subterms().end(); ++kt) {
+			vs.push_back((*kt)->sort());
+		}
+		vs.push_back(it->second);
+		Function* rf = f->disambiguate(vs,_vocab);
+		if(rf) {
+			it->first->function(rf);
+			if(!rf->overloaded()) _overloadedterms.erase(it);
+			_changed = true;
+		}
+		it = jt;
+	}
+}
+
+void SortDeriver::derivepreds() {
+	for(std::set<PredForm*>::iterator it = _overloadedatoms.begin(); it != _overloadedatoms.end(); ) {
+		std::set<PredForm*>::iterator jt = it; ++jt;
+		PFSymbol* p = (*it)->symbol();
+		vector<Sort*> vs;
+		for(vector<Term*>::const_iterator kt = (*it)->subterms().begin(); kt != (*it)->subterms().end(); ++kt) {
+			vs.push_back((*kt)->sort());
+		}
+		PFSymbol* rp = p->disambiguate(vs,_vocab);
+		if(rp) {
+			(*it)->symbol(rp);
+			if(!rp->overloaded()) _overloadedatoms.erase(it);
+			_changed = true;
+		}
+		it = jt;
+	}
+}
+
+void SortDeriver::run(Formula* f) {
+	_changed = false;
+	_firstvisit = true;
+	f->accept(this);	// First visit: collect untyped symbols, set types of variables that occur in typed positions.
+	_firstvisit = false;
+	while(_changed) {
+		_changed = false;
+		derivesorts();
+		derivefuncs();
+		derivepreds();
+		f->accept(this);	// Next visit: type derivation over overloaded predicates or functions.
+	}
+	check();
+}
+
+void SortDeriver::run(Rule* r) {
+	// Set the sort of the variables in the head
+	vector<Sort*>::const_iterator jt = r->head()->symbol()->sorts().begin();
+	for(vector<Term*>::const_iterator it = r->head()->subterms().begin(); it != r->head()->subterms().end(); ++it, ++jt) 
+		(*it)->sort(*jt);
+	// Rest of the algorithm
+	_changed = false;
+	_firstvisit = true;
+	r->accept(this);
+	_firstvisit = false;
+	while(_changed) {
+		_changed = false;
+		derivesorts();
+		derivefuncs();
+		derivepreds();
+		r->accept(this);
+	}
+	check();
+}
+
+void SortDeriver::check() {
+	for(map<Variable*,std::set<Sort*> >::iterator it = _untyped.begin(); it != _untyped.end(); ++it) {
+		assert((it->second).empty());
+		Error::novarsort(it->first->name(),it->first->pi());
+	}
+	for(std::set<PredForm*>::iterator it = _overloadedatoms.begin(); it != _overloadedatoms.end(); ++it) {
+		if(typeid(*((*it)->symbol())) == typeid(Predicate)) Error::nopredsort((*it)->symbol()->name(),(*it)->pi());
+		else Error::nofuncsort((*it)->symbol()->name(),(*it)->pi());
+	}
+	for(map<FuncTerm*,Sort*>::iterator it = _overloadedterms.begin(); it != _overloadedterms.end(); ++it) {
+		Error::nofuncsort(it->first->function()->name(),it->first->pi());
+	}
+	for(std::set<DomainTerm*>::iterator it = _domelements.begin(); it != _domelements.end(); ++it) {
+		Error::nodomsort((*it)->to_string(),(*it)->pi());
+	}
+}
 
 class SortChecker : public TheoryVisitor {
 
@@ -83,6 +306,74 @@ class SortChecker : public TheoryVisitor {
 		void visit(const AggTerm*);
 
 };
+
+void SortChecker::visit(const PredForm* pf) {
+	PFSymbol* s = pf->symbol();
+	vector<Sort*>::const_iterator it = s->sorts().begin();
+	vector<Term*>::const_iterator jt = pf->subterms().begin();
+	for(; it != s->sorts().end(); ++it, ++jt) {
+		Sort* s1 = *it;
+		Sort* s2 = (*jt)->sort();
+		if(s1 && s2) {
+			if(!SortUtils::resolve(s1,s2,_vocab)) {
+				Error::wrongsort((*jt)->to_string(),s2->name(),s1->name(),(*jt)->pi());
+			}
+		}
+	}
+	traverse(pf);
+}
+
+void SortChecker::visit(const FuncTerm* ft) {
+	Function* f = ft->function();
+	vector<Sort*>::const_iterator it = f->insorts().begin();
+	vector<Term*>::const_iterator jt = ft->subterms().begin();
+	for(; it != f->insorts().end(); ++it, ++jt) {
+		Sort* s1 = *it;
+		Sort* s2 = (*jt)->sort();
+		if(s1 && s2) {
+			if(!SortUtils::resolve(s1,s2,_vocab)) {
+				Error::wrongsort((*jt)->to_string(),s2->name(),s1->name(),(*jt)->pi());
+			}
+		}
+	}
+	traverse(ft);
+}
+
+void SortChecker::visit(const EqChainForm* ef) {
+	Sort* s = 0;
+	vector<Term*>::const_iterator it = ef->subterms().begin();
+	while(!s && it != ef->subterms().end()) {
+		s = (*it)->sort();
+		++it;
+	}
+	for(; it != ef->subterms().end(); ++it) {
+		Sort* t = (*it)->sort();
+		if(t) {
+			if(!SortUtils::resolve(s,t,_vocab)) {
+				Error::wrongsort((*it)->to_string(),t->name(),s->name(),(*it)->pi());
+			}
+		}
+	}
+	traverse(ef);
+}
+
+void SortChecker::visit(const AggTerm* at) {
+	if(at->function() != AGG_CARD) {
+		SetExpr* s = at->set();
+		if(!s->quantvars().empty() && (*(s->quantvars().begin()))->sort()) {
+			Variable* v = *(s->quantvars().begin());
+			if(!SortUtils::resolve(v->sort(),VocabularyUtils::floatsort(),_vocab)) {
+				Error::wrongsort(v->name(),v->sort()->name(),"int or float",v->pi());
+			}
+		}
+		for(vector<Term*>::const_iterator it = s->subterms().begin(); it != s->subterms().end(); ++it) {
+			if((*it)->sort() && !SortUtils::resolve((*it)->sort(),VocabularyUtils::floatsort(),_vocab)) {
+				Error::wrongsort((*it)->to_string(),(*it)->sort()->name(),"int or float",(*it)->pi());
+			}
+		}
+	}
+	traverse(at);
+}
 
 /**
  * Rewrite a vector of strings s1,s2,...,sn to the single string s1::s2::...::sn
@@ -168,6 +459,44 @@ string NSPair::to_string() {
 /*************
 	Insert
 *************/
+
+bool Insert::belongsToVoc(Sort* s) const {
+	if(_currvocabulary->contains(s)) return true;
+	return false;
+}
+
+bool Insert::belongsToVoc(Predicate* p) const {
+	if(_currvocabulary->contains(p)) return true;
+	return false;
+}
+
+bool Insert::belongsToVoc(Function* f) const {
+	if(_currvocabulary->contains(f)) return true;
+	return false;
+}
+
+std::set<Predicate*> Insert::noArPredInScope(const string& name) const {
+	std::set<Predicate*> vp;
+	for(unsigned int n = 0; n < _usingvocab.size(); ++n) {
+		std::set<Predicate*> nvp = _usingvocab[n]->pred_no_arity(name);
+		vp.insert(nvp.begin(),nvp.end());
+	}
+	return vp;
+}
+
+std::set<Predicate*> Insert::noArPredInScope(const vector<string>& vs, const ParseInfo& pi) const {
+	assert(!vs.empty());
+	if(vs.size() == 1) {
+		return noArPredInScope(vs[0]);
+	}
+	else {
+		vector<string> vv(vs.size()-1);
+		for(unsigned int n = 0; n < vv.size(); ++n) vv[n] = vs[n];
+		Vocabulary* v = vocabularyInScope(vv,pi);
+		if(v) return v->pred_no_arity(vs.back());
+		else return std::set<Predicate*>();
+	}
+}
 
 Function* Insert::funcInScope(const string& name) const {
 	std::set<Function*> vf;
@@ -2162,69 +2491,6 @@ using namespace std;
 	Sort checking
 ********************/
 
-void SortChecker::visit(const PredForm* pf) {
-	PFSymbol* s = pf->symb();
-	for(unsigned int n = 0; n < s->nrSorts(); ++n) {
-		Sort* s1 = s->sort(n);
-		Sort* s2 = pf->subterm(n)->sort();
-		if(s1 && s2) {
-			if(!SortUtils::resolve(s1,s2,_vocab)) {
-				Error::wrongsort(pf->subterm(n)->to_string(),s2->name(),s1->name(),pf->subterm(n)->pi());
-			}
-		}
-	}
-	traverse(pf);
-}
-
-void SortChecker::visit(const FuncTerm* ft) {
-	Function* f = ft->func();
-	for(unsigned int n = 0; n < f->arity(); ++n) {
-		Sort* s1 = f->insort(n);
-		Sort* s2 = ft->subterm(n)->sort();
-		if(s1 && s2) {
-			if(!SortUtils::resolve(s1,s2,_vocab)) {
-				Error::wrongsort(ft->subterm(n)->to_string(),s2->name(),s1->name(),ft->subterm(n)->pi());
-			}
-		}
-	}
-	traverse(ft);
-}
-
-void SortChecker::visit(const EqChainForm* ef) {
-	Sort* s = 0;
-	unsigned int n = 0;
-	while(!s && n < ef->nrSubterms()) {
-		s = ef->subterm(n)->sort();
-		++n;
-	}
-	for(; n < ef->nrSubterms(); ++n) {
-		Sort* t = ef->subterm(n)->sort();
-		if(t) {
-			if(!SortUtils::resolve(s,t,_vocab)) {
-				Error::wrongsort(ef->subterm(n)->to_string(),t->name(),s->name(),ef->subterm(n)->pi());
-			}
-		}
-	}
-	traverse(ef);
-}
-
-void SortChecker::visit(const AggTerm* at) {
-	if(at->type() != AGGCARD) {
-		SetExpr* s = at->set();
-		if(s->nrQvars() && s->qvar(0)->sort()) {
-			if(!SortUtils::resolve(s->qvar(0)->sort(),*(StdBuiltin::instance()->sort("float")->begin()),_vocab)) {
-				Error::wrongsort(s->qvar(0)->name(),s->qvar(0)->sort()->name(),"int or float",s->qvar(0)->pi());
-			}
-		}
-		for(unsigned int n = 0; n < s->nrSubterms(); ++n) {
-			if(s->subterm(n)->sort() && !SortUtils::resolve(s->subterm(n)->sort(),*(StdBuiltin::instance()->sort("float")->begin()),_vocab)) {
-				Error::wrongsort(s->subterm(n)->to_string(),s->subterm(n)->sort()->name(),"int or float",s->subterm(n)->pi());
-			}
-		}
-	}
-	traverse(at);
-}
-
 /**********************
 	Sort derivation
 **********************/
@@ -2257,227 +2523,6 @@ SetExpr* SortDeriver::traverse(SetExpr* s) {
 	for(unsigned int n = 0; n < s->nrSubterms(); ++n)
 		s->subterm(n)->accept(this);
 	return s;
-}
-
-Formula* SortDeriver::visit(QuantForm* qf) {
-	if(_firstvisit) {
-		for(unsigned int n = 0; n < qf->nrQvars(); ++n) {
-			if(!(qf->qvar(n)->sort())) _untyped[qf->qvar(n)] = set<Sort*>();
-			_changed = true;
-		}
-	}
-	return traverse(qf);
-}
-
-Formula* SortDeriver::visit(PredForm* pf) {
-	PFSymbol* p = pf->symb();
-
-	// At first visit, insert the atoms over overloaded predicates
-	if(_firstvisit && p->overloaded()) {
-		_overloadedatoms.insert(pf);
-		_changed = true;
-	}
-
-	// Visit the children while asserting the sorts of the predicate
-	for(unsigned int n = 0; n < p->nrSorts(); ++n) {
-		_assertsort = p->sort(n);
-		pf->subterm(n)->accept(this);
-	}
-	return pf;
-}
-
-Formula* SortDeriver::visit(EqChainForm* ef) {
-	Sort* s = 0;
-	if(!_firstvisit) {
-		for(unsigned int n = 0; n < ef->nrSubterms(); ++n) {
-			Sort* temp = ef->subterm(n)->sort();
-			if(temp && temp->nrParents() == 0 && temp->nrChildren() == 0) {
-				s = temp;
-				break;
-			}
-		}
-	}
-	for(unsigned int n = 0; n < ef->nrSubterms(); ++n) {
-		_assertsort = s;
-		ef->subterm(n)->accept(this);
-	}
-	return ef;
-}
-
-Rule* SortDeriver::visit(Rule* r) {
-	if(_firstvisit) {
-		for(unsigned int n = 0; n < r->nrQvars(); ++n) {
-			if(!(r->qvar(n)->sort())) _untyped[r->qvar(n)] = set<Sort*>();
-			_changed = true;
-		}
-	}
-	return traverse(r);
-}
-
-Term* SortDeriver::visit(VarTerm* vt) {
-	if((!(vt->sort())) && _assertsort) {
-		_untyped[vt->var()].insert(_assertsort);
-	}
-	return vt;
-}
-
-Term* SortDeriver::visit(DomainTerm* dt) {
-	if(_firstvisit && (!(dt->sort()))) {
-		_domelements.insert(dt);
-	}
-
-	if((!(dt->sort())) && _assertsort) {
-		dt->sort(_assertsort);
-		_changed = true;
-		_domelements.erase(dt);
-	}
-	return dt;
-}
-
-Term* SortDeriver::visit(FuncTerm* ft) {
-	Function* f = ft->func();
-
-	// At first visit, insert the terms over overloaded functions
-	if(f->overloaded()) {
-		if(_firstvisit || _assertsort != _overloadedterms[ft]) {
-			_changed = true;
-			_overloadedterms[ft] = _assertsort;
-		}
-	}
-
-	// Visit the children while asserting the sorts of the predicate
-	for(unsigned int n = 0; n < f->arity(); ++n) {
-		_assertsort = f->insort(n);
-		ft->subterm(n)->accept(this);
-	}
-	return ft;
-}
-
-SetExpr* SortDeriver::visit(QuantSetExpr* qs) {
-	if(_firstvisit) {
-		for(unsigned int n = 0; n < qs->nrQvars(); ++n) {
-			if(!(qs->qvar(n)->sort())) {
-				_untyped[qs->qvar(n)] = set<Sort*>();
-				_changed = true;
-			}
-		}
-	}
-	return traverse(qs);
-}
-
-void SortDeriver::derivesorts() {
-	for(map<Variable*,set<Sort*> >::iterator it = _untyped.begin(); it != _untyped.end(); ) {
-		map<Variable*,set<Sort*> >::iterator jt = it; ++jt;
-		if(!((it->second).empty())) {
-			set<Sort*>::iterator kt = (it->second).begin(); 
-			Sort* s = *kt;
-			++kt;
-			for(; kt != (it->second).end(); ++kt) {
-				s = SortUtils::resolve(s,*kt,_vocab);
-				if(!s) { // In case of conflicting sorts, assign the first sort. 
-						 // Error message will be given during final check.
-					s = *((it->second).begin());
-					break;
-				}
-			}
-			assert(s);
-			if((it->second).size() > 1 || s->builtin()) {	// Warning when the sort was resolved or builtin
-				Warning::derivevarsort(it->first->name(),s->name(),it->first->pi());
-			}
-			it->first->sort(s);
-			_untyped.erase(it);
-			_changed = true;
-		}
-		it = jt;
-	}
-}
-
-void SortDeriver::derivefuncs() {
-	for(map<FuncTerm*,Sort*>::iterator it = _overloadedterms.begin(); it != _overloadedterms.end(); ) {
-		map<FuncTerm*,Sort*>::iterator jt = it; ++jt;
-		Function* f = it->first->func();
-		vector<Sort*> vs(f->arity(),0);
-		for(unsigned int n = 0; n < vs.size(); ++n) {
-			vs[n] = it->first->subterm(n)->sort();
-		}
-		vs.push_back(it->second);
-		Function* rf = f->disambiguate(vs,_vocab);
-		if(rf) {
-			it->first->func(rf);
-			if(!rf->overloaded()) _overloadedterms.erase(it);
-			_changed = true;
-		}
-		it = jt;
-	}
-}
-
-void SortDeriver::derivepreds() {
-	for(set<PredForm*>::iterator it = _overloadedatoms.begin(); it != _overloadedatoms.end(); ) {
-		set<PredForm*>::iterator jt = it; ++jt;
-		PFSymbol* p = (*it)->symb();
-		vector<Sort*> vs(p->nrSorts(),0);
-		for(unsigned int n = 0; n < vs.size(); ++n) {
-			vs[n] = (*it)->subterm(n)->sort();
-		}
-		PFSymbol* rp = p->disambiguate(vs,_vocab);
-		if(rp) {
-			(*it)->symb(rp);
-			if(!rp->overloaded()) _overloadedatoms.erase(it);
-			_changed = true;
-		}
-		it = jt;
-	}
-}
-
-void SortDeriver::run(Formula* f) {
-	_changed = false;
-	_firstvisit = true;
-	f->accept(this);	// First visit: collect untyped symbols, set types of variables that occur in typed positions.
-	_firstvisit = false;
-	while(_changed) {
-		_changed = false;
-		derivesorts();
-		derivefuncs();
-		derivepreds();
-		f->accept(this);	// Next visit: type derivation over overloaded predicates or functions.
-	}
-	check();
-}
-
-void SortDeriver::run(Rule* r) {
-	// Set the sort of the variables in the head
-	for(unsigned int n = 0; n < r->head()->nrSubterms(); ++n) 
-		r->head()->subterm(n)->sort(r->head()->symb()->sort(n));
-	// Rest of the algorithm
-	_changed = false;
-	_firstvisit = true;
-	r->accept(this);
-	_firstvisit = false;
-	while(_changed) {
-		_changed = false;
-		derivesorts();
-		derivefuncs();
-		derivepreds();
-		r->accept(this);
-	}
-	check();
-}
-
-void SortDeriver::check() {
-	for(map<Variable*,set<Sort*> >::iterator it = _untyped.begin(); it != _untyped.end(); ++it) {
-		assert((it->second).empty());
-		Error::novarsort(it->first->name(),it->first->pi());
-	}
-	for(set<PredForm*>::iterator it = _overloadedatoms.begin(); it != _overloadedatoms.end(); ++it) {
-		if((*it)->symb()->ispred()) Error::nopredsort((*it)->symb()->name(),(*it)->pi());
-		else Error::nofuncsort((*it)->symb()->name(),(*it)->pi());
-	}
-	for(map<FuncTerm*,Sort*>::iterator it = _overloadedterms.begin(); it != _overloadedterms.end(); ++it) {
-		Error::nofuncsort(it->first->func()->name(),it->first->pi());
-	}
-	for(set<DomainTerm*>::iterator it = _domelements.begin(); it != _domelements.end(); ++it) {
-		Error::nodomsort((*it)->to_string(),(*it)->pi());
-	}
 }
 
 /**************
@@ -2528,44 +2573,6 @@ namespace Insert {
 	/*****************
 		Find names
 	*****************/
-
-	bool belongsToVoc(Sort* s) {
-		if(_currvocabulary->contains(s)) return true;
-		return false;
-	}
-
-	bool belongsToVoc(Predicate* p) {
-		if(_currvocabulary->contains(p)) return true;
-		return false;
-	}
-
-	bool belongsToVoc(Function* f) {
-		if(_currvocabulary->contains(f)) return true;
-		return false;
-	}
-
-	vector<Predicate*> noArPredInScope(const string& name) {
-		vector<Predicate*> vp;
-		for(unsigned int n = 0; n < _usingvocab.size(); ++n) {
-			vector<Predicate*> nvp = _usingvocab[n]->pred_no_arity(name);
-			for(unsigned int m = 0; m < nvp.size(); ++m) vp.push_back(nvp[m]);
-		}
-		return vp;
-	}
-
-	vector<Predicate*> noArPredInScope(const vector<string>& vs, const ParseInfo& pi) {
-		assert(!vs.empty());
-		if(vs.size() == 1) {
-			return noArPredInScope(vs[0]);
-		}
-		else {
-			vector<string> vv(vs.size()-1);
-			for(unsigned int n = 0; n < vv.size(); ++n) vv[n] = vs[n];
-			Vocabulary* v = vocabInScope(vv,pi);
-			if(v) return v->pred_no_arity(vs.back());
-			else return vector<Predicate*>(0);
-		}
-	}
 
 	vector<Function*> noArFuncInScope(const string& name) {
 		vector<Function*> vf;

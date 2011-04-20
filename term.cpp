@@ -89,6 +89,14 @@ inline Sort* VarTerm::sort() const {
 	return _var->sort();
 }
 
+void VarTerm::accept(TheoryVisitor* v) const {
+	v->visit(this);
+}
+
+Term* VarTerm::accept(TheoryMutatingVisitor* v) {
+	return v->visit(this);
+}
+
 ostream& VarTerm::put(std::ostream& output) const {
 	output << *_var;
 	return output;
@@ -119,6 +127,14 @@ Sort* FuncTerm::sort() const {
 	return _function->outsort();
 }
 
+void FuncTerm::accept(TheoryVisitor* v) const {
+	v->visit(this);
+}
+
+Term* FuncTerm::accept(TheoryMutatingVisitor* v) {
+	return v->visit(this);
+}
+
 ostream& FuncTerm::put(ostream& output) const {
 	output << *_function;
 	if(!subterms().empty()) {
@@ -146,6 +162,14 @@ DomainTerm* DomainTerm::clone() const {
 
 DomainTerm* DomainTerm::clone(const map<Variable*,Variable*>& mvv) const {
 	return new DomainTerm(_sort,_value,_pi.clone(mvv));
+}
+
+void DomainTerm::accept(TheoryVisitor* v) const {
+	v->visit(this);
+}
+
+Term* DomainTerm::accept(TheoryMutatingVisitor* v) {
+	return v->visit(this);
 }
 
 ostream& DomainTerm::put(ostream& output) const {
@@ -179,6 +203,14 @@ Sort* AggTerm::sort() const {
 	else {
 		return set()->sort();
 	}
+}
+
+void AggTerm::accept(TheoryVisitor* v) const {
+	v->visit(this);
+}
+
+Term* AggTerm::accept(TheoryMutatingVisitor* v) {
+	return v->visit(this);
 }
 
 ostream& AggTerm::put(ostream& output) const {
@@ -290,6 +322,14 @@ Sort* EnumSetExpr::sort() const {
 	else return 0;
 }
 
+void EnumSetExpr::accept(TheoryVisitor* v) const {
+	v->visit(this);
+}
+
+SetExpr* EnumSetExpr::accept(TheoryMutatingVisitor* v) {
+	return v->visit(this);
+}
+
 ostream& EnumSetExpr::put(ostream& output) const {
 	output << "[ ";
 	if(!_subformulas.empty()) {
@@ -338,6 +378,14 @@ Sort* QuantSetExpr::sort() const {
 	else if(SortUtils::isSubsort(termsort,VocabularyUtils::intsort())) return VocabularyUtils::intsort();
 	else if(SortUtils::isSubsort(termsort,VocabularyUtils::floatsort())) return VocabularyUtils::floatsort();
 	else return 0;
+}
+
+void QuantSetExpr::accept(TheoryVisitor* v) const {
+	v->visit(this);
+}
+
+SetExpr* QuantSetExpr::accept(TheoryMutatingVisitor* v) {
+	return v->visit(this);
 }
 
 ostream& QuantSetExpr::put(ostream& output) const {

@@ -265,6 +265,7 @@ class SetExpr {
 		// Inspectors
 		virtual Sort*							sort()						const = 0;	//!< Returns the sort of the set
 				const std::set<Variable*>&		freevars()					const { return _freevars;	}
+				const std::set<Variable*>&		quantvars()					const { return _quantvars;	}
 				bool							contains(const Variable*)	const;
 				const std::vector<Formula*>&	subformulas()				const { return _subformulas;	}
 				const std::vector<Term*>&		subterms()					const { return _subterms;		}
