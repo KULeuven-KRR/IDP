@@ -24,12 +24,12 @@ Printer::Printer() {
 }
 
 Printer* Printer::create(Options* opts) {
-	switch(opts->_format) {
-		case OF_TXT:
+	switch(opts->language()) {
+		case LAN_TXT:
 			return new SimplePrinter();
-		case OF_IDP:
-			return new IDPPrinter(opts->_printtypes);
-		case OF_ECNF:
+		case LAN_IDP:
+			return new IDPPrinter(opts->printtypes());
+		case LAN_ECNF:
 			return new EcnfPrinter();
 		default:
 			assert(false);

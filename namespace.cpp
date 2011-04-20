@@ -109,3 +109,12 @@ UserProcedure* Namespace::procedure(const string& lp) const {
 	return ((_procedures.find(lp))->second);
 }
 
+ostream& Namespace::putname(ostream& output) const {
+	if(isGlobal()) return output;
+	else if(_superspace) {
+		_superspace->putname(output);
+		output << "::";
+	}
+	output << _name;
+	return output;
+}

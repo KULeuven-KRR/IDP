@@ -30,7 +30,7 @@ end
 
 local oldTostring = tostring
 function tostring(e,opts) 
-	if isIdp(e) then
+	if idp_intern.isIdp(e) then
 		return idp_intern.tostring(e,opts)
 	else
 		return oldTostring(e)

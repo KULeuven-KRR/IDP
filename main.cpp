@@ -60,6 +60,7 @@ struct CLOptions {
 	string	_exec;
 	bool	_interactive;
 	bool	_readfromstdin;
+	CLOptions() : _exec(""), _interactive(false), _readfromstdin(false) { }
 };
 
 /** 
@@ -172,7 +173,7 @@ int main(int argc, char* argv[]) {
 		// Execute statements
 		executeproc(cloptions._exec);
 		if(cloptions._interactive) interactive();
-		else if(cloptions._exec == "") executeproc("idp_intern_main()");
+		else if(cloptions._exec == "") executeproc("idp_intern.main()");
 
 	}
 

@@ -2440,6 +2440,7 @@ void Insert::assignunknowntables() {
 		PredInter* pt = _currstructure->inter(it->first);
 		TableIterator tit = it->second->begin();
 		for( ; tit.hasNext(); ++tit) {
+			// FIXME: this is completely wrong...
 			pt->ct()->remove(*tit);
 			pt->cf()->remove(*tit);
 		}
@@ -2450,6 +2451,7 @@ void Insert::assignunknowntables() {
 		PredInter* ft = _currstructure->inter(it->first)->graphinter();
 		TableIterator tit = it->second->begin();
 		for( ; tit.hasNext(); ++tit) {
+			// FIXME: this is completely wrong...
 			ft->ct()->remove(*tit);
 			ft->cf()->remove(*tit);
 		}

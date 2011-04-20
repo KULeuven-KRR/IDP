@@ -801,10 +801,10 @@ nonempty_spt		: sort_pointer_tuple ',' sort_pointer	{ $$ = $1; $$->push_back($3)
 	Instructions
 *******************/
 
-execstatement		: EXEC_HEADER '{' LUACHUNK '}'		{ insert.exec($3);	}
+execstatement		: EXEC_HEADER '{' LUACHUNK 		{ insert.exec($3);	}
 					;
 
-instructions		: PROCEDURE_HEADER proc_name proc_sig '{' LUACHUNK '}'		{ insert.closeprocedure($5);	}
+instructions		: PROCEDURE_HEADER proc_name proc_sig '{' LUACHUNK 		{ insert.closeprocedure($5);	}
 					;
 
 proc_name			: identifier	{ insert.openprocedure(*$1,@1);	}

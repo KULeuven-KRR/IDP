@@ -42,7 +42,7 @@ void UserProcedure::compile(lua_State* L) {
 		int err = luaL_loadstring(L,ss.str().c_str());
 		if(err) {
 			Error::error(_pi);
-			cerr << string(lua_tostring(L,-1));
+			cerr << string(lua_tostring(L,-1)) << endl;
 			lua_pop(L,1);
 		}
 		else {
@@ -459,15 +459,13 @@ InternalArgument idptype(const vector<InternalArgument>& args, lua_State*) {
 	return ia;
 }
 
-InternalArgument printtheory(const vector<InternalArgument>& , lua_State* ) {
-	// FIXME: uncomment
-	//AbstractTheory* theory = args[0].theory();
-	//Options* opts = args[1].options();
+InternalArgument printtheory(const vector<InternalArgument>& args, lua_State* ) {
+	AbstractTheory* theory = args[0].theory();
+	Options* opts = args[1].options();
 
-	//Printer* printer = Printer::create(opts);
-	//string str = printer->print(theory);
-	//delete(printer);
-	string str;
+	Printer* printer = Printer::create(opts);
+	string str = printer->print(theory);
+	delete(printer);
 
 	InternalArgument result(StringPointer(str));
 	return result;
@@ -792,7 +790,10 @@ namespace LuaConnection {
 
 		// Execute the procedure
 		if(proc) return (*proc)(L);
-		else { Error::wrongcommandargs(proc->name()); return 0; }
+		else { 
+			assert(!procs->empty());
+			Error::wrongcommandargs(procs->begin()->second->name()); return 0; 
+		}
 	}
 
 	/**
@@ -1933,7 +1934,7 @@ namespace LuaConnection {
 	/**
 	 * map interal procedure names to the actual procedures
 	 */
-	map<string,set<InternalProcedure*> >	_internalprocedures;
+	map<string,map<vector<ArgType>,InternalProcedure*> >	_internalprocedures;
 	
 	/**
 	 *	\brief Add a new internal procedure
@@ -1947,7 +1948,7 @@ namespace LuaConnection {
 					   const vector<ArgType>& argtypes, 
 					   InternalArgument (*execute)(const vector<InternalArgument>&, lua_State*)) {
 		InternalProcedure* proc = new InternalProcedure(name,argtypes,execute);
-		_internalprocedures[name].insert(proc);
+		_internalprocedures[name][argtypes] = proc;
 	}
 
 	/**
@@ -1968,10 +1969,11 @@ namespace LuaConnection {
 		
 		// Add the internal procedures to lua
 		lua_getglobal(L,"idp_intern");
-		for(map<string,set<InternalProcedure*> >::iterator it =	_internalprocedures.begin();
+		for(map<string,map<vector<ArgType>,InternalProcedure*> >::iterator it =	_internalprocedures.begin();
 			it != _internalprocedures.end(); ++it) {
-			set<InternalProcedure*>** ptr = (set<InternalProcedure*>**)lua_newuserdata(L,sizeof(set<InternalProcedure*>*));
-			(*ptr) = new set<InternalProcedure*>(it->second);
+			map<vector<ArgType>,InternalProcedure*>** ptr = 
+				(map<vector<ArgType>,InternalProcedure*>**)lua_newuserdata(L,sizeof(map<vector<ArgType>,InternalProcedure*>*));
+			(*ptr) = new map<vector<ArgType>,InternalProcedure*>(it->second);
 			luaL_getmetatable (L,"internalprocedure");
 			lua_setmetatable(L,-2);
 			lua_setfield(L,-2,it->first.c_str());
@@ -2008,10 +2010,10 @@ namespace LuaConnection {
 	 */
 	void closeLuaConnection() {
 		lua_close(_state);
-		for(map<string,set<InternalProcedure*> >::iterator it =	_internalprocedures.begin(); 
+		for(map<string,map<vector<ArgType>,InternalProcedure*> >::iterator it =	_internalprocedures.begin(); 
 			it != _internalprocedures.end(); ++it) {
-			for(set<InternalProcedure*>::iterator jt = it->second.begin(); jt != it->second.end(); ++jt) {
-				delete(*jt);
+			for(map<vector<ArgType>,InternalProcedure*>::iterator jt = it->second.begin(); jt != it->second.end(); ++jt) {
+				delete(jt->second);
 			}
 		}
 	}
@@ -2020,7 +2022,7 @@ namespace LuaConnection {
 		int err = luaL_dostring(_state,chunk->str().c_str());
 		if(err) {
 			Error::error();
-			cerr << string(lua_tostring(_state,-1));
+			cerr << string(lua_tostring(_state,-1)) << endl;
 			lua_pop(_state,1);
 		}
 	}
@@ -2045,7 +2047,7 @@ namespace LuaConnection {
 		int err = lua_pcall(_state,args.size(),1,0);
 		if(err) {
 			Error::error(pi);
-			cerr << lua_tostring(_state,-1);
+			cerr << lua_tostring(_state,-1) << endl;
 			lua_pop(_state,1);
 			return 0;
 		}

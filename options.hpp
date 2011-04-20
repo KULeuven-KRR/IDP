@@ -50,6 +50,8 @@ class StringOption {
 		virtual const std::string&	value()						const = 0;
 };
 
+enum Language { LAN_TXT, LAN_IDP, LAN_ECNF, LAN_LATEX, LAN_ASP, LAN_CNF };
+
 /**
  * Class to represent a block of options
  */
@@ -83,6 +85,9 @@ class Options {
 		bool	setvalue(const std::string&,int);
 		bool	setvalue(const std::string&,double);
 		bool	setvalue(const std::string&,const std::string&);
+
+		Language	language() const;
+		bool		printtypes() const;
 };
 
 #endif

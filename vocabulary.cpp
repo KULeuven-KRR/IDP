@@ -8,6 +8,7 @@
 #include "vocabulary.hpp"
 #include "structure.hpp"
 #include "common.hpp"
+#include "namespace.hpp"
 
 using namespace std;
 
@@ -1375,7 +1376,7 @@ set<Function*> Vocabulary::func_no_arity(const string& name) const {
 
 ostream& Vocabulary::putname(ostream& output) const {
 	if(_namespace) {
-		// TODO uncomment this: _namespace->putname(output);
+		_namespace->putname(output);
 		output << "::";
 	}
 	output << _name;

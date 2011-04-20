@@ -11,15 +11,6 @@
 #include <sstream>
 #include <string>
 
-#include "visitor.hpp"
-
-class PFSymbol;
-class AbstractStructure;
-class PredTable;
-class GroundTranslator;
-class Options;
-class GroundTermTranslator;
-
 /*************************
 	Printer base class
 *************************/

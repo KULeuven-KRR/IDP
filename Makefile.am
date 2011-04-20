@@ -38,7 +38,8 @@ gidl_SOURCES = \
 		error.hpp error.cpp\
 		common.hpp common.cpp\
 		interactive.hpp interactive.cpp\
-		main.cpp
+		main.cpp\
+		print.hpp print.cpp
 
 AM_CXXFLAGS+=-I $(top_srcdir)/pcsolver/src/ 
 
