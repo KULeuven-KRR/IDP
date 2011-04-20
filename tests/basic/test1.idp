@@ -1,0 +1,17 @@
+vocabulary V {
+	type A
+	type B
+	type C isa A
+	type D contains B
+	P(A)
+	Q(A,B)
+	F(A) : A
+	partial G(A) : B
+}
+
+theory T : V {
+	? x : P(x).
+}
+
+procedure main() {
+}
