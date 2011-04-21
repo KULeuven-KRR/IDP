@@ -282,6 +282,8 @@ void IDPPrinter::visit(const QuantSetExpr* s) {
 	Grounding
 ****************/
 
+const int ID_FOR_UNDEFINED = -1;
+
 void IDPPrinter::printAtom(int atomnr) {
 	// Make sure there is a translator.
 	assert(_translator);
@@ -367,6 +369,41 @@ void IDPPrinter::printTerm(unsigned int termnr) {
 			_out << ")";
 		}
 	}
+}
+
+void IDPPrinter::printAggregate(double bound, bool lower, AggType aggtype, unsigned int setnr) {
+	_out << bound << (lower ? " =< " : " >= ");
+	switch(aggtype) {
+		case AGGCARD: 	_out << "card("; break;
+		case AGGSUM: 	_out << "sum("; break;
+		case AGGPROD: 	_out << "prod("; break;
+		case AGGMIN: 	_out << "min("; break;
+		case AGGMAX: 	_out << "max("; break;
+		default: assert(false);
+	}
+	_out << "set_" << setnr << ").\n";
+}
+
+void EcnfPrinter::printAggregate(AggType aggtype, TsType arrow, unsigned int defnr, bool lower, int head, unsigned int setnr, double bound) {
+	switch(aggtype) {
+		case AGGCARD: 	_out << "Card "; break;
+		case AGGSUM: 	_out << "Sum "; break;
+		case AGGPROD: 	_out << "Prod "; break;
+		case AGGMIN: 	_out << "Min "; break;
+		case AGGMAX: 	_out << "Max "; break;
+		default: assert(false);
+	}
+	#warning "Replacing implication by equivalence...";
+	switch(arrow) {
+		case TS_EQ: case TS_IMPL: case TS_RIMPL:  /* (Reverse) implication is not supported by solver (yet)*/
+			_out << "C ";
+			break;
+		case TS_RULE: 
+			_out << "<- ";
+			break; 
+		default: assert(false);
+	}
+	_out << defnr << ' ' << (lower ? 'G' : 'L') << ' ' << head << ' ' << setnr << ' ' << bound << " 0\n";
 }
 
 void SimplePrinter::visit(const GroundTheory* g) {
@@ -468,29 +505,11 @@ void EcnfPrinter::visit(const PCGroundRuleBody* b) {
 }
 
 void IDPPrinter::visit(const AggGroundRuleBody* b) {
-	_out << b->bound() << (b->lower() ? " =< " : " >= ");
-	switch(b->aggtype()) {
-		case AGGCARD: 	_out << "card("; break;
-		case AGGSUM: 	_out << "sum("; break;
-		case AGGPROD: 	_out << "prod("; break;
-		case AGGMIN: 	_out << "min("; break;
-		case AGGMAX: 	_out << "max("; break;
-		default: assert(false);
-	}
-	_out << "set_" << b->setnr() << ").\n";
+	printAggregate(b->bound(),b->lower(),b->aggtype(),b->setnr());
 }
 
 void EcnfPrinter::visit(const AggGroundRuleBody* b) {
-	switch(b->aggtype()) {
-		case AGGCARD: 	_out << "Card "; break;
-		case AGGSUM: 	_out << "Sum "; break;
-		case AGGPROD: 	_out << "Prod "; break;
-		case AGGMIN: 	_out << "Min "; break;
-		case AGGMAX: 	_out << "Max "; break;
-		default: assert(false);
-	}
-	_out << "<- " << _currentdefnr << ' ' << (b->lower() ? "L " : "G ");
-	_out << _currenthead << ' ' << b->setnr() << ' ' << b->bound() << " 0\n";
+	printAggregate(b->aggtype(),TS_RULE,_currentdefnr,b->lower(),_currenthead,b->setnr(),b->bound());
 }
 
 void IDPPrinter::visit(const GroundAggregate* a) {
@@ -501,50 +520,31 @@ void IDPPrinter::visit(const GroundAggregate* a) {
 		case TS_EQ: 	_out << " <=> "; break;
 		case TS_RULE: default: assert(false);
 	}
-	_out << a->bound();
-	_out << (a->lower() ? " =< " : " >= ");
-	switch(a->type()) {
-		case AGGCARD:	_out << "card("; break;
-		case AGGSUM: 	_out << "sum("; break;
-		case AGGPROD: 	_out << "prod("; break;
-		case AGGMIN: 	_out << "min("; break;
-		case AGGMAX: 	_out << "max("; break;
-		default: assert(false);
-	}
-	_out << "set_" << a->setnr() << ").\n";
+	printAggregate(a->bound(),a->lower(),a->type(),a->setnr());
 }
 
 void EcnfPrinter::visit(const GroundAggregate* a) {
-	switch(a->type()) {
-		case AGGCARD: 	_out << "Card "; break;
-		case AGGSUM: 	_out << "Sum "; break;
-		case AGGPROD: 	_out << "Prod "; break;
-		case AGGMIN: 	_out << "Min "; break;
-		case AGGMAX: 	_out << "Max "; break;
-		default: assert(false);
-	}
-	#warning "Simply replacing implication by equivalence...";
-	switch(a->arrow()) {
-		case TS_EQ: case TS_IMPL: case TS_RIMPL: _out << "C "; break; /* (Reverse) implication is not supported by solver (yet)*/
-		case TS_RULE: default: assert(false);
-	}
-	_out << (a->lower() ? "L " : "G ") << a->head() << ' ' << a->setnr() << ' ' << a->bound() << " 0\n";
+	assert(a->arrow() != TS_RULE);
+	printAggregate(a->type(),a->arrow(),ID_FOR_UNDEFINED,a->lower(),a->head(),a->setnr(),a->bound());
 }
 
 void IDPPrinter::visit(const GroundSet* s) {
 	_out << "set_" << s->setnr() << " = [ ";
 	for(unsigned int n = 0; n < s->size(); ++n) {
-		_out << '('; printAtom(s->literal(n));
-		_out << ',' << s->weight(n) << ')';
+		if(s->weighted()) _out << '('; 
+		printAtom(s->literal(n));
+		if(s->weighted()) _out << ',' << s->weight(n) << ')';
 		if(n < s->size()-1) _out << "; ";
 	}
 	_out << " ]\n";
 }
 
 void EcnfPrinter::visit(const GroundSet* s) {
-	_out << "WSet " << s->setnr();
-	for(unsigned int n = 0; n < s->size(); ++n)
-		_out << ' ' << s->literal(n) << '=' << s->weight(n);
+	_out << (s->weighted() ? "WSet" : "Set") << ' ' << s->setnr();
+	for(unsigned int n = 0; n < s->size(); ++n) {
+		_out << ' ' << s->literal(n);
+		if(s->weighted()) _out << '=' << s->weight(n);
+	}
 	_out << " 0\n";
 }
 

@@ -41,6 +41,9 @@ typedef std::vector<int> GroundClause;
 	Ground sets 
 ******************/
 
+/**
+ * class GroundSet
+ */
 class GroundSet {
 	private:
 		unsigned int		_setnr;
@@ -57,7 +60,8 @@ class GroundSet {
 		unsigned int	setnr() 				const { return _setnr; 			}
 		unsigned int	size()					const { return _setlits.size();	}
 		int				literal(unsigned int n)	const { return _setlits[n];		}
-		double			weight(unsigned int n)	const { return _litweights[n];	}
+		double			weight(unsigned int n)	const { return (not _litweights.empty()) ? _litweights[n] : 1;	}
+		bool			weighted()				const { return not _litweights.empty(); }
 
 		// Visitor
 		void accept(Visitor*) const;

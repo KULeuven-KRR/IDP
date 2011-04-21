@@ -389,12 +389,14 @@ void GroundTheory::addCPReification(int tseitin, CPTsBody* body) {
 	_cpreifications.push_back(new CPReification(tseitin,body));
 }
 
-void GroundTheory::addSet(int setnr, int defnr, bool) {
+void GroundTheory::addSet(int setnr, int defnr, bool weighted) {
 	if(_printedsets.find(setnr) == _printedsets.end()) {
 		_printedsets.insert(setnr);
-		TsSet& tss = _translator->groundset(setnr);
-		transformForAdd(tss.literals(),VIT_SET,defnr);
-		_sets.push_back(new GroundSet(setnr,tss.literals(),tss.weights()));
+		TsSet& tsset = _translator->groundset(setnr);
+		transformForAdd(tsset.literals(),VIT_SET,defnr);
+		vector<double> weights;
+		if(weighted) weights = tsset.weights();
+		_sets.push_back(new GroundSet(setnr,tsset.literals(),weights));
 	}
 }
 
@@ -587,7 +589,7 @@ void SolverTheory::addFixpDef(GroundFixpDef*) {
 }
 
 void SolverTheory::addAggregate(int definitionID, int head, bool lowerbound, int setnr, AggType aggtype, TsType sem, double bound) {
-	addSet(setnr,definitionID, aggtype != AGGCARD);
+	addSet(setnr,definitionID,(aggtype != AGGCARD));
 	MinisatID::Aggregate agg;
 	agg.sign = lowerbound ? MinisatID::AGGSIGN_LB : MinisatID::AGGSIGN_UB;
 	agg.setID = setnr;
@@ -748,13 +750,15 @@ void SolverTheory::addCPVariable(unsigned int varid) {
 		Function* function = _termtranslator->function(varid);
 //cerr << "func = " << function->name();
 		SortTable* domain = _structure->inter(function->outsort());
-		assert(domain->finite()); //TODO Right?
-		assert(domain->type() == ELINT); //FIXME For this kind of table first() and last() are always defined?
+		assert(domain->finite()); 		//TODO Right?
+		assert(domain->type() == ELINT); //FIXME ... so for this kind of table first() and last() are always defined?
 		Element first = domain->element(0); 				//FIXME domain->first() ?
 		int minvalue = first._int;
 		Element last = domain->element(domain->size()-1);	//FIXME domain->last() ?
 		int maxvalue = last._int;
-		if((maxvalue - minvalue + 1) == domain->size()) {
+		assert(maxvalue > minvalue);
+		unsigned int difference = maxvalue - minvalue;
+		if(difference + 1 == domain->size()) {
 //cerr << " domain = [" << minvalue << "," << maxvalue << "]" << endl;
 			// the domain is a complete range from minvalue to maxvalue.
 			MinisatID::CPIntVarRange cpvar;
