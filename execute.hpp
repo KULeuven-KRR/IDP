@@ -38,11 +38,12 @@ class UserProcedure {
 		std::string					_registryindex;		//!< place where the compiled version of the 
 														//!< procedure is stored in the registry of the lua state
 		static int					_compilenumber;		//!< used to create unique registryindexes
+		std::stringstream*			_description;		
 
 	public:
 		// Constructors
-		UserProcedure(const std::string& name, const ParseInfo& pi) :
-			_name(name), _pi(pi), _registryindex("") { }
+		UserProcedure(const std::string& name, const ParseInfo& pi, std::stringstream* des = 0) :
+			_name(name), _pi(pi), _registryindex(""), _description(des) { }
 
 		// Mutators
 		void compile(lua_State*);	//!< compile the procedure
@@ -58,6 +59,8 @@ class UserProcedure {
 		unsigned int		arity()			const { return _argnames.size();		}
 		bool				iscompiled()	const { return _registryindex != "";	}
 		const std::string&	registryindex()	const { return _registryindex;			}
+		const std::vector<std::string>&	args()	const { return _argnames;			}
+			  std::string	description()	const { return _description ? _description->str() : "(undocumented)";		}
 };
 
 class Vocabulary;

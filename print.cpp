@@ -167,7 +167,7 @@ void IDPPrinter::visit(const QuantForm* f) {
 		_out << " ";
 		_out << (*it)->name();
 		if((*it)->sort())
-			_out << "[" << (*it)->sort()->name() << "]";
+			_out << "[" << *((*it)->sort()) << "]";
 	}
 	_out << " : ";
 	f->subformulas()[0]->accept(this);

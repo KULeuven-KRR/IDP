@@ -86,7 +86,8 @@ class Formula : public TheoryComponent {
 
 		// Destructor
 				void recursiveDelete();	//!< delete the formula and all its children (subformulas, subterms, etc)
-		virtual ~Formula() { }			//!< delete the formula, but not its children
+		virtual ~Formula() { }
+			//!< delete the formula, but not its children
 
 		// Mutators
 		void	swapsign()	{ _sign = !_sign; if(_pi.original()) _pi.original()->swapsign();		}	

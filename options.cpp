@@ -4,6 +4,7 @@
 	(c) K.U.Leuven
 ************************************/
 
+#include <sstream>
 #include "options.hpp"
 #include "error.hpp"
 using namespace std;
@@ -136,4 +137,26 @@ Language Options::language() const {
 
 bool Options::printtypes() const {
 	return _booloptions.find("printtypes")->second;
+}
+
+ostream& Options::put(ostream& output) const {
+	for(map<string,StringOption*>::const_iterator it = _stringoptions.begin(); it != _stringoptions.end(); ++it) {
+		output << it->first << " = " << it->second->value() << endl;
+	}
+	for(map<string,IntOption*>::const_iterator it = _intoptions.begin(); it != _intoptions.end(); ++it) {
+		output << it->first << " = " << it->second->value() << endl;
+	}
+	for(map<string,FloatOption*>::const_iterator it = _floatoptions.begin(); it != _floatoptions.end(); ++it) {
+		output << it->first << " = " << it->second->value() << endl;
+	}
+	for(map<string,bool>::const_iterator it = _booloptions.begin(); it != _booloptions.end(); ++it) {
+		output << it->first << " = " << (it->second ? "true" : "false") << endl;
+	}
+	return output;
+}
+
+string Options::to_string() const {
+	stringstream sstr;
+	put(sstr);
+	return sstr.str();
 }

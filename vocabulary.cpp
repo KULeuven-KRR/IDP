@@ -457,7 +457,7 @@ ostream& Predicate::put(ostream& output) const {
 			break;
 		}
 	}
-	output << _name;
+	output << _name.substr(0,_name.find('/'));
 	if(!overloaded()) {
 		if(nrSorts() > 0) {
 			output << '[' << *_sorts[0];
@@ -1374,7 +1374,7 @@ set<Function*> Vocabulary::func_no_arity(const string& name) const {
 }
 
 ostream& Vocabulary::putname(ostream& output) const {
-	if(_namespace) {
+	if(_namespace && !_namespace->isGlobal()) {
 		_namespace->putname(output);
 		output << "::";
 	}

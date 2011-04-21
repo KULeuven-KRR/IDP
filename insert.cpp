@@ -14,6 +14,7 @@
 #include "term.hpp"
 #include "theory.hpp"
 #include "namespace.hpp"
+#include "yyltype.hpp"
 #include "parse.tab.hh"
 #include "error.hpp"
 #include "options.hpp"
@@ -1018,7 +1019,7 @@ void Insert::openprocedure(const string& name, YYLTYPE l) {
 	ParseInfo pi = parseinfo(l);
 	UserProcedure* p = procedureInScope(name,pi);
 	if(p) Error::multdeclproc(name,pi,p->pi());
-	_currprocedure = new UserProcedure(name,pi);
+	_currprocedure = new UserProcedure(name,pi,l.descr);
 	// TODO: take using declarations into account
 	_currspace->add(_currprocedure);
 }
@@ -1271,7 +1272,7 @@ void Insert::sentence(Formula* f) {
 		// 2. Sort derivation & checking
 		SortDeriver sd(f,_currvocabulary); 
 		SortChecker sc(f,_currvocabulary);
-		// Add the formula to the current theory
+		// 3. Add the formula to the current theory
 		_currtheory->add(f);
 	}
 	else _curr_vars.clear();
@@ -1373,7 +1374,8 @@ Formula* Insert::predform(NSPair* nst, const vector<Term*>& vt, YYLTYPE l) const
 					if((*it)->pi().original()) vtpi.push_back((*it)->pi().original()->clone());
 					else vtpi.push_back((*it)->clone());
 				}
-				FormulaParseInfo pi = formparseinfo(new PredForm(true,p,vtpi,FormulaParseInfo()),l);
+				PredForm* pipf = new PredForm(true,p,vtpi,FormulaParseInfo());
+				FormulaParseInfo pi = formparseinfo(pipf,l);
 				pf = new PredForm(true,p,vt,pi);
 			}
 		}

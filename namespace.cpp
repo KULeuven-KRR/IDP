@@ -32,8 +32,6 @@ Namespace* Namespace::global() {
 Namespace::~Namespace() {
 	for(map<string,Namespace*>::iterator it = _subspaces.begin(); it != _subspaces.end(); ++it) 
 		delete(it->second);
-	for(map<string,Vocabulary*>::iterator it = _vocabularies.begin(); it != _vocabularies.end(); ++it) 
-		delete(it->second);
 	for(map<string,AbstractStructure*>::iterator it = _structures.begin(); it != _structures.end(); ++it) 
 		delete(it->second);
 	for(map<string,AbstractTheory*>::iterator it = _theories.begin(); it != _theories.end(); ++it) 
@@ -41,6 +39,8 @@ Namespace::~Namespace() {
 	for(map<string,Options*>::iterator it = _options.begin(); it != _options.end(); ++it) 
 		delete(it->second);
 	for(map<string,UserProcedure*>::iterator it = _procedures.begin(); it != _procedures.end(); ++it) 
+		delete(it->second);
+	for(map<string,Vocabulary*>::iterator it = _vocabularies.begin(); it != _vocabularies.end(); ++it) 
 		delete(it->second);
 }
 
@@ -110,7 +110,7 @@ UserProcedure* Namespace::procedure(const string& lp) const {
 
 ostream& Namespace::putname(ostream& output) const {
 	if(isGlobal()) return output;
-	else if(_superspace) {
+	else if(_superspace && !_superspace->isGlobal()) {
 		_superspace->putname(output);
 		output << "::";
 	}

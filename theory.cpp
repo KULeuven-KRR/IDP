@@ -6,6 +6,7 @@
 
 #include <cassert>
 #include <sstream>
+#include <iostream>
 #include "common.hpp"
 #include "vocabulary.hpp"
 #include "structure.hpp"
@@ -35,7 +36,9 @@ void Formula::setfvars() {
 	for(vector<Formula*>::const_iterator it = _subformulas.begin(); it != _subformulas.end(); ++it) {
 		_freevars.insert((*it)->freevars().begin(),(*it)->freevars().end());
 	}
-	_freevars.erase(_quantvars.begin(),_quantvars.end());
+	for(set<Variable*>::const_iterator it = _quantvars.begin(); it != _quantvars.end(); ++it) {
+		_freevars.erase(*it);
+	}
 }
 
 void Formula::recursiveDelete() {
@@ -48,6 +51,7 @@ void Formula::recursiveDelete() {
 	for(set<Variable*>::iterator it = _quantvars.begin(); it != _quantvars.end(); ++it) {
 		delete(*it);
 	}
+	delete(this);
 }
 
 bool Formula::contains(const Variable* v) const {

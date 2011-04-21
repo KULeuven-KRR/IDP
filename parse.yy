@@ -9,6 +9,7 @@
 #include <sstream>
 #include "common.hpp"
 #include "insert.hpp"
+#include "yyltype.hpp"
 
 // Lexer
 extern int yylex();
@@ -25,6 +26,26 @@ extern std::string dtos(double);
 
 typedef std::pair<int,std::string*> isp;
 typedef std::list<isp>				lisp;
+
+# define YYLLOC_DEFAULT(Current, Rhs, N)									 \
+         do                                                                  \
+           if (N)                                                            \
+             {                                                               \
+               (Current).first_line   = YYRHSLOC(Rhs, 1).first_line;         \
+               (Current).first_column = YYRHSLOC(Rhs, 1).first_column;       \
+               (Current).last_line    = YYRHSLOC(Rhs, N).last_line;          \
+               (Current).last_column  = YYRHSLOC(Rhs, N).last_column;        \
+			   (Current).descr		  = YYRHSLOC(Rhs, 1).descr;				 \
+             }                                                               \
+           else                                                              \
+             {                                                               \
+               (Current).first_line   = (Current).last_line   =              \
+                 YYRHSLOC(Rhs, 0).last_line;                                 \
+               (Current).first_column = (Current).last_column =              \
+                 YYRHSLOC(Rhs, 0).last_column;                               \
+			   (Current).descr		  = YYRHSLOC(Rhs,0).descr;				 \
+             }                                                               \
+         while (0)
 
 %}
 
@@ -858,6 +879,7 @@ void yyerror(const char* s) {
 void parsefile(const std::string& str) {
 	yylloc.first_line = 1;
 	yylloc.first_column = 1;
+	yylloc.descr = 0;
 	yyin = fopen(str.c_str(),"r");
 	if(yyin) {
 		insert.currfile(str);
@@ -868,6 +890,9 @@ void parsefile(const std::string& str) {
 }
 
 void parsestdin() {
+	yylloc.first_line = 1;
+	yylloc.first_column = 1;
+	yylloc.descr = 0;
 	yyin = stdin;
 	insert.currfile(0);
 	yyparse();

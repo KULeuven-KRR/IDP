@@ -160,6 +160,7 @@ class OverloadedObject {
 		AbstractStructure*	structure()	const { return _structure;	}
 		AbstractTheory*		theory()	const { return _theory;		}
 		Options*			options()	const { return _options;	}
+		Namespace*			space()		const { return _namespace;	}
 
 		vector<ArgType> types() {
 			vector<ArgType> result;
@@ -263,6 +264,15 @@ struct InternalArgument {
 	Options* options() const {
 		if(_type == AT_OPTIONS) return _value._options;
 		else if(_type == AT_OVERLOADED) return _value._overloaded->options();
+		else {
+			assert(false);
+			return 0;
+		}
+	}
+
+	Namespace* space() const {
+		if(_type == AT_NAMESPACE) return _value._namespace;
+		else if(_type == AT_OVERLOADED) return _value._overloaded->space();
 		else {
 			assert(false);
 			return 0;
@@ -445,14 +455,24 @@ InternalArgument idptype(const vector<InternalArgument>& args, lua_State*) {
 		case AT_OVERLOADED:
 			return InternalArgument(StringPointer("overloaded"));
 		case AT_NIL:
+			return InternalArgument(StringPointer("nil"));
 		case AT_INT:
+			return InternalArgument(StringPointer("number"));
 		case AT_DOUBLE:
+			return InternalArgument(StringPointer("number"));
 		case AT_BOOLEAN:
+			return InternalArgument(StringPointer("boolean"));
 		case AT_STRING:
+			return InternalArgument(StringPointer("string"));
 		case AT_TABLE:
+			return InternalArgument(StringPointer("table"));
 		case AT_PROCEDURE:
+			return InternalArgument(StringPointer("function"));
 		case AT_MULT:
+			return InternalArgument(StringPointer("mult"));
 		case AT_REGISTRY:
+			return InternalArgument(StringPointer("registry"));
+		default:
 			assert(false);
 	}
 	InternalArgument ia;
@@ -471,6 +491,11 @@ InternalArgument printtheory(const vector<InternalArgument>& args, lua_State* ) 
 	return result;
 }
 
+InternalArgument printoptions(const vector<InternalArgument>& args, lua_State* ) {
+	Options* opts = args[0].options();
+	return InternalArgument(StringPointer(opts->to_string()));
+}
+
 InternalArgument printstructure(const vector<InternalArgument>& , lua_State* ) {
 	// FIXME: uncomment
 	//AbstractStructure* structure = args[0].structure();
@@ -483,6 +508,69 @@ InternalArgument printstructure(const vector<InternalArgument>& , lua_State* ) {
 
 	InternalArgument result(StringPointer(str));
 	return result;
+}
+
+string help(Namespace* ns) {
+	stringstream sstr;
+	if(ns->procedures().empty()) {
+		if(ns->isGlobal()) sstr << "There are no procedures in the global namespace\n";
+		else {
+			sstr << "There are no procedures in namespace ";
+			ns->putname(sstr);
+			sstr << '\n';
+		}
+	}
+	else {
+		sstr << "The following procedures are available:\n";
+		stringstream prefixs;
+		ns->putname(prefixs);
+		string prefix = prefixs.str();
+		if(prefix != "") prefix += "::";
+		for(map<string,UserProcedure*>::const_iterator it = ns->procedures().begin(); it != ns->procedures().end(); ++it) {
+			sstr << "    " << prefix << it->second->name() << '(';
+			if(!it->second->args().empty()) {
+				sstr << it->second->args()[0];
+				for(unsigned int n = 1; n < it->second->args().size(); ++n) {
+					sstr << ',' << it->second->args()[n];
+				}
+			}
+			sstr << ")\n";
+			sstr << "        " << it->second->description() << "\n";
+		}
+	}
+	sstr << '\n';
+	if(!ns->subspaces().empty()) {
+		if(ns->isGlobal()) sstr << "The following are subspaces of the global namespace:\n";
+		for(map<string,Namespace*>::const_iterator it = ns->subspaces().begin(); it != ns->subspaces().end(); ++it) {
+			sstr << "    ";
+			it->second->putname(sstr); 
+			sstr << '\n';
+		}
+		sstr << "Type help(<subspace>) for information on procedures in namespace <subspace>\n";
+	}
+	sstr << '\n';
+	return sstr.str();
+}
+
+InternalArgument globalhelp(const vector<InternalArgument>&, lua_State* L) {
+	string str = help(Namespace::global());
+	lua_getglobal(L,"print");
+	lua_pushstring(L,str.c_str());
+	lua_call(L,1,0);
+
+	InternalArgument ia; ia._type = AT_NIL;
+	return ia;
+}
+
+InternalArgument help(const vector<InternalArgument>& args, lua_State* L) {
+	Namespace* ns = args[0].space();
+	string str = help(ns);
+	lua_getglobal(L,"print");
+	lua_pushstring(L,str.c_str());
+	lua_call(L,1,0);
+	
+	InternalArgument ia; ia._type = AT_NIL;
+	return ia;
 }
 
 /**************************
@@ -1957,14 +2045,18 @@ namespace LuaConnection {
 	void addInternProcs(lua_State* L) {
 		// arguments of internal procedures
 		vector<ArgType> vint(1,AT_INT);
+		vector<ArgType> vspace(1,AT_NAMESPACE);
 		vector<ArgType> vtheoopt(2); vtheoopt[0] = AT_THEORY; vtheoopt[1] = AT_OPTIONS;
-		vector<ArgType> vstructopt(2); vtheoopt[0] = AT_STRUCTURE; vtheoopt[1] = AT_OPTIONS;
+		vector<ArgType> vstructopt(2); vstructopt[0] = AT_STRUCTURE; vstructopt[1] = AT_OPTIONS;
+		vector<ArgType> voptopt(2); voptopt[0] = AT_OPTIONS; voptopt[1] = AT_OPTIONS;
 		// TODO
 
 		// Create internal procedures
 		addInternalProcedure("idptype",vint,&idptype);
 		addInternalProcedure("tostring",vtheoopt,&printtheory);
 		addInternalProcedure("tostring",vstructopt,&printstructure);
+		addInternalProcedure("tostring",voptopt,&printoptions);
+		addInternalProcedure("help",vspace,&help);
 		// TODO
 		
 		// Add the internal procedures to lua
@@ -2003,6 +2095,9 @@ namespace LuaConnection {
 		stringstream ss;
 		ss << DATADIR << "/std/idp_intern.lua";
 		luaL_dofile(_state,ss.str().c_str());
+
+		// Add the global namespace
+		addGlobal(Namespace::global());
 	}
 
 	/**

@@ -237,7 +237,9 @@ void SetExpr::setfvars() {
 	for(vector<Term*>::const_iterator it = _subterms.begin(); it != _subterms.end(); ++it) {
 		_freevars.insert((*it)->freevars().begin(),(*it)->freevars().end());
 	}
-	_freevars.erase(_quantvars.begin(),_quantvars.end());
+	for(set<Variable*>::const_iterator it = _quantvars.begin(); it != _quantvars.end(); ++it) {
+		_freevars.erase(*it);
+	}
 }
 
 void SetExpr::recursiveDelete() {

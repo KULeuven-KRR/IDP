@@ -31,6 +31,7 @@ end
 local oldTostring = tostring
 function tostring(e,opts) 
 	if idp_intern.isIdp(e) then
+		if (not opts) then opts = stdoptions end
 		return idp_intern.tostring(e,opts)
 	else
 		return oldTostring(e)

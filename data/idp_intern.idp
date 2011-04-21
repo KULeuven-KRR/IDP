@@ -1,3 +1,15 @@
+/***********
+	Help
+***********/
+
+/**
+ * List the procedures in the given namespace 
+ */
+procedure help(namespace) {
+	if (not namespace) then namespace = global_namespace end
+	idp_intern.help(namespace)
+}
+
 /**********************
 	Default options 
 **********************/
@@ -12,9 +24,9 @@ options stdoptions {
 	Create new objects 
 ************************/
 
-/**
+/** 
  * Create a new structure over a given vocabulary voc. 
- * The created structure assigns the least precise interpretation to every symbol of its vocabulary.
+ * The created structure assigns the least precise interpretation to every symbol of its vocabulary.  
  */
 procedure newstructure(voc) {
 	return idp_intern.newstructure(voc)

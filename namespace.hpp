@@ -72,6 +72,9 @@ class Namespace {
 		Options*					options(const std::string&)		const;
 		UserProcedure*				procedure(const std::string&)	const;
 
+		const std::map<std::string,UserProcedure*>&	procedures()	const { return _procedures;	}
+		const std::map<std::string,Namespace*>&		subspaces()		const { return _subspaces;	}
+
 		// Mutators	
 		void	add(Vocabulary* v);
 		void	add(Namespace* n);

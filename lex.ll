@@ -6,6 +6,8 @@
 
 %{
 
+#include "yyltype.hpp"
+
 #include <string>
 #include <iostream>
 #include <sstream>
@@ -100,6 +102,7 @@ void start_include(string s) {
 	else {
 		yylloc.first_line = 1;
 		yylloc.first_column = 1;
+		yylloc.descr = 0;
 		prevlength = 0;
 		insert.currfile(s);
 		yy_switch_to_buffer(yy_create_buffer(yyin,YY_BUF_SIZE));
@@ -155,6 +158,8 @@ void end_include() {
 %x include
 %x procedure
 %x lua
+%x description
+%x descontent
 
 ID				_*[A-Za-z][a-zA-Z0-9_]*	
 CH				[A-Za-z]
@@ -173,6 +178,23 @@ COMMENTLINE		"//".*
 	***************/
 
 <*>{COMMENTLINE}			{							}
+
+<*>"/**"/[^*]				{ commentcaller = YY_START;
+							  BEGIN(description);
+							  advancecol();
+							  yylloc.descr = new stringstream();
+							}
+<description>[^*\n \r\t]*	{ advancecol(); (*yylloc.descr) << yytext; BEGIN(descontent);	}
+<description>[*]*			{ advancecol();													}
+<description>"*"+"/"		{ BEGIN(commentcaller);           
+							  advancecol();				}
+<descontent>[^*\n]*			{ advancecol(); (*yylloc.descr) << yytext;			}
+<descontent>[^*\n]*\n		{ advanceline(); (*yylloc.descr) << yytext << "        "; BEGIN(description);		}
+<descontent>"*"+[^*/\n]*	{ advancecol();	(*yylloc.descr) << yytext;			}
+<descontent>"*"+[^*/\n]*\n	{ advanceline(); (*yylloc.descr) << yytext << "        ";	BEGIN(description);		}
+<descontent>"*"+"/"			{ BEGIN(commentcaller);           
+							  advancecol();				}
+
 <*>"/*"						{ commentcaller = YY_START;
 							  BEGIN(comment);	
 							  advancecol();				}

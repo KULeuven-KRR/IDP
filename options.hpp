@@ -90,6 +90,9 @@ class Options {
 
 		Language	language() const;
 		bool		printtypes() const;
+
+		std::ostream&	put(std::ostream&)	const;
+		std::string		to_string()			const;	
 };
 
 #endif

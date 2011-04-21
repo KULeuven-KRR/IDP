@@ -13,5 +13,18 @@ theory T : V {
 	? x : P(x).
 }
 
+/**
+ * main procedure
+ */
 procedure main() {
+	print(T,stdoptions)
+	print(stdoptions)
 }
+
+namespace N {
+
+	procedure A() {
+	}
+
+}
+

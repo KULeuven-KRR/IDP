@@ -124,7 +124,8 @@ void executeproc(const string& proc) {
  **/
 void interactive() {
 	cout << "Running GidL in interactive mode.\n"
-		 << "  Type 'exit' to quit.\n\n";
+		 << "  Type 'exit' to quit.\n"
+		 << "  Type 'help()' for help\n\n";
 
 #ifdef USEINTERACTIVE
 	idp_rl_start();
