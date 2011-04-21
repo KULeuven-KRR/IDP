@@ -237,6 +237,8 @@ COMMENTLINE		"//".*
 							  if(bracketcounter == 0) { 
 								  yylval.sstr = luacode;
 								  BEGIN(INITIAL); 
+								  delete(yylloc.descr);
+								  yylloc.descr = 0;
 								  return LUACHUNK;	
 							  }
 							  else (*luacode) << '}';
@@ -494,7 +496,11 @@ COMMENTLINE		"//".*
 							}
 <*>"}"						{ advancecol();
 							  --bracketcounter;
-							  if(bracketcounter == 0) BEGIN(INITIAL);
+							  if(bracketcounter == 0) {
+								  BEGIN(INITIAL);
+								  delete(yylloc.descr);
+								  yylloc.descr = 0;
+							  }
 							  return *yytext;
 							}
 <*>.                        { advancecol();

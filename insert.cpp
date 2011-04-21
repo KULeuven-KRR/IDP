@@ -1020,7 +1020,6 @@ void Insert::openprocedure(const string& name, YYLTYPE l) {
 	UserProcedure* p = procedureInScope(name,pi);
 	if(p) Error::multdeclproc(name,pi,p->pi());
 	_currprocedure = new UserProcedure(name,pi,l.descr);
-	// TODO: take using declarations into account
 	_currspace->add(_currprocedure);
 }
 

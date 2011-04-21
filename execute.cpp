@@ -157,10 +157,11 @@ class OverloadedObject {
 		void insert(Options* n)				{ _options = n;		}
 		void insert(UserProcedure* n)		{ _procedure = n;	}
 
-		AbstractStructure*	structure()	const { return _structure;	}
-		AbstractTheory*		theory()	const { return _theory;		}
-		Options*			options()	const { return _options;	}
-		Namespace*			space()		const { return _namespace;	}
+		AbstractStructure*	structure()		const { return _structure;	}
+		AbstractTheory*		theory()		const { return _theory;		}
+		Options*			options()		const { return _options;	}
+		Namespace*			space()			const { return _namespace;	}
+		Vocabulary*			vocabulary()	const { return _vocabulary;	}
 
 		vector<ArgType> types() {
 			vector<ArgType> result;
@@ -273,6 +274,15 @@ struct InternalArgument {
 	Namespace* space() const {
 		if(_type == AT_NAMESPACE) return _value._namespace;
 		else if(_type == AT_OVERLOADED) return _value._overloaded->space();
+		else {
+			assert(false);
+			return 0;
+		}
+	}
+
+	Vocabulary* vocabulary() const {
+		if(_type == AT_VOCABULARY) return _value._vocabulary;
+		else if(_type == AT_OVERLOADED) return _value._overloaded->vocabulary();
 		else {
 			assert(false);
 			return 0;
@@ -508,6 +518,34 @@ InternalArgument printstructure(const vector<InternalArgument>& , lua_State* ) {
 
 	InternalArgument result(StringPointer(str));
 	return result;
+}
+
+InternalArgument newstructure(const vector<InternalArgument>& args, lua_State* ) {
+	Vocabulary* v = args[0].vocabulary();
+	Structure* s = new Structure("",ParseInfo());
+	s->vocabulary(v);
+	return InternalArgument(s);
+}
+
+InternalArgument newtheory(const vector<InternalArgument>& args, lua_State* ) {
+	Vocabulary* v = args[0].vocabulary();
+	Theory* t = new Theory("",v,ParseInfo());
+	return InternalArgument(t);
+}
+
+InternalArgument newoptions(const vector<InternalArgument>& , lua_State* ) {
+	Options* opts = new Options("",ParseInfo());
+	return InternalArgument(opts);
+}
+
+InternalArgument clonetheory(const vector<InternalArgument>& args, lua_State* ) {
+	AbstractTheory* t = args[0].theory();
+	return InternalArgument(t->clone());
+}
+
+InternalArgument clonestructure(const vector<InternalArgument>& args, lua_State* ) {
+	AbstractStructure* s = args[0].structure();
+	return InternalArgument(s->clone());
 }
 
 string help(Namespace* ns) {
@@ -981,21 +1019,27 @@ namespace LuaConnection {
 	/**
 	 * Garbage collection for structures
 	 */
-	int gcStructure(lua_State* ) {
+	int gcStructure(lua_State* L) {
+		AbstractStructure* s = *(AbstractStructure**)lua_touserdata(L,1);
+		if(s->pi().line() == 0) delete(s);	// FIXME: replace this by a check if s belongs to a namespace
 		return 0;
 	}
 
 	/**
 	 * Garbage collection for theories
 	 */
-	int gcTheory(lua_State* ) {
+	int gcTheory(lua_State* L) {
+		AbstractTheory* t = *(AbstractTheory**)lua_touserdata(L,1);
+		if(t->pi().line() == 0) t->recursiveDelete();	// FIXME: replace this by a check if t belongs to a namespace
 		return 0;
 	}
 
 	/**
 	 * Garbage collection for options
 	 */
-	int gcOptions(lua_State* ) {
+	int gcOptions(lua_State* L) {
+		Options* opts = *(Options**)lua_touserdata(L,1);
+		if(opts->pi().line() == 0) delete(opts);	// FIXME: replace this by a check if opts belongs to a namespace
 		return 0;
 	}
 
@@ -1147,8 +1191,27 @@ namespace LuaConnection {
 				return predicateIndex(L);
 			}
 		}
+		else if(index._type == AT_STRING) {
+			string str = *(index._value._string);
+			if(str == "type") {
+				convertToLua(L,InternalArgument(new set<Sort*>(*(symb->sorts()))));
+				return 1;
+			}
+			else if(str == "predicate") {
+				convertToLua(L,InternalArgument(new set<Predicate*>(*(symb->preds()))));
+				return 1;
+			}
+			else if(str == "function") {
+				convertToLua(L,InternalArgument(new set<Function*>(*(symb->funcs()))));
+				return 1;
+			}
+			else {
+				lua_pushstring(L,"A symbol can only be indexed by a tuple of sorts or the strings \"sort\", \"predicate\", or \"function\".");
+				return lua_error(L);
+			}
+		}
 		else {
-			lua_pushstring(L,"A symbol can only be indexed by a tuple of sorts");
+			lua_pushstring(L,"A symbol can only be indexed by a tuple of sorts or the strings \"sort\", \"predicate\", or \"function\".");
 			return lua_error(L);
 		}
 	}
@@ -1162,14 +1225,14 @@ namespace LuaConnection {
 		if(index._type == AT_STRING) {
 			unsigned int emptycounter = 0;
 			const set<Sort*>* sorts = voc->sort(*(index._value._string));
-			if(sorts->empty()) ++emptycounter;
+			if((!sorts) || sorts->empty()) ++emptycounter;
 			set<Predicate*> preds = voc->pred_no_arity(*(index._value._string));
 			if(preds.empty()) ++emptycounter;
 			set<Function*> funcs = voc->func_no_arity(*(index._value._string));
 			if(funcs.empty()) ++emptycounter;
 			if(emptycounter == 3) return 0;
 			else if(emptycounter == 2) {
-				if(!sorts->empty()) {
+				if(sorts && !sorts->empty()) {
 					set<Sort*>* newsorts = new set<Sort*>(*sorts);
 					InternalArgument ns(newsorts);
 					return convertToLua(L,ns);
@@ -1188,7 +1251,9 @@ namespace LuaConnection {
 			}
 			else {
 				OverloadedSymbol* os = new OverloadedSymbol();
-				for(set<Sort*>::const_iterator it = sorts->begin(); it != sorts->end(); ++it) os->insert(*it);
+				if(sorts) {
+					for(set<Sort*>::const_iterator it = sorts->begin(); it != sorts->end(); ++it) os->insert(*it);
+				}
 				for(set<Predicate*>::const_iterator it = preds.begin(); it != preds.end(); ++it) os->insert(*it);
 				for(set<Function*>::const_iterator it = funcs.begin(); it != funcs.end(); ++it) os->insert(*it);
 				InternalArgument s(os);
@@ -2044,12 +2109,15 @@ namespace LuaConnection {
 	 */
 	void addInternProcs(lua_State* L) {
 		// arguments of internal procedures
+		vector<ArgType> vempty(0);
 		vector<ArgType> vint(1,AT_INT);
+		vector<ArgType> vtheo(1,AT_THEORY);
+		vector<ArgType> vstruct(1,AT_STRUCTURE);
 		vector<ArgType> vspace(1,AT_NAMESPACE);
+		vector<ArgType> vvoc(1,AT_VOCABULARY);
 		vector<ArgType> vtheoopt(2); vtheoopt[0] = AT_THEORY; vtheoopt[1] = AT_OPTIONS;
 		vector<ArgType> vstructopt(2); vstructopt[0] = AT_STRUCTURE; vstructopt[1] = AT_OPTIONS;
 		vector<ArgType> voptopt(2); voptopt[0] = AT_OPTIONS; voptopt[1] = AT_OPTIONS;
-		// TODO
 
 		// Create internal procedures
 		addInternalProcedure("idptype",vint,&idptype);
@@ -2057,6 +2125,11 @@ namespace LuaConnection {
 		addInternalProcedure("tostring",vstructopt,&printstructure);
 		addInternalProcedure("tostring",voptopt,&printoptions);
 		addInternalProcedure("help",vspace,&help);
+		addInternalProcedure("newstructure",vvoc,&newstructure);
+		addInternalProcedure("newtheory",vvoc,&newtheory);
+		addInternalProcedure("newoptions",vempty,&newoptions);
+		addInternalProcedure("clone",vtheo,&clonetheory);
+		addInternalProcedure("clone",vstruct,&clonestructure);
 		// TODO
 		
 		// Add the internal procedures to lua
@@ -2381,7 +2454,7 @@ namespace BuiltinProcs {
 			case IAT_OVERLOADED: 
 				return("overloaded");
 			case IAT_SORT:
-				return("sort");
+				return("type");
 			case IAT_PREDICATE: 
 				return("predicate_symbol");
 			case IAT_FUNCTION:

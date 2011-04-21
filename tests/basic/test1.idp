@@ -23,7 +23,13 @@ procedure main() {
 
 namespace N {
 
+	/**
+	 * A dummy procedure
+	 */
 	procedure A() {
+	}
+
+	procedure B() {
 	}
 
 }
