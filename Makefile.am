@@ -39,7 +39,13 @@ gidl_SOURCES = \
 		common.hpp common.cpp\
 		interactive.hpp interactive.cpp\
 		main.cpp\
-		print.hpp print.cpp
+		print.hpp print.cpp\
+		checker.hpp checker.cpp\
+		generator.hpp generator.cpp\
+		propagate.hpp propagate.cpp\
+		ecnf.hpp ecnf.cpp\
+		ground.hpp ground.cpp\
+		fobdd.hpp fobdd.cpp
 
 AM_CXXFLAGS+=-I $(top_srcdir)/pcsolver/src/ 
 
@@ -52,4 +58,4 @@ AM_CXXFLAGS += -I $(LIBSRCDIR)/pluscallback1.7/
 dist_doc_DATA = README
 
 data_stddir = $(datadir)/std
-data_std_DATA = data/idp_intern.idp data/idp_intern.lua
+data_std_DATA = data/idp_intern.idp data/idp_intern.lua data/mx.idp

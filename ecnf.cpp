@@ -132,7 +132,7 @@ void GroundDefinition::addPCRule(int head, const vector<int>& body, bool conj, b
 	}
 }
 
-void GroundDefinition::addAggRule(int head, int setnr, AggType aggtype, bool lower, double bound, bool recursive) {
+void GroundDefinition::addAggRule(int head, int setnr, AggFunction aggtype, bool lower, double bound, bool recursive) {
 	// Check if there exists a rule with the same head
 	map<int,GroundRuleBody*>::iterator it = _rules.find(head);
 
@@ -181,8 +181,7 @@ void GroundDefinition::addAggRule(int head, int setnr, AggType aggtype, bool low
 	}
 }
 
-string GroundDefinition::to_string(unsigned int) const {
-	stringstream s;
+ostream& GroundDefinition::put(ostream& s, unsigned int ) const {
 	s << "{\n";
 	for(map<int,GroundRuleBody*>::const_iterator it = _rules.begin(); it != _rules.end(); ++it) {
 		s << _translator->printAtom(it->first) << " <- ";
@@ -191,11 +190,11 @@ string GroundDefinition::to_string(unsigned int) const {
 			const AggGroundRuleBody* grb = dynamic_cast<const AggGroundRuleBody*>(body);
 			s << grb->_bound << (grb->_lower ? " =< " : " >= ");
 			switch(grb->_aggtype) {
-				case AGGCARD: s << "#"; break;
-				case AGGSUM: s << "sum"; break;
-				case AGGPROD: s << "prod"; break;
-				case AGGMIN: s << "min"; break;
-				case AGGMAX: s << "max"; break;
+				case AGG_CARD: s << "#"; break;
+				case AGG_SUM: s << "sum"; break;
+				case AGG_PROD: s << "prod"; break;
+				case AGG_MIN: s << "min"; break;
+				case AGG_MAX: s << "max"; break;
 			}
 			s << grb->_setnr << ".\n";
 		}
@@ -217,7 +216,13 @@ string GroundDefinition::to_string(unsigned int) const {
 		}
 	}
 	s << "}\n";
-	return s.str();
+	return s;
+}
+
+string GroundDefinition::to_string(unsigned int) const {
+	stringstream sstr;
+	put(sstr);
+	return sstr.str();
 }
 
 /*******************************
@@ -369,7 +374,7 @@ void GroundTheory::addDefinition(GroundDefinition* d) {
 			else {
 				assert(typeid(*grb) == typeid(AggGroundRuleBody));
 				AggGroundRuleBody* agggrb = dynamic_cast<AggGroundRuleBody*>(grb);
-				addSet(agggrb->setnr(),defnr,(agggrb->aggtype() != AGGCARD));
+				addSet(agggrb->setnr(),defnr,(agggrb->aggtype() != AGG_CARD));
 			}
 		}
 	}
@@ -381,7 +386,7 @@ void GroundTheory::addFixpDef(GroundFixpDef*) {
 }
 
 void GroundTheory::addAggregate(int head, AggTsBody* body) {
-	addSet(body->setnr(),ID_FOR_UNDEFINED,(body->aggtype() != AGGCARD));
+	addSet(body->setnr(),ID_FOR_UNDEFINED,(body->aggtype() != AGG_CARD));
 	_aggregates.push_back(new GroundAggregate(body->aggtype(),body->lower(),body->type(),head,body->setnr(),body->bound()));
 }
 
@@ -408,7 +413,7 @@ void GroundTheory::addPCRule(int defnr, int tseitin, PCTsBody* body) {
 
 void GroundTheory::addAggRule(int defnr, int tseitin, AggTsBody* body) {
 	assert(_definitions[defnr]->rule(tseitin) == _definitions[defnr]->end());
-	addSet(body->setnr(),defnr,(body->aggtype() != AGGCARD));
+	addSet(body->setnr(),defnr,(body->aggtype() != AGG_CARD));
 	_definitions[defnr]->addAggRule(tseitin,body->setnr(),body->aggtype(),body->lower(),body->bound(),true);
 }
 
@@ -456,11 +461,11 @@ string GroundTheory::to_string() const {
 		s << agg->bound();
 		s << (agg->lower() ? " =< " : " >= ");
 		switch(agg->type()) {
-			case AGGCARD: 	s << "card("; break;
-			case AGGSUM: 	s << "sum("; break;
-			case AGGPROD: 	s << "prod("; break;
-			case AGGMIN: 	s << "min("; break;
-			case AGGMAX: 	s << "max("; break;
+			case AGG_CARD: 	s << "card("; break;
+			case AGG_SUM: 	s << "sum("; break;
+			case AGG_PROD: 	s << "prod("; break;
+			case AGG_MIN: 	s << "min("; break;
+			case AGG_MAX: 	s << "max("; break;
 			default: assert(false);
 		}
 		s << agg->setnr() << ").\n";
@@ -588,25 +593,25 @@ void SolverTheory::addFixpDef(GroundFixpDef*) {
 	assert(false);
 }
 
-void SolverTheory::addAggregate(int definitionID, int head, bool lowerbound, int setnr, AggType aggtype, TsType sem, double bound) {
-	addSet(setnr,definitionID,(aggtype != AGGCARD));
+void SolverTheory::addAggregate(int definitionID, int head, bool lowerbound, int setnr, AggFunction aggtype, TsType sem, double bound) {
+	addSet(setnr,definitionID,(aggtype != AGG_CARD));
 	MinisatID::Aggregate agg;
 	agg.sign = lowerbound ? MinisatID::AGGSIGN_LB : MinisatID::AGGSIGN_UB;
 	agg.setID = setnr;
 	switch (aggtype) {
-		case AGGCARD:
+		case AGG_CARD:
 			agg.type = MinisatID::CARD;
 			break;
-		case AGGSUM:
+		case AGG_SUM:
 			agg.type = MinisatID::SUM;
 			break;
-		case AGGPROD:
+		case AGG_PROD:
 			agg.type = MinisatID::PROD;
 			break;
-		case AGGMIN:
+		case AGG_MIN:
 			agg.type = MinisatID::MIN;
 			break;
-		case AGGMAX:
+		case AGG_MAX:
 			agg.type = MinisatID::MAX;
 			break;
 	}
@@ -751,14 +756,12 @@ void SolverTheory::addCPVariable(unsigned int varid) {
 //cerr << "func = " << function->name();
 		SortTable* domain = _structure->inter(function->outsort());
 		assert(domain->finite()); 		//TODO Right?
-		assert(domain->type() == ELINT); //FIXME ... so for this kind of table first() and last() are always defined?
-		Element first = domain->element(0); 				//FIXME domain->first() ?
-		int minvalue = first._int;
-		Element last = domain->element(domain->size()-1);	//FIXME domain->last() ?
-		int maxvalue = last._int;
+		const DomainElement* first = domain->first(); 	//FIXME domain->first() ?
+		int minvalue = first->value()._int;
+		const DomainElement* last = domain->last();		//FIXME domain->last() ?
+		int maxvalue = last->value()._int;
 		assert(maxvalue > minvalue);
-		unsigned int difference = maxvalue - minvalue;
-		if(difference + 1 == domain->size()) {
+		if(domain->isRange()) {
 //cerr << " domain = [" << minvalue << "," << maxvalue << "]" << endl;
 			// the domain is a complete range from minvalue to maxvalue.
 			MinisatID::CPIntVarRange cpvar;
@@ -772,9 +775,9 @@ void SolverTheory::addCPVariable(unsigned int varid) {
 			MinisatID::CPIntVarEnum cpvar;
 			cpvar.varID = varid;
 //cerr << " domain = { ";
-			for(unsigned int m = 0; m < domain->size(); ++m) {
-				Element element = domain->element(m);
-				int value = element._int;
+			
+			for(SortIterator it = domain->sortbegin(); it.hasNext(); ++it) {
+				int value = (*it)->value()._int;
 //cerr << value << "; ";
 				cpvar.values.push_back(value);
 			}
@@ -809,7 +812,7 @@ class DomelementEquality {
 		unsigned int	_arity;
 	public:
 		DomelementEquality(unsigned int arity) : _arity(arity) { }
-		bool operator()(const vector<domelement>& v1, const vector<domelement>& v2) {
+		bool operator()(const vector<const DomainElement*>& v1, const vector<const DomainElement*>& v2) {
 			for(unsigned int n = 0; n < _arity; ++n) {
 				if(v1[n] != v2[n]) return false;
 			}
@@ -826,14 +829,14 @@ class DomelementEquality {
 void SolverTheory::addFuncConstraints() {
 	for(unsigned int n = 0; n < getTranslator().nrOffsets(); ++n) {
 		PFSymbol* pfs = getTranslator().getSymbol(n);
-		const map<vector<domelement>,int>& tuples = getTranslator().getTuples(n);
-		if(!(pfs->ispred()) && !(tuples.empty())) {
+		const map<vector<const DomainElement*>,int>& tuples = getTranslator().getTuples(n);
+		if((typeid(*pfs) == typeid(Function))  && !(tuples.empty())) {
 			Function* f = dynamic_cast<Function*>(pfs);
 			SortTable* st = _structure->inter(f->outsort());
 			DomelementEquality de(f->arity());
 			vector<vector<int> > sets(1);
-			map<vector<domelement>,int>::const_iterator pit = tuples.begin();
-			for(map<vector<domelement>,int>::const_iterator it = tuples.begin(); it != tuples.end(); ++it) {
+			map<vector<const DomainElement*>,int>::const_iterator pit = tuples.begin();
+			for(map<vector<const DomainElement*>,int>::const_iterator it = tuples.begin(); it != tuples.end(); ++it) {
 				if(de(it->first,pit->first)) sets.back().push_back(it->second);
 				else sets.push_back(vector<int>(1,it->second));
 				pit = it;
@@ -843,11 +846,11 @@ void SolverTheory::addFuncConstraints() {
 				vector<double> tw(0);
 				int setnr = getTranslator().translateSet(sets[s],lw,tw);
 				int tseitin;
-				if(f->partial() || !(st->finite()) || st->size() != sets[s].size()) {
-					tseitin = getTranslator().translate(1,'>',false,AGGCARD,setnr,TS_IMPL);
+				if(f->partial() || !(st->finite()) /* FIXME || st->size() != sets[s].size()*/) {
+					tseitin = getTranslator().translate(1,'>',false,AGG_CARD,setnr,TS_IMPL);
 				}
 				else {
-					tseitin = getTranslator().translate(1,'=',true,AGGCARD,setnr,TS_IMPL);
+					tseitin = getTranslator().translate(1,'=',true,AGG_CARD,setnr,TS_IMPL);
 				}
 				addUnitClause(tseitin);
 			}
@@ -860,8 +863,8 @@ void SolverTheory::addFalseDefineds() {
 		PFSymbol* s = getTranslator().getSymbol(n);
 		map<PFSymbol*,set<int> >::const_iterator it = _defined.find(s);
 		if(it != _defined.end()) {
-			const map<vector<domelement>,int>& tuples = getTranslator().getTuples(n);
-			for(map<vector<domelement>,int>::const_iterator jt = tuples.begin(); jt != tuples.end(); ++jt) {
+			const map<vector<const DomainElement*>,int>& tuples = getTranslator().getTuples(n);
+			for(map<vector<const DomainElement*>,int>::const_iterator jt = tuples.begin(); jt != tuples.end(); ++jt) {
 				if(it->second.find(jt->second) == it->second.end()) addUnitClause(-jt->second);
 			}
 		}

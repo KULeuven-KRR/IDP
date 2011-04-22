@@ -16,6 +16,7 @@
 	Abstract base class for formulas, definitions and fixpoint definitions
 *****************************************************************************/
 
+class Function;
 class PFSymbol;
 class Vocabulary;
 class AbstractStructure;

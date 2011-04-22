@@ -232,10 +232,10 @@ FOBDDVariable* FOBDDManager::getVariable(Variable* var) {
 	return addVariable(var);
 }
 
-vector<FOBDDVariable*> FOBDDManager::getVariables(const vector<Variable*>& vars) {
-	vector<FOBDDVariable*> bddvars;
-	for(vector<Variable*>::const_iterator it = vars.begin(); it != vars.end(); ++it) {
-		bddvars.push_back(getVariable(*it));
+set<FOBDDVariable*> FOBDDManager::getVariables(const set<Variable*>& vars) {
+	set<FOBDDVariable*> bddvars;
+	for(set<Variable*>::const_iterator it = vars.begin(); it != vars.end(); ++it) {
+		bddvars.insert(getVariable(*it));
 	}
 	return bddvars;
 }
@@ -439,7 +439,7 @@ FOBDD* FOBDDManager::univquantify(FOBDDVariable* var, FOBDD* bdd) {
 	return negation(quantbdd);
 }
 
-FOBDD* FOBDDManager::univquantify(const vector<FOBDDVariable*>& qvars, FOBDD* bdd) {
+FOBDD* FOBDDManager::univquantify(const set<FOBDDVariable*>& qvars, FOBDD* bdd) {
 	FOBDD* negatedbdd = negation(bdd);
 	FOBDD* quantbdd = existsquantify(qvars,negatedbdd);
 	return negation(quantbdd);
@@ -451,9 +451,9 @@ FOBDD* FOBDDManager::existsquantify(FOBDDVariable* var, FOBDD* bdd) {
 	return quantify(var->variable()->sort(),bumped);
 }
 
-FOBDD* FOBDDManager::existsquantify(const vector<FOBDDVariable*>& qvars, FOBDD* bdd) {
+FOBDD* FOBDDManager::existsquantify(const set<FOBDDVariable*>& qvars, FOBDD* bdd) {
 	FOBDD* result = bdd;
-	for(vector<FOBDDVariable*>::const_iterator it = qvars.begin(); it != qvars.end(); ++it) {
+	for(set<FOBDDVariable*>::const_iterator it = qvars.begin(); it != qvars.end(); ++it) {
 		result = existsquantify(*it,result);
 	}
 	return result;

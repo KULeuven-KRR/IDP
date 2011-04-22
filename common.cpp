@@ -5,6 +5,7 @@
 ************************************/
 
 #include <iostream>
+#include <ostream>
 #include <vector>
 #include <limits>
 #include <cassert>
@@ -163,17 +164,12 @@ CompType negatect(CompType ct) {
 }
 
 string AggTypeNames[5] = { "#", "sum", "prod", "min", "max" };
-ostream& operator<<(ostream& out, const AggType& aggtype) {
+ostream& operator<<(ostream& out, AggFunction aggtype) {
 	return out << AggTypeNames[aggtype];
 }
 
-string ElementTypeNames[4] = { "int", "double", "string", "compound" };
-ostream& operator<<(ostream& out, const ElementType& elementtype) {
-	return out << ElementTypeNames[elementtype];
-}
-
 string TsTypeNames[4] = { "<=>", "<-", "=>", "<=" };
-ostream& operator<<(ostream& out, const TsType& tstype) {
+ostream& operator<<(ostream& out, TsType tstype) {
 	return out << TsTypeNames[tstype];
 }
 

@@ -11,22 +11,21 @@
 
 class PredTable;
 class PredInter;
-struct compound;
-typedef compound* domelement; //repeated from vocabulary.hpp
+class DomainElement;
 
 class InstanceChecker {
 	public:
-		virtual bool run(const std::vector<domelement>&)	const = 0;
+		virtual bool run(const std::vector<const DomainElement*>&)	const = 0;
 };
 
 class FalseInstanceChecker : public InstanceChecker {
 	public:
-		bool run(const std::vector<domelement>&)	const { return false;	}
+		bool run(const std::vector<const DomainElement*>&)	const { return false;	}
 };
 
 class TrueInstanceChecker : public InstanceChecker { 
 	public:
-		bool run(const std::vector<domelement>&)	const { return true;	}
+		bool run(const std::vector<const DomainElement*>&)	const { return true;	}
 };
 
 class TableInstanceChecker : public InstanceChecker {
@@ -34,15 +33,7 @@ class TableInstanceChecker : public InstanceChecker {
 		PredTable*	_table;
 	public:
 		TableInstanceChecker(PredTable* t) : _table(t) { }
-		bool run(const std::vector<domelement>& vd)	const;
-};
-
-class InvTableInstanceChecker : public InstanceChecker {
-	private:
-		PredTable*	_table;
-	public:
-		InvTableInstanceChecker(PredTable* t) : _table(t) { }
-		bool run(const std::vector<domelement>& vd)	const;
+		bool run(const std::vector<const DomainElement*>& vd)	const;
 };
 
 class CheckerFactory {

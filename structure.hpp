@@ -828,6 +828,10 @@ class InternalSortTable : public InternalPredTable {
 
 		virtual InternalSortIterator*	sortbegin() const = 0;
 				InternalTableIterator*	begin()		const;
+
+		virtual	const DomainElement*	first()		const = 0;
+		virtual	const DomainElement*	last()		const = 0;
+		virtual bool					isRange()	const = 0;
 	
 		virtual ~InternalSortTable() { }
 
@@ -859,6 +863,10 @@ class UnionInternalSortTable : public InternalSortTable {
 		InternalSortTable*	add(const DomainElement*);		
 		InternalSortTable*	remove(const DomainElement*);	
 		InternalSortTable*	add(int i1, int i2);
+
+		const DomainElement*	first()		const;
+		const DomainElement*	last()		const;
+		bool					isRange()	const;
 	
 };
 
@@ -885,6 +893,9 @@ class AllNaturalNumbers : public InfiniteInternalSortTable {
 	protected:
 		~AllNaturalNumbers() { }
 		InternalSortTable*	add(int i1, int i2);
+		const DomainElement*	first()	const;
+		const DomainElement*	last()	const;
+		bool					isRange()	const { return true;	}
 };
 
 /**
@@ -898,6 +909,9 @@ class AllIntegers : public InfiniteInternalSortTable {
 	protected:
 		~AllIntegers() { }
 		InternalSortTable*	add(int i1, int i2);
+		const DomainElement*	first()	const;
+		const DomainElement*	last()	const;
+		bool					isRange()	const { return true;	}
 };
 
 /**
@@ -911,6 +925,9 @@ class AllFloats : public InfiniteInternalSortTable {
 	protected:
 		~AllFloats() { }
 		InternalSortTable*	add(int i1, int i2);
+		const DomainElement*	first()	const;
+		const DomainElement*	last()	const;
+		bool					isRange()	const { return true;	}
 };
 
 /**
@@ -924,6 +941,9 @@ class AllStrings : public InfiniteInternalSortTable {
 	protected:
 		~AllStrings() { }
 		InternalSortTable*	add(int i1, int i2);
+		const DomainElement*	first()	const;
+		const DomainElement*	last()	const;
+		bool					isRange()	const { return true;	}
 };
 
 /**
@@ -944,6 +964,9 @@ class AllChars : public InternalSortTable {
 		bool	approxempty()	const { return false;	}
 	protected:
 		~AllChars() { }
+		const DomainElement*	first()	const;
+		const DomainElement*	last()	const;
+		bool					isRange()	const { return true;	}
 };
 
 /**
@@ -969,6 +992,9 @@ class EnumeratedInternalSortTable : public InternalSortTable {
 		InternalSortTable*		add(const DomainElement*);
 		InternalSortTable*		remove(const DomainElement*);
 		InternalSortTable*		add(int i1, int i2);
+		const DomainElement*	first()		const;
+		const DomainElement*	last()		const;
+		bool					isRange()	const;
 };
 
 /**
@@ -987,6 +1013,8 @@ class IntRangeInternalSortTable : public InternalSortTable {
 		InternalSortTable*	add(const DomainElement*);
 		InternalSortTable*	remove(const DomainElement*);
 		InternalSortTable*	add(int i1, int i2);
+		const DomainElement*	first()	const;
+		const DomainElement*	last()	const;
 
 };
 
@@ -1259,6 +1287,10 @@ class SortTable : public AbstractTable {
 		void			remove(const DomainElement* el)				{ _table = _table->remove(el);		}
 		TableIterator 	begin()								const;
 		SortIterator 	sortbegin()							const;
+
+		const DomainElement*	first()		const { return _table->first();	}
+		const DomainElement*	last()		const { return _table->last();	}
+		bool					isRange()	const { return _table->isRange();	}
 
 		InternalSortTable*	interntable()	const { return _table;	}
 };

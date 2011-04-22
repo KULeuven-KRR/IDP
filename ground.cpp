@@ -12,7 +12,6 @@
 #include <limits>
 #include <cmath>
 
-#include "element.hpp"
 #include "vocabulary.hpp"
 #include "structure.hpp"
 #include "ecnf.hpp"

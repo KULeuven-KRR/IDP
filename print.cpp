@@ -260,7 +260,7 @@ void IDPPrinter::visit(const DomainTerm* t) {
 }
 
 void IDPPrinter::visit(const AggTerm* t) {
-	_out << t->type();
+	_out << t->function();
 	t->set()->accept(this);
 }
 
@@ -409,7 +409,7 @@ void EcnfPrinter::printAggregate(AggType aggtype, TsType arrow, unsigned int def
 	}
 	#warning "Replacing implication by equivalence...";
 	switch(arrow) {
-		case TS_EQ: case TS_IMPL: case TS_RIMPL:  /* (Reverse) implication is not supported by solver (yet)*/
+		case TS_EQ: case TS_IMPL: case TS_RIMPL:  // (Reverse) implication is not supported by solver (yet)
 			_out << "C ";
 			break;
 		case TS_RULE: 

@@ -10,12 +10,12 @@
 #include <vector>
 #include <map>
 #include <string>
+#include "theory.hpp"
 
-#include "element.hpp"
-#include "visitor.hpp"
-
+class Sort;
 class PFSymbol;
 class Variable;
+class DomainElement;
 
 /*******************
 	Kernel order
@@ -55,7 +55,7 @@ typedef std::map<Sort*,MBDDQK>									QuantKernelTable;
 typedef std::map<Variable*,FOBDDVariable*>						VariableTable;
 typedef std::map<unsigned int,FOBDDDeBruijnIndex*>				MUIDB;
 typedef std::map<Sort*,MUIDB>									DeBruijnIndexTable;
-typedef std::map<TypedElement,FOBDDDomainTerm*>					MTEDT;
+typedef std::map<const DomainElement*,FOBDDDomainTerm*>			MTEDT;
 typedef std::map<Sort*,MTEDT>									DomainTermTable;
 typedef std::map<std::vector<FOBDDArgument*>,FOBDDFuncTerm*>	MVAFT;
 typedef std::map<Function*,MVAFT>								FuncTermTable;
@@ -88,7 +88,7 @@ class FOBDDManager {
 		FOBDDVariable*		addVariable(Variable* var);
 		FOBDDDeBruijnIndex* addDeBruijnIndex(Sort* sort, unsigned int index);
 		FOBDDFuncTerm* 		addFuncTerm(Function* func, const std::vector<FOBDDArgument*>& args);
-		FOBDDDomainTerm*	addDomainTerm(Sort* sort, TypedElement value);
+		FOBDDDomainTerm*	addDomainTerm(Sort* sort, const DomainElement* value);
 
 		FOBDD*				quantify(Sort* sort, FOBDD* bdd);
 		FOBDD*				bump(FOBDDVariable* var, FOBDD* bdd, unsigned int depth = 0);
@@ -107,17 +107,17 @@ class FOBDDManager {
 		FOBDDVariable*		getVariable(Variable* var);
 		FOBDDDeBruijnIndex* getDeBruijnIndex(Sort* sort, unsigned int index);
 		FOBDDFuncTerm* 		getFuncTerm(Function* func, const std::vector<FOBDDArgument*>& args);
-		FOBDDDomainTerm*	getDomainTerm(Sort* sort, TypedElement value);
+		FOBDDDomainTerm*	getDomainTerm(Sort* sort, const DomainElement* value);
 
-		std::vector<FOBDDVariable*>	getVariables(const std::vector<Variable*>& vars);
+		std::set<FOBDDVariable*>	getVariables(const std::set<Variable*>& vars);
 
 		FOBDD*	negation(FOBDD*);
 		FOBDD*	conjunction(FOBDD*,FOBDD*);
 		FOBDD*	disjunction(FOBDD*,FOBDD*);
 		FOBDD*	univquantify(FOBDDVariable*,FOBDD*);
 		FOBDD*	existsquantify(FOBDDVariable*,FOBDD*);
-		FOBDD*	univquantify(const std::vector<FOBDDVariable*>&,FOBDD*);
-		FOBDD*	existsquantify(const std::vector<FOBDDVariable*>&,FOBDD*);
+		FOBDD*	univquantify(const std::set<FOBDDVariable*>&,FOBDD*);
+		FOBDD*	existsquantify(const std::set<FOBDDVariable*>&,FOBDD*);
 		FOBDD*	ifthenelse(FOBDDKernel*, FOBDD* truebranch, FOBDD* falsebranch);
 		FOBDD*	substitute(FOBDD*,const std::map<FOBDDVariable*,FOBDDVariable*>&);
 		
@@ -129,7 +129,7 @@ class FOBDDManager {
 		std::string	to_string(FOBDDArgument*) const;
 };
 
-class FOBDDFactory : public Visitor {
+class FOBDDFactory : public TheoryVisitor {
 	private:
 		FOBDDManager*	_manager;
 		Vocabulary*		_vocabulary;
@@ -202,16 +202,16 @@ class FOBDDDeBruijnIndex : public FOBDDArgument {
 class FOBDDDomainTerm : public FOBDDArgument {
 	private:
 		Sort*			_sort;
-		TypedElement	_value;
+		const DomainElement*	_value;
 
-		FOBDDDomainTerm(Sort* sort, TypedElement value) :
+		FOBDDDomainTerm(Sort* sort, const DomainElement* value) :
 			_sort(sort), _value(value) { }
 
 	public:
 		bool containsDeBruijnIndex(unsigned int)	const { return false;	}
 
-		Sort*			sort()	const { return _sort;	}	
-		TypedElement	value()	const { return _value;	}
+		Sort*					sort()	const { return _sort;	}	
+		const DomainElement*	value()	const { return _value;	}
 
 	friend class  FOBDDManager;
 };

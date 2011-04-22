@@ -1460,6 +1460,15 @@ bool EnumeratedInternalSortTable::contains(const DomainElement* d) const {
 	return _table.find(d) != _table.end();
 }
 
+bool EnumeratedInternalSortTable::isRange() const {
+	const DomainElement* f = first();
+	const DomainElement* l = last();
+	if(f->type() == DET_INT && l->type() == DET_INT) {
+		return l->value()._int - f->value()._int == _table.size() - 1;
+	}
+	else return false;
+}
+
 InternalSortIterator* EnumeratedInternalSortTable::sortbegin() const {
 	return new EnumInternalSortIterator(_table.begin(),_table.end());
 }
@@ -1500,6 +1509,14 @@ InternalSortTable* EnumeratedInternalSortTable::remove(const DomainElement* d) {
 			return this;
 		}
 	}
+}
+
+const DomainElement* EnumeratedInternalSortTable::first() const {
+	return *(_table.begin());
+}
+
+const DomainElement* EnumeratedInternalSortTable::last() const {
+	return *(_table.rbegin());
 }
 
 
@@ -1630,6 +1647,21 @@ InternalSortIterator* UnionInternalSortTable::sortbegin() const {
 	return new UnionInternalSortIterator(vsi,_outtables);
 }
 
+const DomainElement* UnionInternalSortTable::first() const {
+	// TODO
+	return 0;
+}
+
+const DomainElement* UnionInternalSortTable::last() const {
+	// TODO
+	return 0;
+}
+
+bool UnionInternalSortTable::isRange() const {
+	// TODO
+	return false;
+}
+
 InternalSortTable* InfiniteInternalSortTable::add(const DomainElement* d) {
 	if(!contains(d)) {
 		UnionInternalSortTable* upt = new UnionInternalSortTable();
@@ -1661,6 +1693,14 @@ InternalSortIterator* AllNaturalNumbers::sortbegin() const {
 	return new NatInternalSortIterator();
 }
 
+const DomainElement* AllNaturalNumbers::first() const {
+	return DomainElementFactory::instance()->create(0);
+}
+
+const DomainElement* AllNaturalNumbers::last() const {
+	return DomainElementFactory::instance()->create(numeric_limits<int>::max());
+}
+
 InternalSortTable* AllNaturalNumbers::add(int i1,int i2) {
 	if(i1 >= 0) return this;
 	else {
@@ -1685,6 +1725,14 @@ InternalSortTable* AllIntegers::add(int,int) {
 	return this;
 }
 
+const DomainElement* AllIntegers::first() const {
+	return DomainElementFactory::instance()->create(numeric_limits<int>::min());
+}
+
+const DomainElement* AllIntegers::last() const {
+	return DomainElementFactory::instance()->create(numeric_limits<int>::max());
+}
+
 bool AllFloats::contains(const DomainElement* d) const {
 	return (d->type() == DET_INT || d->type() == DET_DOUBLE);
 }
@@ -1697,6 +1745,14 @@ InternalSortTable* AllFloats::add(int,int) {
 	return this;
 }
 
+const DomainElement* AllFloats::first() const {
+	return DomainElementFactory::instance()->create(numeric_limits<double>::min());
+}
+
+const DomainElement* AllFloats::last() const {
+	return DomainElementFactory::instance()->create(numeric_limits<double>::max());
+}
+
 bool AllStrings::contains(const DomainElement* d) const {
 	return d->type() != DET_COMPOUND;
 }
@@ -1707,6 +1763,15 @@ InternalSortTable* AllStrings::add(int,int) {
 
 InternalSortIterator* AllStrings::sortbegin() const {
 	return new StringInternalSortIterator();
+}
+
+const DomainElement* AllStrings::first() const {
+	return DomainElementFactory::instance()->create(StringPointer(""));
+}
+
+const DomainElement* AllStrings::last() const {
+	notyetimplemented("impossible to get the largest string");
+	return 0;
 }
 
 bool AllChars::contains(const DomainElement* d) const {
@@ -1763,6 +1828,14 @@ InternalSortTable* AllChars::remove(const DomainElement* d) {
 
 InternalSortIterator* AllChars::sortbegin() const {
 	return new CharInternalSortIterator();
+}
+
+const DomainElement* AllChars::first() const {
+	return DomainElementFactory::instance()->create(StringPointer(string(1,numeric_limits<char>::min())));
+}
+
+const DomainElement* AllChars::last() const {
+	return DomainElementFactory::instance()->create(StringPointer(string(1,numeric_limits<char>::max())));
 }
 
 /*************************

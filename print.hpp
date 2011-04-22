@@ -85,7 +85,7 @@ class IDPPrinter : public Printer {
 		void printInter(const char*,const char*,const PredTable*,const PredTable*);
 		void printAtom(int atomnr);
 		void printTerm(unsigned int termnr);
-		void printAggregate(double bound, bool lower, AggType aggtype, unsigned int setnr);
+		void printAggregate(double bound, bool lower, AggFunction aggtype, unsigned int setnr);
 
 	public:
 		IDPPrinter() : _printtypes(false) { }
