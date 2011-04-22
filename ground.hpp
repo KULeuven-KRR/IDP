@@ -15,7 +15,7 @@
 #include <stack>
 #include <cstdlib>
 
-#include "common.hpp" //FIXME: need include for AggType
+#include "commontypes.hpp"
 #include "visitor.hpp"
 #include "pcsolver/src/external/ExternalInterface.hpp"
 
@@ -27,20 +27,13 @@ class AbstractGroundTheory;
 class InstGenerator;
 class InstanceChecker;
 
+struct TypedElement;
+
 typedef compound* domelement; //repeated from vocabulary.hpp
 
 /**********************************************
 	Translate from ground atoms to numbers
 **********************************************/
-
-/*
- * Enumeration for the possible ways to define a tseitin atom in terms of the subformula it replaces.
- *		TS_EQ:		tseitin <=> subformula
- *		TS_RULE:	tseitin <- subformula
- *		TS_IMPL:	tseitin => subformula
- *		TS_RIMPL:	tseitin <= subformula
- */
-enum TsType { TS_EQ, TS_RULE, TS_IMPL, TS_RIMPL };
 
 /*
  * A complete definition of a tseitin atom
@@ -49,8 +42,8 @@ class TsBody {
 	protected:
 		TsType _type;	// the type of "tseitin definition"
 		TsBody(TsType type): _type(type) { }
-		virtual ~TsBody() {}
 	public:
+		virtual ~TsBody() { }
 		TsType type() const { return _type; }
 	friend class GroundTranslator;
 };
@@ -148,6 +141,9 @@ class TsSet {
 		std::vector<double>	_litweights;	// For each literal a corresponding weight
 		std::vector<double>	_trueweights;	// The weights of the true literals in the set
 	public:
+		// Modifiers
+		void	setWeight(unsigned int n, double w)	{ _litweights[n] = w;	}
+		// Inspectors
 		std::vector<int>	literals()				const { return _setlits; 			}
 		std::vector<double>	weights()				const { return _litweights;			}
 		std::vector<double>	trueweights()			const { return _trueweights;		}
@@ -217,21 +213,22 @@ class GroundTermTranslator {
 	public:
 		GroundTermTranslator() : _backfunctable(1), _backargstable(1) { }
 
-		unsigned int	translate(unsigned int,const std::vector<domelement>&);
-		unsigned int	translate(Function*,const std::vector<TypedElement>&);
+		unsigned int	translate(unsigned int offset,const std::vector<domelement>& args);
+		unsigned int	translate(Function*,const std::vector<TypedElement>& args);
 		unsigned int	nextNumber();
 		unsigned int	addFunction(Function*);
 
 		Function*						function(unsigned int nr)		const { return _backfunctable[nr];		}
 		const std::vector<domelement>&	args(unsigned int nr)			const { return _backargstable[nr];		}
-		Function*						getFunction(unsigned int nr)	const { return _offset2function[nr]; 		}
+		unsigned int					nrOffsets()						const { return _offset2function.size();	}
+		Function*						getFunction(unsigned int nr)	const { return _offset2function[nr]; 	}
 		std::string						printTerm(unsigned int nr)		const;
 };
 
 
 /************************************
 	Optimized grounding algorithm
-************************************/
+******************************domain******/
 
 class TermGrounder;
 class FormulaGrounder;
@@ -262,6 +259,7 @@ class TopLevelGrounder {
 		AbstractGroundTheory*	_grounding;
 	public:
 		TopLevelGrounder(AbstractGroundTheory* gt) : _grounding(gt) { }
+		virtual ~TopLevelGrounder() { }
 
 		virtual bool					run()		const = 0;
 				AbstractGroundTheory*	grounding()	const { return _grounding;	}
@@ -315,6 +313,7 @@ class TermGrounder {
 #endif
 	public:
 		TermGrounder() { }
+		virtual ~TermGrounder() { }
 		virtual domelement run() const = 0;
 		virtual bool canReturnCPVar() const = 0;
 #ifndef NDEBUG
@@ -410,6 +409,7 @@ class FormulaGrounder {
 		GroundingContext	_context;
 	public:
 		FormulaGrounder(GroundTranslator* gt, const GroundingContext& ct): _translator(gt), _context(ct) { }
+		virtual ~FormulaGrounder() { }
 		virtual int		run()					const = 0;
 		virtual void	run(std::vector<int>&)	const = 0;
 		virtual bool	conjunctive()			const = 0;
@@ -459,16 +459,21 @@ class AggGrounder : public FormulaGrounder {
 		char			_comp;
 		bool			_sign;
 		bool			_doublenegtseitin;
+		int	handleDoubleNegation(double boundvalue,int setnr) const;
+		int	finishCard(double truevalue,double boundvalue,int setnr) 	const;
+		int	finishSum(double truevalue,double boundvalue,int setnr)		const;
+		int	finishProduct(double truevalue,double boundvalue,int setnr)	const;
+		int	finishMaximum(double truevalue,double boundvalue,int setnr)	const;
+		int	finishMinimum(double truevalue,double boundvalue,int setnr)	const;
+		int finish(double boundvalue,double newboundvalue,double maxpossvalue,double minpossvalue,int setnr) const;
 	public:
 		AggGrounder(GroundTranslator* tr, GroundingContext gc, AggType tp, SetGrounder* sg, TermGrounder* bg, char c,bool s) :
 			FormulaGrounder(tr,gc), _setgrounder(sg), _boundgrounder(bg), _type(tp), _comp(c), _sign(s) { 
-				_doublenegtseitin = gc._tseitin == TS_RULE && ((gc._monotone == PC_POSITIVE && !s) || (gc._monotone == PC_NEGATIVE && s));	
+				_doublenegtseitin = (gc._tseitin == TS_RULE) && ((gc._monotone == PC_POSITIVE && !s) || (gc._monotone == PC_NEGATIVE && s));	
 			}
-		int		run()				const;
-		void	run(std::vector<int>&)	const;
-		int		finishCard(double,double,int)	const;
-		int		finishSum(double,double,int)	const;
-		bool	conjunctive() const { return true;	}
+		int		run()								const;
+		void	run(std::vector<int>&)				const;
+		bool	conjunctive() 						const { return true;	}
 };
 
 class ClauseGrounder : public FormulaGrounder {
@@ -531,6 +536,7 @@ class SetGrounder {
 		GroundTranslator*	_translator;
 	public:
 		SetGrounder(GroundTranslator* gt) : _translator(gt) { }
+		virtual ~SetGrounder() { }
 		virtual int run() const = 0;
 };
 
@@ -617,9 +623,6 @@ class GrounderFactory : public Visitor {
 		AbstractStructure*		_structure;		// The structure that will be used to reduce the grounding
 		AbstractGroundTheory*	_grounding;		// The ground theory that will be produced
 
-		// Options
-		bool	_usingcp;
-
 		// Context
 		GroundingContext				_context;
 		std::stack<GroundingContext>	_contextstack;
@@ -636,9 +639,13 @@ class GrounderFactory : public Visitor {
 		void	descend(Rule* r);
 		void	descend(SetExpr* s);
 		
+		// Grounding to CP
+		bool						_cpsupport;
+		std::set<const Function*>	_cpfunctions;
+
 		// Variable mapping
 		std::map<Variable*,domelement*>	_varmapping;	// Maps variables to their counterpart during grounding.
-													// That is, the corresponding domelement* acts as a variable+value.
+														// That is, the corresponding domelement* acts as a variable+value.
 
 		// Current ground definition
 		GroundDefinition*		_definition;	// The ground definition that will be produced by the 
@@ -654,11 +661,14 @@ class GrounderFactory : public Visitor {
 
 	public:
 		// Constructor
-		GrounderFactory(AbstractStructure* structure, bool usingcp): _structure(structure), _usingcp(usingcp) { }
+		GrounderFactory(AbstractStructure* structure, bool cpsupport): _structure(structure), _cpsupport(cpsupport) { }
 
 		// Factory method
-		TopLevelGrounder* create(const AbstractTheory* theory);
-		TopLevelGrounder* create(const AbstractTheory* theory, MinisatID::WrappedPCSolver* solver);
+		TopLevelGrounder* create(const AbstractTheory*);
+		TopLevelGrounder* create(const AbstractTheory*, MinisatID::WrappedPCSolver*);
+
+		// Determine what should be grounded to CP
+		std::set<const Function*> findCPFunctions(const AbstractTheory*);
 
 		// Recursive check
 		bool recursive(const Formula*);

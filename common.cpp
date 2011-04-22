@@ -5,12 +5,15 @@
 ************************************/
 
 #include <iostream>
-#include <string>
-#include <sstream>
 #include <vector>
 #include <limits>
 #include <cassert>
+#include <stdlib.h>
+#include <string>
+#include <sstream>
+
 #include "commontypes.hpp"
+
 using namespace std;
 
 string itos(int n) {
@@ -158,6 +161,27 @@ CompType negatect(CompType ct) {
 			return CT_EQ;
 	}
 }
+
+string AggTypeNames[5] = { "#", "sum", "prod", "min", "max" };
+ostream& operator<<(ostream& out, const AggType& aggtype) {
+	return out << AggTypeNames[aggtype];
+}
+
+string ElementTypeNames[4] = { "int", "double", "string", "compound" };
+ostream& operator<<(ostream& out, const ElementType& elementtype) {
+	return out << ElementTypeNames[elementtype];
+}
+
+string TsTypeNames[4] = { "<=>", "<-", "=>", "<=" };
+ostream& operator<<(ostream& out, const TsType& tstype) {
+	return out << TsTypeNames[tstype];
+}
+
+
+
+
+
+
 
 #ifdef OLD
 #include <string>

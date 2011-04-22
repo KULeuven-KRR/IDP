@@ -10,10 +10,18 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <set>
+#include <cassert>
 
 #include "theory.hpp"
-#include "ground.hpp" //FIXME: need include for enum TsType
+#include "commontypes.hpp"
 #include "pcsolver/src/external/ExternalInterface.hpp"
+
+class GroundTranslator;
+class GroundTermTranslator;
+class PCTsBody;
+class AggTsBody;
+class CPTsBody;
 
 namespace MinisatID{
  	 class WrappedPCSolver;
@@ -33,6 +41,9 @@ typedef std::vector<int> GroundClause;
 	Ground sets 
 ******************/
 
+/**
+ * class GroundSet
+ */
 class GroundSet {
 	private:
 		unsigned int		_setnr;
@@ -49,7 +60,8 @@ class GroundSet {
 		unsigned int	setnr() 				const { return _setnr; 			}
 		unsigned int	size()					const { return _setlits.size();	}
 		int				literal(unsigned int n)	const { return _setlits[n];		}
-		double			weight(unsigned int n)	const { return _litweights[n];	}
+		double			weight(unsigned int n)	const { return (not _litweights.empty()) ? _litweights[n] : 1;	}
+		bool			weighted()				const { return not _litweights.empty(); }
 
 		// Visitor
 		void accept(Visitor*) const;
@@ -59,7 +71,7 @@ class GroundSet {
 	Ground aggregate formulas
 ********************************/
 
-/*
+/**
  * class GroundAggregate
  *		This class represents ground formulas of the form
  *			head ARROW bound COMP agg(set)
@@ -110,10 +122,9 @@ class GroundAggregate {
 *************************/
 
 // Enumeration type for rules
-// RM enum RuleType { RT_TRUE, RT_FALSE, RT_UNARY, RT_CONJ, RT_DISJ, RT_AGG };
 enum RuleType { RT_CONJ, RT_DISJ, RT_AGG };
 
-/*
+/**
  * class GroundRuleBody
  *		This class represents a ground rule body, where literals are represented by integers.
  */ 
@@ -142,7 +153,7 @@ class GroundRuleBody {
 		friend class GroundDefinition;
 };
 
-/*
+/**
  * class PCGroundRuleBody
  *		This class represents ground rule bodies that are conjunctions or disjunctions of literals.
  */
@@ -170,7 +181,7 @@ class PCGroundRuleBody : public GroundRuleBody {
 		friend class GroundDefinition;
 };
 
-/*
+/**
  * class AggGroundRuleBody
  *		This class represents ground rule bodies that are aggregates.
  */
@@ -203,7 +214,7 @@ class AggGroundRuleBody : public GroundRuleBody {
 		friend class GroundDefinition;
 };
 
-/*
+/**
  * class GroundDefinition
  *		This class represents ground definitions.
  */
@@ -216,6 +227,7 @@ class GroundDefinition : public AbstractDefinition {
 		// Constructors
 		GroundDefinition(GroundTranslator* tr) : _translator(tr) { }
 		GroundDefinition* clone() const;
+		void recursiveDelete();
 
 		// Mutators
 		void addTrueRule(int head);
@@ -252,8 +264,8 @@ class GroundDefinition : public AbstractDefinition {
 
 class GroundFixpDef : public AbstractDefinition {
 	private:
-		std::map<int,GroundRuleBody*>	_rules;		// the direct subrules
-		std::vector<GroundFixpDef*>		_subdefs;	// the direct subdefinitions
+//		std::map<int,GroundRuleBody*>	_rules;		// the direct subrules
+//		std::vector<GroundFixpDef*>		_subdefs;	// the direct subdefinitions
 	public:
 		//TODO
 };
@@ -263,6 +275,10 @@ class GroundFixpDef : public AbstractDefinition {
 	CP reifications
 **********************/
 
+/**
+ * class CPReification
+ * 		This class represents CP constraints.
+ */
 class CPReification { //TODO
 	public:
 		int 		_head;
@@ -276,20 +292,18 @@ class CPReification { //TODO
 	Ground theories
 **********************/
 
-/*
+/**
  * class AbstractGroundTheory
  *		Implements base class for ground theories
  */
 class AbstractGroundTheory : public AbstractTheory {
 	protected:
-		AbstractStructure*			_structure;			// The ground theory may be partially reduced with respect
-														// to this structure. 
-		GroundTranslator*			_translator;		// Link between ground atoms and SAT-solver literals
-		GroundTermTranslator*		_termtranslator;	// Link between ground terms and SAT-solver literals
+		AbstractStructure*		_structure;			// The ground theory may be partially reduced with respect to this structure. 
+		GroundTranslator*		_translator;		// Link between ground atoms and SAT-solver literals.
+		GroundTermTranslator*	_termtranslator;	// Link between ground terms and SAT-solver literals.
 
-		std::set<int>			_printedtseitins;	// Tseitin atoms produced by the translator that occur 
-													// in the theory.
-		std::set<int>			_printedsets;		// Set numbers produced by the translator that occur in the theory
+		std::set<int>			_printedtseitins;	// Tseitin atoms produced by the translator that occur in the theory.
+		std::set<int>			_printedsets;		// Set numbers produced by the translator that occur in the theory.
 
 		const 	GroundTranslator& getTranslator() const	{ return *_translator; }
 				GroundTranslator& getTranslator() 		{ return *_translator; }
@@ -300,8 +314,8 @@ class AbstractGroundTheory : public AbstractTheory {
 		AbstractGroundTheory(Vocabulary* voc, AbstractStructure* str);
 
 		// Destructor
-		virtual void recursiveDelete()	{ delete(this);			}
-		virtual	~AbstractGroundTheory()	{ delete(_translator);	}
+		virtual void recursiveDelete();
+		virtual	~AbstractGroundTheory();
 
 		// Mutators
 				void add(Formula* )		{ assert(false);	}
@@ -330,20 +344,22 @@ class AbstractGroundTheory : public AbstractTheory {
 		AbstractGroundTheory*	clone()				const { assert(false); /* TODO */	}
 };
 
-/* 
+/**
  * class SolverTheory 
  *		A SolverTheory is a ground theory, stored as an instance of a SAT solver
  */
 class SolverTheory : public AbstractGroundTheory {
 	private:
-		SATSolver*							_solver;	// The SAT solver
-		std::map<PFSymbol*,std::set<int> >	_defined;	// Symbols that are defined in the theory. This set is used to
-														// communicate to the solver which ground atoms should be considered defined.
+		SATSolver*							_solver;		// The SAT solver
+		std::map<PFSymbol*,std::set<int> >	_defined;		// Symbols that are defined in the theory. This set is used to
+															// communicate to the solver which ground atoms should be considered defined.
+		std::set<unsigned int> 				_addedvarids;	// Variable ids that have already been added, together with their domain.
+
 		const 	SATSolver& getSolver() const	{ return *_solver; }
 				SATSolver& getSolver() 			{ return *_solver; }
 
 		void 	addAggregate(int definitionID, int head, bool lowerbound, int setnr, AggType aggtype, TsType sem, double bound);
-		void 	addPCRule(int defnr, int head, std::vector<int> body, bool conjunctive);
+		void 	addPCRule(int definitionID, int head, std::vector<int> body, bool conjunctive);
 
 	public:
 		// Constructors 
@@ -357,6 +373,8 @@ class SolverTheory : public AbstractGroundTheory {
 		void	addSet(int setnr, int defnr, bool weighted);
 		void	addAggregate(int tseitin, AggTsBody* body);
 		void 	addCPReification(int tseitin, CPTsBody* body);
+		void	addCPVariable(unsigned int varids);
+		void	addCPVariables(const std::vector<unsigned int>& varids);
 
 		void	addPCRule(int defnr, int tseitin, PCTsBody* body);
 		void	addAggRule(int defnr, int tseitin, AggTsBody* body);
@@ -383,7 +401,7 @@ class SolverTheory : public AbstractGroundTheory {
 
 };
 
-/*
+/**
  * class GroundTheory
  *		This class implements ground theories
  */
@@ -397,10 +415,10 @@ class GroundTheory : public AbstractGroundTheory {
 		std::vector<CPReification*>		_cpreifications;
 
 	public:
-
-		// Constructor
+		// Constructors
 		GroundTheory(AbstractStructure* str) : AbstractGroundTheory(str) { }
 		GroundTheory(Vocabulary* voc, AbstractStructure* str) : AbstractGroundTheory(voc,str)	{ }
+		void recursiveDelete();
 
 		// Mutators
 		void	addClause(GroundClause& cl, bool skipfirst = false);

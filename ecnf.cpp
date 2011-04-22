@@ -11,6 +11,7 @@
 
 #include "vocabulary.hpp"
 #include "structure.hpp"
+#include "ground.hpp"
 #include "pcsolver/src/external/ExternalInterface.hpp"
 
 using namespace std;
@@ -25,6 +26,12 @@ GroundDefinition* GroundDefinition::clone() const {
 //	for(ruleit = _rules.begin(); ruleit != _rules.end(); ++ruleit)
 		//TODO clone rules...	
 	return newdef;
+}
+
+void GroundDefinition::recursiveDelete() {
+	for(ruleiterator it = begin(); it != end(); ++it)
+		delete(it->second);
+	delete(this);
 }
 
 void GroundDefinition::addTrueRule(int head) {
@@ -102,15 +109,16 @@ void GroundDefinition::addPCRule(int head, const vector<int>& body, bool conj, b
 			case RT_AGG:
 			{
 				AggGroundRuleBody* grb = dynamic_cast<AggGroundRuleBody*>(it->second);
+				char comp = (grb->_lower ? '<' : '>');
 				if((!conj) || body.size() == 1) {
-					int ts = _translator->translate(grb->_bound,(grb->_lower ? '<' : '>'),false,grb->_aggtype,grb->_setnr,(grb->_recursive ? TS_RULE : TS_EQ));
+					int ts = _translator->translate(grb->_bound,comp,false,grb->_aggtype,grb->_setnr,(grb->_recursive ? TS_RULE : TS_EQ));
 					PCGroundRuleBody* newgrb = new PCGroundRuleBody(RT_DISJ,body,(recursive || grb->_recursive));
 					newgrb->_body.push_back(ts);
 					delete(grb);
 					it->second = newgrb;
 				}
 				else {
-					int ts1 = _translator->translate(grb->_bound,(grb->_lower ? '<' : '>'),false,grb->_aggtype,grb->_setnr,(grb->_recursive ? TS_RULE : TS_EQ));
+					int ts1 = _translator->translate(grb->_bound,comp,false,grb->_aggtype,grb->_setnr,(grb->_recursive ? TS_RULE : TS_EQ));
 					int ts2 = _translator->translate(body,conj,(recursive ? TS_RULE : TS_EQ));
 					vector<int> vi(2); vi[0] = ts1; vi[1] = ts2;
 					it->second = new PCGroundRuleBody(RT_DISJ,vi,(recursive || grb->_recursive));
@@ -224,6 +232,16 @@ AbstractGroundTheory::AbstractGroundTheory(AbstractStructure* str) :
 AbstractGroundTheory::AbstractGroundTheory(Vocabulary* voc, AbstractStructure* str) : 
 	AbstractTheory("",voc,ParseInfo()), _structure(str), _translator(new GroundTranslator()), _termtranslator(new GroundTermTranslator()) { }
 
+AbstractGroundTheory::~AbstractGroundTheory() {
+	delete(_structure);
+	delete(_translator);
+	delete(_termtranslator);
+}
+
+void AbstractGroundTheory::recursiveDelete() {
+	delete(this);
+}
+
 /*
  * AbstractGroundTheory::transformForAdd(vector<int>& vi, VIType vit, int defnr, bool skipfirst)
  * DESCRIPTION
@@ -312,6 +330,26 @@ void AbstractGroundTheory::transformForAdd(const vector<int>& vi, VIType /*vit*/
 	Internal ground theories
 *******************************/
 
+void GroundTheory::recursiveDelete() {
+	for(vector<GroundDefinition*>::iterator defit = _definitions.begin(); defit != _definitions.end(); ++defit) {
+		(*defit)->recursiveDelete();
+		delete(*defit);
+	}
+	for(vector<GroundAggregate*>::iterator aggit = _aggregates.begin(); aggit != _aggregates.end(); ++aggit) {
+		delete(*aggit);
+	}
+	for(vector<GroundSet*>::iterator setit = _sets.begin(); setit != _sets.end(); ++setit) {
+		delete(*setit);
+	}
+	//for(vector<GroundFixpDef*>::iterator fdefit = _fixpdefs.begin(); fdefit != _fixpdefs.end(); ++fdefit) {
+	//	(*defit)->recursiveDelete();
+	//	delete(*defit);
+	//}
+	for(vector<CPReification*>::iterator cprit = _cpreifications.begin(); cprit != _cpreifications.end(); ++cprit) {
+		delete(*cprit);
+	}
+}
+
 void GroundTheory::addClause(GroundClause& cl, bool skipfirst) {
 	transformForAdd(cl,VIT_DISJ,ID_FOR_UNDEFINED,skipfirst);
 	_clauses.push_back(cl);
@@ -351,12 +389,14 @@ void GroundTheory::addCPReification(int tseitin, CPTsBody* body) {
 	_cpreifications.push_back(new CPReification(tseitin,body));
 }
 
-void GroundTheory::addSet(int setnr, int defnr, bool) {
+void GroundTheory::addSet(int setnr, int defnr, bool weighted) {
 	if(_printedsets.find(setnr) == _printedsets.end()) {
 		_printedsets.insert(setnr);
-		TsSet& tss = _translator->groundset(setnr);
-		transformForAdd(tss.literals(),VIT_SET,defnr);
-		_sets.push_back(new GroundSet(setnr,tss.literals(),tss.weights()));
+		TsSet& tsset = _translator->groundset(setnr);
+		transformForAdd(tsset.literals(),VIT_SET,defnr);
+		vector<double> weights;
+		if(weighted) weights = tsset.weights();
+		_sets.push_back(new GroundSet(setnr,tsset.literals(),weights));
 	}
 }
 
@@ -530,7 +570,8 @@ void SolverTheory::addSet(int setnr, int defnr, bool weighted) {
 				set.literals.push_back(createLiteral(tsset.literal(n)));
 			}
 			getSolver().add(set);
-		}else{
+		}
+		else {
 			MinisatID::WSet set;
 			set.setID = setnr;
 			for(unsigned int n = 0; n < tsset.size(); ++n) {
@@ -548,7 +589,7 @@ void SolverTheory::addFixpDef(GroundFixpDef*) {
 }
 
 void SolverTheory::addAggregate(int definitionID, int head, bool lowerbound, int setnr, AggType aggtype, TsType sem, double bound) {
-	addSet(setnr,definitionID, aggtype != AGGCARD);
+	addSet(setnr,definitionID,(aggtype != AGGCARD));
 	MinisatID::Aggregate agg;
 	agg.sign = lowerbound ? MinisatID::AGGSIGN_LB : MinisatID::AGGSIGN_UB;
 	agg.setID = setnr;
@@ -575,9 +616,9 @@ void SolverTheory::addAggregate(int definitionID, int head, bool lowerbound, int
 			break;
 		case TS_RULE:
 			agg.sem = MinisatID::DEF;
-			agg.defID = definitionID;
 			break;
 	}
+	agg.defID = definitionID;
 	agg.head = createAtom(head);
 	agg.bound = createWeight(bound);
 	getSolver().add(agg);
@@ -618,8 +659,129 @@ void SolverTheory::addDefinition(GroundDefinition* d) {
 }
 
 void SolverTheory::addCPReification(int tseitin, CPTsBody* body) {
-	assert(false);
-	//TODO
+	MinisatID::EqType comp;
+	switch(body->comp()) {
+		case CT_EQ:		comp = MinisatID::MEQ; break; 
+		case CT_NEQ:	comp = MinisatID::MNEQ; break; 
+		case CT_LEQ:	comp = MinisatID::MLEQ; break; 
+		case CT_GEQ:	comp = MinisatID::MGEQ; break; 
+		case CT_LT:		comp = MinisatID::ML; break; 
+		case CT_GT:		comp = MinisatID::MG; break;
+		default: assert(false);
+	} 
+	CPTerm* left = body->left();
+	CPBound right = body->right();
+	if(typeid(*left) == typeid(CPVarTerm)) {
+		CPVarTerm* term = dynamic_cast<CPVarTerm*>(left);
+		addCPVariable(term->_varid);
+		if(right._isvarid) {
+			addCPVariable(right._value._varid);
+			MinisatID::CPBinaryRelVar sentence;
+			sentence.head = createAtom(tseitin);
+			sentence.lhsvarID = term->_varid;
+			sentence.rhsvarID = right._value._varid;
+			sentence.rel = comp;
+			getSolver().add(sentence);
+		}
+		else {
+			MinisatID::CPBinaryRel sentence;
+			sentence.head = createAtom(tseitin);
+			sentence.varID = term->_varid;
+			sentence.bound = right._value._bound;
+			sentence.rel = comp;
+			getSolver().add(sentence);
+		}
+	}
+	else if(typeid(*left) == typeid(CPSumTerm)) {
+		CPSumTerm* term = dynamic_cast<CPSumTerm*>(left);
+		addCPVariables(term->_varids);
+		if(right._isvarid) {
+			addCPVariable(right._value._varid);
+			MinisatID::CPSumWithVar sentence;
+			sentence.head = createAtom(tseitin);
+			sentence.varIDs = term->_varids;
+			sentence.rhsvarID = right._value._varid;
+			sentence.rel = comp;
+			getSolver().add(sentence);
+		}
+		else {
+			MinisatID::CPSum sentence;
+			sentence.head = createAtom(tseitin);
+			sentence.varIDs = term->_varids;
+			sentence.bound = right._value._bound;
+			sentence.rel = comp;
+			getSolver().add(sentence);
+		}
+	}
+	else {
+		assert(typeid(*left) == typeid(CPWSumTerm));
+		CPWSumTerm* term = dynamic_cast<CPWSumTerm*>(left);
+		addCPVariables(term->_varids);
+		if(right._isvarid) {
+			addCPVariable(right._value._varid);
+			MinisatID::CPSumWeightedWithVar sentence;
+			sentence.head = createAtom(tseitin);
+			sentence.varIDs = term->_varids;
+			sentence.weights = term->_weights;
+			sentence.rhsvarID = right._value._varid;
+			sentence.rel = comp;
+			getSolver().add(sentence);
+		}
+		else {
+			MinisatID::CPSumWeighted sentence;
+			sentence.head = createAtom(tseitin);
+			sentence.varIDs = term->_varids;
+			sentence.weights = term->_weights;
+			sentence.bound = right._value._bound;
+			sentence.rel = comp;
+			getSolver().add(sentence);
+		}
+	}
+}
+
+void SolverTheory::addCPVariables(const vector<unsigned int>& varids) {
+	for(vector<unsigned int>::const_iterator it = varids.begin(); it != varids.end(); ++it)
+		addCPVariable(*it);
+}
+
+void SolverTheory::addCPVariable(unsigned int varid) {
+	if(_addedvarids.find(varid) == _addedvarids.end()) {
+		_addedvarids.insert(varid);
+		Function* function = _termtranslator->function(varid);
+//cerr << "func = " << function->name();
+		SortTable* domain = _structure->inter(function->outsort());
+		assert(domain->finite()); 		//TODO Right?
+		assert(domain->type() == ELINT); //FIXME ... so for this kind of table first() and last() are always defined?
+		Element first = domain->element(0); 				//FIXME domain->first() ?
+		int minvalue = first._int;
+		Element last = domain->element(domain->size()-1);	//FIXME domain->last() ?
+		int maxvalue = last._int;
+		assert(maxvalue > minvalue);
+		unsigned int difference = maxvalue - minvalue;
+		if(difference + 1 == domain->size()) {
+//cerr << " domain = [" << minvalue << "," << maxvalue << "]" << endl;
+			// the domain is a complete range from minvalue to maxvalue.
+			MinisatID::CPIntVarRange cpvar;
+			cpvar.varID = varid;
+			cpvar.minvalue = minvalue;
+			cpvar.maxvalue = maxvalue;
+			getSolver().add(cpvar);
+		}
+		else {
+			// the domain is not a complete range.
+			MinisatID::CPIntVarEnum cpvar;
+			cpvar.varID = varid;
+//cerr << " domain = { ";
+			for(unsigned int m = 0; m < domain->size(); ++m) {
+				Element element = domain->element(m);
+				int value = element._int;
+//cerr << value << "; ";
+				cpvar.values.push_back(value);
+			}
+//cerr << " }" << endl;
+			getSolver().add(cpvar);
+		}
+	}
 }
 
 void SolverTheory::addPCRule(int defnr, int head, vector<int> body, bool conjunctive){

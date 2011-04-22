@@ -346,8 +346,11 @@ namespace FormulaUtils {
 	/** **/
 	Formula* graph_functions(Formula* f);	
 
-	/** **/
-	Formula* moveThreeValTerms(Formula*,AbstractStructure*,bool positive,bool usingcp=false);
+	/**
+	 * Non-recursively move terms that are three-valued in a given structure outside of the given atom.
+	 */
+	Formula* moveThreeValTerms(Formula*,AbstractStructure*,bool positive,bool usingcp=false,
+								const std::set<const Function*> cpfunctions=std::set<const Function*>());
 
 	/** \brief Returns true iff the aggregate formula is monotone **/
 	bool monotone(const AggForm* af);

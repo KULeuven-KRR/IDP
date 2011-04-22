@@ -2976,7 +2976,7 @@ int overloaddiv(lua_State* L) {
 	InfArg a = BuiltinProcs::convertarg(L,1,IAT_OVERLOADED);
 	OverloadedObject* obj = a._overloaded;
 	InfArg b = BuiltinProcs::convertarg(L,2,IAT_INT);
-	int div = b._int;
+	unsigned int div = b._int;
 	set<Predicate*>* sp = 0;
 	set<Function*>* sf = 0;
 	if(obj->isPredicate()) {
@@ -3381,10 +3381,11 @@ TypedInfArg FastMXInference::execute(const vector<InfArg>& args, lua_State* L) c
 	modes.nbmodels = opts->_nrmodels;
 	modes.verbosity = opts->_satverbosity;
 	modes.remap = false;
+	//TODO pass other solver options from opts->_solveroptions
 	SATSolver* solver = new SATSolver(modes);
 
 	// Create grounder
-	GrounderFactory gf(structure,opts->_usingcp);
+	GrounderFactory gf(structure,opts->_cpsupport);
 	TopLevelGrounder* grounder = gf.create(theory,solver);
 
 	// Ground
@@ -3420,24 +3421,43 @@ TypedInfArg FastMXInference::execute(const vector<InfArg>& args, lua_State* L) c
 	// Translate
 	TypedInfArg a; a._type = IAT_TABLE; a._value._table = new vector<TypedInfArg>();
 	if(sol->isSat()){
-		for(unsigned int i=0; i<sol->getModels().size(); i++){
+		for(vector<MinisatID::Model*>::const_iterator modelit = sol->getModels().begin(); modelit != sol->getModels().end(); ++modelit) {
+//cerr << "---Building new model---" << endl;
 			AbstractStructure* mod = structure->clone();
 			set<PredInter*>	tobesorted1;
 			set<FuncInter*>	tobesorted2;
-			for(unsigned int j=0; j<sol->getModels()[i].size(); j++) {
-				PFSymbol* pfs = grounding->translator()->symbol((sol->getModels()[i][j].getAtom().getValue()));
+//cerr << "-Normal SAT part-" << endl;
+			for(vector<MinisatID::Literal>::const_iterator literalit = (*modelit)->literalinterpretations.begin();
+					literalit != (*modelit)->literalinterpretations.end(); ++literalit) {
+				PFSymbol* pfs = grounding->translator()->symbol(((*literalit).getAtom().getValue()));
 				if(pfs && mod->vocabulary()->contains(pfs)) {
-					vector<domelement> vd = grounding->translator()->args(sol->getModels()[i][j].getAtom().getValue());
+					vector<domelement> vd = grounding->translator()->args((*literalit).getAtom().getValue());
 					vector<TypedElement> args = ElementUtil::convert(vd);
 					if(pfs->ispred()) {
-						mod->inter(pfs)->add(args,!(sol->getModels()[i][j].hasSign()),true);
+						mod->inter(pfs)->add(args,!((*literalit).hasSign()),true);
 						tobesorted1.insert(mod->inter(pfs));
 					}
 					else {
-						Function* f = dynamic_cast<Function*>(pfs);
-						mod->inter(f)->add(args,!(sol->getModels()[i][j].hasSign()),true);
-						tobesorted2.insert(mod->inter(f));
+						Function* function = dynamic_cast<Function*>(pfs);
+//if(!((*literalit).hasSign())) cerr << "Adding value " << args.back()._element._int << " for function " << function->name() << endl;
+//else cerr << "Adding impossible value " << args.back()._element._int << " for function " << function->name() << endl;
+						mod->inter(function)->add(args,!((*literalit).hasSign()),true);
+						tobesorted2.insert(mod->inter(function));
 					}
+				}
+			}
+//cerr << "-CP part-" << endl;
+			for(vector<MinisatID::VariableEqValue>::const_iterator cpvarit = (*modelit)->variableassignments.begin();
+					cpvarit != (*modelit)->variableassignments.end(); ++cpvarit) {
+				Function* function = grounding->termtranslator()->function((*cpvarit).variable);
+				if(function && mod->vocabulary()->contains(function)) {
+					vector<domelement> vd = grounding->termtranslator()->args((*cpvarit).variable);
+					vector<TypedElement> args = ElementUtil::convert(vd);
+					TypedElement value((*cpvarit).value);
+					args.push_back(value);
+//cerr << "Adding value " << args.back()._element._int << " for function " << function->name() << endl;
+					mod->inter(function)->add(args,true,true);
+					tobesorted2.insert(mod->inter(function));
 				}
 			}
 			for(set<PredInter*>::const_iterator it=tobesorted1.begin(); it != tobesorted1.end(); ++it)
@@ -3461,6 +3481,8 @@ TypedInfArg FastMXInference::execute(const vector<InfArg>& args, lua_State* L) c
 			}
 		}
 	}
+
+	// Return answer
 	if(opts->_trace) {
 		TypedInfArg b; b._type = IAT_MULT; b._value._table = new vector<TypedInfArg>(1,a);
 		b._value._table->push_back(tracewriter.trace());
@@ -3530,11 +3552,11 @@ FastGrounding::FastGrounding() {
 }
 
 TypedInfArg FastGrounding::execute(const vector<InfArg>& args, lua_State*) const {
-	GrounderFactory factory(args[1]._structure,args[2]._options->_usingcp);
-	TopLevelGrounder* g = factory.create(args[0]._theory);
-	g->run();
+	GrounderFactory factory(args[1]._structure,args[2]._options->_cpsupport);
+	TopLevelGrounder* grounder = factory.create(args[0]._theory);
+	grounder->run();
 	TypedInfArg a; a._type = IAT_THEORY;
-	a._value._theory = g->grounding();
+	a._value._theory = grounder->grounding();
 	return a;
 }
 
@@ -3652,7 +3674,7 @@ TypedInfArg GetIndex::execute(const vector<InfArg>& args, lua_State* L) const {
 		case IAT_PREDTABLE:
 		{
 			PredTable* pt = args[0]._predtable;
-			int index = args[1]._int - 1;
+			unsigned int index = args[1]._int - 1;
 			if(pt->finite() && index < pt->size()) {
 				if(pt->arity() == 1) {
 					Element e = pt->element(index,0);
@@ -3691,7 +3713,7 @@ TypedInfArg GetIndex::execute(const vector<InfArg>& args, lua_State* L) const {
 		case IAT_TUPLE:
 		{
 			PredTableTuple* ptt = args[0]._tuple;
-			int column = args[1]._int - 1;
+			unsigned int column = args[1]._int - 1;
 			if(column < ptt->_table->size()) {
 				Element e = ptt->_table->element(ptt->_index,column);
 				switch(ptt->_table->type(column)) {
@@ -3801,7 +3823,7 @@ TypedInfArg LenghtOperator::execute(const vector<InfArg>& args, lua_State*) cons
 
 TypedInfArg ArityCastOperator::execute(const vector<InfArg>& args, lua_State*) const {
 	TypedInfArg result; result._type = IAT_NIL;
-	int arity = args[1]._int;
+	unsigned int arity = args[1]._int;
 	switch(_intypes[0]) {
 		case IAT_PREDICATE:
 		{

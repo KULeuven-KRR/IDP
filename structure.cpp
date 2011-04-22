@@ -2686,7 +2686,7 @@ Structure::~Structure() {
 }
 
 Structure* Structure::clone() {
-	Structure*	s = new Structure("",ParseInfo());
+	Structure* s = new Structure("",ParseInfo());
 	s->vocabulary(_vocabulary);
 	// TODO
 	return 0;

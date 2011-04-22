@@ -260,8 +260,7 @@ void IDPPrinter::visit(const DomainTerm* t) {
 }
 
 void IDPPrinter::visit(const AggTerm* t) {
-	string AggTypeNames[5] = { "#", "sum", "prod", "min", "max" };
-	_out << AggTypeNames[t->function()];
+	_out << t->type();
 	t->set()->accept(this);
 }
 
@@ -272,7 +271,7 @@ void IDPPrinter::visit(const EnumSetExpr* s) {
 	if(!s->subformulas().empty()) {
 		s->subformulas()[0]->accept(this);
 		for(unsigned int n = 1; n < s->subformulas().size(); ++n) {
-			_out << ",";
+			_out << ";";
 			s->subformulas()[n]->accept(this);
 		}
 	}
@@ -298,6 +297,7 @@ void IDPPrinter::visit(const QuantSetExpr* s) {
 	Grounding
 ****************/
 /*
+const int ID_FOR_UNDEFINED = -1;
 void IDPPrinter::printAtom(int atomnr) {
 	// Make sure there is a translator.
 	assert(_translator);
@@ -322,13 +322,27 @@ void IDPPrinter::printAtom(int atomnr) {
 		// Get the atom's arguments for the translator.
 		const vector<domelement>& args = _translator->args(atomnr);
 		// Print the atom's arguments.
-		if(! args.empty()) {
-			_out << "(";
-			for(unsigned int n = 0; n < args.size(); ++n) {
-				_out << ElementUtil::ElementToString(args[n]);
-				if(n != args.size()-1) _out << ",";
+		if(pfs->ispred()) {
+			if(not args.empty()) {
+				_out << "(";
+				for(unsigned int n = 0; n < args.size(); ++n) {
+					_out << ElementUtil::ElementToString(args[n]);
+					if(n != args.size()-1) _out << ",";
+				}
+				_out << ")";
 			}
-			_out << ")";
+		}
+		else {
+			assert(not pfs->ispred());
+			if(args.size() > 1) {
+				_out << "(";
+				for(unsigned int n = 0; n < args.size()-1; ++n) {
+					_out << ElementUtil::ElementToString(args[n]);
+					if(n != args.size()-2) _out << ",";
+				}
+				_out << ")";
+			}
+			_out << " = " << ElementUtil::ElementToString(args.back());
 		}
 	}
 	else {
@@ -371,6 +385,41 @@ void IDPPrinter::printTerm(unsigned int termnr) {
 	}
 }
 
+void IDPPrinter::printAggregate(double bound, bool lower, AggType aggtype, unsigned int setnr) {
+	_out << bound << (lower ? " =< " : " >= ");
+	switch(aggtype) {
+		case AGGCARD: 	_out << "card("; break;
+		case AGGSUM: 	_out << "sum("; break;
+		case AGGPROD: 	_out << "prod("; break;
+		case AGGMIN: 	_out << "min("; break;
+		case AGGMAX: 	_out << "max("; break;
+		default: assert(false);
+	}
+	_out << "set_" << setnr << ").\n";
+}
+
+void EcnfPrinter::printAggregate(AggType aggtype, TsType arrow, unsigned int defnr, bool lower, int head, unsigned int setnr, double bound) {
+	switch(aggtype) {
+		case AGGCARD: 	_out << "Card "; break;
+		case AGGSUM: 	_out << "Sum "; break;
+		case AGGPROD: 	_out << "Prod "; break;
+		case AGGMIN: 	_out << "Min "; break;
+		case AGGMAX: 	_out << "Max "; break;
+		default: assert(false);
+	}
+	#warning "Replacing implication by equivalence...";
+	switch(arrow) {
+		case TS_EQ: case TS_IMPL: case TS_RIMPL:  /* (Reverse) implication is not supported by solver (yet)*/
+			_out << "C ";
+			break;
+		case TS_RULE: 
+			_out << "<- ";
+			break; 
+		default: assert(false);
+	}
+	_out << defnr << ' ' << (lower ? 'G' : 'L') << ' ' << head << ' ' << setnr << ' ' << bound << " 0\n";
+}
+
 void SimplePrinter::visit(const GroundTheory* g) {
 	_out << g->to_string();
 }
@@ -407,7 +456,7 @@ void IDPPrinter::visit(const GroundTheory* ) {
 void EcnfPrinter::visit(const GroundTheory* g) {
 	_out << "p ecnf def aggr\n";
 	for(unsigned int n = 0; n < g->nrClauses(); ++n) {
-		for(unsigned int m = 0; m < g->clause(n).size(); ++n)
+		for(unsigned int m = 0; m < g->clause(n).size(); ++m)
 			_out << g->clause(n)[m] << ' ';
 		_out << "0\n";
 	}
@@ -471,29 +520,11 @@ void EcnfPrinter::visit(const PCGroundRuleBody* b) {
 }
 
 void IDPPrinter::visit(const AggGroundRuleBody* b) {
-	_out << b->bound() << (b->lower() ? " =< " : " >= ");
-	switch(b->aggtype()) {
-		case AGGCARD: 	_out << "card("; break;
-		case AGGSUM: 	_out << "sum("; break;
-		case AGGPROD: 	_out << "prod("; break;
-		case AGGMIN: 	_out << "min("; break;
-		case AGGMAX: 	_out << "max("; break;
-		default: assert(false);
-	}
-	_out << "set_" << b->setnr() << ").\n";
+	printAggregate(b->bound(),b->lower(),b->aggtype(),b->setnr());
 }
 
 void EcnfPrinter::visit(const AggGroundRuleBody* b) {
-	switch(b->aggtype()) {
-		case AGGCARD: 	_out << "Card "; break;
-		case AGGSUM: 	_out << "Sum "; break;
-		case AGGPROD: 	_out << "Prod "; break;
-		case AGGMIN: 	_out << "Min "; break;
-		case AGGMAX: 	_out << "Max "; break;
-		default: assert(false);
-	}
-	_out << "<- " << _currentdefnr << ' ' << (b->lower() ? "L " : "G ");
-	_out << _currenthead << ' ' << b->setnr() << ' ' << b->bound() << " 0\n";
+	printAggregate(b->aggtype(),TS_RULE,_currentdefnr,b->lower(),_currenthead,b->setnr(),b->bound());
 }
 
 void IDPPrinter::visit(const GroundAggregate* a) {
@@ -504,51 +535,31 @@ void IDPPrinter::visit(const GroundAggregate* a) {
 		case TS_EQ: 	_out << " <=> "; break;
 		case TS_RULE: default: assert(false);
 	}
-	_out << a->bound();
-	_out << (a->lower() ? " =< " : " >= ");
-	switch(a->type()) {
-		case AGGCARD:	_out << "card("; break;
-		case AGGSUM: 	_out << "sum("; break;
-		case AGGPROD: 	_out << "prod("; break;
-		case AGGMIN: 	_out << "min("; break;
-		case AGGMAX: 	_out << "max("; break;
-		default: assert(false);
-	}
-	_out << "set_" << a->setnr() << ").\n";
+	printAggregate(a->bound(),a->lower(),a->type(),a->setnr());
 }
 
 void EcnfPrinter::visit(const GroundAggregate* a) {
-	switch(a->type()) {
-		case AGGCARD: 	_out << "Card "; break;
-		case AGGSUM: 	_out << "Sum "; break;
-		case AGGPROD: 	_out << "Prod "; break;
-		case AGGMIN: 	_out << "Min "; break;
-		case AGGMAX: 	_out << "Max "; break;
-		default: assert(false);
-	}
-	switch(a->arrow()) {
-		case TS_EQ: _out << "C ";
-		case TS_IMPL: case TS_RIMPL: // Not supported by solver yet 
-			assert(false); break;
-		case TS_RULE: default: assert(false);
-	}
-	_out << (a->lower() ? "L " : "G ") << a->head() << " " << a->setnr() << " " << a->bound() << " 0\n";
+	assert(a->arrow() != TS_RULE);
+	printAggregate(a->type(),a->arrow(),ID_FOR_UNDEFINED,a->lower(),a->head(),a->setnr(),a->bound());
 }
 
 void IDPPrinter::visit(const GroundSet* s) {
 	_out << "set_" << s->setnr() << " = [ ";
 	for(unsigned int n = 0; n < s->size(); ++n) {
-		_out << "("; printAtom(s->literal(n));
-		_out << " = " << s->weight(n) << ")";
+		if(s->weighted()) _out << '('; 
+		printAtom(s->literal(n));
+		if(s->weighted()) _out << ',' << s->weight(n) << ')';
 		if(n < s->size()-1) _out << "; ";
 	}
 	_out << " ]\n";
 }
 
 void EcnfPrinter::visit(const GroundSet* s) {
-	_out << "WSet " << s->setnr();
-	for(unsigned int n = 0; n < s->size(); ++n)
-		_out << " " << s->literal(n) << "=" << s->weight(n);
+	_out << (s->weighted() ? "WSet" : "Set") << ' ' << s->setnr();
+	for(unsigned int n = 0; n < s->size(); ++n) {
+		_out << ' ' << s->literal(n);
+		if(s->weighted()) _out << '=' << s->weight(n);
+	}
 	_out << " 0\n";
 }
 
@@ -591,7 +602,7 @@ void IDPPrinter::visit(const CPWSumTerm* cpt) {
 	vector<int>::const_iterator wit;
 	_out << "wsum[ ";
 	for(vit = cpt->_varids.begin(), wit = cpt->_weights.begin(); vit != cpt->_varids.end() && wit != cpt->_weights.end(); ++vit, ++wit) {
-		_out << "("; printTerm(*vit); _out << "=" << *wit << ")";
+		_out << '('; printTerm(*vit); _out << ',' << *wit << ')';
 		if(*vit != cpt->_varids.back()) _out << "; ";
 	}
 	_out << " ]";

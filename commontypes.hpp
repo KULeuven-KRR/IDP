@@ -22,6 +22,15 @@
 enum AggFunction { AGG_CARD, AGG_SUM, AGG_PROD, AGG_MIN, AGG_MAX };
 
 /**
+ * Enumeration for the possible ways to define a tseitin atom in terms of the subformula it replaces.
+ *		- TS_EQ:		tseitin <=> subformula
+ *		- TS_RULE:	tseitin <- subformula
+ *		- TS_IMPL:	tseitin => subformula
+ *		- TS_RIMPL:	tseitin <= subformula
+ */
+enum TsType { TS_EQ, TS_RULE, TS_IMPL, TS_RIMPL };
+
+/**
  * The different comparison operators
  *	- CT_EQ:	=
  *	- CT_NEQ:	~=

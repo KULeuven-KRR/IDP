@@ -58,8 +58,14 @@ class Sort {
 		Sort(const std::string& name, const ParseInfo& pi, SortTable* inter = 0);	//!< Create a user-declared sort
 
 		// Mutators
+<<<<<<< HEAD:vocabulary.hpp
 		void	addParent(Sort* p);	//!< Adds p as a parent. Also adds this as a child of p.
 		void	addChild(Sort* c);	//!< Adds c as a child. Also add this as a parent of c.
+=======
+		void	addParent(Sort* p);	// Add p as a parent. Also add this as a child of p.
+		void	addChild(Sort* c);	// Add c as a child. Also add this as a parent of c.
+		void	pred(Predicate* p)	{ _pred = p;	}
+>>>>>>> 57cfc98b79b0c99bffae5fbe3668ab92f5094501:vocabulary.hpp
 		
 		// Inspectors
 		const std::string&		name()									const;	//!< Returns the name of the sort

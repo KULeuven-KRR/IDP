@@ -67,7 +67,6 @@ class Options {
 		std::map<std::string,StringOption*>	_stringoptions;	//!< Options that have a string value
 
 	public:
-
 		Options(const std::string& name, const ParseInfo& pi);
 		~Options();
 
@@ -93,6 +92,7 @@ class Options {
 
 		std::ostream&	put(std::ostream&)	const;
 		std::string		to_string()			const;	
+
 };
 
 #endif

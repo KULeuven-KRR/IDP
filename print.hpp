@@ -85,6 +85,7 @@ class IDPPrinter : public Printer {
 		void printInter(const char*,const char*,const PredTable*,const PredTable*);
 		void printAtom(int atomnr);
 		void printTerm(unsigned int termnr);
+		void printAggregate(double bound, bool lower, AggType aggtype, unsigned int setnr);
 
 	public:
 		IDPPrinter() : _printtypes(false) { }
@@ -153,6 +154,8 @@ class EcnfPrinter : public Printer {
 	private:
 		int				_currenthead;
 		unsigned int 	_currentdefnr;
+
+		void printAggregate(AggType aggtype, TsType arrow, unsigned int defnr, bool lower, int head, unsigned int setnr, double bound);
 
 	public:
 		void visit(const GroundTheory*);
