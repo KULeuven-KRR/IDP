@@ -244,6 +244,23 @@ class InternalTableIterator {
 	friend class TableIterator;
 };
 
+class CartesianInternalTableIterator : public InternalTableIterator {
+	private:
+		std::vector<SortIterator>	_iterators;
+		std::vector<SortIterator>	_lowest;
+		mutable ElementTable		_deref;
+		bool						_hasNext;
+		bool						hasNext()	const;
+		const ElementTuple&			operator*()	const;
+		void						operator++();
+	public:
+		CartesianInternalTableIterator(const std::vector<SortIterator>& vsi, const std::vector<SortIterator>& low, bool h = true) : 
+			_iterators(vsi), _lowest(low), _hasNext(h) { }
+		~CartesianInternalTableIterator() { }
+		CartesianInternalTableIterator*	clone()	const;
+
+};
+
 class SortInternalTableIterator : public InternalTableIterator {
 	private:
 		InternalSortIterator*	_iter;
@@ -369,6 +386,8 @@ class StrGreaterThanInternalIterator : public InternalTableIterator {
 		void					operator++();	
 	public:
 		StrGreaterThanInternalIterator(const SortIterator& si);
+		StrGreaterThanInternalIterator(const SortIterator& l, const SortIterator& r, const SortIterator& m) :
+			_leftiterator(l), _rightiterator(r), _lowest(m) { }
 		~StrGreaterThanInternalIterator() { }
 		StrGreaterThanInternalIterator*	clone()	const;
 };
@@ -469,15 +488,15 @@ class CharInternalSortIterator : public InternalSortIterator {
 
 class EnumInternalSortIterator : public InternalSortIterator {
 	private:
-		ElementTuple::const_iterator	_iter;
-		ElementTuple::const_iterator	_end;
+		SortedElementTuple::const_iterator	_iter;
+		SortedElementTuple::const_iterator	_end;
 		bool					hasNext()	const	{ return _iter != _end;	}
 		const DomainElement*	operator*()	const	{ return *_iter;		}
 		void					operator++()		{ ++_iter;				}
 	public:
-		EnumInternalSortIterator(ElementTuple::iterator it, ElementTuple::iterator end) : _iter(it), _end(end) { }
+		EnumInternalSortIterator(SortedElementTuple::iterator it, SortedElementTuple::iterator end) : _iter(it), _end(end) { }
 		~EnumInternalSortIterator() { }
-		EnumInternalSortIterator* clone()	const;
+		EnumInternalSortIterator* clone()	const { return new EnumInternalSortIterator(_iter,_end);	}
 };
 
 
@@ -525,17 +544,16 @@ class InternalPredTable {
 
 class ProcInternalPredTable : public InternalPredTable {
 	private:
-		std::string*			_procedure;
-		std::vector<SortTable*>	_universe;		//!< the actual table is the intersection of the procedure
-												//!< with the cartesian product of the tables in _universe
-		std::vector<bool>		_univlinked;	//!< if _univlinked[n] is true, _universe[n] will not be deleted
+		std::string*	_procedure;
+		PredTable*		_domain;	//!< the actual table is the intersection of the procedure with the domain
+		bool			_linked;	//!< if _univlinked[n] is true, _universe[n] will not be deleted
 	public:
-		ProcInternalPredTable(std::string* proc, const std::vector<SortTable*>& univ, const std::vector<bool>& link) :
-			_procedure(proc), _universe(univ), _univlinked(link) { }
+		ProcInternalPredTable(std::string* proc, PredTable* dom, bool link) :
+			_procedure(proc), _domain(dom), _linked(link) { }
 
 		~ProcInternalPredTable();
 
-		unsigned int	arity()			const { return _universe.size();	}
+		unsigned int	arity()			const;
 		bool			finite()		const;
 		bool			empty()			const;
 		bool			approxfinite()	const;
@@ -1011,16 +1029,15 @@ class InternalFuncTable {
 class ProcInternalFuncTable : public InternalFuncTable {
 	private:
 		std::string*			_procedure;
-		std::vector<SortTable*>	_universe;		//!< the actual domain of the function is the intersection of the procedure
-												//!< with the cartesian product of the tables in _universe
-		std::vector<bool>		_univlinked;	//!< if _univlinked[n] is true, _universe[n] will not be deleted
+		PredTable*				_domain;	//!< the domain of the function 
+		bool					_linked;	//!< if _linked[n] is true, _domain will not be deleted
 	public:
-		ProcInternalFuncTable(std::string* proc, const std::vector<SortTable*>& univ, const std::vector<bool>& link) :
-			_procedure(proc), _universe(univ), _univlinked(link) { }
+		ProcInternalFuncTable(std::string* proc, PredTable* dom, bool link) :
+			_procedure(proc), _domain(dom), _linked(link) { }
 
 		~ProcInternalFuncTable();
 
-		unsigned int	arity()	const { return _universe.size();	}
+		unsigned int	arity()	const;
 		bool	finite()		const;
 		bool	empty()			const; 
 		bool	approxfinite()	const;

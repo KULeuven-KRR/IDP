@@ -809,7 +809,7 @@ Function* Function::disambiguate(const vector<Sort*>& sorts,const Vocabulary* vo
 
 ostream& Function::put(ostream& output) const {
 	for(set<const Vocabulary*>::iterator it = _vocabularies.begin(); it != _vocabularies.end(); ++it) {
-		if(!(*it)->pred(_name)->overloaded()) {
+		if(!(*it)->func(_name)->overloaded()) {
 			(*it)->putname(output);
 			output << "::";
 			break;
@@ -817,7 +817,7 @@ ostream& Function::put(ostream& output) const {
 	}
 	output << _name;
 	if(!overloaded()) {
-		output << _name << '[';
+		output << '[';
 		if(_insorts.size() > 0) {
 			output << *_insorts[0];
 			for(unsigned int n = 1; n < _insorts.size(); ++n) output << ',' << *_insorts[n];

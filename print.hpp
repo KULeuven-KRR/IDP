@@ -45,10 +45,10 @@ class Printer : public TheoryVisitor {
 		static Printer* create(Options* opts);
 
 		// Print methods
-		std::string print(const Vocabulary*);
+		virtual std::string print(const Vocabulary*) = 0;
+		virtual std::string print(const AbstractStructure*) = 0;
+		virtual std::string print(const Namespace*) = 0;
 		std::string print(const AbstractTheory*);
-		std::string print(const AbstractStructure*);
-		std::string print(const Namespace*);
 
 		// Indentation
 		void indent();
@@ -90,6 +90,11 @@ class IDPPrinter : public Printer {
 		IDPPrinter() : _printtypes(false) { }
 		IDPPrinter(bool printtypes) : _printtypes(printtypes) { }
 
+		// Print methods
+		std::string print(const Vocabulary*);
+		std::string print(const AbstractStructure*);
+		std::string print(const Namespace*);
+
 		/** Namespace **/
 		void visit(const Namespace*); //TODO procedures and options are not printed yet..
 
@@ -125,7 +130,6 @@ class IDPPrinter : public Printer {
 		void visit(const FuncInter*);
 
 		/** Vocabularies **/
-		void visit(const Vocabulary*);
 		void visit(const Sort*);
 		void visit(const Predicate*);
 		void visit(const Function*);

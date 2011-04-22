@@ -2039,14 +2039,15 @@ void Insert::inter(NSPair* nsp, const longname& procedure, YYLTYPE l) const {
 				univlink.push_back(true);
 			}
 		}
+		PredTable* dom = new PredTable(new CartesianInternalPredTable(univ,univlink));
 		if(nsp->_func) {
 			univ.pop_back();
-			ProcInternalFuncTable* pift = new ProcInternalFuncTable(proc,univ,univlink);
+			ProcInternalFuncTable* pift = new ProcInternalFuncTable(proc,dom,false);
 			FuncTable* ft = new FuncTable(pift);
 			funcinter(nsp,ft);
 		}
 		else {
-			ProcInternalPredTable* pipt = new ProcInternalPredTable(proc,univ,univlink);
+			ProcInternalPredTable* pipt = new ProcInternalPredTable(proc,dom,false);
 			PredTable* pt = new PredTable(pipt);
 			predinter(nsp,pt);
 		}
@@ -2069,7 +2070,8 @@ void Insert::inter(NSPair* nsp, const longname& procedure, YYLTYPE l) const {
 					univlink.push_back(true);
 				}
 			}
-			ProcInternalPredTable* pipt = new ProcInternalPredTable(proc,univ,univlink);
+			PredTable* dom = new PredTable(new CartesianInternalPredTable(univ,univlink));
+			ProcInternalPredTable* pipt = new ProcInternalPredTable(proc,dom,false);
 			PredTable* pt = new PredTable(pipt);
 			predinter(nsp,pt);
 		}

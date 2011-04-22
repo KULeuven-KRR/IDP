@@ -295,6 +295,35 @@ int ArgProcNumber = 0;						//!< Number to create unique registry indexes
 static const char* _typefield = "type";		//!< Field index containing the type of userdata
 
 /**
+ * Get a domain element from the lua stack
+ */
+const DomainElement* convertToElement(int arg, lua_State* L) {
+	switch(lua_type(L,arg)) {
+		case LUA_TNIL: 
+			return 0;
+		case LUA_TSTRING: 
+			return DomainElementFactory::instance()->create(StringPointer(lua_tostring(L,arg)));
+		case LUA_TNUMBER:
+			return DomainElementFactory::instance()->create(lua_tonumber(L,arg));
+		case LUA_TUSERDATA:
+		{
+			lua_getmetatable(L,arg);
+			lua_getfield(L,-1,_typefield);
+			ArgType type = (ArgType)lua_tointeger(L,-1); assert(type != AT_NIL);
+			lua_pop(L,2);
+			switch(type) {
+				case AT_COMPOUND:
+					return DomainElementFactory::instance()->create(*(Compound**)lua_touserdata(L,arg));
+				default:
+					return 0;
+			}
+		}
+		default:
+			return 0;
+	}
+}
+
+/**
  * Constructor to convert an element on the lua stack to an InternalArgument
  */
 InternalArgument::InternalArgument(int arg, lua_State* L) {
@@ -506,15 +535,37 @@ InternalArgument printoptions(const vector<InternalArgument>& args, lua_State* )
 	return InternalArgument(StringPointer(opts->to_string()));
 }
 
-InternalArgument printstructure(const vector<InternalArgument>& , lua_State* ) {
-	// FIXME: uncomment
-	//AbstractStructure* structure = args[0].structure();
-	//Options* opts = args[1].options();
+InternalArgument printstructure(const vector<InternalArgument>& args, lua_State* ) {
+	AbstractStructure* structure = args[0].structure();
+	Options* opts = args[1].options();
 
-	//Printer* printer = Printer::create(opts);
-	//string str = printer->print(structure);
-	//delete(printer);
-	string str;
+	Printer* printer = Printer::create(opts);
+	string str = printer->print(structure);
+	delete(printer);
+
+	InternalArgument result(StringPointer(str));
+	return result;
+}
+
+InternalArgument printvocabulary(const vector<InternalArgument>& args, lua_State* ) {
+	Vocabulary* vocabulary = args[0].vocabulary();
+	Options* opts = args[1].options();
+
+	Printer* printer = Printer::create(opts);
+	string str = printer->print(vocabulary);
+	delete(printer);
+
+	InternalArgument result(StringPointer(str));
+	return result;
+}
+
+InternalArgument printnamespace(const vector<InternalArgument>& args, lua_State* ) {
+	Namespace* space = args[0].space();
+	Options* opts = args[1].options();
+
+	Printer* printer = Printer::create(opts);
+	string str = printer->print(space);
+	delete(printer);
 
 	InternalArgument result(StringPointer(str));
 	return result;
@@ -1021,7 +1072,7 @@ namespace LuaConnection {
 	 */
 	int gcStructure(lua_State* L) {
 		AbstractStructure* s = *(AbstractStructure**)lua_touserdata(L,1);
-		if(s->pi().line() == 0) delete(s);	// FIXME: replace this by a check if s belongs to a namespace
+		if(s->pi().line() == 0) delete(s);	// FIXME: replace this by a check whether s belongs to a namespace
 		return 0;
 	}
 
@@ -1030,7 +1081,7 @@ namespace LuaConnection {
 	 */
 	int gcTheory(lua_State* L) {
 		AbstractTheory* t = *(AbstractTheory**)lua_touserdata(L,1);
-		if(t->pi().line() == 0) t->recursiveDelete();	// FIXME: replace this by a check if t belongs to a namespace
+		if(t->pi().line() == 0) t->recursiveDelete();	// FIXME: replace this by a check whether t belongs to a namespace
 		return 0;
 	}
 
@@ -1039,7 +1090,7 @@ namespace LuaConnection {
 	 */
 	int gcOptions(lua_State* L) {
 		Options* opts = *(Options**)lua_touserdata(L,1);
-		if(opts->pi().line() == 0) delete(opts);	// FIXME: replace this by a check if opts belongs to a namespace
+		if(opts->pi().line() == 0) delete(opts);	// FIXME: replace this by a check whether opts belongs to a namespace
 		return 0;
 	}
 
@@ -2117,12 +2168,16 @@ namespace LuaConnection {
 		vector<ArgType> vvoc(1,AT_VOCABULARY);
 		vector<ArgType> vtheoopt(2); vtheoopt[0] = AT_THEORY; vtheoopt[1] = AT_OPTIONS;
 		vector<ArgType> vstructopt(2); vstructopt[0] = AT_STRUCTURE; vstructopt[1] = AT_OPTIONS;
+		vector<ArgType> vvocopt(2); vvocopt[0] = AT_VOCABULARY; vvocopt[1] = AT_OPTIONS;
 		vector<ArgType> voptopt(2); voptopt[0] = AT_OPTIONS; voptopt[1] = AT_OPTIONS;
+		vector<ArgType> vspaceopt(2); vspaceopt[0] = AT_NAMESPACE; vspaceopt[1] = AT_OPTIONS;
 
 		// Create internal procedures
 		addInternalProcedure("idptype",vint,&idptype);
 		addInternalProcedure("tostring",vtheoopt,&printtheory);
 		addInternalProcedure("tostring",vstructopt,&printstructure);
+		addInternalProcedure("tostring",vvocopt,&printvocabulary);
+		addInternalProcedure("namespace",vspaceopt,&printnamespace);
 		addInternalProcedure("tostring",voptopt,&printoptions);
 		addInternalProcedure("help",vspace,&help);
 		addInternalProcedure("newstructure",vvoc,&newstructure);
@@ -2130,7 +2185,6 @@ namespace LuaConnection {
 		addInternalProcedure("newoptions",vempty,&newoptions);
 		addInternalProcedure("clone",vtheo,&clonetheory);
 		addInternalProcedure("clone",vstruct,&clonestructure);
-		// TODO
 		
 		// Add the internal procedures to lua
 		lua_getglobal(L,"idp_intern");
@@ -2224,6 +2278,44 @@ namespace LuaConnection {
 			InternalArgument* ia = new InternalArgument(-1,_state);
 			lua_pop(_state,1);
 			return ia;
+		}
+	}
+
+	const DomainElement* funccall(string* procedure, const ElementTuple& input) {
+		lua_getfield(_state,LUA_REGISTRYINDEX,procedure->c_str());
+		for(ElementTuple::const_iterator it = input.begin(); it != input.end(); ++it) {
+			convertToLua(_state,*it);
+		}
+		int err = lua_pcall(_state,input.size(),1,0);
+		if(err) {
+			Error::error();
+			cerr << string(lua_tostring(_state,-1)) << endl;
+			lua_pop(_state,1);
+			return 0;
+		}
+		else {
+			const DomainElement* d = convertToElement(-1,_state);
+			lua_pop(_state,1);
+			return d;
+		}
+	}
+
+	bool predcall(string* procedure, const ElementTuple& input) {
+		lua_getfield(_state,LUA_REGISTRYINDEX,procedure->c_str());
+		for(ElementTuple::const_iterator it = input.begin(); it != input.end(); ++it) {
+			convertToLua(_state,*it);
+		}
+		int err = lua_pcall(_state,input.size(),1,0);
+		if(err) {
+			Error::error();
+			cerr << string(lua_tostring(_state,-1)) << endl;
+			lua_pop(_state,1);
+			return 0;
+		}
+		else {
+			bool b = lua_toboolean(_state,-1);
+			lua_pop(_state,1);
+			return b;
 		}
 	}
 

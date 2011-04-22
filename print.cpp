@@ -38,10 +38,7 @@ Printer* Printer::create(Options* opts) {
 	}
 }
 
-string Printer::print(const Namespace* )			{ /* FIXME n->accept(this); return _out.str();*/ }
-string Printer::print(const Vocabulary* v)			{ return v->to_string(); /* FIXME v->accept(this); return _out.str();*/ }
 string Printer::print(const AbstractTheory* t)		{ t->accept(this); return _out.str(); }
-string Printer::print(const AbstractStructure* )	{ /* FIXME s->accept(this); return _out.str();*/ }	
 
 void Printer::indent() 		{ _indent++; }
 void Printer::unindent()	{ _indent--; }
@@ -612,7 +609,12 @@ void IDPPrinter::visit(const CPVarTerm* cpt) {
 void SimplePrinter::visit(const Structure* ) {
 	// FIXME _out << s->to_string();
 }
+*/
+string IDPPrinter::print(const AbstractStructure* ) {
+	return string("not yet implemented");
+}
 
+/*
 void IDPPrinter::visit(const Structure* s) {
 	_currentstructure = s;
 	Vocabulary* v = s->vocabulary();
@@ -741,50 +743,75 @@ void IDPPrinter::visit(const FuncInter* f) {
 void SimplePrinter::visit(const Vocabulary* v) {
 	_out << v->to_string();
 }
-
-void IDPPrinter::visit(const Vocabulary* v) {
-	traverse(v);
+*/
+string IDPPrinter::print(const Vocabulary* v) {
+	for(map<string,set<Sort*> >::const_iterator it = v->firstsort(); it != v->lastsort(); ++it) {
+		for(set<Sort*>::iterator jt = it->second.begin(); jt != it->second.end(); ++jt) {
+			if(!(*jt)->builtin() || v == Vocabulary::std()) visit(*jt);
+		}
+	}
+	for(map<string,Predicate*>::const_iterator it = v->firstpred(); it != v->lastpred(); ++it) {
+		if(!it->second->builtin() || v == Vocabulary::std()) visit(it->second);
+	}
+	for(map<string,Function*>::const_iterator it = v->firstfunc(); it != v->lastfunc(); ++it) {
+		if(!it->second->builtin() || v == Vocabulary::std()) visit(it->second);
+	}
+	return _out.str();
 }
 
 void IDPPrinter::visit(const Sort* s) {
 	printtab();
 	_out << "type " << s->name();
-	if(s->nrParents() > 0)
-		_out << " isa " << s->parent(0)->name();
-		for(unsigned int n = 1; n < s->nrParents(); ++n)
-			_out << "," << s->parent(n)->name();
+	if(!s->parents().empty())
+		_out << " isa " << (*(s->parents().begin()))->name();
+		for(set<Sort*>::const_iterator it = ++(s->parents().begin()); it != s->parents().end(); ++it)
+			_out << "," << (*it)->name();
 	_out << "\n";
 }
 
 void IDPPrinter::visit(const Predicate* p) {
 	printtab();
-	_out << p->name().substr(0,p->name().find('/'));
-	if(p->arity() > 0) {
-		_out << "(" << p->sort(0)->name();
-		for(unsigned int n = 1; n < p->arity(); ++n)
-			_out << "," << p->sort(n)->name();
-		_out << ")";
+	if(p->overloaded()) {
+		_out << "overloaded predicate " << p->name() << '\n';
 	}
-	_out << "\n";
+	else {
+		_out << p->name().substr(0,p->name().find('/'));
+		if(p->arity() > 0) {
+			_out << "(" << p->sort(0)->name();
+			for(unsigned int n = 1; n < p->arity(); ++n)
+				_out << "," << p->sort(n)->name();
+			_out << ")";
+		}
+		_out << "\n";
+	}
 }
 
 void IDPPrinter::visit(const Function* f) {
 	printtab();
-	if(f->partial())
-		_out << "partial ";
-	_out << f->name().substr(0,f->name().find('/'));
-	if(f->arity() > 0) {
-		_out << "(" << f->insort(0)->name();
-		for(unsigned int n = 1; n < f->arity(); ++n)
-			_out << "," << f->insort(n)->name();
-		_out << ")";
+	if(f->overloaded()) {
+		_out << "overloaded function " << f->name() << '\n';
 	}
-	_out << " : " << f->outsort()->name() << "\n";
+	else {
+		if(f->partial())
+			_out << "partial ";
+		_out << f->name().substr(0,f->name().find('/'));
+		if(f->arity() > 0) {
+			_out << "(" << f->insort(0)->name();
+			for(unsigned int n = 1; n < f->arity(); ++n)
+				_out << "," << f->insort(n)->name();
+			_out << ")";
+		}
+		_out << " : " << f->outsort()->name() << "\n";
+	}
 }
-*/
+
 /*****************
 	Namespaces
 *****************/
+
+string IDPPrinter::print(const Namespace* ) {
+	return string("not yet implemented");
+}
 /*
 void IDPPrinter::visit(const Namespace* s) {
 	for(unsigned int n = 0; n < s->nrVocs(); ++n) {
