@@ -399,7 +399,8 @@ class SolverTheory : public AbstractGroundTheory {
 		AbstractTheory*	accept(TheoryMutatingVisitor*);
 
 		// Debugging
-		std::string to_string() const { assert(false); /*TODO*/	}
+		std::ostream&	put(std::ostream&, unsigned int spaces = 0)	const;
+		std::string		to_string()									const { assert(false); /*TODO*/	}
 
 };
 
@@ -454,7 +455,8 @@ class GroundTheory : public AbstractGroundTheory {
 		AbstractTheory*	accept(TheoryMutatingVisitor*);
 
 		// Debugging
-		std::string to_string() const;
+		std::ostream&	put(std::ostream&, unsigned int spaces = 0)	const;
+		std::string		to_string()									const;
 };
 
 #endif

@@ -238,6 +238,8 @@ class Predicate : public PFSymbol {
 		bool		contains(const Predicate* p)									const;
 		Predicate*	resolve(const std::vector<Sort*>&);
 		Predicate*	disambiguate(const std::vector<Sort*>&,const Vocabulary* v = 0);
+		std::set<Predicate*>	nonbuiltins()	const;	//!< Returns the set of predicates that are not builtin
+														//!< and that are overloaded by 'this'.
 
 		// Output
 		std::ostream&	put(std::ostream&)	const;
@@ -384,6 +386,8 @@ class Function : public PFSymbol {
 		bool		contains(const Function* f)										const;
 		Function*	resolve(const std::vector<Sort*>&);
 		Function*	disambiguate(const std::vector<Sort*>&,const Vocabulary*);
+		std::set<Function*>	nonbuiltins()	const;	//!< Returns the set of predicates that are not builtin
+													//!< and that are overloaded by 'this'.
 
 		// Output
 		std::ostream&	put(std::ostream&)	const;

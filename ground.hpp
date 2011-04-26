@@ -26,6 +26,7 @@ class AbstractStructure;
 class AbstractGroundTheory;
 class InstGenerator;
 class InstanceChecker;
+class SortTable;
 class DomainElement;
 
 /**********************************************
@@ -450,7 +451,7 @@ class AggGrounder : public FormulaGrounder {
 	private:
 		SetGrounder*	_setgrounder;
 		TermGrounder*	_boundgrounder;
-		AggFunction			_type;
+		AggFunction		_type;
 		char			_comp;
 		bool			_sign;
 		bool			_doublenegtseitin;
@@ -539,10 +540,10 @@ class QuantSetGrounder : public SetGrounder {
 	private:
 		FormulaGrounder*	_subgrounder;
 		InstGenerator*		_generator;	
-		const DomainElement**			_weight;
+		TermGrounder*		_weightgrounder;
 	public:
-		QuantSetGrounder(GroundTranslator* gt, FormulaGrounder* gr, InstGenerator* ig, const DomainElement** w) :
-			SetGrounder(gt), _subgrounder(gr), _generator(ig), _weight(w) { }
+		QuantSetGrounder(GroundTranslator* gt, FormulaGrounder* gr, InstGenerator* ig, TermGrounder* w) :
+			SetGrounder(gt), _subgrounder(gr), _generator(ig), _weightgrounder(w) { }
 		int run() const;
 };
 

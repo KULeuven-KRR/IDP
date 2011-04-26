@@ -442,3 +442,14 @@ namespace SetUtils {
 	}
 
 }
+
+namespace TermUtils {
+	vector<Term*> makeNewVarTerms(const vector<Variable*>& vars) {
+		vector<Term*> terms;
+		for(vector<Variable*>::const_iterator it = vars.begin(); it != vars.end(); ++it) {
+			terms.push_back(new VarTerm(*it,TermParseInfo()));
+		}
+		return terms;
+	}
+}
+

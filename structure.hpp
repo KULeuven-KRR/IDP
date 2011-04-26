@@ -129,6 +129,7 @@ class Compound {
 
 		Function*				function()				const;	//!< Returns the function of the compound
 		const DomainElement*	arg(unsigned int n)		const;	//!< Returns the n'th argument of the compound
+		const ElementTuple&		args()					const { return _arguments;	}
 
 		std::ostream&	put(std::ostream&)	const;
 		std::string		to_string()			const;

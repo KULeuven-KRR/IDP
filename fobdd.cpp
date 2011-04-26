@@ -4,13 +4,16 @@
 	(c) K.U.Leuven
 ************************************/
 
+#include <cassert>
+#include <typeinfo>
+#include <sstream>
 #include "fobdd.hpp"
-#include "element.hpp"
 #include "vocabulary.hpp"
 #include "term.hpp"
 #include "theory.hpp"
+#include "common.hpp"
+#include "structure.hpp"
 
-#include <typeinfo>
 
 using namespace std;
 
@@ -286,7 +289,7 @@ FOBDDFuncTerm* FOBDDManager::addFuncTerm(Function* func, const vector<FOBDDArgum
 	return newarg;
 }
 
-FOBDDDomainTerm* FOBDDManager::getDomainTerm(Sort* sort, TypedElement value) {
+FOBDDDomainTerm* FOBDDManager::getDomainTerm(Sort* sort, const DomainElement* value) {
 	// Lookup
 	DomainTermTable::const_iterator it = _domaintermtable.find(sort);
 	if(it != _domaintermtable.end()) {
@@ -299,7 +302,7 @@ FOBDDDomainTerm* FOBDDManager::getDomainTerm(Sort* sort, TypedElement value) {
 	return addDomainTerm(sort,value);
 }
 
-FOBDDDomainTerm* FOBDDManager::addDomainTerm(Sort* sort, TypedElement value) {
+FOBDDDomainTerm* FOBDDManager::addDomainTerm(Sort* sort, const DomainElement* value) {
 	FOBDDDomainTerm* newdt = new FOBDDDomainTerm(sort,value);
 	_domaintermtable[sort][value] = newdt;
 	return newdt;
@@ -535,19 +538,16 @@ void FOBDDFactory::visit(const VarTerm* vt) {
 }
 
 void FOBDDFactory::visit(const DomainTerm* dt) {
-	TypedElement te;
-	te._type = dt->type();
-	te._element = dt->value();
-	_argument = _manager->getDomainTerm(dt->sort(),te);
+	_argument = _manager->getDomainTerm(dt->sort(),dt->value());
 }
 
 void FOBDDFactory::visit(const FuncTerm* ft) {
-	vector<FOBDDArgument*> args(ft->func()->arity());
+	vector<FOBDDArgument*> args(ft->function()->arity());
 	for(unsigned int n = 0; n < args.size(); ++n) {
-		ft->subterm(n)->accept(this);
+		ft->subterms()[n]->accept(this);
 		args[n] = _argument;
 	}
-	_argument = _manager->getFuncTerm(ft->func(),args);
+	_argument = _manager->getFuncTerm(ft->function(),args);
 }
 
 void FOBDDFactory::visit(const AggTerm* ) {
@@ -556,12 +556,12 @@ void FOBDDFactory::visit(const AggTerm* ) {
 }
 
 void FOBDDFactory::visit(const PredForm* pf) {
-	vector<FOBDDArgument*> args(pf->symb()->nrSorts());
+	vector<FOBDDArgument*> args(pf->symbol()->nrSorts());
 	for(unsigned int n = 0; n < args.size(); ++n) {
-		pf->subterm(n)->accept(this);
+		pf->subterms()[n]->accept(this);
 		args[n] = _argument;
 	}
-	_kernel = _manager->getAtomKernel(pf->symb(),args);
+	_kernel = _manager->getAtomKernel(pf->symbol(),args);
 	if(pf->sign()) _bdd = _manager->getBDD(_kernel,_manager->truebdd(),_manager->falsebdd());
 	else  _bdd = _manager->getBDD(_kernel,_manager->falsebdd(),_manager->truebdd());
 }
@@ -569,16 +569,16 @@ void FOBDDFactory::visit(const PredForm* pf) {
 void FOBDDFactory::visit(const BoolForm* bf) {
 	if(bf->conj()) {
 		FOBDD* temp = _manager->truebdd();
-		for(unsigned int n = 0; n < bf->nrSubforms(); ++n) {
-			bf->subform(n)->accept(this);
+		for(vector<Formula*>::const_iterator it = bf->subformulas().begin(); it != bf->subformulas().end(); ++it) {
+			(*it)->accept(this);
 			temp = _manager->conjunction(temp,_bdd);
 		}
 		_bdd = temp;
 	}
 	else {
 		FOBDD* temp = _manager->falsebdd();
-		for(unsigned int n = 0; n < bf->nrSubforms(); ++n) {
-			bf->subform(n)->accept(this);
+		for(vector<Formula*>::const_iterator it = bf->subformulas().begin(); it != bf->subformulas().end(); ++it) {
+			(*it)->accept(this);
 			temp = _manager->disjunction(temp,_bdd);
 		}
 		_bdd = temp;
@@ -589,8 +589,8 @@ void FOBDDFactory::visit(const BoolForm* bf) {
 void FOBDDFactory::visit(const QuantForm* qf) {
 	qf->subf()->accept(this);
 	FOBDD* qbdd = _bdd;
-	for(unsigned int n = 0; n < qf->nrQvars(); ++n) {
-		FOBDDVariable* qvar = _manager->getVariable(qf->qvar(n));
+	for(set<Variable*>::const_iterator it = qf->quantvars().begin(); it != qf->quantvars().end(); ++it) {
+		FOBDDVariable* qvar = _manager->getVariable(*it);
 		if(qf->univ()) qbdd = _manager->univquantify(qvar,qbdd);
 		else qbdd = _manager->existsquantify(qvar,qbdd);
 	}
@@ -614,26 +614,30 @@ void FOBDDFactory::visit(const AggForm* ) {
 ****************/
 
 string FOBDDManager::to_string(FOBDD* bdd, unsigned int spaces) const {
-	string str = tabstring(spaces);
+	stringstream sstr;
+	printtabs(sstr,spaces);
+	string str = sstr.str();
 	if(bdd == _truebdd) str += "true\n";
 	else if(bdd == _falsebdd) str += "false\n";
 	else {
 		str += to_string(bdd->kernel(),spaces);
-		str += tabstring(spaces) + string("FALSE BRANCH:\n");
+		str += sstr.str() + string("FALSE BRANCH:\n");
 		str += to_string(bdd->falsebranch(),spaces+3);
-		str += tabstring(spaces) + string("TRUE BRANCH:\n");
+		str += sstr.str() + string("TRUE BRANCH:\n");
 		str += to_string(bdd->truebranch(),spaces+3);
 	}
 	return str;
 }
 
 string FOBDDManager::to_string(FOBDDKernel* kernel, unsigned int spaces) const {
-	string str = tabstring(spaces);
+	stringstream sstr;
+	printtabs(sstr,spaces);
+	string str = sstr.str();
 	if(typeid(*kernel) == typeid(FOBDDAtomKernel)) {
 		FOBDDAtomKernel* atomkernel = dynamic_cast<FOBDDAtomKernel*>(kernel);
 		PFSymbol* symbol = atomkernel->symbol();
 		str += symbol->to_string();
-		if(symbol->ispred()) {
+		if(typeid(*symbol) == typeid(Predicate)) {
 			if(symbol->nrSorts()) {
 				str += "(" + to_string(atomkernel->args(0));
 				for(unsigned int n = 1; n < symbol->nrSorts(); ++n) 
@@ -655,7 +659,7 @@ string FOBDDManager::to_string(FOBDDKernel* kernel, unsigned int spaces) const {
 		FOBDDQuantKernel* quantkernel = dynamic_cast<FOBDDQuantKernel*>(kernel);
 		str += "EXISTS(" + quantkernel->sort()->to_string() + ") {\n";
 		str += to_string(quantkernel->bdd(),spaces+3);
-		str += tabstring(spaces) + "}";
+		str += sstr.str() + "}";
 	}
 	else {
 		assert(false);
@@ -687,7 +691,7 @@ string FOBDDManager::to_string(FOBDDArgument* arg) const {
 	}
 	else if(typeid(*arg) == typeid(FOBDDDomainTerm)) {
 		FOBDDDomainTerm* dt = dynamic_cast<FOBDDDomainTerm*>(arg);
-		str += ElementUtil::ElementToString(dt->value()) + "[" + dt->sort()->to_string() + "]";
+		str += dt->value()->to_string() + "[" + dt->sort()->to_string() + "]";
 	}
 	else {
 		assert(false);

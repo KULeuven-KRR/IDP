@@ -604,6 +604,7 @@ class Theory : public AbstractTheory {
 		const std::vector<Formula*>&		sentences()		const { return _sentences;	}
 		const std::vector<Definition*>&		definitions()	const { return _definitions;	}
 		const std::vector<FixpDef*>&		fixpdefs()		const { return _fixpdefs;		}
+		std::set<TheoryComponent*>			components()	const;
 
 		// Visitor
 		void	accept(TheoryVisitor*) const;
