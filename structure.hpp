@@ -215,7 +215,7 @@ class TableIterator {
 		TableIterator& operator=(const TableIterator&);
 		bool					hasNext()	const;
 		const ElementTuple&		operator*()	const;
-		TableIterator&			operator++();
+		void					operator++();
 		~TableIterator();
 		const InternalTableIterator*	iterator()	const { return _iterator;	}
 };

@@ -57,7 +57,41 @@ procedure clone(obj) {
 	Basic inference
 **********************/
 
+/**
+ * Apply model expansion to theory T, structure S, and options Opts. Opts defaults to stdoptions.
+ * The result is a table of structures and, if Opts.trace == true, a trace of the solver
+ */
+procedure modelexpand(T,S,Opts) {
+	local clonetheo = clone(T)
+	internal_inference::push_negations(clonetheo)
+	internal_inference::flatten(clonetheo)
+	if not Opts then Opts = stdoptions end
+	local solutions, trace =  idp_intern.mx(clonetheo,S,Opts) 
+	return solutions, trace
+}
 
+/*************************
+	Advanced inference
+*************************/
+
+namespace internal_inference {
+
+	/**
+	 * Push the negations of a given theory T inside until they are in front of atoms
+	 */
+	procedure push_negations(T) {
+		return idp_intern.push_negations(T)
+	}
+
+	/**
+	 * Remove brackets from long conjunctions and disjunctions in theory T
+	 * Merge successive quantifiers in theory T
+	 */
+	procedure flatten(T) {
+		return idp_intern.flatten(T)
+	}
+
+}
 
 
 
@@ -95,15 +129,6 @@ procedure parse(filename) {
 	return idp_intern_idpcall("load_file",filename)
 }
 
-procedure modelexpand(Theo,Struct,Opt) {
-	local clonetheo = clone(Theo)
-	IDP_ADVANCED::push_negations(clonetheo)
-	IDP_ADVANCED::flatten(clonetheo)
-	if not Opt then Opt = stdoptions end
-	local solutions, trace =  idp_intern_idpcall("fastmx",clonetheo,Struct,Opt) 
-	return solutions, trace
-}
-
 procedure ground(Theo,Struct,Opt) {
 	local clonetheo = clone(Theo)
 	IDP_ADVANCED::push_negations(clonetheo)
@@ -128,10 +153,6 @@ procedure idptostring(obj,opts) {
 
 namespace IDP_ADVANCED {
 	
-	procedure push_negations(T) {
-		return idp_intern_idpcall("push_negations",T)
-	}
-
 	procedure move_functions(T) {
 		return idp_intern_idpcall("move_functions",T)
 	}
@@ -152,10 +173,6 @@ namespace IDP_ADVANCED {
 		return idp_intern_idpcall("tseitin",T)
 	}
 
-	procedure flatten(T) {
-		return idp_intern_idpcall("flatten",T)
-	}
-
 	procedure reduce(T,S) {
 		return idp_intern_idpcall("reduce",T,S)
 	}
@@ -171,6 +188,4 @@ namespace IDP_ADVANCED {
 	procedure getbdds(T) {
 		return idp_intern_idpcall("getbdds",T);
 	}
-
-}
 */

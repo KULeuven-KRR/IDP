@@ -287,7 +287,7 @@ COMMENTLINE		"//".*
 								}
 <include>"<"[a-zA-Z0-9_/]*">"	{ advancecol();
 								  char* temp = yytext; ++temp;
-								  string str = string(DATADIR) + string(temp,yyleng-2) + ".idp";
+								  string str = string(DATADIR) + "/std/" + string(temp,yyleng-2) + ".idp";
 								  start_include(str);	
 								  BEGIN(includecaller);
 								}
@@ -507,7 +507,8 @@ COMMENTLINE		"//".*
 							  return *yytext;			}
 <*>\n                       { advanceline();			}
 
-<<EOF>>						{ if(!include_buffer_stack.empty())	
+<<EOF>>						{ BEGIN(INITIAL);
+							  if(!include_buffer_stack.empty())	
 								  end_include();			
 							  else yyterminate();
 							}

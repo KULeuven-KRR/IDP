@@ -597,8 +597,8 @@ elements_es		: elements ';'						{ $$ = $1;	}
 				| elements							{ $$ = $1;	}
 				;
 
-elements		: elements ';' charrange			{ $$ = $1; insert.addElement($$,$3->first,$3->second);		}
-				| elements ';' intrange				{ $$ = $1; insert.addElement($$,$3->first,$3->second);		}
+elements		: elements ';' charrange			{ $$ = $1; insert.addElement($$,$3->first,$3->second); delete($3);	}
+				| elements ';' intrange				{ $$ = $1; insert.addElement($$,$3->first,$3->second); delete($3);	}
 				| elements ';' '(' strelement ')'	{ $$ = $1; insert.addElement($$,$4);						}
 				| elements ';' '(' integer ')'		{ $$ = $1; insert.addElement($$,$4);						}
 				| elements ';' '(' compound ')'		{ $$ = $1; insert.addElement($$,$4);						}
@@ -608,9 +608,9 @@ elements		: elements ';' charrange			{ $$ = $1; insert.addElement($$,$3->first,$
 				| elements ';' floatnr				{ $$ = $1; insert.addElement($$,$3);						}
 				| elements ';' compound				{ $$ = $1; insert.addElement($$,$3);						}
 				| charrange							{ $$ = insert.createSortTable(); 
-													  insert.addElement($$,$1->first,$1->second);				}
+													  insert.addElement($$,$1->first,$1->second); delete($1);	}
 				| intrange							{ $$ = insert.createSortTable(); 
-													  insert.addElement($$,$1->first,$1->second);				}
+													  insert.addElement($$,$1->first,$1->second); delete($1);	}
 				| '(' strelement ')'				{ $$ = insert.createSortTable(); insert.addElement($$,$2);	}
 				| '(' integer ')'					{ $$ = insert.createSortTable(); insert.addElement($$,$2);	}
 				| '(' floatnr ')'                   { $$ = insert.createSortTable(); insert.addElement($$,$2);	}
@@ -791,12 +791,12 @@ funcatom	: intern_pointer '(' domain_tuple ')' '=' domain_element		{ insert.func
 			| '-' intern_pointer '=' domain_element						    { insert.funcatom($2,$4,false);		}
 			;
 
-domain_tuple	: domain_tuple ',' domain_element	{ $$ = insert.domaintuple($1,$3);	}
-				| domain_tuple ',' intrange			{ $$ = insert.domaintuple($1,$3);	}
-				| domain_tuple ',' charrange		{ $$ = insert.domaintuple($1,$3);	}
-				| domain_element					{ $$ = insert.domaintuple($1);		}
-				| intrange							{ $$ = insert.domaintuple($1);		}
-				| charrange							{ $$ = insert.domaintuple($1);		}
+domain_tuple	: domain_tuple ',' domain_element	{ $$ = insert.domaintuple($1,$3);				}
+				| domain_tuple ',' intrange			{ $$ = insert.domaintuple($1,$3); delete($3);	}
+				| domain_tuple ',' charrange		{ $$ = insert.domaintuple($1,$3); delete($3);	}
+				| domain_element					{ $$ = insert.domaintuple($1);					}
+				| intrange							{ $$ = insert.domaintuple($1); delete($1);		}
+				| charrange							{ $$ = insert.domaintuple($1); delete($1);		}
 				;
 
 domain_element	: strelement	{ $$ = insert.element($1); }

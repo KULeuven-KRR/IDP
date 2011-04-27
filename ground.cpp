@@ -1988,3 +1988,23 @@ void GrounderFactory::visit(const Rule* rule) {
 	RestoreContext();
 
 }
+
+/**************
+	Visitor
+**************/
+
+void TheoryVisitor::visit(const CPVarTerm*) {
+	// TODO
+}
+
+void TheoryVisitor::visit(const CPWSumTerm*) {
+	// TODO
+}
+
+void TheoryVisitor::visit(const CPSumTerm*) {
+	// TODO
+}
+
+void TheoryVisitor::visit(const CPReification*) {
+	// TODO
+}

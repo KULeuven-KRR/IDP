@@ -1865,12 +1865,12 @@ void Insert::predinter(NSPair* nst, PredTable* t) const {
 void Insert::funcinter(NSPair* nst, FuncTable* t) const {
 	ParseInfo pi = nst->_pi;
 	if(nst->_sortsincluded) {
-		if((nst->_sorts).size() != t->arity()) Error::incompatiblearity(nst->to_string(),pi);
+		if((nst->_sorts).size() != t->arity()+1) Error::incompatiblearity(nst->to_string(),pi);
 		if(!(nst->_func)) Error::funcnameexpected(pi);
 	}
 	nst->includeArity(t->arity());
 	Function* f = funcInScope(nst->_name,pi);
-	if(f && nst->_sortsincluded && (nst->_sorts).size() == t->arity()) f = f->resolve(nst->_sorts);
+	if(f && nst->_sortsincluded && (nst->_sorts).size() == t->arity()+1) f = f->resolve(nst->_sorts);
 	if(f) {
 		if(belongsToVoc(f)) {
 			FuncInter* inter = _currstructure->inter(f);
@@ -1879,6 +1879,7 @@ void Insert::funcinter(NSPair* nst, FuncTable* t) const {
 		else Error::funcnotinstructvoc(nst->to_string(),_currstructure->name(),pi);
 	}
 	else Error::undeclfunc(nst->to_string(),pi);
+	delete(nst);
 }
 
 void Insert::sortinter(NSPair* nst, SortTable* t) const {
@@ -2146,6 +2147,7 @@ void Insert::threepredinter(NSPair* nst, const string& utf, PredTable* t) {
 		}
 	}
 	else Error::undeclpred(nst->to_string(),pi);
+	delete(nst);
 }
 
 void Insert::threefuncinter(NSPair* nst, const string& utf, PredTable* t) {

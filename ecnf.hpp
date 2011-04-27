@@ -65,7 +65,7 @@ class GroundSet {
 		bool			weighted()				const { return not _litweights.empty(); }
 
 		// Visitor
-		void accept(TheoryVisitor*) const;
+		void accept(TheoryVisitor* v) const { v->visit(this);	}
 };
 
 /********************************
@@ -114,7 +114,7 @@ class GroundAggregate {
 		unsigned int	setnr()	const { return _set; 	}
 
 		// Visitor
-		void accept(TheoryVisitor*) const;
+		void accept(TheoryVisitor* v) const { v->visit(this);	}
 };
 
 
@@ -138,6 +138,7 @@ class GroundRuleBody {
 		// Constructors
 		GroundRuleBody() { }
 		GroundRuleBody(RuleType type, bool rec): _type(type), _recursive(rec) { }
+
 		// Destructor
 		virtual		~GroundRuleBody() { }
 
@@ -149,6 +150,7 @@ class GroundRuleBody {
 
 		// Visitor
 		virtual void accept(TheoryVisitor*) const = 0;
+		virtual GroundRuleBody* accept(TheoryMutatingVisitor* v) = 0;
 
 		// Friends
 		friend class GroundDefinition;
@@ -167,6 +169,8 @@ class PCGroundRuleBody : public GroundRuleBody {
 		PCGroundRuleBody(RuleType type, const std::vector<int>& body, bool rec) : GroundRuleBody(type,rec), _body(body) { }
 		PCGroundRuleBody(const PCGroundRuleBody& grb): GroundRuleBody(grb._type,grb._recursive), _body(grb._body) { }
 
+		~PCGroundRuleBody() { }
+
 		// Inspectors
 		std::vector<int>		body()					const { return _body;								}
 		unsigned int	size()					const { return _body.size();						}
@@ -176,7 +180,8 @@ class PCGroundRuleBody : public GroundRuleBody {
 		bool			isTrue()				const { return (_body.empty() && _type == RT_CONJ);	}
 
 		// Visitor
-		void accept(TheoryVisitor*) const;
+		void accept(TheoryVisitor* v) const { v->visit(this);	}
+		GroundRuleBody* accept(TheoryMutatingVisitor* v) { return v->visit(this);	}
 
 		// Friends
 		friend class GroundDefinition;
@@ -200,6 +205,8 @@ class AggGroundRuleBody : public GroundRuleBody {
 		AggGroundRuleBody(const AggGroundRuleBody& grb):
 			GroundRuleBody(RT_AGG,grb._recursive), _setnr(grb._setnr), _aggtype(grb._aggtype), _lower(grb._lower), _bound(grb._bound) { }
 
+		~AggGroundRuleBody() { }
+
 		// Inspectors
 		unsigned int	setnr()		const { return _setnr;		}
 		AggFunction			aggtype()	const { return _aggtype;	}
@@ -209,7 +216,8 @@ class AggGroundRuleBody : public GroundRuleBody {
 		bool			isTrue()	const { return false;		}
 
 		// Visitor
-		void accept(TheoryVisitor*) const;
+		void accept(TheoryVisitor* v) const { v->visit(this);	}
+		GroundRuleBody* accept(TheoryMutatingVisitor* v) { return v->visit(this);	}
 
 		// Friends
 		friend class GroundDefinition;
@@ -251,8 +259,8 @@ class GroundDefinition : public AbstractDefinition {
 		const_ruleiterator	end()			const { return _rules.end();		}
 
 		// Visitor
-		void 				accept(TheoryVisitor*) const;
-		AbstractDefinition*	accept(TheoryMutatingVisitor*);
+		void 				accept(TheoryVisitor* v) const		{ v->visit(this);			}
+		AbstractDefinition*	accept(TheoryMutatingVisitor* v)	{ return v->visit(this);	}
 
 		// Debugging
 		std::ostream&	put(std::ostream&,unsigned int spaces = 0) const;
@@ -287,7 +295,7 @@ class CPReification { //TODO
 		CPTsBody* 	_body;
 		CPReification(int head, CPTsBody* body): _head(head), _body(body) { }
 		std::string to_string(unsigned int spaces = 0) const;
-		void accept(TheoryVisitor*) const;
+		void accept(TheoryVisitor* v) const { v->visit(this);	}
 };
 
 /**********************
@@ -331,7 +339,9 @@ class AbstractGroundTheory : public AbstractTheory {
 		virtual void addFixpDef(GroundFixpDef*)								= 0;
 		virtual void addSet(int setnr, int defnr, bool weighted)			= 0;
 		virtual	void addAggregate(int tseitin, AggTsBody* body)				= 0; 
+#ifdef TEMP_CP
 		virtual void addCPReification(int tseitin, CPTsBody* body)			= 0;
+#endif
 
 				void addEmptyClause()		{ GroundClause c(0); addClause(c);		}
 				void addUnitClause(int l)	{ GroundClause c(1,l); addClause(c);	}
@@ -374,9 +384,11 @@ class SolverTheory : public AbstractGroundTheory {
 		void	addFixpDef(GroundFixpDef*);
 		void	addSet(int setnr, int defnr, bool weighted);
 		void	addAggregate(int tseitin, AggTsBody* body);
+#ifdef TEMP_CP
 		void 	addCPReification(int tseitin, CPTsBody* body);
 		void	addCPVariable(unsigned int varids);
 		void	addCPVariables(const std::vector<unsigned int>& varids);
+#endif
 
 		void	addPCRule(int defnr, int tseitin, PCTsBody* body);
 		void	addAggRule(int defnr, int tseitin, AggTsBody* body);
@@ -395,12 +407,12 @@ class SolverTheory : public AbstractGroundTheory {
 		GroundFixpDef*		fixpdef(unsigned int)		const { assert(false); /*TODO*/	}
 
 		// Visitor
-		void			accept(TheoryVisitor*) const;
-		AbstractTheory*	accept(TheoryMutatingVisitor*);
+		void			accept(TheoryVisitor* v) const		{ v->visit(this);			}
+		AbstractTheory*	accept(TheoryMutatingVisitor* v)	{ return v->visit(this);	}
 
 		// Debugging
-		std::ostream&	put(std::ostream&, unsigned int spaces = 0)	const;
-		std::string		to_string()									const { assert(false); /*TODO*/	}
+		std::ostream&	put(std::ostream& output, unsigned int)	const { assert(false); /* TODO */ return output;	   }
+		std::string		to_string()								const { assert(false); /*TODO*/	}
 
 };
 
@@ -451,8 +463,8 @@ class GroundTheory : public AbstractGroundTheory {
 		CPReification*		cpreification(unsigned int n)	const { return _cpreifications[n];						}
 
 		// Visitor
-		void			accept(TheoryVisitor*) const;
-		AbstractTheory*	accept(TheoryMutatingVisitor*);
+		void			accept(TheoryVisitor* v) const		{ v->visit(this);			}
+		AbstractTheory*	accept(TheoryMutatingVisitor* v)	{ return v->visit(this);	}
 
 		// Debugging
 		std::ostream&	put(std::ostream&, unsigned int spaces = 0)	const;

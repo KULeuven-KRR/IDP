@@ -638,6 +638,18 @@ namespace TheoryUtils {
 
 class GroundTheory;
 class SolverTheory;
+class GroundDefinition;
+class GroundRuleBody;
+class PCGroundRuleBody;
+class AggGroundRuleBody;
+class GroundSet;
+class GroundAggregate;
+
+class CPTerm;
+class CPVarTerm;
+class CPWSumTerm;
+class CPSumTerm;
+class CPReification;
 
 /**
  * Visitor class for theories
@@ -659,10 +671,18 @@ class TheoryVisitor {
 		virtual void visit(const QuantForm*);
 		virtual void visit(const AggForm*);
 
+		virtual void visit(const PCGroundRuleBody*);
+		virtual void visit(const AggGroundRuleBody*);
+		virtual void visit(const GroundSet*);
+		virtual void visit(const GroundAggregate*);
+
+		virtual void visit(const CPReification*);
+
 		// Definitions 
 		virtual void visit(const Rule*);
 		virtual void visit(const Definition*);
 		virtual void visit(const FixpDef*);
+		virtual void visit(const GroundDefinition*);
 
 		// Terms
 				void traverse(const Term*);
@@ -670,6 +690,10 @@ class TheoryVisitor {
 		virtual void visit(const FuncTerm*);
 		virtual void visit(const DomainTerm*);
 		virtual void visit(const AggTerm*);
+
+		virtual void visit(const CPVarTerm*);
+		virtual void visit(const CPWSumTerm*);
+		virtual void visit(const CPSumTerm*);
 
 		// Set expressions
 				void traverse(const SetExpr*);
@@ -693,12 +717,16 @@ class TheoryMutatingVisitor {
 		virtual Formula* visit(BoolForm*);
 		virtual Formula* visit(QuantForm*);
 		virtual Formula* visit(AggForm*);
+
+		virtual GroundRuleBody*	visit(AggGroundRuleBody*);
+		virtual GroundRuleBody*	visit(PCGroundRuleBody*);
 	
 
 		// Definitions 
-		virtual Rule*		visit(Rule*);
-		virtual Definition* visit(Definition*);
-		virtual FixpDef*	visit(FixpDef*);
+		virtual Rule*				visit(Rule*);
+		virtual Definition*			visit(Definition*);
+		virtual FixpDef*			visit(FixpDef*);
+		virtual GroundDefinition*	visit(GroundDefinition*);
 
 		// Terms
 				Term* traverse(Term*);

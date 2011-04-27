@@ -35,7 +35,7 @@ void UserProcedure::compile(lua_State* L) {
 			ss << *it; ++it;
 			for(; it != _argnames.end(); ++it) ss << ',' << *it;
 		}		
-		ss << ')' << _code.str() << "end\n";
+		ss << ')' << _code.str() << " end\n";
 		ss << "return " << _name << "(...)\n";
 
 		// Compile 
@@ -597,6 +597,22 @@ InternalArgument clonetheory(const vector<InternalArgument>& args, lua_State* ) 
 InternalArgument clonestructure(const vector<InternalArgument>& args, lua_State* ) {
 	AbstractStructure* s = args[0].structure();
 	return InternalArgument(s->clone());
+}
+
+InternalArgument pushnegations(const vector<InternalArgument>& args, lua_State* ) {
+	AbstractTheory* t = args[0].theory();
+	TheoryUtils::push_negations(t);
+	return InternalArgument(t);
+}
+
+InternalArgument flatten(const vector<InternalArgument>& args, lua_State* ) {
+	AbstractTheory* t = args[0].theory();
+	TheoryUtils::flatten(t);
+	return InternalArgument(t);
+}
+
+InternalArgument modelexpand(const vector<InternalArgument>& args, lua_State* ) {
+	// TODO HIER HIER HIER
 }
 
 string help(Namespace* ns) {
@@ -1479,7 +1495,7 @@ namespace LuaConnection {
 				if(opts) return convertToLua(L,InternalArgument(opts));
 				if(proc) {
 					proc->compile(L);
-					lua_pushstring(L,proc->registryindex().c_str());
+					lua_getfield(L,LUA_REGISTRYINDEX,proc->registryindex().c_str());
 					return 1;
 				}
 				assert(false);
@@ -2171,6 +2187,10 @@ namespace LuaConnection {
 		vector<ArgType> vvocopt(2); vvocopt[0] = AT_VOCABULARY; vvocopt[1] = AT_OPTIONS;
 		vector<ArgType> voptopt(2); voptopt[0] = AT_OPTIONS; voptopt[1] = AT_OPTIONS;
 		vector<ArgType> vspaceopt(2); vspaceopt[0] = AT_NAMESPACE; vspaceopt[1] = AT_OPTIONS;
+		vector<ArgType> vtheostructopt(3); 
+			vtheostructopt[0] = AT_THEORY; 
+			vtheostructopt[1] = AT_STRUCTURE; 
+			vtheostructopt[2] = AT_OPTIONS;
 
 		// Create internal procedures
 		addInternalProcedure("idptype",vint,&idptype);
@@ -2185,6 +2205,9 @@ namespace LuaConnection {
 		addInternalProcedure("newoptions",vempty,&newoptions);
 		addInternalProcedure("clone",vtheo,&clonetheory);
 		addInternalProcedure("clone",vstruct,&clonestructure);
+		addInternalProcedure("push_negations",vtheo,&pushnegations);
+		addInternalProcedure("flatten",vtheo,&flatten);
+		addInternalProcedure("mx",vtheostructopt,&modelexpand);
 		
 		// Add the internal procedures to lua
 		lua_getglobal(L,"idp_intern");
@@ -2239,6 +2262,7 @@ namespace LuaConnection {
 			}
 		}
 		delete(Namespace::global());
+		delete(DomainElementFactory::instance());
 	}
 
 	void execute(stringstream* chunk) {

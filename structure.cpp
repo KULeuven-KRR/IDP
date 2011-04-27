@@ -65,12 +65,16 @@ ostream& DomainElement::put(ostream& output) const {
 	switch(_type) {
 		case DET_INT:
 			output << itos(_value._int);
+			break;
 		case DET_DOUBLE:
 			output << dtos(_value._double);
+			break;
 		case DET_STRING:
 			output << *(_value._string);
+			break;
 		case DET_COMPOUND:
 			_value._compound->put(output);
+			break;
 		default:
 			assert(false); 
 	}
@@ -441,9 +445,8 @@ TableIterator::~TableIterator() {
 	delete(_iterator);
 }
 
-TableIterator& TableIterator::operator++() {
+void TableIterator::operator++() {
 	_iterator->operator++();
-	return *this;
 }
 
 SortIterator::SortIterator(const SortIterator& si) {
@@ -516,7 +519,7 @@ inline const ElementTuple& SortInternalTableIterator::operator*() const {
 }
 
 inline void	SortInternalTableIterator::operator++() {
-	++_iter;
+	_iter->operator++();
 }
 
 SortInternalTableIterator* SortInternalTableIterator::clone() const {
@@ -828,7 +831,6 @@ bool StrictWeakTupleOrdering::operator()(const ElementTuple& t1, const ElementTu
 }
 
 bool StrictWeakNTupleEquality::operator()(const ElementTuple& t1, const ElementTuple& t2) const {
-	assert(t1.size() == t2.size());
 	for(unsigned int n = 0; n < _arity; ++n) {
 		if(t1[n] != t2[n]) return false;
 	}
@@ -1202,8 +1204,11 @@ InternalTableIterator* UnionInternalPredTable::begin() const {
  *		tuple	- the given tuple
  */
 bool EnumeratedInternalPredTable::contains(const ElementTuple& tuple) const {
-	assert(tuple.size() == arity());
-	return _table.find(tuple) != _table.end();
+	if(_table.empty()) return false;
+	else {
+		assert(tuple.size() == arity());
+		return _table.find(tuple) != _table.end();
+	}
 }
 
 /**
@@ -1926,6 +1931,7 @@ const DomainElement* EnumeratedInternalFuncTable::operator[](const ElementTuple&
 }
 
 InternalFuncTable* EnumeratedInternalFuncTable::add(const ElementTuple& tuple) {
+	if(_table.empty() && _arity == 0) _arity = tuple.size() - 1;
 	ElementTuple key = tuple;
 	const DomainElement* value = key.back(); 
 	key.pop_back();
@@ -2479,11 +2485,11 @@ TableIterator FuncTable::begin() const {
  */
 PredInter::PredInter(PredTable* ctpf, PredTable* cfpt, bool ct, bool cf, const vector<SortTable*>& univ) :
 	_univ(univ) {
-	vector<bool> univlinked(ctpf->arity(),true);
+	vector<bool> univlinked(univ.size(),true);
 	PredTable* inverseCtpf = new PredTable(new InverseInternalPredTable(ctpf,univ,true,univlinked));
 	PredTable* inverseCfpt = new PredTable(new InverseInternalPredTable(cfpt,univ,true,univlinked));
 	if(ct)	{ _ct = ctpf; _pf = inverseCtpf; } else	{ _pf = ctpf; _ct = inverseCtpf; }
-	if(cf)	{ _cf = ctpf; _pt = inverseCfpt; } else	{ _pt = ctpf; _cf = inverseCfpt; }
+	if(cf)	{ _cf = cfpt; _pt = inverseCfpt; } else	{ _pt = cfpt; _cf = inverseCfpt; }
 }
 
 /**
@@ -2496,7 +2502,7 @@ PredInter::PredInter(PredTable* ctpf, PredTable* cfpt, bool ct, bool cf, const v
  */
 PredInter::PredInter(PredTable* ctpf, bool ct, const vector<SortTable*>& univ) : 
 	_univ(univ) {
-	vector<bool> univlinked(ctpf->arity(),true);
+	vector<bool> univlinked(univ.size(),true);
 	PredTable* inverseCtpf = new PredTable(new InverseInternalPredTable(ctpf,univ,true,univlinked));
 	if(ct) {
 		_ct = ctpf; _pt = ctpf;
@@ -2508,7 +2514,8 @@ PredInter::PredInter(PredTable* ctpf, bool ct, const vector<SortTable*>& univ) :
  * \brief Destructor for predicate interpretations
  */
 PredInter::~PredInter() {
-	delete(_ct); delete(_cf);
+	delete(_ct); 
+	delete(_cf);
 	if(_ct != _pt) delete(_pt);
 	if(_cf != _pf) delete(_pf);
 }
@@ -2570,7 +2577,7 @@ void PredInter::ct(PredTable* t) {
 	if(_ct != _pt) delete(_ct);
 	_ct = t;
 	delete(_pf);
-	vector<bool> univlinked(t->arity(),true);
+	vector<bool> univlinked(_univ.size(),true);
 	_pf = new PredTable(new InverseInternalPredTable(t,_univ,true,univlinked));
 }
 
@@ -2578,7 +2585,7 @@ void PredInter::cf(PredTable* t) {
 	if(_cf != _pf) delete(_cf);
 	_cf = t;
 	delete(_pt);
-	vector<bool> univlinked(t->arity(),true);
+	vector<bool> univlinked(_univ.size(),true);
 	_pt = new PredTable(new InverseInternalPredTable(t,_univ,true,univlinked));
 }
 
@@ -2586,7 +2593,7 @@ void PredInter::pt(PredTable* t) {
 	if(_pt != _ct) delete(_pt);
 	_pt = t;
 	delete(_cf);
-	vector<bool> univlinked(t->arity(),true);
+	vector<bool> univlinked(_univ.size(),true);
 	_cf = new PredTable(new InverseInternalPredTable(t,_univ,true,univlinked));
 }
 
@@ -2594,7 +2601,7 @@ void PredInter::pf(PredTable* t) {
 	if(_pf != _cf) delete(_pf);
 	_pf = t;
 	delete(_ct);
-	vector<bool> univlinked(t->arity(),true);
+	vector<bool> univlinked(_univ.size(),true);
 	_ct = new PredTable(new InverseInternalPredTable(t,_univ,true,univlinked));
 }
 
@@ -2605,7 +2612,7 @@ void PredInter::ctpt(PredTable* t) {
 	_pt = t;
 	delete(_cf);
 	if(_cf != _pf) delete(_pf);
-	vector<bool> univlinked(t->arity(),true);
+	vector<bool> univlinked(_univ.size(),true);
 	PredTable* inv = new PredTable(new InverseInternalPredTable(t,_univ,true,univlinked));
 	_cf = inv;
 	_pf = inv;
@@ -2810,29 +2817,31 @@ void Structure::vocabulary(Vocabulary* v) {
 		}
 	}
 	for(map<string,Predicate*>::const_iterator it = _vocabulary->firstpred(); it != _vocabulary->lastpred(); ++it) {
-		if(!it->second->builtin()) {
-			if(_predinter.find(it->second) == _predinter.end()) {
+		set<Predicate*> sp = it->second->nonbuiltins();
+		for(set<Predicate*>::iterator jt = sp.begin(); jt != sp.end(); ++jt) {
+			if(_predinter.find(*jt) == _predinter.end()) {
 				vector<SortTable*> univ;
-				for(vector<Sort*>::const_iterator jt = it->second->sorts().begin(); jt != it->second->sorts().end(); ++jt) {
-					univ.push_back(_sortinter[*jt]);
+				for(vector<Sort*>::const_iterator kt = (*jt)->sorts().begin(); kt != (*jt)->sorts().end(); ++kt) {
+					univ.push_back(_sortinter[*kt]);
 				}
-				PredTable* ct = new PredTable(new EnumeratedInternalPredTable(it->second->arity()));
-				PredTable* cf = new PredTable(new EnumeratedInternalPredTable(it->second->arity()));
-				_predinter[it->second] = new PredInter(ct,cf,true,true,univ);
+				PredTable* ct = new PredTable(new EnumeratedInternalPredTable((*jt)->arity()));
+				PredTable* cf = new PredTable(new EnumeratedInternalPredTable((*jt)->arity()));
+				_predinter[(*jt)] = new PredInter(ct,cf,true,true,univ);
 			}
 		}
 	}
 	for(map<string,Function*>::const_iterator it = _vocabulary->firstfunc(); it != _vocabulary->lastfunc(); ++it) {
-		if(!it->second->builtin()) {
-			if(_funcinter.find(it->second) == _funcinter.end()) {
+		set<Function*> sf = it->second->nonbuiltins();
+		for(set<Function*>::iterator jt = sf.begin(); jt != sf.end(); ++jt) {
+			if(_funcinter.find(*jt) == _funcinter.end()) {
 				vector<SortTable*> univ;
-				for(vector<Sort*>::const_iterator jt = it->second->sorts().begin(); jt != it->second->sorts().end(); ++jt) {
-					univ.push_back(_sortinter[*jt]);
+				for(vector<Sort*>::const_iterator kt = (*jt)->sorts().begin(); kt != (*jt)->sorts().end(); ++kt) {
+					univ.push_back(_sortinter[*kt]);
 				}
-				PredTable* ct = new PredTable(new EnumeratedInternalPredTable(it->second->arity()));
-				PredTable* cf = new PredTable(new EnumeratedInternalPredTable(it->second->arity()));
+				PredTable* ct = new PredTable(new EnumeratedInternalPredTable((*jt)->arity()));
+				PredTable* cf = new PredTable(new EnumeratedInternalPredTable((*jt)->arity()));
 				PredInter* gf = new PredInter(ct,cf,true,true,univ);
-				_funcinter[it->second] = new FuncInter(gf);
+				_funcinter[(*jt)] = new FuncInter(gf);
 			}
 		}
 	}
@@ -3028,15 +3037,14 @@ void Structure::addStructure(AbstractStructure* ) {
 void Structure::functioncheck() {
 	for(map<Function*,FuncInter*>::const_iterator it = _funcinter.begin(); it != _funcinter.end(); ++it) {
 		Function* f = it->first;
-cerr << "checking function " << *f << endl;
 		FuncInter* ft = it->second;
-		if(ft) {
-			PredInter* pt = ft->graphinter();
-			PredTable* ct = pt->ct();
-			// Check if the interpretation is indeed a function
-			bool isfunc = true;
-			StrictWeakNTupleEquality eq(f->arity());
-			TableIterator it = ct->begin();
+		PredInter* pt = ft->graphinter();
+		PredTable* ct = pt->ct();
+		// Check if the interpretation is indeed a function
+		bool isfunc = true;
+		StrictWeakNTupleEquality eq(f->arity());
+		TableIterator it = ct->begin();
+		if(it.hasNext()) {
 			TableIterator jt = ct->begin(); ++jt;
 			for(; jt.hasNext(); ++it, ++jt) {
 				if(eq(*it,*jt)) {
@@ -3049,25 +3057,25 @@ cerr << "checking function " << *f << endl;
 					isfunc = false;
 				}
 			}
-			// Check if the interpretation is total
-			if(isfunc && !(f->partial()) && ft->approxtwovalued() && ct->approxfinite()) {
-				vector<SortTable*> vst;
-				vector<bool> linked;
-				for(unsigned int c = 0; c < f->arity(); ++c) {
-					vst.push_back(inter(f->insort(c)));
-					linked.push_back(true);
+		}
+		// Check if the interpretation is total
+		if(isfunc && !(f->partial()) && ft->approxtwovalued() && ct->approxfinite()) {
+			vector<SortTable*> vst;
+			vector<bool> linked;
+			for(unsigned int c = 0; c < f->arity(); ++c) {
+				vst.push_back(inter(f->insort(c)));
+				linked.push_back(true);
+			}
+			PredTable spt(new CartesianInternalPredTable(vst,linked));
+			it = spt.begin();
+			TableIterator jt = ct->begin();
+			for(; it.hasNext() && jt.hasNext(); ++it, ++jt) {
+				if(!eq(*it,*jt)) {
+					break;
 				}
-				PredTable spt(new CartesianInternalPredTable(vst,linked));
-				it = spt.begin();
-				jt = ct->begin();
-				for(; it.hasNext() && jt.hasNext(); ++it, ++jt) {
-					if(!eq(*it,*jt)) {
-						break;
-					}
-				}
-				if(it.hasNext() || jt.hasNext()) {
-					Error::nottotal(f->name(),name());
-				}
+			}
+			if(it.hasNext() || jt.hasNext()) {
+				Error::nottotal(f->name(),name());
 			}
 		}
 	}

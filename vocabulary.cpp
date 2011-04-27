@@ -449,6 +449,15 @@ Predicate* Predicate::disambiguate(const vector<Sort*>& sorts,const Vocabulary* 
 	}
 }
 
+set<Predicate*> Predicate::nonbuiltins() {
+	if(_overpredgenerator) return _overpredgenerator->nonbuiltins();
+	else {
+		set<Predicate*> sp;
+		if(!_interpretation) sp.insert(this);
+		return sp;
+	}
+}
+
 ostream& Predicate::put(ostream& output) const {
 	for(set<const Vocabulary*>::iterator it = _vocabularies.begin(); it != _vocabularies.end(); ++it) {
 		if(!(*it)->pred(_name)->overloaded()) {
@@ -546,6 +555,15 @@ void EnumeratedPredGenerator::removeVocabulary(const Vocabulary* vocabulary) {
 	}
 }
 
+set<Predicate*> EnumeratedPredGenerator::nonbuiltins() const {
+	set<Predicate*> sp;
+	for(set<Predicate*>::const_iterator it = _overpreds.begin(); it != _overpreds.end(); ++it) {
+		set<Predicate*> temp = (*it)->nonbuiltins();
+		sp.insert(temp.begin(),temp.end());
+	}
+	return sp;
+}
+
 ComparisonPredGenerator::ComparisonPredGenerator(const string& name, PredInterGeneratorGenerator* inter) : 
 	PredGenerator(name,2,true), _interpretation(inter) {
 }
@@ -631,6 +649,11 @@ void ComparisonPredGenerator::removeVocabulary(const Vocabulary* vocabulary) {
 	for(map<Sort*,Predicate*>::iterator it = _overpreds.begin(); it != _overpreds.end(); ++it) {
 		it->second->removeVocabulary(vocabulary);
 	}
+}
+
+set<Predicate*> ComparisonPredGenerator::nonbuiltins() const {
+	set<Predicate*> sp;
+	return sp;
 }
 
 namespace PredUtils {
@@ -807,6 +830,15 @@ Function* Function::disambiguate(const vector<Sort*>& sorts,const Vocabulary* vo
 	}
 }
 
+set<Function*> Function::nonbuiltins() {
+	if(_overfuncgenerator) return _overfuncgenerator->nonbuiltins();
+	else {
+		set<Function*> sf;
+		if(!_interpretation) sf.insert(this);
+		return sf;
+	}
+}
+
 ostream& Function::put(ostream& output) const {
 	for(set<const Vocabulary*>::iterator it = _vocabularies.begin(); it != _vocabularies.end(); ++it) {
 		if(!(*it)->func(_name)->overloaded()) {
@@ -815,14 +847,14 @@ ostream& Function::put(ostream& output) const {
 			break;
 		}
 	}
-	output << _name;
+	output << _name.substr(0,_name.find('/'));
 	if(!overloaded()) {
 		output << '[';
 		if(_insorts.size() > 0) {
 			output << *_insorts[0];
 			for(unsigned int n = 1; n < _insorts.size(); ++n) output << ',' << *_insorts[n];
 		}
-		output << ':' << *_outsort << ']';
+		output << " : " << *_outsort << ']';
 	}
 	return output;
 }
@@ -902,6 +934,15 @@ void EnumeratedFuncGenerator::removeVocabulary(const Vocabulary* vocabulary) {
 	}
 }
 
+set<Function*> EnumeratedFuncGenerator::nonbuiltins() const {
+	set<Function*> sf;
+	for(set<Function*>::const_iterator it = _overfuncs.begin(); it != _overfuncs.end(); ++it) {
+		set<Function*> temp = (*it)->nonbuiltins();
+		sf.insert(temp.begin(),temp.end());
+	}
+	return sf;
+}
+
 IntFloatFuncGenerator::IntFloatFuncGenerator(Function* intfunc, Function* floatfunc) : 
 	FuncGenerator(intfunc->name(),intfunc->arity(),intfunc->binding()), _intfunction(intfunc), _floatfunction(floatfunc) {
 }
@@ -970,6 +1011,11 @@ void IntFloatFuncGenerator::addVocabulary(const Vocabulary* vocabulary) {
 void IntFloatFuncGenerator::removeVocabulary(const Vocabulary* vocabulary) {
 	_intfunction->removeVocabulary(vocabulary);
 	_floatfunction->removeVocabulary(vocabulary);
+}
+
+set<Function*> IntFloatFuncGenerator::nonbuiltins() const {
+	set<Function*> sf;
+	return sf;
 }
 
 OrderFuncGenerator::OrderFuncGenerator(const string& name, unsigned int arity, FuncInterGeneratorGenerator* inter) : 
@@ -1052,6 +1098,11 @@ void OrderFuncGenerator::removeVocabulary(const Vocabulary* vocabulary) {
 	for(map<Sort*,Function*>::iterator it = _overfuncs.begin(); it != _overfuncs.end(); ++it) {
 		it->second->removeVocabulary(vocabulary);
 	}
+}
+
+set<Function*> OrderFuncGenerator::nonbuiltins() const {
+	set<Function*> sf;
+	return sf;
 }
 
 

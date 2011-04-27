@@ -563,6 +563,14 @@ void Theory::recursiveDelete() {
 	delete(this);
 }
 
+set<TheoryComponent*> Theory::components() const {
+	set<TheoryComponent*> stc;
+	for(vector<Formula*>::const_iterator it = _sentences.begin(); it != _sentences.end(); ++it) stc.insert(*it);
+	for(vector<Definition*>::const_iterator it = _definitions.begin(); it != _definitions.end(); ++it) stc.insert(*it);
+	for(vector<FixpDef*>::const_iterator it = _fixpdefs.begin(); it != _fixpdefs.end(); ++it) stc.insert(*it);
+	return stc;
+}
+
 void Theory::accept(TheoryVisitor* v) const {
 	v->visit(this);
 }
@@ -694,26 +702,7 @@ class Flattener : public TheoryMutatingVisitor {
 		Formula*	visit(BoolForm*);
 		Formula* 	visit(QuantForm*);
 
-		Formula*	traverse(Formula*);
-		Term*		traverse(Term*);
-
 };
-
-Formula* Flattener::traverse(Formula* f) {
-	for(vector<Formula*>::const_iterator it = f->subformulas().begin(); it != f->subformulas().end(); ++it)
-		(*it)->accept(this);
-	for(vector<Term*>::const_iterator it = f->subterms().begin(); it != f->subterms().end(); ++it)
-		(*it)->accept(this);
-	return f;
-}
-
-Term* Flattener::traverse(Term* t) {
-	for(vector<Term*>::const_iterator it = t->subterms().begin(); it != t->subterms().end(); ++it)
-		(*it)->accept(this);
-	for(vector<SetExpr*>::const_iterator it = t->subsets().begin(); it != t->subsets().end(); ++it)
-		(*it)->accept(this);
-	return t;
-}
 
 Formula* Flattener::visit(BoolForm* bf) {
 	vector<Formula*> newsubf;
@@ -740,7 +729,7 @@ Formula* Flattener::visit(QuantForm* qf) {
 		QuantForm* sqf = dynamic_cast<QuantForm*>(qf->subf());
 		if((qf->univ() == sqf->univ()) && sqf->sign()) {
 			qf->subf(sqf->subf());
-			for(set<Variable*>::const_iterator it = qf->quantvars().begin(); it != qf->quantvars().end(); ++it) 
+			for(set<Variable*>::const_iterator it = sqf->quantvars().begin(); it != sqf->quantvars().end(); ++it) 
 				qf->add(*it);
 			delete(sqf);
 		}

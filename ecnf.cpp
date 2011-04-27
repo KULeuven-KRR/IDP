@@ -316,6 +316,7 @@ void AbstractGroundTheory::transformForAdd(const vector<int>& vi, VIType /*vit*/
 				}
 			}
 			else {
+#ifdef TEMP_CP
 				assert(typeid(*tsbody) == typeid(CPTsBody));
 				CPTsBody* body = dynamic_cast<CPTsBody*>(tsbody);
 				if(body->type() == TS_RULE) {
@@ -325,6 +326,9 @@ void AbstractGroundTheory::transformForAdd(const vector<int>& vi, VIType /*vit*/
 				else {
 					addCPReification(atom,body);
 				}
+#else
+				assert(false);
+#endif
 			}
 		}
 	}
@@ -417,8 +421,7 @@ void GroundTheory::addAggRule(int defnr, int tseitin, AggTsBody* body) {
 	_definitions[defnr]->addAggRule(tseitin,body->setnr(),body->aggtype(),body->lower(),body->bound(),true);
 }
 
-string GroundTheory::to_string() const {
-	stringstream s;
+ostream& GroundTheory::put(ostream& s, unsigned int) const {
 	for(unsigned int n = 0; n < _clauses.size(); ++n) {
 		if(_clauses[n].empty()) {
 			s << "false";
@@ -521,6 +524,12 @@ string GroundTheory::to_string() const {
 		else s << right._value._bound;
 		s << ".\n";
 	}
+	return s;
+}
+
+string GroundTheory::to_string() const {
+	stringstream s;
+	put(s);
 	return s.str();
 }
 
@@ -663,6 +672,7 @@ void SolverTheory::addDefinition(GroundDefinition* d) {
 	}
 }
 
+#ifdef TEMP_CP
 void SolverTheory::addCPReification(int tseitin, CPTsBody* body) {
 	MinisatID::EqType comp;
 	switch(body->comp()) {
@@ -786,6 +796,7 @@ void SolverTheory::addCPVariable(unsigned int varid) {
 		}
 	}
 }
+#endif
 
 void SolverTheory::addPCRule(int defnr, int head, vector<int> body, bool conjunctive){
 	transformForAdd(body,(conjunctive ? VIT_CONJ : VIT_DISJ),defnr);
@@ -869,4 +880,45 @@ void SolverTheory::addFalseDefineds() {
 			}
 		}
 	}
+}
+
+/**************
+	Visitor
+**************/
+
+void TheoryVisitor::visit(const GroundDefinition* d) {
+	for(map<int,GroundRuleBody*>::const_iterator it = d->begin(); it != d->end(); ++it) 
+		it->second->accept(this);
+}
+
+void TheoryVisitor::visit(const AggGroundRuleBody*) {
+	// TODO
+}
+
+void TheoryVisitor::visit(const PCGroundRuleBody*) {
+	// TODO
+}
+
+void TheoryVisitor::visit(const GroundSet*) {
+	// TODO
+}
+
+void TheoryVisitor::visit(const GroundAggregate*) {
+	// TODO
+}
+
+GroundDefinition* TheoryMutatingVisitor::visit(GroundDefinition* d) {
+	for(map<int,GroundRuleBody*>::iterator it = d->begin(); it != d->end(); ++it) 
+		it->second = it->second->accept(this);
+	return d;
+}
+
+GroundRuleBody* TheoryMutatingVisitor::visit(AggGroundRuleBody* r) {
+	// TODO
+	return r;
+}
+
+GroundRuleBody* TheoryMutatingVisitor::visit(PCGroundRuleBody* r) {
+	// TODO
+	return r;
 }

@@ -88,20 +88,20 @@ class CPVarTerm : public CPTerm {
 	public:
 		unsigned int _varid;
 		CPVarTerm(unsigned int varid) : _varid(varid) { }
-		void accept(TheoryVisitor*) const;
+		void accept(TheoryVisitor* v) const { v->visit(this);	}
 };
 
 class CPSumTerm : public CPTerm {
 	public:
 		std::vector<unsigned int> _varids; 
-		void accept(TheoryVisitor*) const;
+		void accept(TheoryVisitor* v) const { v->visit(this);	}
 };
 
 class CPWSumTerm : public CPTerm {
 	public:
 		std::vector<unsigned int> 	_varids; 
 		std::vector<int>			_weights;
-		void accept(TheoryVisitor*) const;
+		void accept(TheoryVisitor* v) const { v->visit(this);	}
 };
 
 struct CPBound {
