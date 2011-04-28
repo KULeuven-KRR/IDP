@@ -17,7 +17,13 @@
 #include "execute.hpp"
 #include "error.hpp"
 #include "print.hpp"
+#include "external/MonitorInterface.hpp"
+#include "pcsolver/src/external/ExternalInterface.hpp"
+#include "ground.hpp"
+#include "ecnf.hpp"
 using namespace std;
+
+typedef MinisatID::WrappedPCSolver SATSolver;
 
 /******************************
 	User defined procedures
@@ -611,10 +617,6 @@ InternalArgument flatten(const vector<InternalArgument>& args, lua_State* ) {
 	return InternalArgument(t);
 }
 
-InternalArgument modelexpand(const vector<InternalArgument>& args, lua_State* ) {
-	// TODO HIER HIER HIER
-}
-
 string help(Namespace* ns) {
 	stringstream sstr;
 	if(ns->procedures().empty()) {
@@ -676,6 +678,103 @@ InternalArgument help(const vector<InternalArgument>& args, lua_State* L) {
 	
 	InternalArgument ia; ia._type = AT_NIL;
 	return ia;
+}
+
+/********************************
+	Model expansion inference
+********************************/
+
+SATSolver* createsolver(Options* options) {
+	MinisatID::SolverOption modes;
+	modes.nbmodels = options->nrmodels();
+	modes.verbosity = options->satverbosity();
+	modes.remap = false;
+	return new SATSolver(modes);
+}
+
+MinisatID::Solution* initsolution(Options* options) {
+	MinisatID::ModelExpandOptions opts;
+	opts.nbmodelstofind = options->nrmodels();
+	opts.printmodels = MinisatID::PRINT_NONE;
+	opts.savemodels = MinisatID::SAVE_ALL;
+	opts.search = MinisatID::MODELEXPAND;
+	return new MinisatID::Solution(opts);
+}
+
+void addLiterals(MinisatID::Model* model, GroundTranslator* translator, AbstractStructure* init) {
+	for(vector<MinisatID::Literal>::const_iterator literal = model->literalinterpretations.begin();
+		literal != model->literalinterpretations.end(); ++literal) {
+		int atomnr = literal->getAtom().getValue();
+		PFSymbol* symbol = translator->symbol(atomnr);
+		if(symbol) {
+			const ElementTuple& args = translator->args(atomnr);
+			if(typeid(*symbol) == typeid(Predicate)) {
+				Predicate* pred = dynamic_cast<Predicate*>(symbol);
+				if(literal->hasSign()) init->inter(pred)->ct()->add(args);
+				else init->inter(pred)->cf()->add(args);
+			}
+			else {
+				Function* func = dynamic_cast<Function*>(symbol);
+				if(literal->hasSign()) init->inter(func)->graphinter()->ct()->add(args);
+				else init->inter(func)->graphinter()->cf()->add(args);
+			}
+		}
+	}
+}
+
+void addTerms(MinisatID::Model* model, GroundTermTranslator* translator, AbstractStructure* init) {
+	for(vector<MinisatID::VariableEqValue>::const_iterator cpvar = model->variableassignments.begin();
+		cpvar != model->variableassignments.end(); ++cpvar) {
+		Function* function = translator->function(cpvar->variable);
+		if(function) {
+			ElementTuple tuple = translator->args(cpvar->variable);
+			tuple.push_back(DomainElementFactory::instance()->create(cpvar->value));
+			init->inter(function)->graphinter()->ct()->add(tuple);
+		}
+	}
+}
+
+vector<AbstractStructure*> modelexpand(AbstractTheory* theory, AbstractStructure* structure, Options* options) {
+	// Create solver and grounder
+	SATSolver* solver = createsolver(options);
+	GrounderFactory grounderfactory(structure,options);
+	TopLevelGrounder* grounder = grounderfactory.create(theory,solver);
+
+	// Run grounder
+	grounder->run();
+	SolverTheory* grounding = dynamic_cast<SolverTheory*>(grounder->grounding());
+
+	// Add information that is abstracted in the grounding
+	grounding->addFuncConstraints();
+	grounding->addFalseDefineds();
+
+	// Run solver
+	MinisatID::Solution* abstractsolutions = initsolution(options);
+	solver->solve(abstractsolutions);
+	
+	// Collect solutions
+	vector<AbstractStructure*> solutions;
+	for(vector<MinisatID::Model*>::const_iterator model = abstractsolutions->getModels().begin();
+		model != abstractsolutions->getModels().end(); ++model) {
+		AbstractStructure* newsolution = structure->clone();
+		addLiterals(*model,grounding->translator(),newsolution);
+		addTerms(*model,grounding->termtranslator(),newsolution);
+		newsolution->clean();
+		solutions.push_back(newsolution);
+	}
+	
+	return solutions;
+}
+
+InternalArgument modelexpand(const vector<InternalArgument>& args, lua_State* ) {
+	vector<AbstractStructure*> solutions = modelexpand(args[0].theory(),args[1].structure(),args[2].options());
+	InternalArgument result; 
+	result._type = AT_TABLE;
+	result._value._table = new vector<InternalArgument>();
+	for(vector<AbstractStructure*>::const_iterator it = solutions.begin(); it != solutions.end(); ++it) {
+		result._value._table->push_back(InternalArgument(*it));
+	}
+	return result;
 }
 
 /**************************

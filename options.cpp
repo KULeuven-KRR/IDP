@@ -139,6 +139,14 @@ bool Options::printtypes() const {
 	return _booloptions.find("printtypes")->second;
 }
 
+int Options::nrmodels() const {
+	return _intoptions.find("nrmodels")->second->value();
+}
+
+int Options::satverbosity() const {
+	return _intoptions.find("satverbosity")->second->value();
+}
+
 ostream& Options::put(ostream& output) const {
 	for(map<string,StringOption*>::const_iterator it = _stringoptions.begin(); it != _stringoptions.end(); ++it) {
 		output << it->first << " = " << it->second->value() << endl;

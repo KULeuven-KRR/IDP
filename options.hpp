@@ -87,8 +87,10 @@ class Options {
 		bool	setvalue(const std::string&,double);
 		bool	setvalue(const std::string&,const std::string&);
 
-		Language	language() const;
-		bool		printtypes() const;
+		Language	language()		const;
+		bool		printtypes()	const;
+		int			nrmodels()		const;
+		int			satverbosity()	const;
 
 		std::ostream&	put(std::ostream&)	const;
 		std::string		to_string()			const;	
