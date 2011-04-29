@@ -30,9 +30,9 @@ class TrueInstanceChecker : public InstanceChecker {
 
 class TableInstanceChecker : public InstanceChecker {
 	private:
-		PredTable*	_table;
+		const PredTable*	_table;
 	public:
-		TableInstanceChecker(PredTable* t) : _table(t) { }
+		TableInstanceChecker(const PredTable* t) : _table(t) { }
 		bool run(const std::vector<const DomainElement*>& vd)	const;
 };
 

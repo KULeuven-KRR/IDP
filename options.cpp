@@ -46,12 +46,13 @@ class EnumeratedStringOption : public StringOption {
 };
 
 Options::Options(const string& name, const ParseInfo& pi) : _name(name), _pi(pi) {
-	_booloptions["printtypes"]	= true;
-	_booloptions["usingcp"]		= true;
-	_booloptions["trace"]		= false;
+	_booloptions["printtypes"]		= true;
+	_booloptions["usingcp"]			= true;
+	_booloptions["trace"]			= false;
 
-	_intoptions["satverbosity"] = new IntOption(0,numeric_limits<int>::max(),0);
-	_intoptions["nrmodels"]		= new IntOption(0,numeric_limits<int>::max(),1);
+	_intoptions["satverbosity"]		= new IntOption(0,numeric_limits<int>::max(),0);
+	_intoptions["groundverbosity"]	= new IntOption(0,numeric_limits<int>::max(),0);
+	_intoptions["nrmodels"]			= new IntOption(0,numeric_limits<int>::max(),1);
 
 	vector<string> ls(3); ls[0] = "idp"; ls[1] = "txt"; ls[2] = "ecnf";
 	vector<string> mf(3); mf[0] = "threevalued"; mf[1] = "twovalued"; mf[2] = "all";
@@ -145,6 +146,14 @@ int Options::nrmodels() const {
 
 int Options::satverbosity() const {
 	return _intoptions.find("satverbosity")->second->value();
+}
+
+int Options::groundverbosity() const {
+	return _intoptions.find("groundverbosity")->second->value();
+}
+
+bool Options::cpsupport() const {
+	return _booloptions.find("usingcp")->second;
 }
 
 ostream& Options::put(ostream& output) const {

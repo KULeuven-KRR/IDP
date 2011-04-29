@@ -97,9 +97,9 @@ class IDPPrinter : public Printer {
 		std::string print(const Namespace*);
 
 		std::ostream& print(std::ostream&, SortTable*) const;
-		std::ostream& print(std::ostream&, PredTable*) const;
+		std::ostream& print(std::ostream&, const PredTable*) const;
 		std::ostream& print(std::ostream&, FuncTable*) const;
-		std::ostream& printasfunc(std::ostream&, PredTable*) const;
+		std::ostream& printasfunc(std::ostream&, const PredTable*) const;
 
 		/** Namespace **/
 		void visit(const Namespace*); //TODO procedures and options are not printed yet..

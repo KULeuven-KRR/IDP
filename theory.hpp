@@ -54,6 +54,8 @@ class TheoryComponent {
 				std::string to_string(unsigned int spaces = 0)				const;
 };
 
+std::ostream& operator<<(std::ostream&, const TheoryComponent&);
+
 /***************
 	Formulas
 ***************/

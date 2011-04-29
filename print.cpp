@@ -638,7 +638,7 @@ ostream& IDPPrinter::print(std::ostream& output, SortTable* table) const {
 	return output;
 }
 
-ostream& IDPPrinter::print(std::ostream& output, PredTable* table) const {
+ostream& IDPPrinter::print(std::ostream& output, const PredTable* table) const {
 	TableIterator kt = table->begin();
 	if(table->arity()) {
 		output << "{ ";
@@ -665,7 +665,7 @@ ostream& IDPPrinter::print(std::ostream& output, PredTable* table) const {
 	return output;
 }
 
-ostream& IDPPrinter::printasfunc(std::ostream& output, PredTable* table) const {
+ostream& IDPPrinter::printasfunc(std::ostream& output, const PredTable* table) const {
 	TableIterator kt = table->begin();
 	output << "{ ";
 	if(kt.hasNext()) {
@@ -742,16 +742,16 @@ string IDPPrinter::print(const AbstractStructure* structure) {
 				PredInter* pi = structure->inter(p);
 				if(pi->approxtwovalued()) {
 					sstr << *p << " = ";
-					PredTable* pt = pi->ct();
+					const PredTable* pt = pi->ct();
 					print(sstr,pt);
 					sstr << '\n';
 				}
 				else {
-					PredTable* ct = pi->ct();
+					const PredTable* ct = pi->ct();
 					sstr << *p << "<ct> = ";
 					print(sstr,ct);
 					sstr << '\n';
-					PredTable* cf = pi->cf();
+					const PredTable* cf = pi->cf();
 					sstr << *p << "<cf> = ";
 					print(sstr,cf);
 					sstr << '\n';
@@ -772,11 +772,11 @@ string IDPPrinter::print(const AbstractStructure* structure) {
 			}
 			else {
 				PredInter* pi = fi->graphinter();
-				PredTable* ct = pi->ct();
+				const PredTable* ct = pi->ct();
 				sstr << *f << "<ct> = ";
 				printasfunc(sstr,ct);
 				sstr << '\n';
-				PredTable* cf = pi->cf();
+				const PredTable* cf = pi->cf();
 				sstr << *f << "<cf> = ";
 				printasfunc(sstr,cf);
 				sstr << '\n';

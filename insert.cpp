@@ -1554,8 +1554,12 @@ Formula* Insert::eqchain(CompType c, Term* left, Term* right, YYLTYPE l) const {
 	if(left && right) {
 		Term* leftpi = left->pi().original() ? left->pi().original()->clone() : left->clone();
 		Term* rightpi = right->pi().original() ? right->pi().original()->clone() : right->clone();
-		FormulaParseInfo fpi = formparseinfo(new EqChainForm(leftpi,c,rightpi,FormulaParseInfo()),l);
-		return new EqChainForm(left,c,right,fpi);
+		EqChainForm* ecfpi = new EqChainForm(true,true,leftpi,FormulaParseInfo());
+		ecfpi->add(c,rightpi);
+		FormulaParseInfo fpi = formparseinfo(ecfpi,l);
+		EqChainForm* ecf = new EqChainForm(true,true,left,fpi);
+		ecf->add(c,right);
+		return ecf;
 	}
 	else return 0;
 }
@@ -1852,8 +1856,10 @@ void Insert::predinter(NSPair* nst, PredTable* t) const {
 	if(p && nst->_sortsincluded && (nst->_sorts).size() == t->arity()) p = p->resolve(nst->_sorts);
 	if(p) {
 		if(belongsToVoc(p)) {
+			PredTable* nt = new PredTable(t->interntable(),_currstructure->universe(p));
+			delete(t);
 			PredInter* inter = _currstructure->inter(p);
-			inter->ctpt(t);
+			inter->ctpt(nt);
 		}
 		else Error::prednotinstructvoc(nst->to_string(),_currstructure->name(),pi);
 	}
@@ -1873,8 +1879,10 @@ void Insert::funcinter(NSPair* nst, FuncTable* t) const {
 	if(f && nst->_sortsincluded && (nst->_sorts).size() == t->arity()+1) f = f->resolve(nst->_sorts);
 	if(f) {
 		if(belongsToVoc(f)) {
+			FuncTable* nt = new FuncTable(t->interntable(),_currstructure->universe(f));
+			delete(t);
 			FuncInter* inter = _currstructure->inter(f);
-			inter->functable(t);
+			inter->functable(nt);
 		}
 		else Error::funcnotinstructvoc(nst->to_string(),_currstructure->name(),pi);
 	}
@@ -1939,7 +1947,7 @@ void Insert::addElement(SortTable* s, int i1, int i2)	const {
 }
 
 void Insert::addElement(SortTable* s, char c1, char c2) const {
-	for(char c = c1; c <= c2; ++c) addElement(s,c);
+	for(char c = c1; c <= c2; ++c) addElement(s,StringPointer(string(1,c)));
 }
 
 SortTable* Insert::createSortTable() const {
@@ -1956,7 +1964,7 @@ void Insert::truepredinter(NSPair* nst) const {
 }
 
 void Insert::falsepredinter(NSPair* nst) const {
-	EnumeratedInternalPredTable* eipt = new EnumeratedInternalPredTable(eipt);
+	EnumeratedInternalPredTable* eipt = new EnumeratedInternalPredTable();
 	PredTable* pt = new PredTable(eipt,Universe(vector<SortTable*>(0)));
 	predinter(nst,pt);
 }
@@ -2006,7 +2014,7 @@ const DomainElement* Insert::element(const Compound* c) const {
 }
 
 FuncTable* Insert::createFuncTable(unsigned int arity) const {
-	EnumeratedInternalFuncTable* eift = new EnumeratedInternalFuncTable(0);
+	EnumeratedInternalFuncTable* eift = new EnumeratedInternalFuncTable();
 	return new FuncTable(eift,TableUtils::fullUniverse(arity));
 }
 
@@ -2032,24 +2040,21 @@ void Insert::inter(NSPair* nsp, const longname& procedure, YYLTYPE l) const {
 	ParseInfo pi = parseinfo(l);
 	string* proc = LuaConnection::getProcedure(procedure,pi);
 	vector<SortTable*> univ;
-	vector<bool> univlink;
 	if(nsp->_sortsincluded) {
 		for(vector<Sort*>::const_iterator it = nsp->_sorts.begin(); it != nsp->_sorts.end(); ++it) {
 			if(*it) {
 				univ.push_back(_currstructure->inter(*it));
-				univlink.push_back(true);
 			}
 		}
-		PredTable* dom = new PredTable(new CartesianInternalPredTable(univ,univlink));
 		if(nsp->_func) {
 			univ.pop_back();
-			ProcInternalFuncTable* pift = new ProcInternalFuncTable(proc,dom,false);
-			FuncTable* ft = new FuncTable(pift);
+			ProcInternalFuncTable* pift = new ProcInternalFuncTable(proc);
+			FuncTable* ft = new FuncTable(pift,Universe(univ));
 			funcinter(nsp,ft);
 		}
 		else {
-			ProcInternalPredTable* pipt = new ProcInternalPredTable(proc,dom,false);
-			PredTable* pt = new PredTable(pipt);
+			ProcInternalPredTable* pipt = new ProcInternalPredTable(proc);
+			PredTable* pt = new PredTable(pipt,Universe(univ));
 			predinter(nsp,pt);
 		}
 	}
@@ -2068,12 +2073,10 @@ void Insert::inter(NSPair* nsp, const longname& procedure, YYLTYPE l) const {
 			for(vector<Sort*>::const_iterator it = (*(vp.begin()))->sorts().begin(); it != (*(vp.begin()))->sorts().end(); ++it) {
 				if(*it) {
 					univ.push_back(_currstructure->inter(*it));
-					univlink.push_back(true);
 				}
 			}
-			PredTable* dom = new PredTable(new CartesianInternalPredTable(univ,univlink));
-			ProcInternalPredTable* pipt = new ProcInternalPredTable(proc,dom,false);
-			PredTable* pt = new PredTable(pipt);
+			ProcInternalPredTable* pipt = new ProcInternalPredTable(proc);
+			PredTable* pt = new PredTable(pipt,Universe(univ));
 			predinter(nsp,pt);
 		}
 	}
@@ -2082,8 +2085,8 @@ void Insert::inter(NSPair* nsp, const longname& procedure, YYLTYPE l) const {
 
 void Insert::emptythreeinter(NSPair* nst, const string& utf) {
 	if(nst->_sortsincluded) {
-		EnumeratedInternalPredTable* ipt = new EnumeratedInternalPredTable(nst->_sorts.size());
-		PredTable* pt = new PredTable(ipt);
+		EnumeratedInternalPredTable* ipt = new EnumeratedInternalPredTable();
+		PredTable* pt = new PredTable(ipt,TableUtils::fullUniverse(nst->_sorts.size()));
 		if(nst->_func) threefuncinter(nst,utf,pt);
 		else threepredinter(nst,utf,pt);
 	}
@@ -2099,8 +2102,8 @@ void Insert::emptythreeinter(NSPair* nst, const string& utf) {
 			Error::overloadedpred(nst->to_string(),p1->pi(),p2->pi(),pi);
 		}
 		else {
-			EnumeratedInternalPredTable* ipt = new EnumeratedInternalPredTable((*(vp.begin()))->arity());
-			PredTable* pt = new PredTable(ipt);
+			EnumeratedInternalPredTable* ipt = new EnumeratedInternalPredTable();
+			PredTable* pt = new PredTable(ipt,TableUtils::fullUniverse((*(vp.begin()))->arity()));
 			threepredinter(nst,utf,pt);
 		}
 	}
@@ -2121,20 +2124,22 @@ void Insert::threepredinter(NSPair* nst, const string& utf, PredTable* t) {
 		}
 		else {
 			if(belongsToVoc(p)) {
+				PredTable* nt = new PredTable(t->interntable(),_currstructure->universe(p));
+				delete(t);
 				switch(getUTF(utf,pi)) {
 					case UTF_UNKNOWN:
-						_unknownpredtables[p] = t;
+						_unknownpredtables[p] = nt;
 						break;
 					case UTF_CT:
 					{	
 						PredInter* pt = _currstructure->inter(p);
-						pt->ct(t);
+						pt->ct(nt);
 						break;
 					}
 					case UTF_CF:
 					{
 						PredInter* pt = _currstructure->inter(p);
-						pt->cf(t);
+						pt->cf(nt);
 						break;
 					}
 					case UTF_ERROR:
@@ -2161,20 +2166,22 @@ void Insert::threefuncinter(NSPair* nst, const string& utf, PredTable* t) {
 	if(f && nst->_sortsincluded && (nst->_sorts).size() == t->arity()) f = f->resolve(nst->_sorts);
 	if(f) {
 		if(belongsToVoc(f)) {
+			PredTable* nt = new PredTable(t->interntable(),_currstructure->universe(f));
+			delete(t);
 			switch(getUTF(utf,pi)) {
 				case UTF_UNKNOWN:
-					_unknownfunctables[f] = t;
+					_unknownfunctables[f] = nt;
 					break;
 				case UTF_CT:
 				{	
 					PredInter* ft = _currstructure->inter(f)->graphinter();
-					ft->ct(t);
+					ft->ct(nt);
 					break;
 				}
 				case UTF_CF:
 				{
 					PredInter* ft = _currstructure->inter(f)->graphinter();
-					ft->cf(t);
+					ft->cf(nt);
 					break;
 				}
 				case UTF_ERROR:
@@ -2189,22 +2196,22 @@ void Insert::threefuncinter(NSPair* nst, const string& utf, PredTable* t) {
 }
 
 void Insert::threepredinter(NSPair* nst, const string& utf, SortTable* t) {
-	SortInternalPredTable* sipt = new SortInternalPredTable(t,false);
-	PredTable* pt = new PredTable(sipt);
+	PredTable* pt = new PredTable(t->interntable(),TableUtils::fullUniverse(1));
+	delete(t);
 	threepredinter(nst,utf,pt);
 }
 
 void Insert::truethreepredinter(NSPair* nst, const string& utf) {
-	EnumeratedInternalPredTable* eipt = new EnumeratedInternalPredTable(0);
-	PredTable* pt = new PredTable(eipt);
+	EnumeratedInternalPredTable* eipt = new EnumeratedInternalPredTable();
+	PredTable* pt = new PredTable(eipt,Universe(vector<SortTable*>(0)));
 	ElementTuple et;
 	pt->add(et);
 	threepredinter(nst,utf,pt);
 }
 
 void Insert::falsethreepredinter(NSPair* nst, const string& utf) {
-	EnumeratedInternalPredTable* eipt = new EnumeratedInternalPredTable(0);
-	PredTable* pt = new PredTable(eipt);
+	EnumeratedInternalPredTable* eipt = new EnumeratedInternalPredTable();
+	PredTable* pt = new PredTable(eipt,Universe(vector<SortTable*>(0)));
 	threepredinter(nst,utf,pt);
 }
 
@@ -2297,8 +2304,8 @@ void Insert::predatom(NSPair* nst, const vector<ElRange>& args, bool t) const {
 					}
 				}
 				PredInter* inter = _currstructure->inter(p);
-				if(t) inter->ct()->add(tuple);
-				else inter->cf()->add(tuple);
+				if(t) inter->makeTrue(tuple);
+				else inter->makeFalse(tuple);
 				while(true) {
 					unsigned int n = 0;
 					for(; n < args.size(); ++n) {
@@ -2329,8 +2336,8 @@ void Insert::predatom(NSPair* nst, const vector<ElRange>& args, bool t) const {
 						if(end) break;
 					}
 					if(n < args.size()) {
-						if(t) inter->ct()->add(tuple);
-						else inter->cf()->add(tuple);
+						if(t) inter->makeTrue(tuple);
+						else inter->makeFalse(tuple);
 					}
 					else break;
 				}
@@ -2446,9 +2453,7 @@ void Insert::assignunknowntables() {
 		PredInter* pt = _currstructure->inter(it->first);
 		TableIterator tit = it->second->begin();
 		for( ; tit.hasNext(); ++tit) {
-			// FIXME: this is completely wrong...
-			pt->ct()->remove(*tit);
-			pt->cf()->remove(*tit);
+			// TODO TODO TODO
 		}
 		delete(it->second);
 	}
@@ -2457,9 +2462,7 @@ void Insert::assignunknowntables() {
 		PredInter* ft = _currstructure->inter(it->first)->graphinter();
 		TableIterator tit = it->second->begin();
 		for( ; tit.hasNext(); ++tit) {
-			// FIXME: this is completely wrong...
-			ft->ct()->remove(*tit);
-			ft->cf()->remove(*tit);
+			// TODO TODO TODO
 		}
 		delete(it->second);
 	}

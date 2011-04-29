@@ -784,6 +784,8 @@ class InverseInternalPredTable : public InternalPredTable {
 		InternalPredTable*	remove(const ElementTuple& tuple);
 
 		InternalTableIterator*	begin(const Universe&) const;
+
+		void	interntable(InternalPredTable*);
 };
 
 /********************************
@@ -1098,7 +1100,7 @@ class IntFloatInternalFuncTable : public InternalFuncTable {
 		bool	_int;
 	public:
 
-		IntFloatInternalFuncTable(bool i);
+		IntFloatInternalFuncTable(bool i) : _int(i) { }
 
 				bool			finite(const Universe&)			const { return false;	}
 				bool			empty(const Universe&)			const { return false;	}
@@ -1234,9 +1236,9 @@ class PredTable : public AbstractTable {
 
 		bool				finite()							const	{ return _table->finite(_universe);			}
 		bool				empty()								const	{ return _table->empty(_universe);			}
-		unsigned int		arity()								const	{ return _universe.arity();				}
+		unsigned int		arity()								const	{ return _universe.arity();					}
 		bool				approxfinite()						const	{ return _table->approxfinite(_universe);	}
-		bool				approxempty()						const	{ return _table->approxfinite(_universe);	}
+		bool				approxempty()						const	{ return _table->approxempty(_universe);	}
 		bool				contains(const ElementTuple& tuple)	const	{ return _table->contains(tuple,_universe);	}
 		void				add(const ElementTuple& tuple);
 		void				remove(const ElementTuple& tuple);
@@ -1263,7 +1265,7 @@ class SortTable : public AbstractTable {
 		bool			finite()							const	{ return _table->finite();			}
 		bool			empty()								const	{ return _table->empty();			}
 		bool			approxfinite()						const	{ return _table->approxfinite();	}
-		bool			approxempty()						const	{ return _table->approxfinite();	}
+		bool			approxempty()						const	{ return _table->approxempty();		}
 		unsigned int	arity()								const	{ return 1;							}
 		bool			contains(const ElementTuple& tuple)	const	{ return _table->contains(tuple);	}
 		bool			contains(const DomainElement* el)	const	{ return _table->contains(el);		}
@@ -1297,9 +1299,11 @@ class FuncTable : public AbstractTable {
 		bool			empty()					const	{ return _table->empty(_universe);			}
 		unsigned int	arity()					const	{ return _universe.arity() - 1;				}
 		bool			approxfinite()			const	{ return _table->approxfinite(_universe);	}
-		bool			approxempty()			const	{ return _table->approxfinite(_universe);	}
+		bool			approxempty()			const	{ return _table->approxempty(_universe);	}
 
-		const DomainElement*	operator[](const std::vector<const DomainElement*>& tuple)	const;
+		const DomainElement*	operator[](const std::vector<const DomainElement*>& tuple)	const {
+			return _table->operator[](tuple);
+		}
 		bool	contains(const std::vector<const DomainElement*>& tuple)		const;
 		void	add(const ElementTuple& tuple);	
 		void	remove(const ElementTuple& tuple);
@@ -1588,8 +1592,7 @@ class Structure : public AbstractStructure {
 		PredInter*		inter(PFSymbol* s)			const; //!< Return the interpretation of s.
 		Structure*		clone()						const; //!< take a clone of this structure
 
-		const Universe&	universe(Predicate*)	const;
-		const Universe& universe(Function*)		const;
+		Universe	universe(PFSymbol*)	const;
 };
 
 /************************

@@ -710,13 +710,13 @@ void addLiterals(MinisatID::Model* model, GroundTranslator* translator, Abstract
 			const ElementTuple& args = translator->args(atomnr);
 			if(typeid(*symbol) == typeid(Predicate)) {
 				Predicate* pred = dynamic_cast<Predicate*>(symbol);
-				if(literal->hasSign()) init->inter(pred)->makeTrue(args);
-				else init->inter(pred)->makeFalse(args);
+				if(literal->hasSign()) init->inter(pred)->makeFalse(args);
+				else init->inter(pred)->makeTrue(args);
 			}
 			else {
 				Function* func = dynamic_cast<Function*>(symbol);
-				if(literal->hasSign()) init->inter(func)->graphinter()->makeTrue(args);
-				else init->inter(func)->graphinter()->makeFalse(args);
+				if(literal->hasSign()) init->inter(func)->graphinter()->makeFalse(args);
+				else init->inter(func)->graphinter()->makeTrue(args);
 			}
 		}
 	}
@@ -774,6 +774,19 @@ InternalArgument modelexpand(const vector<InternalArgument>& args, lua_State* ) 
 	for(vector<AbstractStructure*>::const_iterator it = solutions.begin(); it != solutions.end(); ++it) {
 		result._value._table->push_back(InternalArgument(*it));
 	}
+	return result;
+}
+
+AbstractTheory* ground(AbstractTheory* theory, AbstractStructure* structure, Options* options) {
+	GrounderFactory factory(structure,options);
+	TopLevelGrounder* grounder = factory.create(theory);
+	grounder->run();
+	return grounder->grounding();
+}
+
+InternalArgument ground(const vector<InternalArgument>& args, lua_State*  ) {
+	AbstractTheory* grounding = ground(args[0].theory(),args[1].structure(),args[2].options());
+	InternalArgument result(grounding); 
 	return result;
 }
 
@@ -1186,8 +1199,8 @@ namespace LuaConnection {
 	 * Garbage collection for structures
 	 */
 	int gcStructure(lua_State* L) {
-		AbstractStructure* s = *(AbstractStructure**)lua_touserdata(L,1);
-		if(s->pi().line() == 0) delete(s);	// FIXME: replace this by a check whether s belongs to a namespace
+		//AbstractStructure* s = *(AbstractStructure**)lua_touserdata(L,1);
+		//if(s->pi().line() == 0) delete(s);	// FIXME: replace this by a check whether s belongs to a namespace
 		return 0;
 	}
 
@@ -1195,8 +1208,8 @@ namespace LuaConnection {
 	 * Garbage collection for theories
 	 */
 	int gcTheory(lua_State* L) {
-		AbstractTheory* t = *(AbstractTheory**)lua_touserdata(L,1);
-		if(t->pi().line() == 0) t->recursiveDelete();	// FIXME: replace this by a check whether t belongs to a namespace
+		//AbstractTheory* t = *(AbstractTheory**)lua_touserdata(L,1);
+		//if(t->pi().line() == 0) t->recursiveDelete();	// FIXME: replace this by a check whether t belongs to a namespace
 		return 0;
 	}
 
@@ -1204,8 +1217,8 @@ namespace LuaConnection {
 	 * Garbage collection for options
 	 */
 	int gcOptions(lua_State* L) {
-		Options* opts = *(Options**)lua_touserdata(L,1);
-		if(opts->pi().line() == 0) delete(opts);	// FIXME: replace this by a check whether opts belongs to a namespace
+		//Options* opts = *(Options**)lua_touserdata(L,1);
+		//if(opts->pi().line() == 0) delete(opts);	// FIXME: replace this by a check whether opts belongs to a namespace
 		return 0;
 	}
 
@@ -2311,6 +2324,7 @@ namespace LuaConnection {
 		addInternalProcedure("push_negations",vtheo,&pushnegations);
 		addInternalProcedure("flatten",vtheo,&flatten);
 		addInternalProcedure("mx",vtheostructopt,&modelexpand);
+		addInternalProcedure("ground",vtheostructopt,&ground);
 		
 		// Add the internal procedures to lua
 		lua_getglobal(L,"idp_intern");

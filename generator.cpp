@@ -14,7 +14,7 @@ using namespace std;
 
 TwoChildGeneratorNode::TwoChildGeneratorNode(InstanceChecker* t, const vector<const DomainElement**>& ov, const vector<SortTable*>& dom, GeneratorNode* l, GeneratorNode* r) :
 	_checker(t), _outvars(ov), _currargs(ov.size()), _left(l), _right(r) {
-	PredTable* domtab = new PredTable(new CartesianInternalPredTable(dom,vector<bool>(dom.size(),true)));
+	PredTable* domtab = new PredTable(new FullInternalPredTable(),Universe(dom));
 	_currposition = new TableInstGenerator(domtab,ov);
 }
 

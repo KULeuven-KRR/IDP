@@ -108,6 +108,10 @@ bool Formula::contains(const PFSymbol* s) const {
 	return cc.run(this);
 }
 
+ostream& operator<<(ostream& output, const TheoryComponent& f) {
+	return f.put(output);
+}
+
 ostream& operator<<(ostream& output, const Formula& f) {
 	return f.put(output);
 }

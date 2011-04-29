@@ -70,6 +70,17 @@ procedure modelexpand(T,S,Opts) {
 	return solutions, trace
 }
 
+/**
+ * Create the reduced grounding of theory T and structure S
+ */
+procedure ground(T,S,Opts) {
+	local clonetheo = clone(T)
+	internal_inference::push_negations(clonetheo)
+	internal_inference::flatten(clonetheo)
+	if not Opts then Opts = stdoptions end
+	return idp_intern.ground(clonetheo,S,Opts) 
+}
+
 /*************************
 	Advanced inference
 *************************/

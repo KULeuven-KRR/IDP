@@ -12,7 +12,7 @@
 using namespace std;
 
 InstanceChecker* CheckerFactory::create(PredInter* inter, bool ctpf, bool c) {
-	PredTable* pt = ctpf ? (c ? inter->ct() : inter->pf()) : (c ? inter->cf() : inter->pt());
+	const PredTable* pt = ctpf ? (c ? inter->ct() : inter->pf()) : (c ? inter->cf() : inter->pt());
 	if(pt->approxempty()) return new FalseInstanceChecker();
 	else return new TableInstanceChecker(pt);
 }

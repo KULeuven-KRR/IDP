@@ -229,6 +229,10 @@ bool CopyGrounder::run() const {
 }
 
 bool TheoryGrounder::run() const {
+	if(_verbosity > 0) {
+		clog << "Grounding theory " << endl;
+		clog << "Components to ground = " << _grounders.size() << endl;
+	}
 	for(unsigned int n = 0; n < _grounders.size(); ++n) {
 		bool b = _grounders[n]->run();
 		if(!b) return b;
@@ -237,6 +241,7 @@ bool TheoryGrounder::run() const {
 }
 
 bool SentenceGrounder::run() const {
+	if(_verbosity > 0) clog << "Grounding sentence " << endl;
 	vector<int> cl;
 	_subgrounder->run(cl);
 	if(cl.empty()) {
@@ -266,6 +271,7 @@ bool SentenceGrounder::run() const {
 }
 
 bool UnivSentGrounder::run() const {
+	if(_verbosity > 0) clog << "Grounding a universally quantified sentence " << endl;
 	if(_generator->first()) {
 		bool b = _subgrounder->run();
 		if(!b) {
@@ -280,11 +286,14 @@ bool UnivSentGrounder::run() const {
 			}
 		}
 	}
+	else if(_verbosity > 0) {
+		clog << "No instances for this sentence " << endl;
+	}
 	return true;
 }
 
-#ifndef NDEBUG
-void FormulaGrounder::setorig(const Formula* f, const map<Variable*,const DomainElement**>& mvd) {
+void FormulaGrounder::setorig(const Formula* f, const map<Variable*,const DomainElement**>& mvd,int verb) {
+	_verbosity = verb;
 	map<Variable*,Variable*> mvv;
 	for(set<Variable*>::const_iterator it = f->freevars().begin(); it != f->freevars().end(); ++it) {
 		Variable* v = new Variable((*it)->name(),(*it)->sort(),ParseInfo());
@@ -295,15 +304,14 @@ void FormulaGrounder::setorig(const Formula* f, const map<Variable*,const Domain
 }
 
 void FormulaGrounder::printorig() const {
-	cerr << "Grounding formula " << _origform->to_string() << " with instance ";
+	clog << "Grounding formula " << _origform->to_string() << " with instance ";
 	for(set<Variable*>::const_iterator it = _origform->freevars().begin(); it != _origform->freevars().end(); ++it) {
-		cerr << (*it)->to_string() << " = ";
+		clog << (*it)->to_string() << " = ";
 		const DomainElement* e = *(_varmap.find(*it)->second);
-		cerr << e->to_string() << ' ';
+		clog << e->to_string() << ' ';
 	}
-	cerr << endl;
+	clog << endl;
 }
-#endif
 
 AtomGrounder::AtomGrounder(GroundTranslator* gt, bool sign, PFSymbol* s,
 							const vector<TermGrounder*> sg, InstanceChecker* pic, InstanceChecker* cic,
@@ -312,6 +320,7 @@ AtomGrounder::AtomGrounder(GroundTranslator* gt, bool sign, PFSymbol* s,
 	{ _certainvalue = ct._truegen ? _true : _false; }
 
 int AtomGrounder::run() const {
+	if(_verbosity > 1) printorig();
 	// Run subterm grounders
 	for(unsigned int n = 0; n < _subtermgrounders.size(); ++n) 
 		_args[n] = _subtermgrounders[n]->run();
@@ -324,13 +333,10 @@ int AtomGrounder::run() const {
 			if(_context._funccontext == PC_BOTH) {
 				// TODO: produce an error
 			}
-#ifndef NDEBUG
-/*			if(_cloptions._verbose) {
-				printorig();
-				cerr << "Partial function went out of bounds\n";
-				cerr << "Result is " << (_context._funccontext != PC_NEGATIVE  ? "true" : "false") << endl;
-			}*/
-#endif
+			if(_verbosity > 1) {
+				clog << "Partial function went out of bounds\n";
+				clog << "Result is " << (_context._funccontext != PC_NEGATIVE  ? "true" : "false") << endl;
+			}
 			return _context._funccontext != PC_NEGATIVE  ? _true : _false;
 		}
 	}
@@ -338,59 +344,41 @@ int AtomGrounder::run() const {
 	// Checking out-of-bounds
 	for(unsigned int n = 0; n < _args.size(); ++n) {
 		if(!_tables[n]->contains(_args[n])) {
-#ifndef NDEBUG
-/*			if(_cloptions._verbose) {
-				printorig();
-				cerr << "Term value out of predicate type\n";
-				cerr << "Result is " << (_sign  ? "false" : "true") << endl;
-			}*/
-#endif
+			if(_verbosity > 1) {
+				clog << "Term value out of predicate type\n";
+				clog << "Result is " << (_sign  ? "false" : "true") << endl;
+			}
 			return _sign ? _false : _true;
 		}
 	}
 
 	// Run instance checkers and return grounding
 	if(!(_pchecker->run(_args))) {
-#ifndef NDEBUG
-/*		if(_cloptions._verbose) {
-			printorig();
-			cerr << "Possible checker failed\n";
-			cerr << "Result is " << (_certainvalue ? "false" : "true") << endl;
-		}*/
-#endif
+		if(_verbosity > 1) {
+			clog << "Possible checker failed\n";
+			clog << "Result is " << (_certainvalue ? "false" : "true") << endl;
+		}
 		return _certainvalue ? _false : _true;	// TODO: dit is lelijk
 	}
 	if(_cchecker->run(_args)) {
-#ifndef NDEBUG
-/*		if(_cloptions._verbose) {
-			printorig();
+		if(_verbosity > 1) {
 			cerr << "Certain checker succeeded\n";
 			cerr << "Result is " << _translator->printAtom(_certainvalue) << endl;
-		}*/
-#endif
+		}
 		return _certainvalue;
 	}
 	else {
 		int atom = _translator->translate(_symbol,_args);
 		if(!_sign) atom = -atom;
-#ifndef NDEBUG
-/*		if(_cloptions._verbose) {
-			printorig();
+		if(_verbosity > 1) {
 			cerr << "Result is " << _translator->printAtom(atom) << endl;
-		}*/
-#endif
+		}
 		return atom;
 	}
 }
 
 void AtomGrounder::run(vector<int>& clause) const {
 	clause.push_back(run());
-#ifndef NDEBUG
-/*if(_cloptions._verbose) {
-	printorig();
-	cerr << "Result = " << _translator->printAtom(clause.back()) << endl;
-}*/
-#endif
 }
 
 CompType invertcpcomp(CompType ct) {
@@ -940,8 +928,8 @@ void EquivGrounder::run(vector<int>& clause) const {
 	}
 }
 
-#ifndef NDEBUG
-void TermGrounder::setorig(const Term* t, const map<Variable*,const DomainElement**>& mvd) {
+void TermGrounder::setorig(const Term* t, const map<Variable*,const DomainElement**>& mvd, int verb) {
+	_verbosity = verb;
 	map<Variable*,Variable*> mvv;
 	for(set<Variable*>::const_iterator it = t->freevars().begin(); it != t->freevars().end(); ++it) {
 		Variable* v = new Variable((*it)->name(),(*it)->sort(),ParseInfo());
@@ -952,15 +940,14 @@ void TermGrounder::setorig(const Term* t, const map<Variable*,const DomainElemen
 }
 
 void TermGrounder::printorig() const {
-	cerr << "Grounding term " << _origterm->to_string() << " with instance ";
+	clog << "Grounding term " << _origterm->to_string() << " with instance ";
 	for(set<Variable*>::const_iterator it = _origterm->freevars().begin(); it != _origterm->freevars().end(); ++it) {
-		cerr << (*it)->to_string() << " = ";
+		clog << (*it)->to_string() << " = ";
 		const DomainElement* e = *(_varmap.find(*it)->second);
-		cerr << e->to_string() << ' ';
+		clog << e->to_string() << ' ';
 	}
-	cerr << endl;
+	clog << endl;
 }
-#endif 
 
 const DomainElement* VarTermGrounder::run() const {
 	return *_value;
@@ -1356,7 +1343,7 @@ TopLevelGrounder* GrounderFactory::create(const AbstractTheory* theory) {
 	_grounding = new GroundTheory(theory->vocabulary(),_structure->clone());
 
 	// Find function that can be passed to CP solver.
-	if(_cpsupport) findCPFunctions(theory);
+	if(_options->cpsupport()) findCPFunctions(theory);
 
 	// Create the grounder
 	theory->accept(this);
@@ -1385,7 +1372,7 @@ TopLevelGrounder* GrounderFactory::create(const AbstractTheory* theory, SATSolve
 	_grounding = new SolverTheory(theory->vocabulary(),solver,_structure->clone());
 
 	// Find function that can be passed to CP solver.
-	if(_cpsupport) findCPFunctions(theory);
+	if(_options->cpsupport()) findCPFunctions(theory);
 
 	// Create the grounder
 	theory->accept(this);
@@ -1402,7 +1389,7 @@ TopLevelGrounder* GrounderFactory::create(const AbstractTheory* theory, SATSolve
  *		_toplevelgrounder is equal to the created grounder.
  */
 void GrounderFactory::visit(const GroundTheory* ecnf) {
-	_toplevelgrounder = new CopyGrounder(_grounding,ecnf);	
+	_toplevelgrounder = new CopyGrounder(_grounding,ecnf,_options->groundverbosity());	
 }
 
 /**
@@ -1426,12 +1413,13 @@ void GrounderFactory::visit(const Theory* theory) {
 	vector<TopLevelGrounder*> children(components.size());
 	for(unsigned int n = 0; n < components.size(); ++n) {
 		InitContext();
+		if(_options->groundverbosity() > 0) clog << "Creating a grounder for " << *(components[n]) << endl;
 		components[n]->accept(this);
 		children[n] = _toplevelgrounder; 
 	}
 
 	// Create the grounder
-	_toplevelgrounder = new TheoryGrounder(_grounding,children);
+	_toplevelgrounder = new TheoryGrounder(_grounding,children,_options->groundverbosity());
 }
 
 /**
@@ -1453,7 +1441,7 @@ void GrounderFactory::visit(const PredForm* pf) {
 	// to _structure outside the atom. To avoid changing the original atom, 
 	// we first clone it.
 	PredForm* newpf = pf->clone();
-	Formula* transpf = FormulaUtils::moveThreeValTerms(newpf,_structure,(_context._funccontext != PC_NEGATIVE),_cpsupport,_cpfunctions);
+	Formula* transpf = FormulaUtils::moveThreeValTerms(newpf,_structure,(_context._funccontext != PC_NEGATIVE),_options->cpsupport(),_cpfunctions);
 
 	if(newpf != transpf) {	// The rewriting changed the atom
 		//delete(newpf); TODO: produces a segfault??
@@ -1501,7 +1489,7 @@ void GrounderFactory::visit(const PredForm* pf) {
 					//TODO construct lefttermgrounder
 				}
 				if(_context._component == CC_SENTENCE) 
-					_toplevelgrounder = new SentenceGrounder(_grounding,_formgrounder,false);
+					_toplevelgrounder = new SentenceGrounder(_grounding,_formgrounder,false,_options->groundverbosity());
 			}
 		}
 		else {
@@ -1527,11 +1515,9 @@ void GrounderFactory::visit(const PredForm* pf) {
 				// Create the grounder
 				_formgrounder = new AtomGrounder(_grounding->translator(),pf->sign(),pf->symbol(),
 									 subtermgrounders,possch,certainch,argsorttables,_context);
-#ifndef NDEBUG
-				_formgrounder->setorig(pf,_varmapping);
-#endif
+				_formgrounder->setorig(pf,_varmapping,_options->groundverbosity());
 				if(_context._component == CC_SENTENCE) 
-					_toplevelgrounder = new SentenceGrounder(_grounding,_formgrounder,false);
+					_toplevelgrounder = new SentenceGrounder(_grounding,_formgrounder,false,_options->groundverbosity());
 			}
 		}
 	}
@@ -1573,7 +1559,7 @@ void GrounderFactory::visit(const BoolForm* bf) {
 			sub.push_back(_toplevelgrounder);
 		}
 		newbf->recursiveDelete();
-		_toplevelgrounder = new TheoryGrounder(_grounding,sub);
+		_toplevelgrounder = new TheoryGrounder(_grounding,sub,_options->groundverbosity());
 	}
 	else {	// Formula bf is not a top-level conjunction
 
@@ -1592,10 +1578,8 @@ void GrounderFactory::visit(const BoolForm* bf) {
 		if(recursive(bf)) _context._tseitin = TS_RULE;
 		_formgrounder = new BoolGrounder(_grounding->translator(),sub,bf->sign(),bf->conj(),_context);
 		RestoreContext();
-#ifndef NDEBUG
-		_formgrounder->setorig(bf,_varmapping);
-#endif	
-		if(_context._component == CC_SENTENCE) _toplevelgrounder = new SentenceGrounder(_grounding,_formgrounder,false);
+		_formgrounder->setorig(bf,_varmapping,_options->groundverbosity());
+		if(_context._component == CC_SENTENCE) _toplevelgrounder = new SentenceGrounder(_grounding,_formgrounder,false,_options->groundverbosity());
 
 	}
 }
@@ -1635,7 +1619,7 @@ void GrounderFactory::visit(const QuantForm* qf) {
 		if(!(qf->univ())) newsub->swapsign();
 		descend(newsub);
 		newsub->recursiveDelete();
-		_toplevelgrounder = new UnivSentGrounder(_grounding,_toplevelgrounder,gen);
+		_toplevelgrounder = new UnivSentGrounder(_grounding,_toplevelgrounder,gen,_options->groundverbosity());
 	}
 	else {
 		// Create grounder for subformula
@@ -1650,10 +1634,8 @@ void GrounderFactory::visit(const QuantForm* qf) {
 		if(recursive(qf)) _context._tseitin = TS_RULE;
 		_formgrounder = new QuantGrounder(_grounding->translator(),_formgrounder,qf->sign(),qf->univ(),gen,_context);
 		RestoreContext();
-#ifndef NDEBUG
-		_formgrounder->setorig(qf,_varmapping);
-#endif	
-		if(_context._component == CC_SENTENCE) _toplevelgrounder = new SentenceGrounder(_grounding,_formgrounder,false);
+		_formgrounder->setorig(qf,_varmapping,_options->groundverbosity());
+		if(_context._component == CC_SENTENCE) _toplevelgrounder = new SentenceGrounder(_grounding,_formgrounder,false,_options->groundverbosity());
 	}
 }
 
@@ -1690,7 +1672,7 @@ void GrounderFactory::visit(const EquivForm* ef) {
 	if(recursive(ef)) _context._tseitin = TS_RULE;
 	_formgrounder = new EquivGrounder(_grounding->translator(),leftg,rightg,ef->sign(),_context);
 	RestoreContext();
-	if(_context._component == CC_SENTENCE) _toplevelgrounder = new SentenceGrounder(_grounding,_formgrounder,true);
+	if(_context._component == CC_SENTENCE) _toplevelgrounder = new SentenceGrounder(_grounding,_formgrounder,true,_options->groundverbosity());
 }
 
 /**
@@ -1700,7 +1682,7 @@ void GrounderFactory::visit(const EquivForm* ef) {
  */
 void GrounderFactory::visit(const AggForm* af) {
 	AggForm* newaf = af->clone();
-	Formula* transaf = FormulaUtils::moveThreeValTerms(newaf,_structure,(_context._funccontext != PC_NEGATIVE),_cpsupport,_cpfunctions);
+	Formula* transaf = FormulaUtils::moveThreeValTerms(newaf,_structure,(_context._funccontext != PC_NEGATIVE),_options->cpsupport(),_cpfunctions);
 
 	if(newaf != transaf) {	// The rewriting changed the atom
 		//delete(newaf); TODO: produces a segfault??
@@ -1724,7 +1706,7 @@ void GrounderFactory::visit(const AggForm* af) {
 		if(recursive(af)) _context._tseitin = TS_RULE;
 		_formgrounder = new AggGrounder(_grounding->translator(),_context,af->right()->function(),setgr,boundgr,af->comp(),af->sign());
 		RestoreContext();
-		if(_context._component == CC_SENTENCE) _toplevelgrounder = new SentenceGrounder(_grounding,_formgrounder,true);
+		if(_context._component == CC_SENTENCE) _toplevelgrounder = new SentenceGrounder(_grounding,_formgrounder,true,_options->groundverbosity());
 	}
 	transaf->recursiveDelete();
 }
@@ -1749,9 +1731,7 @@ void GrounderFactory::visit(const EqChainForm* ef) {
 void GrounderFactory::visit(const VarTerm* t) {
 	assert(_varmapping.find(t->var()) != _varmapping.end());
 	_termgrounder = new VarTermGrounder(_varmapping.find(t->var())->second);
-#ifndef NDEBUG
-	_termgrounder->setorig(t,_varmapping);
-#endif
+	_termgrounder->setorig(t,_varmapping,_options->groundverbosity());
 }
 
 /**
@@ -1761,9 +1741,7 @@ void GrounderFactory::visit(const VarTerm* t) {
  */
 void GrounderFactory::visit(const DomainTerm* t) {
 	_termgrounder = new DomTermGrounder(t->value());
-#ifndef NDEBUG
-	_termgrounder->setorig(t,_varmapping);
-#endif
+	_termgrounder->setorig(t,_varmapping,_options->groundverbosity());
 }
 
 /**
@@ -1781,7 +1759,7 @@ void GrounderFactory::visit(const FuncTerm* t) {
 
 	// Create term grounder
 	Function* func = t->function();
-	if(_structure->inter(func)->approxtwovalued() || not _cpsupport) {
+	if(_structure->inter(func)->approxtwovalued() || not _options->cpsupport()) {
 		FuncTable* ft = _structure->inter(func)->functable();
 		_termgrounder = new FuncTermGrounder(sub,ft);
 	}
@@ -1794,9 +1772,7 @@ void GrounderFactory::visit(const FuncTerm* t) {
 		assert(ft);
 		_termgrounder = new ThreeValuedFuncTermGrounder(sub,func,ft,vst);
 	}
-#ifndef NDEBUG
-	_termgrounder->setorig(t,_varmapping);
-#endif
+	_termgrounder->setorig(t,_varmapping,_options->groundverbosity());
 }
 
 /**
@@ -1809,13 +1785,11 @@ void GrounderFactory::visit(const AggTerm* t) {
 	t->set()->accept(this);
 
 	// Create term grounder
-	if(SetUtils::approxTwoValued(t->set(),_structure) || not _cpsupport)
+	if(SetUtils::approxTwoValued(t->set(),_structure) || not _options->cpsupport())
 		_termgrounder = new AggTermGrounder(_grounding->translator(),t->function(),_setgrounder);
 	else //TODO
 		_termgrounder = new ThreeValuedAggTermGrounder(_grounding->translator(),t->function(),_setgrounder);
-#ifndef NDEBUG
-	_termgrounder->setorig(t,_varmapping);
-#endif
+	_termgrounder->setorig(t,_varmapping,_options->groundverbosity());
 }
 
 /**
@@ -1902,7 +1876,7 @@ void GrounderFactory::visit(const Definition* def) {
 	}
 	
 	// Create definition grounder
-	_toplevelgrounder = new DefinitionGrounder(_grounding,_definition,subgrounders);
+	_toplevelgrounder = new DefinitionGrounder(_grounding,_definition,subgrounders,_options->groundverbosity());
 
 	_context._defined.clear();
 }

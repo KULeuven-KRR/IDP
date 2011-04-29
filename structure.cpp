@@ -998,7 +998,18 @@ InternalTableIterator* FullInternalPredTable::begin(const Universe& univ) const 
 
 UnionInternalPredTable::UnionInternalPredTable() : InternalPredTable() { 
 	_intables.push_back(new EnumeratedInternalPredTable());
+	_intables[0]->incrementRef();
 	_outtables.push_back(new EnumeratedInternalPredTable());
+	_outtables[0]->incrementRef();
+}
+
+UnionInternalPredTable::UnionInternalPredTable(const vector<InternalPredTable*>& intabs, const vector<InternalPredTable*>& outtabs) : InternalPredTable(), _intables(intabs), _outtables(outtabs) { 
+	for(vector<InternalPredTable*>::const_iterator it = intabs.begin(); it != intabs.end(); ++it) {
+		(*it)->incrementRef();
+	}
+	for(vector<InternalPredTable*>::const_iterator it = outtabs.begin(); it != outtabs.end(); ++it) {
+		(*it)->incrementRef();
+	}
 }
 
 /**
@@ -2130,6 +2141,12 @@ InverseInternalPredTable::~InverseInternalPredTable() {
 	_invtable->decrementRef();
 }
 
+void InverseInternalPredTable::interntable(InternalPredTable* ipt) {
+	ipt->incrementRef();
+	_invtable->decrementRef();
+	_invtable = ipt;
+}
+
 /**
  *		Returns true iff the table is finite
  */
@@ -2426,6 +2443,52 @@ bool PredInter::approxtwovalued() const {
 	return _ct->interntable() == _pt->interntable();
 }
 
+void PredInter::makeTrue(const ElementTuple& tuple) {
+	if(typeid(*(_pf->interntable())) == typeid(InverseInternalPredTable)) {
+		_ct->interntable()->decrementRef();
+		InternalPredTable* old = _ct->interntable();
+		_ct->add(tuple);
+		old->incrementRef();
+		if(_ct->interntable() != old) {
+			InverseInternalPredTable* internpf = dynamic_cast<InverseInternalPredTable*>(_pf->interntable());
+			internpf->interntable(_ct->interntable());
+		}
+	}
+	else {
+		_pf->interntable()->decrementRef();
+		InternalPredTable* old = _pf->interntable();
+		_pf->remove(tuple);
+		old->incrementRef();
+		if(_pf->interntable() != old) {
+			InverseInternalPredTable* internct = dynamic_cast<InverseInternalPredTable*>(_ct->interntable());
+			internct->interntable(_pf->interntable());
+		}
+	}
+}
+
+void PredInter::makeFalse(const ElementTuple& tuple) {
+	if(typeid(*(_pt->interntable())) == typeid(InverseInternalPredTable)) {
+		_cf->interntable()->decrementRef();
+		InternalPredTable* old = _cf->interntable();
+		_cf->add(tuple);
+		old->incrementRef();
+		if(_cf->interntable() != old) {
+			InverseInternalPredTable* internpt = dynamic_cast<InverseInternalPredTable*>(_pt->interntable());
+			internpt->interntable(_cf->interntable());
+		}
+	}
+	else {
+		_pt->interntable()->decrementRef();
+		InternalPredTable* old = _pt->interntable();
+		_pt->remove(tuple);
+		old->incrementRef();
+		if(_pt->interntable() != old) {
+			InverseInternalPredTable* interncf = dynamic_cast<InverseInternalPredTable*>(_cf->interntable());
+			interncf->interntable(_pt->interntable());
+		}
+	}
+}
+
 void PredInter::ct(PredTable* t) {
 	delete(_ct);
 	delete(_pf);
@@ -2489,7 +2552,7 @@ PredInter* PredInter::clone(const Universe& univ) const {
 
 PredInter* EqualInterGenerator::get(const AbstractStructure* structure) {
 	SortTable* st = structure->inter(_sort);
-	Universe univ(vector<SortTable*>(1,st));
+	Universe univ(vector<SortTable*>(2,st));
 	EqualInternalPredTable* eip = new EqualInternalPredTable();
 	PredTable* ct = new PredTable(eip,univ);
 	return new PredInter(ct,true);
@@ -2497,7 +2560,7 @@ PredInter* EqualInterGenerator::get(const AbstractStructure* structure) {
 
 PredInter* StrLessThanInterGenerator::get(const AbstractStructure* structure) {
 	SortTable* st = structure->inter(_sort);
-	Universe univ(vector<SortTable*>(1,st));
+	Universe univ(vector<SortTable*>(2,st));
 	StrLessInternalPredTable* eip = new StrLessInternalPredTable();
 	PredTable* ct = new PredTable(eip,univ);
 	return new PredInter(ct,true);
@@ -2505,7 +2568,7 @@ PredInter* StrLessThanInterGenerator::get(const AbstractStructure* structure) {
 
 PredInter* StrGreaterThanInterGenerator::get(const AbstractStructure* structure) {
 	SortTable* st = structure->inter(_sort);
-	Universe univ(vector<SortTable*>(1,st));
+	Universe univ(vector<SortTable*>(2,st));
 	StrGreaterInternalPredTable* eip = new StrGreaterInternalPredTable();
 	PredTable* ct = new PredTable(eip,univ);
 	return new PredInter(ct,true);
@@ -2628,6 +2691,11 @@ namespace TableUtils {
 	FuncInter* leastFuncInter(const Universe& univ) {
 		PredInter* pt = leastPredInter(univ);
 		return new FuncInter(pt);
+	}
+
+	Universe fullUniverse(unsigned int arity) {
+		vector<SortTable*> vst(arity,VocabularyUtils::stringsort()->interpretation());
+		return Universe(vst);
 	}
 
 }
@@ -2991,6 +3059,14 @@ FuncInter* Structure::inter(Function* f) const {
 PredInter* Structure::inter(PFSymbol* s) const {
 	if(typeid(*s) == typeid(Predicate)) return inter(dynamic_cast<Predicate*>(s));
 	else return inter(dynamic_cast<Function*>(s))->graphinter();
+}
+
+Universe Structure::universe(PFSymbol* s) const {
+	vector<SortTable*> vst;
+	for(vector<Sort*>::const_iterator it = s->sorts().begin(); it != s->sorts().end(); ++it) {
+		vst.push_back(inter(*it));
+	}
+	return Universe(vst);
 }
 
 void Structure::clean() {

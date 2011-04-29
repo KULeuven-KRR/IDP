@@ -28,6 +28,7 @@ class InstGenerator;
 class InstanceChecker;
 class SortTable;
 class DomainElement;
+class Options;
 
 /**********************************************
 	Translate from ground atoms to numbers
@@ -253,8 +254,9 @@ struct GroundingContext {
 class TopLevelGrounder {
 	protected:
 		AbstractGroundTheory*	_grounding;
+		int						_verbosity;
 	public:
-		TopLevelGrounder(AbstractGroundTheory* gt) : _grounding(gt) { }
+		TopLevelGrounder(AbstractGroundTheory* gt, int verb) : _grounding(gt), _verbosity(verb) { }
 		virtual ~TopLevelGrounder() { }
 
 		virtual bool					run()		const = 0;
@@ -265,7 +267,7 @@ class CopyGrounder : public TopLevelGrounder {
 	private:
 		const GroundTheory*		_original;
 	public:
-		CopyGrounder(AbstractGroundTheory* gt, const GroundTheory* orig) : TopLevelGrounder(gt), _original(orig) { }
+		CopyGrounder(AbstractGroundTheory* gt, const GroundTheory* orig, int verb) : TopLevelGrounder(gt,verb), _original(orig) { }
 		bool run() const;
 };
 
@@ -273,8 +275,8 @@ class TheoryGrounder : public TopLevelGrounder {
 	private:
 		std::vector<TopLevelGrounder*>	_grounders;
 	public:
-		TheoryGrounder(AbstractGroundTheory* gt, const std::vector<TopLevelGrounder*>& fgs) :
-			TopLevelGrounder(gt), _grounders(fgs) { }
+		TheoryGrounder(AbstractGroundTheory* gt, const std::vector<TopLevelGrounder*>& fgs, int verb) :
+			TopLevelGrounder(gt,verb), _grounders(fgs) { }
 		bool run() const;
 };
 
@@ -283,8 +285,8 @@ class SentenceGrounder : public TopLevelGrounder {
 		bool				_conj;	
 		FormulaGrounder*	_subgrounder;
 	public:
-		SentenceGrounder(AbstractGroundTheory* gt, FormulaGrounder* sub, bool conj) : 
-			TopLevelGrounder(gt), _conj(conj), _subgrounder(sub) { }
+		SentenceGrounder(AbstractGroundTheory* gt, FormulaGrounder* sub, bool conj, int verb) : 
+			TopLevelGrounder(gt,verb), _conj(conj), _subgrounder(sub) { }
 		bool run() const;
 };
 
@@ -293,8 +295,8 @@ class UnivSentGrounder : public TopLevelGrounder {
 		TopLevelGrounder*	_subgrounder;
 		InstGenerator*		_generator;	
 	public:
-		UnivSentGrounder(AbstractGroundTheory* gt, TopLevelGrounder* sub, InstGenerator* gen) : 
-			TopLevelGrounder(gt), _subgrounder(sub), _generator(gen) { }
+		UnivSentGrounder(AbstractGroundTheory* gt, TopLevelGrounder* sub, InstGenerator* gen, int verb) : 
+			TopLevelGrounder(gt,verb), _subgrounder(sub), _generator(gen) { }
 		bool run() const;
 };
 
@@ -302,19 +304,16 @@ class UnivSentGrounder : public TopLevelGrounder {
 
 class TermGrounder {
 	protected:
-#ifndef NDEBUG
-		const Term*						_origterm;
-		std::map<Variable*,const DomainElement**> _varmap;
+		const Term*									_origterm;
+		std::map<Variable*,const DomainElement**>	_varmap;
+		int											_verbosity;
 		void printorig() const;
-#endif
 	public:
 		TermGrounder() { }
 		virtual ~TermGrounder() { }
 		virtual const DomainElement* run() const = 0;
 		virtual bool canReturnCPVar() const = 0;
-#ifndef NDEBUG
-		void setorig(const Term* t, const std::map<Variable*,const DomainElement**>& mvd); 
-#endif
+		void setorig(const Term* t, const std::map<Variable*,const DomainElement**>& mvd,int); 
 };
 
 class DomTermGrounder : public TermGrounder {
@@ -396,11 +395,10 @@ class ThreeValuedAggTermGrounder : public TermGrounder {
 
 class FormulaGrounder {
 	protected:
-#ifndef NDEBUG
-		const Formula*					_origform;
+		const Formula*								_origform;
 		std::map<Variable*,const DomainElement**>	_varmap;
+		int											_verbosity;
 		void printorig() const;
-#endif
 		GroundTranslator*	_translator;
 		GroundingContext	_context;
 	public:
@@ -409,9 +407,7 @@ class FormulaGrounder {
 		virtual int		run()					const = 0;
 		virtual void	run(std::vector<int>&)	const = 0;
 		virtual bool	conjunctive()			const = 0;
-#ifndef NDEBUG
-		void setorig(const Formula* f, const std::map<Variable*,const DomainElement**>& mvd);
-#endif
+		void setorig(const Formula* f, const std::map<Variable*,const DomainElement**>& mvd,int);
 };
 
 class AtomGrounder : public FormulaGrounder {
@@ -600,8 +596,8 @@ class DefinitionGrounder : public TopLevelGrounder {
 		GroundDefinition*			_definition;	// The ground definition that will be produced by running the grounder.
 		std::vector<RuleGrounder*>	_subgrounders;	// Grounders for the rules of the definition.
 	public:
-		DefinitionGrounder(AbstractGroundTheory* gt, GroundDefinition* def, std::vector<RuleGrounder*> subgr) :
-			TopLevelGrounder(gt), _definition(def), _subgrounders(subgr) { }
+		DefinitionGrounder(AbstractGroundTheory* gt, GroundDefinition* def, std::vector<RuleGrounder*> subgr,int verb) :
+			TopLevelGrounder(gt,verb), _definition(def), _subgrounders(subgr) { }
 		bool run() const;
 };
 
@@ -616,6 +612,7 @@ class DefinitionGrounder : public TopLevelGrounder {
 class GrounderFactory : public TheoryVisitor {
 	private:
 		// Data
+		Options*				_options;
 		AbstractStructure*		_structure;		// The structure that will be used to reduce the grounding
 		AbstractGroundTheory*	_grounding;		// The ground theory that will be produced
 
@@ -636,7 +633,6 @@ class GrounderFactory : public TheoryVisitor {
 		void	descend(SetExpr* s);
 		
 		// Grounding to CP
-		bool						_cpsupport;
 		std::set<const Function*>	_cpfunctions;
 
 		// Variable mapping
@@ -657,7 +653,7 @@ class GrounderFactory : public TheoryVisitor {
 
 	public:
 		// Constructor
-		GrounderFactory(AbstractStructure* structure, bool cpsupport): _structure(structure), _cpsupport(cpsupport) { }
+		GrounderFactory(AbstractStructure* structure, Options* opts): _options(opts), _structure(structure) { }
 
 		// Factory method
 		TopLevelGrounder* create(const AbstractTheory*);

@@ -341,10 +341,14 @@ Predicate::~Predicate() {
 	if(_overpredgenerator) delete(_overpredgenerator);
 }
 
-void Predicate::removeVocabulary(const Vocabulary* vocabulary) {
+bool Predicate::removeVocabulary(const Vocabulary* vocabulary) {
 	_vocabularies.erase(vocabulary);
 	if(overloaded()) _overpredgenerator->removeVocabulary(vocabulary);
-	if(_vocabularies.empty()) delete(this);
+	if(_vocabularies.empty()) {
+		delete(this);
+		return true;
+	}
+	return false;
 }
 
 void Predicate::addVocabulary(const Vocabulary* vocabulary) {
@@ -627,7 +631,7 @@ Predicate* ComparisonPredGenerator::disambiguate(const vector<Sort*>& sorts, con
 		if(it != _overpreds.end()) pred = it->second;
 		else {
 			vector<Sort*> predSorts(2,predSort); 
-			pred = new Predicate(_name,predSorts,_interpretation->get(predSorts));
+			pred = new Predicate(_name,predSorts,_interpretation->get(predSorts),true);
 			_overpreds[predSort] = pred;
 		}
 	}
@@ -646,8 +650,10 @@ void ComparisonPredGenerator::addVocabulary(const Vocabulary* vocabulary) {
 }
 
 void ComparisonPredGenerator::removeVocabulary(const Vocabulary* vocabulary) {
-	for(map<Sort*,Predicate*>::iterator it = _overpreds.begin(); it != _overpreds.end(); ++it) {
-		it->second->removeVocabulary(vocabulary);
+	for(map<Sort*,Predicate*>::iterator it = _overpreds.begin(); it != _overpreds.end(); ) {
+		map<Sort*,Predicate*>::iterator jt = it;
+		++it;
+		if(jt->second->removeVocabulary(vocabulary)) _overpreds.erase(jt);
 	}
 }
 
@@ -721,10 +727,14 @@ Function::~Function() {
 	if(_overfuncgenerator) delete(_overfuncgenerator);
 }
 
-void Function::removeVocabulary(const Vocabulary* vocabulary) {
+bool Function::removeVocabulary(const Vocabulary* vocabulary) {
 	_vocabularies.erase(vocabulary);
 	if(overloaded()) _overfuncgenerator->removeVocabulary(vocabulary);
-	if(_vocabularies.empty()) delete(this);
+	if(_vocabularies.empty()) {
+		delete(this);
+		return true;
+	}
+	return false;
 }
 
 void Function::addVocabulary(const Vocabulary* vocabulary) {

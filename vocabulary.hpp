@@ -162,7 +162,7 @@ class PFSymbol {
 		PFSymbol(const std::string& name, const std::vector<Sort*>& sorts, const ParseInfo& pi, bool infix = false);  
 
 		// Mutators
-		virtual void removeVocabulary(const Vocabulary*) = 0;	//!< Removes a vocabulary from the list of vocabularies
+		virtual bool removeVocabulary(const Vocabulary*) = 0;	//!< Removes a vocabulary from the list of vocabularies
 		virtual void addVocabulary(const Vocabulary*) = 0;		//!< Add a vocabulary to the list of vocabularies
 
 		// Inspectors
@@ -222,7 +222,7 @@ class Predicate : public PFSymbol {
 		~Predicate();	//!< Destructor
 
 		// Mutators
-		void removeVocabulary(const Vocabulary*);	//!< Removes a vocabulary from the list of vocabularies
+		bool removeVocabulary(const Vocabulary*);	//!< Removes a vocabulary from the list of vocabularies
 		void addVocabulary(const Vocabulary*);		//!< Add a vocabulary to the list of vocabularies
 
 		// Inspectors
@@ -370,7 +370,7 @@ class Function : public PFSymbol {
 
 		// Mutators
 		void	partial(bool b);						//!< Make the function total/partial if b is false/true
-		void	removeVocabulary(const Vocabulary*);	//!< Removes a vocabulary from the list of vocabularies
+		bool	removeVocabulary(const Vocabulary*);	//!< Removes a vocabulary from the list of vocabularies
 		void	addVocabulary(const Vocabulary*);		//!< Add a vocabulary to the list of vocabularies
 	
 		// Inspectors
