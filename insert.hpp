@@ -352,11 +352,11 @@ class Insert {
 		void	addElement(SortTable*,int,int)			const;
 		void	addElement(SortTable*,char,char)		const;
 
-		PredTable*	createPredTable()												const;
+		PredTable*	createPredTable(unsigned int arity)												const;
 		void	addTuple(PredTable*, std::vector<const DomainElement*>&, YYLTYPE)	const;
 		void	addTuple(PredTable*, YYLTYPE)										const;
 
-		FuncTable*	createFuncTable()													const;
+		FuncTable*	createFuncTable(unsigned int arity)													const;
 		void	addTupleVal(FuncTable*, std::vector<const DomainElement*>&, YYLTYPE)	const;
 		void	addTupleVal(FuncTable*, const DomainElement*, YYLTYPE)					const;
 

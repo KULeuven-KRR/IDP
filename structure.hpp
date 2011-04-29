@@ -1343,6 +1343,9 @@ class PredInter {
 		void pf(PredTable*);
 		void ctpt(PredTable*);
 
+		void makeTrue(const ElementTuple&);
+		void makeFalse(const ElementTuple&);
+
 		// Inspectors
 		const PredTable*	ct()										const { return _ct;		}
 		const PredTable*	cf()										const { return _cf;		}
@@ -1354,6 +1357,7 @@ class PredInter {
 		bool				isinconsistent(const ElementTuple& tuple)	const;
 		bool				approxtwovalued()							const;
 		const Universe&		universe()									const { return _ct->universe();	}
+		PredInter*			clone(const Universe&)						const;
 
 };
 
@@ -1428,12 +1432,15 @@ class FuncInter {
 
 		void	graphinter(PredInter*);
 		void	functable(FuncTable*);
+		void	makeTrue(const ElementTuple&);
+		void	makeFalse(const ElementTuple&);
 
 		PredInter*	graphinter()		const { return _graphinter;			}
 		FuncTable*	functable()			const { return _functable;			}
 		bool		approxtwovalued()	const { return _functable != 0;		}
 
 		const Universe&	universe()	const { return _graphinter->universe();	}
+		FuncInter*	clone(const Universe&)	const;
 };
 
 class FuncInterGenerator {
@@ -1530,7 +1537,6 @@ class AbstractStructure {
 		// Mutators
 		virtual void	vocabulary(Vocabulary* v) { _vocabulary = v;	}	// set the vocabulary
 
-		virtual void	inter(Sort* s,SortTable* d) = 0;		//!< set the domain of s to d
 		virtual void	inter(Predicate* p, PredInter* i) = 0;	//!< set the interpretation of p to i
 		virtual void	inter(Function* f, FuncInter* i) = 0;	//!< set the interpretation of f to i
 		virtual void	clean()	= 0;							//!< make three-valued interpretations that are in fact
@@ -1567,7 +1573,6 @@ class Structure : public AbstractStructure {
 
 		// Mutators
 		void	vocabulary(Vocabulary* v);			//!< set the vocabulary of the structure
-		void	inter(Sort* s,SortTable* d);		//!< set the domain of s to d
 		void	inter(Predicate* p, PredInter* i);	//!< set the interpretation of p to i
 		void	inter(Function* f, FuncInter* i);	//!< set the interpretation of f to i
 		void	addStructure(AbstractStructure*);	
@@ -1582,6 +1587,9 @@ class Structure : public AbstractStructure {
 		FuncInter*		inter(Function* f)			const; //!< Return the interpretation of f.
 		PredInter*		inter(PFSymbol* s)			const; //!< Return the interpretation of s.
 		Structure*		clone()						const; //!< take a clone of this structure
+
+		const Universe&	universe(Predicate*)	const;
+		const Universe& universe(Function*)		const;
 };
 
 /************************
@@ -1593,6 +1601,7 @@ namespace TableUtils {
 		//!< construct a new, least precise predicate interpretation
 	FuncInter*	leastFuncInter(const Universe& univ);		
 		//!< construct a new, least precise function interpretation
+	Universe	fullUniverse(unsigned int arity);
 }
 
 #endif

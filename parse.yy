@@ -640,9 +640,9 @@ ptuples_es		: ptuples ';'					{ $$ = $1;	}
 ptuples			: ptuples ';' '(' ptuple ')'	{ $$ = $1; insert.addTuple($$,*$4,@4); delete($4);	}
 				| ptuples ';' ptuple			{ $$ = $1; insert.addTuple($$,*$3,@3); delete($3);	}
 				| ptuples ';' emptyptuple		{ $$ = $1; insert.addTuple($$,@3);					}
-				| '(' ptuple ')'				{ $$ = insert.createPredTable(); insert.addTuple($$,*$2,@2); delete($2);	}
-				| ptuple						{ $$ = insert.createPredTable(); insert.addTuple($$,*$1,@1); delete($1);	}
-				| emptyptuple					{ $$ = insert.createPredTable(); insert.addTuple($$,@1);					}
+				| '(' ptuple ')'				{ $$ = insert.createPredTable($2->size()); insert.addTuple($$,*$2,@2); delete($2);	}
+				| ptuple						{ $$ = insert.createPredTable($1->size()); insert.addTuple($$,*$1,@1); delete($1);	}
+				| emptyptuple					{ $$ = insert.createPredTable(0); insert.addTuple($$,@1);					}
 				;
 
 emptyptuple		: '(' ')'										
@@ -664,7 +664,7 @@ pelement		: integer		{ $$ = insert.element($1);	}
 /** Interpretations for functions **/
 
 func_inter	: intern_pointer '=' '{' ftuples_es '}'	{ insert.funcinter($1,$4); }	
-			| intern_pointer '=' pelement			{ FuncTable* ft = insert.createFuncTable();
+			| intern_pointer '=' pelement			{ FuncTable* ft = insert.createFuncTable(1);
 													  insert.addTupleVal(ft,$3,@3);
 													  insert.funcinter($1,ft); }
 			;
@@ -674,7 +674,7 @@ ftuples_es		: ftuples ';'					{ $$ = $1;	}
 				;
 
 ftuples			: ftuples ';' ftuple			{ $$ = $1; insert.addTupleVal($$,*$3,@3); delete($3);					    }
-				| ftuple						{ $$ = insert.createFuncTable(); insert.addTupleVal($$,*$1,@1);	delete($1);	}
+				| ftuple						{ $$ = insert.createFuncTable($1->size()); insert.addTupleVal($$,*$1,@1);	delete($1);	}
 				;
 
 ftuple			: ptuple "->" pelement			{ $$ = $1; $$->push_back($3);	}			
@@ -688,7 +688,7 @@ f3tuples_es		: f3tuples ';'					{ $$ = $1;	}
 				;
 
 f3tuples		: f3tuples ';' ftuple			{ $$ = $1; insert.addTuple($$,*$3,@3); delete($3);							}
-				| ftuple						{ $$ = insert.createPredTable(); insert.addTuple($$,*$1,@1); delete($1);	}
+				| ftuple						{ $$ = insert.createPredTable($1->size()); insert.addTuple($$,*$1,@1); delete($1);	}
 				;
 
 /** Procedural interpretations **/
@@ -713,7 +713,7 @@ threepred_inter : intern_pointer '<' identifier '>' '=' '{' ptuples_es '}'	{ ins
 				;
 
 threefunc_inter	: intern_pointer '<' identifier '>' '=' '{' f3tuples_es '}'	{ insert.threefuncinter($1,*$3,$7);		}
-				| intern_pointer '<' identifier '>' '=' pelement			{ PredTable* ft = insert.createPredTable();
+				| intern_pointer '<' identifier '>' '=' pelement			{ PredTable* ft = insert.createPredTable(1);
 																			  std::vector<const DomainElement*> vd(1,$6);
 																			  insert.addTuple(ft,vd,@6);
 																			  insert.threefuncinter($1,*$3,ft);		}

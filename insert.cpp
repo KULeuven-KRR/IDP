@@ -1812,13 +1812,13 @@ void Insert::addFormula(EnumSetExpr* s, Formula* f) const {
 void Insert::emptyinter(NSPair* nst) const {
 	if(nst->_sortsincluded) {
 		if(nst->_func) {
-			EnumeratedInternalFuncTable* ift = new EnumeratedInternalFuncTable(nst->_sorts.size()-1);
-			FuncTable* ft = new FuncTable(ift);
+			EnumeratedInternalFuncTable* ift = new EnumeratedInternalFuncTable();
+			FuncTable* ft = new FuncTable(ift,TableUtils::fullUniverse(nst->_sorts.size()));
 			funcinter(nst,ft);
 		}
 		else {
-			EnumeratedInternalPredTable* ipt = new EnumeratedInternalPredTable(nst->_sorts.size());
-			PredTable* pt = new PredTable(ipt);
+			EnumeratedInternalPredTable* ipt = new EnumeratedInternalPredTable();
+			PredTable* pt = new PredTable(ipt,TableUtils::fullUniverse(nst->_sorts.size()));
 			predinter(nst,pt);
 		}
 	}
@@ -1834,8 +1834,8 @@ void Insert::emptyinter(NSPair* nst) const {
 			Error::overloadedpred(nst->to_string(),p1->pi(),p2->pi(),pi);
 		}
 		else {
-			EnumeratedInternalPredTable* ipt = new EnumeratedInternalPredTable((*(vp.begin()))->arity());
-			PredTable* pt = new PredTable(ipt);
+			EnumeratedInternalPredTable* ipt = new EnumeratedInternalPredTable();
+			PredTable* pt = new PredTable(ipt,TableUtils::fullUniverse((*(vp.begin()))->arity()));
 			predinter(nst,pt);
 		}
 	}
@@ -1903,10 +1903,10 @@ void Insert::sortinter(NSPair* nst, SortTable* t) const {
 	}
 	else if(p) {
 		if(belongsToVoc(p)) {
-			SortInternalPredTable* sipt = new SortInternalPredTable(t,false);
-			PredTable* pt = new PredTable(sipt);
+			PredTable* pt = new PredTable(t->interntable(),_currstructure->universe(p));
 			PredInter* i = _currstructure->inter(p);
 			i->ctpt(pt);
+			delete(t);
 		}
 		else Error::prednotinstructvoc(nst->to_string(),_currstructure->name(),pi);
 	}
@@ -1948,22 +1948,22 @@ SortTable* Insert::createSortTable() const {
 }
 
 void Insert::truepredinter(NSPair* nst) const {
-	EnumeratedInternalPredTable* eipt = new EnumeratedInternalPredTable(0);
-	PredTable* pt = new PredTable(eipt);
+	EnumeratedInternalPredTable* eipt = new EnumeratedInternalPredTable();
+	PredTable* pt = new PredTable(eipt,Universe(vector<SortTable*>(0)));
 	ElementTuple et;
 	pt->add(et);
 	predinter(nst,pt);
 }
 
 void Insert::falsepredinter(NSPair* nst) const {
-	EnumeratedInternalPredTable* eipt = new EnumeratedInternalPredTable(0);
-	PredTable* pt = new PredTable(eipt);
+	EnumeratedInternalPredTable* eipt = new EnumeratedInternalPredTable(eipt);
+	PredTable* pt = new PredTable(eipt,Universe(vector<SortTable*>(0)));
 	predinter(nst,pt);
 }
 
-PredTable* Insert::createPredTable() const {
-	EnumeratedInternalPredTable* eipt = new EnumeratedInternalPredTable(0);
-	PredTable* pt = new PredTable(eipt);
+PredTable* Insert::createPredTable(unsigned int arity) const {
+	EnumeratedInternalPredTable* eipt = new EnumeratedInternalPredTable();
+	PredTable* pt = new PredTable(eipt,TableUtils::fullUniverse(arity));
 	return pt;
 }
 
@@ -2005,9 +2005,9 @@ const DomainElement* Insert::element(const Compound* c) const {
 	return DomainElementFactory::instance()->create(c);
 }
 
-FuncTable* Insert::createFuncTable() const {
+FuncTable* Insert::createFuncTable(unsigned int arity) const {
 	EnumeratedInternalFuncTable* eift = new EnumeratedInternalFuncTable(0);
-	return new FuncTable(eift);
+	return new FuncTable(eift,TableUtils::fullUniverse(arity));
 }
 
 void Insert::addTupleVal(FuncTable* ft, ElementTuple& tuple, YYLTYPE l) const {

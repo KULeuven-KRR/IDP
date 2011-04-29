@@ -195,7 +195,7 @@ struct InternalArgument {
 		const Compound*					_compound;
 		ElementTuple*					_tuple;
 		SortTable*						_domain;
-		PredTable*						_predtable;
+		const PredTable*				_predtable;
 		PredInter*						_predinter;
 		FuncInter*						_funcinter;
 		AbstractStructure*				_structure;
@@ -231,7 +231,7 @@ struct InternalArgument {
 	InternalArgument(set<Predicate*>* p)				: _type(AT_PREDICATE)	{ _value._predicate = p;	} 
 	InternalArgument(set<Function*>* f)					: _type(AT_FUNCTION)	{ _value._function = f;		} 
 	InternalArgument(OverloadedSymbol* s)				: _type(AT_SYMBOL)		{ _value._symbol = s;		}
-	InternalArgument(PredTable* t)						: _type(AT_PREDTABLE)	{ _value._predtable = t;	}
+	InternalArgument(const PredTable* t)				: _type(AT_PREDTABLE)	{ _value._predtable = t;	}
 	InternalArgument(SortTable* t)						: _type(AT_DOMAIN)		{ _value._domain = t;		}
 	InternalArgument(const Compound* c)					: _type(AT_COMPOUND)	{ _value._compound = c;		}
 	InternalArgument(OverloadedObject* o)				: _type(AT_OVERLOADED)	{ _value._overloaded = o;	}
@@ -710,13 +710,13 @@ void addLiterals(MinisatID::Model* model, GroundTranslator* translator, Abstract
 			const ElementTuple& args = translator->args(atomnr);
 			if(typeid(*symbol) == typeid(Predicate)) {
 				Predicate* pred = dynamic_cast<Predicate*>(symbol);
-				if(literal->hasSign()) init->inter(pred)->ct()->add(args);
-				else init->inter(pred)->cf()->add(args);
+				if(literal->hasSign()) init->inter(pred)->makeTrue(args);
+				else init->inter(pred)->makeFalse(args);
 			}
 			else {
 				Function* func = dynamic_cast<Function*>(symbol);
-				if(literal->hasSign()) init->inter(func)->graphinter()->ct()->add(args);
-				else init->inter(func)->graphinter()->cf()->add(args);
+				if(literal->hasSign()) init->inter(func)->graphinter()->makeTrue(args);
+				else init->inter(func)->graphinter()->makeFalse(args);
 			}
 		}
 	}
@@ -729,7 +729,7 @@ void addTerms(MinisatID::Model* model, GroundTermTranslator* translator, Abstrac
 		if(function) {
 			ElementTuple tuple = translator->args(cpvar->variable);
 			tuple.push_back(DomainElementFactory::instance()->create(cpvar->value));
-			init->inter(function)->graphinter()->ct()->add(tuple);
+			init->inter(function)->graphinter()->makeTrue(tuple);
 		}
 	}
 }
@@ -884,7 +884,7 @@ namespace LuaConnection {
 			}
 			case AT_PREDTABLE:
 			{
-				PredTable** ptr = (PredTable**)lua_newuserdata(L,sizeof(PredTable*));
+				const PredTable** ptr = (const PredTable**)lua_newuserdata(L,sizeof(const PredTable*));
 				(*ptr) = arg._value._predtable;
 				luaL_getmetatable(L,"predtable");
 				lua_setmetatable(L,-2);
@@ -1640,8 +1640,8 @@ namespace LuaConnection {
 		return st;
 	}
 
-	PredTable* toPredTable(vector<InternalArgument>* table, lua_State* L) {
-		EnumeratedInternalPredTable* ipt = new EnumeratedInternalPredTable(0);
+	PredTable* toPredTable(vector<InternalArgument>* table, lua_State* L, const Universe& univ) {
+		EnumeratedInternalPredTable* ipt = new EnumeratedInternalPredTable();
 		for(vector<InternalArgument>::const_iterator it = table->begin(); it != table->end(); ++it) {
 			if(it->_type == AT_TABLE) {
 				ElementTuple tuple;
@@ -1671,7 +1671,7 @@ namespace LuaConnection {
 				return 0;
 			}
 		}
-		PredTable* pt = new PredTable(ipt);
+		PredTable* pt = new PredTable(ipt,univ);
 		return pt;
 	}
 
@@ -1682,13 +1682,14 @@ namespace LuaConnection {
 		PredInter* predinter = *(PredInter**)lua_touserdata(L,1);
 		InternalArgument index = InternalArgument(2,L);
 		InternalArgument value = InternalArgument(3,L);
+		const Universe& univ = predinter->ct()->universe();
 		if(index._type == AT_STRING) {
-			PredTable* pt = 0;
+			const PredTable* pt = 0;
 			if(value._type == AT_PREDTABLE) {
 				pt = value._value._predtable;
 			}
 			else if(value._type == AT_TABLE) {
-				pt = toPredTable(value._value._table,L);
+				pt = toPredTable(value._value._table,L,univ);
 			}
 			else {
 				lua_pushstring(L,"Wrong argument to __newindex procedure of a predicate interpretation");
@@ -1696,10 +1697,10 @@ namespace LuaConnection {
 			}
 			assert(pt);
 			string str = *(index._value._string);
-			if(str == "ct") predinter->ct(pt);
-			else if(str == "pt") predinter->pt(pt);
-			else if(str == "cf") predinter->cf(pt);
-			else if(str == "pf") predinter->pf(pt);
+			if(str == "ct") predinter->ct(new PredTable(pt->interntable(),univ));
+			else if(str == "pt") predinter->pt(new PredTable(pt->interntable(),univ));
+			else if(str == "cf") predinter->cf(new PredTable(pt->interntable(),univ));
+			else if(str == "pf") predinter->pf(new PredTable(pt->interntable(),univ));
 			else {
 				lua_pushstring(L,"A predicate interpretation can only be indexed by \"ct\", \"cf\", \"pt\", and \"pf\"");
 				return lua_error(L);
@@ -1755,12 +1756,15 @@ namespace LuaConnection {
 				if(ss->size() == 1) {
 					Sort* s = *(ss->begin());
 					if(value._type == AT_DOMAIN) {
-						structure->inter(s,value._value._domain);
+						SortTable* st = structure->inter(s);
+						st->interntable(value._value._domain->interntable());
 						return 0;
 					}
 					else if(value._type == AT_TABLE) {
 						SortTable* dom = toDomain(value._value._table,L);
-						structure->inter(s,dom);
+						SortTable* st = structure->inter(s);
+						st->interntable(dom->interntable());
+						delete(dom);
 						return 0;
 					}
 					else {

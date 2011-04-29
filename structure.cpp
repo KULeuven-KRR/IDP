@@ -576,13 +576,13 @@ void UnionInternalIterator::setcurriterator() {
 	}
 }
 
-UnionInternalIterator::UnionInternalIterator(const vector<TableIterator>& its, const vector<PredTable*>& outs) :
-	_iterators(its), _outtables(outs) {
+UnionInternalIterator::UnionInternalIterator(const vector<TableIterator>& its, const vector<InternalPredTable*>& outs, const Universe& univ) :
+	_iterators(its), _universe(univ), _outtables(outs) {
 	setcurriterator();
 }
 
 UnionInternalIterator* UnionInternalIterator::clone() const {
-	return new UnionInternalIterator(_iterators,_outtables);
+	return new UnionInternalIterator(_iterators,_outtables,_universe);
 }
 
 bool UnionInternalIterator::hasNext() const {
@@ -1137,12 +1137,9 @@ InternalTableIterator* UnionInternalPredTable::begin(const Universe& univ) const
  * PARAMETERS
  *		tuple	- the given tuple
  */
-bool EnumeratedInternalPredTable::contains(const ElementTuple& tuple) const {
+bool EnumeratedInternalPredTable::contains(const ElementTuple& tuple, const Universe&) const {
 	if(_table.empty()) return false;
-	else {
-		assert(tuple.size() == arity());
-		return _table.find(tuple) != _table.end();
-	}
+	else return _table.find(tuple) != _table.end();
 }
 
 /**
@@ -1155,17 +1152,14 @@ bool EnumeratedInternalPredTable::contains(const ElementTuple& tuple) const {
  *		A pointer to the updated table
  */
 EnumeratedInternalPredTable* EnumeratedInternalPredTable::add(const ElementTuple& tuple) {
-	if(contains(tuple)) return this;
+	if(_nrRefs == 1) {
+		_table.insert(tuple);
+		return this;
+	}
 	else {
-		if(_nrRefs == 1) {
-			_table.insert(tuple);
-			return this;
-		}
-		else {
-			SortedElementTable newtable = _table;
-			newtable.insert(tuple);
-			return new EnumeratedInternalPredTable(newtable,_universe);
-		}
+		SortedElementTable newtable = _table;
+		newtable.insert(tuple);
+		return new EnumeratedInternalPredTable(newtable);
 	}
 }
 
@@ -1189,7 +1183,7 @@ EnumeratedInternalPredTable* EnumeratedInternalPredTable::remove(const ElementTu
 			SortedElementTable newtable = _table;
 			SortedElementTable::iterator nt = newtable.find(tuple);
 			newtable.erase(nt);
-			return new EnumeratedInternalPredTable(newtable,_universe);
+			return new EnumeratedInternalPredTable(newtable);
 		}
 	}
 	else return this;
@@ -1198,37 +1192,28 @@ EnumeratedInternalPredTable* EnumeratedInternalPredTable::remove(const ElementTu
 /**
  * \brief Returns an iterator on the first tuple of the table
  */
-InternalTableIterator* EnumeratedInternalPredTable::begin() const {
+InternalTableIterator* EnumeratedInternalPredTable::begin(const Universe&) const {
 	return new EnumInternalIterator(_table.begin(),_table.end());
 }
 
-ComparisonInternalPredTable::ComparisonInternalPredTable(const Universe& univ) :
-	InternalPredTable(univ) {
-}
+ComparisonInternalPredTable::ComparisonInternalPredTable() { }
 
-ComparisonInternalPredTable::~ComparisonInternalPredTable() {
-}
+ComparisonInternalPredTable::~ComparisonInternalPredTable() { }
 
 InternalPredTable* ComparisonInternalPredTable::add(const ElementTuple& tuple) {
-	if(!contains(tuple)) {
-		UnionInternalPredTable* upt = new UnionInternalPredTable(_universe);
-		upt->addInTable(new PredTable(this));
-		InternalPredTable* temp = upt->add(tuple);
-		if(temp != upt) delete(upt);
-		return temp;
-	}
-	else return this;
+	UnionInternalPredTable* upt = new UnionInternalPredTable();
+	upt->addInTable(this);
+	InternalPredTable* temp = upt->add(tuple);
+	if(temp != upt) delete(upt);
+	return temp;
 }
 
 InternalPredTable* ComparisonInternalPredTable::remove(const ElementTuple& tuple) {
-	if(contains(tuple)) {
-		UnionInternalPredTable* upt = new UnionInternalPredTable(_universe);
-		upt->addInTable(new PredTable(this));
-		InternalPredTable* temp = upt->remove(tuple);
-		if(temp != upt) delete(upt);
-		return temp;
-	}
-	else return this;
+	UnionInternalPredTable* upt = new UnionInternalPredTable();
+	upt->addInTable(this);
+	InternalPredTable* temp = upt->remove(tuple);
+	if(temp != upt) delete(upt);
+	return temp;
 }
 
 /**
@@ -1237,99 +1222,45 @@ InternalPredTable* ComparisonInternalPredTable::remove(const ElementTuple& tuple
  * PARAMETERS
  *		tuple	- the given tuple
  */
-bool EqualInternalPredTable::contains(const ElementTuple& tuple) const {
+bool EqualInternalPredTable::contains(const ElementTuple& tuple, const Universe& univ) const {
 	assert(tuple.size() == 2);
-	return (tuple[0] == tuple[1] && _universe.contains(tuple));
+	return (tuple[0] == tuple[1] && univ.contains(tuple));
 }
 
 /**
  * \brief	Returns true iff the table is finite
  */
-bool EqualInternalPredTable::finite(const Universe&) const {
-	if(approxfinite()) return true;
-	else if(_universe.finite()) return true;
+bool EqualInternalPredTable::finite(const Universe& univ) const {
+	if(approxfinite(univ)) return true;
+	else if(univ.finite()) return true;
 	else return false;
 }
 
 /**
  * \brief Returns true iff the table is empty
  */
-bool EqualInternalPredTable::empty() const {
-	if(approxempty()) return true;
-	else if(_universe.empty()) return true;
+bool EqualInternalPredTable::empty(const Universe& univ) const {
+	if(approxempty(univ)) return true;
+	else if(univ.empty()) return true;
 	else return false;
 }
 
 /**
  * \brief Returns false if the table is infinite. May return true if the table is finite.
  */
-inline bool EqualInternalPredTable::approxfinite(const Universe&) const {
-	return _universe.approxfinite();
+inline bool EqualInternalPredTable::approxfinite(const Universe& univ) const {
+	return univ.approxfinite();
 }
 
 /**
  * \brief Returns false if the table is not empty. May return true if the table is empty.
  */
-inline bool EqualInternalPredTable::approxempty() const {
-	return _universe.approxempty();
+inline bool EqualInternalPredTable::approxempty(const Universe& univ) const {
+	return univ.approxempty();
 }
 
-InternalTableIterator* EqualInternalPredTable::begin() const {
-	return new EqualInternalIterator(_universe.tables()[0]->sortbegin());
-}
-
-/**
- * \brief Returns true iff the table contains a given tuple
- *
- * PARAMETERS
- *		tuple	- the given tuple
- */
-bool StrLessInternalPredTable::contains(const ElementTuple& tuple) const {
-	assert(tuple.size() == 2);
-	return (*(tuple[0]) < *(tuple[1]) && _universe.contains(tuple));
-}
-
-/**
- * \brief Returns true iff the table is finite
- */
-bool StrLessInternalPredTable::finite(const Universe&) const {
-	if(approxfinite()) return true;
-	else return _universe.finite();
-}
-
-/**
- * \brief Returns true iff the table is empty
- */
-bool StrLessInternalPredTable::empty() const {
-	SortIterator isi = _universe.tables()[0]->sortbegin();
-	if(isi.hasNext()) {
-		++isi;
-		if(isi.hasNext()) return false;
-	}
-	return true;
-}
-
-/**
- * \brief Returns false if the table is infinite. May return true if the table is finite.
- */
-inline bool StrLessInternalPredTable::approxfinite(const Universe&) const {
-	return (_universe.approxfinite());
-}
-
-/**
- * \brief Returns false if the table is infinite. May return true if the table is finite.
- */
-inline bool StrLessInternalPredTable::approxempty() const {
-	SortIterator isi = _universe.tables()[0]->sortbegin();
-	if(isi.hasNext()) {
-		++isi;
-		if(isi.hasNext()) return false;
-	}
-	return true;
-}
-
-InternalTableIterator* StrLessInternalPredTable::begin() const {
-	return new StrLessThanInternalIterator(_universe.tables()[0]->sortbegin());
+InternalTableIterator* EqualInternalPredTable::begin(const Universe& univ) const {
+	return new EqualInternalIterator(univ.tables()[0]->sortbegin());
 }
 
 /**
@@ -1338,24 +1269,24 @@ InternalTableIterator* StrLessInternalPredTable::begin() const {
  * PARAMETERS
  *		tuple	- the given tuple
  */
-bool StrGreaterInternalPredTable::contains(const ElementTuple& tuple) const {
+bool StrLessInternalPredTable::contains(const ElementTuple& tuple, const Universe& univ) const {
 	assert(tuple.size() == 2);
-	return (*(tuple[0]) > *(tuple[1]) && _universe.contains(tuple));
+	return (*(tuple[0]) < *(tuple[1]) && univ.contains(tuple));
 }
 
 /**
  * \brief Returns true iff the table is finite
  */
-bool StrGreaterInternalPredTable::finite(const Universe&) const {
-	if(approxfinite()) return true;
-	else return _universe.finite(); 
+bool StrLessInternalPredTable::finite(const Universe& univ) const {
+	if(approxfinite(univ)) return true;
+	else return univ.finite();
 }
 
 /**
  * \brief Returns true iff the table is empty
  */
-bool StrGreaterInternalPredTable::empty() const {
-	SortIterator isi = _universe.tables()[0]->sortbegin();
+bool StrLessInternalPredTable::empty(const Universe& univ) const {
+	SortIterator isi = univ.tables()[0]->sortbegin();
 	if(isi.hasNext()) {
 		++isi;
 		if(isi.hasNext()) return false;
@@ -1366,15 +1297,15 @@ bool StrGreaterInternalPredTable::empty() const {
 /**
  * \brief Returns false if the table is infinite. May return true if the table is finite.
  */
-inline bool StrGreaterInternalPredTable::approxfinite(const Universe&) const {
-	return (_universe.approxfinite());
+inline bool StrLessInternalPredTable::approxfinite(const Universe& univ) const {
+	return (univ.approxfinite());
 }
 
 /**
  * \brief Returns false if the table is infinite. May return true if the table is finite.
  */
-inline bool StrGreaterInternalPredTable::approxempty() const {
-	SortIterator isi = _universe.tables()[0]->sortbegin();
+inline bool StrLessInternalPredTable::approxempty(const Universe& univ) const {
+	SortIterator isi = univ.tables()[0]->sortbegin();
 	if(isi.hasNext()) {
 		++isi;
 		if(isi.hasNext()) return false;
@@ -1382,8 +1313,62 @@ inline bool StrGreaterInternalPredTable::approxempty() const {
 	return true;
 }
 
-InternalTableIterator* StrGreaterInternalPredTable::begin() const {
-	return new StrGreaterThanInternalIterator(_universe.tables()[0]->sortbegin());
+InternalTableIterator* StrLessInternalPredTable::begin(const Universe& univ) const {
+	return new StrLessThanInternalIterator(univ.tables()[0]->sortbegin());
+}
+
+/**
+ * \brief Returns true iff the table contains a given tuple
+ *
+ * PARAMETERS
+ *		tuple	- the given tuple
+ */
+bool StrGreaterInternalPredTable::contains(const ElementTuple& tuple, const Universe& univ) const {
+	assert(tuple.size() == 2);
+	return (*(tuple[0]) > *(tuple[1]) && univ.contains(tuple));
+}
+
+/**
+ * \brief Returns true iff the table is finite
+ */
+bool StrGreaterInternalPredTable::finite(const Universe& univ) const {
+	if(approxfinite(univ)) return true;
+	else return univ.finite(); 
+}
+
+/**
+ * \brief Returns true iff the table is empty
+ */
+bool StrGreaterInternalPredTable::empty(const Universe& univ) const {
+	SortIterator isi = univ.tables()[0]->sortbegin();
+	if(isi.hasNext()) {
+		++isi;
+		if(isi.hasNext()) return false;
+	}
+	return true;
+}
+
+/**
+ * \brief Returns false if the table is infinite. May return true if the table is finite.
+ */
+inline bool StrGreaterInternalPredTable::approxfinite(const Universe& univ) const {
+	return (univ.approxfinite());
+}
+
+/**
+ * \brief Returns false if the table is infinite. May return true if the table is finite.
+ */
+inline bool StrGreaterInternalPredTable::approxempty(const Universe& univ) const {
+	SortIterator isi = univ.tables()[0]->sortbegin();
+	if(isi.hasNext()) {
+		++isi;
+		if(isi.hasNext()) return false;
+	}
+	return true;
+}
+
+InternalTableIterator* StrGreaterInternalPredTable::begin(const Universe& univ) const {
+	return new StrGreaterThanInternalIterator(univ.tables()[0]->sortbegin());
 }
 
 /*************************
@@ -1470,7 +1455,7 @@ UnionInternalSortTable::~UnionInternalSortTable() {
 		delete(*it);
 }
 
-bool UnionInternalSortTable::finite(const Universe&) const {
+bool UnionInternalSortTable::finite() const {
 	if(approxfinite()) return true;
 	else {
 		notyetimplemented("Exact finiteness test on union sort tables");	
@@ -1789,71 +1774,64 @@ inline void InternalFuncTable::decrementRef() {
 	if(_nrRefs == 0) delete(this);
 }
 
-bool InternalFuncTable::contains(const ElementTuple& tuple) const {
+bool InternalFuncTable::contains(const ElementTuple& tuple, const Universe& univ) const {
 	ElementTuple input = tuple;
 	const DomainElement* output = tuple.back();
 	input.pop_back();
 	const DomainElement* computedoutput = operator[](input);
-	return output == computedoutput;
+	if(output == computedoutput) return univ.contains(tuple);
+	else return false;
 }
 
 ProcInternalFuncTable::~ProcInternalFuncTable() {
 }
 
-bool ProcInternalFuncTable::finite() const {
-	if(empty()) return true;
-	for(unsigned int n = 0; n < arity(); ++n) {
-		if(!_universe.tables()[n]->finite()) return false;
+bool ProcInternalFuncTable::finite(const Universe& univ) const {
+	if(empty(univ)) return true;
+	for(unsigned int n = 0; n < univ.tables().size()-1; ++n) {
+		if(!univ.tables()[n]->finite()) return false;
 	}
 	return true;
 }
 
-bool ProcInternalFuncTable::empty() const {
-	for(unsigned int n = 0; n < arity(); ++n) {
-		if(_universe.tables()[n]->empty()) return true;
+bool ProcInternalFuncTable::empty(const Universe& univ) const {
+	for(unsigned int n = 0; n < univ.tables().size()-1; ++n) {
+		if(univ.tables()[n]->empty()) return true;
 	}
+	notyetimplemented("Exact finiteness test on procedural function tables");	
 	return false;
 }
 
-bool ProcInternalFuncTable::approxfinite() const {
-	if(approxempty()) return true;
-	for(unsigned int n = 0; n < arity(); ++n) {
-		if(!_universe.tables()[n]->approxfinite()) return false;
+bool ProcInternalFuncTable::approxfinite(const Universe& univ) const {
+	if(approxempty(univ)) return true;
+	for(unsigned int n = 0; n < univ.tables().size()-1; ++n) {
+		if(!univ.tables()[n]->approxfinite()) return false;
 	}
 	return true;
 }
 
-bool ProcInternalFuncTable::approxempty() const {
-	for(unsigned int n = 0; n < arity(); ++n) {
-		if(_universe.tables()[n]->approxempty()) return true;
+bool ProcInternalFuncTable::approxempty(const Universe& univ) const {
+	for(unsigned int n = 0; n < univ.tables().size()-1; ++n) {
+		if(univ.tables()[n]->approxempty()) return true;
 	}
 	return false;
 }
 
 const DomainElement* ProcInternalFuncTable::operator[](const ElementTuple& tuple) const {
-	for(unsigned int n = 0; n < arity(); ++n) {
-		if(!_universe.tables()[n]->contains(tuple[n])) return 0;
-	}
 	return LuaConnection::funccall(_procedure,tuple);
 }
 
-InternalFuncTable* ProcInternalFuncTable::add(const ElementTuple& tuple) {
-	if(!contains(tuple)) {
-		// TODO
-		return 0;
-	}
-	else return this;
+InternalFuncTable* ProcInternalFuncTable::add(const ElementTuple& ) {
+	// TODO
+	return 0;
 }
 
-InternalFuncTable* ProcInternalFuncTable::remove(const ElementTuple& tuple) {
-	if(contains(tuple)) {
-		// TODO
-		return 0;
-	}
-	else return this;
+InternalFuncTable* ProcInternalFuncTable::remove(const ElementTuple& ) {
+	// TODO
+	return 0;
 }
 
-InternalTableIterator* ProcInternalFuncTable::begin() const {
+InternalTableIterator* ProcInternalFuncTable::begin(const Universe& ) const {
 	// TODO
 	return 0;
 }
@@ -1877,7 +1855,7 @@ InternalFuncTable* EnumeratedInternalFuncTable::add(const ElementTuple& tuple) {
 		if(_nrRefs > 1) {
 			ElementFunc newtable = _table;
 			newtable[key] = value;
-			return new EnumeratedInternalFuncTable(newtable,_universe);
+			return new EnumeratedInternalFuncTable(newtable);
 		}
 		else {
 			_table[key] = value;
@@ -1895,7 +1873,7 @@ InternalFuncTable* EnumeratedInternalFuncTable::remove(const ElementTuple& tuple
 		if(_nrRefs > 1) {
 			ElementFunc newtable = _table;
 			newtable.erase(key);
-			return new EnumeratedInternalFuncTable(newtable,_universe);
+			return new EnumeratedInternalFuncTable(newtable);
 		}
 		else {
 			_table.erase(key);
@@ -1905,7 +1883,7 @@ InternalFuncTable* EnumeratedInternalFuncTable::remove(const ElementTuple& tuple
 	else return this;
 }
 
-InternalTableIterator* EnumeratedInternalFuncTable::begin() const {
+InternalTableIterator* EnumeratedInternalFuncTable::begin(const Universe&) const {
 	return new EnumInternalFuncIterator(_table.begin(),_table.end());
 }
 
@@ -1915,23 +1893,17 @@ const DomainElement* ModInternalFuncTable::operator[](const vector<const DomainE
 	return DomainElementFactory::instance()->create(a1 % a2);
 }
 
-InternalFuncTable* ModInternalFuncTable::add(const ElementTuple& tuple) {
-	if(contains(tuple)) return this;
-	else {
-		// TODO
-		return 0;
-	}
+InternalFuncTable* ModInternalFuncTable::add(const ElementTuple& ) {
+	// TODO
+	return 0;
 }
 
-InternalFuncTable* ModInternalFuncTable::remove(const ElementTuple& tuple) {
-	if(!contains(tuple)) return this;
-	else {
-		// TODO
-		return 0;
-	}
+InternalFuncTable* ModInternalFuncTable::remove(const ElementTuple& ) {
+	// TODO
+	return 0;
 }
 
-InternalTableIterator* ModInternalFuncTable::begin() const {
+InternalTableIterator* ModInternalFuncTable::begin(const Universe&) const {
 	// TODO
 	return 0;
 }
@@ -1942,41 +1914,29 @@ const DomainElement* ExpInternalFuncTable::operator[](const vector<const DomainE
 	return DomainElementFactory::instance()->create(pow(a1,a2),false);
 }
 
-InternalFuncTable* ExpInternalFuncTable::add(const ElementTuple& tuple) {
-	if(contains(tuple)) return this;
-	else {
-		// TODO
-		return 0;
-	}
-}
-
-InternalFuncTable* ExpInternalFuncTable::remove(const ElementTuple& tuple) {
-	if(!contains(tuple)) return this;
-	else {
-		// TODO
-		return 0;
-	}
-}
-
-InternalTableIterator* ExpInternalFuncTable::begin() const {
+InternalFuncTable* ExpInternalFuncTable::add(const ElementTuple& ) {
 	// TODO
 	return 0;
 }
 
-InternalFuncTable* IntFloatInternalFuncTable::add(const ElementTuple& tuple) {
-	if(contains(tuple)) return this;
-	else {
-		// TODO
-		return 0;
-	}
+InternalFuncTable* ExpInternalFuncTable::remove(const ElementTuple& ) {
+	// TODO
+	return 0;
 }
 
-InternalFuncTable* IntFloatInternalFuncTable::remove(const ElementTuple& tuple) {
-	if(!contains(tuple)) return this;
-	else {
-		// TODO
-		return 0;
-	}
+InternalTableIterator* ExpInternalFuncTable::begin(const Universe&) const {
+	// TODO
+	return 0;
+}
+
+InternalFuncTable* IntFloatInternalFuncTable::add(const ElementTuple& ) {
+	// TODO
+	return 0;
+}
+
+InternalFuncTable* IntFloatInternalFuncTable::remove(const ElementTuple& ) {
+	// TODO
+	return 0;
 }
 
 const DomainElement* PlusInternalFuncTable::operator[](const ElementTuple& tuple) const {
@@ -1992,7 +1952,7 @@ const DomainElement* PlusInternalFuncTable::operator[](const ElementTuple& tuple
 	}
 }
 
-InternalTableIterator* PlusInternalFuncTable::begin() const {
+InternalTableIterator* PlusInternalFuncTable::begin(const Universe& ) const {
 	// TODO
 	return 0;
 }
@@ -2010,7 +1970,7 @@ const DomainElement* MinusInternalFuncTable::operator[](const ElementTuple& tupl
 	}
 }
 
-InternalTableIterator* MinusInternalFuncTable::begin() const {
+InternalTableIterator* MinusInternalFuncTable::begin(const Universe&) const {
 	// TODO
 	return 0;
 }
@@ -2028,7 +1988,7 @@ const DomainElement* TimesInternalFuncTable::operator[](const ElementTuple& tupl
 	}
 }
 
-InternalTableIterator* TimesInternalFuncTable::begin() const {
+InternalTableIterator* TimesInternalFuncTable::begin(const Universe&) const {
 	// TODO
 	return 0;
 }
@@ -2046,7 +2006,7 @@ const DomainElement* DivInternalFuncTable::operator[](const ElementTuple& tuple)
 	}
 }
 
-InternalTableIterator* DivInternalFuncTable::begin() const {
+InternalTableIterator* DivInternalFuncTable::begin(const Universe&) const {
 	// TODO
 	return 0;
 }
@@ -2060,7 +2020,7 @@ const DomainElement* AbsInternalFuncTable::operator[](const ElementTuple& tuple)
 	}
 }
 
-InternalTableIterator* AbsInternalFuncTable::begin() const {
+InternalTableIterator* AbsInternalFuncTable::begin(const Universe&) const {
 	// TODO
 	return 0;
 }
@@ -2074,7 +2034,7 @@ const DomainElement* UminInternalFuncTable::operator[](const ElementTuple& tuple
 	}
 }
 
-InternalTableIterator* UminInternalFuncTable::begin() const {
+InternalTableIterator* UminInternalFuncTable::begin(const Universe&) const {
 	// TODO
 	return 0;
 }
@@ -2083,7 +2043,7 @@ InternalTableIterator* UminInternalFuncTable::begin() const {
 	PredTable
 ****************/
 
-PredTable::PredTable(InternalPredTable* table) : _table(table) {
+PredTable::PredTable(InternalPredTable* table, const Universe& univ) : _table(table), _universe(univ) {
 	table->incrementRef();
 }
 
@@ -2112,7 +2072,7 @@ void PredTable::remove(const ElementTuple& tuple) {
 }
 
 TableIterator PredTable::begin() const {
-	TableIterator ti(_table->begin());
+	TableIterator ti(_table->begin(_universe));
 	return ti;
 }
 
@@ -2128,24 +2088,24 @@ void InternalPredTable::incrementRef() {
 ProcInternalPredTable::~ProcInternalPredTable() {
 }
 
-bool ProcInternalPredTable::finite() const {
-	return _universe.finite();
+bool ProcInternalPredTable::finite(const Universe& univ) const {
+	return univ.finite();
 }
 
-bool ProcInternalPredTable::empty() const {
-	return _universe.empty();
+bool ProcInternalPredTable::empty(const Universe& univ) const {
+	return univ.empty();
 }
 
-bool ProcInternalPredTable::approxfinite() const {
-	return _universe.approxfinite();
+bool ProcInternalPredTable::approxfinite(const Universe& univ) const {
+	return univ.approxfinite();
 }
 
-bool ProcInternalPredTable::approxempty() const {
-	return _universe.approxempty();
+bool ProcInternalPredTable::approxempty(const Universe& univ) const {
+	return univ.approxempty();
 }
 
-bool ProcInternalPredTable::contains(const ElementTuple& tuple) const {
-	if(_universe.contains(tuple)) {
+bool ProcInternalPredTable::contains(const ElementTuple& tuple, const Universe& univ) const {
+	if(univ.contains(tuple)) {
 		return LuaConnection::predcall(_procedure,tuple);
 	}
 	else return false;
@@ -2161,7 +2121,7 @@ InternalPredTable* ProcInternalPredTable::remove(const ElementTuple& ) {
 	return 0;
 }
 
-InternalTableIterator* ProcInternalPredTable::begin() const {
+InternalTableIterator* ProcInternalPredTable::begin(const Universe& ) const {
 	// TODO
 	return 0;
 }
@@ -2173,44 +2133,44 @@ InverseInternalPredTable::~InverseInternalPredTable() {
 /**
  *		Returns true iff the table is finite
  */
-bool InverseInternalPredTable::finite() const {
-	if(approxfinite()) return true;
-	if(_universe.finite()) return true;
-	else if(_invtable->finite()) return false;
+bool InverseInternalPredTable::finite(const Universe& univ) const {
+	if(approxfinite(univ)) return true;
+	if(univ.finite()) return true;
+	else if(_invtable->finite(univ)) return false;
 	else {
 		notyetimplemented("Exact finiteness test on inverse predicate tables");	
-		return approxempty();
+		return approxempty(univ);
 	}
 }
 
 /**
  *		Returns true iff the table is empty
  */
-bool InverseInternalPredTable::empty() const {
-	if(approxempty()) return true;
-	if(_universe.empty()) return true;
-	if(finite()) {
-		TableIterator ti = TableIterator(begin());
+bool InverseInternalPredTable::empty(const Universe& univ) const {
+	if(approxempty(univ)) return true;
+	if(univ.empty()) return true;
+	if(finite(univ)) {
+		TableIterator ti = TableIterator(begin(univ));
 		return !(ti.hasNext());
 	}
 	else {
 		notyetimplemented("Exact emptyness test on inverse predicate tables");	
-		return approxempty();
+		return approxempty(univ);
 	}
 }
 
 /**
  *		Returns false if the table is infinite. May return true if the table is finite.
  */
-bool InverseInternalPredTable::approxfinite() const {
-	return _universe.approxfinite();
+bool InverseInternalPredTable::approxfinite(const Universe& univ) const {
+	return univ.approxfinite();
 }
 
 /**
  *		Returns false if the table is non-empty. May return true if the table is empty.
  */
-bool InverseInternalPredTable::approxempty() const {
-	return _universe.approxempty();
+bool InverseInternalPredTable::approxempty(const Universe& univ) const {
+	return univ.approxempty();
 }
 
 /**
@@ -2219,9 +2179,9 @@ bool InverseInternalPredTable::approxempty() const {
  * PARAMETERS
  *		tuple	- the given tuple
  */
-bool InverseInternalPredTable::contains(const ElementTuple& tuple) const {
-	if(_invtable->contains(tuple)) return false;
-	else if(_universe.contains(tuple)) return true;
+bool InverseInternalPredTable::contains(const ElementTuple& tuple, const Universe& univ) const {
+	if(_invtable->contains(tuple,univ)) return false;
+	else if(univ.contains(tuple)) return true;
 	else return false; 
 }
 
@@ -2235,23 +2195,20 @@ bool InverseInternalPredTable::contains(const ElementTuple& tuple) const {
  *		A pointer to the updated table
  */
 InternalPredTable* InverseInternalPredTable::add(const ElementTuple& tuple) {
-	if(!contains(tuple)) {
-		if(_nrRefs > 1) {
-			InverseInternalPredTable* newtable = new InverseInternalPredTable(_invtable,_universe);
-			InternalPredTable* temp = newtable->add(tuple); assert(temp == newtable);
-			return newtable;
-		}
-		else {
-			InternalPredTable* temp = _invtable->remove(tuple);
-			if(temp != _invtable) {
-				_invtable->decrementRef();
-				temp->incrementRef();
-				_invtable = temp;
-			}
-			return this;
-		}
+	if(_nrRefs > 1) {
+		InverseInternalPredTable* newtable = new InverseInternalPredTable(_invtable);
+		InternalPredTable* temp = newtable->add(tuple); assert(temp == newtable);
+		return newtable;
 	}
-	else return this;
+	else {
+		InternalPredTable* temp = _invtable->remove(tuple);
+		if(temp != _invtable) {
+			_invtable->decrementRef();
+			temp->incrementRef();
+			_invtable = temp;
+		}
+		return this;
+	}
 }
 
 /**
@@ -2264,31 +2221,28 @@ InternalPredTable* InverseInternalPredTable::add(const ElementTuple& tuple) {
  *		A pointer to the updated table
  */
 InternalPredTable* InverseInternalPredTable::remove(const ElementTuple& tuple) {
-	if(contains(tuple)) {
-		if(_nrRefs > 1) {
-			InverseInternalPredTable* newtable = new InverseInternalPredTable(_invtable,_universe);
-			InternalPredTable* temp = newtable->remove(tuple); assert(temp == newtable);
-			return newtable;
-		}
-		else {
-			InternalPredTable* temp = _invtable->add(tuple);
-			if(temp != _invtable) {
-				_invtable->decrementRef();
-				temp->incrementRef();
-				_invtable = temp;
-			}
-			return this;
-		}
+	if(_nrRefs > 1) {
+		InverseInternalPredTable* newtable = new InverseInternalPredTable(_invtable);
+		InternalPredTable* temp = newtable->remove(tuple); assert(temp == newtable);
+		return newtable;
 	}
-	else return this;
+	else {
+		InternalPredTable* temp = _invtable->add(tuple);
+		if(temp != _invtable) {
+			_invtable->decrementRef();
+			temp->incrementRef();
+			_invtable = temp;
+		}
+		return this;
+	}
 }
 
-InternalTableIterator* InverseInternalPredTable::begin() const {
+InternalTableIterator* InverseInternalPredTable::begin(const Universe& univ) const {
 	vector<SortIterator> vsi;
-	for(vector<SortTable*>::const_iterator it = _universe.tables().begin(); it != _universe.tables().end(); ++it) {
+	for(vector<SortTable*>::const_iterator it = univ.tables().begin(); it != univ.tables().end(); ++it) {
 		vsi.push_back((*it)->sortbegin());
 	}
-	return new InverseInternalIterator(vsi,_invtable);
+	return new InverseInternalIterator(vsi,_invtable,univ);
 }
 
 /****************
@@ -2321,7 +2275,7 @@ void SortTable::interntable(InternalSortTable* table) {
 	FuncTable
 ****************/
 
-FuncTable::FuncTable(InternalFuncTable* table) : _table(table) {
+FuncTable::FuncTable(InternalFuncTable* table, const Universe& univ) : _table(table), _universe(univ) {
 	_table->incrementRef();
 }
 
@@ -2330,7 +2284,7 @@ FuncTable::~FuncTable() {
 }
 
 void FuncTable::add(const ElementTuple& tuple) {
-	if(_table->contains(tuple)) return;
+	if(_table->contains(tuple,_universe)) return;
 	InternalFuncTable* temp = _table;
 	_table = _table->add(tuple);
 	if(temp != _table) {
@@ -2340,7 +2294,7 @@ void FuncTable::add(const ElementTuple& tuple) {
 }
 
 void FuncTable::remove(const ElementTuple& tuple) {
-	if(!_table->contains(tuple)) return;
+	if(!_table->contains(tuple,_universe)) return;
 	InternalFuncTable* temp = _table;
 	_table = _table->remove(tuple);
 	if(temp != _table) {
@@ -2366,7 +2320,7 @@ bool FuncTable::contains(const ElementTuple& tuple) const {
 }
 
 TableIterator FuncTable::begin() const {
-	TableIterator ti(_table->begin());
+	TableIterator ti(_table->begin(_universe));
 	return ti;
 }
 
@@ -2386,8 +2340,8 @@ TableIterator FuncTable::begin() const {
  *	- univ	: all possible domain elements of the sorts of the columns of the table
  */
 PredInter::PredInter(PredTable* ctpf, PredTable* cfpt, bool ct, bool cf) {
-	PredTable* inverseCtpf = new PredTable(new InverseInternalPredTable(ctpf->interntable(),ctpf->universe()));
-	PredTable* inverseCfpt = new PredTable(new InverseInternalPredTable(cfpt->interntable(),ctpf->universe()));
+	PredTable* inverseCtpf = new PredTable(new InverseInternalPredTable(ctpf->interntable()),ctpf->universe());
+	PredTable* inverseCfpt = new PredTable(new InverseInternalPredTable(cfpt->interntable()),ctpf->universe());
 	if(ct)	{ _ct = ctpf; _pf = inverseCtpf; } else	{ _pf = ctpf; _ct = inverseCtpf; }
 	if(cf)	{ _cf = cfpt; _pt = inverseCfpt; } else	{ _pt = cfpt; _cf = inverseCfpt; }
 }
@@ -2401,9 +2355,9 @@ PredInter::PredInter(PredTable* ctpf, PredTable* cfpt, bool ct, bool cf) {
  *	- univ	: all possible domain elements of the sorts of the columns of the table
  */
 PredInter::PredInter(PredTable* ctpf, bool ct) {
-	PredTable* cfpt = new PredTable(ctpf->interntable());
-	PredTable* inverseCtpf = new PredTable(new InverseInternalPredTable(ctpf->interntable(),ctpf->universe()));
-	PredTable* inverseCfpt = new PredTable(new InverseInternalPredTable(cfpt->interntable(),cfpt->universe()));
+	PredTable* cfpt = new PredTable(ctpf->interntable(),ctpf->universe());
+	PredTable* inverseCtpf = new PredTable(new InverseInternalPredTable(ctpf->interntable()),ctpf->universe());
+	PredTable* inverseCfpt = new PredTable(new InverseInternalPredTable(cfpt->interntable()),cfpt->universe());
 	if(ct) {
 		_ct = ctpf; 
 		_pt = cfpt;
@@ -2476,33 +2430,33 @@ void PredInter::ct(PredTable* t) {
 	delete(_ct);
 	delete(_pf);
 	_ct = t;
-	_pf = new PredTable(new InverseInternalPredTable(t->interntable(),t->universe()));
+	_pf = new PredTable(new InverseInternalPredTable(t->interntable()),t->universe());
 }
 
 void PredInter::cf(PredTable* t) {
 	delete(_cf);
 	delete(_pt);
 	_cf = t;
-	_pt = new PredTable(new InverseInternalPredTable(t->interntable(),t->universe()));
+	_pt = new PredTable(new InverseInternalPredTable(t->interntable()),t->universe());
 }
 
 void PredInter::pt(PredTable* t) {
 	delete(_pt);
 	delete(_cf);
 	_pt = t;
-	_cf = new PredTable(new InverseInternalPredTable(t->interntable(),t->universe()));
+	_cf = new PredTable(new InverseInternalPredTable(t->interntable()),t->universe());
 }
 
 void PredInter::pf(PredTable* t) {
 	delete(_pf);
 	delete(_ct);
 	_pf = t;
-	_ct = new PredTable(new InverseInternalPredTable(t->interntable(),t->universe()));
+	_ct = new PredTable(new InverseInternalPredTable(t->interntable()),t->universe());
 }
 
 void PredInter::ctpt(PredTable* t) {
 	ct(t);
-	PredTable* npt = new PredTable(t->interntable());
+	PredTable* npt = new PredTable(t->interntable(),t->universe());
 	pt(npt);
 }
 
@@ -2510,37 +2464,50 @@ PredInter* PredInter::clone(const Universe& univ) const {
 	PredTable* nctpf;
 	bool ct;
 	if(typeid(*(_pf->interntable())) == typeid(InverseInternalPredTable)) {
-		nctpf = new PredTable(_ct->interntable());
+		nctpf = new PredTable(_ct->interntable(),univ);
 		ct = true;
 	}
 	else {
-		nctpf = new PredTable(_pf->interntable());
+		nctpf = new PredTable(_pf->interntable(),univ);
 		ct = false;
 	}
-	if(approxtwovalued) return new PredInter
+	if(approxtwovalued()) return new PredInter(nctpf,ct);
+	else {
+		PredTable* ncfpt;
+		bool cf;
+		if(typeid(*(_pt->interntable())) == typeid(InverseInternalPredTable)) {
+			ncfpt = new PredTable(_cf->interntable(),univ);
+			cf = true;
+		}
+		else {
+			ncfpt = new PredTable(_pt->interntable(),univ);
+			cf = false;
+		}
+		return new PredInter(nctpf,ncfpt,ct,cf);
+	}
 }
 
 PredInter* EqualInterGenerator::get(const AbstractStructure* structure) {
 	SortTable* st = structure->inter(_sort);
 	Universe univ(vector<SortTable*>(1,st));
-	EqualInternalPredTable* eip = new EqualInternalPredTable(univ);
-	PredTable* ct = new PredTable(eip);
+	EqualInternalPredTable* eip = new EqualInternalPredTable();
+	PredTable* ct = new PredTable(eip,univ);
 	return new PredInter(ct,true);
 }
 
 PredInter* StrLessThanInterGenerator::get(const AbstractStructure* structure) {
 	SortTable* st = structure->inter(_sort);
 	Universe univ(vector<SortTable*>(1,st));
-	StrLessInternalPredTable* eip = new StrLessInternalPredTable(univ);
-	PredTable* ct = new PredTable(eip);
+	StrLessInternalPredTable* eip = new StrLessInternalPredTable();
+	PredTable* ct = new PredTable(eip,univ);
 	return new PredInter(ct,true);
 }
 
 PredInter* StrGreaterThanInterGenerator::get(const AbstractStructure* structure) {
 	SortTable* st = structure->inter(_sort);
 	Universe univ(vector<SortTable*>(1,st));
-	StrGreaterInternalPredTable* eip = new StrGreaterInternalPredTable(univ);
-	PredTable* ct = new PredTable(eip);
+	StrGreaterInternalPredTable* eip = new StrGreaterInternalPredTable();
+	PredTable* ct = new PredTable(eip,univ);
 	return new PredInter(ct,true);
 }
 
@@ -2561,7 +2528,7 @@ StrLessThanInterGenerator* StrLessThanInterGeneratorGenerator::get(const std::ve
 *******************************/
 
 FuncInter::FuncInter(FuncTable* ft) : _functable(ft) {
-	PredTable* ct = new PredTable(new FuncInternalPredTable(ft,true));
+	PredTable* ct = new PredTable(new FuncInternalPredTable(ft,true),ft->universe());
 	_graphinter = new PredInter(ct,true);
 }
 
@@ -2581,8 +2548,19 @@ void FuncInter::functable(FuncTable* ft) {
 	delete(_functable);
 	delete(_graphinter);
 	_functable = ft;
-	PredTable* ct = new PredTable(new FuncInternalPredTable(ft,true));
+	PredTable* ct = new PredTable(new FuncInternalPredTable(ft,true),ft->universe());
 	_graphinter = new PredInter(ct,true);
+}
+
+FuncInter* FuncInter::clone(const Universe& univ) const {
+	if(_functable) {
+		FuncTable* nft = new FuncTable(_functable->interntable(),univ);
+		return new FuncInter(nft);
+	}
+	else {
+		PredInter* npi = _graphinter->clone(univ);
+		return new FuncInter(npi);
+	}
 }
 
 FuncInter* MinInterGenerator::get(const AbstractStructure* structure) {
@@ -2590,8 +2568,8 @@ FuncInter* MinInterGenerator::get(const AbstractStructure* structure) {
 	Universe univ(vector<SortTable*>(1,st));
 	ElementTuple t;
 	ElementFunc ef; ef[t] = st->first();
-	EnumeratedInternalFuncTable* ift = new EnumeratedInternalFuncTable(ef,univ);
-	FuncTable* ft = new FuncTable(ift);
+	EnumeratedInternalFuncTable* ift = new EnumeratedInternalFuncTable(ef);
+	FuncTable* ft = new FuncTable(ift,univ);
 	return new FuncInter(ft);
 }
 
@@ -2600,8 +2578,8 @@ FuncInter* MaxInterGenerator::get(const AbstractStructure* structure) {
 	Universe univ(vector<SortTable*>(1,st));
 	ElementTuple t;
 	ElementFunc ef; ef[t] = st->last();
-	EnumeratedInternalFuncTable* ift = new EnumeratedInternalFuncTable(ef,univ);
-	FuncTable* ft = new FuncTable(ift);
+	EnumeratedInternalFuncTable* ift = new EnumeratedInternalFuncTable(ef);
+	FuncTable* ft = new FuncTable(ift,univ);
 	return new FuncInter(ft);
 }
 
@@ -2642,8 +2620,8 @@ InvSuccInterGenerator* InvSuccInterGeneratorGenerator::get(const vector<Sort*>& 
 namespace TableUtils {
 
 	PredInter* leastPredInter(const Universe& univ) {
-		PredTable* t1 = new PredTable(new EnumeratedInternalPredTable(univ));
-		PredTable* t2 = new PredTable(new EnumeratedInternalPredTable(univ));
+		PredTable* t1 = new PredTable(new EnumeratedInternalPredTable(),univ);
+		PredTable* t2 = new PredTable(new EnumeratedInternalPredTable(),univ);
 		return new PredInter(t1,t2,true,true);
 	}
 
@@ -2723,8 +2701,8 @@ void Structure::vocabulary(Vocabulary* v) {
 				SortTable* st = new SortTable(new EnumeratedInternalSortTable());
 				_sortinter[*jt] = st;
 				vector<SortTable*> univ(1,st);
-				PredTable* pt = new PredTable(new SortInternalPredTable(st,true));
-				_predinter[(*jt)->pred()] = new PredInter(pt,true,univ);
+				PredTable* pt = new PredTable(new FullInternalPredTable(),Universe(univ));
+				_predinter[(*jt)->pred()] = new PredInter(pt,true);
 			}
 		}
 	}
@@ -2752,11 +2730,6 @@ void Structure::vocabulary(Vocabulary* v) {
 			}
 		}
 	}
-}
-
-void Structure::inter(Sort* s, SortTable* d) {
-	delete(_sortinter[s]);
-	_sortinter[s] = d;
 }
 
 void Structure::inter(Predicate* p, PredInter* i) {
@@ -2946,7 +2919,7 @@ void Structure::functioncheck() {
 		Function* f = it->first;
 		FuncInter* ft = it->second;
 		PredInter* pt = ft->graphinter();
-		PredTable* ct = pt->ct();
+		const PredTable* ct = pt->ct();
 		// Check if the interpretation is indeed a function
 		bool isfunc = true;
 		StrictWeakNTupleEquality eq(f->arity());
@@ -2973,7 +2946,7 @@ void Structure::functioncheck() {
 				vst.push_back(inter(f->insort(c)));
 				linked.push_back(true);
 			}
-			PredTable spt(new FullInternalPredTable(vst,linked));
+			PredTable spt(new FullInternalPredTable(),Universe(vst));
 			it = spt.begin();
 			TableIterator jt = ct->begin();
 			for(; it.hasNext() && jt.hasNext(); ++it, ++jt) {
