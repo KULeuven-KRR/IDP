@@ -23,6 +23,7 @@ Namespace* Namespace::global() {
 		ParseInfo pi;
 		_global = new Namespace("global_namespace",0,pi);
 		_global->add(Vocabulary::std());
+		_global->add(new Options("stdoptions",pi));
 	}
 	return _global;
 }

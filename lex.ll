@@ -137,7 +137,7 @@ void end_include() {
 	insert.currfile(include_buffer_filenames.back());
 	include_buffer_stack.pop_back();
 	include_buffer_filenames.pop_back();
-	fclose(include_buffer_files.back());
+	//fclose(include_buffer_files.back());
 	include_buffer_files.pop_back();
 	include_line_stack.pop_back();
 	include_col_stack.pop_back();
@@ -160,6 +160,7 @@ void end_include() {
 %x lua
 %x description
 %x descontent
+%x spacename
 
 ID				_*[A-Za-z][a-zA-Z0-9_]*	
 CH				[A-Za-z]
@@ -266,7 +267,7 @@ COMMENTLINE		"//".*
 "asp_structure"			{ BEGIN(aspstructure);
 						  advancecol();
 						  return ASP_HEADER;		}
-"namespace"				{ BEGIN(INITIAL);
+"namespace"				{ BEGIN(spacename);
 						  advancecol();
 						  return NAMESPACE_HEADER;	}
 "procedure"				{ BEGIN(procedure);
@@ -484,6 +485,10 @@ COMMENTLINE		"//".*
 							  prevlength = tablen;		}
 <*>"::"						{ advancecol();
 							  return NSPACE;			}
+<spacename>"{"				{ advancecol();
+							  BEGIN(INITIAL);
+							  return *yytext;
+							}
 "{"							{ advancecol(); 
 							  return *yytext;
 							}

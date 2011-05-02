@@ -761,7 +761,6 @@ Options* Insert::optionsInScope(const vector<string>& vs, const ParseInfo& pi) c
 	}
 }
 
-enum UTF { UTF_UNKNOWN, UTF_CT, UTF_CF, UTF_ERROR };
 
 UTF getUTF(const string& utf, const ParseInfo& pi) {
 	if(utf == "u") return UTF_UNKNOWN;
@@ -777,6 +776,7 @@ Insert::Insert() {
 	openblock();
 	_currfile = 0;
 	_currspace = Namespace::global();
+	_options = _currspace->options("stdoptions");
 	usenamespace(_currspace);
 }
 
@@ -1008,7 +1008,7 @@ void Insert::assignstructure(InternalArgument* arg, YYLTYPE l) {
 void Insert::closestructure() {
 	assert(_currstructure);
 	assignunknowntables();
-	_currstructure->autocomplete();
+	if(_options->autocomplete()) _currstructure->autocomplete();
 	_currstructure->functioncheck();
 	if(_currspace->isGlobal()) LuaConnection::addGlobal(_currstructure);
 	closeblock();
@@ -2134,12 +2134,14 @@ void Insert::threepredinter(NSPair* nst, const string& utf, PredTable* t) {
 					{	
 						PredInter* pt = _currstructure->inter(p);
 						pt->ct(nt);
+						_cpreds[p] = UTF_CT;
 						break;
 					}
 					case UTF_CF:
 					{
 						PredInter* pt = _currstructure->inter(p);
 						pt->cf(nt);
+						_cpreds[p] = UTF_CF;
 						break;
 					}
 					case UTF_ERROR:
@@ -2176,12 +2178,14 @@ void Insert::threefuncinter(NSPair* nst, const string& utf, PredTable* t) {
 				{	
 					PredInter* ft = _currstructure->inter(f)->graphinter();
 					ft->ct(nt);
+					_cfuncs[f] = UTF_CT;
 					break;
 				}
 				case UTF_CF:
 				{
 					PredInter* ft = _currstructure->inter(f)->graphinter();
 					ft->cf(nt);
+					_cfuncs[f] = UTF_CF;
 					break;
 				}
 				case UTF_ERROR:
@@ -2450,20 +2454,20 @@ void Insert::option(const string& opt, bool val,YYLTYPE l) const {
 void Insert::assignunknowntables() {
 	// Assign the unknown predicate interpretations
 	for(map<Predicate*,PredTable*>::iterator it = _unknownpredtables.begin(); it != _unknownpredtables.end(); ++it) {
-		PredInter* pt = _currstructure->inter(it->first);
-		TableIterator tit = it->second->begin();
-		for( ; tit.hasNext(); ++tit) {
-			// TODO TODO TODO
-		}
+		PredInter* pri = _currstructure->inter(it->first);
+		const PredTable* ctable = _cpreds[it->first] == UTF_CT ? pri->ct() : pri->cf();
+		PredTable* pt = new PredTable(ctable->interntable(),ctable->universe());
+		for(TableIterator tit = it->second->begin() ; tit.hasNext(); ++tit) pt->add(*tit);
+		_cpreds[it->first] == UTF_CT ? pri->pt(pt) : pri->pf(pt);
 		delete(it->second);
 	}
 	// Assign the unknown function interpretations
 	for(map<Function*,PredTable*>::iterator it = _unknownfunctables.begin(); it != _unknownfunctables.end(); ++it) {
-		PredInter* ft = _currstructure->inter(it->first)->graphinter();
-		TableIterator tit = it->second->begin();
-		for( ; tit.hasNext(); ++tit) {
-			// TODO TODO TODO
-		}
+		PredInter* pri = _currstructure->inter(it->first)->graphinter();
+		const PredTable* ctable = _cfuncs[it->first] == UTF_CT ? pri->ct() : pri->cf();
+		PredTable* pt = new PredTable(ctable->interntable(),ctable->universe());
+		for(TableIterator tit = it->second->begin() ; tit.hasNext(); ++tit) pt->add(*tit);
+		_cfuncs[it->first] == UTF_CT ? pri->pt(pt) : pri->pf(pt);
 		delete(it->second);
 	}
 	_unknownpredtables.clear();
@@ -2799,6 +2803,8 @@ namespace Insert {
 		_currstructure->functioncheck();
 		_unknownpredtables.clear();
 		_unknownfunctables.clear();
+		_cpreds.clear();
+		_cfuncs.clear();
 		closeblock();
 	}
 

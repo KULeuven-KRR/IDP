@@ -28,6 +28,34 @@ function type(obj)
 	end
 end
 
+local oldPairs = pairs
+function pairs(table) 
+	if idp_intern.isIdp(table) then
+		return 
+			function(s,var) 
+				var = var+1
+				if var > #table then
+					return nil
+				else
+					return var, table[var]
+				end
+			end,
+			0,
+			0
+	else
+		return oldPairs(table)
+	end
+end
+
+local oldIpairs = ipairs
+function ipairs(table) 
+	if idp_intern.isIdp(table) then
+		return pairs(table)
+	else
+		return oldIpairs(table)
+	end
+end
+
 local oldTostring = tostring
 function tostring(e,opts) 
 	if idp_intern.isIdp(e) then

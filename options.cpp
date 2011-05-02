@@ -49,6 +49,7 @@ Options::Options(const string& name, const ParseInfo& pi) : _name(name), _pi(pi)
 	_booloptions["printtypes"]		= true;
 	_booloptions["usingcp"]			= true;
 	_booloptions["trace"]			= false;
+	_booloptions["autocomplete"]	= true;
 
 	_intoptions["satverbosity"]		= new IntOption(0,numeric_limits<int>::max(),0);
 	_intoptions["groundverbosity"]	= new IntOption(0,numeric_limits<int>::max(),0);
@@ -154,6 +155,10 @@ int Options::groundverbosity() const {
 
 bool Options::cpsupport() const {
 	return _booloptions.find("usingcp")->second;
+}
+
+bool Options::autocomplete() const {
+	return _booloptions.find("autocomplete")->second;
 }
 
 ostream& Options::put(ostream& output) const {

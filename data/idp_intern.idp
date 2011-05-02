@@ -10,14 +10,34 @@ procedure help(namespace) {
 	idp_intern.help(namespace)
 }
 
-/**********************
-	Default options 
-**********************/
+/**************************
+	Iterate over tables
+**************************/
 
-options stdoptions {
-	nrmodels=1
-	language=idp
-	modelformat=all
+/**
+ * Returns a procedure, iterator, and a tuple such that 
+ *    for t in tuples(table) do ... end
+ * iterates over all tuples in the given predicate table
+ */
+procedure tuples(table) {
+	if type(table) == "predicate_table" then
+		return idp_intern.deref_and_increment, idp_intern.tableiterator(table), idp_intern.dummytuple()
+	else
+		print("Error: predicate table expected")
+	end
+}
+
+/**
+ * Returns a procedure, iterator, and 0 such that
+ *    for e in elements(d) do ... end
+ * iterates over all elements in the given domain d
+ */
+procedure elements(d) {
+	if type(d) == "domain" then
+		return idp_intern.deref_and_increment, idp_intern.domainiterator(d), 0
+	else 
+		print("Error: domain expected")
+	end
 }
 
 /************************
@@ -63,8 +83,8 @@ procedure clone(obj) {
  */
 procedure modelexpand(T,S,Opts) {
 	local clonetheo = clone(T)
-	internal_inference::push_negations(clonetheo)
-	internal_inference::flatten(clonetheo)
+	idp_intern.push_negations(clonetheo)
+	idp_intern.flatten(clonetheo)
 	if not Opts then Opts = stdoptions end
 	local solutions, trace =  idp_intern.mx(clonetheo,S,Opts) 
 	return solutions, trace
@@ -75,35 +95,11 @@ procedure modelexpand(T,S,Opts) {
  */
 procedure ground(T,S,Opts) {
 	local clonetheo = clone(T)
-	internal_inference::push_negations(clonetheo)
-	internal_inference::flatten(clonetheo)
+	idp_intern.push_negations(clonetheo)
+	idp_intern.flatten(clonetheo)
 	if not Opts then Opts = stdoptions end
 	return idp_intern.ground(clonetheo,S,Opts) 
 }
-
-/*************************
-	Advanced inference
-*************************/
-
-namespace internal_inference {
-
-	/**
-	 * Push the negations of a given theory T inside until they are in front of atoms
-	 */
-	procedure push_negations(T) {
-		return idp_intern.push_negations(T)
-	}
-
-	/**
-	 * Remove brackets from long conjunctions and disjunctions in theory T
-	 * Merge successive quantifiers in theory T
-	 */
-	procedure flatten(T) {
-		return idp_intern.flatten(T)
-	}
-
-}
-
 
 
 

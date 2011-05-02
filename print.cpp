@@ -934,10 +934,12 @@ string IDPPrinter::print(const Vocabulary* v) {
 void IDPPrinter::visit(const Sort* s) {
 	printtab();
 	_out << "type " << s->name();
-	if(!s->parents().empty())
+	if(!(s->parents().empty())) {
 		_out << " isa " << (*(s->parents().begin()))->name();
-		for(set<Sort*>::const_iterator it = ++(s->parents().begin()); it != s->parents().end(); ++it)
+		set<Sort*>::const_iterator it = s->parents().begin(); ++it;
+		for(; it != s->parents().end(); ++it)
 			_out << "," << (*it)->name();
+	}
 	_out << "\n";
 }
 

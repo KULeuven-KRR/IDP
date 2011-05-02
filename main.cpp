@@ -98,12 +98,6 @@ vector<string> read_options(int argc, char* argv[], CLOptions& cloptions) {
  * Parse all input files
  */
 void parse(const vector<string>& inputfiles) {
-	// Parse standard input file
-	stringstream ss; 
-	ss <<DATADIR <<"/std/idp_intern.idp";
-	parsefile(ss.str());
-
-	// Parse files of the user
 	for(unsigned int n = 0; n < inputfiles.size(); ++n) {
 		parsefile(inputfiles[n]);
 	}

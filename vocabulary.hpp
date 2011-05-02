@@ -67,7 +67,7 @@ class Sort {
 		Predicate*				pred()									const;	//!< Returns the corresponding predicate
 		const std::set<Sort*>&	parents()								const;
 		const std::set<Sort*>&	children()								const;
-		std::set<Sort*>			ancestors(const Vocabulary* v = 0)		const;	//!< Returns the ancestor of the sort
+		std::set<Sort*>			ancestors(const Vocabulary* v = 0)		const;	//!< Returns the ancestors of the sort
 		std::set<Sort*>			descendents(const Vocabulary* v = 0)	const;	//!< Returns the descendents of the sort
 		bool					builtin()								const;  //!< True iff the sort is built-in
 		SortTable*				interpretation()						const;	

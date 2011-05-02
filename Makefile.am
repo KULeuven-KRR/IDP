@@ -2,7 +2,7 @@ SUBDIRS = lib pcsolver
 AM_CXXFLAGS = @AC_CXXFLAGS@ -Wall -Wextra\
 		-I$(srcdir)/lib/lua/etc -I$(srcdir)/lib/lua/src\
 		-I$(builddir)/lib/lua/src  -I $(srcdir)/lib/\
-		-DDATADIR=\"$(datadir)\"
+		-DDATADIR=\"$(datadir)\" -DRCDIR=\"$(localstatedir)\"
 		
 if USEINTERACTIVE
 AM_CXXFLAGS += -DUSEINTERACTIVE
@@ -58,4 +58,7 @@ AM_CXXFLAGS += -I $(LIBSRCDIR)/pluscallback1.7/
 dist_doc_DATA = README
 
 data_stddir = $(datadir)/std
-data_std_DATA = data/idp_intern.idp data/idp_intern.lua data/mx.idp
+data_std_DATA = data/idp_intern.idp data/idp_intern.lua data/mx.idp data/theory.idp data/domain.idp
+
+data_localdir = $(localstatedir)/idp
+data_local_DATA = data/.idprc

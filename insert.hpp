@@ -92,9 +92,13 @@ struct VarName {
 	VarName(const std::string& n, Variable* v) : _name(n), _var(v) { }
 };
 
+enum UTF { UTF_UNKNOWN, UTF_CT, UTF_CF, UTF_ERROR };
+
 class Insert {
 
 	private:
+		Options*		_options;
+
 		lua_State*		_state;		//!< the lua state objects are added to
 
 		std::string*	_currfile;	//!< the file that is currently being parsed
@@ -163,6 +167,8 @@ class Insert {
 
 		std::map<Predicate*,PredTable*>	_unknownpredtables;
 		std::map<Function*,PredTable*>	_unknownfunctables;
+		std::map<Predicate*,UTF>		_cpreds;
+		std::map<Function*,UTF>			_cfuncs;
 		void	assignunknowntables();
 
 	public:

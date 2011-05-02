@@ -43,7 +43,7 @@ class UserProcedure {
 	public:
 		// Constructors
 		UserProcedure(const std::string& name, const ParseInfo& pi, std::stringstream* des = 0) :
-			_name(name), _pi(pi), _registryindex(""), _description(des ? des->str() : "(undocumented)") { }
+			_name(name), _pi(pi), _registryindex(""), _description(des ? des->str() : "(undocumented)\n") { }
 
 		// Mutators
 		void compile(lua_State*);	//!< compile the procedure
