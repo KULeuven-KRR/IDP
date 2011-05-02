@@ -242,7 +242,7 @@ void AbstractGroundTheory::recursiveDelete() {
 	delete(this);
 }
 
-/*
+/**
  * AbstractGroundTheory::transformForAdd(vector<int>& vi, VIType vit, int defnr, bool skipfirst)
  * DESCRIPTION
  *		Adds defining rules for tseitin literals in a given vector of literals to the ground theory.
@@ -445,37 +445,14 @@ string GroundTheory::to_string() const {
 	}
 	for(unsigned int n = 0; n < _aggregates.size(); ++n) {
 		const GroundAggregate* agg = _aggregates[n];
-		s << _translator->printAtom(agg->head());
-		switch(agg->arrow()) {
-			case TS_RULE: 	s << " <- "; break;
-			case TS_IMPL: 	s << " => "; break;
-			case TS_RIMPL: 	s << " <= "; break;
-			case TS_EQ: 	s << " <=> "; break;
-			default: assert(false);
-		}
-		s << agg->bound();
+		s << _translator->printAtom(agg->head()) << ' ' << agg->arrow() << ' ' << agg->bound();
 		s << (agg->lower() ? " =< " : " >= ");
-		switch(agg->type()) {
-			case AGGCARD: 	s << "card("; break;
-			case AGGSUM: 	s << "sum("; break;
-			case AGGPROD: 	s << "prod("; break;
-			case AGGMIN: 	s << "min("; break;
-			case AGGMAX: 	s << "max("; break;
-			default: assert(false);
-		}
-		s << agg->setnr() << ").\n";
+		s << agg->type() << '(' << agg->setnr() << ")." << endl;
 	}
 	//TODO: repeat above for fixpoint definitions
 	for(vector<CPReification*>::const_iterator it = _cpreifications.begin(); it != _cpreifications.end(); ++it) {
 		CPReification* cpr = *it;
-		s << _translator->printAtom(cpr->_head);
-		switch(cpr->_body->type()) {
-			case TS_RULE: 	s << " <- "; break;
-			case TS_IMPL: 	s << " => "; break;
-			case TS_RIMPL: 	s << " <= "; break;
-			case TS_EQ: 	s << " <=> "; break;
-			default: assert(false);
-		}
+		s << _translator->printAtom(cpr->_head) << ' ' << cpr->_body->type() << ' ';
 		CPTerm* left = cpr->_body->left();
 		if(typeid(*left) == typeid(CPSumTerm)) {
 			CPSumTerm* cpt = dynamic_cast<CPSumTerm*>(left);
@@ -492,7 +469,7 @@ string GroundTheory::to_string() const {
 			vector<int>::const_iterator wit;
 			s << "wsum[ ";
 			for(vit = cpt->_varids.begin(), wit = cpt->_weights.begin(); vit != cpt->_varids.end() && wit != cpt->_weights.end(); ++vit, ++wit) {
-				s << "(" << _termtranslator->printTerm(*vit) << "=" << *wit << ")";
+				s << '(' << _termtranslator->printTerm(*vit) << '=' << *wit << ')';
 				if(*vit != cpt->_varids.back()) s << "; ";
 			}
 			s << " ]";
@@ -502,19 +479,11 @@ string GroundTheory::to_string() const {
 			CPVarTerm* cpt = dynamic_cast<CPVarTerm*>(left);
 			s << _termtranslator->printTerm(cpt->_varid);
 		}
-		switch(cpr->_body->comp()) {
-			case CT_EQ:		s << " = "; break;
-			case CT_NEQ:	s << " ~= "; break;
-			case CT_LEQ:	s << " =< "; break;
-			case CT_GEQ:	s << " >= "; break;
-			case CT_LT:		s << " < "; break;
-			case CT_GT:		s << " > "; break;
-			default: assert(false);
-		}
+		s << ' ' << cpr->_body->comp() << ' ';
 		CPBound right = cpr->_body->right();
 		if(right._isvarid) s << _termtranslator->printTerm(right._value._varid);
 		else s << right._value._bound;
-		s << ".\n";
+		s << '.' << endl;
 	}
 	return s.str();
 }
@@ -740,8 +709,9 @@ void SolverTheory::addCPReification(int tseitin, CPTsBody* body) {
 }
 
 void SolverTheory::addCPVariables(const vector<unsigned int>& varids) {
-	for(vector<unsigned int>::const_iterator it = varids.begin(); it != varids.end(); ++it)
+	for(vector<unsigned int>::const_iterator it = varids.begin(); it != varids.end(); ++it) {
 		addCPVariable(*it);
+	}
 }
 
 void SolverTheory::addCPVariable(unsigned int varid) {

@@ -439,11 +439,13 @@ void IDPPrinter::visit(const GroundTheory* g) {
 }
 
 void EcnfPrinter::visit(const GroundTheory* g) {
+	_structure = g->structure();
+	_termtranslator = g->termtranslator();
 	_out << "p ecnf def aggr\n";
 	for(unsigned int n = 0; n < g->nrClauses(); ++n) {
 		for(unsigned int m = 0; m < g->clause(n).size(); ++m)
 			_out << g->clause(n)[m] << ' ';
-		_out << "0" << endl;
+		_out << '0' << endl;
 	}
 	for(unsigned int n = 0; n < g->nrSets(); ++n) //NOTE: Print sets before aggregates!!
 		g->set(n)->accept(this);
@@ -460,7 +462,7 @@ void EcnfPrinter::visit(const GroundTheory* g) {
 
 void IDPPrinter::visit(const GroundDefinition* d) {
 	printtab();
-	_out << "{" << endl;
+	_out << '{' << endl;
 	indent();
 	for(GroundDefinition::const_ruleiterator it = d->begin(); it != d->end(); ++it) {
 		printtab();
@@ -469,7 +471,7 @@ void IDPPrinter::visit(const GroundDefinition* d) {
 		(it->second)->accept(this);
 	}
 	unindent();
-	_out << "}" << endl;
+	_out << '}' << endl;
 }
 
 void EcnfPrinter::visit(const GroundDefinition* d) {
@@ -495,7 +497,7 @@ void IDPPrinter::visit(const PCGroundRuleBody* b) {
 		else
 			_out << "false";
 	}
-	_out << "." << endl;
+	_out << '.' << endl;
 }
 
 void EcnfPrinter::visit(const PCGroundRuleBody* b) {
@@ -503,7 +505,7 @@ void EcnfPrinter::visit(const PCGroundRuleBody* b) {
 	_out << "<- " << _currentdefnr << ' ' << _currenthead << ' ';
 	for(unsigned int n = 0; n < b->size(); ++n)
 		_out << b->literal(n) << ' ';
-	_out << "0" << endl;
+	_out << '0' << endl;
 }
 
 void IDPPrinter::visit(const AggGroundRuleBody* b) {
@@ -575,6 +577,33 @@ void IDPPrinter::visit(const CPReification* cpr) {
 	_out << '.' << endl;
 }
 
+void EcnfPrinter::printCPVariables(vector<unsigned int> varids) {
+	for(vector<unsigned int>::const_iterator it = varids.begin(); it != varids.end(); ++it) {
+		printCPVariable(*it);
+	}
+}
+
+void EcnfPrinter::printCPVariable(unsigned int varid) {
+	if(_printedvarids.find(varid) == _printedvarids.end()) {
+		_printedvarids.insert(varid);
+		Function* function = _termtranslator->function(varid);
+		SortTable* domain = _structure->inter(function->outsort());
+		int minvalue = domain->element(0)._int;
+		int maxvalue = domain->element(domain->size()-1)._int;
+		unsigned int difference = maxvalue - minvalue;
+		if(difference + 1 == domain->size()) {
+			_out << "INTVAR " << varid << ' ' << minvalue << ' ' << maxvalue << ' ';
+		} else {
+			_out << "INTVARDOM " << varid << ' ';
+			for(unsigned int n = 0; n < domain->size(); ++n) {
+				int value = domain->element(n)._int;
+				_out << value << ' ';
+			}
+		}
+		_out << '0' << endl;
+	}
+}
+
 void EcnfPrinter::printCPReification(string type, int head, unsigned int left, CompType comp, int right) {
 	#warning "Might be dangerous to cast varids to bounds (unsigned int to int)";
 	_out << type << ' ' << head << ' ' << left << ' ' << comp << ' ' << right << " 0" << endl;
@@ -605,59 +634,35 @@ void EcnfPrinter::visit(const CPReification* cpr) {
 	CPBound right = cpr->_body->right();
 	if(typeid(*left) == typeid(CPVarTerm)) {
 		CPVarTerm* term = dynamic_cast<CPVarTerm*>(left);
-		//TODO Print domain of left variable: INTVAR(DOM) varid ...
+		printCPVariable(term->_varid);
 		if(right._isvarid) { // CPBinaryRelVar
-			//TODO Print domain of right variable: INTVAR(DOM) varid ...
-			//_out << "BINTRT " << cpr->_head << ' ' << term->_varid << ' ' << comp << ' ' << right._value._varid << " 0" << endl;
+			printCPVariable(right._value._varid);
 			printCPReification("BINTRT",cpr->_head,term->_varid,comp,right._value._varid);
 		}
 		else { // CPBinaryRel
-			//_out << "BINTRI " << cpr->_head << ' ' << term->_varid << ' ' << comp << ' ' << right._value._bound << " 0" << endl;
 			printCPReification("BINTRI",cpr->_head,term->_varid,comp,right._value._bound);
 		}
 	}
 	else if(typeid(*left) == typeid(CPSumTerm)) {
 		CPSumTerm* term = dynamic_cast<CPSumTerm*>(left);
-		//TODO Print domains of left variables: INTVAR(DOM) varid ...
+		printCPVariables(term->_varids);
 		if(right._isvarid) { // CPSumWithVar
-			//TODO Print domain of right variable: INTVAR(DOM) varid ...
-			//_out << "SUMSTRT " << cpr->_head << ' ';
-			//for(vector<unsigned int>::const_iterator it = term->_varids.begin(); it != term->_varids.end(); ++it)
-			//	_out << *it << ' ';
-			//_out << comp << ' ' << right._value._varid << " 0" << endl;
+			printCPVariable(right._value._varid);
 			printCPReification("SUMSTRT",cpr->_head,term->_varids,comp,right._value._varid);
 		}
 		else { // CPSum
-			//_out << "SUMSTRI " << cpr->_head << ' ';
-			//for(vector<unsigned int>::const_iterator it = term->_varids.begin(); it != term->_varids.end(); ++it)
-			//	_out << *it << ' ';
-			//_out << comp << ' ' << right._value._bound << " 0" << endl;
 			printCPReification("SUMSTRI",cpr->_head,term->_varids,comp,right._value._bound);
 		}
 	}
 	else {
 		assert(typeid(*left) == typeid(CPWSumTerm));
 		CPWSumTerm* term = dynamic_cast<CPWSumTerm*>(left);
-		//TODO Print domains of left variables: INTVAR(DOM) varid ...
+		printCPVariables(term->_varids);
 		if(right._isvarid) { // CPSumWeightedWithVar
-			//TODO Print domain of right variable: INTVAR(DOM) varid ...
-			//_out << "SUMSTSIRT " << cpr->_head << ' ';
-			//for(vector<unsigned int>::const_iterator it = term->_varids.begin(); it != term->_varids.end(); ++it)
-			//	_out << *it << ' ';
-			//_out << " | ";
-			//for(vector<int>::const_iterator it = term->_weights.begin(); it != term->_weights.end(); ++it)
-			//	_out << *it << ' ';
-			//_out << comp << ' ' << right._value._varid << " 0" << endl;
+			printCPVariable(right._value._varid);
 			printCPReification("SUMSTSIRT",cpr->_head,term->_varids,term->_weights,comp,right._value._varid);
 		}
 		else { // CPSumWeighted
-			//_out << "SUMSTSIRI " << cpr->_head << ' ';
-			//for(vector<unsigned int>::const_iterator it = term->_varids.begin(); it != term->_varids.end(); ++it)
-			//	_out << *it << ' ';
-			//_out << " | ";
-			//for(vector<int>::const_iterator it = term->_weights.begin(); it != term->_weights.end(); ++it)
-			//	_out << *it << ' ';
-			//_out << comp << ' ' << right._value._bound << " 0" << endl;
 			printCPReification("SUMSTSIRI",cpr->_head,term->_varids,term->_weights,comp,right._value._bound);
 		}
 	}

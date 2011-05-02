@@ -11,6 +11,7 @@
 #include <sstream>
 #include <string>
 #include <vector>
+#include <set>
 
 #include "visitor.hpp"
 #include "commontypes.hpp"
@@ -139,10 +140,15 @@ class IDPPrinter : public Printer {
 
 class EcnfPrinter : public Printer {
 	private:
-		int				_currenthead;
-		unsigned int 	_currentdefnr;
+		int							_currenthead;
+		unsigned int 				_currentdefnr;
+		AbstractStructure*			_structure;
+		const GroundTermTranslator*	_termtranslator;
+		std::set<unsigned int> 		_printedvarids;
 
 		void printAggregate(AggType aggtype, TsType arrow, unsigned int defnr, bool lower, int head, unsigned int setnr, double bound);
+		void printCPVariable(unsigned int varid);
+		void printCPVariables(std::vector<unsigned int> varids);
 		void printCPReification(std::string type, int head, unsigned int left, CompType comp, int right);
 		void printCPReification(std::string type, int head, std::vector<unsigned int> left, CompType comp, int right);
 		void printCPReification(std::string type, int head, std::vector<unsigned int> left, std::vector<int> weights, CompType comp, int right);
