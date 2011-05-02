@@ -10,6 +10,7 @@
 #include <sstream>
 #include <iostream>
 #include <stdlib.h>
+#include <cassert>
 #include "commontypes.hpp"
 
 using namespace std;
@@ -94,7 +95,7 @@ bool isChar(double d) {
 	else return false;
 }
 
-// Return a string of n spaces
+// String of n spaces
 string tabstring(unsigned int n) {
 	string tab;
 	for(unsigned int m = 0; m < n; ++m) 
@@ -102,18 +103,36 @@ string tabstring(unsigned int n) {
 	return tab;
 }
 
+// Invert comparison type
+CompType invertcomp(const CompType& ct) {
+	switch(ct) {
+		case CT_EQ: return CT_EQ;
+		case CT_NEQ: return CT_NEQ;
+		case CT_LEQ: return CT_GEQ;
+		case CT_GEQ: return CT_LEQ;
+		case CT_LT: return CT_GT;
+		case CT_GT: return CT_LT;
+		default: assert(false);
+	}
+}
+
+// Put enum types on output stream
 ostream& operator<<(ostream& out, const AggType& aggtype) {
-	string AggTypeNames[5] = { "#", "sum", "prod", "min", "max" };
-	return out << AggTypeNames[aggtype];
+	string AggTypeStrings[5] = { "#", "sum", "prod", "min", "max" };
+	return out << AggTypeStrings[aggtype];
 }
 
 ostream& operator<<(ostream& out, const ElementType& elementtype) {
-	string ElementTypeNames[4] = { "int", "double", "string", "compound" };
-	return out << ElementTypeNames[elementtype];
+	string ElementTypeStrings[4] = { "int", "double", "string", "compound" };
+	return out << ElementTypeStrings[elementtype];
 }
 
 ostream& operator<<(ostream& out, const TsType& tstype) {
-	string TsTypeNames[4] = { "<=>", "<-", "=>", "<=" };
-	return out << TsTypeNames[tstype];
+	string TsTypeStrings[4] = { "<=>", "<-", "=>", "<=" };
+	return out << TsTypeStrings[tstype];
 }
 
+ostream& operator<<(ostream& out, const CompType& comp) {
+	string CompTypeStrings[6] = { "=", "~=", "=<", ">=", "<", ">" };
+	return out << CompTypeStrings[comp];
+}

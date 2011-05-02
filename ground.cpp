@@ -19,6 +19,7 @@
 #include "options.hpp"
 #include "generator.hpp"
 #include "checker.hpp"
+#include "common.hpp"
 
 using namespace std;
 
@@ -402,18 +403,6 @@ if(_cloptions._verbose) {
 #endif
 }
 
-CompType invertcpcomp(CompType ct) {
-	switch(ct) {
-		case CT_EQ: return CT_EQ;
-		case CT_NEQ: return CT_NEQ;
-		case CT_LEQ: return CT_GEQ;
-		case CT_GEQ: return CT_LEQ;
-		case CT_LT: return CT_GT;
-		case CT_GT: return CT_LT;
-		default: assert(false);
-	}
-}
-
 int CPGrounder::run() const {
 	domelement left = _lefttermgrounder->run();
 	domelement right = _righttermgrounder->run();
@@ -444,7 +433,7 @@ int CPGrounder::run() const {
 			unsigned int rightvarid = _termtranslator->translate(right->_function,right->_args);	// TODO: try to use the faster translate function 
 			CPTerm* rightterm = new CPVarTerm(rightvarid);
 			CPBound leftbound(false,leftvalue);
-			return _translator->translate(rightterm,invertcpcomp(_comparator),leftbound,_context._tseitin);
+			return _translator->translate(rightterm,invertcomp(_comparator),leftbound,_context._tseitin);
 		}	
 		else {
 			assert(right->_args[0]._type == ELINT);
@@ -1222,6 +1211,11 @@ set<const Function*> GrounderFactory::findCPFunctions(const AbstractTheory* theo
 		}
 		if(groundtocp) _cpfunctions.insert(function);
 	}
+cerr << "Function that could be handled by constraint solver: ";
+for(set<const Function*>::const_iterator it = _cpfunctions.begin(); it != _cpfunctions.end(); ++it) {
+	cerr << (*it)->to_string() << " ";
+}
+cerr << endl;
 	return _cpfunctions;
 }
 

@@ -381,7 +381,7 @@ void IDPPrinter::printAggregate(double bound, bool lower, AggType aggtype, unsig
 		case AGGMAX: 	_out << "max("; break;
 		default: assert(false);
 	}
-	_out << "set_" << setnr << ").\n";
+	_out << "set_" << setnr << ")." << endl;
 }
 
 void EcnfPrinter::printAggregate(AggType aggtype, TsType arrow, unsigned int defnr, bool lower, int head, unsigned int setnr, double bound) {
@@ -403,7 +403,7 @@ void EcnfPrinter::printAggregate(AggType aggtype, TsType arrow, unsigned int def
 			break; 
 		default: assert(false);
 	}
-	_out << defnr << ' ' << (lower ? 'G' : 'L') << ' ' << head << ' ' << setnr << ' ' << bound << " 0\n";
+	_out << defnr << ' ' << (lower ? 'G' : 'L') << ' ' << head << ' ' << setnr << ' ' << bound << " 0" << endl;
 }
 
 void SimplePrinter::visit(const GroundTheory* g) {
@@ -425,7 +425,7 @@ void IDPPrinter::visit(const GroundTheory* g) {
 				if(m < g->clause(n).size()-1) _out << " | ";
 			}
 		}
-		_out << ".\n";
+		_out << "." << endl;
 	}
 	for(unsigned int n = 0; n < g->nrDefinitions(); ++n)
 		g->definition(n)->accept(this);
@@ -443,7 +443,7 @@ void EcnfPrinter::visit(const GroundTheory* g) {
 	for(unsigned int n = 0; n < g->nrClauses(); ++n) {
 		for(unsigned int m = 0; m < g->clause(n).size(); ++m)
 			_out << g->clause(n)[m] << ' ';
-		_out << "0\n";
+		_out << "0" << endl;
 	}
 	for(unsigned int n = 0; n < g->nrSets(); ++n) //NOTE: Print sets before aggregates!!
 		g->set(n)->accept(this);
@@ -454,11 +454,13 @@ void EcnfPrinter::visit(const GroundTheory* g) {
 	for(unsigned int n = 0; n < g->nrAggregates(); ++n)
 		g->aggregate(n)->accept(this);
 	//TODO: repeat above for fixpoint definitions
+	for(unsigned int n = 0; n < g->nrCPReifications(); ++n)
+		g->cpreification(n)->accept(this);
 }
 
 void IDPPrinter::visit(const GroundDefinition* d) {
 	printtab();
-	_out << "{\n";
+	_out << "{" << endl;
 	indent();
 	for(GroundDefinition::const_ruleiterator it = d->begin(); it != d->end(); ++it) {
 		printtab();
@@ -467,7 +469,7 @@ void IDPPrinter::visit(const GroundDefinition* d) {
 		(it->second)->accept(this);
 	}
 	unindent();
-	_out << "}\n";
+	_out << "}" << endl;
 }
 
 void EcnfPrinter::visit(const GroundDefinition* d) {
@@ -493,7 +495,7 @@ void IDPPrinter::visit(const PCGroundRuleBody* b) {
 		else
 			_out << "false";
 	}
-	_out << ".\n";
+	_out << "." << endl;
 }
 
 void EcnfPrinter::visit(const PCGroundRuleBody* b) {
@@ -501,7 +503,7 @@ void EcnfPrinter::visit(const PCGroundRuleBody* b) {
 	_out << "<- " << _currentdefnr << ' ' << _currenthead << ' ';
 	for(unsigned int n = 0; n < b->size(); ++n)
 		_out << b->literal(n) << ' ';
-	_out << "0\n";
+	_out << "0" << endl;
 }
 
 void IDPPrinter::visit(const AggGroundRuleBody* b) {
@@ -536,7 +538,7 @@ void IDPPrinter::visit(const GroundSet* s) {
 		if(s->weighted()) _out << ',' << s->weight(n) << ')';
 		if(n < s->size()-1) _out << "; ";
 	}
-	_out << " ]\n";
+	_out << " ]" << endl;
 }
 
 void EcnfPrinter::visit(const GroundSet* s) {
@@ -545,7 +547,7 @@ void EcnfPrinter::visit(const GroundSet* s) {
 		_out << ' ' << s->literal(n);
 		if(s->weighted()) _out << '=' << s->weight(n);
 	}
-	_out << " 0\n";
+	_out << " 0" << endl;
 }
 
 void IDPPrinter::visit(const CPReification* cpr) {
@@ -570,7 +572,95 @@ void IDPPrinter::visit(const CPReification* cpr) {
 	CPBound right = cpr->_body->right();
 	if(right._isvarid) printTerm(right._value._varid);
 	else _out << right._value._bound;
-	_out << ".\n";
+	_out << '.' << endl;
+}
+
+void EcnfPrinter::printCPReification(string type, int head, unsigned int left, CompType comp, int right) {
+	#warning "Might be dangerous to cast varids to bounds (unsigned int to int)";
+	_out << type << ' ' << head << ' ' << left << ' ' << comp << ' ' << right << " 0" << endl;
+}
+
+void EcnfPrinter::printCPReification(string type, int head, vector<unsigned int> left, CompType comp, int right) {
+	#warning "Might be dangerous to cast varids to bounds (unsigned int to int)";
+	_out << type << ' ' << head << ' ';
+	for(vector<unsigned int>::const_iterator it = left.begin(); it != left.end(); ++it)
+		_out << *it << ' ';
+	_out << comp << ' ' << right << " 0" << endl;
+}
+
+void EcnfPrinter::printCPReification(string type, int head, vector<unsigned int> left, vector<int> weights, CompType comp, int right) {
+	#warning "Might be dangerous to cast varids to bounds (unsigned int to int)";
+	_out << type << ' ' << head << ' ';
+	for(vector<unsigned int>::const_iterator it = left.begin(); it != left.end(); ++it)
+		_out << *it << ' ';
+	_out << " | ";
+	for(vector<int>::const_iterator it = weights.begin(); it != weights.end(); ++it)
+		_out << *it << ' ';
+	_out << comp << ' ' << right << " 0" << endl;
+}
+
+void EcnfPrinter::visit(const CPReification* cpr) {
+	CompType comp = cpr->_body->comp();
+	CPTerm* left = cpr->_body->left();
+	CPBound right = cpr->_body->right();
+	if(typeid(*left) == typeid(CPVarTerm)) {
+		CPVarTerm* term = dynamic_cast<CPVarTerm*>(left);
+		//TODO Print domain of left variable: INTVAR(DOM) varid ...
+		if(right._isvarid) { // CPBinaryRelVar
+			//TODO Print domain of right variable: INTVAR(DOM) varid ...
+			//_out << "BINTRT " << cpr->_head << ' ' << term->_varid << ' ' << comp << ' ' << right._value._varid << " 0" << endl;
+			printCPReification("BINTRT",cpr->_head,term->_varid,comp,right._value._varid);
+		}
+		else { // CPBinaryRel
+			//_out << "BINTRI " << cpr->_head << ' ' << term->_varid << ' ' << comp << ' ' << right._value._bound << " 0" << endl;
+			printCPReification("BINTRI",cpr->_head,term->_varid,comp,right._value._bound);
+		}
+	}
+	else if(typeid(*left) == typeid(CPSumTerm)) {
+		CPSumTerm* term = dynamic_cast<CPSumTerm*>(left);
+		//TODO Print domains of left variables: INTVAR(DOM) varid ...
+		if(right._isvarid) { // CPSumWithVar
+			//TODO Print domain of right variable: INTVAR(DOM) varid ...
+			//_out << "SUMSTRT " << cpr->_head << ' ';
+			//for(vector<unsigned int>::const_iterator it = term->_varids.begin(); it != term->_varids.end(); ++it)
+			//	_out << *it << ' ';
+			//_out << comp << ' ' << right._value._varid << " 0" << endl;
+			printCPReification("SUMSTRT",cpr->_head,term->_varids,comp,right._value._varid);
+		}
+		else { // CPSum
+			//_out << "SUMSTRI " << cpr->_head << ' ';
+			//for(vector<unsigned int>::const_iterator it = term->_varids.begin(); it != term->_varids.end(); ++it)
+			//	_out << *it << ' ';
+			//_out << comp << ' ' << right._value._bound << " 0" << endl;
+			printCPReification("SUMSTRI",cpr->_head,term->_varids,comp,right._value._bound);
+		}
+	}
+	else {
+		assert(typeid(*left) == typeid(CPWSumTerm));
+		CPWSumTerm* term = dynamic_cast<CPWSumTerm*>(left);
+		//TODO Print domains of left variables: INTVAR(DOM) varid ...
+		if(right._isvarid) { // CPSumWeightedWithVar
+			//TODO Print domain of right variable: INTVAR(DOM) varid ...
+			//_out << "SUMSTSIRT " << cpr->_head << ' ';
+			//for(vector<unsigned int>::const_iterator it = term->_varids.begin(); it != term->_varids.end(); ++it)
+			//	_out << *it << ' ';
+			//_out << " | ";
+			//for(vector<int>::const_iterator it = term->_weights.begin(); it != term->_weights.end(); ++it)
+			//	_out << *it << ' ';
+			//_out << comp << ' ' << right._value._varid << " 0" << endl;
+			printCPReification("SUMSTSIRT",cpr->_head,term->_varids,term->_weights,comp,right._value._varid);
+		}
+		else { // CPSumWeighted
+			//_out << "SUMSTSIRI " << cpr->_head << ' ';
+			//for(vector<unsigned int>::const_iterator it = term->_varids.begin(); it != term->_varids.end(); ++it)
+			//	_out << *it << ' ';
+			//_out << " | ";
+			//for(vector<int>::const_iterator it = term->_weights.begin(); it != term->_weights.end(); ++it)
+			//	_out << *it << ' ';
+			//_out << comp << ' ' << right._value._bound << " 0" << endl;
+			printCPReification("SUMSTSIRI",cpr->_head,term->_varids,term->_weights,comp,right._value._bound);
+		}
+	}
 }
 
 void IDPPrinter::visit(const CPSumTerm* cpt) {

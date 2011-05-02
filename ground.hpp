@@ -36,6 +36,28 @@ typedef compound* domelement; //repeated from vocabulary.hpp
 **********************************************/
 
 /*
+ * Set corresponding to a tseitin
+ */ 
+class TsSet {
+	private:
+		std::vector<int>	_setlits;		// All literals in the ground set
+		std::vector<double>	_litweights;	// For each literal a corresponding weight
+		std::vector<double>	_trueweights;	// The weights of the true literals in the set
+	public:
+		// Modifiers
+		void	setWeight(unsigned int n, double w)	{ _litweights[n] = w;	}
+		// Inspectors
+		std::vector<int>	literals()				const { return _setlits; 			}
+		std::vector<double>	weights()				const { return _litweights;			}
+		std::vector<double>	trueweights()			const { return _trueweights;		}
+		unsigned int		size() 					const { return _setlits.size();		}
+		bool				empty()					const { return _setlits.empty();	}
+		int					literal(unsigned int n)	const { return _setlits[n];			}
+		double				weight(unsigned int n)	const { return _litweights[n];		}
+	friend class GroundTranslator;
+};
+
+/*
  * A complete definition of a tseitin atom
 */
 class TsBody {
@@ -79,6 +101,15 @@ class AggTsBody : public TsBody {
 	friend class GroundTranslator;
 };
 
+/*
+ * Sets and terms that will be handled by a constraint solver
+ */
+
+class CPSet {
+	public:
+		std::vector<unsigned int> _varids;
+};
+
 class CPTerm {
 	protected:
 		virtual ~CPTerm() {	}
@@ -116,8 +147,6 @@ struct CPBound {
 	CPBound(bool isvarid, unsigned int varid): _isvarid(isvarid) { _value._varid = varid; }
 };
 
-enum CompType { CT_EQ, CT_NEQ, CT_LEQ, CT_GEQ, CT_LT, CT_GT };
-
 class CPTsBody : public TsBody {
 	private:
 		CPTerm*		_left;
@@ -129,28 +158,6 @@ class CPTsBody : public TsBody {
 		CPTerm*		left()	const { return _left;	}
 		CompType	comp()	const { return _comp;	}
 		CPBound		right()	const { return _right;	}
-	friend class GroundTranslator;
-};
-
-/*
- * Set corresponding to a tseitin
- */ 
-class TsSet {
-	private:
-		std::vector<int>	_setlits;		// All literals in the ground set
-		std::vector<double>	_litweights;	// For each literal a corresponding weight
-		std::vector<double>	_trueweights;	// The weights of the true literals in the set
-	public:
-		// Modifiers
-		void	setWeight(unsigned int n, double w)	{ _litweights[n] = w;	}
-		// Inspectors
-		std::vector<int>	literals()				const { return _setlits; 			}
-		std::vector<double>	weights()				const { return _litweights;			}
-		std::vector<double>	trueweights()			const { return _trueweights;		}
-		unsigned int		size() 					const { return _setlits.size();		}
-		bool				empty()					const { return _setlits.empty();	}
-		int					literal(unsigned int n)	const { return _setlits[n];			}
-		double				weight(unsigned int n)	const { return _litweights[n];		}
 	friend class GroundTranslator;
 };
 
@@ -228,7 +235,7 @@ class GroundTermTranslator {
 
 /************************************
 	Optimized grounding algorithm
-******************************domain******/
+************************************/
 
 class TermGrounder;
 class FormulaGrounder;

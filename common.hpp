@@ -60,12 +60,24 @@ extern bool isChar(int);
 extern bool isChar(double);
 extern bool isDouble(const std::string&);
 
-/** Return a string of n spaces **/
+/**
+ * string tabstring(unsigned int n)
+ * DESCRIPTION
+ * 		Return a string of n spaces.
+ */
 extern std::string tabstring(unsigned int n);
+
+/**
+ * CompType invertcomp(const CompType&)
+ * DESCRIPTION
+ * 		Invert a comparison operator.
+ */
+extern CompType invertcomp(const CompType&);
 
 /** Output operators for enum types **/
 extern std::ostream& operator<<(std::ostream&, const ElementType&);
 extern std::ostream& operator<<(std::ostream&, const AggType&);
 extern std::ostream& operator<<(std::ostream&, const TsType&);
+extern std::ostream& operator<<(std::ostream&, const CompType&);
 
 #endif

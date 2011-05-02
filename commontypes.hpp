@@ -10,6 +10,7 @@
 /** Enumeration types **/
 enum ElementType { ELINT, ELDOUBLE, ELSTRING, ELCOMPOUND };
 enum AggType { AGGCARD, AGGSUM, AGGPROD, AGGMIN, AGGMAX };
+enum CompType { CT_EQ, CT_NEQ, CT_LEQ, CT_GEQ, CT_LT, CT_GT };
 
 /*
  * Enumeration for the possible ways to define a tseitin atom in terms of the subformula it replaces.

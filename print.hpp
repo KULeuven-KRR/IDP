@@ -10,6 +10,7 @@
 #include <cstdio>
 #include <sstream>
 #include <string>
+#include <vector>
 
 #include "visitor.hpp"
 #include "commontypes.hpp"
@@ -129,7 +130,7 @@ class IDPPrinter : public Printer {
 		void visit(const GroundAggregate*);
 		void visit(const GroundSet*);
 
-		/* Constraint Programming */
+		// Constraint Programming
 		void visit(const CPReification*);
 		void visit(const CPSumTerm*);
 		void visit(const CPWSumTerm*);
@@ -142,6 +143,9 @@ class EcnfPrinter : public Printer {
 		unsigned int 	_currentdefnr;
 
 		void printAggregate(AggType aggtype, TsType arrow, unsigned int defnr, bool lower, int head, unsigned int setnr, double bound);
+		void printCPReification(std::string type, int head, unsigned int left, CompType comp, int right);
+		void printCPReification(std::string type, int head, std::vector<unsigned int> left, CompType comp, int right);
+		void printCPReification(std::string type, int head, std::vector<unsigned int> left, std::vector<int> weights, CompType comp, int right);
 
 	public:
 		void visit(const GroundTheory*);
@@ -150,6 +154,7 @@ class EcnfPrinter : public Printer {
 		void visit(const AggGroundRuleBody*);
 		void visit(const GroundAggregate*);
 		void visit(const GroundSet*);
+		void visit(const CPReification*);
 }; 
 
 #endif
