@@ -225,9 +225,12 @@ class GroundTermTranslator {
 		unsigned int	nextNumber();
 		unsigned int	addFunction(Function*);
 
+		bool 							contains(Function*,const std::vector<domelement>& args) const;
+		bool							contains(Function* func)		const;
 		Function*						function(unsigned int nr)		const { return _backfunctable[nr];		}
 		const std::vector<domelement>&	args(unsigned int nr)			const { return _backargstable[nr];		}
 		unsigned int					nrOffsets()						const { return _offset2function.size();	}
+		unsigned int					getOffset(Function* func)		const { return _function2offset.at(func);	}
 		Function*						getFunction(unsigned int nr)	const { return _offset2function[nr]; 	}
 		std::string						printTerm(unsigned int nr)		const;
 };

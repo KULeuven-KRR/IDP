@@ -1013,11 +1013,11 @@ TypedInfArg FastMXInference::execute(const vector<InfArg>& args, lua_State* L) c
 	TypedInfArg a; a._type = IAT_TABLE; a._value._table = new vector<TypedInfArg>();
 	if(sol->isSat()){
 		for(vector<MinisatID::Model*>::const_iterator modelit = sol->getModels().begin(); modelit != sol->getModels().end(); ++modelit) {
-cerr << "---Building new model---" << endl;
+//cerr << "---Building new model---" << endl;
 			AbstractStructure* mod = structure->clone();
 			set<PredInter*>	tobesorted1;
 			set<FuncInter*>	tobesorted2;
-cerr << "-Normal SAT part-" << endl;
+//cerr << "-SAT part-" << endl;
 			for(vector<MinisatID::Literal>::const_iterator literalit = (*modelit)->literalinterpretations.begin();
 					literalit != (*modelit)->literalinterpretations.end(); ++literalit) {
 				PFSymbol* pfs = grounding->translator()->symbol(((*literalit).getAtom().getValue()));
@@ -1030,18 +1030,18 @@ cerr << "-Normal SAT part-" << endl;
 					}
 					else {
 						Function* function = dynamic_cast<Function*>(pfs);
-if(!((*literalit).hasSign())) {
-	cerr << "Adding certainly true value " << args.back()._element._int << " for function " << function->name();
-} else {
-	cerr << "Adding certainly false value " << args.back()._element._int << " for function " << function->name();
-}
-cerr << " (literal " << (*literalit).getValue() << ")" << endl;
+//if(!((*literalit).hasSign())) {
+//	cerr << "Adding certainly true value " << args.back()._element._int << " for function " << function->name();
+//} else {
+//	cerr << "Adding certainly false value " << args.back()._element._int << " for function " << function->name();
+//}
+//cerr << " (literal " << (*literalit).getValue() << ")" << endl;
 						mod->inter(function)->add(args,!((*literalit).hasSign()),true);
 						tobesorted2.insert(mod->inter(function));
 					}
 				}
 			}
-cerr << "-CP part-" << endl;
+//cerr << "-CP part-" << endl;
 			for(vector<MinisatID::VariableEqValue>::const_iterator cpvarit = (*modelit)->variableassignments.begin();
 					cpvarit != (*modelit)->variableassignments.end(); ++cpvarit) {
 				Function* function = grounding->termtranslator()->function((*cpvarit).variable);
@@ -1050,7 +1050,7 @@ cerr << "-CP part-" << endl;
 					vector<TypedElement> args = ElementUtil::convert(vd);
 					TypedElement value((*cpvarit).value);
 					args.push_back(value);
-cerr << "Adding value " << args.back()._element._int << " for function " << function->name() << endl;
+//cerr << "Adding value " << args.back()._element._int << " for function " << function->name() << endl;
 					mod->inter(function)->add(args,true,true);
 					tobesorted2.insert(mod->inter(function));
 				}

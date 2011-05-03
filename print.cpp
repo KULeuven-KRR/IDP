@@ -399,11 +399,11 @@ void EcnfPrinter::printAggregate(AggType aggtype, TsType arrow, unsigned int def
 			_out << "C ";
 			break;
 		case TS_RULE: 
-			_out << "<- ";
+			_out << "<- " << defnr << ' ';
 			break; 
 		default: assert(false);
 	}
-	_out << defnr << ' ' << (lower ? 'G' : 'L') << ' ' << head << ' ' << setnr << ' ' << bound << " 0" << endl;
+	_out << (lower ? 'G' : 'L') << ' ' << head << ' ' << setnr << ' ' << bound << " 0" << endl;
 }
 
 void SimplePrinter::visit(const GroundTheory* g) {

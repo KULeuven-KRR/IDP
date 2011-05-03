@@ -210,6 +210,19 @@ unsigned int GroundTermTranslator::addFunction(Function* func) {
 	}
 }
 
+bool GroundTermTranslator::contains(Function* func, const vector<domelement>& args) const {
+	if(contains(func)) {
+		unsigned int offset = getOffset(func);
+		map<vector<domelement>,unsigned int>::const_iterator jt = _table[offset].lower_bound(args);
+		return jt != _table[offset].end() && jt->first == args;
+	}
+	return false;
+}
+
+bool GroundTermTranslator::contains(Function* func)	const {
+	return _function2offset.find(func) != _function2offset.end();
+}
+
 string GroundTermTranslator::printTerm(unsigned int nr) const {
 	stringstream s;
 	if(nr >= _backfunctable.size()) {
@@ -543,6 +556,8 @@ int AggGrounder::finishCard(double truevalue, double boundvalue, int setnr) cons
 				return _sign ? _true : _false;
 			}
 			break;
+		default: 
+			assert(false);
 	}
 	if(simplify) {
 		if(_doublenegtseitin) {
@@ -605,6 +620,8 @@ int AggGrounder::finish(double boundvalue, double newboundvalue, double minpossv
 			else if(boundvalue <= minpossvalue)
 				return _sign ? _false : _true;
 			break;
+		default:
+			assert(false);
 	}
 	if(_doublenegtseitin)
 		return handleDoubleNegation(newboundvalue,setnr);
@@ -1211,11 +1228,11 @@ set<const Function*> GrounderFactory::findCPFunctions(const AbstractTheory* theo
 		}
 		if(groundtocp) _cpfunctions.insert(function);
 	}
-cerr << "Function that could be handled by constraint solver: ";
-for(set<const Function*>::const_iterator it = _cpfunctions.begin(); it != _cpfunctions.end(); ++it) {
-	cerr << (*it)->to_string() << " ";
-}
-cerr << endl;
+//cerr << "Function that could be handled by constraint solver: ";
+//for(set<const Function*>::const_iterator it = _cpfunctions.begin(); it != _cpfunctions.end(); ++it) {
+//	cerr << (*it)->to_string() << " ";
+//}
+//cerr << endl;
 	return _cpfunctions;
 }
 

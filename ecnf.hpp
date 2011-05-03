@@ -304,6 +304,7 @@ class AbstractGroundTheory : public AbstractTheory {
 
 		std::set<int>			_printedtseitins;	// Tseitin atoms produced by the translator that occur in the theory.
 		std::set<int>			_printedsets;		// Set numbers produced by the translator that occur in the theory.
+		std::set<int>			_printedconstraints; // Atoms for which a connection to CP constraints are added.
 
 		const 	GroundTranslator& getTranslator() const	{ return *_translator; }
 				GroundTranslator& getTranslator() 		{ return *_translator; }

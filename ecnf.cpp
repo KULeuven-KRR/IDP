@@ -322,6 +322,29 @@ void AbstractGroundTheory::transformForAdd(const vector<int>& vi, VIType /*vit*/
 				}
 			}
 		}
+		else {
+			//TODO
+			//if atom's value is determined by CP-solver and used by the SAT-solver {
+			//	add connection constraint.
+			//}
+			//PROBLEM: this does not make sense in an "idp grounding", right?
+			PFSymbol* pfs = _translator->symbol(atom);
+			if(not pfs->ispred() && _printedconstraints.find(atom) == _printedconstraints.end()) {
+				_printedconstraints.insert(atom);
+				vector<domelement> args = _translator->args(atom);
+				int value = args.back()->_args[0]._element._int;
+				args.pop_back();
+				Function* func = dynamic_cast<Function*>(pfs);
+				if(_termtranslator->contains(func,args)) {
+					unsigned int varid = _termtranslator->translate(func,ElementUtil::convert(args)); //FIXME conversion is nasty...
+					CPTerm* leftterm = new CPVarTerm(varid);
+					CPBound rightbound(false,value);
+					vector<int> cl(2,-atom);
+					cl[1] = _translator->translate(leftterm,CT_EQ,rightbound,TS_IMPL);
+					addClause(cl,true);
+				}
+			}
+		}
 	}
 }
 
@@ -718,7 +741,7 @@ void SolverTheory::addCPVariable(unsigned int varid) {
 	if(_addedvarids.find(varid) == _addedvarids.end()) {
 		_addedvarids.insert(varid);
 		Function* function = _termtranslator->function(varid);
-cerr << "Adding domain "; 
+//cerr << "Adding domain "; 
 		SortTable* domain = _structure->inter(function->outsort());
 		assert(domain->finite()); 		//TODO Right?
 		assert(domain->type() == ELINT); //FIXME ... so for this kind of table first() and last() are always defined?
@@ -729,7 +752,7 @@ cerr << "Adding domain ";
 		assert(maxvalue > minvalue);
 		unsigned int difference = maxvalue - minvalue;
 		if(difference + 1 == domain->size()) {
-cerr << "[" << minvalue << "," << maxvalue << "]";
+//cerr << "[" << minvalue << "," << maxvalue << "]";
 			// the domain is a complete range from minvalue to maxvalue.
 			MinisatID::CPIntVarRange cpvar;
 			cpvar.varID = varid;
@@ -741,17 +764,17 @@ cerr << "[" << minvalue << "," << maxvalue << "]";
 			// the domain is not a complete range.
 			MinisatID::CPIntVarEnum cpvar;
 			cpvar.varID = varid;
-cerr << "{ ";
+//cerr << "{ ";
 			for(unsigned int m = 0; m < domain->size(); ++m) {
 				Element element = domain->element(m);
 				int value = element._int;
-cerr << value << "; ";
+//cerr << value << "; ";
 				cpvar.values.push_back(value);
 			}
-cerr << " }";
+//cerr << " }";
 			getSolver().add(cpvar);
 		}
-cerr << " for function " << function->name() << " (varid = " << varid << ")" << endl;
+//cerr << " for function " << function->name() << " (varid = " << varid << ")" << endl;
 	}
 }
 
@@ -797,26 +820,26 @@ class DomelementEquality {
  * 		This should not be done for functions that are handled by the constraint solver.
  */
 void SolverTheory::addFuncConstraints() {
-cerr << "Functions known by translator: ";
-for(unsigned int n = 0; n < getTranslator().nrOffsets(); ++n) {
-	PFSymbol* pfs = getTranslator().getSymbol(n);
-	if(not pfs->ispred()) cerr << pfs->to_string() << " ";
-}
-cerr << endl;
+//cerr << "Functions known by translator: ";
+//for(unsigned int n = 0; n < getTranslator().nrOffsets(); ++n) {
+//	PFSymbol* pfs = getTranslator().getSymbol(n);
+//	if(not pfs->ispred()) cerr << pfs->to_string() << ' ';
+//}
+//cerr << endl;
 	set<Function*> knownbytt;
-cerr << "Functions known by termtranslator: ";
+//cerr << "Functions known by termtranslator: ";
 	for(unsigned int n = 0; n < _termtranslator->nrOffsets();++n) {
 		knownbytt.insert(_termtranslator->getFunction(n));
-cerr << _termtranslator->getFunction(n)->to_string() << " ";
+//cerr << _termtranslator->getFunction(n)->to_string() << ' ';
 	}
-cerr << endl;
+//cerr << endl;
 	for(unsigned int n = 0; n < getTranslator().nrOffsets(); ++n) {
 		PFSymbol* pfs = getTranslator().getSymbol(n);
 		const map<vector<domelement>,int>& tuples = getTranslator().getTuples(n);
 		if(!(pfs->ispred()) && !(tuples.empty())) {
 			Function* f = dynamic_cast<Function*>(pfs);
 			//if(knownbytt.find(f) == knownbytt.end()) {
-cerr << "Adding function constraints for " << f->to_string() << ": " << endl;
+//cerr << "Adding function constraints for " << f->to_string() << ": " << endl;
 				SortTable* st = _structure->inter(f->outsort());
 				DomelementEquality de(f->arity());
 				vector<vector<int> > sets(1);
@@ -830,20 +853,20 @@ cerr << "Adding function constraints for " << f->to_string() << ": " << endl;
 					vector<double> lw(sets[s].size(),1);
 					vector<double> tw(0);
 					int setnr = getTranslator().translateSet(sets[s],lw,tw);
-cerr << " set_" << setnr << " = [ ";
-for(unsigned int n = 0; n < sets[s].size(); ++n) {
-	cerr << getTranslator().printAtom(sets[s][n]);
-	if(n != sets[s].size()-1) cerr << "; "; 
-}
-cerr << "] " << endl;
+//cerr << " set_" << setnr << " = [ ";
+//for(unsigned int n = 0; n < sets[s].size(); ++n) {
+//	cerr << getTranslator().printAtom(sets[s][n]);
+//	if(n != sets[s].size()-1) cerr << "; "; 
+//}
+//cerr << "] " << endl;
 					int tseitin;
 					if(f->partial() || !(st->finite()) || st->size() != sets[s].size()) {
 						tseitin = getTranslator().translate(1,'>',false,AGGCARD,setnr,TS_IMPL);
-cerr << " 1 >= #(set_" << setnr << ")" << endl;
+//cerr << " 1 >= #(set_" << setnr << ")" << endl;
 					}
 					else {
 						tseitin = getTranslator().translate(1,'=',true,AGGCARD,setnr,TS_IMPL);
-cerr << " 1 = #(set_" << setnr << ")" << endl;
+//cerr << " 1 = #(set_" << setnr << ")" << endl;
 					}
 					addUnitClause(tseitin);
 				}
