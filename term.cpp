@@ -220,6 +220,7 @@ ostream& AggTerm::put(ostream& output) const {
 		case AGG_PROD:	output << "prod"; break;
 		case AGG_MIN:	output << "min"; break;
 		case AGG_MAX:	output << "max"; break;
+		default: assert(false);
 	}
 	output << *subsets()[0];
 	return output;

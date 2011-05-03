@@ -1092,8 +1092,8 @@ namespace FormulaUtils {
 
 	bool monotone(const AggForm* af) {
 		switch(af->comp()) {
-			case '=' : return false;
-			case '<' : {
+			case CT_EQ: case CT_NEQ: return false;
+			case CT_LT: case CT_LEQ: {
 				switch(af->right()->function()) {
 					case AGG_CARD : case AGG_MAX: return af->sign();
 					case AGG_MIN : return !af->sign();
@@ -1102,7 +1102,7 @@ namespace FormulaUtils {
 				}
 				break;
 			}
-			case '>' : { 
+			case CT_GT: case CT_GEQ: { 
 				switch(af->right()->function()) {
 					case AGG_CARD : case AGG_MAX: return !af->sign();
 					case AGG_MIN : return af->sign();
@@ -1118,8 +1118,8 @@ namespace FormulaUtils {
 
 	bool antimonotone(const AggForm* af) {
 		switch(af->comp()) {
-			case '=' : return false;
-			case '<' : { 
+			case CT_EQ: case CT_NEQ: return false;
+			case CT_LT: case CT_LEQ: { 
 				switch(af->right()->function()) {
 					case AGG_CARD : case AGG_MAX: return !af->sign();
 					case AGG_MIN : return af->sign();
@@ -1128,7 +1128,7 @@ namespace FormulaUtils {
 				}
 				break;
 			}
-			case '>' : {
+			case CT_GT: case CT_GEQ: {
 				switch(af->right()->function()) {
 					case AGG_CARD : case AGG_MAX: return af->sign();
 					case AGG_MIN : return !af->sign();

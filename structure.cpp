@@ -888,6 +888,14 @@ bool StrictWeakNTupleEquality::operator()(const ElementTuple& t1, const ElementT
 	return true;
 }
 
+bool StrictWeakNTupleOrdering::operator()(const ElementTuple& t1, const ElementTuple& t2) const {
+	for(unsigned int n = 0; n < _arity; ++n) {
+		if(*(t1[n]) < *(t2[n])) return true;
+		else if(*(t1[n]) > *(t2[n])) return false;
+	}
+	return false;
+}
+
 
 FuncInternalPredTable::FuncInternalPredTable(FuncTable* table, bool linked) : 
 	InternalPredTable(), _table(table), _linked(linked) { }
@@ -2866,12 +2874,14 @@ void Structure::vocabulary(Vocabulary* v) {
 	// Create empty tables for new symbols
 	for(map<string,set<Sort*> >::const_iterator it = _vocabulary->firstsort(); it != _vocabulary->lastsort(); ++it) {
 		for(set<Sort*>::const_iterator jt = it->second.begin(); jt != it->second.end(); ++jt) {
-			if(_sortinter.find(*jt) == _sortinter.end()) {
-				SortTable* st = new SortTable(new EnumeratedInternalSortTable());
-				_sortinter[*jt] = st;
-				vector<SortTable*> univ(1,st);
-				PredTable* pt = new PredTable(new FullInternalPredTable(),Universe(univ));
-				_predinter[(*jt)->pred()] = new PredInter(pt,true);
+			if(!(*jt)->builtin()) {
+				if(_sortinter.find(*jt) == _sortinter.end()) {
+					SortTable* st = new SortTable(new EnumeratedInternalSortTable());
+					_sortinter[*jt] = st;
+					vector<SortTable*> univ(1,st);
+					PredTable* pt = new PredTable(new FullInternalPredTable(),Universe(univ));
+					_predinter[(*jt)->pred()] = new PredInter(pt,true);
+				}
 			}
 		}
 	}
@@ -2881,7 +2891,7 @@ void Structure::vocabulary(Vocabulary* v) {
 			if(_predinter.find(*jt) == _predinter.end()) {
 				vector<SortTable*> univ;
 				for(vector<Sort*>::const_iterator kt = (*jt)->sorts().begin(); kt != (*jt)->sorts().end(); ++kt) {
-					univ.push_back(_sortinter[*kt]);
+					univ.push_back(inter(*kt));
 				}
 				_predinter[*jt] = TableUtils::leastPredInter(Universe(univ));
 			}
@@ -2893,7 +2903,7 @@ void Structure::vocabulary(Vocabulary* v) {
 			if(_funcinter.find(*jt) == _funcinter.end()) {
 				vector<SortTable*> univ;
 				for(vector<Sort*>::const_iterator kt = (*jt)->sorts().begin(); kt != (*jt)->sorts().end(); ++kt) {
-					univ.push_back(_sortinter[*kt]);
+					univ.push_back(inter(*kt));
 				}
 				_funcinter[(*jt)] = TableUtils::leastFuncInter(Universe(univ));
 			}
@@ -3005,9 +3015,9 @@ void Structure::autocomplete() {
 				}
 				notextend.erase(e);
 			}
-			SortTable* st = _sortinter[s];
+			SortTable* st = inter(s);
 			for(vector<Sort*>::const_iterator kt = toextend.begin(); kt != toextend.end(); ++kt) {
-				SortTable* kst = _sortinter[*kt];
+				SortTable* kst = inter(*kt);
 				if(st->approxfinite()) {
 					for(SortIterator lt = st->sortbegin(); lt.hasNext(); ++lt) kst->add(*lt);
 				}

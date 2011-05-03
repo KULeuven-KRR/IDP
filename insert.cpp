@@ -119,7 +119,7 @@ Rule* SortDeriver::visit(Rule* r) {
 			_changed = true;
 		}
 	}
-	traverse(r->body());
+	r->body()->accept(this);
 	return r;
 }
 
@@ -148,7 +148,7 @@ Term* SortDeriver::visit(FuncTerm* ft) {
 
 	// At first visit, insert the terms over overloaded functions
 	if(f->overloaded()) {
-		if(_firstvisit || _assertsort != _overloadedterms[ft]) {
+		if(_firstvisit || _overloadedterms.find(ft) == _overloadedterms.end() || _assertsort != _overloadedterms[ft]) {
 			_changed = true;
 			_overloadedterms[ft] = _assertsort;
 		}
@@ -256,7 +256,8 @@ void SortDeriver::run(Formula* f) {
 }
 
 void SortDeriver::run(Rule* r) {
-	// Set the sort of the variables in the head
+	// Set the sort of the terms in the head
+	// FIXME: if the terms in the head already have a sort, replace it by the intersection of the headsort.
 	vector<Sort*>::const_iterator jt = r->head()->symbol()->sorts().begin();
 	for(vector<Term*>::const_iterator it = r->head()->subterms().begin(); it != r->head()->subterms().end(); ++it, ++jt) 
 		(*it)->sort(*jt);
@@ -1015,12 +1016,45 @@ void Insert::closestructure() {
 }
 
 void Insert::openprocedure(const string& name, YYLTYPE l) {
+	// open block
 	openblock();
 	ParseInfo pi = parseinfo(l);
 	UserProcedure* p = procedureInScope(name,pi);
 	if(p) Error::multdeclproc(name,pi,p->pi());
 	_currprocedure = new UserProcedure(name,pi,l.descr);
 	_currspace->add(_currprocedure);
+
+	// include the namespaces and vocabularies in scope
+	for(vector<Namespace*>::const_iterator it = _usingspace.begin(); it != _usingspace.end(); ++it) {
+		if(!(*it)->isGlobal()) {
+			stringstream sstr;
+			for(map<string,UserProcedure*>::const_iterator jt = (*it)->procedures().begin(); 
+				jt != (*it)->procedures().end(); ++jt) {
+				sstr << "local " << jt->second->name() << " = ";
+				(*it)->putluaname(sstr);
+				sstr << '.' << jt->second->name() << '\n';
+			}
+			for(map<string,Vocabulary*>::const_iterator jt = (*it)->vocabularies().begin(); 
+				jt != (*it)->vocabularies().end(); ++jt) {
+				sstr << "local " << jt->second->name() << " = ";
+				(*it)->putluaname(sstr);
+				sstr << '.' << jt->second->name() << '\n';
+			}
+			for(map<string,AbstractTheory*>::const_iterator jt = (*it)->theories().begin(); 
+				jt != (*it)->theories().end(); ++jt) {
+				sstr << "local " << jt->second->name() << " = ";
+				(*it)->putluaname(sstr);
+				sstr << '.' << jt->second->name() << '\n';
+			}
+			for(map<string,AbstractStructure*>::const_iterator jt = (*it)->structures().begin(); 
+				jt != (*it)->structures().end(); ++jt) {
+				sstr << "local " << jt->second->name() << " = ";
+				(*it)->putluaname(sstr);
+				sstr << '.' << jt->second->name() << '\n';
+			}
+			_currprocedure->add(sstr.str());
+		}
+	}
 }
 
 void Insert::closeprocedure(stringstream* chunk) {

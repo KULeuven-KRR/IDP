@@ -895,6 +895,70 @@ InternalArgument domainiterator(const vector<InternalArgument>& args, lua_State*
 	return ia;
 }
 
+InternalArgument changevocabulary(const vector<InternalArgument>& args, lua_State* ) {
+	AbstractStructure* s = args[0].structure();
+	Vocabulary* v = args[1].vocabulary();
+	s->vocabulary(v);
+	InternalArgument ia; ia._type = AT_NIL;
+	return ia;
+}
+
+InternalArgument maketrue(const vector<InternalArgument>& args, lua_State* ) {
+	PredInter* pri = args[0]._value._predinter;
+	ElementTuple* tup = args[1]._value._tuple;
+	pri->makeTrue(*tup);
+	InternalArgument ia; ia._type = AT_NIL;
+	return ia;
+}
+
+InternalArgument maketabtrue(const vector<InternalArgument>& args, lua_State* L) {
+	PredInter* pri = args[0]._value._predinter;
+	vector<InternalArgument>* tab = args[1]._value._table;
+	ElementTuple tup;
+	for(vector<InternalArgument>::const_iterator it = tab->begin(); it != tab->end(); ++it) {
+		switch(it->_type) {
+			case AT_INT: tup.push_back(DomainElementFactory::instance()->create(it->_value._int)); break;
+			case AT_DOUBLE: tup.push_back(DomainElementFactory::instance()->create(it->_value._double)); break;
+			case AT_STRING: tup.push_back(DomainElementFactory::instance()->create(it->_value._string)); break;
+			case AT_COMPOUND: tup.push_back(DomainElementFactory::instance()->create(it->_value._compound)); break;
+			default:
+				lua_pushstring(L,"Wrong value in a tuple. Expected an integer, double, string, or compound");
+				return lua_error(L);
+		}
+	}
+	pri->makeTrue(tup);
+	InternalArgument ia; ia._type = AT_NIL;
+	return ia;
+}
+
+InternalArgument makefalse(const vector<InternalArgument>& args, lua_State* ) {
+	PredInter* pri = args[0]._value._predinter;
+	ElementTuple* tup = args[1]._value._tuple;
+	pri->makeFalse(*tup);
+	InternalArgument ia; ia._type = AT_NIL;
+	return ia;
+}
+
+InternalArgument maketabfalse(const vector<InternalArgument>& args, lua_State* L) {
+	PredInter* pri = args[0]._value._predinter;
+	vector<InternalArgument>* tab = args[1]._value._table;
+	ElementTuple tup;
+	for(vector<InternalArgument>::const_iterator it = tab->begin(); it != tab->end(); ++it) {
+		switch(it->_type) {
+			case AT_INT: tup.push_back(DomainElementFactory::instance()->create(it->_value._int)); break;
+			case AT_DOUBLE: tup.push_back(DomainElementFactory::instance()->create(it->_value._double)); break;
+			case AT_STRING: tup.push_back(DomainElementFactory::instance()->create(it->_value._string)); break;
+			case AT_COMPOUND: tup.push_back(DomainElementFactory::instance()->create(it->_value._compound)); break;
+			default:
+				lua_pushstring(L,"Wrong value in a tuple. Expected an integer, double, string, or compound");
+				return lua_error(L);
+		}
+	}
+	pri->makeFalse(tup);
+	InternalArgument ia; ia._type = AT_NIL;
+	return ia;
+}
+
 /**************************
 	Connection with Lua
 **************************/
@@ -2025,7 +2089,7 @@ namespace LuaConnection {
 						break;
 					}
 				default:
-					lua_pushstring(L,"Only numbers, strings, and compounds as arguments of a function interpretation");
+					lua_pushstring(L,"Only numbers, strings, and compounds can be arguments of a predicate table");
 					lua_error(L);
 					return 0;
 			}
@@ -2066,7 +2130,7 @@ namespace LuaConnection {
 					case AT_COMPOUND:
 						tuple.push_back(DomainElementFactory::instance()->create(arg._value._compound)); break;
 					default:
-						lua_pushstring(L,"Only numbers, strings, and compounds as arguments of a function interpretation");
+						lua_pushstring(L,"Only numbers, strings, and compounds can be arguments of a function interpretation");
 						lua_error(L);
 						return 0;
 				}
@@ -2480,6 +2544,7 @@ namespace LuaConnection {
 		vector<ArgType> vtabitertuple(2); vtabitertuple[0] = AT_TABLEITERATOR; vtabitertuple[1] = AT_TUPLE;
 		vector<ArgType> vtheoopt(2); vtheoopt[0] = AT_THEORY; vtheoopt[1] = AT_OPTIONS;
 		vector<ArgType> vstructopt(2); vstructopt[0] = AT_STRUCTURE; vstructopt[1] = AT_OPTIONS;
+		vector<ArgType> vstructvoc(2); vstructvoc[0] = AT_STRUCTURE; vstructvoc[1] = AT_VOCABULARY;
 		vector<ArgType> vvocopt(2); vvocopt[0] = AT_VOCABULARY; vvocopt[1] = AT_OPTIONS;
 		vector<ArgType> voptopt(2); voptopt[0] = AT_OPTIONS; voptopt[1] = AT_OPTIONS;
 		vector<ArgType> vspaceopt(2); vspaceopt[0] = AT_NAMESPACE; vspaceopt[1] = AT_OPTIONS;
@@ -2488,6 +2553,8 @@ namespace LuaConnection {
 		vector<ArgType> vdomiterdouble(2); vdomiterdouble[0] = AT_DOMAINITERATOR; vdomiterdouble[1] = AT_DOUBLE;
 		vector<ArgType> vdomiterstring(2); vdomiterstring[0] = AT_DOMAINITERATOR; vdomiterstring[1] = AT_STRING;
 		vector<ArgType> vdomitercomp(2); vdomitercomp[0] = AT_DOMAINITERATOR; vdomitercomp[1] = AT_COMPOUND;
+		vector<ArgType> vpritab(2); vpritab[0] = AT_PREDINTER; vpritab[1] = AT_TABLE;
+		vector<ArgType> vpritup(2); vpritup[0] = AT_PREDINTER; vpritup[1] = AT_TUPLE;
 		vector<ArgType> vtheostructopt(3); 
 			vtheostructopt[0] = AT_THEORY; 
 			vtheostructopt[1] = AT_STRUCTURE; 
@@ -2519,6 +2586,11 @@ namespace LuaConnection {
 		addInternalProcedure("deref_and_increment",vdomitercomp,&domderefandincrement);
 		addInternalProcedure("tableiterator",vpredtable,&tableiterator);
 		addInternalProcedure("domainiterator",vdomain,&domainiterator);
+		addInternalProcedure("changevocabulary",vstructvoc,&changevocabulary);
+		addInternalProcedure("maketrue",vpritab,&maketabtrue);
+		addInternalProcedure("maketrue",vpritup,&maketrue);
+		addInternalProcedure("makefalse",vpritab,&maketabfalse);
+		addInternalProcedure("makefalse",vpritup,&makefalse);
 		
 		// Add the internal procedures to lua
 		lua_getglobal(L,"idp_intern");

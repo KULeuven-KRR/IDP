@@ -72,8 +72,12 @@ class Namespace {
 		Options*					options(const std::string&)		const;
 		UserProcedure*				procedure(const std::string&)	const;
 
-		const std::map<std::string,UserProcedure*>&	procedures()	const { return _procedures;	}
-		const std::map<std::string,Namespace*>&		subspaces()		const { return _subspaces;	}
+		const std::map<std::string,UserProcedure*>&		procedures()	const { return _procedures;		}
+		const std::map<std::string,Namespace*>&			subspaces()		const { return _subspaces;		}
+		const std::map<std::string,Vocabulary*>&		vocabularies()	const { return _vocabularies;	}
+		const std::map<std::string,AbstractStructure*>&	structures()	const { return _structures;		}
+		const std::map<std::string,AbstractTheory*>&	theories()		const { return _theories;		}
+		const std::map<std::string,Options*>&			options()		const { return _options;		}
 
 		// Mutators	
 		void	add(Vocabulary* v);
@@ -85,6 +89,7 @@ class Namespace {
 
 		// Output
 		std::ostream& putname(std::ostream&) const;
+		std::ostream& putluaname(std::ostream&) const;
 };
 
 #endif

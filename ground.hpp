@@ -29,6 +29,7 @@ class InstanceChecker;
 class SortTable;
 class DomainElement;
 class Options;
+class StrictWeakTupleOrdering;
 
 /**********************************************
 	Translate from ground atoms to numbers
@@ -156,7 +157,7 @@ class TsSet {
  */
 class GroundTranslator {
 	private:
-		std::vector<std::map<std::vector<const DomainElement*>,int> >	_table;			// map atoms to integers
+		std::vector<std::map<std::vector<const DomainElement*>,int,StrictWeakTupleOrdering> >	_table;			// map atoms to integers
 		std::vector<PFSymbol*>								_symboffsets;	// map integer to symbol
 		std::vector<PFSymbol*>								_backsymbtable;	// map integer to the symbol of its corresponding atom
 		std::vector<std::vector<const DomainElement*> >				_backargstable;	// map integer to the terms of its corresponding atom
@@ -190,7 +191,7 @@ class GroundTranslator {
 		TsSet&											groundset(int nr)					{ return _sets[nr];						}
 		unsigned int									nrOffsets()					const	{ return _symboffsets.size();			}
 		PFSymbol*										getSymbol(unsigned int n)	const	{ return _symboffsets[n];				}
-		const std::map<std::vector<const DomainElement*>,int>&	getTuples(unsigned int n)	const	{ return _table[n];						}
+		const std::map<std::vector<const DomainElement*>,int,StrictWeakTupleOrdering>&	getTuples(unsigned int n)	const	{ return _table[n];						}
 
 		std::string	printAtom(int nr)	const;
 };
@@ -200,7 +201,7 @@ class GroundTranslator {
  */
 class GroundTermTranslator {
 	private:
-		std::vector<std::map<std::vector<const DomainElement*>,unsigned int> >	_table;			// map terms to integers
+		std::vector<std::map<std::vector<const DomainElement*>,unsigned int,StrictWeakTupleOrdering> >	_table;			// map terms to integers
 		std::vector<Function*>											_backfunctable;	// map integer to the symbol of its corresponding term
 		std::vector<std::vector<const DomainElement*> >							_backargstable;	// map integer to the terms of its corresponding term
 		
@@ -225,7 +226,7 @@ class GroundTermTranslator {
 
 /************************************
 	Optimized grounding algorithm
-******************************domain******/
+************************************/
 
 class TermGrounder;
 class FormulaGrounder;

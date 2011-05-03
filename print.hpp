@@ -154,15 +154,19 @@ class IDPPrinter : public Printer {
 		void visit(const CPWSumTerm*);
 		void visit(const CPVarTerm*);
 };
-/*
+
 class EcnfPrinter : public Printer {
 	private:
 		int				_currenthead;
 		unsigned int 	_currentdefnr;
 
-		void printAggregate(AggType aggtype, TsType arrow, unsigned int defnr, bool lower, int head, unsigned int setnr, double bound);
+		void printAggregate(AggFunction aggtype, TsType arrow, unsigned int defnr, bool lower, int head, unsigned int setnr, double bound);
 
 	public:
+		std::string print(const Vocabulary*);
+		std::string print(const AbstractStructure*);
+		std::string print(const Namespace*);
+
 		void visit(const GroundTheory*);
 		void visit(const GroundDefinition*);
 		void visit(const PCGroundRuleBody*);
@@ -170,5 +174,5 @@ class EcnfPrinter : public Printer {
 		void visit(const GroundAggregate*);
 		void visit(const GroundSet*);
 }; 
-*/
+
 #endif

@@ -101,10 +101,29 @@ procedure ground(T,S,Opts) {
 	return idp_intern.ground(clonetheo,S,Opts) 
 }
 
+/**
+ * Change the vocabulary of a structure S to vocabulary V
+ * If some symbol occurs both in V and in the previous vocabulary of S, its interpretation in S is kept.
+ * For all symbols that belong to V but not to the previous vocabulary of S, 
+ * the interpretation in S is initialized to the least precise interpretation.
+ */
+procedure changevocabulary(S,V) {
+	idp_intern.changevocabulary(S,V)
+}
 
+/**
+ * Make a tuple true in a predicate interpretation
+ */
+procedure maketrue(inter,tuple) {
+	idp_intern.maketrue(inter,tuple)
+}
 
-
-
+/**
+ * Make a tuple false in a predicate interpretation
+ */
+procedure makefalse(inter,tuple) {
+	idp_intern.makefalse(inter,tuple)
+}
 
 
 

@@ -818,46 +818,67 @@ void SolverTheory::addPCRule(int defnr, int head, PCTsBody* tsb) {
 	addPCRule(defnr,head,tsb->body(),tsb->conj());
 }
 
-class DomelementEquality {
-	private:
-		unsigned int	_arity;
-	public:
-		DomelementEquality(unsigned int arity) : _arity(arity) { }
-		bool operator()(const vector<const DomainElement*>& v1, const vector<const DomainElement*>& v2) {
-			for(unsigned int n = 0; n < _arity; ++n) {
-				if(v1[n] != v2[n]) return false;
-			}
-			return true;
-		}
-};
-
 /*
- * void SolverTheory::addFuncConstraints()
- * DESCRIPTION
  *		Adds constraints to the theory that state that each of the functions that occur in the theory is indeed a function.
  *		This method should be called before running the SAT solver and after grounding.
  */
 void SolverTheory::addFuncConstraints() {
 	for(unsigned int n = 0; n < getTranslator().nrOffsets(); ++n) {
 		PFSymbol* pfs = getTranslator().getSymbol(n);
-		const map<vector<const DomainElement*>,int>& tuples = getTranslator().getTuples(n);
+		const map<vector<const DomainElement*>,int,StrictWeakTupleOrdering>& tuples = getTranslator().getTuples(n);
 		if((typeid(*pfs) == typeid(Function))  && !(tuples.empty())) {
 			Function* f = dynamic_cast<Function*>(pfs);
+			StrictWeakNTupleEquality de(f->arity());
+			StrictWeakNTupleOrdering ds(f->arity());
+
+			const PredTable* ct = _structure->inter(f)->graphinter()->ct();
+			const PredTable* pt = _structure->inter(f)->graphinter()->pt();
 			SortTable* st = _structure->inter(f->outsort());
-			DomelementEquality de(f->arity());
-			vector<vector<int> > sets(1);
-			map<vector<const DomainElement*>,int>::const_iterator pit = tuples.begin();
-			for(map<vector<const DomainElement*>,int>::const_iterator it = tuples.begin(); it != tuples.end(); ++it) {
-				if(de(it->first,pit->first)) sets.back().push_back(it->second);
-				else sets.push_back(vector<int>(1,it->second));
-				pit = it;
+
+			ElementTuple input(f->arity(),0);
+			TableIterator tit = ct->begin();
+			SortIterator sit = st->sortbegin();
+			vector<vector<int> > sets;
+			vector<bool> weak;
+			for(map<vector<const DomainElement*>,int,StrictWeakTupleOrdering>::const_iterator it = tuples.begin(); it != tuples.end(); ) {
+				if(de(it->first,input)) {
+					sets.back().push_back(it->second);
+					while(*sit != it->first.back()) {
+						ElementTuple temp = input; temp.push_back(*sit);
+						if(pt->contains(temp)) {
+							weak.back() = true;
+							break;
+						}
+						++sit;
+					}
+					++it;
+					if(sit.hasNext()) ++sit;
+				}
+				else {
+					if(!sets.empty() && sit.hasNext()) weak.back() = true;
+					if(tit.hasNext()) {
+						const ElementTuple& tuple = *tit;
+						if(de(tuple,it->first)) {
+							do { ++it; } while(it != tuples.end() && de(tuple,it->first));
+							continue;
+						}
+						else if(ds(tuple,it->first)) {
+							do { ++tit; } while(tit.hasNext() && ds(*tit,it->first));
+							continue;
+						}
+					}
+					sets.push_back(vector<int>(0));
+					weak.push_back(false);
+					input = it->first; input.pop_back();
+					sit = st->sortbegin();
+				}
 			}
 			for(unsigned int s = 0; s < sets.size(); ++s) {
 				vector<double> lw(sets[s].size(),1);
 				vector<double> tw(0);
 				int setnr = getTranslator().translateSet(sets[s],lw,tw);
 				int tseitin;
-				if(f->partial() || !(st->finite()) /* FIXME || st->size() != sets[s].size()*/) {
+				if(f->partial() || !(st->finite())) {
 					tseitin = getTranslator().translate(1,'>',false,AGG_CARD,setnr,TS_IMPL);
 				}
 				else {
@@ -874,7 +895,7 @@ void SolverTheory::addFalseDefineds() {
 		PFSymbol* s = getTranslator().getSymbol(n);
 		map<PFSymbol*,set<int> >::const_iterator it = _defined.find(s);
 		if(it != _defined.end()) {
-			const map<vector<const DomainElement*>,int>& tuples = getTranslator().getTuples(n);
+			const map<vector<const DomainElement*>,int,StrictWeakTupleOrdering>& tuples = getTranslator().getTuples(n);
 			for(map<vector<const DomainElement*>,int>::const_iterator jt = tuples.begin(); jt != tuples.end(); ++jt) {
 				if(it->second.find(jt->second) == it->second.end()) addUnitClause(-jt->second);
 			}

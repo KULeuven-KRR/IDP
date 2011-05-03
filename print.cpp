@@ -34,8 +34,7 @@ Printer* Printer::create(Options* opts) {
 		case LAN_IDP:
 			return new IDPPrinter(opts->printtypes());
 		case LAN_ECNF:
-			// FIXME
-			//return new EcnfPrinter();
+			return new EcnfPrinter();
 		default:
 			assert(false);
 	}
@@ -263,7 +262,14 @@ void IDPPrinter::visit(const DomainTerm* t) {
 }
 
 void IDPPrinter::visit(const AggTerm* t) {
-	_out << t->function();
+	switch(t->function()) {
+		case AGG_CARD: _out << '#'; break;
+		case AGG_SUM: _out << "sum"; break;
+		case AGG_PROD: _out << "prod"; break;
+		case AGG_MIN: _out << "min"; break;
+		case AGG_MAX: _out << "max"; break;
+		default: assert(false);
+	}
 	t->set()->accept(this);
 }
 
@@ -400,7 +406,7 @@ void IDPPrinter::printAggregate(double bound, bool lower, AggFunction aggtype, u
 	}
 	_out << "set_" << setnr << ").\n";
 }
-/*
+
 void EcnfPrinter::printAggregate(AggFunction aggtype, TsType arrow, unsigned int defnr, bool lower, int head, unsigned int setnr, double bound) {
 	switch(aggtype) {
 		case AGG_CARD: 	_out << "Card "; break;
@@ -416,13 +422,13 @@ void EcnfPrinter::printAggregate(AggFunction aggtype, TsType arrow, unsigned int
 			_out << "C ";
 			break;
 		case TS_RULE: 
-			_out << "<- ";
+			_out << "<- " << defnr << ' ';
 			break; 
 		default: assert(false);
 	}
-	_out << defnr << ' ' << (lower ? 'G' : 'L') << ' ' << head << ' ' << setnr << ' ' << bound << " 0\n";
+	_out << (lower ? 'G' : 'L') << ' ' << head << ' ' << setnr << ' ' << bound << " 0\n";
 }
-
+/*
 void SimplePrinter::visit(const GroundTheory* g) {
 	_out << g->to_string();
 }
@@ -454,7 +460,7 @@ void IDPPrinter::visit(const GroundTheory* g) {
 	for(unsigned int n = 0; n < g->nrCPReifications(); ++n)
 		g->cpreification(n)->accept(this);
 }
-/*
+
 void EcnfPrinter::visit(const GroundTheory* g) {
 	_out << "p ecnf def aggr\n";
 	for(unsigned int n = 0; n < g->nrClauses(); ++n) {
@@ -472,7 +478,7 @@ void EcnfPrinter::visit(const GroundTheory* g) {
 		g->aggregate(n)->accept(this);
 	//TODO: repeat above for fixpoint definitions
 }
-*/
+
 void IDPPrinter::visit(const GroundDefinition* d) {
 	printtab();
 	_out << "{\n";
@@ -486,14 +492,14 @@ void IDPPrinter::visit(const GroundDefinition* d) {
 	unindent();
 	_out << "}\n";
 }
-/*
+
 void EcnfPrinter::visit(const GroundDefinition* d) {
 	for(GroundDefinition::const_ruleiterator it = d->begin(); it != d->end(); ++it) {
 		_currenthead = it->first;
 		(it->second)->accept(this);
 	}
 }
-*/
+
 void IDPPrinter::visit(const PCGroundRuleBody* b) {
 	char c = (b->type() == RT_CONJ ? '&' : '|');
 	if(! b->empty()) {
@@ -512,7 +518,7 @@ void IDPPrinter::visit(const PCGroundRuleBody* b) {
 	}
 	_out << ".\n";
 }
-/*
+
 void EcnfPrinter::visit(const PCGroundRuleBody* b) {
 	_out << (b->type() == RT_CONJ ? "C " : "D ");
 	_out << "<- " << _currentdefnr << ' ' << _currenthead << ' ';
@@ -520,15 +526,15 @@ void EcnfPrinter::visit(const PCGroundRuleBody* b) {
 		_out << b->literal(n) << ' ';
 	_out << "0\n";
 }
-*/
+
 void IDPPrinter::visit(const AggGroundRuleBody* b) {
 	printAggregate(b->bound(),b->lower(),b->aggtype(),b->setnr());
 }
-/*
+
 void EcnfPrinter::visit(const AggGroundRuleBody* b) {
 	printAggregate(b->aggtype(),TS_RULE,_currentdefnr,b->lower(),_currenthead,b->setnr(),b->bound());
 }
-*/
+
 void IDPPrinter::visit(const GroundAggregate* a) {
 	printAtom(a->head());
 	switch(a->arrow()) {
@@ -539,12 +545,12 @@ void IDPPrinter::visit(const GroundAggregate* a) {
 	}
 	printAggregate(a->bound(),a->lower(),a->type(),a->setnr());
 }
-/*
+
 void EcnfPrinter::visit(const GroundAggregate* a) {
 	assert(a->arrow() != TS_RULE);
 	printAggregate(a->type(),a->arrow(),ID_FOR_UNDEFINED,a->lower(),a->head(),a->setnr(),a->bound());
 }
-*/
+
 void IDPPrinter::visit(const GroundSet* s) {
 	_out << "set_" << s->setnr() << " = [ ";
 	for(unsigned int n = 0; n < s->size(); ++n) {
@@ -555,7 +561,7 @@ void IDPPrinter::visit(const GroundSet* s) {
 	}
 	_out << " ]\n";
 }
-/*
+
 void EcnfPrinter::visit(const GroundSet* s) {
 	_out << (s->weighted() ? "WSet" : "Set") << ' ' << s->setnr();
 	for(unsigned int n = 0; n < s->size(); ++n) {
@@ -564,7 +570,7 @@ void EcnfPrinter::visit(const GroundSet* s) {
 	}
 	_out << " 0\n";
 }
-*/
+
 void IDPPrinter::visit(const CPReification* cpr) {
 	printAtom(cpr->_head);
 	switch(cpr->_body->type()) {
@@ -916,6 +922,18 @@ void SimplePrinter::visit(const Vocabulary* v) {
 	_out << v->to_string();
 }
 */
+string EcnfPrinter::print(const Vocabulary* v) {
+	return "(vocabulary cannot be printed in ecnf)";
+}
+
+string EcnfPrinter::print(const Namespace* v) {
+	return "(namespace cannot be printed in ecnf)";
+}
+
+string EcnfPrinter::print(const AbstractStructure* v) {
+	return "(structure cannot be printed in ecnf)";
+}
+
 string IDPPrinter::print(const Vocabulary* v) {
 	for(map<string,set<Sort*> >::const_iterator it = v->firstsort(); it != v->lastsort(); ++it) {
 		for(set<Sort*>::iterator jt = it->second.begin(); jt != it->second.end(); ++jt) {

@@ -9,3 +9,4 @@
 -- =========================
 
 stdoptions.autocomplete = true		-- use autocompletion for structures
+stdoptions.usingcp = false			-- do not use a cp-solver

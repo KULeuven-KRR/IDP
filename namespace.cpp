@@ -118,3 +118,13 @@ ostream& Namespace::putname(ostream& output) const {
 	output << _name;
 	return output;
 }
+
+ostream& Namespace::putluaname(ostream& output) const {
+	if(isGlobal()) return output;
+	else if(_superspace && !_superspace->isGlobal()) {
+		_superspace->putname(output);
+		output << '.';
+	}
+	output << _name;
+	return output;
+}

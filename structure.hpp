@@ -112,6 +112,12 @@ struct StrictWeakNTupleEquality {
 	bool operator()(const ElementTuple&, const ElementTuple&) const;
 };
 
+struct StrictWeakNTupleOrdering {
+	unsigned int _arity;
+	StrictWeakNTupleOrdering(unsigned int arity) : _arity(arity) { }
+	bool operator()(const ElementTuple&, const ElementTuple&) const;
+};
+
 class Function;
 
 /**

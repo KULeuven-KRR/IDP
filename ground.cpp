@@ -126,7 +126,7 @@ unsigned int GroundTranslator::addSymbol(PFSymbol* pfs) {
 	for(unsigned int n = 0; n < _symboffsets.size(); ++n)
 		if(_symboffsets[n] == pfs) return n;
 	_symboffsets.push_back(pfs);
-	_table.push_back(map<vector<const DomainElement*>,int>());
+	_table.push_back(map<vector<const DomainElement*>,int,StrictWeakTupleOrdering>());
 	return _symboffsets.size()-1;
 }
 
@@ -195,7 +195,7 @@ unsigned int GroundTermTranslator::addFunction(Function* func) {
 		unsigned int offset = _offset2function.size();
 		_function2offset[func] = offset; 
 		_offset2function.push_back(func);
-		_table.push_back(map<vector<const DomainElement*>,unsigned int>());
+		_table.push_back(map<vector<const DomainElement*>,unsigned int,StrictWeakTupleOrdering>());
 		return offset;	
 	}
 }
@@ -322,8 +322,9 @@ AtomGrounder::AtomGrounder(GroundTranslator* gt, bool sign, PFSymbol* s,
 int AtomGrounder::run() const {
 	if(_verbosity > 1) printorig();
 	// Run subterm grounders
-	for(unsigned int n = 0; n < _subtermgrounders.size(); ++n) 
+	for(unsigned int n = 0; n < _subtermgrounders.size(); ++n) {
 		_args[n] = _subtermgrounders[n]->run();
+	}
 	
 	// Checking partial functions
 	for(unsigned int n = 0; n < _args.size(); ++n) {
@@ -533,6 +534,8 @@ int AggGrounder::finishCard(double truevalue, double boundvalue, int setnr) cons
 				return _sign ? _true : _false;
 			}
 			break;
+		default:
+			assert(false);
 	}
 	if(simplify) {
 		if(_doublenegtseitin) {
@@ -1704,7 +1707,17 @@ void GrounderFactory::visit(const AggForm* af) {
 		// Create aggregate grounder
 		SaveContext();
 		if(recursive(af)) _context._tseitin = TS_RULE;
-		_formgrounder = new AggGrounder(_grounding->translator(),_context,af->right()->function(),setgr,boundgr,af->comp(),af->sign());
+		// TODO: change AggGrounder so that it accepts a CompType...
+		char cmp; bool sgn = af->sign();
+		switch(af->comp()) {
+			case CT_EQ: cmp = '='; break;
+			case CT_NEQ: cmp = '='; sgn = !sgn; break;
+			case CT_LT: cmp = '<'; break;
+			case CT_LEQ: cmp = '>'; sgn = !sgn; break;
+			case CT_GT: cmp = '>'; break;
+			case CT_GEQ: cmp = '<'; sgn = !sgn; break;
+		}
+		_formgrounder = new AggGrounder(_grounding->translator(),_context,af->right()->function(),setgr,boundgr,cmp,sgn);
 		RestoreContext();
 		if(_context._component == CC_SENTENCE) _toplevelgrounder = new SentenceGrounder(_grounding,_formgrounder,true,_options->groundverbosity());
 	}
