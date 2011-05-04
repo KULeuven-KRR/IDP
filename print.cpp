@@ -645,73 +645,51 @@ ostream& IDPPrinter::print(std::ostream& output, SortTable* table) const {
 }
 
 ostream& IDPPrinter::print(std::ostream& output, const PredTable* table) const {
-	TableIterator kt = table->begin();
-	if(table->arity()) {
-		output << "{ ";
-		if(kt.hasNext()) {
-			ElementTuple tuple = *kt;
-			output << tuple[0]->to_string();
-			for(ElementTuple::const_iterator lt = ++tuple.begin(); lt != tuple.end(); ++lt) {
-				output << ',' << (*lt)->to_string();
-			}
-			++kt;
-			for(; kt.hasNext(); ++kt) {
-				output << "; ";
-				tuple = *kt;
+	if(table->approxfinite()) {
+		TableIterator kt = table->begin();
+		if(table->arity()) {
+			output << "{ ";
+			if(kt.hasNext()) {
+				ElementTuple tuple = *kt;
 				output << tuple[0]->to_string();
 				for(ElementTuple::const_iterator lt = ++tuple.begin(); lt != tuple.end(); ++lt) {
 					output << ',' << (*lt)->to_string();
 				}
+				++kt;
+				for(; kt.hasNext(); ++kt) {
+					output << "; ";
+					tuple = *kt;
+					output << tuple[0]->to_string();
+					for(ElementTuple::const_iterator lt = ++tuple.begin(); lt != tuple.end(); ++lt) {
+						output << ',' << (*lt)->to_string();
+					}
+				}
 			}
+			output << " }";
 		}
-		output << " }";
+		else if(kt.hasNext()) output << "true";
+		else output << "false";
+		return output;
 	}
-	else if(kt.hasNext()) output << "true";
-	else output << "false";
-	return output;
+	else return output << "possibly infinite table";
 }
 
 ostream& IDPPrinter::printasfunc(std::ostream& output, const PredTable* table) const {
-	TableIterator kt = table->begin();
-	output << "{ ";
-	if(kt.hasNext()) {
-		ElementTuple tuple = *kt;
-		if(tuple.size() > 1) output << tuple[0]->to_string();
-		for(unsigned int n = 1; n < tuple.size() - 1; ++n) {
-			output << ',' << tuple[n]->to_string();
-		}
-		output << "->" << tuple.back()->to_string();
-		++kt;
-		for(; kt.hasNext(); ++kt) {
-			output << "; ";
-			tuple = *kt;
+	if(table->approxfinite()) {
+		TableIterator kt = table->begin();
+		output << "{ ";
+		if(kt.hasNext()) {
+			ElementTuple tuple = *kt;
 			if(tuple.size() > 1) output << tuple[0]->to_string();
 			for(unsigned int n = 1; n < tuple.size() - 1; ++n) {
 				output << ',' << tuple[n]->to_string();
 			}
 			output << "->" << tuple.back()->to_string();
-		}
-	}
-	output << " }";
-	return output;
-}
-
-ostream& IDPPrinter::print(std::ostream& output, FuncTable* table) const {
-	TableIterator kt = table->begin();
-	if(table->arity() != 0) {
-		output << "{ ";
-		if(kt.hasNext()) {
-			ElementTuple tuple = *kt;
-			output << tuple[0]->to_string();
-			for(unsigned int n = 1; n < tuple.size() - 1; ++n) {
-				output << ',' << tuple[n]->to_string();
-			}
-			output << "->" << tuple.back()->to_string();
 			++kt;
 			for(; kt.hasNext(); ++kt) {
 				output << "; ";
 				tuple = *kt;
-				output << tuple[0]->to_string();
+				if(tuple.size() > 1) output << tuple[0]->to_string();
 				for(unsigned int n = 1; n < tuple.size() - 1; ++n) {
 					output << ',' << tuple[n]->to_string();
 				}
@@ -719,10 +697,44 @@ ostream& IDPPrinter::print(std::ostream& output, FuncTable* table) const {
 			}
 		}
 		output << " }";
+		return output;
 	}
-	else if(kt.hasNext()) output << (*kt)[0]->to_string();
-	else output << "{ }";
-	return output;
+	else return output << "possibly infinite table";
+}
+
+ostream& IDPPrinter::print(std::ostream& output, FuncTable* table) const {
+	vector<SortTable*> vst = table->universe().tables();
+	vst.pop_back();
+	Universe univ(vst);
+	if(univ.approxfinite()) {
+		TableIterator kt = table->begin();
+		if(table->arity() != 0) {
+			output << "{ ";
+			if(kt.hasNext()) {
+				ElementTuple tuple = *kt;
+				output << tuple[0]->to_string();
+				for(unsigned int n = 1; n < tuple.size() - 1; ++n) {
+					output << ',' << tuple[n]->to_string();
+				}
+				output << "->" << tuple.back()->to_string();
+				++kt;
+				for(; kt.hasNext(); ++kt) {
+					output << "; ";
+					tuple = *kt;
+					output << tuple[0]->to_string();
+					for(unsigned int n = 1; n < tuple.size() - 1; ++n) {
+						output << ',' << tuple[n]->to_string();
+					}
+					output << "->" << tuple.back()->to_string();
+				}
+			}
+			output << " }";
+		}
+		else if(kt.hasNext()) output << (*kt)[0]->to_string();
+		else output << "{ }";
+		return output;
+	}
+	else return output << "possibly infinite table";
 }
 
 string IDPPrinter::print(const AbstractStructure* structure) {

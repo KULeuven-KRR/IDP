@@ -108,6 +108,7 @@ typedef std::list<isp>				lisp;
 %token EXEC_HEADER
 
 /** Keywords **/
+%token CONSTRUCTOR
 %token VOCABULARY
 %token NAMESPACE
 %token PROCEDURE
@@ -667,6 +668,7 @@ func_inter	: intern_pointer '=' '{' ftuples_es '}'	{ insert.funcinter($1,$4); }
 			| intern_pointer '=' pelement			{ FuncTable* ft = insert.createFuncTable(1);
 													  insert.addTupleVal(ft,$3,@3);
 													  insert.funcinter($1,ft); }
+			| intern_pointer '=' CONSTRUCTOR		{ insert.constructor($1);	}
 			;
 
 ftuples_es		: ftuples ';'					{ $$ = $1;	}

@@ -425,6 +425,8 @@ COMMENTLINE		"//".*
 							  return FALSE;				}
 <structure>"procedure"		{ advancecol();
 							  return PROCEDURE;			}
+<structure>"generate"		{ advancecol();
+							  return CONSTRUCTOR;		}
 <aspstructure>"%".*			{							}
 <aspstructure>".."			{ advancecol();
 							  return RANGE;				}

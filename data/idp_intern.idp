@@ -125,6 +125,13 @@ procedure makefalse(inter,tuple) {
 	idp_intern.makefalse(inter,tuple)
 }
 
+/**
+ * Make a tuple unknown in a predicate interpretation
+ */
+procedure makeunknown(inter,tuple) {
+	idp_intern.makeunknown(inter,tuple)
+}
+
 
 
 

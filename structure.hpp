@@ -356,6 +356,24 @@ class UnionInternalIterator : public InternalTableIterator {
 		UnionInternalIterator*	clone() const;
 };
 
+class UNAInternalIterator : public InternalTableIterator {
+	private:
+		std::vector<SortIterator>	_curr;
+		std::vector<SortIterator>	_lowest;
+		Function*					_function;
+		mutable bool						_end;
+		mutable ElementTuple				_currtuple;
+		mutable std::vector<ElementTuple>	_deref;
+
+		bool					hasNext()	const;	
+		const ElementTuple&		operator*()	const;
+		void					operator++();	
+		UNAInternalIterator(const std::vector<SortIterator>&, const std::vector<SortIterator>&, Function*, bool);
+	public:
+		UNAInternalIterator(const std::vector<SortIterator>&, Function*);
+		~UNAInternalIterator() { }
+		UNAInternalIterator* clone() const;
+};
 
 class InverseInternalIterator : public InternalTableIterator {
 	private:
@@ -1119,6 +1137,28 @@ class ProcInternalFuncTable : public InternalFuncTable {
 		InternalTableIterator*	begin(const Universe&)	const;
 };
 
+class UNAInternalFuncTable : public InternalFuncTable {
+	private:
+		Function*	_function;
+	public:
+		UNAInternalFuncTable(Function* f) :
+			InternalFuncTable(), _function(f) { }
+
+		~UNAInternalFuncTable() { }
+
+		bool		finite(const Universe&)			const;
+		bool		empty(const Universe&)			const; 
+		bool		approxfinite(const Universe&)	const;
+		bool		approxempty(const Universe&)	const; 
+		tablesize	size(const Universe&)			const;
+		
+		const DomainElement*	operator[](const ElementTuple& tuple) const;
+		InternalFuncTable*		add(const ElementTuple&);	
+		InternalFuncTable*		remove(const ElementTuple&);
+
+		InternalTableIterator*	begin(const Universe&)	const;
+};
+
 /**
  *		A finite, enumerated InternalFuncTable
  */
@@ -1396,14 +1436,15 @@ class PredInter {
 		~PredInter();
 
 		// Mutators
-		void ct(PredTable*);
-		void cf(PredTable*);
-		void pt(PredTable*);
-		void pf(PredTable*);
-		void ctpt(PredTable*);
+		void ct(PredTable*);		//!< Replace the certainly true (and possibly false) tuples
+		void cf(PredTable*);		//!< Replace the certainly false (and possibly true) tuples
+		void pt(PredTable*);		//!< Replace the possibly true (and certainly false) tuples
+		void pf(PredTable*);        //!< Replace the possibly false (and certainly true) tuples
+		void ctpt(PredTable*);		//!< Replace the certainly and possibly true tuples
 
-		void makeTrue(const ElementTuple&);
-		void makeFalse(const ElementTuple&);
+		void makeTrue(const ElementTuple&);		//!< Make the given tuple true
+		void makeFalse(const ElementTuple&);	//!< Make the given tuple false
+		void makeUnknown(const ElementTuple&);	//!< Make the given tuple unknown
 
 		// Inspectors
 		const PredTable*	ct()										const { return _ct;		}

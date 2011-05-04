@@ -145,6 +145,8 @@ class Insert {
 		Function*				funcInScope(const longname&, const ParseInfo&) const;
 		std::set<Predicate*>	noArPredInScope(const std::string& name) const;
 		std::set<Predicate*>	noArPredInScope(const longname& name, const ParseInfo&) const;
+		std::set<Function*>		noArFuncInScope(const std::string& name) const;
+		std::set<Function*>		noArFuncInScope(const longname& name, const ParseInfo&) const;
 		Vocabulary*				vocabularyInScope(const std::string&, const ParseInfo&) const;
 		Vocabulary*				vocabularyInScope(const longname&, const ParseInfo&) const;
 		Namespace*				namespaceInScope(const std::string&, const ParseInfo&) const;
@@ -342,6 +344,7 @@ class Insert {
 		void truepredinter(NSPair*) const;						//!< Assign true
 		void falsepredinter(NSPair*) const;						//!< Assign false
 		void inter(NSPair*, const longname& ,YYLTYPE) const;	//!< Assign a procedure
+		void constructor(NSPair*) const;						//!< Assign a constructor 
 
 		void threepredinter(NSPair*, const std::string& utf, PredTable* t);
 		void threepredinter(NSPair*, const std::string& utf, SortTable* t);

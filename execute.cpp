@@ -304,6 +304,12 @@ struct InternalArgument {
 
 };
 
+InternalArgument nilarg() {
+	InternalArgument ia;
+	ia._type = AT_NIL;
+	return ia;
+}
+
 int ArgProcNumber = 0;						//!< Number to create unique registry indexes
 static const char* _typefield = "type";		//!< Field index containing the type of userdata
 
@@ -705,9 +711,7 @@ InternalArgument globalhelp(const vector<InternalArgument>&, lua_State* L) {
 	lua_getglobal(L,"print");
 	lua_pushstring(L,str.c_str());
 	lua_call(L,1,0);
-
-	InternalArgument ia; ia._type = AT_NIL;
-	return ia;
+	return nilarg();
 }
 
 InternalArgument help(const vector<InternalArgument>& args, lua_State* L) {
@@ -716,9 +720,7 @@ InternalArgument help(const vector<InternalArgument>& args, lua_State* L) {
 	lua_getglobal(L,"print");
 	lua_pushstring(L,str.c_str());
 	lua_call(L,1,0);
-	
-	InternalArgument ia; ia._type = AT_NIL;
-	return ia;
+	return nilarg();
 }
 
 /********************************
@@ -803,6 +805,10 @@ vector<AbstractStructure*> modelexpand(AbstractTheory* theory, AbstractStructure
 		newsolution->clean();
 		solutions.push_back(newsolution);
 	}
+
+	grounding->recursiveDelete();
+	delete(solver);
+	delete(abstractsolutions);
 	
 	return solutions;
 }
@@ -822,7 +828,9 @@ AbstractTheory* ground(AbstractTheory* theory, AbstractStructure* structure, Opt
 	GrounderFactory factory(structure,options);
 	TopLevelGrounder* grounder = factory.create(theory);
 	grounder->run();
-	return grounder->grounding();
+	AbstractTheory* grounding = grounder->grounding();
+	delete(grounder);
+	return grounding;
 }
 
 InternalArgument ground(const vector<InternalArgument>& args, lua_State*  ) {
@@ -859,10 +867,7 @@ InternalArgument derefandincrement(const vector<InternalArgument>& args, lua_Sta
 		InternalArgument ia; ia._type = AT_TUPLE; ia._value._tuple = tuple;
 		return ia;
 	}
-	else {
-		InternalArgument ia; ia._type = AT_NIL;
-		return ia;
-	}
+	else return nilarg();
 }
 
 InternalArgument domderefandincrement(const vector<InternalArgument>& args, lua_State* ) {
@@ -873,10 +878,7 @@ InternalArgument domderefandincrement(const vector<InternalArgument>& args, lua_
 		InternalArgument ia(element);
 		return ia;
 	}
-	else {
-		InternalArgument ia; ia._type = AT_NIL;
-		return ia;
-	}
+	else return nilarg();
 }
 
 InternalArgument tableiterator(const vector<InternalArgument>& args, lua_State* ) {
@@ -899,64 +901,62 @@ InternalArgument changevocabulary(const vector<InternalArgument>& args, lua_Stat
 	AbstractStructure* s = args[0].structure();
 	Vocabulary* v = args[1].vocabulary();
 	s->vocabulary(v);
-	InternalArgument ia; ia._type = AT_NIL;
-	return ia;
+	return nilarg();
+}
+
+ElementTuple toTuple(vector<InternalArgument>* tab, lua_State* L) {
+	ElementTuple tup;
+	for(vector<InternalArgument>::const_iterator it = tab->begin(); it != tab->end(); ++it) {
+		switch(it->_type) {
+			case AT_INT: tup.push_back(DomainElementFactory::instance()->create(it->_value._int)); break;
+			case AT_DOUBLE: tup.push_back(DomainElementFactory::instance()->create(it->_value._double)); break;
+			case AT_STRING: tup.push_back(DomainElementFactory::instance()->create(it->_value._string)); break;
+			case AT_COMPOUND: tup.push_back(DomainElementFactory::instance()->create(it->_value._compound)); break;
+			default:
+				lua_pushstring(L,"Wrong value in a tuple. Expected an integer, double, string, or compound");
+				lua_error(L);
+		}
+	}
+	return tup;
 }
 
 InternalArgument maketrue(const vector<InternalArgument>& args, lua_State* ) {
 	PredInter* pri = args[0]._value._predinter;
 	ElementTuple* tup = args[1]._value._tuple;
 	pri->makeTrue(*tup);
-	InternalArgument ia; ia._type = AT_NIL;
-	return ia;
+	return nilarg();
 }
 
 InternalArgument maketabtrue(const vector<InternalArgument>& args, lua_State* L) {
 	PredInter* pri = args[0]._value._predinter;
-	vector<InternalArgument>* tab = args[1]._value._table;
-	ElementTuple tup;
-	for(vector<InternalArgument>::const_iterator it = tab->begin(); it != tab->end(); ++it) {
-		switch(it->_type) {
-			case AT_INT: tup.push_back(DomainElementFactory::instance()->create(it->_value._int)); break;
-			case AT_DOUBLE: tup.push_back(DomainElementFactory::instance()->create(it->_value._double)); break;
-			case AT_STRING: tup.push_back(DomainElementFactory::instance()->create(it->_value._string)); break;
-			case AT_COMPOUND: tup.push_back(DomainElementFactory::instance()->create(it->_value._compound)); break;
-			default:
-				lua_pushstring(L,"Wrong value in a tuple. Expected an integer, double, string, or compound");
-				return lua_error(L);
-		}
-	}
-	pri->makeTrue(tup);
-	InternalArgument ia; ia._type = AT_NIL;
-	return ia;
+	pri->makeTrue(toTuple(args[1]._value._table,L));
+	return nilarg();
 }
 
 InternalArgument makefalse(const vector<InternalArgument>& args, lua_State* ) {
 	PredInter* pri = args[0]._value._predinter;
 	ElementTuple* tup = args[1]._value._tuple;
 	pri->makeFalse(*tup);
-	InternalArgument ia; ia._type = AT_NIL;
-	return ia;
+	return nilarg();
 }
 
 InternalArgument maketabfalse(const vector<InternalArgument>& args, lua_State* L) {
 	PredInter* pri = args[0]._value._predinter;
-	vector<InternalArgument>* tab = args[1]._value._table;
-	ElementTuple tup;
-	for(vector<InternalArgument>::const_iterator it = tab->begin(); it != tab->end(); ++it) {
-		switch(it->_type) {
-			case AT_INT: tup.push_back(DomainElementFactory::instance()->create(it->_value._int)); break;
-			case AT_DOUBLE: tup.push_back(DomainElementFactory::instance()->create(it->_value._double)); break;
-			case AT_STRING: tup.push_back(DomainElementFactory::instance()->create(it->_value._string)); break;
-			case AT_COMPOUND: tup.push_back(DomainElementFactory::instance()->create(it->_value._compound)); break;
-			default:
-				lua_pushstring(L,"Wrong value in a tuple. Expected an integer, double, string, or compound");
-				return lua_error(L);
-		}
-	}
-	pri->makeFalse(tup);
-	InternalArgument ia; ia._type = AT_NIL;
-	return ia;
+	pri->makeFalse(toTuple(args[1]._value._table,L));
+	return nilarg();
+}
+
+InternalArgument makeunknown(const vector<InternalArgument>& args, lua_State* ) {
+	PredInter* pri = args[0]._value._predinter;
+	ElementTuple* tup = args[1]._value._tuple;
+	pri->makeUnknown(*tup);
+	return nilarg();
+}
+
+InternalArgument maketabunknown(const vector<InternalArgument>& args, lua_State* L) {
+	PredInter* pri = args[0]._value._predinter;
+	pri->makeUnknown(toTuple(args[1]._value._table,L));
+	return nilarg();
 }
 
 /**************************
@@ -966,6 +966,10 @@ InternalArgument maketabfalse(const vector<InternalArgument>& args, lua_State* L
 namespace LuaConnection {
 
 	lua_State* _state;
+
+	// garbage collection 
+	map<Sort*,int>				_gcsort;
+	map<AbstractTheory*,int>	_gctheory;
 
 	/**
 	 * Push a domain element to the lua stack
@@ -2591,6 +2595,8 @@ namespace LuaConnection {
 		addInternalProcedure("maketrue",vpritup,&maketrue);
 		addInternalProcedure("makefalse",vpritab,&maketabfalse);
 		addInternalProcedure("makefalse",vpritup,&makefalse);
+		addInternalProcedure("makeunknown",vpritab,&maketabunknown);
+		addInternalProcedure("makeunknown",vpritup,&makeunknown);
 		
 		// Add the internal procedures to lua
 		lua_getglobal(L,"idp_intern");
@@ -2628,7 +2634,10 @@ namespace LuaConnection {
 		stringstream ss;
 		ss << DATADIR << "/std/idp_intern.lua";
 		int err = luaL_dofile(_state,ss.str().c_str());
-		if(err) { cerr << "Error in idp_intern.lua\n"; exit(1); }
+		if(err) { 
+			cerr << lua_tostring(_state,-1) << endl;
+			cerr << "Error in idp_intern.lua\n"; exit(1); 
+		}
 
 		// Add the global namespace and standard options
 		addGlobal(Namespace::global());

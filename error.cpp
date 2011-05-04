@@ -417,6 +417,17 @@ namespace Error {
 		cerr << ".\n";
 	}
 
+	void overloadedfunc(const string& name, const ParseInfo& p1, const ParseInfo& p2, const ParseInfo& thisplace) {
+		error(thisplace);
+		cerr << "The function " << name << " used here could be the predicate declared at " 
+			 << "line " << p1.line() << ", column " << p1.col();
+		if(p1.file()) cerr << " of file " << p1.file();
+		cerr << " or the function declared at "
+			 << "line " << p2.line() << ", column " << p2.col();
+		if(p2.file()) cerr << " of file " << p2.file();
+		cerr << ".\n";
+	}
+
 	void overloadedpred(const string& name, const ParseInfo& p1, const ParseInfo& p2, const ParseInfo& thisplace) {
 		error(thisplace);
 		cerr << "The predicate " << name << " used here could be the predicate declared at " 

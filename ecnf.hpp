@@ -378,6 +378,9 @@ class SolverTheory : public AbstractGroundTheory {
 		SolverTheory(SATSolver* solver,AbstractStructure* str);
 		SolverTheory(Vocabulary* voc, SATSolver* solver, AbstractStructure* str);
 
+		// Destructors
+		void recursiveDelete() { delete(this);	}
+
 		// Mutators
 		void	addClause(GroundClause& cl, bool skipfirst = false);
 		void	addDefinition(GroundDefinition*);

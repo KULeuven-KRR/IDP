@@ -501,6 +501,29 @@ std::set<Predicate*> Insert::noArPredInScope(const vector<string>& vs, const Par
 	}
 }
 
+std::set<Function*> Insert::noArFuncInScope(const string& name) const {
+	std::set<Function*> vf;
+	for(unsigned int n = 0; n < _usingvocab.size(); ++n) {
+		std::set<Function*> nvf = _usingvocab[n]->func_no_arity(name);
+		vf.insert(nvf.begin(),nvf.end());
+	}
+	return vf;
+}
+
+std::set<Function*> Insert::noArFuncInScope(const vector<string>& vs, const ParseInfo& pi) const {
+	assert(!vs.empty());
+	if(vs.size() == 1) {
+		return noArFuncInScope(vs[0]);
+	}
+	else {
+		vector<string> vv(vs.size()-1);
+		for(unsigned int n = 0; n < vv.size(); ++n) vv[n] = vs[n];
+		Vocabulary* v = vocabularyInScope(vv,pi);
+		if(v) return v->func_no_arity(vs.back());
+		else return std::set<Function*>();
+	}
+}
+
 Function* Insert::funcInScope(const string& name) const {
 	std::set<Function*> vf;
 	for(unsigned int n = 0; n < _usingvocab.size(); ++n) {
@@ -1924,6 +1947,39 @@ void Insert::funcinter(NSPair* nst, FuncTable* t) const {
 	delete(nst);
 }
 
+void Insert::constructor(NSPair* nst) const {
+	ParseInfo pi = nst->_pi;
+	Function* f = 0;
+	if(nst->_sortsincluded) {
+		if(!(nst->_func)) Error::funcnameexpected(pi);
+		nst->includeFuncArity();
+		f = funcInScope(nst->_name,pi);
+		if(f) f = f->resolve(nst->_sorts);
+		else Error::undeclfunc(nst->to_string(),pi);
+	}
+	else {
+		std::set<Function*> vf = noArFuncInScope(nst->_name,pi);
+		if(vf.empty()) Error::undeclfunc(nst->to_string(),pi);
+		else if(vf.size() > 1) {
+			std::set<Function*>::const_iterator it = vf.begin();
+			Function* f1 = *it; 
+			++it;
+			Function* f2 = *it;
+			Error::overloadedfunc(nst->to_string(),f1->pi(),f2->pi(),pi);
+		}
+		else f = *(vf.begin());
+	}
+	if(f) {
+		if(belongsToVoc(f)) {
+			UNAInternalFuncTable* uift = new UNAInternalFuncTable(f);
+			FuncTable* ft = new FuncTable(uift,_currstructure->universe(f));
+			FuncInter* inter = _currstructure->inter(f);
+			inter->functable(ft);
+		}
+		else Error::funcnotinstructvoc(nst->to_string(),_currstructure->name(),pi);
+	}
+}
+
 void Insert::sortinter(NSPair* nst, SortTable* t) const {
 	ParseInfo pi = nst->_pi;
 	longname name = nst->_name;
@@ -2081,7 +2137,6 @@ void Insert::inter(NSPair* nsp, const longname& procedure, YYLTYPE l) const {
 			}
 		}
 		if(nsp->_func) {
-			univ.pop_back();
 			ProcInternalFuncTable* pift = new ProcInternalFuncTable(proc);
 			FuncTable* ft = new FuncTable(pift,Universe(univ));
 			funcinter(nsp,ft);
@@ -2622,30 +2677,6 @@ namespace Insert {
 	/*****************
 		Find names
 	*****************/
-
-	vector<Function*> noArFuncInScope(const string& name) {
-		vector<Function*> vf;
-		for(unsigned int n = 0; n < _usingvocab.size(); ++n) {
-			vector<Function*> nvf = _usingvocab[n]->func_no_arity(name);
-			for(unsigned int m = 0; m < nvf.size(); ++m) vf.push_back(nvf[m]);
-		}
-		return vf;
-	}
-
-
-	vector<Function*> noArFuncInScope(const vector<string>& vs, const ParseInfo& pi) {
-		assert(!vs.empty());
-		if(vs.size() == 1) {
-			return noArFuncInScope(vs[0]);
-		}
-		else {
-			vector<string> vv(vs.size()-1);
-			for(unsigned int n = 0; n < vv.size(); ++n) vv[n] = vs[n];
-			Vocabulary* v = vocabInScope(vv,pi);
-			if(v) return v->func_no_arity(vs.back());
-			else return vector<Function*>(0);
-		}
-	}
 
 
 	/******************************************************************* 

@@ -107,6 +107,7 @@ namespace Error {
 	void predorfuncsymbol(const std::string& name, const ParseInfo& thisplace);
 	void overloadedsort(const std::string& name, const ParseInfo& p1, const ParseInfo& p2, const ParseInfo& thisplace);
 	void overloadedpred(const std::string& name, const ParseInfo& p1, const ParseInfo& p2, const ParseInfo& thisplace);
+	void overloadedfunc(const std::string& name, const ParseInfo& p1, const ParseInfo& p2, const ParseInfo& thisplace);
 	void overloadedspace(const std::string& name, const ParseInfo& p1, const ParseInfo& p2, const ParseInfo& thisplace);
 	void overloadedvocab(const std::string& name, const ParseInfo& p1, const ParseInfo& p2, const ParseInfo& thisplace);
 	void overloadedtheory(const std::string& name, const ParseInfo& p1, const ParseInfo& p2, const ParseInfo& thisplace);

@@ -53,11 +53,11 @@ DomainElement::DomainElement(const Compound* value) : _type(DET_COMPOUND) {
 DomainElement::~DomainElement() { 
 }
 
-inline DomainElementType DomainElement::type() const {
+DomainElementType DomainElement::type() const {
 	return _type;
 }
 
-inline DomainElementValue DomainElement::value() const {
+DomainElementValue DomainElement::value() const {
 	return _value;
 }
 
@@ -181,11 +181,11 @@ Compound::Compound(Function* function, const std::vector<const DomainElement*> a
 Compound::~Compound() { 
 }
 
-inline Function* Compound::function() const {
+Function* Compound::function() const {
 	return _function;
 }
 
-inline const DomainElement* Compound::arg(unsigned int n) const {
+const DomainElement* Compound::arg(unsigned int n) const {
 	return _arguments[n];
 }
 
@@ -433,11 +433,11 @@ TableIterator& TableIterator::operator=(const TableIterator& tab) {
 	return *this;
 }
 
-inline bool TableIterator::hasNext() const {
+bool TableIterator::hasNext() const {
 	return _iterator->hasNext();
 }
 
-inline const ElementTuple& TableIterator::operator*() const {
+const ElementTuple& TableIterator::operator*() const {
 	return _iterator->operator*();
 }
 
@@ -461,11 +461,11 @@ SortIterator& SortIterator::operator=(const SortIterator& si) {
 	return *this;
 }
 
-inline bool SortIterator::hasNext() const {
+bool SortIterator::hasNext() const {
 	return _iterator->hasNext();
 }
 
-inline const DomainElement* SortIterator::operator*() const {
+const DomainElement* SortIterator::operator*() const {
 	return _iterator->operator*();
 }
 
@@ -650,6 +650,57 @@ void InverseInternalIterator::operator++() {
 		}
 		if(pos < 0) _end = true;
 	} while((!_end) && _outtable->contains(_currtuple,_universe));
+}
+
+UNAInternalIterator::UNAInternalIterator(const vector<SortIterator>& its, Function* f) :
+	_curr(its), _lowest(its), _function(f), _end(false), _currtuple(its.size())  {
+	for(unsigned int n = 0; n < _curr.size(); ++n) {
+		if(_curr[n].hasNext()) {
+			_currtuple[n] = *(_curr[n]);
+		}
+		else {
+			_end = true; break;
+		}
+	}
+}
+
+UNAInternalIterator::UNAInternalIterator(const vector<SortIterator>& curr, const vector<SortIterator>& low, Function* f, bool end) :
+	_curr(curr), _lowest(low), _function(f), _end(end), _currtuple(curr.size()) {
+	for(unsigned int n = 0; n < _curr.size(); ++n) {
+		if(_curr[n].hasNext()) _currtuple[n] = *(_curr[n]);
+	}
+}
+
+UNAInternalIterator* UNAInternalIterator::clone() const {
+	return new UNAInternalIterator(_curr,_lowest,_function,_end);
+}
+
+bool UNAInternalIterator::hasNext() const {
+	return !_end;
+}
+
+const ElementTuple& UNAInternalIterator::operator*() const {
+	_deref.push_back(_currtuple);
+	_deref.back().push_back(DomainElementFactory::instance()->create(_function,_deref.back()));
+	return _deref.back();
+}
+
+void UNAInternalIterator::operator++() {
+	int pos = _curr.size() - 1;
+	for(vector<SortIterator>::reverse_iterator it = _curr.rbegin(); it != _curr.rend(); ++it, --pos) {
+		assert(it->hasNext());
+		++(*it);
+		if(it->hasNext()) {
+			_currtuple[pos] = *(*it);
+			break;
+		}
+		else {
+			_curr[pos] = _lowest[pos];
+			assert(_curr[pos].hasNext());
+			_currtuple[pos] = *(_curr[pos]);
+		}
+	}
+	if(pos < 0) _end = true;
 }
 
 EqualInternalIterator::EqualInternalIterator(const SortIterator& iter) 
@@ -1937,6 +1988,66 @@ InternalTableIterator* ProcInternalFuncTable::begin(const Universe& ) const {
 	return 0;
 }
 
+bool UNAInternalFuncTable::finite(const Universe& univ) const {
+	if(empty(univ)) return true;
+	for(unsigned int n = 0; n < univ.tables().size()-1; ++n) {
+		if(!univ.tables()[n]->finite()) return false;
+	}
+	return true;
+}
+
+bool UNAInternalFuncTable::empty(const Universe& univ) const {
+	for(unsigned int n = 0; n < univ.tables().size()-1; ++n) {
+		if(univ.tables()[n]->empty()) return true;
+	}
+	notyetimplemented("Exact finiteness test on constructor function tables");	
+	return false;
+}
+
+bool UNAInternalFuncTable::approxfinite(const Universe& univ) const {
+	if(approxempty(univ)) return true;
+	for(unsigned int n = 0; n < univ.tables().size()-1; ++n) {
+		if(!univ.tables()[n]->approxfinite()) return false;
+	}
+	return true;
+}
+
+bool UNAInternalFuncTable::approxempty(const Universe& univ) const {
+	for(unsigned int n = 0; n < univ.tables().size()-1; ++n) {
+		if(univ.tables()[n]->approxempty()) return true;
+	}
+	return false;
+}
+
+tablesize UNAInternalFuncTable::size(const Universe& univ) const {
+	vector<SortTable*> vst = univ.tables();
+	vst.pop_back();
+	Universe newuniv(vst);
+	return newuniv.size();
+}
+
+const DomainElement* UNAInternalFuncTable::operator[](const ElementTuple& tuple) const {
+	return DomainElementFactory::instance()->create(_function,tuple);
+}
+
+InternalFuncTable* UNAInternalFuncTable::add(const ElementTuple& ) {
+	// TODO
+	return 0;
+}
+
+InternalFuncTable* UNAInternalFuncTable::remove(const ElementTuple& ) {
+	// TODO
+	return 0;
+}
+
+InternalTableIterator* UNAInternalFuncTable::begin(const Universe& univ) const {
+	vector<SortIterator> vsi;
+	for(unsigned int n = 0; n < _function->arity(); ++n) {
+		vsi.push_back(univ.tables()[n]->sortbegin());
+	}
+	return new UNAInternalIterator(vsi,_function);
+}
+
 const DomainElement* EnumeratedInternalFuncTable::operator[](const ElementTuple& tuple) const {
 	ElementFunc::const_iterator it = _table.find(tuple);
 	if(it != _table.end()) return it->second;
@@ -2542,6 +2653,49 @@ bool PredInter::approxtwovalued() const {
 	return _ct->interntable() == _pt->interntable();
 }
 
+void PredInter::makeUnknown(const ElementTuple& tuple) {
+	if(typeid(*(_pf->interntable())) == typeid(InverseInternalPredTable)) {
+		_ct->interntable()->decrementRef();
+		InternalPredTable* old = _ct->interntable();
+		_ct->remove(tuple);
+		old->incrementRef();
+		if(_ct->interntable() != old) {
+			InverseInternalPredTable* internpf = dynamic_cast<InverseInternalPredTable*>(_pf->interntable());
+			internpf->interntable(_ct->interntable());
+		}
+	}
+	else {
+		_pf->interntable()->decrementRef();
+		InternalPredTable* old = _pf->interntable();
+		_pf->add(tuple);
+		old->incrementRef();
+		if(_pf->interntable() != old) {
+			InverseInternalPredTable* internct = dynamic_cast<InverseInternalPredTable*>(_ct->interntable());
+			internct->interntable(_pf->interntable());
+		}
+	}
+	if(typeid(*(_pt->interntable())) == typeid(InverseInternalPredTable)) {
+		_cf->interntable()->decrementRef();
+		InternalPredTable* old = _cf->interntable();
+		_cf->remove(tuple);
+		old->incrementRef();
+		if(_cf->interntable() != old) {
+			InverseInternalPredTable* internpt = dynamic_cast<InverseInternalPredTable*>(_pt->interntable());
+			internpt->interntable(_cf->interntable());
+		}
+	}
+	else {
+		_pt->interntable()->decrementRef();
+		InternalPredTable* old = _pt->interntable();
+		_pt->add(tuple);
+		old->incrementRef();
+		if(_pt->interntable() != old) {
+			InverseInternalPredTable* interncf = dynamic_cast<InverseInternalPredTable*>(_cf->interntable());
+			interncf->interntable(_pt->interntable());
+		}
+	}
+}
+
 void PredInter::makeTrue(const ElementTuple& tuple) {
 	if(typeid(*(_pf->interntable())) == typeid(InverseInternalPredTable)) {
 		_ct->interntable()->decrementRef();
@@ -2934,18 +3088,22 @@ void computescore(Sort* s, map<Sort*,unsigned int>& scores) {
 }
 
 void completeSortTable(const PredTable* pt, PFSymbol* symbol, const string& structname) {
-	for(TableIterator jt = pt->begin(); jt.hasNext(); ++jt) {
-		const ElementTuple& tuple = *jt;
-		for(unsigned int col = 0; col < tuple.size(); ++col) {
-			if(!symbol->sorts()[col]->builtin()) {
-				pt->universe().tables()[col]->add(tuple[col]);
-			}
-			else if(!pt->universe().tables()[col]->contains(tuple[col])) {
-				if(typeid(*symbol) == typeid(Predicate)) {
-					Error::predelnotinsort(tuple[col]->to_string(),symbol->name(), symbol->sorts()[col]->name(),structname);
+	if(pt->universe().approxfinite()) {
+		for(TableIterator jt = pt->begin(); jt.hasNext(); ++jt) {
+			const ElementTuple& tuple = *jt;
+			for(unsigned int col = 0; col < tuple.size(); ++col) {
+				if(!symbol->sorts()[col]->builtin()) {
+					pt->universe().tables()[col]->add(tuple[col]);
 				}
-				else {
-					Error::funcelnotinsort(tuple[col]->to_string(),symbol->name(), symbol->sorts()[col]->name(),structname);
+				else if(!pt->universe().tables()[col]->contains(tuple[col])) {
+					if(typeid(*symbol) == typeid(Predicate)) {
+						Error::predelnotinsort(tuple[col]->to_string(),symbol->name(), 
+											   symbol->sorts()[col]->name(),structname);
+					}
+					else {
+						Error::funcelnotinsort(tuple[col]->to_string(),symbol->name(), 
+											   symbol->sorts()[col]->name(),structname);
+					}
 				}
 			}
 		}
@@ -2966,7 +3124,11 @@ void Structure::autocomplete() {
 			}
 		}
 	}
-	// Adding elements from predicate interpretations to sorts
+	// Adding elements from function interpretations to sorts
+	// FIXME: this can be wrong if the input sorts of the function are infinite
+	// FIXME: this can be wrong if the output sort of the function influences its input sorts and the
+	// FIXME: wrong if loop over functions...
+	// function is not finite
 	for(map<Function*,FuncInter*>::const_iterator it = _funcinter.begin(); it != _funcinter.end(); ++it) {
 		const PredTable* pt1 = it->second->graphinter()->ct();
 		if(typeid(*(pt1->interntable())) == typeid(InverseInternalPredTable)) pt1 = it->second->graphinter()->pf();
@@ -3051,44 +3213,46 @@ void Structure::functioncheck() {
 	for(map<Function*,FuncInter*>::const_iterator it = _funcinter.begin(); it != _funcinter.end(); ++it) {
 		Function* f = it->first;
 		FuncInter* ft = it->second;
-		PredInter* pt = ft->graphinter();
-		const PredTable* ct = pt->ct();
-		// Check if the interpretation is indeed a function
-		bool isfunc = true;
-		StrictWeakNTupleEquality eq(f->arity());
-		TableIterator it = ct->begin();
-		if(it.hasNext()) {
-			TableIterator jt = ct->begin(); ++jt;
-			for(; jt.hasNext(); ++it, ++jt) {
-				if(eq(*it,*jt)) {
-					const ElementTuple& tuple = *it;
-					vector<string> vstr;
-					for(unsigned int c = 0; c < f->arity(); ++c) 
-						vstr.push_back(tuple[c]->to_string());
-					Error::notfunction(f->name(),name(),vstr);
-					do { ++it; ++jt; } while(jt.hasNext() && eq(*it,*jt));
-					isfunc = false;
+		if(it->second->universe().approxfinite()) {
+			PredInter* pt = ft->graphinter();
+			const PredTable* ct = pt->ct();
+			// Check if the interpretation is indeed a function
+			bool isfunc = true;
+			StrictWeakNTupleEquality eq(f->arity());
+			TableIterator it = ct->begin();
+			if(it.hasNext()) {
+				TableIterator jt = ct->begin(); ++jt;
+				for(; jt.hasNext(); ++it, ++jt) {
+					if(eq(*it,*jt)) {
+						const ElementTuple& tuple = *it;
+						vector<string> vstr;
+						for(unsigned int c = 0; c < f->arity(); ++c) 
+							vstr.push_back(tuple[c]->to_string());
+						Error::notfunction(f->name(),name(),vstr);
+						do { ++it; ++jt; } while(jt.hasNext() && eq(*it,*jt));
+						isfunc = false;
+					}
 				}
 			}
-		}
-		// Check if the interpretation is total
-		if(isfunc && !(f->partial()) && ft->approxtwovalued() && ct->approxfinite()) {
-			vector<SortTable*> vst;
-			vector<bool> linked;
-			for(unsigned int c = 0; c < f->arity(); ++c) {
-				vst.push_back(inter(f->insort(c)));
-				linked.push_back(true);
-			}
-			PredTable spt(new FullInternalPredTable(),Universe(vst));
-			it = spt.begin();
-			TableIterator jt = ct->begin();
-			for(; it.hasNext() && jt.hasNext(); ++it, ++jt) {
-				if(!eq(*it,*jt)) {
-					break;
+			// Check if the interpretation is total
+			if(isfunc && !(f->partial()) && ft->approxtwovalued() && ct->approxfinite()) {
+				vector<SortTable*> vst;
+				vector<bool> linked;
+				for(unsigned int c = 0; c < f->arity(); ++c) {
+					vst.push_back(inter(f->insort(c)));
+					linked.push_back(true);
 				}
-			}
-			if(it.hasNext() || jt.hasNext()) {
-				Error::nottotal(f->name(),name());
+				PredTable spt(new FullInternalPredTable(),Universe(vst));
+				it = spt.begin();
+				TableIterator jt = ct->begin();
+				for(; it.hasNext() && jt.hasNext(); ++it, ++jt) {
+					if(!eq(*it,*jt)) {
+						break;
+					}
+				}
+				if(it.hasNext() || jt.hasNext()) {
+					Error::nottotal(f->name(),name());
+				}
 			}
 		}
 	}
