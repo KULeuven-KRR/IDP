@@ -161,6 +161,10 @@ bool Options::autocomplete() const {
 	return _booloptions.find("autocomplete")->second;
 }
 
+bool Options::trace() const {
+	return _booloptions.find("trace")->second;
+}
+
 ostream& Options::put(ostream& output) const {
 	for(map<string,StringOption*>::const_iterator it = _stringoptions.begin(); it != _stringoptions.end(); ++it) {
 		output << it->first << " = " << it->second->value() << endl;

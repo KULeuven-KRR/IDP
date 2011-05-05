@@ -20,7 +20,7 @@ Namespace* Namespace::_global = 0;
 
 Namespace* Namespace::global() {
 	if(!_global) {
-		ParseInfo pi;
+		ParseInfo pi(1,1,0);
 		_global = new Namespace("global_namespace",0,pi);
 		_global->add(Vocabulary::std());
 		_global->add(new Options("stdoptions",pi));

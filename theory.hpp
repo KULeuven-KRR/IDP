@@ -246,6 +246,8 @@ class BoolForm : public Formula {
 		// Constructors
 		BoolForm(bool sign, bool c, const std::vector<Formula*>& sb, const FormulaParseInfo& pi) :
 			Formula(sign,pi), _conj(c) { subformulas(sb); }
+		BoolForm(bool sign, bool c, Formula* left, Formula* right, const FormulaParseInfo& pi) :
+			Formula(sign,pi), _conj(c) { addsubformula(left); addsubformula(right);	}
 
 		BoolForm*	clone()										const;
 		BoolForm*	clone(const std::map<Variable*,Variable*>&)	const;
@@ -396,6 +398,7 @@ class Rule {
 		// Mutators
 		void	head(PredForm* h)	{ _head = h;	}	//!< Replace the head of the rule
 		void	body(Formula* f)	{ _body = f;	}	//!< Replace the body of the rule
+		void	addvar(Variable* v)	{ _quantvars.insert(v);	}
 
 		// Inspectors
 		PredForm*					head()			const { return _head;		}

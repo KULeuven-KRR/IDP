@@ -56,19 +56,6 @@ class Printer : public TheoryVisitor {
 		void printtab();
 };
 
-/*********************
-	Simple printer
-*********************/
-
-/*
-class SimplePrinter : public Printer {
-	public:
-		void visit(const Vocabulary*);
-		void visit(const Theory*);
-		void visit(const GroundTheory*);
-		void visit(const Structure*);
-};
-*/
 /******************
 	IDP printer
 ******************/

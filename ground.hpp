@@ -183,14 +183,14 @@ class GroundTranslator {
 		unsigned int	addSymbol(PFSymbol* pfs);
 		int				translateSet(const std::vector<int>&,const std::vector<double>&,const std::vector<double>&);
 
-		PFSymbol*										symbol(int nr)				const	{ return _backsymbtable[abs(nr)];		}
-		const std::vector<const DomainElement*>&					args(int nr)				const	{ return _backargstable[abs(nr)];		}
-		bool											isTseitin(int l)			const	{ return symbol(l) == 0;				}
-		TsBody*											tsbody(int l)				const	{ return _tsbodies.find(abs(l))->second;}
-		const TsSet&									groundset(int nr)			const	{ return _sets[nr];						}
-		TsSet&											groundset(int nr)					{ return _sets[nr];						}
-		unsigned int									nrOffsets()					const	{ return _symboffsets.size();			}
-		PFSymbol*										getSymbol(unsigned int n)	const	{ return _symboffsets[n];				}
+		PFSymbol*									symbol(int nr)				const	{ return _backsymbtable[abs(nr)];		}
+		const std::vector<const DomainElement*>&	args(int nr)				const	{ return _backargstable[abs(nr)];		}
+		bool										isTseitin(int l)			const	{ return symbol(l) == 0;				}
+		TsBody*										tsbody(int l)				const	{ return _tsbodies.find(abs(l))->second;}
+		const TsSet&								groundset(int nr)			const	{ return _sets[nr];						}
+		TsSet&										groundset(int nr)					{ return _sets[nr];						}
+		unsigned int								nrOffsets()					const	{ return _symboffsets.size();			}
+		PFSymbol*									getSymbol(unsigned int n)	const	{ return _symboffsets[n];				}
 		const std::map<std::vector<const DomainElement*>,int,StrictWeakTupleOrdering>&	getTuples(unsigned int n)	const	{ return _table[n];						}
 
 		std::string	printAtom(int nr)	const;

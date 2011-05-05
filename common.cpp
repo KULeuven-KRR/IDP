@@ -60,7 +60,7 @@ bool isDouble(const string& s) {
 }
 
 void notyetimplemented(const string& message) {
-	cerr << "ERROR: The following feature is not yet implemented:\n"
+	cerr << "WARNING or ERROR: The following feature is not yet implemented:\n"
 		 << '\t' << message << '\n'
 		 << "Please send an e-mail to krr@cs.kuleuven.be if you really need this feature.\n";
 }
@@ -172,59 +172,3 @@ string TsTypeNames[4] = { "<=>", "<-", "=>", "<=" };
 ostream& operator<<(ostream& out, TsType tstype) {
 	return out << TsTypeNames[tstype];
 }
-
-
-
-
-
-
-
-#ifdef OLD
-#include <string>
-#include <limits>
-#include <sstream>
-#include <stdlib.h>
-
-using namespace std;
-
-// Extreme numbers
-int		MIN_INT		= numeric_limits<int>::min();
-int		MAX_INT		= numeric_limits<int>::max();
-double	MIN_DOUBLE	= numeric_limits<double>::min(); 
-double	MAX_DOUBLE	= numeric_limits<double>::max(); 
-
-// Number of chars
-int nrOfChars() {
-	return numeric_limits<char>::max() - numeric_limits<char>::min();
-}
-
-// Next tuple
-bool nexttuple(vector<unsigned int>& tuple, const vector<unsigned int>& limits) {
-	for(unsigned int n = 0; n < tuple.size(); ++n) {
-		++tuple[n]; 
-		if(tuple[n] == limits[n]) tuple[n] = 0;
-		else return true;
-	}
-	return false;
-}
-
-// Convert integer to string
-
-// Convert string to integer 
-// (returns 0 when the string is not an integer)
-// Convert double to string 
-
-// Convert string to double 
-// (returns 0 if the input string is not a double)
-// Test if something is a char, double or int
-
-bool isChar(int n) {
-	return (0 <= n && n < 10);
-}
-
-bool isChar(double d) {
-	if(isInt(d)) return isChar(int(d));
-	else return false;
-}
-
-#endif

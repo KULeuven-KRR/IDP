@@ -28,9 +28,6 @@ Printer::Printer() {
 
 Printer* Printer::create(Options* opts) {
 	switch(opts->language()) {
-		case LAN_TXT:
-			// FIXME
-			//return new SimplePrinter();
 		case LAN_IDP:
 			return new IDPPrinter(opts->printtypes());
 		case LAN_ECNF:
@@ -52,10 +49,6 @@ void Printer::printtab() {
 /***************
     Theories
 ***************/
-
-//void SimplePrinter::visit(const Theory* ) {
-//	/* FIXME _out << t->to_string(); */
-//}
 
 void IDPPrinter::visit(const Theory* t) {
 	for(vector<Formula*>::const_iterator it = t->sentences().begin(); it != t->sentences().end(); ++it) {
@@ -428,11 +421,7 @@ void EcnfPrinter::printAggregate(AggFunction aggtype, TsType arrow, unsigned int
 	}
 	_out << (lower ? 'G' : 'L') << ' ' << head << ' ' << setnr << ' ' << bound << " 0\n";
 }
-/*
-void SimplePrinter::visit(const GroundTheory* g) {
-	_out << g->to_string();
-}
-*/
+
 void IDPPrinter::visit(const GroundTheory* g) {
 	_translator = g->translator();
 	_termtranslator = g->termtranslator();
@@ -624,11 +613,6 @@ void IDPPrinter::visit(const CPVarTerm* cpt) {
 /*****************
     Structures
 *****************/
-/*
-void SimplePrinter::visit(const Structure* ) {
-	// FIXME _out << s->to_string();
-}
-*/
 
 ostream& IDPPrinter::print(std::ostream& output, SortTable* table) const {
 	SortIterator it = table->sortbegin();
@@ -804,136 +788,9 @@ string IDPPrinter::print(const AbstractStructure* structure) {
 	return sstr.str();
 }
 
-/*
-void IDPPrinter::visit(const Structure* s) {
-	_currentstructure = s;
-	Vocabulary* v = s->vocabulary();
-	for(unsigned int n = 0; n < v->nrNBPreds(); ++n) {
-		_currentsymbol = v->nbpred(n);
-		if(_printtypes || _currentsymbol->nrSorts() != 1 || _currentsymbol != _currentsymbol->sort(0)->pred()) {
-			s->inter(v->nbpred(n))->accept(this);
-		}
-	}
-	for(unsigned int n = 0; n < v->nrNBFuncs(); ++n) {
-		_currentsymbol = v->nbfunc(n);
-		s->inter(v->nbfunc(n))->accept(this);
-	}
-}
-
-void IDPPrinter::visit(const SortTable* t) {
-	for(unsigned int n = 0; n < t->size(); ++n) {
-		_out << ElementUtil::ElementToString(t->element(n),t->type());
-		if(n < t->size()-1)
-			_out << ";";
-	}
-}
-
-void IDPPrinter::print(const PredTable* t) {
-	for(unsigned int r = 0; r < t->size(); ++r) {
-		for(unsigned int c = 0; c < t->arity(); ++c) {
-			_out << ElementUtil::ElementToString(t->element(r,c),t->type(c));
-			if(c < t->arity()-1) {
-				if(not(_currentsymbol->ispred()) && c == t->arity()-2)
-					_out << "->";
-				else
-					_out << ",";
-			}
-		}
-		if(r < t->size()-1)
-			_out << "; ";
-	}
-}
-
-void IDPPrinter::printInter(const char* pt1name,const char* pt2name,const PredTable* pt1,const PredTable* pt2) {
-	string fullname = _currentsymbol->name();
-	string shortname = fullname.substr(0,fullname.find('/'));
-	printtab();
-	_out << shortname << "<" << pt1name << "> = { ";
-	if(pt1)
-		print(pt1);
-	_out << " }\n";
-	printtab();
-	_out << shortname << "<" << pt2name << "> = { ";
-	if(pt2)
-		print(pt2);
-	_out << " }\n";
-}
-
-void IDPPrinter::visit(const PredInter* p) {
-	string fullname = _currentsymbol->name();
-	string shortname = fullname.substr(0,fullname.find('/'));
-	if(_currentsymbol->nrSorts() == 0) { // proposition
-		printtab();
-		_out << shortname << " = "; 
-		if(p->ct() != p->ctpf()->empty()) {
-			assert(p->cf() == p->cfpt()->empty());
-			_out << "true";
-		}
-		else if(p->cf() != p->cfpt()->empty()) {
-			assert(p->ct() == p->ctpf()->empty());
-			_out << "false";
-		}
-		else _out << "unknown";
-		_out << "\n";	
-	}
-	else if(!_currentsymbol->ispred() && _currentsymbol->nrSorts() == 1) { // constant
-		printtab();
-		_out << shortname << " = ";
-		print(p->ctpf());
-		_out << "\n";
-	}
-	else if(p->ctpf() == p->cfpt()) {
-		if(p->ct() && p->cf()) { // impossible
-			assert(false);
-		}
-		else if(p->ct()) { // p = ctpf
-			printtab();
-			_out << shortname << " = { ";
-			print(p->ctpf());
-			_out << " }\n";
-		}
-		else if(p->cf()) { // p[cf] = cfpt and p[u] = comp(cfpt)
-			PredTable* u = StructUtils::complement(p->cfpt(),_currentsymbol->sorts(),_currentstructure);
-			printInter("cf","u",p->cfpt(),u);
-			delete(u);
-		}
-		else { // p[ct] = {} and p[cf] = {}
-			printInter("ct","cf",NULL,NULL);
-		}
-	}
-	else {
-		if(p->ct() && p->cf()) { // p[ct] = { ctpf } and p[cf] = { cfpt }
-			printInter("ct","cf",p->ctpf(),p->cfpt());
-		}
-		else if(p->ct()) { // p[ct] = { ctpf } and p[u] = { cfpt \ ctpf }
-			PredTable* u = TableUtils::difference(p->cfpt(),p->ctpf());
-			printInter("ct","u",p->ctpf(),u);
-			delete(u);
-		}
-		else if(p->cf()) { // p[cf] = { cfpt } and p[u] = { ctpf \ cfpt }
-			PredTable* u = TableUtils::difference(p->ctpf(),p->cfpt());
-			printInter("cf","u",p->cfpt(),u);
-			delete(u);
-		}
-		else { // p[ct] = {} and p[cf] = {}
-			printInter("ct","cf",NULL,NULL);
-		}
-	}
-}
-
-void IDPPrinter::visit(const FuncInter* f) {
-	//TODO Currently, function interpretation is handled as predicate interpretation
-	f->predinter()->accept(this);	
-}
-*/
 /*******************
     Vocabularies
 *******************/
-/*
-void SimplePrinter::visit(const Vocabulary* v) {
-	_out << v->to_string();
-}
-*/
 string EcnfPrinter::print(const Vocabulary* v) {
 	return "(vocabulary cannot be printed in ecnf)";
 }
@@ -1016,6 +873,7 @@ void IDPPrinter::visit(const Function* f) {
 string IDPPrinter::print(const Namespace* ) {
 	return string("not yet implemented");
 }
+
 /*
 void IDPPrinter::visit(const Namespace* s) {
 	for(unsigned int n = 0; n < s->nrVocs(); ++n) {

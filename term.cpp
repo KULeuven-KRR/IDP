@@ -377,9 +377,12 @@ QuantSetExpr* QuantSetExpr::clone(const map<Variable*,Variable*>& mvv) const {
 
 Sort* QuantSetExpr::sort() const {
 	Sort* termsort = (*_subterms.begin())->sort();
-	if(SortUtils::isSubsort(termsort,VocabularyUtils::natsort())) return VocabularyUtils::natsort();
-	else if(SortUtils::isSubsort(termsort,VocabularyUtils::intsort())) return VocabularyUtils::intsort();
-	else if(SortUtils::isSubsort(termsort,VocabularyUtils::floatsort())) return VocabularyUtils::floatsort();
+	if(termsort) {
+		if(SortUtils::isSubsort(termsort,VocabularyUtils::natsort())) return VocabularyUtils::natsort();
+		else if(SortUtils::isSubsort(termsort,VocabularyUtils::intsort())) return VocabularyUtils::intsort();
+		else if(SortUtils::isSubsort(termsort,VocabularyUtils::floatsort())) return VocabularyUtils::floatsort();
+		else return 0;
+	}
 	else return 0;
 }
 

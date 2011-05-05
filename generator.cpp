@@ -78,7 +78,7 @@ GeneratorNode* TwoChildGeneratorNode::first() const {
 }
 
 bool TreeInstGenerator::first() const {
-	if(!_root) return true; //FIXME probably not correct in every situation
+	if(!_root) return true; 
 	_curr = _root->first(); 
 	return (_curr ? true : false);
 }
@@ -138,7 +138,7 @@ GeneratorNode*	TwoChildGeneratorNode::next() const {
 }
 
 bool TreeInstGenerator::next() const {
-	if(!_root) return false; //FIXME probably not correct in every situation...
+	if(!_root) return false; 
 	assert(_curr);
 	GeneratorNode* temp = 0;
 	while(!temp) {

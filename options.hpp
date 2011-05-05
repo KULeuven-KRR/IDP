@@ -94,6 +94,7 @@ class Options {
 		int			nrmodels()			const;
 		int			satverbosity()		const;
 		int			groundverbosity()	const;
+		bool		trace()				const;
 
 		std::ostream&	put(std::ostream&)	const;
 		std::string		to_string()			const;	

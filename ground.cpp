@@ -1610,7 +1610,14 @@ void GrounderFactory::visit(const QuantForm* qf) {
 		_varmapping[*it] = d;
 		vars.push_back(d);
 		SortTable* st = _structure->inter((*it)->sort());
-		assert(st->finite());	// TODO: produce an error message
+		if(!st->finite()) {
+			cerr << "Warning: infinite grounding of formula ";
+			if(qf->pi().original()) {
+				cerr << *(qf->pi().original());
+				cerr << "\n   internal representation: ";
+			}
+			cerr << *qf << endl;
+		}
 		tables.push_back(st);
 	}
 	GeneratorFactory gf;

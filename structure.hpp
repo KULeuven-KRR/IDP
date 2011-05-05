@@ -201,6 +201,43 @@ class DomainElementFactory {
 		const Compound*		compound(Function*,const ElementTuple&);
 };
 
+/*******************
+	Domain atoms
+*******************/
+
+class DomainAtomFactory;
+
+class DomainAtom {
+	private:
+		PFSymbol*		_symbol;
+		ElementTuple	_args;
+
+		DomainAtom(PFSymbol* symbol, const ElementTuple& args) : _symbol(symbol), _args(args) { }
+
+	public:
+		~DomainAtom() { }
+
+		PFSymbol*			symbol()	const { return _symbol;	}
+		const ElementTuple&	args()		const { return _args;	} 
+
+		std::ostream&	put(std::ostream&)	const;
+		std::string		to_string()			const;
+
+		friend class DomainAtomFactory;
+		
+};
+
+class DomainAtomFactory {
+	private:
+		static DomainAtomFactory*								_instance;
+		std::map<PFSymbol*,std::map<ElementTuple,DomainAtom*> >	_atoms;	
+		DomainAtomFactory() { }
+
+	public:
+		~DomainAtomFactory();
+		static	DomainAtomFactory*	instance();
+				const DomainAtom*	create(PFSymbol*,const ElementTuple&);
+};
 
 /****************
 	Iterators
@@ -216,6 +253,7 @@ class TableIterator {
 	private:
 		InternalTableIterator*	_iterator;
 	public:
+		TableIterator() : _iterator(0) { }
 		TableIterator(const TableIterator&);
 		TableIterator(InternalTableIterator* iter) : _iterator(iter) { }
 		TableIterator& operator=(const TableIterator&);
@@ -335,6 +373,45 @@ class Universe {
 		bool		approxfinite()					const;
 		bool		contains(const ElementTuple&)	const;
 		tablesize	size()							const;
+};
+
+class InternalFuncTable;
+
+class InternalFuncIterator : public InternalTableIterator {
+	private:
+		TableIterator					_curr;
+		mutable ElementTable			_deref;
+		const InternalFuncTable*		_function;
+		bool							hasNext()	const { return _curr.hasNext();	}
+		const ElementTuple&				operator*()	const;
+		void							operator++();
+	public:
+		InternalFuncIterator(const InternalFuncTable* f, const Universe& univ);
+		InternalFuncIterator(const InternalFuncTable* f, const TableIterator& c) : 
+			_curr(c), _function(f) { }
+		~InternalFuncIterator() {	}
+		InternalFuncIterator* clone() const { return new InternalFuncIterator(_function,_curr);	}
+		
+};
+
+class InternalPredTable;
+
+class ProcInternalTableIterator : public InternalTableIterator {
+	private:
+		TableIterator					_curr;
+		Universe						_univ;
+		mutable ElementTable			_deref;
+		const InternalPredTable*		_predicate;
+		bool							hasNext()	const { return _curr.hasNext();	}
+		const ElementTuple&				operator*()	const;
+		void							operator++();
+	public:
+		ProcInternalTableIterator(const InternalPredTable* p, const Universe& univ);
+		ProcInternalTableIterator(const InternalPredTable* p, const TableIterator& c, const Universe& univ) : 
+			_curr(c), _univ(univ), _predicate(p) { }
+		~ProcInternalTableIterator() {	}
+		ProcInternalTableIterator* clone() const { return new ProcInternalTableIterator(_predicate,_curr,_univ);	}
+		
 };
 
 class UnionInternalIterator : public InternalTableIterator {
@@ -1040,9 +1117,9 @@ class EnumeratedInternalSortTable : public InternalSortTable {
 		bool approxempty()	const { return _table.empty();	}
 		tablesize	size()	const { return tablesize(true,_table.size());	}
 	protected:
-		~EnumeratedInternalSortTable() { }
 	public:
 		EnumeratedInternalSortTable() { }
+		~EnumeratedInternalSortTable() { }
 		EnumeratedInternalSortTable(const SortedElementTuple& d) : _table(d) { }
 		InternalSortTable*		add(const DomainElement*);
 		InternalSortTable*		remove(const DomainElement*);
@@ -1363,11 +1440,11 @@ class SortTable : public AbstractTable {
 		tablesize		size()								const	{ return _table->size();			}
 		bool			contains(const ElementTuple& tuple)	const	{ return _table->contains(tuple);	}
 		bool			contains(const DomainElement* el)	const	{ return _table->contains(el);		}
-		void			add(const ElementTuple& tuple)				{ _table = _table->add(tuple);		}
-		void			add(const DomainElement* el)				{ _table = _table->add(el);			}
-		void			add(int i1, int i2)							{ _table = _table->add(i1,i2);		}
-		void			remove(const ElementTuple& tuple)			{ _table = _table->remove(tuple);	}
-		void			remove(const DomainElement* el)				{ _table = _table->remove(el);		}
+		void			add(const ElementTuple& tuple);	
+		void			add(const DomainElement* el);	
+		void			add(int i1, int i2);			
+		void			remove(const ElementTuple& tuple);	
+		void			remove(const DomainElement* el);	
 		TableIterator 	begin()								const;
 		SortIterator 	sortbegin()							const;
 

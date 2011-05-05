@@ -765,10 +765,10 @@ void SolverTheory::addCPVariable(unsigned int varid) {
 		Function* function = _termtranslator->function(varid);
 //cerr << "func = " << function->name();
 		SortTable* domain = _structure->inter(function->outsort());
-		assert(domain->finite()); 		//TODO Right?
-		const DomainElement* first = domain->first(); 	//FIXME domain->first() ?
+		assert(domain->approxfinite()); 
+		const DomainElement* first = domain->first(); 
 		int minvalue = first->value()._int;
-		const DomainElement* last = domain->last();		//FIXME domain->last() ?
+		const DomainElement* last = domain->last();	
 		int maxvalue = last->value()._int;
 		assert(maxvalue > minvalue);
 		if(domain->isRange()) {

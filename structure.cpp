@@ -246,6 +246,36 @@ bool operator>=(const Compound& c1,const Compound& c2) {
 	return (c1 == c2 || c2 < c1);
 }
 
+ostream& DomainAtom::put(ostream& output) const {
+	output << *_symbol;
+	if(typeid(*_symbol) == typeid(Predicate)) {
+		if(!_symbol->sorts().empty()) {
+			output << '(' << *_args[0];
+			for(unsigned int n = 1; n < _args.size(); ++n) {
+				output << ',' << *_args[n];
+			}
+			output << ')';
+		}
+	}
+	else {
+		Function* f = dynamic_cast<Function*>(_symbol);
+		if(f->arity() > 0) {
+			output << '(' << *_args[0];
+			for(unsigned int n = 1; n < f->arity(); ++n) {
+				output << ',' << *_args[n];
+			}
+			output << ") = " << *(_args.back());
+		}
+	}
+	return output;
+}
+
+string DomainAtom::to_string() const {
+	stringstream sstr;
+	put(sstr);
+	return sstr.str();
+}
+
 /**
  *	Constructor for a domain element factory. The constructor gets two arguments, 
  *	specifying the range of integer for which creation of domain elements is optimized.
@@ -416,6 +446,33 @@ const DomainElement* DomainElementFactory::create(Function* function, const Elem
 	return create(value);
 }
 
+DomainAtomFactory::~DomainAtomFactory() {
+	for(map<PFSymbol*,map<ElementTuple,DomainAtom*> >::iterator it = _atoms.begin(); it != _atoms.end(); ++it) {
+		for(map<ElementTuple,DomainAtom*>::iterator jt = it->second.begin(); jt != it->second.end(); ++jt) {
+			delete(jt->second);
+		}
+	}
+}
+
+DomainAtomFactory* DomainAtomFactory::_instance = 0;
+
+DomainAtomFactory* DomainAtomFactory::instance() {
+	if(!_instance) _instance = new DomainAtomFactory();
+	return _instance;
+}
+
+const DomainAtom* DomainAtomFactory::create(PFSymbol* s, const ElementTuple& tuple) {
+	map<PFSymbol*,map<ElementTuple,DomainAtom*> >::const_iterator it = _atoms.find(s);
+	if(it != _atoms.end()) {
+		map<ElementTuple,DomainAtom*>::const_iterator jt = it->second.find(tuple); 
+		if(jt != it->second.end()) return jt->second;
+	}
+	DomainAtom* newatom = new DomainAtom(s,tuple);
+	_atoms[s][tuple] = newatom;
+	return newatom;
+}
+
+
 /****************
 	Iterators
 ****************/
@@ -502,6 +559,49 @@ void CartesianInternalTableIterator::operator++() {
 		else _iterators[n] = _lowest[n];
 	}
 	if(n < 0) _hasNext = false;
+}
+
+const ElementTuple&	InternalFuncIterator::operator*() const {
+	ElementTuple e = *_curr;
+	e.push_back(_function->operator[](e));
+	_deref.push_back(e);
+	return _deref.back();
+}
+
+void InternalFuncIterator::operator++() {
+	++_curr;
+	while(_curr.hasNext() && !(_function->operator[](*_curr))) ++_curr;
+}
+
+InternalFuncIterator::InternalFuncIterator(const InternalFuncTable* f, const Universe& univ) : _function(f) {
+	vector<SortIterator> vsi1;
+	vector<SortIterator> vsi2;
+	for(unsigned int n = 0; n < univ.arity()-1; ++n) {
+		vsi1.push_back(univ.tables()[n]->sortbegin());
+		vsi2.push_back(univ.tables()[n]->sortbegin());
+	}
+	_curr = TableIterator(new CartesianInternalTableIterator(vsi1,vsi2,true));
+	if(!_function->operator[](*_curr)) operator++();
+}
+
+const ElementTuple&	ProcInternalTableIterator::operator*() const {
+	return *_curr;
+}
+
+void ProcInternalTableIterator::operator++() {
+	++_curr;
+	while(_curr.hasNext() && !(_predicate->contains(*_curr,_univ))) ++_curr;
+}
+
+ProcInternalTableIterator::ProcInternalTableIterator(const InternalPredTable* p, const Universe& univ) :  _univ(univ), _predicate(p) {
+	vector<SortIterator> vsi1;
+	vector<SortIterator> vsi2;
+	for(unsigned int n = 0; n < univ.arity(); ++n) {
+		vsi1.push_back(univ.tables()[n]->sortbegin());
+		vsi2.push_back(univ.tables()[n]->sortbegin());
+	}
+	_curr = TableIterator(new CartesianInternalTableIterator(vsi1,vsi2,true));
+	if(!_predicate->contains(*_curr,_univ)) operator++();
 }
 
 SortInternalTableIterator::~SortInternalTableIterator() {
@@ -1513,7 +1613,19 @@ InternalSortIterator* EnumeratedInternalSortTable::sortbegin() const {
 }
 
 InternalSortTable* EnumeratedInternalSortTable::add(int i1, int i2) {
-	// TODO TODO TODO
+	if(empty()) return new IntRangeInternalSortTable(i1,i2);
+	else if(first()->type() == DET_INT && last()->type() == DET_INT) {
+		if(i1 <= first()->value()._int && last()->value()._int <= i2) {
+			return new IntRangeInternalSortTable(i1,i2);
+		}
+		else if(isRange()) {
+			if((i1 <= last()->value()._int + 1) && (i2 >= first()->value()._int - 1)) {
+				int f = i1 < first()->value()._int ? i1 : first()->value()._int;
+				int l = i2 < last()->value()._int ? last()->value()._int : i2;
+				return new IntRangeInternalSortTable(f,l);
+			}
+		}
+	}
 	InternalSortTable* temp = this;
 	for(int n = i1; n <= i2; ++n) {
 		temp = temp->add(DomainElementFactory::instance()->create(n));
@@ -1560,15 +1672,66 @@ const DomainElement* EnumeratedInternalSortTable::last() const {
 }
 
 InternalSortTable* IntRangeInternalSortTable::add(const DomainElement* d) {
-	// TODO
+	if(!contains(d)) {
+		if(d->type() == DET_INT) {
+			if(d->value()._int == _first - 1) {
+				if(_nrRefs < 2) { _first = d->value()._int; return this;	}
+			}
+			else if(d->value()._int == _last +1) {
+				if(_nrRefs < 2) { _last = d->value()._int; return this;		}
+			}
+		}
+		EnumeratedInternalSortTable* eist = new EnumeratedInternalSortTable();
+		InternalSortTable* ist = eist->add(d);
+		InternalSortTable* ist2 = ist->add(_first,_last);
+		if(ist2 != eist) delete(eist);
+		return ist2;
+	}
+	else return this;
 }
 
 InternalSortTable* IntRangeInternalSortTable::remove(const DomainElement* d) {
-	// TODO
+	if(contains(d)) {
+		if(d->type() == DET_INT) {
+			if(d->value()._int == _first) {
+				if(_nrRefs < 2) { _first = _first + 1; return this;	}
+			}
+			else if(d->value()._int == _last) {
+				if(_nrRefs < 2) { _last = _last - 1; return this;	}
+			}
+		}
+		EnumeratedInternalSortTable* eist = new EnumeratedInternalSortTable();
+		for(int n = _first; n < d->value()._int; ++n) {
+			eist->add(DomainElementFactory::instance()->create(n));
+		}
+		for(int n = d->value()._int + 1; n <= _last; ++n) {
+			eist->add(DomainElementFactory::instance()->create(n));
+		}
+		return eist;
+	}
+	else return this;
 }
 
 InternalSortTable* IntRangeInternalSortTable::add(int i1, int i2) {
-	// TODO
+	if(i1 <= _last + 1 && i2 >= _first -1) {
+		if(_nrRefs > 1) {
+			int f = i1 < _first ? i1 : _first;
+			int l = i2 > _last ? i2 : _last;
+			return new IntRangeInternalSortTable(f,l);
+		}
+		else {
+			_first = i1 < _first ? i1 : _first;
+			_last = i2 > _last ? i2 : _last;
+			return this;
+		}
+	}
+	else {
+		EnumeratedInternalSortTable* eist = new EnumeratedInternalSortTable();
+		for(int n = _first; n <= _last; ++n) eist->add(DomainElementFactory::instance()->create(n));
+		InternalSortTable* ist = eist->add(i1,i2);
+		if(ist != eist) delete(eist);
+		return ist;
+	}
 }
 
 const DomainElement* IntRangeInternalSortTable::first() const {
@@ -1719,17 +1882,34 @@ InternalSortIterator* UnionInternalSortTable::sortbegin() const {
 }
 
 const DomainElement* UnionInternalSortTable::first() const {
-	// TODO
-	return 0;
+	InternalSortIterator* isi = sortbegin();
+	if(isi->hasNext()) {
+		const DomainElement* f = *(*isi);
+		delete(isi);
+		return f;
+	}
+	else return 0;
 }
 
 const DomainElement* UnionInternalSortTable::last() const {
-	// TODO
-	return 0;
+	const DomainElement* result = 0;
+	for(vector<SortTable*>::const_iterator it = _intables.begin(); it != _intables.end(); ++it) {
+		const DomainElement* temp = (*it)->last();
+		if(temp && contains(temp)) {
+			if(result) {
+				result = *result < *temp ? temp : result;
+			}
+			else result = temp;
+		}
+	}
+	if(!result) {
+		notyetimplemented("Computation of last element of a UnionInternalSortTable");
+	}
+	return result;
 }
 
 bool UnionInternalSortTable::isRange() const {
-	// TODO
+	notyetimplemented("Exact range test of a UnionInternalSortTable");
 	return false;
 }
 
@@ -1974,18 +2154,17 @@ const DomainElement* ProcInternalFuncTable::operator[](const ElementTuple& tuple
 }
 
 InternalFuncTable* ProcInternalFuncTable::add(const ElementTuple& ) {
-	// TODO
-	return 0;
+	notyetimplemented("adding a tuple to a procedural function interpretation");
+	return this;
 }
 
 InternalFuncTable* ProcInternalFuncTable::remove(const ElementTuple& ) {
-	// TODO
-	return 0;
+	notyetimplemented("removing a tuple from a procedural function interpretation");
+	return this;
 }
 
-InternalTableIterator* ProcInternalFuncTable::begin(const Universe& ) const {
-	// TODO
-	return 0;
+InternalTableIterator* ProcInternalFuncTable::begin(const Universe& univ) const {
+	return new InternalFuncIterator(this,univ);
 }
 
 bool UNAInternalFuncTable::finite(const Universe& univ) const {
@@ -2031,13 +2210,13 @@ const DomainElement* UNAInternalFuncTable::operator[](const ElementTuple& tuple)
 }
 
 InternalFuncTable* UNAInternalFuncTable::add(const ElementTuple& ) {
-	// TODO
-	return 0;
+	notyetimplemented("adding a tuple to a generated function interpretation");
+	return this;
 }
 
 InternalFuncTable* UNAInternalFuncTable::remove(const ElementTuple& ) {
-	// TODO
-	return 0;
+	notyetimplemented("removing a tuple from a generated function interpretation");
+	return this;
 }
 
 InternalTableIterator* UNAInternalFuncTable::begin(const Universe& univ) const {
@@ -2106,18 +2285,17 @@ const DomainElement* ModInternalFuncTable::operator[](const vector<const DomainE
 }
 
 InternalFuncTable* ModInternalFuncTable::add(const ElementTuple& ) {
-	// TODO
+	assert(false);
 	return 0;
 }
 
 InternalFuncTable* ModInternalFuncTable::remove(const ElementTuple& ) {
-	// TODO
+	assert(false);
 	return 0;
 }
 
-InternalTableIterator* ModInternalFuncTable::begin(const Universe&) const {
-	// TODO
-	return 0;
+InternalTableIterator* ModInternalFuncTable::begin(const Universe& univ) const {
+	return new InternalFuncIterator(this,univ);
 }
 
 const DomainElement* ExpInternalFuncTable::operator[](const vector<const DomainElement*>& tuple) const {
@@ -2127,27 +2305,26 @@ const DomainElement* ExpInternalFuncTable::operator[](const vector<const DomainE
 }
 
 InternalFuncTable* ExpInternalFuncTable::add(const ElementTuple& ) {
-	// TODO
+	assert(false);
 	return 0;
 }
 
 InternalFuncTable* ExpInternalFuncTable::remove(const ElementTuple& ) {
-	// TODO
+	assert(false);
 	return 0;
 }
 
-InternalTableIterator* ExpInternalFuncTable::begin(const Universe&) const {
-	// TODO
-	return 0;
+InternalTableIterator* ExpInternalFuncTable::begin(const Universe& univ) const {
+	return new InternalFuncIterator(this,univ);
 }
 
 InternalFuncTable* IntFloatInternalFuncTable::add(const ElementTuple& ) {
-	// TODO
+	assert(false);
 	return 0;
 }
 
 InternalFuncTable* IntFloatInternalFuncTable::remove(const ElementTuple& ) {
-	// TODO
+	assert(false);
 	return 0;
 }
 
@@ -2164,9 +2341,8 @@ const DomainElement* PlusInternalFuncTable::operator[](const ElementTuple& tuple
 	}
 }
 
-InternalTableIterator* PlusInternalFuncTable::begin(const Universe& ) const {
-	// TODO
-	return 0;
+InternalTableIterator* PlusInternalFuncTable::begin(const Universe& univ) const {
+	return new InternalFuncIterator(this,univ);
 }
 
 const DomainElement* MinusInternalFuncTable::operator[](const ElementTuple& tuple) const {
@@ -2182,9 +2358,8 @@ const DomainElement* MinusInternalFuncTable::operator[](const ElementTuple& tupl
 	}
 }
 
-InternalTableIterator* MinusInternalFuncTable::begin(const Universe&) const {
-	// TODO
-	return 0;
+InternalTableIterator* MinusInternalFuncTable::begin(const Universe& univ) const {
+	return new InternalFuncIterator(this,univ);
 }
 
 const DomainElement* TimesInternalFuncTable::operator[](const ElementTuple& tuple) const {
@@ -2200,9 +2375,8 @@ const DomainElement* TimesInternalFuncTable::operator[](const ElementTuple& tupl
 	}
 }
 
-InternalTableIterator* TimesInternalFuncTable::begin(const Universe&) const {
-	// TODO
-	return 0;
+InternalTableIterator* TimesInternalFuncTable::begin(const Universe& univ) const {
+	return new InternalFuncIterator(this,univ);
 }
 
 const DomainElement* DivInternalFuncTable::operator[](const ElementTuple& tuple) const {
@@ -2218,9 +2392,8 @@ const DomainElement* DivInternalFuncTable::operator[](const ElementTuple& tuple)
 	}
 }
 
-InternalTableIterator* DivInternalFuncTable::begin(const Universe&) const {
-	// TODO
-	return 0;
+InternalTableIterator* DivInternalFuncTable::begin(const Universe& univ) const {
+	return new InternalFuncIterator(this,univ);
 }
 
 const DomainElement* AbsInternalFuncTable::operator[](const ElementTuple& tuple) const {
@@ -2232,9 +2405,8 @@ const DomainElement* AbsInternalFuncTable::operator[](const ElementTuple& tuple)
 	}
 }
 
-InternalTableIterator* AbsInternalFuncTable::begin(const Universe&) const {
-	// TODO
-	return 0;
+InternalTableIterator* AbsInternalFuncTable::begin(const Universe& univ ) const {
+	return new InternalFuncIterator(this,univ);
 }
 
 const DomainElement* UminInternalFuncTable::operator[](const ElementTuple& tuple) const {
@@ -2246,9 +2418,8 @@ const DomainElement* UminInternalFuncTable::operator[](const ElementTuple& tuple
 	}
 }
 
-InternalTableIterator* UminInternalFuncTable::begin(const Universe&) const {
-	// TODO
-	return 0;
+InternalTableIterator* UminInternalFuncTable::begin(const Universe& univ) const {
+	return new InternalFuncIterator(this,univ);
 }
 
 /****************
@@ -2324,18 +2495,17 @@ bool ProcInternalPredTable::contains(const ElementTuple& tuple, const Universe& 
 }
 
 InternalPredTable* ProcInternalPredTable::add(const ElementTuple& ) {
-	// TODO
-	return 0;
+	notyetimplemented("Adding a tuple to a procedural predicate table");
+	return this;
 }
 
 InternalPredTable* ProcInternalPredTable::remove(const ElementTuple& ) {
-	// TODO
-	return 0;
+	notyetimplemented("Removing a tuple from a procedural predicate table");
+	return this;
 }
 
-InternalTableIterator* ProcInternalPredTable::begin(const Universe& ) const {
-	// TODO
-	return 0;
+InternalTableIterator* ProcInternalPredTable::begin(const Universe& univ) const {
+	return new ProcInternalTableIterator(this,univ);
 }
 
 InverseInternalPredTable::~InverseInternalPredTable() {
@@ -2497,6 +2667,56 @@ void SortTable::interntable(InternalSortTable* table) {
 	_table = table;
 	_table->incrementRef();
 }
+
+void SortTable::add(const ElementTuple& tuple) {
+	if(_table->contains(tuple)) return;
+	InternalSortTable* temp = _table;
+	_table = _table->add(tuple);
+	if(temp != _table) {
+		temp->decrementRef();
+		_table->incrementRef();
+	}
+}
+
+void SortTable::add(const DomainElement* el) {
+	if(_table->contains(el)) return;
+	InternalSortTable* temp = _table;
+	_table = _table->add(el);
+	if(temp != _table) {
+		temp->decrementRef();
+		_table->incrementRef();
+	}
+}
+
+void SortTable::add(int i1, int i2) {
+	InternalSortTable* temp = _table;
+	_table = _table->add(i1,i2);
+	if(temp != _table) {
+		temp->decrementRef();
+		_table->incrementRef();
+	}
+}
+
+void SortTable::remove(const ElementTuple& tuple) {
+	if(!_table->contains(tuple)) return;
+	InternalSortTable* temp = _table;
+	_table = _table->remove(tuple);
+	if(temp != _table) {
+		temp->decrementRef();
+		_table->incrementRef();
+	}
+}
+
+void SortTable::remove(const DomainElement* el) {
+	if(!_table->contains(el)) return;
+	InternalSortTable* temp = _table;
+	_table = _table->remove(el);
+	if(temp != _table) {
+		temp->decrementRef();
+		_table->incrementRef();
+	}
+}
+
 
 /****************
 	FuncTable
@@ -3088,7 +3308,7 @@ void computescore(Sort* s, map<Sort*,unsigned int>& scores) {
 }
 
 void completeSortTable(const PredTable* pt, PFSymbol* symbol, const string& structname) {
-	if(pt->universe().approxfinite()) {
+	if(pt->approxfinite()) {
 		for(TableIterator jt = pt->begin(); jt.hasNext(); ++jt) {
 			const ElementTuple& tuple = *jt;
 			for(unsigned int col = 0; col < tuple.size(); ++col) {
@@ -3110,6 +3330,10 @@ void completeSortTable(const PredTable* pt, PFSymbol* symbol, const string& stru
 	}
 }
 
+void addUNAPattern(Function* f) {
+	// TODO
+}
+
 void Structure::autocomplete() {
 	// Adding elements from predicate interpretations to sorts
 	for(map<Predicate*,PredInter*>::const_iterator it = _predinter.begin(); it != _predinter.end(); ++it) {
@@ -3125,18 +3349,19 @@ void Structure::autocomplete() {
 		}
 	}
 	// Adding elements from function interpretations to sorts
-	// FIXME: this can be wrong if the input sorts of the function are infinite
-	// FIXME: this can be wrong if the output sort of the function influences its input sorts and the
-	// FIXME: wrong if loop over functions...
-	// function is not finite
 	for(map<Function*,FuncInter*>::const_iterator it = _funcinter.begin(); it != _funcinter.end(); ++it) {
-		const PredTable* pt1 = it->second->graphinter()->ct();
-		if(typeid(*(pt1->interntable())) == typeid(InverseInternalPredTable)) pt1 = it->second->graphinter()->pf();
-		completeSortTable(pt1,it->first,_name);
-		if(!it->second->approxtwovalued()) {
-			const PredTable* pt2 = it->second->graphinter()->cf();
-			if(typeid(*(pt2->interntable())) == typeid(InverseInternalPredTable)) pt2 = it->second->graphinter()->pt();
-			completeSortTable(pt2,it->first,_name);
+		if(it->second->functable() && typeid(*(it->second->functable()->interntable())) == typeid(UNAInternalFuncTable)) {
+			addUNAPattern(it->first);
+		}
+		else {
+			const PredTable* pt1 = it->second->graphinter()->ct();
+			if(typeid(*(pt1->interntable())) == typeid(InverseInternalPredTable)) pt1 = it->second->graphinter()->pf();
+			completeSortTable(pt1,it->first,_name);
+			if(!it->second->approxtwovalued()) {
+				const PredTable* pt2 = it->second->graphinter()->cf();
+				if(typeid(*(pt2->interntable())) == typeid(InverseInternalPredTable)) pt2 = it->second->graphinter()->pt();
+				completeSortTable(pt2,it->first,_name);
+			}
 		}
 	}
 
