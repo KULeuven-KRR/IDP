@@ -31,7 +31,7 @@ gidl_SOURCES = \
 		options.cpp options.hpp\
 		execute.hpp execute.cpp\
 		namespace.hpp namespace.cpp\
-		parse.yy\
+		parse.yy yyltype.hpp\
 		lex.ll\
 		clconst.hpp\
 		insert.hpp insert.cpp\
@@ -55,10 +55,10 @@ LIBBLDDIR = $(builddir)/lib
 # CALLBACK FRAMEWORK
 AM_CXXFLAGS += -I $(LIBSRCDIR)/pluscallback1.7/
 
-dist_doc_DATA = README
-
 data_stddir = $(datadir)/std
 data_std_DATA = data/idp_intern.idp data/idp_intern.lua data/mx.idp data/theory.idp data/domain.idp
 
 data_localdir = $(localstatedir)/idp
 data_local_DATA = data/.idprc
+
+dist_doc_DATA = README $(data_std_DATA) $(data_local_DATA)
