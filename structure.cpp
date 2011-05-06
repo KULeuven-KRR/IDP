@@ -536,6 +536,17 @@ SortIterator& SortIterator::operator++() {
 	return *this;
 }
 
+CartesianInternalTableIterator::CartesianInternalTableIterator(const vector<SortIterator>& vsi, const vector<SortIterator>& low, bool h) : _iterators(vsi), _lowest(low), _hasNext(h) {
+	if(h) {
+		for(vector<SortIterator>::iterator it = _iterators.begin(); it != _iterators.end(); ++it) {
+			if(!it->hasNext()) {
+				_hasNext = false;
+				break;
+			}
+		}
+	}
+}
+
 CartesianInternalTableIterator* CartesianInternalTableIterator::clone() const {
 	return new CartesianInternalTableIterator(_iterators,_lowest,_hasNext);
 }
@@ -582,7 +593,7 @@ InternalFuncIterator::InternalFuncIterator(const InternalFuncTable* f, const Uni
 		vsi2.push_back(univ.tables()[n]->sortbegin());
 	}
 	_curr = TableIterator(new CartesianInternalTableIterator(vsi1,vsi2,true));
-	if(!_function->operator[](*_curr)) operator++();
+	if(_curr.hasNext() && !_function->operator[](*_curr)) operator++();
 }
 
 const ElementTuple&	ProcInternalTableIterator::operator*() const {
@@ -1341,7 +1352,7 @@ bool EnumeratedInternalPredTable::contains(const ElementTuple& tuple, const Univ
  *		A pointer to the updated table
  */
 EnumeratedInternalPredTable* EnumeratedInternalPredTable::add(const ElementTuple& tuple) {
-	if(_nrRefs == 1) {
+	if(_nrRefs <= 1) {
 		_table.insert(tuple);
 		return this;
 	}

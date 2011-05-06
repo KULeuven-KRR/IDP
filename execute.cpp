@@ -924,7 +924,8 @@ AbstractTheory* ground(AbstractTheory* theory, AbstractStructure* structure, Opt
 	GrounderFactory factory(structure,options);
 	TopLevelGrounder* grounder = factory.create(theory);
 	grounder->run();
-	AbstractTheory* grounding = grounder->grounding();
+	AbstractGroundTheory* grounding = grounder->grounding();
+	grounding->addFuncConstraints();
 	delete(grounder);
 	return grounding;
 }
@@ -1516,6 +1517,7 @@ namespace LuaConnection {
 	 * Garbage collection for structures
 	 */
 	int gcStructure(lua_State* L) {
+		/* TODO: uncomment
 		AbstractStructure* s = *(AbstractStructure**)lua_touserdata(L,1);
 		map<AbstractStructure*,unsigned int>::iterator it = _luastructures.find(s);
 		if(it != _luastructures.end()) {
@@ -1525,6 +1527,7 @@ namespace LuaConnection {
 				delete(s);
 			}
 		}
+		*/
 		return 0;
 	}
 
@@ -2197,7 +2200,7 @@ namespace LuaConnection {
 				if(sp->size() == 1) {
 					Predicate* p = *(sp->begin());
 					if(value._type == AT_PREDINTER) {
-						structure->inter(p,value._value._predinter);
+						structure->inter(p,value._value._predinter->clone(structure->universe(p)));
 						return 0;
 					}
 					else {
@@ -2213,7 +2216,7 @@ namespace LuaConnection {
 				if(sf->size() == 1) {
 					Function* f = *(sf->begin());
 					if(value._type == AT_FUNCINTER) {
-						structure->inter(f,value._value._funcinter);
+						structure->inter(f,value._value._funcinter->clone(structure->universe(f)));
 						return 0;
 					}
 					else {

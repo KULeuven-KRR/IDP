@@ -604,11 +604,12 @@ int AggGrounder::finish(double boundvalue, double newboundvalue, double minpossv
 	else {
 		int tseitin;
 		TsType tp = _context._tseitin;
-		if((_type == AGG_MIN) && (_comp == '=')) // Only use lower bound
-			tseitin = _translator->translate(newboundvalue,'<',false,AGG_MIN,setnr,tp);
-		else if((_type == AGG_MAX) && (_comp == '=')) // Only use upper bound
-			tseitin = _translator->translate(newboundvalue,'>',false,AGG_MAX,setnr,tp);
-		else
+	// ??? WRONG CODE ???	
+	//	if((_type == AGG_MIN) && (_comp == '=')) // Only use lower bound
+	//		tseitin = _translator->translate(newboundvalue,'<',false,AGG_MIN,setnr,tp);
+	//	else if((_type == AGG_MAX) && (_comp == '=')) // Only use upper bound
+	//		tseitin = _translator->translate(newboundvalue,'>',false,AGG_MAX,setnr,tp);
+	//	else
 			tseitin = _translator->translate(newboundvalue,_comp,true,_type,setnr,tp);
 		return _sign ? tseitin : -tseitin;
 	}
