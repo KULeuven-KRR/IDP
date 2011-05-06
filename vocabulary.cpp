@@ -1104,10 +1104,11 @@ void OrderFuncGenerator::addVocabulary(const Vocabulary* vocabulary) {
 	}
 }
 
-void OrderFuncGenerator::removeVocabulary(const Vocabulary* vocabulary) {
-	for(map<Sort*,Function*>::iterator it = _overfuncs.begin(); it != _overfuncs.end(); ++it) {
-		it->second->removeVocabulary(vocabulary);
-	}
+void OrderFuncGenerator::removeVocabulary(const Vocabulary* ) {
+	// TODO: check this...
+	//for(map<Sort*,Function*>::iterator it = _overfuncs.begin(); it != _overfuncs.end(); ++it) {
+	//	it->second->removeVocabulary(vocabulary);
+	//}
 }
 
 set<Function*> OrderFuncGenerator::nonbuiltins() const {

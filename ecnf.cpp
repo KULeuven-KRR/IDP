@@ -342,7 +342,6 @@ void AbstractGroundTheory::transformForAdd(const vector<int>& vi, VIType /*vit*/
 void GroundTheory::recursiveDelete() {
 	for(vector<GroundDefinition*>::iterator defit = _definitions.begin(); defit != _definitions.end(); ++defit) {
 		(*defit)->recursiveDelete();
-		delete(*defit);
 	}
 	for(vector<GroundAggregate*>::iterator aggit = _aggregates.begin(); aggit != _aggregates.end(); ++aggit) {
 		delete(*aggit);
@@ -822,7 +821,7 @@ void SolverTheory::addPCRule(int defnr, int head, PCTsBody* tsb) {
  *		Adds constraints to the theory that state that each of the functions that occur in the theory is indeed a function.
  *		This method should be called before running the SAT solver and after grounding.
  */
-void SolverTheory::addFuncConstraints() {
+void AbstractGroundTheory::addFuncConstraints() {
 	for(unsigned int n = 0; n < getTranslator().nrOffsets(); ++n) {
 		PFSymbol* pfs = getTranslator().getSymbol(n);
 		const map<vector<const DomainElement*>,int,StrictWeakTupleOrdering>& tuples = getTranslator().getTuples(n);
@@ -859,7 +858,10 @@ void SolverTheory::addFuncConstraints() {
 					if(tit.hasNext()) {
 						const ElementTuple& tuple = *tit;
 						if(de(tuple,it->first)) {
-							do { ++it; } while(it != tuples.end() && de(tuple,it->first));
+							do { 
+								if(it->first != tuple) addUnitClause(-(it->second));
+								++it; 
+							} while(it != tuples.end() && de(tuple,it->first));
 							continue;
 						}
 						else if(ds(tuple,it->first)) {
@@ -878,7 +880,7 @@ void SolverTheory::addFuncConstraints() {
 				vector<double> tw(0);
 				int setnr = getTranslator().translateSet(sets[s],lw,tw);
 				int tseitin;
-				if(f->partial() || !(st->finite())) {
+				if(f->partial() || !(st->finite()) || weak[s]) {
 					tseitin = getTranslator().translate(1,'>',false,AGG_CARD,setnr,TS_IMPL);
 				}
 				else {

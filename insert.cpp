@@ -2145,48 +2145,52 @@ void Insert::addTupleVal(FuncTable* ft, const DomainElement* d, YYLTYPE l) const
 
 void Insert::inter(NSPair* nsp, const longname& procedure, YYLTYPE l) const {
 	ParseInfo pi = parseinfo(l);
-	string* proc = LuaConnection::getProcedure(procedure,pi);
-	vector<SortTable*> univ;
-	if(nsp->_sortsincluded) {
-		for(vector<Sort*>::const_iterator it = nsp->_sorts.begin(); it != nsp->_sorts.end(); ++it) {
-			if(*it) {
-				univ.push_back(_currstructure->inter(*it));
-			}
-		}
-		if(nsp->_func) {
-			ProcInternalFuncTable* pift = new ProcInternalFuncTable(proc);
-			FuncTable* ft = new FuncTable(pift,Universe(univ));
-			funcinter(nsp,ft);
-		}
-		else {
-			ProcInternalPredTable* pipt = new ProcInternalPredTable(proc);
-			PredTable* pt = new PredTable(pipt,Universe(univ));
-			predinter(nsp,pt);
-		}
-	}
-	else {
-		ParseInfo pi = nsp->_pi;
-		std::set<Predicate*> vp = noArPredInScope(nsp->_name,pi);
-		if(vp.empty()) Error::undeclpred(nsp->to_string(),pi);
-		else if(vp.size() > 1) {
-			std::set<Predicate*>::const_iterator it = vp.begin();
-			Predicate* p1 = *it; 
-			++it;
-			Predicate* p2 = *it;
-			Error::overloadedpred(nsp->to_string(),p1->pi(),p2->pi(),pi);
-		}
-		else {
-			for(vector<Sort*>::const_iterator it = (*(vp.begin()))->sorts().begin(); it != (*(vp.begin()))->sorts().end(); ++it) {
+	UserProcedure* up = procedureInScope(procedure,pi);
+	string* proc = 0;
+	if(up) proc = StringPointer(up->registryindex());
+	else proc = LuaConnection::getProcedure(procedure,pi);
+	if(proc) {
+		vector<SortTable*> univ;
+		if(nsp->_sortsincluded) {
+			for(vector<Sort*>::const_iterator it = nsp->_sorts.begin(); it != nsp->_sorts.end(); ++it) {
 				if(*it) {
 					univ.push_back(_currstructure->inter(*it));
 				}
 			}
-			ProcInternalPredTable* pipt = new ProcInternalPredTable(proc);
-			PredTable* pt = new PredTable(pipt,Universe(univ));
-			predinter(nsp,pt);
+			if(nsp->_func) {
+				ProcInternalFuncTable* pift = new ProcInternalFuncTable(proc);
+				FuncTable* ft = new FuncTable(pift,Universe(univ));
+				funcinter(nsp,ft);
+			}
+			else {
+				ProcInternalPredTable* pipt = new ProcInternalPredTable(proc);
+				PredTable* pt = new PredTable(pipt,Universe(univ));
+				predinter(nsp,pt);
+			}
+		}
+		else {
+				ParseInfo pi = nsp->_pi;
+			std::set<Predicate*> vp = noArPredInScope(nsp->_name,pi);
+			if(vp.empty()) Error::undeclpred(nsp->to_string(),pi);
+			else if(vp.size() > 1) {
+				std::set<Predicate*>::const_iterator it = vp.begin();
+				Predicate* p1 = *it; 
+				++it;
+				Predicate* p2 = *it;
+				Error::overloadedpred(nsp->to_string(),p1->pi(),p2->pi(),pi);
+			}
+			else {
+				for(vector<Sort*>::const_iterator it = (*(vp.begin()))->sorts().begin(); it != (*(vp.begin()))->sorts().end(); ++it) {
+					if(*it) {
+						univ.push_back(_currstructure->inter(*it));
+					}
+				}
+				ProcInternalPredTable* pipt = new ProcInternalPredTable(proc);
+				PredTable* pt = new PredTable(pipt,Universe(univ));
+				predinter(nsp,pt);
+			}
 		}
 	}
-
 }
 
 void Insert::emptythreeinter(NSPair* nst, const string& utf) {

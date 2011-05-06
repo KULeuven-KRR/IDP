@@ -324,7 +324,7 @@ class AbstractGroundTheory : public AbstractTheory {
 		AbstractGroundTheory(Vocabulary* voc, AbstractStructure* str);
 
 		// Destructor
-		virtual void recursiveDelete();
+		virtual void recursiveDelete() = 0;
 		virtual	~AbstractGroundTheory();
 
 		// Mutators
@@ -348,6 +348,8 @@ class AbstractGroundTheory : public AbstractTheory {
 
 		virtual void addPCRule(int defnr, int tseitin, PCTsBody* body)		= 0; 
 		virtual void addAggRule(int defnr, int tseitin, AggTsBody* body)	= 0; 
+
+		void	addFuncConstraints();
 
 		// Inspectors
 		GroundTranslator*		translator()		const { return _translator;			}
@@ -398,7 +400,6 @@ class SolverTheory : public AbstractGroundTheory {
 		void	addPCRule(int defnr, int head, PCGroundRuleBody* body);
 		void	addAggRule(int defnr, int head, AggGroundRuleBody* body);
 
-		void	addFuncConstraints();
 		void	addFalseDefineds();
 
 		// Inspectors

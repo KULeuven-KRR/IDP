@@ -299,8 +299,7 @@ class CartesianInternalTableIterator : public InternalTableIterator {
 		const ElementTuple&			operator*()	const;
 		void						operator++();
 	public:
-		CartesianInternalTableIterator(const std::vector<SortIterator>& vsi, const std::vector<SortIterator>& low, bool h = true) : 
-			_iterators(vsi), _lowest(low), _hasNext(h) { }
+		CartesianInternalTableIterator(const std::vector<SortIterator>& vsi, const std::vector<SortIterator>& low, bool h = true); 
 		~CartesianInternalTableIterator() { }
 		CartesianInternalTableIterator*	clone()	const;
 
@@ -1729,6 +1728,8 @@ class AbstractStructure {
 		virtual PredInter*			inter(PFSymbol* s)			const = 0;	// Return the interpretation of s.
 
 		virtual AbstractStructure*	clone() const = 0;	// take a clone of this structure
+
+		virtual Universe	universe(PFSymbol*)	const = 0;
 
 };
 
