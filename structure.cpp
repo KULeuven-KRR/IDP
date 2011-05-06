@@ -7,6 +7,7 @@
 #include <cmath>
 #include <sstream>
 #include <iostream>
+#include <typeinfo>
 #include "common.hpp"
 #include "vocabulary.hpp"
 #include "structure.hpp"

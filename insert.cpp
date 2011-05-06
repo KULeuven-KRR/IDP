@@ -7,6 +7,7 @@
 #include <cassert>
 #include <sstream>
 #include <iostream>
+#include <typeinfo>
 #include "common.hpp"
 #include "insert.hpp"
 #include "vocabulary.hpp"
@@ -15,7 +16,7 @@
 #include "theory.hpp"
 #include "namespace.hpp"
 #include "yyltype.hpp"
-#include "parse.tab.hh"
+#include "parse.h"
 #include "error.hpp"
 #include "options.hpp"
 #include "execute.hpp"

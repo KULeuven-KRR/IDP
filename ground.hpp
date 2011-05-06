@@ -15,7 +15,7 @@
 #include <stack>
 #include <cstdlib>
 #include "theory.hpp"
-
+#include "structure.hpp"
 #include "commontypes.hpp"
 #include "pcsolver/src/external/ExternalInterface.hpp"
 
