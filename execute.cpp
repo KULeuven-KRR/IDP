@@ -1629,7 +1629,7 @@ namespace LuaConnection {
 			for(unsigned int n = 0; n < table->size(); ++n) carry[n] = (*table)[n].sort()->begin();
 			while(true) {
 				vector<Sort*> currsorts(table->size());
-				for(unsigned int n = 0; table->size(); ++n) currsorts[n] = *(carry[n]);
+				for(unsigned int n = 0; n < table->size(); ++n) currsorts[n] = *(carry[n]);
 				for(set<Predicate*>::const_iterator it = pred->begin(); it != pred->end(); ++it) {
 					if((*it)->arity() == table->size()) {
 						if((*it)->resolve(currsorts)) newpred->insert(*it);
@@ -1661,25 +1661,17 @@ namespace LuaConnection {
 		if(index._type == AT_TABLE) {
 			vector<InternalArgument>* table = index._value._table;
 			vector<InternalArgument> newtable;
-			if(table->size() < 2) {
+			if(table->size() < 1) {
 				lua_pushstring(L,"Invalid function symbol index");
 				return lua_error(L);
 			}
 			for(unsigned int n = 0; n < table->size(); ++n) {
-				if(n == table->size()-2) {
-					if((*table)[n]._type != AT_PROCEDURE) {
-						lua_pushstring(L,"Expected a colon in a function symbol index");
-						return lua_error(L);
-					}
+				if((*table)[n]._type == AT_SORT) {
+					newtable.push_back((*table)[n]);
 				}
 				else {
-					if((*table)[n]._type == AT_SORT) {
-						newtable.push_back((*table)[n]);
-					}
-					else {
-						lua_pushstring(L,"A function symbol can only be indexed by a tuple of types");
-						return lua_error(L);
-					}
+					lua_pushstring(L,"A function symbol can only be indexed by a tuple of types");
+					return lua_error(L);
 				}
 			}
 			set<Function*>* newfunc = new set<Function*>();
@@ -1687,7 +1679,7 @@ namespace LuaConnection {
 			for(unsigned int n = 0; n < newtable.size(); ++n) carry[n] = newtable[n].sort()->begin();
 			while(true) {
 				vector<Sort*> currsorts(newtable.size());
-				for(unsigned int n = 0; newtable.size(); ++n) currsorts[n] = *(carry[n]);
+				for(unsigned int n = 0; n < newtable.size(); ++n) currsorts[n] = *(carry[n]);
 				for(set<Function*>::const_iterator it = func->begin(); it != func->end(); ++it) {
 					if((*it)->arity() == newtable.size()) {
 						if((*it)->resolve(currsorts)) newfunc->insert(*it);
@@ -2366,21 +2358,18 @@ namespace LuaConnection {
 	int functionArity(lua_State* L) {
 		set<Function*>* func = *(set<Function*>**)lua_touserdata(L,1);
 		InternalArgument arity(2,L);
-		if(arity._type == AT_TABLE) {
-			if(arity._value._table->size() > 0) {
-				if((*(arity._value._table))[0]._type == AT_INT) {
-					int ar = (*(arity._value._table))[0]._value._int;
-					set<Function*>* newfunc = new set<Function*>();
-					for(set<Function*>::const_iterator it = func->begin(); it != func->end(); ++it) {
-						if((int)(*it)->arity() == ar) newfunc->insert(*it);
-					}
-					InternalArgument nf(newfunc);
-					return convertToLua(L,nf);
-				}
+		if(arity._type == AT_INT) {
+			set<Function*>* newfunc = new set<Function*>();
+			for(set<Function*>::const_iterator it = func->begin(); it != func->end(); ++it) {
+				if((int)(*it)->arity() == arity._value._int) newfunc->insert(*it);
 			}
+			InternalArgument nf(newfunc);
+			return convertToLua(L,nf);
 		}
-		lua_pushstring(L,"The arity of a function must be of the form \'integer : 1\'");
-		return lua_error(L);
+		else {
+			lua_pushstring(L,"The arity of a function must an integer");
+			return lua_error(L);
+		}
 	}
 
 	/**

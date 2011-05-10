@@ -1273,7 +1273,7 @@ InternalPredTable* UnionInternalPredTable::add(const ElementTuple& tuple) {
 	if(_nrRefs > 1) {
 		UnionInternalPredTable* newtable = new UnionInternalPredTable(_intables,_outtables);
 		InternalPredTable* temp = newtable->add(tuple); assert(temp == newtable);
-		return newtable;
+		return temp;
 	}
 	else {
 		InternalPredTable* temp = _intables[0]->add(tuple);
@@ -1308,7 +1308,7 @@ InternalPredTable* UnionInternalPredTable::remove(const ElementTuple& tuple) {
 	if(_nrRefs > 1) {
 		UnionInternalPredTable* newtable = new UnionInternalPredTable(_intables,_outtables);
 		InternalPredTable* temp = newtable->remove(tuple); assert(temp == newtable);
-		return newtable;
+		return temp;
 	}
 	else {
 		InternalPredTable* temp = _outtables[0]->add(tuple);
@@ -2251,7 +2251,9 @@ InternalFuncTable* EnumeratedInternalFuncTable::add(const ElementTuple& tuple) {
 	const DomainElement* computedvalue = operator[](key);
 	if(computedvalue != 0) {
 		if(computedvalue == value) return this;
-		else assert(false);
+		else { 
+			assert(false); return this;
+		}
 	}
 	else {
 		if(_nrRefs > 1) {
@@ -3133,14 +3135,16 @@ FuncInter* MaxInterGenerator::get(const AbstractStructure* structure) {
 FuncInter* SuccInterGenerator::get(const AbstractStructure* structure) {
 	SortTable* st = structure->inter(_sort);
 	vector<SortTable*> univ(2,st);
-	FuncTable* ft; // TODO
+	FuncTable* ft = 0; // TODO
+	notyetimplemented("successor function");
 	return new FuncInter(ft);
 }
 
 FuncInter* InvSuccInterGenerator::get(const AbstractStructure* structure) {
 	SortTable* st = structure->inter(_sort);
 	vector<SortTable*> univ(2,st);
-	FuncTable* ft; // TODO
+	FuncTable* ft = 0; // TODO
+	notyetimplemented("successor function");
 	return new FuncInter(ft);
 }
 
@@ -3341,8 +3345,9 @@ void completeSortTable(const PredTable* pt, PFSymbol* symbol, const string& stru
 	}
 }
 
-void addUNAPattern(Function* f) {
+void addUNAPattern(Function* ) {
 	// TODO
+	notyetimplemented("una pattern type");
 }
 
 void Structure::autocomplete() {

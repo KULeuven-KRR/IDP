@@ -5,6 +5,7 @@
 ************************************/
 
 #include <sstream>
+#include <iostream>
 #include "vocabulary.hpp"
 #include "structure.hpp"
 #include "common.hpp"
@@ -186,6 +187,7 @@ namespace SortUtils {
 	 *	\return	The unique nearest common ancestor if it exists, a null-pointer otherwise.
 	 */ 
 	Sort* resolve(Sort* s1, Sort* s2, const Vocabulary* vocabulary) {
+		if((s1 == 0) || s2 == 0) return 0;
 		set<Sort*> ss1 = s1->ancestors(vocabulary); ss1.insert(s1);
 		set<Sort*> ss2 = s2->ancestors(vocabulary); ss2.insert(s2);
 		set<Sort*> ss;
@@ -447,7 +449,7 @@ Predicate* Predicate::disambiguate(const vector<Sort*>& sorts,const Vocabulary* 
 	if(overloaded()) return _overpredgenerator->disambiguate(sorts,vocabulary); 
 	else {
 		for(unsigned int n = 0; n < _sorts.size(); ++n) {
-			if(!SortUtils::resolve(sorts[n],_sorts[n],vocabulary)) return 0;
+			if(_sorts[n] && !SortUtils::resolve(sorts[n],_sorts[n],vocabulary)) return 0;
 		}
 		return this;
 	}
@@ -834,7 +836,7 @@ Function* Function::disambiguate(const vector<Sort*>& sorts,const Vocabulary* vo
 	if(overloaded()) return _overfuncgenerator->disambiguate(sorts,vocabulary); 
 	else {
 		for(unsigned int n = 0; n < _sorts.size(); ++n) {
-			if(!SortUtils::resolve(sorts[n],_sorts[n],vocabulary)) return 0;
+			if(sorts[n] && !SortUtils::resolve(sorts[n],_sorts[n],vocabulary)) return 0;
 		}
 		return this;
 	}

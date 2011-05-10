@@ -840,7 +840,7 @@ void AbstractGroundTheory::addFuncConstraints() {
 			vector<vector<int> > sets;
 			vector<bool> weak;
 			for(map<vector<const DomainElement*>,int,StrictWeakTupleOrdering>::const_iterator it = tuples.begin(); it != tuples.end(); ) {
-				if(de(it->first,input)) {
+				if(de(it->first,input) && !sets.empty()) {
 					sets.back().push_back(it->second);
 					while(*sit != it->first.back()) {
 						ElementTuple temp = input; temp.push_back(*sit);

@@ -392,6 +392,8 @@ CompType invertcpcomp(CompType ct) {
 		case CT_GT: return CT_LT;
 		default: assert(false);
 	}
+	assert(false);
+	return CT_EQ;
 }
 
 int CPGrounder::run() const {
@@ -447,6 +449,7 @@ int CPGrounder::run() const {
 		}
 	}
 	assert(false);
+	return 0;
 }
 
 void CPGrounder::run(vector<int>& clause) const {
@@ -641,7 +644,7 @@ int AggGrounder::run() const {
 			case '<' : returnvalue = boundvalue < truevalue; break;
 			case '>' : returnvalue = boundvalue > truevalue; break;
 			case '=' : returnvalue = boundvalue == truevalue; break;
-			default: assert(false);
+			default: assert(false); returnvalue = true;
 		}
 		return _sign == returnvalue ? _true : _false;
 	}
@@ -701,6 +704,7 @@ int AggGrounder::run() const {
 		}
 		default: 
 			assert(false);
+			tseitin = 0;
 	}
 	return tseitin;
 }
@@ -958,17 +962,15 @@ const DomainElement* VarTermGrounder::run() const {
 }
 
 const DomainElement* FuncTermGrounder::run() const {
+	if(_verbosity > 1) 
+		printorig();
 	for(unsigned int n = 0; n < _subtermgrounders.size(); ++n) {
 		_args[n] = _subtermgrounders[n]->run();
 	}
 	const DomainElement* result = (*_function)[_args];
-#ifndef NDEBUG
-/*	if(_cloptions._verbose) {
-		printorig();
-		Element e; e._compound = result;
-		cerr << "Result is " << ElementUtil::ElementToString(e,ELCOMPOUND) << endl;
-	}*/
-#endif
+	if(_verbosity > 1) {
+		clog << "Result = " << result << endl;
+	}
 	return result;
 }
 
@@ -1023,6 +1025,7 @@ const DomainElement* AggTermGrounder::run() const {
 const DomainElement* ThreeValuedAggTermGrounder::run() const {
 	//TODO
 	assert(false);
+	return 0;
 }
 
 int EnumSetGrounder::run() const {
@@ -1480,7 +1483,10 @@ void GrounderFactory::visit(const PredForm* pf) {
 					else if(pf->symbol()->name() == ">/2") {
 						comp = pf->sign() ? CT_GT : CT_LEQ;
 					}
-					else assert(false);
+					else {
+						assert(false);
+						comp = CT_EQ;
+					}
 					_formgrounder = new CPGrounder(_grounding->translator(),_grounding->termtranslator(),
 											subtermgrounders[0],comp,subtermgrounders[1],_context);
 				}
@@ -1724,6 +1730,7 @@ void GrounderFactory::visit(const AggForm* af) {
 			case CT_LEQ: cmp = '>'; sgn = !sgn; break;
 			case CT_GT: cmp = '>'; break;
 			case CT_GEQ: cmp = '<'; sgn = !sgn; break;
+			default: assert(false); cmp = '=';
 		}
 		_formgrounder = new AggGrounder(_grounding->translator(),_context,af->right()->function(),setgr,boundgr,cmp,sgn);
 		RestoreContext();
@@ -1780,11 +1787,13 @@ void GrounderFactory::visit(const FuncTerm* t) {
 
 	// Create term grounder
 	Function* func = t->function();
-	if(_structure->inter(func)->approxtwovalued() || not _options->cpsupport()) {
+	if(_structure->inter(func)->approxtwovalued()) {
 		FuncTable* ft = _structure->inter(func)->functable();
+		assert(ft);
 		_termgrounder = new FuncTermGrounder(sub,ft);
 	}
 	else {
+		// FIXME FIXME FIXME (see old version 26/4/11 for correct code)
 		vector<SortTable*> vst;
 		for(unsigned int n = 0; n < func->arity(); ++n) {
 			vst.push_back(_structure->inter(func->sort(n)));
