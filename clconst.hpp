@@ -9,7 +9,7 @@
 
 #include <string>
 #include "insert.hpp"
-#include "parse.tab.hh"
+#include "parse.h"
 
 /************************************************
 	class to represent the different 

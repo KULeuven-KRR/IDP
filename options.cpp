@@ -5,6 +5,7 @@
 ************************************/
 
 #include <sstream>
+#include <limits>
 #include "options.hpp"
 #include "error.hpp"
 using namespace std;

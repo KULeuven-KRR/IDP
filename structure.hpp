@@ -1696,6 +1696,8 @@ class InvSuccInterGeneratorGenerator : public FuncInterGeneratorGenerator {
 
 /** Abstract base class **/
 
+class Predicate;
+
 class AbstractStructure {
 	protected:
 

@@ -11,9 +11,10 @@
 #include <string>
 #include <iostream>
 #include <sstream>
+#include <typeinfo>
 #include "clconst.hpp"
 #include "insert.hpp"
-#include "parse.tab.hh"
+#include "parse.h"
 #include "error.hpp"
 #include "common.hpp"
 using namespace std;

@@ -10,6 +10,7 @@
 #include "structure.hpp"
 #include "common.hpp"
 #include "namespace.hpp"
+#include <typeinfo>
 
 using namespace std;
 
