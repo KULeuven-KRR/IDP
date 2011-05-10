@@ -322,29 +322,29 @@ void AbstractGroundTheory::transformForAdd(const vector<int>& vi, VIType /*vit*/
 				}
 			}
 		}
-		else {
-			//TODO
-			//if atom's value is determined by CP-solver and used by the SAT-solver {
-			//	add connection constraint.
-			//}
-			//PROBLEM: this does not make sense in an "idp grounding", right?
-			PFSymbol* pfs = _translator->symbol(atom);
-			if(not pfs->ispred() && _printedconstraints.find(atom) == _printedconstraints.end()) {
-				_printedconstraints.insert(atom);
-				vector<domelement> args = _translator->args(atom);
-				int value = args.back()->_args[0]._element._int;
-				args.pop_back();
-				Function* func = dynamic_cast<Function*>(pfs);
-				if(_termtranslator->contains(func,args)) {
-					unsigned int varid = _termtranslator->translate(func,ElementUtil::convert(args)); //FIXME conversion is nasty...
-					CPTerm* leftterm = new CPVarTerm(varid);
-					CPBound rightbound(false,value);
-					vector<int> cl(2,-atom);
-					cl[1] = _translator->translate(leftterm,CT_EQ,rightbound,TS_IMPL);
-					addClause(cl,true);
-				}
-			}
-		}
+		//else {
+		//	//TODO
+		//	//if atom's value is determined by CP-solver and used by the SAT-solver {
+		//	//	add connection constraint.
+		//	//}
+		//	//PROBLEM: this does not make sense in an "idp grounding", right?
+		//	PFSymbol* pfs = _translator->symbol(atom);
+		//	if(not pfs->ispred() && _printedconstraints.find(atom) == _printedconstraints.end()) {
+		//		_printedconstraints.insert(atom);
+		//		vector<domelement> args = _translator->args(atom);
+		//		int value = args.back()->_args[0]._element._int;
+		//		args.pop_back();
+		//		Function* func = dynamic_cast<Function*>(pfs);
+		//		if(_termtranslator->contains(func,args)) {
+		//			unsigned int varid = _termtranslator->translate(func,ElementUtil::convert(args)); //FIXME conversion is nasty...
+		//			CPTerm* leftterm = new CPVarTerm(varid);
+		//			CPBound rightbound(false,value);
+		//			vector<int> cl(2,-atom);
+		//			cl[1] = _translator->translate(leftterm,CT_EQ,rightbound,TS_IMPL);
+		//			addClause(cl,true);
+		//		}
+		//	}
+		//}
 	}
 }
 

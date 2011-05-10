@@ -43,9 +43,9 @@ struct TypedElement {
 	ElementType	_type;
 
 	TypedElement(Element e, ElementType t) : _element(e), _type(t) { }
-	TypedElement(int n) : _type(ELINT) { _element._int = n;	}
-	TypedElement(double d) : _type(ELDOUBLE) { _element._double = d;	}
-	TypedElement(std::string* s) : _type(ELSTRING) { _element._string = s;	}
+	explicit TypedElement(int n) : _type(ELINT) { _element._int = n;	}
+	explicit TypedElement(double d) : _type(ELDOUBLE) { _element._double = d;	}
+	explicit TypedElement(std::string* s) : _type(ELSTRING) { _element._string = s;	}
 	TypedElement(compound* c) : _type(ELCOMPOUND) { _element._compound = c;	}
 	TypedElement() : _type(ELINT) { }
 };

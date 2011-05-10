@@ -11,6 +11,7 @@
 #include <sstream>
 #include <limits>
 #include <cmath>
+#include <utility> // for relational operators
 
 #include "element.hpp"
 #include "vocabulary.hpp"
@@ -22,6 +23,7 @@
 #include "common.hpp"
 
 using namespace std;
+using namespace rel_ops;
 
 /** The two built-in literals 'true' and 'false' **/
 int _true = numeric_limits<int>::max();
@@ -29,9 +31,131 @@ int _false = 0;
 
 extern CLOptions _cloptions;
 
-/**********************************************
+/****************************************
+	Comparison operators for TsBodies
+****************************************/
+
+bool operator==(const TsBody& a, const TsBody& b) {
+	if(typeid(a) != typeid(b))
+		return false;
+	else
+		return a.equal(b);
+}
+
+bool operator<(const TsBody& a, const TsBody& b) {
+	// Order of TsBodies of different types is defined by lexical order of there typeids.
+	if(typeid(a) != typeid(b))
+		return (typeid(a).name() < typeid(b).name());
+	else
+		return a.compare(b);
+}	
+
+bool TsBody::equal(const TsBody& other) const {
+	return _type == other.type();
+}
+
+bool TsBody::compare(const TsBody& other) const {
+	return _type < other.type();
+}
+
+bool CPTsBody::equal(const TsBody& other) const {
+	if(not TsBody::equal(other))
+		return false;
+	const CPTsBody& othercpt = static_cast<const CPTsBody&>(other);
+	return (*_left == *othercpt.left()) && (_comp == othercpt.comp()) && (_right == othercpt.right());
+}
+
+bool CPTsBody::compare(const TsBody& other) const {
+	if(TsBody::compare(other))
+		return true;
+	else if(TsBody::equal(other)) {
+		const CPTsBody& othercpt = static_cast<const CPTsBody&>(other);
+		if(*_left < *othercpt.left())
+			return true;
+		else if(*_left == *othercpt.left()) {
+			if(_comp < othercpt.comp())
+				return true;
+			else if(_comp == othercpt.comp()) {
+				if(_right < othercpt.right()) 
+					return true;
+			}
+		}
+	}
+	return false;
+}
+
+/** Comparing CP terms and bounds **/
+
+bool operator==(const CPTerm& a, const CPTerm& b) {
+	if(typeid(a) != typeid(b))
+		return false;
+	else
+		return a.equal(b);
+}
+
+bool operator<(const CPTerm& a, const CPTerm& b) {
+	if(typeid(a) != typeid(b))
+		return (typeid(a).name() < typeid(b).name());
+	else
+		return a.compare(b);
+}
+
+bool CPVarTerm::equal(const CPTerm& other) const {
+	const CPVarTerm& othercpt = static_cast<const CPVarTerm&>(other);
+	return _varid == othercpt._varid;
+}
+
+bool CPVarTerm::compare(const CPTerm& other) const {
+	const CPVarTerm& othercpt = static_cast<const CPVarTerm&>(other);
+	return _varid < othercpt._varid;
+}
+
+bool CPSumTerm::equal(const CPTerm& other) const {
+	const CPSumTerm& othercpt = static_cast<const CPSumTerm&>(other);
+	return _varids == othercpt._varids;
+}
+
+bool CPSumTerm::compare(const CPTerm& other) const {
+	const CPSumTerm& othercpt = static_cast<const CPSumTerm&>(other);
+	return _varids < othercpt._varids;
+}
+
+bool CPWSumTerm::equal(const CPTerm& other) const {
+	const CPWSumTerm& othercpt = static_cast<const CPWSumTerm&>(other);
+	return (_varids == othercpt._varids) && (_weights == othercpt._weights);
+}
+
+bool CPWSumTerm::compare(const CPTerm& other) const {
+	const CPWSumTerm& othercpt = static_cast<const CPWSumTerm&>(other);
+	return (_varids <= othercpt._varids) && (_weights < othercpt._weights);
+}
+
+bool operator==(const CPBound& a, const CPBound& b) {
+	if(a._isvarid == b._isvarid) {
+		return a._isvarid ? (a._value._varid == b._value._varid) : (a._value._bound == b._value._bound);
+	}
+	return false;
+}
+
+bool operator<(const CPBound& a, const CPBound& b) {
+	if(a._isvarid == b._isvarid) {
+		return a._isvarid ? (a._value._varid < b._value._varid) : (a._value._bound < b._value._bound);
+	}
+	// CPBounds with a number value come before CPBounds with a varid.
+	return (a._isvarid < b._isvarid);
+}
+
+/*********************************************
 	Translate from ground atoms to numbers
-**********************************************/
+*********************************************/
+
+GroundTranslator::~GroundTranslator() {
+	// delete TsBodies
+	for(map<int,TsBody*>::iterator mapit = _nr2tsbodies.begin(); mapit != _nr2tsbodies.end(); ++mapit)
+		delete mapit->second;
+	_nr2tsbodies.clear();
+	_tsbodies2nr.clear(); // All TsBodies in this map should've been deleted through the other map.
+}
 
 int GroundTranslator::translate(unsigned int n, const vector<domelement>& args) {
 	map<vector<domelement>,int>::iterator jt = _table[n].lower_bound(args);
@@ -59,7 +183,8 @@ int GroundTranslator::translate(PFSymbol* s, const vector<TypedElement>& args) {
 int GroundTranslator::translate(const vector<int>& clause, bool conj, TsType tstype) {
 	int nr = nextNumber();
 	PCTsBody* tsbody = new PCTsBody(tstype,clause,conj);
-	_tsbodies[nr] = tsbody;
+	//_tsbodies2nr.insert(it,pair<TsBody*,int>(tsbody,nr));
+	_nr2tsbodies.insert(pair<int,TsBody*>(nr,tsbody));
 	return nr;
 }
 
@@ -78,16 +203,25 @@ int	GroundTranslator::translate(double bound, char comp, bool strict, AggType ag
 			tsbody->_bound = (comp == '<') ? bound + 1 : bound - 1;	
 		} 
 		else tsbody->_bound = bound;
-		_tsbodies[nr] = tsbody;
+		//_tsbodies2nr.insert(it,pair<TsBody*,int>(tsbody,nr));
+		_nr2tsbodies.insert(pair<int,TsBody*>(nr,tsbody));
 		return nr;
 	}
 }
 
 int GroundTranslator::translate(CPTerm* left, CompType comp, const CPBound& right, TsType tstype) {
-	int nr = nextNumber();
-	CPTsBody* tb = new CPTsBody(tstype,left,comp,right);
-	_tsbodies[nr] = tb;
-	return nr;
+	CPTsBody* tsbody = new CPTsBody(tstype,left,comp,right);
+	map<TsBody*,int,TsCompare>::iterator it = _tsbodies2nr.lower_bound(tsbody);
+	if(it != _tsbodies2nr.end() && *(it->first) == *tsbody) {
+		delete tsbody;
+		return it->second;
+	}
+	else {
+		int nr = nextNumber();
+		_tsbodies2nr.insert(it,pair<TsBody*,int>(tsbody,nr));
+		_nr2tsbodies.insert(pair<int,TsBody*>(nr,tsbody));
+		return nr;
+	}
 }
 
 int GroundTranslator::translateSet(const vector<int>& lits, const vector<double>& weights, const vector<double>& trueweights) {
@@ -328,10 +462,11 @@ void FormulaGrounder::printorig() const {
 }
 #endif
 
-AtomGrounder::AtomGrounder(GroundTranslator* gt, bool sign, PFSymbol* s,
+AtomGrounder::AtomGrounder(GroundTranslator* gt, GroundTermTranslator* tt, bool sign, PFSymbol* s,
 							const vector<TermGrounder*> sg, InstanceChecker* pic, InstanceChecker* cic,
 							const vector<SortTable*>& vst, const GroundingContext& ct) :
-	FormulaGrounder(gt,ct), _subtermgrounders(sg), _pchecker(pic), _cchecker(cic), _symbol(gt->addSymbol(s)), _args(sg.size()), _tables(vst), _sign(sign)
+	FormulaGrounder(gt,ct), _termtranslator(tt), _subtermgrounders(sg), _pchecker(pic), _cchecker(cic),
+   	_symbol(gt->addSymbol(s)), _args(sg.size()), _tables(vst), _sign(sign)
 	{ _certainvalue = ct._truegen ? _true : _false; }
 
 int AtomGrounder::run() const {
@@ -393,17 +528,38 @@ int AtomGrounder::run() const {
 #endif
 		return _certainvalue;
 	}
-	else {
-		int atom = _translator->translate(_symbol,_args);
-		if(!_sign) atom = -atom;
+	if(not _translator->getSymbol(_symbol)->ispred()) {
+		//FIXME this is not the right place to put this
+		//TODO We need a new type of dedicated grounder to do this..
+		Function* func = dynamic_cast<Function*>(_translator->getSymbol(_symbol));
+		vector<domelement> args = _args; args.pop_back();
+		int value = _args.back()->_args[0]._element._int;
+		if(_termtranslator->contains(func,args)) {
+			unsigned int varid = _termtranslator->translate(func,ElementUtil::convert(args)); //FIXME conversion is nasty...
+			CPTerm* leftterm = new CPVarTerm(varid);
+			CPBound rightbound(false,value);
+			int atom = _translator->translate(leftterm,CT_EQ,rightbound,TS_EQ);
+			if(!_sign) atom = -atom;
 #ifndef NDEBUG
-		if(_cloptions._verbose) {
-			printorig();
-			cerr << "Result is " << _translator->printAtom(atom) << endl;
-		}
+			if(_cloptions._verbose) {
+				printorig();
+				cerr << "Result is " << _translator->printAtom(atom) << endl;
+			}
 #endif
-		return atom;
+			return atom;
+		}
 	}
+
+	// Default case
+	int atom = _translator->translate(_symbol,_args);
+	if(!_sign) atom = -atom;
+#ifndef NDEBUG
+	if(_cloptions._verbose) {
+		printorig();
+		cerr << "Result is " << _translator->printAtom(atom) << endl;
+	}
+#endif
+	return atom;
 }
 
 void AtomGrounder::run(vector<int>& clause) const {
@@ -1519,11 +1675,17 @@ void GrounderFactory::visit(const PredForm* pf) {
 					else if(pf->symb()->name() == ">/2") {
 						comp = pf->sign() ? CT_GT : CT_LEQ;
 					}
-					else assert(false);
+					else {
+						// pf is a predicate different from =, < and >
+						assert(false);
+						//TODO
+						// P(t1,...,tn) should be rewritten as ! x1 ... xn : t1=x1 & ... & tn=xn => P(x1,...,xn).
+					}
 					_formgrounder = new CPGrounder(_grounding->translator(),_grounding->termtranslator(),
 											subtermgrounders[0],comp,subtermgrounders[1],_context);
 				}
 				else {
+					assert(not pf->symb()->ispred()); //So it is a function... TODO
 					assert(false);
 					//CompType comp = pf->sign() ? CT_EQ : CT_NEQ;
 					//TermGrounder* righttermgrounder = subtermgrounders.back();
@@ -1556,8 +1718,8 @@ void GrounderFactory::visit(const PredForm* pf) {
 				}
 		
 				// Create the grounder
-				_formgrounder = new AtomGrounder(_grounding->translator(),pf->sign(),pf->symb(),
-									 subtermgrounders,possch,certainch,argsorttables,_context);
+				_formgrounder = new AtomGrounder(_grounding->translator(),_grounding->termtranslator(),pf->sign(),
+										pf->symb(),subtermgrounders,possch,certainch,argsorttables,_context);
 #ifndef NDEBUG
 				_formgrounder->setorig(pf,_varmapping);
 #endif

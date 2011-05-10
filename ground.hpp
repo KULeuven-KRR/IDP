@@ -64,10 +64,18 @@ class TsBody {
 	protected:
 		TsType _type;	// the type of "tseitin definition"
 		TsBody(TsType type): _type(type) { }
+		virtual bool equal(const TsBody&) const;
+		virtual bool compare(const TsBody&) const;
 	public:
 		virtual ~TsBody() { }
 		TsType type() const { return _type; }
+		friend bool operator==(const TsBody&, const TsBody&);
+		friend bool operator<(const TsBody&, const TsBody&);
 	friend class GroundTranslator;
+};
+
+struct TsCompare {
+	bool operator()(const TsBody* a, const TsBody* b) { return *a < *b; }
 };
 
 class PCTsBody : public TsBody {
@@ -75,6 +83,8 @@ class PCTsBody : public TsBody {
 		std::vector<int> 	_body;	// the literals in the subformula replaced by the tseitin
 		bool				_conj;	// if true, the replaced subformula is the conjunction of the literals in _body,
 									// if false, the replaced subformula is the disjunction of the literals in _body
+		//bool equal(const TsBody&) const;
+		//bool compare(const TsBody&) const;
 	public:
 		PCTsBody(TsType type, const std::vector<int>& body, bool conj):
 			TsBody(type), _body(body), _conj(conj) { }
@@ -91,6 +101,8 @@ class AggTsBody : public TsBody {
 		AggType		_aggtype;
 		bool		_lower;
 		double		_bound;
+		//bool equal(const TsBody&) const;
+		//bool compare(const TsBody&) const;
 	public:
 		AggTsBody(TsType type, double bound, bool lower, AggType at, int setnr):
 			TsBody(type), _setnr(setnr), _aggtype(at), _lower(lower), _bound(bound) { }
@@ -113,11 +125,19 @@ class CPSet {
 class CPTerm {
 	protected:
 		virtual ~CPTerm() {	}
+	private:
+		virtual bool equal(const CPTerm&) const = 0;
+		virtual bool compare(const CPTerm&) const = 0;
 	public:
 		virtual void accept(Visitor*) const = 0;
+		friend bool operator==(const CPTerm&, const CPTerm&);
+		friend bool operator<(const CPTerm&, const CPTerm&);
 };
 
 class CPVarTerm : public CPTerm {
+	private:
+		bool equal(const CPTerm&) const;
+		bool compare(const CPTerm&) const;
 	public:
 		unsigned int _varid;
 		CPVarTerm(unsigned int varid) : _varid(varid) { }
@@ -125,12 +145,18 @@ class CPVarTerm : public CPTerm {
 };
 
 class CPSumTerm : public CPTerm {
+	private:
+		bool equal(const CPTerm&) const;
+		bool compare(const CPTerm&) const;
 	public:
 		std::vector<unsigned int> _varids; 
 		void accept(Visitor*) const;
 };
 
 class CPWSumTerm : public CPTerm {
+	private:
+		bool equal(const CPTerm&) const;
+		bool compare(const CPTerm&) const;
 	public:
 		std::vector<unsigned int> 	_varids; 
 		std::vector<int>			_weights;
@@ -145,6 +171,8 @@ struct CPBound {
 	} _value;
 	CPBound(bool isvarid, int bound): _isvarid(isvarid) { _value._bound = bound; }
 	CPBound(bool isvarid, unsigned int varid): _isvarid(isvarid) { _value._varid = varid; }
+	friend bool operator==(const CPBound&, const CPBound&);
+	friend bool operator<(const CPBound&, const CPBound&);
 };
 
 class CPTsBody : public TsBody {
@@ -158,8 +186,11 @@ class CPTsBody : public TsBody {
 		CPTerm*		left()	const { return _left;	}
 		CompType	comp()	const { return _comp;	}
 		CPBound		right()	const { return _right;	}
+		bool equal(const TsBody&) const;
+		bool compare(const TsBody&) const;
 	friend class GroundTranslator;
 };
+
 
 /*
  * Ground translator 
@@ -171,17 +202,17 @@ class GroundTranslator {
 		std::vector<PFSymbol*>								_backsymbtable;	// map integer to the symbol of its corresponding atom
 		std::vector<std::vector<domelement> >				_backargstable;	// map integer to the terms of its corresponding atom
 
-		std::queue<int>			_freenumbers;		// keeps atom numbers that were freed 
-													// and can be used again
-		std::queue<int>			_freesetnumbers;	// keeps set numbers that were freed
-													// and can be used again
+		std::queue<int>		_freenumbers;		// keeps atom numbers that were freed and can be used again
+		std::queue<int>		_freesetnumbers;	// keeps set numbers that were freed and can be used again
 
-		std::map<int,TsBody*>	_tsbodies;	// keeps mapping between Tseitin numbers and bodies
+		std::map<int,TsBody*>			_nr2tsbodies;	// keeps mapping between Tseitin numbers and bodies
+		std::map<TsBody*,int,TsCompare>	_tsbodies2nr;	// keeps mapping between Tseitin bodies and numbers
 
-		std::vector<TsSet>		_sets;		// keeps mapping between Set numbers and sets
+		std::vector<TsSet>	_sets;	// keeps mapping between Set numbers and sets
 
 	public:
 		GroundTranslator() : _backsymbtable(1), _backargstable(1), _sets(1) { }
+		~GroundTranslator();
 
 		int				translate(unsigned int,const std::vector<domelement>&);
 		int				translate(const std::vector<int>& cl, bool conj, TsType tp);
@@ -192,15 +223,15 @@ class GroundTranslator {
 		unsigned int	addSymbol(PFSymbol* pfs);
 		int				translateSet(const std::vector<int>&,const std::vector<double>&,const std::vector<double>&);
 
-		PFSymbol*										symbol(int nr)				const	{ return _backsymbtable[abs(nr)];		}
-		const std::vector<domelement>&					args(int nr)				const	{ return _backargstable[abs(nr)];		}
-		bool											isTseitin(int l)			const	{ return symbol(l) == 0;				}
-		TsBody*											tsbody(int l)				const	{ return _tsbodies.find(abs(l))->second;}
-		const TsSet&									groundset(int nr)			const	{ return _sets[nr];						}
-		TsSet&											groundset(int nr)					{ return _sets[nr];						}
-		unsigned int									nrOffsets()					const	{ return _symboffsets.size();			}
-		PFSymbol*										getSymbol(unsigned int n)	const	{ return _symboffsets[n];				}
-		const std::map<std::vector<domelement>,int>&	getTuples(unsigned int n)	const	{ return _table[n];						}
+		PFSymbol*										symbol(int nr)				const	{ return _backsymbtable[abs(nr)];			}
+		const std::vector<domelement>&					args(int nr)				const	{ return _backargstable[abs(nr)];			}
+		bool											isTseitin(int l)			const	{ return symbol(l) == 0;					}
+		TsBody*											tsbody(int l)				const	{ return _nr2tsbodies.find(abs(l))->second;	}
+		const TsSet&									groundset(int nr)			const	{ return _sets[nr];							}
+		TsSet&											groundset(int nr)					{ return _sets[nr];							}
+		unsigned int									nrOffsets()					const	{ return _symboffsets.size();				}
+		PFSymbol*										getSymbol(unsigned int n)	const	{ return _symboffsets[n];					}
+		const std::map<std::vector<domelement>,int>&	getTuples(unsigned int n)	const	{ return _table[n];							}
 
 		std::string	printAtom(int nr)	const;
 };
@@ -430,6 +461,7 @@ class FormulaGrounder {
 
 class AtomGrounder : public FormulaGrounder {
 	private:
+		GroundTermTranslator*			_termtranslator;
 		std::vector<TermGrounder*>		_subtermgrounders;
 		InstanceChecker*				_pchecker;
 		InstanceChecker*				_cchecker;
@@ -439,9 +471,9 @@ class AtomGrounder : public FormulaGrounder {
 		bool							_sign;
 		int								_certainvalue;
 	public:
-		AtomGrounder(GroundTranslator* gt, bool sign, PFSymbol* s,
-					const std::vector<TermGrounder*> sg, InstanceChecker* pic, InstanceChecker* cic,
-					const std::vector<SortTable*>& vst, const GroundingContext&);
+		AtomGrounder(GroundTranslator*, GroundTermTranslator*,bool sign, PFSymbol*,
+					const std::vector<TermGrounder*>, InstanceChecker* pic, InstanceChecker* cic,
+					const std::vector<SortTable*>&, const GroundingContext&);
 		int		run() const;
 		void	run(std::vector<int>&) const;
 		bool	conjunctive() const { return true;	}
