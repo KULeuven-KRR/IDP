@@ -1737,11 +1737,14 @@ Formula* ThreeValTermMover::visit(PredForm* predform) {
 		}
 	}
 	// Visit the subterms
+	bool comparisonpred = predform->symb()->ispred() && (symbname == "=/2" || symbname == "</2" || symbname == ">/2");
 	for(unsigned int n = 0; n < predform->nrSubterms(); ++n) {
-		_istoplevelterm = (predform->symb()->ispred() || n == predform->nrSubterms()-1);
+		_istoplevelterm = (comparisonpred || (not predform->symb()->ispred() && n == predform->nrSubterms()-1));
 		Term* newterm = predform->subterm(n)->accept(this);
 		predform->arg(n,newterm);
 	}
+
+
 	if(_termgraphs.empty()) {	// No rewriting was needed, simply return the given atom
 		return predform;
 	}

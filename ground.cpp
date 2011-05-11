@@ -462,10 +462,10 @@ void FormulaGrounder::printorig() const {
 }
 #endif
 
-AtomGrounder::AtomGrounder(GroundTranslator* gt, GroundTermTranslator* tt, bool sign, PFSymbol* s,
+AtomGrounder::AtomGrounder(GroundTranslator* gt, bool sign, PFSymbol* s,
 							const vector<TermGrounder*> sg, InstanceChecker* pic, InstanceChecker* cic,
 							const vector<SortTable*>& vst, const GroundingContext& ct) :
-	FormulaGrounder(gt,ct), _termtranslator(tt), _subtermgrounders(sg), _pchecker(pic), _cchecker(cic),
+	FormulaGrounder(gt,ct), _subtermgrounders(sg), _pchecker(pic), _cchecker(cic),
    	_symbol(gt->addSymbol(s)), _args(sg.size()), _tables(vst), _sign(sign)
 	{ _certainvalue = ct._truegen ? _true : _false; }
 
@@ -507,7 +507,7 @@ int AtomGrounder::run() const {
 		}
 	}
 
-	// Run instance checkers and return grounding
+	// Run instance checkers
 	if(!(_pchecker->run(_args))) {
 #ifndef NDEBUG
 		if(_cloptions._verbose) {
@@ -528,29 +528,8 @@ int AtomGrounder::run() const {
 #endif
 		return _certainvalue;
 	}
-	if(not _translator->getSymbol(_symbol)->ispred()) {
-		//FIXME this is not the right place to put this
-		//TODO We need a new type of dedicated grounder to do this..
-		Function* func = dynamic_cast<Function*>(_translator->getSymbol(_symbol));
-		vector<domelement> args = _args; args.pop_back();
-		int value = _args.back()->_args[0]._element._int;
-		if(_termtranslator->contains(func,args)) {
-			unsigned int varid = _termtranslator->translate(func,ElementUtil::convert(args)); //FIXME conversion is nasty...
-			CPTerm* leftterm = new CPVarTerm(varid);
-			CPBound rightbound(false,value);
-			int atom = _translator->translate(leftterm,CT_EQ,rightbound,TS_EQ);
-			if(!_sign) atom = -atom;
-#ifndef NDEBUG
-			if(_cloptions._verbose) {
-				printorig();
-				cerr << "Result is " << _translator->printAtom(atom) << endl;
-			}
-#endif
-			return atom;
-		}
-	}
 
-	// Default case
+	// Return grounding
 	int atom = _translator->translate(_symbol,_args);
 	if(!_sign) atom = -atom;
 #ifndef NDEBUG
@@ -572,7 +551,92 @@ if(_cloptions._verbose) {
 #endif
 }
 
-int CPGrounder::run() const {
+CPAtomGrounder::CPAtomGrounder(GroundTranslator* gt, GroundTermTranslator* tt, bool sign, Function* func,
+							const vector<TermGrounder*> vtg, InstanceChecker* pic, InstanceChecker* cic,
+							const vector<SortTable*>& vst, const GroundingContext& ct) :
+	AtomGrounder(gt,sign,func,vtg,pic,cic,vst,ct), _termtranslator(tt) { }
+
+int CPAtomGrounder::run() const {
+	// Run subterm grounders
+	for(unsigned int n = 0; n < _subtermgrounders.size(); ++n) 
+		_args[n] = _subtermgrounders[n]->run();
+	
+	// Checking partial functions //TODO put in separate function!!
+	for(unsigned int n = 0; n < _args.size(); ++n) {
+		//TODO: only check positions that can be out of bounds!
+		if(!ElementUtil::exists(_args[n])) {
+			//TODO: produce a warning!
+			if(_context._funccontext == PC_BOTH) {
+				// TODO: produce an error
+			}
+#ifndef NDEBUG
+			if(_cloptions._verbose) {
+				printorig();
+				cerr << "Partial function went out of bounds\n";
+				cerr << "Result is " << (_context._funccontext != PC_NEGATIVE  ? "true" : "false") << endl;
+			}
+#endif
+			return _context._funccontext != PC_NEGATIVE  ? _true : _false;
+		}
+	}
+
+	// Checking out-of-bounds //TODO put in separate function!!
+	for(unsigned int n = 0; n < _args.size(); ++n) {
+		if(!_tables[n]->contains(_args[n])) {
+#ifndef NDEBUG
+			if(_cloptions._verbose) {
+				printorig();
+				cerr << "Term value out of predicate type\n";
+				cerr << "Result is " << (_sign  ? "false" : "true") << endl;
+			}
+#endif
+			return _sign ? _false : _true;
+		}
+	}
+
+	// Run instance checkers //TODO put in separate function!!
+	if(!(_pchecker->run(_args))) {
+#ifndef NDEBUG
+		if(_cloptions._verbose) {
+			printorig();
+			cerr << "Possible checker failed\n";
+			cerr << "Result is " << (_certainvalue ? "false" : "true") << endl;
+		}
+#endif
+		return _certainvalue ? _false : _true;	// TODO: dit is lelijk
+	}
+	if(_cchecker->run(_args)) {
+#ifndef NDEBUG
+		if(_cloptions._verbose) {
+			printorig();
+			cerr << "Certain checker succeeded\n";
+			cerr << "Result is " << _translator->printAtom(_certainvalue) << endl;
+		}
+#endif
+		return _certainvalue;
+	}
+
+	// Return grounding
+	assert(not _translator->getSymbol(_symbol)->ispred()); // by definition...
+	Function* func = static_cast<Function*>(_translator->getSymbol(_symbol));
+	vector<domelement> args = _args; args.pop_back();
+	int value = _args.back()->_args[0]._element._int;
+	
+	unsigned int varid = _termtranslator->translate(func,ElementUtil::convert(args)); //FIXME conversion is nasty...
+	CPTerm* leftterm = new CPVarTerm(varid);
+	CPBound rightbound(false,value);
+	int atom = _translator->translate(leftterm,CT_EQ,rightbound,TS_EQ);
+	if(!_sign) atom = -atom;
+#ifndef NDEBUG
+	if(_cloptions._verbose) {
+		printorig();
+		cerr << "Result is " << _translator->printAtom(atom) << endl;
+	}
+#endif
+	return atom;
+}
+
+int CPFormulaGrounder::run() const {
 	domelement left = _lefttermgrounder->run();
 	domelement right = _righttermgrounder->run();
 	if(!ElementUtil::exists(left) || !ElementUtil::exists(right)) {
@@ -581,17 +645,21 @@ int CPGrounder::run() const {
 	// TODO??? out-of-bounds check. Can out-of-bounds ever occur on </2, >/2, =/2???
 	
 	if(left->_function) {
-		unsigned int leftvarid = _termtranslator->translate(left->_function,left->_args);	// TODO: try to use the faster translate function 
+		unsigned int leftvarid = _termtranslator->translate(left->_function,left->_args);
+		// TODO: try to use the faster translate function (use addSymbol first)
 		CPTerm* leftterm = new CPVarTerm(leftvarid);
 		if(right->_function) {
-			unsigned int rightvarid = _termtranslator->translate(right->_function,right->_args);	// TODO: try to use the faster translate function 
+			unsigned int rightvarid = _termtranslator->translate(right->_function,right->_args);
+			// TODO: try to use the faster translate function 
 			CPBound rightbound(true,rightvarid);
+			//return _translator->translate(leftterm,_comparator,rightbound,TS_EQ);
 			return _translator->translate(leftterm,_comparator,rightbound,_context._tseitin);
 		}	
 		else {
 			assert(right->_args[0]._type == ELINT);
 			int rightvalue = right->_args[0]._element._int;
 			CPBound rightbound(false,rightvalue);
+			//return _translator->translate(leftterm,_comparator,rightbound,TS_EQ);
 			return _translator->translate(leftterm,_comparator,rightbound,_context._tseitin);
 		}
 	}
@@ -599,9 +667,11 @@ int CPGrounder::run() const {
 		assert(left->_args[0]._type == ELINT);
 		int leftvalue = left->_args[0]._element._int;
 		if(right->_function) {
-			unsigned int rightvarid = _termtranslator->translate(right->_function,right->_args);	// TODO: try to use the faster translate function 
+			unsigned int rightvarid = _termtranslator->translate(right->_function,right->_args);
+			// TODO: try to use the faster translate function 
 			CPTerm* rightterm = new CPVarTerm(rightvarid);
 			CPBound leftbound(false,leftvalue);
+			//return _translator->translate(rightterm,invertcomp(_comparator),leftbound,TS_EQ);
 			return _translator->translate(rightterm,invertcomp(_comparator),leftbound,_context._tseitin);
 		}	
 		else {
@@ -627,7 +697,7 @@ int CPGrounder::run() const {
 	assert(false);
 }
 
-void CPGrounder::run(vector<int>& clause) const {
+void CPFormulaGrounder::run(vector<int>& clause) const {
 	clause.push_back(run());
 }
 
@@ -1392,6 +1462,15 @@ set<const Function*> GrounderFactory::findCPFunctions(const AbstractTheory* theo
 	return _cpfunctions;
 }
 
+bool GrounderFactory::isCPFunction(const PFSymbol* symbol) const { 
+	if(not symbol->ispred()) {
+		const Function* func = static_cast<const Function*>(symbol);
+		return _cpfunctions.find(func) != _cpfunctions.end();
+	}
+	return false;
+}
+
+
 /**
  * bool GrounderFactory::recursive(const Formula*)
  * DESCRIPTION
@@ -1658,40 +1737,35 @@ void GrounderFactory::visit(const PredForm* pf) {
 			argsorttables.push_back(_structure->inter(pf->symb()->sort(n)));
 		}
 		// Create checkers and grounder
-		if(cpsubterms) {
+		if(_cpsupport && cpsubterms) {
 			if(_context._component == CC_HEAD) {
 				assert(false);
 				//TODO
 			}
 			else {
-				if(pf->symb()->ispred()) {
-					CompType comp;
-					if(pf->symb()->name() == "=/2") {
+				string symbname = pf->symb()->name();
+				CompType comp;
+				if(pf->symb()->ispred() && (symbname == "=/2" || symbname == "</2" || symbname == ">/2")) {
+					if(symbname == "=/2")
 						comp = pf->sign() ? CT_EQ : CT_NEQ;
-					}
-					else if(pf->symb()->name() == "</2") {
+					else if(symbname == "</2")
 						comp = pf->sign() ? CT_LT : CT_GEQ;
-					}
-					else if(pf->symb()->name() == ">/2") {
+					else if(symbname == ">/2")
 						comp = pf->sign() ? CT_GT : CT_LEQ;
-					}
-					else {
-						// pf is a predicate different from =, < and >
-						assert(false);
-						//TODO
-						// P(t1,...,tn) should be rewritten as ! x1 ... xn : t1=x1 & ... & tn=xn => P(x1,...,xn).
-					}
-					_formgrounder = new CPGrounder(_grounding->translator(),_grounding->termtranslator(),
+					else assert(false);
+					_formgrounder = new CPFormulaGrounder(_grounding->translator(),_grounding->termtranslator(),
 											subtermgrounders[0],comp,subtermgrounders[1],_context);
 				}
-				else {
-					assert(not pf->symb()->ispred()); //So it is a function... TODO
+				else if (pf->symb()->ispred()) {
+					// pf is a predicate different from =, < and >
 					assert(false);
-					//CompType comp = pf->sign() ? CT_EQ : CT_NEQ;
-					//TermGrounder* righttermgrounder = subtermgrounders.back();
-					//subtermgrounders.pop_back();
-					//TermGrounder* lefttermgrounder;
-					//TODO construct lefttermgrounder
+					//FIXME THIS WILL NEVER HAPPEN!!
+				}
+				else {
+					assert(not pf->symb()->ispred());
+					// pf is a function: F(x1,..,xn,xo) which is same as F(x1,..,xn) = xo
+					assert(false);
+					//FIXME THIS WILL NEVER HAPPEN!!
 				}
 				if(_context._component == CC_SENTENCE) 
 					_toplevelgrounder = new SentenceGrounder(_grounding,_formgrounder,false);
@@ -1716,10 +1790,17 @@ void GrounderFactory::visit(const PredForm* pf) {
 					possch = checkfactory.create(inter,true,false);
 					certainch = checkfactory.create(inter,false,true);
 				}
-		
+
 				// Create the grounder
-				_formgrounder = new AtomGrounder(_grounding->translator(),_grounding->termtranslator(),pf->sign(),
-										pf->symb(),subtermgrounders,possch,certainch,argsorttables,_context);
+				if(_cpsupport && (not pf->symb()->ispred()) && isCPFunction(pf->symb())) { 
+					Function* func = static_cast<Function*>(pf->symb());
+					_formgrounder = new CPAtomGrounder(_grounding->translator(),_grounding->termtranslator(),pf->sign(),func,
+											subtermgrounders,possch,certainch,argsorttables,_context);
+				} 
+				else {
+					_formgrounder = new AtomGrounder(_grounding->translator(),pf->sign(),pf->symb(),
+											subtermgrounders,possch,certainch,argsorttables,_context);
+				}
 #ifndef NDEBUG
 				_formgrounder->setorig(pf,_varmapping);
 #endif

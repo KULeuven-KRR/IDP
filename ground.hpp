@@ -460,8 +460,7 @@ class FormulaGrounder {
 };
 
 class AtomGrounder : public FormulaGrounder {
-	private:
-		GroundTermTranslator*			_termtranslator;
+	protected:
 		std::vector<TermGrounder*>		_subtermgrounders;
 		InstanceChecker*				_pchecker;
 		InstanceChecker*				_cchecker;
@@ -471,23 +470,36 @@ class AtomGrounder : public FormulaGrounder {
 		bool							_sign;
 		int								_certainvalue;
 	public:
-		AtomGrounder(GroundTranslator*, GroundTermTranslator*,bool sign, PFSymbol*,
-					const std::vector<TermGrounder*>, InstanceChecker* pic, InstanceChecker* cic,
+		AtomGrounder(GroundTranslator*, bool sign, PFSymbol*,
+					const std::vector<TermGrounder*>, InstanceChecker*, InstanceChecker*,
 					const std::vector<SortTable*>&, const GroundingContext&);
 		int		run() const;
 		void	run(std::vector<int>&) const;
 		bool	conjunctive() const { return true;	}
 };
 
-class CPGrounder : public FormulaGrounder {
+class CPAtomGrounder : public AtomGrounder {
+	private:
+		GroundTermTranslator*	_termtranslator;
+	public:
+		CPAtomGrounder(GroundTranslator*, GroundTermTranslator*, bool sign, Function*,
+					const std::vector<TermGrounder*>, InstanceChecker*, InstanceChecker*,
+					const std::vector<SortTable*>&, const GroundingContext&);
+		int	run() const;
+};
+
+class CPFormulaGrounder : public FormulaGrounder {
 	private:
 		GroundTermTranslator* 	_termtranslator;
 		TermGrounder*			_lefttermgrounder;
 		TermGrounder*			_righttermgrounder;
 		CompType				_comparator;
 	public:
-		CPGrounder(GroundTranslator* gt, GroundTermTranslator* tt, TermGrounder* left, CompType comp, TermGrounder* right, const GroundingContext& gc):
-			FormulaGrounder(gt,gc), _termtranslator(tt), _lefttermgrounder(left), _righttermgrounder(right), _comparator(comp) { } 
+		CPFormulaGrounder(GroundTranslator* gt, GroundTermTranslator* tt, 
+				TermGrounder* left, CompType comp, TermGrounder* right,
+				const GroundingContext& gc):
+			FormulaGrounder(gt,gc), _termtranslator(tt),
+			_lefttermgrounder(left), _righttermgrounder(right),	_comparator(comp) { } 
 		int		run() const;
 		void	run(std::vector<int>&) const;
 		bool	conjunctive() const { return true;	}
@@ -710,7 +722,8 @@ class GrounderFactory : public Visitor {
 		TopLevelGrounder* create(const AbstractTheory*, MinisatID::WrappedPCSolver*);
 
 		// Determine what should be grounded to CP
-		std::set<const Function*> findCPFunctions(const AbstractTheory*);
+		std::set<const Function*> 	findCPFunctions(const AbstractTheory*);
+		bool 						isCPFunction(const PFSymbol*) const;
 
 		// Recursive check
 		bool recursive(const Formula*);
