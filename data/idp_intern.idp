@@ -1,129 +1,134 @@
-/** Options **/
+/***********
+	Help
+***********/
 
-#options stdoptions {
-	nrmodels=1
-	language=idp
-	modelformat=all
+/**
+ * List the procedures in the given namespace 
+ */
+procedure help(namespace) {
+	if (not namespace) then namespace = global_namespace end
+	idp_intern.help(namespace)
 }
 
-/** Create new blocks **/
+/**************************
+	Iterate over tables
+**************************/
 
-#procedure newoptions() {
-	return idp_intern_idpcall("newoptions")
-}
-
-/** Copy blocks **/
-
-#procedure clone(obj) {
-	return idp_intern_idpcall("clone",obj)
-}
-
-/** Casting **/
-
-#procedure cast(obj,newtype) {
-	if type(obj) == newtype then 
-		return obj
-	elseif type(obj) == "overloaded" then
-		return idp_intern_idpcall("cast",obj,newtype)
-	elseif type(obj) == "structure" and newtype == "theory" then
-		return idp_intern_idpcall("convert_to_theory",S)
-	else 
-		print("Error: impossible cast")
+/**
+ * Returns a procedure, iterator, and a tuple such that 
+ *    for t in tuples(table) do ... end
+ * iterates over all tuples in the given predicate table
+ */
+procedure tuples(table) {
+	if type(table) == "predicate_table" then
+		return idp_intern.deref_and_increment, idp_intern.tableiterator(table), idp_intern.dummytuple()
+	else
+		print("Error: predicate table expected")
 	end
 }
 
-/** Vocabulary **/
-
-#procedure changevoc(Struct,Voc) {
-	return idp_intern_idpcall("changevoc",Struct,Voc)
+/**
+ * Returns a procedure, iterator, and 0 such that
+ *    for e in elements(d) do ... end
+ * iterates over all elements in the given domain d
+ */
+procedure elements(d) {
+	if type(d) == "domain" then
+		return idp_intern.deref_and_increment, idp_intern.domainiterator(d), 0
+	else 
+		print("Error: domain expected")
+	end
 }
 
-/** Parsing of files **/
-#procedure parse(filename) {
-	return idp_intern_idpcall("load_file",filename)
+/************************
+	Create new objects 
+************************/
+
+/** 
+ * Create a new structure over a given vocabulary voc. 
+ * The created structure assigns the least precise interpretation to every symbol of its vocabulary.  
+ */
+procedure newstructure(voc) {
+	return idp_intern.newstructure(voc)
 }
 
-/** Model expansion **/
-#procedure modelexpand(Theo,Struct,Opt) {
-	local clonetheo = clone(Theo)
-	IDP_ADVANCED::push_negations(clonetheo)
-	IDP_ADVANCED::flatten(clonetheo)
-	if not Opt then Opt = stdoptions end
-	local solutions, trace =  idp_intern_idpcall("fastmx",clonetheo,Struct,Opt) 
+/**
+ * Create a new, empty theory over a given vocabulary voc
+ */
+procedure newtheory(voc) {
+	return idp_intern.newtheory(voc)
+}
+
+/**
+ * Create a new block of options
+ */
+procedure newoptions() {
+	return idp_intern.newoptions()
+}
+
+/**
+ * Create a copy of the object obj
+ */
+procedure clone(obj) {
+	return idp_intern.clone(obj)
+}
+
+/**********************
+	Basic inference
+**********************/
+
+/**
+ * Apply model expansion to theory T, structure S, and options Opts. Opts defaults to stdoptions.
+ * The result is a table of structures and, if Opts.trace == true, a trace of the solver
+ */
+procedure modelexpand(T,S,Opts) {
+	local clonetheo = clone(T)
+	idp_intern.push_negations(clonetheo)
+	idp_intern.flatten(clonetheo)
+	if not Opts then Opts = stdoptions end
+	local solutions, trace =  idp_intern.mx(clonetheo,S,Opts) 
 	return solutions, trace
 }
 
-/** Grounding **/
-#procedure ground(Theo,Struct,Opt) {
-	local clonetheo = clone(Theo)
-	IDP_ADVANCED::push_negations(clonetheo)
-	IDP_ADVANCED::flatten(clonetheo)
-	if not Opt then Opt = stdoptions end
-	return idp_intern_idpcall("fastground",clonetheo,Struct,Opt)
+/**
+ * Create the reduced grounding of theory T and structure S
+ */
+procedure ground(T,S,Opts) {
+	local clonetheo = clone(T)
+	idp_intern.push_negations(clonetheo)
+	idp_intern.flatten(clonetheo)
+	if not Opts then Opts = stdoptions end
+	return idp_intern.ground(clonetheo,S,Opts) 
 }
 
-/** Model checking **/
-#procedure modelcheck(Theo,Struct) {
-	// TODO: check if two-valued
-	// assert(twovalued(Struct),"Procedure modelcheck/2 requires a two-valued structure as second argument")
-	opts = newoptions()
-	setoption(opts,"nrmodels",1)
-	sols = modelexpand(Theo,Struct,opts)
-	return #sols == 1
+/**
+ * Change the vocabulary of a structure S to vocabulary V
+ * If some symbol occurs both in V and in the previous vocabulary of S, its interpretation in S is kept.
+ * For all symbols that belong to V but not to the previous vocabulary of S, 
+ * the interpretation in S is initialized to the least precise interpretation.
+ */
+procedure changevocabulary(S,V) {
+	idp_intern.changevocabulary(S,V)
 }
 
-/** Printing **/
-#procedure idptostring(obj,opts) {
-	if not opts then opts = stdoptions end
-	return idp_intern_idpcall("print",obj,opts)
+/**
+ * Make a tuple true in a predicate interpretation
+ */
+procedure maketrue(inter,tuple) {
+	idp_intern.maketrue(inter,tuple)
 }
 
-/** Procedures for advanced use of IDP **/
-#namespace IDP_ADVANCED {
-	
-	#procedure push_negations(T) {
-		return idp_intern_idpcall("push_negations",T)
-	}
+/**
+ * Make a tuple false in a predicate interpretation
+ */
+procedure makefalse(inter,tuple) {
+	idp_intern.makefalse(inter,tuple)
+}
 
-	#procedure move_functions(T) {
-		return idp_intern_idpcall("move_functions",T)
-	}
-
-	#procedure move_quantifiers(T) {
-		return idp_intern_idpcall("move_quantifiers",T)
-	}
-
-	#procedure remove_eqchains(T) {
-		return idp_intern_idpcall("remove_eqchains",T)
-	}
-
-	#procedure remove_equivalences(T) {
-		return idp_intern_idpcall("remove_equivalences",T)
-	}
-
-	#procedure tseitin(T) {
-		return idp_intern_idpcall("tseitin",T)
-	}
-
-	#procedure flatten(T) {
-		return idp_intern_idpcall("flatten",T)
-	}
-
-	#procedure reduce(T,S) {
-		return idp_intern_idpcall("reduce",T,S)
-	}
-
-	#procedure totheory(S) {
-		return idp_intern_idpcall("convert_to_theory",S);
-	}
-
-	#procedure forcetwovalued(S) {
-		return idp_intern_idpcall("forcetwovalued",S);
-	}
-
-	#procedure getbdds(T) {
-		return idp_intern_idpcall("getbdds",T);
-	}
-
+/**
+ * Make a tuple unknown in a predicate interpretation
+ */
+procedure makeunknown(inter,tuple) {
+	idp_intern.makeunknown(inter,tuple)
 }
 

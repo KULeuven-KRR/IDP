@@ -4,31 +4,41 @@
 	(c) K.U.Leuven
 ************************************/
 
-#include "generator.hpp"
+#include "parseinfo.hpp"
+#include "vocabulary.hpp"
 #include "structure.hpp"
 #include "checker.hpp"
+#include "generator.hpp"
 
 using namespace std;
+
+TwoChildGeneratorNode::TwoChildGeneratorNode(InstanceChecker* t, const vector<const DomainElement**>& ov, const vector<SortTable*>& dom, GeneratorNode* l, GeneratorNode* r) :
+	_checker(t), _outvars(ov), _currargs(ov.size()), _left(l), _right(r) {
+	PredTable* domtab = new PredTable(new FullInternalPredTable(),Universe(dom));
+	_currposition = new TableInstGenerator(domtab,ov);
+}
 
 /** First instance **/
 
 bool TableInstGenerator::first() const {
-	if(_table->empty()) return false;
+	if(_table->approxempty()) return false;
 	else {
-		_currpos = 0;
-		for(unsigned int n = 0; n < _outvars.size(); ++n) {
-			*(_outvars[n]) = _table->delement(_currpos,n);
-		}
-		return true;	
+		_currpos = _table->begin();
+		if(_currpos.hasNext()) {
+			const ElementTuple& tuple = *_currpos;
+			for(unsigned int n = 0; n < _outvars.size(); ++n) *(_outvars[n]) = tuple[n];
+			return true;	
+		} 
+		else return false;
 	}
 }
 
 bool SortInstGenerator::first() const {
-	if(_table->empty()) return false;
+	if(_table->approxempty()) return false;
 	else {
-		_currpos = 0;
-		*_outvar = _table->delement(_currpos);
-		return true;	
+		_currpos = _table->sortbegin();
+		if(_currpos.hasNext()) { *_outvar = *_currpos; return true;	}
+		else return false;
 	}
 }
 
@@ -47,10 +57,14 @@ GeneratorNode* OneChildGeneratorNode::first() const {
 }
 
 GeneratorNode* TwoChildGeneratorNode::first() const {
+#ifdef NDEBUG
+	_currposition->first();
+#else
+	bool b = _currposition->first();
+	assert(b);
+#endif
 	for(unsigned int n = 0; n < _outvars.size(); ++n) {
-		_currargs[n] = _tables[n]->delement(0);
-		*(_outvars[n]) = _currargs[n];
-		_currpositions[n] = 0;
+		_currargs[n] = *(_outvars[n]);
 	}
 	if(_checker->run(_currargs)) {
 		GeneratorNode* r = _right->first();
@@ -64,7 +78,7 @@ GeneratorNode* TwoChildGeneratorNode::first() const {
 }
 
 bool TreeInstGenerator::first() const {
-	if(!_root) return true; //FIXME probably not correct in every situation
+	if(!_root) return true; 
 	_curr = _root->first(); 
 	return (_curr ? true : false);
 }
@@ -74,19 +88,18 @@ bool TreeInstGenerator::first() const {
 
 bool TableInstGenerator::next() const {
 	++_currpos;
-	if(_currpos < _table->size()) {
-		for(unsigned int n = 0; n < _outvars.size(); ++n) {
-			*(_outvars[n]) = _table->delement(_currpos,n);
-		}
-		return true;
+	if(_currpos.hasNext()) {
+		const ElementTuple& tuple = *_currpos;
+		for(unsigned int n = 0; n < _outvars.size(); ++n) *(_outvars[n]) = tuple[n];
+		return true;	
 	}
 	return false;
 }
 
 bool SortInstGenerator::next() const {
 	++_currpos;
-	if(_currpos < _table->size()) {
-		*_outvar = _table->delement(_currpos);
+	if(_currpos.hasNext()) {
+		*_outvar = *_currpos;
 		return true;
 	}
 	return false;
@@ -107,22 +120,11 @@ GeneratorNode* OneChildGeneratorNode::next() const {
 
 GeneratorNode*	TwoChildGeneratorNode::next() const {
 	while(true) {
-		unsigned int n = 0;
-		for( ; n < _outvars.size(); ++n) {
-			if(_currpositions[n] < _tables[n]->size()) {
-				_currpositions[n]++;
-				_currargs[n] = _tables[n]->delement(_currpositions[n]);
-				*(_outvars[n]) = _currargs[n];
-				break;
-			}
-			else {
-				_currpositions[n] = 0;
-				_currargs[n] = _tables[n]->delement(0);
-				*(_outvars[n]) = _currargs[n];
-			}
-		}
-		if(n == _outvars.size()) return 0;
+		if(!_currposition->next()) return 0;
 		else {
+			for(unsigned int n = 0; n < _outvars.size(); ++n) {
+				_currargs[n] = *(_outvars[n]);
+			}
 			if(_checker->run(_currargs)) {
 				GeneratorNode* r = _right->first();
 				if(r) return r;
@@ -136,7 +138,7 @@ GeneratorNode*	TwoChildGeneratorNode::next() const {
 }
 
 bool TreeInstGenerator::next() const {
-	if(!_root) return false; //FIXME probably not correct in every situation...
+	if(!_root) return false; 
 	assert(_curr);
 	GeneratorNode* temp = 0;
 	while(!temp) {
@@ -152,7 +154,7 @@ bool TreeInstGenerator::next() const {
 	Factory
 **************/
 
-InstGenerator* GeneratorFactory::create(const vector<domelement*>& vars, const vector<SortTable*>& tabs) {
+InstGenerator* GeneratorFactory::create(const vector<const DomainElement**>& vars, const vector<SortTable*>& tabs) {
 	InstGenerator* gen = 0;
 	GeneratorNode* node = 0;
 	for(unsigned int n = 0; n < vars.size(); ++n) {

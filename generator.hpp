@@ -11,9 +11,8 @@
 
 class PredTable;
 class SortTable;
+class DomainElement;
 class InstanceChecker;
-class compound;
-typedef compound* domelement;
 
 class InstGenerator {
 	public:
@@ -24,11 +23,12 @@ class InstGenerator {
 
 class TableInstGenerator : public InstGenerator { 
 	private:
-		PredTable*					_table;
-		std::vector<domelement*>	_outvars;
-		mutable unsigned int		_currpos;
+		PredTable*							_table;
+		std::vector<const DomainElement**>	_outvars;
+		mutable TableIterator				_currpos;
 	public:
-		TableInstGenerator(PredTable* t, const std::vector<domelement*>& out) : _table(t), _outvars(out) { }
+		TableInstGenerator(PredTable* t, const std::vector<const DomainElement**>& out) : 
+			_table(t), _outvars(out), _currpos(t->begin()) { }
 		bool first() const;
 		bool next() const;
 };
@@ -36,10 +36,11 @@ class TableInstGenerator : public InstGenerator {
 class SortInstGenerator : public InstGenerator { 
 	private:
 		SortTable*				_table;
-		domelement*				_outvar;
-		mutable unsigned int	_currpos;
+		const DomainElement**	_outvar;
+		mutable SortIterator	_currpos;
 	public:
-		SortInstGenerator(SortTable* t, domelement* out) : _table(t), _outvar(out) { }
+		SortInstGenerator(SortTable* t, const DomainElement** out) : 
+			_table(t), _outvar(out), _currpos(t->sortbegin()) { }
 		bool first() const;
 		bool next() const;
 };
@@ -98,19 +99,16 @@ class OneChildGeneratorNode : public GeneratorNode {
 
 class TwoChildGeneratorNode : public GeneratorNode {
 	private:
-		InstanceChecker*					_checker;
-		std::vector<domelement*>			_outvars;
-		std::vector<SortTable*>				_tables;
-		mutable std::vector<unsigned int>	_currpositions;
-		mutable std::vector<domelement>		_currargs;
-		GeneratorNode*						_left;
-		GeneratorNode*						_right;
+		InstanceChecker*							_checker;
+		std::vector<const DomainElement**>			_outvars;
+		InstGenerator*								_currposition;
+		mutable std::vector<const DomainElement*>	_currargs;
+		GeneratorNode*								_left;
+		GeneratorNode*								_right;
 	
 	public:
 		// Constructor
-		TwoChildGeneratorNode(InstanceChecker* t, const std::vector<domelement*>& ov, const std::vector<SortTable*>& tbs, GeneratorNode* l, GeneratorNode* r) :
-			GeneratorNode(), _checker(t), _outvars(ov), _tables(tbs), _currpositions(tbs.size()), _currargs(_outvars.size()), _left(l), _right(r) 
-			{ _left->parent(this); _right->parent(this); }
+		TwoChildGeneratorNode(InstanceChecker* t, const std::vector<const DomainElement**>& ov, const std::vector<SortTable*>& tbs, GeneratorNode* l, GeneratorNode* r);
 
 		// Generate instances
 		GeneratorNode*	first()	const;
@@ -142,7 +140,7 @@ class TreeInstGenerator : public InstGenerator {
 
 class GeneratorFactory {
 	public:
-		InstGenerator*	create(const std::vector<domelement*>&, const std::vector<SortTable*>&);
+		InstGenerator*	create(const std::vector<const DomainElement**>&, const std::vector<SortTable*>&);
 };
 
 #endif

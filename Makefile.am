@@ -2,7 +2,7 @@ SUBDIRS = lib pcsolver
 AM_CXXFLAGS = @AC_CXXFLAGS@ -Wall -Wextra\
 		-I$(srcdir)/lib/lua/etc -I$(srcdir)/lib/lua/src\
 		-I$(builddir)/lib/lua/src  -I $(srcdir)/lib/\
-		-DDATADIR=\"$(datadir)\"
+		-DDATADIR=\"$(datadir)\" -DRCDIR=\"$(localstatedir)\"
 		
 if USEINTERACTIVE
 AM_CXXFLAGS += -DUSEINTERACTIVE
@@ -22,34 +22,30 @@ gidl_LDADD += $(builddir)/pcsolver/src/libminisatid-2.0.la
 BUILT_SOURCES = parse.h
 
 gidl_SOURCES = \
-		builtin.hpp builtin.cpp\
-		insert.hpp insert.cpp\
-		namespace.hpp namespace.cpp\
-		theory.hpp theory.cpp\
-		execute.hpp execute.cpp\
-		structure.hpp structure.cpp\
-		common.hpp common.cpp\
-		ecnf.hpp ecnf.cpp\
-		visitor.hpp visitor.cpp\
-		ground.hpp ground.cpp\
-		main.cpp\
-		term.hpp term.cpp\
-		data.hpp data.cpp\
-		error.hpp error.cpp\
+		commontypes.hpp\
+		parseinfo.hpp parseinfo.cpp\
 		vocabulary.hpp vocabulary.cpp\
-		parse.yy\
-		lex.ll\
-		parseinfo.hpp\
+		structure.hpp structure.cpp\
+		term.hpp term.cpp\
+		theory.hpp theory.cpp\
 		options.cpp options.hpp\
+		execute.hpp execute.cpp\
+		namespace.hpp namespace.cpp\
+		parse.yy yyltype.hpp\
+		lex.ll\
 		clconst.hpp\
+		insert.hpp insert.cpp\
+		error.hpp error.cpp\
+		common.hpp common.cpp\
 		interactive.hpp interactive.cpp\
+		main.cpp\
 		print.hpp print.cpp\
 		checker.hpp checker.cpp\
 		generator.hpp generator.cpp\
-		fobdd.hpp fobdd.cpp\
 		propagate.hpp propagate.cpp\
-		element.hpp element.cpp\
-		commontypes.hpp
+		ecnf.hpp ecnf.cpp\
+		ground.hpp ground.cpp\
+		fobdd.hpp fobdd.cpp
 
 AM_CXXFLAGS+=-I $(top_srcdir)/pcsolver/src/ 
 
@@ -59,7 +55,10 @@ LIBBLDDIR = $(builddir)/lib
 # CALLBACK FRAMEWORK
 AM_CXXFLAGS += -I $(LIBSRCDIR)/pluscallback1.7/
 
-dist_doc_DATA = README
-
 data_stddir = $(datadir)/std
-data_std_DATA = data/idp_intern.idp data/idp_intern.lua
+data_std_DATA = data/idp_intern.idp data/idp_intern.lua data/mx.idp data/theory.idp data/domain.idp
+
+data_localdir = $(localstatedir)/idp
+data_local_DATA = data/.idprc
+
+dist_doc_DATA = README $(data_std_DATA) $(data_local_DATA)

@@ -13,21 +13,31 @@
 #include <vector>
 #include <set>
 
-#include "visitor.hpp"
-#include "commontypes.hpp"
+#include "theory.hpp" // for TheoryVisitor
 
-class PFSymbol;
-class AbstractStructure;
+class Options;
 class PredTable;
+class Structure;
+class Namespace;
 class GroundTranslator;
-class InfOptions;
 class GroundTermTranslator;
+class GroundTheory;
+class GroundDefinition;
+class PCGroundRuleBody;
+class AggGroundRuleBody;
+class GroundAggregate;
+class GroundSet;
+class CPVarTerm;
+class CPWSumTerm;
+class CPReification;
+class CPSumTerm;
 
-/*************************
-	Printer base class
-*************************/
 
-class Printer : public Visitor {
+/***************************
+	Printer base classes
+***************************/
+
+class Printer : public TheoryVisitor {
 	protected:
 		std::stringstream _out;
 		unsigned int _indent;
@@ -35,30 +45,18 @@ class Printer : public Visitor {
 	
 	public:
 		// Factory method
-		static Printer* create(InfOptions* opts);
+		static Printer* create(Options* opts);
 
 		// Print methods
-		std::string print(const Vocabulary*);
+		virtual std::string print(const Vocabulary*) = 0;
+		virtual std::string print(const AbstractStructure*) = 0;
+		virtual std::string print(const Namespace*) = 0;
 		std::string print(const AbstractTheory*);
-		std::string print(const AbstractStructure*);
-		std::string print(const Namespace*);
 
 		// Indentation
 		void indent();
 		void unindent();
 		void printtab();
-};
-
-/*********************
-	Simple printer
-*********************/
-
-class SimplePrinter : public Printer {
-	public:
-		void visit(const Vocabulary*);
-		void visit(const Theory*);
-		void visit(const GroundTheory*);
-		void visit(const Structure*);
 };
 
 /******************
@@ -77,11 +75,21 @@ class IDPPrinter : public Printer {
 		void printInter(const char*,const char*,const PredTable*,const PredTable*);
 		void printAtom(int atomnr);
 		void printTerm(unsigned int termnr);
-		void printAggregate(double bound, bool lower, AggType aggtype, unsigned int setnr);
+		void printAggregate(double bound, bool lower, AggFunction aggtype, unsigned int setnr);
 
 	public:
 		IDPPrinter() : _printtypes(false) { }
 		IDPPrinter(bool printtypes) : _printtypes(printtypes) { }
+
+		// Print methods
+		std::string print(const Vocabulary*);
+		std::string print(const AbstractStructure*);
+		std::string print(const Namespace*);
+
+		std::ostream& print(std::ostream&, SortTable*) const;
+		std::ostream& print(std::ostream&, const PredTable*) const;
+		std::ostream& print(std::ostream&, FuncTable*) const;
+		std::ostream& printasfunc(std::ostream&, const PredTable*) const;
 
 		/** Namespace **/
 		void visit(const Namespace*); //TODO procedures and options are not printed yet..
@@ -118,7 +126,6 @@ class IDPPrinter : public Printer {
 		void visit(const FuncInter*);
 
 		/** Vocabularies **/
-		void visit(const Vocabulary*);
 		void visit(const Sort*);
 		void visit(const Predicate*);
 		void visit(const Function*);
@@ -146,7 +153,7 @@ class EcnfPrinter : public Printer {
 		const GroundTermTranslator*	_termtranslator;
 		std::set<unsigned int> 		_printedvarids;
 
-		void printAggregate(AggType aggtype, TsType arrow, unsigned int defnr, bool lower, int head, unsigned int setnr, double bound);
+		void printAggregate(AggFunction aggtype, TsType arrow, unsigned int defnr, bool lower, int head, unsigned int setnr, double bound);
 		void printCPVariable(unsigned int varid);
 		void printCPVariables(std::vector<unsigned int> varids);
 		void printCPReification(std::string type, int head, unsigned int left, CompType comp, int right);
@@ -154,6 +161,10 @@ class EcnfPrinter : public Printer {
 		void printCPReification(std::string type, int head, std::vector<unsigned int> left, std::vector<int> weights, CompType comp, int right);
 
 	public:
+		std::string print(const Vocabulary*);
+		std::string print(const AbstractStructure*);
+		std::string print(const Namespace*);
+
 		void visit(const GroundTheory*);
 		void visit(const GroundDefinition*);
 		void visit(const PCGroundRuleBody*);

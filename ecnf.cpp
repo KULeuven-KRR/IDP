@@ -132,7 +132,7 @@ void GroundDefinition::addPCRule(int head, const vector<int>& body, bool conj, b
 	}
 }
 
-void GroundDefinition::addAggRule(int head, int setnr, AggType aggtype, bool lower, double bound, bool recursive) {
+void GroundDefinition::addAggRule(int head, int setnr, AggFunction aggtype, bool lower, double bound, bool recursive) {
 	// Check if there exists a rule with the same head
 	map<int,GroundRuleBody*>::iterator it = _rules.find(head);
 
@@ -181,8 +181,7 @@ void GroundDefinition::addAggRule(int head, int setnr, AggType aggtype, bool low
 	}
 }
 
-string GroundDefinition::to_string(unsigned int) const {
-	stringstream s;
+ostream& GroundDefinition::put(ostream& s, unsigned int ) const {
 	s << "{\n";
 	for(map<int,GroundRuleBody*>::const_iterator it = _rules.begin(); it != _rules.end(); ++it) {
 		s << _translator->printAtom(it->first) << " <- ";
@@ -191,11 +190,11 @@ string GroundDefinition::to_string(unsigned int) const {
 			const AggGroundRuleBody* grb = dynamic_cast<const AggGroundRuleBody*>(body);
 			s << grb->_bound << (grb->_lower ? " =< " : " >= ");
 			switch(grb->_aggtype) {
-				case AGGCARD: s << "#"; break;
-				case AGGSUM: s << "sum"; break;
-				case AGGPROD: s << "prod"; break;
-				case AGGMIN: s << "min"; break;
-				case AGGMAX: s << "max"; break;
+				case AGG_CARD: s << "#"; break;
+				case AGG_SUM: s << "sum"; break;
+				case AGG_PROD: s << "prod"; break;
+				case AGG_MIN: s << "min"; break;
+				case AGG_MAX: s << "max"; break;
 			}
 			s << grb->_setnr << ".\n";
 		}
@@ -217,7 +216,13 @@ string GroundDefinition::to_string(unsigned int) const {
 		}
 	}
 	s << "}\n";
-	return s.str();
+	return s;
+}
+
+string GroundDefinition::to_string(unsigned int) const {
+	stringstream sstr;
+	put(sstr);
+	return sstr.str();
 }
 
 /*******************************
@@ -311,6 +316,7 @@ void AbstractGroundTheory::transformForAdd(const vector<int>& vi, VIType /*vit*/
 				}
 			}
 			else {
+#ifdef TEMP_CP
 				assert(typeid(*tsbody) == typeid(CPTsBody));
 				CPTsBody* body = dynamic_cast<CPTsBody*>(tsbody);
 				if(body->type() == TS_RULE) {
@@ -320,6 +326,9 @@ void AbstractGroundTheory::transformForAdd(const vector<int>& vi, VIType /*vit*/
 				else {
 					addCPReification(atom,body);
 				}
+#else
+				assert(false);
+#endif
 			}
 		}
 	}
@@ -333,7 +342,6 @@ void AbstractGroundTheory::transformForAdd(const vector<int>& vi, VIType /*vit*/
 void GroundTheory::recursiveDelete() {
 	for(vector<GroundDefinition*>::iterator defit = _definitions.begin(); defit != _definitions.end(); ++defit) {
 		(*defit)->recursiveDelete();
-		delete(*defit);
 	}
 	for(vector<GroundAggregate*>::iterator aggit = _aggregates.begin(); aggit != _aggregates.end(); ++aggit) {
 		delete(*aggit);
@@ -369,7 +377,7 @@ void GroundTheory::addDefinition(GroundDefinition* d) {
 			else {
 				assert(typeid(*grb) == typeid(AggGroundRuleBody));
 				AggGroundRuleBody* agggrb = dynamic_cast<AggGroundRuleBody*>(grb);
-				addSet(agggrb->setnr(),defnr,(agggrb->aggtype() != AGGCARD));
+				addSet(agggrb->setnr(),defnr,(agggrb->aggtype() != AGG_CARD));
 			}
 		}
 	}
@@ -381,7 +389,7 @@ void GroundTheory::addFixpDef(GroundFixpDef*) {
 }
 
 void GroundTheory::addAggregate(int head, AggTsBody* body) {
-	addSet(body->setnr(),ID_FOR_UNDEFINED,(body->aggtype() != AGGCARD));
+	addSet(body->setnr(),ID_FOR_UNDEFINED,(body->aggtype() != AGG_CARD));
 	_aggregates.push_back(new GroundAggregate(body->aggtype(),body->lower(),body->type(),head,body->setnr(),body->bound()));
 }
 
@@ -408,12 +416,11 @@ void GroundTheory::addPCRule(int defnr, int tseitin, PCTsBody* body) {
 
 void GroundTheory::addAggRule(int defnr, int tseitin, AggTsBody* body) {
 	assert(_definitions[defnr]->rule(tseitin) == _definitions[defnr]->end());
-	addSet(body->setnr(),defnr,(body->aggtype() != AGGCARD));
+	addSet(body->setnr(),defnr,(body->aggtype() != AGG_CARD));
 	_definitions[defnr]->addAggRule(tseitin,body->setnr(),body->aggtype(),body->lower(),body->bound(),true);
 }
 
-string GroundTheory::to_string() const {
-	stringstream s;
+ostream& GroundTheory::put(ostream& s, unsigned int) const {
 	for(unsigned int n = 0; n < _clauses.size(); ++n) {
 		if(_clauses[n].empty()) {
 			s << "false";
@@ -485,6 +492,12 @@ string GroundTheory::to_string() const {
 		else s << right._value._bound;
 		s << '.' << endl;
 	}
+	return s;
+}
+
+string GroundTheory::to_string() const {
+	stringstream s;
+	put(s);
 	return s.str();
 }
 
@@ -557,25 +570,25 @@ void SolverTheory::addFixpDef(GroundFixpDef*) {
 	assert(false);
 }
 
-void SolverTheory::addAggregate(int definitionID, int head, bool lowerbound, int setnr, AggType aggtype, TsType sem, double bound) {
-	addSet(setnr,definitionID,(aggtype != AGGCARD));
+void SolverTheory::addAggregate(int definitionID, int head, bool lowerbound, int setnr, AggFunction aggtype, TsType sem, double bound) {
+	addSet(setnr,definitionID,(aggtype != AGG_CARD));
 	MinisatID::Aggregate agg;
 	agg.sign = lowerbound ? MinisatID::AGGSIGN_LB : MinisatID::AGGSIGN_UB;
 	agg.setID = setnr;
 	switch (aggtype) {
-		case AGGCARD:
+		case AGG_CARD:
 			agg.type = MinisatID::CARD;
 			break;
-		case AGGSUM:
+		case AGG_SUM:
 			agg.type = MinisatID::SUM;
 			break;
-		case AGGPROD:
+		case AGG_PROD:
 			agg.type = MinisatID::PROD;
 			break;
-		case AGGMIN:
+		case AGG_MIN:
 			agg.type = MinisatID::MIN;
 			break;
-		case AGGMAX:
+		case AGG_MAX:
 			agg.type = MinisatID::MAX;
 			break;
 	}
@@ -627,6 +640,7 @@ void SolverTheory::addDefinition(GroundDefinition* d) {
 	}
 }
 
+#ifdef TEMP_CP
 void SolverTheory::addCPReification(int tseitin, CPTsBody* body) {
 	MinisatID::EqType comp;
 	switch(body->comp()) {
@@ -720,21 +734,19 @@ void SolverTheory::addCPVariable(unsigned int varid) {
 		Function* function = _termtranslator->function(varid);
 //cerr << "Adding domain "; 
 		SortTable* domain = _structure->inter(function->outsort());
-		assert(domain->finite()); 		//TODO Right?
-		assert(domain->type() == ELINT); //FIXME ... so for this kind of table first() and last() are always defined?
-		Element first = domain->element(0); 				//FIXME domain->first() ?
-		int minvalue = first._int;
-		Element last = domain->element(domain->size()-1);	//FIXME domain->last() ?
-		int maxvalue = last._int;
+		assert(domain->approxfinite()); 
+		const DomainElement* first = domain->first(); 
+		int minvalue = first->value()._int;
+		const DomainElement* last = domain->last();	
+		int maxvalue = last->value()._int;
 		assert(maxvalue > minvalue);
-		unsigned int difference = maxvalue - minvalue;
-		if(difference + 1 == domain->size()) {
-//cerr << "[" << minvalue << "," << maxvalue << "]";
+		if(domain->isRange()) {
 			// the domain is a complete range from minvalue to maxvalue.
 			MinisatID::CPIntVarRange cpvar;
 			cpvar.varID = varid;
 			cpvar.minvalue = minvalue;
 			cpvar.maxvalue = maxvalue;
+//cerr << "[" << minvalue << "," << maxvalue << "]";
 			getSolver().add(cpvar);
 		}
 		else {
@@ -742,18 +754,18 @@ void SolverTheory::addCPVariable(unsigned int varid) {
 			MinisatID::CPIntVarEnum cpvar;
 			cpvar.varID = varid;
 //cerr << "{ ";
-			for(unsigned int m = 0; m < domain->size(); ++m) {
-				Element element = domain->element(m);
-				int value = element._int;
+			for(SortIterator it = domain->sortbegin(); it.hasNext(); ++it) {
+				int value = (*it)->value()._int;
 //cerr << value << "; ";
 				cpvar.values.push_back(value);
 			}
-//cerr << " }";
+//cerr << "}";
 			getSolver().add(cpvar);
 		}
 //cerr << " for function " << function->name() << " (varid = " << varid << ")" << endl;
 	}
 }
+#endif
 
 void SolverTheory::addPCRule(int defnr, int head, vector<int> body, bool conjunctive){
 	transformForAdd(body,(conjunctive ? VIT_CONJ : VIT_DISJ),defnr);
@@ -775,79 +787,78 @@ void SolverTheory::addPCRule(int defnr, int head, PCTsBody* tsb) {
 	addPCRule(defnr,head,tsb->body(),tsb->conj());
 }
 
-class DomelementEquality {
-	private:
-		unsigned int	_arity;
-	public:
-		DomelementEquality(unsigned int arity) : _arity(arity) { }
-		bool operator()(const vector<domelement>& v1, const vector<domelement>& v2) {
-			for(unsigned int n = 0; n < _arity; ++n) {
-				if(v1[n] != v2[n]) return false;
-			}
-			return true;
-		}
-};
-
-/*
- * void SolverTheory::addFuncConstraints()
- * DESCRIPTION
+/**
  *		Adds constraints to the theory that state that each of the functions that occur in the theory is indeed a function.
  *		This method should be called before running the SAT solver and after grounding.
  * TODO
  * 		This should not be done for functions that are handled by the constraint solver.
  */
-void SolverTheory::addFuncConstraints() {
-//cerr << "Functions known by translator: ";
-//for(unsigned int n = 0; n < getTranslator().nrOffsets(); ++n) {
-//	PFSymbol* pfs = getTranslator().getSymbol(n);
-//	if(not pfs->ispred()) cerr << pfs->to_string() << ' ';
-//}
-//cerr << endl;
-//	set<Function*> knownbytt;
-//cerr << "Functions known by termtranslator: ";
-//	for(unsigned int n = 0; n < _termtranslator->nrOffsets();++n) {
-//		knownbytt.insert(_termtranslator->getFunction(n));
-//cerr << _termtranslator->getFunction(n)->to_string() << ' ';
-//	}
-//cerr << endl;
+void AbstractGroundTheory::addFuncConstraints() {
 	for(unsigned int n = 0; n < getTranslator().nrOffsets(); ++n) {
 		PFSymbol* pfs = getTranslator().getSymbol(n);
-		const map<vector<domelement>,int>& tuples = getTranslator().getTuples(n);
-		if(!(pfs->ispred()) && !(tuples.empty())) {
+		const map<vector<const DomainElement*>,int,StrictWeakTupleOrdering>& tuples = getTranslator().getTuples(n);
+		if((typeid(*pfs) == typeid(Function))  && !(tuples.empty())) {
 			Function* f = dynamic_cast<Function*>(pfs);
-			//if(knownbytt.find(f) == knownbytt.end()) {
-//cerr << "Adding function constraints for " << f->to_string() << ": " << endl;
-				SortTable* st = _structure->inter(f->outsort());
-				DomelementEquality de(f->arity());
-				vector<vector<int> > sets(1);
-				map<vector<domelement>,int>::const_iterator pit = tuples.begin();
-				for(map<vector<domelement>,int>::const_iterator it = tuples.begin(); it != tuples.end(); ++it) {
-					if(de(it->first,pit->first)) sets.back().push_back(it->second);
-					else sets.push_back(vector<int>(1,it->second));
-					pit = it;
-				}
-				for(unsigned int s = 0; s < sets.size(); ++s) {
-					vector<double> lw(sets[s].size(),1);
-					vector<double> tw(0);
-					int setnr = getTranslator().translateSet(sets[s],lw,tw);
-//cerr << " set_" << setnr << " = [ ";
-//for(unsigned int n = 0; n < sets[s].size(); ++n) {
-//	cerr << getTranslator().printAtom(sets[s][n]);
-//	if(n != sets[s].size()-1) cerr << "; "; 
-//}
-//cerr << "] " << endl;
-					int tseitin;
-					if(f->partial() || !(st->finite()) || st->size() != sets[s].size()) {
-						tseitin = getTranslator().translate(1,'>',false,AGGCARD,setnr,TS_IMPL);
-//cerr << " 1 >= #(set_" << setnr << ")" << endl;
+			StrictWeakNTupleEquality de(f->arity());
+			StrictWeakNTupleOrdering ds(f->arity());
+
+			const PredTable* ct = _structure->inter(f)->graphinter()->ct();
+			const PredTable* pt = _structure->inter(f)->graphinter()->pt();
+			SortTable* st = _structure->inter(f->outsort());
+
+			ElementTuple input(f->arity(),0);
+			TableIterator tit = ct->begin();
+			SortIterator sit = st->sortbegin();
+			vector<vector<int> > sets;
+			vector<bool> weak;
+			for(map<vector<const DomainElement*>,int,StrictWeakTupleOrdering>::const_iterator it = tuples.begin(); it != tuples.end(); ) {
+				if(de(it->first,input) && !sets.empty()) {
+					sets.back().push_back(it->second);
+					while(*sit != it->first.back()) {
+						ElementTuple temp = input; temp.push_back(*sit);
+						if(pt->contains(temp)) {
+							weak.back() = true;
+							break;
+						}
+						++sit;
 					}
-					else {
-						tseitin = getTranslator().translate(1,'=',true,AGGCARD,setnr,TS_IMPL);
-//cerr << " 1 = #(set_" << setnr << ")" << endl;
-					}
-					addUnitClause(tseitin);
+					++it;
+					if(sit.hasNext()) ++sit;
 				}
-			//}
+				else {
+					if(!sets.empty() && sit.hasNext()) weak.back() = true;
+					if(tit.hasNext()) {
+						const ElementTuple& tuple = *tit;
+						if(de(tuple,it->first)) {
+							do { 
+								if(it->first != tuple) addUnitClause(-(it->second));
+								++it; 
+							} while(it != tuples.end() && de(tuple,it->first));
+							continue;
+						}
+						else if(ds(tuple,it->first)) {
+							do { ++tit; } while(tit.hasNext() && ds(*tit,it->first));
+							continue;
+						}
+					}
+					sets.push_back(vector<int>(0));
+					weak.push_back(false);
+					input = it->first; input.pop_back();
+					sit = st->sortbegin();
+				}
+			}
+			for(unsigned int s = 0; s < sets.size(); ++s) {
+				vector<double> lw(sets[s].size(),1);
+				vector<double> tw(0);
+				int setnr = getTranslator().translateSet(sets[s],lw,tw);
+				int tseitin;
+				if(f->partial() || !(st->finite()) || weak[s]) {
+					tseitin = getTranslator().translate(1,'>',false,AGG_CARD,setnr,TS_IMPL);
+				}
+				else {
+					tseitin = getTranslator().translate(1,'=',true,AGG_CARD,setnr,TS_IMPL);
+				}
+			}
 		}
 	}
 }
@@ -857,10 +868,51 @@ void SolverTheory::addFalseDefineds() {
 		PFSymbol* s = getTranslator().getSymbol(n);
 		map<PFSymbol*,set<int> >::const_iterator it = _defined.find(s);
 		if(it != _defined.end()) {
-			const map<vector<domelement>,int>& tuples = getTranslator().getTuples(n);
-			for(map<vector<domelement>,int>::const_iterator jt = tuples.begin(); jt != tuples.end(); ++jt) {
+			const map<vector<const DomainElement*>,int,StrictWeakTupleOrdering>& tuples = getTranslator().getTuples(n);
+			for(map<vector<const DomainElement*>,int>::const_iterator jt = tuples.begin(); jt != tuples.end(); ++jt) {
 				if(it->second.find(jt->second) == it->second.end()) addUnitClause(-jt->second);
 			}
 		}
 	}
+}
+
+/**************
+	Visitor
+**************/
+
+void TheoryVisitor::visit(const GroundDefinition* d) {
+	for(map<int,GroundRuleBody*>::const_iterator it = d->begin(); it != d->end(); ++it) 
+		it->second->accept(this);
+}
+
+void TheoryVisitor::visit(const AggGroundRuleBody*) {
+	// TODO
+}
+
+void TheoryVisitor::visit(const PCGroundRuleBody*) {
+	// TODO
+}
+
+void TheoryVisitor::visit(const GroundSet*) {
+	// TODO
+}
+
+void TheoryVisitor::visit(const GroundAggregate*) {
+	// TODO
+}
+
+GroundDefinition* TheoryMutatingVisitor::visit(GroundDefinition* d) {
+	for(map<int,GroundRuleBody*>::iterator it = d->begin(); it != d->end(); ++it) 
+		it->second = it->second->accept(this);
+	return d;
+}
+
+GroundRuleBody* TheoryMutatingVisitor::visit(AggGroundRuleBody* r) {
+	// TODO
+	return r;
+}
+
+GroundRuleBody* TheoryMutatingVisitor::visit(PCGroundRuleBody* r) {
+	// TODO
+	return r;
 }

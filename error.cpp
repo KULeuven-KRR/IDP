@@ -4,14 +4,9 @@
 	(c) K.U.Leuven
 ************************************/
 
-#include "error.hpp"
-
 #include <iostream>
-
-#include "options.hpp"
-#include "data.hpp"
 #include "parseinfo.hpp"
-
+#include "error.hpp"
 using namespace std;
 
 namespace Error {
@@ -30,7 +25,7 @@ namespace Error {
 	void error(const ParseInfo& p) {
 		errorcounter++;
 		cerr << "ERROR at line " << p.line() 
-			 << ", column " << p.column();
+			 << ", column " << p.col();
 		if(p.file()) cerr << " of file " << *(p.file());
 		cerr << ": ";
 	}
@@ -45,6 +40,16 @@ namespace Error {
 	void unknoption(const string& s) {
 		error();
 		cerr << "'" << s << "' is an unknown option." << endl;
+	}
+
+	void unknoption(const string& s, const ParseInfo& pi) {
+		error(pi);
+		cerr << "'" << s << "' is an unknown option." << endl;
+	}
+
+	void wrongvalue(const string& optname, const string& val, const ParseInfo& pi) {
+		error(pi);
+		cerr << "'" << val << "' is not a valid value for option '" << optname << "'\n";
 	}
 
 	void unknfile(const string& s) {
@@ -266,7 +271,7 @@ namespace Error {
 	void multdeclns(const string& nsname, const ParseInfo& thisplace, const ParseInfo& prevdeclplace) {
 		error(thisplace);
 		cerr << "Namespace " << nsname << " is already declared in this scope" 
-			 << ", namely at line " << prevdeclplace.line() << ", column " << prevdeclplace.column(); 
+			 << ", namely at line " << prevdeclplace.line() << ", column " << prevdeclplace.col(); 
 		if(prevdeclplace.file()) cerr << " of file " << *(prevdeclplace.file());
 		cerr << "." << endl;
 	}
@@ -274,7 +279,7 @@ namespace Error {
 	void multdeclvoc(const string& vocname, const ParseInfo& thisplace, const ParseInfo& prevdeclplace) {
 		error(thisplace);
 		cerr << "Vocabulary " << vocname << " is already declared in this scope" 
-			 << ", namely at line " << prevdeclplace.line() << ", column " << prevdeclplace.column(); 
+			 << ", namely at line " << prevdeclplace.line() << ", column " << prevdeclplace.col(); 
 		if(prevdeclplace.file()) cerr << " of file " << *(prevdeclplace.file());
 		cerr << "." << endl;
 	}
@@ -282,7 +287,7 @@ namespace Error {
 	void multdecltheo(const string& thname, const ParseInfo& thisplace, const ParseInfo& prevdeclplace) {
 		error(thisplace);
 		cerr << "Theory " << thname << " is already declared in this scope" 
-			 << ", namely at line " << prevdeclplace.line() << ", column " << prevdeclplace.column(); 
+			 << ", namely at line " << prevdeclplace.line() << ", column " << prevdeclplace.col(); 
 		if(prevdeclplace.file()) cerr << " of file " << *(prevdeclplace.file());
 		cerr << "." << endl;
 	}
@@ -290,7 +295,7 @@ namespace Error {
 	void multdeclstruct(const string& sname, const ParseInfo& thisplace, const ParseInfo& prevdeclplace) {
 		error(thisplace);
 		cerr << "Structure " << sname << " is already declared in this scope" 
-			 << ", namely at line " << prevdeclplace.line() << ", column " << prevdeclplace.column(); 
+			 << ", namely at line " << prevdeclplace.line() << ", column " << prevdeclplace.col(); 
 		if(prevdeclplace.file()) cerr << " of file " << *(prevdeclplace.file());
 		cerr << "." << endl;
 	}
@@ -298,7 +303,7 @@ namespace Error {
 	void multdeclopt(const string& sname, const ParseInfo& thisplace, const ParseInfo& prevdeclplace) {
 		error(thisplace);
 		cerr << "Options " << sname << " is already declared in this scope" 
-			 << ", namely at line " << prevdeclplace.line() << ", column " << prevdeclplace.column(); 
+			 << ", namely at line " << prevdeclplace.line() << ", column " << prevdeclplace.col(); 
 		if(prevdeclplace.file()) cerr << " of file " << *(prevdeclplace.file());
 		cerr << "." << endl;
 	}
@@ -306,7 +311,7 @@ namespace Error {
 	void multdeclproc(const string& sname, const ParseInfo& thisplace, const ParseInfo& prevdeclplace) {
 		error(thisplace);
 		cerr << "Procedure " << sname << " is already declared in this scope" 
-			 << ", namely at line " << prevdeclplace.line() << ", column " << prevdeclplace.column(); 
+			 << ", namely at line " << prevdeclplace.line() << ", column " << prevdeclplace.col(); 
 		if(prevdeclplace.file()) cerr << " of file " << *(prevdeclplace.file());
 		cerr << "." << endl;
 	}
@@ -404,10 +409,21 @@ namespace Error {
 	void overloadedsort(const string& name, const ParseInfo& p1, const ParseInfo& p2, const ParseInfo& thisplace) {
 		error(thisplace);
 		cerr << "The sort " << name << " used here could be the sort declared at " 
-			 << "line " << p1.line() << ", column " << p1.column();
+			 << "line " << p1.line() << ", column " << p1.col();
 		if(p1.file()) cerr << " of file " << p1.file();
 		cerr << " or the sort declared at "
-			 << "line " << p2.line() << ", column " << p2.column();
+			 << "line " << p2.line() << ", column " << p2.col();
+		if(p2.file()) cerr << " of file " << p2.file();
+		cerr << ".\n";
+	}
+
+	void overloadedfunc(const string& name, const ParseInfo& p1, const ParseInfo& p2, const ParseInfo& thisplace) {
+		error(thisplace);
+		cerr << "The function " << name << " used here could be the predicate declared at " 
+			 << "line " << p1.line() << ", column " << p1.col();
+		if(p1.file()) cerr << " of file " << p1.file();
+		cerr << " or the function declared at "
+			 << "line " << p2.line() << ", column " << p2.col();
 		if(p2.file()) cerr << " of file " << p2.file();
 		cerr << ".\n";
 	}
@@ -415,10 +431,10 @@ namespace Error {
 	void overloadedpred(const string& name, const ParseInfo& p1, const ParseInfo& p2, const ParseInfo& thisplace) {
 		error(thisplace);
 		cerr << "The predicate " << name << " used here could be the predicate declared at " 
-			 << "line " << p1.line() << ", column " << p1.column();
+			 << "line " << p1.line() << ", column " << p1.col();
 		if(p1.file()) cerr << " of file " << p1.file();
 		cerr << " or the predicate declared at "
-			 << "line " << p2.line() << ", column " << p2.column();
+			 << "line " << p2.line() << ", column " << p2.col();
 		if(p2.file()) cerr << " of file " << p2.file();
 		cerr << ".\n";
 	}
@@ -426,10 +442,10 @@ namespace Error {
 	void overloadedspace(const string& name, const ParseInfo& p1, const ParseInfo& p2, const ParseInfo& thisplace) {
 		error(thisplace);
 		cerr << "The namespace " << name << " used here could be the namespace declared at " 
-			 << "line " << p1.line() << ", column " << p1.column();
+			 << "line " << p1.line() << ", column " << p1.col();
 		if(p1.file()) cerr << " of file " << p1.file();
 		cerr << " or the namespace declared at "
-			 << "line " << p2.line() << ", column " << p2.column();
+			 << "line " << p2.line() << ", column " << p2.col();
 		if(p2.file()) cerr << " of file " << p2.file();
 		cerr << ".\n";
 	}
@@ -437,10 +453,10 @@ namespace Error {
 	void overloadedstructure(const string& name, const ParseInfo& p1, const ParseInfo& p2, const ParseInfo& thisplace) {
 		error(thisplace);
 		cerr << "The structure " << name << " used here could be the structure declared at " 
-			 << "line " << p1.line() << ", column " << p1.column();
+			 << "line " << p1.line() << ", column " << p1.col();
 		if(p1.file()) cerr << " of file " << p1.file();
 		cerr << " or the structure declared at "
-			 << "line " << p2.line() << ", column " << p2.column();
+			 << "line " << p2.line() << ", column " << p2.col();
 		if(p2.file()) cerr << " of file " << p2.file();
 		cerr << ".\n";
 	}
@@ -448,10 +464,10 @@ namespace Error {
 	void overloadedopt(const string& name, const ParseInfo& p1, const ParseInfo& p2, const ParseInfo& thisplace) {
 		error(thisplace);
 		cerr << "The options " << name << " used here could be the options declared at " 
-			 << "line " << p1.line() << ", column " << p1.column();
+			 << "line " << p1.line() << ", column " << p1.col();
 		if(p1.file()) cerr << " of file " << p1.file();
 		cerr << " or the options declared at "
-			 << "line " << p2.line() << ", column " << p2.column();
+			 << "line " << p2.line() << ", column " << p2.col();
 		if(p2.file()) cerr << " of file " << p2.file();
 		cerr << ".\n";
 	}
@@ -459,10 +475,10 @@ namespace Error {
 	void overloadedproc(const string& name, const ParseInfo& p1, const ParseInfo& p2, const ParseInfo& thisplace) {
 		error(thisplace);
 		cerr << "The procedure " << name << " used here could be the options declared at " 
-			 << "line " << p1.line() << ", column " << p1.column();
+			 << "line " << p1.line() << ", column " << p1.col();
 		if(p1.file()) cerr << " of file " << p1.file();
 		cerr << " or the procedure declared at "
-			 << "line " << p2.line() << ", column " << p2.column();
+			 << "line " << p2.line() << ", column " << p2.col();
 		if(p2.file()) cerr << " of file " << p2.file();
 		cerr << ".\n";
 	}
@@ -470,10 +486,10 @@ namespace Error {
 	void overloadedtheory(const string& name, const ParseInfo& p1, const ParseInfo& p2, const ParseInfo& thisplace) {
 		error(thisplace);
 		cerr << "The theory " << name << " used here could be the theory declared at " 
-			 << "line " << p1.line() << ", column " << p1.column();
+			 << "line " << p1.line() << ", column " << p1.col();
 		if(p1.file()) cerr << " of file " << p1.file();
 		cerr << " or the theory declared at "
-			 << "line " << p2.line() << ", column " << p2.column();
+			 << "line " << p2.line() << ", column " << p2.col();
 		if(p2.file()) cerr << " of file " << p2.file();
 		cerr << ".\n";
 	}
@@ -481,10 +497,10 @@ namespace Error {
 	void overloadedvocab(const string& name, const ParseInfo& p1, const ParseInfo& p2, const ParseInfo& thisplace) {
 		error(thisplace);
 		cerr << "The vocabulary " << name << " used here could be the vocabulary declared at " 
-			 << "line " << p1.line() << ", column " << p1.column();
+			 << "line " << p1.line() << ", column " << p1.col();
 		if(p1.file()) cerr << " of file " << p1.file();
 		cerr << " or the vocabulary declared at "
-			 << "line " << p2.line() << ", column " << p2.column();
+			 << "line " << p2.line() << ", column " << p2.col();
 		if(p2.file()) cerr << " of file " << p2.file();
 		cerr << ".\n";
 	}
@@ -557,7 +573,7 @@ namespace Error {
 
 	void wrongcommandargs(const string& name) {
 		error();
-		cerr << "The arguments given to command " << name << " are either of the wrong type, or do not exist.\n";
+		cerr << "The arguments given to procedure " << name << " are either of the wrong type, or do not exist.\n";
 	}
 
 	void wrongvaluetype(const string& name, ParseInfo* thisplace) {
@@ -582,7 +598,7 @@ namespace Error {
 
 	void ambigcommand(const string& name) {
 		error();
-		cerr << "Ambiguous call to overloaded command " << name << ".\n";
+		cerr << "Ambiguous call to overloaded procedure " << name << ".\n";
 	}
 
 	void indexoverloadedfunc() {
@@ -605,6 +621,21 @@ namespace Error {
 		cerr << "Calling a three-valued function.\n";
 	}
 
+	void structureexpected(const ParseInfo& pi) {
+		error(pi);
+		cerr << "Expected a structure.\n";
+	}
+
+	void theoryexpected(const ParseInfo& pi) {
+		error(pi);
+		cerr << "Expected a theory.\n";
+	}
+
+	void vocabexpected(const ParseInfo& pi) {
+		error(pi);
+		cerr << "Expected a vocabulary.\n";
+	}
+
 }
 
 namespace Warning {
@@ -622,7 +653,7 @@ namespace Warning {
 	void warning(const ParseInfo& p) {
 		warningcounter++;
 		cerr << "WARNING at line " << p.line() 
-			 << ", column " << p.column();
+			 << ", column " << p.col();
 		if(p.file()) cerr << " of file " << *(p.file());
 		cerr << ": ";
 	}
@@ -630,43 +661,33 @@ namespace Warning {
 	/** Ambiguous statements **/
 
 	void varcouldbeconst(const string& name, const ParseInfo& thisplace) {
-		if(_cloptions._warning[WT_VARORCONST]) {
-			warning(thisplace);
-			cerr << "'" << name << "' could be a variable or a constant. GidL assumes it is a variable.\n";
-		}
+		warning(thisplace);
+		cerr << "'" << name << "' could be a variable or a constant. GidL assumes it is a variable.\n";
 	}
 
 	/** Free variables **/
 	void freevars(const string& fv, const ParseInfo& thisplace) {
-		if(_cloptions._warning[WT_FREE_VARS]) {
-			warning(thisplace);
-			if(fv.size() > 1) cerr << "Variables" << fv << " are not quantified.\n";
-			else cerr << "Variable" << fv[0] << " is not quantified.\n";
-		}
+		warning(thisplace);
+		if(fv.size() > 1) cerr << "Variables" << fv << " are not quantified.\n";
+		else cerr << "Variable" << fv[0] << " is not quantified.\n";
 	}
 
 	/** Unexpeded type derivation **/
 	void derivevarsort(const string& varname, const string& sortname, const ParseInfo& thisplace) {
-		if(_cloptions._warning[WT_SORTDERIVE]) {
-			warning(thisplace);
-			cerr << "Derived sort " << sortname << " for variable " << varname << ".\n";
-		}
+		warning(thisplace);
+		cerr << "Derived sort " << sortname << " for variable " << varname << ".\n";
 	}
 
 	/** Autocompletion **/
 	void addingeltosort(const string& elname, const string& sortname, const string& structname) {
-		if(_cloptions._warning[WT_AUTOCOMPL]) {
-			warning();
-			cerr << "Adding element " << elname << " to the interpretation of sort " << sortname << " in structure " << structname << ".\n";
-		}
+		warning();
+		cerr << "Adding element " << elname << " to the interpretation of sort " << sortname << " in structure " << structname << ".\n";
 	}
 
 
 	/** Reading from stdin **/
 	void readingfromstdin() {
-		if(_cloptions._warning[WT_STDIN]) {
-			cerr << "(Reading from stdin)\n";
-		}
+		cerr << "(Reading from stdin)\n";
 	}
 }
 
@@ -674,8 +695,6 @@ namespace Info {
 	
 	/** Information **/
 	void print(const string& s) {
-		if(_cloptions._verbose) {
-			cerr << s << endl;
-		}
+		cerr << s << endl;
 	}
 }

@@ -8,6 +8,8 @@
 #define CLCONST_HPP
 
 #include <string>
+#include "insert.hpp"
+#include "parse.h"
 
 /************************************************
 	class to represent the different 

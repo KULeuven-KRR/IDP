@@ -14,9 +14,9 @@
 #include <queue>
 #include <stack>
 #include <cstdlib>
-
+#include "theory.hpp"
+#include "structure.hpp"
 #include "commontypes.hpp"
-#include "visitor.hpp"
 #include "pcsolver/src/external/ExternalInterface.hpp"
 
 class PFSymbol;
@@ -26,10 +26,10 @@ class AbstractStructure;
 class AbstractGroundTheory;
 class InstGenerator;
 class InstanceChecker;
-
-struct TypedElement;
-
-typedef compound* domelement; //repeated from vocabulary.hpp
+class SortTable;
+class DomainElement;
+class Options;
+class StrictWeakTupleOrdering;
 
 /**********************************************
 	Translate from ground atoms to numbers
@@ -98,16 +98,16 @@ class PCTsBody : public TsBody {
 class AggTsBody : public TsBody {
 	private:
 		int			_setnr;
-		AggType		_aggtype;
+		AggFunction		_aggtype;
 		bool		_lower;
 		double		_bound;
 		//bool equal(const TsBody&) const;
 		//bool compare(const TsBody&) const;
 	public:
-		AggTsBody(TsType type, double bound, bool lower, AggType at, int setnr):
+		AggTsBody(TsType type, double bound, bool lower, AggFunction at, int setnr):
 			TsBody(type), _setnr(setnr), _aggtype(at), _lower(lower), _bound(bound) { }
 		int			setnr()		const { return _setnr; 		}
-		AggType		aggtype()	const { return _aggtype;	}
+		AggFunction		aggtype()	const { return _aggtype;	}
 		bool		lower()		const { return _lower;		}
 		double		bound()		const { return _bound;		}
 	friend class GroundTranslator;
@@ -129,9 +129,9 @@ class CPTerm {
 		virtual bool equal(const CPTerm&) const = 0;
 		virtual bool compare(const CPTerm&) const = 0;
 	public:
-		virtual void accept(Visitor*) const = 0;
 		friend bool operator==(const CPTerm&, const CPTerm&);
 		friend bool operator<(const CPTerm&, const CPTerm&);
+		virtual void accept(TheoryVisitor*) const = 0;
 };
 
 class CPVarTerm : public CPTerm {
@@ -141,7 +141,7 @@ class CPVarTerm : public CPTerm {
 	public:
 		unsigned int _varid;
 		CPVarTerm(unsigned int varid) : _varid(varid) { }
-		void accept(Visitor*) const;
+		void accept(TheoryVisitor* v) const { v->visit(this);	}
 };
 
 class CPSumTerm : public CPTerm {
@@ -150,7 +150,7 @@ class CPSumTerm : public CPTerm {
 		bool compare(const CPTerm&) const;
 	public:
 		std::vector<unsigned int> _varids; 
-		void accept(Visitor*) const;
+		void accept(TheoryVisitor* v) const { v->visit(this);	}
 };
 
 class CPWSumTerm : public CPTerm {
@@ -160,7 +160,7 @@ class CPWSumTerm : public CPTerm {
 	public:
 		std::vector<unsigned int> 	_varids; 
 		std::vector<int>			_weights;
-		void accept(Visitor*) const;
+		void accept(TheoryVisitor* v) const { v->visit(this);	}
 };
 
 struct CPBound {
@@ -197,10 +197,11 @@ class CPTsBody : public TsBody {
  */
 class GroundTranslator {
 	private:
-		std::vector<std::map<std::vector<domelement>,int> >	_table;			// map atoms to integers
+		std::vector<std::map<std::vector<const DomainElement*>,int,StrictWeakTupleOrdering> >
+															_table;			// map atoms to integers
 		std::vector<PFSymbol*>								_symboffsets;	// map integer to symbol
 		std::vector<PFSymbol*>								_backsymbtable;	// map integer to the symbol of its corresponding atom
-		std::vector<std::vector<domelement> >				_backargstable;	// map integer to the terms of its corresponding atom
+		std::vector<std::vector<const DomainElement*> >		_backargstable;	// map integer to the terms of its corresponding atom
 
 		std::queue<int>		_freenumbers;		// keeps atom numbers that were freed and can be used again
 		std::queue<int>		_freesetnumbers;	// keeps set numbers that were freed and can be used again
@@ -214,24 +215,25 @@ class GroundTranslator {
 		GroundTranslator() : _backsymbtable(1), _backargstable(1), _sets(1) { }
 		~GroundTranslator();
 
-		int				translate(unsigned int,const std::vector<domelement>&);
+		int				translate(unsigned int,const std::vector<const DomainElement*>&);
 		int				translate(const std::vector<int>& cl, bool conj, TsType tp);
-		int				translate(double bound, char comp, bool strict, AggType aggtype, int setnr, TsType tstype);
-		int				translate(PFSymbol*,const std::vector<TypedElement>&);
+		int				translate(double bound, char comp, bool strict, AggFunction aggtype, int setnr, TsType tstype);
+		int				translate(PFSymbol*,const std::vector<const DomainElement*>&);
 		int				translate(CPTerm*, CompType, const CPBound&, TsType);
 		int				nextNumber();
 		unsigned int	addSymbol(PFSymbol* pfs);
 		int				translateSet(const std::vector<int>&,const std::vector<double>&,const std::vector<double>&);
 
-		PFSymbol*										symbol(int nr)				const	{ return _backsymbtable[abs(nr)];			}
-		const std::vector<domelement>&					args(int nr)				const	{ return _backargstable[abs(nr)];			}
-		bool											isTseitin(int l)			const	{ return symbol(l) == 0;					}
-		TsBody*											tsbody(int l)				const	{ return _nr2tsbodies.find(abs(l))->second;	}
-		const TsSet&									groundset(int nr)			const	{ return _sets[nr];							}
-		TsSet&											groundset(int nr)					{ return _sets[nr];							}
-		unsigned int									nrOffsets()					const	{ return _symboffsets.size();				}
-		PFSymbol*										getSymbol(unsigned int n)	const	{ return _symboffsets[n];					}
-		const std::map<std::vector<domelement>,int>&	getTuples(unsigned int n)	const	{ return _table[n];							}
+		PFSymbol*									symbol(int nr)				const	{ return _backsymbtable[abs(nr)];			}
+		const std::vector<const DomainElement*>&	args(int nr)				const	{ return _backargstable[abs(nr)];			}
+		bool										isTseitin(int l)			const	{ return symbol(l) == 0;					}
+		TsBody*										tsbody(int l)				const	{ return _nr2tsbodies.find(abs(l))->second;	}
+		const TsSet&								groundset(int nr)			const	{ return _sets[nr];							}
+		TsSet&										groundset(int nr)					{ return _sets[nr];							}
+		unsigned int								nrOffsets()					const	{ return _symboffsets.size();				}
+		PFSymbol*									getSymbol(unsigned int n)	const	{ return _symboffsets[n];					}
+		const std::map<std::vector<const DomainElement*>,int,StrictWeakTupleOrdering>&	
+													getTuples(unsigned int n)	const	{ return _table[n];							}
 
 		std::string	printAtom(int nr)	const;
 };
@@ -241,9 +243,9 @@ class GroundTranslator {
  */
 class GroundTermTranslator {
 	private:
-		std::vector<std::map<std::vector<domelement>,unsigned int> >	_table;			// map terms to integers
+		std::vector<std::map<std::vector<const DomainElement*>,unsigned int,StrictWeakTupleOrdering> >	_table;			// map terms to integers
 		std::vector<Function*>											_backfunctable;	// map integer to the symbol of its corresponding term
-		std::vector<std::vector<domelement> >							_backargstable;	// map integer to the terms of its corresponding term
+		std::vector<std::vector<const DomainElement*> >							_backargstable;	// map integer to the terms of its corresponding term
 		
 		std::vector<Function*>				_offset2function;
 		std::map<Function*,unsigned int>	_function2offset;
@@ -251,19 +253,20 @@ class GroundTermTranslator {
 	public:
 		GroundTermTranslator() : _backfunctable(1), _backargstable(1) { }
 
-		unsigned int	translate(unsigned int offset,const std::vector<domelement>& args);
-		unsigned int	translate(Function*,const std::vector<TypedElement>& args);
+		unsigned int	translate(unsigned int offset,const std::vector<const DomainElement*>& args);
+		unsigned int	translate(Function*,const std::vector<const DomainElement*>& args);
 		unsigned int	nextNumber();
 		unsigned int	addFunction(Function*);
 
-		bool 							contains(Function*,const std::vector<domelement>& args) const;
-		bool							contains(Function* func)		const;
-		Function*						function(unsigned int nr)		const { return _backfunctable[nr];		}
-		const std::vector<domelement>&	args(unsigned int nr)			const { return _backargstable[nr];		}
-		unsigned int					nrOffsets()						const { return _offset2function.size();	}
-		unsigned int					getOffset(Function* func)		const { return _function2offset.at(func);	}
-		Function*						getFunction(unsigned int nr)	const { return _offset2function[nr]; 	}
-		std::string						printTerm(unsigned int nr)		const;
+		bool 			contains(Function*,const std::vector<domelement>& args) const;
+		bool			contains(Function* func)		const;
+		Function*		function(unsigned int nr)		const { return _backfunctable[nr];			}
+		const std::vector<const DomainElement*>&	
+						args(unsigned int nr)			const { return _backargstable[nr];			}
+		unsigned int	nrOffsets()						const { return _offset2function.size();		}
+		unsigned int	getOffset(Function* func)		const { return _function2offset.at(func);	}
+		Function*		getFunction(unsigned int nr)	const { return _offset2function[nr]; 		}
+		std::string		printTerm(unsigned int nr)		const;
 };
 
 
@@ -298,8 +301,9 @@ struct GroundingContext {
 class TopLevelGrounder {
 	protected:
 		AbstractGroundTheory*	_grounding;
+		int						_verbosity;
 	public:
-		TopLevelGrounder(AbstractGroundTheory* gt) : _grounding(gt) { }
+		TopLevelGrounder(AbstractGroundTheory* gt, int verb) : _grounding(gt), _verbosity(verb) { }
 		virtual ~TopLevelGrounder() { }
 
 		virtual bool					run()		const = 0;
@@ -310,7 +314,7 @@ class CopyGrounder : public TopLevelGrounder {
 	private:
 		const GroundTheory*		_original;
 	public:
-		CopyGrounder(AbstractGroundTheory* gt, const GroundTheory* orig) : TopLevelGrounder(gt), _original(orig) { }
+		CopyGrounder(AbstractGroundTheory* gt, const GroundTheory* orig, int verb) : TopLevelGrounder(gt,verb), _original(orig) { }
 		bool run() const;
 };
 
@@ -318,8 +322,8 @@ class TheoryGrounder : public TopLevelGrounder {
 	private:
 		std::vector<TopLevelGrounder*>	_grounders;
 	public:
-		TheoryGrounder(AbstractGroundTheory* gt, const std::vector<TopLevelGrounder*>& fgs) :
-			TopLevelGrounder(gt), _grounders(fgs) { }
+		TheoryGrounder(AbstractGroundTheory* gt, const std::vector<TopLevelGrounder*>& fgs, int verb) :
+			TopLevelGrounder(gt,verb), _grounders(fgs) { }
 		bool run() const;
 };
 
@@ -328,8 +332,8 @@ class SentenceGrounder : public TopLevelGrounder {
 		bool				_conj;	
 		FormulaGrounder*	_subgrounder;
 	public:
-		SentenceGrounder(AbstractGroundTheory* gt, FormulaGrounder* sub, bool conj) : 
-			TopLevelGrounder(gt), _conj(conj), _subgrounder(sub) { }
+		SentenceGrounder(AbstractGroundTheory* gt, FormulaGrounder* sub, bool conj, int verb) : 
+			TopLevelGrounder(gt,verb), _conj(conj), _subgrounder(sub) { }
 		bool run() const;
 };
 
@@ -338,8 +342,8 @@ class UnivSentGrounder : public TopLevelGrounder {
 		TopLevelGrounder*	_subgrounder;
 		InstGenerator*		_generator;	
 	public:
-		UnivSentGrounder(AbstractGroundTheory* gt, TopLevelGrounder* sub, InstGenerator* gen) : 
-			TopLevelGrounder(gt), _subgrounder(sub), _generator(gen) { }
+		UnivSentGrounder(AbstractGroundTheory* gt, TopLevelGrounder* sub, InstGenerator* gen, int verb) : 
+			TopLevelGrounder(gt,verb), _subgrounder(sub), _generator(gen) { }
 		bool run() const;
 };
 
@@ -347,36 +351,33 @@ class UnivSentGrounder : public TopLevelGrounder {
 
 class TermGrounder {
 	protected:
-#ifndef NDEBUG
-		const Term*						_origterm;
-		std::map<Variable*,domelement*> _varmap;
+		const Term*									_origterm;
+		std::map<Variable*,const DomainElement**>	_varmap;
+		int											_verbosity;
 		void printorig() const;
-#endif
 	public:
 		TermGrounder() { }
 		virtual ~TermGrounder() { }
-		virtual domelement run() const = 0;
+		virtual const DomainElement* run() const = 0;
 		virtual bool canReturnCPVar() const = 0;
-#ifndef NDEBUG
-		void setorig(const Term* t, const std::map<Variable*,domelement*>& mvd); 
-#endif
+		void setorig(const Term* t, const std::map<Variable*,const DomainElement**>& mvd,int); 
 };
 
 class DomTermGrounder : public TermGrounder {
 	private:
-		domelement	_value;
+		const DomainElement*	_value;
 	public:
-		DomTermGrounder(domelement val) : _value(val) { }
-		domelement run() const { return _value;	}
+		DomTermGrounder(const DomainElement* val) : _value(val) { }
+		const DomainElement* run() const { return _value;	}
 		bool canReturnCPVar() const { return false; }
 };
 
 class VarTermGrounder : public TermGrounder {
 	private:
-		domelement*	_value;
+		const DomainElement**	_value;
 	public:
-		VarTermGrounder(domelement* a) : _value(a) { }
-		domelement run() const; 
+		VarTermGrounder(const DomainElement** a) : _value(a) { }
+		const DomainElement* run() const; 
 		bool canReturnCPVar() const { return false; }
 };
 
@@ -384,11 +385,11 @@ class FuncTermGrounder : public TermGrounder {
 	private:
 		FuncTable*						_function;
 		std::vector<TermGrounder*>		_subtermgrounders;
-		mutable std::vector<domelement>	_args;
+		mutable std::vector<const DomainElement*>	_args;
 	public:
 		FuncTermGrounder(const std::vector<TermGrounder*>& sub, FuncTable* f) :
 			_function(f), _subtermgrounders(sub), _args(sub.size()) { }
-		domelement run() const;
+		const DomainElement* run() const;
 		bool canReturnCPVar() const { return false; }
 
 		// TODO? Optimisation:
@@ -399,13 +400,13 @@ class FuncTermGrounder : public TermGrounder {
 
 class AggTermGrounder : public TermGrounder {
 	private:
-		AggType				_type;
+		AggFunction				_type;
 		SetGrounder*		_setgrounder;
 		GroundTranslator*	_translator;
 	public:
-		AggTermGrounder(GroundTranslator* gt, AggType tp, SetGrounder* gr):
+		AggTermGrounder(GroundTranslator* gt, AggFunction tp, SetGrounder* gr):
 			_type(tp), _setgrounder(gr), _translator(gt) { }
-		domelement run() const;
+		const DomainElement* run() const;
 		bool canReturnCPVar() const { return false; }
 };
 
@@ -416,24 +417,24 @@ class ThreeValuedFuncTermGrounder : public TermGrounder {
 		std::vector<TermGrounder*>		_subtermgrounders;
 		Function*						_function;
 		FuncTable*						_functable;
-		mutable std::vector<domelement>	_args;
+		mutable std::vector<const DomainElement*>	_args;
 		std::vector<SortTable*>			_tables;
 	public:
 		ThreeValuedFuncTermGrounder(const std::vector<TermGrounder*>& sub, Function* f, FuncTable* ft, const std::vector<SortTable*>& vst):
 			_subtermgrounders(sub), _function(f), _functable(ft), _args(sub.size()), _tables(vst) { }
-		domelement run() const;
+		const DomainElement* run() const;
 		bool canReturnCPVar() const { return true; }
 };
 
 class ThreeValuedAggTermGrounder : public TermGrounder {
 	private:
-		AggType				_type;
+		AggFunction				_type;
 		SetGrounder*		_setgrounder;
 		GroundTranslator*	_translator;
 	public:
-		ThreeValuedAggTermGrounder(GroundTranslator* gt, AggType tp, SetGrounder* gr):
+		ThreeValuedAggTermGrounder(GroundTranslator* gt, AggFunction tp, SetGrounder* gr):
 			_type(tp), _setgrounder(gr), _translator(gt) { } 
-		domelement run() const;
+		const DomainElement* run() const;
 		bool canReturnCPVar() const { return true; }
 };
 
@@ -441,11 +442,10 @@ class ThreeValuedAggTermGrounder : public TermGrounder {
 
 class FormulaGrounder {
 	protected:
-#ifndef NDEBUG
-		const Formula*					_origform;
-		std::map<Variable*,domelement*>	_varmap;
+		const Formula*								_origform;
+		std::map<Variable*,const DomainElement**>	_varmap;
+		int											_verbosity;
 		void printorig() const;
-#endif
 		GroundTranslator*	_translator;
 		GroundingContext	_context;
 	public:
@@ -454,9 +454,7 @@ class FormulaGrounder {
 		virtual int		run()					const = 0;
 		virtual void	run(std::vector<int>&)	const = 0;
 		virtual bool	conjunctive()			const = 0;
-#ifndef NDEBUG
-		void setorig(const Formula* f, const std::map<Variable*,domelement*>& mvd);
-#endif
+		void setorig(const Formula* f, const std::map<Variable*,const DomainElement**>& mvd,int);
 };
 
 class AtomGrounder : public FormulaGrounder {
@@ -465,7 +463,7 @@ class AtomGrounder : public FormulaGrounder {
 		InstanceChecker*				_pchecker;
 		InstanceChecker*				_cchecker;
 		unsigned int					_symbol;
-		mutable std::vector<domelement>	_args;
+		mutable std::vector<const DomainElement*>	_args;
 		std::vector<SortTable*>			_tables;
 		bool							_sign;
 		int								_certainvalue;
@@ -509,7 +507,7 @@ class AggGrounder : public FormulaGrounder {
 	private:
 		SetGrounder*	_setgrounder;
 		TermGrounder*	_boundgrounder;
-		AggType			_type;
+		AggFunction		_type;
 		char			_comp;
 		bool			_sign;
 		bool			_doublenegtseitin;
@@ -521,7 +519,7 @@ class AggGrounder : public FormulaGrounder {
 		int	finishMinimum(double truevalue,double boundvalue,int setnr)	const;
 		int finish(double boundvalue,double newboundvalue,double maxpossvalue,double minpossvalue,int setnr) const;
 	public:
-		AggGrounder(GroundTranslator* tr, GroundingContext gc, AggType tp, SetGrounder* sg, TermGrounder* bg, char c,bool s) :
+		AggGrounder(GroundTranslator* tr, GroundingContext gc, AggFunction tp, SetGrounder* sg, TermGrounder* bg, char c,bool s) :
 			FormulaGrounder(tr,gc), _setgrounder(sg), _boundgrounder(bg), _type(tp), _comp(c), _sign(s) { 
 				_doublenegtseitin = (gc._tseitin == TS_RULE) && ((gc._monotone == PC_POSITIVE && !s) || (gc._monotone == PC_NEGATIVE && s));	
 			}
@@ -598,10 +596,10 @@ class QuantSetGrounder : public SetGrounder {
 	private:
 		FormulaGrounder*	_subgrounder;
 		InstGenerator*		_generator;	
-		domelement*			_weight;
+		TermGrounder*		_weightgrounder;
 	public:
-		QuantSetGrounder(GroundTranslator* gt, FormulaGrounder* gr, InstGenerator* ig, domelement* w) :
-			SetGrounder(gt), _subgrounder(gr), _generator(ig), _weight(w) { }
+		QuantSetGrounder(GroundTranslator* gt, FormulaGrounder* gr, InstGenerator* ig, TermGrounder* w) :
+			SetGrounder(gt), _subgrounder(gr), _generator(ig), _weightgrounder(w) { }
 		int run() const;
 };
 
@@ -626,7 +624,7 @@ class HeadGrounder {
 		InstanceChecker*				_truechecker;
 		InstanceChecker*				_falsechecker;
 		unsigned int					_symbol;
-		mutable std::vector<domelement>	_args;
+		mutable std::vector<const DomainElement*>	_args;
 		std::vector<SortTable*>			_tables;
 	public:
 		HeadGrounder(AbstractGroundTheory* gt, InstanceChecker* pc, InstanceChecker* cc, PFSymbol* s, 
@@ -658,8 +656,8 @@ class DefinitionGrounder : public TopLevelGrounder {
 		GroundDefinition*			_definition;	// The ground definition that will be produced by running the grounder.
 		std::vector<RuleGrounder*>	_subgrounders;	// Grounders for the rules of the definition.
 	public:
-		DefinitionGrounder(AbstractGroundTheory* gt, GroundDefinition* def, std::vector<RuleGrounder*> subgr) :
-			TopLevelGrounder(gt), _definition(def), _subgrounders(subgr) { }
+		DefinitionGrounder(AbstractGroundTheory* gt, GroundDefinition* def, std::vector<RuleGrounder*> subgr,int verb) :
+			TopLevelGrounder(gt,verb), _definition(def), _subgrounders(subgr) { }
 		bool run() const;
 };
 
@@ -671,9 +669,10 @@ class DefinitionGrounder : public TopLevelGrounder {
 /*
  * Class to produce grounders 
  */
-class GrounderFactory : public Visitor {
+class GrounderFactory : public TheoryVisitor {
 	private:
 		// Data
+		Options*				_options;
 		AbstractStructure*		_structure;		// The structure that will be used to reduce the grounding
 		AbstractGroundTheory*	_grounding;		// The ground theory that will be produced
 
@@ -694,12 +693,11 @@ class GrounderFactory : public Visitor {
 		void	descend(SetExpr* s);
 		
 		// Grounding to CP
-		bool						_cpsupport;
 		std::set<const Function*>	_cpfunctions;
 
 		// Variable mapping
-		std::map<Variable*,domelement*>	_varmapping;	// Maps variables to their counterpart during grounding.
-														// That is, the corresponding domelement* acts as a variable+value.
+		std::map<Variable*,const DomainElement**>	_varmapping;	// Maps variables to their counterpart during grounding.
+														// That is, the corresponding const DomainElement** acts as a variable+value.
 
 		// Current ground definition
 		GroundDefinition*		_definition;	// The ground definition that will be produced by the 
@@ -715,7 +713,7 @@ class GrounderFactory : public Visitor {
 
 	public:
 		// Constructor
-		GrounderFactory(AbstractStructure* structure, bool cpsupport): _structure(structure), _cpsupport(cpsupport) { }
+		GrounderFactory(AbstractStructure* structure, Options* opts): _options(opts), _structure(structure) { }
 
 		// Factory method
 		TopLevelGrounder* create(const AbstractTheory*);

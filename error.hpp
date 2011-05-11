@@ -24,6 +24,7 @@ namespace Error {
 	/** Command line errors **/
 	void constnotset(const std::string&, const ParseInfo& pi);
 	void unknoption(const std::string&);
+	void unknoption(const std::string&, const ParseInfo& pi);
 	void unknfile(const std::string&);
 	void constsetexp();
 	void stringconsexp(const std::string&, const ParseInfo& pi);
@@ -106,6 +107,7 @@ namespace Error {
 	void predorfuncsymbol(const std::string& name, const ParseInfo& thisplace);
 	void overloadedsort(const std::string& name, const ParseInfo& p1, const ParseInfo& p2, const ParseInfo& thisplace);
 	void overloadedpred(const std::string& name, const ParseInfo& p1, const ParseInfo& p2, const ParseInfo& thisplace);
+	void overloadedfunc(const std::string& name, const ParseInfo& p1, const ParseInfo& p2, const ParseInfo& thisplace);
 	void overloadedspace(const std::string& name, const ParseInfo& p1, const ParseInfo& p2, const ParseInfo& thisplace);
 	void overloadedvocab(const std::string& name, const ParseInfo& p1, const ParseInfo& p2, const ParseInfo& thisplace);
 	void overloadedtheory(const std::string& name, const ParseInfo& p1, const ParseInfo& p2, const ParseInfo& thisplace);
@@ -136,11 +138,16 @@ namespace Error {
 	void wrongmodelformat(const std::string& format, ParseInfo* thisplace);
 	void posintexpected(const std::string& name, ParseInfo* thisplace);
 	void ambigcommand(const std::string& name);
+	void wrongvalue(const std::string&, const std::string&, const ParseInfo&);
 
 	void indexoverloadedfunc();
 	void indexoverloadedpred();
 	void indexoverloadedsort();
 	void threevalcall();
+
+	void vocabexpected(const ParseInfo&);
+	void theoryexpected(const ParseInfo&);
+	void structureexpected(const ParseInfo&);
 }
 
 namespace Warning {

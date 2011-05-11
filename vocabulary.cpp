@@ -4,13 +4,13 @@
 	(c) K.U.Leuven
 ************************************/
 
-#include "vocabulary.hpp"
+#include <sstream>
 #include <iostream>
-#include <algorithm>
-#include "data.hpp"
-#include "namespace.hpp"
+#include "vocabulary.hpp"
 #include "structure.hpp"
-#include "builtin.hpp"
+#include "common.hpp"
+#include "namespace.hpp"
+#include <typeinfo>
 
 using namespace std;
 
@@ -18,86 +18,179 @@ using namespace std;
 	Sorts
 ************/
 
-Sort::Sort(const string& name) : _name(name), _pi() { 
-	_parents = vector<Sort*>(0); 
-	_children = vector<Sort*>(0);
-	_pred = 0;
+/**
+ * Destructor for sorts. 
+ * Deletes the built-in interpretation and removes the sort from the sort hierarchy.
+ */
+Sort::~Sort() {
+	for(set<Sort*>::iterator it = _parents.begin(); it != _parents.end(); ++it)
+		(*it)->removeChild(this);
+	for(set<Sort*>::iterator it = _children.begin(); it != _children.end(); ++it)
+		(*it)->removeParent(this);
+	if(_interpretation) delete(_interpretation);
 }
 
-Sort::Sort(const string& name, const ParseInfo& pi) : _name(name), _pi(pi) { 
-	_parents = vector<Sort*>(0);
-	_children = vector<Sort*>(0);
-	_pred = 0;
+void Sort::removeVocabulary(const Vocabulary* vocabulary) {
+	_vocabularies.erase(vocabulary);
+	if(_vocabularies.empty()) delete(this);
 }
 
-/** Mutators **/
+void Sort::addVocabulary(const Vocabulary* vocabulary) {
+	_vocabularies.insert(vocabulary);
+}
 
+/**
+ * Removes a sort from the set of parents
+ *
+ * PARAMETERS
+ *		- parent: the parent that is removed
+ */
+void Sort::removeParent(Sort* parent) {
+	_parents.erase(parent);
+}
+
+/**
+ * Removes a sort from the set of children
+ *
+ * PARAMETERS
+ *		- child: the child that is removed
+ */
+void Sort::removeChild(Sort* child) {
+	_children.erase(child);
+}
+
+/**
+ * Generate the predicate that corresponds to the sort
+ */
+void Sort::generatePred() {
+	string predname(_name + "/1");
+	vector<Sort*> predsorts(1,this);
+	_pred = new Predicate(predname,predsorts,_pi);
+}
+
+/**
+ * Create an internal sort
+ */
+Sort::Sort(const string& name, SortTable* inter) : _name(name), _pi(), _interpretation(inter) { 
+	generatePred();
+}
+
+/**
+ * Create a user-declared sort
+ */
+Sort::Sort(const string& name, const ParseInfo& pi, SortTable* inter) : _name(name), _pi(pi), _interpretation(inter) { 
+	generatePred();
+}
+
+/**
+ * Add p as a parent
+ */
 void Sort::addParent(Sort* p) {
-	unsigned int n = 0;
-	for(; n < _parents.size(); ++n) {
-		if(p == _parents[n]) break;
-	}
-	if(n == _parents.size()) {
-		_parents.push_back(p);
-		p->addChild(this);
-	}
+	pair<set<Sort*>::iterator,bool> changed = _parents.insert(p);
+	if(changed.second) p->addChild(this);
 }
 
 void Sort::addChild(Sort* c) {
-	unsigned int n = 0;
-	for(; n < _children.size(); ++n) {
-		if(c == _children[n]) break;
-	}
-	if(n == _children.size()) {
-		_children.push_back(c);
-		c->addParent(this);
-	}
+	pair<set<Sort*>::iterator,bool> changed = _children.insert(c);
+	if(changed.second) c->addParent(this);
 }
 
-set<Sort*> Sort::ancestors(Vocabulary* v) const {
-	set<Sort*> ss;
-	for(unsigned int n = 0; n < nrParents(); ++n) {
-		if((!v) || v->contains(parent(n))) ss.insert(parent(n));
-		set<Sort*> temp = parent(n)->ancestors(v);
-		for(set<Sort*>::iterator it = temp.begin(); it != temp.end(); ++it)
-			ss.insert(*it);
-	}
-	return ss;
+const string& Sort::name() const { 
+	return _name;	
 }
 
-set<Sort*> Sort::descendents(Vocabulary* v) const {
-	set<Sort*> ss;
-	for(unsigned int n = 0; n < nrChildren(); ++n) {
-		if((!v) || v->contains(child(n))) ss.insert(child(n));
-		set<Sort*> temp = child(n)->descendents(v);
-		for(set<Sort*>::iterator it = temp.begin(); it != temp.end(); ++it)
-			ss.insert(*it);
-	}
-	return ss;
+const ParseInfo& Sort::pi() const { 
+	return _pi;		
 }
 
-bool OverloadedPredicate::contains(Predicate* p) const {
-	for(unsigned int n = 0; n < _overpreds.size(); ++n) {
-		if(_overpreds[n]->contains(p)) return true;
-	}
-	return false;
+Predicate* Sort::pred() const {
+	return _pred;
 }
 
-bool OverloadedFunction::contains(Function* f) const {
-	for(unsigned int n = 0; n < _overfuncs.size(); ++n) {
-		if(_overfuncs[n]->contains(f)) return true;
-	}
-	return false;
+const std::set<Sort*>& Sort::parents() const { 
+	return _parents;
 }
 
-/** Utils **/
+const std::set<Sort*>& Sort::children() const { 
+	return _children;
+}
+
+/**
+ * Compute all ancestors of the sort in the sort hierarchy
+ *
+ * PARAMETERS
+ *		- vocabulary:	if this is not a null-pointer, the set of ancestors is restricted to the ancestors in vocabulary
+ */
+set<Sort*> Sort::ancestors(const Vocabulary* vocabulary) const {
+	set<Sort*> ancest;
+	for(set<Sort*>::const_iterator it = _parents.begin(); it != _parents.end(); ++it) {
+		if((!vocabulary) || vocabulary->contains(*it)) ancest.insert(*it);
+		set<Sort*> temp = (*it)->ancestors(vocabulary);
+		ancest.insert(temp.begin(),temp.end());
+	}
+	return ancest;
+}
+
+/**
+ * Compute all ancestors of the sort in the sort hierarchy
+ *
+ * PARAMETERS
+ *		- vocabulary:	if this is not a null-pointer, the set of descendents is restricted to the descendents in vocabulary
+ */
+set<Sort*> Sort::descendents(const Vocabulary* vocabulary) const {
+	set<Sort*> descend;
+	for(set<Sort*>::const_iterator it = _children.begin(); it != _children.end(); ++it) {
+		if((!vocabulary) || vocabulary->contains(*it)) descend.insert(*it);
+		set<Sort*> temp = (*it)->descendents(vocabulary);
+		descend.insert(temp.begin(),temp.end());
+	}
+	return descend;
+}
+
+bool Sort::builtin() const {
+	return _interpretation != 0;
+}
+
+SortTable* Sort::interpretation() const {
+	return _interpretation;
+}
+
+ostream& Sort::put(ostream& output) const {
+	for(set<const Vocabulary*>::iterator it = _vocabularies.begin(); it != _vocabularies.end(); ++it) {
+		if((*it)->sort(_name)->size() == 1) {
+			(*it)->putname(output);
+			output << "::";
+			break;
+		}
+	}
+	output << _name;
+	return output;
+}
+
+string Sort::to_string() const {
+	stringstream output;
+	put(output);
+	return output.str();
+}
+
+ostream& operator<< (ostream& output, const Sort& sort) { return sort.put(output);	}
 
 namespace SortUtils {
 
-	// Return the smallest common ancestor of two sorts, if there is an unique one
-	Sort* resolve(Sort* s1, Sort* s2, Vocabulary* v) {
-		set<Sort*> ss1 = s1->ancestors(v); ss1.insert(s1);
-		set<Sort*> ss2 = s2->ancestors(v); ss2.insert(s2);
+	/**
+	 *	\brief	Return the unique nearest common ancestor of two sorts. 
+	 *
+	 *	\param s1			the first sort
+	 *	\param s2			the second sort
+	 *	\param vocabulary	if not 0, search for the nearest common ancestor in the projection of the sort hiearchy on
+	 *						this vocabulary
+	 *
+	 *	\return	The unique nearest common ancestor if it exists, a null-pointer otherwise.
+	 */ 
+	Sort* resolve(Sort* s1, Sort* s2, const Vocabulary* vocabulary) {
+		if((s1 == 0) || s2 == 0) return 0;
+		set<Sort*> ss1 = s1->ancestors(vocabulary); ss1.insert(s1);
+		set<Sort*> ss2 = s2->ancestors(vocabulary); ss2.insert(s2);
 		set<Sort*> ss;
 		for(set<Sort*>::iterator it = ss1.begin(); it != ss1.end(); ++it) {
 			if(ss2.find(*it) != ss2.end()) ss.insert(*it);
@@ -107,21 +200,17 @@ namespace SortUtils {
 		else if(vs.size() == 1) return vs[0];
 		else {
 			for(unsigned int n = 0; n < vs.size(); ++n) {
-				set<Sort*> ds = vs[n]->ancestors(v);
+				set<Sort*> ds = vs[n]->ancestors(vocabulary);
 				for(set<Sort*>::const_iterator it = ds.begin(); it != ds.end(); ++it) ss.erase(*it);
 			}
 			vs = vector<Sort*>(ss.begin(),ss.end());
 			if(vs.size() == 1) return vs[0];
 			else return 0;
 		}
-		//	if(s1->base() != s2->base()) return 0;
-		//	while(s1 != s2 && (s1->depth() || s2->depth())) {
-		//		if(s1->depth() > s2->depth()) s1 = s1->parent();
-		//		else if(s2->depth() > s1->depth()) s2 = s2->parent();
-		//		else { s1 = s1->parent(); s2 = s2->parent(); }
-		//	}
-		//	assert(s1 == s2);
-		//	return s1;
+	}
+
+	bool isSubsort(Sort* a, Sort* b) {
+		return resolve(a,b) == b;
 	}
 
 }
@@ -132,27 +221,46 @@ namespace SortUtils {
 
 int Variable::_nvnr = 0;
 
-/** Constructor for internal variables **/ 
+Variable::~Variable() { 
+}
+
+Variable::Variable(const std::string& name, Sort* sort, const ParseInfo& pi) : _name(name), _sort(sort), _pi(pi) { 
+}
 
 Variable::Variable(Sort* s) : _sort(s) {
 	_name = "_var_" + s->name() + "_" + itos(Variable::_nvnr);
 	++_nvnr;
 }
 
-/** Debugging **/
+void Variable::sort(Sort* s) {
+	_sort = s;
+}
 
-string Variable::to_string() const {
+const string& Variable::name() const {
 	return _name;
 }
 
-
-/** Utils **/
-
-void VarUtils::sortunique(vector<Variable*>& vv) {
-	sort(vv.begin(),vv.end());
-	vector<Variable*>::iterator it = unique(vv.begin(),vv.end());
-	vv.erase(it,vv.end());
+Sort* Variable::sort() const {
+	return _sort;
 }
+
+const ParseInfo& Variable::pi() const {
+	return _pi;
+}
+
+ostream& Variable::put(ostream& output) const {
+	output << _name;
+	if(_sort) output << '[' << *_sort << ']';
+	return output;
+}
+
+string Variable::to_string() const {
+	stringstream output;
+	put(output);
+	return output.str();
+}
+
+ostream& operator<< (ostream& output, const Variable& var) { return var.put(output);	}
 
 vector<Variable*> VarUtils::makeNewVariables(const vector<Sort*>& sorts) {
 	vector<Variable*> vars;
@@ -165,325 +273,868 @@ vector<Variable*> VarUtils::makeNewVariables(const vector<Sort*>& sorts) {
 	Predicates and functions
 *******************************/
 
-/** Constructor for internal predicates **/ 
+PFSymbol::~PFSymbol() {
+}
+
+PFSymbol::PFSymbol(const string& name, unsigned int nrsorts, bool infix) : 
+	_name(name), _sorts(nrsorts,0), _infix(infix) {
+}
+
+PFSymbol::PFSymbol(const string& name, const vector<Sort*>& sorts, bool infix) :
+	_name(name), _sorts(sorts), _infix(infix) { 
+}
+
+PFSymbol::PFSymbol(const string& name, const vector<Sort*>& sorts, const ParseInfo& pi, bool infix) :
+	_name(name), _pi(pi), _sorts(sorts), _infix(infix) { 
+}
+
+const string& PFSymbol::name() const {
+	return _name;
+}
+
+const ParseInfo& PFSymbol::pi() const {
+	return _pi;
+}
+
+unsigned	int PFSymbol::nrSorts() const {
+	return _sorts.size();
+}
+
+Sort* PFSymbol::sort(unsigned int n) const {
+	return _sorts[n];
+}
+
+const vector<Sort*>& PFSymbol::sorts() const {
+	return _sorts;
+}
+
+bool PFSymbol::infix() const {
+	return _infix;
+}
+
+bool PFSymbol::hasVocabularies() const {
+	return !(_vocabularies.empty());
+}
+
+string PFSymbol::to_string() const {
+	stringstream output;
+	put(output);
+	return output.str();
+}
+
+ostream& operator<<(ostream& output, const PFSymbol& s) {
+	return s.put(output);
+}
 
 int Predicate::_npnr = 0;
 
-Predicate::Predicate(const vector<Sort*>& sorts) : PFSymbol("",sorts,ParseInfo()) {
+set<Sort*> Predicate::allsorts() const {
+	set<Sort*> ss;
+	ss.insert(_sorts.begin(),_sorts.end());
+	if(_overpredgenerator) {
+		set<Sort*> os = _overpredgenerator->allsorts();
+		ss.insert(os.begin(),os.end());
+	}
+	ss.erase(0);
+	return ss;
+}
+
+Predicate::~Predicate() {
+	if(_interpretation) delete(_interpretation);
+	if(_overpredgenerator) delete(_overpredgenerator);
+}
+
+bool Predicate::removeVocabulary(const Vocabulary* vocabulary) {
+	_vocabularies.erase(vocabulary);
+	if(overloaded()) _overpredgenerator->removeVocabulary(vocabulary);
+	if(_vocabularies.empty()) {
+		delete(this);
+		return true;
+	}
+	return false;
+}
+
+void Predicate::addVocabulary(const Vocabulary* vocabulary) {
+	_vocabularies.insert(vocabulary);
+	if(overloaded()) _overpredgenerator->addVocabulary(vocabulary);
+}
+
+
+Predicate::Predicate(const std::string& name,const std::vector<Sort*>& sorts, const ParseInfo& pi, bool infix) :
+	PFSymbol(name,sorts,pi,infix), _interpretation(0), _overpredgenerator(0) {
+}
+
+Predicate::Predicate(const std::string& name,const std::vector<Sort*>& sorts, bool infix) :
+	PFSymbol(name,sorts,infix), _interpretation(0), _overpredgenerator(0) {
+}
+
+Predicate::Predicate(const vector<Sort*>& sorts) : 
+	PFSymbol("",sorts,ParseInfo()), _interpretation(0), _overpredgenerator(0) {
 	_name = "_internal_predicate_" + itos(_npnr) + "/" + itos(sorts.size());
 	++_npnr;
 }
 
-/** Mutators **/
-
-void OverloadedPredicate::overpred(Predicate* p) {
-	assert(p->name() == _name);
-	unsigned int n = 0;
-	for(; n < _overpreds.size(); ++n) {
-		if(_overpreds[n] == p) break;
-	}
-	if(n == _overpreds.size()) _overpreds.push_back(p);
+Predicate::Predicate(const std::string& name, const std::vector<Sort*>& sorts, PredInterGenerator* inter, bool infix) :
+	PFSymbol(name,sorts,infix), _interpretation(inter), _overpredgenerator(0) {
 }
 
-void OverloadedFunction::overfunc(Function* f) {
-	assert(f->name() == _name);
-	unsigned int n = 0;
-	for(; n < _overfuncs.size(); ++n) {
-		if(_overfuncs[n] == f) break;
-	}
-	if(n == _overfuncs.size()) _overfuncs.push_back(f);
+Predicate::Predicate(PredGenerator* generator) :
+	PFSymbol(generator->name(),generator->arity(),generator->infix()), _interpretation(0), _overpredgenerator(generator) {
 }
 
-
-/** Inspectors **/
-
-vector<Sort*> Function::insorts() const {
-	vector<Sort*> vs = _sorts;
-	vs.pop_back();
-	return vs;
+unsigned int Predicate::arity() const {
+	return _sorts.size();	
 }
 
-Predicate* Predicate::disambiguate(const vector<Sort*>& vs,Vocabulary* v) {
-	for(unsigned int n = 0; n < _sorts.size(); ++n) {
-		if(!SortUtils::resolve(vs[n],_sorts[n],v)) return 0;
-	}
-	return this;
+bool Predicate::builtin() const {
+	return _interpretation != 0;
 }
 
-Predicate* Predicate::resolve(const vector<Sort*>& vs) {
-	for(unsigned int n = 0; n < _sorts.size(); ++n) {
-		if(vs[n] != _sorts[n]) return 0;
-	}
-	return this;
+bool Predicate::overloaded() const {
+	return (_overpredgenerator != 0);
 }
 
-Function* Function::disambiguate(const vector<Sort*>& vs,Vocabulary* v) {
-	for(unsigned int n = 0; n < _sorts.size(); ++n) {
-		if(!SortUtils::resolve(vs[n],_sorts[n],v)) return 0;
-	}
-	return this;
-}
-
-Function* Function::resolve(const vector<Sort*>& vs) {
-	for(unsigned int n = 0; n < _sorts.size(); ++n) {
-		if(vs[n] != _sorts[n]) return 0;
-	}
-	return this;
-}
-
-Predicate* OverloadedPredicate::resolve(const vector<Sort*>& vs) {
-	Predicate* candidate = 0;
-	for(unsigned int n = 0; n < _overpreds.size(); ++n) {
-		Predicate* newcandidate = 0;
-		if(_overpreds[n]->overloaded()) {
-			newcandidate = _overpreds[n]->resolve(vs);
-		}
-		else {
-			unsigned int m = 0;
-			for(; m < vs.size(); ++m) {
-				if(vs[m]) {
-					if(vs[m] != _overpreds[n]->sort(m)) break;
-				}
-			}
-			if(m == vs.size()) {
-				newcandidate = _overpreds[n];
-			}
-		}
-		if(newcandidate) {
-			if(candidate && newcandidate != candidate) {
-				candidate = 0; 
-				break;
-			}
-			else candidate = newcandidate;
-		}
-	}
-	return candidate;
-}
-
-Predicate* OverloadedPredicate::disambiguate(const vector<Sort*>& vs,Vocabulary* v) {
-	Predicate* candidate = 0;
-	for(unsigned int n = 0; n < _overpreds.size(); ++n) {
-		Predicate* newcandidate = 0;
-		if(_overpreds[n]->overloaded()) {
-			newcandidate = _overpreds[n]->disambiguate(vs,v);
-		}
-		else {
-			unsigned int m = 0;
-			for(; m < vs.size(); ++m) {
-				if(vs[m]) {
-					if(!(SortUtils::resolve(vs[m],_overpreds[n]->sort(m),v))) break;
-				}
-			}
-			if(m == vs.size()) {
-				newcandidate = _overpreds[n];
-			}
-		}
-		if(newcandidate) {
-			if(candidate && newcandidate != candidate) {
-				candidate = 0; 
-				break;
-			}
-			else candidate = newcandidate;
-		}
-	}
-	return candidate;
-}
-
-Function* OverloadedFunction::resolve(const vector<Sort*>& vs) {
-	Function* candidate = 0;
-	for(unsigned int n = 0; n < _overfuncs.size(); ++n) {
-		Function* newcandidate = 0;
-		if(_overfuncs[n]->overloaded()) {
-			newcandidate = _overfuncs[n]->resolve(vs);
-		}
-		else {
-			unsigned int m = 0;
-			for(; m < vs.size(); ++m) {
-				if(vs[m]) {
-					if(vs[m] != _overfuncs[n]->sort(m)) break;
-				}
-			}
-			if(m == vs.size()) {
-				newcandidate = _overfuncs[n];
-			}
-		}
-		if(newcandidate) {
-			if(candidate && newcandidate != candidate) {
-				candidate = 0; 
-				break;
-			}
-			else candidate = newcandidate;
-		}
-	}
-	return candidate;
-}
-
-Function* OverloadedFunction::disambiguate(const vector<Sort*>& vs,Vocabulary* v) {
-	Function* candidate = 0;
-	for(unsigned int n = 0; n < _overfuncs.size(); ++n) {
-		Function* newcandidate = 0;
-		if(_overfuncs[n]->overloaded()) {
-			newcandidate = _overfuncs[n]->disambiguate(vs,v);
-		}
-		else {
-			unsigned int m = 0;
-			for(; m < vs.size(); ++m) {
-				if(vs[m]) {
-					if(!(SortUtils::resolve(vs[m],_overfuncs[n]->sort(m),v))) break;
-				}
-			}
-			if(m == vs.size()) {
-				newcandidate = _overfuncs[n];
-			}
-		}
-		if(newcandidate) {
-			if(candidate && newcandidate != candidate) {
-				candidate = 0; 
-				break;
-			}
-			else candidate = newcandidate;
-		}
-	}
-	return candidate;
-}
-
-PredInter* Function::predinter(const AbstractStructure& s) const {
-	FuncInter* fi = inter(s);
-	if(fi) return fi->predinter();
+/**
+ * \brief Returns the interpretation of a built-in predicate
+ *
+ * PARAMETERS
+ *		 - structure: for some predicates, e.g. =/2 over a type A, the interpretation of A is 
+ *		 needed to generate the interpretation for =/2. The structure contains the interpretation of the 
+ *		 relevant sorts.
+ */
+PredInter* Predicate::interpretation(const AbstractStructure* structure) const {
+	if(_interpretation) return _interpretation->get(structure);
 	else return 0;
 }
 
-vector<Predicate*> Predicate::nonbuiltins() {
-	vector<Predicate*> vp;
-	if(!builtin()) vp.push_back(this);
-	return vp;
+/**
+ * \brief Returns true iff the predicate is equal to, or overloads a given predicate
+ *
+ * PARAMETERS
+ *		- predicate: the given predicate
+ */
+bool Predicate::contains(const Predicate* predicate) const {
+	if(this == predicate) return true;
+	else if(_overpredgenerator && _overpredgenerator->contains(predicate)) return true;
+	else return false; 
 }
 
-vector<Predicate*> OverloadedPredicate::nonbuiltins() {
-	vector<Predicate*> vp;
-	for(unsigned int n = 0; n < _overpreds.size(); ++n) {
-		vector<Predicate*> temp = _overpreds[n]->nonbuiltins();
-		for(unsigned int m = 0; m < temp.size(); ++m) {
-			unsigned int k = 0;
-			for(; k < vp.size(); ++k) {
-				if(vp[k] == temp[m]) break;
-			}
-			if(k == vp.size()) vp.push_back(temp[m]);
+/**
+ * \brief Return a unique predicate that is overloaded by the predicate and which has given sorts.
+ *
+ * PARAMETERS
+ *		- sorts: the sorts the returned predicate should have.
+ *
+ * RETURNS
+ *		- The predicate itself if it is not overloaded and matches the given sorts.
+ *		- A null-pointer if there is more than one predicate that is overloaded by the predicate
+ *		  and matches the given sorts.
+ *		- Otherwise, the unique predicate that is overloaded by the predicate and matches the given sorts.
+ */
+Predicate* Predicate::resolve(const vector<Sort*>& sorts) {
+	if(overloaded()) return _overpredgenerator->resolve(sorts); 
+	else if(_sorts == sorts) return this;
+	else return 0;
+}
+
+/**
+ *		\brief Returns a predicate that is overloaded by the predicate and which sorts resolve with the given sorts.
+ *		Which predicate is returned may depend on the overpredgenerator. Returns a null-pointer if no
+ *		suitable predicate is found.
+ *
+ * PARAMETERS
+ *		- sorts:		the given sorts
+ *		- vocabulary:	the vocabulary used for resolving the sorts. Defaults to 0.
+ */ 
+Predicate* Predicate::disambiguate(const vector<Sort*>& sorts,const Vocabulary* vocabulary) {
+	if(overloaded()) return _overpredgenerator->disambiguate(sorts,vocabulary); 
+	else {
+		for(unsigned int n = 0; n < _sorts.size(); ++n) {
+			if(_sorts[n] && !SortUtils::resolve(sorts[n],_sorts[n],vocabulary)) return 0;
+		}
+		return this;
+	}
+}
+
+set<Predicate*> Predicate::nonbuiltins() {
+	if(_overpredgenerator) return _overpredgenerator->nonbuiltins();
+	else {
+		set<Predicate*> sp;
+		if(!_interpretation) sp.insert(this);
+		return sp;
+	}
+}
+
+ostream& Predicate::put(ostream& output) const {
+	for(set<const Vocabulary*>::iterator it = _vocabularies.begin(); it != _vocabularies.end(); ++it) {
+		if(!(*it)->pred(_name)->overloaded()) {
+			(*it)->putname(output);
+			output << "::";
+			break;
 		}
 	}
-	return vp;
-}
-
-vector<Function*> Function::nonbuiltins() {
-	vector<Function*> vf;
-	if(!builtin()) vf.push_back(this);
-	return vf;
-}
-
-vector<Function*> OverloadedFunction::nonbuiltins() {
-	vector<Function*> vf;
-	for(unsigned int n = 0; n < _overfuncs.size(); ++n) {
-		vector<Function*> temp = _overfuncs[n]->nonbuiltins();
-		for(unsigned int m = 0; m < temp.size(); ++m) {
-			unsigned int k = 0;
-			for(; k < vf.size(); ++k) {
-				if(vf[k] == temp[m]) break;
-			}
-			if(k == vf.size()) vf.push_back(temp[m]);
+	output << _name.substr(0,_name.find('/'));
+	if(!overloaded()) {
+		if(nrSorts() > 0) {
+			output << '[' << *_sorts[0];
+			for(unsigned int n = 1; n < _sorts.size(); ++n) output << ',' << *_sorts[n];
+			output << ']';
 		}
 	}
-	return vf;
+	return output;
 }
 
-vector<Sort*> Predicate::allsorts() const {
-	return _sorts;
+ostream& operator<< (ostream& output, const Predicate& p) { return p.put(output); }
+
+PredGenerator::PredGenerator(const string& name, unsigned int arity, bool infix) : _name(name), _arity(arity), _infix(infix) {
 }
 
-vector<Sort*> OverloadedPredicate::allsorts() const {
-	vector<Sort*> vs;
-	for(unsigned int n = 0; n < _overpreds.size(); ++n) {
-		vector<Sort*> temp = _overpreds[n]->allsorts();
-		for(unsigned int m = 0; m < temp.size(); ++m) {
-			unsigned int k = 0;
-			for(; k < vs.size(); ++k) {
-				if(vs[k] == temp[m]) break;
+const string& PredGenerator::name() const {
+	return _name;
+}
+
+unsigned int PredGenerator::arity() const {
+	return _arity;
+}
+
+bool PredGenerator::infix() const {
+	return _infix;
+}
+
+EnumeratedPredGenerator::EnumeratedPredGenerator(const set<Predicate*>& overpreds) :
+	PredGenerator((*(overpreds.begin()))->name(),(*(overpreds.begin()))->arity(),(*(overpreds.begin()))->infix()), _overpreds(overpreds) {
+}
+
+bool EnumeratedPredGenerator::contains(const Predicate* predicate) const {
+	for(set<Predicate*>::const_iterator it = _overpreds.begin(); it != _overpreds.end(); ++it) {
+		if((*it)->contains(predicate)) return true;
+	}
+	return false;
+}
+
+/**
+ * \brief Returns the unique predicate that is contained in the generator and that has the given sorts.
+ * \brief Returns a null-pointer if such a predicate does not exist or is not unique
+ */
+Predicate* EnumeratedPredGenerator::resolve(const vector<Sort*>& sorts) {
+	Predicate* candidate = 0;
+	for(set<Predicate*>::const_iterator it = _overpreds.begin(); it != _overpreds.end(); ++it) {
+		Predicate* newcandidate = (*it)->resolve(sorts);
+		if(candidate && candidate != newcandidate) return 0;
+		else candidate = newcandidate;
+	}
+	return candidate;
+}
+
+/**
+ * \brief Returns the unique predicate that is contained in the generator and which sorts resolve with the given sorts.
+ * \brief Returns a null-pointer if such a predicate does not exist or is not unique
+ */
+Predicate* EnumeratedPredGenerator::disambiguate(const vector<Sort*>& sorts, const Vocabulary* vocabulary) {
+	Predicate* candidate = 0;
+	for(set<Predicate*>::const_iterator it = _overpreds.begin(); it != _overpreds.end(); ++it) {
+		Predicate* newcandidate = (*it)->disambiguate(sorts,vocabulary);
+		if(candidate && candidate != newcandidate) return 0;
+		else candidate = newcandidate;
+	}
+	return candidate;
+}
+
+set<Sort*> EnumeratedPredGenerator::allsorts() const {
+	set<Sort*> ss;
+	for(set<Predicate*>::const_iterator it = _overpreds.begin(); it != _overpreds.end(); ++it) {
+		set<Sort*> os = (*it)->allsorts();
+		ss.insert(os.begin(),os.end());
+	}
+	ss.erase(0);
+	return ss;
+}
+
+void EnumeratedPredGenerator::addVocabulary(const Vocabulary* vocabulary) {
+	for(set<Predicate*>::const_iterator it = _overpreds.begin(); it != _overpreds.end(); ++it) {
+		(*it)->addVocabulary(vocabulary);
+	}
+}
+
+void EnumeratedPredGenerator::removeVocabulary(const Vocabulary* vocabulary) {
+	for(set<Predicate*>::const_iterator it = _overpreds.begin(); it != _overpreds.end(); ++it) {
+		(*it)->removeVocabulary(vocabulary);
+	}
+}
+
+set<Predicate*> EnumeratedPredGenerator::nonbuiltins() const {
+	set<Predicate*> sp;
+	for(set<Predicate*>::const_iterator it = _overpreds.begin(); it != _overpreds.end(); ++it) {
+		set<Predicate*> temp = (*it)->nonbuiltins();
+		sp.insert(temp.begin(),temp.end());
+	}
+	return sp;
+}
+
+ComparisonPredGenerator::ComparisonPredGenerator(const string& name, PredInterGeneratorGenerator* inter) : 
+	PredGenerator(name,2,true), _interpretation(inter) {
+}
+
+ComparisonPredGenerator::~ComparisonPredGenerator() {
+	delete(_interpretation);
+	for(map<Sort*,Predicate*>::iterator it = _overpreds.begin(); it != _overpreds.end(); ++it) {
+		if(!it->second->hasVocabularies()) delete(it->second);
+	}
+}
+
+/**
+ * \brief Returns true iff predicate has the same name as the generator, and both sorts of the predicate are equal
+ */
+bool ComparisonPredGenerator::contains(const Predicate* predicate) const {
+	if(predicate->name() == _name) {
+		assert(predicate->arity() == 2);
+		return predicate->sort(0) == predicate->sort(1);
+	}
+	else return false;
+}
+
+/**
+ * \brief Returns the unique predicate that has the name of the generator and the given sorts
+ */
+Predicate* ComparisonPredGenerator::resolve(const vector<Sort*>& sorts) {
+	if(sorts.size() == 2 && sorts[0] == sorts[1]) {
+		map<Sort*,Predicate*>::const_iterator it = _overpreds.find(sorts[0]);
+		if(it == _overpreds.end()) return disambiguate(sorts);
+		else return it->second;
+	}
+	return 0;
+}
+
+/**
+ * \brief Returns the predicate P[A,A], where P is the name of the generator and A is the unique least common
+ * \brief ancestor of all the given sorts.
+ *
+ * Returns null-pointer if
+ *	- there is no least common ancestor of the non-null pointers among the given sorts.
+ *	- the vector of given sorts contains a null-pointer and the least common ancestor has an ancestor in the
+ *	given vocabulary
+ */
+Predicate* ComparisonPredGenerator::disambiguate(const vector<Sort*>& sorts, const Vocabulary* vocabulary) {
+	Sort* predSort = 0;
+	bool sortsContainsZero = false;
+	for(vector<Sort*>::const_iterator it = sorts.begin(); it != sorts.end(); ++it) {
+		if(*it) {
+			if(predSort) {
+				predSort = SortUtils::resolve(predSort,*it,vocabulary);
+				if(!predSort) return 0;
 			}
-			if(k == vs.size()) vs.push_back(temp[m]);
+			else predSort = *it;
+		}
+		else sortsContainsZero = true;
+	}
+
+	Predicate* pred = 0;
+	if(predSort && (!sortsContainsZero || !predSort->ancestors(vocabulary).empty())) {
+		map<Sort*,Predicate*>::const_iterator it = _overpreds.find(predSort);
+		if(it != _overpreds.end()) pred = it->second;
+		else {
+			vector<Sort*> predSorts(2,predSort); 
+			pred = new Predicate(_name,predSorts,_interpretation->get(predSorts),true);
+			_overpreds[predSort] = pred;
 		}
 	}
-	return vs;
+	return pred;
 }
 
-vector<Sort*> Function::allsorts() const {
-	return _sorts;
+set<Sort*> ComparisonPredGenerator::allsorts() const {
+	set<Sort*> ss;
+	return ss;
 }
 
-vector<Sort*> OverloadedFunction::allsorts() const {
-	vector<Sort*> vs;
-	for(unsigned int n = 0; n < _overfuncs.size(); ++n) {
-		vector<Sort*> temp = _overfuncs[n]->allsorts();
-		for(unsigned int m = 0; m < temp.size(); ++m) {
-			unsigned int k = 0;
-			for(; k < vs.size(); ++k) {
-				if(vs[k] == temp[m]) break;
-			}
-			if(k == vs.size()) vs.push_back(temp[m]);
-		}
+void ComparisonPredGenerator::addVocabulary(const Vocabulary* vocabulary) {
+	for(map<Sort*,Predicate*>::iterator it = _overpreds.begin(); it != _overpreds.end(); ++it) {
+		it->second->addVocabulary(vocabulary);
 	}
-	return vs;
 }
 
+void ComparisonPredGenerator::removeVocabulary(const Vocabulary* vocabulary) {
+	for(map<Sort*,Predicate*>::iterator it = _overpreds.begin(); it != _overpreds.end(); ) {
+		map<Sort*,Predicate*>::iterator jt = it;
+		++it;
+		if(jt->second->removeVocabulary(vocabulary)) _overpreds.erase(jt);
+	}
+}
+
+set<Predicate*> ComparisonPredGenerator::nonbuiltins() const {
+	set<Predicate*> sp;
+	return sp;
+}
 
 namespace PredUtils {
 
-	// Overload two predicates
 	Predicate* overload(Predicate* p1, Predicate* p2) {
 		assert(p1->name() == p2->name());
 		if(p1 == p2) return p1;
-		OverloadedPredicate* ovp = new OverloadedPredicate(p1->name(),p1->arity());
-		ovp->overpred(p1);
-		ovp->overpred(p2);
-		return ovp;
+		set<Predicate*> sp; sp.insert(p1); sp.insert(p2);
+		return overload(sp);
 	}
 
-	// Overload multiple predicates
-	Predicate* overload(const vector<Predicate*>& vp) {
-		if(vp.empty()) return 0;
-		else if(vp.size() == 1) return vp[0];
+	Predicate* overload(const set<Predicate*>& sp) {
+		if(sp.empty()) return 0;
+		else if(sp.size() == 1) return *(sp.begin());
 		else {
-			OverloadedPredicate* ovp = new OverloadedPredicate(vp[0]->name(),vp[0]->arity());
-			for(unsigned int n = 0; n < vp.size(); ++n) {
-				ovp->overpred(vp[n]);
-			}
-			return ovp;
+			EnumeratedPredGenerator* epg = new EnumeratedPredGenerator(sp);
+			return new Predicate(epg);
 		}
 	}
 
-
 }
+
+set<Sort*> Function::allsorts() const {
+	set<Sort*> ss;
+	ss.insert(_sorts.begin(),_sorts.end());
+	if(_overfuncgenerator) {
+		set<Sort*> os = _overfuncgenerator->allsorts();
+		ss.insert(os.begin(),os.end());
+	}
+	ss.erase(0);
+	return ss;
+}
+
+Function::Function(const std::string& name, const std::vector<Sort*>& is, Sort* os, const ParseInfo& pi, unsigned int binding) : 
+	PFSymbol(name,is,pi), _partial(false), _insorts(is), _outsort(os), _interpretation(0), _overfuncgenerator(0), _binding(binding) { 
+	_sorts.push_back(os); 
+}
+
+Function::Function(const std::string& name, const std::vector<Sort*>& sorts, const ParseInfo& pi, unsigned int binding) : 
+	PFSymbol(name,sorts,pi), _partial(false), _insorts(sorts), _outsort(sorts.back()), _interpretation(0), _overfuncgenerator(0), _binding(binding) { 
+	_insorts.pop_back(); 
+}
+
+Function::Function(const std::string& name, const std::vector<Sort*>& is, Sort* os, unsigned int binding) : 
+	PFSymbol(name,is), _partial(false), _insorts(is), _outsort(os), _interpretation(0), _overfuncgenerator(0), _binding(binding) { 
+	_sorts.push_back(os); 
+}
+
+Function::Function(const std::string& name, const std::vector<Sort*>& sorts, unsigned int binding) : 
+	PFSymbol(name,sorts), _partial(false), _insorts(sorts), _outsort(sorts.back()), _interpretation(0), _overfuncgenerator(0), _binding(binding) { 
+	_insorts.pop_back(); 
+}
+
+Function::Function(const std::string& name, const std::vector<Sort*>& sorts, FuncInterGenerator* inter, unsigned int binding) :
+	PFSymbol(name,sorts,binding != 0), _partial(false), _insorts(sorts), _outsort(sorts.back()), _interpretation(inter), _overfuncgenerator(0), _binding(binding) {	
+		_insorts.pop_back();
+}
+
+Function::Function(FuncGenerator* generator) :
+	PFSymbol(generator->name(),generator->arity()+1,generator->binding() != 0), _partial(true), _insorts(generator->arity(),0), _outsort(0), _interpretation(0), _overfuncgenerator(generator) {
+}
+
+Function::~Function() {
+	if(_interpretation) delete(_interpretation);
+	if(_overfuncgenerator) delete(_overfuncgenerator);
+}
+
+bool Function::removeVocabulary(const Vocabulary* vocabulary) {
+	_vocabularies.erase(vocabulary);
+	if(overloaded()) _overfuncgenerator->removeVocabulary(vocabulary);
+	if(_vocabularies.empty()) {
+		delete(this);
+		return true;
+	}
+	return false;
+}
+
+void Function::addVocabulary(const Vocabulary* vocabulary) {
+	_vocabularies.insert(vocabulary);
+	if(overloaded()) _overfuncgenerator->addVocabulary(vocabulary);
+}
+
+void Function::partial(bool b) {
+	_partial = b;
+}
+
+const vector<Sort*>& Function::insorts() const {
+	return _insorts;
+}
+
+unsigned int Function::arity() const {
+	return _insorts.size();
+}
+
+Sort* Function::insort(unsigned int n) const {
+	return _insorts[n];
+}
+
+Sort* Function::outsort() const {
+	return _outsort;
+}
+
+bool Function::partial() const {
+	return _partial;
+}
+
+bool Function::builtin() const {
+	return _interpretation != 0;
+}
+
+bool Function::overloaded() const {
+	return (_overfuncgenerator != 0);
+}
+
+unsigned int Function::binding() const {
+	return _binding;
+}
+
+/**
+ * \brief Returns the interpretation of a built-in function
+ *
+ * PARAMETERS
+ *		 - structure: for some functions, e.g. //2 over a type A, the interpretation of A is 
+ *		 needed to generate the interpretation for //2. The structure contains the interpretation of the 
+ *		 relevant sorts.
+ */
+FuncInter* Function::interpretation(const AbstractStructure* structure) const {
+	if(_interpretation) return _interpretation->get(structure);
+	else return 0;
+}
+
+/**
+ * \brief Returns true iff the function is equal to, or overloads a given function
+ *
+ * PARAMETERS
+ *		- function: the given function
+ */
+bool Function::contains(const Function* function) const {
+	if(this == function) return true;
+	else if(_overfuncgenerator && _overfuncgenerator->contains(function)) return true;
+	else return false;
+}
+
+/**
+ * \brief Return a unique function that is overloaded by the function and which has given sorts.
+ *
+ * PARAMETERS
+ *		- sorts: the sorts the returned function should have. Includes the return sort
+ *
+ * RETURNS
+ *		- The function itself if it is not overloaded and matches the given sorts.
+ *		- A null-pointer if there is more than one function that is overloaded by the function
+ *		  and matches the given sorts.
+ *		- Otherwise, the unique function that is overloaded by the function and matches the given sorts.
+ */
+Function* Function::resolve(const vector<Sort*>& sorts) {
+	if(overloaded()) return _overfuncgenerator->resolve(sorts); 
+	else if(_sorts == sorts) return this;
+	else return 0;
+}
+
+/**
+ *		\brief Returns a function that is overloaded by the function and which sorts resolve with the given sorts.
+ *		Which function is returned may depend on the overfuncgenerator. Returns a null-pointer if no
+ *		suitable function is found.
+ *
+ * PARAMETERS
+ *		- sorts:		the given sorts (includes the output sort)
+ *		- vocabulary:	the vocabulary used for resolving the sorts. Defaults to 0.
+ */ 
+Function* Function::disambiguate(const vector<Sort*>& sorts,const Vocabulary* vocabulary) {
+	if(overloaded()) return _overfuncgenerator->disambiguate(sorts,vocabulary); 
+	else {
+		for(unsigned int n = 0; n < _sorts.size(); ++n) {
+			if(sorts[n] && !SortUtils::resolve(sorts[n],_sorts[n],vocabulary)) return 0;
+		}
+		return this;
+	}
+}
+
+set<Function*> Function::nonbuiltins() {
+	if(_overfuncgenerator) return _overfuncgenerator->nonbuiltins();
+	else {
+		set<Function*> sf;
+		if(!_interpretation) sf.insert(this);
+		return sf;
+	}
+}
+
+ostream& Function::put(ostream& output) const {
+	for(set<const Vocabulary*>::iterator it = _vocabularies.begin(); it != _vocabularies.end(); ++it) {
+		if(!(*it)->func(_name)->overloaded()) {
+			(*it)->putname(output);
+			output << "::";
+			break;
+		}
+	}
+	output << _name.substr(0,_name.find('/'));
+	if(!overloaded()) {
+		output << '[';
+		if(_insorts.size() > 0) {
+			output << *_insorts[0];
+			for(unsigned int n = 1; n < _insorts.size(); ++n) output << ',' << *_insorts[n];
+		}
+		output << " : " << *_outsort << ']';
+	}
+	return output;
+}
+
+ostream& operator<< (ostream& output, const Function& f) { return f.put(output); }
+
+const string& FuncGenerator::name() const {
+	return _name;
+}
+
+unsigned	int FuncGenerator::arity() const {
+	return _arity;
+}
+
+unsigned int FuncGenerator::binding() const {
+	return _binding;
+}
+
+EnumeratedFuncGenerator::EnumeratedFuncGenerator(const set<Function*>& overfuncs) :
+	FuncGenerator((*(overfuncs.begin()))->name(),(*(overfuncs.begin()))->arity(),(*(overfuncs.begin()))->binding()), _overfuncs(overfuncs) {
+}
+
+bool EnumeratedFuncGenerator::contains(const Function* function) const {
+	for(set<Function*>::const_iterator it = _overfuncs.begin(); it != _overfuncs.end(); ++it) {
+		if((*it)->contains(function)) return true;
+	}
+	return false;
+}
+
+/**
+ * \brief Returns the unique function that is contained in the generator and that has the given sorts.
+ * \brief Returns a null-pointer if such a function does not exist or is not unique
+ */
+Function* EnumeratedFuncGenerator::resolve(const vector<Sort*>& sorts) {
+	Function* candidate = 0;
+	for(set<Function*>::const_iterator it = _overfuncs.begin(); it != _overfuncs.end(); ++it) {
+		Function* newcandidate = (*it)->resolve(sorts);
+		if(candidate && candidate != newcandidate) return 0;
+		else candidate = newcandidate;
+	}
+	return candidate;
+}
+
+/**
+ * \brief Returns the unique function that is contained in the generator and which sorts resolve with the given sorts.
+ * \brief Returns a null-pointer if such a function does not exist or is not unique
+ */
+Function* EnumeratedFuncGenerator::disambiguate(const vector<Sort*>& sorts, const Vocabulary* vocabulary) {
+	Function* candidate = 0;
+	for(set<Function*>::const_iterator it = _overfuncs.begin(); it != _overfuncs.end(); ++it) {
+		Function* newcandidate = (*it)->disambiguate(sorts,vocabulary);
+		if(candidate && candidate != newcandidate) return 0;
+		else candidate = newcandidate;
+	}
+	return candidate;
+}
+
+set<Sort*> EnumeratedFuncGenerator::allsorts() const {
+	set<Sort*> ss;
+	for(set<Function*>::const_iterator it = _overfuncs.begin(); it != _overfuncs.end(); ++it) {
+		set<Sort*> os = (*it)->allsorts();
+		ss.insert(os.begin(),os.end());
+	}
+	ss.erase(0);
+	return ss;
+}
+
+void EnumeratedFuncGenerator::addVocabulary(const Vocabulary* vocabulary) {
+	for(set<Function*>::const_iterator it = _overfuncs.begin(); it != _overfuncs.end(); ++it) {
+		(*it)->addVocabulary(vocabulary);
+	}
+}
+
+void EnumeratedFuncGenerator::removeVocabulary(const Vocabulary* vocabulary) {
+	for(set<Function*>::const_iterator it = _overfuncs.begin(); it != _overfuncs.end(); ++it) {
+		(*it)->removeVocabulary(vocabulary);
+	}
+}
+
+set<Function*> EnumeratedFuncGenerator::nonbuiltins() const {
+	set<Function*> sf;
+	for(set<Function*>::const_iterator it = _overfuncs.begin(); it != _overfuncs.end(); ++it) {
+		set<Function*> temp = (*it)->nonbuiltins();
+		sf.insert(temp.begin(),temp.end());
+	}
+	return sf;
+}
+
+IntFloatFuncGenerator::IntFloatFuncGenerator(Function* intfunc, Function* floatfunc) : 
+	FuncGenerator(intfunc->name(),intfunc->arity(),intfunc->binding()), _intfunction(intfunc), _floatfunction(floatfunc) {
+}
+
+bool IntFloatFuncGenerator::contains(const Function* function) const {
+	return (function == _intfunction || function == _floatfunction);
+}
+
+/**
+ * Returns the integer function if the vector of sorts only contains int, 
+ * the float function if it only contains float, and a null-pointer otherwise.
+ */
+Function* IntFloatFuncGenerator::resolve(const vector<Sort*>& sorts) {
+	assert(sorts.size() == 2 || sorts.size() == 3);
+	if(sorts[0] == sorts[1] && (sorts.size() == 2 || sorts[1] == sorts[2])) {
+		Sort* intsort = *((Vocabulary::std()->sort("int"))->begin());
+		Sort* floatsort = *((Vocabulary::std()->sort("float"))->begin());
+		if(sorts[0] == intsort) return _intfunction;
+		else if(sorts[0] == floatsort) return _floatfunction;
+		else return 0;
+	}
+	return 0;
+}
+
+/**
+ * Returns a null-pointer if more than one of the sorts is a null-pointer, 
+ * or one of the sorts that is not a null-pointer, is not a subsort of float.
+ * Otherwise, return the integer function if all sorts are a subsort of int, 
+ * and the float function if at least one sort is not a subsort of _int.
+ */
+Function* IntFloatFuncGenerator::disambiguate(const vector<Sort*>& sorts, const Vocabulary* vocabulary) {
+	unsigned int zerocounter = 0;
+	bool isfloat = false;
+	Sort* intsort = *((Vocabulary::std()->sort("int"))->begin());
+	Sort* floatsort = *((Vocabulary::std()->sort("float"))->begin());
+	for(vector<Sort*>::const_iterator it = sorts.begin(); it != sorts.end(); ++it) {
+		if(*it) {
+			if(SortUtils::resolve(intsort,*it,vocabulary) != intsort) {
+				if(SortUtils::resolve(floatsort,*it,vocabulary) == floatsort) isfloat = true;
+				else return 0;
+			}
+		}
+		else {
+			++zerocounter;
+			if(zerocounter > 1) return 0;
+		}
+	}
+	return isfloat ? _floatfunction : _intfunction;
+}
+
+/**
+ * \brief Returns sorts int and float
+ */
+set<Sort*> IntFloatFuncGenerator::allsorts() const {
+	set<Sort*> ss;
+	ss.insert(*(Vocabulary::std()->sort("int")->begin()));
+	ss.insert(*(Vocabulary::std()->sort("float")->begin()));
+	return ss;
+}
+
+void IntFloatFuncGenerator::addVocabulary(const Vocabulary* vocabulary) {
+	_intfunction->addVocabulary(vocabulary);
+	_floatfunction->addVocabulary(vocabulary);
+}
+
+void IntFloatFuncGenerator::removeVocabulary(const Vocabulary* vocabulary) {
+	_intfunction->removeVocabulary(vocabulary);
+	_floatfunction->removeVocabulary(vocabulary);
+}
+
+set<Function*> IntFloatFuncGenerator::nonbuiltins() const {
+	set<Function*> sf;
+	return sf;
+}
+
+OrderFuncGenerator::OrderFuncGenerator(const string& name, unsigned int arity, FuncInterGeneratorGenerator* inter) : 
+	FuncGenerator(name,arity,0), _interpretation(inter) {
+}
+
+OrderFuncGenerator::~OrderFuncGenerator() {
+	delete(_interpretation);
+	for(map<Sort*,Function*>::iterator it = _overfuncs.begin(); it != _overfuncs.end(); ++it) {
+		if(!it->second->hasVocabularies()) delete(it->second);
+	}
+}
+
+/**
+ * \brief Returns true iff function has the same name as the generator, and all sorts of function are equal.
+ */
+bool OrderFuncGenerator::contains(const Function* function) const {
+	if(function->name() == _name) {
+		for(unsigned int n = 0; n < _arity; ++n) {
+			if(function->outsort() != function->insort(n)) return false;
+		}
+		return true;
+	}
+	else return false;
+}
+
+/**
+ * \brief Returns the unique function that has the name of the generator and the given sorts
+ */
+Function* OrderFuncGenerator::resolve(const vector<Sort*>& sorts) {
+	for(unsigned int n = 1; n < sorts.size(); ++n) {
+		if(sorts[n] != sorts[n-1]) return 0;
+	}
+	assert(!sorts.empty());
+	map<Sort*,Function*>::const_iterator it = _overfuncs.find(sorts[0]);
+	if(it == _overfuncs.end()) return disambiguate(sorts);
+	else return it->second;
+}
+
+/**
+ * \brief Returns the function F[A,...,A:A], where F is the name of the generator and A is the only sort 
+ * \brief among the given sorts.
+ */
+Function* OrderFuncGenerator::disambiguate(const vector<Sort*>& sorts, const Vocabulary*) {
+	Sort* funcSort = 0;
+	for(vector<Sort*>::const_iterator it = sorts.begin(); it != sorts.end(); ++it) {
+		if(*it) {
+			if(funcSort) {
+				if(funcSort != *it) return 0;
+			}
+			else funcSort = *it;
+		}
+	}
+
+	Function* func = 0;
+	if(funcSort) {
+		map<Sort*,Function*>::const_iterator it = _overfuncs.find(funcSort);
+		if(it != _overfuncs.end()) func = it->second;
+		else {
+			vector<Sort*> funcSorts(_arity+1,funcSort); 
+			func = new Function(_name,funcSorts,_interpretation->get(funcSorts),0);
+			_overfuncs[funcSort] = func;
+		}
+	}
+	return func;
+}
+
+set<Sort*> OrderFuncGenerator::allsorts() const {
+	set<Sort*> ss;
+	return ss;
+}
+
+void OrderFuncGenerator::addVocabulary(const Vocabulary* vocabulary) {
+	for(map<Sort*,Function*>::iterator it = _overfuncs.begin(); it != _overfuncs.end(); ++it) {
+		it->second->addVocabulary(vocabulary);
+	}
+}
+
+void OrderFuncGenerator::removeVocabulary(const Vocabulary* ) {
+	// TODO: check this...
+	//for(map<Sort*,Function*>::iterator it = _overfuncs.begin(); it != _overfuncs.end(); ++it) {
+	//	it->second->removeVocabulary(vocabulary);
+	//}
+}
+
+set<Function*> OrderFuncGenerator::nonbuiltins() const {
+	set<Function*> sf;
+	return sf;
+}
+
 
 namespace FuncUtils {
 
-	// Overload two functions
 	Function* overload(Function* f1, Function* f2) {
 		assert(f1->name() == f2->name());
 		if(f1 == f2) return f1;
-		OverloadedFunction* ovf = new OverloadedFunction(f1->name(),f1->arity());
-		ovf->overfunc(f1);
-		ovf->overfunc(f2);
-		return ovf;
+		set<Function*> sf; sf.insert(f1); sf.insert(f2);
+		return overload(sf);
 	}
 
-	// Overload multiple functions
-	Function* overload(const vector<Function*>& vf) {
-		if(vf.empty()) return 0;
-		else if(vf.size() == 1) return vf[0];
+	Function* overload(const set<Function*>& sf) {
+		if(sf.empty()) return 0;
+		else if(sf.size() == 1) return *(sf.begin());
 		else {
-			OverloadedFunction* ovf = new OverloadedFunction(vf[0]->name(),vf[0]->arity());
-			for(unsigned int n = 0; n < vf.size(); ++n) {
-				ovf->overfunc(vf[n]);
-			}
-			return ovf;
+			EnumeratedFuncGenerator* efg = new EnumeratedFuncGenerator(sf);
+			return new Function(efg);
 		}
 	}
 
@@ -494,19 +1145,70 @@ namespace FuncUtils {
 
 }
 
-
 /*****************
 	Vocabulary
 *****************/
 
-/** Constructors **/
-
-Vocabulary::Vocabulary(const string& name) : _name(name) {
-	if(_name != "std") addVocabulary(StdBuiltin::instance());
+Vocabulary::Vocabulary(const string& name) : _name(name), _namespace(0) {
+	if(_name != "std") addVocabulary(Vocabulary::std());
 }
 
-Vocabulary::Vocabulary(const string& name, const ParseInfo& pi) : _name(name), _pi(pi) {
-	if(_name != "std") addVocabulary(StdBuiltin::instance());
+Vocabulary::Vocabulary(const string& name, const ParseInfo& pi) : _name(name), _pi(pi), _namespace(0) {
+	if(_name != "std") addVocabulary(Vocabulary::std());
+}
+
+Vocabulary::~Vocabulary() {
+	for(map<string,Predicate*>::iterator it = _name2pred.begin(); it != _name2pred.end(); ++it) {
+		it->second->removeVocabulary(this);
+	}
+	for(map<string,Function*>::iterator it = _name2func.begin(); it != _name2func.end(); ++it) {
+		it->second->removeVocabulary(this);
+	}
+	for(map<string,set<Sort*> >::iterator it = _name2sort.begin(); it != _name2sort.end(); ++it) {
+		for(set<Sort*>::iterator jt = it->second.begin(); jt != it->second.end(); ++jt) {
+			(*jt)->removeVocabulary(this);
+		}
+	}
+}
+
+void Vocabulary::addSort(Sort* s) {
+	if(!contains(s)) {
+		_name2sort[s->name()].insert(s);
+		s->addVocabulary(this);
+		addPred(s->pred());
+	}
+}
+
+void Vocabulary::addPred(Predicate* p) {
+	if(!contains(p)) {
+		if(_name2pred.find(p->name()) == _name2pred.end()) {
+			_name2pred[p->name()] = p;
+		}
+		else {
+			Predicate* ovp = PredUtils::overload(p,_name2pred[p->name()]);
+			_name2pred[p->name()] = ovp;
+		}
+		set<Sort*> ss = p->allsorts();
+		for(set<Sort*>::iterator it = ss.begin(); it != ss.end(); ++it) 
+			addSort(*it);
+		p->addVocabulary(this);
+	}
+}
+
+void Vocabulary::addFunc(Function* f) {
+	if(!contains(f)) {
+		if(_name2func.find(f->name()) == _name2func.end()) {
+			_name2func[f->name()] = f;
+		}
+		else {
+			Function* ovf = FuncUtils::overload(f,_name2func[f->name()]);
+			_name2func[f->name()] = ovf;
+		}
+		set<Sort*> ss = f->allsorts();
+		for(set<Sort*>::iterator it = ss.begin(); it != ss.end(); ++it) 
+			addSort(*it);
+		f->addVocabulary(this);
+	}
 }
 
 void Vocabulary::addVocabulary(Vocabulary* v) {
@@ -521,108 +1223,154 @@ void Vocabulary::addVocabulary(Vocabulary* v) {
 	}
 }
 
-/** Mutators **/
+Vocabulary* Vocabulary::_std = 0;
 
-void Vocabulary::addSort(Sort* s) {
-	if(!contains(s)) {
-		_name2sort[s->name()].insert(s);
-//		if(_name2sort.find(s->name()) == _name2sort.end()) {
-//			_name2sort[s->name()] = s;
-//		}
-//		else {
-//			Sort* ovs = SortUtils::overload(s,_name2sort[s->name()]);
-//			assert(ovs->overloaded());
-//			_name2sort[s->name()] = ovs;
-//		}
+Vocabulary* Vocabulary::std() {
+	if(!_std) {
+ 		_std = new Vocabulary("std");
 
-//		if(s->overloaded()) {
-//			vector<Sort*> vs = s->nonbuiltins();
-//			for(unsigned int n = 0; n < vs.size(); ++n) {
-//				if(_sort2index.find(vs[n]) == _sort2index.end()) {
-//					_sort2index[vs[n]] = _index2sort.size();
-//					_index2sort.push_back(vs[n]);
-//				}
-//			}
-//		}
-//		else {
-			if(!s->builtin()) {
-				_sort2index[s] = _index2sort.size();
-				_index2sort.push_back(s);
-			}
-//		}
+		// Create sort interpretations
+		SortTable* allnats		= new SortTable(new AllNaturalNumbers());
+		SortTable* allints		= new SortTable(new AllIntegers());
+		SortTable* allfloats	= new SortTable(new AllFloats());
+		SortTable* allstrings	= new SortTable(new AllStrings());
+		SortTable* allchars		= new SortTable(new AllChars());
 
-		if(s->pred()) addPred(s->pred());
+		// Create sorts
+		Sort* natsort		= new Sort("nat",allnats);
+		Sort* intsort		= new Sort("int",allints); 
+		Sort* floatsort		= new Sort("float",allfloats);
+		Sort* charsort		= new Sort("char",allchars);
+		Sort* stringsort	= new Sort("string",allstrings);
+
+		// Add the sorts
+		_std->addSort(natsort);
+		_std->addSort(intsort);
+		_std->addSort(floatsort);
+		_std->addSort(charsort);
+		_std->addSort(stringsort);
+
+		// Set sort hierarchy 
+		intsort->addParent(floatsort);
+		natsort->addParent(intsort);
+		charsort->addParent(stringsort);
+
+		// Create predicate interpretations
+		EqualInterGeneratorGenerator* eqgen = new EqualInterGeneratorGenerator();
+		StrLessThanInterGeneratorGenerator* ltgen = new StrLessThanInterGeneratorGenerator();
+		StrGreaterThanInterGeneratorGenerator* gtgen = new StrGreaterThanInterGeneratorGenerator();
+		
+		// Create predicate overloaders
+		ComparisonPredGenerator* eqpgen = new ComparisonPredGenerator("=/2",eqgen);
+		ComparisonPredGenerator* ltpgen = new ComparisonPredGenerator("</2",ltgen);
+		ComparisonPredGenerator* gtpgen = new ComparisonPredGenerator(">/2",gtgen);
+		
+		// Add predicates
+		_std->addPred(new Predicate(eqpgen));
+		_std->addPred(new Predicate(ltpgen));
+		_std->addPred(new Predicate(gtpgen));
+
+		// Create function interpretations
+		Universe twoint(vector<SortTable*>(2,allints));
+		Universe twofloat(vector<SortTable*>(2,allfloats));
+		Universe threeint(vector<SortTable*>(3,allints));
+		Universe threefloat(vector<SortTable*>(3,allfloats));
+
+		SingleFuncInterGenerator* modgen = 
+			new SingleFuncInterGenerator(new FuncInter(new FuncTable(new ModInternalFuncTable(),threeint)));
+		SingleFuncInterGenerator* expgen = 
+			new SingleFuncInterGenerator(new FuncInter(new FuncTable(new ExpInternalFuncTable(),threefloat)));
+
+		vector<Sort*> twoints(2,intsort);
+		vector<Sort*> twofloats(2,floatsort);
+		vector<Sort*> threeints(3,intsort);
+		vector<Sort*> threefloats(3,floatsort);
+
+		SingleFuncInterGenerator* intplusgen =
+			new SingleFuncInterGenerator(new FuncInter(new FuncTable(new PlusInternalFuncTable(true),threeint)));
+		SingleFuncInterGenerator* floatplusgen =
+			new SingleFuncInterGenerator(new FuncInter(new FuncTable(new PlusInternalFuncTable(false),threefloat)));
+		Function* intplus = new Function("+/2",threeints,intplusgen,200);
+		Function* floatplus = new Function("+/2",threefloats,floatplusgen,200);
+
+		SingleFuncInterGenerator* intminusgen =
+			new SingleFuncInterGenerator(new FuncInter(new FuncTable(new MinusInternalFuncTable(true),threeint)));
+		SingleFuncInterGenerator* floatminusgen =
+			new SingleFuncInterGenerator(new FuncInter(new FuncTable(new MinusInternalFuncTable(false),threefloat)));
+		Function* intminus = new Function("-/2",threeints,intminusgen,200);
+		Function* floatminus = new Function("-/2",threefloats,floatminusgen,200);
+
+		SingleFuncInterGenerator* inttimesgen =
+			new SingleFuncInterGenerator(new FuncInter(new FuncTable(new TimesInternalFuncTable(true),threeint)));
+		SingleFuncInterGenerator* floattimesgen =
+			new SingleFuncInterGenerator(new FuncInter(new FuncTable(new TimesInternalFuncTable(false),threefloat)));
+		Function* inttimes = new Function("*/2",threeints,inttimesgen,300);
+		Function* floattimes = new Function("*/2",threefloats,floattimesgen,300);
+
+		SingleFuncInterGenerator* intdivgen =
+			new SingleFuncInterGenerator(new FuncInter(new FuncTable(new DivInternalFuncTable(true),threeint)));
+		SingleFuncInterGenerator* floatdivgen =
+			new SingleFuncInterGenerator(new FuncInter(new FuncTable(new DivInternalFuncTable(false),threefloat)));
+		Function* intdiv = new Function("//2",threeints,intdivgen,300);
+		Function* floatdiv = new Function("//2",threefloats,floatdivgen,300);
+
+		SingleFuncInterGenerator* intabsgen =
+			new SingleFuncInterGenerator(new FuncInter(new FuncTable(new AbsInternalFuncTable(true),twoint)));
+		SingleFuncInterGenerator* floatabsgen =
+			new SingleFuncInterGenerator(new FuncInter(new FuncTable(new AbsInternalFuncTable(false),twofloat)));
+		Function* intabs = new Function("abs/1",twoints,intabsgen,0);
+		Function* floatabs = new Function("abs/1",twofloats,floatabsgen,0);
+
+		SingleFuncInterGenerator* intumingen =
+			new SingleFuncInterGenerator(new FuncInter(new FuncTable(new UminInternalFuncTable(true),twoint)));
+		SingleFuncInterGenerator* floatumingen =
+			new SingleFuncInterGenerator(new FuncInter(new FuncTable(new UminInternalFuncTable(false),twofloat)));
+		Function* intumin = new Function("-/1",twoints,intumingen,500);
+		Function* floatumin = new Function("-/1",twofloats,floatumingen,500);
+
+		MinInterGeneratorGenerator* minigengen = new MinInterGeneratorGenerator();
+		MaxInterGeneratorGenerator* maxigengen = new MaxInterGeneratorGenerator();
+		SuccInterGeneratorGenerator* succigengen = new SuccInterGeneratorGenerator();
+		InvSuccInterGeneratorGenerator* predigengen = new InvSuccInterGeneratorGenerator();
+		
+		// Create function overloaders
+		IntFloatFuncGenerator* plusgen = new IntFloatFuncGenerator(intplus,floatplus);
+		IntFloatFuncGenerator* minusgen = new IntFloatFuncGenerator(intminus,floatminus);
+		IntFloatFuncGenerator* timesgen = new IntFloatFuncGenerator(inttimes,floattimes);
+		IntFloatFuncGenerator* divgen = new IntFloatFuncGenerator(intdiv,floatdiv);
+		IntFloatFuncGenerator* absgen = new IntFloatFuncGenerator(intabs,floatabs);
+		IntFloatFuncGenerator* umingen = new IntFloatFuncGenerator(intumin,floatumin);
+		OrderFuncGenerator* mingen = new OrderFuncGenerator("MIN/0",0,minigengen);
+		OrderFuncGenerator* maxgen = new OrderFuncGenerator("MAX/0",0,maxigengen);
+		OrderFuncGenerator* succgen = new OrderFuncGenerator("SUCC/1",1,succigengen);
+		OrderFuncGenerator* predgen = new OrderFuncGenerator("PRED/1",1,predigengen);
+		
+		// Add functions
+		Function* modfunc = new Function(string("%/2"),threeints,modgen,100); modfunc->partial(true);
+		Function* expfunc = new Function(string("^/2"),threefloats,expgen,400);
+		_std->addFunc(modfunc);
+		_std->addFunc(expfunc);
+		_std->addFunc(new Function(plusgen));
+		_std->addFunc(new Function(minusgen));
+		_std->addFunc(new Function(timesgen));
+		_std->addFunc(new Function(divgen));
+		_std->addFunc(new Function(absgen));
+		_std->addFunc(new Function(umingen));
+		_std->addFunc(new Function(mingen));
+		_std->addFunc(new Function(maxgen));
+		_std->addFunc(new Function(succgen));
+		_std->addFunc(new Function(predgen));
 	}
+	return _std;
 }
 
-void Vocabulary::addPred(Predicate* p) {
-	if(!contains(p)) {
-		if(_name2pred.find(p->name()) == _name2pred.end()) {
-			_name2pred[p->name()] = p;
-		}
-		else {
-			Predicate* ovp = PredUtils::overload(p,_name2pred[p->name()]);
-			_name2pred[p->name()] = ovp;
-		}
-
-		if(p->overloaded()) {
-			vector<Predicate*> vp = p->nonbuiltins();
-			for(unsigned int n = 0; n < vp.size(); ++n) {
-				if(_predicate2index.find(vp[n]) == _predicate2index.end()) {
-					_predicate2index[vp[n]] = _index2predicate.size();
-					_index2predicate.push_back(vp[n]);
-				}
-			}
-			vector<Sort*> vs = p->allsorts();
-			for(unsigned int n = 0; n < vs.size(); ++n) {
-				addSort(vs[n]);
-			}
-		}
-		else {
-			if(!p->builtin()) {
-				_predicate2index[p] = _index2predicate.size();
-				_index2predicate.push_back(p);
-			}
-			for(unsigned int n = 0; n < p->arity(); ++n) addSort(p->sort(n));
-		}
-	}
+const string& Vocabulary::name() const {
+	return _name;
 }
 
-void Vocabulary::addFunc(Function* f) {
-	if(!contains(f)) {
-		if(_name2func.find(f->name()) == _name2func.end()) {
-			_name2func[f->name()] = f;
-		}
-		else {
-			Function* ovf = FuncUtils::overload(f,_name2func[f->name()]);
-			_name2func[f->name()] = ovf;
-		}
-
-		if(f->overloaded()) {
-			vector<Function*> vf = f->nonbuiltins();
-			for(unsigned int n = 0; n < vf.size(); ++n) {
-				if(_function2index.find(vf[n]) == _function2index.end()) {
-					_function2index[vf[n]] = _index2function.size();
-					_index2function.push_back(vf[n]);
-				}
-			}
-			vector<Sort*> vs = f->allsorts();
-			for(unsigned int n = 0; n < vs.size(); ++n) {
-				addSort(vs[n]);
-			}
-		}
-		else {
-			if(!f->builtin()) {
-				_function2index[f] = _index2function.size();
-				_index2function.push_back(f);
-			}
-			for(unsigned int n = 0; n < f->arity(); ++n) addSort(f->insort(n));
-			addSort(f->outsort());
-		}
-	}
+const ParseInfo& Vocabulary::pi() const {
+	return _pi;
 }
-
-/** Inspectors **/
 
 bool Vocabulary::contains(Sort* s) const {
 	map<string,set<Sort*> >::const_iterator it = _name2sort.find(s->name());
@@ -645,27 +1393,13 @@ bool Vocabulary::contains(Function* f) const {
 }
 
 bool Vocabulary::contains(PFSymbol* s) const {
-	if(s->ispred()) {
+	if(typeid(*s) == typeid(Predicate)) {
 		return contains(dynamic_cast<Predicate*>(s));
 	}
 	else {
+		assert(typeid(*s) == typeid(Function));
 		return contains(dynamic_cast<Function*>(s));
 	}
-}
-
-unsigned int Vocabulary::index(Sort* s) const {
-	assert(_sort2index.find(s) != _sort2index.end());
-	return _sort2index.find(s)->second;
-}
-
-unsigned int Vocabulary::index(Predicate* p) const {
-	assert(_predicate2index.find(p) != _predicate2index.end());
-	return _predicate2index.find(p)->second;
-}
-
-unsigned int Vocabulary::index(Function* f) const {
-	assert(_function2index.find(f) != _function2index.end());
-	return _function2index.find(f)->second;
 }
 
 const set<Sort*>* Vocabulary::sort(const string& name) const {
@@ -686,74 +1420,78 @@ Function* Vocabulary::func(const string& name) const {
 	else  return 0;
 }
 
-vector<Predicate*> Vocabulary::pred_no_arity(const string& name) const {
-	vector<Predicate*> vp;
+set<Predicate*> Vocabulary::pred_no_arity(const string& name) const {
+	set<Predicate*> vp;
 	for(map<string,Predicate*>::const_iterator it = _name2pred.begin(); it != _name2pred.end(); ++it) {
 		string nm = it->second->name();
-		if(nm.substr(0,nm.find('/')) == name) vp.push_back(it->second);
+		if(nm.substr(0,nm.find('/')) == name) vp.insert(it->second);
 	}
 	return vp;
 }
 
-vector<Function*> Vocabulary::func_no_arity(const string& name) const {
-	vector<Function*> vf;
+set<Function*> Vocabulary::func_no_arity(const string& name) const {
+	set<Function*> vf;
 	for(map<string,Function*>::const_iterator it = _name2func.begin(); it != _name2func.end(); ++it) {
 		string nm = it->second->name();
-		if(nm.substr(0,nm.find('/')) == name) vf.push_back(it->second);
+		if(nm.substr(0,nm.find('/')) == name) vf.insert(it->second);
 	}
 	return vf;
 }
 
-/** Debugging **/
-
-string PFSymbol::to_string() const {
-	string s  = _name.substr(0,_name.find('/'));	
-	if(nrSorts()) {
-		if(sort(0)) s += '[' + sort(0)->to_string();
-		else s += '[';
-		for(unsigned int n = 1; n < nrSorts(); ++n) {
-			if(sort(n)) s += ',' + sort(n)->to_string();
-			else s += ',';
-		}
-		s += ']';
+ostream& Vocabulary::putname(ostream& output) const {
+	if(_namespace && !_namespace->isGlobal()) {
+		_namespace->putname(output);
+		output << "::";
 	}
-	return s;
+	output << _name;
+	return output;
 }
 
-string OverloadedPredicate::to_string() const {
-	string s = " ";
-	for(unsigned int n = 0; n < _overpreds.size(); ++n) {
-		s += _overpreds[n]->to_string();
-		s += ' ';
-	}
-	return s;
-}
-
-string OverloadedFunction::to_string() const {
-	string s = " ";
-	for(unsigned int n = 0; n < _overfuncs.size(); ++n) {
-		s += _overfuncs[n]->to_string();
-		s += ' ';
-	}
-	return s;
-}
-
-string Vocabulary::to_string(unsigned int spaces) const {
-	string tab = tabstring(spaces);
-	string s = tab + "Vocabulary " + _name + ":\n";
-	s = s + tab + "  Sorts:\n";
+ostream& Vocabulary::put(ostream& output, unsigned int tabs) const {
+	printtabs(output,tabs);
+	output << "Vocabulary " << _name << ":\n";
+	++tabs; printtabs(output,tabs);
+	output << "Sorts:\n";
+	++tabs;
 	for(map<string,set<Sort*> >::const_iterator it = _name2sort.begin(); it != _name2sort.end(); ++it) {
 		for(set<Sort*>::const_iterator jt = (it->second).begin(); jt != (it->second).end(); ++jt) {
-			s = s + tab + "    " + (*jt)->to_string() + '\n';
+			printtabs(output,tabs);
+			output << *(*jt) << '\n';
 		}
 	}
-	s = s + tab + "  Predicates:\n";
+	--tabs; printtabs(output,tabs);
+	output << "Predicates:\n";
+	++tabs;
 	for(map<string,Predicate*>::const_iterator it = _name2pred.begin(); it != _name2pred.end(); ++it) {
-		s = s + tab + "    " + it->second->to_string() + '\n';
+		printtabs(output,tabs);
+		output << *(it->second) << '\n';
 	}
-	s = s + tab + "  Functions:\n";
+	--tabs; printtabs(output,tabs);
+	output << "Functions:\n";
+	++tabs;
 	for(map<string,Function*>::const_iterator it = _name2func.begin(); it != _name2func.end(); ++it) {
-		s = s + tab + "    " + it->second->to_string() + '\n';
+		printtabs(output,tabs);
+		output << *(it->second) << '\n';
 	}
-	return s;
+	return output;
+}
+
+string Vocabulary::to_string(unsigned int tabs) const {
+	stringstream ss;
+	put(ss,tabs);
+	return ss.str();
+}
+
+ostream& operator<< (ostream& output,const Vocabulary& voc) {
+	return voc.put(output);
+}
+
+namespace VocabularyUtils {
+
+	Sort* natsort() { return *(Vocabulary::std()->sort("nat")->begin()); }
+	Sort* intsort() { return *(Vocabulary::std()->sort("int")->begin()); }
+	Sort* floatsort() { return *(Vocabulary::std()->sort("float")->begin()); }
+	Sort* stringsort() { return *(Vocabulary::std()->sort("string")->begin()); }
+	Sort* charsort() { return *(Vocabulary::std()->sort("char")->begin()); }
+
 }

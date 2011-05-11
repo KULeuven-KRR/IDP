@@ -11,8 +11,7 @@
 #include <queue>
 #include <map>
 #include <cassert>
-
-#include "visitor.hpp"
+#include "theory.hpp"
 
 class Variable;
 class PFSymbol;
@@ -89,8 +88,8 @@ class FOPropDomainFactory {
 		virtual FOPropDomain* cfDomain(const PredForm*)		const = 0;
 		virtual FOPropDomain* domain(const PredForm*)		const = 0;
 		virtual FOPropDomain* domain(const EqChainForm*) 	const = 0;
-		virtual FOPropDomain* exists(FOPropDomain*, const std::vector<Variable*>&) const = 0;
-		virtual FOPropDomain* forall(FOPropDomain*, const std::vector<Variable*>&) const = 0;
+		virtual FOPropDomain* exists(FOPropDomain*, const std::set<Variable*>&) const = 0;
+		virtual FOPropDomain* forall(FOPropDomain*, const std::set<Variable*>&) const = 0;
 		virtual FOPropDomain* conjunction(FOPropDomain*,FOPropDomain*) const = 0;
 		virtual FOPropDomain* disjunction(FOPropDomain*,FOPropDomain*) const = 0;
 		virtual FOPropDomain* substitute(FOPropDomain*,const std::map<Variable*,Variable*>&) const = 0;
@@ -106,8 +105,8 @@ class FOPropBDDDomainFactory : public FOPropDomainFactory {
 		FOPropBDDDomain* cfDomain(const PredForm*)		const;
 		FOPropBDDDomain* domain(const PredForm*)		const;
 		FOPropBDDDomain* domain(const EqChainForm*) 	const;
-		FOPropBDDDomain* exists(FOPropDomain*, const std::vector<Variable*>&) const;
-		FOPropBDDDomain* forall(FOPropDomain*, const std::vector<Variable*>&) const;
+		FOPropBDDDomain* exists(FOPropDomain*, const std::set<Variable*>&) const;
+		FOPropBDDDomain* forall(FOPropDomain*, const std::set<Variable*>&) const;
 		FOPropBDDDomain* conjunction(FOPropDomain*,FOPropDomain*) const;
 		FOPropBDDDomain* disjunction(FOPropDomain*,FOPropDomain*) const;
 		FOPropBDDDomain* substitute(FOPropDomain*,const std::map<Variable*,Variable*>&) const;
@@ -141,12 +140,12 @@ struct LeafConnectData {
  * DESCRIPTION
  * 	TODO
  */
-class FOPropagator : public Visitor {
+class FOPropagator : public TheoryVisitor {
 	private:
 		FOPropDomainFactory*								_factory;
 		FOPropScheduler*									_scheduler;
 		std::map<const Formula*,ThreeValuedDomain>			_domains;
-		std::map<const Formula*,std::vector<Variable*> >	_quantvars;
+		std::map<const Formula*,std::set<Variable*> >		_quantvars;
 		std::map<const PredForm*,LeafConnectData*>			_leafconnectdata;
 		FOPropDirection										_direction;
 		bool												_ct;
@@ -154,8 +153,8 @@ class FOPropagator : public Visitor {
 
 		FOPropDomain* addToConjunction(FOPropDomain* conjunction, FOPropDomain* newconjunct);
 		FOPropDomain* addToDisjunction(FOPropDomain* disjunction, FOPropDomain* newdisjunct);
-		FOPropDomain* addToExists(FOPropDomain* exists, const std::vector<Variable*>&);
-		FOPropDomain* addToForall(FOPropDomain* forall, const std::vector<Variable*>&);
+		FOPropDomain* addToExists(FOPropDomain* exists, const std::set<Variable*>&);
+		FOPropDomain* addToForall(FOPropDomain* forall, const std::set<Variable*>&);
 
 		void updateDomain(const Formula* tobeupdated,FOPropDirection,bool ct,FOPropDomain* newdomain,const Formula* child = 0);
 	public:
@@ -181,7 +180,7 @@ class FOPropagator : public Visitor {
  * 	Factory class for creating a FOPropagator and initializing the scheduler
  * 	and domains for formulas in a theory.
  */
-class FOPropagatorFactory : public Visitor {
+class FOPropagatorFactory : public TheoryVisitor {
 	private:
 		const AbstractStructure*		_structure;
 		FOPropagator*					_propagator;

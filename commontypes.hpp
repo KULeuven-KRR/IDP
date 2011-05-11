@@ -7,22 +7,38 @@
 #ifndef COMMONTYPES_HPP
 #define COMMONTYPES_HPP
 
-/** Enumeration types **/
-enum ElementType { ELINT, ELDOUBLE, ELSTRING, ELCOMPOUND };
-enum AggType { AGGCARD, AGGSUM, AGGPROD, AGGMIN, AGGMAX };
-enum CompType { CT_EQ, CT_NEQ, CT_LEQ, CT_GEQ, CT_LT, CT_GT };
+/**
+ *	\file This file contains some frequently used typedefs and enumerations
+ */
 
-/*
+/**
+ * The different aggregate functions
+ *	- AGGCARD:	card
+ *	- AGGSUM:	sum
+ *	- AGGPROD:	prod
+ *	- AGGMIN:	min
+ *	- AGGMAX:	max
+ */
+enum AggFunction { AGG_CARD, AGG_SUM, AGG_PROD, AGG_MIN, AGG_MAX };
+
+/**
  * Enumeration for the possible ways to define a tseitin atom in terms of the subformula it replaces.
- *		TS_EQ:		tseitin <=> subformula
- *		TS_RULE:	tseitin <- subformula
- *		TS_IMPL:	tseitin => subformula
- *		TS_RIMPL:	tseitin <= subformula
+ *		- TS_EQ:		tseitin <=> subformula
+ *		- TS_RULE:	tseitin <- subformula
+ *		- TS_IMPL:	tseitin => subformula
+ *		- TS_RIMPL:	tseitin <= subformula
  */
 enum TsType { TS_EQ, TS_RULE, TS_IMPL, TS_RIMPL };
 
-/** Domain element **/
-struct compound;
-typedef compound* domelement;
+/**
+ * The different comparison operators
+ *	- CT_EQ:	=
+ *	- CT_NEQ:	~=
+ *	- CT_LT:	<
+ *	- CT_GT:	>
+ *	- CT_LEQ:	=<
+ *	- CT_GEQ:	>=
+ */
+enum CompType { CT_EQ, CT_NEQ, CT_LT, CT_GT, CT_LEQ, CT_GEQ };
 
 #endif
