@@ -136,10 +136,6 @@ struct LeafConnectData {
 	std::map<Variable*,Variable*>	_connectortoleaf;
 };
 
-/**
- * DESCRIPTION
- * 	TODO
- */
 class FOPropagator : public TheoryVisitor {
 	private:
 		FOPropDomainFactory*								_factory;

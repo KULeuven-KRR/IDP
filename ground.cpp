@@ -1450,20 +1450,20 @@ void GrounderFactory::visit(const PredForm* pf) {
 	PredForm* newpf = pf->clone();
 	Formula* transpf = FormulaUtils::moveThreeValTerms(newpf,_structure,(_context._funccontext != PC_NEGATIVE),_options->cpsupport(),_cpfunctions);
 
-	if(newpf != transpf) {	// The rewriting changed the atom
-		//delete(newpf); TODO: produces a segfault??
+	if(typeid(*transpf) != typeid(PredForm)) {	// The rewriting changed the atom
 		transpf->accept(this);
 	}
 	else {	// The rewriting did not change the atom
+		PredForm* ptranspf = dynamic_cast<PredForm*>(transpf);
 		// Create grounders for the subterms
 		bool cpsubterms = false;
 		vector<TermGrounder*> subtermgrounders;
 		vector<SortTable*>	  argsorttables;
-		for(unsigned int n = 0; n < pf->subterms().size(); ++n) {
-			descend(pf->subterms()[n]);
+		for(unsigned int n = 0; n < ptranspf->subterms().size(); ++n) {
+			descend(ptranspf->subterms()[n]);
 			subtermgrounders.push_back(_termgrounder);
 			cpsubterms = cpsubterms || _termgrounder->canReturnCPVar();
-			argsorttables.push_back(_structure->inter(pf->symbol()->sorts()[n]));
+			argsorttables.push_back(_structure->inter(ptranspf->symbol()->sorts()[n]));
 		}
 		// Create checkers and grounder
 		if(cpsubterms) {
@@ -1472,16 +1472,16 @@ void GrounderFactory::visit(const PredForm* pf) {
 				//TODO
 			}
 			else {
-				if(typeid(*(pf->symbol())) == typeid(Predicate)) {
+				if(typeid(*(ptranspf->symbol())) == typeid(Predicate)) {
 					CompType comp;
-					if(pf->symbol()->name() == "=/2") {
-						comp = pf->sign() ? CT_EQ : CT_NEQ;
+					if(ptranspf->symbol()->name() == "=/2") {
+						comp = ptranspf->sign() ? CT_EQ : CT_NEQ;
 					}
-					else if(pf->symbol()->name() == "</2") {
-						comp = pf->sign() ? CT_LT : CT_GEQ;
+					else if(ptranspf->symbol()->name() == "</2") {
+						comp = ptranspf->sign() ? CT_LT : CT_GEQ;
 					}
-					else if(pf->symbol()->name() == ">/2") {
-						comp = pf->sign() ? CT_GT : CT_LEQ;
+					else if(ptranspf->symbol()->name() == ">/2") {
+						comp = ptranspf->sign() ? CT_GT : CT_LEQ;
 					}
 					else {
 						assert(false);
@@ -1492,7 +1492,7 @@ void GrounderFactory::visit(const PredForm* pf) {
 				}
 				else {
 					assert(false);
-					//CompType comp = pf->sign() ? CT_EQ : CT_NEQ;
+					//CompType comp = ptranspf->sign() ? CT_EQ : CT_NEQ;
 					//TermGrounder* righttermgrounder = subtermgrounders.back();
 					//subtermgrounders.pop_back();
 					//TermGrounder* lefttermgrounder;
@@ -1503,17 +1503,17 @@ void GrounderFactory::visit(const PredForm* pf) {
 			}
 		}
 		else {
-			PredInter* inter = _structure->inter(pf->symbol());
+			PredInter* inter = _structure->inter(ptranspf->symbol());
 			CheckerFactory checkfactory;
 			if(_context._component == CC_HEAD) {
 				InstanceChecker* truech = checkfactory.create(inter,true,true);
 				InstanceChecker* falsech = checkfactory.create(inter,false,true);
-				_headgrounder = new HeadGrounder(_grounding,truech,falsech,pf->symbol(),subtermgrounders,argsorttables);
+				_headgrounder = new HeadGrounder(_grounding,truech,falsech,ptranspf->symbol(),subtermgrounders,argsorttables);
 			}
 			else {
 				InstanceChecker* possch;
 				InstanceChecker* certainch;
-				if(_context._truegen == pf->sign()) {	
+				if(_context._truegen == ptranspf->sign()) {	
 					possch = checkfactory.create(inter,false,false);
 					certainch = checkfactory.create(inter,true,true);
 				}
@@ -1523,9 +1523,9 @@ void GrounderFactory::visit(const PredForm* pf) {
 				}
 		
 				// Create the grounder
-				_formgrounder = new AtomGrounder(_grounding->translator(),pf->sign(),pf->symbol(),
+				_formgrounder = new AtomGrounder(_grounding->translator(),ptranspf->sign(),ptranspf->symbol(),
 									 subtermgrounders,possch,certainch,argsorttables,_context);
-				_formgrounder->setorig(pf,_varmapping,_options->groundverbosity());
+				_formgrounder->setorig(ptranspf,_varmapping,_options->groundverbosity());
 				if(_context._component == CC_SENTENCE) 
 					_toplevelgrounder = new SentenceGrounder(_grounding,_formgrounder,false,_options->groundverbosity());
 			}
@@ -1701,29 +1701,29 @@ void GrounderFactory::visit(const AggForm* af) {
 	AggForm* newaf = af->clone();
 	Formula* transaf = FormulaUtils::moveThreeValTerms(newaf,_structure,(_context._funccontext != PC_NEGATIVE),_options->cpsupport(),_cpfunctions);
 
-	if(newaf != transaf) {	// The rewriting changed the atom
-		//delete(newaf); TODO: produces a segfault??
+	if(typeid(*transaf) != typeid(AggForm)) {	// The rewriting changed the atom
 		transaf->accept(this);
 	}
 	else {	// The rewriting did not change the atom
+		AggForm* atransaf = dynamic_cast<AggForm*>(transaf);
 		// Create grounder for the bound
-		descend(af->left());
+		descend(atransaf->left());
 		TermGrounder* boundgr = _termgrounder;
 	
 		// Create grounder for the set
 		SaveContext();
-		if(recursive(af)) assert(FormulaUtils::monotone(af) || FormulaUtils::antimonotone(af));
-		DeeperContext(!FormulaUtils::antimonotone(af));
-		descend(af->right()->set());
+		if(recursive(atransaf)) assert(FormulaUtils::monotone(atransaf) || FormulaUtils::antimonotone(atransaf));
+		DeeperContext(!FormulaUtils::antimonotone(atransaf));
+		descend(atransaf->right()->set());
 		SetGrounder* setgr = _setgrounder;
 		RestoreContext();
 	
 		// Create aggregate grounder
 		SaveContext();
-		if(recursive(af)) _context._tseitin = TS_RULE;
+		if(recursive(atransaf)) _context._tseitin = TS_RULE;
 		// TODO: change AggGrounder so that it accepts a CompType...
-		char cmp; bool sgn = af->sign();
-		switch(af->comp()) {
+		char cmp; bool sgn = atransaf->sign();
+		switch(atransaf->comp()) {
 			case CT_EQ: cmp = '='; break;
 			case CT_NEQ: cmp = '='; sgn = !sgn; break;
 			case CT_LT: cmp = '<'; break;
@@ -1732,7 +1732,7 @@ void GrounderFactory::visit(const AggForm* af) {
 			case CT_GEQ: cmp = '<'; sgn = !sgn; break;
 			default: assert(false); cmp = '=';
 		}
-		_formgrounder = new AggGrounder(_grounding->translator(),_context,af->right()->function(),setgr,boundgr,cmp,sgn);
+		_formgrounder = new AggGrounder(_grounding->translator(),_context,atransaf->right()->function(),setgr,boundgr,cmp,sgn);
 		RestoreContext();
 		if(_context._component == CC_SENTENCE) _toplevelgrounder = new SentenceGrounder(_grounding,_formgrounder,true,_options->groundverbosity());
 	}

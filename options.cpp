@@ -51,6 +51,7 @@ Options::Options(const string& name, const ParseInfo& pi) : _name(name), _pi(pi)
 	_booloptions["usingcp"]			= true;
 	_booloptions["trace"]			= false;
 	_booloptions["autocomplete"]	= true;
+	_booloptions["longnames"]		= false;
 
 	_intoptions["satverbosity"]		= new IntOption(0,numeric_limits<int>::max(),0);
 	_intoptions["groundverbosity"]	= new IntOption(0,numeric_limits<int>::max(),0);
@@ -164,6 +165,10 @@ bool Options::autocomplete() const {
 
 bool Options::trace() const {
 	return _booloptions.find("trace")->second;
+}
+
+bool Options::longnames() const {
+	return _booloptions.find("longnames")->second;
 }
 
 ostream& Options::put(ostream& output) const {
