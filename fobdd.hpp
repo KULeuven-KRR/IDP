@@ -21,9 +21,14 @@ class DomainElement;
 	Kernel order
 *******************/
 
+/**
+ *	A kernel order contains two numbers to order kernels (nodes) in a BDD. 
+ *	Kernels with a higher category appear further from the root than kernels with a lower category
+ *	Within a category, kernels are ordered according to the second number.
+ */
 struct KernelOrder {
-	unsigned int	_category;
-	unsigned int	_number;
+	unsigned int	_category;	//!< The category
+	unsigned int	_number;	//!< The second number
 	KernelOrder(unsigned int c, unsigned int n) : _category(c), _number(n) { }
 	KernelOrder(const KernelOrder& order) : _category(order._category), _number(order._number) { }
 };
@@ -60,11 +65,14 @@ typedef std::map<Sort*,MTEDT>									DomainTermTable;
 typedef std::map<std::vector<FOBDDArgument*>,FOBDDFuncTerm*>	MVAFT;
 typedef std::map<Function*,MVAFT>								FuncTermTable;
 
+/**
+ * Class to create and manage first-order BDDs
+ */
 class FOBDDManager {
 	private:
 		// Leaf nodes
-		FOBDD*	_truebdd;
-		FOBDD*	_falsebdd;
+		FOBDD*	_truebdd;	//!< the BDD 'true'
+		FOBDD*	_falsebdd;	//!< the BDD 'false'
 
 		// Order
 		std::map<unsigned int,unsigned int>	_nextorder;
@@ -129,6 +137,9 @@ class FOBDDManager {
 		std::string	to_string(FOBDDArgument*) const;
 };
 
+/**
+ * Class to transform first-order formulas to BDDs
+ */
 class FOBDDFactory : public TheoryVisitor {
 	private:
 		FOBDDManager*	_manager;
@@ -201,7 +212,7 @@ class FOBDDDeBruijnIndex : public FOBDDArgument {
 
 class FOBDDDomainTerm : public FOBDDArgument {
 	private:
-		Sort*			_sort;
+		Sort*					_sort;
 		const DomainElement*	_value;
 
 		FOBDDDomainTerm(Sort* sort, const DomainElement* value) :
