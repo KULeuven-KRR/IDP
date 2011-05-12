@@ -4,12 +4,13 @@
 	(c) K.U.Leuven
 ************************************/
 
+#include <string>
 #include <iostream>
+#include <sstream>
 #include <vector>
 #include <limits>
 #include <cassert>
 #include <stdlib.h>
-#include <string>
 #include "commontypes.hpp"
 
 using namespace std;
@@ -67,7 +68,7 @@ void printtabs(ostream& output, unsigned int tabs) {
 		output << ' ';
 }
 
-double applyAgg(AggFunction& agg, const vector<double>& args) {
+double applyAgg(const AggFunction& agg, const vector<double>& args) {
 	double d;
 	switch(agg) {
 		case AGG_CARD:
@@ -93,9 +94,9 @@ double applyAgg(AggFunction& agg, const vector<double>& args) {
 	return d;
 }
 
-CompType invertct(CompType& ct) {
-	switch(ct) {
-		case CT_EQ: case CT_NEQ: return ct;
+const CompType& invertcomp(const CompType& comp) {
+	switch(comp) {
+		case CT_EQ: case CT_NEQ: return comp;
 		case CT_LT: return CT_GT;
 		case CT_GT: return CT_LT;
 		case CT_LEQ: return CT_GEQ;
@@ -106,8 +107,8 @@ CompType invertct(CompType& ct) {
 	}
 }
 
-CompType negatect(CompType& ct) {
-	switch(ct) {
+const CompType& negatecomp(const CompType& comp) {
+	switch(comp) {
 		case CT_EQ: return CT_NEQ;
 		case CT_NEQ: return CT_EQ;
 		case CT_LT: return CT_GEQ;

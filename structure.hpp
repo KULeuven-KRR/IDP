@@ -47,6 +47,8 @@ class DomainElementFactory;
  */
 enum DomainElementType { DET_INT, DET_DOUBLE, DET_STRING, DET_COMPOUND };
 
+std::ostream& operator<< (std::ostream&,const DomainElementType&);
+
 /**
  *	A value for a single domain element. 
  */
@@ -128,7 +130,7 @@ class Compound {
 		Function*		_function;
 		ElementTuple	_arguments;
 
-		Compound(Function* function, const std::vector<const DomainElement*> arguments);
+		Compound(Function* function, const std::vector<const DomainElement*>& arguments);
 
 	public:
 		~Compound();

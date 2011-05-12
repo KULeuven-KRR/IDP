@@ -340,9 +340,7 @@ class AbstractGroundTheory : public AbstractTheory {
 		virtual void addFixpDef(GroundFixpDef*)								= 0;
 		virtual void addSet(int setnr, int defnr, bool weighted)			= 0;
 		virtual	void addAggregate(int tseitin, AggTsBody* body)				= 0; 
-#ifdef TEMP_CP
 		virtual void addCPReification(int tseitin, CPTsBody* body)			= 0;
-#endif
 
 				void addEmptyClause()		{ GroundClause c(0); addClause(c);		}
 				void addUnitClause(int l)	{ GroundClause c(1,l); addClause(c);	}
@@ -390,11 +388,9 @@ class SolverTheory : public AbstractGroundTheory {
 		void	addFixpDef(GroundFixpDef*);
 		void	addSet(int setnr, int defnr, bool weighted);
 		void	addAggregate(int tseitin, AggTsBody* body);
-#ifdef TEMP_CP
 		void 	addCPReification(int tseitin, CPTsBody* body);
 		void	addCPVariable(unsigned int varids);
 		void	addCPVariables(const std::vector<unsigned int>& varids);
-#endif
 
 		void	addPCRule(int defnr, int tseitin, PCTsBody* body);
 		void	addAggRule(int defnr, int tseitin, AggTsBody* body);

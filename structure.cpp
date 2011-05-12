@@ -20,6 +20,11 @@ using namespace std;
 	Domain elements
 **********************/
 
+ostream& operator<<(ostream& out, const DomainElementType& domeltype) {
+	string DomElTypeStrings[4] = { "int", "double", "string", "compound" };
+	return out << DomElTypeStrings[domeltype];
+}
+
 /**
  *	Constructor for domain elements that are integers
  */
@@ -171,7 +176,7 @@ bool operator>=(const DomainElement& d1, const DomainElement& d2) {
 	else return d1 > d2;
 }
 
-Compound::Compound(Function* function, const std::vector<const DomainElement*> arguments) :
+Compound::Compound(Function* function, const std::vector<const DomainElement*>& arguments) :
 	_function(function), _arguments(arguments) { 
 	assert(function != 0); 
 }
@@ -1615,7 +1620,7 @@ bool EnumeratedInternalSortTable::isRange() const {
 	const DomainElement* f = first();
 	const DomainElement* l = last();
 	if(f->type() == DET_INT && l->type() == DET_INT) {
-		return l->value()._int - f->value()._int == _table.size() - 1;
+		return l->value()._int - f->value()._int == (int)_table.size() - 1;
 	}
 	else return false;
 }

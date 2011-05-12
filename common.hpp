@@ -25,10 +25,10 @@ extern double		stod(const std::string&);	//!< convert string to double
 
 extern void	printtabs(std::ostream&,unsigned int tabs);	//!< write a given number of tabs
 
-extern double applyAgg(AggFunction&,const std::vector<double>& args);	//!< apply an aggregate function to arguments
+extern double applyAgg(const AggFunction&,const std::vector<double>& args);	//!< apply an aggregate function to arguments
 
-extern CompType	invertct(CompType&);	//!< Invert a comparison operator
-extern CompType	negatect(CompType&);	//!< Negate a comparison operator
+extern const CompType& invertcomp(const CompType&);	//!< Invert a comparison operator
+extern const CompType& negatecomp(const CompType&);	//!< Negate a comparison operator
 
 extern std::ostream& operator<<(std::ostream&, const AggFunction&);	//!< Put an aggregate type on the given output stream
 extern std::ostream& operator<<(std::ostream&, const TsType&);		//!< Put a tseitin type on the given output stream

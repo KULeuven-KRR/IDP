@@ -422,10 +422,6 @@ void EcnfPrinter::printAggregate(AggFunction aggtype, TsType arrow, unsigned int
 	_out << (lower ? 'G' : 'L') << ' ' << head << ' ' << setnr << ' ' << bound << " 0" << endl;
 }
 
-void SimplePrinter::visit(const GroundTheory* g) {
-	_out << g->to_string();
-}
-
 void IDPPrinter::visit(const GroundTheory* g) {
 	_translator = g->translator();
 	_termtranslator = g->termtranslator();
@@ -604,15 +600,14 @@ void EcnfPrinter::printCPVariable(unsigned int varid) {
 		_printedvarids.insert(varid);
 		Function* function = _termtranslator->function(varid);
 		SortTable* domain = _structure->inter(function->outsort());
-		int minvalue = domain->element(0)._int;
-		int maxvalue = domain->element(domain->size()-1)._int;
-		unsigned int difference = maxvalue - minvalue;
-		if(difference + 1 == domain->size()) {
+		int minvalue = domain->first()->value()._int;
+		int maxvalue = domain->last()->value()._int;
+		if(domain->isRange()) {
 			_out << "INTVAR " << varid << ' ' << minvalue << ' ' << maxvalue << ' ';
 		} else {
 			_out << "INTVARDOM " << varid << ' ';
-			for(unsigned int n = 0; n < domain->size(); ++n) {
-				int value = domain->element(n)._int;
+			for(SortIterator it = domain->sortbegin(); it.hasNext(); ++it) {
+				int value = (*it)->value()._int;
 				_out << value << ' ';
 			}
 		}

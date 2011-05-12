@@ -642,7 +642,7 @@ Formula* NegationPush::visit(EqChainForm* f) {
 		f->swapsign();
 		f->conj(!f->conj());
 		for(unsigned int n = 0; n < f->comps().size(); ++n) 
-			f->comp(n,negatect(f->comps()[n]));
+			f->comp(n,negatecomp(f->comps()[n]));
 	}
 	return traverse(f);
 }
@@ -939,7 +939,7 @@ Formula* ThreeValTermMover::visit(PredForm* predform) {
 			else comp = CT_GT;
 			if(typeid(*left) == typeid(AggTerm)) {
 				AggTerm* aggterm = dynamic_cast<AggTerm*>(left);
-				comp = invertct(comp);
+				comp = invertcomp(comp);
 				AggForm* aggform = new AggForm(predform->sign(),right,comp,aggterm,FormulaParseInfo());
 				delete(predform);
 				return aggform->accept(this);

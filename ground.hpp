@@ -31,6 +31,8 @@ class DomainElement;
 class Options;
 class StrictWeakTupleOrdering;
 
+typedef std::vector<const DomainElement*> ElementTuple;
+
 /**********************************************
 	Translate from ground atoms to numbers
 **********************************************/
@@ -197,11 +199,11 @@ class CPTsBody : public TsBody {
  */
 class GroundTranslator {
 	private:
-		std::vector<std::map<std::vector<const DomainElement*>,int,StrictWeakTupleOrdering> >
-															_table;			// map atoms to integers
-		std::vector<PFSymbol*>								_symboffsets;	// map integer to symbol
-		std::vector<PFSymbol*>								_backsymbtable;	// map integer to the symbol of its corresponding atom
-		std::vector<std::vector<const DomainElement*> >		_backargstable;	// map integer to the terms of its corresponding atom
+		std::vector<std::map<ElementTuple,int,StrictWeakTupleOrdering> >
+										_table;			// map atoms to integers
+		std::vector<PFSymbol*>			_symboffsets;	// map integer to symbol
+		std::vector<PFSymbol*>			_backsymbtable;	// map integer to the symbol of its corresponding atom
+		std::vector<ElementTuple>		_backargstable;	// map integer to the terms of its corresponding atom
 
 		std::queue<int>		_freenumbers;		// keeps atom numbers that were freed and can be used again
 		std::queue<int>		_freesetnumbers;	// keeps set numbers that were freed and can be used again
@@ -215,25 +217,25 @@ class GroundTranslator {
 		GroundTranslator() : _backsymbtable(1), _backargstable(1), _sets(1) { }
 		~GroundTranslator();
 
-		int				translate(unsigned int,const std::vector<const DomainElement*>&);
+		int				translate(unsigned int,const ElementTuple&);
 		int				translate(const std::vector<int>& cl, bool conj, TsType tp);
 		int				translate(double bound, char comp, bool strict, AggFunction aggtype, int setnr, TsType tstype);
-		int				translate(PFSymbol*,const std::vector<const DomainElement*>&);
+		int				translate(PFSymbol*,const ElementTuple&);
 		int				translate(CPTerm*, CompType, const CPBound&, TsType);
 		int				nextNumber();
 		unsigned int	addSymbol(PFSymbol* pfs);
 		int				translateSet(const std::vector<int>&,const std::vector<double>&,const std::vector<double>&);
 
-		PFSymbol*									symbol(int nr)				const	{ return _backsymbtable[abs(nr)];			}
-		const std::vector<const DomainElement*>&	args(int nr)				const	{ return _backargstable[abs(nr)];			}
-		bool										isTseitin(int l)			const	{ return symbol(l) == 0;					}
-		TsBody*										tsbody(int l)				const	{ return _nr2tsbodies.find(abs(l))->second;	}
-		const TsSet&								groundset(int nr)			const	{ return _sets[nr];							}
-		TsSet&										groundset(int nr)					{ return _sets[nr];							}
-		unsigned int								nrOffsets()					const	{ return _symboffsets.size();				}
-		PFSymbol*									getSymbol(unsigned int n)	const	{ return _symboffsets[n];					}
-		const std::map<std::vector<const DomainElement*>,int,StrictWeakTupleOrdering>&	
-													getTuples(unsigned int n)	const	{ return _table[n];							}
+		PFSymbol*				symbol(int nr)				const	{ return _backsymbtable[abs(nr)];			}
+		const ElementTuple&		args(int nr)				const	{ return _backargstable[abs(nr)];			}
+		bool					isTseitin(int l)			const	{ return symbol(l) == 0;					}
+		TsBody*					tsbody(int l)				const	{ return _nr2tsbodies.find(abs(l))->second;	}
+		const TsSet&			groundset(int nr)			const	{ return _sets[nr];							}
+		TsSet&					groundset(int nr)					{ return _sets[nr];							}
+		unsigned int			nrOffsets()					const	{ return _symboffsets.size();				}
+		PFSymbol*				getSymbol(unsigned int n)	const	{ return _symboffsets[n];					}
+		const std::map<ElementTuple,int,StrictWeakTupleOrdering>&	
+								getTuples(unsigned int n)	const	{ return _table[n];							}
 
 		std::string	printAtom(int nr)	const;
 };
@@ -243,9 +245,10 @@ class GroundTranslator {
  */
 class GroundTermTranslator {
 	private:
-		std::vector<std::map<std::vector<const DomainElement*>,unsigned int,StrictWeakTupleOrdering> >	_table;			// map terms to integers
-		std::vector<Function*>											_backfunctable;	// map integer to the symbol of its corresponding term
-		std::vector<std::vector<const DomainElement*> >							_backargstable;	// map integer to the terms of its corresponding term
+		std::vector<std::map<ElementTuple,unsigned int,StrictWeakTupleOrdering> >
+											_table;			// map terms to integers
+		std::vector<Function*>				_backfunctable;	// map integer to the symbol of its corresponding term
+		std::vector<ElementTuple >			_backargstable;	// map integer to the terms of its corresponding term
 		
 		std::vector<Function*>				_offset2function;
 		std::map<Function*,unsigned int>	_function2offset;
@@ -253,20 +256,19 @@ class GroundTermTranslator {
 	public:
 		GroundTermTranslator() : _backfunctable(1), _backargstable(1) { }
 
-		unsigned int	translate(unsigned int offset,const std::vector<const DomainElement*>& args);
-		unsigned int	translate(Function*,const std::vector<const DomainElement*>& args);
+		unsigned int	translate(unsigned int offset,const ElementTuple& args);
+		unsigned int	translate(Function*,const ElementTuple& args);
 		unsigned int	nextNumber();
 		unsigned int	addFunction(Function*);
 
-		bool 			contains(Function*,const std::vector<domelement>& args) const;
-		bool			contains(Function* func)		const;
-		Function*		function(unsigned int nr)		const { return _backfunctable[nr];			}
-		const std::vector<const DomainElement*>&	
-						args(unsigned int nr)			const { return _backargstable[nr];			}
-		unsigned int	nrOffsets()						const { return _offset2function.size();		}
-		unsigned int	getOffset(Function* func)		const { return _function2offset.at(func);	}
-		Function*		getFunction(unsigned int nr)	const { return _offset2function[nr]; 		}
-		std::string		printTerm(unsigned int nr)		const;
+		bool 					contains(Function*,const ElementTuple& args) const;
+		bool					contains(Function* func)		const;
+		Function*				function(unsigned int nr)		const { return _backfunctable[nr];			}
+		const ElementTuple&		args(unsigned int nr)			const { return _backargstable[nr];			}
+		unsigned int			nrOffsets()						const { return _offset2function.size();		}
+		unsigned int			getOffset(Function* func)		const { return _function2offset.at(func);	}
+		Function*				getFunction(unsigned int nr)	const { return _offset2function[nr]; 		}
+		std::string				printTerm(unsigned int nr)		const;
 };
 
 
@@ -383,9 +385,9 @@ class VarTermGrounder : public TermGrounder {
 
 class FuncTermGrounder : public TermGrounder {
 	private:
-		FuncTable*						_function;
-		std::vector<TermGrounder*>		_subtermgrounders;
-		mutable std::vector<const DomainElement*>	_args;
+		FuncTable*					_function;
+		std::vector<TermGrounder*>	_subtermgrounders;
+		mutable ElementTuple		_args;
 	public:
 		FuncTermGrounder(const std::vector<TermGrounder*>& sub, FuncTable* f) :
 			_function(f), _subtermgrounders(sub), _args(sub.size()) { }
@@ -400,7 +402,7 @@ class FuncTermGrounder : public TermGrounder {
 
 class AggTermGrounder : public TermGrounder {
 	private:
-		AggFunction				_type;
+		AggFunction			_type;
 		SetGrounder*		_setgrounder;
 		GroundTranslator*	_translator;
 	public:
@@ -414,21 +416,21 @@ class AggTermGrounder : public TermGrounder {
 
 class ThreeValuedFuncTermGrounder : public TermGrounder {
 	private:
-		std::vector<TermGrounder*>		_subtermgrounders;
-		Function*						_function;
-		FuncTable*						_functable;
-		mutable std::vector<const DomainElement*>	_args;
-		std::vector<SortTable*>			_tables;
+		std::vector<TermGrounder*>	_subtermgrounders;
+		Function*					_function;
+		FuncTable*					_functable;
+		mutable ElementTuple		_args;
+		Universe					_universe;
 	public:
-		ThreeValuedFuncTermGrounder(const std::vector<TermGrounder*>& sub, Function* f, FuncTable* ft, const std::vector<SortTable*>& vst):
-			_subtermgrounders(sub), _function(f), _functable(ft), _args(sub.size()), _tables(vst) { }
+		ThreeValuedFuncTermGrounder(const std::vector<TermGrounder*>& sub, Function* f, FuncTable* ft, Universe univ):
+			_subtermgrounders(sub), _function(f), _functable(ft), _args(sub.size()), _universe(univ) { }
 		const DomainElement* run() const;
 		bool canReturnCPVar() const { return true; }
 };
 
 class ThreeValuedAggTermGrounder : public TermGrounder {
 	private:
-		AggFunction				_type;
+		AggFunction			_type;
 		SetGrounder*		_setgrounder;
 		GroundTranslator*	_translator;
 	public:
@@ -459,14 +461,14 @@ class FormulaGrounder {
 
 class AtomGrounder : public FormulaGrounder {
 	protected:
-		std::vector<TermGrounder*>		_subtermgrounders;
-		InstanceChecker*				_pchecker;
-		InstanceChecker*				_cchecker;
-		unsigned int					_symbol;
-		mutable std::vector<const DomainElement*>	_args;
-		std::vector<SortTable*>			_tables;
-		bool							_sign;
-		int								_certainvalue;
+		std::vector<TermGrounder*>	_subtermgrounders;
+		InstanceChecker*			_pchecker;
+		InstanceChecker*			_cchecker;
+		unsigned int				_symbol;
+		mutable ElementTuple		_args;
+		std::vector<SortTable*>		_tables;
+		bool						_sign;
+		int							_certainvalue;
 	public:
 		AtomGrounder(GroundTranslator*, bool sign, PFSymbol*,
 					const std::vector<TermGrounder*>, InstanceChecker*, InstanceChecker*,
@@ -619,13 +621,13 @@ class EnumSetGrounder : public SetGrounder {
 /** Grounder for a head of a rule **/
 class HeadGrounder {
 	private:
-		AbstractGroundTheory*			_grounding;
-		std::vector<TermGrounder*>		_subtermgrounders;
-		InstanceChecker*				_truechecker;
-		InstanceChecker*				_falsechecker;
-		unsigned int					_symbol;
-		mutable std::vector<const DomainElement*>	_args;
-		std::vector<SortTable*>			_tables;
+		AbstractGroundTheory*		_grounding;
+		std::vector<TermGrounder*>	_subtermgrounders;
+		InstanceChecker*			_truechecker;
+		InstanceChecker*			_falsechecker;
+		unsigned int				_symbol;
+		mutable ElementTuple		_args;
+		std::vector<SortTable*>		_tables;
 	public:
 		HeadGrounder(AbstractGroundTheory* gt, InstanceChecker* pc, InstanceChecker* cc, PFSymbol* s, 
 					const std::vector<TermGrounder*>&, const std::vector<SortTable*>&);

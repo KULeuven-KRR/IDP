@@ -316,19 +316,15 @@ void AbstractGroundTheory::transformForAdd(const vector<int>& vi, VIType /*vit*/
 				}
 			}
 			else {
-#ifdef TEMP_CP
 				assert(typeid(*tsbody) == typeid(CPTsBody));
 				CPTsBody* body = dynamic_cast<CPTsBody*>(tsbody);
 				if(body->type() == TS_RULE) {
 					assert(false);
-					//TODO
+					//TODO Does this ever happen?
 				}
 				else {
 					addCPReification(atom,body);
 				}
-#else
-				assert(false);
-#endif
 			}
 		}
 	}
@@ -640,7 +636,6 @@ void SolverTheory::addDefinition(GroundDefinition* d) {
 	}
 }
 
-#ifdef TEMP_CP
 void SolverTheory::addCPReification(int tseitin, CPTsBody* body) {
 	MinisatID::EqType comp;
 	switch(body->comp()) {
@@ -765,7 +760,6 @@ void SolverTheory::addCPVariable(unsigned int varid) {
 //cerr << " for function " << function->name() << " (varid = " << varid << ")" << endl;
 	}
 }
-#endif
 
 void SolverTheory::addPCRule(int defnr, int head, vector<int> body, bool conjunctive){
 	transformForAdd(body,(conjunctive ? VIT_CONJ : VIT_DISJ),defnr);

@@ -48,7 +48,7 @@ class EnumeratedStringOption : public StringOption {
 
 Options::Options(const string& name, const ParseInfo& pi) : _name(name), _pi(pi) {
 	_booloptions["printtypes"]		= true;
-	_booloptions["usingcp"]			= true;
+	_booloptions["cpsupport"]		= true;
 	_booloptions["trace"]			= false;
 	_booloptions["autocomplete"]	= true;
 
@@ -155,7 +155,7 @@ int Options::groundverbosity() const {
 }
 
 bool Options::cpsupport() const {
-	return _booloptions.find("usingcp")->second;
+	return _booloptions.find("cpsupport")->second;
 }
 
 bool Options::autocomplete() const {

@@ -888,7 +888,7 @@ InternalArgument modelexpand(const vector<InternalArgument>& args, lua_State* L)
 		AbstractStructure* newsolution = structure->clone();
 		addLiterals(*model,grounding->translator(),newsolution);
 		addTerms(*model,grounding->termtranslator(),newsolution);
-		newsolution->clean();
+		//newsolution->clean();
 		solutions.push_back(newsolution);
 	}
 
