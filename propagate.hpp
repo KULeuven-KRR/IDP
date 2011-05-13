@@ -56,14 +56,14 @@ class FOPropScheduler {
  */
 class FOPropagation {
 	private:
-		Formula* 		_parent;		//!< The parent formula
+		const Formula* 	_parent;		//!< The parent formula
 		FOPropDirection	_direction;		//!< Direction of propagation (from parent to child or vice versa)
 		bool			_ct;			//!< Indicates which domain is propagated
 										//!< If _direction == DOWN and _ct == true, 
 										//!< then the ct-domain of the parent is propagated the child, etc.
-		Formula*		_child;			//!< The subformula
+		const Formula*	_child;			//!< The subformula
 	public:
-		FOPropagation(Formula* p, FOPropDirection dir, bool ct, Formula* c = 0):
+		FOPropagation(const Formula* p, FOPropDirection dir, bool ct, const Formula* c = 0):
 			_parent(p), _direction(dir), _ct(ct), _child(c) { }
 	friend class FOPropagator;
 };
@@ -93,12 +93,9 @@ class FOPropBDDDomain : public FOPropDomain {
  */
 class FOPropDomainFactory {
 	public:
-		virtual FOPropDomain*	trueDomain(const Formula*)	const = 0;	//!< Create a domain containing all tuples
-		virtual FOPropDomain* 	falseDomain(const Formula*)	const = 0;	//!< Create an empty domain 
-		virtual FOPropDomain* 	ctDomain(const PredForm*)		const = 0;
-		virtual FOPropDomain* 	cfDomain(const PredForm*)		const = 0;
-		virtual FOPropDomain* 	domain(const PredForm*)		const = 0;
-		virtual FOPropDomain* 	domain(const EqChainForm*) 	const = 0;
+		virtual FOPropDomain*	trueDomain(const Formula*)		const = 0;	//!< Create a domain containing all tuples
+		virtual FOPropDomain* 	falseDomain(const Formula*)		const = 0;	//!< Create an empty domain 
+		virtual FOPropDomain* 	formuladomain(const Formula*)	const = 0;
 		virtual FOPropDomain* 	exists(FOPropDomain*, const std::set<Variable*>&) const = 0;
 		virtual FOPropDomain* 	forall(FOPropDomain*, const std::set<Variable*>&) const = 0;
 		virtual FOPropDomain* 	conjunction(FOPropDomain*,FOPropDomain*) const = 0;
@@ -112,11 +109,8 @@ class FOPropBDDDomainFactory : public FOPropDomainFactory {
 		FOBDDManager* _manager;
 	public:
 		FOPropBDDDomain*	trueDomain(const Formula*)		const;
-		FOPropBDDDomain*	falseDomain(const Formula*)	const;
-		FOPropBDDDomain*	ctDomain(const PredForm*)		const;
-		FOPropBDDDomain*	cfDomain(const PredForm*)		const;
-		FOPropBDDDomain*	domain(const PredForm*)		const;
-		FOPropBDDDomain*	domain(const EqChainForm*) 	const;
+		FOPropBDDDomain*	falseDomain(const Formula*)		const;
+		FOPropBDDDomain*	formuladomain(const Formula*)	const;
 		FOPropBDDDomain*	exists(FOPropDomain*, const std::set<Variable*>&) const;
 		FOPropBDDDomain*	forall(FOPropDomain*, const std::set<Variable*>&) const;
 		FOPropBDDDomain*	conjunction(FOPropDomain*,FOPropDomain*) const;
@@ -136,7 +130,7 @@ struct ThreeValuedDomain {
 	bool			_twovalued;
 	ThreeValuedDomain() : _ctdomain(0), _cfdomain(0), _twovalued(false) { assert(false);	}
 	ThreeValuedDomain(const FOPropDomainFactory*, bool ctdom, bool cfdom, const Formula*);
-	ThreeValuedDomain(const FOPropDomainFactory*, PredForm*, bool twovalued);
+	ThreeValuedDomain(const FOPropDomainFactory*, const Formula*);
 };
 
 /**
@@ -154,17 +148,18 @@ struct LeafConnectData {
  */
 class FOPropagator : public TheoryVisitor {
 	private:
-		FOPropDomainFactory*								_factory;		//!< Manages and creates domains for formulas
-		FOPropScheduler*									_scheduler;		//!< Schedules propagations
-		std::map<const Formula*,ThreeValuedDomain>			_domains;		//!< Map each formula to its current domain
-		std::map<const Formula*,std::set<Variable*> >		_quantvars;
-		std::map<const PredForm*,LeafConnectData*>			_leafconnectdata;
-		std::map<const Formula*,const Formula*>				_upward;
+		FOPropDomainFactory*									_factory;		//!< Manages and creates domains for formulas
+		FOPropScheduler*										_scheduler;		//!< Schedules propagations
+		std::map<const Formula*,ThreeValuedDomain>				_domains;		//!< Map each formula to its current domain
+		std::map<const Formula*,std::set<Variable*> >			_quantvars;
+		std::map<const PredForm*,LeafConnectData>				_leafconnectdata;
+		std::map<const Formula*,const Formula*>					_upward;
+		std::map<const PredForm*,std::set<const PredForm*> >	_leafupward;
 
 		// Variables to temporarily store a propagation
 		FOPropDirection		_direction;
 		bool				_ct;
-		Formula*			_child;
+		const Formula*		_child;
 
 		FOPropDomain* addToConjunction(FOPropDomain* conjunction, FOPropDomain* newconjunct);
 		FOPropDomain* addToDisjunction(FOPropDomain* disjunction, FOPropDomain* newdisjunct);
@@ -172,6 +167,7 @@ class FOPropagator : public TheoryVisitor {
 		FOPropDomain* addToForall(FOPropDomain* forall, const std::set<Variable*>&);
 
 		void updateDomain(const Formula* tobeupdated,FOPropDirection,bool ct,FOPropDomain* newdomain,const Formula* child = 0);
+		void schedule(const Formula* par, FOPropDirection, bool, const Formula* child);
 		bool admissible(FOPropDomain*, FOPropDomain*) const;	//!< Returns true iff the first domain is an allowed
 																//!< replacement of the second domain
 
@@ -193,28 +189,22 @@ class FOPropagator : public TheoryVisitor {
 	friend class FOPropagatorFactory;
 };
 
+enum InitBoundType { TWOVAL, BOTH, CT, CF, NONE }
+
 /**
  * 	Factory class for creating a FOPropagator and initializing the scheduler
  * 	and domains for formulas in a theory.
  */
 class FOPropagatorFactory : public TheoryVisitor {
 	private:
-		const AbstractStructure*		_structure;
-		FOPropagator*					_propagator;
-		std::map<PFSymbol*,PredForm*>	_leafconnectors;
-		bool							_assertsentences;
+		FOPropagator*						_propagator;
+		std::map<PFSymbol*,PredForm*>		_leafconnectors;
+		std::map<PFSymbol*,InitBoundType>	_initbounds;
+		bool								_assertsentences;
 		
-	public:
-		// Constructors
-		FOPropagatorFactory(FOPropDomainFactory* f, FOPropScheduler*, const AbstractStructure* s = 0);
-
-		// Factory methods
-		FOPropagator* create(const AbstractTheory* t);
-	
-		// Mutators
+		void createleafconnector(PFSymbol*);
 		void initFalse(const Formula*);		//!< Set the ct- and cf-domains of the given formula to empty
 
-		// Visitor	
 		void visit(const Theory*);
 		void visit(const PredForm*);
 		void visit(const EqChainForm*);
@@ -222,6 +212,13 @@ class FOPropagatorFactory : public TheoryVisitor {
 		void visit(const BoolForm*);
 		void visit(const QuantForm*);
 		void visit(const AggForm*);
+	public:
+		// Constructors
+		FOPropagatorFactory(FOPropDomainFactory* f, FOPropScheduler*, bool as, const std::map<PFSymbol*,InitBoundType>& in);
+
+		// Factory methods
+		FOPropagator* create(const AbstractTheory* t);
+	
 };
 
 #endif
