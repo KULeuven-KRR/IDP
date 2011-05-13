@@ -5,6 +5,7 @@
 ************************************/
 
 #include <sstream>
+#include <iostream>
 #include "vocabulary.hpp"
 #include "structure.hpp"
 #include "common.hpp"
@@ -154,12 +155,14 @@ SortTable* Sort::interpretation() const {
 	return _interpretation;
 }
 
-ostream& Sort::put(ostream& output) const {
-	for(set<const Vocabulary*>::iterator it = _vocabularies.begin(); it != _vocabularies.end(); ++it) {
-		if((*it)->sort(_name)->size() == 1) {
-			(*it)->putname(output);
-			output << "::";
-			break;
+ostream& Sort::put(ostream& output, bool longnames) const {
+	if(longnames) {
+		for(set<const Vocabulary*>::iterator it = _vocabularies.begin(); it != _vocabularies.end(); ++it) {
+			if((*it)->sort(_name)->size() == 1) {
+				(*it)->putname(output);
+				output << "::";
+				break;
+			}
 		}
 	}
 	output << _name;
@@ -187,6 +190,7 @@ namespace SortUtils {
 	 *	\return	The unique nearest common ancestor if it exists, a null-pointer otherwise.
 	 */ 
 	Sort* resolve(Sort* s1, Sort* s2, const Vocabulary* vocabulary) {
+		if((s1 == 0) || s2 == 0) return 0;
 		set<Sort*> ss1 = s1->ancestors(vocabulary); ss1.insert(s1);
 		set<Sort*> ss2 = s2->ancestors(vocabulary); ss2.insert(s2);
 		set<Sort*> ss;
@@ -448,7 +452,7 @@ Predicate* Predicate::disambiguate(const vector<Sort*>& sorts,const Vocabulary* 
 	if(overloaded()) return _overpredgenerator->disambiguate(sorts,vocabulary); 
 	else {
 		for(unsigned int n = 0; n < _sorts.size(); ++n) {
-			if(!SortUtils::resolve(sorts[n],_sorts[n],vocabulary)) return 0;
+			if(_sorts[n] && !SortUtils::resolve(sorts[n],_sorts[n],vocabulary)) return 0;
 		}
 		return this;
 	}
@@ -463,16 +467,18 @@ set<Predicate*> Predicate::nonbuiltins() {
 	}
 }
 
-ostream& Predicate::put(ostream& output) const {
-	for(set<const Vocabulary*>::iterator it = _vocabularies.begin(); it != _vocabularies.end(); ++it) {
-		if(!(*it)->pred(_name)->overloaded()) {
-			(*it)->putname(output);
-			output << "::";
-			break;
+ostream& Predicate::put(ostream& output, bool longnames) const {
+	if(longnames) {
+		for(set<const Vocabulary*>::iterator it = _vocabularies.begin(); it != _vocabularies.end(); ++it) {
+			if(!(*it)->pred(_name)->overloaded()) {
+				(*it)->putname(output);
+				output << "::";
+				break;
+			}
 		}
 	}
 	output << _name.substr(0,_name.find('/'));
-	if(!overloaded()) {
+	if(longnames && !overloaded()) {
 		if(nrSorts() > 0) {
 			output << '[' << *_sorts[0];
 			for(unsigned int n = 1; n < _sorts.size(); ++n) output << ',' << *_sorts[n];
@@ -835,7 +841,7 @@ Function* Function::disambiguate(const vector<Sort*>& sorts,const Vocabulary* vo
 	if(overloaded()) return _overfuncgenerator->disambiguate(sorts,vocabulary); 
 	else {
 		for(unsigned int n = 0; n < _sorts.size(); ++n) {
-			if(!SortUtils::resolve(sorts[n],_sorts[n],vocabulary)) return 0;
+			if(sorts[n] && !SortUtils::resolve(sorts[n],_sorts[n],vocabulary)) return 0;
 		}
 		return this;
 	}
@@ -850,16 +856,18 @@ set<Function*> Function::nonbuiltins() {
 	}
 }
 
-ostream& Function::put(ostream& output) const {
-	for(set<const Vocabulary*>::iterator it = _vocabularies.begin(); it != _vocabularies.end(); ++it) {
-		if(!(*it)->func(_name)->overloaded()) {
-			(*it)->putname(output);
-			output << "::";
-			break;
+ostream& Function::put(ostream& output, bool longnames) const {
+	if(longnames) { 
+		for(set<const Vocabulary*>::iterator it = _vocabularies.begin(); it != _vocabularies.end(); ++it) {
+			if(!(*it)->func(_name)->overloaded()) {
+				(*it)->putname(output);
+				output << "::";
+				break;
+			}
 		}
 	}
 	output << _name.substr(0,_name.find('/'));
-	if(!overloaded()) {
+	if(longnames && !overloaded()) {
 		output << '[';
 		if(_insorts.size() > 0) {
 			output << *_insorts[0];

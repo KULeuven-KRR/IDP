@@ -1730,6 +1730,7 @@ Term* Insert::functerm(NSPair* nst) {
 		if(v) {
 			if(f) Warning::varcouldbeconst((nst->_name)[0],nst->_pi);
 			t = new VarTerm(v,termparseinfo(new VarTerm(v,TermParseInfo()),nst->_pi));
+			delete(nst);
 		}
 		else if(f) {
 			vector<Term*> vt(0);
@@ -1742,8 +1743,8 @@ Term* Insert::functerm(NSPair* nst) {
 			l.first_column = (nst->_pi).col();
 			v = quantifiedvar(name,l);
 			t = new VarTerm(v,termparseinfo(new VarTerm(v,TermParseInfo()),nst->_pi));
+			delete(nst);
 		}
-		delete(nst);
 		return t;
 	}
 }
@@ -2141,7 +2142,7 @@ void Insert::addTupleVal(FuncTable* ft, ElementTuple& tuple, YYLTYPE l) const {
 
 void Insert::addTupleVal(FuncTable* ft, const DomainElement* d, YYLTYPE l) const {
 	ElementTuple et(1,d);
-	addTupleVal(ft,d,l);
+	addTupleVal(ft,et,l);
 }
 
 void Insert::inter(NSPair* nsp, const longname& procedure, YYLTYPE l) const {

@@ -74,8 +74,8 @@ class Sort {
 			//!< Returns the interpretaion for built-in sorts
 
 		// Output
-		std::ostream&	put(std::ostream&)	const;
-		std::string		to_string()			const;
+		std::ostream&	put(std::ostream&, bool longnames = true)	const;
+		std::string		to_string()									const;
 
 		friend class Vocabulary;
 };
@@ -186,8 +186,8 @@ class PFSymbol {
 		virtual PFSymbol*	disambiguate(const std::vector<Sort*>&, const Vocabulary* v = 0)	= 0;
 
 		// Output
-		virtual std::ostream&	put(std::ostream&)	const = 0;
-				std::string		to_string()			const;
+		virtual std::ostream&	put(std::ostream&, bool longnames = true)	const = 0;
+				std::string		to_string()									const;
 
 		friend class Vocabulary;
 };
@@ -242,7 +242,7 @@ class Predicate : public PFSymbol {
 												//!< and that are overloaded by 'this'.
 
 		// Output
-		std::ostream&	put(std::ostream&)	const;
+		std::ostream&	put(std::ostream&, bool longnames = true)	const;
 
 		friend class Sort;
 		friend class Vocabulary;
@@ -395,7 +395,7 @@ class Function : public PFSymbol {
 											//!< and that are overloaded by 'this'.
 
 		// Output
-		std::ostream&	put(std::ostream&)	const;
+		std::ostream&	put(std::ostream&, bool longnames = true)	const;
 
 		friend class Vocabulary;
 

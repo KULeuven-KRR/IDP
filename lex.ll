@@ -245,7 +245,7 @@ COMMENTLINE		"//".*
 							  }
 							  else (*luacode) << '}';
 							}
-<lua>[^{}:\n]*				{ advancecol();	
+<lua>[^{}:\n*]*				{ advancecol();	
 							  (*luacode) << yytext;
 							}
 <lua>{STR}					{ advancecol(); (*luacode) << yytext;	}

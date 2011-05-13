@@ -842,7 +842,7 @@ class ThreeValTermMover : public TheoryMutatingVisitor {
 		bool isCPFunction(const Function* func) const { return _cpfunctions.find(func) != _cpfunctions.end(); }
 	public:
 		ThreeValTermMover(AbstractStructure* str, bool posc, bool cpc=false, const set<const Function*>& cpfuncs=set<const Function*>()):
-			_structure(str), _poscontext(posc), _cpcontext(cpc), _cpfunctions(cpfuncs) { }
+			_structure(str), _poscontext(posc), _cpcontext(cpc), _cpfunctions(cpfuncs), _termgraphs(0), _variables(), _istoplevelterm(true) { }
 		Formula*	visit(PredForm* pf);
 		Formula*	visit(AggForm* af);
 		Term*		visit(FuncTerm* ft);
@@ -1009,30 +1009,29 @@ class FuncGrapher : public TheoryMutatingVisitor {
 };
 
 Formula* FuncGrapher::visit(PredForm* pf) {
-	PredForm* newpf;
-	if(pf->symbol()->name() == "=/2") {
-		if(typeid(*(pf->subterms()[0])) == typeid(FuncTerm)) {
-			FuncTerm* ft = dynamic_cast<FuncTerm*>(pf->subterms()[0]);
-			vector<Term*> vt;
-			for(vector<Term*>::const_iterator it = ft->subterms().begin(); it != ft->subterms().end(); ++it) 
-				vt.push_back(*it);
-			vt.push_back(pf->subterms()[1]);
-			newpf = new PredForm(pf->sign(),ft->function(),vt,pf->pi().clone());
-			delete(ft);
-			delete(pf);
-		}
-		else if(typeid(*(pf->subterms()[1])) == typeid(FuncTerm)) {
-			FuncTerm* ft = dynamic_cast<FuncTerm*>(pf->subterms()[1]);
-			vector<Term*> vt;
-			for(vector<Term*>::const_iterator it = ft->subterms().begin(); it != ft->subterms().end(); ++it) 
-				vt.push_back(*it);
-			vt.push_back(pf->subterms()[0]);
-			newpf = new PredForm(pf->sign(),ft->function(),vt,pf->pi().clone());
-			delete(ft);
-			delete(pf);
-		}
-		else newpf = pf;
+	PredForm* newpf = 0;
+	assert(pf->symbol()->name() == "=/2");
+	if(typeid(*(pf->subterms()[0])) == typeid(FuncTerm)) {
+		FuncTerm* ft = dynamic_cast<FuncTerm*>(pf->subterms()[0]);
+		vector<Term*> vt;
+		for(vector<Term*>::const_iterator it = ft->subterms().begin(); it != ft->subterms().end(); ++it) 
+			vt.push_back(*it);
+		vt.push_back(pf->subterms()[1]);
+		newpf = new PredForm(pf->sign(),ft->function(),vt,pf->pi().clone());
+		delete(ft);
+		delete(pf);
 	}
+	else if(typeid(*(pf->subterms()[1])) == typeid(FuncTerm)) {
+		FuncTerm* ft = dynamic_cast<FuncTerm*>(pf->subterms()[1]);
+		vector<Term*> vt;
+		for(vector<Term*>::const_iterator it = ft->subterms().begin(); it != ft->subterms().end(); ++it) 
+			vt.push_back(*it);
+		vt.push_back(pf->subterms()[0]);
+		newpf = new PredForm(pf->sign(),ft->function(),vt,pf->pi().clone());
+		delete(ft);
+		delete(pf);
+	}
+	else newpf = pf;
 	return newpf;
 }
 
