@@ -626,6 +626,35 @@ InternalArgument printvocabulary(const vector<InternalArgument>& args, lua_State
 	return result;
 }
 
+InternalArgument printdomainatom(const vector<InternalArgument>& args, lua_State* ) {
+	const DomainAtom* atom = args[0]._value._domainatom;
+	Options* opts = args[1].options();
+	stringstream sstr;
+	atom->symbol()->put(sstr,opts->longnames());
+	if(typeid(*(atom->symbol())) == typeid(Predicate)) {
+		if(!atom->symbol()->sorts().empty()) {
+			sstr << '(' << *(atom->args()[0]);
+			for(unsigned int n = 1; n < atom->args().size(); ++n) {
+				sstr << ',' << *(atom->args()[n]);
+			}
+			sstr << ')';
+		}
+	}
+	else {
+		if(atom->symbol()->sorts().size() > 1) {
+			sstr << '(' << *(atom->args()[0]);
+			for(unsigned int n = 1; n < atom->args().size()-1; ++n) {
+				sstr << ',' << *(atom->args()[n]);
+			}
+			sstr << ')';
+		}
+		sstr << " = " << *(atom->args().back());
+	}
+
+	InternalArgument result(StringPointer(sstr.str()));
+	return result;
+}
+
 InternalArgument printnamespace(const vector<InternalArgument>& args, lua_State* ) {
 	Namespace* space = args[0].space();
 	Options* opts = args[1].options();
@@ -782,10 +811,15 @@ class SATTraceWriter {
 			lua_pushboolean(_state,!lit.hasSign());
 			lua_setfield(_state,-2,"value");
 			PFSymbol* s = _translator->symbol(lit.getAtom().getValue());
-			const ElementTuple& args = _translator->args(lit.getAtom().getValue());
-			const DomainAtom* atom = DomainAtomFactory::instance()->create(s,args);
-			InternalArgument ia(atom);
-			LuaConnection::convertToLua(_state,ia);
+			if(s) {
+				const ElementTuple& args = _translator->args(lit.getAtom().getValue());
+				const DomainAtom* atom = DomainAtomFactory::instance()->create(s,args);
+				InternalArgument ia(atom);
+				LuaConnection::convertToLua(_state,ia);
+			}
+			else {
+				lua_pushstring(_state,_translator->printAtom(lit.getAtom().getValue()).c_str());
+			}
 			lua_setfield(_state,-2,"atom");
 			lua_call(_state,2,0);
 			lua_pop(_state,1);
@@ -888,7 +922,7 @@ InternalArgument modelexpand(const vector<InternalArgument>& args, lua_State* L)
 		AbstractStructure* newsolution = structure->clone();
 		addLiterals(*model,grounding->translator(),newsolution);
 		addTerms(*model,grounding->termtranslator(),newsolution);
-		//newsolution->clean();
+		newsolution->clean();
 		solutions.push_back(newsolution);
 	}
 
@@ -930,7 +964,7 @@ AbstractTheory* ground(AbstractTheory* theory, AbstractStructure* structure, Opt
 	return grounding;
 }
 
-InternalArgument ground(const vector<InternalArgument>& args, lua_State*  ) {
+InternalArgument ground(const vector<InternalArgument>& args, lua_State*) {
 	AbstractTheory* grounding = ground(args[0].theory(),args[1].structure(),args[2].options());
 	InternalArgument result(grounding); 
 	return result;
@@ -1516,7 +1550,7 @@ namespace LuaConnection {
 	/**
 	 * Garbage collection for structures
 	 */
-	int gcStructure(lua_State* L) {
+	int gcStructure(lua_State* ) {
 		/* TODO: uncomment
 		AbstractStructure* s = *(AbstractStructure**)lua_touserdata(L,1);
 		map<AbstractStructure*,unsigned int>::iterator it = _luastructures.find(s);
@@ -2756,6 +2790,7 @@ namespace LuaConnection {
 		vector<ArgType> vtabitertuple(2); vtabitertuple[0] = AT_TABLEITERATOR; vtabitertuple[1] = AT_TUPLE;
 		vector<ArgType> vtheoopt(2); vtheoopt[0] = AT_THEORY; vtheoopt[1] = AT_OPTIONS;
 		vector<ArgType> vstructopt(2); vstructopt[0] = AT_STRUCTURE; vstructopt[1] = AT_OPTIONS;
+		vector<ArgType> vdomainatomopt(2); vdomainatomopt[0] = AT_DOMAINATOM; vdomainatomopt[1] = AT_OPTIONS;
 		vector<ArgType> vstructvoc(2); vstructvoc[0] = AT_STRUCTURE; vstructvoc[1] = AT_VOCABULARY;
 		vector<ArgType> vvocopt(2); vvocopt[0] = AT_VOCABULARY; vvocopt[1] = AT_OPTIONS;
 		vector<ArgType> voptopt(2); voptopt[0] = AT_OPTIONS; voptopt[1] = AT_OPTIONS;
@@ -2777,6 +2812,7 @@ namespace LuaConnection {
 		addInternalProcedure("tostring",vtheoopt,&printtheory);
 		addInternalProcedure("tostring",vstructopt,&printstructure);
 		addInternalProcedure("tostring",vvocopt,&printvocabulary);
+		addInternalProcedure("tostring",vdomainatomopt,&printdomainatom);
 		addInternalProcedure("namespace",vspaceopt,&printnamespace);
 		addInternalProcedure("tostring",voptopt,&printoptions);
 		addInternalProcedure("help",vspace,&help);

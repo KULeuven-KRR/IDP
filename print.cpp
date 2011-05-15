@@ -4,6 +4,7 @@
 	(c) K.U.Leuven
 ************************************/
 
+#include "print.hpp"
 #include <iostream>
 #include "vocabulary.hpp"
 #include "structure.hpp"
@@ -11,9 +12,9 @@
 #include "theory.hpp"
 #include "options.hpp"
 #include "namespace.hpp"
-#include "print.hpp"
 #include "ecnf.hpp"
 #include "ground.hpp"
+#include "common.hpp"
 
 using namespace std;
 
@@ -29,7 +30,7 @@ Printer::Printer() {
 Printer* Printer::create(Options* opts) {
 	switch(opts->language()) {
 		case LAN_IDP:
-			return new IDPPrinter(opts->printtypes());
+			return new IDPPrinter(opts->printtypes(),opts->longnames());
 		case LAN_ECNF:
 			return new EcnfPrinter();
 		default:
@@ -66,12 +67,7 @@ void IDPPrinter::visit(const Theory* t) {
 
 void IDPPrinter::visit(const PredForm* f) {
 	if(! f->sign())	_out << "~";
-#ifndef NDEBUG
-	_out << f->symbol()->to_string();
-#else
-	string fullname = f->symbol()->name();
-	_out << fullname.substr(0,fullname.find('/'));
-#endif
+	f->symbol()->put(_out,_longnames);
 	if(!f->subterms().empty()) {
 		_out << "(";
 		f->subterms()[0]->accept(this);
@@ -173,9 +169,7 @@ void IDPPrinter::visit(const Rule* r) {
 	if(!r->quantvars().empty()) {
 		_out << "!";
 		for(set<Variable*>::const_iterator it = r->quantvars().begin(); it != r->quantvars().end(); ++it) {
-			_out << " " << (*it)->name();
-			if((*it)->sort())
-				_out << "[" << (*it)->sort()->name() << "]";
+			_out << " " << *(*it);
 		}
 		_out << " : ";
 	}
@@ -221,12 +215,7 @@ void IDPPrinter::visit(const VarTerm* t) {
 }
 
 void IDPPrinter::visit(const FuncTerm* t) {
-#ifndef NDEBUG
-	_out << t->function()->to_string();
-#else
-	string fullname = t->function()->name();
-	_out << fullname.substr(0,fullname.find('/'));
-#endif
+	t->function()->put(_out,_longnames);
 	if(!t->subterms().empty()) {
 		_out << "(";
 		t->subterms()[0]->accept(this);
@@ -885,15 +874,15 @@ string IDPPrinter::print(const AbstractStructure* structure) {
 /*******************
     Vocabularies
 *******************/
-string EcnfPrinter::print(const Vocabulary* v) {
+string EcnfPrinter::print(const Vocabulary* ) {
 	return "(vocabulary cannot be printed in ecnf)";
 }
 
-string EcnfPrinter::print(const Namespace* v) {
+string EcnfPrinter::print(const Namespace* ) {
 	return "(namespace cannot be printed in ecnf)";
 }
 
-string EcnfPrinter::print(const AbstractStructure* v) {
+string EcnfPrinter::print(const AbstractStructure* ) {
 	return "(structure cannot be printed in ecnf)";
 }
 

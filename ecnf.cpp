@@ -530,9 +530,12 @@ inline MinisatID::Weight createWeight(double weight){
 void SolverTheory::addClause(GroundClause& cl, bool skipfirst) {
 	transformForAdd(cl,VIT_DISJ,ID_FOR_UNDEFINED,skipfirst);
 	MinisatID::Disjunction clause;
+//cerr << "clause ";
 	for(unsigned int n = 0; n < cl.size(); ++n) {
 		clause.literals.push_back(createLiteral(cl[n]));
+//cerr << (cl[n] > 0 ? "" : "~") << _translator->printAtom(cl[n]) << ' ';
 	}
+//cerr << endl;
 	getSolver().add(clause);
 }
 
@@ -542,21 +545,29 @@ void SolverTheory::addSet(int setnr, int defnr, bool weighted) {
 		TsSet& tsset = getTranslator().groundset(setnr);
 		transformForAdd(tsset.literals(),VIT_SET,defnr);
 		if(!weighted){
+//cerr << "set ";
 			MinisatID::Set set;
 			set.setID = setnr;
+//cerr << setnr;
 			for(unsigned int n = 0; n < tsset.size(); ++n) {
 				set.literals.push_back(createLiteral(tsset.literal(n)));
+//cerr << (tsset.literal(n) > 0 ? "" : "~") << _translator->printAtom(tsset.literal(n)) << ' ';
 			}
+////cerr << endl;
 			getSolver().add(set);
 		}
 		else {
+//cerr << "wset ";
 			MinisatID::WSet set;
 			set.setID = setnr;
+//cerr << setnr;
 			for(unsigned int n = 0; n < tsset.size(); ++n) {
 				set.literals.push_back(createLiteral(tsset.literal(n)));
 				set.weights.push_back(createWeight(tsset.weight(n)));
+//cerr << (tsset.literal(n) > 0 ? "" : "~") << _translator->printAtom(tsset.literal(n)) << "=" << tsset.weight(n) << ' ';
 			}
 			getSolver().add(set);
+//cerr << endl;
 		}
 	}
 }
@@ -568,26 +579,35 @@ void SolverTheory::addFixpDef(GroundFixpDef*) {
 
 void SolverTheory::addAggregate(int definitionID, int head, bool lowerbound, int setnr, AggFunction aggtype, TsType sem, double bound) {
 	addSet(setnr,definitionID,(aggtype != AGG_CARD));
+//cerr << "aggregate: ";
+//cerr << _translator->printAtom(head) << ' ';
+//cerr << (sem == TS_RULE ? "<- " : "<=> ");
 	MinisatID::Aggregate agg;
 	agg.sign = lowerbound ? MinisatID::AGGSIGN_LB : MinisatID::AGGSIGN_UB;
 	agg.setID = setnr;
 	switch (aggtype) {
 		case AGG_CARD:
 			agg.type = MinisatID::CARD;
+//cerr << "card ";
 			break;
 		case AGG_SUM:
 			agg.type = MinisatID::SUM;
+//cerr << "sum ";
 			break;
 		case AGG_PROD:
 			agg.type = MinisatID::PROD;
+//cerr << "prod ";
 			break;
 		case AGG_MIN:
 			agg.type = MinisatID::MIN;
+//cerr << "min ";
 			break;
 		case AGG_MAX:
+//cerr << "max ";
 			agg.type = MinisatID::MAX;
 			break;
 	}
+//cerr << setnr << ' ';
 	switch(sem) {
 		case TS_EQ: case TS_IMPL: case TS_RIMPL: 
 			agg.sem = MinisatID::COMP;
@@ -596,6 +616,7 @@ void SolverTheory::addAggregate(int definitionID, int head, bool lowerbound, int
 			agg.sem = MinisatID::DEF;
 			break;
 	}
+//cerr << (lowerbound ? " >= " : " =< ") << bound << endl; 
 	agg.defID = definitionID;
 	agg.head = createAtom(head);
 	agg.bound = createWeight(bound);
@@ -765,12 +786,15 @@ void SolverTheory::addPCRule(int defnr, int head, vector<int> body, bool conjunc
 	transformForAdd(body,(conjunctive ? VIT_CONJ : VIT_DISJ),defnr);
 	MinisatID::Rule rule;
 	rule.head = createAtom(head);
+//cerr << (rule.conjunctive ? "conjunctive" : "disjunctive") << "rule " << _translator->printAtom(head) << " <- ";
 	for(unsigned int n = 0; n < body.size(); ++n) {
 		rule.body.push_back(createLiteral(body[n]));
+//cerr << (body[n] > 0 ? "" : "~") << _translator->printAtom(body[n]) << ' ';
 	}
 	rule.conjunctive = conjunctive;
 	rule.definitionID = defnr;
 	getSolver().add(rule);
+//cerr << endl;
 }
 
 void SolverTheory::addPCRule(int defnr, int head, PCGroundRuleBody* grb) {
@@ -784,8 +808,6 @@ void SolverTheory::addPCRule(int defnr, int head, PCTsBody* tsb) {
 /**
  *		Adds constraints to the theory that state that each of the functions that occur in the theory is indeed a function.
  *		This method should be called before running the SAT solver and after grounding.
- * TODO
- * 		This should not be done for functions that are handled by the constraint solver.
  */
 void AbstractGroundTheory::addFuncConstraints() {
 	for(unsigned int n = 0; n < getTranslator().nrOffsets(); ++n) {
@@ -852,6 +874,7 @@ void AbstractGroundTheory::addFuncConstraints() {
 				else {
 					tseitin = getTranslator().translate(1,'=',true,AGG_CARD,setnr,TS_IMPL);
 				}
+				addUnitClause(tseitin);
 			}
 		}
 	}

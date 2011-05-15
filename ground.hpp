@@ -384,13 +384,13 @@ class VarTermGrounder : public TermGrounder {
 };
 
 class FuncTermGrounder : public TermGrounder {
-	private:
-		FuncTable*					_function;
+	protected:
+		FuncTable*					_functable;
 		std::vector<TermGrounder*>	_subtermgrounders;
 		mutable ElementTuple		_args;
 	public:
-		FuncTermGrounder(const std::vector<TermGrounder*>& sub, FuncTable* f) :
-			_function(f), _subtermgrounders(sub), _args(sub.size()) { }
+		FuncTermGrounder(const std::vector<TermGrounder*>& sub, FuncTable* ftable) :
+			_functable(ftable), _subtermgrounders(sub), _args(sub.size()) { }
 		const DomainElement* run() const;
 		bool canReturnCPVar() const { return false; }
 
@@ -399,6 +399,16 @@ class FuncTermGrounder : public TermGrounder {
 		//			If the values of the args did not change, return the result immediately instead of doing the
 		//			table lookup
 };
+
+//class CPSumTermGrounder : public FuncTermGrounder {
+//	private:
+//		Function*	_function;
+//	public:
+//		CPSumTermGrounder(const std::vector<TermGrounder*>& sub, Function* func, FuncTable* ftable) :
+//			FuncTermGrounder(sub,ftable), _function(func) { }
+//		const DomainElement* run() const;
+//		bool canReturnCPVar() const { return true; }
+//};
 
 class AggTermGrounder : public TermGrounder {
 	private:

@@ -130,7 +130,7 @@ class Compound {
 		Function*		_function;
 		ElementTuple	_arguments;
 
-		Compound(Function* function, const std::vector<const DomainElement*>& arguments);
+		Compound(Function* function, const ElementTuple& arguments);
 
 	public:
 		~Compound();
@@ -1285,42 +1285,42 @@ class IntFloatInternalFuncTable : public InternalFuncTable {
 class PlusInternalFuncTable : public IntFloatInternalFuncTable {
 	public:
 		PlusInternalFuncTable(bool i) : IntFloatInternalFuncTable(i) { }
-		const DomainElement*	operator[](const std::vector<const DomainElement*>&)	const;
+		const DomainElement*	operator[](const ElementTuple&)	const;
 		InternalTableIterator*	begin(const Universe&)	const;
 };
 
 class MinusInternalFuncTable : public IntFloatInternalFuncTable {
 	public:
 		MinusInternalFuncTable(bool i) : IntFloatInternalFuncTable(i) { }
-		const DomainElement*	operator[](const std::vector<const DomainElement*>&)	const;
+		const DomainElement*	operator[](const ElementTuple&)	const;
 		InternalTableIterator*	begin(const Universe&)	const;
 };
 
 class TimesInternalFuncTable : public IntFloatInternalFuncTable {
 	public:
 		TimesInternalFuncTable(bool i) : IntFloatInternalFuncTable(i) { }
-		const DomainElement*	operator[](const std::vector<const DomainElement*>&)	const;
+		const DomainElement*	operator[](const ElementTuple&)	const;
 		InternalTableIterator*	begin(const Universe&)	const;
 };
 
 class DivInternalFuncTable : public IntFloatInternalFuncTable {
 	public:
 		DivInternalFuncTable(bool i) : IntFloatInternalFuncTable(i) { }
-		const DomainElement*	operator[](const std::vector<const DomainElement*>&)	const;
+		const DomainElement*	operator[](const ElementTuple&)	const;
 		InternalTableIterator*	begin(const Universe&)	const;
 };
 
 class AbsInternalFuncTable : public IntFloatInternalFuncTable {
 	public:
 		AbsInternalFuncTable(bool i) : IntFloatInternalFuncTable(i) { }
-		const DomainElement*	operator[](const std::vector<const DomainElement*>&)	const;
+		const DomainElement*	operator[](const ElementTuple&)	const;
 		InternalTableIterator*	begin(const Universe&)	const;
 };
 
 class UminInternalFuncTable : public IntFloatInternalFuncTable {
 	public:
 		UminInternalFuncTable(bool i) : IntFloatInternalFuncTable(i) { }
-		const DomainElement*	operator[](const std::vector<const DomainElement*>&)	const;
+		const DomainElement*	operator[](const ElementTuple&)	const;
 		InternalTableIterator*	begin(const Universe&)	const;
 };
 
@@ -1331,7 +1331,7 @@ class ExpInternalFuncTable : public InternalFuncTable {
 		bool		approxfinite(const Universe&)	const { return false;	}
 		bool		approxempty(const Universe&)	const { return false;	}
 		tablesize	size(const Universe&)			const { return tablesize(false,0);	}
-		const DomainElement*	operator[](const std::vector<const DomainElement*>&)	const;
+		const DomainElement*	operator[](const ElementTuple&)	const;
 
 		InternalFuncTable*	add(const ElementTuple&);
 		InternalFuncTable*	remove(const ElementTuple&);
@@ -1474,10 +1474,10 @@ class FuncTable : public AbstractTable {
 		bool			approxempty()			const	{ return _table->approxempty(_universe);	}
 		tablesize		size()					const	{ return _table->size(_universe);			}
 
-		const DomainElement*	operator[](const std::vector<const DomainElement*>& tuple)	const {
+		const DomainElement* operator[](const ElementTuple& tuple) const {
 			return _table->operator[](tuple);
 		}
-		bool	contains(const std::vector<const DomainElement*>& tuple)		const;
+		bool	contains(const ElementTuple& tuple)	const;
 		void	add(const ElementTuple& tuple);	
 		void	remove(const ElementTuple& tuple);
 

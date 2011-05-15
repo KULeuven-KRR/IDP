@@ -14,6 +14,7 @@
 class InternalArgument;
 #include "execute.hpp"
 #include "error.hpp"
+
 using namespace std;
 
 /**********************
@@ -176,7 +177,7 @@ bool operator>=(const DomainElement& d1, const DomainElement& d2) {
 	else return d1 > d2;
 }
 
-Compound::Compound(Function* function, const std::vector<const DomainElement*>& arguments) :
+Compound::Compound(Function* function, const ElementTuple& arguments) :
 	_function(function), _arguments(arguments) { 
 	assert(function != 0); 
 }
@@ -320,8 +321,8 @@ DomainElementFactory::~DomainElementFactory() {
 		delete(it->second);
 	for(map<const Compound*,DomainElement*>::iterator it = _compoundelements.begin(); it != _compoundelements.end(); ++it) 
 		delete(it->second);
-	for(map<Function*,map<vector<const DomainElement*>,Compound*> >::iterator it = _compounds.begin(); it != _compounds.end(); ++it) {
-		for(map<vector<const DomainElement*>,Compound*>::iterator jt = it->second.begin(); jt != it->second.end(); ++jt) {
+	for(map<Function*,map<ElementTuple,Compound*> >::iterator it = _compounds.begin(); it != _compounds.end(); ++it) {
+		for(map<ElementTuple,Compound*>::iterator jt = it->second.begin(); jt != it->second.end(); ++jt) {
 			delete(jt->second);
 		}
 	}
@@ -2297,7 +2298,7 @@ InternalTableIterator* EnumeratedInternalFuncTable::begin(const Universe&) const
 	return new EnumInternalFuncIterator(_table.begin(),_table.end());
 }
 
-const DomainElement* ModInternalFuncTable::operator[](const vector<const DomainElement*>& tuple) const {
+const DomainElement* ModInternalFuncTable::operator[](const ElementTuple& tuple) const {
 	int a1 = tuple[0]->value()._int;
 	int a2 = tuple[1]->value()._int;
 	return DomainElementFactory::instance()->create(a1 % a2);
@@ -2317,7 +2318,7 @@ InternalTableIterator* ModInternalFuncTable::begin(const Universe& univ) const {
 	return new InternalFuncIterator(this,univ);
 }
 
-const DomainElement* ExpInternalFuncTable::operator[](const vector<const DomainElement*>& tuple) const {
+const DomainElement* ExpInternalFuncTable::operator[](const ElementTuple& tuple) const {
 	double a1 = tuple[0]->type() == DET_DOUBLE ? tuple[0]->value()._double : double(tuple[0]->value()._int);
 	double a2 = tuple[1]->type() == DET_DOUBLE ? tuple[1]->value()._double : double(tuple[1]->value()._int);
 	return DomainElementFactory::instance()->create(pow(a1,a2),false);

@@ -155,12 +155,14 @@ SortTable* Sort::interpretation() const {
 	return _interpretation;
 }
 
-ostream& Sort::put(ostream& output) const {
-	for(set<const Vocabulary*>::iterator it = _vocabularies.begin(); it != _vocabularies.end(); ++it) {
-		if((*it)->sort(_name)->size() == 1) {
-			(*it)->putname(output);
-			output << "::";
-			break;
+ostream& Sort::put(ostream& output, bool longnames) const {
+	if(longnames) {
+		for(set<const Vocabulary*>::iterator it = _vocabularies.begin(); it != _vocabularies.end(); ++it) {
+			if((*it)->sort(_name)->size() == 1) {
+				(*it)->putname(output);
+				output << "::";
+				break;
+			}
 		}
 	}
 	output << _name;
@@ -465,16 +467,18 @@ set<Predicate*> Predicate::nonbuiltins() {
 	}
 }
 
-ostream& Predicate::put(ostream& output) const {
-	for(set<const Vocabulary*>::iterator it = _vocabularies.begin(); it != _vocabularies.end(); ++it) {
-		if(!(*it)->pred(_name)->overloaded()) {
-			(*it)->putname(output);
-			output << "::";
-			break;
+ostream& Predicate::put(ostream& output, bool longnames) const {
+	if(longnames) {
+		for(set<const Vocabulary*>::iterator it = _vocabularies.begin(); it != _vocabularies.end(); ++it) {
+			if(!(*it)->pred(_name)->overloaded()) {
+				(*it)->putname(output);
+				output << "::";
+				break;
+			}
 		}
 	}
 	output << _name.substr(0,_name.find('/'));
-	if(!overloaded()) {
+	if(longnames && !overloaded()) {
 		if(nrSorts() > 0) {
 			output << '[' << *_sorts[0];
 			for(unsigned int n = 1; n < _sorts.size(); ++n) output << ',' << *_sorts[n];
@@ -852,16 +856,18 @@ set<Function*> Function::nonbuiltins() {
 	}
 }
 
-ostream& Function::put(ostream& output) const {
-	for(set<const Vocabulary*>::iterator it = _vocabularies.begin(); it != _vocabularies.end(); ++it) {
-		if(!(*it)->func(_name)->overloaded()) {
-			(*it)->putname(output);
-			output << "::";
-			break;
+ostream& Function::put(ostream& output, bool longnames) const {
+	if(longnames) { 
+		for(set<const Vocabulary*>::iterator it = _vocabularies.begin(); it != _vocabularies.end(); ++it) {
+			if(!(*it)->func(_name)->overloaded()) {
+				(*it)->putname(output);
+				output << "::";
+				break;
+			}
 		}
 	}
 	output << _name.substr(0,_name.find('/'));
-	if(!overloaded()) {
+	if(longnames && !overloaded()) {
 		output << '[';
 		if(_insorts.size() > 0) {
 			output << *_insorts[0];

@@ -95,6 +95,7 @@ class Options {
 		int			satverbosity()		const;
 		int			groundverbosity()	const;
 		bool		trace()				const;
+		bool		longnames()			const;
 
 		std::ostream&	put(std::ostream&)	const;
 		std::string		to_string()			const;	

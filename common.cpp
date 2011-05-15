@@ -94,7 +94,7 @@ double applyAgg(const AggFunction& agg, const vector<double>& args) {
 	return d;
 }
 
-const CompType& invertcomp(const CompType& comp) {
+CompType invertcomp(CompType comp) {
 	switch(comp) {
 		case CT_EQ: case CT_NEQ: return comp;
 		case CT_LT: return CT_GT;
@@ -107,7 +107,7 @@ const CompType& invertcomp(const CompType& comp) {
 	}
 }
 
-const CompType& negatecomp(const CompType& comp) {
+CompType negatecomp(CompType comp) {
 	switch(comp) {
 		case CT_EQ: return CT_NEQ;
 		case CT_NEQ: return CT_EQ;
@@ -132,7 +132,7 @@ ostream& operator<<(ostream& out, const TsType& tstype) {
 }
 
 ostream& operator<<(ostream& out, const CompType& comp) {
-	string CompTypeStrings[6] = { "=", "~=", "=<", ">=", "<", ">" };
+	string CompTypeStrings[6] = { "=", "~=", "<", ">", "=<", ">=" };
 	return out << CompTypeStrings[comp];
 }
 

@@ -834,7 +834,7 @@ class ThreeValTermMover : public TheoryMutatingVisitor {
 	private:
 		AbstractStructure*			_structure;
 		bool						_poscontext;
-		bool						_cpcontext;
+		bool						_cpsupport;
 		const set<const Function*>	_cpfunctions;
 		vector<Formula*>			_termgraphs;
 		set<Variable*>				_variables;
@@ -842,7 +842,7 @@ class ThreeValTermMover : public TheoryMutatingVisitor {
 		bool isCPFunction(const Function* func) const { return _cpfunctions.find(func) != _cpfunctions.end(); }
 	public:
 		ThreeValTermMover(AbstractStructure* str, bool posc, bool cpc=false, const set<const Function*>& cpfuncs=set<const Function*>()):
-			_structure(str), _poscontext(posc), _cpcontext(cpc), _cpfunctions(cpfuncs), _termgraphs(0), _variables(), _istoplevelterm(true) { }
+			_structure(str), _poscontext(posc), _cpsupport(cpc), _cpfunctions(cpfuncs), _termgraphs(0), _variables(), _istoplevelterm(true) { }
 		Formula*	visit(PredForm* pf);
 		Formula*	visit(AggForm* af);
 		Term*		visit(FuncTerm* ft);
@@ -854,29 +854,23 @@ Term* ThreeValTermMover::visit(FuncTerm* functerm) {
 	Function* func = functerm->function();
 	FuncInter* funcinter = _structure->inter(func);
 
-	if(funcinter->approxtwovalued() || (_cpcontext && _istoplevelterm && isCPFunction(func))) {
+	if(funcinter->approxtwovalued() || (_cpsupport && _istoplevelterm && isCPFunction(func))) {
+//cerr << "Not Rewriting " << *functerm << endl;
 		// The function is two-valued or we want to pass it to the constraint solver. Leave as is, just visit its children.
 		for(unsigned int n = 0; n < functerm->subterms().size(); ++n) {
+//			if(_cpsupport && func->name() == "+/2" && typeid(*(functerm->subterm(n))) == typeid(FuncTerm*)) {
+//				Functerm* subterm = dynamic_cast<FuncTerm*>(functerm->subterm(n));
+//				if(subterm->func()->name() != "+/2") _istoplevelterm = false;
+//			} else 
+//			if(not (_cpsupport && func->name() == "+/2"))
 			_istoplevelterm = false;
 			Term* nterm = functerm->subterms()[n]->accept(this);
 			functerm->subterm(n,nterm);
 		}
 		return functerm;
 	}
-//	else if(_cpcontext && _istoplevelterm && (func->name() == "+/2")) {
-//		for(unsigned int n = 0; functerm->nrSubterms(); ++n) {
-//			if(typeid(*(functerm->subterm(n))) == typeid(FuncTerm*)) {
-//				Functerm* subterm = dynamic_cast<FuncTerm*>(functerm->subterm(n));
-//				if(subterm->func()->name() != "+/2") _istoplevelterm = false;
-//			}
-//			else _istoplevelterm = false;
-//			Term* nterm = functerm->subterm(n)->accept(this);
-//			functerm->arg(n,nterm);
-//		}
-//		functerm->setfvars();
-//		return functerm;
-//	}
 	else {
+//cerr << "Rewriting " << *functerm << endl;
 		// The function is three-valued. Move it: create a new variable and an equation.
 		Variable* var = new Variable(func->outsort());
 		VarTerm* varterm = new VarTerm(var,TermParseInfo());
@@ -894,7 +888,7 @@ Term* ThreeValTermMover::visit(FuncTerm* functerm) {
 
 Term* ThreeValTermMover::visit(AggTerm* aggterm) {
 	bool twovalued = SetUtils::approxTwoValued(aggterm->set(),_structure);
-	if(twovalued || (_cpcontext && _istoplevelterm)) return aggterm;
+	if(twovalued || (_cpsupport && _istoplevelterm)) return aggterm;
 	else {
 		Variable* var = new Variable(aggterm->sort());
 		VarTerm* varterm = new VarTerm(var,TermParseInfo());
@@ -910,7 +904,7 @@ Term* ThreeValTermMover::visit(AggTerm* aggterm) {
 Formula* ThreeValTermMover::visit(PredForm* predform) {
 	// Handle built-in predicates
 	string symbname = predform->symbol()->name();
-	if(! _cpcontext) {
+	if(! _cpsupport) {
 		if(symbname == "=/2") {
 			Term* left = predform->subterms()[0];
 			Term* right = predform->subterms()[1];
@@ -954,6 +948,7 @@ Formula* ThreeValTermMover::visit(PredForm* predform) {
 	}
 	// Visit the subterms
 	bool comparisonpred = typeid(*(predform->symbol())) == typeid(Predicate) && (symbname == "=/2" || symbname == "</2" || symbname == ">/2");
+	//TODO Nicer/better way to recognize comparison predicates??
 	for(unsigned int n = 0; n < predform->subterms().size(); ++n) {
 		_istoplevelterm = (comparisonpred || (typeid(*(predform->symbol())) == typeid(Function) && n == predform->subterms().size()-1));
 		Term* newterm = predform->subterms()[n]->accept(this);
@@ -1087,8 +1082,8 @@ namespace FormulaUtils {
 	 *		If rewriting was needed, pf can be deleted, but not recursively.
 	 *		
 	 */
-	Formula* moveThreeValTerms(Formula* f, AbstractStructure* str, bool poscontext, bool usingcp, const set<const Function*> cpfunctions) {
-		ThreeValTermMover tvtm(str,poscontext,usingcp,cpfunctions);
+	Formula* moveThreeValTerms(Formula* f, AbstractStructure* str, bool poscontext, bool cpsupport, const set<const Function*> cpfunctions) {
+		ThreeValTermMover tvtm(str,poscontext,cpsupport,cpfunctions);
 		Formula* rewriting = f->accept(&tvtm);
 		return rewriting;
 	}

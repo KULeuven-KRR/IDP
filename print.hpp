@@ -16,7 +16,14 @@
 #include "theory.hpp" // for TheoryVisitor
 
 class Options;
+class Sort;
+class Predicate;
+class Function;
+class SortTable;
 class PredTable;
+class FuncTable;
+class PredInter;
+class FuncInter;
 class Structure;
 class Namespace;
 class GroundTranslator;
@@ -66,6 +73,7 @@ class Printer : public TheoryVisitor {
 class IDPPrinter : public Printer {
 	private:
 		bool 						_printtypes;
+		bool						_longnames;
 		const PFSymbol* 			_currentsymbol;
 		const Structure* 			_currentstructure;
 		const GroundTranslator*		_translator;
@@ -79,7 +87,7 @@ class IDPPrinter : public Printer {
 
 	public:
 		IDPPrinter() : _printtypes(false) { }
-		IDPPrinter(bool printtypes) : _printtypes(printtypes) { }
+		IDPPrinter(bool printtypes, bool longnames) : _printtypes(printtypes), _longnames(longnames) { }
 
 		// Print methods
 		std::string print(const Vocabulary*);

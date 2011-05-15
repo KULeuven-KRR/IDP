@@ -27,8 +27,8 @@ extern void	printtabs(std::ostream&,unsigned int tabs);	//!< write a given numbe
 
 extern double applyAgg(const AggFunction&,const std::vector<double>& args);	//!< apply an aggregate function to arguments
 
-extern const CompType& invertcomp(const CompType&);	//!< Invert a comparison operator
-extern const CompType& negatecomp(const CompType&);	//!< Negate a comparison operator
+extern CompType invertcomp(CompType);	//!< Invert a comparison operator
+extern CompType negatecomp(CompType);	//!< Negate a comparison operator
 
 extern std::ostream& operator<<(std::ostream&, const AggFunction&);	//!< Put an aggregate type on the given output stream
 extern std::ostream& operator<<(std::ostream&, const TsType&);		//!< Put a tseitin type on the given output stream
