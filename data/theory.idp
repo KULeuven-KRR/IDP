@@ -15,4 +15,11 @@ namespace theory {
 		return idp_intern.flatten(T)
 	}
 
+	/**
+	 * Replace in theory T all definitions by their completion
+	 */
+	procedure completion(T) {
+		return idp_intern.completion(T)
+	}
+
 }

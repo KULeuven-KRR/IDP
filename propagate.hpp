@@ -12,6 +12,7 @@
 #include <map>
 #include <cassert>
 #include "theory.hpp"
+#include "options.hpp"
 
 class Variable;
 class PFSymbol;
@@ -102,12 +103,14 @@ class FOPropDomainFactory {
 		virtual FOPropDomain*	disjunction(FOPropDomain*,FOPropDomain*) const = 0;
 		virtual FOPropDomain*	substitute(FOPropDomain*,const std::map<Variable*,Variable*>&) const = 0;
 		virtual bool			equals(FOPropDomain*,FOPropDomain*) const = 0;	//!< Checks if two domains are equal
+		virtual std::ostream&	put(std::ostream&,FOPropDomain*) const = 0;
 };
 
 class FOPropBDDDomainFactory : public FOPropDomainFactory {
 	private:
 		FOBDDManager* _manager;
 	public:
+		FOPropBDDDomainFactory();
 		FOPropBDDDomain*	trueDomain(const Formula*)		const;
 		FOPropBDDDomain*	falseDomain(const Formula*)		const;
 		FOPropBDDDomain*	formuladomain(const Formula*)	const;
@@ -117,6 +120,7 @@ class FOPropBDDDomainFactory : public FOPropDomainFactory {
 		FOPropBDDDomain*	disjunction(FOPropDomain*,FOPropDomain*) const;
 		FOPropBDDDomain*	substitute(FOPropDomain*,const std::map<Variable*,Variable*>&) const;
 		bool				equals(FOPropDomain*,FOPropDomain*)	const;
+		std::ostream&		put(std::ostream&,FOPropDomain*) const;
 };
 
 
@@ -128,7 +132,7 @@ struct ThreeValuedDomain {
 	FOPropDomain* 	_ctdomain;
 	FOPropDomain* 	_cfdomain;
 	bool			_twovalued;
-	ThreeValuedDomain() : _ctdomain(0), _cfdomain(0), _twovalued(false) { assert(false);	}
+	ThreeValuedDomain() : _ctdomain(0), _cfdomain(0), _twovalued(false) { }
 	ThreeValuedDomain(const FOPropDomainFactory*, bool ctdom, bool cfdom, const Formula*);
 	ThreeValuedDomain(const FOPropDomainFactory*, const Formula*);
 };
@@ -148,6 +152,7 @@ struct LeafConnectData {
  */
 class FOPropagator : public TheoryVisitor {
 	private:
+		Options*												_options;
 		FOPropDomainFactory*									_factory;		//!< Manages and creates domains for formulas
 		FOPropScheduler*										_scheduler;		//!< Schedules propagations
 		std::map<const Formula*,ThreeValuedDomain>				_domains;		//!< Map each formula to its current domain
@@ -173,7 +178,8 @@ class FOPropagator : public TheoryVisitor {
 
 	public:
 		// Constructor
-		FOPropagator(FOPropDomainFactory* f, FOPropScheduler* s): _factory(f), _scheduler(s) { }; 
+		FOPropagator(FOPropDomainFactory* f, FOPropScheduler* s, Options* opts): 
+			_options(opts), _factory(f), _scheduler(s) { }; 
 
 		// Execution
 		void run();		//!< Apply propagations until the propagation queue is empty
@@ -189,7 +195,7 @@ class FOPropagator : public TheoryVisitor {
 	friend class FOPropagatorFactory;
 };
 
-enum InitBoundType { TWOVAL, BOTH, CT, CF, NONE }
+enum InitBoundType { IBT_TWOVAL, IBT_BOTH, IBT_CT, IBT_CF, IBT_NONE };
 
 /**
  * 	Factory class for creating a FOPropagator and initializing the scheduler
@@ -214,7 +220,7 @@ class FOPropagatorFactory : public TheoryVisitor {
 		void visit(const AggForm*);
 	public:
 		// Constructors
-		FOPropagatorFactory(FOPropDomainFactory* f, FOPropScheduler*, bool as, const std::map<PFSymbol*,InitBoundType>& in);
+		FOPropagatorFactory(FOPropDomainFactory* f, FOPropScheduler*, bool as, const std::map<PFSymbol*,InitBoundType>& in, Options* opts);
 
 		// Factory methods
 		FOPropagator* create(const AbstractTheory* t);

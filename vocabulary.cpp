@@ -62,24 +62,33 @@ void Sort::removeChild(Sort* child) {
 /**
  * Generate the predicate that corresponds to the sort
  */
-void Sort::generatePred() {
+void Sort::generatePred(SortTable* inter) {
 	string predname(_name + "/1");
 	vector<Sort*> predsorts(1,this);
-	_pred = new Predicate(predname,predsorts,_pi);
+	if(inter) {
+		Universe univ(vector<SortTable*>(1,inter));
+		PredTable* pt = new PredTable(new FullInternalPredTable(),univ);
+		PredInter* pinter = new PredInter(pt,true);
+		PredInterGenerator* pig = new SinglePredInterGenerator(pinter);
+		_pred = new Predicate(predname,predsorts,pig,false);
+	}
+	else {
+		_pred = new Predicate(predname,predsorts,_pi);
+	}
 }
 
 /**
  * Create an internal sort
  */
 Sort::Sort(const string& name, SortTable* inter) : _name(name), _pi(), _interpretation(inter) { 
-	generatePred();
+	generatePred(inter);
 }
 
 /**
  * Create a user-declared sort
  */
 Sort::Sort(const string& name, const ParseInfo& pi, SortTable* inter) : _name(name), _pi(pi), _interpretation(inter) { 
-	generatePred();
+	generatePred(inter);
 }
 
 /**

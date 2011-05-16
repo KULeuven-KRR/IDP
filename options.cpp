@@ -53,9 +53,10 @@ Options::Options(const string& name, const ParseInfo& pi) : _name(name), _pi(pi)
 	_booloptions["autocomplete"]	= true;
 	_booloptions["longnames"]		= false;
 
-	_intoptions["satverbosity"]		= new IntOption(0,numeric_limits<int>::max(),0);
-	_intoptions["groundverbosity"]	= new IntOption(0,numeric_limits<int>::max(),0);
-	_intoptions["nrmodels"]			= new IntOption(0,numeric_limits<int>::max(),1);
+	_intoptions["satverbosity"]			= new IntOption(0,numeric_limits<int>::max(),0);
+	_intoptions["groundverbosity"]		= new IntOption(0,numeric_limits<int>::max(),0);
+	_intoptions["propagateverbosity"]	= new IntOption(0,numeric_limits<int>::max(),0);
+	_intoptions["nrmodels"]				= new IntOption(0,numeric_limits<int>::max(),1);
 
 	vector<string> ls(3); ls[0] = "idp"; ls[1] = "txt"; ls[2] = "ecnf";
 	vector<string> mf(3); mf[0] = "threevalued"; mf[1] = "twovalued"; mf[2] = "all";
@@ -153,6 +154,10 @@ int Options::satverbosity() const {
 
 int Options::groundverbosity() const {
 	return _intoptions.find("groundverbosity")->second->value();
+}
+
+int Options::propagateverbosity() const {
+	return _intoptions.find("propagateverbosity")->second->value();
 }
 
 bool Options::cpsupport() const {

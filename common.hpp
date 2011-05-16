@@ -30,6 +30,8 @@ extern double applyAgg(AggFunction,const std::vector<double>& args);	//!< apply 
 extern CompType	invertct(CompType);	//!< Invert a comparison operator
 extern CompType	negatect(CompType);	//!< Negate a comparison operator
 
+extern PosContext swapcontext(PosContext);	//!< Negate a context
+
 extern std::string* StringPointer(const char* str);			//!< Returns a shared pointer to the given string
 extern std::string* StringPointer(const std::string& str);	//!< Returns a shared pointer to the given string
 

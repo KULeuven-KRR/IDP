@@ -102,6 +102,14 @@ procedure ground(T,S,Opts) {
 }
 
 /**
+ * Apply unit propagation on a theory T and structure S
+ */
+procedure propagate(T,S,Opts) {
+	if not Opts then Opts = stdoptions end
+	return idp_intern.propagate(T,S,Opts)
+}
+
+/**
  * Change the vocabulary of a structure S to vocabulary V
  * If some symbol occurs both in V and in the previous vocabulary of S, its interpretation in S is kept.
  * For all symbols that belong to V but not to the previous vocabulary of S, 

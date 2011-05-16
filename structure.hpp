@@ -1544,6 +1544,15 @@ class PredInterGenerator {
 		virtual PredInter* get(const AbstractStructure* structure) = 0;
 };
 
+class SinglePredInterGenerator : public PredInterGenerator {
+	private:
+		PredInter*	_inter;
+	public:
+		SinglePredInterGenerator(PredInter* inter) : _inter(inter) { }
+		~SinglePredInterGenerator() { delete(_inter);	}
+		PredInter* get(const AbstractStructure* ) { return _inter;	}
+};
+
 class Sort;
 
 class EqualInterGenerator : public PredInterGenerator {

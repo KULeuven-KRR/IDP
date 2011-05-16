@@ -163,6 +163,17 @@ CompType negatect(CompType ct) {
 	}
 }
 
+PosContext swapcontext(PosContext ct) {
+	switch(ct) {
+		case PC_BOTH : return PC_BOTH;
+		case PC_POSITIVE : return PC_NEGATIVE;
+		case PC_NEGATIVE : return PC_POSITIVE;
+		default:
+			assert(false);
+			return PC_POSITIVE;
+	}
+}
+
 string AggTypeNames[5] = { "#", "sum", "prod", "min", "max" };
 ostream& operator<<(ostream& out, AggFunction aggtype) {
 	return out << AggTypeNames[aggtype];

@@ -21,6 +21,7 @@
 #include "pcsolver/src/external/ExternalInterface.hpp"
 #include "ground.hpp"
 #include "ecnf.hpp"
+#include "propagate.hpp"
 using namespace std;
 
 extern void parsefile(const string&);
@@ -959,7 +960,6 @@ AbstractTheory* ground(AbstractTheory* theory, AbstractStructure* structure, Opt
 	TopLevelGrounder* grounder = factory.create(theory);
 	grounder->run();
 	AbstractGroundTheory* grounding = grounder->grounding();
-//	grounding->addFuncConstraints();
 	delete(grounder);
 	return grounding;
 }
@@ -968,6 +968,58 @@ InternalArgument ground(const vector<InternalArgument>& args, lua_State*  ) {
 	AbstractTheory* grounding = ground(args[0].theory(),args[1].structure(),args[2].options());
 	InternalArgument result(grounding); 
 	return result;
+}
+
+InternalArgument completion(const vector<InternalArgument>& args, lua_State* ) {
+	AbstractTheory* theory = args[0].theory();
+	TheoryUtils::completion(theory);
+	return nilarg();
+}
+
+InternalArgument propagate(const vector<InternalArgument>& args, lua_State* ) {
+	AbstractTheory*	theory = args[0].theory();
+	AbstractStructure* structure = args[1].structure();
+	
+	map<PFSymbol*,InitBoundType> mpi;
+	Vocabulary* v = theory->vocabulary();
+	for(map<string,Predicate*>::const_iterator it = v->firstpred(); it != v->lastpred(); ++it) {
+		set<Predicate*> spi = it->second->nonbuiltins();
+		for(set<Predicate*>::iterator jt = spi.begin(); jt != spi.end(); ++jt) {
+			if(structure->vocabulary()->contains(*jt)) {
+				PredInter* pinter = structure->inter(*jt);
+				if(pinter->approxtwovalued()) mpi[*jt] = IBT_TWOVAL;
+				else {
+					// TODO
+					mpi[*jt] = IBT_NONE;
+				}
+			}
+			else mpi[*jt] = IBT_NONE;
+		}
+	}
+	for(map<string,Function*>::const_iterator it = v->firstfunc(); it != v->lastfunc(); ++it) {
+		set<Function*> sfi = it->second->nonbuiltins();
+		for(set<Function*>::iterator jt = sfi.begin(); jt != sfi.end(); ++jt) {
+			if(structure->vocabulary()->contains(*jt)) {
+				FuncInter* finter = structure->inter(*jt);
+				if(finter->approxtwovalued()) mpi[*jt] = IBT_TWOVAL;
+				else {
+					// TODO
+					mpi[*jt] = IBT_NONE;
+				}
+			}
+			else mpi[*jt] = IBT_NONE;
+		}
+	}
+
+	FOPropBDDDomainFactory* domainfactory = new FOPropBDDDomainFactory();
+	FOPropScheduler* scheduler = new FOPropScheduler();
+	FOPropagatorFactory propfactory(domainfactory,scheduler,true,mpi,args[2].options());
+	FOPropagator* propagator = propfactory.create(theory);
+	propagator->run();
+
+	// TODO: free allocated memory
+	// TODO: return a structure (instead of nil)
+	return nilarg();
 }
 
 InternalArgument createtuple(const vector<InternalArgument>& , lua_State*) {
@@ -2825,6 +2877,7 @@ namespace LuaConnection {
 		addInternalProcedure("flatten",vtheo,&flatten);
 		addInternalProcedure("mx",vtheostructopt,&modelexpand);
 		addInternalProcedure("ground",vtheostructopt,&ground);
+		addInternalProcedure("propagate",vtheostructopt,&propagate);
 		addInternalProcedure("range",vintint,&createrange);
 		addInternalProcedure("dummytuple",vempty,&createtuple);
 		addInternalProcedure("deref_and_increment",vtabitertuple,&derefandincrement);
@@ -2841,6 +2894,7 @@ namespace LuaConnection {
 		addInternalProcedure("makefalse",vpritup,&makefalse);
 		addInternalProcedure("makeunknown",vpritab,&maketabunknown);
 		addInternalProcedure("makeunknown",vpritup,&makeunknown);
+		addInternalProcedure("completion",vtheo,&completion);
 		
 		// Add the internal procedures to lua
 		lua_getglobal(L,"idp_intern");

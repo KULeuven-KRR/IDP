@@ -83,8 +83,8 @@ bool FOBDDQuantKernel::containsDeBruijnIndex(unsigned int index) const {
 
 bool FOBDD::containsDeBruijnIndex(unsigned int index) const {
 	if(_kernel->containsDeBruijnIndex(index)) return true;
-	else if(_falsebranch->containsDeBruijnIndex(index)) return true;
-	else if(_truebranch->containsDeBruijnIndex(index)) return true;
+	else if(_falsebranch && _falsebranch->containsDeBruijnIndex(index)) return true;
+	else if(_truebranch && _truebranch->containsDeBruijnIndex(index)) return true;
 	else return false;
 }
 
@@ -483,13 +483,15 @@ FOBDD* FOBDDManager::quantify(Sort* sort, FOBDD* bdd) {
 }
 
 FOBDD* FOBDDManager::substitute(FOBDD* bdd,const map<FOBDDVariable*,FOBDDVariable*>& mvv) {
-	FOBDD* newfalse = substitute(bdd->falsebranch(),mvv);
-	FOBDD* newtrue = substitute(bdd->truebranch(),mvv);
-	FOBDDKernel* newkernel = substitute(bdd->kernel(),mvv);
-	FOBDD* result = ifthenelse(newkernel,newtrue,newfalse);
-	return result;
+	if(bdd == _truebdd || bdd == _falsebdd) return bdd;
+	else {
+		FOBDD* newfalse = substitute(bdd->falsebranch(),mvv);
+		FOBDD* newtrue = substitute(bdd->truebranch(),mvv);
+		FOBDDKernel* newkernel = substitute(bdd->kernel(),mvv);
+		FOBDD* result = ifthenelse(newkernel,newtrue,newfalse);
+		return result;
+	}
 }
-
 
 FOBDDKernel* FOBDDManager::substitute(FOBDDKernel* kernel,const map<FOBDDVariable*,FOBDDVariable*>& mvv) {
 	if(typeid(*kernel) == typeid(FOBDDAtomKernel)) {

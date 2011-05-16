@@ -635,6 +635,12 @@ namespace TheoryUtils {
 
 	/** \brief Rewrite (! x : phi & chi) to ((! x : phi) & (!x : chi)), and similarly for ?. **/
 	void move_quantifiers(AbstractTheory*);	
+
+	/** \brief Rewrite the theory so that there are no nested terms **/
+	void remove_nesting(AbstractTheory*);
+
+	/** \brief Replace all definitions in the theory by their completion **/
+	void completion(AbstractTheory*);
 }
 
 /**************
