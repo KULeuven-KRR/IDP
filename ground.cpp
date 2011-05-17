@@ -294,52 +294,52 @@ string GroundTranslator::printAtom(int nr) const {
 	Translate from ground terms to numbers
 *********************************************/
 
-unsigned int GroundTermTranslator::translate(unsigned int offset, const ElementTuple& args) {
-	map<ElementTuple,unsigned int>::iterator jt = _table[offset].lower_bound(args);
-	if(jt != _table[offset].end() && jt->first == args) {
+VarId GroundTermTranslator::translate(size_t offset, const ElementTuple& args) {
+	map<ElementTuple,VarId>::iterator jt = _functerm2varid_table[offset].lower_bound(args);
+	if(jt != _functerm2varid_table[offset].end() && jt->first == args) {
 		return jt->second;
 	}
 	else {
-		unsigned int nr = nextNumber();
-		_table[offset].insert(jt,pair<ElementTuple,unsigned int>(args,nr));
-		_backfunctable[nr] = _offset2function[offset];
-		_backargstable[nr] = args;
-		return nr;
+		VarId varid = nextNumber();
+		_functerm2varid_table[offset].insert(jt,pair<ElementTuple,VarId>(args,varid));
+		_varid2function[varid] = _offset2function[offset];
+		_varid2args[varid] = args;
+		return varid;
 	}
 }
 
-unsigned int GroundTermTranslator::translate(Function* func, const ElementTuple& args) {
-	unsigned int offset = addFunction(func);
+VarId GroundTermTranslator::translate(Function* func, const ElementTuple& args) {
+	size_t offset = addFunction(func);
 	return translate(offset,args);
 }
 
-unsigned int GroundTermTranslator::nextNumber() {
-	unsigned int nr = _backfunctable.size(); 
-	_backfunctable.push_back(0);
-	_backargstable.push_back(ElementTuple(0));
+size_t GroundTermTranslator::nextNumber() {
+	size_t nr = _varid2function.size(); 
+	_varid2function.push_back(0);
+	_varid2args.push_back(ElementTuple(0));
 	return nr;
 }
 
-unsigned int GroundTermTranslator::addFunction(Function* func) {
-	map<Function*,unsigned int>::const_iterator found = _function2offset.find(func);
+size_t GroundTermTranslator::addFunction(Function* func) {
+	map<Function*,size_t>::const_iterator found = _function2offset.find(func);
 	if(found != _function2offset.end())
 		// Simply return number when function is already known
 		return found->second;
 	else {
 		// Add function and number when function is unknown
-		unsigned int offset = _offset2function.size();
+		size_t offset = _offset2function.size();
 		_function2offset[func] = offset; 
 		_offset2function.push_back(func);
-		_table.push_back(map<ElementTuple,unsigned int,StrictWeakTupleOrdering>());
+		_functerm2varid_table.push_back(map<ElementTuple,VarId,StrictWeakTupleOrdering>());
 		return offset;	
 	}
 }
 
 bool GroundTermTranslator::contains(Function* func, const ElementTuple& args) const {
 	if(contains(func)) {
-		unsigned int offset = getOffset(func);
-		map<ElementTuple,unsigned int>::const_iterator jt = _table[offset].lower_bound(args);
-		return jt != _table[offset].end() && jt->first == args;
+		size_t offset = getOffset(func);
+		map<ElementTuple,VarId>::const_iterator jt = _functerm2varid_table[offset].lower_bound(args);
+		return jt != _functerm2varid_table[offset].end() && jt->first == args;
 	}
 	return false;
 }
@@ -348,18 +348,18 @@ bool GroundTermTranslator::contains(Function* func)	const {
 	return _function2offset.find(func) != _function2offset.end();
 }
 
-string GroundTermTranslator::printTerm(unsigned int nr) const {
+string GroundTermTranslator::printTerm(VarId varid) const {
 	stringstream s;
-	if(nr >= _backfunctable.size()) {
+	if(varid >= _varid2function.size()) {
 		return "error";
 	}
-	Function* func = function(nr);
+	Function* func = function(varid);
 	s << func->to_string();
-	if(!(args(nr).empty())) {
+	if(!(args(varid).empty())) {
 		s << "(";
-		for(unsigned int c = 0; c < args(nr).size(); ++c) {
-			s << (args(nr))[c]->to_string();
-			if(c != args(nr).size()-1) s << ",";
+		for(unsigned int c = 0; c < args(varid).size(); ++c) {
+			s << (args(varid))[c]->to_string();
+			if(c != args(varid).size()-1) s << ",";
 		}
 		s << ")";
 	}
@@ -1174,8 +1174,28 @@ const DomainElement* FuncTermGrounder::run() const {
 		_args[n] = _subtermgrounders[n]->run();
 	}
 	const DomainElement* result = (*_functable)[_args];
+//	if(result) {
+//		if(_verbosity > 2) {
+//			clog << "Result = " << *result << endl;
+//		}
+//		return result;
+//	}
+//#ifdef CPSUPPORT
+//	else {
+//		result = _ttranslator.translate(_function,_args)
+//		if(_verbosity > 2) {
+//			clog << "Result = " << _termtranslator(result) << endl;
+//		}
+//		return result;
+//	}
+//#endif //CPSUPPORT
+#ifdef CPSUPPORT
+	if(not result) {
+		result = DomainElementFactory::instance()->create(_function,_args);
+	}
+#endif //CPSUPPORT
 	if(_verbosity > 2) {
-		clog << "Result (by FuncTermGrounder) = " << *result << endl;
+		clog << "Result = " << *result << endl;
 	}
 	return result;
 }
@@ -1187,37 +1207,33 @@ const DomainElement* FuncTermGrounder::run() const {
 //	for(unsigned int n = 0; n < _subtermgrounders.size(); ++n) {
 //		_args[n] = _subtermgrounders[n]->run();
 //	}
-//cerr << "Arguments are ";
-//for(ElementTuple::const_iterator it = _args.begin(); it != _args.end(); ++it)
-//	cerr << *(*it) << ' ';
-//cerr << endl;
 //	const DomainElement* result = DomainElementFactory::instance()->create(_function,_args);
 //	if(_verbosity > 2) {
-//		clog << "Result (by CPSumTermGrounder) = " << *result << endl;
+//		clog << "Result = " << *result << endl;
 //	}
 //	return result;
 //}
 
-const DomainElement* ThreeValuedFuncTermGrounder::run() const {
-	if(_verbosity > 2) {
-		printorig();
-	}
-	for(unsigned int n = 0; n < _subtermgrounders.size(); ++n) {
-		_args[n] = _subtermgrounders[n]->run();
-		if(not _args[n]) return 0;
-	}
-	if(not _universe.contains(_args)) {
-		return 0;
-	}
-	const DomainElement* result = (*_functable)[_args];
-	if(not result) {
-		result = DomainElementFactory::instance()->create(_function,_args);
-	}
-	if(_verbosity > 2) {
-		clog << "Result (by ThreeValuedFuncTermGrounder) = " << *result << endl;
-	}
-	return result;
-}
+//const DomainElement* ThreeValuedFuncTermGrounder::run() const {
+//	if(_verbosity > 2) {
+//		printorig();
+//	}
+//	for(unsigned int n = 0; n < _subtermgrounders.size(); ++n) {
+//		_args[n] = _subtermgrounders[n]->run();
+//		if(not _args[n]) return 0;
+//	}
+//	if(not _universe.contains(_args)) {
+//		return 0;
+//	}
+//	const DomainElement* result = (*_functable)[_args];
+//	if(not result) {
+//		result = DomainElementFactory::instance()->create(_function,_args);
+//	}
+//	if(_verbosity > 2) {
+//		clog << "Result = " << *result << endl;
+//	}
+//	return result;
+//}
 
 const DomainElement* AggTermGrounder::run() const {
 	int setnr = _setgrounder->run();
@@ -1231,11 +1247,11 @@ const DomainElement* AggTermGrounder::run() const {
 	return result;
 }
 
-const DomainElement* ThreeValuedAggTermGrounder::run() const {
-	//TODO
-	assert(false);
-	return 0;
-}
+//const DomainElement* ThreeValuedAggTermGrounder::run() const {
+//	//TODO
+//	assert(false);
+//	return 0;
+//}
 
 int EnumSetGrounder::run() const {
 	vector<int>	literals;
@@ -1385,45 +1401,45 @@ bool DefinitionGrounder::run() const {
 	GrounderFactory methods
 ******************************/
 
-/**
- * set<Function*> GrounderFactory::findCPFunctions()
- * DESCRIPTION
- * 		Finds out which functions can be passed to the constraint solver.
- */
-set<const Function*> GrounderFactory::findCPFunctions(const AbstractTheory* theory) {
+#ifdef CPSUPPORT
+set<const PFSymbol*> GrounderFactory::findCPSymbols(const AbstractTheory* theory) {
 	Vocabulary* vocabulary = theory->vocabulary();
+	for(map<string,Predicate*>::const_iterator predit = vocabulary->firstpred(); predit != vocabulary->lastpred(); ++predit) {
+		Predicate* predicate = predit->second;
+		string name = predicate->symbol()->name();
+		if(name == "=/2" || name == "</2" || name = ">/2") {
+			_cpsymbols.insert(predicate);
+		}
+	}
 	for(map<string,Function*>::const_iterator funcit = vocabulary->firstfunc(); funcit != vocabulary->lastfunc(); ++funcit) {
 		Function* function = funcit->second;
-		bool groundtocp = false;
+		bool passtocp = false;
 		// Check whether the (user-defined) function's outsort is over integers
 		Sort* intsort = *(vocabulary->sort("int")->begin());
 		if(function->overloaded()) {
 			set<Function*> nonbuiltins = function->nonbuiltins();
 			for(set<Function*>::const_iterator nbfit = nonbuiltins.begin(); nbfit != nonbuiltins.end(); ++nbfit) {
-				groundtocp = (SortUtils::resolve(function->outsort(),intsort,vocabulary) == intsort);
+				passtocp = (SortUtils::resolve(function->outsort(),intsort,vocabulary) == intsort);
 			}
 		} else if(!function->builtin()) {
-			groundtocp = (SortUtils::resolve(function->outsort(),intsort,vocabulary) == intsort);
+			passtocp = (SortUtils::resolve(function->outsort(),intsort,vocabulary) == intsort);
 		}
-		if(groundtocp) _cpfunctions.insert(function);
+		if(passtocp) _cpsymbols.insert(function);
 	}
 	if(_options->groundverbosity() > 1) {
-		clog << "Function that could be handled by constraint solver: ";
-		for(set<const Function*>::const_iterator it = _cpfunctions.begin(); it != _cpfunctions.end(); ++it) {
+		clog << "Symbols that can be handled by the constraint solver: ";
+		for(set<const PFSymbol*>::const_iterator it = _cpsymbols.begin(); it != _cpsymbols.end(); ++it) {
 			clog << (*it)->to_string() << " ";
 		}
 		clog << endl;
 	}
-	return _cpfunctions;
+	return _cpsymbols;
 }
 
-bool GrounderFactory::isCPFunction(const PFSymbol* symbol) const { 
-	if(typeid(*symbol) == typeid(Function)) {
-		const Function* func = static_cast<const Function*>(symbol);
-		return _cpfunctions.find(func) != _cpfunctions.end();
-	}
-	return false;
+bool GrounderFactory::isCPSymbol(const PFSymbol* symbol) const { 
+	return _cpsymbols.find(symbol) != _cpsymbols.end();
 }
+#endif //CPSUPPORT
 
 
 /**
@@ -1574,8 +1590,10 @@ TopLevelGrounder* GrounderFactory::create(const AbstractTheory* theory) {
 	// Allocate an ecnf theory to be returned by the grounder
 	_grounding = new GroundTheory(theory->vocabulary(),_structure->clone());
 
+#ifdef CPSUPPORT
 	// Find function that can be passed to CP solver.
 	if(_options->cpsupport()) findCPFunctions(theory);
+#endif //CPSUPPORT
 
 	// Create the grounder
 	theory->accept(this);
@@ -1603,8 +1621,10 @@ TopLevelGrounder* GrounderFactory::create(const AbstractTheory* theory, SATSolve
 	// Allocate a solver theory
 	_grounding = new SolverTheory(theory->vocabulary(),solver,_structure->clone());
 
+#ifdef CPSUPPORT
 	// Find function that can be passed to CP solver.
 	if(_options->cpsupport()) findCPFunctions(theory);
+#endif //CPSUPPORT
 
 	// Create the grounder
 	theory->accept(this);
@@ -1673,7 +1693,11 @@ void GrounderFactory::visit(const PredForm* pf) {
 	// to _structure outside the atom. To avoid changing the original atom, 
 	// we first clone it.
 	PredForm* newpf = pf->clone();
-	Formula* transpf = FormulaUtils::moveThreeValTerms(newpf,_structure,(_context._funccontext != PC_NEGATIVE),_options->cpsupport(),_cpfunctions);
+#ifdef CPSUPPORT
+	Formula* transpf = FormulaUtils::moveThreeValuedTerms(newpf,_structure,(_context._funccontext != PC_NEGATIVE),_options->cpsupport(),_cpsymbols);
+#else
+	Formula* transpf = FormulaUtils::moveThreeValuedTerms(newpf,_structure,(_context._funccontext != PC_NEGATIVE));
+#endif //CPSUPPORT
 
 	if(typeid(*transpf) != typeid(PredForm)) {	// The rewriting changed the atom
 		if(_options->groundverbosity() > 1) {
@@ -1690,10 +1714,13 @@ void GrounderFactory::visit(const PredForm* pf) {
 		for(unsigned int n = 0; n < ptranspf->subterms().size(); ++n) {
 			descend(ptranspf->subterms()[n]);
 			subtermgrounders.push_back(_termgrounder);
+#ifdef CPSUPPORT
 			cpsubterms = cpsubterms || _termgrounder->canReturnCPVar();
+#endif //CPSUPPORT
 			argsorttables.push_back(_structure->inter(ptranspf->symbol()->sorts()[n]));
 		}
 		// Create checkers and grounder
+#ifdef CPSUPPORT
 		if(_options->cpsupport() && cpsubterms) {
 			if(_context._component == CC_HEAD) {
 				notyetimplemented("No CP support for defined predicates yet...");
@@ -1731,6 +1758,7 @@ void GrounderFactory::visit(const PredForm* pf) {
 			}
 		}
 		else {
+#endif //CPSUPPORT
 			PredInter* inter = _structure->inter(ptranspf->symbol());
 			CheckerFactory checkfactory;
 			if(_context._component == CC_HEAD) {
@@ -1766,7 +1794,9 @@ void GrounderFactory::visit(const PredForm* pf) {
 				if(_context._component == CC_SENTENCE) 
 					_toplevelgrounder = new SentenceGrounder(_grounding,_formgrounder,false,_options->groundverbosity());
 			}
+#ifdef CPSUPPORT
 		}
+#endif //CPSUPPORT
 	}
 	transpf->recursiveDelete();
 }
@@ -1936,7 +1966,11 @@ void GrounderFactory::visit(const EquivForm* ef) {
  */
 void GrounderFactory::visit(const AggForm* af) {
 	AggForm* newaf = af->clone();
-	Formula* transaf = FormulaUtils::moveThreeValTerms(newaf,_structure,(_context._funccontext != PC_NEGATIVE),_options->cpsupport(),_cpfunctions);
+#ifdef CPSUPPORT
+	Formula* transpf = FormulaUtils::moveThreeValuedTerms(newpf,_structure,(_context._funccontext != PC_NEGATIVE),_options->cpsupport(),_cpsymbols);
+#else
+	Formula* transpf = FormulaUtils::moveThreeValuedTerms(newpf,_structure,(_context._funccontext != PC_NEGATIVE));
+#endif //CPSUPPORT
 
 	if(typeid(*transaf) != typeid(AggForm)) {	// The rewriting changed the atom
 		transaf->accept(this);
@@ -2024,35 +2058,39 @@ void GrounderFactory::visit(const FuncTerm* t) {
 
 	// Create term grounder
 	Function* function = t->function();
-//	if(_options->cpsupport() && function->name() == "+/2") {
-//		//FIXME Probably not always correct TODO Check whether subtermgrounders can return CPVars? Is that enough?
-//		FuncTable* ftable = _structure->inter(function)->functable();
-//		assert(ftable);
-//		_termgrounder = new CPSumTermGrounder(subtermgrounders,function,ftable);
-//	} else 
-	if(_structure->inter(function)->approxtwovalued()) {
-		FuncTable* ftable = _structure->inter(function)->functable();
-		assert(ftable);
-		_termgrounder = new FuncTermGrounder(subtermgrounders,ftable);
-	}
-	else {
-		Universe universe = _structure->universe(function);
-		FuncTable* ftable = new FuncTable(new EnumeratedInternalFuncTable(),universe); 
-		vector<SortTable*> domtabs = universe.tables(); domtabs.pop_back();
-		Universe domain(domtabs);
-		if(domain.approxfinite()) {
-			const PredTable* ptable = _structure->inter(function)->graphinter()->ct();
-			for(TableIterator it = ptable->begin(); it.hasNext(); ++it) {
-				ftable->add(*it);
-			}
-		}
-		else {
-			assert(false);
-			// This should never happen.. FuncTerm should have been moved.
-		}
+	FuncTable* ftable = _structure->inter(function)->functable();
+	assert(ftable);
+#ifdef CPSUPPORT
+	_termgrounder = new FuncTermGrounder(_termtranslator,function,ftable,subtermgrounders);
+#else
+	_termgrounder = new FuncTermGrounder(ftable,subtermgrounders);
+#endif //CPSUPPORT
 
-		_termgrounder = new ThreeValuedFuncTermGrounder(subtermgrounders,function,ftable,universe);
-	}
+	//TODO Remove commented block!
+	//if(_structure->inter(function)->approxtwovalued()) {
+	//	FuncTable* ftable = _structure->inter(function)->functable();
+	//	assert(ftable);
+	//	_termgrounder = new FuncTermGrounder(subtermgrounders,ftable);
+	//}
+	//else {
+	//	Universe universe = _structure->universe(function);
+	//	FuncTable* ftable = new FuncTable(new EnumeratedInternalFuncTable(),universe); 
+	//	vector<SortTable*> domtabs = universe.tables(); domtabs.pop_back();
+	//	Universe domain(domtabs);
+	//	if(domain.approxfinite()) {
+	//		const PredTable* ptable = _structure->inter(function)->graphinter()->ct();
+	//		for(TableIterator it = ptable->begin(); it.hasNext(); ++it) {
+	//			ftable->add(*it);
+	//		}
+	//	}
+	//	else {
+	//		assert(false);
+	//		// This should never happen.. FuncTerm should have been moved.
+	//	}
+
+	//	_termgrounder = new ThreeValuedFuncTermGrounder(subtermgrounders,function,ftable,universe);
+	//}
+	
 	_termgrounder->setorig(t,_varmapping,_options->groundverbosity());
 }
 
@@ -2248,6 +2286,7 @@ void GrounderFactory::visit(const Rule* rule) {
 	Visitor
 **************/
 
+#ifdef CPSUPPORT
 void TheoryVisitor::visit(const CPVarTerm*) {
 	// TODO
 }
@@ -2263,3 +2302,4 @@ void TheoryVisitor::visit(const CPSumTerm*) {
 void TheoryVisitor::visit(const CPReification*) {
 	// TODO
 }
+#endif //CPSUPPORT
