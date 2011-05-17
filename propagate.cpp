@@ -6,12 +6,12 @@
 
 #include <typeinfo>
 #include <iostream>
-#include "propagate.hpp"
 #include "fobdd.hpp"
 #include "vocabulary.hpp"
 #include "term.hpp"
 #include "theory.hpp"
 #include "structure.hpp"
+#include "propagate.hpp"
 
 using namespace std;
 
@@ -20,6 +20,7 @@ using namespace std;
 ****************************/
 
 void FOPropScheduler::add(FOPropagation* propagation) {
+	// TODO: don't schedule a propagation that is already on the queue
 	_queue.push(propagation);
 }
 
@@ -46,48 +47,93 @@ ostream& FOPropBDDDomainFactory::put(ostream& output, FOPropDomain* domain) cons
 	return output << _manager->to_string(bdddomain->bdd(),6);
 }
 
-FOPropBDDDomain* FOPropBDDDomainFactory::trueDomain(const Formula*) const {
+FOPropBDDDomain* FOPropBDDDomainFactory::trueDomain(const Formula* f) const {
 	FOBDD* bdd = _manager->truebdd();
-	return new FOPropBDDDomain(bdd);
+	vector<Variable*> vv(f->freevars().begin(),f->freevars().end());
+	return new FOPropBDDDomain(bdd,vv);
 }
 
-FOPropBDDDomain* FOPropBDDDomainFactory::falseDomain(const Formula* ) const {
+FOPropBDDDomain* FOPropBDDDomainFactory::falseDomain(const Formula* f) const {
 	FOBDD* bdd = _manager->falsebdd();
-	return new FOPropBDDDomain(bdd);
+	vector<Variable*> vv(f->freevars().begin(),f->freevars().end());
+	return new FOPropBDDDomain(bdd,vv);
 }
 
 FOPropBDDDomain* FOPropBDDDomainFactory::formuladomain(const Formula* f) const {
 	FOBDDFactory bddfactory(_manager);
 	f->accept(&bddfactory);
-	return new FOPropBDDDomain(bddfactory.bdd());
+	vector<Variable*> vv(f->freevars().begin(),f->freevars().end());
+	return new FOPropBDDDomain(bddfactory.bdd(),vv);
+}
+
+FOPropBDDDomain* FOPropBDDDomainFactory::ctDomain(const PredForm* pf) const {
+	vector<FOBDDArgument*> args;
+	FOBDDFactory bddfactory(_manager);
+	for(vector<Term*>::const_iterator it = pf->subterms().begin(); it != pf->subterms().end(); ++it) {
+		(*it)->accept(&bddfactory);
+		args.push_back(bddfactory.argument());
+	}
+	FOBDDAtomKernel* k = _manager->getAtomKernel(pf->symbol(),AKT_CT,args);
+	FOBDD* bdd = _manager->getBDD(k,_manager->truebdd(),_manager->falsebdd());
+	vector<Variable*> vv(pf->freevars().begin(),pf->freevars().end());
+	return new FOPropBDDDomain(bdd,vv);
+}
+
+FOPropBDDDomain* FOPropBDDDomainFactory::cfDomain(const PredForm* pf) const {
+	vector<FOBDDArgument*> args;
+	FOBDDFactory bddfactory(_manager);
+	for(vector<Term*>::const_iterator it = pf->subterms().begin(); it != pf->subterms().end(); ++it) {
+		(*it)->accept(&bddfactory);
+		args.push_back(bddfactory.argument());
+	}
+	FOBDDAtomKernel* k = _manager->getAtomKernel(pf->symbol(),AKT_CF,args);
+	FOBDD* bdd = _manager->getBDD(k,_manager->truebdd(),_manager->falsebdd());
+	vector<Variable*> vv(pf->freevars().begin(),pf->freevars().end());
+	return new FOPropBDDDomain(bdd,vv);
 }
 
 FOPropBDDDomain* FOPropBDDDomainFactory::exists(FOPropDomain* domain, const set<Variable*>& qvars) const {
 	FOPropBDDDomain* bdddomain = dynamic_cast<FOPropBDDDomain*>(domain);
 	set<FOBDDVariable*> bddqvars = _manager->getVariables(qvars);
 	FOBDD* qbdd = _manager->existsquantify(bddqvars,bdddomain->bdd());
-	return new FOPropBDDDomain(qbdd);
+	vector<Variable*> vv;
+	for(vector<Variable*>::const_iterator it = domain->vars().begin(); it != domain->vars().end(); ++it) {
+		if(qvars.find(*it) == qvars.end()) vv.push_back(*it);
+	}
+	return new FOPropBDDDomain(qbdd,vv);
 }
 
 FOPropBDDDomain* FOPropBDDDomainFactory::forall(FOPropDomain* domain, const std::set<Variable*>& qvars) const {
 	FOPropBDDDomain* bdddomain = dynamic_cast<FOPropBDDDomain*>(domain);
 	set<FOBDDVariable*> bddqvars = _manager->getVariables(qvars);
 	FOBDD* qbdd = _manager->univquantify(bddqvars,bdddomain->bdd());
-	return new FOPropBDDDomain(qbdd);
+	vector<Variable*> vv;
+	for(vector<Variable*>::const_iterator it = domain->vars().begin(); it != domain->vars().end(); ++it) {
+		if(qvars.find(*it) == qvars.end()) vv.push_back(*it);
+	}
+	return new FOPropBDDDomain(qbdd,vv);
 }
 
 FOPropBDDDomain* FOPropBDDDomainFactory::conjunction(FOPropDomain* dom1,FOPropDomain* dom2) const {
 	FOPropBDDDomain* bdddomain1 = dynamic_cast<FOPropBDDDomain*>(dom1);
 	FOPropBDDDomain* bdddomain2 = dynamic_cast<FOPropBDDDomain*>(dom2);
 	FOBDD* conjbdd = _manager->conjunction(bdddomain1->bdd(),bdddomain2->bdd());
-	return new FOPropBDDDomain(conjbdd);
+	set<Variable*> sv; 
+	sv.insert(dom1->vars().begin(),dom1->vars().end());
+	sv.insert(dom2->vars().begin(),dom2->vars().end());
+	vector<Variable*> vv(sv.begin(),sv.end());
+	return new FOPropBDDDomain(conjbdd,vv);
 }
 
 FOPropBDDDomain* FOPropBDDDomainFactory::disjunction(FOPropDomain* dom1,FOPropDomain* dom2) const {
 	FOPropBDDDomain* bdddomain1 = dynamic_cast<FOPropBDDDomain*>(dom1);
 	FOPropBDDDomain* bdddomain2 = dynamic_cast<FOPropBDDDomain*>(dom2);
 	FOBDD* disjbdd = _manager->disjunction(bdddomain1->bdd(),bdddomain2->bdd());
-	return new FOPropBDDDomain(disjbdd);
+	set<Variable*> sv; 
+	sv.insert(dom1->vars().begin(),dom1->vars().end());
+	sv.insert(dom2->vars().begin(),dom2->vars().end());
+	vector<Variable*> vv(sv.begin(),sv.end());
+	return new FOPropBDDDomain(disjbdd,vv);
 }
 
 FOPropBDDDomain* FOPropBDDDomainFactory::substitute(FOPropDomain* domain,const map<Variable*,Variable*>& mvv) const {
@@ -99,13 +145,90 @@ FOPropBDDDomain* FOPropBDDDomainFactory::substitute(FOPropDomain* domain,const m
 		newmvv[oldvar] = newvar;
 	}
 	FOBDD* substbdd = _manager->substitute(bdddomain->bdd(),newmvv);
-	return new FOPropBDDDomain(substbdd);
+	vector<Variable*> vv = domain->vars();
+	for(unsigned int n = 0; n < vv.size(); ++n) {
+		map<Variable*,Variable*>::const_iterator it = mvv.find(vv[n]);
+		if(it != mvv.end()) vv[n] = it->second;
+	}
+	return new FOPropBDDDomain(substbdd,vv);
 }
 
-bool FOPropBDDDomainFactory::equals(FOPropDomain* dom1, FOPropDomain* dom2) const {
+bool FOPropBDDDomainFactory::approxequals(FOPropDomain* dom1, FOPropDomain* dom2) const {
 	FOPropBDDDomain* bdddomain1 = dynamic_cast<FOPropBDDDomain*>(dom1);
 	FOPropBDDDomain* bdddomain2 = dynamic_cast<FOPropBDDDomain*>(dom2);
 	return bdddomain1->bdd() == bdddomain2->bdd();
+}
+
+PredInter* FOPropBDDDomainFactory::inter(const vector<Variable*>& vars, const ThreeValuedDomain& dom, AbstractStructure* str) const {
+	// Construct the universe of the interpretation and two sets of new variables
+	vector<SortTable*> vst;
+	vector<Variable*> newctvars;
+	vector<Variable*> newcfvars;
+	map<FOBDDVariable*,FOBDDVariable*> ctmvv;
+	map<FOBDDVariable*,FOBDDVariable*> cfmvv;
+	bool twovalued = dom._twovalued;	
+	for(vector<Variable*>::const_iterator it = vars.begin(); it != vars.end(); ++it) {
+		FOBDDVariable* oldvar = _manager->getVariable(*it);
+		vst.push_back(str->inter((*it)->sort()));
+		Variable* ctv = new Variable((*it)->sort());
+		newctvars.push_back(ctv);
+		FOBDDVariable* newctvar = _manager->getVariable(ctv);
+		ctmvv[oldvar] = newctvar;
+		if(!twovalued) {
+			Variable* cfv = new Variable((*it)->sort());
+			newcfvars.push_back(cfv);
+			FOBDDVariable* newcfvar = _manager->getVariable(cfv);
+			cfmvv[oldvar] = newcfvar;
+		}
+	}
+	Universe univ(vst);
+
+	// Construct the ct-table
+	FOPropBDDDomain* ctdom = dynamic_cast<FOPropBDDDomain*>(dom._ctdomain);
+	FOBDD* newctbdd = _manager->substitute(ctdom->bdd(),ctmvv);
+	PredTable* ct = new PredTable(new BDDInternalPredTable(newctbdd,_manager,newctvars,str),univ);
+	if(twovalued) return new PredInter(ct,true);
+	else {
+		FOPropBDDDomain* cfdom = dynamic_cast<FOPropBDDDomain*>(dom._cfdomain);
+		FOBDD* newcfbdd = _manager->substitute(cfdom->bdd(),cfmvv);
+		PredTable* cf = new PredTable(new BDDInternalPredTable(newcfbdd,_manager,newcfvars,str),univ);
+		return new PredInter(ct,cf,true,true);
+	}
+}
+
+FOPropTableDomain* FOPropTableDomain::clone() const {
+	return new FOPropTableDomain(new PredTable(_table->interntable(),_table->universe()),_vars);
+}
+
+FOPropTableDomain* FOPropTableDomainFactory::exists(FOPropDomain* dom, const set<Variable*>& sv) const {
+	FOPropTableDomain* tabledomain = dynamic_cast<FOPropTableDomain*>(dom);
+	vector<bool> keepcol;
+	vector<Variable*> newvars;
+	vector<SortTable*> newunivcols;
+	for(unsigned int n = 0; n < tabledomain->vars().size(); ++n) {
+		Variable* v= tabledomain->vars()[n];
+		if(sv.find(v) == sv.end()) {
+			keepcol.push_back(true);
+			newvars.push_back(v);
+			newunivcols.push_back(tabledomain->table()->universe().tables()[n]);
+		}
+		else keepcol.push_back(false);
+	}
+
+	if(!tabledomain->table()->approxfinite()) 
+		cerr << "Probably entering an infinte loop when trying to project a possibly infinite table...\n";
+	PredTable* npt = new PredTable(new EnumeratedInternalPredTable(),Universe(newunivcols));
+	for(TableIterator it = tabledomain->table()->begin(); it.hasNext(); ++it) {
+		const ElementTuple& tuple = *it;
+		ElementTuple newtuple;
+		for(unsigned int n = 0; n < tuple.size(); ++n) {
+			if(keepcol[n]) newtuple.push_back(tuple[n]);
+		}
+		npt->add(newtuple);
+	}
+
+	return new FOPropTableDomain(npt,newvars);
+	
 }
 
 /*****************
@@ -129,14 +252,45 @@ ThreeValuedDomain::ThreeValuedDomain(const FOPropDomainFactory* factory, const F
 	assert(_cfdomain);
 }
 
+ThreeValuedDomain::ThreeValuedDomain(const FOPropDomainFactory* factory, const PredForm* pf, InitBoundType ibt) {
+	_twovalued = false;
+	switch(ibt) {
+		case IBT_CT:
+			_ctdomain = factory->ctDomain(pf);
+			_cfdomain = factory->falseDomain(pf);
+			break;
+		case IBT_CF:
+			_ctdomain = factory->falseDomain(pf);
+			_cfdomain = factory->cfDomain(pf);
+			break;
+		case IBT_BOTH:
+			_ctdomain = factory->ctDomain(pf);
+			_cfdomain = factory->cfDomain(pf);
+			break;
+		default:
+			assert(false);
+	}
+}
+
+FOPropagator::FOPropagator(FOPropDomainFactory* f, FOPropScheduler* s, Options* opts) : _verbosity(opts->propagateverbosity()), _factory(f), _scheduler(s) { 
+	_maxsteps = opts->nrpropsteps();
+	_options = opts;
+	if(typeid(*f) == typeid(FOPropBDDDomainFactory)) {
+		FOPropBDDDomainFactory* bddf = dynamic_cast<FOPropBDDDomainFactory*>(f);
+		if(_options->longestbranch()) {
+			_admissiblecheckers.push_back(new LongestBranchChecker(bddf->manager(),_options->longestbranch()));
+		}
+	}
+} 
+
 void FOPropagator::run() {
-	if(_options->propagateverbosity() > 0) { cerr << "=== Start propagation ===\n"; }
+	if(_verbosity > 1) { cerr << "=== Start propagation ===\n"; }
 	while(_scheduler->hasNext()) {
 		FOPropagation* propagation = _scheduler->next();
 		_direction = propagation->_direction;
 		_ct = propagation->_ct;
 		_child = propagation->_child;
-		if(_options->propagateverbosity() > 0) { 
+		if(_verbosity > 1) { 
 			const Formula* p = propagation->_parent;
 			cerr << "  Propagate ";
 			if(_direction == DOWN) {
@@ -154,7 +308,35 @@ void FOPropagator::run() {
 		propagation->_parent->accept(this);
 		delete(propagation);
 	}
-	if(_options->propagateverbosity() > 0) { cerr << "=== End propagation ===\n"; }
+	if(_verbosity > 1) { cerr << "=== End propagation ===\n"; }
+}
+
+AbstractStructure* FOPropagator::result(AbstractStructure* structure) const {
+	Vocabulary* vocabulary = new Vocabulary("");
+	for(map<const PredForm*,set<const PredForm*> >::const_iterator it = _leafupward.begin(); it != _leafupward.end(); ++it) {
+		PFSymbol* symbol = it->first->symbol();
+		if(typeid(*symbol) == typeid(Predicate)) vocabulary->addPred(dynamic_cast<Predicate*>(symbol));
+		else vocabulary->addFunc(dynamic_cast<Function*>(symbol));
+	}
+	Structure* res = new Structure("",ParseInfo());
+	res->vocabulary(vocabulary);
+
+	for(map<const PredForm*,set<const PredForm*> >::const_iterator it = _leafupward.begin(); it != _leafupward.end(); ++it) {
+		const PredForm* connector = it->first;
+		PFSymbol* symbol = connector->symbol();
+		vector<Variable*> vv;
+		for(vector<Term*>::const_iterator jt = connector->subterms().begin(); jt != connector->subterms().end(); ++jt) {
+			vv.push_back(*((*jt)->freevars().begin()));
+		}
+		PredInter* pinter = _factory->inter(vv,_domains.find(connector)->second,structure);
+		if(typeid(*symbol) == typeid(Predicate)) res->inter(dynamic_cast<Predicate*>(symbol),pinter);
+		else {
+			FuncInter* finter = new FuncInter(pinter);
+			res->inter(dynamic_cast<Function*>(symbol),finter);
+		}
+	}
+
+	return res;
 }
 
 FOPropDomain* FOPropagator::addToConjunction(FOPropDomain* conjunction, FOPropDomain* newconjunct) {
@@ -202,25 +384,27 @@ FOPropDomain* FOPropagator::addToForall(FOPropDomain* forall, const set<Variable
 }
 
 void FOPropagator::schedule(const Formula* p, FOPropDirection dir, bool ct, const Formula* c) {
-	// TODO: check if we really want to schedule this propagation.
-	_scheduler->add(new FOPropagation(p,dir,ct,c));
-	if(_options->propagateverbosity() > 0) {
-		cerr << "  Schedule ";
-		if(dir == DOWN) {
-			cerr << "downward propagation from " << (ct ? "the ct-bound of " : "the cf-bound of ") << *p;
-			if(c) cerr << " towards " << *c;
+	if(_maxsteps > 0) {
+		--_maxsteps;
+		_scheduler->add(new FOPropagation(p,dir,ct,c));
+		if(_verbosity > 1) {
+			cerr << "  Schedule ";
+			if(dir == DOWN) {
+				cerr << "downward propagation from " << (ct ? "the ct-bound of " : "the cf-bound of ") << *p;
+				if(c) cerr << " towards " << *c;
+			}
+			else {
+				cerr << "upward propagation to " << ((ct == p->sign()) ? "the ct-bound of " : "the cf-bound of ") << *p;
+				if(c) cerr << ". Propagation comes from " << *c;
+			}
+			cerr << endl;
 		}
-		else {
-			cerr << "upward propagation to " << ((ct == p->sign()) ? "the ct-bound of " : "the cf-bound of ") << *p;
-			if(c) cerr << ". Propagation comes from " << *c;
-		}
-		cerr << endl;
 	}
 }
 
 void FOPropagator::updateDomain(const Formula* f, FOPropDirection dir, bool ct,FOPropDomain* newdomain, const Formula* child) {
 
-	if(_options->propagateverbosity() > 0) {
+	if(_verbosity > 2) {
 		cerr << "    Derived the following " << (ct ? "ct " : "cf ") << "domain for " << *f << ":\n";
 		_factory->put(cerr,newdomain);
 	}
@@ -228,7 +412,7 @@ void FOPropagator::updateDomain(const Formula* f, FOPropDirection dir, bool ct,F
 	FOPropDomain* olddom = ct ? _domains[f]._ctdomain : _domains[f]._cfdomain;
 	FOPropDomain* newdom = _factory->disjunction(olddom,newdomain);
 
-	if((!_factory->equals(olddom,newdom)) && admissible(newdom,olddom)) {
+	if((!_factory->approxequals(olddom,newdom)) && admissible(newdom,olddom)) {
 		ct ? _domains[f]._ctdomain = newdom : _domains[f]._cfdomain = newdom;
 		if(dir == DOWN) {
 			for(vector<Formula*>::const_iterator it = f->subformulas().begin(); it != f->subformulas().end(); ++it) {
@@ -265,8 +449,10 @@ void FOPropagator::updateDomain(const Formula* f, FOPropDirection dir, bool ct,F
 	delete(newdomain);
 }
 
-bool FOPropagator::admissible(FOPropDomain*, FOPropDomain* ) const {
-	// TODO
+bool FOPropagator::admissible(FOPropDomain* newd, FOPropDomain* oldd) const {
+	for(vector<AdmissibleBoundChecker*>::const_iterator it = _admissiblecheckers.begin(); it != _admissiblecheckers.end(); ++it) {
+		if(!((*it)->check(newd,oldd))) return false;
+	}
 	return true;
 }
 
@@ -443,6 +629,7 @@ void FOPropagator::visit(const AggForm*) {
 
 FOPropagatorFactory::FOPropagatorFactory(FOPropDomainFactory* factory, FOPropScheduler* scheduler, bool as, const map<PFSymbol*,InitBoundType>& init, Options* opts): _initbounds(init), _assertsentences(as) {
 	_propagator = new FOPropagator(factory, scheduler, opts);
+	_multiplymaxsteps = opts->relativepropsteps();
 }
 
 void FOPropagatorFactory::createleafconnector(PFSymbol* symbol) {
@@ -457,11 +644,10 @@ void FOPropagatorFactory::createleafconnector(PFSymbol* symbol) {
 			if(_propagator->_options->propagateverbosity() > 1) { cerr << "    The leaf connector is twovalued\n";	}
 			break;
 		case IBT_BOTH:
-			// TODO
 		case IBT_CT:
-			// TODO
 		case IBT_CF:
-			// TODO
+			_propagator->_domains[leafconnector] = ThreeValuedDomain(_propagator->_factory,leafconnector,_initbounds[symbol]);
+			break;
 		case IBT_NONE:
 			initFalse(leafconnector);
 			if(_propagator->_options->propagateverbosity() > 1) { cerr << "    The leaf connector is completely unknown\n";	}
@@ -472,13 +658,16 @@ void FOPropagatorFactory::createleafconnector(PFSymbol* symbol) {
 }
 
 FOPropagator* FOPropagatorFactory::create(const AbstractTheory* theory) {
-	if(_propagator->_options->propagateverbosity() > 0) { cerr << "=== initialize propagation datastructures\n";	}
+	if(_propagator->_options->propagateverbosity() > 1) { cerr << "=== initialize propagation datastructures\n";	}
 
 	// transform theory to a suitable normal form
 	AbstractTheory* newtheo = theory->clone();
 	TheoryUtils::remove_eqchains(newtheo);
 	TheoryUtils::remove_nesting(newtheo);
 	TheoryUtils::completion(newtheo);
+
+	// Multiply maxsteps if requested
+	if(_multiplymaxsteps) _propagator->_maxsteps = _propagator->_maxsteps * TheoryUtils::nrSubformulas(newtheo);
 
 	// create leafconnectors 
 	Vocabulary* voc = newtheo->vocabulary();
@@ -497,6 +686,7 @@ FOPropagator* FOPropagatorFactory::create(const AbstractTheory* theory) {
 	
 	// visit sentences
 	newtheo->accept(this);
+
 	return _propagator;
 }
 
@@ -619,4 +809,8 @@ void FOPropagatorFactory::visit(const QuantForm* qf) {
 	_propagator->_upward[qf->subf()] = qf;
 	initFalse(qf);
 	traverse(qf);
+}
+
+bool LongestBranchChecker::check(FOPropDomain* newd, FOPropDomain*) const {
+	return (_treshhold > _manager->longestbranch(dynamic_cast<FOPropBDDDomain*>(newd)->bdd()));
 }

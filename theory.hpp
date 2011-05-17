@@ -641,6 +641,9 @@ namespace TheoryUtils {
 
 	/** \brief Replace all definitions in the theory by their completion **/
 	void completion(AbstractTheory*);
+
+	/** \brief Count the number of subformulas in the theory **/
+	int nrSubformulas(AbstractTheory*);
 }
 
 /**************

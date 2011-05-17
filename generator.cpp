@@ -42,6 +42,28 @@ bool SortInstGenerator::first() const {
 	}
 }
 
+bool SimpleLookupGenerator::first() const {
+	for(unsigned int n = 0; n < _invars.size(); ++n) {
+		_currargs[n] = *(_invars[n]);
+	}
+	return _table->contains(_currargs);
+}
+
+bool EnumLookupGenerator::first() const {
+	for(unsigned int n = 0; n < _invars.size(); ++n) {
+		_currargs[n] = *(_invars[n]);
+	}
+	_currpos = _table.find(_currargs);
+	if(_currpos == _table.end()) return false;
+	else {
+		_iter = _currpos->second.begin();
+		for(unsigned int n = 0; n < _outvars.size(); ++n) {
+			*(_outvars[n]) = (*_iter)[n];
+		}
+		return true;
+	}
+}
+
 GeneratorNode* LeafGeneratorNode::first() const {
 	if(_generator->first()) return _this;
 	return 0;
@@ -103,6 +125,17 @@ bool SortInstGenerator::next() const {
 		return true;
 	}
 	return false;
+}
+
+bool EnumLookupGenerator::next() const {
+	++_iter;
+	if(_iter != _currpos->second.end()) {
+		for(unsigned int n = 0; n < _outvars.size(); ++n) {
+			*(_outvars[n]) = (*_iter)[n];
+		}
+		return true;
+	}
+	else return false;
 }
 
 GeneratorNode* LeafGeneratorNode::next() const {
@@ -168,4 +201,22 @@ InstGenerator* GeneratorFactory::create(const vector<const DomainElement**>& var
 	}
 	if(!gen) gen = new TreeInstGenerator(node);
 	return gen;
+}
+
+InstGenerator*	GeneratorFactory::create(PredTable* pt, std::vector<bool> pattern, const std::vector<const DomainElement**>& vars) {
+	unsigned int firstout = 0;
+	for( ; firstout < pattern.size(); ++firstout) {
+		if(!pattern[firstout]) break;
+	}
+	if(firstout == pattern.size()) {	// no output variables
+		return new SimpleLookupGenerator(pt,vars);
+	}
+	else {	// there are output variables
+		// TODO TODO TODO
+	}
+}
+
+void GeneratorFactory::visit(EnumeratedInternalPredTable* table) {
+	// TODO const map<ElementTuple,vector<ElementTuple> >& lookuptab = EnumFactory::instance()->get(table,pattern);
+	// return new EnumLookupGenerator(lookuptab,invars,outvars)
 }

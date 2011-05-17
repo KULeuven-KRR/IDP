@@ -14,6 +14,7 @@
 class InternalArgument;
 #include "execute.hpp"
 #include "error.hpp"
+#include "fobdd.hpp"
 using namespace std;
 
 /**********************
@@ -1328,6 +1329,50 @@ InternalTableIterator* UnionInternalPredTable::begin(const Universe& univ) const
 		vti.push_back(TableIterator((*it)->begin(univ)));
 	}
 	return new UnionInternalIterator(vti,_outtables,univ);
+}
+
+BDDInternalPredTable::BDDInternalPredTable(FOBDD* bdd, FOBDDManager* manager, const vector<Variable*>& vars, AbstractStructure* str) :
+	_manager(manager), _bdd(bdd), _vars(vars), _structure(str->clone()) { 
+}
+
+bool BDDInternalPredTable::finite(const Universe&) const {
+	// TODO
+	return false;
+}
+
+bool BDDInternalPredTable::empty(const Universe&) const {
+	// TODO
+	return false;
+}
+
+bool BDDInternalPredTable::approxfinite(const Universe&) const {
+	// TODO
+	return false;
+}
+
+bool BDDInternalPredTable::approxempty(const Universe&) const {
+	// TODO
+	return false;
+}
+
+tablesize BDDInternalPredTable::size(const Universe&) const {
+	// TODO
+}
+
+bool BDDInternalPredTable::contains(const ElementTuple& tuple, const Universe& ) const {
+	// TODO
+}
+
+InternalPredTable* BDDInternalPredTable::add(const ElementTuple&) {
+	// TODO
+}
+
+InternalPredTable* BDDInternalPredTable::remove(const ElementTuple&) {
+	// TODO
+}
+
+InternalTableIterator* BDDInternalPredTable::begin(const Universe&) const {
+	// TODO
 }
 
 

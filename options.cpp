@@ -47,16 +47,19 @@ class EnumeratedStringOption : public StringOption {
 };
 
 Options::Options(const string& name, const ParseInfo& pi) : _name(name), _pi(pi) {
-	_booloptions["printtypes"]		= true;
-	_booloptions["usingcp"]			= true;
-	_booloptions["trace"]			= false;
-	_booloptions["autocomplete"]	= true;
-	_booloptions["longnames"]		= false;
+	_booloptions["printtypes"]			= true;
+	_booloptions["usingcp"]				= true;
+	_booloptions["trace"]				= false;
+	_booloptions["autocomplete"]		= true;
+	_booloptions["longnames"]			= false;
+	_booloptions["relativepropsteps"]	= true;
 
 	_intoptions["satverbosity"]			= new IntOption(0,numeric_limits<int>::max(),0);
 	_intoptions["groundverbosity"]		= new IntOption(0,numeric_limits<int>::max(),0);
 	_intoptions["propagateverbosity"]	= new IntOption(0,numeric_limits<int>::max(),0);
 	_intoptions["nrmodels"]				= new IntOption(0,numeric_limits<int>::max(),1);
+	_intoptions["nrpropsteps"]			= new IntOption(0,numeric_limits<int>::max(),4);
+	_intoptions["longestbranch"]		= new IntOption(0,numeric_limits<int>::max(),8);
 
 	vector<string> ls(3); ls[0] = "idp"; ls[1] = "txt"; ls[2] = "ecnf";
 	vector<string> mf(3); mf[0] = "threevalued"; mf[1] = "twovalued"; mf[2] = "all";
@@ -160,6 +163,14 @@ int Options::propagateverbosity() const {
 	return _intoptions.find("propagateverbosity")->second->value();
 }
 
+int Options::nrpropsteps() const {
+	return _intoptions.find("nrpropsteps")->second->value();
+}
+
+int Options::longestbranch() const {
+	return _intoptions.find("longestbranch")->second->value();
+}
+
 bool Options::cpsupport() const {
 	return _booloptions.find("usingcp")->second;
 }
@@ -174,6 +185,10 @@ bool Options::trace() const {
 
 bool Options::longnames() const {
 	return _booloptions.find("longnames")->second;
+}
+
+bool Options::relativepropsteps() const {
+	return _booloptions.find("relativepropsteps")->second;
 }
 
 ostream& Options::put(ostream& output) const {

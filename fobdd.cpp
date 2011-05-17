@@ -105,7 +105,7 @@ FOBDDKernel* FOBDDManager::bump(FOBDDVariable* var, FOBDDKernel* kernel, unsigne
 		vector<FOBDDArgument*> newargs(symbol->nrSorts());
 		for(unsigned int n = 0; n < symbol->nrSorts(); ++n) 
 			newargs[n] = bump(var,atomkernel->args(n),depth);
-		return getAtomKernel(symbol,newargs);
+		return getAtomKernel(symbol,atomkernel->type(),newargs);
 	}
 	else {
 		assert(typeid(*kernel) == typeid(FOBDDQuantKernel));
@@ -180,7 +180,7 @@ FOBDD* FOBDDManager::addBDD(FOBDDKernel* kernel,FOBDD* truebranch,FOBDD* falsebr
 	return newbdd;
 }
 
-FOBDDAtomKernel* FOBDDManager::getAtomKernel(PFSymbol* symbol,const vector<FOBDDArgument*>& args) {
+FOBDDAtomKernel* FOBDDManager::getAtomKernel(PFSymbol* symbol,AtomKernelType akt, const vector<FOBDDArgument*>& args) {
 	// TODO: simplification
 
 	// Lookup
@@ -193,11 +193,11 @@ FOBDDAtomKernel* FOBDDManager::getAtomKernel(PFSymbol* symbol,const vector<FOBDD
 	}
 
 	// Lookup failed, create a new atom kernel
-	return addAtomKernel(symbol,args);
+	return addAtomKernel(symbol,akt,args);
 }
 
-FOBDDAtomKernel* FOBDDManager::addAtomKernel(PFSymbol* symbol,const vector<FOBDDArgument*>& args) {
-	FOBDDAtomKernel* newkernel = new FOBDDAtomKernel(symbol,args,newOrder(args));
+FOBDDAtomKernel* FOBDDManager::addAtomKernel(PFSymbol* symbol,AtomKernelType akt, const vector<FOBDDArgument*>& args) {
+	FOBDDAtomKernel* newkernel = new FOBDDAtomKernel(symbol,akt,args,newOrder(args));
 	_atomkerneltable[symbol][args] = newkernel;
 	return newkernel;
 }
@@ -501,7 +501,7 @@ FOBDDKernel* FOBDDManager::substitute(FOBDDKernel* kernel,const map<FOBDDVariabl
 			FOBDDArgument* newarg = substitute(atomkernel->args(n),mvv);
 			newargs.push_back(newarg);
 		}
-		return getAtomKernel(atomkernel->symbol(),newargs);
+		return getAtomKernel(atomkernel->symbol(),atomkernel->type(),newargs);
 	}
 	else {
 		assert(typeid(*kernel) == typeid(FOBDDQuantKernel));
@@ -530,6 +530,24 @@ FOBDDArgument* FOBDDManager::substitute(FOBDDArgument* arg,const map<FOBDDVariab
 	else return arg;
 }
 
+int FOBDDManager::longestbranch(FOBDDKernel* kernel) {
+	if(typeid(*kernel) == typeid(FOBDDAtomKernel)) return 1;
+	else {
+		assert(typeid(*kernel) == typeid(FOBDDQuantKernel));
+		FOBDDQuantKernel* qk = dynamic_cast<FOBDDQuantKernel*>(kernel);
+		return longestbranch(qk->bdd()) + 1;
+	}
+}
+
+int FOBDDManager::longestbranch(FOBDD* bdd) {
+	if(bdd == _truebdd || bdd == _falsebdd) return 1;
+	else {
+		int kernellength = longestbranch(bdd->kernel());
+		int truelength = longestbranch(bdd->truebranch()) + kernellength;
+		int falselength = longestbranch(bdd->falsebranch()) + kernellength;
+		return (truelength > falselength ? truelength : falselength);
+	}
+}
 
 /********************
 	FOBDD Factory
@@ -563,7 +581,7 @@ void FOBDDFactory::visit(const PredForm* pf) {
 		pf->subterms()[n]->accept(this);
 		args[n] = _argument;
 	}
-	_kernel = _manager->getAtomKernel(pf->symbol(),args);
+	_kernel = _manager->getAtomKernel(pf->symbol(),AKT_TWOVAL,args);
 	if(pf->sign()) _bdd = _manager->getBDD(_kernel,_manager->truebdd(),_manager->falsebdd());
 	else  _bdd = _manager->getBDD(_kernel,_manager->falsebdd(),_manager->truebdd());
 }
@@ -611,6 +629,7 @@ void FOBDDFactory::visit(const AggForm* ) {
 	assert(false);
 }
 
+
 /****************
 	Debugging
 ****************/
@@ -639,6 +658,8 @@ string FOBDDManager::to_string(FOBDDKernel* kernel, unsigned int spaces) const {
 		FOBDDAtomKernel* atomkernel = dynamic_cast<FOBDDAtomKernel*>(kernel);
 		PFSymbol* symbol = atomkernel->symbol();
 		str += symbol->to_string();
+		if(atomkernel->type() == AKT_CF) str += "<cf>";
+		else if(atomkernel->type() == AKT_CT) str += "<ct>";
 		if(typeid(*symbol) == typeid(Predicate)) {
 			if(symbol->nrSorts()) {
 				str += "(" + to_string(atomkernel->args(0));

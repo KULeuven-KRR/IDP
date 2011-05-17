@@ -886,21 +886,21 @@ Definition* Completer::visit(Definition* def) {
 			_result.push_back(qf);
 		}
 	}
-	
+
 	return def;
 }
 
 Rule* Completer::visit(Rule* rule) {
 	vector<Formula*> vf;
 	vector<Variable*> vv = _headvars[rule->head()->symbol()];
-	set<Variable*> freevars = rule->head()->freevars();
+	set<Variable*> freevars = rule->quantvars();
 	map<Variable*,Variable*> mvv;
 
 	for(unsigned int n = 0; n < rule->head()->subterms().size(); ++n) {
 		Term* t = rule->head()->subterms()[n];
 		if(typeid(*t) != typeid(VarTerm)) {
 			VarTerm* bvt = new VarTerm(vv[n],TermParseInfo());
-			vector<Term*> args; args.push_back(bvt); args.push_back(t);
+			vector<Term*> args; args.push_back(bvt); args.push_back(t->clone());
 			Predicate* p = Vocabulary::std()->pred("=/2")->resolve(vector<Sort*>(2,vv[n]->sort()));
 			PredForm* pf = new PredForm(true,p,args,FormulaParseInfo());
 			vf.push_back(pf);
@@ -1411,6 +1411,21 @@ Formula* FuncGrapher::visit(EqChainForm* ef) {
 	return nf;
 }
 
+class FormulaCounter : public TheoryVisitor {
+	private:
+		int	_result;
+		void addAndTraverse(const Formula* f) { ++_result; traverse(f);	}
+	public:
+		FormulaCounter() : _result(0) { }
+		int result() const { return _result;	}
+		void visit(const PredForm* f)		{ addAndTraverse(f);	}
+		void visit(const BoolForm* f)		{ addAndTraverse(f);	}
+		void visit(const EqChainForm* f)	{ addAndTraverse(f);	}
+		void visit(const QuantForm* f)		{ addAndTraverse(f);	}
+		void visit(const EquivForm* f)		{ addAndTraverse(f);	}
+		void visit(const AggForm* f)		{ addAndTraverse(f);	}
+};
+
 
 namespace FormulaUtils {
 
@@ -1520,6 +1535,7 @@ namespace TheoryUtils {
 	void move_quantifiers(AbstractTheory* t)	{ QuantMover qm; t->accept(&qm);			}
 	void remove_nesting(AbstractTheory* t)		{ AllTermMover atm; t->accept(&atm);		}
 	void completion(AbstractTheory* t)			{ Completer c; t->accept(&c);				}
+	int  nrSubformulas(AbstractTheory* t)		{ FormulaCounter c; t->accept(&c); return c.result();	}
 }
 
 /***************

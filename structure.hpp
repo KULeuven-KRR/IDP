@@ -709,6 +709,33 @@ class ProcInternalPredTable : public InternalPredTable {
 
 };
 
+class FOBDDManager;
+class FOBDD;
+
+class BDDInternalPredTable : public InternalPredTable {
+	private:
+		FOBDDManager*			_manager;
+		FOBDD*					_bdd;
+		std::vector<Variable*>	_vars;
+		AbstractStructure*		_structure;
+	public:
+		BDDInternalPredTable(FOBDD*, FOBDDManager*, const std::vector<Variable*>&, AbstractStructure*);
+		~BDDInternalPredTable() { }
+
+		bool		finite(const Universe&)			const;
+		bool		empty(const Universe&)			const;
+		bool		approxfinite(const Universe&)	const;
+		bool		approxempty(const Universe&)	const;
+		tablesize	size(const Universe&)			const;
+
+		bool	contains(const ElementTuple& tuple, const Universe&)	const;
+
+		InternalPredTable*	add(const ElementTuple& tuple);
+		InternalPredTable*	remove(const ElementTuple& tuple);
+
+		InternalTableIterator*	begin(const Universe&)	const;
+};
+
 class FullInternalPredTable : public InternalPredTable {
 	private:
 	public:

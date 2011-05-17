@@ -95,8 +95,11 @@ class Options {
 		int			satverbosity()			const;
 		int			groundverbosity()		const;
 		int			propagateverbosity()	const;
+		int			nrpropsteps()			const;
 		bool		trace()					const;
 		bool		longnames()				const;
+		bool		relativepropsteps()		const;
+		int			longestbranch()			const;
 
 		std::ostream&	put(std::ostream&)	const;
 		std::string		to_string()			const;	

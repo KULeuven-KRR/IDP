@@ -10,6 +10,7 @@
 #include <vector>
 
 class PredTable;
+class PredInter;
 class SortTable;
 class DomainElement;
 class InstanceChecker;
@@ -31,6 +32,36 @@ class TableInstGenerator : public InstGenerator {
 			_table(t), _outvars(out), _currpos(t->begin()) { }
 		bool first() const;
 		bool next() const;
+};
+
+class SimpleLookupGenerator : public InstGenerator {
+	private:
+		PredTable*									_table;
+		std::vector<const DomainElement**>			_invars;
+		mutable std::vector<const DomainElement*>	_currargs;
+	public:
+		SimpleLookupGenerator(PredTable* t, const std::vector<const DomainElement**> in) :
+			_table(t), _invars(in), _currargs(in.size()) { }
+		bool first()	const;
+		bool next()		const { return false;	}
+};
+
+class StrictWeakTupleOrdering;
+typedef std::map<std::vector<const DomainElement*>,std::vector<std::vector<const DomainElement*> >,StrictWeakTupleOrdering>
+	LookupTable;
+
+class EnumLookupGenerator : public InstGenerator {
+	private:
+		const LookupTable&							_table;
+		std::vector<const DomainElement**>			_invars;
+		std::vector<const DomainElement**>			_outvars;
+		mutable std::vector<const DomainElement*>	_currargs;
+		mutable LookupTable::const_iterator										_currpos;
+		mutable std::vector<std::vector<const DomainElement*> >::const_iterator	_iter;
+	public:
+		EnumLookupGenerator(const LookupTable&, const std::vector<const DomainElement**> in, const std::vector<const DomainElement**> out);
+		bool first()	const;
+		bool next()		const;
 };
 
 class SortInstGenerator : public InstGenerator { 
@@ -138,9 +169,14 @@ class TreeInstGenerator : public InstGenerator {
 	Factory
 **************/
 
+class EnumeratedInternalPredTable;
+
 class GeneratorFactory {
+	private:
+		void visit(EnumeratedInternalPredTable*	);
 	public:
 		InstGenerator*	create(const std::vector<const DomainElement**>&, const std::vector<SortTable*>&);
+		InstGenerator*	create(PredTable*, std::vector<bool> pattern, const std::vector<const DomainElement**>&);
 };
 
 #endif

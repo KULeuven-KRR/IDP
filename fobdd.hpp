@@ -17,6 +17,8 @@ class PFSymbol;
 class Variable;
 class DomainElement;
 
+enum AtomKernelType { AKT_CT, AKT_CF, AKT_TWOVAL };
+
 /*******************
 	Kernel order
 *******************/
@@ -91,7 +93,7 @@ class FOBDDManager {
 		DomainTermTable		_domaintermtable;
 
 		FOBDD*				addBDD(FOBDDKernel* kernel,FOBDD* falsebranch,FOBDD* truebranch);
-		FOBDDAtomKernel*	addAtomKernel(PFSymbol* symbol,const std::vector<FOBDDArgument*>& args);
+		FOBDDAtomKernel*	addAtomKernel(PFSymbol* symbol,AtomKernelType akt, const std::vector<FOBDDArgument*>& args);
 		FOBDDQuantKernel*	addQuantKernel(Sort* sort, FOBDD* bdd);
 		FOBDDVariable*		addVariable(Variable* var);
 		FOBDDDeBruijnIndex* addDeBruijnIndex(Sort* sort, unsigned int index);
@@ -109,8 +111,8 @@ class FOBDDManager {
 		FOBDD*				truebdd()	const	{ return _truebdd;	}
 		FOBDD*				falsebdd()	const	{ return _falsebdd;	}
 
-		FOBDD*				getBDD(FOBDDKernel* kernel,FOBDD* falsebranch,FOBDD* truebranch);
-		FOBDDAtomKernel*	getAtomKernel(PFSymbol* symbol,const std::vector<FOBDDArgument*>& args);
+		FOBDD*				getBDD(FOBDDKernel* kernel,FOBDD* truebranch,FOBDD* falsebranch);
+		FOBDDAtomKernel*	getAtomKernel(PFSymbol* symbol,AtomKernelType akt, const std::vector<FOBDDArgument*>& args);
 		FOBDDQuantKernel*	getQuantKernel(Sort* sort, FOBDD* bdd);
 		FOBDDVariable*		getVariable(Variable* var);
 		FOBDDDeBruijnIndex* getDeBruijnIndex(Sort* sort, unsigned int index);
@@ -131,6 +133,9 @@ class FOBDDManager {
 		
 		FOBDDKernel*	substitute(FOBDDKernel*,const std::map<FOBDDVariable*,FOBDDVariable*>&);
 		FOBDDArgument*	substitute(FOBDDArgument*,const std::map<FOBDDVariable*,FOBDDVariable*>&);
+
+		int	longestbranch(FOBDDKernel*);
+		int	longestbranch(FOBDD*);
 
 		std::string	to_string(FOBDD*,unsigned int spaces = 0) const;
 		std::string	to_string(FOBDDKernel*,unsigned int spaces = 0) const;
@@ -153,7 +158,8 @@ class FOBDDFactory : public TheoryVisitor {
 	public:
 		FOBDDFactory(FOBDDManager* m, Vocabulary* v = 0) : _manager(m), _vocabulary(v) { }
 
-		FOBDD*	bdd() const { return _bdd;	}
+		FOBDD*			bdd()		const { return _bdd;		}
+		FOBDDArgument*	argument()	const { return _argument;	}
 
 		void	visit(const VarTerm* vt);
 		void	visit(const DomainTerm* dt);
@@ -265,15 +271,17 @@ class FOBDDKernel {
 class FOBDDAtomKernel : public FOBDDKernel {
 	private:
 		PFSymbol*					_symbol;
+		AtomKernelType				_type;
 		std::vector<FOBDDArgument*>	_args;
 
-		FOBDDAtomKernel(PFSymbol* symbol, const std::vector<FOBDDArgument*>& args, const KernelOrder& order) :
-			FOBDDKernel(order), _symbol(symbol), _args(args) { }
+		FOBDDAtomKernel(PFSymbol* symbol, AtomKernelType akt, const std::vector<FOBDDArgument*>& args, const KernelOrder& order) :
+			FOBDDKernel(order), _symbol(symbol), _type(akt), _args(args) { }
 
 	public:
 		bool containsDeBruijnIndex(unsigned int index)	const;
 
 		PFSymbol*		symbol()				const { return _symbol;		}
+		AtomKernelType	type()					const { return _type;		}
 		FOBDDArgument*	args(unsigned int n)	const { return _args[n];	}
 
 	friend class FOBDDManager;
