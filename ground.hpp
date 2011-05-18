@@ -33,6 +33,8 @@ class StrictWeakTupleOrdering;
 
 typedef std::vector<const DomainElement*> ElementTuple;
 
+typedef unsigned int VarId;
+
 /**********************************************
 	Translate from ground atoms to numbers
 **********************************************/
@@ -121,8 +123,6 @@ class AggTsBody : public TsBody {
 #ifdef CPSUPPORT
 /* Sets and terms that will be handled by a constraint solver */
 
-typedef unsigned int VarId;
-
 /**
  * Set of CP variable identifiers.
  */
@@ -131,6 +131,9 @@ class CPSet {
 		std::vector<VarId> _varids;
 };
 
+/**
+ * Abstract CP term class.
+ */
 class CPTerm {
 	protected:
 		virtual ~CPTerm() {	}
@@ -143,6 +146,9 @@ class CPTerm {
 		virtual void accept(TheoryVisitor*) const = 0;
 };
 
+/**
+ * CP term consisting of one CP variable.
+ */
 class CPVarTerm : public CPTerm {
 	private:
 		bool equal(const CPTerm&) const;
@@ -153,6 +159,9 @@ class CPVarTerm : public CPTerm {
 		void accept(TheoryVisitor* v) const { v->visit(this);	}
 };
 
+/**
+ * CP term consisting of a sum of CP variables.
+ */
 class CPSumTerm : public CPTerm {
 	private:
 		bool equal(const CPTerm&) const;
@@ -162,41 +171,50 @@ class CPSumTerm : public CPTerm {
 		void accept(TheoryVisitor* v) const { v->visit(this);	}
 };
 
+/**
+ * CP term consisting of a weighted sum of CP variables.
+ */
 class CPWSumTerm : public CPTerm {
 	private:
 		bool equal(const CPTerm&) const;
 		bool compare(const CPTerm&) const;
 	public:
 		std::vector<VarId> 	_varids; 
-		std::vector<int>			_weights;
+		std::vector<int>	_weights;
 		void accept(TheoryVisitor* v) const { v->visit(this);	}
 };
 
+/**
+ * A bound in a CP constraint can be an integer or a CP variable.
+ */
 struct CPBound {
 	bool _isvarid;
 	union { 
-		int _bound;
-		VarId _varid;
-	} _value;
-	CPBound(bool isvarid, int bound): _isvarid(isvarid) { _value._bound = bound; }
-	CPBound(bool isvarid, VarId varid): _isvarid(isvarid) { _value._varid = varid; }
+		int 	_bound;
+		VarId 	_varid;
+	};
+	CPBound(int bound): _isvarid(false), _bound(bound) { }
+	CPBound(VarId varid): _isvarid(true), _varid(varid) { }
 	friend bool operator==(const CPBound&, const CPBound&);
 	friend bool operator<(const CPBound&, const CPBound&);
 };
 
+/**
+ * Tseitin body consisting of a CP constraint.
+ */
 class CPTsBody : public TsBody {
 	private:
 		CPTerm*		_left;
 		CompType	_comp;
 		CPBound		_right;
+		bool equal(const TsBody&) const;
+		bool compare(const TsBody&) const;
 	public:
 		CPTsBody(TsType type, CPTerm* left, CompType comp, const CPBound& right) :
 			TsBody(type), _left(left), _comp(comp), _right(right) { }
 		CPTerm*		left()	const { return _left;	}
 		CompType	comp()	const { return _comp;	}
 		CPBound		right()	const { return _right;	}
-		bool equal(const TsBody&) const;
-		bool compare(const TsBody&) const;
 	friend class GroundTranslator;
 };
 #endif //CPSUPPORT
@@ -228,10 +246,13 @@ class GroundTranslator {
 		int				translate(const std::vector<int>& cl, bool conj, TsType tp);
 		int				translate(double bound, char comp, bool strict, AggFunction aggtype, int setnr, TsType tstype);
 		int				translate(PFSymbol*,const ElementTuple&);
+#ifdef CPSUPPORT
 		int				translate(CPTerm*, CompType, const CPBound&, TsType);
+#endif //CPSUPPORT
+		int				translateSet(const std::vector<int>&,const std::vector<double>&,const std::vector<double>&);
+
 		int				nextNumber();
 		unsigned int	addSymbol(PFSymbol* pfs);
-		int				translateSet(const std::vector<int>&,const std::vector<double>&,const std::vector<double>&);
 
 		PFSymbol*				symbol(int nr)				const	{ return _backsymbtable[abs(nr)];			}
 		const ElementTuple&		args(int nr)				const	{ return _backargstable[abs(nr)];			}
@@ -247,68 +268,60 @@ class GroundTranslator {
 		std::string	printAtom(int nr)	const;
 };
 
+struct GroundTerm {
+	bool _isvarid;
+#ifdef CPSUPPORT
+	union {
+		const DomainElement* 	_domelement;
+		const VarId 			_varid;
+	}
+#else
+	DomainElement* _domelement;
+#endif //CPSUPPORT
+	GroundTerm(DomainElement* domel): _isvarid(false), _domelement(domel) { }
+#ifdef CPSUPPORT
+	GroundTerm(VarId varid): _isvarid(true), _varid(varid) { }
+	friend bool operator==(const GroundTerm&, const GroundTerm&);
+	friend bool operator<(const GroundTerm&, const GroundTerm&);
+#endif //CPSUPPORT
+};
+
 #ifdef CPSUPPORT
 /**
  * Ground term translator.
  */
 class GroundTermTranslator {
 	private:
-		std::vector<std::map<ElementTuple,VarId,StrictWeakTupleOrdering> >
-									_functerm2varid_table;	// map terms to CP variable identifiers
-		std::vector<Function*>		_varid2function;		// map CP varid to the symbol of its corresponding term
-		std::vector<ElementTuple>	_varid2args;			// map CP varid to the terms of its corresponding term
+		std::vector<std::map<vector<GroundTerm>,VarId,StrictWeakTupleOrdering> >
+											_functerm2varid_table;	// map terms to CP variable identifiers
+		std::vector<Function*>				_varid2function;		// map CP varid to the symbol of its corresponding term
+		std::vector<vector<GroundTerm> >	_varid2args;			// map CP varid to the terms of its corresponding term
 		
 		std::vector<Function*>		_offset2function;
 		std::map<Function*,size_t>	_function2offset;
 
 	public:
-		VarIdTranslator() : _varid2function(1), _varid2args(1) { }
+		GroundTermTranslator() : _varid2function(1), _varid2args(1) { }
 
-		VarId	translate(size_t offset,const ElementTuple&);
-		VarId	translate(Function*,const ElementTuple&);
+		VarId	translate(size_t offset,const vector<GroundTerm>&);
+		VarId	translate(Function*,const vector<GroundTerm>&);
 
 		size_t	nextNumber();
 		size_t	addFunction(Function*);
 
-		bool 	contains(Function*,const ElementTuple&) const;
-		bool 	contains(Function*)						const;
+		bool 	contains(Function*,const vector<GroundTerm>&)	const;
+		bool 	contains(Function*)								const;
 
-		Function*				function(VarId varid)		const { return _backfunctable[varid];		}
-		const ElementTuple&		args(VarId varid)			const { return _backargstable[varid];		}
+		Function*					function(const VarId& varid)	const { return _varid2function[varid];		}
+		const vector<GroundTerm>&	args(const VarId& varid)		const { return _varid2args[varid];			}
+		bool						isVarId(const VarId& varid)		const { return function(varid) != 0;		}
 
-		size_t					nrOffsets()					const { return _offset2function.size();		}
-		size_t					getOffset(Function* func)	const { return _function2offset.at(func);	}
-		Function*				getFunction(size_t offset)	const { return _offset2function[offset];	}
+		size_t						nrOffsets()						const { return _offset2function.size();		}
+		size_t						getOffset(Function* func)		const { return _function2offset.at(func);	}
+		Function*					getFunction(size_t offset)		const { return _offset2function[offset];	}
 
-		std::string				printTerm(VarId)			const;
+		std::string		printTerm(const VarId&)		const;
 };
-
-//class ConstantTranslator {
-//	private:
-//		std::vector<std::map<ElementTuple,Functerm*,StrictWeakTupleOrdering> >
-//											_functerm2constant_table;
-//		std::map<Functerm*,Function*>		_constant2function;
-//		std::map<FuncTerm*,ElementTuple>	_constant2args;
-//
-//		std::vector<Function*>		_offset2function;
-//		std::map<Function*,size_t>	_function2offset;
-//
-//	public:
-//		ConstantTranslator() : _constant2function(1), _constant2args(1) { }
-//
-//		FuncTerm*	translate(size_t offset,const ElementTuple&);
-//		FuncTerm*	translate(Function*,const ElementTuple&);
-//
-//		bool 	contains(Function*,const ElementTuple&) const;
-//		bool	contains(Function*)						const;
-//
-//		Function*				function(FuncTerm* functerm)	const { return _constant2function.at(functerm);	}
-//		const ElementTuple&		args(FuncTerm* functerm)		const { return _constant2args.at(functerm);		}
-//
-//		size_t					nrOffsets()						const { return _offset2function.size();			}
-//		size_t					getOffset(Function* func)		const { return _function2offset.at(func);		}
-//		Function*				getFunction(size_t offset)		const { return _offset2function[offset];		}
-//};
 #endif //CPSUPPORT
 
 /************************************
@@ -388,6 +401,7 @@ class UnivSentGrounder : public TopLevelGrounder {
 		bool run() const;
 };
 
+
 /*** Term grounders ***/
 
 class TermGrounder {
@@ -399,8 +413,7 @@ class TermGrounder {
 	public:
 		TermGrounder() { }
 		virtual ~TermGrounder() { }
-		virtual const DomainElement* run() const = 0;
-		virtual bool canReturnCPVar() const = 0;
+		virtual GroundTerm run() const = 0;
 		void setorig(const Term* t, const std::map<Variable*,const DomainElement**>& mvd,int); 
 };
 
@@ -409,8 +422,7 @@ class DomTermGrounder : public TermGrounder {
 		const DomainElement*	_value;
 	public:
 		DomTermGrounder(const DomainElement* val) : _value(val) { }
-		const DomainElement* run() const { return _value;	}
-		bool canReturnCPVar() const { return false; }
+		GroundTerm run() const { return GroundTerm(_value);	}
 };
 
 class VarTermGrounder : public TermGrounder {
@@ -418,8 +430,7 @@ class VarTermGrounder : public TermGrounder {
 		const DomainElement**	_value;
 	public:
 		VarTermGrounder(const DomainElement** a) : _value(a) { }
-		const DomainElement* run() const; 
-		bool canReturnCPVar() const { return false; }
+		GroundTerm run() const; 
 };
 
 class FuncTermGrounder : public TermGrounder {
@@ -430,17 +441,17 @@ class FuncTermGrounder : public TermGrounder {
 #endif //CPSUPPORT
 		FuncTable*					_functable;
 		std::vector<TermGrounder*>	_subtermgrounders;
+		vector<GroundTerm>			_groundsubterms;
 		mutable ElementTuple		_args;
 	public:
 #ifdef CPSUPPORT
 		FuncTermGrounder(GroundTermTranslator* tt, Function* func, FuncTable* ftable, const std::vector<TermGrounder*>& sub) :
-			_termtranslator(tt), _function(func), _functable(ftable), _subtermgrounders(sub), _args(sub.size()) { }
+			_termtranslator(tt), _function(func), _functable(ftable), _subtermgrounders(sub), _groundsubterms(sub.size()), _args(sub.size()) { }
 #else
 		FuncTermGrounder(FuncTable* ftable, const std::vector<TermGrounder*>& sub) :
 			_functable(ftable), _subtermgrounders(sub), _args(sub.size()) { }
 #endif //CPSUPPORT
-		const DomainElement* run() const;
-		bool canReturnCPVar() const { return true; }
+		GroundTerm run() const;
 
 		// TODO? Optimisation:
 		//			Keep all values of the args + result of the previous call to calc().
@@ -456,9 +467,9 @@ class AggTermGrounder : public TermGrounder {
 	public:
 		AggTermGrounder(GroundTranslator* gt, AggFunction tp, SetGrounder* gr):
 			_type(tp), _setgrounder(gr), _translator(gt) { }
-		const DomainElement* run() const;
-		bool canReturnCPVar() const { return true; }
+		GroundTerm run() const;
 };
+
 
 /*** Formula grounders ***/
 
@@ -484,8 +495,8 @@ class AtomGrounder : public FormulaGrounder {
 		std::vector<TermGrounder*>	_subtermgrounders;
 		InstanceChecker*			_pchecker;
 		InstanceChecker*			_cchecker;
-		unsigned int				_symbol;
-		mutable ElementTuple		_args;
+		size_t						_symbol; // symbol's offset in translator's table.
+		vector<GroundTerm>			_args;
 		std::vector<SortTable*>		_tables;
 		bool						_sign;
 		int							_certainvalue;
@@ -499,24 +510,24 @@ class AtomGrounder : public FormulaGrounder {
 };
 
 #ifdef CPSUPPORT
-class CPAtomGrounder : public AtomGrounder {
-	private:
-		GroundTermTranslator*	_termtranslator;
-	public:
-		CPAtomGrounder(GroundTranslator*, GroundTermTranslator*, bool sign, Function*,
-					const std::vector<TermGrounder*>, InstanceChecker*, InstanceChecker*,
-					const std::vector<SortTable*>&, const GroundingContext&);
-		int	run() const;
-};
+//class CPAtomGrounder : public AtomGrounder {
+//	private:
+//		GroundTermTranslator*	_termtranslator;
+//	public:
+//		CPAtomGrounder(GroundTranslator*, GroundTermTranslator*, bool sign, Function*,
+//					const std::vector<TermGrounder*>, InstanceChecker*, InstanceChecker*,
+//					const std::vector<SortTable*>&, const GroundingContext&);
+//		int	run() const;
+//};
 
-class CPFormulaGrounder : public FormulaGrounder {
+class ComparisonGrounder : public FormulaGrounder {
 	private:
 		GroundTermTranslator* 	_termtranslator;
 		TermGrounder*			_lefttermgrounder;
 		TermGrounder*			_righttermgrounder;
 		CompType				_comparator;
 	public:
-		CPFormulaGrounder(GroundTranslator* gt, GroundTermTranslator* tt, 
+		ComparisonGrounder(GroundTranslator* gt, GroundTermTranslator* tt, 
 				TermGrounder* left, CompType comp, TermGrounder* right,
 				const GroundingContext& gc):
 			FormulaGrounder(gt,gc), _termtranslator(tt),
@@ -648,8 +659,9 @@ class HeadGrounder {
 		InstanceChecker*			_truechecker;
 		InstanceChecker*			_falsechecker;
 		unsigned int				_symbol;
-		mutable ElementTuple		_args;
 		std::vector<SortTable*>		_tables;
+		vector<GroundTerm>			_groundsubterms;
+		mutable ElementTuple		_args;
 	public:
 		HeadGrounder(AbstractGroundTheory* gt, InstanceChecker* pc, InstanceChecker* cc, PFSymbol* s, 
 					const std::vector<TermGrounder*>&, const std::vector<SortTable*>&);

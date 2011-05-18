@@ -310,11 +310,11 @@ class AbstractGroundTheory : public AbstractTheory {
 	protected:
 		AbstractStructure*		_structure;			// The ground theory may be partially reduced with respect to this structure. 
 		GroundTranslator*		_translator;		// Link between ground atoms and SAT-solver literals.
-		GroundTermTranslator*	_termtranslator;	// Link between ground terms and SAT-solver literals.
+		GroundTermTranslator*	_termtranslator;	// Link between ground terms and CP-solver variables.
 
-		std::set<int>			_printedtseitins;	// Tseitin atoms produced by the translator that occur in the theory.
-		std::set<int>			_printedsets;		// Set numbers produced by the translator that occur in the theory.
-		std::set<int>			_printedconstraints; // Atoms for which a connection to CP constraints are added.
+		std::set<int>			_printedtseitins;		// Tseitin atoms produced by the translator that occur in the theory.
+		std::set<int>			_printedsets;			// Set numbers produced by the translator that occur in the theory.
+		std::set<int>			_printedconstraints;	// Atoms for which a connection to CP constraints are added.
 
 		const 	GroundTranslator& getTranslator() const	{ return *_translator; }
 				GroundTranslator& getTranslator() 		{ return *_translator; }
