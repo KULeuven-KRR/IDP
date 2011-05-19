@@ -352,12 +352,8 @@ namespace FormulaUtils {
 	Formula* graph_functions(Formula* f);	
 
 	/** \brief Non-recursively move terms that are three-valued in a given structure outside of the given atom **/
-#ifdef CPSUPPORT
 	Formula* moveThreeValuedTerms(Formula*,AbstractStructure*,bool positive,bool cpsupport=false,
-								const std::set<const Function*> cpfunctions=std::set<const Function*>());
-#else
-	Formula* moveThreeValuedTerms(Formula*,AbstractStructure*,bool positive);
-#endif //CPSUPPORT
+								const std::set<const PFSymbol*> cpsymbols=std::set<const PFSymbol*>());
 
 	/** \brief Returns true iff the aggregate formula is monotone **/
 	bool monotone(const AggForm* af);

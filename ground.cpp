@@ -83,7 +83,6 @@ bool CPTsBody::compare(const TsBody& other) const {
 	return false;
 }
 
-#ifdef CPSUPPORT
 /** Comparing CP terms and bounds **/
 
 bool operator==(const CPTerm& a, const CPTerm& b) {
@@ -145,8 +144,6 @@ bool operator<(const CPBound& a, const CPBound& b) {
 	return (a._isvarid < b._isvarid);
 }
 
-#endif //CPSUPPORT
-
 
 /*********************************************
 	Translate from ground atoms to numbers
@@ -161,7 +158,7 @@ GroundTranslator::~GroundTranslator() {
 }
 
 int GroundTranslator::translate(unsigned int n, const ElementTuple& args) {
-	map<ElementTuple,int>::iterator jt = _table[n].lower_bound(args);
+	map<ElementTuple,int,StrictWeakTupleOrdering>::iterator jt = _table[n].lower_bound(args);
 	if(jt != _table[n].end() && jt->first == args) {
 		return jt->second;
 	}
@@ -210,7 +207,7 @@ int	GroundTranslator::translate(double bound, char comp, bool strict, AggFunctio
 
 int GroundTranslator::translate(CPTerm* left, CompType comp, const CPBound& right, TsType tstype) {
 	CPTsBody* tsbody = new CPTsBody(tstype,left,comp,right);
-	map<TsBody*,int,TsCompare>::iterator it = _tsbodies2nr.lower_bound(tsbody);
+	map<TsBody*,int,StrictWeakTsBodyOrdering>::iterator it = _tsbodies2nr.lower_bound(tsbody);
 	if(it != _tsbodies2nr.end() && *(it->first) == *tsbody) {
 		delete tsbody;
 		return it->second;
@@ -294,7 +291,6 @@ string GroundTranslator::printAtom(int nr) const {
 }
 
 
-#ifdef CPSUPPORT
 /*********************************************
 	Translate from ground terms to numbers
 *********************************************/
@@ -315,13 +311,13 @@ bool operator<(const GroundTerm& a, const GroundTerm& b) {
 }
 
 VarId GroundTermTranslator::translate(size_t offset, const vector<GroundTerm>& args) {
-	map<vector<GroundTerm>,VarId>::iterator jt = _functerm2varid_table[offset].lower_bound(args);
-	if(jt != _functerm2varid_table[offset].end() && jt->first == args) {
-		return jt->second;
+	map<vector<GroundTerm>,VarId>::iterator it = _functerm2varid_table[offset].lower_bound(args);
+	if(it != _functerm2varid_table[offset].end() && it->first == args) {
+		return it->second;
 	}
 	else {
 		VarId varid = nextNumber();
-		_functerm2varid_table[offset].insert(jt,pair<vector<GroundTerm>,VarId>(args,varid));
+		_functerm2varid_table[offset].insert(it,pair<vector<GroundTerm>,VarId>(args,varid));
 		_varid2function[varid] = _offset2function[offset];
 		_varid2args[varid] = args;
 		return varid;
@@ -331,6 +327,50 @@ VarId GroundTermTranslator::translate(size_t offset, const vector<GroundTerm>& a
 VarId GroundTermTranslator::translate(Function* func, const vector<GroundTerm>& args) {
 	size_t offset = addFunction(func);
 	return translate(offset,args);
+}
+
+//VarId GroundTermTranslator::translate(const CPTerm* cpterm) {
+//	map<const CPTerm*,VarId,StrictWeakCPTermOrdering>::iterator it = _cpterm2varid.lower_bound(cpterm);
+//	if(it != _cpterm2varid.end() && *(it->first) == *cpterm) {
+//		return it->second;
+//	}
+//	else {
+//		VarId varid = nextNumber();
+//		_cpterm2varid.insert(it,pair<const CPTerm*,VarId>(cpterm,varid));
+//		_varid2cpterm.insert(pair<VarId,const CPTerm*>(varid,cpterm));
+//		return varid;
+//	}
+//}
+
+//VarId GroundTermTranslator::translate(const DomainElement* element) {
+//	map<const DomainElement*,VarId,StrictWeakElementOrdering>::iterator it = _element2varid.lower_bound(element);
+//	if(it != _element2varid.end() && *(it->first) == *element) {
+//		return it->second;
+//	}
+//	else {
+//		VarId varid = nextNumber();
+//		_element2varid.insert(it,pair<const DomainElement*,VarId>(element,varid));
+//		_varid2element.insert(pair<VarId,const DomainElement*>(varid,element));
+//		return varid;
+//	}
+//}
+
+VarId GroundTermTranslator::translate(CPTerm* cpterm) {
+	VarId varid = nextNumber();
+	CPBound bound(varid);
+	CPTsBody* cprelation = new CPTsBody(TS_EQ,cpterm,CT_EQ,bound);
+	_varid2cprelation.insert(pair<VarId,CPTsBody*>(varid,cprelation));
+	return varid;
+}
+
+VarId GroundTermTranslator::translate(const DomainElement* element) {
+	VarId varid = nextNumber();
+	CPVarTerm* cpterm = new CPVarTerm(varid);
+	assert(element->type() == DET_INT);
+	CPBound bound(element->value()._int);
+	CPTsBody* cprelation = new CPTsBody(TS_EQ,cpterm,CT_EQ,bound);
+	_varid2cprelation.insert(pair<VarId,CPTsBody*>(varid,cprelation));
+	return varid;
 }
 
 size_t GroundTermTranslator::nextNumber() {
@@ -350,47 +390,47 @@ size_t GroundTermTranslator::addFunction(Function* func) {
 		size_t offset = _offset2function.size();
 		_function2offset[func] = offset; 
 		_offset2function.push_back(func);
-		_functerm2varid_table.push_back(map<vector<GroundTerm>,VarId,StrictWeakTupleOrdering>());
+		_functerm2varid_table.push_back(map<vector<GroundTerm>,VarId>());
 		return offset;	
 	}
 }
 
-bool GroundTermTranslator::contains(Function* func, const vector<GroundTerm>& args) const {
-	if(contains(func)) {
-		size_t offset = getOffset(func);
-		map<vector<GroundTerm>,VarId>::const_iterator jt = _functerm2varid_table[offset].lower_bound(args);
-		return jt != _functerm2varid_table[offset].end() && jt->first == args;
-	}
-	return false;
-}
+//bool GroundTermTranslator::contains(Function* func, const vector<GroundTerm>& args) const {
+//	if(contains(func)) {
+//		size_t offset = getOffset(func);
+//		map<vector<GroundTerm>,VarId>::const_iterator it = _functerm2varid_table[offset].lower_bound(args);
+//		return it != _functerm2varid_table[offset].end() && it->first == args;
+//	}
+//	return false;
+//}
 
-bool GroundTermTranslator::contains(Function* func)	const {
-	return _function2offset.find(func) != _function2offset.end();
-}
+//bool GroundTermTranslator::contains(Function* func)	const {
+//	return _function2offset.find(func) != _function2offset.end();
+//}
 
-string GroundTermTranslator::printTerm(VarId varid) const {
+string GroundTermTranslator::printTerm(const VarId& varid) const {
 	stringstream s;
 	if(varid >= _varid2function.size()) {
 		return "error";
 	}
-	Function* func = function(varid);
-	s << func->to_string();
-	if(not args(varid).empty()) {
-		s << "(";
-		for(vector<GroundTerm>::const_iterator gtit = args(varid).begin(); gtit != args(varid).end(); ++gtit) {
-			if((*gtit)._isvarid) {
-				s << printTerm((*gtit)._varid);
-			} else {
-				s << (*gtit)._domelement->to_string();
+	const Function* func = function(varid);
+	if(func) {
+		s << func->to_string();
+		if(not args(varid).empty()) {
+			s << "(";
+			for(vector<GroundTerm>::const_iterator gtit = args(varid).begin(); gtit != args(varid).end(); ++gtit) {
+				if((*gtit)._isvarid) {
+					s << printTerm((*gtit)._varid);
+				} else {
+					s << (*gtit)._domelement->to_string();
+				}
+				if(*gtit != args(varid).back()) s << ",";
 			}
-			if(*gtit != args(varid).last()) s << ",";
+			s << ")";
 		}
-		s << ")";
-	}
+	} else s << "var_" << varid;
 	return s.str();
 }
-
-#endif //CPSUPPORT
 
 
 /*************************************
@@ -494,7 +534,7 @@ AtomGrounder::AtomGrounder(GroundTranslator* gt, bool sign, PFSymbol* s,
 							const vector<TermGrounder*> sg, InstanceChecker* pic, InstanceChecker* cic,
 							const vector<SortTable*>& vst, const GroundingContext& ct) :
 	FormulaGrounder(gt,ct), _subtermgrounders(sg), _pchecker(pic), _cchecker(cic),
-   	_symbol(gt->addSymbol(s)), _args(sg.size()), _tables(vst), _sign(sign)
+   	_symbol(gt->addSymbol(s)), _groundsubterms(sg.size()), _args(sg.size()), _tables(vst), _sign(sign)
 	{ _certainvalue = ct._truegen ? _true : _false; }
 
 int AtomGrounder::run() const {
@@ -647,17 +687,22 @@ void AtomGrounder::run(vector<int>& clause) const {
 //}
 
 int ComparisonGrounder::run() const {
-	GroundTerm left = _lefttermgrounder->run();
-	GroundTerm right = _righttermgrounder->run();
+	const GroundTerm& left = _lefttermgrounder->run();
+	const GroundTerm& right = _righttermgrounder->run();
 
+	//XXX Is following check necessary??
 	if((not left._domelement && not left._varid) || (not right._domelement && not right._varid)) {
 		return _context._funccontext != PC_NEGATIVE  ? _true : _false;
 	}
 
+	//FIXME What if the comparison predicate was overloaded?! In that case this will not be correct!!
+	//TODO Use a better mechanism to recognize comparison predicates that should be handled by this grounder
+	// -> only use this one if it was not overloaded by the user???
+
 	//TODO??? out-of-bounds check. Can out-of-bounds ever occur on </2, >/2, =/2???
 	
 	if(left._isvarid) {
-		CPTerm* lefterm = new CPVarTerm(left._varid);
+		CPTerm* leftterm = new CPVarTerm(left._varid);
 		if(right._isvarid) {
 			CPBound rightbound(right._varid);
 			return _translator->translate(leftterm,_comparator,rightbound,_context._tseitin);
@@ -701,7 +746,7 @@ int ComparisonGrounder::run() const {
 	return 0;
 }
 
-void CPFormulaGrounder::run(vector<int>& clause) const {
+void ComparisonGrounder::run(vector<int>& clause) const {
 	clause.push_back(run());
 }
 
@@ -871,8 +916,8 @@ int AggGrounder::finish(double boundvalue, double newboundvalue, double minpossv
 int AggGrounder::run() const {
 	// Run subgrounders
 	int setnr = _setgrounder->run();
-	GroundTerm groundbound = _boundgrounder->run();
-	assert(not ground._isvarid); //TODO
+	const GroundTerm& groundbound = _boundgrounder->run();
+	assert(not groundbound._isvarid); //TODO
 	const DomainElement* bound = groundbound._domelement;
 
 	// Retrieve the set, note that weights might be changed when handling min and max aggregates.
@@ -1215,7 +1260,7 @@ GroundTerm FuncTermGrounder::run() const {
 			_args[n] = _groundsubterms[n]._domelement;
 		}
 	}
-	if(calculable) { // All ground subterms are domain elements!
+	if(calculable && _functable) { // All ground subterms are domain elements!
 		const DomainElement* result = (*_functable)[_args];
 		if(result) {
 			if(_verbosity > 2) {
@@ -1248,6 +1293,49 @@ GroundTerm FuncTermGrounder::run() const {
 }
 #endif //CPSUPPORT
 
+GroundTerm SumTermGrounder::run() const {
+	if(_verbosity > 2) { 
+		printorig();
+	}
+	// Run subtermgrounders
+	const GroundTerm& left = _lefttermgrounder->run();
+	const GroundTerm& right = _righttermgrounder->run();
+
+	VarId varid;
+	if(left._isvarid) {
+		if(right._isvarid) {
+			CPTerm* sumterm = new CPSumTerm(left._varid,right._varid);
+			varid = _termtranslator->translate(sumterm);
+		} else {
+			assert(not right._isvarid);
+			VarId rightvarid = _termtranslator->translate(right._domelement);
+			CPTerm* sumterm = new CPSumTerm(left._varid,rightvarid);
+			varid = _termtranslator->translate(sumterm);
+		}
+	} else {
+		assert(not left._isvarid);
+		if(right._isvarid) {
+			VarId leftvarid = _termtranslator->translate(left._domelement);
+			CPTerm* sumterm = new CPSumTerm(leftvarid,right._varid);
+			varid = _termtranslator->translate(sumterm);
+		} else { // Both subterms are domain elements, so lookup the result in the function table.
+			assert(not right._isvarid);
+			assert(_functable);
+			ElementTuple args(2); args[0] = left._domelement; args[1] = right._domelement;
+			const DomainElement* result = (*_functable)[args];
+			assert(result);
+			if(_verbosity > 2) {
+				clog << "Result = " << *result << endl;
+			}
+			return GroundTerm(result);
+		}
+	}
+	if(_verbosity > 2) {
+		clog << "Result = " << _termtranslator->printTerm(varid) << endl;
+	}
+	return GroundTerm(varid);
+}
+
 GroundTerm AggTermGrounder::run() const {
 //TODO Should this grounder return a VarId in some cases?
 	int setnr = _setgrounder->run();
@@ -1268,7 +1356,7 @@ int EnumSetGrounder::run() const {
 	for(unsigned int n = 0; n < _subgrounders.size(); ++n) {
 		int l = _subgrounders[n]->run();
 		if(l != _false) {
-			GroundTerm groundweight = _subtermgrounders[n]->run();
+			const GroundTerm& groundweight = _subtermgrounders[n]->run();
 			assert(not groundweight._isvarid);
 			const DomainElement* d = groundweight._domelement;
 			double w = d->type() == DET_INT ? (double) d->value()._int : d->value()._double;
@@ -1290,7 +1378,7 @@ int QuantSetGrounder::run() const {
 	if(_generator->first()) {
 		int l = _subgrounder->run();
 		if(l != _false) {
-			GroundTerm groundweight = _weightgrounder->run();
+			const GroundTerm& groundweight = _weightgrounder->run();
 			assert(not groundweight._isvarid);
 			const DomainElement* weight = groundweight._domelement;
 			double w = weight->type() == DET_INT ? (double) weight->value()._int : weight->value()._double;
@@ -1303,7 +1391,7 @@ int QuantSetGrounder::run() const {
 		while(_generator->next()) {
 			l = _subgrounder->run();
 			if(l != _false) {
-				GroundTerm groundweight = _weightgrounder->run();
+				const GroundTerm& groundweight = _weightgrounder->run();
 				assert(not groundweight._isvarid);
 				const DomainElement* weight = groundweight._domelement;
 				double w = weight->type() == DET_INT ? (double) weight->value()._int : weight->value()._double;
@@ -1424,16 +1512,14 @@ bool DefinitionGrounder::run() const {
 	GrounderFactory methods
 ******************************/
 
-#ifdef CPSUPPORT
 set<const PFSymbol*> GrounderFactory::findCPSymbols(const AbstractTheory* theory) {
 	Vocabulary* vocabulary = theory->vocabulary();
-	for(map<string,Predicate*>::const_iterator predit = vocabulary->firstpred(); predit != vocabulary->lastpred(); ++predit) {
-		Predicate* predicate = predit->second;
-		string name = predicate->symbol()->name();
-		if(name == "=/2" || name == "</2" || name = ">/2") {
-			_cpsymbols.insert(predicate);
-		}
-	}
+//	for(map<string,Predicate*>::const_iterator predit = vocabulary->firstpred(); predit != vocabulary->lastpred(); ++predit) {
+//		Predicate* predicate = predit->second;
+//		if(VocabularyUtils::isComparisonPredicate(predicate)) {
+//			_cpsymbols.insert(predicate);
+//		}
+//	}
 	for(map<string,Function*>::const_iterator funcit = vocabulary->firstfunc(); funcit != vocabulary->lastfunc(); ++funcit) {
 		Function* function = funcit->second;
 		bool passtocp = false;
@@ -1450,7 +1536,7 @@ set<const PFSymbol*> GrounderFactory::findCPSymbols(const AbstractTheory* theory
 		if(passtocp) _cpsymbols.insert(function);
 	}
 	if(_options->groundverbosity() > 1) {
-		clog << "Symbols that can be handled by the constraint solver: ";
+		clog << "User-defined symbols that can be handled by the constraint solver: ";
 		for(set<const PFSymbol*>::const_iterator it = _cpsymbols.begin(); it != _cpsymbols.end(); ++it) {
 			clog << (*it)->to_string() << " ";
 		}
@@ -1459,11 +1545,9 @@ set<const PFSymbol*> GrounderFactory::findCPSymbols(const AbstractTheory* theory
 	return _cpsymbols;
 }
 
-bool GrounderFactory::isCPSymbol(const PFSymbol* symbol) const { 
-	return _cpsymbols.find(symbol) != _cpsymbols.end();
+bool GrounderFactory::isCPSymbol(const PFSymbol* symbol) const {
+	return VocabularyUtils::isComparisonPredicate(symbol) || (_cpsymbols.find(symbol) != _cpsymbols.end());
 }
-#endif //CPSUPPORT
-
 
 /**
  * bool GrounderFactory::recursive(const Formula*)
@@ -1615,7 +1699,7 @@ TopLevelGrounder* GrounderFactory::create(const AbstractTheory* theory) {
 
 #ifdef CPSUPPORT
 	// Find function that can be passed to CP solver.
-	if(_options->cpsupport()) findCPFunctions(theory);
+	if(_options->cpsupport()) findCPSymbols(theory);
 #endif //CPSUPPORT
 
 	// Create the grounder
@@ -1646,7 +1730,7 @@ TopLevelGrounder* GrounderFactory::create(const AbstractTheory* theory, SATSolve
 
 #ifdef CPSUPPORT
 	// Find function that can be passed to CP solver.
-	if(_options->cpsupport()) findCPFunctions(theory);
+	if(_options->cpsupport()) findCPSymbols(theory);
 #endif //CPSUPPORT
 
 	// Create the grounder
@@ -1697,11 +1781,6 @@ void GrounderFactory::visit(const Theory* theory) {
 	_toplevelgrounder = new TheoryGrounder(_grounding,children,_options->groundverbosity());
 }
 
-bool isComparisonPredicate(PFSymbol* symbol) {
-	string name = symbol->name();
-	return (typeid(*symbol) == typeid(Predicate)) && (name == "=/2" || name == "</2" || name == ">/2");
-}
-
 /**
  * void GrounderFactory::visit(const PredForm* pf) 
  * DESCRIPTION
@@ -1721,11 +1800,7 @@ void GrounderFactory::visit(const PredForm* pf) {
 	// to _structure outside the atom. To avoid changing the original atom, 
 	// we first clone it.
 	PredForm* newpf = pf->clone();
-#ifdef CPSUPPORT
 	Formula* transpf = FormulaUtils::moveThreeValuedTerms(newpf,_structure,(_context._funccontext != PC_NEGATIVE),_options->cpsupport(),_cpsymbols);
-#else
-	Formula* transpf = FormulaUtils::moveThreeValuedTerms(newpf,_structure,(_context._funccontext != PC_NEGATIVE));
-#endif //CPSUPPORT
 
 	if(typeid(*transpf) != typeid(PredForm)) {	// The rewriting changed the atom
 		if(_options->groundverbosity() > 1) {
@@ -1744,8 +1819,7 @@ void GrounderFactory::visit(const PredForm* pf) {
 			argsorttables.push_back(_structure->inter(ptranspf->symbol()->sorts()[n]));
 		}
 		// Create checkers and grounder
-#ifdef CPSUPPORT
-		if(_options->cpsupport() && isComparisonPredicate(ptranspf->symbol())) {
+		if(_options->cpsupport() && VocabularyUtils::isComparisonPredicate(ptranspf->symbol())) {
 			string name = ptranspf->symbol()->name();
 			CompType comp;
 			if(name == "=/2")
@@ -1760,11 +1834,8 @@ void GrounderFactory::visit(const PredForm* pf) {
 			}
 			_formgrounder = new ComparisonGrounder(_grounding->translator(),_grounding->termtranslator(),
 									subtermgrounders[0],comp,subtermgrounders[1],_context);
-			//if(_context._component == CC_SENTENCE) 
-			//	_toplevelgrounder = new SentenceGrounder(_grounding,_formgrounder,false,_options->groundverbosity());
 		}
 		else {
-#endif //CPSUPPORT
 			PredInter* inter = _structure->inter(ptranspf->symbol());
 			CheckerFactory checkfactory;
 			if(_context._component == CC_HEAD) {
@@ -1801,9 +1872,7 @@ void GrounderFactory::visit(const PredForm* pf) {
 //				}
 //XXX
 			}
-#ifdef CPSUPPORT
 		}
-#endif //CPSUPPORT
 		_formgrounder->setorig(ptranspf,_varmapping,_options->groundverbosity());
 		if(_context._component == CC_SENTENCE) { 
 			_toplevelgrounder = new SentenceGrounder(_grounding,_formgrounder,false,_options->groundverbosity());
@@ -1976,11 +2045,7 @@ void GrounderFactory::visit(const EquivForm* ef) {
  */
 void GrounderFactory::visit(const AggForm* af) {
 	AggForm* newaf = af->clone();
-#ifdef CPSUPPORT
-	Formula* transpf = FormulaUtils::moveThreeValuedTerms(newpf,_structure,(_context._funccontext != PC_NEGATIVE),_options->cpsupport(),_cpsymbols);
-#else
-	Formula* transpf = FormulaUtils::moveThreeValuedTerms(newpf,_structure,(_context._funccontext != PC_NEGATIVE));
-#endif //CPSUPPORT
+	Formula* transaf = FormulaUtils::moveThreeValuedTerms(newaf,_structure,(_context._funccontext != PC_NEGATIVE),_options->cpsupport(),_cpsymbols);
 
 	if(typeid(*transaf) != typeid(AggForm)) {	// The rewriting changed the atom
 		transaf->accept(this);
@@ -2068,44 +2133,12 @@ void GrounderFactory::visit(const FuncTerm* t) {
 
 	// Create term grounder
 	Function* function = t->function();
-
-//	if(function->symbol()->name() == "+/2") {
-//		_termgrounder = new SumTermGrounder(_termtranslator,subtermgrounders);
-//	} else {
-
 	FuncTable* ftable = _structure->inter(function)->functable();
-	assert(ftable);
-#ifdef CPSUPPORT
-	_termgrounder = new FuncTermGrounder(_termtranslator,function,ftable,subtermgrounders);
-#else
-	_termgrounder = new FuncTermGrounder(ftable,subtermgrounders);
-#endif //CPSUPPORT
-
-	//XXX Old code XXX
-	//if(_structure->inter(function)->approxtwovalued()) {
-	//	FuncTable* ftable = _structure->inter(function)->functable();
-	//	assert(ftable);
-	//	_termgrounder = new FuncTermGrounder(subtermgrounders,ftable);
-	//}
-	//else {
-	//	Universe universe = _structure->universe(function);
-	//	FuncTable* ftable = new FuncTable(new EnumeratedInternalFuncTable(),universe); 
-	//	vector<SortTable*> domtabs = universe.tables(); domtabs.pop_back();
-	//	Universe domain(domtabs);
-	//	if(domain.approxfinite()) {
-	//		const PredTable* ptable = _structure->inter(function)->graphinter()->ct();
-	//		for(TableIterator it = ptable->begin(); it.hasNext(); ++it) {
-	//			ftable->add(*it);
-	//		}
-	//	}
-	//	else {
-	//		assert(false);
-	//		// This should never happen.. FuncTerm should have been moved.
-	//	}
-	//	_termgrounder = new ThreeValuedFuncTermGrounder(subtermgrounders,function,ftable,universe);
-	//}
-	//XXX Old code XXX
-	
+	if(_options->cpsupport() && function->name() == "+/2") {
+		_termgrounder = new SumTermGrounder(_grounding->termtranslator(),ftable,subtermgrounders[0],subtermgrounders[1]);
+	} else {
+		_termgrounder = new FuncTermGrounder(_grounding->termtranslator(),function,ftable,subtermgrounders);
+	}
 	_termgrounder->setorig(t,_varmapping,_options->groundverbosity());
 }
 
@@ -2119,10 +2152,7 @@ void GrounderFactory::visit(const AggTerm* t) {
 	t->set()->accept(this);
 
 	// Create term grounder
-	//if(SetUtils::approxTwoValued(t->set(),_structure) || not _options->cpsupport())
 	_termgrounder = new AggTermGrounder(_grounding->translator(),t->function(),_setgrounder);
-	//else //TODO
-	//	_termgrounder = new ThreeValuedAggTermGrounder(_grounding->translator(),t->function(),_setgrounder);
 	_termgrounder->setorig(t,_varmapping,_options->groundverbosity());
 }
 
@@ -2301,7 +2331,6 @@ void GrounderFactory::visit(const Rule* rule) {
 	Visitor
 **************/
 
-#ifdef CPSUPPORT
 void TheoryVisitor::visit(const CPVarTerm*) {
 	// TODO
 }
@@ -2317,4 +2346,3 @@ void TheoryVisitor::visit(const CPSumTerm*) {
 void TheoryVisitor::visit(const CPReification*) {
 	// TODO
 }
-#endif //CPSUPPORT

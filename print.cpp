@@ -17,6 +17,7 @@
 #include "common.hpp"
 
 using namespace std;
+using namespace rel_ops;
 
 /**************
     Printer
@@ -347,7 +348,7 @@ void IDPPrinter::printTerm(unsigned int termnr) {
 	// Make sure there is a translator.
 	assert(_termtranslator);
 	// Get information from the term translator.
-	Function* func = _termtranslator->function(termnr);
+	const Function* func = _termtranslator->function(termnr);
 	if(func) {
 		// Print the symbol's name.
 		_out << func->name().substr(0,func->name().find('/'));
@@ -363,16 +364,24 @@ void IDPPrinter::printTerm(unsigned int termnr) {
 			_out << ']';
 		}
 		// Get the arguments from the translator.
-		const vector<const DomainElement*>& args = _termtranslator->args(termnr);
+		const vector<GroundTerm>& args = _termtranslator->args(termnr);
 		// Print the arguments.
 		if(not args.empty()) {
 			_out << "(";
-			for(unsigned int c = 0; c < args.size(); ++c) {
-				_out << args[c]->to_string();
-				if(c != args.size()-1) _out << ",";
+			for(vector<GroundTerm>::const_iterator gtit = args.begin(); gtit != args.end(); ++gtit) {
+				if((*gtit)._isvarid) {
+					printTerm((*gtit)._varid);
+				} else {
+					_out << (*gtit)._domelement->to_string();
+				}
+				if(*gtit != args.back()) _out << ",";
 			}
 			_out << ")";
 		}
+	} else {
+		_out << "var_" << termnr;
+//		CPTsBody* cprelation = _termtranslator->cprelation(varid);
+//		CPReification(1,cprelation).accept(this);
 	}
 }
 
@@ -573,8 +582,8 @@ void IDPPrinter::visit(const CPReification* cpr) {
 		default: assert(false);
 	}
 	CPBound right = cpr->_body->right();
-	if(right._isvarid) printTerm(right._value._varid);
-	else _out << right._value._bound;
+	if(right._isvarid) printTerm(right._varid);
+	else _out << right._bound;
 	_out << '.' << endl;
 }
 
@@ -587,7 +596,7 @@ void EcnfPrinter::printCPVariables(vector<unsigned int> varids) {
 void EcnfPrinter::printCPVariable(unsigned int varid) {
 	if(_printedvarids.find(varid) == _printedvarids.end()) {
 		_printedvarids.insert(varid);
-		Function* function = _termtranslator->function(varid);
+		const Function* function = _termtranslator->function(varid);
 		SortTable* domain = _structure->inter(function->outsort());
 		int minvalue = domain->first()->value()._int;
 		int maxvalue = domain->last()->value()._int;
@@ -604,21 +613,18 @@ void EcnfPrinter::printCPVariable(unsigned int varid) {
 	}
 }
 
-void EcnfPrinter::printCPReification(string type, int head, unsigned int left, CompType comp, int right) {
-	#warning "Might be dangerous to cast varids to bounds (unsigned int to int)";
+void EcnfPrinter::printCPReification(string type, int head, unsigned int left, CompType comp, long right) {
 	_out << type << ' ' << head << ' ' << left << ' ' << comp << ' ' << right << " 0" << endl;
 }
 
-void EcnfPrinter::printCPReification(string type, int head, vector<unsigned int> left, CompType comp, int right) {
-	#warning "Might be dangerous to cast varids to bounds (unsigned int to int)";
+void EcnfPrinter::printCPReification(string type, int head, vector<unsigned int> left, CompType comp, long right) {
 	_out << type << ' ' << head << ' ';
 	for(vector<unsigned int>::const_iterator it = left.begin(); it != left.end(); ++it)
 		_out << *it << ' ';
 	_out << comp << ' ' << right << " 0" << endl;
 }
 
-void EcnfPrinter::printCPReification(string type, int head, vector<unsigned int> left, vector<int> weights, CompType comp, int right) {
-	#warning "Might be dangerous to cast varids to bounds (unsigned int to int)";
+void EcnfPrinter::printCPReification(string type, int head, vector<unsigned int> left, vector<int> weights, CompType comp, long right) {
 	_out << type << ' ' << head << ' ';
 	for(vector<unsigned int>::const_iterator it = left.begin(); it != left.end(); ++it)
 		_out << *it << ' ';
@@ -636,22 +642,22 @@ void EcnfPrinter::visit(const CPReification* cpr) {
 		CPVarTerm* term = dynamic_cast<CPVarTerm*>(left);
 		printCPVariable(term->_varid);
 		if(right._isvarid) { // CPBinaryRelVar
-			printCPVariable(right._value._varid);
-			printCPReification("BINTRT",cpr->_head,term->_varid,comp,right._value._varid);
+			printCPVariable(right._varid);
+			printCPReification("BINTRT",cpr->_head,term->_varid,comp,right._varid);
 		}
 		else { // CPBinaryRel
-			printCPReification("BINTRI",cpr->_head,term->_varid,comp,right._value._bound);
+			printCPReification("BINTRI",cpr->_head,term->_varid,comp,right._bound);
 		}
 	}
 	else if(typeid(*left) == typeid(CPSumTerm)) {
 		CPSumTerm* term = dynamic_cast<CPSumTerm*>(left);
 		printCPVariables(term->_varids);
 		if(right._isvarid) { // CPSumWithVar
-			printCPVariable(right._value._varid);
-			printCPReification("SUMSTRT",cpr->_head,term->_varids,comp,right._value._varid);
+			printCPVariable(right._varid);
+			printCPReification("SUMSTRT",cpr->_head,term->_varids,comp,right._varid);
 		}
 		else { // CPSum
-			printCPReification("SUMSTRI",cpr->_head,term->_varids,comp,right._value._bound);
+			printCPReification("SUMSTRI",cpr->_head,term->_varids,comp,right._bound);
 		}
 	}
 	else {
@@ -659,11 +665,11 @@ void EcnfPrinter::visit(const CPReification* cpr) {
 		CPWSumTerm* term = dynamic_cast<CPWSumTerm*>(left);
 		printCPVariables(term->_varids);
 		if(right._isvarid) { // CPSumWeightedWithVar
-			printCPVariable(right._value._varid);
-			printCPReification("SUMSTSIRT",cpr->_head,term->_varids,term->_weights,comp,right._value._varid);
+			printCPVariable(right._varid);
+			printCPReification("SUMSTSIRT",cpr->_head,term->_varids,term->_weights,comp,right._varid);
 		}
 		else { // CPSumWeighted
-			printCPReification("SUMSTSIRI",cpr->_head,term->_varids,term->_weights,comp,right._value._bound);
+			printCPReification("SUMSTSIRI",cpr->_head,term->_varids,term->_weights,comp,right._bound);
 		}
 	}
 }

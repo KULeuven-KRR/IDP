@@ -881,10 +881,19 @@ void addLiterals(MinisatID::Model* model, GroundTranslator* translator, Abstract
 
 void addTerms(MinisatID::Model* model, GroundTermTranslator* translator, AbstractStructure* init) {
 	for(vector<MinisatID::VariableEqValue>::const_iterator cpvar = model->variableassignments.begin();
-		cpvar != model->variableassignments.end(); ++cpvar) {
+			cpvar != model->variableassignments.end(); ++cpvar) {
 		Function* function = translator->function(cpvar->variable);
 		if(function) {
-			ElementTuple tuple = translator->args(cpvar->variable);
+			const vector<GroundTerm>& gtuple = translator->args(cpvar->variable);
+			ElementTuple tuple;
+			for(vector<GroundTerm>::const_iterator it = gtuple.begin(); it != gtuple.end(); ++it) {
+				if(it->_isvarid) {
+					int value = model->variableassignments[it->_varid].value;
+					tuple.push_back(DomainElementFactory::instance()->create(value));
+				} else {
+					tuple.push_back(it->_domelement);
+				}
+			}
 			tuple.push_back(DomainElementFactory::instance()->create(cpvar->value));
 			init->inter(function)->graphinter()->makeTrue(tuple);
 		}

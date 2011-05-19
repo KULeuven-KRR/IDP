@@ -1500,4 +1500,9 @@ namespace VocabularyUtils {
 	Sort* stringsort() { return *(Vocabulary::std()->sort("string")->begin()); }
 	Sort* charsort() { return *(Vocabulary::std()->sort("char")->begin()); }
 
+	bool isComparisonPredicate(const PFSymbol* symbol) {
+		string name = symbol->name();
+		return (typeid(*symbol) == typeid(Predicate)) && (name == "=/2" || name == "</2" || name == ">/2");
+	}
+
 }

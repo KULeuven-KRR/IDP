@@ -610,6 +610,8 @@ namespace VocabularyUtils {
 	Sort*	floatsort();	//!< returns the sort 'float' of the standard vocabulary
 	Sort*	stringsort();	//!< returns the sort 'string' of the standard vocabulary
 	Sort*	charsort();		//!< returns the sort 'char' of the standard vocabulary
+
+	bool isComparisonPredicate(const PFSymbol*);
 }
 
 #endif

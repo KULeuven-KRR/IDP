@@ -24,6 +24,8 @@ class PCTsBody;
 class AggTsBody;
 class CPTsBody;
 
+typedef unsigned int VarId;
+
 namespace MinisatID{
  	 class WrappedPCSolver;
 }
@@ -31,6 +33,7 @@ typedef MinisatID::WrappedPCSolver SATSolver;
 
 // Enumeration used in GroundTheory::transformForAdd 
 enum VIType { VIT_DISJ, VIT_CONJ, VIT_SET };
+
 
 /*********************
 	Ground clauses
@@ -110,7 +113,7 @@ class GroundAggregate {
 		TsType			arrow()	const { return _arrow;	}
 		double			bound()	const { return _bound;	}
 		bool			lower()	const { return _lower;	}
-		AggFunction			type()	const { return _type;	}
+		AggFunction		type()	const { return _type;	}
 		unsigned int	setnr()	const { return _set; 	}
 
 		// Visitor
@@ -389,8 +392,8 @@ class SolverTheory : public AbstractGroundTheory {
 		void	addSet(int setnr, int defnr, bool weighted);
 		void	addAggregate(int tseitin, AggTsBody* body);
 		void 	addCPReification(int tseitin, CPTsBody* body);
-		void	addCPVariable(unsigned int varids);
-		void	addCPVariables(const std::vector<unsigned int>& varids);
+		void	addCPVariable(const VarId&);
+		void	addCPVariables(const std::vector<VarId>&);
 
 		void	addPCRule(int defnr, int tseitin, PCTsBody* body);
 		void	addAggRule(int defnr, int tseitin, AggTsBody* body);

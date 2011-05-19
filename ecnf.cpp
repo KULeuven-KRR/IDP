@@ -8,6 +8,7 @@
 
 #include <iostream>
 #include <sstream>
+#include <limits> //XXX used for cp variable addition hack...
 
 #include "vocabulary.hpp"
 #include "structure.hpp"
@@ -484,8 +485,8 @@ ostream& GroundTheory::put(ostream& s, unsigned int) const {
 		}
 		s << ' ' << cpr->_body->comp() << ' ';
 		CPBound right = cpr->_body->right();
-		if(right._isvarid) s << _termtranslator->printTerm(right._value._varid);
-		else s << right._value._bound;
+		if(right._isvarid) s << _termtranslator->printTerm(right._varid);
+		else s << right._bound;
 		s << '.' << endl;
 	}
 	return s;
@@ -509,9 +510,15 @@ string GroundTheory::to_string() const {
 
 SolverTheory::SolverTheory(SATSolver* solver,AbstractStructure* str) :
 			AbstractGroundTheory(str), _solver(solver) {
+	//XXX Adding tseitin_1 for internal CP constraints!
+	GroundClause c(1,1);
+	addClause(c,true);
 }
 SolverTheory::SolverTheory(Vocabulary* voc, SATSolver* solver, AbstractStructure* str) :
 			AbstractGroundTheory(voc,str), _solver(solver) {
+	//XXX Adding tseitin_1 for internal CP constraints!
+	GroundClause c(1,1);
+	addClause(c,true);
 }
 
 inline MinisatID::Atom createAtom(int lit){
@@ -674,11 +681,11 @@ void SolverTheory::addCPReification(int tseitin, CPTsBody* body) {
 		CPVarTerm* term = dynamic_cast<CPVarTerm*>(left);
 		addCPVariable(term->_varid);
 		if(right._isvarid) {
-			addCPVariable(right._value._varid);
+			addCPVariable(right._varid);
 			MinisatID::CPBinaryRelVar sentence;
 			sentence.head = createAtom(tseitin);
 			sentence.lhsvarID = term->_varid;
-			sentence.rhsvarID = right._value._varid;
+			sentence.rhsvarID = right._varid;
 			sentence.rel = comp;
 			getSolver().add(sentence);
 		}
@@ -686,7 +693,7 @@ void SolverTheory::addCPReification(int tseitin, CPTsBody* body) {
 			MinisatID::CPBinaryRel sentence;
 			sentence.head = createAtom(tseitin);
 			sentence.varID = term->_varid;
-			sentence.bound = right._value._bound;
+			sentence.bound = right._bound;
 			sentence.rel = comp;
 			getSolver().add(sentence);
 		}
@@ -695,11 +702,11 @@ void SolverTheory::addCPReification(int tseitin, CPTsBody* body) {
 		CPSumTerm* term = dynamic_cast<CPSumTerm*>(left);
 		addCPVariables(term->_varids);
 		if(right._isvarid) {
-			addCPVariable(right._value._varid);
+			addCPVariable(right._varid);
 			MinisatID::CPSumWithVar sentence;
 			sentence.head = createAtom(tseitin);
 			sentence.varIDs = term->_varids;
-			sentence.rhsvarID = right._value._varid;
+			sentence.rhsvarID = right._varid;
 			sentence.rel = comp;
 			getSolver().add(sentence);
 		}
@@ -707,7 +714,7 @@ void SolverTheory::addCPReification(int tseitin, CPTsBody* body) {
 			MinisatID::CPSum sentence;
 			sentence.head = createAtom(tseitin);
 			sentence.varIDs = term->_varids;
-			sentence.bound = right._value._bound;
+			sentence.bound = right._bound;
 			sentence.rel = comp;
 			getSolver().add(sentence);
 		}
@@ -717,12 +724,12 @@ void SolverTheory::addCPReification(int tseitin, CPTsBody* body) {
 		CPWSumTerm* term = dynamic_cast<CPWSumTerm*>(left);
 		addCPVariables(term->_varids);
 		if(right._isvarid) {
-			addCPVariable(right._value._varid);
+			addCPVariable(right._varid);
 			MinisatID::CPSumWeightedWithVar sentence;
 			sentence.head = createAtom(tseitin);
 			sentence.varIDs = term->_varids;
 			sentence.weights = term->_weights;
-			sentence.rhsvarID = right._value._varid;
+			sentence.rhsvarID = right._varid;
 			sentence.rel = comp;
 			getSolver().add(sentence);
 		}
@@ -731,54 +738,67 @@ void SolverTheory::addCPReification(int tseitin, CPTsBody* body) {
 			sentence.head = createAtom(tseitin);
 			sentence.varIDs = term->_varids;
 			sentence.weights = term->_weights;
-			sentence.bound = right._value._bound;
+			sentence.bound = right._bound;
 			sentence.rel = comp;
 			getSolver().add(sentence);
 		}
 	}
 }
 
-void SolverTheory::addCPVariables(const vector<unsigned int>& varids) {
+void SolverTheory::addCPVariables(const vector<VarId>& varids) {
 	for(vector<unsigned int>::const_iterator it = varids.begin(); it != varids.end(); ++it) {
 		addCPVariable(*it);
 	}
 }
 
-void SolverTheory::addCPVariable(unsigned int varid) {
+void SolverTheory::addCPVariable(const VarId& varid) {
 	if(_addedvarids.find(varid) == _addedvarids.end()) {
 		_addedvarids.insert(varid);
-		Function* function = _termtranslator->function(varid);
-//cerr << "Adding domain "; 
-		SortTable* domain = _structure->inter(function->outsort());
-		assert(domain->approxfinite()); 
-		const DomainElement* first = domain->first(); 
-		int minvalue = first->value()._int;
-		const DomainElement* last = domain->last();	
-		int maxvalue = last->value()._int;
-		assert(maxvalue > minvalue);
-		if(domain->isRange()) {
-			// the domain is a complete range from minvalue to maxvalue.
+		const Function* function = _termtranslator->function(varid);
+		if(function) {
+cerr << "Adding domain "; 
+			SortTable* domain = _structure->inter(function->outsort());
+			assert(domain->approxfinite()); 
+			const DomainElement* first = domain->first(); 
+			int minvalue = first->value()._int;
+			const DomainElement* last = domain->last();	
+			int maxvalue = last->value()._int;
+			assert(maxvalue > minvalue);
+			if(domain->isRange()) {
+				// the domain is a complete range from minvalue to maxvalue.
+				MinisatID::CPIntVarRange cpvar;
+				cpvar.varID = varid;
+				cpvar.minvalue = minvalue;
+				cpvar.maxvalue = maxvalue;
+cerr << "[" << minvalue << "," << maxvalue << "]";
+				getSolver().add(cpvar);
+			}
+			else {
+				// the domain is not a complete range.
+				MinisatID::CPIntVarEnum cpvar;
+				cpvar.varID = varid;
+cerr << "{ ";
+				for(SortIterator it = domain->sortbegin(); it.hasNext(); ++it) {
+					int value = (*it)->value()._int;
+cerr << value << "; ";
+					cpvar.values.push_back(value);
+				}
+cerr << "}";
+				getSolver().add(cpvar);
+			}
+cerr << " for function " << function->name() << " (varid = " << varid << ")" << endl;
+		} else {
+			CPTsBody* cprelation = _termtranslator->cprelation(varid);
+			// Add domain for this variable..
+			//FIXME OVERKILL FIXME
 			MinisatID::CPIntVarRange cpvar;
 			cpvar.varID = varid;
-			cpvar.minvalue = minvalue;
-			cpvar.maxvalue = maxvalue;
-//cerr << "[" << minvalue << "," << maxvalue << "]";
+			cpvar.minvalue = numeric_limits<int>::min()+1000;
+			cpvar.maxvalue = numeric_limits<int>::max()-1000;
 			getSolver().add(cpvar);
+			// Add rest
+			addCPReification(1,cprelation);
 		}
-		else {
-			// the domain is not a complete range.
-			MinisatID::CPIntVarEnum cpvar;
-			cpvar.varID = varid;
-//cerr << "{ ";
-			for(SortIterator it = domain->sortbegin(); it.hasNext(); ++it) {
-				int value = (*it)->value()._int;
-//cerr << value << "; ";
-				cpvar.values.push_back(value);
-			}
-//cerr << "}";
-			getSolver().add(cpvar);
-		}
-//cerr << " for function " << function->name() << " (varid = " << varid << ")" << endl;
 	}
 }
 

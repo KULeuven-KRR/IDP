@@ -164,9 +164,9 @@ class EcnfPrinter : public Printer {
 		void printAggregate(AggFunction aggtype, TsType arrow, unsigned int defnr, bool lower, int head, unsigned int setnr, double bound);
 		void printCPVariable(unsigned int varid);
 		void printCPVariables(std::vector<unsigned int> varids);
-		void printCPReification(std::string type, int head, unsigned int left, CompType comp, int right);
-		void printCPReification(std::string type, int head, std::vector<unsigned int> left, CompType comp, int right);
-		void printCPReification(std::string type, int head, std::vector<unsigned int> left, std::vector<int> weights, CompType comp, int right);
+		void printCPReification(std::string type, int head, unsigned int left, CompType comp, long right);
+		void printCPReification(std::string type, int head, std::vector<unsigned int> left, CompType comp, long right);
+		void printCPReification(std::string type, int head, std::vector<unsigned int> left, std::vector<int> weights, CompType comp, long right);
 
 	public:
 		std::string print(const Vocabulary*);
