@@ -21,6 +21,7 @@
 #include "pcsolver/src/external/ExternalInterface.hpp"
 #include "ground.hpp"
 #include "ecnf.hpp"
+#include "fobdd.hpp"
 #include "propagate.hpp"
 using namespace std;
 
@@ -973,6 +974,27 @@ InternalArgument ground(const vector<InternalArgument>& args, lua_State*  ) {
 InternalArgument completion(const vector<InternalArgument>& args, lua_State* ) {
 	AbstractTheory* theory = args[0].theory();
 	TheoryUtils::completion(theory);
+	return nilarg();
+}
+
+void estimatenrans(Theory* theory, AbstractStructure* structure, FOBDDManager* manager) {
+	FOBDDFactory m(manager,theory->vocabulary());
+	set<Variable*> sv;
+	set<FOBDDDeBruijnIndex*> si;
+	for(vector<Formula*>::const_iterator it = theory->sentences().begin(); it != theory->sentences().end(); ++it) {
+		(*it)->accept(&m);
+		FOBDD* bdd = m.bdd();
+		cout << manager->to_string(bdd);
+		cout << "Estimated nr of answer for formula " << *(*it) << ":\n";
+		cout << "    " << manager->estimatedNrAnswers(bdd,sv,si,structure) << endl;
+	}
+}
+
+InternalArgument estimatenrans(const vector<InternalArgument>& args, lua_State* ) {
+	Theory* theory = dynamic_cast<Theory*>(args[0].theory());
+	AbstractStructure* structure = args[1].structure();
+	FOBDDManager manager;
+	estimatenrans(theory,structure,&manager);
 	return nilarg();
 }
 
@@ -2854,6 +2876,7 @@ namespace LuaConnection {
 		vector<ArgType> vdomitercomp(2); vdomitercomp[0] = AT_DOMAINITERATOR; vdomitercomp[1] = AT_COMPOUND;
 		vector<ArgType> vpritab(2); vpritab[0] = AT_PREDINTER; vpritab[1] = AT_TABLE;
 		vector<ArgType> vpritup(2); vpritup[0] = AT_PREDINTER; vpritup[1] = AT_TUPLE;
+		vector<ArgType> vtheostruct(2); vtheostruct[0] = AT_THEORY; vtheostruct[1] = AT_STRUCTURE; 
 		vector<ArgType> vtheostructopt(3); 
 			vtheostructopt[0] = AT_THEORY; 
 			vtheostructopt[1] = AT_STRUCTURE; 
@@ -2895,6 +2918,7 @@ namespace LuaConnection {
 		addInternalProcedure("makeunknown",vpritab,&maketabunknown);
 		addInternalProcedure("makeunknown",vpritup,&makeunknown);
 		addInternalProcedure("completion",vtheo,&completion);
+		addInternalProcedure("estimate_nr_ans",vtheostruct,&estimatenrans);
 		
 		// Add the internal procedures to lua
 		lua_getglobal(L,"idp_intern");

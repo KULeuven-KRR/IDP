@@ -1852,22 +1852,16 @@ void GrounderFactory::visit(const EnumSetExpr* s) {
  */
 void GrounderFactory::visit(const QuantSetExpr* s) {
 	// Create instance generator
-	InstGenerator* gen = 0;
-	GeneratorNode* node = 0;
+	vector<SortTable*> vst;
+	vector<const DomainElement**> vars;
 	for(set<Variable*>::const_iterator it = s->quantvars().begin(); it != s->quantvars().end(); ++it) {
 		const DomainElement** d = new const DomainElement*();
 		_varmapping[*it] = d;
-		SortTable* st = _structure->inter((*it)->sort());
-		assert(st->finite());	// TODO: produce an error message
-		SortInstGenerator* tig = new SortInstGenerator(st,d);
-		if(s->quantvars().size() == 1) {
-			gen = tig;
-			break;
-		}
-		else if(it == s->quantvars().begin()) node = new LeafGeneratorNode(tig);
-		else node = new OneChildGeneratorNode(tig,node);
+		vst.push_back(_structure->inter((*it)->sort()));
+		vars.push_back(d);
 	}
-	if(!gen) gen = new TreeInstGenerator(node);
+	GeneratorFactory gf;
+	InstGenerator* gen = gf.create(vars,vst);
 	
 	// Create grounder for subformula
 	SaveContext();
@@ -1932,40 +1926,27 @@ void GrounderFactory::visit(const Rule* rule) {
 	}
 
 	// Create head instance generator
-	InstGenerator* headgen = 0;
-	GeneratorNode* hnode = 0;
+	vector<SortTable*> hvst;
+	vector<const DomainElement**> hvars;
 	for(unsigned int n = 0; n < headvars.size(); ++n) {
 		const DomainElement** d = new const DomainElement*();
 		_varmapping[headvars[n]] = d;
-		SortTable* st = _structure->inter(headvars[n]->sort());
-		assert(st->finite());	// TODO: produce an error message
-		SortInstGenerator* sig = new SortInstGenerator(st,d);
-		if(headvars.size() == 1) {
-			headgen = sig;
-			break;
-		}
-		else if(n == 0) hnode = new LeafGeneratorNode(sig);
-		else hnode = new OneChildGeneratorNode(sig,hnode);
+		hvst.push_back(_structure->inter((headvars[n])->sort()));
+		hvars.push_back(d);
 	}
-	if(!headgen) headgen = new TreeInstGenerator(hnode);
+	GeneratorFactory gf;
+	InstGenerator* headgen = gf.create(hvars,hvst);
 	
 	// Create body instance generator
-	InstGenerator* bodygen = 0;
-	GeneratorNode* bnode = 0;
+	vector<SortTable*> bvst;
+	vector<const DomainElement**> bvars;
 	for(unsigned int n = 0; n < bodyvars.size(); ++n) {
 		const DomainElement** d = new const DomainElement*();
 		_varmapping[bodyvars[n]] = d;
-		SortTable* st = _structure->inter(bodyvars[n]->sort());
-		assert(st->finite());	// TODO: produce an error message
-		SortInstGenerator* sig = new SortInstGenerator(st,d);
-		if(bodyvars.size() == 1) {
-			bodygen = sig;
-			break;
-		}
-		else if(n == 0) bnode = new LeafGeneratorNode(sig);
-		else bnode = new OneChildGeneratorNode(sig,bnode);
+		bvst.push_back(_structure->inter((bodyvars[n])->sort()));
+		bvars.push_back(d);
 	}
-	if(!bodygen) bodygen = new TreeInstGenerator(bnode);
+	InstGenerator* bodygen = gf.create(bvars,bvst);
 	
 	// Create head grounder
 	SaveContext();

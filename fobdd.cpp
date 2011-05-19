@@ -6,6 +6,7 @@
 
 #include <cassert>
 #include <typeinfo>
+#include <cmath>
 #include <sstream>
 #include "fobdd.hpp"
 #include "vocabulary.hpp"
@@ -186,9 +187,11 @@ FOBDDAtomKernel* FOBDDManager::getAtomKernel(PFSymbol* symbol,AtomKernelType akt
 	// Lookup
 	AtomKernelTable::const_iterator it = _atomkerneltable.find(symbol);
 	if(it != _atomkerneltable.end()) {
-		MVAGAK::const_iterator jt = it->second.find(args);
+		MAKTMVAGAK::const_iterator jt = it->second.find(akt);
 		if(jt != it->second.end()) {
-			return jt->second;
+			MVAGAK::const_iterator kt = jt->second.find(args);
+			if(kt != jt->second.end())
+				return kt->second;
 		}
 	}
 
@@ -198,7 +201,7 @@ FOBDDAtomKernel* FOBDDManager::getAtomKernel(PFSymbol* symbol,AtomKernelType akt
 
 FOBDDAtomKernel* FOBDDManager::addAtomKernel(PFSymbol* symbol,AtomKernelType akt, const vector<FOBDDArgument*>& args) {
 	FOBDDAtomKernel* newkernel = new FOBDDAtomKernel(symbol,akt,args,newOrder(args));
-	_atomkerneltable[symbol][args] = newkernel;
+	_atomkerneltable[symbol][akt][args] = newkernel;
 	return newkernel;
 }
 
@@ -721,3 +724,218 @@ string FOBDDManager::to_string(FOBDDArgument* arg) const {
 	}
 	return str;
 }
+
+/*****************
+	Estimators
+*****************/
+
+bool FOBDDManager::contains(FOBDD* bdd, FOBDDVariable* v) {
+	if(bdd == _truebdd || bdd == _falsebdd) return false;
+	else {
+		if(contains(bdd->kernel(),v)) return true;
+		else if(contains(bdd->truebranch(),v)) return true;
+		else if(contains(bdd->falsebranch(),v)) return true;
+		else return false;
+	}
+}
+
+bool FOBDDManager::contains(FOBDDKernel* kernel, FOBDDVariable* v) {
+	if(typeid(*kernel) == typeid(FOBDDAtomKernel)) {
+		FOBDDAtomKernel* atomkernel = dynamic_cast<FOBDDAtomKernel*>(kernel);
+		for(unsigned int n = 0; n < atomkernel->symbol()->sorts().size(); ++n) {
+			if(contains(atomkernel->args(n),v)) return true;
+		}
+		return false;
+	}
+	else {
+		assert(typeid(*kernel) == typeid(FOBDDQuantKernel));
+		FOBDDQuantKernel* quantkernel = dynamic_cast<FOBDDQuantKernel*>(kernel);
+		return contains(quantkernel->bdd(),v);
+	}
+}
+
+bool FOBDDManager::contains(FOBDDArgument* arg, FOBDDVariable* v) {
+	if(typeid(*arg) == typeid(FOBDDVariable)) return arg == v;
+	else if(typeid(*arg) == typeid(FOBDDFuncTerm)) {
+		FOBDDFuncTerm* farg = dynamic_cast<FOBDDFuncTerm*>(arg);
+		for(unsigned int n = 0; n < farg->func()->arity(); ++n) {
+			if(contains(farg->args(n),v)) return true;
+		}
+		return false;
+	}
+	else return false;
+}
+
+bool FOBDDManager::contains(FOBDDKernel* kernel, Variable* v) {
+	FOBDDVariable* var = getVariable(v);
+	return contains(kernel,var);
+}
+
+int univNrAnswers(const set<Variable*>& vars, const set<FOBDDDeBruijnIndex*>& indices, AbstractStructure* structure) {
+	int maxint = numeric_limits<int>::max();
+	vector<SortTable*> vst; 
+	for(set<Variable*>::const_iterator it = vars.begin(); it != vars.end(); ++it) 
+		vst.push_back(structure->inter((*it)->sort()));
+	for(set<FOBDDDeBruijnIndex*>::const_iterator it = indices.begin(); it != indices.end(); ++it)
+		vst.push_back(structure->inter((*it)->sort()));
+	Universe univ(vst);
+	tablesize univsize = univ.size();
+	return (univsize.first ? univsize.second : maxint);
+}
+
+/**
+ * \brief Returns an estimate of the number of answers to the query { vars | kernel } in the given structure 
+ */
+double FOBDDManager::estimatedNrAnswers(FOBDDKernel* kernel, const set<Variable*>& vars, const set<FOBDDDeBruijnIndex*>& indices, AbstractStructure* structure) {
+	int maxint = numeric_limits<int>::max();
+	double maxdouble = numeric_limits<double>::max();
+	double chance = 1;
+
+	if(typeid(*kernel) == typeid(FOBDDAtomKernel)) {
+		FOBDDAtomKernel* atomkernel = dynamic_cast<FOBDDAtomKernel*>(kernel);
+		PFSymbol* symbol = atomkernel->symbol();
+		PredInter* pinter;
+		if(typeid(*symbol) == typeid(Predicate)) pinter = structure->inter(dynamic_cast<Predicate*>(symbol));
+		else pinter = structure->inter(dynamic_cast<Function*>(symbol))->graphinter();
+		const PredTable* pt = atomkernel->type() == AKT_CF ? pinter->cf() : pinter->ct();
+		tablesize symbolsize = pt->size();
+		tablesize univsize = pt->universe().size();
+		if(symbolsize.first) {
+			if(univsize.first && univsize.second != 0) {
+				chance = double(symbolsize.second) / double(univsize.second);
+			}
+			else chance = 0;
+		}
+		if(chance > 1) chance = 1;
+	}
+	else {
+		assert(typeid(*kernel) == typeid(FOBDDQuantKernel));
+		FOBDDQuantKernel* quantkernel = dynamic_cast<FOBDDQuantKernel*>(kernel);
+		set<FOBDDDeBruijnIndex*> kernindices;
+		kernindices.insert(getDeBruijnIndex(quantkernel->sort(),0));
+		for(set<FOBDDDeBruijnIndex*>::const_iterator it = indices.begin(); it != indices.end(); ++it) 
+			kernindices.insert(getDeBruijnIndex((*it)->sort(),(*it)->index()+1));
+		double quantans = estimatedNrAnswers(quantkernel->bdd(),vars,kernindices,structure);
+		int univquantans = univNrAnswers(vars,kernindices,structure);
+		double quantchance = 1;
+		if(quantans < maxdouble) {
+			if(univquantans == maxint) quantchance = 0;
+			else quantchance = double(quantans) / double(univquantans);
+		}
+		if(quantchance > 1) quantchance = 1;
+		double invquantchance = 1 - quantchance;
+		tablesize quantvarsize = structure->inter(quantkernel->sort())->size();
+		double expchance;
+		if(quantvarsize.first) expchance = pow(invquantchance, int(quantvarsize.second));
+		else expchance = (invquantchance >= 1 ? 1 : 0);
+		assert(expchance <= 1 && 0 <= expchance);
+		chance = 1 - expchance;
+	}
+
+	int univsize = univNrAnswers(vars,indices,structure);
+	if(univsize == maxint) return chance > 0 ? maxdouble : 0;
+	else return double(univsize) * chance;
+}
+
+/**
+ * \brief Returns an estimate of the number of answers to the query { vars | bdd } in the given structure 
+ */
+double FOBDDManager::estimatedNrAnswers(FOBDD* bdd, const set<Variable*>& vars, const set<FOBDDDeBruijnIndex*>& indices, AbstractStructure* structure) {
+	int maxint = numeric_limits<int>::max();
+	double maxdouble = numeric_limits<double>::max();
+	if(bdd == _falsebdd) {
+		return 0;
+	}
+	else if(bdd == _truebdd) {
+		int res = univNrAnswers(vars,indices,structure);
+		if(res == maxint) return maxdouble;
+		else return double(res);
+	}
+	else {
+		// split the variables among those that occur in the kernel and those that don't
+		set<Variable*> kernvars;
+		set<Variable*> othervars;
+		for(set<Variable*>::const_iterator it = vars.begin(); it != vars.end(); ++it) {
+			if(contains(bdd->kernel(),*it)) kernvars.insert(*it);
+			else othervars.insert(*it);
+		}
+		set<FOBDDDeBruijnIndex*> kernindices;
+		set<FOBDDDeBruijnIndex*> otherindices;
+		for(set<FOBDDDeBruijnIndex*>::const_iterator it = indices.begin(); it != indices.end(); ++it) {
+			if(bdd->kernel()->containsDeBruijnIndex((*it)->index())) kernindices.insert(*it);
+			else otherindices.insert(*it);
+		}
+	
+		// get the number of answers to the kernels and branches
+		double kernanswers = estimatedNrAnswers(bdd->kernel(),kernvars,kernindices,structure);
+		double trueanswers = estimatedNrAnswers(bdd->truebranch(),othervars,otherindices,structure);
+		double falseanswers = estimatedNrAnswers(bdd->falsebranch(),othervars,otherindices,structure);
+		double allkernanswers = estimatedNrAnswers(_truebdd,kernvars,kernindices,structure);
+
+		if(!(kernanswers < maxdouble)) return maxdouble;
+		if(!(allkernanswers < maxdouble) && falseanswers > 0) return maxdouble;
+		if(!(trueanswers < maxdouble) && kernanswers > 0) return maxdouble;
+		if(!(falseanswers < maxdouble) && kernanswers < allkernanswers) return maxdouble;
+
+		// compute the number of answers
+		if(kernanswers * trueanswers + (allkernanswers - kernanswers) * falseanswers > maxdouble) return maxdouble;
+		else return kernanswers * trueanswers + (allkernanswers - kernanswers) * falseanswers;
+	}
+}
+/*
+double FOBDDManager::estimatedCostOne(FOBDD* bdd, const set<Variable*>& vars, const set<FOBDDDeBruijnIndex*>& indices, AbstractStructure* structure) {
+	double costall = estimatedCostAll(bdd,vars,indices,structure);
+	int nrans = double(estimatedNrAnswers(bdd,vars,indices,structure));
+	if(nrans == numeric_limits<int>::max()) return numeric_limits<double>::max();
+	else return costall / double(nrans);
+}
+
+double FOBDDManager::estimatedCostAll(FOBDD* bdd, const set<Variable*>& vars, const set<FOBDDDeBruijnIndex*>& indices, AbstractStructure* structure) {
+	double maxdouble = numeric_limits<double>::max();
+	int maxint = numeric_limits<int>::max();
+	if(bdd == _falsebdd) return 1;
+	else if(bdd = _truebdd) return estimatedNrAnswers(bdd,vars,indices,structure);
+	else {
+		// split the variables among those that occur in the kernel and those that don't
+		set<Variable*> kernvars;
+		set<Variable*> othervars;
+		for(set<Variable*>::const_iterator it = vars.begin(); it != vars.end(); ++it) {
+			if(contains(bdd->kernel(),*it)) kernvars.insert(*it);
+			else othervars.insert(*it);
+		}
+		set<FOBDDDeBruijnIndex*> kernindices;
+		set<FOBDDDeBruijnIndex*> otherindices;
+		for(set<FOBDDDeBruijnIndex*>::const_iterator it = indices.begin(); it != indices.end(); ++it) {
+			if(bdd->kernel()->containsDeBruijnIndex((*it)->index())) kernindices.insert(*it);
+			else otherindices.insert(*it);
+		}
+
+		if(bdd->falsebranch() == _falsebdd) {
+			double kerncost = estimatedTrueCostAll(bdd->kernel(),kernvars,kernindices,structure);
+			int nrkernans = estimatedNrAnswers(bdd->kernel(),kernvars,kernindices,structure);
+			double truecost = estimatedCostAll(bdd->truebranch(),othervars,otherindices,structure);
+			if(kerncost < maxdouble && truecost < maxdouble && nrkernans != maxint) {
+				if((kerncost * double(nrkernans)) > numeric_limits<double>::max()) return maxdouble;
+				double branchcost = kerncost * double(nrkernans);
+				if((branchcost + kerncost) > numeric_limits<double>::max()) return maxdouble;
+				else return branchcost + kerncost;
+			}
+			else return maxdouble;
+		}
+		else if(bdd->truebranch() == _falsebdd) {
+			double kerncost = estimatedFalseCostAll(bdd->kernel(),kernvars,kernindices,structure);
+			int nrkernans = estimatedNrAnswers(bdd->kernel(),kernvars,kernindices,structure);
+			int allkernanswers = estimatedNrAnswers(_truebdd,kernvars,kernindices,structure);
+			double falsecost = estimatedCostAll(bdd->falsebranch(),othervars,otherindices,structure);
+			// TODO
+			if(kerncost < maxdouble && falsecost < maxdouble && invkernans != maint) {
+				
+			}
+			else return maxdouble;
+		}
+		else {
+			// TODO
+		}
+	}
+}
+*/

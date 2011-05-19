@@ -55,7 +55,8 @@ typedef std::map<FOBDD*,MBDDBDD>			MBDDMBDDBDD;
 typedef std::map<FOBDDKernel*,MBDDMBDDBDD>	BDDTable;
 
 typedef std::map<std::vector<FOBDDArgument*>,FOBDDAtomKernel*>	MVAGAK;
-typedef std::map<PFSymbol*,MVAGAK>								AtomKernelTable;
+typedef std::map<AtomKernelType,MVAGAK>							MAKTMVAGAK;
+typedef std::map<PFSymbol*,MAKTMVAGAK>							AtomKernelTable;
 typedef std::map<FOBDD*,FOBDDQuantKernel*>						MBDDQK;
 typedef std::map<Sort*,MBDDQK>									QuantKernelTable;
 
@@ -140,6 +141,14 @@ class FOBDDManager {
 		std::string	to_string(FOBDD*,unsigned int spaces = 0) const;
 		std::string	to_string(FOBDDKernel*,unsigned int spaces = 0) const;
 		std::string	to_string(FOBDDArgument*) const;
+
+		bool contains(FOBDDKernel*, Variable*);
+		bool contains(FOBDDKernel*, FOBDDVariable*);
+		bool contains(FOBDD*, FOBDDVariable*);
+		bool contains(FOBDDArgument*, FOBDDVariable*);
+
+		double estimatedNrAnswers(FOBDDKernel*, const std::set<Variable*>&, const std::set<FOBDDDeBruijnIndex*>&, AbstractStructure*);
+		double estimatedNrAnswers(FOBDD*, const std::set<Variable*>&, const std::set<FOBDDDeBruijnIndex*>&, AbstractStructure*);
 };
 
 /**

@@ -1357,22 +1357,27 @@ bool BDDInternalPredTable::approxempty(const Universe&) const {
 
 tablesize BDDInternalPredTable::size(const Universe&) const {
 	// TODO
+	return tablesize(false,0);
 }
 
-bool BDDInternalPredTable::contains(const ElementTuple& tuple, const Universe& ) const {
+bool BDDInternalPredTable::contains(const ElementTuple& , const Universe& ) const {
 	// TODO
+	return false;
 }
 
 InternalPredTable* BDDInternalPredTable::add(const ElementTuple&) {
 	// TODO
+	return 0;
 }
 
 InternalPredTable* BDDInternalPredTable::remove(const ElementTuple&) {
 	// TODO
+	return 0;
 }
 
 InternalTableIterator* BDDInternalPredTable::begin(const Universe&) const {
 	// TODO
+	return 0;
 }
 
 
@@ -1669,6 +1674,10 @@ InternalSortIterator* EnumeratedInternalSortTable::sortbegin() const {
 	return new EnumInternalSortIterator(_table.begin(),_table.end());
 }
 
+InternalSortIterator* EnumeratedInternalSortTable::sortiterator(const DomainElement* d) const {
+	return new EnumInternalSortIterator(_table.find(d),_table.end());
+}
+
 InternalSortTable* EnumeratedInternalSortTable::add(int i1, int i2) {
 	if(empty()) return new IntRangeInternalSortTable(i1,i2);
 	else if(first()->type() == DET_INT && last()->type() == DET_INT) {
@@ -1810,6 +1819,9 @@ InternalSortIterator* IntRangeInternalSortTable::sortbegin() const {
 	return new RangeInternalSortIterator(_first,_last);
 }
 
+InternalSortIterator* IntRangeInternalSortTable::sortiterator(const DomainElement* d) const {
+	return new RangeInternalSortIterator(d->value()._int,_last);
+}
 
 UnionInternalSortTable::UnionInternalSortTable() {
 	_intables.push_back(new SortTable(new EnumeratedInternalSortTable()));
@@ -1938,6 +1950,11 @@ InternalSortIterator* UnionInternalSortTable::sortbegin() const {
 	return new UnionInternalSortIterator(vsi,_outtables);
 }
 
+InternalSortIterator* UnionInternalSortTable::sortiterator(const DomainElement* ) const {
+	notyetimplemented("intermediate sortiterator for UnionInternalSortTable");
+	return 0;
+}
+
 const DomainElement* UnionInternalSortTable::first() const {
 	InternalSortIterator* isi = sortbegin();
 	if(isi->hasNext()) {
@@ -2001,6 +2018,10 @@ InternalSortIterator* AllNaturalNumbers::sortbegin() const {
 	return new NatInternalSortIterator();
 }
 
+InternalSortIterator* AllNaturalNumbers::sortiterator(const DomainElement* d) const {
+	return new NatInternalSortIterator(d->value()._int);
+}
+
 const DomainElement* AllNaturalNumbers::first() const {
 	return DomainElementFactory::instance()->create(0);
 }
@@ -2029,6 +2050,10 @@ InternalSortIterator* AllIntegers::sortbegin() const {
 	return new IntInternalSortIterator();
 }
 
+InternalSortIterator* AllIntegers::sortiterator(const DomainElement* d) const {
+	return new IntInternalSortIterator(d->value()._int);
+}
+
 InternalSortTable* AllIntegers::add(int,int) {
 	return this;
 }
@@ -2047,6 +2072,11 @@ bool AllFloats::contains(const DomainElement* d) const {
 
 InternalSortIterator* AllFloats::sortbegin() const {
 	return new FloatInternalSortIterator();
+}
+
+InternalSortIterator* AllFloats::sortiterator(const DomainElement* d) const {
+	double dou = d->type() == DET_DOUBLE ? d->value()._double : double(d->value()._int);
+	return new FloatInternalSortIterator(dou);
 }
 
 InternalSortTable* AllFloats::add(int,int) {
@@ -2071,6 +2101,14 @@ InternalSortTable* AllStrings::add(int,int) {
 
 InternalSortIterator* AllStrings::sortbegin() const {
 	return new StringInternalSortIterator();
+}
+
+InternalSortIterator* AllStrings::sortiterator(const DomainElement* d) const {
+	string str;
+	if(d->type() == DET_INT) str = itos(d->value()._int);
+	else if(d->type() == DET_DOUBLE) str = dtos(d->value()._double);
+	else str = *(d->value()._string);
+	return new StringInternalSortIterator(str);
 }
 
 const DomainElement* AllStrings::first() const {
@@ -2136,6 +2174,13 @@ InternalSortTable* AllChars::remove(const DomainElement* d) {
 
 InternalSortIterator* AllChars::sortbegin() const {
 	return new CharInternalSortIterator();
+}
+
+InternalSortIterator* AllChars::sortiterator(const DomainElement* d) const {
+	char c;
+	if(d->type() == DET_INT) c = '0' + d->value()._int;
+	else c = d->value()._string->operator[](0);
+	return new CharInternalSortIterator(c);
 }
 
 const DomainElement* AllChars::first() const {
@@ -2340,7 +2385,8 @@ InternalTableIterator* EnumeratedInternalFuncTable::begin(const Universe&) const
 const DomainElement* ModInternalFuncTable::operator[](const vector<const DomainElement*>& tuple) const {
 	int a1 = tuple[0]->value()._int;
 	int a2 = tuple[1]->value()._int;
-	return DomainElementFactory::instance()->create(a1 % a2);
+	if(a2 == 0) return 0;
+	else return DomainElementFactory::instance()->create(a1 % a2);
 }
 
 InternalFuncTable* ModInternalFuncTable::add(const ElementTuple& ) {
@@ -2442,12 +2488,14 @@ const DomainElement* DivInternalFuncTable::operator[](const ElementTuple& tuple)
 	if(_int) {
 		int a1 = tuple[0]->value()._int;
 		int a2 = tuple[1]->value()._int;
-		return DomainElementFactory::instance()->create(a1 / a2);
+		if(a2 == 0) return 0;
+		else return DomainElementFactory::instance()->create(a1 / a2);
 	}
 	else {
 		double a1 = tuple[0]->type() == DET_DOUBLE ? tuple[0]->value()._double : double(tuple[0]->value()._int);
 		double a2 = tuple[1]->type() == DET_DOUBLE ? tuple[1]->value()._double : double(tuple[1]->value()._int);
-		return DomainElementFactory::instance()->create(a1 / a2,false);
+		if(a2 == 0) return 0;
+		else return DomainElementFactory::instance()->create(a1 / a2,false);
 	}
 }
 
@@ -2719,6 +2767,10 @@ TableIterator SortTable::begin() const {
 
 SortIterator SortTable::sortbegin() const {
 	return SortIterator(_table->sortbegin());
+}
+
+SortIterator SortTable::sortiterator(const DomainElement* d) const {
+	return SortIterator(_table->sortiterator(d));
 }
 
 void SortTable::interntable(InternalSortTable* table) {
@@ -3606,3 +3658,38 @@ void Structure::clean() {
 		}
 	}
 }
+
+/**************
+	Visitor
+**************/
+
+
+void ProcInternalPredTable::accept(StructureVisitor* v) const { v->visit(this);	}
+void BDDInternalPredTable::accept(StructureVisitor* v) const { v->visit(this);	}
+void FullInternalPredTable::accept(StructureVisitor* v) const { v->visit(this);	}
+void FuncInternalPredTable::accept(StructureVisitor* v) const { v->visit(this);	}
+void UnionInternalPredTable::accept(StructureVisitor* v) const { v->visit(this);	}
+void EnumeratedInternalPredTable::accept(StructureVisitor* v) const { v->visit(this);	}
+void EqualInternalPredTable::accept(StructureVisitor* v) const { v->visit(this);	}
+void StrLessInternalPredTable::accept(StructureVisitor* v) const { v->visit(this);	}
+void StrGreaterInternalPredTable::accept(StructureVisitor* v) const { v->visit(this);	}
+void InverseInternalPredTable::accept(StructureVisitor* v) const { v->visit(this);	}
+void UnionInternalSortTable::accept(StructureVisitor* v) const { v->visit(this);	}
+void AllNaturalNumbers::accept(StructureVisitor* v) const { v->visit(this);	}
+void AllIntegers::accept(StructureVisitor* v) const { v->visit(this);	}
+void AllFloats::accept(StructureVisitor* v) const { v->visit(this);	}
+void AllChars::accept(StructureVisitor* v) const { v->visit(this);	}
+void AllStrings::accept(StructureVisitor* v) const { v->visit(this);	}
+void EnumeratedInternalSortTable::accept(StructureVisitor* v) const { v->visit(this);	}
+void IntRangeInternalSortTable::accept(StructureVisitor* v) const { v->visit(this);	}
+void ProcInternalFuncTable::accept(StructureVisitor* v) const { v->visit(this);	}
+void UNAInternalFuncTable::accept(StructureVisitor* v) const { v->visit(this);	}
+void EnumeratedInternalFuncTable::accept(StructureVisitor* v) const { v->visit(this);	}
+void PlusInternalFuncTable::accept(StructureVisitor* v) const { v->visit(this);	}
+void MinusInternalFuncTable::accept(StructureVisitor* v) const { v->visit(this);	}
+void TimesInternalFuncTable::accept(StructureVisitor* v) const { v->visit(this);	}
+void DivInternalFuncTable::accept(StructureVisitor* v) const { v->visit(this);	}
+void AbsInternalFuncTable::accept(StructureVisitor* v) const { v->visit(this);	}
+void UminInternalFuncTable::accept(StructureVisitor* v) const { v->visit(this);	}
+void ExpInternalFuncTable::accept(StructureVisitor* v) const { v->visit(this);	}
+void ModInternalFuncTable::accept(StructureVisitor* v) const { v->visit(this);	}
