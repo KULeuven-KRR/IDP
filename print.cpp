@@ -596,11 +596,10 @@ void EcnfPrinter::printCPVariables(vector<unsigned int> varids) {
 void EcnfPrinter::printCPVariable(unsigned int varid) {
 	if(_printedvarids.find(varid) == _printedvarids.end()) {
 		_printedvarids.insert(varid);
-		const Function* function = _termtranslator->function(varid);
-		SortTable* domain = _structure->inter(function->outsort());
-		int minvalue = domain->first()->value()._int;
-		int maxvalue = domain->last()->value()._int;
+		SortTable* domain = _termtranslator->domain(varid);
 		if(domain->isRange()) {
+			int minvalue = domain->first()->value()._int;
+			int maxvalue = domain->last()->value()._int;
 			_out << "INTVAR " << varid << ' ' << minvalue << ' ' << maxvalue << ' ';
 		} else {
 			_out << "INTVARDOM " << varid << ' ';

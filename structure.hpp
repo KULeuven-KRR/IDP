@@ -657,8 +657,8 @@ class InternalPredTable {
 
 	public:
 		// Inspectors
-		virtual bool			finite(const Universe&)	const = 0;	//!< Returns true iff the table is finite
-		virtual	bool			empty(const Universe&)		const = 0;	//!< Returns true iff the table is empty
+		virtual bool	finite(const Universe&)		const = 0;	//!< Returns true iff the table is finite
+		virtual	bool	empty(const Universe&)		const = 0;	//!< Returns true iff the table is empty
 
 		virtual bool	approxfinite(const Universe&)	const = 0;
 			//!< Returns false if the table size is infinite. May return true if the table size is finite.
@@ -1744,7 +1744,6 @@ class Structure : public AbstractStructure {
 		std::map<Sort*,SortTable*>		_sortinter;		//!< The domains of the structure. 
 		std::map<Predicate*,PredInter*>	_predinter;		//!< The interpretations of the predicate symbols.
 		std::map<Function*,FuncInter*>	_funcinter;		//!< The interpretations of the function symbols.
-	
 
 	public:
 		// Constructors

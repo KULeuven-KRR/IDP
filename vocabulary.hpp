@@ -70,8 +70,7 @@ class Sort {
 		std::set<Sort*>			ancestors(const Vocabulary* v = 0)		const;	//!< Returns the ancestors of the sort
 		std::set<Sort*>			descendents(const Vocabulary* v = 0)	const;	//!< Returns the descendents of the sort
 		bool					builtin()								const;  //!< True iff the sort is built-in
-		SortTable*				interpretation()						const;	
-			//!< Returns the interpretaion for built-in sorts
+		SortTable*				interpretation()						const;	//!< Returns the interpretaion for built-in sorts
 
 		// Output
 		std::ostream&	put(std::ostream&, bool longnames = true)	const;
@@ -388,7 +387,7 @@ class Function : public PFSymbol {
 		FuncInter*	interpretation(const AbstractStructure*)	const; 
 
 		// Overloaded symbols 
-		bool		contains(const Function* f)										const;
+		bool		contains(const Function* f)	const;
 		Function*	resolve(const std::vector<Sort*>&);
 		Function*	disambiguate(const std::vector<Sort*>&,const Vocabulary*);
 		std::set<Function*>	nonbuiltins();	//!< Returns the set of predicates that are not builtin
@@ -398,7 +397,6 @@ class Function : public PFSymbol {
 		std::ostream&	put(std::ostream&, bool longnames = true)	const;
 
 		friend class Vocabulary;
-
 };
 
 std::ostream& operator<< (std::ostream&, const Function&);
@@ -512,9 +510,14 @@ namespace FuncUtils {
 	Function* overload(const std::set<Function*>&);
 
 	/**
-	 * Check whether the output sort of a function is integer.
+	 * check whether the output sort of a function is integer
 	 */
-	bool isIntFunc(const Function*, Vocabulary*);
+	bool isIntFunc(const Function*, const Vocabulary*);
+
+	/**
+	 * check whether the function is a sum over integers
+	 */
+	bool isIntSum(const Function* function, const Vocabulary* voc);
 }
 
 /*****************

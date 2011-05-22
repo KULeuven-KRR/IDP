@@ -8,7 +8,6 @@
 
 #include <iostream>
 #include <sstream>
-#include <limits> //XXX used for cp variable addition hack...
 
 #include "vocabulary.hpp"
 #include "structure.hpp"
@@ -233,10 +232,10 @@ string GroundDefinition::to_string(unsigned int) const {
 const int ID_FOR_UNDEFINED = -1;
 
 AbstractGroundTheory::AbstractGroundTheory(AbstractStructure* str) : 
-	AbstractTheory("",ParseInfo()), _structure(str), _translator(new GroundTranslator()), _termtranslator(new GroundTermTranslator()) { }
+	AbstractTheory("",ParseInfo()), _structure(str), _translator(new GroundTranslator()), _termtranslator(new GroundTermTranslator(str)) { }
 
 AbstractGroundTheory::AbstractGroundTheory(Vocabulary* voc, AbstractStructure* str) : 
-	AbstractTheory("",voc,ParseInfo()), _structure(str), _translator(new GroundTranslator()), _termtranslator(new GroundTermTranslator()) { }
+	AbstractTheory("",voc,ParseInfo()), _structure(str), _translator(new GroundTranslator()), _termtranslator(new GroundTermTranslator(str)) { }
 
 AbstractGroundTheory::~AbstractGroundTheory() {
 	delete(_structure);
@@ -382,7 +381,7 @@ void GroundTheory::addDefinition(GroundDefinition* d) {
 
 void GroundTheory::addFixpDef(GroundFixpDef*) {
 	assert(false);
-	/* TODO */
+	//TODO
 }
 
 void GroundTheory::addAggregate(int head, AggTsBody* body) {
@@ -391,6 +390,7 @@ void GroundTheory::addAggregate(int head, AggTsBody* body) {
 }
 
 void GroundTheory::addCPReification(int tseitin, CPTsBody* body) {
+	//TODO also add variables (in a separate container?)
 	_cpreifications.push_back(new CPReification(tseitin,body));
 }
 
@@ -508,17 +508,11 @@ string GroundTheory::to_string() const {
 	Solver theories
 **********************/
 
-SolverTheory::SolverTheory(SATSolver* solver,AbstractStructure* str) :
-			AbstractGroundTheory(str), _solver(solver) {
-	//XXX Adding tseitin_1 for internal CP constraints!
-	GroundClause c(1,1);
-	addClause(c,true);
+SolverTheory::SolverTheory(SATSolver* solver, AbstractStructure* str, int verbosity) :
+			AbstractGroundTheory(str), _solver(solver), _verbosity(verbosity) {
 }
-SolverTheory::SolverTheory(Vocabulary* voc, SATSolver* solver, AbstractStructure* str) :
-			AbstractGroundTheory(voc,str), _solver(solver) {
-	//XXX Adding tseitin_1 for internal CP constraints!
-	GroundClause c(1,1);
-	addClause(c,true);
+SolverTheory::SolverTheory(Vocabulary* voc, SATSolver* solver, AbstractStructure* str, int verbosity) :
+			AbstractGroundTheory(voc,str), _solver(solver), _verbosity(verbosity) {
 }
 
 inline MinisatID::Atom createAtom(int lit){
@@ -537,12 +531,12 @@ inline MinisatID::Weight createWeight(double weight){
 void SolverTheory::addClause(GroundClause& cl, bool skipfirst) {
 	transformForAdd(cl,VIT_DISJ,ID_FOR_UNDEFINED,skipfirst);
 	MinisatID::Disjunction clause;
-//cerr << "clause ";
+	if(_verbosity > 0) clog << "clause ";
 	for(unsigned int n = 0; n < cl.size(); ++n) {
 		clause.literals.push_back(createLiteral(cl[n]));
-//cerr << (cl[n] > 0 ? "" : "~") << _translator->printAtom(cl[n]) << ' ';
+		if(_verbosity > 0) clog << (cl[n] > 0 ? "" : "~") << _translator->printAtom(cl[n]) << ' ';
 	}
-//cerr << endl;
+	if(_verbosity > 0) clog << endl;
 	getSolver().add(clause);
 }
 
@@ -552,29 +546,29 @@ void SolverTheory::addSet(int setnr, int defnr, bool weighted) {
 		TsSet& tsset = getTranslator().groundset(setnr);
 		transformForAdd(tsset.literals(),VIT_SET,defnr);
 		if(!weighted){
-//cerr << "set ";
+		if(_verbosity > 0) clog << "set ";
 			MinisatID::Set set;
 			set.setID = setnr;
-//cerr << setnr;
+			if(_verbosity > 0) clog << setnr;
 			for(unsigned int n = 0; n < tsset.size(); ++n) {
 				set.literals.push_back(createLiteral(tsset.literal(n)));
-//cerr << (tsset.literal(n) > 0 ? "" : "~") << _translator->printAtom(tsset.literal(n)) << ' ';
+				if(_verbosity > 0) clog << (tsset.literal(n) > 0 ? "" : "~") << _translator->printAtom(tsset.literal(n)) << ' ';
 			}
-////cerr << endl;
+			if(_verbosity > 0) clog << endl;
 			getSolver().add(set);
 		}
 		else {
-//cerr << "wset ";
+			if(_verbosity > 0) clog << "wset ";
 			MinisatID::WSet set;
 			set.setID = setnr;
-//cerr << setnr;
+			if(_verbosity > 0) clog << setnr;
 			for(unsigned int n = 0; n < tsset.size(); ++n) {
 				set.literals.push_back(createLiteral(tsset.literal(n)));
 				set.weights.push_back(createWeight(tsset.weight(n)));
-//cerr << (tsset.literal(n) > 0 ? "" : "~") << _translator->printAtom(tsset.literal(n)) << "=" << tsset.weight(n) << ' ';
+				if(_verbosity > 0) clog << (tsset.literal(n) > 0 ? "" : "~") << _translator->printAtom(tsset.literal(n)) << "=" << tsset.weight(n) << ' ';
 			}
 			getSolver().add(set);
-//cerr << endl;
+			if(_verbosity > 0) clog << endl;
 		}
 	}
 }
@@ -586,35 +580,33 @@ void SolverTheory::addFixpDef(GroundFixpDef*) {
 
 void SolverTheory::addAggregate(int definitionID, int head, bool lowerbound, int setnr, AggFunction aggtype, TsType sem, double bound) {
 	addSet(setnr,definitionID,(aggtype != AGG_CARD));
-//cerr << "aggregate: ";
-//cerr << _translator->printAtom(head) << ' ';
-//cerr << (sem == TS_RULE ? "<- " : "<=> ");
+	if(_verbosity > 0) clog << "aggregate: " << _translator->printAtom(head) << ' ' << (sem == TS_RULE ? "<- " : "<=> ");
 	MinisatID::Aggregate agg;
 	agg.sign = lowerbound ? MinisatID::AGGSIGN_LB : MinisatID::AGGSIGN_UB;
 	agg.setID = setnr;
 	switch (aggtype) {
 		case AGG_CARD:
 			agg.type = MinisatID::CARD;
-//cerr << "card ";
+			if(_verbosity > 0) clog << "card ";
 			break;
 		case AGG_SUM:
 			agg.type = MinisatID::SUM;
-//cerr << "sum ";
+			if(_verbosity > 0) clog << "sum ";
 			break;
 		case AGG_PROD:
 			agg.type = MinisatID::PROD;
-//cerr << "prod ";
+			if(_verbosity > 0) clog << "prod ";
 			break;
 		case AGG_MIN:
 			agg.type = MinisatID::MIN;
-//cerr << "min ";
+			if(_verbosity > 0) clog << "min ";
 			break;
 		case AGG_MAX:
-//cerr << "max ";
+			if(_verbosity > 0) clog << "max ";
 			agg.type = MinisatID::MAX;
 			break;
 	}
-//cerr << setnr << ' ';
+	if(_verbosity > 0) clog << setnr << ' ';
 	switch(sem) {
 		case TS_EQ: case TS_IMPL: case TS_RIMPL: 
 			agg.sem = MinisatID::COMP;
@@ -623,7 +615,7 @@ void SolverTheory::addAggregate(int definitionID, int head, bool lowerbound, int
 			agg.sem = MinisatID::DEF;
 			break;
 	}
-//cerr << (lowerbound ? " >= " : " =< ") << bound << endl; 
+	if(_verbosity > 0) clog << (lowerbound ? " >= " : " =< ") << bound << endl; 
 	agg.defID = definitionID;
 	agg.head = createAtom(head);
 	agg.bound = createWeight(bound);
@@ -746,7 +738,7 @@ void SolverTheory::addCPReification(int tseitin, CPTsBody* body) {
 }
 
 void SolverTheory::addCPVariables(const vector<VarId>& varids) {
-	for(vector<unsigned int>::const_iterator it = varids.begin(); it != varids.end(); ++it) {
+	for(vector<VarId>::const_iterator it = varids.begin(); it != varids.end(); ++it) {
 		addCPVariable(*it);
 	}
 }
@@ -754,51 +746,38 @@ void SolverTheory::addCPVariables(const vector<VarId>& varids) {
 void SolverTheory::addCPVariable(const VarId& varid) {
 	if(_addedvarids.find(varid) == _addedvarids.end()) {
 		_addedvarids.insert(varid);
-		const Function* function = _termtranslator->function(varid);
-		if(function) {
-cerr << "Adding domain "; 
-			SortTable* domain = _structure->inter(function->outsort());
-			assert(domain->approxfinite()); 
-			const DomainElement* first = domain->first(); 
-			int minvalue = first->value()._int;
-			const DomainElement* last = domain->last();	
-			int maxvalue = last->value()._int;
-			assert(maxvalue > minvalue);
-			if(domain->isRange()) {
-				// the domain is a complete range from minvalue to maxvalue.
-				MinisatID::CPIntVarRange cpvar;
-				cpvar.varID = varid;
-				cpvar.minvalue = minvalue;
-				cpvar.maxvalue = maxvalue;
-cerr << "[" << minvalue << "," << maxvalue << "]";
-				getSolver().add(cpvar);
-			}
-			else {
-				// the domain is not a complete range.
-				MinisatID::CPIntVarEnum cpvar;
-				cpvar.varID = varid;
-cerr << "{ ";
-				for(SortIterator it = domain->sortbegin(); it.hasNext(); ++it) {
-					int value = (*it)->value()._int;
-cerr << value << "; ";
-					cpvar.values.push_back(value);
-				}
-cerr << "}";
-				getSolver().add(cpvar);
-			}
-cerr << " for function " << function->name() << " (varid = " << varid << ")" << endl;
-		} else {
-			CPTsBody* cprelation = _termtranslator->cprelation(varid);
-			// Add domain for this variable..
-			//FIXME OVERKILL FIXME
+		Function* function = _termtranslator->function(varid);
+		if(_verbosity > 0) { 
+			clog << "Adding domain for var_" << varid;
+			if(function) clog << " (function " << *function << ")";
+	   		clog << ": ";
+		}
+		SortTable* domain = _termtranslator->domain(varid);
+		assert(domain);
+		assert(domain->approxfinite()); 
+		if(domain->isRange()) {
+			// the domain is a complete range from minvalue to maxvalue.
 			MinisatID::CPIntVarRange cpvar;
 			cpvar.varID = varid;
-			cpvar.minvalue = numeric_limits<int>::min()+1000;
-			cpvar.maxvalue = numeric_limits<int>::max()-1000;
+			cpvar.minvalue = domain->first()->value()._int;
+			cpvar.maxvalue = domain->last()->value()._int;
+			if(_verbosity > 0) clog << "[" << cpvar.minvalue << "," << cpvar.maxvalue << "]";
 			getSolver().add(cpvar);
-			// Add rest
-			addCPReification(1,cprelation);
 		}
+		else {
+			// the domain is not a complete range.
+			MinisatID::CPIntVarEnum cpvar;
+			cpvar.varID = varid;
+			if(_verbosity > 0) clog << "{ ";
+			for(SortIterator it = domain->sortbegin(); it.hasNext(); ++it) {
+				int value = (*it)->value()._int;
+				cpvar.values.push_back(value);
+				if(_verbosity > 0) clog << value << "; ";
+			}
+			if(_verbosity > 0) clog << "}";
+			getSolver().add(cpvar);
+		}
+		if(_verbosity > 0) clog << endl;
 	}
 }
 
@@ -806,15 +785,15 @@ void SolverTheory::addPCRule(int defnr, int head, vector<int> body, bool conjunc
 	transformForAdd(body,(conjunctive ? VIT_CONJ : VIT_DISJ),defnr);
 	MinisatID::Rule rule;
 	rule.head = createAtom(head);
-//cerr << (rule.conjunctive ? "conjunctive" : "disjunctive") << "rule " << _translator->printAtom(head) << " <- ";
+	if(_verbosity > 0) clog << (rule.conjunctive ? "conjunctive" : "disjunctive") << "rule " << _translator->printAtom(head) << " <- ";
 	for(unsigned int n = 0; n < body.size(); ++n) {
 		rule.body.push_back(createLiteral(body[n]));
-//cerr << (body[n] > 0 ? "" : "~") << _translator->printAtom(body[n]) << ' ';
+		if(_verbosity > 0) clog << (body[n] > 0 ? "" : "~") << _translator->printAtom(body[n]) << ' ';
 	}
 	rule.conjunctive = conjunctive;
 	rule.definitionID = defnr;
 	getSolver().add(rule);
-//cerr << endl;
+	if(_verbosity > 0) clog << endl;
 }
 
 void SolverTheory::addPCRule(int defnr, int head, PCGroundRuleBody* grb) {

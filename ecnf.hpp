@@ -23,6 +23,7 @@ class GroundTermTranslator;
 class PCTsBody;
 class AggTsBody;
 class CPTsBody;
+class SortTable;
 
 typedef unsigned int VarId;
 
@@ -371,6 +372,8 @@ class SolverTheory : public AbstractGroundTheory {
 															// communicate to the solver which ground atoms should be considered defined.
 		std::set<unsigned int> 				_addedvarids;	// Variable ids that have already been added, together with their domain.
 
+		int	_verbosity;
+
 		const 	SATSolver& getSolver() const	{ return *_solver; }
 				SATSolver& getSolver() 			{ return *_solver; }
 
@@ -379,8 +382,8 @@ class SolverTheory : public AbstractGroundTheory {
 
 	public:
 		// Constructors 
-		SolverTheory(SATSolver* solver,AbstractStructure* str);
-		SolverTheory(Vocabulary* voc, SATSolver* solver, AbstractStructure* str);
+		SolverTheory(SATSolver* solver, AbstractStructure* str, int verbosity);
+		SolverTheory(Vocabulary* voc, SATSolver* solver, AbstractStructure* str, int verbosity);
 
 		// Destructors
 		void recursiveDelete() { delete(this);	}
@@ -428,9 +431,9 @@ class GroundTheory : public AbstractGroundTheory {
 	private:
 		std::vector<GroundClause>		_clauses;	
 		std::vector<GroundDefinition*>	_definitions;
-		std::vector<GroundAggregate*>	_aggregates;
 		std::vector<GroundFixpDef*>		_fixpdefs;
 		std::vector<GroundSet*>			_sets;
+		std::vector<GroundAggregate*>	_aggregates;
 		std::vector<CPReification*>		_cpreifications;
 
 	public:
@@ -455,15 +458,15 @@ class GroundTheory : public AbstractGroundTheory {
 		unsigned int		nrClauses()						const { return _clauses.size();							}
 		unsigned int		nrDefinitions()					const { return _definitions.size();						}
 		unsigned int		nrFixpDefs()					const { return _fixpdefs.size();						}
-		unsigned int		nrAggregates()					const { return _aggregates.size();						}
 		unsigned int		nrSets()						const { return _sets.size();							}
+		unsigned int		nrAggregates()					const { return _aggregates.size();						}
 		unsigned int 		nrCPReifications()				const { return _cpreifications.size();					}
 		Formula*			sentence(unsigned int)			const { assert(false); /* TODO */						}
 		GroundClause		clause(unsigned int n)			const { return _clauses[n];								}
 		GroundDefinition*	definition(unsigned int n)		const { return _definitions[n];							}
-		GroundAggregate*	aggregate(unsigned int n)		const { return _aggregates[n];							}
 		GroundFixpDef*		fixpdef(unsigned int n)			const { return _fixpdefs[n];							}
 		GroundSet*			set(unsigned int n)				const { return _sets[n];								}
+		GroundAggregate*	aggregate(unsigned int n)		const { return _aggregates[n];							}
 		CPReification*		cpreification(unsigned int n)	const { return _cpreifications[n];						}
 
 		// Visitor
