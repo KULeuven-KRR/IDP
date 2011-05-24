@@ -817,19 +817,29 @@ double FOBDDManager::estimatedNrAnswers(FOBDDKernel* kernel, const set<Variable*
 			kernindices.insert(getDeBruijnIndex((*it)->sort(),(*it)->index()+1));
 		double quantans = estimatedNrAnswers(quantkernel->bdd(),vars,kernindices,structure);
 		int univquantans = univNrAnswers(vars,kernindices,structure);
-		double quantchance = 1;
+		double invquantans = 0;
 		if(quantans < maxdouble) {
-			if(univquantans == maxint) quantchance = 0;
-			else quantchance = double(quantans) / double(univquantans);
+			if(univquantans == maxint) invquantans = maxdouble;
+			else invquantans = double(univquantans) - double(quantans);
 		}
-		if(quantchance > 1) quantchance = 1;
-		double invquantchance = 1 - quantchance;
 		tablesize quantvarsize = structure->inter(quantkernel->sort())->size();
-		double expchance;
-		if(quantvarsize.first) expchance = pow(invquantchance, int(quantvarsize.second));
-		else expchance = (invquantchance >= 1 ? 1 : 0);
-		assert(expchance <= 1 && 0 <= expchance);
-		chance = 1 - expchance;
+		if(quantvarsize.first) {
+			double varsize = double(quantvarsize.second);
+			if(varsize > invquantans + 1) chance = 1;
+			else {
+				double invchance = 1;
+				for(double m = 0; m < varsize; ++m) {
+					invchance = invchance * invquantans / univquantans;
+					invquantans = invquantans - 1;
+					univquantans = univquantans - 1;
+				}
+				chance = 1 - invchance;
+			}
+		}
+		else {
+			if(invquantans < univquantans) chance = 1;
+			else chance = 0;
+		}
 	}
 
 	int univsize = univNrAnswers(vars,indices,structure);

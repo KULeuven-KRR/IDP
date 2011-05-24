@@ -1730,11 +1730,13 @@ InternalSortTable* EnumeratedInternalSortTable::remove(const DomainElement* d) {
 }
 
 const DomainElement* EnumeratedInternalSortTable::first() const {
-	return *(_table.begin());
+	if(_table.empty()) return 0;
+	else return *(_table.begin());
 }
 
 const DomainElement* EnumeratedInternalSortTable::last() const {
-	return *(_table.rbegin());
+	if(_table.empty()) return 0;
+	else return *(_table.rbegin());
 }
 
 InternalSortTable* IntRangeInternalSortTable::add(const DomainElement* d) {
