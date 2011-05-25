@@ -1331,7 +1331,7 @@ InternalTableIterator* UnionInternalPredTable::begin(const Universe& univ) const
 	return new UnionInternalIterator(vti,_outtables,univ);
 }
 
-BDDInternalPredTable::BDDInternalPredTable(FOBDD* bdd, FOBDDManager* manager, const vector<Variable*>& vars, AbstractStructure* str) :
+BDDInternalPredTable::BDDInternalPredTable(const FOBDD* bdd, FOBDDManager* manager, const vector<Variable*>& vars, AbstractStructure* str) :
 	_manager(manager), _bdd(bdd), _vars(vars), _structure(str->clone()) { 
 }
 

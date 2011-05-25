@@ -87,11 +87,11 @@ class FOPropDomain {
  */
 class FOPropBDDDomain : public FOPropDomain {
 	private:
-		FOBDD* _bdd;
+		const FOBDD* _bdd;
 	public:
-		FOPropBDDDomain(FOBDD* bdd, const std::vector<Variable*>& vars): FOPropDomain(vars), _bdd(bdd) { }
+		FOPropBDDDomain(const FOBDD* bdd, const std::vector<Variable*>& vars): FOPropDomain(vars), _bdd(bdd) { }
 		FOPropBDDDomain* clone() const { return new FOPropBDDDomain(_bdd,_vars);	}
-		FOBDD*	bdd() const { return _bdd;	}
+		const FOBDD*	bdd() const { return _bdd;	}
 };
 
 /**

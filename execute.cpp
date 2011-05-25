@@ -93,6 +93,7 @@ enum ArgType {
 	AT_DOMAINATOM,		//!< a domain atom
 
 	// Theory
+	AT_FORMULA,			//!< a formula
 	AT_THEORY,			//!< a theory
 
 	// Options
@@ -154,6 +155,7 @@ class OverloadedObject {
 		AbstractStructure*	_structure;
 		Options*			_options;
 		UserProcedure*		_procedure;
+		Formula*			_formula;
 
 		set<Predicate*>		_predicate;
 		set<Function*>		_function;
@@ -162,7 +164,7 @@ class OverloadedObject {
 	public:
 		// Constructor
 		OverloadedObject() : 
-			_namespace(0), _vocabulary(0), _theory(0), _structure(0), _options(0), _procedure(0) { }
+			_namespace(0), _vocabulary(0), _theory(0), _structure(0), _options(0), _procedure(0), _formula(0) { }
 
 		void insert(Namespace* n)			{ _namespace = n;	}
 		void insert(Vocabulary* n)			{ _vocabulary = n;	}
@@ -170,12 +172,14 @@ class OverloadedObject {
 		void insert(AbstractStructure* n)	{ _structure = n;	}
 		void insert(Options* n)				{ _options = n;		}
 		void insert(UserProcedure* n)		{ _procedure = n;	}
+		void insert(Formula* f)				{ _formula = f;		}
 
 		AbstractStructure*	structure()		const { return _structure;	}
 		AbstractTheory*		theory()		const { return _theory;		}
 		Options*			options()		const { return _options;	}
 		Namespace*			space()			const { return _namespace;	}
 		Vocabulary*			vocabulary()	const { return _vocabulary;	}
+		Formula*			formula()		const { return _formula;	}
 
 		vector<ArgType> types() {
 			vector<ArgType> result;
@@ -188,6 +192,7 @@ class OverloadedObject {
 			if(!_predicate.empty()) result.push_back(AT_PREDICATE);
 			if(!_function.empty()) result.push_back(AT_FUNCTION);
 			if(!_sort.empty()) result.push_back(AT_SORT);
+			if(_formula) result.push_back(AT_FORMULA);
 			return result;
 		}
 };
@@ -212,6 +217,7 @@ struct InternalArgument {
 		SortIterator*					_sortiterator;
 
 		AbstractTheory*					_theory;
+		Formula*						_formula;
 		Options*						_options;
 		Namespace*						_namespace;
 
@@ -247,6 +253,7 @@ struct InternalArgument {
 	InternalArgument(const Compound* c)					: _type(AT_COMPOUND)	{ _value._compound = c;		}
 	InternalArgument(const DomainAtom* a)				: _type(AT_DOMAINATOM)	{ _value._domainatom = a;	}
 	InternalArgument(OverloadedObject* o)				: _type(AT_OVERLOADED)	{ _value._overloaded = o;	}
+	InternalArgument(Formula* f)						: _type(AT_FORMULA)		{ _value._formula = f;		}
 
 	InternalArgument(int arg, lua_State* L);
 	InternalArgument(const DomainElement*);
@@ -477,6 +484,8 @@ InternalArgument::InternalArgument(int arg, lua_State* L) {
 				case AT_THEORY:			
 					_value._theory = *(AbstractTheory**)lua_touserdata(L,arg);
 					break;
+				case AT_FORMULA:
+					_value._formula = *(Formula**)lua_touserdata(L,arg);
 				case AT_OPTIONS:		
 					_value._options = *(Options**)lua_touserdata(L,arg);
 					break;
@@ -552,6 +561,8 @@ InternalArgument idptype(const vector<InternalArgument>& args, lua_State*) {
 			return InternalArgument(StringPointer("structure"));
 		case AT_THEORY:
 			return InternalArgument(StringPointer("theory"));
+		case AT_FORMULA:
+			return InternalArgument(StringPointer("formula"));
 		case AT_OPTIONS:
 			return InternalArgument(StringPointer("options"));
 		case AT_NAMESPACE:
@@ -593,6 +604,17 @@ InternalArgument printtheory(const vector<InternalArgument>& args, lua_State* ) 
 
 	Printer* printer = Printer::create(opts);
 	string str = printer->print(theory);
+	delete(printer);
+
+	InternalArgument result(StringPointer(str));
+	return result;
+}
+
+InternalArgument printformula(const vector<InternalArgument>& args, lua_State* ) {
+	Formula* f = args[0]._value._formula;
+	Options* opts = args[1].options();
+	Printer* printer = Printer::create(opts);
+	string str = printer->print(f);
 	delete(printer);
 
 	InternalArgument result(StringPointer(str));
@@ -977,25 +999,31 @@ InternalArgument completion(const vector<InternalArgument>& args, lua_State* ) {
 	return nilarg();
 }
 
-void estimatenrans(Theory* theory, AbstractStructure* structure, FOBDDManager* manager) {
-	FOBDDFactory m(manager,theory->vocabulary());
-	set<Variable*> sv;
-	set<FOBDDDeBruijnIndex*> si;
-	for(vector<Formula*>::const_iterator it = theory->sentences().begin(); it != theory->sentences().end(); ++it) {
-		(*it)->accept(&m);
-		FOBDD* bdd = m.bdd();
-		cout << manager->to_string(bdd);
-		cout << "Estimated nr of answer for formula " << *(*it) << ":\n";
-		cout << "    " << manager->estimatedNrAnswers(bdd,sv,si,structure) << endl;
-	}
+InternalArgument tobdd(const vector<InternalArgument>& args, lua_State*) {
+	Formula* f = dynamic_cast<Formula*>(args[0]._value._formula);
+	FOBDDManager manager;
+	FOBDDFactory m(&manager);
+	f->accept(&m);
+	const FOBDD* bdd = m.bdd();
+	stringstream sstr; 
+	manager.put(sstr,bdd);
+	InternalArgument ia; ia._type = AT_STRING;
+	ia._value._string = StringPointer(sstr.str());
+	return ia;
 }
 
 InternalArgument estimatenrans(const vector<InternalArgument>& args, lua_State* ) {
-	Theory* theory = dynamic_cast<Theory*>(args[0].theory());
+	Formula* f = dynamic_cast<Formula*>(args[0]._value._formula);
 	AbstractStructure* structure = args[1].structure();
 	FOBDDManager manager;
-	estimatenrans(theory,structure,&manager);
-	return nilarg();
+	FOBDDFactory m(&manager);
+	set<Variable*> sv = f->freevars();
+	set<const FOBDDDeBruijnIndex*> si;
+	f->accept(&m);
+	const FOBDD* bdd = m.bdd();
+	InternalArgument ia; ia._type = AT_DOUBLE;
+	ia._value._double = manager.estimatedNrAnswers(bdd,sv,si,structure);
+	return ia;
 }
 
 InternalArgument propagate(const vector<InternalArgument>& args, lua_State* ) {
@@ -1338,6 +1366,14 @@ namespace LuaConnection {
 				}
 				return 1;
 			}
+			case AT_FORMULA:
+			{
+				Formula** ptr = (Formula**)lua_newuserdata(L,sizeof(Formula*));
+				(*ptr) = arg._value._formula;
+				luaL_getmetatable(L,"formula");
+				lua_setmetatable(L,-2);
+				return 1;
+			}
 			case AT_OPTIONS:
 			{
 				Options** ptr = (Options**)lua_newuserdata(L,sizeof(Options*));
@@ -1670,6 +1706,14 @@ namespace LuaConnection {
 				t->recursiveDelete();
 			}
 		}
+		return 0;
+	}
+
+	/**
+	 * Garbage collection for formulas
+	 */
+	int gcFormula(lua_State* ) {
+		// TODO
 		return 0;
 	}
 
@@ -2104,6 +2148,8 @@ namespace LuaConnection {
 			if(ns->isOptions(str)) { opts = ns->options(str); ++counter; }
 			UserProcedure* proc = 0;
 			if(ns->isProc(str)) { proc = ns->procedure(str); ++counter; }
+			Formula* formula = 0;
+			if(ns->isFormula(str)) { formula = ns->formula(str); ++counter;	}
 
 			if(counter == 0) return 0;
 			else if(counter == 1) {
@@ -2117,6 +2163,9 @@ namespace LuaConnection {
 					lua_getfield(L,LUA_REGISTRYINDEX,proc->registryindex().c_str());
 					return 1;
 				}
+				if(formula) {
+					return convertToLua(L,InternalArgument(formula));
+				}
 				assert(false);
 				return 0;
 			}
@@ -2128,6 +2177,7 @@ namespace LuaConnection {
 				oo->insert(structure);
 				oo->insert(opts);
 				oo->insert(proc);
+				oo->insert(formula);
 				return convertToLua(L,InternalArgument(oo));
 			}
 		}
@@ -2743,6 +2793,18 @@ namespace LuaConnection {
 	}
 
 	/**
+	 * Create metatable for formulas
+	 */
+	void formulaMetaTable(lua_State* L) {
+		int ok = luaL_newmetatable(L,"formula"); assert(ok);
+		lua_pushinteger(L,(int)AT_FORMULA);
+		lua_setfield(L,-2,_typefield);
+		lua_pushcfunction(L,&gcFormula);
+		lua_setfield(L,-2,"__gc");
+		lua_pop(L,1);
+	}
+
+	/**
 	 * Create metatable for options
 	 */
 	void optionsMetaTable(lua_State* L) {
@@ -2822,6 +2884,7 @@ namespace LuaConnection {
 		domainatomMetaTable(L);
 
 		theoryMetaTable(L);
+		formulaMetaTable(L);
 		optionsMetaTable(L);
 		namespaceMetaTable(L);
 
@@ -2861,8 +2924,10 @@ namespace LuaConnection {
 		vector<ArgType> vvoc(1,AT_VOCABULARY);
 		vector<ArgType> vpredtable(1,AT_PREDTABLE);
 		vector<ArgType> vdomain(1,AT_DOMAIN);
+		vector<ArgType> vform(1,AT_FORMULA);
 		vector<ArgType> vtabitertuple(2); vtabitertuple[0] = AT_TABLEITERATOR; vtabitertuple[1] = AT_TUPLE;
 		vector<ArgType> vtheoopt(2); vtheoopt[0] = AT_THEORY; vtheoopt[1] = AT_OPTIONS;
+		vector<ArgType> vformopt(2); vformopt[0] = AT_FORMULA; vformopt[1] = AT_OPTIONS;
 		vector<ArgType> vstructopt(2); vstructopt[0] = AT_STRUCTURE; vstructopt[1] = AT_OPTIONS;
 		vector<ArgType> vdomainatomopt(2); vdomainatomopt[0] = AT_DOMAINATOM; vdomainatomopt[1] = AT_OPTIONS;
 		vector<ArgType> vstructvoc(2); vstructvoc[0] = AT_STRUCTURE; vstructvoc[1] = AT_VOCABULARY;
@@ -2876,7 +2941,7 @@ namespace LuaConnection {
 		vector<ArgType> vdomitercomp(2); vdomitercomp[0] = AT_DOMAINITERATOR; vdomitercomp[1] = AT_COMPOUND;
 		vector<ArgType> vpritab(2); vpritab[0] = AT_PREDINTER; vpritab[1] = AT_TABLE;
 		vector<ArgType> vpritup(2); vpritup[0] = AT_PREDINTER; vpritup[1] = AT_TUPLE;
-		vector<ArgType> vtheostruct(2); vtheostruct[0] = AT_THEORY; vtheostruct[1] = AT_STRUCTURE; 
+		vector<ArgType> vformstruct(2); vformstruct[0] = AT_FORMULA; vformstruct[1] = AT_STRUCTURE; 
 		vector<ArgType> vtheostructopt(3); 
 			vtheostructopt[0] = AT_THEORY; 
 			vtheostructopt[1] = AT_STRUCTURE; 
@@ -2885,6 +2950,7 @@ namespace LuaConnection {
 		// Create internal procedures
 		addInternalProcedure("idptype",vint,&idptype);
 		addInternalProcedure("tostring",vtheoopt,&printtheory);
+		addInternalProcedure("tostring",vformopt,&printformula);
 		addInternalProcedure("tostring",vstructopt,&printstructure);
 		addInternalProcedure("tostring",vvocopt,&printvocabulary);
 		addInternalProcedure("tostring",vdomainatomopt,&printdomainatom);
@@ -2918,7 +2984,8 @@ namespace LuaConnection {
 		addInternalProcedure("makeunknown",vpritab,&maketabunknown);
 		addInternalProcedure("makeunknown",vpritup,&makeunknown);
 		addInternalProcedure("completion",vtheo,&completion);
-		addInternalProcedure("estimate_nr_ans",vtheostruct,&estimatenrans);
+		addInternalProcedure("estimate_nr_ans",vformstruct,&estimatenrans);
+		addInternalProcedure("bddstring",vform,&tobdd);
 		
 		// Add the internal procedures to lua
 		lua_getglobal(L,"idp_intern");
@@ -3074,6 +3141,11 @@ namespace LuaConnection {
 	void addGlobal(Vocabulary* v) {
 		convertToLua(_state,InternalArgument(v));
 		lua_setglobal(_state,v->name().c_str());
+	}
+
+	void addGlobal(const string& name, Formula* f) {
+		convertToLua(_state,InternalArgument(f));
+		lua_setglobal(_state,name.c_str());
 	}
 
 	void addGlobal(AbstractStructure* s) {

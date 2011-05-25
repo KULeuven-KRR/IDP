@@ -80,6 +80,7 @@ namespace LuaConnection {
 	void addGlobal(Options*);
 	void addGlobal(UserProcedure*);
 	void addGlobal(Namespace*);
+	void addGlobal(const std::string& name, Formula*);
 
 	Vocabulary*			vocabulary(InternalArgument*);
 	AbstractTheory*		theory(InternalArgument*);

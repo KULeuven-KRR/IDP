@@ -44,17 +44,18 @@ FOPropBDDDomainFactory::FOPropBDDDomainFactory() {
 
 ostream& FOPropBDDDomainFactory::put(ostream& output, FOPropDomain* domain) const {
 	FOPropBDDDomain* bdddomain = dynamic_cast<FOPropBDDDomain*>(domain);
-	return output << _manager->to_string(bdddomain->bdd(),6);
+	_manager->put(output,bdddomain->bdd(),6);
+	return output;
 }
 
 FOPropBDDDomain* FOPropBDDDomainFactory::trueDomain(const Formula* f) const {
-	FOBDD* bdd = _manager->truebdd();
+	const FOBDD* bdd = _manager->truebdd();
 	vector<Variable*> vv(f->freevars().begin(),f->freevars().end());
 	return new FOPropBDDDomain(bdd,vv);
 }
 
 FOPropBDDDomain* FOPropBDDDomainFactory::falseDomain(const Formula* f) const {
-	FOBDD* bdd = _manager->falsebdd();
+	const FOBDD* bdd = _manager->falsebdd();
 	vector<Variable*> vv(f->freevars().begin(),f->freevars().end());
 	return new FOPropBDDDomain(bdd,vv);
 }
@@ -67,35 +68,35 @@ FOPropBDDDomain* FOPropBDDDomainFactory::formuladomain(const Formula* f) const {
 }
 
 FOPropBDDDomain* FOPropBDDDomainFactory::ctDomain(const PredForm* pf) const {
-	vector<FOBDDArgument*> args;
+	vector<const FOBDDArgument*> args;
 	FOBDDFactory bddfactory(_manager);
 	for(vector<Term*>::const_iterator it = pf->subterms().begin(); it != pf->subterms().end(); ++it) {
 		(*it)->accept(&bddfactory);
 		args.push_back(bddfactory.argument());
 	}
-	FOBDDAtomKernel* k = _manager->getAtomKernel(pf->symbol(),AKT_CT,args);
-	FOBDD* bdd = _manager->getBDD(k,_manager->truebdd(),_manager->falsebdd());
+	const FOBDDAtomKernel* k = _manager->getAtomKernel(pf->symbol(),AKT_CT,args);
+	const FOBDD* bdd = _manager->getBDD(k,_manager->truebdd(),_manager->falsebdd());
 	vector<Variable*> vv(pf->freevars().begin(),pf->freevars().end());
 	return new FOPropBDDDomain(bdd,vv);
 }
 
 FOPropBDDDomain* FOPropBDDDomainFactory::cfDomain(const PredForm* pf) const {
-	vector<FOBDDArgument*> args;
+	vector<const FOBDDArgument*> args;
 	FOBDDFactory bddfactory(_manager);
 	for(vector<Term*>::const_iterator it = pf->subterms().begin(); it != pf->subterms().end(); ++it) {
 		(*it)->accept(&bddfactory);
 		args.push_back(bddfactory.argument());
 	}
-	FOBDDAtomKernel* k = _manager->getAtomKernel(pf->symbol(),AKT_CF,args);
-	FOBDD* bdd = _manager->getBDD(k,_manager->truebdd(),_manager->falsebdd());
+	const FOBDDAtomKernel* k = _manager->getAtomKernel(pf->symbol(),AKT_CF,args);
+	const FOBDD* bdd = _manager->getBDD(k,_manager->truebdd(),_manager->falsebdd());
 	vector<Variable*> vv(pf->freevars().begin(),pf->freevars().end());
 	return new FOPropBDDDomain(bdd,vv);
 }
 
 FOPropBDDDomain* FOPropBDDDomainFactory::exists(FOPropDomain* domain, const set<Variable*>& qvars) const {
 	FOPropBDDDomain* bdddomain = dynamic_cast<FOPropBDDDomain*>(domain);
-	set<FOBDDVariable*> bddqvars = _manager->getVariables(qvars);
-	FOBDD* qbdd = _manager->existsquantify(bddqvars,bdddomain->bdd());
+	set<const FOBDDVariable*> bddqvars = _manager->getVariables(qvars);
+	const FOBDD* qbdd = _manager->existsquantify(bddqvars,bdddomain->bdd());
 	vector<Variable*> vv;
 	for(vector<Variable*>::const_iterator it = domain->vars().begin(); it != domain->vars().end(); ++it) {
 		if(qvars.find(*it) == qvars.end()) vv.push_back(*it);
@@ -105,8 +106,8 @@ FOPropBDDDomain* FOPropBDDDomainFactory::exists(FOPropDomain* domain, const set<
 
 FOPropBDDDomain* FOPropBDDDomainFactory::forall(FOPropDomain* domain, const std::set<Variable*>& qvars) const {
 	FOPropBDDDomain* bdddomain = dynamic_cast<FOPropBDDDomain*>(domain);
-	set<FOBDDVariable*> bddqvars = _manager->getVariables(qvars);
-	FOBDD* qbdd = _manager->univquantify(bddqvars,bdddomain->bdd());
+	set<const FOBDDVariable*> bddqvars = _manager->getVariables(qvars);
+	const FOBDD* qbdd = _manager->univquantify(bddqvars,bdddomain->bdd());
 	vector<Variable*> vv;
 	for(vector<Variable*>::const_iterator it = domain->vars().begin(); it != domain->vars().end(); ++it) {
 		if(qvars.find(*it) == qvars.end()) vv.push_back(*it);
@@ -117,7 +118,7 @@ FOPropBDDDomain* FOPropBDDDomainFactory::forall(FOPropDomain* domain, const std:
 FOPropBDDDomain* FOPropBDDDomainFactory::conjunction(FOPropDomain* dom1,FOPropDomain* dom2) const {
 	FOPropBDDDomain* bdddomain1 = dynamic_cast<FOPropBDDDomain*>(dom1);
 	FOPropBDDDomain* bdddomain2 = dynamic_cast<FOPropBDDDomain*>(dom2);
-	FOBDD* conjbdd = _manager->conjunction(bdddomain1->bdd(),bdddomain2->bdd());
+	const FOBDD* conjbdd = _manager->conjunction(bdddomain1->bdd(),bdddomain2->bdd());
 	set<Variable*> sv; 
 	sv.insert(dom1->vars().begin(),dom1->vars().end());
 	sv.insert(dom2->vars().begin(),dom2->vars().end());
@@ -128,7 +129,7 @@ FOPropBDDDomain* FOPropBDDDomainFactory::conjunction(FOPropDomain* dom1,FOPropDo
 FOPropBDDDomain* FOPropBDDDomainFactory::disjunction(FOPropDomain* dom1,FOPropDomain* dom2) const {
 	FOPropBDDDomain* bdddomain1 = dynamic_cast<FOPropBDDDomain*>(dom1);
 	FOPropBDDDomain* bdddomain2 = dynamic_cast<FOPropBDDDomain*>(dom2);
-	FOBDD* disjbdd = _manager->disjunction(bdddomain1->bdd(),bdddomain2->bdd());
+	const FOBDD* disjbdd = _manager->disjunction(bdddomain1->bdd(),bdddomain2->bdd());
 	set<Variable*> sv; 
 	sv.insert(dom1->vars().begin(),dom1->vars().end());
 	sv.insert(dom2->vars().begin(),dom2->vars().end());
@@ -138,13 +139,13 @@ FOPropBDDDomain* FOPropBDDDomainFactory::disjunction(FOPropDomain* dom1,FOPropDo
 
 FOPropBDDDomain* FOPropBDDDomainFactory::substitute(FOPropDomain* domain,const map<Variable*,Variable*>& mvv) const {
 	FOPropBDDDomain* bdddomain = dynamic_cast<FOPropBDDDomain*>(domain);
-	map<FOBDDVariable*,FOBDDVariable*> newmvv;
+	map<const FOBDDVariable*,const FOBDDVariable*> newmvv;
 	for(map<Variable*,Variable*>::const_iterator it = mvv.begin(); it != mvv.end(); ++it) {
-		FOBDDVariable* oldvar = _manager->getVariable(it->first);
-		FOBDDVariable* newvar = _manager->getVariable(it->second);
+		const FOBDDVariable* oldvar = _manager->getVariable(it->first);
+		const FOBDDVariable* newvar = _manager->getVariable(it->second);
 		newmvv[oldvar] = newvar;
 	}
-	FOBDD* substbdd = _manager->substitute(bdddomain->bdd(),newmvv);
+	const FOBDD* substbdd = _manager->substitute(bdddomain->bdd(),newmvv);
 	vector<Variable*> vv = domain->vars();
 	for(unsigned int n = 0; n < vv.size(); ++n) {
 		map<Variable*,Variable*>::const_iterator it = mvv.find(vv[n]);
@@ -164,20 +165,20 @@ PredInter* FOPropBDDDomainFactory::inter(const vector<Variable*>& vars, const Th
 	vector<SortTable*> vst;
 	vector<Variable*> newctvars;
 	vector<Variable*> newcfvars;
-	map<FOBDDVariable*,FOBDDVariable*> ctmvv;
-	map<FOBDDVariable*,FOBDDVariable*> cfmvv;
+	map<const FOBDDVariable*,const FOBDDVariable*> ctmvv;
+	map<const FOBDDVariable*,const FOBDDVariable*> cfmvv;
 	bool twovalued = dom._twovalued;	
 	for(vector<Variable*>::const_iterator it = vars.begin(); it != vars.end(); ++it) {
-		FOBDDVariable* oldvar = _manager->getVariable(*it);
+		const FOBDDVariable* oldvar = _manager->getVariable(*it);
 		vst.push_back(str->inter((*it)->sort()));
 		Variable* ctv = new Variable((*it)->sort());
 		newctvars.push_back(ctv);
-		FOBDDVariable* newctvar = _manager->getVariable(ctv);
+		const FOBDDVariable* newctvar = _manager->getVariable(ctv);
 		ctmvv[oldvar] = newctvar;
 		if(!twovalued) {
 			Variable* cfv = new Variable((*it)->sort());
 			newcfvars.push_back(cfv);
-			FOBDDVariable* newcfvar = _manager->getVariable(cfv);
+			const FOBDDVariable* newcfvar = _manager->getVariable(cfv);
 			cfmvv[oldvar] = newcfvar;
 		}
 	}
@@ -185,12 +186,12 @@ PredInter* FOPropBDDDomainFactory::inter(const vector<Variable*>& vars, const Th
 
 	// Construct the ct-table
 	FOPropBDDDomain* ctdom = dynamic_cast<FOPropBDDDomain*>(dom._ctdomain);
-	FOBDD* newctbdd = _manager->substitute(ctdom->bdd(),ctmvv);
+	const FOBDD* newctbdd = _manager->substitute(ctdom->bdd(),ctmvv);
 	PredTable* ct = new PredTable(new BDDInternalPredTable(newctbdd,_manager,newctvars,str),univ);
 	if(twovalued) return new PredInter(ct,true);
 	else {
 		FOPropBDDDomain* cfdom = dynamic_cast<FOPropBDDDomain*>(dom._cfdomain);
-		FOBDD* newcfbdd = _manager->substitute(cfdom->bdd(),cfmvv);
+		const FOBDD* newcfbdd = _manager->substitute(cfdom->bdd(),cfmvv);
 		PredTable* cf = new PredTable(new BDDInternalPredTable(newcfbdd,_manager,newcfvars,str),univ);
 		return new PredInter(ct,cf,true,true);
 	}

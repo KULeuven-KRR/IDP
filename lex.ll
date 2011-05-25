@@ -280,6 +280,10 @@ COMMENTLINE		"//".*
 						  advancecol();
 						  return OPTION_HEADER;
 						}
+"formula"				{ BEGIN(theory);
+						  advancecol();
+						  return FORMULA_HEADER;
+						}
 
 	/**************
 		Include

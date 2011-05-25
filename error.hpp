@@ -78,6 +78,7 @@ namespace Error {
 	void multdeclns(const std::string& nsname, const ParseInfo& thisplace, const ParseInfo& prevdeclplace);
 	void multdeclvoc(const std::string& vocname, const ParseInfo& thisplace, const ParseInfo& prevdeclplace);
 	void multdecltheo(const std::string& thname, const ParseInfo& thisplace, const ParseInfo& prevdeclplace);
+	void multdeclformula(const std::string& fname, const ParseInfo& thisplace, const ParseInfo& prevdeclplace);
 	void multdeclstruct(const std::string& sname, const ParseInfo& thisplace, const ParseInfo& prevdeclplace);
 	void multdeclopt(const std::string& sname, const ParseInfo& thisplace, const ParseInfo& prevdeclplace);
 	void multdeclproc(const std::string& sname, const ParseInfo& thisplace, const ParseInfo& prevdeclplace);
@@ -111,6 +112,7 @@ namespace Error {
 	void overloadedspace(const std::string& name, const ParseInfo& p1, const ParseInfo& p2, const ParseInfo& thisplace);
 	void overloadedvocab(const std::string& name, const ParseInfo& p1, const ParseInfo& p2, const ParseInfo& thisplace);
 	void overloadedtheory(const std::string& name, const ParseInfo& p1, const ParseInfo& p2, const ParseInfo& thisplace);
+	void overloadedformula(const std::string& name, const ParseInfo& p1, const ParseInfo& p2, const ParseInfo& thisplace);
 	void overloadedstructure(const std::string& name, const ParseInfo& p1, const ParseInfo& p2, const ParseInfo& thisplace);
 	void overloadedopt(const std::string& name, const ParseInfo& p1, const ParseInfo& p2, const ParseInfo& thisplace);
 	void overloadedproc(const std::string& name, const ParseInfo& p1, const ParseInfo& p2, const ParseInfo& thisplace);

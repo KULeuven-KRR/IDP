@@ -15,6 +15,9 @@
 #include "interactive.hpp"
 using namespace std;
 
+// seed
+int global_seed;
+
 // Parser stuff
 extern map<string,CLConst*>	clconsts;
 extern void parsestring(const string&);
@@ -31,6 +34,7 @@ void usage() {
 	cout << "    -i, --interactive    run in interactive mode\n";
 	cout << "    -e \"<proc>\"        run procedure <proc> after parsing\n"
 		 << "    -c <name1>=<name2>   substitute <name2> for <name1> in the input\n"
+		 << "    --seed=N             use N as seed for the random generator\n"
 		 << "    -I                   read from stdin\n"
 		 << "    -v, --version        show version number and stop\n"
 		 << "    -h, --help           show this help message\n\n";
@@ -85,6 +89,7 @@ vector<string> read_options(int argc, char* argv[], CLOptions& cloptions) {
 														  else Error::constsetexp();
 														  argc--; argv++;
 														}
+		else if(str.substr(0,7) == "--seed=")			{ global_seed = stoi(str.substr(7,str.size()));	}
 		else if(str == "-I")							{ cloptions._readfromstdin = true;	}
 		else if(str == "-v" || str == "--version")		{ cout << "GidL 2.0.1\n"; exit(0);	}
 		else if(str == "-h" || str == "--help")			{ usage(); exit(0);					}

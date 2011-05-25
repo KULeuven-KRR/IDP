@@ -106,6 +106,7 @@ typedef std::list<isp>				lisp;
 %token PROCEDURE_HEADER
 %token OPTION_HEADER
 %token EXEC_HEADER
+%token FORMULA_HEADER
 
 /** Keywords **/
 %token CONSTRUCTOR
@@ -247,6 +248,7 @@ idp		        : /* empty */
 				| idp asp_structure
 				| idp instructions
 				| idp options
+				| idp namedformula
 				| idp using
 		        ;
 	
@@ -379,6 +381,11 @@ pointer_name		: pointer_name "::" identifier	{ $$ = $1; $$->push_back(*$3); 		}
 /*************
 	Theory	
 *************/
+
+namedformula	: FORMULA_HEADER formula_name ':' vocab_pointer '{' formula '}'	{ insert.closeformula($6);	}
+				;
+
+formula_name	: identifier	{ insert.openformula(*$1,@1);	}
 
 theory		: THEORY_HEADER theory_name ':' vocab_pointer '{' def_forms '}'		{ insert.closetheory();	}
 			| THEORY_HEADER theory_name '=' function_call						{ insert.assigntheory($4,@2); 

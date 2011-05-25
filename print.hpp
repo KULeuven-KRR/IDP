@@ -48,6 +48,7 @@ class Printer : public TheoryVisitor {
 		virtual std::string print(const Vocabulary*) = 0;
 		virtual std::string print(const AbstractStructure*) = 0;
 		virtual std::string print(const Namespace*) = 0;
+		virtual std::string print(const Formula*);
 		std::string print(const AbstractTheory*);
 
 		// Indentation

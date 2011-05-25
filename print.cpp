@@ -38,6 +38,7 @@ Printer* Printer::create(Options* opts) {
 }
 
 string Printer::print(const AbstractTheory* t)		{ t->accept(this); return _out.str(); }
+string Printer::print(const Formula* f)				{ f->accept(this); return _out.str(); }
 
 void Printer::indent() 		{ _indent++; }
 void Printer::unindent()	{ _indent--; }

@@ -292,6 +292,14 @@ namespace Error {
 		cerr << "." << endl;
 	}
 
+	void multdeclformula(const string& fname, const ParseInfo& thisplace, const ParseInfo& prevdeclplace) {
+		error(thisplace);
+		cerr << "Formula " << fname << " is already declared in this scope" 
+			 << ", namely at line " << prevdeclplace.line() << ", column " << prevdeclplace.col(); 
+		if(prevdeclplace.file()) cerr << " of file " << *(prevdeclplace.file());
+		cerr << "." << endl;
+	}
+
 	void multdeclstruct(const string& sname, const ParseInfo& thisplace, const ParseInfo& prevdeclplace) {
 		error(thisplace);
 		cerr << "Structure " << sname << " is already declared in this scope" 
@@ -478,6 +486,17 @@ namespace Error {
 			 << "line " << p1.line() << ", column " << p1.col();
 		if(p1.file()) cerr << " of file " << p1.file();
 		cerr << " or the procedure declared at "
+			 << "line " << p2.line() << ", column " << p2.col();
+		if(p2.file()) cerr << " of file " << p2.file();
+		cerr << ".\n";
+	}
+
+	void overloadedformula(const string& name, const ParseInfo& p1, const ParseInfo& p2, const ParseInfo& thisplace) {
+		error(thisplace);
+		cerr << "The formula " << name << " used here could be the formula declared at " 
+			 << "line " << p1.line() << ", column " << p1.col();
+		if(p1.file()) cerr << " of file " << p1.file();
+		cerr << " or the theory declared at "
 			 << "line " << p2.line() << ", column " << p2.col();
 		if(p2.file()) cerr << " of file " << p2.file();
 		cerr << ".\n";

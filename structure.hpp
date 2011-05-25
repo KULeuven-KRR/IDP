@@ -722,11 +722,11 @@ class FOBDD;
 class BDDInternalPredTable : public InternalPredTable {
 	private:
 		FOBDDManager*			_manager;
-		FOBDD*					_bdd;
+		const FOBDD*			_bdd;
 		std::vector<Variable*>	_vars;
 		AbstractStructure*		_structure;
 	public:
-		BDDInternalPredTable(FOBDD*, FOBDDManager*, const std::vector<Variable*>&, AbstractStructure*);
+		BDDInternalPredTable(const FOBDD*, FOBDDManager*, const std::vector<Variable*>&, AbstractStructure*);
 		~BDDInternalPredTable() { }
 
 		bool		finite(const Universe&)			const;

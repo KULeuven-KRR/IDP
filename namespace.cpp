@@ -52,6 +52,7 @@ void Namespace::add(AbstractStructure* s)	{ _structures[s->name()] = s;		}
 void Namespace::add(AbstractTheory* t)		{ _theories[t->name()] = t; 		}
 void Namespace::add(Options* o)				{ _options[o->name()] = o; 			}
 void Namespace::add(UserProcedure* l)		{ _procedures[l->name()] = l;		}
+void Namespace::add(const string& name, Formula* f)	{ _formulas[name] = f;	}
 
 /** Find subparts **/
 
@@ -61,6 +62,10 @@ bool Namespace::isSubspace(const string& sn) const {
 
 bool Namespace::isVocab(const string& vn) const {
 	return (_vocabularies.find(vn) != _vocabularies.end());
+}
+
+bool Namespace::isFormula(const string& fn) const {
+	return (_formulas.find(fn) != _formulas.end());
 }
 
 bool Namespace::isTheory(const string& tn) const {
@@ -92,6 +97,11 @@ Vocabulary* Namespace::vocabulary(const string& vn) const {
 AbstractTheory* Namespace::theory(const string& tn) const {
 	assert(isTheory(tn));
 	return ((_theories.find(tn))->second);
+}
+
+Formula* Namespace::formula(const string& fn) const {
+	assert(isFormula(fn));
+	return ((_formulas.find(fn))->second);
 }
 
 AbstractStructure* Namespace::structure(const string& sn) const {

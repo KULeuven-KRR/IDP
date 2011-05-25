@@ -727,6 +727,17 @@ AbstractStructure* Insert::structureInScope(const vector<string>& vs, const Pars
 	}
 }
 
+Formula* Insert::formulaInScope(const string& name, const ParseInfo& pi) const {
+	Formula* f = 0;
+	for(unsigned int n = 0; n < _usingspace.size(); ++n) {
+		if(_usingspace[n]->isFormula(name)) {
+			if(f) Error::overloadedformula(name,_usingspace[n]->formula(name)->pi(),f->pi(),pi);
+			else f = _usingspace[n]->formula(name);
+		}
+	}
+	return f;
+}
+
 AbstractTheory* Insert::theoryInScope(const string& name, const ParseInfo& pi) const {
 	AbstractTheory* th = 0;
 	for(unsigned int n = 0; n < _usingspace.size(); ++n) {
@@ -936,6 +947,7 @@ void Insert::closeblock() {
 	_currstructure = 0;
 	_curroptions = 0;
 	_currprocedure = 0;
+	_currformula = "";
 }
 
 void Insert::openspace(const string& sname, YYLTYPE l) {
@@ -987,14 +999,12 @@ void Insert::setvocab(const longname& vs, YYLTYPE l) {
 		_currvocabulary = v;
 		if(_currstructure) _currstructure->vocabulary(v);
 		else if(_currtheory) _currtheory->vocabulary(v);
-		else assert(false);
 	}
 	else {
 		Error::undeclvoc(oneName(vs),pi);
 		_currvocabulary = Vocabulary::std();
 		if(_currstructure) _currstructure->vocabulary(Vocabulary::std());
 		else if(_currtheory) _currtheory->vocabulary(Vocabulary::std());
-		else assert(false);
 	}
 }
 
@@ -1003,6 +1013,14 @@ void Insert::externvocab(const vector<string>& vname, YYLTYPE l) const {
 	Vocabulary* v = vocabularyInScope(vname,pi);
 	if(v) _currvocabulary->addVocabulary(v); 
 	else Error::undeclvoc(oneName(vname),pi);
+}
+
+void Insert::openformula(const string& fname, YYLTYPE l) {
+	openblock();
+	ParseInfo pi = parseinfo(l);
+	Formula* f = formulaInScope(fname,pi);
+	_currformula = fname;
+	if(f) Error::multdeclformula(fname,pi,f->pi());
 }
 
 void Insert::opentheory(const string& tname, YYLTYPE l) {
@@ -1026,6 +1044,19 @@ void Insert::assigntheory(InternalArgument* arg, YYLTYPE l) {
 void Insert::closetheory() {
 	assert(_currtheory);
 	if(_currspace->isGlobal()) LuaConnection::addGlobal(_currtheory);
+	closeblock();
+}
+
+void Insert::closeformula(Formula* f) {
+	_curr_vars.clear();
+	if(f) {
+		QuantForm* qf = new QuantForm(true,true,f->freevars(),f,FormulaParseInfo());
+		SortDeriver sd(qf,_currvocabulary); 
+		SortChecker sc(qf,_currvocabulary);
+		delete(qf);
+		_currspace->add(_currformula,f);
+		if(_currspace->isGlobal()) LuaConnection::addGlobal(_currformula,f);
+	}
 	closeblock();
 }
 

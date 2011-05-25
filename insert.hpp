@@ -109,6 +109,7 @@ class Insert {
 		Structure*		_currstructure;		//!< the structure that is currently being parsed
 		Options*		_curroptions;		//!< the options that is currently being parsed
 		UserProcedure*	_currprocedure;		//!< the procedure that is currently being parsed
+		std::string		_currformula;		//!< the name of the named formula that is currently being parsed
 
 		std::list<VarName>	_curr_vars;
 
@@ -151,6 +152,7 @@ class Insert {
 		Vocabulary*				vocabularyInScope(const longname&, const ParseInfo&) const;
 		Namespace*				namespaceInScope(const std::string&, const ParseInfo&) const;
 		Namespace*				namespaceInScope(const longname&, const ParseInfo&) const;
+		Formula*				formulaInScope(const std::string&, const ParseInfo&) const;
 		AbstractTheory*			theoryInScope(const std::string&, const ParseInfo&) const;
 		AbstractTheory*			theoryInScope(const longname&, const ParseInfo&) const;
 		AbstractStructure*		structureInScope(const std::string&, const ParseInfo&) const;
@@ -183,6 +185,7 @@ class Insert {
 		void openspace(const std::string& name,YYLTYPE);		//!< Open a new namespace
 		void openvocab(const std::string& name,YYLTYPE);		//!< Open a new vocabulary
 		void opentheory(const std::string& tname, YYLTYPE);		//!< Open a new theory
+		void openformula(const std::string& tname, YYLTYPE);	//!< Open a new named formula
 		void openstructure(const std::string& name, YYLTYPE);	//!< Open a new structure
 		void openprocedure(const std::string& name, YYLTYPE);	//!< Open a procedure
 		void openoptions(const std::string& name, YYLTYPE);		//!< Open a new options block
@@ -190,6 +193,7 @@ class Insert {
 		void closespace();										//!< Close the current namespace
 		void closevocab();										//!< Close the current vocabulary
 		void closetheory();										//!< Close the current theory
+		void closeformula(Formula*);							//!< Close the current named formula
 		void closestructure();									//!< Close the current structure
 		void closeprocedure(std::stringstream*);				//!< Close the current procedure
 		void closeoptions();									//!< Close the current options
