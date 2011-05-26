@@ -879,12 +879,14 @@ void addLiterals(MinisatID::Model* model, GroundTranslator* translator, Abstract
 	}
 }
 
-void addTerms(MinisatID::Model* model, GroundTermTranslator* translator, AbstractStructure* init) {
+void addTerms(MinisatID::Model* model, GroundTermTranslator* termtranslator, AbstractStructure* init) {
+cerr << "Adding terms based on var-val pairs from CP solver, pairs are { ";
 	for(vector<MinisatID::VariableEqValue>::const_iterator cpvar = model->variableassignments.begin();
 			cpvar != model->variableassignments.end(); ++cpvar) {
-		Function* function = translator->function(cpvar->variable);
+cerr << cpvar->variable << '=' << cpvar->value;
+		Function* function = termtranslator->function(cpvar->variable);
 		if(function) {
-			const vector<GroundTerm>& gtuple = translator->args(cpvar->variable);
+			const vector<GroundTerm>& gtuple = termtranslator->args(cpvar->variable);
 			ElementTuple tuple;
 			for(vector<GroundTerm>::const_iterator it = gtuple.begin(); it != gtuple.end(); ++it) {
 				if(it->_isvarid) {
@@ -895,9 +897,12 @@ void addTerms(MinisatID::Model* model, GroundTermTranslator* translator, Abstrac
 				}
 			}
 			tuple.push_back(DomainElementFactory::instance()->create(cpvar->value));
+cerr << '=' << function->name() << tuple;
 			init->inter(function)->graphinter()->makeTrue(tuple);
 		}
+cerr << ' ';
 	}
+cerr << '}' << endl;
 }
 
 InternalArgument modelexpand(const vector<InternalArgument>& args, lua_State* L) {
@@ -1085,6 +1090,13 @@ InternalArgument maketabunknown(const vector<InternalArgument>& args, lua_State*
 	pri->makeUnknown(toTuple(args[1]._value._table,L));
 	return nilarg();
 }
+
+InternalArgument clean(const vector<InternalArgument>& args, lua_State*) {
+	AbstractStructure* s = args[0].structure();
+	s->clean();
+	return InternalArgument(s);
+}
+
 
 /**************************
 	Connection with Lua
@@ -2850,6 +2862,7 @@ namespace LuaConnection {
 		addInternalProcedure("makefalse",vpritup,&makefalse);
 		addInternalProcedure("makeunknown",vpritab,&maketabunknown);
 		addInternalProcedure("makeunknown",vpritup,&makeunknown);
+		addInternalProcedure("clean",vstruct,&clean);
 		
 		// Add the internal procedures to lua
 		lua_getglobal(L,"idp_intern");

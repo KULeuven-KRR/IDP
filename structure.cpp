@@ -98,6 +98,16 @@ ostream& operator<<(ostream& output, const DomainElement& d) {
 	return d.put(output);
 }
 
+ostream& operator<<(ostream& output, const ElementTuple& tuple) {
+	output << '(';
+	for(ElementTuple::const_iterator it = tuple.begin(); it != tuple.end(); ++it) {
+		output << **it;
+		if(it != tuple.end()-1) output << ',';
+	}
+	output << ')';
+	return output;
+}
+
 bool operator<(const DomainElement& d1, const DomainElement& d2) {
 	switch(d1.type()) {
 		case DET_INT:
@@ -3203,6 +3213,19 @@ namespace TableUtils {
 		else return false;
 	}
 
+	bool approxTotalityCheck(const FuncInter* funcinter) {
+		vector<SortTable*> vst = funcinter->universe().tables();
+		vst.pop_back();
+		tablesize nroftuples = Universe(vst).size();
+		tablesize nrofvalues = funcinter->graphinter()->ct()->size();
+//cerr << "Checking totality of " << *function << " -- nroftuples=" << nroftuples.second << " and nrofvalues=" << nrofvalues.second;
+//cerr << " (trust=" << (nroftuples.first && nrofvalues.first) << ")" << endl;
+		if(nroftuples.first && nrofvalues.first) {
+			return nroftuples.second == nrofvalues.second;
+		}
+		else return false;
+	}
+
 }
 
 /*****************
@@ -3538,7 +3561,7 @@ PredInter* Structure::inter(PFSymbol* s) const {
 	else return inter(dynamic_cast<Function*>(s))->graphinter();
 }
 
-Universe Structure::universe(PFSymbol* s) const {
+Universe Structure::universe(const PFSymbol* s) const {
 	vector<SortTable*> vst;
 	for(vector<Sort*>::const_iterator it = s->sorts().begin(); it != s->sorts().end(); ++it) {
 		vst.push_back(inter(*it));
@@ -3556,8 +3579,24 @@ void Structure::clean() {
 		}
 	}
 	for(map<Function*,FuncInter*>::iterator it = _funcinter.begin(); it != _funcinter.end(); ++it) {
+		if(it->first->partial()) {
+			SortTable* lastsorttable = it->second->universe().tables().back();
+			for(TableIterator ctit = it->second->graphinter()->ct()->begin(); ctit.hasNext(); ++ctit) {
+				ElementTuple tuple = *ctit;
+				const DomainElement* ctvalue = tuple.back();
+				for(SortIterator sortit = lastsorttable->sortbegin(); sortit.hasNext(); ++sortit) {
+					const DomainElement* cfvalue = *sortit;
+					if(*cfvalue != *ctvalue) {
+						tuple.pop_back();
+						tuple.push_back(*sortit);
+						it->second->graphinter()->makeFalse(tuple);
+					}
+				}
+			}
+		}
 		if(!it->second->approxtwovalued()) {
-			if(TableUtils::approxIsInverse(it->second->graphinter()->ct(),it->second->graphinter()->cf())) {
+			if(((not it->first->partial()) && TableUtils::approxTotalityCheck(it->second))
+			|| TableUtils::approxIsInverse(it->second->graphinter()->ct(),it->second->graphinter()->cf())) {
 				EnumeratedInternalFuncTable* eift = new EnumeratedInternalFuncTable();
 				for(TableIterator jt = it->second->graphinter()->ct()->begin(); jt.hasNext(); ++jt) {
 					eift->add(*jt);

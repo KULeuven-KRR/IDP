@@ -84,17 +84,19 @@ class DomainElement {
 		friend class DomainElementFactory;
 };
 
-bool operator<(const DomainElement&,const DomainElement&);
-bool operator>(const DomainElement&,const DomainElement&);
-bool operator==(const DomainElement&,const DomainElement&);
-bool operator!=(const DomainElement&,const DomainElement&);
-bool operator<=(const DomainElement&,const DomainElement&);
-bool operator>=(const DomainElement&,const DomainElement&);
+bool operator<(const DomainElement&, const DomainElement&);
+bool operator>(const DomainElement&, const DomainElement&);
+bool operator==(const DomainElement&, const DomainElement&);
+bool operator!=(const DomainElement&, const DomainElement&);
+bool operator<=(const DomainElement&, const DomainElement&);
+bool operator>=(const DomainElement&, const DomainElement&);
 
-std::ostream& operator<< (std::ostream&,const DomainElement&);
+std::ostream& operator<<(std::ostream&, const DomainElement&);
 
 typedef std::vector<const DomainElement*>	ElementTuple;
 typedef std::vector<ElementTuple>			ElementTable;
+
+std::ostream& operator<<(std::ostream&, const ElementTuple&);
 
 struct StrictWeakElementOrdering {
 	bool operator()(const DomainElement* d1, const DomainElement* d2) const { return *d1 < *d2;	}
@@ -1733,7 +1735,7 @@ class AbstractStructure {
 
 		virtual AbstractStructure*	clone() const = 0;	// take a clone of this structure
 
-		virtual Universe	universe(PFSymbol*)	const = 0;
+		virtual Universe	universe(const PFSymbol*)	const = 0;
 
 };
 
@@ -1769,7 +1771,7 @@ class Structure : public AbstractStructure {
 		PredInter*		inter(PFSymbol* s)			const; //!< Return the interpretation of s.
 		Structure*		clone()						const; //!< take a clone of this structure
 
-		Universe	universe(PFSymbol*)	const;
+		Universe	universe(const PFSymbol*)	const;
 };
 
 /************************
@@ -1782,6 +1784,9 @@ namespace TableUtils {
 	FuncInter*	leastFuncInter(const Universe& univ);		
 		//!< construct a new, least precise function interpretation
 	Universe	fullUniverse(unsigned int arity);
+
+	bool		approxTotalityCheck(const FuncInter*);
+		//!< Check whether there is a value for every tuple in the given function interpretation.
 }
 
 #endif
