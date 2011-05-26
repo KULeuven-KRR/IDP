@@ -312,13 +312,14 @@ class CPReification { //TODO
  */
 class AbstractGroundTheory : public AbstractTheory {
 	protected:
-		AbstractStructure*		_structure;			// The ground theory may be partially reduced with respect to this structure. 
-		GroundTranslator*		_translator;		// Link between ground atoms and SAT-solver literals.
-		GroundTermTranslator*	_termtranslator;	// Link between ground terms and CP-solver variables.
+		AbstractStructure*		_structure;			//!< The ground theory may be partially reduced with respect to this structure. 
+		GroundTranslator*		_translator;		//!< Link between ground atoms and SAT-solver literals.
+		GroundTermTranslator*	_termtranslator;	//!< Link between ground terms and CP-solver variables.
 
-		std::set<int>			_printedtseitins;		// Tseitin atoms produced by the translator that occur in the theory.
-		std::set<int>			_printedsets;			// Set numbers produced by the translator that occur in the theory.
-		std::set<int>			_printedconstraints;	// Atoms for which a connection to CP constraints are added.
+		std::set<int>			_printedtseitins;		//!< Tseitin atoms produced by the translator that occur in the theory.
+		std::set<int>			_printedsets;			//!< Set numbers produced by the translator that occur in the theory.
+		std::set<int>			_printedconstraints;	//!< Atoms for which a connection to CP constraints are added.
+		std::set<CPTerm*>		_foldedterms;
 
 		const 	GroundTranslator& getTranslator() const	{ return *_translator; }
 				GroundTranslator& getTranslator() 		{ return *_translator; }
@@ -333,26 +334,28 @@ class AbstractGroundTheory : public AbstractTheory {
 		virtual	~AbstractGroundTheory();
 
 		// Mutators
-				void add(Formula* )		{ assert(false);	}
-				void add(Definition* )	{ assert(false);	}
-				void add(FixpDef* )		{ assert(false);	}
+				void 	add(Formula* )		{ assert(false);	}
+				void 	add(Definition* )	{ assert(false);	}
+				void 	add(FixpDef* )		{ assert(false);	}
 
-				void transformForAdd(const std::vector<int>& vi, VIType vit, int defnr, bool skipfirst = false);
+				void 	transformForAdd(const std::vector<int>& vi, VIType vit, int defnr, bool skipfirst = false);
 
-		virtual void addClause(GroundClause& cl, bool skipfirst = false)	= 0;
-		virtual void addDefinition(GroundDefinition*)						= 0;
-		virtual void addFixpDef(GroundFixpDef*)								= 0;
-		virtual void addSet(int setnr, int defnr, bool weighted)			= 0;
-		virtual	void addAggregate(int tseitin, AggTsBody* body)				= 0; 
-		virtual void addCPReification(int tseitin, CPTsBody* body)			= 0;
+				CPTerm*	foldCPTerm(CPTerm*);
 
-				void addEmptyClause()		{ GroundClause c(0); addClause(c);		}
-				void addUnitClause(int l)	{ GroundClause c(1,l); addClause(c);	}
+		virtual void 	addClause(GroundClause& cl, bool skipfirst = false)		= 0;
+		virtual void 	addDefinition(GroundDefinition*)						= 0;
+		virtual void 	addFixpDef(GroundFixpDef*)								= 0;
+		virtual void 	addSet(int setnr, int defnr, bool weighted)				= 0;
+		virtual	void 	addAggregate(int tseitin, AggTsBody* body)				= 0; 
+		virtual void 	addCPReification(int tseitin, CPTsBody* body)			= 0;
 
-		virtual void addPCRule(int defnr, int tseitin, PCTsBody* body)		= 0; 
-		virtual void addAggRule(int defnr, int tseitin, AggTsBody* body)	= 0; 
+				void 	addEmptyClause()		{ GroundClause c(0); addClause(c);		}
+				void 	addUnitClause(int l)	{ GroundClause c(1,l); addClause(c);	}
 
-		void	addFuncConstraints();
+		virtual void 	addPCRule(int defnr, int tseitin, PCTsBody* body)		= 0; 
+		virtual void 	addAggRule(int defnr, int tseitin, AggTsBody* body)		= 0; 
+
+				void	addFuncConstraints();
 
 		// Inspectors
 		GroundTranslator*		translator()		const { return _translator;			}

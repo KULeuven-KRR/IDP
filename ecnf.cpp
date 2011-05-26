@@ -330,6 +330,83 @@ void AbstractGroundTheory::transformForAdd(const vector<int>& vi, VIType /*vit*/
 	}
 }
 
+CPTerm* AbstractGroundTheory::foldCPTerm(CPTerm* cpterm) {
+	if(_foldedterms.find(cpterm) == _foldedterms.end()) {
+		_foldedterms.insert(cpterm);
+		if(typeid(*cpterm) == typeid(CPVarTerm)) {
+			CPVarTerm* varterm = static_cast<CPVarTerm*>(cpterm);
+			if(not _termtranslator->function(varterm->_varid)) {
+				CPTsBody* cprelation = _termtranslator->cprelation(varterm->_varid);
+				CPTerm* left = foldCPTerm(cprelation->left());
+				if((typeid(*left) == typeid(CPSumTerm) || typeid(*left) == typeid(CPWSumTerm)) && cprelation->comp() == CT_EQ) {
+					assert(cprelation->right()._isvarid && cprelation->right()._varid == varterm->_varid);
+					return left;
+				}
+			}
+		}
+		else if(typeid(*cpterm) == typeid(CPSumTerm)) {
+			CPSumTerm* sumterm = static_cast<CPSumTerm*>(cpterm);
+			vector<VarId> newvarids;
+			for(vector<VarId>::const_iterator it = sumterm->_varids.begin(); it != sumterm->_varids.end(); ++it) {
+				if(not _termtranslator->function(*it)) {
+					CPTsBody* cprelation = _termtranslator->cprelation(*it);
+					CPTerm* left = foldCPTerm(cprelation->left());
+					if(typeid(*left) == typeid(CPSumTerm) && cprelation->comp() == CT_EQ) {
+						CPSumTerm* subterm = static_cast<CPSumTerm*>(left);
+						assert(cprelation->right()._isvarid && cprelation->right()._varid == *it);
+						newvarids.insert(newvarids.end(),subterm->_varids.begin(),subterm->_varids.end());
+					}
+					//TODO Need to do something special in other cases?
+					else newvarids.push_back(*it);
+				}
+				else newvarids.push_back(*it);
+			}
+			sumterm->_varids = newvarids;
+		}
+		else if(typeid(*cpterm) == typeid(CPWSumTerm)) {
+			//CPWSumTerm* wsumterm = static_cast<CPWSumTerm*>(cpterm);
+			//TODO
+		}
+	}
+	return cpterm;
+}
+
+//CPTerm* AbstractGroundTheory::foldCPTerm(CPVarTerm* cpterm) {
+//	if(not _termtranslator->function(cpterm->_varid)) {
+//		CPTsBody* cprelation = _termtranslator->cprelation(cpterm->_varid);
+//		CPTerm* left = foldCPTerm(cprelation->left());
+//		if((typeid(*left) == typeid(CPSumTerm) || typeid(*left) == typeid(CPWSumTerm)) && cprelation->comp() == CT_EQ) {
+//			assert(cprelation->right()._isvarid && cprelation->right()._varid == cpterm->_varid);
+//			return left;
+//		}
+//	}
+//	return cpterm;
+//}
+//
+//CPTerm* AbstractGroundTheory::foldCPTerm(CPSumTerm* cpterm) {
+//	//TODO
+//	vector<VarId> newvarids;
+//	for(vector<VarId>::const_iterator it = cpterm->_varids.begin(); it != cpterm->_varids.end(); ++it) {
+//		if(not _termtranslator->function(*it)) {
+//			CPTsBody* cprelation = _termtranslator->cprelation(*it);
+//			CPTerm* left = foldCPTerm(cprelation->left());
+//			if(typeid(*left) == typeid(CPSumTerm) && cprelation->comp() == CT_EQ) {
+//				CPSumTerm* subterm = static_cast<CPSumTerm*>(left);
+//				assert(cprelation->right()._isvarid && cprelation->right()._varid == *it);
+//				newvarids.insert(newvarids.end(),subterm->_varids.begin(),subterm->_varids.end());
+//			}
+//			//TODO Need to do something special in other cases?
+//			else newvarids.push_back(*it);
+//		}
+//	}
+//	cpterm->_varids = newvarids;
+//	return cpterm;
+//}
+//
+//CPTerm* AbstractGroundTheory::foldCPTerm(CPWSumTerm*) {
+//	//TODO Do something similar to CPSumTerm case.
+//}
+
 
 /*******************************
 	Internal ground theories
@@ -391,7 +468,11 @@ void GroundTheory::addAggregate(int head, AggTsBody* body) {
 
 void GroundTheory::addCPReification(int tseitin, CPTsBody* body) {
 	//TODO also add variables (in a separate container?)
-	_cpreifications.push_back(new CPReification(tseitin,body));
+	
+	CPTsBody* foldedbody = new CPTsBody(body->type(),foldCPTerm(body->left()),body->comp(),body->right());
+	//FIXME possible leaks!!
+
+	_cpreifications.push_back(new CPReification(tseitin,foldedbody));
 }
 
 void GroundTheory::addSet(int setnr, int defnr, bool weighted) {
@@ -463,7 +544,7 @@ ostream& GroundTheory::put(ostream& s, unsigned int) const {
 			s << "sum[ ";
 			for(vector<unsigned int>::const_iterator vit = cpt->_varids.begin(); vit != cpt->_varids.end(); ++vit) {
 				s << _termtranslator->printTerm(*vit);
-				if(*vit != cpt->_varids.back()) s << "; ";
+				if(vit != cpt->_varids.end()-1) s << "; ";
 			}
 			s << " ]";
 		}
@@ -474,7 +555,7 @@ ostream& GroundTheory::put(ostream& s, unsigned int) const {
 			s << "wsum[ ";
 			for(vit = cpt->_varids.begin(), wit = cpt->_weights.begin(); vit != cpt->_varids.end() && wit != cpt->_weights.end(); ++vit, ++wit) {
 				s << '(' << _termtranslator->printTerm(*vit) << '=' << *wit << ')';
-				if(*vit != cpt->_varids.back()) s << "; ";
+				if(vit != cpt->_varids.end()-1) s << "; ";
 			}
 			s << " ]";
 		}
@@ -667,7 +748,7 @@ void SolverTheory::addCPReification(int tseitin, CPTsBody* body) {
 		case CT_GT:		comp = MinisatID::MG; break;
 		default: assert(false);
 	} 
-	CPTerm* left = body->left();
+	CPTerm* left = foldCPTerm(body->left());
 	CPBound right = body->right();
 	if(typeid(*left) == typeid(CPVarTerm)) {
 		CPVarTerm* term = dynamic_cast<CPVarTerm*>(left);

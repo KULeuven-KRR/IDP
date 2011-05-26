@@ -48,10 +48,14 @@ class EnumeratedStringOption : public StringOption {
 
 Options::Options(const string& name, const ParseInfo& pi) : _name(name), _pi(pi) {
 	_booloptions["printtypes"]		= true;
-	_booloptions["cpsupport"]		= true;
 	_booloptions["trace"]			= false;
 	_booloptions["autocomplete"]	= true;
 	_booloptions["longnames"]		= false;
+#ifdef CPSUPPORT
+	_booloptions["cpsupport"]		= true;
+#else
+	_booloptions["cpsupport"]		= false;
+#endif //CPSUPPORT
 
 	_intoptions["satverbosity"]		= new IntOption(0,numeric_limits<int>::max(),0);
 	_intoptions["groundverbosity"]	= new IntOption(0,numeric_limits<int>::max(),0);

@@ -443,7 +443,7 @@ string GroundTermTranslator::printTerm(const VarId& varid) const {
 				} else {
 					s << (*gtit)._domelement->to_string();
 				}
-				if(*gtit != args(varid).back()) s << ",";
+				if(gtit != args(varid).end()-1) s << ",";
 			}
 			s << ")";
 		}
@@ -710,8 +710,6 @@ void AtomGrounder::run(vector<int>& clause) const {
 int ComparisonGrounder::run() const {
 	const GroundTerm& left = _lefttermgrounder->run();
 	const GroundTerm& right = _righttermgrounder->run();
-	SortTable* leftdomain = _lefttermgrounder->domain();
-	SortTable* rightdomain = _righttermgrounder->domain();
 
 	//XXX Is following check necessary??
 	if((not left._domelement && not left._varid) || (not right._domelement && not right._varid)) {
@@ -724,13 +722,15 @@ int ComparisonGrounder::run() const {
 		CPTerm* leftterm = new CPVarTerm(left._varid);
 		if(right._isvarid) {
 			CPBound rightbound(right._varid);
-			return _translator->translate(leftterm,_comparator,rightbound,_context._tseitin);
+//			return _translator->translate(leftterm,_comparator,rightbound,_context._tseitin);
+			return _translator->translate(leftterm,_comparator,rightbound,TS_EQ);
 		}	
 		else {
 			assert(not right._isvarid);
 			int rightvalue = right._domelement->value()._int;
 			CPBound rightbound(rightvalue);
-			return _translator->translate(leftterm,_comparator,rightbound,_context._tseitin);
+//			return _translator->translate(leftterm,_comparator,rightbound,_context._tseitin);
+			return _translator->translate(leftterm,_comparator,rightbound,TS_EQ);
 		}
 	}
 	else {
@@ -739,7 +739,8 @@ int ComparisonGrounder::run() const {
 		if(right._isvarid) {
 			CPTerm* rightterm = new CPVarTerm(right._varid);
 			CPBound leftbound(leftvalue);
-			return _translator->translate(rightterm,invertcomp(_comparator),leftbound,_context._tseitin);
+//			return _translator->translate(rightterm,invertcomp(_comparator),leftbound,_context._tseitin);
+			return _translator->translate(rightterm,invertcomp(_comparator),leftbound,TS_EQ);
 		}	
 		else {
 			assert(not right._isvarid);
@@ -1340,11 +1341,11 @@ GroundTerm SumTermGrounder::run() const {
 			//TODO one case when left or right is a domain element!
 			assert(false);
 			// Create domain
-			rightdomain = new SortTable(new EnumeratedInternalSortTable());
-			rightdomain->add(right._domelement);
+			//rightdomain = new SortTable(new EnumeratedInternalSortTable());
+			//rightdomain->add(right._domelement);
 			// Create domain
-			leftdomain = new SortTable(new EnumeratedInternalSortTable());
-			leftdomain->add(left._domelement);
+			//leftdomain = new SortTable(new EnumeratedInternalSortTable());
+			//leftdomain->add(left._domelement);
 		}
 	}
 
@@ -1390,9 +1391,9 @@ GroundTerm SumTermGrounder::run() const {
 
 	// Ask for a new tseitin for this cp constraint and add it to the grounding.
 	//FIXME Following should be done more efficiently... overhead because of lookup in translator...
-	CPTsBody* cprelation = _termtranslator->cprelation(varid);
-	int sumtseitin = _grounding->translator()->translate(cprelation->left(),cprelation->comp(),cprelation->right(),TS_EQ);
-	_grounding->addUnitClause(sumtseitin);
+	//CPTsBody* cprelation = _termtranslator->cprelation(varid);
+	//int sumtseitin = _grounding->translator()->translate(cprelation->left(),cprelation->comp(),cprelation->right(),TS_EQ);
+	//_grounding->addUnitClause(sumtseitin);
 
 	// Return result
 	if(_verbosity > 2) {
