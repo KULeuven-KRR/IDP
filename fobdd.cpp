@@ -8,6 +8,7 @@
 #include <typeinfo>
 #include <cmath>
 #include <sstream>
+#include <iostream>
 #include "fobdd.hpp"
 #include "vocabulary.hpp"
 #include "term.hpp"
@@ -58,7 +59,7 @@ KernelOrder FOBDDManager::newOrder(const vector<const FOBDDArgument*>& args) {
 }
 
 KernelOrder FOBDDManager::newOrder(const FOBDD* bdd) {
-	unsigned int category = (bdd->containsFreeDeBruijnIndex()) ? DEBRUIJNCATEGORY : STANDARDCATEGORY;
+	unsigned int category = (bdd->containsDeBruijnIndex(1)) ? DEBRUIJNCATEGORY : STANDARDCATEGORY;
 	return newOrder(category);
 }
 
@@ -101,7 +102,7 @@ class Bump : public FOBDDVisitor {
 
 		const FOBDDQuantKernel*	change(const FOBDDQuantKernel* kernel) {
 			++_depth;
-			FOBDD* nbdd = FOBDDVisitor::change(kernel->bdd());
+			const FOBDD* nbdd = FOBDDVisitor::change(kernel->bdd());
 			--_depth;
 			return _manager->getQuantKernel(kernel->sort(),nbdd);
 		}
@@ -439,7 +440,8 @@ const FOBDD* FOBDDManager::existsquantify(const FOBDDVariable* var, const FOBDD*
 	// TODO dynamic programming
 	Bump b(this,var,0);
 	const FOBDD* bumped = b.FOBDDVisitor::change(bdd);
-	return quantify(var->variable()->sort(),bumped);
+	const FOBDD* q = quantify(var->variable()->sort(),bumped);
+	return q;
 }
 
 const FOBDD* FOBDDManager::existsquantify(const set<const FOBDDVariable*>& qvars, const FOBDD* bdd) {
@@ -756,12 +758,12 @@ bool FOBDDManager::contains(const FOBDDKernel* kernel, Variable* v) {
 /**
  * Returns the product of the sizes of the interpretations of the sorts of the given variables and indices in the given structure
  */
-int univNrAnswers(const set<Variable*>& vars, const set<FOBDDDeBruijnIndex*>& indices, AbstractStructure* structure) {
+int univNrAnswers(const set<const FOBDDVariable*>& vars, const set<const FOBDDDeBruijnIndex*>& indices, AbstractStructure* structure) {
 	int maxint = numeric_limits<int>::max();
 	vector<SortTable*> vst; 
-	for(set<Variable*>::const_iterator it = vars.begin(); it != vars.end(); ++it) 
-		vst.push_back(structure->inter((*it)->sort()));
-	for(set<FOBDDDeBruijnIndex*>::const_iterator it = indices.begin(); it != indices.end(); ++it)
+	for(set<const FOBDDVariable*>::const_iterator it = vars.begin(); it != vars.end(); ++it) 
+		vst.push_back(structure->inter((*it)->variable()->sort()));
+	for(set<const FOBDDDeBruijnIndex*>::const_iterator it = indices.begin(); it != indices.end(); ++it)
 		vst.push_back(structure->inter((*it)->sort()));
 	Universe univ(vst);
 	tablesize univsize = univ.size();
@@ -814,13 +816,14 @@ set<const FOBDDKernel*> FOBDDManager::nonnestedkernels(const FOBDD* bdd) {
 }
 
 /**
- * Return a mapping from the non-nested kernels of the given bdd to their estimated number of answers with
- * respect to the given variables and indices
+ * Return a mapping from the non-nested kernels of the given bdd to their estimated number of answers
  */
-map<const FOBDDKernel*,double> FOBDDManager::kernelAnswers(const FOBDD* bdd, const set<Variable*>& vars, const set<const FOBDDDeBruijnIndex*> indices, AbstractStructure* structure) {
+map<const FOBDDKernel*,double> FOBDDManager::kernelAnswers(const FOBDD* bdd, AbstractStructure* structure) {
 	map<const FOBDDKernel*,double> result;
 	set<const FOBDDKernel*> kernels = nonnestedkernels(bdd);
 	for(set<const FOBDDKernel*>::const_iterator it = kernels.begin(); it != kernels.end(); ++it) {
+		set<const FOBDDVariable*> vars = variables(*it);
+		set<const FOBDDDeBruijnIndex*> indices = FOBDDManager::indices(*it);
 		result[*it] = estimatedNrAnswers(*it,vars,indices,structure);
 	}
 	return result;
@@ -898,39 +901,13 @@ set<const FOBDDDeBruijnIndex*> FOBDDManager::indices(const FOBDDKernel* kernel) 
 	return dbc.result();
 }
 
-/**
- * Returns the product of the size of the domains of all variables and non-quantified indices in the
- * given kernel, except those among the given variables and indices
- */
-double FOBDDManager::univSize(const FOBDDKernel* kernel, const set<Variable*>& vars, const set<const FOBDDDeBruijnIndex*> indices, AbstractStructure* structure) {
-	double maxdouble = numeric_limits<double>::max();
-	set<const FOBDDVariable*> kernelvars = variables(kernel);
-	set<const FOBDDDeBruijnIndex*> kernelindices = FOBDDManager::indices(kernel);
-	for(set<Variable*>::const_iterator it = vars.begin(); it != vars.end(); ++it) {
-		const FOBDDVariable* v = getVariable(*it);
-		kernelvars.erase(v);
-	}
-	for(set<const FOBDDDeBruijnIndex*>::const_iterator it = indices.begin(); it != indices.end(); ++it) {
-		kernelindices.erase(*it);
-	}
-	double result = 1;
-	for(set<const FOBDDVariable*>::const_iterator it = kernelvars.begin(); it != kernelvars.end(); ++it) {
-		tablesize ts = structure->inter((*it)->variable()->sort())->size();
-		if(ts.first) result = result * double(ts.second);
-		else return maxdouble;
-	}
-	for(set<const FOBDDDeBruijnIndex*>::const_iterator it = kernelindices.begin(); it != kernelindices.end(); ++it) {
-		tablesize ts = structure->inter((*it)->sort())->size();
-		if(ts.first) result = result * double(ts.second);
-		else return maxdouble;
-	}
-}
-
-map<const FOBDDKernel*,double> FOBDDManager::kernelUnivs(const FOBDD* bdd, const set<Variable*>& vars, const set<const FOBDDDeBruijnIndex*> indices, AbstractStructure* structure) {
+map<const FOBDDKernel*,double> FOBDDManager::kernelUnivs(const FOBDD* bdd, AbstractStructure* structure) {
 	map<const FOBDDKernel*,double> result;
 	set<const FOBDDKernel*> kernels = nonnestedkernels(bdd);
 	for(set<const FOBDDKernel*>::const_iterator it = kernels.begin(); it != kernels.end(); ++it) {
-		result[*it] = univSize(*it,vars,indices,structure);
+		set<const FOBDDVariable*> vars = variables(*it);
+		set<const FOBDDDeBruijnIndex*> indices = FOBDDManager::indices(*it);
+		result[*it] = univNrAnswers(vars,indices,structure);
 	}
 	return result;
 }
@@ -994,9 +971,8 @@ double FOBDDManager::estimatedChance(const FOBDDKernel* kernel, AbstractStructur
 		vector<vector<pair<bool,const FOBDDKernel*> > > paths = pathsToFalse(quantkernel->bdd());
 
 		// collect all kernels and their estimated number of answers
-		set<const FOBDDDeBruijnIndex*> idx; idx.insert(getDeBruijnIndex(quantkernel->sort(),0));
-		map<const FOBDDKernel*,double> subkernels = kernelAnswers(quantkernel->bdd(),set<Variable*>(),idx,structure);
-		map<const FOBDDKernel*,double> subunivs = kernelUnivs(quantkernel->bdd(),set<Variable*>(),idx,structure);
+		map<const FOBDDKernel*,double> subkernels = kernelAnswers(quantkernel->bdd(),structure);
+		map<const FOBDDKernel*,double> subunivs = kernelUnivs(quantkernel->bdd(),structure);
 
 		srand(global_seed);
 		double sum = 0;		// stores the sum of the chances obtained by each experiment
@@ -1016,12 +992,13 @@ double FOBDDManager::estimatedChance(const FOBDDKernel* kernel, AbstractStructur
 				for(unsigned int pathnr = 0; pathnr < paths.size(); ++pathnr) {
 					double currchance = 1;
 					for(unsigned int nodenr = 0; nodenr < paths[pathnr].size(); ++nodenr) {
+						double nodeunivsize = subunivs[paths[pathnr][nodenr].second];
 						if(paths[pathnr][nodenr].first) 
 							currchance = 
-								currchance * dynsubkernels[paths[pathnr][nodenr].second] / double(quantsize - element);
+								currchance * dynsubkernels[paths[pathnr][nodenr].second] / double(nodeunivsize - element);
 						else 
 							currchance = 
-								currchance * (quantsize - element - dynsubkernels[paths[pathnr][nodenr].second]) / double(quantsize - element);
+								currchance * (nodeunivsize - element - dynsubkernels[paths[pathnr][nodenr].second]) / double(nodeunivsize - element);
 					}
 					cumulative_chance += currchance;
 					cumulative_pathsposs.push_back(cumulative_chance);
@@ -1035,7 +1012,7 @@ double FOBDDManager::estimatedChance(const FOBDDKernel* kernel, AbstractStructur
 					unsigned int chosenpathnr = lower_bound(cumulative_pathsposs.begin(),cumulative_pathsposs.end(),toss) - cumulative_pathsposs.begin();
 					for(unsigned int nodenr = 0; nodenr < paths[chosenpathnr].size(); ++nodenr) {
 						if(paths[chosenpathnr][nodenr].first) 
-							dynsubkernels[paths[chosenpathnr][nodenr].second] += -(1.0 / subunivs[paths[chosenpathnr][nodenr].second]);
+							dynsubkernels[paths[chosenpathnr][nodenr].second] += -(1.0);
 					}
 				}
 				else {	// the experiment failed 
@@ -1073,7 +1050,7 @@ double FOBDDManager::estimatedChance(const FOBDD* bdd, AbstractStructure* struct
 /**
  * \brief Returns an estimate of the number of answers to the query { vars | kernel } in the given structure 
  */
-double FOBDDManager::estimatedNrAnswers(const FOBDDKernel* kernel, const set<Variable*>& vars, const set<const FOBDDDeBruijnIndex*>& indices, AbstractStructure* structure) {
+double FOBDDManager::estimatedNrAnswers(const FOBDDKernel* kernel, const set<const FOBDDVariable*>& vars, const set<const FOBDDDeBruijnIndex*>& indices, AbstractStructure* structure) {
 	// TODO: improve this if functional dependency is known
 	int maxint = numeric_limits<int>::max();
 	double maxdouble = numeric_limits<double>::max();
@@ -1088,7 +1065,7 @@ double FOBDDManager::estimatedNrAnswers(const FOBDDKernel* kernel, const set<Var
 /**
  * \brief Returns an estimate of the number of answers to the query { vars | bdd } in the given structure 
  */
-double FOBDDManager::estimatedNrAnswers(const FOBDD* bdd, const set<Variable*>& vars, const set<const FOBDDDeBruijnIndex*>& indices, AbstractStructure* structure) {
+double FOBDDManager::estimatedNrAnswers(const FOBDD* bdd, const set<const FOBDDVariable*>& vars, const set<const FOBDDDeBruijnIndex*>& indices, AbstractStructure* structure) {
 	int maxint = numeric_limits<int>::max();
 	double maxdouble = numeric_limits<double>::max();
 	double bddchance = estimatedChance(bdd,structure);
@@ -1097,6 +1074,113 @@ double FOBDDManager::estimatedNrAnswers(const FOBDD* bdd, const set<Variable*>& 
 		return (bddchance > 0 ? maxdouble : 0);
 	}
 	else return bddchance * univanswers;
+}
+
+/**********************
+	Cost estimators
+**********************/
+
+class TableCostEstimator : public StructureVisitor {
+	private:
+		PredTable*		_table;
+		vector<bool>	_pattern;	//!< _pattern[n] == true iff the n'th column is an input column
+	public:
+		double run(PredTable* t, const vector<bool>& p) {
+			// TODO
+		}
+
+};
+
+double FOBDDManager::estimatedCostAll(bool sign, const FOBDDKernel* kernel, const set<const FOBDDVariable*>& vars, const set<const FOBDDDeBruijnIndex*>& indices, AbstractStructure* structure) {
+	if(typeid(*kernel) == typeid(FOBDDAtomKernel*)) {
+		const FOBDDAtomKernel* atomkernel = dynamic_cast<const FOBDDAtomKernel*>(kernel);
+
+		// TODO
+	}
+	else {
+		// TODO
+	}
+}
+
+double FOBDDManager::estimatedCostAll(const FOBDD* bdd, const set<const FOBDDVariable*>& vars, const set<const FOBDDDeBruijnIndex*>& indices, AbstractStructure* structure) {
+	int maxint = numeric_limits<int>::max();
+	double maxdouble = numeric_limits<double>::max();
+	if(bdd == _truebdd) {
+		int univsize = univNrAnswers(vars,indices,structure);
+		if(univsize == maxint) return maxdouble;
+		else return double(univsize);
+	}
+	else if(bdd == _falsebdd) {
+		return 1;
+	}
+	else {
+		// split variables
+		set<const FOBDDVariable*> kernelvars = variables(bdd->kernel());
+		set<const FOBDDDeBruijnIndex*> kernelindices = indices(bdd->kernel());
+		set<const FOBDDVariable*> bddvars;
+		set<const FOBDDDeBruijnIndex*> bddindices;
+		for(set<const FOBDDVariable*>::const_iterator it = vars.begin(); it != vars.end(); ++it) {
+			if(!kernelvars.contains(*it)) bddvars.insert(*it);
+		}
+		for(set<const FOBDDDeBruijnIndex*>::const_iterator it = indices.begin(); it != indices.end(); ++it) {
+			if(!kernelindices.contains(*it)) bddindices.insert(*it);
+		}
+		set<const FOBDDVariable*> removevars;
+		set<const FOBDDDeBruijnIndex*> removeindices;
+		for(set<const FOBDDVariable*>::const_iterator it = kernelvars.begin(); it != kernelvars.end(); ++it) {
+			if(!vars.contains(*it)) removevars.insert(*it);
+		}
+		for(set<const FOBDDDeBruijnIndex*>::const_iterator it = kernelindices.begin(); it != kernelindices.end(); ++it) {
+			if(!indices.contains(*it)) removeindices.insert(*it);
+		}
+		for(set<const FOBDDVariable*>::const_iterator it = removevars.begin(); it != removevars.end(); ++it) {
+			kernelvars.erase(*it);
+		}
+		for(set<const FOBDDDeBruijnIndex*>::const_iterator it = removeindices.begin(); it != removeindices.end(); ++it) {
+			kernelindices.insert(*it);
+		}
+
+		// recursive case
+		if(bdd->falsebranch() == _falsebdd) {
+			double kernelcost = estimatedCostAll(true,bdd->kernel(),kernelvars,kernelindices,structure);
+			double kernelans = estimatedNrAnswers(bdd->kernel(),kernelvars,kernelindices,structure);
+			double truecost = estimatedCostAll(bdd->truebranch(),bddvars,bddindices,structure);
+			if(kernelcost < maxdouble && 
+			   kernelans < maxdouble && 
+			   truecost < maxdouble &&
+			   kernelcost + (kernelans * truecost) < maxdouble) {
+				return kernelcost + (kernelans * truecost);
+			}
+			else return maxdouble;
+		}
+		else if(bdd->truebranch() == _truebdd) {
+			double kernelcost = estimatedCostAll(false,bdd->kernel(),kernelvars,kernelindices,structure);
+			double kernelans = estimatedNrAnswers(bdd->kernel(),kernelvars,kernelindices,structure);
+			int kernelunivsize = univNrAnswers(kernelvars,kernelindices,structure);
+			double invkernans = (kernelunivsize == maxint) ? maxdouble : double(kernelunivsize) - kernelans;
+			double falsecost = estimatedCostAll(bdd->falsebranch(),bddvars,bddindices,structure);
+			if( kernelcost + (invkernelans * falsecost) < maxdouble) {
+				return kernelcost + (invkernelans * falsecost);
+			}
+			else return maxdouble;
+		}
+		else {
+			int kernelunivsize = univNrAnswers(kernelvars,kernelindices,structure);
+			set<const FOBDDVariable*> emptyvars;
+			set<const FOBDDDeBruijnIndex*> emptyindices;
+			double kernelcost = estimatedCostAll(true,bdd->kernel(),emptyvars,emptyindices,structure);
+			double truecost = estimatedCostAll(bdd->truebranch(),bddvars,bddindices,structure);
+			double falsecost = estimatedCostAll(bdd->falsebranch(),bddvars,bddindices,structure);
+			double kernelans = estimatedNrAnswers(bdd->kernel(),kernelvars,kernelindices,structure);
+			if(kernelunivsize == maxint) return maxdouble;
+			else {
+				if((double(kernelunivsize) * kernelcost) + (double(kernelans) * truecost) + ((kernelunivsize - kernelans) * falsecost) < maxdouble) {
+					return (double(kernelunivsize) * kernelcost) + (double(kernelans) * truecost) + ((kernelunivsize - kernelans) * falsecost);
+				}
+				else return maxdouble;
+			}
+		}
+	}
 }
 
 /*
@@ -1168,12 +1252,12 @@ void FOBDDDeBruijnIndex::accept(FOBDDVisitor* v)	const { v->visit(this);	}
 void FOBDDDomainTerm::accept(FOBDDVisitor* v)		const { v->visit(this);	}
 void FOBDDFuncTerm::accept(FOBDDVisitor* v)			const { v->visit(this);	}
 
-FOBDDKernel*	FOBDDAtomKernel::acceptchange(FOBDDVisitor* v)		const { return v->change(this);	}
-FOBDDKernel*	FOBDDQuantKernel::acceptchange(FOBDDVisitor* v)	const { return v->change(this);	}
-FOBDDArgument*	FOBDDVariable::acceptchange(FOBDDVisitor* v)		const { return v->change(this);	}
-FOBDDArgument*	FOBDDDeBruijnIndex::acceptchange(FOBDDVisitor* v)	const { return v->change(this);	}
-FOBDDArgument*	FOBDDDomainTerm::acceptchange(FOBDDVisitor* v)		const { return v->change(this);	}
-FOBDDArgument*	FOBDDFuncTerm::acceptchange(FOBDDVisitor* v)		const { return v->change(this);	}
+const FOBDDKernel*		FOBDDAtomKernel::acceptchange(FOBDDVisitor* v)		const { return v->change(this);	}
+const FOBDDKernel*		FOBDDQuantKernel::acceptchange(FOBDDVisitor* v)		const { return v->change(this);	}
+const FOBDDArgument*	FOBDDVariable::acceptchange(FOBDDVisitor* v)		const { return v->change(this);	}
+const FOBDDArgument*	FOBDDDeBruijnIndex::acceptchange(FOBDDVisitor* v)	const { return v->change(this);	}
+const FOBDDArgument*	FOBDDDomainTerm::acceptchange(FOBDDVisitor* v)		const { return v->change(this);	}
+const FOBDDArgument*	FOBDDFuncTerm::acceptchange(FOBDDVisitor* v)		const { return v->change(this);	}
 
 void FOBDDVisitor::visit(const FOBDD* bdd) {
 	if(bdd != _manager->truebdd() && bdd != _manager->falsebdd()) {
@@ -1184,13 +1268,13 @@ void FOBDDVisitor::visit(const FOBDD* bdd) {
 }
 
 void FOBDDVisitor::visit(const FOBDDAtomKernel* kernel) {
-	for(vector<FOBDDArgument*>::const_iterator it = kernel->args().begin(); it != kernel->args().end(); ++it) {
+	for(vector<const FOBDDArgument*>::const_iterator it = kernel->args().begin(); it != kernel->args().end(); ++it) {
 		(*it)->accept(this);
 	}
 }
 
 void FOBDDVisitor::visit(const FOBDDQuantKernel* kernel) {
-	kernel->bdd()->accept(this);
+	visit(kernel->bdd());
 }
 
 void FOBDDVisitor::visit(const FOBDDVariable* ) {
@@ -1206,7 +1290,7 @@ void FOBDDVisitor::visit(const FOBDDDomainTerm* ) {
 }
 
 void FOBDDVisitor::visit(const FOBDDFuncTerm* term) {
-	for(vector<FOBDDArgument*>::const_iterator it = term->args().begin(); it != term->args().end(); ++it) {
+	for(vector<const FOBDDArgument*>::const_iterator it = term->args().begin(); it != term->args().end(); ++it) {
 		(*it)->accept(this);
 	}
 }
@@ -1215,42 +1299,42 @@ const FOBDD* FOBDDVisitor::change(const FOBDD* bdd) {
 	if(_manager->isTruebdd(bdd)) return _manager->truebdd();
 	else if(_manager->isFalsebdd(bdd)) return _manager->falsebdd();
 	else {
-		FOBDDKernel* nk = bdd->kernel()->acceptchange(this);
-		FOBDD* nt = change(bdd->truebranch());
-		FOBDD* nf = change(bdd->falsebranch());
-		return manager->ifthenelse(nk,nt,nf);
+		const FOBDDKernel* nk = bdd->kernel()->acceptchange(this);
+		const FOBDD* nt = change(bdd->truebranch());
+		const FOBDD* nf = change(bdd->falsebranch());
+		return _manager->ifthenelse(nk,nt,nf);
 	}
 }
 
 const FOBDDKernel* FOBDDVisitor::change(const FOBDDAtomKernel* kernel) {
-	vector<FOBDDArgument*>	nargs;
-	for(vector<FOBDDArgument*>::const_iterator it = kernel->args().begin(); it != kernel->args().end(); ++it) {
+	vector<const FOBDDArgument*>	nargs;
+	for(vector<const FOBDDArgument*>::const_iterator it = kernel->args().begin(); it != kernel->args().end(); ++it) {
 		nargs.push_back((*it)->acceptchange(this));
 	}
-	return manager->getAtomKernel(kernel->symbol(),kernel->type(),nargs);
+	return _manager->getAtomKernel(kernel->symbol(),kernel->type(),nargs);
 }
 
 const FOBDDKernel* FOBDDVisitor::change(const FOBDDQuantKernel* kernel) {
-	FOBDD* nbdd = kernel->bdd()->change(this);
-	return manager->getQuantKernel(kernel->sort(),nbdd);
+	const FOBDD* nbdd = change(kernel->bdd());
+	return _manager->getQuantKernel(kernel->sort(),nbdd);
 }
 
-const FOBDDArgument* FOBDDVisitor::visit(const FOBDDVariable* variable) {
+const FOBDDArgument* FOBDDVisitor::change(const FOBDDVariable* variable) {
 	return variable;
 }
 
-const FOBDDArgument* FOBDDVisitor::visit(const FOBDDDeBruijnIndex* index) {
+const FOBDDArgument* FOBDDVisitor::change(const FOBDDDeBruijnIndex* index) {
 	return index;
 }
 
-const FOBDDArgument* FOBDDVisitor::visit(const FOBDDDomainTerm* term) {
+const FOBDDArgument* FOBDDVisitor::change(const FOBDDDomainTerm* term) {
 	return term;
 }
 
-const FOBDDArgument* FOBDDVisitor::visit(const FOBDDFuncTerm* term) {
-	vector<FOBDDArgument*>	nargs;
-	for(vector<FOBDDArgument*>::const_iterator it = term->args().begin(); it != term->args().end(); ++it) {
+const FOBDDArgument* FOBDDVisitor::change(const FOBDDFuncTerm* term) {
+	vector<const FOBDDArgument*>	nargs;
+	for(vector<const FOBDDArgument*>::const_iterator it = term->args().begin(); it != term->args().end(); ++it) {
 		nargs.push_back((*it)->acceptchange(this));
 	}
-	return manager->getFuncTerm(term->function(),nargs);
+	return _manager->getFuncTerm(term->func(),nargs);
 }

@@ -1018,11 +1018,12 @@ InternalArgument estimatenrans(const vector<InternalArgument>& args, lua_State* 
 	FOBDDManager manager;
 	FOBDDFactory m(&manager);
 	set<Variable*> sv = f->freevars();
+	set<const FOBDDVariable*> svbdd = manager.getVariables(sv);
 	set<const FOBDDDeBruijnIndex*> si;
 	f->accept(&m);
 	const FOBDD* bdd = m.bdd();
 	InternalArgument ia; ia._type = AT_DOUBLE;
-	ia._value._double = manager.estimatedNrAnswers(bdd,sv,si,structure);
+	ia._value._double = manager.estimatedNrAnswers(bdd,svbdd,si,structure);
 	return ia;
 }
 

@@ -107,13 +107,12 @@ class FOBDDManager {
 		std::set<const FOBDDVariable*>	variables(const FOBDD*);
 		std::set<const FOBDDDeBruijnIndex*>	indices(const FOBDDKernel*);
 		std::set<const FOBDDDeBruijnIndex*>	indices(const FOBDD*);
-		double univSize(const FOBDDKernel*, const std::set<Variable*>&, const std::set<const FOBDDDeBruijnIndex*>, AbstractStructure*);
-		std::map<const FOBDDKernel*,double> kernelUnivs(const FOBDD*, const std::set<Variable*>&, const std::set<const FOBDDDeBruijnIndex*>, AbstractStructure* structure); 
+		std::map<const FOBDDKernel*,double> kernelUnivs(const FOBDD*, AbstractStructure* structure); 
 
 
 		std::vector<std::vector<std::pair<bool,const FOBDDKernel*> > >	pathsToFalse(const FOBDD* bdd);
 		std::set<const FOBDDKernel*>									nonnestedkernels(const FOBDD* bdd);
-		std::map<const FOBDDKernel*,double> kernelAnswers(const FOBDD*, const std::set<Variable*>&, const std::set<const FOBDDDeBruijnIndex*>, AbstractStructure*);
+		std::map<const FOBDDKernel*,double> kernelAnswers(const FOBDD*, AbstractStructure*);
 		double estimatedChance(const FOBDDKernel*, AbstractStructure*);
 		double estimatedChance(const FOBDD*, AbstractStructure*);
 
@@ -158,8 +157,10 @@ class FOBDDManager {
 		bool contains(const FOBDD*, const FOBDDVariable*);
 		bool contains(const FOBDDArgument*, const FOBDDVariable*);
 
-		double estimatedNrAnswers(const FOBDDKernel*, const std::set<Variable*>&, const std::set<const FOBDDDeBruijnIndex*>&, AbstractStructure*);
-		double estimatedNrAnswers(const FOBDD*, const std::set<Variable*>&, const std::set<const FOBDDDeBruijnIndex*>&, AbstractStructure*);
+		double estimatedNrAnswers(const FOBDDKernel*, const std::set<const FOBDDVariable*>&, const std::set<const FOBDDDeBruijnIndex*>&, AbstractStructure*);
+		double estimatedNrAnswers(const FOBDD*, const std::set<const FOBDDVariable*>&, const std::set<const FOBDDDeBruijnIndex*>&, AbstractStructure*);
+		double estimatedCostAll(bool, const FOBDDKernel*, const std::set<const FOBDDVariable*>&, const std::set<const FOBDDDeBruijnIndex*>&, AbstractStructure*);
+		double estimatedCostAll(const FOBDD*, const std::set<const FOBDDVariable*>&, const std::set<const FOBDDDeBruijnIndex*>&, AbstractStructure*);
 };
 
 /**
@@ -387,21 +388,21 @@ class FOBDDVisitor {
 	public:
 		FOBDDVisitor(FOBDDManager* manager) : _manager(manager) { }
 
-		void visit(const FOBDD*);
-		void visit(const FOBDDAtomKernel*);
-		void visit(const FOBDDQuantKernel*);
-		void visit(const FOBDDVariable*);
-		void visit(const FOBDDDeBruijnIndex*);
-		void visit(const FOBDDDomainTerm*);
-		void visit(const FOBDDFuncTerm*);
+		virtual void visit(const FOBDD*);
+		virtual void visit(const FOBDDAtomKernel*);
+		virtual void visit(const FOBDDQuantKernel*);
+		virtual void visit(const FOBDDVariable*);
+		virtual void visit(const FOBDDDeBruijnIndex*);
+		virtual void visit(const FOBDDDomainTerm*);
+		virtual void visit(const FOBDDFuncTerm*);
 
-		FOBDD*			change(const FOBDD*);
-		FOBDDKernel*	change(const FOBDDAtomKernel*);
-		FOBDDKernel*	change(const FOBDDQuantKernel*);
-		FOBDDArgument*	change(const FOBDDVariable*);
-		FOBDDArgument*	change(const FOBDDDeBruijnIndex*);
-		FOBDDArgument*	change(const FOBDDDomainTerm*);
-		FOBDDArgument*	change(const FOBDDFuncTerm*);
+		virtual const FOBDD*			change(const FOBDD*);
+		virtual const FOBDDKernel*		change(const FOBDDAtomKernel*);
+		virtual const FOBDDKernel*		change(const FOBDDQuantKernel*);
+		virtual const FOBDDArgument*	change(const FOBDDVariable*);
+		virtual const FOBDDArgument*	change(const FOBDDDeBruijnIndex*);
+		virtual const FOBDDArgument*	change(const FOBDDDomainTerm*);
+		virtual const FOBDDArgument*	change(const FOBDDFuncTerm*);
 };
 
 #endif
