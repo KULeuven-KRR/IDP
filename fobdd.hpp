@@ -60,6 +60,9 @@ typedef std::map<PFSymbol*,MAKTMVAGAK>									AtomKernelTable;
 typedef std::map<const FOBDD*,FOBDDQuantKernel*>						MBDDQK;
 typedef std::map<Sort*,MBDDQK>											QuantKernelTable;
 
+typedef std::map<unsigned int, FOBDDKernel*>		MIK;
+typedef std::map<unsigned int, MIK>					KernelTable;
+
 typedef std::map<Variable*,FOBDDVariable*>							VariableTable;
 typedef std::map<unsigned int,FOBDDDeBruijnIndex*>					MUIDB;
 typedef std::map<Sort*,MUIDB>										DeBruijnIndexTable;
@@ -92,6 +95,7 @@ class FOBDDManager {
 		DeBruijnIndexTable	_debruijntable;
 		FuncTermTable		_functermtable;
 		DomainTermTable		_domaintermtable;
+		KernelTable			_kernels;
 
 		FOBDD*				addBDD(const FOBDDKernel* kernel,const FOBDD* falsebranch,const FOBDD* truebranch);
 		FOBDDAtomKernel*	addAtomKernel(PFSymbol* symbol,AtomKernelType akt, const std::vector<const FOBDDArgument*>& args);
@@ -112,6 +116,7 @@ class FOBDDManager {
 
 		std::vector<std::vector<std::pair<bool,const FOBDDKernel*> > >	pathsToFalse(const FOBDD* bdd);
 		std::set<const FOBDDKernel*>									nonnestedkernels(const FOBDD* bdd);
+		std::set<const FOBDDKernel*>									allkernels(const FOBDD* bdd);
 		std::map<const FOBDDKernel*,double> kernelAnswers(const FOBDD*, AbstractStructure*);
 		double estimatedChance(const FOBDDKernel*, AbstractStructure*);
 		double estimatedChance(const FOBDD*, AbstractStructure*);
@@ -161,6 +166,15 @@ class FOBDDManager {
 		double estimatedNrAnswers(const FOBDD*, const std::set<const FOBDDVariable*>&, const std::set<const FOBDDDeBruijnIndex*>&, AbstractStructure*);
 		double estimatedCostAll(bool, const FOBDDKernel*, const std::set<const FOBDDVariable*>&, const std::set<const FOBDDDeBruijnIndex*>&, AbstractStructure*);
 		double estimatedCostAll(const FOBDD*, const std::set<const FOBDDVariable*>&, const std::set<const FOBDDDeBruijnIndex*>&, AbstractStructure*);
+
+		void moveDown(const FOBDDKernel*);	//!< Swap the given kernel with its successor in the kernelorder
+		void moveUp(const FOBDDKernel*);	//!< Swap the given kernel with its predecessor in the kernelorder
+		void optimizequery(const FOBDD*, const std::set<const FOBDDVariable*>&, const std::set<const FOBDDDeBruijnIndex*>&, AbstractStructure*);
+
+		const FOBDD* getBDD(const FOBDD* bdd, FOBDDManager*)	//!< Given a bdd and the manager that created the bdd,
+																//!< this function returns the same bdd, but created
+																//!< by the manager 'this'
+
 };
 
 /**
@@ -208,6 +222,8 @@ class FOBDDArgument {
 
 		virtual void					accept(FOBDDVisitor*)		const = 0;
 		virtual const FOBDDArgument*	acceptchange(FOBDDVisitor*)	const = 0;
+
+		virtual Sort*					sort()	const = 0;
 };
 
 class FOBDDVariable : public FOBDDArgument {
@@ -220,7 +236,8 @@ class FOBDDVariable : public FOBDDArgument {
 	public:
 		bool containsDeBruijnIndex(unsigned int)	const { return false;	}
 
-		Variable*	variable()	const { return _variable;	}
+		Variable*	variable()	const { return _variable;			}
+		Sort*		sort()		const;
 
 		void					accept(FOBDDVisitor*)		const;
 		const FOBDDArgument*	acceptchange(FOBDDVisitor*)	const;
@@ -279,9 +296,10 @@ class FOBDDFuncTerm : public FOBDDArgument {
 	public:
 		bool containsDeBruijnIndex(unsigned int index)	const;
 
-		Function*				func()						const	{ return _function;		}
-		const FOBDDArgument*	args(unsigned int n)		const	{ return _args[n];		}
-		const std::vector<const FOBDDArgument*>&	args()	const	{ return _args;		}
+		Function*				func()						const	{ return _function;				}
+		const FOBDDArgument*	args(unsigned int n)		const	{ return _args[n];				}
+		const std::vector<const FOBDDArgument*>&	args()	const	{ return _args;					}
+		Sort*					sort()						const;
 
 		void					accept(FOBDDVisitor*)		const;
 		const FOBDDArgument*	acceptchange(FOBDDVisitor*)	const;
@@ -302,6 +320,9 @@ class FOBDDKernel {
 				bool containsFreeDeBruijnIndex()			const { return containsDeBruijnIndex(0);	}
 		virtual bool containsDeBruijnIndex(unsigned int)	const { return false;						}
 				unsigned int category()						const { return _order._category;			}
+				unsigned int number()						const { return _order._number;				}
+
+		void replacenumber(unsigned int n)	{ _order._number = n;	}
 
 		bool operator<(const FOBDDKernel&) const;
 		bool operator>(const FOBDDKernel&) const;
@@ -363,6 +384,10 @@ class FOBDD {
 		const FOBDDKernel*	_kernel;
 		const FOBDD*		_truebranch;
 		const FOBDD*		_falsebranch;
+
+		void replacefalse(const FOBDD* f)			{ _falsebranch = f;	}
+		void replacetrue(const FOBDD* t)			{ _truebranch = t;	}
+		void replacekernel(const FOBDDKernel* k)	{ _kernel = k;		}
 
 		FOBDD(const FOBDDKernel* kernel, const FOBDD* truebranch, const FOBDD* falsebranch) :
 			_kernel(kernel), _truebranch(truebranch), _falsebranch(falsebranch) { }

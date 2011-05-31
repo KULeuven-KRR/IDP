@@ -1035,6 +1035,7 @@ void GeneratorFactory::visit(const DivInternalFuncTable* pift) {
 		_generator = new DivGenerator(_vars[0],_vars[2],_vars[1],pift->isInt());
 	}
 	else if(_pattern[1]) {
+		// FIXME: wrong in case of integers. E.g., a / 2 = 1 should result in a \in { 2,3 } instead of a \in { 2 }
 		_generator = new TimesGenerator(_vars[1],_vars[2],_vars[0],pift->isInt());
 	}
 	else {

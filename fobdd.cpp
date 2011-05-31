@@ -63,6 +63,90 @@ KernelOrder FOBDDManager::newOrder(const FOBDD* bdd) {
 	return newOrder(category);
 }
 
+void FOBDDManager::moveUp(const FOBDDKernel* kernel) {
+	unsigned int cat = kernel->category();
+	if(cat != TRUEFALSECATEGORY) {
+		unsigned int nr = kernel->number();
+		if(nr != 0) {
+			--nr;
+			const FOBDDKernel* pkernel = _kernels[cat][nr];
+			moveDown(pkernel);
+		}
+	}
+}
+
+void FOBDDManager::moveDown(const FOBDDKernel* kernel) {
+	unsigned int cat = kernel->category();
+	if(cat != TRUEFALSECATEGORY) {
+		unsigned int nr = kernel->number();
+		vector<const FOBDD*> falseerase;
+		vector<const FOBDD*> trueerase;
+		if(_kernels[cat].find(nr+1) != _kernels[cat].end()) {
+			const FOBDDKernel* nextkernel = _kernels[cat][nr+1];
+			const MBDDMBDDBDD& bdds = _bddtable[kernel];
+			for(MBDDMBDDBDD::const_iterator it = bdds.begin(); it != bdds.end(); ++it) {
+				for(MBDDBDD::const_iterator jt = it->second.begin(); jt != it->second.end(); ++jt) {
+					FOBDD* bdd = jt->second;
+					bool swapfalse = (nextkernel == it->first->kernel());
+					bool swaptrue = (nextkernel == jt->first->kernel());
+					if(swapfalse || swaptrue) {
+						falseerase.push_back(it->first);
+						trueerase.push_back(jt->first);
+					}
+					if(swapfalse) {
+						if(swaptrue) {
+							const FOBDD* newfalse = getBDD(kernel,jt->first->falsebranch(),it->first->falsebranch()); 
+							const FOBDD* newtrue = getBDD(kernel,jt->first->truebranch(),it->first->truebranch());
+							bdd->replacefalse(newfalse);
+							bdd->replacetrue(newtrue);
+							bdd->replacekernel(nextkernel);
+							_bddtable[nextkernel][newfalse][newtrue] = bdd;
+						}
+						else {
+							const FOBDD* newfalse = getBDD(kernel,jt->first,it->first->falsebranch()); 
+							const FOBDD* newtrue = getBDD(kernel,jt->first,it->first->truebranch());
+							bdd->replacefalse(newfalse);
+							bdd->replacetrue(newtrue);
+							bdd->replacekernel(nextkernel);
+							_bddtable[nextkernel][newfalse][newtrue] = bdd;
+						}
+					}
+					else if(swaptrue) {
+						const FOBDD* newfalse = getBDD(kernel,jt->first->falsebranch(),it->first); 
+						const FOBDD* newtrue = getBDD(kernel,jt->first->truebranch(),it->first);
+						bdd->replacefalse(newfalse);
+						bdd->replacetrue(newtrue);
+						bdd->replacekernel(nextkernel);
+						_bddtable[nextkernel][newfalse][newtrue] = bdd;
+					}
+				}
+			}
+			for(unsigned int n = 0; n < falseerase.size(); ++n) {
+				_bddtable[kernel][falseerase[n]].erase(trueerase[n]);
+				if(_bddtable[kernel][falseerase[n]].empty()) _bddtable[kernel].erase(falseerase[n]);
+			}
+			FOBDDKernel* tkernel = _kernels[cat][nr];
+			FOBDDKernel* nkernel = _kernels[cat][nr+1];
+			nkernel->replacenumber(nr);
+			tkernel->replacenumber(nr+1);
+			_kernels[cat][nr] = nkernel;
+			_kernels[cat][nr+1] = tkernel;
+		}
+	}
+}
+
+/****************
+	Arguments
+****************/
+
+Sort* FOBDDVariable::sort() const {
+	return _variable->sort();
+}
+
+Sort* FOBDDFuncTerm::sort() const {
+	return _function->outsort();
+}
+
 /************************
 	De Bruijn indices
 ************************/
@@ -160,6 +244,17 @@ const FOBDD* FOBDDManager::getBDD(const FOBDDKernel* kernel,const FOBDD* truebra
 
 }
 
+const FOBDD* getBDD(const FOBDD* bdd, FOBDDManager* manager) {
+	if(bdd == manager->truebdd()) return _truebdd;
+	else if(bdd == manager->falsebdd()) return _falsebdd;
+	else {
+		const FOBDD* falsebranch = getBDD(bdd->falsebranch(),manager);
+		const FOBDD* truebranch = getBDD(bdd->truebranch(),manager);
+		const FOBDDKernel* kernel = getKernel(bdd->kernel(),manager);
+		return getBDD(kernel,truebranch,falsebranch);
+	}
+}
+
 FOBDD* FOBDDManager::addBDD(const FOBDDKernel* kernel,const FOBDD* truebranch,const FOBDD* falsebranch) {
 	FOBDD* newbdd = new FOBDD(kernel,truebranch,falsebranch);
 	_bddtable[kernel][falsebranch][truebranch] = newbdd;
@@ -187,6 +282,7 @@ const FOBDDAtomKernel* FOBDDManager::getAtomKernel(PFSymbol* symbol,AtomKernelTy
 FOBDDAtomKernel* FOBDDManager::addAtomKernel(PFSymbol* symbol,AtomKernelType akt, const vector<const FOBDDArgument*>& args) {
 	FOBDDAtomKernel* newkernel = new FOBDDAtomKernel(symbol,akt,args,newOrder(args));
 	_atomkerneltable[symbol][akt][args] = newkernel;
+	_kernels[newkernel->category()][newkernel->number()] = newkernel;
 	return newkernel;
 }
 
@@ -209,6 +305,7 @@ const FOBDDQuantKernel* FOBDDManager::getQuantKernel(Sort* sort,const FOBDD* bdd
 FOBDDQuantKernel* FOBDDManager::addQuantKernel(Sort* sort,const FOBDD* bdd) {
 	FOBDDQuantKernel* newkernel = new FOBDDQuantKernel(sort,bdd,newOrder(bdd));
 	_quantkerneltable[sort][bdd] = newkernel;
+	_kernels[newkernel->category()][newkernel->number()] = newkernel;
 	return newkernel;
 }
 
@@ -801,6 +898,25 @@ vector<vector<pair<bool,const FOBDDKernel*> > > FOBDDManager::pathsToFalse(const
 }
 
 /**
+ * Return all kernels of the given bdd
+ */
+set<const FOBDDKernel*> FOBDDManager::allkernels(const FOBDD* bdd) {
+	set<const FOBDDKernel*> result;
+	if(bdd != _truebdd && bdd != _falsebdd) {
+		set<const FOBDDKernel*> falsekernels = allkernels(bdd->falsebranch());
+		set<const FOBDDKernel*> truekernels = allkernels(bdd->truebranch());
+		result.insert(falsekernels.begin(),falsekernels.end());
+		result.insert(truekernels.begin(),truekernels.end());
+		result.insert(bdd->kernel());
+		if(typeid(*(bdd->kernel())) == typeid(FOBDDQuantKernel)) {
+			set<const FOBDDKernel*> kernelkernels = allkernels(dynamic_cast<const FOBDDQuantKernel*>(bdd->kernel())->bdd());
+			result.insert(kernelkernels.begin(),kernelkernels.end());
+		}
+	}
+	return result;
+}
+
+/**
  * Return all kernels of the given bdd that occur outside the scope of quantifiers
  */
 set<const FOBDDKernel*> FOBDDManager::nonnestedkernels(const FOBDD* bdd) {
@@ -922,21 +1038,26 @@ double FOBDDManager::estimatedChance(const FOBDDKernel* kernel, AbstractStructur
 		else pinter = structure->inter(dynamic_cast<Function*>(symbol))->graphinter();
 		const PredTable* pt = atomkernel->type() == AKT_CF ? pinter->cf() : pinter->ct();
 		tablesize symbolsize = pt->size();
-		tablesize univsize = pt->universe().size();
+		double univsize = 1;
+		for(vector<const FOBDDArgument*>::const_iterator it = atomkernel->args().begin(); it != atomkernel->args().end(); ++it) {
+			tablesize argsize = structure->inter((*it)->sort())->size();
+			if(argsize.first) univsize = univsize * argsize.second;
+			else {
+				univsize = numeric_limits<double>::max();
+				break;
+			}
+		}
 		if(symbolsize.first) {
-			if(univsize.first && univsize.second != 0) {
-				assert(symbolsize.second <= univsize.second);
-				chance = double(symbolsize.second) / double(univsize.second);
+			if(univsize < numeric_limits<double>::max()) {
+				chance = double(symbolsize.second) / univsize;
+				if(chance > 1) chance = 1;
 			}
 			else chance = 0;
 		}
 		else {
 			// TODO better estimators possible?
-			if(univsize.first) chance = 0.5;
-			else {
-				if(typeid(*(pt->interntable())) == typeid(FullInternalPredTable)) chance = 1;
-				else chance = 0;
-			}
+			if(univsize < numeric_limits<double>::max()) chance = 0.5;
+			else chance = 0;
 		}
 		return chance;
 	}
@@ -1082,23 +1203,426 @@ double FOBDDManager::estimatedNrAnswers(const FOBDD* bdd, const set<const FOBDDV
 
 class TableCostEstimator : public StructureVisitor {
 	private:
-		PredTable*		_table;
-		vector<bool>	_pattern;	//!< _pattern[n] == true iff the n'th column is an input column
+		const PredTable*	_table;
+		vector<bool>		_pattern;	//!< _pattern[n] == true iff the n'th column is an input column
+		double				_result;
 	public:
-		double run(PredTable* t, const vector<bool>& p) {
+
+		double run(const PredTable* t, const vector<bool>& p) {
+			_table = t;
+			_pattern = p;
+			t->interntable()->accept(this);
+			return _result;
+		}
+
+		void visit(const ProcInternalPredTable* ) {
+			double maxdouble = numeric_limits<double>::max();
+			double sz = 1;
+			for(unsigned int n = 0; n < _pattern.size(); ++n) {
+				if(!_pattern[n]) {
+					tablesize ts = _table->universe().tables()[n]->size();
+					if(ts.first) {
+						if(sz * ts.second < maxdouble) {
+							sz = sz * ts.second;
+						}
+						else {
+							_result = maxdouble;
+							return;
+						}
+					}
+					else {
+						_result = maxdouble;
+						return;
+					}
+				}
+			}
+			// NOTE: We assume that evaluation of a lua function has cost 5
+			// Can be adapted if this turns out to be unrealistic
+			if(5 * sz < maxdouble) _result = 5 * sz;				
+			else _result = maxdouble;
+		}
+		
+		void visit(const BDDInternalPredTable*) {
 			// TODO
 		}
 
+		void visit(const FullInternalPredTable* ) {
+			double maxdouble = numeric_limits<double>::max();
+			double sz = 1;
+			for(unsigned int n = 0; n < _pattern.size(); ++n) {
+				if(!_pattern[n]) {
+					tablesize ts = _table->universe().tables()[n]->size();
+					if(ts.first) {
+						if(sz * ts.second < maxdouble) {
+							sz = sz * ts.second;
+						}
+						else {
+							_result = maxdouble;
+							return;
+						}
+					}
+					else {
+						_result = maxdouble;
+						return;
+					}
+				}
+			}
+			_result = sz;
+		}
+
+		void visit(const FuncInternalPredTable* t) {
+			t->table()->interntable()->accept(this);
+		}
+
+		void visit(const UnionInternalPredTable* ) {
+			// TODO
+		}
+
+		void visit(const UnionInternalSortTable* ) {
+			// TODO
+		}
+
+		void visit(const EnumeratedInternalSortTable* ) {
+			if(_pattern[0]) {
+				_result = log(double(_table->size().second)) / log(2);
+			}
+			else {
+				_result = _table->size().second;
+			}
+		}
+
+		void visit(const IntRangeInternalSortTable* ) {
+			if(_pattern[0]) _result = 1;
+			else _result = _table->size().second;
+		}
+
+		void visit(const EnumeratedInternalPredTable* ) {
+			double maxdouble = numeric_limits<double>::max();
+			double inputunivsize = 1;
+			int inputsize = 0;
+			for(unsigned int n = 0; n < _pattern.size(); ++n) {
+				if(_pattern[n]) {
+					++inputsize;
+					tablesize ts = _table->universe().tables()[n]->size();
+					if(ts.first) {
+						if(inputunivsize * ts.second < maxdouble) {
+							inputunivsize = inputunivsize * ts.second;
+						}
+						else {
+							_result = maxdouble;
+							return;
+						}
+					}
+					else {
+						_result = maxdouble;
+						return;
+					}
+				}
+			}
+			tablesize ts = _table->size();
+			double lookupsize = inputunivsize < ts.second ? inputunivsize : ts.second;
+			if(inputsize * log(lookupsize) / log(2) < maxdouble) {
+				double lookuptime = inputsize * log(lookupsize) / log(2);
+				double iteratetime = ts.second / inputunivsize;
+				if(lookuptime + iteratetime < maxdouble) _result = lookuptime + iteratetime;
+				else _result = maxdouble;
+			}
+			else _result = maxdouble;
+		}
+
+		void visit(const EqualInternalPredTable* ) {
+			if(_pattern[0]) _result = 1;
+			else if(_pattern[1]) _result = 1;
+			else {
+				tablesize ts = _table->universe().tables()[0]->size();
+				if(ts.first) _result = ts.second;
+				else _result = numeric_limits<double>::max();
+			}
+		}
+
+		void visit(const StrLessInternalPredTable* ) {
+			if(_pattern[0]) {
+				if(_pattern[1]) _result = 1;
+				else {
+					tablesize ts = _table->universe().tables()[0]->size();
+					if(ts.first) _result = ts.second / double(2);
+					else _result = numeric_limits<double>::max();
+				}
+			}
+			else if(_pattern[1]) {
+				tablesize ts = _table->universe().tables()[0]->size();
+				if(ts.first) _result = ts.second / double(2);
+				else _result = numeric_limits<double>::max();
+			}
+			else {
+				tablesize ts = _table->size();
+				if(ts.first) _result = ts.second;
+				else _result = numeric_limits<double>::max();
+			}
+		}
+
+		void visit(const StrGreaterInternalPredTable* ) {
+			if(_pattern[0]) {
+				if(_pattern[1]) _result = 1;
+				else {
+					tablesize ts = _table->universe().tables()[0]->size();
+					if(ts.first) _result = ts.second / double(2);
+					else _result = numeric_limits<double>::max();
+				}
+			}
+			else if(_pattern[1]) {
+				tablesize ts = _table->universe().tables()[0]->size();
+				if(ts.first) _result = ts.second / double(2);
+				else _result = numeric_limits<double>::max();
+			}
+			else {
+				tablesize ts = _table->size();
+				if(ts.first) _result = ts.second;
+				else _result = numeric_limits<double>::max();
+			}
+		}
+
+		void visit(const InverseInternalPredTable* t) {
+			if(typeid(*(t->table())) == typeid(InverseInternalPredTable)) {
+				const InverseInternalPredTable* nt = dynamic_cast<const InverseInternalPredTable*>(t->table());
+				nt->table()->accept(this);
+			}
+			else {
+				double maxdouble = numeric_limits<double>::max();
+				TableCostEstimator tce;
+				PredTable npt(t->table(),_table->universe());
+				double lookuptime = tce.run(&npt,vector<bool>(_pattern.size(),true));
+				double sz = 1;
+				for(unsigned int n = 0; n < _pattern.size(); ++n) {
+					if(!_pattern[n]) {
+						tablesize ts = _table->universe().tables()[n]->size();
+						if(ts.first) {
+							if(sz * ts.second < maxdouble) {
+								sz = sz * ts.second;
+							}
+							else {
+								_result = maxdouble;
+								return;
+							}
+						}
+						else {
+							_result = maxdouble;
+							return;
+						}
+					}
+				}
+				if(sz * lookuptime < maxdouble) _result = sz * lookuptime;
+				else _result = maxdouble;
+			}
+		}
+
+		void visit(const ProcInternalFuncTable* ) {
+			double maxdouble = numeric_limits<double>::max();
+			double sz = 1;
+			for(unsigned int n = 0; n < _pattern.size() - 1; ++n) {
+				if(!_pattern[n]) {
+					tablesize ts = _table->universe().tables()[n]->size();
+					if(ts.first) {
+						if(sz * ts.second < maxdouble) {
+							sz = sz * ts.second;
+						}
+						else {
+							_result = maxdouble;
+							return;
+						}
+					}
+					else {
+						_result = maxdouble;
+						return;
+					}
+				}
+			}
+			// NOTE: We assume that evaluation of a lua function has cost 5
+			// Can be adapted if this turns out to be unrealistic
+			if(5 * sz < maxdouble) _result = 5 * sz;				
+			else _result = maxdouble;
+		}
+
+		void visit(const UNAInternalFuncTable* ) {
+			if(_pattern.back()) {
+				unsigned int patterncount = 0;
+				for(unsigned int n = 0; n < _pattern.size() - 1; ++n) {
+					if(_pattern[n]) ++patterncount;
+				}
+				_result = patterncount;
+			}
+			else {
+				double maxdouble = numeric_limits<double>::max();
+				double sz = 1;
+				for(unsigned int n = 0; n < _pattern.size() - 1; ++n) {
+					if(!_pattern[n]) {
+						tablesize ts = _table->universe().tables()[n]->size();
+						if(ts.first) {
+							if(sz * ts.second < maxdouble) {
+								sz = sz * ts.second;
+							}
+							else {
+								_result = maxdouble;
+								return;
+							}
+						}
+						else {
+							_result = maxdouble;
+							return;
+						}
+					}
+				}
+				_result = sz;
+			}
+		}
+
+		void visit(const EnumeratedInternalFuncTable* ) {
+			double maxdouble = numeric_limits<double>::max();
+			double inputunivsize = 1;
+			int inputsize = 0;
+			for(unsigned int n = 0; n < _pattern.size(); ++n) {
+				if(_pattern[n]) {
+					++inputsize;
+					tablesize ts = _table->universe().tables()[n]->size();
+					if(ts.first) {
+						if(inputunivsize * ts.second < maxdouble) {
+							inputunivsize = inputunivsize * ts.second;
+						}
+						else {
+							_result = maxdouble;
+							return;
+						}
+					}
+					else {
+						_result = maxdouble;
+						return;
+					}
+				}
+			}
+			tablesize ts = _table->size();
+			double lookupsize = inputunivsize < ts.second ? inputunivsize : ts.second;
+			if(inputsize * log(lookupsize) / log(2) < maxdouble) {
+				double lookuptime = inputsize * log(lookupsize) / log(2);
+				double iteratetime = ts.second / inputunivsize;
+				if(lookuptime + iteratetime < maxdouble) _result = lookuptime + iteratetime;
+				else _result = maxdouble;
+			}
+			else _result = maxdouble;
+		}
+
+		void visit(const PlusInternalFuncTable* ) {
+			unsigned int patterncount = 0;
+			for(unsigned int n = 0; n < _pattern.size(); ++n) {
+				if(_pattern[n]) ++patterncount;
+			}
+			if(patterncount >= 2) _result = 1;
+			else _result = numeric_limits<double>::max();
+		}
+
+		void visit(const MinusInternalFuncTable* ) {
+			unsigned int patterncount = 0;
+			for(unsigned int n = 0; n < _pattern.size(); ++n) {
+				if(_pattern[n]) ++patterncount;
+			}
+			if(patterncount >= 2) _result = 1;
+			else _result = numeric_limits<double>::max();
+		}
+
+		void visit(const TimesInternalFuncTable* ) {
+			unsigned int patterncount = 0;
+			for(unsigned int n = 0; n < _pattern.size(); ++n) {
+				if(_pattern[n]) ++patterncount;
+			}
+			if(patterncount >= 2) _result = 1;
+			else _result = numeric_limits<double>::max();
+		}
+
+		void visit(const DivInternalFuncTable* ) {
+			unsigned int patterncount = 0;
+			for(unsigned int n = 0; n < _pattern.size(); ++n) {
+				if(_pattern[n]) ++patterncount;
+			}
+			if(patterncount >= 2) _result = 1;
+			else _result = numeric_limits<double>::max();
+		}
+
+		void visit(const AbsInternalFuncTable* ) {
+			if(_pattern[0]) _result = 1;
+			else if(_pattern[1]) _result = 2;
+			else _result = numeric_limits<double>::max();
+		}
+
+		void visit(const UminInternalFuncTable* ) {
+			if(_pattern[0] || _pattern[1]) _result = 1;
+			else _result = numeric_limits<double>::max();
+		}
+
+		void visit(const ExpInternalFuncTable* ) {
+			if(_pattern[0] && _pattern[1]) _result = 1;
+			else _result = numeric_limits<double>::max();
+		}
+
+		void visit(const ModInternalFuncTable* ) {
+			if(_pattern[0] && _pattern[1]) _result = 1;
+			else _result = numeric_limits<double>::max();
+		}
 };
 
 double FOBDDManager::estimatedCostAll(bool sign, const FOBDDKernel* kernel, const set<const FOBDDVariable*>& vars, const set<const FOBDDDeBruijnIndex*>& indices, AbstractStructure* structure) {
-	if(typeid(*kernel) == typeid(FOBDDAtomKernel*)) {
+	if(typeid(*kernel) == typeid(FOBDDAtomKernel)) {
 		const FOBDDAtomKernel* atomkernel = dynamic_cast<const FOBDDAtomKernel*>(kernel);
+		PFSymbol* symbol = atomkernel->symbol();
+		PredInter* pinter;
+		if(typeid(*symbol) == typeid(Predicate)) {
+			pinter = structure->inter(dynamic_cast<Predicate*>(symbol));
+		}
+		else {
+			pinter = structure->inter(dynamic_cast<Function*>(symbol))->graphinter();
+		}
+		const PredTable* pt;
+		if(sign) {
+			if(atomkernel->type() == AKT_CF) pt = pinter->cf();
+			else pt = pinter->ct();
+		}
+		else {
+			if(atomkernel->type() == AKT_CF) pt = pinter->pt();
+			else pt = pinter->pf();
+		}
 
-		// TODO
+		vector<bool> pattern;
+		for(vector<const FOBDDArgument*>::const_iterator it = atomkernel->args().begin(); it != atomkernel->args().end(); ++it) {
+			bool input = true;
+			for(set<const FOBDDVariable*>::const_iterator jt = vars.begin(); jt != vars.end(); ++jt) {
+				if(contains(*it,*jt)) {
+					input = false;
+					break;
+				}
+			}
+			if(input) {
+				for(set<const FOBDDDeBruijnIndex*>::const_iterator jt = indices.begin(); jt != indices.end(); ++jt) {
+					if((*it)->containsDeBruijnIndex((*jt)->index())) {
+						input = false;
+						break;
+					}
+				}
+			}
+			pattern.push_back(input);
+		}
+		
+		TableCostEstimator tce;
+		double result = tce.run(pt,pattern);
+		return result;
 	}
 	else {
-		// TODO
+		// NOTE: implement a better estimator if backjumping on bdds is implemented
+		const FOBDDQuantKernel* quantkernel = dynamic_cast<const FOBDDQuantKernel*>(kernel);
+		set<const FOBDDDeBruijnIndex*> newindices;
+		for(set<const FOBDDDeBruijnIndex*>::const_iterator it = indices.begin(); it != indices.end(); ++it) {
+			newindices.insert(getDeBruijnIndex((*it)->sort(),(*it)->index()+1));
+		}
+		newindices.insert(getDeBruijnIndex(quantkernel->sort(),0));
+		double result = estimatedCostAll(quantkernel->bdd(),vars,newindices,structure);
+		return result;
 	}
 }
 
@@ -1116,28 +1640,28 @@ double FOBDDManager::estimatedCostAll(const FOBDD* bdd, const set<const FOBDDVar
 	else {
 		// split variables
 		set<const FOBDDVariable*> kernelvars = variables(bdd->kernel());
-		set<const FOBDDDeBruijnIndex*> kernelindices = indices(bdd->kernel());
+		set<const FOBDDDeBruijnIndex*> kernelindices = FOBDDManager::indices(bdd->kernel());
 		set<const FOBDDVariable*> bddvars;
 		set<const FOBDDDeBruijnIndex*> bddindices;
 		for(set<const FOBDDVariable*>::const_iterator it = vars.begin(); it != vars.end(); ++it) {
-			if(!kernelvars.contains(*it)) bddvars.insert(*it);
+			if(kernelvars.find(*it) == kernelvars.end()) bddvars.insert(*it);
 		}
 		for(set<const FOBDDDeBruijnIndex*>::const_iterator it = indices.begin(); it != indices.end(); ++it) {
-			if(!kernelindices.contains(*it)) bddindices.insert(*it);
+			if(kernelindices.find(*it) == kernelindices.end()) bddindices.insert(*it);
 		}
 		set<const FOBDDVariable*> removevars;
 		set<const FOBDDDeBruijnIndex*> removeindices;
 		for(set<const FOBDDVariable*>::const_iterator it = kernelvars.begin(); it != kernelvars.end(); ++it) {
-			if(!vars.contains(*it)) removevars.insert(*it);
+			if(vars.find(*it) == vars.end()) removevars.insert(*it);
 		}
 		for(set<const FOBDDDeBruijnIndex*>::const_iterator it = kernelindices.begin(); it != kernelindices.end(); ++it) {
-			if(!indices.contains(*it)) removeindices.insert(*it);
+			if(indices.find(*it) == indices.end()) removeindices.insert(*it);
 		}
 		for(set<const FOBDDVariable*>::const_iterator it = removevars.begin(); it != removevars.end(); ++it) {
 			kernelvars.erase(*it);
 		}
 		for(set<const FOBDDDeBruijnIndex*>::const_iterator it = removeindices.begin(); it != removeindices.end(); ++it) {
-			kernelindices.insert(*it);
+			kernelindices.erase(*it);
 		}
 
 		// recursive case
@@ -1153,14 +1677,14 @@ double FOBDDManager::estimatedCostAll(const FOBDD* bdd, const set<const FOBDDVar
 			}
 			else return maxdouble;
 		}
-		else if(bdd->truebranch() == _truebdd) {
+		else if(bdd->truebranch() == _falsebdd) {
 			double kernelcost = estimatedCostAll(false,bdd->kernel(),kernelvars,kernelindices,structure);
 			double kernelans = estimatedNrAnswers(bdd->kernel(),kernelvars,kernelindices,structure);
 			int kernelunivsize = univNrAnswers(kernelvars,kernelindices,structure);
 			double invkernans = (kernelunivsize == maxint) ? maxdouble : double(kernelunivsize) - kernelans;
 			double falsecost = estimatedCostAll(bdd->falsebranch(),bddvars,bddindices,structure);
-			if( kernelcost + (invkernelans * falsecost) < maxdouble) {
-				return kernelcost + (invkernelans * falsecost);
+			if( kernelcost + (invkernans * falsecost) < maxdouble) {
+				return kernelcost + (invkernans * falsecost);
 			}
 			else return maxdouble;
 		}
@@ -1183,63 +1707,43 @@ double FOBDDManager::estimatedCostAll(const FOBDD* bdd, const set<const FOBDDVar
 	}
 }
 
-/*
-double FOBDDManager::estimatedCostOne(FOBDD* bdd, const set<Variable*>& vars, const set<FOBDDDeBruijnIndex*>& indices, AbstractStructure* structure) {
-	double costall = estimatedCostAll(bdd,vars,indices,structure);
-	int nrans = double(estimatedNrAnswers(bdd,vars,indices,structure));
-	if(nrans == numeric_limits<int>::max()) return numeric_limits<double>::max();
-	else return costall / double(nrans);
-}
-
-double FOBDDManager::estimatedCostAll(FOBDD* bdd, const set<Variable*>& vars, const set<FOBDDDeBruijnIndex*>& indices, AbstractStructure* structure) {
-	double maxdouble = numeric_limits<double>::max();
-	int maxint = numeric_limits<int>::max();
-	if(bdd == _falsebdd) return 1;
-	else if(bdd = _truebdd) return estimatedNrAnswers(bdd,vars,indices,structure);
-	else {
-		// split the variables among those that occur in the kernel and those that don't
-		set<Variable*> kernvars;
-		set<Variable*> othervars;
-		for(set<Variable*>::const_iterator it = vars.begin(); it != vars.end(); ++it) {
-			if(contains(bdd->kernel(),*it)) kernvars.insert(*it);
-			else othervars.insert(*it);
-		}
-		set<FOBDDDeBruijnIndex*> kernindices;
-		set<FOBDDDeBruijnIndex*> otherindices;
-		for(set<FOBDDDeBruijnIndex*>::const_iterator it = indices.begin(); it != indices.end(); ++it) {
-			if(bdd->kernel()->containsDeBruijnIndex((*it)->index())) kernindices.insert(*it);
-			else otherindices.insert(*it);
-		}
-
-		if(bdd->falsebranch() == _falsebdd) {
-			double kerncost = estimatedTrueCostAll(bdd->kernel(),kernvars,kernindices,structure);
-			int nrkernans = estimatedNrAnswers(bdd->kernel(),kernvars,kernindices,structure);
-			double truecost = estimatedCostAll(bdd->truebranch(),othervars,otherindices,structure);
-			if(kerncost < maxdouble && truecost < maxdouble && nrkernans != maxint) {
-				if((kerncost * double(nrkernans)) > numeric_limits<double>::max()) return maxdouble;
-				double branchcost = kerncost * double(nrkernans);
-				if((branchcost + kerncost) > numeric_limits<double>::max()) return maxdouble;
-				else return branchcost + kerncost;
+void FOBDDManager::optimizequery(const FOBDD* query, const set<const FOBDDVariable*>& vars, const set<const FOBDDDeBruijnIndex*>& indices, AbstractStructure* structure) {
+	if(query != _truebdd && query != _falsebdd) {
+		set<const FOBDDKernel*> kernels = allkernels(query);
+		for(set<const FOBDDKernel*>::const_iterator it = kernels.begin(); it != kernels.end(); ++it) {
+			double bestscore = estimatedCostAll(query,vars,indices,structure);
+			int bestposition = 0;
+			// move upward
+			while((*it)->number() != 0) {
+				moveUp(*it);
+				double currscore = estimatedCostAll(query,vars,indices,structure);
+				if(currscore < bestscore) {
+					bestscore = currscore;
+					bestposition = 0;
+				}
+				else bestposition += 1;
 			}
-			else return maxdouble;
-		}
-		else if(bdd->truebranch() == _falsebdd) {
-			double kerncost = estimatedFalseCostAll(bdd->kernel(),kernvars,kernindices,structure);
-			int nrkernans = estimatedNrAnswers(bdd->kernel(),kernvars,kernindices,structure);
-			int allkernanswers = estimatedNrAnswers(_truebdd,kernvars,kernindices,structure);
-			double falsecost = estimatedCostAll(bdd->falsebranch(),othervars,otherindices,structure);
-			// TODO
-			if(kerncost < maxdouble && falsecost < maxdouble && invkernans != maint) {
-				
+			// move downward
+			while((*it)->number() < _kernels[(*it)->category()].size()-1) {
+				moveDown(*it);
+				double currscore = estimatedCostAll(query,vars,indices,structure);
+				if(currscore < bestscore) {
+					bestscore = currscore;
+					bestposition = 0;
+				}
+				else bestposition += -1;
 			}
-			else return maxdouble;
-		}
-		else {
-			// TODO
+			// move to best position
+			if(bestposition < 0) {
+				for(int n = 0; n > bestposition; --n) moveUp(*it);
+			}
+			else if(bestposition > 0) {
+				for(int n = 0; n < bestposition; ++n) moveDown(*it);
+			}
 		}
 	}
 }
-*/
+
 
 /**************
 	Visitor

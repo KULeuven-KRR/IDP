@@ -1027,6 +1027,22 @@ InternalArgument estimatenrans(const vector<InternalArgument>& args, lua_State* 
 	return ia;
 }
 
+InternalArgument estimatecost(const vector<InternalArgument>& args, lua_State* ) {
+	Formula* f = dynamic_cast<Formula*>(args[0]._value._formula);
+	AbstractStructure* structure = args[1].structure();
+	FOBDDManager manager;
+	FOBDDFactory m(&manager);
+	set<Variable*> sv = f->freevars();
+	set<const FOBDDVariable*> svbdd = manager.getVariables(sv);
+	set<const FOBDDDeBruijnIndex*> si;
+	f->accept(&m);
+	const FOBDD* bdd = m.bdd();
+	InternalArgument ia; ia._type = AT_DOUBLE;
+	manager.optimizequery(bdd,svbdd,si,structure);
+	ia._value._double = manager.estimatedCostAll(bdd,svbdd,si,structure);
+	return ia;
+}
+
 InternalArgument propagate(const vector<InternalArgument>& args, lua_State* ) {
 	AbstractTheory*	theory = args[0].theory();
 	AbstractStructure* structure = args[1].structure();
@@ -2986,6 +3002,7 @@ namespace LuaConnection {
 		addInternalProcedure("makeunknown",vpritup,&makeunknown);
 		addInternalProcedure("completion",vtheo,&completion);
 		addInternalProcedure("estimate_nr_ans",vformstruct,&estimatenrans);
+		addInternalProcedure("estimate_cost",vformstruct,&estimatecost);
 		addInternalProcedure("bddstring",vform,&tobdd);
 		
 		// Add the internal procedures to lua
