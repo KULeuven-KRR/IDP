@@ -729,6 +729,11 @@ class BDDInternalPredTable : public InternalPredTable {
 		BDDInternalPredTable(const FOBDD*, FOBDDManager*, const std::vector<Variable*>&, AbstractStructure*);
 		~BDDInternalPredTable() { }
 
+		FOBDDManager*					manager()	const	{ return _manager;		}
+		const FOBDD*					bdd()		const	{ return _bdd;			}
+		const std::vector<Variable*>&	vars()		const	{ return _vars;			}
+		AbstractStructure*				structure()	const	{ return _structure;	}
+
 		bool		finite(const Universe&)			const;
 		bool		empty(const Universe&)			const;
 		bool		approxfinite(const Universe&)	const;

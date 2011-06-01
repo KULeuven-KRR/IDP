@@ -171,7 +171,7 @@ class FOBDDManager {
 		void moveUp(const FOBDDKernel*);	//!< Swap the given kernel with its predecessor in the kernelorder
 		void optimizequery(const FOBDD*, const std::set<const FOBDDVariable*>&, const std::set<const FOBDDDeBruijnIndex*>&, AbstractStructure*);
 
-		const FOBDD* getBDD(const FOBDD* bdd, FOBDDManager*)	//!< Given a bdd and the manager that created the bdd,
+		const FOBDD* getBDD(const FOBDD* bdd, FOBDDManager*);	//!< Given a bdd and the manager that created the bdd,
 																//!< this function returns the same bdd, but created
 																//!< by the manager 'this'
 

@@ -244,15 +244,74 @@ const FOBDD* FOBDDManager::getBDD(const FOBDDKernel* kernel,const FOBDD* truebra
 
 }
 
-const FOBDD* getBDD(const FOBDD* bdd, FOBDDManager* manager) {
-	if(bdd == manager->truebdd()) return _truebdd;
-	else if(bdd == manager->falsebdd()) return _falsebdd;
-	else {
-		const FOBDD* falsebranch = getBDD(bdd->falsebranch(),manager);
-		const FOBDD* truebranch = getBDD(bdd->truebranch(),manager);
-		const FOBDDKernel* kernel = getKernel(bdd->kernel(),manager);
-		return getBDD(kernel,truebranch,falsebranch);
-	}
+class FOBDDCopy : public FOBDDVisitor {
+	private:
+		FOBDDManager*			_originalmanager;
+		FOBDDManager*			_copymanager;
+		const FOBDDKernel*		_kernel;
+		const FOBDDArgument*	_argument;
+	public:
+		FOBDDCopy(FOBDDManager* orig, FOBDDManager* copy) : FOBDDVisitor(orig), _originalmanager(orig), _copymanager(copy) { }
+
+		void visit(const FOBDDVariable* var) {
+			_argument = _copymanager->getVariable(var->variable());
+		}
+
+		void visit(const FOBDDDeBruijnIndex* index) {
+			_argument = _copymanager->getDeBruijnIndex(index->sort(),index->index());
+		}
+
+		void visit(const FOBDDDomainTerm* term) {
+			_argument = _copymanager->getDomainTerm(term->sort(),term->value());
+		}
+
+		void visit(const FOBDDFuncTerm* term) {
+			vector<const FOBDDArgument*> newargs;
+			for(vector<const FOBDDArgument*>::const_iterator it = term->args().begin(); it != term->args().end(); ++it) {
+				newargs.push_back(copy(*it));
+			}
+			_argument = _copymanager->getFuncTerm(term->func(),newargs);
+		}
+
+		void visit(const FOBDDQuantKernel* kernel) {
+			const FOBDD* newbdd = copy(kernel->bdd());
+			_kernel = _copymanager->getQuantKernel(kernel->sort(),newbdd);
+		}
+
+		void visit(const FOBDDAtomKernel* kernel) {
+			vector<const FOBDDArgument*> newargs;
+			for(vector<const FOBDDArgument*>::const_iterator it = kernel->args().begin(); it != kernel->args().end(); ++it) {
+				newargs.push_back(copy(*it));
+			}
+			_kernel = _copymanager->getAtomKernel(kernel->symbol(),kernel->type(),newargs);
+		}
+
+		const FOBDDArgument* copy(const FOBDDArgument* arg) {
+			arg->accept(this);
+			return _argument;
+		}
+
+		const FOBDDKernel* copy(const FOBDDKernel* kernel) {
+			kernel->accept(this);
+			return _kernel;
+		}
+
+		const FOBDD* copy(const FOBDD* bdd) {
+			if(bdd == _originalmanager->truebdd()) return _copymanager->truebdd();
+			else if(bdd == _originalmanager->falsebdd()) return _copymanager->falsebdd();
+			else {
+				const FOBDD* falsebranch = copy(bdd->falsebranch());
+				const FOBDD* truebranch = copy(bdd->truebranch());
+				const FOBDDKernel* kernel = copy(bdd->kernel());
+				return _copymanager->ifthenelse(kernel,truebranch,falsebranch);
+			}
+		}
+};
+
+const FOBDD* FOBDDManager::getBDD(const FOBDD* bdd, FOBDDManager* manager) {
+	FOBDDCopy copier(manager,this);
+	const FOBDD* res = copier.copy(bdd);
+	return res;
 }
 
 FOBDD* FOBDDManager::addBDD(const FOBDDKernel* kernel,const FOBDD* truebranch,const FOBDD* falsebranch) {

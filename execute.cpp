@@ -1043,6 +1043,43 @@ InternalArgument estimatecost(const vector<InternalArgument>& args, lua_State* )
 	return ia;
 }
 
+InternalArgument query(const vector<InternalArgument>& args, lua_State* ) {
+	Formula* formula = dynamic_cast<Formula*>(args[0]._value._formula);
+	AbstractStructure* structure = args[1].structure();
+
+	// translate the formula to a bdd
+	FOBDDManager manager;
+	FOBDDFactory factory(&manager);
+	set<Variable*> vars = formula->freevars();
+	set<const FOBDDVariable*> bddvars = manager.getVariables(sv);
+	set<const FOBDDDeBruijnIndex*> bddindices;
+	formula->accept(&factory);
+	const FOBDD* bdd = factory.bdd();
+
+	// optimize the query
+	manager.optimizequery(bdd,bddvars,bddindices,structure);
+
+	// create a generator
+	// TODO InstGenerator* generator = ... ;
+	
+	// Create an empty table
+	// TODO PredTable* result = ... ;
+	
+	// execute the query
+/*	if(generator.first()) {
+		// TODO
+		while(generator.next()) {
+			// TODO
+		}
+	}*/
+
+	// return the result
+	InternalArgument arg;
+	arg.type = AT_PREDTABLE;
+	arg._value._predtable = result;
+	return arg;
+}
+
 InternalArgument propagate(const vector<InternalArgument>& args, lua_State* ) {
 	AbstractTheory*	theory = args[0].theory();
 	AbstractStructure* structure = args[1].structure();
@@ -3003,6 +3040,7 @@ namespace LuaConnection {
 		addInternalProcedure("completion",vtheo,&completion);
 		addInternalProcedure("estimate_nr_ans",vformstruct,&estimatenrans);
 		addInternalProcedure("estimate_cost",vformstruct,&estimatecost);
+		addInternalProcedure("query",vformstruct,&query);
 		addInternalProcedure("bddstring",vform,&tobdd);
 		
 		// Add the internal procedures to lua

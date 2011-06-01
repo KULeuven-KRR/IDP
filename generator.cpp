@@ -16,6 +16,12 @@ using namespace std;
 	Classes
 **************/
 
+class EmptyGenerator : public InstGenerator {
+	public:
+		bool first()	const { return false;	}
+		bool next()		const { return false;	}
+};
+
 class StrLessGenerator : public InstGenerator {
 	private:
 		SortTable*				_table;
@@ -494,12 +500,12 @@ class OneChildGeneratorNode : public GeneratorNode {
 
 class TwoChildGeneratorNode : public GeneratorNode {
 	private:
-		InstanceChecker*							_checker;
+		InstanceChecker*						_checker;
 		vector<const DomainElement**>			_outvars;
-		InstGenerator*								_currposition;
+		InstGenerator*							_currposition;
 		mutable vector<const DomainElement*>	_currargs;
-		GeneratorNode*								_left;
-		GeneratorNode*								_right;
+		GeneratorNode*							_left;
+		GeneratorNode*							_right;
 	
 	public:
 		// Constructor
@@ -871,8 +877,87 @@ void GeneratorFactory::visit(const ProcInternalPredTable* ) {
 	_generator = new GenerateAndTestGenerator(_table,_pattern,_vars);
 }
 
-void GeneratorFactory::visit(const BDDInternalPredTable* ) {
+class BDDToGenerator : public FOBDDVisitor {
+	private:
+		InstGenerator*		_generator;
+		InstanceChecker*	_checker;
+	public:
+		BDDToGenerator(FOBDDManager* manager) : FOBDDVisitor(manager) { }
+
+		void visit(const FOBDDAtomKernel* kernel) {
+			// TODO
+		}
+
+		void visit(const FOBDDQuantKernel* kernel) {
+			// TODO
+		}
+
+		InstGenerator* create(const FOBDD* bdd, const vector<bool>& pattern, const vector<const DomainElement**>& vars, const vector<FOBDDVariable*>& bddvars, AbstractStructure* structure) {
+			if(bdd == _manager->falsebdd()) {
+				return EmptyGenerator();
+			}
+			else if(bdd == _manager->truebdd()) {
+				vector<const DomainElement**> outvars;
+				vector<SortTable*> tables;
+				for(unsigned int n = 0; n < pattern.size(); ++n) {
+					if(!_pattern[n]) {
+						outvars.push_back(vars[n]);
+						tables.push_back(structure->inter(bddvars[n]->sort()));
+					}
+				}
+				GeneratorFactory gf;
+				InstGenerator* result = gf.create(outvars,tables);
+				return result;
+			}
+			else {
+				// split variables
+				// TODO
+				
+				// recursive case
+				if(bdd->falsebranch() == _manager->falsebdd()) {
+					InstGenerator* kernelgenerator = // TODO
+					GeneratorNode* truegenerator = // TODO
+					OneChildGeneratorNode* ocgn = new OneChildGeneratorNode(kernelgenerator,truegenerator);
+					return new TreeInstGenerator(ocgn);
+				}
+				else if(bdd->truebranch() == _manager->falsebdd()) {
+					InstGenerator* kernelgenerator = // TODO
+					GeneratorNode* falsegenerator = // TODO
+					OneChildGeneratorNode* ocgn = new OneChildGeneratorNode(kernelgenerator,falsegenerator);
+					return new TreeInstGenerator(ocgn);
+				}
+				else {
+					InstanceChecker* kernelchecker = // TODO
+					GeneratorNode* truegenerator = // TODO
+					GeneratorNode* falsegenerator = // TODO
+					TwoChildGeneratorNode tcgn = new TwoChildGeneratorNode(kernelchecker,/*TODO*/,/*TODO*/,falsegenerator,truegenerator);
+					return new TreeInstGenerator(tcgn);
+				}
+			}
+		}
+};
+
+void GeneratorFactory::visit(const BDDInternalPredTable* table) {
+
+	// Add necessary types to the bdd to ensure, if possible, finite querying
+	FOBDDManager optimizemanager;
+	const FOBDD* copybdd = optimizemanager.getBDD(table->bdd(),table->manager());
 	// TODO
+
+	// Optimize the bdd for querying
+	set<const FOBDDVariable*> outvars;
+	vector<const FOBDDVariable*> allvars;
+	for(unsigned int n = 0; n < _pattern.size(); ++n) {
+		const FOBDDVariable* var = optimizemanager.getVariable(table->vars()[n]);
+		allvars.push_back(var);
+		if(!_pattern[n]) outvars.insert(var);
+	}
+	set<const FOBDDDeBruijnIndex*> indices;
+	optimizemanager.optimizequery(copybdd,outvars,indices,table->structure());
+
+	// Generate a generator for the optimized bdd
+	BDDToGenerator btg(optimizemanager);
+	_generator = btg.create(copybdd,_pattern,_vars,_allvars,table->structure());
 }
 
 void GeneratorFactory::visit(const FullInternalPredTable* ) {
