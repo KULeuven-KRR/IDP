@@ -129,9 +129,6 @@ class AggTsBody : public TsBody {
 class CPSet {
 	public:
 		std::vector<VarId> 		_varids;
-//		std::vector<SortTable*> _domains;
-//		CPSet(const std::vector<VarId>& varids, const std::vector<SortTable*>& domains)
-//			: _varids(varids), _domains(domains) { }
 };
 
 /**
@@ -144,7 +141,6 @@ class CPTerm {
 		virtual bool equal(const CPTerm&) const = 0;
 		virtual bool compare(const CPTerm&) const = 0;
 	public:
-//		virtual SortTable* domain() const = 0;
 		virtual void accept(TheoryVisitor*) const = 0;
 		friend bool operator==(const CPTerm&, const CPTerm&);
 		friend bool operator<(const CPTerm&, const CPTerm&);
@@ -166,10 +162,7 @@ class CPVarTerm : public CPTerm {
 		bool compare(const CPTerm&) const;
 	public:
 		VarId 		_varid;
-//		SortTable*	_domain;
 		CPVarTerm(const VarId& varid) : _varid(varid) { }
-//		CPVarTerm(const VarId& varid, SortTable* dom) : _varid(varid), _domain(dom) { }
-//		SortTable* domain() const { return _domain; }
 		void accept(TheoryVisitor* v) const { v->visit(this);	}
 };
 
@@ -182,13 +175,8 @@ class CPSumTerm : public CPTerm {
 		bool compare(const CPTerm&) const;
 	public:
 		std::vector<VarId> 		_varids;
-//		std::vector<SortTable*> _domains;
-//		mutable SortTable* 		_domain;
 		CPSumTerm(const VarId& left, const VarId& right) : _varids(2) { _varids[0] = left; _varids[1] = right; }
 		CPSumTerm(const std::vector<VarId>& varids) : _varids(varids) { }
-//		CPSumTerm(const VarId&, SortTable*, const VarId&, SortTable*);
-//		CPSumTerm(const std::vector<VarId>&, const std::vector<SortTable*>&);
-//		SortTable* domain() const;
 		void accept(TheoryVisitor* v) const { v->visit(this);	}
 };
 
@@ -202,11 +190,7 @@ class CPWSumTerm : public CPTerm {
 	public:
 		std::vector<VarId> 		_varids; 
 		std::vector<int>		_weights;
-//		std::vector<SortTable*>	_domains;
-//		mutable SortTable* 		_domain;
 		CPWSumTerm(const std::vector<VarId>& varids, const std::vector<int>& weights) : _varids(varids), _weights(weights) { }
-//		CPWSumTerm(const std::vector<VarId>&, const std::vector<int>&, const std::vector<SortTable*>);
-//		SortTable* domain() const;
 		void accept(TheoryVisitor* v) const { v->visit(this);	}
 };
 
@@ -219,11 +203,8 @@ struct CPBound {
 		int 	_bound;
 		VarId 	_varid;
 	};
-//	SortTable*	_domain;
 	CPBound(const int& bound): _isvarid(false), _bound(bound) { }
 	CPBound(const VarId& varid): _isvarid(true), _varid(varid) { }
-//	CPBound(const VarId& varid, SortTable* dom): _isvarid(true), _varid(varid), _domain(dom) { }
-//	SortTable* domain() const { return _domain; }
 	friend bool operator==(const CPBound&, const CPBound&);
 	friend bool operator<(const CPBound&, const CPBound&);
 };
@@ -484,7 +465,7 @@ class FuncTermGrounder : public TermGrounder {
 		GroundTerm run() const;
 
 		// TODO? Optimisation:
-		//			Keep all values of the args + result of the previous call to calc().
+		//			Keep all values of the args + result of the previous call to run().
 		//			If the values of the args did not change, return the result immediately instead of doing the
 		//			table lookup
 };

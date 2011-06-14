@@ -31,52 +31,6 @@ int _true = numeric_limits<int>::max();
 int _false = 0;
 
 
-/***************
-	CP terms 
-***************/
-
-//CPSumTerm::CPSumTerm(const VarId& varid1, SortTable* domain1, const VarId& varid2, SortTable* domain2)
-//		: _varids(vector<VarId>(2)), _domains(vector<SortTable*>(2)), _domain(NULL) {
-//	_varids[0] = varid1;
-//	_domains[0] = domain1;
-//	_varids[1] = varid2;
-//	_domains[1] = domain2;
-//}
-//
-//CPSumTerm::CPSumTerm(const vector<VarId>& varids, const vector<SortTable*>& domains)
-//		: _varids(varids), _domains(domains), _domain(NULL) {
-//}
-//
-//CPWSumTerm::CPWSumTerm(const std::vector<VarId>& varids, const std::vector<int>& weights, const std::vector<SortTable*> domains)
-//		: _varids(varids), _weights(weights), _domains(domains), _domain(NULL) {
-//}
-//
-//SortTable* computeSumDomain(vector<SortTable*> argdomains) {
-//	int min, max;
-//	for(vector<SortTable*>::const_iterator it = argdomains.begin(); it != argdomains.end(); ++it) {
-//		SortTable* current = *it;
-//		assert(current && current->approxfinite());
-//		min += current->first()->value()._int;
-//		max += current->last()->value()._int;
-//	}
-//	return new SortTable(new IntRangeInternalSortTable(min,max));
-//}
-//
-//SortTable* CPSumTerm::domain() const {
-//	if(not _domain) {
-//		_domain = computeSumDomain(_domains);
-//	}
-//	return _domain;
-//}
-//
-//SortTable* CPWSumTerm::domain() const {
-//	if(not _domain) {
-//		_domain = computeSumDomain(_domains);
-//	}
-//	return _domain;
-//}
-
-
 /****************************************
 	Comparison operators for TsBodies
 ****************************************/
@@ -1339,7 +1293,7 @@ GroundTerm SumTermGrounder::run() const {
 		} else {
 			//TODO one of the domains is unknown or infinite...
 			//TODO one case when left or right is a domain element!
-			assert(false);
+			//assert(false);
 			// Create domain
 			//rightdomain = new SortTable(new EnumeratedInternalSortTable());
 			//rightdomain->add(right._domelement);

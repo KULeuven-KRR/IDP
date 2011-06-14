@@ -633,6 +633,10 @@ namespace TheoryUtils {
 
 	/** \brief Rewrite (! x : phi & chi) to ((! x : phi) & (!x : chi)), and similarly for ?. **/
 	void move_quantifiers(AbstractTheory*);	
+
+	/** \brief Merge two theories **/
+	AbstractTheory* merge(AbstractTheory*,AbstractTheory*);
+
 }
 
 /**************

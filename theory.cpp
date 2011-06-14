@@ -1145,6 +1145,28 @@ namespace TheoryUtils {
 	void flatten(AbstractTheory* t)				{ Flattener f; t->accept(&f);				}
 	void remove_eqchains(AbstractTheory* t)		{ EqChainRemover er; t->accept(&er);		}
 	void move_quantifiers(AbstractTheory* t)	{ QuantMover qm; t->accept(&qm);			}
+
+	AbstractTheory* merge(AbstractTheory* at1, AbstractTheory* at2) {
+		if(typeid(*at1) != typeid(Theory) || typeid(*at2) != typeid(Theory)) {
+			notyetimplemented("Only merging of normal theories has been implemented...");
+		}
+		//TODO merge vocabularies?
+		if(at1->vocabulary() == at2->vocabulary()) {
+			AbstractTheory* at = at1->clone();
+			Theory* t2 = static_cast<Theory*>(at2);
+			for(vector<Formula*>::const_iterator it = t2->sentences().begin(); it != t2->sentences().end(); ++it) {
+				at->add((*it)->clone());
+			}
+			for(vector<Definition*>::const_iterator it = t2->definitions().begin(); it != t2->definitions().end(); ++it) {
+				at->add((*it)->clone());
+			}
+			for(vector<FixpDef*>::const_iterator it = t2->fixpdefs().begin(); it != t2->fixpdefs().end(); ++it) {
+				at->add((*it)->clone());
+			}
+			return at;
+		}
+		else return NULL;
+	}
 }
 
 /***************

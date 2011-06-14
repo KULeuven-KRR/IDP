@@ -707,6 +707,13 @@ InternalArgument flatten(const vector<InternalArgument>& args, lua_State* ) {
 	return InternalArgument(t);
 }
 
+InternalArgument mergetheories(const vector<InternalArgument>& args, lua_State*) {
+	AbstractTheory* t1 = args[0].theory();
+	AbstractTheory* t2 = args[1].theory();
+	AbstractTheory* t = TheoryUtils::merge(t1,t2);
+	return InternalArgument(t);
+}
+
 string help(Namespace* ns) {
 	stringstream sstr;
 	if(ns->procedures().empty()) {
@@ -2827,6 +2834,7 @@ namespace LuaConnection {
 			vtheostructopt[0] = AT_THEORY; 
 			vtheostructopt[1] = AT_STRUCTURE; 
 			vtheostructopt[2] = AT_OPTIONS;
+		vector<ArgType> vtheotheo(2); vtheotheo[0] = AT_THEORY; vtheotheo[1] = AT_THEORY;
 
 		// Create internal procedures
 		addInternalProcedure("idptype",vint,&idptype);
@@ -2863,6 +2871,7 @@ namespace LuaConnection {
 		addInternalProcedure("makeunknown",vpritab,&maketabunknown);
 		addInternalProcedure("makeunknown",vpritup,&makeunknown);
 		addInternalProcedure("clean",vstruct,&clean);
+		addInternalProcedure("merge",vtheotheo,&mergetheories);
 		
 		// Add the internal procedures to lua
 		lua_getglobal(L,"idp_intern");
@@ -3123,81 +3132,3 @@ InternalArgument Options::getvalue(const string& opt) const {
 }
 
 
-/*
- ONDERSTAANDE IS OUDE TRANSLATE VAN MX
-
-  /cerr << "---Building new model---" << endl;
-			AbstractStructure* mod = structure->clone();
-			set<PredInter*>	tobesorted1;
-			set<FuncInter*>	tobesorted2;
-//cerr << "-SAT part-" << endl;
-			for(vector<MinisatID::Literal>::const_iterator literalit = (*modelit)->literalinterpretations.begin();
-					literalit != (*modelit)->literalinterpretations.end(); ++literalit) {
-				PFSymbol* pfs = grounding->translator()->symbol(((*literalit).getAtom().getValue()));
-				if(pfs && mod->vocabulary()->contains(pfs)) {
-					vector<domelement> vd = grounding->translator()->args((*literalit).getAtom().getValue());
-					vector<TypedElement> args = ElementUtil::convert(vd);
-					if(pfs->ispred()) {
-						mod->inter(pfs)->add(args,!((*literalit).hasSign()),true);
-						tobesorted1.insert(mod->inter(pfs));
-					}
-					else {
-						Function* function = dynamic_cast<Function*>(pfs);
-//if(!((*literalit).hasSign())) {
-//	cerr << "Adding certainly true value " << args.back()._element._int << " for function " << function->name();
-//} else {
-//	cerr << "Adding certainly false value " << args.back()._element._int << " for function " << function->name();
-//}
-//cerr << " (literal " << (*literalit).getValue() << ")" << endl;
-						mod->inter(function)->add(args,!((*literalit).hasSign()),true);
-						tobesorted2.insert(mod->inter(function));
-					}
-				}
-			}
-//cerr << "-CP part-" << endl;
-			for(vector<MinisatID::VariableEqValue>::const_iterator cpvarit = (*modelit)->variableassignments.begin();
-					cpvarit != (*modelit)->variableassignments.end(); ++cpvarit) {
-				Function* function = grounding->termtranslator()->function((*cpvarit).variable);
-				if(function && mod->vocabulary()->contains(function)) {
-					vector<domelement> vd = grounding->termtranslator()->args((*cpvarit).variable);
-					vector<TypedElement> args = ElementUtil::convert(vd);
-					TypedElement value((*cpvarit).value);
-					args.push_back(value);
-//cerr << "Adding value " << args.back()._element._int << " for function " << function->name() << endl;
-					mod->inter(function)->add(args,true,true);
-					tobesorted2.insert(mod->inter(function));
-				}
-			}
-			for(set<PredInter*>::const_iterator it=tobesorted1.begin(); it != tobesorted1.end(); ++it)
-				(*it)->sortunique();
-			for(set<FuncInter*>::const_iterator it=tobesorted2.begin(); it != tobesorted2.end(); ++it)
-				(*it)->sortunique();
-
-			if(opts->_modelformat == MF_TWOVAL) {
-				mod->forcetwovalued();
-				TypedInfArg b; b._value._structure = mod; b._type = IAT_STRUCTURE;
-				a._value._table->push_back(b);
-			}
-			else if(opts->_modelformat == MF_ALL) {
-				// TODO
-				TypedInfArg b; b._value._structure = mod; b._type = IAT_STRUCTURE;
-				a._value._table->push_back(b);
-			}
-			else {
-				TypedInfArg b; b._value._structure = mod; b._type = IAT_STRUCTURE;
-				a._value._table->push_back(b);
-			}
-		}
-	}
-
-	// Return answer
-	if(opts->_trace) {
-		TypedInfArg b; b._type = IAT_MULT; b._value._table = new vector<TypedInfArg>(1,a);
-		b._value._table->push_back(tracewriter.trace());
-		return b;
-	}
-	else {
-		return a;
-	}
-}
-*/
