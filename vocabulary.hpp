@@ -614,8 +614,6 @@ namespace VocabularyUtils {
 	Sort*	stringsort();	//!< returns the sort 'string' of the standard vocabulary
 	Sort*	charsort();		//!< returns the sort 'char' of the standard vocabulary
 
-	Vocabulary* merge(const Vocabulary*, const Vocabulary*)
-
 	bool isComparisonPredicate(const PFSymbol*);
 }
 

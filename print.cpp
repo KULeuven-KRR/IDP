@@ -6,6 +6,7 @@
 
 #include "print.hpp"
 #include <iostream>
+#include <utility>
 #include "vocabulary.hpp"
 #include "structure.hpp"
 #include "term.hpp"

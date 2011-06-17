@@ -4,7 +4,8 @@
 	(c) K.U.Leuven
 ************************************/
 
-#include <cmath>
+#include <cmath> // double std::abs(double) and double std::pow(double,double)
+#include <cstdlib> // int std::abs(int)
 #include <sstream>
 #include <iostream>
 #include <typeinfo>
