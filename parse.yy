@@ -72,6 +72,7 @@ typedef std::list<isp>				lisp;
 	FixpDef*				fpd;
 	Definition*				def;
 	Formula*				fom;
+	Query*					que;
 	Variable*				var;
 	SetExpr*				set;
 	EnumSetExpr*			est;
@@ -84,6 +85,7 @@ typedef std::list<isp>				lisp;
 	std::vector<std::string>*			vstr;
 	std::vector<Sort*>*					vsor;
 	std::set<Variable*>*				svar;
+	std::vector<Variable*>*				vvar;
 	std::vector<Term*>*					vter;
 	std::vector<Formula*>*				vfom;
 	std::vector<Rule*>*					vrul;
@@ -106,7 +108,7 @@ typedef std::list<isp>				lisp;
 %token PROCEDURE_HEADER
 %token OPTION_HEADER
 %token EXEC_HEADER
-%token FORMULA_HEADER
+%token QUERY_HEADER
 
 /** Keywords **/
 %token CONSTRUCTOR
@@ -212,11 +214,13 @@ typedef std::list<isp>				lisp;
 %type <pta> f3tuples_es
 %type <dom>	pelement
 %type <dom>	domain_element
+%type <que> query
 
 %type <vint>	intrange
 %type <vcha>	charrange
 %type <vter>	term_tuple
 %type <svar>	variables
+%type <vvar>	query_vars
 %type <vrul>	rules
 %type <vstr>	pointer_name
 %type <vsor>	sort_pointer_tuple
@@ -248,7 +252,7 @@ idp		        : /* empty */
 				| idp asp_structure
 				| idp instructions
 				| idp options
-				| idp namedformula
+				| idp namedquery
 				| idp using
 		        ;
 	
@@ -378,14 +382,26 @@ pointer_name		: pointer_name "::" identifier	{ $$ = $1; $$->push_back(*$3); 		}
 					| identifier					{ $$ = new std::vector<std::string>(1,*$1);	}
 					;
 
+/**************
+	Queries
+**************/
+
+namedquery	: QUERY_HEADER query_name ':' vocab_pointer '{' query '}'	{ insert.closequery($6);	}
+			;
+
+query_name	: identifier	{ insert.openquery(*$1,@1);	}
+			;
+
+query		: '{' query_vars ':' formula '}'		{ $$ = insert.query(*$2,$4,@1); delete($2);	}
+			;
+
+query_vars	: /* empty */			{ $$ = new std::vector<Variable*>(0);	}
+			| query_vars variable	{ $$ = $1; $$->push_back($2);		}
+			;
+
 /*************
 	Theory	
 *************/
-
-namedformula	: FORMULA_HEADER formula_name ':' vocab_pointer '{' formula '}'	{ insert.closeformula($6);	}
-				;
-
-formula_name	: identifier	{ insert.openformula(*$1,@1);	}
 
 theory		: THEORY_HEADER theory_name ':' vocab_pointer '{' def_forms '}'		{ insert.closetheory();	}
 			| THEORY_HEADER theory_name '=' function_call						{ insert.assigntheory($4,@2); 

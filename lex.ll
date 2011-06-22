@@ -280,9 +280,9 @@ COMMENTLINE		"//".*
 						  advancecol();
 						  return OPTION_HEADER;
 						}
-"formula"				{ BEGIN(theory);
+"query"					{ BEGIN(theory);
 						  advancecol();
-						  return FORMULA_HEADER;
+						  return QUERY_HEADER;
 						}
 
 	/**************

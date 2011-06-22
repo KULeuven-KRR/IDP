@@ -292,9 +292,9 @@ namespace Error {
 		cerr << "." << endl;
 	}
 
-	void multdeclformula(const string& fname, const ParseInfo& thisplace, const ParseInfo& prevdeclplace) {
+	void multdeclquery(const string& fname, const ParseInfo& thisplace, const ParseInfo& prevdeclplace) {
 		error(thisplace);
-		cerr << "Formula " << fname << " is already declared in this scope" 
+		cerr << "Query " << fname << " is already declared in this scope" 
 			 << ", namely at line " << prevdeclplace.line() << ", column " << prevdeclplace.col(); 
 		if(prevdeclplace.file()) cerr << " of file " << *(prevdeclplace.file());
 		cerr << "." << endl;
@@ -491,12 +491,12 @@ namespace Error {
 		cerr << ".\n";
 	}
 
-	void overloadedformula(const string& name, const ParseInfo& p1, const ParseInfo& p2, const ParseInfo& thisplace) {
+	void overloadedquery(const string& name, const ParseInfo& p1, const ParseInfo& p2, const ParseInfo& thisplace) {
 		error(thisplace);
-		cerr << "The formula " << name << " used here could be the formula declared at " 
+		cerr << "The query " << name << " used here could be the query declared at " 
 			 << "line " << p1.line() << ", column " << p1.col();
 		if(p1.file()) cerr << " of file " << p1.file();
-		cerr << " or the theory declared at "
+		cerr << " or the query declared at "
 			 << "line " << p2.line() << ", column " << p2.col();
 		if(p2.file()) cerr << " of file " << p2.file();
 		cerr << ".\n";

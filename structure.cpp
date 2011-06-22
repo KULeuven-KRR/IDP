@@ -2507,7 +2507,8 @@ InternalTableIterator* DivInternalFuncTable::begin(const Universe& univ) const {
 
 const DomainElement* AbsInternalFuncTable::operator[](const ElementTuple& tuple) const {
 	if(tuple[0]->type() == DET_INT) {
-		return DomainElementFactory::instance()->create(abs(tuple[0]->value()._int));
+		int val = tuple[0]->value()._int;
+		return DomainElementFactory::instance()->create(val < 0 ? -val : val);
 	}
 	else {
 		return DomainElementFactory::instance()->create(abs(tuple[0]->value()._double),true);

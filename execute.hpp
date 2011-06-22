@@ -68,6 +68,7 @@ class AbstractStructure;
 class AbstractTheory;
 class Options;
 class Namespace;
+class Query;
 
 namespace LuaConnection {
 	void makeLuaConnection();
@@ -81,6 +82,7 @@ namespace LuaConnection {
 	void addGlobal(UserProcedure*);
 	void addGlobal(Namespace*);
 	void addGlobal(const std::string& name, Formula*);
+	void addGlobal(const std::string& name, Query*);
 
 	Vocabulary*			vocabulary(InternalArgument*);
 	AbstractTheory*		theory(InternalArgument*);

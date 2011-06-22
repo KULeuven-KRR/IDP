@@ -727,15 +727,15 @@ AbstractStructure* Insert::structureInScope(const vector<string>& vs, const Pars
 	}
 }
 
-Formula* Insert::formulaInScope(const string& name, const ParseInfo& pi) const {
-	Formula* f = 0;
+Query* Insert::queryInScope(const string& name, const ParseInfo& pi) const {
+	Query* q = 0;
 	for(unsigned int n = 0; n < _usingspace.size(); ++n) {
-		if(_usingspace[n]->isFormula(name)) {
-			if(f) Error::overloadedformula(name,_usingspace[n]->formula(name)->pi(),f->pi(),pi);
-			else f = _usingspace[n]->formula(name);
+		if(_usingspace[n]->isQuery(name)) {
+			if(q) Error::overloadedquery(name,_usingspace[n]->query(name)->pi(),q->pi(),pi);
+			else q = _usingspace[n]->query(name);
 		}
 	}
-	return f;
+	return q;
 }
 
 AbstractTheory* Insert::theoryInScope(const string& name, const ParseInfo& pi) const {
@@ -897,6 +897,17 @@ set<Variable*> Insert::freevars(const ParseInfo& pi) {
 	return vv;
 }
 
+void Insert::remove_vars(const std::vector<Variable*>& v) {
+	for(std::vector<Variable*>::const_iterator it = v.begin(); it != v.end(); ++it) {
+		for(list<VarName>::iterator i = _curr_vars.begin(); i != _curr_vars.end(); ++i) {
+			if(i->_name == (*it)->name()) {
+				_curr_vars.erase(i);
+				break;
+			}
+		}
+	}
+}
+
 void Insert::remove_vars(const std::set<Variable*>& v) {
 	for(std::set<Variable*>::const_iterator it = v.begin(); it != v.end(); ++it) {
 		for(list<VarName>::iterator i = _curr_vars.begin(); i != _curr_vars.end(); ++i) {
@@ -947,7 +958,7 @@ void Insert::closeblock() {
 	_currstructure = 0;
 	_curroptions = 0;
 	_currprocedure = 0;
-	_currformula = "";
+	_currquery = "";
 }
 
 void Insert::openspace(const string& sname, YYLTYPE l) {
@@ -1015,12 +1026,12 @@ void Insert::externvocab(const vector<string>& vname, YYLTYPE l) const {
 	else Error::undeclvoc(oneName(vname),pi);
 }
 
-void Insert::openformula(const string& fname, YYLTYPE l) {
+void Insert::openquery(const string& qname, YYLTYPE l) {
 	openblock();
 	ParseInfo pi = parseinfo(l);
-	Formula* f = formulaInScope(fname,pi);
-	_currformula = fname;
-	if(f) Error::multdeclformula(fname,pi,f->pi());
+	Query* q = queryInScope(qname,pi);
+	_currquery = qname;
+	if(q) Error::multdeclquery(qname,pi,q->pi());
 }
 
 void Insert::opentheory(const string& tname, YYLTYPE l) {
@@ -1047,15 +1058,16 @@ void Insert::closetheory() {
 	closeblock();
 }
 
-void Insert::closeformula(Formula* f) {
+void Insert::closequery(Query* q) {
 	_curr_vars.clear();
-	if(f) {
-		QuantForm* qf = new QuantForm(true,true,f->freevars(),f,FormulaParseInfo());
+	if(q) {
+		std::set<Variable*> sv(q->variables().begin(),q->variables().end());
+		QuantForm* qf = new QuantForm(true,true,sv,q->query(),FormulaParseInfo());
 		SortDeriver sd(qf,_currvocabulary); 
 		SortChecker sc(qf,_currvocabulary);
 		delete(qf);
-		_currspace->add(_currformula,f);
-		if(_currspace->isGlobal()) LuaConnection::addGlobal(_currformula,f);
+		_currspace->add(_currquery,q);
+		if(_currspace->isGlobal()) LuaConnection::addGlobal(_currquery,q);
 	}
 	closeblock();
 }
@@ -1853,6 +1865,18 @@ Term* Insert::aggregate(AggFunction f, SetExpr* s, YYLTYPE l) const {
 		return new AggTerm(s,f,pi);
 	}
 	else return 0;
+}
+
+Query* Insert::query(const std::vector<Variable*>& vv, Formula* f, YYLTYPE l) {
+	remove_vars(vv);
+	if(f) {
+		ParseInfo pi = parseinfo(l);
+		return new Query(vv,f,pi);
+	}
+	else {
+		for(std::vector<Variable*>::const_iterator it = vv.begin(); it != vv.end(); ++it) delete(*it);
+		return 0;
+	}
 }
 
 SetExpr* Insert::set(const std::set<Variable*>& vv, Formula* f, Term* counter, YYLTYPE l) {

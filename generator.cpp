@@ -10,6 +10,7 @@
 #include "structure.hpp"
 #include "checker.hpp"
 #include "generator.hpp"
+#include "fobdd.hpp"
 using namespace std;
 
 /**************
