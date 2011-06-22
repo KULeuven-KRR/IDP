@@ -398,8 +398,6 @@ class SolverTheory : public AbstractGroundTheory {
 		void	addSet(int setnr, int defnr, bool weighted);
 		void	addAggregate(int tseitin, AggTsBody* body);
 		void 	addCPReification(int tseitin, CPTsBody* body);
-		void	addCPVariable(const VarId&);
-		void	addCPVariables(const std::vector<VarId>&);
 
 		void	addPCRule(int defnr, int tseitin, PCTsBody* body);
 		void	addAggRule(int defnr, int tseitin, AggTsBody* body);
@@ -424,6 +422,11 @@ class SolverTheory : public AbstractGroundTheory {
 		std::ostream&	put(std::ostream& output, unsigned int)	const { assert(false); /* TODO */ return output;	   }
 		std::string		to_string()								const { assert(false); /*TODO*/	}
 
+	private:
+#ifdef CPSUPPORT
+		void	addCPVariable(const VarId&);
+		void	addCPVariables(const std::vector<VarId>&);
+#endif CPSUPPORT
 };
 
 /**
