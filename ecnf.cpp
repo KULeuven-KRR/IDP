@@ -371,43 +371,6 @@ CPTerm* AbstractGroundTheory::foldCPTerm(CPTerm* cpterm) {
 	return cpterm;
 }
 
-//CPTerm* AbstractGroundTheory::foldCPTerm(CPVarTerm* cpterm) {
-//	if(not _termtranslator->function(cpterm->_varid)) {
-//		CPTsBody* cprelation = _termtranslator->cprelation(cpterm->_varid);
-//		CPTerm* left = foldCPTerm(cprelation->left());
-//		if((typeid(*left) == typeid(CPSumTerm) || typeid(*left) == typeid(CPWSumTerm)) && cprelation->comp() == CT_EQ) {
-//			assert(cprelation->right()._isvarid && cprelation->right()._varid == cpterm->_varid);
-//			return left;
-//		}
-//	}
-//	return cpterm;
-//}
-//
-//CPTerm* AbstractGroundTheory::foldCPTerm(CPSumTerm* cpterm) {
-//	//TODO
-//	vector<VarId> newvarids;
-//	for(vector<VarId>::const_iterator it = cpterm->_varids.begin(); it != cpterm->_varids.end(); ++it) {
-//		if(not _termtranslator->function(*it)) {
-//			CPTsBody* cprelation = _termtranslator->cprelation(*it);
-//			CPTerm* left = foldCPTerm(cprelation->left());
-//			if(typeid(*left) == typeid(CPSumTerm) && cprelation->comp() == CT_EQ) {
-//				CPSumTerm* subterm = static_cast<CPSumTerm*>(left);
-//				assert(cprelation->right()._isvarid && cprelation->right()._varid == *it);
-//				newvarids.insert(newvarids.end(),subterm->_varids.begin(),subterm->_varids.end());
-//			}
-//			//TODO Need to do something special in other cases?
-//			else newvarids.push_back(*it);
-//		}
-//	}
-//	cpterm->_varids = newvarids;
-//	return cpterm;
-//}
-//
-//CPTerm* AbstractGroundTheory::foldCPTerm(CPWSumTerm*) {
-//	//TODO Do something similar to CPSumTerm case.
-//}
-
-
 /*******************************
 	Internal ground theories
 *******************************/

@@ -592,75 +592,6 @@ void AtomGrounder::run(vector<int>& clause) const {
 	clause.push_back(run());
 }
 
-//CPAtomGrounder::CPAtomGrounder(GroundTranslator* gt, GroundTermTranslator* tt, bool sign, Function* func,
-//							const vector<TermGrounder*> vtg, InstanceChecker* pic, InstanceChecker* cic,
-//							const vector<SortTable*>& vst, const GroundingContext& ct) :
-//	AtomGrounder(gt,sign,func,vtg,pic,cic,vst,ct), _termtranslator(tt) { }
-
-//int CPAtomGrounder::run() const {
-//	if(_verbosity > 2) printorig();
-//	// Run subterm grounders
-//	for(unsigned int n = 0; n < _subtermgrounders.size(); ++n) {
-//		_args[n] = _subtermgrounders[n]->run();
-//	}
-//	
-//	// Checking partial functions
-//	for(unsigned int n = 0; n < _args.size(); ++n) {
-//		//TODO: only check positions that can be out of bounds!
-//		if(!_args[n]) {
-//			//TODO: produce a warning!
-//			if(_context._funccontext == PC_BOTH) {
-//				// TODO: produce an error
-//			}
-//			if(_verbosity > 2) {
-//				clog << "Partial function went out of bounds\n";
-//				clog << "Result is " << (_context._funccontext != PC_NEGATIVE  ? "true" : "false") << endl;
-//			}
-//			return _context._funccontext != PC_NEGATIVE  ? _true : _false;
-//		}
-//	}
-//
-//	// Checking out-of-bounds
-//	for(unsigned int n = 0; n < _args.size(); ++n) {
-//		if(!_tables[n]->contains(_args[n])) {
-//			if(_verbosity > 2) {
-//				clog << "Term value out of predicate type\n";
-//				clog << "Result is " << (_sign  ? "false" : "true") << endl;
-//			}
-//			return _sign ? _false : _true;
-//		}
-//	}
-//
-//	// Run instance checkers
-//	if(!(_pchecker->run(_args))) {
-//		if(_verbosity > 2) {
-//			clog << "Possible checker failed\n";
-//			clog << "Result is " << (_certainvalue ? "false" : "true") << endl;
-//		}
-//		return _certainvalue ? _false : _true;	// TODO: dit is lelijk
-//	}
-//	if(_cchecker->run(_args)) {
-//		if(_verbosity > 2) {
-//			clog << "Certain checker succeeded\n";
-//			clog << "Result is " << _translator->printAtom(_certainvalue) << endl;
-//		}
-//		return _certainvalue;
-//	}
-//
-//	// Return grounding
-//	assert(typeid(*(_translator->getSymbol(_symbol))) == typeid(Function)); // by definition...
-//	Function* func = static_cast<Function*>(_translator->getSymbol(_symbol));
-//	ElementTuple args = _args; args.pop_back();
-//	int value = _args.back()->value()._int;
-//	
-//	unsigned int varid = _termtranslator->translate(func,args); //FIXME conversion is nasty...
-//	CPTerm* leftterm = new CPVarTerm(varid);
-//	CPBound rightbound(value);
-//	int atom = _translator->translate(leftterm,CT_EQ,rightbound,TS_EQ);
-//	if(!_sign) atom = -atom;
-//	return atom;
-//}
-
 int ComparisonGrounder::run() const {
 	const GroundTerm& left = _lefttermgrounder->run();
 	const GroundTerm& right = _righttermgrounder->run();
@@ -1602,10 +1533,10 @@ void GrounderFactory::InitContext() {
 }
 
 void GrounderFactory::AggContext() {
-	_context._truegen = false;
-	_context._funccontext = PC_POSITIVE;
-	_context._tseitin = (_context._tseitin == TS_RULE) ? TS_RULE : TS_EQ;
-	_context._component = CC_FORMULA;
+	_context._truegen 		= false;
+	_context._funccontext 	= PC_POSITIVE;
+	_context._tseitin 		= (_context._tseitin == TS_RULE) ? TS_RULE : TS_EQ;
+	_context._component 	= CC_FORMULA;
 }
 
 /**
@@ -1644,6 +1575,7 @@ void GrounderFactory::DeeperContext(bool sign) {
 
 		if(_context._funccontext == PC_POSITIVE) _context._funccontext = PC_NEGATIVE;
 		else if(_context._funccontext == PC_NEGATIVE) _context._funccontext = PC_POSITIVE;
+
 		if(_context._monotone == PC_POSITIVE) _context._monotone = PC_NEGATIVE;
 		else if(_context._monotone == PC_NEGATIVE) _context._monotone = PC_POSITIVE;
 
@@ -2107,6 +2039,10 @@ void GrounderFactory::visit(const AggForm* af) {
 			case CT_GT: cmp = '>'; break;
 			case CT_GEQ: cmp = '<'; sgn = !sgn; break;
 			default: assert(false); cmp = '=';
+		}
+		if(not sgn) {
+			if(_context._tseitin == TS_IMPL) _context._tseitin = TS_RIMPL;
+			else if(_context._tseitin == TS_RIMPL) _context._tseitin = TS_IMPL;
 		}
 		_formgrounder = new AggGrounder(_grounding->translator(),_context,atransaf->right()->function(),setgr,boundgr,cmp,sgn);
 		RestoreContext();

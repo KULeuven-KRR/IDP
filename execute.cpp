@@ -887,10 +887,10 @@ void addLiterals(MinisatID::Model* model, GroundTranslator* translator, Abstract
 }
 
 void addTerms(MinisatID::Model* model, GroundTermTranslator* termtranslator, AbstractStructure* init) {
-cerr << "Adding terms based on var-val pairs from CP solver, pairs are { ";
+//cerr << "Adding terms based on var-val pairs from CP solver, pairs are { ";
 	for(vector<MinisatID::VariableEqValue>::const_iterator cpvar = model->variableassignments.begin();
 			cpvar != model->variableassignments.end(); ++cpvar) {
-cerr << cpvar->variable << '=' << cpvar->value;
+//cerr << cpvar->variable << '=' << cpvar->value;
 		Function* function = termtranslator->function(cpvar->variable);
 		if(function) {
 			const vector<GroundTerm>& gtuple = termtranslator->args(cpvar->variable);
@@ -904,12 +904,12 @@ cerr << cpvar->variable << '=' << cpvar->value;
 				}
 			}
 			tuple.push_back(DomainElementFactory::instance()->create(cpvar->value));
-cerr << '=' << function->name() << tuple;
+//cerr << '=' << function->name() << tuple;
 			init->inter(function)->graphinter()->makeTrue(tuple);
 		}
-cerr << ' ';
+//cerr << ' ';
 	}
-cerr << '}' << endl;
+//cerr << '}' << endl;
 }
 
 InternalArgument modelexpand(const vector<InternalArgument>& args, lua_State* L) {
