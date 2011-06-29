@@ -9,8 +9,10 @@
 #include "vocabulary.hpp"
 #include "structure.hpp"
 #include "checker.hpp"
-#include "generator.hpp"
 #include "fobdd.hpp"
+#include "generator.hpp"
+#include <cstdlib>
+#include <typeinfo>
 using namespace std;
 
 /**************
@@ -290,11 +292,11 @@ class UminGenerator : public InstGenerator {
 
 class TableInstGenerator : public InstGenerator { 
 	private:
-		PredTable*							_table;
+		const PredTable*					_table;
 		vector<const DomainElement**>		_outvars;
 		mutable TableIterator				_currpos;
 	public:
-		TableInstGenerator(PredTable* t, const vector<const DomainElement**>& out) : 
+		TableInstGenerator(const PredTable* t, const vector<const DomainElement**>& out) : 
 			_table(t), _outvars(out), _currpos(t->begin()) { }
 		bool first() const;
 		bool next() const;
@@ -378,27 +380,28 @@ class EqualGenerator : public InstGenerator {
 
 class GenerateAndTestGenerator : public InstGenerator {
 	private:	
-		PredTable*									_table;
+		const PredTable*							_table;		
 		PredTable*									_full;
 		vector<const DomainElement**>				_invars;
 		vector<const DomainElement**>				_outvars;
 		vector<unsigned int>						_inposs;
 		vector<unsigned int>						_outposs;
+		vector<unsigned int>						_firstocc;
 		mutable TableIterator						_currpos;
 		mutable ElementTuple						_currtuple;
 	public:
-		GenerateAndTestGenerator(PredTable*,const vector<bool>&, const vector<const DomainElement**>&);
+		GenerateAndTestGenerator(const PredTable*,const vector<bool>&, const vector<const DomainElement**>&, const vector<unsigned int>&);
 		bool first()	const;
 		bool next()		const;
 };
 
 class SimpleLookupGenerator : public InstGenerator {
 	private:
-		PredTable*									_table;
+		const PredTable*						_table;
 		vector<const DomainElement**>			_invars;
 		mutable vector<const DomainElement*>	_currargs;
 	public:
-		SimpleLookupGenerator(PredTable* t, const vector<const DomainElement**> in) :
+		SimpleLookupGenerator(const PredTable* t, const vector<const DomainElement**> in) :
 			_table(t), _invars(in), _currargs(in.size()) { }
 		bool first()	const;
 		bool next()		const { return false;	}
@@ -422,14 +425,24 @@ class EnumLookupGenerator : public InstGenerator {
 
 class SortInstGenerator : public InstGenerator { 
 	private:
-		SortTable*				_table;
-		const DomainElement**	_outvar;
-		mutable SortIterator	_currpos;
+		const InternalSortTable*	_table;
+		const DomainElement**		_outvar;
+		mutable SortIterator		_currpos;
 	public:
-		SortInstGenerator(SortTable* t, const DomainElement** out) : 
+		SortInstGenerator(const InternalSortTable* t, const DomainElement** out) : 
 			_table(t), _outvar(out), _currpos(t->sortbegin()) { }
 		bool first() const;
 		bool next() const;
+};
+
+class SortLookUpGenerator : public InstGenerator {
+	private:
+		const InternalSortTable*	_table;
+		const DomainElement**		_invar;
+	public:
+		SortLookUpGenerator(const InternalSortTable* t, const DomainElement** in) : _table(t), _invar(in) { }
+		bool first()	const { return _table->contains(*_invar);	}
+		bool next()		const { return false;						}
 };
 
 class InverseInstGenerator : public InstGenerator {
@@ -548,7 +561,7 @@ TwoChildGeneratorNode::TwoChildGeneratorNode(InstanceChecker* t, const vector<co
 	Constructors
 *******************/
 
-GenerateAndTestGenerator::GenerateAndTestGenerator(PredTable* t, const vector<bool>& pattern, const vector<const DomainElement**>& vars) : _table(t), _currtuple(pattern.size()) {
+GenerateAndTestGenerator::GenerateAndTestGenerator(const PredTable* t, const vector<bool>& pattern, const vector<const DomainElement**>& vars, const vector<unsigned int>& firstocc) : _table(t), _firstocc(firstocc), _currtuple(pattern.size()) {
 	vector<SortTable*> outuniv;
 	for(unsigned int n = 0; n < pattern.size(); ++n) {
 		if(pattern[n]) {
@@ -556,9 +569,11 @@ GenerateAndTestGenerator::GenerateAndTestGenerator(PredTable* t, const vector<bo
 			_inposs.push_back(n);
 		}
 		else {
-			_outvars.push_back(vars[n]);
 			_outposs.push_back(n);
-			outuniv.push_back(t->universe().tables()[n]);
+			if(firstocc[n] == n) {
+				_outvars.push_back(vars[n]);
+				outuniv.push_back(t->universe().tables()[n]);
+			}
 		}
 	}
 	_full = new PredTable(new FullInternalPredTable(),Universe(outuniv));
@@ -627,7 +642,7 @@ bool GenerateAndTestGenerator::first() const {
 			_currtuple[_inposs[n]] = *(_invars[n]);
 		}
 		for(unsigned int n = 0; n < _outposs.size(); ++n) {
-			_currtuple[_outposs[n]] = tuple[n];
+			_currtuple[_outposs[n]] = tuple[_firstocc[_outposs[n]]];
 		}
 		if(_table->contains(_currtuple)) {
 			for(unsigned int n = 0; n < tuple.size(); ++n) {
@@ -749,7 +764,7 @@ bool GenerateAndTestGenerator::next() const {
 	while(_currpos.hasNext()) {
 		const ElementTuple& tuple = *_currpos;
 		for(unsigned int n = 0; n < _outposs.size(); ++n) {
-			_currtuple[_outposs[n]] = tuple[n];
+			_currtuple[_outposs[n]] = tuple[_firstocc[_outposs[n]]];
 		}
 		if(_table->contains(_currtuple)) {
 			for(unsigned int n = 0; n < tuple.size(); ++n) {
@@ -845,7 +860,7 @@ InstGenerator* GeneratorFactory::create(const vector<const DomainElement**>& var
 	InstGenerator* gen = 0;
 	GeneratorNode* node = 0;
 	for(unsigned int n = 0; n < vars.size(); ++n) {
-		SortInstGenerator* tig = new SortInstGenerator(tabs[n],vars[n]);
+		SortInstGenerator* tig = new SortInstGenerator(tabs[n]->interntable(),vars[n]);
 		if(vars.size() == 1) {
 			gen = tig;
 			break;
@@ -857,10 +872,20 @@ InstGenerator* GeneratorFactory::create(const vector<const DomainElement**>& var
 	return gen;
 }
 
-InstGenerator*	GeneratorFactory::create(PredTable* pt, vector<bool> pattern, const vector<const DomainElement**>& vars) {
+InstGenerator*	GeneratorFactory::create(const PredTable* pt, vector<bool> pattern, const vector<const DomainElement**>& vars) {
 	_table = pt;
 	_pattern = pattern;
 	_vars = vars;
+	for(unsigned int n = 0; n < _vars.size(); ++n) {
+		_firstocc.push_back(n);
+		for(unsigned int m = 0; m < n; ++m) {
+			if(_vars[n] == _vars[m]) {
+				_firstocc[n] = m;
+				break;
+			}
+		}
+	}
+
 	unsigned int firstout = 0;
 	for( ; firstout < pattern.size(); ++firstout) {
 		if(!pattern[firstout]) break;
@@ -875,68 +900,142 @@ InstGenerator*	GeneratorFactory::create(PredTable* pt, vector<bool> pattern, con
 }
 
 void GeneratorFactory::visit(const ProcInternalPredTable* ) {
-	_generator = new GenerateAndTestGenerator(_table,_pattern,_vars);
+	_generator = new GenerateAndTestGenerator(_table,_pattern,_vars,_firstocc);
 }
 
-class BDDToGenerator : public FOBDDVisitor {
-	private:
-		InstGenerator*		_generator;
-		InstanceChecker*	_checker;
-	public:
-		BDDToGenerator(FOBDDManager* manager) : FOBDDVisitor(manager) { }
+/******************************
+	From BDDs to generators
+******************************/
 
-		void visit(const FOBDDAtomKernel* kernel) {
-			// TODO
-		}
+BDDToGenerator::BDDToGenerator(FOBDDManager* manager) : _manager(manager) { }
 
-		void visit(const FOBDDQuantKernel* kernel) {
-			// TODO
-		}
-
-		InstGenerator* create(const FOBDD* bdd, const vector<bool>& pattern, const vector<const DomainElement**>& vars, const vector<FOBDDVariable*>& bddvars, AbstractStructure* structure) {
-			if(bdd == _manager->falsebdd()) {
-				return new EmptyGenerator();
+InstGenerator* BDDToGenerator::create(const FOBDD* bdd, const vector<bool>& pattern, const vector<const DomainElement**>& vars, const vector<const FOBDDVariable*>& bddvars, AbstractStructure* structure) {
+	if(bdd == _manager->falsebdd()) {
+		return new EmptyGenerator();
+	}
+	else if(bdd == _manager->truebdd()) {
+		vector<const DomainElement**> outvars;
+		vector<SortTable*> tables;
+		for(unsigned int n = 0; n < pattern.size(); ++n) {
+			if(!pattern[n]) {
+				outvars.push_back(vars[n]);
+				tables.push_back(structure->inter(bddvars[n]->sort()));
 			}
-			else if(bdd == _manager->truebdd()) {
-				vector<const DomainElement**> outvars;
-				vector<SortTable*> tables;
-				for(unsigned int n = 0; n < pattern.size(); ++n) {
-					if(!_pattern[n]) {
-						outvars.push_back(vars[n]);
-						tables.push_back(structure->inter(bddvars[n]->sort()));
-					}
-				}
-				GeneratorFactory gf;
-				InstGenerator* result = gf.create(outvars,tables);
-				return result;
+		}
+		GeneratorFactory gf;
+		InstGenerator* result = gf.create(outvars,tables);
+		return result;
+	}
+	else {
+		GeneratorNode* gn = createnode(bdd,pattern,vars,bddvars,structure);
+		return new TreeInstGenerator(gn);
+	}
+}
+
+GeneratorNode* BDDToGenerator::createnode(const FOBDD* bdd, const vector<bool>& pattern, const vector<const DomainElement**>& vars, const vector<const FOBDDVariable*>& bddvars, AbstractStructure* structure) {
+	if(bdd == _manager->falsebdd()) {
+		EmptyGenerator* eg = new EmptyGenerator();
+		return new LeafGeneratorNode(eg);
+	}
+	else if(bdd == _manager->truebdd()) {
+		vector<const DomainElement**> outvars;
+		vector<SortTable*> tables;
+		for(unsigned int n = 0; n < pattern.size(); ++n) {
+			if(!pattern[n]) {
+				outvars.push_back(vars[n]);
+				tables.push_back(structure->inter(bddvars[n]->sort()));
+			}
+		}
+		GeneratorFactory gf;
+		InstGenerator* ig = gf.create(outvars,tables);
+		return new LeafGeneratorNode(ig);
+	}
+	else {
+		// split variables
+		vector<bool> kernpattern;
+		vector<const DomainElement**> kerngenvars;
+		vector<const FOBDDVariable*> kernvars;
+		vector<bool> branchpattern;
+		for(unsigned int n = 0; n < pattern.size(); ++n) {
+			if(_manager->contains(bdd->kernel(),bddvars[n])) {
+				kernpattern.push_back(pattern[n]);
+				kerngenvars.push_back(vars[n]);
+				kernvars.push_back(bddvars[n]);
+				branchpattern.push_back(true);
 			}
 			else {
-				// split variables
-				// TODO
-				
-				// recursive case
-				if(bdd->falsebranch() == _manager->falsebdd()) {
-					InstGenerator* kernelgenerator = // TODO
-					GeneratorNode* truegenerator = // TODO
-					OneChildGeneratorNode* ocgn = new OneChildGeneratorNode(kernelgenerator,truegenerator);
-					return new TreeInstGenerator(ocgn);
-				}
-				else if(bdd->truebranch() == _manager->falsebdd()) {
-					InstGenerator* kernelgenerator = // TODO
-					GeneratorNode* falsegenerator = // TODO
-					OneChildGeneratorNode* ocgn = new OneChildGeneratorNode(kernelgenerator,falsegenerator);
-					return new TreeInstGenerator(ocgn);
-				}
-				else {
-					InstanceChecker* kernelchecker = // TODO
-					GeneratorNode* truegenerator = // TODO
-					GeneratorNode* falsegenerator = // TODO
-					TwoChildGeneratorNode tcgn = new TwoChildGeneratorNode(kernelchecker,/*TODO*/,/*TODO*/,falsegenerator,truegenerator);
-					return new TreeInstGenerator(tcgn);
-				}
+				branchpattern.push_back(pattern[n]);
 			}
 		}
-};
+		
+		
+		// recursive case
+		if(bdd->falsebranch() == _manager->falsebdd()) {
+			InstGenerator* kernelgenerator = create(bdd->kernel(),kernpattern,kerngenvars,kernvars,structure);
+			GeneratorNode* truegenerator = createnode(bdd->truebranch(),branchpattern,vars,bddvars,structure);
+			return new OneChildGeneratorNode(kernelgenerator,truegenerator);
+		}
+		/*
+		else if(bdd->truebranch() == _manager->falsebdd()) {
+			InstGenerator* kernelgenerator = // TODO
+			GeneratorNode* falsegenerator = // TODO
+			OneChildGeneratorNode* ocgn = new OneChildGeneratorNode(kernelgenerator,falsegenerator);
+			return new TreeInstGenerator(ocgn);
+		}
+		else {
+			InstanceChecker* kernelchecker = // TODO
+			GeneratorNode* truegenerator = // TODO
+			GeneratorNode* falsegenerator = // TODO	*/
+			//TwoChildGeneratorNode tcgn = new TwoChildGeneratorNode(kernelchecker,/*TODO*/,/*TODO*/,falsegenerator,truegenerator);
+			//return new TreeInstGenerator(tcgn);
+		//}
+		return 0;
+	}
+}
+
+InstGenerator* BDDToGenerator::create(const FOBDDKernel* kernel, const vector<bool>& pattern, const vector<const DomainElement**>& vars, const vector<const FOBDDVariable*>& kernelvars, AbstractStructure* structure) {
+	if(typeid(*kernel) == typeid(FOBDDAtomKernel)) {
+		const FOBDDAtomKernel* atom = dynamic_cast<const FOBDDAtomKernel*>(kernel);
+
+		// Create the pattern for the atom
+		vector<bool> atompattern;
+		vector<const DomainElement**> atomvars;
+		for(vector<const FOBDDArgument*>::const_iterator it = atom->args().begin(); it != atom->args().end(); ++it) {
+			if(typeid(*(*it)) == typeid(FOBDDVariable)) {
+				const FOBDDVariable* var = dynamic_cast<const FOBDDVariable*>(*it);
+				unsigned int pos = 0;
+				for(; pos < pattern.size(); ++pos) {
+					if(kernelvars[pos] == var) break;
+				}
+				assert(pos < pattern.size());
+				atompattern.push_back(pattern[pos]);
+				atomvars.push_back(vars[pos]);
+			}
+			else {
+				// TODO
+				return 0;
+			}
+		}
+
+		// Construct the generator
+		PFSymbol* symbol = atom->symbol();
+		const PredTable* table = 0;
+		if(typeid(*symbol) == typeid(Predicate)) {
+			table = structure->inter(dynamic_cast<Predicate*>(symbol))->ct();
+		}
+		else {
+			assert(typeid(*symbol) == typeid(Function));
+			table = structure->inter(dynamic_cast<Function*>(symbol))->graphinter()->ct();
+		}
+		GeneratorFactory gf;
+		return gf.create(table,atompattern,atomvars);
+	}
+	else {
+		assert(typeid(*kernel) == typeid(FOBDDQuantKernel));
+		// TODO
+		return 0;
+	}
+}
 
 void GeneratorFactory::visit(const BDDInternalPredTable* table) {
 
@@ -957,15 +1056,15 @@ void GeneratorFactory::visit(const BDDInternalPredTable* table) {
 	optimizemanager.optimizequery(copybdd,outvars,indices,table->structure());
 
 	// Generate a generator for the optimized bdd
-	BDDToGenerator btg(optimizemanager);
-	_generator = btg.create(copybdd,_pattern,_vars,_allvars,table->structure());
+	BDDToGenerator btg(&optimizemanager);
+	_generator = btg.create(copybdd,_pattern,_vars,allvars,table->structure());
 }
 
 void GeneratorFactory::visit(const FullInternalPredTable* ) {
 	vector<const DomainElement**> outvars;
 	vector<SortTable*> outtables;
 	for(unsigned int n = 0; n < _pattern.size(); ++n) {
-		if(!_pattern[n]) {
+		if((!_pattern[n]) && _firstocc[n] == n) {
 			outvars.push_back(_vars[n]);
 			outtables.push_back(_table->universe().tables()[n]);
 		}
@@ -981,6 +1080,39 @@ void GeneratorFactory::visit(const UnionInternalPredTable* ) {
 	// TODO
 }
 
+void GeneratorFactory::visit(const UnionInternalSortTable*) {
+	// TODO
+}
+
+void GeneratorFactory::visit(const AllNaturalNumbers* t) {
+	if(_pattern[0]) _generator = new SortLookUpGenerator(t,_vars[0]);
+	else _generator = new SortInstGenerator(t,_vars[0]);
+}
+void GeneratorFactory::visit(const AllIntegers* t) {						
+	if(_pattern[0]) _generator = new SortLookUpGenerator(t,_vars[0]);
+	else _generator = new SortInstGenerator(t,_vars[0]);
+}
+void GeneratorFactory::visit(const AllFloats* t) {					
+	if(_pattern[0]) _generator = new SortLookUpGenerator(t,_vars[0]);
+	else _generator = new SortInstGenerator(t,_vars[0]);
+}
+void GeneratorFactory::visit(const AllChars* t) {				
+	if(_pattern[0]) _generator = new SortLookUpGenerator(t,_vars[0]);
+	else _generator = new SortInstGenerator(t,_vars[0]);
+}
+void GeneratorFactory::visit(const AllStrings* t)	{				
+	if(_pattern[0]) _generator = new SortLookUpGenerator(t,_vars[0]);
+	else _generator = new SortInstGenerator(t,_vars[0]);
+}
+void GeneratorFactory::visit(const EnumeratedInternalSortTable* t) {
+	if(_pattern[0]) _generator = new SortLookUpGenerator(t,_vars[0]);
+	else _generator = new SortInstGenerator(t,_vars[0]);
+}
+void GeneratorFactory::visit(const IntRangeInternalSortTable* t) {
+	if(_pattern[0]) _generator = new SortLookUpGenerator(t,_vars[0]);
+	else _generator = new SortInstGenerator(t,_vars[0]);
+}
+
 void GeneratorFactory::visit(const EnumeratedInternalPredTable* ) {
 	// TODO: Use dynamic programming to improve this
 	LookupTable* lpt = new LookupTable();
@@ -988,25 +1120,45 @@ void GeneratorFactory::visit(const EnumeratedInternalPredTable* ) {
 	vector<const DomainElement**> invars;
 	vector<const DomainElement**> outvars;
 	for(unsigned int n = 0; n < _pattern.size(); ++n) {
-		if(_pattern[n]) invars.push_back(_vars[n]);
-		else outvars.push_back(_vars[n]);
+		if(_firstocc[n] == n) {
+			if(_pattern[n]) invars.push_back(_vars[n]);
+			else outvars.push_back(_vars[n]);
+		}
 	}
 	for(TableIterator it = _table->begin(); it.hasNext(); ++it) {
 		const ElementTuple& tuple = *it;
-		ElementTuple intuple;
-		ElementTuple outtuple;
+		bool ok = true;
 		for(unsigned int n = 0; n < _pattern.size(); ++n) {
-			if(_pattern[n]) intuple.push_back(tuple[n]);
-			else outtuple.push_back(tuple[n]);
+			if(_firstocc[n] != n && tuple[n] != tuple[_firstocc[n]]) {
+				ok = false;
+				break;
+			}
 		}
-		lookuptab[intuple].push_back(outtuple);
+		if(ok) {
+			ElementTuple intuple;
+			ElementTuple outtuple;
+			for(unsigned int n = 0; n < _pattern.size(); ++n) {
+				if(_firstocc[n] == n) {
+					if(_pattern[n]) {
+						intuple.push_back(tuple[n]);
+					}
+					else if(_firstocc[n] == n) {
+						outtuple.push_back(tuple[n]);
+					}
+				}
+			}
+			lookuptab[intuple].push_back(outtuple);
+		}
 	}
 	_generator = new EnumLookupGenerator(lookuptab,invars,outvars);
 }
 
-void GeneratorFactory::visit(const EqualInternalPredTable* ) {
+void GeneratorFactory::visit(const EqualInternalPredTable*) {
 	if(_pattern[0]) { assert(!_pattern[1]); _generator = new EqualGenerator(_vars[0],_vars[1]); }
 	else if(_pattern[1]) _generator = new EqualGenerator(_vars[1],_vars[0]);
+	else if(_firstocc[1] == 0) {
+		create(vector<const DomainElement**>(1,_vars[0]), vector<SortTable*>(1,_table->universe().tables()[0]));
+	}
 	else _generator = new TableInstGenerator(_table,_vars); 
 }
 
@@ -1048,7 +1200,7 @@ void GeneratorFactory::visit(const FuncTable* ft) {
 }
 
 void GeneratorFactory::visit(const ProcInternalFuncTable* ) {
-	_generator = new GenerateAndTestGenerator(_table,_pattern,_vars);
+	_generator = new GenerateAndTestGenerator(_table,_pattern,_vars,_firstocc);
 }
 
 void GeneratorFactory::visit(const UNAInternalFuncTable* ) {

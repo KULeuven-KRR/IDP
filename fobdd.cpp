@@ -9,6 +9,8 @@
 #include <cmath>
 #include <sstream>
 #include <iostream>
+#include <cstdlib>
+#include <algorithm>
 #include "fobdd.hpp"
 #include "vocabulary.hpp"
 #include "term.hpp"

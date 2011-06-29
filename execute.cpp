@@ -1050,14 +1050,14 @@ InternalArgument tobdd(const vector<InternalArgument>& args, lua_State*) {
 }
 
 InternalArgument estimatenrans(const vector<InternalArgument>& args, lua_State* ) {
-	Formula* f = dynamic_cast<Formula*>(args[0]._value._formula);
+	Query* q = args[0]._value._query;
 	AbstractStructure* structure = args[1].structure();
 	FOBDDManager manager;
 	FOBDDFactory m(&manager);
-	set<Variable*> sv = f->freevars();
+	set<Variable*> sv(q->variables().begin(),q->variables().end());
 	set<const FOBDDVariable*> svbdd = manager.getVariables(sv);
 	set<const FOBDDDeBruijnIndex*> si;
-	f->accept(&m);
+	q->query()->accept(&m);
 	const FOBDD* bdd = m.bdd();
 	InternalArgument ia; ia._type = AT_DOUBLE;
 	ia._value._double = manager.estimatedNrAnswers(bdd,svbdd,si,structure);
@@ -1065,14 +1065,14 @@ InternalArgument estimatenrans(const vector<InternalArgument>& args, lua_State* 
 }
 
 InternalArgument estimatecost(const vector<InternalArgument>& args, lua_State* ) {
-	Formula* f = dynamic_cast<Formula*>(args[0]._value._formula);
+	Query* q = args[0]._value._query;
 	AbstractStructure* structure = args[1].structure();
 	FOBDDManager manager;
 	FOBDDFactory m(&manager);
-	set<Variable*> sv = f->freevars();
+	set<Variable*> sv(q->variables().begin(),q->variables().end());
 	set<const FOBDDVariable*> svbdd = manager.getVariables(sv);
 	set<const FOBDDDeBruijnIndex*> si;
-	f->accept(&m);
+	q->query()->accept(&m);
 	const FOBDD* bdd = m.bdd();
 	InternalArgument ia; ia._type = AT_DOUBLE;
 	manager.optimizequery(bdd,svbdd,si,structure);
@@ -1081,6 +1081,9 @@ InternalArgument estimatecost(const vector<InternalArgument>& args, lua_State* )
 }
 
 InternalArgument query(const vector<InternalArgument>& args, lua_State* ) {
+	// FIXME: watch out for partial functions!
+
+
 	Query* q = args[0]._value._query;
 	AbstractStructure* structure = args[1].structure();
 
@@ -1097,8 +1100,16 @@ InternalArgument query(const vector<InternalArgument>& args, lua_State* ) {
 	manager.optimizequery(bdd,bddvars,bddindices,structure);
 
 	// create a generator
-	vector<DomainElement**> genvars;	// TODO = ... ;
-	InstGenerator* generator; // TODO = ... ;
+	vector<const DomainElement**> genvars;	
+	vector<const FOBDDVariable*> vbddvars;
+	vector<bool> pattern;
+	for(vector<Variable*>::const_iterator it = q->variables().begin(); it != q->variables().end(); ++it) {
+		pattern.push_back(false);
+		genvars.push_back(new const DomainElement*());
+		vbddvars.push_back(manager.getVariable(*it));
+	}
+	BDDToGenerator btg(&manager);
+	InstGenerator* generator = btg.create(bdd,pattern,genvars,vbddvars,structure);
 	
 	// Create an empty table
 	EnumeratedInternalPredTable* interntable = new EnumeratedInternalPredTable();
@@ -3025,6 +3036,7 @@ namespace LuaConnection {
 
 		theoryMetaTable(L);
 		formulaMetaTable(L);
+		queryMetaTable(L);
 		optionsMetaTable(L);
 		namespaceMetaTable(L);
 
