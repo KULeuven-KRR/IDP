@@ -746,6 +746,13 @@ InternalArgument flatten(const vector<InternalArgument>& args, lua_State* ) {
 	return InternalArgument(t);
 }
 
+InternalArgument mergetheories(const vector<InternalArgument>& args, lua_State*) {
+	AbstractTheory* t1 = args[0].theory();
+	AbstractTheory* t2 = args[1].theory();
+	AbstractTheory* t = TheoryUtils::merge(t1,t2);
+	return InternalArgument(t);
+}
+
 string help(Namespace* ns) {
 	stringstream sstr;
 	if(ns->procedures().empty()) {
@@ -918,16 +925,30 @@ void addLiterals(MinisatID::Model* model, GroundTranslator* translator, Abstract
 	}
 }
 
-void addTerms(MinisatID::Model* model, GroundTermTranslator* translator, AbstractStructure* init) {
+void addTerms(MinisatID::Model* model, GroundTermTranslator* termtranslator, AbstractStructure* init) {
+cerr << "Adding terms based on var-val pairs from CP solver, pairs are { ";
 	for(vector<MinisatID::VariableEqValue>::const_iterator cpvar = model->variableassignments.begin();
-		cpvar != model->variableassignments.end(); ++cpvar) {
-		Function* function = translator->function(cpvar->variable);
+			cpvar != model->variableassignments.end(); ++cpvar) {
+cerr << cpvar->variable << '=' << cpvar->value;
+		Function* function = termtranslator->function(cpvar->variable);
 		if(function) {
-			ElementTuple tuple = translator->args(cpvar->variable);
+			const vector<GroundTerm>& gtuple = termtranslator->args(cpvar->variable);
+			ElementTuple tuple;
+			for(vector<GroundTerm>::const_iterator it = gtuple.begin(); it != gtuple.end(); ++it) {
+				if(it->_isvarid) {
+					int value = model->variableassignments[it->_varid].value;
+					tuple.push_back(DomainElementFactory::instance()->create(value));
+				} else {
+					tuple.push_back(it->_domelement);
+				}
+			}
 			tuple.push_back(DomainElementFactory::instance()->create(cpvar->value));
+cerr << '=' << function->name() << tuple;
 			init->inter(function)->graphinter()->makeTrue(tuple);
 		}
+cerr << ' ';
 	}
+cerr << '}' << endl;
 }
 
 InternalArgument modelexpand(const vector<InternalArgument>& args, lua_State* L) {
@@ -998,11 +1019,15 @@ AbstractTheory* ground(AbstractTheory* theory, AbstractStructure* structure, Opt
 	TopLevelGrounder* grounder = factory.create(theory);
 	grounder->run();
 	AbstractGroundTheory* grounding = grounder->grounding();
+<<<<<<< HEAD
+=======
+	grounding->addFuncConstraints();
+>>>>>>> origin/stef
 	delete(grounder);
 	return grounding;
 }
 
-InternalArgument ground(const vector<InternalArgument>& args, lua_State*  ) {
+InternalArgument ground(const vector<InternalArgument>& args, lua_State*) {
 	AbstractTheory* grounding = ground(args[0].theory(),args[1].structure(),args[2].options());
 	InternalArgument result(grounding); 
 	return result;
@@ -1261,6 +1286,13 @@ InternalArgument maketabunknown(const vector<InternalArgument>& args, lua_State*
 	pri->makeUnknown(toTuple(args[1]._value._table,L));
 	return nilarg();
 }
+
+InternalArgument clean(const vector<InternalArgument>& args, lua_State*) {
+	AbstractStructure* s = args[0].structure();
+	s->clean();
+	return InternalArgument(s);
+}
+
 
 /**************************
 	Connection with Lua
@@ -3057,6 +3089,7 @@ namespace LuaConnection {
 			vtheostructopt[0] = AT_THEORY; 
 			vtheostructopt[1] = AT_STRUCTURE; 
 			vtheostructopt[2] = AT_OPTIONS;
+		vector<ArgType> vtheotheo(2); vtheotheo[0] = AT_THEORY; vtheotheo[1] = AT_THEORY;
 
 		// Create internal procedures
 		addInternalProcedure("idptype",vint,&idptype);
@@ -3099,6 +3132,8 @@ namespace LuaConnection {
 		addInternalProcedure("estimate_cost",vquerystruct,&estimatecost);
 		addInternalProcedure("query",vquerystruct,&query);
 		addInternalProcedure("bddstring",vform,&tobdd);
+		addInternalProcedure("clean",vstruct,&clean);
+		addInternalProcedure("merge",vtheotheo,&mergetheories);
 		
 		// Add the internal procedures to lua
 		lua_getglobal(L,"idp_intern");
@@ -3369,77 +3404,3 @@ InternalArgument Options::getvalue(const string& opt) const {
 }
 
 
-/*
- ONDERSTAANDE IS OUDE TRANSLATE VAN MX
-
-  /cerr << "---Building new model---" << endl;
-			AbstractStructure* mod = structure->clone();
-			set<PredInter*>	tobesorted1;
-			set<FuncInter*>	tobesorted2;
-//cerr << "-Normal SAT part-" << endl;
-			for(vector<MinisatID::Literal>::const_iterator literalit = (*modelit)->literalinterpretations.begin();
-					literalit != (*modelit)->literalinterpretations.end(); ++literalit) {
-				PFSymbol* pfs = grounding->translator()->symbol(((*literalit).getAtom().getValue()));
-				if(pfs && mod->vocabulary()->contains(pfs)) {
-					vector<domelement> vd = grounding->translator()->args((*literalit).getAtom().getValue());
-					vector<TypedElement> args = ElementUtil::convert(vd);
-					if(pfs->ispred()) {
-						mod->inter(pfs)->add(args,!((*literalit).hasSign()),true);
-						tobesorted1.insert(mod->inter(pfs));
-					}
-					else {
-						Function* function = dynamic_cast<Function*>(pfs);
-//if(!((*literalit).hasSign())) cerr << "Adding value " << args.back()._element._int << " for function " << function->name() << endl;
-//else cerr << "Adding impossible value " << args.back()._element._int << " for function " << function->name() << endl;
-						mod->inter(function)->add(args,!((*literalit).hasSign()),true);
-						tobesorted2.insert(mod->inter(function));
-					}
-				}
-			}
-//cerr << "-CP part-" << endl;
-			for(vector<MinisatID::VariableEqValue>::const_iterator cpvarit = (*modelit)->variableassignments.begin();
-					cpvarit != (*modelit)->variableassignments.end(); ++cpvarit) {
-				Function* function = grounding->termtranslator()->function((*cpvarit).variable);
-				if(function && mod->vocabulary()->contains(function)) {
-					vector<domelement> vd = grounding->termtranslator()->args((*cpvarit).variable);
-					vector<TypedElement> args = ElementUtil::convert(vd);
-					TypedElement value((*cpvarit).value);
-					args.push_back(value);
-//cerr << "Adding value " << args.back()._element._int << " for function " << function->name() << endl;
-					mod->inter(function)->add(args,true,true);
-					tobesorted2.insert(mod->inter(function));
-				}
-			}
-			for(set<PredInter*>::const_iterator it=tobesorted1.begin(); it != tobesorted1.end(); ++it)
-				(*it)->sortunique();
-			for(set<FuncInter*>::const_iterator it=tobesorted2.begin(); it != tobesorted2.end(); ++it)
-				(*it)->sortunique();
-
-			if(opts->_modelformat == MF_TWOVAL) {
-				mod->forcetwovalued();
-				TypedInfArg b; b._value._structure = mod; b._type = IAT_STRUCTURE;
-				a._value._table->push_back(b);
-			}
-			else if(opts->_modelformat == MF_ALL) {
-				// TODO
-				TypedInfArg b; b._value._structure = mod; b._type = IAT_STRUCTURE;
-				a._value._table->push_back(b);
-			}
-			else {
-				TypedInfArg b; b._value._structure = mod; b._type = IAT_STRUCTURE;
-				a._value._table->push_back(b);
-			}
-		}
-	}
-
-	// Return answer
-	if(opts->_trace) {
-		TypedInfArg b; b._type = IAT_MULT; b._value._table = new vector<TypedInfArg>(1,a);
-		b._value._table->push_back(tracewriter.trace());
-		return b;
-	}
-	else {
-		return a;
-	}
-}
-*/

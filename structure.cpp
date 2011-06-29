@@ -4,7 +4,8 @@
 	(c) K.U.Leuven
 ************************************/
 
-#include <cmath>
+#include <cmath> // double std::abs(double) and double std::pow(double,double)
+#include <cstdlib> // int std::abs(int)
 #include <sstream>
 #include <iostream>
 #include <typeinfo>
@@ -20,6 +21,11 @@ using namespace std;
 /**********************
 	Domain elements
 **********************/
+
+ostream& operator<<(ostream& out, const DomainElementType& domeltype) {
+	string DomElTypeStrings[4] = { "int", "double", "string", "compound" };
+	return out << DomElTypeStrings[domeltype];
+}
 
 /**
  *	Constructor for domain elements that are integers
@@ -91,6 +97,16 @@ string DomainElement::to_string() const {
 
 ostream& operator<<(ostream& output, const DomainElement& d) {
 	return d.put(output);
+}
+
+ostream& operator<<(ostream& output, const ElementTuple& tuple) {
+	output << '(';
+	for(ElementTuple::const_iterator it = tuple.begin(); it != tuple.end(); ++it) {
+		output << **it;
+		if(it != tuple.end()-1) output << ',';
+	}
+	output << ')';
+	return output;
 }
 
 bool operator<(const DomainElement& d1, const DomainElement& d2) {
@@ -172,7 +188,7 @@ bool operator>=(const DomainElement& d1, const DomainElement& d2) {
 	else return d1 > d2;
 }
 
-Compound::Compound(Function* function, const std::vector<const DomainElement*> arguments) :
+Compound::Compound(Function* function, const ElementTuple& arguments) :
 	_function(function), _arguments(arguments) { 
 	assert(function != 0); 
 }
@@ -316,8 +332,8 @@ DomainElementFactory::~DomainElementFactory() {
 		delete(it->second);
 	for(map<const Compound*,DomainElement*>::iterator it = _compoundelements.begin(); it != _compoundelements.end(); ++it) 
 		delete(it->second);
-	for(map<Function*,map<vector<const DomainElement*>,Compound*> >::iterator it = _compounds.begin(); it != _compounds.end(); ++it) {
-		for(map<vector<const DomainElement*>,Compound*>::iterator jt = it->second.begin(); jt != it->second.end(); ++jt) {
+	for(map<Function*,map<ElementTuple,Compound*> >::iterator it = _compounds.begin(); it != _compounds.end(); ++it) {
+		for(map<ElementTuple,Compound*>::iterator jt = it->second.begin(); jt != it->second.end(); ++jt) {
 			delete(jt->second);
 		}
 	}
@@ -1665,7 +1681,7 @@ bool EnumeratedInternalSortTable::isRange() const {
 	const DomainElement* f = first();
 	const DomainElement* l = last();
 	if(f->type() == DET_INT && l->type() == DET_INT) {
-		return l->value()._int - f->value()._int == _table.size() - 1;
+		return l->value()._int - f->value()._int == (int)_table.size() - 1;
 	}
 	else return false;
 }
@@ -2384,7 +2400,7 @@ InternalTableIterator* EnumeratedInternalFuncTable::begin(const Universe&) const
 	return new EnumInternalFuncIterator(_table.begin(),_table.end());
 }
 
-const DomainElement* ModInternalFuncTable::operator[](const vector<const DomainElement*>& tuple) const {
+const DomainElement* ModInternalFuncTable::operator[](const ElementTuple& tuple) const {
 	int a1 = tuple[0]->value()._int;
 	int a2 = tuple[1]->value()._int;
 	if(a2 == 0) return 0;
@@ -2405,7 +2421,7 @@ InternalTableIterator* ModInternalFuncTable::begin(const Universe& univ) const {
 	return new InternalFuncIterator(this,univ);
 }
 
-const DomainElement* ExpInternalFuncTable::operator[](const vector<const DomainElement*>& tuple) const {
+const DomainElement* ExpInternalFuncTable::operator[](const ElementTuple& tuple) const {
 	double a1 = tuple[0]->type() == DET_DOUBLE ? tuple[0]->value()._double : double(tuple[0]->value()._int);
 	double a2 = tuple[1]->type() == DET_DOUBLE ? tuple[1]->value()._double : double(tuple[1]->value()._int);
 	return DomainElementFactory::instance()->create(pow(a1,a2),false);
@@ -3297,6 +3313,19 @@ namespace TableUtils {
 		else return false;
 	}
 
+	bool approxTotalityCheck(const FuncInter* funcinter) {
+		vector<SortTable*> vst = funcinter->universe().tables();
+		vst.pop_back();
+		tablesize nroftuples = Universe(vst).size();
+		tablesize nrofvalues = funcinter->graphinter()->ct()->size();
+//cerr << "Checking totality of " << *function << " -- nroftuples=" << nroftuples.second << " and nrofvalues=" << nrofvalues.second;
+//cerr << " (trust=" << (nroftuples.first && nrofvalues.first) << ")" << endl;
+		if(nroftuples.first && nrofvalues.first) {
+			return nroftuples.second == nrofvalues.second;
+		}
+		else return false;
+	}
+
 }
 
 /*****************
@@ -3632,7 +3661,7 @@ PredInter* Structure::inter(PFSymbol* s) const {
 	else return inter(dynamic_cast<Function*>(s))->graphinter();
 }
 
-Universe Structure::universe(PFSymbol* s) const {
+Universe Structure::universe(const PFSymbol* s) const {
 	vector<SortTable*> vst;
 	for(vector<Sort*>::const_iterator it = s->sorts().begin(); it != s->sorts().end(); ++it) {
 		vst.push_back(inter(*it));
@@ -3650,8 +3679,24 @@ void Structure::clean() {
 		}
 	}
 	for(map<Function*,FuncInter*>::iterator it = _funcinter.begin(); it != _funcinter.end(); ++it) {
+		if(it->first->partial()) {
+			SortTable* lastsorttable = it->second->universe().tables().back();
+			for(TableIterator ctit = it->second->graphinter()->ct()->begin(); ctit.hasNext(); ++ctit) {
+				ElementTuple tuple = *ctit;
+				const DomainElement* ctvalue = tuple.back();
+				for(SortIterator sortit = lastsorttable->sortbegin(); sortit.hasNext(); ++sortit) {
+					const DomainElement* cfvalue = *sortit;
+					if(*cfvalue != *ctvalue) {
+						tuple.pop_back();
+						tuple.push_back(*sortit);
+						it->second->graphinter()->makeFalse(tuple);
+					}
+				}
+			}
+		}
 		if(!it->second->approxtwovalued()) {
-			if(TableUtils::approxIsInverse(it->second->graphinter()->ct(),it->second->graphinter()->cf())) {
+			if(((not it->first->partial()) && TableUtils::approxTotalityCheck(it->second))
+			|| TableUtils::approxIsInverse(it->second->graphinter()->ct(),it->second->graphinter()->cf())) {
 				EnumeratedInternalFuncTable* eift = new EnumeratedInternalFuncTable();
 				for(TableIterator jt = it->second->graphinter()->ct()->begin(); jt.hasNext(); ++jt) {
 					eift->add(*jt);

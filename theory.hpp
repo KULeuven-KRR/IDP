@@ -351,11 +351,9 @@ namespace FormulaUtils {
 	/** **/
 	Formula* graph_functions(Formula* f);	
 
-	/**
-	 * Non-recursively move terms that are three-valued in a given structure outside of the given atom.
-	 */
-	Formula* moveThreeValTerms(Formula*,AbstractStructure*,bool positive,bool usingcp=false,
-								const std::set<const Function*> cpfunctions=std::set<const Function*>());
+	/** \brief Non-recursively move terms that are three-valued in a given structure outside of the given atom **/
+	Formula* moveThreeValuedTerms(Formula*,AbstractStructure*,bool positive,bool cpsupport=false,
+								const std::set<const PFSymbol*> cpsymbols=std::set<const PFSymbol*>());
 
 	/** \brief Returns true iff the aggregate formula is monotone **/
 	bool monotone(const AggForm* af);
@@ -644,6 +642,9 @@ namespace TheoryUtils {
 
 	/** \brief Count the number of subformulas in the theory **/
 	int nrSubformulas(AbstractTheory*);
+
+	/** \brief Merge two theories **/
+	AbstractTheory* merge(AbstractTheory*,AbstractTheory*);
 }
 
 /**************

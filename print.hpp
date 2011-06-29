@@ -10,10 +10,20 @@
 #include <cstdio>
 #include <sstream>
 #include <string>
-#include "theory.hpp"
+#include <vector>
+#include <set>
+
+#include "theory.hpp" // for TheoryVisitor
 
 class Options;
+class Sort;
+class Predicate;
+class Function;
+class SortTable;
 class PredTable;
+class FuncTable;
+class PredInter;
+class FuncInter;
 class Structure;
 class Namespace;
 class GroundTranslator;
@@ -139,7 +149,7 @@ class IDPPrinter : public Printer {
 		void visit(const GroundAggregate*);
 		void visit(const GroundSet*);
 
-		/* Constraint Programming */
+		// Constraint Programming
 		void visit(const CPReification*);
 		void visit(const CPSumTerm*);
 		void visit(const CPWSumTerm*);
@@ -148,11 +158,19 @@ class IDPPrinter : public Printer {
 
 class EcnfPrinter : public Printer {
 	private:
-		int				_currenthead;
-		unsigned int 	_currentdefnr;
-		bool 			writeTranslation_;
+		int							_currenthead;
+		unsigned int 				_currentdefnr;
+		AbstractStructure*			_structure;
+		const GroundTermTranslator*	_termtranslator;
+		std::set<unsigned int> 		_printedvarids;
+		bool 			writeTranslation_;>>>>>>> origin/stef
 
 		void printAggregate(AggFunction aggtype, TsType arrow, unsigned int defnr, bool lower, int head, unsigned int setnr, double bound);
+		void printCPVariable(unsigned int varid);
+		void printCPVariables(std::vector<unsigned int> varids);
+		void printCPReification(std::string type, int head, unsigned int left, CompType comp, long right);
+		void printCPReification(std::string type, int head, std::vector<unsigned int> left, CompType comp, long right);
+		void printCPReification(std::string type, int head, std::vector<unsigned int> left, std::vector<int> weights, CompType comp, long right);
 
 		bool			writeTranlation() const { return writeTranslation_; }
 
@@ -169,6 +187,7 @@ class EcnfPrinter : public Printer {
 		void visit(const AggGroundRuleBody*);
 		void visit(const GroundAggregate*);
 		void visit(const GroundSet*);
+		void visit(const CPReification*);
 }; 
 
 #endif

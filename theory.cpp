@@ -642,7 +642,7 @@ Formula* NegationPush::visit(EqChainForm* f) {
 		f->swapsign();
 		f->conj(!f->conj());
 		for(unsigned int n = 0; n < f->comps().size(); ++n) 
-			f->comp(n,negatect(f->comps()[n]));
+			f->comp(n,negatecomp(f->comps()[n]));
 	}
 	return traverse(f);
 }
@@ -1199,52 +1199,43 @@ SetExpr* AllTermMover::visit(QuantSetExpr* s) {
 }
 
 
-class ThreeValTermMover : public TheoryMutatingVisitor {
+class ThreeValuedTermMover : public TheoryMutatingVisitor {
 	private:
 		AbstractStructure*			_structure;
 		bool						_poscontext;
-		bool						_cpcontext;
-		const set<const Function*>	_cpfunctions;
 		vector<Formula*>			_termgraphs;
 		set<Variable*>				_variables;
-		bool						_istoplevelterm;
-		bool isCPFunction(const Function* func) const { return _cpfunctions.find(func) != _cpfunctions.end(); }
+		bool						_keepterm;
+		bool						_cpsupport;
+		const set<const PFSymbol*> 	_cpsymbols;
+		bool isCPSymbol(const PFSymbol*) const;
+
 	public:
-		ThreeValTermMover(AbstractStructure* str, bool posc, bool cpc=false, const set<const Function*>& cpfuncs=set<const Function*>()):
-			_structure(str), _poscontext(posc), _cpcontext(cpc), _cpfunctions(cpfuncs), _termgraphs(0), _variables(), _istoplevelterm(true) { }
+		ThreeValuedTermMover(AbstractStructure* str, bool posc, bool cps=false, const set<const PFSymbol*>& cpsymbols=set<const PFSymbol*>()):
+			_structure(str), _poscontext(posc), _termgraphs(0), _variables(), _cpsupport(cps), _cpsymbols(cpsymbols) { }
 		Formula*	visit(PredForm* pf);
 		Formula*	visit(AggForm* af);
 		Term*		visit(FuncTerm* ft);
 		Term*		visit(AggTerm*	at);
 };
 
-Term* ThreeValTermMover::visit(FuncTerm* functerm) {
+bool ThreeValuedTermMover::isCPSymbol(const PFSymbol* symbol) const {
+	return (VocabularyUtils::isComparisonPredicate(symbol)) || (_cpsymbols.find(symbol) != _cpsymbols.end());
+}
+
+Term* ThreeValuedTermMover::visit(FuncTerm* functerm) {
 	// Get the function and its interpretation
 	Function* func = functerm->function();
 	FuncInter* funcinter = _structure->inter(func);
 
-	if(funcinter->approxtwovalued() || (_cpcontext && _istoplevelterm && isCPFunction(func))) {
+	if(funcinter->approxtwovalued() || (_cpsupport && _keepterm && isCPSymbol(func))) {
 		// The function is two-valued or we want to pass it to the constraint solver. Leave as is, just visit its children.
 		for(unsigned int n = 0; n < functerm->subterms().size(); ++n) {
-			_istoplevelterm = false;
 			Term* nterm = functerm->subterms()[n]->accept(this);
 			functerm->subterm(n,nterm);
 		}
 		return functerm;
 	}
-//	else if(_cpcontext && _istoplevelterm && (func->name() == "+/2")) {
-//		for(unsigned int n = 0; functerm->nrSubterms(); ++n) {
-//			if(typeid(*(functerm->subterm(n))) == typeid(FuncTerm*)) {
-//				Functerm* subterm = dynamic_cast<FuncTerm*>(functerm->subterm(n));
-//				if(subterm->func()->name() != "+/2") _istoplevelterm = false;
-//			}
-//			else _istoplevelterm = false;
-//			Term* nterm = functerm->subterm(n)->accept(this);
-//			functerm->arg(n,nterm);
-//		}
-//		functerm->setfvars();
-//		return functerm;
-//	}
 	else {
 		// The function is three-valued. Move it: create a new variable and an equation.
 		Variable* var = new Variable(func->outsort());
@@ -1261,9 +1252,9 @@ Term* ThreeValTermMover::visit(FuncTerm* functerm) {
 	}
 }
 
-Term* ThreeValTermMover::visit(AggTerm* aggterm) {
+Term* ThreeValuedTermMover::visit(AggTerm* aggterm) {
 	bool twovalued = SetUtils::approxTwoValued(aggterm->set(),_structure);
-	if(twovalued || (_cpcontext && _istoplevelterm)) return aggterm;
+	if(twovalued || (_cpsupport && _keepterm)) return aggterm;
 	else {
 		Variable* var = new Variable(aggterm->sort());
 		VarTerm* varterm = new VarTerm(var,TermParseInfo());
@@ -1276,10 +1267,10 @@ Term* ThreeValTermMover::visit(AggTerm* aggterm) {
 	}
 };
 
-Formula* ThreeValTermMover::visit(PredForm* predform) {
+Formula* ThreeValuedTermMover::visit(PredForm* predform) {
 	// Handle built-in predicates
 	string symbname = predform->symbol()->name();
-	if(! _cpcontext) {
+	if(not _cpsupport) {
 		if(symbname == "=/2") {
 			Term* left = predform->subterms()[0];
 			Term* right = predform->subterms()[1];
@@ -1308,7 +1299,7 @@ Formula* ThreeValTermMover::visit(PredForm* predform) {
 			else comp = CT_GT;
 			if(typeid(*left) == typeid(AggTerm)) {
 				AggTerm* aggterm = dynamic_cast<AggTerm*>(left);
-				comp = invertct(comp);
+				comp = invertcomp(comp);
 				AggForm* aggform = new AggForm(predform->sign(),right,comp,aggterm,FormulaParseInfo());
 				delete(predform);
 				return aggform->accept(this);
@@ -1321,12 +1312,16 @@ Formula* ThreeValTermMover::visit(PredForm* predform) {
 			}
 		}
 	}
+
 	// Visit the subterms
+	_keepterm = false;
 	for(unsigned int n = 0; n < predform->subterms().size(); ++n) {
-		_istoplevelterm = (typeid(*(predform->symbol())) == typeid(Predicate) || n == predform->subterms().size()-1);
+		_keepterm += (typeid(*(predform->symbol())) == typeid(Function) && (n == predform->subterms().size()-1));
+		_keepterm += isCPSymbol(predform->symbol());
 		Term* newterm = predform->subterms()[n]->accept(this);
 		predform->subterm(n,newterm);
 	}
+
 	if(_termgraphs.empty()) {	// No rewriting was needed, simply return the given atom
 		return predform;
 	}
@@ -1349,8 +1344,8 @@ Formula* ThreeValTermMover::visit(PredForm* predform) {
 	}
 }
 
-Formula* ThreeValTermMover::visit(AggForm* af) {
-	_istoplevelterm = true;
+Formula* ThreeValuedTermMover::visit(AggForm* af) {
+	_keepterm = true;
 	af->left(af->left()->accept(this));
 	if(_termgraphs.empty()) {	// No rewriting was needed, simply return the given atom
 		return af;
@@ -1468,8 +1463,8 @@ namespace FormulaUtils {
 	 *		If rewriting was needed, pf can be deleted, but not recursively.
 	 *		
 	 */
-	Formula* moveThreeValTerms(Formula* f, AbstractStructure* str, bool poscontext, bool usingcp, const set<const Function*> cpfunctions) {
-		ThreeValTermMover tvtm(str,poscontext,usingcp,cpfunctions);
+	Formula* moveThreeValuedTerms(Formula* f, AbstractStructure* str, bool poscontext, bool cpsupport, const set<const PFSymbol*> cpsymbols) {
+		ThreeValuedTermMover tvtm(str,poscontext,cpsupport,cpsymbols);
 		Formula* rewriting = f->accept(&tvtm);
 		return rewriting;
 	}
@@ -1536,6 +1531,28 @@ namespace TheoryUtils {
 	void remove_nesting(AbstractTheory* t)		{ AllTermMover atm; t->accept(&atm);		}
 	void completion(AbstractTheory* t)			{ Completer c; t->accept(&c);				}
 	int  nrSubformulas(AbstractTheory* t)		{ FormulaCounter c; t->accept(&c); return c.result();	}
+
+	AbstractTheory* merge(AbstractTheory* at1, AbstractTheory* at2) {
+		if(typeid(*at1) != typeid(Theory) || typeid(*at2) != typeid(Theory)) {
+			notyetimplemented("Only merging of normal theories has been implemented...");
+		}
+		//TODO merge vocabularies?
+		if(at1->vocabulary() == at2->vocabulary()) {
+			AbstractTheory* at = at1->clone();
+			Theory* t2 = static_cast<Theory*>(at2);
+			for(vector<Formula*>::const_iterator it = t2->sentences().begin(); it != t2->sentences().end(); ++it) {
+				at->add((*it)->clone());
+			}
+			for(vector<Definition*>::const_iterator it = t2->definitions().begin(); it != t2->definitions().end(); ++it) {
+				at->add((*it)->clone());
+			}
+			for(vector<FixpDef*>::const_iterator it = t2->fixpdefs().begin(); it != t2->fixpdefs().end(); ++it) {
+				at->add((*it)->clone());
+			}
+			return at;
+		}
+		else return NULL;
+	}
 }
 
 /***************

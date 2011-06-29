@@ -70,7 +70,7 @@ class Term {
 		void subterms(const std::vector<Term*>& vt) { _subterms = vt; setfvars();			}
 
 		// Inspectors
-				const TermParseInfo&	pi()					const { return _pi;				}
+				const TermParseInfo&			pi()			const { return _pi;				}
 		virtual	Sort*							sort()			const = 0;	//!< Returns the sort of the term
 				const std::set<Variable*>&		freevars()		const { return _freevars;		}
 				const std::vector<Term*>&		subterms()		const { return _subterms;		}

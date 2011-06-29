@@ -1153,11 +1153,20 @@ namespace FuncUtils {
 		}
 	}
 
-	bool isIntFunc(const Function* func, Vocabulary* voc) {
-		Sort* ints = *(voc->sort("int")->begin());
-		return SortUtils::resolve(func->outsort(),ints,voc) == ints;
+	bool isIntFunc(const Function* func, const Vocabulary* voc) {
+		return SortUtils::resolve(func->outsort(),VocabularyUtils::intsort(),voc) == VocabularyUtils::intsort();
 	}
 
+	bool isIntSum(const Function* function, const Vocabulary* voc) {
+		if(function->name() == "+/2") {
+			bool allintsorts = isIntFunc(function,voc);
+			for(vector<Sort*>::const_iterator it = function->insorts().begin(); it != function->insorts().end(); ++it) {
+				allintsorts *= (SortUtils::resolve(*it,VocabularyUtils::intsort(),voc) == VocabularyUtils::intsort());
+			}
+			return allintsorts;
+		}
+		return false;
+	}
 }
 
 /*****************
@@ -1509,4 +1518,8 @@ namespace VocabularyUtils {
 	Sort* stringsort() { return *(Vocabulary::std()->sort("string")->begin()); }
 	Sort* charsort() { return *(Vocabulary::std()->sort("char")->begin()); }
 
+	bool isComparisonPredicate(const PFSymbol* symbol) {
+		string name = symbol->name();
+		return (typeid(*symbol) == typeid(Predicate)) && (name == "=/2" || name == "</2" || name == ">/2");
+	}
 }

@@ -32,7 +32,7 @@ void usage() {
 		 << "   gidl [options] [filename [filename [...]]]\n\n";
 	cout << "Options:\n";
 	cout << "    -i, --interactive    run in interactive mode\n";
-	cout << "    -e \"<proc>\"        run procedure <proc> after parsing\n"
+	cout << "    -e \"<proc>\"          run procedure <proc> after parsing\n"
 		 << "    -c <name1>=<name2>   substitute <name2> for <name1> in the input\n"
 		 << "    --seed=N             use N as seed for the random generator\n"
 		 << "    -I                   read from stdin\n"
