@@ -8,6 +8,7 @@
 #include <limits>
 #include "options.hpp"
 #include "error.hpp"
+#include <algorithm>
 using namespace std;
 
 bool IntOption::value(int v) {
@@ -46,6 +47,8 @@ class EnumeratedStringOption : public StringOption {
 		}
 };
 
+//TODO code van minisatid 2.3+ gebruiken om dit makkelijker te doen
+
 Options::Options(const string& name, const ParseInfo& pi) : _name(name), _pi(pi) {
 	_booloptions["printtypes"]			= true;
 	_booloptions["usingcp"]				= true;
@@ -53,6 +56,7 @@ Options::Options(const string& name, const ParseInfo& pi) : _name(name), _pi(pi)
 	_booloptions["autocomplete"]		= true;
 	_booloptions["longnames"]			= false;
 	_booloptions["relativepropsteps"]	= true;
+	_booloptions["createtranslation"]	= false;
 
 	_intoptions["satverbosity"]			= new IntOption(0,numeric_limits<int>::max(),0);
 	_intoptions["groundverbosity"]		= new IntOption(0,numeric_limits<int>::max(),0);
@@ -191,19 +195,33 @@ bool Options::relativepropsteps() const {
 	return _booloptions.find("relativepropsteps")->second;
 }
 
+bool Options::writeTranslation() const {
+	return _booloptions.find("createtranslation")->second;
+}
+
+template<class OptionList, class StringList>
+void getStringFromOption(const OptionList& list, StringList& newlist){
+	for(auto it = list.begin(); it != list.end(); ++it) {
+		stringstream ss;
+		ss << it->first << " = " << it->second->value();
+		newlist.push_back(ss.str());
+	}
+}
+
 ostream& Options::put(ostream& output) const {
-	for(map<string,StringOption*>::const_iterator it = _stringoptions.begin(); it != _stringoptions.end(); ++it) {
-		output << it->first << " = " << it->second->value() << endl;
-	}
-	for(map<string,IntOption*>::const_iterator it = _intoptions.begin(); it != _intoptions.end(); ++it) {
-		output << it->first << " = " << it->second->value() << endl;
-	}
-	for(map<string,FloatOption*>::const_iterator it = _floatoptions.begin(); it != _floatoptions.end(); ++it) {
-		output << it->first << " = " << it->second->value() << endl;
-	}
+	vector<string> optionslines;
+	getStringFromOption(_stringoptions, optionslines);
+	getStringFromOption(_intoptions, optionslines);
+	getStringFromOption(_floatoptions, optionslines);
 	for(map<string,bool>::const_iterator it = _booloptions.begin(); it != _booloptions.end(); ++it) {
 		output << it->first << " = " << (it->second ? "true" : "false") << endl;
 	}
+
+	sort(optionslines.begin(), optionslines.end());
+	for(auto i=optionslines.begin(); i<optionslines.end(); ++i){
+		output <<*i <<endl;
+	}
+
 	return output;
 }
 

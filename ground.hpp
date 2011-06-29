@@ -183,6 +183,7 @@ class GroundTranslator {
 		unsigned int	addSymbol(PFSymbol* pfs);
 		int				translateSet(const std::vector<int>&,const std::vector<double>&,const std::vector<double>&);
 
+		bool										isSymbol(int nr)			const	{ return 0<nr && nr<_backsymbtable.size(); }
 		PFSymbol*									symbol(int nr)				const	{ return _backsymbtable[abs(nr)];		}
 		const std::vector<const DomainElement*>&	args(int nr)				const	{ return _backargstable[abs(nr)];		}
 		bool										isTseitin(int l)			const	{ return symbol(l) == 0;				}

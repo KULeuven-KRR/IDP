@@ -55,6 +55,8 @@ class Printer : public TheoryVisitor {
 		void indent();
 		void unindent();
 		void printtab();
+
+		std::stringstream& output() { return _out; }
 };
 
 /******************
@@ -148,10 +150,15 @@ class EcnfPrinter : public Printer {
 	private:
 		int				_currenthead;
 		unsigned int 	_currentdefnr;
+		bool 			writeTranslation_;
 
 		void printAggregate(AggFunction aggtype, TsType arrow, unsigned int defnr, bool lower, int head, unsigned int setnr, double bound);
 
+		bool			writeTranlation() const { return writeTranslation_; }
+
 	public:
+		EcnfPrinter(bool writetranslation): writeTranslation_(writetranslation){}
+
 		std::string print(const Vocabulary*);
 		std::string print(const AbstractStructure*);
 		std::string print(const Namespace*);
