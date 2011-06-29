@@ -14,6 +14,7 @@
 #include <cassert>
 #include <ostream>
 #include <limits>
+#include <cstdlib>
 
 /**
  * \file structure.hpp
