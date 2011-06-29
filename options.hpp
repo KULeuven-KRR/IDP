@@ -99,6 +99,7 @@ class Options {
 		bool		trace()					const;
 		bool		longnames()				const;
 		bool		relativepropsteps()		const;
+		bool 		writeTranslation() 		const;
 		int			longestbranch()			const;
 
 		std::ostream&	put(std::ostream&)	const;
