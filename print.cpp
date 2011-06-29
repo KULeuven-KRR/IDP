@@ -5,12 +5,20 @@
 ************************************/
 
 #include "print.hpp"
-#include "theory.hpp"
-#include "ecnf.hpp"
+#include <iostream>
+#include <utility>
 #include "vocabulary.hpp"
 #include "structure.hpp"
 #include "term.hpp"
+#include "theory.hpp"
+#include "options.hpp"
 #include "namespace.hpp"
+#include "ecnf.hpp"
+#include "ground.hpp"
+#include "common.hpp"
+
+using namespace std;
+using namespace rel_ops;
 
 /**************
     Printer
@@ -21,454 +29,1000 @@ Printer::Printer() {
 	_indent = 0;
 }
 
-Printer* Printer::create(InfOptions* opts) {
-	switch(opts->_format) {
-		case OF_TXT:
-			return new SimplePrinter();
-		case OF_IDP:
-			return new IDPPrinter(opts->_printtypes);
+Printer* Printer::create(Options* opts) {
+	switch(opts->language()) {
+		case LAN_IDP:
+			return new IDPPrinter(opts->printtypes(),opts->longnames());
+		case LAN_ECNF:
+			return new EcnfPrinter(opts->writeTranslation());
 		default:
 			assert(false);
 	}
 }
 
-string Printer::print(const Vocabulary* v)			{ v->accept(this); return _out.str(); }
 string Printer::print(const AbstractTheory* t)		{ t->accept(this); return _out.str(); }
-string Printer::print(const AbstractStructure* s)	{ s->accept(this); return _out.str(); }
+string Printer::print(const Formula* f)				{ f->accept(this); return _out.str(); }
 
 void Printer::indent() 		{ _indent++; }
 void Printer::unindent()	{ _indent--; }
 void Printer::printtab() {
 	for(unsigned int n = 0; n < _indent; ++n)
-		_out << "  ";
+		output() << "  ";
 }
 
-/*******************
-    SimplePrinter
-*******************/
-
-void SimplePrinter::visit(const Vocabulary* v) {
-	_out << v->to_string();
-}
-
-void SimplePrinter::visit(const AbstractTheory* t) {
-	_out << t->to_string();
-}
-
-void SimplePrinter::visit(const AbstractStructure* s) {
-	_out << s->to_string();
-}
-
-/*****************
-    IDPPrinter
-*****************/
-
-/** Theory **/
+/***************
+    Theories
+***************/
 
 void IDPPrinter::visit(const Theory* t) {
-	for(unsigned int n = 0; n < t->nrSentences(); ++n) {
-		printtab();
-		t->sentence(n)->accept(this);
-		_out << ".\n";
+	for(vector<Formula*>::const_iterator it = t->sentences().begin(); it != t->sentences().end(); ++it) {
+		(*it)->accept(this); output() << ".\n";
 	}
-	for(unsigned int n = 0; n < t->nrDefinitions(); ++n) {
-		t->definition(n)->accept(this);
+	for(vector<Definition*>::const_iterator it = t->definitions().begin(); it != t->definitions().end(); ++it) {
+		(*it)->accept(this);
 	}
-	for(unsigned int n = 0; n < t->nrFixpDefs(); ++n) {
-		t->fixpdef(n)->accept(this);
+	for(vector<FixpDef*>::const_iterator it = t->fixpdefs().begin(); it != t->fixpdefs().end(); ++it) {
+		(*it)->accept(this);
 	}
-}
-
-void IDPPrinter::visit(const GroundTheory* et) {
-	_out << et->to_string();
 }
 
 /** Formulas **/
 
 void IDPPrinter::visit(const PredForm* f) {
-	if(! f->sign())
-		_out << "~";
-#ifndef NDEBUG
-	_out << f->symb()->to_string();
-#else
-	string fullname = f->symb()->name();
-	_out << fullname.substr(0,fullname.find('/'));
-#endif
-	if(f->nrSubterms()) {
-		_out << "(";
-		f->subterm(0)->accept(this);
-		for(unsigned int n = 1; n < f->nrSubterms(); ++n) {
-			_out << ",";
-			f->subterm(n)->accept(this);
+	if(! f->sign())	output() << "~";
+	f->symbol()->put(output(),_longnames);
+	if(!f->subterms().empty()) {
+		output() << "(";
+		f->subterms()[0]->accept(this);
+		for(unsigned int n = 1; n < f->subterms().size(); ++n) {
+			output() << ",";
+			f->subterms()[n]->accept(this);
 		}
-		_out << ")";
+		output() << ")";
 	}
 }
 
 void IDPPrinter::visit(const EqChainForm* f) {
-	if(! f->sign())
-		_out << "~";
-	_out << "(";
-	f->subterm(0)->accept(this);
-	for(unsigned int n = 0; n < f->nrComps(); ++n) {
-		switch(f->comp(n)) {
-			case '=':
-				if(f->compsign(n)) _out << " = ";
-				else _out << " ~= ";
+	if(! f->sign())	output() << "~";
+	output() << "(";
+	f->subterms()[0]->accept(this);
+	for(unsigned int n = 0; n < f->comps().size(); ++n) {
+		switch(f->comps()[n]) {
+			case CT_EQ:
+				output() << " = ";
 				break;
-			case '<':
-				if(f->compsign(n)) _out << " < ";
-				else _out << " >= ";
+			case CT_NEQ:
+				output() << " ~= ";
 				break;
-			case '>':
-				if(f->compsign(n)) _out << " > ";
-				else _out << " =< ";
+			case CT_LEQ:
+				output() << " =< ";
+				break;
+			case CT_GEQ:
+				output() << " >= ";
+				break;
+			case CT_LT:
+				output() << " < ";
+				break;
+			case CT_GT:
+				output() << " > ";
 				break;
 		}
-		f->subterm(n+1)->accept(this);
-		if(! f->conj() && n+1 < f->nrComps()) {
-			_out << " | ";
-			f->subterm(n+1)->accept(this);
+		f->subterms()[n+1]->accept(this);
+		if(! f->conj() && n+1 < f->comps().size()) {
+			output() << " | ";
+			f->subterms()[n+1]->accept(this);
 		}
 	}
-	_out << ")";
+	output() << ")";
 }
 
 void IDPPrinter::visit(const EquivForm* f) {
-	_out << "(";
+	if(! f->sign())	output() << "~";
+	output() << "(";
 	f->left()->accept(this);
-	_out << " <=> ";
+	output() << " <=> ";
 	f->right()->accept(this);
-	_out << ")";
+	output() << ")";
 }
 
 void IDPPrinter::visit(const BoolForm* f) {
-	if(! f->nrSubforms()) {
+	if(f->subformulas().empty()) {
 		if(f->sign() == f->conj())
-			_out << "true";
+			output() << "true";
 		else
-			_out << "false";
-	} else {
-		if(! f->sign())
-			_out << "~";
-		_out << "(";
-		f->subform(0)->accept(this);
-		for(unsigned int n = 1; n < f->nrSubforms(); ++n) {
+			output() << "false";
+	}
+	else {
+		if(! f->sign())	output() << "~";
+		output() << "(";
+		f->subformulas()[0]->accept(this);
+		for(unsigned int n = 1; n < f->subformulas().size(); ++n) {
 			if(f->conj())
-				_out << " & ";
+				output() << " & ";
 			else
-				_out << " | ";
-			f->subform(n)->accept(this);
+				output() << " | ";
+			f->subformulas()[n]->accept(this);
 		}
-		_out << ")";
+		output() << ")";
 	}
 }
 
 void IDPPrinter::visit(const QuantForm* f) {
-	if(! f->sign())
-		_out << "~";
-	_out << "(";
+	if(! f->sign())	output() << "~";
+	output() << "(";
 	if(f->univ())
-		_out << "!";
+		output() << "!";
 	else
-		_out << "?";
-	for(unsigned int n = 0; n < f->nrQvars(); ++n) {
-		_out << " ";
-		_out << f->qvar(n)->name();
-		if(f->qvar(n)->sort())
-			_out << "[" << f->qvar(n)->sort()->name() << "]";
+		output() << "?";
+	for(set<Variable*>::const_iterator it = f->quantvars().begin(); it != f->quantvars().end(); ++it) {
+		output() << " ";
+		output() << (*it)->name();
+		if((*it)->sort())
+			output() << "[" << *((*it)->sort()) << "]";
 	}
-	_out << " : ";
-	f->subform(0)->accept(this);
-	_out << ")";
+	output() << " : ";
+	f->subformulas()[0]->accept(this);
+	output() << ")";
 }
 
 /** Definitions **/
 
 void IDPPrinter::visit(const Rule* r) {
 	printtab();
-	if(r->nrQvars()) {
-		_out << "!";
-		for(unsigned int n = 0; n < r->nrQvars(); ++n) {
-			_out << " " << r->qvar(n)->name();
-			if(r->qvar(n)->sort())
-				_out << "[" << r->qvar(n)->sort()->name() << "]";
+	if(!r->quantvars().empty()) {
+		output() << "!";
+		for(set<Variable*>::const_iterator it = r->quantvars().begin(); it != r->quantvars().end(); ++it) {
+			output() << " " << *(*it);
 		}
-		_out << " : ";
+		output() << " : ";
 	}
 	r->head()->accept(this);
-	_out << " <- ";
+	output() << " <- ";
 	r->body()->accept(this);
-	_out << ".";
+	output() << ".";
 }
 
 void IDPPrinter::visit(const Definition* d) {
 	printtab();
-	_out << "{\n";
+	output() << "{\n";
 	indent();
-	for(unsigned int n = 0; n < d->nrRules(); ++n) {
-		d->rule(n)->accept(this);
-		_out << "\n";
+	for(vector<Rule*>::const_iterator it = d->rules().begin(); it != d->rules().end(); ++it) {
+		(*it)->accept(this);
+		output() << "\n";
 	}
 	unindent();
 	printtab();
-	_out << "}\n";
+	output() << "}\n";
 }
 
 void IDPPrinter::visit(const FixpDef* d) {
 	printtab();
-	_out << (d->lfp() ? "LFD" : "GFD") << " [\n";
+	output() << (d->lfp() ? "LFD" : "GFD") << " [\n";
 	indent();
-	for(unsigned int n = 0; n < d->nrRules(); ++n) {
-		d->rule(n)->accept(this);
-		_out << "\n";
+	for(vector<Rule*>::const_iterator it = d->rules().begin(); it != d->rules().end(); ++it) {
+		(*it)->accept(this);
+		output() << "\n";
 	}
-	for(unsigned int n = 0; n < d->nrDefs(); ++n) {
-		d->def(n)->accept(this);
+	for(vector<FixpDef*>::const_iterator it = d->defs().begin(); it != d->defs().end(); ++it) {
+		(*it)->accept(this);
 	}
 	unindent();
 	printtab();
-	_out << "]\n";
+	output() << "]\n";
 }
 
 /** Terms **/
 
 void IDPPrinter::visit(const VarTerm* t) {
-	_out << t->var()->name();
+	output() << t->var()->name();
 }
 
 void IDPPrinter::visit(const FuncTerm* t) {
-#ifndef NDEBUG
-	_out << t->func()->to_string();
-#else
-	string fullname = t->func()->name();
-	_out << fullname.substr(0,fullname.find('/'));
-#endif
-	if(t->nrSubterms()) {
-		_out << "(";
-		t->arg(0)->accept(this);
-		for(unsigned int n = 1; n < t->nrSubterms(); ++n) {
-			_out << ",";
-			t->arg(n)->accept(this);
+	t->function()->put(output(),_longnames);
+	if(!t->subterms().empty()) {
+		output() << "(";
+		t->subterms()[0]->accept(this);
+		for(unsigned int n = 1; n < t->subterms().size(); ++n) {
+			output() << ",";
+			t->subterms()[n]->accept(this);
 		}
-		_out << ")";
+		output() << ")";
 	}
 }
 
 void IDPPrinter::visit(const DomainTerm* t) {
-	_out << ElementUtil::ElementToString(t->value(),t->type());
+	string str = t->value()->to_string();
+	if(t->sort()) {
+		if(SortUtils::isSubsort(t->sort(),VocabularyUtils::charsort())) {
+			output() << '\'' << str << '\'';
+		}
+		else if(SortUtils::isSubsort(t->sort(),VocabularyUtils::stringsort())) {
+			output() << '\"' << str << '\"';
+		}
+		else {
+			output() << str;
+		}
+	}
+	else output() << '@' << str;
 }
 
 void IDPPrinter::visit(const AggTerm* t) {
-	string AggTypeNames[5] = { "#", "sum", "prod", "min", "max" };
-	_out << AggTypeNames[t->type()];
+	switch(t->function()) {
+		case AGG_CARD: output() << '#'; break;
+		case AGG_SUM: output() << "sum"; break;
+		case AGG_PROD: output() << "prod"; break;
+		case AGG_MIN: output() << "min"; break;
+		case AGG_MAX: output() << "max"; break;
+		default: assert(false);
+	}
 	t->set()->accept(this);
 }
 
 /** Sets **/
 
 void IDPPrinter::visit(const EnumSetExpr* s) {
-	_out << "[ ";
-	if(s->nrSubforms()) {
-		s->subform(0)->accept(this);
-		for(unsigned int n = 1; n < s->nrSubforms(); ++n) {
-			_out << ",";
-			s->subform(n)->accept(this);
+	output() << "[ ";
+	if(!s->subformulas().empty()) {
+		s->subformulas()[0]->accept(this);
+		for(unsigned int n = 1; n < s->subformulas().size(); ++n) {
+			output() << ";";
+			s->subformulas()[n]->accept(this);
 		}
 	}
-	_out << " ]";
+	output() << " ]";
 }
 
 void IDPPrinter::visit(const QuantSetExpr* s) {
-	_out << "{";
-	for(unsigned int n = 0; n < s->nrQvars(); ++n) {
-		_out << " ";
-		_out << s->qvar(n)->name();
-		if(s->firstargsort())
-			_out << "[" << s->qvar(n)->sort()->name() << "]";
+	output() << "{";
+	for(set<Variable*>::const_iterator it = s->quantvars().begin(); it != s->quantvars().end(); ++it) {
+		output() << " ";
+		output() << (*it)->name();
+		if((*it)->sort())
+			output() << "[" << (*it)->sort()->name() << "]";
 	}
-	_out << ": ";
-	s->subform(0)->accept(this);
-	_out << " }";
+	output() << ": ";
+	s->subformulas()[0]->accept(this);
+	output() << ": ";
+	s->subterms()[0]->accept(this);
+	output() << " }";
 }
+
+/****************
+	Grounding
+****************/
+
+const int ID_FOR_UNDEFINED = -1;
+void IDPPrinter::printAtom(int atomnr) {
+	// Make sure there is a translator.
+	assert(_translator);
+	// The sign of the literal is handled on higher level.
+	atomnr = abs(atomnr);
+	// Get the atom's symbol from the translator.
+	PFSymbol* pfs = _translator->symbol(atomnr);
+	if(pfs) {
+		// Print the symbol's name.
+		output() << pfs->name().substr(0,pfs->name().find('/'));
+		// Print the symbol's sorts.
+		if(pfs->nrSorts()) {
+			output() << '[';
+			for(unsigned int n = 0; n < pfs->nrSorts(); ++n) {
+				if(pfs->sort(n)) {
+					output() << pfs->sort(n)->name();
+					if(n != pfs->nrSorts()-1) output() << ',';
+				}
+			}
+			output() << ']';
+		}
+		// Get the atom's arguments for the translator.
+		const vector<const DomainElement*>& args = _translator->args(atomnr);
+		// Print the atom's arguments.
+		if(typeid(*pfs) == typeid(Predicate)) {
+			if(not args.empty()) {
+				output() << "(";
+				for(unsigned int n = 0; n < args.size(); ++n) {
+					output() << args[n]->to_string();
+					if(n != args.size()-1) output() << ",";
+				}
+				output() << ")";
+			}
+		}
+		else {
+			assert(typeid(*pfs) == typeid(Function));
+			if(args.size() > 1) {
+				output() << "(";
+				for(unsigned int n = 0; n < args.size()-1; ++n) {
+					output() << args[n]->to_string();
+					if(n != args.size()-2) output() << ",";
+				}
+				output() << ")";
+			}
+			output() << " = " << args.back()->to_string();
+		}
+	}
+	else {
+		// If there was no symbol, then the atom is a tseitin.
+		assert(! pfs);
+		output() << "tseitin_" << atomnr;
+	}
+}
+
+void IDPPrinter::printTerm(unsigned int termnr) { 
+	// Make sure there is a translator.
+	assert(_termtranslator);
+	// Get information from the term translator.
+	const Function* func = _termtranslator->function(termnr);
+	if(func) {
+		// Print the symbol's name.
+		output() << func->name().substr(0,func->name().find('/'));
+		// Print the symbol's sorts.
+		if(func->nrSorts()) {
+			output() << '[';
+			for(unsigned int n = 0; n < func->nrSorts(); ++n) {
+				if(func->sort(n)) {
+					output() << func->sort(n)->name();
+					if(n != func->nrSorts()-1) output() << ',';
+				}
+			}
+			output() << ']';
+		}
+		// Get the arguments from the translator.
+		const vector<GroundTerm>& args = _termtranslator->args(termnr);
+		// Print the arguments.
+		if(not args.empty()) {
+			output() << "(";
+			for(vector<GroundTerm>::const_iterator gtit = args.begin(); gtit != args.end(); ++gtit) {
+				if((*gtit)._isvarid) {
+					printTerm((*gtit)._varid);
+				} else {
+					output() << (*gtit)._domelement->to_string();
+				}
+				if(*gtit != args.back()){
+					output() << ",";
+				}
+			}
+			output() << ")";
+		}
+	} else {
+		_out << "var_" << termnr;
+//		CPTsBody* cprelation = _termtranslator->cprelation(varid);
+//		CPReification(1,cprelation).accept(this);
+	}
+}
+
+void IDPPrinter::printAggregate(double bound, bool lower, AggFunction aggtype, unsigned int setnr) {
+	output() << bound << (lower ? " =< " : " >= ");
+	switch(aggtype) {
+		case AGG_CARD: 	output() << "card("; break;
+		case AGG_SUM: 	output() << "sum("; break;
+		case AGG_PROD: 	output() << "prod("; break;
+		case AGG_MIN: 	output() << "min("; break;
+		case AGG_MAX: 	output() << "max("; break;
+		default: assert(false);
+	}
+	output() << "set_" << setnr << ")." <<endl;
+}
+
+void EcnfPrinter::printAggregate(AggFunction aggtype, TsType arrow, unsigned int defnr, bool lower, int head, unsigned int setnr, double bound) {
+	switch(aggtype) {
+		case AGG_CARD: 	output() << "Card "; break;
+		case AGG_SUM: 	output() << "Sum "; break;
+		case AGG_PROD: 	output() << "Prod "; break;
+		case AGG_MIN: 	output() << "Min "; break;
+		case AGG_MAX: 	output() << "Max "; break;
+		default: assert(false);
+	}
+	#warning "Replacing implication by equivalence...";
+	switch(arrow) {
+		case TS_EQ: case TS_IMPL: case TS_RIMPL:  // (Reverse) implication is not supported by solver (yet)
+			output() << "C ";
+			break;
+		case TS_RULE: 
+			output() << "<- " << defnr << ' ';
+			break; 
+		default: assert(false);
+	}
+	output() << (lower ? 'G' : 'L') << ' ' << head << ' ' << setnr << ' ' << bound << " 0" <<endl;
+}
+
+void IDPPrinter::visit(const GroundTheory* g) {
+	_translator = g->translator();
+	_termtranslator = g->termtranslator();
+	for(unsigned int n = 0; n < g->nrClauses(); ++n) {
+//TODO visitor for GroundClause?
+		if(g->clause(n).empty()) {
+			output() << "false";
+		}
+		else {
+			for(unsigned int m = 0; m < g->clause(n).size(); ++m) {
+				if(g->clause(n)[m] < 0) output() << '~';
+				printAtom(g->clause(n)[m]);
+				if(m < g->clause(n).size()-1) output() << " | ";
+			}
+		}
+		output() << "." <<endl;
+	}
+	for(unsigned int n = 0; n < g->nrDefinitions(); ++n)
+		g->definition(n)->accept(this);
+	for(unsigned int n = 0; n < g->nrSets(); ++n)
+		g->set(n)->accept(this);
+	for(unsigned int n = 0; n < g->nrAggregates(); ++n)
+		g->aggregate(n)->accept(this);
+	//TODO: repeat above for fixpoint definitions
+	for(unsigned int n = 0; n < g->nrCPReifications(); ++n)
+		g->cpreification(n)->accept(this);
+}
+
+void EcnfPrinter::visit(const GroundTheory* g) {
+	_structure = g->structure();
+	_termtranslator = g->termtranslator();
+	output() << "p ecnf def aggr\n";
+	for(unsigned int n = 0; n < g->nrClauses(); ++n) {
+		for(unsigned int m = 0; m < g->clause(n).size(); ++m){
+			output() << g->clause(n)[m] << ' ';
+		}
+		output() << '0' << endl;
+	}
+	for(unsigned int n = 0; n < g->nrSets(); ++n) //NOTE: Print sets before aggregates!!
+		g->set(n)->accept(this);
+	for(unsigned int n = 0; n < g->nrDefinitions(); ++n) {
+		_currentdefnr = n+1; //NOTE: Ecnf parsers do not like identifiers to be zero.
+		g->definition(n)->accept(this);
+	}
+	for(unsigned int n = 0; n < g->nrAggregates(); ++n)
+		g->aggregate(n)->accept(this);
+	//TODO: repeat above for fixpoint definitions
+
+	for(unsigned int n = 0; n < g->nrCPReifications(); ++n) {
+		g->cpreification(n)->accept(this);
+	}
+
+	if(writeTranlation()){
+		output() <<"=== Atomtranslation ===" << endl;
+		GroundTranslator* translator = g->translator();
+		int atom = 1;
+		while(translator->isSymbol(atom)){
+			if(!translator->isTseitin(atom)){
+				output() << atom <<"|" <<translator->printAtom(atom) <<endl;
+			}
+			atom++;
+		}
+		output() <<"==== ====" <<endl;
+	}
+}
+
+void IDPPrinter::visit(const GroundDefinition* d) {
+	printtab();
+	output() << "{\n";
+	indent();
+	for(GroundDefinition::const_ruleiterator it = d->begin(); it != d->end(); ++it) {
+		printtab();
+		printAtom(it->first);
+		output() << " <- ";
+		(it->second)->accept(this);
+	}
+	unindent();
+	output() << "}\n";
+}
+
+void EcnfPrinter::visit(const GroundDefinition* d) {
+	for(GroundDefinition::const_ruleiterator it = d->begin(); it != d->end(); ++it) {
+		_currenthead = it->first;
+		(it->second)->accept(this);
+	}
+}
+
+void IDPPrinter::visit(const PCGroundRuleBody* b) {
+	char c = (b->type() == RT_CONJ ? '&' : '|');
+	if(! b->empty()) {
+		for(unsigned int n = 0; n < b->size(); ++n) {
+			if(b->literal(n) < 0) output() << '~';
+			printAtom(b->literal(n));
+			if(n != b->size()-1) output() << ' ' << c << ' ';
+		}
+	}
+	else {
+		assert(b->empty());
+		if(b->type() == RT_CONJ)
+			output() << "true";
+		else
+			output() << "false";
+	}
+	output() << ".\n";
+}
+
+void EcnfPrinter::visit(const PCGroundRuleBody* b) {
+	output() << (b->type() == RT_CONJ ? "C " : "D ");
+	output() << "<- " << _currentdefnr << ' ' << _currenthead << ' ';
+	for(unsigned int n = 0; n < b->size(); ++n){
+		output() << b->literal(n) << ' ';
+	}
+	output() << "0\n";
+}
+
+void IDPPrinter::visit(const AggGroundRuleBody* b) {
+	printAggregate(b->bound(),b->lower(),b->aggtype(),b->setnr());
+}
+
+void EcnfPrinter::visit(const AggGroundRuleBody* b) {
+	printAggregate(b->aggtype(),TS_RULE,_currentdefnr,b->lower(),_currenthead,b->setnr(),b->bound());
+}
+
+void IDPPrinter::visit(const GroundAggregate* a) {
+	printAtom(a->head());
+	switch(a->arrow()) {
+		case TS_IMPL: 	output() << " => "; break;
+		case TS_RIMPL: 	output() << " <= "; break;
+		case TS_EQ: 	output() << " <=> "; break;
+		case TS_RULE: default: assert(false);
+	}
+	printAggregate(a->bound(),a->lower(),a->type(),a->setnr());
+}
+
+void EcnfPrinter::visit(const GroundAggregate* a) {
+	assert(a->arrow() != TS_RULE);
+	printAggregate(a->type(),a->arrow(),ID_FOR_UNDEFINED,a->lower(),a->head(),a->setnr(),a->bound());
+}
+
+void IDPPrinter::visit(const GroundSet* s) {
+	output() << "set_" << s->setnr() << " = [ ";
+	for(unsigned int n = 0; n < s->size(); ++n) {
+		if(s->weighted()) output() << '(';
+		printAtom(s->literal(n));
+		if(s->weighted()) output() << ',' << s->weight(n) << ')';
+		if(n < s->size()-1) output() << "; ";
+	}
+	output() << " ]\n";
+}
+
+void EcnfPrinter::visit(const GroundSet* s) {
+	output() << (s->weighted() ? "WSet" : "Set") << ' ' << s->setnr();
+	for(unsigned int n = 0; n < s->size(); ++n) {
+		output() << ' ' << s->literal(n);
+		if(s->weighted()) output() << '=' << s->weight(n);
+	}
+	output() << " 0\n";
+}
+
+void IDPPrinter::visit(const CPReification* cpr) {
+	printAtom(cpr->_head);
+	switch(cpr->_body->type()) {
+		case TS_RULE: 	output() << " <- "; break;
+		case TS_IMPL: 	output() << " => "; break;
+		case TS_RIMPL: 	output() << " <= "; break;
+		case TS_EQ: 	output() << " <=> "; break;
+		default: assert(false);
+	}
+	cpr->_body->left()->accept(this);
+	switch(cpr->_body->comp()) {
+		case CT_EQ:		output() << " = "; break;
+		case CT_NEQ:	output() << " ~= "; break;
+		case CT_LEQ:	output() << " =< "; break;
+		case CT_GEQ:	output() << " >= "; break;
+		case CT_LT:		output() << " < "; break;
+		case CT_GT:		output() << " > "; break;
+		default: assert(false);
+	}
+	CPBound right = cpr->_body->right();
+	if(right._isvarid) printTerm(right._varid);
+	else output() << right._bound;
+	output() << ".\n";
+}
+
+void EcnfPrinter::printCPVariables(vector<unsigned int> varids) {
+	for(vector<unsigned int>::const_iterator it = varids.begin(); it != varids.end(); ++it) {
+		printCPVariable(*it);
+	}
+}
+
+void EcnfPrinter::printCPVariable(unsigned int varid) {
+	if(_printedvarids.find(varid) == _printedvarids.end()) {
+		_printedvarids.insert(varid);
+		SortTable* domain = _termtranslator->domain(varid);
+		if(domain->isRange()) {
+			int minvalue = domain->first()->value()._int;
+			int maxvalue = domain->last()->value()._int;
+			_out << "INTVAR " << varid << ' ' << minvalue << ' ' << maxvalue << ' ';
+		} else {
+			_out << "INTVARDOM " << varid << ' ';
+			for(SortIterator it = domain->sortbegin(); it.hasNext(); ++it) {
+				int value = (*it)->value()._int;
+				_out << value << ' ';
+			}
+		}
+		_out << '0' << endl;
+	}
+}
+
+void EcnfPrinter::printCPReification(string type, int head, unsigned int left, CompType comp, long right) {
+	_out << type << ' ' << head << ' ' << left << ' ' << comp << ' ' << right << " 0" << endl;
+}
+
+void EcnfPrinter::printCPReification(string type, int head, vector<unsigned int> left, CompType comp, long right) {
+	_out << type << ' ' << head << ' ';
+	for(vector<unsigned int>::const_iterator it = left.begin(); it != left.end(); ++it)
+		_out << *it << ' ';
+	_out << comp << ' ' << right << " 0" << endl;
+}
+
+void EcnfPrinter::printCPReification(string type, int head, vector<unsigned int> left, vector<int> weights, CompType comp, long right) {
+	_out << type << ' ' << head << ' ';
+	for(vector<unsigned int>::const_iterator it = left.begin(); it != left.end(); ++it)
+		_out << *it << ' ';
+	_out << " | ";
+	for(vector<int>::const_iterator it = weights.begin(); it != weights.end(); ++it)
+		_out << *it << ' ';
+	_out << comp << ' ' << right << " 0" << endl;
+}
+
+void EcnfPrinter::visit(const CPReification* cpr) {
+	CompType comp = cpr->_body->comp();
+	CPTerm* left = cpr->_body->left();
+	CPBound right = cpr->_body->right();
+	if(typeid(*left) == typeid(CPVarTerm)) {
+		CPVarTerm* term = dynamic_cast<CPVarTerm*>(left);
+		printCPVariable(term->_varid);
+		if(right._isvarid) { // CPBinaryRelVar
+			printCPVariable(right._varid);
+			printCPReification("BINTRT",cpr->_head,term->_varid,comp,right._varid);
+		}
+		else { // CPBinaryRel
+			printCPReification("BINTRI",cpr->_head,term->_varid,comp,right._bound);
+		}
+	}
+	else if(typeid(*left) == typeid(CPSumTerm)) {
+		CPSumTerm* term = dynamic_cast<CPSumTerm*>(left);
+		printCPVariables(term->_varids);
+		if(right._isvarid) { // CPSumWithVar
+			printCPVariable(right._varid);
+			printCPReification("SUMSTRT",cpr->_head,term->_varids,comp,right._varid);
+		}
+		else { // CPSum
+			printCPReification("SUMSTRI",cpr->_head,term->_varids,comp,right._bound);
+		}
+	}
+	else {
+		assert(typeid(*left) == typeid(CPWSumTerm));
+		CPWSumTerm* term = dynamic_cast<CPWSumTerm*>(left);
+		printCPVariables(term->_varids);
+		if(right._isvarid) { // CPSumWeightedWithVar
+			printCPVariable(right._varid);
+			printCPReification("SUMSTSIRT",cpr->_head,term->_varids,term->_weights,comp,right._varid);
+		}
+		else { // CPSumWeighted
+			printCPReification("SUMSTSIRI",cpr->_head,term->_varids,term->_weights,comp,right._bound);
+		}
+	}
+}
+
+void IDPPrinter::visit(const CPSumTerm* cpt) {
+	output() << "sum[ ";
+	for(vector<unsigned int>::const_iterator vit = cpt->_varids.begin(); vit != cpt->_varids.end(); ++vit) {
+		printTerm(*vit);
+		if(*vit != cpt->_varids.back()) output() << "; ";
+	}
+	output() << " ]";
+}
+
+void IDPPrinter::visit(const CPWSumTerm* cpt) {
+	vector<unsigned int>::const_iterator vit;
+	vector<int>::const_iterator wit;
+	output() << "wsum[ ";
+	for(vit = cpt->_varids.begin(), wit = cpt->_weights.begin(); vit != cpt->_varids.end() && wit != cpt->_weights.end(); ++vit, ++wit) {
+		output() << '('; printTerm(*vit); output() << ',' << *wit << ')';
+		if(*vit != cpt->_varids.back()) output() << "; ";
+	}
+	output() << " ]";
+}
+
+void IDPPrinter::visit(const CPVarTerm* cpt) {
+	printTerm(cpt->_varid);
+}
+
 
 /*****************
     Structures
 *****************/
 
-void IDPPrinter::visit(const Structure* s) {
-	_currstructure = s;
-	Vocabulary* v = s->vocabulary();
-//	_out << "#structure " << s->name();
-//	if(s->vocabulary())
-//		_out << " : " << v->name();
-//	_out << " {\n";
-//	indent();
-	for(unsigned int n = 0; n < v->nrNBPreds(); ++n) {
-		_currsymbol = v->nbpred(n);
-		if(_printtypes || _currsymbol->nrSorts() != 1 || _currsymbol != _currsymbol->sort(0)->pred()) {
-			s->inter(v->nbpred(n))->accept(this);
+ostream& IDPPrinter::print(std::ostream& output, SortTable* table) const {
+	SortIterator it = table->sortbegin();
+	output << "{ ";
+	if(it.hasNext()) {
+		output << (*it)->to_string();
+		++it;
+		for(; it.hasNext(); ++it) {
+			output << "; " << (*it)->to_string();
 		}
 	}
-	for(unsigned int n = 0; n < v->nrNBFuncs(); ++n) {
-		_currsymbol = v->nbfunc(n);
-		s->inter(v->nbfunc(n))->accept(this);
-	}
-//	unindent();
-//	_out << "}\n";
+	output << " }";
+	return output;
 }
 
-void IDPPrinter::visit(const SortTable* t) {
-	for(unsigned int n = 0; n < t->size(); ++n) {
-		_out << ElementUtil::ElementToString(t->element(n),t->type());
-		if(n < t->size()-1)
-			_out << ";";
+ostream& IDPPrinter::print(std::ostream& output, const PredTable* table) const {
+	if(table->approxfinite()) {
+		TableIterator kt = table->begin();
+		if(table->arity()) {
+			output << "{ ";
+			if(kt.hasNext()) {
+				ElementTuple tuple = *kt;
+				output << tuple[0]->to_string();
+				for(ElementTuple::const_iterator lt = ++tuple.begin(); lt != tuple.end(); ++lt) {
+					output << ',' << (*lt)->to_string();
+				}
+				++kt;
+				for(; kt.hasNext(); ++kt) {
+					output << "; ";
+					tuple = *kt;
+					output << tuple[0]->to_string();
+					for(ElementTuple::const_iterator lt = ++tuple.begin(); lt != tuple.end(); ++lt) {
+						output << ',' << (*lt)->to_string();
+					}
+				}
+			}
+			output << " }";
+		}
+		else if(kt.hasNext()) output << "true";
+		else output << "false";
+		return output;
 	}
+	else return output << "possibly infinite table";
 }
 
-void IDPPrinter::print(const PredTable* t) {
-	for(unsigned int r = 0; r < t->size(); ++r) {
-		for(unsigned int c = 0; c < t->arity(); ++c) {
-			_out << ElementUtil::ElementToString(t->element(r,c),t->type(c));
-			if(c < t->arity()-1) {
-				if(not(_currsymbol->ispred()) && c == t->arity()-2)
-					_out << "->";
-				else
-					_out << ",";
+ostream& IDPPrinter::printasfunc(std::ostream& output, const PredTable* table) const {
+	if(table->approxfinite()) {
+		TableIterator kt = table->begin();
+		output << "{ ";
+		if(kt.hasNext()) {
+			ElementTuple tuple = *kt;
+			if(tuple.size() > 1) output << tuple[0]->to_string();
+			for(unsigned int n = 1; n < tuple.size() - 1; ++n) {
+				output << ',' << tuple[n]->to_string();
+			}
+			output << "->" << tuple.back()->to_string();
+			++kt;
+			for(; kt.hasNext(); ++kt) {
+				output << "; ";
+				tuple = *kt;
+				if(tuple.size() > 1) output << tuple[0]->to_string();
+				for(unsigned int n = 1; n < tuple.size() - 1; ++n) {
+					output << ',' << tuple[n]->to_string();
+				}
+				output << "->" << tuple.back()->to_string();
 			}
 		}
-		if(r < t->size()-1)
-			_out << "; ";
+		output << " }";
+		return output;
 	}
+	else return output << "possibly infinite table";
 }
 
-void IDPPrinter::printInter(const char* pt1name,const char* pt2name,const PredTable* pt1,const PredTable* pt2) {
-	string fullname = _currsymbol->name();
-	string shortname = fullname.substr(0,fullname.find('/'));
-	printtab();
-	_out << shortname << "<" << pt1name << "> = { ";
-	if(pt1)
-		print(pt1);
-	_out << " }\n";
-	printtab();
-	_out << shortname << "<" << pt2name << "> = { ";
-	if(pt2)
-		print(pt2);
-	_out << " }\n";
+ostream& IDPPrinter::print(std::ostream& output, FuncTable* table) const {
+	vector<SortTable*> vst = table->universe().tables();
+	vst.pop_back();
+	Universe univ(vst);
+	if(univ.approxfinite()) {
+		TableIterator kt = table->begin();
+		if(table->arity() != 0) {
+			output << "{ ";
+			if(kt.hasNext()) {
+				ElementTuple tuple = *kt;
+				output << tuple[0]->to_string();
+				for(unsigned int n = 1; n < tuple.size() - 1; ++n) {
+					output << ',' << tuple[n]->to_string();
+				}
+				output << "->" << tuple.back()->to_string();
+				++kt;
+				for(; kt.hasNext(); ++kt) {
+					output << "; ";
+					tuple = *kt;
+					output << tuple[0]->to_string();
+					for(unsigned int n = 1; n < tuple.size() - 1; ++n) {
+						output << ',' << tuple[n]->to_string();
+					}
+					output << "->" << tuple.back()->to_string();
+				}
+			}
+			output << " }";
+		}
+		else if(kt.hasNext()) output << (*kt)[0]->to_string();
+		else output << "{ }";
+		return output;
+	}
+	else return output << "possibly infinite table";
 }
 
-void IDPPrinter::visit(const PredInter* p) {
-	string fullname = _currsymbol->name();
-	string shortname = fullname.substr(0,fullname.find('/'));
-	if(_currsymbol->nrSorts() == 0) { // proposition
-		printtab();
-		_out << shortname << " = "; 
-		if(p->ct() != p->ctpf()->empty()) {
-			assert(p->cf() == p->cfpt()->empty());
-			_out << "true";
-		}
-		else if(p->cf() != p->cfpt()->empty()) {
-			assert(p->ct() == p->ctpf()->empty());
-			_out << "false";
-		}
-		else _out << "unknown";
-		_out << "\n";	
-	}
-	else if(!_currsymbol->ispred() && _currsymbol->nrSorts() == 1) { // constant
-		printtab();
-		_out << shortname << " = ";
-		print(p->ctpf());
-		_out << "\n";
-	}
-	else if(p->ctpf() == p->cfpt()) {
-		if(p->ct() && p->cf()) { // impossible
-			assert(false);
-		}
-		else if(p->ct()) { // p = ctpf
-			printtab();
-			_out << shortname << " = { ";
-			print(p->ctpf());
-			_out << " }\n";
-		}
-		else if(p->cf()) { // p[cf] = cfpt and p[u] = comp(cfpt)
-			PredTable* u = StructUtils::complement(p->cfpt(),_currsymbol->sorts(),_currstructure);
-			printInter("cf","u",p->cfpt(),u);
-			delete(u);
-		}
-		else { // p[ct] = {} and p[cf] = {}
-			printInter("ct","cf",NULL,NULL);
-		}
-	}
-	else {
-		if(p->ct() && p->cf()) { // p[ct] = { ctpf } and p[cf] = { cfpt }
-			printInter("ct","cf",p->ctpf(),p->cfpt());
-		}
-		else if(p->ct()) { // p[ct] = { ctpf } and p[u] = { cfpt \ ctpf }
-			PredTable* u = TableUtils::difference(p->cfpt(),p->ctpf());
-			printInter("ct","u",p->ctpf(),u);
-			delete(u);
-		}
-		else if(p->cf()) { // p[cf] = { cfpt } and p[u] = { ctpf \ cfpt }
-			PredTable* u = TableUtils::difference(p->ctpf(),p->cfpt());
-			printInter("cf","u",p->cfpt(),u);
-			delete(u);
-		}
-		else { // p[ct] = {} and p[cf] = {}
-			printInter("ct","cf",NULL,NULL);
-		}
-	}
-}
+string IDPPrinter::print(const AbstractStructure* structure) {
+	stringstream sstr;
+	Vocabulary* voc = structure->vocabulary();
 
-void IDPPrinter::visit(const FuncInter* f) {
-	//TODO Currently, function interpretation is handled as predicate interpretation
-	f->predinter()->accept(this);	
+	for(map<string,set<Sort*> >::const_iterator it = voc->firstsort(); it != voc->lastsort(); ++it) {
+		for(set<Sort*>::const_iterator jt = it->second.begin(); jt != it->second.end(); ++jt) {
+			Sort* s = *jt;
+			if(!s->builtin()) {
+				sstr << *s << " = ";
+				SortTable* st = structure->inter(s);
+				print(sstr,st);
+				sstr << '\n';
+			}
+		}
+	}
+	for(map<string,Predicate*>::const_iterator it = voc->firstpred(); it != voc->lastpred(); ++it) {
+		set<Predicate*> sp = it->second->nonbuiltins();
+		for(set<Predicate*>::iterator jt = sp.begin(); jt != sp.end(); ++jt) {
+			Predicate* p = *jt;
+			if(p->arity() != 1 || p->sorts()[0]->pred() != p) {
+				PredInter* pi = structure->inter(p);
+				if(pi->approxtwovalued()) {
+					sstr << *p << " = ";
+					const PredTable* pt = pi->ct();
+					print(sstr,pt);
+					sstr << '\n';
+				}
+				else {
+					const PredTable* ct = pi->ct();
+					sstr << *p << "<ct> = ";
+					print(sstr,ct);
+					sstr << '\n';
+					const PredTable* cf = pi->cf();
+					sstr << *p << "<cf> = ";
+					print(sstr,cf);
+					sstr << '\n';
+				}
+			}
+		}
+	}
+	for(map<string,Function*>::const_iterator it = voc->firstfunc(); it != voc->lastfunc(); ++it) {
+		set<Function*> sf = it->second->nonbuiltins();
+		for(set<Function*>::iterator jt = sf.begin(); jt != sf.end(); ++jt) {
+			Function* f = *jt;
+			FuncInter* fi = structure->inter(f);
+			if(fi->approxtwovalued()) {
+				FuncTable* ft = fi->functable();
+				sstr << *f << " = ";
+				print(sstr,ft);
+				sstr << '\n';
+			}
+			else {
+				PredInter* pi = fi->graphinter();
+				const PredTable* ct = pi->ct();
+				sstr << *f << "<ct> = ";
+				printasfunc(sstr,ct);
+				sstr << '\n';
+				const PredTable* cf = pi->cf();
+				sstr << *f << "<cf> = ";
+				printasfunc(sstr,cf);
+				sstr << '\n';
+			}
+		}
+	}
+	return sstr.str();
 }
 
 /*******************
     Vocabularies
 *******************/
+string EcnfPrinter::print(const Vocabulary* ) {
+	return "(vocabulary cannot be printed in ecnf)";
+}
 
-void IDPPrinter::visit(const Vocabulary* v) {
-//	_out << "#vocabulary " << v->name() << " {\n";
-//	indent();
-	traverse(v);
-//	unindent();
-//	_out << "}\n";
+string EcnfPrinter::print(const Namespace* ) {
+	return "(namespace cannot be printed in ecnf)";
+}
+
+string EcnfPrinter::print(const AbstractStructure* ) {
+	return "(structure cannot be printed in ecnf)";
+}
+
+string IDPPrinter::print(const Vocabulary* v) {
+	for(map<string,set<Sort*> >::const_iterator it = v->firstsort(); it != v->lastsort(); ++it) {
+		for(set<Sort*>::iterator jt = it->second.begin(); jt != it->second.end(); ++jt) {
+			if(!(*jt)->builtin() || v == Vocabulary::std()) visit(*jt);
+		}
+	}
+	for(map<string,Predicate*>::const_iterator it = v->firstpred(); it != v->lastpred(); ++it) {
+		if(!it->second->builtin() || v == Vocabulary::std()) visit(it->second);
+	}
+	for(map<string,Function*>::const_iterator it = v->firstfunc(); it != v->lastfunc(); ++it) {
+		if(!it->second->builtin() || v == Vocabulary::std()) visit(it->second);
+	}
+	return output().str();
 }
 
 void IDPPrinter::visit(const Sort* s) {
-//	printtab();
-	_out << "type " << s->name();
-	if(s->nrParents() > 0)
-		_out << " isa " << s->parent(0)->name();
-		for(unsigned int n = 1; n < s->nrParents(); ++n)
-			_out << "," << s->parent(n)->name();
-	_out << "\n";
+	printtab();
+	output() << "type " << s->name();
+	if(!(s->parents().empty())) {
+		output() << " isa " << (*(s->parents().begin()))->name();
+		set<Sort*>::const_iterator it = s->parents().begin(); ++it;
+		for(; it != s->parents().end(); ++it)
+			output() << "," << (*it)->name();
+	}
+	output() << "\n";
 }
 
 void IDPPrinter::visit(const Predicate* p) {
-//	printtab();
-	_out << p->name().substr(0,p->name().find('/'));
-	if(p->arity() > 0) {
-		_out << "(" << p->sort(0)->name();
-		for(unsigned int n = 1; n < p->arity(); ++n)
-			_out << "," << p->sort(n)->name();
-		_out << ")";
+	printtab();
+	if(p->overloaded()) {
+		output() << "overloaded predicate " << p->name() << '\n';
 	}
-	_out << "\n";
+	else {
+		output() << p->name().substr(0,p->name().find('/'));
+		if(p->arity() > 0) {
+			output() << "(" << p->sort(0)->name();
+			for(unsigned int n = 1; n < p->arity(); ++n)
+				output() << "," << p->sort(n)->name();
+			output() << ")";
+		}
+		output() << "\n";
+	}
 }
 
 void IDPPrinter::visit(const Function* f) {
-//	printtab();
-	if(f->partial())
-		_out << "partial ";
-	_out << f->name().substr(0,f->name().find('/'));
-	if(f->arity() > 0) {
-		_out << "(" << f->insort(0)->name();
-		for(unsigned int n = 1; n < f->arity(); ++n)
-			_out << "," << f->insort(n)->name();
-		_out << ")";
+	printtab();
+	if(f->overloaded()) {
+		output() << "overloaded function " << f->name() << '\n';
 	}
-	_out << " : " << f->outsort()->name() << "\n";
+	else {
+		if(f->partial())
+			output() << "partial ";
+		output() << f->name().substr(0,f->name().find('/'));
+		if(f->arity() > 0) {
+			output() << "(" << f->insort(0)->name();
+			for(unsigned int n = 1; n < f->arity(); ++n)
+				output() << "," << f->insort(n)->name();
+			output() << ")";
+		}
+		output() << " : " << f->outsort()->name() << "\n";
+	}
 }
 
+/*****************
+	Namespaces
+*****************/
+
+string IDPPrinter::print(const Namespace* ) {
+	return string("not yet implemented");
+}
+
+/*
+void IDPPrinter::visit(const Namespace* s) {
+	for(unsigned int n = 0; n < s->nrVocs(); ++n) {
+		printtab();
+		output() << "#vocabulary " << s->vocabulary(n)->name() << " {\n";
+		indent();
+		s->vocabulary(n)->accept(this);
+		unindent();
+		printtab();
+		output() << "}\n";
+	}
+	for(unsigned int n = 0; n < s->nrTheos(); ++n) {
+		printtab();
+		output() << "#theory " << s->theory(n)->name();
+		output() << " : " << s->theory(n)->vocabulary()->name() << " {\n";
+		indent();
+		s->theory(n)->accept(this);
+		unindent();
+		printtab();
+		output() << "}\n";
+	}
+	for(unsigned int n = 0; n < s->nrStructs(); ++n) {
+		printtab();
+		output() << "#structure " << s->structure(n)->name();
+		output() << " : " << s->structure(n)->vocabulary()->name() << " {\n";
+		indent();
+		s->structure(n)->accept(this);
+		unindent();
+		printtab();
+		output() << "}\n";
+	} 
+	for(unsigned int n = 0; n < s->nrSubs(); ++n) {
+		printtab();
+		output() << "#namespace " << s->subspace(n)->name() << " {\n";
+		indent();
+		s->subspace(n)->accept(this);
+		unindent();
+		printtab();
+		output() << "}\n";
+	}
+	//TODO Print procedures and options?
+}
+*/

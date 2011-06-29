@@ -7,6 +7,10 @@
 #ifndef CLCONST_HPP
 #define CLCONST_HPP
 
+#include <string>
+#include "insert.hpp"
+#include "parse.h"
+
 /************************************************
 	class to represent the different 
 	types of constants set at the command line
@@ -49,12 +53,12 @@ class CharCLConst : public CLConst {
 // Strings
 class StrClConst : public CLConst {
 	private:
-		string	_value;
+		std::string	_value;
 		bool	_cons;
 	public:
-		StrClConst(string s, bool b) : _value(s), _cons(b) { }
-		int execute() const { yylval.str = new string(_value); return _cons ? STRINGCONS : IDENTIFIER;	}
-		string value() const { return _value;	}
+		StrClConst(std::string s, bool b) : _value(s), _cons(b) { }
+		int execute() const { yylval.str = new std::string(_value); return _cons ? STRINGCONS : IDENTIFIER;	}
+		std::string value() const { return _value;	}
 };
 
 #endif

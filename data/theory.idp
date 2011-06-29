@@ -1,0 +1,32 @@
+namespace theory {
+
+	/**
+	 * Push the negations of a given theory T inside until they are in front of atoms
+	 */
+	procedure push_negations(T) {
+		return idp_intern.push_negations(T)
+	}
+
+	/**
+	 * Remove brackets from long conjunctions and disjunctions in theory T
+	 * Merge successive quantifiers in theory T
+	 */
+	procedure flatten(T) {
+		return idp_intern.flatten(T)
+	}
+
+  /**
+   * Merge two theories into one.
+   */
+  procedure merge(T1,T2) {
+    return idp_intern.merge(T1,T2)
+  }
+
+	/**
+	 * Replace in theory T all definitions by their completion
+	 */
+	procedure completion(T) {
+		return idp_intern.completion(T)
+	}
+
+}

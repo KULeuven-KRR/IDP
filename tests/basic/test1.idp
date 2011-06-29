@@ -1,0 +1,54 @@
+vocabulary V {
+	type A
+	type B
+	type C isa A
+	type D contains B
+	P(A)
+	Q(A,B)
+	F(A) : A
+	partial G(A) : B
+	R1 R2 R3
+}
+
+theory T : V {
+	? x : P(x).
+	~( ! x : ! y  : Q(x,y) ).
+	R1 & R2 & R3.
+}
+
+structure S : V {
+	A = {a;b;c}
+	B = {1..10}
+	P<ct> = { a } 
+	P<u> = { b }
+	Q = { a,1; b,2 }
+	F[A:A] = { a->a; b->b; c->c }
+	G[A:B] = { a->1 }
+}
+
+/**
+ * main procedure
+ */
+procedure main() {
+	print(T)
+	internal_inference::push_negations(T)
+	print(T)
+	internal_inference::flatten(T)
+	print(T)
+	print()
+	print(S)
+}
+
+namespace N {
+
+	/**
+	 * A dummy procedure
+	 */
+	procedure A() {
+	}
+
+	procedure B() {
+	}
+
+}
+

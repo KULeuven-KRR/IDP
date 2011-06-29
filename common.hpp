@@ -4,61 +4,45 @@
 	(c) K.U.Leuven
 ************************************/
 
-#ifndef IDP_COMMON_H
-#define IDP_COMMON_H
+#ifndef COMMON_HPP
+#define COMMON_HPP
 
-#include <iostream>
-#include <vector>
 #include <string>
-using namespace std;
-struct compound;
-struct TypedElement;
-union Element;
-class Function;
-enum ElementType { ELINT, ELDOUBLE, ELSTRING, ELCOMPOUND };
+#include <ostream>
+#include <sstream>
+#include <vector>
+#include "commontypes.hpp"
 
-/** Memory management **/
-// The functions below implement shared pointers to strings and compound elements. All user defined strings should be created by a call to one of these functions. Similarly for all compound elements.
-extern string*		IDPointer(char* s);			// return a 'shared' pointer to s;
-extern string*		IDPointer(const string& s);	// return a 'shared' pointer to s;
-extern compound*	CPPointer(TypedElement e);	// return a 'shared' pointer to compound 0(e);
-extern compound*	CPPointer(Element e, ElementType t);	// return a 'shared' pointer to compound 0(e);
-extern compound*	CPPointer(Function* f,const vector<TypedElement>& v);	// return a 'shared' pointer to compound f(v);
+void notyetimplemented(const std::string&);
 
-/** Extreme numbers **/
-extern int MAX_INT;			// maximum integer value
-extern int MIN_INT;			// minimum integer value
-extern double MAX_DOUBLE;	// maximum double value
-extern double MIN_DOUBLE;	// minimum double value
+bool	isInt(double);					//!< true iff the given double is an integer
+bool isInt(const std::string&);		//!< true iff the given string is an integer
+bool isDouble(const std::string&);	//!< true iff the given string is a double
 
-/** Number of characters **/
-extern int nrOfChars();
+template<typename T>
+std::string	toString(T element){
+	std::stringstream ss;
+	ss <<element;
+	return ss.str();
+}
+int			toint(const std::string&);	//!< convert string to int
+double		toDouble(const std::string&);	//!< convert string to double
 
-/** Next tuple **/
-// implements a 'mechanical counter' (or 'carry')
-//		when called, the first element in tuple is incremented by 1
-//		if now, that element is strictly lower than the first element in limits, stop and return true;
-//		else, set the first element to 0 and increase the second element in tuple
-//		if now, that element is strictly lower than the second element in limits, stop and return true;
-//		etc.
-//		if all elements are set to 0, return false.
-//	NOTE: this is useful, e.g., when iterating over all values of a tuple of variables.
-extern bool nexttuple(vector<unsigned int>& tuple, const vector<unsigned int>& limits);
+void	printtabs(std::ostream&,unsigned int tabs);	//!< write a given number of tabs
 
-/** Conversions **/
-extern string	itos(int);				// int to string
-extern string	dtos(double);			// double to string
-extern int		stoi(const string&);	// string to int
-extern double	stod(const string&);	// string to double
+double applyAgg(const AggFunction&,const std::vector<double>& args);	//!< apply an aggregate function to arguments
 
-/** Type checking **/
-extern bool isInt(const string&);
-extern bool isInt(double);
-extern bool isChar(int);
-extern bool isChar(double);
-extern bool isDouble(const string&);
+CompType invertct(CompType ct);
+CompType invertcomp(CompType);	//!< Invert a comparison operator
+CompType negatecomp(CompType);	//!< Negate a comparison operator
 
-/** Return a string of n spaces **/
-extern string tabstring(unsigned int n);
+std::ostream& operator<<(std::ostream&, const AggFunction&);	//!< Put an aggregate type on the given output stream
+std::ostream& operator<<(std::ostream&, const TsType&);		//!< Put a tseitin type on the given output stream
+std::ostream& operator<<(std::ostream&, const CompType&);	//!< Put a comparator type on the given output stream
+
+PosContext swapcontext(PosContext);	//!< Negate a context
+
+std::string* StringPointer(const char* str);			//!< Returns a shared pointer to the given string
+std::string* StringPointer(const std::string& str);	//!< Returns a shared pointer to the given string
 
 #endif

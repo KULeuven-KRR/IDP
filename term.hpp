@@ -7,434 +7,358 @@
 #ifndef TERM_HPP
 #define TERM_HPP
 
-#include "vocabulary.hpp"
-#include "visitor.hpp"
+/**
+ * \file term.hpp
+ *
+ *		This file contains the classes to represent first-order terms and first-order sets
+ */
 
-/*******************************
-	Abstract base class term
-*******************************/
+#include <set>
+#include <vector>
+#include <map>
+#include "parseinfo.hpp"
+#include "commontypes.hpp"
 
+class Sort;
+class Variable;
+class Function;
+class DomainElement;
+class TheoryVisitor;
+class TheoryMutatingVisitor;
+
+/************
+	Terms
+************/
+
+class VarTerm;
+
+/**
+ * Abstract class to represent terms
+ */
 class Term {
+	private:
+
+		std::set<Variable*>		_freevars;		//!< the set of free variables of the term
+		std::vector<Term*>		_subterms;		//!< the subterms of the term
+		std::vector<SetExpr*>	_subsets;		//!< the subsets of the term
+
+		virtual	void	setfvars();		//!< Compute the free variables of the term
 
 	protected:
-
-		vector<Variable*>	_fvars;	// Free variables of the term
-		ParseInfo			_pi;	// the place where the term was parsed
+		TermParseInfo			_pi;			//!< the place where the term was parsed
 
 	public:
 
 		// Constructors
-		Term(const ParseInfo& pi) : _pi(pi) { }
+		Term(const TermParseInfo& pi) : _pi(pi) { }
 
-		// Virtual constructors
-		virtual Term* clone()									const = 0;	// create a copy of the term while keeping the free variables
-		virtual Term* clone(const map<Variable*,Variable*>&)	const = 0;	// create a copy of the term and substitute the
-																			// free variables according to the given map
+		virtual Term* clone()										const = 0;	
+			//!< create a copy of the term while keeping the free variables
+		virtual Term* clone(const std::map<Variable*,Variable*>&)	const = 0;	
+			//!< create a copy of the term and substitute the free variables according to the given map
 
-		// Destructor
-		virtual ~Term() { }
-		virtual void recursiveDelete() = 0;		// Delete a term and its subterms
-
-		// Mutators
-		virtual	void	setfvars();		// Compute the free variables of the term
-		virtual void	sort(Sort*)	{ }	// Set the sort of the term (only does something for VarTerm and DomainTerm)
-
-		// Inspectors
-		virtual	Sort*				sort()						const = 0;	// The sort of the term
-		virtual	unsigned int		nrSubforms()				const = 0;	// number of direct subformulas
-		virtual	unsigned int		nrSubterms()				const = 0;	// number of direct subterms
-		virtual	unsigned int		nrSubsets()					const = 0;	// number of direct subsets
-				unsigned int		nrFvars()					const { return _fvars.size();	}
-		virtual	unsigned int		nrQvars()					const = 0;	// the number of variables quantified by the term
-		virtual	Formula*			subform(unsigned int n)		const = 0;	// the n'th direct subformula
-		virtual	Term*				subterm(unsigned int n)		const = 0;	// the n'th direct subterm
-		virtual	SetExpr*			subset(unsigned int n)		const = 0;	// the n'th direct subset
-		virtual	Variable*			fvar(unsigned int n)		const { return _fvars[n];		}
-		virtual Variable*			qvar(unsigned int n)		const = 0;	// the n'th quantified variable of the term
-				const ParseInfo&	pi()						const { return _pi;				}
-		virtual bool				contains(const Variable*)	const;		// true iff the term contains the variable
-
-		// Visitor
-		virtual void	accept(Visitor*) const		= 0;
-		virtual Term*	accept(MutatingVisitor*)	= 0;
-
-		// Debugging
-		virtual	string	to_string()	const = 0;	
-
-};
-
-
-/*******************************
-	Terms that are variables
-*******************************/
-
-class VarTerm : public Term {
-	
-	private:
-		Variable* _var;	// the variable of the term
-
-	public:
-
-		// Constructors
-		VarTerm(Variable* v, const ParseInfo& pi);
-
-		VarTerm* clone()								const;
-		VarTerm* clone(const map<Variable*,Variable*>&)	const;
-
-		// Destructor
-		void recursiveDelete() { delete(this);	}
+		// Destructors
+		virtual ~Term() { }			//!< Shallow destructor. Does not delete subterms and subsets of the term.
+		void recursiveDelete();		//!< Delete the term, its subterms, and subsets.
 
 		// Mutators
-		void	setfvars();
-		void	sort(Sort* s)	{ _var->sort(s);	}
+		virtual void	sort(Sort*) { }	//!< Set the sort of the term (only does something for VarTerm and DomainTerm)
+
+		void addset(SetExpr* s)						{ _subsets.push_back(s); setfvars();	}
+		void subterm(unsigned int n, Term* t)		{ _subterms[n] = t; setfvars();			}
+		void subset(unsigned int n, SetExpr* s)		{ _subsets[n] = s; setfvars();			}
+		void subterms(const std::vector<Term*>& vt) { _subterms = vt; setfvars();			}
 
 		// Inspectors
-		Sort*			sort()						const	{ return _var->sort();		}
-		Variable*		var()						const	{ return _var;				}
-		unsigned int	nrSubforms()				const	{ return 0;					}
-		unsigned int	nrSubterms()				const	{ return 0;					}
-		unsigned int	nrSubsets()					const	{ return 0;					}
-		unsigned int	nrQvars()					const	{ return 0;					}
-		Formula*		subform(unsigned int)		const	{ assert(false); return 0;	}
-		Term*			subterm(unsigned int)		const	{ assert(false); return 0;	}
-		SetExpr*		subset(unsigned int)		const	{ assert(false); return 0;	}
-		Variable*		qvar(unsigned int)			const	{ assert(false); return 0;	}
-		bool			contains(const Variable* v)	const	{ return _var == v;			}	
+				const TermParseInfo&			pi()			const { return _pi;				}
+		virtual	Sort*							sort()			const = 0;	//!< Returns the sort of the term
+				const std::set<Variable*>&		freevars()		const { return _freevars;		}
+				const std::vector<Term*>&		subterms()		const { return _subterms;		}
+				const std::vector<SetExpr*>&	subsets()		const { return _subsets;		}
+
+		bool	contains(const Variable*)	const;		//!< true iff the term contains the variable
 
 		// Visitor
-		void	accept(Visitor* v) const;
-		Term*	accept(MutatingVisitor* v);
+		virtual void	accept(TheoryVisitor*)			const = 0;
+		virtual Term*	accept(TheoryMutatingVisitor*)  = 0;
 
 		// Output
-		string to_string()	const { return _var->to_string();	}
+		virtual std::ostream&	put(std::ostream&)	const = 0;
+				std::string		to_string()			const;	
 
+	friend class VarTerm;
 };
 
+std::ostream& operator<<(std::ostream&,const Term&);
 
-/***********************************************************************
-	Terms formed by applying a function to a tuple of terms
-	Constants (0-ary function applied to empty tuple)
-***********************************************************************/
-
-class FuncTerm : public Term {
-	
+/**
+ *	\brief Class to represent terms that are variables
+ */
+class VarTerm : public Term {
 	private:
+		Variable*	_var;	//!< the variable of the term
 
-		Function*		_func;		// the function
-		vector<Term*>	_args;		// the arguments of the function
-
-	public:
-
-		// Constructors
-		FuncTerm(Function* f, const vector<Term*>& a, const ParseInfo& pi);
-
-		FuncTerm* clone()									const;
-		FuncTerm* clone(const map<Variable*,Variable*>&)	const;
-
-		// Destructor
-		void recursiveDelete();
-
-		// Mutators
-		void func(Function* f)				{ _func = f;	}
-		void arg(unsigned int n, Term* t)	{ _args[n] = t;	}
-
-		// Inspectors
-		Sort*			sort()					const	{ return _func->outsort();	}
-		Function*		func()					const	{ return _func;				}
-		const vector<Term*>&	args()			const	{ return _args;				}
-		Term*			arg(unsigned int n)		const	{ return _args[n];			}
-		Formula*		subform(unsigned int)	const	{ assert(false); return 0;	}
-		Term*			subterm(unsigned int n)	const	{ return _args[n];			}
-		SetExpr*		subset(unsigned int)	const	{ assert(false); return 0;	}
-		Variable*		qvar(unsigned int)		const	{ assert(false); return 0;	}
-		unsigned int	nrSubforms()			const	{ return 0;					}
-		unsigned int	nrSubterms()			const	{ return _args.size();		}
-		unsigned int	nrSubsets()				const	{ return 0;					}
-		unsigned int	nrQvars()				const	{ return 0;					}
-
-		// Visitor
-		void	accept(Visitor* v) const;
-		Term*	accept(MutatingVisitor* v);
-
-		// Debugging
-		string to_string() const;
-
-};
-
-/**********************
-	Domain constants
-**********************/
-
-class DomainTerm : public Term {
-
-	private:
-		Sort*		_sort;		// The sort of the domain element
-		ElementType	_type;		// Whether the term is an int, double, string, or compound
-		Element		_value;		// The value of the domain element
-		
-
-	public:
-
-		// Constructors
-		DomainTerm(Sort* s, ElementType t, Element v, const ParseInfo& pi) : 
-			Term(pi), _sort(s), _type(t), _value(v) { assert(s); setfvars(); }
-
-		DomainTerm* clone()								const;
-		DomainTerm* clone(const map<Variable*,Variable*>&)	const;
-
-		// Destructor
-		void recursiveDelete();
-
-		// Mutators
-		void	sort(Sort* s)	{ _sort = s;	}
-
-		// Inspectors
-		Sort*			sort()					const { return _sort;				}
-		unsigned int	nrSubforms()			const { return 0;					}
-		unsigned int	nrSubterms()			const { return 0;					}
-		unsigned int	nrSubsets()				const { return 0;					}
-		unsigned int	nrQvars()				const { return 0;					}
-		Formula*		subform(unsigned int)	const { assert(false); return 0;	}
-		Term*			subterm(unsigned int)	const { assert(false); return 0;	}
-		SetExpr*		subset(unsigned int)	const { assert(false); return 0;	}
-		Variable*		qvar(unsigned int)		const { assert(false); return 0;	}
-		Element			value()					const { return _value;				}
-		ElementType		type()					const { return _type;				}
-
-		// Visitor
-		void	accept(Visitor* v) const;
-		Term*	accept(MutatingVisitor* v);
-
-		// Debugging
-		string	to_string()	const;	
-
-};
-
-
-/*****************
-	Aggregates
-*****************/
-
-/** Abstract base class for set expressions **/
-class SetExpr {
-
-	protected:
-		
-		vector<Variable*>	_fvars;	// The free variables of the set expression
-		ParseInfo			_pi;	// the place where the set was parsed
-
-	public:
-
-		// Constructors
-		SetExpr(const ParseInfo& pi) : _pi(pi) { }
-
-		virtual SetExpr* clone()								const = 0;
-		virtual SetExpr* clone(const map<Variable*,Variable*>&)	const = 0;
-
-		// Destructor
-		virtual void recursiveDelete() = 0;	// Delete the set and its subformulas and subterms
-		virtual ~SetExpr() { }
-
-		// Mutators
 		void	setfvars();
 
-		// Inspectors
-				unsigned int	nrFvars()				const { return _fvars.size();	}
-		virtual	unsigned int	nrSubforms()			const = 0;	// Number of direct subformulas of the set
-		virtual	unsigned int	nrSubterms()			const = 0;	// Number of direct subterms of the set
-		virtual	unsigned int	nrQvars()				const = 0;	// Number of variables quantified by the set
-				Variable*		fvar(unsigned int n)	const { return _fvars[n];		}	
-		virtual	Formula*		subform(unsigned int n)	const = 0;	// The n'th direct subformula
-		virtual	Term*			subterm(unsigned int n)	const = 0;	// The n'th direct subterm
-		virtual	Variable*		qvar(unsigned int n)	const = 0;	// The n'th quantified variable
-		virtual	Sort*			firstargsort()			const = 0;	// Sort of the first element in any tuple in the set
+	public:
 
-		// Visitor
-		virtual void		accept(Visitor* v) const = 0;
-		virtual SetExpr*	accept(MutatingVisitor* v) = 0;
+		VarTerm(Variable* v, const TermParseInfo& pi);
 
-		// Debugging
-		virtual string	to_string()	const = 0;
+		VarTerm* clone()										const;
+		VarTerm* clone(const std::map<Variable*,Variable*>&)	const;
+
+		~VarTerm() { }
+
+		void	sort(Sort* s);
+
+		Sort*		sort()	const;
+		Variable*	var()	const	{ return _var;	}
+
+		void	accept(TheoryVisitor*)	const;
+		Term*	accept(TheoryMutatingVisitor*);
+
+		std::ostream&	put(std::ostream&)	const;
 
 };
 
-/** Set expression of the form [ (phi1,w1); ... ; (phin,wn) ] **/
-class EnumSetExpr : public SetExpr {
 
+/**
+ *	\brief Terms formed by applying a function to a tuple of terms.
+ *
+ *	Constants are represented by 0-ary functions applied to empty tuples.
+ *
+ */
+class FuncTerm : public Term {
 	private:
+
+		Function*		_function;		//!< the function
+
+	public:
+
+		FuncTerm(Function* function, const std::vector<Term*>& args, const TermParseInfo& pi);
+
+		FuncTerm* clone()										const;
+		FuncTerm* clone(const std::map<Variable*,Variable*>&)	const;
+
+		~FuncTerm() { }
+
+		void function(Function* f)	{ _function = f;	}
+
+		Sort*						sort()			const;
+		Function*					function()		const	{ return _function;		}
+		const std::vector<Term*>&	args()			const	{ return subterms();	}
+
+		void	accept(TheoryVisitor*)	const;
+		Term*	accept(TheoryMutatingVisitor*);
+
+		std::ostream&	put(std::ostream&)	const;
+
+};
+
+/**
+ *
+ * \brief Class to represent terms that are domain elements
+ *
+ */
+class DomainTerm : public Term {
+	private:
+		Sort*					_sort;		//!< the sort of the domain element
+		const DomainElement*	_value;		//!< the actual domain element
 		
-		vector<Formula*>	_subf;		// the subformulas
-		vector<Term*>		_weights;	// the associated weights
 
 	public:
 
-		// Constructors
-		EnumSetExpr(const vector<Formula*>& s, const vector<Term*>& w, const ParseInfo& pi) : 
-			SetExpr(pi), _subf(s), _weights(w) { setfvars(); }
+		DomainTerm(Sort* sort, const DomainElement* value, const TermParseInfo& pi);
 
-		EnumSetExpr* clone()								const;
-		EnumSetExpr* clone(const map<Variable*,Variable*>&)	const;
+		DomainTerm* clone()										const;
+		DomainTerm* clone(const std::map<Variable*,Variable*>&)	const;
 
-		// Destructor
-		void recursiveDelete();
+		~DomainTerm() { }
 
-		// Mutators
-		void	subf(unsigned int n, Formula* f)	{ _subf[n] = f;		}
-		void	weight(unsigned int n, Term* t)		{ _weights[n] = t;	}
+		void	sort(Sort* s)	{ _sort = s;	}
 
-		// Inspectors
-		unsigned int	nrSubforms()			const	{ return _subf.size();		}	
-		unsigned int	nrSubterms()			const	{ return _weights.size();	}
-		unsigned int	nrQvars()				const	{ return 0;					}
-		Formula*		subform(unsigned int n)	const	{ return _subf[n];			}
-		Term*			subterm(unsigned int n)	const	{ return _weights[n];		}
-		Variable*		qvar(unsigned int)		const	{ assert(false); return 0;	}
-		Sort*			firstargsort()			const;
+		Sort*					sort()		const { return _sort;	}
+		const DomainElement*	value()		const { return _value;	}
 
-		// Visitor
-		void		accept(Visitor* v) const;
-		SetExpr*	accept(MutatingVisitor* v);
+		void	accept(TheoryVisitor*)	const;
+		Term*	accept(TheoryMutatingVisitor*);
 
-		// Debugging
-		string	to_string()	const;	
+		std::ostream&	put(std::ostream&)	const;	
 
 };
 
-/** Set expression of the form { x1 ... xn : phi } **/
-class QuantSetExpr : public SetExpr {
-
-	private:
-
-		Formula*			_subf;	// the direct subformula
-		vector<Variable*>	_vars;	// the quantified variables
-
-	public:
-
-		// Constructors
-		QuantSetExpr(const vector<Variable*>& v, Formula* s, const ParseInfo& pi) : 
-			SetExpr(pi), _subf(s), _vars(v) { setfvars(); }
-
-		QuantSetExpr* clone()									const;
-		QuantSetExpr* clone(const map<Variable*,Variable*>&)	const;
-
-		// Destructor
-		void recursiveDelete();
-
-		// Mutators
-		void	subf(Formula* f)	{ _subf = f;	}
-
-		// Inspectors
-		unsigned int	nrSubforms()			const	{ return 1;					}	
-		unsigned int	nrSubterms()			const	{ return 0;					}
-		unsigned int	nrQvars()				const	{ return _vars.size();		}
-		Formula*		subform(unsigned int)	const	{ return _subf;				}
-		Term*			subterm(unsigned int)	const	{ assert(false); return 0;	}
-		Variable*		qvar(unsigned int n)	const	{ return _vars[n];			}
-		Formula*		subf()					const	{ return _subf;				}
-		Sort*			firstargsort()			const;
-		const vector<Variable*>&	qvars()		const	{ return _vars;				}
-
-		// Visitor
-		void		accept(Visitor* v) const;
-		SetExpr*	accept(MutatingVisitor* v);
-
-		// Debugging
-		string	to_string()	const;	
-
-};
-
-class AbstractStructure;
-namespace SetUtils {
-	bool isTwoValued(SetExpr*,AbstractStructure*);
-}
-
-/** Aggregate types **/
-enum AggType { AGGCARD, AGGSUM, AGGPROD, AGGMIN, AGGMAX };
-
-namespace AggUtils {
-	double compute(AggType,const vector<double>&);	// apply the aggregate on the given set of doubles 
-}
-
-/** Aggregate term **/
+/**
+ *
+ *	\brief Class to represent aggregate terms
+ *
+ */
 class AggTerm : public Term {
 
 	private:
+		AggFunction		_function;	//!< The aggregate function
+
+	public:
+
+		AggTerm(SetExpr* set, AggFunction function, const TermParseInfo& pi);
+
+		AggTerm* clone()										const;
+		AggTerm* clone(const std::map<Variable*,Variable*>&)	const;
+
+		~AggTerm() { }
+
+		Sort*		sort()		const;
+		SetExpr*	set()		const	{ return subsets()[0];	}
+		AggFunction	function()	const	{ return _function;		}
+
+		void	accept(TheoryVisitor*)	const;
+		Term*	accept(TheoryMutatingVisitor*);
+
+		std::ostream&	put(std::ostream&)	const;
+
+};
+
+namespace TermUtils {
+	std::vector<Term*> 	makeNewVarTerms(const std::vector<Variable*>&);	//!< Make a vector of fresh variable terms
+}
+
+/**************
+	Queries
+**************/
+
+/**
+ * Class to represent a first-order query
+ */
+class Query {
+	private:
+		std::vector<Variable*>	_variables;		//!< The free variables of the query. The order of the variables is the
+												//!< order in which they were parsed.
+		Formula*				_query;			//!< The actual query.
+		ParseInfo				_pi;			//!< The place where the query was parsed.
+	public:
 		
-		SetExpr*	_set;
-		AggType		_type;
+		// Constructors
+		Query(const std::vector<Variable*>& vars, Formula* q, const ParseInfo& pi) : 
+			_variables(vars), _query(q), _pi(pi) { }
+
+		// Inspectors
+		Formula*						query()		const	{ return _query;		}
+		const std::vector<Variable*>&	variables()	const	{ return _variables;	}
+		const ParseInfo&				pi()		const	{ return _pi;			}
+};
+
+/**********************
+	Set expressions
+**********************/
+
+/** 
+ *
+ *	\brief Abstract base class for first-order set expressions 
+ *
+ */
+class SetExpr {
+	protected:
+		
+		std::set<Variable*>		_freevars;		//!< The free variables of the set expression
+		std::set<Variable*>		_quantvars;		//!< The quantified variables of the set expression
+		std::vector<Formula*>	_subformulas;	//!< The direct subformulas of the set expression
+		std::vector<Term*>		_subterms;		//!< The direct subterms of the set expression
+		SetParseInfo			_pi;			//!< the place where the set was parsed
+
+		void	setfvars();	//!< Compute the free variables of the set
 
 	public:
 
 		// Constructors
-		AggTerm(SetExpr* s, AggType t, const ParseInfo& pi) : 
-			Term(pi), _set(s), _type(t) { setfvars(); }
+		SetExpr(const SetParseInfo& pi) : _pi(pi) { }
 
-		AggTerm* clone()								const;
-		AggTerm* clone(const map<Variable*,Variable*>&)	const;
+		virtual SetExpr* clone()										const = 0;
+			//!< create a copy of the set while keeping the free variables
+		virtual SetExpr* clone(const std::map<Variable*,Variable*>&)	const = 0;
+			//!< create a copy of the set and substitute the free variables according to the given map
 
-		// Destructor
-		void recursiveDelete() { _set->recursiveDelete(); delete(this);	}
+		// Destructors
+		virtual ~SetExpr() { }		//!< Delete the set, but not 
+		void	recursiveDelete();	//!< Delete the set and its subformulas and subterms
 
 		// Mutators
-		void	set(SetExpr* s) { _set = s;	}
-
+		void subterm(unsigned int n, Term* t)		{ _subterms[n] = t; setfvars();				}
+		void subformula(unsigned int n, Formula* f)	{ _subformulas[n] = f; setfvars();			}
+		void addterm(Term* t)						{ _subterms.push_back(t); setfvars();		}
+		void addformula(Formula* f)					{ _subformulas.push_back(f); setfvars();	}
+		
 		// Inspectors
-		Sort*			sort()					const;
-		unsigned int	nrSubforms()			const	{ return _set->nrSubforms();	}
-		unsigned int	nrSubterms()			const	{ return _set->nrSubterms();	}
-		unsigned int	nrQvars()				const	{ return _set->nrQvars();		}
-		unsigned int	nrSubsets()				const	{ return 1;						}
-		Formula*		subform(unsigned int n)	const	{ return _set->subform(n);		}
-		Term*			subterm(unsigned int n)	const	{ return _set->subterm(n);		}
-		SetExpr*		subset(unsigned int)	const	{ return _set;					}
-		Variable*		qvar(unsigned int n)	const	{ return _set->qvar(n);			}
-		SetExpr*		set()					const	{ return _set;					}
-		AggType			type()					const	{ return _type;					}
+		virtual Sort*							sort()						const = 0;	//!< Returns the sort of the set
+				const std::set<Variable*>&		freevars()					const { return _freevars;	}
+				const std::set<Variable*>&		quantvars()					const { return _quantvars;	}
+				bool							contains(const Variable*)	const;
+				const std::vector<Formula*>&	subformulas()				const { return _subformulas;	}
+				const std::vector<Term*>&		subterms()					const { return _subterms;		}
+				const SetParseInfo&				pi()						const { return _pi;				}
 
 		// Visitor
-		void	accept(Visitor* v) const;
-		Term*	accept(MutatingVisitor* v);
+		virtual void		accept(TheoryVisitor*)			const = 0;
+		virtual SetExpr*	accept(TheoryMutatingVisitor*)	= 0;
 
-		// Debugging
-		string	to_string()	const;	
+		// Output
+		virtual std::ostream&	put(std::ostream&)	const = 0;
+				std::string		to_string()			const;
 
 };
 
-/***********************
-	Evaluating terms
-***********************/
+std::ostream& operator<<(std::ostream&,const SetExpr&);
 
-class TermEvaluator : public Visitor {
-
-	private:
-		FiniteSortTable*			_returnvalue;
-		AbstractStructure*			_structure;
-		map<Variable*,TypedElement>	_varmapping;
+/** 
+ *	\brief Set expression of the form [ (phi_1,w_1); ... ; (phi_n,w_n) ] 
+ */
+class EnumSetExpr : public SetExpr {
 
 	public:
-		TermEvaluator(AbstractStructure* s,const map<Variable*,TypedElement> m);
-		TermEvaluator(Term* t,AbstractStructure* s,const map<Variable*,TypedElement> m);
+		// Constructors
+		EnumSetExpr(const SetParseInfo& pi) : SetExpr(pi) { }
+		EnumSetExpr(const std::vector<Formula*>& s, const std::vector<Term*>& w, const SetParseInfo& pi);
+			
 
-		FiniteSortTable* returnvalue()	{ return _returnvalue;	}
+		EnumSetExpr* clone()										const;
+		EnumSetExpr* clone(const std::map<Variable*,Variable*>&)	const;
 
-		void visit(const VarTerm* vt);
-		void visit(const FuncTerm* ft);
-		void visit(const DomainTerm* dt);
-		void visit(const AggTerm* at);
-		
+		~EnumSetExpr() { }
+
+		Sort*	sort()	const;
+
+		void		accept(TheoryVisitor*)	const;
+		SetExpr*	accept(TheoryMutatingVisitor*);
+
+		std::ostream& put(std::ostream&) const;
 };
 
-namespace TermUtils {
-	// evaluate the given term in the given structure under the given variable mapping
-	//		in case of a three-valued function, this may result in multiple values of the term
-	//		in case of a partial function, the term may have no value
-	//	NOTE: This method works for general terms and structures. Therefore, it is rather slow.
-	//		  Faster methods exist if the structure is two-valued and the term contains no partial functions
-	//	Precondition: all bounded variables in the term range over a finite domain in the given structure
-	//	Precondition: all free variables of the term are interpreted by the given map
-	FiniteSortTable*	evaluate(Term*,AbstractStructure*,const map<Variable*,TypedElement>&);	
+/** 
+ * \brief Set expression of the form { x1 ... xn : t : phi }
+ **/
+class QuantSetExpr : public SetExpr {
+
+	public:
+		QuantSetExpr(const std::set<Variable*>& v, Term* t, Formula* s, const SetParseInfo& pi);
+
+		QuantSetExpr* clone()										const;
+		QuantSetExpr* clone(const std::map<Variable*,Variable*>&)	const;
+
+		~QuantSetExpr() { }
+
+		Sort*	sort()	const;
+
+		void		accept(TheoryVisitor*)	const;
+		SetExpr*	accept(TheoryMutatingVisitor*);
+
+		std::ostream&	put(std::ostream&)	const;	
+};
+
+class AbstractStructure;
+
+namespace SetUtils {
+	bool approxTwoValued(SetExpr*,AbstractStructure*);	
+		//!< Returns false if the set expression is not two-valued in the given structure. May return true
+		//!< if the set expression is two-valued in the structure.
+											
 }
-
-
 
 #endif 

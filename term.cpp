@@ -4,33 +4,111 @@
 	(c) K.U.Leuven
 ************************************/
 
-#include "data.hpp"
-#include "namespace.hpp"
-#include "builtin.hpp"
-#include "visitor.hpp"
+#include <sstream>
+#include "vocabulary.hpp"
+#include "structure.hpp"
+#include "term.hpp"
+#include "theory.hpp"
+using namespace std;
 
-extern string itos(int);
-extern string dtos(double);
+/*********************
+	Abstract terms
+*********************/
 
-
-/*******************
-	Constructors
-*******************/
-
-VarTerm::VarTerm(Variable* v, const ParseInfo& pi) : Term(pi), _var(v) {
-	setfvars();
+void Term::setfvars() {
+	_freevars.clear();
+	for(vector<Term*>::const_iterator it = _subterms.begin(); it != _subterms.end(); ++it) {
+		_freevars.insert((*it)->freevars().begin(),(*it)->freevars().end());
+	}
+	for(vector<SetExpr*>::const_iterator it = _subsets.begin(); it != _subsets.end(); ++it) {
+		_freevars.insert((*it)->freevars().begin(),(*it)->freevars().end());
+	}
 }
 
-FuncTerm::FuncTerm(Function* f, const vector<Term*>& a, const ParseInfo& pi) : Term(pi), _func(f), _args(a) { 
-	setfvars();
+void Term::recursiveDelete() {
+	for(vector<Term*>::iterator it = _subterms.begin(); it != _subterms.end(); ++it) {
+		(*it)->recursiveDelete();
+	}
+	for(vector<SetExpr*>::iterator it = _subsets.begin(); it != _subsets.end(); ++it) {
+		(*it)->recursiveDelete();
+	}
+	delete(this);
 }
 
+bool Term::contains(const Variable* v) const {
+	for(set<Variable*>::const_iterator it = _freevars.begin(); it != _freevars.end(); ++it) {
+		if(*it == v) return true;
+	}
+	for(vector<Term*>::const_iterator it = _subterms.begin(); it != _subterms.end(); ++it) {
+		if((*it)->contains(v)) return true;
+	}
+	for(vector<SetExpr*>::const_iterator it = _subsets.begin(); it != _subsets.end(); ++it) {
+		if((*it)->contains(v)) return true;
+	}
+	return false;
+}
 
-/** Cloning while keeping free variables **/
+string Term::to_string() const {
+	stringstream sstr;
+	put(sstr);
+	return sstr.str();
+}
+
+ostream& operator<<(ostream& output, const Term& t) {
+	return t.put(output);
+}
+
+/***************
+	VarTerm
+***************/
+
+void VarTerm::setfvars() {
+	_freevars.clear();
+	_freevars.insert(_var);
+}
+
+void VarTerm::sort(Sort* s) {
+	_var->sort(s);
+}
+
+VarTerm::VarTerm(Variable* v, const TermParseInfo& pi) : Term(pi), _var(v) {
+	setfvars();
+}
 
 VarTerm* VarTerm::clone() const {
-	map<Variable*,Variable*> mvv;
-	return clone(mvv);
+	return new VarTerm(_var,_pi.clone());
+}
+
+VarTerm* VarTerm::clone(const map<Variable*,Variable*>& mvv) const {
+	map<Variable*,Variable*>::const_iterator it = mvv.find(_var);
+	if(it != mvv.end()) return new VarTerm(it->second,_pi);
+	else return new VarTerm(_var,_pi.clone(mvv));
+}
+
+inline Sort* VarTerm::sort() const {
+	return _var->sort();
+}
+
+void VarTerm::accept(TheoryVisitor* v) const {
+	v->visit(this);
+}
+
+Term* VarTerm::accept(TheoryMutatingVisitor* v) {
+	return v->visit(this);
+}
+
+ostream& VarTerm::put(std::ostream& output) const {
+	output << *_var;
+	return output;
+}
+
+/*****************
+	FuncTerm
+*****************/
+
+FuncTerm::FuncTerm(Function* func, const vector<Term*>& args, const TermParseInfo& pi) : 
+	Term(pi), _function(func) { 
+	subterms(args);
 }
 
 FuncTerm* FuncTerm::clone() const {
@@ -38,9 +116,74 @@ FuncTerm* FuncTerm::clone() const {
 	return clone(mvv);
 }
 
+FuncTerm* FuncTerm::clone(const map<Variable*,Variable*>& mvv) const {
+	vector<Term*> newargs;
+	for(vector<Term*>::const_iterator it = subterms().begin(); it != subterms().end(); ++it)
+		newargs.push_back((*it)->clone(mvv));
+	return new FuncTerm(_function,newargs,_pi.clone(mvv));
+}
+
+Sort* FuncTerm::sort() const { 
+	return _function->outsort();
+}
+
+void FuncTerm::accept(TheoryVisitor* v) const {
+	v->visit(this);
+}
+
+Term* FuncTerm::accept(TheoryMutatingVisitor* v) {
+	return v->visit(this);
+}
+
+ostream& FuncTerm::put(ostream& output) const {
+	output << *_function;
+	if(!subterms().empty()) {
+		output << '(' << *subterms()[0];
+		for(unsigned int n = 1; n < subterms().size(); ++n) {
+			output << ',' << *subterms()[n];
+		}
+		output << ')';
+	}
+	return output; 
+}
+
+/*****************
+	DomainTerm
+*****************/
+
+DomainTerm::DomainTerm(Sort* sort, const DomainElement* value, const TermParseInfo& pi) :
+	Term(pi), _sort(sort), _value(value) {
+	
+}
+
 DomainTerm* DomainTerm::clone() const {
-	map<Variable*,Variable*> mvv;
-	return clone(mvv);
+	return new DomainTerm(_sort,_value,_pi.clone());
+}
+
+DomainTerm* DomainTerm::clone(const map<Variable*,Variable*>& mvv) const {
+	return new DomainTerm(_sort,_value,_pi.clone(mvv));
+}
+
+void DomainTerm::accept(TheoryVisitor* v) const {
+	v->visit(this);
+}
+
+Term* DomainTerm::accept(TheoryMutatingVisitor* v) {
+	return v->visit(this);
+}
+
+ostream& DomainTerm::put(ostream& output) const {
+	output << *_value;
+	return output;
+}
+
+/**************
+	AggTerm
+**************/
+
+AggTerm::AggTerm(SetExpr* set, AggFunction function, const TermParseInfo& pi) :
+	Term(pi), _function(function) {
+	addset(set);
 }
 
 AggTerm* AggTerm::clone() const {
@@ -48,9 +191,170 @@ AggTerm* AggTerm::clone() const {
 	return clone(mvv);
 }
 
+AggTerm* AggTerm::clone(const map<Variable*,Variable*>& mvv) const {
+	SetExpr* newset = subsets()[0]->clone(mvv);
+	return new AggTerm(newset,_function,_pi.clone(mvv));
+}
+
+Sort* AggTerm::sort() const {
+	if(_function == AGG_CARD) {
+		return VocabularyUtils::natsort();
+	}
+	else {
+		return set()->sort();
+	}
+}
+
+void AggTerm::accept(TheoryVisitor* v) const {
+	v->visit(this);
+}
+
+Term* AggTerm::accept(TheoryMutatingVisitor* v) {
+	return v->visit(this);
+}
+
+ostream& AggTerm::put(ostream& output) const {
+	switch(_function) {
+		case AGG_CARD:	output << '#'; break;
+		case AGG_SUM:	output << "sum"; break;
+		case AGG_PROD:	output << "prod"; break;
+		case AGG_MIN:	output << "min"; break;
+		case AGG_MAX:	output << "max"; break;
+		default: assert(false);
+	}
+	output << *subsets()[0];
+	return output;
+}
+
+/**************
+	SetExpr
+**************/
+
+void SetExpr::setfvars() {
+	_freevars.clear();
+	for(vector<Formula*>::const_iterator it = _subformulas.begin(); it != _subformulas.end(); ++it) {
+		_freevars.insert((*it)->freevars().begin(),(*it)->freevars().end());
+	}
+	for(vector<Term*>::const_iterator it = _subterms.begin(); it != _subterms.end(); ++it) {
+		_freevars.insert((*it)->freevars().begin(),(*it)->freevars().end());
+	}
+	for(set<Variable*>::const_iterator it = _quantvars.begin(); it != _quantvars.end(); ++it) {
+		_freevars.erase(*it);
+	}
+}
+
+void SetExpr::recursiveDelete() {
+	for(vector<Formula*>::iterator it = _subformulas.begin(); it != _subformulas.end(); ++it) {
+		(*it)->recursiveDelete();
+	}
+	for(vector<Term*>::iterator it = _subterms.begin(); it != _subterms.end(); ++it) {
+		(*it)->recursiveDelete();
+	}
+	for(set<Variable*>::iterator it = _quantvars.begin(); it != _quantvars.end(); ++it) {
+		delete(*it);
+	}
+	delete(this);
+}
+
+bool SetExpr::contains(const Variable* v) const {
+	for(set<Variable*>::const_iterator it = _freevars.begin(); it != _freevars.end(); ++it) {
+		if(*it == v) return true;
+	}
+	for(set<Variable*>::const_iterator it = _quantvars.begin(); it != _quantvars.end(); ++it) {
+		if(*it == v) return true;
+	}
+	for(vector<Term*>::const_iterator it = _subterms.begin(); it != _subterms.end(); ++it) {
+		if((*it)->contains(v)) return true;
+	}
+	for(vector<Formula*>::const_iterator it = _subformulas.begin(); it != _subformulas.end(); ++it) {
+		if((*it)->contains(v)) return true;
+	}
+	return false;
+}
+
+std::string SetExpr::to_string() const {
+	stringstream sstr;
+	put(sstr);
+	return sstr.str();
+}
+
+ostream& operator<<(ostream& output,const SetExpr& set) {
+	return set.put(output);
+}
+
+/******************
+	EnumSetExpr
+******************/
+
+EnumSetExpr::EnumSetExpr(const vector<Formula*>& subforms, const vector<Term*>& weights, const SetParseInfo& pi) :
+	SetExpr(pi) {
+	_subformulas = subforms;
+	_subterms = weights;
+	setfvars();
+}
+
 EnumSetExpr* EnumSetExpr::clone() const {
 	map<Variable*,Variable*> mvv;
 	return clone(mvv);
+}
+
+EnumSetExpr* EnumSetExpr::clone(const map<Variable*,Variable*>& mvv) const {
+	vector<Formula*> newforms;
+	vector<Term*> newweights;
+	for(vector<Formula*>::const_iterator it = _subformulas.begin(); it != _subformulas.end(); ++it) {
+		newforms.push_back((*it)->clone(mvv));
+	}
+	for(vector<Term*>::const_iterator it = _subterms.begin(); it != _subterms.end(); ++it) {
+		newweights.push_back((*it)->clone(mvv));
+	}
+	return new EnumSetExpr(newforms,newweights,_pi.clone(mvv));
+}
+
+Sort* EnumSetExpr::sort() const {
+	Sort* currsort = VocabularyUtils::natsort();
+	for(vector<Term*>::const_iterator it = _subterms.begin(); it != _subterms.end(); ++it) {
+		if((*it)->sort()) currsort = SortUtils::resolve(currsort,(*it)->sort());
+		else return 0;
+	}
+	if(currsort) {
+		if(SortUtils::isSubsort(currsort,VocabularyUtils::natsort())) return VocabularyUtils::natsort();
+		else if(SortUtils::isSubsort(currsort,VocabularyUtils::intsort())) return VocabularyUtils::intsort();
+		else if(SortUtils::isSubsort(currsort,VocabularyUtils::floatsort())) return VocabularyUtils::floatsort();
+		else return 0;
+	}
+	else return 0;
+}
+
+void EnumSetExpr::accept(TheoryVisitor* v) const {
+	v->visit(this);
+}
+
+SetExpr* EnumSetExpr::accept(TheoryMutatingVisitor* v) {
+	return v->visit(this);
+}
+
+ostream& EnumSetExpr::put(ostream& output) const {
+	output << "[ ";
+	if(!_subformulas.empty()) {
+		output << '(' << *_subformulas[0] << ',' << *_subterms[0] << ')';
+		for(unsigned int n = 1; n < _subformulas.size(); ++n) {
+			output << "; (" << *_subformulas[n] << ',' << *_subterms[n] << ')';
+		}
+	}
+	output << " ]";
+	return output;
+}
+
+/*******************
+	QuantSetExpr
+*******************/
+
+QuantSetExpr::QuantSetExpr(const set<Variable*>& qvars, Term* term, Formula* formula, const SetParseInfo& pi) :
+	SetExpr(pi) {
+	_quantvars = qvars;
+	_subterms.push_back(term);
+	_subformulas.push_back(formula);
+	setfvars();
 }
 
 QuantSetExpr* QuantSetExpr::clone() const {
@@ -58,475 +362,75 @@ QuantSetExpr* QuantSetExpr::clone() const {
 	return clone(mvv);
 }
 
-/** Cloning while substituting free variables **/
-
-VarTerm* VarTerm::clone(const map<Variable*,Variable*>& mvv) const {
-	map<Variable*,Variable*>::const_iterator it = mvv.find(_var);
-	if(it != mvv.end()) return new VarTerm(it->second,_pi);
-	else return new VarTerm(_var,_pi);
-}
-
-FuncTerm* FuncTerm::clone(const map<Variable*,Variable*>& mvv) const {
-	vector<Term*> na(_args.size());
-	for(unsigned int n = 0; n < _args.size(); ++n) na[n] = _args[n]->clone(mvv);
-	return new FuncTerm(_func,na,_pi);
-}
-
-DomainTerm* DomainTerm::clone(const map<Variable*,Variable*>&) const {
-	return new DomainTerm(_sort,_type,_value,_pi);
-}
-
-AggTerm* AggTerm::clone(const map<Variable*,Variable*>& mvv) const {
-	SetExpr* ns = _set->clone(mvv);
-	return new AggTerm(ns,_type,_pi);
-}
-
-EnumSetExpr* EnumSetExpr::clone(const map<Variable*,Variable*>& mvv) const {
-	vector<Formula*> nf(_subf.size());
-	vector<Term*> nt(_weights.size());
-	for(unsigned int n = 0; n < _subf.size(); ++n) nf[n] = _subf[n]->clone(mvv);
-	for(unsigned int n = 0; n < _weights.size(); ++n) nt[n] = _weights[n]->clone(mvv);
-	return new EnumSetExpr(nf,nt,_pi);
-}
-
 QuantSetExpr* QuantSetExpr::clone(const map<Variable*,Variable*>& mvv) const {
-	vector<Variable*> nv(_vars.size());
+	set<Variable*> newvars;
 	map<Variable*,Variable*> nmvv = mvv;
-	for(unsigned int n = 0; n < _vars.size(); ++n) {
-		nv[n] = new Variable(_vars[n]->name(),_vars[n]->sort(),_vars[n]->pi());
-		nmvv[_vars[n]] = nv[n];
+	for(set<Variable*>::const_iterator it = _quantvars.begin(); it != _quantvars.end(); ++it) {
+		Variable* nv = new Variable((*it)->name(),(*it)->sort(),(*it)->pi());
+		newvars.insert(nv);
+		nmvv[*it] = nv;
 	}
-	Formula* nf = _subf->clone(nmvv);
-	return new QuantSetExpr(nv,nf,_pi);
+	Term* newterm = _subterms[0]->clone(nmvv);
+	Formula* nf = _subformulas[0]->clone(nmvv);
+	return new QuantSetExpr(newvars,newterm,nf,_pi.clone(mvv));
 }
 
-/******************
-	Destructors
-******************/
-
-void FuncTerm::recursiveDelete() {
-	for(unsigned int n = 0; n < _args.size(); ++n) _args[n]->recursiveDelete();
-	delete(this);
-}
-
-void DomainTerm::recursiveDelete() {
-	delete(this);
-}
-
-void EnumSetExpr::recursiveDelete() {
-	for(unsigned int n = 0; n < _subf.size(); ++n) _subf[n]->recursiveDelete();
-	for(unsigned int n = 0; n < _weights.size(); ++n) _weights[n]->recursiveDelete();
-	delete(this);
-}
-
-void QuantSetExpr::recursiveDelete() {
-	_subf->recursiveDelete();
-	for(unsigned int n = 0; n < _vars.size(); ++n) delete(_vars[n]);
-	delete(this);
-}
-
-/*******************************
-	Computing free variables
-*******************************/
-
-/** Compute free variables  **/
-
-void Term::setfvars() {
-	_fvars.clear();
-	for(unsigned int n = 0; n < nrSubterms(); ++n) {
-		Term* t = subterm(n);
-		t->setfvars();
-		for(unsigned int m = 0; m < t->nrFvars(); ++m) { 
-			unsigned int k = 0;
-			for(; k < nrQvars(); ++k) {
-				if(qvar(k) == t->fvar(m)) break;
-			}
-			if(k == nrQvars()) _fvars.push_back(t->fvar(m));
-		}
+Sort* QuantSetExpr::sort() const {
+	Sort* termsort = (*_subterms.begin())->sort();
+	if(termsort) {
+		if(SortUtils::isSubsort(termsort,VocabularyUtils::natsort())) return VocabularyUtils::natsort();
+		else if(SortUtils::isSubsort(termsort,VocabularyUtils::intsort())) return VocabularyUtils::intsort();
+		else if(SortUtils::isSubsort(termsort,VocabularyUtils::floatsort())) return VocabularyUtils::floatsort();
+		else return 0;
 	}
-	for(unsigned int n = 0; n < nrSubforms(); ++n) {
-		Formula* f = subform(n);
-		f->setfvars();
-		for(unsigned int m = 0; m < f->nrFvars(); ++m) {
-			unsigned int k = 0;
-			for(; k < nrQvars(); ++k) {
-				if(qvar(k) == f->fvar(m)) break;
-			}
-			if(k == nrQvars()) _fvars.push_back(f->fvar(m));
-		}
+	else return 0;
+}
+
+void QuantSetExpr::accept(TheoryVisitor* v) const {
+	v->visit(this);
+}
+
+SetExpr* QuantSetExpr::accept(TheoryMutatingVisitor* v) {
+	return v->visit(this);
+}
+
+ostream& QuantSetExpr::put(ostream& output) const {
+	output << "{";
+	for(set<Variable*>::const_iterator it = _quantvars.begin(); it != _quantvars.end(); ++it) {
+		output << ' ' << *(*it);
 	}
-	for(unsigned int n = 0; n < nrSubsets(); ++n) {
-		SetExpr* s = subset(n);
-		s->setfvars();
-		for(unsigned int m = 0; m < s->nrFvars(); ++m) {
-			unsigned int k = 0;
-			for(; k < nrQvars(); ++k) {
-				if(qvar(k) == s->fvar(m)) break;
-			}
-			if(k == nrQvars()) _fvars.push_back(s->fvar(m));
-		}
-	}
-	VarUtils::sortunique(_fvars);
+	output << " : " << *_subterms[0] << " : ";
+	output << *_subformulas[0] << " }";
+	return output;
 }
 
-void VarTerm::setfvars() {
-	_fvars.clear();
-	_fvars = vector<Variable*>(1,_var);
-}
-
-void SetExpr::setfvars() {
-	_fvars.clear();
-	for(unsigned int n = 0; n < nrSubforms(); ++n) {
-		Formula* f = subform(n);
-		f->setfvars();
-		for(unsigned int m = 0; m < f->nrFvars(); ++m) {
-			unsigned int k = 0;
-			for(; k < nrQvars(); ++k) {
-				if(qvar(k) == f->fvar(m)) break;
-			}
-			if(k == nrQvars()) _fvars.push_back(f->fvar(m));
-		}
-	}
-	VarUtils::sortunique(_fvars);
-}
-
-/************************
-	Sort of aggregates
-************************/
-
-Sort* EnumSetExpr::firstargsort() const {
-	if(_weights.empty()) return 0;
-	else return _weights[0]->sort();
-}
-
-Sort* QuantSetExpr::firstargsort() const {
-	if(_vars.empty()) return 0;
-	else return _vars[0]->sort();
-}
-
-Sort* AggTerm::sort() const {
-	if(_type == AGGCARD) return *(StdBuiltin::instance()->sort("nat")->begin());
-	else return _set->firstargsort();
-}
-
-/***************************
-	Containment checking
-***************************/
-
-bool Term::contains(const Variable* v) const {
-	for(unsigned int n = 0; n < nrQvars(); ++n)
-		if(qvar(n) == v) return true;
-	for(unsigned int n = 0; n < nrSubterms(); ++n)
-		if(subterm(n)->contains(v)) return true;
-	for(unsigned int n = 0; n < nrSubforms(); ++n)
-		if(subform(n)->contains(v)) return true;
-	return false;
-}
-
-
-/****************
-	Debugging
-****************/
-
-string FuncTerm::to_string() const {
-	string s = _func->to_string();
-	if(_args.size()) {
-		s = s + '(' + _args[0]->to_string();
-		for(unsigned int n = 1; n < _args.size(); ++n) {
-			s = s + ',' + _args[n]->to_string();
-		}
-		s = s + ')';
-	}
-	return s;
-}
-
-string DomainTerm::to_string() const {
-	switch(_type) {
-		case ELINT:
-			return itos(_value._int);
-		case ELDOUBLE:
-			return dtos(_value._double);
-		case ELSTRING:
-			return *(_value._string);
-		default:
-			assert(false);
-	}
-	return "";
-}
-
-string EnumSetExpr::to_string() const {
-	string s = "[ ";
-	if(_subf.size()) {
-		s = s + _subf[0]->to_string();
-		for(unsigned int n = 1; n < _subf.size(); ++n) {
-			s = s + ',' + _subf[n]->to_string();
-		}
-	}
-	s = s + " ]";
-	return s;
-}
-
-string QuantSetExpr::to_string() const {
-	string s = "{";
-	for(unsigned int n = 0; n < _vars.size(); ++n) {
-		s = s + ' ' + _vars[n]->to_string();
-		if(_vars[n]->sort()) s = s + '[' + _vars[n]->sort()->name() + ']';
-	}
-	s = s + ": " + _subf->to_string() + " }";
-	return s;
-}
-
-string AggTypeNames[5] = { "#", "sum", "prod", "min", "max" };
-string makestring(const AggType& t) {
-	return AggTypeNames[t];
-}
-
-string AggTerm::to_string() const {
-	string s = makestring(_type) + _set->to_string();
-	return s;
-}
-
-
-/*****************
-	Term utils
-*****************/
-
-class SetEvaluator : public Visitor {
-
-	private:
-		vector<SortTable*>			_truevalues;
-		vector<SortTable*>			_unknvalues;
-		AbstractStructure*			_structure;
-		map<Variable*,TypedElement>	_varmapping;
-
-	public:
-		SetEvaluator(SetExpr* e, AbstractStructure* s, const map<Variable*,TypedElement> m) :
-			Visitor(), _structure(s), _varmapping(m) { e->accept(this);	}
-
-		const vector<SortTable*>& truevalues()	const	{ return _truevalues;	}
-		const vector<SortTable*>& unknvalues()	const	{ return _unknvalues;	}
-
-		void visit(const EnumSetExpr*);
-		void visit(const QuantSetExpr*);
-
-};
-
-void SetEvaluator::visit(const EnumSetExpr* e) {
-	for(unsigned int n = 0; n < e->nrSubforms(); ++n) {
-		TruthValue tv = FormulaUtils::evaluate(e->subform(n),_structure,_varmapping);
-		switch(tv) {
-			case TV_TRUE:
-			{
-				TermEvaluator te(e->subterm(n),_structure,_varmapping);
-				FiniteSortTable* st = te.returnvalue();
-				if(st->empty()) delete(st);
-				else _truevalues.push_back(st);
-				break;
-			}
-			case TV_FALSE:
-				break;
-			case TV_UNKN:
-			{
-				TermEvaluator te(e->subterm(n),_structure,_varmapping);
-				FiniteSortTable* st = te.returnvalue();
-				if(st->empty()) delete(st);
-				else _unknvalues.push_back(st);
-				break;
-			}
-		}
-	}
-}
-
-void SetEvaluator::visit(const QuantSetExpr* e)	{
-	SortTableTupleIterator vti(e->qvars(),_structure);
-	if(!vti.empty()) {
-		for(unsigned int n; n < e->nrQvars(); ++n) {
-			TypedElement te; 
-			te._type = vti.type(n); 
-			_varmapping[e->qvar(n)] = te;
-		}
-		do {
-			for(unsigned int n = 0; n < e->nrQvars(); ++n) 
-				_varmapping[e->qvar(n)]._element = vti.value(n);
-			SortTable* sst = TableUtils::singletonSort(_varmapping[e->qvar(0)]);
-			TruthValue tv = FormulaUtils::evaluate(e->subf(),_structure,_varmapping);
-			switch(tv) {
-				case TV_TRUE:
-					_truevalues.push_back(sst);
-					break;
-				case TV_FALSE:
-					delete(sst);
-					break;
-				case TV_UNKN:
-					_unknvalues.push_back(sst);
-					break;
-			}
-		} while(vti.nextvalue());
-	}
-}
-
-TermEvaluator::TermEvaluator(AbstractStructure* s,const map<Variable*,TypedElement> m) : 
-	Visitor(), _structure(s), _varmapping(m) { }
-TermEvaluator::TermEvaluator(Term* t,AbstractStructure* s,const map<Variable*,TypedElement> m) : 
-	Visitor(), _structure(s), _varmapping(m) { t->accept(this);	}
-
-void TermEvaluator::visit(const VarTerm* vt) {
-	assert(_varmapping.find(vt->var()) != _varmapping.end());
-	_returnvalue = TableUtils::singletonSort(_varmapping[vt->var()]);
-}
-
-void TermEvaluator::visit(const DomainTerm* dt) {
-	_returnvalue = TableUtils::singletonSort(dt->value(),dt->type());
-}
-
-void TermEvaluator::visit(const FuncTerm* ft) {
-	// Calculate the value of the subterms
-	vector<SortTable*> argvalues;
-	for(unsigned int n = 0; n < ft->nrSubterms(); ++n) {
-		ft->subterm(n)->accept(this);
-		if(_returnvalue->empty()) {
-			for(unsigned int m = 0; m < argvalues.size(); ++m) delete(argvalues[m]);
-			return;
-		}
-		else argvalues.push_back(_returnvalue);
-	}
-	// Calculate the value of the function
-	SortTableTupleIterator stti(argvalues);
-	Function* f = ft->func();
-	FuncInter* fi = _structure->inter(f);
-	assert(fi);
-	_returnvalue = new EmptySortTable();
-	if(fi->functable()) {	// Two-valued function
-		FuncTable* fut = fi->functable();
-		ElementType et = fut->type(fut->arity());
-		do {
-			vector<TypedElement> vet(f->arity());
-			for(unsigned int n = 0; n < f->arity(); ++n) { 
-				vet[n]._element = stti.value(n);
-				vet[n]._type = stti.type(n);
-			}
-			Element e = (*fut)[vet];
-			if(ElementUtil::exists(e,et)) {
-				FiniteSortTable* st = _returnvalue->add(e,et);
-				if(st != _returnvalue) { 
-					delete(_returnvalue);	
-					_returnvalue = st;
-				}
-			}
-		} while(stti.nextvalue());
-	}
-	else {	// Three-valued function
-		PredInter* pi = fi->predinter();
-		PredTable* pt = pi->cfpt();
-		vector<bool> vb(pt->arity(),true); vb.back() = false;
-		do {
-			vector<TypedElement> vet(pt->arity());
-			for(unsigned int n = 0; n < f->arity(); ++n) {
-				vet[n]._element = stti.value(n);
-				vet[n]._type = stti.type(n);
-			}
-			PredTable* ppt = TableUtils::project(pt,vet,vb);
-			if(pi->cf()) {
-				PredTable* ippt = StructUtils::complement(ppt,vector<Sort*>(1,f->outsort()),_structure);
-				delete(ppt);
-				ppt = ippt;
-			}
-			assert(ppt->finite());
-			for(unsigned int n = 0; n < ppt->size(); ++n) {
-				FiniteSortTable* st = _returnvalue->add(ppt->element(n,0),ppt->type(0));
-				if(st != _returnvalue) {
-					delete(_returnvalue);
-					_returnvalue = st;
-				}
-			}
-		} while(stti.nextvalue());
-	}
-	_returnvalue->sortunique();
-	for(unsigned int n = 0; n < argvalues.size(); ++n) delete(argvalues[n]);
-}
-
-void TermEvaluator::visit(const AggTerm* at) {
-	SetEvaluator sev(at->set(),_structure,_varmapping);
-	if(at->type() == AGGCARD) {
-		int tv = sev.truevalues().size();
-		int uv = tv + sev.unknvalues().size();
-		_returnvalue = new RanSortTable(tv,uv);
-		return;
-	}
-	else {
-		_returnvalue = new EmptySortTable();
-		SortTableTupleIterator ittrue(sev.truevalues());
-		vector<double> tvs(sev.truevalues().size());
-		assert(!ittrue.empty());
-		do {
-			// compute the value of the true part
-			for(unsigned int n = 0; n < tvs.size(); ++n) 
-				tvs[n] = (ElementUtil::convert(ittrue.value(n),ittrue.type(n),ELDOUBLE))._double;
-			double tv = AggUtils::compute(at->type(),tvs);
-			// choose which unknown values will be treated as true
-			vector<unsigned int> limits(sev.unknvalues().size(),1);
-			vector<unsigned int> tuple(limits.size(),0);
-			do {
-				vector<SortTable*> vst;
-				for(unsigned int n = 0; n < tuple.size(); ++n) {
-					if(tuple[n]) vst.push_back((sev.unknvalues())[n]);
-				}
-				vector<double> uvs(vst.size()+1);
-				uvs[0] = tv;
-				SortTableTupleIterator itunkn(vst);
-				assert(!itunkn.empty());
-				do {
-					for(unsigned int n = 1; n < uvs.size(); ++n) 
-						uvs[n] = (ElementUtil::convert(itunkn.value(n-1),itunkn.type(n-1),ELDOUBLE))._double;
-					double tuv = AggUtils::compute(at->type(),uvs);
-					FiniteSortTable* temp = _returnvalue->add(tuv);
-					if(temp != _returnvalue) {
-						delete(_returnvalue);
-						_returnvalue = temp;
-					}
-				} while(itunkn.nextvalue());
-			} while(nexttuple(tuple,limits));
-		} while(ittrue.nextvalue());
-	}
-	// delete tables
-	for(unsigned int n = 0; n < sev.truevalues().size(); ++n) delete((sev.truevalues())[n]);
-	for(unsigned int n = 0; n < sev.unknvalues().size(); ++n) delete((sev.unknvalues())[n]);
-}
-
-namespace TermUtils {
-	FiniteSortTable* evaluate(Term* t,AbstractStructure* s,const map<Variable*,TypedElement> m) {
-		TermEvaluator te(t,s,m);
-		return te.returnvalue();
-	}
-}
-
-class TwoValChecker : public Visitor {
+class ApproxTwoValChecker : public TheoryVisitor {
 	private:
 		AbstractStructure*	_structure;
 		bool				_returnvalue;
 	public:
-		TwoValChecker(AbstractStructure* str) : _structure(str), _returnvalue(true) { }
+		ApproxTwoValChecker(AbstractStructure* str) : _structure(str), _returnvalue(true) { }
 		bool	returnvalue()	const { return _returnvalue;	}
 		void	visit(const PredForm*);
 		void	visit(const FuncTerm*);
 };
 
-void TwoValChecker::visit(const PredForm* pf) {
-	PredInter* inter = _structure->inter(pf->symb());
-	if(inter->fasttwovalued()) {
-		for(unsigned int n = 0; n < pf->nrSubterms(); ++n) {
-			pf->subterm(n)->accept(this);
+void ApproxTwoValChecker::visit(const PredForm* pf) {
+	PredInter* inter = _structure->inter(pf->symbol());
+	if(inter->approxtwovalued()) {
+		for(vector<Term*>::const_iterator it = pf->subterms().begin(); it != pf->subterms().end(); ++it) {
+			(*it)->accept(this);
 			if(!_returnvalue) return;
 		}
 	}
 	else _returnvalue = false;
 }
 
-void TwoValChecker::visit(const FuncTerm* ft) {
-	FuncInter* inter = _structure->inter(ft->func());
-	if(inter->fasttwovalued()) {
-		for(unsigned int n = 0; n < ft->nrSubterms(); ++n) {
-			ft->subterm(n)->accept(this);
+void ApproxTwoValChecker::visit(const FuncTerm* ft) {
+	FuncInter* inter = _structure->inter(ft->function());
+	if(inter->approxtwovalued()) {
+		for(vector<Term*>::const_iterator it = ft->subterms().begin(); it != ft->subterms().end(); ++it) {
+			(*it)->accept(this);
 			if(!_returnvalue) return;
 		}
 	}
@@ -535,40 +439,21 @@ void TwoValChecker::visit(const FuncTerm* ft) {
 
 namespace SetUtils {
 
-	bool isTwoValued(SetExpr* exp, AbstractStructure* str) {
-		TwoValChecker tvc(str);
+	bool approxTwoValued(SetExpr* exp, AbstractStructure* str) {
+		ApproxTwoValChecker tvc(str);
 		exp->accept(&tvc);
 		return tvc.returnvalue();
 	}
 
 }
 
-namespace AggUtils {
-
-	double compute(AggType agg, const vector<double>& args) {
-		double d;
-		switch(agg) {
-			case AGGCARD:
-				d = double(args.size());
-				break;
-			case AGGSUM:
-				d = 0;
-				for(unsigned int n = 0; n < args.size(); ++n) d += args[n];
-				break;
-			case AGGPROD:
-				d = 1;
-				for(unsigned int n = 0; n < args.size(); ++n) d = d * args[n];
-				break;
-			case AGGMIN:
-				d = MAX_DOUBLE;
-				for(unsigned int n = 0; n < args.size(); ++n) d = (d <= args[n] ? d : args[n]);
-				break;
-			case AGGMAX:
-				d = MIN_DOUBLE;
-				for(unsigned int n = 0; n < args.size(); ++n) d = (d >= args[n] ? d : args[n]);
-				break;
+namespace TermUtils {
+	vector<Term*> makeNewVarTerms(const vector<Variable*>& vars) {
+		vector<Term*> terms;
+		for(vector<Variable*>::const_iterator it = vars.begin(); it != vars.end(); ++it) {
+			terms.push_back(new VarTerm(*it,TermParseInfo()));
 		}
-		return d;
+		return terms;
 	}
-
 }
+

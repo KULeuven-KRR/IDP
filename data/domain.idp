@@ -1,0 +1,9 @@
+namespace domain {
+	
+	/**
+	 * Create a domain containing all integers between First and Last
+	 */
+	procedure range(First,Last) {
+		return idp_intern.range(First,Last)
+	}
+}

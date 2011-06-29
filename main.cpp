@@ -4,55 +4,46 @@
 	(c) K.U.Leuven
 ************************************/
 
-#include "data.hpp"
-#include "insert.hpp"
-#include "builtin.hpp"
-#include "namespace.hpp"
-#include "execute.hpp"
-#include "parse.h"
-#include "error.hpp"
-#include "options.hpp"
-#include "clconst.hpp"
-#include "lua.hpp"
 #include <cstdio>
 #include <iostream>
 #include <cstdlib>
+#include <map>
+#include "clconst.hpp"
+#include "common.hpp"
+#include "error.hpp"
+#include "execute.hpp"
 #include "interactive.hpp"
+using namespace std;
+
+// seed
+int global_seed;
 
 // Parser stuff
-extern int yyparse();
-extern FILE* yyin;
 extern map<string,CLConst*>	clconsts;
 extern void parsestring(const string&);
+extern void parsefile(const string&);
+extern void parsestdin();
 
-// Lua stuff
-extern int idpcall(lua_State*);
-extern int overloadcall(lua_State*);
-
-/** Initialize data structures **/
-void initialize() {
-	BuiltinProcs::initialize();
-	Insert::initialize();
-}
-
-/** Help message **/
+/**
+ * Print help message and stop
+ **/
 void usage() {
 	cout << "Usage:\n"
 		 << "   gidl [options] [filename [filename [...]]]\n\n";
 	cout << "Options:\n";
 	cout << "    -i, --interactive    run in interactive mode\n";
 	cout << "    -e \"<proc>\"          run procedure <proc> after parsing\n"
-		 << "    --statistics         show statistics\n"
-		 << "    --verbose            print additional information\n"
 		 << "    -c <name1>=<name2>   substitute <name2> for <name1> in the input\n"
+		 << "    --seed=N             use N as seed for the random generator\n"
 		 << "    -I                   read from stdin\n"
-		 << "    -W                   suppress all warnings\n"
 		 << "    -v, --version        show version number and stop\n"
 		 << "    -h, --help           show this help message\n\n";
 	exit(0);
 }
 
-/** Parse command line constants **/
+/** 
+ * Parse command line constants 
+ **/
 void setclconst(string name1, string name2) {
 	CLConst* c;
 	if(isInt(name2)) 
@@ -69,180 +60,71 @@ void setclconst(string name1, string name2) {
 	clconsts[name1] = c;
 }
 
-/** Parse command line options **/
-vector<string> read_options(int argc, char* argv[]) {
+struct CLOptions {
+	string	_exec;
+	bool	_interactive;
+	bool	_readfromstdin;
+	CLOptions() : _exec(""), _interactive(false), _readfromstdin(false) { }
+};
+
+/** 
+ * Parse command line options 
+ **/
+vector<string> read_options(int argc, char* argv[], CLOptions& cloptions) {
 	vector<string> inputfiles;
 	argc--; argv++;
 	while(argc) {
 		string str(argv[0]);
 		argc--; argv++;
-		if(str == "-e" || str == "--execute")  		{ _cloptions._exec = string(argv[0]); 
-														argc--; argv++;						}
-#ifdef USEINTERACTIVE
-		else if(str == "-i" || str == "--interactive")	{ _cloptions._interactive = true;	}
-#endif
-		else if(str == "--statistics")				{ _cloptions._statistics = true;		}
-		else if(str == "--verbose")					{ _cloptions._verbose = true;			}
-		else if(str == "-c")						{ str = argv[0];
-													  if(argc && (str.find('=') != string::npos)) {
-														  int p = str.find('=');
-														  string name1 = str.substr(0,p);
-														  string name2 = str.substr(p+1,str.size());
-														  setclconst(name1,name2); 
-													  }
-													  else Error::constsetexp();
-													  argc--; argv++;
-													}
-		else if(str == "-I")						{ _cloptions._readfromstdin = true;	}
-		else if(str == "-W")						{ for(unsigned int n = 0; n < _cloptions._warning.size(); ++n)
-														  _cloptions._warning[n] = false;
-													}
-		else if(str == "-v" || str == "--version")	{ cout << "GidL 2.0.1\n"; exit(0);	}
-		else if(str == "-h" || str == "--help")		{ usage(); exit(0);					}
-		else if(str[0] == '-')						{ Error::unknoption(str);			}
-		else										{ inputfiles.push_back(str);		}
+		if(str == "-e" || str == "--execute")			{ cloptions._exec = string(argv[0]); 
+														  argc--; argv++;					}
+		else if(str == "-i" || str == "--interactive")	{ cloptions._interactive = true;	}
+		else if(str == "-c")							{ str = argv[0];
+														  if(argc && (str.find('=') != string::npos)) {
+															  int p = str.find('=');
+															  string name1 = str.substr(0,p);
+															  string name2 = str.substr(p+1,str.size());
+															  setclconst(name1,name2); 
+														  }
+														  else Error::constsetexp();
+														  argc--; argv++;
+														}
+		else if(str.substr(0,7) == "--seed=")			{ global_seed = stoi(str.substr(7,str.size()));	}
+		else if(str == "-I")							{ cloptions._readfromstdin = true;	}
+		else if(str == "-v" || str == "--version")		{ cout << "GidL 2.0.1\n"; exit(0);	}
+		else if(str == "-h" || str == "--help")			{ usage(); exit(0);					}
+		else if(str[0] == '-')							{ Error::unknoption(str);			}
+		else											{ inputfiles.push_back(str);		}
 	}
 	return inputfiles;
 }
 
-/** Parse input files **/
-void parsefile(const string& str) {
-	yylloc.first_line = 1;
-	yylloc.first_column = 1;
-	yyin = fopen(str.c_str(),"r");
-	if(yyin) {
-		Insert::currfile(str);
-		yyparse();
-		fclose(yyin);
-		// TODO: de 'using' vocabularia van de global namespace uitvegen
-		// en er globale variabelen van maken...?
-	}
-	else Error::unknfile(str);
-}
-
+/**
+ * Parse all input files
+ */
 void parse(const vector<string>& inputfiles) {
-	// Parse standard input file
-	stringstream ss;
-	ss <<DATADIR <<"/std/idp_intern.idp";
-	yyin = fopen(ss.str().c_str(),"r");
-	if(yyin==NULL) Error::unknfile(ss.str());
-	else {
-		yyparse();
-		fclose(yyin);
-
-		// Parse files of the user
-		for(unsigned int n = 0; n < inputfiles.size(); ++n) {
-			parsefile(inputfiles[n]);
-		}
-		if(_cloptions._readfromstdin) {
-			yyin = stdin;
-			Insert::currfile(0);
-			yyparse();
-		}
+	for(unsigned int n = 0; n < inputfiles.size(); ++n) {
+		parsefile(inputfiles[n]);
 	}
 }
 
-/** Communication with lua **/
-
-void fillmetatable(lua_State* L, bool index, bool newindex, const string& type) {
-
-	if(index) {
-		lua_getglobal(L,"idp_intern_index");
-		lua_setfield(L,-2,"__index");
-	}
-	if(newindex) {
-		lua_getglobal(L,"idp_intern_newindex");
-		lua_setfield(L,-2,"__newindex");
-	}
-
-	lua_getglobal(L,"idp_intern_delete");
-	lua_setfield(L,-2,"__gc");
-
-	lua_pushstring(L,type.c_str());
-	lua_setfield(L,-2,"idptype");
-}
-
-void createmetatables(lua_State* L) {
-
-	luaL_newmetatable(L,"overloaded");
-	fillmetatable(L,true,true,"overloaded");
-	lua_getglobal(L,"idp_intern_overloadcall");
-	lua_setfield(L,-2,"__call");
-	lua_pop(L,1);
-
-	luaL_newmetatable (L,"theory");
-	fillmetatable(L,false,false,"theory");
-	lua_pop(L,1);
-
-	luaL_newmetatable (L,"structure");
-	fillmetatable(L,true,true,"structure");
-	lua_pop(L,1);
-
-	luaL_newmetatable (L,"namespace");
-	fillmetatable(L,true,false,"namespace");
-	lua_pop(L,1);
-
-	luaL_newmetatable (L,"vocabulary");
-	fillmetatable(L,true,false,"vocabulary");
-	lua_pop(L,1);
-
-	luaL_newmetatable (L,"options");
-	fillmetatable(L,true,true,"options");
-	lua_pop(L,1);
-}
-
-
-lua_State* initLua() {
-		
-	// Create the lua state
-	lua_State* L = lua_open();
-	luaL_openlibs(L);
-
-	// Create the main communication functions
-	lua_pushcfunction(L,&idpcall);
-	lua_setglobal(L,"idp_intern_idpcall");
-	lua_pushcfunction(L,&overloadcall);
-	lua_setglobal(L,"idp_intern_overloadcall");
-	luaL_dostring(L,"idp_intern_index = function(t,k) return idp_intern_idpcall(\"index\",t,k) end");
-	luaL_dostring(L,"idp_intern_delete = function(obj) idp_intern_idpcall(\"delete\",obj) end");
-	luaL_dostring(L,"idp_intern_newindex = function(t,k,v) idp_intern_idpcall(\"newindex\",t,k,v) end");
-
-	// Create metatables for the different userdata
-	createmetatables(L);
-
-	// Overwrite some standard lua procedures
-	stringstream ss;
-	ss << DATADIR << "/std/idp_intern.lua";
-	luaL_dofile(L,ss.str().c_str());
-
-	// Make the objects in the global namespace global variables in lua 
-	Namespace::global()->toLuaGlobal(L);
-
-	return L;
-}
-
-/** Execute a procecure **/
-
-void executeproc(lua_State* L, const string& proc) {
+/** 
+ * Execute a procecure 
+ **/
+void executeproc(const string& proc) {
 	if(proc != "") {
 		string str = "##intern##{"+proc+'}';
 		parsestring(str);
-		LuaProcedure* proc = Insert::currproc();
-		luaL_loadstring(L,(proc->code()).c_str());
-		delete(proc);
-		int res = lua_pcall(L,0,0,0);
-		if(res) {
-			cerr << string(lua_tostring(L,1)) << endl; 
-			lua_pop(L,1);
-		}
 	}
 }
 
-/** Interactive mode **/
-
-void interactive(lua_State* L) {
+/** 
+ * Interactive mode 
+ **/
+void interactive() {
 	cout << "Running GidL in interactive mode.\n"
-		 << "  Type 'exit' to quit.\n\n";
+		 << "  Type 'exit' to quit.\n"
+		 << "  Type 'help()' for help\n\n";
 
 #ifdef USEINTERACTIVE
 	idp_rl_start();
@@ -257,13 +139,6 @@ void interactive(lua_State* L) {
 			else {
 				string str = "##intern##{"+string(userline)+'}';
 				parsestring(str);
-				LuaProcedure* proc = Insert::currproc();
-				luaL_loadstring(L,(proc->code()).c_str());
-				delete(proc);
-				int res = lua_pcall(L,0,0,0);
-				if(res) {
-				cerr << string(lua_tostring(L,1)) << endl;
-				}
 			}
 		}
 		else cout << "\n";
@@ -274,52 +149,36 @@ void interactive(lua_State* L) {
 	while(userline != "exit") {
 		string str = "##intern##{"+userline+'}';
 		parsestring(str);
-		LuaProcedure* proc = Insert::currproc();
-		luaL_loadstring(L,(proc->code()).c_str());
-		delete(proc);
-		int res = lua_pcall(L,0,0,0);
-		if(res) {
-			cerr << string(lua_tostring(L,1)) << endl;
-		}
 		userline = cin.getline();
 	}
 #endif
 }
 
-
-/** Delete all data **/
-void cleanup() {
-	Insert::cleanup();
-	BuiltinProcs::cleanup();
-	delete(Namespace::global());
-	delete(DomainData::instance());
-	for(map<string,CLConst*>::iterator it = clconsts.begin(); it != clconsts.end(); ++it) delete(it->second);
-}
-
-/** Main **/
+/** 
+ * Main 
+ **/
 int main(int argc, char* argv[]) {
 
+	// Make lua connection
+	LuaConnection::makeLuaConnection();
+
 	// Parse idp input
-	initialize();
-	vector<string> inputfiles = read_options(argc,argv);
+	CLOptions cloptions;
+	vector<string> inputfiles = read_options(argc,argv,cloptions);
 	parse(inputfiles);
+	if(cloptions._readfromstdin) parsestdin();
 
 	// Run
 	if(!Error::nr_of_errors()) {
-
-		// Initialize communication with lua
-		lua_State* L = initLua();
-
 		// Execute statements
-		executeproc(L,_cloptions._exec);
-		if(_cloptions._interactive) interactive(L);
-		else if(_cloptions._exec == "") executeproc(L,"idp_intern_main()");
-
-		// End lua communication
-		lua_close(L);
+		executeproc(cloptions._exec);
+		if(cloptions._interactive) interactive();
+		else if(cloptions._exec == "") executeproc("idp_intern.main()");
 	}
 
+	// Close lua communication
+	LuaConnection::closeLuaConnection();
+
 	// Exit
-	cleanup();
 	return Error::nr_of_errors();
 }
