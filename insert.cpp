@@ -437,19 +437,19 @@ string funcName(const longname& name, const vector<Sort*>& vs) {
 
 void NSPair::includePredArity() {
 	assert(_sortsincluded && !_arityincluded); 
-	_name.back() = _name.back() + '/' + itos(_sorts.size());	
+	_name.back() = _name.back() + '/' + toString(_sorts.size());
 	_arityincluded = true;
 }
 
 void NSPair::includeFuncArity() {
 	assert(_sortsincluded && !_arityincluded); 
-	_name.back() = _name.back() + '/' + itos(_sorts.size() - 1);	
+	_name.back() = _name.back() + '/' + toString(_sorts.size() - 1);
 	_arityincluded = true;
 }
 
 void NSPair::includeArity(unsigned int n) {
 	assert(!_arityincluded); 
-	_name.back() = _name.back() + '/' + itos(n);	
+	_name.back() = _name.back() + '/' + toString(n);
 	_arityincluded = true;
 }
 
@@ -1186,7 +1186,7 @@ Sort* Insert::sortpointer(const longname& vs, YYLTYPE l) const {
 
 Predicate* Insert::predpointer(longname& vs, int arity, YYLTYPE l) const {
 	ParseInfo pi = parseinfo(l);
-	vs.back() = vs.back() + '/' + itos(arity);
+	vs.back() = vs.back() + '/' + toString(arity);
 	Predicate* p = predInScope(vs,pi);
 	if(!p) Error::undeclpred(oneName(vs),pi);
 	return p;
@@ -1203,7 +1203,7 @@ Predicate* Insert::predpointer(longname& vs, const vector<Sort*>& va, YYLTYPE l)
 
 Function* Insert::funcpointer(longname& vs, int arity, YYLTYPE l) const {
 	ParseInfo pi = parseinfo(l);
-	vs.back() = vs.back() + '/' + itos(arity);
+	vs.back() = vs.back() + '/' + toString(arity);
 	Function* f = funcInScope(vs,pi);
 	if(!f) Error::undeclfunc(oneName(vs),pi);
 	return f;
@@ -1324,7 +1324,7 @@ Sort* Insert::sort(const string& name, const vector<Sort*> supbs, bool p, YYLTYP
 
 Predicate* Insert::predicate(const string& name, const vector<Sort*>& sorts, YYLTYPE l) const {
 	ParseInfo pi = parseinfo(l);
-	string nar = string(name) + '/' + itos(sorts.size());
+	string nar = string(name) + '/' + toString(sorts.size());
 	for(unsigned int n = 0; n < sorts.size(); ++n) {
 		if(!sorts[n]) return 0;
 	}
@@ -1340,7 +1340,7 @@ Predicate* Insert::predicate(const string& name, YYLTYPE l) const {
 
 Function* Insert::function(const string& name, const vector<Sort*>& insorts, Sort* outsort, YYLTYPE l) const {
 	ParseInfo pi = parseinfo(l);
-	string nar = string(name) + '/' + itos(insorts.size());
+	string nar = string(name) + '/' + toString(insorts.size());
 	for(unsigned int n = 0; n < insorts.size(); ++n) {
 		if(!insorts[n]) return 0;
 	}
@@ -2595,7 +2595,7 @@ void Insert::option(const string& opt, double val,YYLTYPE l) const {
 	ParseInfo pi = parseinfo(l);
 	if(_curroptions->isoption(opt)) {
 		if(_curroptions->setvalue(opt,val)) { } // do nothing
-		else Error::wrongvalue(opt,dtos(val),pi);
+		else Error::wrongvalue(opt,toString(val),pi);
 	}
 	else Error::unknoption(opt,pi);
 }
@@ -2604,7 +2604,7 @@ void Insert::option(const string& opt, int val,YYLTYPE l) const {
 	ParseInfo pi = parseinfo(l);
 	if(_curroptions->isoption(opt)) {
 		if(_curroptions->setvalue(opt,val)) { } // do nothing
-		else Error::wrongvalue(opt,itos(val),pi);
+		else Error::wrongvalue(opt,toString(val),pi);
 	}
 	else Error::unknoption(opt,pi);
 }

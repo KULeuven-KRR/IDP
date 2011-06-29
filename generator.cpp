@@ -895,7 +895,7 @@ class BDDToGenerator : public FOBDDVisitor {
 
 		InstGenerator* create(const FOBDD* bdd, const vector<bool>& pattern, const vector<const DomainElement**>& vars, const vector<FOBDDVariable*>& bddvars, AbstractStructure* structure) {
 			if(bdd == _manager->falsebdd()) {
-				return EmptyGenerator();
+				return new EmptyGenerator();
 			}
 			else if(bdd == _manager->truebdd()) {
 				vector<const DomainElement**> outvars;

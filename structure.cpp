@@ -72,10 +72,10 @@ DomainElementValue DomainElement::value() const {
 ostream& DomainElement::put(ostream& output) const {
 	switch(_type) {
 		case DET_INT:
-			output << itos(_value._int);
+			output << toString(_value._int);
 			break;
 		case DET_DOUBLE:
-			output << dtos(_value._double);
+			output << toString(_value._double);
 			break;
 		case DET_STRING:
 			output << *(_value._string);
@@ -2123,8 +2123,8 @@ InternalSortIterator* AllStrings::sortbegin() const {
 
 InternalSortIterator* AllStrings::sortiterator(const DomainElement* d) const {
 	string str;
-	if(d->type() == DET_INT) str = itos(d->value()._int);
-	else if(d->type() == DET_DOUBLE) str = dtos(d->value()._double);
+	if(d->type() == DET_INT) str = toString(d->value()._int);
+	else if(d->type() == DET_DOUBLE) str = toString(d->value()._double);
 	else str = *(d->value()._string);
 	return new StringInternalSortIterator(str);
 }

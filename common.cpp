@@ -40,26 +40,14 @@ bool isDouble(const string& s) {
 	return (i >> d);
 }
 
-string itos(int n) {
-	stringstream sst;
-	sst << n;
-	return sst.str();
-}
-
-string dtos(double d) {
-	stringstream s;
-	s << d;
-	return s.str();
-}
-
-int stoi(const string& s) {
+int toInt(const string& s) {
 	stringstream i(s);
 	int n;
 	if(!(i >> n)) return 0;
 	else return n;
 }
 
-double stod(const string& s) {
+double toDouble(const string& s) {
 	stringstream i(s);
 	double d;
 	if(!(i >> d)) return 0;

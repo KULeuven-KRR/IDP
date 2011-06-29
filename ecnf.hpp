@@ -426,7 +426,7 @@ class SolverTheory : public AbstractGroundTheory {
 #ifdef CPSUPPORT
 		void	addCPVariable(const VarId&);
 		void	addCPVariables(const std::vector<VarId>&);
-#endif CPSUPPORT
+#endif //CPSUPPORT
 };
 
 /**

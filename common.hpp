@@ -9,34 +9,40 @@
 
 #include <string>
 #include <ostream>
+#include <sstream>
 #include <vector>
 #include "commontypes.hpp"
 
-extern void notyetimplemented(const std::string&);
+void notyetimplemented(const std::string&);
 
-extern bool	isInt(double);					//!< true iff the given double is an integer
-extern bool isInt(const std::string&);		//!< true iff the given string is an integer
-extern bool isDouble(const std::string&);	//!< true iff the given string is a double
+bool	isInt(double);					//!< true iff the given double is an integer
+bool isInt(const std::string&);		//!< true iff the given string is an integer
+bool isDouble(const std::string&);	//!< true iff the given string is a double
 
-extern std::string	itos(int);					//!< convert int to string
-extern std::string	dtos(double);				//!< convert double to string
-extern int			stoi(const std::string&);	//!< convert string to int
-extern double		stod(const std::string&);	//!< convert string to double
+template<typename T>
+std::string	toString(T element){
+	std::stringstream ss;
+	ss <<element;
+	return ss.str();
+}
+int			toint(const std::string&);	//!< convert string to int
+double		toDouble(const std::string&);	//!< convert string to double
 
-extern void	printtabs(std::ostream&,unsigned int tabs);	//!< write a given number of tabs
+void	printtabs(std::ostream&,unsigned int tabs);	//!< write a given number of tabs
 
-extern double applyAgg(const AggFunction&,const std::vector<double>& args);	//!< apply an aggregate function to arguments
+double applyAgg(const AggFunction&,const std::vector<double>& args);	//!< apply an aggregate function to arguments
 
-extern CompType invertcomp(CompType);	//!< Invert a comparison operator
-extern CompType negatecomp(CompType);	//!< Negate a comparison operator
+CompType invertct(CompType ct);
+CompType invertcomp(CompType);	//!< Invert a comparison operator
+CompType negatecomp(CompType);	//!< Negate a comparison operator
 
-extern std::ostream& operator<<(std::ostream&, const AggFunction&);	//!< Put an aggregate type on the given output stream
-extern std::ostream& operator<<(std::ostream&, const TsType&);		//!< Put a tseitin type on the given output stream
-extern std::ostream& operator<<(std::ostream&, const CompType&);	//!< Put a comparator type on the given output stream
+std::ostream& operator<<(std::ostream&, const AggFunction&);	//!< Put an aggregate type on the given output stream
+std::ostream& operator<<(std::ostream&, const TsType&);		//!< Put a tseitin type on the given output stream
+std::ostream& operator<<(std::ostream&, const CompType&);	//!< Put a comparator type on the given output stream
 
-extern PosContext swapcontext(PosContext);	//!< Negate a context
+PosContext swapcontext(PosContext);	//!< Negate a context
 
-extern std::string* StringPointer(const char* str);			//!< Returns a shared pointer to the given string
-extern std::string* StringPointer(const std::string& str);	//!< Returns a shared pointer to the given string
+std::string* StringPointer(const char* str);			//!< Returns a shared pointer to the given string
+std::string* StringPointer(const std::string& str);	//!< Returns a shared pointer to the given string
 
 #endif

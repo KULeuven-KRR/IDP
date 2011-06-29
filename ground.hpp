@@ -354,7 +354,6 @@ struct GroundDefinition;
 
 /** Grounding context **/
 enum CompContext { CC_SENTENCE, CC_HEAD, CC_FORMULA };
-enum PosContext { PC_POSITIVE, PC_NEGATIVE, PC_BOTH };
 
 struct GroundingContext {
 	bool				_truegen;		// Indicates whether the variables are instantiated in order to obtain

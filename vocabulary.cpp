@@ -239,7 +239,7 @@ Variable::Variable(const std::string& name, Sort* sort, const ParseInfo& pi) : _
 }
 
 Variable::Variable(Sort* s) : _sort(s) {
-	_name = "_var_" + s->name() + "_" + itos(Variable::_nvnr);
+	_name = "_var_" + s->name() + "_" + toString(Variable::_nvnr);
 	++_nvnr;
 }
 
@@ -381,7 +381,7 @@ Predicate::Predicate(const std::string& name,const std::vector<Sort*>& sorts, bo
 
 Predicate::Predicate(const vector<Sort*>& sorts) : 
 	PFSymbol("",sorts,ParseInfo()), _interpretation(0), _overpredgenerator(0) {
-	_name = "_internal_predicate_" + itos(_npnr) + "/" + itos(sorts.size());
+	_name = "_internal_predicate_" + toString(_npnr) + "/" + toString(sorts.size());
 	++_npnr;
 }
 

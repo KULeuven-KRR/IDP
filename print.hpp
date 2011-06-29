@@ -163,7 +163,7 @@ class EcnfPrinter : public Printer {
 		AbstractStructure*			_structure;
 		const GroundTermTranslator*	_termtranslator;
 		std::set<unsigned int> 		_printedvarids;
-		bool 			writeTranslation_;>>>>>>> origin/stef
+		bool 			writeTranslation_;
 
 		void printAggregate(AggFunction aggtype, TsType arrow, unsigned int defnr, bool lower, int head, unsigned int setnr, double bound);
 		void printCPVariable(unsigned int varid);

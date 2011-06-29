@@ -59,7 +59,7 @@ void UserProcedure::compile(lua_State* L) {
 			lua_pop(L,1);
 		}
 		else {
-			_registryindex = "idp_compiled_procedure_" + itos(UserProcedure::_compilenumber);
+			_registryindex = "idp_compiled_procedure_" + toString(UserProcedure::_compilenumber);
 			++UserProcedure::_compilenumber;
 			lua_setfield(L,LUA_REGISTRYINDEX,_registryindex.c_str());
 		}
@@ -421,7 +421,7 @@ InternalArgument::InternalArgument(int arg, lua_State* L) {
 		case LUA_TFUNCTION: 
 		{
 			_type = AT_PROCEDURE;
-			string* registryindex = StringPointer(string("idp_argument_procedure_" + itos(ArgProcNumber)));
+			string* registryindex = StringPointer(string("idp_argument_procedure_" + toString(ArgProcNumber)));
 			++ArgProcNumber;
 			lua_pushvalue(L,arg);
 			lua_setfield(L,LUA_REGISTRYINDEX,registryindex->c_str());
@@ -827,7 +827,7 @@ class SATTraceWriter {
 	public:
 		SATTraceWriter(GroundTranslator* trans, lua_State* L) : _translator(trans), _state(L) { 
 			++_tracenr;
-			_registryindex = StringPointer(string("sat_trace_") + itos(_tracenr));
+			_registryindex = StringPointer(string("sat_trace_") + toString(_tracenr));
 			lua_newtable(L);
 			lua_setfield(L,LUA_REGISTRYINDEX,_registryindex->c_str());
 		}
@@ -1019,10 +1019,7 @@ AbstractTheory* ground(AbstractTheory* theory, AbstractStructure* structure, Opt
 	TopLevelGrounder* grounder = factory.create(theory);
 	grounder->run();
 	AbstractGroundTheory* grounding = grounder->grounding();
-<<<<<<< HEAD
-=======
 	grounding->addFuncConstraints();
->>>>>>> origin/stef
 	delete(grounder);
 	return grounding;
 }

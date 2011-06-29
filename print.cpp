@@ -604,7 +604,7 @@ void IDPPrinter::visit(const CPReification* cpr) {
 	}
 	CPBound right = cpr->_body->right();
 	if(right._isvarid) printTerm(right._varid);
-	else output() << right._value._bound;
+	else output() << right._bound;
 	output() << ".\n";
 }
 
