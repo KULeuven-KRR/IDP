@@ -456,15 +456,16 @@ void EcnfPrinter::visit(const GroundTheory* g) {
 	//TODO: repeat above for fixpoint definitions
 
 	if(writeTranlation()){
-		output() <<"atomtranslation:\n";
+		output() <<"=== Atomtranslation ===" << endl;
 		GroundTranslator* translator = g->translator();
 		int atom = 1;
 		while(translator->isSymbol(atom)){
-			if(translator->isTseitin(atom)){
-				output() << translator->printAtom(atom) <<"\n";
+			if(!translator->isTseitin(atom)){
+				output() << atom <<"|" <<translator->printAtom(atom) <<endl;
 			}
 			atom++;
 		}
+		output() <<"==== ====" <<endl;
 	}
 }
 
