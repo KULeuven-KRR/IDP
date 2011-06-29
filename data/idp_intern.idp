@@ -78,6 +78,13 @@ procedure clone(obj) {
 **********************/
 
 /**
+ * Solve a query Q over a structure S
+ */
+procedure query(Q,S) {
+	return idp_intern.query(Q,S)
+}
+
+/**
  * Apply model expansion to theory T, structure S, and options Opts. Opts defaults to stdoptions.
  * The result is a table of structures and, if Opts.trace == true, a trace of the solver
  */
