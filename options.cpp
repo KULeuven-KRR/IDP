@@ -222,8 +222,8 @@ ostream& Options::put(ostream& output) const {
 	}
 
 	sort(optionslines.begin(), optionslines.end());
-	for(auto i=optionslines.begin(); i<optionslines.end(); ++i){
-		output <<*i <<endl;
+	for(auto i = optionslines.begin(); i < optionslines.end(); ++i){
+		output << *i <<endl;
 	}
 
 	return output;
