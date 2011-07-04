@@ -1077,17 +1077,22 @@ InternalArgument query(const vector<InternalArgument>& args, lua_State* ) {
 	// optimize the query
 	manager.optimizequery(bdd,bddvars,bddindices,structure);
 
+cerr << "Solving the query\n";
+manager.put(cerr,bdd);
+
 	// create a generator
 	vector<const DomainElement**> genvars;	
 	vector<const FOBDDVariable*> vbddvars;
 	vector<bool> pattern;
+	vector<SortTable*> tables;
 	for(vector<Variable*>::const_iterator it = q->variables().begin(); it != q->variables().end(); ++it) {
 		pattern.push_back(false);
 		genvars.push_back(new const DomainElement*());
 		vbddvars.push_back(manager.getVariable(*it));
+		tables.push_back(structure->inter((*it)->sort()));
 	}
 	BDDToGenerator btg(&manager);
-	InstGenerator* generator = btg.create(bdd,pattern,genvars,vbddvars,structure);
+	InstGenerator* generator = btg.create(bdd,pattern,genvars,vbddvars,structure,Universe(tables));
 	
 	// Create an empty table
 	EnumeratedInternalPredTable* interntable = new EnumeratedInternalPredTable();

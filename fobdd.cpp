@@ -637,7 +637,7 @@ class Substitute : public FOBDDVisitor {
 		Substitute(FOBDDManager* manager, const map<const FOBDDVariable*, const FOBDDVariable*>	mvv) :
 			FOBDDVisitor(manager), _mvv(mvv) { }
 
-		const FOBDDVariable*	change(FOBDDVariable* v) {
+		const FOBDDVariable* change(const FOBDDVariable* v) {
 			map<const FOBDDVariable*,const FOBDDVariable*>::const_iterator it = _mvv.find(v);
 			if(it != _mvv.end()) return it->second;
 			else return v;
@@ -646,6 +646,30 @@ class Substitute : public FOBDDVisitor {
 
 const FOBDD* FOBDDManager::substitute(const FOBDD* bdd,const map<const FOBDDVariable*,const FOBDDVariable*>& mvv) {
 	Substitute s(this,mvv);
+	return s.FOBDDVisitor::change(bdd);
+}
+
+class IndexSubstitute : public FOBDDVisitor {
+	private:
+		const FOBDDDeBruijnIndex*	_index;
+		const FOBDDVariable*		_variable;
+	public:
+		IndexSubstitute(FOBDDManager* manager, const FOBDDDeBruijnIndex* index, const FOBDDVariable* variable) :
+			FOBDDVisitor(manager), _index(index), _variable(variable) { }
+		const FOBDDArgument* change(const FOBDDVariable* v) {
+			if(v == _variable) return _index;
+			else return v;
+		}
+		const FOBDDKernel* change(const FOBDDQuantKernel* k) {
+			_index = _manager->getDeBruijnIndex(_index->sort(),_index->index()+1);
+			const FOBDD* nbdd = FOBDDVisitor::change(k->bdd());
+			_index = _manager->getDeBruijnIndex(_index->sort(),_index->index()-1);
+			return _manager->getQuantKernel(k->sort(),nbdd);
+		}
+};
+
+const FOBDD* FOBDDManager::substitute(const FOBDD* bdd,const FOBDDDeBruijnIndex* index, const FOBDDVariable* variable) {
+	IndexSubstitute s(this,index,variable);
 	return s.FOBDDVisitor::change(bdd);
 }
 

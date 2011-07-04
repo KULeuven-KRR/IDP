@@ -149,6 +149,7 @@ class FOBDDManager {
 		const FOBDD*	existsquantify(const std::set<const FOBDDVariable*>&,const FOBDD*);
 		const FOBDD*	ifthenelse(const FOBDDKernel*, const FOBDD* truebranch, const FOBDD* falsebranch);
 		const FOBDD*	substitute(const FOBDD*,const std::map<const FOBDDVariable*,const FOBDDVariable*>&);
+		const FOBDD*	substitute(const FOBDD*, const FOBDDDeBruijnIndex*, const FOBDDVariable*);
 		
 		int	longestbranch(const FOBDDKernel*);
 		int	longestbranch(const FOBDD*);
