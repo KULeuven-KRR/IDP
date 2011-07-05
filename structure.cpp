@@ -3339,9 +3339,11 @@ namespace StructureUtils {
 		for(map<string, set<Sort*>>::const_iterator mapIt= s->vocabulary()->firstsort(); mapIt !=s->vocabulary()->lastsort(); ++mapIt){
 			dontCares.insert(mapIt->second.begin(), mapIt->second.end());
 		}
-		for(map<Predicate*,PredInter*>::const_iterator predIt = s->firstpredinter(); predIt!= s->lastpredinter(); ++predIt){
-			if(!predIt->second->ct()->approxempty() || !predIt->second->cf()->approxempty()){ // all sorts for this predicate are cares
-				for(set<Sort*>::const_iterator sortIt = predIt->first->allsorts().begin(); sortIt != predIt->first->allsorts().end(); ++sortIt){
+		for(map<string, Predicate*>::const_iterator mapIt= s->vocabulary()->firstpred(); mapIt !=s->vocabulary()->lastpred(); ++mapIt){
+			Predicate* pred = mapIt->second;
+			PredInter* inter = s->inter(pred);
+			if(!inter->ct()->approxempty() || !inter->cf()->approxempty()){ // all sorts for this predicate are cares
+				for(set<Sort*>::const_iterator sortIt = pred->allsorts().begin(); sortIt != pred->allsorts().end(); ++sortIt){
 					if(dontCares.erase(*sortIt)){
 						cares.insert(*sortIt);
 					}
