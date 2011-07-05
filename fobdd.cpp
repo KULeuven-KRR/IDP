@@ -649,6 +649,24 @@ const FOBDD* FOBDDManager::substitute(const FOBDD* bdd,const map<const FOBDDVari
 	return s.FOBDDVisitor::change(bdd);
 }
 
+class DomainTermSubstitute : public FOBDDVisitor {
+	private:
+		const FOBDDDomainTerm*	_domainterm;
+		const FOBDDVariable*	_variable;
+	public:
+		DomainTermSubstitute(FOBDDManager* manager, const FOBDDDomainTerm* term, const FOBDDVariable* variable) :
+			FOBDDVisitor(manager), _domainterm(term), _variable(variable) { }
+		const FOBDDArgument* change(const FOBDDDomainTerm* dt) {
+			if(dt == _domainterm) return _variable;
+			else return dt;
+		}
+};
+
+const FOBDDKernel* FOBDDManager::substitute(const FOBDDKernel* kernel,const FOBDDDomainTerm* term, const FOBDDVariable* variable) {
+	DomainTermSubstitute s(this,term,variable);
+	return kernel->acceptchange(&s);
+}
+
 class IndexSubstitute : public FOBDDVisitor {
 	private:
 		const FOBDDDeBruijnIndex*	_index;
@@ -656,9 +674,9 @@ class IndexSubstitute : public FOBDDVisitor {
 	public:
 		IndexSubstitute(FOBDDManager* manager, const FOBDDDeBruijnIndex* index, const FOBDDVariable* variable) :
 			FOBDDVisitor(manager), _index(index), _variable(variable) { }
-		const FOBDDArgument* change(const FOBDDVariable* v) {
-			if(v == _variable) return _index;
-			else return v;
+		const FOBDDArgument* change(const FOBDDDeBruijnIndex* i) {
+			if(i == _index) return _variable;
+			else return i;
 		}
 		const FOBDDKernel* change(const FOBDDQuantKernel* k) {
 			_index = _manager->getDeBruijnIndex(_index->sort(),_index->index()+1);
@@ -690,6 +708,71 @@ int FOBDDManager::longestbranch(const FOBDD* bdd) {
 		int falselength = longestbranch(bdd->falsebranch()) + kernellength;
 		return (truelength > falselength ? truelength : falselength);
 	}
+}
+
+/*****************
+	Arithmetic
+*****************/
+
+class ArithChecker : public FOBDDVisitor {
+	private:
+		bool _result;
+	public: 
+		ArithChecker(FOBDDManager* m) : FOBDDVisitor(m) { }
+
+		bool check(const FOBDDKernel* k)	{ _result = true; k->accept(this); return _result;	}
+		bool check(const FOBDDArgument* a)	{ _result = true; a->accept(this); return _result;	}
+
+		void visit(const FOBDDAtomKernel* kernel) {
+			for(vector<const FOBDDArgument*>::const_iterator it = kernel->args().begin(); it != kernel->args().end(); ++it) {
+				if(_result) (*it)->accept(this);
+			}
+			_result = _result && Vocabulary::std()->contains(kernel->symbol());
+		}
+
+		void visit(const FOBDDQuantKernel* ) {
+			_result = false;
+		}
+
+		void visit(const FOBDDVariable* variable) {
+			_result = _result && SortUtils::isSubsort(variable->sort(),VocabularyUtils::floatsort());
+		}
+
+		void visit(const FOBDDDeBruijnIndex* index) {
+			_result = _result && SortUtils::isSubsort(index->sort(),VocabularyUtils::floatsort());
+		}
+
+		void visit(const FOBDDDomainTerm* domainterm) {
+			_result = _result && SortUtils::isSubsort(domainterm->sort(),VocabularyUtils::floatsort());
+		}
+
+		void visit(const FOBDDFuncTerm* functerm) {
+			for(vector<const FOBDDArgument*>::const_iterator it = functerm->args().begin(); it != functerm->args().end(); ++it) {
+				if(_result) (*it)->accept(this);
+			}
+			_result = _result && Vocabulary::std()->contains(functerm->func());
+		}
+
+};
+
+bool FOBDDManager::isArithmetic(const FOBDDKernel* k) {
+	ArithChecker ac(this);
+	return ac.check(k);
+}
+
+bool FOBDDManager::isArithmetic(const FOBDDArgument* a) {
+	ArithChecker ac(this);
+	return ac.check(a);
+}
+
+const FOBDDAtomKernel* FOBDDManager::solve(const FOBDDKernel* kernel, const FOBDDVariable* var) {
+	// TODO
+	return 0;
+}
+
+const FOBDDAtomKernel* FOBDDManager::solve(const FOBDDKernel* kernel, const FOBDDDeBruijnIndex* index) {
+	// TODO
+	return 0;
 }
 
 /********************
@@ -1654,16 +1737,86 @@ class TableCostEstimator : public StructureVisitor {
 };
 
 double FOBDDManager::estimatedCostAll(bool sign, const FOBDDKernel* kernel, const set<const FOBDDVariable*>& vars, const set<const FOBDDDeBruijnIndex*>& indices, AbstractStructure* structure) {
-	if(typeid(*kernel) == typeid(FOBDDAtomKernel)) {
+	double maxdouble = numeric_limits<double>::max();
+	if(isArithmetic(kernel)) {
+		vector<double> varunivsizes;
+		vector<double> indexunivsizes;
+		vector<const FOBDDVariable*> varsvector;
+		vector<const FOBDDDeBruijnIndex*> indicesvector;
+		unsigned int nrinfinite = 0;
+		const FOBDDVariable* infinitevar = 0;
+		const FOBDDDeBruijnIndex* infiniteindex = 0;
+		for(set<const FOBDDVariable*>::const_iterator it = vars.begin(); it != vars.end(); ++it) {
+			varsvector.push_back(*it);
+			SortTable* st = structure->inter((*it)->sort());
+			tablesize stsize = st->size();
+			if(stsize.first) varunivsizes.push_back(double(stsize.second));
+			else { varunivsizes.push_back(maxdouble); ++nrinfinite; if(!infinitevar) infinitevar = *it; }
+		}
+		for(set<const FOBDDDeBruijnIndex*>::const_iterator it = indices.begin(); it != indices.end(); ++it) {
+			indicesvector.push_back(*it);
+			SortTable* st = structure->inter((*it)->sort());
+			tablesize stsize = st->size();
+			if(stsize.first) indexunivsizes.push_back(double(stsize.second));
+			else { indexunivsizes.push_back(maxdouble); ++nrinfinite; if(!infiniteindex) infiniteindex = *it; }
+		}
+		if(nrinfinite > 1) {
+			return maxdouble;
+		}
+		else if(nrinfinite == 1) {
+			if(infinitevar) {
+				if(!solve(kernel,infinitevar)) return maxdouble;
+			}
+			else {
+				assert(infiniteindex);
+				if(!solve(kernel,infiniteindex)) return maxdouble;
+			}
+			double result = 1;
+			for(unsigned int n = 0; n < varsvector.size(); ++n) {
+				if(varsvector[n] != infinitevar) {
+					result = (result * varunivsizes[n] < maxdouble) ? (result * varunivsizes[n]) : maxdouble;
+				}
+			}
+			for(unsigned int n = 0; n < indicesvector.size(); ++n) {
+				if(indicesvector[n] != infiniteindex) {
+					result = (result * indexunivsizes[n] < maxdouble) ? (result * indexunivsizes[n]) : maxdouble;
+				}
+			}
+			return result;
+		}
+		else {
+			double maxresult = 1;
+			for(vector<double>::const_iterator it = varunivsizes.begin(); it != varunivsizes.end(); ++it) {
+				maxresult = (maxresult * (*it) < maxdouble) ? (maxresult * (*it)) : maxdouble;
+			}
+			for(vector<double>::const_iterator it = indexunivsizes.begin(); it != indexunivsizes.end(); ++it) {
+				maxresult = (maxresult * (*it) < maxdouble) ? (maxresult * (*it)) : maxdouble;
+			}
+			if(maxresult < maxdouble) {
+				double bestresult = maxresult;
+				for(unsigned int n = 0; n < varsvector.size(); ++n) {
+					if(solve(kernel,varsvector[n])) {
+						double currresult = maxresult / varunivsizes[n];
+						if(currresult < bestresult) bestresult = currresult;
+					}
+				}
+				for(unsigned int n = 0; n < indicesvector.size(); ++n) {
+					if(solve(kernel,indicesvector[n])) {
+						double currresult = maxresult / indexunivsizes[n];
+						if(currresult < bestresult) bestresult = currresult;
+					}
+				}
+				return bestresult;
+			}
+			else return maxdouble;
+		}
+	}
+	else if(typeid(*kernel) == typeid(FOBDDAtomKernel)) {
 		const FOBDDAtomKernel* atomkernel = dynamic_cast<const FOBDDAtomKernel*>(kernel);
 		PFSymbol* symbol = atomkernel->symbol();
 		PredInter* pinter;
-		if(typeid(*symbol) == typeid(Predicate)) {
-			pinter = structure->inter(dynamic_cast<Predicate*>(symbol));
-		}
-		else {
-			pinter = structure->inter(dynamic_cast<Function*>(symbol))->graphinter();
-		}
+		if(typeid(*symbol) == typeid(Predicate)) pinter = structure->inter(dynamic_cast<Predicate*>(symbol));
+		else pinter = structure->inter(dynamic_cast<Function*>(symbol))->graphinter();
 		const PredTable* pt;
 		if(sign) {
 			if(atomkernel->type() == AKT_CF) pt = pinter->cf();

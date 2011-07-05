@@ -140,16 +140,17 @@ class FOBDDManager {
 
 		std::set<const FOBDDVariable*>	getVariables(const std::set<Variable*>& vars);
 
-		const FOBDD*	negation(const FOBDD*);
-		const FOBDD*	conjunction(const FOBDD*,const FOBDD*);
-		const FOBDD*	disjunction(const FOBDD*,const FOBDD*);
-		const FOBDD*	univquantify(const FOBDDVariable*,const FOBDD*);
-		const FOBDD*	existsquantify(const FOBDDVariable*,const FOBDD*);
-		const FOBDD*	univquantify(const std::set<const FOBDDVariable*>&,const FOBDD*);
-		const FOBDD*	existsquantify(const std::set<const FOBDDVariable*>&,const FOBDD*);
-		const FOBDD*	ifthenelse(const FOBDDKernel*, const FOBDD* truebranch, const FOBDD* falsebranch);
-		const FOBDD*	substitute(const FOBDD*,const std::map<const FOBDDVariable*,const FOBDDVariable*>&);
-		const FOBDD*	substitute(const FOBDD*, const FOBDDDeBruijnIndex*, const FOBDDVariable*);
+		const FOBDD*		negation(const FOBDD*);
+		const FOBDD*		conjunction(const FOBDD*,const FOBDD*);
+		const FOBDD*		disjunction(const FOBDD*,const FOBDD*);
+		const FOBDD*		univquantify(const FOBDDVariable*,const FOBDD*);
+		const FOBDD*		existsquantify(const FOBDDVariable*,const FOBDD*);
+		const FOBDD*		univquantify(const std::set<const FOBDDVariable*>&,const FOBDD*);
+		const FOBDD*		existsquantify(const std::set<const FOBDDVariable*>&,const FOBDD*);
+		const FOBDD*		ifthenelse(const FOBDDKernel*, const FOBDD* truebranch, const FOBDD* falsebranch);
+		const FOBDD*		substitute(const FOBDD*,const std::map<const FOBDDVariable*,const FOBDDVariable*>&);
+		const FOBDD*		substitute(const FOBDD*, const FOBDDDeBruijnIndex*, const FOBDDVariable*);
+		const FOBDDKernel*	substitute(const FOBDDKernel*, const FOBDDDomainTerm*, const FOBDDVariable*);
 		
 		int	longestbranch(const FOBDDKernel*);
 		int	longestbranch(const FOBDD*);
@@ -175,6 +176,16 @@ class FOBDDManager {
 		const FOBDD* getBDD(const FOBDD* bdd, FOBDDManager*);	//!< Given a bdd and the manager that created the bdd,
 																//!< this function returns the same bdd, but created
 																//!< by the manager 'this'
+
+		bool isArithmetic(const FOBDDKernel*);		//!< Returns true iff the kernel is an equation or inequality of
+													//!< arithmetic terms
+		bool isArithmetic(const FOBDDArgument*);	//!< Returns true iff the argument is an arithmetic term
+		const FOBDDAtomKernel*	solve(const FOBDDKernel*, const FOBDDVariable*);		
+			//!< Try to rewrite the given arithmetic kernel such that the right-hand side is the given variable,
+			//!< and such that the given variable does not occur in the left-hand side.
+		const FOBDDAtomKernel*	solve(const FOBDDKernel*, const FOBDDDeBruijnIndex*);
+			//!< Try to rewrite the given arithmetic kernel such that the right-hand side is the given index,
+			//!< and such that the given index does not occur in the left-hand side.
 
 };
 

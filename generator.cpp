@@ -20,6 +20,36 @@ using namespace std;
 	Classes
 **************/
 
+class FalseQuantKernelGenerator : public InstGenerator {
+	private:
+		InstGenerator*	_quantgenerator;
+		InstGenerator*	_univgenerator;
+	public:
+		FalseQuantKernelGenerator(InstGenerator* q, InstGenerator* u) : _quantgenerator(q), _univgenerator(u) { }
+		bool first() const {
+			if(_univgenerator->first()) {
+				if(_quantgenerator->first()) return next();
+				else return true;
+			}
+			else return false;
+		}
+		bool next() const {
+			while(_univgenerator->next()) {
+				if(!_quantgenerator->first()) return true;
+			}
+			return false;
+		}
+};
+
+class TestQuantKernelGenerator : public InstGenerator {
+	private:
+		InstGenerator*	_quantgenerator;
+	public:
+		TestQuantKernelGenerator(InstGenerator* gen) : _quantgenerator(gen) { }
+		bool first()	const { return _quantgenerator->first();	}
+		bool next()		const { return false;						}
+};
+
 class TrueQuantKernelGenerator : public InstGenerator {
 	private:
 		InstGenerator*					_quantgenerator;
@@ -964,6 +994,9 @@ BDDToGenerator::BDDToGenerator(FOBDDManager* manager) : _manager(manager) { }
 
 InstGenerator* BDDToGenerator::create(const FOBDD* bdd, const vector<bool>& pattern, const vector<const DomainElement**>& vars, const vector<const FOBDDVariable*>& bddvars, AbstractStructure* structure, const Universe& universe) {
 
+cerr << "Creating a generator for\n";
+_manager->put(cerr,bdd);
+
 	// Detect double occurrences
 	vector<unsigned int> firstocc;
 	for(unsigned int n = 0; n < vars.size(); ++n) {
@@ -1113,7 +1146,25 @@ InstGenerator* BDDToGenerator::create(const FOBDDKernel* kernel, const vector<bo
 				atomvars.push_back(vars[pos]);
 				atomtables.push_back(universe.tables()[pos]);
 			}
+			else if(typeid(*(*it)) == typeid(FOBDDDomainTerm)) {
+				const FOBDDDomainTerm* domterm = dynamic_cast<const FOBDDDomainTerm*>(*it);
+				const DomainElement** domelement = new const DomainElement*();
+				*domelement = domterm->value(); 
+
+				Variable* termvar = new Variable(domterm->sort());
+				const FOBDDVariable* bddtermvar = _manager->getVariable(termvar);
+				const FOBDDKernel* termkernel = _manager->substitute(kernel,domterm,bddtermvar);
+
+				vector<bool> termpattern(pattern); termpattern.push_back(true);
+				vector<const DomainElement**> termvars(vars); termvars.push_back(domelement);
+				vector<const FOBDDVariable*> termkernelvars(kernelvars); termkernelvars.push_back(bddtermvar);
+				vector<SortTable*> termuniv(universe.tables()); termuniv.push_back(structure->inter(domterm->sort()));
+				
+				return create(termkernel,termpattern,termvars,termkernelvars,structure,inverse,Universe(termuniv));
+			}
 			else {
+				assert(typeid(*(*it)) == typeid(FOBDDFuncTerm));
+				const FOBDDFuncTerm* functerm = dynamic_cast<const FOBDDFuncTerm*>(*it);
 				// TODO
 				return 0;
 			}
@@ -1144,7 +1195,7 @@ InstGenerator* BDDToGenerator::create(const FOBDDKernel* kernel, const vector<bo
 		GeneratorFactory gf;
 		return gf.create(table,atompattern,atomvars,Universe(atomtables));
 	}
-	else {
+	else {	// Quantification kernel
 		assert(typeid(*kernel) == typeid(FOBDDQuantKernel));
 		const FOBDDQuantKernel* quantkernel = dynamic_cast<const FOBDDQuantKernel*>(kernel);
 
@@ -1157,7 +1208,10 @@ InstGenerator* BDDToGenerator::create(const FOBDDKernel* kernel, const vector<bo
 		const FOBDD* quantbdd = _manager->substitute(quantkernel->bdd(),quantindex,bddquantvar);
 
 		// Create a generator for then quantified formula
-		vector<bool> quantpattern(pattern); quantpattern.push_back(false);
+		vector<bool> quantpattern; 
+		if(inverse) quantpattern = vector<bool>(pattern.size(),true);
+		else quantpattern = pattern;
+		quantpattern.push_back(false);
 		vector<const DomainElement**> quantvars(vars); quantvars.push_back(new const DomainElement*());
 		vector<const FOBDDVariable*> bddquantvars(kernelvars); bddquantvars.push_back(bddquantvar);
 		vector<SortTable*> quantuniv = universe.tables(); quantuniv.push_back(structure->inter(quantkernel->sort()));
@@ -1166,8 +1220,31 @@ InstGenerator* BDDToGenerator::create(const FOBDDKernel* kernel, const vector<bo
 
 		// Create a generator for the kernel
 		InstGenerator* result = 0;
-		// TODO take inverse/gen&test into account
-		result = new TrueQuantKernelGenerator(quantgenerator,vars);
+		if(inverse) {
+			GeneratorFactory gf;
+			vector<const DomainElement**> univgenvars;
+			vector<SortTable*> univgentables;
+			for(unsigned int n = 0; n < pattern.size(); ++n) {
+				if(!pattern[n]) {
+					univgenvars.push_back(vars[n]);
+					univgentables.push_back(universe.tables()[n]);
+				}
+			}
+			InstGenerator* univgenerator = gf.create(univgenvars,univgentables);
+			result = new FalseQuantKernelGenerator(quantgenerator,univgenerator);
+		}
+		else {
+			unsigned int firstout = 0;
+			for(; firstout < pattern.size(); ++firstout) {
+				if(!pattern[firstout]) break;
+			}
+			if(firstout == pattern.size()) {
+				result = new TestQuantKernelGenerator(quantgenerator);
+			}
+			else {
+				result = new TrueQuantKernelGenerator(quantgenerator,vars);
+			}
+		}
 
 		return result;
 	}
