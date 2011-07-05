@@ -3329,6 +3329,33 @@ namespace TableUtils {
 }
 
 /*****************
+	StructureUtils
+*****************/
+
+namespace StructureUtils {
+	findDontCaresResult findDontCares(AbstractStructure* s){
+		set<Sort*> dontCares; // initially this set contains all sorts, but sorts which are not a don't care will be removed		
+		set<Sort*> cares; // initially this set is empty, but in the end it will contain all cares
+		for(map<string, set<Sort*>>::const_iterator mapIt= s->vocabulary()->firstsort(); mapIt !=s->vocabulary()->lastsort(); ++mapIt){
+			dontCares.insert(mapIt->second.begin(), mapIt->second.end());
+		}
+		for(map<Predicate*,PredInter*>::const_iterator predIt = s->firstpredinter(); predIt!= s->lastpredinter(); ++predIt){
+			if(!predIt->second->ct()->approxempty() || !predIt->second->cf()->approxempty()){ // all sorts for this predicate are cares
+				for(set<Sort*>::const_iterator sortIt = predIt->first->allsorts().begin(); sortIt != predIt->first->allsorts().end(); ++sortIt){
+					if(dontCares.erase(*sortIt)){
+						cares.insert(*sortIt);
+					}
+				}
+			}
+		}
+		
+		findDontCaresResult result;
+		return result;
+	}
+	
+}
+
+/*****************
 	Structures
 *****************/
 

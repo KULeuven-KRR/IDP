@@ -1971,6 +1971,16 @@ namespace TableUtils {
 		//!< Check whether there is a value for every tuple in the given function interpretation.
 }
 
+struct findDontCaresResult{
+	std::vector<std::vector<const DomainElement*>> Cares;
+	std::vector<std::vector<const DomainElement*>> InvariantSet;
+};
+
+namespace StructureUtils {
+	findDontCaresResult findDontCares(AbstractStructure*);
+	
+}
+
 /**************
 	Visitor
 **************/
