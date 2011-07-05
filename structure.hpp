@@ -1946,6 +1946,14 @@ class Structure : public AbstractStructure {
 		void	functioncheck();	//!< check the correctness of the function tables
 		void	autocomplete();		//!< make the domains consistent with the predicate and function tables				
 
+		// Iterators
+		std::map<Sort*,SortTable*>::const_iterator 		firstsortinter() 	const { return _sortinter.begin(); 	}
+		std::map<Predicate*,PredInter*>::const_iterator	firstpredinter() 	const { return _predinter.begin(); 	}
+		std::map<Function*,FuncInter*>::const_iterator	firstfuncinter() 	const { return _funcinter.begin(); 	}
+		std::map<Sort*,SortTable*>::const_iterator 		lastsortinter() 	const { return _sortinter.end(); 	}
+		std::map<Predicate*,PredInter*>::const_iterator	lastpredinter() 	const { return _predinter.end(); 	}
+		std::map<Function*,FuncInter*>::const_iterator	lastfuncinter() 	const { return _funcinter.end(); 	}
+
 		// Inspectors
 		SortTable*		inter(Sort* s)				const; //!< Return the domain of s.
 		PredInter*		inter(Predicate* p)			const; //!< Return the interpretation of p.
