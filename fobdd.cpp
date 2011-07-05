@@ -430,6 +430,7 @@ const FOBDDFuncTerm* FOBDDManager::getFuncTerm(Function* func, const vector<cons
 }
 
 FOBDDFuncTerm* FOBDDManager::addFuncTerm(Function* func, const vector<const FOBDDArgument*>& args) {
+	// TODO: rewrite arithmetic terms!
 	FOBDDFuncTerm* newarg = new FOBDDFuncTerm(func,args);
 	_functermtable[func][args] = newarg;
 	return newarg;
@@ -764,6 +765,79 @@ bool FOBDDManager::isArithmetic(const FOBDDArgument* a) {
 	ArithChecker ac(this);
 	return ac.check(a);
 }
+
+/**
+ * Class to move all terms in an equation to the left hand side
+ */
+class TermsToLeft : public FOBDDVisitor {
+	public:
+		TermsToLeft(FOBDDManager* m) : FOBDDVisitor(m) { }
+
+		const FOBDDAtomKernel* change(const FOBDDAtomKernel* atom) {
+			if(typeid(*(atom->symbol())) == typeid(Function)) {
+				// TODO
+			}
+			else {
+				const string& predname = atom->symbol()->name();
+				if(predname == "=/2" || predname == "</2" || predname == ">/2") {
+					// TODO
+				}
+			}
+			return atom;
+		}
+};
+
+/**
+ * Class to exhaustively distribute addition with respect to multiplication in a FOBDDFuncTerm
+ */
+class Distributivity : public FOBDDVisitor {
+	public:
+		Distributivity(FOBDDManager* m) : FOBDDVisitor(m) { }
+
+		const FOBDDArgument* change(const FOBDDFuncTerm* functerm) {
+			if(functerm->func()->name() == "*/2") {
+				const FOBDDArgument* leftterm = functerm->args(0);
+				const FOBDDArgument* rightterm = functerm->args(1);
+				if(typeid(*leftterm) == typeid(FOBDDFuncTerm)) {
+					const FOBDDFuncTerm* leftfuncterm = dynamic_cast<const FOBDDFuncTerm*>(leftterm);
+					if(leftfuncterm->func()->name() == "+/2") {
+						vector<const FOBDDArgument*> newleftargs;
+						newleftargs.push_back(leftfuncterm->args(0));
+						newleftargs.push_back(rightterm);
+						vector<const FOBDDArgument*> newrightargs;
+						newrightargs.push_back(leftfuncterm->args(1));
+						newrightargs.push_back(rightterm);
+						const FOBDDFuncTerm* newleft = _manager->getFuncTerm(functerm->func(),newleftargs);
+						const FOBDDFuncTerm* newright = _manager->getFuncTerm(functerm->func(),newrightargs);
+						vector<const FOBDDArgument*> newargs;
+						newargs.push_back(newleft);
+						newargs.push_back(newright);
+						const FOBDDFuncTerm* newterm = _manager->getFuncTerm(leftfuncterm->func(),newargs);
+						return newterm->acceptchange(this);
+					}
+				}
+				if(typeid(*rightterm) == typeid(FOBDDFuncTerm)) {
+					const FOBDDFuncTerm* rightfuncterm = dynamic_cast<const FOBDDFuncTerm*>(rightterm);
+					if(rightfuncterm->func()->name() == "+/2") {
+						vector<const FOBDDArgument*> newleftargs;
+						newleftargs.push_back(rightfuncterm->args(0));
+						newleftargs.push_back(leftterm);
+						vector<const FOBDDArgument*> newrightargs;
+						newrightargs.push_back(rightfuncterm->args(1));
+						newrightargs.push_back(leftterm);
+						const FOBDDFuncTerm* newleft = _manager->getFuncTerm(functerm->func(),newleftargs);
+						const FOBDDFuncTerm* newright = _manager->getFuncTerm(functerm->func(),newrightargs);
+						vector<const FOBDDArgument*> newargs;
+						newargs.push_back(newleft);
+						newargs.push_back(newright);
+						const FOBDDFuncTerm* newterm = _manager->getFuncTerm(rightfuncterm->func(),newargs);
+						return newterm->acceptchange(this);
+					}
+				}
+			}
+			return FOBDDVisitor::change(functerm);
+		}
+};
 
 const FOBDDAtomKernel* FOBDDManager::solve(const FOBDDKernel* kernel, const FOBDDVariable* var) {
 	// TODO
