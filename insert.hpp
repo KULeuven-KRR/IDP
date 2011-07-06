@@ -11,7 +11,7 @@
 #include <vector>
 #include <list>
 #include <sstream>
-#include "commontypes.hpp" 
+#include "commontypes.hpp"
 #include "parseinfo.hpp"
 
 class Sort;
@@ -40,7 +40,7 @@ class UserProcedure;
 class Namespace;
 
 struct YYLTYPE;
-class lua_State;
+class lua_State; // TODO break lua connection
 class InternalArgument;
 
 typedef std::vector<std::string> longname;

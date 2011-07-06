@@ -261,7 +261,7 @@ class GroundTranslator {
 		int				nextNumber();
 		unsigned int	addSymbol(PFSymbol* pfs);
 
-		bool										isSymbol(int nr)			const	{ return 0<nr && nr<_backsymbtable.size(); }
+		bool					isSymbol(int nr)			const	{ return 0<nr && (uint)nr<_backsymbtable.size(); }
 		PFSymbol*				symbol(int nr)				const	{ return _backsymbtable[abs(nr)];			}
 		const ElementTuple&		args(int nr)				const	{ return _backargstable[abs(nr)];			}
 		bool					isTseitin(int l)			const	{ return symbol(l) == 0;					}

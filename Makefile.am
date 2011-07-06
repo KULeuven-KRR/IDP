@@ -1,8 +1,11 @@
 SUBDIRS = lib pcsolver
 AM_CXXFLAGS = @AC_CXXFLAGS@ -Wall -Wextra\
+		-std=c++0x\
 		-I$(srcdir)/lib/lua/etc -I$(srcdir)/lib/lua/src\
 		-I$(builddir)/lib/lua/src  -I $(srcdir)/lib/\
-		-DDATADIR=\"$(datadir)\" -DRCDIR=\"$(localstatedir)\"
+		-DDATADIR=\"$(datadir)\" -DRCDIR=\"$(localstatedir)\"\
+		-DINTERNALLIBARYNAME=\"idp_intern\" -DINTERNALLIBARYLUA=\"/std/idp_intern.lua\"\
+		-DINTERNALLIBARYIDP=\"/std/idp_intern.idp\" -DCONFIGFILENAME=\"/idp/.idprc\"
 		
 if USEINTERACTIVE
 AM_CXXFLAGS += -DUSEINTERACTIVE
@@ -30,6 +33,9 @@ gidl_SOURCES = \
 		theory.hpp theory.cpp\
 		options.cpp options.hpp\
 		execute.hpp execute.cpp\
+		luaconnection.hpp luaconnection.cpp\
+		internalluaargument.hpp\
+		internalargument.hpp\
 		namespace.hpp namespace.cpp\
 		parse.yy yyltype.hpp\
 		lex.ll\
@@ -56,6 +62,7 @@ LIBBLDDIR = $(builddir)/lib
 AM_CXXFLAGS += -I $(LIBSRCDIR)/pluscallback1.7/
 
 data_stddir = $(datadir)/std
+
 data_std_DATA = data/idp_intern.idp data/idp_intern.lua data/mx.idp data/theory.idp data/domain.idp
 
 data_localdir = $(localstatedir)/idp

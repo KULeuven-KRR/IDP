@@ -666,6 +666,9 @@ class CPWSumTerm;
 class CPSumTerm;
 class CPReification;
 
+// All have a default implementation to allow visitors only implementing some of the traversals, the other
+// being no-ops.
+
 /**
  * Visitor class for theories
  */

@@ -361,7 +361,7 @@ class AbstractGroundTheory : public AbstractTheory {
 		GroundTranslator*		translator()		const { return _translator;			}
 		GroundTermTranslator*	termtranslator()	const { return _termtranslator; 	}
 		AbstractStructure*		structure()			const { return _structure;			}
-		AbstractGroundTheory*	clone()				const { assert(false); /* TODO */	}
+		AbstractGroundTheory*	clone()				const { assert(false); return NULL;/* TODO */	}
 };
 
 /**
@@ -407,12 +407,12 @@ class SolverTheory : public AbstractGroundTheory {
 		void	addFalseDefineds();
 
 		// Inspectors
-		unsigned int		nrSentences()				const { assert(false); /*TODO*/	}
-		unsigned int		nrDefinitions()				const { assert(false); /*TODO*/	}
-		unsigned int		nrFixpDefs()				const { assert(false); /*TODO*/	}
-		Formula*			sentence(unsigned int)		const { assert(false); /*TODO*/	}
-		GroundDefinition*	definition(unsigned int)	const { assert(false); /*TODO*/	}
-		GroundFixpDef*		fixpdef(unsigned int)		const { assert(false); /*TODO*/	}
+		unsigned int		nrSentences()				const { assert(false); return 0;/*TODO*/	}
+		unsigned int		nrDefinitions()				const { assert(false); return 0;/*TODO*/	}
+		unsigned int		nrFixpDefs()				const { assert(false); return 0;/*TODO*/	}
+		Formula*			sentence(unsigned int)		const { assert(false); return NULL;/*TODO*/	}
+		GroundDefinition*	definition(unsigned int)	const { assert(false); return NULL;/*TODO*/	}
+		GroundFixpDef*		fixpdef(unsigned int)		const { assert(false); return NULL;/*TODO*/	}
 
 		// Visitor
 		void			accept(TheoryVisitor* v) const		{ v->visit(this);			}
@@ -420,7 +420,7 @@ class SolverTheory : public AbstractGroundTheory {
 
 		// Debugging
 		std::ostream&	put(std::ostream& output, unsigned int)	const { assert(false); /* TODO */ return output;	   }
-		std::string		to_string()								const { assert(false); /*TODO*/	}
+		std::string		to_string()								const { assert(false); return ""; /*TODO*/	}
 
 	private:
 #ifdef CPSUPPORT
@@ -467,7 +467,7 @@ class GroundTheory : public AbstractGroundTheory {
 		unsigned int		nrSets()						const { return _sets.size();							}
 		unsigned int		nrAggregates()					const { return _aggregates.size();						}
 		unsigned int 		nrCPReifications()				const { return _cpreifications.size();					}
-		Formula*			sentence(unsigned int)			const { assert(false); /* TODO */						}
+		Formula*			sentence(unsigned int)			const { assert(false); return NULL;/* TODO */						}
 		GroundClause		clause(unsigned int n)			const { return _clauses[n];								}
 		GroundDefinition*	definition(unsigned int n)		const { return _definitions[n];							}
 		GroundFixpDef*		fixpdef(unsigned int n)			const { return _fixpdefs[n];							}

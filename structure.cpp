@@ -12,10 +12,9 @@
 #include "common.hpp"
 #include "vocabulary.hpp"
 #include "structure.hpp"
-class InternalArgument;
-#include "execute.hpp"
 #include "error.hpp"
 #include "fobdd.hpp"
+#include "luaconnection.hpp" //FIXME break connection with lua!
 using namespace std;
 
 /**********************
@@ -418,7 +417,7 @@ const DomainElement* DomainElementFactory::create(double value, bool certnotint)
  *		- certnotdouble:	true iff the caller of this method asserts that the value is not a floating point number
  */
 const DomainElement* DomainElementFactory::create(const string* value, bool certnotdouble) {
-	if(!certnotdouble && isDouble(*value)) return create(stod(*value),false);
+	if(!certnotdouble && isDouble(*value)) return create(toDouble(*value),false);
 
 	DomainElement* element;
 	map<const string*,DomainElement*>::const_iterator it = _stringelements.find(value);

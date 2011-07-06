@@ -13,9 +13,14 @@
 #include <vector>
 #include "commontypes.hpp"
 
+std::string getLibraryName();
+std::string getLuaLibraryFilename();
+std::string getIDPLibraryFilename();
+std::string getConfigFilename();
+
 void notyetimplemented(const std::string&);
 
-bool	isInt(double);					//!< true iff the given double is an integer
+bool isInt(double);					//!< true iff the given double is an integer
 bool isInt(const std::string&);		//!< true iff the given string is an integer
 bool isDouble(const std::string&);	//!< true iff the given string is a double
 

@@ -11,7 +11,7 @@
 #include "clconst.hpp"
 #include "common.hpp"
 #include "error.hpp"
-#include "execute.hpp"
+#include "luaconnection.hpp"
 #include "interactive.hpp"
 using namespace std;
 
@@ -173,7 +173,11 @@ int main(int argc, char* argv[]) {
 		// Execute statements
 		executeproc(cloptions._exec);
 		if(cloptions._interactive) interactive();
-		else if(cloptions._exec == "") executeproc("idp_intern.main()");
+		else if(cloptions._exec == ""){
+			stringstream ss;
+			ss <<getLibraryName() <<".main()";
+			executeproc(ss.str());
+		}
 	}
 
 	// Close lua communication

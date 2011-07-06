@@ -19,8 +19,10 @@
 #include "parse.h"
 #include "error.hpp"
 #include "options.hpp"
-#include "execute.hpp"
+#include "internalargument.hpp"
+#include "luaconnection.hpp"
 using namespace std;
+using namespace LuaConnection; //TODO add abstraction to remove lua dependence here
 
 class SortDeriver : public TheoryMutatingVisitor {
 
