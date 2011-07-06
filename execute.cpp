@@ -135,6 +135,8 @@ InternalArgument help(const vector<InternalArgument>& args, lua_State* L) {
 	Model expansion inference
 ********************************/
 
+//FIXME this has to become a monitor => an extra internal argument to which can be written!
+
 /**
  * Class to output the trace of a solver
  **/
