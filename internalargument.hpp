@@ -277,34 +277,57 @@ InternalArgument nilarg();
  * Class to represent user-defined procedures
  */
 class UserProcedure {
-	protected:
-		std::string					_name;				//!< name of the procedure
-		ParseInfo					_pi;				//!< place where the procedure was parsed
-		std::vector<std::string>	_argnames;			//!< names of the arguments of the procedure
-		std::stringstream			_code;				//!< body of the procedure. Empty string if the procedure is not
-														//!< yet compiled.
-		std::string					_registryindex;		//!< place where the compiled version of the
-														//!< procedure is stored in the registry of the lua state
-		static int					_compilenumber;		//!< used to create unique registryindexes
-		std::string					_description;
+private:
+	static int					_compilenumber;		//!< used to create unique registryindexes
+public:
+	static int getCompileNumber()		{ return _compilenumber; }
+	static void increaseCompileNumber() { _compilenumber++; }
 
-	public:
-		// Constructors
-		UserProcedure(const std::string& name, const ParseInfo& pi, std::stringstream* des) :
-				_name(name), _pi(pi), _registryindex(""), _description(des ? des->str() : "(undocumented)\n") { }
+protected:
+	std::string					_name;				//!< name of the procedure
+	ParseInfo					_pi;				//!< place where the procedure was parsed
+	std::vector<std::string>	_argnames;			//!< names of the arguments of the procedure
+	std::stringstream			_code;				//!< body of the procedure. Empty string if the procedure is not
+													//!< yet compiled.
+	std::string					_registryindex;		//!< place where the compiled version of the
+													//!< procedure is stored in the registry of the lua state
+	std::string					_description;
 
-		void addarg(const std::string& name)	{ _argnames.push_back(name);	}	//!< add an argument to the procedure
+public:
+	// Constructors
+	UserProcedure(const std::string& name, const ParseInfo& pi, std::stringstream* des) :
+			_name(name), _pi(pi), _registryindex(""), _description(des ? des->str() : "(undocumented)\n") { }
 
-		template<typename Printable> void add(const Printable& s) { _code << s;	}
+	void addarg(const std::string& name)	{ _argnames.push_back(name);	}	//!< add an argument to the procedure
 
-		// Inspectors
-		const ParseInfo&	pi()			const { return _pi;						}
-		const std::string&	name()			const { return _name;					}
-		unsigned int		arity()			const { return _argnames.size();		}
-		bool				iscompiled()	const { return _registryindex != "";	}
-		const std::string&	registryindex()	const { return _registryindex;			}
-		const std::vector<std::string>&	args()	const { return _argnames;			}
-		const std::string&	description()	const { return _description;			}
+	template<typename Printable> void add(const Printable& s) { _code << s;	}
+
+	// Inspectors
+	std::string 	getProcedurecode() 	const { return _code.str(); 			}
+	const ParseInfo&	pi()			const { return _pi;						}
+	const std::string&	name()			const { return _name;					}
+	unsigned int		arity()			const { return _argnames.size();		}
+	bool				iscompiled()	const { return _registryindex != "";	}
+	const std::string&	registryindex()	const { return _registryindex;			}
+	void	setRegistryIndex(const std::string& index)	{ _registryindex = index; }
+	const std::vector<std::string>&	args()	const { return _argnames;			}
+	const std::string&	description()	const { return _description;			}
+};
+
+class Inference {
+private:
+	std::string				_name;		//!< the name of the procedure
+	std::vector<ArgType>	_argtypes;	//!< types of the input arguments
+
+protected:
+	void add(ArgType type) { _argtypes.push_back(type); }
+
+public:
+	Inference(const std::string& name): _name(name){ }
+
+	const std::vector<ArgType>& getArgumentTypes() const { return _argtypes; }
+	const std::string& getName() const { return _name;	}
+	virtual InternalArgument execute(const std::vector<InternalArgument>&) const = 0;
 };
 
 #endif /* INTERNALARGUMENT_HPP_ */

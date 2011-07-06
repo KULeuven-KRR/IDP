@@ -51,7 +51,24 @@ gidl_SOURCES = \
 		propagate.hpp propagate.cpp\
 		ecnf.hpp ecnf.cpp\
 		ground.hpp ground.cpp\
-		fobdd.hpp fobdd.cpp
+		fobdd.hpp fobdd.cpp\
+		commands/printtheory.hpp\
+		commands/printformula.hpp\
+		commands/printdomainatom.hpp\
+		commands/printstructure.hpp\
+		commands/printvocabulary.hpp\
+		commands/printoptions.hpp\
+		commands/printnamespace.hpp\
+		commands/newstructure.hpp\
+		commands/newtheory.hpp\
+		commands/modelexpand.hpp\
+		commands/newoptions.hpp\
+		commands/clonestructure.hpp\
+		commands/clonetheory.hpp\
+		commands/pushnegations.hpp\
+		commands/mergetheories.hpp\
+		commands/flatten.hpp\
+		commands/idptype.hpp
 
 AM_CXXFLAGS+=-I $(top_srcdir)/pcsolver/src/ 
 

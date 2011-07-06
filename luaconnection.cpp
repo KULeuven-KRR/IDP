@@ -26,6 +26,7 @@
 #include "propagate.hpp"
 #include "generator.hpp"
 #include "internalluaargument.hpp"
+#include "commands/allcommands.hpp"
 using namespace std;
 using namespace LuaConnection;
 
@@ -135,33 +136,37 @@ const DomainElement* convertToElement(int arg, lua_State* L) {
 namespace LuaConnection {
 
 	void compile(UserProcedure* procedure, lua_State* state){
-		//FIXME
-/*		if(!iscompiled()) {
+		if(!procedure->iscompiled()) {
 			// Compose function header, body, and return statement
 			stringstream ss;
-			ss << "local function " << _name << "(";
-			if(!_argnames.empty()) {
-				vector<string>::iterator it = _argnames.begin();
-				ss << *it; ++it;
-				for(; it != _argnames.end(); ++it) ss << ',' << *it;
+			ss << "local function " << procedure->name() << "(";
+			if(!procedure->arity()>0) {
+				bool begin = true;
+				for(auto it = procedure->args().begin(); it != procedure->args().end(); ++it){
+					if(!begin){
+						ss <<",";
+						begin=false;
+					}
+					ss << *it;
+				}
 			}
-			ss << ')' << _code.str() << " end\n";
-			ss << "return " << _name << "(...)\n";
+			ss << ')' << procedure->getProcedurecode() << " end\n";
+			ss << "return " << procedure->name() << "(...)\n";
 
 			// Compile
 			//cerr << "compiling:\n" << ss.str() << endl;
-			int err = luaL_loadstring(L,ss.str().c_str());
+			int err = luaL_loadstring(state,ss.str().c_str());
 			if(err) {
-				Error::error(_pi);
-				cerr << string(lua_tostring(L,-1)) << endl;
-				lua_pop(L,1);
+				Error::error(procedure->pi());
+				cerr << string(lua_tostring(state,-1)) << endl;
+				lua_pop(state,1);
 			}
 			else {
-				_registryindex = "idp_compiled_procedure_" + toString(UserProcedure::_compilenumber);
-				++UserProcedure::_compilenumber;
-				lua_setfield(L,LUA_REGISTRYINDEX,_registryindex.c_str());
+				procedure->setRegistryIndex("idp_compiled_procedure_" + toString(UserProcedure::getCompileNumber()));
+				UserProcedure::increaseCompileNumber();
+				lua_setfield(state,LUA_REGISTRYINDEX,procedure->registryindex().c_str());
 			}
-		}*/
+		}
 	}
 
 	lua_State* _state;
@@ -539,7 +544,7 @@ namespace LuaConnection {
 				if(!proc) {
 					proc = (*procs)[currtypes];
 				}
-				else { Error::ambigcommand(proc->name()); return 0; }
+				else { Error::ambigcommand(proc->getName()); return 0; }
 			}
 			unsigned int c = 0;
 			for(; c < argtypes.size(); ++c) {
@@ -554,7 +559,7 @@ namespace LuaConnection {
 		if(proc) return (*proc)(L);
 		else {
 			assert(!procs->empty());
-			Error::wrongcommandargs(procs->begin()->second->name()); return 0;
+			Error::wrongcommandargs(procs->begin()->second->getName()); return 0;
 		}
 	}
 
@@ -1701,10 +1706,15 @@ namespace LuaConnection {
 		_internalprocedures[name][argtypes] = proc;
 	}*/
 
-	/**
-	 * Adds all internal procedures
-	 */
-	void addInternProcs(lua_State* L) {
+	void addInternalProcedure(Inference* inf){
+		_internalprocedures[inf->getName()][inf->getArgumentTypes()] = new InternalProcedure(inf);
+	}
+
+	void addInternalProcedures(lua_State* L) {
+		std::vector<Inference*> inferences = getAllInferences();
+		for(auto i=inferences.begin(); i!=inferences.end(); ++i){
+			addInternalProcedure(*i);
+		}
 		// arguments of internal procedures
 /*		FIXME vector<ArgType> vempty(0);
 		vector<ArgType> vint(1,AT_INT);
@@ -1741,23 +1751,7 @@ namespace LuaConnection {
 
 
 		// Create internal procedures
-		addInternalProcedure("idptype",vint,&idptype);
-		addInternalProcedure("tostring",vtheoopt,&printtheory);
-		addInternalProcedure("tostring",vformopt,&printformula);
-		addInternalProcedure("tostring",vstructopt,&printstructure);
-		addInternalProcedure("tostring",vvocopt,&printvocabulary);
-		addInternalProcedure("tostring",vdomainatomopt,&printdomainatom);
-		addInternalProcedure("namespace",vspaceopt,&printnamespace);
-		addInternalProcedure("tostring",voptopt,&printoptions);
 		addInternalProcedure("help",vspace,&help);
-		addInternalProcedure("newstructure",vvoc,&newstructure);
-		addInternalProcedure("newtheory",vvoc,&newtheory);
-		addInternalProcedure("newoptions",vempty,&newoptions);
-		addInternalProcedure("clone",vtheo,&clonetheory);
-		addInternalProcedure("clone",vstruct,&clonestructure);
-		addInternalProcedure("push_negations",vtheo,&pushnegations);
-		addInternalProcedure("flatten",vtheo,&flatten);
-		addInternalProcedure("mx",vtheostructopt,&modelexpand);
 		addInternalProcedure("ground",vtheostructopt,&ground);
 		addInternalProcedure("propagate",vtheostructopt,&propagate);
 		addInternalProcedure("range",vintint,&createrange);
@@ -1781,8 +1775,7 @@ namespace LuaConnection {
 		addInternalProcedure("estimate_cost",vquerystruct,&estimatecost);
 		addInternalProcedure("query",vquerystruct,&query);
 		addInternalProcedure("bddstring",vform,&tobdd);
-		addInternalProcedure("clean",vstruct,&clean);
-		addInternalProcedure("merge",vtheotheo,&mergetheories);*/
+		addInternalProcedure("clean",vstruct,&clean);*/
 
 		// Add the internal procedures to lua
 		lua_getglobal(L,getLibraryName().c_str());
@@ -1809,7 +1802,7 @@ namespace LuaConnection {
 		lua_setglobal(_state,getLibraryName().c_str());
 
 		// Add internal procedures
-		addInternProcs(_state);
+		addInternalProcedures(_state);
 
 		// Overwrite some standard lua procedures
 		stringstream ss;

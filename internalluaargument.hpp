@@ -30,26 +30,21 @@ int convertToLua(lua_State*,InternalArgument);
 InternalArgument createArgument(int arg, lua_State* L);
 
 class InternalProcedure {
-	private:
-		std::string				_name;		//!< the name of the procedure
-		std::vector<ArgType>	_argtypes;	//!< types of the input arguments
-		InternalArgument		(*_execute)(const std::vector<InternalArgument>&, lua_State*);
+private:
+	Inference* 			inference_;
 
-	protected:
-		void add(ArgType type) { _argtypes.push_back(type); }
-
-	public:
-		InternalProcedure(const std::string& name): _name(name){ }
-		int operator()(lua_State* L) const {
-			std::vector<InternalArgument> args;
-			for(int arg = 1; arg <= lua_gettop(L); ++arg) {
-				args.push_back(createArgument(arg,L));
-			}
-			InternalArgument result = execute(args,L);
-			return LuaConnection::convertToLua(L,result);
+public:
+	InternalProcedure(Inference* inference): inference_(inference){ }
+	int operator()(lua_State* L) const {
+		std::vector<InternalArgument> args;
+		for(int arg = 1; arg <= lua_gettop(L); ++arg) {
+			args.push_back(createArgument(arg,L));
 		}
-		const std::string& name() const { return _name;	}
-		virtual InternalArgument execute(const std::vector<InternalArgument>&, lua_State* ) const = 0;
+		InternalArgument result = inference_->execute(args);
+		return LuaConnection::convertToLua(L,result);
+	}
+
+	const std::string& getName() const { return inference_->getName(); }
 };
 
 } // LUA CONNECTION
