@@ -46,7 +46,8 @@ gidl_SOURCES = \
 		propagate.hpp propagate.cpp\
 		ecnf.hpp ecnf.cpp\
 		ground.hpp ground.cpp\
-		fobdd.hpp fobdd.cpp
+		fobdd.hpp fobdd.cpp\
+        symmetry.hpp symmetry.cpp
 
 AM_CXXFLAGS+=-I $(top_srcdir)/pcsolver/src/ 
 
