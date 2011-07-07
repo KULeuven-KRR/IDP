@@ -1,25 +1,30 @@
 /************************************
+	changevocabulary.hpp
 	this file belongs to GidL 2.0
 	(c) K.U.Leuven
 ************************************/
 
-#ifndef CLONESTRUCTURE_HPP_
-#define CLONESTRUCTURE_HPP_
+#ifndef CHANGEVOCABULARY_HPP_
+#define CHANGEVOCABULARY_HPP_
 
 #include <vector>
 #include "commandinterface.hpp"
+#include "vocabulary.hpp"
 #include "structure.hpp"
 
-class CloneStructureInference: public Inference {
+class ChangeVocabularyInference: public Inference {
 public:
-	CloneStructureInference(): Inference("clone") {
+	ChangeVocabularyInference(): Inference("changevocabulary") {
 		add(AT_STRUCTURE);
+		add(AT_VOCABULARY);
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
 		AbstractStructure* s = args[0].structure();
-		return InternalArgument(s->clone());
+		Vocabulary* v = args[1].vocabulary();
+		s->vocabulary(v);
+		return nilarg();
 	}
 };
 
-#endif /* CLONESTRUCTURE_HPP_ */
+#endif /* CHANGEVOCABULARY_HPP_ */

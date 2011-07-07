@@ -7,7 +7,7 @@
 #define FLATTEN_HPP_
 
 #include <vector>
-#include "internalargument.hpp"
+#include "commandinterface.hpp"
 #include "theory.hpp"
 
 class FlattenInference: public Inference {

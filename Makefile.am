@@ -32,10 +32,8 @@ gidl_SOURCES = \
 		term.hpp term.cpp\
 		theory.hpp theory.cpp\
 		options.cpp options.hpp\
-		execute.hpp execute.cpp\
 		luaconnection.hpp luaconnection.cpp\
-		internalluaargument.hpp\
-		internalargument.hpp\
+		internalargument.hpp internalargument.cpp\
 		namespace.hpp namespace.cpp\
 		parse.yy yyltype.hpp\
 		lex.ll\
@@ -52,6 +50,11 @@ gidl_SOURCES = \
 		ecnf.hpp ecnf.cpp\
 		ground.hpp ground.cpp\
 		fobdd.hpp fobdd.cpp\
+		monitors/interactiveprintmonitor.hpp monitors/tracemonitor.hpp\
+		monitors/luatracemonitor.hpp monitors/luainteractiveprintmonitor.hpp\
+		groundtheories/PrintGroundTheory.hpp groundtheories/PrintGroundTheory.cpp\
+		commands/allcommands.hpp\
+		commands/commandinterface.hpp\
 		commands/printtheory.hpp\
 		commands/printformula.hpp\
 		commands/printdomainatom.hpp\
@@ -68,7 +71,22 @@ gidl_SOURCES = \
 		commands/pushnegations.hpp\
 		commands/mergetheories.hpp\
 		commands/flatten.hpp\
-		commands/idptype.hpp
+		commands/idptype.hpp\
+		commands/setatomvalue.hpp\
+		commands/settablevalue.hpp\
+		commands/domainiterator.hpp\
+		commands/tableiterator.hpp\
+		commands/propagate.hpp\
+		commands/query.hpp\
+		commands/createtuple.hpp\
+		commands/ground.hpp\
+		commands/completion.hpp\
+		commands/tobdd.hpp\
+		commands/clean.hpp\
+		commands/help.hpp\
+		commands/changevocabulary.hpp\
+		commands/estimatecosts.hpp\
+		commands/derefandincrement.hpp
 
 AM_CXXFLAGS+=-I $(top_srcdir)/pcsolver/src/ 
 

@@ -7,7 +7,7 @@
 #define PRINT_HPP_
 
 #include <vector>
-#include "internalargument.hpp"
+#include "commandinterface.hpp"
 #include "print.hpp"
 #include "theory.hpp"
 #include "options.hpp"

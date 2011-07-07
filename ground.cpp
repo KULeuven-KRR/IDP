@@ -22,6 +22,8 @@
 #include "generator.hpp"
 #include "checker.hpp"
 #include "common.hpp"
+#include "monitors/interactiveprintmonitor.hpp"
+#include "groundtheories/PrintGroundTheory.hpp"
 
 using namespace std;
 using namespace rel_ops;
@@ -1726,6 +1728,22 @@ TopLevelGrounder* GrounderFactory::create(const AbstractTheory* theory) {
 #ifdef CPSUPPORT
 	// Find function that can be passed to CP solver.
 	if(_cpsupport) findCPSymbols(theory);
+#endif //CPSUPPORT
+
+	// Create the grounder
+	theory->accept(this);
+	return _toplevelgrounder;
+}
+
+// TODO comment
+TopLevelGrounder* GrounderFactory::create(const AbstractTheory* theory, InteractivePrintMonitor* monitor) {
+	_grounding = new PrintGroundTheory(monitor,_structure->clone());
+
+#ifdef CPSUPPORT
+	// Find function that can be passed to CP solver.
+	if(_cpsupport){
+		findCPSymbols(theory);
+	}
 #endif //CPSUPPORT
 
 	// Create the grounder

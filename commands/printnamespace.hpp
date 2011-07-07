@@ -7,7 +7,7 @@
 #define PRINTNAMESPACE_HPP_
 
 #include <vector>
-#include "internalargument.hpp"
+#include "commandinterface.hpp"
 #include "options.hpp"
 #include "namespace.hpp"
 #include "print.hpp"

@@ -17,6 +17,8 @@
 #include "theory.hpp"
 #include "options.hpp"
 #include "namespace.hpp"
+#include "monitors/tracemonitor.hpp"
+#include "monitors/interactiveprintmonitor.hpp"
 
 /**
  * Types of arguments given to, or results produced by internal procedures
@@ -65,7 +67,10 @@ enum ArgType {
 
 	// Additional return values
 	AT_MULT,			//!< multiple arguments	(only used as return value)
-	AT_REGISTRY			//!< a value stored in the registry of the lua state
+	AT_REGISTRY,			//!< a value stored in the registry of the lua state
+
+	AT_PRINTMONITOR,
+	AT_TRACEMONITOR
 };
 
 template<class T>
@@ -85,6 +90,9 @@ template<typename T> map_init_helper<T> map_init(T& container){
 }
 
 const char* toCString(ArgType type);
+
+void addToGarbageCollection(SortTable* table);
+void garbageCollect(SortTable* table);
 
 /**
  * Objects to overload sorts, predicate, and function symbols
@@ -204,6 +212,9 @@ struct InternalArgument {
 
 		OverloadedSymbol*				_symbol;
 		OverloadedObject*				_overloaded;
+
+		InteractivePrintMonitor*		printmonitor_;
+		TraceMonitor*					tracemonitor_;
 	} _value;
 
 	// Constructors
@@ -231,7 +242,32 @@ struct InternalArgument {
 	InternalArgument(OverloadedObject* o)				: _type(AT_OVERLOADED)	{ _value._overloaded = o;	}
 	InternalArgument(Formula* f)						: _type(AT_FORMULA)		{ _value._formula = f;		}
 	InternalArgument(Query* q)							: _type(AT_QUERY)		{ _value._query = q;		}
-	InternalArgument(const DomainElement*);
+	InternalArgument(InteractivePrintMonitor* f)		: _type(AT_PRINTMONITOR){ _value.printmonitor_= f;	}
+	InternalArgument(TraceMonitor* q)					: _type(AT_TRACEMONITOR){ _value.tracemonitor_ = q;	}
+	InternalArgument(const DomainElement* el) {
+		_type = AT_NIL;
+		switch(el->type()) {
+			case DET_INT:
+				_type = AT_INT;
+				_value._int = el->value()._int;
+				break;
+			case DET_DOUBLE:
+				_type = AT_DOUBLE;
+				_value._double = el->value()._double;
+				break;
+			case DET_STRING:
+				_type = AT_STRING;
+				_value._string = StringPointer(*(el->value()._string));
+				break;
+			case DET_COMPOUND:
+				_type = AT_COMPOUND;
+				_value._compound = el->value()._compound;
+				break;
+			default:
+				assert(false);
+				break;
+		}
+	}
 
 	// Inspectors
 	std::set<Sort*>*	sort() const {
@@ -276,6 +312,7 @@ InternalArgument nilarg();
 /**
  * Class to represent user-defined procedures
  */
+// TODO class depends on the presence of lua, refactor
 class UserProcedure {
 private:
 	static int					_compilenumber;		//!< used to create unique registryindexes
@@ -312,22 +349,6 @@ public:
 	void	setRegistryIndex(const std::string& index)	{ _registryindex = index; }
 	const std::vector<std::string>&	args()	const { return _argnames;			}
 	const std::string&	description()	const { return _description;			}
-};
-
-class Inference {
-private:
-	std::string				_name;		//!< the name of the procedure
-	std::vector<ArgType>	_argtypes;	//!< types of the input arguments
-
-protected:
-	void add(ArgType type) { _argtypes.push_back(type); }
-
-public:
-	Inference(const std::string& name): _name(name){ }
-
-	const std::vector<ArgType>& getArgumentTypes() const { return _argtypes; }
-	const std::string& getName() const { return _name;	}
-	virtual InternalArgument execute(const std::vector<InternalArgument>&) const = 0;
 };
 
 #endif /* INTERNALARGUMENT_HPP_ */

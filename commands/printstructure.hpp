@@ -7,7 +7,7 @@
 #define PRINTSTRUCTURE_HPP_
 
 #include <vector>
-#include "internalargument.hpp"
+#include "commandinterface.hpp"
 #include "print.hpp"
 #include "structure.hpp"
 #include "options.hpp"

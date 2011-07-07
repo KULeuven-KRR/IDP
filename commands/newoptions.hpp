@@ -7,7 +7,7 @@
 #define NEWOPTIONS_HPP_
 
 #include <vector>
-#include "internalargument.hpp"
+#include "commandinterface.hpp"
 #include "options.hpp"
 
 class NewOptionsInference: public Inference {

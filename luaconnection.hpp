@@ -6,8 +6,11 @@
 #ifndef LUACONNECTION_HPP_
 #define LUACONNECTION_HPP_
 
-#include "execute.hpp"
+#include <string>
+#include <sstream>
+#include "internalargument.hpp"
 #include "lua.hpp"
+#include "commands/commandinterface.hpp"
 
 class Vocabulary;
 class AbstractStructure;
@@ -47,6 +50,28 @@ namespace LuaConnection {
 
 	void				execute(std::stringstream* chunk);
 	void				compile(UserProcedure*);
+
+	InternalArgument 	createArgument(int arg, lua_State* L);
+
+	class InternalProcedure {
+	private:
+		Inference* 			inference_;
+
+	public:
+		InternalProcedure(Inference* inference): inference_(inference){ }
+		~InternalProcedure(){ delete(inference_); }
+
+		int operator()(lua_State* L) const {
+			std::vector<InternalArgument> args;
+			for(int arg = 1; arg <= lua_gettop(L); ++arg) {
+				args.push_back(createArgument(arg,L));
+			}
+			InternalArgument result = inference_->execute(args);
+			return LuaConnection::convertToLua(L,result);
+		}
+
+		const std::string& getName() const { return inference_->getName(); }
+	};
 }
 
 #endif /* LUACONNECTION_HPP_ */

@@ -7,7 +7,7 @@
 #define PRINTOPTIONS_HPP_
 
 #include <vector>
-#include "internalargument.hpp"
+#include "commandinterface.hpp"
 #include "options.hpp"
 
 class PrintOptionInference: public Inference {

@@ -1,25 +1,27 @@
 /************************************
+	completion.hpp
 	this file belongs to GidL 2.0
 	(c) K.U.Leuven
 ************************************/
 
-#ifndef CLONETHEORY_HPP_
-#define CLONETHEORY_HPP_
+#ifndef COMPLETION_HPP_
+#define COMPLETION_HPP_
 
 #include <vector>
 #include "commandinterface.hpp"
 #include "theory.hpp"
 
-class CloneTheoryInference: public Inference {
+class CompletionInference: public Inference {
 public:
-	CloneTheoryInference(): Inference("clone") {
+	CompletionInference(): Inference("completion") {
 		add(AT_THEORY);
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
-		AbstractTheory* t = args[0].theory();
-		return InternalArgument(t->clone());
+		AbstractTheory* theory = args[0].theory();
+		TheoryUtils::completion(theory);
+		return nilarg();
 	}
 };
 
-#endif /* CLONETHEORY_HPP_ */
+#endif /* COMPLETION_HPP_ */

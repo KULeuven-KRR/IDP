@@ -1,0 +1,94 @@
+/************************************
+	help.hpp
+	this file belongs to GidL 2.0
+	(c) K.U.Leuven
+************************************/
+
+#ifndef HELP_HPP_
+#define HELP_HPP_
+
+#include <string>
+#include <sstream>
+#include "commands/commandinterface.hpp"
+#include "namespace.hpp"
+#include "monitors/interactiveprintmonitor.hpp"
+
+std::string help(Namespace* ns) {
+	std::stringstream sstr;
+	if(ns->procedures().empty()) {
+		if(ns->isGlobal()) sstr << "There are no procedures in the global namespace\n";
+		else {
+			sstr << "There are no procedures in namespace ";
+			ns->putname(sstr);
+			sstr << '\n';
+		}
+	}
+	else {
+		sstr << "The following procedures are available:\n\n";
+		std::stringstream prefixs;
+		ns->putname(prefixs);
+		std::string prefix = prefixs.str();
+		if(prefix != "") prefix += "::";
+		for(auto it = ns->procedures().begin(); it != ns->procedures().end(); ++it) {
+			sstr << "    * " << prefix << it->second->name() << '(';
+			if(!it->second->args().empty()) {
+				sstr << it->second->args()[0];
+				for(unsigned int n = 1; n < it->second->args().size(); ++n) {
+					sstr << ',' << it->second->args()[n];
+				}
+			}
+			sstr << ")\n";
+			sstr << "        " << it->second->description() << "\n";
+		}
+	}
+	if(!ns->subspaces().empty()) {
+		sstr << "\nThe following subspaces are available:\n\n";
+		for(auto it = ns->subspaces().begin(); it != ns->subspaces().end(); ++it) {
+			sstr << "    * ";
+			it->second->putname(sstr);
+			sstr << '\n';
+		}
+		sstr << "\nType help(<subspace>) for information on procedures in namespace <subspace>\n";
+	}
+	return sstr.str();
+}
+
+class GlobalHelpInference: public Inference {
+public:
+	GlobalHelpInference(): Inference("globalhelp") {
+		add(AT_PRINTMONITOR);
+	}
+
+	InternalArgument execute(const std::vector<InternalArgument>& args) const {
+		InteractivePrintMonitor* monitor = args[1]._value.printmonitor_;
+
+		std::string str = help(Namespace::global());
+		monitor->print(str);
+
+		delete(monitor);
+
+		return nilarg();
+	}
+};
+
+class HelpInference: public Inference {
+public:
+	HelpInference(): Inference("help") {
+		add(AT_NAMESPACE);
+		add(AT_PRINTMONITOR);
+	}
+
+	InternalArgument execute(const std::vector<InternalArgument>& args) const {
+		Namespace* ns = args[0].space();
+		InteractivePrintMonitor* monitor = args[1]._value.printmonitor_;
+
+		std::string str = help(ns);
+		monitor->print(str);
+
+		delete(monitor);
+
+		return nilarg();
+	}
+};
+
+#endif /* HELP_HPP_ */

@@ -7,7 +7,7 @@
 #define IDPTYPE_HPP_
 
 #include <vector>
-#include "internalargument.hpp"
+#include "commandinterface.hpp"
 
 class IdpTypeInference: public Inference {
 public:

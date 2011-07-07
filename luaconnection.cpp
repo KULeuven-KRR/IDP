@@ -25,12 +25,16 @@
 #include "fobdd.hpp"
 #include "propagate.hpp"
 #include "generator.hpp"
-#include "internalluaargument.hpp"
 #include "commands/allcommands.hpp"
+#include "monitors/luainteractiveprintmonitor.hpp"
+#include "monitors/luatracemonitor.hpp"
 using namespace std;
 using namespace LuaConnection;
 
 extern void parsefile(const string&);
+
+int UserProcedure::_compilenumber = 0;
+int	LuaTraceMonitor::_tracenr = 0;
 
 template<class Arg>
 int addUserData(lua_State* l, Arg arg, const std::string& name){
@@ -121,16 +125,33 @@ const DomainElement* convertToElement(int arg, lua_State* L) {
 			lua_getfield(L,-1,_typefield);
 			ArgType type = (ArgType)lua_tointeger(L,-1); assert(type != AT_NIL);
 			lua_pop(L,2);
-			switch(type) {
-				case AT_COMPOUND:
-					return DomainElementFactory::instance()->create(*(Compound**)lua_touserdata(L,arg));
-				default:
-					return 0;
-			}
+			return type==AT_COMPOUND?DomainElementFactory::instance()->create(*(Compound**)lua_touserdata(L,arg)) : NULL;
 		}
 		default:
 			return 0;
 	}
+}
+
+InternalArgument Options::getvalue(const string& opt) const {
+	map<string,bool>::const_iterator bit = _booloptions.find(opt);
+	if(bit != _booloptions.end()) {
+		return InternalArgument(bit->second);
+	}
+	map<string,IntOption*>::const_iterator iit = _intoptions.find(opt);
+	if(iit != _intoptions.end()) {
+		return InternalArgument(iit->second->value());
+	}
+	map<string,FloatOption*>::const_iterator fit = _floatoptions.find(opt);
+	if(fit != _floatoptions.end()) {
+		return InternalArgument(fit->second->value());
+	}
+	map<string,StringOption*>::const_iterator sit = _stringoptions.find(opt);
+	if(sit != _stringoptions.end()) {
+		return InternalArgument(StringPointer(sit->second->value()));
+	}
+
+	InternalArgument ia; ia._type = AT_NIL;
+	return ia;
 }
 
 namespace LuaConnection {
@@ -177,7 +198,6 @@ namespace LuaConnection {
 	map<AbstractStructure*,unsigned int>	_luastructures;
 	map<AbstractTheory*,unsigned int>		_luatheories;
 	map<Options*,unsigned int>				_luaoptions;
-	set<SortTable*>							_luadomains;
 
 	/**
 	 * Push a domain element to the lua stack
@@ -466,6 +486,13 @@ namespace LuaConnection {
 					case AT_OVERLOADED:
 						ia._value._overloaded = *(OverloadedObject**)lua_touserdata(L,arg);
 						break;
+					case AT_PRINTMONITOR:
+						// delete after use in inference
+						ia._value.printmonitor_ = new LuaInteractivePrintMonitor(L);
+						break;
+					case AT_TRACEMONITOR:
+						// delete after use in inference
+						ia._value.tracemonitor_ = new LuaTraceMonitor(L);
 						break;
 					default:
 						assert(false);
@@ -590,12 +617,7 @@ namespace LuaConnection {
 	int gcOverloaded(lua_State* L) { return garbageCollect(*(OverloadedObject**)lua_touserdata(L,1)); }
 
 	int gcDomain(lua_State* L) {
-		SortTable* tab = *(SortTable**)lua_touserdata(L,1);
-		set<SortTable*>::iterator it = _luadomains.find(tab);
-		if(it != _luadomains.end()) {
-			delete(*it);
-			_luadomains.erase(tab);
-		}
+		garbageCollect(*(SortTable**)lua_touserdata(L,1));
 		return 0;
 	}
 
@@ -1638,20 +1660,6 @@ namespace LuaConnection {
 		createNewTable(L, AT_OVERLOADED, elements);
 	}
 
-	InternalArgument createrange(const vector<InternalArgument>& args, lua_State* ) {
-		int n1 = args[0]._value._int;
-		int n2 = args[1]._value._int;
-		InternalArgument ia; ia._type = AT_DOMAIN;
-		if(n1 <= n2) {
-			ia._value._domain = new SortTable(new IntRangeInternalSortTable(n1,n2));
-		}
-		else {
-			ia._value._domain = new SortTable(new EnumeratedInternalSortTable());
-		}
-		_luadomains.insert(ia._value._domain);
-		return ia;
-	}
-
 	/**
 	 * Create all metatables
 	 */
@@ -1691,21 +1699,6 @@ namespace LuaConnection {
 	typedef map<string,internalprocargmap > internalproclist;
 	internalproclist _internalprocedures;
 
-	/**
-	 *	\brief Add a new internal procedure
-	 *
-	 *	\param name			the name of the internal procedure
-	 *	\param argtypes		the type of the arguments of the procedure
-	 *	\param execute		the implementation of the procedure
-	 *
-	 */
-/*	void addInternalProcedure(const string& name,
-					   const vector<ArgType>& argtypes,
-					   InternalArgument (*execute)(const vector<InternalArgument>&, lua_State*)) {
-		InternalProcedure* proc = new InternalProcedure(name,argtypes,execute);
-		_internalprocedures[name][argtypes] = proc;
-	}*/
-
 	void addInternalProcedure(Inference* inf){
 		_internalprocedures[inf->getName()][inf->getArgumentTypes()] = new InternalProcedure(inf);
 	}
@@ -1715,67 +1708,6 @@ namespace LuaConnection {
 		for(auto i=inferences.begin(); i!=inferences.end(); ++i){
 			addInternalProcedure(*i);
 		}
-		// arguments of internal procedures
-/*		FIXME vector<ArgType> vempty(0);
-		vector<ArgType> vint(1,AT_INT);
-		vector<ArgType> vtheo(1,AT_THEORY);
-		vector<ArgType> vstruct(1,AT_STRUCTURE);
-		vector<ArgType> vspace(1,AT_NAMESPACE);
-		vector<ArgType> vvoc(1,AT_VOCABULARY);
-		vector<ArgType> vpredtable(1,AT_PREDTABLE);
-		vector<ArgType> vdomain(1,AT_DOMAIN);
-		vector<ArgType> vform(1,AT_FORMULA);
-		vector<ArgType> vtabitertuple(2); vtabitertuple[0] = AT_TABLEITERATOR; vtabitertuple[1] = AT_TUPLE;
-		vector<ArgType> vtheoopt(2); vtheoopt[0] = AT_THEORY; vtheoopt[1] = AT_OPTIONS;
-		vector<ArgType> vformopt(2); vformopt[0] = AT_FORMULA; vformopt[1] = AT_OPTIONS;
-		vector<ArgType> vstructopt(2); vstructopt[0] = AT_STRUCTURE; vstructopt[1] = AT_OPTIONS;
-		vector<ArgType> vdomainatomopt(2); vdomainatomopt[0] = AT_DOMAINATOM; vdomainatomopt[1] = AT_OPTIONS;
-		vector<ArgType> vstructvoc(2); vstructvoc[0] = AT_STRUCTURE; vstructvoc[1] = AT_VOCABULARY;
-		vector<ArgType> vvocopt(2); vvocopt[0] = AT_VOCABULARY; vvocopt[1] = AT_OPTIONS;
-		vector<ArgType> voptopt(2); voptopt[0] = AT_OPTIONS; voptopt[1] = AT_OPTIONS;
-		vector<ArgType> vspaceopt(2); vspaceopt[0] = AT_NAMESPACE; vspaceopt[1] = AT_OPTIONS;
-		vector<ArgType> vintint(2); vintint[0] = AT_INT; vintint[1] = AT_INT;
-		vector<ArgType> vdomiterint(2); vdomiterint[0] = AT_DOMAINITERATOR; vdomiterint[1] = AT_INT;
-		vector<ArgType> vdomiterdouble(2); vdomiterdouble[0] = AT_DOMAINITERATOR; vdomiterdouble[1] = AT_DOUBLE;
-		vector<ArgType> vdomiterstring(2); vdomiterstring[0] = AT_DOMAINITERATOR; vdomiterstring[1] = AT_STRING;
-		vector<ArgType> vdomitercomp(2); vdomitercomp[0] = AT_DOMAINITERATOR; vdomitercomp[1] = AT_COMPOUND;
-		vector<ArgType> vpritab(2); vpritab[0] = AT_PREDINTER; vpritab[1] = AT_TABLE;
-		vector<ArgType> vpritup(2); vpritup[0] = AT_PREDINTER; vpritup[1] = AT_TUPLE;
-		vector<ArgType> vquerystruct(2); vquerystruct[0] = AT_QUERY; vquerystruct[1] = AT_STRUCTURE;
-		vector<ArgType> vtheostructopt(3);
-			vtheostructopt[0] = AT_THEORY;
-			vtheostructopt[1] = AT_STRUCTURE;
-			vtheostructopt[2] = AT_OPTIONS;
-		vector<ArgType> vtheotheo(2); vtheotheo[0] = AT_THEORY; vtheotheo[1] = AT_THEORY;
-
-
-
-		// Create internal procedures
-		addInternalProcedure("help",vspace,&help);
-		addInternalProcedure("ground",vtheostructopt,&ground);
-		addInternalProcedure("propagate",vtheostructopt,&propagate);
-		addInternalProcedure("range",vintint,&createrange);
-		addInternalProcedure("dummytuple",vempty,&createtuple);
-		addInternalProcedure("deref_and_increment",vtabitertuple,&derefandincrement);
-		addInternalProcedure("deref_and_increment",vdomiterint,&domderefandincrement);
-		addInternalProcedure("deref_and_increment",vdomiterstring,&domderefandincrement);
-		addInternalProcedure("deref_and_increment",vdomiterdouble,&domderefandincrement);
-		addInternalProcedure("deref_and_increment",vdomitercomp,&domderefandincrement);
-		addInternalProcedure("tableiterator",vpredtable,&tableiterator);
-		addInternalProcedure("domainiterator",vdomain,&domainiterator);
-		addInternalProcedure("changevocabulary",vstructvoc,&changevocabulary);
-		addInternalProcedure("maketrue",vpritab,&maketabtrue);
-		addInternalProcedure("maketrue",vpritup,&maketrue);
-		addInternalProcedure("makefalse",vpritab,&maketabfalse);
-		addInternalProcedure("makefalse",vpritup,&makefalse);
-		addInternalProcedure("makeunknown",vpritab,&maketabunknown);
-		addInternalProcedure("makeunknown",vpritup,&makeunknown);
-		addInternalProcedure("completion",vtheo,&completion);
-		addInternalProcedure("estimate_nr_ans",vquerystruct,&estimatenrans);
-		addInternalProcedure("estimate_cost",vquerystruct,&estimatecost);
-		addInternalProcedure("query",vquerystruct,&query);
-		addInternalProcedure("bddstring",vform,&tobdd);
-		addInternalProcedure("clean",vstruct,&clean);*/
 
 		// Add the internal procedures to lua
 		lua_getglobal(L,getLibraryName().c_str());
@@ -1948,5 +1880,4 @@ namespace LuaConnection {
 		}
 		else return 0;
 	}
-
 }
