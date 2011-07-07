@@ -31,7 +31,9 @@ public:
 	Inference(const std::string& name, bool needprintmonitor = false, bool needtracemonitor = false):
 			_name(name),
 			needprintmonitor_(needprintmonitor),
-			needtracemonitor_(needtracemonitor){
+			needtracemonitor_(needtracemonitor),
+			printmonitor_(NULL),
+			tracemonitor_(NULL){
 	}
 	virtual ~Inference(){}
 

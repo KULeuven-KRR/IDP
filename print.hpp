@@ -9,6 +9,7 @@
 
 #include <cstdio>
 #include <sstream>
+#include <ostream>
 #include <string>
 #include <vector>
 #include <set>
@@ -41,6 +42,7 @@ class CPVarTerm;
 class CPWSumTerm;
 class CPReification;
 class CPSumTerm;
+class InteractivePrintMonitor;
 
 
 /***************************
@@ -48,38 +50,38 @@ class CPSumTerm;
 ***************************/
 
 class Printer : public TheoryVisitor {
-	protected:
-		std::stringstream _out;
-		unsigned int _indent;
-		Printer(); 
-	
-	public:
-		// Factory method
-		static Printer* create(Options* opts);
+private:
+	InteractivePrintMonitor& _out;
+	unsigned int _indent;
+protected:
+	Printer(InteractivePrintMonitor& stream):_out(stream), _indent(0){} //default indentation = 0
+public:
+	// Factory method
+	static Printer* create(Options* opts, InteractivePrintMonitor& stream);
 
-		// Print methods
-		virtual std::string print(const Vocabulary*) = 0;
-		virtual std::string print(const AbstractStructure*) = 0;
-		virtual std::string print(const Namespace*) = 0;
-		virtual std::string print(const Formula*);
-		std::string print(const AbstractTheory*);
+	// Print methods
+	virtual std::string print(const Vocabulary*) = 0;
+	virtual std::string print(const AbstractStructure*) = 0;
+	virtual std::string print(const Namespace*) = 0;
+	virtual std::string print(const Formula*);
+	std::string print(const AbstractTheory*);
 
-		virtual void visit(const GroundClause&) = 0;
-		virtual void visit(const GroundFixpDef*) = 0;
+	virtual void visit(const GroundClause&) = 0;
+	virtual void visit(const GroundFixpDef*) = 0;
 
-		// Indentation
-		void indent();
-		void unindent();
-		void printtab();
+	// Indentation
+	void indent();
+	void unindent();
+	void printtab();
 
-		std::stringstream& output() { return _out; }
+	InteractivePrintMonitor& output(){ return _out; }
 };
 
 /******************
 	IDP printer
 ******************/
 
-class IDPPrinter : public Printer {
+class IDPPrinter: public Printer {
 	private:
 		bool 						_printtypes;
 		bool						_longnames;
@@ -95,8 +97,7 @@ class IDPPrinter : public Printer {
 		void printAggregate(double bound, bool lower, AggFunction aggtype, unsigned int setnr);
 
 	public:
-		IDPPrinter() : _printtypes(false) { }
-		IDPPrinter(bool printtypes, bool longnames) : _printtypes(printtypes), _longnames(longnames) { }
+		IDPPrinter(bool printtypes, bool longnames, InteractivePrintMonitor& stream): Printer(stream), _printtypes(printtypes), _longnames(longnames) { }
 
 		// Print methods
 		std::string print(const Vocabulary*);
@@ -171,7 +172,7 @@ class EcnfPrinter : public Printer {
 		AbstractStructure*			_structure;
 		const GroundTermTranslator*	_termtranslator;
 		std::set<unsigned int> 		_printedvarids;
-		bool 			writeTranslation_;
+		bool 						writeTranslation_;
 
 		void printAggregate(AggFunction aggtype, TsType arrow, unsigned int defnr, bool lower, int head, unsigned int setnr, double bound);
 		void printCPVariable(unsigned int varid);
@@ -183,7 +184,7 @@ class EcnfPrinter : public Printer {
 		bool			writeTranlation() const { return writeTranslation_; }
 
 	public:
-		EcnfPrinter(bool writetranslation): writeTranslation_(writetranslation){}
+		EcnfPrinter(bool writetranslation, InteractivePrintMonitor& stream): Printer(stream), writeTranslation_(writetranslation){}
 
 		std::string print(const Vocabulary*);
 		std::string print(const AbstractStructure*);

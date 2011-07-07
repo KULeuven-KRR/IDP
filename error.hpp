@@ -19,6 +19,7 @@ namespace Error {
 
 	/** Global error message **/
 	void error();
+	void error(const std::string& message);
 	void error(const ParseInfo& p);
 
 	/** Command line errors **/

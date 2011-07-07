@@ -22,6 +22,11 @@ namespace Error {
 		cerr << "ERROR: ";
 	}
 
+	void error(const std::string& message) {
+		errorcounter++;
+		cerr << "ERROR: " <<message;
+	}
+
 	void error(const ParseInfo& p) {
 		errorcounter++;
 		cerr << "ERROR at line " << p.line() 
@@ -588,11 +593,6 @@ namespace Error {
 	void unkniat(const string& name, const ParseInfo& thisplace) {
 		error(thisplace);
 		cerr << "Argument type " << name << " does not exist." << "\n";
-	}
-
-	void wrongcommandargs(const string& name) {
-		error();
-		cerr << "The arguments given to procedure " << name << " are either of the wrong type, or do not exist.\n";
 	}
 
 	void wrongvaluetype(const string& name, ParseInfo* thisplace) {

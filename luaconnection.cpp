@@ -177,15 +177,13 @@ namespace LuaConnection {
 			// Compose function header, body, and return statement
 			stringstream ss;
 			ss << "local function " << procedure->name() << "(";
-			if(!procedure->arity()>0) {
-				bool begin = true;
-				for(auto it = procedure->args().begin(); it != procedure->args().end(); ++it){
-					if(!begin){
-						ss <<",";
-						begin=false;
-					}
-					ss << *it;
+			bool begin = true;
+			for(auto it = procedure->args().begin(); it != procedure->args().end(); ++it){
+				if(!begin){
+					ss <<",";
 				}
+				begin=false;
+				ss << *it;
 			}
 			ss << ')' << procedure->getProcedurecode() << " end\n";
 			ss << "return " << procedure->name() << "(...)\n";
@@ -558,55 +556,81 @@ namespace LuaConnection {
 		return result;
 	}
 
-	/**
-	 *	Call to internal procedure
-	 */
+	void errorNoSuchProcedure(map<vector<ArgType>,InternalProcedure*> const * const procs){
+		string name = procs->begin()->second->getName();
+		stringstream ss;
+		ss << "There is no procedure " << name << " with the provided arguments.\n";
+		ss <<"Did you intend to use:\n";
+		for(auto i=procs->begin(); i!=procs->end(); ++i){
+			ss <<"\t" <<name <<"(";
+			bool begin = true;
+			for(auto j=(*i).second->getArgumentTypes().begin(); j!=(*i).second->getArgumentTypes().end(); ++j){
+				if(!begin){
+					ss <<", ";
+				}
+				begin = false;
+				ss <<toCString(*j);
+			}
+			ss <<")\n";
+		}
+		ss <<"\n";
+		Error::error(ss.str());
+	}
+
 	int internalCall(lua_State* L) {
 		// get the list of possible procedures
 		map<vector<ArgType>,InternalProcedure*>* procs = *(map<vector<ArgType>,InternalProcedure*>**)lua_touserdata(L,1);
+		assert(!procs->empty()); //otherwise lua should have thrown an exception
+
 		lua_remove(L,1);
 
 		// get the list of possible argument types
-		vector<vector<ArgType> > argtypes(lua_gettop(L));
-		for(int arg = 1; arg <= lua_gettop(L); ++arg){
-			argtypes[arg-1] = getArgTypes(L,arg);
+		vector<vector<ArgType> > argtypes;
+		for(int luaindex = 1; luaindex <= lua_gettop(L); ++luaindex){
+			argtypes.push_back(getArgTypes(L,luaindex));
 		}
 
 		// find the right procedure
-		InternalProcedure* proc = 0;
-		vector<vector<ArgType>::iterator> carry(argtypes.size());
-		for(unsigned int n = 0; n < argtypes.size(); ++n){
-			carry[n] = argtypes[n].begin();
+		InternalProcedure* proc = NULL;
+		vector<vector<ArgType>::iterator> carry;
+		for(auto i=argtypes.begin(); i<argtypes.end(); ++i){
+			carry.push_back((*i).begin());
 		}
 		while(true) {
-			vector<ArgType> currtypes(argtypes.size());
-			for(unsigned int n = 0; n < argtypes.size(); ++n){
-				currtypes[n] = *(carry[n]);
+			vector<ArgType> currtypes;
+			for(auto i=carry.begin(); i < carry.end(); ++i){
+				currtypes.push_back(**i);
 			}
-			if(procs->find(currtypes) != procs->end()) {
-				if(!proc) {
-					proc = (*procs)[currtypes];
+
+			if(procs->find(currtypes)!=procs->end()) {
+				if(proc!=NULL){
+					Error::ambigcommand(proc->getName());
+					return 0;
 				}
-				else { Error::ambigcommand(proc->getName()); return 0; }
+				proc = (*procs)[currtypes];
 			}
-			unsigned int c = 0;
-			for(; c < argtypes.size(); ++c) {
-				++(carry[c]);
-				if(carry[c] != argtypes[c].end()){ break;}
-				else {carry[c] = argtypes[c].begin();}
+
+			//Code generates all possible combinations over argument types
+			bool newcombination = false;
+			for(unsigned int i=0; !newcombination && i<argtypes.size(); ++i) {
+				++carry[i];
+				if(carry[i]!=argtypes[i].end()){
+					newcombination = true;
+				}else{
+					carry[i] = argtypes[i].begin();
+				}
 			}
-			if(c == argtypes.size()){
+			if(!newcombination){
 				break;
 			}
 		}
 
-		// Execute the procedure
-		if(proc){
-			return (*proc)(L);
-		} else {
-			assert(!procs->empty());
-			Error::wrongcommandargs(procs->begin()->second->getName()); return 0;
+		if(proc==NULL){
+			errorNoSuchProcedure(procs);
+			return 0;
 		}
+
+		return (*proc)(L);
 	}
 
 	/*************************

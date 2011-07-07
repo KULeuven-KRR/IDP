@@ -64,6 +64,7 @@ namespace LuaConnection {
 		int operator()(lua_State* L) const;
 
 		const std::string& getName() const { return inference_->getName(); }
+		const std::vector<ArgType>& getArgumentTypes() const { return inference_->getArgumentTypes(); }
 	};
 }
 

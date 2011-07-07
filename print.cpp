@@ -16,6 +16,7 @@
 #include "ecnf.hpp"
 #include "ground.hpp"
 #include "common.hpp"
+#include "monitors/interactiveprintmonitor.hpp"
 
 using namespace std;
 using namespace rel_ops;
@@ -24,25 +25,20 @@ using namespace rel_ops;
     Printer
 **************/
 
-Printer::Printer() {
-	// Set indentation level to zero
-	_indent = 0;
-}
-
-Printer* Printer::create(Options* opts) {
+Printer* Printer::create(Options* opts, InteractivePrintMonitor& stream) {
 	switch(opts->language()) {
 		case LAN_IDP:
-			return new IDPPrinter(opts->printtypes(),opts->longnames());
+			return new IDPPrinter(opts->printtypes(),opts->longnames(), stream);
 		case LAN_ECNF:
-			return new EcnfPrinter(opts->writeTranslation());
+			return new EcnfPrinter(opts->writeTranslation(), stream);
 		default:
 			assert(false);
 			return NULL;
 	}
 }
 
-string Printer::print(const AbstractTheory* t)		{ t->accept(this); return _out.str(); }
-string Printer::print(const Formula* f)				{ f->accept(this); return _out.str(); }
+string Printer::print(const AbstractTheory* t)		{ t->accept(this); return output().str(); }
+string Printer::print(const Formula* f)				{ f->accept(this); return output().str(); }
 
 void Printer::indent() 		{ _indent++; }
 void Printer::unindent()	{ _indent--; }
@@ -71,7 +67,7 @@ void IDPPrinter::visit(const Theory* t) {
 
 void IDPPrinter::visit(const PredForm* f) {
 	if(! f->sign())	output() << "~";
-	f->symbol()->put(output(),_longnames);
+	//FIXME f->symbol()->put(output(),_longnames);
 	if(!f->subterms().empty()) {
 		output() << "(";
 		f->subterms()[0]->accept(this);
@@ -219,7 +215,7 @@ void IDPPrinter::visit(const VarTerm* t) {
 }
 
 void IDPPrinter::visit(const FuncTerm* t) {
-	t->function()->put(output(),_longnames);
+	//FIXME t->function()->put(output(),_longnames);
 	if(!t->subterms().empty()) {
 		output() << "(";
 		t->subterms()[0]->accept(this);
@@ -384,7 +380,7 @@ void IDPPrinter::printTerm(unsigned int termnr) {
 			output() << ")";
 		}
 	} else {
-		_out << "var_" << termnr;
+		output() << "var_" << termnr;
 //		CPTsBody* cprelation = _termtranslator->cprelation(varid);
 //		CPReification(1,cprelation).accept(this);
 	}
@@ -629,37 +625,37 @@ void EcnfPrinter::printCPVariable(unsigned int varid) {
 		if(domain->isRange()) {
 			int minvalue = domain->first()->value()._int;
 			int maxvalue = domain->last()->value()._int;
-			_out << "INTVAR " << varid << ' ' << minvalue << ' ' << maxvalue << ' ';
+			output() << "INTVAR " << varid << ' ' << minvalue << ' ' << maxvalue << ' ';
 		} else {
-			_out << "INTVARDOM " << varid << ' ';
+			output() << "INTVARDOM " << varid << ' ';
 			for(SortIterator it = domain->sortbegin(); it.hasNext(); ++it) {
 				int value = (*it)->value()._int;
-				_out << value << ' ';
+				output() << value << ' ';
 			}
 		}
-		_out << '0' << "\n";
+		output() << '0' << "\n";
 	}
 }
 
 void EcnfPrinter::printCPReification(string type, int head, unsigned int left, CompType comp, long right) {
-	_out << type << ' ' << head << ' ' << left << ' ' << comp << ' ' << right << " 0" << "\n";
+	output() << type << ' ' << head << ' ' << left << ' ' << comp << ' ' << right << " 0" << "\n";
 }
 
 void EcnfPrinter::printCPReification(string type, int head, vector<unsigned int> left, CompType comp, long right) {
-	_out << type << ' ' << head << ' ';
+	output() << type << ' ' << head << ' ';
 	for(vector<unsigned int>::const_iterator it = left.begin(); it != left.end(); ++it)
-		_out << *it << ' ';
-	_out << comp << ' ' << right << " 0" << "\n";
+		output() << *it << ' ';
+	output() << comp << ' ' << right << " 0" << "\n";
 }
 
 void EcnfPrinter::printCPReification(string type, int head, vector<unsigned int> left, vector<int> weights, CompType comp, long right) {
-	_out << type << ' ' << head << ' ';
+	output() << type << ' ' << head << ' ';
 	for(vector<unsigned int>::const_iterator it = left.begin(); it != left.end(); ++it)
-		_out << *it << ' ';
-	_out << " | ";
+		output() << *it << ' ';
+	output() << " | ";
 	for(vector<int>::const_iterator it = weights.begin(); it != weights.end(); ++it)
-		_out << *it << ' ';
-	_out << comp << ' ' << right << " 0" << "\n";
+		output() << *it << ' ';
+	output() << comp << ' ' << right << " 0" << "\n";
 }
 
 void EcnfPrinter::visit(const CPReification* cpr) {

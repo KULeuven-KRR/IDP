@@ -211,7 +211,7 @@ struct InternalArgument {
 
 	// Constructors
 	InternalArgument() { }
-	//InternalArgument(const InternalArgument& orig):_type(orig._type), _value(orig._value) { }
+	InternalArgument(const InternalArgument& orig):_type(orig._type), _value(orig._value) { }
 	InternalArgument(Vocabulary* v)						: _type(AT_VOCABULARY)	{ _value._vocabulary = v;	}
 	InternalArgument(PredInter* p)						: _type(AT_PREDINTER)	{ _value._predinter = p;	}
 	InternalArgument(FuncInter* f)						: _type(AT_FUNCINTER)	{ _value._funcinter = f;	}

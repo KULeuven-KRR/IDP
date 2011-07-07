@@ -13,6 +13,8 @@
 class LuaInteractivePrintMonitor: public InteractivePrintMonitor{
 private:
 	lua_State* state_;
+	int buffersize;
+	std::stringstream buffer_;
 
 	lua_State* state() const { return state_; }
 
@@ -21,14 +23,31 @@ public:
 	}
 
 	virtual void print(const std::string& text){
-		lua_getglobal(state(),"print");
-		lua_pushstring(state(),text.c_str());
-		lua_call(state(),1,0);
+		buffersize +=text.size();
+		buffer_ <<text;
+
+		if(buffersize>1000){
+			lua_getglobal(state(),"print");
+			lua_pushstring(state(),buffer_.str().c_str());
+			lua_call(state(),1,0);
+			buffersize = 0;
+			buffer_.str("");
+		}
 	}
 
 	virtual void printerror(const std::string& text){
 		lua_pushstring(state(),text.c_str());
 		lua_error(state());
+	}
+
+	//FiXME not the cleanest flush
+	virtual std::string str() {
+		lua_getglobal(state(),"print");
+		lua_pushstring(state(),buffer_.str().c_str());
+		lua_call(state(),1,0);
+		buffersize = 0;
+		buffer_.str("");
+		return "";
 	}
 };
 

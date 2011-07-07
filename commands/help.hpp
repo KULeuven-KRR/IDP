@@ -58,7 +58,7 @@ public:
 	GlobalHelpInference(): Inference("globalhelp") {
 	}
 
-	InternalArgument execute(const std::vector<InternalArgument>& args) const {
+	InternalArgument execute(const std::vector<InternalArgument>&) const {
 		std::string str = help(Namespace::global());
 		printmonitor()->print(str);
 		return nilarg();

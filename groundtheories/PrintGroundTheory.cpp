@@ -16,7 +16,7 @@ const int ID_FOR_UNDEFINED = -1; // FIXME REMOVE
 PrintGroundTheory::PrintGroundTheory(InteractivePrintMonitor* monitor, AbstractStructure* str):
 			AbstractGroundTheory(str),
 			monitor_(monitor),
-			printer_(new EcnfPrinter(true)){ //FIXME translation option as argument to constructor
+			printer_(new EcnfPrinter(true, *monitor)){ //FIXME translation option as argument to constructor
 
 }
 

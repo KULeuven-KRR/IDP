@@ -56,13 +56,9 @@ gidl_SOURCES = \
 		commands/allcommands.hpp\
 		commands/optimization.hpp\
 		commands/commandinterface.hpp\
-		commands/printtheory.hpp\
-		commands/printformula.hpp\
+		commands/printblocks.hpp\
 		commands/printdomainatom.hpp\
-		commands/printstructure.hpp\
-		commands/printvocabulary.hpp\
 		commands/printoptions.hpp\
-		commands/printnamespace.hpp\
 		commands/newstructure.hpp\
 		commands/newtheory.hpp\
 		commands/modelexpand.hpp\

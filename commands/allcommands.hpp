@@ -7,13 +7,9 @@
 #define ALLCOMMANDS_HPP_
 
 #include "internalargument.hpp"
-#include "commands/printtheory.hpp"
-#include "commands/printformula.hpp"
+#include "commands/printblocks.hpp"
 #include "commands/printdomainatom.hpp"
-#include "commands/printstructure.hpp"
-#include "commands/printvocabulary.hpp"
 #include "commands/printoptions.hpp"
-#include "commands/printnamespace.hpp"
 #include "commands/newstructure.hpp"
 #include "commands/newtheory.hpp"
 #include "commands/modelexpand.hpp"

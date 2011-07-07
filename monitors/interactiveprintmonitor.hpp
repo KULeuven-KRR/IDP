@@ -12,11 +12,33 @@
  */
 
 #include <string>
+#include <sstream>
 
 class InteractivePrintMonitor{
 public:
-	virtual void print(const std::string&) = 0;
-	virtual void printerror(const std::string&) = 0;
+	virtual void print(const std::string& str)=0;
+	virtual std::string str() = 0;
+	virtual void printerror(const std::string& str) = 0;
 };
+
+class SavingPrintMonitor : public InteractivePrintMonitor{
+private:
+	std::stringstream ss;
+public:
+	virtual void print(const std::string& str){
+		ss <<str;
+	}
+	std::string str() { return ss.str(); }
+	virtual void printerror(const std::string& str){
+		ss <<str;
+	}
+};
+
+template<class T> InteractivePrintMonitor& operator<<(InteractivePrintMonitor& monitor, const T& object) {
+	std::stringstream ss;
+	ss <<object;
+	monitor.print(ss.str());
+	return monitor;
+}
 
 #endif /* INTERACTIVEPRINTMONITOR_HPP_ */
