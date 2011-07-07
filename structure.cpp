@@ -3325,42 +3325,6 @@ namespace TableUtils {
 		}
 		else return false;
 	}
-
-}
-
-/*****************
-	StructureUtils
-*****************/
-void findCares(AbstractStructure* s, PFSymbol* pf, map<Sort*, IVSet>& dontcares, map<Sort*, IVSet>& cares){
-	PredInter* inter = s->inter(pf);
-	if(!inter->ct()->approxempty() || !inter->cf()->approxempty()){ // all sorts for this predicate are cares
-		for(set<Sort*>::const_iterator sortIt = pf->allsorts().begin(); sortIt != pf->allsorts().end(); ++sortIt){
-			map<Sort*, IVSet>::iterator dc_it = dontcares.find(*sortIt);
-			if(dc_it!=dontcares.end()){
-				cares.insert(*dc_it); // pair<Sort*, IVSet>
-				dontcares.erase(dc_it);
-			}
-		}
-	}
-}
-
-namespace StructureUtils {
-	void findDontCares(AbstractStructure* s, map<Sort*, IVSet>& dontcares, map<Sort*, IVSet>& cares, map<Sort*, vector<IVSet> >& ivsets){	
-//		for(map<string, set<Sort*>>::const_iterator mapIt= s->vocabulary()->firstsort(); mapIt !=s->vocabulary()->lastsort(); ++mapIt){
-//			dontcares.insert(mapIt->second.begin(), mapIt->second.end());
-//		}
-		for(map<string, Predicate*>::const_iterator mapIt= s->vocabulary()->firstpred(); mapIt !=s->vocabulary()->lastpred(); ++mapIt){
-			PFSymbol* pf = mapIt->second;
-			findCares(s, pf, dontcares, cares);
-		}
-		for(map<string, Function*>::const_iterator mapIt= s->vocabulary()->firstfunc(); mapIt !=s->vocabulary()->lastfunc(); ++mapIt){
-			PFSymbol* pf = mapIt->second;
-			findCares(s, pf, dontcares, cares);
-		}
-		for(map<Sort*,IVSet>::const_iterator dc_it = dontcares.begin(); dc_it!=dontcares.end(); ++dc_it){
-			ivsets[dc_it->first].push_back(dc_it->second);
-		}
-	}
 }
 
 /*****************

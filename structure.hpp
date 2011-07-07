@@ -15,6 +15,10 @@
 #include <ostream>
 #include <limits>
 #include <cstdlib>
+#include "parseinfo.hpp"
+
+class PFSymbol;
+class Vocabulary;
 
 /**
  * \file structure.hpp
@@ -723,6 +727,7 @@ class ProcInternalPredTable : public InternalPredTable {
 
 class FOBDDManager;
 class FOBDD;
+class AbstractStructure;
 
 class BDDInternalPredTable : public InternalPredTable {
 	private:
@@ -1969,12 +1974,6 @@ namespace TableUtils {
 
 	bool		approxTotalityCheck(const FuncInter*);
 		//!< Check whether there is a value for every tuple in the given function interpretation.
-}
-
-typedef std::set<const DomainElement*> IVSet;
-
-namespace StructureUtils {
-	void findDontCares(AbstractStructure*, std::map<Sort*, IVSet>&, std::map<Sort*, IVSet>&, std::map<Sort*, std::vector<IVSet> >&);
 }
 
 /**************
