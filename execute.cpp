@@ -25,6 +25,7 @@
 #include "fobdd.hpp"
 #include "propagate.hpp"
 #include "generator.hpp"
+#include "symmetry.hpp"
 using namespace std;
 
 extern void parsefile(const string&);
@@ -1299,6 +1300,19 @@ InternalArgument clean(const vector<InternalArgument>& args, lua_State*) {
 	AbstractStructure* s = args[0].structure();
 	s->clean();
 	return InternalArgument(s);
+}
+
+/**************************
+	Symmetry Detection
+**************************/
+
+InternalArgument detectSymmetry(const vector<InternalArgument>& args, lua_State*) {
+	const AbstractTheory* t = args[0].theory();
+	const AbstractStructure* s = args[1].structure();
+	map<const Sort*,vector<IVSet> > temp = findIVSets(t, s);
+	string str = printIVSets(temp);
+	InternalArgument result = StringPointer(str);
+	return result;
 }
 
 
@@ -3099,6 +3113,7 @@ namespace LuaConnection {
 			vtheostructopt[1] = AT_STRUCTURE; 
 			vtheostructopt[2] = AT_OPTIONS;
 		vector<ArgType> vtheotheo(2); vtheotheo[0] = AT_THEORY; vtheotheo[1] = AT_THEORY;
+		vector<ArgType> vtheostruct(2); vtheostruct[0] = AT_THEORY; vtheostruct[1] = AT_STRUCTURE; 
 
 		// Create internal procedures
 		addInternalProcedure("idptype",vint,&idptype);
@@ -3143,6 +3158,7 @@ namespace LuaConnection {
 		addInternalProcedure("bddstring",vform,&tobdd);
 		addInternalProcedure("clean",vstruct,&clean);
 		addInternalProcedure("merge",vtheotheo,&mergetheories);
+		addInternalProcedure("detectsymmetry",vtheostruct,&detectSymmetry);
 		
 		// Add the internal procedures to lua
 		lua_getglobal(L,"idp_intern");

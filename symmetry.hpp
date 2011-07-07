@@ -7,11 +7,15 @@
 #include <set>
 #include <map>
 #include <vector>
+#include <string>
 
 class DomainElement;
 class AbstractStructure;
+class AbstractTheory;
 class Sort;
 
 typedef std::set<const DomainElement*> IVSet;
 
-void findDontCares(AbstractStructure*, std::map<Sort*, IVSet>&, std::map<Sort*, IVSet>&, std::map<Sort*, std::vector<IVSet> >&);
+std::map<const Sort*,std::vector<IVSet> > findIVSets(const AbstractTheory*, const AbstractStructure*);
+
+std::string printIVSets(std::map<const Sort*,std::vector<IVSet> >&);

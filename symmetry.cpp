@@ -8,6 +8,8 @@
 #include "vocabulary.hpp"
 #include "theory.hpp"
 #include "term.hpp"
+#include <sstream>
+#include <iostream>  //TODO: wissen na debuggen :)
 
 using namespace std;
 
@@ -19,24 +21,27 @@ map<const Sort*, IVSet> initializeIVSets(const AbstractStructure* s){
 	map<const Sort*, IVSet> result; 
 	for(map<string, set<Sort*>>::const_iterator map_it= s->vocabulary()->firstsort(); map_it !=s->vocabulary()->lastsort(); ++map_it){
 		for(set<Sort*>::const_iterator sort_it = map_it->second.begin(); sort_it != map_it->second.end(); ++sort_it){
-			IVSet uniqueDomainElements;
 			const SortTable* parent = s->inter(*sort_it);
-			vector<const SortTable*> kids;
-			for(set<Sort*>::const_iterator kids_it = (*sort_it)->children().begin(); kids_it != (*sort_it)->children().end(); ++kids_it){
-				kids.push_back(s->inter(*kids_it));
-			}			
-			for(SortIterator parent_it = parent->sortbegin(); parent_it.hasNext(); ++parent_it){
-				bool isUnique = true;
-				for(vector<const SortTable*>::const_iterator kids_it2 = kids.begin(); kids_it2 != kids.end() && isUnique; ++kids_it2 ){
-					isUnique = not (*kids_it2)->contains(*parent_it);
+			if(parent->approxfinite()){
+				IVSet uniqueDomainElements;
+				vector<const SortTable*> kids;
+				for(set<Sort*>::const_iterator kids_it = (*sort_it)->children().begin(); kids_it != (*sort_it)->children().end(); ++kids_it){
+					kids.push_back(s->inter(*kids_it));
 				}
-				if(isUnique){
-					uniqueDomainElements.insert(*parent_it);
+				for(SortIterator parent_it = parent->sortbegin(); parent_it.hasNext(); ++parent_it){
+					bool isUnique = true;
+					for(vector<const SortTable*>::const_iterator kids_it2 = kids.begin(); kids_it2 != kids.end() && isUnique; ++kids_it2 ){
+						isUnique = not (*kids_it2)->contains(*parent_it);
+					}
+					if(isUnique){
+						uniqueDomainElements.insert(*parent_it);
+					}
+				}
+				if(uniqueDomainElements.size()>1){
+					result[*sort_it]=uniqueDomainElements;
 				}
 			}
-			if(uniqueDomainElements.size()>1){
-				result[*sort_it]=uniqueDomainElements;
-			}
+			
 		}
 	}
 	return result;
@@ -44,7 +49,7 @@ map<const Sort*, IVSet> initializeIVSets(const AbstractStructure* s){
 
 class TheorySymmetryAnalyzer : public TheoryVisitor {
 	private:
-		const AbstractStructure* 						structure_;
+		const AbstractStructure* 				structure_;
 		set<const Sort*> 						forbiddenSorts_;
 		map<const DomainElement*,const Sort*> 	forbiddenElements_;
 		
@@ -61,8 +66,8 @@ class TheorySymmetryAnalyzer : public TheoryVisitor {
 		void visit(const DomainTerm*);
 		void visit(const EqChainForm*);
 		
-		set<const Sort*> 						getForbiddenSorts() 	const { return forbiddenSorts_; }
-		map<const DomainElement*,const Sort*> 	getForbiddenElements() 	const { return forbiddenElements_; }
+		const set<const Sort*>& 						getForbiddenSorts() 	const { return forbiddenSorts_; }
+		const map<const DomainElement*,const Sort*>& 	getForbiddenElements() 	const { return forbiddenElements_; }
 };
 
 void TheorySymmetryAnalyzer::markAsUnfitForSymmetry(const vector<Term*>& subTerms){
@@ -141,15 +146,15 @@ void TheorySymmetryAnalyzer::visit(const EqChainForm* ef){
  * from dontcares. 
  */
 void adjustIVSetsByTheory(const AbstractTheory* t, const AbstractStructure* s, map<const Sort*, IVSet>& dontcares){
-	TheorySymmetryAnalyzer* tsa = new TheorySymmetryAnalyzer(s);
-	t->accept(tsa);
-	for(set<const Sort*>::iterator forbiddenSort_it=tsa->getForbiddenSorts().begin(); 
-			forbiddenSort_it!=tsa->getForbiddenSorts().end(); 
+	TheorySymmetryAnalyzer tsa(s);
+	t->accept(&tsa);
+	for(set<const Sort*>::iterator forbiddenSort_it=tsa.getForbiddenSorts().begin(); 
+			forbiddenSort_it!=tsa.getForbiddenSorts().end(); 
 			++forbiddenSort_it){
 		dontcares.erase(*forbiddenSort_it);
 	}
-	for(map<const DomainElement*,const Sort*>::const_iterator forbiddenDE_it=tsa->getForbiddenElements().begin(); 
-			forbiddenDE_it!=tsa->getForbiddenElements().end(); 
+	for(map<const DomainElement*,const Sort*>::const_iterator forbiddenDE_it=tsa.getForbiddenElements().begin(); 
+			forbiddenDE_it!=tsa.getForbiddenElements().end(); 
 			++forbiddenDE_it){
 		map<const Sort*, IVSet>::iterator IV_it = dontcares.find(forbiddenDE_it->second);
 		if(IV_it != dontcares.end()){
@@ -159,18 +164,19 @@ void adjustIVSetsByTheory(const AbstractTheory* t, const AbstractStructure* s, m
 			}
 		}
 	}
-	delete tsa;
 }
 
 
 void findCares(const AbstractStructure* s, PFSymbol* pf, map<const Sort*, IVSet>& dontcares, map<const Sort*, IVSet>& cares){
-	const PredInter* inter = s->inter(pf);
-	if(!inter->ct()->approxempty() || !inter->cf()->approxempty()){ // all sorts for this predicate are cares
-		for(set<Sort*>::const_iterator sortIt = pf->allsorts().begin(); sortIt != pf->allsorts().end(); ++sortIt){
-			map<const Sort*, IVSet>::iterator dc_it = dontcares.find(*sortIt);
-			if(dc_it!=dontcares.end() && dc_it->second.size()>1){
-				cares.insert(*dc_it); // pair<const Sort*, IVSet>
-				dontcares.erase(dc_it);
+	if(not (pf->builtin() || pf->overloaded()) ){
+		const PredInter* inter = s->inter(pf);
+		if(not (inter->ct()->approxempty() && inter->cf()->approxempty()) ){ // all sorts for this predicate are cares
+			for(vector<Sort*>::const_iterator sortIt = pf->sorts().begin(); sortIt != pf->sorts().end(); ++sortIt){
+				map<const Sort*, IVSet>::iterator dc_it = dontcares.find(*sortIt);
+				if(dc_it!=dontcares.end() && dc_it->second.size()>1){
+					cares.insert(*dc_it); // pair<const Sort*, IVSet>
+					dontcares.erase(dc_it);
+				}
 			}
 		}
 	}
@@ -178,12 +184,21 @@ void findCares(const AbstractStructure* s, PFSymbol* pf, map<const Sort*, IVSet>
 
 void findDontCares(const AbstractStructure* s, map<const Sort*,IVSet>& dontcares, map<const Sort*,IVSet>& cares, map<const Sort*,vector<IVSet> >& ivsets){	
 	for(map<string, Predicate*>::const_iterator mapIt= s->vocabulary()->firstpred(); mapIt !=s->vocabulary()->lastpred(); ++mapIt){
-		PFSymbol* pf = mapIt->second;
-		findCares(s, pf, dontcares, cares);
+		Predicate* p = mapIt->second;
+		bool isSortPredicate = false;
+		if(p->nrSorts()==1){
+			stringstream ss;
+			ss << p->sorts()[0]->name() << "/1";
+			isSortPredicate = p->name() == ss.str();
+			//isSortPredicate = not p->name().compare(ss.str());
+		}
+		if(not isSortPredicate ){ // Else it is a predicate representing a sort... TODO: hack...
+			findCares(s, p, dontcares, cares);
+		}
 	}
 	for(map<string, Function*>::const_iterator mapIt= s->vocabulary()->firstfunc(); mapIt !=s->vocabulary()->lastfunc(); ++mapIt){
-		PFSymbol* pf = mapIt->second;
-		findCares(s, pf, dontcares, cares);
+		Function* f = mapIt->second;
+		findCares(s, f, dontcares, cares);
 	}
 	for(map<const Sort*,IVSet>::const_iterator dc_it = dontcares.begin(); dc_it!=dontcares.end(); ++dc_it){
 		if(dc_it->second.size()>1){
@@ -207,3 +222,20 @@ map<const Sort*,vector<IVSet> > findIVSets(const AbstractTheory* t, const Abstra
 	return ivsets;
 }
 
+string printIVSets(map<const Sort*,vector<IVSet> >& ivSets){
+	stringstream ss;
+	for(map<const Sort*,vector<IVSet> >::const_iterator ivSets_it = ivSets.begin(); ivSets_it!=ivSets.end(); ++ivSets_it){
+		string sortName = ivSets_it->first->to_string();
+		ss << sortName << endl;
+		for(vector<IVSet>::const_iterator vector_it = ivSets_it->second.begin(); vector_it != ivSets_it->second.end(); ++vector_it){
+			for(IVSet::const_iterator ivSet_it = vector_it->begin(); ivSet_it != vector_it->end(); ++ivSet_it){
+				if(sortName.compare("std::char")!=0){ //otherwise all chars would make a very long string... TODO
+					ss << (*ivSet_it)->to_string();
+					if(ivSet_it != --vector_it->end() ) ss << ", ";
+				}
+			}
+			ss << endl;
+		}
+	}
+	return ss.str();
+}
