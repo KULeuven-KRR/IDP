@@ -259,6 +259,7 @@ void AbstractGroundTheory::recursiveDelete() {
  *		skipfirst	- if true, the defining rule for the first literal is not added to the ground theory
  * TODO
  *		implement unfolding
+ * FIXME: Move this into the grounder, so the different groundertheories need no knowledge of this
  */
 void AbstractGroundTheory::transformForAdd(const vector<int>& vi, VIType /*vit*/, int defnr, bool skipfirst) {
 	unsigned int n = 0;
@@ -532,7 +533,7 @@ ostream& GroundTheory::put(ostream& s, unsigned int) const {
 		const GroundAggregate* agg = _aggregates[n];
 		s << _translator->printAtom(agg->head()) << ' ' << agg->arrow() << ' ' << agg->bound();
 		s << (agg->lower() ? " =< " : " >= ");
-		s << agg->type() << '(' << agg->setnr() << ")." << endl;
+		s << agg->type() << '(' << agg->setnr() << ")." << "\n";
 	}
 	//TODO: repeat above for fixpoint definitions
 	for(vector<CPReification*>::const_iterator it = _cpreifications.begin(); it != _cpreifications.end(); ++it) {
@@ -568,7 +569,7 @@ ostream& GroundTheory::put(ostream& s, unsigned int) const {
 		CPBound right = cpr->_body->right();
 		if(right._isvarid) s << _termtranslator->printTerm(right._varid);
 		else s << right._bound;
-		s << '.' << endl;
+		s << '.' << "\n";
 	}
 	return s;
 }
@@ -617,7 +618,7 @@ void SolverTheory::addClause(GroundClause& cl, bool skipfirst) {
 		clause.literals.push_back(createLiteral(cl[n]));
 		if(_verbosity > 0) clog << (cl[n] > 0 ? "" : "~") << _translator->printAtom(cl[n]) << ' ';
 	}
-	if(_verbosity > 0) clog << endl;
+	if(_verbosity > 0) clog << "\n";
 	getSolver().add(clause);
 }
 
@@ -635,7 +636,7 @@ void SolverTheory::addSet(int setnr, int defnr, bool weighted) {
 				set.literals.push_back(createLiteral(tsset.literal(n)));
 				if(_verbosity > 0) clog << (tsset.literal(n) > 0 ? "" : "~") << _translator->printAtom(tsset.literal(n)) << ' ';
 			}
-			if(_verbosity > 0) clog << endl;
+			if(_verbosity > 0) clog << "\n";
 			getSolver().add(set);
 		}
 		else {
@@ -649,7 +650,7 @@ void SolverTheory::addSet(int setnr, int defnr, bool weighted) {
 				if(_verbosity > 0) clog << (tsset.literal(n) > 0 ? "" : "~") << _translator->printAtom(tsset.literal(n)) << "=" << tsset.weight(n) << ' ';
 			}
 			getSolver().add(set);
-			if(_verbosity > 0) clog << endl;
+			if(_verbosity > 0) clog << "\n";
 		}
 	}
 }
@@ -696,7 +697,7 @@ void SolverTheory::addAggregate(int definitionID, int head, bool lowerbound, int
 			agg.sem = MinisatID::DEF;
 			break;
 	}
-	if(_verbosity > 0) clog << (lowerbound ? " >= " : " =< ") << bound << endl; 
+	if(_verbosity > 0) clog << (lowerbound ? " >= " : " =< ") << bound << "\n"; 
 	agg.defID = definitionID;
 	agg.head = createAtom(head);
 	agg.bound = createWeight(bound);
@@ -867,7 +868,7 @@ void SolverTheory::addCPVariable(const VarId& varid) {
 			if(_verbosity > 0) clog << "}";
 			getSolver().add(cpvar);
 		}
-		if(_verbosity > 0) clog << endl;
+		if(_verbosity > 0) clog << "\n";
 	}
 }
 #endif //CPSUPPORT
@@ -884,7 +885,7 @@ void SolverTheory::addPCRule(int defnr, int head, vector<int> body, bool conjunc
 	rule.conjunctive = conjunctive;
 	rule.definitionID = defnr;
 	getSolver().add(rule);
-	if(_verbosity > 0) clog << endl;
+	if(_verbosity > 0) clog << "\n";
 }
 
 void SolverTheory::addPCRule(int defnr, int head, PCGroundRuleBody* grb) {

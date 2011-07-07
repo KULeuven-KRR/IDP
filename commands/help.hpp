@@ -56,37 +56,25 @@ std::string help(Namespace* ns) {
 class GlobalHelpInference: public Inference {
 public:
 	GlobalHelpInference(): Inference("globalhelp") {
-		add(AT_PRINTMONITOR);
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
-		InteractivePrintMonitor* monitor = args[1]._value.printmonitor_;
-
 		std::string str = help(Namespace::global());
-		monitor->print(str);
-
-		delete(monitor);
-
+		printmonitor()->print(str);
 		return nilarg();
 	}
 };
 
 class HelpInference: public Inference {
 public:
-	HelpInference(): Inference("help") {
+	HelpInference(): Inference("help", true) {
 		add(AT_NAMESPACE);
-		add(AT_PRINTMONITOR);
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
 		Namespace* ns = args[0].space();
-		InteractivePrintMonitor* monitor = args[1]._value.printmonitor_;
-
 		std::string str = help(ns);
-		monitor->print(str);
-
-		delete(monitor);
-
+		printmonitor()->print(str);
 		return nilarg();
 	}
 };

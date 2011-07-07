@@ -39,18 +39,19 @@
 #include "commands/estimatecosts.hpp"
 #include "commands/derefandincrement.hpp"
 #include "commands/help.hpp"
+#include "commands/optimization.hpp"
 
 #include <vector>
 
 // Important: pointer owner is transferred to receiver!
 std::vector<Inference*> getAllInferences(){
 	std::vector<Inference*> inferences;
-	inferences.push_back(new MakeFalseInference());
-	inferences.push_back(new MakeTrueInference());
-	inferences.push_back(new MakeUnknownInference());
-	inferences.push_back(new MakeTableFalseInference());
-	inferences.push_back(new MakeTableTrueInference());
-	inferences.push_back(new MakeTableUnknownInference());
+	inferences.push_back(SetAtomValueInference::getMakeAtomTrueInference());
+	inferences.push_back(SetAtomValueInference::getMakeAtomFalseInference());
+	inferences.push_back(SetAtomValueInference::getMakeAtomUnknownInference());
+	inferences.push_back(SetTableValueInference::getMakeTableTrueInference());
+	inferences.push_back(SetTableValueInference::getMakeTableFalseInference());
+	inferences.push_back(SetTableValueInference::getMakeTableUnknownInference());
 	inferences.push_back(new DomainIteratorInference());
 	inferences.push_back(new TableIteratorInference());
 	inferences.push_back(new PropagateInference());
@@ -87,6 +88,8 @@ std::vector<Inference*> getAllInferences(){
 	inferences.push_back(new CompoundDerefAndIncrementInference());
 	inferences.push_back(new GlobalHelpInference());
 	inferences.push_back(new HelpInference());
+	inferences.push_back(new GroundAndPrintInference());
+	inferences.push_back(new OptimizationInference());
 	return inferences;
 }
 

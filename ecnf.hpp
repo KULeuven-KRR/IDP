@@ -213,7 +213,7 @@ class AggGroundRuleBody : public GroundRuleBody {
 
 		// Inspectors
 		unsigned int	setnr()		const { return _setnr;		}
-		AggFunction			aggtype()	const { return _aggtype;	}
+		AggFunction		aggtype()	const { return _aggtype;	}
 		bool			lower()		const { return _lower;		}
 		double			bound()		const { return _bound;		}
 		bool			isFalse()	const { return false;		}
@@ -293,7 +293,7 @@ class GroundFixpDef : public AbstractDefinition {
  * class CPReification
  * 		This class represents CP constraints.
  */
-class CPReification { //TODO
+class CPReification { //TODO ?
 	public:
 		int 		_head;
 		CPTsBody* 	_body;
@@ -405,7 +405,7 @@ public:
 
 	// Debugging
 	virtual std::ostream&	put(std::ostream& output, unsigned int)	const { assert(false); /* TODO */ return output;	   }
-	virtual std::string		to_string()								const { assert(false); return ""; /*TODO*/	}
+	virtual std::string		to_string()								const { assert(false); return ""; /*TODO might be implemented in the future (if solver supports it)*/	}
 
 private:
 	void 	addAggregate(int definitionID, int head, bool lowerbound, int setnr, AggFunction aggtype, TsType sem, double bound);
@@ -445,14 +445,12 @@ public:
 	void	addAggRule(int defnr, int tseitin, AggTsBody* body);
 
 	// Inspectors
-	unsigned int		nrSentences()					const { return _clauses.size() + _aggregates.size();	}
 	unsigned int		nrClauses()						const { return _clauses.size();							}
 	unsigned int		nrDefinitions()					const { return _definitions.size();						}
 	unsigned int		nrFixpDefs()					const { return _fixpdefs.size();						}
 	unsigned int		nrSets()						const { return _sets.size();							}
 	unsigned int		nrAggregates()					const { return _aggregates.size();						}
 	unsigned int 		nrCPReifications()				const { return _cpreifications.size();					}
-	Formula*			sentence(unsigned int)			const { assert(false); return NULL;/* TODO */						}
 	GroundClause		clause(unsigned int n)			const { return _clauses[n];								}
 	GroundDefinition*	definition(unsigned int n)		const { return _definitions[n];							}
 	GroundFixpDef*		fixpdef(unsigned int n)			const { return _fixpdefs[n];							}

@@ -156,6 +156,22 @@ InternalArgument Options::getvalue(const string& opt) const {
 
 namespace LuaConnection {
 
+	int InternalProcedure::operator()(lua_State* L) const {
+		std::vector<InternalArgument> args;
+		for(int arg = 1; arg <= lua_gettop(L); ++arg) {
+			args.push_back(createArgument(arg,L));
+		}
+		if(inference_->needPrintMonitor()){
+			inference_->addPrintMonitor(new LuaInteractivePrintMonitor(L));
+		}
+		if(inference_->needTraceMonitor()){
+			inference_->addTraceMonitor(new LuaTraceMonitor(L));
+		}
+		InternalArgument result = inference_->execute(args);
+		inference_->clean();
+		return LuaConnection::convertToLua(L,result);
+	}
+
 	void compile(UserProcedure* procedure, lua_State* state){
 		if(!procedure->iscompiled()) {
 			// Compose function header, body, and return statement
@@ -175,11 +191,11 @@ namespace LuaConnection {
 			ss << "return " << procedure->name() << "(...)\n";
 
 			// Compile
-			//cerr << "compiling:\n" << ss.str() << endl;
+			//cerr << "compiling:\n" << ss.str() << "\n";
 			int err = luaL_loadstring(state,ss.str().c_str());
 			if(err) {
 				Error::error(procedure->pi());
-				cerr << string(lua_tostring(state,-1)) << endl;
+				cerr << string(lua_tostring(state,-1)) << "\n";
 				lua_pop(state,1);
 			}
 			else {
@@ -225,6 +241,7 @@ namespace LuaConnection {
 	/**
 	 * Push an internal argument to the lua stack
 	 */
+	//FIXME dit moet beter kunnen
 	int convertToLua(lua_State* L,InternalArgument arg) {
 		switch(arg._type) {
 			case AT_SORT:{
@@ -420,7 +437,7 @@ namespace LuaConnection {
 			case LUA_TUSERDATA: {
 				lua_getmetatable(L,arg);
 				lua_getfield(L,-1,getTypeField());
-				ia._type = (ArgType)lua_tointeger(L,-1); assert(_type != AT_NIL);
+				ia._type = (ArgType)lua_tointeger(L,-1); assert(ia._type != AT_NIL);
 				lua_pop(L,2);
 				switch(ia._type) {
 					case AT_SORT:
@@ -486,14 +503,6 @@ namespace LuaConnection {
 					case AT_OVERLOADED:
 						ia._value._overloaded = *(OverloadedObject**)lua_touserdata(L,arg);
 						break;
-					case AT_PRINTMONITOR:
-						// delete after use in inference
-						ia._value.printmonitor_ = new LuaInteractivePrintMonitor(L);
-						break;
-					case AT_TRACEMONITOR:
-						// delete after use in inference
-						ia._value.tracemonitor_ = new LuaTraceMonitor(L);
-						break;
 					default:
 						assert(false);
 				}
@@ -536,7 +545,9 @@ namespace LuaConnection {
 					OverloadedSymbol* os = *(OverloadedSymbol**)lua_touserdata(L,arg);
 					result = os->types();
 				}
-				else  result.push_back(type);
+				else{
+					result.push_back(type);
+				}
 				lua_pop(L,2);
 				break;
 			}
@@ -557,16 +568,21 @@ namespace LuaConnection {
 
 		// get the list of possible argument types
 		vector<vector<ArgType> > argtypes(lua_gettop(L));
-		for(int arg = 1; arg <= lua_gettop(L); ++arg)
+		for(int arg = 1; arg <= lua_gettop(L); ++arg){
 			argtypes[arg-1] = getArgTypes(L,arg);
+		}
 
 		// find the right procedure
 		InternalProcedure* proc = 0;
 		vector<vector<ArgType>::iterator> carry(argtypes.size());
-		for(unsigned int n = 0; n < argtypes.size(); ++n) carry[n] = argtypes[n].begin();
+		for(unsigned int n = 0; n < argtypes.size(); ++n){
+			carry[n] = argtypes[n].begin();
+		}
 		while(true) {
 			vector<ArgType> currtypes(argtypes.size());
-			for(unsigned int n = 0; n < argtypes.size(); ++n) currtypes[n] = *(carry[n]);
+			for(unsigned int n = 0; n < argtypes.size(); ++n){
+				currtypes[n] = *(carry[n]);
+			}
 			if(procs->find(currtypes) != procs->end()) {
 				if(!proc) {
 					proc = (*procs)[currtypes];
@@ -576,15 +592,18 @@ namespace LuaConnection {
 			unsigned int c = 0;
 			for(; c < argtypes.size(); ++c) {
 				++(carry[c]);
-				if(carry[c] != argtypes[c].end()) break;
-				else carry[c] = argtypes[c].begin();
+				if(carry[c] != argtypes[c].end()){ break;}
+				else {carry[c] = argtypes[c].begin();}
 			}
-			if(c == argtypes.size()) break;
+			if(c == argtypes.size()){
+				break;
+			}
 		}
 
 		// Execute the procedure
-		if(proc) return (*proc)(L);
-		else {
+		if(proc){
+			return (*proc)(L);
+		} else {
 			assert(!procs->empty());
 			Error::wrongcommandargs(procs->begin()->second->getName()); return 0;
 		}
@@ -1741,7 +1760,7 @@ namespace LuaConnection {
 		ss << DATADIR << getLuaLibraryFilename();
 		int err = luaL_dofile(_state,ss.str().c_str());
 		if(err) {
-			cerr << lua_tostring(_state,-1) << endl;
+			cerr << lua_tostring(_state,-1) << "\n";
 			cerr << "Error in " <<getLuaLibraryFilename() <<".\n"; exit(1);
 		}
 
@@ -1781,7 +1800,7 @@ namespace LuaConnection {
 		int err = luaL_dostring(_state,chunk->str().c_str());
 		if(err) {
 			Error::error();
-			cerr << string(lua_tostring(_state,-1)) << endl;
+			cerr << string(lua_tostring(_state,-1)) << "\n";
 			lua_pop(_state,1);
 		}
 	}
@@ -1795,7 +1814,7 @@ namespace LuaConnection {
 			}
 			else {
 				Error::error(pi);
-				cerr << "unknown object" << endl;
+				cerr << "unknown object" << "\n";
 			}
 		}
 	}
@@ -1806,7 +1825,7 @@ namespace LuaConnection {
 		int err = lua_pcall(_state,args.size(),1,0);
 		if(err) {
 			Error::error(pi);
-			cerr << lua_tostring(_state,-1) << endl;
+			cerr << lua_tostring(_state,-1) << "\n";
 			lua_pop(_state,1);
 			return 0;
 		}
@@ -1825,7 +1844,7 @@ namespace LuaConnection {
 		int err = lua_pcall(_state,input.size(),1,0);
 		if(err) {
 			Error::error();
-			cerr << string(lua_tostring(_state,-1)) << endl;
+			cerr << string(lua_tostring(_state,-1)) << "\n";
 			lua_pop(_state,1);
 			return 0;
 		}
@@ -1844,7 +1863,7 @@ namespace LuaConnection {
 		int err = lua_pcall(_state,input.size(),1,0);
 		if(err) {
 			Error::error();
-			cerr << string(lua_tostring(_state,-1)) << endl;
+			cerr << string(lua_tostring(_state,-1)) << "\n";
 			lua_pop(_state,1);
 			return 0;
 		}

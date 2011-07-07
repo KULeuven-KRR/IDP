@@ -17,8 +17,6 @@
 #include "theory.hpp"
 #include "options.hpp"
 #include "namespace.hpp"
-#include "monitors/tracemonitor.hpp"
-#include "monitors/interactiveprintmonitor.hpp"
 
 /**
  * Types of arguments given to, or results produced by internal procedures
@@ -67,10 +65,7 @@ enum ArgType {
 
 	// Additional return values
 	AT_MULT,			//!< multiple arguments	(only used as return value)
-	AT_REGISTRY,			//!< a value stored in the registry of the lua state
-
-	AT_PRINTMONITOR,
-	AT_TRACEMONITOR
+	AT_REGISTRY			//!< a value stored in the registry of the lua state
 };
 
 template<class T>
@@ -212,9 +207,6 @@ struct InternalArgument {
 
 		OverloadedSymbol*				_symbol;
 		OverloadedObject*				_overloaded;
-
-		InteractivePrintMonitor*		printmonitor_;
-		TraceMonitor*					tracemonitor_;
 	} _value;
 
 	// Constructors
@@ -242,8 +234,6 @@ struct InternalArgument {
 	InternalArgument(OverloadedObject* o)				: _type(AT_OVERLOADED)	{ _value._overloaded = o;	}
 	InternalArgument(Formula* f)						: _type(AT_FORMULA)		{ _value._formula = f;		}
 	InternalArgument(Query* q)							: _type(AT_QUERY)		{ _value._query = q;		}
-	InternalArgument(InteractivePrintMonitor* f)		: _type(AT_PRINTMONITOR){ _value.printmonitor_= f;	}
-	InternalArgument(TraceMonitor* q)					: _type(AT_TRACEMONITOR){ _value.tracemonitor_ = q;	}
 	InternalArgument(const DomainElement* el) {
 		_type = AT_NIL;
 		switch(el->type()) {

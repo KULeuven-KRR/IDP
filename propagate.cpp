@@ -304,7 +304,7 @@ void FOPropagator::run() {
 				p->put(cerr,_options->longnames());
 				if(_child) { cerr << " from "; _child->put(cerr,_options->longnames());	}
 			}
-			cerr << endl;
+			cerr << "\n";
 		}
 		propagation->_parent->accept(this);
 		delete(propagation);
@@ -398,7 +398,7 @@ void FOPropagator::schedule(const Formula* p, FOPropDirection dir, bool ct, cons
 				cerr << "upward propagation to " << ((ct == p->sign()) ? "the ct-bound of " : "the cf-bound of ") << *p;
 				if(c) cerr << ". Propagation comes from " << *c;
 			}
-			cerr << endl;
+			cerr << "\n";
 		}
 	}
 }
@@ -703,7 +703,7 @@ void FOPropagatorFactory::visit(const Theory* theory) {
 }
 
 void FOPropagatorFactory::initFalse(const Formula* f) {
-	if(_propagator->_options->propagateverbosity() > 2) { cerr << "  Assigning the least precise bounds to " << *f << endl;	}
+	if(_propagator->_options->propagateverbosity() > 2) { cerr << "  Assigning the least precise bounds to " << *f << "\n";	}
 	if(_propagator->_domains.find(f) == _propagator->_domains.end()) {
 		_propagator->_domains[f] = ThreeValuedDomain(_propagator->_factory,false,false,f);
 	}

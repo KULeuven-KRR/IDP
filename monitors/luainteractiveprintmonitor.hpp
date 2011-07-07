@@ -25,6 +25,11 @@ public:
 		lua_pushstring(state(),text.c_str());
 		lua_call(state(),1,0);
 	}
+
+	virtual void printerror(const std::string& text){
+		lua_pushstring(state(),text.c_str());
+		lua_error(state());
+	}
 };
 
 #endif /* LUAINTERACTIVEPRINTMONITOR_HPP_ */

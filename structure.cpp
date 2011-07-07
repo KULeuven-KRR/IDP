@@ -3318,7 +3318,7 @@ namespace TableUtils {
 		tablesize nroftuples = Universe(vst).size();
 		tablesize nrofvalues = funcinter->graphinter()->ct()->size();
 //cerr << "Checking totality of " << *function << " -- nroftuples=" << nroftuples.second << " and nrofvalues=" << nrofvalues.second;
-//cerr << " (trust=" << (nroftuples.first && nrofvalues.first) << ")" << endl;
+//cerr << " (trust=" << (nroftuples.first && nrofvalues.first) << ")" << "\n";
 		if(nroftuples.first && nrofvalues.first) {
 			return nroftuples.second == nrofvalues.second;
 		}

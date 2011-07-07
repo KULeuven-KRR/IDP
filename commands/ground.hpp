@@ -52,20 +52,14 @@ private:
 	}
 
 public:
-	GroundAndPrintInference(): Inference("printgrounding") {
+	GroundAndPrintInference(): Inference("printgrounding", true) {
 		add(AT_THEORY);
 		add(AT_STRUCTURE);
 		add(AT_OPTIONS);
-		add(AT_PRINTMONITOR);
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
-		InteractivePrintMonitor* monitor = args[3]._value.printmonitor_;
-
-		AbstractTheory* grounding = ground(args[0].theory(),args[1].structure(),args[2].options(), monitor);
-
-		delete(monitor);
-
+		AbstractTheory* grounding = ground(args[0].theory(),args[1].structure(),args[2].options(), printmonitor());
 		return InternalArgument(grounding);
 	}
 };

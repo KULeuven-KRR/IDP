@@ -54,6 +54,7 @@ gidl_SOURCES = \
 		monitors/luatracemonitor.hpp monitors/luainteractiveprintmonitor.hpp\
 		groundtheories/PrintGroundTheory.hpp groundtheories/PrintGroundTheory.cpp\
 		commands/allcommands.hpp\
+		commands/optimization.hpp\
 		commands/commandinterface.hpp\
 		commands/printtheory.hpp\
 		commands/printformula.hpp\

@@ -11,50 +11,44 @@
 #include "internalargument.hpp"
 #include "structure.hpp"
 
-class MakeTrueInference: public Inference {
+class SetAtomValueInference: public Inference {
+	enum SETVALUE { SET_TRUE, SET_FALSE, SET_UNKNOWN};
+private:
+	SETVALUE value_;
 public:
-	MakeTrueInference(): Inference("maketrue") {
+	static Inference* getMakeAtomTrueInference(){
+		return new SetAtomValueInference("maketrue", SET_TRUE);
+	}
+	static Inference* getMakeAtomFalseInference(){
+		return new SetAtomValueInference("makefalse", SET_FALSE);
+	}
+	static Inference* getMakeAtomUnknownInference(){
+		return new SetAtomValueInference("makeunknown", SET_UNKNOWN);
+	}
+
+	SetAtomValueInference(const char* command, SETVALUE value): Inference(command, true), value_(value) {
 		add(AT_PREDINTER);
-		add(AT_TUPLE);
+		add(AT_TABLE);
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
 		PredInter* pri = args[0]._value._predinter;
-		ElementTuple* tup = args[1]._value._tuple;
-		pri->makeTrue(*tup);
+		ElementTuple* tuple = args[1]._value._tuple;
+		switch (value_) {
+			case SET_TRUE:
+				pri->makeTrue(*tuple);
+				break;
+			case SET_FALSE:
+				pri->makeFalse(*tuple);
+				break;
+			case SET_UNKNOWN:
+				pri->makeUnknown(*tuple);
+				break;
+			default:
+				break;
+		}
 		return nilarg();
 	}
 };
-
-class MakeFalseInference: public Inference {
-public:
-	MakeFalseInference(): Inference("makefalse") {
-		add(AT_PREDINTER);
-		add(AT_TUPLE);
-	}
-
-	InternalArgument execute(const std::vector<InternalArgument>& args) const {
-		PredInter* pri = args[0]._value._predinter;
-		ElementTuple* tup = args[1]._value._tuple;
-		pri->makeFalse(*tup);
-		return nilarg();
-	}
-};
-
-class MakeUnknownInference: public Inference {
-public:
-	MakeUnknownInference(): Inference("makeunknown") {
-		add(AT_PREDINTER);
-		add(AT_TUPLE);
-	}
-
-	InternalArgument execute(const std::vector<InternalArgument>& args) const {
-		PredInter* pri = args[0]._value._predinter;
-		ElementTuple* tup = args[1]._value._tuple;
-		pri->makeUnknown(*tup);
-		return nilarg();
-	}
-};
-
 
 #endif /* MAKEFALSE_HPP_ */

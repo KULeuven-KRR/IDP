@@ -14,18 +14,17 @@
 
 class ModelExpandInference: public Inference {
 public:
-	ModelExpandInference(): Inference("mx") {
+	ModelExpandInference(): Inference("mx", false, true) {
 		add(AT_THEORY);
 		add(AT_STRUCTURE);
 		add(AT_OPTIONS);
-		add(AT_TRACEMONITOR); // FIXME do not add always: create second inference
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
 		AbstractTheory* theory = args[0].theory();
 		AbstractStructure* structure = args[1].structure();
 		Options* options = args[2].options();
-		TraceMonitor* monitor = args[3]._value.tracemonitor_;
+		TraceMonitor* monitor = tracemonitor();
 
 		// Create solver and grounder
 		SATSolver* solver = createsolver(options);
@@ -81,7 +80,6 @@ public:
 		grounding->recursiveDelete();
 		delete(solver);
 		delete(abstractsolutions);
-		delete(monitor);
 
 		return result;
 	}
@@ -147,7 +145,7 @@ private:
 			}
 			std::cerr << ' ';
 		}
-		std::cerr << '}' << std::endl;
+		std::cerr << '}' << "\n";
 	}
 };
 

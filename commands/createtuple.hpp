@@ -15,7 +15,7 @@ public:
 	CreateTupleInference(): Inference("dummytuple") {
 	}
 
-	InternalArgument execute(const std::vector<InternalArgument>& args) const {
+	InternalArgument execute(const std::vector<InternalArgument>&) const {
 		InternalArgument ia;
 		ia._type = AT_TUPLE;
 		ia._value._tuple = 0;

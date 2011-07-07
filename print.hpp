@@ -12,6 +12,7 @@
 #include <string>
 #include <vector>
 #include <set>
+#include <assert.h>
 
 #include "theory.hpp" // for TheoryVisitor
 
@@ -29,7 +30,9 @@ class Namespace;
 class GroundTranslator;
 class GroundTermTranslator;
 class GroundTheory;
+class GroundFixpDef;
 class GroundDefinition;
+typedef std::vector<int> GroundClause;
 class PCGroundRuleBody;
 class AggGroundRuleBody;
 class GroundAggregate;
@@ -60,6 +63,9 @@ class Printer : public TheoryVisitor {
 		virtual std::string print(const Namespace*) = 0;
 		virtual std::string print(const Formula*);
 		std::string print(const AbstractTheory*);
+
+		virtual void visit(const GroundClause&) = 0;
+		virtual void visit(const GroundFixpDef*) = 0;
 
 		// Indentation
 		void indent();
@@ -143,7 +149,9 @@ class IDPPrinter : public Printer {
 
 		/** Grounding **/
 		void visit(const GroundTheory*);
+		void visit(const GroundClause&);
 		void visit(const GroundDefinition*);
+		void visit(const GroundFixpDef*) { /*TODO not implemented yet*/ assert(false);}
 		void visit(const PCGroundRuleBody*);
 		void visit(const AggGroundRuleBody*);
 		void visit(const GroundAggregate*);
@@ -183,6 +191,8 @@ class EcnfPrinter : public Printer {
 
 		void visit(const GroundTheory*);
 		void visit(const GroundDefinition*);
+		void visit(const GroundFixpDef*) { /*TODO not implemented yet*/ assert(false);}
+		void visit(const GroundClause&);
 		void visit(const PCGroundRuleBody*);
 		void visit(const AggGroundRuleBody*);
 		void visit(const GroundAggregate*);

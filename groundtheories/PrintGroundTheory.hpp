@@ -19,7 +19,7 @@
 #include "commontypes.hpp"
 
 class InteractivePrintMonitor;
-class Printer;
+class EcnfPrinter;
 
 /**
  * A ground theory which does not store the grounding, but directly writes it to its monitors.
@@ -28,13 +28,13 @@ class Printer;
 class PrintGroundTheory : public AbstractGroundTheory {
 private:
 	InteractivePrintMonitor* monitor_;
-	Printer*				printer_;
+	EcnfPrinter*			printer_;
 
 public:
 	PrintGroundTheory(InteractivePrintMonitor* monitor, AbstractStructure* str);
 	void recursiveDelete() { delete(this);	}
 
-	Printer&	printer() { return *printer_; }
+	EcnfPrinter&	printer() { return *printer_; }
 
 	// Mutators
 	virtual void	addClause(GroundClause& cl, bool skipfirst = false);

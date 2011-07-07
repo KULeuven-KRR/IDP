@@ -37,6 +37,7 @@ Printer* Printer::create(Options* opts) {
 			return new EcnfPrinter(opts->writeTranslation());
 		default:
 			assert(false);
+			return NULL;
 	}
 }
 
@@ -399,7 +400,7 @@ void IDPPrinter::printAggregate(double bound, bool lower, AggFunction aggtype, u
 		case AGG_MAX: 	output() << "max("; break;
 		default: assert(false);
 	}
-	output() << "set_" << setnr << ")." <<endl;
+	output() << "set_" << setnr << ")." <<"\n";
 }
 
 void EcnfPrinter::printAggregate(AggFunction aggtype, TsType arrow, unsigned int defnr, bool lower, int head, unsigned int setnr, double bound) {
@@ -421,25 +422,28 @@ void EcnfPrinter::printAggregate(AggFunction aggtype, TsType arrow, unsigned int
 			break; 
 		default: assert(false);
 	}
-	output() << (lower ? 'G' : 'L') << ' ' << head << ' ' << setnr << ' ' << bound << " 0" <<endl;
+	output() << (lower ? 'G' : 'L') << ' ' << head << ' ' << setnr << ' ' << bound << " 0" <<"\n";
+}
+
+void IDPPrinter::visit(const GroundClause& g){
+	if(g.empty()) {
+		output() << "false";
+	}
+	else {
+		for(unsigned int m = 0; m < g.size(); ++m) {
+			if(g[m] < 0) output() << '~';
+			printAtom(g[m]);
+			if(m < g.size()-1) output() << " | ";
+		}
+	}
+	output() << "." <<"\n";
 }
 
 void IDPPrinter::visit(const GroundTheory* g) {
 	_translator = g->translator();
 	_termtranslator = g->termtranslator();
 	for(unsigned int n = 0; n < g->nrClauses(); ++n) {
-//TODO visitor for GroundClause?
-		if(g->clause(n).empty()) {
-			output() << "false";
-		}
-		else {
-			for(unsigned int m = 0; m < g->clause(n).size(); ++m) {
-				if(g->clause(n)[m] < 0) output() << '~';
-				printAtom(g->clause(n)[m]);
-				if(m < g->clause(n).size()-1) output() << " | ";
-			}
-		}
-		output() << "." <<endl;
+		visit(g->clause(n));
 	}
 	for(unsigned int n = 0; n < g->nrDefinitions(); ++n)
 		g->definition(n)->accept(this);
@@ -452,15 +456,19 @@ void IDPPrinter::visit(const GroundTheory* g) {
 		g->cpreification(n)->accept(this);
 }
 
+void EcnfPrinter::visit(const GroundClause& g){
+	for(unsigned int m = 0; m < g.size(); ++m){
+		output() << g[m] << ' ';
+	}
+	output() << '0' << "\n";
+}
+
 void EcnfPrinter::visit(const GroundTheory* g) {
 	_structure = g->structure();
 	_termtranslator = g->termtranslator();
 	output() << "p ecnf def aggr\n";
 	for(unsigned int n = 0; n < g->nrClauses(); ++n) {
-		for(unsigned int m = 0; m < g->clause(n).size(); ++m){
-			output() << g->clause(n)[m] << ' ';
-		}
-		output() << '0' << endl;
+		visit(g->clause(n));
 	}
 	for(unsigned int n = 0; n < g->nrSets(); ++n) //NOTE: Print sets before aggregates!!
 		g->set(n)->accept(this);
@@ -477,16 +485,16 @@ void EcnfPrinter::visit(const GroundTheory* g) {
 	}
 
 	if(writeTranlation()){
-		output() <<"=== Atomtranslation ===" << endl;
+		output() <<"=== Atomtranslation ===" << "\n";
 		GroundTranslator* translator = g->translator();
 		int atom = 1;
 		while(translator->isSymbol(atom)){
 			if(!translator->isTseitin(atom)){
-				output() << atom <<"|" <<translator->printAtom(atom) <<endl;
+				output() << atom <<"|" <<translator->printAtom(atom) <<"\n";
 			}
 			atom++;
 		}
-		output() <<"==== ====" <<endl;
+		output() <<"==== ====" <<"\n";
 	}
 }
 
@@ -629,19 +637,19 @@ void EcnfPrinter::printCPVariable(unsigned int varid) {
 				_out << value << ' ';
 			}
 		}
-		_out << '0' << endl;
+		_out << '0' << "\n";
 	}
 }
 
 void EcnfPrinter::printCPReification(string type, int head, unsigned int left, CompType comp, long right) {
-	_out << type << ' ' << head << ' ' << left << ' ' << comp << ' ' << right << " 0" << endl;
+	_out << type << ' ' << head << ' ' << left << ' ' << comp << ' ' << right << " 0" << "\n";
 }
 
 void EcnfPrinter::printCPReification(string type, int head, vector<unsigned int> left, CompType comp, long right) {
 	_out << type << ' ' << head << ' ';
 	for(vector<unsigned int>::const_iterator it = left.begin(); it != left.end(); ++it)
 		_out << *it << ' ';
-	_out << comp << ' ' << right << " 0" << endl;
+	_out << comp << ' ' << right << " 0" << "\n";
 }
 
 void EcnfPrinter::printCPReification(string type, int head, vector<unsigned int> left, vector<int> weights, CompType comp, long right) {
@@ -651,7 +659,7 @@ void EcnfPrinter::printCPReification(string type, int head, vector<unsigned int>
 	_out << " | ";
 	for(vector<int>::const_iterator it = weights.begin(); it != weights.end(); ++it)
 		_out << *it << ' ';
-	_out << comp << ' ' << right << " 0" << endl;
+	_out << comp << ' ' << right << " 0" << "\n";
 }
 
 void EcnfPrinter::visit(const CPReification* cpr) {

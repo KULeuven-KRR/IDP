@@ -419,8 +419,8 @@ bool CopyGrounder::run() const {
 
 bool TheoryGrounder::run() const {
 	if(_verbosity > 0) {
-		clog << "Grounding theory " << endl;
-		clog << "Components to ground = " << _grounders.size() << endl;
+		clog << "Grounding theory " << "\n";
+		clog << "Components to ground = " << _grounders.size() << "\n";
 	}
 	for(unsigned int n = 0; n < _grounders.size(); ++n) {
 		bool b = _grounders[n]->run();
@@ -430,7 +430,7 @@ bool TheoryGrounder::run() const {
 }
 
 bool SentenceGrounder::run() const {
-	if(_verbosity > 1) clog << "Grounding sentence " << endl;
+	if(_verbosity > 1) clog << "Grounding sentence " << "\n";
 	vector<int> cl;
 	_subgrounder->run(cl);
 	if(cl.empty()) {
@@ -460,7 +460,7 @@ bool SentenceGrounder::run() const {
 }
 
 bool UnivSentGrounder::run() const {
-	if(_verbosity > 1) clog << "Grounding a universally quantified sentence " << endl;
+	if(_verbosity > 1) clog << "Grounding a universally quantified sentence " << "\n";
 	if(_generator->first()) {
 		bool b = _subgrounder->run();
 		if(!b) {
@@ -476,7 +476,7 @@ bool UnivSentGrounder::run() const {
 		}
 	}
 	else if(_verbosity > 1) {
-		clog << "No instances for this sentence " << endl;
+		clog << "No instances for this sentence " << "\n";
 	}
 	return true;
 }
@@ -502,7 +502,7 @@ void FormulaGrounder::printorig() const {
 			clog << e->to_string() << ' ';
 		}
 	}
-	clog << endl;
+	clog << "\n";
 }
 
 AtomGrounder::AtomGrounder(GroundTranslator* gt, bool sign, PFSymbol* s,
@@ -538,7 +538,7 @@ int AtomGrounder::run() const {
 			}
 			if(_verbosity > 2) {
 				clog << "Partial function went out of bounds\n";
-				clog << "Result is " << (_context._funccontext != PC_NEGATIVE  ? "true" : "false") << endl;
+				clog << "Result is " << (_context._funccontext != PC_NEGATIVE  ? "true" : "false") << "\n";
 			}
 			return _context._funccontext != PC_NEGATIVE  ? _true : _false;
 		}
@@ -549,7 +549,7 @@ int AtomGrounder::run() const {
 		if(not groundsubterms[n]._isvarid && not _tables[n]->contains(args[n])) {
 			if(_verbosity > 2) {
 				clog << "Term value out of predicate type\n";
-				clog << "Result is " << (_sign  ? "false" : "true") << endl;
+				clog << "Result is " << (_sign  ? "false" : "true") << "\n";
 			}
 			return _sign ? _false : _true;
 		}
@@ -560,14 +560,14 @@ int AtomGrounder::run() const {
 		if(not _pchecker->run(args)) {
 			if(_verbosity > 2) {
 				clog << "Possible checker failed\n";
-				clog << "Result is " << (_certainvalue ? "false" : "true") << endl;
+				clog << "Result is " << (_certainvalue ? "false" : "true") << "\n";
 			}
 			return _certainvalue ? _false : _true;	// TODO: dit is lelijk
 		}
 		if(_cchecker->run(args)) {
 			if(_verbosity > 2) {
 				clog << "Certain checker succeeded\n";
-				clog << "Result is " << _translator->printAtom(_certainvalue) << endl;
+				clog << "Result is " << _translator->printAtom(_certainvalue) << "\n";
 			}
 			return _certainvalue;
 		}
@@ -578,7 +578,7 @@ int AtomGrounder::run() const {
 		int atom = _translator->translate(_symbol,args);
 		if(!_sign) atom = -atom;
 		if(_verbosity > 2) {
-			clog << "Result is " << _translator->printAtom(atom) << endl;
+			clog << "Result is " << _translator->printAtom(atom) << "\n";
 		}
 		return atom;
 	}
@@ -616,7 +616,7 @@ void AtomGrounder::run(vector<int>& clause) const {
 //			}
 //			if(_verbosity > 2) {
 //				clog << "Partial function went out of bounds\n";
-//				clog << "Result is " << (_context._funccontext != PC_NEGATIVE  ? "true" : "false") << endl;
+//				clog << "Result is " << (_context._funccontext != PC_NEGATIVE  ? "true" : "false") << "\n";
 //			}
 //			return _context._funccontext != PC_NEGATIVE  ? _true : _false;
 //		}
@@ -627,7 +627,7 @@ void AtomGrounder::run(vector<int>& clause) const {
 //		if(!_tables[n]->contains(_args[n])) {
 //			if(_verbosity > 2) {
 //				clog << "Term value out of predicate type\n";
-//				clog << "Result is " << (_sign  ? "false" : "true") << endl;
+//				clog << "Result is " << (_sign  ? "false" : "true") << "\n";
 //			}
 //			return _sign ? _false : _true;
 //		}
@@ -637,14 +637,14 @@ void AtomGrounder::run(vector<int>& clause) const {
 //	if(!(_pchecker->run(_args))) {
 //		if(_verbosity > 2) {
 //			clog << "Possible checker failed\n";
-//			clog << "Result is " << (_certainvalue ? "false" : "true") << endl;
+//			clog << "Result is " << (_certainvalue ? "false" : "true") << "\n";
 //		}
 //		return _certainvalue ? _false : _true;	// TODO: dit is lelijk
 //	}
 //	if(_cchecker->run(_args)) {
 //		if(_verbosity > 2) {
 //			clog << "Certain checker succeeded\n";
-//			clog << "Result is " << _translator->printAtom(_certainvalue) << endl;
+//			clog << "Result is " << _translator->printAtom(_certainvalue) << "\n";
 //		}
 //		return _certainvalue;
 //	}
@@ -1003,13 +1003,13 @@ int ClauseGrounder::finish(vector<int>& cl) const {
 	}
 	if(cl.empty()) {
 		if(_verbosity > 2) {
-			clog << "Result = " << _translator->printAtom(result2()) << endl;
+			clog << "Result = " << _translator->printAtom(result2()) << "\n";
 		}
 		return result2();
 	}
 	else if(cl.size() == 1) {
 		if(_verbosity > 2) {
-			clog << "Result = " << (_sign ? _translator->printAtom(cl[0]) : _translator->printAtom(-cl[0])) << endl;
+			clog << "Result = " << (_sign ? _translator->printAtom(cl[0]) : _translator->printAtom(-cl[0])) << "\n";
 		}
 		return _sign ? cl[0] : -cl[0];
 	}
@@ -1076,7 +1076,7 @@ int QuantGrounder::run() const {
 		int l = _subgrounder->run();
 		if(check1(l)) {
 			if(_verbosity > 2) {
-				clog << "Result = " << _translator->printAtom(result1()) << endl;
+				clog << "Result = " << _translator->printAtom(result1()) << "\n";
 			}
 			return result1();
 		}
@@ -1085,7 +1085,7 @@ int QuantGrounder::run() const {
 			l = _subgrounder->run();
 			if(check1(l)) {
 				if(_verbosity > 2) {
-					clog << "Result = " << _translator->printAtom(result1()) << endl;
+					clog << "Result = " << _translator->printAtom(result1()) << "\n";
 				}
 				return result1();
 			}
@@ -1105,7 +1105,7 @@ void QuantGrounder::run(vector<int>& clause) const {
 			clause.clear();
 			clause.push_back(result1());
 			if(_verbosity > 2) {
-				clog << "Result = " << _translator->printAtom(result1()) << endl;
+				clog << "Result = " << _translator->printAtom(result1()) << "\n";
 			}
 			return;
 		}
@@ -1116,7 +1116,7 @@ void QuantGrounder::run(vector<int>& clause) const {
 				clause.clear();
 				clause.push_back(result1());
 				if(_verbosity > 2) {
-					clog << "Result = " << _translator->printAtom(result1()) << endl;
+					clog << "Result = " << _translator->printAtom(result1()) << "\n";
 				}
 				return;
 			}
@@ -1126,7 +1126,7 @@ void QuantGrounder::run(vector<int>& clause) const {
 	if(_verbosity > 2) {
 		clog << "Result = " << (_sign ? "" : "~");
 		if(clause.empty()) {
-			clog << (_conj ? "true" : "false") << endl;
+			clog << (_conj ? "true" : "false") << "\n";
 		}
 		else {
 			clog << _translator->printAtom(clause[0]) << ' ';
@@ -1215,7 +1215,7 @@ void TermGrounder::printorig() const {
 			clog << e->to_string() << ' ';
 		}
 	}
-	clog << endl;
+	clog << "\n";
 }
 
 GroundTerm VarTermGrounder::run() const {
@@ -1242,7 +1242,7 @@ GroundTerm FuncTermGrounder::run() const {
 		const DomainElement* result = (*_functable)[args];
 		if(result) {
 			if(_verbosity > 2) {
-				clog << "Result = " << *result << endl;
+				clog << "Result = " << *result << "\n";
 			}
 			return GroundTerm(result);
 		}
@@ -1250,7 +1250,7 @@ GroundTerm FuncTermGrounder::run() const {
 	// assert(isCPSymbol(_function->symbol())) && some of the ground subterms are CP terms.
 	VarId varid = _termtranslator->translate(_function,groundsubterms);
 	if(_verbosity > 2) {
-		clog << "Result = " << _termtranslator->printTerm(varid) << endl;
+		clog << "Result = " << _termtranslator->printTerm(varid) << "\n";
 	}
 	return GroundTerm(varid);
 }
@@ -1268,7 +1268,7 @@ GroundTerm FuncTermGrounder::run() const {
 	}
 	const DomainElement* result = (*_functable)[args];
 	if(_verbosity > 2) {
-		clog << "Result = " << *result << endl;
+		clog << "Result = " << *result << "\n";
 	}
 	return GroundTerm(result);
 }
@@ -1339,7 +1339,7 @@ GroundTerm SumTermGrounder::run() const {
 			const DomainElement* result = (*_functable)[args];
 			assert(result);
 			if(_verbosity > 2) {
-				clog << "Result = " << *result << endl;
+				clog << "Result = " << *result << "\n";
 			}
 			return GroundTerm(result);
 		}
@@ -1353,7 +1353,7 @@ GroundTerm SumTermGrounder::run() const {
 
 	// Return result
 	if(_verbosity > 2) {
-		clog << "Result = " << _termtranslator->printTerm(varid) << endl;
+		clog << "Result = " << _termtranslator->printTerm(varid) << "\n";
 	}
 	return GroundTerm(varid);
 }
@@ -1366,7 +1366,7 @@ GroundTerm AggTermGrounder::run() const {
 	double value = applyAgg(_type,tsset.trueweights());
 	const DomainElement* result = DomainElementFactory::instance()->create(value);
 	if(_verbosity > 2) {
-		clog << "Result = " << *result << endl;
+		clog << "Result = " << *result << "\n";
 	}
 	return GroundTerm(result);
 }
@@ -1568,7 +1568,7 @@ set<const PFSymbol*> GrounderFactory::findCPSymbols(const AbstractTheory* theory
 		for(set<const PFSymbol*>::const_iterator it = _cpsymbols.begin(); it != _cpsymbols.end(); ++it) {
 			clog << (*it)->to_string() << " ";
 		}
-		clog << endl;
+		clog << "\n";
 	}
 	return _cpsymbols;
 }
@@ -1816,7 +1816,7 @@ void GrounderFactory::visit(const Theory* theory) {
 	vector<TopLevelGrounder*> children(components.size());
 	for(unsigned int n = 0; n < components.size(); ++n) {
 		InitContext();
-		if(_verbosity > 0) clog << "Creating a grounder for " << *(components[n]) << endl;
+		if(_verbosity > 0) clog << "Creating a grounder for " << *(components[n]) << "\n";
 		components[n]->accept(this);
 		children[n] = _toplevelgrounder; 
 	}
@@ -1848,7 +1848,7 @@ void GrounderFactory::visit(const PredForm* pf) {
 
 	if(typeid(*transpf) != typeid(PredForm)) {	// The rewriting changed the atom
 		if(_verbosity > 1) {
-			clog << "Rewritten " << *pf << " to " << *transpf << endl; 
+			clog << "Rewritten " << *pf << " to " << *transpf << "\n"; 
 		}
 		transpf->accept(this);
 	}
@@ -2017,7 +2017,7 @@ void GrounderFactory::visit(const QuantForm* qf) {
 				cerr << *(qf->pi().original());
 				cerr << "\n   internal representation: ";
 			}
-			cerr << *qf << endl;
+			cerr << *qf << "\n";
 		}
 		tables.push_back(st);
 	}

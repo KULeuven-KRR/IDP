@@ -16,6 +16,7 @@
 class InteractivePrintMonitor{
 public:
 	virtual void print(const std::string&) = 0;
+	virtual void printerror(const std::string&) = 0;
 };
 
 #endif /* INTERACTIVEPRINTMONITOR_HPP_ */
