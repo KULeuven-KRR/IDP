@@ -261,7 +261,7 @@ class GroundTranslator {
 		int				nextNumber();
 		unsigned int	addSymbol(PFSymbol* pfs);
 
-		bool										isSymbol(int nr)			const	{ return 0<nr && nr<_backsymbtable.size(); }
+		bool					isSymbol(int nr)			const	{ return 0<nr && (uint)nr<_backsymbtable.size(); }
 		PFSymbol*				symbol(int nr)				const	{ return _backsymbtable[abs(nr)];			}
 		const ElementTuple&		args(int nr)				const	{ return _backargstable[abs(nr)];			}
 		bool					isTseitin(int l)			const	{ return symbol(l) == 0;					}
@@ -718,6 +718,9 @@ class DefinitionGrounder : public TopLevelGrounder {
 /*
  * Class to produce grounders 
  */
+
+class InteractivePrintMonitor;
+
 class GrounderFactory : public TheoryVisitor {
 	private:
 		// Data
@@ -771,6 +774,7 @@ class GrounderFactory : public TheoryVisitor {
 		// Factory method
 		TopLevelGrounder* create(const AbstractTheory*);
 		TopLevelGrounder* create(const AbstractTheory*, MinisatID::WrappedPCSolver*);
+		TopLevelGrounder* create(const AbstractTheory* theory, InteractivePrintMonitor* monitor, Options* opts);
 
 		// Determine what should be passed to CP solver
 		std::set<const PFSymbol*> 	findCPSymbols(const AbstractTheory*);

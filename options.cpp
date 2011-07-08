@@ -218,12 +218,12 @@ ostream& Options::put(ostream& output) const {
 	getStringFromOption(_intoptions, optionslines);
 	getStringFromOption(_floatoptions, optionslines);
 	for(map<string,bool>::const_iterator it = _booloptions.begin(); it != _booloptions.end(); ++it) {
-		output << it->first << " = " << (it->second ? "true" : "false") << endl;
+		output << it->first << " = " << (it->second ? "true" : "false") << "\n";
 	}
 
 	sort(optionslines.begin(), optionslines.end());
-	for(auto i = optionslines.begin(); i < optionslines.end(); ++i){
-		output << *i <<endl;
+	for(auto i=optionslines.begin(); i<optionslines.end(); ++i){
+		output <<*i <<"\n";
 	}
 
 	return output;
@@ -234,3 +234,4 @@ string Options::to_string() const {
 	put(sstr);
 	return sstr.str();
 }
+ 

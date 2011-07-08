@@ -327,9 +327,15 @@ bool PFSymbol::hasVocabularies() const {
 	return !(_vocabularies.empty());
 }
 
-string PFSymbol::to_string() const {
+string PFSymbol::to_string(bool longnames) const {
 	stringstream output;
-	put(output);
+	put(output, longnames);
+	return output.str();
+}
+
+string Function::to_string(bool longnames) const {
+	stringstream output;
+	put(output, longnames);
 	return output.str();
 }
 

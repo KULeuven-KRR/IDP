@@ -10,8 +10,8 @@
 #include "structure.hpp"
 #include "theory.hpp"
 #include "options.hpp"
-#include "execute.hpp"
 #include "namespace.hpp"
+#include "internalargument.hpp"
 using namespace std;
 
 /** Global namespace **/

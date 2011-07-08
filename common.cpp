@@ -18,6 +18,15 @@
 
 using namespace std;
 
+string libraryname = INTERNALLIBARYNAME;
+string lualibraryfilename = INTERNALLIBARYLUA;
+string idplibraryfilename = INTERNALLIBARYIDP;
+string configfilename = CONFIGFILENAME;
+string getLibraryName() { return libraryname; }
+string getLuaLibraryFilename() { return lualibraryfilename; }
+string getIDPLibraryFilename() { return idplibraryfilename; }
+string getConfigFilename() { return configfilename; }
+
 void notyetimplemented(const string& message) {
 	cerr << "WARNING or ERROR: The following feature is not yet implemented:\n"
 		 << '\t' << message << '\n'

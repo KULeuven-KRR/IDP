@@ -15,6 +15,7 @@
 #include <ostream>
 #include <limits>
 #include <cstdlib>
+#include "parseinfo.hpp"
 
 /**
  * \file structure.hpp
@@ -211,6 +212,10 @@ class DomainElementFactory {
 *******************/
 
 class DomainAtomFactory;
+class PFSymbol;
+class Variable;
+class Vocabulary;
+class AbstractStructure;
 
 class DomainAtom {
 	private:

@@ -259,6 +259,7 @@ void AbstractGroundTheory::recursiveDelete() {
  *		skipfirst	- if true, the defining rule for the first literal is not added to the ground theory
  * TODO
  *		implement unfolding
+ * FIXME: Move this into the grounder, so the different groundertheories need no knowledge of this
  */
 void AbstractGroundTheory::transformForAdd(const vector<int>& vi, VIType /*vit*/, int defnr, bool skipfirst) {
 	unsigned int n = 0;
@@ -302,14 +303,14 @@ void AbstractGroundTheory::transformForAdd(const vector<int>& vi, VIType /*vit*/
 				}
 				if(body->type() == TS_RULE) {
 					assert(defnr != ID_FOR_UNDEFINED);
-					addPCRule(defnr,atom,body);
+					addPCRule(defnr,atom,body,true); //TODO true (recursive) might not always be the case?
 				}
 			}
 			else if(typeid(*tsbody) == typeid(AggTsBody)) {
 				AggTsBody* body = dynamic_cast<AggTsBody*>(tsbody);
 				if(body->type() == TS_RULE) {
 					assert(defnr != ID_FOR_UNDEFINED);
-					addAggRule(defnr,atom,body);
+					addAggRule(defnr,atom,body,true); //TODO true (recursive) might not always be the case?
 				}
 				else {
 					addAggregate(atom,body);
@@ -486,16 +487,16 @@ void GroundTheory::addSet(int setnr, int defnr, bool weighted) {
 	}
 }
 
-void GroundTheory::addPCRule(int defnr, int tseitin, PCTsBody* body) {
+void GroundTheory::addPCRule(int defnr, int tseitin, PCTsBody* body, bool recursive) {
 	assert(_definitions[defnr]->rule(tseitin) == _definitions[defnr]->end());
 	transformForAdd(body->body(),(body->conj() ? VIT_CONJ : VIT_DISJ), defnr);
-	_definitions[defnr]->addPCRule(tseitin,body->body(),body->conj(),true);
+	_definitions[defnr]->addPCRule(tseitin,body->body(),body->conj(),recursive);
 }
 
-void GroundTheory::addAggRule(int defnr, int tseitin, AggTsBody* body) {
+void GroundTheory::addAggRule(int defnr, int tseitin, AggTsBody* body, bool recursive) {
 	assert(_definitions[defnr]->rule(tseitin) == _definitions[defnr]->end());
 	addSet(body->setnr(),defnr,(body->aggtype() != AGG_CARD));
-	_definitions[defnr]->addAggRule(tseitin,body->setnr(),body->aggtype(),body->lower(),body->bound(),true);
+	_definitions[defnr]->addAggRule(tseitin,body->setnr(),body->aggtype(),body->lower(),body->bound(),recursive);
 }
 
 ostream& GroundTheory::put(ostream& s, unsigned int) const {
@@ -532,7 +533,7 @@ ostream& GroundTheory::put(ostream& s, unsigned int) const {
 		const GroundAggregate* agg = _aggregates[n];
 		s << _translator->printAtom(agg->head()) << ' ' << agg->arrow() << ' ' << agg->bound();
 		s << (agg->lower() ? " =< " : " >= ");
-		s << agg->type() << '(' << agg->setnr() << ")." << endl;
+		s << agg->type() << '(' << agg->setnr() << ")." << "\n";
 	}
 	//TODO: repeat above for fixpoint definitions
 	for(vector<CPReification*>::const_iterator it = _cpreifications.begin(); it != _cpreifications.end(); ++it) {
@@ -568,7 +569,7 @@ ostream& GroundTheory::put(ostream& s, unsigned int) const {
 		CPBound right = cpr->_body->right();
 		if(right._isvarid) s << _termtranslator->printTerm(right._varid);
 		else s << right._bound;
-		s << '.' << endl;
+		s << '.' << "\n";
 	}
 	return s;
 }
@@ -617,7 +618,7 @@ void SolverTheory::addClause(GroundClause& cl, bool skipfirst) {
 		clause.literals.push_back(createLiteral(cl[n]));
 		if(_verbosity > 0) clog << (cl[n] > 0 ? "" : "~") << _translator->printAtom(cl[n]) << ' ';
 	}
-	if(_verbosity > 0) clog << endl;
+	if(_verbosity > 0) clog << "\n";
 	getSolver().add(clause);
 }
 
@@ -635,7 +636,7 @@ void SolverTheory::addSet(int setnr, int defnr, bool weighted) {
 				set.literals.push_back(createLiteral(tsset.literal(n)));
 				if(_verbosity > 0) clog << (tsset.literal(n) > 0 ? "" : "~") << _translator->printAtom(tsset.literal(n)) << ' ';
 			}
-			if(_verbosity > 0) clog << endl;
+			if(_verbosity > 0) clog << "\n";
 			getSolver().add(set);
 		}
 		else {
@@ -649,7 +650,7 @@ void SolverTheory::addSet(int setnr, int defnr, bool weighted) {
 				if(_verbosity > 0) clog << (tsset.literal(n) > 0 ? "" : "~") << _translator->printAtom(tsset.literal(n)) << "=" << tsset.weight(n) << ' ';
 			}
 			getSolver().add(set);
-			if(_verbosity > 0) clog << endl;
+			if(_verbosity > 0) clog << "\n";
 		}
 	}
 }
@@ -696,7 +697,7 @@ void SolverTheory::addAggregate(int definitionID, int head, bool lowerbound, int
 			agg.sem = MinisatID::DEF;
 			break;
 	}
-	if(_verbosity > 0) clog << (lowerbound ? " >= " : " =< ") << bound << endl; 
+	if(_verbosity > 0) clog << (lowerbound ? " >= " : " =< ") << bound << "\n"; 
 	agg.defID = definitionID;
 	agg.head = createAtom(head);
 	agg.bound = createWeight(bound);
@@ -708,11 +709,11 @@ void SolverTheory::addAggregate(int head, AggTsBody* body) {
 	addAggregate(ID_FOR_UNDEFINED,head,body->lower(),body->setnr(),body->aggtype(),body->type(),body->bound());
 }
 
-void SolverTheory::addAggRule(int defnr, int head, AggGroundRuleBody* body) {
+void SolverTheory::addAggRule(int defnr, int head, AggGroundRuleBody* body, bool) {
 	addAggregate(defnr,head,body->lower(),body->setnr(),body->aggtype(),TS_RULE,body->bound());
 }
 
-void SolverTheory::addAggRule(int defnr, int head, AggTsBody* body) {
+void SolverTheory::addAggRule(int defnr, int head, AggTsBody* body, bool) {
 	assert(body->type() == TS_RULE);
 	addAggregate(defnr,head,body->lower(),body->setnr(),body->aggtype(),body->type(),body->bound());
 }
@@ -725,12 +726,12 @@ void SolverTheory::addDefinition(GroundDefinition* d) {
 		// Pass the rule to the definition in the solver
 		if(typeid(*grb) == typeid(PCGroundRuleBody)) {
 			PCGroundRuleBody* pcgrb = static_cast<PCGroundRuleBody*>(grb);
-			addPCRule(defnr,head,pcgrb);
+			addPCRule(defnr,head,pcgrb, grb->recursive());
 		}
 		else {
 			assert(typeid(*grb) == typeid(AggGroundRuleBody));
 			AggGroundRuleBody* agggrb = dynamic_cast<AggGroundRuleBody*>(grb);
-			addAggRule(defnr,head,agggrb);
+			addAggRule(defnr,head,agggrb, grb->recursive());
 		}
 		// add head to set of defined atoms
 		_defined[getTranslator().symbol(head)].insert(head);
@@ -867,12 +868,12 @@ void SolverTheory::addCPVariable(const VarId& varid) {
 			if(_verbosity > 0) clog << "}";
 			getSolver().add(cpvar);
 		}
-		if(_verbosity > 0) clog << endl;
+		if(_verbosity > 0) clog << "\n";
 	}
 }
 #endif //CPSUPPORT
 
-void SolverTheory::addPCRule(int defnr, int head, vector<int> body, bool conjunctive){
+void SolverTheory::addPCRule(int defnr, int head, vector<int> body, bool conjunctive, bool){
 	transformForAdd(body,(conjunctive ? VIT_CONJ : VIT_DISJ),defnr);
 	MinisatID::Rule rule;
 	rule.head = createAtom(head);
@@ -884,15 +885,15 @@ void SolverTheory::addPCRule(int defnr, int head, vector<int> body, bool conjunc
 	rule.conjunctive = conjunctive;
 	rule.definitionID = defnr;
 	getSolver().add(rule);
-	if(_verbosity > 0) clog << endl;
+	if(_verbosity > 0) clog << "\n";
 }
 
-void SolverTheory::addPCRule(int defnr, int head, PCGroundRuleBody* grb) {
-	addPCRule(defnr,head,grb->body(),(grb->type() == RT_CONJ));
+void SolverTheory::addPCRule(int defnr, int head, PCGroundRuleBody* grb, bool recursive) {
+	addPCRule(defnr,head,grb->body(),(grb->type() == RT_CONJ), recursive);
 }
 
-void SolverTheory::addPCRule(int defnr, int head, PCTsBody* tsb) {
-	addPCRule(defnr,head,tsb->body(),tsb->conj());
+void SolverTheory::addPCRule(int defnr, int head, PCTsBody* tsb, bool recursive) {
+	addPCRule(defnr,head,tsb->body(),tsb->conj(), recursive);
 }
 
 /**
