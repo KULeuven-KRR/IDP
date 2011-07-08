@@ -1736,8 +1736,8 @@ TopLevelGrounder* GrounderFactory::create(const AbstractTheory* theory) {
 }
 
 // TODO comment
-TopLevelGrounder* GrounderFactory::create(const AbstractTheory* theory, InteractivePrintMonitor* monitor) {
-	_grounding = new PrintGroundTheory(monitor,_structure->clone());
+TopLevelGrounder* GrounderFactory::create(const AbstractTheory* theory, InteractivePrintMonitor* monitor, Options* opts) {
+	_grounding = new PrintGroundTheory(monitor,_structure->clone(), opts);
 
 #ifdef CPSUPPORT
 	// Find function that can be passed to CP solver.

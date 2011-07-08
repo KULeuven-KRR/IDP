@@ -43,11 +43,12 @@ class GroundAndPrintInference: public Inference {
 private:
 	AbstractTheory* ground(AbstractTheory* theory, AbstractStructure* structure, Options* options, InteractivePrintMonitor* monitor) const {
 		GrounderFactory factory(structure,options);
-		TopLevelGrounder* grounder = factory.create(theory, monitor);
+		TopLevelGrounder* grounder = factory.create(theory, monitor, options);
 		grounder->run();
 		AbstractGroundTheory* grounding = grounder->grounding();
 		grounding->addFuncConstraints();
 		delete(grounder);
+		monitor->flush();
 		return grounding;
 	}
 

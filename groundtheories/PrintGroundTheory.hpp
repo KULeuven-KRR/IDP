@@ -18,8 +18,10 @@
 #include "ecnf.hpp"
 #include "commontypes.hpp"
 
+class Options;
 class InteractivePrintMonitor;
-class EcnfPrinter;
+class Printer;
+
 
 /**
  * A ground theory which does not store the grounding, but directly writes it to its monitors.
@@ -28,13 +30,13 @@ class EcnfPrinter;
 class PrintGroundTheory : public AbstractGroundTheory {
 private:
 	InteractivePrintMonitor* monitor_;
-	EcnfPrinter*			printer_;
+	Printer*			printer_;
 
 public:
-	PrintGroundTheory(InteractivePrintMonitor* monitor, AbstractStructure* str);
+	PrintGroundTheory(InteractivePrintMonitor* monitor, AbstractStructure* str, Options* opts);
 	void recursiveDelete() { delete(this);	}
 
-	EcnfPrinter&	printer() { return *printer_; }
+	Printer&	printer() { return *printer_; }
 
 	// Mutators
 	virtual void	addClause(GroundClause& cl, bool skipfirst = false);
@@ -44,12 +46,12 @@ public:
 	virtual void	addAggregate(int tseitin, AggTsBody* body);
 	virtual void 	addCPReification(int tseitin, CPTsBody* body);
 
-	virtual void	addPCRule(int defnr, int tseitin, PCTsBody* body);
-	virtual void	addAggRule(int defnr, int tseitin, AggTsBody* body);
+	virtual void	addPCRule(int defnr, int tseitin, PCTsBody* body, bool recursive);
+	virtual void	addAggRule(int defnr, int tseitin, AggTsBody* body, bool recursive);
 
 	// Visitor
-	virtual void			accept(TheoryVisitor* v) const		{ /*NOOP*/	}
-	virtual AbstractTheory*	accept(TheoryMutatingVisitor* v)	{ return NULL; /*TODO*/	}
+	virtual void			accept(TheoryVisitor* v) const;
+	virtual AbstractTheory*	accept(TheoryMutatingVisitor* v);
 
 	// Debugging
 	virtual std::ostream&	put(std::ostream& output, unsigned int)	const { assert(false); return output;	}

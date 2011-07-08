@@ -8,7 +8,7 @@
 
 #include <vector>
 #include "commandinterface.hpp"
-#include "print.hpp"
+#include "printers/print.hpp"
 #include "structure.hpp"
 #include "theory.hpp"
 #include "namespace.hpp"
@@ -17,14 +17,10 @@
 
 template<class Object>
 std::string print(Object o, Options* opts){
-	InteractivePrintMonitor* moni = new SavingPrintMonitor();
-
-	Printer* printer = Printer::create(opts, *moni);
-	std::string str = printer->print(o);
-
-	delete(moni);
-
-	return str;
+	std::stringstream stream;
+	Printer* printer = Printer::create<std::stringstream>(opts, stream);
+	printer->visit(o);
+	return stream.str();
 }
 
 class PrintStructureInference: public Inference {

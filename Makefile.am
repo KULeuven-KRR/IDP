@@ -43,7 +43,8 @@ gidl_SOURCES = \
 		common.hpp common.cpp\
 		interactive.hpp interactive.cpp\
 		main.cpp\
-		print.hpp print.cpp\
+		printers/print.hpp printers/print.cpp\
+		printers/idpprinter.hpp printers/ecnfprinter.hpp\
 		checker.hpp checker.cpp\
 		generator.hpp generator.cpp\
 		propagate.hpp propagate.cpp\

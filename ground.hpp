@@ -774,7 +774,7 @@ class GrounderFactory : public TheoryVisitor {
 		// Factory method
 		TopLevelGrounder* create(const AbstractTheory*);
 		TopLevelGrounder* create(const AbstractTheory*, MinisatID::WrappedPCSolver*);
-		TopLevelGrounder* create(const AbstractTheory* theory, InteractivePrintMonitor* monitor);
+		TopLevelGrounder* create(const AbstractTheory* theory, InteractivePrintMonitor* monitor, Options* opts);
 
 		// Determine what should be passed to CP solver
 		std::set<const PFSymbol*> 	findCPSymbols(const AbstractTheory*);

@@ -51,12 +51,12 @@ std::vector<Inference*> getAllInferences(){
 	inferences.push_back(new DomainIteratorInference());
 	inferences.push_back(new TableIteratorInference());
 	inferences.push_back(new PropagateInference());
+	inferences.push_back(new PrintVocabularyInference());
 	inferences.push_back(new PrintTheoryInference());
 	inferences.push_back(new PrintDomainAtomInference());
 	inferences.push_back(new PrintFormulaInference());
 	inferences.push_back(new PrintNamespaceInference());
 	inferences.push_back(new PrintOptionInference());
-	inferences.push_back(new PrintVocabularyInference());
 	inferences.push_back(new PrintStructureInference());
 	inferences.push_back(new NewTheoryInference());
 	inferences.push_back(new CloneStructureInference());

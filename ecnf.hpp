@@ -134,7 +134,7 @@ enum RuleType { RT_CONJ, RT_DISJ, RT_AGG };
  *		This class represents a ground rule body, where literals are represented by integers.
  */ 
 class GroundRuleBody {
-	protected:
+	private:
 		RuleType	_type;					// The rule type (disjunction, conjunction, or aggregate
 		bool		_recursive;				// True iff the rule body contains defined literals
 
@@ -171,7 +171,7 @@ class PCGroundRuleBody : public GroundRuleBody {
 	public:
 		// Constructors
 		PCGroundRuleBody(RuleType type, const std::vector<int>& body, bool rec) : GroundRuleBody(type,rec), _body(body) { }
-		PCGroundRuleBody(const PCGroundRuleBody& grb): GroundRuleBody(grb._type,grb._recursive), _body(grb._body) { }
+		PCGroundRuleBody(const PCGroundRuleBody& grb): GroundRuleBody(grb.type(),grb.recursive()), _body(grb._body) { }
 
 		~PCGroundRuleBody() { }
 
@@ -180,8 +180,8 @@ class PCGroundRuleBody : public GroundRuleBody {
 		unsigned int	size()					const { return _body.size();						}
 		bool			empty()					const { return _body.empty();						}
 		int				literal(unsigned int n)	const { return _body[n];							}
-		bool			isFalse()				const { return (_body.empty() && _type == RT_DISJ);	}
-		bool			isTrue()				const { return (_body.empty() && _type == RT_CONJ);	}
+		bool			isFalse()				const { return (_body.empty() && type() == RT_DISJ);	}
+		bool			isTrue()				const { return (_body.empty() && type() == RT_CONJ);	}
 
 		// Visitor
 		void accept(TheoryVisitor* v) const { v->visit(this);	}
@@ -207,7 +207,7 @@ class AggGroundRuleBody : public GroundRuleBody {
 		AggGroundRuleBody(int setnr, AggFunction at, bool lower, double bound, bool rec):
 			GroundRuleBody(RT_AGG,rec), _setnr(setnr), _aggtype(at), _lower(lower), _bound(bound) { }
 		AggGroundRuleBody(const AggGroundRuleBody& grb):
-			GroundRuleBody(RT_AGG,grb._recursive), _setnr(grb._setnr), _aggtype(grb._aggtype), _lower(grb._lower), _bound(grb._bound) { }
+			GroundRuleBody(RT_AGG,grb.recursive()), _setnr(grb._setnr), _aggtype(grb._aggtype), _lower(grb._lower), _bound(grb._bound) { }
 
 		~AggGroundRuleBody() { }
 
@@ -351,8 +351,8 @@ public:
 			void 	addEmptyClause()		{ GroundClause c(0); addClause(c);		}
 			void 	addUnitClause(int l)	{ GroundClause c(1,l); addClause(c);	}
 
-	virtual void 	addPCRule(int defnr, int tseitin, PCTsBody* body)		= 0;
-	virtual void 	addAggRule(int defnr, int tseitin, AggTsBody* body)		= 0;
+	virtual void 	addPCRule(int defnr, int tseitin, PCTsBody* body, bool recursive)= 0;
+	virtual void 	addAggRule(int defnr, int tseitin, AggTsBody* body, bool recursive)		= 0;
 
 			void	addFuncConstraints();
 
@@ -394,8 +394,8 @@ public:
 	virtual void	addAggregate(int tseitin, AggTsBody* body);
 	virtual void 	addCPReification(int tseitin, CPTsBody* body);
 
-	virtual void	addPCRule(int defnr, int tseitin, PCTsBody* body);
-	virtual void	addAggRule(int defnr, int tseitin, AggTsBody* body);
+	virtual void	addPCRule(int defnr, int tseitin, PCTsBody* body, bool recursive);
+	virtual void	addAggRule(int defnr, int tseitin, AggTsBody* body, bool recursive);
 
 			void	addFalseDefineds();
 
@@ -409,9 +409,9 @@ public:
 
 private:
 	void 	addAggregate(int definitionID, int head, bool lowerbound, int setnr, AggFunction aggtype, TsType sem, double bound);
-	void 	addPCRule(int definitionID, int head, std::vector<int> body, bool conjunctive);
-	void	addPCRule(int defnr, int head, PCGroundRuleBody* body);
-	void	addAggRule(int defnr, int head, AggGroundRuleBody* body);
+	void 	addPCRule(int definitionID, int head, std::vector<int> body, bool conjunctive, bool recursive);
+	void	addPCRule(int defnr, int head, PCGroundRuleBody* body, bool recursive);
+	void	addAggRule(int defnr, int head, AggGroundRuleBody* body, bool recursive);
 #ifdef CPSUPPORT
 	void	addCPVariable(const VarId&);
 	void	addCPVariables(const std::vector<VarId>&);
@@ -441,8 +441,8 @@ public:
 	void	addAggregate(int tseitin, AggTsBody* body);
 	void 	addCPReification(int tseitin, CPTsBody* body);
 
-	void	addPCRule(int defnr, int tseitin, PCTsBody* body);
-	void	addAggRule(int defnr, int tseitin, AggTsBody* body);
+	void	addPCRule(int defnr, int tseitin, PCTsBody* body, bool recursive);
+	void	addAggRule(int defnr, int tseitin, AggTsBody* body, bool recursive);
 
 	// Inspectors
 	unsigned int		nrClauses()						const { return _clauses.size();							}

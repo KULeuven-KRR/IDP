@@ -186,7 +186,7 @@ class PFSymbol {
 
 		// Output
 		virtual std::ostream&	put(std::ostream&, bool longnames = true)	const = 0;
-				std::string		to_string()									const;
+				std::string		to_string(bool longnames = true)			const;
 
 		friend class Vocabulary;
 };
@@ -395,6 +395,7 @@ class Function : public PFSymbol {
 
 		// Output
 		std::ostream&	put(std::ostream&, bool longnames = true)	const;
+		std::string		to_string(bool longnames = true)			const;
 
 		friend class Vocabulary;
 };

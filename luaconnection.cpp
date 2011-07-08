@@ -19,7 +19,7 @@
 #include "options.hpp"
 #include "namespace.hpp"
 #include "error.hpp"
-#include "print.hpp"
+#include "printers/print.hpp"
 #include "ground.hpp"
 #include "ecnf.hpp"
 #include "fobdd.hpp"
@@ -1753,6 +1753,8 @@ namespace LuaConnection {
 		}
 
 		// Add the internal procedures to lua
+		// FIXME here, all hard coded internal procedures are added to the table with name getLibraryName(),
+		// in future, we might add some procedures to the basic namespace
 		lua_getglobal(L,getLibraryName().c_str());
 		for(internalproclist::iterator it =	_internalprocedures.begin(); it != _internalprocedures.end(); ++it) {
 			addUserData(L, new internalprocargmap(it->second), "internalprocedure");
