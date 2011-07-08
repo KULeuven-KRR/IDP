@@ -48,6 +48,8 @@ class DomainElementFactory;
  */
 enum DomainElementType { DET_INT, DET_DOUBLE, DET_STRING, DET_COMPOUND };
 
+std::ostream& operator<< (std::ostream&,const DomainElementType&);
+
 /**
  *	A value for a single domain element. 
  */
@@ -83,17 +85,19 @@ class DomainElement {
 		friend class DomainElementFactory;
 };
 
-bool operator<(const DomainElement&,const DomainElement&);
-bool operator>(const DomainElement&,const DomainElement&);
-bool operator==(const DomainElement&,const DomainElement&);
-bool operator!=(const DomainElement&,const DomainElement&);
-bool operator<=(const DomainElement&,const DomainElement&);
-bool operator>=(const DomainElement&,const DomainElement&);
+bool operator<(const DomainElement&, const DomainElement&);
+bool operator>(const DomainElement&, const DomainElement&);
+bool operator==(const DomainElement&, const DomainElement&);
+bool operator!=(const DomainElement&, const DomainElement&);
+bool operator<=(const DomainElement&, const DomainElement&);
+bool operator>=(const DomainElement&, const DomainElement&);
 
-std::ostream& operator<< (std::ostream&,const DomainElement&);
+std::ostream& operator<<(std::ostream&, const DomainElement&);
 
 typedef std::vector<const DomainElement*>	ElementTuple;
 typedef std::vector<ElementTuple>			ElementTable;
+
+std::ostream& operator<<(std::ostream&, const ElementTuple&);
 
 struct StrictWeakElementOrdering {
 	bool operator()(const DomainElement* d1, const DomainElement* d2) const { return *d1 < *d2;	}
@@ -129,7 +133,7 @@ class Compound {
 		Function*		_function;
 		ElementTuple	_arguments;
 
-		Compound(Function* function, const std::vector<const DomainElement*> arguments);
+		Compound(Function* function, const ElementTuple& arguments);
 
 	public:
 		~Compound();
@@ -657,8 +661,8 @@ class InternalPredTable {
 
 	public:
 		// Inspectors
-		virtual bool			finite(const Universe&)	const = 0;	//!< Returns true iff the table is finite
-		virtual	bool			empty(const Universe&)		const = 0;	//!< Returns true iff the table is empty
+		virtual bool	finite(const Universe&)		const = 0;	//!< Returns true iff the table is finite
+		virtual	bool	empty(const Universe&)		const = 0;	//!< Returns true iff the table is empty
 
 		virtual bool	approxfinite(const Universe&)	const = 0;
 			//!< Returns false if the table size is infinite. May return true if the table size is finite.
@@ -1423,7 +1427,7 @@ class IntFloatInternalFuncTable : public InternalFuncTable {
 class PlusInternalFuncTable : public IntFloatInternalFuncTable {
 	public:
 		PlusInternalFuncTable(bool i) : IntFloatInternalFuncTable(i) { }
-		const DomainElement*	operator[](const std::vector<const DomainElement*>&)	const;
+		const DomainElement*	operator[](const ElementTuple&)	const;
 		InternalTableIterator*	begin(const Universe&)	const;
 
 		// Visitor
@@ -1434,7 +1438,7 @@ class PlusInternalFuncTable : public IntFloatInternalFuncTable {
 class MinusInternalFuncTable : public IntFloatInternalFuncTable {
 	public:
 		MinusInternalFuncTable(bool i) : IntFloatInternalFuncTable(i) { }
-		const DomainElement*	operator[](const std::vector<const DomainElement*>&)	const;
+		const DomainElement*	operator[](const ElementTuple&)	const;
 		InternalTableIterator*	begin(const Universe&)	const;
 
 		// Visitor
@@ -1445,7 +1449,7 @@ class MinusInternalFuncTable : public IntFloatInternalFuncTable {
 class TimesInternalFuncTable : public IntFloatInternalFuncTable {
 	public:
 		TimesInternalFuncTable(bool i) : IntFloatInternalFuncTable(i) { }
-		const DomainElement*	operator[](const std::vector<const DomainElement*>&)	const;
+		const DomainElement*	operator[](const ElementTuple&)	const;
 		InternalTableIterator*	begin(const Universe&)	const;
 
 		// Visitor
@@ -1456,7 +1460,7 @@ class TimesInternalFuncTable : public IntFloatInternalFuncTable {
 class DivInternalFuncTable : public IntFloatInternalFuncTable {
 	public:
 		DivInternalFuncTable(bool i) : IntFloatInternalFuncTable(i) { }
-		const DomainElement*	operator[](const std::vector<const DomainElement*>&)	const;
+		const DomainElement*	operator[](const ElementTuple&)	const;
 		InternalTableIterator*	begin(const Universe&)	const;
 
 		// Visitor
@@ -1467,7 +1471,7 @@ class DivInternalFuncTable : public IntFloatInternalFuncTable {
 class AbsInternalFuncTable : public IntFloatInternalFuncTable {
 	public:
 		AbsInternalFuncTable(bool i) : IntFloatInternalFuncTable(i) { }
-		const DomainElement*	operator[](const std::vector<const DomainElement*>&)	const;
+		const DomainElement*	operator[](const ElementTuple&)	const;
 		InternalTableIterator*	begin(const Universe&)	const;
 
 		// Visitor
@@ -1478,7 +1482,7 @@ class AbsInternalFuncTable : public IntFloatInternalFuncTable {
 class UminInternalFuncTable : public IntFloatInternalFuncTable {
 	public:
 		UminInternalFuncTable(bool i) : IntFloatInternalFuncTable(i) { }
-		const DomainElement*	operator[](const std::vector<const DomainElement*>&)	const;
+		const DomainElement*	operator[](const ElementTuple&)	const;
 		InternalTableIterator*	begin(const Universe&)	const;
 
 		// Visitor
@@ -1493,7 +1497,7 @@ class ExpInternalFuncTable : public InternalFuncTable {
 		bool		approxfinite(const Universe&)	const { return false;	}
 		bool		approxempty(const Universe&)	const { return false;	}
 		tablesize	size(const Universe&)			const { return tablesize(false,0);	}
-		const DomainElement*	operator[](const std::vector<const DomainElement*>&)	const;
+		const DomainElement*	operator[](const ElementTuple&)	const;
 
 		InternalFuncTable*	add(const ElementTuple&);
 		InternalFuncTable*	remove(const ElementTuple&);
@@ -1645,10 +1649,10 @@ class FuncTable : public AbstractTable {
 		bool			approxempty()			const	{ return _table->approxempty(_universe);	}
 		tablesize		size()					const	{ return _table->size(_universe);			}
 
-		const DomainElement*	operator[](const std::vector<const DomainElement*>& tuple)	const {
+		const DomainElement* operator[](const ElementTuple& tuple) const {
 			return _table->operator[](tuple);
 		}
-		bool	contains(const std::vector<const DomainElement*>& tuple)		const;
+		bool	contains(const ElementTuple& tuple)	const;
 		void	add(const ElementTuple& tuple);	
 		void	remove(const ElementTuple& tuple);
 
@@ -1913,7 +1917,7 @@ class AbstractStructure {
 
 		virtual AbstractStructure*	clone() const = 0;	// take a clone of this structure
 
-		virtual Universe	universe(PFSymbol*)	const = 0;
+		virtual Universe	universe(const PFSymbol*)	const = 0;
 
 };
 
@@ -1924,7 +1928,6 @@ class Structure : public AbstractStructure {
 		std::map<Sort*,SortTable*>		_sortinter;		//!< The domains of the structure. 
 		std::map<Predicate*,PredInter*>	_predinter;		//!< The interpretations of the predicate symbols.
 		std::map<Function*,FuncInter*>	_funcinter;		//!< The interpretations of the function symbols.
-	
 
 	public:
 		// Constructors
@@ -1950,7 +1953,7 @@ class Structure : public AbstractStructure {
 		PredInter*		inter(PFSymbol* s)			const; //!< Return the interpretation of s.
 		Structure*		clone()						const; //!< take a clone of this structure
 
-		Universe	universe(PFSymbol*)	const;
+		Universe	universe(const PFSymbol*)	const;
 };
 
 /************************
@@ -1963,6 +1966,9 @@ namespace TableUtils {
 	FuncInter*	leastFuncInter(const Universe& univ);		
 		//!< construct a new, least precise function interpretation
 	Universe	fullUniverse(unsigned int arity);
+
+	bool		approxTotalityCheck(const FuncInter*);
+		//!< Check whether there is a value for every tuple in the given function interpretation.
 }
 
 /**************

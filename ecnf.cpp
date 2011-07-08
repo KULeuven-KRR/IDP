@@ -232,10 +232,10 @@ string GroundDefinition::to_string(unsigned int) const {
 const int ID_FOR_UNDEFINED = -1;
 
 AbstractGroundTheory::AbstractGroundTheory(AbstractStructure* str) : 
-	AbstractTheory("",ParseInfo()), _structure(str), _translator(new GroundTranslator()), _termtranslator(new GroundTermTranslator()) { }
+	AbstractTheory("",ParseInfo()), _structure(str), _translator(new GroundTranslator()), _termtranslator(new GroundTermTranslator(str)) { }
 
 AbstractGroundTheory::AbstractGroundTheory(Vocabulary* voc, AbstractStructure* str) : 
-	AbstractTheory("",voc,ParseInfo()), _structure(str), _translator(new GroundTranslator()), _termtranslator(new GroundTermTranslator()) { }
+	AbstractTheory("",voc,ParseInfo()), _structure(str), _translator(new GroundTranslator()), _termtranslator(new GroundTermTranslator(str)) { }
 
 AbstractGroundTheory::~AbstractGroundTheory() {
 	delete(_structure);
@@ -247,7 +247,7 @@ void AbstractGroundTheory::recursiveDelete() {
 	delete(this);
 }
 
-/*
+/**
  * AbstractGroundTheory::transformForAdd(vector<int>& vi, VIType vit, int defnr, bool skipfirst)
  * DESCRIPTION
  *		Adds defining rules for tseitin literals in a given vector of literals to the ground theory.
@@ -316,23 +316,96 @@ void AbstractGroundTheory::transformForAdd(const vector<int>& vi, VIType /*vit*/
 				}
 			}
 			else {
-#ifdef TEMP_CP
 				assert(typeid(*tsbody) == typeid(CPTsBody));
 				CPTsBody* body = dynamic_cast<CPTsBody*>(tsbody);
 				if(body->type() == TS_RULE) {
 					assert(false);
-					//TODO
+					//TODO Does this ever happen?
 				}
 				else {
 					addCPReification(atom,body);
 				}
-#else
-				assert(false);
-#endif
 			}
 		}
 	}
 }
+
+CPTerm* AbstractGroundTheory::foldCPTerm(CPTerm* cpterm) {
+	if(_foldedterms.find(cpterm) == _foldedterms.end()) {
+		_foldedterms.insert(cpterm);
+		if(typeid(*cpterm) == typeid(CPVarTerm)) {
+			CPVarTerm* varterm = static_cast<CPVarTerm*>(cpterm);
+			if(not _termtranslator->function(varterm->_varid)) {
+				CPTsBody* cprelation = _termtranslator->cprelation(varterm->_varid);
+				CPTerm* left = foldCPTerm(cprelation->left());
+				if((typeid(*left) == typeid(CPSumTerm) || typeid(*left) == typeid(CPWSumTerm)) && cprelation->comp() == CT_EQ) {
+					assert(cprelation->right()._isvarid && cprelation->right()._varid == varterm->_varid);
+					return left;
+				}
+			}
+		}
+		else if(typeid(*cpterm) == typeid(CPSumTerm)) {
+			CPSumTerm* sumterm = static_cast<CPSumTerm*>(cpterm);
+			vector<VarId> newvarids;
+			for(vector<VarId>::const_iterator it = sumterm->_varids.begin(); it != sumterm->_varids.end(); ++it) {
+				if(not _termtranslator->function(*it)) {
+					CPTsBody* cprelation = _termtranslator->cprelation(*it);
+					CPTerm* left = foldCPTerm(cprelation->left());
+					if(typeid(*left) == typeid(CPSumTerm) && cprelation->comp() == CT_EQ) {
+						CPSumTerm* subterm = static_cast<CPSumTerm*>(left);
+						assert(cprelation->right()._isvarid && cprelation->right()._varid == *it);
+						newvarids.insert(newvarids.end(),subterm->_varids.begin(),subterm->_varids.end());
+					}
+					//TODO Need to do something special in other cases?
+					else newvarids.push_back(*it);
+				}
+				else newvarids.push_back(*it);
+			}
+			sumterm->_varids = newvarids;
+		}
+		else if(typeid(*cpterm) == typeid(CPWSumTerm)) {
+			//CPWSumTerm* wsumterm = static_cast<CPWSumTerm*>(cpterm);
+			//TODO
+		}
+	}
+	return cpterm;
+}
+
+//CPTerm* AbstractGroundTheory::foldCPTerm(CPVarTerm* cpterm) {
+//	if(not _termtranslator->function(cpterm->_varid)) {
+//		CPTsBody* cprelation = _termtranslator->cprelation(cpterm->_varid);
+//		CPTerm* left = foldCPTerm(cprelation->left());
+//		if((typeid(*left) == typeid(CPSumTerm) || typeid(*left) == typeid(CPWSumTerm)) && cprelation->comp() == CT_EQ) {
+//			assert(cprelation->right()._isvarid && cprelation->right()._varid == cpterm->_varid);
+//			return left;
+//		}
+//	}
+//	return cpterm;
+//}
+//
+//CPTerm* AbstractGroundTheory::foldCPTerm(CPSumTerm* cpterm) {
+//	//TODO
+//	vector<VarId> newvarids;
+//	for(vector<VarId>::const_iterator it = cpterm->_varids.begin(); it != cpterm->_varids.end(); ++it) {
+//		if(not _termtranslator->function(*it)) {
+//			CPTsBody* cprelation = _termtranslator->cprelation(*it);
+//			CPTerm* left = foldCPTerm(cprelation->left());
+//			if(typeid(*left) == typeid(CPSumTerm) && cprelation->comp() == CT_EQ) {
+//				CPSumTerm* subterm = static_cast<CPSumTerm*>(left);
+//				assert(cprelation->right()._isvarid && cprelation->right()._varid == *it);
+//				newvarids.insert(newvarids.end(),subterm->_varids.begin(),subterm->_varids.end());
+//			}
+//			//TODO Need to do something special in other cases?
+//			else newvarids.push_back(*it);
+//		}
+//	}
+//	cpterm->_varids = newvarids;
+//	return cpterm;
+//}
+//
+//CPTerm* AbstractGroundTheory::foldCPTerm(CPWSumTerm*) {
+//	//TODO Do something similar to CPSumTerm case.
+//}
 
 
 /*******************************
@@ -385,7 +458,7 @@ void GroundTheory::addDefinition(GroundDefinition* d) {
 
 void GroundTheory::addFixpDef(GroundFixpDef*) {
 	assert(false);
-	/* TODO */
+	//TODO
 }
 
 void GroundTheory::addAggregate(int head, AggTsBody* body) {
@@ -394,7 +467,12 @@ void GroundTheory::addAggregate(int head, AggTsBody* body) {
 }
 
 void GroundTheory::addCPReification(int tseitin, CPTsBody* body) {
-	_cpreifications.push_back(new CPReification(tseitin,body));
+	//TODO also add variables (in a separate container?)
+	
+	CPTsBody* foldedbody = new CPTsBody(body->type(),foldCPTerm(body->left()),body->comp(),body->right());
+	//FIXME possible leaks!!
+
+	_cpreifications.push_back(new CPReification(tseitin,foldedbody));
 }
 
 void GroundTheory::addSet(int setnr, int defnr, bool weighted) {
@@ -452,44 +530,21 @@ ostream& GroundTheory::put(ostream& s, unsigned int) const {
 	}
 	for(unsigned int n = 0; n < _aggregates.size(); ++n) {
 		const GroundAggregate* agg = _aggregates[n];
-		s << _translator->printAtom(agg->head());
-		switch(agg->arrow()) {
-			case TS_RULE: 	s << " <- "; break;
-			case TS_IMPL: 	s << " => "; break;
-			case TS_RIMPL: 	s << " <= "; break;
-			case TS_EQ: 	s << " <=> "; break;
-			default: assert(false);
-		}
-		s << agg->bound();
+		s << _translator->printAtom(agg->head()) << ' ' << agg->arrow() << ' ' << agg->bound();
 		s << (agg->lower() ? " =< " : " >= ");
-		switch(agg->type()) {
-			case AGG_CARD: 	s << "card("; break;
-			case AGG_SUM: 	s << "sum("; break;
-			case AGG_PROD: 	s << "prod("; break;
-			case AGG_MIN: 	s << "min("; break;
-			case AGG_MAX: 	s << "max("; break;
-			default: assert(false);
-		}
-		s << agg->setnr() << ").\n";
+		s << agg->type() << '(' << agg->setnr() << ")." << endl;
 	}
 	//TODO: repeat above for fixpoint definitions
 	for(vector<CPReification*>::const_iterator it = _cpreifications.begin(); it != _cpreifications.end(); ++it) {
 		CPReification* cpr = *it;
-		s << _translator->printAtom(cpr->_head);
-		switch(cpr->_body->type()) {
-			case TS_RULE: 	s << " <- "; break;
-			case TS_IMPL: 	s << " => "; break;
-			case TS_RIMPL: 	s << " <= "; break;
-			case TS_EQ: 	s << " <=> "; break;
-			default: assert(false);
-		}
+		s << _translator->printAtom(cpr->_head) << ' ' << cpr->_body->type() << ' ';
 		CPTerm* left = cpr->_body->left();
 		if(typeid(*left) == typeid(CPSumTerm)) {
 			CPSumTerm* cpt = dynamic_cast<CPSumTerm*>(left);
 			s << "sum[ ";
 			for(vector<unsigned int>::const_iterator vit = cpt->_varids.begin(); vit != cpt->_varids.end(); ++vit) {
 				s << _termtranslator->printTerm(*vit);
-				if(*vit != cpt->_varids.back()) s << "; ";
+				if(vit != cpt->_varids.end()-1) s << "; ";
 			}
 			s << " ]";
 		}
@@ -499,8 +554,8 @@ ostream& GroundTheory::put(ostream& s, unsigned int) const {
 			vector<int>::const_iterator wit;
 			s << "wsum[ ";
 			for(vit = cpt->_varids.begin(), wit = cpt->_weights.begin(); vit != cpt->_varids.end() && wit != cpt->_weights.end(); ++vit, ++wit) {
-				s << "(" << _termtranslator->printTerm(*vit) << "=" << *wit << ")";
-				if(*vit != cpt->_varids.back()) s << "; ";
+				s << '(' << _termtranslator->printTerm(*vit) << '=' << *wit << ')';
+				if(vit != cpt->_varids.end()-1) s << "; ";
 			}
 			s << " ]";
 		}
@@ -509,19 +564,11 @@ ostream& GroundTheory::put(ostream& s, unsigned int) const {
 			CPVarTerm* cpt = dynamic_cast<CPVarTerm*>(left);
 			s << _termtranslator->printTerm(cpt->_varid);
 		}
-		switch(cpr->_body->comp()) {
-			case CT_EQ:		s << " = "; break;
-			case CT_NEQ:	s << " ~= "; break;
-			case CT_LEQ:	s << " =< "; break;
-			case CT_GEQ:	s << " >= "; break;
-			case CT_LT:		s << " < "; break;
-			case CT_GT:		s << " > "; break;
-			default: assert(false);
-		}
+		s << ' ' << cpr->_body->comp() << ' ';
 		CPBound right = cpr->_body->right();
-		if(right._isvarid) s << _termtranslator->printTerm(right._value._varid);
-		else s << right._value._bound;
-		s << ".\n";
+		if(right._isvarid) s << _termtranslator->printTerm(right._varid);
+		else s << right._bound;
+		s << '.' << endl;
 	}
 	return s;
 }
@@ -542,11 +589,11 @@ string GroundTheory::to_string() const {
 	Solver theories
 **********************/
 
-SolverTheory::SolverTheory(SATSolver* solver,AbstractStructure* str) :
-			AbstractGroundTheory(str), _solver(solver) {
+SolverTheory::SolverTheory(SATSolver* solver, AbstractStructure* str, int verbosity) :
+			AbstractGroundTheory(str), _solver(solver), _verbosity(verbosity) {
 }
-SolverTheory::SolverTheory(Vocabulary* voc, SATSolver* solver, AbstractStructure* str) :
-			AbstractGroundTheory(voc,str), _solver(solver) {
+SolverTheory::SolverTheory(Vocabulary* voc, SATSolver* solver, AbstractStructure* str, int verbosity) :
+			AbstractGroundTheory(voc,str), _solver(solver), _verbosity(verbosity) {
 }
 
 inline MinisatID::Atom createAtom(int lit){
@@ -565,12 +612,12 @@ inline MinisatID::Weight createWeight(double weight){
 void SolverTheory::addClause(GroundClause& cl, bool skipfirst) {
 	transformForAdd(cl,VIT_DISJ,ID_FOR_UNDEFINED,skipfirst);
 	MinisatID::Disjunction clause;
-//cerr << "clause ";
+	if(_verbosity > 0) clog << "clause ";
 	for(unsigned int n = 0; n < cl.size(); ++n) {
 		clause.literals.push_back(createLiteral(cl[n]));
-//cerr << (cl[n] > 0 ? "" : "~") << _translator->printAtom(cl[n]) << ' ';
+		if(_verbosity > 0) clog << (cl[n] > 0 ? "" : "~") << _translator->printAtom(cl[n]) << ' ';
 	}
-//cerr << endl;
+	if(_verbosity > 0) clog << endl;
 	getSolver().add(clause);
 }
 
@@ -580,29 +627,29 @@ void SolverTheory::addSet(int setnr, int defnr, bool weighted) {
 		TsSet& tsset = getTranslator().groundset(setnr);
 		transformForAdd(tsset.literals(),VIT_SET,defnr);
 		if(!weighted){
-//cerr << "set ";
+		if(_verbosity > 0) clog << "set ";
 			MinisatID::Set set;
 			set.setID = setnr;
-//cerr << setnr;
+			if(_verbosity > 0) clog << setnr;
 			for(unsigned int n = 0; n < tsset.size(); ++n) {
 				set.literals.push_back(createLiteral(tsset.literal(n)));
-//cerr << (tsset.literal(n) > 0 ? "" : "~") << _translator->printAtom(tsset.literal(n)) << ' ';
+				if(_verbosity > 0) clog << (tsset.literal(n) > 0 ? "" : "~") << _translator->printAtom(tsset.literal(n)) << ' ';
 			}
-////cerr << endl;
+			if(_verbosity > 0) clog << endl;
 			getSolver().add(set);
 		}
 		else {
-//cerr << "wset ";
+			if(_verbosity > 0) clog << "wset ";
 			MinisatID::WSet set;
 			set.setID = setnr;
-//cerr << setnr;
+			if(_verbosity > 0) clog << setnr;
 			for(unsigned int n = 0; n < tsset.size(); ++n) {
 				set.literals.push_back(createLiteral(tsset.literal(n)));
 				set.weights.push_back(createWeight(tsset.weight(n)));
-//cerr << (tsset.literal(n) > 0 ? "" : "~") << _translator->printAtom(tsset.literal(n)) << "=" << tsset.weight(n) << ' ';
+				if(_verbosity > 0) clog << (tsset.literal(n) > 0 ? "" : "~") << _translator->printAtom(tsset.literal(n)) << "=" << tsset.weight(n) << ' ';
 			}
 			getSolver().add(set);
-//cerr << endl;
+			if(_verbosity > 0) clog << endl;
 		}
 	}
 }
@@ -614,35 +661,33 @@ void SolverTheory::addFixpDef(GroundFixpDef*) {
 
 void SolverTheory::addAggregate(int definitionID, int head, bool lowerbound, int setnr, AggFunction aggtype, TsType sem, double bound) {
 	addSet(setnr,definitionID,(aggtype != AGG_CARD));
-//cerr << "aggregate: ";
-//cerr << _translator->printAtom(head) << ' ';
-//cerr << (sem == TS_RULE ? "<- " : "<=> ");
+	if(_verbosity > 0) clog << "aggregate: " << _translator->printAtom(head) << ' ' << (sem == TS_RULE ? "<- " : "<=> ");
 	MinisatID::Aggregate agg;
 	agg.sign = lowerbound ? MinisatID::AGGSIGN_LB : MinisatID::AGGSIGN_UB;
 	agg.setID = setnr;
 	switch (aggtype) {
 		case AGG_CARD:
 			agg.type = MinisatID::CARD;
-//cerr << "card ";
+			if(_verbosity > 0) clog << "card ";
 			break;
 		case AGG_SUM:
 			agg.type = MinisatID::SUM;
-//cerr << "sum ";
+			if(_verbosity > 0) clog << "sum ";
 			break;
 		case AGG_PROD:
 			agg.type = MinisatID::PROD;
-//cerr << "prod ";
+			if(_verbosity > 0) clog << "prod ";
 			break;
 		case AGG_MIN:
 			agg.type = MinisatID::MIN;
-//cerr << "min ";
+			if(_verbosity > 0) clog << "min ";
 			break;
 		case AGG_MAX:
-//cerr << "max ";
+			if(_verbosity > 0) clog << "max ";
 			agg.type = MinisatID::MAX;
 			break;
 	}
-//cerr << setnr << ' ';
+	if(_verbosity > 0) clog << setnr << ' ';
 	switch(sem) {
 		case TS_EQ: case TS_IMPL: case TS_RIMPL: 
 			agg.sem = MinisatID::COMP;
@@ -651,7 +696,7 @@ void SolverTheory::addAggregate(int definitionID, int head, bool lowerbound, int
 			agg.sem = MinisatID::DEF;
 			break;
 	}
-//cerr << (lowerbound ? " >= " : " =< ") << bound << endl; 
+	if(_verbosity > 0) clog << (lowerbound ? " >= " : " =< ") << bound << endl; 
 	agg.defID = definitionID;
 	agg.head = createAtom(head);
 	agg.bound = createWeight(bound);
@@ -692,8 +737,24 @@ void SolverTheory::addDefinition(GroundDefinition* d) {
 	}
 }
 
-#ifdef TEMP_CP
+#ifdef CPSUPPORT
+void addWeightedSum(const MinisatID::Atom& head, const vector<VarId>& varids, const vector<int> weights, const int& bound, MinisatID::EqType rel, SATSolver& solver){
+	MinisatID::CPSumWeighted sentence;
+	sentence.head = head;
+	sentence.varIDs = varids;
+	sentence.weights = weights;
+	sentence.bound = bound;
+	sentence.rel = rel;
+	solver.add(sentence);
+}
+#endif
+
 void SolverTheory::addCPReification(int tseitin, CPTsBody* body) {
+#ifndef CPSUPPORT
+	//TODO cleanly catch this
+	cerr <<"Interrupted because writing cp-constraints to the solver, which are not compiled in.\n";
+	throw exception();
+#else
 	MinisatID::EqType comp;
 	switch(body->comp()) {
 		case CT_EQ:		comp = MinisatID::MEQ; break; 
@@ -703,134 +764,127 @@ void SolverTheory::addCPReification(int tseitin, CPTsBody* body) {
 		case CT_LT:		comp = MinisatID::ML; break; 
 		case CT_GT:		comp = MinisatID::MG; break;
 		default: assert(false);
-	} 
-	CPTerm* left = body->left();
+	}
+	CPTerm* left = foldCPTerm(body->left());
 	CPBound right = body->right();
 	if(typeid(*left) == typeid(CPVarTerm)) {
 		CPVarTerm* term = dynamic_cast<CPVarTerm*>(left);
 		addCPVariable(term->_varid);
 		if(right._isvarid) {
-			addCPVariable(right._value._varid);
+			addCPVariable(right._varid);
 			MinisatID::CPBinaryRelVar sentence;
 			sentence.head = createAtom(tseitin);
 			sentence.lhsvarID = term->_varid;
-			sentence.rhsvarID = right._value._varid;
+			sentence.rhsvarID = right._varid;
 			sentence.rel = comp;
 			getSolver().add(sentence);
-		}
-		else {
+		} else {
 			MinisatID::CPBinaryRel sentence;
 			sentence.head = createAtom(tseitin);
 			sentence.varID = term->_varid;
-			sentence.bound = right._value._bound;
+			sentence.bound = right._bound;
 			sentence.rel = comp;
 			getSolver().add(sentence);
 		}
-	}
-	else if(typeid(*left) == typeid(CPSumTerm)) {
+	} else if(typeid(*left) == typeid(CPSumTerm)) {
 		CPSumTerm* term = dynamic_cast<CPSumTerm*>(left);
 		addCPVariables(term->_varids);
 		if(right._isvarid) {
-			addCPVariable(right._value._varid);
-			MinisatID::CPSumWithVar sentence;
-			sentence.head = createAtom(tseitin);
-			sentence.varIDs = term->_varids;
-			sentence.rhsvarID = right._value._varid;
-			sentence.rel = comp;
-			getSolver().add(sentence);
+			addCPVariable(right._varid);
+			vector<VarId> varids = term->_varids;
+			vector<int> weights;
+			weights.resize(1, term->_varids.size());
+
+			int bound = 0;
+			varids.push_back(right._varid);
+			weights.push_back(-1);
+
+			addWeightedSum(createAtom(tseitin), varids, weights, bound, comp, getSolver());
+		} else {
+			vector<int> weights;
+			weights.resize(1, term->_varids.size());
+			addWeightedSum(createAtom(tseitin), term->_varids, weights, right._bound, comp, getSolver());
 		}
-		else {
-			MinisatID::CPSum sentence;
-			sentence.head = createAtom(tseitin);
-			sentence.varIDs = term->_varids;
-			sentence.bound = right._value._bound;
-			sentence.rel = comp;
-			getSolver().add(sentence);
-		}
-	}
-	else {
+	} else {
 		assert(typeid(*left) == typeid(CPWSumTerm));
 		CPWSumTerm* term = dynamic_cast<CPWSumTerm*>(left);
 		addCPVariables(term->_varids);
 		if(right._isvarid) {
-			addCPVariable(right._value._varid);
-			MinisatID::CPSumWeightedWithVar sentence;
-			sentence.head = createAtom(tseitin);
-			sentence.varIDs = term->_varids;
-			sentence.weights = term->_weights;
-			sentence.rhsvarID = right._value._varid;
-			sentence.rel = comp;
-			getSolver().add(sentence);
+			addCPVariable(right._varid);
+			vector<VarId> varids = term->_varids;
+			vector<int> weights = term->_weights;
+
+			int bound = 0;
+			varids.push_back(right._varid);
+			weights.push_back(-1);
+
+			addWeightedSum(createAtom(tseitin), varids, weights, bound, comp, getSolver());
+		} else {
+			addWeightedSum(createAtom(tseitin), term->_varids, term->_weights, right._bound, comp, getSolver());
 		}
-		else {
-			MinisatID::CPSumWeighted sentence;
-			sentence.head = createAtom(tseitin);
-			sentence.varIDs = term->_varids;
-			sentence.weights = term->_weights;
-			sentence.bound = right._value._bound;
-			sentence.rel = comp;
-			getSolver().add(sentence);
-		}
+	}
+#endif //CPSUPPORT
+}
+
+#ifdef CPSUPPORT
+void SolverTheory::addCPVariables(const vector<VarId>& varids) {
+	for(vector<VarId>::const_iterator it = varids.begin(); it != varids.end(); ++it) {
+		addCPVariable(*it);
 	}
 }
 
-void SolverTheory::addCPVariables(const vector<unsigned int>& varids) {
-	for(vector<unsigned int>::const_iterator it = varids.begin(); it != varids.end(); ++it)
-		addCPVariable(*it);
-}
-
-void SolverTheory::addCPVariable(unsigned int varid) {
+void SolverTheory::addCPVariable(const VarId& varid) {
 	if(_addedvarids.find(varid) == _addedvarids.end()) {
 		_addedvarids.insert(varid);
 		Function* function = _termtranslator->function(varid);
-//cerr << "func = " << function->name();
-		SortTable* domain = _structure->inter(function->outsort());
+		if(_verbosity > 0) { 
+			clog << "Adding domain for var_" << varid;
+			if(function) clog << " (function " << *function << ")";
+	   		clog << ": ";
+		}
+		SortTable* domain = _termtranslator->domain(varid);
+		assert(domain);
 		assert(domain->approxfinite()); 
-		const DomainElement* first = domain->first(); 
-		int minvalue = first->value()._int;
-		const DomainElement* last = domain->last();	
-		int maxvalue = last->value()._int;
-		assert(maxvalue > minvalue);
 		if(domain->isRange()) {
-//cerr << " domain = [" << minvalue << "," << maxvalue << "]" << endl;
 			// the domain is a complete range from minvalue to maxvalue.
 			MinisatID::CPIntVarRange cpvar;
 			cpvar.varID = varid;
-			cpvar.minvalue = minvalue;
-			cpvar.maxvalue = maxvalue;
+			cpvar.minvalue = domain->first()->value()._int;
+			cpvar.maxvalue = domain->last()->value()._int;
+			if(_verbosity > 0) clog << "[" << cpvar.minvalue << "," << cpvar.maxvalue << "]";
 			getSolver().add(cpvar);
 		}
 		else {
 			// the domain is not a complete range.
 			MinisatID::CPIntVarEnum cpvar;
 			cpvar.varID = varid;
-//cerr << " domain = { ";
-			
+			if(_verbosity > 0) clog << "{ ";
 			for(SortIterator it = domain->sortbegin(); it.hasNext(); ++it) {
 				int value = (*it)->value()._int;
-//cerr << value << "; ";
 				cpvar.values.push_back(value);
+				if(_verbosity > 0) clog << value << "; ";
 			}
-//cerr << " }" << endl;
+			if(_verbosity > 0) clog << "}";
 			getSolver().add(cpvar);
 		}
+		if(_verbosity > 0) clog << endl;
 	}
 }
-#endif
+#endif //CPSUPPORT
 
 void SolverTheory::addPCRule(int defnr, int head, vector<int> body, bool conjunctive){
 	transformForAdd(body,(conjunctive ? VIT_CONJ : VIT_DISJ),defnr);
 	MinisatID::Rule rule;
 	rule.head = createAtom(head);
-//cerr << (rule.conjunctive ? "conjunctive" : "disjunctive") << "rule " << _translator->printAtom(head) << " <- ";
+	if(_verbosity > 0) clog << (rule.conjunctive ? "conjunctive" : "disjunctive") << "rule " << _translator->printAtom(head) << " <- ";
 	for(unsigned int n = 0; n < body.size(); ++n) {
 		rule.body.push_back(createLiteral(body[n]));
-//cerr << (body[n] > 0 ? "" : "~") << _translator->printAtom(body[n]) << ' ';
+		if(_verbosity > 0) clog << (body[n] > 0 ? "" : "~") << _translator->printAtom(body[n]) << ' ';
 	}
 	rule.conjunctive = conjunctive;
 	rule.definitionID = defnr;
 	getSolver().add(rule);
-//cerr << endl;
+	if(_verbosity > 0) clog << endl;
 }
 
 void SolverTheory::addPCRule(int defnr, int head, PCGroundRuleBody* grb) {
@@ -841,7 +895,7 @@ void SolverTheory::addPCRule(int defnr, int head, PCTsBody* tsb) {
 	addPCRule(defnr,head,tsb->body(),tsb->conj());
 }
 
-/*
+/**
  *		Adds constraints to the theory that state that each of the functions that occur in the theory is indeed a function.
  *		This method should be called before running the SAT solver and after grounding.
  */

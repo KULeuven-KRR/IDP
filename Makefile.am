@@ -2,7 +2,8 @@ SUBDIRS = lib pcsolver
 AM_CXXFLAGS = @AC_CXXFLAGS@ -Wall -Wextra\
 		-I$(srcdir)/lib/lua/etc -I$(srcdir)/lib/lua/src\
 		-I$(builddir)/lib/lua/src  -I $(srcdir)/lib/\
-		-DDATADIR=\"$(datadir)\" -DRCDIR=\"$(localstatedir)\"
+		-DDATADIR=\"$(datadir)\" -DRCDIR=\"$(localstatedir)\"\
+		-std=c++0x
 		
 if USEINTERACTIVE
 AM_CXXFLAGS += -DUSEINTERACTIVE

@@ -20,10 +20,6 @@ Insert insert;
 // Errors
 void yyerror(const char* s);
 
-// Common 
-extern std::string itos(int);
-extern std::string dtos(double);
-
 typedef std::pair<int,std::string*> isp;
 typedef std::list<isp>				lisp;
 

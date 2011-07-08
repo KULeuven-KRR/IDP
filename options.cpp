@@ -51,7 +51,11 @@ class EnumeratedStringOption : public StringOption {
 
 Options::Options(const string& name, const ParseInfo& pi) : _name(name), _pi(pi) {
 	_booloptions["printtypes"]			= true;
-	_booloptions["usingcp"]				= true;
+#ifdef CPSUPPORT
+	_booloptions["cpsupport"]		= true;
+#else
+	_booloptions["cpsupport"]		= false;
+#endif //CPSUPPORT
 	_booloptions["trace"]				= false;
 	_booloptions["autocomplete"]		= true;
 	_booloptions["longnames"]			= false;
@@ -176,7 +180,7 @@ int Options::longestbranch() const {
 }
 
 bool Options::cpsupport() const {
-	return _booloptions.find("usingcp")->second;
+	return _booloptions.find("cpsupport")->second;
 }
 
 bool Options::autocomplete() const {
@@ -218,8 +222,8 @@ ostream& Options::put(ostream& output) const {
 	}
 
 	sort(optionslines.begin(), optionslines.end());
-	for(auto i=optionslines.begin(); i<optionslines.end(); ++i){
-		output <<*i <<endl;
+	for(auto i = optionslines.begin(); i < optionslines.end(); ++i){
+		output << *i <<endl;
 	}
 
 	return output;

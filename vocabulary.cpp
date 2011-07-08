@@ -239,7 +239,7 @@ Variable::Variable(const std::string& name, Sort* sort, const ParseInfo& pi) : _
 }
 
 Variable::Variable(Sort* s) : _sort(s) {
-	_name = "_var_" + s->name() + "_" + itos(Variable::_nvnr);
+	_name = "_var_" + s->name() + "_" + toString(Variable::_nvnr);
 	++_nvnr;
 }
 
@@ -381,7 +381,7 @@ Predicate::Predicate(const std::string& name,const std::vector<Sort*>& sorts, bo
 
 Predicate::Predicate(const vector<Sort*>& sorts) : 
 	PFSymbol("",sorts,ParseInfo()), _interpretation(0), _overpredgenerator(0) {
-	_name = "_internal_predicate_" + itos(_npnr) + "/" + itos(sorts.size());
+	_name = "_internal_predicate_" + toString(_npnr) + "/" + toString(sorts.size());
 	++_npnr;
 }
 
@@ -1153,11 +1153,20 @@ namespace FuncUtils {
 		}
 	}
 
-	bool isIntFunc(const Function* func, Vocabulary* voc) {
-		Sort* ints = *(voc->sort("int")->begin());
-		return SortUtils::resolve(func->outsort(),ints,voc) == ints;
+	bool isIntFunc(const Function* func, const Vocabulary* voc) {
+		return SortUtils::resolve(func->outsort(),VocabularyUtils::intsort(),voc) == VocabularyUtils::intsort();
 	}
 
+	bool isIntSum(const Function* function, const Vocabulary* voc) {
+		if(function->name() == "+/2") {
+			bool allintsorts = isIntFunc(function,voc);
+			for(vector<Sort*>::const_iterator it = function->insorts().begin(); it != function->insorts().end(); ++it) {
+				allintsorts *= (SortUtils::resolve(*it,VocabularyUtils::intsort(),voc) == VocabularyUtils::intsort());
+			}
+			return allintsorts;
+		}
+		return false;
+	}
 }
 
 /*****************
@@ -1509,4 +1518,8 @@ namespace VocabularyUtils {
 	Sort* stringsort() { return *(Vocabulary::std()->sort("string")->begin()); }
 	Sort* charsort() { return *(Vocabulary::std()->sort("char")->begin()); }
 
+	bool isComparisonPredicate(const PFSymbol* symbol) {
+		string name = symbol->name();
+		return (typeid(*symbol) == typeid(Predicate)) && (name == "=/2" || name == "</2" || name == ">/2");
+	}
 }

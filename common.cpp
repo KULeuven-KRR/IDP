@@ -4,6 +4,7 @@
 	(c) K.U.Leuven
 ************************************/
 
+#include <string>
 #include <iostream>
 #include <ostream>
 #include <vector>
@@ -17,30 +18,10 @@
 
 using namespace std;
 
-string itos(int n) {
-	stringstream sst;
-	sst << n;
-	return sst.str();
-}
-
-int stoi(const string& s) {
-	stringstream i(s);
-	int n;
-	if(!(i >> n)) return 0;
-	else return n;
-}
-
-string dtos(double d) {
-	stringstream s;
-	s << d;
-	return s.str();
-}
-
-double stod(const string& s) {
-	stringstream i(s);
-	double d;
-	if(!(i >> d)) return 0;
-	else return d;
+void notyetimplemented(const string& message) {
+	cerr << "WARNING or ERROR: The following feature is not yet implemented:\n"
+		 << '\t' << message << '\n'
+		 << "Please send an e-mail to krr@cs.kuleuven.be if you really need this feature.\n";
 }
 
 bool isInt(double d) {
@@ -59,13 +40,26 @@ bool isDouble(const string& s) {
 	return (i >> d);
 }
 
-void notyetimplemented(const string& message) {
-	cerr << "WARNING or ERROR: The following feature is not yet implemented:\n"
-		 << '\t' << message << '\n'
-		 << "Please send an e-mail to krr@cs.kuleuven.be if you really need this feature.\n";
+int toInt(const string& s) {
+	stringstream i(s);
+	int n;
+	if(!(i >> n)) return 0;
+	else return n;
 }
 
-double applyAgg(AggFunction agg, const vector<double>& args) {
+double toDouble(const string& s) {
+	stringstream i(s);
+	double d;
+	if(!(i >> d)) return 0;
+	else return d;
+}
+
+void printtabs(ostream& output, unsigned int tabs) {
+	for(unsigned int n = 0; n < tabs; ++n) 
+		output << ' ';
+}
+
+double applyAgg(const AggFunction& agg, const vector<double>& args) {
 	double d;
 	switch(agg) {
 		case AGG_CARD:
@@ -91,10 +85,48 @@ double applyAgg(AggFunction agg, const vector<double>& args) {
 	return d;
 }
 
-void printtabs(ostream& output, unsigned int tabs) {
-	for(unsigned int n = 0; n < tabs; ++n) 
-		output << ' ';
+CompType invertcomp(CompType comp) {
+	switch(comp) {
+		case CT_EQ: case CT_NEQ: return comp;
+		case CT_LT: return CT_GT;
+		case CT_GT: return CT_LT;
+		case CT_LEQ: return CT_GEQ;
+		case CT_GEQ: return CT_LEQ;
+		default:
+			assert(false);
+			return CT_EQ;
+	}
 }
+
+CompType negatecomp(CompType comp) {
+	switch(comp) {
+		case CT_EQ: return CT_NEQ;
+		case CT_NEQ: return CT_EQ;
+		case CT_LT: return CT_GEQ;
+		case CT_GT: return CT_LEQ;
+		case CT_LEQ: return CT_GT;
+		case CT_GEQ: return CT_LT;
+		default:
+			assert(false);
+			return CT_EQ;
+	}
+}
+
+ostream& operator<<(ostream& out, const AggFunction& aggtype) {
+	string AggTypeStrings[5] = { "#", "sum", "prod", "min", "max" };
+	return out << AggTypeStrings[aggtype];
+}
+
+ostream& operator<<(ostream& out, const TsType& tstype) {
+	string TsTypeStrings[4] = { "<=>", "<-", "=>", "<=" };
+	return out << TsTypeStrings[tstype];
+}
+
+ostream& operator<<(ostream& out, const CompType& comp) {
+	string CompTypeStrings[6] = { "=", "~=", "<", ">", "=<", ">=" };
+	return out << CompTypeStrings[comp];
+}
+
 
 /*********************
 	Shared strings
