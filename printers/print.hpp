@@ -29,6 +29,8 @@ class GroundDefinition;
 class CPReification;
 class GroundSet;
 class GroundAggregate;
+class GroundTermTranslator;
+class GroundTranslator;
 typedef std::vector<int> GroundClause;
 
 int getIDForUndefined();
@@ -65,6 +67,10 @@ public:
 	void setOpen(int defid) { opendef_ = defid; }
 	virtual void openDefinition(int defid) = 0;
 	virtual void closeDefinition() = 0;
+
+	virtual void setTranslator(GroundTranslator*){}
+	virtual void setTermTranslator(GroundTermTranslator*){}
+	virtual void setStructure(AbstractStructure*){}
 };
 
 template<typename Stream>

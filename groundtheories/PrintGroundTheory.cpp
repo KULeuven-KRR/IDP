@@ -16,7 +16,9 @@ PrintGroundTheory::PrintGroundTheory(InteractivePrintMonitor* monitor, AbstractS
 			AbstractGroundTheory(str),
 			monitor_(monitor),
 			printer_(Printer::create(opts, *monitor)){ //FIXME translation option as argument to constructor
-
+	printer().setTranslator(translator());
+	printer().setTermTranslator(termtranslator());
+	printer().setStructure(str);
 }
 
 void PrintGroundTheory::addClause(GroundClause& cl, bool skipfirst) {

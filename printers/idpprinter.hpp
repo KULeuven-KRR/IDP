@@ -35,7 +35,14 @@ private:
 public:
 	IDPPrinter(bool printtypes, bool longnames, Stream& stream):
 			StreamPrinter<Stream>(stream),
-			_printtypes(printtypes), _longnames(longnames) { }
+			_printtypes(printtypes), _longnames(longnames),
+			_currentsymbol(NULL),
+			_currentstructure(NULL),
+			_translator(NULL),
+			_termtranslator(NULL){ }
+
+	virtual void setTranslator(GroundTranslator* t){ _translator = t; }
+	virtual void setTermTranslator(GroundTermTranslator* t){ _termtranslator = t; }
 
 	void visit(const AbstractStructure* structure) {
 		Vocabulary* voc = structure->vocabulary();
@@ -517,7 +524,7 @@ public:
 	}
 
 	void openDefinition(int defid){
-		assert(!isClosed());
+		assert(isClosed());
 		setOpen(defid);
 		printtab();
 		output() << "{\n";

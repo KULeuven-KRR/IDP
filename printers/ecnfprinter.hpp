@@ -35,7 +35,14 @@ private:
 public:
 	EcnfPrinter(bool writetranslation, Stream& stream):
 			StreamPrinter<Stream>(stream),
-			writeTranslation_(writetranslation){}
+			_structure(NULL),
+			_termtranslator(NULL),
+			writeTranslation_(writetranslation){
+
+	}
+
+	virtual void setStructure(AbstractStructure* t){ _structure = t; }
+	virtual void setTermTranslator(GroundTermTranslator* t){ _termtranslator = t; }
 
 	void visit(const Vocabulary* ) {
 		output() <<"(vocabulary cannot be printed in ecnf)";
@@ -57,6 +64,7 @@ public:
 	}
 
 	void visit(const GroundTheory* g) {
+		//FIXME these are not used correctly
 		_structure = g->structure();
 		_termtranslator = g->termtranslator();
 		output() << "p ecnf\n";
@@ -101,7 +109,7 @@ public:
 	}
 
 	void openDefinition(int defid){
-		assert(!isClosed());
+		assert(isClosed());
 		setOpen(defid);
 		printtab();
 		output() << "{\n";
@@ -117,10 +125,12 @@ public:
 
 	void visit(const GroundDefinition* d) {
 		_currentdefnr++;
+		openDefinition(_currentdefnr);
 		for(auto it = d->begin(); it != d->end(); ++it) {
 			_currenthead = it->first;
 			(it->second)->accept(this);
 		}
+		closeDefinition();
 	}
 
 	void visit(int defid, int tseitin, const PCGroundRuleBody* b) {
