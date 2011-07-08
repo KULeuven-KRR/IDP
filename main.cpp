@@ -47,9 +47,9 @@ void usage() {
 void setclconst(string name1, string name2) {
 	CLConst* c;
 	if(isInt(name2)) 
-		c = new IntClConst(stoi(name2));
+		c = new IntClConst(toInt(name2));
 	else if(isDouble(name2)) 
-		c = new DoubleClConst(stod(name2));
+		c = new DoubleClConst(toDouble(name2));
 	else if(name2.size() == 1) 
 		c = new CharCLConst(name2[0],false);
 	else if(name2.size() == 3 && name2[0] == '\'' && name2[2] == '\'') 
@@ -89,7 +89,7 @@ vector<string> read_options(int argc, char* argv[], CLOptions& cloptions) {
 														  else Error::constsetexp();
 														  argc--; argv++;
 														}
-		else if(str.substr(0,7) == "--seed=")			{ global_seed = stoi(str.substr(7,str.size()));	}
+		else if(str.substr(0,7) == "--seed=")			{ global_seed = toInt(str.substr(7,str.size()));	}
 		else if(str == "-I")							{ cloptions._readfromstdin = true;	}
 		else if(str == "-v" || str == "--version")		{ cout << "GidL 2.0.1\n"; exit(0);	}
 		else if(str == "-h" || str == "--help")			{ usage(); exit(0);					}

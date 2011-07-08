@@ -27,10 +27,10 @@ bool isDouble(const std::string&);	//!< true iff the given string is a double
 template<typename T>
 std::string	toString(T element){
 	std::stringstream ss;
-	ss <<element;
+	ss << element;
 	return ss.str();
 }
-int			toint(const std::string&);	//!< convert string to int
+int			toInt(const std::string&);	//!< convert string to int
 double		toDouble(const std::string&);	//!< convert string to double
 
 void	printtabs(std::ostream&,unsigned int tabs);	//!< write a given number of tabs
