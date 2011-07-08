@@ -774,13 +774,44 @@ class TermsToLeft : public FOBDDVisitor {
 		TermsToLeft(FOBDDManager* m) : FOBDDVisitor(m) { }
 
 		const FOBDDAtomKernel* change(const FOBDDAtomKernel* atom) {
+			const DomainElement* minus_one = DomainElementFactory::instance()->create(-1);
+			const DomainElement* zero = DomainElementFactory::instance()->create(0);
+			const FOBDDDomainTerm* minus_one_term = _manager->getDomainTerm(VocabularyUtils::intsort(),minus_one);
 			if(typeid(*(atom->symbol())) == typeid(Function)) {
 				// TODO
 			}
 			else {
 				const string& predname = atom->symbol()->name();
 				if(predname == "=/2" || predname == "</2" || predname == ">/2") {
-					// TODO
+					const FOBDDArgument* rhs = atom->args(1);
+					if(SortUtils::isSubsort(rhs->sort(),VocabularyUtils::floatsort())) {
+						const FOBDDDomainTerm* zero_term = _manager->getDomainTerm(rhs->sort(),zero);
+						if(rhs != zero_term) {
+							const FOBDDArgument* lhs = atom->args(0);
+							Sort* plussort = SortUtils::resolve(lhs->sort(),rhs->sort());
+							if(plussort) {
+								Function* plus = Vocabulary::std()->func("+/2");
+								vector<Sort*> plussorts(2,plussort);
+								plus = plus->disambiguate(plussorts,0);
+								assert(plus);
+								vector<const FOBDDArgument*> newlhsargs;
+								newlhsargs.push_back(lhs);
+								Function* times = Vocabulary::std()->func("*/2");
+								vector<Sort*> timessorts(2,SortUtils::resolve(rhs->sort(),minus_one_term->sort()));
+								times = times->disambiguate(timessorts,0);
+								vector<const FOBDDArgument*> timesargs;
+								timesargs.push_back(minus_one_term);
+								timesargs.push_back(rhs);
+								const FOBDDFuncTerm* timesterm = _manager->getFuncTerm(times,timesargs);
+								newlhsargs.push_back(timesterm);
+								const FOBDDFuncTerm* newlhs = _manager->getFuncTerm(plus,newlhsargs);
+								vector<const FOBDDArgument*> newatomargs;
+								newatomargs.push_back(newlhs);
+								newatomargs.push_back(zero_term);
+								atom = _manager->getAtomKernel(atom->symbol(),atom->type(),newatomargs);
+							}
+						}
+					}
 				}
 			}
 			return atom;
