@@ -12,6 +12,8 @@
 #include "ground.hpp"
 #include "ecnf.hpp"
 
+// FIXME rewrite the printers to correctly handle visiting incrementally, making sure all arguments are instantiated, ...
+
 template<typename Stream>
 class EcnfPrinter : public StreamPrinter<Stream> {
 private:
@@ -28,13 +30,19 @@ private:
 	using StreamPrinter<Stream>::printtab;
 	using StreamPrinter<Stream>::unindent;
 	using StreamPrinter<Stream>::indent;
-	using StreamPrinter<Stream>::isClosed;
-	using StreamPrinter<Stream>::isOpen;
-	using StreamPrinter<Stream>::setOpen;
+	using StreamPrinter<Stream>::isDefClosed;
+	using StreamPrinter<Stream>::isDefOpen;
+	using StreamPrinter<Stream>::closeDef;
+	using StreamPrinter<Stream>::openDef;
+	using StreamPrinter<Stream>::isTheoryOpen;
+	using StreamPrinter<Stream>::closeTheory;
+	using StreamPrinter<Stream>::openTheory;
 
 public:
 	EcnfPrinter(bool writetranslation, Stream& stream):
 			StreamPrinter<Stream>(stream),
+			_currenthead(-1),
+			_currentdefnr(-1),
 			_structure(NULL),
 			_termtranslator(NULL),
 			writeTranslation_(writetranslation){
@@ -56,7 +64,21 @@ public:
 		output() <<"(structure cannot be printed in ecnf)";
 	}
 
+	void startTheory(){
+		if(!isTheoryOpen()){
+			output() << "p ecnf\n";
+			openTheory();
+		}
+	}
+
+	void endTheory(){
+		if(isTheoryOpen()){
+			closeTheory();
+		}
+	}
+
 	void visit(const GroundClause& g){
+		startTheory();
 		for(unsigned int m = 0; m < g.size(); ++m){
 			output() << g[m] << ' ';
 		}
@@ -64,10 +86,9 @@ public:
 	}
 
 	void visit(const GroundTheory* g) {
-		//FIXME these are not used correctly
-		_structure = g->structure();
-		_termtranslator = g->termtranslator();
-		output() << "p ecnf\n";
+		setStructure(g->structure());
+		setTermTranslator(g->termtranslator());
+		startTheory();
 		for(unsigned int n = 0; n < g->nrClauses(); ++n) {
 			visit(g->clause(n));
 		}
@@ -101,6 +122,7 @@ public:
 			}
 			output() <<"==== ====" <<"\n";
 		}
+		endTheory();
 	}
 
 	void visit(const GroundFixpDef*) {
@@ -109,21 +131,17 @@ public:
 	}
 
 	void openDefinition(int defid){
-		assert(isClosed());
-		setOpen(defid);
-		printtab();
-		output() << "{\n";
-		indent();
+		assert(isDefClosed());
+		openDef(defid);
 	}
 
 	void closeDefinition(){
-		assert(!isClosed());
-		setOpen(-1);
-		unindent();
-		output() << "}\n";
+		assert(!isDefClosed());
+		closeDef();
 	}
 
 	void visit(const GroundDefinition* d) {
+		startTheory();
 		_currentdefnr++;
 		openDefinition(_currentdefnr);
 		for(auto it = d->begin(); it != d->end(); ++it) {
@@ -134,7 +152,8 @@ public:
 	}
 
 	void visit(int defid, int tseitin, const PCGroundRuleBody* b) {
-		assert(isOpen(defid));
+		startTheory();
+		assert(isDefOpen(defid));
 		output() << (b->type() == RT_CONJ ? "C " : "D ");
 		output() << "<- " << defid << ' ' << tseitin << ' ';
 		for(unsigned int n = 0; n < b->size(); ++n){
@@ -144,19 +163,23 @@ public:
 	}
 
 	void visit(const PCGroundRuleBody* b) {
+		startTheory();
 		visit(_currentdefnr, _currenthead, b);
 	}
 
 	void visit(const GroundAggregate* b) {
+		startTheory();
 		visit(_currentdefnr, b);
 	}
 
 	void visit(int defnr, const GroundAggregate* a) {
+		startTheory();
 		assert(a->arrow() != TS_RULE);
 		printAggregate(a->type(),a->arrow(),defnr,a->lower(),a->head(),a->setnr(),a->bound());
 	}
 
 	void visit(const GroundSet* s) {
+		startTheory();
 		output() << (s->weighted() ? "WSet" : "Set") << ' ' << s->setnr();
 		for(unsigned int n = 0; n < s->size(); ++n) {
 			output() << ' ' << s->literal(n);
@@ -166,6 +189,7 @@ public:
 	}
 
 	void visit(const CPReification* cpr) {
+		startTheory();
 		CompType comp = cpr->_body->comp();
 		CPTerm* left = cpr->_body->left();
 		CPBound right = cpr->_body->right();
@@ -220,7 +244,7 @@ private:
 				output() << "C ";
 				break;
 			case TS_RULE:
-				assert(isOpen(defnr));
+				assert(isDefOpen(defnr));
 				output() << "<- " << defnr << ' ';
 				break;
 		}

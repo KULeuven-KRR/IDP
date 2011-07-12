@@ -1398,19 +1398,8 @@ int QuantSetGrounder::run() const {
 	vector<double> weights;
 	vector<double> trueweights;
 	if(_generator->first()) {
-		int l = _subgrounder->run();
-		if(l != _false) {
-			const GroundTerm& groundweight = _weightgrounder->run();
-			assert(not groundweight._isvarid);
-			const DomainElement* weight = groundweight._domelement;
-			double w = weight->type() == DET_INT ? (double) weight->value()._int : weight->value()._double;
-			if(l == _true) trueweights.push_back(w);
-			else {
-				weights.push_back(w);
-				literals.push_back(l);
-			}
-		}
-		while(_generator->next()) {
+		int l;
+		do {
 			l = _subgrounder->run();
 			if(l != _false) {
 				const GroundTerm& groundweight = _weightgrounder->run();
@@ -1423,7 +1412,7 @@ int QuantSetGrounder::run() const {
 					literals.push_back(l);
 				}
 			}
-		}
+		}while(_generator->next());
 	}
 	int s = _translator->translateSet(literals,weights,trueweights);
 	return s;
@@ -1473,28 +1462,7 @@ bool RuleGrounder::run() const {
 	bool conj = _bodygrounder->conjunctive();
 	if(_bodygenerator->first()) {	
 		vector<int>	body;
-		_bodygrounder->run(body);
-		bool falsebody = (body.empty() && !conj) || (body.size() == 1 && body[0] == _false);
-		if(!falsebody) {
-			bool truebody = (body.empty() && conj) || (body.size() == 1 && body[0] == _true);
-			if(_headgenerator->first()) {
-				int head = _headgrounder->run();
-				assert(head != _true);
-				if(head != _false) {
-					if(truebody) _definition->addTrueRule(head);
-					else _definition->addPCRule(head,body,conj,_context._tseitin == TS_RULE);
-				}
-				while(_headgenerator->next()) {
-					head = _headgrounder->run();
-					assert(head != _true);
-					if(head != _false) {
-						if(truebody) _definition->addTrueRule(head);
-						else _definition->addPCRule(head,body,conj,_context._tseitin == TS_RULE);
-					}
-				}
-			}
-		}
-		while(_bodygenerator->next()) {
+		do {
 			body.clear();
 			_bodygrounder->run(body);
 			bool falsebody = (body.empty() && !conj) || (body.size() == 1 && body[0] == _false);
@@ -1517,7 +1485,7 @@ bool RuleGrounder::run() const {
 					}
 				}
 			}
-		}
+		}while(_bodygenerator->next());
 	}
 	return true;
 }

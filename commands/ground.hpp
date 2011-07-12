@@ -39,6 +39,8 @@ public:
 	}
 };
 
+// TODO add an option to write to a file instead to stdout.
+
 class GroundAndPrintInference: public Inference {
 private:
 	AbstractTheory* ground(AbstractTheory* theory, AbstractStructure* structure, Options* options, InteractivePrintMonitor* monitor) const {

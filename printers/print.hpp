@@ -38,8 +38,19 @@ int getIDForUndefined();
 class Printer : public TheoryVisitor {
 private:
 	int	opendef_; 	//the id of the currenlty open definition
+	bool theoryopen_;
 protected:
-	Printer(): opendef_(-1){}
+	Printer(): opendef_(-1), theoryopen_(false){}
+
+	bool isDefClosed() const { return opendef_ == -1; }
+	bool isDefOpen(int defid) const { return opendef_==defid; }
+	void closeDef() { opendef_ = -1; }
+	void openDef(int defid) { opendef_ = defid; }
+
+	bool isTheoryOpen() const { return theoryopen_; }
+	void closeTheory() { theoryopen_ = false; }
+	void openTheory() { theoryopen_ = true; }
+
 public:
 	// Factory method
 	template<class Stream> static Printer* create(Options* opts, Stream& stream);
@@ -61,12 +72,6 @@ public:
 	virtual void visit(const GroundAggregate* cpr) = 0;
 	virtual void visit(int defid, const GroundAggregate* b) = 0;
 	virtual void visit(const CPReification* cpr) = 0;
-
-	bool isClosed() const { return opendef_ == -1; }
-	bool isOpen(int defid) const { return opendef_==defid; }
-	void setOpen(int defid) { opendef_ = defid; }
-	virtual void openDefinition(int defid) = 0;
-	virtual void closeDefinition() = 0;
 
 	virtual void setTranslator(GroundTranslator*){}
 	virtual void setTermTranslator(GroundTermTranslator*){}
