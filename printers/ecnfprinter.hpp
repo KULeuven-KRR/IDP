@@ -42,7 +42,7 @@ public:
 	EcnfPrinter(bool writetranslation, Stream& stream):
 			StreamPrinter<Stream>(stream),
 			_currenthead(-1),
-			_currentdefnr(-1),
+			_currentdefnr(0),
 			_structure(NULL),
 			_termtranslator(NULL),
 			writeTranslation_(writetranslation){
@@ -188,6 +188,14 @@ public:
 		output() << " 0\n";
 	}
 
+	void addWeightedSum(int head, const std::vector<VarId>& varids, const std::vector<int> weights, const int& bound, CompType rel){
+		assert(varids.size()==weights.size());
+		for(auto i=varids.begin(); i<varids.end(); ++i){
+			printCPVariable(*i);
+		}
+		printCPReification("SUMSTSIRI",head,varids,weights,rel,bound);
+	}
+
 	void visit(const CPReification* cpr) {
 		startTheory();
 		CompType comp = cpr->_body->comp();
@@ -203,28 +211,35 @@ public:
 			else { // CPBinaryRel
 				printCPReification("BINTRI",cpr->_head,term->_varid,comp,right._bound);
 			}
-		}
-		else if(typeid(*left) == typeid(CPSumTerm)) {
+		} else if(typeid(*left) == typeid(CPSumTerm)) {
 			CPSumTerm* term = dynamic_cast<CPSumTerm*>(left);
-			printCPVariables(term->_varids);
-			if(right._isvarid) { // CPSumWithVar
-				printCPVariable(right._varid);
-				printCPReification("SUMSTRT",cpr->_head,term->_varids,comp,right._varid);
+			std::vector<int> weights;
+			weights.resize(term->_varids.size(), 1);
+
+			if(right._isvarid) {
+				std::vector<VarId> varids = term->_varids;
+				int bound = 0;
+				varids.push_back(right._varid);
+				weights.push_back(-1);
+
+				addWeightedSum(cpr->_head, varids, weights, bound, comp);
+			} else {
+				addWeightedSum(cpr->_head, term->_varids, weights, right._bound, comp);
 			}
-			else { // CPSum
-				printCPReification("SUMSTRI",cpr->_head,term->_varids,comp,right._bound);
-			}
-		}
-		else {
+		} else {
 			assert(typeid(*left) == typeid(CPWSumTerm));
 			CPWSumTerm* term = dynamic_cast<CPWSumTerm*>(left);
-			printCPVariables(term->_varids);
-			if(right._isvarid) { // CPSumWeightedWithVar
-				printCPVariable(right._varid);
-				printCPReification("SUMSTSIRT",cpr->_head,term->_varids,term->_weights,comp,right._varid);
-			}
-			else { // CPSumWeighted
-				printCPReification("SUMSTSIRI",cpr->_head,term->_varids,term->_weights,comp,right._bound);
+			if(right._isvarid) {
+				std::vector<VarId> varids = term->_varids;
+				std::vector<int> weights = term->_weights;
+
+				int bound = 0;
+				varids.push_back(right._varid);
+				weights.push_back(-1);
+
+				addWeightedSum(cpr->_head, varids, weights, bound, comp);
+			} else {
+				addWeightedSum(cpr->_head, term->_varids, term->_weights, right._bound, comp);
 			}
 		}
 	}
@@ -275,25 +290,33 @@ private:
 		}
 	}
 
+	std::string toString(CompType comp){
+		switch (comp) {
+			case CT_EQ: return "=";
+			case CT_NEQ: return "~=";
+			case CT_LEQ: return "=<";
+			case CT_GEQ: return ">=";
+			case CT_GT: return ">";
+			case CT_LT: return "<";
+		}
+		assert(false);
+		return "";
+	}
+
 	void printCPReification(std::string type, int head, unsigned int left, CompType comp, long right) {
-		output() << type << ' ' << head << ' ' << left << ' ' << comp << ' ' << right << " 0" << "\n";
+		output() << type << ' ' << head << ' ' << left << ' ' << toString(comp) << ' ' << right << " 0" << "\n";
 	}
 
-	void printCPReification(std::string type, int head, std::vector<unsigned int> left, CompType comp, long right) {
+	void printCPReification(std::string type, int head, std::vector<unsigned int> varids, std::vector<int> weights, CompType comp, long right) {
 		output() << type << ' ' << head << ' ';
-		for(std::vector<unsigned int>::const_iterator it = left.begin(); it != left.end(); ++it)
+		for(std::vector<unsigned int>::const_iterator it = varids.begin(); it != varids.end(); ++it){
 			output() << *it << ' ';
-		output() << comp << ' ' << right << " 0" << "\n";
-	}
-
-	void printCPReification(std::string type, int head, std::vector<unsigned int> left, std::vector<int> weights, CompType comp, long right) {
-		output() << type << ' ' << head << ' ';
-		for(std::vector<unsigned int>::const_iterator it = left.begin(); it != left.end(); ++it)
-			output() << *it << ' ';
+		}
 		output() << " | ";
-		for(std::vector<int>::const_iterator it = weights.begin(); it != weights.end(); ++it)
+		for(std::vector<int>::const_iterator it = weights.begin(); it != weights.end(); ++it){
 			output() << *it << ' ';
-		output() << comp << ' ' << right << " 0" << "\n";
+		}
+		output() << toString(comp) << ' ' << right << " 0" << "\n";
 	}
 };
 
