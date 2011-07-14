@@ -12,6 +12,8 @@
 #include "ground.hpp"
 #include "ecnf.hpp"
 
+// FIXME rewrite the printers to correctly handle visiting incrementally, making sure all arguments are instantiated, ...
+
 template<typename Stream>
 class EcnfPrinter : public StreamPrinter<Stream> {
 private:
@@ -28,13 +30,19 @@ private:
 	using StreamPrinter<Stream>::printtab;
 	using StreamPrinter<Stream>::unindent;
 	using StreamPrinter<Stream>::indent;
-	using StreamPrinter<Stream>::isClosed;
-	using StreamPrinter<Stream>::isOpen;
-	using StreamPrinter<Stream>::setOpen;
+	using StreamPrinter<Stream>::isDefClosed;
+	using StreamPrinter<Stream>::isDefOpen;
+	using StreamPrinter<Stream>::closeDef;
+	using StreamPrinter<Stream>::openDef;
+	using StreamPrinter<Stream>::isTheoryOpen;
+	using StreamPrinter<Stream>::closeTheory;
+	using StreamPrinter<Stream>::openTheory;
 
 public:
 	EcnfPrinter(bool writetranslation, Stream& stream):
 			StreamPrinter<Stream>(stream),
+			_currenthead(-1),
+			_currentdefnr(0),
 			_structure(NULL),
 			_termtranslator(NULL),
 			writeTranslation_(writetranslation){
@@ -56,7 +64,21 @@ public:
 		output() <<"(structure cannot be printed in ecnf)";
 	}
 
+	void startTheory(){
+		if(!isTheoryOpen()){
+			output() << "p ecnf\n";
+			openTheory();
+		}
+	}
+
+	void endTheory(){
+		if(isTheoryOpen()){
+			closeTheory();
+		}
+	}
+
 	void visit(const GroundClause& g){
+		startTheory();
 		for(unsigned int m = 0; m < g.size(); ++m){
 			output() << g[m] << ' ';
 		}
@@ -64,10 +86,9 @@ public:
 	}
 
 	void visit(const GroundTheory* g) {
-		//FIXME these are not used correctly
-		_structure = g->structure();
-		_termtranslator = g->termtranslator();
-		output() << "p ecnf\n"; //FIXME open file also when not visiting the ground theory!
+		setStructure(g->structure());
+		setTermTranslator(g->termtranslator());
+		startTheory();
 		for(unsigned int n = 0; n < g->nrClauses(); ++n) {
 			visit(g->clause(n));
 		}
@@ -101,6 +122,7 @@ public:
 			}
 			output() <<"==== ====" <<"\n";
 		}
+		endTheory();
 	}
 
 	void visit(const GroundFixpDef*) {
@@ -109,16 +131,17 @@ public:
 	}
 
 	void openDefinition(int defid){
-		assert(isClosed());
-		setOpen(defid);
+		assert(isDefClosed());
+		openDef(defid);
 	}
 
 	void closeDefinition(){
-		assert(!isClosed());
-		setOpen(-1);
+		assert(!isDefClosed());
+		closeDef();
 	}
 
 	void visit(const GroundDefinition* d) {
+		startTheory();
 		_currentdefnr++;
 		openDefinition(_currentdefnr);
 		for(auto it = d->begin(); it != d->end(); ++it) {
@@ -129,7 +152,8 @@ public:
 	}
 
 	void visit(int defid, int tseitin, const PCGroundRuleBody* b) {
-		assert(isOpen(defid));
+		startTheory();
+		assert(isDefOpen(defid));
 		output() << (b->type() == RT_CONJ ? "C " : "D ");
 		output() << "<- " << defid << ' ' << tseitin << ' ';
 		for(unsigned int n = 0; n < b->size(); ++n){
@@ -139,19 +163,23 @@ public:
 	}
 
 	void visit(const PCGroundRuleBody* b) {
+		startTheory();
 		visit(_currentdefnr, _currenthead, b);
 	}
 
 	void visit(const GroundAggregate* b) {
+		startTheory();
 		visit(_currentdefnr, b);
 	}
 
 	void visit(int defnr, const GroundAggregate* a) {
+		startTheory();
 		assert(a->arrow() != TS_RULE);
 		printAggregate(a->type(),a->arrow(),defnr,a->lower(),a->head(),a->setnr(),a->bound());
 	}
 
 	void visit(const GroundSet* s) {
+		startTheory();
 		output() << (s->weighted() ? "WSet" : "Set") << ' ' << s->setnr();
 		for(unsigned int n = 0; n < s->size(); ++n) {
 			output() << ' ' << s->literal(n);
@@ -160,7 +188,16 @@ public:
 		output() << " 0\n";
 	}
 
+	void addWeightedSum(int head, const std::vector<VarId>& varids, const std::vector<int> weights, const int& bound, CompType rel){
+		assert(varids.size()==weights.size());
+		for(auto i=varids.begin(); i<varids.end(); ++i){
+			printCPVariable(*i);
+		}
+		printCPReification("SUMSTSIRI",head,varids,weights,rel,bound);
+	}
+
 	void visit(const CPReification* cpr) {
+		startTheory();
 		CompType comp = cpr->_body->comp();
 		CPTerm* left = cpr->_body->left();
 		CPBound right = cpr->_body->right();
@@ -174,28 +211,35 @@ public:
 			else { // CPBinaryRel
 				printCPReification("BINTRI",cpr->_head,term->_varid,comp,right._bound);
 			}
-		}
-		else if(typeid(*left) == typeid(CPSumTerm)) {
+		} else if(typeid(*left) == typeid(CPSumTerm)) {
 			CPSumTerm* term = dynamic_cast<CPSumTerm*>(left);
-			printCPVariables(term->_varids);
-			if(right._isvarid) { // CPSumWithVar
-				printCPVariable(right._varid);
-				printCPReification("SUMSTRT",cpr->_head,term->_varids,comp,right._varid);
+			std::vector<int> weights;
+			weights.resize(term->_varids.size(), 1);
+
+			if(right._isvarid) {
+				std::vector<VarId> varids = term->_varids;
+				int bound = 0;
+				varids.push_back(right._varid);
+				weights.push_back(-1);
+
+				addWeightedSum(cpr->_head, varids, weights, bound, comp);
+			} else {
+				addWeightedSum(cpr->_head, term->_varids, weights, right._bound, comp);
 			}
-			else { // CPSum
-				printCPReification("SUMSTRI",cpr->_head,term->_varids,comp,right._bound);
-			}
-		}
-		else {
+		} else {
 			assert(typeid(*left) == typeid(CPWSumTerm));
 			CPWSumTerm* term = dynamic_cast<CPWSumTerm*>(left);
-			printCPVariables(term->_varids);
-			if(right._isvarid) { // CPSumWeightedWithVar
-				printCPVariable(right._varid);
-				printCPReification("SUMSTSIRT",cpr->_head,term->_varids,term->_weights,comp,right._varid);
-			}
-			else { // CPSumWeighted
-				printCPReification("SUMSTSIRI",cpr->_head,term->_varids,term->_weights,comp,right._bound);
+			if(right._isvarid) {
+				std::vector<VarId> varids = term->_varids;
+				std::vector<int> weights = term->_weights;
+
+				int bound = 0;
+				varids.push_back(right._varid);
+				weights.push_back(-1);
+
+				addWeightedSum(cpr->_head, varids, weights, bound, comp);
+			} else {
+				addWeightedSum(cpr->_head, term->_varids, term->_weights, right._bound, comp);
 			}
 		}
 	}
@@ -215,7 +259,7 @@ private:
 				output() << "C ";
 				break;
 			case TS_RULE:
-				assert(isOpen(defnr));
+				assert(isDefOpen(defnr));
 				output() << "<- " << defnr << ' ';
 				break;
 		}
@@ -246,32 +290,27 @@ private:
 		}
 	}
 
-	std::string toString(CompType type){
-		switch(type){
-		case CT_EQ: return "=";
-		case CT_NEQ: return "~=";
-		case CT_LT: return "<";
-		case CT_GT: return ">";
-		case CT_LEQ: return "=<";
-		case CT_GEQ: return ">=";
+	std::string toString(CompType comp){
+		switch (comp) {
+			case CT_EQ: return "=";
+			case CT_NEQ: return "~=";
+			case CT_LEQ: return "=<";
+			case CT_GEQ: return ">=";
+			case CT_GT: return ">";
+			case CT_LT: return "<";
 		}
+		assert(false);
+		return "";
 	}
 
 	void printCPReification(std::string type, int head, unsigned int left, CompType comp, long right) {
 		output() << type << ' ' << head << ' ' << left << ' ' << toString(comp) << ' ' << right << " 0" << "\n";
+>>>>>>> 7178c49c1db4c5f60805d86cc866296d7970e099
 	}
 
-	void printCPReification(std::string type, int head, std::vector<unsigned int> left, CompType comp, long right) {
+	void printCPReification(std::string type, int head, std::vector<unsigned int> varids, std::vector<int> weights, CompType comp, long right) {
 		output() << type << ' ' << head << ' ';
-		for(std::vector<unsigned int>::const_iterator it = left.begin(); it != left.end(); ++it){
-			output() << *it << ' ';
-		}
-		output() << toString(comp) << ' ' << right << " 0" << "\n";
-	}
-
-	void printCPReification(std::string type, int head, std::vector<unsigned int> left, std::vector<int> weights, CompType comp, long right) {
-		output() << type << ' ' << head << ' ';
-		for(std::vector<unsigned int>::const_iterator it = left.begin(); it != left.end(); ++it){
+		for(std::vector<unsigned int>::const_iterator it = varids.begin(); it != varids.end(); ++it){
 			output() << *it << ' ';
 		}
 		output() << " | ";

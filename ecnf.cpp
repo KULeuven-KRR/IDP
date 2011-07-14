@@ -738,7 +738,6 @@ void SolverTheory::addDefinition(GroundDefinition* d) {
 	}
 }
 
-#ifdef CPSUPPORT
 void addWeightedSum(const MinisatID::Atom& head, const vector<VarId>& varids, const vector<int> weights, const int& bound, MinisatID::EqType rel, SATSolver& solver){
 	MinisatID::CPSumWeighted sentence;
 	sentence.head = head;
@@ -748,14 +747,8 @@ void addWeightedSum(const MinisatID::Atom& head, const vector<VarId>& varids, co
 	sentence.rel = rel;
 	solver.add(sentence);
 }
-#endif
 
 void SolverTheory::addCPReification(int tseitin, CPTsBody* body) {
-#ifndef CPSUPPORT
-	//TODO cleanly catch this
-	cerr <<"Interrupted because writing cp-constraints to the solver, which are not compiled in.\n";
-	throw exception();
-#else
 	MinisatID::EqType comp;
 	switch(body->comp()) {
 		case CT_EQ:		comp = MinisatID::MEQ; break; 
@@ -764,7 +757,6 @@ void SolverTheory::addCPReification(int tseitin, CPTsBody* body) {
 		case CT_GEQ:	comp = MinisatID::MGEQ; break; 
 		case CT_LT:		comp = MinisatID::ML; break; 
 		case CT_GT:		comp = MinisatID::MG; break;
-		default: assert(false);
 	}
 	CPTerm* left = foldCPTerm(body->left());
 	CPBound right = body->right();
@@ -824,10 +816,8 @@ void SolverTheory::addCPReification(int tseitin, CPTsBody* body) {
 			addWeightedSum(createAtom(tseitin), term->_varids, term->_weights, right._bound, comp, getSolver());
 		}
 	}
-#endif //CPSUPPORT
 }
 
-#ifdef CPSUPPORT
 void SolverTheory::addCPVariables(const vector<VarId>& varids) {
 	for(vector<VarId>::const_iterator it = varids.begin(); it != varids.end(); ++it) {
 		addCPVariable(*it);
@@ -871,7 +861,6 @@ void SolverTheory::addCPVariable(const VarId& varid) {
 		if(_verbosity > 0) clog << "\n";
 	}
 }
-#endif //CPSUPPORT
 
 void SolverTheory::addPCRule(int defnr, int head, vector<int> body, bool conjunctive, bool){
 	transformForAdd(body,(conjunctive ? VIT_CONJ : VIT_DISJ),defnr);

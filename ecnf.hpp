@@ -412,10 +412,8 @@ private:
 	void 	addPCRule(int definitionID, int head, std::vector<int> body, bool conjunctive, bool recursive);
 	void	addPCRule(int defnr, int head, PCGroundRuleBody* body, bool recursive);
 	void	addAggRule(int defnr, int head, AggGroundRuleBody* body, bool recursive);
-#ifdef CPSUPPORT
 	void	addCPVariable(const VarId&);
 	void	addCPVariables(const std::vector<VarId>&);
-#endif //CPSUPPORT
 };
 
 class GroundTheory : public AbstractGroundTheory {

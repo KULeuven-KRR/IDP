@@ -37,6 +37,8 @@
 #include "commands/help.hpp"
 #include "commands/optimization.hpp"
 
+//TODO add support for easily using these inferences directly in lua, by also providing a help/usage text and replacing idp_intern. with something easier
+
 #include <vector>
 
 // Important: pointer owner is transferred to receiver!

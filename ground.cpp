@@ -1222,7 +1222,6 @@ GroundTerm VarTermGrounder::run() const {
 	return GroundTerm(*_value);
 }
 
-#ifdef CPSUPPORT
 GroundTerm FuncTermGrounder::run() const {
 	if(_verbosity > 2) { 
 		printorig();
@@ -1254,25 +1253,25 @@ GroundTerm FuncTermGrounder::run() const {
 	}
 	return GroundTerm(varid);
 }
-#else //NO CPSUPPORT
-GroundTerm FuncTermGrounder::run() const {
-	if(_verbosity > 2) { 
-		printorig();
-	}
-	vector<GroundTerm> groundsubterms(_subtermgrounders.size());
-	ElementTuple args(_subtermgrounders.size());
-	for(unsigned int n = 0; n < _subtermgrounders.size(); ++n) {
-		groundsubterms[n] = _subtermgrounders[n]->run();
-		assert(not groundsubterms[n]._isvarid);
-		args[n] = groundsubterms[n]._domelement;
-	}
-	const DomainElement* result = (*_functable)[args];
-	if(_verbosity > 2) {
-		clog << "Result = " << *result << "\n";
-	}
-	return GroundTerm(result);
-}
-#endif //CPSUPPORT
+
+// Without CP support
+//GroundTerm FuncTermGrounder::run() const {
+//	if(_verbosity > 2) {
+//		printorig();
+//	}
+//	vector<GroundTerm> groundsubterms(_subtermgrounders.size());
+//	ElementTuple args(_subtermgrounders.size());
+//	for(unsigned int n = 0; n < _subtermgrounders.size(); ++n) {
+//		groundsubterms[n] = _subtermgrounders[n]->run();
+//		assert(not groundsubterms[n]._isvarid);
+//		args[n] = groundsubterms[n]._domelement;
+//	}
+//	const DomainElement* result = (*_functable)[args];
+//	if(_verbosity > 2) {
+//		clog << "Result = " << *result << "\n";
+//	}
+//	return GroundTerm(result);
+//}
 
 GroundTerm SumTermGrounder::run() const {
 	if(_verbosity > 2) { 
@@ -1398,19 +1397,8 @@ int QuantSetGrounder::run() const {
 	vector<double> weights;
 	vector<double> trueweights;
 	if(_generator->first()) {
-		int l = _subgrounder->run();
-		if(l != _false) {
-			const GroundTerm& groundweight = _weightgrounder->run();
-			assert(not groundweight._isvarid);
-			const DomainElement* weight = groundweight._domelement;
-			double w = weight->type() == DET_INT ? (double) weight->value()._int : weight->value()._double;
-			if(l == _true) trueweights.push_back(w);
-			else {
-				weights.push_back(w);
-				literals.push_back(l);
-			}
-		}
-		while(_generator->next()) {
+		int l;
+		do {
 			l = _subgrounder->run();
 			if(l != _false) {
 				const GroundTerm& groundweight = _weightgrounder->run();
@@ -1423,7 +1411,7 @@ int QuantSetGrounder::run() const {
 					literals.push_back(l);
 				}
 			}
-		}
+		}while(_generator->next());
 	}
 	int s = _translator->translateSet(literals,weights,trueweights);
 	return s;
@@ -1473,28 +1461,7 @@ bool RuleGrounder::run() const {
 	bool conj = _bodygrounder->conjunctive();
 	if(_bodygenerator->first()) {	
 		vector<int>	body;
-		_bodygrounder->run(body);
-		bool falsebody = (body.empty() && !conj) || (body.size() == 1 && body[0] == _false);
-		if(!falsebody) {
-			bool truebody = (body.empty() && conj) || (body.size() == 1 && body[0] == _true);
-			if(_headgenerator->first()) {
-				int head = _headgrounder->run();
-				assert(head != _true);
-				if(head != _false) {
-					if(truebody) _definition->addTrueRule(head);
-					else _definition->addPCRule(head,body,conj,_context._tseitin == TS_RULE);
-				}
-				while(_headgenerator->next()) {
-					head = _headgrounder->run();
-					assert(head != _true);
-					if(head != _false) {
-						if(truebody) _definition->addTrueRule(head);
-						else _definition->addPCRule(head,body,conj,_context._tseitin == TS_RULE);
-					}
-				}
-			}
-		}
-		while(_bodygenerator->next()) {
+		do {
 			body.clear();
 			_bodygrounder->run(body);
 			bool falsebody = (body.empty() && !conj) || (body.size() == 1 && body[0] == _false);
@@ -1517,7 +1484,7 @@ bool RuleGrounder::run() const {
 					}
 				}
 			}
-		}
+		}while(_bodygenerator->next());
 	}
 	return true;
 }
@@ -1725,10 +1692,10 @@ TopLevelGrounder* GrounderFactory::create(const AbstractTheory* theory) {
 	// Allocate an ecnf theory to be returned by the grounder
 	_grounding = new GroundTheory(theory->vocabulary(),_structure->clone());
 
-#ifdef CPSUPPORT
 	// Find function that can be passed to CP solver.
-	if(_cpsupport) findCPSymbols(theory);
-#endif //CPSUPPORT
+	if(_cpsupport){
+		findCPSymbols(theory);
+	}
 
 	// Create the grounder
 	theory->accept(this);
@@ -1739,12 +1706,10 @@ TopLevelGrounder* GrounderFactory::create(const AbstractTheory* theory) {
 TopLevelGrounder* GrounderFactory::create(const AbstractTheory* theory, InteractivePrintMonitor* monitor, Options* opts) {
 	_grounding = new PrintGroundTheory(monitor,_structure->clone(), opts);
 
-#ifdef CPSUPPORT
 	// Find function that can be passed to CP solver.
 	if(_cpsupport){
 		findCPSymbols(theory);
 	}
-#endif //CPSUPPORT
 
 	// Create the grounder
 	theory->accept(this);
@@ -1772,10 +1737,10 @@ TopLevelGrounder* GrounderFactory::create(const AbstractTheory* theory, SATSolve
 	// Allocate a solver theory
 	_grounding = new SolverTheory(theory->vocabulary(),solver,_structure->clone(),_verbosity);
 
-#ifdef CPSUPPORT
 	// Find function that can be passed to CP solver.
-	if(_cpsupport) findCPSymbols(theory);
-#endif //CPSUPPORT
+	if(_cpsupport){
+		findCPSymbols(theory);
+	}
 
 	// Create the grounder
 	theory->accept(this);
