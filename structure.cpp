@@ -762,8 +762,8 @@ const ElementTuple& InverseInternalIterator::operator*() const {
 }
 
 void InverseInternalIterator::operator++() {
-	int pos = _curr.size() - 1;
 	do {
+		int pos = _curr.size() - 1;
 		for(vector<SortIterator>::reverse_iterator it = _curr.rbegin(); it != _curr.rend(); ++it, --pos) {
 			assert(it->hasNext());
 			++(*it);
@@ -2995,7 +2995,7 @@ inline bool PredInter::isinconsistent(const ElementTuple& tuple) const {
 }
 
 /**
- * \brief Returns false is the interpretation is not two-valued. May return true if it is two-valued.
+ * \brief Returns false if the interpretation is not two-valued. May return true if it is two-valued.
  *
  * NOTE: Simple check if _ct == _pt
  */

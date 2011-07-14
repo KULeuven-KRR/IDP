@@ -13,45 +13,296 @@
 
 using namespace std;
 
-/**
- * This method creates an initial set of sorts and their corresponding IVSets (of domain elements) based on the sort hierarchy.
- * An initial IVSet is the domainelements of the sort not present in the domain of any of its children
- */
-map<const Sort*, IVSet> initializeIVSets(const AbstractStructure* s){
-	map<const Sort*, IVSet> result; 
-	for(map<string, set<Sort*>>::const_iterator map_it= s->vocabulary()->firstsort(); map_it !=s->vocabulary()->lastsort(); ++map_it){
-		for(set<Sort*>::const_iterator sort_it = map_it->second.begin(); sort_it != map_it->second.end(); ++sort_it){
-			const SortTable* parent = s->inter(*sort_it);
-			if(parent->approxfinite()){
-				IVSet uniqueDomainElements;
-				vector<const SortTable*> kids;
-				for(set<Sort*>::const_iterator kids_it = (*sort_it)->children().begin(); kids_it != (*sort_it)->children().end(); ++kids_it){
-					kids.push_back(s->inter(*kids_it));
-				}
-				for(SortIterator parent_it = parent->sortbegin(); parent_it.hasNext(); ++parent_it){
-					bool isUnique = true;
-					for(vector<const SortTable*>::const_iterator kids_it2 = kids.begin(); kids_it2 != kids.end() && isUnique; ++kids_it2 ){
-						isUnique = not (*kids_it2)->contains(*parent_it);
+/**********
+ * Miscellaneous methods
+ **********/
+
+bool isSortForSymmetry(Sort* sort, const AbstractStructure* s){
+	return s->inter(sort)->approxfinite() && !s->inter(sort)->approxempty();
+}
+
+bool hasTrivialInterpretation(const AbstractStructure* s, PFSymbol* relation){
+	return s->inter(relation)->pt()->approxempty() || s->inter(relation)->pf()->approxempty();
+}
+
+bool hasInterpretation(const AbstractStructure* s, PFSymbol* relation){
+	return !(s->inter(relation)->ct()->approxempty() && s->inter(relation)->cf()->approxempty());
+}
+
+bool isBinarySymmetryInPredTable(const PredTable* table, const vector<unsigned int>& argumentNrs, const DomainElement* first, const DomainElement* second){
+	bool isSymmetry = true;
+	for(TableIterator table_it = table->begin(); table_it.hasNext() && isSymmetry; ++table_it){
+		bool symmetricalIsDifferent = false;
+		ElementTuple tuple = *table_it;
+		ElementTuple symmetricalTuple = tuple;
+		for(unsigned int i=0; i<argumentNrs.size(); ++i){
+			if(tuple[i]==first){
+				symmetricalTuple[i]=second;
+				symmetricalIsDifferent=true;
+			}else if(tuple[i]==second){
+				symmetricalTuple[i]=first;
+				symmetricalIsDifferent=true;
+			}
+		}
+		if(symmetricalIsDifferent){
+			isSymmetry=table->contains(symmetricalTuple);
+		}
+	}
+	return isSymmetry;
+}
+
+bool isBinarySymmetry(const AbstractStructure* s, const DomainElement* first, const DomainElement* second, PFSymbol* relation, Sort* sort){
+	if(!hasInterpretation(s,relation)){
+		return true;
+	}
+	vector<unsigned int> argumentNrs = relation->argumentNrs(sort);
+	if(argumentNrs.size()==0){
+		return true;
+	}
+	const PredInter* inter = s->inter(relation);
+	const PredTable* table = inter->ct();
+	bool result = isBinarySymmetryInPredTable(table, argumentNrs, first, second);
+	if(!inter->approxtwovalued() && result==true){
+		table = inter->cf();
+		result = isBinarySymmetryInPredTable(table, argumentNrs, first, second);
+	}
+	return result;
+}
+
+/**********
+ * Object to count occurrences using memoization
+ **********/
+
+class OccurrencesCounter{
+	private:
+		// Attributes
+		const AbstractStructure* 							structure_;
+		map<pair<const PFSymbol*,const Sort*>,map<const DomainElement*,pair<int,int> > >	occurrences_; //<! a pair of ints for each domain element representing its occurrences in ct and cf for each relation-sort combination
+		
+		// Mutators
+		map<const DomainElement*,pair<int,int> > count(PFSymbol*, Sort*);
+	
+	public:
+		// Constructors
+		OccurrencesCounter(const AbstractStructure* s) : structure_(s) {}
+		
+		// Inspectors
+		pair<int,int>							getOccurrences(const DomainElement*, PFSymbol*, Sort* );
+		map<const DomainElement*, vector<int> > getOccurrences(const set<const DomainElement*>&, const set<PFSymbol*>&, const set<Sort*>& );
+		
+		string									to_string() const;
+};
+
+// @pre: !relation->argumentNrs(sort).empty()
+map<const DomainElement*,pair<int,int> > OccurrencesCounter::count(PFSymbol* relation, Sort* sort){
+	assert(!relation->argumentNrs(sort).empty());
+	vector<unsigned int> argumentNrs = relation->argumentNrs(sort);
+	map<const DomainElement*,pair<int,int> > result;
+	const PredTable* ct = structure_->inter(relation)->ct();
+	for(TableIterator ct_it = ct->begin(); ct_it.hasNext(); ++ct_it){
+		for(unsigned int i=0; i<argumentNrs.size(); ++i){
+			const DomainElement* element = (*ct_it)[i];
+			map<const DomainElement*,pair<int,int> >::iterator result_it = result.find(element);
+			if(result_it==result.end()){
+				result[element]=pair<int,int>(1,0);
+			}else{
+				++(result_it->second.first);
+			}
+		}
+	}
+	const PredTable* cf = structure_->inter(relation)->cf();
+	for(TableIterator cf_it = cf->begin(); cf_it.hasNext(); ++cf_it){
+		for(unsigned int i=0; i<argumentNrs.size(); ++i){
+			const DomainElement* element = (*cf_it)[i];
+			map<const DomainElement*,pair<int,int> >::iterator result_it = result.find(element);
+			if(result_it==result.end()){
+				result[element]=pair<int,int>(0,1);
+			}else{
+				++(result_it->second.second);
+			}
+		}
+	}
+	occurrences_[pair<const PFSymbol*,const Sort*>(relation,sort)]=result;
+	return result;
+}
+
+// @pre: !relation->argumentNrs(sort).empty()
+pair<int,int> OccurrencesCounter::getOccurrences(const DomainElement* element, PFSymbol* relation, Sort* sort){
+	assert(!relation->argumentNrs(sort).empty());
+	map<pair<const PFSymbol*,const Sort*>,map<const DomainElement*,pair<int,int> > >::iterator occurrences_it = occurrences_.find(pair<const PFSymbol*,const Sort*>(relation,sort) );
+	if(occurrences_it!=occurrences_.end()){
+		map<const DomainElement*,pair<int,int> >::const_iterator result_it = occurrences_it->second.find(element);
+		if(result_it!=occurrences_it->second.end()){
+			return result_it->second;
+		}else{
+			return pair<int,int>(0,0);
+		}		
+	}else{
+		map<const DomainElement*,pair<int,int> > counts = count(relation, sort);
+		map<const DomainElement*,pair<int,int> >::const_iterator counts_it = counts.find(element);
+		if(counts_it!=counts.end()){
+			return counts_it->second;
+		}else{
+			return pair<int,int>(0,0);
+		}
+	}
+}
+
+map<const DomainElement*, vector<int> > OccurrencesCounter::getOccurrences(const set<const DomainElement*>& elements, const set<PFSymbol*>& relations, const set<Sort*>& sorts){
+	map<const DomainElement*, vector<int> > result;
+	for(set<const DomainElement*>::const_iterator elements_it=elements.begin(); elements_it!=elements.end(); ++elements_it){
+		vector<int> values;
+		for(set<PFSymbol*>::const_iterator relations_it=relations.begin(); relations_it!=relations.end(); ++relations_it){
+			if(hasInterpretation(structure_,*relations_it)){
+				for(set<Sort*>::const_iterator sorts_it=sorts.begin(); sorts_it!=sorts.end(); ++sorts_it){
+					if(!(*relations_it)->argumentNrs(*sorts_it).empty()){
+						pair<int,int> temp = getOccurrences(*elements_it,*relations_it,*sorts_it); 
+						values.push_back(temp.first);
+						values.push_back(temp.second);
 					}
-					if(isUnique){
-						uniqueDomainElements.insert(*parent_it);
-					}
-				}
-				if(uniqueDomainElements.size()>1){
-					result[*sort_it]=uniqueDomainElements;
 				}
 			}
-			
+		}
+		result[*elements_it]=values;
+	}
+	return result;
+}
+
+string OccurrencesCounter::to_string() const{
+	stringstream ss;
+	ss << "COUNTER:" << endl;
+	for(map<pair<const PFSymbol*,const Sort*>,map<const DomainElement*,pair<int,int> > >::const_iterator occurrences_it= occurrences_.begin(); occurrences_it!=occurrences_.end(); ++occurrences_it){
+		ss << occurrences_it->first.first->to_string() << "-" << occurrences_it->first.second->to_string() << endl;
+		for(map<const DomainElement*,pair<int,int> >::const_iterator element_it=occurrences_it->second.begin(); element_it!=occurrences_it->second.end(); ++element_it){
+			ss << "   " << element_it->first->to_string() << ": " << element_it->second.first << "," << element_it->second.second << endl;
+		}
+	}
+	return ss.str();
+
+}
+
+/**********
+ * Implementation of IVSet methods
+ **********/
+
+const set<const DomainElement*>& IVSet::getElements() const{
+	return elements_;
+}
+
+const set<Sort*>& IVSet::getSorts() const{
+	return sorts_;
+}
+
+const set<PFSymbol*>& IVSet::getRelations() const{
+	return relations_;
+}
+
+IVSet::~IVSet(){};
+
+IVSet::IVSet(const set<const DomainElement*> elements, const set<Sort*> sorts, const set<PFSymbol*> relations) 
+	: elements_(elements), sorts_(sorts), relations_(relations){}
+
+string IVSet::to_string() const{
+	stringstream ss;
+	for(set<Sort*>::iterator sorts_it = getSorts().begin(); sorts_it!=getSorts().end(); ++sorts_it){
+		ss << (*sorts_it)->to_string() << " | ";
+	}
+	ss << endl;
+	for(set<PFSymbol*>::const_iterator relations_it = getRelations().begin(); relations_it!=getRelations().end(); ++relations_it){
+		ss << (*relations_it)->to_string() << " | ";
+	}
+	ss << endl;
+	ss << getElements().size() << ": ";
+	for(set<const DomainElement*>::const_iterator elements_it = getElements().begin(); elements_it!=getElements().end(); ++elements_it){
+		ss << (*elements_it)->to_string() << " | ";
+	}
+	ss << endl;
+	return ss.str();
+}
+
+bool IVSet::containsMultipleElements() const{
+	return getElements().size()>1 && getRelations().size()>0;
+}
+
+bool IVSet::isDontCare(const AbstractStructure* s) const{
+	bool result = true;
+	set<PFSymbol*> relations = getRelations();
+	for(set<PFSymbol*>::const_iterator relation_it = relations.begin(); relation_it!=relations.end() && result; ++relation_it){
+		result=!hasInterpretation(s, *relation_it);
+	}
+	return result;
+}
+
+vector<const IVSet*> IVSet::splitBasedOnOccurrences(OccurrencesCounter* counter) const{
+	map<vector<int>,set<const DomainElement*> > subSets;
+	map<const DomainElement*, vector<int> > occurrences = counter->getOccurrences(getElements(), getRelations(), getSorts());
+	for(map<const DomainElement*, vector<int> >::const_iterator occurrences_it=occurrences.begin(); occurrences_it!=occurrences.end(); ++occurrences_it){
+		map<vector<int>,set<const DomainElement*> >::iterator subSets_it= subSets.find(occurrences_it->second);
+		if(subSets_it!=subSets.end()){
+			subSets_it->second.insert(occurrences_it->first);
+		}else{
+			set<const DomainElement*> temp;
+			temp.insert(occurrences_it->first);
+			subSets[occurrences_it->second]=temp;
+		}
+	}	
+	vector<const IVSet*> result;
+	for(map<vector<int>,set<const DomainElement*> >::const_iterator subSets_it=subSets.begin(); subSets_it!=subSets.end(); ++subSets_it){
+		IVSet* ivset = new IVSet(subSets_it->second,getSorts(),getRelations());
+		if(ivset->containsMultipleElements()){
+			result.push_back(ivset);			
+		}else{
+			delete ivset;
 		}
 	}
 	return result;
 }
+
+vector<const IVSet*> IVSet::splitBasedOnBinarySymmetries(const AbstractStructure* s) const{
+	vector<const IVSet*> result;
+	set<const DomainElement*> elements = getElements();
+	set<const DomainElement*>::iterator elements_it=elements.begin();
+	while(elements_it!=elements.end()){
+		set<const DomainElement*> elementsIVSet;
+		elementsIVSet.insert(*elements_it);
+		set<const DomainElement*>::iterator elements_it2 = elements_it;
+		++elements_it2;
+		while(elements_it2!=elements.end()){
+			bool isSymmetry = true;
+			for(set<PFSymbol*>::const_iterator relations_it=getRelations().begin(); relations_it!=getRelations().end() && isSymmetry; ++relations_it){
+				for(set<Sort*>::const_iterator sorts_it=getSorts().begin(); sorts_it!=getSorts().end() && isSymmetry; ++sorts_it){
+					isSymmetry = isBinarySymmetry(s, *elements_it, *elements_it2, *relations_it, *sorts_it);
+				}
+			}
+			set<const DomainElement*>::iterator erase_it2=elements_it2++;
+			if(isSymmetry){
+				elementsIVSet.insert(*erase_it2);
+				elements.erase(erase_it2);
+			}
+		}
+		IVSet* ivset = new IVSet(elementsIVSet, getSorts(), getRelations());
+		if(ivset->containsMultipleElements()){
+			result.push_back(ivset);
+			cout << "S;dlfkjas;dlfkj" << ivset->to_string() << endl;
+		}else{
+			delete ivset;
+		}		
+		set<const DomainElement*>::iterator erase_it=elements_it++;
+		elements.erase(erase_it);
+	}
+	return result;
+}
+
+/**********
+ * Visitor analyzing theory for symmetry relevant information
+ **********/
 
 class TheorySymmetryAnalyzer : public TheoryVisitor {
 	private:
 		const AbstractStructure* 				structure_;
 		set<const Sort*> 						forbiddenSorts_;
 		map<const DomainElement*,const Sort*> 	forbiddenElements_;
+		set<PFSymbol*>					usedRelations_;
 		
 		void markAsUnfitForSymmetry(const vector<Term*>&);
 		void markAsUnfitForSymmetry(const Sort*);
@@ -68,6 +319,10 @@ class TheorySymmetryAnalyzer : public TheoryVisitor {
 		
 		const set<const Sort*>& 						getForbiddenSorts() 	const { return forbiddenSorts_; }
 		const map<const DomainElement*,const Sort*>& 	getForbiddenElements() 	const { return forbiddenElements_; }
+		const set<PFSymbol*>& 					getUsedRelations()	 	const { return usedRelations_; }
+		
+		void addForbiddenSort(const Sort* sort) 			{ forbiddenSorts_.insert(sort); }
+		void addUsedRelation(PFSymbol* relation) 	{ usedRelations_.insert(relation); }
 };
 
 void TheorySymmetryAnalyzer::markAsUnfitForSymmetry(const vector<Term*>& subTerms){
@@ -77,7 +332,7 @@ void TheorySymmetryAnalyzer::markAsUnfitForSymmetry(const vector<Term*>& subTerm
 }
 
 void TheorySymmetryAnalyzer::markAsUnfitForSymmetry(const Sort* s){
-	forbiddenSorts_.insert(s);
+	addForbiddenSort(s);
 }
 
 void TheorySymmetryAnalyzer::markAsUnfitForSymmetry(const DomainElement* e, const Sort* s){
@@ -92,6 +347,8 @@ void TheorySymmetryAnalyzer::visit(const PredForm* f){
 			}			
 			markAsUnfitForSymmetry(f->args());
 		}
+	}else{
+		addUsedRelation(f->symbol());
 	}
 	traverse(f);
 }
@@ -111,6 +368,8 @@ void TheorySymmetryAnalyzer::visit(const FuncTerm* t){
 		}else{
 			markAsUnfitForSymmetry(t->args());
 		}
+	}else{
+		addUsedRelation(t->function());
 	}
 	traverse(t);
 }
@@ -136,106 +395,154 @@ void TheorySymmetryAnalyzer::visit(const EqChainForm* ef){
 	 */
 }
 
+/**********
+ * Symmetry detection methods
+ **********/
 
-/**
- * This method adjusts the set of potential dontcares according to not strictly FO structures in the theory.
- * For now, 2 checks are made. The first one checks whether a domain element occurs in the theory. 
- * If so, the domain element will be removed from the IVSet of its Sort in dontcares. If the IVSet turns
- * empty, the IVSet and corresponding Sort is removed from dontcares. The second one checks whether a certain
- * Sort is used in asymmetrical built-in functions. If so, the Sort and its corresponding IVSet will be removed 
- * from dontcares. 
- */
-void adjustIVSetsByTheory(const AbstractTheory* t, const AbstractStructure* s, map<const Sort*, IVSet>& dontcares){
+map<Sort*,set<const DomainElement*> > findElementsForSorts(const AbstractStructure* s, set<Sort*>& sorts, const map<const DomainElement*,const Sort*>& forbiddenElements){
+	map<Sort*,set<const DomainElement*> > result; 
+	for(set<Sort*>::const_iterator sort_it = sorts.begin(); sort_it != sorts.end(); ++sort_it){
+		const SortTable* parent = s->inter(*sort_it);
+		set<const DomainElement*> uniqueDomainElements;
+		vector<const SortTable*> kids;
+		for(set<Sort*>::const_iterator kids_it = (*sort_it)->children().begin(); kids_it != (*sort_it)->children().end(); ++kids_it){
+			kids.push_back(s->inter(*kids_it));
+		}
+		for(SortIterator parent_it = parent->sortbegin(); parent_it.hasNext(); ++parent_it){
+			map<const DomainElement*,const Sort*>::const_iterator forbiddenElement = forbiddenElements.find(*parent_it);
+			bool isUnique = (forbiddenElement == forbiddenElements.end() || forbiddenElement->second != *sort_it);
+			for(vector<const SortTable*>::const_iterator kids_it2 = kids.begin(); kids_it2 != kids.end() && isUnique; ++kids_it2 ){
+				isUnique = not (*kids_it2)->contains(*parent_it);
+			}
+			if(isUnique){
+				uniqueDomainElements.insert(*parent_it);
+			}
+		}
+		if(uniqueDomainElements.size()>1){
+			result[*sort_it]=uniqueDomainElements;
+		}
+	}
+	return result;
+}
+
+set<PFSymbol*> findNonTrivialRelationsWithSort(const AbstractStructure* s, const set<Sort*>& sorts, const set<PFSymbol*>& relations){
+	set<PFSymbol*> result;
+	for(set<PFSymbol*>::const_iterator relation_it=relations.begin(); relation_it!=relations.end(); ++relation_it){
+		bool rangesOverSorts = hasTrivialInterpretation(s, *relation_it);
+		for(vector<Sort*>::const_iterator sort_it=(*relation_it)->sorts().begin(); sort_it!=(*relation_it)->sorts().end() && !rangesOverSorts; ++sort_it){
+			rangesOverSorts = sorts.count(*sort_it);
+		}
+		if(rangesOverSorts){
+			result.insert(*relation_it);
+		}
+	}
+	return result;
+}
+
+set<const IVSet*> initializeIVSets(const AbstractStructure* s, const AbstractTheory* t){
 	TheorySymmetryAnalyzer tsa(s);
-	t->accept(&tsa);
-	for(set<const Sort*>::iterator forbiddenSort_it=tsa.getForbiddenSorts().begin(); 
-			forbiddenSort_it!=tsa.getForbiddenSorts().end(); 
-			++forbiddenSort_it){
-		dontcares.erase(*forbiddenSort_it);
-	}
-	for(map<const DomainElement*,const Sort*>::const_iterator forbiddenDE_it=tsa.getForbiddenElements().begin(); 
-			forbiddenDE_it!=tsa.getForbiddenElements().end(); 
-			++forbiddenDE_it){
-		map<const Sort*, IVSet>::iterator IV_it = dontcares.find(forbiddenDE_it->second);
-		if(IV_it != dontcares.end()){
-			IV_it->second.erase(forbiddenDE_it->first);
-			if(IV_it->second.size()<2){
-				dontcares.erase(IV_it);
-			}
+	t->accept(&tsa);	
+	set<const Sort*> forbiddenSorts;
+	for(set<const Sort*>::const_iterator sort_it = tsa.getForbiddenSorts().begin(); sort_it!=tsa.getForbiddenSorts().end(); ++sort_it){
+		forbiddenSorts.insert(*sort_it);
+		set<Sort*> descendents = (*sort_it)->descendents();
+		for(set<Sort*>::const_iterator sort_it2 = descendents.begin(); sort_it2 != descendents.end(); ++sort_it2){
+			forbiddenSorts.insert(*sort_it2);
 		}
 	}
-}
-
-
-void findCares(const AbstractStructure* s, PFSymbol* pf, map<const Sort*, IVSet>& dontcares, map<const Sort*, IVSet>& cares){
-	if(not (pf->builtin() || pf->overloaded()) ){
-		const PredInter* inter = s->inter(pf);
-		if(not (inter->ct()->approxempty() && inter->cf()->approxempty()) ){ // all sorts for this predicate are cares
-			for(vector<Sort*>::const_iterator sortIt = pf->sorts().begin(); sortIt != pf->sorts().end(); ++sortIt){
-				map<const Sort*, IVSet>::iterator dc_it = dontcares.find(*sortIt);
-				if(dc_it!=dontcares.end() && dc_it->second.size()>1){
-					cares.insert(*dc_it); // pair<const Sort*, IVSet>
-					dontcares.erase(dc_it);
+	set<Sort*> allowedSorts;
+	for(set<PFSymbol*>::const_iterator relation_it=tsa.getUsedRelations().begin(); relation_it!=tsa.getUsedRelations().end(); ++relation_it){
+		for(vector<Sort*>::const_iterator sort_it=(*relation_it)->sorts().begin(); sort_it!=(*relation_it)->sorts().end(); ++sort_it){
+			if(!forbiddenSorts.count(*sort_it) && isSortForSymmetry(*sort_it, s)){
+				allowedSorts.insert(*sort_it);
+				set<Sort*> ancestors = (*sort_it)->ancestors();
+				for(set<Sort*>::const_iterator sort_it2 = ancestors.begin(); sort_it2 != ancestors.end(); ++sort_it2){
+					if(isSortForSymmetry(*sort_it2, s)){
+						allowedSorts.insert(*sort_it2);
+					}
 				}
 			}
 		}
 	}
-}
-
-void findDontCares(const AbstractStructure* s, map<const Sort*,IVSet>& dontcares, map<const Sort*,IVSet>& cares, map<const Sort*,vector<IVSet> >& ivsets){	
-	for(map<string, Predicate*>::const_iterator mapIt= s->vocabulary()->firstpred(); mapIt !=s->vocabulary()->lastpred(); ++mapIt){
-		Predicate* p = mapIt->second;
-		bool isSortPredicate = false;
-		if(p->nrSorts()==1){
-			stringstream ss;
-			ss << p->sorts()[0]->name() << "/1";
-			isSortPredicate = p->name() == ss.str();
-			//isSortPredicate = not p->name().compare(ss.str());
-		}
-		if(not isSortPredicate ){ // Else it is a predicate representing a sort... TODO: hack...
-			findCares(s, p, dontcares, cares);
+	map<Sort*,set<const DomainElement*> > elementsForSorts = findElementsForSorts(s, allowedSorts, tsa.getForbiddenElements());
+	set<const IVSet*> result;
+	for(map<Sort*,set<const DomainElement*> >::const_iterator ivset_it = elementsForSorts.begin(); ivset_it!=elementsForSorts.end(); ++ivset_it){
+		set<Sort*> sorts = ivset_it->first->ancestors();
+		sorts.insert(ivset_it->first);
+		set<PFSymbol*> relations = findNonTrivialRelationsWithSort(s, sorts, tsa.getUsedRelations());
+		IVSet* ivset = new IVSet(ivset_it->second, sorts, relations);
+		if(ivset->containsMultipleElements()){
+			result.insert(ivset);
+		}else{
+			delete ivset;
 		}
 	}
-	for(map<string, Function*>::const_iterator mapIt= s->vocabulary()->firstfunc(); mapIt !=s->vocabulary()->lastfunc(); ++mapIt){
-		Function* f = mapIt->second;
-		findCares(s, f, dontcares, cares);
+	return result;
+}
+
+vector<const IVSet*> extractDontCares(const AbstractStructure* s, set<const IVSet*>& potentials){
+	vector<const IVSet*> result;
+	set<const IVSet*>::iterator potentials_it=potentials.begin();
+	while(potentials_it!=potentials.end()){
+		set<const IVSet*>::iterator erase_it = potentials_it++;
+		if((*erase_it)->isDontCare(s)){
+			result.push_back(*erase_it);
+			potentials.erase(erase_it);
+		}
 	}
-	for(map<const Sort*,IVSet>::const_iterator dc_it = dontcares.begin(); dc_it!=dontcares.end(); ++dc_it){
-		if(dc_it->second.size()>1){
-			ivsets[dc_it->first].push_back(dc_it->second);			
+	return result;
+}
+
+void splitByOccurrences(const AbstractStructure* s, set<const IVSet*>& potentials){
+	OccurrencesCounter counter(s);
+	vector<vector<const IVSet*> > splittedSets;
+	set<const IVSet*>::iterator potentials_it=potentials.begin(); 
+	while(potentials_it!=potentials.end()){
+		splittedSets.push_back((*potentials_it)->splitBasedOnOccurrences(&counter));
+		delete (*potentials_it);
+		set<const IVSet*>::iterator erase_it=potentials_it++;
+		potentials.erase(erase_it);
+	}
+	for(vector<vector<const IVSet*> >::const_iterator it1=splittedSets.begin(); it1!=splittedSets.end(); ++it1){
+		for(vector<const IVSet*>::const_iterator it2=it1->begin(); it2!=it1->end(); ++it2){
+			potentials.insert(*it2);
+		}
+	}
+	cout << counter.to_string() << endl;
+}
+
+void splitByBinarySymmetries(const AbstractStructure* s, set<const IVSet*>& potentials){
+	vector<vector<const IVSet*> > splittedSets;
+	set<const IVSet*>::iterator potentials_it=potentials.begin(); 
+	while(potentials_it!=potentials.end()){
+		splittedSets.push_back((*potentials_it)->splitBasedOnBinarySymmetries(s));
+		delete (*potentials_it);
+		set<const IVSet*>::iterator erase_it=potentials_it++;
+		potentials.erase(erase_it);
+	}
+	for(vector<vector<const IVSet*> >::const_iterator it1=splittedSets.begin(); it1!=splittedSets.end(); ++it1){
+		for(vector<const IVSet*>::const_iterator it2=it1->begin(); it2!=it1->end(); ++it2){
+			potentials.insert(*it2);
 		}
 	}
 }
 
-void processCares(const AbstractStructure* s, map<const Sort*,IVSet>& cares, map<const Sort*,vector<IVSet> >& ivsets){
-	//TODO
-}
-
-map<const Sort*,vector<IVSet> > findIVSets(const AbstractTheory* t, const AbstractStructure* s){
-	map<const Sort*, IVSet> dontcares = initializeIVSets(s);
-	adjustIVSetsByTheory(t, s, dontcares);
-	map<const Sort*, IVSet> cares;
-	map<const Sort*,vector<IVSet> > ivsets;
-	findDontCares(s, dontcares, cares, ivsets);
-	processCares(s, cares, ivsets);
-	
-	return ivsets;
-}
-
-string printIVSets(map<const Sort*,vector<IVSet> >& ivSets){
-	stringstream ss;
-	for(map<const Sort*,vector<IVSet> >::const_iterator ivSets_it = ivSets.begin(); ivSets_it!=ivSets.end(); ++ivSets_it){
-		string sortName = ivSets_it->first->to_string();
-		ss << sortName << endl;
-		for(vector<IVSet>::const_iterator vector_it = ivSets_it->second.begin(); vector_it != ivSets_it->second.end(); ++vector_it){
-			for(IVSet::const_iterator ivSet_it = vector_it->begin(); ivSet_it != vector_it->end(); ++ivSet_it){
-				if(sortName.compare("std::char")!=0){ //otherwise all chars would make a very long string... TODO
-					ss << (*ivSet_it)->to_string();
-					if(ivSet_it != --vector_it->end() ) ss << ", ";
-				}
-			}
-			ss << endl;
-		}
+vector<const IVSet*> findIVSets(const AbstractTheory* t, const AbstractStructure* s){
+	set<const IVSet*> potentials = initializeIVSets(s,t);
+	vector<const IVSet*> result = extractDontCares(s, potentials); 
+	splitByOccurrences(s, potentials);
+	for(vector<const IVSet*>::const_iterator result_it=result.begin(); result_it!=result.end(); ++result_it){
+		cout << "##########" << endl << (*result_it)->to_string() << endl;
 	}
-	return ss.str();
+	for(set<const IVSet*>::const_iterator potentials_it=potentials.begin(); potentials_it!=potentials.end(); ++potentials_it){
+		cout << "@@@@@@@@@@" << endl << (*potentials_it)->to_string() << endl;
+	}
+	splitByBinarySymmetries(s, potentials);
+	for(vector<const IVSet*>::const_iterator result_it=result.begin(); result_it!=result.end(); ++result_it){
+		cout << "##########" << endl << (*result_it)->to_string() << endl;
+	}
+	for(set<const IVSet*>::const_iterator potentials_it=potentials.begin(); potentials_it!=potentials.end(); ++potentials_it){
+		cout << "@@@@@@@@@@" << endl << (*potentials_it)->to_string() << endl;
+	}
+	return result;
 }

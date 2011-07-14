@@ -1309,9 +1309,8 @@ InternalArgument clean(const vector<InternalArgument>& args, lua_State*) {
 InternalArgument detectSymmetry(const vector<InternalArgument>& args, lua_State*) {
 	const AbstractTheory* t = args[0].theory();
 	const AbstractStructure* s = args[1].structure();
-	map<const Sort*,vector<IVSet> > temp = findIVSets(t, s);
-	string str = printIVSets(temp);
-	InternalArgument result = StringPointer(str);
+	vector<const IVSet*> temp = findIVSets(t, s);
+	InternalArgument result = StringPointer("oke");
 	return result;
 }
 
