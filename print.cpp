@@ -598,6 +598,8 @@ void EcnfPrinter::printCPVariable(unsigned int varid) {
 	if(_printedvarids.find(varid) == _printedvarids.end()) {
 		_printedvarids.insert(varid);
 		SortTable* domain = _termtranslator->domain(varid);
+		assert(domain);
+		assert(domain->approxfinite());
 		if(domain->isRange()) {
 			int minvalue = domain->first()->value()._int;
 			int maxvalue = domain->last()->value()._int;
