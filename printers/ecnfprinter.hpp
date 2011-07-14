@@ -67,7 +67,7 @@ public:
 		//FIXME these are not used correctly
 		_structure = g->structure();
 		_termtranslator = g->termtranslator();
-		output() << "p ecnf\n";
+		output() << "p ecnf\n"; //FIXME open file also when not visiting the ground theory!
 		for(unsigned int n = 0; n < g->nrClauses(); ++n) {
 			visit(g->clause(n));
 		}
@@ -111,16 +111,11 @@ public:
 	void openDefinition(int defid){
 		assert(isClosed());
 		setOpen(defid);
-		printtab();
-		output() << "{\n";
-		indent();
 	}
 
 	void closeDefinition(){
 		assert(!isClosed());
 		setOpen(-1);
-		unindent();
-		output() << "}\n";
 	}
 
 	void visit(const GroundDefinition* d) {
@@ -251,25 +246,39 @@ private:
 		}
 	}
 
+	std::string toString(CompType type){
+		switch(type){
+		case CT_EQ: return "=";
+		case CT_NEQ: return "~=";
+		case CT_LT: return "<";
+		case CT_GT: return ">";
+		case CT_LEQ: return "=<";
+		case CT_GEQ: return ">=";
+		}
+	}
+
 	void printCPReification(std::string type, int head, unsigned int left, CompType comp, long right) {
-		output() << type << ' ' << head << ' ' << left << ' ' << comp << ' ' << right << " 0" << "\n";
+		output() << type << ' ' << head << ' ' << left << ' ' << toString(comp) << ' ' << right << " 0" << "\n";
 	}
 
 	void printCPReification(std::string type, int head, std::vector<unsigned int> left, CompType comp, long right) {
 		output() << type << ' ' << head << ' ';
-		for(std::vector<unsigned int>::const_iterator it = left.begin(); it != left.end(); ++it)
+		for(std::vector<unsigned int>::const_iterator it = left.begin(); it != left.end(); ++it){
 			output() << *it << ' ';
-		output() << comp << ' ' << right << " 0" << "\n";
+		}
+		output() << toString(comp) << ' ' << right << " 0" << "\n";
 	}
 
 	void printCPReification(std::string type, int head, std::vector<unsigned int> left, std::vector<int> weights, CompType comp, long right) {
 		output() << type << ' ' << head << ' ';
-		for(std::vector<unsigned int>::const_iterator it = left.begin(); it != left.end(); ++it)
+		for(std::vector<unsigned int>::const_iterator it = left.begin(); it != left.end(); ++it){
 			output() << *it << ' ';
+		}
 		output() << " | ";
-		for(std::vector<int>::const_iterator it = weights.begin(); it != weights.end(); ++it)
+		for(std::vector<int>::const_iterator it = weights.begin(); it != weights.end(); ++it){
 			output() << *it << ' ';
-		output() << comp << ' ' << right << " 0" << "\n";
+		}
+		output() << toString(comp) << ' ' << right << " 0" << "\n";
 	}
 };
 
