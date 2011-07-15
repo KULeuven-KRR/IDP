@@ -32,9 +32,12 @@ void PrintGroundTheory::addSet(int setnr, int defnr, bool weighted) {
 		transformForAdd(tsset.literals(),VIT_SET,defnr);
 		std::vector<double> weights;
 		if(weighted) weights = tsset.weights();
+
 		GroundSet* set = new GroundSet(setnr,tsset.literals(),weights);
 		printer().visit(set);
 		delete(set);
+
+		_printedsets.insert(setnr);
 	}
 }
 

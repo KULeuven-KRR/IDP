@@ -305,7 +305,6 @@ private:
 
 	void printCPReification(std::string type, int head, unsigned int left, CompType comp, long right) {
 		output() << type << ' ' << head << ' ' << left << ' ' << toString(comp) << ' ' << right << " 0" << "\n";
->>>>>>> 7178c49c1db4c5f60805d86cc866296d7970e099
 	}
 
 	void printCPReification(std::string type, int head, std::vector<unsigned int> varids, std::vector<int> weights, CompType comp, long right) {
