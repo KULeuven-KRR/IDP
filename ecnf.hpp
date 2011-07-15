@@ -356,6 +356,8 @@ class AbstractGroundTheory : public AbstractTheory {
 		virtual void 	addAggRule(int defnr, int tseitin, AggTsBody* body)		= 0; 
 
 				void	addFuncConstraints();
+		
+				int	 	getFreeTseitin();
 
 		// Inspectors
 		GroundTranslator*		translator()		const { return _translator;			}

@@ -970,6 +970,12 @@ void AbstractGroundTheory::addFuncConstraints() {
 	}
 }
 
+int AbstractGroundTheory::getFreeTseitin(){
+	int result = _translator->nextNumber(); 
+	_printedtseitins.insert(result);
+	return result;
+}
+
 void SolverTheory::addFalseDefineds() {
 	for(unsigned int n = 0; n < getTranslator().nrOffsets(); ++n) {
 		PFSymbol* s = getTranslator().getSymbol(n);
