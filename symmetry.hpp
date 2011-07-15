@@ -4,6 +4,9 @@
 	(c) K.U.Leuven
 ************************************/
 
+#ifndef SYMMETRY_HPP_
+#define SYMMETRY_HPP_
+
 #include <set>
 #include <map>
 #include <vector>
@@ -67,8 +70,9 @@ class IVSet {
 		std::vector<const IVSet*>	splitBasedOnOccurrences(OccurrencesCounter*) const;
 		std::vector<const IVSet*>	splitBasedOnBinarySymmetries() const;
 		
-		void addSymBreakingPreds(AbstractGroundTheory*) const;
-		
+		void 						addSymBreakingPreds(AbstractGroundTheory*) const;
+		std::vector<std::map<int,int> >	getLiteralsSymmetries(AbstractGroundTheory*) const;
+		std::vector<std::list<int> >getInterchangeableLiterals(AbstractGroundTheory*) const;
 		
 		// Output
 		std::string		to_string()									const;
@@ -77,3 +81,5 @@ class IVSet {
 std::vector<const IVSet*> findIVSets(const AbstractTheory*, const AbstractStructure*);
 
 void addSymBreakingPredicates(AbstractGroundTheory*, std::vector<const IVSet*>);
+
+#endif /* SYMMETRY_HPP_ */

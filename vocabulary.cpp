@@ -337,9 +337,15 @@ vector<unsigned int> PFSymbol::argumentNrs(const Sort* soort)	const{
 	return result;
 }
 
-string PFSymbol::to_string() const {
+string PFSymbol::to_string(bool longnames) const {
 	stringstream output;
-	put(output);
+	put(output, longnames);
+	return output.str();
+}
+
+string Function::to_string(bool longnames) const {
+	stringstream output;
+	put(output, longnames);
 	return output.str();
 }
 

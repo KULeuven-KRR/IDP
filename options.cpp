@@ -47,15 +47,11 @@ class EnumeratedStringOption : public StringOption {
 		}
 };
 
-//TODO code van minisatid 2.3+ gebruiken om dit makkelijker te doen
+//TODO code van minisatid 2.3 of later gebruiken om makkelijker opties toe te voegen te doen
 
 Options::Options(const string& name, const ParseInfo& pi) : _name(name), _pi(pi) {
 	_booloptions["printtypes"]			= true;
-#ifdef CPSUPPORT
-	_booloptions["cpsupport"]		= true;
-#else
 	_booloptions["cpsupport"]		= false;
-#endif //CPSUPPORT
 	_booloptions["trace"]				= false;
 	_booloptions["autocomplete"]		= true;
 	_booloptions["longnames"]			= false;
@@ -68,6 +64,7 @@ Options::Options(const string& name, const ParseInfo& pi) : _name(name), _pi(pi)
 	_intoptions["nrmodels"]				= new IntOption(0,numeric_limits<int>::max(),1);
 	_intoptions["nrpropsteps"]			= new IntOption(0,numeric_limits<int>::max(),4);
 	_intoptions["longestbranch"]		= new IntOption(0,numeric_limits<int>::max(),8);
+	_intoptions["symmetry"]				= new IntOption(0,numeric_limits<int>::max(),0);
 
 	vector<string> ls(3); ls[0] = "idp"; ls[1] = "txt"; ls[2] = "ecnf";
 	vector<string> mf(3); mf[0] = "threevalued"; mf[1] = "twovalued"; mf[2] = "all";
@@ -179,6 +176,10 @@ int Options::longestbranch() const {
 	return _intoptions.find("longestbranch")->second->value();
 }
 
+int Options::symmetry() const {
+	return _intoptions.find("symmetry")->second->value();
+}
+
 bool Options::cpsupport() const {
 	return _booloptions.find("cpsupport")->second;
 }
@@ -218,12 +219,12 @@ ostream& Options::put(ostream& output) const {
 	getStringFromOption(_intoptions, optionslines);
 	getStringFromOption(_floatoptions, optionslines);
 	for(map<string,bool>::const_iterator it = _booloptions.begin(); it != _booloptions.end(); ++it) {
-		output << it->first << " = " << (it->second ? "true" : "false") << endl;
+		output << it->first << " = " << (it->second ? "true" : "false") << "\n";
 	}
 
 	sort(optionslines.begin(), optionslines.end());
-	for(auto i = optionslines.begin(); i < optionslines.end(); ++i){
-		output << *i <<endl;
+	for(auto i=optionslines.begin(); i<optionslines.end(); ++i){
+		output <<*i <<"\n";
 	}
 
 	return output;
@@ -234,3 +235,4 @@ string Options::to_string() const {
 	put(sstr);
 	return sstr.str();
 }
+ 

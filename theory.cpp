@@ -1254,7 +1254,7 @@ Term* ThreeValuedTermMover::visit(FuncTerm* functerm) {
 
 Term* ThreeValuedTermMover::visit(AggTerm* aggterm) {
 	bool twovalued = SetUtils::approxTwoValued(aggterm->set(),_structure);
-	if(twovalued || (_cpsupport && _keepterm)) return aggterm;
+	if(twovalued /*FIXME || (_cpsupport && _keepterm)*/) return aggterm;
 	else {
 		Variable* var = new Variable(aggterm->sort());
 		VarTerm* varterm = new VarTerm(var,TermParseInfo());

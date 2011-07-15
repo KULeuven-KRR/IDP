@@ -11,7 +11,7 @@
 #include <map>
 #include "parseinfo.hpp"
 
-struct InternalArgument;
+class InternalArgument;
 
 /**
  * A single option that has an integer value
@@ -101,6 +101,7 @@ class Options {
 		bool		relativepropsteps()		const;
 		bool 		writeTranslation() 		const;
 		int			longestbranch()			const;
+		int			symmetry()				const;
 
 		std::ostream&	put(std::ostream&)	const;
 		std::string		to_string()			const;	

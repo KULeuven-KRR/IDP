@@ -438,22 +438,26 @@ vector<const IVSet*> IVSet::splitBasedOnBinarySymmetries() const{
 }
 
 // should be an inner method in IVSet::getSymmetricLiterals()
-vector<vector<const DomainElement*> > fillGroundElementsOneRank(vector<vector<const DomainElement*> >& groundElements, const SortTable* domain, const int rank, const set<const DomainElement*>& excludedElements){
-	unsigned int domainSize = domain->size().second-excludedElements.size();
-	vector<vector<const DomainElement*> > newGroundElements(groundElements.size()*domainSize);
+vector<vector<const DomainElement*> > fillGroundElementsOneRank(vector<vector<const DomainElement*> >& groundElements, const SortTable* domainTable, const int rank, const set<const DomainElement*>& excludedElements){
+	set<const DomainElement*> domain; //set to order the elements
+	for(SortIterator domain_it=domainTable->sortbegin(); domain_it.hasNext(); ++domain_it){
+		if(!excludedElements.count(*domain_it)){
+			domain.insert(*domain_it);
+		}
+	}
+	vector<vector<const DomainElement*> > newGroundElements(groundElements.size()*domain.size());
 	for(unsigned int ge=0; ge<groundElements.size(); ++ge){
-		int index = 0;
-		for(SortIterator domain_it=domain->sortbegin(); domain_it.hasNext(); ++domain_it){
-			if(!excludedElements.count((*domain_it))){
-				newGroundElements[ge*domainSize+index]=groundElements[ge];
-				newGroundElements[ge*domainSize+index][rank]=(*domain_it);
-				++index;
-			}
+		int index=0;
+		for(set<const DomainElement*>::const_iterator domain_it=domain.begin(); domain_it!=domain.end(); ++domain_it){
+			newGroundElements[ge*domain.size()+index]=groundElements[ge];
+			newGroundElements[ge*domain.size()+index][rank]=(*domain_it);
+			++index;
 		}
 	}
 	return newGroundElements;
 }
 
+// Order is based on the pointers, not on the order given by for instance a SortIterator!
 pair<list<int>,list<int> > IVSet::getSymmetricLiterals(AbstractGroundTheory* gt, const DomainElement* smaller, const DomainElement* bigger) const {
 	set<const DomainElement*> excludedSet; excludedSet.insert(smaller); excludedSet.insert(bigger);
 	const set<const DomainElement*> emptySet;
@@ -477,7 +481,7 @@ pair<list<int>,list<int> > IVSet::getSymmetricLiterals(AbstractGroundTheory* gt,
 				for(unsigned int it=0; it<groundElements.size(); it++){
 					groundElements[it][*arguments_it]=smaller;
 				}
-				for(unsigned int argument = (*arguments_it)+1; (*relations_it)->nrSorts(); ++argument){
+				for(unsigned int argument = (*arguments_it)+1; argument<(*relations_it)->nrSorts(); ++argument){
 					Sort* currSort = (*relations_it)->sort(argument);
 					groundElements = fillGroundElementsOneRank(groundElements, getStructure()->inter(currSort), argument, emptySet);			
 				}
@@ -500,6 +504,65 @@ void IVSet::addSymBreakingPreds(AbstractGroundTheory* gt) const{
 		pair<list<int>,list<int> > literals = getSymmetricLiterals(gt, *smaller, *bigger);
 		addSymBreakingClausesToGroundTheory(gt, literals.first, literals.second);
 	}
+}
+
+vector<map<int,int> > IVSet::getLiteralsSymmetries(AbstractGroundTheory* gt) const{
+	vector<map<int,int> > literalSymmetries;
+	set<const DomainElement*>::const_iterator smaller = getElements().begin();
+	set<const DomainElement*>::const_iterator bigger = getElements().begin(); ++bigger;
+	for(; bigger!=getElements().end(); ++bigger, ++smaller){
+		map<int,int> literalSymmetry;
+		pair<list<int>,list<int> > symmetricLiterals = getSymmetricLiterals(gt, *smaller, *bigger);
+		list<int>::const_iterator first_it=symmetricLiterals.first.begin();
+		for(list<int>::const_iterator second_it=symmetricLiterals.second.begin(); second_it!=symmetricLiterals.second.end(); ++first_it, ++second_it){
+			literalSymmetry[*first_it]=*second_it;
+			literalSymmetry[*second_it]=*first_it;
+		}
+		literalSymmetries.push_back(literalSymmetry);
+	}
+	return literalSymmetries;
+}
+
+// pre: this->isEnkelvoudig()
+vector<list<int> > IVSet::getInterchangeableLiterals(AbstractGroundTheory* gt) const{
+	assert(this->isEnkelvoudig());
+	
+	const set<const DomainElement*> emptySet;
+	vector<list<int> > result;
+	const DomainElement* smallest = *(getElements().begin());
+	for(set<PFSymbol*>::const_iterator relations_it=getRelations().begin(); relations_it!=getRelations().end(); ++relations_it){
+		if(!hasInterpretation(getStructure(), *relations_it)){
+			set<unsigned int> argumentPlaces = argumentNrs(*relations_it,getSorts());
+			unsigned int argumentPlace = *(argumentPlaces.begin());
+			vector<vector<const DomainElement*> > groundElements(1);
+			groundElements[0] = vector<const DomainElement*>((*relations_it)->nrSorts());
+			for(unsigned int argument = 0; argument<argumentPlace; ++argument){
+				Sort* currSort = (*relations_it)->sort(argument);
+				groundElements = fillGroundElementsOneRank(groundElements, getStructure()->inter(currSort), argument, emptySet);
+			}
+			for(unsigned int it=0; it<groundElements.size(); it++){
+				groundElements[it][argumentPlace]=smallest;
+			}
+			for(unsigned int argument = argumentPlace+1; argument<(*relations_it)->nrSorts(); ++argument){
+				Sort* currSort = (*relations_it)->sort(argument);
+				groundElements = fillGroundElementsOneRank(groundElements, getStructure()->inter(currSort), argument, emptySet);			
+			}
+			for(set<const DomainElement*>::const_iterator elements_it= getElements().begin(); elements_it!=getElements().end(); ++elements_it){
+				list<int> literals;
+				for(vector<vector<const DomainElement*> >::const_iterator ge_it=groundElements.begin(); ge_it!=groundElements.end(); ++ge_it){
+					ElementTuple original = *ge_it;
+					if(*elements_it==smallest){
+						literals.push_back(gt->translator()->translate(*relations_it, original));
+					}else{
+						ElementTuple symmetrical = symmetricalTuple(original, smallest, *elements_it, argumentPlaces);
+						literals.push_back(gt->translator()->translate(*relations_it, symmetrical));
+					}
+				}
+				result.push_back(literals);
+			}
+		}
+	}
+	return result;
 }
 
 /**********
@@ -763,14 +826,23 @@ void splitByBinarySymmetries(set<const IVSet*>& potentials){
 // pre: t->vocabulary()==s->vocabulary()
 vector<const IVSet*> findIVSets(const AbstractTheory* t, const AbstractStructure* s){
 	assert(t->vocabulary()==s->vocabulary());
+	
+	cout << "initialize ivsets..." << endl;
+	
 	set<const IVSet*> potentials = initializeIVSets(s,t);
-	vector<const IVSet*> result = extractDontCares(potentials); 
-	splitByOccurrences(potentials);
-	splitByBinarySymmetries(potentials);
-	result.insert(result.end(),potentials.begin(),potentials.end());
+	
+	cout << "extract dont cares..." << endl;
+	
+	vector<const IVSet*> result = extractDontCares(potentials);
 	for(vector<const IVSet*>::const_iterator result_it=result.begin(); result_it!=result.end(); ++result_it){
 		cout << "##########" << endl << (*result_it)->to_string() << endl;
 	}
+	splitByOccurrences(potentials);
+	splitByBinarySymmetries(potentials);
+	for(set<const IVSet*>::const_iterator result_it=potentials.begin(); result_it!=potentials.end(); ++result_it){
+		cout << "@@@@@@@@@@" << endl << (*result_it)->to_string() << endl;
+	}
+	result.insert(result.end(),potentials.begin(),potentials.end());
 	return result;
 }
 
