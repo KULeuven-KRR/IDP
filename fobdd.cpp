@@ -1137,7 +1137,7 @@ double FOBDDManager::estimatedChance(const FOBDDKernel* kernel, AbstractStructur
 			else quantsize = quanttablesize.second;
 		}
 		else {
-			if(!quantsorttable->approxfinite()) {
+			if(!quantsorttable->approxFinite()) {
 				// if the sort is infinite, the kernel is true if the chance of the bdd is nonzero.
 				double bddchance = estimatedChance(quantkernel->bdd(),structure);
 				return bddchance == 0 ? 0 : 1;

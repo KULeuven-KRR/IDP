@@ -656,7 +656,7 @@ bool GenerateAndTestGenerator::first() const {
 }
 
 bool TableInstGenerator::first() const {
-	if(_table->approxempty()) return false;
+	if(_table->approxEmpty()) return false;
 	else {
 		_currpos = _table->begin();
 		if(_currpos.hasNext()) {
@@ -669,7 +669,7 @@ bool TableInstGenerator::first() const {
 }
 
 bool SortInstGenerator::first() const {
-	if(_table->approxempty()) return false;
+	if(_table->approxEmpty()) return false;
 	else {
 		_currpos = _table->sortbegin();
 		if(_currpos.hasNext()) { *_outvar = *_currpos; return true;	}

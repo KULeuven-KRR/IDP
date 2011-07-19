@@ -126,8 +126,6 @@ void GroundDefinition::addPCRule(int head, const vector<int>& body, bool conj, b
 				}
 				break;
 			}
-			default:
-				assert(false);
 		}
 	}
 }
@@ -798,7 +796,7 @@ void SolverTheory::addCPVariable(const VarId& varid) {
 		}
 		SortTable* domain = _termtranslator->domain(varid);
 		assert(domain);
-		assert(domain->approxfinite()); 
+		assert(domain->approxFinite());
 		if(domain->isRange()) {
 			// the domain is a complete range from minvalue to maxvalue.
 			MinisatID::CPIntVarRange cpvar;

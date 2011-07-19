@@ -1216,7 +1216,7 @@ class ThreeValuedTermMover : public TheoryMutatingVisitor {
 		Formula*	visit(PredForm* pf);
 		Formula*	visit(AggForm* af);
 		Term*		visit(FuncTerm* ft);
-		Term*		visit(AggTerm*	at);
+		Term*		visit(AggTerm* at);
 };
 
 bool ThreeValuedTermMover::isCPSymbol(const PFSymbol* symbol) const {
@@ -1228,7 +1228,7 @@ Term* ThreeValuedTermMover::visit(FuncTerm* functerm) {
 	Function* func = functerm->function();
 	FuncInter* funcinter = _structure->inter(func);
 
-	if(funcinter->approxtwovalued() || (_cpsupport && _keepterm && isCPSymbol(func))) {
+	if(funcinter->approxTwoValued() || (_cpsupport && _keepterm && isCPSymbol(func))) {
 		// The function is two-valued or we want to pass it to the constraint solver. Leave as is, just visit its children.
 		for(unsigned int n = 0; n < functerm->subterms().size(); ++n) {
 			Term* nterm = functerm->subterms()[n]->accept(this);
@@ -1276,14 +1276,14 @@ Formula* ThreeValuedTermMover::visit(PredForm* predform) {
 			Term* right = predform->subterms()[1];
 			if(typeid(*left) == typeid(FuncTerm)) {
 				FuncTerm* functerm = dynamic_cast<FuncTerm*>(left);
-				if(!_structure->inter(functerm->function())->approxtwovalued()) { 
+				if(!_structure->inter(functerm->function())->approxTwoValued()) { 
 					Formula* newpredform = FormulaUtils::graph_functions(predform);
 					return newpredform->accept(this);
 				}
 			}
 			else if(typeid(*right) == typeid(FuncTerm)) {
 				FuncTerm* functerm = dynamic_cast<FuncTerm*>(right);
-				if(!_structure->inter(functerm->function())->approxtwovalued()) { 
+				if(!_structure->inter(functerm->function())->approxTwoValued()) { 
 					Formula* newpredform = FormulaUtils::graph_functions(predform);
 					return newpredform->accept(this);
 				}

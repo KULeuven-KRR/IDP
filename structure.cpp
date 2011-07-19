@@ -82,8 +82,6 @@ ostream& DomainElement::put(ostream& output) const {
 		case DET_COMPOUND:
 			_value._compound->put(output);
 			break;
-		default:
-			assert(false); 
 	}
 	return output;
 }
@@ -119,8 +117,6 @@ bool operator<(const DomainElement& d1, const DomainElement& d2) {
 				case DET_STRING:
 				case DET_COMPOUND:
 					return true;
-				default:
-					assert(false);
 			}
 		case DET_DOUBLE:
 			switch(d2.type()) {
@@ -131,8 +127,6 @@ bool operator<(const DomainElement& d1, const DomainElement& d2) {
 				case DET_STRING:
 				case DET_COMPOUND:
 					return true;
-				default:
-					assert(false);
 			}
 		case DET_STRING:
 			switch(d2.type()) {
@@ -143,8 +137,6 @@ bool operator<(const DomainElement& d1, const DomainElement& d2) {
 					return *(d1.value()._string) < *(d2.value()._string);
 				case DET_COMPOUND:
 					return true;
-				default:
-					assert(false);
 			}
 			break;
 		case DET_COMPOUND:
@@ -155,12 +147,8 @@ bool operator<(const DomainElement& d1, const DomainElement& d2) {
 					return false;
 				case DET_COMPOUND:
 					return *(d1.value()._compound) < *(d2.value()._compound);
-				default:
-					assert(false);
 			}
 			break;
-		default:
-			assert(false);
 	}
 	return false;
 }
@@ -1019,17 +1007,17 @@ bool Universe::finite() const {
 	return true;
 }
 
-bool Universe::approxempty() const {
+bool Universe::approxEmpty() const {
 	for(vector<SortTable*>::const_iterator it = _tables.begin(); it != _tables.end(); ++it) {
-		if((*it)->approxempty()) return true;
+		if((*it)->approxEmpty()) return true;
 	}
 	return false;
 }
 
-bool Universe::approxfinite() const {
-	if(approxempty()) return true;
+bool Universe::approxFinite() const {
+	if(approxEmpty()) return true;
 	for(vector<SortTable*>::const_iterator it = _tables.begin(); it != _tables.end(); ++it) {
-		if(!(*it)->approxfinite()) return false;
+		if(!(*it)->approxFinite()) return false;
 	}
 	return true;
 }
@@ -1091,12 +1079,12 @@ inline bool FuncInternalPredTable::empty(const Universe&) const {
 	return _table->empty();			
 }
 
-inline bool FuncInternalPredTable::approxfinite(const Universe&) const {
-	return _table->approxfinite();	
+inline bool FuncInternalPredTable::approxFinite(const Universe&) const {
+	return _table->approxFinite();	
 }
 
-inline bool FuncInternalPredTable::approxempty(const Universe&) const {
-	return _table->approxempty();	
+inline bool FuncInternalPredTable::approxEmpty(const Universe&) const {
+	return _table->approxEmpty();	
 }
 
 tablesize FuncInternalPredTable::size(const Universe& ) const {
@@ -1125,7 +1113,7 @@ InternalPredTable* FuncInternalPredTable::add(const ElementTuple& tuple) {
 			return this;
 		}
 	}
-	else if(_table->approxfinite()) {
+	else if(_table->approxFinite()) {
 		EnumeratedInternalPredTable* eipt = new EnumeratedInternalPredTable();
 		for(TableIterator it = _table->begin(); it.hasNext(); ++it)
 			eipt->add(*it);
@@ -1167,12 +1155,12 @@ bool FullInternalPredTable::empty(const Universe& univ) const {
 	return univ.empty();
 }
 
-bool FullInternalPredTable::approxfinite(const Universe& univ) const {
-	return univ.approxfinite();
+bool FullInternalPredTable::approxFinite(const Universe& univ) const {
+	return univ.approxFinite();
 }
 
-bool FullInternalPredTable::approxempty(const Universe& univ) const {
-	return univ.approxempty();
+bool FullInternalPredTable::approxEmpty(const Universe& univ) const {
+	return univ.approxEmpty();
 }
 
 bool FullInternalPredTable::contains(const ElementTuple& tuple, const Universe& univ) const {
@@ -1228,31 +1216,31 @@ UnionInternalPredTable::~UnionInternalPredTable() {
 }
 
 bool UnionInternalPredTable::finite(const Universe& univ) const {
-	if(approxfinite(univ)) return true;
+	if(approxFinite(univ)) return true;
 	else {
 		notyetimplemented("Exact finiteness test on union predicate tables");	
-		return approxfinite(univ);
+		return approxFinite(univ);
 	}
 }
 
 bool UnionInternalPredTable::empty(const Universe& univ) const {
-	if(approxempty(univ)) return true;
+	if(approxEmpty(univ)) return true;
 	else {
 		notyetimplemented("Exact emptyness test on union predicate tables");	
-		return approxempty(univ);
+		return approxEmpty(univ);
 	}
 }
 
-bool UnionInternalPredTable::approxfinite(const Universe& univ) const {
+bool UnionInternalPredTable::approxFinite(const Universe& univ) const {
 	for(vector<InternalPredTable*>::const_iterator it = _intables.begin(); it != _intables.end(); ++it) {
-		if(!(*it)->approxfinite(univ)) return false;
+		if(!(*it)->approxFinite(univ)) return false;
 	}
 	return true;
 }
 
-bool UnionInternalPredTable::approxempty(const Universe& univ) const {
+bool UnionInternalPredTable::approxEmpty(const Universe& univ) const {
 	for(vector<InternalPredTable*>::const_iterator it = _intables.begin(); it != _intables.end(); ++it) {
-		if(!(*it)->approxempty(univ)) return false;
+		if(!(*it)->approxEmpty(univ)) return false;
 	}
 	return true;
 }
@@ -1360,12 +1348,12 @@ bool BDDInternalPredTable::empty(const Universe&) const {
 	return false;
 }
 
-bool BDDInternalPredTable::approxfinite(const Universe&) const {
+bool BDDInternalPredTable::approxFinite(const Universe&) const {
 	// TODO
 	return false;
 }
 
-bool BDDInternalPredTable::approxempty(const Universe&) const {
+bool BDDInternalPredTable::approxEmpty(const Universe&) const {
 	// TODO
 	return false;
 }
@@ -1496,7 +1484,7 @@ bool EqualInternalPredTable::contains(const ElementTuple& tuple, const Universe&
  * \brief	Returns true iff the table is finite
  */
 bool EqualInternalPredTable::finite(const Universe& univ) const {
-	if(approxfinite(univ)) return true;
+	if(approxFinite(univ)) return true;
 	else if(univ.finite()) return true;
 	else return false;
 }
@@ -1505,7 +1493,7 @@ bool EqualInternalPredTable::finite(const Universe& univ) const {
  * \brief Returns true iff the table is empty
  */
 bool EqualInternalPredTable::empty(const Universe& univ) const {
-	if(approxempty(univ)) return true;
+	if(approxEmpty(univ)) return true;
 	else if(univ.empty()) return true;
 	else return false;
 }
@@ -1513,15 +1501,15 @@ bool EqualInternalPredTable::empty(const Universe& univ) const {
 /**
  * \brief Returns false if the table is infinite. May return true if the table is finite.
  */
-inline bool EqualInternalPredTable::approxfinite(const Universe& univ) const {
-	return univ.approxfinite();
+inline bool EqualInternalPredTable::approxFinite(const Universe& univ) const {
+	return univ.approxFinite();
 }
 
 /**
  * \brief Returns false if the table is not empty. May return true if the table is empty.
  */
-inline bool EqualInternalPredTable::approxempty(const Universe& univ) const {
-	return univ.approxempty();
+inline bool EqualInternalPredTable::approxEmpty(const Universe& univ) const {
+	return univ.approxEmpty();
 }
 
 tablesize EqualInternalPredTable::size(const Universe& univ) const {
@@ -1547,7 +1535,7 @@ bool StrLessInternalPredTable::contains(const ElementTuple& tuple, const Univers
  * \brief Returns true iff the table is finite
  */
 bool StrLessInternalPredTable::finite(const Universe& univ) const {
-	if(approxfinite(univ)) return true;
+	if(approxFinite(univ)) return true;
 	else return univ.finite();
 }
 
@@ -1566,14 +1554,14 @@ bool StrLessInternalPredTable::empty(const Universe& univ) const {
 /**
  * \brief Returns false if the table is infinite. May return true if the table is finite.
  */
-inline bool StrLessInternalPredTable::approxfinite(const Universe& univ) const {
-	return (univ.approxfinite());
+inline bool StrLessInternalPredTable::approxFinite(const Universe& univ) const {
+	return (univ.approxFinite());
 }
 
 /**
  * \brief Returns false if the table is infinite. May return true if the table is finite.
  */
-inline bool StrLessInternalPredTable::approxempty(const Universe& univ) const {
+inline bool StrLessInternalPredTable::approxEmpty(const Universe& univ) const {
 	SortIterator isi = univ.tables()[0]->sortbegin();
 	if(isi.hasNext()) {
 		++isi;
@@ -1613,7 +1601,7 @@ bool StrGreaterInternalPredTable::contains(const ElementTuple& tuple, const Univ
  * \brief Returns true iff the table is finite
  */
 bool StrGreaterInternalPredTable::finite(const Universe& univ) const {
-	if(approxfinite(univ)) return true;
+	if(approxFinite(univ)) return true;
 	else return univ.finite(); 
 }
 
@@ -1632,14 +1620,14 @@ bool StrGreaterInternalPredTable::empty(const Universe& univ) const {
 /**
  * \brief Returns false if the table is infinite. May return true if the table is finite.
  */
-inline bool StrGreaterInternalPredTable::approxfinite(const Universe& univ) const {
-	return (univ.approxfinite());
+inline bool StrGreaterInternalPredTable::approxFinite(const Universe& univ) const {
+	return (univ.approxFinite());
 }
 
 /**
  * \brief Returns false if the table is infinite. May return true if the table is finite.
  */
-inline bool StrGreaterInternalPredTable::approxempty(const Universe& univ) const {
+inline bool StrGreaterInternalPredTable::approxEmpty(const Universe& univ) const {
 	SortIterator isi = univ.tables()[0]->sortbegin();
 	if(isi.hasNext()) {
 		++isi;
@@ -1853,31 +1841,31 @@ UnionInternalSortTable::~UnionInternalSortTable() {
 }
 
 bool UnionInternalSortTable::finite() const {
-	if(approxfinite()) return true;
+	if(approxFinite()) return true;
 	else {
 		notyetimplemented("Exact finiteness test on union sort tables");	
-		return approxfinite();
+		return approxFinite();
 	}
 }
 
 bool UnionInternalSortTable::empty() const {
-	if(approxempty()) return true;
+	if(approxEmpty()) return true;
 	else {
 		notyetimplemented("Exact emptyness test on union sort tables");	
-		return approxempty();
+		return approxEmpty();
 	}
 }
 
-bool UnionInternalSortTable::approxfinite() const {
+bool UnionInternalSortTable::approxFinite() const {
 	for(vector<SortTable*>::const_iterator it = _intables.begin(); it != _intables.end(); ++it) {
-		if(!(*it)->approxfinite()) return false;
+		if(!(*it)->approxFinite()) return false;
 	}
 	return true;
 }
 
-bool UnionInternalSortTable::approxempty() const {
+bool UnionInternalSortTable::approxEmpty() const {
 	for(vector<SortTable*>::const_iterator it = _intables.begin(); it != _intables.end(); ++it) {
-		if(!(*it)->approxempty()) return false;
+		if(!(*it)->approxEmpty()) return false;
 	}
 	return true;
 }
@@ -2253,17 +2241,17 @@ bool ProcInternalFuncTable::empty(const Universe& univ) const {
 	return false;
 }
 
-bool ProcInternalFuncTable::approxfinite(const Universe& univ) const {
-	if(approxempty(univ)) return true;
+bool ProcInternalFuncTable::approxFinite(const Universe& univ) const {
+	if(approxEmpty(univ)) return true;
 	for(unsigned int n = 0; n < univ.tables().size()-1; ++n) {
-		if(!univ.tables()[n]->approxfinite()) return false;
+		if(!univ.tables()[n]->approxFinite()) return false;
 	}
 	return true;
 }
 
-bool ProcInternalFuncTable::approxempty(const Universe& univ) const {
+bool ProcInternalFuncTable::approxEmpty(const Universe& univ) const {
 	for(unsigned int n = 0; n < univ.tables().size()-1; ++n) {
-		if(univ.tables()[n]->approxempty()) return true;
+		if(univ.tables()[n]->approxEmpty()) return true;
 	}
 	return false;
 }
@@ -2302,17 +2290,17 @@ bool UNAInternalFuncTable::empty(const Universe& univ) const {
 	return false;
 }
 
-bool UNAInternalFuncTable::approxfinite(const Universe& univ) const {
-	if(approxempty(univ)) return true;
+bool UNAInternalFuncTable::approxFinite(const Universe& univ) const {
+	if(approxEmpty(univ)) return true;
 	for(unsigned int n = 0; n < univ.tables().size()-1; ++n) {
-		if(!univ.tables()[n]->approxfinite()) return false;
+		if(!univ.tables()[n]->approxFinite()) return false;
 	}
 	return true;
 }
 
-bool UNAInternalFuncTable::approxempty(const Universe& univ) const {
+bool UNAInternalFuncTable::approxEmpty(const Universe& univ) const {
 	for(unsigned int n = 0; n < univ.tables().size()-1; ++n) {
-		if(univ.tables()[n]->approxempty()) return true;
+		if(univ.tables()[n]->approxEmpty()) return true;
 	}
 	return false;
 }
@@ -2604,12 +2592,12 @@ bool ProcInternalPredTable::empty(const Universe& univ) const {
 	return univ.empty();
 }
 
-bool ProcInternalPredTable::approxfinite(const Universe& univ) const {
-	return univ.approxfinite();
+bool ProcInternalPredTable::approxFinite(const Universe& univ) const {
+	return univ.approxFinite();
 }
 
-bool ProcInternalPredTable::approxempty(const Universe& univ) const {
-	return univ.approxempty();
+bool ProcInternalPredTable::approxEmpty(const Universe& univ) const {
+	return univ.approxEmpty();
 }
 
 bool ProcInternalPredTable::contains(const ElementTuple& tuple, const Universe& univ) const {
@@ -2647,12 +2635,12 @@ void InverseInternalPredTable::interntable(InternalPredTable* ipt) {
  *		Returns true iff the table is finite
  */
 bool InverseInternalPredTable::finite(const Universe& univ) const {
-	if(approxfinite(univ)) return true;
+	if(approxFinite(univ)) return true;
 	if(univ.finite()) return true;
 	else if(_invtable->finite(univ)) return false;
 	else {
 		notyetimplemented("Exact finiteness test on inverse predicate tables");	
-		return approxempty(univ);
+		return approxEmpty(univ);
 	}
 }
 
@@ -2660,7 +2648,7 @@ bool InverseInternalPredTable::finite(const Universe& univ) const {
  *		Returns true iff the table is empty
  */
 bool InverseInternalPredTable::empty(const Universe& univ) const {
-	if(approxempty(univ)) return true;
+	if(approxEmpty(univ)) return true;
 	if(univ.empty()) return true;
 	if(finite(univ)) {
 		TableIterator ti = TableIterator(begin(univ));
@@ -2668,22 +2656,22 @@ bool InverseInternalPredTable::empty(const Universe& univ) const {
 	}
 	else {
 		notyetimplemented("Exact emptyness test on inverse predicate tables");	
-		return approxempty(univ);
+		return approxEmpty(univ);
 	}
 }
 
 /**
  *		Returns false if the table is infinite. May return true if the table is finite.
  */
-bool InverseInternalPredTable::approxfinite(const Universe& univ) const {
-	return univ.approxfinite();
+bool InverseInternalPredTable::approxFinite(const Universe& univ) const {
+	return univ.approxFinite();
 }
 
 /**
  *		Returns false if the table is non-empty. May return true if the table is empty.
  */
-bool InverseInternalPredTable::approxempty(const Universe& univ) const {
-	return univ.approxempty();
+bool InverseInternalPredTable::approxEmpty(const Universe& univ) const {
+	return univ.approxEmpty();
 }
 
 tablesize InverseInternalPredTable::size(const Universe& univ) const {
@@ -2961,14 +2949,14 @@ PredInter::~PredInter() {
 /**
  * \brief Returns true iff the tuple is true or inconsistent according to the predicate interpretation
  */
-inline bool PredInter::istrue(const ElementTuple& tuple) const {
+inline bool PredInter::isTrue(const ElementTuple& tuple) const {
 	return _ct->contains(tuple);
 }
 
 /**
  * \brief Returns true iff the tuple is false or inconsistent according to the predicate interpretation
  */
-inline bool PredInter::isfalse(const ElementTuple& tuple) const {
+inline bool PredInter::isFalse(const ElementTuple& tuple) const {
 	if(!_cf->contains(tuple)) {
 		return !(_cf->universe().contains(tuple));
 	}
@@ -2978,19 +2966,19 @@ inline bool PredInter::isfalse(const ElementTuple& tuple) const {
 /**
  * \brief Returns true iff the tuple is unknown according to the predicate interpretation
  */
-inline bool PredInter::isunknown(const ElementTuple& tuple) const {
-	if(approxtwovalued()) return false;
+inline bool PredInter::isUnknown(const ElementTuple& tuple) const {
+	if(approxTwoValued()) return false;
 	else {
-		return !(isfalse(tuple) || istrue(tuple));
+		return !(isFalse(tuple) || isTrue(tuple));
 	}
 }
 
 /**
  * \brief Returns true iff the tuple is inconsistent according to the predicate interpretation
  */
-inline bool PredInter::isinconsistent(const ElementTuple& tuple) const {
-	if(approxtwovalued()) return false;
-	else return (isfalse(tuple) && istrue(tuple));
+inline bool PredInter::isInconsistent(const ElementTuple& tuple) const {
+	if(approxTwoValued()) return false;
+	else return (isFalse(tuple) && isTrue(tuple));
 }
 
 /**
@@ -2998,7 +2986,7 @@ inline bool PredInter::isinconsistent(const ElementTuple& tuple) const {
  *
  * NOTE: Simple check if _ct == _pt
  */
-bool PredInter::approxtwovalued() const {
+bool PredInter::approxTwoValued() const {
 	return _ct->interntable() == _pt->interntable();
 }
 
@@ -3136,7 +3124,7 @@ PredInter* PredInter::clone(const Universe& univ) const {
 		nctpf = new PredTable(_pf->interntable(),univ);
 		ct = false;
 	}
-	if(approxtwovalued()) return new PredInter(nctpf,ct);
+	if(approxTwoValued()) return new PredInter(nctpf,ct);
 	else {
 		PredTable* ncfpt;
 		bool cf;
@@ -3452,7 +3440,7 @@ void computescore(Sort* s, map<Sort*,unsigned int>& scores) {
 }
 
 void completeSortTable(const PredTable* pt, PFSymbol* symbol, const string& structname) {
-	if(pt->approxfinite()) {
+	if(pt->approxFinite()) {
 		for(TableIterator jt = pt->begin(); jt.hasNext(); ++jt) {
 			const ElementTuple& tuple = *jt;
 			for(unsigned int col = 0; col < tuple.size(); ++col) {
@@ -3486,7 +3474,7 @@ void Structure::autocomplete() {
 			const PredTable* pt1 = it->second->ct();
 			if(typeid(*(pt1->interntable())) == typeid(InverseInternalPredTable)) pt1 = it->second->pf();
 			completeSortTable(pt1,it->first,_name);
-			if(!it->second->approxtwovalued()) {
+			if(!it->second->approxTwoValued()) {
 				const PredTable* pt2 = it->second->cf();
 				if(typeid(*(pt2->interntable())) == typeid(InverseInternalPredTable)) pt2 = it->second->pt();
 				completeSortTable(pt2,it->first,_name);
@@ -3502,7 +3490,7 @@ void Structure::autocomplete() {
 			const PredTable* pt1 = it->second->graphinter()->ct();
 			if(typeid(*(pt1->interntable())) == typeid(InverseInternalPredTable)) pt1 = it->second->graphinter()->pf();
 			completeSortTable(pt1,it->first,_name);
-			if(!it->second->approxtwovalued()) {
+			if(!it->second->approxTwoValued()) {
 				const PredTable* pt2 = it->second->graphinter()->cf();
 				if(typeid(*(pt2->interntable())) == typeid(InverseInternalPredTable)) pt2 = it->second->graphinter()->pt();
 				completeSortTable(pt2,it->first,_name);
@@ -3550,7 +3538,7 @@ void Structure::autocomplete() {
 			SortTable* st = inter(s);
 			for(vector<Sort*>::const_iterator kt = toextend.begin(); kt != toextend.end(); ++kt) {
 				SortTable* kst = inter(*kt);
-				if(st->approxfinite()) {
+				if(st->approxFinite()) {
 					for(SortIterator lt = st->sortbegin(); lt.hasNext(); ++lt) kst->add(*lt);
 				}
 				else { 
@@ -3560,7 +3548,7 @@ void Structure::autocomplete() {
 			if(!s->builtin()) {
 				for(vector<Sort*>::const_iterator kt = tocheck.begin(); kt != tocheck.end(); ++kt) {
 					SortTable* kst = inter(*kt);
-					if(st->approxfinite()) {
+					if(st->approxFinite()) {
 						for(SortIterator lt = st->sortbegin(); lt.hasNext(); ++lt) {
 							if(!kst->contains(*lt)) 
 								Error::sortelnotinsort((*lt)->toString(),s->name(),(*kt)->name(),_name);
@@ -3583,7 +3571,7 @@ void Structure::functioncheck() {
 	for(map<Function*,FuncInter*>::const_iterator it = _funcinter.begin(); it != _funcinter.end(); ++it) {
 		Function* f = it->first;
 		FuncInter* ft = it->second;
-		if(it->second->universe().approxfinite()) {
+		if(it->second->universe().approxFinite()) {
 			PredInter* pt = ft->graphinter();
 			const PredTable* ct = pt->ct();
 			// Check if the interpretation is indeed a function
@@ -3605,7 +3593,7 @@ void Structure::functioncheck() {
 				}
 			}
 			// Check if the interpretation is total
-			if(isfunc && !(f->partial()) && ft->approxtwovalued() && ct->approxfinite()) {
+			if(isfunc && !(f->partial()) && ft->approxTwoValued() && ct->approxFinite()) {
 				vector<SortTable*> vst;
 				vector<bool> linked;
 				for(unsigned int c = 0; c < f->arity(); ++c) {
@@ -3670,7 +3658,7 @@ Universe Structure::universe(const PFSymbol* s) const {
 
 void Structure::clean() {
 	for(map<Predicate*,PredInter*>::iterator it = _predinter.begin(); it != _predinter.end(); ++it) {
-		if(!it->second->approxtwovalued()) {
+		if(!it->second->approxTwoValued()) {
 			if(TableUtils::approxIsInverse(it->second->ct(),it->second->cf())) {
 				PredTable* npt = new PredTable(it->second->ct()->interntable(),it->second->ct()->universe());
 				it->second->pt(npt);
@@ -3693,7 +3681,7 @@ void Structure::clean() {
 				}
 			}
 		}
-		if(!it->second->approxtwovalued()) {
+		if(!it->second->approxTwoValued()) {
 			if(((not it->first->partial()) && TableUtils::approxTotalityCheck(it->second))
 			|| TableUtils::approxIsInverse(it->second->graphinter()->ct(),it->second->graphinter()->cf())) {
 				EnumeratedInternalFuncTable* eift = new EnumeratedInternalFuncTable();

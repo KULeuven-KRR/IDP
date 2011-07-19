@@ -57,7 +57,7 @@ std::ostream& operator<< (std::ostream&,const DomainElementType&);
 union DomainElementValue {
 	int					_int;		//!< Value if the domain element is an integer
 	double				_double;	//!< Value if the domain element is a floating point number
-	const std::string*	_string;	//!< Value if the domein element is a string
+	const std::string*	_string;	//!< Value if the domain element is a string
 	const Compound*		_compound;	//!< Value if the domain element is a function applied to domain elements
 };
 
@@ -378,8 +378,8 @@ class Universe {
 
 		bool		empty()							const;
 		bool		finite()						const;
-		bool		approxempty()					const;
-		bool		approxfinite()					const;
+		bool		approxEmpty()					const;
+		bool		approxFinite()					const;
 		bool		contains(const ElementTuple&)	const;
 		tablesize	size()							const;
 };
@@ -669,9 +669,9 @@ class InternalPredTable {
 		virtual bool	finite(const Universe&)		const = 0;	//!< Returns true iff the table is finite
 		virtual	bool	empty(const Universe&)		const = 0;	//!< Returns true iff the table is empty
 
-		virtual bool	approxfinite(const Universe&)	const = 0;
+		virtual bool	approxFinite(const Universe&)	const = 0;
 			//!< Returns false if the table size is infinite. May return true if the table size is finite.
-		virtual bool	approxempty(const Universe&)	const = 0;
+		virtual bool	approxEmpty(const Universe&)	const = 0;
 			//!< Returns false if the table is non-empty. May return true if the table is empty.
 
 		virtual	bool	contains(const ElementTuple& tuple, const Universe&) const = 0;	
@@ -710,8 +710,8 @@ class ProcInternalPredTable : public InternalPredTable {
 
 		bool			finite(const Universe&)			const;
 		bool			empty(const Universe&)			const;
-		bool			approxfinite(const Universe&)	const;
-		bool			approxempty(const Universe&)	const;
+		bool			approxFinite(const Universe&)	const;
+		bool			approxEmpty(const Universe&)	const;
 		tablesize		size(const Universe&)			const { return tablesize(false,0);	}
 
 		bool	contains(const ElementTuple& tuple,const Universe&)		const;
@@ -746,8 +746,8 @@ class BDDInternalPredTable : public InternalPredTable {
 
 		bool		finite(const Universe&)			const;
 		bool		empty(const Universe&)			const;
-		bool		approxfinite(const Universe&)	const;
-		bool		approxempty(const Universe&)	const;
+		bool		approxFinite(const Universe&)	const;
+		bool		approxEmpty(const Universe&)	const;
 		tablesize	size(const Universe&)			const;
 
 		bool	contains(const ElementTuple& tuple, const Universe&)	const;
@@ -769,8 +769,8 @@ class FullInternalPredTable : public InternalPredTable {
 
 		bool			finite(const Universe&)			const;
 		bool			empty(const Universe&)			const;
-		bool			approxfinite(const Universe&)	const;
-		bool			approxempty(const Universe&)	const;
+		bool			approxFinite(const Universe&)	const;
+		bool			approxEmpty(const Universe&)	const;
 		tablesize		size(const Universe& univ)		const { return univ.size();	}
 
 		bool	contains(const ElementTuple& tuple,const Universe&)		const;
@@ -799,8 +799,8 @@ class FuncInternalPredTable : public InternalPredTable {
 
 		bool			finite(const Universe&)			const;
 		bool			empty(const Universe&)			const;
-		bool			approxfinite(const Universe&)	const;
-		bool			approxempty(const Universe&)	const;
+		bool			approxFinite(const Universe&)	const;
+		bool			approxEmpty(const Universe&)	const;
 		tablesize		size(const Universe& univ)		const;
 
 		bool		contains(const ElementTuple& tuple,const Universe&)		const;
@@ -835,8 +835,8 @@ class UnionInternalPredTable : public InternalPredTable {
 
 		bool			finite(const Universe&)			const;
 		bool			empty(const Universe&)			const;
-		bool			approxfinite(const Universe&)	const;
-		bool			approxempty(const Universe&)	const;
+		bool			approxFinite(const Universe&)	const;
+		bool			approxEmpty(const Universe&)	const;
 		tablesize		size(const Universe& )			const { return tablesize(false,0);	}
 
 		bool	contains(const ElementTuple& tuple,const Universe&) const;	
@@ -868,8 +868,8 @@ class EnumeratedInternalPredTable : public InternalPredTable {
 
 		bool			finite(const Universe&)			const { return true;			}
 		bool			empty(const Universe&)			const { return _table.empty();	}
-		bool			approxfinite(const Universe&)	const { return true;			}
-		bool			approxempty(const Universe&)	const { return _table.empty();	}
+		bool			approxFinite(const Universe&)	const { return true;			}
+		bool			approxEmpty(const Universe&)	const { return _table.empty();	}
 		tablesize		size(const Universe&)			const { return tablesize(true,_table.size());	}
 
 		bool			contains(const ElementTuple& tuple, const Universe&) const;
@@ -915,8 +915,8 @@ class EqualInternalPredTable : public ComparisonInternalPredTable {
 		bool		contains(const ElementTuple&, const Universe&)	const;
 		bool		finite(const Universe&)							const;
 		bool		empty(const Universe&)							const;
-		bool		approxfinite(const Universe&)					const;
-		bool		approxempty(const Universe&)					const;
+		bool		approxFinite(const Universe&)					const;
+		bool		approxEmpty(const Universe&)					const;
 		tablesize	size(const Universe&)							const;
 
 		InternalTableIterator*		begin(const Universe&) const;
@@ -937,8 +937,8 @@ class StrLessInternalPredTable : public ComparisonInternalPredTable {
 		bool		contains(const ElementTuple&, const Universe&)	const;
 		bool		finite(const Universe&)							const;
 		bool		empty(const Universe&)							const;
-		bool		approxfinite(const Universe&)					const;
-		bool		approxempty(const Universe&)					const;
+		bool		approxFinite(const Universe&)					const;
+		bool		approxEmpty(const Universe&)					const;
 		tablesize	size(const Universe&)							const;
 
 		InternalTableIterator*		begin(const Universe&) const;
@@ -959,8 +959,8 @@ class StrGreaterInternalPredTable : public ComparisonInternalPredTable {
 		bool		contains(const ElementTuple&, const Universe&)	const;
 		bool		finite(const Universe&)							const;
 		bool		empty(const Universe&)							const;
-		bool		approxfinite(const Universe&)					const;
-		bool		approxempty(const Universe&)					const;
+		bool		approxFinite(const Universe&)					const;
+		bool		approxEmpty(const Universe&)					const;
 		tablesize	size(const Universe&)							const;
 
 		InternalTableIterator*		begin(const Universe&) const;
@@ -984,8 +984,8 @@ class InverseInternalPredTable : public InternalPredTable {
 
 		bool				finite(const Universe&)					const;
 		bool				empty(const Universe&)					const;
-		bool				approxfinite(const Universe&)			const;
-		bool				approxempty(const Universe&)			const;
+		bool				approxFinite(const Universe&)			const;
+		bool				approxEmpty(const Universe&)			const;
 		tablesize			size(const Universe&)					const;
 		InternalPredTable*	table()									const { return _invtable;	}
 
@@ -1024,13 +1024,13 @@ class InternalSortTable : public InternalPredTable {
 
 		virtual bool		empty()			const = 0;
 		virtual bool		finite()		const = 0;
-		virtual bool		approxempty()	const = 0;
-		virtual bool		approxfinite()	const = 0;
+		virtual bool		approxEmpty()	const = 0;
+		virtual bool		approxFinite()	const = 0;
 		virtual tablesize	size()			const = 0;
 				bool		empty(const Universe&)			const { return empty();			}
 				bool		finite(const Universe&)			const { return finite();		}
-				bool		approxempty(const Universe&)	const { return approxempty();	}
-				bool		approxfinite(const Universe&)	const { return approxfinite();	}
+				bool		approxEmpty(const Universe&)	const { return approxEmpty();	}
+				bool		approxFinite(const Universe&)	const { return approxFinite();	}
 				tablesize	size(const Universe&)			const { return size();			}
 
 		virtual InternalSortTable*	add(const DomainElement*)			= 0;
@@ -1065,8 +1065,8 @@ class UnionInternalSortTable : public InternalSortTable {
 
 		bool		finite()		const;
 		bool		empty()			const;
-		bool		approxfinite()	const;
-		bool		approxempty()	const;
+		bool		approxFinite()	const;
+		bool		approxEmpty()	const;
 		tablesize	size()			const { return tablesize(false,0);	}
 
 		bool	contains(const DomainElement*) const;	
@@ -1101,8 +1101,8 @@ class InfiniteInternalSortTable : public InternalSortTable {
 		InternalSortTable*	remove(const DomainElement*);
 		bool		finite()		const { return false;	}
 		bool		empty()			const { return false;	}
-		bool		approxfinite()	const { return false;	}
-		bool		approxempty()	const { return false;	}
+		bool		approxFinite()	const { return false;	}
+		bool		approxEmpty()	const { return false;	}
 		tablesize	size()			const { return tablesize(false,0);	}
 	protected:
 		virtual ~InfiniteInternalSortTable() { }
@@ -1207,8 +1207,8 @@ class AllChars : public InternalSortTable {
 
 		bool		finite()		const { return true;	}
 		bool		empty()			const { return false;	}
-		bool		approxfinite()	const { return true;	}
-		bool		approxempty()	const { return false;	}
+		bool		approxFinite()	const { return true;	}
+		bool		approxEmpty()	const { return false;	}
 		tablesize	size()			const;
 	protected:
 		~AllChars() { }
@@ -1235,8 +1235,8 @@ class EnumeratedInternalSortTable : public InternalSortTable {
 
 		bool finite()		const { return true;			}
 		bool empty()		const { return _table.empty();	}	
-		bool approxfinite()	const { return true;			}
-		bool approxempty()	const { return _table.empty();	}
+		bool approxFinite()	const { return true;			}
+		bool approxEmpty()	const { return _table.empty();	}
 		tablesize	size()	const { return tablesize(true,_table.size());	}
 	protected:
 	public:
@@ -1264,10 +1264,10 @@ class IntRangeInternalSortTable : public InternalSortTable {
 		int _last;		//!< last element in the range
 	public:
 		IntRangeInternalSortTable(int f, int l) : _first(f), _last(l) { }
-		bool				finite()		const	{ return approxfinite();	}
-		bool				empty()			const	{ return approxempty();		}
-		bool				approxfinite()	const	{ return true;				}
-		bool				approxempty()	const	{ return _first > _last;	}
+		bool				finite()		const	{ return approxFinite();	}
+		bool				empty()			const	{ return approxEmpty();		}
+		bool				approxFinite()	const	{ return true;				}
+		bool				approxEmpty()	const	{ return _first > _last;	}
 		tablesize			size()			const	{ return tablesize(true,_last - _first + 1);	}
 		InternalSortTable*	add(const DomainElement*);
 		InternalSortTable*	remove(const DomainElement*);
@@ -1307,9 +1307,9 @@ class InternalFuncTable {
 		virtual bool			finite(const Universe&)	const = 0;	//!< Returns true iff the table is finite
 		virtual	bool			empty(const Universe&)		const = 0;	//!< Returns true iff the table is empty
 
-		virtual bool			approxfinite(const Universe&)			const = 0;
+		virtual bool			approxFinite(const Universe&)			const = 0;
 			//!< Returns false if the table size is infinite. May return true if the table size is finite.
-		virtual bool			approxempty(const Universe&)			const = 0;
+		virtual bool			approxEmpty(const Universe&)			const = 0;
 			//!< Returns false if the table is non-empty. May return true if the table is empty.
 		virtual tablesize		size(const Universe&)					const = 0;
 		
@@ -1338,8 +1338,8 @@ class ProcInternalFuncTable : public InternalFuncTable {
 
 		bool		finite(const Universe&)			const;
 		bool		empty(const Universe&)			const; 
-		bool		approxfinite(const Universe&)	const;
-		bool		approxempty(const Universe&)	const; 
+		bool		approxFinite(const Universe&)	const;
+		bool		approxEmpty(const Universe&)	const; 
 		tablesize	size(const Universe&)			const { return tablesize(false,0);	}
 		
 		const DomainElement*	operator[](const ElementTuple& tuple) const;
@@ -1364,8 +1364,8 @@ class UNAInternalFuncTable : public InternalFuncTable {
 
 		bool		finite(const Universe&)			const;
 		bool		empty(const Universe&)			const; 
-		bool		approxfinite(const Universe&)	const;
-		bool		approxempty(const Universe&)	const; 
+		bool		approxFinite(const Universe&)	const;
+		bool		approxEmpty(const Universe&)	const; 
 		tablesize	size(const Universe&)			const;
 		
 		const DomainElement*	operator[](const ElementTuple& tuple) const;
@@ -1393,8 +1393,8 @@ class EnumeratedInternalFuncTable : public InternalFuncTable {
 
 		bool		finite(const Universe&)			const { return true;							}
 		bool		empty(const Universe&)			const { return _table.empty();					}
-		bool		approxfinite(const Universe&)	const { return true;							}
-		bool		approxempty(const Universe&)	const { return _table.empty();					}
+		bool		approxFinite(const Universe&)	const { return true;							}
+		bool		approxEmpty(const Universe&)	const { return _table.empty();					}
 		tablesize	size(const Universe&)			const { return tablesize(true,_table.size());	}
 		
 		const DomainElement*	operator[](const ElementTuple& tuple) const;
@@ -1417,8 +1417,8 @@ class IntFloatInternalFuncTable : public InternalFuncTable {
 
 		bool		finite(const Universe&)			const { return false;	}
 		bool		empty(const Universe&)			const { return false;	}
-		bool		approxfinite(const Universe&)	const { return false;	}
-		bool		approxempty(const Universe&)	const { return false;	}
+		bool		approxFinite(const Universe&)	const { return false;	}
+		bool		approxEmpty(const Universe&)	const { return false;	}
 		tablesize	size(const Universe&)			const { return tablesize(false,0);	}
 
 		bool		isInt()	const { return _int;	}
@@ -1499,8 +1499,8 @@ class ExpInternalFuncTable : public InternalFuncTable {
 	public:
 		bool		finite(const Universe&)			const { return false;	}
 		bool		empty(const Universe&)			const { return false;	}
-		bool		approxfinite(const Universe&)	const { return false;	}
-		bool		approxempty(const Universe&)	const { return false;	}
+		bool		approxFinite(const Universe&)	const { return false;	}
+		bool		approxEmpty(const Universe&)	const { return false;	}
 		tablesize	size(const Universe&)			const { return tablesize(false,0);	}
 		const DomainElement*	operator[](const ElementTuple&)	const;
 
@@ -1523,8 +1523,8 @@ class ModInternalFuncTable : public InternalFuncTable {
 		~ModInternalFuncTable() { }
 		bool		finite(const Universe&)			const { return false;	}
 		bool		empty(const Universe&)			const { return false;	}
-		bool		approxfinite(const Universe&)	const { return false;	}
-		bool		approxempty(const Universe&)	const { return false;	}
+		bool		approxFinite(const Universe&)	const { return false;	}
+		bool		approxEmpty(const Universe&)	const { return false;	}
 		tablesize	size(const Universe&)			const { return tablesize(false,0);	}
 		const DomainElement*	operator[](const ElementTuple&)	const;
 
@@ -1556,9 +1556,9 @@ class AbstractTable {
 		virtual	bool			empty()		const = 0;	//!< Returns true iff the table is empty
 		virtual	unsigned int	arity()		const = 0;	//!< Returns the number of columns in the table
 
-		virtual bool	approxfinite()		const = 0;	
+		virtual bool	approxFinite()		const = 0;	
 			//!< Returns false if the table size is infinite. May return true if the table size is finite.
-		virtual bool	approxempty()		const = 0;
+		virtual bool	approxEmpty()		const = 0;
 			//!< Returns false if the table is non-empty. May return true if the table is empty.
 
 		virtual	bool	contains(const ElementTuple& tuple)	const = 0;	
@@ -1586,8 +1586,8 @@ class PredTable : public AbstractTable {
 		bool				finite()							const	{ return _table->finite(_universe);			}
 		bool				empty()								const	{ return _table->empty(_universe);			}
 		unsigned int		arity()								const	{ return _universe.arity();					}
-		bool				approxfinite()						const	{ return _table->approxfinite(_universe);	}
-		bool				approxempty()						const	{ return _table->approxempty(_universe);	}
+		bool				approxFinite()						const	{ return _table->approxFinite(_universe);	}
+		bool				approxEmpty()						const	{ return _table->approxEmpty(_universe);	}
 		bool				contains(const ElementTuple& tuple)	const	{ return _table->contains(tuple,_universe);	}
 		tablesize			size()								const	{ return _table->size(_universe);			}
 		void				add(const ElementTuple& tuple);
@@ -1614,8 +1614,8 @@ class SortTable : public AbstractTable {
 
 		bool			finite()							const	{ return _table->finite();			}
 		bool			empty()								const	{ return _table->empty();			}
-		bool			approxfinite()						const	{ return _table->approxfinite();	}
-		bool			approxempty()						const	{ return _table->approxempty();		}
+		bool			approxFinite()						const	{ return _table->approxFinite();	}
+		bool			approxEmpty()						const	{ return _table->approxEmpty();		}
 		unsigned int	arity()								const	{ return 1;							}
 		tablesize		size()								const	{ return _table->size();			}
 		bool			contains(const ElementTuple& tuple)	const	{ return _table->contains(tuple);	}
@@ -1650,8 +1650,8 @@ class FuncTable : public AbstractTable {
 		bool			finite()				const	{ return _table->finite(_universe);			}
 		bool			empty()					const	{ return _table->empty(_universe);			}
 		unsigned int	arity()					const	{ return _universe.arity() - 1;				}
-		bool			approxfinite()			const	{ return _table->approxfinite(_universe);	}
-		bool			approxempty()			const	{ return _table->approxempty(_universe);	}
+		bool			approxFinite()			const	{ return _table->approxFinite(_universe);	}
+		bool			approxEmpty()			const	{ return _table->approxEmpty(_universe);	}
 		tablesize		size()					const	{ return _table->size(_universe);			}
 
 		const DomainElement* operator[](const ElementTuple& tuple) const {
@@ -1687,7 +1687,7 @@ class PredInter {
 
 	public:
 		
-		PredInter(PredTable* ctpf,PredTable* cfpt,bool ct, bool cf);
+		PredInter(PredTable* ctpf, PredTable* cfpt, bool ct, bool cf);
 		PredInter(PredTable* ctpf, bool ct);
 
 		// Destructor
@@ -1709,11 +1709,11 @@ class PredInter {
 		const PredTable*	cf()										const { return _cf;		}
 		const PredTable*	pt()										const { return _pt;		}
 		const PredTable*	pf()										const { return _pf;		}
-		bool				istrue(const ElementTuple& tuple)			const;
-		bool				isfalse(const ElementTuple& tuple)			const;
-		bool				isunknown(const ElementTuple& tuple)		const;
-		bool				isinconsistent(const ElementTuple& tuple)	const;
-		bool				approxtwovalued()							const;
+		bool				isTrue(const ElementTuple& tuple)			const;
+		bool				isFalse(const ElementTuple& tuple)			const;
+		bool				isUnknown(const ElementTuple& tuple)		const;
+		bool				isInconsistent(const ElementTuple& tuple)	const;
+		bool				approxTwoValued()							const;
 		const Universe&		universe()									const { return _ct->universe();	}
 		PredInter*			clone(const Universe&)						const;
 
@@ -1804,7 +1804,7 @@ class FuncInter {
 
 		PredInter*	graphinter()		const { return _graphinter;			}
 		FuncTable*	functable()			const { return _functable;			}
-		bool		approxtwovalued()	const { return _functable != 0;		}
+		bool		approxTwoValued()	const { return _functable != 0;		}
 
 		const Universe&	universe()	const { return _graphinter->universe();	}
 		FuncInter*	clone(const Universe&)	const;

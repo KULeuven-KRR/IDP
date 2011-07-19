@@ -417,7 +417,7 @@ class ApproxTwoValChecker : public TheoryVisitor {
 
 void ApproxTwoValChecker::visit(const PredForm* pf) {
 	PredInter* inter = _structure->inter(pf->symbol());
-	if(inter->approxtwovalued()) {
+	if(inter->approxTwoValued()) {
 		for(vector<Term*>::const_iterator it = pf->subterms().begin(); it != pf->subterms().end(); ++it) {
 			(*it)->accept(this);
 			if(!_returnvalue) return;
@@ -428,7 +428,7 @@ void ApproxTwoValChecker::visit(const PredForm* pf) {
 
 void ApproxTwoValChecker::visit(const FuncTerm* ft) {
 	FuncInter* inter = _structure->inter(ft->function());
-	if(inter->approxtwovalued()) {
+	if(inter->approxTwoValued()) {
 		for(vector<Term*>::const_iterator it = ft->subterms().begin(); it != ft->subterms().end(); ++it) {
 			(*it)->accept(this);
 			if(!_returnvalue) return;

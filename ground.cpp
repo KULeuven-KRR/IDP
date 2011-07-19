@@ -1215,8 +1215,8 @@ GroundTerm SumTermGrounder::run() const {
 	SortTable* rightdomain = _righttermgrounder->domain();
 
 	// Compute domain for the sum term
-	if(not _domain || not _domain->approxfinite()) {
-		if(leftdomain && rightdomain && leftdomain->approxfinite() && rightdomain->approxfinite()) {
+	if(not _domain || not _domain->approxFinite()) {
+		if(leftdomain && rightdomain && leftdomain->approxFinite() && rightdomain->approxFinite()) {
 			int leftmin = leftdomain->first()->value()._int;
 			int rightmin = rightdomain->first()->value()._int;
 			int leftmax = leftdomain->last()->value()._int;

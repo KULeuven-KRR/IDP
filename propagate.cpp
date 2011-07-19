@@ -216,7 +216,7 @@ FOPropTableDomain* FOPropTableDomainFactory::exists(FOPropDomain* dom, const set
 		else keepcol.push_back(false);
 	}
 
-	if(!tabledomain->table()->approxfinite()) 
+	if(!tabledomain->table()->approxFinite()) 
 		cerr << "Probably entering an infinte loop when trying to project a possibly infinite table...\n";
 	PredTable* npt = new PredTable(new EnumeratedInternalPredTable(),Universe(newunivcols));
 	for(TableIterator it = tabledomain->table()->begin(); it.hasNext(); ++it) {
