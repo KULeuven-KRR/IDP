@@ -10,9 +10,11 @@
 #include <vector>
 
 class PredTable;
+class PredInter;
 class SortTable;
 class DomainElement;
 class InstanceChecker;
+class GeneratorNode;
 
 class InstGenerator {
 	public:
@@ -21,126 +23,85 @@ class InstGenerator {
 		virtual bool next() const = 0; 
 };
 
-class TableInstGenerator : public InstGenerator { 
-	private:
-		PredTable*							_table;
-		std::vector<const DomainElement**>	_outvars;
-		mutable TableIterator				_currpos;
-	public:
-		TableInstGenerator(PredTable* t, const std::vector<const DomainElement**>& out) : 
-			_table(t), _outvars(out), _currpos(t->begin()) { }
-		bool first() const;
-		bool next() const;
-};
-
-class SortInstGenerator : public InstGenerator { 
-	private:
-		SortTable*				_table;
-		const DomainElement**	_outvar;
-		mutable SortIterator	_currpos;
-	public:
-		SortInstGenerator(SortTable* t, const DomainElement** out) : 
-			_table(t), _outvar(out), _currpos(t->sortbegin()) { }
-		bool first() const;
-		bool next() const;
-};
-
-
-/********************************************
-	Tree structure for generating instances
-********************************************/
-
-class GeneratorNode {
-	protected:
-		GeneratorNode*	_parent;
-
-	public:
-		// Constructors
-		GeneratorNode() : _parent(0) { }
-
-		// Mutators
-		void	parent(GeneratorNode* n) { _parent = n;	}
-
-		// Inspectors
-		GeneratorNode*	parent()	const { return _parent;	}
-
-		// Generate instances
-		virtual	GeneratorNode*	first()	const = 0;
-		virtual	GeneratorNode*	next()	const = 0;
-};
-
-class LeafGeneratorNode : public GeneratorNode {
-	private:
-		InstGenerator*	_generator;
-		GeneratorNode*	_this;		//	equal to 'this'
-	
-	public:
-		// Constructor
-		LeafGeneratorNode(InstGenerator* gt) : GeneratorNode(), _generator(gt) { _this = this;	}
-
-		// Generate instances
-		GeneratorNode*	first()	const;
-		GeneratorNode*	next()	const;
-};
-
-class OneChildGeneratorNode : public GeneratorNode {
-	private:
-		InstGenerator*	_generator;
-		GeneratorNode*	_child;
-	
-	public:
-		// Constructor
-		OneChildGeneratorNode(InstGenerator* gt, GeneratorNode* c) : GeneratorNode(), _generator(gt), _child(c) { _child->parent(this);	}
-
-		// Generate instances
-		GeneratorNode*	first()	const;
-		GeneratorNode*	next()	const;
-};
-
-class TwoChildGeneratorNode : public GeneratorNode {
-	private:
-		InstanceChecker*							_checker;
-		std::vector<const DomainElement**>			_outvars;
-		InstGenerator*								_currposition;
-		mutable std::vector<const DomainElement*>	_currargs;
-		GeneratorNode*								_left;
-		GeneratorNode*								_right;
-	
-	public:
-		// Constructor
-		TwoChildGeneratorNode(InstanceChecker* t, const std::vector<const DomainElement**>& ov, const std::vector<SortTable*>& tbs, GeneratorNode* l, GeneratorNode* r);
-
-		// Generate instances
-		GeneratorNode*	first()	const;
-		GeneratorNode*	next()	const;
-};
-
-
-/***************************************
-	Root node for generating instances
-***************************************/
-
-class TreeInstGenerator : public InstGenerator {
-	private:
-				GeneratorNode*	_root;
-		mutable	GeneratorNode*	_curr;	// Remember the last position of a match
-
-	public:
-		// Constructor
-		TreeInstGenerator(GeneratorNode* r) : _root(r), _curr(0) { }
-
-		// Generate instances
-		bool	first()	const;
-		bool	next()	const;
-};
-
 /**************
 	Factory
 **************/
 
-class GeneratorFactory {
+class GeneratorFactory : public StructureVisitor {
+	private:
+		const PredTable*					_table;
+		std::vector<bool>					_pattern;	//!< _pattern[n] == true iff the n'th column is an input column
+		std::vector<const DomainElement**>	_vars;		//!< the variables corresponding to each column
+		std::vector<unsigned int>			_firstocc;	//!< for each of the variables, the position in _vars where this
+														//!< variable occurs first
+		InstGenerator*						_generator;
+
+		void visit(const FuncTable* ft);				
+		void visit(const ProcInternalPredTable*);
+		void visit(const BDDInternalPredTable*);			
+		void visit(const FullInternalPredTable*);		
+		void visit(const FuncInternalPredTable*);		
+		void visit(const UnionInternalPredTable*);		
+		void visit(const EnumeratedInternalPredTable*);	
+		void visit(const EqualInternalPredTable*);		
+		void visit(const StrLessInternalPredTable*);		
+		void visit(const StrGreaterInternalPredTable*);	
+		void visit(const InverseInternalPredTable*);		
+		void visit(const ProcInternalFuncTable*);		
+		void visit(const UNAInternalFuncTable*);			
+		void visit(const EnumeratedInternalFuncTable*);	
+		void visit(const PlusInternalFuncTable*);		
+		void visit(const MinusInternalFuncTable*);		
+		void visit(const TimesInternalFuncTable*);		
+		void visit(const DivInternalFuncTable*);			
+		void visit(const AbsInternalFuncTable*);			
+		void visit(const UminInternalFuncTable*);		
+		void visit(const ExpInternalFuncTable*);			
+		void visit(const ModInternalFuncTable*);			
+
+		void visit(const UnionInternalSortTable*);	
+		void visit(const AllNaturalNumbers*);				
+		void visit(const AllIntegers*);						
+		void visit(const AllFloats*);						
+		void visit(const AllChars*);					
+		void visit(const AllStrings*);					
+		void visit(const EnumeratedInternalSortTable*);	
+		void visit(const IntRangeInternalSortTable*);	
+
 	public:
 		InstGenerator*	create(const std::vector<const DomainElement**>&, const std::vector<SortTable*>&);
+		InstGenerator*	create(const PredTable*, std::vector<bool> pattern, const std::vector<const DomainElement**>&);
+};
+
+/******************************
+	From BDDs to generators
+******************************/
+
+class FOBDDManager;
+class FOBDDVariable;
+class FOBDD;
+class FOBDDKernel;
+
+/**
+ * Class to convert a bdd into a generator
+ */
+class BDDToGenerator {
+	private:
+		FOBDDManager*	_manager;
+	public:
+
+		// Constructor
+		BDDToGenerator(FOBDDManager* manager);
+
+		// Factory methods
+		InstGenerator* create(const FOBDD*, const std::vector<bool>&, const std::vector<const DomainElement**>&, const std::vector<const FOBDDVariable*>&, AbstractStructure* structure);
+		InstGenerator* create(const FOBDDKernel*, const std::vector<bool>&, const std::vector<const DomainElement**>&, const std::vector<const FOBDDVariable*>&, AbstractStructure* structure);
+
+		GeneratorNode* createnode(const FOBDD*, const std::vector<bool>&, const std::vector<const DomainElement**>&, const std::vector<const FOBDDVariable*>&, AbstractStructure* structure);
+
+		// Visit
+//		void visit(const FOBDDAtomKernel* kernel);
+//		void visit(const FOBDDQuantKernel* kernel);
 };
 
 #endif

@@ -11,7 +11,7 @@ AC_DECL_YYTEXT
 AC_DISABLE_SHARED
 AC_PROG_LIBTOOL
 AC_PROG_YACC
-AM_INIT_AUTOMAKE([foreign subdir-objects]) #silent-rules FROM VERSION 1.11 #-ffloat-store
+AM_INIT_AUTOMAKE([tar-pax foreign subdir-objects]) #silent-rules FROM VERSION 1.11 #-ffloat-store
 AC_LANG([C++])
 
 #check for the necessary headers

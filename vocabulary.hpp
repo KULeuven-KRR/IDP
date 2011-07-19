@@ -44,10 +44,10 @@ class Sort {
 		SortTable*					_interpretation;	//!< The interpretation of the sort if it is built-in. 
 														//!< A null-pointer otherwise.
 														
-		~Sort();					//!< Destructor
-		void removeParent(Sort* p);	//!< Removes parent p
-		void removeChild(Sort* c);	//!< Removes child c
-		void generatePred();		//!< Generate the predicate that corresponds to the sort
+		~Sort();						//!< Destructor
+		void removeParent(Sort* p);		//!< Removes parent p
+		void removeChild(Sort* c);		//!< Removes child c
+		void generatePred(SortTable*);	//!< Generate the predicate that corresponds to the sort
 
 		void removeVocabulary(const Vocabulary*);	//!< Removes a vocabulary from the list of vocabularies
 		void addVocabulary(const Vocabulary*);		//!< Add a vocabulary to the list of vocabularies
@@ -186,7 +186,7 @@ class PFSymbol {
 
 		// Output
 		virtual std::ostream&	put(std::ostream&, bool longnames = true)	const = 0;
-				std::string		to_string()									const;
+				std::string		to_string(bool longnames = true)			const;
 
 		friend class Vocabulary;
 };
@@ -395,6 +395,7 @@ class Function : public PFSymbol {
 
 		// Output
 		std::ostream&	put(std::ostream&, bool longnames = true)	const;
+		std::string		to_string(bool longnames = true)			const;
 
 		friend class Vocabulary;
 };

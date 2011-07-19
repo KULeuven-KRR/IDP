@@ -62,24 +62,33 @@ void Sort::removeChild(Sort* child) {
 /**
  * Generate the predicate that corresponds to the sort
  */
-void Sort::generatePred() {
+void Sort::generatePred(SortTable* inter) {
 	string predname(_name + "/1");
 	vector<Sort*> predsorts(1,this);
-	_pred = new Predicate(predname,predsorts,_pi);
+	if(inter) {
+		Universe univ(vector<SortTable*>(1,inter));
+		PredTable* pt = new PredTable(new FullInternalPredTable(),univ);
+		PredInter* pinter = new PredInter(pt,true);
+		PredInterGenerator* pig = new SinglePredInterGenerator(pinter);
+		_pred = new Predicate(predname,predsorts,pig,false);
+	}
+	else {
+		_pred = new Predicate(predname,predsorts,_pi);
+	}
 }
 
 /**
  * Create an internal sort
  */
 Sort::Sort(const string& name, SortTable* inter) : _name(name), _pi(), _interpretation(inter) { 
-	generatePred();
+	generatePred(inter);
 }
 
 /**
  * Create a user-declared sort
  */
 Sort::Sort(const string& name, const ParseInfo& pi, SortTable* inter) : _name(name), _pi(pi), _interpretation(inter) { 
-	generatePred();
+	generatePred(inter);
 }
 
 /**
@@ -230,7 +239,7 @@ Variable::Variable(const std::string& name, Sort* sort, const ParseInfo& pi) : _
 }
 
 Variable::Variable(Sort* s) : _sort(s) {
-	_name = "_var_" + s->name() + "_" + itos(Variable::_nvnr);
+	_name = "_var_" + s->name() + "_" + toString(Variable::_nvnr);
 	++_nvnr;
 }
 
@@ -318,9 +327,15 @@ bool PFSymbol::hasVocabularies() const {
 	return !(_vocabularies.empty());
 }
 
-string PFSymbol::to_string() const {
+string PFSymbol::to_string(bool longnames) const {
 	stringstream output;
-	put(output);
+	put(output, longnames);
+	return output.str();
+}
+
+string Function::to_string(bool longnames) const {
+	stringstream output;
+	put(output, longnames);
 	return output.str();
 }
 
@@ -372,7 +387,7 @@ Predicate::Predicate(const std::string& name,const std::vector<Sort*>& sorts, bo
 
 Predicate::Predicate(const vector<Sort*>& sorts) : 
 	PFSymbol("",sorts,ParseInfo()), _interpretation(0), _overpredgenerator(0) {
-	_name = "_internal_predicate_" + itos(_npnr) + "/" + itos(sorts.size());
+	_name = "_internal_predicate_" + toString(_npnr) + "/" + toString(sorts.size());
 	++_npnr;
 }
 

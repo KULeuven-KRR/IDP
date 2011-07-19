@@ -6,14 +6,26 @@
 
 #include <string>
 #include <iostream>
-#include <sstream>
+#include <ostream>
 #include <vector>
 #include <limits>
 #include <cassert>
 #include <stdlib.h>
+#include <string>
+#include <sstream>
+
 #include "commontypes.hpp"
 
 using namespace std;
+
+string libraryname = INTERNALLIBARYNAME;
+string lualibraryfilename = INTERNALLIBARYLUA;
+string idplibraryfilename = INTERNALLIBARYIDP;
+string configfilename = CONFIGFILENAME;
+string getLibraryName() { return libraryname; }
+string getLuaLibraryFilename() { return lualibraryfilename; }
+string getIDPLibraryFilename() { return idplibraryfilename; }
+string getConfigFilename() { return configfilename; }
 
 void notyetimplemented(const string& message) {
 	cerr << "WARNING or ERROR: The following feature is not yet implemented:\n"
@@ -37,26 +49,14 @@ bool isDouble(const string& s) {
 	return (i >> d);
 }
 
-string itos(int n) {
-	stringstream sst;
-	sst << n;
-	return sst.str();
-}
-
-string dtos(double d) {
-	stringstream s;
-	s << d;
-	return s.str();
-}
-
-int stoi(const string& s) {
+int toInt(const string& s) {
 	stringstream i(s);
 	int n;
 	if(!(i >> n)) return 0;
 	else return n;
 }
 
-double stod(const string& s) {
+double toDouble(const string& s) {
 	stringstream i(s);
 	double d;
 	if(!(i >> d)) return 0;
@@ -177,3 +177,50 @@ string* StringPointer(const string& str) {
 	return sharedstrings.stringpointer(str);
 }
 
+CompType invertct(CompType ct) {
+	switch(ct) {
+		case CT_EQ: case CT_NEQ: return ct;
+		case CT_LT: return CT_GT;
+		case CT_GT: return CT_LT;
+		case CT_LEQ: return CT_GEQ;
+		case CT_GEQ: return CT_LEQ;
+		default:
+			assert(false);
+			return CT_EQ;
+	}
+}
+
+CompType negatect(CompType ct) {
+	switch(ct) {
+		case CT_EQ: return CT_NEQ;
+		case CT_NEQ: return CT_EQ;
+		case CT_LT: return CT_GEQ;
+		case CT_GT: return CT_LEQ;
+		case CT_LEQ: return CT_GT;
+		case CT_GEQ: return CT_LT;
+		default:
+			assert(false);
+			return CT_EQ;
+	}
+}
+
+PosContext swapcontext(PosContext ct) {
+	switch(ct) {
+		case PC_BOTH : return PC_BOTH;
+		case PC_POSITIVE : return PC_NEGATIVE;
+		case PC_NEGATIVE : return PC_POSITIVE;
+		default:
+			assert(false);
+			return PC_POSITIVE;
+	}
+}
+
+string AggTypeNames[5] = { "#", "sum", "prod", "min", "max" };
+ostream& operator<<(ostream& out, AggFunction aggtype) {
+	return out << AggTypeNames[aggtype];
+}
+
+string TsTypeNames[4] = { "<=>", "<-", "=>", "<=" };
+ostream& operator<<(ostream& out, TsType tstype) {
+	return out << TsTypeNames[tstype];
+}

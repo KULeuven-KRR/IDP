@@ -20,10 +20,6 @@ Insert insert;
 // Errors
 void yyerror(const char* s);
 
-// Common 
-extern std::string itos(int);
-extern std::string dtos(double);
-
 typedef std::pair<int,std::string*> isp;
 typedef std::list<isp>				lisp;
 
@@ -72,6 +68,7 @@ typedef std::list<isp>				lisp;
 	FixpDef*				fpd;
 	Definition*				def;
 	Formula*				fom;
+	Query*					que;
 	Variable*				var;
 	SetExpr*				set;
 	EnumSetExpr*			est;
@@ -84,6 +81,7 @@ typedef std::list<isp>				lisp;
 	std::vector<std::string>*			vstr;
 	std::vector<Sort*>*					vsor;
 	std::set<Variable*>*				svar;
+	std::vector<Variable*>*				vvar;
 	std::vector<Term*>*					vter;
 	std::vector<Formula*>*				vfom;
 	std::vector<Rule*>*					vrul;
@@ -106,6 +104,7 @@ typedef std::list<isp>				lisp;
 %token PROCEDURE_HEADER
 %token OPTION_HEADER
 %token EXEC_HEADER
+%token QUERY_HEADER
 
 /** Keywords **/
 %token CONSTRUCTOR
@@ -211,11 +210,13 @@ typedef std::list<isp>				lisp;
 %type <pta> f3tuples_es
 %type <dom>	pelement
 %type <dom>	domain_element
+%type <que> query
 
 %type <vint>	intrange
 %type <vcha>	charrange
 %type <vter>	term_tuple
 %type <svar>	variables
+%type <vvar>	query_vars
 %type <vrul>	rules
 %type <vstr>	pointer_name
 %type <vsor>	sort_pointer_tuple
@@ -247,6 +248,7 @@ idp		        : /* empty */
 				| idp asp_structure
 				| idp instructions
 				| idp options
+				| idp namedquery
 				| idp using
 		        ;
 	
@@ -375,6 +377,23 @@ intern_pointer		: pointer_name '[' sort_pointer_tuple ']'	{ $$ = insert.internpr
 pointer_name		: pointer_name "::" identifier	{ $$ = $1; $$->push_back(*$3); 		}
 					| identifier					{ $$ = new std::vector<std::string>(1,*$1);	}
 					;
+
+/**************
+	Queries
+**************/
+
+namedquery	: QUERY_HEADER query_name ':' vocab_pointer '{' query '}'	{ insert.closequery($6);	}
+			;
+
+query_name	: identifier	{ insert.openquery(*$1,@1);	}
+			;
+
+query		: '{' query_vars ':' formula '}'		{ $$ = insert.query(*$2,$4,@1); delete($2);	}
+			;
+
+query_vars	: /* empty */			{ $$ = new std::vector<Variable*>(0);	}
+			| query_vars variable	{ $$ = $1; $$->push_back($2);		}
+			;
 
 /*************
 	Theory	

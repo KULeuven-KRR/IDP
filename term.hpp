@@ -221,6 +221,30 @@ namespace TermUtils {
 	std::vector<Term*> 	makeNewVarTerms(const std::vector<Variable*>&);	//!< Make a vector of fresh variable terms
 }
 
+/**************
+	Queries
+**************/
+
+/**
+ * Class to represent a first-order query
+ */
+class Query {
+	private:
+		std::vector<Variable*>	_variables;		//!< The free variables of the query. The order of the variables is the
+												//!< order in which they were parsed.
+		Formula*				_query;			//!< The actual query.
+		ParseInfo				_pi;			//!< The place where the query was parsed.
+	public:
+		
+		// Constructors
+		Query(const std::vector<Variable*>& vars, Formula* q, const ParseInfo& pi) : 
+			_variables(vars), _query(q), _pi(pi) { }
+
+		// Inspectors
+		Formula*						query()		const	{ return _query;		}
+		const std::vector<Variable*>&	variables()	const	{ return _variables;	}
+		const ParseInfo&				pi()		const	{ return _pi;			}
+};
 
 /**********************
 	Set expressions

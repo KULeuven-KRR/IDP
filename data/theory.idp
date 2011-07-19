@@ -22,4 +22,11 @@ namespace theory {
     return idp_intern.merge(T1,T2)
   }
 
+	/**
+	 * Replace in theory T all definitions by their completion
+	 */
+	procedure completion(T) {
+		return idp_intern.completion(T)
+	}
+
 }

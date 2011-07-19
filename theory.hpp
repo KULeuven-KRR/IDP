@@ -634,9 +634,17 @@ namespace TheoryUtils {
 	/** \brief Rewrite (! x : phi & chi) to ((! x : phi) & (!x : chi)), and similarly for ?. **/
 	void move_quantifiers(AbstractTheory*);	
 
+	/** \brief Rewrite the theory so that there are no nested terms **/
+	void remove_nesting(AbstractTheory*);
+
+	/** \brief Replace all definitions in the theory by their completion **/
+	void completion(AbstractTheory*);
+
+	/** \brief Count the number of subformulas in the theory **/
+	int nrSubformulas(AbstractTheory*);
+
 	/** \brief Merge two theories **/
 	AbstractTheory* merge(AbstractTheory*,AbstractTheory*);
-
 }
 
 /**************
@@ -657,6 +665,9 @@ class CPVarTerm;
 class CPWSumTerm;
 class CPSumTerm;
 class CPReification;
+
+// All have a default implementation to allow visitors only implementing some of the traversals, the other
+// being no-ops.
 
 /**
  * Visitor class for theories

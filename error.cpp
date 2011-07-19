@@ -22,6 +22,11 @@ namespace Error {
 		cerr << "ERROR: ";
 	}
 
+	void error(const std::string& message) {
+		errorcounter++;
+		cerr << "ERROR: " <<message;
+	}
+
 	void error(const ParseInfo& p) {
 		errorcounter++;
 		cerr << "ERROR at line " << p.line() 
@@ -34,17 +39,17 @@ namespace Error {
 
 	void constnotset(const string& s, const ParseInfo& pi) {
 		error(pi);
-		cerr << "Constant '" << s << "' should be set at the command line." << endl;
+		cerr << "Constant '" << s << "' should be set at the command line." << "\n";
 	}
 
 	void unknoption(const string& s) {
 		error();
-		cerr << "'" << s << "' is an unknown option." << endl;
+		cerr << "'" << s << "' is an unknown option." << "\n";
 	}
 
 	void unknoption(const string& s, const ParseInfo& pi) {
 		error(pi);
-		cerr << "'" << s << "' is an unknown option." << endl;
+		cerr << "'" << s << "' is an unknown option." << "\n";
 	}
 
 	void wrongvalue(const string& optname, const string& val, const ParseInfo& pi) {
@@ -54,12 +59,12 @@ namespace Error {
 
 	void unknfile(const string& s) {
 		error();
-		cerr << "'" << s << "' is not a valid file name or not readable." << endl;
+		cerr << "'" << s << "' is not a valid file name or not readable." << "\n";
 	}
 
 	void constsetexp() {
 		error();
-		cerr << "Constant assignment expected after '-c'." << endl;
+		cerr << "Constant assignment expected after '-c'." << "\n";
 	}
 
 	void stringconsexp(const string& c, const ParseInfo& pi) {
@@ -74,7 +79,7 @@ namespace Error {
 
 	void nrmodelsnegative() {
 		error();
-		cerr << "Expected a non-negative integer after '-n'" << endl;
+		cerr << "Expected a non-negative integer after '-n'" << "\n";
 	}
 
 	/** File errors **/
@@ -97,18 +102,18 @@ namespace Error {
 	/** Invalid ranges **/
 	void invalidrange(int n1, int n2, const ParseInfo& pi) {
 		error(pi);
-		cerr << n1 << ".." << n2 << " is an invalid range." << endl;
+		cerr << n1 << ".." << n2 << " is an invalid range." << "\n";
 	}
 
 	void invalidrange(char c1, char c2, const ParseInfo& pi) {
 		error(pi);
-		cerr << "'" << c1 << ".." << c2 << "' is an invalid range." << endl;
+		cerr << "'" << c1 << ".." << c2 << "' is an invalid range." << "\n";
 	}
 
 	/** Invalid tuples **/
 	void wrongarity(const ParseInfo& pi) {
 		error(pi);
-		cerr << "The tuples in this table have different lengths" << endl;
+		cerr << "The tuples in this table have different lengths" << "\n";
 	}
 
 	void wrongpredarity(const string& p, const ParseInfo& pi) {
@@ -160,13 +165,13 @@ namespace Error {
 	void emptyassign(const string& s, const ParseInfo& pi) {
 		error(pi);
 		cerr << "I cannot assign the empty interpretation to symbol " << s
-			 << " because all symbols with that name do already have an interpretation." << endl;
+			 << " because all symbols with that name do already have an interpretation." << "\n";
 	}
 
 	void emptyambig(const string& s, const ParseInfo& pi) {
 		error(pi);
 		cerr << "I cannot unambiguously assign the empty interpretation to symbol " << s
-			 << " because there is more than one symbol with that name and without an interpretation." << endl;
+			 << " because there is more than one symbol with that name and without an interpretation." << "\n";
 	}
 
 	void multunknpredinter(const string& s, const ParseInfo& pi) {
@@ -273,7 +278,7 @@ namespace Error {
 		cerr << "Namespace " << nsname << " is already declared in this scope" 
 			 << ", namely at line " << prevdeclplace.line() << ", column " << prevdeclplace.col(); 
 		if(prevdeclplace.file()) cerr << " of file " << *(prevdeclplace.file());
-		cerr << "." << endl;
+		cerr << "." << "\n";
 	}
 
 	void multdeclvoc(const string& vocname, const ParseInfo& thisplace, const ParseInfo& prevdeclplace) {
@@ -281,7 +286,7 @@ namespace Error {
 		cerr << "Vocabulary " << vocname << " is already declared in this scope" 
 			 << ", namely at line " << prevdeclplace.line() << ", column " << prevdeclplace.col(); 
 		if(prevdeclplace.file()) cerr << " of file " << *(prevdeclplace.file());
-		cerr << "." << endl;
+		cerr << "." << "\n";
 	}
 
 	void multdecltheo(const string& thname, const ParseInfo& thisplace, const ParseInfo& prevdeclplace) {
@@ -289,7 +294,15 @@ namespace Error {
 		cerr << "Theory " << thname << " is already declared in this scope" 
 			 << ", namely at line " << prevdeclplace.line() << ", column " << prevdeclplace.col(); 
 		if(prevdeclplace.file()) cerr << " of file " << *(prevdeclplace.file());
-		cerr << "." << endl;
+		cerr << "." << "\n";
+	}
+
+	void multdeclquery(const string& fname, const ParseInfo& thisplace, const ParseInfo& prevdeclplace) {
+		error(thisplace);
+		cerr << "Query " << fname << " is already declared in this scope" 
+			 << ", namely at line " << prevdeclplace.line() << ", column " << prevdeclplace.col(); 
+		if(prevdeclplace.file()) cerr << " of file " << *(prevdeclplace.file());
+		cerr << "." << "\n";
 	}
 
 	void multdeclstruct(const string& sname, const ParseInfo& thisplace, const ParseInfo& prevdeclplace) {
@@ -297,7 +310,7 @@ namespace Error {
 		cerr << "Structure " << sname << " is already declared in this scope" 
 			 << ", namely at line " << prevdeclplace.line() << ", column " << prevdeclplace.col(); 
 		if(prevdeclplace.file()) cerr << " of file " << *(prevdeclplace.file());
-		cerr << "." << endl;
+		cerr << "." << "\n";
 	}
 
 	void multdeclopt(const string& sname, const ParseInfo& thisplace, const ParseInfo& prevdeclplace) {
@@ -305,7 +318,7 @@ namespace Error {
 		cerr << "Options " << sname << " is already declared in this scope" 
 			 << ", namely at line " << prevdeclplace.line() << ", column " << prevdeclplace.col(); 
 		if(prevdeclplace.file()) cerr << " of file " << *(prevdeclplace.file());
-		cerr << "." << endl;
+		cerr << "." << "\n";
 	}
 
 	void multdeclproc(const string& sname, const ParseInfo& thisplace, const ParseInfo& prevdeclplace) {
@@ -313,91 +326,91 @@ namespace Error {
 		cerr << "Procedure " << sname << " is already declared in this scope" 
 			 << ", namely at line " << prevdeclplace.line() << ", column " << prevdeclplace.col(); 
 		if(prevdeclplace.file()) cerr << " of file " << *(prevdeclplace.file());
-		cerr << "." << endl;
+		cerr << "." << "\n";
 	}
 
 	/** Undeclared objects **/
 
 	void undeclvoc(const string& vocname, const ParseInfo& thisplace) {
 		error(thisplace);
-		cerr << "Vocabulary " << vocname << " is not declared in this scope." << endl;
+		cerr << "Vocabulary " << vocname << " is not declared in this scope." << "\n";
 	}
 
 	void undeclopt(const string& optname, const ParseInfo& thisplace) {
 		error(thisplace);
-		cerr << "Option " << optname << " is not declared in this scope." << endl;
+		cerr << "Option " << optname << " is not declared in this scope." << "\n";
 	}
 
 	void undecltheo(const string& tname, const ParseInfo& thisplace) {
 		error(thisplace);
-		cerr << "Theory " << tname << " is not declared in this scope." << endl;
+		cerr << "Theory " << tname << " is not declared in this scope." << "\n";
 	}
 
 	void undeclstruct(const string& sname, const ParseInfo& thisplace) {
 		error(thisplace);
-		cerr << "Structure " << sname << " is not declared in this scope." << endl;
+		cerr << "Structure " << sname << " is not declared in this scope." << "\n";
 	}
 
 	void undeclspace(const string& sname, const ParseInfo& thisplace) {
 		error(thisplace);
-		cerr << "Namespace " << sname << " is not declared in this scope." << endl;
+		cerr << "Namespace " << sname << " is not declared in this scope." << "\n";
 	}
 
 	void undeclsort(const string& sname, const ParseInfo& thisplace) {
 		error(thisplace);
-		cerr << "Sort " << sname << " is not declared in this scope." << endl;
+		cerr << "Sort " << sname << " is not declared in this scope." << "\n";
 	}
 
 	void undeclpred(const string& pname, const ParseInfo& thisplace) {
 		error(thisplace);
-		cerr << "Predicate " << pname << " is not declared in this scope." << endl;
+		cerr << "Predicate " << pname << " is not declared in this scope." << "\n";
 	}
 
 	void undeclfunc(const string& fname, const ParseInfo& thisplace) {
 		error(thisplace);
-		cerr << "Function " << fname << " is not declared in this scope." << endl;
+		cerr << "Function " << fname << " is not declared in this scope." << "\n";
 	}
 
 	void undeclsymb(const string& name, const ParseInfo& pi) {
 		error(pi);
-		cerr << "Predicate or function " << name << " is not declared in this scope." << endl;
+		cerr << "Predicate or function " << name << " is not declared in this scope." << "\n";
 	}
 
 	/** Unavailable objects **/
 
 	void sortnotintheovoc(const string& sname, const string& tname, const ParseInfo& thisplace) {
 		error(thisplace);
-		cerr << "Sort " << sname << " is not in the vocabulary of theory " << tname << "." << endl;
+		cerr << "Sort " << sname << " is not in the vocabulary of theory " << tname << "." << "\n";
 	}
 
 	void prednotintheovoc(const string& pname, const string& tname, const ParseInfo& thisplace) {
 		error(thisplace);
-		cerr << "Predicate " << pname << " is not in the vocabulary of theory " << tname << "." << endl;
+		cerr << "Predicate " << pname << " is not in the vocabulary of theory " << tname << "." << "\n";
 	}
 
 	void funcnotintheovoc(const string& fname, const string& tname, const ParseInfo& thisplace) {
 		error(thisplace);
-		cerr << "Function " << fname << " is not in the vocabulary of theory " << tname << "." << endl;
+		cerr << "Function " << fname << " is not in the vocabulary of theory " << tname << "." << "\n";
 	}
 
 	void symbnotinstructvoc(const string& name, const string& sname, const ParseInfo& thisplace) {
 		error(thisplace);
-		cerr << "Symbol " << name << " does not belong to the vocabulary of structrure " << sname << "." << endl;
+		cerr << "Symbol " << name << " does not belong to the vocabulary of structrure " << sname << "." << "\n";
 	}
 
 	void sortnotinstructvoc(const string& name, const string& sname, const ParseInfo& thisplace) {
 		error(thisplace);
-		cerr << "Sort " << name << " does not belong to the vocabulary of structrure " << sname << "." << endl;
+		cerr << "Sort " << name << " does not belong to the vocabulary of structrure " << sname << "." << "\n";
 	}
 
 	void prednotinstructvoc(const string& name, const string& sname, const ParseInfo& thisplace) {
 		error(thisplace);
-		cerr << "Predicate " << name << " does not belong to the vocabulary of structrure " << sname << "." << endl;
+		cerr << "Predicate " << name << " does not belong to the vocabulary of structrure " << sname << "." << "\n";
 	}
 
 	void funcnotinstructvoc(const string& name, const string& sname, const ParseInfo& thisplace) {
 		error(thisplace);
-		cerr << "Function " << name << " does not belong to the vocabulary of structrure " << sname << "." << endl;
+		cerr << "Function " << name << " does not belong to the vocabulary of structrure " << sname << "." << "\n";
 	}
 
 	/** Using overlapping symbols **/
@@ -483,6 +496,17 @@ namespace Error {
 		cerr << ".\n";
 	}
 
+	void overloadedquery(const string& name, const ParseInfo& p1, const ParseInfo& p2, const ParseInfo& thisplace) {
+		error(thisplace);
+		cerr << "The query " << name << " used here could be the query declared at " 
+			 << "line " << p1.line() << ", column " << p1.col();
+		if(p1.file()) cerr << " of file " << p1.file();
+		cerr << " or the query declared at "
+			 << "line " << p2.line() << ", column " << p2.col();
+		if(p2.file()) cerr << " of file " << p2.file();
+		cerr << ".\n";
+	}
+
 	void overloadedtheory(const string& name, const ParseInfo& p1, const ParseInfo& p2, const ParseInfo& thisplace) {
 		error(thisplace);
 		cerr << "The theory " << name << " used here could be the theory declared at " 
@@ -548,32 +572,27 @@ namespace Error {
 
 	void notcommand() {
 		error();
-		cerr << "Attempt to call a non-function value." << endl;
+		cerr << "Attempt to call a non-function value." << "\n";
 	}
 
 	void unkncommand(const string& name, const ParseInfo& thisplace) {
 		error(thisplace);
-		cerr << "Procedure " << name << " does not exist." << endl;
+		cerr << "Procedure " << name << " does not exist." << "\n";
 	}
 
 	void unkncommand(const string& name) {
 		error();
-		cerr << "Procedure " << name << " does not exist." << endl;
+		cerr << "Procedure " << name << " does not exist." << "\n";
 	}
 
 	void unknopt(const string& name, ParseInfo* thisplace) {
 		thisplace ? error(*thisplace) : error();
-		cerr << "Options " << name << " does not exist." << endl;
+		cerr << "Options " << name << " does not exist." << "\n";
 	}
 
 	void unkniat(const string& name, const ParseInfo& thisplace) {
 		error(thisplace);
-		cerr << "Argument type " << name << " does not exist." << endl;
-	}
-
-	void wrongcommandargs(const string& name) {
-		error();
-		cerr << "The arguments given to procedure " << name << " are either of the wrong type, or do not exist.\n";
+		cerr << "Argument type " << name << " does not exist." << "\n";
 	}
 
 	void wrongvaluetype(const string& name, ParseInfo* thisplace) {
@@ -695,6 +714,6 @@ namespace Info {
 	
 	/** Information **/
 	void print(const string& s) {
-		cerr << s << endl;
+		cerr << s << "\n";
 	}
 }

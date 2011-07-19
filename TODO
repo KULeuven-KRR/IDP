@@ -1,0 +1,9 @@
+- je moet zorgen dat je interactive shell niet crasht als een inferentie crasht. Het makkelijkste zal zijn om rond de code die interne procedures oproept enkele try catches te zettten
+- ik heb een bug dat het parsen van een procedure faalt en hij een foutboodschap geeft die over een andere procedure en lijn nummer gaat. Herhaalbaar door 2 functies dezelfde naam te geven en ook een fout in de interne code van een van de functies.
+- Als ik volgende commandos na mekaar uitvoer, is de variabele t ineens terug leeg, maar ik krijg geen foutboodschappen
+	t = theory::merge(packing::base, packing::symmetries)
+	outname = "/tmp/groundpacking"
+	out = io.open(outname, "w")
+	stdoptions.language="ecnf"
+
+- een niet bestaande optie in stdoptions setten geeft geen fout (bvb stdoptions.a=1) 

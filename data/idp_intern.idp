@@ -78,6 +78,13 @@ procedure clone(obj) {
 **********************/
 
 /**
+ * Solve a query Q over a structure S
+ */
+procedure query(Q,S) {
+	return idp_intern.query(Q,S)
+}
+
+/**
  * Apply model expansion to theory T, structure S, and options Opts. Opts defaults to stdoptions.
  * The result is a table of structures and, if Opts.trace == true, a trace of the solver
  */
@@ -99,6 +106,14 @@ procedure ground(T,S,Opts) {
 	idp_intern.flatten(clonetheo)
 	if not Opts then Opts = stdoptions end
 	return idp_intern.ground(clonetheo,S,Opts) 
+}
+
+/**
+ * Apply unit propagation on a theory T and structure S
+ */
+procedure propagate(T,S,Opts) {
+	if not Opts then Opts = stdoptions end
+	return idp_intern.propagate(T,S,Opts)
 }
 
 /**

@@ -11,7 +11,7 @@
 #include <vector>
 #include <list>
 #include <sstream>
-#include "commontypes.hpp" 
+#include "commontypes.hpp"
 #include "parseinfo.hpp"
 
 class Sort;
@@ -27,6 +27,7 @@ class Structure;
 class AbstractStructure;
 class Term;
 class SetExpr;
+class Query;
 class EnumSetExpr;
 class Formula;
 class Rule;
@@ -39,7 +40,7 @@ class UserProcedure;
 class Namespace;
 
 struct YYLTYPE;
-class lua_State;
+class lua_State; // TODO break lua connection
 class InternalArgument;
 
 typedef std::vector<std::string> longname;
@@ -109,6 +110,7 @@ class Insert {
 		Structure*		_currstructure;		//!< the structure that is currently being parsed
 		Options*		_curroptions;		//!< the options that is currently being parsed
 		UserProcedure*	_currprocedure;		//!< the procedure that is currently being parsed
+		std::string		_currquery;			//!< the name of the named query that is currently being parsed
 
 		std::list<VarName>	_curr_vars;
 
@@ -127,6 +129,8 @@ class Insert {
 		Variable*			getVar(const std::string&) const;			//!< Returns the quantified variable with
 																		//!< given name in the current scope
 		std::set<Variable*>	freevars(const ParseInfo&);					//!< Return all currently free variables
+		void				remove_vars(const std::vector<Variable*>&);	//!< Remove the given variables from the 
+																		//!< list of free variables
 		void				remove_vars(const std::set<Variable*>&);	//!< Remove the given variables from the 
 																		//!< list of free variables
 
@@ -151,6 +155,7 @@ class Insert {
 		Vocabulary*				vocabularyInScope(const longname&, const ParseInfo&) const;
 		Namespace*				namespaceInScope(const std::string&, const ParseInfo&) const;
 		Namespace*				namespaceInScope(const longname&, const ParseInfo&) const;
+		Query*					queryInScope(const std::string&, const ParseInfo&) const;
 		AbstractTheory*			theoryInScope(const std::string&, const ParseInfo&) const;
 		AbstractTheory*			theoryInScope(const longname&, const ParseInfo&) const;
 		AbstractStructure*		structureInScope(const std::string&, const ParseInfo&) const;
@@ -183,6 +188,7 @@ class Insert {
 		void openspace(const std::string& name,YYLTYPE);		//!< Open a new namespace
 		void openvocab(const std::string& name,YYLTYPE);		//!< Open a new vocabulary
 		void opentheory(const std::string& tname, YYLTYPE);		//!< Open a new theory
+		void openquery(const std::string& tname, YYLTYPE);		//!< Open a new named query
 		void openstructure(const std::string& name, YYLTYPE);	//!< Open a new structure
 		void openprocedure(const std::string& name, YYLTYPE);	//!< Open a procedure
 		void openoptions(const std::string& name, YYLTYPE);		//!< Open a new options block
@@ -190,6 +196,7 @@ class Insert {
 		void closespace();										//!< Close the current namespace
 		void closevocab();										//!< Close the current vocabulary
 		void closetheory();										//!< Close the current theory
+		void closequery(Query*);								//!< Close the current named query
 		void closestructure();									//!< Close the current structure
 		void closeprocedure(std::stringstream*);				//!< Close the current procedure
 		void closeoptions();									//!< Close the current options
@@ -323,6 +330,7 @@ class Insert {
 		Term*	domterm(std::string*,Sort*,YYLTYPE) const;			//!< create a new domain element term of a given sort
 		Term*	aggregate(AggFunction, SetExpr*, YYLTYPE) const;	//!< create a new aggregate term
 
+		Query*		query(const std::vector<Variable*>&, Formula*, YYLTYPE);
 		SetExpr*	set(const std::set<Variable*>&, Formula*, YYLTYPE);
 			//!< Create a new set of the form { x1 ... xn : phi }
 		SetExpr*	set(const std::set<Variable*>&, Formula*, Term*, YYLTYPE);

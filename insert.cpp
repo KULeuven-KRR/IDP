@@ -19,8 +19,10 @@
 #include "parse.h"
 #include "error.hpp"
 #include "options.hpp"
-#include "execute.hpp"
+#include "internalargument.hpp"
+#include "luaconnection.hpp"
 using namespace std;
+using namespace LuaConnection; //TODO add abstraction to remove lua dependence here
 
 class SortDeriver : public TheoryMutatingVisitor {
 
@@ -437,19 +439,19 @@ string funcName(const longname& name, const vector<Sort*>& vs) {
 
 void NSPair::includePredArity() {
 	assert(_sortsincluded && !_arityincluded); 
-	_name.back() = _name.back() + '/' + itos(_sorts.size());	
+	_name.back() = _name.back() + '/' + toString(_sorts.size());
 	_arityincluded = true;
 }
 
 void NSPair::includeFuncArity() {
 	assert(_sortsincluded && !_arityincluded); 
-	_name.back() = _name.back() + '/' + itos(_sorts.size() - 1);	
+	_name.back() = _name.back() + '/' + toString(_sorts.size() - 1);
 	_arityincluded = true;
 }
 
 void NSPair::includeArity(unsigned int n) {
 	assert(!_arityincluded); 
-	_name.back() = _name.back() + '/' + itos(n);	
+	_name.back() = _name.back() + '/' + toString(n);
 	_arityincluded = true;
 }
 
@@ -727,6 +729,17 @@ AbstractStructure* Insert::structureInScope(const vector<string>& vs, const Pars
 	}
 }
 
+Query* Insert::queryInScope(const string& name, const ParseInfo& pi) const {
+	Query* q = 0;
+	for(unsigned int n = 0; n < _usingspace.size(); ++n) {
+		if(_usingspace[n]->isQuery(name)) {
+			if(q) Error::overloadedquery(name,_usingspace[n]->query(name)->pi(),q->pi(),pi);
+			else q = _usingspace[n]->query(name);
+		}
+	}
+	return q;
+}
+
 AbstractTheory* Insert::theoryInScope(const string& name, const ParseInfo& pi) const {
 	AbstractTheory* th = 0;
 	for(unsigned int n = 0; n < _usingspace.size(); ++n) {
@@ -886,6 +899,17 @@ set<Variable*> Insert::freevars(const ParseInfo& pi) {
 	return vv;
 }
 
+void Insert::remove_vars(const std::vector<Variable*>& v) {
+	for(std::vector<Variable*>::const_iterator it = v.begin(); it != v.end(); ++it) {
+		for(list<VarName>::iterator i = _curr_vars.begin(); i != _curr_vars.end(); ++i) {
+			if(i->_name == (*it)->name()) {
+				_curr_vars.erase(i);
+				break;
+			}
+		}
+	}
+}
+
 void Insert::remove_vars(const std::set<Variable*>& v) {
 	for(std::set<Variable*>::const_iterator it = v.begin(); it != v.end(); ++it) {
 		for(list<VarName>::iterator i = _curr_vars.begin(); i != _curr_vars.end(); ++i) {
@@ -936,6 +960,7 @@ void Insert::closeblock() {
 	_currstructure = 0;
 	_curroptions = 0;
 	_currprocedure = 0;
+	_currquery = "";
 }
 
 void Insert::openspace(const string& sname, YYLTYPE l) {
@@ -987,14 +1012,12 @@ void Insert::setvocab(const longname& vs, YYLTYPE l) {
 		_currvocabulary = v;
 		if(_currstructure) _currstructure->vocabulary(v);
 		else if(_currtheory) _currtheory->vocabulary(v);
-		else assert(false);
 	}
 	else {
 		Error::undeclvoc(oneName(vs),pi);
 		_currvocabulary = Vocabulary::std();
 		if(_currstructure) _currstructure->vocabulary(Vocabulary::std());
 		else if(_currtheory) _currtheory->vocabulary(Vocabulary::std());
-		else assert(false);
 	}
 }
 
@@ -1003,6 +1026,14 @@ void Insert::externvocab(const vector<string>& vname, YYLTYPE l) const {
 	Vocabulary* v = vocabularyInScope(vname,pi);
 	if(v) _currvocabulary->addVocabulary(v); 
 	else Error::undeclvoc(oneName(vname),pi);
+}
+
+void Insert::openquery(const string& qname, YYLTYPE l) {
+	openblock();
+	ParseInfo pi = parseinfo(l);
+	Query* q = queryInScope(qname,pi);
+	_currquery = qname;
+	if(q) Error::multdeclquery(qname,pi,q->pi());
 }
 
 void Insert::opentheory(const string& tname, YYLTYPE l) {
@@ -1026,6 +1057,20 @@ void Insert::assigntheory(InternalArgument* arg, YYLTYPE l) {
 void Insert::closetheory() {
 	assert(_currtheory);
 	if(_currspace->isGlobal()) LuaConnection::addGlobal(_currtheory);
+	closeblock();
+}
+
+void Insert::closequery(Query* q) {
+	_curr_vars.clear();
+	if(q) {
+		std::set<Variable*> sv(q->variables().begin(),q->variables().end());
+		QuantForm* qf = new QuantForm(true,true,sv,q->query(),FormulaParseInfo());
+		SortDeriver sd(qf,_currvocabulary); 
+		SortChecker sc(qf,_currvocabulary);
+		delete(qf);
+		_currspace->add(_currquery,q);
+		if(_currspace->isGlobal()) LuaConnection::addGlobal(_currquery,q);
+	}
 	closeblock();
 }
 
@@ -1143,7 +1188,7 @@ Sort* Insert::sortpointer(const longname& vs, YYLTYPE l) const {
 
 Predicate* Insert::predpointer(longname& vs, int arity, YYLTYPE l) const {
 	ParseInfo pi = parseinfo(l);
-	vs.back() = vs.back() + '/' + itos(arity);
+	vs.back() = vs.back() + '/' + toString(arity);
 	Predicate* p = predInScope(vs,pi);
 	if(!p) Error::undeclpred(oneName(vs),pi);
 	return p;
@@ -1160,7 +1205,7 @@ Predicate* Insert::predpointer(longname& vs, const vector<Sort*>& va, YYLTYPE l)
 
 Function* Insert::funcpointer(longname& vs, int arity, YYLTYPE l) const {
 	ParseInfo pi = parseinfo(l);
-	vs.back() = vs.back() + '/' + itos(arity);
+	vs.back() = vs.back() + '/' + toString(arity);
 	Function* f = funcInScope(vs,pi);
 	if(!f) Error::undeclfunc(oneName(vs),pi);
 	return f;
@@ -1281,7 +1326,7 @@ Sort* Insert::sort(const string& name, const vector<Sort*> supbs, bool p, YYLTYP
 
 Predicate* Insert::predicate(const string& name, const vector<Sort*>& sorts, YYLTYPE l) const {
 	ParseInfo pi = parseinfo(l);
-	string nar = string(name) + '/' + itos(sorts.size());
+	string nar = string(name) + '/' + toString(sorts.size());
 	for(unsigned int n = 0; n < sorts.size(); ++n) {
 		if(!sorts[n]) return 0;
 	}
@@ -1297,7 +1342,7 @@ Predicate* Insert::predicate(const string& name, YYLTYPE l) const {
 
 Function* Insert::function(const string& name, const vector<Sort*>& insorts, Sort* outsort, YYLTYPE l) const {
 	ParseInfo pi = parseinfo(l);
-	string nar = string(name) + '/' + itos(insorts.size());
+	string nar = string(name) + '/' + toString(insorts.size());
 	for(unsigned int n = 0; n < insorts.size(); ++n) {
 		if(!insorts[n]) return 0;
 	}
@@ -1822,6 +1867,18 @@ Term* Insert::aggregate(AggFunction f, SetExpr* s, YYLTYPE l) const {
 		return new AggTerm(s,f,pi);
 	}
 	else return 0;
+}
+
+Query* Insert::query(const std::vector<Variable*>& vv, Formula* f, YYLTYPE l) {
+	remove_vars(vv);
+	if(f) {
+		ParseInfo pi = parseinfo(l);
+		return new Query(vv,f,pi);
+	}
+	else {
+		for(std::vector<Variable*>::const_iterator it = vv.begin(); it != vv.end(); ++it) delete(*it);
+		return 0;
+	}
 }
 
 SetExpr* Insert::set(const std::set<Variable*>& vv, Formula* f, Term* counter, YYLTYPE l) {
@@ -2540,7 +2597,7 @@ void Insert::option(const string& opt, double val,YYLTYPE l) const {
 	ParseInfo pi = parseinfo(l);
 	if(_curroptions->isoption(opt)) {
 		if(_curroptions->setvalue(opt,val)) { } // do nothing
-		else Error::wrongvalue(opt,dtos(val),pi);
+		else Error::wrongvalue(opt,toString(val),pi);
 	}
 	else Error::unknoption(opt,pi);
 }
@@ -2549,7 +2606,7 @@ void Insert::option(const string& opt, int val,YYLTYPE l) const {
 	ParseInfo pi = parseinfo(l);
 	if(_curroptions->isoption(opt)) {
 		if(_curroptions->setvalue(opt,val)) { } // do nothing
-		else Error::wrongvalue(opt,itos(val),pi);
+		else Error::wrongvalue(opt,toString(val),pi);
 	}
 	else Error::unknoption(opt,pi);
 }

@@ -41,4 +41,9 @@ enum TsType { TS_EQ, TS_RULE, TS_IMPL, TS_RIMPL };
  */
 enum CompType { CT_EQ, CT_NEQ, CT_LT, CT_GT, CT_LEQ, CT_GEQ };
 
+/**
+ * The context of a subformula
+ */
+enum PosContext { PC_POSITIVE, PC_NEGATIVE, PC_BOTH };
+
 #endif

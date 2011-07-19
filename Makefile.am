@@ -1,8 +1,11 @@
 SUBDIRS = lib pcsolver
 AM_CXXFLAGS = @AC_CXXFLAGS@ -Wall -Wextra\
+		-std=c++0x\
 		-I$(srcdir)/lib/lua/etc -I$(srcdir)/lib/lua/src\
 		-I$(builddir)/lib/lua/src  -I $(srcdir)/lib/\
-		-DDATADIR=\"$(datadir)\" -DRCDIR=\"$(localstatedir)\"
+		-DDATADIR=\"$(datadir)\" -DRCDIR=\"$(localstatedir)\"\
+		-DINTERNALLIBARYNAME=\"idp_intern\" -DINTERNALLIBARYLUA=\"/std/idp_intern.lua\"\
+		-DINTERNALLIBARYIDP=\"/std/idp_intern.idp\" -DCONFIGFILENAME=\"/idp/.idprc\"
 		
 if USEINTERACTIVE
 AM_CXXFLAGS += -DUSEINTERACTIVE
@@ -29,7 +32,8 @@ gidl_SOURCES = \
 		term.hpp term.cpp\
 		theory.hpp theory.cpp\
 		options.cpp options.hpp\
-		execute.hpp execute.cpp\
+		luaconnection.hpp luaconnection.cpp\
+		internalargument.hpp internalargument.cpp\
 		namespace.hpp namespace.cpp\
 		parse.yy yyltype.hpp\
 		lex.ll\
@@ -39,13 +43,48 @@ gidl_SOURCES = \
 		common.hpp common.cpp\
 		interactive.hpp interactive.cpp\
 		main.cpp\
-		print.hpp print.cpp\
+		printers/print.hpp printers/print.cpp\
+		printers/idpprinter.hpp printers/ecnfprinter.hpp\
 		checker.hpp checker.cpp\
 		generator.hpp generator.cpp\
 		propagate.hpp propagate.cpp\
 		ecnf.hpp ecnf.cpp\
 		ground.hpp ground.cpp\
-		fobdd.hpp fobdd.cpp
+		fobdd.hpp fobdd.cpp\
+		monitors/interactiveprintmonitor.hpp monitors/tracemonitor.hpp\
+		monitors/luatracemonitor.hpp monitors/luainteractiveprintmonitor.hpp\
+		groundtheories/PrintGroundTheory.hpp groundtheories/PrintGroundTheory.cpp\
+		commands/allcommands.hpp\
+		commands/optimization.hpp\
+		commands/commandinterface.hpp\
+		commands/printblocks.hpp\
+		commands/printdomainatom.hpp\
+		commands/printoptions.hpp\
+		commands/newstructure.hpp\
+		commands/newtheory.hpp\
+		commands/modelexpand.hpp\
+		commands/newoptions.hpp\
+		commands/clonestructure.hpp\
+		commands/clonetheory.hpp\
+		commands/pushnegations.hpp\
+		commands/mergetheories.hpp\
+		commands/flatten.hpp\
+		commands/idptype.hpp\
+		commands/setatomvalue.hpp\
+		commands/settablevalue.hpp\
+		commands/domainiterator.hpp\
+		commands/tableiterator.hpp\
+		commands/propagate.hpp\
+		commands/query.hpp\
+		commands/createtuple.hpp\
+		commands/ground.hpp\
+		commands/completion.hpp\
+		commands/tobdd.hpp\
+		commands/clean.hpp\
+		commands/help.hpp\
+		commands/changevocabulary.hpp\
+		commands/estimatecosts.hpp\
+		commands/derefandincrement.hpp
 
 AM_CXXFLAGS+=-I $(top_srcdir)/pcsolver/src/ 
 
@@ -56,6 +95,7 @@ LIBBLDDIR = $(builddir)/lib
 AM_CXXFLAGS += -I $(LIBSRCDIR)/pluscallback1.7/
 
 data_stddir = $(datadir)/std
+
 data_std_DATA = data/idp_intern.idp data/idp_intern.lua data/mx.idp data/theory.idp data/domain.idp
 
 data_localdir = $(localstatedir)/idp

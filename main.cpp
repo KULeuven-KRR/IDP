@@ -11,9 +11,12 @@
 #include "clconst.hpp"
 #include "common.hpp"
 #include "error.hpp"
-#include "execute.hpp"
+#include "luaconnection.hpp"
 #include "interactive.hpp"
 using namespace std;
+
+// seed
+int global_seed;
 
 // Parser stuff
 extern map<string,CLConst*>	clconsts;
@@ -31,6 +34,7 @@ void usage() {
 	cout << "    -i, --interactive    run in interactive mode\n";
 	cout << "    -e \"<proc>\"          run procedure <proc> after parsing\n"
 		 << "    -c <name1>=<name2>   substitute <name2> for <name1> in the input\n"
+		 << "    --seed=N             use N as seed for the random generator\n"
 		 << "    -I                   read from stdin\n"
 		 << "    -v, --version        show version number and stop\n"
 		 << "    -h, --help           show this help message\n\n";
@@ -43,9 +47,9 @@ void usage() {
 void setclconst(string name1, string name2) {
 	CLConst* c;
 	if(isInt(name2)) 
-		c = new IntClConst(stoi(name2));
+		c = new IntClConst(toInt(name2));
 	else if(isDouble(name2)) 
-		c = new DoubleClConst(stod(name2));
+		c = new DoubleClConst(toDouble(name2));
 	else if(name2.size() == 1) 
 		c = new CharCLConst(name2[0],false);
 	else if(name2.size() == 3 && name2[0] == '\'' && name2[2] == '\'') 
@@ -85,6 +89,7 @@ vector<string> read_options(int argc, char* argv[], CLOptions& cloptions) {
 														  else Error::constsetexp();
 														  argc--; argv++;
 														}
+		else if(str.substr(0,7) == "--seed=")			{ global_seed = toInt(str.substr(7,str.size()));	}
 		else if(str == "-I")							{ cloptions._readfromstdin = true;	}
 		else if(str == "-v" || str == "--version")		{ cout << "GidL 2.0.1\n"; exit(0);	}
 		else if(str == "-h" || str == "--help")			{ usage(); exit(0);					}
@@ -168,7 +173,11 @@ int main(int argc, char* argv[]) {
 		// Execute statements
 		executeproc(cloptions._exec);
 		if(cloptions._interactive) interactive();
-		else if(cloptions._exec == "") executeproc("idp_intern.main()");
+		else if(cloptions._exec == ""){
+			stringstream ss;
+			ss <<getLibraryName() <<".main()";
+			executeproc(ss.str());
+		}
 	}
 
 	// Close lua communication

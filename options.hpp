@@ -11,7 +11,7 @@
 #include <map>
 #include "parseinfo.hpp"
 
-struct InternalArgument;
+class InternalArgument;
 
 /**
  * A single option that has an integer value
@@ -87,15 +87,20 @@ class Options {
 		bool	setvalue(const std::string&,double);
 		bool	setvalue(const std::string&,const std::string&);
 
-		Language	language()			const;
-		bool		printtypes()		const;
-		bool		autocomplete()		const;
-		bool		cpsupport()			const;
-		int			nrmodels()			const;
-		int			satverbosity()		const;
-		int			groundverbosity()	const;
-		bool		trace()				const;
-		bool		longnames()			const;
+		Language	language()				const;
+		bool		printtypes()			const;
+		bool		autocomplete()			const;
+		bool		cpsupport()				const;
+		int			nrmodels()				const;
+		int			satverbosity()			const;
+		int			groundverbosity()		const;
+		int			propagateverbosity()	const;
+		int			nrpropsteps()			const;
+		bool		trace()					const;
+		bool		longnames()				const;
+		bool		relativepropsteps()		const;
+		bool 		writeTranslation() 		const;
+		int			longestbranch()			const;
 
 		std::ostream&	put(std::ostream&)	const;
 		std::string		to_string()			const;	

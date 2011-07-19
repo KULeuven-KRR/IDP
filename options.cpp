@@ -8,6 +8,7 @@
 #include <limits>
 #include "options.hpp"
 #include "error.hpp"
+#include <algorithm>
 using namespace std;
 
 bool IntOption::value(int v) {
@@ -46,20 +47,23 @@ class EnumeratedStringOption : public StringOption {
 		}
 };
 
-Options::Options(const string& name, const ParseInfo& pi) : _name(name), _pi(pi) {
-	_booloptions["printtypes"]		= true;
-	_booloptions["trace"]			= false;
-	_booloptions["autocomplete"]	= true;
-	_booloptions["longnames"]		= false;
-#ifdef CPSUPPORT
-	_booloptions["cpsupport"]		= true;
-#else
-	_booloptions["cpsupport"]		= false;
-#endif //CPSUPPORT
+//TODO code van minisatid 2.3 of later gebruiken om makkelijker opties toe te voegen te doen
 
-	_intoptions["satverbosity"]		= new IntOption(0,numeric_limits<int>::max(),0);
-	_intoptions["groundverbosity"]	= new IntOption(0,numeric_limits<int>::max(),0);
-	_intoptions["nrmodels"]			= new IntOption(0,numeric_limits<int>::max(),1);
+Options::Options(const string& name, const ParseInfo& pi) : _name(name), _pi(pi) {
+	_booloptions["printtypes"]			= true;
+	_booloptions["cpsupport"]		= false;
+	_booloptions["trace"]				= false;
+	_booloptions["autocomplete"]		= true;
+	_booloptions["longnames"]			= false;
+	_booloptions["relativepropsteps"]	= true;
+	_booloptions["createtranslation"]	= false;
+
+	_intoptions["satverbosity"]			= new IntOption(0,numeric_limits<int>::max(),0);
+	_intoptions["groundverbosity"]		= new IntOption(0,numeric_limits<int>::max(),0);
+	_intoptions["propagateverbosity"]	= new IntOption(0,numeric_limits<int>::max(),0);
+	_intoptions["nrmodels"]				= new IntOption(0,numeric_limits<int>::max(),1);
+	_intoptions["nrpropsteps"]			= new IntOption(0,numeric_limits<int>::max(),4);
+	_intoptions["longestbranch"]		= new IntOption(0,numeric_limits<int>::max(),8);
 
 	vector<string> ls(3); ls[0] = "idp"; ls[1] = "txt"; ls[2] = "ecnf";
 	vector<string> mf(3); mf[0] = "threevalued"; mf[1] = "twovalued"; mf[2] = "all";
@@ -159,6 +163,18 @@ int Options::groundverbosity() const {
 	return _intoptions.find("groundverbosity")->second->value();
 }
 
+int Options::propagateverbosity() const {
+	return _intoptions.find("propagateverbosity")->second->value();
+}
+
+int Options::nrpropsteps() const {
+	return _intoptions.find("nrpropsteps")->second->value();
+}
+
+int Options::longestbranch() const {
+	return _intoptions.find("longestbranch")->second->value();
+}
+
 bool Options::cpsupport() const {
 	return _booloptions.find("cpsupport")->second;
 }
@@ -175,19 +191,37 @@ bool Options::longnames() const {
 	return _booloptions.find("longnames")->second;
 }
 
+bool Options::relativepropsteps() const {
+	return _booloptions.find("relativepropsteps")->second;
+}
+
+bool Options::writeTranslation() const {
+	return _booloptions.find("createtranslation")->second;
+}
+
+template<class OptionList, class StringList>
+void getStringFromOption(const OptionList& list, StringList& newlist){
+	for(auto it = list.begin(); it != list.end(); ++it) {
+		stringstream ss;
+		ss << it->first << " = " << it->second->value();
+		newlist.push_back(ss.str());
+	}
+}
+
 ostream& Options::put(ostream& output) const {
-	for(map<string,StringOption*>::const_iterator it = _stringoptions.begin(); it != _stringoptions.end(); ++it) {
-		output << it->first << " = " << it->second->value() << endl;
-	}
-	for(map<string,IntOption*>::const_iterator it = _intoptions.begin(); it != _intoptions.end(); ++it) {
-		output << it->first << " = " << it->second->value() << endl;
-	}
-	for(map<string,FloatOption*>::const_iterator it = _floatoptions.begin(); it != _floatoptions.end(); ++it) {
-		output << it->first << " = " << it->second->value() << endl;
-	}
+	vector<string> optionslines;
+	getStringFromOption(_stringoptions, optionslines);
+	getStringFromOption(_intoptions, optionslines);
+	getStringFromOption(_floatoptions, optionslines);
 	for(map<string,bool>::const_iterator it = _booloptions.begin(); it != _booloptions.end(); ++it) {
-		output << it->first << " = " << (it->second ? "true" : "false") << endl;
+		output << it->first << " = " << (it->second ? "true" : "false") << "\n";
 	}
+
+	sort(optionslines.begin(), optionslines.end());
+	for(auto i=optionslines.begin(); i<optionslines.end(); ++i){
+		output <<*i <<"\n";
+	}
+
 	return output;
 }
 
@@ -196,3 +230,4 @@ string Options::to_string() const {
 	put(sstr);
 	return sstr.str();
 }
+ 
