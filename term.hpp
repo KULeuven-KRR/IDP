@@ -84,7 +84,7 @@ class Term {
 
 		// Output
 		virtual std::ostream&	put(std::ostream&)	const = 0;
-				std::string		to_string()			const;	
+				std::string		toString()			const;	
 
 	friend class VarTerm;
 };
@@ -301,7 +301,7 @@ class SetExpr {
 
 		// Output
 		virtual std::ostream&	put(std::ostream&)	const = 0;
-				std::string		to_string()			const;
+				std::string		toString()			const;
 
 };
 

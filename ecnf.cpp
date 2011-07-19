@@ -219,7 +219,7 @@ ostream& GroundDefinition::put(ostream& s, unsigned int ) const {
 	return s;
 }
 
-string GroundDefinition::to_string(unsigned int) const {
+string GroundDefinition::toString(unsigned int) const {
 	stringstream sstr;
 	put(sstr);
 	return sstr.str();
@@ -481,7 +481,7 @@ ostream& GroundTheory::put(ostream& s, unsigned int) const {
 		s << "0\n";
 	}
 	for(unsigned int n = 0; n < _definitions.size(); ++n) {
-		s << _definitions[n]->to_string();
+		s << _definitions[n]->toString();
 	}
 	for(unsigned int n = 0; n < _sets.size(); ++n) {
 		s << "Set nr. " << _sets[n]->setnr() << " = [ ";
@@ -537,7 +537,7 @@ ostream& GroundTheory::put(ostream& s, unsigned int) const {
 	return s;
 }
 
-string GroundTheory::to_string() const {
+string GroundTheory::toString() const {
 	stringstream s;
 	put(s);
 	return s.str();

@@ -279,11 +279,11 @@ string GroundTranslator::printAtom(int nr) const {
 	}
 	PFSymbol* pfs = symbol(nr);
 	if(pfs) {
-		s << pfs->to_string();
+		s << pfs->toString();
 		if(!(args(nr).empty())) {
 			s << "(";
 			for(unsigned int c = 0; c < args(nr).size(); ++c) {
-				s << args(nr)[c]->to_string();
+				s << args(nr)[c]->toString();
 				if(c !=  args(nr).size()-1) s << ",";
 			}
 			s << ")";
@@ -390,14 +390,14 @@ string GroundTermTranslator::printTerm(const VarId& varid) const {
 	}
 	const Function* func = function(varid);
 	if(func) {
-		s << func->to_string();
+		s << func->toString();
 		if(not args(varid).empty()) {
 			s << "(";
 			for(vector<GroundTerm>::const_iterator gtit = args(varid).begin(); gtit != args(varid).end(); ++gtit) {
 				if((*gtit)._isvarid) {
 					s << printTerm((*gtit)._varid);
 				} else {
-					s << (*gtit)._domelement->to_string();
+					s << (*gtit)._domelement->toString();
 				}
 				if(gtit != args(varid).end()-1) s << ",";
 			}
@@ -493,13 +493,13 @@ void FormulaGrounder::setorig(const Formula* f, const map<Variable*, const Domai
 }
 
 void FormulaGrounder::printorig() const {
-	clog << "Grounding formula " << _origform->to_string();
+	clog << "Grounding formula " << _origform->toString();
 	if(not _origform->freevars().empty()) {
 		clog << " with instance ";
 		for(set<Variable*>::const_iterator it = _origform->freevars().begin(); it != _origform->freevars().end(); ++it) {
-			clog << (*it)->to_string() << " = ";
+			clog << (*it)->toString() << " = ";
 			const DomainElement* e = *(_varmap.find(*it)->second);
-			clog << e->to_string() << ' ';
+			clog << e->toString() << ' ';
 		}
 	}
 	clog << "\n";
@@ -1137,13 +1137,13 @@ void TermGrounder::setorig(const Term* t, const map<Variable*,const DomainElemen
 }
 
 void TermGrounder::printorig() const {
-	clog << "Grounding term " << _origterm->to_string();
+	clog << "Grounding term " << _origterm->toString();
 	if(not _origterm->freevars().empty()) {
 		clog << " with instance ";
 		for(set<Variable*>::const_iterator it = _origterm->freevars().begin(); it != _origterm->freevars().end(); ++it) {
-			clog << (*it)->to_string() << " = ";
+			clog << (*it)->toString() << " = ";
 			const DomainElement* e = *(_varmap.find(*it)->second);
-			clog << e->to_string() << ' ';
+			clog << e->toString() << ' ';
 		}
 	}
 	clog << "\n";
@@ -1464,7 +1464,7 @@ set<const PFSymbol*> GrounderFactory::findCPSymbols(const AbstractTheory* theory
 	if(_verbosity > 1) {
 		clog << "User-defined symbols that can be handled by the constraint solver: ";
 		for(set<const PFSymbol*>::const_iterator it = _cpsymbols.begin(); it != _cpsymbols.end(); ++it) {
-			clog << (*it)->to_string() << " ";
+			clog << (*it)->toString() << " ";
 		}
 		clog << "\n";
 	}

@@ -51,7 +51,7 @@ class TheoryComponent {
 
 		// Output
 		virtual std::ostream& put(std::ostream&, unsigned int spaces = 0)	const = 0;
-				std::string to_string(unsigned int spaces = 0)				const;
+				std::string toString(unsigned int spaces = 0)				const;
 };
 
 std::ostream& operator<<(std::ostream&, const TheoryComponent&);
@@ -410,7 +410,7 @@ class Rule {
 
 		// Output
 		std::ostream&	put(std::ostream&, unsigned int spaces = 0) const;
-		std::string		to_string(unsigned int spaces = 0)			const;
+		std::string		toString(unsigned int spaces = 0)			const;
 };
 
 std::ostream& operator<<(std::ostream&,const Rule&);
@@ -563,7 +563,7 @@ class AbstractTheory {
 
 		// Output
 		virtual std::ostream&	put(std::ostream&,unsigned int spaces)	const = 0;
-				std::string		to_string(unsigned int spaces)			const;
+				std::string		toString(unsigned int spaces)			const;
 };
 
 std::ostream& operator<<(std::ostream&,const AbstractTheory&);
@@ -620,22 +620,22 @@ class Theory : public AbstractTheory {
 namespace TheoryUtils {
 
 	/** \brief Push negations inside **/
-	void push_negations(AbstractTheory*);	
+	void pushNegations(AbstractTheory*);	
 
 	/** \brief Rewrite A <=> B to (A => B) & (B => A) **/
-	void remove_equiv(AbstractTheory*);		
+	void removeEquiv(AbstractTheory*);		
 
 	/** \brief Rewrite (! x : ! y : phi) to (! x y : phi), rewrite ((A & B) & C) to (A & B & C), etc. **/
 	void flatten(AbstractTheory*);			
 
 	/** \brief Rewrite chains of equalities to a conjunction or disjunction of atoms. **/
-	void remove_eqchains(AbstractTheory*);	
+	void removeEqchains(AbstractTheory*);	
 
 	/** \brief Rewrite (! x : phi & chi) to ((! x : phi) & (!x : chi)), and similarly for ?. **/
-	void move_quantifiers(AbstractTheory*);	
+	void moveQuantifiers(AbstractTheory*);	
 
 	/** \brief Rewrite the theory so that there are no nested terms **/
-	void remove_nesting(AbstractTheory*);
+	void removeNesting(AbstractTheory*);
 
 	/** \brief Replace all definitions in the theory by their completion **/
 	void completion(AbstractTheory*);
@@ -674,7 +674,6 @@ class CPReification;
  */
 class TheoryVisitor {
 	public:
-
 		// Theories
 		virtual void visit(const Theory*);
 		virtual void visit(const GroundTheory*);

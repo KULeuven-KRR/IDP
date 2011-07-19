@@ -81,7 +81,7 @@ class DomainElement {
 		DomainElementValue	value()	const;	//!< Returns the value of the element
 
 		std::ostream& put(std::ostream&)	const;
-		std::string to_string()				const;
+		std::string toString()				const;
 
 		friend class DomainElementFactory;
 };
@@ -144,7 +144,7 @@ class Compound {
 		const ElementTuple&		args()					const { return _arguments;	}
 
 		std::ostream&	put(std::ostream&)	const;
-		std::string		to_string()			const;
+		std::string		toString()			const;
 
 		friend class DomainElementFactory;
 };
@@ -231,7 +231,7 @@ class DomainAtom {
 		const ElementTuple&	args()		const { return _args;	} 
 
 		std::ostream&	put(std::ostream&)	const;
-		std::string		to_string()			const;
+		std::string		toString()			const;
 
 		friend class DomainAtomFactory;
 		

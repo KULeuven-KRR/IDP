@@ -178,7 +178,7 @@ ostream& Sort::put(ostream& output, bool longnames) const {
 	return output;
 }
 
-string Sort::to_string() const {
+string Sort::toString() const {
 	stringstream output;
 	put(output);
 	return output.str();
@@ -239,7 +239,7 @@ Variable::Variable(const std::string& name, Sort* sort, const ParseInfo& pi) : _
 }
 
 Variable::Variable(Sort* s) : _sort(s) {
-	_name = "_var_" + s->name() + "_" + toString(Variable::_nvnr);
+	_name = "_var_" + s->name() + "_" + convertToString(Variable::_nvnr);
 	++_nvnr;
 }
 
@@ -265,7 +265,7 @@ ostream& Variable::put(ostream& output) const {
 	return output;
 }
 
-string Variable::to_string() const {
+string Variable::toString() const {
 	stringstream output;
 	put(output);
 	return output.str();
@@ -327,13 +327,13 @@ bool PFSymbol::hasVocabularies() const {
 	return !(_vocabularies.empty());
 }
 
-string PFSymbol::to_string(bool longnames) const {
+string PFSymbol::toString(bool longnames) const {
 	stringstream output;
 	put(output, longnames);
 	return output.str();
 }
 
-string Function::to_string(bool longnames) const {
+string Function::toString(bool longnames) const {
 	stringstream output;
 	put(output, longnames);
 	return output.str();
@@ -387,7 +387,7 @@ Predicate::Predicate(const std::string& name,const std::vector<Sort*>& sorts, bo
 
 Predicate::Predicate(const vector<Sort*>& sorts) : 
 	PFSymbol("",sorts,ParseInfo()), _interpretation(0), _overpredgenerator(0) {
-	_name = "_internal_predicate_" + toString(_npnr) + "/" + toString(sorts.size());
+	_name = "_internal_predicate_" + convertToString(_npnr) + "/" + convertToString(sorts.size());
 	++_npnr;
 }
 
@@ -1506,7 +1506,7 @@ ostream& Vocabulary::put(ostream& output, unsigned int tabs) const {
 	return output;
 }
 
-string Vocabulary::to_string(unsigned int tabs) const {
+string Vocabulary::toString(unsigned int tabs) const {
 	stringstream ss;
 	put(ss,tabs);
 	return ss.str();

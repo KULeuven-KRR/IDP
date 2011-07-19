@@ -103,7 +103,7 @@ class Options {
 		int			longestbranch()			const;
 
 		std::ostream&	put(std::ostream&)	const;
-		std::string		to_string()			const;	
+		std::string		toString()			const;	
 
 };
 

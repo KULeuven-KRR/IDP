@@ -309,7 +309,7 @@ void SortDeriver::check() {
 		Error::nofuncsort(it->first->function()->name(),it->first->pi());
 	}
 	for(std::set<DomainTerm*>::iterator it = _domelements.begin(); it != _domelements.end(); ++it) {
-		Error::nodomsort((*it)->to_string(),(*it)->pi());
+		Error::nodomsort((*it)->toString(),(*it)->pi());
 	}
 }
 
@@ -339,7 +339,7 @@ void SortChecker::visit(const PredForm* pf) {
 		Sort* s2 = (*jt)->sort();
 		if(s1 && s2) {
 			if(!SortUtils::resolve(s1,s2,_vocab)) {
-				Error::wrongsort((*jt)->to_string(),s2->name(),s1->name(),(*jt)->pi());
+				Error::wrongsort((*jt)->toString(),s2->name(),s1->name(),(*jt)->pi());
 			}
 		}
 	}
@@ -355,7 +355,7 @@ void SortChecker::visit(const FuncTerm* ft) {
 		Sort* s2 = (*jt)->sort();
 		if(s1 && s2) {
 			if(!SortUtils::resolve(s1,s2,_vocab)) {
-				Error::wrongsort((*jt)->to_string(),s2->name(),s1->name(),(*jt)->pi());
+				Error::wrongsort((*jt)->toString(),s2->name(),s1->name(),(*jt)->pi());
 			}
 		}
 	}
@@ -373,7 +373,7 @@ void SortChecker::visit(const EqChainForm* ef) {
 		Sort* t = (*it)->sort();
 		if(t) {
 			if(!SortUtils::resolve(s,t,_vocab)) {
-				Error::wrongsort((*it)->to_string(),t->name(),s->name(),(*it)->pi());
+				Error::wrongsort((*it)->toString(),t->name(),s->name(),(*it)->pi());
 			}
 		}
 	}
@@ -391,7 +391,7 @@ void SortChecker::visit(const AggTerm* at) {
 		}
 		for(vector<Term*>::const_iterator it = s->subterms().begin(); it != s->subterms().end(); ++it) {
 			if((*it)->sort() && !SortUtils::resolve((*it)->sort(),VocabularyUtils::floatsort(),_vocab)) {
-				Error::wrongsort((*it)->to_string(),(*it)->sort()->name(),"int or float",(*it)->pi());
+				Error::wrongsort((*it)->toString(),(*it)->sort()->name(),"int or float",(*it)->pi());
 			}
 		}
 	}
@@ -439,23 +439,23 @@ string funcName(const longname& name, const vector<Sort*>& vs) {
 
 void NSPair::includePredArity() {
 	assert(_sortsincluded && !_arityincluded); 
-	_name.back() = _name.back() + '/' + toString(_sorts.size());
+	_name.back() = _name.back() + '/' + convertToString(_sorts.size());
 	_arityincluded = true;
 }
 
 void NSPair::includeFuncArity() {
 	assert(_sortsincluded && !_arityincluded); 
-	_name.back() = _name.back() + '/' + toString(_sorts.size() - 1);
+	_name.back() = _name.back() + '/' + convertToString(_sorts.size() - 1);
 	_arityincluded = true;
 }
 
 void NSPair::includeArity(unsigned int n) {
 	assert(!_arityincluded); 
-	_name.back() = _name.back() + '/' + toString(n);
+	_name.back() = _name.back() + '/' + convertToString(n);
 	_arityincluded = true;
 }
 
-string NSPair::to_string() {
+string NSPair::toString() {
 	assert(!_name.empty());
 	string str = _name[0];
 	for(unsigned int n = 1; n < _name.size(); ++n) str = str + "::" + _name[n];
@@ -1188,7 +1188,7 @@ Sort* Insert::sortpointer(const longname& vs, YYLTYPE l) const {
 
 Predicate* Insert::predpointer(longname& vs, int arity, YYLTYPE l) const {
 	ParseInfo pi = parseinfo(l);
-	vs.back() = vs.back() + '/' + toString(arity);
+	vs.back() = vs.back() + '/' + convertToString(arity);
 	Predicate* p = predInScope(vs,pi);
 	if(!p) Error::undeclpred(oneName(vs),pi);
 	return p;
@@ -1205,7 +1205,7 @@ Predicate* Insert::predpointer(longname& vs, const vector<Sort*>& va, YYLTYPE l)
 
 Function* Insert::funcpointer(longname& vs, int arity, YYLTYPE l) const {
 	ParseInfo pi = parseinfo(l);
-	vs.back() = vs.back() + '/' + toString(arity);
+	vs.back() = vs.back() + '/' + convertToString(arity);
 	Function* f = funcInScope(vs,pi);
 	if(!f) Error::undeclfunc(oneName(vs),pi);
 	return f;
@@ -1326,7 +1326,7 @@ Sort* Insert::sort(const string& name, const vector<Sort*> supbs, bool p, YYLTYP
 
 Predicate* Insert::predicate(const string& name, const vector<Sort*>& sorts, YYLTYPE l) const {
 	ParseInfo pi = parseinfo(l);
-	string nar = string(name) + '/' + toString(sorts.size());
+	string nar = string(name) + '/' + convertToString(sorts.size());
 	for(unsigned int n = 0; n < sorts.size(); ++n) {
 		if(!sorts[n]) return 0;
 	}
@@ -1342,7 +1342,7 @@ Predicate* Insert::predicate(const string& name, YYLTYPE l) const {
 
 Function* Insert::function(const string& name, const vector<Sort*>& insorts, Sort* outsort, YYLTYPE l) const {
 	ParseInfo pi = parseinfo(l);
-	string nar = string(name) + '/' + toString(insorts.size());
+	string nar = string(name) + '/' + convertToString(insorts.size());
 	for(unsigned int n = 0; n < insorts.size(); ++n) {
 		if(!insorts[n]) return 0;
 	}
@@ -1475,7 +1475,7 @@ Formula* Insert::falseform(YYLTYPE l) const {
 
 Formula* Insert::predform(NSPair* nst, const vector<Term*>& vt, YYLTYPE l) const {
 	if(nst->_sortsincluded) {
-		if((nst->_sorts).size() != vt.size()) Error::incompatiblearity(nst->to_string(),nst->_pi);
+		if((nst->_sorts).size() != vt.size()) Error::incompatiblearity(nst->toString(),nst->_pi);
 		if(nst->_func) Error::prednameexpected(nst->_pi);
 	}
 	nst->includeArity(vt.size());
@@ -1500,7 +1500,7 @@ Formula* Insert::predform(NSPair* nst, const vector<Term*>& vt, YYLTYPE l) const
 		}
 		else Error::prednotintheovoc(p->name(),_currtheory->name(),nst->_pi);
 	}
-	else Error::undeclpred(nst->to_string(),nst->_pi);
+	else Error::undeclpred(nst->toString(),nst->_pi);
 	
 	// Cleanup
 	if(!pf) {
@@ -1518,7 +1518,7 @@ Formula* Insert::predform(NSPair* t, YYLTYPE l) const {
 
 Formula* Insert::funcgraphform(NSPair* nst, const vector<Term*>& vt, Term* t, YYLTYPE l) const {
 	if(nst->_sortsincluded) {
-		if((nst->_sorts).size() != vt.size() + 1) Error::incompatiblearity(nst->to_string(),nst->_pi);
+		if((nst->_sorts).size() != vt.size() + 1) Error::incompatiblearity(nst->toString(),nst->_pi);
 		if(!nst->_func) Error::funcnameexpected(nst->_pi);
 	}
 	nst->includeArity(vt.size());
@@ -1543,7 +1543,7 @@ Formula* Insert::funcgraphform(NSPair* nst, const vector<Term*>& vt, Term* t, YY
 		}
 		else Error::funcnotintheovoc(f->name(),_currtheory->name(),nst->_pi);
 	}
-	else Error::undeclfunc(nst->to_string(),nst->_pi);
+	else Error::undeclfunc(nst->toString(),nst->_pi);
 
 	// Cleanup
 	if(!pf) {
@@ -1718,7 +1718,7 @@ Sort* Insert::theosortpointer(const vector<string>& vs, YYLTYPE l) const {
 
 Term* Insert::functerm(NSPair* nst, const vector<Term*>& vt) {
 	if(nst->_sortsincluded) {
-		if((nst->_sorts).size() != vt.size()+1) Error::incompatiblearity(nst->to_string(),nst->_pi);
+		if((nst->_sorts).size() != vt.size()+1) Error::incompatiblearity(nst->toString(),nst->_pi);
 		if(!nst->_func) Error::funcnameexpected(nst->_pi);
 	}
 	nst->includeArity(vt.size());
@@ -1742,7 +1742,7 @@ Term* Insert::functerm(NSPair* nst, const vector<Term*>& vt) {
 		}
 		else Error::funcnotintheovoc(f->name(),_currtheory->name(),nst->_pi);
 	}
-	else Error::undeclfunc(nst->to_string(),nst->_pi);
+	else Error::undeclfunc(nst->toString(),nst->_pi);
 
 	// Cleanup
 	if(!t) {
@@ -1962,13 +1962,13 @@ void Insert::emptyinter(NSPair* nst) const {
 	else {
 		ParseInfo pi = nst->_pi;
 		std::set<Predicate*> vp = noArPredInScope(nst->_name,pi);
-		if(vp.empty()) Error::undeclpred(nst->to_string(),pi);
+		if(vp.empty()) Error::undeclpred(nst->toString(),pi);
 		else if(vp.size() > 1) {
 			std::set<Predicate*>::const_iterator it = vp.begin();
 			Predicate* p1 = *it; 
 			++it;
 			Predicate* p2 = *it;
-			Error::overloadedpred(nst->to_string(),p1->pi(),p2->pi(),pi);
+			Error::overloadedpred(nst->toString(),p1->pi(),p2->pi(),pi);
 		}
 		else {
 			EnumeratedInternalPredTable* ipt = new EnumeratedInternalPredTable();
@@ -1981,7 +1981,7 @@ void Insert::emptyinter(NSPair* nst) const {
 void Insert::predinter(NSPair* nst, PredTable* t) const {
 	ParseInfo pi = nst->_pi;
 	if(nst->_sortsincluded) {
-		if((nst->_sorts).size() != t->arity()) Error::incompatiblearity(nst->to_string(),pi);
+		if((nst->_sorts).size() != t->arity()) Error::incompatiblearity(nst->toString(),pi);
 		if(nst->_func) Error::prednameexpected(pi);
 	}
 	nst->includeArity(t->arity());
@@ -1994,9 +1994,9 @@ void Insert::predinter(NSPair* nst, PredTable* t) const {
 			PredInter* inter = _currstructure->inter(p);
 			inter->ctpt(nt);
 		}
-		else Error::prednotinstructvoc(nst->to_string(),_currstructure->name(),pi);
+		else Error::prednotinstructvoc(nst->toString(),_currstructure->name(),pi);
 	}
-	else Error::undeclpred(nst->to_string(),pi);
+	else Error::undeclpred(nst->toString(),pi);
 	delete(nst);
 }
 
@@ -2004,7 +2004,7 @@ void Insert::predinter(NSPair* nst, PredTable* t) const {
 void Insert::funcinter(NSPair* nst, FuncTable* t) const {
 	ParseInfo pi = nst->_pi;
 	if(nst->_sortsincluded) {
-		if((nst->_sorts).size() != t->arity()+1) Error::incompatiblearity(nst->to_string(),pi);
+		if((nst->_sorts).size() != t->arity()+1) Error::incompatiblearity(nst->toString(),pi);
 		if(!(nst->_func)) Error::funcnameexpected(pi);
 	}
 	nst->includeArity(t->arity());
@@ -2017,9 +2017,9 @@ void Insert::funcinter(NSPair* nst, FuncTable* t) const {
 			FuncInter* inter = _currstructure->inter(f);
 			inter->functable(nt);
 		}
-		else Error::funcnotinstructvoc(nst->to_string(),_currstructure->name(),pi);
+		else Error::funcnotinstructvoc(nst->toString(),_currstructure->name(),pi);
 	}
-	else Error::undeclfunc(nst->to_string(),pi);
+	else Error::undeclfunc(nst->toString(),pi);
 	delete(nst);
 }
 
@@ -2031,17 +2031,17 @@ void Insert::constructor(NSPair* nst) const {
 		nst->includeFuncArity();
 		f = funcInScope(nst->_name,pi);
 		if(f) f = f->resolve(nst->_sorts);
-		else Error::undeclfunc(nst->to_string(),pi);
+		else Error::undeclfunc(nst->toString(),pi);
 	}
 	else {
 		std::set<Function*> vf = noArFuncInScope(nst->_name,pi);
-		if(vf.empty()) Error::undeclfunc(nst->to_string(),pi);
+		if(vf.empty()) Error::undeclfunc(nst->toString(),pi);
 		else if(vf.size() > 1) {
 			std::set<Function*>::const_iterator it = vf.begin();
 			Function* f1 = *it; 
 			++it;
 			Function* f2 = *it;
-			Error::overloadedfunc(nst->to_string(),f1->pi(),f2->pi(),pi);
+			Error::overloadedfunc(nst->toString(),f1->pi(),f2->pi(),pi);
 		}
 		else f = *(vf.begin());
 	}
@@ -2052,7 +2052,7 @@ void Insert::constructor(NSPair* nst) const {
 			FuncInter* inter = _currstructure->inter(f);
 			inter->functable(ft);
 		}
-		else Error::funcnotinstructvoc(nst->to_string(),_currstructure->name(),pi);
+		else Error::funcnotinstructvoc(nst->toString(),_currstructure->name(),pi);
 	}
 }
 
@@ -2061,7 +2061,7 @@ void Insert::sortinter(NSPair* nst, SortTable* t) const {
 	longname name = nst->_name;
 	Sort* s = sortInScope(name,pi);
 	if(nst->_sortsincluded) {
-		if((nst->_sorts).size() != 1) Error::incompatiblearity(nst->to_string(),pi);
+		if((nst->_sorts).size() != 1) Error::incompatiblearity(nst->toString(),pi);
 		if(nst->_func) Error::prednameexpected(pi);
 	}
 	nst->includeArity(1);
@@ -2082,9 +2082,9 @@ void Insert::sortinter(NSPair* nst, SortTable* t) const {
 			i->ctpt(pt);
 			delete(t);
 		}
-		else Error::prednotinstructvoc(nst->to_string(),_currstructure->name(),pi);
+		else Error::prednotinstructvoc(nst->toString(),_currstructure->name(),pi);
 	}
-	else Error::undeclpred(nst->to_string(),pi);
+	else Error::undeclpred(nst->toString(),pi);
 	delete(nst);
 }
 
@@ -2230,13 +2230,13 @@ void Insert::inter(NSPair* nsp, const longname& procedure, YYLTYPE l) const {
 		else {
 				ParseInfo pi = nsp->_pi;
 			std::set<Predicate*> vp = noArPredInScope(nsp->_name,pi);
-			if(vp.empty()) Error::undeclpred(nsp->to_string(),pi);
+			if(vp.empty()) Error::undeclpred(nsp->toString(),pi);
 			else if(vp.size() > 1) {
 				std::set<Predicate*>::const_iterator it = vp.begin();
 				Predicate* p1 = *it; 
 				++it;
 				Predicate* p2 = *it;
-				Error::overloadedpred(nsp->to_string(),p1->pi(),p2->pi(),pi);
+				Error::overloadedpred(nsp->toString(),p1->pi(),p2->pi(),pi);
 			}
 			else {
 				for(vector<Sort*>::const_iterator it = (*(vp.begin()))->sorts().begin(); it != (*(vp.begin()))->sorts().end(); ++it) {
@@ -2262,13 +2262,13 @@ void Insert::emptythreeinter(NSPair* nst, const string& utf) {
 	else {
 		ParseInfo pi = nst->_pi;
 		std::set<Predicate*> vp = noArPredInScope(nst->_name,pi);
-		if(vp.empty()) Error::undeclpred(nst->to_string(),pi);
+		if(vp.empty()) Error::undeclpred(nst->toString(),pi);
 		else if(vp.size() > 1) {
 			std::set<Predicate*>::const_iterator it = vp.begin();
 			Predicate* p1 = *it; 
 			++it;
 			Predicate* p2 = *it;
-			Error::overloadedpred(nst->to_string(),p1->pi(),p2->pi(),pi);
+			Error::overloadedpred(nst->toString(),p1->pi(),p2->pi(),pi);
 		}
 		else {
 			EnumeratedInternalPredTable* ipt = new EnumeratedInternalPredTable();
@@ -2281,7 +2281,7 @@ void Insert::emptythreeinter(NSPair* nst, const string& utf) {
 void Insert::threepredinter(NSPair* nst, const string& utf, PredTable* t) {
 	ParseInfo pi = nst->_pi;
 	if(nst->_sortsincluded) {
-		if((nst->_sorts).size() != t->arity()) Error::incompatiblearity(nst->to_string(),pi);
+		if((nst->_sorts).size() != t->arity()) Error::incompatiblearity(nst->toString(),pi);
 		if(nst->_func) Error::prednameexpected(pi);
 	}
 	nst->includeArity(t->arity());
@@ -2319,17 +2319,17 @@ void Insert::threepredinter(NSPair* nst, const string& utf, PredTable* t) {
 						assert(false);
 				}
 			}
-			else Error::prednotinstructvoc(nst->to_string(),_currstructure->name(),pi);
+			else Error::prednotinstructvoc(nst->toString(),_currstructure->name(),pi);
 		}
 	}
-	else Error::undeclpred(nst->to_string(),pi);
+	else Error::undeclpred(nst->toString(),pi);
 	delete(nst);
 }
 
 void Insert::threefuncinter(NSPair* nst, const string& utf, PredTable* t) {
 	ParseInfo pi = nst->_pi;
 	if(nst->_sortsincluded) {
-		if((nst->_sorts).size() != t->arity()) Error::incompatiblearity(nst->to_string(),pi);
+		if((nst->_sorts).size() != t->arity()) Error::incompatiblearity(nst->toString(),pi);
 		if(!(nst->_func)) Error::funcnameexpected(pi);
 	}
 	nst->includeArity(t->arity()-1);
@@ -2363,9 +2363,9 @@ void Insert::threefuncinter(NSPair* nst, const string& utf, PredTable* t) {
 					assert(false);
 			}
 		}
-		else Error::funcnotinstructvoc(nst->to_string(),_currstructure->name(),pi);
+		else Error::funcnotinstructvoc(nst->toString(),_currstructure->name(),pi);
 	}
-	else Error::undeclfunc(nst->to_string(),pi);
+	else Error::undeclfunc(nst->toString(),pi);
 }
 
 void Insert::threepredinter(NSPair* nst, const string& utf, SortTable* t) {
@@ -2409,7 +2409,7 @@ pair<char,char>* Insert::range(char c1, char c2, YYLTYPE l) const {
 const Compound* Insert::compound(NSPair* nst, const vector<const DomainElement*>& vte) const {
 	ParseInfo pi = nst->_pi;
 	if(nst->_sortsincluded) {
-		if((nst->_sorts).size() != vte.size()+1) Error::incompatiblearity(nst->to_string(),pi);
+		if((nst->_sorts).size() != vte.size()+1) Error::incompatiblearity(nst->toString(),pi);
 		if(!(nst->_func)) Error::funcnameexpected(pi);
 	}
 	nst->includeArity(vte.size());
@@ -2418,9 +2418,9 @@ const Compound* Insert::compound(NSPair* nst, const vector<const DomainElement*>
 	if(f && nst->_sortsincluded && (nst->_sorts).size() == vte.size()+1) f = f->resolve(nst->_sorts);
 	if(f) {
 		if(belongsToVoc(f)) return DomainElementFactory::instance()->compound(f,vte);
-		else Error::funcnotinstructvoc(nst->to_string(),_currstructure->name(),pi);
+		else Error::funcnotinstructvoc(nst->toString(),_currstructure->name(),pi);
 	}
-	else Error::undeclfunc(nst->to_string(),pi);
+	else Error::undeclfunc(nst->toString(),pi);
 	return c;
 }
 
@@ -2432,7 +2432,7 @@ const Compound* Insert::compound(NSPair* nst) const {
 void Insert::predatom(NSPair* nst, const vector<ElRange>& args, bool t) const {
 	ParseInfo pi = nst->_pi;
 	if(nst->_sortsincluded) {
-		if((nst->_sorts).size() != args.size()) Error::incompatiblearity(nst->to_string(),pi);
+		if((nst->_sorts).size() != args.size()) Error::incompatiblearity(nst->toString(),pi);
 		if(nst->_func) Error::prednameexpected(pi);
 	}
 	nst->includeArity(args.size());
@@ -2516,9 +2516,9 @@ void Insert::predatom(NSPair* nst, const vector<ElRange>& args, bool t) const {
 				}
 			}
 		}
-		else Error::prednotinstructvoc(nst->to_string(),_currstructure->name(),pi);
+		else Error::prednotinstructvoc(nst->toString(),_currstructure->name(),pi);
 	}
-	else Error::undeclpred(nst->to_string(),pi);
+	else Error::undeclpred(nst->toString(),pi);
 	delete(nst);
 }
 
@@ -2597,7 +2597,7 @@ void Insert::option(const string& opt, double val,YYLTYPE l) const {
 	ParseInfo pi = parseinfo(l);
 	if(_curroptions->isoption(opt)) {
 		if(_curroptions->setvalue(opt,val)) { } // do nothing
-		else Error::wrongvalue(opt,toString(val),pi);
+		else Error::wrongvalue(opt,convertToString(val),pi);
 	}
 	else Error::unknoption(opt,pi);
 }
@@ -2606,7 +2606,7 @@ void Insert::option(const string& opt, int val,YYLTYPE l) const {
 	ParseInfo pi = parseinfo(l);
 	if(_curroptions->isoption(opt)) {
 		if(_curroptions->setvalue(opt,val)) { } // do nothing
-		else Error::wrongvalue(opt,toString(val),pi);
+		else Error::wrongvalue(opt,convertToString(val),pi);
 	}
 	else Error::unknoption(opt,pi);
 }

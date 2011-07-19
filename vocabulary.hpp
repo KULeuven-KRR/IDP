@@ -74,7 +74,7 @@ class Sort {
 
 		// Output
 		std::ostream&	put(std::ostream&, bool longnames = true)	const;
-		std::string		to_string()									const;
+		std::string		toString()									const;
 
 		friend class Vocabulary;
 };
@@ -122,7 +122,7 @@ class Variable {
 
 		// Output
 		std::ostream&	put(std::ostream&)	const;
-		std::string		to_string()			const;
+		std::string		toString()			const;
 
 };
 
@@ -186,7 +186,7 @@ class PFSymbol {
 
 		// Output
 		virtual std::ostream&	put(std::ostream&, bool longnames = true)	const = 0;
-				std::string		to_string(bool longnames = true)			const;
+				std::string		toString(bool longnames = true)	const;
 
 		friend class Vocabulary;
 };
@@ -395,7 +395,7 @@ class Function : public PFSymbol {
 
 		// Output
 		std::ostream&	put(std::ostream&, bool longnames = true)	const;
-		std::string		to_string(bool longnames = true)			const;
+		std::string		toString(bool longnames = true)			const;
 
 		friend class Vocabulary;
 };
@@ -600,7 +600,7 @@ class Vocabulary {
 		// Output
 		std::ostream& putname(std::ostream&)					const;
 		std::ostream& put(std::ostream&, unsigned int tabs = 0)	const;
-		std::string to_string(unsigned int tabs = 0)			const;
+		std::string toString(unsigned int tabs = 0)			const;
 
 		friend class Namespace;
 

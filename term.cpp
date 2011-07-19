@@ -48,7 +48,7 @@ bool Term::contains(const Variable* v) const {
 	return false;
 }
 
-string Term::to_string() const {
+string Term::toString() const {
 	stringstream sstr;
 	put(sstr);
 	return sstr.str();
@@ -272,7 +272,7 @@ bool SetExpr::contains(const Variable* v) const {
 	return false;
 }
 
-std::string SetExpr::to_string() const {
+std::string SetExpr::toString() const {
 	stringstream sstr;
 	put(sstr);
 	return sstr.str();

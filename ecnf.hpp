@@ -268,7 +268,7 @@ class GroundDefinition : public AbstractDefinition {
 
 		// Debugging
 		std::ostream&	put(std::ostream&,unsigned int spaces = 0) const;
-		std::string to_string(unsigned int spaces = 0) const;
+		std::string toString(unsigned int spaces = 0) const;
 };
 
 
@@ -298,7 +298,7 @@ class CPReification { //TODO ?
 		int 		_head;
 		CPTsBody* 	_body;
 		CPReification(int head, CPTsBody* body): _head(head), _body(body) { }
-		std::string to_string(unsigned int spaces = 0) const;
+		std::string toString(unsigned int spaces = 0) const;
 		void accept(TheoryVisitor* v) const { v->visit(this);	}
 };
 
@@ -310,159 +310,159 @@ class CPReification { //TODO ?
  * Implements base class for ground theories
  */
 class AbstractGroundTheory : public AbstractTheory {
-protected:
-	AbstractStructure*		_structure;			//!< The ground theory may be partially reduced with respect to this structure.
-	GroundTranslator*		_translator;		//!< Link between ground atoms and SAT-solver literals.
-	GroundTermTranslator*	_termtranslator;	//!< Link between ground terms and CP-solver variables.
+	protected:
+		AbstractStructure*		_structure;			//!< The ground theory may be partially reduced with respect to this structure.
+		GroundTranslator*		_translator;		//!< Link between ground atoms and SAT-solver literals.
+		GroundTermTranslator*	_termtranslator;	//!< Link between ground terms and CP-solver variables.
 
-	std::set<int>			_printedtseitins;		//!< Tseitin atoms produced by the translator that occur in the theory.
-	std::set<int>			_printedsets;			//!< Set numbers produced by the translator that occur in the theory.
-	std::set<int>			_printedconstraints;	//!< Atoms for which a connection to CP constraints are added.
-	std::set<CPTerm*>		_foldedterms;
+		std::set<int>			_printedtseitins;		//!< Tseitin atoms produced by the translator that occur in the theory.
+		std::set<int>			_printedsets;			//!< Set numbers produced by the translator that occur in the theory.
+		std::set<int>			_printedconstraints;	//!< Atoms for which a connection to CP constraints are added.
+		std::set<CPTerm*>		_foldedterms;
 
-	const 	GroundTranslator& getTranslator() const	{ return *_translator; }
-			GroundTranslator& getTranslator() 		{ return *_translator; }
+		const 	GroundTranslator& getTranslator() const	{ return *_translator; }
+				GroundTranslator& getTranslator() 		{ return *_translator; }
 
-public:
-	// Constructors
-	AbstractGroundTheory(AbstractStructure* str);
-	AbstractGroundTheory(Vocabulary* voc, AbstractStructure* str);
+	public:
+		// Constructors
+		AbstractGroundTheory(AbstractStructure* str);
+		AbstractGroundTheory(Vocabulary* voc, AbstractStructure* str);
 
-	// Destructor
-	virtual void recursiveDelete() = 0;
-	virtual	~AbstractGroundTheory();
+		// Destructor
+		virtual void recursiveDelete() = 0;
+		virtual	~AbstractGroundTheory();
 
-	// Mutators
-			void 	add(Formula* )		{ assert(false);	}
-			void 	add(Definition* )	{ assert(false);	}
-			void 	add(FixpDef* )		{ assert(false);	}
+		// Mutators
+				void 	add(Formula* )		{ assert(false);	}
+				void 	add(Definition* )	{ assert(false);	}
+				void 	add(FixpDef* )		{ assert(false);	}
 
-			void 	transformForAdd(const std::vector<int>& vi, VIType vit, int defnr, bool skipfirst = false);
+				void 	transformForAdd(const std::vector<int>& vi, VIType vit, int defnr, bool skipfirst = false);
 
-			CPTerm*	foldCPTerm(CPTerm*);
+				CPTerm*	foldCPTerm(CPTerm*);
 
-	virtual void 	addClause(GroundClause& cl, bool skipfirst = false)		= 0;
-	virtual void 	addDefinition(GroundDefinition*)						= 0;
-	virtual void 	addFixpDef(GroundFixpDef*)								= 0;
-	virtual void 	addSet(int setnr, int defnr, bool weighted)				= 0;
-	virtual	void 	addAggregate(int tseitin, AggTsBody* body)				= 0;
-	virtual void 	addCPReification(int tseitin, CPTsBody* body)			= 0;
+		virtual void 	addClause(GroundClause& cl, bool skipfirst = false)		= 0;
+		virtual void 	addDefinition(GroundDefinition*)						= 0;
+		virtual void 	addFixpDef(GroundFixpDef*)								= 0;
+		virtual void 	addSet(int setnr, int defnr, bool weighted)				= 0;
+		virtual	void 	addAggregate(int tseitin, AggTsBody* body)				= 0;
+		virtual void 	addCPReification(int tseitin, CPTsBody* body)			= 0;
 
-			void 	addEmptyClause()		{ GroundClause c(0); addClause(c);		}
-			void 	addUnitClause(int l)	{ GroundClause c(1,l); addClause(c);	}
+				void 	addEmptyClause()		{ GroundClause c(0); addClause(c);		}
+				void 	addUnitClause(int l)	{ GroundClause c(1,l); addClause(c);	}
 
-	virtual void 	addPCRule(int defnr, int tseitin, PCTsBody* body, bool recursive)= 0;
-	virtual void 	addAggRule(int defnr, int tseitin, AggTsBody* body, bool recursive)		= 0;
+		virtual void 	addPCRule(int defnr, int tseitin, PCTsBody* body, bool recursive)= 0;
+		virtual void 	addAggRule(int defnr, int tseitin, AggTsBody* body, bool recursive)		= 0;
 
-			void	addFuncConstraints();
+				void	addFuncConstraints();
 
-	// Inspectors
-	GroundTranslator*		translator()		const { return _translator;			}
-	GroundTermTranslator*	termtranslator()	const { return _termtranslator; 	}
-	AbstractStructure*		structure()			const { return _structure;			}
-	AbstractGroundTheory*	clone()				const { assert(false); return NULL;/* TODO */	}
+		// Inspectors
+		GroundTranslator*		translator()		const { return _translator;			}
+		GroundTermTranslator*	termtranslator()	const { return _termtranslator; 	}
+		AbstractStructure*		structure()			const { return _structure;			}
+		AbstractGroundTheory*	clone()				const { assert(false); return NULL;/* TODO */	}
 };
 
 /**
  *	A SolverTheory is a ground theory, stored as an instance of a SAT solver
  */
 class SolverTheory : public AbstractGroundTheory {
-private:
-	SATSolver*							_solver;		// The SAT solver
-	std::map<PFSymbol*,std::set<int> >	_defined;		// Symbols that are defined in the theory. This set is used to
-														// communicate to the solver which ground atoms should be considered defined.
-	std::set<unsigned int> 				_addedvarids;	// Variable ids that have already been added, together with their domain.
+	private:
+		SATSolver*							_solver;		// The SAT solver
+		std::map<PFSymbol*,std::set<int> >	_defined;		// Symbols that are defined in the theory. This set is used to
+															// communicate to the solver which ground atoms should be considered defined.
+		std::set<unsigned int> 				_addedvarids;	// Variable ids that have already been added, together with their domain.
 
-	int	_verbosity;
+		int	_verbosity;
 
-	const 	SATSolver& getSolver() const	{ return *_solver; }
-			SATSolver& getSolver() 			{ return *_solver; }
+		const 	SATSolver& getSolver() const	{ return *_solver; }
+				SATSolver& getSolver() 			{ return *_solver; }
 
-public:
-	// Constructors
-	SolverTheory(SATSolver* solver, AbstractStructure* str, int verbosity);
-	SolverTheory(Vocabulary* voc, SATSolver* solver, AbstractStructure* str, int verbosity);
+	public:
+		// Constructors
+		SolverTheory(SATSolver* solver, AbstractStructure* str, int verbosity);
+		SolverTheory(Vocabulary* voc, SATSolver* solver, AbstractStructure* str, int verbosity);
 
-	// Destructors
-	void recursiveDelete() { delete(this);	}
+		// Destructors
+		void recursiveDelete() { delete(this);	}
 
-	// Mutators
-	virtual void	addClause(GroundClause& cl, bool skipfirst = false);
-	virtual void	addDefinition(GroundDefinition*);
-	virtual void	addFixpDef(GroundFixpDef*);
-	virtual void	addSet(int setnr, int defnr, bool weighted);
-	virtual void	addAggregate(int tseitin, AggTsBody* body);
-	virtual void 	addCPReification(int tseitin, CPTsBody* body);
+		// Mutators
+		virtual void	addClause(GroundClause& cl, bool skipfirst = false);
+		virtual void	addDefinition(GroundDefinition*);
+		virtual void	addFixpDef(GroundFixpDef*);
+		virtual void	addSet(int setnr, int defnr, bool weighted);
+		virtual void	addAggregate(int tseitin, AggTsBody* body);
+		virtual void 	addCPReification(int tseitin, CPTsBody* body);
 
-	virtual void	addPCRule(int defnr, int tseitin, PCTsBody* body, bool recursive);
-	virtual void	addAggRule(int defnr, int tseitin, AggTsBody* body, bool recursive);
+		virtual void	addPCRule(int defnr, int tseitin, PCTsBody* body, bool recursive);
+		virtual void	addAggRule(int defnr, int tseitin, AggTsBody* body, bool recursive);
 
-			void	addFalseDefineds();
+				void	addFalseDefineds();
 
-	// Visitor
-	virtual void			accept(TheoryVisitor* v) const		{ v->visit(this);			}
-	virtual AbstractTheory*	accept(TheoryMutatingVisitor* v)	{ return v->visit(this);	}
+		// Visitor
+		virtual void			accept(TheoryVisitor* v) const		{ v->visit(this);			}
+		virtual AbstractTheory*	accept(TheoryMutatingVisitor* v)	{ return v->visit(this);	}
 
-	// Debugging
-	virtual std::ostream&	put(std::ostream& output, unsigned int)	const { assert(false); /* TODO */ return output;	   }
-	virtual std::string		to_string()								const { assert(false); return ""; /*TODO might be implemented in the future (if solver supports it)*/	}
+		// Debugging
+		virtual std::ostream&	put(std::ostream& output, unsigned int)	const { assert(false); /* TODO */ return output;	   }
+		virtual std::string		to_string()								const { assert(false); return ""; /*TODO might be implemented in the future (if solver supports it)*/	}
 
-private:
-	void 	addAggregate(int definitionID, int head, bool lowerbound, int setnr, AggFunction aggtype, TsType sem, double bound);
-	void 	addPCRule(int definitionID, int head, std::vector<int> body, bool conjunctive, bool recursive);
-	void	addPCRule(int defnr, int head, PCGroundRuleBody* body, bool recursive);
-	void	addAggRule(int defnr, int head, AggGroundRuleBody* body, bool recursive);
-	void	addCPVariable(const VarId&);
-	void	addCPVariables(const std::vector<VarId>&);
+	private:
+		void 	addAggregate(int definitionID, int head, bool lowerbound, int setnr, AggFunction aggtype, TsType sem, double bound);
+		void 	addPCRule(int definitionID, int head, std::vector<int> body, bool conjunctive, bool recursive);
+		void	addPCRule(int defnr, int head, PCGroundRuleBody* body, bool recursive);
+		void	addAggRule(int defnr, int head, AggGroundRuleBody* body, bool recursive);
+		void	addCPVariable(const VarId&);
+		void	addCPVariables(const std::vector<VarId>&);
 };
 
 class GroundTheory : public AbstractGroundTheory {
-private:
-	std::vector<GroundClause>		_clauses;
-	std::vector<GroundDefinition*>	_definitions;
-	std::vector<GroundFixpDef*>		_fixpdefs;
-	std::vector<GroundSet*>			_sets;
-	std::vector<GroundAggregate*>	_aggregates;
-	std::vector<CPReification*>		_cpreifications;
+	private:
+		std::vector<GroundClause>		_clauses;
+		std::vector<GroundDefinition*>	_definitions;
+		std::vector<GroundFixpDef*>		_fixpdefs;
+		std::vector<GroundSet*>			_sets;
+		std::vector<GroundAggregate*>	_aggregates;
+		std::vector<CPReification*>		_cpreifications;
 
-public:
-	// Constructors
-	GroundTheory(AbstractStructure* str) : AbstractGroundTheory(str) { }
-	GroundTheory(Vocabulary* voc, AbstractStructure* str) : AbstractGroundTheory(voc,str)	{ }
-	void recursiveDelete();
+	public:
+		// Constructors
+		GroundTheory(AbstractStructure* str) : AbstractGroundTheory(str) { }
+		GroundTheory(Vocabulary* voc, AbstractStructure* str) : AbstractGroundTheory(voc,str)	{ }
+		void recursiveDelete();
 
-	// Mutators
-	void	addClause(GroundClause& cl, bool skipfirst = false);
-	void	addDefinition(GroundDefinition*);
-	void	addFixpDef(GroundFixpDef*);
-	void	addSet(int setnr, int defnr, bool weighted);
-	void	addAggregate(int tseitin, AggTsBody* body);
-	void 	addCPReification(int tseitin, CPTsBody* body);
+		// Mutators
+		void	addClause(GroundClause& cl, bool skipfirst = false);
+		void	addDefinition(GroundDefinition*);
+		void	addFixpDef(GroundFixpDef*);
+		void	addSet(int setnr, int defnr, bool weighted);
+		void	addAggregate(int tseitin, AggTsBody* body);
+		void 	addCPReification(int tseitin, CPTsBody* body);
 
-	void	addPCRule(int defnr, int tseitin, PCTsBody* body, bool recursive);
-	void	addAggRule(int defnr, int tseitin, AggTsBody* body, bool recursive);
+		void	addPCRule(int defnr, int tseitin, PCTsBody* body, bool recursive);
+		void	addAggRule(int defnr, int tseitin, AggTsBody* body, bool recursive);
 
-	// Inspectors
-	unsigned int		nrClauses()						const { return _clauses.size();							}
-	unsigned int		nrDefinitions()					const { return _definitions.size();						}
-	unsigned int		nrFixpDefs()					const { return _fixpdefs.size();						}
-	unsigned int		nrSets()						const { return _sets.size();							}
-	unsigned int		nrAggregates()					const { return _aggregates.size();						}
-	unsigned int 		nrCPReifications()				const { return _cpreifications.size();					}
-	GroundClause		clause(unsigned int n)			const { return _clauses[n];								}
-	GroundDefinition*	definition(unsigned int n)		const { return _definitions[n];							}
-	GroundFixpDef*		fixpdef(unsigned int n)			const { return _fixpdefs[n];							}
-	GroundSet*			set(unsigned int n)				const { return _sets[n];								}
-	GroundAggregate*	aggregate(unsigned int n)		const { return _aggregates[n];							}
-	CPReification*		cpreification(unsigned int n)	const { return _cpreifications[n];						}
+		// Inspectors
+		unsigned int		nrClauses()						const { return _clauses.size();							}
+		unsigned int		nrDefinitions()					const { return _definitions.size();						}
+		unsigned int		nrFixpDefs()					const { return _fixpdefs.size();						}
+		unsigned int		nrSets()						const { return _sets.size();							}
+		unsigned int		nrAggregates()					const { return _aggregates.size();						}
+		unsigned int 		nrCPReifications()				const { return _cpreifications.size();					}
+		GroundClause		clause(unsigned int n)			const { return _clauses[n];								}
+		GroundDefinition*	definition(unsigned int n)		const { return _definitions[n];							}
+		GroundFixpDef*		fixpdef(unsigned int n)			const { return _fixpdefs[n];							}
+		GroundSet*			set(unsigned int n)				const { return _sets[n];								}
+		GroundAggregate*	aggregate(unsigned int n)		const { return _aggregates[n];							}
+		CPReification*		cpreification(unsigned int n)	const { return _cpreifications[n];						}
 
-	// Visitor
-	void			accept(TheoryVisitor* v) const		{ v->visit(this);			}
-	AbstractTheory*	accept(TheoryMutatingVisitor* v)	{ return v->visit(this);	}
+		// Visitor
+		void			accept(TheoryVisitor* v) const		{ v->visit(this);			}
+		AbstractTheory*	accept(TheoryMutatingVisitor* v)	{ return v->visit(this);	}
 
-	// Debugging
-	std::ostream&	put(std::ostream&, unsigned int spaces = 0)	const;
-	std::string		to_string()									const;
+		// Debugging
+		std::ostream&	put(std::ostream&, unsigned int spaces = 0)	const;
+		std::string		to_string()									const;
 };
 
 #endif

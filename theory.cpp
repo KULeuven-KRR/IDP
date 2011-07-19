@@ -19,7 +19,7 @@ using namespace std;
 	TheoryComponent
 **********************/
 
-string TheoryComponent::to_string(unsigned int spaces) const {
+string TheoryComponent::toString(unsigned int spaces) const {
 	stringstream sstr;
 	put(sstr,spaces);
 	return sstr.str();
@@ -420,7 +420,7 @@ ostream& Rule::put(ostream& output, unsigned int spaces) const {
 	return output;
 }
 
-string Rule::to_string(unsigned int spaces) const {
+string Rule::toString(unsigned int spaces) const {
 	stringstream sstr;
 	put(sstr,spaces);
 	return sstr.str();
@@ -1523,14 +1523,14 @@ namespace FormulaUtils {
 }
 
 namespace TheoryUtils {
-	void push_negations(AbstractTheory* t)		{ NegationPush np; t->accept(&np);			}
-	void remove_equiv(AbstractTheory* t)		{ EquivRemover er; t->accept(&er);			}
-	void flatten(AbstractTheory* t)				{ Flattener f; t->accept(&f);				}
-	void remove_eqchains(AbstractTheory* t)		{ EqChainRemover er; t->accept(&er);		}
-	void move_quantifiers(AbstractTheory* t)	{ QuantMover qm; t->accept(&qm);			}
-	void remove_nesting(AbstractTheory* t)		{ AllTermMover atm; t->accept(&atm);		}
-	void completion(AbstractTheory* t)			{ Completer c; t->accept(&c);				}
-	int  nrSubformulas(AbstractTheory* t)		{ FormulaCounter c; t->accept(&c); return c.result();	}
+	void pushNegations(AbstractTheory* t)	{ NegationPush np; t->accept(&np);			}
+	void removeEquiv(AbstractTheory* t)		{ EquivRemover er; t->accept(&er);			}
+	void flatten(AbstractTheory* t)			{ Flattener f; t->accept(&f);				}
+	void removeEqchains(AbstractTheory* t)	{ EqChainRemover er; t->accept(&er);		}
+	void moveQuantifiers(AbstractTheory* t)	{ QuantMover qm; t->accept(&qm);			}
+	void removeNesting(AbstractTheory* t)	{ AllTermMover atm; t->accept(&atm);		}
+	void completion(AbstractTheory* t)		{ Completer c; t->accept(&c);				}
+	int  nrSubformulas(AbstractTheory* t)	{ FormulaCounter c; t->accept(&c); return c.result();	}
 
 	AbstractTheory* merge(AbstractTheory* at1, AbstractTheory* at2) {
 		if(typeid(*at1) != typeid(Theory) || typeid(*at2) != typeid(Theory)) {
@@ -1590,9 +1590,9 @@ void TheoryVisitor::traverse(const Formula* f) {
 
 void TheoryVisitor::visit(const PredForm* pf)		{ traverse(pf); } 
 void TheoryVisitor::visit(const EqChainForm* ef)	{ traverse(ef); } 
-void TheoryVisitor::visit(const EquivForm* ef)	{ traverse(ef); } 
+void TheoryVisitor::visit(const EquivForm* ef)		{ traverse(ef); } 
 void TheoryVisitor::visit(const BoolForm* bf)		{ traverse(bf); } 
-void TheoryVisitor::visit(const QuantForm* qf)	{ traverse(qf); } 
+void TheoryVisitor::visit(const QuantForm* qf)		{ traverse(qf); } 
 void TheoryVisitor::visit(const AggForm* af)		{ traverse(af); } 
 
 void TheoryVisitor::visit(const Rule* r) {
@@ -1625,7 +1625,7 @@ void TheoryVisitor::traverse(const Term* t) {
 
 void TheoryVisitor::visit(const VarTerm* vt)		{ traverse(vt); } 
 void TheoryVisitor::visit(const FuncTerm* ft)		{ traverse(ft); } 
-void TheoryVisitor::visit(const DomainTerm* dt)	{ traverse(dt); } 
+void TheoryVisitor::visit(const DomainTerm* dt)		{ traverse(dt); } 
 void TheoryVisitor::visit(const AggTerm* at)		{ traverse(at); } 
 
 void TheoryVisitor::traverse(const SetExpr* s) {

@@ -71,10 +71,10 @@ DomainElementValue DomainElement::value() const {
 ostream& DomainElement::put(ostream& output) const {
 	switch(_type) {
 		case DET_INT:
-			output << toString(_value._int);
+			output << convertToString(_value._int);
 			break;
 		case DET_DOUBLE:
-			output << toString(_value._double);
+			output << convertToString(_value._double);
 			break;
 		case DET_STRING:
 			output << *(_value._string);
@@ -88,7 +88,7 @@ ostream& DomainElement::put(ostream& output) const {
 	return output;
 }
 
-string DomainElement::to_string() const {
+string DomainElement::toString() const {
 	stringstream sstr;
 	put(sstr);
 	return sstr.str();
@@ -218,7 +218,7 @@ ostream& Compound::put(ostream& output) const {
 	return output;
 }
 
-string Compound::to_string() const {
+string Compound::toString() const {
 	stringstream sstr;
 	put(sstr);
 	return sstr.str();
@@ -287,7 +287,7 @@ ostream& DomainAtom::put(ostream& output) const {
 	return output;
 }
 
-string DomainAtom::to_string() const {
+string DomainAtom::toString() const {
 	stringstream sstr;
 	put(sstr);
 	return sstr.str();
@@ -2122,8 +2122,8 @@ InternalSortIterator* AllStrings::sortbegin() const {
 
 InternalSortIterator* AllStrings::sortiterator(const DomainElement* d) const {
 	string str;
-	if(d->type() == DET_INT) str = toString(d->value()._int);
-	else if(d->type() == DET_DOUBLE) str = toString(d->value()._double);
+	if(d->type() == DET_INT) str = convertToString(d->value()._int);
+	else if(d->type() == DET_DOUBLE) str = convertToString(d->value()._double);
 	else str = *(d->value()._string);
 	return new StringInternalSortIterator(str);
 }
@@ -3461,11 +3461,11 @@ void completeSortTable(const PredTable* pt, PFSymbol* symbol, const string& stru
 				}
 				else if(!pt->universe().tables()[col]->contains(tuple[col])) {
 					if(typeid(*symbol) == typeid(Predicate)) {
-						Error::predelnotinsort(tuple[col]->to_string(),symbol->name(), 
+						Error::predelnotinsort(tuple[col]->toString(),symbol->name(), 
 											   symbol->sorts()[col]->name(),structname);
 					}
 					else {
-						Error::funcelnotinsort(tuple[col]->to_string(),symbol->name(), 
+						Error::funcelnotinsort(tuple[col]->toString(),symbol->name(), 
 											   symbol->sorts()[col]->name(),structname);
 					}
 				}
@@ -3563,7 +3563,7 @@ void Structure::autocomplete() {
 					if(st->approxfinite()) {
 						for(SortIterator lt = st->sortbegin(); lt.hasNext(); ++lt) {
 							if(!kst->contains(*lt)) 
-								Error::sortelnotinsort((*lt)->to_string(),s->name(),(*kt)->name(),_name);
+								Error::sortelnotinsort((*lt)->toString(),s->name(),(*kt)->name(),_name);
 						}
 					}
 					else {
@@ -3597,7 +3597,7 @@ void Structure::functioncheck() {
 						const ElementTuple& tuple = *it;
 						vector<string> vstr;
 						for(unsigned int c = 0; c < f->arity(); ++c) 
-							vstr.push_back(tuple[c]->to_string());
+							vstr.push_back(tuple[c]->toString());
 						Error::notfunction(f->name(),name(),vstr);
 						do { ++it; ++jt; } while(jt.hasNext() && eq(*it,*jt));
 						isfunc = false;
