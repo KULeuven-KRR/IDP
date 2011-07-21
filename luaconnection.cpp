@@ -197,7 +197,7 @@ namespace LuaConnection {
 				lua_pop(state,1);
 			}
 			else {
-				procedure->setRegistryIndex("idp_compiled_procedure_" + toString(UserProcedure::getCompileNumber()));
+				procedure->setRegistryIndex("idp_compiled_procedure_" + convertToString(UserProcedure::getCompileNumber()));
 				UserProcedure::increaseCompileNumber();
 				lua_setfield(state,LUA_REGISTRYINDEX,procedure->registryindex().c_str());
 			}
@@ -414,7 +414,7 @@ namespace LuaConnection {
 			case LUA_TFUNCTION:
 			{
 				ia._type = AT_PROCEDURE;
-				std::string* registryindex = StringPointer(std::string("idp_argument_procedure_" + toString(argProcNumber())));
+				std::string* registryindex = StringPointer(std::string("idp_argument_procedure_" + convertToString(argProcNumber())));
 				++argProcNumber();
 				lua_pushvalue(L,arg);
 				lua_setfield(L,LUA_REGISTRYINDEX,registryindex->c_str());
@@ -1419,7 +1419,7 @@ namespace LuaConnection {
 	 */
 	int funcinterCall(lua_State* L) {
 		FuncInter* funcinter = *(FuncInter**)lua_touserdata(L,1);
-		if(funcinter->approxtwovalued()) {
+		if(funcinter->approxTwoValued()) {
 			FuncTable* ft = funcinter->functable();
 			lua_remove(L,1);
 			unsigned int nrargs = lua_gettop(L);

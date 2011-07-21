@@ -19,7 +19,7 @@ public:
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
 		Options* opts = args[0].options();
-		return InternalArgument(StringPointer(opts->to_string()));
+		return InternalArgument(StringPointer(opts->toString()));
 	}
 };
 

@@ -33,7 +33,7 @@ public:
 			for(auto jt = spi.begin(); jt != spi.end(); ++jt) {
 				if(structure->vocabulary()->contains(*jt)) {
 					PredInter* pinter = structure->inter(*jt);
-					if(pinter->approxtwovalued()) mpi[*jt] = IBT_TWOVAL;
+					if(pinter->approxTwoValued()) mpi[*jt] = IBT_TWOVAL;
 					else {
 						// TODO
 						mpi[*jt] = IBT_NONE;
@@ -47,7 +47,7 @@ public:
 			for(auto jt = sfi.begin(); jt != sfi.end(); ++jt) {
 				if(structure->vocabulary()->contains(*jt)) {
 					FuncInter* finter = structure->inter(*jt);
-					if(finter->approxtwovalued()) mpi[*jt] = IBT_TWOVAL;
+					if(finter->approxTwoValued()) mpi[*jt] = IBT_TWOVAL;
 					else {
 						// TODO
 						mpi[*jt] = IBT_NONE;

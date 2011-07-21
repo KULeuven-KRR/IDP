@@ -67,7 +67,7 @@ public:
 				Predicate* p = *jt;
 				if(p->arity() != 1 || p->sorts()[0]->pred() != p) {
 					PredInter* pi = structure->inter(p);
-					if(pi->approxtwovalued()) {
+					if(pi->approxTwoValued()) {
 						output() << *p << " = ";
 						const PredTable* pt = pi->ct();
 						visit(pt);
@@ -91,7 +91,7 @@ public:
 			for(std::set<Function*>::iterator jt = sf.begin(); jt != sf.end(); ++jt) {
 				Function* f = *jt;
 				FuncInter* fi = structure->inter(f);
-				if(fi->approxtwovalued()) {
+				if(fi->approxTwoValued()) {
 					FuncTable* ft = fi->functable();
 					output() << *f << " = ";
 					visit(ft);
@@ -210,7 +210,7 @@ public:
 
 	void visit(const PredForm* f) {
 		if(! f->sign())	output() << "~";
-		output() <<f->symbol()->to_string(_longnames);
+		output() <<f->symbol()->toString(_longnames);
 		if(!f->subterms().empty()) {
 			output() << "(";
 			f->subterms()[0]->accept(this);
@@ -358,7 +358,7 @@ public:
 	}
 
 	void visit(const FuncTerm* t) {
-		output() <<t->function()->to_string(_longnames);
+		output() <<t->function()->toString(_longnames);
 		if(!t->subterms().empty()) {
 			output() << "(";
 			t->subterms()[0]->accept(this);
@@ -371,7 +371,7 @@ public:
 	}
 
 	void visit(const DomainTerm* t) {
-		std::string str = t->value()->to_string();
+		std::string str = t->value()->toString();
 		if(t->sort()) {
 			if(SortUtils::isSubsort(t->sort(),VocabularyUtils::charsort())) {
 				output() << '\'' << str << '\'';
@@ -428,7 +428,7 @@ public:
 				if(not args.empty()) {
 					output() << "(";
 					for(unsigned int n = 0; n < args.size(); ++n) {
-						output() << args[n]->to_string();
+						output() << args[n]->toString();
 						if(n != args.size()-1) output() << ",";
 					}
 					output() << ")";
@@ -439,12 +439,12 @@ public:
 				if(args.size() > 1) {
 					output() << "(";
 					for(unsigned int n = 0; n < args.size()-1; ++n) {
-						output() << args[n]->to_string();
+						output() << args[n]->toString();
 						if(n != args.size()-2) output() << ",";
 					}
 					output() << ")";
 				}
-				output() << " = " << args.back()->to_string();
+				output() << " = " << args.back()->toString();
 			}
 		}
 		else {
@@ -487,7 +487,7 @@ public:
 					if((*gtit)._isvarid) {
 						printTerm((*gtit)._varid);
 					} else {
-						output() << (*gtit)._domelement->to_string();
+						output() << (*gtit)._domelement->toString();
 					}
 				}
 				output() << ")";
@@ -646,23 +646,23 @@ public:
 
 
 	void visit(const PredTable* table) {
-		if(table->approxfinite()) {
+		if(table->approxFinite()) {
 			TableIterator kt = table->begin();
 			if(table->arity()) {
 				output() << "{ ";
 				if(kt.hasNext()) {
 					ElementTuple tuple = *kt;
-					output() << tuple[0]->to_string();
+					output() << tuple[0]->toString();
 					for(ElementTuple::const_iterator lt = ++tuple.begin(); lt != tuple.end(); ++lt) {
-						output() << ',' << (*lt)->to_string();
+						output() << ',' << (*lt)->toString();
 					}
 					++kt;
 					for(; kt.hasNext(); ++kt) {
 						output() << "; ";
 						tuple = *kt;
-						output() << tuple[0]->to_string();
+						output() << tuple[0]->toString();
 						for(ElementTuple::const_iterator lt = ++tuple.begin(); lt != tuple.end(); ++lt) {
-							output() << ',' << (*lt)->to_string();
+							output() << ',' << (*lt)->toString();
 						}
 					}
 				}
@@ -675,25 +675,25 @@ public:
 	}
 
 	void printasfunc(const PredTable* table) {
-		if(table->approxfinite()) {
+		if(table->approxFinite()) {
 			TableIterator kt = table->begin();
 			output() << "{ ";
 			if(kt.hasNext()) {
 				ElementTuple tuple = *kt;
-				if(tuple.size() > 1) output() << tuple[0]->to_string();
+				if(tuple.size() > 1) output() << tuple[0]->toString();
 				for(unsigned int n = 1; n < tuple.size() - 1; ++n) {
-					output() << ',' << tuple[n]->to_string();
+					output() << ',' << tuple[n]->toString();
 				}
-				output() << "->" << tuple.back()->to_string();
+				output() << "->" << tuple.back()->toString();
 				++kt;
 				for(; kt.hasNext(); ++kt) {
 					output() << "; ";
 					tuple = *kt;
-					if(tuple.size() > 1) output() << tuple[0]->to_string();
+					if(tuple.size() > 1) output() << tuple[0]->toString();
 					for(unsigned int n = 1; n < tuple.size() - 1; ++n) {
-						output() << ',' << tuple[n]->to_string();
+						output() << ',' << tuple[n]->toString();
 					}
-					output() << "->" << tuple.back()->to_string();
+					output() << "->" << tuple.back()->toString();
 				}
 			}
 			output() << " }";
@@ -705,31 +705,31 @@ public:
 		std::vector<SortTable*> vst = table->universe().tables();
 		vst.pop_back();
 		Universe univ(vst);
-		if(univ.approxfinite()) {
+		if(univ.approxFinite()) {
 			TableIterator kt = table->begin();
 			if(table->arity() != 0) {
 				output() << "{ ";
 				if(kt.hasNext()) {
 					ElementTuple tuple = *kt;
-					output() << tuple[0]->to_string();
+					output() << tuple[0]->toString();
 					for(unsigned int n = 1; n < tuple.size() - 1; ++n) {
-						output() << ',' << tuple[n]->to_string();
+						output() << ',' << tuple[n]->toString();
 					}
-					output() << "->" << tuple.back()->to_string();
+					output() << "->" << tuple.back()->toString();
 					++kt;
 					for(; kt.hasNext(); ++kt) {
 						output() << "; ";
 						tuple = *kt;
-						output() << tuple[0]->to_string();
+						output() << tuple[0]->toString();
 						for(unsigned int n = 1; n < tuple.size() - 1; ++n) {
-							output() << ',' << tuple[n]->to_string();
+							output() << ',' << tuple[n]->toString();
 						}
-						output() << "->" << tuple.back()->to_string();
+						output() << "->" << tuple.back()->toString();
 					}
 				}
 				output() << " }";
 			}
-			else if(kt.hasNext()) output() << (*kt)[0]->to_string();
+			else if(kt.hasNext()) output() << (*kt)[0]->toString();
 			else output() << "{ }";
 		}
 		else output() << "possibly infinite table";
@@ -787,10 +787,10 @@ public:
 		SortIterator it = table->sortbegin();
 		output() << "{ ";
 		if(it.hasNext()) {
-			output() << (*it)->to_string();
+			output() << (*it)->toString();
 			++it;
 			for(; it.hasNext(); ++it) {
-				output() << "; " << (*it)->to_string();
+				output() << "; " << (*it)->toString();
 			}
 		}
 		output() << " }";

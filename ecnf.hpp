@@ -405,7 +405,7 @@ class SolverTheory : public AbstractGroundTheory {
 
 		// Debugging
 		virtual std::ostream&	put(std::ostream& output, unsigned int)	const { assert(false); /* TODO */ return output;	   }
-		virtual std::string		to_string()								const { assert(false); return ""; /*TODO might be implemented in the future (if solver supports it)*/	}
+		virtual std::string		toString()								const { assert(false); return ""; /*TODO might be implemented in the future (if solver supports it)*/	}
 
 	private:
 		void 	addAggregate(int definitionID, int head, bool lowerbound, int setnr, AggFunction aggtype, TsType sem, double bound);
@@ -462,7 +462,7 @@ class GroundTheory : public AbstractGroundTheory {
 
 		// Debugging
 		std::ostream&	put(std::ostream&, unsigned int spaces = 0)	const;
-		std::string		to_string()									const;
+		std::string		toString()									const;
 };
 
 #endif
