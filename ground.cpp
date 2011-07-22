@@ -1185,24 +1185,6 @@ GroundTerm FuncTermGrounder::run() const {
 	return GroundTerm(varid);
 }
 
-// Without CP support
-//GroundTerm FuncTermGrounder::run() const {
-//	if(_verbosity > 2) {
-//		printorig();
-//	}
-//	vector<GroundTerm> groundsubterms(_subtermgrounders.size());
-//	ElementTuple args(_subtermgrounders.size());
-//	for(unsigned int n = 0; n < _subtermgrounders.size(); ++n) {
-//		groundsubterms[n] = _subtermgrounders[n]->run();
-//		assert(not groundsubterms[n]._isvarid);
-//		args[n] = groundsubterms[n]._domelement;
-//	}
-//	const DomainElement* result = (*_functable)[args];
-//	if(_verbosity > 2) {
-//		clog << "Result = " << *result << "\n";
-//	}
-//	return GroundTerm(result);
-//}
 
 GroundTerm SumTermGrounder::run() const {
 	if(_verbosity > 2) { 
