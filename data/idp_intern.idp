@@ -21,7 +21,7 @@ procedure help(namespace) {
  */
 procedure tuples(table) {
 	if type(table) == "predicate_table" then
-		return idp_intern.deref_and_increment, idp_intern.tableiterator(table), idp_intern.dummytuple()
+		return idp_intern.deref_and_increment, idp_intern.tableIterator(table), idp_intern.dummytuple()
 	else
 		print("Error: predicate table expected")
 	end
@@ -34,7 +34,7 @@ procedure tuples(table) {
  */
 procedure elements(d) {
 	if type(d) == "domain" then
-		return idp_intern.deref_and_increment, idp_intern.domainiterator(d), 0
+		return idp_intern.deref_and_increment, idp_intern.domainIterator(d), 0
 	else 
 		print("Error: domain expected")
 	end
@@ -48,22 +48,22 @@ procedure elements(d) {
  * Create a new structure over a given vocabulary voc. 
  * The created structure assigns the least precise interpretation to every symbol of its vocabulary.  
  */
-procedure newstructure(voc) {
-	return idp_intern.newstructure(voc)
+procedure newStructure(voc) {
+	return idp_intern.newStructure(voc)
 }
 
 /**
  * Create a new, empty theory over a given vocabulary voc
  */
-procedure newtheory(voc) {
-	return idp_intern.newtheory(voc)
+procedure newTheory(voc) {
+	return idp_intern.newTheory(voc)
 }
 
 /**
  * Create a new block of options
  */
-procedure newoptions() {
-	return idp_intern.newoptions()
+procedure newOptions() {
+	return idp_intern.newOptions()
 }
 
 /**
@@ -88,9 +88,9 @@ procedure query(Q,S) {
  * Apply model expansion to theory T, structure S, and options Opts. Opts defaults to stdoptions.
  * The result is a table of structures and, if Opts.trace == true, a trace of the solver
  */
-procedure modelexpand(T,S,Opts) {
+procedure modelExpand(T,S,Opts) {
 	local clonetheo = clone(T)
-	idp_intern.push_negations(clonetheo)
+	idp_intern.pushNegations(clonetheo)
 	idp_intern.flatten(clonetheo)
 	if not Opts then Opts = stdoptions end
 	local solutions, trace =  idp_intern.mx(clonetheo,S,Opts) 
@@ -102,7 +102,7 @@ procedure modelexpand(T,S,Opts) {
  */
 procedure ground(T,S,Opts) {
 	local clonetheo = clone(T)
-	idp_intern.push_negations(clonetheo)
+	idp_intern.pushNegations(clonetheo)
 	idp_intern.flatten(clonetheo)
 	if not Opts then Opts = stdoptions end
 	return idp_intern.ground(clonetheo,S,Opts) 
@@ -122,28 +122,28 @@ procedure propagate(T,S,Opts) {
  * For all symbols that belong to V but not to the previous vocabulary of S, 
  * the interpretation in S is initialized to the least precise interpretation.
  */
-procedure changevocabulary(S,V) {
-	idp_intern.changevocabulary(S,V)
+procedure changeVocabulary(S,V) {
+	idp_intern.changeVocabulary(S,V)
 }
 
 /**
  * Make a tuple true in a predicate interpretation
  */
-procedure maketrue(inter,tuple) {
-	idp_intern.maketrue(inter,tuple)
+procedure makeTrue(inter,tuple) {
+	idp_intern.makeTrue(inter,tuple)
 }
 
 /**
  * Make a tuple false in a predicate interpretation
  */
-procedure makefalse(inter,tuple) {
-	idp_intern.makefalse(inter,tuple)
+procedure makeFalse(inter,tuple) {
+	idp_intern.makeFalse(inter,tuple)
 }
 
 /**
  * Make a tuple unknown in a predicate interpretation
  */
-procedure makeunknown(inter,tuple) {
-	idp_intern.makeunknown(inter,tuple)
+procedure makeUnknown(inter,tuple) {
+	idp_intern.makeUnknown(inter,tuple)
 }
 

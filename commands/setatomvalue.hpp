@@ -17,13 +17,13 @@ private:
 	SETVALUE value_;
 public:
 	static Inference* getMakeAtomTrueInference(){
-		return new SetAtomValueInference("maketrue", SET_TRUE);
+		return new SetAtomValueInference("makeTrue", SET_TRUE);
 	}
 	static Inference* getMakeAtomFalseInference(){
-		return new SetAtomValueInference("makefalse", SET_FALSE);
+		return new SetAtomValueInference("makeFalse", SET_FALSE);
 	}
 	static Inference* getMakeAtomUnknownInference(){
-		return new SetAtomValueInference("makeunknown", SET_UNKNOWN);
+		return new SetAtomValueInference("makeUnknown", SET_UNKNOWN);
 	}
 
 	SetAtomValueInference(const char* command, SETVALUE value): Inference(command, true), value_(value) {

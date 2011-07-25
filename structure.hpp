@@ -80,8 +80,8 @@ class DomainElement {
 		DomainElementType	type()	const;	//!< Returns the type of the element
 		DomainElementValue	value()	const;	//!< Returns the value of the element
 
-		std::ostream& put(std::ostream&)	const;
-		std::string toString()				const;
+		std::ostream& 	put(std::ostream&)	const;
+		std::string 	toString()			const;
 
 		friend class DomainElementFactory;
 };

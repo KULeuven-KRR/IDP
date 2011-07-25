@@ -12,7 +12,7 @@
 
 class NewOptionsInference: public Inference {
 public:
-	NewOptionsInference(): Inference("newoptions") {
+	NewOptionsInference(): Inference("newOptions") {
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>&) const {

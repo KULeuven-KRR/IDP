@@ -481,7 +481,7 @@ bool UnivSentGrounder::run() const {
 	return true;
 }
 
-void FormulaGrounder::setorig(const Formula* f, const map<Variable*, const DomainElement**>& mvd, int verb) {
+void FormulaGrounder::setOrig(const Formula* f, const map<Variable*, const DomainElement**>& mvd, int verb) {
 	_verbosity = verb;
 	map<Variable*,Variable*> mvv;
 	for(set<Variable*>::const_iterator it = f->freevars().begin(); it != f->freevars().end(); ++it) {
@@ -492,7 +492,7 @@ void FormulaGrounder::setorig(const Formula* f, const map<Variable*, const Domai
 	_origform = f->clone(mvv);
 }
 
-void FormulaGrounder::printorig() const {
+void FormulaGrounder::printOrig() const {
 	clog << "Grounding formula " << _origform->toString();
 	if(not _origform->freevars().empty()) {
 		clog << " with instance ";
@@ -513,7 +513,7 @@ AtomGrounder::AtomGrounder(GroundTranslator* gt, bool sign, PFSymbol* s,
 	{ _certainvalue = ct._truegen ? _true : _false; }
 
 int AtomGrounder::run() const {
-	if(_verbosity > 2) printorig();
+	if(_verbosity > 2) printOrig();
 
 	// Run subterm grounders
 	bool alldomelts = true;
@@ -930,7 +930,7 @@ inline int ClauseGrounder::result2() const {
 
 int ClauseGrounder::finish(vector<int>& cl) const {
 	if(_verbosity > 2) {
-		printorig();
+		printOrig();
 	}
 	if(cl.empty()) {
 		if(_verbosity > 2) {
@@ -1000,7 +1000,7 @@ void BoolGrounder::run(vector<int>& clause) const {
 
 int QuantGrounder::run() const {
 	if(_verbosity > 2) {
-		printorig();
+		printOrig();
 	}
 	vector<int> cl;
 	if(_generator->first()) {
@@ -1028,7 +1028,7 @@ int QuantGrounder::run() const {
 
 void QuantGrounder::run(vector<int>& clause) const {
 	if(_verbosity > 2) {
-		printorig();
+		printOrig();
 	}
 	if(_generator->first()) {
 		int l = _subgrounder->run();
@@ -1125,7 +1125,7 @@ void EquivGrounder::run(vector<int>& clause) const {
 	}
 }
 
-void TermGrounder::setorig(const Term* t, const map<Variable*,const DomainElement**>& mvd, int verb) {
+void TermGrounder::setOrig(const Term* t, const map<Variable*,const DomainElement**>& mvd, int verb) {
 	_verbosity = verb;
 	map<Variable*,Variable*> mvv;
 	for(set<Variable*>::const_iterator it = t->freevars().begin(); it != t->freevars().end(); ++it) {
@@ -1136,7 +1136,7 @@ void TermGrounder::setorig(const Term* t, const map<Variable*,const DomainElemen
 	_origterm = t->clone(mvv);
 }
 
-void TermGrounder::printorig() const {
+void TermGrounder::printOrig() const {
 	clog << "Grounding term " << _origterm->toString();
 	if(not _origterm->freevars().empty()) {
 		clog << " with instance ";
@@ -1149,13 +1149,20 @@ void TermGrounder::printorig() const {
 	clog << "\n";
 }
 
+GroundTerm DomTermGrounder::run() const {
+	//SortTable* _domain = new SortTable(new EnumeratedInternalSortTable());
+	//_domain->add(_value);
+	return GroundTerm(_value);
+}
+
 GroundTerm VarTermGrounder::run() const {
+	//TODO Set domain?
 	return GroundTerm(*_value);
 }
 
 GroundTerm FuncTermGrounder::run() const {
 	if(_verbosity > 2) { 
-		printorig();
+		printOrig();
 	}
 	bool calculable = true;
 	vector<GroundTerm> groundsubterms(_subtermgrounders.size());
@@ -1185,42 +1192,72 @@ GroundTerm FuncTermGrounder::run() const {
 	return GroundTerm(varid);
 }
 
+CPTerm* createSumTerm(SumType type, const VarId& left, const VarId& right) {
+	if(type == ST_MINUS) {
+		vector<VarId> varids(2); //XXX vector<VarId> varids[] = { left, right }; ?
+		varids[0] = left;
+		varids[1] = right;
+		vector<int> weights(2);
+		weights[0] = 1;
+		weights[1] = -1;
+		return new CPWSumTerm(varids,weights);
+	} else {
+		return new CPSumTerm(left,right);
+	}
+}
 
 GroundTerm SumTermGrounder::run() const {
 	if(_verbosity > 2) { 
-		printorig();
+		printOrig();
 	}
 	// Run subtermgrounders
 	const GroundTerm& left = _lefttermgrounder->run();
 	const GroundTerm& right = _righttermgrounder->run();
-	SortTable* leftdomain = _lefttermgrounder->domain();
-	SortTable* rightdomain = _righttermgrounder->domain();
+	SortTable* leftdomain = _lefttermgrounder->getDomain();
+	SortTable* rightdomain = _righttermgrounder->getDomain();
 
 	// Compute domain for the sum term
 	if(not _domain || not _domain->approxFinite()) {
+		if(not left._isvarid) {
+			leftdomain = new SortTable(new EnumeratedInternalSortTable());
+			leftdomain->add(left._domelement);
+		}
+		if(not right._isvarid) {
+			rightdomain = new SortTable(new EnumeratedInternalSortTable());
+			rightdomain->add(right._domelement);
+		}
 		if(leftdomain && rightdomain && leftdomain->approxFinite() && rightdomain->approxFinite()) {
 			int leftmin = leftdomain->first()->value()._int;
 			int rightmin = rightdomain->first()->value()._int;
 			int leftmax = leftdomain->last()->value()._int;
 			int rightmax = rightdomain->last()->value()._int;
-			_domain = new SortTable(new IntRangeInternalSortTable(leftmin+rightmin,leftmax+rightmax));
+			int min, max; 
+			if(_type == ST_PLUS) {
+				min = leftmin + rightmin;
+				max = leftmax + rightmax;
+			} else if (_type == ST_MINUS) {
+				min = leftmin - rightmin;
+				max = leftmax - rightmax;
+			}
+			if(max < min) { swap(min,max); }
+			_domain = new SortTable(new IntRangeInternalSortTable(min,max));
 		} else {
+			if(leftdomain && not leftdomain->approxFinite()) {
+				cerr << "Left domain is infinite..." << endl;
+			}
+			if(rightdomain && not rightdomain->approxFinite()) {
+				cerr << "Right domain is infinite..." << endl;
+			}
 			//TODO one of the domains is unknown or infinite...
 			//TODO one case when left or right is a domain element!
 			//assert(false);
-			// Create domain
-			//rightdomain = new SortTable(new EnumeratedInternalSortTable());
-			//rightdomain->add(right._domelement);
-			// Create domain
-			//leftdomain = new SortTable(new EnumeratedInternalSortTable());
-			//leftdomain->add(left._domelement);
 		}
 	}
 
 	VarId varid;
 	if(left._isvarid) {
 		if(right._isvarid) {
-			CPTerm* sumterm = new CPSumTerm(left._varid,right._varid);
+			CPTerm* sumterm = createSumTerm(_type,left._varid,right._varid);
 			varid = _termtranslator->translate(sumterm,_domain);
 		} else {
 			assert(not right._isvarid);
@@ -1230,7 +1267,7 @@ GroundTerm SumTermGrounder::run() const {
 			int tseitin = _grounding->translator()->translate(cpelement->left(),cpelement->comp(),cpelement->right(),TS_EQ);
 			_grounding->addUnitClause(tseitin);
 			// Create cp sum term
-			CPTerm* sumterm = new CPSumTerm(left._varid,rightvarid);
+			CPTerm* sumterm = createSumTerm(_type,left._varid,rightvarid);
 			varid = _termtranslator->translate(sumterm,_domain);
 		}
 	} else {
@@ -1242,7 +1279,7 @@ GroundTerm SumTermGrounder::run() const {
 			int tseitin = _grounding->translator()->translate(cpelement->left(),cpelement->comp(),cpelement->right(),TS_EQ);
 			_grounding->addUnitClause(tseitin);
 			// Create cp sum term
-			CPTerm* sumterm = new CPSumTerm(leftvarid,right._varid);
+			CPTerm* sumterm = createSumTerm(_type,leftvarid,right._varid);
 			varid = _termtranslator->translate(sumterm,_domain);
 		} else { // Both subterms are domain elements, so lookup the result in the function table.
 			assert(not right._isvarid);
@@ -1256,12 +1293,6 @@ GroundTerm SumTermGrounder::run() const {
 			return GroundTerm(result);
 		}
 	}
-
-	// Ask for a new tseitin for this cp constraint and add it to the grounding.
-	//FIXME Following should be done more efficiently... overhead because of lookup in translator...
-	//CPTsBody* cprelation = _termtranslator->cprelation(varid);
-	//int sumtseitin = _grounding->translator()->translate(cprelation->left(),cprelation->comp(),cprelation->right(),TS_EQ);
-	//_grounding->addUnitClause(sumtseitin);
 
 	// Return result
 	if(_verbosity > 2) {
@@ -1757,7 +1788,7 @@ void GrounderFactory::visit(const PredForm* pf) {
 			}
 			_formgrounder = new ComparisonGrounder(_grounding->translator(),_grounding->termtranslator(),
 									subtermgrounders[0],comp,subtermgrounders[1],_context);
-			_formgrounder->setorig(ptranspf,_varmapping,_verbosity);
+			_formgrounder->setOrig(ptranspf,_varmapping,_verbosity);
 			if(_context._component == CC_SENTENCE) { 
 				_toplevelgrounder = new SentenceGrounder(_grounding,_formgrounder,false,_verbosity);
 			}
@@ -1787,7 +1818,7 @@ void GrounderFactory::visit(const PredForm* pf) {
 				// Create the grounder
 				_formgrounder = new AtomGrounder(_grounding->translator(),ptranspf->sign(),ptranspf->symbol(),
 										subtermgrounders,possch,certainch,argsorttables,_context);
-				_formgrounder->setorig(ptranspf,_varmapping,_verbosity);
+				_formgrounder->setOrig(ptranspf,_varmapping,_verbosity);
 				if(_context._component == CC_SENTENCE) { 
 					_toplevelgrounder = new SentenceGrounder(_grounding,_formgrounder,false,_verbosity);
 				}
@@ -1861,7 +1892,7 @@ void GrounderFactory::visit(const BoolForm* bf) {
 		if(recursive(bf)) _context._tseitin = TS_RULE;
 		_formgrounder = new BoolGrounder(_grounding->translator(),sub,bf->sign(),bf->conj(),_context);
 		RestoreContext();
-		_formgrounder->setorig(bf,_varmapping,_verbosity);
+		_formgrounder->setOrig(bf,_varmapping,_verbosity);
 		if(_context._component == CC_SENTENCE) _toplevelgrounder = new SentenceGrounder(_grounding,_formgrounder,false,_verbosity);
 
 	}
@@ -1924,7 +1955,7 @@ void GrounderFactory::visit(const QuantForm* qf) {
 		if(recursive(qf)) _context._tseitin = TS_RULE;
 		_formgrounder = new QuantGrounder(_grounding->translator(),_formgrounder,qf->sign(),qf->univ(),gen,_context);
 		RestoreContext();
-		_formgrounder->setorig(qf,_varmapping,_verbosity);
+		_formgrounder->setOrig(qf,_varmapping,_verbosity);
 		if(_context._component == CC_SENTENCE) _toplevelgrounder = new SentenceGrounder(_grounding,_formgrounder,false,_verbosity);
 	}
 }
@@ -2036,7 +2067,7 @@ void GrounderFactory::visit(const EqChainForm* ef) {
 void GrounderFactory::visit(const VarTerm* t) {
 	assert(_varmapping.find(t->var()) != _varmapping.end());
 	_termgrounder = new VarTermGrounder(_varmapping.find(t->var())->second);
-	_termgrounder->setorig(t,_varmapping,_verbosity);
+	_termgrounder->setOrig(t,_varmapping,_verbosity);
 }
 
 /**
@@ -2046,7 +2077,7 @@ void GrounderFactory::visit(const VarTerm* t) {
  */
 void GrounderFactory::visit(const DomainTerm* t) {
 	_termgrounder = new DomTermGrounder(t->value());
-	_termgrounder->setorig(t,_varmapping,_verbosity);
+	_termgrounder->setOrig(t,_varmapping,_verbosity);
 }
 
 /**
@@ -2067,11 +2098,15 @@ void GrounderFactory::visit(const FuncTerm* t) {
 	FuncTable* ftable = _structure->inter(function)->functable();
 	SortTable* domain = _structure->inter(function->outsort());
 	if(_cpsupport && FuncUtils::isIntSum(function,_structure->vocabulary())) {
-		_termgrounder = new SumTermGrounder(_grounding,_grounding->termtranslator(),ftable,domain,subtermgrounders[0],subtermgrounders[1]);
+		if(function->name() == "-/2") {
+			_termgrounder = new SumTermGrounder(_grounding,_grounding->termtranslator(),ftable,domain,subtermgrounders[0],subtermgrounders[1],ST_MINUS);
+		} else {
+			_termgrounder = new SumTermGrounder(_grounding,_grounding->termtranslator(),ftable,domain,subtermgrounders[0],subtermgrounders[1]);
+		}
 	} else {
 		_termgrounder = new FuncTermGrounder(_grounding->termtranslator(),function,ftable,domain,subtermgrounders);
 	}
-	_termgrounder->setorig(t,_varmapping,_verbosity);
+	_termgrounder->setOrig(t,_varmapping,_verbosity);
 }
 
 /**
@@ -2085,7 +2120,7 @@ void GrounderFactory::visit(const AggTerm* t) {
 
 	// Create term grounder
 	_termgrounder = new AggTermGrounder(_grounding->translator(),t->function(),_setgrounder);
-	_termgrounder->setorig(t,_varmapping,_verbosity);
+	_termgrounder->setOrig(t,_varmapping,_verbosity);
 }
 
 /**

@@ -336,7 +336,6 @@ class GroundTermTranslator {
 		size_t			getOffset(Function* func)	const { return _function2offset.at(func);	}
 		const Function*	getFunction(size_t offset)	const { return _offset2function[offset];	}
 
-
 		// Debugging
 		std::string		printTerm(const VarId&)		const;
 };
@@ -427,14 +426,15 @@ class TermGrounder {
 		const Term*									_origterm;
 		std::map<Variable*,const DomainElement**>	_varmap;
 		int											_verbosity;
-		void printorig() const;
+		void printOrig() const;
 	public:
 		TermGrounder() { }
 		TermGrounder(AbstractGroundTheory* g, SortTable* dom) : _grounding(g), _domain(dom) { }
 		virtual ~TermGrounder() { }
 		virtual GroundTerm run() const = 0;
-		void setorig(const Term* t, const std::map<Variable*, const DomainElement**>& mvd, int); 
-		SortTable* domain() const { return _domain; }
+		void setOrig(const Term* t, const std::map<Variable*, const DomainElement**>& mvd, int); 
+		SortTable* 	getDomain() const 			{ return _domain; }
+		void		setDomain(SortTable* dom) 	{ _domain = dom; }
 };
 
 class DomTermGrounder : public TermGrounder {
@@ -442,7 +442,7 @@ class DomTermGrounder : public TermGrounder {
 		const DomainElement*	_value;
 	public:
 		DomTermGrounder(const DomainElement* val) : _value(val) { }
-		GroundTerm run() const { return GroundTerm(_value);	}
+		GroundTerm run() const;
 };
 
 class VarTermGrounder : public TermGrounder {
@@ -470,15 +470,19 @@ class FuncTermGrounder : public TermGrounder {
 		//			table lookup
 };
 
+enum SumType { ST_PLUS, ST_MINUS };
+
 class SumTermGrounder : public TermGrounder {
 	protected:
 		GroundTermTranslator* 	_termtranslator;
 		FuncTable*				_functable;
 		TermGrounder*			_lefttermgrounder;
 		TermGrounder*			_righttermgrounder;
+		SumType					_type;
 	public:
-		SumTermGrounder(AbstractGroundTheory* g, GroundTermTranslator* tt, FuncTable* ftable, SortTable* dom, TermGrounder* ltg, TermGrounder* rtg)
-			: TermGrounder(g,dom), _termtranslator(tt), _functable(ftable), _lefttermgrounder(ltg), _righttermgrounder(rtg) { }
+		SumTermGrounder(AbstractGroundTheory* g, GroundTermTranslator* tt, FuncTable* ftable,
+			SortTable* dom, TermGrounder* ltg, TermGrounder* rtg, SumType type = ST_PLUS)
+			: TermGrounder(g,dom), _termtranslator(tt), _functable(ftable), _lefttermgrounder(ltg), _righttermgrounder(rtg), _type(type) { }
 		GroundTerm run() const;
 };
 
@@ -503,14 +507,14 @@ class FormulaGrounder {
 		const Formula*								_origform;
 		std::map<Variable*,const DomainElement**>	_varmap;
 		int											_verbosity;
-		void printorig() const;
+		void printOrig() const;
 	public:
 		FormulaGrounder(GroundTranslator* gt, const GroundingContext& ct): _translator(gt), _context(ct) { }
 		virtual ~FormulaGrounder() { }
 		virtual int		run()					const = 0;
 		virtual void	run(std::vector<int>&)	const = 0;
 		virtual bool	conjunctive()			const = 0;
-		void setorig(const Formula* f, const std::map<Variable*, const DomainElement**>& mvd, int);
+		void setOrig(const Formula* f, const std::map<Variable*, const DomainElement**>& mvd, int);
 };
 
 class AtomGrounder : public FormulaGrounder {

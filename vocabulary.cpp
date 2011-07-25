@@ -1164,7 +1164,7 @@ namespace FuncUtils {
 	}
 
 	bool isIntSum(const Function* function, const Vocabulary* voc) {
-		if(function->name() == "+/2") {
+		if(function->name() == "+/2" || function->name() == "-/2") {
 			bool allintsorts = isIntFunc(function,voc);
 			for(vector<Sort*>::const_iterator it = function->insorts().begin(); it != function->insorts().end(); ++it) {
 				allintsorts *= (SortUtils::resolve(*it,VocabularyUtils::intsort(),voc) == VocabularyUtils::intsort());

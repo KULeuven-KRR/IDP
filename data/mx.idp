@@ -7,7 +7,7 @@ namespace mx {
 		if (not Opts) then Opts = stdoptions end
 		local oldnrmodels = Opts.nrmodels
 		Opts.nrmodels = 1
-		local solutions = modelexpand(T,S,Opts)
+		local solutions = modelExpand(T,S,Opts)
 		Opts.nrmodels = oldnrmodels
 		return solutions[1]
 	}
@@ -20,7 +20,7 @@ namespace mx {
 		if (not Opts) then Opts = stdoptions end
 		local oldnrmodels = Opts.nrmodels
 		Opts.nrmodels = 0
-		local solutions = modelexpand(T,S,Opts)
+		local solutions = modelExpand(T,S,Opts)
 		Opts.nrmodels = oldnrmodels
 		return solutions
 	}
@@ -28,8 +28,8 @@ namespace mx {
 	/**
 	 * Prints the solutions to the model expansion problem with input theory T, structure S, and options Opts
 	 */
-	procedure printsol(T,S,Opts) {
-		local sols = modelexpand(T,S,Opts)
+	procedure printSolutions(T,S,Opts) {
+		local sols = modelExpand(T,S,Opts)
 		if #sols > 0 then
 			for k,v in ipairs(sols) do
 				print("Model "..k)

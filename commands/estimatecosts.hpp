@@ -15,7 +15,7 @@
 
 class EstimateBDDCostInference: public Inference {
 public:
-	EstimateBDDCostInference(): Inference("estimate_cost") {
+	EstimateBDDCostInference(): Inference("estimateCost") {
 		add(AT_QUERY);
 		add(AT_STRUCTURE);
 	}
@@ -39,7 +39,7 @@ public:
 
 class EstimateNumberOfAnswersInference: public Inference {
 public:
-	EstimateNumberOfAnswersInference(): Inference("estimate_nr_ans") {
+	EstimateNumberOfAnswersInference(): Inference("estimateNrOfAnswers") {
 		add(AT_QUERY);
 		add(AT_STRUCTURE);
 	}

@@ -13,7 +13,7 @@
 
 class NewStructureInference: public Inference {
 public:
-	NewStructureInference(): Inference("newstructure") {
+	NewStructureInference(): Inference("newStructure") {
 		add(AT_VOCABULARY);
 	}
 

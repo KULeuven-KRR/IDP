@@ -3,8 +3,8 @@ namespace theory {
 	/**
 	 * Push the negations of a given theory T inside until they are in front of atoms
 	 */
-	procedure push_negations(T) {
-		return idp_intern.push_negations(T)
+	procedure pushNegations(T) {
+		return idp_intern.pushNegations(T)
 	}
 
 	/**

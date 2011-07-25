@@ -13,7 +13,7 @@
 
 class TableIteratorInference: public Inference {
 public:
-	TableIteratorInference(): Inference("tableiterator") {
+	TableIteratorInference(): Inference("tableIterator") {
 		add(AT_PREDTABLE);
 	}
 

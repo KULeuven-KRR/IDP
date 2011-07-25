@@ -355,16 +355,53 @@ CPTerm* AbstractGroundTheory::foldCPTerm(CPTerm* cpterm) {
 						assert(cprelation->right()._isvarid && cprelation->right()._varid == *it);
 						newvarids.insert(newvarids.end(),subterm->_varids.begin(),subterm->_varids.end());
 					}
+					else if(typeid(*left) == typeid(CPWSumTerm)) {
+						newvarids.push_back(*it);
+						int sumtseitin = translator()->translate(cprelation->left(),cprelation->comp(),cprelation->right(),TS_EQ);
+						addUnitClause(sumtseitin);
+					}
 					//TODO Need to do something special in other cases?
-					else newvarids.push_back(*it);
+					else { newvarids.push_back(*it); }
 				}
-				else newvarids.push_back(*it);
+				else { newvarids.push_back(*it); }
 			}
 			sumterm->_varids = newvarids;
 		}
 		else if(typeid(*cpterm) == typeid(CPWSumTerm)) {
-			//CPWSumTerm* wsumterm = static_cast<CPWSumTerm*>(cpterm);
-			//TODO
+			CPWSumTerm* wsumterm = static_cast<CPWSumTerm*>(cpterm);
+			vector<VarId> newvarids;
+			vector<int> newweights;
+			assert(wsumterm->_varids.size() == wsumterm->_weights.size());
+			for(auto vit = wsumterm->_varids.begin(), wit = wsumterm->_weights.begin(); vit != wsumterm->_varids.end(); ++vit, ++wit) {
+				if(not _termtranslator->function(*vit)) {
+					CPTsBody* cprelation = _termtranslator->cprelation(*vit);
+					CPTerm* left = foldCPTerm(cprelation->left());
+					if(typeid(*left) == typeid(CPWSumTerm) && cprelation->comp() == CT_EQ) {
+						CPWSumTerm* subterm = static_cast<CPWSumTerm*>(left);
+						assert(cprelation->right()._isvarid && cprelation->right()._varid == *vit);
+						newvarids.insert(newvarids.end(),subterm->_varids.begin(),subterm->_varids.end());
+						for(auto it = subterm->_weights.begin(); it != subterm->_weights.end(); ++it) {
+							newweights.push_back((*wit)*(*it));
+						}
+					}
+					else if(typeid(*left) == typeid(CPSumTerm)) {
+						newvarids.push_back(*vit);
+						newweights.push_back(*wit);
+						int sumtseitin = translator()->translate(cprelation->left(),cprelation->comp(),cprelation->right(),TS_EQ);
+						addUnitClause(sumtseitin);
+					}
+					//TODO Need to do something special in other cases?
+					else {
+						newvarids.push_back(*vit);
+						newweights.push_back(*wit);
+					}
+				}
+				else {
+					newvarids.push_back(*vit);
+					newweights.push_back(*wit);
+				}
+			}
+			wsumterm->_varids = newvarids;
 		}
 	}
 	return cpterm;
@@ -540,11 +577,6 @@ string GroundTheory::toString() const {
 	put(s);
 	return s.str();
 }
-
-//Formula* GroundTheory::sentence(unsigned int n) const{
-//	if(n < _clauses.size()) return _clauses[n];
-//	else return _aggregates[n-_clauses.size()]
-//}
 
 
 /**********************
@@ -747,7 +779,7 @@ void SolverTheory::addCPReification(int tseitin, CPTsBody* body) {
 			addCPVariable(right._varid);
 			vector<VarId> varids = term->_varids;
 			vector<int> weights;
-			weights.resize(1, term->_varids.size());
+			weights.resize(term->_varids.size(),1);
 
 			int bound = 0;
 			varids.push_back(right._varid);
@@ -756,7 +788,7 @@ void SolverTheory::addCPReification(int tseitin, CPTsBody* body) {
 			addWeightedSum(createAtom(tseitin), varids, weights, bound, comp, getSolver());
 		} else {
 			vector<int> weights;
-			weights.resize(1, term->_varids.size());
+			weights.resize(term->_varids.size(),1);
 			addWeightedSum(createAtom(tseitin), term->_varids, weights, right._bound, comp, getSolver());
 		}
 	} else {

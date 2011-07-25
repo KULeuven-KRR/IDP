@@ -268,7 +268,7 @@ class GroundDefinition : public AbstractDefinition {
 
 		// Debugging
 		std::ostream&	put(std::ostream&,unsigned int spaces = 0) const;
-		std::string toString(unsigned int spaces = 0) const;
+		std::string 	toString(unsigned int spaces = 0) const;
 };
 
 

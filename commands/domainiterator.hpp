@@ -13,7 +13,7 @@
 
 class DomainIteratorInference: public Inference {
 public:
-	DomainIteratorInference(): Inference("domainiterator") {
+	DomainIteratorInference(): Inference("domainIterator") {
 		add(AT_DOMAIN);
 	}
 

@@ -55,7 +55,7 @@ private:
 	}
 
 public:
-	GroundAndPrintInference(): Inference("printgrounding", true) {
+	GroundAndPrintInference(): Inference("printGrounding", true) {
 		add(AT_THEORY);
 		add(AT_STRUCTURE);
 		add(AT_OPTIONS);
