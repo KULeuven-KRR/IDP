@@ -1861,9 +1861,9 @@ void GrounderFactory::visit(const BoolForm* bf) {
 		BoolForm* newbf = bf->clone();
 		if(!(newbf->conj())) {
 			newbf->conj(true);
-			newbf->swapsign();
+			newbf->negate();
 			for(vector<Formula*>::const_iterator it = newbf->subformulas().begin(); it != newbf->subformulas().end(); ++it)
-				(*it)->swapsign();
+				(*it)->negate();
 		}
 
 		// Visit the subformulas
@@ -1937,7 +1937,7 @@ void GrounderFactory::visit(const QuantForm* qf) {
 	// Handle top-level universal quantifiers efficiently
 	if(_context._component == CC_SENTENCE && (qf->sign() == qf->univ())) {
 		Formula* newsub = qf->subf()->clone();
-		if(!(qf->univ())) newsub->swapsign();
+		if(!(qf->univ())) newsub->negate();
 		descend(newsub);
 		newsub->recursiveDelete();
 		_toplevelgrounder = new UnivSentGrounder(_grounding,_toplevelgrounder,gen,_verbosity);
@@ -2016,8 +2016,8 @@ void GrounderFactory::visit(const AggForm* af) {
 	
 		// Create grounder for the set
 		SaveContext();
-		if(recursive(atransaf)) assert(FormulaUtils::monotone(atransaf) || FormulaUtils::antimonotone(atransaf));
-		DeeperContext(!FormulaUtils::antimonotone(atransaf));
+		if(recursive(atransaf)) assert(FormulaUtils::isMonotone(atransaf) || FormulaUtils::isAntimonotone(atransaf));
+		DeeperContext(!FormulaUtils::isAntimonotone(atransaf));
 		descend(atransaf->right()->set());
 		SetGrounder* setgr = _setgrounder;
 		RestoreContext();
@@ -2054,7 +2054,7 @@ void GrounderFactory::visit(const AggForm* af) {
  */
 void GrounderFactory::visit(const EqChainForm* ef) {
 	Formula* f = ef->clone();
-	f = FormulaUtils::remove_eqchains(f,_grounding->vocabulary());
+	f = FormulaUtils::removeEqChains(f,_grounding->vocabulary());
 	f->accept(this);
 	f->recursiveDelete();
 }

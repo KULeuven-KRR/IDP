@@ -29,8 +29,8 @@ class Printer;
 //TODO monitor policy
 class PrintGroundTheory : public AbstractGroundTheory {
 private:
-	InteractivePrintMonitor* monitor_;
-	Printer*			printer_;
+	InteractivePrintMonitor* 	monitor_;
+	Printer*					printer_;
 
 public:
 	PrintGroundTheory(InteractivePrintMonitor* monitor, AbstractStructure* str, Options* opts);
@@ -55,7 +55,7 @@ public:
 
 	// Debugging
 	virtual std::ostream&	put(std::ostream& output, unsigned int)	const { assert(false); return output;	}
-	virtual std::string		to_string()								const { assert(false); return "";		}
+	virtual std::string		toString()								const { assert(false); return "";		}
 };
 
 #endif /* PRINTGROUNDTHEORY_HPP_ */

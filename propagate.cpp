@@ -246,7 +246,7 @@ ThreeValuedDomain::ThreeValuedDomain(const FOPropDomainFactory* factory, bool ct
 
 ThreeValuedDomain::ThreeValuedDomain(const FOPropDomainFactory* factory, const Formula* f) {
 	_ctdomain = factory->formuladomain(f);
-	Formula* negf = f->clone(); negf->swapsign();
+	Formula* negf = f->clone(); negf->negate();
 	_cfdomain = factory->formuladomain(negf);
 	_twovalued = true;
 	assert(_ctdomain);

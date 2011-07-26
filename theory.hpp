@@ -73,7 +73,7 @@ class Formula : public TheoryComponent {
 		std::vector<Formula*>	_subformulas;	//!< the direct subformulas of the formula
 		FormulaParseInfo		_pi;			//!< the place where the formula was parsed 
 
-		void	setfvars();		//!< compute the free variables of the formula
+		void	setFreeVars();		//!< compute the free variables of the formula
 
 	public:
 
@@ -93,17 +93,17 @@ class Formula : public TheoryComponent {
 			//!< delete the formula, but not its children
 
 		// Mutators
-		void	swapsign()	{ _sign = !_sign; if(_pi.original()) _pi.original()->swapsign();		}	
+		void	negate()	{ _sign = !_sign; if(_pi.original()) _pi.original()->negate();		}	
 			//!< swap the sign of the formula
 
-		void	addsubterm(Term* t)								{ _subterms.push_back(t); setfvars();		}
-		void	addsubformula(Formula* f)						{ _subformulas.push_back(f); setfvars();	}
-		void	addquantvar(Variable* v)						{ _quantvars.insert(v); setfvars();			}
-		void	subterm(unsigned int n, Term* t)				{ _subterms[n] = t; setfvars();				}
-		void	subformula(unsigned int n, Formula* f)			{ _subformulas[n] = f; setfvars();			}
-		void	subterms(const std::vector<Term*>& vt)			{ _subterms = vt; setfvars();				}
-		void	subformulas(const std::vector<Formula*>& vf)	{ _subformulas = vf; setfvars();			}
-		void	quantvars(const std::set<Variable*>& sv)		{ _quantvars = sv; setfvars();				}
+		void	addSubterm(Term* t)								{ _subterms.push_back(t); setFreeVars();		}
+		void	addSubformula(Formula* f)						{ _subformulas.push_back(f); setFreeVars();	}
+		void	addQuantVar(Variable* v)						{ _quantvars.insert(v); setFreeVars();			}
+		void	subterm(unsigned int n, Term* t)				{ _subterms[n] = t; setFreeVars();				}
+		void	subformula(unsigned int n, Formula* f)			{ _subformulas[n] = f; setFreeVars();			}
+		void	subterms(const std::vector<Term*>& vt)			{ _subterms = vt; setFreeVars();				}
+		void	subformulas(const std::vector<Formula*>& vf)	{ _subformulas = vf; setFreeVars();			}
+		void	quantvars(const std::set<Variable*>& sv)		{ _quantvars = sv; setFreeVars();				}
 
 		// Inspectors
 				bool					sign()						const { return _sign;			}
@@ -186,7 +186,7 @@ class EqChainForm : public Formula {
 		~EqChainForm() { }
 
 		// Mutators
-		void add(CompType ct, Term* t)			{ _comps.push_back(ct); addsubterm(t);	}
+		void add(CompType ct, Term* t)			{ _comps.push_back(ct); addSubterm(t);	}
 		void conj(bool b)						{ _conj = b;							}
 		void term(unsigned int n, Term* t)		{ subterm(n,t);							}
 		void comp(unsigned int n, CompType ct)	{ _comps[n] = ct;						}
@@ -211,7 +211,7 @@ class EquivForm : public Formula {
 	public:
 		// Constructors
 		EquivForm(bool sign, Formula* lf, Formula* rf, const FormulaParseInfo& pi) : 
-			Formula(sign,pi) { addsubformula(lf); addsubformula(rf); }
+			Formula(sign,pi) { addSubformula(lf); addSubformula(rf); }
 
 		EquivForm*	clone()										const;
 		EquivForm*	clone(const std::map<Variable*,Variable*>&)	const;
@@ -247,7 +247,7 @@ class BoolForm : public Formula {
 		BoolForm(bool sign, bool c, const std::vector<Formula*>& sb, const FormulaParseInfo& pi) :
 			Formula(sign,pi), _conj(c) { subformulas(sb); }
 		BoolForm(bool sign, bool c, Formula* left, Formula* right, const FormulaParseInfo& pi) :
-			Formula(sign,pi), _conj(c) { addsubformula(left); addsubformula(right);	}
+			Formula(sign,pi), _conj(c) { addSubformula(left); addSubformula(right);	}
 
 		BoolForm*	clone()										const;
 		BoolForm*	clone(const std::map<Variable*,Variable*>&)	const;
@@ -290,7 +290,7 @@ class QuantForm : public Formula {
 		~QuantForm() { }
 
 		// Mutators
-		void	add(Variable* v)	{ addquantvar(v);	}
+		void	add(Variable* v)	{ addQuantVar(v);	}
 		void	univ(bool b)		{ _univ = b;		}
 		void	subf(Formula* f)	{ subformula(0,f);	}
 
@@ -346,20 +346,20 @@ class AggForm : public Formula {
 namespace FormulaUtils {
 
 	/** \brief Recursively rewrite all EqChainForms in the given formula to BoolForms **/
-	Formula* remove_eqchains(Formula*,Vocabulary* v = 0);	
+	Formula* removeEqChains(Formula*,Vocabulary* v = 0);	
 
 	/** **/
-	Formula* graph_functions(Formula* f);	
+	Formula* graphFunctions(Formula* f);	
 
 	/** \brief Non-recursively move terms that are three-valued in a given structure outside of the given atom **/
 	Formula* moveThreeValuedTerms(Formula*,AbstractStructure*,bool positive,bool cpsupport=false,
 								const std::set<const PFSymbol*> cpsymbols=std::set<const PFSymbol*>());
 
 	/** \brief Returns true iff the aggregate formula is monotone **/
-	bool monotone(const AggForm* af);
+	bool isMonotone(const AggForm* af);
 
 	/** \brief Returns true iff the aggregate formula is anti-monotone **/
-	bool antimonotone(const AggForm* af);
+	bool isAntimonotone(const AggForm* af);
 
 	/** \brief Create the formula 'true' **/
 	BoolForm*	trueform();

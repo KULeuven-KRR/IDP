@@ -109,6 +109,17 @@ procedure ground(T,S,Opts) {
 }
 
 /**
+ * Print the reduced grounding of theory T and structure S (without storing it)
+ */
+procedure printGrounding(T,S,Opts) {
+	local clonetheo = clone(T)
+	idp_intern.pushNegations(clonetheo)
+	idp_intern.flatten(clonetheo)
+	if not Opts then Opts = stdoptions end
+	return idp_intern.printGrounding(clonetheo,S,Opts) 
+}
+
+/**
  * Apply unit propagation on a theory T and structure S
  */
 procedure propagate(T,S,Opts) {

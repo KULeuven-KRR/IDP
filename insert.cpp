@@ -1600,12 +1600,12 @@ Formula* Insert::conjform(Formula* lf, Formula* rf, YYLTYPE l) const {
 }
 
 Formula* Insert::implform(Formula* lf, Formula* rf, YYLTYPE l) const {
-	if(lf) lf->swapsign();
+	if(lf) lf->negate();
 	return boolform(false,lf,rf,l);
 }
 
 Formula* Insert::revimplform(Formula* lf, Formula* rf, YYLTYPE l) const {
-	if(rf) rf->swapsign();
+	if(rf) rf->negate();
 	return boolform(false,rf,lf,l);
 }
 
@@ -1651,7 +1651,7 @@ Formula* Insert::bexform(CompType c, int bound, const std::set<Variable*>& vv, F
 }
 
 void Insert::negate(Formula* f) const {
-	f->swapsign();
+	f->negate();
 }
 
 

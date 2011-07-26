@@ -738,7 +738,7 @@ void FOBDDFactory::visit(const QuantForm* qf) {
 
 void FOBDDFactory::visit(const EqChainForm* ef) {
 	EqChainForm* efclone = ef->clone();
-	Formula* f = FormulaUtils::remove_eqchains(efclone,_vocabulary);
+	Formula* f = FormulaUtils::removeEqChains(efclone,_vocabulary);
 	f->accept(this);
 	f->recursiveDelete();
 }

@@ -20,7 +20,7 @@ public:
 		//TODO
 	}
 
-	InternalArgument execute(const std::vector<InternalArgument>& args) const {
+	InternalArgument execute(const std::vector<InternalArgument>& /* args */) const {
 		//TODO not implemented
 		assert(false);
 	}
