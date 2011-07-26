@@ -11,6 +11,7 @@
 #include "theory.hpp"
 #include "ground.hpp"
 #include "ecnf.hpp"
+#include "common.hpp"
 
 // FIXME rewrite the printers to correctly handle visiting incrementally, making sure all arguments are instantiated, ...
 
@@ -27,7 +28,7 @@ private:
 	bool writeTranlation() const { return writeTranslation_; }
 
 	using StreamPrinter<Stream>::output;
-	using StreamPrinter<Stream>::printtab;
+	using StreamPrinter<Stream>::printTab;
 	using StreamPrinter<Stream>::unindent;
 	using StreamPrinter<Stream>::indent;
 	using StreamPrinter<Stream>::isDefClosed;

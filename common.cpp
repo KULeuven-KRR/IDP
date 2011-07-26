@@ -63,7 +63,7 @@ double toDouble(const string& s) {
 	else return d;
 }
 
-void printtabs(ostream& output, unsigned int tabs) {
+void printTabs(ostream& output, unsigned int tabs) {
 	for(unsigned int n = 0; n < tabs; ++n) 
 		output << ' ';
 }
@@ -94,7 +94,7 @@ double applyAgg(const AggFunction& agg, const vector<double>& args) {
 	return d;
 }
 
-CompType invertcomp(CompType comp) {
+CompType invertComp(CompType comp) {
 	switch(comp) {
 		case CT_EQ: case CT_NEQ: return comp;
 		case CT_LT: return CT_GT;
@@ -107,7 +107,7 @@ CompType invertcomp(CompType comp) {
 	}
 }
 
-CompType negatecomp(CompType comp) {
+CompType negateComp(CompType comp) {
 	switch(comp) {
 		case CT_EQ: return CT_NEQ;
 		case CT_NEQ: return CT_EQ;
@@ -177,34 +177,7 @@ string* StringPointer(const string& str) {
 	return sharedstrings.stringpointer(str);
 }
 
-CompType invertct(CompType ct) {
-	switch(ct) {
-		case CT_EQ: case CT_NEQ: return ct;
-		case CT_LT: return CT_GT;
-		case CT_GT: return CT_LT;
-		case CT_LEQ: return CT_GEQ;
-		case CT_GEQ: return CT_LEQ;
-		default:
-			assert(false);
-			return CT_EQ;
-	}
-}
-
-CompType negatect(CompType ct) {
-	switch(ct) {
-		case CT_EQ: return CT_NEQ;
-		case CT_NEQ: return CT_EQ;
-		case CT_LT: return CT_GEQ;
-		case CT_GT: return CT_LEQ;
-		case CT_LEQ: return CT_GT;
-		case CT_GEQ: return CT_LT;
-		default:
-			assert(false);
-			return CT_EQ;
-	}
-}
-
-PosContext swapcontext(PosContext ct) {
+PosContext negateContext(PosContext ct) {
 	switch(ct) {
 		case PC_BOTH : return PC_BOTH;
 		case PC_POSITIVE : return PC_NEGATIVE;

@@ -143,7 +143,7 @@ Formula* PredForm::accept(TheoryMutatingVisitor* v) {
 }
 
 ostream& PredForm::put(ostream& output, unsigned int spaces) const {
-	printtabs(output,spaces);
+	printTabs(output,spaces);
 	if(!sign()) output << '~';
 	output << *_symbol;
 	if(typeid(*_symbol) == typeid(Predicate)) {
@@ -192,7 +192,7 @@ Formula* EqChainForm::accept(TheoryMutatingVisitor* v) {
 }
 
 ostream& EqChainForm::put(ostream& output, unsigned int spaces) const {
-	printtabs(output,spaces);
+	printTabs(output,spaces);
 	if(!sign()) output << '~';
 	output << '(' << *subterms()[0];
 	for(unsigned int n = 0; n < _comps.size(); ++n) {
@@ -237,7 +237,7 @@ Formula* EquivForm::accept(TheoryMutatingVisitor* v) {
 }
 
 ostream& EquivForm::put(ostream& output, unsigned int spaces) const {
-	printtabs(output,spaces);
+	printTabs(output,spaces);
 	output << '(' << *left() << " <=> " << *right() << ')';
 	return output;
 }
@@ -268,7 +268,7 @@ Formula* BoolForm::accept(TheoryMutatingVisitor* v) {
 }
 
 ostream& BoolForm::put(ostream& output, unsigned int spaces) const {
-	printtabs(output,spaces);
+	printTabs(output,spaces);
 	if(subformulas().empty()) {
 		if(sign() == _conj) output << "true";
 		else output << "false";
@@ -317,7 +317,7 @@ Formula* QuantForm::accept(TheoryMutatingVisitor* v) {
 }
 
 ostream& QuantForm::put(ostream& output, unsigned int spaces) const {
-	printtabs(output,spaces);
+	printTabs(output,spaces);
 	if(!sign()) output << '~';
 	output << '(';
 	output << (_univ ? '!' : '?');
@@ -359,7 +359,7 @@ Formula* AggForm::accept(TheoryMutatingVisitor* v) {
 }
 
 ostream& AggForm::put(ostream& output, unsigned int spaces) const {
-	printtabs(output,spaces);
+	printTabs(output,spaces);
 	if(!sign()) output << '~';
 	output << '(' << *left();
 	switch(_comp) {
@@ -407,7 +407,7 @@ Rule* Rule::accept(TheoryMutatingVisitor* v) {
 
 
 ostream& Rule::put(ostream& output, unsigned int spaces) const {
-	printtabs(output,spaces);
+	printTabs(output,spaces);
 	if(!_quantvars.empty()) {
 		output << "!";
 		for(set<Variable*>::const_iterator it = _quantvars.begin(); it != _quantvars.end(); ++it) {
@@ -467,7 +467,7 @@ Definition* Definition::accept(TheoryMutatingVisitor* v) {
 }
 
 ostream& Definition::put(ostream& output, unsigned int spaces) const {
-	printtabs(output,spaces);
+	printTabs(output,spaces);
 	output << "{ ";
 	if(!_rules.empty()) {
 		output << *_rules[0];
@@ -522,7 +522,7 @@ FixpDef* FixpDef::accept(TheoryMutatingVisitor* v) {
 }
 
 ostream& FixpDef::put(ostream& output, unsigned int spaces) const {
-	printtabs(output,spaces);
+	printTabs(output,spaces);
 	output << (_lfp ? "LFD [  " : "GFD [  ");
 	if(!_rules.empty()) {
 		output << *_rules[0];
@@ -585,7 +585,7 @@ Theory* Theory::accept(TheoryMutatingVisitor* v) {
 }
 
 std::ostream& Theory::put(std::ostream& output, unsigned int spaces) const {
-	printtabs(output,spaces);
+	printTabs(output,spaces);
 	output << "#theory " <<  _name;
 	if(_vocabulary) {
 		output << " : " << _vocabulary->name();
@@ -642,7 +642,7 @@ Formula* NegationPush::visit(EqChainForm* f) {
 		f->negate();
 		f->conj(!f->conj());
 		for(unsigned int n = 0; n < f->comps().size(); ++n) 
-			f->comp(n,negatecomp(f->comps()[n]));
+			f->comp(n,negateComp(f->comps()[n]));
 	}
 	return traverse(f);
 }
@@ -1000,7 +1000,7 @@ Rule* AllTermMover::visit(Rule* rule) {
 }
 
 Formula* AllTermMover::visit(BoolForm* bf) {
-	PosContext pc = bf->sign() ? _context : swapcontext(_context);
+	PosContext pc = bf->sign() ? _context : negateContext(_context);
 	for(unsigned int n = 0; n < bf->subformulas().size(); ++n) {
 		bf->subformula(n,bf->subformulas()[n]->accept(this));
 		_context = pc;
@@ -1009,7 +1009,7 @@ Formula* AllTermMover::visit(BoolForm* bf) {
 }
 
 Formula* AllTermMover::visit(QuantForm* qf) {
-	PosContext pc = qf->sign() ? _context : swapcontext(_context);
+	PosContext pc = qf->sign() ? _context : negateContext(_context);
 	for(unsigned int n = 0; n < qf->subformulas().size(); ++n) {
 		qf->subformula(n,qf->subformulas()[n]->accept(this));
 		_context = pc;
@@ -1093,7 +1093,7 @@ Formula* AllTermMover::visit(PredForm* predform) {
 		else comp = CT_GT;
 		if(typeid(*left) == typeid(AggTerm)) {
 			AggTerm* aggterm = dynamic_cast<AggTerm*>(left);
-			comp = invertct(comp);
+			comp = invertComp(comp);
 			AggForm* aggform = new AggForm(predform->sign(),right,comp,aggterm,FormulaParseInfo());
 			delete(predform);
 			return aggform->accept(this);
@@ -1212,10 +1212,10 @@ class ThreeValuedTermMover : public TheoryMutatingVisitor {
 	public:
 		ThreeValuedTermMover(AbstractStructure* str, bool posc, bool cps=false, const set<const PFSymbol*>& cpsymbols=set<const PFSymbol*>()):
 			_structure(str), _poscontext(posc), _termgraphs(0), _variables(), _cpsupport(cps), _cpsymbols(cpsymbols) { }
-		Formula*	visit(PredForm* pf);
-		Formula*	visit(AggForm* af);
 		Term*		visit(FuncTerm* ft);
 		Term*		visit(AggTerm* at);
+		Formula*	visit(PredForm* pf);
+		Formula*	visit(AggForm* af);
 
 	private:
 		bool isCPSymbol(const PFSymbol*) const;
@@ -1271,7 +1271,7 @@ Term* ThreeValuedTermMover::visit(AggTerm* aggterm) {
 		delete(aggterm);
 		return varterm->clone();
 	}
-};
+}
 
 Formula* ThreeValuedTermMover::visit(PredForm* predform) {
 	// Handle built-in predicates
@@ -1300,12 +1300,12 @@ Formula* ThreeValuedTermMover::visit(PredForm* predform) {
 			Term* right = predform->subterms()[1];
 			//TODO: Check whether handled correctly when both sides are AggTerms!!
 			CompType comp;
-			if(symbname == "=/2") comp = CT_EQ;
-			else if(symbname == "</2") comp = CT_LT;
-			else comp = CT_GT;
+			if(symbname == "=/2") { comp = CT_EQ; } 
+			else if(symbname == "</2") { comp = CT_LT; } 
+			else { comp = CT_GT; }
 			if(typeid(*left) == typeid(AggTerm)) {
 				AggTerm* aggterm = dynamic_cast<AggTerm*>(left);
-				comp = invertcomp(comp);
+				comp = invertComp(comp);
 				AggForm* aggform = new AggForm(predform->sign(),right,comp,aggterm,FormulaParseInfo());
 				delete(predform);
 				return aggform->accept(this);

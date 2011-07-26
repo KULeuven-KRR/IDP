@@ -627,7 +627,7 @@ int ComparisonGrounder::run() const {
 			CPTerm* rightterm = new CPVarTerm(right._varid);
 			CPBound leftbound(leftvalue);
 //			return _translator->translate(rightterm,invertcomp(_comparator),leftbound,_context._tseitin);
-			return _translator->translate(rightterm,invertcomp(_comparator),leftbound,TS_EQ);
+			return _translator->translate(rightterm,invertComp(_comparator),leftbound,TS_EQ);
 		}	
 		else {
 			assert(not right._isvarid);

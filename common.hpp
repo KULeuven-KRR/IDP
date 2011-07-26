@@ -33,19 +33,18 @@ std::string	convertToString(T element) {
 int		toInt(const std::string&);	//!< convert string to int
 double	toDouble(const std::string&);	//!< convert string to double
 
-void	printtabs(std::ostream&,unsigned int tabs);	//!< write a given number of tabs
+void	printTabs(std::ostream&,unsigned int tabs);	//!< write a given number of tabs
 
-double applyAgg(const AggFunction&,const std::vector<double>& args);	//!< apply an aggregate function to arguments
+double 	applyAgg(const AggFunction&,const std::vector<double>& args);	//!< apply an aggregate function to arguments
 
-CompType invertct(CompType ct);
-CompType invertcomp(CompType);	//!< Invert a comparison operator
-CompType negatecomp(CompType);	//!< Negate a comparison operator
+CompType invertComp(CompType);	//!< Invert a comparison operator
+CompType negateComp(CompType);	//!< Negate a comparison operator
 
 std::ostream& operator<<(std::ostream&, const AggFunction&);	//!< Put an aggregate type on the given output stream
 std::ostream& operator<<(std::ostream&, const TsType&);		//!< Put a tseitin type on the given output stream
 std::ostream& operator<<(std::ostream&, const CompType&);	//!< Put a comparator type on the given output stream
 
-PosContext swapcontext(PosContext);	//!< Negate a context
+PosContext negateContext(PosContext);	//!< Negate a context
 
 std::string* StringPointer(const char* str);			//!< Returns a shared pointer to the given string
 std::string* StringPointer(const std::string& str);	//!< Returns a shared pointer to the given string

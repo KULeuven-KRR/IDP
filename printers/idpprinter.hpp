@@ -25,7 +25,7 @@ private:
 	const GroundTermTranslator*	_termtranslator;
 
 	using StreamPrinter<Stream>::output;
-	using StreamPrinter<Stream>::printtab;
+	using StreamPrinter<Stream>::printTab;
 	using StreamPrinter<Stream>::unindent;
 	using StreamPrinter<Stream>::indent;
 	using StreamPrinter<Stream>::isDefClosed;
@@ -101,11 +101,11 @@ public:
 					PredInter* pi = fi->graphinter();
 					const PredTable* ct = pi->ct();
 					output() << *f << "<ct> = ";
-					printasfunc(ct);
+					printAsFunc(ct);
 					output() << '\n';
 					const PredTable* cf = pi->cf();
 					output() << *f << "<cf> = ";
-					printasfunc(cf);
+					printAsFunc(cf);
 					output() << '\n';
 				}
 			}
@@ -128,40 +128,40 @@ public:
 
 	void visit(const Namespace* s) {
 		for(auto i=s->vocabularies().begin(); i!=s->vocabularies().end(); ++i) {
-			printtab();
-			output() << "#vocabulary " << (*i).second->name() << " {\n";
+			printTab();
+			output() << "vocabulary " << (*i).second->name() << " {\n";
 			indent();
 			visit((*i).second);
 			unindent();
-			printtab();
+			printTab();
 			output() << "}\n";
 		}
 		for(auto i=s->theories().begin(); i!=s->theories().end(); ++i) {
-			printtab();
-			output() << "#theory " << (*i).second->name() <<" : " << (*i).second->vocabulary()->name() << " {\n";
+			printTab();
+			output() << "theory " << (*i).second->name() <<" : " << (*i).second->vocabulary()->name() << " {\n";
 			indent();
 			Printer::visit((*i).second);
 			unindent();
-			printtab();
+			printTab();
 			output() << "}\n";
 		}
 		for(auto i=s->structures().begin(); i!=s->structures().end(); ++i) {
-			printtab();
-			output() << "#structure " << (*i).second->name();
+			printTab();
+			output() << "structure " << (*i).second->name();
 			output() << " : " << (*i).second->vocabulary()->name() << " {\n";
 			indent();
 			visit((*i).second);
 			unindent();
-			printtab();
+			printTab();
 			output() << "}\n";
 		}
 		for(auto i=s->subspaces().begin(); i!=s->subspaces().end(); ++i) {
-			printtab();
-			output() << "#namespace " << (*i).second->name() << " {\n";
+			printTab();
+			output() << "namespace " << (*i).second->name() << " {\n";
 			indent();
 			visit((*i).second);
 			unindent();
-			printtab();
+			printTab();
 			output() << "}\n";
 		}
 	}
@@ -209,106 +209,110 @@ public:
 	/** Formulas **/
 
 	void visit(const PredForm* f) {
-		if(! f->sign())	output() << "~";
+		if(! f->sign())	output() << '~';
 		output() <<f->symbol()->toString(_longnames);
 		if(!f->subterms().empty()) {
-			output() << "(";
+			output() << '(';
 			f->subterms()[0]->accept(this);
 			for(unsigned int n = 1; n < f->subterms().size(); ++n) {
-				output() << ",";
+				output() << ',';
 				f->subterms()[n]->accept(this);
 			}
-			output() << ")";
+			output() << ')';
 		}
 	}
 
 	void visit(const EqChainForm* f) {
-		if(! f->sign())	output() << "~";
-		output() << "(";
+		if(! f->sign())	output() << '~';
+		output() << '(';
 		f->subterms()[0]->accept(this);
 		for(unsigned int n = 0; n < f->comps().size(); ++n) {
-			switch(f->comps()[n]) {
-				case CT_EQ:
-					output() << " = ";
-					break;
-				case CT_NEQ:
-					output() << " ~= ";
-					break;
-				case CT_LEQ:
-					output() << " =< ";
-					break;
-				case CT_GEQ:
-					output() << " >= ";
-					break;
-				case CT_LT:
-					output() << " < ";
-					break;
-				case CT_GT:
-					output() << " > ";
-					break;
-			}
+			output() << ' ' << toString(f->comps()[n]) << ' ';
 			f->subterms()[n+1]->accept(this);
 			if(! f->conj() && n+1 < f->comps().size()) {
 				output() << " | ";
 				f->subterms()[n+1]->accept(this);
 			}
 		}
-		output() << ")";
+		output() << ')';
 	}
 
 	void visit(const EquivForm* f) {
-		if(! f->sign())	output() << "~";
-		output() << "(";
+		if(! f->sign())	output() << '~';
+		output() << '(';
 		f->left()->accept(this);
 		output() << " <=> ";
 		f->right()->accept(this);
-		output() << ")";
+		output() << ')';
 	}
 
 	void visit(const BoolForm* f) {
 		if(f->subformulas().empty()) {
-			if(f->sign() == f->conj())
+			if(f->sign() == f->conj()) {
 				output() << "true";
-			else
+			}
+			else {
 				output() << "false";
+			}
 		}
 		else {
-			if(! f->sign())	output() << "~";
-			output() << "(";
+			if(! f->sign())	{
+				output() << '~';
+			}
+			output() << '(';
 			f->subformulas()[0]->accept(this);
 			for(unsigned int n = 1; n < f->subformulas().size(); ++n) {
-				if(f->conj())
+				if(f->conj()) {
 					output() << " & ";
-				else
+				}
+				else {
 					output() << " | ";
+				}
 				f->subformulas()[n]->accept(this);
 			}
-			output() << ")";
+			output() << ')';
 		}
 	}
 
 	void visit(const QuantForm* f) {
-		if(! f->sign())	output() << "~";
-		output() << "(";
-		if(f->univ())
-			output() << "!";
-		else
-			output() << "?";
+		if(! f->sign())	{
+			output() << '~';
+		}
+		output() << '(';
+		if(f->univ()) {
+			output() << '!';
+		}
+		else {
+			output() << '?';
+		}
 		for(std::set<Variable*>::const_iterator it = f->quantvars().begin(); it != f->quantvars().end(); ++it) {
-			output() << " ";
+			output() << ' ';
 			output() << (*it)->name();
-			if((*it)->sort())
-				output() << "[" << *((*it)->sort()) << "]";
+			if((*it)->sort()) {
+				output() << '[' << *((*it)->sort()) << ']';
+			}
 		}
 		output() << " : ";
 		f->subformulas()[0]->accept(this);
-		output() << ")";
+		output() << ')';
 	}
+
+	void visit(const AggForm* f) {
+		if(not f->sign()) {
+			output() << '~';
+		}
+		output() << '(';
+		f->left()->accept(this);
+		output() << ' ' << toString(f->comp()) << ' ';
+		f->right()->accept(this);
+		output() << ')';
+	}
+
 
 	/** Definitions **/
 
 	void visit(const Rule* r) {
-		printtab();
+		printTab();
 		if(!r->quantvars().empty()) {
 			output() << "!";
 			for(std::set<Variable*>::const_iterator it = r->quantvars().begin(); it != r->quantvars().end(); ++it) {
@@ -323,7 +327,7 @@ public:
 	}
 
 	void visit(const Definition* d) {
-		printtab();
+		printTab();
 		output() << "{\n";
 		indent();
 		for(std::vector<Rule*>::const_iterator it = d->rules().begin(); it != d->rules().end(); ++it) {
@@ -331,12 +335,12 @@ public:
 			output() << "\n";
 		}
 		unindent();
-		printtab();
+		printTab();
 		output() << "}\n";
 	}
 
 	void visit(const FixpDef* d) {
-		printtab();
+		printTab();
 		output() << (d->lfp() ? "LFD" : "GFD") << " [\n";
 		indent();
 		for(std::vector<Rule*>::const_iterator it = d->rules().begin(); it != d->rules().end(); ++it) {
@@ -347,7 +351,7 @@ public:
 			(*it)->accept(this);
 		}
 		unindent();
-		printtab();
+		printTab();
 		output() << "]\n";
 	}
 
@@ -397,118 +401,36 @@ public:
 		t->set()->accept(this);
 	}
 
-	void printAtom(int atomnr) {
-		if(_translator==NULL){
-			assert(false);
-			return;
-		}
+	/** Set expressions **/
 
-		// The sign of the literal is handled on higher level.
-		atomnr = abs(atomnr);
-		// Get the atom's symbol from the translator.
-		PFSymbol* pfs = _translator->symbol(atomnr);
-		if(pfs) {
-			// Print the symbol's name.
-			output() << pfs->name().substr(0,pfs->name().find('/'));
-			// Print the symbol's sorts.
-			if(pfs->nrSorts()) {
-				output() << '[';
-				for(unsigned int n = 0; n < pfs->nrSorts(); ++n) {
-					if(pfs->sort(n)) {
-						output() << pfs->sort(n)->name();
-						if(n != pfs->nrSorts()-1) output() << ',';
-					}
-				}
-				output() << ']';
-			}
-			// Get the atom's arguments for the translator.
-			const std::vector<const DomainElement*>& args = _translator->args(atomnr);
-			// Print the atom's arguments.
-			if(typeid(*pfs) == typeid(Predicate)) {
-				if(not args.empty()) {
-					output() << "(";
-					for(unsigned int n = 0; n < args.size(); ++n) {
-						output() << args[n]->toString();
-						if(n != args.size()-1) output() << ",";
-					}
-					output() << ")";
-				}
-			}
-			else {
-				assert(typeid(*pfs) == typeid(Function));
-				if(args.size() > 1) {
-					output() << "(";
-					for(unsigned int n = 0; n < args.size()-1; ++n) {
-						output() << args[n]->toString();
-						if(n != args.size()-2) output() << ",";
-					}
-					output() << ")";
-				}
-				output() << " = " << args.back()->toString();
+	void visit(const EnumSetExpr* s) {
+		output() << "[ ";
+		if(not s->subformulas().empty()) {
+			s->subformulas()[0]->accept(this);
+			for(unsigned int n = 1; n < s->subformulas().size(); ++n) {
+				output() << ";";
+				s->subformulas()[n]->accept(this);
 			}
 		}
-		else {
-			// If there was no symbol, then the atom is a tseitin.
-			assert(!pfs);
-			output() << "tseitin_" << atomnr;
-		}
+		output() << " ]";
 	}
-
-	void printTerm(unsigned int termnr) {
-		// Make sure there is a translator.
-		assert(_termtranslator);
-		// Get information from the term translator.
-		const Function* func = _termtranslator->function(termnr);
-		if(func) {
-			// Print the symbol's name.
-			output() << func->name().substr(0,func->name().find('/'));
-			// Print the symbol's sorts.
-			if(func->nrSorts()) {
-				output() << '[';
-				for(unsigned int n = 0; n < func->nrSorts(); ++n) {
-					if(func->sort(n)) {
-						output() << func->sort(n)->name();
-						if(n != func->nrSorts()-1) output() << ',';
-					}
-				}
-				output() << ']';
+	
+	void visit(const QuantSetExpr* s) {
+		output() << "{";
+		for(std::set<Variable*>::const_iterator it = s->quantvars().begin(); it != s->quantvars().end(); ++it) {
+			output() << " ";
+			output() << (*it)->name();
+			if((*it)->sort()) {
+				output() << "[" << (*it)->sort()->name() << "]";
 			}
-			// Get the arguments from the translator.
-			const std::vector<GroundTerm>& args = _termtranslator->args(termnr);
-			// Print the arguments.
-			if(not args.empty()) {
-				output() << "(";
-				bool begin = true;
-				for(std::vector<GroundTerm>::const_iterator gtit = args.begin(); gtit != args.end(); ++gtit) {
-					if(!begin){
-						output() << ",";
-					}
-					begin = false;
-					if((*gtit)._isvarid) {
-						printTerm((*gtit)._varid);
-					} else {
-						output() << (*gtit)._domelement->toString();
-					}
-				}
-				output() << ")";
-			}
-		} else {
-			output() << "var_" << termnr;
-	//		CPTsBody* cprelation = _termtranslator->cprelation(varid);
-	//		CPReification(1,cprelation).accept(this);
 		}
-	}
-
-	void printAggregate(double bound, bool lower, AggFunction aggtype, unsigned int setnr) {
-		output() << bound << (lower ? " =< " : " >= ");
-		switch(aggtype) {
-			case AGG_CARD: 	output() << "card("; break;
-			case AGG_SUM: 	output() << "sum("; break;
-			case AGG_PROD: 	output() << "prod("; break;
-			case AGG_MIN: 	output() << "min("; break;
-			case AGG_MAX: 	output() << "max("; break;
+		output() << " : ";
+		s->subformulas()[0]->accept(this);
+		if(not s->subterms().empty()) {
+			output() << " : ";
+			s->subterms()[0]->accept(this);
 		}
-		output() << "set_" << setnr << ")." <<"\n";
+		output() << " }";
 	}
 
 	void visit(const GroundClause& g){
@@ -528,7 +450,7 @@ public:
 	void openDefinition(int defid){
 		assert(isDefClosed());
 		openDef(defid);
-		printtab();
+		printTab();
 		output() << "{\n";
 		indent();
 	}
@@ -543,7 +465,7 @@ public:
 	void visit(const GroundDefinition* d) {
 		openDefinition(1);
 		for(GroundDefinition::const_ruleiterator it = d->begin(); it != d->end(); ++it) {
-			printtab();
+			printTab();
 			printAtom(it->first);
 			output() << " <- ";
 			(it->second)->accept(this);
@@ -644,7 +566,6 @@ public:
 		printTerm(cpt->_varid);
 	}
 
-
 	void visit(const PredTable* table) {
 		if(table->approxFinite()) {
 			TableIterator kt = table->begin();
@@ -670,33 +591,6 @@ public:
 			}
 			else if(kt.hasNext()) output() << "true";
 			else output() << "false";
-		}
-		else output() << "possibly infinite table";
-	}
-
-	void printasfunc(const PredTable* table) {
-		if(table->approxFinite()) {
-			TableIterator kt = table->begin();
-			output() << "{ ";
-			if(kt.hasNext()) {
-				ElementTuple tuple = *kt;
-				if(tuple.size() > 1) output() << tuple[0]->toString();
-				for(unsigned int n = 1; n < tuple.size() - 1; ++n) {
-					output() << ',' << tuple[n]->toString();
-				}
-				output() << "->" << tuple.back()->toString();
-				++kt;
-				for(; kt.hasNext(); ++kt) {
-					output() << "; ";
-					tuple = *kt;
-					if(tuple.size() > 1) output() << tuple[0]->toString();
-					for(unsigned int n = 1; n < tuple.size() - 1; ++n) {
-						output() << ',' << tuple[n]->toString();
-					}
-					output() << "->" << tuple.back()->toString();
-				}
-			}
-			output() << " }";
 		}
 		else output() << "possibly infinite table";
 	}
@@ -736,7 +630,7 @@ public:
 	}
 
 	void visit(const Sort* s) {
-		printtab();
+		printTab();
 		output() << "type " << s->name();
 		if(!(s->parents().empty())) {
 			output() << " isa " << (*(s->parents().begin()))->name();
@@ -748,7 +642,7 @@ public:
 	}
 
 	void visit(const Predicate* p) {
-		printtab();
+		printTab();
 		if(p->overloaded()) {
 			output() << "overloaded predicate " << p->name() << '\n';
 		}
@@ -765,7 +659,7 @@ public:
 	}
 
 	void visit(const Function* f) {
-		printtab();
+		printTab();
 		if(f->overloaded()) {
 			output() << "overloaded function " << f->name() << '\n';
 		}
@@ -806,6 +700,162 @@ public:
 		}
 		output() << " ]\n";
 	}
+
+
+private:
+	std::string toString(CompType comp){
+		switch (comp) {
+			case CT_EQ: return "=";
+			case CT_NEQ: return "~=";
+			case CT_LEQ: return "=<";
+			case CT_GEQ: return ">=";
+			case CT_GT: return ">";
+			case CT_LT: return "<";
+		}
+		assert(false);
+		return "";
+	}
+
+	void printAtom(int atomnr) {
+		if(_translator==NULL){
+			assert(false);
+			return;
+		}
+		// The sign of the literal is handled on higher level.
+		atomnr = abs(atomnr);
+		// Get the atom's symbol from the translator.
+		PFSymbol* pfs = _translator->symbol(atomnr);
+		if(pfs) {
+			// Print the symbol's name.
+			output() << pfs->name().substr(0,pfs->name().find('/'));
+			// Print the symbol's sorts.
+			if(pfs->nrSorts()) {
+				output() << '[';
+				for(unsigned int n = 0; n < pfs->nrSorts(); ++n) {
+					if(pfs->sort(n)) {
+						output() << pfs->sort(n)->name();
+						if(n != pfs->nrSorts()-1) { output() << ','; }
+					}
+				}
+				output() << ']';
+			}
+			// Get the atom's arguments for the translator.
+			const std::vector<const DomainElement*>& args = _translator->args(atomnr);
+			// Print the atom's arguments.
+			if(typeid(*pfs) == typeid(Predicate)) {
+				if(not args.empty()) {
+					output() << "(";
+					for(unsigned int n = 0; n < args.size(); ++n) {
+						output() << args[n]->toString();
+						if(n != args.size()-1) { output() << ","; }
+					}
+					output() << ")";
+				}
+			}
+			else {
+				assert(typeid(*pfs) == typeid(Function));
+				if(args.size() > 1) {
+					output() << "(";
+					for(unsigned int n = 0; n < args.size()-1; ++n) {
+						output() << args[n]->toString();
+						if(n != args.size()-2) { output() << ","; }
+					}
+					output() << ")";
+				}
+				output() << " = " << args.back()->toString();
+			}
+		}
+		else {
+			// If there was no symbol, then the atom is a tseitin.
+			assert(!pfs);
+			output() << "tseitin_" << atomnr;
+		}
+	}
+
+	void printTerm(unsigned int termnr) {
+		// Make sure there is a translator.
+		assert(_termtranslator);
+		// Get information from the term translator.
+		const Function* func = _termtranslator->function(termnr);
+		if(func) {
+			// Print the symbol's name.
+			output() << func->name().substr(0,func->name().find('/'));
+			// Print the symbol's sorts.
+			if(func->nrSorts()) {
+				output() << '[';
+				for(unsigned int n = 0; n < func->nrSorts(); ++n) {
+					if(func->sort(n)) {
+						output() << func->sort(n)->name();
+						if(n != func->nrSorts()-1) { output() << ','; }
+					}
+				}
+				output() << ']';
+			}
+			// Get the arguments from the translator.
+			const std::vector<GroundTerm>& args = _termtranslator->args(termnr);
+			// Print the arguments.
+			if(not args.empty()) {
+				output() << "(";
+				bool begin = true;
+				for(std::vector<GroundTerm>::const_iterator gtit = args.begin(); gtit != args.end(); ++gtit) {
+					if(!begin){
+						output() << ",";
+					}
+					begin = false;
+					if((*gtit)._isvarid) {
+						printTerm((*gtit)._varid);
+					} else {
+						output() << (*gtit)._domelement->toString();
+					}
+				}
+				output() << ")";
+			}
+		} else {
+			output() << "var_" << termnr;
+	//		CPTsBody* cprelation = _termtranslator->cprelation(varid);
+	//		CPReification(1,cprelation).accept(this);
+		}
+	}
+
+	void printAggregate(double bound, bool lower, AggFunction aggtype, unsigned int setnr) {
+		output() << bound << (lower ? " =< " : " >= ");
+		switch(aggtype) {
+			case AGG_CARD: 	output() << "card("; break;
+			case AGG_SUM: 	output() << "sum("; break;
+			case AGG_PROD: 	output() << "prod("; break;
+			case AGG_MIN: 	output() << "min("; break;
+			case AGG_MAX: 	output() << "max("; break;
+		}
+		output() << "set_" << setnr << ")." <<"\n";
+	}
+
+	void printAsFunc(const PredTable* table) {
+		if(table->approxFinite()) {
+			TableIterator kt = table->begin();
+			output() << "{ ";
+			if(kt.hasNext()) {
+				ElementTuple tuple = *kt;
+				if(tuple.size() > 1) output() << tuple[0]->toString();
+				for(unsigned int n = 1; n < tuple.size() - 1; ++n) {
+					output() << ',' << tuple[n]->toString();
+				}
+				output() << "->" << tuple.back()->toString();
+				++kt;
+				for(; kt.hasNext(); ++kt) {
+					output() << "; ";
+					tuple = *kt;
+					if(tuple.size() > 1) output() << tuple[0]->toString();
+					for(unsigned int n = 1; n < tuple.size() - 1; ++n) {
+						output() << ',' << tuple[n]->toString();
+					}
+					output() << "->" << tuple.back()->toString();
+				}
+			}
+			output() << " }";
+		}
+		else output() << "possibly infinite table";
+	}
+
 };
 
 #endif /* IDPPRINTER_HPP_ */

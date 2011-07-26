@@ -755,19 +755,19 @@ void FOBDDFactory::visit(const AggForm* ) {
 
 ostream& FOBDDManager::put(ostream& output, const FOBDD* bdd, unsigned int spaces) const {
 	if(bdd == _truebdd) {
-		printtabs(output,spaces);
+		printTabs(output,spaces);
 		output << "true\n";
 	}
 	else if(bdd == _falsebdd) {
-		printtabs(output,spaces);
+		printTabs(output,spaces);
 		output << "false\n";
 	}
 	else {
 		put(output,bdd->kernel(),spaces);
-		printtabs(output,spaces+3);
+		printTabs(output,spaces+3);
 		output << "FALSE BRANCH:\n";
 		put(output,bdd->falsebranch(),spaces+6);
-		printtabs(output,spaces+3);
+		printTabs(output,spaces+3);
 		output << "TRUE BRANCH:\n";
 		put(output,bdd->truebranch(),spaces+6);
 	}
@@ -778,7 +778,7 @@ ostream& FOBDDManager::put(ostream& output, const FOBDDKernel* kernel, unsigned 
 	if(typeid(*kernel) == typeid(FOBDDAtomKernel)) {
 		const FOBDDAtomKernel* atomkernel = dynamic_cast<const FOBDDAtomKernel*>(kernel);
 		PFSymbol* symbol = atomkernel->symbol();
-		printtabs(output,spaces);
+		printTabs(output,spaces);
 		output << *symbol;
 		if(atomkernel->type() == AKT_CF) output << "<cf>";
 		else if(atomkernel->type() == AKT_CT) output << "<ct>";
@@ -809,10 +809,10 @@ ostream& FOBDDManager::put(ostream& output, const FOBDDKernel* kernel, unsigned 
 	}
 	else if(typeid(*kernel) == typeid(FOBDDQuantKernel)) {
 		const FOBDDQuantKernel* quantkernel = dynamic_cast<const FOBDDQuantKernel*>(kernel);
-		printtabs(output,spaces);
+		printTabs(output,spaces);
 		output << "EXISTS(" << *(quantkernel->sort()) << ") {\n";
 		put(output,quantkernel->bdd(),spaces+3);
-		printtabs(output,spaces);
+		printTabs(output,spaces);
 		output << "}";
 	}
 	else {

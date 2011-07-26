@@ -33,7 +33,6 @@ class TheoryMutatingVisitor;
  *	Abstract base class to represent formulas, definitions, and fixpoint definitions.
  */
 class TheoryComponent {
-
 	public:
 		// Constructor
 		TheoryComponent() { }
@@ -64,7 +63,6 @@ std::ostream& operator<<(std::ostream&, const TheoryComponent&);
  * Abstract base class to represent formulas
  */
 class Formula : public TheoryComponent {
-
 	private:
 		bool					_sign;			//!< true iff the formula does not start with a negation
 		std::set<Variable*>		_freevars;		//!< the free variables of the formula
@@ -73,10 +71,7 @@ class Formula : public TheoryComponent {
 		std::vector<Formula*>	_subformulas;	//!< the direct subformulas of the formula
 		FormulaParseInfo		_pi;			//!< the place where the formula was parsed 
 
-		void	setFreeVars();		//!< compute the free variables of the formula
-
 	public:
-
 		// Constructor
 		Formula(bool sign) : _sign(sign) { }
 		Formula(bool sign, const FormulaParseInfo& pi): _sign(sign), _pi(pi)  { }
@@ -93,17 +88,17 @@ class Formula : public TheoryComponent {
 			//!< delete the formula, but not its children
 
 		// Mutators
-		void	negate()	{ _sign = !_sign; if(_pi.original()) _pi.original()->negate();		}	
-			//!< swap the sign of the formula
+				void	negate()	{ _sign = !_sign; if(_pi.original()) _pi.original()->negate();		}	
+					//!< swap the sign of the formula
 
-		void	addSubterm(Term* t)								{ _subterms.push_back(t); setFreeVars();		}
-		void	addSubformula(Formula* f)						{ _subformulas.push_back(f); setFreeVars();	}
-		void	addQuantVar(Variable* v)						{ _quantvars.insert(v); setFreeVars();			}
-		void	subterm(unsigned int n, Term* t)				{ _subterms[n] = t; setFreeVars();				}
-		void	subformula(unsigned int n, Formula* f)			{ _subformulas[n] = f; setFreeVars();			}
-		void	subterms(const std::vector<Term*>& vt)			{ _subterms = vt; setFreeVars();				}
-		void	subformulas(const std::vector<Formula*>& vf)	{ _subformulas = vf; setFreeVars();			}
-		void	quantvars(const std::set<Variable*>& sv)		{ _quantvars = sv; setFreeVars();				}
+				void	addSubterm(Term* t)								{ _subterms.push_back(t); setFreeVars();		}
+				void	addSubformula(Formula* f)						{ _subformulas.push_back(f); setFreeVars();	}
+				void	addQuantVar(Variable* v)						{ _quantvars.insert(v); setFreeVars();			}
+				void	subterm(unsigned int n, Term* t)				{ _subterms[n] = t; setFreeVars();				}
+				void	subformula(unsigned int n, Formula* f)			{ _subformulas[n] = f; setFreeVars();			}
+				void	subterms(const std::vector<Term*>& vt)			{ _subterms = vt; setFreeVars();				}
+				void	subformulas(const std::vector<Formula*>& vf)	{ _subformulas = vf; setFreeVars();			}
+				void	quantvars(const std::set<Variable*>& sv)		{ _quantvars = sv; setFreeVars();				}
 
 		// Inspectors
 				bool					sign()						const { return _sign;			}
@@ -126,6 +121,9 @@ class Formula : public TheoryComponent {
 
 		// Output
 		virtual std::ostream& put(std::ostream&, unsigned int spaces = 0)	const = 0;
+
+	private:
+		void	setFreeVars();		//!< compute the free variables of the formula
 };
 
 std::ostream& operator<<(std::ostream&, const Formula&);

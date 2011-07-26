@@ -1644,8 +1644,8 @@ Formula* Insert::bexform(CompType c, int bound, const std::set<Variable*>& vv, F
 		Term* b = domterm(bound,l);
 		AggTerm* pia = a->pi().original() ? dynamic_cast<AggTerm*>(a->pi().original()->clone()) : a->clone();
 		Term* pib = b->pi().original() ? b->pi().original()->clone() : b->clone();
-		FormulaParseInfo pi = formparseinfo(new AggForm(true,pib,invertcomp(c),pia,FormulaParseInfo()),l);
-		return new AggForm(true,b,invertcomp(c),a,pi);
+		FormulaParseInfo pi = formparseinfo(new AggForm(true,pib,invertComp(c),pia,FormulaParseInfo()),l);
+		return new AggForm(true,b,invertComp(c),a,pi);
 	}
 	else return 0;
 }

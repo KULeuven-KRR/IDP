@@ -1478,29 +1478,29 @@ ostream& Vocabulary::putname(ostream& output) const {
 }
 
 ostream& Vocabulary::put(ostream& output, unsigned int tabs) const {
-	printtabs(output,tabs);
+	printTabs(output,tabs);
 	output << "Vocabulary " << _name << ":\n";
-	++tabs; printtabs(output,tabs);
+	++tabs; printTabs(output,tabs);
 	output << "Sorts:\n";
 	++tabs;
 	for(map<string,set<Sort*> >::const_iterator it = _name2sort.begin(); it != _name2sort.end(); ++it) {
 		for(set<Sort*>::const_iterator jt = (it->second).begin(); jt != (it->second).end(); ++jt) {
-			printtabs(output,tabs);
+			printTabs(output,tabs);
 			output << *(*jt) << '\n';
 		}
 	}
-	--tabs; printtabs(output,tabs);
+	--tabs; printTabs(output,tabs);
 	output << "Predicates:\n";
 	++tabs;
 	for(map<string,Predicate*>::const_iterator it = _name2pred.begin(); it != _name2pred.end(); ++it) {
-		printtabs(output,tabs);
+		printTabs(output,tabs);
 		output << *(it->second) << '\n';
 	}
-	--tabs; printtabs(output,tabs);
+	--tabs; printTabs(output,tabs);
 	output << "Functions:\n";
 	++tabs;
 	for(map<string,Function*>::const_iterator it = _name2func.begin(); it != _name2func.end(); ++it) {
-		printtabs(output,tabs);
+		printTabs(output,tabs);
 		output << *(it->second) << '\n';
 	}
 	return output;
