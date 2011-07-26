@@ -23,7 +23,7 @@ template<class Stream>
 Printer* Printer::create(Options* opts, Stream& stream) {
 	switch(opts->language()) {
 		case LAN_IDP:
-			return new IDPPrinter<Stream>(opts->printtypes(),opts->longnames(), stream);
+			return new IDPPrinter<Stream>(opts->longnames(), stream);
 		case LAN_ECNF:
 			return new EcnfPrinter<Stream>(opts->writeTranslation(), stream);
 		default:

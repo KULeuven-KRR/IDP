@@ -5,3 +5,5 @@
 	outname = "/tmp/groundpacking"
 	out = io.open(outname, "w")
 	stdoptions.language="ecnf"
+
+- een niet bestaande optie in stdoptions setten geeft geen fout (bvb stdoptions.a=1) 

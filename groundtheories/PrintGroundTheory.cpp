@@ -32,9 +32,12 @@ void PrintGroundTheory::addSet(int setnr, int defnr, bool weighted) {
 		transformForAdd(tsset.literals(),VIT_SET,defnr);
 		std::vector<double> weights;
 		if(weighted) weights = tsset.weights();
+
 		GroundSet* set = new GroundSet(setnr,tsset.literals(),weights);
 		printer().visit(set);
 		delete(set);
+
+		_printedsets.insert(setnr);
 	}
 }
 
@@ -51,12 +54,6 @@ void PrintGroundTheory::addAggregate(int head, AggTsBody* body) {
 
 void PrintGroundTheory::addPCRule(int defnr, int tseitin, PCTsBody* body, bool recursive) {
 	transformForAdd(body->body(),(body->conj() ? VIT_CONJ : VIT_DISJ), defnr);
-	if(!printer().isOpen(defnr) && !printer().isClosed()){
-		printer().closeDefinition();
-	}
-	if(printer().isClosed()){
-		printer().openDefinition(defnr);
-	}
 	PCGroundRuleBody* rule = new PCGroundRuleBody(body->conj()?RuleType::RT_CONJ:RuleType::RT_DISJ, body->body(), recursive);
 	printer().visit(defnr, tseitin, rule);
 	delete(rule);
@@ -64,12 +61,6 @@ void PrintGroundTheory::addPCRule(int defnr, int tseitin, PCTsBody* body, bool r
 
 void PrintGroundTheory::addAggRule(int defnr, int tseitin, AggTsBody* body, bool) {
 	addSet(body->setnr(),defnr,(body->aggtype() != AGG_CARD));
-	if(!printer().isOpen(defnr) && !printer().isClosed()){
-		printer().closeDefinition();
-	}
-	if(printer().isClosed()){
-		printer().openDefinition(defnr);
-	}
 	GroundAggregate* agg = new GroundAggregate(body->aggtype(),body->lower(),body->type(),tseitin,body->setnr(),body->bound());
 	printer().visit(defnr, agg);
 	delete(agg);

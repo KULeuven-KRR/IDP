@@ -14,13 +14,13 @@
 #include "ecnf.hpp"
 #include "namespace.hpp"
 
+//TODO is not guaranteed to generate correct idp files!
+//TODO usage of stored parameters might be incorrect in some cases.
+
 template<typename Stream>
 class IDPPrinter: public StreamPrinter<Stream> {
 private:
-	bool 						_printtypes;
 	bool						_longnames;
-	const PFSymbol* 			_currentsymbol;
-	const Structure* 			_currentstructure;
 	const GroundTranslator*		_translator;
 	const GroundTermTranslator*	_termtranslator;
 
@@ -28,19 +28,22 @@ private:
 	using StreamPrinter<Stream>::printtab;
 	using StreamPrinter<Stream>::unindent;
 	using StreamPrinter<Stream>::indent;
-	using StreamPrinter<Stream>::isClosed;
-	using StreamPrinter<Stream>::isOpen;
-	using StreamPrinter<Stream>::setOpen;
+	using StreamPrinter<Stream>::isDefClosed;
+	using StreamPrinter<Stream>::isDefOpen;
+	using StreamPrinter<Stream>::closeDef;
+	using StreamPrinter<Stream>::openDef;
+	using StreamPrinter<Stream>::isTheoryOpen;
+	using StreamPrinter<Stream>::closeTheory;
+	using StreamPrinter<Stream>::openTheory;
 
 public:
-	IDPPrinter(bool printtypes, bool longnames, Stream& stream):
+	IDPPrinter(bool longnames, Stream& stream):
 			StreamPrinter<Stream>(stream),
-			_printtypes(printtypes), _longnames(longnames),
-			_currentsymbol(NULL),
-			_currentstructure(NULL),
+			_longnames(longnames),
 			_translator(NULL),
 			_termtranslator(NULL){ }
 
+	virtual void setLongNames(bool longnames){ _longnames = longnames; }
 	virtual void setTranslator(GroundTranslator* t){ _translator = t; }
 	virtual void setTermTranslator(GroundTermTranslator* t){ _termtranslator = t; }
 
@@ -394,13 +397,12 @@ public:
 		t->set()->accept(this);
 	}
 
-	/****************
-		Grounding
-	****************/
-
 	void printAtom(int atomnr) {
-		// Make sure there is a translator.
-		assert(_translator);
+		if(_translator==NULL){
+			assert(false);
+			return;
+		}
+
 		// The sign of the literal is handled on higher level.
 		atomnr = abs(atomnr);
 		// Get the atom's symbol from the translator.
@@ -447,7 +449,7 @@ public:
 		}
 		else {
 			// If there was no symbol, then the atom is a tseitin.
-			assert(! pfs);
+			assert(!pfs);
 			output() << "tseitin_" << atomnr;
 		}
 	}
@@ -524,16 +526,16 @@ public:
 	}
 
 	void openDefinition(int defid){
-		assert(isClosed());
-		setOpen(defid);
+		assert(isDefClosed());
+		openDef(defid);
 		printtab();
 		output() << "{\n";
 		indent();
 	}
 
 	void closeDefinition(){
-		assert(!isClosed());
-		setOpen(-1);
+		assert(!isDefClosed());
+		closeDef();
 		unindent();
 		output() << "}\n";
 	}
@@ -550,7 +552,7 @@ public:
 	}
 
 	void visit(int defid, int tseitin, const PCGroundRuleBody* b) {
-		assert(isOpen(defid));
+		assert(isDefOpen(defid));
 		printAtom(tseitin);
 		output() << " <- ";
 		visit(b);
@@ -580,7 +582,7 @@ public:
 	}
 
 	void visit(int defid, const GroundAggregate* b) {
-		assert(isOpen(defid));
+		assert(isDefOpen(defid));
 		visit(b);
 	}
 
