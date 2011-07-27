@@ -27,6 +27,7 @@
 #include "commands/propagate.hpp"
 #include "commands/query.hpp"
 #include "commands/createtuple.hpp"
+#include "commands/createrange.hpp"
 #include "commands/ground.hpp"
 #include "commands/completion.hpp"
 #include "commands/tobdd.hpp"
@@ -73,6 +74,7 @@ std::vector<Inference*> getAllInferences(){
 	inferences.push_back(new PushNegationsInference());
 	inferences.push_back(new QueryInference());
 	inferences.push_back(new CreateTupleInference());
+	inferences.push_back(new CreateRangeInference());
 	inferences.push_back(new GroundInference());
 	inferences.push_back(new CompletionInference());
 	inferences.push_back(new CleanInference());
