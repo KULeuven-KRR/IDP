@@ -82,6 +82,7 @@ const char* toCString(ArgType type){
 			(AT_DOMAINITERATOR, "domain_iterator")
 			(AT_DOMAINATOM, "domain_atom")
 			(AT_QUERY, "query")
+			(AT_TERM, "term")
 			(AT_FORMULA, "formula")
 			(AT_THEORY, "theory")
 			(AT_OPTIONS, "options")
@@ -316,6 +317,9 @@ namespace LuaConnection {
 			case AT_QUERY:{
 				return addUserData(L, arg._value._query, arg._type);
 			}
+			case AT_TERM:{
+				return addUserData(L, arg._value._term, arg._type);
+			}
 			case AT_OPTIONS:{
 				Options** ptr = (Options**)lua_newuserdata(L,sizeof(Options*));
 				(*ptr) = arg._value._options;
@@ -491,6 +495,9 @@ namespace LuaConnection {
 						break;
 					case AT_QUERY:
 						ia._value._query = *(Query**)lua_touserdata(L,arg);
+						break;
+					case AT_TERM:
+						ia._value._term = *(Term**)lua_touserdata(L,arg);
 						break;
 					case AT_OPTIONS:
 						ia._value._options = *(Options**)lua_touserdata(L,arg);
@@ -701,6 +708,11 @@ namespace LuaConnection {
 	}
 
 	int gcQuery(lua_State*) {
+		// TODO
+		return 0;
+	}
+
+	int gcTerm(lua_State*) {
 		// TODO
 		return 0;
 	}
@@ -1122,6 +1134,8 @@ namespace LuaConnection {
 			if(ns->isProc(str)) { proc = ns->procedure(str); ++counter; }
 			Query* query = 0;
 			if(ns->isQuery(str)) { query = ns->query(str); ++counter;	}
+			Term* term = 0;
+			if(ns->isTerm(str)) { term = ns->term(str); ++counter;		}
 
 			if(counter == 0) return 0;
 			else if(counter == 1) {
@@ -1138,6 +1152,9 @@ namespace LuaConnection {
 				if(query) {
 					return convertToLua(L,InternalArgument(query));
 				}
+				if(term) {
+					return convertToLua(L,InternalArgument(term));
+				}
 				assert(false);
 				return 0;
 			}
@@ -1150,6 +1167,7 @@ namespace LuaConnection {
 				oo->insert(opts);
 				oo->insert(proc);
 				oo->insert(query);
+				oo->insert(term);
 				return convertToLua(L,InternalArgument(oo));
 			}
 		}
@@ -1682,6 +1700,12 @@ namespace LuaConnection {
 		createNewTable(L, AT_QUERY, elements);
 	}
 
+	void termMetaTable(lua_State* L) {
+		vector<tablecolheader> elements;
+		elements.push_back(tablecolheader(&gcTerm, "__term"));
+		createNewTable(L, AT_TERM, elements);
+	}
+
 	void optionsMetaTable(lua_State* L) {
 		vector<tablecolheader> elements;
 		elements.push_back(tablecolheader(&gcOptions, "__gc"));
@@ -1729,6 +1753,7 @@ namespace LuaConnection {
 		theoryMetaTable(L);
 		formulaMetaTable(L);
 		queryMetaTable(L);
+		termMetaTable(L);
 		optionsMetaTable(L);
 		namespaceMetaTable(L);
 

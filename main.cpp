@@ -150,6 +150,7 @@ void interactive() {
 	while(userline != "exit") {
 		string str = "##intern##{"+userline+'}';
 		parsestring(str);
+		cout << "> ";
 		getline(cin,userline);
 	}
 #endif

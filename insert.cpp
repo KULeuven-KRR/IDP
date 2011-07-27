@@ -40,10 +40,12 @@ class SortDeriver : public TheoryMutatingVisitor {
 		// Constructor
 		SortDeriver(Formula* f,Vocabulary* v) : _vocab(v) { run(f); }
 		SortDeriver(Rule* r,Vocabulary* v)	: _vocab(v) { run(r); }
+		SortDeriver(Term* t, Vocabulary* v) : _vocab(v) { run(t);	}
 
 		// Run sort derivation 
 		void run(Formula*);
 		void run(Rule*);
+		void run(Term*);
 
 		// Visit 
 		Formula*	visit(QuantForm*);
@@ -259,6 +261,21 @@ void SortDeriver::run(Formula* f) {
 	check();
 }
 
+void SortDeriver::run(Term* t) {
+	_changed = false;
+	_firstvisit = true;
+	t->accept(this);
+	_firstvisit = false;
+	while(_changed) {
+		_changed = false;
+		derivesorts();
+		derivefuncs();
+		derivepreds();
+		t->accept(this);
+	}
+	check();
+}
+
 void SortDeriver::run(Rule* r) {
 	// Set the sort of the terms in the head
 	vector<Sort*>::const_iterator jt = r->head()->symbol()->sorts().begin();
@@ -320,6 +337,7 @@ class SortChecker : public TheoryVisitor {
 
 	public:
 		SortChecker(Formula* f,Vocabulary* v)		: _vocab(v) { f->accept(this);	}
+		SortChecker(Term* t,Vocabulary* v)			: _vocab(v) { t->accept(this);	}
 		SortChecker(Definition* d,Vocabulary* v)	: _vocab(v) { d->accept(this);	}
 		SortChecker(FixpDef* d,Vocabulary* v)		: _vocab(v) { d->accept(this);	}
 
@@ -740,6 +758,17 @@ Query* Insert::queryInScope(const string& name, const ParseInfo& pi) const {
 	return q;
 }
 
+Term* Insert::termInScope(const string& name, const ParseInfo& pi) const {
+	Term* t = 0;
+	for(unsigned int n = 0; n < _usingspace.size(); ++n) {
+		if(_usingspace[n]->isTerm(name)) {
+			if(t) Error::overloadedterm(name,_usingspace[n]->term(name)->pi(),t->pi(),pi);
+			else t = _usingspace[n]->term(name);
+		}
+	}
+	return t;
+}
+
 AbstractTheory* Insert::theoryInScope(const string& name, const ParseInfo& pi) const {
 	AbstractTheory* th = 0;
 	for(unsigned int n = 0; n < _usingspace.size(); ++n) {
@@ -961,6 +990,7 @@ void Insert::closeblock() {
 	_curroptions = 0;
 	_currprocedure = 0;
 	_currquery = "";
+	_currterm = "";
 }
 
 void Insert::openspace(const string& sname, YYLTYPE l) {
@@ -1036,6 +1066,14 @@ void Insert::openquery(const string& qname, YYLTYPE l) {
 	if(q) Error::multdeclquery(qname,pi,q->pi());
 }
 
+void Insert::openterm(const string& tname, YYLTYPE l) {
+	openblock();
+	ParseInfo pi = parseinfo(l);
+	Term* t = termInScope(tname,pi);
+	_currterm = tname;
+	if(t) Error::multdeclterm(tname,pi,t->pi());
+}
+
 void Insert::opentheory(const string& tname, YYLTYPE l) {
 	openblock();
 	ParseInfo pi = parseinfo(l);
@@ -1072,6 +1110,16 @@ void Insert::closequery(Query* q) {
 		if(_currspace->isGlobal()) LuaConnection::addGlobal(_currquery,q);
 	}
 	closeblock();
+}
+
+void Insert::closeterm(Term* t) {
+	_curr_vars.clear();
+	if(t) {
+		SortDeriver sd(t,_currvocabulary); 
+		SortChecker sc(t,_currvocabulary);
+		_currspace->add(_currterm,t);
+		if(_currspace->isGlobal()) LuaConnection::addGlobal(_currterm,t);
+	}
 }
 
 void Insert::openstructure(const string& sname, YYLTYPE l) {

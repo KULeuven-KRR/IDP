@@ -767,6 +767,31 @@ bool FOBDDManager::isArithmetic(const FOBDDArgument* a) {
 }
 
 /**
+ * Class to replace an atom F(x,y) by F(x) = y
+ */
+class FuncAtomRemover : public FOBDDVisitor {
+	public:
+		FuncAtomRemover(FOBDDManager* m) : FOBDDVisitor(m) { }
+
+		const FOBDDAtomKernel* change(const FOBDDAtomKernel* atom) {
+			if(typeid(*(atom->symbol())) == typeid(Function) && atom->type() == AKT_TWOVAL) {
+				Function* f = dynamic_cast<Function*>(atom->symbol());
+				Sort* s = SortUtils::resolve(f->outsort(),atom->args().back()->sort());
+				vector<Sort*> equalsorts(2,s);
+				Predicate* equalpred = Vocabulary::std()->pred("=/2");
+				equalpred = equalpred->disambiguate(equalsorts);
+				vector<const FOBDDArgument*> funcargs = atom->args(); funcargs.pop_back();
+				const FOBDDFuncTerm* functerm = _manager->getFuncTerm(f,funcargs);
+				vector<const FOBDDArgument*> newargs; 
+				newargs.push_back(functerm);
+				newargs.push_back(atom->args().back());
+				return _manager->getAtomKernel(equalpred,AKT_TWOVAL,newargs);
+			}
+			else return atom;
+		}
+};
+
+/**
  * Class to move all terms in an equation to the left hand side
  */
 class TermsToLeft : public FOBDDVisitor {
@@ -774,47 +799,87 @@ class TermsToLeft : public FOBDDVisitor {
 		TermsToLeft(FOBDDManager* m) : FOBDDVisitor(m) { }
 
 		const FOBDDAtomKernel* change(const FOBDDAtomKernel* atom) {
-			const DomainElement* minus_one = DomainElementFactory::instance()->create(-1);
-			const DomainElement* zero = DomainElementFactory::instance()->create(0);
-			const FOBDDDomainTerm* minus_one_term = _manager->getDomainTerm(VocabularyUtils::intsort(),minus_one);
+			const FOBDDArgument* lhs = 0;
+			const FOBDDArgument* rhs = 0;
 			if(typeid(*(atom->symbol())) == typeid(Function)) {
-				// TODO
+				rhs = atom->args().back();
+				vector<const FOBDDArgument*> lhsterms = atom->args(); lhsterms.pop_back();
+				lhs = _manager->getFuncTerm(dynamic_cast<Function*>(atom->symbol()),lhsterms);
 			}
 			else {
 				const string& predname = atom->symbol()->name();
 				if(predname == "=/2" || predname == "</2" || predname == ">/2") {
-					const FOBDDArgument* rhs = atom->args(1);
-					if(SortUtils::isSubsort(rhs->sort(),VocabularyUtils::floatsort())) {
-						const FOBDDDomainTerm* zero_term = _manager->getDomainTerm(rhs->sort(),zero);
-						if(rhs != zero_term) {
-							const FOBDDArgument* lhs = atom->args(0);
-							Sort* plussort = SortUtils::resolve(lhs->sort(),rhs->sort());
-							if(plussort) {
-								Function* plus = Vocabulary::std()->func("+/2");
-								vector<Sort*> plussorts(2,plussort);
-								plus = plus->disambiguate(plussorts,0);
-								assert(plus);
-								vector<const FOBDDArgument*> newlhsargs;
-								newlhsargs.push_back(lhs);
-								Function* times = Vocabulary::std()->func("*/2");
-								vector<Sort*> timessorts(2,SortUtils::resolve(rhs->sort(),minus_one_term->sort()));
-								times = times->disambiguate(timessorts,0);
-								vector<const FOBDDArgument*> timesargs;
-								timesargs.push_back(minus_one_term);
-								timesargs.push_back(rhs);
-								const FOBDDFuncTerm* timesterm = _manager->getFuncTerm(times,timesargs);
-								newlhsargs.push_back(timesterm);
-								const FOBDDFuncTerm* newlhs = _manager->getFuncTerm(plus,newlhsargs);
-								vector<const FOBDDArgument*> newatomargs;
-								newatomargs.push_back(newlhs);
-								newatomargs.push_back(zero_term);
-								atom = _manager->getAtomKernel(atom->symbol(),atom->type(),newatomargs);
-							}
+					rhs = atom->args(1);
+					lhs = atom->args(0);
+				}
+			}
+
+			if(lhs && rhs) {
+				if(SortUtils::isSubsort(rhs->sort(),VocabularyUtils::floatsort())) {
+					const DomainElement* zero = DomainElementFactory::instance()->create(0);
+					const FOBDDDomainTerm* zero_term = _manager->getDomainTerm(rhs->sort(),zero);
+					if(rhs != zero_term) {
+						Sort* minussort = SortUtils::resolve(lhs->sort(),rhs->sort());
+						if(minussort) {
+							Function* minus = Vocabulary::std()->func("-/2");
+							vector<Sort*> minussorts(2,minussort);
+							minus = minus->disambiguate(minussorts,0);
+							assert(minus);
+							vector<const FOBDDArgument*> newlhsargs;
+							newlhsargs.push_back(lhs);
+							newlhsargs.push_back(rhs);
+							const FOBDDFuncTerm* newlhs = _manager->getFuncTerm(minus,newlhsargs);
+							vector<const FOBDDArgument*> newatomargs;
+							newatomargs.push_back(newlhs);
+							newatomargs.push_back(zero_term);
+							atom = _manager->getAtomKernel(atom->symbol(),atom->type(),newatomargs);
 						}
 					}
 				}
 			}
 			return atom;
+		}
+};
+
+/**
+ * Class to replace (t1 - t2) by (t1 + (-1) * t2) and (-t) by ((-1) * t)
+ */
+class RemoveMinus : public FOBDDVisitor {
+	public:
+		RemoveMinus(FOBDDManager* m) : FOBDDVisitor(m) { }
+
+		const FOBDDArgument* change(const FOBDDFuncTerm* functerm) {
+			if(functerm->func()->name() == "-/2") {
+				Function* plus = Vocabulary::std()->func("+/2");
+				plus = plus->disambiguate(functerm->func()->sorts(),0); assert(plus);
+				vector<const FOBDDArgument*> newargs;
+				newargs.push_back(functerm->args(0));
+				const FOBDDArgument* rhs = functerm->args(1);
+				const DomainElement* minusone = DomainElementFactory::instance()->create(-1);
+				const FOBDDDomainTerm* minusone_term = _manager->getDomainTerm(rhs->sort(),minusone);
+				vector<const FOBDDArgument*> rhsargs; 
+				rhsargs.push_back(minusone_term);
+				rhsargs.push_back(rhs);
+				Function* times = Vocabulary::std()->func("*/2");
+				vector<Sort*> timessorts(3,rhs->sort());
+				times = times->disambiguate(timessorts,0);
+				newargs.push_back(_manager->getFuncTerm(times,rhsargs));
+				const FOBDDFuncTerm* newterm = _manager->getFuncTerm(plus,newargs);
+				return newterm->acceptchange(this);
+			}
+			else if(functerm->func()->name() == "-/1") {
+				const DomainElement* minusone = DomainElementFactory::instance()->create(-1);
+				const FOBDDDomainTerm* minusone_term = _manager->getDomainTerm(functerm->args(0)->sort(),minusone);
+				vector<const FOBDDArgument*> newargs; 
+				newargs.push_back(minusone_term);
+				newargs.push_back(functerm->args(0));
+				Function* times = Vocabulary::std()->func("*/2");
+				vector<Sort*> timessorts(3,functerm->args(0)->sort());
+				times = times->disambiguate(timessorts,0);
+				const FOBDDFuncTerm* newterm = _manager->getFuncTerm(times,newargs);
+				return newterm->acceptchange(this);
+			}
+			else return FOBDDVisitor::change(functerm);
 		}
 };
 
@@ -869,6 +934,58 @@ class Distributivity : public FOBDDVisitor {
 			return FOBDDVisitor::change(functerm);
 		}
 };
+
+/**
+ * Classes to order multiplications
+ */
+
+class MultOrderer : public FOBDDVisitor {
+	public:
+		MultOrderer(FOBDDManager* m) : FOBDDVisitor(m) { }
+
+		const FOBDDArgument* change(const FOBDDFuncTerm* functerm) {
+			if(functerm->symbol()->name() == "*/2") {
+				vector<const FOBDDArgument*> multterms; // TODO = MultTermExtractor::run(functerm)
+				// TODO recursive call on all elements of multterms
+				std::sort(multterms.begin(),multterms.end()); // TODO add right strict weak ordering
+				// TODO create a new multiplication which is in the right order
+			}
+			else return FOBDDVisitor::change(functerm);
+		}
+
+};
+
+/**
+ * Class to simplify multiplications
+ */
+class MultSimplifier : public FOBDDVisitor {
+	public:
+		MultSimplifier(FOBDDManager* m) : FOBDDVisitor(m) { }
+
+		const FOBDDArgument* change(const FOBDDFuncTerm* functerm) {
+			if(functerm->symbol()->name() == "*/2") {
+				if(typeid(*(functerm->args(0))) == typeid(FOBDDDomainTerm)) {
+					// TODO TODO TODO
+				}
+			}
+			return FOBDDVisitor::change(functerm);
+		}
+};
+
+const FOBDD* FOBDDManager::simplify(const FOBDD* bdd) {
+	FuncAtomRemover far(this);
+	bdd = far.FOBDDVisitor::change(bdd);
+	TermsToLeft ttl(this);
+	bdd = ttl.FOBDDVisitor::change(bdd);
+	RemoveMinus rm(this);
+	bdd = rm.FOBDDVisitor::change(bdd);
+	Distributivity dsbtvt(this);
+	bdd = dsbtvt.FOBDDVisitor::change(bdd);
+	// TODO MultOrderer
+
+	// TODO
+	return bdd;
+}
 
 const FOBDDAtomKernel* FOBDDManager::solve(const FOBDDKernel* kernel, const FOBDDVariable* var) {
 	// TODO
