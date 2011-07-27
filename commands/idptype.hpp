@@ -11,7 +11,7 @@
 
 class IdpTypeInference: public Inference {
 public:
-	IdpTypeInference(): Inference("idpType") {
+	IdpTypeInference(): Inference("idptype") {
 		add(AT_INT);
 	}
 

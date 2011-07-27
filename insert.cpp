@@ -460,7 +460,7 @@ string NSPair::toString() {
 	string str = _name[0];
 	for(unsigned int n = 1; n < _name.size(); ++n) str = str + "::" + _name[n];
 	if(_sortsincluded) {
-		if(_arityincluded) str = str.substr(0,str.find('/'));
+		if(_arityincluded) str = str.substr(0,str.rfind('/'));
 		str = str + '[';
 		if(!_sorts.empty()) {
 			if(_func && _sorts.size() == 1) str = str + ':';

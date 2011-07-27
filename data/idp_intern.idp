@@ -93,7 +93,7 @@ procedure modelExpand(T,S,Opts) {
 	idp_intern.pushNegations(clonetheo)
 	idp_intern.flatten(clonetheo)
 	if not Opts then Opts = stdoptions end
-	local solutions, trace =  idp_intern.mx(clonetheo,S,Opts) 
+	local solutions, trace =  idp_intern.modelExpand(clonetheo,S,Opts) 
 	return solutions, trace
 }
 

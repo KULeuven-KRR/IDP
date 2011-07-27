@@ -1754,11 +1754,13 @@ void GrounderFactory::visit(const PredForm* pf) {
 	// to _structure outside the atom. To avoid changing the original atom, 
 	// we first clone it.
 	PredForm* newpf = pf->clone();
-	Formula* transpf = FormulaUtils::moveThreeValuedTerms(newpf,_structure,(_context._funccontext != PC_NEGATIVE),_cpsupport,_cpsymbols);
+	Formula* transpf = FormulaUtils::moveThreeValuedTerms(newpf,_structure,_context._funccontext,_cpsupport,_cpsymbols);
 
 	if(typeid(*transpf) != typeid(PredForm)) {	// The rewriting changed the atom
 		if(_verbosity > 1) {
-			clog << "Rewritten " << *pf << " to " << *transpf << "\n"; 
+			clog << "Rewritten "; pf->put(clog,_options->longnames());
+			clog << " to "; transpf->put(clog,_options->longnames());
+		   	clog << "\n"; 
 		}
 		transpf->accept(this);
 	}
@@ -2003,7 +2005,7 @@ void GrounderFactory::visit(const EquivForm* ef) {
  */
 void GrounderFactory::visit(const AggForm* af) {
 	AggForm* newaf = af->clone();
-	Formula* transaf = FormulaUtils::moveThreeValuedTerms(newaf,_structure,(_context._funccontext != PC_NEGATIVE),_cpsupport,_cpsymbols);
+	Formula* transaf = FormulaUtils::moveThreeValuedTerms(newaf,_structure,_context._funccontext,_cpsupport,_cpsymbols);
 
 	if(typeid(*transaf) != typeid(AggForm)) {	// The rewriting changed the atom
 		transaf->accept(this);

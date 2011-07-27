@@ -287,7 +287,7 @@ vector<Variable*> VarUtils::makeNewVariables(const vector<Sort*>& sorts) {
 PFSymbol::~PFSymbol() {
 }
 
-PFSymbol::PFSymbol(const string& name, unsigned int nrsorts, bool infix) : 
+PFSymbol::PFSymbol(const string& name, size_t nrsorts, bool infix) : 
 	_name(name), _sorts(nrsorts,0), _infix(infix) {
 }
 
@@ -307,11 +307,11 @@ const ParseInfo& PFSymbol::pi() const {
 	return _pi;
 }
 
-unsigned	int PFSymbol::nrSorts() const {
+size_t PFSymbol::nrSorts() const {
 	return _sorts.size();
 }
 
-Sort* PFSymbol::sort(unsigned int n) const {
+Sort* PFSymbol::sort(size_t n) const {
 	return _sorts[n];
 }
 
@@ -324,7 +324,7 @@ bool PFSymbol::infix() const {
 }
 
 bool PFSymbol::hasVocabularies() const {
-	return !(_vocabularies.empty());
+	return not _vocabularies.empty();
 }
 
 string PFSymbol::toString(bool longnames) const {
@@ -466,7 +466,7 @@ Predicate* Predicate::resolve(const vector<Sort*>& sorts) {
 Predicate* Predicate::disambiguate(const vector<Sort*>& sorts,const Vocabulary* vocabulary) {
 	if(overloaded()) return _overpredgenerator->disambiguate(sorts,vocabulary); 
 	else {
-		for(unsigned int n = 0; n < _sorts.size(); ++n) {
+		for(size_t n = 0; n < _sorts.size(); ++n) {
 			if(_sorts[n] && !SortUtils::resolve(sorts[n],_sorts[n],vocabulary)) return 0;
 		}
 		return this;
@@ -477,7 +477,7 @@ set<Predicate*> Predicate::nonbuiltins() {
 	if(_overpredgenerator) return _overpredgenerator->nonbuiltins();
 	else {
 		set<Predicate*> sp;
-		if(!_interpretation) sp.insert(this);
+		if(not _interpretation) sp.insert(this);
 		return sp;
 	}
 }
@@ -485,18 +485,20 @@ set<Predicate*> Predicate::nonbuiltins() {
 ostream& Predicate::put(ostream& output, bool longnames) const {
 	if(longnames) {
 		for(set<const Vocabulary*>::iterator it = _vocabularies.begin(); it != _vocabularies.end(); ++it) {
-			if(!(*it)->pred(_name)->overloaded()) {
+			if(not (*it)->pred(_name)->overloaded()) {
 				(*it)->putname(output);
 				output << "::";
 				break;
 			}
 		}
 	}
-	output << _name.substr(0,_name.find('/'));
-	if(longnames && !overloaded()) {
+	output << _name.substr(0,_name.rfind('/'));
+	if(longnames && not overloaded()) {
 		if(nrSorts() > 0) {
-			output << '[' << *_sorts[0];
-			for(unsigned int n = 1; n < _sorts.size(); ++n) output << ',' << *_sorts[n];
+			output << '['; sort(0);
+			for(size_t n = 1; n < nrSorts(); ++n){
+				output << ','; sort(n)->put(output);
+			}
 			output << ']';
 		}
 	}
@@ -881,7 +883,7 @@ ostream& Function::put(ostream& output, bool longnames) const {
 			}
 		}
 	}
-	output << _name.substr(0,_name.find('/'));
+	output << _name.substr(0,_name.rfind('/'));
 	if(longnames && !overloaded()) {
 		output << '[';
 		if(_insorts.size() > 0) {
@@ -1454,7 +1456,7 @@ set<Predicate*> Vocabulary::pred_no_arity(const string& name) const {
 	set<Predicate*> vp;
 	for(map<string,Predicate*>::const_iterator it = _name2pred.begin(); it != _name2pred.end(); ++it) {
 		string nm = it->second->name();
-		if(nm.substr(0,nm.find('/')) == name) vp.insert(it->second);
+		if(nm.substr(0,nm.rfind('/')) == name) vp.insert(it->second);
 	}
 	return vp;
 }
@@ -1463,13 +1465,13 @@ set<Function*> Vocabulary::func_no_arity(const string& name) const {
 	set<Function*> vf;
 	for(map<string,Function*>::const_iterator it = _name2func.begin(); it != _name2func.end(); ++it) {
 		string nm = it->second->name();
-		if(nm.substr(0,nm.find('/')) == name) vf.insert(it->second);
+		if(nm.substr(0,nm.rfind('/')) == name) vf.insert(it->second);
 	}
 	return vf;
 }
 
 ostream& Vocabulary::putname(ostream& output) const {
-	if(_namespace && !_namespace->isGlobal()) {
+	if(_namespace && not _namespace->isGlobal()) {
 		_namespace->putname(output);
 		output << "::";
 	}
@@ -1517,7 +1519,6 @@ ostream& operator<< (ostream& output,const Vocabulary& voc) {
 }
 
 namespace VocabularyUtils {
-
 	Sort* natsort() { return *(Vocabulary::std()->sort("nat")->begin()); }
 	Sort* intsort() { return *(Vocabulary::std()->sort("int")->begin()); }
 	Sort* floatsort() { return *(Vocabulary::std()->sort("float")->begin()); }

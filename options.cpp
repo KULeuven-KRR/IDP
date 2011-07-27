@@ -47,11 +47,11 @@ class EnumeratedStringOption : public StringOption {
 		}
 };
 
-//TODO code van minisatid 2.3 of later gebruiken om makkelijker opties toe te voegen te doen
+//TODO code van minisatid 2.3 of later gebruiken om makkelijker opties toe te voegen 
 
 Options::Options(const string& name, const ParseInfo& pi) : _name(name), _pi(pi) {
 	_booloptions["printtypes"]			= true;
-	_booloptions["cpsupport"]		= false;
+	_booloptions["cpsupport"]			= false;
 	_booloptions["trace"]				= false;
 	_booloptions["autocomplete"]		= true;
 	_booloptions["longnames"]			= false;

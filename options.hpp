@@ -104,7 +104,6 @@ class Options {
 
 		std::ostream&	put(std::ostream&)	const;
 		std::string		toString()			const;	
-
 };
 
 #endif

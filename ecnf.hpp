@@ -360,7 +360,7 @@ class AbstractGroundTheory : public AbstractTheory {
 		GroundTranslator*		translator()		const { return _translator;			}
 		GroundTermTranslator*	termtranslator()	const { return _termtranslator; 	}
 		AbstractStructure*		structure()			const { return _structure;			}
-		AbstractGroundTheory*	clone()				const { assert(false); return NULL;/* TODO */	}
+		AbstractGroundTheory*	clone()				const { assert(false); return NULL; /* TODO */	}
 };
 
 /**

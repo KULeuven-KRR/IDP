@@ -342,7 +342,6 @@ class AggForm : public Formula {
 };
 
 namespace FormulaUtils {
-
 	/** \brief Recursively rewrite all EqChainForms in the given formula to BoolForms **/
 	Formula* removeEqChains(Formula*,Vocabulary* v = 0);	
 
@@ -350,7 +349,7 @@ namespace FormulaUtils {
 	Formula* graphFunctions(Formula* f);	
 
 	/** \brief Non-recursively move terms that are three-valued in a given structure outside of the given atom **/
-	Formula* moveThreeValuedTerms(Formula*,AbstractStructure*,bool positive,bool cpsupport=false,
+	Formula* moveThreeValuedTerms(Formula*,AbstractStructure*,PosContext,bool cpsupport=false,
 								const std::set<const PFSymbol*> cpsymbols=std::set<const PFSymbol*>());
 
 	/** \brief Returns true iff the aggregate formula is monotone **/

@@ -362,7 +362,7 @@ public:
 	}
 
 	void visit(const FuncTerm* t) {
-		output() <<t->function()->toString(_longnames);
+		output() << t->function()->toString(_longnames);
 		if(!t->subterms().empty()) {
 			output() << "(";
 			t->subterms()[0]->accept(this);

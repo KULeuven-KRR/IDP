@@ -14,7 +14,7 @@
 
 class ModelExpandInference: public Inference {
 public:
-	ModelExpandInference(): Inference("mx", false, true) {
+	ModelExpandInference(): Inference("modelExpand", false, true) {
 		add(AT_THEORY);
 		add(AT_STRUCTURE);
 		add(AT_OPTIONS);
@@ -124,9 +124,9 @@ private:
 	}
 
 	void addTerms(MinisatID::Model* model, GroundTermTranslator* termtranslator, AbstractStructure* init) const {
-//		std::cerr << "Adding terms based on var-val pairs from CP solver, pairs are { ";
+		std::cerr << "Adding terms based on var-val pairs from CP solver, pairs are { ";
 		for(auto cpvar = model->variableassignments.begin(); cpvar != model->variableassignments.end(); ++cpvar) {
-//			std::cerr << cpvar->variable << '=' << cpvar->value;
+			std::cerr << cpvar->variable << '=' << cpvar->value;
 			Function* function = termtranslator->function(cpvar->variable);
 			if(function) {
 				const std::vector<GroundTerm>& gtuple = termtranslator->args(cpvar->variable);
@@ -140,12 +140,12 @@ private:
 					}
 				}
 				tuple.push_back(DomainElementFactory::instance()->create(cpvar->value));
-//				std::cerr << '=' << function->name() << tuple;
+				std::cerr << '=' << function->name() << tuple;
 				init->inter(function)->graphinter()->makeTrue(tuple);
 			}
-//			std::cerr << ' ';
+			std::cerr << ' ';
 		}
-//		std::cerr << '}' << "\n";
+		std::cerr << '}' << "\n";
 	}
 };
 
