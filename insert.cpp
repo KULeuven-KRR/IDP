@@ -380,19 +380,15 @@ void SortChecker::visit(const EqChainForm* ef) {
 	traverse(ef);
 }
 
+bool isNumeric(Sort* sort, Vocabulary* voc){
+	return SortUtils::resolve(sort,VocabularyUtils::floatsort(),voc);
+}
+
 void SortChecker::visit(const AggTerm* at) {
-	if(at->function() != AGG_CARD) {
-		SetExpr* s = at->set();
-		if(!s->quantvars().empty() && (*(s->quantvars().begin()))->sort()) {
-			Variable* v = *(s->quantvars().begin());
-			if(!SortUtils::resolve(v->sort(),VocabularyUtils::floatsort(),_vocab)) {
-				Error::wrongsort(v->name(),v->sort()->name(),"int or float",v->pi());
-			}
-		}
-		for(vector<Term*>::const_iterator it = s->subterms().begin(); it != s->subterms().end(); ++it) {
-			if((*it)->sort() && !SortUtils::resolve((*it)->sort(),VocabularyUtils::floatsort(),_vocab)) {
-				Error::wrongsort((*it)->to_string(),(*it)->sort()->name(),"int or float",(*it)->pi());
-			}
+	auto subterms = at->set()->subterms();
+	for(auto it = subterms.begin(); it != subterms.end(); ++it) {
+		if((*it)->sort()!=NULL && !isNumeric((*it)->sort(),_vocab)) {
+			Error::wrongsort((*it)->to_string(),(*it)->sort()->name(),"int or float",(*it)->pi());
 		}
 	}
 	traverse(at);
@@ -460,7 +456,7 @@ string NSPair::to_string() {
 	string str = _name[0];
 	for(unsigned int n = 1; n < _name.size(); ++n) str = str + "::" + _name[n];
 	if(_sortsincluded) {
-		if(_arityincluded) str = str.substr(0,str.find('/'));
+		if(_arityincluded) str = str.substr(0,str.rfind('/'));
 		str = str + '[';
 		if(!_sorts.empty()) {
 			if(_func && _sorts.size() == 1) str = str + ':';
