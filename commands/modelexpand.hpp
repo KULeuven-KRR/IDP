@@ -66,7 +66,7 @@ public:
 					std::vector<std::map<int,int> > literalsSymmetries = (*ivsets_it)->getLiteralsSymmetries(grounding);
 					for(std::vector<std::map<int,int> >::const_iterator ls_it = literalsSymmetries.begin(); ls_it != literalsSymmetries.end(); ++ls_it){
 						MinisatID::Symmetry symmetry;
-						for(std::map<int,int>::const_iterator s_it = ls_it->begin(); s_it!=ls_it->end(); ++ls_it){
+						for(std::map<int,int>::const_iterator s_it = ls_it->begin(); s_it!=ls_it->end(); ++s_it){
 							MinisatID::Atom a1 = MinisatID::Atom(s_it->first);
 							MinisatID::Atom a2 = MinisatID::Atom(s_it->second);
 							std::pair<MinisatID::Atom,MinisatID::Atom> entry = std::pair<MinisatID::Atom,MinisatID::Atom>(a1,a2);
