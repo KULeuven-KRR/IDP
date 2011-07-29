@@ -169,6 +169,9 @@ namespace Warning {
 	/** Unexpeded type derivation **/
 	void derivevarsort(const std::string& varname, const std::string& sortname, const ParseInfo& thisplace);
 
+	/** Ambiguous occurrence of a partial term **/
+	void ambigpartialterm(const std::string& term, const ParseInfo& thisplace);
+
 	/** Autocompletion **/
 	void addingeltosort(const std::string& elname, const std::string& sortname,const std::string& strname);
 

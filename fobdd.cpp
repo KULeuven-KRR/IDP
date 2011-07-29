@@ -1325,6 +1325,10 @@ const FOBDD* FOBDDManager::simplify(const FOBDD* bdd) {
 	return bdd;
 }
 
+/**********************
+	Solve equations
+**********************/
+
 const FOBDDAtomKernel* FOBDDManager::solve(const FOBDDKernel* kernel, const FOBDDVariable* var) {
 	// TODO
 	return 0;

@@ -10,6 +10,10 @@
 #include <vector>
 #include "commandinterface.hpp"
 
+/**
+ *	Class to test simplification of bdds. 
+ *  Gets a query as input and returns a string representation of the simplified bdd associated to the query.
+ */
 class SimplifyInference : public Inference {
 public:
 	SimplifyInference() : Inference("simplify") {

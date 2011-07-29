@@ -696,6 +696,12 @@ namespace Warning {
 		cerr << ": ";
 	}
 
+	/** Ambiguous partial term **/
+	void ambigpartialterm(const string& term, const ParseInfo& thisplace) {
+		warning(thisplace);
+		cerr << "Term " << term << " may lead to an ambiguous meaning of the formula where it occurs.\n";
+	}
+
 	/** Ambiguous statements **/
 
 	void varcouldbeconst(const string& name, const ParseInfo& thisplace) {

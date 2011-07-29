@@ -385,7 +385,7 @@ class Rule {
 	public:
 		// Constructors
 		Rule(const std::set<Variable*>& vv, PredForm* h, Formula* b, const ParseInfo& pi) : 
-			_head(h), _body(b), _quantvars(vv), _pi(pi) { }
+			_head(h), _body(b), _quantvars(vv), _pi(pi) { assert(h->symbol()->name() != "=/2");	}
 
 		Rule*	clone()	const;	//!< Make a deep copy of the rule
 
@@ -728,7 +728,7 @@ class TheoryMutatingVisitor {
 		virtual SolverTheory* visit(SolverTheory*);
 
 		// Formulas     
-				Formula* traverse(Formula*);
+		virtual	Formula* traverse(Formula*);
 		virtual Formula* visit(PredForm*);			
 		virtual Formula* visit(EqChainForm*);
 		virtual Formula* visit(EquivForm*);
@@ -747,14 +747,14 @@ class TheoryMutatingVisitor {
 		virtual GroundDefinition*	visit(GroundDefinition*);
 
 		// Terms
-				Term* traverse(Term*);
+		virtual	Term* traverse(Term*);
 		virtual Term* visit(VarTerm*);
 		virtual Term* visit(FuncTerm*);
 		virtual Term* visit(DomainTerm*);
 		virtual Term* visit(AggTerm*);
 
 		// Set expressions
-				SetExpr* traverse(SetExpr*);
+		virtual SetExpr* traverse(SetExpr*);
 		virtual SetExpr* visit(EnumSetExpr*);
 		virtual SetExpr* visit(QuantSetExpr*);
 };

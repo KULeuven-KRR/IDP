@@ -12,6 +12,10 @@
 #include "commandinterface.hpp"
 #include "theory.hpp"
 
+/**
+ * Class to convert a formula to a bdd and return a string representation of the bdd
+ * Probably only useful for debugging purposes
+ */
 class ToBDDInference: public Inference {
 public:
 	ToBDDInference(): Inference("bddstring") {

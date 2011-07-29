@@ -1,9 +1,11 @@
+-- runs the main procedure, if it exists
 idp_intern.main = function() 
 	if main then return main() end
 end
 
 local oldType = type
 
+-- return true iff the given object is a userdatum created by idp
 idp_intern.isIdp = function(obj) 
 	if oldType(obj) == "userdata" then
 		local t = getmetatable(obj)
@@ -19,6 +21,7 @@ idp_intern.isIdp = function(obj)
 	end
 end
 
+-- overwrites standard type function so that it returns the correct idp types instead of 'userdatum'
 function type(obj) 
 	if idp_intern.isIdp(obj) then
 		local idptype = getmetatable(obj)["type"]
@@ -28,6 +31,7 @@ function type(obj)
 	end
 end
 
+-- overwrite standard pairs function so that it returns an iterator also on idp tables
 local oldPairs = pairs
 function pairs(table) 
 	if idp_intern.isIdp(table) then
@@ -47,6 +51,7 @@ function pairs(table)
 	end
 end
 
+-- overwrite standard ipairs function so that it returns an iterator also on idp tables
 local oldIpairs = ipairs
 function ipairs(table) 
 	if idp_intern.isIdp(table) then
@@ -56,6 +61,7 @@ function ipairs(table)
 	end
 end
 
+-- overwrite standard tostring function so that it works correctly on idp types
 local oldTostring = tostring
 function tostring(e,opts) 
 	if idp_intern.isIdp(e) then
@@ -66,6 +72,7 @@ function tostring(e,opts)
 	end
 end
 
+-- overwrite standard print function to take options into account
 local oldPrint = print
 local function print_with_options(list,opts)
 	local res = ""

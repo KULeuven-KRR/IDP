@@ -664,7 +664,7 @@ FOPropagator* FOPropagatorFactory::create(const AbstractTheory* theory) {
 	// transform theory to a suitable normal form
 	AbstractTheory* newtheo = theory->clone();
 	TheoryUtils::remove_eqchains(newtheo);
-	TheoryUtils::remove_nesting(newtheo);
+	TheoryUtils::remove_nesting(newtheo);	// FIXME: remove nesting does not change F(x)=y to F(x,y) anymore, which is probably needed here
 	TheoryUtils::completion(newtheo);
 
 	// Multiply maxsteps if requested
