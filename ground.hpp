@@ -382,9 +382,9 @@ class TopLevelGrounder {
 
 class CopyGrounder : public TopLevelGrounder {
 	private:
-		const GroundTheory*		_original;
+		const AbstractGroundTheory*		_original;
 	public:
-		CopyGrounder(AbstractGroundTheory* gt, const GroundTheory* orig, int verb) : TopLevelGrounder(gt,verb), _original(orig) { }
+		CopyGrounder(AbstractGroundTheory* gt, const AbstractGroundTheory* orig, int verb) : TopLevelGrounder(gt,verb), _original(orig) { }
 		bool run() const;
 };
 
@@ -784,7 +784,7 @@ class GrounderFactory : public TheoryVisitor {
 		bool recursive(const Formula*);
 
 		// Visitors
-		void visit(const GroundTheory*);
+		void visit(const AbstractGroundTheory*);
 		void visit(const Theory*);
 
 		void visit(const PredForm*);

@@ -651,8 +651,7 @@ namespace TheoryUtils {
 	Visitor
 **************/
 
-class GroundTheory;
-class SolverTheory;
+class AbstractGroundTheory;
 class GroundDefinition;
 class GroundRuleBody;
 class PCGroundRuleBody;
@@ -677,8 +676,7 @@ class TheoryVisitor {
 
 		// Theories
 		virtual void visit(const Theory*);
-		virtual void visit(const GroundTheory*);
-		virtual void visit(const SolverTheory*);
+		virtual void visit(const AbstractGroundTheory*);
 
 		// Formulas     
 				void traverse(const Formula*);
@@ -724,8 +722,7 @@ class TheoryMutatingVisitor {
 	public:
 		// Theories
 		virtual Theory* visit(Theory*);
-		virtual GroundTheory* visit(GroundTheory*);
-		virtual SolverTheory* visit(SolverTheory*);
+		virtual AbstractGroundTheory* visit(AbstractGroundTheory*);
 
 		// Formulas     
 				Formula* traverse(Formula*);

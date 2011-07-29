@@ -14,6 +14,9 @@
 #include "ecnf.hpp"
 #include "namespace.hpp"
 
+#include "groundtheories/AbstractGroundTheory.hpp"
+#include "groundtheories/GroundPolicy.hpp"
+
 //TODO is not guaranteed to generate correct idp files!
 //TODO usage of stored parameters might be incorrect in some cases.
 
@@ -183,7 +186,7 @@ public:
 		}
 	}
 
-	void visit(const GroundTheory* g) {
+	void visit(const GroundTheory<GroundPolicy>* g) {
 		_translator = g->translator();
 		_termtranslator = g->termtranslator();
 		for(unsigned int n = 0; n < g->nrClauses(); ++n) {

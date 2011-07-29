@@ -12,6 +12,9 @@
 #include "ground.hpp"
 #include "ecnf.hpp"
 
+#include "groundtheories/AbstractGroundTheory.hpp"
+#include "groundtheories/GroundPolicy.hpp"
+
 // FIXME rewrite the printers to correctly handle visiting incrementally, making sure all arguments are instantiated, ...
 
 template<typename Stream>
@@ -85,7 +88,7 @@ public:
 		output() << '0' << "\n";
 	}
 
-	void visit(const GroundTheory* g) {
+	void visit(const GroundTheory<GroundPolicy>* g) {
 		setStructure(g->structure());
 		setTermTranslator(g->termtranslator());
 		startTheory();
@@ -244,7 +247,6 @@ public:
 		}
 	}
 
-private:
 	void printAggregate(AggFunction aggtype, TsType arrow, unsigned int defnr, bool lower, int head, unsigned int setnr, double bound) {
 		switch(aggtype) {
 			case AGG_CARD: 	output() << "Card "; break;
@@ -265,6 +267,9 @@ private:
 		}
 		output() << (lower ? 'G' : 'L') << ' ' << head << ' ' << setnr << ' ' << bound << " 0" <<"\n";
 	}
+
+private:
+
 	void printCPVariables(std::vector<unsigned int> varids) {
 		for(std::vector<unsigned int>::const_iterator it = varids.begin(); it != varids.end(); ++it) {
 			printCPVariable(*it);

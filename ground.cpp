@@ -23,7 +23,10 @@
 #include "checker.hpp"
 #include "common.hpp"
 #include "monitors/interactiveprintmonitor.hpp"
-#include "groundtheories/PrintGroundTheory.hpp"
+#include "groundtheories/AbstractGroundTheory.hpp"
+#include "groundtheories/SolverPolicy.hpp"
+#include "groundtheories/GroundPolicy.hpp"
+#include "groundtheories/PrintGroundPolicy.hpp"
 
 using namespace std;
 using namespace rel_ops;
@@ -1690,7 +1693,8 @@ void GrounderFactory::descend(Rule* r) {
  */
 TopLevelGrounder* GrounderFactory::create(const AbstractTheory* theory) {
 	// Allocate an ecnf theory to be returned by the grounder
-	_grounding = new GroundTheory(theory->vocabulary(),_structure->clone());
+	GroundTheory<GroundPolicy>* groundtheory = new GroundTheory<GroundPolicy>(theory->vocabulary(),_structure->clone());
+	_grounding = groundtheory;
 
 	// Find function that can be passed to CP solver.
 	if(_cpsupport){
@@ -1704,7 +1708,9 @@ TopLevelGrounder* GrounderFactory::create(const AbstractTheory* theory) {
 
 // TODO comment
 TopLevelGrounder* GrounderFactory::create(const AbstractTheory* theory, InteractivePrintMonitor* monitor, Options* opts) {
-	_grounding = new PrintGroundTheory(monitor,_structure->clone(), opts);
+	GroundTheory<PrintGroundPolicy>* groundtheory = new GroundTheory<PrintGroundPolicy>(_structure->clone());
+	groundtheory->initialize(monitor, groundtheory->structure(), groundtheory->translator(), groundtheory->termtranslator(), opts);
+	_grounding = groundtheory;
 
 	// Find function that can be passed to CP solver.
 	if(_cpsupport){
@@ -1735,7 +1741,9 @@ TopLevelGrounder* GrounderFactory::create(const AbstractTheory* theory, Interact
  */
 TopLevelGrounder* GrounderFactory::create(const AbstractTheory* theory, SATSolver* solver) {
 	// Allocate a solver theory
-	_grounding = new SolverTheory(theory->vocabulary(),solver,_structure->clone(),_verbosity);
+	GroundTheory<SolverPolicy>* groundtheory = new GroundTheory<SolverPolicy>(theory->vocabulary(), _structure->clone());
+	groundtheory->initialize(solver, _verbosity, groundtheory->termtranslator());
+	_grounding = groundtheory;
 
 	// Find function that can be passed to CP solver.
 	if(_cpsupport){
@@ -1756,7 +1764,7 @@ TopLevelGrounder* GrounderFactory::create(const AbstractTheory* theory, SATSolve
  * POSTCONDITIONS
  *		_toplevelgrounder is equal to the created grounder.
  */
-void GrounderFactory::visit(const GroundTheory* ecnf) {
+void GrounderFactory::visit(const AbstractGroundTheory* ecnf) {
 	_toplevelgrounder = new CopyGrounder(_grounding,ecnf,_verbosity);	
 }
 

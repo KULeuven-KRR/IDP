@@ -63,7 +63,6 @@ public:
 	virtual void visit(const AbstractStructure*) = 0;
 	virtual void visit(const Namespace*) = 0;
 	virtual void visit(const GroundClause& g) = 0;
-	virtual void visit(const GroundTheory* g) = 0;
 	virtual void visit(const GroundFixpDef*) = 0;
 	virtual void visit(const GroundSet*) = 0;
 	virtual void visit(const GroundDefinition* d) = 0;
@@ -72,6 +71,8 @@ public:
 	virtual void visit(const GroundAggregate* cpr) = 0;
 	virtual void visit(int defid, const GroundAggregate* b) = 0;
 	virtual void visit(const CPReification* cpr) = 0;
+
+	virtual void printAggregate(AggFunction aggtype, TsType arrow, unsigned int defnr, bool lower, int head, unsigned int setnr, double bound) {}
 
 	virtual void setTranslator(GroundTranslator*){}
 	virtual void setTermTranslator(GroundTermTranslator*){}

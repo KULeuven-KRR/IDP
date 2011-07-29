@@ -1571,11 +1571,7 @@ void TheoryVisitor::visit(const Theory* t) {
 	}
 }
 
-void TheoryVisitor::visit(const GroundTheory* ) {
-	// TODO
-}
-
-void TheoryVisitor::visit(const SolverTheory* ) {
+void TheoryVisitor::visit(const AbstractGroundTheory* ) {
 	// TODO
 }
 
@@ -1653,12 +1649,7 @@ Theory* TheoryMutatingVisitor::visit(Theory* t) {
 	return t;
 }
 
-GroundTheory* TheoryMutatingVisitor::visit(GroundTheory* t) {
-	// TODO
-	return t;
-}
-
-SolverTheory* TheoryMutatingVisitor::visit(SolverTheory* t) {
+AbstractGroundTheory* TheoryMutatingVisitor::visit(AbstractGroundTheory* t) {
 	// TODO
 	return t;
 }

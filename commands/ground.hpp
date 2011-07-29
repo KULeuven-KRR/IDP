@@ -49,6 +49,7 @@ private:
 		grounder->run();
 		AbstractGroundTheory* grounding = grounder->grounding();
 		grounding->addFuncConstraints();
+		//FIXME addfalsedefined? both of those should be automatic, depending on options in the ground theory
 		delete(grounder);
 		monitor->flush();
 		return grounding;
