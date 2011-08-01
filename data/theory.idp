@@ -8,6 +8,13 @@ namespace theory {
 	}
 
 	/**
+	 * Move nested terms
+	 */
+	procedure remove_nesting(T) {
+		return idp_intern.remove_nesting(T)
+	}
+
+	/**
 	 * Remove brackets from long conjunctions and disjunctions in theory T
 	 * Merge successive quantifiers in theory T
 	 */
