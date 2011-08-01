@@ -1571,7 +1571,15 @@ void TheoryVisitor::visit(const Theory* t) {
 	}
 }
 
-void TheoryVisitor::visit(const AbstractGroundTheory* ) {
+void TheoryVisitor::visit(const GroundTheory<GroundPolicy>* ) {
+	// TODO
+}
+
+void TheoryVisitor::visit(const GroundTheory<SolverPolicy>* ) {
+	// TODO
+}
+
+void TheoryVisitor::visit(const GroundTheory<PrintGroundPolicy>* ) {
 	// TODO
 }
 
@@ -1649,7 +1657,17 @@ Theory* TheoryMutatingVisitor::visit(Theory* t) {
 	return t;
 }
 
-AbstractGroundTheory* TheoryMutatingVisitor::visit(AbstractGroundTheory* t) {
+GroundTheory<GroundPolicy>* TheoryMutatingVisitor::visit(GroundTheory<GroundPolicy>* t) {
+	// TODO
+	return t;
+}
+
+GroundTheory<SolverPolicy>* TheoryMutatingVisitor::visit(GroundTheory<SolverPolicy>* t) {
+	// TODO
+	return t;
+}
+
+GroundTheory<PrintGroundPolicy>* TheoryMutatingVisitor::visit(GroundTheory<PrintGroundPolicy>* t) {
 	// TODO
 	return t;
 }

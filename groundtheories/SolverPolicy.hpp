@@ -47,6 +47,9 @@ public:
 	// Destructors
 	void polRecursiveDelete() { delete(this);	}
 
+	void polStartTheory(GroundTranslator* translator){}
+	void polEndTheory(){}
+
 	inline MinisatID::Atom createAtom(int lit){
 		return MinisatID::Atom(abs(lit));
 	}
@@ -99,7 +102,7 @@ public:
 		polAddAggregate(-1,head,body->lower(),body->setnr(),body->aggtype(),body->type(),body->bound());
 	}
 
-	void polAddAggRule(int defnr, int head, AggGroundRuleBody* body, bool) {
+	void polAddAggRule(int defnr, int head, AggGroundRule* body, bool) {
 		polAddAggregate(defnr,head,body->lower(),body->setnr(),body->aggtype(),TS_RULE,body->bound());
 	}
 
@@ -192,7 +195,7 @@ public:
 
 
 
-	void polAddPCRule(int defnr, int head, PCGroundRuleBody* grb, bool recursive) {
+	void polAddPCRule(int defnr, int head, PCGroundRule* grb, bool recursive) {
 		polAddPCRule(defnr,head,grb->body(),(grb->type() == RT_CONJ), recursive);
 	}
 

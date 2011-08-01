@@ -13,6 +13,7 @@
 #include <set>
 #include <cassert>
 #include <ostream>
+#include <iostream>
 
 #include "ecnf.hpp"
 #include "commontypes.hpp"
@@ -31,6 +32,9 @@ private:
 	std::vector<GroundAggregate*>	_aggregates;
 	std::vector<CPReification*>		_cpreifications;
 
+	GroundTranslator*				_translator;
+	GroundTranslator* polTranslator() const { return _translator; }
+
 public:
 	// Inspectors
 	unsigned int		nrClauses()						const { return _clauses.size();							}
@@ -45,6 +49,11 @@ public:
 	GroundSet*			set(unsigned int n)				const { return _sets[n];								}
 	GroundAggregate*	aggregate(unsigned int n)		const { return _aggregates[n];							}
 	CPReification*		cpreification(unsigned int n)	const { return _cpreifications[n];						}
+
+	void polStartTheory(GroundTranslator* translator){
+		_translator = translator;
+	}
+	void polEndTheory(){}
 
 	void polRecursiveDelete() {
 		for(auto defit = _definitions.begin(); defit != _definitions.end(); ++defit) {
@@ -83,16 +92,26 @@ public:
 	}
 
 	void polAddPCRule(int defnr, int tseitin, PCTsBody* body, bool recursive) {
-		assert(_definitions[defnr]->rule(tseitin) == _definitions[defnr]->end());
-		_definitions[defnr]->addPCRule(tseitin,body->body(),body->conj(),recursive);
+		if(_definitions.size()<=defnr){
+			while(_definitions.size()<=defnr){
+				_definitions.push_back(new GroundDefinition(defnr, polTranslator()));
+			}
+		}
+		_definitions[defnr]->add(new PCGroundRule(tseitin, body->conj()?RT_CONJ:RT_DISJ, body->body(),recursive));
 	}
 
 	void polAddAggRule(int defnr, int tseitin, AggTsBody* body, bool recursive) {
-		assert(_definitions[defnr]->rule(tseitin) == _definitions[defnr]->end());
-		_definitions[defnr]->addAggRule(tseitin,body->setnr(),body->aggtype(),body->lower(),body->bound(),recursive);
+		if(_definitions.size()<=defnr){
+			while(_definitions.size()<=defnr){
+				_definitions.push_back(new GroundDefinition(defnr, polTranslator()));
+			}
+		}
+		_definitions[defnr]->add(new AggGroundRule(tseitin,body->setnr(),body->aggtype(),body->lower(),body->bound(),recursive));
 	}
 
 	std::ostream& polPut(std::ostream& s, GroundTranslator* translator, GroundTermTranslator* termtranslator) const {
+		std::cerr <<"Printing ground theory\n";
+		std::cerr <<"Has " <<_clauses.size() <<" clauses." <<"\n";
 		for(unsigned int n = 0; n < _clauses.size(); ++n) {
 			if(_clauses[n].empty()) {
 				s << "false";

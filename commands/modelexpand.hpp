@@ -38,10 +38,6 @@ public:
 		grounder->run();
 		AbstractGroundTheory* grounding = dynamic_cast<GroundTheory<SolverPolicy>*>(grounder->grounding());
 
-		// Add information that is abstracted in the grounding
-		grounding->addFuncConstraints();
-		grounding->addFalseDefineds();
-
 		// Run solver
 		MinisatID::Solution* abstractsolutions = initsolution(options);
 		if(options->trace()){
@@ -109,7 +105,7 @@ private:
 		for(auto literal = model->literalinterpretations.begin();
 			literal != model->literalinterpretations.end(); ++literal) {
 			int atomnr = literal->getAtom().getValue();
-			PFSymbol* symbol = translator->symbol(atomnr);
+			PFSymbol* symbol = translator->atom2symbol(atomnr);
 			if(symbol) {
 				const ElementTuple& args = translator->args(atomnr);
 				if(typeid(*symbol) == typeid(Predicate)) {

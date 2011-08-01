@@ -21,7 +21,6 @@ private:
 		TopLevelGrounder* grounder = factory.create(theory);
 		grounder->run();
 		AbstractGroundTheory* grounding = grounder->grounding();
-		grounding->addFuncConstraints();
 		delete(grounder);
 		return grounding;
 	}
@@ -48,8 +47,6 @@ private:
 		TopLevelGrounder* grounder = factory.create(theory, monitor, options);
 		grounder->run();
 		AbstractGroundTheory* grounding = grounder->grounding();
-		grounding->addFuncConstraints();
-		//FIXME addfalsedefined? both of those should be automatic, depending on options in the ground theory
 		delete(grounder);
 		monitor->flush();
 		return grounding;

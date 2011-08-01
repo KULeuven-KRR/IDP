@@ -13,6 +13,7 @@
 #include <set>
 #include <cassert>
 #include <ostream>
+#include <iostream>
 
 #include "ecnf.hpp"
 #include "ground.hpp"
@@ -43,22 +44,20 @@ public:
 		delete(_termtranslator);
 	}
 
-	void 	addEmptyClause()	{ GroundClause c(0); addClause(c);		}
-	void 	addUnitClause(int l){ GroundClause c(1,l); addClause(c);	}
-	virtual void addClause(GroundClause& cl, bool skipfirst=false) = 0;
-	virtual void addDefinition(GroundDefinition* d) = 0;
-	virtual void addFixpDef(GroundFixpDef*) = 0;
-	virtual void addAggregate(int head, AggTsBody* body) = 0;
-	virtual void addCPReification(int tseitin, CPTsBody* body) = 0;
-	virtual void addSet(int setnr, int defnr, bool weighted) = 0;
-	virtual void addPCRule(int defnr, int tseitin, PCTsBody* body, bool recursive) = 0;
+	void 	addEmptyClause()	{ GroundClause c(0); add(c);	}
+	void 	addUnitClause(int l){ GroundClause c(1,l); add(c);	}
+	virtual void add(GroundClause& cl, bool skipfirst=false) = 0;
+	virtual void add(GroundFixpDef*) = 0;
+	virtual void add(int head, AggTsBody* body) = 0;
+	virtual void add(int tseitin, CPTsBody* body) = 0;
+	virtual void add(int setnr, unsigned int defnr, bool weighted) = 0;
+	virtual void add(unsigned int defnr, int tseitin, PCTsBody* body, bool recursive) = 0;
+	virtual void add(unsigned int defnr, int tseitin, AggTsBody* body, bool recursive) = 0;
 
-	/**
-	 *		Adds constraints to the theory that state that each of the functions that occur in the theory is indeed a function.
-	 *		This method should be called before running the SAT solver and after grounding.
-	 */
-	virtual void addFuncConstraints() = 0;
-	virtual void addFalseDefineds() = 0;
+	//NOTE: have to call these!
+	//TODO check whether they are called correctly (currently in theorygrounder->run), but probably missing several usecases
+	virtual void startTheory() = 0;
+	virtual void closeTheory() = 0;
 
 	// Inspectors
 	GroundTranslator*		translator()		const { return _translator;			}
@@ -72,6 +71,7 @@ class GroundTheory : public AbstractGroundTheory, public Policy {
 	std::set<int>			_printedsets;			//!< Set numbers produced by the translator that occur in the theory.
 	std::set<int>			_printedconstraints;	//!< Atoms for which a connection to CP constraints are added.
 	std::set<CPTerm*>		_foldedterms;
+	std::map<PFSymbol*, std::set<int> >		_defined;	//list of defined symbols and the heads which have a rule
 
 	/**
 	 * GroundTheory<Policy>::transformForAdd(vector<int>& vi, VIType vit, int defnr, bool skipfirst)
@@ -102,44 +102,46 @@ class GroundTheory : public AbstractGroundTheory, public Policy {
 							for(unsigned int m = 0; m < body->size(); ++m) {
 								std::vector<int> cl(2,-atom);
 								cl[1] = body->literal(m);
-								addClause(cl,true);
+								add(cl,true);
 							}
 						}
 						else {
 							std::vector<int> cl(body->size()+1,-atom);
-							for(unsigned int m = 0; m < body->size(); ++m)
+							for(unsigned int m = 0; m < body->size(); ++m){
 								cl[m+1] = body->literal(m);
-							addClause(cl,true);
+							}
+							add(cl,true);
 						}
 					}
 					if(body->type() == TS_RIMPL || body->type() == TS_EQ) {
 						if(body->conj()) {
 							std::vector<int> cl(body->size()+1,atom);
-							for(unsigned int m = 0; m < body->size(); ++m)
+							for(unsigned int m = 0; m < body->size(); ++m){
 								cl[m+1] = -body->literal(m);
-							addClause(cl,true);
+							}
+							add(cl,true);
 						}
 						else {
 							for(unsigned int m = 0; m < body->size(); ++m) {
 								std::vector<int> cl(2,atom);
 								cl[1] = -body->literal(m);
-								addClause(cl,true);
+								add(cl,true);
 							}
 						}
 					}
 					if(body->type() == TS_RULE) {
 						assert(defnr != ID_FOR_UNDEFINED);
-						addPCRule(defnr,atom,body,true); //TODO true (recursive) might not always be the case?
+						add(defnr,atom,body,true); //TODO true (recursive) might not always be the case?
 					}
 				}
 				else if(typeid(*tsbody) == typeid(AggTsBody)) {
 					AggTsBody* body = dynamic_cast<AggTsBody*>(tsbody);
 					if(body->type() == TS_RULE) {
 						assert(defnr != ID_FOR_UNDEFINED);
-						addAggRule(defnr,atom,body,true); //TODO true (recursive) might not always be the case?
+						add(defnr,atom,body,true); //TODO true (recursive) might not always be the case?
 					}
 					else {
-						addAggregate(atom,body);
+						add(atom,body);
 					}
 				}
 				else {
@@ -150,7 +152,7 @@ class GroundTheory : public AbstractGroundTheory, public Policy {
 						//TODO Does this ever happen?
 					}
 					else {
-						addCPReification(atom,body);
+						add(atom,body);
 					}
 				}
 			}
@@ -200,11 +202,10 @@ class GroundTheory : public AbstractGroundTheory, public Policy {
 
 public:
 	const int ID_FOR_UNDEFINED;
-	int definitioncounter;
 
 	// Constructors
-	GroundTheory(AbstractStructure* str): AbstractGroundTheory(str), ID_FOR_UNDEFINED(-1), definitioncounter(1){}
-	GroundTheory(Vocabulary* voc, AbstractStructure* str): AbstractGroundTheory(voc, str), ID_FOR_UNDEFINED(-1), definitioncounter(1){}
+	GroundTheory(AbstractStructure* str): AbstractGroundTheory(str), ID_FOR_UNDEFINED(-1){}
+	GroundTheory(Vocabulary* voc, AbstractStructure* str): AbstractGroundTheory(voc, str), ID_FOR_UNDEFINED(-1){}
 
 	virtual	~GroundTheory(){}
 
@@ -215,42 +216,32 @@ public:
 
 	virtual void recursiveDelete(){ Policy::polRecursiveDelete(); }
 
-	void addClause(GroundClause& cl, bool skipfirst) {
+	void startTheory(){
+		Policy::polStartTheory(translator());
+	}
+	void closeTheory(){
+		// TODO arbitrary values?
+		addFalseDefineds();
+		addFuncConstraints();
+		Policy::polEndTheory();
+	}
+
+	void add(GroundClause& cl, bool skipfirst) {
 		transformForAdd(cl,VIT_DISJ,ID_FOR_UNDEFINED,skipfirst);
 		Policy::polAddClause(cl);
 	}
 
-	void addDefinition(GroundDefinition* d) {
-		unsigned int defnr = definitioncounter++;
-		for(auto it = d->begin(); it != d->end(); ++it) {
-			int head = it->first;
-			if(_printedtseitins.find(head) == _printedtseitins.end()) {
-				GroundRuleBody* grb = it->second;
-				if(typeid(*grb) == typeid(PCGroundRuleBody)) {
-					PCGroundRuleBody* pcgrb = dynamic_cast<PCGroundRuleBody*>(grb);
-					transformForAdd(pcgrb->body(),(pcgrb->type() == RT_CONJ ? VIT_CONJ : VIT_DISJ),defnr);
-				}
-				else {
-					assert(typeid(*grb) == typeid(AggGroundRuleBody));
-					AggGroundRuleBody* agggrb = dynamic_cast<AggGroundRuleBody*>(grb);
-					addSet(agggrb->setnr(),defnr,(agggrb->aggtype() != AGG_CARD));
-				}
-			}
-		}
-		Policy::polAddDefinition(d);
-	}
-
-	void addFixpDef(GroundFixpDef*) {
+	void add(GroundFixpDef*) {
 		assert(false);
 		//TODO
 	}
 
-	void addAggregate(int head, AggTsBody* body) {
-		addSet(body->setnr(),ID_FOR_UNDEFINED,(body->aggtype() != AGG_CARD));
+	void add(int head, AggTsBody* body) {
+		add(body->setnr(),ID_FOR_UNDEFINED,(body->aggtype() != AGG_CARD));
 		Policy::polAddAggregate(head, body);
 	}
 
-	void addCPReification(int tseitin, CPTsBody* body) {
+	void add(int tseitin, CPTsBody* body) {
 		//TODO also add variables (in a separate container?)
 
 		CPTsBody* foldedbody = new CPTsBody(body->type(),foldCPTerm(body->left()),body->comp(),body->right());
@@ -259,7 +250,7 @@ public:
 		Policy::polAddCPReification(tseitin, foldedbody);
 	}
 
-	void addSet(int setnr, int defnr, bool weighted) {
+	void add(int setnr, unsigned int defnr, bool weighted) {
 		if(_printedsets.find(setnr) == _printedsets.end()) {
 			_printedsets.insert(setnr);
 			TsSet& tsset = translator()->groundset(setnr);
@@ -270,13 +261,27 @@ public:
 		}
 	}
 
-	void addPCRule(int defnr, int tseitin, PCTsBody* body, bool recursive) {
+	void notifyDefined(int tseitin){
+		if(!translator()->hasSymbolFor(tseitin)){
+			return;
+		}
+		PFSymbol* symbol = translator()->atom2symbol(tseitin);
+		auto it = _defined.find(symbol);
+		if(it==_defined.end()){
+			it = _defined.insert(std::pair<PFSymbol*, std::set<int> >(symbol, std::set<int>())).first;
+		}
+		(*it).second.insert(tseitin);
+	}
+
+	void add(unsigned int defnr, int tseitin, PCTsBody* body, bool recursive) {
 		transformForAdd(body->body(),(body->conj() ? VIT_CONJ : VIT_DISJ), defnr);
+		notifyDefined(tseitin);
 		Policy::polAddPCRule(defnr, tseitin, body, recursive);
 	}
 
-	void addAggRule(int defnr, int tseitin, AggTsBody* body, bool recursive) {
-		addSet(body->setnr(),defnr,(body->aggtype() != AGG_CARD));
+	void add(unsigned int defnr, int tseitin, AggTsBody* body, bool recursive) {
+		add(body->setnr(),defnr,(body->aggtype() != AGG_CARD));
+		notifyDefined(tseitin);
 		Policy::polAddAggRule(defnr, tseitin, body, recursive);
 	}
 
@@ -285,82 +290,83 @@ public:
 	 *		This method should be called before running the SAT solver and after grounding.
 	 */
 	void addFuncConstraints() {
-		for(unsigned int n = 0; n < translator()->nrOffsets(); ++n) {
+		for(unsigned int n = 0; n < translator()->nbSymbols(); ++n) {
 			PFSymbol* pfs = translator()->getSymbol(n);
 			auto tuples = translator()->getTuples(n);
-			if((typeid(*pfs) == typeid(Function))  && !(tuples.empty())) {
-				Function* f = dynamic_cast<Function*>(pfs);
-				StrictWeakNTupleEquality de(f->arity());
-				StrictWeakNTupleOrdering ds(f->arity());
+			if((typeid(*pfs)!=typeid(Function)) || tuples.empty()) {
+				continue;
+			}
+			Function* f = dynamic_cast<Function*>(pfs);
+			StrictWeakNTupleEquality de(f->arity());
+			StrictWeakNTupleOrdering ds(f->arity());
 
-				const PredTable* ct = structure()->inter(f)->graphinter()->ct();
-				const PredTable* pt = structure()->inter(f)->graphinter()->pt();
-				SortTable* st = structure()->inter(f->outsort());
+			const PredTable* ct = structure()->inter(f)->graphinter()->ct();
+			const PredTable* pt = structure()->inter(f)->graphinter()->pt();
+			SortTable* st = structure()->inter(f->outsort());
 
-				ElementTuple input(f->arity(),0);
-				TableIterator tit = ct->begin();
-				SortIterator sit = st->sortbegin();
-				std::vector<std::vector<int> > sets;
-				std::vector<bool> weak;
-				for(auto it = tuples.begin(); it != tuples.end(); ) {
-					if(de(it->first,input) && !sets.empty()) {
-						sets.back().push_back(it->second);
-						while(*sit != it->first.back()) {
-							ElementTuple temp = input; temp.push_back(*sit);
-							if(pt->contains(temp)) {
-								weak.back() = true;
-								break;
-							}
-							++sit;
+			ElementTuple input(f->arity(),0);
+			TableIterator tit = ct->begin();
+			SortIterator sit = st->sortbegin();
+			std::vector<std::vector<int> > sets;
+			std::vector<bool> weak;
+			for(auto it = tuples.begin(); it != tuples.end(); ) {
+				if(de(it->first,input) && !sets.empty()) {
+					sets.back().push_back(it->second);
+					while(*sit != it->first.back()) {
+						ElementTuple temp = input; temp.push_back(*sit);
+						if(pt->contains(temp)) {
+							weak.back() = true;
+							break;
 						}
-						++it;
-						if(sit.hasNext()) ++sit;
+						++sit;
 					}
-					else {
-						if(!sets.empty() && sit.hasNext()) weak.back() = true;
-						if(tit.hasNext()) {
-							const ElementTuple& tuple = *tit;
-							if(de(tuple,it->first)) {
-								do {
-									if(it->first != tuple) addUnitClause(-(it->second));
-									++it;
-								} while(it != tuples.end() && de(tuple,it->first));
-								continue;
-							}
-							else if(ds(tuple,it->first)) {
-								do { ++tit; } while(tit.hasNext() && ds(*tit,it->first));
-								continue;
-							}
+					++it;
+					if(sit.hasNext()) ++sit;
+				}
+				else {
+					if(!sets.empty() && sit.hasNext()) weak.back() = true;
+					if(tit.hasNext()) {
+						const ElementTuple& tuple = *tit;
+						if(de(tuple,it->first)) {
+							do {
+								if(it->first != tuple) addUnitClause(-(it->second));
+								++it;
+							} while(it != tuples.end() && de(tuple,it->first));
+							continue;
 						}
-						sets.push_back(std::vector<int>(0));
-						weak.push_back(false);
-						input = it->first; input.pop_back();
-						sit = st->sortbegin();
+						else if(ds(tuple,it->first)) {
+							do { ++tit; } while(tit.hasNext() && ds(*tit,it->first));
+							continue;
+						}
 					}
+					sets.push_back(std::vector<int>(0));
+					weak.push_back(false);
+					input = it->first; input.pop_back();
+					sit = st->sortbegin();
 				}
-				for(unsigned int s = 0; s < sets.size(); ++s) {
-					std::vector<double> lw(sets[s].size(),1);
-					std::vector<double> tw(0);
-					int setnr = translator()->translateSet(sets[s],lw,tw);
-					int tseitin;
-					if(f->partial() || !(st->finite()) || weak[s]) {
-						tseitin = translator()->translate(1,'>',false,AGG_CARD,setnr,TS_IMPL);
-					}
-					else {
-						tseitin = translator()->translate(1,'=',true,AGG_CARD,setnr,TS_IMPL);
-					}
-					addUnitClause(tseitin);
+			}
+			for(unsigned int s = 0; s < sets.size(); ++s) {
+				std::vector<double> lw(sets[s].size(),1);
+				std::vector<double> tw(0);
+				int setnr = translator()->translateSet(sets[s],lw,tw);
+				int tseitin;
+				if(f->partial() || !(st->finite()) || weak[s]) {
+					tseitin = translator()->translate(1,'>',false,AGG_CARD,setnr,TS_IMPL);
 				}
+				else {
+					tseitin = translator()->translate(1,'=',true,AGG_CARD,setnr,TS_IMPL);
+				}
+				addUnitClause(tseitin);
 			}
 		}
 	}
 
 	void addFalseDefineds() {
-			for(unsigned int n = 0; n < getTranslator().nrOffsets(); ++n) {
+		for(unsigned int n = 0; n < translator()->nbSymbols(); ++n) {
 			PFSymbol* s = translator()->getSymbol(n);
 			auto it = _defined.find(s);
-			if(it != _defined.end()) {
-				auto tuples = getTranslator().getTuples(n);
+			if(it!=_defined.end()) {
+				auto tuples = translator()->getTuples(n);
 				for(auto jt = tuples.begin(); jt != tuples.end(); ++jt) {
 					if(it->second.find(jt->second) == it->second.end()){
 						addUnitClause(-jt->second);

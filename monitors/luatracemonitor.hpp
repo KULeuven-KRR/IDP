@@ -60,7 +60,7 @@ public:
 		lua_setfield(_state,-2,"dl");
 		lua_pushboolean(_state,!lit.hasSign());
 		lua_setfield(_state,-2,"value");
-		PFSymbol* s = _translator->symbol(lit.getAtom().getValue());
+		PFSymbol* s = _translator->atom2symbol(lit.getAtom().getValue());
 		if(s) {
 			const ElementTuple& args = _translator->args(lit.getAtom().getValue());
 			const DomainAtom* atom = DomainAtomFactory::instance()->create(s,args);

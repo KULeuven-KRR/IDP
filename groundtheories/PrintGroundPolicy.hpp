@@ -49,6 +49,14 @@ public:
 		printer().setStructure(str);
 	}
 
+	void polStartTheory(GroundTranslator* translator){
+		printer().startTheory();
+	}
+
+	void polEndTheory(){
+		printer().endTheory();
+	}
+
 	void polAddClause(GroundClause& cl) {
 		printer().visit(cl);
 	}
@@ -66,14 +74,16 @@ public:
 	}
 
 	void polAddPCRule(int defnr, int tseitin, PCTsBody* body, bool recursive) {
-		PCGroundRuleBody* rule = new PCGroundRuleBody(body->conj()?RuleType::RT_CONJ:RuleType::RT_DISJ, body->body(), recursive);
-		printer().visit(defnr, tseitin, rule);
+		PCGroundRule* rule = new PCGroundRule(tseitin, body->conj()?RuleType::RT_CONJ:RuleType::RT_DISJ, body->body(), recursive);
+		printer().checkOrOpen(defnr);
+		printer().visit(rule);
 		delete(rule);
 	}
 
 	void polAddAggRule(int defnr, int tseitin, AggTsBody* body, bool recursive) {
-		GroundAggregate* agg = new GroundAggregate(body->aggtype(),body->lower(),body->type(),tseitin,body->setnr(),body->bound());
-		printer().visit(defnr, agg);
+		AggGroundRule* agg = new AggGroundRule(tseitin, body->setnr(), body->aggtype(), body->lower(), body->bound(), recursive);
+		printer().checkOrOpen(defnr);
+		printer().visit(agg);
 		delete(agg);
 	}
 

@@ -8,38 +8,28 @@
 #define OPTIONS_HPP
 
 #include <string>
+#include <vector>
+#include <string>
 #include <map>
 #include "parseinfo.hpp"
 
 class InternalArgument;
 
-/**
- * A single option that has an integer value
- */
-class IntOption {
-	private:
-		int		_value;
-		int		_lower;
-		int		_upper;
-	public:
-		IntOption(int l, int u, int v) : _value(v), _lower(l), _upper(u) { }
-		bool	value(int v);
-		int		value()	const { return _value;	}
+template<class T> class Option {
+private:
+	T		_value;
+	T		_lower;
+	T		_upper;
+public:
+	Option(T l, T u, T v) : _value(v), _lower(l), _upper(u) { }
+	bool	value(int v);
+	T		value()	const { return _value;	}
+	T		lower() const { return _lower; }
+	T		upper() const { return _upper; }
 };
 
-/**
- * A single option that has an floating point value
- */
-class FloatOption {
-	private:
-		double	_value;
-		double	_lower;
-		double	_upper;
-	public:
-		FloatOption(double l, double u, double v) : _value(v), _lower(l), _upper(u) { }
-		bool	value(double v);
-		double	value()	const { return _value;	}
-};
+typedef Option<int> IntOption;
+typedef Option<float> FloatOption;
 
 /**
  * A single option that has an string value
@@ -48,7 +38,21 @@ class StringOption {
 	public:
 		virtual ~StringOption() { }
 		virtual bool				value(const std::string& v)	= 0;
-		virtual const std::string&	value()						const = 0;
+		virtual const std::string&	value()					const = 0;
+
+		virtual std::string					getPossibleValues() const;
+};
+
+class EnumeratedStringOption : public StringOption {
+	private:
+		unsigned int	_value;
+		std::vector<std::string>	_possvalues;
+	public:
+		EnumeratedStringOption(const std::vector<std::string>& possvalues, const std::string& val);
+		~EnumeratedStringOption() { }
+		const std::string& value()	const;
+		bool value(const std::string& val);
+		virtual std::string	getPossibleValues() const;
 };
 
 enum Language { LAN_TXT, LAN_IDP, LAN_ECNF, LAN_LATEX, LAN_ASP, LAN_CNF };
@@ -86,6 +90,8 @@ class Options {
 		bool	setvalue(const std::string&,int);
 		bool	setvalue(const std::string&,double);
 		bool	setvalue(const std::string&,const std::string&);
+
+		std::string getPossibleValues(const std::string& option) const;
 
 		Language	language()				const;
 		bool		printtypes()			const;
