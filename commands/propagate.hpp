@@ -34,6 +34,7 @@ class OptimalPropagateInference : public Inference {
 			// Compute all models
 			MinisatID::SolverOption modes;
 			modes.nbmodels = 0;
+			modes.verbosity = 0;
 			modes.remap = false;
 			SATSolver solver(modes);
 			Options options("",ParseInfo());

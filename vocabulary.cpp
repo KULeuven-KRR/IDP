@@ -492,7 +492,7 @@ ostream& Predicate::put(ostream& output, bool longnames) const {
 			}
 		}
 	}
-	output << _name.substr(0,_name.find('/'));
+	output << _name.substr(0,_name.rfind('/'));
 	if(longnames && !overloaded()) {
 		if(nrSorts() > 0) {
 			output << '[' << *_sorts[0];
@@ -881,7 +881,7 @@ ostream& Function::put(ostream& output, bool longnames) const {
 			}
 		}
 	}
-	output << _name.substr(0,_name.find('/'));
+	output << _name.substr(0,_name.rfind('/'));
 	if(longnames && !overloaded()) {
 		output << '[';
 		if(_insorts.size() > 0) {
@@ -1454,7 +1454,7 @@ set<Predicate*> Vocabulary::pred_no_arity(const string& name) const {
 	set<Predicate*> vp;
 	for(map<string,Predicate*>::const_iterator it = _name2pred.begin(); it != _name2pred.end(); ++it) {
 		string nm = it->second->name();
-		if(nm.substr(0,nm.find('/')) == name) vp.insert(it->second);
+		if(nm.substr(0,nm.rfind('/')) == name) vp.insert(it->second);
 	}
 	return vp;
 }
@@ -1463,7 +1463,7 @@ set<Function*> Vocabulary::func_no_arity(const string& name) const {
 	set<Function*> vf;
 	for(map<string,Function*>::const_iterator it = _name2func.begin(); it != _name2func.end(); ++it) {
 		string nm = it->second->name();
-		if(nm.substr(0,nm.find('/')) == name) vf.insert(it->second);
+		if(nm.substr(0,nm.rfind('/')) == name) vf.insert(it->second);
 	}
 	return vf;
 }
