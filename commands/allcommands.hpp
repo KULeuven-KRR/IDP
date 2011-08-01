@@ -56,6 +56,7 @@ std::vector<Inference*> getAllInferences(){
 	inferences.push_back(new DomainIteratorInference());
 	inferences.push_back(new TableIteratorInference());
 	inferences.push_back(new OptimalPropagateInference());
+	inferences.push_back(new GroundPropagateInference());
 	inferences.push_back(new PropagateInference());
 	inferences.push_back(new PrintVocabularyInference());
 	inferences.push_back(new PrintTheoryInference());
