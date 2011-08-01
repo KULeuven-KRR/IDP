@@ -285,6 +285,7 @@ class SetExpr {
 		void subformula(unsigned int n, Formula* f)	{ _subformulas[n] = f; setfvars();			}
 		void addterm(Term* t)						{ _subterms.push_back(t); setfvars();		}
 		void addformula(Formula* f)					{ _subformulas.push_back(f); setfvars();	}
+		void addquantvar(Variable* v)				{ _quantvars.insert(v); setfvars();			}
 		
 		// Inspectors
 		virtual Sort*							sort()						const = 0;	//!< Returns the sort of the set
