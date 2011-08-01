@@ -220,6 +220,7 @@ class FOPropagator : public TheoryVisitor {
 		FOPropScheduler*										_scheduler;		//!< Schedules propagations
 		std::map<const Formula*,ThreeValuedDomain>				_domains;		//!< Map each formula to its current domain
 		std::map<const Formula*,std::set<Variable*> >			_quantvars;
+		std::map<PFSymbol*,PredForm*>							_leafconnectors;
 		std::map<const PredForm*,LeafConnectData>				_leafconnectdata;
 		std::map<const Formula*,const Formula*>					_upward;
 		std::map<const PredForm*,std::set<const PredForm*> >	_leafupward;
@@ -246,9 +247,6 @@ class FOPropagator : public TheoryVisitor {
 
 		// Execution
 		void run();		//!< Apply propagations until the propagation queue is empty
-		AbstractStructure*	result(AbstractStructure* str) const;	
-			//!< Obtain the resulting structure 
-			//!< (the given structure is used to evaluate BDDs in case of symbolic propagation)
 
 		// Visitor
 		void visit(const PredForm*);
@@ -257,6 +255,13 @@ class FOPropagator : public TheoryVisitor {
 		void visit(const BoolForm*);
 		void visit(const QuantForm*);
 		void visit(const AggForm*);
+
+		// Inspectors
+		AbstractStructure*	currstructure(AbstractStructure* str) const;	
+			//!< Obtain the resulting structure 
+			//!< (the given structure is used to evaluate BDDs in case of symbolic propagation)
+		FuncInter*	interpretation(Function* f)		const;	//!< Returns the current interpretation of function symbol f
+		PredInter*	interpretation(Predicate* p)	const;	//!< Returns the current interpretation of predicate symbol p
 
 	friend class FOPropagatorFactory;
 };

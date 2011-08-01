@@ -309,7 +309,7 @@ void FOPropagator::run() {
 	if(_verbosity > 1) { cerr << "=== End propagation ===\n"; }
 }
 
-AbstractStructure* FOPropagator::result(AbstractStructure* structure) const {
+AbstractStructure* FOPropagator::currstructure(AbstractStructure* structure) const {
 	Vocabulary* vocabulary = new Vocabulary("");
 	for(map<const PredForm*,set<const PredForm*> >::const_iterator it = _leafupward.begin(); it != _leafupward.end(); ++it) {
 		PFSymbol* symbol = it->first->symbol();
@@ -335,6 +335,18 @@ AbstractStructure* FOPropagator::result(AbstractStructure* structure) const {
 	}
 
 	return res;
+}
+
+FuncInter* FOPropagator::interpretation(Function* ) const {
+	assert(false);
+	// TODO
+	return 0;
+}
+
+PredInter* FOPropagator::interpretation(Predicate* ) const {
+	assert(false);
+	// TODO
+	return 0;
 }
 
 FOPropDomain* FOPropagator::addToConjunction(FOPropDomain* conjunction, FOPropDomain* newconjunct) {
@@ -636,6 +648,7 @@ void FOPropagatorFactory::createleafconnector(PFSymbol* symbol) {
 	vector<Term*> args = TermUtils::makeNewVarTerms(vars);
 	PredForm* leafconnector = new PredForm(true,symbol,args,FormulaParseInfo());
 	_leafconnectors[symbol] = leafconnector;
+	_propagator->_leafconnectors[symbol] = leafconnector;
 	switch(_initbounds[symbol]) {
 		case IBT_TWOVAL:
 			_propagator->_domains[leafconnector] = ThreeValuedDomain(_propagator->_factory,leafconnector);

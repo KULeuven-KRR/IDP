@@ -28,6 +28,8 @@ class GroundPropagateInference : public Inference {
 		}
 
 		InternalArgument execute(const std::vector<InternalArgument>& args) const {
+			// TODO: make a clean version of this implementation
+			// TODO: doens't work with cp support (because a.o.(?) backtranslation is not implemented)
 			AbstractTheory*	theory = args[0].theory();
 			AbstractStructure* structure = args[1].structure();
 
@@ -172,6 +174,7 @@ public:
 		AbstractTheory*	theory = args[0].theory();
 		AbstractStructure* structure = args[1].structure();
 
+		// Collect symbolic propagator vocabulary
 		std::map<PFSymbol*,InitBoundType> mpi;
 		Vocabulary* v = theory->vocabulary();
 		for(auto it = v->firstpred(); it != v->lastpred(); ++it) {
@@ -180,10 +183,14 @@ public:
 				if(structure->vocabulary()->contains(*jt)) {
 					PredInter* pinter = structure->inter(*jt);
 					if(pinter->approxtwovalued()) mpi[*jt] = IBT_TWOVAL;
-					else {
-						// TODO
-						mpi[*jt] = IBT_NONE;
+					else if(pinter->ct()->approxempty()) {
+						if(pinter->cf()->approxempty()) mpi[*jt] = IBT_NONE;
+						else mpi[*jt] = IBT_CF;
 					}
+					else if(pinter->cf()->approxempty()) {
+						mpi[*jt] = IBT_CT;
+					}
+					else mpi[*jt] = IBT_BOTH; 
 				}
 				else mpi[*jt] = IBT_NONE;
 			}
@@ -194,10 +201,14 @@ public:
 				if(structure->vocabulary()->contains(*jt)) {
 					FuncInter* finter = structure->inter(*jt);
 					if(finter->approxtwovalued()) mpi[*jt] = IBT_TWOVAL;
-					else {
-						// TODO
-						mpi[*jt] = IBT_NONE;
+					else if(finter->graphinter()->ct()->approxempty()) {
+						if(finter->graphinter()->cf()->approxempty()) mpi[*jt] = IBT_NONE;
+						else mpi[*jt] = IBT_CF;
 					}
+					else if(finter->graphinter()->cf()->approxempty()) {
+						mpi[*jt] = IBT_CT;
+					}
+					else mpi[*jt] = IBT_BOTH; 
 				}
 				else mpi[*jt] = IBT_NONE;
 			}
@@ -209,9 +220,9 @@ public:
 		FOPropagator* propagator = propfactory.create(theory);
 		propagator->run();
 
+		AbstractStructure* result = propagator->currstructure(structure);
 		// TODO: free allocated memory
-		// TODO: return a structure (instead of nil)
-		return nilarg();
+		return InternalArgument(result);
 	}
 };
 
