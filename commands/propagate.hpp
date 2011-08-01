@@ -13,6 +13,87 @@
 #include "internalargument.hpp"
 #include "theory.hpp"
 #include "structure.hpp"
+#include "commandinterface.hpp"
+#include "monitors/tracemonitor.hpp"
+
+/**
+ * Implements the optimal propagator by computing all models of the theory and then taking the intersection
+ */
+class OptimalPropagateInference : public Inference {
+	public:
+		OptimalPropagateInference() : Inference("optimalpropagate") {
+			add(AT_THEORY);
+			add(AT_STRUCTURE);
+		}
+
+		InternalArgument execute(const std::vector<InternalArgument>& args) const {
+			AbstractTheory*	theory = args[0].theory();
+			AbstractStructure* structure = args[1].structure();
+
+			// TODO: make a clean version of the implementation
+			// Compute all models
+			MinisatID::SolverOption modes;
+			modes.nbmodels = 0;
+			modes.remap = false;
+			SATSolver solver(modes);
+			Options options("",ParseInfo());
+			options.setvalue("nrmodels",0);
+			GrounderFactory grounderfactory(structure,&options);
+			TopLevelGrounder* grounder = grounderfactory.create(theory,&solver);
+			grounder->run();
+			SolverTheory* grounding = dynamic_cast<SolverTheory*>(grounder->grounding());
+			grounding->addFuncConstraints();
+			grounding->addFalseDefineds();
+			MinisatID::ModelExpandOptions opts;
+			opts.nbmodelstofind = options.nrmodels();
+			opts.printmodels = MinisatID::PRINT_NONE;
+			opts.savemodels = MinisatID::SAVE_ALL;
+			opts.search = MinisatID::MODELEXPAND;
+			MinisatID::Solution* abstractsolutions = new MinisatID::Solution(opts);
+			solver.solve(abstractsolutions);
+
+			std::set<int> intersection;
+			if(abstractsolutions->getModels().empty()) return nilarg();
+			else { // Take the intersection of all models
+				MinisatID::Model* firstmodel = *(abstractsolutions->getModels().begin());
+				for(auto it = firstmodel->literalinterpretations.begin(); 
+					it != firstmodel->literalinterpretations.end(); ++it) {
+					intersection.insert(it->getValue());
+				}
+				for(auto currmodel = (abstractsolutions->getModels().begin()); 
+					currmodel != abstractsolutions->getModels().end(); ++currmodel) {
+					for(auto it = (*currmodel)->literalinterpretations.begin(); 
+						it != (*currmodel)->literalinterpretations.end(); ++it) {
+						if(intersection.find(it->getValue()) == intersection.end()) {
+							intersection.erase((-1) * it->getValue());
+						}
+					}
+				}
+			}
+
+			GroundTranslator* translator = grounding->translator();
+			AbstractStructure* result = structure->clone();
+			for(auto literal = intersection.begin(); literal != intersection.end(); ++literal) {
+				int atomnr = *literal > 0 ? *literal : (-1) * (*literal);
+				PFSymbol* symbol = translator->symbol(atomnr);
+				if(symbol) {
+					const ElementTuple& args = translator->args(atomnr);
+					if(typeid(*symbol) == typeid(Predicate)) {
+						Predicate* pred = dynamic_cast<Predicate*>(symbol);
+						if(*literal < 0) result->inter(pred)->makeFalse(args);
+						else result->inter(pred)->makeTrue(args);
+					}
+					else {
+						Function* func = dynamic_cast<Function*>(symbol);
+						if(*literal < 0) result->inter(func)->graphinter()->makeFalse(args);
+						else result->inter(func)->graphinter()->makeTrue(args);
+					}
+				}
+			}
+			result->clean();
+			return InternalArgument(result);
+		}
+};
 
 class PropagateInference: public Inference {
 public:

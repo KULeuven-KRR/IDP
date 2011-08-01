@@ -33,8 +33,7 @@ public:
 		std::set<Variable*> vars(q->variables().begin(),q->variables().end());
 		std::set<const FOBDDVariable*> bddvars = manager.getVariables(vars);
 		std::set<const FOBDDDeBruijnIndex*> bddindices;
-		q->query()->accept(&factory);
-		const FOBDD* bdd = factory.bdd();
+		const FOBDD* bdd = factory.run(q->query());
 
 		// optimize the query
 		manager.optimizequery(bdd,bddvars,bddindices,structure);

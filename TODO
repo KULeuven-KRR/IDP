@@ -13,6 +13,8 @@ Todo
 	- help functie die mogelijke opties uitlegt
 	- je moet zorgen dat je interactive shell niet crasht als een inferentie crasht. Het makkelijkste zal zijn om rond de code die interne procedures oproept enkele try catches te zettten
 	- een niet bestaande optie in stdoptions setten geeft geen fout (bvb stdoptions.a=1) 
+	- modelexpansie algoritme moet beschikbaar zijn in verschillende andere inferenties (e.g., optimalpropagate). Moet dus ergens anders staan dan in 
+	  de klasse in modelexpand.hpp 
 
 Bugs
 ====

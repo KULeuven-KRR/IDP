@@ -226,6 +226,12 @@ class AggTerm : public Term {
 
 namespace TermUtils {
 	std::vector<Term*> 	makeNewVarTerms(const std::vector<Variable*>&);	//!< Make a vector of fresh variable terms
+
+	/**
+	 * Returns false if the value of the term is defined 
+	 * for all possible instantiations of its free variables
+	 */
+	bool isPartial(Term*);	
 }
 
 /**************
@@ -292,6 +298,7 @@ class SetExpr {
 		void subformula(unsigned int n, Formula* f)	{ _subformulas[n] = f; setfvars();			}
 		void addterm(Term* t)						{ _subterms.push_back(t); setfvars();		}
 		void addformula(Formula* f)					{ _subformulas.push_back(f); setfvars();	}
+		void addquantvar(Variable* v)				{ _quantvars.insert(v); setfvars();			}
 		
 		// Inspectors
 		virtual Sort*							sort()						const = 0;	//!< Returns the sort of the set

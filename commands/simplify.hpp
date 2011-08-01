@@ -26,8 +26,7 @@ public:
 		// Translate the query to a bdd
 		FOBDDManager manager;
 		FOBDDFactory factory(&manager);
-		q->query()->accept(&factory);
-		const FOBDD* bdd = factory.bdd();
+		const FOBDD* bdd = factory.run(q->query());
 		
 		// Simplify the bdd
 		const FOBDD* simplifiedbdd = manager.simplify(bdd);

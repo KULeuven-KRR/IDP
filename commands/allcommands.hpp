@@ -78,7 +78,8 @@ std::vector<Inference*> getAllInferences(){
 	inferences.push_back(new GroundInference());
 	inferences.push_back(new CompletionInference());
 	inferences.push_back(new CleanInference());
-	inferences.push_back(new ToBDDInference());
+	inferences.push_back(new ToBDDInference(AT_FORMULA));
+	inferences.push_back(new ToBDDInference(AT_QUERY));
 	inferences.push_back(new ChangeVocabularyInference());
 	inferences.push_back(new EstimateBDDCostInference());
 	inferences.push_back(new EstimateNumberOfAnswersInference());

@@ -351,6 +351,9 @@ namespace FormulaUtils {
 	/** **/
 	Formula* graph_functions(Formula* f);	
 
+	/** \brief Recursively move all partial terms outside atoms **/
+	Formula* movePartialTerms(Formula*, Vocabulary* voc = 0, PosContext = PC_POSITIVE);
+
 	/** \brief Non-recursively move terms that are three-valued in a given structure outside of the given atom **/
 	Formula* moveThreeValuedTerms(Formula*,AbstractStructure*,bool positive,bool cpsupport=false,
 								const std::set<const PFSymbol*> cpsymbols=std::set<const PFSymbol*>());
@@ -385,7 +388,7 @@ class Rule {
 	public:
 		// Constructors
 		Rule(const std::set<Variable*>& vv, PredForm* h, Formula* b, const ParseInfo& pi) : 
-			_head(h), _body(b), _quantvars(vv), _pi(pi) { assert(h->symbol()->name() != "=/2");	}
+			_head(h), _body(b), _quantvars(vv), _pi(pi) { }
 
 		Rule*	clone()	const;	//!< Make a deep copy of the rule
 

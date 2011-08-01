@@ -1343,6 +1343,20 @@ const FOBDDAtomKernel* FOBDDManager::solve(const FOBDDKernel* kernel, const FOBD
 	FOBDD Factory
 ********************/
 
+const FOBDD* FOBDDFactory::run(const Formula* f) {
+	Formula* cf = f->clone();
+	cf = FormulaUtils::movePartialTerms(cf);
+	cf->accept(this);
+	cf->recursiveDelete();
+	return _bdd;
+}
+
+const FOBDDArgument* FOBDDFactory::run(const Term* t) {
+	// FIXME: move partial functions in aggregates that occur in t
+	t->accept(this);
+	return _argument;
+}
+
 void FOBDDFactory::visit(const VarTerm* vt) {
 	_argument = _manager->getVariable(vt->var());
 }

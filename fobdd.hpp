@@ -201,14 +201,8 @@ class FOBDDFactory : public TheoryVisitor {
 		
 		// Return values
 		const FOBDD*			_bdd;
-		const FOBDDKernel*	_kernel;
+		const FOBDDKernel*		_kernel;
 		const FOBDDArgument*	_argument;
-
-	public:
-		FOBDDFactory(FOBDDManager* m, Vocabulary* v = 0) : _manager(m), _vocabulary(v) { }
-
-		const FOBDD*			bdd()		const { return _bdd;		}
-		const FOBDDArgument*	argument()	const { return _argument;	}
 
 		void	visit(const VarTerm* vt);
 		void	visit(const DomainTerm* dt);
@@ -220,6 +214,12 @@ class FOBDDFactory : public TheoryVisitor {
 		void	visit(const QuantForm* qf);
 		void	visit(const EqChainForm* ef);
 		void	visit(const AggForm* af);
+
+	public:
+		FOBDDFactory(FOBDDManager* m, Vocabulary* v = 0) : _manager(m), _vocabulary(v) { }
+
+		const FOBDD*			run(const Formula* f);
+		const FOBDDArgument*	run(const Term* t);
 };
 
 
