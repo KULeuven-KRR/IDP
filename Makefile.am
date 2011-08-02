@@ -44,7 +44,7 @@ gidl_SOURCES = \
 		interactive.hpp interactive.cpp\
 		main.cpp\
 		printers/print.hpp printers/print.cpp\
-		printers/idpprinter.hpp printers/ecnfprinter.hpp\
+		printers/idpprinter.hpp printers/ecnfprinter.hpp printers/tptpprinter.hpp\
 		checker.hpp checker.cpp\
 		generator.hpp generator.cpp\
 		propagate.hpp propagate.cpp\
@@ -85,7 +85,8 @@ gidl_SOURCES = \
 		commands/changevocabulary.hpp\
 		commands/estimatecosts.hpp\
 		commands/createrange.hpp\
-		commands/derefandincrement.hpp
+		commands/derefandincrement.hpp\
+		commands/implies.hpp
 
 AM_CXXFLAGS+=-I $(top_srcdir)/pcsolver/src/ 
 

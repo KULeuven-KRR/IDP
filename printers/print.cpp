@@ -12,6 +12,7 @@
 #include "printers/print.hpp"
 #include "printers/idpprinter.hpp"
 #include "printers/ecnfprinter.hpp"
+#include "printers/tptpprinter.hpp"
 
 using namespace std;
 using namespace rel_ops;
@@ -26,13 +27,25 @@ Printer* Printer::create(Options* opts, Stream& stream) {
 			return new IDPPrinter<Stream>(opts->longnames(), stream);
 		case LAN_ECNF:
 			return new EcnfPrinter<Stream>(opts->writeTranslation(), stream);
+		case LAN_TPTP:
+			return new TPTPPrinter<Stream>(false, false, stream);
 		default:
 			assert(false);
 			return NULL;
 	}
 }
 
+template<class Stream>
+Printer* Printer::create(Options* opts, Stream& stream, bool conjecture, bool arithmetic) {
+	if (opts->language() == LAN_TPTP) {
+		return new TPTPPrinter<Stream>(conjecture, arithmetic, stream);
+	} else {
+		return create<Stream>(opts, stream);
+	}
+}
+
 template Printer* Printer::create<stringstream>(Options*, stringstream&);
+template Printer* Printer::create<stringstream>(Options*, stringstream&, bool, bool);
 template Printer* Printer::create<InteractivePrintMonitor>(Options*, InteractivePrintMonitor&);
 
 void Printer::visit(const AbstractTheory* t){

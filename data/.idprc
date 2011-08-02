@@ -4,6 +4,8 @@
 --	All code in this chunk is executed before input files are parsed
 -- ================================================================== --
 
+idp_intern.prover_fof_command = "/Users/roel/vakantiejob/E/PROVER/eprover -xAuto -tAuto --tptp3-format "
+idp_intern.prover_tff_command = "java -jar -Dfile.encoding=UTF-8 -jar /Users/roel/vakantiejob/MELIA-0.1.1.jar "
 
 -- Options for parsing files
 -- =========================

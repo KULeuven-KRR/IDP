@@ -65,7 +65,7 @@ Options::Options(const string& name, const ParseInfo& pi) : _name(name), _pi(pi)
 	_intoptions["nrpropsteps"]			= new IntOption(0,numeric_limits<int>::max(),4);
 	_intoptions["longestbranch"]		= new IntOption(0,numeric_limits<int>::max(),8);
 
-	vector<string> ls(3); ls[0] = "idp"; ls[1] = "txt"; ls[2] = "ecnf";
+	vector<string> ls(4); ls[0] = "idp"; ls[1] = "txt"; ls[2] = "ecnf"; ls[3] = "tptp";
 	vector<string> mf(3); mf[0] = "threevalued"; mf[1] = "twovalued"; mf[2] = "all";
 	_stringoptions["language"]		= new EnumeratedStringOption(ls,"idp");
 	_stringoptions["modelformat"]	= new EnumeratedStringOption(mf,"threevalued");
@@ -144,6 +144,7 @@ Language Options::language() const {
 	if(lan == "idp") return LAN_IDP;
 	else if(lan == "txt") return LAN_TXT;
 	else if(lan == "ecnf") return LAN_ECNF;
+	else if(lan == "tptp") return LAN_TPTP;
 	else return LAN_IDP;
 }
 

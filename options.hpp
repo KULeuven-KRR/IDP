@@ -51,7 +51,7 @@ class StringOption {
 		virtual const std::string&	value()						const = 0;
 };
 
-enum Language { LAN_TXT, LAN_IDP, LAN_ECNF, LAN_LATEX, LAN_ASP, LAN_CNF };
+enum Language { LAN_TXT, LAN_IDP, LAN_ECNF, LAN_LATEX, LAN_ASP, LAN_CNF, LAN_TPTP };
 
 /**
  * Class to represent a block of options

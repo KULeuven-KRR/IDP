@@ -147,3 +147,10 @@ procedure makeunknown(inter,tuple) {
 	idp_intern.makeunknown(inter,tuple)
 }
 
+procedure implies(T1,T2) {
+	tmplang = stdoptions.language
+	stdoptions.language = "tptp"
+	result = idp_intern.implies(T1,T2,idp_intern.prover_fof_command,idp_intern.prover_tff_command,stdoptions)
+	stdoptions.language = tmplang
+	return result
+}
