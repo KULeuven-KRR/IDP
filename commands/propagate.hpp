@@ -117,6 +117,7 @@ class GroundPropagateInference : public Inference {
 			modes.verbosity = 0;
 			modes.remap = false;
 			SATSolver solver(modes);
+			monitor.setSolver(&solver);
 			Options options("",ParseInfo());
 			options.setvalue("nrmodels",0);
 			GrounderFactory grounderfactory(structure,&options);
@@ -131,7 +132,6 @@ class GroundPropagateInference : public Inference {
 			opts.savemodels = MinisatID::SAVE_ALL;
 			opts.search = MinisatID::PROPAGATE;
 			MinisatID::Solution* abstractsolutions = new MinisatID::Solution(opts);
-			monitor.setSolver(&solver);
 			solver.solve(abstractsolutions);
 
 			GroundTranslator* translator = grounding->translator();

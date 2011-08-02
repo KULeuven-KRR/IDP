@@ -1130,6 +1130,11 @@ InstGenerator* BDDToGenerator::create(const FOBDDKernel* kernel, const vector<bo
 	if(typeid(*kernel) == typeid(FOBDDAtomKernel)) {
 		const FOBDDAtomKernel* atom = dynamic_cast<const FOBDDAtomKernel*>(kernel);
 
+		// TODO: if the atom contains a functerm, then
+		// 1. convert the kernel to a Formula
+		// 2. implement special purpose algorithm on the formula
+		HIER BEZIG
+
 		// Create the pattern for the atom
 		vector<bool> atompattern;
 		vector<const DomainElement**> atomvars;
@@ -1162,12 +1167,7 @@ InstGenerator* BDDToGenerator::create(const FOBDDKernel* kernel, const vector<bo
 				
 				return create(termkernel,termpattern,termvars,termkernelvars,structure,inverse,Universe(termuniv));
 			}
-			else {
-				assert(typeid(*(*it)) == typeid(FOBDDFuncTerm));
-				const FOBDDFuncTerm* functerm = dynamic_cast<const FOBDDFuncTerm*>(*it);
-				// TODO
-				return 0;
-			}
+			else assert(false);
 		}
 
 		// Construct the generator
@@ -1290,11 +1290,11 @@ void GeneratorFactory::visit(const FuncInternalPredTable* fipt) {
 }
 
 void GeneratorFactory::visit(const UnionInternalPredTable* ) {
-	// TODO
+	assert(false); // TODO
 }
 
 void GeneratorFactory::visit(const UnionInternalSortTable*) {
-	// TODO
+	assert(false); // TODO
 }
 
 void GeneratorFactory::visit(const AllNaturalNumbers* t) {
@@ -1471,7 +1471,7 @@ void GeneratorFactory::visit(const PlusInternalFuncTable* pift) {
 	}
 	else if(_firstocc[1] == 0) {
 		if(pift->isInt()) {
-			// TODO
+			assert(false); // TODO
 		}
 		else {
 			const DomainElement* two = DomainElementFactory::instance()->create(2);
@@ -1494,7 +1494,7 @@ void GeneratorFactory::visit(const MinusInternalFuncTable* pift) {
 		_generator = new PlusGenerator(_vars[1],_vars[2],_vars[0],pift->isInt(),_universe.tables()[0]);
 	}
 	else if(_firstocc[1] == 0) {
-		// TODO
+		assert(false); // TODO
 	}
 	else {
 		notyetimplemented("Infinite generator for subtraction pattern (out,out,in)");
@@ -1510,7 +1510,7 @@ void GeneratorFactory::visit(const TimesInternalFuncTable* pift) {
 		_generator = new DivGenerator(_vars[2],_vars[1],_vars[0],pift->isInt(),_universe.tables()[0]);
 	}
 	else if(_firstocc[1] == 0) {
-		// TODO
+		assert(false); // TODO
 	}
 	else {
 		notyetimplemented("Infinite generator for multiplication pattern (out,out,in)");
@@ -1527,7 +1527,7 @@ void GeneratorFactory::visit(const DivInternalFuncTable* pift) {
 		_generator = new TimesGenerator(_vars[1],_vars[2],_vars[0],pift->isInt(),_universe.tables()[0]);
 	}
 	else if(_firstocc[1] == 0) {
-		// TODO
+		assert(false); // TODO
 	}
 	else {
 		notyetimplemented("Infinite generator for division pattern (out,out,in)");

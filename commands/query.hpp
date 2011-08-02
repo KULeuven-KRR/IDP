@@ -21,9 +21,6 @@ public:
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
-		// FIXME: watch out for partial functions!
-
-
 		Query* q = args[0]._value._query;
 		AbstractStructure* structure = args[1].structure();
 

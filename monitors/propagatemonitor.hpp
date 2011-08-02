@@ -17,8 +17,8 @@ class PropagateMonitor : public TraceMonitor {
 	public:
 		PropagateMonitor() {
 			cb::Callback2<void, MinisatID::Literal, int> callbackprop(this, &PropagateMonitor::propagate);
-			MinisatID::Monitor* solvermonitor_ = new MinisatID::Monitor();
-			solvermonitor_->setPropagateCB(callbackprop);
+			_solvermonitor = new MinisatID::Monitor();
+			_solvermonitor->setPropagateCB(callbackprop);
 		}
 		~PropagateMonitor() { }
 

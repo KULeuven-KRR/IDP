@@ -181,14 +181,18 @@ PredInter* FOPropBDDDomainFactory::inter(const vector<Variable*>& vars, const Th
 	}
 	Universe univ(vst);
 
-	// Construct the ct-table
+	// Construct the ct-table and cf-table
 	FOPropBDDDomain* ctdom = dynamic_cast<FOPropBDDDomain*>(dom._ctdomain);
 	const FOBDD* newctbdd = _manager->substitute(ctdom->bdd(),ctmvv);
+cerr << "the ct domain is\n";
+_manager->put(cerr,newctbdd);
 	PredTable* ct = new PredTable(new BDDInternalPredTable(newctbdd,_manager,newctvars,str),univ);
 	if(twovalued) return new PredInter(ct,true);
 	else {
 		FOPropBDDDomain* cfdom = dynamic_cast<FOPropBDDDomain*>(dom._cfdomain);
 		const FOBDD* newcfbdd = _manager->substitute(cfdom->bdd(),cfmvv);
+cerr << "the cf domain is\n";
+_manager->put(cerr,newcfbdd);
 		PredTable* cf = new PredTable(new BDDInternalPredTable(newcfbdd,_manager,newcfvars,str),univ);
 		return new PredInter(ct,cf,true,true);
 	}
@@ -311,14 +315,12 @@ void FOPropagator::run() {
 
 AbstractStructure* FOPropagator::currstructure(AbstractStructure* structure) const {
 	Vocabulary* vocabulary = new Vocabulary("");
-cerr << "adding symbols\n";
 	for(map<const PredForm*,set<const PredForm*> >::const_iterator it = _leafupward.begin(); it != _leafupward.end(); ++it) {
 		PFSymbol* symbol = it->first->symbol();
-cerr << "adding symbol "; symbol->put(cerr,false); cerr << endl;
 		if(typeid(*symbol) == typeid(Predicate)) vocabulary->addPred(dynamic_cast<Predicate*>(symbol));
 		else vocabulary->addFunc(dynamic_cast<Function*>(symbol));
 	}
-	Structure* res = new Structure("",ParseInfo());
+	AbstractStructure* res = structure->clone();
 	res->vocabulary(vocabulary);
 
 	for(map<const PredForm*,set<const PredForm*> >::const_iterator it = _leafupward.begin(); it != _leafupward.end(); ++it) {
@@ -335,7 +337,6 @@ cerr << "adding symbol "; symbol->put(cerr,false); cerr << endl;
 			res->inter(dynamic_cast<Function*>(symbol),finter);
 		}
 	}
-
 	return res;
 }
 
