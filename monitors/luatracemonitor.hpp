@@ -28,9 +28,9 @@ public:
 
 		cb::Callback1<void, int> callbackback(this, &LuaTraceMonitor::backtrack);
 		cb::Callback2<void, MinisatID::Literal, int> callbackprop(this, &LuaTraceMonitor::propagate);
-		MinisatID::Monitor* m = new MinisatID::Monitor();
-		m->setBacktrackCB(callbackback);
-		m->setPropagateCB(callbackprop);
+		MinisatID::Monitor* solvermonitor_ = new MinisatID::Monitor();
+		solvermonitor_->setBacktrackCB(callbackback);
+		solvermonitor_->setPropagateCB(callbackprop);
 	}
 
 	void setTranslator(GroundTranslator* translator) { _translator = translator; }

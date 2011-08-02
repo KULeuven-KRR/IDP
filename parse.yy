@@ -105,6 +105,7 @@ typedef std::list<isp>				lisp;
 %token OPTION_HEADER
 %token EXEC_HEADER
 %token QUERY_HEADER
+%token TERM_HEADER
 
 /** Keywords **/
 %token CONSTRUCTOR
@@ -393,6 +394,16 @@ query		: '{' query_vars ':' formula '}'		{ $$ = insert.query(*$2,$4,@1); delete(
 
 query_vars	: /* empty */			{ $$ = new std::vector<Variable*>(0);	}
 			| query_vars variable	{ $$ = $1; $$->push_back($2);		}
+			;
+
+/******************
+	Named terms
+******************/
+
+namedterm	: TERM_HEADER term_name ':' vocab_pointer '{' term '}'	{ insert.closeterm($6);	}
+			;
+
+term_name	: identifier	{ insert.openterm(*$1,@1);	}
 			;
 
 /*************

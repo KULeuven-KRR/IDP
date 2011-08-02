@@ -84,8 +84,9 @@ gidl_SOURCES = \
 		commands/help.hpp\
 		commands/changevocabulary.hpp\
 		commands/estimatecosts.hpp\
-		commands/createrange.hpp\
-		commands/derefandincrement.hpp
+		commands/derefandincrement.hpp\
+		commands/simplify.hpp\
+		commands/createrange.hpp
 
 AM_CXXFLAGS+=-I $(top_srcdir)/pcsolver/src/ 
 

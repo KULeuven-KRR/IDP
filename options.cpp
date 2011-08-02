@@ -51,7 +51,7 @@ class EnumeratedStringOption : public StringOption {
 
 Options::Options(const string& name, const ParseInfo& pi) : _name(name), _pi(pi) {
 	_booloptions["printtypes"]			= true;
-	_booloptions["cpsupport"]		= false;
+	_booloptions["cpsupport"]			= false;
 	_booloptions["trace"]				= false;
 	_booloptions["autocomplete"]		= true;
 	_booloptions["longnames"]			= false;

@@ -30,6 +30,8 @@ class TheoryMutatingVisitor;
 	Terms
 ************/
 
+enum TermType { TT_VAR, TT_FUNC, TT_AGG, TT_DOM };
+
 class VarTerm;
 
 /**
@@ -72,6 +74,7 @@ class Term {
 		// Inspectors
 				const TermParseInfo&			pi()			const { return _pi;				}
 		virtual	Sort*							sort()			const = 0;	//!< Returns the sort of the term
+		virtual TermType						type()			const = 0;
 				const std::set<Variable*>&		freevars()		const { return _freevars;		}
 				const std::vector<Term*>&		subterms()		const { return _subterms;		}
 				const std::vector<SetExpr*>&	subsets()		const { return _subsets;		}
@@ -112,7 +115,8 @@ class VarTerm : public Term {
 		void	sort(Sort* s);
 
 		Sort*		sort()	const;
-		Variable*	var()	const	{ return _var;	}
+		TermType	type()	const	{ return TT_VAR;	}
+		Variable*	var()	const	{ return _var;		}
 
 		void	accept(TheoryVisitor*)	const;
 		Term*	accept(TheoryMutatingVisitor*);
@@ -145,6 +149,7 @@ class FuncTerm : public Term {
 		void function(Function* f)	{ _function = f;	}
 
 		Sort*						sort()			const;
+		TermType	type()							const	{ return TT_FUNC;		}
 		Function*					function()		const	{ return _function;		}
 		const std::vector<Term*>&	args()			const	{ return subterms();	}
 
@@ -178,6 +183,7 @@ class DomainTerm : public Term {
 		void	sort(Sort* s)	{ _sort = s;	}
 
 		Sort*					sort()		const { return _sort;	}
+		TermType				type()		const { return TT_DOM;	}
 		const DomainElement*	value()		const { return _value;	}
 
 		void	accept(TheoryVisitor*)	const;
@@ -207,6 +213,7 @@ class AggTerm : public Term {
 		~AggTerm() { }
 
 		Sort*		sort()		const;
+		TermType	type()		const	{ return TT_AGG;		}
 		SetExpr*	set()		const	{ return subsets()[0];	}
 		AggFunction	function()	const	{ return _function;		}
 
@@ -219,6 +226,12 @@ class AggTerm : public Term {
 
 namespace TermUtils {
 	std::vector<Term*> 	makeNewVarTerms(const std::vector<Variable*>&);	//!< Make a vector of fresh variable terms
+
+	/**
+	 * Returns false if the value of the term is defined 
+	 * for all possible instantiations of its free variables
+	 */
+	bool isPartial(Term*);	
 }
 
 /**************

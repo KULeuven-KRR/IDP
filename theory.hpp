@@ -351,6 +351,9 @@ namespace FormulaUtils {
 	/** **/
 	Formula* graph_functions(Formula* f);	
 
+	/** \brief Recursively move all partial terms outside atoms **/
+	Formula* movePartialTerms(Formula*, Vocabulary* voc = 0, PosContext = PC_POSITIVE);
+
 	/** \brief Non-recursively move terms that are three-valued in a given structure outside of the given atom **/
 	Formula* moveThreeValuedTerms(Formula*,AbstractStructure*,bool positive,bool cpsupport=false,
 								const std::set<const PFSymbol*> cpsymbols=std::set<const PFSymbol*>());
@@ -728,7 +731,7 @@ class TheoryMutatingVisitor {
 		virtual SolverTheory* visit(SolverTheory*);
 
 		// Formulas     
-				Formula* traverse(Formula*);
+		virtual	Formula* traverse(Formula*);
 		virtual Formula* visit(PredForm*);			
 		virtual Formula* visit(EqChainForm*);
 		virtual Formula* visit(EquivForm*);
@@ -747,14 +750,14 @@ class TheoryMutatingVisitor {
 		virtual GroundDefinition*	visit(GroundDefinition*);
 
 		// Terms
-				Term* traverse(Term*);
+		virtual	Term* traverse(Term*);
 		virtual Term* visit(VarTerm*);
 		virtual Term* visit(FuncTerm*);
 		virtual Term* visit(DomainTerm*);
 		virtual Term* visit(AggTerm*);
 
 		// Set expressions
-				SetExpr* traverse(SetExpr*);
+		virtual SetExpr* traverse(SetExpr*);
 		virtual SetExpr* visit(EnumSetExpr*);
 		virtual SetExpr* visit(QuantSetExpr*);
 };

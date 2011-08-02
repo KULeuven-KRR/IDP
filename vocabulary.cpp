@@ -1524,6 +1524,21 @@ namespace VocabularyUtils {
 	Sort* stringsort() { return *(Vocabulary::std()->sort("string")->begin()); }
 	Sort* charsort() { return *(Vocabulary::std()->sort("char")->begin()); }
 
+	Predicate* equal(Sort* s) {
+		vector<Sort*> sorts(2,s);
+		return Vocabulary::std()->pred("=/2")->resolve(sorts);
+	}
+
+	Predicate* lessthan(Sort* s) {
+		vector<Sort*> sorts(2,s);
+		return Vocabulary::std()->pred("</2")->resolve(sorts);
+	}
+
+	Predicate* greaterthan(Sort* s) {
+		vector<Sort*> sorts(2,s);
+		return Vocabulary::std()->pred(">/2")->resolve(sorts);
+	}
+
 	bool isComparisonPredicate(const PFSymbol* symbol) {
 		string name = symbol->name();
 		return (typeid(*symbol) == typeid(Predicate)) && (name == "=/2" || name == "</2" || name == ">/2");
