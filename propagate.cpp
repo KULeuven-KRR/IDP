@@ -311,8 +311,10 @@ void FOPropagator::run() {
 
 AbstractStructure* FOPropagator::currstructure(AbstractStructure* structure) const {
 	Vocabulary* vocabulary = new Vocabulary("");
+cerr << "adding symbols\n";
 	for(map<const PredForm*,set<const PredForm*> >::const_iterator it = _leafupward.begin(); it != _leafupward.end(); ++it) {
 		PFSymbol* symbol = it->first->symbol();
+cerr << "adding symbol "; symbol->put(cerr,false); cerr << endl;
 		if(typeid(*symbol) == typeid(Predicate)) vocabulary->addPred(dynamic_cast<Predicate*>(symbol));
 		else vocabulary->addFunc(dynamic_cast<Function*>(symbol));
 	}
@@ -673,9 +675,11 @@ FOPropagator* FOPropagatorFactory::create(const AbstractTheory* theory) {
 
 	// transform theory to a suitable normal form
 	AbstractTheory* newtheo = theory->clone();
-	TheoryUtils::remove_eqchains(newtheo);
-	TheoryUtils::remove_nesting(newtheo);	// FIXME: remove nesting does not change F(x)=y to F(x,y) anymore, which is probably needed here
 	TheoryUtils::completion(newtheo);
+	TheoryUtils::remove_nesting(newtheo);	
+	TheoryUtils::graph_functions(newtheo);
+	TheoryUtils::graph_aggregates(newtheo);
+	TheoryUtils::remove_eqchains(newtheo);
 
 	// Multiply maxsteps if requested
 	if(_multiplymaxsteps) _propagator->_maxsteps = _propagator->_maxsteps * TheoryUtils::nrSubformulas(newtheo);

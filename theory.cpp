@@ -1462,46 +1462,164 @@ class PartialTermMover : public TermMover {
 ***********************************/
 
 class FuncGrapher : public TheoryMutatingVisitor {
+	private:
+		bool _recursive;
 	public:
-		FuncGrapher() { }
+		FuncGrapher(bool recursive = false) : _recursive(recursive) { }
 		Formula*	visit(PredForm* pf);
 		Formula*	visit(EqChainForm* ef);
 };
 
 Formula* FuncGrapher::visit(PredForm* pf) {
-	PredForm* newpf = 0;
-	assert(pf->symbol()->name() == "=/2");
-	if(typeid(*(pf->subterms()[0])) == typeid(FuncTerm)) {
-		FuncTerm* ft = dynamic_cast<FuncTerm*>(pf->subterms()[0]);
-		vector<Term*> vt;
-		for(vector<Term*>::const_iterator it = ft->subterms().begin(); it != ft->subterms().end(); ++it) 
-			vt.push_back(*it);
-		vt.push_back(pf->subterms()[1]);
-		newpf = new PredForm(pf->sign(),ft->function(),vt,pf->pi().clone());
-		delete(ft);
-		delete(pf);
+	if(_recursive) pf = dynamic_cast<PredForm*>(traverse(pf));
+	if(pf->symbol()->name() == "=/2") {
+		PredForm* newpf = 0;
+		if(typeid(*(pf->subterms()[0])) == typeid(FuncTerm)) {
+			FuncTerm* ft = dynamic_cast<FuncTerm*>(pf->subterms()[0]);
+			vector<Term*> vt = ft->subterms();
+			vt.push_back(pf->subterms()[1]);
+			newpf = new PredForm(pf->sign(),ft->function(),vt,pf->pi().clone());
+			delete(ft); delete(pf);
+		}
+		else if(typeid(*(pf->subterms()[1])) == typeid(FuncTerm)) {
+			FuncTerm* ft = dynamic_cast<FuncTerm*>(pf->subterms()[1]);
+			vector<Term*> vt = ft->subterms();
+			vt.push_back(pf->subterms()[0]);
+			newpf = new PredForm(pf->sign(),ft->function(),vt,pf->pi().clone());
+			delete(ft); delete(pf);
+		}
+		else newpf = pf;
+		return newpf;
 	}
-	else if(typeid(*(pf->subterms()[1])) == typeid(FuncTerm)) {
-		FuncTerm* ft = dynamic_cast<FuncTerm*>(pf->subterms()[1]);
-		vector<Term*> vt;
-		for(vector<Term*>::const_iterator it = ft->subterms().begin(); it != ft->subterms().end(); ++it) 
-			vt.push_back(*it);
-		vt.push_back(pf->subterms()[0]);
-		newpf = new PredForm(pf->sign(),ft->function(),vt,pf->pi().clone());
-		delete(ft);
-		delete(pf);
-	}
-	else newpf = pf;
-	return newpf;
+	else return pf;
 }
 
 Formula* FuncGrapher::visit(EqChainForm* ef) {
-	EqChainRemover ecr;
-	Formula* f = ecr.visit(ef);
-	Formula* nf = f->accept(this);
-	return nf;
+	const FormulaParseInfo& finalpi = ef->pi();
+	bool finalconj = ef->conj();
+	if(_recursive) ef = dynamic_cast<EqChainForm*>(traverse(ef));
+	set<unsigned int> removecomps;
+	set<unsigned int> removeterms;
+	vector<Formula*> graphs;
+	for(unsigned int comppos = 0; comppos < ef->comps().size(); ++comppos) {
+		CompType comparison = ef->comps()[comppos];
+		if((comparison == CT_EQ && ef->conj()) || (comparison == CT_NEQ && !ef->conj())) {
+			if(typeid(*(ef->subterms()[comppos])) == typeid(FuncTerm)) {
+				FuncTerm* functerm = dynamic_cast<FuncTerm*>(ef->subterms()[comppos]);
+				vector<Term*> vt = functerm->subterms(); vt.push_back(ef->subterms()[comppos+1]);
+				graphs.push_back(new PredForm(ef->sign() == ef->conj(),functerm->function(),vt,FormulaParseInfo()));
+				removecomps.insert(comppos);
+				removeterms.insert(comppos);
+			}
+			else if(typeid(*(ef->subterms()[comppos+1])) == typeid(FuncTerm)) {
+				FuncTerm* functerm = dynamic_cast<FuncTerm*>(ef->subterms()[comppos+1]);
+				vector<Term*> vt = functerm->subterms(); vt.push_back(ef->subterms()[comppos]);
+				graphs.push_back(new PredForm(ef->sign() == ef->conj(),functerm->function(),vt,FormulaParseInfo()));
+				removecomps.insert(comppos);
+				removeterms.insert(comppos+1);
+			}
+		}
+	}
+	if(!graphs.empty()) {
+		vector<Term*> newterms;
+		vector<CompType> newcomps;
+		for(unsigned int n = 0; n < ef->comps().size(); ++n) {
+			if(removecomps.find(n) == removecomps.end()) newcomps.push_back(ef->comps()[n]);
+		}
+		for(unsigned int n = 0; n < ef->subterms().size(); ++n) {
+			if(removeterms.find(n) == removeterms.end()) newterms.push_back(ef->subterms()[n]);
+			else delete(ef->subterms()[n]);
+		}
+		EqChainForm* newef = new EqChainForm(ef->sign(),ef->conj(),newterms,newcomps,FormulaParseInfo());
+		delete(ef);
+		ef = newef;
+	}
+	
+	bool remainingfuncterms = false;
+	for(vector<Term*>::const_iterator it = ef->subterms().begin(); it != ef->subterms().end(); ++it) {
+		if(typeid(*(*it)) == typeid(FuncTerm)) {
+			remainingfuncterms = true;
+			break;
+		}
+	}
+	Formula* nf = 0;
+	if(remainingfuncterms) {
+		EqChainRemover ecr;
+		Formula* f = ecr.visit(ef);
+		nf = f->accept(this);
+	}
+	else nf = ef;
+
+	if(graphs.empty()) return nf;
+	else {
+		graphs.push_back(nf);
+		return new BoolForm(true,nf->sign() == finalconj,graphs,finalpi.clone());
+	}
 }
 
+class AggGrapher : public TheoryMutatingVisitor {
+	private:
+		bool _recursive;
+	public:
+		AggGrapher(bool recursive = false) : _recursive(recursive) { }
+		Formula*	visit(PredForm* pf);
+		Formula*	visit(EqChainForm* ef);
+};
+
+Formula* AggGrapher::visit(PredForm* pf) {
+	if(_recursive) pf = dynamic_cast<PredForm*>(traverse(pf));
+	if(VocabularyUtils::isComparisonPredicate(pf->symbol())) {
+		CompType comparison;
+		if(pf->symbol()->name() == "=/2") {
+			if(pf->sign()) comparison = CT_EQ;
+			else comparison = CT_NEQ;
+		}
+		else if(pf->symbol()->name() == "</2") {
+			if(pf->sign()) comparison = CT_LT;
+			else comparison = CT_GEQ;
+		}
+		else {
+			assert(pf->symbol()->name() == ">/2");
+			if(pf->sign()) comparison = CT_GT;
+			else comparison = CT_LEQ;
+		}
+		Formula* newpf = 0;
+		if(typeid(*(pf->subterms()[0])) == typeid(AggTerm)) {
+			AggTerm* at = dynamic_cast<AggTerm*>(pf->subterms()[0]);
+			newpf = new AggForm(true,pf->subterms()[1],comparison,at,pf->pi().clone());
+			delete(pf);
+		}
+		else if(typeid(*(pf->subterms()[1])) == typeid(AggTerm)) {
+			AggTerm* at = dynamic_cast<AggTerm*>(pf->subterms()[1]);
+			newpf = new AggForm(true,pf->subterms()[0],comparison,at,pf->pi().clone());
+			delete(pf);
+		}
+		else newpf = pf;
+		return newpf;
+	}
+	else return pf;
+}
+
+Formula* AggGrapher::visit(EqChainForm* ef) {
+	if(_recursive) ef = dynamic_cast<EqChainForm*>(traverse(ef));
+	bool containsaggregates = false;
+	for(unsigned int n = 0; n < ef->subterms().size(); ++n) {
+		if(typeid(*(ef->subterms()[n])) == typeid(AggTerm)) {
+			containsaggregates = true;
+			break;
+		}
+	}
+	if(containsaggregates) {
+		EqChainRemover ecr;
+		Formula* f = ecr.visit(ef);
+		return f->accept(this);
+	}
+	else return ef;
+}
+
+/**
+ * Count the number of subformulas
+ */
 class FormulaCounter : public TheoryVisitor {
 	private:
 		int	_result;
@@ -1535,7 +1653,7 @@ namespace FormulaUtils {
 	}
 
 	Formula* graph_functions(Formula* f) {
-		FuncGrapher fg;
+		FuncGrapher fg(true);
 		Formula* newf = f->accept(&fg);
 		return newf;
 	}
@@ -1631,6 +1749,8 @@ namespace TheoryUtils {
 	void remove_eqchains(AbstractTheory* t)		{ EqChainRemover er; t->accept(&er);		}
 	void move_quantifiers(AbstractTheory* t)	{ QuantMover qm; t->accept(&qm);			}
 	void remove_nesting(AbstractTheory* t)		{ TermMover atm; t->accept(&atm);			}
+	void graph_functions(AbstractTheory* t)		{ FuncGrapher fg(true); t->accept(&fg);		}
+	void graph_aggregates(AbstractTheory* t)	{ AggGrapher ag; t->accept(&ag);			}
 	void completion(AbstractTheory* t)			{ Completer c; t->accept(&c);				}
 	int  nrSubformulas(AbstractTheory* t)		{ FormulaCounter c; t->accept(&c); return c.result();	}
 

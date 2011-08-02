@@ -640,6 +640,12 @@ namespace TheoryUtils {
 	/** \brief Rewrite the theory so that there are no nested terms **/
 	void remove_nesting(AbstractTheory*);
 
+	/** \brief Rewrite (F(x) = y) or (y = F(x)) to Graph_F(x,y) **/
+	void graph_functions(AbstractTheory* t);
+
+	/** \brief Rewrite (AggTerm op BoundTerm) to an aggregate formula (op = '=', '<', or '>') **/
+	void graph_aggregates(AbstractTheory* t);
+
 	/** \brief Replace all definitions in the theory by their completion **/
 	void completion(AbstractTheory*);
 
