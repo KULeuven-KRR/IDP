@@ -706,6 +706,8 @@ class RuleGrounder {
 };
 
 /** Grounder for a definition **/
+// NOTE: definition printing code is based on the INVARIANT that a defintion is ALWAYS grounded as contiguous component: never ground def A a bit, then ground B, then return to A again (code should error on this)
+// directly printing in idp language will be incorrect then.
 class DefinitionGrounder : public TopLevelGrounder {
 	private:
 		static unsigned int _currentdefnb;
