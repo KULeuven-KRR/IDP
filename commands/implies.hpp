@@ -41,7 +41,7 @@ void ArithmeticDetector::visit(const EqChainForm* f) {
 }
 
 void ArithmeticDetector::visit(const FuncTerm* f) {
-	std::string arithmeticFunction [5] = {"+", "-", "/", "*", "%"};
+	std::string arithmeticFunction [6] = {"+", "-", "/", "*", "%", "abs"};
 	for(unsigned int n = 0; n < 5; ++n) {
 		if(f->function()->to_string(false) == arithmeticFunction[n]) {
 			_arithmeticFound = true;
@@ -78,7 +78,7 @@ public:
 		TheoryUtils::completion(axioms);
 		TheoryUtils::remove_nesting(axioms);
 		TheoryUtils::remove_nesting(conjectures);
-		
+						
 		for(auto it = axioms->sentences().begin(); it != axioms->sentences().end(); ++it) {
 			FormulaUtils::graph_functions(*it);
 		}
@@ -92,6 +92,7 @@ public:
 		
 		std::stringstream stream;
 		Printer* printer = Printer::create<std::stringstream>(opts, stream, false, arithmeticFound);
+		
 		printer->visit(axioms->vocabulary());
 		printer->visit(axioms);
 		delete(printer);
@@ -107,7 +108,7 @@ public:
 		tptpFile.close();
 		
 		// TODO remove me
-		//std::cout << stream.str();
+		std::cout << stream.str();
 		
 		// Stuff die de externe dinges oproept.
 		std::string& fofCommandString = *args[2]._value._string;
@@ -130,15 +131,17 @@ public:
 		}
 		if(tptpResult.eof()) {
 			tptpResult.close();
-			remove(".tptpfile.tptp");
-			remove(".tptpresult.txt");
+			// TODO uncomment
+			//remove(".tptpfile.tptp");
+			//remove(".tptpresult.txt");
 			return nilarg();
 		}
 		
 		tptpResult.close();
 		
-		remove(".tptpfile.tptp");
-		remove(".tptpresult.txt");
+		// TODO uncomment
+		//remove(".tptpfile.tptp");
+		//remove(".tptpresult.txt");
 		
 		bool result = false;
 		std::string acceptStrings [12] = {"Theorem", "Equivalent", "TautologousConclusion", "WeakerConclusion", "EquivalentTheorem", "Tautology", "WeakerTautologousConclusion", "WeakerTheorem", "ContradictoryAxioms", "SatisfiableConclusionContradictoryAxioms", "TautologousConclusionContradictoryAxioms", "WeakerConclusionContradictoryAxioms"};

@@ -12,12 +12,16 @@
 #include "vocabulary.hpp"
 #include "namespace.hpp"
 
+//#include <set>
+
 template<typename Stream>
 class TPTPPrinter: public StreamPrinter<Stream> {
 private:
 	bool						_conjecture;
 	bool						_arithmetic;
 	unsigned int				_count;
+	std::set<DomainTerm*>		_typedDomainTerms;
+	std::set<std::string>		_typedDomainTermNames;
 
 	using StreamPrinter<Stream>::output;
 
@@ -26,7 +30,9 @@ public:
 			StreamPrinter<Stream>(stream),
 			_conjecture(conjecture),
 			_arithmetic(arithmetic),
-			_count(0){ }
+			_count(0) { }
+
+	
 
 	void visit(const AbstractStructure* structure) {
 	}
@@ -87,6 +93,34 @@ public:
 			output() << ").\n";
 		}
 		// Do nothing with definitions or fixpoint definitions
+		//if (!_conjecture) // TODO: Is this right, can I just leave them out?
+		outputDomainTermTypeAxioms();
+	}
+	
+	void outputDomainTermTypeAxioms() {
+		for(auto it = _typedDomainTerms.begin(); it != _typedDomainTerms.end(); ++ it) {
+			if(_arithmetic) {
+				output() << "tff";
+			} else {
+				output() << "fof";
+			}
+			output() << "(";
+			// This will cause axioms to be double-printed sometimes, but it's better
+			// than having them never printed. I'm not sure whether I need them.
+			if (_conjecture) {
+				output() << "dttac";
+			}
+			else {
+				output() << "dtta";
+			}
+			output() << _count << ",axiom,(";
+			output() << rewriteSortName((*it)->sort()->name()) << "(";
+			outputDomainTermName((*it));
+			output() << ")";
+			output() << ")).\n";
+			_count ++;
+		}
+		_typedDomainTerms.clear();
 	}
 
 	void visit(const GroundTheory* g) {
@@ -143,7 +177,7 @@ public:
 		}
 	}
 
-	// TODO
+	// TODO TFF
 	void visit(const EqChainForm* f) {
 		if(! f->sign())	output() << "~";
 		output() << "(";
@@ -181,7 +215,7 @@ public:
 			}
 		} else {
 			for(unsigned int n = 0; n < f->comps().size(); ++n) {
-				
+				// TODO
 			}
 		}
 		output() << ")";
@@ -240,7 +274,7 @@ public:
 		while(it != f->quantvars().end() && !((*it)->sort()))
 			++ it;
 		if (it != f->quantvars().end()) {
-			if(f->univ())
+		 	if(f->univ())
 				output() << "~";
 			output() << "(";
 			output() << rewriteSortName((*it)->sort()->name()) << "(V_" << (*it)->name() << ")";
@@ -280,6 +314,7 @@ public:
 	}
 
 	// TODO: Handle predefined functions
+	// Actually, we won't have any of these anymore...
 	void visit(const FuncTerm* t) {
 		output() << "f_" << rewriteLongname(t->function()->to_string(true));
 		if(!t->subterms().empty()) {
@@ -296,6 +331,14 @@ public:
 	// TODO: Figure out what to do with these.
 	// I hope this is okay...
 	void visit(const DomainTerm* t) {
+		if(t->sort() && _typedDomainTermNames.find(t->value()->to_string()) == _typedDomainTermNames.end()) {
+			_typedDomainTermNames.insert(t->value()->to_string());
+			_typedDomainTerms.insert(const_cast<DomainTerm*>(t));
+		}
+		outputDomainTermName(t);
+	}
+	
+	void outputDomainTermName(const DomainTerm* t) {
 		std::string str = t->value()->to_string();
 		if(t->sort()) {
 			if(SortUtils::isSubsort(t->sort(),VocabularyUtils::charsort())) {
@@ -390,14 +433,14 @@ public:
 				output() << "ta";
 			}
 			output() << _count << ",axiom,(";
-			output() << "! [X] : ~" << rewriteSortName(s->name()) << "(X) | ";
+			output() << "! [X] : (~" << rewriteSortName(s->name()) << "(X) | ";
 			auto it = s->parents().begin();
 			output() << "(" << rewriteSortName((*it)->name()) << "(X)";
 			++it;
 			for(; it != s->parents().end(); ++it) {
 				output() << " & " << rewriteSortName((*it)->name()) << "(X)";
 			}
-			output() << "))).\n";
+			output() << ")))).\n";
 			_count ++;
 		}
 	}
@@ -423,7 +466,7 @@ public:
 			for(unsigned int n = 1; n < p->arity(); ++n) {
 				output() << ",V" << n;
 			}
-			output() << "] : ";
+			output() << "] : (";
 			if(p->arity() != 1 || p->to_string(false) != p->sort(0)->name())
 				output() << "~";
 			output() << "p_" << rewriteLongname(p->to_string(true)) << "(";
@@ -439,16 +482,11 @@ public:
 			for(unsigned int n = 1; n < p->arity(); ++n) {
 				output() << " & " << rewriteSortName(p->sort(n)->name()) << "(V" << n << ")";
 			}
-			output() << "))).\n";
+			output() << ")))).\n";
 			_count ++;
 		}
 	}
 
-	// TODO: I think it won't be used.
-	// Yes it will... make them into predicates.
-	// And add extra axioms!
-	// Not a partial function: Functions must be defined for all necessary types
-	// Waarde van de ftie moet uniek zijn.
 	void visit(const Function* f) {
 		if (!f->overloaded()) {
 			if (_arithmetic) {
@@ -469,7 +507,7 @@ public:
 			for(unsigned int n = 1; n < f->arity() + 1; ++n) {
 				output() << ",V" << n;
 			}
-			output() << "] : ";
+			output() << "] : (";
 			// TODO: Waar ga je het onderscheid nog zien?
 			// You won't, but names may not clash, so you can call these p_ too
 			output() << "~p_" << rewriteLongname(f->to_string(true)) << "(";
@@ -482,7 +520,7 @@ public:
 			for(unsigned int n = 1; n < f->arity() + 1; ++n) {
 				output() << " & " << rewriteSortName(f->sort(n)->name()) << "(V" << n << ")";
 			}
-			output() << "))).\n";
+			output() << ")))).\n";
 			if(f->arity() > 0 && !f->partial()) {
 				outputTotalFuncAxiom(f);
 			}
