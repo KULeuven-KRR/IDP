@@ -14,6 +14,7 @@
 #include "term.hpp"
 #include "theory.hpp"
 #include "error.hpp"
+#include "fobdd.hpp"
 using namespace std;
 
 /**********************
@@ -612,6 +613,7 @@ class NegationPush : public TheoryMutatingVisitor {
 	public:
 		NegationPush()	: TheoryMutatingVisitor() { }
 
+		Formula*	visit(PredForm*);
 		Formula*	visit(EqChainForm*);
 		Formula* 	visit(EquivForm*);
 		Formula* 	visit(BoolForm*);
@@ -621,6 +623,28 @@ class NegationPush : public TheoryMutatingVisitor {
 		Term*		traverse(Term*);
 
 };
+
+Formula* NegationPush::visit(PredForm* pf) {
+	if(!pf->sign()) {
+		if(typeid(*(pf->symbol())) == typeid(Predicate)) {
+			Predicate* p = dynamic_cast<Predicate*>(pf->symbol());
+			if(p->type() != ST_NONE) {
+				Predicate* newsymbol;
+				switch(p->type()) {
+					case ST_CT: newsymbol = pf->symbol()->derivedsymbol(ST_PF); break;
+					case ST_CF: newsymbol = pf->symbol()->derivedsymbol(ST_PT); break;
+					case ST_PT: newsymbol = pf->symbol()->derivedsymbol(ST_CF); break;
+					case ST_PF: newsymbol = pf->symbol()->derivedsymbol(ST_CT); break;
+					default: assert(false);
+				}
+				PredForm* newpf = new PredForm(true,newsymbol,pf->subterms(),pf->pi().clone());
+				delete(pf);
+				pf = newpf;
+			}
+		}
+	}
+	return traverse(pf);
+}
 
 Formula* NegationPush::traverse(Formula* f) {
 	for(vector<Formula*>::const_iterator it = f->subformulas().begin(); it != f->subformulas().end(); ++it)
@@ -1635,8 +1659,59 @@ class FormulaCounter : public TheoryVisitor {
 		void visit(const AggForm* f)		{ addAndTraverse(f);	}
 };
 
+class FormulaFuncTermChecker : public TheoryVisitor {
+	private:
+		bool _result;
+		void visit(const FuncTerm*) {
+			_result = true;
+		}
+	public:
+		bool run(Formula* f) {
+			_result = false;
+			f->accept(this);
+			return _result;
+		}
+};
+
+class Substituter : public TheoryMutatingVisitor {
+	private:
+		Term* _term;
+		Variable* _variable;
+
+		Term* traverse(Term* t) {
+			if(t == _term) return new VarTerm(_variable,TermParseInfo());
+			else return t;
+		}
+	public:
+		Substituter(Term* t, Variable* v) : _term(t), _variable(v) { }
+};
 
 namespace FormulaUtils {
+
+	double estimatedCostAll(PredForm* query, const std::set<Variable*> freevars, bool inverse, AbstractStructure* structure) {
+		FOBDDManager manager;
+		FOBDDFactory factory(&manager);
+		const FOBDD* bdd = factory.run(query);
+		if(inverse) bdd = manager.negation(bdd);
+		set<const FOBDDDeBruijnIndex*> indices;
+		return manager.estimatedCostAll(bdd,manager.getVariables(freevars),indices,structure);
+	}
+
+
+	Formula* remove_nesting(Formula* f, PosContext context)	{ 
+		TermMover atm(context); 
+		return f->accept(&atm);			
+	}
+
+	Formula* substitute(Formula* f, Term* t, Variable* v) {
+		Substituter s(t,v);
+		return f->accept(&s);
+	}
+
+	bool containsFuncTerms(Formula* f) {
+		FormulaFuncTermChecker fftc;
+		return fftc.run(f);
+	}
 
 	BoolForm* trueform() {
 		return new BoolForm(true,true,vector<Formula*>(0),FormulaParseInfo());

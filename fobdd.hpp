@@ -163,6 +163,12 @@ class FOBDDManager {
 		bool contains(const FOBDDKernel*, const FOBDDVariable*);
 		bool contains(const FOBDD*, const FOBDDVariable*);
 		bool contains(const FOBDDArgument*, const FOBDDVariable*);
+		bool containsFuncTerms(const FOBDDKernel*);
+		bool containsFuncTerms(const FOBDD*);
+
+		Formula*	toFormula(const FOBDD*);
+		Formula*	toFormula(const FOBDDKernel*);
+		Term*		toTerm(const FOBDDArgument*);
 
 		double estimatedNrAnswers(const FOBDDKernel*, const std::set<const FOBDDVariable*>&, const std::set<const FOBDDDeBruijnIndex*>&, AbstractStructure*);
 		double estimatedNrAnswers(const FOBDD*, const std::set<const FOBDDVariable*>&, const std::set<const FOBDDDeBruijnIndex*>&, AbstractStructure*);

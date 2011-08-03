@@ -96,6 +96,7 @@ class BDDToGenerator {
 		BDDToGenerator(FOBDDManager* manager);
 
 		// Factory methods
+		InstGenerator* create(PredForm*, const std::vector<bool>&, const std::vector<const DomainElement**>&, const std::vector<Variable*>&, AbstractStructure*, bool, const Universe&);
 		InstGenerator* create(const FOBDD*, const std::vector<bool>&, const std::vector<const DomainElement**>&, const std::vector<const FOBDDVariable*>&, AbstractStructure* structure, const Universe&);
 		InstGenerator* create(const FOBDDKernel*, const std::vector<bool>&, const std::vector<const DomainElement**>&, const std::vector<const FOBDDVariable*>&, AbstractStructure* structure, bool, const Universe&);
 

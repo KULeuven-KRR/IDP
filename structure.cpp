@@ -3641,6 +3641,21 @@ SortTable* Structure::inter(Sort* s) const {
 
 PredInter* Structure::inter(Predicate* p) const {
 	if(p->builtin()) return p->interpretation(this);
+	else if(p->type() != ST_NONE) {
+		PredInter* pinter = inter(p->parent());
+		// FIXME: the code below creates a memory leak
+		switch(p->type()) {
+			case ST_CT:
+				return new PredInter(new PredTable(pinter->ct()->interntable(),pinter->universe()),true);
+			case ST_CF:
+				return new PredInter(new PredTable(pinter->cf()->interntable(),pinter->universe()),true);
+			case ST_PT:
+				return new PredInter(new PredTable(pinter->pt()->interntable(),pinter->universe()),true);
+			case ST_PF:
+				return new PredInter(new PredTable(pinter->pf()->interntable(),pinter->universe()),true);
+			default: assert(false); return 0;
+		}
+	}
 	else {
 		map<Predicate*,PredInter*>::const_iterator it = _predinter.find(p);
 		assert(it != _predinter.end());

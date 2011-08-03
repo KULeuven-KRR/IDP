@@ -285,6 +285,9 @@ vector<Variable*> VarUtils::makeNewVariables(const vector<Sort*>& sorts) {
 *******************************/
 
 PFSymbol::~PFSymbol() {
+	for(auto it = _derivedsymbols.begin(); it != _derivedsymbols.end(); ++it) {
+		delete(it->second);
+	}
 }
 
 PFSymbol::PFSymbol(const string& name, unsigned int nrsorts, bool infix) : 
@@ -325,6 +328,18 @@ bool PFSymbol::infix() const {
 
 bool PFSymbol::hasVocabularies() const {
 	return !(_vocabularies.empty());
+}
+
+Predicate* PFSymbol::derivedsymbol(SymbolType type) {
+	assert(type != ST_NONE);
+	auto it = _derivedsymbols.find(type);
+	if(it == _derivedsymbols.end()) {
+		Predicate* derp = new Predicate(_name,_sorts,_pi,_infix);
+		derp->type(type,this);
+		_derivedsymbols[type] = derp;
+		return derp;
+	}
+	else return it->second;
 }
 
 string PFSymbol::to_string(bool longnames) const {
@@ -378,25 +393,25 @@ void Predicate::addVocabulary(const Vocabulary* vocabulary) {
 
 
 Predicate::Predicate(const std::string& name,const std::vector<Sort*>& sorts, const ParseInfo& pi, bool infix) :
-	PFSymbol(name,sorts,pi,infix), _interpretation(0), _overpredgenerator(0) {
+	PFSymbol(name,sorts,pi,infix), _type(ST_NONE), _parent(0), _interpretation(0), _overpredgenerator(0) {
 }
 
 Predicate::Predicate(const std::string& name,const std::vector<Sort*>& sorts, bool infix) :
-	PFSymbol(name,sorts,infix), _interpretation(0), _overpredgenerator(0) {
+	PFSymbol(name,sorts,infix), _type(ST_NONE), _parent(0), _interpretation(0), _overpredgenerator(0) {
 }
 
 Predicate::Predicate(const vector<Sort*>& sorts) : 
-	PFSymbol("",sorts,ParseInfo()), _interpretation(0), _overpredgenerator(0) {
+	PFSymbol("",sorts,ParseInfo()), _type(ST_NONE), _parent(0), _interpretation(0), _overpredgenerator(0) {
 	_name = "_internal_predicate_" + toString(_npnr) + "/" + toString(sorts.size());
 	++_npnr;
 }
 
 Predicate::Predicate(const std::string& name, const std::vector<Sort*>& sorts, PredInterGenerator* inter, bool infix) :
-	PFSymbol(name,sorts,infix), _interpretation(inter), _overpredgenerator(0) {
+	PFSymbol(name,sorts,infix), _type(ST_NONE), _parent(0), _interpretation(inter), _overpredgenerator(0) {
 }
 
 Predicate::Predicate(PredGenerator* generator) :
-	PFSymbol(generator->name(),generator->arity(),generator->infix()), _interpretation(0), _overpredgenerator(generator) {
+	PFSymbol(generator->name(),generator->arity(),generator->infix()), _type(ST_NONE), _parent(0), _interpretation(0), _overpredgenerator(generator) {
 }
 
 unsigned int Predicate::arity() const {
@@ -409,6 +424,11 @@ bool Predicate::builtin() const {
 
 bool Predicate::overloaded() const {
 	return (_overpredgenerator != 0);
+}
+
+void Predicate::type(SymbolType type, PFSymbol* parent) {
+	_type = type;
+	_parent = parent;
 }
 
 /**
@@ -499,6 +519,14 @@ ostream& Predicate::put(ostream& output, bool longnames) const {
 			for(unsigned int n = 1; n < _sorts.size(); ++n) output << ',' << *_sorts[n];
 			output << ']';
 		}
+	}
+	switch(_type) {
+		case ST_NONE: break;
+		case ST_CT: output << "<ct>"; break;
+		case ST_CF: output << "<cf>"; break;
+		case ST_PT: output << "<pt>"; break;
+		case ST_PF: output << "<pf>"; break;
+		default: assert(false);
 	}
 	return output;
 }

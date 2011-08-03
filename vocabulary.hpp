@@ -139,6 +139,8 @@ namespace VarUtils {
 	Predicate and function symbols
 *************************************/
 
+enum SymbolType { ST_NONE, ST_CT, ST_CF, ST_PT, ST_PF };
+
 /** 
  *	\brief	Abstract base class to represent predicate and function symbols
  */
@@ -150,6 +152,9 @@ class PFSymbol {
 		std::vector<Sort*>			_sorts;			//!< Sorts of the arguments. 
 													//!< For a function symbol, the last sort is the output sort.
 		bool						_infix;			//!< True iff the symbol is infix
+
+		std::map<SymbolType,Predicate*>	_derivedsymbols;	//!< The symbols this<ct>, this<cf>, this<pt>, and this<pf>
+
 
 		// Destructor
 		virtual ~PFSymbol();	//!< Destructor
@@ -174,6 +179,7 @@ class PFSymbol {
 		bool							infix()					const;  //!< True iff the symbol is infix
 		bool							hasVocabularies()		const;	//!< Returns true iff the symbol occurs in a 
 																		//!< vocabulary
+		Predicate*						derivedsymbol(SymbolType);		//!< Return the derived symbol of the given type
 
 		virtual bool			builtin()		const = 0;	//!< Returns true iff the symbol is built-in
 		virtual bool			overloaded()	const = 0;	//!< Returns true iff the symbol is in fact a set of overloaded
@@ -203,6 +209,9 @@ class AbstractStructure;
  */
 class Predicate : public PFSymbol {
 	private:
+		SymbolType				_type;				//!< The type of the symbol
+		PFSymbol*				_parent;			//!< The symbol this predicate is derived from. 
+													//!< Nullpointer if _type == ST_NONE.
 		static int				_npnr;				//!< Used to create unique new names for internal predicates
 		PredInterGenerator*		_interpretation;	//!< The interpretation if the predicate is built-in, a null-pointer
 													//!< otherwise.
@@ -223,8 +232,11 @@ class Predicate : public PFSymbol {
 		// Mutators
 		bool removeVocabulary(const Vocabulary*);	//!< Removes a vocabulary from the list of vocabularies
 		void addVocabulary(const Vocabulary*);		//!< Add a vocabulary to the list of vocabularies
+		void type(SymbolType,PFSymbol* parent);		//!< Set the type and parent of the predicate
 
 		// Inspectors
+		SymbolType		type()			const { return _type;	}
+		PFSymbol*		parent()		const { return _parent;	}
 		unsigned int	arity()			const;	//!< Returns the arity of the predicate
 		bool			builtin()		const;	
 		bool			overloaded()	const;			

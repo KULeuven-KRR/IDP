@@ -17,6 +17,7 @@
 #include "theory.hpp"
 #include "common.hpp"
 #include "structure.hpp"
+#include "error.hpp"
 
 
 using namespace std;
@@ -1385,8 +1386,24 @@ void FOBDDFactory::visit(const PredForm* pf) {
 		pf->subterms()[n]->accept(this);
 		args[n] = _argument;
 	}
-	_kernel = _manager->getAtomKernel(pf->symbol(),AKT_TWOVAL,args);
-	if(pf->sign()) _bdd = _manager->getBDD(_kernel,_manager->truebdd(),_manager->falsebdd());
+	AtomKernelType akt = AKT_TWOVAL;
+	bool notinverse = true;
+	PFSymbol* symbol = pf->symbol();
+	if(typeid(*symbol) == typeid(Predicate)) {
+		Predicate* predicate = dynamic_cast<Predicate*>(symbol);
+		if(predicate->type() != ST_NONE) {
+			switch(predicate->type()) {
+				case ST_CF: akt = AKT_CF; break;
+				case ST_CT: akt = AKT_CT; break;
+				case ST_PF: akt = AKT_CT; notinverse = false; break;
+				case ST_PT: akt = AKT_CF; notinverse = false; break;
+				default: assert(false);
+			}
+			symbol = predicate->parent();
+		}
+	}
+	_kernel = _manager->getAtomKernel(pf->symbol(),akt,args);
+	if(pf->sign() == notinverse) _bdd = _manager->getBDD(_kernel,_manager->truebdd(),_manager->falsebdd());
 	else  _bdd = _manager->getBDD(_kernel,_manager->falsebdd(),_manager->truebdd());
 }
 
@@ -1540,9 +1557,194 @@ ostream& FOBDDManager::put(ostream& output, const FOBDDArgument* arg) const {
 	return output;
 }
 
+/*************************
+	Convert to formula
+*************************/
+
+class BDDToFormula : public FOBDDVisitor {
+	private:
+		Formula* _currformula;
+		Term* _currterm;
+		map<const FOBDDDeBruijnIndex*,Variable*> _dbrmapping;
+
+		void visit(const FOBDDDeBruijnIndex* index) {
+			auto it = _dbrmapping.find(index);
+			Variable* v;
+			if(it == _dbrmapping.end()) {
+				Variable* v = new Variable(index->sort());
+				_dbrmapping[index] = v;
+			}
+			else v = it->second;
+			_currterm = new VarTerm(v,TermParseInfo());
+		}
+
+		void visit(const FOBDDVariable* var) {
+			_currterm = new VarTerm(var->variable(),TermParseInfo());
+		}
+
+		void visit(const FOBDDDomainTerm* dt) {
+			_currterm = new DomainTerm(dt->sort(),dt->value(),TermParseInfo());
+		}
+
+		void visit(const FOBDDFuncTerm* ft) {
+			vector<Term*> args;
+			for(auto it = ft->args().begin(); it != ft->args().end(); ++it) {
+				(*it)->accept(this);
+				args.push_back(_currterm);
+			}
+			_currterm = new FuncTerm(ft->func(),args,TermParseInfo());
+		}
+
+		void visit(const FOBDDAtomKernel* atom) {
+			vector<Term*> args;
+			for(auto it = atom->args().begin(); it != atom->args().end(); ++it) {
+				(*it)->accept(this);
+				args.push_back(_currterm);
+			}
+			switch(atom->type()) {
+				case AKT_TWOVAL:
+					_currformula = new PredForm(true,atom->symbol(),args,FormulaParseInfo());
+					break;
+				case AKT_CT:
+					_currformula = new PredForm(true,atom->symbol()->derivedsymbol(ST_CT),args,FormulaParseInfo());
+					break;
+				case AKT_CF:
+					_currformula = new PredForm(true,atom->symbol()->derivedsymbol(ST_CF),args,FormulaParseInfo());
+					break;
+				default: 
+					assert(false);
+			}
+		}
+
+		void visit(const FOBDDQuantKernel* quantkernel) {
+			map<const FOBDDDeBruijnIndex*,Variable*> savemapping = _dbrmapping;
+			_dbrmapping.clear();
+			for(auto it = savemapping.begin(); it != savemapping.end(); ++it) 
+				_dbrmapping[_manager->getDeBruijnIndex(it->first->sort(),it->first->index()+1)] = it->second;
+			FOBDDVisitor::visit(quantkernel->bdd());
+			set<Variable*> quantvars;
+			quantvars.insert(_dbrmapping[_manager->getDeBruijnIndex(quantkernel->sort(),0)]);
+			_dbrmapping = savemapping;
+			_currformula = new QuantForm(true,false,quantvars,_currformula,FormulaParseInfo());
+		}
+
+		void visit(const FOBDD* bdd) {
+			if(_manager->isTruebdd(bdd)) _currformula =  FormulaUtils::trueform();
+			else if(_manager->isFalsebdd(bdd)) _currformula = FormulaUtils::falseform();
+			else {
+				bdd->kernel()->accept(this);
+				if(_manager->isFalsebdd(bdd->falsebranch())) {
+					if(!_manager->isTruebdd(bdd->truebranch())) {
+						Formula* kernelform = _currformula;
+						FOBDDVisitor::visit(bdd->truebranch());
+						_currformula = new BoolForm(true,true,kernelform,_currformula,FormulaParseInfo());
+					}
+				}
+				else if(_manager->isFalsebdd(bdd->truebranch())) {
+					_currformula->swapsign();
+					if(!_manager->isTruebdd(bdd->falsebranch())) {
+						Formula* kernelform = _currformula;
+						FOBDDVisitor::visit(bdd->falsebranch());
+						_currformula = new BoolForm(true,true,kernelform,_currformula,FormulaParseInfo());
+					}
+				}
+				else {
+					Formula* kernelform = _currformula;
+					Formula* negkernelform = kernelform->clone(); negkernelform->swapsign();
+					if(_manager->isTruebdd(bdd->falsebranch())) {
+						FOBDDVisitor::visit(bdd->truebranch());
+						BoolForm* bf = new BoolForm(true,true,kernelform,_currformula,FormulaParseInfo());
+						_currformula = new BoolForm(true,false,negkernelform,bf,FormulaParseInfo());
+					}
+					else if(_manager->isTruebdd(bdd->truebranch())) {
+						FOBDDVisitor::visit(bdd->falsebranch());
+						BoolForm* bf = new BoolForm(true,true,negkernelform,_currformula,FormulaParseInfo());
+						_currformula = new BoolForm(true,false,kernelform,bf,FormulaParseInfo());
+					}
+					else {
+						FOBDDVisitor::visit(bdd->truebranch());
+						Formula* trueform = _currformula;
+						FOBDDVisitor::visit(bdd->falsebranch());
+						Formula* falseform = _currformula;
+						BoolForm* bf1 = new BoolForm(true,true,kernelform,trueform,FormulaParseInfo());
+						BoolForm* bf2 = new BoolForm(true,true,negkernelform,falseform,FormulaParseInfo());
+						_currformula = new BoolForm(true,false,bf1,bf2,FormulaParseInfo());
+					}
+				}
+			}
+		}
+
+	public:
+		BDDToFormula(FOBDDManager* m) : FOBDDVisitor(m) { }
+		Formula* run(const FOBDDKernel* kernel) { 
+			kernel->accept(this);
+			return _currformula;
+		}
+		Formula* run(const FOBDD* bdd) { 
+			FOBDDVisitor::visit(bdd);
+			return _currformula;
+		}
+		Term* run(const FOBDDArgument* arg) {
+			arg->accept(this);
+			return _currterm;
+		}
+};
+
+Formula* FOBDDManager::toFormula(const FOBDD* bdd) {
+	BDDToFormula btf(this);
+	return btf.run(bdd);
+}
+
+Formula* FOBDDManager::toFormula(const FOBDDKernel* kernel) {
+	BDDToFormula btf(this);
+	return btf.run(kernel);
+}
+
+Term* FOBDDManager::toTerm(const FOBDDArgument* arg) {
+	BDDToFormula btf(this);
+	return btf.run(arg);
+}
+
+
+/*******************************
+	Check for function terms
+*******************************/
+
+class FuncTermChecker : public FOBDDVisitor {
+	private:
+		bool _result;
+		void visit(const FOBDDFuncTerm*) {
+			_result = true;
+			return;
+		}
+	public:
+		FuncTermChecker(FOBDDManager* m) : FOBDDVisitor(m) { }
+		bool run(const FOBDDKernel* kernel) { 
+			_result = false;
+			kernel->accept(this);
+			return _result;
+		}
+		bool run(const FOBDD* bdd) { 
+			_result = false;
+			FOBDDVisitor::visit(bdd);
+			return _result;
+		}
+};
+
+bool FOBDDManager::containsFuncTerms(const FOBDDKernel* kernel) {
+	FuncTermChecker ft(this);
+	return ft.run(kernel);
+}
+
+bool FOBDDManager::containsFuncTerms(const FOBDD* bdd) {
+	FuncTermChecker ft(this);
+	return ft.run(bdd);
+}
+
 /*****************
 	Estimators
 *****************/
+
 
 /**
  * Returns true iff the bdd contains the variable
@@ -1870,7 +2072,10 @@ double FOBDDManager::estimatedChance(const FOBDDKernel* kernel, AbstractStructur
 					cumulative_chance += currchance;
 					cumulative_pathsposs.push_back(cumulative_chance);
 				}
-				assert(cumulative_chance <= 1);
+				if(cumulative_chance > 1) {	// FIXME: looks like a bug :-)
+					Warning::cumulchance(cumulative_chance);
+					cumulative_chance = 1;
+				}
 				if(cumulative_chance > 0) {	// there is a possible path to false
 					chance = chance * cumulative_chance;
 

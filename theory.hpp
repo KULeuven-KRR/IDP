@@ -345,8 +345,18 @@ class AggForm : public Formula {
 
 namespace FormulaUtils {
 
+	/** \brief Estimate the cost of the given query 
+	 *		Precondition: 
+	 *			- query does not contain any FuncTerm or AggTerm subterms
+	 *			- the query has a twovalue result in the given structure
+	 */
+	double estimatedCostAll(PredForm* query, const std::set<Variable*> freevars, bool inverse, AbstractStructure* structure);
+
+	/** \brief Recursively remove all nested terms **/
+	Formula* remove_nesting(Formula*, PosContext poscontext = PC_POSITIVE);
+
 	/** \brief Recursively rewrite all EqChainForms in the given formula to BoolForms **/
-	Formula* remove_eqchains(Formula*,Vocabulary* v = 0);	
+	Formula* remove_eqchains(Formula*, Vocabulary* v = 0);	
 
 	/** **/
 	Formula* graph_functions(Formula* f);	
@@ -357,6 +367,12 @@ namespace FormulaUtils {
 	/** \brief Non-recursively move terms that are three-valued in a given structure outside of the given atom **/
 	Formula* moveThreeValuedTerms(Formula*,AbstractStructure*,bool positive,bool cpsupport=false,
 								const std::set<const PFSymbol*> cpsymbols=std::set<const PFSymbol*>());
+
+	/** \brief Returns true iff at least one FuncTerm occurs in the given formula **/
+	bool containsFuncTerms(Formula* f);
+
+	/** \brief Replace the given term by the given variable in the given formula **/
+	Formula* substitute(Formula*, Term*, Variable*);
 
 	/** \brief Returns true iff the aggregate formula is monotone **/
 	bool monotone(const AggForm* af);
