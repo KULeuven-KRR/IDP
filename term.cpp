@@ -447,13 +447,55 @@ namespace SetUtils {
 
 }
 
+/**
+ * Class to implement TermUtils::isPartial
+ */
+class PartialChecker : public TheoryVisitor {
+	private:
+		bool			_result;
+
+		void visit(const VarTerm* ) { }
+		void visit(const DomainTerm* ) { }
+		void visit(const AggTerm* ) { }	// NOTE: we are not interested whether at contains partial functions. 
+										// So we don't visit it recursively.
+
+		void visit(const FuncTerm* ft) {
+			if(ft->function()->partial()) { 
+				_result = true; 
+				return;	
+			}
+			else {
+				for(unsigned int argpos = 0; argpos < ft->subterms().size(); ++argpos) {
+					if(!SortUtils::isSubsort(ft->subterms()[argpos]->sort(),ft->function()->insort(argpos))) {
+						_result = true;
+						return;
+					}
+				}
+				TheoryVisitor::traverse(ft);
+			}
+		}
+
+	public:
+		bool run(Term* t) {
+			_result = false;
+			t->accept(this);
+			return _result;
+		}
+};
+
 namespace TermUtils {
+
 	vector<Term*> makeNewVarTerms(const vector<Variable*>& vars) {
 		vector<Term*> terms;
 		for(vector<Variable*>::const_iterator it = vars.begin(); it != vars.end(); ++it) {
 			terms.push_back(new VarTerm(*it,TermParseInfo()));
 		}
 		return terms;
+	}
+
+	bool isPartial(Term* term) {
+		PartialChecker pc;
+		return pc.run(term);
 	}
 }
 

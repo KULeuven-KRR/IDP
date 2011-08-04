@@ -12,6 +12,9 @@
 #include "monitors/interactiveprintmonitor.hpp"
 #include "structure.hpp"
 
+/**
+ * Implements maketrue, makefalse, and makeunknown on a predicate interpretation and lua table
+ */
 class SetTableValueInference: public Inference {
 	enum SETVALUE { SET_TRUE, SET_FALSE, SET_UNKNOWN};
 private:

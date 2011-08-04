@@ -11,6 +11,9 @@
 #include "commandinterface.hpp"
 #include "structure.hpp"
 
+/**
+ * Returns an iterator for a given predicate table
+ */
 class TableIteratorInference: public Inference {
 public:
 	TableIteratorInference(): Inference("tableiterator") {

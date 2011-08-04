@@ -22,12 +22,12 @@ namespace theory {
 		return idp_intern.flatten(T)
 	}
 
-  /**
-   * Merge two theories into one.
-   */
-  procedure merge(T1,T2) {
-    return idp_intern.merge(T1,T2)
-  }
+	/**
+	 * Merge two theories into one.
+	 */
+	procedure merge(T1,T2) {
+	  return idp_intern.merge(T1,T2)
+	}
 
 	/**
 	 * Replace in theory T all definitions by their completion

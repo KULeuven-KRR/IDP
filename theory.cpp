@@ -13,6 +13,7 @@
 #include "structure.hpp"
 #include "term.hpp"
 #include "theory.hpp"
+#include "error.hpp"
 using namespace std;
 
 /**********************
@@ -957,7 +958,7 @@ class TermMover : public TheoryMutatingVisitor {
 
 		void contextProblem(Term* t) {
 			if(t->pi().original()) {
-				// if(TermUtils::isPartial(t)) Warning::ambigpartialterm(t->pi().original()->to_string(), t->pi());
+				if(TermUtils::isPartial(t)) Warning::ambigpartialterm(t->pi().original()->to_string(), t->pi());
 			}
 		}
 
@@ -966,7 +967,7 @@ class TermMover : public TheoryMutatingVisitor {
 		 * (this is the most important method to overwrite in subclasses)
 		 */
 		virtual bool shouldMove(Term* t) {
-			//assert(t->type() != TT_VAR);
+			assert(t->type() != TT_VAR);
 			return _movecontext;
 		}
 
@@ -983,7 +984,7 @@ class TermMover : public TheoryMutatingVisitor {
 			vector<Term*> equality_args(2);
 			equality_args[0] = introduced_eq_term;
 			equality_args[1] = term;
-			Predicate* equalpred = Vocabulary::std()->pred("=/2")->resolve(vector<Sort*>(2,term->sort()));
+			Predicate* equalpred = VocabularyUtils::equal(term->sort());
 			PredForm* equalatom = new PredForm(true,equalpred,equality_args,FormulaParseInfo());
 
 			_equalities.push_back(equalatom);
@@ -1104,30 +1105,24 @@ class TermMover : public TheoryMutatingVisitor {
 				Predicate* comppred;
 				switch(ef->comps()[0]) {
 					case CT_EQ:
-						//comppred = VocabularyUtils::equal(atomsort);
-						comppred = Vocabulary::std()->pred("=/2")->resolve(vector<Sort*>(2,atomsort));
+						comppred = VocabularyUtils::equal(atomsort);
 						break;
 					case CT_LT:
-						comppred = Vocabulary::std()->pred("</2")->resolve(vector<Sort*>(2,atomsort));
-						//comppred = VocabularyUtils::lessthan(atomsort);
+						comppred = VocabularyUtils::lessthan(atomsort);
 						break;
 					case CT_GT:
-						comppred = Vocabulary::std()->pred(">/2")->resolve(vector<Sort*>(2,atomsort));
-						//comppred = VocabularyUtils::greaterthan(atomsort);
+						comppred = VocabularyUtils::greaterthan(atomsort);
 						break;
 					case CT_NEQ:
-						//comppred = VocabularyUtils::equal(atomsort);
-						comppred = Vocabulary::std()->pred("=/2")->resolve(vector<Sort*>(2,atomsort));
+						comppred = VocabularyUtils::equal(atomsort);
 						atomsign = !atomsign;
 						break;
 					case CT_LEQ:
-						comppred = Vocabulary::std()->pred(">/2")->resolve(vector<Sort*>(2,atomsort));
-						//comppred = VocabularyUtils::greaterthan(atomsort);
+						comppred = VocabularyUtils::greaterthan(atomsort);
 						atomsign = !atomsign;
 						break;
 					case CT_GEQ:
-						comppred = Vocabulary::std()->pred("</2")->resolve(vector<Sort*>(2,atomsort));
-						//comppred = VocabularyUtils::lessthan(atomsort);
+						comppred = VocabularyUtils::lessthan(atomsort);
 						atomsign = !atomsign;
 						break;
 				}
@@ -1156,9 +1151,9 @@ class TermMover : public TheoryMutatingVisitor {
 			if(symbolname == "=/2" || symbolname == "</2" || symbolname == ">/2") {
 				Term* leftterm = predform->subterms()[0];
 				Term* rightterm = predform->subterms()[1];
-				if(typeid(*leftterm) == typeid(AggTerm)) moveonlyright = true;
-				else if(typeid(*rightterm) == typeid(AggTerm)) moveonlyleft = true;
-				else if(symbolname == "=/2") moveonlyright = (typeid(*leftterm) != typeid(VarTerm)) && (typeid(*rightterm) != typeid(VarTerm));
+				if(leftterm->type() == TT_AGG) moveonlyright = true;
+				else if(rightterm->type() == TT_AGG) moveonlyleft = true;
+				else if(symbolname == "=/2") moveonlyright = (leftterm->type() != TT_VAR) && (rightterm->type() != TT_VAR);
 				else _movecontext = true;
 			}
 			else _movecontext = true;
@@ -1448,6 +1443,24 @@ Formula* ThreeValuedTermMover::visit(AggForm* af) {
 	}
 }
 
+/*****************************
+	Move partial functions 
+*****************************/
+
+class PartialTermMover : public TermMover {
+	public:
+		PartialTermMover(PosContext context, Vocabulary* voc) : TermMover(context,voc) { }
+
+		bool shouldMove(Term* t) {
+			return (_movecontext && TermUtils::isPartial(t));
+		}
+
+};
+
+/***********************************
+	Replace F(x) = y by P_F(x,y)
+***********************************/
+
 class FuncGrapher : public TheoryMutatingVisitor {
 	public:
 		FuncGrapher() { }
@@ -1553,6 +1566,12 @@ namespace FormulaUtils {
 	Formula* moveThreeValuedTerms(Formula* f, AbstractStructure* str, bool poscontext, bool cpsupport, const set<const PFSymbol*> cpsymbols) {
 		ThreeValuedTermMover tvtm(str,poscontext,cpsupport,cpsymbols);
 		Formula* rewriting = f->accept(&tvtm);
+		return rewriting;
+	}
+
+	Formula* movePartialTerms(Formula* f, Vocabulary* voc, PosContext context) {
+		PartialTermMover ptm(context,voc);
+		Formula* rewriting = f->accept(&ptm);
 		return rewriting;
 	}
 

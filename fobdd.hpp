@@ -140,15 +140,17 @@ class FOBDDManager {
 
 		std::set<const FOBDDVariable*>	getVariables(const std::set<Variable*>& vars);
 
-		const FOBDD*	negation(const FOBDD*);
-		const FOBDD*	conjunction(const FOBDD*,const FOBDD*);
-		const FOBDD*	disjunction(const FOBDD*,const FOBDD*);
-		const FOBDD*	univquantify(const FOBDDVariable*,const FOBDD*);
-		const FOBDD*	existsquantify(const FOBDDVariable*,const FOBDD*);
-		const FOBDD*	univquantify(const std::set<const FOBDDVariable*>&,const FOBDD*);
-		const FOBDD*	existsquantify(const std::set<const FOBDDVariable*>&,const FOBDD*);
-		const FOBDD*	ifthenelse(const FOBDDKernel*, const FOBDD* truebranch, const FOBDD* falsebranch);
-		const FOBDD*	substitute(const FOBDD*,const std::map<const FOBDDVariable*,const FOBDDVariable*>&);
+		const FOBDD*		negation(const FOBDD*);
+		const FOBDD*		conjunction(const FOBDD*,const FOBDD*);
+		const FOBDD*		disjunction(const FOBDD*,const FOBDD*);
+		const FOBDD*		univquantify(const FOBDDVariable*,const FOBDD*);
+		const FOBDD*		existsquantify(const FOBDDVariable*,const FOBDD*);
+		const FOBDD*		univquantify(const std::set<const FOBDDVariable*>&,const FOBDD*);
+		const FOBDD*		existsquantify(const std::set<const FOBDDVariable*>&,const FOBDD*);
+		const FOBDD*		ifthenelse(const FOBDDKernel*, const FOBDD* truebranch, const FOBDD* falsebranch);
+		const FOBDD*		substitute(const FOBDD*,const std::map<const FOBDDVariable*,const FOBDDVariable*>&);
+		const FOBDD*		substitute(const FOBDD*, const FOBDDDeBruijnIndex*, const FOBDDVariable*);
+		const FOBDDKernel*	substitute(const FOBDDKernel*, const FOBDDDomainTerm*, const FOBDDVariable*);
 		
 		int	longestbranch(const FOBDDKernel*);
 		int	longestbranch(const FOBDD*);
@@ -171,9 +173,21 @@ class FOBDDManager {
 		void moveUp(const FOBDDKernel*);	//!< Swap the given kernel with its predecessor in the kernelorder
 		void optimizequery(const FOBDD*, const std::set<const FOBDDVariable*>&, const std::set<const FOBDDDeBruijnIndex*>&, AbstractStructure*);
 
+		const FOBDD* simplify(const FOBDD*);	//!< apply arithmetic simplifications to the given bdd
+
 		const FOBDD* getBDD(const FOBDD* bdd, FOBDDManager*);	//!< Given a bdd and the manager that created the bdd,
 																//!< this function returns the same bdd, but created
 																//!< by the manager 'this'
+
+		bool isArithmetic(const FOBDDKernel*);		//!< Returns true iff the kernel is an equation or inequality of
+													//!< arithmetic terms
+		bool isArithmetic(const FOBDDArgument*);	//!< Returns true iff the argument is an arithmetic term
+		const FOBDDAtomKernel*	solve(const FOBDDKernel*, const FOBDDVariable*);		
+			//!< Try to rewrite the given arithmetic kernel such that the right-hand side is the given variable,
+			//!< and such that the given variable does not occur in the left-hand side.
+		const FOBDDAtomKernel*	solve(const FOBDDKernel*, const FOBDDDeBruijnIndex*);
+			//!< Try to rewrite the given arithmetic kernel such that the right-hand side is the given index,
+			//!< and such that the given index does not occur in the left-hand side.
 
 };
 
@@ -187,14 +201,8 @@ class FOBDDFactory : public TheoryVisitor {
 		
 		// Return values
 		const FOBDD*			_bdd;
-		const FOBDDKernel*	_kernel;
+		const FOBDDKernel*		_kernel;
 		const FOBDDArgument*	_argument;
-
-	public:
-		FOBDDFactory(FOBDDManager* m, Vocabulary* v = 0) : _manager(m), _vocabulary(v) { }
-
-		const FOBDD*			bdd()		const { return _bdd;		}
-		const FOBDDArgument*	argument()	const { return _argument;	}
 
 		void	visit(const VarTerm* vt);
 		void	visit(const DomainTerm* dt);
@@ -206,6 +214,12 @@ class FOBDDFactory : public TheoryVisitor {
 		void	visit(const QuantForm* qf);
 		void	visit(const EqChainForm* ef);
 		void	visit(const AggForm* af);
+
+	public:
+		FOBDDFactory(FOBDDManager* m, Vocabulary* v = 0) : _manager(m), _vocabulary(v) { }
+
+		const FOBDD*			run(const Formula* f);
+		const FOBDDArgument*	run(const Term* t);
 };
 
 

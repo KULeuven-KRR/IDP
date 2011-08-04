@@ -284,6 +284,10 @@ COMMENTLINE		"//".*
 						  advancecol();
 						  return QUERY_HEADER;
 						}
+"term"					{ BEGIN(theory);
+						  advancecol();
+						  return TERM_HEADER;
+						}
 
 	/**************
 		Include
