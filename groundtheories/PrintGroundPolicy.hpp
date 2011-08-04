@@ -36,7 +36,7 @@ private:
 	Printer*			printer_;
 
 public:
-	void polRecursiveDelete() { delete(this);	}
+	void polRecursiveDelete() { }
 
 	Printer&	printer() { return *printer_; }
 

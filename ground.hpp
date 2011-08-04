@@ -708,6 +708,9 @@ class RuleGrounder {
 /** Grounder for a definition **/
 // NOTE: definition printing code is based on the INVARIANT that a defintion is ALWAYS grounded as contiguous component: never ground def A a bit, then ground B, then return to A again (code should error on this)
 // directly printing in idp language will be incorrect then.
+// TODO optimize grounding of definitions by grouping rules with the same head and grounding them atom by atom
+//	(using approximation to derive given a head query which bodies might be true). This would allow to write out rules without
+//	first constructing and storing the full ground definition to remove duplicate heads
 class DefinitionGrounder : public TopLevelGrounder {
 	private:
 		static unsigned int _currentdefnb;

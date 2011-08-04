@@ -45,7 +45,7 @@ private:
 
 public:
 	// Destructors
-	void polRecursiveDelete() { delete(this);	}
+	void polRecursiveDelete() { }
 
 	void polStartTheory(GroundTranslator* translator){}
 	void polEndTheory(){}
