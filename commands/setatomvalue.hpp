@@ -28,7 +28,7 @@ public:
 
 	SetAtomValueInference(const char* command, SETVALUE value): Inference(command, true), value_(value) {
 		add(AT_PREDINTER);
-		add(AT_TABLE);
+		add(AT_TUPLE);
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {

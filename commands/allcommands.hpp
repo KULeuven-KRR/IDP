@@ -17,6 +17,7 @@
 #include "commands/clonestructure.hpp"
 #include "commands/clonetheory.hpp"
 #include "commands/pushnegations.hpp"
+#include "commands/removenesting.hpp"
 #include "commands/mergetheories.hpp"
 #include "commands/flatten.hpp"
 #include "commands/idptype.hpp"
@@ -71,6 +72,7 @@ std::vector<Inference*> getAllInferences(){
 	inferences.push_back(new FlattenInference());
 	inferences.push_back(new MergeTheoriesInference());
 	inferences.push_back(new PushNegationsInference());
+	inferences.push_back(new RemoveNestingInference());
 	inferences.push_back(new QueryInference());
 	inferences.push_back(new CreateTupleInference());
 	inferences.push_back(new CreateRangeInference());

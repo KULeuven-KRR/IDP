@@ -820,6 +820,10 @@ int AggGrounder::finishCard(double truevalue, double boundvalue, int setnr) cons
 		default:
 			assert(false);
 	}
+	if(!_sign) {
+		if(tp == TS_IMPL) tp = TS_RIMPL;
+		else if(tp == TS_RIMPL) tp = TS_IMPL;
+	}
 	if(simplify) {
 		if(_doublenegtseitin) {
 			if(negateset) {
@@ -889,6 +893,10 @@ int AggGrounder::finish(double boundvalue, double newboundvalue, double minpossv
 	else {
 		int tseitin;
 		TsType tp = _context._tseitin;
+		if(!_sign) {
+			if(tp == TS_IMPL) tp = TS_RIMPL;
+			else if(tp == TS_RIMPL) tp = TS_IMPL;
+		}
 		tseitin = _translator->translate(newboundvalue,_comp,true,_type,setnr,tp);
 		return _sign ? tseitin : -tseitin;
 	}
