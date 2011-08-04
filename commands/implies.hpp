@@ -9,6 +9,7 @@
 
 #include "commandinterface.hpp"
 #include "printers/print.hpp"
+#include "printers/tptpprinter.hpp"
 #include "theory.hpp"
 #include <cstdlib>
 #include <iostream>
@@ -52,6 +53,17 @@ void ArithmeticDetector::visit(const FuncTerm* f) {
 	}
 }
 
+// TODO: Neem support checks en arithmetic detection samen!
+// class TheorySupportChecker : public TheoryVisitor {
+// 	private:
+// 		bool		_theorySupported;
+// 	public:
+// 		TheorySupportChecker() : _theorySupported(true) { }
+// 		void visit(const FuncTerm* f);
+// 		void visit(EqChainForm* f);
+// 		bool theorySupported() { return _theorySupported; }
+// };
+
 class ImpliesInference: public Inference {
 public:
 	ImpliesInference(): Inference("implies") {
@@ -91,12 +103,19 @@ public:
 		remove(".tptpresult.txt");
 		
 		std::stringstream stream;
-		Printer* printer = Printer::create<std::stringstream>(opts, stream, false, arithmeticFound);
+		// TODO: Dynamic cast, is dat wel mooi?
+		TPTPPrinter<std::stringstream>* printer = dynamic_cast<TPTPPrinter<std::stringstream>*>(Printer::create<std::stringstream>(opts, stream, false, arithmeticFound));
+		
+		// TODO: DELETE ME
+		// if (arithmeticFound) {
+		// 	stream << "tff(t_nat_type,type,(t_nat: ($int) > $o)).\n";
+		// }
 		
 		printer->visit(axioms->vocabulary());
 		printer->visit(axioms);
-		delete(printer);
-		printer = Printer::create<std::stringstream>(opts, stream, true, arithmeticFound);
+		//delete(printer);
+		//printer = Printer::create<std::stringstream>(opts, stream, true, arithmeticFound);
+		printer->conjecture(true);
 		if(axioms->vocabulary() != conjectures->vocabulary())
 			printer->visit(conjectures->vocabulary());
 		printer->visit(conjectures);

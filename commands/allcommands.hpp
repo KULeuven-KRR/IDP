@@ -38,6 +38,7 @@
 #include "commands/help.hpp"
 #include "commands/optimization.hpp"
 #include "commands/implies.hpp"
+#include "commands/removenesting.hpp"
 
 //TODO add support for easily using these inferences directly in lua, by also providing a help/usage text and replacing idp_intern. with something easier
 
@@ -92,6 +93,7 @@ std::vector<Inference*> getAllInferences(){
 	inferences.push_back(new GroundAndPrintInference());
 	inferences.push_back(new OptimizationInference());
 	inferences.push_back(new ImpliesInference());
+	inferences.push_back(new RemoveNestingInference());
 	return inferences;
 }
 
