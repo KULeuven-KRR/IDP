@@ -305,6 +305,14 @@ namespace Error {
 		cerr << "." << "\n";
 	}
 
+	void multdeclterm(const string& tname, const ParseInfo& thisplace, const ParseInfo& prevdeclplace) {
+		error(thisplace);
+		cerr << "Term " << tname << " is already declared in this scope" 
+			 << ", namely at line " << prevdeclplace.line() << ", column " << prevdeclplace.col(); 
+		if(prevdeclplace.file()) cerr << " of file " << *(prevdeclplace.file());
+		cerr << "." << "\n";
+	}
+
 	void multdeclstruct(const string& sname, const ParseInfo& thisplace, const ParseInfo& prevdeclplace) {
 		error(thisplace);
 		cerr << "Structure " << sname << " is already declared in this scope" 
@@ -507,6 +515,17 @@ namespace Error {
 		cerr << ".\n";
 	}
 
+	void overloadedterm(const string& name, const ParseInfo& p1, const ParseInfo& p2, const ParseInfo& thisplace) {
+		error(thisplace);
+		cerr << "The term " << name << " used here could be the term declared at " 
+			 << "line " << p1.line() << ", column " << p1.col();
+		if(p1.file()) cerr << " of file " << p1.file();
+		cerr << " or the term declared at "
+			 << "line " << p2.line() << ", column " << p2.col();
+		if(p2.file()) cerr << " of file " << p2.file();
+		cerr << ".\n";
+	}
+
 	void overloadedtheory(const string& name, const ParseInfo& p1, const ParseInfo& p2, const ParseInfo& thisplace) {
 		error(thisplace);
 		cerr << "The theory " << name << " used here could be the theory declared at " 
@@ -675,6 +694,12 @@ namespace Warning {
 			 << ", column " << p.col();
 		if(p.file()) cerr << " of file " << *(p.file());
 		cerr << ": ";
+	}
+
+	/** Ambiguous partial term **/
+	void ambigpartialterm(const string& term, const ParseInfo& thisplace) {
+		warning(thisplace);
+		cerr << "Term " << term << " may lead to an ambiguous meaning of the formula where it occurs.\n";
 	}
 
 	/** Ambiguous statements **/

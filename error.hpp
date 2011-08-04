@@ -80,6 +80,7 @@ namespace Error {
 	void multdeclvoc(const std::string& vocname, const ParseInfo& thisplace, const ParseInfo& prevdeclplace);
 	void multdecltheo(const std::string& thname, const ParseInfo& thisplace, const ParseInfo& prevdeclplace);
 	void multdeclquery(const std::string& fname, const ParseInfo& thisplace, const ParseInfo& prevdeclplace);
+	void multdeclterm(const std::string& fname, const ParseInfo& thisplace, const ParseInfo& prevdeclplace);
 	void multdeclstruct(const std::string& sname, const ParseInfo& thisplace, const ParseInfo& prevdeclplace);
 	void multdeclopt(const std::string& sname, const ParseInfo& thisplace, const ParseInfo& prevdeclplace);
 	void multdeclproc(const std::string& sname, const ParseInfo& thisplace, const ParseInfo& prevdeclplace);
@@ -114,6 +115,7 @@ namespace Error {
 	void overloadedvocab(const std::string& name, const ParseInfo& p1, const ParseInfo& p2, const ParseInfo& thisplace);
 	void overloadedtheory(const std::string& name, const ParseInfo& p1, const ParseInfo& p2, const ParseInfo& thisplace);
 	void overloadedquery(const std::string& name, const ParseInfo& p1, const ParseInfo& p2, const ParseInfo& thisplace);
+	void overloadedterm(const std::string& name, const ParseInfo& p1, const ParseInfo& p2, const ParseInfo& thisplace);
 	void overloadedstructure(const std::string& name, const ParseInfo& p1, const ParseInfo& p2, const ParseInfo& thisplace);
 	void overloadedopt(const std::string& name, const ParseInfo& p1, const ParseInfo& p2, const ParseInfo& thisplace);
 	void overloadedproc(const std::string& name, const ParseInfo& p1, const ParseInfo& p2, const ParseInfo& thisplace);
@@ -166,6 +168,9 @@ namespace Warning {
 
 	/** Unexpeded type derivation **/
 	void derivevarsort(const std::string& varname, const std::string& sortname, const ParseInfo& thisplace);
+
+	/** Ambiguous occurrence of a partial term **/
+	void ambigpartialterm(const std::string& term, const ParseInfo& thisplace);
 
 	/** Autocompletion **/
 	void addingeltosort(const std::string& elname, const std::string& sortname,const std::string& strname);

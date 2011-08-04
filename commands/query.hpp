@@ -33,8 +33,7 @@ public:
 		std::set<Variable*> vars(q->variables().begin(),q->variables().end());
 		std::set<const FOBDDVariable*> bddvars = manager.getVariables(vars);
 		std::set<const FOBDDDeBruijnIndex*> bddindices;
-		q->query()->accept(&factory);
-		const FOBDD* bdd = factory.bdd();
+		const FOBDD* bdd = factory.run(q->query());
 
 		// optimize the query
 		manager.optimizequery(bdd,bddvars,bddindices,structure);
@@ -43,13 +42,15 @@ public:
 		std::vector<const DomainElement**> genvars;
 		std::vector<const FOBDDVariable*> vbddvars;
 		std::vector<bool> pattern;
+		std::vector<SortTable*> tables;
 		for(auto it = q->variables().begin(); it != q->variables().end(); ++it) {
 			pattern.push_back(false);
 			genvars.push_back(new const DomainElement*());
 			vbddvars.push_back(manager.getVariable(*it));
+            tables.push_back(structure->inter((*it)->sort()));
 		}
 		BDDToGenerator btg(&manager);
-		InstGenerator* generator = btg.create(bdd,pattern,genvars,vbddvars,structure);
+		InstGenerator* generator = btg.create(bdd,pattern,genvars,vbddvars,structure,Universe(tables));
 
 		// Create an empty table
 		EnumeratedInternalPredTable* interntable = new EnumeratedInternalPredTable();

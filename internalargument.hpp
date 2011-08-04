@@ -45,6 +45,7 @@ enum ArgType {
 	AT_QUERY,			//!< a query
 	AT_FORMULA,			//!< a formula
 	AT_THEORY,			//!< a theory
+	AT_TERM,			//!< a term
 
 	// Options
 	AT_OPTIONS,			//!< an options block
@@ -128,6 +129,7 @@ private:
 	UserProcedure*		_procedure;
 	Formula*			_formula;
 	Query*				_query;
+	Term*				_term;
 
 	std::set<Predicate*>	_predicate;
 	std::set<Function*>		_function;
@@ -138,7 +140,7 @@ public:
 	OverloadedObject() :
 		_namespace(NULL), _vocabulary(NULL), _theory(NULL),
 		_structure(NULL), _options(NULL), _procedure(NULL),
-		_formula(NULL), _query(NULL) { }
+		_formula(NULL), _query(NULL), _term(NULL) { }
 
 	void insert(Namespace* n)			{ _namespace = n;	}
 	void insert(Vocabulary* n)			{ _vocabulary = n;	}
@@ -148,6 +150,7 @@ public:
 	void insert(UserProcedure* n)		{ _procedure = n;	}
 	void insert(Formula* f)				{ _formula = f;		}
 	void insert(Query* q)				{ _query = q;		}
+	void insert(Term* t)				{ _term = t;		}
 
 	AbstractStructure*	structure()		const { return _structure;	}
 	AbstractTheory*		theory()		const { return _theory;		}
@@ -156,6 +159,7 @@ public:
 	Vocabulary*			vocabulary()	const { return _vocabulary;	}
 	Formula*			formula()		const { return _formula;	}
 	Query*				query()			const { return _query;		}
+	Term*				term()			const { return _term;		}
 
 	std::vector<ArgType> types() {
 		std::vector<ArgType> result;
@@ -170,6 +174,7 @@ public:
 		if(!_sort.empty()) result.push_back(AT_SORT);
 		if(_formula) result.push_back(AT_FORMULA);
 		if(_query) result.push_back(AT_QUERY);
+		if(_term) result.push_back(AT_TERM);
 		return result;
 	}
 };
@@ -196,6 +201,7 @@ struct InternalArgument {
 		AbstractTheory*					_theory;
 		Formula*						_formula;
 		Query*							_query;
+		Term*							_term;
 		Options*						_options;
 		Namespace*						_namespace;
 
@@ -234,6 +240,7 @@ struct InternalArgument {
 	InternalArgument(OverloadedObject* o)				: _type(AT_OVERLOADED)	{ _value._overloaded = o;	}
 	InternalArgument(Formula* f)						: _type(AT_FORMULA)		{ _value._formula = f;		}
 	InternalArgument(Query* q)							: _type(AT_QUERY)		{ _value._query = q;		}
+	InternalArgument(Term* t)							: _type(AT_TERM)		{ _value._term = t;			}
 	InternalArgument(const DomainElement* el) {
 		_type = AT_NIL;
 		switch(el->type()) {

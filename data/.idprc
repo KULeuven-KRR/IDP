@@ -1,6 +1,6 @@
 -- ================================================================== --
 --	Configuration file for idp
---	This file should contain a lua chunck. 
+--	This file should contain a lua chunk. 
 --	All code in this chunk is executed before input files are parsed
 -- ================================================================== --
 
