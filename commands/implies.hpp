@@ -16,6 +16,7 @@
 #include <fstream>
 #include <stdio.h>
 #include <string>
+#include "vocabulary.hpp"
 
 class ArithmeticDetector : public TheoryVisitor {
 	private:
@@ -42,7 +43,7 @@ void ArithmeticDetector::visit(const EqChainForm* f) {
 }
 
 void ArithmeticDetector::visit(const FuncTerm* f) {
-	std::string arithmeticFunction [6] = {"+", "-", "/", "*", "%", "abs"};
+	std::string arithmeticFunction [10] = {"+", "-", "/", "*", "%", "abs", "MAX", "MIN", "SUCC", "PRED"};
 	for(unsigned int n = 0; n < 5; ++n) {
 		if(f->function()->to_string(false) == arithmeticFunction[n]) {
 			_arithmeticFound = true;
@@ -111,6 +112,7 @@ public:
 		// 	stream << "tff(t_nat_type,type,(t_nat: ($int) > $o)).\n";
 		// }
 		
+		//printer->visit(Vocabulary::std());
 		printer->visit(axioms->vocabulary());
 		printer->visit(axioms);
 		//delete(printer);

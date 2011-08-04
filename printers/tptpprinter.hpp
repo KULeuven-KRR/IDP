@@ -21,9 +21,13 @@ class TPTPPrinter: public StreamPrinter<Stream> {
 private:
 	bool						_conjecture;
 	bool						_arithmetic;
+	bool						_nats;
+	bool						_ints;
+	bool						_floats;
 	unsigned int				_count;
 	std::set<DomainTerm*>		_typedDomainTerms;
 	std::set<std::string>		_typedDomainTermNames;
+	std::set<Sort*>				_types; // TODO: Gaat dit niet beter?
 	std::stringstream			_typeStream; // The types. (for TFF)
 	std::stringstream			_typeAxiomStream; // The type predicates (defining what atomic symbols have what type,
 												  // and which functions/predicates take which types)
@@ -37,7 +41,10 @@ public:
 			StreamPrinter<Stream>(stream),
 			_conjecture(conjecture),
 			_arithmetic(arithmetic),
-			_count(0) { }
+			_count(0),
+			_nats(false),
+			_ints(false),
+			_floats(false) { }
 	
 	bool conjecture() {
 		return _conjecture;
@@ -105,7 +112,6 @@ public:
 			_conjectureStream << ").\n";
 		}
 		// Do nothing with definitions or fixpoint definitions
-		//if (!_conjecture) // TODO: Is this right, can I just leave them out?
 		outputDomainTermTypeAxioms();
 		if (_conjecture)
 			writeStreams();
@@ -114,22 +120,27 @@ public:
 	void writeStreams() {
 		// Add t_nat, t_int and t_float types:
 		if (_arithmetic) {
-			output() << "tff(nat_type,type,(t_nat: $int > $o)).\n";
-			output() << "tff(int_type,type,(t_int: $int > $o)).\n";
-			//output() << "tff(float_type,type,(t_float: $real > $o)).\n";
+			if (_nats)
+				output() << "tff(nat_type,type,(t_nat: $int > $o)).\n";
+			if (_ints)
+				output() << "tff(int_type,type,(t_int: $int > $o)).\n";
+			if (_floats)
+				output() << "tff(float_type,type,(t_float: $real > $o)).\n";
 		}
 		output() << _typeStream.str();
-		//output() << _funcPredTypeStream.str();
 		// Add t_nat > t_int > t_float hierarchy
 		output() << _typeAxiomStream.str();
 		if (_arithmetic) {
-			output() << "tff(nat_is_int,axiom,(! [X: $int] : (~t_nat(X) | t_int(X)))).\n";
-			//output() << "tff(int_is_float,axiom,(! [X: $int] : ~t_int(X) | t_float(X))).\n";
+			if (_nats && _ints)
+				output() << "tff(nat_is_int,axiom,(! [X: $int] : (~t_nat(X) | t_int(X)))).\n";
+			if (_ints && _floats)
+				output() << "tff(int_is_float,axiom,(! [X: $int] : ~t_int(X) | t_float(X))).\n";
+			if (_nats && _floats)
+				output() << "tff(nat_is_float,axiom,(! [X: $int] : ~t_nat(X) | t_float(X))).\n";
 		}
 		output() << _axiomStream.str();
 		output() << _conjectureStream.str();
 		_typeStream.str(std::string());
-		//_funcPredTypeStream.str(std::string());
 		_typeAxiomStream.str(std::string());
 		_axiomStream.str(std::string());
 		_conjectureStream.str(std::string());
@@ -157,7 +168,7 @@ public:
 			outputDomainTermName((*it), &_typeAxiomStream);
 			_typeAxiomStream << ")";
 			_typeAxiomStream << ")).\n";
-			if(_arithmetic && sortName != "int" && sortName != "nat" && sortName != "float") { // TODO: output these only ONCE! Also, output them at the START!
+			if(_arithmetic/* && sortName != "int" && sortName != "nat" && sortName != "float"*/) { // TODO: output these only ONCE! Also, output them at the START!
  				_typeStream << "tff(";
  				if (_conjecture) {
  					_typeStream << "dttc";
@@ -513,23 +524,23 @@ public:
 	// TODO: Handle predefined functions
 	// Actually, we won't have any of these anymore...
 	void visit(const FuncTerm* t) {
-		std::stringstream* outputStreamPtr;
-		if(_conjecture) {
-			outputStreamPtr = &_conjectureStream;
-		} else {
-			outputStreamPtr = &_axiomStream;
-		}
-		std::stringstream& outputStream = *outputStreamPtr;
-		outputStream << "f_" << rewriteLongname(t->function()->to_string(true));
-		if(!t->subterms().empty()) {
-			outputStream << "(";
-			t->subterms()[0]->accept(this);
-			for(unsigned int n = 1; n < t->subterms().size(); ++n) {
-				outputStream << ",";
-				t->subterms()[n]->accept(this);
-			}
-			outputStream << ")";
-		}
+		// std::stringstream* outputStreamPtr;
+		// if(_conjecture) {
+		// 	outputStreamPtr = &_conjectureStream;
+		// } else {
+		// 	outputStreamPtr = &_axiomStream;
+		// }
+		// std::stringstream& outputStream = *outputStreamPtr;
+		// outputStream << "f_" << rewriteLongname(t->function()->to_string(true));
+		// if(!t->subterms().empty()) {
+		// 	outputStream << "(";
+		// 	t->subterms()[0]->accept(this);
+		// 	for(unsigned int n = 1; n < t->subterms().size(); ++n) {
+		// 		outputStream << ",";
+		// 		t->subterms()[n]->accept(this);
+		// 	}
+		// 	outputStream << ")";
+		// }
 	}
 
 	// TODO: Figure out what to do with these.
@@ -545,6 +556,15 @@ public:
 		if(t->sort() && _typedDomainTermNames.find(t->value()->to_string()) == _typedDomainTermNames.end()) {
 			_typedDomainTermNames.insert(t->value()->to_string());
 			_typedDomainTerms.insert(const_cast<DomainTerm*>(t));
+			if(SortUtils::isSubsort(t->sort(),VocabularyUtils::natsort())) {
+				_nats = true;
+			}
+			else if(SortUtils::isSubsort(t->sort(),VocabularyUtils::intsort())) {
+				_ints = true;
+			}
+			else if(SortUtils::isSubsort(t->sort(),VocabularyUtils::floatsort())) {
+				_floats = true;
+			}
 		}
 		outputDomainTermName(t, outputStreamPtr);
 	}
