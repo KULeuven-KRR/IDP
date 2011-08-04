@@ -2269,6 +2269,8 @@ void GrounderFactory::visit(const Definition* def) {
  * 		Creates a grounder for a definitional rule.
  */
 void GrounderFactory::visit(const Rule* rule) {
+	// FIXME Move all three-valued terms outside the head
+
 	// Split the quantified variables in two categories: 
 	//		1. the variables that only occur in the head
 	//		2. the variables that occur in the body (and possibly in the head)

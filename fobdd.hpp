@@ -151,6 +151,7 @@ class FOBDDManager {
 		const FOBDD*		substitute(const FOBDD*,const std::map<const FOBDDVariable*,const FOBDDVariable*>&);
 		const FOBDD*		substitute(const FOBDD*, const FOBDDDeBruijnIndex*, const FOBDDVariable*);
 		const FOBDDKernel*	substitute(const FOBDDKernel*, const FOBDDDomainTerm*, const FOBDDVariable*);
+		const FOBDD*		substitute(const FOBDD*,const std::map<const FOBDDVariable*, const FOBDDArgument*>&);
 		
 		int	longestbranch(const FOBDDKernel*);
 		int	longestbranch(const FOBDD*);

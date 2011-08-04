@@ -20,8 +20,7 @@
  * Implements symbolic propagation, followed by an evaluation of the BDDs to obtain a concrete structure
  */
 class PropagateInference: public Inference {
-private:
-
+public:
 	/** Collect symbolic propagation vocabulary **/
 	std::map<PFSymbol*,InitBoundType> propagatevocabulary(AbstractTheory* theory, AbstractStructure* structure) const {
 		std::map<PFSymbol*,InitBoundType> mpi;
@@ -73,7 +72,6 @@ private:
 		return propagator;
 	}
 
-public:
 	PropagateInference(): Inference("propagate") {
 		add(AT_THEORY);
 		add(AT_STRUCTURE);

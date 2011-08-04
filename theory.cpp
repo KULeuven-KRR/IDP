@@ -578,6 +578,14 @@ set<TheoryComponent*> Theory::components() const {
 	return stc;
 }
 
+void Theory::remove(Definition* d) {
+	auto it = _definitions.begin();
+	for(; it != _definitions.end(); ++it) {
+		if(*it == d) break;
+	}
+	if(it != _definitions.end()) _definitions.erase(it);
+}
+
 void Theory::accept(TheoryVisitor* v) const {
 	v->visit(this);
 }
@@ -1703,6 +1711,11 @@ namespace FormulaUtils {
 		return f->accept(&atm);			
 	}
 
+	Formula* remove_equiv(Formula* f) { 
+		EquivRemover er; 
+		return f->accept(&er);
+	}
+
 	Formula* substitute(Formula* f, Term* t, Variable* v) {
 		Substituter s(t,v);
 		return f->accept(&s);
@@ -2027,3 +2040,36 @@ SetExpr* TheoryMutatingVisitor::traverse(SetExpr* s) {
 SetExpr* TheoryMutatingVisitor::visit(EnumSetExpr* es)	{ return traverse(es); }
 SetExpr* TheoryMutatingVisitor::visit(QuantSetExpr* qs) { return traverse(qs); }
 
+
+/***********************
+	Definition utils
+***********************/
+
+class OpenCollector : public TheoryVisitor {
+	private:
+		Definition*		_definition;
+		set<PFSymbol*>	_result;
+		void visit(const PredForm* pf) {
+			if(_definition->defsymbols().find(pf->symbol()) == _definition->defsymbols().end()) {
+				_result.insert(pf->symbol());
+			}
+			traverse(pf);
+		}
+		void visit(const FuncTerm* ft) {
+			if(_definition->defsymbols().find(ft->function()) == _definition->defsymbols().end()) {
+				_result.insert(ft->function());
+			}
+			traverse(ft);
+		}
+	public:
+		const set<PFSymbol*>& run(Definition* d) {
+			_definition = d;
+			_result.clear();
+			d->accept(this);
+			return _result;
+		}
+};
+
+namespace DefinitionUtils {
+	set<PFSymbol*> opens(Definition* d) { OpenCollector oc; return oc.run(d);	}
+}

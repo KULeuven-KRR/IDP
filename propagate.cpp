@@ -184,15 +184,11 @@ PredInter* FOPropBDDDomainFactory::inter(const vector<Variable*>& vars, const Th
 	// Construct the ct-table and cf-table
 	FOPropBDDDomain* ctdom = dynamic_cast<FOPropBDDDomain*>(dom._ctdomain);
 	const FOBDD* newctbdd = _manager->substitute(ctdom->bdd(),ctmvv);
-cerr << "the ct domain is\n";
-_manager->put(cerr,newctbdd);
 	PredTable* ct = new PredTable(new BDDInternalPredTable(newctbdd,_manager,newctvars,str),univ);
 	if(twovalued) return new PredInter(ct,true);
 	else {
 		FOPropBDDDomain* cfdom = dynamic_cast<FOPropBDDDomain*>(dom._cfdomain);
 		const FOBDD* newcfbdd = _manager->substitute(cfdom->bdd(),cfmvv);
-cerr << "the cf domain is\n";
-_manager->put(cerr,newcfbdd);
 		PredTable* cf = new PredTable(new BDDInternalPredTable(newcfbdd,_manager,newcfvars,str),univ);
 		return new PredInter(ct,cf,true,true);
 	}
@@ -338,6 +334,26 @@ AbstractStructure* FOPropagator::currstructure(AbstractStructure* structure) con
 		}
 	}
 	return res;
+}
+
+SymbolicStructure* FOPropagator::symbolicstructure() const {
+	map<PFSymbol*,vector<const FOBDDVariable*> > vars;
+	map<PFSymbol*,const FOBDD*> ctbounds;
+	map<PFSymbol*,const FOBDD*> cfbounds;
+	assert(typeid(*_factory) == typeid(FOPropBDDDomainFactory));
+	FOBDDManager* manager = (dynamic_cast<FOPropBDDDomainFactory*>(_factory))->manager();
+	for(auto it = _leafconnectors.begin(); it != _leafconnectors.end(); ++it) {
+		ThreeValuedDomain tvd = (_domains.find(it->second))->second;
+		ctbounds[it->first] = dynamic_cast<FOPropBDDDomain*>(tvd._ctdomain)->bdd();
+		cfbounds[it->first] = dynamic_cast<FOPropBDDDomain*>(tvd._cfdomain)->bdd();
+		vector<const FOBDDVariable*> bddvars;
+		for(auto jt = it->second->subterms().begin(); jt != it->second->subterms().end(); ++jt) {
+			assert(typeid(*(*jt)) == typeid(VarTerm));
+			bddvars.push_back(manager->getVariable((dynamic_cast<VarTerm*>(*jt))->var()));
+		}
+		vars[it->first] = bddvars;
+	}
+	return new SymbolicStructure(manager,ctbounds,cfbounds,vars);
 }
 
 FuncInter* FOPropagator::interpretation(Function* ) const {
@@ -681,6 +697,49 @@ FOPropagator* FOPropagatorFactory::create(const AbstractTheory* theory) {
 	TheoryUtils::graph_functions(newtheo);
 	TheoryUtils::graph_aggregates(newtheo);
 	TheoryUtils::remove_eqchains(newtheo);
+
+	// Add function constraints
+	for(auto it = _initbounds.begin(); it != _initbounds.end(); ++it) {
+		if(it->second != IBT_TWOVAL && typeid(*(it->first)) == typeid(Function)) {
+			Function* function = dynamic_cast<Function*>(it->first);
+
+			// Add  (! x : ? y : F(x) = y)
+			vector<Variable*> vars = VarUtils::makeNewVariables(function->sorts());
+			vector<Term*> terms = TermUtils::makeNewVarTerms(vars);
+			PredForm* atom = new PredForm(true,function,terms,FormulaParseInfo());
+			Variable* y = vars.back();
+			set<Variable*> yset;
+			yset.insert(y);
+			QuantForm* exists = new QuantForm(true,false,yset,atom,FormulaParseInfo());
+			vars.pop_back();
+			set<Variable*> xset;
+			xset.insert(vars.begin(),vars.end());
+			QuantForm* univ1 = new QuantForm(true,true,xset,exists,FormulaParseInfo());
+			newtheo->add(univ1);
+
+			// Add	(! z y1 y2 : F(z) ~= y1 | F(z) ~= y2 | y1 = y2)
+			vector<Variable*> zvars = VarUtils::makeNewVariables(function->insorts());
+			Variable* y1var = new Variable(function->outsort());
+			Variable* y2var = new Variable(function->outsort());
+			vector<Variable*> zy1vars = zvars; zy1vars.push_back(y1var);
+			vector<Variable*> zy2vars = zvars; zy2vars.push_back(y2var);
+			vector<Variable*> y1y2vars; y1y2vars.push_back(y1var); y1y2vars.push_back(y2var);
+			vector<Term*> zy1terms = TermUtils::makeNewVarTerms(zy1vars);
+			vector<Term*> zy2terms = TermUtils::makeNewVarTerms(zy2vars);
+			vector<Term*> y1y2terms = TermUtils::makeNewVarTerms(y1y2vars);
+			vector<Formula*> atoms;
+			atoms.push_back(new PredForm(false,function,zy1terms,FormulaParseInfo()));
+			atoms.push_back(new PredForm(false,function,zy2terms,FormulaParseInfo()));
+			atoms.push_back(new PredForm(true,VocabularyUtils::equal(function->outsort()),y1y2terms,FormulaParseInfo()));
+			BoolForm* disjunction = new BoolForm(true,false,atoms,FormulaParseInfo());
+			set<Variable*> zy1y2set;
+			zy1y2set.insert(zvars.begin(),zvars.end());
+			zy1y2set.insert(y1var);
+			zy1y2set.insert(y2var);
+			QuantForm* univ2 = new QuantForm(true,true,zy1y2set,disjunction,FormulaParseInfo());
+			newtheo->add(univ2);
+		}
+	}
 
 	// Multiply maxsteps if requested
 	if(_multiplymaxsteps) _propagator->_maxsteps = _propagator->_maxsteps * TheoryUtils::nrSubformulas(newtheo);

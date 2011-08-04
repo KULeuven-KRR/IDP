@@ -358,6 +358,8 @@ namespace FormulaUtils {
 	/** \brief Recursively rewrite all EqChainForms in the given formula to BoolForms **/
 	Formula* remove_eqchains(Formula*, Vocabulary* v = 0);	
 
+	Formula* remove_equiv(Formula*);
+
 	/** **/
 	Formula* graph_functions(Formula* f);	
 
@@ -482,6 +484,13 @@ class Definition : public AbstractDefinition {
 		// output
 		std::ostream& put(std::ostream&,unsigned int spaces = 0) const;
 };
+
+namespace DefinitionUtils {
+
+	/** Compute the open symbols of a definition **/
+	std::set<PFSymbol*>	opens(Definition*);
+
+}
 
 /***************************
 	Fixpoint definitions
@@ -617,6 +626,7 @@ class Theory : public AbstractTheory {
 		void	sentence(unsigned int n, Formula* f)		{ _sentences[n] = f;			}
 		void	definition(unsigned int n, Definition* d)	{ _definitions[n] = d;			}
 		void	fixpdef(unsigned int n, FixpDef* d)			{ _fixpdefs[n] = d;				}
+		void	remove(Definition* d);
 
 		std::vector<Formula*>&		sentences()		{ return _sentences;	}
 		std::vector<Definition*>&	definitions()	{ return _definitions;	}

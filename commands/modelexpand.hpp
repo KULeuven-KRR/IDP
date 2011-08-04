@@ -11,6 +11,7 @@
 #include <iostream>
 #include "commandinterface.hpp"
 #include "monitors/tracemonitor.hpp"
+#include "commands/propagate.hpp"
 
 class ModelExpandInference: public Inference {
 public:
@@ -21,10 +22,22 @@ public:
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
-		AbstractTheory* theory = args[0].theory();
-		AbstractStructure* structure = args[1].structure();
+		AbstractTheory* theory = args[0].theory()->clone();
+		AbstractStructure* structure = args[1].structure()->clone();
 		Options* options = args[2].options();
 		TraceMonitor* monitor = tracemonitor();
+
+		// Calculate known definitions
+		if(typeid(*theory) == typeid(Theory)) {
+			bool satisfiable = calculateKnownDefinitions(dynamic_cast<Theory*>(theory),structure,options);
+			if(!satisfiable) return unsat();
+		}
+
+		// Symbolic propagation
+		PropagateInference propinference;
+		std::map<PFSymbol*,InitBoundType> mpi = propinference.propagatevocabulary(theory,structure);
+		FOPropagator* propagator = propinference.createpropagator(theory,mpi,options);
+		propagator->run();
 
 		// Create solver and grounder
 		SATSolver* solver = createsolver(options);
@@ -85,6 +98,88 @@ public:
 	}
 
 private:
+
+	InternalArgument unsat() const {
+		// Return an empty table of solutions
+		InternalArgument result;
+		result._type = AT_TABLE;
+		result._value._table = new std::vector<InternalArgument>();
+		return result;
+	}
+
+	bool calculateDefinition(Definition* definition, AbstractStructure* structure, Options* options) const {
+		// Create solver and grounder
+		SATSolver* solver = createsolver(options);
+		GrounderFactory grounderfactory(structure,options);
+		Theory theory("",structure->vocabulary(),ParseInfo()); theory.add(definition);
+		TopLevelGrounder* grounder = grounderfactory.create(&theory,solver);
+
+		// Run grounder
+		grounder->run();
+		SolverTheory* grounding = dynamic_cast<SolverTheory*>(grounder->grounding());
+
+		// Add information that is abstracted in the grounding
+		grounding->addFuncConstraints();
+		grounding->addFalseDefineds();
+
+		// Run solver
+		MinisatID::Solution* abstractsolutions = initsolution(options);
+		solver->solve(abstractsolutions);
+
+		// Collect solutions
+		if(abstractsolutions->getModels().empty()) return false;
+		else {
+			assert(abstractsolutions->getModels().size() == 1);
+			auto model = *(abstractsolutions->getModels().begin());
+			addLiterals(model,grounding->translator(),structure);
+			addTerms(model,grounding->termtranslator(),structure);
+			structure->clean();
+		}
+
+		// Cleanup
+		grounding->recursiveDelete();
+		delete(solver);
+		delete(abstractsolutions);
+
+		return true;
+	}
+
+	bool calculateKnownDefinitions(Theory* theory, AbstractStructure* structure, Options* options) const {
+
+		// Collect the open symbols of all definitions
+		std::map<Definition*,std::set<PFSymbol*> > opens;
+		for(auto it = theory->definitions().begin(); it != theory->definitions().end(); ++it) 
+			opens[*it] = DefinitionUtils::opens(*it);
+
+		// Calculate the interpretation of the defined atoms from definitions that do not have
+		// three-valued open symbols
+		bool fixpoint = false;
+		while(!fixpoint) {
+			fixpoint = true;
+			for(auto it = opens.begin(); it != opens.end(); ) {
+				auto currentdefinition = it++;
+				// Remove opens that have a two-valued interpretation
+				for(auto symbol = currentdefinition->second.begin(); symbol != currentdefinition->second.end(); ) {
+					auto currentsymbol = symbol++;
+					if(structure->inter(*currentsymbol)->approxtwovalued()) {
+						currentdefinition->second.erase(currentsymbol);
+					}
+				}
+				// If no opens are left, calculate the interpretation of the defined atoms
+				if(currentdefinition->second.empty()) {
+					bool satisfiable = calculateDefinition(currentdefinition->first,structure,options);
+					if(!satisfiable) return false;
+					opens.erase(currentdefinition);
+					theory->remove(currentdefinition->first);
+					fixpoint = false;
+				}
+			}
+		} 
+
+		return true;
+
+	}
+
 	SATSolver* createsolver(Options* options) const {
 		MinisatID::SolverOption modes;
 		modes.nbmodels = options->nrmodels();

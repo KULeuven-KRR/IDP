@@ -651,6 +651,25 @@ const FOBDD* FOBDDManager::substitute(const FOBDD* bdd,const map<const FOBDDVari
 	return s.FOBDDVisitor::change(bdd);
 }
 
+class VarSubstitute : public FOBDDVisitor {
+	private:
+		map<const FOBDDVariable*,const FOBDDArgument*> _mva;
+	public:
+		VarSubstitute(FOBDDManager* m, const map<const FOBDDVariable*,const FOBDDArgument*>& mva) :
+			FOBDDVisitor(m), _mva(mva) { }
+
+		const FOBDDArgument* change(const FOBDDVariable* v) {
+			auto it = _mva.find(v);
+			if(it != _mva.end()) return it->second;
+			else return v;
+		}
+};
+
+const FOBDD* FOBDDManager::substitute(const FOBDD* bdd,const map<const FOBDDVariable*,const FOBDDArgument*>& mvv) {
+	VarSubstitute s(this,mvv);
+	return s.FOBDDVisitor::change(bdd);
+}
+
 class DomainTermSubstitute : public FOBDDVisitor {
 	private:
 		const FOBDDDomainTerm*	_domainterm;
