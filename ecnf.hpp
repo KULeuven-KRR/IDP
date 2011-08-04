@@ -223,7 +223,7 @@ class GroundDefinition : public AbstractDefinition {
 	private:
 		unsigned int				_id;
 		GroundTranslator*			_translator;
-		std::vector<GroundRule*>	_rules;
+		std::map<int, GroundRule*>	_rules;
 
 	public:
 		// Constructors
@@ -231,7 +231,11 @@ class GroundDefinition : public AbstractDefinition {
 		GroundDefinition* clone() const;
 		void recursiveDelete();
 
-		void add(GroundRule* rule);
+		// Mutators
+		void addTrueRule(int head);
+		void addFalseRule(int head);
+		void addPCRule(int head, const std::vector<int>& body, bool conj, bool recursive);
+		void addAggRule(int head, int setnr, AggFunction aggtype, bool lower, double bound, bool recursive);
 
 		unsigned int id() const { return _id; }
 
