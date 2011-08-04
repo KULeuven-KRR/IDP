@@ -21,7 +21,7 @@ private:
 		TopLevelGrounder* grounder = factory.create(theory);
 		grounder->run();
 		AbstractGroundTheory* grounding = grounder->grounding();
-		grounding->addFuncConstraints();
+		//grounding->addFuncConstraints();
 		delete(grounder);
 		return grounding;
 	}
