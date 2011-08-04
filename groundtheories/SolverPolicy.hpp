@@ -69,7 +69,7 @@ public:
 		_termtranslator = termtranslator;
 	}
 
-	void polAddClause(GroundClause& cl) {
+	void polAdd(GroundClause& cl) {
 		MinisatID::Disjunction clause;
 		for(unsigned int n = 0; n < cl.size(); ++n) {
 			clause.literals.push_back(createLiteral(cl[n]));
@@ -77,7 +77,7 @@ public:
 		getSolver().add(clause);
 	}
 
-	void polAddSet(const TsSet& tsset, int setnr, bool weighted) {
+	void polAdd(const TsSet& tsset, int setnr, bool weighted) {
 		if(!weighted){
 			MinisatID::Set set;
 			set.setID = setnr;
@@ -96,19 +96,33 @@ public:
 		}
 	}
 
-	void polAddAggregate(int head, AggTsBody* body) {
-		assert(body->type() != TS_RULE);
-		//FIXME correct undefined id numbering instead of -1 (should be the number the solver takes as undefined, so should but it in the solver interface)
-		polAddAggregate(-1,head,body->lower(),body->setnr(),body->aggtype(),body->type(),body->bound());
+	void polAdd(GroundDefinition* def){
+		for(auto i=def->begin(); i!=def->end(); ++i){
+			if(typeid(PCGroundRule*)==typeid((*i).second)){
+				polAdd(def->id(), dynamic_cast<PCGroundRule*>((*i).second));
+			}else{
+				polAdd(def->id(), dynamic_cast<AggGroundRule*>((*i).second));
+			}
+		}
 	}
 
-	void polAddAggRule(int defnr, int head, AggGroundRule* body, bool) {
+	void polAdd(int defnr, PCGroundRule* rule) {
+		polAddPCRule(defnr,rule->head(),rule->body(),(rule->type() == RT_CONJ), rule->recursive());
+	}
+
+	void polAdd(int defnr, AggGroundRule* rule) {
+		polAddAggregate(defnr,rule->head(),rule->lower(),rule->setnr(),rule->aggtype(),TS_RULE,rule->bound());
+	}
+
+	void polAdd(int defnr, int head, AggGroundRule* body, bool) {
 		polAddAggregate(defnr,head,body->lower(),body->setnr(),body->aggtype(),TS_RULE,body->bound());
 	}
 
-	void polAddAggRule(int defnr, int head, AggTsBody* body, bool) {
-		assert(body->type() == TS_RULE);
-		polAddAggregate(defnr,head,body->lower(),body->setnr(),body->aggtype(),body->type(),body->bound());
+
+	void polAdd(int head, AggTsBody* body) {
+		assert(body->type() != TS_RULE);
+		//FIXME correct undefined id numbering instead of -1 (should be the number the solver takes as undefined, so should but it in the solver interface)
+		polAddAggregate(-1,head,body->lower(),body->setnr(),body->aggtype(),body->type(),body->bound());
 	}
 
 	void polAddWeightedSum(const MinisatID::Atom& head, const std::vector<VarId>& varids, const std::vector<int> weights, const int& bound, MinisatID::EqType rel, SATSolver& solver){
@@ -121,7 +135,7 @@ public:
 		solver.add(sentence);
 	}
 
-	void polAddCPReification(int tseitin, CPTsBody* body) {
+	void polAdd(int tseitin, CPTsBody* body) {
 		MinisatID::EqType comp;
 		switch(body->comp()) {
 			case CT_EQ:		comp = MinisatID::MEQ; break;
@@ -189,18 +203,6 @@ public:
 				polAddWeightedSum(createAtom(tseitin), term->_varids, term->_weights, right._bound, comp, getSolver());
 			}
 		}
-	}
-
-
-
-
-
-	void polAddPCRule(int defnr, int head, PCGroundRule* grb, bool recursive) {
-		polAddPCRule(defnr,head,grb->body(),(grb->type() == RT_CONJ), recursive);
-	}
-
-	void polAddPCRule(int defnr, int head, PCTsBody* tsb, bool recursive) {
-		polAddPCRule(defnr,head,tsb->body(),tsb->conj(), recursive);
 	}
 
 	std::ostream& polPut(std::ostream& s, GroundTranslator* translator, GroundTermTranslator* termtranslator)	const { assert(false); return s;	}

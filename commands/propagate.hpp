@@ -42,9 +42,7 @@ class GroundPropagateInference : public Inference {
 			GrounderFactory grounderfactory(structure,&options);
 			TopLevelGrounder* grounder = grounderfactory.create(theory,&solver);
 			grounder->run();
-			SolverTheory* grounding = dynamic_cast<SolverTheory*>(grounder->grounding());
-			grounding->addFuncConstraints();
-			grounding->addFalseDefineds();
+			AbstractGroundTheory* grounding = grounder->grounding();
 			MinisatID::ModelExpandOptions opts;
 			opts.nbmodelstofind = options.nrmodels();
 			opts.printmodels = MinisatID::PRINT_NONE;
@@ -58,7 +56,7 @@ class GroundPropagateInference : public Inference {
 			AbstractStructure* result = structure->clone();
 			for(auto literal = monitor.model().begin(); literal != monitor.model().end(); ++literal) {
 				int atomnr = literal->getAtom().getValue();
-				PFSymbol* symbol = translator->symbol(atomnr);
+				PFSymbol* symbol = translator->atom2symbol(atomnr);
 				if(symbol) {
 					const ElementTuple& args = translator->args(atomnr);
 					if(typeid(*symbol) == typeid(Predicate)) {
@@ -106,9 +104,7 @@ class OptimalPropagateInference : public Inference {
 			GrounderFactory grounderfactory(structure,&options);
 			TopLevelGrounder* grounder = grounderfactory.create(theory,&solver);
 			grounder->run();
-			SolverTheory* grounding = dynamic_cast<SolverTheory*>(grounder->grounding());
-			grounding->addFuncConstraints();
-			grounding->addFalseDefineds();
+			AbstractGroundTheory* grounding = grounder->grounding();
 			MinisatID::ModelExpandOptions opts;
 			opts.nbmodelstofind = options.nrmodels();
 			opts.printmodels = MinisatID::PRINT_NONE;
@@ -140,7 +136,7 @@ class OptimalPropagateInference : public Inference {
 			AbstractStructure* result = structure->clone();
 			for(auto literal = intersection.begin(); literal != intersection.end(); ++literal) {
 				int atomnr = *literal > 0 ? *literal : (-1) * (*literal);
-				PFSymbol* symbol = translator->symbol(atomnr);
+				PFSymbol* symbol = translator->atom2symbol(atomnr);
 				if(symbol) {
 					const ElementTuple& args = translator->args(atomnr);
 					if(typeid(*symbol) == typeid(Predicate)) {

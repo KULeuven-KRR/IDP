@@ -57,37 +57,45 @@ public:
 		printer().endTheory();
 	}
 
-	void polAddClause(GroundClause& cl) {
+	void polAdd(GroundClause& cl) {
 		printer().visit(cl);
 	}
 
-	void polAddSet(const TsSet& tsset, int setnr, bool weighted) {
+	void polAdd(const TsSet& tsset, int setnr, bool weighted) {
 		GroundSet* set = new GroundSet(setnr,tsset.literals(),tsset.weights());
 		printer().visit(set);
 		delete(set);
 	}
 
-	void polAddAggregate(int head, AggTsBody* body) {
+	void polAdd(int head, AggTsBody* body) {
 		GroundAggregate* agg = new GroundAggregate(body->aggtype(),body->lower(),body->type(),head,body->setnr(),body->bound());
 		printer().visit(agg);
 		delete(agg);
 	}
 
-	void polAddPCRule(int defnr, int tseitin, PCTsBody* body, bool recursive) {
-		PCGroundRule* rule = new PCGroundRule(tseitin, body->conj()?RuleType::RT_CONJ:RuleType::RT_DISJ, body->body(), recursive);
+
+	void polAdd(GroundDefinition* def){
+		for(auto i=def->begin(); i!=def->end(); ++i){
+			if(typeid(PCGroundRule*)==typeid((*i).second)){
+				polAdd(def->id(), dynamic_cast<PCGroundRule*>((*i).second));
+			}else{
+				polAdd(def->id(), dynamic_cast<AggGroundRule*>((*i).second));
+			}
+		}
+	}
+
+	void polAdd(int defnr, PCGroundRule* rule) {
 		printer().checkOrOpen(defnr);
 		printer().visit(rule);
 		delete(rule);
 	}
 
-	void polAddAggRule(int defnr, int tseitin, AggTsBody* body, bool recursive) {
-		AggGroundRule* agg = new AggGroundRule(tseitin, body->setnr(), body->aggtype(), body->lower(), body->bound(), recursive);
+	void polAdd(int defnr, AggGroundRule* rule) {
 		printer().checkOrOpen(defnr);
-		printer().visit(agg);
-		delete(agg);
+		printer().visit(rule);
 	}
 
-	void polAddCPReification(int tseitin, CPTsBody* body) {
+	void polAdd(int tseitin, CPTsBody* body) {
 		CPReification* reif = new CPReification(tseitin,body);
 		printer().visit(reif);
 		delete(reif);

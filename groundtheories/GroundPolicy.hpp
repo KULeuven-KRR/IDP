@@ -26,7 +26,7 @@
 class GroundPolicy {
 private:
 	std::vector<GroundClause>		_clauses;
-	std::vector<GroundDefinition*>	_definitions;
+	std::map<int,GroundDefinition*>	_definitions;
 	std::vector<GroundFixpDef*>		_fixpdefs;
 	std::vector<GroundSet*>			_sets;
 	std::vector<GroundAggregate*>	_aggregates;
@@ -44,7 +44,7 @@ public:
 	unsigned int		nrAggregates()					const { return _aggregates.size();						}
 	unsigned int 		nrCPReifications()				const { return _cpreifications.size();					}
 	GroundClause		clause(unsigned int n)			const { return _clauses[n];								}
-	GroundDefinition*	definition(unsigned int n)		const { return _definitions[n];							}
+	GroundDefinition*	definition(unsigned int n)		const { return _definitions.at(n);						}
 	GroundFixpDef*		fixpdef(unsigned int n)			const { return _fixpdefs[n];							}
 	GroundSet*			set(unsigned int n)				const { return _sets[n];								}
 	GroundAggregate*	aggregate(unsigned int n)		const { return _aggregates[n];							}
@@ -57,7 +57,7 @@ public:
 
 	void polRecursiveDelete() {
 		for(auto defit = _definitions.begin(); defit != _definitions.end(); ++defit) {
-			(*defit)->recursiveDelete();
+			(*defit).second->recursiveDelete();
 		}
 		for(auto aggit = _aggregates.begin(); aggit != _aggregates.end(); ++aggit) {
 			delete(*aggit);
@@ -74,39 +74,39 @@ public:
 		}
 	}
 
-	void polAddClause(GroundClause& cl) {
+	void polAdd(GroundClause& cl) {
 		_clauses.push_back(cl);
 	}
 
-	void polAddAggregate(int head, AggTsBody* body) {
+	void polAdd(int head, AggTsBody* body) {
 		_aggregates.push_back(new GroundAggregate(body->aggtype(),body->lower(),body->type(),head,body->setnr(),body->bound()));
 	}
 
-	void polAddCPReification(int tseitin, CPTsBody* body) {
+	void polAdd(int tseitin, CPTsBody* body) {
 		//TODO also add variables (in a separate container?)
 		_cpreifications.push_back(new CPReification(tseitin,body));
 	}
 
-	void polAddSet(const TsSet& tsset, int setnr, bool weighted) {
+	void polAdd(const TsSet& tsset, int setnr, bool weighted) {
 		_sets.push_back(new GroundSet(setnr,tsset.literals(),tsset.weights()));
 	}
 
-	void polAddPCRule(int defnr, int tseitin, PCTsBody* body, bool recursive) {
-		if(_definitions.size()<=defnr){
-			while(_definitions.size()<=defnr){
-				_definitions.push_back(new GroundDefinition(defnr, polTranslator()));
-			}
-		}
-		_definitions[defnr]->add(new PCGroundRule(tseitin, body->conj()?RT_CONJ:RT_DISJ, body->body(),recursive));
+	void polAdd(GroundDefinition* d){
+		_definitions.insert(std::pair<int, GroundDefinition*>(d->id(), d));
 	}
 
-	void polAddAggRule(int defnr, int tseitin, AggTsBody* body, bool recursive) {
-		if(_definitions.size()<=defnr){
-			while(_definitions.size()<=defnr){
-				_definitions.push_back(new GroundDefinition(defnr, polTranslator()));
-			}
+	void polAdd(int defnr, PCGroundRule* rule) {
+		if(_definitions.find(defnr)==_definitions.end()){
+			_definitions.insert(std::pair<int, GroundDefinition*>(defnr, new GroundDefinition(defnr, _translator)));
 		}
-		_definitions[defnr]->add(new AggGroundRule(tseitin,body->setnr(),body->aggtype(),body->lower(),body->bound(),recursive));
+		_definitions.at(defnr)->addPCRule(rule->head(), rule->body(), rule->type()==RT_CONJ, rule->recursive());
+	}
+
+	void polAdd(int defnr, AggGroundRule* rule) {
+		if(_definitions.find(defnr)==_definitions.end()){
+			_definitions.insert(std::pair<int, GroundDefinition*>(defnr, new GroundDefinition(defnr, _translator)));
+		}
+		_definitions.at(defnr)->addAggRule(rule->head(), rule->setnr(), rule->aggtype(), rule->lower(), rule->bound(), rule->recursive());
 	}
 
 	std::ostream& polPut(std::ostream& s, GroundTranslator* translator, GroundTermTranslator* termtranslator) const {
@@ -130,7 +130,7 @@ public:
 			s << "0\n";
 		}
 		for(unsigned int n = 0; n < _definitions.size(); ++n) {
-			s << _definitions[n]->to_string();
+			s << _definitions.at(n)->to_string();
 		}
 		for(unsigned int n = 0; n < _sets.size(); ++n) {
 			s << "Set nr. " << _sets[n]->setnr() << " = [ ";

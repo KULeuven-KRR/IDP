@@ -1475,23 +1475,23 @@ int HeadGrounder::run() const {
 	return atom;
 }
 
-void RuleGrounder::addTrueRule(unsigned int defid, AbstractGroundTheory* groundtheory, int head) const {
-	addPCRule(defid, groundtheory, head,vector<int>(0),true,false);
+void RuleGrounder::addTrueRule(GroundDefinition* const grounddefinition, int head) const {
+	addPCRule(grounddefinition, head,vector<int>(0),true,false);
 }
 
-void RuleGrounder::addFalseRule(unsigned int defid, AbstractGroundTheory* groundtheory, int head) const {
-	addPCRule(defid, groundtheory, head,vector<int>(0),false,false);
+void RuleGrounder::addFalseRule(GroundDefinition* const grounddefinition, int head) const {
+	addPCRule(grounddefinition, head,vector<int>(0),false,false);
 }
 
-void RuleGrounder::addPCRule(unsigned int defid, AbstractGroundTheory* groundtheory, int head, const vector<int>& body, bool conj, bool recursive) const {
-	groundtheory->add(defid, head, new PCTsBody(TS_RULE, body, conj), recursive);
+void RuleGrounder::addPCRule(GroundDefinition* grounddefinition, int head, const vector<int>& body, bool conj, bool recursive) const {
+	grounddefinition->addPCRule(head, body, conj, recursive);
 }
 
-void RuleGrounder::addAggRule(unsigned int defid, AbstractGroundTheory* groundtheory, int head, int setnr, AggFunction aggtype, bool lower, double bound, bool recursive) const {
-	groundtheory->add(defid, head, new AggTsBody(TS_RULE, bound, lower, aggtype, setnr), recursive);
+void RuleGrounder::addAggRule(GroundDefinition* grounddefinition, int head, int setnr, AggFunction aggtype, bool lower, double bound, bool recursive) const {
+	grounddefinition->addAggRule(head, setnr, aggtype, lower, bound, recursive);
 }
 
-bool RuleGrounder::run(unsigned int defid, AbstractGroundTheory* groundtheory) const {
+bool RuleGrounder::run(unsigned int defid, GroundDefinition* grounddefinition) const {
 	bool conj = _bodygrounder->conjunctive();
 	if(_bodygenerator->first()) {	
 		vector<int>	body;
@@ -1507,10 +1507,10 @@ bool RuleGrounder::run(unsigned int defid, AbstractGroundTheory* groundtheory) c
 						assert(head != _true);
 						if(head != _false) {
 							if(truebody){
-								addTrueRule(defid, groundtheory, head);
+								addTrueRule(grounddefinition, head);
 							}
 							else{
-								addPCRule(defid, groundtheory, head,body,conj,_context._tseitin == TS_RULE);
+								addPCRule(grounddefinition, head,body,conj,_context._tseitin == TS_RULE);
 							}
 						}
 					}while(_headgenerator->next());
@@ -1524,12 +1524,12 @@ bool RuleGrounder::run(unsigned int defid, AbstractGroundTheory* groundtheory) c
 unsigned int DefinitionGrounder::_currentdefnb = 1;
 
 DefinitionGrounder::DefinitionGrounder(AbstractGroundTheory* gt, std::vector<RuleGrounder*> subgr,int verb)
-		: TopLevelGrounder(gt,verb), _defnb(_currentdefnb++), _subgrounders(subgr) {
+		: TopLevelGrounder(gt,verb), _defnb(_currentdefnb++), _subgrounders(subgr), _grounddefinition(new GroundDefinition(_defnb, gt->translator())) {
 }
 
 bool DefinitionGrounder::run() const {
 	for(unsigned int n = 0; n < _subgrounders.size(); ++n) {
-		bool b = _subgrounders[n]->run(id(), _grounding);
+		bool b = _subgrounders[n]->run(id(), _grounddefinition);
 		if(!b) {
 			return false;
 		}

@@ -459,7 +459,7 @@ public:
 	void visit(GroundDefinition* d){
 		assert(isTheoryOpen());
 		for(auto it=d->begin(); it!=d->end(); ++it){
-			(*it)->accept(this);
+			(*it).second->accept(this);
 		}
 	}
 

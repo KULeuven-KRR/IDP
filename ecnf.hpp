@@ -149,6 +149,10 @@ class GroundRule {
 		virtual	bool		isFalse()	const = 0;
 		virtual	bool		isTrue()	const = 0;
 
+		void head(int head) { _head = head; 		}
+		void type(RuleType type) { _type = type; 		}
+		void recursive(bool recursive) { _recursive = recursive; 		}
+
 		// Visitor
 		virtual void accept(TheoryVisitor*) const = 0;
 		virtual GroundRule* accept(TheoryMutatingVisitor* v) = 0;
@@ -165,12 +169,15 @@ class PCGroundRule : public GroundRule {
 	public:
 		// Constructors
 		PCGroundRule(int head, RuleType type, const std::vector<int>& body, bool rec) : GroundRule(head, type,rec), _body(body) { }
+		PCGroundRule(int head, PCTsBody* body, bool rec);
 		PCGroundRule(const PCGroundRule& grb): GroundRule(grb.head(), grb.type(),grb.recursive()), _body(grb._body) { }
 
 		~PCGroundRule() { }
 
 		// Inspectors
-		std::vector<int>	body()				const { return _body;								}
+		const std::vector<int>&	body()			const { return _body;								}
+		std::vector<int>&	body()					{ return _body;								}
+		void			body(const std::vector<int>& body) { _body = body;							}
 		unsigned int	size()					const { return _body.size();						}
 		bool			empty()					const { return _body.empty();						}
 		int				literal(unsigned int n)	const { return _body[n];							}
@@ -197,6 +204,7 @@ class AggGroundRule : public GroundRule {
 		// Constructors
 		AggGroundRule(int head, int setnr, AggFunction at, bool lower, double bound, bool rec):
 			GroundRule(head, RT_AGG,rec), _setnr(setnr), _aggtype(at), _lower(lower), _bound(bound) { }
+		AggGroundRule(int head, AggTsBody* body, bool rec);
 		AggGroundRule(const AggGroundRule& grb):
 			GroundRule(grb.head(), RT_AGG,grb.recursive()), _setnr(grb._setnr), _aggtype(grb._aggtype), _lower(grb._lower), _bound(grb._bound) { }
 
@@ -239,13 +247,13 @@ class GroundDefinition : public AbstractDefinition {
 
 		unsigned int id() const { return _id; }
 
-		typedef std::vector<GroundRule*>::iterator	ruleiterator;
+		typedef std::map<int, GroundRule*>::iterator	ruleiterator;
 		ruleiterator	begin()			{ return _rules.begin();	}
 		ruleiterator	end()			{ return _rules.end();		}
 
 		GroundTranslator*	translator()	const { return _translator;			}
 
-		typedef std::vector<GroundRule*>::const_iterator	const_ruleiterator;
+		typedef std::map<int, GroundRule*>::const_iterator	const_ruleiterator;
 		const_ruleiterator	begin()			const { return _rules.begin();		}
 		const_ruleiterator	end()			const { return _rules.end();		}
 

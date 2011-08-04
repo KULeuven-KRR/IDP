@@ -49,7 +49,7 @@ public:
 	void 	addEmptyClause()	{ GroundClause c(0); add(c);	}
 	void 	addUnitClause(int l){ GroundClause c(1,l); add(c);	}
 	virtual void add(GroundClause& cl, bool skipfirst=false) = 0;
-	virtual void addDefinition(GroundDefinition* d) = 0;
+	virtual void add(GroundDefinition* d) = 0;
 	virtual void add(GroundFixpDef*) = 0;
 	virtual void add(int head, AggTsBody* body) = 0;
 	virtual void add(int tseitin, CPTsBody* body) = 0;
@@ -134,14 +134,14 @@ class GroundTheory : public AbstractGroundTheory, public Policy {
 					}
 					if(body->type() == TS_RULE) {
 						assert(defnr != ID_FOR_UNDEFINED);
-						add(defnr,atom,body,true); //TODO true (recursive) might not always be the case?
+						Policy::polAdd(defnr,new PCGroundRule(atom,body,true)); //TODO true (recursive) might not always be the case?
 					}
 				}
 				else if(typeid(*tsbody) == typeid(AggTsBody)) {
 					AggTsBody* body = dynamic_cast<AggTsBody*>(tsbody);
 					if(body->type() == TS_RULE) {
 						assert(defnr != ID_FOR_UNDEFINED);
-						add(defnr,atom,body,true); //TODO true (recursive) might not always be the case?
+						Policy::polAdd(defnr,new AggGroundRule(atom,body,true)); //TODO true (recursive) might not always be the case?
 					}
 					else {
 						add(atom,body);
@@ -231,39 +231,25 @@ public:
 
 	void add(GroundClause& cl, bool skipfirst) {
 		transformForAdd(cl,VIT_DISJ,ID_FOR_UNDEFINED,skipfirst);
-		Policy::polAddClause(cl);
+		Policy::polAdd(cl);
 	}
 
-	void add(GroundFixpDef*) {
-		assert(false);
-		//TODO
-	}
-
-	void add(int head, AggTsBody* body) {
-		add(body->setnr(),ID_FOR_UNDEFINED,(body->aggtype() != AGG_CARD));
-		Policy::polAddAggregate(head, body);
-	}
-
-	void add(int tseitin, CPTsBody* body) {
-		//TODO also add variables (in a separate container?)
-
-		CPTsBody* foldedbody = new CPTsBody(body->type(),foldCPTerm(body->left()),body->comp(),body->right());
-		//FIXME possible leaks!!
-
-		Policy::polAddCPReification(tseitin, foldedbody);
-	}
-
-	void add(int setnr, unsigned int defnr, bool weighted) {
-		if(_printedsets.find(setnr) == _printedsets.end()) {
-			_printedsets.insert(setnr);
-			TsSet& tsset = translator()->groundset(setnr);
-			transformForAdd(tsset.literals(),VIT_SET,defnr);
-			std::vector<double> weights;
-			if(weighted) weights = tsset.weights();
-			Policy::polAddSet(tsset,setnr, weighted);
+	void add(GroundDefinition* def) {
+		for(auto i=def->begin(); i!=def->end(); ++i){
+			if(typeid(PCGroundRule*)==typeid((*i).second)){
+				PCGroundRule* rule = dynamic_cast<PCGroundRule*>((*i).second);
+				transformForAdd(rule->body(),(rule->type()==RT_CONJ ? VIT_CONJ : VIT_DISJ), def->id());
+				notifyDefined(rule->head());
+			}else{
+				AggGroundRule* rule = dynamic_cast<AggGroundRule*>((*i).second);
+				add(rule->setnr(),def->id(),(rule->aggtype() != AGG_CARD));
+				notifyDefined(rule->head());
+			}
 		}
+		Policy::polAdd(def);
 	}
 
+private:
 	void notifyDefined(int tseitin){
 		if(!translator()->hasSymbolFor(tseitin)){
 			return;
@@ -276,16 +262,35 @@ public:
 		(*it).second.insert(tseitin);
 	}
 
-	void add(unsigned int defnr, int tseitin, PCTsBody* body, bool recursive) {
-		transformForAdd(body->body(),(body->conj() ? VIT_CONJ : VIT_DISJ), defnr);
-		notifyDefined(tseitin);
-		Policy::polAddPCRule(defnr, tseitin, body, recursive);
+public:
+	void add(GroundFixpDef*) {
+		assert(false);
+		//TODO
 	}
 
-	void add(unsigned int defnr, int tseitin, AggTsBody* body, bool recursive) {
-		add(body->setnr(),defnr,(body->aggtype() != AGG_CARD));
-		notifyDefined(tseitin);
-		Policy::polAddAggRule(defnr, tseitin, body, recursive);
+	void add(int tseitin, CPTsBody* body) {
+		//TODO also add variables (in a separate container?)
+
+		CPTsBody* foldedbody = new CPTsBody(body->type(),foldCPTerm(body->left()),body->comp(),body->right());
+		//FIXME possible leaks!!
+
+		Policy::polAdd(tseitin, foldedbody);
+	}
+
+	void add(int setnr, unsigned int defnr, bool weighted) {
+		if(_printedsets.find(setnr) == _printedsets.end()) {
+			_printedsets.insert(setnr);
+			TsSet& tsset = translator()->groundset(setnr);
+			transformForAdd(tsset.literals(),VIT_SET,defnr);
+			std::vector<double> weights;
+			if(weighted) weights = tsset.weights();
+			Policy::polAdd(tsset,setnr, weighted);
+		}
+	}
+
+	void add(int head, AggTsBody* body) {
+		add(body->setnr(),ID_FOR_UNDEFINED,(body->aggtype() != AGG_CARD));
+		Policy::polAdd(head, body);
 	}
 
 	/**

@@ -696,13 +696,13 @@ class RuleGrounder {
 	public:
 		RuleGrounder(HeadGrounder* hgr, FormulaGrounder* bgr, InstGenerator* hig, InstGenerator* big, GroundingContext& ct)
 			: _headgrounder(hgr), _bodygrounder(bgr), _headgenerator(hig), _bodygenerator(big), _context(ct) { }
-		bool run(unsigned int defid, AbstractGroundTheory* groundtheory) const;
+		bool run(unsigned int defid, GroundDefinition* grounddefinition) const;
 
 		// Mutators
-		void addTrueRule(unsigned int defid, AbstractGroundTheory* groundtheory, int head) const;
-		void addFalseRule(unsigned int defid, AbstractGroundTheory* groundtheory, int head) const;
-		void addPCRule(unsigned int defid, AbstractGroundTheory* groundtheory, int head, const std::vector<int>& body, bool conj, bool recursive) const;
-		void addAggRule(unsigned int defid, AbstractGroundTheory* groundtheory, int head, int setnr, AggFunction aggtype, bool lower, double bound, bool recursive) const;
+		void addTrueRule(GroundDefinition* grounddefinition, int head) const;
+		void addFalseRule(GroundDefinition* grounddefinition, int head) const;
+		void addPCRule(GroundDefinition* grounddefinition, int head, const std::vector<int>& body, bool conj, bool recursive) const;
+		void addAggRule(GroundDefinition* grounddefinition, int head, int setnr, AggFunction aggtype, bool lower, double bound, bool recursive) const;
 };
 
 /** Grounder for a definition **/
@@ -713,6 +713,7 @@ class DefinitionGrounder : public TopLevelGrounder {
 		static unsigned int _currentdefnb;
 		unsigned int _defnb;
 		std::vector<RuleGrounder*>	_subgrounders;	//!< Grounders for the rules of the definition.
+		GroundDefinition* _grounddefinition;
 	public:
 		DefinitionGrounder(AbstractGroundTheory* groundtheory, std::vector<RuleGrounder*> subgr,int verb);
 		bool run() const;
