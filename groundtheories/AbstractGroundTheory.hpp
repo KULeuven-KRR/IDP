@@ -49,12 +49,13 @@ public:
 	void 	addEmptyClause()	{ GroundClause c(0); add(c);	}
 	void 	addUnitClause(int l){ GroundClause c(1,l); add(c);	}
 	virtual void add(GroundClause& cl, bool skipfirst=false) = 0;
+	virtual void addDefinition(GroundDefinition* d) = 0;
 	virtual void add(GroundFixpDef*) = 0;
 	virtual void add(int head, AggTsBody* body) = 0;
 	virtual void add(int tseitin, CPTsBody* body) = 0;
 	virtual void add(int setnr, unsigned int defnr, bool weighted) = 0;
-	virtual void add(unsigned int defnr, int tseitin, PCTsBody* body, bool recursive) = 0;
-	virtual void add(unsigned int defnr, int tseitin, AggTsBody* body, bool recursive) = 0;
+	//virtual void add(unsigned int defnr, int tseitin, PCTsBody* body, bool recursive) = 0;
+	//virtual void add(unsigned int defnr, int tseitin, AggTsBody* body, bool recursive) = 0;
 
 	//NOTE: have to call these!
 	//TODO check whether they are called correctly (currently in theorygrounder->run), but probably missing several usecases
