@@ -1373,6 +1373,14 @@ namespace LuaConnection {
 		return lua_error(L);
 	}
 
+	int invalidOption(Options* options, lua_State* L, const string& option, const string& value){
+		stringstream ss;
+		ss <<"\""<<value <<"\" is not a valid value for " <<option <<".\n";
+		ss <<options->getPossibleValues(option) <<".\n";
+		lua_pushstring(L,ss.str().c_str());
+		return lua_error(L);
+	}
+
 	/**
 	 * NewIndex function for options
 	 */
@@ -1380,23 +1388,50 @@ namespace LuaConnection {
 		Options* opts = *(Options**)lua_touserdata(L,1);
 		InternalArgument index = createArgument(2,L);
 		InternalArgument value = createArgument(3,L);
-		if(index._type == AT_STRING) {
-			string str = *(index._value._string);
-			switch(value._type) {
-				case AT_INT: opts->setvalue(str,value._value._int); break;
-				case AT_DOUBLE: opts->setvalue(str,value._value._double); break;
-				case AT_STRING: opts->setvalue(str,*(value._value._string)); break;
-				case AT_BOOLEAN: opts->setvalue(str,value._value._boolean); break;
-				default:
-					lua_pushstring(L,"Wrong option value");
-					return lua_error(L);
-			}
-			return 0;
-		}
-		else {
+		if(index._type!=AT_STRING) {
 			lua_pushstring(L,"Options can only be indexed by a string");
 			return lua_error(L);
 		}
+
+		string option = *(index._value._string);
+		if(!opts->isoption(option)){
+			stringstream ss;
+			ss <<"There is no option named " <<option <<".\n";
+			lua_pushstring(L,ss.str().c_str());
+			return lua_error(L);
+		}
+		switch(value._type) {
+			case AT_INT:
+				if(!opts->setvalue(option,value._value._int)){
+					stringstream ss; ss<<value._value._int;
+					return invalidOption(opts, L, option, ss.str());
+				}
+				break;
+			case AT_DOUBLE:
+				if(!opts->setvalue(option,value._value._double)){
+					stringstream ss; ss<<value._value._double;
+					return invalidOption(opts, L, option, ss.str());
+				}
+				break;
+			case AT_STRING:
+				if(!opts->setvalue(option,*value._value._string)){
+					return invalidOption(opts, L, option, *value._value._string);
+				}
+				break;
+			case AT_BOOLEAN:
+				if(!opts->setvalue(option,value._value._boolean)){
+					stringstream ss; ss<<value._value._boolean;
+					return invalidOption(opts, L, option, ss.str());
+				}
+				break;
+			default:
+				stringstream ss;
+				ss <<"Wrong option value type for option " <<option <<".\n";
+				ss <<opts->getPossibleValues(option) <<".\n";
+				lua_pushstring(L,ss.str().c_str());
+				return lua_error(L);
+		}
+		return 0;
 	}
 
 	/**

@@ -14,4 +14,4 @@ idp_intern.prover_tff_command = "java -jar -Dfile.encoding=UTF-8 -Xmx512m -jar /
 -- =========================
 
 stdoptions.autocomplete = true		-- use autocompletion for structures
-stdoptions.usingcp = false			-- do not use a cp-solver
+stdoptions.cpsupport = false			-- do not use a cp-solver

@@ -39,6 +39,7 @@ class Printer : public TheoryVisitor {
 private:
 	int	opendef_; 	//the id of the currenlty open definition
 	bool theoryopen_;
+	std::set<int> _pastopendefs;
 protected:
 	Printer(): opendef_(-1), theoryopen_(false){}
 
@@ -64,15 +65,22 @@ public:
 	virtual void visit(const AbstractStructure*) = 0;
 	virtual void visit(const Namespace*) = 0;
 	virtual void visit(const GroundClause& g) = 0;
-	virtual void visit(const GroundTheory* g) = 0;
 	virtual void visit(const GroundFixpDef*) = 0;
 	virtual void visit(const GroundSet*) = 0;
-	virtual void visit(const GroundDefinition* d) = 0;
-	virtual void visit(const PCGroundRuleBody* b) = 0;
-	virtual void visit(int defid, int head, const PCGroundRuleBody* b) = 0;
+	virtual void visit(const PCGroundRule* b) = 0;
+	virtual void visit(const AggGroundRule* b) = 0;
 	virtual void visit(const GroundAggregate* cpr) = 0;
-	virtual void visit(int defid, const GroundAggregate* b) = 0;
 	virtual void visit(const CPReification* cpr) = 0;
+
+	void checkOrOpen(int defid) {
+		if(!isDefOpen(defid)){
+			_pastopendefs.insert(opendef_);
+			assert(_pastopendefs.find(defid)==_pastopendefs.end());
+		}
+	}
+
+	virtual void startTheory() = 0;
+	virtual void endTheory() = 0;
 
 	virtual void setTranslator(GroundTranslator*){}
 	virtual void setTermTranslator(GroundTermTranslator*){}

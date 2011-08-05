@@ -12,6 +12,9 @@
 #include "commandinterface.hpp"
 #include "monitors/tracemonitor.hpp"
 
+#include "groundtheories/AbstractGroundTheory.hpp"
+#include "groundtheories/SolverPolicy.hpp"
+
 class ModelExpandInference: public Inference {
 public:
 	ModelExpandInference(): Inference("mx", false, true) {
@@ -33,11 +36,7 @@ public:
 
 		// Run grounder
 		grounder->run();
-		SolverTheory* grounding = dynamic_cast<SolverTheory*>(grounder->grounding());
-
-		// Add information that is abstracted in the grounding
-		grounding->addFuncConstraints();
-		grounding->addFalseDefineds();
+		AbstractGroundTheory* grounding = dynamic_cast<GroundTheory<SolverPolicy>*>(grounder->grounding());
 
 		// Run solver
 		MinisatID::Solution* abstractsolutions = initsolution(options);
@@ -106,7 +105,7 @@ private:
 		for(auto literal = model->literalinterpretations.begin();
 			literal != model->literalinterpretations.end(); ++literal) {
 			int atomnr = literal->getAtom().getValue();
-			PFSymbol* symbol = translator->symbol(atomnr);
+			PFSymbol* symbol = translator->atom2symbol(atomnr);
 			if(symbol) {
 				const ElementTuple& args = translator->args(atomnr);
 				if(typeid(*symbol) == typeid(Predicate)) {

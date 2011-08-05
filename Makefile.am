@@ -53,7 +53,10 @@ gidl_SOURCES = \
 		fobdd.hpp fobdd.cpp\
 		monitors/interactiveprintmonitor.hpp monitors/tracemonitor.hpp\
 		monitors/luatracemonitor.hpp monitors/luainteractiveprintmonitor.hpp\
-		groundtheories/PrintGroundTheory.hpp groundtheories/PrintGroundTheory.cpp\
+		groundtheories/PrintGroundPolicy.hpp\
+		groundtheories/GroundPolicy.hpp\
+		groundtheories/SolverPolicy.hpp\
+		groundtheories/AbstractGroundTheory.hpp\
 		commands/allcommands.hpp\
 		commands/optimization.hpp\
 		commands/commandinterface.hpp\
