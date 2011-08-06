@@ -739,10 +739,18 @@ set<const IVSet*> initializeIVSets(const AbstractStructure* s, const AbstractThe
 	for(set<const Sort*>::const_iterator sort_it = tsa.getForbiddenSorts().begin(); sort_it!=tsa.getForbiddenSorts().end(); ++sort_it){
 		forbiddenSorts.insert(*sort_it);
 		set<Sort*> descendents = (*sort_it)->descendents();
+		cout << (*sort_it)->to_string() << ": ";
 		for(set<Sort*>::const_iterator sort_it2 = descendents.begin(); sort_it2 != descendents.end(); ++sort_it2){
 			forbiddenSorts.insert(*sort_it2);
+			cout << (*sort_it2)->to_string() << " | ";
 		}
+		cout << endl;
 	}
+	cout << "forbiddenSorts:" << endl;
+	for(auto it=forbiddenSorts.begin(); it!=forbiddenSorts.end(); ++it){
+		cout << (*it)->to_string() << endl;
+	}
+
 	set<Sort*> allowedSorts;
 	for(set<PFSymbol*>::const_iterator relation_it=tsa.getUsedRelations().begin(); relation_it!=tsa.getUsedRelations().end(); ++relation_it){
 		for(vector<Sort*>::const_iterator sort_it=(*relation_it)->sorts().begin(); sort_it!=(*relation_it)->sorts().end(); ++sort_it){
@@ -751,6 +759,12 @@ set<const IVSet*> initializeIVSets(const AbstractStructure* s, const AbstractThe
 			}
 		}
 	}
+
+	cout << "allowedSorts:" << endl;
+	for(auto it=allowedSorts.begin(); it!=allowedSorts.end(); ++it){
+		cout << (*it)->to_string() << endl;
+	}
+
 	map<Sort*,set<const DomainElement*> > elementsForSorts = findElementsForSorts(s, allowedSorts, tsa.getForbiddenElements());
 	set<const IVSet*> result;
 	for(map<Sort*,set<const DomainElement*> >::const_iterator ivset_it = elementsForSorts.begin(); ivset_it!=elementsForSorts.end(); ++ivset_it){
@@ -832,11 +846,12 @@ vector<const IVSet*> findIVSets(const AbstractTheory* t, const AbstractStructure
 	set<const IVSet*> potentials = initializeIVSets(s,t);
 	
 	cout << "extract dont cares..." << endl;
-	
+
 	vector<const IVSet*> result = extractDontCares(potentials);
 	for(vector<const IVSet*>::const_iterator result_it=result.begin(); result_it!=result.end(); ++result_it){
 		cout << "##########" << endl << (*result_it)->to_string() << endl;
 	}
+
 	splitByOccurrences(potentials);
 	splitByBinarySymmetries(potentials);
 	for(set<const IVSet*>::const_iterator result_it=potentials.begin(); result_it!=potentials.end(); ++result_it){

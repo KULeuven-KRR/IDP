@@ -38,8 +38,12 @@ public:
 		
 		// Execute symmetry breaking
 		if(options->symmetry()!=0){
+			std::cerr << "Symmetry detection... \n";
+			clock_t start = clock();
 			//Break symmetry
 			std::vector<const IVSet*> ivsets = findIVSets(theory, structure);
+			float time = (float) (clock() - start)/CLOCKS_PER_SEC;
+			std::cerr << "*Symmetry_detection_finished_in: " << time << "\n";
 			if(options->symmetry()==1){
 				/** method 1 **/
 				addSymBreakingPredicates(grounding, ivsets);
