@@ -957,6 +957,9 @@ InstGenerator* GeneratorFactory::create(const vector<const DomainElement**>& var
 }
 
 InstGenerator*	GeneratorFactory::create(const PredTable* pt, vector<bool> pattern, const vector<const DomainElement**>& vars, const Universe& universe) {
+//cerr << "Create on table " << pt << endl;
+//cerr << "Pattern = "; for(unsigned int n = 0; n < pattern.size(); ++n) cerr << (pattern[n] ? "true " : "false "); cerr << endl;
+//cerr << "Vars = "; for(unsigned int n = 0; n < vars.size(); ++n) cerr << "  " << vars[n]; cerr << endl;
 	_table = pt;
 	_pattern = pattern;
 	_vars = vars;
@@ -976,7 +979,12 @@ InstGenerator*	GeneratorFactory::create(const PredTable* pt, vector<bool> patter
 		if(!pattern[firstout]) break;
 	}
 	if(firstout == pattern.size()) {	// no output variables
-		return new SimpleLookupGenerator(pt,vars,_universe);
+		if(typeid(*(pt->interntable())) != typeid(BDDInternalPredTable)) 
+			return new SimpleLookupGenerator(pt,vars,_universe);
+		else { 
+			StructureVisitor::visit(pt);
+			return _generator;
+		}
 	}
 	else {
 		StructureVisitor::visit(pt);
@@ -995,6 +1003,11 @@ void GeneratorFactory::visit(const ProcInternalPredTable* ) {
 BDDToGenerator::BDDToGenerator(FOBDDManager* manager) : _manager(manager) { }
 
 InstGenerator* BDDToGenerator::create(const FOBDD* bdd, const vector<bool>& pattern, const vector<const DomainElement**>& vars, const vector<const FOBDDVariable*>& bddvars, AbstractStructure* structure, const Universe& universe) {
+
+//cerr << "Create on bdd\n";
+//_manager->put(cerr,bdd);
+//cerr << "Pattern = "; for(unsigned int n = 0; n < pattern.size(); ++n) cerr << (pattern[n] ? "true " : "false "); cerr << endl;
+//cerr << "bddvars = "; for(unsigned int n = 0; n < bddvars.size(); ++n) cerr << "  " << *(bddvars[n]->variable()); cerr << endl;
 
 	// Detect double occurrences
 	vector<unsigned int> firstocc;
@@ -1126,6 +1139,12 @@ GeneratorNode* BDDToGenerator::createnode(const FOBDD* bdd, const vector<bool>& 
 }
 
 InstGenerator* BDDToGenerator::create(PredForm* atom, const vector<bool>& pattern, const vector<const DomainElement**>& vars, const vector<Variable*>& atomvars, AbstractStructure* structure, bool inverse, const Universe& universe) {
+
+//cerr << "Create on atom " << *atom << endl;
+//cerr << "Pattern = "; for(unsigned int n = 0; n < pattern.size(); ++n) cerr << (pattern[n] ? "true " : "false "); cerr << endl;
+//cerr << "Atomvars = "; for(unsigned int n = 0; n < atomvars.size(); ++n) cerr << "  " << *(atomvars[n]) << ' ' << atomvars[n]; cerr << endl;
+//cerr << "Inverse = " << (inverse ? "true" : "false") << endl;
+
 	// The atom is of one of the following forms: 
 	//	(A)		P(t1,...,tn), 
 	//	(B)		F(t1,...,tn) = t, 
@@ -1193,7 +1212,10 @@ InstGenerator* BDDToGenerator::create(PredForm* atom, const vector<bool>& patter
 		PredForm* origatom = conjunction.back();
 		set<Variable*> still_free;
 		for(unsigned int n = 0; n < pattern.size(); ++n) {
-			if(pattern[n]) still_free.insert(atomvars[n]);
+			if(!pattern[n]) still_free.insert(atomvars[n]);
+		}
+		for(auto it = quantform->quantvars().begin(); it != quantform->quantvars().end(); ++it) {
+			still_free.insert(*it);
 		}
 		set<PredForm*> atoms_to_order(conjunction.begin(),conjunction.end());
 		vector<PredForm*> orderedconjunction;
@@ -1221,6 +1243,13 @@ InstGenerator* BDDToGenerator::create(PredForm* atom, const vector<bool>& patter
 		vector<bool> branchpattern = pattern;
 		vector<const DomainElement**> branchvars = vars;
 		vector<Variable*> branchfovars = atomvars;
+		vector<SortTable*> branchuniverse = universe.tables();
+		for(auto it = quantform->quantvars().begin(); it != quantform->quantvars().end(); ++it) {
+			branchpattern.push_back(false);
+			branchvars.push_back(new const DomainElement*());
+			branchfovars.push_back(*it);
+			branchuniverse.push_back(structure->inter((*it)->sort()));
+		}
 		for(auto it = orderedconjunction.begin(); it != orderedconjunction.end(); ++it) {
 			vector<bool> kernpattern;
 			vector<const DomainElement**> kernvars;
@@ -1235,7 +1264,7 @@ InstGenerator* BDDToGenerator::create(PredForm* atom, const vector<bool>& patter
 					kernpattern.push_back(branchpattern[n]);
 					kernvars.push_back(branchvars[n]);
 					kernfovars.push_back(branchfovars[n]);
-					kerntables.push_back(universe.tables()[n]);
+					kerntables.push_back(branchuniverse[n]);
 					newbranchpattern.push_back(true);
 				}
 			}
@@ -1329,6 +1358,13 @@ InstGenerator* BDDToGenerator::create(PredForm* atom, const vector<bool>& patter
 }
 
 InstGenerator* BDDToGenerator::create(const FOBDDKernel* kernel, const vector<bool>& pattern, const vector<const DomainElement**>& vars, const vector<const FOBDDVariable*>& kernelvars, AbstractStructure* structure, bool inverse, const Universe& universe) {
+
+//cerr << "Create on kernel\n";
+//_manager->put(cerr,kernel);
+//cerr << "Pattern = "; for(unsigned int n = 0; n < pattern.size(); ++n) cerr << (pattern[n] ? "true " : "false "); cerr << endl;
+//cerr << "kernelvars = "; for(unsigned int n = 0; n < kernelvars.size(); ++n) cerr << "  " << *(kernelvars[n]->variable()); cerr << endl;
+//cerr << "inverse = " << (inverse ? "true" : "false") << endl;
+
 	if(typeid(*kernel) == typeid(FOBDDAtomKernel)) {
 		const FOBDDAtomKernel* atom = dynamic_cast<const FOBDDAtomKernel*>(kernel);
 

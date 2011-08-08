@@ -1228,7 +1228,7 @@ class TermMover : public TheoryMutatingVisitor {
 			return t; 
 		}
 
-		Term* visit(DomainTerm* t) {
+		virtual Term* visit(DomainTerm* t) {
 			if(_movecontext && shouldMove(t)) return move(t);
 			else return t;
 		}
@@ -1309,6 +1309,40 @@ class TermMover : public TheoryMutatingVisitor {
 
 };
 
+class ThreeValTermMover : public TermMover {
+	private:
+		AbstractStructure*	_structure;
+
+		bool shouldMove(Term* t) {
+			if(_movecontext) {
+				switch(t->type()) {
+					case TT_FUNC:
+					{
+						FuncTerm* ft = dynamic_cast<FuncTerm*>(t);
+						Function* func = ft->function();
+						FuncInter* finter = _structure->inter(func);
+						if(finter->approxtwovalued()) return false;
+						else return true;
+					}
+					case TT_AGG:
+					{
+						AggTerm* at = dynamic_cast<AggTerm*>(t);
+						bool twovalued = SetUtils::approxTwoValued(at->set(),_structure);
+						return !twovalued;
+					}
+					default: 
+						break;
+				}
+			}
+			return false;
+		}
+
+	public:
+		ThreeValTermMover(AbstractStructure* str, PosContext context = PC_POSITIVE, Vocabulary* voc = 0) :
+			TermMover(context,voc), _structure(str) { }
+
+};
+
 class ThreeValuedTermMover : public TheoryMutatingVisitor {
 	private:
 		AbstractStructure*			_structure;
@@ -1325,9 +1359,16 @@ class ThreeValuedTermMover : public TheoryMutatingVisitor {
 			_structure(str), _poscontext(posc), _termgraphs(0), _variables(), _cpsupport(cps), _cpsymbols(cpsymbols) { }
 		Formula*	visit(PredForm* pf);
 		Formula*	visit(AggForm* af);
+		Formula*	visit(EqChainForm* ef);
 		Term*		visit(FuncTerm* ft);
 		Term*		visit(AggTerm*	at);
 };
+
+Formula* ThreeValuedTermMover::visit(EqChainForm* ef) {
+	EqChainRemover ecr;
+	Formula* f = ecr.visit(ef);
+	return f->accept(this);
+}
 
 bool ThreeValuedTermMover::isCPSymbol(const PFSymbol* symbol) const {
 	return (VocabularyUtils::isComparisonPredicate(symbol)) || (_cpsymbols.find(symbol) != _cpsymbols.end());
@@ -1744,6 +1785,11 @@ namespace FormulaUtils {
 		FuncGrapher fg(true);
 		Formula* newf = f->accept(&fg);
 		return newf;
+	}
+
+	Formula* moveThreeValTerms(Formula* f, AbstractStructure* str, bool poscontext) {
+		ThreeValTermMover tvtm(str,(poscontext ? PC_POSITIVE : PC_NEGATIVE));
+		return f->accept(&tvtm);
 	}
 
 	/** 

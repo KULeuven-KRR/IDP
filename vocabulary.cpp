@@ -261,7 +261,7 @@ const ParseInfo& Variable::pi() const {
 
 ostream& Variable::put(ostream& output) const {
 	output << _name;
-	if(_sort) output << '[' << *_sort << ']';
+//	if(_sort) output << '[' << *_sort << ']';
 	return output;
 }
 

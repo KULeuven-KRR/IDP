@@ -32,6 +32,7 @@ class SymbolicStructure : public TheoryVisitor {
 			_manager(m), _ctbounds(ct), _cfbounds(cf), _vars(v) { }
 		FOBDDManager*	manager()						const { return _manager;	}
 		const FOBDD*	evaluate(Formula*,QueryType);
+		std::ostream& put(std::ostream&) const;
 };
 
 #endif	/* SYMBOLICSTRUCTURE_HPP_ */

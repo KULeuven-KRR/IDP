@@ -38,10 +38,11 @@ public:
 		std::map<PFSymbol*,InitBoundType> mpi = propinference.propagatevocabulary(theory,structure);
 		FOPropagator* propagator = propinference.createpropagator(theory,mpi,options);
 		propagator->run();
+		SymbolicStructure* symstructure = propagator->symbolicstructure();
 
 		// Create solver and grounder
 		SATSolver* solver = createsolver(options);
-		GrounderFactory grounderfactory(structure,options);
+		GrounderFactory grounderfactory(structure,options,symstructure);
 		TopLevelGrounder* grounder = grounderfactory.create(theory,solver);
 
 		// Run grounder
@@ -61,6 +62,7 @@ public:
 		solver->solve(abstractsolutions);
 
 		// Collect solutions
+		structure = propagator->currstructure(structure);
 		std::vector<AbstractStructure*> solutions;
 		for(auto model = abstractsolutions->getModels().begin();
 			model != abstractsolutions->getModels().end(); ++model) {

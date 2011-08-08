@@ -4,6 +4,8 @@
 ************************************/
 
 #include <cassert>
+#include <iostream>
+#include "vocabulary.hpp"
 #include "theory.hpp"
 #include "fobdd.hpp"
 #include "symbolicstructure.hpp"
@@ -28,18 +30,26 @@ const FOBDD* SymbolicStructure::evaluate(Formula* f, QueryType type) {
 }
 
 void SymbolicStructure::visit(const PredForm* atom) {
-	bool getct = (_type == QT_CT || _type == QT_PF);
-	if(!atom->sign()) getct = !getct;
-	const FOBDD* bdd = getct ? _ctbounds[atom->symbol()] : _cfbounds[atom->symbol()];
-	map<const FOBDDVariable*, const FOBDDArgument*> mva;
-	const vector<const FOBDDVariable*>& vars = _vars[atom->symbol()];
-	FOBDDFactory factory(_manager);
-	for(unsigned int n = 0; n < vars.size(); ++n) {
-		mva[vars[n]] = factory.run(atom->subterms()[n]);
+	if(_ctbounds.find(atom->symbol()) == _ctbounds.end()) {
+		FOBDDFactory factory(_manager);
+		const FOBDD* bdd = factory.run(atom);
+		if(_type == QT_CF || _type == QT_PF) bdd = _manager->negation(bdd);
+		_result = bdd;
 	}
-	bdd = _manager->substitute(bdd,mva);
-	if(_type == QT_PT || _type == QT_PF) bdd = _manager->negation(bdd);
-	_result = bdd;
+	else {
+		bool getct = (_type == QT_CT || _type == QT_PF);
+		if(!atom->sign()) getct = !getct;
+		const FOBDD* bdd = getct ? _ctbounds[atom->symbol()] : _cfbounds[atom->symbol()];
+		map<const FOBDDVariable*, const FOBDDArgument*> mva;
+		const vector<const FOBDDVariable*>& vars = _vars[atom->symbol()];
+		FOBDDFactory factory(_manager);
+		for(unsigned int n = 0; n < vars.size(); ++n) {
+			mva[vars[n]] = factory.run(atom->subterms()[n]);
+		}
+		bdd = _manager->substitute(bdd,mva);
+		if(_type == QT_PT || _type == QT_PF) bdd = _manager->negation(bdd);
+		_result = bdd;
+	}
 }
 
 void SymbolicStructure::visit(const BoolForm* boolform) {
@@ -84,7 +94,23 @@ void SymbolicStructure::visit(const AggForm*) {
 	else _result =  _manager->falsebdd();
 }
 
-
+ostream& SymbolicStructure::put(ostream& output) const {
+	for(map<PFSymbol*,vector<const FOBDDVariable*> >::const_iterator it = _vars.begin(); it != _vars.end(); ++it) {
+		output << "   "; (it->first)->put(output); output << endl;
+		output << "      vars:";
+		for(auto jt = it->second.begin(); jt != it->second.end(); ++jt) {
+			output << ' ';
+			_manager->put(output,*jt);
+		}
+		output << '\n';
+		output << "      ct:" << endl;
+		_manager->put(output,_ctbounds.find(it->first)->second,10);
+		output << "      cf:" << endl;
+		_manager->put(output,_cfbounds.find(it->first)->second,10);
+		output << "\n";
+	}
+	return output;
+}
 
 
 

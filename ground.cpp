@@ -24,6 +24,8 @@
 #include "common.hpp"
 #include "monitors/interactiveprintmonitor.hpp"
 #include "groundtheories/PrintGroundTheory.hpp"
+#include "fobdd.hpp"
+#include "symbolicstructure.hpp"
 
 using namespace std;
 using namespace rel_ops;
@@ -1038,6 +1040,7 @@ int ClauseGrounder::finish(vector<int>& cl) const {
 				for(unsigned int n = 1; n < cl.size(); ++n) { 
 					clog << (!_conj ? "& " : "| ") << _translator->printAtom(cl[n]) << ' ';
 				}
+				clog << '\n';
 			}
 			return _sign ? -ts : ts;
 		}
@@ -1049,6 +1052,7 @@ int ClauseGrounder::finish(vector<int>& cl) const {
 				for(unsigned int n = 1; n < cl.size(); ++n) { 
 					clog << (_conj ? "& " : "| ") << _translator->printAtom(cl[n]) << ' ';
 				}
+				clog << '\n';
 			}
 			return _sign ? ts : -ts;
 		}
@@ -1083,15 +1087,21 @@ int QuantGrounder::run() const {
 	}
 	vector<int> cl;
 	if(_generator->first()) {
+		if(_checker->first()) {
+			if(_verbosity > 2) clog << "Result = " << _translator->printAtom(result1()) << "\n";
+			return result1();
+		}
 		int l = _subgrounder->run();
 		if(check1(l)) {
-			if(_verbosity > 2) {
-				clog << "Result = " << _translator->printAtom(result1()) << "\n";
-			}
+			if(_verbosity > 2) clog << "Result = " << _translator->printAtom(result1()) << "\n";
 			return result1();
 		}
 		else if(! check2(l)) cl.push_back(l);
 		while(_generator->next()) {
+			if(_checker->first()) {
+				if(_verbosity > 2) clog << "Result = " << _translator->printAtom(result1()) << "\n";
+				return result1();
+			}
 			l = _subgrounder->run();
 			if(check1(l)) {
 				if(_verbosity > 2) {
@@ -1409,7 +1419,8 @@ int QuantSetGrounder::run() const {
 	if(_generator->first()) {
 		int l;
 		do {
-			l = _subgrounder->run();
+			if(_checker->first()) l = _true;
+			else l = _subgrounder->run();
 			if(l != _false) {
 				const GroundTerm& groundweight = _weightgrounder->run();
 				assert(not groundweight._isvarid);
@@ -1421,7 +1432,7 @@ int QuantSetGrounder::run() const {
 					literals.push_back(l);
 				}
 			}
-		}while(_generator->next());
+		} while(_generator->next());
 	}
 	int s = _translator->translateSet(literals,weights,trueweights);
 	return s;
@@ -1513,9 +1524,66 @@ bool DefinitionGrounder::run() const {
 	GrounderFactory methods
 ******************************/
 
-GrounderFactory::GrounderFactory(AbstractStructure* structure, Options* opts)
-	: _structure(structure), _options(opts), _verbosity(opts->groundverbosity()), _cpsupport(opts->cpsupport()) {
+GrounderFactory::GrounderFactory(AbstractStructure* structure, Options* opts, SymbolicStructure* symstructure)
+	: _structure(structure), _symstructure(symstructure), _options(opts), _verbosity(opts->groundverbosity()), _cpsupport(opts->cpsupport()) {
+
+	// Create a symbolic structure if no such structure is given
+	if(!_symstructure) {
+		FOBDDManager* manager = new FOBDDManager();
+		std::map<PFSymbol*,const FOBDD*> ctbounds;
+		std::map<PFSymbol*,const FOBDD*> cfbounds;
+		std::map<PFSymbol*,std::vector<const FOBDDVariable*> > vars;
+		Vocabulary* vocabulary = structure->vocabulary();
+		for(auto it = vocabulary->firstpred(); it != vocabulary->lastpred(); ++it) {
+			set<Predicate*> sp = it->second->nonbuiltins();
+			for(auto jt = sp.begin(); jt != sp.end(); ++jt) {
+				PredInter* pinter = structure->inter(*jt);
+				if(!pinter->approxtwovalued()) {
+					vector<Variable*> pvars = VarUtils::makeNewVariables((*jt)->sorts());
+					vector<const FOBDDVariable*> pbddvars(pvars.size());
+					vector<const FOBDDArgument*> pbddargs(pvars.size());
+					for(unsigned int n = 0; n < pvars.size(); ++n) {
+						const FOBDDVariable* bddvar = manager->getVariable(pvars[n]);
+						pbddvars[n] = bddvar; pbddargs[n] = bddvar;
+					}
+					vars[*jt] = pbddvars;
+					const FOBDDKernel* ctkernel = manager->getAtomKernel(*jt,AKT_CT,pbddargs);
+					const FOBDDKernel* cfkernel = manager->getAtomKernel(*jt,AKT_CF,pbddargs);
+					ctbounds[*jt] = manager->getBDD(ctkernel,manager->truebdd(),manager->falsebdd());
+					cfbounds[*jt] = manager->getBDD(cfkernel,manager->truebdd(),manager->falsebdd());
+				}
+			}
+		}
+		for(auto it = vocabulary->firstfunc(); it != vocabulary->lastfunc(); ++it) {
+			set<Function*> sf = it->second->nonbuiltins();
+			for(auto jt = sf.begin(); jt != sf.end(); ++jt) {
+				PredInter* pinter = structure->inter(*jt)->graphinter();
+				if(!pinter->approxtwovalued()) {
+					vector<Variable*> pvars = VarUtils::makeNewVariables((*jt)->sorts());
+					vector<const FOBDDVariable*> pbddvars(pvars.size());
+					vector<const FOBDDArgument*> pbddargs(pvars.size());
+					for(unsigned int n = 0; n < pvars.size(); ++n) {
+						const FOBDDVariable* bddvar = manager->getVariable(pvars[n]);
+						pbddvars[n] = bddvar; pbddargs[n] = bddvar;
+					}
+					vars[*jt] = pbddvars;
+					const FOBDDKernel* ctkernel = manager->getAtomKernel(*jt,AKT_CT,pbddargs);
+					const FOBDDKernel* cfkernel = manager->getAtomKernel(*jt,AKT_CF,pbddargs);
+					ctbounds[*jt] = manager->getBDD(ctkernel,manager->truebdd(),manager->falsebdd());
+					cfbounds[*jt] = manager->getBDD(cfkernel,manager->truebdd(),manager->falsebdd());
+				}
+			}
+		}
+		_symstructure = new SymbolicStructure(manager,ctbounds,cfbounds,vars);
+	}
+
+	if(_verbosity > 2) {
+		clog << "Using the following symbolic structure to ground: " << endl;
+		_symstructure->put(clog);
+	}
+
 }
+
 
 set<const PFSymbol*> GrounderFactory::findCPSymbols(const AbstractTheory* theory) {
 	Vocabulary* vocabulary = theory->vocabulary();
@@ -1978,26 +2046,44 @@ void GrounderFactory::visit(const BoolForm* bf) {
  *			CC_HEAD is not possible
  */
 void GrounderFactory::visit(const QuantForm* qf) {
+cerr << "visit of " << *qf << endl;
 	// Create instance generator
+	Formula* clonedformula = qf->subf()->clone();
+	Formula* movedformula = FormulaUtils::moveThreeValTerms(clonedformula,_structure,(_context._funccontext!=PC_NEGATIVE));
+	movedformula = FormulaUtils::remove_eqchains(movedformula);
+	movedformula = FormulaUtils::graph_functions(movedformula);
+cerr << "body translated to " << *movedformula << endl;
+	const FOBDD* generatorbdd = _symstructure->evaluate(movedformula,(qf->univ() ? QT_PF : QT_PT));
+	const FOBDD* checkerbdd = _symstructure->evaluate(movedformula,(qf->univ() ? QT_CF : QT_CT));
+cerr << "generatorbdd:\n";
+_symstructure->manager()->put(cerr,generatorbdd);
+cerr << "checkerbdd:\n";
+_symstructure->manager()->put(cerr,checkerbdd);
 	vector<const DomainElement**> vars;
-	vector<SortTable*>	tables;
-	for(std::set<Variable*>::const_iterator it = qf->quantvars().begin(); it != qf->quantvars().end(); ++it) {
-		const DomainElement** d = new const DomainElement*();
-		_varmapping[*it] = d;
-		vars.push_back(d);
-		SortTable* st = _structure->inter((*it)->sort());
-		if(!st->finite()) {
-			cerr << "Warning: infinite grounding of formula ";
-			if(qf->pi().original()) {
-				cerr << *(qf->pi().original());
-				cerr << "\n   internal representation: ";
-			}
-			cerr << *qf << "\n";
+	vector<Variable*> fovars;
+	vector<SortTable*> tables;
+	vector<bool> pattern;
+	for(std::set<Variable*>::const_iterator it = movedformula->freevars().begin(); it != movedformula->freevars().end(); ++it) {
+		if(qf->quantvars().find(*it) == qf->quantvars().end()) {
+			assert(_varmapping.find(*it) != _varmapping.end());
+			vars.push_back(_varmapping[*it]);
+			pattern.push_back(true);
 		}
+		else {
+			const DomainElement** d = new const DomainElement*();
+			_varmapping[*it] = d;
+			vars.push_back(d);
+			pattern.push_back(false);
+		}
+		fovars.push_back(*it);
+		SortTable* st = _structure->inter((*it)->sort());
 		tables.push_back(st);
 	}
+	PredTable* gentable = new PredTable(new BDDInternalPredTable(generatorbdd,_symstructure->manager(),fovars,_structure),Universe(tables));
+	PredTable* checktable = new PredTable(new BDDInternalPredTable(checkerbdd,_symstructure->manager(),fovars,_structure),Universe(tables));
 	GeneratorFactory gf;
-	InstGenerator* gen = gf.create(vars,tables);
+	InstGenerator* gen = gf.create(gentable,pattern,vars,Universe(tables));
+	InstGenerator* check = gf.create(checktable,vector<bool>(vars.size(),true),vars,Universe(tables));
 
 	// Handle top-level universal quantifiers efficiently
 	if(_context._component == CC_SENTENCE && (qf->sign() == qf->univ())) {
@@ -2018,7 +2104,7 @@ void GrounderFactory::visit(const QuantForm* qf) {
 		// Create the grounder
 		SaveContext();
 		if(recursive(qf)) _context._tseitin = TS_RULE;
-		_formgrounder = new QuantGrounder(_grounding->translator(),_formgrounder,qf->sign(),qf->univ(),gen,_context);
+		_formgrounder = new QuantGrounder(_grounding->translator(),_formgrounder,qf->sign(),qf->univ(),gen,check,_context);
 		RestoreContext();
 		_formgrounder->setorig(qf,_varmapping,_verbosity);
 		if(_context._component == CC_SENTENCE) _toplevelgrounder = new SentenceGrounder(_grounding,_formgrounder,false,_verbosity);
@@ -2210,17 +2296,37 @@ void GrounderFactory::visit(const EnumSetExpr* s) {
  */
 void GrounderFactory::visit(const QuantSetExpr* s) {
 	// Create instance generator
-	vector<SortTable*> vst;
+	Formula* clonedformula = s->subformulas()[0]->clone();
+	Formula* movedformula = FormulaUtils::moveThreeValuedTerms(clonedformula,_structure,true);
+	movedformula = FormulaUtils::remove_eqchains(movedformula);
+	movedformula = FormulaUtils::graph_functions(movedformula);
+	const FOBDD* generatorbdd = _symstructure->evaluate(movedformula,QT_PT);
+	const FOBDD* checkerbdd = _symstructure->evaluate(movedformula,QT_CT);
 	vector<const DomainElement**> vars;
-	for(set<Variable*>::const_iterator it = s->quantvars().begin(); it != s->quantvars().end(); ++it) {
-		const DomainElement** d = new const DomainElement*();
-		_varmapping[*it] = d;
-		vst.push_back(_structure->inter((*it)->sort()));
-		vars.push_back(d);
+	vector<Variable*> fovars;
+	vector<SortTable*> tables;
+	vector<bool> pattern;
+	for(std::set<Variable*>::const_iterator it = movedformula->freevars().begin(); it != movedformula->freevars().end(); ++it) {
+		if(s->quantvars().find(*it) == s->quantvars().end()) {
+			vars.push_back(_varmapping[*it]);
+			pattern.push_back(true);
+		}
+		else {
+			const DomainElement** d = new const DomainElement*();
+			_varmapping[*it] = d;
+			vars.push_back(d);
+			pattern.push_back(false);
+		}
+		fovars.push_back(*it);
+		SortTable* st = _structure->inter((*it)->sort());
+		tables.push_back(st);
 	}
+	PredTable* gentable = new PredTable(new BDDInternalPredTable(generatorbdd,_symstructure->manager(),fovars,_structure),Universe(tables));
+	PredTable* checktable = new PredTable(new BDDInternalPredTable(checkerbdd,_symstructure->manager(),fovars,_structure),Universe(tables));
 	GeneratorFactory gf;
-	InstGenerator* gen = gf.create(vars,vst);
-	
+	InstGenerator* gen = gf.create(gentable,pattern,vars,Universe(tables));
+	InstGenerator* check = gf.create(checktable,vector<bool>(vars.size(),true),vars,Universe(tables));
+
 	// Create grounder for subformula
 	SaveContext();
 	AggContext();
@@ -2233,7 +2339,7 @@ void GrounderFactory::visit(const QuantSetExpr* s) {
 	TermGrounder* wg = _termgrounder;
 
 	// Create grounder	
-	_setgrounder = new QuantSetGrounder(_grounding->translator(),sub,gen,wg);
+	_setgrounder = new QuantSetGrounder(_grounding->translator(),sub,gen,check,wg);
 }
 
 /**

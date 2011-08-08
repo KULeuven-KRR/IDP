@@ -367,6 +367,9 @@ namespace FormulaUtils {
 	Formula* movePartialTerms(Formula*, Vocabulary* voc = 0, PosContext = PC_POSITIVE);
 
 	/** \brief Non-recursively move terms that are three-valued in a given structure outside of the given atom **/
+	Formula* moveThreeValTerms(Formula*,AbstractStructure*,bool positive);
+
+	/** \brief Non-recursively move terms that are three-valued in a given structure outside of the given atom **/
 	Formula* moveThreeValuedTerms(Formula*,AbstractStructure*,bool positive,bool cpsupport=false,
 								const std::set<const PFSymbol*> cpsymbols=std::set<const PFSymbol*>());
 

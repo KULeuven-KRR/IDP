@@ -16,6 +16,7 @@ class Sort;
 class PFSymbol;
 class Variable;
 class DomainElement;
+struct tablesize;
 
 enum AtomKernelType { AKT_CT, AKT_CF, AKT_TWOVAL };
 
@@ -77,8 +78,10 @@ typedef std::map<Function*,MVAFT>									FuncTermTable;
 class FOBDDManager {
 	private:
 		// Leaf nodes
-		FOBDD*	_truebdd;	//!< the BDD 'true'
-		FOBDD*	_falsebdd;	//!< the BDD 'false'
+		FOBDD*			_truebdd;		//!< the BDD 'true'
+		FOBDD*			_falsebdd;		//!< the BDD 'false'
+		FOBDDKernel*	_truekernel;	//!< the kernel 'true'
+		FOBDDKernel*	_falsekernel;	//!< the kernel 'false'
 
 		// Order
 		std::map<unsigned int,unsigned int>	_nextorder;
@@ -105,13 +108,21 @@ class FOBDDManager {
 		FOBDDFuncTerm* 		addFuncTerm(Function* func, const std::vector<const FOBDDArgument*>& args);
 		FOBDDDomainTerm*	addDomainTerm(Sort* sort, const DomainElement* value);
 
+		// Dynamic programming tables
+		std::map<const FOBDD*,const FOBDD*>															_negationtable;
+		std::map<const FOBDD*,std::map<const FOBDD*,const FOBDD*> >									_conjunctiontable;
+		std::map<const FOBDD*,std::map<const FOBDD*,const FOBDD*> >									_disjunctiontable;
+		std::map<const FOBDDKernel*,std::map<const FOBDD*,std::map<const FOBDD*,const FOBDD*> > >	_ifthenelsetable;
+		std::map<Sort*,std::map<const FOBDD*,const FOBDD*> >										_quanttable;
+		void clearDynamicTables();
+
 		const FOBDD*				quantify(Sort* sort, const FOBDD* bdd);
 
 		std::set<const FOBDDVariable*>	variables(const FOBDDKernel*);
 		std::set<const FOBDDVariable*>	variables(const FOBDD*);
 		std::set<const FOBDDDeBruijnIndex*>	indices(const FOBDDKernel*);
 		std::set<const FOBDDDeBruijnIndex*>	indices(const FOBDD*);
-		std::map<const FOBDDKernel*,double> kernelUnivs(const FOBDD*, AbstractStructure* structure); 
+		std::map<const FOBDDKernel*,tablesize> kernelUnivs(const FOBDD*, AbstractStructure* structure); 
 
 
 		std::vector<std::vector<std::pair<bool,const FOBDDKernel*> > >	pathsToFalse(const FOBDD* bdd);
@@ -131,8 +142,8 @@ class FOBDDManager {
 		bool				isFalsebdd(const FOBDD* bdd)	const	{ return _falsebdd == bdd;	}
 
 		const FOBDD*				getBDD(const FOBDDKernel* kernel,const FOBDD* truebranch,const FOBDD* falsebranch);
-		const FOBDDAtomKernel*		getAtomKernel(PFSymbol*,AtomKernelType, const std::vector<const FOBDDArgument*>&);
-		const FOBDDQuantKernel*		getQuantKernel(Sort* sort, const FOBDD* bdd);
+		const FOBDDKernel*			getAtomKernel(PFSymbol*,AtomKernelType, const std::vector<const FOBDDArgument*>&);
+		const FOBDDKernel*			getQuantKernel(Sort* sort, const FOBDD* bdd);
 		const FOBDDVariable*		getVariable(Variable* var);
 		const FOBDDDeBruijnIndex*	getDeBruijnIndex(Sort* sort, unsigned int index);
 		const FOBDDFuncTerm* 		getFuncTerm(Function* func, const std::vector<const FOBDDArgument*>& args);
@@ -189,10 +200,10 @@ class FOBDDManager {
 		bool isArithmetic(const FOBDDKernel*);		//!< Returns true iff the kernel is an equation or inequality of
 													//!< arithmetic terms
 		bool isArithmetic(const FOBDDArgument*);	//!< Returns true iff the argument is an arithmetic term
-		const FOBDDAtomKernel*	solve(const FOBDDKernel*, const FOBDDVariable*);		
+		const FOBDDArgument*	solve(const FOBDDKernel*, const FOBDDVariable*);		
 			//!< Try to rewrite the given arithmetic kernel such that the right-hand side is the given variable,
 			//!< and such that the given variable does not occur in the left-hand side.
-		const FOBDDAtomKernel*	solve(const FOBDDKernel*, const FOBDDDeBruijnIndex*);
+		const FOBDDArgument*	solve(const FOBDDKernel*, const FOBDDDeBruijnIndex*);
 			//!< Try to rewrite the given arithmetic kernel such that the right-hand side is the given index,
 			//!< and such that the given index does not occur in the left-hand side.
 

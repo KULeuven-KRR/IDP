@@ -13,15 +13,24 @@
 #include "theory.hpp"
 #include "structure.hpp"
 #include "options.hpp"
+#include "commands/propagate.hpp"
 
 class GroundInference: public Inference {
 private:
 	AbstractTheory* ground(AbstractTheory* theory, AbstractStructure* structure, Options* options) const {
-		GrounderFactory factory(structure,options);
+		
+		// Symbolic propagation
+		PropagateInference propinference;
+		std::map<PFSymbol*,InitBoundType> mpi = propinference.propagatevocabulary(theory,structure);
+		FOPropagator* propagator = propinference.createpropagator(theory,mpi,options);
+		propagator->run();
+		SymbolicStructure* symstructure = propagator->symbolicstructure();
+
+		GrounderFactory factory(structure,options,symstructure);
 		TopLevelGrounder* grounder = factory.create(theory);
 		grounder->run();
 		AbstractGroundTheory* grounding = grounder->grounding();
-		//grounding->addFuncConstraints();
+		grounding->addFuncConstraints();
 		delete(grounder);
 		return grounding;
 	}

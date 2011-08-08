@@ -33,6 +33,7 @@
 #include "commands/completion.hpp"
 #include "commands/tobdd.hpp"
 #include "commands/clean.hpp"
+#include "commands/materialize.hpp"
 #include "commands/changevocabulary.hpp"
 #include "commands/estimatecosts.hpp"
 #include "commands/derefandincrement.hpp"
@@ -82,6 +83,7 @@ std::vector<Inference*> getAllInferences(){
 	inferences.push_back(new GroundInference());
 	inferences.push_back(new CompletionInference());
 	inferences.push_back(new CleanInference());
+	inferences.push_back(new MaterializeInference());
 	inferences.push_back(new ToBDDInference(AT_FORMULA));
 	inferences.push_back(new ToBDDInference(AT_QUERY));
 	inferences.push_back(new ChangeVocabularyInference());

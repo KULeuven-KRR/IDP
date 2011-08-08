@@ -669,7 +669,7 @@ namespace LuaConnection {
 		return 0;
 	}
 
-	int gcInternProc(lua_State* L) { /*return garbageCollect(*(map<vector<ArgType>,InternalProcedure*>**)lua_touserdata(L,1));*/ return 0; }
+	int gcInternProc(lua_State* ) { /*return garbageCollect(*(map<vector<ArgType>,InternalProcedure*>**)lua_touserdata(L,1));*/ return 0; }
 	int gcSort(lua_State* L) { return garbageCollect(*(set<Sort*>**)lua_touserdata(L,1)); }
 	int gcPredicate(lua_State* L) { return garbageCollect(*(set<Predicate*>**)lua_touserdata(L,1)); }
 	int gcFunction(lua_State* L) { return garbageCollect(*(set<Function*>**)lua_touserdata(L,1)); }

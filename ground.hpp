@@ -612,9 +612,10 @@ class QuantGrounder : public ClauseGrounder {
 	private:
 		FormulaGrounder*	_subgrounder;
 		InstGenerator*		_generator;	
+		InstGenerator*		_checker;
 	public:
-		QuantGrounder(GroundTranslator* gt, FormulaGrounder* sub, bool sign, bool conj, InstGenerator* gen, const GroundingContext& ct):
-			ClauseGrounder(gt,sign,conj,ct), _subgrounder(sub), _generator(gen) { }
+		QuantGrounder(GroundTranslator* gt, FormulaGrounder* sub, bool sign, bool conj, InstGenerator* gen, InstGenerator* check, const GroundingContext& ct):
+			ClauseGrounder(gt,sign,conj,ct), _subgrounder(sub), _generator(gen), _checker(check) { }
 		int		run() const;
 		void	run(std::vector<int>&) const;
 };
@@ -648,10 +649,11 @@ class QuantSetGrounder : public SetGrounder {
 	private:
 		FormulaGrounder*	_subgrounder;
 		InstGenerator*		_generator;	
+		InstGenerator*		_checker;	
 		TermGrounder*		_weightgrounder;
 	public:
-		QuantSetGrounder(GroundTranslator* gt, FormulaGrounder* gr, InstGenerator* ig, TermGrounder* w) :
-			SetGrounder(gt), _subgrounder(gr), _generator(ig), _weightgrounder(w) { }
+		QuantSetGrounder(GroundTranslator* gt, FormulaGrounder* gr, InstGenerator* ig, InstGenerator* check, TermGrounder* w) :
+			SetGrounder(gt), _subgrounder(gr), _generator(ig), _checker(check), _weightgrounder(w) { }
 		int run() const;
 };
 
@@ -720,12 +722,14 @@ class DefinitionGrounder : public TopLevelGrounder {
  */
 
 class InteractivePrintMonitor;
+class SymbolicStructure;
 
 class GrounderFactory : public TheoryVisitor {
 	private:
 		// Data
-		AbstractStructure*		_structure;		// The structure that will be used to reduce the grounding
-		AbstractGroundTheory*	_grounding;		// The ground theory that will be produced
+		AbstractStructure*		_structure;		//!< The structure that will be used to reduce the grounding
+		SymbolicStructure*		_symstructure;	//!< Used approximation
+		AbstractGroundTheory*	_grounding;		//!< The ground theory that will be produced
 
 		// Options
 		Options*	_options;
@@ -769,7 +773,7 @@ class GrounderFactory : public TheoryVisitor {
 
 	public:
 		// Constructor
-		GrounderFactory(AbstractStructure* structure, Options* opts);
+		GrounderFactory(AbstractStructure* structure, Options* opts, SymbolicStructure* s = 0);
 
 		// Factory method
 		TopLevelGrounder* create(const AbstractTheory*);
