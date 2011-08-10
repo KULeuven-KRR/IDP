@@ -2046,19 +2046,19 @@ void GrounderFactory::visit(const BoolForm* bf) {
  *			CC_HEAD is not possible
  */
 void GrounderFactory::visit(const QuantForm* qf) {
-cerr << "visit of " << *qf << endl;
+//cerr << "visit of " << *qf << endl;
 	// Create instance generator
 	Formula* clonedformula = qf->subf()->clone();
 	Formula* movedformula = FormulaUtils::moveThreeValTerms(clonedformula,_structure,(_context._funccontext!=PC_NEGATIVE));
 	movedformula = FormulaUtils::remove_eqchains(movedformula);
 	movedformula = FormulaUtils::graph_functions(movedformula);
-cerr << "body translated to " << *movedformula << endl;
+//cerr << "body translated to " << *movedformula << endl;
 	const FOBDD* generatorbdd = _symstructure->evaluate(movedformula,(qf->univ() ? QT_PF : QT_PT));
 	const FOBDD* checkerbdd = _symstructure->evaluate(movedformula,(qf->univ() ? QT_CF : QT_CT));
-cerr << "generatorbdd:\n";
-_symstructure->manager()->put(cerr,generatorbdd);
-cerr << "checkerbdd:\n";
-_symstructure->manager()->put(cerr,checkerbdd);
+//cerr << "generatorbdd:\n";
+//_symstructure->manager()->put(cerr,generatorbdd);
+//cerr << "checkerbdd:\n";
+//_symstructure->manager()->put(cerr,checkerbdd);
 	vector<const DomainElement**> vars;
 	vector<Variable*> fovars;
 	vector<SortTable*> tables;

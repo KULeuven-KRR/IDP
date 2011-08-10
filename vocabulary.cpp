@@ -1571,4 +1571,8 @@ namespace VocabularyUtils {
 		string name = symbol->name();
 		return (typeid(*symbol) == typeid(Predicate)) && (name == "=/2" || name == "</2" || name == ">/2");
 	}
+
+	bool isNumeric(Sort* s) {
+		return SortUtils::isSubsort(s,floatsort());
+	}
 }

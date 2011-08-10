@@ -146,7 +146,7 @@ class FOBDDManager {
 		const FOBDDKernel*			getQuantKernel(Sort* sort, const FOBDD* bdd);
 		const FOBDDVariable*		getVariable(Variable* var);
 		const FOBDDDeBruijnIndex*	getDeBruijnIndex(Sort* sort, unsigned int index);
-		const FOBDDFuncTerm* 		getFuncTerm(Function* func, const std::vector<const FOBDDArgument*>& args);
+		const FOBDDArgument* 		getFuncTerm(Function* func, const std::vector<const FOBDDArgument*>& args);
 		const FOBDDDomainTerm*		getDomainTerm(Sort* sort, const DomainElement* value);
 
 		std::set<const FOBDDVariable*>	getVariables(const std::set<Variable*>& vars);
@@ -163,6 +163,8 @@ class FOBDDManager {
 		const FOBDD*		substitute(const FOBDD*, const FOBDDDeBruijnIndex*, const FOBDDVariable*);
 		const FOBDDKernel*	substitute(const FOBDDKernel*, const FOBDDDomainTerm*, const FOBDDVariable*);
 		const FOBDD*		substitute(const FOBDD*,const std::map<const FOBDDVariable*, const FOBDDArgument*>&);
+
+		const FOBDDArgument*	invert(const FOBDDArgument*);
 		
 		int	longestbranch(const FOBDDKernel*);
 		int	longestbranch(const FOBDD*);
@@ -175,6 +177,7 @@ class FOBDDManager {
 		bool contains(const FOBDDKernel*, const FOBDDVariable*);
 		bool contains(const FOBDD*, const FOBDDVariable*);
 		bool contains(const FOBDDArgument*, const FOBDDVariable*);
+		bool contains(const FOBDDArgument*, const FOBDDArgument*);
 		bool containsFuncTerms(const FOBDDKernel*);
 		bool containsFuncTerms(const FOBDD*);
 
@@ -200,12 +203,11 @@ class FOBDDManager {
 		bool isArithmetic(const FOBDDKernel*);		//!< Returns true iff the kernel is an equation or inequality of
 													//!< arithmetic terms
 		bool isArithmetic(const FOBDDArgument*);	//!< Returns true iff the argument is an arithmetic term
-		const FOBDDArgument*	solve(const FOBDDKernel*, const FOBDDVariable*);		
-			//!< Try to rewrite the given arithmetic kernel such that the right-hand side is the given variable,
-			//!< and such that the given variable does not occur in the left-hand side.
-		const FOBDDArgument*	solve(const FOBDDKernel*, const FOBDDDeBruijnIndex*);
-			//!< Try to rewrite the given arithmetic kernel such that the right-hand side is the given index,
-			//!< and such that the given index does not occur in the left-hand side.
+		const FOBDDArgument*	solve(const FOBDDKernel*, const FOBDDArgument*);		
+			//!< Try to rewrite the given arithmetic kernel such that the right-hand side is the given argument,
+			//!< and such that the given argument does not occur in the left-hand side. 
+			//!< Returns a null-pointer in case this is impossible.
+			//!< Only guaranteed to work correctly on variables and indices.
 
 };
 

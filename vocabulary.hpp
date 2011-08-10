@@ -631,7 +631,9 @@ namespace VocabularyUtils {
 	Predicate*	lessthan(Sort* s);		//!< returns the predicate </2 with sorts (s,s)
 	Predicate*	greaterthan(Sort* s);	//!< returns the predicate >/2 with sorts (s,s)
 
-	bool isComparisonPredicate(const PFSymbol*);
+	bool isComparisonPredicate(const PFSymbol*);	//!< returns true iff the given symbol is =/2, </2, or >/2
+	bool isNumeric(Sort*);							//!< returns true iff the given sort is a subsort of float
+
 }
 
 #endif

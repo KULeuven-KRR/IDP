@@ -152,6 +152,111 @@ void FOBDDManager::moveDown(const FOBDDKernel* kernel) {
 	Arguments
 ****************/
 
+
+bool FactorSWOrdering(const FOBDDArgument* arg1, const FOBDDArgument* arg2) {
+	if(typeid(*arg1) == typeid(FOBDDDomainTerm)) {
+		if(typeid(*arg2) == typeid(FOBDDDomainTerm)) return arg1 < arg2;
+		else return true;
+	}
+	else if(typeid(*arg2) == typeid(FOBDDDomainTerm)) return false;
+	else return arg1 < arg2;
+}
+
+class FlatMult : public FOBDDVisitor {
+	private:
+		vector<const FOBDDArgument*>	_result;
+
+		void avoidempty() {
+			if(_result.empty()) {
+				_result.push_back(_manager->getDomainTerm(VocabularyUtils::natsort(),DomainElementFactory::instance()->create(1)));
+			}
+		}
+		void visit(const FOBDDDomainTerm* dt) { 
+			_result.push_back(dt); 
+		}
+		void visit(const FOBDDVariable* v) {
+			avoidempty();
+			_result.push_back(v);
+		}
+		void visit(const FOBDDDeBruijnIndex* i) {
+			avoidempty();
+			_result.push_back(i);
+		}
+		void visit(const FOBDDFuncTerm* ft) {
+			if(ft->func()->name() == "*/2" && Vocabulary::std()->contains(ft->func())) {
+				ft->args(0)->accept(this);
+				_result.push_back(ft->args(1));
+			}
+			else {
+				avoidempty();
+				_result.push_back(ft);
+			}
+		}
+	public:
+		FlatMult(FOBDDManager* m) : FOBDDVisitor(m) { }
+
+		vector<const FOBDDArgument*> run(const FOBDDArgument* arg) {
+			_result.clear();
+			arg->accept(this);
+			return _result;
+		}
+};
+
+class FlatAdd : public FOBDDVisitor {
+	private:
+		vector<const FOBDDArgument*>	_result;
+
+		void avoidempty() {
+			if(_result.empty()) {
+				_result.push_back(_manager->getDomainTerm(VocabularyUtils::natsort(),DomainElementFactory::instance()->create(0)));
+			}
+		}
+		void visit(const FOBDDDomainTerm* dt) { 
+			_result.push_back(dt); 
+		}
+		void visit(const FOBDDVariable* v) {
+			avoidempty();
+			_result.push_back(v);
+		}
+		void visit(const FOBDDDeBruijnIndex* i) {
+			avoidempty();
+			_result.push_back(i);
+		}
+		void visit(const FOBDDFuncTerm* ft) {
+			if(ft->func()->name() == "+/2" && Vocabulary::std()->contains(ft->func())) {
+				ft->args(0)->accept(this);
+				_result.push_back(ft->args(1));
+			}
+			else {
+				avoidempty();
+				_result.push_back(ft);
+			}
+		}
+	public:
+		FlatAdd(FOBDDManager* m) : FOBDDVisitor(m) { }
+
+		vector<const FOBDDArgument*> run(const FOBDDArgument* arg) {
+			_result.clear();
+			arg->accept(this);
+			return _result;
+		}
+};
+
+bool TermSWOrdering(const FOBDDArgument* arg1, const FOBDDArgument* arg2,FOBDDManager* manager) {
+	FlatMult fa(manager);
+	vector<const FOBDDArgument*> flat1 = fa.run(arg1);
+	vector<const FOBDDArgument*> flat2 = fa.run(arg2);
+	if(flat1.size() < flat2.size()) return true;
+	else if(flat1.size() > flat2.size()) return false;
+	else {
+		for(unsigned int n = 1; n < flat1.size(); ++n) {
+			if(FactorSWOrdering(flat1[n],flat2[n])) return true;
+			else if(FactorSWOrdering(flat2[n],flat1[n])) return false;
+		}
+		return false;
+	}
+}
+
 Sort* FOBDDVariable::sort() const {
 	return _variable->sort();
 }
@@ -334,6 +439,15 @@ FOBDD* FOBDDManager::addBDD(const FOBDDKernel* kernel,const FOBDD* truebranch,co
 	return newbdd;
 }
 
+const FOBDDArgument* FOBDDManager::invert(const FOBDDArgument* arg) {
+	const DomainElement* minus_one = DomainElementFactory::instance()->create(-1);
+	const FOBDDArgument* minus_one_term = getDomainTerm(VocabularyUtils::intsort(),minus_one);
+	Function* times = Vocabulary::std()->func("*/2");
+	times = times->disambiguate(vector<Sort*>(3,SortUtils::resolve(VocabularyUtils::intsort(),arg->sort())),0);
+	vector<const FOBDDArgument*> timesterms(2); timesterms[0] = minus_one_term; timesterms[1] = arg;
+	return getFuncTerm(times,timesterms);
+}
+
 const FOBDDKernel* FOBDDManager::getAtomKernel(PFSymbol* symbol,AtomKernelType akt, const vector<const FOBDDArgument*>& args) {
 	// Simplification
 	if(symbol->name() == "=/2") {
@@ -352,10 +466,41 @@ const FOBDDKernel* FOBDDManager::getAtomKernel(PFSymbol* symbol,AtomKernelType a
 		Sort* s = SortUtils::resolve(f->outsort(),args.back()->sort());
 		Predicate* equal = VocabularyUtils::equal(s);
 		vector<const FOBDDArgument*> funcargs = args; funcargs.pop_back();
-		const FOBDDFuncTerm* functerm = getFuncTerm(f,funcargs);
+		const FOBDDArgument* functerm = getFuncTerm(f,funcargs);
 		vector<const FOBDDArgument*> newargs;
 		newargs.push_back(functerm); newargs.push_back(args.back());
 		return getAtomKernel(equal,AKT_TWOVAL,newargs);
+	}
+	// 2. Move all arithmetic terms to the lefthand side of an (in)equality
+	if(VocabularyUtils::isComparisonPredicate(symbol)) {
+		const FOBDDArgument* leftarg = args[0];
+		const FOBDDArgument* rightarg = args[1];
+		if(VocabularyUtils::isNumeric(rightarg->sort())) {
+			assert(VocabularyUtils::isNumeric(leftarg->sort()));
+			if(typeid(*rightarg) != typeid(FOBDDDomainTerm) || dynamic_cast<const FOBDDDomainTerm*>(rightarg)->value() != DomainElementFactory::instance()->create(0)) {
+				const DomainElement* zero = DomainElementFactory::instance()->create(0);
+				const FOBDDDomainTerm* zero_term = getDomainTerm(VocabularyUtils::natsort(),zero);
+				const FOBDDArgument* minus_rightarg = invert(rightarg);
+				Function* plus = Vocabulary::std()->func("+/2");
+				plus = plus->disambiguate(vector<Sort*>(3,SortUtils::resolve(leftarg->sort(),rightarg->sort())),0);
+				assert(plus);
+				vector<const FOBDDArgument*> plusargs(2); plusargs[0] = leftarg; plusargs[1] = minus_rightarg;
+				const FOBDDArgument* plusterm = getFuncTerm(plus,plusargs);
+				vector<const FOBDDArgument*> newargs(2); newargs[0] = plusterm; newargs[1] = zero_term;
+				return getAtomKernel(symbol,akt,newargs);
+			}
+		}
+	}
+
+	// Comparison rewriting
+	if(VocabularyUtils::isComparisonPredicate(symbol)) {
+		if(FactorSWOrdering(args[0],args[1])) {
+			vector<const FOBDDArgument*> newargs(2); newargs[0] = args[1]; newargs[1] = args[0];
+			Predicate* newsymbol = dynamic_cast<Predicate*>(symbol);
+			if(symbol->name() == "</2") newsymbol = VocabularyUtils::greaterthan(symbol->sorts()[0]);
+			else if(symbol->name() == ">/2") newsymbol = VocabularyUtils::lessthan(symbol->sorts()[0]);
+			return getAtomKernel(newsymbol,akt,newargs);
+		}
 	}
 
 
@@ -454,8 +599,215 @@ FOBDDDeBruijnIndex* FOBDDManager::addDeBruijnIndex(Sort* sort, unsigned int inde
 	return newindex;
 }
 
-const FOBDDFuncTerm* FOBDDManager::getFuncTerm(Function* func, const vector<const FOBDDArgument*>& args) {
-	// TODO Simplification
+const FOBDDArgument* FOBDDManager::getFuncTerm(Function* func, const vector<const FOBDDArgument*>& args) {
+
+//cerr << "Get functerm on function " << *func << " and arguments ";
+//for(auto it = args.begin(); it != args.end(); ++it) {
+//	put(cerr,*it); cerr << "   ";
+//}
+//cerr << endl;
+
+	// Arithmetic rewriting
+	// 1. Remove unary minus
+	if(func->name() == "-/1" && Vocabulary::std()->contains(func)) return invert(args[0]);
+	// 2. Remove binary minus
+	if(func->name() == "-/2" && Vocabulary::std()->contains(func)) {
+		const FOBDDArgument* invright = invert(args[1]);
+		Function* plus = Vocabulary::std()->func("+/2");
+		plus = plus->disambiguate(vector<Sort*>(3,SortUtils::resolve(args[0]->sort(),invright->sort())),0);
+		vector<const FOBDDArgument*> newargs(2); newargs[0] = args[0]; newargs[1] = invright;
+		return getFuncTerm(plus,newargs);
+	}
+	if(func->name() == "*/2" && Vocabulary::std()->contains(func)) {
+		// 3. Execute computable multiplications
+		if(typeid(*(args[0])) == typeid(FOBDDDomainTerm)) {
+			const FOBDDDomainTerm* leftterm = dynamic_cast<const FOBDDDomainTerm*>(args[0]);
+			if(leftterm->value()->type() == DET_INT) {
+				if(leftterm->value()->value()._int == 0) return leftterm;
+				else if(leftterm->value()->value()._int == 1) return args[1];
+			}
+			if(typeid(*(args[1])) == typeid(FOBDDDomainTerm)) {
+				const FOBDDDomainTerm* rightterm = dynamic_cast<const FOBDDDomainTerm*>(args[1]);
+				FuncInter* fi = func->interpretation(0);
+				vector<const DomainElement*> multargs(2);
+				multargs[0] = leftterm->value();
+				multargs[1] = rightterm->value();
+				const DomainElement* result = fi->functable()->operator[](multargs);
+				return getDomainTerm(func->outsort(),result);
+			}
+		}
+		// 4. Apply distributivity of */2 with respect to +/2
+		if(typeid(*(args[0])) == typeid(FOBDDFuncTerm)) {
+			const FOBDDFuncTerm* leftterm = dynamic_cast<const FOBDDFuncTerm*>(args[0]);
+			if(leftterm->func()->name() == "+/2" && Vocabulary::std()->contains(leftterm->func())) {
+				vector<const FOBDDArgument*> newleftargs(2);
+				newleftargs[0] = leftterm->args(0); newleftargs[1] = args[1];
+				vector<const FOBDDArgument*> newrightargs(2);
+				newrightargs[0] = leftterm->args(1); newrightargs[1] = args[1];
+				const FOBDDArgument* newleft = getFuncTerm(func,newleftargs);
+				const FOBDDArgument* newright = getFuncTerm(func,newrightargs);
+				vector<const FOBDDArgument*> newargs(2); newargs[0] = newleft; newargs[1] = newright;
+				return getFuncTerm(leftterm->func(),newargs);
+			}
+		}
+		if(typeid(*(args[1])) == typeid(FOBDDFuncTerm)) {
+			const FOBDDFuncTerm* rightterm = dynamic_cast<const FOBDDFuncTerm*>(args[1]);
+			if(rightterm->func()->name() == "+/2" && Vocabulary::std()->contains(rightterm->func())) {
+				vector<const FOBDDArgument*> newleftargs(2);
+				newleftargs[0] = args[0]; newleftargs[1] = rightterm->args(0);
+				vector<const FOBDDArgument*> newrightargs(2);
+				newrightargs[0] = args[0]; newrightargs[1] = rightterm->args(1);
+				const FOBDDArgument* newleft = getFuncTerm(func,newleftargs);
+				const FOBDDArgument* newright = getFuncTerm(func,newrightargs);
+				vector<const FOBDDArgument*> newargs(2); newargs[0] = newleft; newargs[1] = newright;
+				return getFuncTerm(rightterm->func(),newargs);
+			}
+		}
+		// 5. Apply commutativity and associativity to obtain
+		// a sorted multiplication of the form ((((t1 * t2) * t3) * t4) * ...)
+		if(typeid(*(args[0])) == typeid(FOBDDFuncTerm)) {
+			const FOBDDFuncTerm* leftterm = dynamic_cast<const FOBDDFuncTerm*>(args[0]);
+			if(leftterm->func()->name() == "*/2" && Vocabulary::std()->contains(leftterm->func())) {
+				if(typeid(*(args[1])) == typeid(FOBDDFuncTerm)) {
+					const FOBDDFuncTerm* rightterm = dynamic_cast<const FOBDDFuncTerm*>(args[1]);
+					if(rightterm->func()->name() == "*/2" && Vocabulary::std()->contains(rightterm->func())) {
+						Function* times = Vocabulary::std()->func("*/2");
+						Function* times1 = times->disambiguate(vector<Sort*>(3,SortUtils::resolve(leftterm->sort(),rightterm->args(1)->sort())),0);
+						vector<const FOBDDArgument*> leftargs(2); leftargs[0] = leftterm; leftargs[1] = rightterm->args(1);
+						const FOBDDArgument* newleft = getFuncTerm(times1,leftargs);
+						Function* times2 = times->disambiguate(vector<Sort*>(3,SortUtils::resolve(newleft->sort(),rightterm->args(0)->sort())),0);
+						vector<const FOBDDArgument*> newargs(2); newargs[0] = newleft; newargs[1] = rightterm->args(0);
+						return getFuncTerm(times2,newargs);
+					}
+				}
+				if(FactorSWOrdering(args[1],leftterm->args(1))) {
+					Function* times = Vocabulary::std()->func("*/2");
+					Function* times1 = times->disambiguate(vector<Sort*>(3,SortUtils::resolve(args[1]->sort(),leftterm->args(0)->sort())),0);
+					vector<const FOBDDArgument*> leftargs(2); leftargs[0] = leftterm->args(0); leftargs[1] = args[1];
+					const FOBDDArgument* newleft = getFuncTerm(times1,leftargs);
+					Function* times2 = times->disambiguate(vector<Sort*>(3,SortUtils::resolve(newleft->sort(),leftterm->args(1)->sort())),0);
+					vector<const FOBDDArgument*> newargs(2); newargs[0] = newleft; newargs[1] = leftterm->args(1);
+					return getFuncTerm(times2,newargs);
+				}
+			}
+		}
+		else if(typeid(*(args[1])) == typeid(FOBDDFuncTerm)) {
+			const FOBDDFuncTerm* rightterm = dynamic_cast<const FOBDDFuncTerm*>(args[1]);
+			if(rightterm->func()->name() == "*/2" && Vocabulary::std()->contains(rightterm->func())) {
+				vector<const FOBDDArgument*> newargs(2); newargs[0] = args[1]; newargs[1] = args[0];
+				return getFuncTerm(func,newargs);
+			}
+			else if(FactorSWOrdering(args[1],args[0])) {
+				vector<const FOBDDArgument*> newargs(2); newargs[0] = args[1]; newargs[1] = args[0];
+				return getFuncTerm(func,newargs);
+			}
+		}
+		else if(FactorSWOrdering(args[1],args[0])) {
+				vector<const FOBDDArgument*> newargs(2); newargs[0] = args[1]; newargs[1] = args[0];
+				return getFuncTerm(func,newargs);
+		}
+	}
+	else if(func->name() == "+/2" && Vocabulary::std()->contains(func)) {
+		// 6. Execute computable additions
+		if(typeid(*(args[0])) == typeid(FOBDDDomainTerm)) {
+			const FOBDDDomainTerm* leftterm = dynamic_cast<const FOBDDDomainTerm*>(args[0]);
+			if(leftterm->value()->type() == DET_INT && leftterm->value()->value()._int == 0) return args[1];
+			if(typeid(*(args[1])) == typeid(FOBDDDomainTerm)) {
+				const FOBDDDomainTerm* rightterm = dynamic_cast<const FOBDDDomainTerm*>(args[1]);
+				FuncInter* fi = func->interpretation(0);
+				vector<const DomainElement*> plusargs(2);
+				plusargs[0] = leftterm->value();
+				plusargs[1] = rightterm->value();
+				const DomainElement* result = fi->functable()->operator[](plusargs);
+				return getDomainTerm(func->outsort(),result);
+			}
+		}
+
+		// 7. Apply commutativity and associativity to 
+		// obtain a sorted addition of the form ((((t1 + t2) + t3) + t4) + ...)
+		if(typeid(*(args[0])) == typeid(FOBDDFuncTerm)) {
+			const FOBDDFuncTerm* leftterm = dynamic_cast<const FOBDDFuncTerm*>(args[0]);
+			if(leftterm->func()->name() == "+/2" && Vocabulary::std()->contains(leftterm->func())) {
+				if(typeid(*(args[1])) == typeid(FOBDDFuncTerm)) {
+					const FOBDDFuncTerm* rightterm = dynamic_cast<const FOBDDFuncTerm*>(args[1]);
+					if(rightterm->func()->name() == "+/2" && Vocabulary::std()->contains(rightterm->func())) {
+						Function* plus = Vocabulary::std()->func("+/2");
+						Function* plus1 = plus->disambiguate(vector<Sort*>(3,SortUtils::resolve(leftterm->sort(),rightterm->args(1)->sort())),0);
+						vector<const FOBDDArgument*> leftargs(2); leftargs[0] = leftterm; leftargs[1] = rightterm->args(1);
+						const FOBDDArgument* newleft = getFuncTerm(plus1,leftargs);
+						Function* plus2 = plus->disambiguate(vector<Sort*>(3,SortUtils::resolve(newleft->sort(),rightterm->args(0)->sort())),0);
+						vector<const FOBDDArgument*> newargs(2); newargs[0] = newleft; newargs[1] = rightterm->args(0);
+						return getFuncTerm(plus2,newargs);
+					}
+				}
+				if(TermSWOrdering(args[1],leftterm->args(1),this)) {
+					Function* plus = Vocabulary::std()->func("+/2");
+					Function* plus1 = plus->disambiguate(vector<Sort*>(3,SortUtils::resolve(args[1]->sort(),leftterm->args(0)->sort())),0);
+					vector<const FOBDDArgument*> leftargs(2); leftargs[0] = leftterm->args(0); leftargs[1] = args[1];
+					const FOBDDArgument* newleft = getFuncTerm(plus1,leftargs);
+					Function* plus2 = plus->disambiguate(vector<Sort*>(3,SortUtils::resolve(newleft->sort(),leftterm->args(1)->sort())),0);
+					vector<const FOBDDArgument*> newargs(2); newargs[0] = newleft; newargs[1] = leftterm->args(1);
+					return getFuncTerm(plus2,newargs);
+				}
+			}
+		}
+		else if(typeid(*(args[1])) == typeid(FOBDDFuncTerm)) {
+			const FOBDDFuncTerm* rightterm = dynamic_cast<const FOBDDFuncTerm*>(args[1]);
+			if(rightterm->func()->name() == "+/2" && Vocabulary::std()->contains(rightterm->func())) {
+				vector<const FOBDDArgument*> newargs(2); newargs[0] = args[1]; newargs[1] = args[0];
+				return getFuncTerm(func,newargs);
+			}
+			else if(TermSWOrdering(args[1],args[0],this)) {
+				vector<const FOBDDArgument*> newargs(2); newargs[0] = args[1]; newargs[1] = args[0];
+				return getFuncTerm(func,newargs);
+			}
+		}
+		else if(TermSWOrdering(args[1],args[0],this)) {
+				vector<const FOBDDArgument*> newargs(2); newargs[0] = args[1]; newargs[1] = args[0];
+				return getFuncTerm(func,newargs);
+		}
+
+		// 8. Add terms with the same non-constant part
+		const FOBDDArgument* left = 0;
+		const FOBDDArgument* right = 0;
+		if(typeid(*(args[0])) == typeid(FOBDDFuncTerm)) {
+			const FOBDDFuncTerm* leftterm = dynamic_cast<const FOBDDFuncTerm*>(args[0]);
+			if(leftterm->func()->name() == "+/2" && Vocabulary::std()->contains(leftterm->func())) {
+				left = leftterm->args(0);
+				right = leftterm->args(1);
+			}
+			else right = args[0];
+		}
+		else right = args[0];
+		FlatMult flatadd(this);
+		vector<const FOBDDArgument*> leftflat = flatadd.run(right);
+		vector<const FOBDDArgument*> rightflat = flatadd.run(args[1]);
+		if(leftflat.size() == rightflat.size()) {
+			unsigned int n = 1;
+			for(; n < leftflat.size(); ++n) {
+				if(leftflat[n] != rightflat[n]) break;
+			}
+			if(n == leftflat.size()) {
+				Function* plus = Vocabulary::std()->func("+/2");
+				plus = plus->disambiguate(vector<Sort*>(3,SortUtils::resolve(leftflat[0]->sort(),rightflat[0]->sort())),0);
+				vector<const FOBDDArgument*> firstargs(2); firstargs[0] = leftflat[0]; firstargs[1] = rightflat[0];
+				const FOBDDArgument* currterm = getFuncTerm(plus,firstargs);
+				for(unsigned int m = 1; m < leftflat.size(); ++m) {
+					Function* times = Vocabulary::std()->func("*/2");
+					times = times->disambiguate(vector<Sort*>(3,SortUtils::resolve(currterm->sort(),leftflat[m]->sort())),0);
+					vector<const FOBDDArgument*> nextargs(2); nextargs[0] = currterm; nextargs[1] = leftflat[m];
+					currterm = getFuncTerm(times,nextargs);
+				}
+				if(left) {
+					Function* plus1 = Vocabulary::std()->func("+/2");
+					plus1 = plus1->disambiguate(vector<Sort*>(3,SortUtils::resolve(currterm->sort(),left->sort())),0);
+					vector<const FOBDDArgument*> lastargs(2); lastargs[0] = left; lastargs[1] = currterm;
+					return getFuncTerm(plus1,lastargs);
+				}
+				else return currterm;
+			}
+		}
+	}
 	
 	// Lookup
 	FuncTermTable::const_iterator it = _functermtable.find(func);
@@ -470,7 +822,6 @@ const FOBDDFuncTerm* FOBDDManager::getFuncTerm(Function* func, const vector<cons
 }
 
 FOBDDFuncTerm* FOBDDManager::addFuncTerm(Function* func, const vector<const FOBDDArgument*>& args) {
-	// TODO: rewrite arithmetic terms!
 	FOBDDFuncTerm* newarg = new FOBDDFuncTerm(func,args);
 	_functermtable[func][args] = newarg;
 	return newarg;
@@ -871,7 +1222,7 @@ class FuncAtomRemover : public FOBDDVisitor {
 				Predicate* equalpred = Vocabulary::std()->pred("=/2");
 				equalpred = equalpred->disambiguate(equalsorts);
 				vector<const FOBDDArgument*> funcargs = atom->args(); funcargs.pop_back();
-				const FOBDDFuncTerm* functerm = _manager->getFuncTerm(f,funcargs);
+				const FOBDDArgument* functerm = _manager->getFuncTerm(f,funcargs);
 				vector<const FOBDDArgument*> newargs; 
 				newargs.push_back(functerm);
 				newargs.push_back(atom->args().back());
@@ -918,7 +1269,7 @@ class TermsToLeft : public FOBDDVisitor {
 							vector<const FOBDDArgument*> newlhsargs;
 							newlhsargs.push_back(lhs);
 							newlhsargs.push_back(rhs);
-							const FOBDDFuncTerm* newlhs = _manager->getFuncTerm(minus,newlhsargs);
+							const FOBDDArgument* newlhs = _manager->getFuncTerm(minus,newlhsargs);
 							vector<const FOBDDArgument*> newatomargs;
 							newatomargs.push_back(newlhs);
 							newatomargs.push_back(zero_term);
@@ -954,7 +1305,7 @@ class RemoveMinus : public FOBDDVisitor {
 				vector<Sort*> timessorts(3,rhs->sort());
 				times = times->disambiguate(timessorts,0);
 				newargs.push_back(_manager->getFuncTerm(times,rhsargs));
-				const FOBDDFuncTerm* newterm = _manager->getFuncTerm(plus,newargs);
+				const FOBDDArgument* newterm = _manager->getFuncTerm(plus,newargs);
 				return newterm->acceptchange(this);
 			}
 			else if(functerm->func()->name() == "-/1") {
@@ -966,7 +1317,7 @@ class RemoveMinus : public FOBDDVisitor {
 				Function* times = Vocabulary::std()->func("*/2");
 				vector<Sort*> timessorts(3,functerm->args(0)->sort());
 				times = times->disambiguate(timessorts,0);
-				const FOBDDFuncTerm* newterm = _manager->getFuncTerm(times,newargs);
+				const FOBDDArgument* newterm = _manager->getFuncTerm(times,newargs);
 				return newterm->acceptchange(this);
 			}
 			else return FOBDDVisitor::change(functerm);
@@ -993,12 +1344,12 @@ class Distributivity : public FOBDDVisitor {
 						vector<const FOBDDArgument*> newrightargs;
 						newrightargs.push_back(leftfuncterm->args(1));
 						newrightargs.push_back(rightterm);
-						const FOBDDFuncTerm* newleft = _manager->getFuncTerm(functerm->func(),newleftargs);
-						const FOBDDFuncTerm* newright = _manager->getFuncTerm(functerm->func(),newrightargs);
+						const FOBDDArgument* newleft = _manager->getFuncTerm(functerm->func(),newleftargs);
+						const FOBDDArgument* newright = _manager->getFuncTerm(functerm->func(),newrightargs);
 						vector<const FOBDDArgument*> newargs;
 						newargs.push_back(newleft);
 						newargs.push_back(newright);
-						const FOBDDFuncTerm* newterm = _manager->getFuncTerm(leftfuncterm->func(),newargs);
+						const FOBDDArgument* newterm = _manager->getFuncTerm(leftfuncterm->func(),newargs);
 						return newterm->acceptchange(this);
 					}
 				}
@@ -1011,12 +1362,12 @@ class Distributivity : public FOBDDVisitor {
 						vector<const FOBDDArgument*> newrightargs;
 						newrightargs.push_back(rightfuncterm->args(1));
 						newrightargs.push_back(leftterm);
-						const FOBDDFuncTerm* newleft = _manager->getFuncTerm(functerm->func(),newleftargs);
-						const FOBDDFuncTerm* newright = _manager->getFuncTerm(functerm->func(),newrightargs);
+						const FOBDDArgument* newleft = _manager->getFuncTerm(functerm->func(),newleftargs);
+						const FOBDDArgument* newright = _manager->getFuncTerm(functerm->func(),newrightargs);
 						vector<const FOBDDArgument*> newargs;
 						newargs.push_back(newleft);
 						newargs.push_back(newright);
-						const FOBDDFuncTerm* newterm = _manager->getFuncTerm(rightfuncterm->func(),newargs);
+						const FOBDDArgument* newterm = _manager->getFuncTerm(rightfuncterm->func(),newargs);
 						return newterm->acceptchange(this);
 					}
 				}
@@ -1028,17 +1379,6 @@ class Distributivity : public FOBDDVisitor {
 /**
  * Classes to order multiplications
  */
-
-struct MultTermSWOrdering {
-	bool operator()(const FOBDDArgument* arg1, const FOBDDArgument* arg2) {
-		if(typeid(*arg1) == typeid(FOBDDDomainTerm)) {
-			if(typeid(*arg2) == typeid(FOBDDDomainTerm)) return arg1 < arg2;
-			else return true;
-		}
-		else if(typeid(*arg2) == typeid(FOBDDDomainTerm)) return false;
-		else return arg1 < arg2;
-	}
-};
 
 class MultTermExtractor : public FOBDDVisitor {
 	private:
@@ -1084,8 +1424,7 @@ class MultOrderer : public FOBDDVisitor {
 				for(unsigned int n = 0; n < multterms.size(); ++n) {
 					// TODO? recursive call on all elements of multterms
 				}
-				MultTermSWOrdering mtswo;
-				std::sort(multterms.begin(),multterms.end(),mtswo); 
+				std::sort(multterms.begin(),multterms.end(),&FactorSWOrdering); 
 				const FOBDDArgument* currarg = multterms.back();
 				for(unsigned int n = multterms.size()-1; n != 0; --n) {
 					const FOBDDArgument* nextarg = multterms[n-1];
@@ -1135,7 +1474,7 @@ class AddMultSimplifier : public FOBDDVisitor {
 									vector<const FOBDDArgument*> newargs(2);
 									newargs[0] = multres;
 									newargs[1] = rightterm->args(1);
-									const FOBDDFuncTerm* newterm = _manager->getFuncTerm(rightterm->func(),newargs);
+									const FOBDDArgument* newterm = _manager->getFuncTerm(rightterm->func(),newargs);
 									return newterm->acceptchange(this);
 								}
 							}
@@ -1327,14 +1666,14 @@ class TermAdder : public FOBDDVisitor {
 							mult = mult->disambiguate(multsorts,0); assert(mult);
 							vector<const FOBDDArgument*> multargs(2);
 							multargs[0] = addterm; multargs[1] = leftncte;
-							const FOBDDFuncTerm* newterm = _manager->getFuncTerm(mult,multargs);
+							const FOBDDArgument* newterm = _manager->getFuncTerm(mult,multargs);
 							Function* plus = Vocabulary::std()->func("+/2");
 							Sort* plussort = SortUtils::resolve(newterm->sort(),rightterm->args(1)->sort());
 							vector<Sort*> plussorts(3,plussort);
 							plus = plus->disambiguate(plussorts,0); assert(plus);
 							vector<const FOBDDArgument*> plusargs(2);
 							plusargs[0] = newterm; plusargs[1] = rightterm->args(1);
-							const FOBDDFuncTerm* addbddterm = _manager->getFuncTerm(plus,plusargs);
+							const FOBDDArgument* addbddterm = _manager->getFuncTerm(plus,plusargs);
 							return addbddterm->acceptchange(this);
 						}
 						else return FOBDDVisitor::change(functerm);
@@ -1419,13 +1758,104 @@ const FOBDD* FOBDDManager::simplify(const FOBDD* bdd) {
 	Solve equations
 **********************/
 
-const FOBDDArgument* FOBDDManager::solve(const FOBDDKernel* , const FOBDDVariable* ) {
-	// TODO
-	return 0;
+class ArgChecker : public FOBDDVisitor {
+	private:
+		bool _result;
+		const FOBDDArgument* _arg;
+
+		void visit(const FOBDDVariable* var)		{ if(var == _arg) _result = true;	}
+		void visit(const FOBDDDeBruijnIndex* index)	{ if(index == _arg) _result = true;	}
+		void visit(const FOBDDDomainTerm* dt)		{ if(dt == _arg) _result = true;	}
+		void visit(const FOBDDFuncTerm* ft)	{
+			if(ft == _arg) {
+				_result = true;
+				return;
+			}
+			else {
+				for(auto it = ft->args().begin(); it != ft->args().end(); ++it) {
+					(*it)->accept(this);
+					if(_result) return;
+				}
+			}
+		}
+	public:
+		ArgChecker(FOBDDManager* m) : FOBDDVisitor(m) { }
+		bool run(const FOBDDArgument* super, const FOBDDArgument* arg) {
+			_result = false;
+			_arg = arg;
+			super->accept(this);
+			return _result;
+		}
+};
+
+bool FOBDDManager::contains(const FOBDDArgument* super, const FOBDDArgument* arg) {
+	ArgChecker ac(this);
+	return ac.run(super,arg);
 }
 
-const FOBDDArgument* FOBDDManager::solve(const FOBDDKernel* , const FOBDDDeBruijnIndex* ) {
-	// TODO
+const FOBDDArgument* FOBDDManager::solve(const FOBDDKernel* kernel, const FOBDDArgument* argument) {
+	if(typeid(*kernel) == typeid(FOBDDAtomKernel)) {
+		const FOBDDAtomKernel* atom = dynamic_cast<const FOBDDAtomKernel*>(kernel);
+		if(atom->symbol()->name() == "=/2") {
+			if(atom->args(0) == argument) {
+				if(!contains(atom->args(1),argument)) return atom->args(1);
+			}
+			if(atom->args(1) == argument) {
+				if(!contains(atom->args(0),argument)) return atom->args(0);
+			}
+			if(SortUtils::isSubsort(atom->symbol()->sorts()[0],VocabularyUtils::floatsort())) {
+				FlatAdd fa(this);
+				vector<const FOBDDArgument*> terms = fa.run(atom->args(0));
+				unsigned int occcounter = 0;
+				unsigned int occterm;
+				for(unsigned int n = 0; n < terms.size(); ++n) {
+					if(contains(terms[n],argument)) {
+						++occcounter;
+						occterm = n;
+					}
+				}
+				if(occcounter == 1) {
+					FlatMult fm(this);
+					vector<const FOBDDArgument*> factors = fm.run(terms[occterm]);
+					if(factors.size() == 2 && factors[1] == argument) {
+						const FOBDDArgument* currterm = 0;
+						for(unsigned int n = 0; n < terms.size(); ++n) {
+							if(n != occterm) {
+								if(!currterm) currterm = terms[n];
+								else {
+									Function* plus = Vocabulary::std()->func("+/2");
+									plus = plus->disambiguate(vector<Sort*>(3,SortUtils::resolve(currterm->sort(),terms[n]->sort())),0);
+									vector<const FOBDDArgument*> newargs(2); newargs[0] = currterm; newargs[1] = terms[n];
+									currterm = getFuncTerm(plus,newargs);
+								}
+							}
+						}
+						if(!currterm) return atom->args(1);
+						else {
+							const FOBDDDomainTerm* constant = dynamic_cast<const FOBDDDomainTerm*>(factors[0]);
+							if(constant->value()->type() == DET_INT) {
+								int constval = constant->value()->value()._int;
+								if(constval == -1) return currterm;
+								else if(constval == 1) return invert(currterm);
+							}
+							if(!SortUtils::isSubsort(currterm->sort(),VocabularyUtils::intsort())) {
+								Function* times = Vocabulary::std()->func("*/2");
+								times = times->disambiguate(vector<Sort*>(3,VocabularyUtils::floatsort()),0);
+								vector<const FOBDDArgument*> timesargs(2);
+								timesargs[0] = currterm;
+								double d = constant->value()->type() == DET_INT ? 
+									(double(1) / double(constant->value()->value()._int)) : 
+									(double(1) / constant->value()->value()._double);
+								timesargs[1] = getDomainTerm(VocabularyUtils::floatsort(),DomainElementFactory::instance()->create(d));
+								d = -d;
+								return getFuncTerm(times,timesargs);
+							}
+						}
+					}
+				}
+			}
+		}
+	}
 	return 0;
 }
 
