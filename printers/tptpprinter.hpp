@@ -14,7 +14,7 @@
 
 #include <iostream>
 
-//#include <set>
+#include "groundtheories/GroundPolicy.hpp"
 
 template<typename Stream>
 class TPTPPrinter: public StreamPrinter<Stream> {
@@ -26,8 +26,9 @@ private:
 	bool						_floats;
 	unsigned int				_count;
 	std::set<DomainTerm*>		_typedDomainTerms;
-	std::set<std::string>		_typedDomainTermNames;
+	std::set<DomainElement*>	_typedDomainElements;
 	std::set<Sort*>				_types; // TODO: Gaat dit niet beter?
+	std::stringstream*			_os;
 	std::stringstream			_typeStream; // The types. (for TFF)
 	std::stringstream			_typeAxiomStream; // The type predicates (defining what atomic symbols have what type,
 												  // and which functions/predicates take which types)
@@ -37,9 +38,9 @@ private:
 	using StreamPrinter<Stream>::output;
 
 public:
-	TPTPPrinter(bool conjecture, bool arithmetic, Stream& stream):
+	TPTPPrinter(bool arithmetic, Stream& stream):
 			StreamPrinter<Stream>(stream),
-			_conjecture(conjecture),
+			_conjecture(false),
 			_arithmetic(arithmetic),
 			_count(0),
 			_nats(false),
@@ -71,34 +72,17 @@ public:
 		}
 	}
 
-	void visit(const Namespace* s) {
-	}
-
-	void visit(const GroundFixpDef*) {
-	}
-
 	void visit(const Theory* t) {
 		if(!_conjecture) {
 			for(auto it = t->sentences().begin(); it != t->sentences().end(); ++it) {
-				if(_arithmetic) {
-					_axiomStream << "tff";
-				} else {
-					_axiomStream << "fof";
-				}
-				_axiomStream << "(";
-				_axiomStream << "a" << _count << ",axiom,";
+				startAxiom("a");
 				(*it)->accept(this);
-				_axiomStream << ").\n";
+				endAxiom();
 				_count ++;
 			}
 		} else if (t->sentences().begin() != t->sentences().end()) {
 			// Output a conjecture as a conjunction.
-			if(_arithmetic) {
-				_conjectureStream << "tff";
-			} else {
-				_conjectureStream << "fof";
-			}
-			_conjectureStream << "(cnj,conjecture,";
+			startAxiom("cnj");
 			auto it = t->sentences().begin();
 			while(it != t->sentences().end()) {
 				_conjectureStream << "(";
@@ -106,27 +90,19 @@ public:
 				_conjectureStream << ")";
 				++ it;
 				if(it != t->sentences().end()) {
-					_conjectureStream << "\n & ";
+					_conjectureStream << " & ";
 				}
 			}
-			_conjectureStream << ").\n";
+			endAxiom();
 		}
 		// Do nothing with definitions or fixpoint definitions
-		outputDomainTermTypeAxioms();
-		if (_conjecture)
+		if (_conjecture) {
+			outputDomainTermTypeAxioms();
 			writeStreams();
+		}
 	}
 	
 	void writeStreams() {
-		// Add t_nat, t_int and t_float types:
-		if (_arithmetic) {
-			if (_nats)
-				output() << "tff(nat_type,type,(t_nat: $int > $o)).\n";
-			if (_ints)
-				output() << "tff(int_type,type,(t_int: $int > $o)).\n";
-			if (_floats)
-				output() << "tff(float_type,type,(t_float: $real > $o)).\n";
-		}
 		output() << _typeStream.str();
 		// Add t_nat > t_int > t_float hierarchy
 		output() << _typeAxiomStream.str();
@@ -134,10 +110,13 @@ public:
 			if (_nats && _ints)
 				output() << "tff(nat_is_int,axiom,(! [X: $int] : (~t_nat(X) | t_int(X)))).\n";
 			if (_ints && _floats)
-				output() << "tff(int_is_float,axiom,(! [X: $int] : ~t_int(X) | t_float(X))).\n";
+				output() << "tff(int_is_float,axiom,(! [X: $int] : (~t_int(X) | t_float(X)))).\n";
 			if (_nats && _floats)
-				output() << "tff(nat_is_float,axiom,(! [X: $int] : ~t_nat(X) | t_float(X))).\n";
+				output() << "tff(nat_is_float,axiom,(! [X: $int] : (~t_nat(X) | t_float(X)))).\n";
 		}
+		startAxiom("char_is_string", &_axiomStream);
+		(*_os) << "! [X] : (~t_char(X) | t_string(X))";
+		endAxiom();
 		output() << _axiomStream.str();
 		output() << _conjectureStream.str();
 		_typeStream.str(std::string());
@@ -145,49 +124,560 @@ public:
 		_axiomStream.str(std::string());
 		_conjectureStream.str(std::string());
 	}
-	
-	void outputDomainTermTypeAxioms() {
-		for(auto it = _typedDomainTerms.begin(); it != _typedDomainTerms.end(); ++ it) {
-			if(_arithmetic) {
-				_typeAxiomStream << "tff";
-			} else {
-				_typeAxiomStream << "fof";
+
+	/** Formulas **/
+
+	void visit(const PredForm* f) {
+		if(! f->sign())	(*_os) << "~";
+		if(f->symbol()->to_string(false) == "=") {
+			(*_os) << "(";
+			f->subterms()[0]->accept(this);
+			(*_os) << " = ";
+			f->subterms()[1]->accept(this);
+			(*_os) << ")";
+		} else if(f->symbol()->to_string(false) == ">") {
+			(*_os) << "$greater(";
+			f->subterms()[0]->accept(this);
+			(*_os) << ",";
+			f->subterms()[1]->accept(this);
+			(*_os) << ")";
+		} else if(f->symbol()->to_string(false) == "<") {
+			(*_os) << "$less(";
+			f->subterms()[0]->accept(this);
+			(*_os) << ",";
+			f->subterms()[1]->accept(this);
+			(*_os) << ")";
+		} else if(f->symbol()->to_string(false) == "+") {
+			(*_os) << "($sum(";
+			f->subterms()[0]->accept(this);
+			(*_os) << ",";
+			f->subterms()[1]->accept(this);
+			(*_os) << ") = ";
+			f->subterms()[2]->accept(this);
+			(*_os) << ")";
+		} else if(f->symbol()->to_string(false) == "-" && f->subterms().size() == 3) {
+			(*_os) << "($difference(";
+			f->subterms()[0]->accept(this);
+			(*_os) << ",";
+			f->subterms()[1]->accept(this);
+			(*_os) << ") = ";
+			f->subterms()[2]->accept(this);
+			(*_os) << ")";
+		} else if(f->symbol()->to_string(false) == "-" && f->subterms().size() == 2) {
+			(*_os) << "($uminus(";
+			f->subterms()[0]->accept(this);
+			(*_os) << ") = ";
+			f->subterms()[1]->accept(this);
+			(*_os) << ")";
+		} else if(f->symbol()->to_string(false) == "*") {
+			(*_os) << "($product(";
+			f->subterms()[0]->accept(this);
+			(*_os) << ",";
+			f->subterms()[1]->accept(this);
+			(*_os) << ") = ";
+			f->subterms()[2]->accept(this);
+			(*_os) << ")";
+		} else if(f->symbol()->to_string(false) == "PRED") {
+			(*_os) << "($difference(";
+			f->subterms()[0]->accept(this);
+			(*_os) << ",1) = ";
+			f->subterms()[1]->accept(this);
+			(*_os) << ")";
+		} else if(f->symbol()->to_string(false) == "SUCC") {
+			(*_os) << "($sum(";
+			f->subterms()[0]->accept(this);
+			(*_os) << ",1) = ";
+			f->subterms()[1]->accept(this);
+			(*_os) << ")";
+		} else if(f->symbol()->to_string(false) == "MAX") {
+			// NOTE: $itett is often unsupported
+			(*_os) << "($itett($greater(";
+			f->subterms()[0]->accept(this);
+			(*_os) << ",";
+			f->subterms()[1]->accept(this);
+			(*_os) << "),";
+			f->subterms()[0]->accept(this);
+			(*_os) << ",";
+			f->subterms()[1]->accept(this);
+			(*_os) << ") = ";
+			f->subterms()[2]->accept(this);
+			(*_os) << ")";
+		} else if(f->symbol()->to_string(false) == "MIN") {
+			// NOTE: $itett is often unsupported
+			(*_os) << "($itett($less(";
+			f->subterms()[0]->accept(this);
+			(*_os) << ",";
+			f->subterms()[1]->accept(this);
+			(*_os) << "),";
+			f->subterms()[0]->accept(this);
+			(*_os) << ",";
+			f->subterms()[1]->accept(this);
+			(*_os) << ") = ";
+			f->subterms()[2]->accept(this);
+			(*_os) << ")";
+		} else if(f->symbol()->to_string(false) == "abs") {
+			// NOTE: $itett is often unsupported
+			(*_os) << "($itett($greater(";
+			f->subterms()[0]->accept(this);
+			(*_os) << ",$uminus(";
+			f->subterms()[0]->accept(this);
+			(*_os) << ")),";
+			f->subterms()[0]->accept(this);
+			(*_os) << ",$uminus(";
+			f->subterms()[0]->accept(this);
+			(*_os) << ")) = ";
+			f->subterms()[1]->accept(this);
+			(*_os) << ")";
+		} else {
+			(*_os) << "p_" << rewriteLongname(f->symbol()->to_string(true));
+			if(!f->subterms().empty()) {
+				(*_os) << "(";
+				f->subterms()[0]->accept(this);
+				for(unsigned int n = 1; n < f->subterms().size(); ++n) {
+					(*_os) << ",";
+					f->subterms()[n]->accept(this);
+				}
+				(*_os) << ")";
 			}
-			_typeAxiomStream << "(";
-			// This will cause axioms to be double-printed sometimes, but it's better
-			// than having them never printed. I'm not sure whether I need them.
-			if (_conjecture) {
-				_typeAxiomStream << "dttac";
-			}
-			else {
-				_typeAxiomStream << "dtta";
-			}
-			_typeAxiomStream << _count << ",axiom,(";
-			std::string sortName = (*it)->sort()->name();
-			_typeAxiomStream << "t_" << sortName << "(";
-			outputDomainTermName((*it), &_typeAxiomStream);
-			_typeAxiomStream << ")";
-			_typeAxiomStream << ")).\n";
-			if(_arithmetic/* && sortName != "int" && sortName != "nat" && sortName != "float"*/) { // TODO: output these only ONCE! Also, output them at the START!
- 				_typeStream << "tff(";
- 				if (_conjecture) {
- 					_typeStream << "dttc";
- 				}
- 				else {
- 					_typeStream << "dtt";
- 				}
- 				_typeStream << _count << ",type,(";
- 				_typeStream << "t_" << (*it)->sort()->name() << ": ";
- 				outputTFFType((*it)->sort(), &_typeStream);
- 				_typeStream << " > $o";
- 				_typeStream << ")).\n";
- 			}
-			_count ++;
 		}
-		_typedDomainTerms.clear();
 	}
 
-	void visit(const GroundTheory* g) {
+	// TODO TFF
+	void visit(const EqChainForm* f) {
+		if(! f->sign())	(*_os) << "~";
+		(*_os) << "(";
+		f->subterms()[0]->accept(this);
+		for(unsigned int n = 0; n < f->comps().size(); ++n) {
+			if(f->comps()[n] == CT_EQ)
+				(*_os) << " = ";
+			else if(f->comps()[n] == CT_NEQ)
+				(*_os) << " != ";
+			f->subterms()[n+1]->accept(this);
+			if(n+1 < f->comps().size()) {
+				if(f->conj())
+					(*_os) << " & ";
+				else
+					(*_os) << " | ";
+				f->subterms()[n+1]->accept(this);
+			}
+		}
+		(*_os) << ")";
+	}
+
+	void visit(const EquivForm* f) {
+		if(! f->sign())	(*_os) << "~";
+		(*_os) << "(";
+		f->left()->accept(this);
+		(*_os) << " <=> ";
+		f->right()->accept(this);
+		(*_os) << ")";
+	}
+
+	void visit(const BoolForm* f) {
+		if(f->subformulas().empty()) {
+			if(f->sign() == f->conj())
+				(*_os) << "$true";
+			else
+				(*_os) << "$false";
+		}
+		else {
+			if(! f->sign())	(*_os) << "~";
+			(*_os) << "(";
+			f->subformulas()[0]->accept(this);
+			for(unsigned int n = 1; n < f->subformulas().size(); ++n) {
+				if(f->conj())
+					(*_os) << " & ";
+				else
+					(*_os) << " | ";
+				f->subformulas()[n]->accept(this);
+			}
+			(*_os) << ")";
+		}
+	}
+	
+	std::string TFFTypeString(const Sort* s) {
+		if(SortUtils::isSubsort(const_cast<Sort*>(s),VocabularyUtils::natsort())) {
+			//output() << ": nat"; // TODO: What to do with nats? Just add an axiom? Or a type?
+			return "$int";
+		}
+		else if(SortUtils::isSubsort(const_cast<Sort*>(s),VocabularyUtils::intsort())) {
+			return "$int";
+		}
+		else if(SortUtils::isSubsort(const_cast<Sort*>(s),VocabularyUtils::floatsort())) {
+			return "$float";
+		}
+		else {
+			// TODO: Welke is het nu?
+			return "$i";
+			//return "$tType";
+		}
+	}
+
+	// TODO: SORTS!
+	void visit(const QuantForm* f) {
+		if(! f->sign())	(*_os) << "~";
+		(*_os) << "(";
+		if(f->univ())
+			(*_os) << "! [";
+		else
+			(*_os) << "? [";
+		auto it = f->quantvars().begin();
+		(*_os) << "V_" << (*it)->name();
+		if(_arithmetic && (*it)->sort()) {
+			(*_os) << ": ";
+			(*_os) << TFFTypeString((*it)->sort());
+		}
+		++ it;
+		for(; it != f->quantvars().end(); ++it) {
+			(*_os) << ",";
+			(*_os) << "V_" << (*it)->name();
+			if(_arithmetic && (*it)->sort()) {
+				(*_os) << ": ";
+				(*_os) << TFFTypeString((*it)->sort());
+			}
+		}
+		(*_os) << "] : (";
+		
+		// When quantifying over types, add these.
+		it = f->quantvars().begin();
+		while(it != f->quantvars().end() && !(*it)->sort())
+			++ it;
+		if (it != f->quantvars().end()) {
+		 	if(f->univ())
+				(*_os) << "~";
+			(*_os) << "(";
+			if(_types.find((*it)->sort()) == _types.end()) {
+				_types.insert((*it)->sort());
+			}
+			if(SortUtils::isSubsort((*it)->sort(),VocabularyUtils::natsort())) {
+				_nats = true;
+			}
+			else if(SortUtils::isSubsort((*it)->sort(),VocabularyUtils::intsort())) {
+				_ints = true;
+			}
+			else if(SortUtils::isSubsort((*it)->sort(),VocabularyUtils::floatsort())) {
+				_floats = true;
+			}
+			(*_os) << "t_" << (*it)->sort()->name() << "(V_" << (*it)->name() << ")";
+			++ it;
+			for(; it != f->quantvars().end(); ++it) {
+				if((*it)->sort()) {
+					(*_os) << " & ";
+					(*_os) << "t_" << (*it)->sort()->name() << "(V_" << (*it)->name() << ")";
+				}
+			}
+			(*_os) << ")";
+			if(f->univ())
+				(*_os) << " | ";
+			else
+				(*_os) << " & ";
+		}
+		
+		(*_os) << "(";
+		f->subformulas()[0]->accept(this);
+		(*_os) << ")))";
+	}
+
+	/** Definitions **/
+
+	
+
+	/** Terms **/
+
+	void visit(const VarTerm* t) {
+		(*_os) << "V_" << t->var()->name();
+	}
+
+	void visit(const FuncTerm* t) {
+		// Functions have been replaced by predicates
+	}
+
+	// TODO: Figure out what to do with these.
+	// I hope this is okay...
+	void visit(const DomainTerm* t) {
+		if(t->sort() && _typedDomainElements.find(const_cast<DomainElement*>(t->value())) == _typedDomainElements.end()) {
+			_typedDomainElements.insert(const_cast<DomainElement*>(t->value()));
+			_typedDomainTerms.insert(const_cast<DomainTerm*>(t));
+			if(SortUtils::isSubsort(t->sort(),VocabularyUtils::natsort())) {
+				_nats = true;
+			}
+			else if(SortUtils::isSubsort(t->sort(),VocabularyUtils::intsort())) {
+				_ints = true;
+			}
+			else if(SortUtils::isSubsort(t->sort(),VocabularyUtils::floatsort())) {
+				_floats = true;
+			}
+		}
+		if(t->sort() && _types.find(t->sort()) == _types.end()) {
+			_types.insert(t->sort());
+		}
+		(*_os) << domainTermNameString(t);
+	}
+	
+	std::string domainTermNameString(const DomainTerm* t) {
+		std::string str = t->value()->to_string();
+		if(t->sort()) {
+			if(SortUtils::isSubsort(t->sort(),VocabularyUtils::stringsort())) {
+				std::stringstream result;
+				result << "str_" << t->value()->value()._string;
+				return result.str();
+				//return '\"' + str + '\"';
+			}
+			else if(SortUtils::isSubsort(t->sort(),VocabularyUtils::floatsort())) {
+				return str;
+			}
+			else {
+				return "tt_" + str;
+			}
+		}
+		else return "utt_" + str;
+	}
+
+	void visit(const Sort* s) {
+		if (!(s->parents().empty())) {
+			startAxiom("ta", &_typeAxiomStream);
+			(*_os) << "! [X";
+			if (_arithmetic) {
+				(*_os) << ": ";
+				(*_os) << TFFTypeString(s);
+			}
+			(*_os) << "] : (~" << "t_" << s->name() << "(X) | ";
+			auto it = s->parents().begin();
+			(*_os) << "(" << "t_" << (*it)->name() << "(X)";
+			++it;
+			for(; it != s->parents().end(); ++it) {
+				(*_os) << " & " << "t_" << (*it)->name() << "(X)";
+			}
+			(*_os) << "))";
+			endAxiom();
+			_count ++;
+		}
+	}
+
+	// TODO: in TFF, handle ints and floats (and nats)
+	void visit(const Predicate* p) {
+		outputPFSymbolType(p);
+		if (!p->overloaded() && p->arity() > 0) {
+			_count ++;
+		}
+	}
+	
+	void visit(const Function* f) {
+		outputPFSymbolType(f);
+		if (!f->overloaded()) {
+			outputFuncAxiom(f);
+			_count ++;
+		}
+	}
+	
+	void outputFuncAxiom(const Function* f) {
+		startAxiom("fa", &_typeAxiomStream);
+		if(f->arity() > 0) {
+			(*_os) << "! [";
+			(*_os) << "V0";
+			if(_arithmetic) {
+				(*_os) << ": ";
+				(*_os) << TFFTypeString(f->sort(0));
+			}
+			for(unsigned int n = 1; n < f->arity(); ++n) {
+				(*_os) << ",V" << n;
+				if (_arithmetic) {
+					(*_os) << ": ";
+					(*_os) << TFFTypeString(f->sort(n));
+				}
+			}
+			(*_os) << "] : (";
+			(*_os) << "~(";
+			(*_os) << "t_" << f->sort(0)->name() << "(V0)";
+			for(unsigned int n = 1; n < f->arity(); ++n) {
+				(*_os) << " & " << "t_" << f->sort(n)->name() << "(V" << n << ")";
+			}
+			(*_os) << ") | ";
+		}
+		(*_os) << "(? [X1";
+		if(_arithmetic) {
+			(*_os) << ": ";
+			(*_os) << TFFTypeString(f->outsort());
+		}
+		(*_os) << "] : (";
+		(*_os) << "t_" << f->outsort()->name() << "(X1) & ";
+		(*_os) << "(! [X2";
+		if(_arithmetic) {
+			(*_os) << ": ";
+			(*_os) << TFFTypeString(f->outsort());
+		}
+		(*_os) << "] : (";
+		if(f->partial())
+			(*_os) << "~";
+		(*_os) << "p_" << rewriteLongname(f->to_string(true)) << "(";
+		if(f->arity() > 0) {
+			(*_os) << "V0";
+			for(unsigned int n = 1; n < f->arity(); ++n) {
+				(*_os) << ",V" << n;
+			}
+			(*_os) << ",";
+		}
+		(*_os) << "X2)";
+		if(f->partial())
+			(*_os) << " | ";
+		else
+			(*_os) << " <=> ";
+		(*_os) << "X1 = X2";
+		(*_os) << "))))";
+		if(f->arity() > 0)
+			(*_os) << ")";
+		endAxiom();
+	}
+
+	// Unimplemented virtual methods
+	void visit(const GroundSet*) { }
+	void visit(const Namespace*) { }
+	void visit(const GroundFixpDef*) { }
+	void visit(const GroundClause&) { }
+	void visit(const AggGroundRule*) { }
+	void visit(const GroundAggregate*) { }
+	void visit(const CPReification*) { }
+	void visit(const PCGroundRule*) { }
+	void startTheory() { }
+	void endTheory() { }
+
+private:
+	void startAxiom(std::string prefix) {
+		if (_conjecture)
+			startAxiom(prefix, "conjecture", &_conjectureStream);
+		else
+			startAxiom(prefix, "axiom", &_axiomStream);
+	}
+	
+	void startAxiom(std::string prefix, std::stringstream* output) {
+		startAxiom(prefix, "axiom", output);
+	}
+	
+	void startAxiom(std::string prefix, std::string type, std::stringstream* output) {
+		_os = output;
+		if(_arithmetic)
+			(*_os) << "tff";
+		else
+			(*_os) << "fof";
+		(*_os) << "(" << prefix << _count << "," << type << ",(";
+	}
+	
+	void endAxiom() {
+		(*_os) << ")).\n";
+	}
+	
+	void outputPFSymbolType(const PFSymbol* pfs) {
+		if (!pfs->overloaded() && pfs->nrSorts() > 0) {
+			startAxiom("ta", &_typeAxiomStream);
+			(*_os) << "! [";
+			(*_os) << "V0";
+			if(_arithmetic) {
+				(*_os) << ": ";
+				(*_os) << TFFTypeString(pfs->sort(0));
+			}
+			for(unsigned int n = 1; n < pfs->nrSorts(); ++n) {
+				(*_os) << ",V" << n;
+				if (_arithmetic) {
+					(*_os) << ": ";
+					(*_os) << TFFTypeString(pfs->sort(n));
+				}
+			}
+			(*_os) << "] : (";
+			if(pfs->nrSorts() != 1 || pfs->to_string(false) != pfs->sort(0)->name())
+				(*_os) << "~";
+			(*_os) << "p_" << rewriteLongname(pfs->to_string(true)) << "(";
+			(*_os) << "V0";
+			for(unsigned int n = 1; n < pfs->nrSorts(); ++n) {
+				(*_os) << ",V" << n;
+			}
+			if(pfs->nrSorts() == 1 && pfs->to_string(false) == pfs->sort(0)->name())
+				(*_os) << ") <=> (";
+			else
+				(*_os) << ") | (";
+			(*_os) << "t_" << pfs->sort(0)->name() << "(V0)";
+			for(unsigned int n = 1; n < pfs->nrSorts(); ++n) {
+				(*_os) << " & " << "t_" << pfs->sort(n)->name() << "(V" << n << ")";
+			}
+			(*_os) << "))";
+			if (_arithmetic) {
+				outputTFFPFSymbolType(pfs);
+			}
+			endAxiom();
+		}
+	}
+	
+	void outputTFFPFSymbolType(const PFSymbol* pfs) {
+		_typeStream << "tff(t" << _count;
+		_typeStream << ",type,(";
+		_typeStream << "p_" << rewriteLongname(pfs->to_string(true));
+		_typeStream << ": ";
+		if (pfs->nrSorts() > 1) {
+			_typeStream << "(";
+		}
+		for(unsigned int n = 0; n < pfs->nrSorts(); ++ n) {
+			if(pfs->sort(n)) {
+				_typeStream << TFFTypeString(pfs->sort(n));
+			}
+			else {
+				_typeStream << "$i";
+			}
+			if (n + 1 < pfs->nrSorts()) {
+				_typeStream << " * ";
+			}
+		}
+		if (pfs->nrSorts() > 1)
+			_typeStream << ")";
+		_typeStream << " > $o)).\n";
+	}
+	
+	void outputDomainTermTypeAxioms() {
+		std::vector<DomainTerm*> strings;
+		for(auto it = _typedDomainTerms.begin(); it != _typedDomainTerms.end(); ++ it) {
+			startAxiom("dtta", &_typeAxiomStream);
+			std::string sortName = (*it)->sort()->name();
+			(*_os) << "t_" << sortName << "(";
+			(*_os) << domainTermNameString(*it);
+			(*_os) << ")";
+			endAxiom();
+			if(SortUtils::isSubsort((*it)->sort(),VocabularyUtils::stringsort())) {
+				strings.push_back((*it));
+			}
+			_count ++;
+			// if(_arithmetic && sortName != "int" && sortName != "nat" && sortName != "float" && sortName != "string") {
+			// 	_typeStream << "tff(dtt" << _count << ",type,(";
+			// 	_typeStream << domainTermNameString(*it) << ": ";
+			// 	_typeStream << "$tType";
+			// 	_typeStream << ")).\n";
+			// }
+			// _count ++;
+		}
+		if(_arithmetic) {
+			for(auto it = _types.begin(); it != _types.end(); ++ it) {
+ 				_typeStream << "tff(";
+ 				_typeStream << "dtt";
+ 				_typeStream << _count << ",type,(";
+ 				_typeStream << "t_" << (*it)->name() << ": ";
+ 				_typeStream << TFFTypeString(*it);
+ 				_typeStream << " > $o";
+ 				_typeStream << ")).\n";
+				_count ++;
+	 		}
+		}
+		if (strings.size() >= 2) {
+			startAxiom("stringineqa", &_typeAxiomStream);
+			for(unsigned int i = 0; i < strings.size() - 1; i++) {
+				for(unsigned int j = i + 1; j < strings.size(); j++) {
+					(*_os) << domainTermNameString(strings[i]) << " != " << domainTermNameString(strings[j]);
+					if(!(i == strings.size() - 2 && j == strings.size() - 1)) {
+						(*_os) << " & ";
+					}
+				}
+			}
+			endAxiom();
+		}
+		_typedDomainElements.clear();
+		_typedDomainTerms.clear();
+		_types.clear();
 	}
 	
 	std::string rewriteLongname(const std::string& longname) {
@@ -202,9 +692,8 @@ public:
 		// Append 1 more '_' to sequences of 3 or more '_'s
 		pos = result.find("___");
 		while(pos != std::string::npos) {
-			while(result[pos + 3] == '_') {
+			while(result[pos + 3] == '_')
 				++ pos;
-			}
 			result.replace(pos, 3, "____");
 			pos = result.find("___", pos + 3);
 		}
@@ -216,717 +705,6 @@ public:
 			pos = result.find("::", pos + 3);
 		}
 		return result;
-	}
-
-	/** Formulas **/
-
-	void visit(const PredForm* f) {
-		std::stringstream* outputStreamPtr;
-		if(_conjecture) {
-			outputStreamPtr = &_conjectureStream;
-		} else {
-			outputStreamPtr = &_axiomStream;
-		}
-		std::stringstream& outputStream = *outputStreamPtr;
-		if(! f->sign())	outputStream << "~";
-		if(f->symbol()->to_string(false) == "=") {
-			outputStream << "(";
-			f->subterms()[0]->accept(this);
-			outputStream << " = ";
-			f->subterms()[1]->accept(this);
-			outputStream << ")";
-		} else if(f->symbol()->to_string(false) == ">") {
-			outputStream << "$greater(";
-			f->subterms()[0]->accept(this);
-			outputStream << ",";
-			f->subterms()[1]->accept(this);
-			outputStream << ")";
-		} else if(f->symbol()->to_string(false) == "<") {
-			outputStream << "$less(";
-			f->subterms()[0]->accept(this);
-			outputStream << ",";
-			f->subterms()[1]->accept(this);
-			outputStream << ")";
-		} else if(f->symbol()->to_string(false) == "+") {
-			outputStream << "($sum(";
-			f->subterms()[0]->accept(this);
-			outputStream << ",";
-			f->subterms()[1]->accept(this);
-			outputStream << ") = ";
-			f->subterms()[2]->accept(this);
-			outputStream << ")";
-		} else if(f->symbol()->to_string(false) == "-" && f->subterms().size() == 3) {
-			outputStream << "($difference(";
-			f->subterms()[0]->accept(this);
-			outputStream << ",";
-			f->subterms()[1]->accept(this);
-			outputStream << ") = ";
-			f->subterms()[2]->accept(this);
-			outputStream << ")";
-		} else if(f->symbol()->to_string(false) == "-" && f->subterms().size() == 2) {
-			outputStream << "($uminus(";
-			f->subterms()[0]->accept(this);
-			outputStream << ") = ";
-			f->subterms()[1]->accept(this);
-			outputStream << ")";
-		} else if(f->symbol()->to_string(false) == "*") {
-			outputStream << "($product(";
-			f->subterms()[0]->accept(this);
-			outputStream << ",";
-			f->subterms()[1]->accept(this);
-			outputStream << ") = ";
-			f->subterms()[2]->accept(this);
-			outputStream << ")";
-		} else if(f->symbol()->to_string(false) == "PRED") {
-			outputStream << "($difference(";
-			f->subterms()[0]->accept(this);
-			outputStream << ",1) = ";
-			f->subterms()[1]->accept(this);
-			outputStream << ")";
-		} else if(f->symbol()->to_string(false) == "SUCC") {
-			outputStream << "($sum(";
-			f->subterms()[0]->accept(this);
-			outputStream << ",1) = ";
-			f->subterms()[1]->accept(this);
-			outputStream << ")";
-		} else if(f->symbol()->to_string(false) == "MAX") {
-			// NOTE: $itett is often unsupported
-			outputStream << "($itett($greater(";
-			f->subterms()[0]->accept(this);
-			outputStream << ",";
-			f->subterms()[1]->accept(this);
-			outputStream << "),";
-			f->subterms()[0]->accept(this);
-			outputStream << ",";
-			f->subterms()[1]->accept(this);
-			outputStream << ") = ";
-			f->subterms()[2]->accept(this);
-			outputStream << ")";
-		} else if(f->symbol()->to_string(false) == "MIN") {
-			// NOTE: $itett is often unsupported
-			outputStream << "($itett($less(";
-			f->subterms()[0]->accept(this);
-			outputStream << ",";
-			f->subterms()[1]->accept(this);
-			outputStream << "),";
-			f->subterms()[0]->accept(this);
-			outputStream << ",";
-			f->subterms()[1]->accept(this);
-			outputStream << ") = ";
-			f->subterms()[2]->accept(this);
-			outputStream << ")";
-		} else if(f->symbol()->to_string(false) == "abs") {
-			// NOTE: $itett is often unsupported
-			outputStream << "($itett($greater(";
-			f->subterms()[0]->accept(this);
-			outputStream << ",$uminus(";
-			f->subterms()[0]->accept(this);
-			outputStream << ")),";
-			f->subterms()[0]->accept(this);
-			outputStream << ",$uminus(";
-			f->subterms()[0]->accept(this);
-			outputStream << ")) = ";
-			f->subterms()[1]->accept(this);
-			outputStream << ")";
-		} else {
-			outputStream << "p_" << rewriteLongname(f->symbol()->to_string(true));
-			if(!f->subterms().empty()) {
-				outputStream << "(";
-				f->subterms()[0]->accept(this);
-				for(unsigned int n = 1; n < f->subterms().size(); ++n) {
-					outputStream << ",";
-					f->subterms()[n]->accept(this);
-				}
-				outputStream << ")";
-			}
-		}
-	}
-
-	// TODO TFF
-	void visit(const EqChainForm* f) {
-		std::stringstream* outputStreamPtr;
-		if(_conjecture) {
-			outputStreamPtr = &_conjectureStream;
-		} else {
-			outputStreamPtr = &_axiomStream;
-		}
-		std::stringstream& outputStream = *outputStreamPtr;
-		if(! f->sign())	outputStream << "~";
-		outputStream << "(";
-		f->subterms()[0]->accept(this);
-		for(unsigned int n = 0; n < f->comps().size(); ++n) {
-			switch(f->comps()[n]) {
-				case CT_EQ:
-					outputStream << " = ";
-					break;
-				case CT_NEQ:
-					outputStream << " != ";
-					break;
-			}
-			f->subterms()[n+1]->accept(this);
-			if(n+1 < f->comps().size()) {
-				if(f->conj())
-					outputStream << " & ";
-				else
-					outputStream << " | ";
-				f->subterms()[n+1]->accept(this);
-			}
-		}
-		outputStream << ")";
-	}
-
-	void visit(const EquivForm* f) {
-		std::stringstream* outputStreamPtr;
-		if(_conjecture) {
-			outputStreamPtr = &_conjectureStream;
-		} else {
-			outputStreamPtr = &_axiomStream;
-		}
-		std::stringstream& outputStream = *outputStreamPtr;
-		if(! f->sign())	outputStream << "~";
-		outputStream << "(";
-		f->left()->accept(this);
-		outputStream << " <=> ";
-		f->right()->accept(this);
-		outputStream << ")";
-	}
-
-	void visit(const BoolForm* f) {
-		std::stringstream* outputStreamPtr;
-		if(_conjecture) {
-			outputStreamPtr = &_conjectureStream;
-		} else {
-			outputStreamPtr = &_axiomStream;
-		}
-		std::stringstream& outputStream = *outputStreamPtr;
-		if(f->subformulas().empty()) {
-			if(f->sign() == f->conj())
-				outputStream << "$true";
-			else
-				outputStream << "$false";
-		}
-		else {
-			if(! f->sign())	outputStream << "~";
-			outputStream << "(";
-			f->subformulas()[0]->accept(this);
-			for(unsigned int n = 1; n < f->subformulas().size(); ++n) {
-				if(f->conj())
-					outputStream << " & ";
-				else
-					outputStream << " | ";
-				f->subformulas()[n]->accept(this);
-			}
-			outputStream << ")";
-		}
-	}
-	
-	void outputTFFType(const Sort* s, std::stringstream* outputStreamPtr) {
-		std::stringstream& outputStream = *outputStreamPtr;
-		if(SortUtils::isSubsort(const_cast<Sort*>(s),VocabularyUtils::natsort())) {
-			//output() << ": nat"; // TODO: What to do with nats? Just add an axiom? Or a type?
-			outputStream << "$int";
-		}
-		else if(SortUtils::isSubsort(const_cast<Sort*>(s),VocabularyUtils::intsort())) {
-			outputStream << "$int";
-		}
-		else if(SortUtils::isSubsort(const_cast<Sort*>(s),VocabularyUtils::floatsort())) {
-			outputStream << "$float";
-		}
-		else {
-			outputStream << "$tType";
-		}
-	}
-
-	// TODO: SORTS!
-	void visit(const QuantForm* f) {
-		std::stringstream* outputStreamPtr;
-		if(_conjecture) {
-			outputStreamPtr = &_conjectureStream;
-		} else {
-			outputStreamPtr = &_axiomStream;
-		}
-		std::stringstream& outputStream = *outputStreamPtr;
-		if(! f->sign())	outputStream << "~";
-		outputStream << "(";
-		if(f->univ())
-			outputStream << "! [";
-		else
-			outputStream << "? [";
-		auto it = f->quantvars().begin();
-		outputStream << "V_" << (*it)->name();
-		if(_arithmetic && (*it)->sort()) {
-			outputStream << ": ";
-			outputTFFType((*it)->sort(), outputStreamPtr);
-		}
-		++ it;
-		for(; it != f->quantvars().end(); ++it) {
-			outputStream << ",";
-			outputStream << "V_" << (*it)->name();
-			if(_arithmetic && (*it)->sort()) {
-				outputStream << ": ";
-				outputTFFType((*it)->sort(), outputStreamPtr);
-			}
-		}
-		outputStream << "] : (";
-		
-		// When quantifying over types, add these.
-		it = f->quantvars().begin();
-		while(it != f->quantvars().end() && !((*it)->sort()))
-			++ it;
-		if (it != f->quantvars().end()) {
-		 	if(f->univ())
-				outputStream << "~";
-			outputStream << "(";
-			outputStream << "t_" << (*it)->sort()->name() << "(V_" << (*it)->name() << ")";
-			++ it;
-			for(; it != f->quantvars().end(); ++it) {
-				if((*it)->sort()) {
-					outputStream << " & ";
-					outputStream << "t_" << (*it)->sort()->name() << "(V_" << (*it)->name() << ")";
-				}
-			}
-			outputStream << ")";
-			if(f->univ())
-				outputStream << " | ";
-			else
-				outputStream << " & ";
-		}
-		
-		outputStream << "(";
-		f->subformulas()[0]->accept(this);
-		outputStream << ")))";
-	}
-
-	/** Definitions **/
-
-	void visit(const Rule* r) {
-	}
-
-	void visit(const Definition* d) {
-	}
-
-	void visit(const FixpDef* d) {
-	}
-
-	/** Terms **/
-
-	void visit(const VarTerm* t) {
-		std::stringstream* outputStreamPtr;
-		if(_conjecture) {
-			outputStreamPtr = &_conjectureStream;
-		} else {
-			outputStreamPtr = &_axiomStream;
-		}
-		std::stringstream& outputStream = *outputStreamPtr;
-		outputStream << "V_" << t->var()->name();
-	}
-
-	// TODO: Handle predefined functions
-	// Actually, we won't have any of these anymore...
-	void visit(const FuncTerm* t) {
-		// std::stringstream* outputStreamPtr;
-		// if(_conjecture) {
-		// 	outputStreamPtr = &_conjectureStream;
-		// } else {
-		// 	outputStreamPtr = &_axiomStream;
-		// }
-		// std::stringstream& outputStream = *outputStreamPtr;
-		// outputStream << "f_" << rewriteLongname(t->function()->to_string(true));
-		// if(!t->subterms().empty()) {
-		// 	outputStream << "(";
-		// 	t->subterms()[0]->accept(this);
-		// 	for(unsigned int n = 1; n < t->subterms().size(); ++n) {
-		// 		outputStream << ",";
-		// 		t->subterms()[n]->accept(this);
-		// 	}
-		// 	outputStream << ")";
-		// }
-	}
-
-	// TODO: Figure out what to do with these.
-	// I hope this is okay...
-	void visit(const DomainTerm* t) {
-		std::stringstream* outputStreamPtr;
-		if(_conjecture) {
-			outputStreamPtr = &_conjectureStream;
-		} else {
-			outputStreamPtr = &_axiomStream;
-		}
-		std::stringstream& outputStream = *outputStreamPtr;
-		if(t->sort() && _typedDomainTermNames.find(t->value()->to_string()) == _typedDomainTermNames.end()) {
-			_typedDomainTermNames.insert(t->value()->to_string());
-			_typedDomainTerms.insert(const_cast<DomainTerm*>(t));
-			if(SortUtils::isSubsort(t->sort(),VocabularyUtils::natsort())) {
-				_nats = true;
-			}
-			else if(SortUtils::isSubsort(t->sort(),VocabularyUtils::intsort())) {
-				_ints = true;
-			}
-			else if(SortUtils::isSubsort(t->sort(),VocabularyUtils::floatsort())) {
-				_floats = true;
-			}
-		}
-		outputDomainTermName(t, outputStreamPtr);
-	}
-	
-	void outputDomainTermName(const DomainTerm* t, std::stringstream* outputStreamPtr) {
-		std::stringstream& outputStream = *outputStreamPtr;
-		std::string str = t->value()->to_string();
-		if(t->sort()) {
-			if(SortUtils::isSubsort(t->sort(),VocabularyUtils::charsort())) {
-				outputStream << "char_" << str;
-			}
-			else if(SortUtils::isSubsort(t->sort(),VocabularyUtils::stringsort())) {
-				outputStream << '\"' << str << '\"';
-			}
-			else if(SortUtils::isSubsort(t->sort(),VocabularyUtils::floatsort())) {
-				outputStream << str;
-			}
-			else {
-				outputStream << "tt_" << str;
-			}
-		}
-		else outputStream << "utt_" << str;
-	}
-
-	void visit(const AggTerm* t) {
-	}
-
-	void visit(const GroundClause& g){
-	}
-
-	void visit(const GroundDefinition* d) {
-	}
-
-	void visit(int defid, int tseitin, const PCGroundRuleBody* b) {
-	}
-
-	void visit(const PCGroundRuleBody* b) {
-	}
-
-	void visit(const AggGroundRuleBody* b) {
-	}
-
-	void visit(int defid, const GroundAggregate* b) {
-	}
-
-	void visit(const GroundAggregate* a) {
-	}
-
-	void visit(const CPReification* cpr) {
-	}
-
-	void visit(const CPSumTerm* cpt) {
-	}
-
-	void visit(const CPWSumTerm* cpt) {
-	}
-
-	void visit(const CPVarTerm* cpt) {
-	}
-
-
-	void visit(const PredTable* table) {
-	}
-
-	void visit(FuncTable* table) {
-	}
-
-	void visit(const Sort* s) {
-		if (!(s->parents().empty())) {
-			if (_arithmetic) {
-				_typeAxiomStream << "tff";
-			} else {
-				_typeAxiomStream << "fof";
-			}
-			_typeAxiomStream << "(";
-			if(_conjecture) {
-				_typeAxiomStream << "cta";
-			} else {
-				_typeAxiomStream << "ta";
-			}
-			_typeAxiomStream << _count << ",axiom,(";
-			_typeAxiomStream << "! [X";
-			if (_arithmetic) {
-				_typeAxiomStream << ": ";
-				outputTFFType(s, &_typeAxiomStream);
-			}
-			_typeAxiomStream << "] : (~" << "t_" << s->name() << "(X) | ";
-			auto it = s->parents().begin();
-			_typeAxiomStream << "(" << "t_" << (*it)->name() << "(X)";
-			++it;
-			for(; it != s->parents().end(); ++it) {
-				_typeAxiomStream << " & " << "t_" << (*it)->name() << "(X)";
-			}
-			_typeAxiomStream << ")))).\n";
-			_count ++;
-		}
-	}
-
-	// TODO: in TFF, handle ints and floats (and nats)
-	void visit(const Predicate* p) {
-		if (!p->overloaded() && p->arity() > 0) {
-			if (_arithmetic) {
-				outputTFFPFSymbolType(p);
-				_typeAxiomStream << "tff";
-			} else {
-				_typeAxiomStream << "fof";
-			}
-			_typeAxiomStream << "(";
-			if(_conjecture) {
-				_typeAxiomStream << "cta";
-			} else {
-				_typeAxiomStream << "ta";
-			}
-			_typeAxiomStream << _count;
-			_typeAxiomStream << ",axiom,(";
-			_typeAxiomStream << "! [";
-			_typeAxiomStream << "V0";
-			if(_arithmetic) {
-				_typeAxiomStream << ": ";
-				outputTFFType(p->sort(0), &_typeAxiomStream);
-			}
-			for(unsigned int n = 1; n < p->arity(); ++n) {
-				_typeAxiomStream << ",V" << n;
-				if (_arithmetic) {
-					_typeAxiomStream << ": ";
-					outputTFFType(p->sort(n), &_typeAxiomStream);
-				}
-			}
-			_typeAxiomStream << "] : (";
-			if(p->arity() != 1 || p->to_string(false) != p->sort(0)->name())
-				_typeAxiomStream << "~";
-			_typeAxiomStream << "p_" << rewriteLongname(p->to_string(true)) << "(";
-			_typeAxiomStream << "V0";
-			for(unsigned int n = 1; n < p->arity(); ++n) {
-				_typeAxiomStream << ",V" << n;
-			}
-			if(p->arity() == 1 && p->to_string(false) == p->sort(0)->name())
-				_typeAxiomStream << ") <=> (";
-			else
-				_typeAxiomStream << ") | (";
-			_typeAxiomStream << "t_" << p->sort(0)->name() << "(V0)";
-			for(unsigned int n = 1; n < p->arity(); ++n) {
-				_typeAxiomStream << " & " << "t_" << p->sort(n)->name() << "(V" << n << ")";
-			}
-			_typeAxiomStream << ")))).\n";
-			_count ++;
-		}
-		else {
-			std::cout << "Predicate: " << p->to_string(true) << std::endl;
-		}
-	}
-	
-	void outputTFFPFSymbolType(const PFSymbol* pfs) {
-		_typeStream << "tff(t" << _count;
-		_typeStream << ",type,(";
-		_typeStream << "p_" << rewriteLongname(pfs->to_string(true));
-		_typeStream << ": ";
-		if (pfs->nrSorts() > 1) {
-			_typeStream << "(";
-		}
-		for(unsigned int n = 0; n < pfs->nrSorts(); ++ n) {
-			if(pfs->sort(n)) {
-				outputTFFType(pfs->sort(n), &_typeStream);
-			}
-			else {
-				_typeStream << "$tType";
-			}
-			if (n + 1 < pfs->nrSorts()) {
-				_typeStream << " * ";
-			}
-		}
-		if (pfs->nrSorts() > 1)
-			_typeStream << ")";
-		_typeStream << " > $o)).\n";
-	}
-
-	void visit(const Function* f) {
-		if (!f->overloaded()) {
-			if (_arithmetic) {
-				outputTFFPFSymbolType(f);
-				_typeAxiomStream << "tff";
-			} else {
-				_typeAxiomStream << "fof";
-			}
-			_typeAxiomStream << "(";
-			if(_conjecture) {
-				_typeAxiomStream << "cta";
-			} else {
-				_typeAxiomStream << "ta";
-			}
-			_typeAxiomStream << _count;
-			_typeAxiomStream << ",axiom,(";
-			_typeAxiomStream << "! [";
-			_typeAxiomStream << "V0";
-			if(_arithmetic) {
-				_typeAxiomStream << ": ";
-				outputTFFType(f->sort(0), &_typeAxiomStream);
-			}
-			for(unsigned int n = 1; n < f->arity() + 1; ++n) {
-				_typeAxiomStream << ",V" << n;
-				if (_arithmetic) {
-					_typeAxiomStream << ": ";
-					outputTFFType(f->sort(n), &_typeAxiomStream);
-				}
-			}
-			_typeAxiomStream << "] : (";
-			// TODO: Waar ga je het onderscheid nog zien?
-			// You won't, but names may not clash, so you can call these p_ too
-			_typeAxiomStream << "~p_" << rewriteLongname(f->to_string(true)) << "(";
-			_typeAxiomStream << "V0";
-			for(unsigned int n = 1; n < f->arity() + 1; ++n) {
-				_typeAxiomStream << ",V" << n;
-			}
-			_typeAxiomStream << ") | (";
-			_typeAxiomStream << "t_" << f->sort(0)->name() << "(V0)";
-			for(unsigned int n = 1; n < f->arity() + 1; ++n) {
-				_typeAxiomStream << " & " << "t_" << f->sort(n)->name() << "(V" << n << ")";
-			}
-			_typeAxiomStream << ")))).\n";
-			if(f->arity() > 0 && !f->partial()) {
-				outputTotalFuncAxiom(f);
-			}
-			else if(f->arity() > 0) {
-				outputPartialFuncAxiom(f);
-			}
-			else {
-				outputArity0FuncAxiom(f);
-			}
-			_count ++;
-		}
-		else {
-			std::cout << "Function: " << f->to_string(true) << std::endl;
-		}
-	}
-	
-	void outputTotalFuncAxiom(const Function* f) {
-		if(_arithmetic) {
-			_typeAxiomStream << "tff";
-		} else {
-			_typeAxiomStream << "fof";
-		}
-		_typeAxiomStream << "(tfa" << _count << ",axiom,(";
-		_typeAxiomStream << "! [";
-		_typeAxiomStream << "V0";
-		if(_arithmetic) {
-			_typeAxiomStream << ": ";
-			outputTFFType(f->sort(0), &_typeAxiomStream);
-		}
-		for(unsigned int n = 1; n < f->arity(); ++n) {
-			_typeAxiomStream << ",V" << n;
-			if (_arithmetic) {
-				_typeAxiomStream << ": ";
-				outputTFFType(f->sort(n), &_typeAxiomStream);
-			}
-		}
-		_typeAxiomStream << "] : (";
-		_typeAxiomStream << "~(";
-		_typeAxiomStream << "t_" << f->sort(0)->name() << "(V0)";
-		for(unsigned int n = 1; n < f->arity(); ++n) {
-			_typeAxiomStream << " & " << "t_" << f->sort(n)->name() << "(V" << n << ")";
-		}
-		_typeAxiomStream << ") | ";
-		_typeAxiomStream << "(? [X1";
-		if(_arithmetic) {
-			_typeAxiomStream << ": ";
-			outputTFFType(f->outsort(), &_typeAxiomStream);
-		}
-		_typeAxiomStream << "] : (";
-		_typeAxiomStream << "t_" << f->outsort()->name() << "(X1) & ";
-		_typeAxiomStream << "(! [X2";
-		if(_arithmetic) {
-			_typeAxiomStream << ": ";
-			outputTFFType(f->outsort(), &_typeAxiomStream);
-		}
-		_typeAxiomStream << "] : (";
-		_typeAxiomStream << "p_" << rewriteLongname(f->to_string(true)) << "(";
-		_typeAxiomStream << "V0";
-		for(unsigned int n = 1; n < f->arity(); ++n) {
-			_typeAxiomStream << ",V" << n;
-		}
-		_typeAxiomStream << ",X2) <=> X1 = X2";
-		_typeAxiomStream << "))))))).\n";
-	}
-	
-	void outputPartialFuncAxiom(const Function* f) {
-		if(_arithmetic) {
-			_typeAxiomStream << "tff";
-		} else {
-			_typeAxiomStream << "fof";
-		}
-		_typeAxiomStream << "(fa" << _count << ",axiom,(";
-		_typeAxiomStream << "! [";
-		_typeAxiomStream << "V0";
-		if(_arithmetic) {
-			_typeAxiomStream << ": ";
-			outputTFFType(f->sort(0), &_typeAxiomStream);
-		}
-		for(unsigned int n = 1; n < f->arity(); ++n) {
-			_typeAxiomStream << ",V" << n;
-			if (_arithmetic) {
-				_typeAxiomStream << ": ";
-				outputTFFType(f->sort(n), &_typeAxiomStream);
-			}
-		}
-		_typeAxiomStream << "] : (";
-		_typeAxiomStream << "~(";
-		_typeAxiomStream << "t_" << f->sort(0)->name() << "(V0)";
-		for(unsigned int n = 1; n < f->arity(); ++n) {
-			_typeAxiomStream << " & " << "t_" << f->sort(n)->name() << "(V" << n << ")";
-		}
-		_typeAxiomStream << ") | ";
-		_typeAxiomStream << "(? [X1";
-		if(_arithmetic) {
-			_typeAxiomStream << ": ";
-			outputTFFType(f->outsort(), &_typeAxiomStream);
-		}
-		_typeAxiomStream << "] : (";
-		_typeAxiomStream << "t_" << f->outsort()->name() << "(X1) & ";
-		_typeAxiomStream << "(! [X2";
-		if(_arithmetic) {
-			_typeAxiomStream << ": ";
-			outputTFFType(f->outsort(), &_typeAxiomStream);
-		}
-		_typeAxiomStream << "] : (";
-		_typeAxiomStream << "~p_" << rewriteLongname(f->to_string(true)) << "(";
-		_typeAxiomStream << "V0";
-		for(unsigned int n = 1; n < f->arity(); ++n) {
-			_typeAxiomStream << ",V" << n;
-		}
-		_typeAxiomStream << ",X2) | X1 = X2";
-		_typeAxiomStream << "))))))).\n";
-	}
-	
-	void outputArity0FuncAxiom(const Function* f) {
-		if(_arithmetic) {
-			_typeAxiomStream << "tff";
-		} else {
-			_typeAxiomStream << "fof";
-		}
-		_typeAxiomStream << "(ta0fa" << _count << ",axiom,";
-		_typeAxiomStream << "(? [X1";
-		if(_arithmetic) {
-			_typeAxiomStream << ": ";
-			outputTFFType(f->outsort(), &_typeAxiomStream);
-		}
-		_typeAxiomStream << "] : (";
-		_typeAxiomStream << "t_" << f->outsort()->name() << "(X1) & ";
-		_typeAxiomStream << "(! [X2";
-		if(_arithmetic) {
-			_typeAxiomStream << ": ";
-			outputTFFType(f->outsort(), &_typeAxiomStream);
-		}
-		_typeAxiomStream << "] : (";
-		_typeAxiomStream << "p_" << rewriteLongname(f->to_string(true)) << "(X2)";
-		_typeAxiomStream << " <=> X1 = X2";
-		_typeAxiomStream << "))))).\n";
-	}
-
-	void visit(SortTable* table) {
-	}
-
-	void visit(const GroundSet* s) {
 	}
 };
 

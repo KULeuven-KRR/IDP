@@ -28,7 +28,7 @@ Printer* Printer::create(Options* opts, Stream& stream) {
 		case LAN_ECNF:
 			return new EcnfPrinter<Stream>(opts->writeTranslation(), stream);
 		case LAN_TPTP:
-			return new TPTPPrinter<Stream>(false, false, stream);
+			return new TPTPPrinter<Stream>(false, stream);
 		default:
 			assert(false);
 			return NULL;
@@ -36,16 +36,16 @@ Printer* Printer::create(Options* opts, Stream& stream) {
 }
 
 template<class Stream>
-Printer* Printer::create(Options* opts, Stream& stream, bool conjecture, bool arithmetic) {
+Printer* Printer::create(Options* opts, Stream& stream, bool arithmetic) {
 	if (opts->language() == LAN_TPTP) {
-		return new TPTPPrinter<Stream>(conjecture, arithmetic, stream);
+		return new TPTPPrinter<Stream>(arithmetic, stream);
 	} else {
 		return create<Stream>(opts, stream);
 	}
 }
 
 template Printer* Printer::create<stringstream>(Options*, stringstream&);
-template Printer* Printer::create<stringstream>(Options*, stringstream&, bool, bool);
+template Printer* Printer::create<stringstream>(Options*, stringstream&, bool);
 template Printer* Printer::create<InteractivePrintMonitor>(Options*, InteractivePrintMonitor&);
 
 void Printer::visit(const AbstractTheory* t){

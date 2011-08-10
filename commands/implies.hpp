@@ -12,7 +12,6 @@
 #include "printers/tptpprinter.hpp"
 #include "theory.hpp"
 #include <cstdlib>
-#include <iostream>
 #include <fstream>
 #include <stdio.h>
 #include <string>
@@ -25,6 +24,7 @@ class ArithmeticDetector : public TheoryVisitor {
 		ArithmeticDetector() : _arithmeticFound(false) { }
 		void visit(const FuncTerm* f);
 		void visit(const EqChainForm* f);
+		void visit(const Rule* r);
 		bool arithmeticFound() { return _arithmeticFound; }
 };
 
@@ -54,6 +54,10 @@ void ArithmeticDetector::visit(const FuncTerm* f) {
 	}
 }
 
+void ArithmeticDetector::visit(const Rule* r) {
+	
+}
+
 // TODO: Neem support checks en arithmetic detection samen!
 // class TheorySupportChecker : public TheoryVisitor {
 // 	private:
@@ -70,28 +74,69 @@ public:
 	ImpliesInference(): Inference("implies") {
 		add(AT_THEORY);
 		add(AT_THEORY);
-		add(AT_STRING);
-		add(AT_STRING);
+		// Prover commands
+		add(AT_TABLE); // fof
+		add(AT_TABLE); // tff
+		// theorem/countersatisfiable strings
+		add(AT_TABLE); // fof theorem
+		add(AT_TABLE); // fof countersatisfiable
+		add(AT_TABLE); // tff theorem
+		add(AT_TABLE); // tff countersatisfiable
 		add(AT_OPTIONS);
 	}
 	
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
-		// Doe wat voorverwerking van de theories.
-		Theory* axioms = dynamic_cast<Theory*>(args[0].theory()->clone());
-		Theory* conjectures = dynamic_cast<Theory*>(args[1].theory()->clone());
-		// TODO: What if the cast fails?
+		std::vector<InternalArgument>& fofCommands = *args[2]._value._table;
+		std::vector<InternalArgument>& tffCommands = *args[3]._value._table;
 		
-		Options* opts = args[4].options();
+		std::vector<InternalArgument>& fofTheoremStrings = *args[4]._value._table;
+		std::vector<InternalArgument>& fofCounterSatisfiableStrings = *args[5]._value._table;
+		std::vector<InternalArgument>& tffTheoremStrings = *args[6]._value._table;
+		std::vector<InternalArgument>& tffCounterSatisfiableStrings = *args[7]._value._table;
 		
+		#ifdef __linux__
+		#define COMMANDS_INDEX 0
+		#endif
+		#ifdef _WIN32
+		#define COMMANDS_INDEX 1
+		#endif
+		#ifdef __APPLE__
+		#define COMMANDS_INDEX 2
+		#endif
+		
+		#ifdef COMMANDS_INDEX
+		std::string& fofCommandString = *fofCommands[COMMANDS_INDEX]._value._string;
+		std::string& tffCommandString = *tffCommands[COMMANDS_INDEX]._value._string;
+		#else
+		Error::error("Implies inference is not supported on this platform.\n");
+		return nilarg();
+		#endif
+		
+		Theory* axioms;
+		Theory* conjectures;
+		try {
+			axioms = dynamic_cast<Theory*>(args[0].theory()->clone());
+			conjectures = dynamic_cast<Theory*>(args[1].theory()->clone());
+		} catch (std::bad_cast) {
+			// TODO error?
+			Error::error("Implies can only take regular Theory objects as axioms and conjectures.\n");
+			return nilarg();
+		}
+		
+		Options* opts = args[8].options();
+		
+		// Determine whether the theories are compatible with this inference and whether arithmetic support is required
 		ArithmeticDetector ad;
 		axioms->accept(&ad);
 		conjectures->accept(&ad);
 		bool arithmeticFound = ad.arithmeticFound();
 		
+		// Replace definitions by their completion
 		TheoryUtils::completion(axioms);
+		
+		// Turn functions into predicates (for partial function support)
 		TheoryUtils::remove_nesting(axioms);
 		TheoryUtils::remove_nesting(conjectures);
-						
 		for(auto it = axioms->sentences().begin(); it != axioms->sentences().end(); ++it) {
 			FormulaUtils::graph_functions(*it);
 		}
@@ -103,20 +148,21 @@ public:
 		remove(".tptpfile.tptp");
 		remove(".tptpresult.txt");
 		
+		//arithmeticFound = true; // TODO REMOVE ME
+		
 		std::stringstream stream;
-		// TODO: Dynamic cast, is dat wel mooi?
-		TPTPPrinter<std::stringstream>* printer = dynamic_cast<TPTPPrinter<std::stringstream>*>(Printer::create<std::stringstream>(opts, stream, false, arithmeticFound));
+		TPTPPrinter<std::stringstream>* printer;
+		try {
+			printer = dynamic_cast<TPTPPrinter<std::stringstream>*>(Printer::create<std::stringstream>(opts, stream, arithmeticFound));
+		} catch (std::bad_cast) {
+			// TODO error?
+			Error::error("The printer type must be set to a TPTPPrinter.\n");
+			return nilarg();
+		}
 		
-		// TODO: DELETE ME
-		// if (arithmeticFound) {
-		// 	stream << "tff(t_nat_type,type,(t_nat: ($int) > $o)).\n";
-		// }
-		
-		//printer->visit(Vocabulary::std());
+		// Print the theories to a TPTP file
 		printer->visit(axioms->vocabulary());
 		printer->visit(axioms);
-		//delete(printer);
-		//printer = Printer::create<std::stringstream>(opts, stream, true, arithmeticFound);
 		printer->conjecture(true);
 		if(axioms->vocabulary() != conjectures->vocabulary())
 			printer->visit(conjectures->vocabulary());
@@ -128,57 +174,62 @@ public:
 		tptpFile << stream.str();
 		tptpFile.close();
 		
-		// TODO remove me
-		std::cout << stream.str();
-		
-		// Stuff die de externe dinges oproept.
-		std::string& fofCommandString = *args[2]._value._string;
-		std::string& tffCommandString = *args[3]._value._string; // TODO: after arithmetic test, use TFF version if result is true
-		std::stringstream commandStream;
+		// Call the external prover
+		std::string commandString;
 		if (arithmeticFound)
-			commandStream << tffCommandString;
+			commandString = tffCommandString;
 		else
-			commandStream << fofCommandString;
-		commandStream << ".tptpfile.tptp > .tptpresult.txt";
-		system(commandStream.str().c_str());
+			commandString = fofCommandString;
+		auto pos = commandString.find("%i");
+		commandString.replace(pos, 2, ".tptpfile.tptp");
+		pos = commandString.find("%o");
+		commandString.replace(pos, 2, ".tptpresult.txt");
 		
-		// Haal daar het antwoord uit. "SZS status ... "
+		system(commandString.c_str());
+		
+		std::vector<InternalArgument> theoremStrings;
+		std::vector<InternalArgument> counterSatisfiableStrings;
+		if(arithmeticFound) {
+			theoremStrings = tffTheoremStrings;
+			counterSatisfiableStrings = tffCounterSatisfiableStrings;
+		}
+		else {
+			theoremStrings = fofTheoremStrings;
+			counterSatisfiableStrings = fofCounterSatisfiableStrings;
+		}
+		
+		// Retrieve the status from the result
 		std::string line;
 		std::ifstream tptpResult;
 		tptpResult.open(".tptpresult.txt");
 		getline(tptpResult, line);
-		while(line.find("SZS status") == std::string::npos && !tptpResult.eof()) {
+		// TODO: Hoe itereren?
+		pos = std::string::npos;
+		bool result = false;
+		while(pos == std::string::npos && !tptpResult.eof()) {
+			unsigned int i = 0;
+			while(i < theoremStrings.size() && pos == std::string::npos) {
+				pos = line.find(*theoremStrings[i]._value._string);
+				result = true;
+				i++;
+			}
+			i = 0;
+			while(i < counterSatisfiableStrings.size() && pos == std::string::npos) {
+				pos = line.find(*counterSatisfiableStrings[i]._value._string);
+				result = false;
+				i++;
+			}
 			getline(tptpResult, line);
 		}
-		if(tptpResult.eof()) {
-			tptpResult.close();
-			// TODO uncomment
-			//remove(".tptpfile.tptp");
-			//remove(".tptpresult.txt");
-			return nilarg();
-		}
-		
 		tptpResult.close();
 		
 		// TODO uncomment
 		//remove(".tptpfile.tptp");
 		//remove(".tptpresult.txt");
 		
-		bool result = false;
-		std::string acceptStrings [12] = {"Theorem", "Equivalent", "TautologousConclusion", "WeakerConclusion", "EquivalentTheorem", "Tautology", "WeakerTautologousConclusion", "WeakerTheorem", "ContradictoryAxioms", "SatisfiableConclusionContradictoryAxioms", "TautologousConclusionContradictoryAxioms", "WeakerConclusionContradictoryAxioms"};
-		std::string unkStrings [22] = {"NoSuccess", "Open", "Unknown", "Assumed", "Stopped", "Error", "OSError", "InputError", "SyntaxError", "SemanticError", "TypeError", "Forced", "User", "ResourceOut", "Timeout", "MemoryOut", "GaveUp", "Incomplete", "Inappropriate", "InProgress", "NotTried", "NotTriedYet"};
-		
-		// Match on the strings
-		// TODO: make sure that there is only whitespace following, but not necessary I think
-		for(unsigned int n = 0; n < 22; n++) {
-			if(line.find("SZS status " + unkStrings[n]) != std::string::npos) {
-				return nilarg();
-			}
-		}
-		for(unsigned int n = 0; n < 12; n++) {
-			if(line.find("SZS status " + acceptStrings[n]) != std::string::npos) {
-				result = true;
-			}
+		if(pos == std::string::npos) {
+			Error::error("The prover did not finish in time or stopped in an irregular state.\n");
+			return nilarg();
 		}
 		
 		InternalArgument ia = InternalArgument();
