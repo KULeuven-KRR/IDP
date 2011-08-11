@@ -88,7 +88,7 @@ gidl_SOURCES = \
 		commands/changevocabulary.hpp\
 		commands/estimatecosts.hpp\
 		commands/derefandincrement.hpp\
-		commands/implies.hpp\
+		commands/entails.hpp\
 		commands/removenesting.hpp\
 		commands/simplify.hpp\
 		commands/createrange.hpp

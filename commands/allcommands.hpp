@@ -37,7 +37,7 @@
 #include "commands/derefandincrement.hpp"
 #include "commands/help.hpp"
 #include "commands/optimization.hpp"
-#include "commands/implies.hpp"
+#include "commands/entails.hpp"
 #include "commands/removenesting.hpp"
 #include "commands/simplify.hpp"
 
@@ -96,7 +96,7 @@ std::vector<Inference*> getAllInferences(){
 	inferences.push_back(new HelpInference());
 	inferences.push_back(new GroundAndPrintInference());
 	inferences.push_back(new OptimizationInference());
-	inferences.push_back(new ImpliesInference());
+	inferences.push_back(new EntailsInference());
 	inferences.push_back(new RemoveNestingInference());
 	inferences.push_back(new SimplifyInference());
 	return inferences;

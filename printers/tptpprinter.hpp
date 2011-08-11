@@ -27,7 +27,7 @@ private:
 	unsigned int				_count;
 	std::set<DomainTerm*>		_typedDomainTerms;
 	std::set<DomainElement*>	_typedDomainElements;
-	std::set<Sort*>				_types; // TODO: Gaat dit niet beter?
+	std::set<Sort*>				_types;
 	std::stringstream*			_os;
 	std::stringstream			_typeStream; // The types. (for TFF)
 	std::stringstream			_typeAxiomStream; // The type predicates (defining what atomic symbols have what type,
@@ -242,7 +242,6 @@ public:
 		}
 	}
 
-	// TODO TFF
 	void visit(const EqChainForm* f) {
 		if(! f->sign())	(*_os) << "~";
 		(*_os) << "(";
@@ -297,7 +296,6 @@ public:
 	
 	std::string TFFTypeString(const Sort* s) {
 		if(SortUtils::isSubsort(const_cast<Sort*>(s),VocabularyUtils::natsort())) {
-			//output() << ": nat"; // TODO: What to do with nats? Just add an axiom? Or a type?
 			return "$int";
 		}
 		else if(SortUtils::isSubsort(const_cast<Sort*>(s),VocabularyUtils::intsort())) {
@@ -307,13 +305,10 @@ public:
 			return "$float";
 		}
 		else {
-			// TODO: Welke is het nu?
 			return "$i";
-			//return "$tType";
 		}
 	}
 
-	// TODO: SORTS!
 	void visit(const QuantForm* f) {
 		if(! f->sign())	(*_os) << "~";
 		(*_os) << "(";
@@ -378,10 +373,6 @@ public:
 		(*_os) << ")))";
 	}
 
-	/** Definitions **/
-
-	
-
 	/** Terms **/
 
 	void visit(const VarTerm* t) {
@@ -392,8 +383,6 @@ public:
 		// Functions have been replaced by predicates
 	}
 
-	// TODO: Figure out what to do with these.
-	// I hope this is okay...
 	void visit(const DomainTerm* t) {
 		if(t->sort() && _typedDomainElements.find(const_cast<DomainElement*>(t->value())) == _typedDomainElements.end()) {
 			_typedDomainElements.insert(const_cast<DomainElement*>(t->value()));
@@ -421,7 +410,6 @@ public:
 				std::stringstream result;
 				result << "str_" << t->value()->value()._string;
 				return result.str();
-				//return '\"' + str + '\"';
 			}
 			else if(SortUtils::isSubsort(t->sort(),VocabularyUtils::floatsort())) {
 				return str;
@@ -454,7 +442,6 @@ public:
 		}
 	}
 
-	// TODO: in TFF, handle ints and floats (and nats)
 	void visit(const Predicate* p) {
 		outputPFSymbolType(p);
 		if (!p->overloaded() && p->arity() > 0) {
@@ -607,27 +594,30 @@ private:
 	}
 	
 	void outputTFFPFSymbolType(const PFSymbol* pfs) {
-		_typeStream << "tff(t" << _count;
-		_typeStream << ",type,(";
-		_typeStream << "p_" << rewriteLongname(pfs->to_string(true));
-		_typeStream << ": ";
+		//_typeStream << "tff(t" << _count;
+		//_typeStream << ",type,(";
+		startAxiom("t", "type", &_typeStream);
+		(*_os) << "p_" << rewriteLongname(pfs->to_string(true));
+		(*_os) << ": ";
 		if (pfs->nrSorts() > 1) {
-			_typeStream << "(";
+			(*_os) << "(";
 		}
 		for(unsigned int n = 0; n < pfs->nrSorts(); ++ n) {
 			if(pfs->sort(n)) {
-				_typeStream << TFFTypeString(pfs->sort(n));
+				(*_os) << TFFTypeString(pfs->sort(n));
 			}
 			else {
-				_typeStream << "$i";
+				(*_os) << "$i";
 			}
 			if (n + 1 < pfs->nrSorts()) {
-				_typeStream << " * ";
+				(*_os) << " * ";
 			}
 		}
 		if (pfs->nrSorts() > 1)
-			_typeStream << ")";
-		_typeStream << " > $o)).\n";
+			(*_os) << ")";
+		(*_os) << " > $o";
+		//_typeStream << ")).\n";
+		endAxiom();
 	}
 	
 	void outputDomainTermTypeAxioms() {
