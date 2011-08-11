@@ -209,6 +209,8 @@ class FOBDDManager {
 			//!< Returns a null-pointer in case this is impossible.
 			//!< Only guaranteed to work correctly on variables and indices.
 
+		bool partial(const FOBDDArgument*);	//!< Returns true iff the given term is partial
+
 };
 
 /**

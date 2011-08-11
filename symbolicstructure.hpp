@@ -32,6 +32,10 @@ class SymbolicStructure : public TheoryVisitor {
 			_manager(m), _ctbounds(ct), _cfbounds(cf), _vars(v) { }
 		FOBDDManager*	manager()						const { return _manager;	}
 		const FOBDD*	evaluate(Formula*,QueryType);
+
+		/** Make the symbolic structure less precise, based on the given structure **/
+		void filter(AbstractStructure* structure, double max_cost_per_answer);
+
 		std::ostream& put(std::ostream&) const;
 };
 

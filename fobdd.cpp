@@ -531,8 +531,14 @@ const FOBDDKernel* FOBDDManager::getQuantKernel(Sort* sort,const FOBDD* bdd) {
 	if(bdd == _truebdd) return _truekernel;
 	else if(bdd == _falsebdd) return _falsekernel;
 	else if(longestbranch(bdd) == 2) {
-		// TODO check if the bdd is solvable to the quantified variable. 
-		// If yes, check if the solved form is non-partial. If yes, return _truekernel
+		const FOBDDDeBruijnIndex* qvar = getDeBruijnIndex(sort,0);
+		const FOBDDArgument* arg = solve(bdd->kernel(),qvar);
+		if(arg && !partial(arg)) {
+			if((bdd->truebranch() == _truebdd && SortUtils::isSubsort(arg->sort(),sort)) 
+				|| sort->builtin()) return _truekernel;	
+				// NOTE: sort->builtin() is used here as an approximate test to see if the sort contains more than
+				// one domain element. If that is the case, (? y : F(x) ~= y) is indeed true.
+		}
 	}
 
 	// Lookup
@@ -1838,7 +1844,10 @@ const FOBDDArgument* FOBDDManager::solve(const FOBDDKernel* kernel, const FOBDDA
 								if(constval == -1) return currterm;
 								else if(constval == 1) return invert(currterm);
 							}
-							if(!SortUtils::isSubsort(currterm->sort(),VocabularyUtils::intsort())) {
+							if(SortUtils::isSubsort(currterm->sort(),VocabularyUtils::intsort())) {
+								// TODO: try if constval divides all constant factors
+							}
+							else {
 								Function* times = Vocabulary::std()->func("*/2");
 								times = times->disambiguate(vector<Sort*>(3,VocabularyUtils::floatsort()),0);
 								vector<const FOBDDArgument*> timesargs(2);
@@ -2258,6 +2267,36 @@ bool FOBDDManager::containsFuncTerms(const FOBDDKernel* kernel) {
 bool FOBDDManager::containsFuncTerms(const FOBDD* bdd) {
 	FuncTermChecker ft(this);
 	return ft.run(bdd);
+}
+
+class BDDPartialChecker : public FOBDDVisitor {
+	private:
+		bool _result;
+		void visit(const FOBDDFuncTerm* ft) {
+			if(ft->func()->partial()) {
+				_result = true;
+				return;
+			}
+			else {
+				for(auto it = ft->args().begin(); it != ft->args().end(); ++it) {
+					(*it)->accept(this);
+					if(_result) return;
+				}
+			}
+		}
+
+	public:
+		BDDPartialChecker(FOBDDManager* m) : FOBDDVisitor(m) { }
+		bool run(const FOBDDArgument* arg) {
+			_result = false;
+			arg->accept(this);
+			return _result;
+		}
+};
+
+bool FOBDDManager::partial(const FOBDDArgument* arg) {
+	BDDPartialChecker bpc(this);
+	return bpc.run(arg);
 }
 
 /*****************

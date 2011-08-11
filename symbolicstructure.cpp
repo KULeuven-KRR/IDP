@@ -112,5 +112,11 @@ ostream& SymbolicStructure::put(ostream& output) const {
 	return output;
 }
 
-
+void SymbolicStructure::filter(AbstractStructure* structure, double max_cost_per_answer) {
+	for(auto it = _ctbounds.begin(); it != _ctbounds.end(); ++it) {
+		const FOBDD* bdd = it->second;
+		const vector<const FOBDDVariable*>& bddvars = _vars[it->first];
+		// TODO HIER BEZIG
+	}
+}
 

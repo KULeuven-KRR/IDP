@@ -250,6 +250,7 @@ idp		        : /* empty */
 				| idp instructions
 				| idp options
 				| idp namedquery
+				| idp namedterm
 				| idp using
 		        ;
 	

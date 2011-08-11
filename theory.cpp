@@ -1239,14 +1239,12 @@ class TermMover : public TheoryMutatingVisitor {
 		}
 
 		virtual Term* visit(FuncTerm* ft) {
-			if(_movecontext && shouldMove(ft)) return move(ft);
-			else {
-				bool savemovecontext = _movecontext;
-				_movecontext = true;
-				Term* result = traverse(ft);
-				_movecontext = savemovecontext;
-				return result;
-			}
+			bool savemovecontext = _movecontext;
+			_movecontext = true;
+			Term* result = traverse(ft);
+			_movecontext = savemovecontext;
+			if(_movecontext && shouldMove(result)) return move(result);
+			else return result;
 		}
 
 		virtual SetExpr* visit(EnumSetExpr* s) {
@@ -1743,7 +1741,14 @@ namespace FormulaUtils {
 		const FOBDD* bdd = factory.run(query);
 		if(inverse) bdd = manager.negation(bdd);
 		set<const FOBDDDeBruijnIndex*> indices;
-		return manager.estimatedCostAll(bdd,manager.getVariables(freevars),indices,structure);
+//cerr << "Estimating the cost of bdd\n";
+//manager.put(cerr,bdd);
+//cerr << "With variables ";
+//for(auto it = freevars.begin(); it != freevars.end(); ++it) cerr << *(*it) << ' ';
+//cerr << endl;
+		double res = manager.estimatedCostAll(bdd,manager.getVariables(freevars),indices,structure);
+//cerr << "Estimated " << res << endl;
+		return res;
 	}
 
 
@@ -1755,6 +1760,11 @@ namespace FormulaUtils {
 	Formula* remove_equiv(Formula* f) { 
 		EquivRemover er; 
 		return f->accept(&er);
+	}
+
+	Formula* flatten(Formula* f)	{ 
+		Flattener fl; 
+		return f->accept(&fl);				
 	}
 
 	Formula* substitute(Formula* f, Term* t, Variable* v) {

@@ -979,14 +979,18 @@ InstGenerator*	GeneratorFactory::create(const PredTable* pt, vector<bool> patter
 		if(!pattern[firstout]) break;
 	}
 	if(firstout == pattern.size()) {	// no output variables
-		if(typeid(*(pt->interntable())) != typeid(BDDInternalPredTable)) 
+		if(typeid(*(pt->interntable())) != typeid(BDDInternalPredTable)) {
+//cerr << "result is a simple lookup generator " << endl;
 			return new SimpleLookupGenerator(pt,vars,_universe);
+		}
 		else { 
+//cerr << "result is a bdd lookup generator" << endl;
 			StructureVisitor::visit(pt);
 			return _generator;
 		}
 	}
 	else {
+//cerr << "not a lookup generator" << endl;
 		StructureVisitor::visit(pt);
 		return _generator;
 	}
@@ -1145,61 +1149,125 @@ InstGenerator* BDDToGenerator::create(PredForm* atom, const vector<bool>& patter
 //cerr << "Atomvars = "; for(unsigned int n = 0; n < atomvars.size(); ++n) cerr << "  " << *(atomvars[n]) << ' ' << atomvars[n]; cerr << endl;
 //cerr << "Inverse = " << (inverse ? "true" : "false") << endl;
 
-	// The atom is of one of the following forms: 
-	//	(A)		P(t1,...,tn), 
-	//	(B)		F(t1,...,tn) = t, 
-	//  (C)		t = F(t1,...,tn),
-	//  (D)		(t_1 * x_11 * ... * x_1n_1) + ... + (t_m * x_m1 * ... * x_mn_m) = 0,
-	//  (E)		0 = (t_1 * x_11 * ... * x_1n_1) + ... + (t_m * x_m1 * ... * x_mn_m).
+	if(FormulaUtils::containsFuncTerms(atom)) {
 
-	// Convert all cases to case (A)
-	if(atom->symbol()->name() == "=/2") {	// cases (B), (C), (D), and (E)
-		if(typeid(*(atom->subterms()[0])) == typeid(DomainTerm)) {	// Case (C) or (E)
-			assert(typeid(*(atom->subterms()[1])) == typeid(FuncTerm));
-			FuncTerm* ft = dynamic_cast<FuncTerm*>(atom->subterms()[1]);
-			if(SortUtils::resolve(ft->sort(),VocabularyUtils::floatsort()) && (ft->function()->name() == "*/2" || ft->function()->name() == "+/2")) {	// Case (E)
-				assert(false); // TODO solve towards a variable...
-			}
-			else {	// Case (C)
-				vector<Term*> vt = ft->subterms(); vt.push_back(atom->subterms()[0]);
-				PredForm* newatom = new PredForm(atom->sign(),ft->function(),vt,atom->pi().clone());
-				delete(atom); delete(ft);
-				atom = newatom;
+		bool allinput = true;
+		for(auto it = pattern.begin(); it != pattern.end(); ++it) {
+			if(!(*it)) { allinput = false; break; }
+		}
+		if(allinput) {
+			for(unsigned int n = 0; n < pattern.size(); ++n) {
+				Term* solvedterm = solve(atom,atomvars[n]);
+				if(solvedterm) {
+					vector<Term*> newargs(2); 
+					newargs[0] = new VarTerm(atomvars[n],TermParseInfo()); newargs[1] = solvedterm;
+					PredForm* newatom = new PredForm(atom->sign(),atom->symbol(),newargs,atom->pi().clone());
+					delete(atom);
+					atom = newatom;
+					break;
+				}
 			}
 		}
-		else if(typeid(*(atom->subterms()[1])) == typeid(DomainTerm)) {	// Case (B) or (D)
-			assert(typeid(*(atom->subterms()[0])) == typeid(FuncTerm));
-			FuncTerm* ft = dynamic_cast<FuncTerm*>(atom->subterms()[0]);
-			if(SortUtils::resolve(ft->sort(),VocabularyUtils::floatsort()) && (ft->function()->name() == "*/2" || ft->function()->name() == "+/2")) {	// Case (D)
-				assert(false); // TODO solve towards a variable...
+		else {
+
+			// The atom is of one of the following forms: 
+			//	(A)		P(t1,...,tn), 
+			//	(B)		F(t1,...,tn) = t, 
+			//  (C)		t = F(t1,...,tn),
+			//  (D)		(t_1 * x_11 * ... * x_1n_1) + ... + (t_m * x_m1 * ... * x_mn_m) = 0,
+			//  (E)		0 = (t_1 * x_11 * ... * x_1n_1) + ... + (t_m * x_m1 * ... * x_mn_m).
+
+			// Convert all cases to case (A)
+			if(atom->symbol()->name() == "=/2") {	// cases (B), (C), (D), and (E)
+				if(typeid(*(atom->subterms()[0])) == typeid(DomainTerm)) {	// Case (C) or (E)
+					assert(typeid(*(atom->subterms()[1])) == typeid(FuncTerm));
+					FuncTerm* ft = dynamic_cast<FuncTerm*>(atom->subterms()[1]);
+					if(SortUtils::resolve(ft->sort(),VocabularyUtils::floatsort()) && (ft->function()->name() == "*/2" || ft->function()->name() == "+/2")) {	// Case (E)
+						unsigned int n = 0;
+						for(unsigned int n = 0; n < pattern.size(); ++n) {
+							if(!pattern[n]) {
+								Term* solvedterm = solve(atom,atomvars[n]);
+								if(solvedterm) {
+									vector<Term*> newargs(2); 
+									newargs[0] = new VarTerm(atomvars[n],TermParseInfo()); newargs[1] = solvedterm;
+									PredForm* newatom = new PredForm(atom->sign(),atom->symbol(),newargs,atom->pi().clone());
+									delete(atom);
+									atom = newatom;
+									break;
+								}
+							}
+						}
+						if(n == pattern.size()) {
+							vector<Term*> vt = ft->subterms(); vt.push_back(atom->subterms()[0]);
+							PredForm* newatom = new PredForm(atom->sign(),ft->function(),vt,atom->pi().clone());
+							delete(atom); delete(ft);
+							atom = newatom;
+						}
+					}
+					else {	// Case (C)
+						vector<Term*> vt = ft->subterms(); vt.push_back(atom->subterms()[0]);
+						PredForm* newatom = new PredForm(atom->sign(),ft->function(),vt,atom->pi().clone());
+						delete(atom); delete(ft);
+						atom = newatom;
+					}
+				}
+				else if(typeid(*(atom->subterms()[1])) == typeid(DomainTerm)) {	// Case (B) or (D)
+					assert(typeid(*(atom->subterms()[0])) == typeid(FuncTerm));
+					FuncTerm* ft = dynamic_cast<FuncTerm*>(atom->subterms()[0]);
+					if(SortUtils::resolve(ft->sort(),VocabularyUtils::floatsort()) && (ft->function()->name() == "*/2" || ft->function()->name() == "+/2")) {	// Case (D)
+						unsigned int n = 0;
+						for(unsigned int n = 0; n < pattern.size(); ++n) {
+							if(!pattern[n]) {
+								Term* solvedterm = solve(atom,atomvars[n]);
+								if(solvedterm) {
+									vector<Term*> newargs(2); 
+									newargs[0] = new VarTerm(atomvars[n],TermParseInfo()); newargs[1] = solvedterm;
+									PredForm* newatom = new PredForm(atom->sign(),atom->symbol(),newargs,atom->pi().clone());
+									delete(atom);
+									atom = newatom;
+									break;
+								}
+							}
+						}
+						if(n == pattern.size()) {
+							vector<Term*> vt = ft->subterms(); vt.push_back(atom->subterms()[1]);
+							PredForm* newatom = new PredForm(atom->sign(),ft->function(),vt,atom->pi().clone());
+							delete(atom); delete(ft);
+							atom = newatom;
+						}
+					}
+					else {	// Case (B)
+						vector<Term*> vt = ft->subterms(); vt.push_back(atom->subterms()[1]);
+						PredForm* newatom = new PredForm(atom->sign(),ft->function(),vt,atom->pi().clone());
+						delete(atom); delete(ft);
+						atom = newatom;
+					}
+				}
+				else if(typeid(*(atom->subterms()[0])) == typeid(FuncTerm)) {	// Case (B)
+					FuncTerm* ft = dynamic_cast<FuncTerm*>(atom->subterms()[0]);
+					vector<Term*> vt = ft->subterms(); vt.push_back(atom->subterms()[1]);
+					PredForm* newatom = new PredForm(atom->sign(),ft->function(),vt,atom->pi().clone());
+					delete(atom); delete(ft);
+					atom = newatom;
+				}
+				else {	// Case (C)
+					FuncTerm* ft = dynamic_cast<FuncTerm*>(atom->subterms()[1]);
+					vector<Term*> vt = ft->subterms(); vt.push_back(atom->subterms()[0]);
+					PredForm* newatom = new PredForm(atom->sign(),ft->function(),vt,atom->pi().clone());
+					delete(atom); delete(ft);
+					atom = newatom;
+				}
 			}
-			else {	// Case (B)
-				vector<Term*> vt = ft->subterms(); vt.push_back(atom->subterms()[1]);
-				PredForm* newatom = new PredForm(atom->sign(),ft->function(),vt,atom->pi().clone());
-				delete(atom); delete(ft);
-				atom = newatom;
-			}
-		}
-		else if(typeid(*(atom->subterms()[0])) == typeid(FuncTerm)) {	// Case (B)
-			FuncTerm* ft = dynamic_cast<FuncTerm*>(atom->subterms()[0]);
-			vector<Term*> vt = ft->subterms(); vt.push_back(atom->subterms()[1]);
-			PredForm* newatom = new PredForm(atom->sign(),ft->function(),vt,atom->pi().clone());
-			delete(atom); delete(ft);
-			atom = newatom;
-		}
-		else {	// Case (C)
-			FuncTerm* ft = dynamic_cast<FuncTerm*>(atom->subterms()[1]);
-			vector<Term*> vt = ft->subterms(); vt.push_back(atom->subterms()[0]);
-			PredForm* newatom = new PredForm(atom->sign(),ft->function(),vt,atom->pi().clone());
-			delete(atom); delete(ft);
-			atom = newatom;
 		}
 	}
 
 	if(FormulaUtils::containsFuncTerms(atom)) {
+//cerr << "HIERZO " << *atom << endl;
 		Formula* newform = FormulaUtils::remove_nesting(atom,PC_NEGATIVE);
 		newform = FormulaUtils::remove_eqchains(newform);
 		newform = FormulaUtils::graph_functions(newform);
+		newform = FormulaUtils::flatten(newform);
+//cerr << "DAARZO " << *newform << endl;
 		assert(typeid(*newform) == typeid(QuantForm));
 		QuantForm* quantform = dynamic_cast<QuantForm*>(newform);
 		assert(typeid(*(quantform->subf())) == typeid(BoolForm));
@@ -1219,24 +1287,38 @@ InstGenerator* BDDToGenerator::create(PredForm* atom, const vector<bool>& patter
 		}
 		set<PredForm*> atoms_to_order(conjunction.begin(),conjunction.end());
 		vector<PredForm*> orderedconjunction;
+//cerr << "Start ordering atoms " << endl;
+//cerr << "Still free:";
+//for(auto it = still_free.begin(); it != still_free.end(); ++it) cerr << " " << *(*it);
+//cerr << endl;
 		while(!atoms_to_order.empty()) {
 			PredForm* bestatom = 0;
 			double bestcost = numeric_limits<double>::max();
 			for(auto it = atoms_to_order.begin(); it != atoms_to_order.end(); ++it) {
+//cerr << "Checking atom " << *(*it) << endl;
 				bool currinverse = false;
 				if(*it == origatom) currinverse = inverse;
-				double currcost = FormulaUtils::estimatedCostAll(*it,still_free,currinverse,structure);
+				set<Variable*> projectedfree;
+				for(auto jt = still_free.begin(); jt != still_free.end(); ++jt) {
+					if((*it)->freevars().find(*jt) != (*it)->freevars().end()) projectedfree.insert(*jt);
+				}
+				double currcost = FormulaUtils::estimatedCostAll(*it,projectedfree,currinverse,structure);
+//cerr << "Estimated cost = " << currcost << endl;
 				if(currcost < bestcost) {
 					bestcost = currcost;
 					bestatom = *it;
 				}
 			}
 			if(!bestatom) bestatom = *(atoms_to_order.begin());
+//cerr << "Choose " << *bestatom << endl;
 			orderedconjunction.push_back(bestatom);
 			atoms_to_order.erase(bestatom);
 			for(auto it = bestatom->freevars().begin(); it != bestatom->freevars().end(); ++it) {
 				still_free.erase(*it);
 			}
+//cerr << "Still free:";
+//for(auto it = still_free.begin(); it != still_free.end(); ++it) cerr << " " << *(*it) << endl;
+//cerr << endl;
 		}
 
 		vector<InstGenerator*> generators;
@@ -1272,7 +1354,7 @@ InstGenerator* BDDToGenerator::create(PredForm* atom, const vector<bool>& patter
 			if(*it == origatom) 
 				generators.push_back(create(*it,kernpattern,kernvars,kernfovars,structure,inverse,Universe(kerntables)));
 			else 
-				generators.push_back(create(*it,kernpattern,kernvars,kernfovars,structure,true,Universe(kerntables)));
+				generators.push_back(create(*it,kernpattern,kernvars,kernfovars,structure,false,Universe(kerntables)));
 		}
 
 		if(generators.size() == 1) return generators[0];
@@ -1490,6 +1572,18 @@ InstGenerator* BDDToGenerator::create(const FOBDDKernel* kernel, const vector<bo
 
 		return result;
 	}
+}
+
+Term* BDDToGenerator::solve(PredForm* atom, Variable* var) {
+	FOBDDFactory factory(_manager);
+	const FOBDD* bdd = factory.run(atom);
+	assert(!_manager->isTruebdd(bdd));
+	assert(!_manager->isFalsebdd(bdd));
+	const FOBDDKernel* kernel = bdd->kernel();
+	const FOBDDArgument* arg = _manager->getVariable(var);
+	const FOBDDArgument* solved = _manager->solve(kernel,arg);
+	if(solved) return _manager->toTerm(solved);
+	else return 0;
 }
 
 void GeneratorFactory::visit(const BDDInternalPredTable* table) {

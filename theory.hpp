@@ -360,6 +360,8 @@ namespace FormulaUtils {
 
 	Formula* remove_equiv(Formula*);
 
+	Formula* flatten(Formula*);
+
 	/** **/
 	Formula* graph_functions(Formula* f);	
 

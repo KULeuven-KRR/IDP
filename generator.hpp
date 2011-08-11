@@ -90,6 +90,8 @@ class FOBDDKernel;
 class BDDToGenerator {
 	private:
 		FOBDDManager*	_manager;
+
+		Term* solve(PredForm* atom, Variable* var);
 	public:
 
 		// Constructor
