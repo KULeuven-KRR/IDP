@@ -13,6 +13,9 @@
 #include "monitors/tracemonitor.hpp"
 #include "symmetry.hpp"
 
+#include "groundtheories/AbstractGroundTheory.hpp"
+#include "groundtheories/SolverPolicy.hpp"
+
 class ModelExpandInference: public Inference {
 public:
 	ModelExpandInference(): Inference("mx", false, true) {
@@ -34,7 +37,7 @@ public:
 
 		// Run grounder
 		grounder->run();
-		SolverTheory* grounding = dynamic_cast<SolverTheory*>(grounder->grounding());
+		AbstractGroundTheory* grounding = dynamic_cast<GroundTheory<SolverPolicy>*>(grounder->grounding());
 		
 		// Execute symmetry breaking
 		if(options->symmetry()!=0){
@@ -81,10 +84,6 @@ public:
 				}
 			}
 		}
-		
-		// Add information that is abstracted in the grounding
-		grounding->addFuncConstraints();
-		grounding->addFalseDefineds();
 
 		// Run solver
 		MinisatID::Solution* abstractsolutions = initsolution(options);
@@ -153,7 +152,7 @@ private:
 		for(auto literal = model->literalinterpretations.begin();
 			literal != model->literalinterpretations.end(); ++literal) {
 			int atomnr = literal->getAtom().getValue();
-			PFSymbol* symbol = translator->symbol(atomnr);
+			PFSymbol* symbol = translator->atom2symbol(atomnr);
 			if(symbol) {
 				const ElementTuple& args = translator->args(atomnr);
 				if(typeid(*symbol) == typeid(Predicate)) {
@@ -171,9 +170,9 @@ private:
 	}
 
 	void addTerms(MinisatID::Model* model, GroundTermTranslator* termtranslator, AbstractStructure* init) const {
-		std::cerr << "Adding terms based on var-val pairs from CP solver, pairs are { ";
+//		std::cerr << "Adding terms based on var-val pairs from CP solver, pairs are { ";
 		for(auto cpvar = model->variableassignments.begin(); cpvar != model->variableassignments.end(); ++cpvar) {
-			std::cerr << cpvar->variable << '=' << cpvar->value;
+//			std::cerr << cpvar->variable << '=' << cpvar->value;
 			Function* function = termtranslator->function(cpvar->variable);
 			if(function) {
 				const std::vector<GroundTerm>& gtuple = termtranslator->args(cpvar->variable);
@@ -187,12 +186,12 @@ private:
 					}
 				}
 				tuple.push_back(DomainElementFactory::instance()->create(cpvar->value));
-				std::cerr << '=' << function->name() << tuple;
+//				std::cerr << '=' << function->name() << tuple;
 				init->inter(function)->graphinter()->makeTrue(tuple);
 			}
-			std::cerr << ' ';
+//			std::cerr << ' ';
 		}
-		std::cerr << '}' << "\n";
+//		std::cerr << '}' << "\n";
 	}
 };
 

@@ -62,17 +62,15 @@ FOPropBDDDomain* FOPropBDDDomainFactory::falseDomain(const Formula* f) const {
 
 FOPropBDDDomain* FOPropBDDDomainFactory::formuladomain(const Formula* f) const {
 	FOBDDFactory bddfactory(_manager);
-	f->accept(&bddfactory);
 	vector<Variable*> vv(f->freevars().begin(),f->freevars().end());
-	return new FOPropBDDDomain(bddfactory.bdd(),vv);
+	return new FOPropBDDDomain(bddfactory.run(f),vv);
 }
 
 FOPropBDDDomain* FOPropBDDDomainFactory::ctDomain(const PredForm* pf) const {
 	vector<const FOBDDArgument*> args;
 	FOBDDFactory bddfactory(_manager);
 	for(vector<Term*>::const_iterator it = pf->subterms().begin(); it != pf->subterms().end(); ++it) {
-		(*it)->accept(&bddfactory);
-		args.push_back(bddfactory.argument());
+		args.push_back(bddfactory.run(*it));
 	}
 	const FOBDDAtomKernel* k = _manager->getAtomKernel(pf->symbol(),AKT_CT,args);
 	const FOBDD* bdd = _manager->getBDD(k,_manager->truebdd(),_manager->falsebdd());
@@ -84,8 +82,7 @@ FOPropBDDDomain* FOPropBDDDomainFactory::cfDomain(const PredForm* pf) const {
 	vector<const FOBDDArgument*> args;
 	FOBDDFactory bddfactory(_manager);
 	for(vector<Term*>::const_iterator it = pf->subterms().begin(); it != pf->subterms().end(); ++it) {
-		(*it)->accept(&bddfactory);
-		args.push_back(bddfactory.argument());
+		args.push_back(bddfactory.run(*it));
 	}
 	const FOBDDAtomKernel* k = _manager->getAtomKernel(pf->symbol(),AKT_CF,args);
 	const FOBDD* bdd = _manager->getBDD(k,_manager->truebdd(),_manager->falsebdd());
@@ -664,7 +661,7 @@ FOPropagator* FOPropagatorFactory::create(const AbstractTheory* theory) {
 	// transform theory to a suitable normal form
 	AbstractTheory* newtheo = theory->clone();
 	TheoryUtils::remove_eqchains(newtheo);
-	TheoryUtils::remove_nesting(newtheo);
+	TheoryUtils::remove_nesting(newtheo);	// FIXME: remove nesting does not change F(x)=y to F(x,y) anymore, which is probably needed here
 	TheoryUtils::completion(newtheo);
 
 	// Multiply maxsteps if requested

@@ -737,7 +737,9 @@ InverseInternalIterator::InverseInternalIterator(const vector<SortIterator>& its
 			_end = true; break;
 		}
 	}
-	if((!_end) && _outtable->contains(_currtuple,_universe)) operator++();
+	if(!_end) {
+		if(_outtable->contains(_currtuple,_universe)) operator++();
+	}
 }
 
 InverseInternalIterator::InverseInternalIterator(const vector<SortIterator>& curr, const vector<SortIterator>& low, InternalPredTable* out, const Universe& univ, bool end) :

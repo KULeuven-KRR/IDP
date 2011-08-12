@@ -17,6 +17,7 @@ class AbstractTheory;
 class Options;
 class UserProcedure;
 class Query;
+class Term;
 
 #include "parseinfo.hpp"
 
@@ -39,6 +40,7 @@ class Namespace {
 		std::map<std::string,Options*>				_options;		//!< Map a name to the corresponding options
 		std::map<std::string,UserProcedure*>		_procedures;	//!< Map a name+arity to the corresponding procedure
 		std::map<std::string,Query*>				_queries;		//!< Map a name to the corresponding query
+		std::map<std::string,Term*>					_terms;			//!< Map a name to the corresponding term
 
 		ParseInfo									_pi;			//!< the place where the namespace was parsed
 
@@ -65,6 +67,7 @@ class Namespace {
 		bool						isVocab(const std::string&)		const;
 		bool						isTheory(const std::string&)	const;
 		bool						isQuery(const std::string&)		const;
+		bool						isTerm(const std::string&)		const;
 		bool						isStructure(const std::string&)	const;
 		bool						isOptions(const std::string&)	const;
 		bool						isProc(const std::string&)		const;
@@ -75,6 +78,7 @@ class Namespace {
 		Options*					options(const std::string&)		const;
 		UserProcedure*				procedure(const std::string&)	const;
 		Query*						query(const std::string&)		const;
+		Term*						term(const std::string&)		const;
 
 		const std::map<std::string,UserProcedure*>&		procedures()	const { return _procedures;		}
 		const std::map<std::string,Namespace*>&			subspaces()		const { return _subspaces;		}
@@ -83,6 +87,7 @@ class Namespace {
 		const std::map<std::string,AbstractTheory*>&	theories()		const { return _theories;		}
 		const std::map<std::string,Options*>&			options()		const { return _options;		}
 		const std::map<std::string,Query*>&				queries()		const { return _queries;		}
+		const std::map<std::string,Term*>&				terms()			const { return _terms;			}
 
 		// Mutators	
 		void	add(Vocabulary* v);
@@ -92,6 +97,7 @@ class Namespace {
 		void	add(Options* o);
 		void	add(UserProcedure* l);
 		void	add(const std::string& name, Query*);
+		void	add(const std::string& name, Term*);
 
 		// Output
 		std::ostream& putname(std::ostream&) const;

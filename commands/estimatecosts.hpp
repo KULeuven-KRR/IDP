@@ -28,8 +28,7 @@ public:
 		std::set<Variable*> sv(q->variables().begin(),q->variables().end());
 		std::set<const FOBDDVariable*> svbdd = manager.getVariables(sv);
 		std::set<const FOBDDDeBruijnIndex*> si;
-		q->query()->accept(&m);
-		const FOBDD* bdd = m.bdd();
+		const FOBDD* bdd = m.run(q->query());
 		InternalArgument ia; ia._type = AT_DOUBLE;
 		manager.optimizequery(bdd,svbdd,si,structure);
 		ia._value._double = manager.estimatedCostAll(bdd,svbdd,si,structure);
@@ -52,8 +51,7 @@ public:
 		std::set<Variable*> sv(q->variables().begin(),q->variables().end());
 		std::set<const FOBDDVariable*> svbdd = manager.getVariables(sv);
 		std::set<const FOBDDDeBruijnIndex*> si;
-		q->query()->accept(&m);
-		const FOBDD* bdd = m.bdd();
+		const FOBDD* bdd = m.run(q->query());
 		InternalArgument ia; ia._type = AT_DOUBLE;
 		ia._value._double = manager.estimatedNrAnswers(bdd,svbdd,si,structure);
 		return ia;

@@ -12,6 +12,9 @@
 #include "ground.hpp"
 #include "ecnf.hpp"
 
+#include "groundtheories/AbstractGroundTheory.hpp"
+#include "groundtheories/GroundPolicy.hpp"
+
 // FIXME rewrite the printers to correctly handle visiting incrementally, making sure all arguments are instantiated, ...
 
 template<typename Stream>
@@ -49,6 +52,18 @@ public:
 
 	}
 
+	virtual void startTheory(){
+		if(!isTheoryOpen()){
+			output() << "p ecnf\n";
+			openTheory();
+		}
+	}
+	virtual void endTheory(){
+		if(isTheoryOpen()){
+			closeTheory();
+		}
+	}
+
 	virtual void setStructure(AbstractStructure* t){ _structure = t; }
 	virtual void setTermTranslator(GroundTermTranslator* t){ _termtranslator = t; }
 
@@ -64,38 +79,27 @@ public:
 		output() <<"(structure cannot be printed in ecnf)";
 	}
 
-	void startTheory(){
-		if(!isTheoryOpen()){
-			output() << "p ecnf\n";
-			openTheory();
-		}
-	}
-
-	void endTheory(){
-		if(isTheoryOpen()){
-			closeTheory();
-		}
-	}
-
 	void visit(const GroundClause& g){
-		startTheory();
+		assert(isTheoryOpen());
 		for(unsigned int m = 0; m < g.size(); ++m){
 			output() << g[m] << ' ';
 		}
 		output() << '0' << "\n";
 	}
 
-	void visit(const GroundTheory* g) {
+	void visit(const GroundTheory<GroundPolicy>* g) {
+		assert(isTheoryOpen());
 		setStructure(g->structure());
 		setTermTranslator(g->termtranslator());
 		startTheory();
 		for(unsigned int n = 0; n < g->nrClauses(); ++n) {
 			visit(g->clause(n));
 		}
-		_currentdefnr = 1; //NOTE: 0 is not accepted as defition identifier by ECNF
 		for(unsigned int n = 0; n < g->nrDefinitions(); ++n) {
-			_currentdefnr++;
+			_currentdefnr = g->definition(n)->id();
+			openDefinition(_currentdefnr);
 			g->definition(n)->accept(this);
+			closeDefinition();
 		}
 		for(unsigned int n = 0; n < g->nrSets(); ++n){ //IMPORTANT: Print sets before aggregates!!
 			g->set(n)->accept(this);
@@ -114,7 +118,7 @@ public:
 			output() <<"=== Atomtranslation ===" << "\n";
 			GroundTranslator* translator = g->translator();
 			int atom = 1;
-			while(translator->isSymbol(atom)){
+			while(translator->hasSymbolFor(atom)){
 				if(!translator->isTseitin(atom)){
 					output() << atom <<"|" <<translator->printAtom(atom) <<"\n";
 				}
@@ -140,46 +144,37 @@ public:
 		closeDef();
 	}
 
+	//FIXME a visitor for definitions does not work!
 	void visit(const GroundDefinition* d) {
-		startTheory();
-		_currentdefnr++;
-		openDefinition(_currentdefnr);
+		assert(isTheoryOpen());
 		for(auto it = d->begin(); it != d->end(); ++it) {
-			_currenthead = it->first;
-			(it->second)->accept(this);
+			(*it).second->accept(this);
 		}
-		closeDefinition();
 	}
 
-	void visit(int defid, int tseitin, const PCGroundRuleBody* b) {
-		startTheory();
-		assert(isDefOpen(defid));
+	void visit(const PCGroundRule* b) {
+		assert(isTheoryOpen());
 		output() << (b->type() == RT_CONJ ? "C " : "D ");
-		output() << "<- " << defid << ' ' << tseitin << ' ';
+		output() << "<- " << _currentdefnr << ' ' << b->head() << ' ';
 		for(unsigned int n = 0; n < b->size(); ++n){
 			output() << b->literal(n) << ' ';
 		}
 		output() << "0\n";
 	}
 
-	void visit(const PCGroundRuleBody* b) {
-		startTheory();
-		visit(_currentdefnr, _currenthead, b);
+	void visit(const AggGroundRule* a) {
+		assert(isTheoryOpen());
+		printAggregate(a->aggtype(),TS_RULE,_currentdefnr,a->lower(),a->head(),a->setnr(),a->bound());
 	}
 
 	void visit(const GroundAggregate* b) {
-		startTheory();
-		visit(_currentdefnr, b);
-	}
-
-	void visit(int defnr, const GroundAggregate* a) {
-		startTheory();
-		assert(a->arrow() != TS_RULE);
-		printAggregate(a->type(),a->arrow(),defnr,a->lower(),a->head(),a->setnr(),a->bound());
+		assert(isTheoryOpen());
+		//FIXME -1 should be the minisatid undefined
+		printAggregate(b->type(),b->arrow(),-1,b->lower(),b->head(),b->setnr(),b->bound());
 	}
 
 	void visit(const GroundSet* s) {
-		startTheory();
+		assert(isTheoryOpen());
 		output() << (s->weighted() ? "WSet" : "Set") << ' ' << s->setnr();
 		for(unsigned int n = 0; n < s->size(); ++n) {
 			output() << ' ' << s->literal(n);
@@ -188,16 +183,8 @@ public:
 		output() << " 0\n";
 	}
 
-	void addWeightedSum(int head, const std::vector<VarId>& varids, const std::vector<int> weights, const int& bound, CompType rel){
-		assert(varids.size()==weights.size());
-		for(auto i=varids.begin(); i<varids.end(); ++i){
-			printCPVariable(*i);
-		}
-		printCPReification("SUMSTSIRI",head,varids,weights,rel,bound);
-	}
-
 	void visit(const CPReification* cpr) {
-		startTheory();
+		assert(isTheoryOpen());
 		CompType comp = cpr->_body->comp();
 		CPTerm* left = cpr->_body->left();
 		CPBound right = cpr->_body->right();
@@ -245,6 +232,15 @@ public:
 	}
 
 private:
+
+	void addWeightedSum(int head, const std::vector<VarId>& varids, const std::vector<int> weights, const int& bound, CompType rel){
+		assert(varids.size()==weights.size());
+		for(auto i=varids.begin(); i<varids.end(); ++i){
+			printCPVariable(*i);
+		}
+		printCPReification("SUMSTSIRI",head,varids,weights,rel,bound);
+	}
+
 	void printAggregate(AggFunction aggtype, TsType arrow, unsigned int defnr, bool lower, int head, unsigned int setnr, double bound) {
 		switch(aggtype) {
 			case AGG_CARD: 	output() << "Card "; break;
@@ -265,6 +261,7 @@ private:
 		}
 		output() << (lower ? 'G' : 'L') << ' ' << head << ' ' << setnr << ' ' << bound << " 0" <<"\n";
 	}
+
 	void printCPVariables(std::vector<unsigned int> varids) {
 		for(std::vector<unsigned int>::const_iterator it = varids.begin(); it != varids.end(); ++it) {
 			printCPVariable(*it);

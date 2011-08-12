@@ -82,6 +82,7 @@ const char* toCString(ArgType type){
 			(AT_DOMAINITERATOR, "domain_iterator")
 			(AT_DOMAINATOM, "domain_atom")
 			(AT_QUERY, "query")
+			(AT_TERM, "term")
 			(AT_FORMULA, "formula")
 			(AT_THEORY, "theory")
 			(AT_OPTIONS, "options")
@@ -316,6 +317,9 @@ namespace LuaConnection {
 			case AT_QUERY:{
 				return addUserData(L, arg._value._query, arg._type);
 			}
+			case AT_TERM:{
+				return addUserData(L, arg._value._term, arg._type);
+			}
 			case AT_OPTIONS:{
 				Options** ptr = (Options**)lua_newuserdata(L,sizeof(Options*));
 				(*ptr) = arg._value._options;
@@ -492,6 +496,9 @@ namespace LuaConnection {
 					case AT_QUERY:
 						ia._value._query = *(Query**)lua_touserdata(L,arg);
 						break;
+					case AT_TERM:
+						ia._value._term = *(Term**)lua_touserdata(L,arg);
+						break;
 					case AT_OPTIONS:
 						ia._value._options = *(Options**)lua_touserdata(L,arg);
 						break;
@@ -642,7 +649,7 @@ namespace LuaConnection {
 		return 0;
 	}
 
-	int gcInternProc(lua_State* L) { return garbageCollect(*(map<vector<ArgType>,InternalProcedure*>**)lua_touserdata(L,1)); }
+	int gcInternProc(lua_State* L) { /*return garbageCollect(*(map<vector<ArgType>,InternalProcedure*>**)lua_touserdata(L,1));*/ return 0; }
 	int gcSort(lua_State* L) { return garbageCollect(*(set<Sort*>**)lua_touserdata(L,1)); }
 	int gcPredicate(lua_State* L) { return garbageCollect(*(set<Predicate*>**)lua_touserdata(L,1)); }
 	int gcFunction(lua_State* L) { return garbageCollect(*(set<Function*>**)lua_touserdata(L,1)); }
@@ -701,6 +708,11 @@ namespace LuaConnection {
 	}
 
 	int gcQuery(lua_State*) {
+		// TODO
+		return 0;
+	}
+
+	int gcTerm(lua_State*) {
 		// TODO
 		return 0;
 	}
@@ -1122,6 +1134,8 @@ namespace LuaConnection {
 			if(ns->isProc(str)) { proc = ns->procedure(str); ++counter; }
 			Query* query = 0;
 			if(ns->isQuery(str)) { query = ns->query(str); ++counter;	}
+			Term* term = 0;
+			if(ns->isTerm(str)) { term = ns->term(str); ++counter;		}
 
 			if(counter == 0) return 0;
 			else if(counter == 1) {
@@ -1138,6 +1152,9 @@ namespace LuaConnection {
 				if(query) {
 					return convertToLua(L,InternalArgument(query));
 				}
+				if(term) {
+					return convertToLua(L,InternalArgument(term));
+				}
 				assert(false);
 				return 0;
 			}
@@ -1150,6 +1167,7 @@ namespace LuaConnection {
 				oo->insert(opts);
 				oo->insert(proc);
 				oo->insert(query);
+				oo->insert(term);
 				return convertToLua(L,InternalArgument(oo));
 			}
 		}
@@ -1355,6 +1373,14 @@ namespace LuaConnection {
 		return lua_error(L);
 	}
 
+	int invalidOption(Options* options, lua_State* L, const string& option, const string& value){
+		stringstream ss;
+		ss <<"\""<<value <<"\" is not a valid value for " <<option <<".\n";
+		ss <<options->getPossibleValues(option) <<".\n";
+		lua_pushstring(L,ss.str().c_str());
+		return lua_error(L);
+	}
+
 	/**
 	 * NewIndex function for options
 	 */
@@ -1362,23 +1388,50 @@ namespace LuaConnection {
 		Options* opts = *(Options**)lua_touserdata(L,1);
 		InternalArgument index = createArgument(2,L);
 		InternalArgument value = createArgument(3,L);
-		if(index._type == AT_STRING) {
-			string str = *(index._value._string);
-			switch(value._type) {
-				case AT_INT: opts->setvalue(str,value._value._int); break;
-				case AT_DOUBLE: opts->setvalue(str,value._value._double); break;
-				case AT_STRING: opts->setvalue(str,*(value._value._string)); break;
-				case AT_BOOLEAN: opts->setvalue(str,value._value._boolean); break;
-				default:
-					lua_pushstring(L,"Wrong option value");
-					return lua_error(L);
-			}
-			return 0;
-		}
-		else {
+		if(index._type!=AT_STRING) {
 			lua_pushstring(L,"Options can only be indexed by a string");
 			return lua_error(L);
 		}
+
+		string option = *(index._value._string);
+		if(!opts->isoption(option)){
+			stringstream ss;
+			ss <<"There is no option named " <<option <<".\n";
+			lua_pushstring(L,ss.str().c_str());
+			return lua_error(L);
+		}
+		switch(value._type) {
+			case AT_INT:
+				if(!opts->setvalue(option,value._value._int)){
+					stringstream ss; ss<<value._value._int;
+					return invalidOption(opts, L, option, ss.str());
+				}
+				break;
+			case AT_DOUBLE:
+				if(!opts->setvalue(option,value._value._double)){
+					stringstream ss; ss<<value._value._double;
+					return invalidOption(opts, L, option, ss.str());
+				}
+				break;
+			case AT_STRING:
+				if(!opts->setvalue(option,*value._value._string)){
+					return invalidOption(opts, L, option, *value._value._string);
+				}
+				break;
+			case AT_BOOLEAN:
+				if(!opts->setvalue(option,value._value._boolean)){
+					stringstream ss; ss<<value._value._boolean;
+					return invalidOption(opts, L, option, ss.str());
+				}
+				break;
+			default:
+				stringstream ss;
+				ss <<"Wrong option value type for option " <<option <<".\n";
+				ss <<opts->getPossibleValues(option) <<".\n";
+				lua_pushstring(L,ss.str().c_str());
+				return lua_error(L);
+		}
+		return 0;
 	}
 
 	/**
@@ -1682,6 +1735,12 @@ namespace LuaConnection {
 		createNewTable(L, AT_QUERY, elements);
 	}
 
+	void termMetaTable(lua_State* L) {
+		vector<tablecolheader> elements;
+		elements.push_back(tablecolheader(&gcTerm, "__term"));
+		createNewTable(L, AT_TERM, elements);
+	}
+
 	void optionsMetaTable(lua_State* L) {
 		vector<tablecolheader> elements;
 		elements.push_back(tablecolheader(&gcOptions, "__gc"));
@@ -1729,6 +1788,7 @@ namespace LuaConnection {
 		theoryMetaTable(L);
 		formulaMetaTable(L);
 		queryMetaTable(L);
+		termMetaTable(L);
 		optionsMetaTable(L);
 		namespaceMetaTable(L);
 

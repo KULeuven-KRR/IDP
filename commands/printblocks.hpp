@@ -19,7 +19,9 @@ template<class Object>
 std::string print(Object o, Options* opts){
 	std::stringstream stream;
 	Printer* printer = Printer::create<std::stringstream>(opts, stream);
+	printer->startTheory();
 	printer->visit(o);
+	printer->endTheory();
 	return stream.str();
 }
 

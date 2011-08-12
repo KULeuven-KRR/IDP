@@ -14,6 +14,8 @@
 #include <monitors/interactiveprintmonitor.hpp>
 #include <monitors/tracemonitor.hpp>
 
+//TODO refactor the monitors as extra arguments
+
 class Inference {
 private:
 	std::string				_name;		//!< the name of the procedure

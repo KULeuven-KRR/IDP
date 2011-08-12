@@ -618,6 +618,10 @@ namespace VocabularyUtils {
 	Sort*	stringsort();	//!< returns the sort 'string' of the standard vocabulary
 	Sort*	charsort();		//!< returns the sort 'char' of the standard vocabulary
 
+	Predicate*	equal(Sort* s);			//!< returns the predicate =/2 with sorts (s,s)
+	Predicate*	lessthan(Sort* s);		//!< returns the predicate </2 with sorts (s,s)
+	Predicate*	greaterthan(Sort* s);	//!< returns the predicate >/2 with sorts (s,s)
+
 	bool isComparisonPredicate(const PFSymbol*);
 }
 

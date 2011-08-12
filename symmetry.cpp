@@ -11,6 +11,7 @@
 #include "term.hpp"
 #include "ecnf.hpp"
 #include "ground.hpp"
+#include "groundtheories/AbstractGroundTheory.hpp"
 #include <list>
 #include <sstream>
 #include <iostream>  //TODO: wissen na debuggen :)
@@ -96,26 +97,26 @@ void addSymBreakingClausesToGroundTheory(AbstractGroundTheory* gt, const list<in
 		vector<int> firstClause (2);
 		firstClause[0]= -(*literals_it); 
 		firstClause[1]=  (*symLiterals_it);
-		gt->addClause(firstClause, false);
+		gt->add(firstClause, false);
 	}
 	if(literals.size()>1){
-		currentAuxVar = gt->getFreeTseitin();
+		currentAuxVar = gt->translator()->nextNumber();
 		// (~A2 | V1 | ~V1*)
 		vector<int> clause2 (3);
 		clause2[0]= -currentAuxVar;
 		clause2[1]=  (*literals_it);
 		clause2[2]= -(*symLiterals_it);
-		gt->addClause(clause2, true);
+		gt->add(clause2, true);
 		// (A2 | ~V1) 
 		vector<int> clause3 (2);
 		clause3[0]=  currentAuxVar;
 		clause3[1]= -(*literals_it);
-		gt->addClause(clause3, true);
+		gt->add(clause3, true);
 		// (A2 | V1*)
 		vector<int> clause4 (2);
 		clause4[0]=  currentAuxVar;
 		clause4[1]=  (*symLiterals_it);
-		gt->addClause(clause4, true);
+		gt->add(clause4, true);
 		// (~A2 | ~V2 | V2*)
 		++literals_it;
 		++symLiterals_it;
@@ -123,37 +124,37 @@ void addSymBreakingClausesToGroundTheory(AbstractGroundTheory* gt, const list<in
 		clause5[0]= -currentAuxVar;
 		clause5[1]= -(*literals_it);
 		clause5[2]=  (*symLiterals_it);
-		gt->addClause(clause5, true);
+		gt->add(clause5, true);
 	}
 	list<int>::const_iterator oneButLast_it = literals.end();
 	--oneButLast_it;
 	while(literals_it != oneButLast_it){
 		previousAuxVar = currentAuxVar;
-		currentAuxVar = gt->getFreeTseitin();
+		currentAuxVar = gt->translator()->nextNumber();
 		// ( ~A_n | A_n-1 )
 		vector<int> clause1 (2);
 		clause1[0]= -currentAuxVar;
 		clause1[1]=  previousAuxVar;
-		gt->addClause(clause1, true);
+		gt->add(clause1, true);
 		// ( ~An | ~A_n-1 | V_n-1 | ~V_n-1* )
 		vector<int> clause4 (4);
 		clause4[0]= -currentAuxVar; 
 		clause4[1]= -previousAuxVar;
 		clause4[2]=  (*literals_it);
 		clause4[3]= -(*symLiterals_it);
-		gt->addClause(clause4, true);
+		gt->add(clause4, true);
 		// ( A_n | ~A_n-1 | ~V_n-1)
 		vector<int> clause2 (3);
 		clause2[0]=  currentAuxVar;
 		clause2[1]= -previousAuxVar; 
 		clause2[2]= -(*literals_it);
-		gt->addClause(clause2, true);
+		gt->add(clause2, true);
 		// ( A_n | ~A_n-1 | V_n-1*)
 		vector<int> clause3 (3);
 		clause3[0]=  currentAuxVar;
 		clause3[1]= -previousAuxVar;
 		clause3[2]=  (*symLiterals_it);
-		gt->addClause(clause3, true);
+		gt->add(clause3, true);
 		// ( ~An | ~Vn | Vn* )
 		++literals_it;
 		++symLiterals_it;
@@ -161,7 +162,7 @@ void addSymBreakingClausesToGroundTheory(AbstractGroundTheory* gt, const list<in
 		clause6[0]= -currentAuxVar;
 		clause6[1]= -(*literals_it);
 		clause6[2]=  (*symLiterals_it);
-		gt->addClause(clause6, true);
+		gt->add(clause6, true);
 	}
 }
 
@@ -816,7 +817,6 @@ void splitByOccurrences(set<const IVSet*>& potentials){
 				potentials.insert(*it2);
 			}
 		}
-		cout << counter.to_string() << endl;
 	}
 }
 

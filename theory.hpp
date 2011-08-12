@@ -351,6 +351,9 @@ namespace FormulaUtils {
 	/** **/
 	Formula* graph_functions(Formula* f);	
 
+	/** \brief Recursively move all partial terms outside atoms **/
+	Formula* movePartialTerms(Formula*, Vocabulary* voc = 0, PosContext = PC_POSITIVE);
+
 	/** \brief Non-recursively move terms that are three-valued in a given structure outside of the given atom **/
 	Formula* moveThreeValuedTerms(Formula*,AbstractStructure*,bool positive,bool cpsupport=false,
 								const std::set<const PFSymbol*> cpsymbols=std::set<const PFSymbol*>());
@@ -651,12 +654,10 @@ namespace TheoryUtils {
 	Visitor
 **************/
 
-class GroundTheory;
-class SolverTheory;
 class GroundDefinition;
-class GroundRuleBody;
-class PCGroundRuleBody;
-class AggGroundRuleBody;
+class GroundRule;
+class PCGroundRule;
+class AggGroundRule;
 class GroundSet;
 class GroundAggregate;
 
@@ -665,6 +666,11 @@ class CPVarTerm;
 class CPWSumTerm;
 class CPSumTerm;
 class CPReification;
+
+class GroundPolicy;
+class PrintGroundPolicy;
+class SolverPolicy;
+template<class T> class GroundTheory;
 
 // All have a default implementation to allow visitors only implementing some of the traversals, the other
 // being no-ops.
@@ -677,30 +683,32 @@ class TheoryVisitor {
 
 		// Theories
 		virtual void visit(const Theory*);
-		virtual void visit(const GroundTheory*);
-		virtual void visit(const SolverTheory*);
 
-		// Formulas     
+		virtual void visit(const GroundTheory<GroundPolicy>*);
+		virtual void visit(const GroundTheory<PrintGroundPolicy>*);
+		virtual void visit(const GroundTheory<SolverPolicy>*);
+
+		// Formulas
 				void traverse(const Formula*);
-		virtual void visit(const PredForm*);			
+		virtual void visit(const PredForm*);
 		virtual void visit(const EqChainForm*);
 		virtual void visit(const EquivForm*);
 		virtual void visit(const BoolForm*);
 		virtual void visit(const QuantForm*);
 		virtual void visit(const AggForm*);
 
-		virtual void visit(const PCGroundRuleBody*);
-		virtual void visit(const AggGroundRuleBody*);
+		virtual void visit(const GroundDefinition*);
+		virtual void visit(const PCGroundRule*);
+		virtual void visit(const AggGroundRule*);
 		virtual void visit(const GroundSet*);
 		virtual void visit(const GroundAggregate*);
 
 		virtual void visit(const CPReification*);
 
-		// Definitions 
+		// Definitions
 		virtual void visit(const Rule*);
 		virtual void visit(const Definition*);
 		virtual void visit(const FixpDef*);
-		virtual void visit(const GroundDefinition*);
 
 		// Terms
 				void traverse(const Term*);
@@ -724,11 +732,12 @@ class TheoryMutatingVisitor {
 	public:
 		// Theories
 		virtual Theory* visit(Theory*);
-		virtual GroundTheory* visit(GroundTheory*);
-		virtual SolverTheory* visit(SolverTheory*);
+		virtual GroundTheory<GroundPolicy>* visit(GroundTheory<GroundPolicy>*);
+		virtual GroundTheory<PrintGroundPolicy>* visit(GroundTheory<PrintGroundPolicy>*);
+		virtual GroundTheory<SolverPolicy>* visit(GroundTheory<SolverPolicy>*);
 
 		// Formulas     
-				Formula* traverse(Formula*);
+		virtual	Formula* traverse(Formula*);
 		virtual Formula* visit(PredForm*);			
 		virtual Formula* visit(EqChainForm*);
 		virtual Formula* visit(EquivForm*);
@@ -736,28 +745,27 @@ class TheoryMutatingVisitor {
 		virtual Formula* visit(QuantForm*);
 		virtual Formula* visit(AggForm*);
 
-		virtual GroundRuleBody*	visit(AggGroundRuleBody*);
-		virtual GroundRuleBody*	visit(PCGroundRuleBody*);
-	
+		virtual GroundDefinition* visit(GroundDefinition*);
+		virtual GroundRule*	visit(AggGroundRule*);
+		virtual GroundRule*	visit(PCGroundRule*);
 
-		// Definitions 
+
+		// Definitions
 		virtual Rule*				visit(Rule*);
 		virtual Definition*			visit(Definition*);
 		virtual FixpDef*			visit(FixpDef*);
-		virtual GroundDefinition*	visit(GroundDefinition*);
 
 		// Terms
-				Term* traverse(Term*);
+		virtual	Term* traverse(Term*);
 		virtual Term* visit(VarTerm*);
 		virtual Term* visit(FuncTerm*);
 		virtual Term* visit(DomainTerm*);
 		virtual Term* visit(AggTerm*);
 
 		// Set expressions
-				SetExpr* traverse(SetExpr*);
+		virtual SetExpr* traverse(SetExpr*);
 		virtual SetExpr* visit(EnumSetExpr*);
 		virtual SetExpr* visit(QuantSetExpr*);
 };
-
 
 #endif

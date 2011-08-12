@@ -11,7 +11,7 @@
 #include <algorithm>
 using namespace std;
 
-bool IntOption::value(int v) {
+template<class T> bool Option<T>::value(int v) {
 	if(v >= _lower && v <= _upper) {
 		_value = v;
 		return true;
@@ -19,39 +19,24 @@ bool IntOption::value(int v) {
 	else return false;
 }
 
-bool FloatOption::value(double v) {
-	if(v >= _lower && v <= _upper) {
-		_value = v;
-		return true;
+EnumeratedStringOption::EnumeratedStringOption(const vector<string>& possvalues, const string& val) : _possvalues(possvalues) {
+	for(unsigned int n = 0; n < _possvalues.size(); ++n) {
+		if(_possvalues[n] == val) { _value = n; break;	}
 	}
-	else return false;
 }
-
-class EnumeratedStringOption : public StringOption {
-	private:
-		unsigned int	_value;
-		vector<string>	_possvalues;
-	public:
-		EnumeratedStringOption(const vector<string>& possvalues, const string& val) : _possvalues(possvalues) {
-			for(unsigned int n = 0; n < _possvalues.size(); ++n) {
-				if(_possvalues[n] == val) { _value = n; break;	}
-			}
-		}
-		~EnumeratedStringOption() { }
-		const string& value()	const { return _possvalues[_value];	}
-		bool value(const string& val) {
-			for(unsigned int n = 0; n < _possvalues.size(); ++n) {
-				if(_possvalues[n] == val) { _value = n; return true;	}
-			}
-			return false;
-		}
-};
+const string& EnumeratedStringOption::value()	const { return _possvalues[_value];	}
+bool EnumeratedStringOption::value(const string& val) {
+	for(unsigned int n = 0; n < _possvalues.size(); ++n) {
+		if(_possvalues[n] == val) { _value = n; return true;	}
+	}
+	return false;
+}
 
 //TODO code van minisatid 2.3 of later gebruiken om makkelijker opties toe te voegen te doen
 
 Options::Options(const string& name, const ParseInfo& pi) : _name(name), _pi(pi) {
 	_booloptions["printtypes"]			= true;
-	_booloptions["cpsupport"]		= false;
+	_booloptions["cpsupport"]			= false;
 	_booloptions["trace"]				= false;
 	_booloptions["autocomplete"]		= true;
 	_booloptions["longnames"]			= false;
@@ -82,6 +67,52 @@ Options::~Options() {
 	for(map<string,FloatOption*>::const_iterator it = _floatoptions.begin(); it != _floatoptions.end(); ++it) {
 		delete(it->second);
 	}
+}
+
+std::string	StringOption::getPossibleValues() const{
+	stringstream ss;
+	ss <<"Allowed values: any string value";
+	return ss.str();
+}
+
+std::string	EnumeratedStringOption::getPossibleValues() const{
+	stringstream ss;
+	ss <<"Allowed values: ";
+	bool begin = true;
+	for(auto i=_possvalues.begin(); i!=_possvalues.end(); ++i){
+		if(!begin){
+			ss <<" | ";
+		}
+		begin = false;
+		ss <<"\"" <<*i <<"\"";
+	}
+	return ss.str();
+}
+
+std::string Options::getPossibleValues(const string& option) const {
+	auto bit = _booloptions.find(option);
+	if(bit != _booloptions.end()) {
+		stringstream ss;
+		ss <<"Allowed values: true | false";
+		return ss.str();
+	}
+	map<string,IntOption*>::const_iterator iit = _intoptions.find(option);
+	if(iit != _intoptions.end()) {
+		stringstream ss;
+		ss <<"Allowed values: integers between" <<(*iit).second->lower() <<" and " <<(*iit).second->upper();
+		return ss.str();
+	}
+	map<string,FloatOption*>::const_iterator fit = _floatoptions.find(option);
+	if(fit != _floatoptions.end()) {
+		stringstream ss;
+		ss <<"Allowed values: reals between" <<(*iit).second->lower() <<" and " <<(*iit).second->upper();
+		return ss.str();
+	}
+	map<string,StringOption*>::const_iterator sit = _stringoptions.find(option);
+	if(sit != _stringoptions.end()) {
+		return (*sit).second->getPossibleValues();
+	}
+	return "";
 }
 
 bool Options::isoption(const string& optname) const {
