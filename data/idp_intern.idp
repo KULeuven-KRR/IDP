@@ -157,10 +157,10 @@ procedure entails(T1,T2) {
 		T2,
 		fof_commands,
 		tff_commands,
-		idp_intern.prover_fof_theoremstrings,
-		idp_intern.prover_fof_countersatisfiablestrings,
-		idp_intern.prover_tff_theoremstrings,
-		idp_intern.prover_tff_countersatisfiablestrings,
+		idp_intern.prover_fof_truestrings,
+		idp_intern.prover_fof_falsestrings,
+		idp_intern.prover_tff_truestrings,
+		idp_intern.prover_tff_falsestrings,
 		stdoptions
 	)
 	stdoptions.language = tmplang

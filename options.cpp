@@ -49,6 +49,7 @@ Options::Options(const string& name, const ParseInfo& pi) : _name(name), _pi(pi)
 	_intoptions["nrmodels"]				= new IntOption(0,numeric_limits<int>::max(),1);
 	_intoptions["nrpropsteps"]			= new IntOption(0,numeric_limits<int>::max(),4);
 	_intoptions["longestbranch"]		= new IntOption(0,numeric_limits<int>::max(),8);
+	_intoptions["provertimeout"]		= new IntOption(0,numeric_limits<int>::max(),10000000);
 
 	vector<string> ls(4); ls[0] = "idp"; ls[1] = "txt"; ls[2] = "ecnf"; ls[3] = "tptp";
 	vector<string> mf(3); mf[0] = "threevalued"; mf[1] = "twovalued"; mf[2] = "all";
@@ -205,6 +206,10 @@ int Options::nrpropsteps() const {
 
 int Options::longestbranch() const {
 	return _intoptions.find("longestbranch")->second->value();
+}
+
+int Options::provertimeout() const {
+	return _intoptions.find("provertimeout")->second->value();
 }
 
 bool Options::cpsupport() const {

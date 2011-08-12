@@ -102,6 +102,7 @@ class Options {
 		int			groundverbosity()		const;
 		int			propagateverbosity()	const;
 		int			nrpropsteps()			const;
+		int			provertimeout()			const;
 		bool		trace()					const;
 		bool		longnames()				const;
 		bool		relativepropsteps()		const;

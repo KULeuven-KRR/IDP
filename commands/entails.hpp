@@ -1,11 +1,11 @@
 /************************************
-	implies.hpp
+	entails.hpp
 	this file belongs to GidL 2.0
 	(c) K.U.Leuven
 ************************************/
 
-#ifndef IMPLIES_HPP_
-#define IMPLIES_HPP_
+#ifndef ENTAILS_HPP_
+#define ENTAILS_HPP_
 
 #include "commandinterface.hpp"
 #include "printers/print.hpp"
@@ -14,6 +14,9 @@
 #include <cstdlib>
 #include <fstream>
 #include "vocabulary.hpp"
+#include <unistd.h>
+#include <signal.h>
+#include <setjmp.h>
 
 class TheorySupportedChecker : public TheoryVisitor {
 	private:
@@ -64,6 +67,13 @@ void TheorySupportedChecker::visit(const FuncTerm* f) {
 	}
 }
 
+namespace Entails {
+	static jmp_buf _timeoutJump;
+	void timeout(int) {
+		longjmp(_timeoutJump, 1);
+	}
+}
+
 class EntailsInference: public Inference {
 public:
 	EntailsInference(): Inference("entails") {
@@ -79,32 +89,30 @@ public:
 		add(AT_TABLE); // tff countersatisfiable
 		add(AT_OPTIONS);
 	}
-	
+
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
+		#if defined(__linux__)
+		#define COMMANDS_INDEX 0
+		#elif defined(_WIN32)
+		#define COMMANDS_INDEX 1
+		#elif defined(__APPLE__)
+		#define COMMANDS_INDEX 2
+		#else
+		Error::error("\"entails\" is not supported on this platform.\n");
+		return nilarg();
+		#endif
+		
 		std::vector<InternalArgument>& fofCommands = *args[2]._value._table;
 		std::vector<InternalArgument>& tffCommands = *args[3]._value._table;
-		
+
 		std::vector<InternalArgument>& fofTheoremStrings = *args[4]._value._table;
 		std::vector<InternalArgument>& fofCounterSatisfiableStrings = *args[5]._value._table;
 		std::vector<InternalArgument>& tffTheoremStrings = *args[6]._value._table;
 		std::vector<InternalArgument>& tffCounterSatisfiableStrings = *args[7]._value._table;
-		
-		#ifdef __linux__
-		#define COMMANDS_INDEX 0
-		#endif
-		#ifdef _WIN32
-		#define COMMANDS_INDEX 1
-		#endif
-		#ifdef __APPLE__
-		#define COMMANDS_INDEX 2
-		#endif
-		
+
 		#ifdef COMMANDS_INDEX
-		std::string& fofCommandString = *fofCommands[COMMANDS_INDEX]._value._string;
-		std::string& tffCommandString = *tffCommands[COMMANDS_INDEX]._value._string;
-		#else
-		Error::error("Determining entailment using ATP systems is not supported on this platform.\n");
-		return nilarg();
+		InternalArgument& fofCommand = fofCommands[COMMANDS_INDEX];
+		InternalArgument& tffCommand = tffCommands[COMMANDS_INDEX];
 		#endif
 		
 		Theory* axioms;
@@ -124,14 +132,19 @@ public:
 		TheorySupportedChecker sc;
 		axioms->accept(&sc);
 		if (sc.definitionFound()) {
-			Info::print("Replacing a definition by its (potentially weaker) completion."
-					    "The prover may wrongly decide TODO.");
+			Info::print("Replacing a definition by its (potentially weaker) completion. "
+					"The prover may wrongly decide that the first theory does not entail the second theory.");
 			TheoryUtils::completion(axioms);
 			sc.definitionFound(false);
 		}
 		conjectures->accept(&sc);
-		if (sc.definitionFound() || !sc.theorySupported()) {
-			Error::error("Definitions in the conjecture are not supported for \"entails\".");
+		if (!sc.theorySupported()) {
+			Error::error("\"entails\" is not supported for the given theories. "
+					"Only first-order theories (with arithmetic) are supported, with the addition of "
+					"definitions in the axiom theory. (No aggregates, fixpoint definitions,...)\n");
+		}
+		if (sc.definitionFound()) {
+			Error::error("Definitions in the conjecture are not supported for \"entails\".\n");
 			return nilarg();
 		}
 		bool arithmeticFound = sc.arithmeticFound();
@@ -155,7 +168,7 @@ public:
 		try {
 			printer = dynamic_cast<TPTPPrinter<std::stringstream>*>(Printer::create<std::stringstream>(opts, stream, arithmeticFound));
 		} catch (std::bad_cast&) {
-			Error::error("The printer type must be set to a TPTPPrinter.\n");
+			Error::error("\"entails\" requires the printer to be set to the TPTPPrinter.\n");
 			return nilarg();
 		}
 		
@@ -170,22 +183,76 @@ public:
 		
 		std::ofstream tptpFile;
 		tptpFile.open(".tptpfile.tptp");
+		if(!tptpFile.is_open()) {
+			Error::error("Could not successfully open file \".tptpfile.tptp\" for writing. "
+					"Check whether you have write rights in the current directory.\n");
+			return nilarg();
+		}
 		tptpFile << stream.str();
 		tptpFile.close();
 		
-		// Call the external prover
-		std::string commandString;
-		if (arithmeticFound)
-			commandString = tffCommandString;
-		else
-			commandString = fofCommandString;
-		auto pos = commandString.find("%i");
-		commandString.replace(pos, 2, ".tptpfile.tptp");
-		pos = commandString.find("%o");
-		commandString.replace(pos, 2, ".tptpresult.txt");
-		
-		system(commandString.c_str());
-		
+		// Assemble the command of the prover.
+		std::vector<InternalArgument> command;
+		if (arithmeticFound) {
+			if(tffCommand._type != AT_TABLE) {
+				Error::error("No prover command was specified. Please add a prover command to .idprc that "
+						"accepts input in TPTP TFF syntax.\n");
+				return nilarg();
+			}
+			command = *tffCommand._value._table;
+		}
+		else {
+			if(fofCommand._type != AT_TABLE) {
+				Error::error("No prover command was specified. Please add a prover command to .idprc that "
+						"accepts input in TPTP FOF syntax.\n");
+				return nilarg();
+			}
+			command = *fofCommand._value._table;
+		}
+		if(command.size() != 2 || command[0]._type != AT_STRING || command[1]._type != AT_STRING) {
+			Error::error("The prover command must contain 2 strings: The prover application and its "
+					"arguments. Please check your .idprc file.\n");
+			return nilarg();
+		}
+		std::string& arguments = *command[1]._value._string;
+
+		std::stringstream applicationStream;
+		applicationStream << getenv("PROVERDIR") << "/" << *command[0]._value._string;
+
+		if (access(applicationStream.str().c_str(), X_OK)) {
+			Error::error("Prover application:\n" + applicationStream.str() + "\nnot found or not executable. "
+					"Please check your .idprc file or set the PROVERDIR environment variable.\n");
+			return nilarg();
+		}
+
+		auto pos = arguments.find("%i");
+		if(pos == std::string::npos) {
+			Error::error("The argument string for the prover must indicate where the input file "
+					"must be inserted. (Marked by '%i')\n");
+			return nilarg();
+		}
+		arguments.replace(pos, 2, ".tptpfile.tptp");
+		pos = arguments.find("%o");
+		if(pos == std::string::npos) {
+			// If %o was not found, assume output redirection
+			arguments += " > %o";
+			pos = arguments.find("%o");
+		}
+		arguments.replace(pos, 2, ".tptpresult.txt");
+
+		// Call the prover with timeout.
+		if (!setjmp(Entails::_timeoutJump)) {
+			signal(SIGALRM, &Entails::timeout);
+			ualarm(opts->provertimeout(), 0);
+			system((applicationStream.str() + " " + arguments).c_str());
+		}
+		else {
+			Info::print("The theorem prover did not finish within the specified timeout.");
+			return nilarg();
+		}
+		alarm(0);
+		signal(SIGALRM, SIG_DFL);
+
 		std::vector<InternalArgument> theoremStrings;
 		std::vector<InternalArgument> counterSatisfiableStrings;
 		if(arithmeticFound) {
@@ -201,6 +268,9 @@ public:
 		std::string line;
 		std::ifstream tptpResult;
 		tptpResult.open(".tptpresult.txt");
+		if(!tptpResult.is_open()) {
+			Error::error("Could not open file \".tptpresult.txt\" for reading.\n");
+		}
 		getline(tptpResult, line);
 		pos = std::string::npos;
 		bool result = false;
@@ -227,7 +297,7 @@ public:
 		#endif
 		
 		if(pos == std::string::npos) {
-			Error::error("The automated theorem prover did not finish in time or stopped in an irregular state.\n");
+			Info::print("The automated theorem prover gave up or stopped in an irregular state.");
 			return nilarg();
 		}
 		
@@ -238,4 +308,4 @@ public:
 	}
 };
 
-#endif /* IMPLIES_HPP_ */
+#endif /* ENTAILS_HPP_ */
