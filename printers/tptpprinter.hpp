@@ -101,29 +101,6 @@ public:
 			writeStreams();
 		}
 	}
-	
-	void writeStreams() {
-		output() << _typeStream.str();
-		// Add t_nat > t_int > t_float hierarchy
-		output() << _typeAxiomStream.str();
-		if (_arithmetic) {
-			if (_nats && _ints)
-				output() << "tff(nat_is_int,axiom,(! [X: $int] : (~t_nat(X) | t_int(X)))).\n";
-			if (_ints && _floats)
-				output() << "tff(int_is_float,axiom,(! [X: $int] : (~t_int(X) | t_float(X)))).\n";
-			if (_nats && _floats)
-				output() << "tff(nat_is_float,axiom,(! [X: $int] : (~t_nat(X) | t_float(X)))).\n";
-		}
-		startAxiom("char_is_string", &_axiomStream);
-		(*_os) << "! [X] : (~t_char(X) | t_string(X))";
-		endAxiom();
-		output() << _axiomStream.str();
-		output() << _conjectureStream.str();
-		_typeStream.str(std::string());
-		_typeAxiomStream.str(std::string());
-		_axiomStream.str(std::string());
-		_conjectureStream.str(std::string());
-	}
 
 	/** Formulas **/
 
@@ -293,21 +270,6 @@ public:
 			(*_os) << ")";
 		}
 	}
-	
-	std::string TFFTypeString(const Sort* s) {
-		if(SortUtils::isSubsort(const_cast<Sort*>(s),VocabularyUtils::natsort())) {
-			return "$int";
-		}
-		else if(SortUtils::isSubsort(const_cast<Sort*>(s),VocabularyUtils::intsort())) {
-			return "$int";
-		}
-		else if(SortUtils::isSubsort(const_cast<Sort*>(s),VocabularyUtils::floatsort())) {
-			return "$float";
-		}
-		else {
-			return "$i";
-		}
-	}
 
 	void visit(const QuantForm* f) {
 		if(! f->sign())	(*_os) << "~";
@@ -402,24 +364,6 @@ public:
 		}
 		(*_os) << domainTermNameString(t);
 	}
-	
-	std::string domainTermNameString(const DomainTerm* t) {
-		std::string str = t->value()->to_string();
-		if(t->sort()) {
-			if(SortUtils::isSubsort(t->sort(),VocabularyUtils::stringsort())) {
-				std::stringstream result;
-				result << "str_" << t->value()->value()._string;
-				return result.str();
-			}
-			else if(SortUtils::isSubsort(t->sort(),VocabularyUtils::floatsort())) {
-				return str;
-			}
-			else {
-				return "tt_" + str;
-			}
-		}
-		else return "utt_" + str;
-	}
 
 	void visit(const Sort* s) {
 		if (!(s->parents().empty())) {
@@ -455,65 +399,6 @@ public:
 			outputFuncAxiom(f);
 			_count ++;
 		}
-	}
-	
-	void outputFuncAxiom(const Function* f) {
-		startAxiom("fa", &_typeAxiomStream);
-		if(f->arity() > 0) {
-			(*_os) << "! [";
-			(*_os) << "V0";
-			if(_arithmetic) {
-				(*_os) << ": ";
-				(*_os) << TFFTypeString(f->sort(0));
-			}
-			for(unsigned int n = 1; n < f->arity(); ++n) {
-				(*_os) << ",V" << n;
-				if (_arithmetic) {
-					(*_os) << ": ";
-					(*_os) << TFFTypeString(f->sort(n));
-				}
-			}
-			(*_os) << "] : (";
-			(*_os) << "~(";
-			(*_os) << "t_" << f->sort(0)->name() << "(V0)";
-			for(unsigned int n = 1; n < f->arity(); ++n) {
-				(*_os) << " & " << "t_" << f->sort(n)->name() << "(V" << n << ")";
-			}
-			(*_os) << ") | ";
-		}
-		(*_os) << "(? [X1";
-		if(_arithmetic) {
-			(*_os) << ": ";
-			(*_os) << TFFTypeString(f->outsort());
-		}
-		(*_os) << "] : (";
-		(*_os) << "t_" << f->outsort()->name() << "(X1) & ";
-		(*_os) << "(! [X2";
-		if(_arithmetic) {
-			(*_os) << ": ";
-			(*_os) << TFFTypeString(f->outsort());
-		}
-		(*_os) << "] : (";
-		if(f->partial())
-			(*_os) << "~";
-		(*_os) << "p_" << rewriteLongname(f->to_string(true)) << "(";
-		if(f->arity() > 0) {
-			(*_os) << "V0";
-			for(unsigned int n = 1; n < f->arity(); ++n) {
-				(*_os) << ",V" << n;
-			}
-			(*_os) << ",";
-		}
-		(*_os) << "X2)";
-		if(f->partial())
-			(*_os) << " | ";
-		else
-			(*_os) << " <=> ";
-		(*_os) << "X1 = X2";
-		(*_os) << "))))";
-		if(f->arity() > 0)
-			(*_os) << ")";
-		endAxiom();
 	}
 
 	// Unimplemented virtual methods
@@ -695,6 +580,121 @@ private:
 			pos = result.find("::", pos + 3);
 		}
 		return result;
+	}
+
+	std::string TFFTypeString(const Sort* s) {
+		if(SortUtils::isSubsort(const_cast<Sort*>(s),VocabularyUtils::natsort())) {
+			return "$int";
+		}
+		else if(SortUtils::isSubsort(const_cast<Sort*>(s),VocabularyUtils::intsort())) {
+			return "$int";
+		}
+		else if(SortUtils::isSubsort(const_cast<Sort*>(s),VocabularyUtils::floatsort())) {
+			return "$float";
+		}
+		else {
+			return "$i";
+		}
+	}
+
+	std::string domainTermNameString(const DomainTerm* t) {
+		std::string str = t->value()->to_string();
+		if(t->sort()) {
+			if(SortUtils::isSubsort(t->sort(),VocabularyUtils::stringsort())) {
+				std::stringstream result;
+				result << "str_" << t->value()->value()._string;
+				return result.str();
+			}
+			else if(SortUtils::isSubsort(t->sort(),VocabularyUtils::floatsort())) {
+				return str;
+			}
+			else {
+				return "tt_" + str;
+			}
+		}
+		else return "utt_" + str;
+	}
+
+	void outputFuncAxiom(const Function* f) {
+		startAxiom("fa", &_typeAxiomStream);
+		if(f->arity() > 0) {
+			(*_os) << "! [";
+			(*_os) << "V0";
+			if(_arithmetic) {
+				(*_os) << ": ";
+				(*_os) << TFFTypeString(f->sort(0));
+			}
+			for(unsigned int n = 1; n < f->arity(); ++n) {
+				(*_os) << ",V" << n;
+				if (_arithmetic) {
+					(*_os) << ": ";
+					(*_os) << TFFTypeString(f->sort(n));
+				}
+			}
+			(*_os) << "] : (";
+			(*_os) << "~(";
+			(*_os) << "t_" << f->sort(0)->name() << "(V0)";
+			for(unsigned int n = 1; n < f->arity(); ++n) {
+				(*_os) << " & " << "t_" << f->sort(n)->name() << "(V" << n << ")";
+			}
+			(*_os) << ") | ";
+		}
+		(*_os) << "(? [X1";
+		if(_arithmetic) {
+			(*_os) << ": ";
+			(*_os) << TFFTypeString(f->outsort());
+		}
+		(*_os) << "] : (";
+		(*_os) << "t_" << f->outsort()->name() << "(X1) & ";
+		(*_os) << "(! [X2";
+		if(_arithmetic) {
+			(*_os) << ": ";
+			(*_os) << TFFTypeString(f->outsort());
+		}
+		(*_os) << "] : (";
+		if(f->partial())
+			(*_os) << "~";
+		(*_os) << "p_" << rewriteLongname(f->to_string(true)) << "(";
+		if(f->arity() > 0) {
+			(*_os) << "V0";
+			for(unsigned int n = 1; n < f->arity(); ++n) {
+				(*_os) << ",V" << n;
+			}
+			(*_os) << ",";
+		}
+		(*_os) << "X2)";
+		if(f->partial())
+			(*_os) << " | ";
+		else
+			(*_os) << " <=> ";
+		(*_os) << "X1 = X2";
+		(*_os) << "))))";
+		if(f->arity() > 0)
+			(*_os) << ")";
+		endAxiom();
+	}
+
+	void writeStreams() {
+		output() << _typeStream.str();
+		// Add t_nat > t_int > t_float hierarchy
+		output() << _typeAxiomStream.str();
+		if (_arithmetic) {
+			if (_nats && _ints)
+				output() << "tff(nat_is_int,axiom,(! [X: $int] : (~t_nat(X) | t_int(X)))).\n";
+			if (_ints && _floats)
+				output() << "tff(int_is_float,axiom,(! [X: $int] : (~t_int(X) | t_float(X)))).\n";
+			if (_nats && _floats)
+				output() << "tff(nat_is_float,axiom,(! [X: $int] : (~t_nat(X) | t_float(X)))).\n";
+		}
+		startAxiom("char_is_string", &_axiomStream);
+		(*_os) << "! [X] : (~t_char(X) | t_string(X))";
+		endAxiom();
+		output() << _axiomStream.str();
+		output() << _conjectureStream.str();
+		_typeStream.str(std::string());
+		_typeAxiomStream.str(std::string());
+		_axiomStream.str(std::string());
+		_conjectureStream.str(std::string());
 	}
 };
 

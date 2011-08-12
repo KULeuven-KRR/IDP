@@ -159,6 +159,9 @@ procedure makeunknown(inter,tuple) {
 	idp_intern.makeunknown(inter,tuple)
 }
 
+/**
+ * Check whether theory T1 entails theory T2
+ */
 procedure entails(T1,T2) {
 	tmplang = stdoptions.language
 	stdoptions.language = "tptp"
