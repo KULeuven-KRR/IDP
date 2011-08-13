@@ -562,12 +562,12 @@ vector<list<int> > IVSet::getInterchangeableLiterals(AbstractGroundTheory* gt) c
 						symmetrical= *ge_it;
 					}
 					result[list].push_back(gt->translator()->translate(*relations_it, symmetrical));
-					for(auto it=symmetrical.begin(); it!=symmetrical.end(); ++it){
-						cout << (*it)->to_string() << "|";
-					}
-					cout << endl;
+//**/				for(auto it=symmetrical.begin(); it!=symmetrical.end(); ++it){
+//**/					cout << (*it)->to_string() << "|";
+//**/				}
+//**/				cout << endl;
 				}
-				cout << endl;
+//**/			cout << endl;
 				list++;
 			}
 		}
