@@ -97,7 +97,7 @@ void addSymBreakingClausesToGroundTheory(AbstractGroundTheory* gt, const list<in
 		vector<int> firstClause (2);
 		firstClause[0]= -(*literals_it); 
 		firstClause[1]=  (*symLiterals_it);
-		gt->add(firstClause, false);
+		gt->addPure(firstClause);
 	}
 	if(literals.size()>1){
 		currentAuxVar = gt->translator()->nextNumber();
@@ -106,17 +106,17 @@ void addSymBreakingClausesToGroundTheory(AbstractGroundTheory* gt, const list<in
 		clause2[0]= -currentAuxVar;
 		clause2[1]=  (*literals_it);
 		clause2[2]= -(*symLiterals_it);
-		gt->add(clause2, true);
+		gt->addPure(clause2);
 		// (A2 | ~V1) 
 		vector<int> clause3 (2);
 		clause3[0]=  currentAuxVar;
 		clause3[1]= -(*literals_it);
-		gt->add(clause3, true);
+		gt->addPure(clause3);
 		// (A2 | V1*)
 		vector<int> clause4 (2);
 		clause4[0]=  currentAuxVar;
 		clause4[1]=  (*symLiterals_it);
-		gt->add(clause4, true);
+		gt->addPure(clause4);
 		// (~A2 | ~V2 | V2*)
 		++literals_it;
 		++symLiterals_it;
@@ -124,7 +124,7 @@ void addSymBreakingClausesToGroundTheory(AbstractGroundTheory* gt, const list<in
 		clause5[0]= -currentAuxVar;
 		clause5[1]= -(*literals_it);
 		clause5[2]=  (*symLiterals_it);
-		gt->add(clause5, true);
+		gt->addPure(clause5);
 	}
 	list<int>::const_iterator oneButLast_it = literals.end();
 	--oneButLast_it;
@@ -135,26 +135,26 @@ void addSymBreakingClausesToGroundTheory(AbstractGroundTheory* gt, const list<in
 		vector<int> clause1 (2);
 		clause1[0]= -currentAuxVar;
 		clause1[1]=  previousAuxVar;
-		gt->add(clause1, true);
+		gt->addPure(clause1);
 		// ( ~An | ~A_n-1 | V_n-1 | ~V_n-1* )
 		vector<int> clause4 (4);
 		clause4[0]= -currentAuxVar; 
 		clause4[1]= -previousAuxVar;
 		clause4[2]=  (*literals_it);
 		clause4[3]= -(*symLiterals_it);
-		gt->add(clause4, true);
+		gt->addPure(clause4);
 		// ( A_n | ~A_n-1 | ~V_n-1)
 		vector<int> clause2 (3);
 		clause2[0]=  currentAuxVar;
 		clause2[1]= -previousAuxVar; 
 		clause2[2]= -(*literals_it);
-		gt->add(clause2, true);
+		gt->addPure(clause2);
 		// ( A_n | ~A_n-1 | V_n-1*)
 		vector<int> clause3 (3);
 		clause3[0]=  currentAuxVar;
 		clause3[1]= -previousAuxVar;
 		clause3[2]=  (*symLiterals_it);
-		gt->add(clause3, true);
+		gt->addPure(clause3);
 		// ( ~An | ~Vn | Vn* )
 		++literals_it;
 		++symLiterals_it;
@@ -162,7 +162,7 @@ void addSymBreakingClausesToGroundTheory(AbstractGroundTheory* gt, const list<in
 		clause6[0]= -currentAuxVar;
 		clause6[1]= -(*literals_it);
 		clause6[2]=  (*symLiterals_it);
-		gt->add(clause6, true);
+		gt->addPure(clause6);
 	}
 }
 
@@ -530,6 +530,9 @@ vector<list<int> > IVSet::getInterchangeableLiterals(AbstractGroundTheory* gt) c
 	
 	const set<const DomainElement*> emptySet;
 	vector<list<int> > result;
+	for(auto elements_it= getElements().begin(); elements_it!=getElements().end(); ++elements_it){
+		result.push_back(list<int>());
+	}
 	const DomainElement* smallest = *(getElements().begin());
 	for(set<PFSymbol*>::const_iterator relations_it=getRelations().begin(); relations_it!=getRelations().end(); ++relations_it){
 		if(!hasInterpretation(getStructure(), *relations_it)){
@@ -546,20 +549,26 @@ vector<list<int> > IVSet::getInterchangeableLiterals(AbstractGroundTheory* gt) c
 			}
 			for(unsigned int argument = argumentPlace+1; argument<(*relations_it)->nrSorts(); ++argument){
 				Sort* currSort = (*relations_it)->sort(argument);
-				groundElements = fillGroundElementsOneRank(groundElements, getStructure()->inter(currSort), argument, emptySet);			
+				groundElements = fillGroundElementsOneRank(groundElements, getStructure()->inter(currSort), argument, emptySet);
 			}
-			for(set<const DomainElement*>::const_iterator elements_it= getElements().begin(); elements_it!=getElements().end(); ++elements_it){
-				list<int> literals;
-				for(vector<vector<const DomainElement*> >::const_iterator ge_it=groundElements.begin(); ge_it!=groundElements.end(); ++ge_it){
-					ElementTuple original = *ge_it;
-					if(*elements_it==smallest){
-						literals.push_back(gt->translator()->translate(*relations_it, original));
+//			cout << "interchVars: " << (*relations_it)->to_string() << endl;
+			int list=0;
+			for(auto elements_it= getElements().begin(); elements_it!=getElements().end(); ++elements_it){
+				for(auto ge_it=groundElements.begin(); ge_it!=groundElements.end(); ++ge_it){
+					ElementTuple symmetrical;
+					if(*elements_it!=smallest){
+						symmetrical = symmetricalTuple(*ge_it, smallest, *elements_it, argumentPlaces);
 					}else{
-						ElementTuple symmetrical = symmetricalTuple(original, smallest, *elements_it, argumentPlaces);
-						literals.push_back(gt->translator()->translate(*relations_it, symmetrical));
+						symmetrical= *ge_it;
 					}
+					result[list].push_back(gt->translator()->translate(*relations_it, symmetrical));
+					for(auto it=symmetrical.begin(); it!=symmetrical.end(); ++it){
+						cout << (*it)->to_string() << "|";
+					}
+					cout << endl;
 				}
-				result.push_back(literals);
+				cout << endl;
+				list++;
 			}
 		}
 	}

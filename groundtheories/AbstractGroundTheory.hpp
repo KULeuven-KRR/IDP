@@ -49,6 +49,7 @@ public:
 	void 	addEmptyClause()	{ GroundClause c(0); add(c);	}
 	void 	addUnitClause(int l){ GroundClause c(1,l); add(c);	}
 	virtual void add(GroundClause& cl, bool skipfirst=false) = 0;
+	virtual void addPure(GroundClause& cl) = 0;
 	virtual void add(GroundDefinition* d) = 0;
 	virtual void add(GroundFixpDef*) = 0;
 	virtual void add(int head, AggTsBody* body) = 0;
@@ -231,6 +232,10 @@ public:
 
 	void add(GroundClause& cl, bool skipfirst) {
 		transformForAdd(cl,VIT_DISJ,ID_FOR_UNDEFINED,skipfirst);
+		Policy::polAdd(cl);
+	}
+
+	void addPure(GroundClause& cl){
 		Policy::polAdd(cl);
 	}
 
