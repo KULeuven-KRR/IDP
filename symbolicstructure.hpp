@@ -26,6 +26,7 @@ class SymbolicStructure : public TheoryVisitor {
 		void visit(const EqChainForm*);
 		void visit(const AggForm*);
 		void visit(const EquivForm*);
+		const FOBDD* prunebdd(const FOBDD*, const vector<const FOBDDVariable*>&);
 
 	public:
 		SymbolicStructure(FOBDDManager* m,const std::map<PFSymbol*,const FOBDD*>& ct, const std::map<PFSymbol*,const FOBDD*>& cf, const std::map<PFSymbol*,std::vector<const FOBDDVariable*> >& v) : 
