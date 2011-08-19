@@ -25,6 +25,7 @@ private:
 		FOPropagator* propagator = propinference.createpropagator(theory,mpi,options);
 		propagator->run();
 		SymbolicStructure* symstructure = propagator->symbolicstructure();
+		symstructure->filter(structure,5);
 
 		GrounderFactory factory(structure,options,symstructure);
 		TopLevelGrounder* grounder = factory.create(theory);

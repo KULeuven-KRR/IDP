@@ -112,29 +112,33 @@ ostream& SymbolicStructure::put(ostream& output) const {
 	return output;
 }
 
-const FOBDD* SymbolicStructure::prunebdd(const FOBDD* bdd, const vector<const FOBDDVariable*>& bddvars,double mcpa) {
+const FOBDD* SymbolicStructure::prunebdd(const FOBDD* bdd, const vector<const FOBDDVariable*>& bddvars,AbstractStructure* structure, double mcpa) {
 		// 1. Optimize the query
 		FOBDDManager optimizemanager;
 		const FOBDD* copybdd = optimizemanager.getBDD(bdd,_manager);
 		set<const FOBDDVariable*> copyvars;
 		set<const FOBDDDeBruijnIndex*> indices;
 		for(auto it = bddvars.begin(); it != bddvars.end(); ++it) 
-			copyvars.insert(optimizemanager->getVariable((*it)->variable()));
+			copyvars.insert(optimizemanager.getVariable((*it)->variable()));
 		optimizemanager.optimizequery(copybdd,copyvars,indices,structure);
 
 		// 2. Remove certain leaves
 		const FOBDD* pruned = optimizemanager.make_more_false(copybdd,copyvars,indices,structure,mcpa);
 
 		// 3. Replace result
-		return _manager.getBDD(pruned,optimizemanager);
+		return _manager->getBDD(pruned,&optimizemanager);
 }
 
 void SymbolicStructure::filter(AbstractStructure* structure, double max_cost_per_answer) {
 	for(auto it = _ctbounds.begin(); it != _ctbounds.end(); ++it) {
-		it->second = prunebdd(it->second,_vars[it->first],max_cost_per_answer);
+cerr << "Filtering\n"; _manager->put(cerr,it->second);
+		it->second = prunebdd(it->second,_vars[it->first],structure,max_cost_per_answer);
+cerr << "Result of filtering\n"; _manager->put(cerr,it->second);
 	}
 	for(auto it = _cfbounds.begin(); it != _cfbounds.end(); ++it) {
-		it->second = prunebdd(it->second,_vars[it->first],max_cost_per_answer);
+cerr << "Filtering\n"; _manager->put(cerr,it->second);
+		it->second = prunebdd(it->second,_vars[it->first],structure,max_cost_per_answer);
+cerr << "Result of filtering\n"; _manager->put(cerr,it->second);
 	}
 }
 
