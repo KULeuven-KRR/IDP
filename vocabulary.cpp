@@ -167,7 +167,7 @@ SortTable* Sort::interpretation() const {
 ostream& Sort::put(ostream& output, bool longnames) const {
 	if(longnames) {
 		for(set<const Vocabulary*>::iterator it = _vocabularies.begin(); it != _vocabularies.end(); ++it) {
-			if((*it)->sort(_name)->size() == 1) {
+			if(not (*it)->sort(_name)->empty()) {
 				(*it)->putname(output);
 				output << "::";
 				break;
@@ -184,7 +184,7 @@ string Sort::toString() const {
 	return output.str();
 }
 
-ostream& operator<< (ostream& output, const Sort& sort) { return sort.put(output);	}
+ostream& operator<<(ostream& output, const Sort& sort) { return sort.put(output);	}
 
 namespace SortUtils {
 
@@ -259,9 +259,11 @@ const ParseInfo& Variable::pi() const {
 	return _pi;
 }
 
-ostream& Variable::put(ostream& output) const {
+ostream& Variable::put(ostream& output, bool longnames) const {
 	output << _name;
-	if(_sort) output << '[' << *_sort << ']';
+	if(_sort) { 
+		output << '['; _sort->put(output,longnames); output << ']';
+	}
 	return output;
 }
 
@@ -271,7 +273,9 @@ string Variable::toString() const {
 	return output.str();
 }
 
-ostream& operator<< (ostream& output, const Variable& var) { return var.put(output);	}
+ostream& operator<<(ostream& output, const Variable& var) { 
+	return var.put(output);
+}
 
 vector<Variable*> VarUtils::makeNewVariables(const vector<Sort*>& sorts) {
 	vector<Variable*> vars;
@@ -876,7 +880,7 @@ set<Function*> Function::nonbuiltins() {
 ostream& Function::put(ostream& output, bool longnames) const {
 	if(longnames) { 
 		for(set<const Vocabulary*>::iterator it = _vocabularies.begin(); it != _vocabularies.end(); ++it) {
-			if(!(*it)->func(_name)->overloaded()) {
+			if(not (*it)->func(_name)->overloaded()) {
 				(*it)->putname(output);
 				output << "::";
 				break;
@@ -884,18 +888,25 @@ ostream& Function::put(ostream& output, bool longnames) const {
 		}
 	}
 	output << _name.substr(0,_name.rfind('/'));
-	if(longnames && !overloaded()) {
+	if(longnames && not overloaded()) {
 		output << '[';
 		if(_insorts.size() > 0) {
-			output << *_insorts[0];
-			for(unsigned int n = 1; n < _insorts.size(); ++n) output << ',' << *_insorts[n];
+			_insorts[0]->put(output,longnames);
+			for(size_t n = 1; n < _insorts.size(); ++n) {
+				output << ',';
+				_insorts[n]->put(output,longnames);
+			}
 		}
-		output << " : " << *_outsort << ']';
+		output << " : ";
+		_outsort->put(output,longnames);
+		output << ']';
 	}
 	return output;
 }
 
-ostream& operator<< (ostream& output, const Function& f) { return f.put(output); }
+ostream& operator<<(ostream& output, const Function& f) {
+	return f.put(output);
+}
 
 const string& FuncGenerator::name() const {
 	return _name;
@@ -1480,6 +1491,7 @@ ostream& Vocabulary::putname(ostream& output) const {
 }
 
 ostream& Vocabulary::put(ostream& output, unsigned int tabs) const {
+	//TODO Use put methods + add longnames option...
 	printTabs(output,tabs);
 	output << "Vocabulary " << _name << ":\n";
 	++tabs; printTabs(output,tabs);

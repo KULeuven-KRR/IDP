@@ -49,8 +49,8 @@ class TheoryComponent {
 		virtual TheoryComponent*	accept(TheoryMutatingVisitor*) 	= 0;
 
 		// Output
-		virtual std::ostream& put(std::ostream&, unsigned int spaces = 0)	const = 0;
-				std::string toString(unsigned int spaces = 0)				const;
+		virtual std::ostream&	put(std::ostream&, bool longnames = true, unsigned int spaces = 0)	const = 0;
+				std::string 	toString(unsigned int spaces = 0)									const;
 };
 
 std::ostream& operator<<(std::ostream&, const TheoryComponent&);
@@ -120,7 +120,7 @@ class Formula : public TheoryComponent {
 		virtual Formula*	accept(TheoryMutatingVisitor* v)	= 0;
 
 		// Output
-		virtual std::ostream& put(std::ostream&, unsigned int spaces = 0)	const = 0;
+		virtual std::ostream& put(std::ostream&, bool longnames = true, unsigned int spaces = 0) const = 0;
 
 	private:
 		void	setFreeVars();		//!< compute the free variables of the formula
@@ -159,7 +159,7 @@ class PredForm : public Formula {
 		Formula*	accept(TheoryMutatingVisitor* v);
 
 		// Output
-		std::ostream& put(std::ostream&,unsigned int spaces = 0) const;
+		std::ostream& put(std::ostream&, bool longnames = true, unsigned int spaces = 0) const;
 };
 
 /** 
@@ -174,7 +174,7 @@ class EqChainForm : public Formula {
 		// Constructors
 		EqChainForm(bool sign, bool c, Term* t, const FormulaParseInfo& pi) : 
 			Formula(sign,pi), _conj(c), _comps(0) { subterms(std::vector<Term*>(1,t)); }
-		EqChainForm(bool s,bool c,const std::vector<Term*>& vt,const std::vector<CompType>& vc,const FormulaParseInfo& pi) :
+		EqChainForm(bool s, bool c, const std::vector<Term*>& vt, const std::vector<CompType>& vc, const FormulaParseInfo& pi) :
 			Formula(s,pi), _conj(c), _comps(vc) { subterms(vt); }
 
 		EqChainForm*	clone()										const;
@@ -198,7 +198,7 @@ class EqChainForm : public Formula {
 		Formula*	accept(TheoryMutatingVisitor* v);
 
 		// Output
-		std::ostream& put(std::ostream&, unsigned int spaces = 0) const;
+		std::ostream& put(std::ostream&, bool longnames = true, unsigned int spaces = 0) const;
 };
 
 /** 
@@ -230,7 +230,7 @@ class EquivForm : public Formula {
 		Formula*	accept(TheoryMutatingVisitor* v);
 
 		// Output
-		std::ostream& put(std::ostream&,unsigned int spaces = 0) const;
+		std::ostream& put(std::ostream&, bool longnames = true, unsigned int spaces = 0) const;
 };
 
 /** 
@@ -266,7 +266,7 @@ class BoolForm : public Formula {
 		Formula*	accept(TheoryMutatingVisitor* v);
 
 		// Debugging
-		std::ostream& put(std::ostream&, unsigned int spaces = 0)	const;
+		std::ostream& put(std::ostream&, bool longnames = true, unsigned int spaces = 0)	const;
 };
 
 /** 
@@ -288,20 +288,20 @@ class QuantForm : public Formula {
 		~QuantForm() { }
 
 		// Mutators
-		void	add(Variable* v)	{ addQuantVar(v);	}
-		void	univ(bool b)		{ _univ = b;		}
-		void	subf(Formula* f)	{ subformula(0,f);	}
+		void	add(Variable* v)		{ addQuantVar(v);	}
+		void	univ(bool b)			{ _univ = b;		}
+		void	subformula(Formula* f)	{ Formula::subformula(0,f);	}
 
 		// Inspectors
-		Formula*	subf()	const { return subformulas()[0];	}
-		bool		univ()	const { return _univ;				}
+		Formula*	subformula()	const { return subformulas()[0];	}
+		bool		univ()			const { return _univ;				}
 
 		// Visitor
 		void		accept(TheoryVisitor* v) const;
 		Formula*	accept(TheoryMutatingVisitor* v);
 
 		// Output
-		std::ostream& put(std::ostream&,unsigned int spaces = 0)	const;
+		std::ostream& put(std::ostream&, bool longnames = true, unsigned int spaces = 0)	const;
 };
 
 /** 
@@ -338,14 +338,14 @@ class AggForm : public Formula {
 		Formula*	accept(TheoryMutatingVisitor* v);
 
 		// Output
-		std::ostream& put(std::ostream&,unsigned int spaces = 0)	const;
+		std::ostream& put(std::ostream&, bool longnames = true, unsigned int spaces = 0)	const;
 };
 
 namespace FormulaUtils {
 	/** \brief Recursively rewrite all EqChainForms in the given formula to BoolForms **/
 	Formula* removeEqChains(Formula*,Vocabulary* v = 0);	
 
-	/** **/
+	/** \brief Recursively rewrite all function terms to their predicate form **/
 	Formula* graphFunctions(Formula* f);	
 
 	/** \brief Non-recursively move terms that are three-valued in a given structure outside of the given atom **/
@@ -362,6 +362,12 @@ namespace FormulaUtils {
 	BoolForm*	trueform();
 	/** \brief Create the formula 'false' **/
 	BoolForm*	falseform();
+}
+
+namespace TermUtils {
+	/** \brief Rewrite set expressions by moving three-valued terms **/
+	SetExpr* moveThreeValuedTerms(SetExpr*,AbstractStructure*,PosContext,bool cpsupport=false,
+			const std::set<const PFSymbol*> cpsymbols=std::set<const PFSymbol*>());
 }
 
 
@@ -406,8 +412,8 @@ class Rule {
 		Rule*	accept(TheoryMutatingVisitor* v);
 
 		// Output
-		std::ostream&	put(std::ostream&, unsigned int spaces = 0) const;
-		std::string		toString(unsigned int spaces = 0)			const;
+		std::ostream&	put(std::ostream&, bool longnames = true, unsigned int spaces = 0) 	const;
+		std::string		toString(unsigned int spaces = 0)									const;
 };
 
 std::ostream& operator<<(std::ostream&,const Rule&);
@@ -458,7 +464,7 @@ class Definition : public AbstractDefinition {
 		Definition*	accept(TheoryMutatingVisitor* v);
 
 		// output
-		std::ostream& put(std::ostream&,unsigned int spaces = 0) const;
+		std::ostream& put(std::ostream&, bool longnames = true, unsigned int spaces = 0) const;
 };
 
 /***************************
@@ -512,7 +518,7 @@ class FixpDef : public AbstractFixpDef {
 		FixpDef*	accept(TheoryMutatingVisitor* v);
 
 		// output
-		std::ostream& put(std::ostream&,unsigned int spaces = 0) const;
+		std::ostream& put(std::ostream&, bool longnames = true, unsigned int spaces = 0) const;
 };
 
 
@@ -559,8 +565,8 @@ class AbstractTheory {
 		virtual AbstractTheory*	accept(TheoryMutatingVisitor*)	= 0;
 
 		// Output
-		virtual std::ostream&	put(std::ostream&,unsigned int spaces)	const = 0;
-				std::string		toString(unsigned int spaces)			const;
+		virtual std::ostream&	put(std::ostream&, bool longnames, unsigned int spaces)	const = 0;
+				std::string		toString(unsigned int spaces)							const;
 };
 
 std::ostream& operator<<(std::ostream&,const AbstractTheory&);
@@ -611,7 +617,7 @@ class Theory : public AbstractTheory {
 		Theory*	accept(TheoryMutatingVisitor*);
 
 		// Output
-		std::ostream& put(std::ostream&,unsigned int spaces = 0) const;
+		std::ostream& put(std::ostream&, bool longnames = true, unsigned int spaces = 0) const;
 };
 
 namespace TheoryUtils {

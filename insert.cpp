@@ -25,7 +25,6 @@ using namespace std;
 using namespace LuaConnection; //TODO add abstraction to remove lua dependence here
 
 class SortDeriver : public TheoryMutatingVisitor {
-
 	private:
 		map<Variable*,set<Sort*> >	_untyped;			// The untyped variables, with their possible types
 		map<FuncTerm*,Sort*>		_overloadedterms;	// The terms with an overloaded function
@@ -383,12 +382,12 @@ void SortChecker::visit(const EqChainForm* ef) {
 void SortChecker::visit(const AggTerm* at) {
 	if(at->function() != AGG_CARD) {
 		SetExpr* s = at->set();
-		if(!s->quantvars().empty() && (*(s->quantvars().begin()))->sort()) {
-			Variable* v = *(s->quantvars().begin());
-			if(!SortUtils::resolve(v->sort(),VocabularyUtils::floatsort(),_vocab)) {
-				Error::wrongsort(v->name(),v->sort()->name(),"int or float",v->pi());
-			}
-		}
+//		if(!s->quantvars().empty() && (*(s->quantvars().begin()))->sort()) {
+//			Variable* v = *(s->quantvars().begin());
+//			if(!SortUtils::resolve(v->sort(),VocabularyUtils::floatsort(),_vocab)) {
+//				Error::wrongsort(v->name(),v->sort()->name(),"int or float",v->pi());
+//			}
+//		}
 		for(vector<Term*>::const_iterator it = s->subterms().begin(); it != s->subterms().end(); ++it) {
 			if((*it)->sort() && !SortUtils::resolve((*it)->sort(),VocabularyUtils::floatsort(),_vocab)) {
 				Error::wrongsort((*it)->toString(),(*it)->sort()->name(),"int or float",(*it)->pi());
@@ -1893,13 +1892,15 @@ SetExpr* Insert::set(const std::set<Variable*>& vv, Formula* f, Term* counter, Y
 		}
 		Term* picounter = counter->pi().original() ? counter->pi().original()->clone() : counter->clone(); 
 		Formula* pif = f->pi().original() ? f->pi().original()->clone(mvv) : f->clone(mvv);
-		SetParseInfo pi = setparseinfo(new QuantSetExpr(pivv,picounter,pif,SetParseInfo()),l);
-		return new QuantSetExpr(vv,counter,f,pi);
+		SetParseInfo pi = setparseinfo(new QuantSetExpr(pivv,pif,picounter,SetParseInfo()),l);
+		return new QuantSetExpr(vv,f,counter,pi);
 	}
 	else {
-		if(f) f->recursiveDelete();
-		if(counter) counter->recursiveDelete();
-		for(std::set<Variable*>::const_iterator it = vv.begin(); it != vv.end(); ++it) delete(*it);
+		if(f) { f->recursiveDelete(); }
+		if(counter) { counter->recursiveDelete(); }
+		for(std::set<Variable*>::const_iterator it = vv.begin(); it != vv.end(); ++it) {
+			delete(*it);
+		}
 		return 0;
 	}
 }
@@ -1927,11 +1928,11 @@ void Insert::addFT(EnumSetExpr* s, Formula* f, Term* t) const {
 			EnumSetExpr* origset = dynamic_cast<EnumSetExpr*>(orig);
 			Formula* pif = f->pi().original() ? f->pi().original()->clone() : f->clone();
 			Term* tif = t->pi().original() ? t->pi().original()->clone() : t->clone();
-			origset->addterm(tif);
-			origset->addformula(pif);
+			origset->addTerm(tif);
+			origset->addFormula(pif);
 		}
-		s->addterm(t);
-		s->addformula(f);
+		s->addTerm(t);
+		s->addFormula(f);
 	}
 	else {
 		if(f) f->recursiveDelete();

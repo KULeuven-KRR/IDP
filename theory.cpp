@@ -101,7 +101,6 @@ class ContainmentChecker : public TheoryVisitor {
 			f->accept(this);
 			return _result;
 		}
-
 };
 
 bool Formula::contains(const PFSymbol* s) const {
@@ -142,26 +141,32 @@ Formula* PredForm::accept(TheoryMutatingVisitor* v) {
 	return v->visit(this);
 }
 
-ostream& PredForm::put(ostream& output, unsigned int spaces) const {
+ostream& PredForm::put(ostream& output, bool longnames, unsigned int spaces) const {
 	printTabs(output,spaces);
-	if(!sign()) output << '~';
-	output << *_symbol;
+	if(not sign()) { output << '~'; }
+	_symbol->put(output,longnames);
 	if(typeid(*_symbol) == typeid(Predicate)) {
-		if(!subterms().empty()) {
-			output << '(' << *subterms()[0];
-			for(unsigned int n = 1; n < subterms().size(); ++n) 
-				output << ',' << *subterms()[n];
+		if(not subterms().empty()) {
+			output << '(';
+			for(size_t n = 0; n < subterms().size(); ++n) {
+				subterms()[n]->put(output,longnames);
+				if(n < subterms().size()-1) { output << ','; }
+			}
 			output << ')';
 		}
 	}
 	else {
+		assert(typeid(*_symbol) == typeid(Function));
 		if(subterms().size() > 1) {
-			output << '(' << *subterms()[0];
-			for(unsigned int n = 1; n < subterms().size()-1; ++n) 
-				output << ',' << *subterms()[n];
+			output << '(';
+			for(size_t n = 0; n < subterms().size()-1; ++n) { 
+				subterms()[n]->put(output,longnames);
+				if(n+1 < subterms().size()-1) { output << ','; }
+			}
 			output << ')';
 		}
-		output << " = " << *subterms().back();
+		output << " = ";
+		subterms().back()->put(output,longnames);
 	}
 	return output;
 }
@@ -177,8 +182,9 @@ EqChainForm* EqChainForm::clone() const {
 
 EqChainForm* EqChainForm::clone(const map<Variable*,Variable*>& mvv) const {
 	vector<Term*> nt;
-	for(vector<Term*>::const_iterator it = subterms().begin(); it != subterms().end(); ++it) 
+	for(vector<Term*>::const_iterator it = subterms().begin(); it != subterms().end(); ++it) { 
 		nt.push_back((*it)->clone(mvv));
+	}
 	EqChainForm* ef = new EqChainForm(sign(),_conj,nt,_comps,pi().clone(mvv));
 	return ef;
 }
@@ -191,22 +197,19 @@ Formula* EqChainForm::accept(TheoryMutatingVisitor* v) {
 	return v->visit(this);
 }
 
-ostream& EqChainForm::put(ostream& output, unsigned int spaces) const {
+ostream& EqChainForm::put(ostream& output, bool longnames, unsigned int spaces) const {
+	assert(subterms().size() == comps().size() + 1);
 	printTabs(output,spaces);
-	if(!sign()) output << '~';
-	output << '(' << *subterms()[0];
-	for(unsigned int n = 0; n < _comps.size(); ++n) {
-		switch(_comps[n]) {
-			case CT_EQ: output << " = "; break;
-			case CT_NEQ: output << " ~= "; break;
-			case CT_LT: output << " < "; break;
-			case CT_GT: output << " > "; break;
-			case CT_LEQ: output << " =< "; break;
-			case CT_GEQ: output << " >= "; break;
-			default: assert(false);
+	if(not sign()) { output << '~'; }
+	output << '(';
+	subterms()[0]->put(output,longnames);
+	for(size_t n = 0; n < comps().size(); ++n) {
+		output << ' ' << comps()[n] << ' ';
+		subterms()[n+1]->put(output,longnames);
+		if(not conj() && (n < comps().size()-1)) {
+			output << " | ";
+			subterms()[n+1]->put(output,longnames);
 		}
-		output << *subterms()[n+1];
-		if(!_conj && n+1 < _comps.size()) output << " | " << *subterms()[n+1];
 	}
 	output << ')';
 	return output;
@@ -236,9 +239,11 @@ Formula* EquivForm::accept(TheoryMutatingVisitor* v) {
 	return v->visit(this);
 }
 
-ostream& EquivForm::put(ostream& output, unsigned int spaces) const {
+ostream& EquivForm::put(ostream& output, bool longnames, unsigned int spaces) const {
 	printTabs(output,spaces);
-	output << '(' << *left() << " <=> " << *right() << ')';
+	output << '('; left()->put(output,longnames);
+	output << " <=> "; right()->put(output,longnames);
+	output << ')';
 	return output;
 }
 
@@ -267,19 +272,19 @@ Formula* BoolForm::accept(TheoryMutatingVisitor* v) {
 	return v->visit(this);
 }
 
-ostream& BoolForm::put(ostream& output, unsigned int spaces) const {
+ostream& BoolForm::put(ostream& output, bool longnames, unsigned int spaces) const {
 	printTabs(output,spaces);
 	if(subformulas().empty()) {
-		if(sign() == _conj) output << "true";
-		else output << "false";
+		output << (sign() == _conj ? "true" : "false");
 	}
 	else {
-		if(!sign()) output << '~';
-		output << '(' << *subformulas()[0];
-		for(unsigned int n = 1; n < subformulas().size(); ++n) {
-			if(_conj) output << " & ";
-			else output <<  " | ";
-			output << *subformulas()[n]; 
+		if(not sign()) { output << '~'; }
+		output << '(';
+		for(size_t n = 0; n < subformulas().size(); ++n) {
+			subformulas()[n]->put(output,longnames);
+			if(n < subformulas().size()-1) {
+				output << (_conj ? " & " : " | ");
+			}
 		}
 		output << ')';
 	}
@@ -303,7 +308,7 @@ QuantForm* QuantForm::clone(const map<Variable*,Variable*>& mvv) const {
 		nv.insert(v);
 		nmvv[*it] = v;
 	}
-	Formula* nf = subf()->clone(nmvv);
+	Formula* nf = subformula()->clone(nmvv);
 	QuantForm* qf = new QuantForm(sign(),_univ,nv,nf,pi().clone(mvv));
 	return qf;
 }
@@ -316,16 +321,16 @@ Formula* QuantForm::accept(TheoryMutatingVisitor* v) {
 	return v->visit(this);
 }
 
-ostream& QuantForm::put(ostream& output, unsigned int spaces) const {
+ostream& QuantForm::put(ostream& output, bool longnames, unsigned int spaces) const {
 	printTabs(output,spaces);
-	if(!sign()) output << '~';
-	output << '(';
-	output << (_univ ? '!' : '?');
+	if(not sign()) { output << '~'; }
+	output << '(' << (univ() ? '!' : '?');
 	for(set<Variable*>::const_iterator it = quantvars().begin(); it != quantvars().end(); ++it) {
-		output << ' ' << *(*it);
-		if((*it)->sort()) output << '[' << (*it)->sort()->name() << ']';
+		output << ' '; (*it)->put(output,longnames);
 	}
-	output << " : " << *subf() << ')';
+	output << " : ";
+	subformula()->put(output,longnames);
+	output << ')';
 	return output;
 }
 
@@ -358,20 +363,14 @@ Formula* AggForm::accept(TheoryMutatingVisitor* v) {
 	return v->visit(this);
 }
 
-ostream& AggForm::put(ostream& output, unsigned int spaces) const {
+ostream& AggForm::put(ostream& output, bool longnames, unsigned int spaces) const {
 	printTabs(output,spaces);
-	if(!sign()) output << '~';
-	output << '(' << *left();
-	switch(_comp) {
-		case CT_EQ: output << " = "; break;
-		case CT_NEQ: output << " ~= "; break;
-		case CT_LT: output << " < "; break;
-		case CT_GT: output << " > "; break;
-		case CT_LEQ: output << " =< "; break;
-		case CT_GEQ: output << " >= "; break;
-		default: assert(false);
-	}
-	output << *right() << ')';
+	if(not sign()) { output << '~'; }
+	output << '(';
+	left()->put(output,longnames);
+	output << ' ' << _comp << ' ';
+	right()->put(output,longnames);
+	output << ')';
 	return output;
 }
 
@@ -406,17 +405,19 @@ Rule* Rule::accept(TheoryMutatingVisitor* v) {
 }
 
 
-ostream& Rule::put(ostream& output, unsigned int spaces) const {
+ostream& Rule::put(ostream& output, bool longnames, unsigned int spaces) const {
 	printTabs(output,spaces);
-	if(!_quantvars.empty()) {
+	if(not _quantvars.empty()) {
 		output << "!";
 		for(set<Variable*>::const_iterator it = _quantvars.begin(); it != _quantvars.end(); ++it) {
-			output << ' ' << (*it)->name();
-			if((*it)->sort()) output << '[' << (*it)->sort()->name() << ']';
+			output << ' '; (*it)->put(output,longnames);
 		}
 		output << " : ";
 	}
-	output << *_head << " <- " << *_body << '.';
+	_head->put(output,longnames);
+	output << " <- ";
+	_body->put(output,longnames);
+	output << '.';
 	return output;
 }
 
@@ -442,7 +443,7 @@ Definition* Definition::clone() const {
 }
 
 void Definition::recursiveDelete() {
-	for(unsigned int n = 0; n < _rules.size(); ++n) _rules[n]->recursiveDelete();
+	for(size_t n = 0; n < _rules.size(); ++n) _rules[n]->recursiveDelete();
 	delete(this);
 }
 
@@ -466,14 +467,14 @@ Definition* Definition::accept(TheoryMutatingVisitor* v) {
 	return v->visit(this);
 }
 
-ostream& Definition::put(ostream& output, unsigned int spaces) const {
+ostream& Definition::put(ostream& output, bool longnames, unsigned int spaces) const {
 	printTabs(output,spaces);
 	output << "{ ";
-	if(!_rules.empty()) {
-		output << *_rules[0];
-		for(unsigned int n = 1; n < _rules.size(); ++n) {
+	if(not _rules.empty()) {
+		_rules[0]->put(output,longnames);
+		for(size_t n = 1; n < _rules.size(); ++n) {
 			output << '\n';
-			_rules[n]->put(output,spaces+2);
+			_rules[n]->put(output,longnames,spaces+2);
 		}
 	}
 	output << '}';
@@ -521,19 +522,19 @@ FixpDef* FixpDef::accept(TheoryMutatingVisitor* v) {
 	return v->visit(this);
 }
 
-ostream& FixpDef::put(ostream& output, unsigned int spaces) const {
+ostream& FixpDef::put(ostream& output, bool longnames, unsigned int spaces) const {
 	printTabs(output,spaces);
 	output << (_lfp ? "LFD [  " : "GFD [  ");
-	if(!_rules.empty()) {
-		output << *_rules[0];
-		for(unsigned int n = 1; n < _rules.size(); ++n) {
+	if(not _rules.empty()) {
+		_rules[0]->put(output,longnames);
+		for(size_t n = 1; n < _rules.size(); ++n) {
 			output << '\n';
-			_rules[n]->put(output,spaces+2);
+			_rules[n]->put(output,longnames,spaces+2);
 		}
 	}
 	for(vector<FixpDef*>::const_iterator it = _defs.begin(); it != _defs.end(); ++it) {
 		output << '\n';
-		(*it)->put(output,spaces+2);
+		(*it)->put(output,longnames,spaces+2);
 	}
 	output << " ]";
 	return output;
@@ -584,19 +585,19 @@ Theory* Theory::accept(TheoryMutatingVisitor* v) {
 	return v->visit(this);
 }
 
-std::ostream& Theory::put(std::ostream& output, unsigned int spaces) const {
+std::ostream& Theory::put(std::ostream& output, bool longnames, unsigned int spaces) const {
 	printTabs(output,spaces);
-	output << "#theory " <<  _name;
+	output << "theory " << name();
 	if(_vocabulary) {
-		output << " : " << _vocabulary->name();
+		output << " : " << vocabulary()->name();
 	}
 	output << " {\n";
 	for(vector<Formula*>::const_iterator it = _sentences.begin(); it != _sentences.end(); ++it)
-		(*it)->put(output,spaces+2);
+		(*it)->put(output,longnames,spaces+2);
 	for(vector<Definition*>::const_iterator it = _definitions.begin(); it != _definitions.end(); ++it)
-		(*it)->put(output,spaces+2);
+		(*it)->put(output,longnames,spaces+2);
 	for(vector<FixpDef*>::const_iterator it = _fixpdefs.begin(); it != _fixpdefs.end(); ++it)
-		(*it)->put(output,spaces+2);
+		(*it)->put(output,longnames,spaces+2);
 	output << "}\n";
 	return output;
 }
@@ -607,7 +608,6 @@ std::ostream& Theory::put(std::ostream& output, unsigned int spaces) const {
 ********************/
 
 class NegationPush : public TheoryMutatingVisitor {
-
 	public:
 		NegationPush()	: TheoryMutatingVisitor() { }
 
@@ -618,37 +618,41 @@ class NegationPush : public TheoryMutatingVisitor {
 
 		Formula*	traverse(Formula*);
 		Term*		traverse(Term*);
-
 };
 
 Formula* NegationPush::traverse(Formula* f) {
-	for(vector<Formula*>::const_iterator it = f->subformulas().begin(); it != f->subformulas().end(); ++it)
+	for(vector<Formula*>::const_iterator it = f->subformulas().begin(); it != f->subformulas().end(); ++it) {
 		(*it)->accept(this);
-	for(vector<Term*>::const_iterator it = f->subterms().begin(); it != f->subterms().end(); ++it)
+	}
+	for(vector<Term*>::const_iterator it = f->subterms().begin(); it != f->subterms().end(); ++it) {
 		(*it)->accept(this);
+	}
 	return f;
 }
 
 Term* NegationPush::traverse(Term* t) {
-	for(vector<Term*>::const_iterator it = t->subterms().begin(); it != t->subterms().end(); ++it)
+	for(vector<Term*>::const_iterator it = t->subterms().begin(); it != t->subterms().end(); ++it) {
 		(*it)->accept(this);
-	for(vector<SetExpr*>::const_iterator it = t->subsets().begin(); it != t->subsets().end(); ++it)
+	}
+	for(vector<SetExpr*>::const_iterator it = t->subsets().begin(); it != t->subsets().end(); ++it) {
 		(*it)->accept(this);
+	}
 	return t;
 }
 
 Formula* NegationPush::visit(EqChainForm* f) {
-	if(!f->sign()) {
+	if(not f->sign()) {
 		f->negate();
 		f->conj(!f->conj());
-		for(unsigned int n = 0; n < f->comps().size(); ++n) 
+		for(size_t n = 0; n < f->comps().size(); ++n) {
 			f->comp(n,negateComp(f->comps()[n]));
+		}
 	}
 	return traverse(f);
 }
 
 Formula* NegationPush::visit(EquivForm* f) {
-	if(!f->sign()) {
+	if(not f->sign()) {
 		f->negate();
 		f->right()->negate();
 	}
@@ -656,31 +660,31 @@ Formula* NegationPush::visit(EquivForm* f) {
 }
 
 Formula* NegationPush::visit(BoolForm* f) {
-	if(!f->sign()) {
+	if(not f->sign()) {
 		f->negate();
-		for(vector<Formula*>::const_iterator it = f->subformulas().begin(); it != f->subformulas().end(); ++it) 
+		for(vector<Formula*>::const_iterator it = f->subformulas().begin(); it != f->subformulas().end(); ++it) { 
 			(*it)->negate();
+		}
 		f->conj(!f->conj());
 	}
 	return traverse(f);
 }
 
 Formula* NegationPush::visit(QuantForm* f) {
-	if(!f->sign()) {
+	if(not f->sign()) {
 		f->negate();
-		f->subf()->negate();
+		f->subformula()->negate();
 		f->univ(!f->univ());
 	}
 	return traverse(f);
 }
 
-class EquivRemover : public TheoryMutatingVisitor {
 
+class EquivRemover : public TheoryMutatingVisitor {
 	public:
 		EquivRemover()	: TheoryMutatingVisitor() { }
 
 		BoolForm* visit(EquivForm*);
-
 };
 
 BoolForm* EquivRemover::visit(EquivForm* ef) {
@@ -699,14 +703,13 @@ BoolForm* EquivRemover::visit(EquivForm* ef) {
 	return bf;
 }
 
-class Flattener : public TheoryMutatingVisitor {
 
+class Flattener : public TheoryMutatingVisitor {
 	public:
 		Flattener() : TheoryMutatingVisitor() { }
 
 		Formula*	visit(BoolForm*);
 		Formula* 	visit(QuantForm*);
-
 };
 
 Formula* Flattener::visit(BoolForm* bf) {
@@ -730,29 +733,28 @@ Formula* Flattener::visit(BoolForm* bf) {
 
 Formula* Flattener::visit(QuantForm* qf) {
 	traverse(qf);	
-	if(typeid(*(qf->subf())) == typeid(QuantForm)) {
-		QuantForm* sqf = dynamic_cast<QuantForm*>(qf->subf());
+	if(typeid(*(qf->subformula())) == typeid(QuantForm)) {
+		QuantForm* sqf = dynamic_cast<QuantForm*>(qf->subformula());
 		if((qf->univ() == sqf->univ()) && sqf->sign()) {
-			qf->subf(sqf->subf());
-			for(set<Variable*>::const_iterator it = sqf->quantvars().begin(); it != sqf->quantvars().end(); ++it) 
+			qf->subformula(sqf->subformula());
+			for(set<Variable*>::const_iterator it = sqf->quantvars().begin(); it != sqf->quantvars().end(); ++it) { 
 				qf->add(*it);
+			}
 			delete(sqf);
 		}
 	}
 	return qf;
 }
 
-class EqChainRemover : public TheoryMutatingVisitor {
 
+class EqChainRemover : public TheoryMutatingVisitor {
 	private:
 		Vocabulary* _vocab;
-
 	public:
 		EqChainRemover() : TheoryMutatingVisitor(), _vocab(0)	{ }
 		EqChainRemover(Vocabulary* v) : TheoryMutatingVisitor(), _vocab(v) { }
 
 		Formula* visit(EqChainForm*);
-
 };
 
 Formula* EqChainRemover::visit(EqChainForm* ef) {
@@ -791,18 +793,17 @@ Formula* EqChainRemover::visit(EqChainForm* ef) {
 	}
 }
 
-class QuantMover : public TheoryMutatingVisitor {
 
+class QuantMover : public TheoryMutatingVisitor {
 	public:
 		QuantMover()	: TheoryMutatingVisitor() { }
 
 		Formula* visit(QuantForm*);
-
 };
 
 Formula* QuantMover::visit(QuantForm* qf) {
-	if(typeid(*(qf->subf())) == typeid(BoolForm)) {
-		BoolForm* bf = dynamic_cast<BoolForm*>(qf->subf());
+	if(typeid(*(qf->subformula())) == typeid(BoolForm)) {
+		BoolForm* bf = dynamic_cast<BoolForm*>(qf->subformula());
 		bool u = (qf->univ() == qf->sign());
 		bool c = (bf->conj() == bf->sign());
 		if(u == c) {
@@ -813,7 +814,7 @@ Formula* QuantMover::visit(QuantForm* qf) {
 				vf.push_back(nqf->clone());
 				delete(nqf);
 			}
-			qf->subf()->recursiveDelete();
+			qf->subformula()->recursiveDelete();
 			BoolForm* nbf = new BoolForm(true,c,vf,(qf->pi()).clone());
 			delete(qf);
 			return nbf->accept(this);
@@ -822,14 +823,6 @@ Formula* QuantMover::visit(QuantForm* qf) {
 	return TheoryMutatingVisitor::visit(qf);
 }
 
-/*
-Formula* AggMover::visit(EqChainForm* ef) {
-	EqChainRemover ecr;
-	Formula* f = ecr.visit(ef);
-	Formula* nf = f->accept(this);
-	return nf;
-}
-*/
 
 class Completer : public TheoryMutatingVisitor {
 	private:
@@ -896,7 +889,7 @@ Rule* Completer::visit(Rule* rule) {
 	set<Variable*> freevars = rule->quantvars();
 	map<Variable*,Variable*> mvv;
 
-	for(unsigned int n = 0; n < rule->head()->subterms().size(); ++n) {
+	for(size_t n = 0; n < rule->head()->subterms().size(); ++n) {
 		Term* t = rule->head()->subterms()[n];
 		if(typeid(*t) != typeid(VarTerm)) {
 			VarTerm* bvt = new VarTerm(vv[n],TermParseInfo());
@@ -961,7 +954,7 @@ class AllTermMover : public TheoryMutatingVisitor {
 };
 
 Theory* AllTermMover::visit(Theory* theory) {
-	for(unsigned int n = 0; n < theory->sentences().size(); ++n) {
+	for(size_t n = 0; n < theory->sentences().size(); ++n) {
 		_context = PC_POSITIVE;
 		theory->sentence(n,theory->sentences()[n]->accept(this));
 	}
@@ -976,7 +969,7 @@ Theory* AllTermMover::visit(Theory* theory) {
 
 Rule* AllTermMover::visit(Rule* rule) {
 	vector<Formula*> vf;
-	for(unsigned int n = 0; n < rule->head()->subterms().size(); ++n) {
+	for(size_t n = 0; n < rule->head()->subterms().size(); ++n) {
 		Term* t = rule->head()->subterms()[n];
 		if(typeid(*t) != typeid(VarTerm)) {
 			Variable* v = new Variable(t->sort());
@@ -1002,7 +995,7 @@ Rule* AllTermMover::visit(Rule* rule) {
 
 Formula* AllTermMover::visit(BoolForm* bf) {
 	PosContext pc = bf->sign() ? _context : negateContext(_context);
-	for(unsigned int n = 0; n < bf->subformulas().size(); ++n) {
+	for(size_t n = 0; n < bf->subformulas().size(); ++n) {
 		bf->subformula(n,bf->subformulas()[n]->accept(this));
 		_context = pc;
 	}
@@ -1011,15 +1004,13 @@ Formula* AllTermMover::visit(BoolForm* bf) {
 
 Formula* AllTermMover::visit(QuantForm* qf) {
 	PosContext pc = qf->sign() ? _context : negateContext(_context);
-	for(unsigned int n = 0; n < qf->subformulas().size(); ++n) {
-		qf->subformula(n,qf->subformulas()[n]->accept(this));
-		_context = pc;
-	}
+	qf->subformula(qf->subformula()->accept(this));
+	_context = pc;
 	return qf;
 }
 
 Formula* AllTermMover::visit(EquivForm* ef) {
-	for(unsigned int n = 0; n < ef->subformulas().size(); ++n) {
+	for(size_t n = 0; n < ef->subformulas().size(); ++n) {
 		_context = PC_BOTH;
 		ef->subformula(n,ef->subformulas()[n]->accept(this));
 	}
@@ -1031,7 +1022,7 @@ Term* AllTermMover::visit(FuncTerm* ft) {
 	Variable* var = new Variable(func->outsort());
 	VarTerm* varterm = new VarTerm(var,TermParseInfo());
 	vector<Term*> args;
-	for(unsigned int n = 0; n < func->arity(); ++n) args.push_back(ft->subterms()[n]);
+	for(size_t n = 0; n < func->arity(); ++n) args.push_back(ft->subterms()[n]);
 	args.push_back(varterm);
 	PredForm* predform = new PredForm(true,func,args,FormulaParseInfo());
 	_termgraphs.push_back(predform);
@@ -1108,7 +1099,7 @@ Formula* AllTermMover::visit(PredForm* predform) {
 	}
 
 	// Visit the subterms
-	for(unsigned int n = 0; n < predform->subterms().size(); ++n) {
+	for(size_t n = 0; n < predform->subterms().size(); ++n) {
 		Term* newterm = predform->subterms()[n]->accept(this);
 		predform->subterm(n,newterm);
 	}
@@ -1140,7 +1131,7 @@ Formula* AllTermMover::visit(AggForm* af) {
 		bool pc = false;
 		if(_context == PC_POSITIVE) {
 			pc = true;
-			for(unsigned int n = 0; n < _termgraphs.size(); ++n)
+			for(size_t n = 0; n < _termgraphs.size(); ++n)
 				_termgraphs[n]->negate();
 		}
 		_termgraphs.push_back(af);
@@ -1156,13 +1147,13 @@ Formula* AllTermMover::visit(AggForm* af) {
 }
 
 SetExpr* AllTermMover::visit(EnumSetExpr* s) {
-	for(unsigned int n = 0; n < s->subterms().size(); ++n) {
+	for(size_t n = 0; n < s->subterms().size(); ++n) {
 		s->subterm(n,s->subterms()[n]->accept(this));
 	}
 	vector<Formula*> savetgr = _termgraphs;
 	set<Variable*> savevars = _variables;
 	PosContext savecontext = _context;
-	for(unsigned int n = 0; n < s->subformulas().size(); ++n) {
+	for(size_t n = 0; n < s->subformulas().size(); ++n) {
 		_context = PC_POSITIVE;
 		s->subformula(n,s->subformulas()[n]->accept(this));
 	}
@@ -1197,6 +1188,63 @@ SetExpr* AllTermMover::visit(QuantSetExpr* s) {
 	_variables = savevars;
 	_context = savecontext;
 	return s;
+}
+
+
+class SetExprTransformer : public TheoryMutatingVisitor {
+	private:
+		AbstractStructure*			structure_;
+		PosContext					context_;
+		bool						keepterm_;
+		bool						cpsupport_;
+		const set<const PFSymbol*> 	cpsymbols_;
+	public:
+		SetExprTransformer(AbstractStructure* str, PosContext posc, bool cps=false, const set<const PFSymbol*>& cpsymbols=set<const PFSymbol*>()):
+			structure_(str), context_(posc), cpsupport_(cps), cpsymbols_(cpsymbols) { }
+		SetExpr*	visit(QuantSetExpr*);
+};
+
+SetExpr* SetExprTransformer::visit(QuantSetExpr* qset) {
+	QuantSetExpr* qsetclone = qset->clone();
+	Term* term = qsetclone->subterms().front();
+	if(typeid(*term) == typeid(FuncTerm)) {
+		FuncTerm* functerm = dynamic_cast<FuncTerm*>(term);
+		Function* func = functerm->function();
+		FuncInter* funcinter = structure_->inter(func);
+		//if(funcinter->approxTwoValued()) { // || (cpsupport_ && keepterm_ && isCPSymbol(func)) {
+		//	//TODO Go deeper?
+		//}
+		//else {
+		if(not funcinter->approxTwoValued()) {
+			// Create new variable and corresponding term
+			Variable* var = new Variable(func->outsort());
+			VarTerm* varterm = new VarTerm(var,TermParseInfo());
+
+			// Add the new variable to the variables of the set
+			set<Variable*> vars = qsetclone->quantvars();
+			vars.insert(var);
+
+			// Create atom for the function term and the variable term
+			vector<Term*> args;
+			for(size_t n = 0; n < func->arity(); ++n) {
+				args.push_back(functerm->subterms()[n]);
+			}
+			args.push_back(varterm);
+			PredForm* predform = new PredForm(true,func,args,FormulaParseInfo());
+
+			// Add the atom to the subformula of the set
+			vector<Formula*> formulas = qsetclone->subformulas();
+			formulas.push_back(predform);
+			BoolForm* boolform = new BoolForm(true,true,formulas,FormulaParseInfo());
+
+			// Create new quantified set
+			QuantSetExpr* newqset = new QuantSetExpr(vars,boolform,varterm,qset->pi());
+
+			delete(qset);
+			return newqset;
+		}
+	}
+	return qset;
 }
 
 
@@ -1262,7 +1310,7 @@ Term* ThreeValuedTermMover::visit(FuncTerm* functerm) {
 Term* ThreeValuedTermMover::visit(AggTerm* aggterm) {
 	bool twovalued = SetUtils::approxTwoValued(aggterm->set(),structure_);
 	if(twovalued /*FIXME || (_cpsupport && _keepterm)*/) {
-	   return aggterm;
+		return aggterm;
 	}
 	else {
 		Variable* var = new Variable(aggterm->sort());
@@ -1301,7 +1349,6 @@ Formula* ThreeValuedTermMover::visit(PredForm* predform) {
 		if(symbname == "=/2" || symbname == "</2" || symbname == ">/2") {
 			Term* left = predform->subterms()[0];
 			Term* right = predform->subterms()[1];
-			//TODO: Check whether handled correctly when both sides are AggTerms!!
 			CompType comp;
 			if(symbname == "=/2") { comp = CT_EQ; } 
 			else if(symbname == "</2") { comp = CT_LT; } 
@@ -1548,7 +1595,17 @@ namespace FormulaUtils {
 	}
 }
 
+namespace TermUtils {
+
+	SetExpr* moveThreeValuedTerms(SetExpr* se, AbstractStructure* str, PosContext posc, bool cpsupport, const set<const PFSymbol*> cpsymbols) {
+		SetExprTransformer st(str,posc,cpsupport,cpsymbols);
+		return se->accept(&st);
+	}
+
+}
+
 namespace TheoryUtils {
+
 	void pushNegations(AbstractTheory* t)	{ NegationPush np; t->accept(&np);			}
 	void removeEquiv(AbstractTheory* t)		{ EquivRemover er; t->accept(&er);			}
 	void flatten(AbstractTheory* t)			{ Flattener f; t->accept(&f);				}
@@ -1606,10 +1663,10 @@ void TheoryVisitor::visit(const SolverTheory* ) {
 }
 
 void TheoryVisitor::traverse(const Formula* f) {
-	for(unsigned int n = 0; n < f->subterms().size(); ++n) {
+	for(size_t n = 0; n < f->subterms().size(); ++n) {
 		f->subterms()[n]->accept(this);
 	}
-	for(unsigned int n = 0; n < f->subformulas().size(); ++n) {
+	for(size_t n = 0; n < f->subformulas().size(); ++n) {
 		f->subformulas()[n]->accept(this);
 	}
 }
@@ -1626,25 +1683,25 @@ void TheoryVisitor::visit(const Rule* r) {
 }
 
 void TheoryVisitor::visit(const Definition* d) {
-	for(unsigned int n = 0; n < d->rules().size(); ++n) {
+	for(size_t n = 0; n < d->rules().size(); ++n) {
 		d->rules()[n]->accept(this);
 	}
 }
 
 void TheoryVisitor::visit(const FixpDef* fd) {
-	for(unsigned int n = 0; n < fd->rules().size(); ++n) {
+	for(size_t n = 0; n < fd->rules().size(); ++n) {
 		fd->rules()[n]->accept(this);
 	}
-	for(unsigned int n = 0; n < fd->defs().size(); ++n) {
+	for(size_t n = 0; n < fd->defs().size(); ++n) {
 		fd->defs()[n]->accept(this);
 	}
 }
 
 void TheoryVisitor::traverse(const Term* t) {
-	for(unsigned int n = 0; n < t->subterms().size(); ++n) {
+	for(size_t n = 0; n < t->subterms().size(); ++n) {
 		t->subterms()[n]->accept(this);
 	}
-	for(unsigned int n = 0; n < t->subsets().size(); ++n) {
+	for(size_t n = 0; n < t->subsets().size(); ++n) {
 		t->subsets()[n]->accept(this);
 	}
 }
@@ -1655,16 +1712,16 @@ void TheoryVisitor::visit(const DomainTerm* dt)		{ traverse(dt); }
 void TheoryVisitor::visit(const AggTerm* at)		{ traverse(at); } 
 
 void TheoryVisitor::traverse(const SetExpr* s) {
-	for(unsigned int n = 0; n < s->subterms().size(); ++n) {
+	for(size_t n = 0; n < s->subterms().size(); ++n) {
 		s->subterms()[n]->accept(this);
 	}
-	for(unsigned int n = 0; n < s->subformulas().size(); ++n) {
+	for(size_t n = 0; n < s->subformulas().size(); ++n) {
 		s->subformulas()[n]->accept(this);
 	}
 }
 
 void TheoryVisitor::visit(const EnumSetExpr* es)	{ traverse(es); }
-void TheoryVisitor::visit(const QuantSetExpr* qs) { traverse(qs); }
+void TheoryVisitor::visit(const QuantSetExpr* qs)	{ traverse(qs); }
 
 Theory* TheoryMutatingVisitor::visit(Theory* t) {
 	for(vector<Formula*>::iterator it = t->sentences().begin(); it != t->sentences().end(); ++it) {
@@ -1690,10 +1747,10 @@ SolverTheory* TheoryMutatingVisitor::visit(SolverTheory* t) {
 }
 
 Formula* TheoryMutatingVisitor::traverse(Formula* f) {
-	for(unsigned int n = 0; n < f->subterms().size(); ++n) {
+	for(size_t n = 0; n < f->subterms().size(); ++n) {
 		f->subterm(n,f->subterms()[n]->accept(this));
 	}
-	for(unsigned int n = 0; n < f->subformulas().size(); ++n) {
+	for(size_t n = 0; n < f->subformulas().size(); ++n) {
 		f->subformula(n,f->subformulas()[n]->accept(this));
 	}
 	return f;
@@ -1712,27 +1769,27 @@ Rule* TheoryMutatingVisitor::visit(Rule* r) {
 }
 
 Definition* TheoryMutatingVisitor::visit(Definition* d) {
-	for(unsigned int n = 0; n < d->rules().size(); ++n) {
+	for(size_t n = 0; n < d->rules().size(); ++n) {
 		d->rule(n,d->rules()[n]->accept(this));
 	}
 	return d;
 }
 
 FixpDef* TheoryMutatingVisitor::visit(FixpDef* fd) {
-	for(unsigned int n = 0; n < fd->rules().size(); ++n) {
+	for(size_t n = 0; n < fd->rules().size(); ++n) {
 		fd->rule(n,fd->rules()[n]->accept(this));
 	}
-	for(unsigned int n = 0; n < fd->defs().size(); ++n) {
+	for(size_t n = 0; n < fd->defs().size(); ++n) {
 		fd->def(n,fd->defs()[n]->accept(this));
 	}
 	return fd;
 }
 
 Term* TheoryMutatingVisitor::traverse(Term* t) {
-	for(unsigned int n = 0; n < t->subterms().size(); ++n) {
+	for(size_t n = 0; n < t->subterms().size(); ++n) {
 		t->subterm(n,t->subterms()[n]->accept(this));
 	}
-	for(unsigned int n = 0; n < t->subsets().size(); ++n) {
+	for(size_t n = 0; n < t->subsets().size(); ++n) {
 		t->subset(n,t->subsets()[n]->accept(this));
 	}
 	return t;
@@ -1744,10 +1801,10 @@ Term* TheoryMutatingVisitor::visit(DomainTerm* dt)	{ return traverse(dt); }
 Term* TheoryMutatingVisitor::visit(AggTerm* at)		{ return traverse(at); } 
 
 SetExpr* TheoryMutatingVisitor::traverse(SetExpr* s) {
-	for(unsigned int n = 0; n < s->subterms().size(); ++n) {
+	for(size_t n = 0; n < s->subterms().size(); ++n) {
 		s->subterm(n,s->subterms()[n]->accept(this));
 	}
-	for(unsigned int n = 0; n < s->subformulas().size(); ++n) {
+	for(size_t n = 0; n < s->subformulas().size(); ++n) {
 		s->subformula(n,s->subformulas()[n]->accept(this));
 	}
 	return s;

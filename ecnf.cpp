@@ -179,7 +179,7 @@ void GroundDefinition::addAggRule(int head, int setnr, AggFunction aggtype, bool
 	}
 }
 
-ostream& GroundDefinition::put(ostream& s, unsigned int ) const {
+ostream& GroundDefinition::put(ostream& s, bool, unsigned int) const {
 	s << "{\n";
 	for(map<int,GroundRuleBody*>::const_iterator it = _rules.begin(); it != _rules.end(); ++it) {
 		s << _translator->printAtom(it->first) << " <- ";
@@ -187,19 +187,12 @@ ostream& GroundDefinition::put(ostream& s, unsigned int ) const {
 		if(body->_type == RT_AGG) {
 			const AggGroundRuleBody* grb = dynamic_cast<const AggGroundRuleBody*>(body);
 			s << grb->_bound << (grb->_lower ? " =< " : " >= ");
-			switch(grb->_aggtype) {
-				case AGG_CARD: s << "#"; break;
-				case AGG_SUM: s << "sum"; break;
-				case AGG_PROD: s << "prod"; break;
-				case AGG_MIN: s << "min"; break;
-				case AGG_MAX: s << "max"; break;
-			}
-			s << grb->_setnr << ".\n";
+			s << grb->_aggtype << grb->_setnr << ".\n";
 		}
 		else {
 			const PCGroundRuleBody* grb = dynamic_cast<const PCGroundRuleBody*>(body);
 			char c = grb->_type == RT_CONJ ? '&' : '|';
-			if(!grb->_body.empty()) {
+			if(not grb->_body.empty()) {
 				if(grb->_body[0] < 0) s << '~';
 				s << _translator->printAtom(grb->_body[0]);
 				for(unsigned int n = 1; n < grb->_body.size(); ++n) {
@@ -497,7 +490,7 @@ void GroundTheory::addAggRule(int defnr, int tseitin, AggTsBody* body, bool recu
 	_definitions[defnr]->addAggRule(tseitin,body->setnr(),body->aggtype(),body->lower(),body->bound(),recursive);
 }
 
-ostream& GroundTheory::put(ostream& s, unsigned int) const {
+ostream& GroundTheory::put(ostream& s, bool, unsigned int) const {
 	for(unsigned int n = 0; n < _clauses.size(); ++n) {
 		if(_clauses[n].empty()) {
 			s << "false";
@@ -606,12 +599,12 @@ inline MinisatID::Weight createWeight(double weight){
 void SolverTheory::addClause(GroundClause& cl, bool skipfirst) {
 	transformForAdd(cl,VIT_DISJ,ID_FOR_UNDEFINED,skipfirst);
 	MinisatID::Disjunction clause;
-	if(_verbosity > 0) clog << "clause ";
-	for(unsigned int n = 0; n < cl.size(); ++n) {
+	if(_verbosity > 0) { clog << "clause "; }
+	for(size_t n = 0; n < cl.size(); ++n) {
 		clause.literals.push_back(createLiteral(cl[n]));
-		if(_verbosity > 0) clog << (cl[n] > 0 ? "" : "~") << _translator->printAtom(cl[n]) << ' ';
+		if(_verbosity > 0) { clog << (cl[n] > 0 ? "" : "~") << _translator->printAtom(cl[n]) << ' '; }
 	}
-	if(_verbosity > 0) clog << "\n";
+	if(_verbosity > 0) { clog << "\n"; }
 	getSolver().add(clause);
 }
 

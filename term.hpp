@@ -37,18 +37,17 @@ class VarTerm;
  */
 class Term {
 	private:
-
 		std::set<Variable*>		_freevars;		//!< the set of free variables of the term
 		std::vector<Term*>		_subterms;		//!< the subterms of the term
 		std::vector<SetExpr*>	_subsets;		//!< the subsets of the term
 
-		virtual	void	setfvars();		//!< Compute the free variables of the term
-
 	protected:
 		TermParseInfo			_pi;			//!< the place where the term was parsed
+	
+	private:
+		virtual	void setFreeVars();	//!< Compute the free variables of the term
 
 	public:
-
 		// Constructors
 		Term(const TermParseInfo& pi) : _pi(pi) { }
 
@@ -64,10 +63,10 @@ class Term {
 		// Mutators
 		virtual void	sort(Sort*) { }	//!< Set the sort of the term (only does something for VarTerm and DomainTerm)
 
-		void addset(SetExpr* s)						{ _subsets.push_back(s); setfvars();	}
-		void subterm(unsigned int n, Term* t)		{ _subterms[n] = t; setfvars();			}
-		void subset(unsigned int n, SetExpr* s)		{ _subsets[n] = s; setfvars();			}
-		void subterms(const std::vector<Term*>& vt) { _subterms = vt; setfvars();			}
+		void addSet(SetExpr* s)						{ _subsets.push_back(s); setFreeVars();	}
+		void subterm(unsigned int n, Term* t)		{ _subterms[n] = t; setFreeVars();			}
+		void subset(unsigned int n, SetExpr* s)		{ _subsets[n] = s; setFreeVars();			}
+		void subterms(const std::vector<Term*>& vt) { _subterms = vt; setFreeVars();			}
 
 		// Inspectors
 				const TermParseInfo&			pi()			const { return _pi;				}
@@ -83,8 +82,8 @@ class Term {
 		virtual Term*	accept(TheoryMutatingVisitor*)  = 0;
 
 		// Output
-		virtual std::ostream&	put(std::ostream&)	const = 0;
-				std::string		toString()			const;	
+		virtual std::ostream&	put(std::ostream&, bool longnames = true)	const = 0;
+				std::string		toString()									const;	
 
 	friend class VarTerm;
 };
@@ -98,10 +97,9 @@ class VarTerm : public Term {
 	private:
 		Variable*	_var;	//!< the variable of the term
 
-		void	setfvars();
+		void	setFreeVars();
 
 	public:
-
 		VarTerm(Variable* v, const TermParseInfo& pi);
 
 		VarTerm* clone()										const;
@@ -117,8 +115,7 @@ class VarTerm : public Term {
 		void	accept(TheoryVisitor*)	const;
 		Term*	accept(TheoryMutatingVisitor*);
 
-		std::ostream&	put(std::ostream&)	const;
-
+		std::ostream&	put(std::ostream&, bool longnames = true)	const;
 };
 
 
@@ -130,11 +127,9 @@ class VarTerm : public Term {
  */
 class FuncTerm : public Term {
 	private:
-
 		Function*		_function;		//!< the function
 
 	public:
-
 		FuncTerm(Function* function, const std::vector<Term*>& args, const TermParseInfo& pi);
 
 		FuncTerm* clone()										const;
@@ -151,8 +146,7 @@ class FuncTerm : public Term {
 		void	accept(TheoryVisitor*)	const;
 		Term*	accept(TheoryMutatingVisitor*);
 
-		std::ostream&	put(std::ostream&)	const;
-
+		std::ostream&	put(std::ostream&, bool longnames = true)	const;
 };
 
 /**
@@ -164,10 +158,8 @@ class DomainTerm : public Term {
 	private:
 		Sort*					_sort;		//!< the sort of the domain element
 		const DomainElement*	_value;		//!< the actual domain element
-		
 
 	public:
-
 		DomainTerm(Sort* sort, const DomainElement* value, const TermParseInfo& pi);
 
 		DomainTerm* clone()										const;
@@ -183,8 +175,7 @@ class DomainTerm : public Term {
 		void	accept(TheoryVisitor*)	const;
 		Term*	accept(TheoryMutatingVisitor*);
 
-		std::ostream&	put(std::ostream&)	const;	
-
+		std::ostream&	put(std::ostream&, bool longnames = true)	const;	
 };
 
 /**
@@ -193,12 +184,10 @@ class DomainTerm : public Term {
  *
  */
 class AggTerm : public Term {
-
 	private:
 		AggFunction		_function;	//!< The aggregate function
 
 	public:
-
 		AggTerm(SetExpr* set, AggFunction function, const TermParseInfo& pi);
 
 		AggTerm* clone()										const;
@@ -213,8 +202,7 @@ class AggTerm : public Term {
 		void	accept(TheoryVisitor*)	const;
 		Term*	accept(TheoryMutatingVisitor*);
 
-		std::ostream&	put(std::ostream&)	const;
-
+		std::ostream&	put(std::ostream&, bool longnames = true)	const;
 };
 
 namespace TermUtils {
@@ -235,7 +223,6 @@ class Query {
 		Formula*				_query;			//!< The actual query.
 		ParseInfo				_pi;			//!< The place where the query was parsed.
 	public:
-		
 		// Constructors
 		Query(const std::vector<Variable*>& vars, Formula* q, const ParseInfo& pi) : 
 			_variables(vars), _query(q), _pi(pi) { }
@@ -257,17 +244,15 @@ class Query {
  */
 class SetExpr {
 	protected:
-		
 		std::set<Variable*>		_freevars;		//!< The free variables of the set expression
 		std::set<Variable*>		_quantvars;		//!< The quantified variables of the set expression
 		std::vector<Formula*>	_subformulas;	//!< The direct subformulas of the set expression
 		std::vector<Term*>		_subterms;		//!< The direct subterms of the set expression
 		SetParseInfo			_pi;			//!< the place where the set was parsed
 
-		void	setfvars();	//!< Compute the free variables of the set
+		void	setFreeVars();	//!< Compute the free variables of the set
 
 	public:
-
 		// Constructors
 		SetExpr(const SetParseInfo& pi) : _pi(pi) { }
 
@@ -281,10 +266,10 @@ class SetExpr {
 		void	recursiveDelete();	//!< Delete the set and its subformulas and subterms
 
 		// Mutators
-		void subterm(unsigned int n, Term* t)		{ _subterms[n] = t; setfvars();				}
-		void subformula(unsigned int n, Formula* f)	{ _subformulas[n] = f; setfvars();			}
-		void addterm(Term* t)						{ _subterms.push_back(t); setfvars();		}
-		void addformula(Formula* f)					{ _subformulas.push_back(f); setfvars();	}
+		void subterm(unsigned int n, Term* t)		{ _subterms[n] = t; setFreeVars();				}
+		void subformula(unsigned int n, Formula* f)	{ _subformulas[n] = f; setFreeVars();			}
+		void addTerm(Term* t)						{ _subterms.push_back(t); setFreeVars();		}
+		void addFormula(Formula* f)					{ _subformulas.push_back(f); setFreeVars();	}
 		
 		// Inspectors
 		virtual Sort*							sort()						const = 0;	//!< Returns the sort of the set
@@ -300,9 +285,8 @@ class SetExpr {
 		virtual SetExpr*	accept(TheoryMutatingVisitor*)	= 0;
 
 		// Output
-		virtual std::ostream&	put(std::ostream&)	const = 0;
-				std::string		toString()			const;
-
+		virtual std::ostream&	put(std::ostream&, bool longnames)	const = 0;
+				std::string		toString()							const;
 };
 
 std::ostream& operator<<(std::ostream&,const SetExpr&);
@@ -311,12 +295,10 @@ std::ostream& operator<<(std::ostream&,const SetExpr&);
  *	\brief Set expression of the form [ (phi_1,w_1); ... ; (phi_n,w_n) ] 
  */
 class EnumSetExpr : public SetExpr {
-
 	public:
 		// Constructors
 		EnumSetExpr(const SetParseInfo& pi) : SetExpr(pi) { }
 		EnumSetExpr(const std::vector<Formula*>& s, const std::vector<Term*>& w, const SetParseInfo& pi);
-			
 
 		EnumSetExpr* clone()										const;
 		EnumSetExpr* clone(const std::map<Variable*,Variable*>&)	const;
@@ -328,16 +310,15 @@ class EnumSetExpr : public SetExpr {
 		void		accept(TheoryVisitor*)	const;
 		SetExpr*	accept(TheoryMutatingVisitor*);
 
-		std::ostream& put(std::ostream&) const;
+		std::ostream& put(std::ostream&, bool longnames = true) const;
 };
 
 /** 
- * \brief Set expression of the form { x1 ... xn : t : phi }
+ * \brief Set expression of the form { x1 ... xn : phi : t }
  **/
 class QuantSetExpr : public SetExpr {
-
 	public:
-		QuantSetExpr(const std::set<Variable*>& v, Term* t, Formula* s, const SetParseInfo& pi);
+		QuantSetExpr(const std::set<Variable*>& v, Formula* s, Term* t, const SetParseInfo& pi);
 
 		QuantSetExpr* clone()										const;
 		QuantSetExpr* clone(const std::map<Variable*,Variable*>&)	const;
@@ -349,7 +330,7 @@ class QuantSetExpr : public SetExpr {
 		void		accept(TheoryVisitor*)	const;
 		SetExpr*	accept(TheoryMutatingVisitor*);
 
-		std::ostream&	put(std::ostream&)	const;	
+		std::ostream&	put(std::ostream&, bool longnames = true)	const;	
 };
 
 class AbstractStructure;
@@ -358,7 +339,6 @@ namespace SetUtils {
 	bool approxTwoValued(SetExpr*,AbstractStructure*);	
 		//!< Returns false if the set expression is not two-valued in the given structure. May return true
 		//!< if the set expression is two-valued in the structure.
-											
 }
 
 #endif 

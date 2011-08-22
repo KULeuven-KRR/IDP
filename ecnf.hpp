@@ -267,7 +267,7 @@ class GroundDefinition : public AbstractDefinition {
 		AbstractDefinition*	accept(TheoryMutatingVisitor* v)	{ return v->visit(this);	}
 
 		// Debugging
-		std::ostream&	put(std::ostream&,unsigned int spaces = 0) const;
+		std::ostream&	put(std::ostream&, bool longnames = true, unsigned int spaces = 0) const;
 		std::string 	toString(unsigned int spaces = 0) const;
 };
 
@@ -404,8 +404,12 @@ class SolverTheory : public AbstractGroundTheory {
 		virtual AbstractTheory*	accept(TheoryMutatingVisitor* v)	{ return v->visit(this);	}
 
 		// Debugging
-		virtual std::ostream&	put(std::ostream& output, unsigned int)	const { assert(false); /* TODO */ return output;	   }
-		virtual std::string		toString()								const { assert(false); return ""; /*TODO might be implemented in the future (if solver supports it)*/	}
+		virtual std::ostream&	put(std::ostream& output, bool, unsigned int)	const {
+			assert(false); return output; /* TODO */
+		}
+		virtual std::string		toString()										const { 
+			assert(false); return ""; /* TODO might be implemented in the future (if solver supports it) */
+		}
 
 	private:
 		void 	addAggregate(int definitionID, int head, bool lowerbound, int setnr, AggFunction aggtype, TsType sem, double bound);
@@ -461,8 +465,8 @@ class GroundTheory : public AbstractGroundTheory {
 		AbstractTheory*	accept(TheoryMutatingVisitor* v)	{ return v->visit(this);	}
 
 		// Debugging
-		std::ostream&	put(std::ostream&, unsigned int spaces = 0)	const;
-		std::string		toString()									const;
+		std::ostream&	put(std::ostream&, bool longnames = true, unsigned int spaces = 0)	const;
+		std::string		toString()															const;
 };
 
 #endif

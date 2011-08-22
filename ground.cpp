@@ -859,7 +859,7 @@ int AggGrounder::run() const {
 		}
 		case AGG_SUM: {
 			// Compute the minimum and maximum possible value of the sum.
-			for(unsigned int n = 0; n < tsset.size(); ++n) {
+			for(size_t n = 0; n < tsset.size(); ++n) {
 				if(tsset.weight(n) > 0) maxpossvalue += tsset.weight(n);
 				else if(tsset.weight(n) < 0) minpossvalue += tsset.weight(n);
 			}
@@ -870,7 +870,7 @@ int AggGrounder::run() const {
 		case AGG_PROD: {
 			// Compute the minimum and maximum possible value of the product.
 			bool containsneg = false;
-			for(unsigned int n = 0; n < tsset.size(); ++n) {
+			for(size_t n = 0; n < tsset.size(); ++n) {
 				maxpossvalue *= abs(tsset.weight(n));
 				if(tsset.weight(n) < 0) containsneg = true;
 			}
@@ -881,7 +881,7 @@ int AggGrounder::run() const {
 		}
 		case AGG_MIN: {
 			// Compute the minimum possible value of the set.
-			for(unsigned int n = 0; n < tsset.size(); ++n) {
+			for(size_t n = 0; n < tsset.size(); ++n) {
 				minpossvalue = (tsset.weight(n) < minpossvalue) ? tsset.weight(n) : minpossvalue;
 				// Decrease all weights greater than truevalue to truevalue.
 				if(tsset.weight(n) > truevalue) tsset.setWeight(n,truevalue);
@@ -892,7 +892,7 @@ int AggGrounder::run() const {
 		}
 		case AGG_MAX: {
 			// Compute the maximum possible value of the set.
-			for(unsigned int n = 0; n < tsset.size(); ++n) {
+			for(size_t n = 0; n < tsset.size(); ++n) {
 				maxpossvalue = (tsset.weight(n) > maxpossvalue) ? tsset.weight(n) : maxpossvalue;
 				// Increase all weights less than truevalue to truevalue.
 				if(tsset.weight(n) < truevalue) tsset.setWeight(n,truevalue);
@@ -1167,7 +1167,7 @@ GroundTerm FuncTermGrounder::run() const {
 	bool calculable = true;
 	vector<GroundTerm> groundsubterms(_subtermgrounders.size());
 	ElementTuple args(_subtermgrounders.size());
-	for(unsigned int n = 0; n < _subtermgrounders.size(); ++n) {
+	for(size_t n = 0; n < _subtermgrounders.size(); ++n) {
 		groundsubterms[n] = _subtermgrounders[n]->run();
 		if(groundsubterms[n]._isvarid) {
 			calculable = false;
@@ -1318,7 +1318,7 @@ int EnumSetGrounder::run() const {
 	vector<int>	literals;
 	vector<double> weights;
 	vector<double> trueweights;
-	for(unsigned int n = 0; n < _subgrounders.size(); ++n) {
+	for(size_t n = 0; n < _subgrounders.size(); ++n) {
 		int l = _subgrounders[n]->run();
 		if(l != _false) {
 			const GroundTerm& groundweight = _subtermgrounders[n]->run();
@@ -1348,14 +1348,16 @@ int QuantSetGrounder::run() const {
 				const GroundTerm& groundweight = _weightgrounder->run();
 				assert(not groundweight._isvarid);
 				const DomainElement* weight = groundweight._domelement;
-				double w = weight->type() == DET_INT ? (double) weight->value()._int : weight->value()._double;
-				if(l == _true) trueweights.push_back(w);
+				double w = weight->type() == (DET_INT ? (double) weight->value()._int : weight->value()._double);
+				if(l == _true) {
+					trueweights.push_back(w);
+				}
 				else {
 					weights.push_back(w);
 					literals.push_back(l);
 				}
 			}
-		}while(_generator->next());
+		} while(_generator->next());
 	}
 	int s = _translator->translateSet(literals,weights,trueweights);
 	return s;
@@ -1447,9 +1449,13 @@ bool DefinitionGrounder::run() const {
 	GrounderFactory methods
 ******************************/
 
-GrounderFactory::GrounderFactory(AbstractStructure* structure, Options* opts)
-	: _structure(structure), _options(opts), _verbosity(opts->groundverbosity()), _cpsupport(opts->cpsupport()) {
-}
+GrounderFactory::GrounderFactory(AbstractStructure* structure, Options* opts) :
+	_structure(structure), 
+	_options(opts), 
+	_verbosity(opts->groundverbosity()), 
+	_cpsupport(opts->cpsupport()), 
+	_longnames(opts->longnames())
+{ }
 
 set<const PFSymbol*> GrounderFactory::findCPSymbols(const AbstractTheory* theory) {
 	Vocabulary* vocabulary = theory->vocabulary();
@@ -1637,7 +1643,7 @@ TopLevelGrounder* GrounderFactory::create(const AbstractTheory* theory) {
 	// Allocate an ecnf theory to be returned by the grounder
 	_grounding = new GroundTheory(theory->vocabulary(),_structure->clone());
 
-	// Find function that can be passed to CP solver.
+	// Find functions that can be passed to CP solver.
 	if(_cpsupport){
 		findCPSymbols(theory);
 	}
@@ -1651,7 +1657,7 @@ TopLevelGrounder* GrounderFactory::create(const AbstractTheory* theory) {
 TopLevelGrounder* GrounderFactory::create(const AbstractTheory* theory, InteractivePrintMonitor* monitor, Options* opts) {
 	_grounding = new PrintGroundTheory(monitor,_structure->clone(), opts);
 
-	// Find function that can be passed to CP solver.
+	// Find functions that can be passed to CP solver.
 	if(_cpsupport){
 		findCPSymbols(theory);
 	}
@@ -1724,9 +1730,13 @@ void GrounderFactory::visit(const Theory* theory) {
 
 	// Create grounders for all components
 	vector<TopLevelGrounder*> children(components.size());
-	for(unsigned int n = 0; n < components.size(); ++n) {
+	for(size_t n = 0; n < components.size(); ++n) {
 		InitContext();
-		if(_verbosity > 0) clog << "Creating a grounder for " << *(components[n]) << "\n";
+		if(_verbosity > 0) {
+			clog << "Creating a grounder for ";
+			components[n]->put(clog,_longnames);
+			clog << "\n";
+		}
 		components[n]->accept(this);
 		children[n] = _toplevelgrounder; 
 	}
@@ -1758,8 +1768,8 @@ void GrounderFactory::visit(const PredForm* pf) {
 
 	if(typeid(*transpf) != typeid(PredForm)) {	// The rewriting changed the atom
 		if(_verbosity > 1) {
-			clog << "Rewritten "; pf->put(clog,_options->longnames());
-			clog << " to "; transpf->put(clog,_options->longnames());
+			clog << "Rewritten "; pf->put(clog,_longnames);
+			clog << " to "; transpf->put(clog,_longnames);
 		   	clog << "\n"; 
 		}
 		transpf->accept(this);
@@ -1769,7 +1779,7 @@ void GrounderFactory::visit(const PredForm* pf) {
 		// Create grounders for the subterms
 		vector<TermGrounder*> subtermgrounders;
 		vector<SortTable*>	  argsorttables;
-		for(unsigned int n = 0; n < ptranspf->subterms().size(); ++n) {
+		for(size_t n = 0; n < ptranspf->subterms().size(); ++n) {
 			descend(ptranspf->subterms()[n]);
 			subtermgrounders.push_back(_termgrounder);
 			argsorttables.push_back(_structure->inter(ptranspf->symbol()->sorts()[n]));
@@ -1824,17 +1834,6 @@ void GrounderFactory::visit(const PredForm* pf) {
 				if(_context._component == CC_SENTENCE) { 
 					_toplevelgrounder = new SentenceGrounder(_grounding,_formgrounder,false,_verbosity);
 				}
-//XXX Old code XXX
-//				if(_cpsupport && (typeid(*(ptranspf->symbol())) == typeid(Function)) && isCPFunction(ptranspf->symbol())) { 
-//					Function* func = static_cast<Function*>(ptranspf->symbol());
-//					_formgrounder = new CPAtomGrounder(_grounding->translator(),_grounding->termtranslator(),ptranspf->sign(),func,
-//											subtermgrounders,possch,certainch,argsorttables,_context);
-//				} 
-//				else {
-//					_formgrounder = new AtomGrounder(_grounding->translator(),ptranspf->sign(),ptranspf->symbol(),
-//											subtermgrounders,possch,certainch,argsorttables,_context);
-//				}
-//XXX
 			}
 		}
 	}
@@ -1861,13 +1860,12 @@ void GrounderFactory::visit(const BoolForm* bf) {
 		// If bf is a negated disjunction, push the negation one level deeper.
 		// Take a clone to avoid changing bf;
 		BoolForm* newbf = bf->clone();
-		if(!(newbf->conj())) {
+		if(not newbf->conj()) {
 			newbf->conj(true);
 			newbf->negate();
 			for(vector<Formula*>::const_iterator it = newbf->subformulas().begin(); it != newbf->subformulas().end(); ++it)
 				(*it)->negate();
 		}
-
 		// Visit the subformulas
 		vector<TopLevelGrounder*> sub;
 		for(vector<Formula*>::const_iterator it = newbf->subformulas().begin(); it != newbf->subformulas().end(); ++it) {
@@ -1878,7 +1876,6 @@ void GrounderFactory::visit(const BoolForm* bf) {
 		_toplevelgrounder = new TheoryGrounder(_grounding,sub,_verbosity);
 	}
 	else {	// Formula bf is not a top-level conjunction
-
 		// Create grounders for subformulas
 		SaveContext();
 		DeeperContext(bf->sign());
@@ -1923,13 +1920,14 @@ void GrounderFactory::visit(const QuantForm* qf) {
 		_varmapping[*it] = d;
 		vars.push_back(d);
 		SortTable* st = _structure->inter((*it)->sort());
-		if(!st->finite()) {
+		if(not st->finite()) {
 			cerr << "Warning: infinite grounding of formula ";
 			if(qf->pi().original()) {
-				cerr << *(qf->pi().original());
+				(qf->pi().original())->put(cerr,_longnames);
 				cerr << "\n   internal representation: ";
 			}
-			cerr << *qf << "\n";
+			qf->put(cerr,_longnames);
+			cerr << "\n";
 		}
 		tables.push_back(st);
 	}
@@ -1938,8 +1936,8 @@ void GrounderFactory::visit(const QuantForm* qf) {
 
 	// Handle top-level universal quantifiers efficiently
 	if(_context._component == CC_SENTENCE && (qf->sign() == qf->univ())) {
-		Formula* newsub = qf->subf()->clone();
-		if(!(qf->univ())) newsub->negate();
+		Formula* newsub = qf->subformula()->clone();
+		if(not qf->univ()) { newsub->negate(); }
 		descend(newsub);
 		newsub->recursiveDelete();
 		_toplevelgrounder = new UnivSentGrounder(_grounding,_toplevelgrounder,gen,_verbosity);
@@ -1949,7 +1947,7 @@ void GrounderFactory::visit(const QuantForm* qf) {
 		SaveContext();
 		DeeperContext(qf->sign());
 		_context._truegen = !(qf->univ()); 
-		descend(qf->subf());
+		descend(qf->subformula());
 		RestoreContext();
 
 		// Create the grounder
@@ -2008,6 +2006,11 @@ void GrounderFactory::visit(const AggForm* af) {
 	Formula* transaf = FormulaUtils::moveThreeValuedTerms(newaf,_structure,_context._funccontext,_cpsupport,_cpsymbols);
 
 	if(typeid(*transaf) != typeid(AggForm)) {	// The rewriting changed the atom
+		if(_verbosity > 1) {
+			clog << "Rewritten "; af->put(clog,_longnames);
+			clog << " to "; transaf->put(clog,_longnames);
+		   	clog << "\n"; 
+		}
 		transaf->accept(this);
 	}
 	else {	// The rewriting did not change the atom
@@ -2132,20 +2135,20 @@ void GrounderFactory::visit(const AggTerm* t) {
  */
 void GrounderFactory::visit(const EnumSetExpr* s) {
 	// Create grounders for formulas and weights
-	vector<FormulaGrounder*> subgr;
+	vector<FormulaGrounder*> subfgr;
 	vector<TermGrounder*> subtgr;
 	SaveContext();
 	AggContext();
-	for(unsigned int n = 0; n < s->subformulas().size(); ++n) {
+	for(size_t n = 0; n < s->subformulas().size(); ++n) {
 		descend(s->subformulas()[n]);
-		subgr.push_back(_formgrounder);
+		subfgr.push_back(_formgrounder);
 		descend(s->subterms()[n]);
 		subtgr.push_back(_termgrounder);
 	}
 	RestoreContext();
 
 	// Create set grounder
-	_setgrounder = new EnumSetGrounder(_grounding->translator(),subgr,subtgr);
+	_setgrounder = new EnumSetGrounder(_grounding->translator(),subfgr,subtgr);
 }
 
 /**
@@ -2153,11 +2156,21 @@ void GrounderFactory::visit(const EnumSetExpr* s) {
  * DESCRIPTION
  * 		Creates a grounder for a quantified set.
  */
-void GrounderFactory::visit(const QuantSetExpr* s) {
+void GrounderFactory::visit(const QuantSetExpr* qs) {
+	// Move three-valued terms in the set expression
+	SetExpr* transqs = TermUtils::moveThreeValuedTerms(qs->clone(),_structure,_context._funccontext,_cpsupport,_cpsymbols);
+	QuantSetExpr* newqs = dynamic_cast<QuantSetExpr*>(transqs);
+
+	if(_verbosity > 1) {
+		clog << "Rewritten "; qs->put(clog,_longnames);
+		clog << " to "; newqs->put(clog,_longnames);
+	   	clog << "\n"; 
+	}
+
 	// Create instance generator
 	vector<SortTable*> vst;
 	vector<const DomainElement**> vars;
-	for(set<Variable*>::const_iterator it = s->quantvars().begin(); it != s->quantvars().end(); ++it) {
+	for(set<Variable*>::const_iterator it = newqs->quantvars().begin(); it != newqs->quantvars().end(); ++it) {
 		const DomainElement** d = new const DomainElement*();
 		_varmapping[*it] = d;
 		vst.push_back(_structure->inter((*it)->sort()));
@@ -2165,20 +2178,23 @@ void GrounderFactory::visit(const QuantSetExpr* s) {
 	}
 	GeneratorFactory gf;
 	InstGenerator* gen = gf.create(vars,vst);
-	
+
 	// Create grounder for subformula
 	SaveContext();
 	AggContext();
-	descend(s->subformulas()[0]);
-	FormulaGrounder* sub = _formgrounder;
+	descend(newqs->subformulas()[0]);
+	FormulaGrounder* subgr = _formgrounder;
 	RestoreContext();
 
 	// Create grounder for weight
-	descend(s->subterms()[0]);
-	TermGrounder* wg = _termgrounder;
+	descend(newqs->subterms()[0]);
+	TermGrounder* wgr = _termgrounder;
 
 	// Create grounder	
-	_setgrounder = new QuantSetGrounder(_grounding->translator(),sub,gen,wg);
+	_setgrounder = new QuantSetGrounder(_grounding->translator(),subgr,gen,wgr);
+
+	// Clean up
+	transqs->recursiveDelete();
 }
 
 /**

@@ -31,7 +31,7 @@ namespace Error {
 		errorcounter++;
 		cerr << "ERROR at line " << p.line() 
 			 << ", column " << p.col();
-		if(p.file()) cerr << " of file " << *(p.file());
+		if(p.file()) { cerr << " of file " << *(p.file()); }
 		cerr << ": ";
 	}
 
@@ -254,7 +254,9 @@ namespace Error {
 		cerr << "Tuple (";
 		if(el.size()) {
 			cerr << el[0];
-			for(unsigned int n = 1; n < el.size(); ++n) cerr << "," << el[n];
+			for(unsigned int n = 1; n < el.size(); ++n) {
+				cerr << "," << el[n];
+			}
 		}
 		cerr << ") has more than one image in the interpretation of function " << f
 			 << " in structure " << str << ".\n";
@@ -277,7 +279,7 @@ namespace Error {
 		error(thisplace);
 		cerr << "Namespace " << nsname << " is already declared in this scope" 
 			 << ", namely at line " << prevdeclplace.line() << ", column " << prevdeclplace.col(); 
-		if(prevdeclplace.file()) cerr << " of file " << *(prevdeclplace.file());
+		if(prevdeclplace.file()) { cerr << " of file " << *(prevdeclplace.file()); }
 		cerr << "." << "\n";
 	}
 
@@ -285,7 +287,7 @@ namespace Error {
 		error(thisplace);
 		cerr << "Vocabulary " << vocname << " is already declared in this scope" 
 			 << ", namely at line " << prevdeclplace.line() << ", column " << prevdeclplace.col(); 
-		if(prevdeclplace.file()) cerr << " of file " << *(prevdeclplace.file());
+		if(prevdeclplace.file()) { cerr << " of file " << *(prevdeclplace.file()); }
 		cerr << "." << "\n";
 	}
 
@@ -293,7 +295,7 @@ namespace Error {
 		error(thisplace);
 		cerr << "Theory " << thname << " is already declared in this scope" 
 			 << ", namely at line " << prevdeclplace.line() << ", column " << prevdeclplace.col(); 
-		if(prevdeclplace.file()) cerr << " of file " << *(prevdeclplace.file());
+		if(prevdeclplace.file()) { cerr << " of file " << *(prevdeclplace.file()); }
 		cerr << "." << "\n";
 	}
 
@@ -301,7 +303,7 @@ namespace Error {
 		error(thisplace);
 		cerr << "Query " << fname << " is already declared in this scope" 
 			 << ", namely at line " << prevdeclplace.line() << ", column " << prevdeclplace.col(); 
-		if(prevdeclplace.file()) cerr << " of file " << *(prevdeclplace.file());
+		if(prevdeclplace.file()) { cerr << " of file " << *(prevdeclplace.file()); }
 		cerr << "." << "\n";
 	}
 
@@ -309,7 +311,7 @@ namespace Error {
 		error(thisplace);
 		cerr << "Structure " << sname << " is already declared in this scope" 
 			 << ", namely at line " << prevdeclplace.line() << ", column " << prevdeclplace.col(); 
-		if(prevdeclplace.file()) cerr << " of file " << *(prevdeclplace.file());
+		if(prevdeclplace.file()) { cerr << " of file " << *(prevdeclplace.file()); }
 		cerr << "." << "\n";
 	}
 
@@ -317,7 +319,7 @@ namespace Error {
 		error(thisplace);
 		cerr << "Options " << sname << " is already declared in this scope" 
 			 << ", namely at line " << prevdeclplace.line() << ", column " << prevdeclplace.col(); 
-		if(prevdeclplace.file()) cerr << " of file " << *(prevdeclplace.file());
+		if(prevdeclplace.file()) { cerr << " of file " << *(prevdeclplace.file()); }
 		cerr << "." << "\n";
 	}
 
@@ -325,7 +327,7 @@ namespace Error {
 		error(thisplace);
 		cerr << "Procedure " << sname << " is already declared in this scope" 
 			 << ", namely at line " << prevdeclplace.line() << ", column " << prevdeclplace.col(); 
-		if(prevdeclplace.file()) cerr << " of file " << *(prevdeclplace.file());
+		if(prevdeclplace.file()) { cerr << " of file " << *(prevdeclplace.file()); }
 		cerr << "." << "\n";
 	}
 
@@ -423,10 +425,10 @@ namespace Error {
 		error(thisplace);
 		cerr << "The sort " << name << " used here could be the sort declared at " 
 			 << "line " << p1.line() << ", column " << p1.col();
-		if(p1.file()) cerr << " of file " << p1.file();
+		if(p1.file()) { cerr << " of file " << p1.file(); }
 		cerr << " or the sort declared at "
 			 << "line " << p2.line() << ", column " << p2.col();
-		if(p2.file()) cerr << " of file " << p2.file();
+		if(p2.file()) { cerr << " of file " << p2.file(); }
 		cerr << ".\n";
 	}
 
@@ -434,10 +436,10 @@ namespace Error {
 		error(thisplace);
 		cerr << "The function " << name << " used here could be the predicate declared at " 
 			 << "line " << p1.line() << ", column " << p1.col();
-		if(p1.file()) cerr << " of file " << p1.file();
+		if(p1.file()) { cerr << " of file " << p1.file(); }
 		cerr << " or the function declared at "
 			 << "line " << p2.line() << ", column " << p2.col();
-		if(p2.file()) cerr << " of file " << p2.file();
+		if(p2.file()) { cerr << " of file " << p2.file(); }
 		cerr << ".\n";
 	}
 
@@ -445,10 +447,10 @@ namespace Error {
 		error(thisplace);
 		cerr << "The predicate " << name << " used here could be the predicate declared at " 
 			 << "line " << p1.line() << ", column " << p1.col();
-		if(p1.file()) cerr << " of file " << p1.file();
+		if(p1.file()) { cerr << " of file " << p1.file(); }
 		cerr << " or the predicate declared at "
 			 << "line " << p2.line() << ", column " << p2.col();
-		if(p2.file()) cerr << " of file " << p2.file();
+		if(p2.file()) { cerr << " of file " << p2.file(); }
 		cerr << ".\n";
 	}
 
@@ -456,10 +458,10 @@ namespace Error {
 		error(thisplace);
 		cerr << "The namespace " << name << " used here could be the namespace declared at " 
 			 << "line " << p1.line() << ", column " << p1.col();
-		if(p1.file()) cerr << " of file " << p1.file();
+		if(p1.file()) { cerr << " of file " << p1.file(); }
 		cerr << " or the namespace declared at "
 			 << "line " << p2.line() << ", column " << p2.col();
-		if(p2.file()) cerr << " of file " << p2.file();
+		if(p2.file()) { cerr << " of file " << p2.file(); }
 		cerr << ".\n";
 	}
 
@@ -467,10 +469,10 @@ namespace Error {
 		error(thisplace);
 		cerr << "The structure " << name << " used here could be the structure declared at " 
 			 << "line " << p1.line() << ", column " << p1.col();
-		if(p1.file()) cerr << " of file " << p1.file();
+		if(p1.file()) { cerr << " of file " << p1.file(); }
 		cerr << " or the structure declared at "
 			 << "line " << p2.line() << ", column " << p2.col();
-		if(p2.file()) cerr << " of file " << p2.file();
+		if(p2.file()) { cerr << " of file " << p2.file(); }
 		cerr << ".\n";
 	}
 
@@ -478,10 +480,10 @@ namespace Error {
 		error(thisplace);
 		cerr << "The options " << name << " used here could be the options declared at " 
 			 << "line " << p1.line() << ", column " << p1.col();
-		if(p1.file()) cerr << " of file " << p1.file();
+		if(p1.file()) { cerr << " of file " << p1.file(); }
 		cerr << " or the options declared at "
 			 << "line " << p2.line() << ", column " << p2.col();
-		if(p2.file()) cerr << " of file " << p2.file();
+		if(p2.file()) { cerr << " of file " << p2.file(); }
 		cerr << ".\n";
 	}
 
@@ -489,10 +491,10 @@ namespace Error {
 		error(thisplace);
 		cerr << "The procedure " << name << " used here could be the options declared at " 
 			 << "line " << p1.line() << ", column " << p1.col();
-		if(p1.file()) cerr << " of file " << p1.file();
+		if(p1.file()) { cerr << " of file " << p1.file(); }
 		cerr << " or the procedure declared at "
 			 << "line " << p2.line() << ", column " << p2.col();
-		if(p2.file()) cerr << " of file " << p2.file();
+		if(p2.file()) { cerr << " of file " << p2.file(); }
 		cerr << ".\n";
 	}
 
@@ -500,10 +502,10 @@ namespace Error {
 		error(thisplace);
 		cerr << "The query " << name << " used here could be the query declared at " 
 			 << "line " << p1.line() << ", column " << p1.col();
-		if(p1.file()) cerr << " of file " << p1.file();
+		if(p1.file()) { cerr << " of file " << p1.file(); }
 		cerr << " or the query declared at "
 			 << "line " << p2.line() << ", column " << p2.col();
-		if(p2.file()) cerr << " of file " << p2.file();
+		if(p2.file()) { cerr << " of file " << p2.file(); }
 		cerr << ".\n";
 	}
 
@@ -511,10 +513,10 @@ namespace Error {
 		error(thisplace);
 		cerr << "The theory " << name << " used here could be the theory declared at " 
 			 << "line " << p1.line() << ", column " << p1.col();
-		if(p1.file()) cerr << " of file " << p1.file();
+		if(p1.file()) { cerr << " of file " << p1.file(); }
 		cerr << " or the theory declared at "
 			 << "line " << p2.line() << ", column " << p2.col();
-		if(p2.file()) cerr << " of file " << p2.file();
+		if(p2.file()) { cerr << " of file " << p2.file(); }
 		cerr << ".\n";
 	}
 
@@ -522,10 +524,10 @@ namespace Error {
 		error(thisplace);
 		cerr << "The vocabulary " << name << " used here could be the vocabulary declared at " 
 			 << "line " << p1.line() << ", column " << p1.col();
-		if(p1.file()) cerr << " of file " << p1.file();
+		if(p1.file()) { cerr << " of file " << p1.file(); }
 		cerr << " or the vocabulary declared at "
 			 << "line " << p2.line() << ", column " << p2.col();
-		if(p2.file()) cerr << " of file " << p2.file();
+		if(p2.file()) { cerr << " of file " << p2.file(); }
 		cerr << ".\n";
 	}
 
@@ -673,7 +675,7 @@ namespace Warning {
 		warningcounter++;
 		cerr << "WARNING at line " << p.line() 
 			 << ", column " << p.col();
-		if(p.file()) cerr << " of file " << *(p.file());
+		if(p.file()) { cerr << " of file " << *(p.file()); }
 		cerr << ": ";
 	}
 
@@ -687,8 +689,8 @@ namespace Warning {
 	/** Free variables **/
 	void freevars(const string& fv, const ParseInfo& thisplace) {
 		warning(thisplace);
-		if(fv.size() > 1) cerr << "Variables" << fv << " are not quantified.\n";
-		else cerr << "Variable" << fv[0] << " is not quantified.\n";
+		if(fv.size() > 1) { cerr << "Variables" << fv << " are not quantified.\n"; }
+		else { cerr << "Variable" << fv[0] << " is not quantified.\n"; }
 	}
 
 	/** Unexpeded type derivation **/

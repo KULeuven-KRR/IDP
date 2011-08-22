@@ -726,7 +726,7 @@ void FOBDDFactory::visit(const BoolForm* bf) {
 }
 
 void FOBDDFactory::visit(const QuantForm* qf) {
-	qf->subf()->accept(this);
+	qf->subformula()->accept(this);
 	const FOBDD* qbdd = _bdd;
 	for(set<Variable*>::const_iterator it = qf->quantvars().begin(); it != qf->quantvars().end(); ++it) {
 		const FOBDDVariable* qvar = _manager->getVariable(*it);

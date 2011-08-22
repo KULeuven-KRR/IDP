@@ -590,7 +590,7 @@ void FOPropagator::visit(const QuantForm* qf) {
 		if(_ct != (qf->univ() == qf->sign())) {
 			set<Variable*> newvars;
 			map<Variable*,Variable*> mvv;
-			FOPropDomain* conjdomain = _factory->trueDomain(qf->subf());
+			FOPropDomain* conjdomain = _factory->trueDomain(qf->subformula());
 			vector<CompType> comps(1,CT_EQ);
 			for(set<Variable*>::const_iterator it = qf->quantvars().begin(); it != qf->quantvars().end(); ++it) {
 				Variable* newvar = new Variable((*it)->sort());
@@ -608,11 +608,11 @@ void FOPropagator::visit(const QuantForm* qf) {
 			FOPropDomain* univdomain = addToForall(disjdomain,newvars);
 			deriveddomain = addToConjunction(deriveddomain,univdomain); delete(univdomain);
 		}
-		updateDomain(qf->subf(),DOWN,(_ct == qf->sign()),deriveddomain);
+		updateDomain(qf->subformula(),DOWN,(_ct == qf->sign()),deriveddomain);
 	}
 	else {
 		assert(_direction == UP);
-		const ThreeValuedDomain& tvd = _domains[qf->subf()];
+		const ThreeValuedDomain& tvd = _domains[qf->subformula()];
 		FOPropDomain* deriveddomain = _ct ? tvd._ctdomain->clone() : tvd._cfdomain->clone();
 		if(_ct == qf->univ()) deriveddomain = addToForall(deriveddomain,qf->quantvars());
 		else deriveddomain = addToExists(deriveddomain,qf->quantvars());
@@ -807,7 +807,7 @@ void FOPropagatorFactory::visit(const BoolForm* bf) {
 }
 
 void FOPropagatorFactory::visit(const QuantForm* qf) {
-	_propagator->_upward[qf->subf()] = qf;
+	_propagator->_upward[qf->subformula()] = qf;
 	initFalse(qf);
 	traverse(qf);
 }

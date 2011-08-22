@@ -121,9 +121,8 @@ class Variable {
 		const ParseInfo&	pi()	const;	//!< Returns the parse info of the variable
 
 		// Output
-		std::ostream&	put(std::ostream&)	const;
-		std::string		toString()			const;
-
+		std::ostream&	put(std::ostream&, bool longnames = true)	const;
+		std::string		toString()									const;
 };
 
 std::ostream& operator<< (std::ostream&,const Variable&);
@@ -530,7 +529,6 @@ class Namespace;
 
 class Vocabulary {
 	private:
-
 		std::string	_name;	//!< Name of the vocabulary. Default name is the empty string.
 		ParseInfo	_pi;	//!< Place where the vocabulary was parsed
 		Namespace*	_namespace;	//!< The namespace the vocabulary belongs to.
@@ -542,7 +540,6 @@ class Vocabulary {
 															//!< that name in the vocabulary. Name should end on /arity.
 
 		static Vocabulary* _std;	//!< The standard vocabulary
-
 
 	public:
 		// Constructors
@@ -603,7 +600,6 @@ class Vocabulary {
 		std::string toString(unsigned int tabs = 0)			const;
 
 		friend class Namespace;
-
 };
 
 std::ostream& operator<< (std::ostream&,const Vocabulary&);

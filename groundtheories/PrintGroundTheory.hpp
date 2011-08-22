@@ -54,8 +54,8 @@ public:
 	virtual AbstractTheory*	accept(TheoryMutatingVisitor* v);
 
 	// Debugging
-	virtual std::ostream&	put(std::ostream& output, unsigned int)	const { assert(false); return output;	}
-	virtual std::string		toString()								const { assert(false); return "";		}
+	virtual std::ostream&	put(std::ostream& output, bool, unsigned int)	const { assert(false); return output;	}
+	virtual std::string		toString()										const { assert(false); return "";		}
 };
 
 #endif /* PRINTGROUNDTHEORY_HPP_ */
