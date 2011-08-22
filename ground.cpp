@@ -23,7 +23,10 @@
 #include "checker.hpp"
 #include "common.hpp"
 #include "monitors/interactiveprintmonitor.hpp"
-#include "groundtheories/PrintGroundTheory.hpp"
+#include "groundtheories/AbstractGroundTheory.hpp"
+#include "groundtheories/SolverPolicy.hpp"
+#include "groundtheories/GroundPolicy.hpp"
+#include "groundtheories/PrintGroundPolicy.hpp"
 
 using namespace std;
 using namespace rel_ops;
@@ -262,8 +265,11 @@ int GroundTranslator::nextNumber() {
 }
 
 unsigned int GroundTranslator::addSymbol(PFSymbol* pfs) {
-	for(unsigned int n = 0; n < _symboffsets.size(); ++n)
-		if(_symboffsets[n] == pfs) return n;
+	for(unsigned int n = 0; n < _symboffsets.size(); ++n){
+		if(_symboffsets[n] == pfs){
+			return n;
+		}
+	}
 	_symboffsets.push_back(pfs);
 	_table.push_back(map<ElementTuple,int,StrictWeakTupleOrdering>());
 	return _symboffsets.size()-1;
@@ -277,7 +283,7 @@ string GroundTranslator::printAtom(int nr) const {
 	if(nr >= int(_backsymbtable.size())) {
 		return "error";
 	}
-	PFSymbol* pfs = symbol(nr);
+	PFSymbol* pfs = atom2symbol(nr);
 	if(pfs) {
 		s << pfs->toString();
 		if(!(args(nr).empty())) {
@@ -418,14 +424,18 @@ bool CopyGrounder::run() const {
 }
 
 bool TheoryGrounder::run() const {
+	_grounding->startTheory();
 	if(_verbosity > 0) {
 		clog << "Grounding theory " << "\n";
 		clog << "Components to ground = " << _grounders.size() << "\n";
 	}
 	for(unsigned int n = 0; n < _grounders.size(); ++n) {
 		bool b = _grounders[n]->run();
-		if(!b) return b;
+		if(!b){
+			return b;
+		}
 	}
+	_grounding->closeTheory();
 	return true;
 }
 
@@ -442,7 +452,7 @@ bool SentenceGrounder::run() const {
 			return false;
 		}
 		else if(cl[0] != _true) {
-			_grounding->addClause(cl);
+			_grounding->add(cl);
 			return true;
 		}
 		else return true;
@@ -453,7 +463,7 @@ bool SentenceGrounder::run() const {
 				_grounding->addUnitClause(cl[n]);
 		}
 		else {
-			_grounding->addClause(cl);
+			_grounding->add(cl);
 		}
 		return true;
 	}
@@ -741,6 +751,10 @@ int AggGrounder::finishCard(double truevalue, double boundvalue, int setnr) cons
 		default:
 			assert(false);
 	}
+	if(!_sign) {
+		if(tp == TS_IMPL) tp = TS_RIMPL;
+		else if(tp == TS_RIMPL) tp = TS_IMPL;
+	}
 	if(simplify) {
 		if(_doublenegtseitin) {
 			if(negateset) {
@@ -810,6 +824,10 @@ int AggGrounder::finish(double boundvalue, double newboundvalue, double minpossv
 	else {
 		int tseitin;
 		TsType tp = _context._tseitin;
+		if(!_sign) {
+			if(tp == TS_IMPL) tp = TS_RIMPL;
+			else if(tp == TS_RIMPL) tp = TS_IMPL;
+		}
 		tseitin = _translator->translate(newboundvalue,_comp,true,_type,setnr,tp);
 		return _sign ? tseitin : -tseitin;
 	}
@@ -1403,7 +1421,23 @@ int HeadGrounder::run() const {
 	return atom;
 }
 
-bool RuleGrounder::run() const {
+void RuleGrounder::addTrueRule(GroundDefinition* const grounddefinition, int head) const {
+	addPCRule(grounddefinition, head,vector<int>(0),true,false);
+}
+
+void RuleGrounder::addFalseRule(GroundDefinition* const grounddefinition, int head) const {
+	addPCRule(grounddefinition, head,vector<int>(0),false,false);
+}
+
+void RuleGrounder::addPCRule(GroundDefinition* grounddefinition, int head, const vector<int>& body, bool conj, bool recursive) const {
+	grounddefinition->addPCRule(head, body, conj, recursive);
+}
+
+void RuleGrounder::addAggRule(GroundDefinition* grounddefinition, int head, int setnr, AggFunction aggtype, bool lower, double bound, bool recursive) const {
+	grounddefinition->addAggRule(head, setnr, aggtype, lower, bound, recursive);
+}
+
+bool RuleGrounder::run(unsigned int defid, GroundDefinition* grounddefinition) const {
 	bool conj = _bodygrounder->conjunctive();
 	if(_bodygenerator->first()) {	
 		vector<int>	body;
@@ -1414,20 +1448,18 @@ bool RuleGrounder::run() const {
 			if(!falsebody) {
 				bool truebody = (body.empty() && conj) || (body.size() == 1 && body[0] == _true);
 				if(_headgenerator->first()) {
-					int head = _headgrounder->run();
-					assert(head != _true);
-					if(head != _false) {
-						if(truebody) _definition->addTrueRule(head);
-						else _definition->addPCRule(head,body,conj,_context._tseitin == TS_RULE);
-					}
-					while(_headgenerator->next()) {
-						head = _headgrounder->run();
+					do{
+						int head = _headgrounder->run();
 						assert(head != _true);
 						if(head != _false) {
-							if(truebody) _definition->addTrueRule(head);
-							else _definition->addPCRule(head,body,conj,_context._tseitin == TS_RULE);
+							if(truebody){
+								addTrueRule(grounddefinition, head);
+							}
+							else{
+								addPCRule(grounddefinition, head,body,conj,_context._tseitin == TS_RULE);
+							}
 						}
-					}
+					}while(_headgenerator->next());
 				}
 			}
 		}while(_bodygenerator->next());
@@ -1435,12 +1467,19 @@ bool RuleGrounder::run() const {
 	return true;
 }
 
+unsigned int DefinitionGrounder::_currentdefnb = 1;
+
+DefinitionGrounder::DefinitionGrounder(AbstractGroundTheory* gt, std::vector<RuleGrounder*> subgr,int verb)
+		: TopLevelGrounder(gt,verb), _defnb(_currentdefnb++), _subgrounders(subgr), _grounddefinition(new GroundDefinition(_defnb, gt->translator())) {
+}
+
 bool DefinitionGrounder::run() const {
 	for(unsigned int n = 0; n < _subgrounders.size(); ++n) {
-		bool b = _subgrounders[n]->run();
-		if(!b) return false;
+		bool b = _subgrounders[n]->run(id(), _grounddefinition);
+		if(!b) {
+			return false;
+		}
 	}
-	_grounding->addDefinition(_definition);
 	return true;
 }
 
@@ -1641,7 +1680,8 @@ void GrounderFactory::descend(Rule* r) {
  */
 TopLevelGrounder* GrounderFactory::create(const AbstractTheory* theory) {
 	// Allocate an ecnf theory to be returned by the grounder
-	_grounding = new GroundTheory(theory->vocabulary(),_structure->clone());
+	GroundTheory<GroundPolicy>* groundtheory = new GroundTheory<GroundPolicy>(theory->vocabulary(),_structure->clone());
+	_grounding = groundtheory;
 
 	// Find functions that can be passed to CP solver.
 	if(_cpsupport){
@@ -1655,7 +1695,9 @@ TopLevelGrounder* GrounderFactory::create(const AbstractTheory* theory) {
 
 // TODO comment
 TopLevelGrounder* GrounderFactory::create(const AbstractTheory* theory, InteractivePrintMonitor* monitor, Options* opts) {
-	_grounding = new PrintGroundTheory(monitor,_structure->clone(), opts);
+	GroundTheory<PrintGroundPolicy>* groundtheory = new GroundTheory<PrintGroundPolicy>(_structure->clone());
+	groundtheory->initialize(monitor, groundtheory->structure(), groundtheory->translator(), groundtheory->termtranslator(), opts);
+	_grounding = groundtheory;
 
 	// Find functions that can be passed to CP solver.
 	if(_cpsupport){
@@ -1686,7 +1728,9 @@ TopLevelGrounder* GrounderFactory::create(const AbstractTheory* theory, Interact
  */
 TopLevelGrounder* GrounderFactory::create(const AbstractTheory* theory, SATSolver* solver) {
 	// Allocate a solver theory
-	_grounding = new SolverTheory(theory->vocabulary(),solver,_structure->clone(),_verbosity);
+	GroundTheory<SolverPolicy>* groundtheory = new GroundTheory<SolverPolicy>(theory->vocabulary(), _structure->clone());
+	groundtheory->initialize(solver, _verbosity, groundtheory->termtranslator());
+	_grounding = groundtheory;
 
 	// Find function that can be passed to CP solver.
 	if(_cpsupport){
@@ -1707,7 +1751,7 @@ TopLevelGrounder* GrounderFactory::create(const AbstractTheory* theory, SATSolve
  * POSTCONDITIONS
  *		_toplevelgrounder is equal to the created grounder.
  */
-void GrounderFactory::visit(const GroundTheory* ecnf) {
+void GrounderFactory::visit(const AbstractGroundTheory* ecnf) {
 	_toplevelgrounder = new CopyGrounder(_grounding,ecnf,_verbosity);	
 }
 
@@ -2203,9 +2247,6 @@ void GrounderFactory::visit(const QuantSetExpr* qs) {
  * 		Creates a grounder for a definition.
  */
 void GrounderFactory::visit(const Definition* def) {
-	// Create new ground definition
-	_definition = new GroundDefinition(_grounding->translator());
-
 	// Store defined predicates
 	for(set<PFSymbol*>::const_iterator it = def->defsymbols().begin(); it != def->defsymbols().end(); ++it) {
 		_context._defined.insert(*it);
@@ -2219,7 +2260,7 @@ void GrounderFactory::visit(const Definition* def) {
 	}
 	
 	// Create definition grounder
-	_toplevelgrounder = new DefinitionGrounder(_grounding,_definition,subgrounders,_verbosity);
+	_toplevelgrounder = new DefinitionGrounder(_grounding,subgrounders,_verbosity);
 
 	_context._defined.clear();
 }
@@ -2288,7 +2329,7 @@ void GrounderFactory::visit(const Rule* rule) {
 	// Create rule grounder
 	SaveContext();
 	if(recursive(rule->body())) _context._tseitin = TS_RULE;
-	_rulegrounder = new RuleGrounder(_definition,headgr,bodygr,headgen,bodygen,_context);
+	_rulegrounder = new RuleGrounder(headgr,bodygr,headgen,bodygen,_context);
 	RestoreContext();
 
 }

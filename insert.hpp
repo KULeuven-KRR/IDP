@@ -111,6 +111,7 @@ class Insert {
 		Options*		_curroptions;		//!< the options that is currently being parsed
 		UserProcedure*	_currprocedure;		//!< the procedure that is currently being parsed
 		std::string		_currquery;			//!< the name of the named query that is currently being parsed
+		std::string		_currterm;			//!< the name of the named term that is currently being parsed
 
 		std::list<VarName>	_curr_vars;
 
@@ -156,6 +157,7 @@ class Insert {
 		Namespace*				namespaceInScope(const std::string&, const ParseInfo&) const;
 		Namespace*				namespaceInScope(const longname&, const ParseInfo&) const;
 		Query*					queryInScope(const std::string&, const ParseInfo&) const;
+		Term*					termInScope(const std::string&, const ParseInfo&) const;
 		AbstractTheory*			theoryInScope(const std::string&, const ParseInfo&) const;
 		AbstractTheory*			theoryInScope(const longname&, const ParseInfo&) const;
 		AbstractStructure*		structureInScope(const std::string&, const ParseInfo&) const;
@@ -189,6 +191,7 @@ class Insert {
 		void openvocab(const std::string& name,YYLTYPE);		//!< Open a new vocabulary
 		void opentheory(const std::string& tname, YYLTYPE);		//!< Open a new theory
 		void openquery(const std::string& tname, YYLTYPE);		//!< Open a new named query
+		void openterm(const std::string& tname, YYLTYPE);		//!< Open a new named term
 		void openstructure(const std::string& name, YYLTYPE);	//!< Open a new structure
 		void openprocedure(const std::string& name, YYLTYPE);	//!< Open a procedure
 		void openoptions(const std::string& name, YYLTYPE);		//!< Open a new options block
@@ -197,6 +200,7 @@ class Insert {
 		void closevocab();										//!< Close the current vocabulary
 		void closetheory();										//!< Close the current theory
 		void closequery(Query*);								//!< Close the current named query
+		void closeterm(Term*);									//!< Close the current named term
 		void closestructure();									//!< Close the current structure
 		void closeprocedure(std::stringstream*);				//!< Close the current procedure
 		void closeoptions();									//!< Close the current options

@@ -19,7 +19,7 @@ private:
 	lua_State* state() const { return state_; }
 
 public:
-	LuaInteractivePrintMonitor(lua_State* state): state_(state){
+	LuaInteractivePrintMonitor(lua_State* state): state_(state), buffersize(0){
 	}
 
 	virtual void print(const std::string& text){

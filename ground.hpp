@@ -261,14 +261,15 @@ class GroundTranslator {
 		int				nextNumber();
 		unsigned int	addSymbol(PFSymbol* pfs);
 
-		bool					isSymbol(int nr)			const	{ return 0<nr && (uint)nr<_backsymbtable.size(); }
-		PFSymbol*				symbol(int nr)				const	{ return _backsymbtable[abs(nr)];			}
+		bool					hasSymbolFor(int atom)		const	{ return 0<atom && (uint)atom<_backsymbtable.size(); }
+		PFSymbol*				atom2symbol(int atom)		const	{ return _backsymbtable[abs(atom)];			}
 		const ElementTuple&		args(int nr)				const	{ return _backargstable[abs(nr)];			}
-		bool					isTseitin(int l)			const	{ return symbol(l) == 0;					}
+		bool					isTseitin(int atom)			const	{ return atom2symbol(atom) == 0;			}
+
 		TsBody*					tsbody(int l)				const	{ return _nr2tsbodies.find(abs(l))->second;	}
 		const TsSet&			groundset(int nr)			const	{ return _sets[nr];							}
 		TsSet&					groundset(int nr)					{ return _sets[nr];							}
-		unsigned int			nrOffsets()					const	{ return _symboffsets.size();				}
+		unsigned int			nbSymbols()					const	{ return _symboffsets.size();				}
 		PFSymbol*				getSymbol(unsigned int n)	const	{ return _symboffsets[n];					}
 		const std::map<ElementTuple,int,StrictWeakTupleOrdering>&	
 								getTuples(unsigned int n)	const	{ return _table[n];							}
@@ -381,9 +382,9 @@ class TopLevelGrounder {
 
 class CopyGrounder : public TopLevelGrounder {
 	private:
-		const GroundTheory*		_original;
+		const AbstractGroundTheory*		_original;
 	public:
-		CopyGrounder(AbstractGroundTheory* gt, const GroundTheory* orig, int verb) : TopLevelGrounder(gt,verb), _original(orig) { }
+		CopyGrounder(AbstractGroundTheory* gt, const AbstractGroundTheory* orig, int verb) : TopLevelGrounder(gt,verb), _original(orig) { }
 		bool run() const;
 };
 
@@ -691,27 +692,39 @@ class HeadGrounder {
 /** Grounder for a single rule **/
 class RuleGrounder {
 	private:
-		GroundDefinition*	_definition;
 		HeadGrounder*		_headgrounder;
 		FormulaGrounder*	_bodygrounder;
 		InstGenerator*		_headgenerator;	
 		InstGenerator*		_bodygenerator;	
 		GroundingContext	_context;
 	public:
-		RuleGrounder(GroundDefinition* def, HeadGrounder* hgr, FormulaGrounder* bgr, InstGenerator* hig, InstGenerator* big, GroundingContext& ct)
-			: _definition(def), _headgrounder(hgr), _bodygrounder(bgr), _headgenerator(hig), _bodygenerator(big), _context(ct) { }
-		bool run() const;
+		RuleGrounder(HeadGrounder* hgr, FormulaGrounder* bgr, InstGenerator* hig, InstGenerator* big, GroundingContext& ct)
+			: _headgrounder(hgr), _bodygrounder(bgr), _headgenerator(hig), _bodygenerator(big), _context(ct) { }
+		bool run(unsigned int defid, GroundDefinition* grounddefinition) const;
+
+		// Mutators
+		void addTrueRule(GroundDefinition* grounddefinition, int head) const;
+		void addFalseRule(GroundDefinition* grounddefinition, int head) const;
+		void addPCRule(GroundDefinition* grounddefinition, int head, const std::vector<int>& body, bool conj, bool recursive) const;
+		void addAggRule(GroundDefinition* grounddefinition, int head, int setnr, AggFunction aggtype, bool lower, double bound, bool recursive) const;
 };
 
 /** Grounder for a definition **/
+// NOTE: definition printing code is based on the INVARIANT that a defintion is ALWAYS grounded as contiguous component: never ground def A a bit, then ground B, then return to A again (code should error on this)
+// directly printing in idp language will be incorrect then.
+// TODO optimize grounding of definitions by grouping rules with the same head and grounding them atom by atom
+//	(using approximation to derive given a head query which bodies might be true). This would allow to write out rules without
+//	first constructing and storing the full ground definition to remove duplicate heads
 class DefinitionGrounder : public TopLevelGrounder {
 	private:
-		GroundDefinition*			_definition;	//!< The ground definition that will be produced by running the grounder.
+		static unsigned int _currentdefnb;
+		unsigned int _defnb;
 		std::vector<RuleGrounder*>	_subgrounders;	//!< Grounders for the rules of the definition.
+		GroundDefinition* _grounddefinition;
 	public:
-		DefinitionGrounder(AbstractGroundTheory* gt, GroundDefinition* def, std::vector<RuleGrounder*> subgr,int verb)
-			: TopLevelGrounder(gt,verb), _definition(def), _subgrounders(subgr) { }
+		DefinitionGrounder(AbstractGroundTheory* groundtheory, std::vector<RuleGrounder*> subgr,int verb);
 		bool run() const;
+		unsigned int id() const { return _defnb; }
 };
 
 
@@ -760,10 +773,6 @@ class GrounderFactory : public TheoryVisitor {
 		std::map<Variable*,const DomainElement**>	_varmapping;	// Maps variables to their counterpart during grounding.
 														// That is, the corresponding const DomainElement** acts as a variable+value.
 
-		// Current ground definition
-		GroundDefinition*		_definition;	// The ground definition that will be produced by the 
-												// currently constructed definition grounder.
-
 		// Return values
 		FormulaGrounder*		_formgrounder;
 		TermGrounder*			_termgrounder;
@@ -789,7 +798,7 @@ class GrounderFactory : public TheoryVisitor {
 		bool recursive(const Formula*);
 
 		// Visitors
-		void visit(const GroundTheory*);
+		void visit(const AbstractGroundTheory*);
 		void visit(const Theory*);
 
 		void visit(const PredForm*);

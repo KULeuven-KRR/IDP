@@ -11,6 +11,9 @@
 #include "internalargument.hpp"
 #include "structure.hpp"
 
+/**
+ * Implements maketrue, makefalse, and makeunknown on a predicate interpretation and a tuple
+ */
 class SetAtomValueInference: public Inference {
 	enum SETVALUE { SET_TRUE, SET_FALSE, SET_UNKNOWN};
 private:
@@ -28,7 +31,7 @@ public:
 
 	SetAtomValueInference(const char* command, SETVALUE value): Inference(command, true), value_(value) {
 		add(AT_PREDINTER);
-		add(AT_TABLE);
+		add(AT_TUPLE);
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {

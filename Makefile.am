@@ -53,7 +53,10 @@ gidl_SOURCES = \
 		fobdd.hpp fobdd.cpp\
 		monitors/interactiveprintmonitor.hpp monitors/tracemonitor.hpp\
 		monitors/luatracemonitor.hpp monitors/luainteractiveprintmonitor.hpp\
-		groundtheories/PrintGroundTheory.hpp groundtheories/PrintGroundTheory.cpp\
+		groundtheories/PrintGroundPolicy.hpp\
+		groundtheories/GroundPolicy.hpp\
+		groundtheories/SolverPolicy.hpp\
+		groundtheories/AbstractGroundTheory.hpp\
 		commands/allcommands.hpp\
 		commands/optimization.hpp\
 		commands/commandinterface.hpp\
@@ -84,7 +87,9 @@ gidl_SOURCES = \
 		commands/help.hpp\
 		commands/changevocabulary.hpp\
 		commands/estimatecosts.hpp\
-		commands/derefandincrement.hpp
+		commands/derefandincrement.hpp\
+		commands/simplify.hpp\
+		commands/createrange.hpp
 
 AM_CXXFLAGS+=-I $(top_srcdir)/pcsolver/src/ 
 

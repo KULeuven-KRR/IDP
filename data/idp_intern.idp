@@ -109,7 +109,8 @@ procedure ground(T,S,Opts) {
 }
 
 /**
- * Print the reduced grounding of theory T and structure S (without storing it)
+ * Print the reduced grounding of theory T and structure S.
+ * MEMORY EFFICIENT: does not store the grounding internally
  */
 procedure printGrounding(T,S,Opts) {
 	local clonetheo = clone(T)

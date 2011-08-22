@@ -1,6 +1,6 @@
 -- ================================================================== --
 --	Configuration file for idp
---	This file should contain a lua chunck. 
+--	This file should contain a lua chunk. 
 --	All code in this chunk is executed before input files are parsed
 -- ================================================================== --
 
@@ -9,4 +9,4 @@
 -- =========================
 
 stdoptions.autocomplete = true		-- use autocompletion for structures
-stdoptions.cpsolver = false			-- do not use a cp-solver
+stdoptions.cpsupport = false		-- do not use a cp-solver

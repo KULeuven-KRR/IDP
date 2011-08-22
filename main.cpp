@@ -16,7 +16,7 @@
 using namespace std;
 
 // seed
-int global_seed;
+int global_seed;	//!< seed used for bdd estimators
 
 // Parser stuff
 extern map<string,CLConst*>	clconsts;
@@ -145,11 +145,13 @@ void interactive() {
 	}
 #else
 	cout << "> ";
-	string userline = cin.getline();
+	string userline;
+	getline(cin,userline);
 	while(userline != "exit()") {
 		string str = "##intern##{"+userline+'}';
 		parsestring(str);
-		userline = cin.getline();
+		cout << "> ";
+		getline(cin,userline);
 	}
 #endif
 }
@@ -169,7 +171,7 @@ int main(int argc, char* argv[]) {
 	if(cloptions._readfromstdin) parsestdin();
 
 	// Run
-	if(!Error::nr_of_errors()) {
+	if(not Error::nr_of_errors()) {
 		// Execute statements
 		executeproc(cloptions._exec);
 		if(cloptions._interactive) interactive();

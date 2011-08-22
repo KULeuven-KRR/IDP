@@ -17,6 +17,7 @@
 #include "commands/clonestructure.hpp"
 #include "commands/clonetheory.hpp"
 #include "commands/pushnegations.hpp"
+#include "commands/removenesting.hpp"
 #include "commands/mergetheories.hpp"
 #include "commands/flatten.hpp"
 #include "commands/idptype.hpp"
@@ -27,6 +28,7 @@
 #include "commands/propagate.hpp"
 #include "commands/query.hpp"
 #include "commands/createtuple.hpp"
+#include "commands/createrange.hpp"
 #include "commands/ground.hpp"
 #include "commands/completion.hpp"
 #include "commands/tobdd.hpp"
@@ -36,6 +38,7 @@
 #include "commands/derefandincrement.hpp"
 #include "commands/help.hpp"
 #include "commands/optimization.hpp"
+#include "commands/simplify.hpp"
 
 //TODO add support for easily using these inferences directly in lua, by also providing a help/usage text and replacing idp_intern. with something easier
 
@@ -52,6 +55,8 @@ std::vector<Inference*> getAllInferences(){
 	inferences.push_back(SetTableValueInference::getMakeTableUnknownInference());
 	inferences.push_back(new DomainIteratorInference());
 	inferences.push_back(new TableIteratorInference());
+	inferences.push_back(new OptimalPropagateInference());
+	inferences.push_back(new GroundPropagateInference());
 	inferences.push_back(new PropagateInference());
 	inferences.push_back(new PrintVocabularyInference());
 	inferences.push_back(new PrintTheoryInference());
@@ -70,12 +75,15 @@ std::vector<Inference*> getAllInferences(){
 	inferences.push_back(new FlattenInference());
 	inferences.push_back(new MergeTheoriesInference());
 	inferences.push_back(new PushNegationsInference());
+	inferences.push_back(new RemoveNestingInference());
 	inferences.push_back(new QueryInference());
 	inferences.push_back(new CreateTupleInference());
+	inferences.push_back(new CreateRangeInference());
 	inferences.push_back(new GroundInference());
 	inferences.push_back(new CompletionInference());
 	inferences.push_back(new CleanInference());
-	inferences.push_back(new ToBDDInference());
+	inferences.push_back(new ToBDDInference(AT_FORMULA));
+	inferences.push_back(new ToBDDInference(AT_QUERY));
 	inferences.push_back(new ChangeVocabularyInference());
 	inferences.push_back(new EstimateBDDCostInference());
 	inferences.push_back(new EstimateNumberOfAnswersInference());
@@ -88,6 +96,7 @@ std::vector<Inference*> getAllInferences(){
 	inferences.push_back(new HelpInference());
 	inferences.push_back(new GroundAndPrintInference());
 	inferences.push_back(new OptimizationInference());
+	inferences.push_back(new SimplifyInference());
 	return inferences;
 }
 
