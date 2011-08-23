@@ -117,6 +117,20 @@ class AggTsBody : public TsBody {
 	friend class GroundTranslator;
 };
 
+class LazyQuantGrounder;
+
+class LazyTsBody: public TsBody{
+private:
+	unsigned int id_;
+	LazyQuantGrounder* grounder_;
+
+public:
+	LazyTsBody(int id, TsType type): TsBody(type){}
+
+	unsigned int id() const { return id_; }
+	LazyQuantGrounder* grounder() const { return grounder_; }
+};
+
 /* Sets and terms that will be handled by a constraint solver */
 
 /**
@@ -225,51 +239,52 @@ class CPTsBody : public TsBody {
 class LazyQuantGrounder;
 
 class GroundTranslator {
-	private:
-		std::vector<std::map<ElementTuple,int,StrictWeakTupleOrdering> >
-										_table;			// map atoms to integers
-		std::vector<PFSymbol*>			_symboffsets;	// map integer to symbol
-		std::vector<PFSymbol*>			_backsymbtable;	// map integer to the symbol of its corresponding atom
-		std::vector<ElementTuple>		_backargstable;	// map integer to the terms of its corresponding atom
+private:
+	std::vector<std::map<ElementTuple,int,StrictWeakTupleOrdering> >
+									_table;			// map atoms to integers
+	std::vector<PFSymbol*>			_symboffsets;	// map integer to symbol
+	std::vector<PFSymbol*>			_backsymbtable;	// map integer to the symbol of its corresponding atom
+	std::vector<ElementTuple>		_backargstable;	// map integer to the terms of its corresponding atom
 
-		std::queue<int>		_freenumbers;		// keeps atom numbers that were freed and can be used again
-		std::queue<int>		_freesetnumbers;	// keeps set numbers that were freed and can be used again
+	std::queue<int>		_freenumbers;		// keeps atom numbers that were freed and can be used again
+	std::queue<int>		_freesetnumbers;	// keeps set numbers that were freed and can be used again
 
-		std::map<int,TsBody*>							_nr2tsbodies;	// keeps mapping between Tseitin numbers and bodies
-		std::map<TsBody*,int,StrictWeakTsBodyOrdering>	_tsbodies2nr;	// keeps mapping between Tseitin bodies and numbers
-		std::map<int,LazyQuantGrounder const* const>				_nr2lazygrounder;
+	std::map<int,TsBody*>							_nr2tsbodies;	// keeps mapping between Tseitin numbers and bodies
+	std::map<TsBody*,int,StrictWeakTsBodyOrdering>	_tsbodies2nr;	// keeps mapping between Tseitin bodies and numbers
 
-		std::vector<TsSet>	_sets;	// keeps mapping between Set numbers and sets
+	std::vector<TsSet>	_sets;	// keeps mapping between Set numbers and sets
 
-	public:
-		GroundTranslator() : _backsymbtable(1), _backargstable(1), _sets(1) { }
-		~GroundTranslator();
+	Lit addTseitinBody(TsBody* body);
 
-		Lit				translate(unsigned int,const ElementTuple&);
-		Lit				translate(const std::vector<int>& cl, bool conj, TsType tp);
-		Lit				translate(double bound, char comp, bool strict, AggFunction aggtype, int setnr, TsType tstype);
-		Lit				translate(PFSymbol*,const ElementTuple&);
-		Lit				translate(CPTerm*, CompType, const CPBound&, TsType);
-		Lit				translateSet(const std::vector<int>&,const std::vector<double>&,const std::vector<double>&);
-		Lit				translate(LazyQuantGrounder const* const lazygrounder);
+public:
+	GroundTranslator() : _backsymbtable(1), _backargstable(1), _sets(1) { }
+	~GroundTranslator();
 
-		Lit				nextNumber();
-		unsigned int	addSymbol(PFSymbol* pfs);
+	Lit	translate(unsigned int,const ElementTuple&);
+	Lit	translate(const std::vector<int>& cl, bool conj, TsType tp);
+	Lit	translate(double bound, char comp, bool strict, AggFunction aggtype, int setnr, TsType tstype);
+	Lit	translate(PFSymbol*,const ElementTuple&);
+	Lit	translate(CPTerm*, CompType, const CPBound&, TsType);
+	Lit	translateSet(const std::vector<int>&,const std::vector<double>&,const std::vector<double>&);
+	Lit	translate(LazyQuantGrounder const* const lazygrounder, TsType type);
 
-		bool					hasSymbolFor(int atom)		const	{ return 0<atom && (uint)atom<_backsymbtable.size(); }
-		PFSymbol*				atom2symbol(int atom)		const	{ return _backsymbtable[abs(atom)];			}
-		const ElementTuple&		args(int nr)				const	{ return _backargstable[abs(nr)];			}
-		bool					isTseitin(int atom)			const	{ return atom2symbol(atom) == 0;			}
+	Lit				nextNumber();
+	unsigned int	addSymbol(PFSymbol* pfs);
 
-		TsBody*					tsbody(int l)				const	{ return _nr2tsbodies.find(abs(l))->second;	}
-		const TsSet&			groundset(int nr)			const	{ return _sets[nr];							}
-		TsSet&					groundset(int nr)					{ return _sets[nr];							}
-		unsigned int			nbSymbols()					const	{ return _symboffsets.size();				}
-		PFSymbol*				getSymbol(unsigned int n)	const	{ return _symboffsets[n];					}
-		const std::map<ElementTuple,int,StrictWeakTupleOrdering>&	
-								getTuples(unsigned int n)	const	{ return _table[n];							}
+	bool				hasSymbolFor(int atom)	const	{ return 0<atom && (uint)atom<_backsymbtable.size(); }
+	PFSymbol*			atom2symbol(int atom)	const	{ return _backsymbtable[abs(atom)];			}
+	const ElementTuple&	args(int nr)			const	{ return _backargstable[abs(nr)];			}
+	bool				isTseitin(int atom)		const	{ return atom2symbol(atom) == 0;			}
 
-		std::string	printAtom(Lit atom)	const;
+	TsBody*			tsbody(int l)				const	{ return _nr2tsbodies.find(abs(l))->second;	}
+	const TsSet&	groundset(int nr)			const	{ return _sets[nr];							}
+	TsSet&			groundset(int nr)					{ return _sets[nr];							}
+	unsigned int	nbSymbols()					const	{ return _symboffsets.size();				}
+	PFSymbol*		getSymbol(unsigned int n)	const	{ return _symboffsets[n];					}
+	const std::map<ElementTuple,int,StrictWeakTupleOrdering>&
+					getTuples(unsigned int n)	const	{ return _table[n];							}
+
+	std::string	printAtom(Lit atom)	const;
 };
 
 /**

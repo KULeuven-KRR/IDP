@@ -157,13 +157,29 @@ int GroundTranslator::translate(const vector<int>& clause, bool conj, TsType tst
 	return nr;
 }
 
-int GroundTranslator::translate(LazyQuantGrounder const* const lazygrounder) {
+// Adds a tseitin body only if it does not yet exist. TODO why does this seem only relevant for CP Terms?
+Lit GroundTranslator::addTseitinBody(TsBody* tsbody){
+	auto it = _tsbodies2nr.lower_bound(tsbody);
+
+	if(it != _tsbodies2nr.end() && *(it->first) == *tsbody) { // Already exists
+		delete tsbody;
+		return it->second;
+	}
+
 	int nr = nextNumber();
-	_nr2lazygrounder.insert(pair<int,LazyQuantGrounder const* const>(nr,lazygrounder));
+	_tsbodies2nr.insert(it,pair<TsBody*,int>(tsbody,nr));
+	_nr2tsbodies.insert(pair<int,TsBody*>(nr,tsbody));
 	return nr;
 }
 
-int	GroundTranslator::translate(double bound, char comp, bool strict, AggFunction aggtype, int setnr, TsType tstype) {
+Lit GroundTranslator::translate(LazyQuantGrounder const* const lazygrounder, TsType tstype) {
+	LazyTsBody* tsbody = new LazyTsBody(lazygrounder->id(), tstype);
+	int nr = nextNumber();
+	_nr2tsbodies.insert(pair<int,TsBody*>(nr,tsbody));
+	return nr;
+}
+
+Lit	GroundTranslator::translate(double bound, char comp, bool strict, AggFunction aggtype, int setnr, TsType tstype) {
 	if(comp == '=') {
 		vector<int> cl(2);
 		cl[0] = translate(bound,'<',false,aggtype,setnr,tstype);
@@ -178,25 +194,14 @@ int	GroundTranslator::translate(double bound, char comp, bool strict, AggFunctio
 			tsbody->_bound = (comp == '<') ? bound + 1 : bound - 1;	
 		} 
 		else tsbody->_bound = bound;
-		//_tsbodies2nr.insert(it,pair<TsBody*,int>(tsbody,nr));
 		_nr2tsbodies.insert(pair<int,TsBody*>(nr,tsbody));
 		return nr;
 	}
 }
 
-int GroundTranslator::translate(CPTerm* left, CompType comp, const CPBound& right, TsType tstype) {
+Lit GroundTranslator::translate(CPTerm* left, CompType comp, const CPBound& right, TsType tstype) {
 	CPTsBody* tsbody = new CPTsBody(tstype,left,comp,right);
-	map<TsBody*,int,StrictWeakTsBodyOrdering>::iterator it = _tsbodies2nr.lower_bound(tsbody);
-	if(it != _tsbodies2nr.end() && *(it->first) == *tsbody) {
-		delete tsbody;
-		return it->second;
-	}
-	else {
-		int nr = nextNumber();
-		_tsbodies2nr.insert(it,pair<TsBody*,int>(tsbody,nr));
-		_nr2tsbodies.insert(pair<int,TsBody*>(nr,tsbody));
-		return nr;
-	}
+	return addTseitinBody(tsbody);
 }
 
 int GroundTranslator::translateSet(const vector<int>& lits, const vector<double>& weights, const vector<double>& trueweights) {

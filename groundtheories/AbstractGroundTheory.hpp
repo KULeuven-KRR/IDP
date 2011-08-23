@@ -235,6 +235,18 @@ public:
 		Policy::polAdd(cl);
 	}
 
+	void notifyLazyClauseHasValue(Lit lit, unsigned int id){
+		Policy::polNotifyLazyClauseHasValue(lit, id);
+	}
+	void addLitToLazyClause(Lit lit, unsigned int id){
+		litlist clause{lit};
+		transformForAdd(clause,VIT_DISJ,ID_FOR_UNDEFINED);
+		Policy::polAddLitToLazyClause(lit, id);
+	}
+	void notifyLazyClauseFullyGround(unsigned int id){
+		Policy::polNotifyLazyClauseFullyGround(id);
+	}
+
 	void add(GroundDefinition* def) {
 		for(auto i=def->begin(); i!=def->end(); ++i){
 			if(typeid(PCGroundRule*)==typeid((*i).second)){
