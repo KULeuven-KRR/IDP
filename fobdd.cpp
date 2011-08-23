@@ -1386,7 +1386,7 @@ void FOBDDFactory::visit(const PredForm* pf) {
 		args[n] = _argument;
 	}
 	_kernel = _manager->getAtomKernel(pf->symbol(),AKT_TWOVAL,args);
-	if(pf->sign()) _bdd = _manager->getBDD(_kernel,_manager->truebdd(),_manager->falsebdd());
+	if(isPos(pf->sign())) _bdd = _manager->getBDD(_kernel,_manager->truebdd(),_manager->falsebdd());
 	else  _bdd = _manager->getBDD(_kernel,_manager->falsebdd(),_manager->truebdd());
 }
 
@@ -1407,7 +1407,7 @@ void FOBDDFactory::visit(const BoolForm* bf) {
 		}
 		_bdd = temp;
 	}
-	_bdd = bf->sign() ? _bdd : _manager->negation(_bdd);
+	_bdd = isPos(bf->sign())? _bdd : _manager->negation(_bdd);
 }
 
 void FOBDDFactory::visit(const QuantForm* qf) {
@@ -1415,10 +1415,10 @@ void FOBDDFactory::visit(const QuantForm* qf) {
 	const FOBDD* qbdd = _bdd;
 	for(set<Variable*>::const_iterator it = qf->quantvars().begin(); it != qf->quantvars().end(); ++it) {
 		const FOBDDVariable* qvar = _manager->getVariable(*it);
-		if(qf->univ()) qbdd = _manager->univquantify(qvar,qbdd);
+		if(qf->isUniv()) qbdd = _manager->univquantify(qvar,qbdd);
 		else qbdd = _manager->existsquantify(qvar,qbdd);
 	}
-	_bdd = qf->sign() ? qbdd : _manager->negation(qbdd);
+	_bdd = isPos(qf->sign()) ? qbdd : _manager->negation(qbdd);
 }
 
 void FOBDDFactory::visit(const EqChainForm* ef) {

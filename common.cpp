@@ -14,7 +14,7 @@
 #include <string>
 #include <sstream>
 
-#include "commontypes.hpp"
+#include "common.hpp"
 
 using namespace std;
 
@@ -71,22 +71,22 @@ void printtabs(ostream& output, unsigned int tabs) {
 double applyAgg(const AggFunction& agg, const vector<double>& args) {
 	double d;
 	switch(agg) {
-		case AGG_CARD:
+		case AggFunction::CARD:
 			d = double(args.size());
 			break;
-		case AGG_SUM:
+		case AggFunction::SUM:
 			d = 0;
 			for(unsigned int n = 0; n < args.size(); ++n) d += args[n];
 			break;
-		case AGG_PROD:
+		case AggFunction::PROD:
 			d = 1;
 			for(unsigned int n = 0; n < args.size(); ++n) d = d * args[n];
 			break;
-		case AGG_MIN:
+		case AggFunction::MIN:
 			d = numeric_limits<double>::max();
 			for(unsigned int n = 0; n < args.size(); ++n) d = (d <= args[n] ? d : args[n]);
 			break;
-		case AGG_MAX:
+		case AggFunction::MAX:
 			d = numeric_limits<double>::min();
 			for(unsigned int n = 0; n < args.size(); ++n) d = (d >= args[n] ? d : args[n]);
 			break;
@@ -96,46 +96,70 @@ double applyAgg(const AggFunction& agg, const vector<double>& args) {
 
 CompType invertcomp(CompType comp) {
 	switch(comp) {
-		case CT_EQ: case CT_NEQ: return comp;
-		case CT_LT: return CT_GT;
-		case CT_GT: return CT_LT;
-		case CT_LEQ: return CT_GEQ;
-		case CT_GEQ: return CT_LEQ;
+		case CompType::EQ: case CompType::NEQ: return comp;
+		case CompType::LT: return CompType::GT;
+		case CompType::GT: return CompType::LT;
+		case CompType::LEQ: return CompType::GEQ;
+		case CompType::GEQ: return CompType::LEQ;
 		default:
 			assert(false);
-			return CT_EQ;
+			return CompType::EQ;
 	}
 }
 
 CompType negatecomp(CompType comp) {
 	switch(comp) {
-		case CT_EQ: return CT_NEQ;
-		case CT_NEQ: return CT_EQ;
-		case CT_LT: return CT_GEQ;
-		case CT_GT: return CT_LEQ;
-		case CT_LEQ: return CT_GT;
-		case CT_GEQ: return CT_LT;
+		case CompType::EQ: return CompType::NEQ;
+		case CompType::NEQ: return CompType::EQ;
+		case CompType::LT: return CompType::GEQ;
+		case CompType::GT: return CompType::LEQ;
+		case CompType::LEQ: return CompType::GT;
+		case CompType::GEQ: return CompType::LT;
 		default:
 			assert(false);
-			return CT_EQ;
+			return CompType::EQ;
 	}
 }
 
-ostream& operator<<(ostream& out, const AggFunction& aggtype) {
-	string AggTypeStrings[5] = { "#", "sum", "prod", "min", "max" };
-	return out << AggTypeStrings[aggtype];
+TsType reverseImplication(TsType type){
+	if(type == TsType::IMPL){
+		return TsType::RIMPL;
+	}
+	if(type == TsType::RIMPL){
+		return TsType::IMPL;
+	}
+	return type;
 }
 
-ostream& operator<<(ostream& out, const TsType& tstype) {
-	string TsTypeStrings[4] = { "<=>", "<-", "=>", "<=" };
-	return out << TsTypeStrings[tstype];
+// Negate a context
+Context swapcontext(Context ct) {
+	Context temp;
+	switch(ct) {
+		case Context::BOTH: 	temp = Context::BOTH; break;
+		case Context::POSITIVE:	temp = Context::NEGATIVE; break;
+		case Context::NEGATIVE:	temp = Context::POSITIVE; break;
+	}
+	return temp;
 }
 
-ostream& operator<<(ostream& out, const CompType& comp) {
-	string CompTypeStrings[6] = { "=", "~=", "<", ">", "=<", ">=" };
-	return out << CompTypeStrings[comp];
+bool isPos(SIGN s){
+	return s==SIGN::POS;
+}
+bool isNeg(SIGN s){
+	return s==SIGN::NEG;
 }
 
+SIGN operator not(SIGN rhs){
+	return rhs==SIGN::POS?SIGN::NEG:SIGN::POS;
+}
+
+SIGN operator~(SIGN rhs){
+	return not rhs;
+}
+
+QUANT operator not (QUANT t){
+	return t==QUANT::UNIV?QUANT::EXIST:QUANT::UNIV;
+}
 
 /*********************
 	Shared strings
@@ -179,48 +203,24 @@ string* StringPointer(const string& str) {
 
 CompType invertct(CompType ct) {
 	switch(ct) {
-		case CT_EQ: case CT_NEQ: return ct;
-		case CT_LT: return CT_GT;
-		case CT_GT: return CT_LT;
-		case CT_LEQ: return CT_GEQ;
-		case CT_GEQ: return CT_LEQ;
+		case CompType::EQ: case CompType::NEQ: return ct;
+		case CompType::LT: return CompType::GT;
+		case CompType::GT: return CompType::LT;
+		case CompType::LEQ: return CompType::GEQ;
+		case CompType::GEQ: return CompType::LEQ;
 		default:
 			assert(false);
-			return CT_EQ;
+			return CompType::EQ;
 	}
 }
 
 CompType negatect(CompType ct) {
 	switch(ct) {
-		case CT_EQ: return CT_NEQ;
-		case CT_NEQ: return CT_EQ;
-		case CT_LT: return CT_GEQ;
-		case CT_GT: return CT_LEQ;
-		case CT_LEQ: return CT_GT;
-		case CT_GEQ: return CT_LT;
-		default:
-			assert(false);
-			return CT_EQ;
+		case CompType::EQ: return CompType::NEQ;
+		case CompType::NEQ: return CompType::EQ;
+		case CompType::LT: return CompType::GEQ;
+		case CompType::GT: return CompType::LEQ;
+		case CompType::LEQ: return CompType::GT;
+		case CompType::GEQ: return CompType::LT;
 	}
-}
-
-PosContext swapcontext(PosContext ct) {
-	switch(ct) {
-		case PC_BOTH : return PC_BOTH;
-		case PC_POSITIVE : return PC_NEGATIVE;
-		case PC_NEGATIVE : return PC_POSITIVE;
-		default:
-			assert(false);
-			return PC_POSITIVE;
-	}
-}
-
-string AggTypeNames[5] = { "#", "sum", "prod", "min", "max" };
-ostream& operator<<(ostream& out, AggFunction aggtype) {
-	return out << AggTypeNames[aggtype];
-}
-
-string TsTypeNames[4] = { "<=>", "<-", "=>", "<=" };
-ostream& operator<<(ostream& out, TsType tstype) {
-	return out << TsTypeNames[tstype];
 }

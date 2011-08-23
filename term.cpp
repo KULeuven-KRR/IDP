@@ -197,7 +197,7 @@ AggTerm* AggTerm::clone(const map<Variable*,Variable*>& mvv) const {
 }
 
 Sort* AggTerm::sort() const {
-	if(_function == AGG_CARD) {
+	if(_function == AggFunction::CARD) {
 		return VocabularyUtils::natsort();
 	}
 	else {
@@ -215,12 +215,11 @@ Term* AggTerm::accept(TheoryMutatingVisitor* v) {
 
 ostream& AggTerm::put(ostream& output) const {
 	switch(_function) {
-		case AGG_CARD:	output << '#'; break;
-		case AGG_SUM:	output << "sum"; break;
-		case AGG_PROD:	output << "prod"; break;
-		case AGG_MIN:	output << "min"; break;
-		case AGG_MAX:	output << "max"; break;
-		default: assert(false);
+		case AggFunction::CARD:	output << '#'; break;
+		case AggFunction::SUM:	output << "sum"; break;
+		case AggFunction::PROD:	output << "prod"; break;
+		case AggFunction::MIN:	output << "min"; break;
+		case AggFunction::MAX:	output << "max"; break;
 	}
 	output << *subsets()[0];
 	return output;

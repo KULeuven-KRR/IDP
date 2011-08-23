@@ -297,7 +297,7 @@ void FOPropagator::run() {
 				if(_child) { cerr << " to "; _child->put(cerr,_options->longnames());	}
 			}
 			else {
-				cerr << "upward to " << ((_ct == p->sign()) ? "the ct-bound of " : "the cf-bound of ");
+				cerr << "upward to " << ((_ct == isPos(p->sign())) ? "the ct-bound of " : "the cf-bound of ");
 				p->put(cerr,_options->longnames());
 				if(_child) { cerr << " from "; _child->put(cerr,_options->longnames());	}
 			}
@@ -392,7 +392,7 @@ void FOPropagator::schedule(const Formula* p, FOPropDirection dir, bool ct, cons
 				if(c) cerr << " towards " << *c;
 			}
 			else {
-				cerr << "upward propagation to " << ((ct == p->sign()) ? "the ct-bound of " : "the cf-bound of ") << *p;
+				cerr << "upward propagation to " << ((ct == isPos(p->sign())) ? "the ct-bound of " : "the cf-bound of ") << *p;
 				if(c) cerr << ". Propagation comes from " << *c;
 			}
 			cerr << "\n";
@@ -477,7 +477,7 @@ void FOPropagator::visit(const PredForm* pf) {
 		deriveddomain = _factory->substitute(deriveddomain,mvv);
 		delete(temp);
 		deriveddomain = addToExists(deriveddomain,freevars);*/
-		updateDomain(connector,DOWN,(_ct == pf->sign()),deriveddomain,pf);
+		updateDomain(connector,DOWN,(_ct == isPos(pf->sign())),deriveddomain,pf);
 	}
 	else {
 		assert(_direction == UP);
@@ -498,7 +498,7 @@ void FOPropagator::visit(const PredForm* pf) {
 		deriveddomain = _factory->substitute(deriveddomain,mvv);
 		delete(temp);
 		deriveddomain = addToExists(deriveddomain,freevars);*/
-		updateDomain(pf,UP,(_ct == pf->sign()),deriveddomain);
+		updateDomain(pf,UP,(_ct == isPos(pf->sign())),deriveddomain);
 	}
 }
 
@@ -516,8 +516,8 @@ void FOPropagator::visit(const EquivForm* ef) {
 		const set<Variable*>& qvars = _quantvars[_child];
 		domain1 = addToExists(domain1,qvars);
 		domain2 = addToExists(domain2,qvars);
-		updateDomain(_child,DOWN,(_ct == ef->sign()),domain1);
-		updateDomain(_child,DOWN,(_ct != ef->sign()),domain2);
+		updateDomain(_child,DOWN,(_ct == isPos(ef->sign())),domain1);
+		updateDomain(_child,DOWN,(_ct != isPos(ef->sign())),domain2);
 	}
 	else {
 		assert(_direction == UP);
@@ -525,8 +525,8 @@ void FOPropagator::visit(const EquivForm* ef) {
 		FOPropDomain* childdomain = _ct ? _domains[_child]._ctdomain : _domains[_child]._cfdomain;
 		FOPropDomain* domain1 = _factory->conjunction(childdomain,tvd._ctdomain);
 		FOPropDomain* domain2 = _factory->conjunction(childdomain,tvd._cfdomain);
-		updateDomain(ef,UP,(_ct == ef->sign()),domain1,_child);
-		updateDomain(ef,UP,(_ct != ef->sign()),domain2,_child);
+		updateDomain(ef,UP,(_ct == isPos(ef->sign())),domain1,_child);
+		updateDomain(ef,UP,(_ct != isPos(ef->sign())),domain2,_child);
 	}
 }
 
@@ -534,11 +534,11 @@ void FOPropagator::visit(const BoolForm* bf) {
 	if(_direction == DOWN) {
 		FOPropDomain* bfdomain = _ct ? _domains[bf]._ctdomain : _domains[bf]._cfdomain;
 		vector<FOPropDomain*> subdomains;
-		bool longnewdomain = (_ct != (bf->conj() == bf->sign()));
+		bool longnewdomain = (_ct != (bf->conj() == isPos(bf->sign())));
 		if(longnewdomain) {
 			for(unsigned int n = 0; n < bf->subformulas().size(); ++n) {
 				const ThreeValuedDomain& subfdomain = _domains[bf->subformulas()[n]];
-				subdomains.push_back(_ct == bf->sign() ? subfdomain._cfdomain : subfdomain._ctdomain);
+				subdomains.push_back(_ct == isPos(bf->sign()) ? subfdomain._cfdomain : subfdomain._ctdomain);
 			}
 		}
 		for(unsigned int n = 0; n < bf->subformulas().size(); ++n) {
@@ -556,7 +556,7 @@ void FOPropagator::visit(const BoolForm* bf) {
 						deriveddomain = addToExists(deriveddomain,qvars);
 					}
 					else deriveddomain = _factory->exists(bfdomain,qvars);
-					updateDomain(subform,DOWN,(_ct == bf->sign()),deriveddomain);
+					updateDomain(subform,DOWN,(_ct == isPos(bf->sign())),deriveddomain);
 				}
 			}
 		}
@@ -575,7 +575,7 @@ void FOPropagator::visit(const BoolForm* bf) {
 			const ThreeValuedDomain& tvd = _domains[_child];
 			deriveddomain = _ct ? tvd._ctdomain->clone() : tvd._cfdomain->clone();
 		}
-		updateDomain(bf,UP,(_ct == bf->sign()),deriveddomain,_child);
+		updateDomain(bf,UP,(_ct == isPos(bf->sign())),deriveddomain,_child);
 	}
 }
 
@@ -584,11 +584,11 @@ void FOPropagator::visit(const QuantForm* qf) {
 		assert(_domains.find(qf) != _domains.end());
 		const ThreeValuedDomain& tvd = _domains[qf];
 		FOPropDomain* deriveddomain = _ct ? tvd._ctdomain->clone() : tvd._cfdomain->clone();
-		if(_ct != (qf->univ() == qf->sign())) {
+		if(_ct != qf->isUnivWithSign()) {
 			set<Variable*> newvars;
 			map<Variable*,Variable*> mvv;
 			FOPropDomain* conjdomain = _factory->trueDomain(qf->subf());
-			vector<CompType> comps(1,CT_EQ);
+			vector<CompType> comps(1,CompType::EQ);
 			for(set<Variable*>::const_iterator it = qf->quantvars().begin(); it != qf->quantvars().end(); ++it) {
 				Variable* newvar = new Variable((*it)->sort());
 				newvars.insert(newvar);
@@ -596,7 +596,7 @@ void FOPropagator::visit(const QuantForm* qf) {
 				vector<Term*> terms(2); 
 				terms[0] = new VarTerm((*it),TermParseInfo()); 
 				terms[1] = new VarTerm(newvar,TermParseInfo());
-				EqChainForm* ef = new EqChainForm(true,true,terms,comps,FormulaParseInfo());
+				EqChainForm* ef = new EqChainForm(SIGN::POS,true,terms,comps,FormulaParseInfo());
 				FOPropDomain* equaldomain = _factory->formuladomain(ef); ef->recursiveDelete();
 				conjdomain = addToConjunction(conjdomain,equaldomain); delete(equaldomain);
 			}
@@ -605,15 +605,15 @@ void FOPropagator::visit(const QuantForm* qf) {
 			FOPropDomain* univdomain = addToForall(disjdomain,newvars);
 			deriveddomain = addToConjunction(deriveddomain,univdomain); delete(univdomain);
 		}
-		updateDomain(qf->subf(),DOWN,(_ct == qf->sign()),deriveddomain);
+		updateDomain(qf->subf(),DOWN,(_ct == isPos(qf->sign())),deriveddomain);
 	}
 	else {
 		assert(_direction == UP);
 		const ThreeValuedDomain& tvd = _domains[qf->subf()];
 		FOPropDomain* deriveddomain = _ct ? tvd._ctdomain->clone() : tvd._cfdomain->clone();
-		if(_ct == qf->univ()) deriveddomain = addToForall(deriveddomain,qf->quantvars());
+		if(_ct == qf->isUniv()) deriveddomain = addToForall(deriveddomain,qf->quantvars());
 		else deriveddomain = addToExists(deriveddomain,qf->quantvars());
-		updateDomain(qf,UP,(_ct == qf->sign()),deriveddomain);
+		updateDomain(qf,UP,(_ct == isPos(qf->sign())),deriveddomain);
 	}
 }
 
@@ -634,7 +634,7 @@ void FOPropagatorFactory::createleafconnector(PFSymbol* symbol) {
 	if(_propagator->_options->propagateverbosity() > 1) { cerr << "  Creating a leaf connector for " << *symbol << "\n";	}
 	vector<Variable*> vars = VarUtils::makeNewVariables(symbol->sorts());
 	vector<Term*> args = TermUtils::makeNewVarTerms(vars);
-	PredForm* leafconnector = new PredForm(true,symbol,args,FormulaParseInfo());
+	PredForm* leafconnector = new PredForm(SIGN::POS,symbol,args,FormulaParseInfo());
 	_leafconnectors[symbol] = leafconnector;
 	switch(_initbounds[symbol]) {
 		case IBT_TWOVAL:
@@ -650,8 +650,6 @@ void FOPropagatorFactory::createleafconnector(PFSymbol* symbol) {
 			initFalse(leafconnector);
 			if(_propagator->_options->propagateverbosity() > 1) { cerr << "    The leaf connector is completely unknown\n";	}
 			break;
-		default:
-			assert(false);
 	}
 }
 
@@ -737,8 +735,8 @@ void FOPropagatorFactory::visit(const PredForm* pf) {
 				FOPropDomain* temp = lcd._equalities;
 				VarTerm* vt1 = new VarTerm(connectvar,TermParseInfo());
 				VarTerm* vt2 = new VarTerm(lcd._leaftoconnector[leafvar],TermParseInfo());
-				EqChainForm* ecf = new EqChainForm(true,true,vt1,FormulaParseInfo());
-				ecf->add(CT_EQ,vt2);
+				EqChainForm* ecf = new EqChainForm(SIGN::POS,true,vt1,FormulaParseInfo());
+				ecf->add(CompType::EQ,vt2);
 				FOPropDomain* eq = _propagator->_factory->formuladomain(ecf);
 				ecf->recursiveDelete();
 				lcd._equalities = _propagator->_factory->conjunction(lcd._equalities,eq);
@@ -746,7 +744,7 @@ void FOPropagatorFactory::visit(const PredForm* pf) {
 			}
 			if(leafvar->sort() != connectvar->sort()) {
 				VarTerm* vt = new VarTerm(connectvar,TermParseInfo());
-				PredForm* as = new PredForm(true,leafvar->sort()->pred(),vector<Term*>(1,vt),FormulaParseInfo());
+				PredForm* as = new PredForm(SIGN::POS,leafvar->sort()->pred(),vector<Term*>(1,vt),FormulaParseInfo());
 				FOPropDomain* asd = _propagator->_factory->formuladomain(as);
 				as->recursiveDelete();
 				FOPropDomain* temp = lcd._equalities;

@@ -17,6 +17,7 @@
 
 #include "ecnf.hpp"
 #include "ground.hpp"
+#include "vocabulary.hpp"
 #include "commontypes.hpp"
 
 //FIXME definition numbers are passed directly to the solver. In future, solver input change might render this invalid
@@ -100,7 +101,7 @@ class GroundTheory : public AbstractGroundTheory, public Policy {
 				TsBody* tsbody = translator()->tsbody(atom);
 				if(typeid(*tsbody) == typeid(PCTsBody)) {
 					PCTsBody* body = dynamic_cast<PCTsBody*>(tsbody);
-					if(body->type() == TS_IMPL || body->type() == TS_EQ) {
+					if(body->type() == TsType::IMPL || body->type() == TsType::EQ) {
 						if(body->conj()) {
 							for(unsigned int m = 0; m < body->size(); ++m) {
 								std::vector<int> cl(2,-atom);
@@ -116,7 +117,7 @@ class GroundTheory : public AbstractGroundTheory, public Policy {
 							add(cl,true);
 						}
 					}
-					if(body->type() == TS_RIMPL || body->type() == TS_EQ) {
+					if(body->type() == TsType::RIMPL || body->type() == TsType::EQ) {
 						if(body->conj()) {
 							std::vector<int> cl(body->size()+1,atom);
 							for(unsigned int m = 0; m < body->size(); ++m){
@@ -132,14 +133,14 @@ class GroundTheory : public AbstractGroundTheory, public Policy {
 							}
 						}
 					}
-					if(body->type() == TS_RULE) {
+					if(body->type() == TsType::RULE) {
 						assert(defnr != ID_FOR_UNDEFINED);
 						Policy::polAdd(defnr,new PCGroundRule(atom,body,true)); //TODO true (recursive) might not always be the case?
 					}
 				}
 				else if(typeid(*tsbody) == typeid(AggTsBody)) {
 					AggTsBody* body = dynamic_cast<AggTsBody*>(tsbody);
-					if(body->type() == TS_RULE) {
+					if(body->type() == TsType::RULE) {
 						assert(defnr != ID_FOR_UNDEFINED);
 						Policy::polAdd(defnr,new AggGroundRule(atom,body,true)); //TODO true (recursive) might not always be the case?
 					}
@@ -150,7 +151,7 @@ class GroundTheory : public AbstractGroundTheory, public Policy {
 				else {
 					assert(typeid(*tsbody) == typeid(CPTsBody));
 					CPTsBody* body = dynamic_cast<CPTsBody*>(tsbody);
-					if(body->type() == TS_RULE) {
+					if(body->type() == TsType::RULE) {
 						assert(false);
 						//TODO Does this ever happen?
 					}
@@ -170,7 +171,7 @@ class GroundTheory : public AbstractGroundTheory, public Policy {
 				if(not termtranslator()->function(varterm->_varid)) {
 					CPTsBody* cprelation = termtranslator()->cprelation(varterm->_varid);
 					CPTerm* left = foldCPTerm(cprelation->left());
-					if((typeid(*left) == typeid(CPSumTerm) || typeid(*left) == typeid(CPWSumTerm)) && cprelation->comp() == CT_EQ) {
+					if((typeid(*left) == typeid(CPSumTerm) || typeid(*left) == typeid(CPWSumTerm)) && cprelation->comp() == CompType::EQ) {
 						assert(cprelation->right()._isvarid && cprelation->right()._varid == varterm->_varid);
 						return left;
 					}
@@ -183,7 +184,7 @@ class GroundTheory : public AbstractGroundTheory, public Policy {
 					if(not termtranslator()->function(*it)) {
 						CPTsBody* cprelation = termtranslator()->cprelation(*it);
 						CPTerm* left = foldCPTerm(cprelation->left());
-						if(typeid(*left) == typeid(CPSumTerm) && cprelation->comp() == CT_EQ) {
+						if(typeid(*left) == typeid(CPSumTerm) && cprelation->comp() == CompType::EQ) {
 							CPSumTerm* subterm = static_cast<CPSumTerm*>(left);
 							assert(cprelation->right()._isvarid && cprelation->right()._varid == *it);
 							newvarids.insert(newvarids.end(),subterm->_varids.begin(),subterm->_varids.end());
@@ -242,7 +243,7 @@ public:
 				notifyDefined(rule->head());
 			}else{
 				AggGroundRule* rule = dynamic_cast<AggGroundRule*>((*i).second);
-				add(rule->setnr(),def->id(),(rule->aggtype() != AGG_CARD));
+				add(rule->setnr(),def->id(),(rule->aggtype() != AggFunction::CARD));
 				notifyDefined(rule->head());
 			}
 		}
@@ -289,7 +290,7 @@ public:
 	}
 
 	void add(int head, AggTsBody* body) {
-		add(body->setnr(),ID_FOR_UNDEFINED,(body->aggtype() != AGG_CARD));
+		add(body->setnr(),ID_FOR_UNDEFINED,(body->aggtype() != AggFunction::CARD));
 		Policy::polAdd(head, body);
 	}
 
@@ -359,10 +360,10 @@ public:
 				int setnr = translator()->translateSet(sets[s],lw,tw);
 				int tseitin;
 				if(f->partial() || !(st->finite()) || weak[s]) {
-					tseitin = translator()->translate(1,'>',false,AGG_CARD,setnr,TS_IMPL);
+					tseitin = translator()->translate(1,'>',false,AggFunction::CARD,setnr,TsType::IMPL);
 				}
 				else {
-					tseitin = translator()->translate(1,'=',true,AGG_CARD,setnr,TS_IMPL);
+					tseitin = translator()->translate(1,'=',true,AggFunction::CARD,setnr,TsType::IMPL);
 				}
 				addUnitClause(tseitin);
 			}

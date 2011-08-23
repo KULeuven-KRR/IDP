@@ -11,12 +11,21 @@
 
 using namespace std;
 
-InstanceChecker* CheckerFactory::create(PredInter* inter, bool ctpf, bool c) {
-	const PredTable* pt = ctpf ? (c ? inter->ct() : inter->pf()) : (c ? inter->cf() : inter->pt());
-	if(pt->approxempty()) return new FalseInstanceChecker();
-	else return new TableInstanceChecker(pt);
+InstanceChecker* CheckerFactory::create(PredInter* inter, TABLE_VALUE type) {
+	const PredTable* pt = NULL;
+	switch(type){
+		case POSS_FALSE: 	pt = inter->pf(); break;
+		case POSS_TRUE: 	pt = inter->pt(); break;
+		case CERTAIN_FALSE: pt = inter->cf(); break;
+		case CERTAIN_TRUE:	pt = inter->ct(); break;
+	}
+	if(pt->approxempty()){
+		return new FalseInstanceChecker();
+	}else{
+		return new TableInstanceChecker(pt);
+	}
 }
 
-inline bool TableInstanceChecker::run(const ElementTuple& vd) const {
+inline bool TableInstanceChecker::isInInterpretation(const ElementTuple& vd) const {
 	return _table->contains(vd);
 }

@@ -164,7 +164,7 @@ public:
 
 	void visit(const AggGroundRule* a) {
 		assert(isTheoryOpen());
-		printAggregate(a->aggtype(),TS_RULE,_currentdefnr,a->lower(),a->head(),a->setnr(),a->bound());
+		printAggregate(a->aggtype(),TsType::RULE,_currentdefnr,a->lower(),a->head(),a->setnr(),a->bound());
 	}
 
 	void visit(const GroundAggregate* b) {
@@ -243,18 +243,18 @@ private:
 
 	void printAggregate(AggFunction aggtype, TsType arrow, unsigned int defnr, bool lower, int head, unsigned int setnr, double bound) {
 		switch(aggtype) {
-			case AGG_CARD: 	output() << "Card "; break;
-			case AGG_SUM: 	output() << "Sum "; break;
-			case AGG_PROD: 	output() << "Prod "; break;
-			case AGG_MIN: 	output() << "Min "; break;
-			case AGG_MAX: 	output() << "Max "; break;
+			case AggFunction::CARD: 	output() << "Card "; break;
+			case AggFunction::SUM: 	output() << "Sum "; break;
+			case AggFunction::PROD: 	output() << "Prod "; break;
+			case AggFunction::MIN: 	output() << "Min "; break;
+			case AggFunction::MAX: 	output() << "Max "; break;
 		}
 		#warning "Replacing implication by equivalence in ecnfprinter, should change in future.";
 		switch(arrow) {
-			case TS_EQ: case TS_IMPL: case TS_RIMPL:  // (Reverse) implication is not supported by solver (yet)
+			case TsType::EQ: case TsType::IMPL: case TsType::RIMPL:  // (Reverse) implication is not supported by solver (yet)
 				output() << "C ";
 				break;
-			case TS_RULE:
+			case TsType::RULE:
 				assert(isDefOpen(defnr));
 				output() << "<- " << defnr << ' ';
 				break;
@@ -289,12 +289,12 @@ private:
 
 	std::string toString(CompType comp){
 		switch (comp) {
-			case CT_EQ: return "=";
-			case CT_NEQ: return "~=";
-			case CT_LEQ: return "=<";
-			case CT_GEQ: return ">=";
-			case CT_GT: return ">";
-			case CT_LT: return "<";
+			case CompType::EQ: return "=";
+			case CompType::NEQ: return "~=";
+			case CompType::LEQ: return "=<";
+			case CompType::GEQ: return ">=";
+			case CompType::GT: return ">";
+			case CompType::LT: return "<";
 		}
 		assert(false);
 		return "";

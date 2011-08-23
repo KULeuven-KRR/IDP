@@ -8,7 +8,7 @@
 #define LUATRACEMONITOR_HPP_
 
 #include "monitors/tracemonitor.hpp"
-#include "external/MonitorInterface.hpp"
+#include "external/SearchMonitor.hpp"
 #include "lua.hpp"
 
 class LuaTraceMonitor: public TraceMonitor{
@@ -17,7 +17,7 @@ private:
 	lua_State*			_state;
 	std::string*		_registryindex;
 	static int			_tracenr;
-	MinisatID::Monitor*	solvermonitor_;
+	MinisatID::SearchMonitor*	solvermonitor_;
 
 public:
 	LuaTraceMonitor(lua_State* L) : _translator(NULL), _state(L) {
@@ -28,7 +28,7 @@ public:
 
 		cb::Callback1<void, int> callbackback(this, &LuaTraceMonitor::backtrack);
 		cb::Callback2<void, MinisatID::Literal, int> callbackprop(this, &LuaTraceMonitor::propagate);
-		MinisatID::Monitor* solvermonitor_ = new MinisatID::Monitor();
+		MinisatID::SearchMonitor* solvermonitor_ = new MinisatID::SearchMonitor();
 		solvermonitor_->setBacktrackCB(callbackback);
 		solvermonitor_->setPropagateCB(callbackprop);
 	}

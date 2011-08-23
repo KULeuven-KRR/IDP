@@ -116,17 +116,13 @@ typedef std::list<isp>				lisp;
 %token PARTIAL
 %token EXTENDS
 %token EXTERN
-%token MINAGG
-%token MAXAGG
+%token P_MINAGG P_MAXAGG P_CARD P_PROD P_SOM
 %token FALSE
 %token USING
-%token CARD
 %token TYPE
-%token PROD
 %token TRUE
 %token ABS
 %token ISA
-%token SOM 
 %token LFD
 %token GFD
 
@@ -142,13 +138,13 @@ typedef std::list<isp>				lisp;
 /** Aliases **/
 %token <operator> MAPS			"->"
 %token <operator> EQUIV			"<=>"
-%token <operator> IMPL			"=>"
-%token <operator> RIMPL			"<="
+%token <operator> P_IMPL		"=>"
+%token <operator> P_RIMPL		"<="
 %token <operator> DEFIMP		"<-"
-%token <operator> NEQ			"~="
-%token <operator> EQ			"=="
-%token <operator> LEQ			"=<"
-%token <operator> GEQ			">="
+%token <operator> P_NEQ			"~="
+%token <operator> P_EQ			"=="
+%token <operator> P_LEQ			"=<"
+%token <operator> P_GEQ			">="
 %token <operator> RANGE			".."
 %token <operator> NSPACE		"::"
 
@@ -477,17 +473,17 @@ fd_rules	: fd_rules rule	'.'			{ $$ = $1; insert.addRule($$,$2);					}
 
 formula		: '!' variables ':' formula					{ $$ = insert.univform(*$2,$4,@1); delete($2);		}
             | '?' variables ':' formula					{ $$ = insert.existform(*$2,$4,@1); delete($2);	}
-			| '?' INTEGER  variables ':' formula		{ $$ = insert.bexform(CT_EQ,$2,*$3,$5,@1);
+			| '?' INTEGER  variables ':' formula		{ $$ = insert.bexform(CompType::EQ,$2,*$3,$5,@1);
 														  delete($3);										}
-			| '?' '=' INTEGER variables ':' formula		{ $$ = insert.bexform(CT_EQ,$3,*$4,$6,@1);
+			| '?' '=' INTEGER variables ':' formula		{ $$ = insert.bexform(CompType::EQ,$3,*$4,$6,@1);
 														  delete($4);										}
-			| '?' '<' INTEGER variables ':' formula		{ $$ = insert.bexform(CT_LT,$3,*$4,$6,@1);
+			| '?' '<' INTEGER variables ':' formula		{ $$ = insert.bexform(CompType::LT,$3,*$4,$6,@1);
 														  delete($4);										}
-			| '?' '>' INTEGER variables ':' formula		{ $$ = insert.bexform(CT_GT,$3,*$4,$6,@1);
+			| '?' '>' INTEGER variables ':' formula		{ $$ = insert.bexform(CompType::GT,$3,*$4,$6,@1);
 														  delete($4);										}
-			| '?' "=<" INTEGER variables ':' formula	{ $$ = insert.bexform(CT_LEQ,$3,*$4,$6,@1);
+			| '?' "=<" INTEGER variables ':' formula	{ $$ = insert.bexform(CompType::LEQ,$3,*$4,$6,@1);
 														  delete($4);										}
-			| '?' ">=" INTEGER variables ':' formula	{ $$ = insert.bexform(CT_GEQ,$3,*$4,$6,@1);
+			| '?' ">=" INTEGER variables ':' formula	{ $$ = insert.bexform(CompType::GEQ,$3,*$4,$6,@1);
 														  delete($4);										}
 			| '~' formula								{ $$ = $2; insert.negate($$);						}
             | formula '&' formula						{ $$ = insert.conjform($1,$3,@1);					}
@@ -507,18 +503,18 @@ predicate   : intern_pointer							{ $$ = insert.predform($1,@1);					}
             | intern_pointer '(' term_tuple ')'			{ $$ = insert.predform($1,*$3,@1); delete($3); }
             ;
 
-eq_chain	: eq_chain '='  term	{ $$ = insert.eqchain(CT_EQ,$1,$3,@1);	}
-			| eq_chain "~=" term	{ $$ = insert.eqchain(CT_NEQ,$1,$3,@1);	}
-			| eq_chain '<'  term	{ $$ = insert.eqchain(CT_LT,$1,$3,@1);	}	
-			| eq_chain '>'  term    { $$ = insert.eqchain(CT_GT,$1,$3,@1);	}
-			| eq_chain "=<" term	{ $$ = insert.eqchain(CT_LEQ,$1,$3,@1);	}		
-			| eq_chain ">=" term	{ $$ = insert.eqchain(CT_GEQ,$1,$3,@1);	}		
-			| term '='  term		{ $$ = insert.eqchain(CT_EQ,$1,$3,@1);	}
-            | term "~=" term		{ $$ = insert.eqchain(CT_NEQ,$1,$3,@1);	}
-            | term '<'  term		{ $$ = insert.eqchain(CT_LT,$1,$3,@1);	}
-            | term '>'  term		{ $$ = insert.eqchain(CT_GT,$1,$3,@1);	}
-            | term "=<" term		{ $$ = insert.eqchain(CT_LEQ,$1,$3,@1);	}
-            | term ">=" term		{ $$ = insert.eqchain(CT_GEQ,$1,$3,@1);	}
+eq_chain	: eq_chain '='  term	{ $$ = insert.eqchain(CompType::EQ,$1,$3,@1);	}
+			| eq_chain "~=" term	{ $$ = insert.eqchain(CompType::NEQ,$1,$3,@1);	}
+			| eq_chain '<'  term	{ $$ = insert.eqchain(CompType::LT,$1,$3,@1);	}	
+			| eq_chain '>'  term    { $$ = insert.eqchain(CompType::GT,$1,$3,@1);	}
+			| eq_chain "=<" term	{ $$ = insert.eqchain(CompType::LEQ,$1,$3,@1);	}		
+			| eq_chain ">=" term	{ $$ = insert.eqchain(CompType::GEQ,$1,$3,@1);	}		
+			| term '='  term		{ $$ = insert.eqchain(CompType::EQ,$1,$3,@1);	}
+            | term "~=" term		{ $$ = insert.eqchain(CompType::NEQ,$1,$3,@1);	}
+            | term '<'  term		{ $$ = insert.eqchain(CompType::LT,$1,$3,@1);	}
+            | term '>'  term		{ $$ = insert.eqchain(CompType::GT,$1,$3,@1);	}
+            | term "=<" term		{ $$ = insert.eqchain(CompType::LEQ,$1,$3,@1);	}
+            | term ">=" term		{ $$ = insert.eqchain(CompType::GEQ,$1,$3,@1);	}
 			;
 
 variables   : variables variable	{ $$ = $1; $$->insert($2);						}		
@@ -564,11 +560,11 @@ domterm		: INTEGER									{ $$ = insert.domterm($1,@1);		}
 			| '@' identifier							{ $$ = insert.domterm($2,0,@1);	}
 			;
 
-aggterm		: CARD formulaset	{ $$ = insert.aggregate(AGG_CARD,$2,@1);	}
-			| SOM termset		{ $$ = insert.aggregate(AGG_SUM,$2,@1);		}
-			| PROD termset		{ $$ = insert.aggregate(AGG_PROD,$2,@1);	}
-			| MINAGG termset	{ $$ = insert.aggregate(AGG_MIN,$2,@1);		}
-			| MAXAGG termset	{ $$ = insert.aggregate(AGG_MAX,$2,@1);		}
+aggterm		: P_CARD formulaset	{ $$ = insert.aggregate(AggFunction::CARD,$2,@1);	}
+			| P_SOM termset		{ $$ = insert.aggregate(AggFunction::SUM,$2,@1);		}
+			| P_PROD termset		{ $$ = insert.aggregate(AggFunction::PROD,$2,@1);	}
+			| P_MINAGG termset	{ $$ = insert.aggregate(AggFunction::MIN,$2,@1);		}
+			| P_MAXAGG termset	{ $$ = insert.aggregate(AggFunction::MAX,$2,@1);		}
 			;
 
 formulaset		: '{' variables ':' formula '}'				{ $$ = insert.set(*$2,$4,@1); delete($2);	}

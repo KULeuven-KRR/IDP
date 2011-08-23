@@ -41,11 +41,54 @@ CompType invertct(CompType ct);
 CompType invertcomp(CompType);	//!< Invert a comparison operator
 CompType negatecomp(CompType);	//!< Negate a comparison operator
 
-std::ostream& operator<<(std::ostream&, const AggFunction&);	//!< Put an aggregate type on the given output stream
-std::ostream& operator<<(std::ostream&, const TsType&);		//!< Put a tseitin type on the given output stream
-std::ostream& operator<<(std::ostream&, const CompType&);	//!< Put a comparator type on the given output stream
+TsType reverseImplication(TsType type);
 
-PosContext swapcontext(PosContext);	//!< Negate a context
+// Negate a context
+Context swapcontext(Context ct);
+
+bool isPos(SIGN s);
+bool isNeg(SIGN s);
+
+SIGN operator not(SIGN rhs);
+
+SIGN operator~(SIGN rhs);
+
+QUANT operator not (QUANT t);
+
+template<class Stream>
+Stream& operator<<(Stream& out, AggFunction aggtype) {
+	switch(aggtype) {
+		case AggFunction::CARD: out << "#"; break;
+		case AggFunction::SUM:	out << "sum"; break;
+		case AggFunction::PROD:	out << "prod"; break;
+		case AggFunction::MIN:	out << "min"; break;
+		case AggFunction::MAX:	out << "max"; break;
+	}
+	return out;
+}
+template<class Stream>
+Stream& operator<<(Stream& out, TsType tstype) {
+	switch(tstype) {
+		case TsType::EQ: out << "<=>"; break;
+		case TsType::IMPL:	out << "=>"; break;
+		case TsType::RULE:	out << "<-"; break;
+		case TsType::RIMPL:	out << "<="; break;
+	}
+	return out;
+}
+
+template<class Stream>
+Stream& operator<<(Stream& output, CompType type){
+	switch(type) {
+		case CompType::EQ: output << " = "; break;
+		case CompType::NEQ: output << " ~= "; break;
+		case CompType::LT: output << " < "; break;
+		case CompType::GT: output << " > "; break;
+		case CompType::LEQ: output << " =< "; break;
+		case CompType::GEQ: output << " >= "; break;
+	}
+	return output;
+}
 
 std::string* StringPointer(const char* str);			//!< Returns a shared pointer to the given string
 std::string* StringPointer(const std::string& str);	//!< Returns a shared pointer to the given string

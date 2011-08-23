@@ -8,16 +8,16 @@
 #define PROPAGATEMONITOR_HPP_
 
 #include "monitors/tracemonitor.hpp"
-#include "external/MonitorInterface.hpp"
+#include "external/SearchMonitor.hpp"
 
 class PropagateMonitor : public TraceMonitor {
 	private:
 		std::vector<MinisatID::Literal>	_partialmodel;
-		MinisatID::Monitor*				_solvermonitor;
+		MinisatID::SearchMonitor*		_solvermonitor;
 	public:
 		PropagateMonitor() {
 			cb::Callback2<void, MinisatID::Literal, int> callbackprop(this, &PropagateMonitor::propagate);
-			MinisatID::Monitor* solvermonitor_ = new MinisatID::Monitor();
+			MinisatID::SearchMonitor* solvermonitor_ = new MinisatID::SearchMonitor();
 			solvermonitor_->setPropagateCB(callbackprop);
 		}
 		~PropagateMonitor() { }

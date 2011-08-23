@@ -57,6 +57,11 @@ gidl_SOURCES = \
 		groundtheories/GroundPolicy.hpp\
 		groundtheories/SolverPolicy.hpp\
 		groundtheories/AbstractGroundTheory.hpp\
+		grounders/LazyQuantGrounder.hpp grounders/LazyQuantGrounder.cpp\
+		grounders/DefinitionGrounders.hpp grounders/DefinitionGrounders.cpp\
+		grounders/FormulaGrounders.hpp grounders/FormulaGrounders.cpp\
+		grounders/SetGrounders.hpp grounders/SetGrounders.cpp\
+		grounders/TermGrounders.hpp grounders/TermGrounders.cpp\
 		commands/allcommands.hpp\
 		commands/optimization.hpp\
 		commands/commandinterface.hpp\

@@ -286,9 +286,9 @@ void SortDeriver::run(Rule* r) {
 				Variable* nv = new Variable(*jt);
 				VarTerm* nvt1 = new VarTerm(nv,TermParseInfo());
 				VarTerm* nvt2 = new VarTerm(nv,TermParseInfo());
-				EqChainForm* ecf = new EqChainForm(true,true,nvt1,FormulaParseInfo());
-				ecf->add(CT_EQ,r->head()->subterms()[n]);
-				BoolForm* bf = new BoolForm(true,true,r->body(),ecf,FormulaParseInfo());
+				EqChainForm* ecf = new EqChainForm(SIGN::POS,true,nvt1,FormulaParseInfo());
+				ecf->add(CompType::EQ,r->head()->subterms()[n]);
+				BoolForm* bf = new BoolForm(SIGN::POS,true,r->body(),ecf,FormulaParseInfo());
 				r->body(bf);
 				r->head()->arg(n,nvt2);
 				r->addvar(nv);
@@ -1098,7 +1098,7 @@ void Insert::closequery(Query* q) {
 	_curr_vars.clear();
 	if(q) {
 		std::set<Variable*> sv(q->variables().begin(),q->variables().end());
-		QuantForm* qf = new QuantForm(true,true,sv,q->query(),FormulaParseInfo());
+		QuantForm* qf = new QuantForm(SIGN::POS,QUANT::UNIV,sv,q->query(),FormulaParseInfo());
 		SortDeriver sd(qf,_currvocabulary); 
 		SortChecker sc(qf,_currvocabulary);
 		delete(qf);
@@ -1431,7 +1431,7 @@ void Insert::sentence(Formula* f) {
 	if(f) {
 		// 1. Quantify the free variables universally
 		std::set<Variable*> vv = freevars(f->pi());
-		if(!vv.empty()) f =  new QuantForm(true,true,vv,f,f->pi());
+		if(!vv.empty()) f =  new QuantForm(SIGN::POS,QUANT::UNIV,vv,f,f->pi());
 		// 2. Sort derivation & checking
 		SortDeriver sd(f,_currvocabulary); 
 		SortChecker sc(f,_currvocabulary);
@@ -1472,7 +1472,7 @@ Rule* Insert::rule(const std::set<Variable*>& qv,Formula* head, Formula* body,YY
 			else bv.insert(*it);
 		}
 		// Create a new rule
-		if(!(bv.empty())) body = new QuantForm(true,false,bv,body,FormulaParseInfo((body->pi())));
+		if(!(bv.empty())) body = new QuantForm(SIGN::POS,QUANT::EXIST,bv,body,FormulaParseInfo((body->pi())));
 		assert(typeid(*head) == typeid(PredForm));
 		PredForm* pfhead = dynamic_cast<PredForm*>(head);
 		Rule* r = new Rule(hv,pfhead,body,pi);
@@ -1507,14 +1507,15 @@ Rule* Insert::rule(Formula* head,YYLTYPE l) {
 
 Formula* Insert::trueform(YYLTYPE l) const {
 	vector<Formula*> vf(0);
-	FormulaParseInfo pi = formparseinfo(new BoolForm(true,true,vf,FormulaParseInfo()),l);
-	return new BoolForm(true,true,vf,pi);
+	// FIXME implement deep clone of formula to prevent having double calls here (the first one just saves an original copy to refer to later)
+	FormulaParseInfo pi = formparseinfo(new BoolForm(SIGN::POS,true,vf,FormulaParseInfo()),l);
+	return new BoolForm(SIGN::POS,true,vf,pi);
 }
 
 Formula* Insert::falseform(YYLTYPE l) const {
 	vector<Formula*> vf(0);
-	FormulaParseInfo pi = formparseinfo(new BoolForm(true,false,vf,FormulaParseInfo()),l);
-	return new BoolForm(true,false,vf,pi);
+	FormulaParseInfo pi = formparseinfo(new BoolForm(SIGN::POS,false,vf,FormulaParseInfo()),l);
+	return new BoolForm(SIGN::POS,false,vf,pi);
 }
 
 Formula* Insert::predform(NSPair* nst, const vector<Term*>& vt, YYLTYPE l) const {
@@ -1537,9 +1538,9 @@ Formula* Insert::predform(NSPair* nst, const vector<Term*>& vt, YYLTYPE l) const
 					if((*it)->pi().original()) vtpi.push_back((*it)->pi().original()->clone());
 					else vtpi.push_back((*it)->clone());
 				}
-				PredForm* pipf = new PredForm(true,p,vtpi,FormulaParseInfo());
+				PredForm* pipf = new PredForm(SIGN::POS,p,vtpi,FormulaParseInfo());
 				FormulaParseInfo pi = formparseinfo(pipf,l);
-				pf = new PredForm(true,p,vt,pi);
+				pf = new PredForm(SIGN::POS,p,vt,pi);
 			}
 		}
 		else Error::prednotintheovoc(p->name(),_currtheory->name(),nst->_pi);
@@ -1581,8 +1582,8 @@ Formula* Insert::funcgraphform(NSPair* nst, const vector<Term*>& vt, Term* t, YY
 					if((*it)->pi().original()) vtpi.push_back((*it)->pi().original()->clone());
 					else vtpi.push_back((*it)->clone());
 				}
-				FormulaParseInfo pi = formparseinfo(new PredForm(true,f,vtpi,FormulaParseInfo()),l);
-				pf = new PredForm(true,f,vt2,pi);	
+				FormulaParseInfo pi = formparseinfo(new PredForm(SIGN::POS,f,vtpi,FormulaParseInfo()),l);
+				pf = new PredForm(SIGN::POS,f,vt2,pi);
 			}
 		}
 		else Error::funcnotintheovoc(f->name(),_currtheory->name(),nst->_pi);
@@ -1608,8 +1609,8 @@ Formula* Insert::equivform(Formula* lf, Formula* rf, YYLTYPE l) const {
 	if(lf && rf) {
 		Formula* lfpi = lf->pi().original() ? lf->pi().original()->clone() : lf->clone();
 		Formula* rfpi = rf->pi().original() ? rf->pi().original()->clone() : rf->clone();
-		FormulaParseInfo pi = formparseinfo(new EquivForm(true,lfpi,rfpi,FormulaParseInfo()),l);
-		return new EquivForm(true,lf,rf,pi);
+		FormulaParseInfo pi = formparseinfo(new EquivForm(SIGN::POS,lfpi,rfpi,FormulaParseInfo()),l);
+		return new EquivForm(SIGN::POS,lf,rf,pi);
 	}
 	else {
 		if(lf) delete(lf);
@@ -1625,8 +1626,8 @@ Formula* Insert::boolform(bool conj, Formula* lf, Formula* rf, YYLTYPE l) const 
 		vf[0] = lf; vf[1] = rf;
 		pivf[0] = lf->pi().original() ? lf->pi().original()->clone() : lf->clone();
 		pivf[1] = rf->pi().original() ? rf->pi().original()->clone() : rf->clone();
-		FormulaParseInfo pi = formparseinfo(new BoolForm(true,conj,pivf,FormulaParseInfo()),l);
-		return new BoolForm(true,conj,vf,pi);
+		FormulaParseInfo pi = formparseinfo(new BoolForm(SIGN::POS,conj,pivf,FormulaParseInfo()),l);
+		return new BoolForm(SIGN::POS,conj,vf,pi);
 	}
 	else {
 		if(lf) delete(lf);
@@ -1664,8 +1665,9 @@ Formula* Insert::quantform(bool univ, const std::set<Variable*>& vv, Formula* f,
 			mvv[*it] = v;
 		}
 		Formula* pif = f->pi().original() ? f->pi().original()->clone(mvv) : f->clone(mvv);
-		FormulaParseInfo pi = formparseinfo(new QuantForm(true,univ,pivv,pif,FormulaParseInfo()),l);
-		return new QuantForm(true,univ,vv,f,pi);
+		QUANT quant = univ?QUANT::UNIV:QUANT::EXIST;
+		FormulaParseInfo pi = formparseinfo(new QuantForm(SIGN::POS,quant,pivv,pif,FormulaParseInfo()),l);
+		return new QuantForm(SIGN::POS,quant,vv,f,pi);
 	}
 	else {
 		for(std::set<Variable*>::const_iterator it = vv.begin(); it != vv.end(); ++it) delete(*it);
@@ -1684,12 +1686,12 @@ Formula* Insert::existform(const std::set<Variable*>& vv, Formula* f, YYLTYPE l)
 Formula* Insert::bexform(CompType c, int bound, const std::set<Variable*>& vv, Formula* f, YYLTYPE l) {
 	if(f) {
 		SetExpr* se = set(vv,f,l);
-		AggTerm* a = dynamic_cast<AggTerm*>(aggregate(AGG_CARD,se,l));
+		AggTerm* a = dynamic_cast<AggTerm*>(aggregate(AggFunction::CARD,se,l));
 		Term* b = domterm(bound,l);
 		AggTerm* pia = a->pi().original() ? dynamic_cast<AggTerm*>(a->pi().original()->clone()) : a->clone();
 		Term* pib = b->pi().original() ? b->pi().original()->clone() : b->clone();
-		FormulaParseInfo pi = formparseinfo(new AggForm(true,pib,c,pia,FormulaParseInfo()),l);
-		return new AggForm(true,b,c,a,pi);
+		FormulaParseInfo pi = formparseinfo(new AggForm(SIGN::POS,pib,c,pia,FormulaParseInfo()),l);
+		return new AggForm(SIGN::POS,b,c,a,pi);
 	}
 	else return 0;
 }
@@ -1718,10 +1720,10 @@ Formula* Insert::eqchain(CompType c, Term* left, Term* right, YYLTYPE l) const {
 	if(left && right) {
 		Term* leftpi = left->pi().original() ? left->pi().original()->clone() : left->clone();
 		Term* rightpi = right->pi().original() ? right->pi().original()->clone() : right->clone();
-		EqChainForm* ecfpi = new EqChainForm(true,true,leftpi,FormulaParseInfo());
+		EqChainForm* ecfpi = new EqChainForm(SIGN::POS,true,leftpi,FormulaParseInfo());
 		ecfpi->add(c,rightpi);
 		FormulaParseInfo fpi = formparseinfo(ecfpi,l);
-		EqChainForm* ecf = new EqChainForm(true,true,left,fpi);
+		EqChainForm* ecf = new EqChainForm(SIGN::POS,true,left,fpi);
 		ecf->add(c,right);
 		return ecf;
 	}
@@ -2359,8 +2361,6 @@ void Insert::threepredinter(NSPair* nst, const string& utf, PredTable* t) {
 					}
 					case UTF_ERROR:
 						break;
-					default:
-						assert(false);
 				}
 			}
 			else Error::prednotinstructvoc(nst->to_string(),_currstructure->name(),pi);
@@ -2403,8 +2403,6 @@ void Insert::threefuncinter(NSPair* nst, const string& utf, PredTable* t) {
 				}
 				case UTF_ERROR:
 					break;
-				default:
-					assert(false);
 			}
 		}
 		else Error::funcnotinstructvoc(nst->to_string(),_currstructure->name(),pi);
@@ -2499,8 +2497,6 @@ void Insert::predatom(NSPair* nst, const vector<ElRange>& args, bool t) const {
 							st->add(DomainElementFactory::instance()->create(StringPointer(string(1,c))));
 						}
 						break;
-					default:
-						assert(false);
 				}
 			}
 			else {
@@ -2516,8 +2512,6 @@ void Insert::predatom(NSPair* nst, const vector<ElRange>& args, bool t) const {
 						case ERE_CHAR:
 							tuple[n] = DomainElementFactory::instance()->create(StringPointer(string(1,args[n]._value._charrange->first)));
 							break;
-						default:
-							assert(false);
 					}
 				}
 				PredInter* inter = _currstructure->inter(p);
@@ -2525,21 +2519,19 @@ void Insert::predatom(NSPair* nst, const vector<ElRange>& args, bool t) const {
 				else inter->makeFalse(tuple);
 				while(true) {
 					unsigned int n = 0;
-					for(; n < args.size(); ++n) {
-						bool end = false;
+					bool end = false;
+					for(; not end && n < args.size(); ++n) {
 						switch(args[n]._type) {
 							case ERE_EL:
 								break;
-							case ERE_INT:
-							{
+							case ERE_INT: {
 								int current = tuple[n]->value()._int;
 								if(current == args[n]._value._intrange->second) { current = args[n]._value._intrange->first; }
 								else { ++current; end = true; }
 								tuple[n] = DomainElementFactory::instance()->create(current);
 								break;
 							}
-							case ERE_CHAR:
-							{
+							case ERE_CHAR: {
 								char current = tuple[n]->value()._string->operator[](0);
 								if(current == args[n]._value._charrange->second) { 
 									current = args[n]._value._charrange->first; }
@@ -2547,10 +2539,7 @@ void Insert::predatom(NSPair* nst, const vector<ElRange>& args, bool t) const {
 								tuple[n] = DomainElementFactory::instance()->create(StringPointer(string(1,current)));
 								break;
 							}
-							default:
-								assert(false);
 						}
-						if(end) break;
 					}
 					if(n < args.size()) {
 						if(t) inter->makeTrue(tuple);

@@ -69,6 +69,7 @@ struct NSPair {
 	std::string to_string();
 };
 
+// TODO no idea of meaning
 enum ElRangeEnum { ERE_EL, ERE_INT, ERE_CHAR };
 
 /**

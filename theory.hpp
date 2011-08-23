@@ -9,7 +9,7 @@
 
 #include <set>
 #include <vector>
-#include "commontypes.hpp"
+#include "common.hpp"
 #include "parseinfo.hpp"
 
 /*****************************************************************************
@@ -66,7 +66,7 @@ std::ostream& operator<<(std::ostream&, const TheoryComponent&);
 class Formula : public TheoryComponent {
 
 	private:
-		bool					_sign;			//!< true iff the formula does not start with a negation
+		SIGN					_sign;			//!< the sign of the formula: NEG is that it is negated
 		std::set<Variable*>		_freevars;		//!< the free variables of the formula
 		std::set<Variable*>		_quantvars;		//!< the quantified variables of the formula
 		std::vector<Term*>		_subterms;		//!< the direct subterms of the formula
@@ -78,14 +78,14 @@ class Formula : public TheoryComponent {
 	public:
 
 		// Constructor
-		Formula(bool sign) : _sign(sign) { }
-		Formula(bool sign, const FormulaParseInfo& pi): _sign(sign), _pi(pi)  { }
+		Formula(SIGN sign) : _sign(sign) { }
+		Formula(SIGN sign, const FormulaParseInfo& pi): _sign(sign), _pi(pi)  { }
 
 		// Virtual constructors
 		virtual	Formula*	clone()										const = 0;	
 			//!< copy the formula while keeping the free variables
 		virtual	Formula*	clone(const std::map<Variable*,Variable*>&)	const = 0;	
-			//!< copy the formulas, and replace the free variables as inidicated by the map
+			//!< copy the formulas, and replace the free variables as indicated by the map
 
 		// Destructor
 				void recursiveDelete();	//!< delete the formula and all its children (subformulas, subterms, etc)
@@ -106,7 +106,7 @@ class Formula : public TheoryComponent {
 		void	quantvars(const std::set<Variable*>& sv)		{ _quantvars = sv; setfvars();				}
 
 		// Inspectors
-				bool					sign()						const { return _sign;			}
+				SIGN					sign()						const { return _sign;			}
 				const FormulaParseInfo&	pi()						const { return _pi;				}
 				bool					contains(const Variable*)	const;	//!< true iff the formula contains the variable
 				bool					contains(const PFSymbol*)	const;	//!< true iff the formula contains the symbol
@@ -140,7 +140,7 @@ class PredForm : public Formula {
 
 	public:
 		// Constructors
-		PredForm(bool sign, PFSymbol* s, const std::vector<Term*>& a, const FormulaParseInfo& pi) : 
+		PredForm(SIGN sign, PFSymbol* s, const std::vector<Term*>& a, const FormulaParseInfo& pi) :
 			Formula(sign,pi), _symbol(s) { subterms(a); }
 
 		PredForm*	clone()										const;
@@ -174,9 +174,9 @@ class EqChainForm : public Formula {
 
 	public:
 		// Constructors
-		EqChainForm(bool sign, bool c, Term* t, const FormulaParseInfo& pi) : 
+		EqChainForm(SIGN sign, bool c, Term* t, const FormulaParseInfo& pi) :
 			Formula(sign,pi), _conj(c), _comps(0) { subterms(std::vector<Term*>(1,t)); }
-		EqChainForm(bool s,bool c,const std::vector<Term*>& vt,const std::vector<CompType>& vc,const FormulaParseInfo& pi) :
+		EqChainForm(SIGN s,bool c,const std::vector<Term*>& vt,const std::vector<CompType>& vc,const FormulaParseInfo& pi) :
 			Formula(s,pi), _conj(c), _comps(vc) { subterms(vt); }
 
 		EqChainForm*	clone()										const;
@@ -210,7 +210,7 @@ class EquivForm : public Formula {
 
 	public:
 		// Constructors
-		EquivForm(bool sign, Formula* lf, Formula* rf, const FormulaParseInfo& pi) : 
+		EquivForm(SIGN sign, Formula* lf, Formula* rf, const FormulaParseInfo& pi) :
 			Formula(sign,pi) { addsubformula(lf); addsubformula(rf); }
 
 		EquivForm*	clone()										const;
@@ -244,9 +244,9 @@ class BoolForm : public Formula {
 									
 	public:
 		// Constructors
-		BoolForm(bool sign, bool c, const std::vector<Formula*>& sb, const FormulaParseInfo& pi) :
+		BoolForm(SIGN sign, bool c, const std::vector<Formula*>& sb, const FormulaParseInfo& pi) :
 			Formula(sign,pi), _conj(c) { subformulas(sb); }
-		BoolForm(bool sign, bool c, Formula* left, Formula* right, const FormulaParseInfo& pi) :
+		BoolForm(SIGN sign, bool c, Formula* left, Formula* right, const FormulaParseInfo& pi) :
 			Formula(sign,pi), _conj(c) { addsubformula(left); addsubformula(right);	}
 
 		BoolForm*	clone()										const;
@@ -260,8 +260,10 @@ class BoolForm : public Formula {
 
 		// Inspectors
 		bool	conj()			const	{ return _conj;											}
-		bool	trueformula()	const	{ return (subformulas().empty() && _conj == sign());	}
-		bool	falseformula()	const	{ return (subformulas().empty() && _conj != sign());	}
+		bool	trueformula()	const	{ return subformulas().empty() && isConjWithSign();	}
+		bool	falseformula()	const	{ return subformulas().empty() && not isConjWithSign();	}
+
+		bool 	isConjWithSign() const { return (conj() && sign()==SIGN::POS) || (not conj() && sign()==SIGN::NEG); }
 
 		// Visitor
 		void		accept(TheoryVisitor* v) const;
@@ -276,12 +278,12 @@ class BoolForm : public Formula {
  */	
 class QuantForm : public Formula {
 	private:
-		bool	_univ;	// true (false) if the quantifier is universal (existential)
+		QUANT	_quantifier;
 
 	public:
 		// Constructors
-		QuantForm(bool sign, bool u, const std::set<Variable*>& v, Formula* sf, const FormulaParseInfo& pi) : 
-			Formula(sign,pi), _univ(u) { subformulas(std::vector<Formula*>(1,sf)); quantvars(v); }
+		QuantForm(SIGN sign, QUANT quant, const std::set<Variable*>& v, Formula* sf, const FormulaParseInfo& pi) :
+			Formula(sign,pi), _quantifier(quant) { subformulas(std::vector<Formula*>(1,sf)); quantvars(v); }
 
 		QuantForm*	clone()										const;
 		QuantForm*	clone(const std::map<Variable*,Variable*>&)	const;
@@ -291,12 +293,15 @@ class QuantForm : public Formula {
 
 		// Mutators
 		void	add(Variable* v)	{ addquantvar(v);	}
-		void	univ(bool b)		{ _univ = b;		}
+		void	quant(QUANT b)		{ _quantifier = b;		}
 		void	subf(Formula* f)	{ subformula(0,f);	}
 
 		// Inspectors
 		Formula*	subf()	const { return subformulas()[0];	}
-		bool		univ()	const { return _univ;				}
+		QUANT		quant()	const { return _quantifier;			}
+
+		bool 		isUniv() const { return _quantifier==QUANT::UNIV; }
+		bool 		isUnivWithSign() const { return (_quantifier==QUANT::UNIV && isPos(sign())) || (_quantifier==QUANT::EXIST && isNeg(sign())); }
 
 		// Visitor
 		void		accept(TheoryVisitor* v) const;
@@ -319,7 +324,7 @@ class AggForm : public Formula {
 
 	public:
 		// Constructors
-		AggForm(bool sign, Term* l, CompType c, AggTerm* r, const FormulaParseInfo& pi); 
+		AggForm(SIGN sign, Term* l, CompType c, AggTerm* r, const FormulaParseInfo& pi);
 
 		AggForm*	clone()										const;
 		AggForm*	clone(const std::map<Variable*,Variable*>&)	const;
@@ -352,7 +357,7 @@ namespace FormulaUtils {
 	Formula* graph_functions(Formula* f);	
 
 	/** \brief Recursively move all partial terms outside atoms **/
-	Formula* movePartialTerms(Formula*, Vocabulary* voc = 0, PosContext = PC_POSITIVE);
+	Formula* movePartialTerms(Formula*, Vocabulary* voc = 0, Context = Context::POSITIVE);
 
 	/** \brief Non-recursively move terms that are three-valued in a given structure outside of the given atom **/
 	Formula* moveThreeValuedTerms(Formula*,AbstractStructure*,bool positive,bool cpsupport=false,

@@ -7,38 +7,43 @@
 #ifndef INSTCHECKER_HPP
 #define INSTCHECKER_HPP
 
-#include <vector>
+#include "structure.hpp"
 
 class PredTable;
 class PredInter;
-class DomainElement;
 
+enum TABLE_VALUE { POSS_TRUE, POSS_FALSE, CERTAIN_TRUE, CERTAIN_FALSE};
+
+/**
+ * Class, associated with a relationship, which given a ElementTuple of domain elements, checks whether it is in the interpretation of that relationship
+ */
 class InstanceChecker {
 	public:
-		virtual bool run(const std::vector<const DomainElement*>&)	const = 0;
+		virtual bool isInInterpretation(const ElementTuple&) const = 0;
+		virtual ~InstanceChecker(){}
 };
 
 class FalseInstanceChecker : public InstanceChecker {
 	public:
-		bool run(const std::vector<const DomainElement*>&)	const { return false;	}
+		bool isInInterpretation(const ElementTuple&) const { return false;	}
 };
 
 class TrueInstanceChecker : public InstanceChecker { 
 	public:
-		bool run(const std::vector<const DomainElement*>&)	const { return true;	}
+		bool isInInterpretation(const ElementTuple&) const { return true;	}
 };
 
 class TableInstanceChecker : public InstanceChecker {
 	private:
-		const PredTable*	_table;
+		const PredTable* _table;
 	public:
 		TableInstanceChecker(const PredTable* t) : _table(t) { }
-		bool run(const std::vector<const DomainElement*>& vd)	const;
+		bool isInInterpretation(const ElementTuple& vd) const;
 };
 
 class CheckerFactory {
 	public:
-		InstanceChecker*	create(PredInter*, bool ctpf, bool c);
+		InstanceChecker* create(PredInter*, TABLE_VALUE type);
 };
 
 #endif

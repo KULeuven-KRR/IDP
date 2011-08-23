@@ -228,7 +228,7 @@ public:
 
 	void visit(const PredForm* f) {
 		assert(isTheoryOpen());
-		if(! f->sign())	output() << "~";
+		if(isNeg(f->sign()))	output() << "~";
 		output() <<f->symbol()->to_string(_longnames);
 		if(!f->subterms().empty()) {
 			output() << "(";
@@ -243,27 +243,27 @@ public:
 
 	void visit(const EqChainForm* f) {
 		assert(isTheoryOpen());
-		if(! f->sign())	output() << "~";
+		if(isNeg(f->sign()))	output() << "~";
 		output() << "(";
 		f->subterms()[0]->accept(this);
 		for(unsigned int n = 0; n < f->comps().size(); ++n) {
 			switch(f->comps()[n]) {
-				case CT_EQ:
+				case CompType::EQ:
 					output() << " = ";
 					break;
-				case CT_NEQ:
+				case CompType::NEQ:
 					output() << " ~= ";
 					break;
-				case CT_LEQ:
+				case CompType::LEQ:
 					output() << " =< ";
 					break;
-				case CT_GEQ:
+				case CompType::GEQ:
 					output() << " >= ";
 					break;
-				case CT_LT:
+				case CompType::LT:
 					output() << " < ";
 					break;
-				case CT_GT:
+				case CompType::GT:
 					output() << " > ";
 					break;
 			}
@@ -278,7 +278,7 @@ public:
 
 	void visit(const EquivForm* f) {
 		assert(isTheoryOpen());
-		if(! f->sign())	output() << "~";
+		if(isNeg(f->sign()))	output() << "~";
 		output() << "(";
 		f->left()->accept(this);
 		output() << " <=> ";
@@ -289,13 +289,13 @@ public:
 	void visit(const BoolForm* f) {
 		assert(isTheoryOpen());
 		if(f->subformulas().empty()) {
-			if(f->sign() == f->conj())
+			if(f->isConjWithSign())
 				output() << "true";
 			else
 				output() << "false";
 		}
 		else {
-			if(! f->sign())	output() << "~";
+			if(isNeg(f->sign()))	output() << "~";
 			output() << "(";
 			f->subformulas()[0]->accept(this);
 			for(unsigned int n = 1; n < f->subformulas().size(); ++n) {
@@ -311,13 +311,14 @@ public:
 
 	void visit(const QuantForm* f) {
 		assert(isTheoryOpen());
-		if(! f->sign())	output() << "~";
+		if(isNeg(f->sign()))	output() << "~";
 		output() << "(";
-		if(f->univ())
+		if(f->isUniv()){
 			output() << "!";
-		else
+		}else{
 			output() << "?";
-		for(std::set<Variable*>::const_iterator it = f->quantvars().begin(); it != f->quantvars().end(); ++it) {
+		}
+		for(auto it = f->quantvars().begin(); it != f->quantvars().end(); ++it) {
 			output() << " ";
 			output() << (*it)->name();
 			if((*it)->sort())
@@ -335,7 +336,7 @@ public:
 		printtab();
 		if(!r->quantvars().empty()) {
 			output() << "!";
-			for(std::set<Variable*>::const_iterator it = r->quantvars().begin(); it != r->quantvars().end(); ++it) {
+			for(auto it = r->quantvars().begin(); it != r->quantvars().end(); ++it) {
 				output() << " " << *(*it);
 			}
 			output() << " : ";
@@ -351,7 +352,7 @@ public:
 		printtab();
 		output() << "{\n";
 		indent();
-		for(std::vector<Rule*>::const_iterator it = d->rules().begin(); it != d->rules().end(); ++it) {
+		for(auto it = d->rules().begin(); it != d->rules().end(); ++it) {
 			(*it)->accept(this);
 			output() << "\n";
 		}
@@ -365,11 +366,11 @@ public:
 		printtab();
 		output() << (d->lfp() ? "LFD" : "GFD") << " [\n";
 		indent();
-		for(std::vector<Rule*>::const_iterator it = d->rules().begin(); it != d->rules().end(); ++it) {
+		for(auto it = d->rules().begin(); it != d->rules().end(); ++it) {
 			(*it)->accept(this);
 			output() << "\n";
 		}
-		for(std::vector<FixpDef*>::const_iterator it = d->defs().begin(); it != d->defs().end(); ++it) {
+		for(auto it = d->defs().begin(); it != d->defs().end(); ++it) {
 			(*it)->accept(this);
 		}
 		unindent();
@@ -418,11 +419,11 @@ public:
 	void visit(const AggTerm* t) {
 		assert(isTheoryOpen());
 		switch(t->function()) {
-			case AGG_CARD: output() << '#'; break;
-			case AGG_SUM: output() << "sum"; break;
-			case AGG_PROD: output() << "prod"; break;
-			case AGG_MIN: output() << "min"; break;
-			case AGG_MAX: output() << "max"; break;
+			case AggFunction::CARD: output() << '#'; break;
+			case AggFunction::SUM: output() << "sum"; break;
+			case AggFunction::PROD: output() << "prod"; break;
+			case AggFunction::MIN: output() << "min"; break;
+			case AggFunction::MAX: output() << "max"; break;
 		}
 		t->set()->accept(this);
 	}
@@ -497,10 +498,10 @@ public:
 		assert(isTheoryOpen());
 		printAtom(a->head());
 		switch(a->arrow()) {
-			case TS_IMPL: 	output() << " => "; break;
-			case TS_RIMPL: 	output() << " <= "; break;
-			case TS_EQ: 	output() << " <=> "; break;
-			case TS_RULE: break;
+			case TsType::IMPL: 	output() << " => "; break;
+			case TsType::RIMPL: 	output() << " <= "; break;
+			case TsType::EQ: 	output() << " <=> "; break;
+			case TsType::RULE: break;
 		}
 		printAggregate(a->bound(),a->lower(),a->type(),a->setnr());
 	}
@@ -509,19 +510,19 @@ public:
 		assert(isTheoryOpen());
 		printAtom(cpr->_head);
 		switch(cpr->_body->type()) {
-			case TS_RULE: 	output() << " <- "; break;
-			case TS_IMPL: 	output() << " => "; break;
-			case TS_RIMPL: 	output() << " <= "; break;
-			case TS_EQ: 	output() << " <=> "; break;
+			case TsType::RULE: 	output() << " <- "; break;
+			case TsType::IMPL: 	output() << " => "; break;
+			case TsType::RIMPL: 	output() << " <= "; break;
+			case TsType::EQ: 	output() << " <=> "; break;
 		}
 		cpr->_body->left()->accept(this);
 		switch(cpr->_body->comp()) {
-			case CT_EQ:		output() << " = "; break;
-			case CT_NEQ:	output() << " ~= "; break;
-			case CT_LEQ:	output() << " =< "; break;
-			case CT_GEQ:	output() << " >= "; break;
-			case CT_LT:		output() << " < "; break;
-			case CT_GT:		output() << " > "; break;
+			case CompType::EQ:		output() << " = "; break;
+			case CompType::NEQ:	output() << " ~= "; break;
+			case CompType::LEQ:	output() << " =< "; break;
+			case CompType::GEQ:	output() << " >= "; break;
+			case CompType::LT:		output() << " < "; break;
+			case CompType::GT:		output() << " > "; break;
 		}
 		CPBound right = cpr->_body->right();
 		if(right._isvarid) printTerm(right._varid);
@@ -833,11 +834,11 @@ private:
 	void printAggregate(double bound, bool lower, AggFunction aggtype, unsigned int setnr) {
 		output() << bound << (lower ? " =< " : " >= ");
 		switch(aggtype) {
-			case AGG_CARD: 	output() << "card("; break;
-			case AGG_SUM: 	output() << "sum("; break;
-			case AGG_PROD: 	output() << "prod("; break;
-			case AGG_MIN: 	output() << "min("; break;
-			case AGG_MAX: 	output() << "max("; break;
+			case AggFunction::CARD: 	output() << "card("; break;
+			case AggFunction::SUM: 	output() << "sum("; break;
+			case AggFunction::PROD: 	output() << "prod("; break;
+			case AggFunction::MIN: 	output() << "min("; break;
+			case AggFunction::MAX: 	output() << "max("; break;
 		}
 		output() << "set_" << setnr << ")." <<"\n";
 	}

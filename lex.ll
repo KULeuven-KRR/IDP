@@ -372,17 +372,17 @@ COMMENTLINE		"//".*
 	/** Aggregates **/
 
 <theory>"card"				{ advancecol();
-							  return CARD;				}
+							  return P_CARD;				}
 <theory>"#"					{ advancecol();
-							  return CARD;				}
+							  return P_CARD;				}
 <theory>"sum"				{ advancecol();
-							  return SOM;				}
+							  return P_SOM;				}
 <theory>"prod"				{ advancecol();
-							  return PROD;				}
+							  return P_PROD;				}
 <theory>"min"				{ advancecol();
-							  return MINAGG;			}
+							  return P_MINAGG;			}
 <theory>"max"				{ advancecol();
-							  return MAXAGG;			}
+							  return P_MAXAGG;			}
 
 	/** Fixpoint definitions **/
 
@@ -394,9 +394,9 @@ COMMENTLINE		"//".*
 	/** Arrows **/
 
 <theory>"=>"                { advancecol();
-							  return IMPL;				}
+							  return P_IMPL;				}
 <theory>"<="				{ advancecol();
-							  return RIMPL;				}
+							  return P_RIMPL;				}
 <theory>"<=>"				{ advancecol();
 							  return EQUIV;				}
 <theory>"<-"				{ advancecol();
@@ -411,11 +411,11 @@ COMMENTLINE		"//".*
 	/** Comparison **/
 
 <theory>"=<"                { advancecol();
-						   	  return LEQ;				}
+						   	  return P_LEQ;				}
 <theory>">="                { advancecol();
-						   	  return GEQ;				}
+						   	  return P_GEQ;				}
 <theory>"~="                { advancecol();
-							  return NEQ;				}
+							  return P_NEQ;				}
 	/** Ranges **/
 
 <theory>".."				{ advancecol();

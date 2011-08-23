@@ -32,8 +32,6 @@ class Options;
 class StrictWeakElementOrdering;
 class StrictWeakTupleOrdering;
 
-typedef std::vector<const DomainElement*> ElementTuple;
-
 typedef unsigned int VarId;
 
 /**********************************************
@@ -69,8 +67,6 @@ class TsBody {
 	protected:
 		TsType _type;	// the type of "tseitin definition"
 		TsBody(TsType type): _type(type) { }
-		virtual bool equal(const TsBody&) const;
-		virtual bool compare(const TsBody&) const;
 	public:
 		virtual ~TsBody() { }
 		TsType type() const { return _type; }
@@ -217,8 +213,6 @@ class CPTsBody : public TsBody {
 		CPTerm*		_left;
 		CompType	_comp;
 		CPBound		_right;
-		bool equal(const TsBody&) const;
-		bool compare(const TsBody&) const;
 	public:
 		CPTsBody(TsType type, CPTerm* left, CompType comp, const CPBound& right) :
 			TsBody(type), _left(left), _comp(comp), _right(right) { }
@@ -228,9 +222,8 @@ class CPTsBody : public TsBody {
 	friend class GroundTranslator;
 };
 
-/**
- * Ground translator 
- */
+class LazyQuantGrounder;
+
 class GroundTranslator {
 	private:
 		std::vector<std::map<ElementTuple,int,StrictWeakTupleOrdering> >
@@ -244,6 +237,7 @@ class GroundTranslator {
 
 		std::map<int,TsBody*>							_nr2tsbodies;	// keeps mapping between Tseitin numbers and bodies
 		std::map<TsBody*,int,StrictWeakTsBodyOrdering>	_tsbodies2nr;	// keeps mapping between Tseitin bodies and numbers
+		std::map<int,LazyQuantGrounder const* const>				_nr2lazygrounder;
 
 		std::vector<TsSet>	_sets;	// keeps mapping between Set numbers and sets
 
@@ -251,14 +245,15 @@ class GroundTranslator {
 		GroundTranslator() : _backsymbtable(1), _backargstable(1), _sets(1) { }
 		~GroundTranslator();
 
-		int				translate(unsigned int,const ElementTuple&);
-		int				translate(const std::vector<int>& cl, bool conj, TsType tp);
-		int				translate(double bound, char comp, bool strict, AggFunction aggtype, int setnr, TsType tstype);
-		int				translate(PFSymbol*,const ElementTuple&);
-		int				translate(CPTerm*, CompType, const CPBound&, TsType);
-		int				translateSet(const std::vector<int>&,const std::vector<double>&,const std::vector<double>&);
+		Lit				translate(unsigned int,const ElementTuple&);
+		Lit				translate(const std::vector<int>& cl, bool conj, TsType tp);
+		Lit				translate(double bound, char comp, bool strict, AggFunction aggtype, int setnr, TsType tstype);
+		Lit				translate(PFSymbol*,const ElementTuple&);
+		Lit				translate(CPTerm*, CompType, const CPBound&, TsType);
+		Lit				translateSet(const std::vector<int>&,const std::vector<double>&,const std::vector<double>&);
+		Lit				translate(LazyQuantGrounder const* const lazygrounder);
 
-		int				nextNumber();
+		Lit				nextNumber();
 		unsigned int	addSymbol(PFSymbol* pfs);
 
 		bool					hasSymbolFor(int atom)		const	{ return 0<atom && (uint)atom<_backsymbtable.size(); }
@@ -274,7 +269,7 @@ class GroundTranslator {
 		const std::map<ElementTuple,int,StrictWeakTupleOrdering>&	
 								getTuples(unsigned int n)	const	{ return _table[n];							}
 
-		std::string	printAtom(int nr)	const;
+		std::string	printAtom(Lit atom)	const;
 };
 
 /**
@@ -346,21 +341,13 @@ class GroundTermTranslator {
 	Optimized grounding algorithm
 ************************************/
 
-class TermGrounder;
-class FormulaGrounder;
-class SetGrounder;
-class RuleGrounder;
-class DefinitionGrounder;
-struct GroundDefinition;
-
-/** Grounding context **/
 enum CompContext { CC_SENTENCE, CC_HEAD, CC_FORMULA };
 
 struct GroundingContext {
 	bool				_truegen;		// Indicates whether the variables are instantiated in order to obtain
 										// a ground formula that is possibly true.
-	PosContext			_funccontext;	
-	PosContext			_monotone;
+	Context				_funccontext;
+	Context				_monotone;
 	CompContext			_component;		// Indicates the context of the visited formula
 	TsType				_tseitin;		// Indicates the type of tseitin definition that needs to be used.
 	std::set<PFSymbol*>	_defined;		// Indicates whether the visited rule is recursive.
@@ -398,6 +385,8 @@ class TheoryGrounder : public TopLevelGrounder {
 		bool run() const;
 };
 
+class FormulaGrounder;
+
 class SentenceGrounder : public TopLevelGrounder {
 	private:
 		bool				_conj;	
@@ -419,311 +408,6 @@ class UnivSentGrounder : public TopLevelGrounder {
 };
 
 
-/*** Term grounders ***/
-
-class TermGrounder {
-	protected:
-		AbstractGroundTheory*						_grounding;
-		mutable SortTable*							_domain;
-		const Term*									_origterm;
-		std::map<Variable*,const DomainElement**>	_varmap;
-		int											_verbosity;
-		void printorig() const;
-	public:
-		TermGrounder() { }
-		TermGrounder(AbstractGroundTheory* g, SortTable* dom) : _grounding(g), _domain(dom) { }
-		virtual ~TermGrounder() { }
-		virtual GroundTerm run() const = 0;
-		void setorig(const Term* t, const std::map<Variable*, const DomainElement**>& mvd, int); 
-		SortTable* domain() const { return _domain; }
-};
-
-class DomTermGrounder : public TermGrounder {
-	private:
-		const DomainElement*	_value;
-	public:
-		DomTermGrounder(const DomainElement* val) : _value(val) { }
-		GroundTerm run() const { return GroundTerm(_value);	}
-};
-
-class VarTermGrounder : public TermGrounder {
-	private:
-		const DomainElement**	_value;
-	public:
-		VarTermGrounder(const DomainElement** a) : _value(a) { }
-		GroundTerm run() const; 
-};
-
-class FuncTermGrounder : public TermGrounder {
-	protected:
-		GroundTermTranslator* 			_termtranslator;
-		Function*						_function;
-		FuncTable*						_functable;
-		std::vector<TermGrounder*>		_subtermgrounders;
-	public:
-		FuncTermGrounder(GroundTermTranslator* tt, Function* func, FuncTable* ftable, SortTable* dom, const std::vector<TermGrounder*>& sub)
-			: _termtranslator(tt), _function(func), _functable(ftable), _subtermgrounders(sub) { _domain = dom; }
-		GroundTerm run() const;
-
-		// TODO? Optimisation:
-		//			Keep all values of the args + result of the previous call to run().
-		//			If the values of the args did not change, return the result immediately instead of doing the
-		//			table lookup
-};
-
-class SumTermGrounder : public TermGrounder {
-	protected:
-		GroundTermTranslator* 	_termtranslator;
-		FuncTable*				_functable;
-		TermGrounder*			_lefttermgrounder;
-		TermGrounder*			_righttermgrounder;
-	public:
-		SumTermGrounder(AbstractGroundTheory* g, GroundTermTranslator* tt, FuncTable* ftable, SortTable* dom, TermGrounder* ltg, TermGrounder* rtg)
-			: TermGrounder(g,dom), _termtranslator(tt), _functable(ftable), _lefttermgrounder(ltg), _righttermgrounder(rtg) { }
-		GroundTerm run() const;
-};
-
-class AggTermGrounder : public TermGrounder {
-	private:
-		GroundTranslator*	_translator;
-		AggFunction			_type;
-		SetGrounder*		_setgrounder;
-	public:
-		AggTermGrounder(GroundTranslator* gt, AggFunction tp, SetGrounder* gr)
-			: _translator(gt), _type(tp), _setgrounder(gr) { }
-		GroundTerm run() const;
-};
-
-
-/*** Formula grounders ***/
-
-class FormulaGrounder {
-	protected:
-		GroundTranslator*							_translator;
-		GroundingContext							_context;
-		const Formula*								_origform;
-		std::map<Variable*,const DomainElement**>	_varmap;
-		int											_verbosity;
-		void printorig() const;
-	public:
-		FormulaGrounder(GroundTranslator* gt, const GroundingContext& ct): _translator(gt), _context(ct) { }
-		virtual ~FormulaGrounder() { }
-		virtual int		run()					const = 0;
-		virtual void	run(std::vector<int>&)	const = 0;
-		virtual bool	conjunctive()			const = 0;
-		void setorig(const Formula* f, const std::map<Variable*, const DomainElement**>& mvd, int);
-};
-
-class AtomGrounder : public FormulaGrounder {
-	protected:
-		std::vector<TermGrounder*>		_subtermgrounders;
-		InstanceChecker*				_pchecker;
-		InstanceChecker*				_cchecker;
-		size_t							_symbol; // symbol's offset in translator's table.
-		std::vector<SortTable*>			_tables;
-		bool							_sign;
-		int								_certainvalue;
-	public:
-		AtomGrounder(GroundTranslator*, bool sign, PFSymbol*,
-					const std::vector<TermGrounder*>, InstanceChecker*, InstanceChecker*,
-					const std::vector<SortTable*>&, const GroundingContext&);
-		int		run() const;
-		void	run(std::vector<int>&) const;
-		bool	conjunctive() const { return true;	}
-};
-
-//class CPAtomGrounder : public AtomGrounder {
-//	private:
-//		GroundTermTranslator*	_termtranslator;
-//	public:
-//		CPAtomGrounder(GroundTranslator*, GroundTermTranslator*, bool sign, Function*,
-//					const std::vector<TermGrounder*>, InstanceChecker*, InstanceChecker*,
-//					const std::vector<SortTable*>&, const GroundingContext&);
-//		int	run() const;
-//};
-
-class ComparisonGrounder : public FormulaGrounder {
-	private:
-		GroundTermTranslator* 	_termtranslator;
-		TermGrounder*			_lefttermgrounder;
-		TermGrounder*			_righttermgrounder;
-		CompType				_comparator;
-	public:
-		ComparisonGrounder(GroundTranslator* gt, GroundTermTranslator* tt, TermGrounder* ltg, CompType comp, TermGrounder* rtg, const GroundingContext& gc)
-			: FormulaGrounder(gt,gc), _termtranslator(tt), _lefttermgrounder(ltg), _righttermgrounder(rtg), _comparator(comp) { } 
-		int		run() const;
-		void	run(std::vector<int>&) const;
-		bool	conjunctive() const { return true;	}
-};
-
-class AggGrounder : public FormulaGrounder {
-	private:
-		SetGrounder*	_setgrounder;
-		TermGrounder*	_boundgrounder;
-		AggFunction		_type;
-		char			_comp;
-		bool			_sign;
-		bool			_doublenegtseitin;
-		int	handleDoubleNegation(double boundvalue,int setnr) const;
-		int	finishCard(double truevalue,double boundvalue,int setnr) 	const;
-		int	finishSum(double truevalue,double boundvalue,int setnr)		const;
-		int	finishProduct(double truevalue,double boundvalue,int setnr)	const;
-		int	finishMaximum(double truevalue,double boundvalue,int setnr)	const;
-		int	finishMinimum(double truevalue,double boundvalue,int setnr)	const;
-		int finish(double boundvalue,double newboundvalue,double maxpossvalue,double minpossvalue,int setnr) const;
-	public:
-		AggGrounder(GroundTranslator* tr, GroundingContext gc, AggFunction tp, SetGrounder* sg, TermGrounder* bg, char c,bool s)
-			: FormulaGrounder(tr,gc), _setgrounder(sg), _boundgrounder(bg), _type(tp), _comp(c), _sign(s) { 
-				_doublenegtseitin = (gc._tseitin == TS_RULE) && ((gc._monotone == PC_POSITIVE && !s) || (gc._monotone == PC_NEGATIVE && s));	
-			}
-		int		run()								const;
-		void	run(std::vector<int>&)				const;
-		bool	conjunctive() 						const { return true;	}
-};
-
-class ClauseGrounder : public FormulaGrounder {
-	protected:
-		bool	_sign;
-		bool	_conj;
-		bool	_doublenegtseitin;
-	public:
-		ClauseGrounder(GroundTranslator* gt, bool sign, bool conj, const GroundingContext& ct) : 
-			FormulaGrounder(gt,ct), _sign(sign), _conj(conj) { 
-				_doublenegtseitin = ct._tseitin == TS_RULE && ((ct._monotone == PC_POSITIVE && !sign) || (ct._monotone == PC_NEGATIVE && sign));	
-			}
-		int		finish(std::vector<int>&) const;
-		bool	check1(int l) const;
-		bool	check2(int l) const;
-		int		result1() const;
-		int		result2() const;
-		bool	conjunctive() const { return _conj == _sign;	}
-};
-
-class BoolGrounder : public ClauseGrounder {
-	private:
-		std::vector<FormulaGrounder*>	_subgrounders;
-	public:
-		BoolGrounder(GroundTranslator* gt, const std::vector<FormulaGrounder*> sub, bool sign, bool conj, const GroundingContext& ct):
-			ClauseGrounder(gt,sign,conj,ct), _subgrounders(sub) { }
-		int	run() const;
-		void	run(std::vector<int>&) const;
-};
-
-class QuantGrounder : public ClauseGrounder {
-	private:
-		FormulaGrounder*	_subgrounder;
-		InstGenerator*		_generator;	
-	public:
-		QuantGrounder(GroundTranslator* gt, FormulaGrounder* sub, bool sign, bool conj, InstGenerator* gen, const GroundingContext& ct):
-			ClauseGrounder(gt,sign,conj,ct), _subgrounder(sub), _generator(gen) { }
-		int		run() const;
-		void	run(std::vector<int>&) const;
-};
-
-class EquivGrounder : public FormulaGrounder {
-	private:
-		FormulaGrounder*	_leftgrounder;
-		FormulaGrounder*	_rightgrounder;
-		bool				_sign;
-	public:
-		EquivGrounder(GroundTranslator* gt, FormulaGrounder* lg, FormulaGrounder* rg, bool sign, const GroundingContext& ct):
-			FormulaGrounder(gt,ct), _leftgrounder(lg), _rightgrounder(rg), _sign(sign) { }
-		int 	run() const;
-		void	run(std::vector<int>&) const;
-		bool	conjunctive() const { return true;	}
-};
-
-
-/*** Set grounders ***/
-
-class SetGrounder {
-	protected:
-		GroundTranslator*	_translator;
-	public:
-		SetGrounder(GroundTranslator* gt) : _translator(gt) { }
-		virtual ~SetGrounder() { }
-		virtual int run() const = 0;
-};
-
-class QuantSetGrounder : public SetGrounder {
-	private:
-		FormulaGrounder*	_subgrounder;
-		InstGenerator*		_generator;	
-		TermGrounder*		_weightgrounder;
-	public:
-		QuantSetGrounder(GroundTranslator* gt, FormulaGrounder* gr, InstGenerator* ig, TermGrounder* w) :
-			SetGrounder(gt), _subgrounder(gr), _generator(ig), _weightgrounder(w) { }
-		int run() const;
-};
-
-class EnumSetGrounder : public SetGrounder {
-	private:
-		std::vector<FormulaGrounder*>	_subgrounders;
-		std::vector<TermGrounder*>		_subtermgrounders;
-	public:
-		EnumSetGrounder(GroundTranslator* gt, const std::vector<FormulaGrounder*>& subgr, const std::vector<TermGrounder*>& subtgr) :
-			SetGrounder(gt), _subgrounders(subgr), _subtermgrounders(subtgr) { }
-		int run() const;
-};
-
-
-/*** Definition grounders ***/
-
-/** Grounder for a head of a rule **/
-class HeadGrounder {
-	private:
-		AbstractGroundTheory*			_grounding;
-		std::vector<TermGrounder*>		_subtermgrounders;
-		InstanceChecker*				_truechecker;
-		InstanceChecker*				_falsechecker;
-		unsigned int					_symbol;
-		std::vector<SortTable*>			_tables;
-	public:
-		HeadGrounder(AbstractGroundTheory* gt, InstanceChecker* pc, InstanceChecker* cc, PFSymbol* s, 
-					const std::vector<TermGrounder*>&, const std::vector<SortTable*>&);
-		int	run() const;
-
-};
-
-/** Grounder for a single rule **/
-class RuleGrounder {
-	private:
-		HeadGrounder*		_headgrounder;
-		FormulaGrounder*	_bodygrounder;
-		InstGenerator*		_headgenerator;	
-		InstGenerator*		_bodygenerator;	
-		GroundingContext	_context;
-	public:
-		RuleGrounder(HeadGrounder* hgr, FormulaGrounder* bgr, InstGenerator* hig, InstGenerator* big, GroundingContext& ct)
-			: _headgrounder(hgr), _bodygrounder(bgr), _headgenerator(hig), _bodygenerator(big), _context(ct) { }
-		bool run(unsigned int defid, GroundDefinition* grounddefinition) const;
-
-		// Mutators
-		void addTrueRule(GroundDefinition* grounddefinition, int head) const;
-		void addFalseRule(GroundDefinition* grounddefinition, int head) const;
-		void addPCRule(GroundDefinition* grounddefinition, int head, const std::vector<int>& body, bool conj, bool recursive) const;
-		void addAggRule(GroundDefinition* grounddefinition, int head, int setnr, AggFunction aggtype, bool lower, double bound, bool recursive) const;
-};
-
-/** Grounder for a definition **/
-// NOTE: definition printing code is based on the INVARIANT that a defintion is ALWAYS grounded as contiguous component: never ground def A a bit, then ground B, then return to A again (code should error on this)
-// directly printing in idp language will be incorrect then.
-// TODO optimize grounding of definitions by grouping rules with the same head and grounding them atom by atom
-//	(using approximation to derive given a head query which bodies might be true). This would allow to write out rules without
-//	first constructing and storing the full ground definition to remove duplicate heads
-class DefinitionGrounder : public TopLevelGrounder {
-	private:
-		static unsigned int _currentdefnb;
-		unsigned int _defnb;
-		std::vector<RuleGrounder*>	_subgrounders;	//!< Grounders for the rules of the definition.
-		GroundDefinition* _grounddefinition;
-	public:
-		DefinitionGrounder(AbstractGroundTheory* groundtheory, std::vector<RuleGrounder*> subgr,int verb);
-		bool run() const;
-		unsigned int id() const { return _defnb; }
-};
-
-
 /***********************
 	Grounder Factory
 ***********************/
@@ -733,6 +417,10 @@ class DefinitionGrounder : public TopLevelGrounder {
  */
 
 class InteractivePrintMonitor;
+class TermGrounder;
+class SetGrounder;
+class HeadGrounder;
+class RuleGrounder;
 
 class GrounderFactory : public TheoryVisitor {
 	private:
@@ -753,7 +441,7 @@ class GrounderFactory : public TheoryVisitor {
 		void	AggContext();	
 		void	SaveContext();		// Push the current context onto the stack
 		void	RestoreContext();	// Set _context to the top of the stack and pop the stack
-		void	DeeperContext(bool);
+		void	DeeperContext(SIGN sign);
 
 		// Descend in the parse tree while taking care of the context
 		void	descend(Formula* f); 

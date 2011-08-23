@@ -90,7 +90,7 @@ class GroundAggregate {
 		// Attributes
 		int			_head;		// the head literal
 		TsType		_arrow;		// the relation between head and aggregate expression
-								// INVARIANT: this should never be TS_RULE
+								// INVARIANT: this should never be TsType::RULE
 		double		_bound;		// the bound
 		bool		_lower;		// true iff the bound is a lower bound for the aggregate
 		AggFunction	_type;		// the aggregate function
@@ -100,10 +100,10 @@ class GroundAggregate {
 		// Constructors
 		GroundAggregate(AggFunction t, bool l, TsType e, int h, int s, double b) :
 			_head(h), _arrow(e), _bound(b), _lower(l), _type(t), _set(s) 
-			{ assert(e != TS_RULE); }
+			{ assert(e != TsType::RULE); }
 		GroundAggregate(const GroundAggregate& a) : 
 			_head(a._head), _arrow(a._arrow), _bound(a._bound), _lower(a._lower), _type(a._type), _set(a._set)
-			{ assert(a._arrow != TS_RULE); }
+			{ assert(a._arrow != TsType::RULE); }
 		GroundAggregate() { }
 
 		// Inspectors

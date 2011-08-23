@@ -16,7 +16,7 @@
 #include <iostream>
 
 #include "ecnf.hpp"
-#include "commontypes.hpp"
+#include "common.hpp"
 
 #include "ground.hpp"
 #include <sstream>
@@ -143,7 +143,9 @@ public:
 		}
 		for(unsigned int n = 0; n < _aggregates.size(); ++n) {
 			const GroundAggregate* agg = _aggregates[n];
-			s << translator->printAtom(agg->head()) << ' ' << agg->arrow() << ' ' << agg->bound();
+			s << translator->printAtom(agg->head()) << ' ';
+			s << agg->arrow() << ' ';
+			s << agg->bound();
 			s << (agg->lower() ? " =< " : " >= ");
 			s << agg->type() << '(' << agg->setnr() << ")." << "\n";
 		}

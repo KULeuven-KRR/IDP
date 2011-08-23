@@ -47,7 +47,7 @@ public:
 	// Destructors
 	void polRecursiveDelete() { }
 
-	void polStartTheory(GroundTranslator* translator){}
+	void polStartTheory(GroundTranslator*){}
 	void polEndTheory(){}
 
 	inline MinisatID::Atom createAtom(int lit){
@@ -111,16 +111,16 @@ public:
 	}
 
 	void polAdd(int defnr, AggGroundRule* rule) {
-		polAddAggregate(defnr,rule->head(),rule->lower(),rule->setnr(),rule->aggtype(),TS_RULE,rule->bound());
+		polAddAggregate(defnr,rule->head(),rule->lower(),rule->setnr(),rule->aggtype(),TsType::RULE,rule->bound());
 	}
 
 	void polAdd(int defnr, int head, AggGroundRule* body, bool) {
-		polAddAggregate(defnr,head,body->lower(),body->setnr(),body->aggtype(),TS_RULE,body->bound());
+		polAddAggregate(defnr,head,body->lower(),body->setnr(),body->aggtype(),TsType::RULE,body->bound());
 	}
 
 
 	void polAdd(int head, AggTsBody* body) {
-		assert(body->type() != TS_RULE);
+		assert(body->type() != TsType::RULE);
 		//FIXME correct undefined id numbering instead of -1 (should be the number the solver takes as undefined, so should but it in the solver interface)
 		polAddAggregate(-1,head,body->lower(),body->setnr(),body->aggtype(),body->type(),body->bound());
 	}
@@ -138,12 +138,12 @@ public:
 	void polAdd(int tseitin, CPTsBody* body) {
 		MinisatID::EqType comp;
 		switch(body->comp()) {
-			case CT_EQ:		comp = MinisatID::MEQ; break;
-			case CT_NEQ:	comp = MinisatID::MNEQ; break;
-			case CT_LEQ:	comp = MinisatID::MLEQ; break;
-			case CT_GEQ:	comp = MinisatID::MGEQ; break;
-			case CT_LT:		comp = MinisatID::ML; break;
-			case CT_GT:		comp = MinisatID::MG; break;
+			case CompType::EQ:	comp = MinisatID::MEQ; break;
+			case CompType::NEQ:	comp = MinisatID::MNEQ; break;
+			case CompType::LEQ:	comp = MinisatID::MLEQ; break;
+			case CompType::GEQ:	comp = MinisatID::MGEQ; break;
+			case CompType::LT:	comp = MinisatID::ML; break;
+			case CompType::GT:	comp = MinisatID::MG; break;
 		}
 		CPTerm* left = body->left();
 		CPBound right = body->right();
@@ -205,8 +205,8 @@ public:
 		}
 	}
 
-	std::ostream& polPut(std::ostream& s, GroundTranslator* translator, GroundTermTranslator* termtranslator)	const { assert(false); return s;	}
-	std::string polTo_string(GroundTranslator* translator, GroundTermTranslator* termtranslator) const { assert(false); return "";		}
+	std::ostream& polPut(std::ostream& s, GroundTranslator*, GroundTermTranslator*)	const { assert(false); return s;	}
+	std::string polTo_string(GroundTranslator*, GroundTermTranslator*) const { assert(false); return "";		}
 
 private:
 	void polAddAggregate(int definitionID, int head, bool lowerbound, int setnr, AggFunction aggtype, TsType sem, double bound) {
@@ -214,33 +214,33 @@ private:
 		agg.sign = lowerbound ? MinisatID::AGGSIGN_LB : MinisatID::AGGSIGN_UB;
 		agg.setID = setnr;
 		switch (aggtype) {
-			case AGG_CARD:
+			case AggFunction::CARD:
 				agg.type = MinisatID::CARD;
 				if(_verbosity > 0) std::clog << "card ";
 				break;
-			case AGG_SUM:
+			case AggFunction::SUM:
 				agg.type = MinisatID::SUM;
 				if(_verbosity > 0) std::clog << "sum ";
 				break;
-			case AGG_PROD:
+			case AggFunction::PROD:
 				agg.type = MinisatID::PROD;
 				if(_verbosity > 0) std::clog << "prod ";
 				break;
-			case AGG_MIN:
+			case AggFunction::MIN:
 				agg.type = MinisatID::MIN;
 				if(_verbosity > 0) std::clog << "min ";
 				break;
-			case AGG_MAX:
+			case AggFunction::MAX:
 				if(_verbosity > 0) std::clog << "max ";
 				agg.type = MinisatID::MAX;
 				break;
 		}
 		if(_verbosity > 0) std::clog << setnr << ' ';
 		switch(sem) {
-			case TS_EQ: case TS_IMPL: case TS_RIMPL:
+			case TsType::EQ: case TsType::IMPL: case TsType::RIMPL:
 				agg.sem = MinisatID::COMP;
 				break;
-			case TS_RULE:
+			case TsType::RULE:
 				agg.sem = MinisatID::DEF;
 				break;
 		}

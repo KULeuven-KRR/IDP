@@ -57,52 +57,51 @@ void Formula::recursiveDelete() {
 }
 
 bool Formula::contains(const Variable* v) const {
-	for(set<Variable*>::const_iterator it = _freevars.begin(); it != _freevars.end(); ++it) {
+	for(auto it = _freevars.begin(); it != _freevars.end(); ++it) {
 		if(*it == v) return true;
 	}
-	for(set<Variable*>::const_iterator it = _quantvars.begin(); it != _quantvars.end(); ++it) {
+	for(auto it = _quantvars.begin(); it != _quantvars.end(); ++it) {
 		if(*it == v) return true;
 	}
-	for(vector<Term*>::const_iterator it = _subterms.begin(); it != _subterms.end(); ++it) {
+	for(auto it = _subterms.begin(); it != _subterms.end(); ++it) {
 		if((*it)->contains(v)) return true;
 	}
-	for(vector<Formula*>::const_iterator it = _subformulas.begin(); it != _subformulas.end(); ++it) {
+	for(auto it = _subformulas.begin(); it != _subformulas.end(); ++it) {
 		if((*it)->contains(v)) return true;
 	}
 	return false;
 }
 
 class ContainmentChecker : public TheoryVisitor {
-	private:
-		const PFSymbol*	_symbol;
-		bool			_result;
+private:
+	const PFSymbol*	_symbol;
+	bool			_result;
 
-		void visit(const PredForm* pf) { 
-			if(pf->symbol() == _symbol) {
-				_result = true;
-				return;
-			}
-			else traverse(pf);	
+	void visit(const PredForm* pf) {
+		if(pf->symbol() == _symbol) {
+			_result = true;
+			return;
 		}
+		else traverse(pf);
+	}
 
-		void visit(const FuncTerm* ft) { 
-			if(ft->function() == _symbol) {
-				_result = true;
-				return;
-			}
-			else traverse(ft);
+	void visit(const FuncTerm* ft) {
+		if(ft->function() == _symbol) {
+			_result = true;
+			return;
 		}
+		else traverse(ft);
+	}
 
-	public:
-		ContainmentChecker(const PFSymbol* s) : 
-			TheoryVisitor(), _symbol(s) { }
+public:
+	ContainmentChecker(const PFSymbol* s) :
+		TheoryVisitor(), _symbol(s) { }
 
-		bool run(const Formula* f) { 
-			_result = false;
-			f->accept(this);
-			return _result;
-		}
-
+	bool run(const Formula* f) {
+		_result = false;
+		f->accept(this);
+		return _result;
+	}
 };
 
 bool Formula::contains(const PFSymbol* s) const {
@@ -145,7 +144,9 @@ Formula* PredForm::accept(TheoryMutatingVisitor* v) {
 
 ostream& PredForm::put(ostream& output, unsigned int spaces) const {
 	printtabs(output,spaces);
-	if(!sign()) output << '~';
+	if(isNeg(sign())){
+		output << '~';
+	}
 	output << *_symbol;
 	if(typeid(*_symbol) == typeid(Predicate)) {
 		if(!subterms().empty()) {
@@ -194,19 +195,10 @@ Formula* EqChainForm::accept(TheoryMutatingVisitor* v) {
 
 ostream& EqChainForm::put(ostream& output, unsigned int spaces) const {
 	printtabs(output,spaces);
-	if(!sign()) output << '~';
+	if(isNeg(sign())) output << '~';
 	output << '(' << *subterms()[0];
 	for(unsigned int n = 0; n < _comps.size(); ++n) {
-		switch(_comps[n]) {
-			case CT_EQ: output << " = "; break;
-			case CT_NEQ: output << " ~= "; break;
-			case CT_LT: output << " < "; break;
-			case CT_GT: output << " > "; break;
-			case CT_LEQ: output << " =< "; break;
-			case CT_GEQ: output << " >= "; break;
-			default: assert(false);
-		}
-		output << *subterms()[n+1];
+		output << _comps[n] << *subterms()[n+1];
 		if(!_conj && n+1 < _comps.size()) output << " | " << *subterms()[n+1];
 	}
 	output << ')';
@@ -271,11 +263,11 @@ Formula* BoolForm::accept(TheoryMutatingVisitor* v) {
 ostream& BoolForm::put(ostream& output, unsigned int spaces) const {
 	printtabs(output,spaces);
 	if(subformulas().empty()) {
-		if(sign() == _conj) output << "true";
+		if(isConjWithSign()) output << "true";
 		else output << "false";
 	}
 	else {
-		if(!sign()) output << '~';
+		if(isNeg(sign())) output << '~';
 		output << '(' << *subformulas()[0];
 		for(unsigned int n = 1; n < subformulas().size(); ++n) {
 			if(_conj) output << " & ";
@@ -305,7 +297,7 @@ QuantForm* QuantForm::clone(const map<Variable*,Variable*>& mvv) const {
 		nmvv[*it] = v;
 	}
 	Formula* nf = subf()->clone(nmvv);
-	QuantForm* qf = new QuantForm(sign(),_univ,nv,nf,pi().clone(mvv));
+	QuantForm* qf = new QuantForm(sign(),quant(),nv,nf,pi().clone(mvv));
 	return qf;
 }
 
@@ -319,9 +311,9 @@ Formula* QuantForm::accept(TheoryMutatingVisitor* v) {
 
 ostream& QuantForm::put(ostream& output, unsigned int spaces) const {
 	printtabs(output,spaces);
-	if(!sign()) output << '~';
+	if(isNeg(sign())) output << '~';
 	output << '(';
-	output << (_univ ? '!' : '?');
+	output << (isUniv()? '!' : '?');
 	for(set<Variable*>::const_iterator it = quantvars().begin(); it != quantvars().end(); ++it) {
 		output << ' ' << *(*it);
 		if((*it)->sort()) output << '[' << (*it)->sort()->name() << ']';
@@ -334,7 +326,7 @@ ostream& QuantForm::put(ostream& output, unsigned int spaces) const {
 	AggForm
 **************/
 
-AggForm::AggForm(bool sign, Term* l, CompType c, AggTerm* r, const FormulaParseInfo& pi) :
+AggForm::AggForm(SIGN sign, Term* l, CompType c, AggTerm* r, const FormulaParseInfo& pi) :
 	Formula(sign,pi), _comp(c), _aggterm(r) { 
 	addsubterm(l); 
 	addsubterm(r); 
@@ -361,18 +353,8 @@ Formula* AggForm::accept(TheoryMutatingVisitor* v) {
 
 ostream& AggForm::put(ostream& output, unsigned int spaces) const {
 	printtabs(output,spaces);
-	if(!sign()) output << '~';
-	output << '(' << *left();
-	switch(_comp) {
-		case CT_EQ: output << " = "; break;
-		case CT_NEQ: output << " ~= "; break;
-		case CT_LT: output << " < "; break;
-		case CT_GT: output << " > "; break;
-		case CT_LEQ: output << " =< "; break;
-		case CT_GEQ: output << " >= "; break;
-		default: assert(false);
-	}
-	output << *right() << ')';
+	if(isNeg(sign())) output << '~';
+	output << '(' << *left() <<_comp << *right() << ')';
 	return output;
 }
 
@@ -639,7 +621,7 @@ Term* NegationPush::traverse(Term* t) {
 }
 
 Formula* NegationPush::visit(EqChainForm* f) {
-	if(!f->sign()) {
+	if(isNeg(f->sign())) {
 		f->swapsign();
 		f->conj(!f->conj());
 		for(unsigned int n = 0; n < f->comps().size(); ++n) 
@@ -649,7 +631,7 @@ Formula* NegationPush::visit(EqChainForm* f) {
 }
 
 Formula* NegationPush::visit(EquivForm* f) {
-	if(!f->sign()) {
+	if(isNeg(f->sign())) {
 		f->swapsign();
 		f->right()->swapsign();
 	}
@@ -657,7 +639,7 @@ Formula* NegationPush::visit(EquivForm* f) {
 }
 
 Formula* NegationPush::visit(BoolForm* f) {
-	if(!f->sign()) {
+	if(isNeg(f->sign())) {
 		f->swapsign();
 		for(vector<Formula*>::const_iterator it = f->subformulas().begin(); it != f->subformulas().end(); ++it) 
 			(*it)->swapsign();
@@ -667,10 +649,10 @@ Formula* NegationPush::visit(BoolForm* f) {
 }
 
 Formula* NegationPush::visit(QuantForm* f) {
-	if(!f->sign()) {
+	if(isNeg(f->sign())) {
 		f->swapsign();
 		f->subf()->swapsign();
-		f->univ(!f->univ());
+		f->quant(not f->quant());
 	}
 	return traverse(f);
 }
@@ -692,8 +674,8 @@ BoolForm* EquivRemover::visit(EquivForm* ef) {
 	vf1[0] = nl; vf1[1] = nr;
 	vf2[0] = nl->clone(); vf2[1] = nr->clone();
 	vf1[0]->swapsign(); vf2[1]->swapsign();
-	BoolForm* bf1 = new BoolForm(true,false,vf1,ef->pi());
-	BoolForm* bf2 = new BoolForm(true,false,vf2,ef->pi());
+	BoolForm* bf1 = new BoolForm(SIGN::POS,false,vf1,ef->pi());
+	BoolForm* bf2 = new BoolForm(SIGN::POS,false,vf2,ef->pi());
 	vector<Formula*> vf(2); vf[0] = bf1; vf[1] = bf2;
 	BoolForm* bf = new BoolForm(ef->sign(),true,vf,ef->pi());
 	delete(ef);
@@ -716,7 +698,7 @@ Formula* Flattener::visit(BoolForm* bf) {
 	for(vector<Formula*>::const_iterator it = bf->subformulas().begin(); it != bf->subformulas().end(); ++it) {
 		if(typeid(*(*it)) == typeid(BoolForm)) {
 			BoolForm* sbf = dynamic_cast<BoolForm*>(*it);
-			if((bf->conj() == sbf->conj()) && sbf->sign()) {
+			if((bf->conj() == sbf->conj()) && isPos(sbf->sign())) {
 				for(vector<Formula*>::const_iterator jt = sbf->subformulas().begin(); jt != sbf->subformulas().end(); ++jt)
 					newsubf.push_back(*jt);
 				delete(sbf);
@@ -733,7 +715,7 @@ Formula* Flattener::visit(QuantForm* qf) {
 	traverse(qf);	
 	if(typeid(*(qf->subf())) == typeid(QuantForm)) {
 		QuantForm* sqf = dynamic_cast<QuantForm*>(qf->subf());
-		if((qf->univ() == sqf->univ()) && sqf->sign()) {
+		if((qf->quant() == sqf->quant()) && isPos(sqf->sign())) {
 			qf->subf(sqf->subf());
 			for(set<Variable*>::const_iterator it = sqf->quantvars().begin(); it != sqf->quantvars().end(); ++it) 
 				qf->add(*it);
@@ -764,12 +746,12 @@ Formula* EqChainRemover::visit(EqChainForm* ef) {
 	for(vector<CompType>::const_iterator it = ef->comps().begin(); it != ef->comps().end(); ++it, ++n) {
 		Predicate* p = 0;
 		switch(*it) {
-			case CT_EQ : case CT_NEQ : p = Vocabulary::std()->pred("=/2"); break;
-			case CT_LT : case CT_GEQ : p = Vocabulary::std()->pred("</2"); break;
-			case CT_GT : case CT_LEQ : p = Vocabulary::std()->pred(">/2"); break;
+			case CompType::EQ : case CompType::NEQ : p = Vocabulary::std()->pred("=/2"); break;
+			case CompType::LT : case CompType::GEQ : p = Vocabulary::std()->pred("</2"); break;
+			case CompType::GT : case CompType::LEQ : p = Vocabulary::std()->pred(">/2"); break;
 			default: assert(false);
 		}
-		bool sign = (*it == CT_EQ || *it == CT_LT || *it == CT_GT); 
+		SIGN sign = (*it == CompType::EQ || *it == CompType::LT || *it == CompType::GT)?SIGN::POS:SIGN::NEG;
 		vector<Sort*> vs(2); vs[0] = ef->subterms()[n]->sort(); vs[1] = ef->subterms()[n+1]->sort();
 		p = p->disambiguate(vs,_vocab);
 		assert(p);
@@ -781,7 +763,7 @@ Formula* EqChainRemover::visit(EqChainForm* ef) {
 		vf.push_back(pf);
 	}
 	if(vf.size() == 1) {
-		if(!ef->sign()) vf[0]->swapsign();
+		if(isNeg(ef->sign())) vf[0]->swapsign();
 		delete(ef);
 		return vf[0];
 	}
@@ -804,10 +786,10 @@ class QuantMover : public TheoryMutatingVisitor {
 Formula* QuantMover::visit(QuantForm* qf) {
 	if(typeid(*(qf->subf())) == typeid(BoolForm)) {
 		BoolForm* bf = dynamic_cast<BoolForm*>(qf->subf());
-		bool u = (qf->univ() == qf->sign());
-		bool c = (bf->conj() == bf->sign());
-		if(u == c) {
-			bool s = (qf->sign() == bf->sign());
+		QUANT u = qf->isUnivWithSign()?QUANT::UNIV:QUANT::EXIST;
+		bool c = bf->isConjWithSign();
+		if((u==QUANT::UNIV && bf->isConjWithSign()) || (u==QUANT::EXIST && not bf->isConjWithSign())) {
+			SIGN s = (qf->sign() == bf->sign())?SIGN::POS:SIGN::NEG;
 			vector<Formula*> vf;
 			for(vector<Formula*>::const_iterator it = bf->subformulas().begin(); it != bf->subformulas().end(); ++it) {
 				QuantForm* nqf = new QuantForm(s,u,qf->quantvars(),*it,FormulaParseInfo());
@@ -815,7 +797,7 @@ Formula* QuantMover::visit(QuantForm* qf) {
 				delete(nqf);
 			}
 			qf->subf()->recursiveDelete();
-			BoolForm* nbf = new BoolForm(true,c,vf,(qf->pi()).clone());
+			BoolForm* nbf = new BoolForm(SIGN::POS,c,vf,(qf->pi()).clone());
 			delete(qf);
 			return nbf->accept(this);
 		}
@@ -875,15 +857,15 @@ Definition* Completer::visit(Definition* def) {
 	for(map<PFSymbol*,vector<Formula*> >::const_iterator it = _interres.begin(); it != _interres.end(); ++it) {
 		assert(!it->second.empty());
 		Formula* b = it->second[0];
-		if(it->second.size() > 1) b = new BoolForm(true,false,it->second,FormulaParseInfo());
-		PredForm* h = new PredForm(true,it->first,TermUtils::makeNewVarTerms(_headvars[it->first]),FormulaParseInfo());
-		EquivForm* ev = new EquivForm(true,h,b,FormulaParseInfo());
+		if(it->second.size() > 1) b = new BoolForm(SIGN::POS,false,it->second,FormulaParseInfo());
+		PredForm* h = new PredForm(SIGN::POS,it->first,TermUtils::makeNewVarTerms(_headvars[it->first]),FormulaParseInfo());
+		EquivForm* ev = new EquivForm(SIGN::POS,h,b,FormulaParseInfo());
 		if(it->first->sorts().empty()) {
 			_result.push_back(ev);
 		}
 		else {
 			set<Variable*> qv(_headvars[it->first].begin(),_headvars[it->first].end());
-			QuantForm* qf = new QuantForm(true,true,qv,ev,FormulaParseInfo());
+			QuantForm* qf = new QuantForm(SIGN::POS,QUANT::UNIV,qv,ev,FormulaParseInfo());
 			_result.push_back(qf);
 		}
 	}
@@ -903,7 +885,7 @@ Rule* Completer::visit(Rule* rule) {
 			VarTerm* bvt = new VarTerm(vv[n],TermParseInfo());
 			vector<Term*> args; args.push_back(bvt); args.push_back(t->clone());
 			Predicate* p = Vocabulary::std()->pred("=/2")->resolve(vector<Sort*>(2,vv[n]->sort()));
-			PredForm* pf = new PredForm(true,p,args,FormulaParseInfo());
+			PredForm* pf = new PredForm(SIGN::POS,p,args,FormulaParseInfo());
 			vf.push_back(pf);
 		}
 		else {
@@ -917,7 +899,7 @@ Rule* Completer::visit(Rule* rule) {
 				VarTerm* bvt2 = new VarTerm(mvv[v],TermParseInfo());
 				vector<Term*> args; args.push_back(bvt1); args.push_back(bvt2);
 				Predicate* p = Vocabulary::std()->pred("=/2")->resolve(vector<Sort*>(2,v->sort()));
-				PredForm* pf = new PredForm(true,p,args,FormulaParseInfo());
+				PredForm* pf = new PredForm(SIGN::POS,p,args,FormulaParseInfo());
 				vf.push_back(pf);
 			}
 		}
@@ -925,10 +907,10 @@ Rule* Completer::visit(Rule* rule) {
 	Formula* b = rule->body();
 	if(!vf.empty()) {
 		vf.push_back(b);
-		b = new BoolForm(true,true,vf,FormulaParseInfo());
+		b = new BoolForm(SIGN::POS,true,vf,FormulaParseInfo());
 	}
 	if(!freevars.empty()) {
-		b = new QuantForm(true,false,freevars,b,FormulaParseInfo());
+		b = new QuantForm(SIGN::POS,QUANT::EXIST,freevars,b,FormulaParseInfo());
 	}
 	b = b->clone(mvv);
 	_interres[rule->head()->symbol()].push_back(b);
@@ -947,13 +929,13 @@ Rule* Completer::visit(Rule* rule) {
 class TermMover : public TheoryMutatingVisitor {
 	protected:
 		Vocabulary*			_vocabulary;	//!< Used to do type derivation during rewrites
-		PosContext			_context;		//!< Keeps track of the current context where terms are moved
+		Context			_context;		//!< Keeps track of the current context where terms are moved
 		bool				_movecontext;	//!< true iff terms in the current context may be moved
 		vector<Formula*>	_equalities;	//!< used to temporarily store the equalities generated when moving terms
 		set<Variable*>		_variables;		//!< used to temporarily store the freshly introduced variables
 	public:
 		
-		TermMover(PosContext context = PC_POSITIVE, Vocabulary* v = 0) : 
+		TermMover(Context context = Context::POSITIVE, Vocabulary* v = 0) :
 			_vocabulary(v), _context(context), _movecontext(false) { }
 
 		void contextProblem(Term* t) {
@@ -975,7 +957,7 @@ class TermMover : public TheoryMutatingVisitor {
 		 * Create a variable and an equation for the given term
 		 */
 		VarTerm* move(Term* term) {
-			if(_context == PC_BOTH) contextProblem(term);
+			if(_context == Context::BOTH) contextProblem(term);
 
 			Variable* introduced_var = new Variable(term->sort());
 
@@ -985,7 +967,7 @@ class TermMover : public TheoryMutatingVisitor {
 			equality_args[0] = introduced_eq_term;
 			equality_args[1] = term;
 			Predicate* equalpred = VocabularyUtils::equal(term->sort());
-			PredForm* equalatom = new PredForm(true,equalpred,equality_args,FormulaParseInfo());
+			PredForm* equalatom = new PredForm(SIGN::POS,equalpred,equality_args,FormulaParseInfo());
 
 			_equalities.push_back(equalatom);
 			_variables.insert(introduced_var);
@@ -998,19 +980,19 @@ class TermMover : public TheoryMutatingVisitor {
 		Formula* rewrite(Formula* formula) {
 			const FormulaParseInfo& origpi = formula->pi();
 			bool univ_and_disj = false;
-			if(_context == PC_POSITIVE) {
+			if(_context == Context::POSITIVE) {
 				univ_and_disj = true;
 				for(vector<Formula*>::const_iterator it = _equalities.begin(); it != _equalities.end(); ++it) 
 					(*it)->swapsign();
 			}
 			if(!_equalities.empty()) {
 				_equalities.push_back(formula);
-				if(!_variables.empty()) formula = new BoolForm(true,!univ_and_disj,_equalities,origpi);
-				else formula = new BoolForm(true,!univ_and_disj,_equalities,FormulaParseInfo());
+				if(!_variables.empty()) formula = new BoolForm(SIGN::POS,!univ_and_disj,_equalities,origpi);
+				else formula = new BoolForm(SIGN::POS,!univ_and_disj,_equalities,FormulaParseInfo());
 				_equalities.clear();
 			}
 			if(!_variables.empty()) {
-				formula = new QuantForm(true,univ_and_disj,_variables,formula,origpi);
+				formula = new QuantForm(SIGN::POS,univ_and_disj?QUANT::UNIV:QUANT::EXIST,_variables,formula,origpi);
 				_variables.clear();
 			}
 			return formula;
@@ -1021,7 +1003,7 @@ class TermMover : public TheoryMutatingVisitor {
 		 */
 		Theory* visit(Theory* theory) {
 			for(unsigned int n = 0; n < theory->sentences().size(); ++n) {
-				_context = PC_POSITIVE;
+				_context = Context::POSITIVE;
 				_movecontext = false;
 				theory->sentence(n,theory->sentences()[n]->accept(this));
 			}
@@ -1055,23 +1037,25 @@ class TermMover : public TheoryMutatingVisitor {
 				}
 				
 				_equalities.push_back(rule->body());
-				rule->body(new BoolForm(true,true,_equalities,FormulaParseInfo()));
+				rule->body(new BoolForm(SIGN::POS,true,_equalities,FormulaParseInfo()));
 
 				_equalities.clear();
 				_variables.clear();
 			}
 
 			// Visit body
-			_context = PC_NEGATIVE;
+			_context = Context::NEGATIVE;
 			_movecontext = false;
 			rule->body(rule->body()->accept(this));
 			return rule;
 		}
 
 		virtual Formula* traverse(Formula* f) {
-			PosContext savecontext = _context;
+			Context savecontext = _context;
 			bool savemovecontext = _movecontext;
-			_context = f->sign() ? _context : swapcontext(_context);
+			if(isNeg(f->sign())){
+				_context = swapcontext(_context);
+			}
 			for(unsigned int n = 0; n < f->subterms().size(); ++n) {
 				f->subterm(n,f->subterms()[n]->accept(this));
 			}
@@ -1084,8 +1068,8 @@ class TermMover : public TheoryMutatingVisitor {
 		}
 
 		virtual Formula* visit(EquivForm* ef) {
-			PosContext savecontext = _context;
-			_context = PC_BOTH;
+			Context savecontext = _context;
+			_context = Context::BOTH;
 			Formula* f = traverse(ef);
 			_context = savecontext;
 			return f;
@@ -1100,30 +1084,30 @@ class TermMover : public TheoryMutatingVisitor {
 
 		virtual Formula* visit(EqChainForm* ef) {
 			if(ef->comps().size() == 1) {	// Rewrite to an normal atom
-				bool atomsign = ef->sign();
+				SIGN atomsign = ef->sign();
 				Sort* atomsort = SortUtils::resolve(ef->subterms()[0]->sort(),ef->subterms()[1]->sort(),_vocabulary);
 				Predicate* comppred;
 				switch(ef->comps()[0]) {
-					case CT_EQ:
+					case CompType::EQ:
 						comppred = VocabularyUtils::equal(atomsort);
 						break;
-					case CT_LT:
+					case CompType::LT:
 						comppred = VocabularyUtils::lessthan(atomsort);
 						break;
-					case CT_GT:
+					case CompType::GT:
 						comppred = VocabularyUtils::greaterthan(atomsort);
 						break;
-					case CT_NEQ:
+					case CompType::NEQ:
 						comppred = VocabularyUtils::equal(atomsort);
-						atomsign = !atomsign;
+						atomsign = not atomsign;
 						break;
-					case CT_LEQ:
+					case CompType::LEQ:
 						comppred = VocabularyUtils::greaterthan(atomsort);
-						atomsign = !atomsign;
+						atomsign = not atomsign;
 						break;
-					case CT_GEQ:
+					case CompType::GEQ:
 						comppred = VocabularyUtils::lessthan(atomsort);
-						atomsign = !atomsign;
+						atomsign = not atomsign;
 						break;
 				}
 				vector<Term*> atomargs(2);
@@ -1179,7 +1163,7 @@ class TermMover : public TheoryMutatingVisitor {
 		}
 
 		virtual Term* traverse(Term* term) {
-			PosContext savecontext = _context;
+			Context savecontext = _context;
 			bool savemovecontext = _movecontext;
 			for(unsigned int n = 0; n < term->subterms().size(); ++n) {
 				term->subterm(n,term->subterms()[n]->accept(this));
@@ -1221,20 +1205,20 @@ class TermMover : public TheoryMutatingVisitor {
 			vector<Formula*> saveequalities = _equalities; _equalities.clear();
 			set<Variable*> savevars = _variables; _variables.clear();
 			bool savemovecontext = _movecontext; _movecontext = true;
-			PosContext savecontext = _context;
+			Context savecontext = _context;
 
 			for(unsigned int n = 0; n < s->subterms().size(); ++n) {
 				s->subterm(n,s->subterms()[n]->accept(this));
 				if(!_equalities.empty()) {
 					_equalities.push_back(s->subformulas()[n]);
-					s->subformula(n,new BoolForm(true,true,_equalities,FormulaParseInfo()));
+					s->subformula(n,new BoolForm(SIGN::POS,true,_equalities,FormulaParseInfo()));
 					savevars.insert(_variables.begin(),_variables.end());
 					_equalities.clear();
 					_variables.clear();
 				}
 			}
 
-			_context = PC_POSITIVE;
+			_context = Context::POSITIVE;
 			_movecontext = false;
 			for(unsigned int n = 0; n < s->subformulas().size(); ++n) {
 				s->subformula(n,s->subformulas()[n]->accept(this));
@@ -1250,12 +1234,12 @@ class TermMover : public TheoryMutatingVisitor {
 			vector<Formula*> saveequalities = _equalities; _equalities.clear();
 			set<Variable*> savevars = _variables; _variables.clear();
 			bool savemovecontext = _movecontext; _movecontext = true;
-			PosContext savecontext = _context; _context = PC_POSITIVE;
+			Context savecontext = _context; _context = Context::POSITIVE;
 
 			s->subterm(0,s->subterms()[0]->accept(this));
 			if(!_equalities.empty()) {
 				_equalities.push_back(s->subformulas()[0]);
-				BoolForm* bf = new BoolForm(true,true,_equalities,FormulaParseInfo());
+				BoolForm* bf = new BoolForm(SIGN::POS,true,_equalities,FormulaParseInfo());
 				s->subformula(0,bf);
 				for(set<Variable*>::const_iterator it = _variables.begin(); it != _variables.end(); ++it) {
 					s->addquantvar(*it);
@@ -1265,7 +1249,7 @@ class TermMover : public TheoryMutatingVisitor {
 			}
 
 			_movecontext = false;
-			_context = PC_POSITIVE;
+			_context = Context::POSITIVE;
 			s->subformula(0,s->subformulas()[0]->accept(this));
 
 			_variables = savevars;
@@ -1280,7 +1264,7 @@ class TermMover : public TheoryMutatingVisitor {
 class ThreeValuedTermMover : public TheoryMutatingVisitor {
 	private:
 		AbstractStructure*			_structure;
-		bool						_poscontext;
+		bool						_Context;
 		vector<Formula*>			_termgraphs;
 		set<Variable*>				_variables;
 		bool						_keepterm;
@@ -1290,7 +1274,7 @@ class ThreeValuedTermMover : public TheoryMutatingVisitor {
 
 	public:
 		ThreeValuedTermMover(AbstractStructure* str, bool posc, bool cps=false, const set<const PFSymbol*>& cpsymbols=set<const PFSymbol*>()):
-			_structure(str), _poscontext(posc), _termgraphs(0), _variables(), _cpsupport(cps), _cpsymbols(cpsymbols) { }
+			_structure(str), _Context(posc), _termgraphs(0), _variables(), _cpsupport(cps), _cpsymbols(cpsymbols) { }
 		Formula*	visit(PredForm* pf);
 		Formula*	visit(AggForm* af);
 		Term*		visit(FuncTerm* ft);
@@ -1322,7 +1306,7 @@ Term* ThreeValuedTermMover::visit(FuncTerm* functerm) {
 		for(unsigned int n = 0; n < func->arity(); ++n)
 			args.push_back(functerm->subterms()[n]);
 		args.push_back(varterm);
-		PredForm* predform = new PredForm(true,func,args,FormulaParseInfo());
+		PredForm* predform = new PredForm(SIGN::POS,func,args,FormulaParseInfo());
 		_termgraphs.push_back(predform);
 		_variables.insert(var);
 		delete(functerm);
@@ -1337,7 +1321,7 @@ Term* ThreeValuedTermMover::visit(AggTerm* aggterm) {
 		Variable* var = new Variable(aggterm->sort());
 		VarTerm* varterm = new VarTerm(var,TermParseInfo());
 		AggTerm* newaggterm = new AggTerm(aggterm->set(),aggterm->function(),TermParseInfo());
-		AggForm* aggform = new AggForm(true,varterm,CT_EQ,newaggterm,FormulaParseInfo());
+		AggForm* aggform = new AggForm(SIGN::POS,varterm,CompType::EQ,newaggterm,FormulaParseInfo());
 		_termgraphs.push_back(aggform);
 		_variables.insert(var);
 		delete(aggterm);
@@ -1372,9 +1356,9 @@ Formula* ThreeValuedTermMover::visit(PredForm* predform) {
 			Term* right = predform->subterms()[1];
 			//TODO: Check whether handled correctly when both sides are AggTerms!!
 			CompType comp;
-			if(symbname == "=/2") comp = CT_EQ;
-			else if(symbname == "</2") comp = CT_LT;
-			else comp = CT_GT;
+			if(symbname == "=/2") comp = CompType::EQ;
+			else if(symbname == "</2") comp = CompType::LT;
+			else comp = CompType::GT;
 			if(typeid(*left) == typeid(AggTerm)) {
 				AggTerm* aggterm = dynamic_cast<AggTerm*>(left);
 				comp = invertcomp(comp);
@@ -1405,7 +1389,7 @@ Formula* ThreeValuedTermMover::visit(PredForm* predform) {
 	}
 	else {	// Rewriting is needed
 		// Negate equations in a positive context
-		if(_poscontext) {
+		if(_Context) {
 			for(vector<Formula*>::const_iterator it = _termgraphs.begin(); it != _termgraphs.end(); ++it)
 				(*it)->swapsign();
 		}
@@ -1415,8 +1399,8 @@ Formula* ThreeValuedTermMover::visit(PredForm* predform) {
 		_termgraphs.push_back(newpredform);
 
 		// Create and return the rewriting
-		BoolForm* boolform = new BoolForm(true,!_poscontext,_termgraphs,FormulaParseInfo());
-		QuantForm* quantform = new QuantForm(true,_poscontext,_variables,boolform,FormulaParseInfo());
+		BoolForm* boolform = new BoolForm(SIGN::POS,!_Context,_termgraphs,FormulaParseInfo());
+		QuantForm* quantform = new QuantForm(SIGN::POS,_Context?QUANT::UNIV:QUANT::EXIST,_variables,boolform,FormulaParseInfo());
 		delete(predform);
 		return quantform;
 	}
@@ -1430,15 +1414,15 @@ Formula* ThreeValuedTermMover::visit(AggForm* af) {
 	}
 	else {
 		// In a positive context, the equations are negated
-		if(_poscontext) {
+		if(_Context) {
 			for(unsigned int n = 0; n < _termgraphs.size(); ++n)
 				_termgraphs[n]->swapsign();
 		}
 		_termgraphs.push_back(af);
 
 		// Create and return the rewriting
-		BoolForm* bf = new BoolForm(true,!_poscontext,_termgraphs,FormulaParseInfo());
-		QuantForm* qf = new QuantForm(true,_poscontext,_variables,bf,(af->pi()).clone());
+		BoolForm* bf = new BoolForm(SIGN::POS,!_Context,_termgraphs,FormulaParseInfo());
+		QuantForm* qf = new QuantForm(SIGN::POS,_Context?QUANT::UNIV:QUANT::EXIST,_variables,bf,(af->pi()).clone());
 		return qf;
 	}
 }
@@ -1449,7 +1433,7 @@ Formula* ThreeValuedTermMover::visit(AggForm* af) {
 
 class PartialTermMover : public TermMover {
 	public:
-		PartialTermMover(PosContext context, Vocabulary* voc) : TermMover(context,voc) { }
+		PartialTermMover(Context context, Vocabulary* voc) : TermMover(context,voc) { }
 
 		bool shouldMove(Term* t) {
 			return (_movecontext && TermUtils::isPartial(t));
@@ -1521,11 +1505,11 @@ class FormulaCounter : public TheoryVisitor {
 namespace FormulaUtils {
 
 	BoolForm* trueform() {
-		return new BoolForm(true,true,vector<Formula*>(0),FormulaParseInfo());
+		return new BoolForm(SIGN::POS,true,vector<Formula*>(0),FormulaParseInfo());
 	}
 
 	BoolForm* falseform() {
-		return new BoolForm(true,false,vector<Formula*>(0),FormulaParseInfo());
+		return new BoolForm(SIGN::POS,false,vector<Formula*>(0),FormulaParseInfo());
 	}
 
 	Formula* remove_eqchains(Formula* f, Vocabulary* v) {
@@ -1552,20 +1536,20 @@ namespace FormulaUtils {
 	 * 
 	 *		\param pf			the given atom
 	 *		\param str			the given structure
-	 *		\param poscontext	true iff we are in a positive context
+	 *		\param Context	true iff we are in a positive context
 	 *		\param usingcp
 	 *
 	 *		\return The rewritten formula. If no rewriting was needed, it is the same pointer as pf.
 	 *		If rewriting was needed, pf can be deleted, but not recursively.
 	 *		
 	 */
-	Formula* moveThreeValuedTerms(Formula* f, AbstractStructure* str, bool poscontext, bool cpsupport, const set<const PFSymbol*> cpsymbols) {
-		ThreeValuedTermMover tvtm(str,poscontext,cpsupport,cpsymbols);
+	Formula* moveThreeValuedTerms(Formula* f, AbstractStructure* str, bool Context, bool cpsupport, const set<const PFSymbol*> cpsymbols) {
+		ThreeValuedTermMover tvtm(str,Context,cpsupport,cpsymbols);
 		Formula* rewriting = f->accept(&tvtm);
 		return rewriting;
 	}
 
-	Formula* movePartialTerms(Formula* f, Vocabulary* voc, PosContext context) {
+	Formula* movePartialTerms(Formula* f, Vocabulary* voc, Context context) {
 		PartialTermMover ptm(context,voc);
 		Formula* rewriting = f->accept(&ptm);
 		return rewriting;
@@ -1573,22 +1557,22 @@ namespace FormulaUtils {
 
 	bool monotone(const AggForm* af) {
 		switch(af->comp()) {
-			case CT_EQ: case CT_NEQ: return false;
-			case CT_LT: case CT_LEQ: {
+			case CompType::EQ: case CompType::NEQ: return false;
+			case CompType::LT: case CompType::LEQ: {
 				switch(af->right()->function()) {
-					case AGG_CARD : case AGG_MAX: return af->sign();
-					case AGG_MIN : return !af->sign();
-					case AGG_SUM : return af->sign(); //FIXME: Asserts that weights are positive! Not correct otherwise.
-					case AGG_PROD : return af->sign();//FIXME: Asserts that weights are larger than one! Not correct otherwise.
+					case AggFunction::CARD : case AggFunction::MAX: return isPos(af->sign());
+					case AggFunction::MIN : return isNeg(af->sign());
+					case AggFunction::SUM : return isPos(af->sign()); //FIXME: Asserts that weights are positive! Not correct otherwise.
+					case AggFunction::PROD : return isPos(af->sign());//FIXME: Asserts that weights are larger than one! Not correct otherwise.
 				}
 				break;
 			}
-			case CT_GT: case CT_GEQ: { 
+			case CompType::GT: case CompType::GEQ: {
 				switch(af->right()->function()) {
-					case AGG_CARD : case AGG_MAX: return !af->sign();
-					case AGG_MIN : return af->sign();
-					case AGG_SUM : return !af->sign(); //FIXME: Asserts that weights are positive! Not correct otherwise.
-					case AGG_PROD : return !af->sign();//FIXME: Asserts that weights are larger than one! Not correct otherwise.
+					case AggFunction::CARD : case AggFunction::MAX: return isNeg(af->sign());
+					case AggFunction::MIN : return isPos(af->sign());
+					case AggFunction::SUM : return isNeg(af->sign()); //FIXME: Asserts that weights are positive! Not correct otherwise.
+					case AggFunction::PROD : return isNeg(af->sign());//FIXME: Asserts that weights are larger than one! Not correct otherwise.
 				}
 				break;
 			}
@@ -1599,22 +1583,22 @@ namespace FormulaUtils {
 
 	bool antimonotone(const AggForm* af) {
 		switch(af->comp()) {
-			case CT_EQ: case CT_NEQ: return false;
-			case CT_LT: case CT_LEQ: { 
+			case CompType::EQ: case CompType::NEQ: return false;
+			case CompType::LT: case CompType::LEQ: {
 				switch(af->right()->function()) {
-					case AGG_CARD : case AGG_MAX: return !af->sign();
-					case AGG_MIN : return af->sign();
-					case AGG_SUM : return !af->sign(); //FIXME: Asserts that weights are positive! Not correct otherwise.
-					case AGG_PROD : return !af->sign();//FIXME: Asserts that weights are larger than one! Not correct otherwise.
+					case AggFunction::CARD : case AggFunction::MAX: return isNeg(af->sign());
+					case AggFunction::MIN : return isPos(af->sign());
+					case AggFunction::SUM : return isNeg(af->sign()); //FIXME: Asserts that weights are positive! Not correct otherwise.
+					case AggFunction::PROD : return isNeg(af->sign());//FIXME: Asserts that weights are larger than one! Not correct otherwise.
 				}
 				break;
 			}
-			case CT_GT: case CT_GEQ: {
+			case CompType::GT: case CompType::GEQ: {
 				switch(af->right()->function()) {
-					case AGG_CARD : case AGG_MAX: return af->sign();
-					case AGG_MIN : return !af->sign();
-					case AGG_SUM : return af->sign(); //FIXME: Asserts that weights are positive! Not correct otherwise.
-					case AGG_PROD : return af->sign();//FIXME: Asserts that weights are larger than one! Not correct otherwise.
+					case AggFunction::CARD : case AggFunction::MAX: return isPos(af->sign());
+					case AggFunction::MIN : return isNeg(af->sign());
+					case AggFunction::SUM : return isPos(af->sign()); //FIXME: Asserts that weights are positive! Not correct otherwise.
+					case AggFunction::PROD : return isPos(af->sign());//FIXME: Asserts that weights are larger than one! Not correct otherwise.
 				}
 				break;
 			}
