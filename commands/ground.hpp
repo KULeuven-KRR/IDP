@@ -25,7 +25,9 @@ private:
 		FOPropagator* propagator = propinference.createpropagator(theory,mpi,options);
 		propagator->run();
 		SymbolicStructure* symstructure = propagator->symbolicstructure();
-		symstructure->filter(structure,5);
+
+std::cerr << "Computed the following symbolic structure:" << std::endl;
+symstructure->put(std::cerr);
 
 		GrounderFactory factory(structure,options,symstructure);
 		TopLevelGrounder* grounder = factory.create(theory);

@@ -1742,9 +1742,23 @@ void GeneratorFactory::visit(const StrGreaterInternalPredTable* ) {
 }
 
 void GeneratorFactory::visit(const InverseInternalPredTable* iip) {
-	// TODO: optimize by checking the type of the internal table!!!
-	PredTable* temp = new PredTable(iip->table(),_universe);
-	_generator = new InverseInstGenerator(temp,_pattern,_vars);
+	InternalPredTable* interntable = iip->table();
+	if(typeid(*interntable) == typeid(InverseInternalPredTable)) {
+		dynamic_cast<InverseInternalPredTable*>(interntable)->table()->accept(this);
+	}
+	else if(typeid(*interntable) == typeid(BDDInternalPredTable)) {
+		BDDInternalPredTable* bddintern = dynamic_cast<BDDInternalPredTable*>(interntable);
+		const FOBDD* invertedbdd = bddintern->manager()->negation(bddintern->bdd());
+		BDDInternalPredTable* invertedbddtable = new BDDInternalPredTable(invertedbdd,bddintern->manager(),bddintern->vars(),bddintern->structure());
+		visit(invertedbddtable);
+	}
+	else if(typeid(*interntable) == typeid(FullInternalPredTable)) {
+		_generator = new EmptyGenerator();
+	}
+	else {
+		PredTable* temp = new PredTable(iip->table(),_universe);
+		_generator = new InverseInstGenerator(temp,_pattern,_vars);
+	}
 }
 
 void GeneratorFactory::visit(const FuncTable* ft) {

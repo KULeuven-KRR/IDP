@@ -34,6 +34,7 @@ using namespace rel_ops;
 int _true = numeric_limits<int>::max();
 int _false = 0;
 
+double MCPA = 5;
 
 /****************************************
 	Comparison operators for TsBodies
@@ -508,9 +509,10 @@ void FormulaGrounder::printorig() const {
 }
 
 AtomGrounder::AtomGrounder(GroundTranslator* gt, bool sign, PFSymbol* s,
-							const vector<TermGrounder*> sg, InstanceChecker* pic, InstanceChecker* cic,
+							const vector<TermGrounder*> sg, const vector<const DomainElement**>& checkargs,
+							InstGenerator* pic, InstGenerator* cic, PredInter* inter,
 							const vector<SortTable*>& vst, const GroundingContext& ct) :
-	FormulaGrounder(gt,ct), _subtermgrounders(sg), _pchecker(pic), _cchecker(cic),
+	FormulaGrounder(gt,ct), _subtermgrounders(sg), _checkargs(checkargs), _pchecker(pic), _cchecker(cic), _inter(inter),
    	_symbol(gt->addSymbol(s)), _tables(vst), _sign(sign)
 	{ _certainvalue = ct._truegen ? _true : _false; }
 
@@ -559,20 +561,25 @@ int AtomGrounder::run() const {
 
 	// Run instance checkers
 	if(alldomelts) {
-		if(not _pchecker->run(args)) {
+		for(unsigned int n = 0; n < args.size(); ++n) {
+			*(_checkargs[n]) = args[n];
+		}
+		if(not _pchecker->first()) {
 			if(_verbosity > 2) {
 				clog << "Possible checker failed\n";
 				clog << "Result is " << (_certainvalue ? "false" : "true") << "\n";
 			}
 			return _certainvalue ? _false : _true;	// TODO: dit is lelijk
 		}
-		if(_cchecker->run(args)) {
+		if(_cchecker->first()) {
 			if(_verbosity > 2) {
 				clog << "Certain checker succeeded\n";
 				clog << "Result is " << _translator->printAtom(_certainvalue) << "\n";
 			}
 			return _certainvalue;
 		}
+		if(_inter->istrue(args)) return _sign ? _true : _false;
+		if(_inter->isfalse(args)) return _sign ? _false : _true;
 	}
 
 	// Return grounding
@@ -1938,19 +1945,35 @@ void GrounderFactory::visit(const PredForm* pf) {
 			}
 			else {
 				// Create instance checkers
-				InstanceChecker* possch;
-				InstanceChecker* certainch;
-				if(_context._truegen == ptranspf->sign()) {	
-					possch = checkfactory.create(inter,false,false);
-					certainch = checkfactory.create(inter,true,true);
+				vector<Sort*> checksorts;
+				vector<const DomainElement**> checkargs;
+				vector<SortTable*> tables;
+				for(auto it = ptranspf->subterms().begin(); it != ptranspf->subterms().end(); ++it) {
+					checksorts.push_back((*it)->sort());
+					checkargs.push_back(new const DomainElement*());
+					tables.push_back(_structure->inter((*it)->sort()));
+				}
+				vector<Variable*> fovars = VarUtils::makeNewVariables(checksorts);
+				vector<Term*> foterms = TermUtils::makeNewVarTerms(fovars);
+				PredForm* checkpf = new PredForm(ptranspf->sign(),ptranspf->symbol(),foterms,FormulaParseInfo());
+				const FOBDD* possbdd;
+				const FOBDD* certbdd;
+				if(_context._truegen) {	
+					possbdd = _symstructure->evaluate(checkpf,QT_PT);
+					certbdd = _symstructure->evaluate(checkpf,QT_CT); 
 				}
 				else {	
-					possch = checkfactory.create(inter,true,false);
-					certainch = checkfactory.create(inter,false,true);
+					possbdd = _symstructure->evaluate(checkpf,QT_PF);
+					certbdd = _symstructure->evaluate(checkpf,QT_CF); 
 				}
+				PredTable* posstable = new PredTable(new BDDInternalPredTable(possbdd,_symstructure->manager(),fovars,_structure),Universe(tables));
+				PredTable* certtable = new PredTable(new BDDInternalPredTable(certbdd,_symstructure->manager(),fovars,_structure),Universe(tables));
+				GeneratorFactory gf;
+				InstGenerator* possch = gf.create(posstable,vector<bool>(checkargs.size(),true),checkargs,Universe(tables));
+				InstGenerator* certainch = gf.create(certtable,vector<bool>(checkargs.size(),true),checkargs,Universe(tables));
 				// Create the grounder
 				_formgrounder = new AtomGrounder(_grounding->translator(),ptranspf->sign(),ptranspf->symbol(),
-										subtermgrounders,possch,certainch,argsorttables,_context);
+										subtermgrounders,checkargs,possch,certainch,inter,argsorttables,_context);
 				_formgrounder->setorig(ptranspf,_varmapping,_verbosity);
 				if(_context._component == CC_SENTENCE) { 
 					_toplevelgrounder = new SentenceGrounder(_grounding,_formgrounder,false,_verbosity);
@@ -2031,6 +2054,51 @@ void GrounderFactory::visit(const BoolForm* bf) {
 	}
 }
 
+const FOBDD* GrounderFactory::improve_generator(const FOBDD* bdd, const vector<Variable*>& fovars, double mcpa) {
+	FOBDDManager* manager = _symstructure->manager();
+
+cerr << "improving\n";
+manager->put(cerr,bdd);
+
+	// 1. Optimize the query
+	FOBDDManager optimizemanager;
+	const FOBDD* copybdd = optimizemanager.getBDD(bdd,manager);
+	set<const FOBDDVariable*> copyvars;
+	set<const FOBDDDeBruijnIndex*> indices;
+	for(auto it = fovars.begin(); it != fovars.end(); ++it) 
+		copyvars.insert(optimizemanager.getVariable(*it));
+	optimizemanager.optimizequery(copybdd,copyvars,indices,_structure);
+
+cerr << "optimized version\n";
+optimizemanager.put(cerr,copybdd);
+
+	// 2. Remove certain leaves
+	const FOBDD* pruned = optimizemanager.make_more_true(copybdd,copyvars,indices,_structure,mcpa);
+
+cerr << "pruned version\n";
+optimizemanager.put(cerr,pruned);
+
+	// 3. Replace result
+	return manager->getBDD(pruned,&optimizemanager);
+}
+
+const FOBDD* GrounderFactory::improve_checker(const FOBDD* bdd, double mcpa) {
+	FOBDDManager* manager = _symstructure->manager();
+
+	// 1. Optimize the query
+	FOBDDManager optimizemanager;
+	const FOBDD* copybdd = optimizemanager.getBDD(bdd,manager);
+	set<const FOBDDVariable*> copyvars;
+	set<const FOBDDDeBruijnIndex*> indices;
+	optimizemanager.optimizequery(copybdd,copyvars,indices,_structure);
+
+	// 2. Remove certain leaves
+	const FOBDD* pruned = optimizemanager.make_more_false(copybdd,copyvars,indices,_structure,mcpa);
+
+	// 3. Replace result
+	return manager->getBDD(pruned,&optimizemanager);
+}
+
 /**
  * void GrounderFactory::visit(const QuantForm* qf)
  * DESCRIPTION
@@ -2046,21 +2114,22 @@ void GrounderFactory::visit(const BoolForm* bf) {
  *			CC_HEAD is not possible
  */
 void GrounderFactory::visit(const QuantForm* qf) {
-//cerr << "visit of " << *qf << endl;
+cerr << "visit of " << *qf << endl;
 	// Create instance generator
 	Formula* clonedformula = qf->subf()->clone();
 	Formula* movedformula = FormulaUtils::moveThreeValTerms(clonedformula,_structure,(_context._funccontext!=PC_NEGATIVE));
 	movedformula = FormulaUtils::remove_eqchains(movedformula);
 	movedformula = FormulaUtils::graph_functions(movedformula);
-//cerr << "body translated to " << *movedformula << endl;
+cerr << "body translated to " << *movedformula << endl;
 	const FOBDD* generatorbdd = _symstructure->evaluate(movedformula,(qf->univ() ? QT_PF : QT_PT));
 	const FOBDD* checkerbdd = _symstructure->evaluate(movedformula,(qf->univ() ? QT_CF : QT_CT));
-//cerr << "generatorbdd:\n";
-//_symstructure->manager()->put(cerr,generatorbdd);
-//cerr << "checkerbdd:\n";
-//_symstructure->manager()->put(cerr,checkerbdd);
+cerr << "generatorbdd:\n";
+_symstructure->manager()->put(cerr,generatorbdd);
+cerr << "checkerbdd:\n";
+_symstructure->manager()->put(cerr,checkerbdd);
 	vector<const DomainElement**> vars;
 	vector<Variable*> fovars;
+	vector<Variable*> optivars;
 	vector<SortTable*> tables;
 	vector<bool> pattern;
 	for(std::set<Variable*>::const_iterator it = movedformula->freevars().begin(); it != movedformula->freevars().end(); ++it) {
@@ -2074,11 +2143,18 @@ void GrounderFactory::visit(const QuantForm* qf) {
 			_varmapping[*it] = d;
 			vars.push_back(d);
 			pattern.push_back(false);
+			optivars.push_back(*it);
 		}
 		fovars.push_back(*it);
 		SortTable* st = _structure->inter((*it)->sort());
 		tables.push_back(st);
 	}
+	generatorbdd = improve_generator(generatorbdd,optivars,MCPA);
+	checkerbdd = improve_checker(checkerbdd,MCPA);
+cerr << "improved generatorbdd:\n";
+_symstructure->manager()->put(cerr,generatorbdd);
+cerr << "improved checkerbdd:\n";
+_symstructure->manager()->put(cerr,checkerbdd);
 	PredTable* gentable = new PredTable(new BDDInternalPredTable(generatorbdd,_symstructure->manager(),fovars,_structure),Universe(tables));
 	PredTable* checktable = new PredTable(new BDDInternalPredTable(checkerbdd,_symstructure->manager(),fovars,_structure),Universe(tables));
 	GeneratorFactory gf;
@@ -2304,6 +2380,7 @@ void GrounderFactory::visit(const QuantSetExpr* s) {
 	const FOBDD* checkerbdd = _symstructure->evaluate(movedformula,QT_CT);
 	vector<const DomainElement**> vars;
 	vector<Variable*> fovars;
+	vector<Variable*> optivars;
 	vector<SortTable*> tables;
 	vector<bool> pattern;
 	for(std::set<Variable*>::const_iterator it = movedformula->freevars().begin(); it != movedformula->freevars().end(); ++it) {
@@ -2316,11 +2393,14 @@ void GrounderFactory::visit(const QuantSetExpr* s) {
 			_varmapping[*it] = d;
 			vars.push_back(d);
 			pattern.push_back(false);
+			optivars.push_back(*it);
 		}
 		fovars.push_back(*it);
 		SortTable* st = _structure->inter((*it)->sort());
 		tables.push_back(st);
 	}
+	generatorbdd = improve_generator(generatorbdd,optivars,MCPA);
+	checkerbdd = improve_checker(checkerbdd,MCPA);
 	PredTable* gentable = new PredTable(new BDDInternalPredTable(generatorbdd,_symstructure->manager(),fovars,_structure),Universe(tables));
 	PredTable* checktable = new PredTable(new BDDInternalPredTable(checkerbdd,_symstructure->manager(),fovars,_structure),Universe(tables));
 	GeneratorFactory gf;

@@ -3134,14 +3134,14 @@ PredInter::~PredInter() {
 /**
  * \brief Returns true iff the tuple is true or inconsistent according to the predicate interpretation
  */
-inline bool PredInter::istrue(const ElementTuple& tuple) const {
+bool PredInter::istrue(const ElementTuple& tuple) const {
 	return _ct->contains(tuple);
 }
 
 /**
  * \brief Returns true iff the tuple is false or inconsistent according to the predicate interpretation
  */
-inline bool PredInter::isfalse(const ElementTuple& tuple) const {
+bool PredInter::isfalse(const ElementTuple& tuple) const {
 	if(!_cf->contains(tuple)) {
 		return !(_cf->universe().contains(tuple));
 	}
@@ -3151,7 +3151,7 @@ inline bool PredInter::isfalse(const ElementTuple& tuple) const {
 /**
  * \brief Returns true iff the tuple is unknown according to the predicate interpretation
  */
-inline bool PredInter::isunknown(const ElementTuple& tuple) const {
+bool PredInter::isunknown(const ElementTuple& tuple) const {
 	if(approxtwovalued()) return false;
 	else {
 		return !(isfalse(tuple) || istrue(tuple));
@@ -3161,7 +3161,7 @@ inline bool PredInter::isunknown(const ElementTuple& tuple) const {
 /**
  * \brief Returns true iff the tuple is inconsistent according to the predicate interpretation
  */
-inline bool PredInter::isinconsistent(const ElementTuple& tuple) const {
+bool PredInter::isinconsistent(const ElementTuple& tuple) const {
 	if(approxtwovalued()) return false;
 	else return (isfalse(tuple) && istrue(tuple));
 }

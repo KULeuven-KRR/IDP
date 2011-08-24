@@ -40,9 +40,6 @@ public:
 		propagator->run();
 		SymbolicStructure* symstructure = propagator->symbolicstructure();
 
-		// Filter symbolic structure
-		symstructure->filter(structure,5);
-
 		// Create solver and grounder
 		SATSolver* solver = createsolver(options);
 		GrounderFactory grounderfactory(structure,options,symstructure);

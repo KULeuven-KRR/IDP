@@ -53,7 +53,11 @@ void SymbolicStructure::visit(const PredForm* atom) {
 }
 
 void SymbolicStructure::visit(const BoolForm* boolform) {
+	HIER BEZIG HIER BEZIG HIER BEZIG
+
 	bool conjunction = boolform->sign() == boolform->conj();
+	conjunction = (_type == QT_PF || _type == QT_CF) ? !conjunction : conjunction;
+
 	const FOBDD* currbdd;
 	if(conjunction) currbdd = _manager->truebdd();
 	else currbdd = _manager->falsebdd();
@@ -113,6 +117,13 @@ ostream& SymbolicStructure::put(ostream& output) const {
 }
 
 const FOBDD* SymbolicStructure::prunebdd(const FOBDD* bdd, const vector<const FOBDDVariable*>& bddvars,AbstractStructure* structure, double mcpa) {
+
+cerr << "filtering the bdd\n";
+_manager->put(cerr,bdd);
+cerr << "input variables are";
+for(auto it = bddvars.begin(); it != bddvars.end(); ++it) cerr << ' ' << *((*it)->variable());
+cerr << endl;
+
 		// 1. Optimize the query
 		FOBDDManager optimizemanager;
 		const FOBDD* copybdd = optimizemanager.getBDD(bdd,_manager);
@@ -122,8 +133,16 @@ const FOBDD* SymbolicStructure::prunebdd(const FOBDD* bdd, const vector<const FO
 			copyvars.insert(optimizemanager.getVariable((*it)->variable()));
 		optimizemanager.optimizequery(copybdd,copyvars,indices,structure);
 
+cerr << "optimized version:\n";
+optimizemanager.put(cerr,copybdd);
+cerr << "estimated nr. of answers: " << optimizemanager.estimatedNrAnswers(copybdd,copyvars,indices,structure) << endl;
+cerr << "estimated cost: " << optimizemanager.estimatedCostAll(copybdd,copyvars,indices,structure) << endl;
+
 		// 2. Remove certain leaves
 		const FOBDD* pruned = optimizemanager.make_more_false(copybdd,copyvars,indices,structure,mcpa);
+
+cerr << "pruned version:\n";
+optimizemanager.put(cerr,pruned);
 
 		// 3. Replace result
 		return _manager->getBDD(pruned,&optimizemanager);
@@ -131,14 +150,14 @@ const FOBDD* SymbolicStructure::prunebdd(const FOBDD* bdd, const vector<const FO
 
 void SymbolicStructure::filter(AbstractStructure* structure, double max_cost_per_answer) {
 	for(auto it = _ctbounds.begin(); it != _ctbounds.end(); ++it) {
-cerr << "Filtering\n"; _manager->put(cerr,it->second);
+//cerr << "Filtering\n"; _manager->put(cerr,it->second);
 		it->second = prunebdd(it->second,_vars[it->first],structure,max_cost_per_answer);
-cerr << "Result of filtering\n"; _manager->put(cerr,it->second);
+//cerr << "Result of filtering\n"; _manager->put(cerr,it->second);
 	}
 	for(auto it = _cfbounds.begin(); it != _cfbounds.end(); ++it) {
-cerr << "Filtering\n"; _manager->put(cerr,it->second);
+//cerr << "Filtering\n"; _manager->put(cerr,it->second);
 		it->second = prunebdd(it->second,_vars[it->first],structure,max_cost_per_answer);
-cerr << "Result of filtering\n"; _manager->put(cerr,it->second);
+//cerr << "Result of filtering\n"; _manager->put(cerr,it->second);
 	}
 }
 

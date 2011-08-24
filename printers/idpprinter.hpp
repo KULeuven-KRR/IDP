@@ -411,16 +411,16 @@ public:
 			// Print the symbol's name.
 			output() << pfs->name().substr(0,pfs->name().find('/'));
 			// Print the symbol's sorts.
-			if(pfs->nrSorts()) {
-				output() << '[';
-				for(unsigned int n = 0; n < pfs->nrSorts(); ++n) {
-					if(pfs->sort(n)) {
-						output() << pfs->sort(n)->name();
-						if(n != pfs->nrSorts()-1) output() << ',';
-					}
-				}
-				output() << ']';
-			}
+//			if(pfs->nrSorts()) {
+//				output() << '[';
+//				for(unsigned int n = 0; n < pfs->nrSorts(); ++n) {
+//					if(pfs->sort(n)) {
+//						output() << pfs->sort(n)->name();
+//						if(n != pfs->nrSorts()-1) output() << ',';
+//					}
+//				}
+//				output() << ']';
+//			}
 			// Get the atom's arguments for the translator.
 			const std::vector<const DomainElement*>& args = _translator->args(atomnr);
 			// Print the atom's arguments.
