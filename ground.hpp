@@ -33,6 +33,8 @@ class StrictWeakElementOrdering;
 class StrictWeakTupleOrdering;
 
 typedef std::vector<const DomainElement*> ElementTuple;
+typedef int Literal;
+typedef std::vector<Literal> Clause;
 
 typedef unsigned int VarId;
 
@@ -535,16 +537,6 @@ class AtomGrounder : public FormulaGrounder {
 		void	run(std::vector<int>&) const;
 		bool	conjunctive() const { return true;	}
 };
-
-//class CPAtomGrounder : public AtomGrounder {
-//	private:
-//		GroundTermTranslator*	_termtranslator;
-//	public:
-//		CPAtomGrounder(GroundTranslator*, GroundTermTranslator*, bool sign, Function*,
-//					const std::vector<TermGrounder*>, InstanceChecker*, InstanceChecker*,
-//					const std::vector<SortTable*>&, const GroundingContext&);
-//		int	run() const;
-//};
 
 class ComparisonGrounder : public FormulaGrounder {
 	private:

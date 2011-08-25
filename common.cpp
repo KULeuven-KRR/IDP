@@ -76,19 +76,19 @@ double applyAgg(const AggFunction& agg, const vector<double>& args) {
 			break;
 		case AGG_SUM:
 			d = 0;
-			for(unsigned int n = 0; n < args.size(); ++n) d += args[n];
+			for(size_t n = 0; n < args.size(); ++n) { d += args[n]; }
 			break;
 		case AGG_PROD:
 			d = 1;
-			for(unsigned int n = 0; n < args.size(); ++n) d = d * args[n];
+			for(size_t n = 0; n < args.size(); ++n) { d = d * args[n]; }
 			break;
 		case AGG_MIN:
 			d = numeric_limits<double>::max();
-			for(unsigned int n = 0; n < args.size(); ++n) d = (d <= args[n] ? d : args[n]);
+			for(size_t n = 0; n < args.size(); ++n) { d = (d <= args[n] ? d : args[n]); }
 			break;
 		case AGG_MAX:
 			d = numeric_limits<double>::min();
-			for(unsigned int n = 0; n < args.size(); ++n) d = (d >= args[n] ? d : args[n]);
+			for(size_t n = 0; n < args.size(); ++n) { d = (d >= args[n] ? d : args[n]); }
 			break;
 	}
 	return d;

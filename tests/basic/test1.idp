@@ -31,9 +31,9 @@ structure S : V {
  */
 procedure main() {
 	print(T)
-	internal_inference::push_negations(T)
+	idp_intern.pushNegations(T)
 	print(T)
-	internal_inference::flatten(T)
+	idp_intern.flatten(T)
 	print(T)
 	print()
 	print(S)

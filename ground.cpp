@@ -520,7 +520,7 @@ AtomGrounder::AtomGrounder(GroundTranslator* gt, bool sign, PFSymbol* s,
 							const vector<SortTable*>& vst, const GroundingContext& ct) :
 	FormulaGrounder(gt,ct), _subtermgrounders(sg), _pchecker(pic), _cchecker(cic),
    	_symbol(gt->addSymbol(s)), _tables(vst), _sign(sign)
-	{ _certainvalue = ct._truegen ? _true : _false; }
+	{ _certainvalue = (ct._truegen ? _true : _false); }
 
 int AtomGrounder::run() const {
 	if(_verbosity > 2) printOrig();
@@ -529,7 +529,7 @@ int AtomGrounder::run() const {
 	bool alldomelts = true;
 	vector<GroundTerm> groundsubterms(_subtermgrounders.size());
 	ElementTuple args(_subtermgrounders.size());
-	for(unsigned int n = 0; n < _subtermgrounders.size(); ++n) {
+	for(size_t n = 0; n < _subtermgrounders.size(); ++n) {
 		groundsubterms[n] = _subtermgrounders[n]->run();
 		if(groundsubterms[n]._isvarid) {
 			alldomelts = false;
@@ -539,7 +539,7 @@ int AtomGrounder::run() const {
 	}
 
 	// Checking partial functions
-	for(unsigned int n = 0; n < args.size(); ++n) {
+	for(size_t n = 0; n < args.size(); ++n) {
 		//TODO: only check positions that can be out of bounds!
 		if(not groundsubterms[n]._isvarid && not args[n]) {
 			//TODO: produce a warning!
@@ -555,7 +555,7 @@ int AtomGrounder::run() const {
 	}
 
 	// Checking out-of-bounds
-	for(unsigned int n = 0; n < args.size(); ++n) {
+	for(size_t n = 0; n < args.size(); ++n) {
 		if(not groundsubterms[n]._isvarid && not _tables[n]->contains(args[n])) {
 			if(_verbosity > 2) {
 				clog << "Term value out of predicate type\n";
@@ -751,9 +751,9 @@ int AggGrounder::finishCard(double truevalue, double boundvalue, int setnr) cons
 		default:
 			assert(false);
 	}
-	if(!_sign) {
-		if(tp == TS_IMPL) tp = TS_RIMPL;
-		else if(tp == TS_RIMPL) tp = TS_IMPL;
+	if(not _sign) {
+		if(tp == TS_IMPL) { tp = TS_RIMPL; }
+		else if(tp == TS_RIMPL) { tp = TS_IMPL; }
 	}
 	if(simplify) {
 		if(_doublenegtseitin) {
@@ -763,7 +763,9 @@ int AggGrounder::finishCard(double truevalue, double boundvalue, int setnr) cons
 			}
 			else {
 				vector<int> newsetlits(tsset.size());
-				for(unsigned int n = 0; n < tsset.size(); ++n) newsetlits[n] = -tsset.literal(n);
+				for(unsigned int n = 0; n < tsset.size(); ++n) {
+					newsetlits[n] = -tsset.literal(n);
+				}
 				int tseitin = _translator->translate(newsetlits,!conj,tp);
 				return _sign ? -tseitin : tseitin;
 			}
@@ -771,7 +773,9 @@ int AggGrounder::finishCard(double truevalue, double boundvalue, int setnr) cons
 		else {
 			if(negateset) {
 				vector<int> newsetlits(tsset.size());
-				for(unsigned int n = 0; n < tsset.size(); ++n) newsetlits[n] = -tsset.literal(n);
+				for(unsigned int n = 0; n < tsset.size(); ++n) {
+					newsetlits[n] = -tsset.literal(n);
+				}
 				int tseitin = _translator->translate(newsetlits,conj,tp);
 				return _sign ? tseitin : -tseitin;
 			}
@@ -801,32 +805,35 @@ int AggGrounder::finish(double boundvalue, double newboundvalue, double minpossv
 	// Check minimum and maximum possible values against the given bound
 	switch(_comp) { //TODO more complicated propagation is possible!
 		case '=':
-			if(minpossvalue > boundvalue || maxpossvalue < boundvalue)
+			if(minpossvalue > boundvalue || maxpossvalue < boundvalue) {
 				return _sign ? _false : _true;
+			}
 			break;
 		case '<':
-			if(boundvalue < minpossvalue)
+			if(boundvalue < minpossvalue) {
 				return _sign ? _true : _false;
-			else if(boundvalue >= maxpossvalue)
+			} else if(boundvalue >= maxpossvalue) {
 				return _sign ? _false : _true;
+			}
 			break;
 		case '>':
-			if(boundvalue > maxpossvalue)
+			if(boundvalue > maxpossvalue) {
 				return _sign ? _true : _false;
-			else if(boundvalue <= minpossvalue)
+			} else if(boundvalue <= minpossvalue) {
 				return _sign ? _false : _true;
+			}
 			break;
 		default:
 			assert(false);
 	}
-	if(_doublenegtseitin)
+	if(_doublenegtseitin) {
 		return handleDoubleNegation(newboundvalue,setnr);
-	else {
+	} else {
 		int tseitin;
 		TsType tp = _context._tseitin;
-		if(!_sign) {
-			if(tp == TS_IMPL) tp = TS_RIMPL;
-			else if(tp == TS_RIMPL) tp = TS_IMPL;
+		if(not _sign) {
+			if(tp == TS_IMPL) { tp = TS_RIMPL; }
+			else if(tp == TS_RIMPL) { tp = TS_IMPL; }
 		}
 		tseitin = _translator->translate(newboundvalue,_comp,true,_type,setnr,tp);
 		return _sign ? tseitin : -tseitin;
@@ -878,8 +885,8 @@ int AggGrounder::run() const {
 		case AGG_SUM: {
 			// Compute the minimum and maximum possible value of the sum.
 			for(size_t n = 0; n < tsset.size(); ++n) {
-				if(tsset.weight(n) > 0) maxpossvalue += tsset.weight(n);
-				else if(tsset.weight(n) < 0) minpossvalue += tsset.weight(n);
+				if(tsset.weight(n) > 0) { maxpossvalue += tsset.weight(n); }
+				else if(tsset.weight(n) < 0) { minpossvalue += tsset.weight(n); }
 			}
 			// Finish
 			tseitin = finish(boundvalue,(boundvalue-truevalue),minpossvalue,maxpossvalue,setnr);
@@ -890,9 +897,9 @@ int AggGrounder::run() const {
 			bool containsneg = false;
 			for(size_t n = 0; n < tsset.size(); ++n) {
 				maxpossvalue *= abs(tsset.weight(n));
-				if(tsset.weight(n) < 0) containsneg = true;
+				if(tsset.weight(n) < 0) { containsneg = true; }
 			}
-			if(containsneg) minpossvalue = -maxpossvalue;
+			if(containsneg) { minpossvalue = -maxpossvalue; }
 			// Finish
 			tseitin = finish(boundvalue,(boundvalue/truevalue),minpossvalue,maxpossvalue,setnr);
 			break;
@@ -902,7 +909,7 @@ int AggGrounder::run() const {
 			for(size_t n = 0; n < tsset.size(); ++n) {
 				minpossvalue = (tsset.weight(n) < minpossvalue) ? tsset.weight(n) : minpossvalue;
 				// Decrease all weights greater than truevalue to truevalue.
-				if(tsset.weight(n) > truevalue) tsset.setWeight(n,truevalue);
+				if(tsset.weight(n) > truevalue) { tsset.setWeight(n,truevalue); }
 			}
 			// Finish
 			tseitin = finish(boundvalue,boundvalue,minpossvalue,maxpossvalue,setnr);
@@ -913,7 +920,7 @@ int AggGrounder::run() const {
 			for(size_t n = 0; n < tsset.size(); ++n) {
 				maxpossvalue = (tsset.weight(n) > maxpossvalue) ? tsset.weight(n) : maxpossvalue;
 				// Increase all weights less than truevalue to truevalue.
-				if(tsset.weight(n) < truevalue) tsset.setWeight(n,truevalue);
+				if(tsset.weight(n) < truevalue) { tsset.setWeight(n,truevalue); }
 			}
 			// Finish
 			tseitin = finish(boundvalue,boundvalue,minpossvalue,maxpossvalue,setnr);
@@ -931,11 +938,11 @@ void AggGrounder::run(vector<int>& clause) const {
 }
 
 inline bool ClauseGrounder::check1(int l) const {
-	return _conj ? l == _false : l == _true;
+	return _conj ? (l == _false) : (l == _true);
 }
 
 inline bool ClauseGrounder::check2(int l) const {
-	return _conj ? l == _true : l == _false;
+	return _conj ? (l == _true) : (l == _false);
 }
 
 inline int ClauseGrounder::result1() const {
@@ -964,12 +971,12 @@ int ClauseGrounder::finish(vector<int>& cl) const {
 	}
 	else {
 		TsType tp = _context._tseitin;
-		if(!_sign) {
-			if(tp == TS_IMPL) tp = TS_RIMPL;
-			else if(tp == TS_RIMPL) tp = TS_IMPL;
+		if(not _sign) {
+			if(tp == TS_IMPL) { tp = TS_RIMPL; }
+			else if(tp == TS_RIMPL) { tp = TS_IMPL; }
 		}
 		if(_doublenegtseitin) {
-			for(unsigned int n = 0; n < cl.size(); ++n) cl[n] = -cl[n];
+			for(unsigned int n = 0; n < cl.size(); ++n) { cl[n] = -cl[n]; }
 			int ts = _translator->translate(cl,!_conj,tp);
 			if(_verbosity > 2) {
 				clog << "Result = " << (_sign ? "~" : "");
@@ -1342,9 +1349,10 @@ int EnumSetGrounder::run() const {
 			const GroundTerm& groundweight = _subtermgrounders[n]->run();
 			assert(not groundweight._isvarid);
 			const DomainElement* d = groundweight._domelement;
-			double w = d->type() == DET_INT ? (double) d->value()._int : d->value()._double;
-			if(l == _true) trueweights.push_back(w);
-			else {
+			double w = (d->type() == DET_INT ? (double) d->value()._int : d->value()._double);
+			if(l == _true) {
+				trueweights.push_back(w);
+			} else {
 				weights.push_back(w);
 				literals.push_back(l);
 			}
@@ -1366,11 +1374,10 @@ int QuantSetGrounder::run() const {
 				const GroundTerm& groundweight = _weightgrounder->run();
 				assert(not groundweight._isvarid);
 				const DomainElement* weight = groundweight._domelement;
-				double w = weight->type() == (DET_INT ? (double) weight->value()._int : weight->value()._double);
+				double w = (weight->type() == DET_INT ? (double) weight->value()._int : weight->value()._double);
 				if(l == _true) {
 					trueweights.push_back(w);
-				}
-				else {
+				} else {
 					weights.push_back(w);
 					literals.push_back(l);
 				}
@@ -2202,19 +2209,19 @@ void GrounderFactory::visit(const EnumSetExpr* s) {
  */
 void GrounderFactory::visit(const QuantSetExpr* qs) {
 	// Move three-valued terms in the set expression
-	SetExpr* transqs = TermUtils::moveThreeValuedTerms(qs->clone(),_structure,_context._funccontext,_cpsupport,_cpsymbols);
-	QuantSetExpr* newqs = dynamic_cast<QuantSetExpr*>(transqs);
+	//SetExpr* transqs = TermUtils::moveThreeValuedTerms(qs->clone(),_structure,_context._funccontext,_cpsupport,_cpsymbols);
+	//QuantSetExpr* newqs = dynamic_cast<QuantSetExpr*>(transqs);
 
-	if(_verbosity > 1) {
-		clog << "Rewritten "; qs->put(clog,_longnames);
-		clog << " to "; newqs->put(clog,_longnames);
-	   	clog << "\n"; 
-	}
+	//if(_verbosity > 1) {
+	//	clog << "Rewritten "; qs->put(clog,_longnames);
+	//	clog << " to "; newqs->put(clog,_longnames);
+	//   	clog << "\n"; 
+	//}
 
 	// Create instance generator
 	vector<SortTable*> vst;
 	vector<const DomainElement**> vars;
-	for(set<Variable*>::const_iterator it = newqs->quantvars().begin(); it != newqs->quantvars().end(); ++it) {
+	for(set<Variable*>::const_iterator it = qs->quantvars().begin(); it != qs->quantvars().end(); ++it) {
 		const DomainElement** d = new const DomainElement*();
 		_varmapping[*it] = d;
 		vst.push_back(_structure->inter((*it)->sort()));
@@ -2226,19 +2233,19 @@ void GrounderFactory::visit(const QuantSetExpr* qs) {
 	// Create grounder for subformula
 	SaveContext();
 	AggContext();
-	descend(newqs->subformulas()[0]);
+	descend(qs->subformulas()[0]);
 	FormulaGrounder* subgr = _formgrounder;
 	RestoreContext();
 
 	// Create grounder for weight
-	descend(newqs->subterms()[0]);
+	descend(qs->subterms()[0]);
 	TermGrounder* wgr = _termgrounder;
 
 	// Create grounder	
 	_setgrounder = new QuantSetGrounder(_grounding->translator(),subgr,gen,wgr);
 
 	// Clean up
-	transqs->recursiveDelete();
+	//transqs->recursiveDelete();
 }
 
 /**

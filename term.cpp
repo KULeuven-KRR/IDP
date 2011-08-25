@@ -410,7 +410,7 @@ SetExpr* QuantSetExpr::accept(TheoryMutatingVisitor* v) {
 ostream& QuantSetExpr::put(ostream& output, bool longnames) const {
 	output << "{";
 	for(set<Variable*>::const_iterator it = quantvars().begin(); it != quantvars().end(); ++it) {
-		output << ' '; (*it)->put(output);
+		output << ' '; (*it)->put(output,longnames);
 	}
 	output << " : "; subformulas()[0]->put(output,longnames);
 	output << " : "; subterms()[0]->put(output,longnames); 
