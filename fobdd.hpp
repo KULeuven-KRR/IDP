@@ -193,8 +193,8 @@ class FOBDDManager {
 		void moveDown(const FOBDDKernel*);	//!< Swap the given kernel with its successor in the kernelorder
 		void moveUp(const FOBDDKernel*);	//!< Swap the given kernel with its predecessor in the kernelorder
 		void optimizequery(const FOBDD*, const std::set<const FOBDDVariable*>&, const std::set<const FOBDDDeBruijnIndex*>&, AbstractStructure*);
-		const FOBDD* make_more_false(const FOBDD*, const std::set<const FOBDDVariable*>&, const std::set<const FOBDDDeBruijnIndex*>&,AbstractStructure*,double max_cost_per_ans);
-		const FOBDD* make_more_true(const FOBDD*, const std::set<const FOBDDVariable*>&, const std::set<const FOBDDDeBruijnIndex*>&,AbstractStructure*,double max_cost_per_ans);
+		const FOBDD* make_more_false(const FOBDD*, const std::set<const FOBDDVariable*>&, const std::set<const FOBDDDeBruijnIndex*>&,AbstractStructure*,double weight_per_ans);
+		const FOBDD* make_more_true(const FOBDD*, const std::set<const FOBDDVariable*>&, const std::set<const FOBDDDeBruijnIndex*>&,AbstractStructure*,double weight_per_ans);
 
 		const FOBDD* simplify(const FOBDD*);	//!< apply arithmetic simplifications to the given bdd
 

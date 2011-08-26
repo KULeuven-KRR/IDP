@@ -53,15 +53,13 @@ void SymbolicStructure::visit(const PredForm* atom) {
 }
 
 void SymbolicStructure::visit(const BoolForm* boolform) {
-	HIER BEZIG HIER BEZIG HIER BEZIG
-
 	bool conjunction = boolform->sign() == boolform->conj();
 	conjunction = (_type == QT_PF || _type == QT_CF) ? !conjunction : conjunction;
+	QueryType rectype = boolform->sign() ? _type : swapTF(_type);
 
 	const FOBDD* currbdd;
 	if(conjunction) currbdd = _manager->truebdd();
 	else currbdd = _manager->falsebdd();
-	QueryType rectype = boolform->sign() ? _type : swapTF(_type);
 	
 	for(auto it = boolform->subformulas().begin(); it != boolform->subformulas().end(); ++it) {
 		const FOBDD* newbdd = evaluate(*it,rectype);
@@ -72,6 +70,7 @@ void SymbolicStructure::visit(const BoolForm* boolform) {
 
 void SymbolicStructure::visit(const QuantForm* quantform) {
 	bool universal = quantform->sign() == quantform->univ();
+	universal = (_type == QT_PF || _type == QT_CF) ? !universal : universal;
 	QueryType rectype = quantform->sign() ? _type : swapTF(_type);
 	const FOBDD* subbdd = evaluate(quantform->subf(),rectype);
 	set<const FOBDDVariable*> vars = _manager->getVariables(quantform->quantvars());

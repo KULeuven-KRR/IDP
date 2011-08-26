@@ -34,7 +34,7 @@ using namespace rel_ops;
 int _true = numeric_limits<int>::max();
 int _false = 0;
 
-double MCPA = 5;
+double MCPA = 1;	// TODO: constant currently used when pruning bdds. Should be made context dependent
 
 /****************************************
 	Comparison operators for TsBodies
@@ -2057,9 +2057,13 @@ void GrounderFactory::visit(const BoolForm* bf) {
 const FOBDD* GrounderFactory::improve_generator(const FOBDD* bdd, const vector<Variable*>& fovars, double mcpa) {
 	FOBDDManager* manager = _symstructure->manager();
 
-cerr << "improving\n";
+/*cerr << "improving\n";
 manager->put(cerr,bdd);
-
+set<Variable*> sv(fovars.begin(),fovars.end());
+set<const FOBDDVariable*> sfv = manager->getVariables(sv);
+set<const FOBDDDeBruijnIndex*> id;
+cerr << "current cost = " << manager->estimatedCostAll(bdd,sfv,id,_structure) << endl;
+*/
 	// 1. Optimize the query
 	FOBDDManager optimizemanager;
 	const FOBDD* copybdd = optimizemanager.getBDD(bdd,manager);
@@ -2068,15 +2072,19 @@ manager->put(cerr,bdd);
 	for(auto it = fovars.begin(); it != fovars.end(); ++it) 
 		copyvars.insert(optimizemanager.getVariable(*it));
 	optimizemanager.optimizequery(copybdd,copyvars,indices,_structure);
-
+/*
 cerr << "optimized version\n";
 optimizemanager.put(cerr,copybdd);
+sfv = optimizemanager.getVariables(sv);
+cerr << "cost is now: " << optimizemanager.estimatedCostAll(copybdd,sfv,id,_structure) << endl;
+*/
 
 	// 2. Remove certain leaves
 	const FOBDD* pruned = optimizemanager.make_more_true(copybdd,copyvars,indices,_structure,mcpa);
-
+/*
 cerr << "pruned version\n";
 optimizemanager.put(cerr,pruned);
+*/
 
 	// 3. Replace result
 	return manager->getBDD(pruned,&optimizemanager);
@@ -2114,19 +2122,19 @@ const FOBDD* GrounderFactory::improve_checker(const FOBDD* bdd, double mcpa) {
  *			CC_HEAD is not possible
  */
 void GrounderFactory::visit(const QuantForm* qf) {
-cerr << "visit of " << *qf << endl;
+//cerr << "visit of " << *qf << endl;
 	// Create instance generator
 	Formula* clonedformula = qf->subf()->clone();
 	Formula* movedformula = FormulaUtils::moveThreeValTerms(clonedformula,_structure,(_context._funccontext!=PC_NEGATIVE));
 	movedformula = FormulaUtils::remove_eqchains(movedformula);
 	movedformula = FormulaUtils::graph_functions(movedformula);
-cerr << "body translated to " << *movedformula << endl;
+//cerr << "body translated to " << *movedformula << endl;
 	const FOBDD* generatorbdd = _symstructure->evaluate(movedformula,(qf->univ() ? QT_PF : QT_PT));
 	const FOBDD* checkerbdd = _symstructure->evaluate(movedformula,(qf->univ() ? QT_CF : QT_CT));
-cerr << "generatorbdd:\n";
-_symstructure->manager()->put(cerr,generatorbdd);
-cerr << "checkerbdd:\n";
-_symstructure->manager()->put(cerr,checkerbdd);
+//cerr << "generatorbdd:\n";
+//_symstructure->manager()->put(cerr,generatorbdd);
+//cerr << "checkerbdd:\n";
+//_symstructure->manager()->put(cerr,checkerbdd);
 	vector<const DomainElement**> vars;
 	vector<Variable*> fovars;
 	vector<Variable*> optivars;
@@ -2151,10 +2159,10 @@ _symstructure->manager()->put(cerr,checkerbdd);
 	}
 	generatorbdd = improve_generator(generatorbdd,optivars,MCPA);
 	checkerbdd = improve_checker(checkerbdd,MCPA);
-cerr << "improved generatorbdd:\n";
-_symstructure->manager()->put(cerr,generatorbdd);
-cerr << "improved checkerbdd:\n";
-_symstructure->manager()->put(cerr,checkerbdd);
+//cerr << "improved generatorbdd:\n";
+//_symstructure->manager()->put(cerr,generatorbdd);
+//cerr << "improved checkerbdd:\n";
+//_symstructure->manager()->put(cerr,checkerbdd);
 	PredTable* gentable = new PredTable(new BDDInternalPredTable(generatorbdd,_symstructure->manager(),fovars,_structure),Universe(tables));
 	PredTable* checktable = new PredTable(new BDDInternalPredTable(checkerbdd,_symstructure->manager(),fovars,_structure),Universe(tables));
 	GeneratorFactory gf;
