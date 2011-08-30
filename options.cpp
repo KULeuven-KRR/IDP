@@ -36,6 +36,7 @@ bool EnumeratedStringOption::value(const string& val) {
 
 Options::Options(const string& name, const ParseInfo& pi) : _name(name), _pi(pi) {
 	_booloptions["printtypes"]			= true;
+	_booloptions["groundlazy"]			= false;
 	_booloptions["cpsupport"]			= false;
 	_booloptions["trace"]				= false;
 	_booloptions["autocomplete"]		= true;
@@ -176,6 +177,10 @@ Language Options::language() const {
 	else if(lan == "txt") return LAN_TXT;
 	else if(lan == "ecnf") return LAN_ECNF;
 	else return LAN_IDP;
+}
+
+bool Options::groundlazily() const{
+	return _booloptions.find("groundlazy")->second;
 }
 
 bool Options::printtypes() const {

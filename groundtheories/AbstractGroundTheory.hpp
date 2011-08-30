@@ -148,8 +148,7 @@ class GroundTheory : public AbstractGroundTheory, public Policy {
 						add(atom,body);
 					}
 				}
-				else {
-					assert(typeid(*tsbody) == typeid(CPTsBody));
+				else if(typeid(*tsbody) == typeid(CPTsBody)){
 					CPTsBody* body = dynamic_cast<CPTsBody*>(tsbody);
 					if(body->type() == TsType::RULE) {
 						assert(false);
@@ -158,6 +157,10 @@ class GroundTheory : public AbstractGroundTheory, public Policy {
 					else {
 						add(atom,body);
 					}
+				}else{
+					assert(typeid(*tsbody) == typeid(LazyTsBody));
+					LazyTsBody* body = dynamic_cast<LazyTsBody*>(tsbody);
+					body->notifyTheoryOccurence();
 				}
 			}
 		}

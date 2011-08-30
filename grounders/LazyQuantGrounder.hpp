@@ -18,6 +18,7 @@ private:
 	unsigned int id_;
 	mutable bool negatedclause_;
 	SolverTheory* groundtheory_;
+	mutable Lit tseitin, firstlit;
 
 	Lit createTseitin() const;
 	public:
@@ -31,10 +32,12 @@ private:
 	}
 
 	// TODO for some reason, the callback framework does not compile when using the const method groundmore directly.
-	void requestGroundMore();
-	void groundMore() const;
+	bool requestGroundMore();
+	bool groundMore() const;
 
 	unsigned int id() const { return id_; }
+
+	void notifyTheoryOccurence() const;
 
 protected:
 	virtual void	run(litlist&, bool negatedclause = true)	const;

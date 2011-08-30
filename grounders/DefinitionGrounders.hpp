@@ -38,7 +38,7 @@ class RuleGrounder {
 	public:
 		RuleGrounder(HeadGrounder* hgr, FormulaGrounder* bgr, InstGenerator* hig, InstGenerator* big, GroundingContext& ct)
 			: _headgrounder(hgr), _bodygrounder(bgr), _headgenerator(hig), _bodygenerator(big), _context(ct) { }
-		bool run(unsigned int defid, GroundDefinition* grounddefinition) const;
+		void run(unsigned int defid, GroundDefinition* grounddefinition) const;
 
 		// Mutators
 		void addTrueRule(GroundDefinition* grounddefinition, int head) const;

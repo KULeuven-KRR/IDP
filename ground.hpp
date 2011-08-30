@@ -122,13 +122,14 @@ class LazyQuantGrounder;
 class LazyTsBody: public TsBody{
 private:
 	unsigned int id_;
-	LazyQuantGrounder* grounder_;
+	LazyQuantGrounder const*const grounder_;
 
 public:
-	LazyTsBody(int id, TsType type): TsBody(type){}
+	LazyTsBody(int id, LazyQuantGrounder const*const grounder, TsType type): TsBody(type), id_(id), grounder_(grounder){}
 
 	unsigned int id() const { return id_; }
-	LazyQuantGrounder* grounder() const { return grounder_; }
+
+	void notifyTheoryOccurence();
 };
 
 /* Sets and terms that will be handled by a constraint solver */

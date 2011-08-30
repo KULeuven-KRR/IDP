@@ -173,7 +173,7 @@ Lit GroundTranslator::addTseitinBody(TsBody* tsbody){
 }
 
 Lit GroundTranslator::translate(LazyQuantGrounder const* const lazygrounder, TsType tstype) {
-	LazyTsBody* tsbody = new LazyTsBody(lazygrounder->id(), tstype);
+	LazyTsBody* tsbody = new LazyTsBody(lazygrounder->id(), lazygrounder, tstype);
 	int nr = nextNumber();
 	_nr2tsbodies.insert(pair<int,TsBody*>(nr,tsbody));
 	return nr;
@@ -984,7 +984,18 @@ void GrounderFactory::visit(const QuantForm* qf) {
 		// Create the grounder
 		SaveContext();
 		if(recursive(qf)) _context._tseitin = TsType::RULE;
-		_formgrounder = new QuantGrounder(_grounding->translator(),_formgrounder,qf->sign(),qf->quant(),gen,_context);
+
+		bool canlazyground = false;
+		if(isPos(qf->sign()) && _context._monotone==Context::POSITIVE && _context._tseitin==TsType::IMPL){
+			canlazyground = true;
+		}
+
+		if(_options->groundlazily() && canlazyground && typeid(*_grounding)==typeid(SolverTheory)){
+			_formgrounder = new LazyQuantGrounder(dynamic_cast<SolverTheory*>(_grounding),_grounding->translator(),_formgrounder,qf->sign(),qf->quant(),gen,_context);
+		}else{
+			_formgrounder = new QuantGrounder(_grounding->translator(),_formgrounder,qf->sign(),qf->quant(),gen,_context);
+		}
+
 		RestoreContext();
 		_formgrounder->setorig(qf,_varmapping,_verbosity);
 		if(_context._component == CC_SENTENCE) _toplevelgrounder = new SentenceGrounder(_grounding,_formgrounder,false,_verbosity);
@@ -1302,4 +1313,8 @@ void TheoryVisitor::visit(const CPSumTerm*) {
 
 void TheoryVisitor::visit(const CPReification*) {
 	// TODO
+}
+
+void LazyTsBody::notifyTheoryOccurence(){
+	grounder_->notifyTheoryOccurence();
 }

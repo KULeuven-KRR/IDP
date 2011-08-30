@@ -18,17 +18,17 @@ Lit LazyQuantGrounder::createTseitin() const{
 	return isNegative()?-tseitin:tseitin;
 }
 
-void LazyQuantGrounder::requestGroundMore() {
-	groundMore();
+bool LazyQuantGrounder::requestGroundMore() {
+	return groundMore();
 }
 
-void LazyQuantGrounder::groundMore() const{
+bool LazyQuantGrounder::groundMore() const{
 	if(_verbosity > 2) printorig();
 
 	// add one more grounding to the formula => with correct sign depending on negateclause!
 	// if value is decided, allow to erase the formula
 
-	// TODO if we come here, "next" SHOULD already have been called AND been succesful (otherwise the formula was fully ground and we should not come here again), check this!
+	// TODO check that if we come here, "next" SHOULD already have been called AND been succesful (otherwise the formula was fully ground and we should not come here again), check this!
 
 	Lit l = _subgrounder->run();
 	if(decidesClause(l)) {
@@ -39,21 +39,33 @@ void LazyQuantGrounder::groundMore() const{
 		l = negatedclause_ ? -l : l;
 		groundtheory_->addLitToLazyClause(l, id());
 	}
-	if(not _generator->next()){
-		groundtheory_->notifyLazyClauseFullyGround(id());
-	}
+	bool fullyground = not _generator->next();
+	return fullyground;
+}
+
+void LazyQuantGrounder::notifyTheoryOccurence() const{
+	groundtheory_->polAdd(tseitin, firstlit, id(), const_cast<LazyQuantGrounder*>(this));
 }
 
 void LazyQuantGrounder::run(litlist& clause, bool negateclause) const {
 	if(_verbosity > 2) printorig();
 
-	if(_generator->first()) {
+	negatedclause_ = negateclause;
+
+	if(not _generator->first()) {
 		return;
 	}
 
-	groundMore();
-
-	negatedclause_ = negateclause;
-
-	clause.push_back(createTseitin());
+	firstlit = _subgrounder->run();
+	if(decidesClause(firstlit)) {
+		firstlit = getDecidedValue();
+		firstlit = negatedclause_?-firstlit:firstlit;
+		clause.push_back(firstlit);
+	}else if(not _generator->next()){
+		firstlit = negatedclause_ ? -firstlit : firstlit;
+		clause.push_back(firstlit);
+	}else{
+		tseitin = createTseitin();
+		clause.push_back(tseitin);
+	}
 }

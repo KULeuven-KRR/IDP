@@ -210,30 +210,26 @@ private:
 	std::map<int, MinisatID::LazyClauseRef*> id2lazyclauses;
 
 public:
-	void polAdd(Lit tseitin, LazyTsBody* body){
-		auto lcit = id2lazyclauses.find(body->id());
+	void polAdd(Lit tseitin, Lit first, uint id, LazyQuantGrounder* const grounder){
+		auto lcit = id2lazyclauses.find(id);
 		if(lcit == id2lazyclauses.end()){
-			MinisatID::LazyClause lc(createLiteral(tseitin), new MinisatID::LazyClauseMonitor());
-			cb::Callback0<void> cbmore(body->grounder(), &LazyQuantGrounder::requestGroundMore); // FIXME for some reason, cannot seem to pass in const function pointers?
-			cb::Callback1<void, MinisatID::LazyClauseRef*> cbcreate(this, &SolverPolicy::notifyLazyClauseCreated);
+			MinisatID::LazyClause lc(createLiteral(tseitin), createLiteral(first), new MinisatID::LazyClauseMonitor(id));
+			cb::Callback0<bool> cbmore(grounder, &LazyQuantGrounder::requestGroundMore); // FIXME for some reason, cannot seem to pass in const function pointers?
+			cb::Callback2<void, int, MinisatID::LazyClauseRef*> cbcreate(this, &SolverPolicy::notifyLazyClauseCreated);
 			lc.monitor->setRequestMoreGrounding(cbmore);
 			lc.monitor->setNotifyClauseCreated(cbcreate);
 			getSolver().add(lc);
 		}
 	}
 
-	void notifyLazyClauseCreated(MinisatID::LazyClauseRef* ref){
-		// FIXME
+	void notifyLazyClauseCreated(int id, MinisatID::LazyClauseRef* ref){
+		id2lazyclauses[id] = ref;
 	}
 
 	void polAddLitToLazyClause(Lit lit, unsigned int id){
 		assert(id2lazyclauses.find(id)!=id2lazyclauses.end());
 		MinisatID::LazyClauseAddition lca(createLiteral(lit), id2lazyclauses.at(id));
 		getSolver().add(lca);
-	}
-	void polNotifyLazyClauseFullyGround(unsigned int id){
-		assert(id2lazyclauses.find(id)!=id2lazyclauses.end());
-		id2lazyclauses[id]->notifyFullyGrounded();
 	}
 	void polNotifyLazyClauseHasValue(Lit lit, unsigned int id){
 		assert(id2lazyclauses.find(id)!=id2lazyclauses.end());
