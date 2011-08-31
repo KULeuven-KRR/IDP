@@ -10,6 +10,8 @@
 #include "ground.hpp"
 #include "grounders/FormulaGrounders.hpp"
 
+#include <map>
+
 typedef GroundTheory<SolverPolicy> SolverTheory;
 
 class LazyQuantGrounder : public QuantGrounder {
@@ -18,9 +20,11 @@ private:
 	unsigned int id_;
 	mutable bool negatedclause_;
 	SolverTheory* groundtheory_;
-	mutable Lit tseitin, firstlit;
+	mutable std::queue<Lit> queuedtseitinstoground;
+	mutable bool grounding;
 
 	Lit createTseitin() const;
+
 	public:
 #warning only create in cases where it reduces to an existential quantifier!!!!
 #warning currently only non-defined!
@@ -28,16 +32,17 @@ private:
 			QuantGrounder(gt,sub,sign, q, gen,ct),
 			id_(maxid++),
 			negatedclause_(false),
-			groundtheory_(groundtheory){
+			groundtheory_(groundtheory),
+			grounding(false){
 	}
 
 	// TODO for some reason, the callback framework does not compile when using the const method groundmore directly.
-	bool requestGroundMore();
-	bool groundMore() const;
+	void requestGroundMore(const Lit& tseitin);
+	void groundMore() const;
 
 	unsigned int id() const { return id_; }
 
-	void notifyTheoryOccurence() const;
+	void notifyTheoryOccurence(const Lit& tseitin) const;
 
 protected:
 	virtual void	run(litlist&, bool negatedclause = true)	const;

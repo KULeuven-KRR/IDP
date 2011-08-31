@@ -206,38 +206,39 @@ public:
 		}
 	}
 
-private:
-	std::map<int, MinisatID::LazyClauseRef*> id2lazyclauses;
-
-public:
-	void polAdd(Lit tseitin, Lit first, uint id, LazyQuantGrounder* const grounder){
-		auto lcit = id2lazyclauses.find(id);
-		if(lcit == id2lazyclauses.end()){
-			MinisatID::LazyClause lc(createLiteral(tseitin), createLiteral(first), new MinisatID::LazyClauseMonitor(id));
-			cb::Callback0<bool> cbmore(grounder, &LazyQuantGrounder::requestGroundMore); // FIXME for some reason, cannot seem to pass in const function pointers?
-			cb::Callback2<void, int, MinisatID::LazyClauseRef*> cbcreate(this, &SolverPolicy::notifyLazyClauseCreated);
-			lc.monitor->setRequestMoreGrounding(cbmore);
-			lc.monitor->setNotifyClauseCreated(cbcreate);
-			getSolver().add(lc);
+	// FIXME probably already exists in transform for add?
+	void polAdd(Lit tseitin, TsType type, const GroundClause& clause){
+		switch(type){
+			case TsType::RIMPL:{
+				assert(false);// FIXME add equivalence or rule or impl
+				break;}
+			case TsType::IMPL:{
+				MinisatID::Disjunction d;
+				d.literals.push_back(createLiteral(-tseitin));
+				for(auto i=clause.begin(); i<clause.end(); ++i){
+					d.literals.push_back(createLiteral(*i));
+				}
+				getSolver().add(d);
+				break;}
+			case TsType::RULE:{
+				assert(false);// FIXME add equivalence or rule or impl
+				break;}
+			case TsType::EQ:{
+				MinisatID::Equivalence eq;
+				eq.head = createLiteral(-tseitin);
+				for(auto i=clause.begin(); i<clause.end(); ++i){
+					eq.body.push_back(createLiteral(*i));
+				}
+				getSolver().add(eq);
+				break;}
 		}
 	}
 
-	void notifyLazyClauseCreated(int id, MinisatID::LazyClauseRef* ref){
-		id2lazyclauses[id] = ref;
-	}
-
-	void polAddLitToLazyClause(Lit lit, unsigned int id){
-		assert(id2lazyclauses.find(id)!=id2lazyclauses.end());
-		MinisatID::LazyClauseAddition lca(createLiteral(lit), id2lazyclauses.at(id));
-		getSolver().add(lca);
-	}
-	void polNotifyLazyClauseHasValue(Lit lit, unsigned int id){
-		assert(id2lazyclauses.find(id)!=id2lazyclauses.end());
-		if(lit==_true){
-			id2lazyclauses[id]->notifyCertainlyTrue();
-		}else{
-			id2lazyclauses[id]->notifyCertainlyFalse();
-		}
+	void notifyLazyResidual(Lit residual, LazyQuantGrounder const* const grounder){
+		MinisatID::LazyClause lc(createLiteral(residual), new MinisatID::LazyClauseMonitor(residual));
+		cb::Callback1<void, const Lit&> cbmore(const_cast<LazyQuantGrounder*>(grounder), &LazyQuantGrounder::requestGroundMore); // FIXME for some reason, cannot seem to pass in const function pointers?
+		lc.monitor->setRequestMoreGrounding(cbmore);
+		getSolver().add(lc);
 	}
 
 	std::ostream& polPut(std::ostream& s, GroundTranslator*, GroundTermTranslator*)	const { assert(false); return s;	}

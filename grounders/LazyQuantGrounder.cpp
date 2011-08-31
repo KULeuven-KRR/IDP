@@ -18,11 +18,11 @@ Lit LazyQuantGrounder::createTseitin() const{
 	return isNegative()?-tseitin:tseitin;
 }
 
-bool LazyQuantGrounder::requestGroundMore() {
-	return groundMore();
+void LazyQuantGrounder::requestGroundMore(const Lit& tseitin) {
+	notifyTheoryOccurence(tseitin);
 }
 
-bool LazyQuantGrounder::groundMore() const{
+void LazyQuantGrounder::groundMore() const{
 	if(_verbosity > 2) printorig();
 
 	// add one more grounding to the formula => with correct sign depending on negateclause!
@@ -30,21 +30,31 @@ bool LazyQuantGrounder::groundMore() const{
 
 	// TODO check that if we come here, "next" SHOULD already have been called AND been succesful (otherwise the formula was fully ground and we should not come here again), check this!
 
-	Lit l = _subgrounder->run();
-	if(decidesClause(l)) {
-		Lit valuelit = getDecidedValue();
-		valuelit = negatedclause_?-valuelit:valuelit;
-		groundtheory_->notifyLazyClauseHasValue(valuelit, id());
-	}else if(isNotRedundantInClause(l)){
-		l = negatedclause_ ? -l : l;
-		groundtheory_->addLitToLazyClause(l, id());
-	}
-	bool fullyground = not _generator->next();
-	return fullyground;
-}
+	grounding = true;
 
-void LazyQuantGrounder::notifyTheoryOccurence() const{
-	groundtheory_->polAdd(tseitin, firstlit, id(), const_cast<LazyQuantGrounder*>(this));
+	while(queuedtseitinstoground.size()>0){
+		Lit oldtseitin = queuedtseitinstoground.front();
+		queuedtseitinstoground.pop();
+		Lit lit = _subgrounder->run();
+		if(decidesClause(lit)) {
+			lit = getDecidedValue();
+			lit = negatedclause_?-lit:lit;
+		}else if(isNotRedundantInClause(lit)){
+			lit = negatedclause_ ? -lit : lit;
+		}
+		GroundClause clause;
+		clause.push_back(lit);
+
+		// FIXME notify lazy should check whether the tseitin already has a value and request more grounding immediately!
+		if(_generator->next()){
+			Lit newtseitin = _translator->nextNumber();
+			clause.push_back(newtseitin);
+			groundtheory_->notifyLazyResidual(newtseitin, this); // set on not-decide and add to watchlist
+		}
+		groundtheory_->add(oldtseitin, _context._tseitin, clause);
+	}
+
+	grounding = false;
 }
 
 void LazyQuantGrounder::run(litlist& clause, bool negateclause) const {
@@ -56,16 +66,13 @@ void LazyQuantGrounder::run(litlist& clause, bool negateclause) const {
 		return;
 	}
 
-	firstlit = _subgrounder->run();
-	if(decidesClause(firstlit)) {
-		firstlit = getDecidedValue();
-		firstlit = negatedclause_?-firstlit:firstlit;
-		clause.push_back(firstlit);
-	}else if(not _generator->next()){
-		firstlit = negatedclause_ ? -firstlit : firstlit;
-		clause.push_back(firstlit);
-	}else{
-		tseitin = createTseitin();
-		clause.push_back(tseitin);
+	clause.push_back(createTseitin());
+}
+
+void LazyQuantGrounder::notifyTheoryOccurence(const Lit& tseitin) const{
+	// restructured code to prevent recursion // FIXME duplication and const issues!
+	queuedtseitinstoground.push(tseitin);
+	if(not grounding){
+		groundMore();
 	}
 }

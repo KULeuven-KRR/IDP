@@ -585,7 +585,7 @@ void BoolGrounder::run(litlist& clause, bool negateclause) const {
 void QuantGrounder::run(litlist& clause, bool negateclause) const {
 	if(_verbosity > 2) printorig();
 
-	if(_generator->first()) {
+	if(not _generator->first()) {
 		return;
 	}
 	do{

@@ -100,12 +100,11 @@ class GroundTheory : public AbstractGroundTheory, public Policy {
 				_printedtseitins.insert(atom);
 				TsBody* tsbody = translator()->tsbody(atom);
 				if(typeid(*tsbody) == typeid(PCTsBody)) {
-					PCTsBody* body = dynamic_cast<PCTsBody*>(tsbody);
+					PCTsBody * body = dynamic_cast<PCTsBody*>(tsbody);
 					if(body->type() == TsType::IMPL || body->type() == TsType::EQ) {
 						if(body->conj()) {
 							for(unsigned int m = 0; m < body->size(); ++m) {
-								std::vector<int> cl(2,-atom);
-								cl[1] = body->literal(m);
+								std::vector<int> cl{-atom, body->literal(m)};
 								add(cl,true);
 							}
 						}
@@ -134,6 +133,7 @@ class GroundTheory : public AbstractGroundTheory, public Policy {
 						}
 					}
 					if(body->type() == TsType::RULE) {
+						// FIXME when doing this lazily, the rule should not be here until the tseitin has a value!
 						assert(defnr != ID_FOR_UNDEFINED);
 						Policy::polAdd(defnr,new PCGroundRule(atom,body,true)); //TODO true (recursive) might not always be the case?
 					}
@@ -238,18 +238,6 @@ public:
 		Policy::polAdd(cl);
 	}
 
-	void notifyLazyClauseHasValue(Lit lit, unsigned int id){
-		Policy::polNotifyLazyClauseHasValue(lit, id);
-	}
-	void addLitToLazyClause(Lit lit, unsigned int id){
-		litlist clause{lit};
-		transformForAdd(clause,VIT_DISJ,ID_FOR_UNDEFINED);
-		Policy::polAddLitToLazyClause(lit, id);
-	}
-	void notifyLazyClauseFullyGround(unsigned int id){
-		Policy::polNotifyLazyClauseFullyGround(id);
-	}
-
 	void add(GroundDefinition* def) {
 		for(auto i=def->begin(); i!=def->end(); ++i){
 			if(typeid(PCGroundRule*)==typeid((*i).second)){
@@ -302,6 +290,14 @@ public:
 			if(weighted) weights = tsset.weights();
 			Policy::polAdd(tsset,setnr, weighted);
 		}
+	}
+
+	// FIXME very unclear invariants!
+	void add(const Lit& tseitin, TsType type, const GroundClause& clause){
+		//std::vector<Lit> temp{clause[0]};
+		// FIXME there might be an ID if it is a rule!
+		transformForAdd(clause, VIT_DISJ, ID_FOR_UNDEFINED);
+		Policy::polAdd(tseitin, type, clause);
 	}
 
 	void add(int head, AggTsBody* body) {

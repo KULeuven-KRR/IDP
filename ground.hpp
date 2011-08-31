@@ -123,9 +123,11 @@ class LazyTsBody: public TsBody{
 private:
 	unsigned int id_;
 	LazyQuantGrounder const*const grounder_;
+	Lit residual;
 
 public:
-	LazyTsBody(int id, LazyQuantGrounder const*const grounder, TsType type): TsBody(type), id_(id), grounder_(grounder){}
+	LazyTsBody(int id, LazyQuantGrounder const*const grounder, const Lit& residual, TsType type):
+			TsBody(type), id_(id), grounder_(grounder), residual(residual){}
 
 	unsigned int id() const { return id_; }
 
@@ -263,6 +265,7 @@ public:
 
 	Lit	translate(unsigned int,const ElementTuple&);
 	Lit	translate(const std::vector<int>& cl, bool conj, TsType tp);
+	Lit translate(const Lit& head, const std::vector<Lit>& clause, bool conj, TsType tstype);
 	Lit	translate(double bound, char comp, bool strict, AggFunction aggtype, int setnr, TsType tstype);
 	Lit	translate(PFSymbol*,const ElementTuple&);
 	Lit	translate(CPTerm*, CompType, const CPBound&, TsType);
@@ -275,7 +278,11 @@ public:
 	bool				hasSymbolFor(int atom)	const	{ return 0<atom && (uint)atom<_backsymbtable.size(); }
 	PFSymbol*			atom2symbol(int atom)	const	{ return _backsymbtable[abs(atom)];			}
 	const ElementTuple&	args(int nr)			const	{ return _backargstable[abs(nr)];			}
-	bool				isTseitin(int atom)		const	{ return atom2symbol(atom) == 0;			}
+
+	// FIXME orig code was a hack by checking whether there was NO first-order symbol for the atom, in that case it was surely a tseitin
+	// now, it might just be a literal which has no symbol and is not (yet) a tseitin (during lazy grounding), so should take this into account!
+	// FIXME is not constant time, but should be! REPAIR
+	bool				isTseitin(int atom)		const	{ return _nr2tsbodies.find(abs(atom)) != _nr2tsbodies.end(); }
 
 	TsBody*			tsbody(int l)				const	{ return _nr2tsbodies.find(abs(l))->second;	}
 	const TsSet&	groundset(int nr)			const	{ return _sets[nr];							}

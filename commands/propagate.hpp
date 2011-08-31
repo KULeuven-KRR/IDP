@@ -35,7 +35,7 @@ class GroundPropagateInference : public Inference {
 			MinisatID::SolverOption modes;
 			modes.nbmodels = 0;
 			modes.verbosity = 0;
-			modes.remap = false;
+			//modes.remap = false;
 			SATSolver solver(modes);
 			Options options("",ParseInfo());
 			options.setvalue("nrmodels",0);
@@ -97,7 +97,7 @@ class OptimalPropagateInference : public Inference {
 			MinisatID::SolverOption modes;
 			modes.nbmodels = 0;
 			modes.verbosity = 0;
-			modes.remap = false;
+			//modes.remap = false;
 			SATSolver solver(modes);
 			Options options("",ParseInfo());
 			options.setvalue("nrmodels",0);

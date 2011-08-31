@@ -88,7 +88,7 @@ private:
 		MinisatID::SolverOption modes;
 		modes.nbmodels = options->nrmodels();
 		modes.verbosity = options->satverbosity();
-		modes.remap = false;
+		//modes.remap = false;
 		return new SATSolver(modes);
 	}
 
@@ -105,8 +105,11 @@ private:
 		for(auto literal = model->literalinterpretations.begin();
 			literal != model->literalinterpretations.end(); ++literal) {
 			int atomnr = literal->getAtom().getValue();
+			if(not translator->hasSymbolFor(atomnr)){
+				continue;
+			}
 			PFSymbol* symbol = translator->atom2symbol(atomnr);
-			if(symbol) {
+			if(symbol!=NULL) {
 				const ElementTuple& args = translator->args(atomnr);
 				if(typeid(*symbol) == typeid(Predicate)) {
 					Predicate* pred = dynamic_cast<Predicate*>(symbol);

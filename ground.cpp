@@ -145,16 +145,20 @@ int GroundTranslator::translate(unsigned int n, const ElementTuple& args) {
 	}
 }
 
-int GroundTranslator::translate(PFSymbol* s, const ElementTuple& args) {
+Lit GroundTranslator::translate(PFSymbol* s, const ElementTuple& args) {
 	unsigned int offset = addSymbol(s);
 	return translate(offset,args);
 }
 
-int GroundTranslator::translate(const vector<int>& clause, bool conj, TsType tstype) {
+Lit GroundTranslator::translate(const vector<Lit>& clause, bool conj, TsType tstype) {
 	int nr = nextNumber();
+	return translate(nr, clause, conj, tstype);
+}
+
+Lit GroundTranslator::translate(const Lit& head, const vector<Lit>& clause, bool conj, TsType tstype) {
 	PCTsBody* tsbody = new PCTsBody(tstype,clause,conj);
-	_nr2tsbodies.insert(pair<int,TsBody*>(nr,tsbody));
-	return nr;
+	_nr2tsbodies.insert(pair<int,TsBody*>(head,tsbody));
+	return head;
 }
 
 // Adds a tseitin body only if it does not yet exist. TODO why does this seem only relevant for CP Terms?
@@ -173,8 +177,8 @@ Lit GroundTranslator::addTseitinBody(TsBody* tsbody){
 }
 
 Lit GroundTranslator::translate(LazyQuantGrounder const* const lazygrounder, TsType tstype) {
-	LazyTsBody* tsbody = new LazyTsBody(lazygrounder->id(), lazygrounder, tstype);
 	int nr = nextNumber();
+	LazyTsBody* tsbody = new LazyTsBody(lazygrounder->id(), lazygrounder, nr, tstype);
 	_nr2tsbodies.insert(pair<int,TsBody*>(nr,tsbody));
 	return nr;
 }
@@ -231,7 +235,7 @@ int GroundTranslator::translateSet(const vector<int>& lits, const vector<double>
 int GroundTranslator::nextNumber() {
 	if(_freenumbers.empty()) {
 		int nr = _backsymbtable.size(); 
-		_backsymbtable.push_back(0);
+		_backsymbtable.push_back(NULL);
 		_backargstable.push_back(ElementTuple(0));
 		return nr;
 	}
@@ -449,22 +453,23 @@ bool SentenceGrounder::run() const {
 
 bool UnivSentGrounder::run() const {
 	if(_verbosity > 1) clog << "Grounding a universally quantified sentence " << "\n";
-	if(_generator->first()) {
-		bool b = _subgrounder->run();
+	if(not _generator->first()) {
+		if(_verbosity > 1){
+			clog << "No instances for this sentence " << "\n";
+		}
+		return true;
+	}
+	bool b = _subgrounder->run();
+	if(!b) {
+		_grounding->addEmptyClause();
+		return b;
+	}
+	while(_generator->next()) {
+		b = _subgrounder->run();
 		if(!b) {
 			_grounding->addEmptyClause();
 			return b;
 		}
-		while(_generator->next()) {
-			b = _subgrounder->run();
-			if(!b) {
-				_grounding->addEmptyClause();
-				return b;
-			}
-		}
-	}
-	else if(_verbosity > 1) {
-		clog << "No instances for this sentence " << "\n";
 	}
 	return true;
 }
@@ -986,10 +991,11 @@ void GrounderFactory::visit(const QuantForm* qf) {
 		if(recursive(qf)) _context._tseitin = TsType::RULE;
 
 		bool canlazyground = false;
-		if(isPos(qf->sign()) && _context._monotone==Context::POSITIVE && _context._tseitin==TsType::IMPL){
+		if(not qf->isUniv() && _context._monotone==Context::POSITIVE && _context._tseitin==TsType::IMPL){
 			canlazyground = true;
 		}
 
+		// FIXME better under-approximation of what to lazily ground
 		if(_options->groundlazily() && canlazyground && typeid(*_grounding)==typeid(SolverTheory)){
 			_formgrounder = new LazyQuantGrounder(dynamic_cast<SolverTheory*>(_grounding),_grounding->translator(),_formgrounder,qf->sign(),qf->quant(),gen,_context);
 		}else{
@@ -1316,5 +1322,5 @@ void TheoryVisitor::visit(const CPReification*) {
 }
 
 void LazyTsBody::notifyTheoryOccurence(){
-	grounder_->notifyTheoryOccurence();
+	grounder_->notifyTheoryOccurence(residual);
 }
