@@ -62,6 +62,7 @@ gidl_SOURCES = \
 		grounders/FormulaGrounders.hpp grounders/FormulaGrounders.cpp\
 		grounders/SetGrounders.hpp grounders/SetGrounders.cpp\
 		grounders/TermGrounders.hpp grounders/TermGrounders.cpp\
+		grounders/GroundUtils.hpp\
 		commands/allcommands.hpp\
 		commands/optimization.hpp\
 		commands/commandinterface.hpp\

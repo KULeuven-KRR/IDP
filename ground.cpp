@@ -132,11 +132,10 @@ GroundTranslator::~GroundTranslator() {
 }
 
 int GroundTranslator::translate(unsigned int n, const ElementTuple& args) {
-	map<ElementTuple,int,StrictWeakTupleOrdering>::iterator jt = _table[n].lower_bound(args);
+	auto jt = _table[n].lower_bound(args);
 	if(jt != _table[n].end() && jt->first == args) {
 		return jt->second;
-	}
-	else {
+	} else {
 		int nr = nextNumber();
 		_table[n].insert(jt,pair<ElementTuple,int>(args,nr));
 		_backsymbtable[nr] = _symboffsets[n];
@@ -147,7 +146,15 @@ int GroundTranslator::translate(unsigned int n, const ElementTuple& args) {
 
 Lit GroundTranslator::translate(PFSymbol* s, const ElementTuple& args) {
 	unsigned int offset = addSymbol(s);
-	return translate(offset,args);
+	Lit lit = translate(offset,args);
+
+	// FIXME expensive operation to do so often!
+	auto ruleit = symbol2rulegrounder.find(s);
+	if(ruleit!=symbol2rulegrounder.end()){
+		ruleit->second->notify(lit, args);
+	}
+
+	return lit;
 }
 
 Lit GroundTranslator::translate(const vector<Lit>& clause, bool conj, TsType tstype) {
@@ -176,11 +183,15 @@ Lit GroundTranslator::addTseitinBody(TsBody* tsbody){
 	return nr;
 }
 
-Lit GroundTranslator::translate(LazyQuantGrounder const* const lazygrounder, TsType tstype) {
-	int nr = nextNumber();
-	LazyTsBody* tsbody = new LazyTsBody(lazygrounder->id(), lazygrounder, nr, tstype);
-	_nr2tsbodies.insert(pair<int,TsBody*>(nr,tsbody));
-	return nr;
+void GroundTranslator::notifyDefined(PFSymbol* pfs, LazyRuleGrounder* const grounder){
+	assert(symbol2rulegrounder.find(pfs)==symbol2rulegrounder.end());
+	symbol2rulegrounder.insert(pair<PFSymbol*, LazyRuleGrounder*>(pfs, grounder));
+}
+
+void GroundTranslator::translate(LazyQuantGrounder const* const lazygrounder, ResidualAndFreeInst* instance, TsType tstype) {
+	instance->residual = nextNumber();
+	LazyTsBody* tsbody = new LazyTsBody(lazygrounder->id(), lazygrounder, instance, tstype);
+	_nr2tsbodies.insert(pair<int,TsBody*>(instance->residual,tsbody));
 }
 
 Lit	GroundTranslator::translate(double bound, char comp, bool strict, AggFunction aggtype, int setnr, TsType tstype) {
@@ -997,7 +1008,7 @@ void GrounderFactory::visit(const QuantForm* qf) {
 
 		// FIXME better under-approximation of what to lazily ground
 		if(_options->groundlazily() && canlazyground && typeid(*_grounding)==typeid(SolverTheory)){
-			_formgrounder = new LazyQuantGrounder(dynamic_cast<SolverTheory*>(_grounding),_grounding->translator(),_formgrounder,qf->sign(),qf->quant(),gen,_context);
+			_formgrounder = new LazyQuantGrounder(qf->freevars(), dynamic_cast<SolverTheory*>(_grounding),_grounding->translator(),_formgrounder,qf->sign(),qf->quant(),gen,_context);
 		}else{
 			_formgrounder = new QuantGrounder(_grounding->translator(),_formgrounder,qf->sign(),qf->quant(),gen,_context);
 		}
@@ -1232,49 +1243,61 @@ void GrounderFactory::visit(const Definition* def) {
 	_context._defined.clear();
 }
 
+typedef std::vector<Variable*> varlist;
+
+InstGenerator* createGenerator(const varlist& vars, var2dommap& mapping, AbstractStructure* structure){
+	vector<SortTable*> hvst;
+	vector<const DomainElement**> hvars;
+	for(unsigned int n = 0; n < vars.size(); ++n) {
+		const DomainElement** d = new const DomainElement*();
+		mapping[vars[n]] = d;
+		hvst.push_back(structure->inter((vars[n])->sort()));
+		hvars.push_back(d);
+	}
+	GeneratorFactory gf;
+	return gf.create(hvars,hvst);
+}
+
 /**
  * void GrounderFactory::visit(const Rule* rule)
  * DESCRIPTION
  * 		Creates a grounder for a definitional rule.
  */
 void GrounderFactory::visit(const Rule* rule) {
-	// Split the quantified variables in two categories: 
-	//		1. the variables that only occur in the head
-	//		2. the variables that occur in the body (and possibly in the head)
-	vector<Variable*>	headvars;
-	vector<Variable*>	bodyvars;
-	for(set<Variable*>::const_iterator it = rule->quantvars().begin(); it != rule->quantvars().end(); ++it) {
-		if(rule->body()->contains(*it)) {
-			bodyvars.push_back(*it);
+	// TODO for lazygroundrules, need a generator for all variables NOT occurring in the head!
+
+	InstGenerator *headgen = NULL, *bodygen = NULL;
+
+	if(_options->groundlazily()){ // FIXME check we also have the correct groundtheory!
+		// for lazy ground rules, need a generator which generates bodies given a head, so only vars not occurring in the head!
+		vector<Variable*> bodyvars;
+		for(auto it = rule->quantvars().begin(); it != rule->quantvars().end(); ++it) {
+			if(not rule->head()->contains(*it)) {
+				bodyvars.push_back(*it);
+			}
 		}
-		else {
-			headvars.push_back(*it);
+
+		bodygen = createGenerator(bodyvars, _varmapping, _structure);
+	}else{
+		// Split the quantified variables in two categories:
+		//		1. the variables that only occur in the head
+		//		2. the variables that occur in the body (and possibly in the head)
+
+		vector<Variable*>	headvars;
+		vector<Variable*>	bodyvars;
+		for(auto it = rule->quantvars().begin(); it != rule->quantvars().end(); ++it) {
+			if(rule->body()->contains(*it)) {
+				bodyvars.push_back(*it);
+			}
+			else {
+				headvars.push_back(*it);
+			}
 		}
+
+		headgen = createGenerator(headvars, _varmapping, _structure);
+		bodygen = createGenerator(bodyvars, _varmapping, _structure);
 	}
 
-	// Create head instance generator
-	vector<SortTable*> hvst;
-	vector<const DomainElement**> hvars;
-	for(unsigned int n = 0; n < headvars.size(); ++n) {
-		const DomainElement** d = new const DomainElement*();
-		_varmapping[headvars[n]] = d;
-		hvst.push_back(_structure->inter((headvars[n])->sort()));
-		hvars.push_back(d);
-	}
-	GeneratorFactory gf;
-	InstGenerator* headgen = gf.create(hvars,hvst);
-	
-	// Create body instance generator
-	vector<SortTable*> bvst;
-	vector<const DomainElement**> bvars;
-	for(unsigned int n = 0; n < bodyvars.size(); ++n) {
-		const DomainElement** d = new const DomainElement*();
-		_varmapping[bodyvars[n]] = d;
-		bvst.push_back(_structure->inter((bodyvars[n])->sort()));
-		bvars.push_back(d);
-	}
-	InstGenerator* bodygen = gf.create(bvars,bvst);
-	
 	// Create head grounder
 	SaveContext();
 	_context._component = CC_HEAD;
@@ -1296,9 +1319,12 @@ void GrounderFactory::visit(const Rule* rule) {
 	// Create rule grounder
 	SaveContext();
 	if(recursive(rule->body())) _context._tseitin = TsType::RULE;
-	_rulegrounder = new RuleGrounder(headgr,bodygr,headgen,bodygen,_context);
+	if(_options->groundlazily()){
+		_rulegrounder = new LazyRuleGrounder(headgr,bodygr,bodygen,_context);
+	}else{
+		_rulegrounder = new RuleGrounder(headgr,bodygr,headgen,bodygen,_context);
+	}
 	RestoreContext();
-
 }
 
 /**************
@@ -1322,5 +1348,5 @@ void TheoryVisitor::visit(const CPReification*) {
 }
 
 void LazyTsBody::notifyTheoryOccurence(){
-	grounder_->notifyTheoryOccurence(residual);
+	grounder_->notifyTheoryOccurence(inst);
 }

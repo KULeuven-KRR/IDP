@@ -20,6 +20,7 @@
 #include "ecnf.hpp"
 #include "commontypes.hpp"
 #include "grounders/LazyQuantGrounder.hpp"
+#include "grounders/DefinitionGrounders.hpp"
 
 namespace MinisatID{
  	 class WrappedPCSolver;
@@ -234,10 +235,57 @@ public:
 		}
 	}
 
-	void notifyLazyResidual(Lit residual, LazyQuantGrounder const* const grounder){
-		MinisatID::LazyClause lc(createLiteral(residual), new MinisatID::LazyClauseMonitor(residual));
-		cb::Callback1<void, const Lit&> cbmore(const_cast<LazyQuantGrounder*>(grounder), &LazyQuantGrounder::requestGroundMore); // FIXME for some reason, cannot seem to pass in const function pointers?
-		lc.monitor->setRequestMoreGrounding(cbmore);
+
+	typedef cb::Callback1<void, ResidualAndFreeInst*> callbackgrounding;
+	class LazyClauseMon: public MinisatID::LazyGroundingCommand{
+	private:
+		ResidualAndFreeInst* inst;
+		callbackgrounding requestGroundingCB;
+
+	public:
+		LazyClauseMon(ResidualAndFreeInst* inst):inst(inst){}
+
+		void setRequestMoreGrounding(callbackgrounding cb){
+			requestGroundingCB = cb;
+		}
+
+		virtual void requestGrounding(){
+			requestGroundingCB(inst);
+		}
+	};
+
+	void notifyLazyResidual(ResidualAndFreeInst* inst, LazyQuantGrounder const* const grounder){
+		LazyClauseMon* mon = new LazyClauseMon(inst);
+		MinisatID::LazyGroundLit lc(false, createLiteral(inst->residual), mon);
+		callbackgrounding cbmore(const_cast<LazyQuantGrounder*>(grounder), &LazyQuantGrounder::requestGroundMore); // FIXME for some reason, cannot seem to pass in const function pointers?
+		mon->setRequestMoreGrounding(cbmore);
+		getSolver().add(lc);
+	}
+
+	typedef cb::Callback2<void, const Lit&, const std::vector<const DomainElement*>&> callbackrulegrounding;
+	class LazyRuleMon: public MinisatID::LazyGroundingCommand{
+	private:
+		Lit lit;
+		ElementTuple args;
+		callbackrulegrounding requestgrounding;
+
+	public:
+		LazyRuleMon(const Lit& lit, const ElementTuple& args): lit(lit), args(args){}
+
+		void setRequestRuleGrounding(callbackrulegrounding cb){
+			requestgrounding = cb;
+		}
+
+		virtual void requestGrounding(){
+			requestgrounding(lit, args);
+		}
+	};
+
+	void polNotifyDefined(const Lit& lit, const ElementTuple& args, LazyRuleGrounder* grounder){
+		LazyRuleMon* mon = new LazyRuleMon(lit, args);
+		MinisatID::LazyGroundLit lc(true, createLiteral(lit), mon);
+		callbackrulegrounding cbmore(grounder, &LazyRuleGrounder::ground); // FIXME for some reason, cannot seem to pass in const function pointers?
+		mon->setRequestRuleGrounding(cbmore);
 		getSolver().add(lc);
 	}
 

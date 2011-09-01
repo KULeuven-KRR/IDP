@@ -118,16 +118,23 @@ class AggTsBody : public TsBody {
 };
 
 class LazyQuantGrounder;
+typedef std::pair<const DomainElement**, const DomainElement*> dominst;
+typedef std::vector<dominst> dominstlist;
+
+struct ResidualAndFreeInst{
+	Lit residual;
+	dominstlist freevarinst;
+};
 
 class LazyTsBody: public TsBody{
 private:
 	unsigned int id_;
 	LazyQuantGrounder const*const grounder_;
-	Lit residual;
+	ResidualAndFreeInst* inst;
 
 public:
-	LazyTsBody(int id, LazyQuantGrounder const*const grounder, const Lit& residual, TsType type):
-			TsBody(type), id_(id), grounder_(grounder), residual(residual){}
+	LazyTsBody(int id, LazyQuantGrounder const*const grounder, ResidualAndFreeInst* inst, TsType type):
+			TsBody(type), id_(id), grounder_(grounder), inst(inst){}
 
 	unsigned int id() const { return id_; }
 
@@ -240,6 +247,7 @@ class CPTsBody : public TsBody {
 };
 
 class LazyQuantGrounder;
+class LazyRuleGrounder;
 
 class GroundTranslator {
 private:
@@ -248,6 +256,8 @@ private:
 	std::vector<PFSymbol*>			_symboffsets;	// map integer to symbol
 	std::vector<PFSymbol*>			_backsymbtable;	// map integer to the symbol of its corresponding atom
 	std::vector<ElementTuple>		_backargstable;	// map integer to the terms of its corresponding atom
+
+	std::map<PFSymbol*, LazyRuleGrounder*> symbol2rulegrounder; // map a symbol to a rulegrounder if the symbol is defined
 
 	std::queue<int>		_freenumbers;		// keeps atom numbers that were freed and can be used again
 	std::queue<int>		_freesetnumbers;	// keeps set numbers that were freed and can be used again
@@ -270,7 +280,9 @@ public:
 	Lit	translate(PFSymbol*,const ElementTuple&);
 	Lit	translate(CPTerm*, CompType, const CPBound&, TsType);
 	Lit	translateSet(const std::vector<int>&,const std::vector<double>&,const std::vector<double>&);
-	Lit	translate(LazyQuantGrounder const* const lazygrounder, TsType type);
+	void translate(LazyQuantGrounder const* const lazygrounder, ResidualAndFreeInst* instance, TsType type);
+
+	void			notifyDefined(PFSymbol* pfs, LazyRuleGrounder* const grounder);
 
 	Lit				nextNumber();
 	unsigned int	addSymbol(PFSymbol* pfs);
@@ -445,6 +457,8 @@ class SetGrounder;
 class HeadGrounder;
 class RuleGrounder;
 
+typedef std::map<Variable*,const DomainElement**> var2dommap;
+
 class GrounderFactory : public TheoryVisitor {
 	private:
 		// Data
@@ -476,8 +490,8 @@ class GrounderFactory : public TheoryVisitor {
 		std::set<const PFSymbol*>	_cpsymbols;
 
 		// Variable mapping
-		std::map<Variable*,const DomainElement**>	_varmapping;	// Maps variables to their counterpart during grounding.
-														// That is, the corresponding const DomainElement** acts as a variable+value.
+		var2dommap	_varmapping; // Maps variables to their counterpart during grounding.
+								// That is, the corresponding const DomainElement** acts as a variable+value.
 
 		// Return values
 		FormulaGrounder*		_formgrounder;

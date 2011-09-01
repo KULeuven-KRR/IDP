@@ -11,41 +11,8 @@
 
 /*** Definition grounders ***/
 
-/** Grounder for a head of a rule **/
-class HeadGrounder {
-	private:
-		AbstractGroundTheory*			_grounding;
-		std::vector<TermGrounder*>		_subtermgrounders;
-		InstanceChecker*				_truechecker;
-		InstanceChecker*				_falsechecker;
-		unsigned int					_symbol;
-		std::vector<SortTable*>			_tables;
-	public:
-		HeadGrounder(AbstractGroundTheory* gt, InstanceChecker* pc, InstanceChecker* cc, PFSymbol* s,
-					const std::vector<TermGrounder*>&, const std::vector<SortTable*>&);
-		int	run() const;
-
-};
-
-/** Grounder for a single rule **/
-class RuleGrounder {
-	private:
-		HeadGrounder*		_headgrounder;
-		FormulaGrounder*	_bodygrounder;
-		InstGenerator*		_headgenerator;
-		InstGenerator*		_bodygenerator;
-		GroundingContext	_context;
-	public:
-		RuleGrounder(HeadGrounder* hgr, FormulaGrounder* bgr, InstGenerator* hig, InstGenerator* big, GroundingContext& ct)
-			: _headgrounder(hgr), _bodygrounder(bgr), _headgenerator(hig), _bodygenerator(big), _context(ct) { }
-		void run(unsigned int defid, GroundDefinition* grounddefinition) const;
-
-		// Mutators
-		void addTrueRule(GroundDefinition* grounddefinition, int head) const;
-		void addFalseRule(GroundDefinition* grounddefinition, int head) const;
-		void addPCRule(GroundDefinition* grounddefinition, int head, const std::vector<int>& body, bool conj, bool recursive) const;
-		void addAggRule(GroundDefinition* grounddefinition, int head, int setnr, AggFunction aggtype, bool lower, double bound, bool recursive) const;
-};
+class RuleGrounder;
+typedef GroundTheory<SolverPolicy> SolverTheory;
 
 /** Grounder for a definition **/
 // NOTE: definition printing code is based on the INVARIANT that a defintion is ALWAYS grounded as contiguous component: never ground def A a bit, then ground B, then return to A again (code should error on this)
@@ -63,6 +30,81 @@ class DefinitionGrounder : public TopLevelGrounder {
 		DefinitionGrounder(AbstractGroundTheory* groundtheory, std::vector<RuleGrounder*> subgr,int verb);
 		bool run() const;
 		unsigned int id() const { return _defnb; }
+};
+
+class HeadGrounder;
+
+/** Grounder for a single rule **/
+class RuleGrounder {
+	private:
+		HeadGrounder*		_headgrounder;
+		FormulaGrounder*	_bodygrounder;
+		InstGenerator*		_headgenerator;
+		InstGenerator*		_bodygenerator;
+		GroundingContext	_context;
+
+	protected:
+		HeadGrounder* 		headgrounder() const { return _headgrounder; }
+		FormulaGrounder* 	bodygrounder() const { return _bodygrounder; }
+		InstGenerator* 		headgenerator() const { return _headgenerator; }
+		InstGenerator* 		bodygenerator() const { return _bodygenerator; }
+
+	public:
+		RuleGrounder(HeadGrounder* hgr, FormulaGrounder* bgr, InstGenerator* hig, InstGenerator* big, GroundingContext& ct);
+		void run(unsigned int defid, GroundDefinition* grounddefinition) const;
+
+		// Mutators
+		void addTrueRule(GroundDefinition* grounddefinition, int head) const;
+		void addFalseRule(GroundDefinition* grounddefinition, int head) const;
+		void addPCRule(GroundDefinition* grounddefinition, int head, const std::vector<int>& body, bool conj, bool recursive) const;
+		void addAggRule(GroundDefinition* grounddefinition, int head, int setnr, AggFunction aggtype, bool lower, double bound, bool recursive) const;
+};
+
+/** Grounder for a head of a rule **/
+class HeadGrounder {
+	private:
+		AbstractGroundTheory*			_grounding;
+		std::vector<TermGrounder*>		_subtermgrounders;
+		InstanceChecker*				_truechecker;
+		InstanceChecker*				_falsechecker;
+		unsigned int					_symbol;
+		std::vector<SortTable*>			_tables;
+		PFSymbol*						_pfsymbol;
+
+	public:
+		HeadGrounder(AbstractGroundTheory* gt, InstanceChecker* pc, InstanceChecker* cc, PFSymbol* s,
+					const std::vector<TermGrounder*>&, const std::vector<SortTable*>&);
+		int	run() const;
+
+		const std::vector<TermGrounder*>& subtermgrounders() const { return _subtermgrounders; }
+		PFSymbol* pfsymbol() const { return pfsymbol(); }
+		AbstractGroundTheory* grounding() const { return _grounding; }
+};
+
+class LazyRuleGrounder;
+
+class LazyDefinitionGrounder : public TopLevelGrounder {
+	private:
+		unsigned int _defnb;
+		std::vector<LazyRuleGrounder*>	_subgrounders;	//!< Grounders for the rules of the definition.
+	public:
+		LazyDefinitionGrounder(AbstractGroundTheory* groundtheory, std::vector<LazyRuleGrounder*> subgr,int verb);
+		bool run() const;
+		unsigned int id() const { return _defnb; }
+};
+
+class LazyRuleGrounder: public RuleGrounder{
+private:
+	SolverTheory* _grounding;
+	SolverTheory* grounding() const { return _grounding; }
+public:
+	LazyRuleGrounder(HeadGrounder* hgr, FormulaGrounder* bgr, InstGenerator* big, GroundingContext& ct);
+	void run(unsigned int defid, GroundDefinition* grounddefinition) const;
+
+	void ground(const Lit& head, const ElementTuple& headargs);
+	void notify(const Lit& lit, const ElementTuple& headargs);
+
+	dominstlist createInst(const ElementTuple& headargs);
 };
 
 #endif /* DEFINITIONGROUNDERS_HPP_ */

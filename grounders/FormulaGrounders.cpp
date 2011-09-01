@@ -21,10 +21,11 @@ using namespace std;
 void FormulaGrounder::setorig(const Formula* f, const map<Variable*, const DomainElement**>& mvd, int verb) {
 	_verbosity = verb;
 	map<Variable*,Variable*> mvv;
-	for(set<Variable*>::const_iterator it = f->freevars().begin(); it != f->freevars().end(); ++it) {
+	for(auto it = f->freevars().begin(); it != f->freevars().end(); ++it) {
 		Variable* v = new Variable((*it)->name(),(*it)->sort(),ParseInfo());
 		mvv[*it] = v;
 		_varmap[v] = mvd.find(*it)->second;
+		_realvarmap[*it] = mvd.find(*it)->second;
 	}
 	_origform = f->clone(mvv);
 }
@@ -33,7 +34,7 @@ void FormulaGrounder::printorig() const {
 	clog << "Grounding formula " << _origform->to_string();
 	if(not _origform->freevars().empty()) {
 		clog << " with instance ";
-		for(set<Variable*>::const_iterator it = _origform->freevars().begin(); it != _origform->freevars().end(); ++it) {
+		for(auto it = _origform->freevars().begin(); it != _origform->freevars().end(); ++it) {
 			clog << (*it)->to_string() << " = ";
 			const DomainElement* e = *(_varmap.find(*it)->second);
 			clog << e->to_string() << ' ';

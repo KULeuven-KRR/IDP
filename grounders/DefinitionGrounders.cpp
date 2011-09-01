@@ -9,7 +9,9 @@
 #include "grounders/TermGrounders.hpp"
 
 #include "grounders/FormulaGrounders.hpp"
+#include "grounders/GroundUtils.hpp"
 #include "groundtheories/AbstractGroundTheory.hpp"
+#include "groundtheories/SolverPolicy.hpp"
 
 #include "generator.hpp"
 #include "checker.hpp"
@@ -21,9 +23,81 @@
 
 using namespace std;
 
-HeadGrounder::HeadGrounder(AbstractGroundTheory* gt, InstanceChecker* pc, InstanceChecker* cc, PFSymbol* s,
-		const vector<TermGrounder*>& sg, const vector<SortTable*>& vst)
-	: _grounding(gt), _subtermgrounders(sg), _truechecker(pc), _falsechecker(cc), _symbol(gt->translator()->addSymbol(s)), _tables(vst) {
+unsigned int DefinitionGrounder::_currentdefnb = 1;
+
+DefinitionGrounder::DefinitionGrounder(AbstractGroundTheory* gt, std::vector<RuleGrounder*> subgr,int verb)
+		: TopLevelGrounder(gt,verb), _defnb(_currentdefnb++), _subgrounders(subgr), _grounddefinition(new GroundDefinition(_defnb, gt->translator())) {
+}
+
+bool DefinitionGrounder::run() const {
+	for(auto grounder = _subgrounders.begin(); grounder<_subgrounders.end(); ++grounder){
+		(*grounder)->run(id(), _grounddefinition);
+	}
+	return true;
+}
+
+RuleGrounder::RuleGrounder(HeadGrounder* hgr, FormulaGrounder* bgr, InstGenerator* hig, InstGenerator* big, GroundingContext& ct)
+			: _headgrounder(hgr), _bodygrounder(bgr), _headgenerator(hig), _bodygenerator(big), _context(ct) {
+}
+
+void RuleGrounder::run(unsigned int defid, GroundDefinition* grounddefinition) const {
+	bool conj = _bodygrounder->conjunctive();
+	if(not _bodygenerator->first()){
+		return;
+	}
+	do {
+		vector<int>	body;
+		_bodygrounder->run(body);
+		bool falsebody = (body.empty() && !conj) || (body.size() == 1 && body[0] == _false);
+		bool truebody = (body.empty() && conj) || (body.size() == 1 && body[0] == _true);
+		if(falsebody){
+			continue;
+		}
+
+		if(not _headgenerator->first()) {
+			continue;
+		}
+		do{
+			Lit head = _headgrounder->run();
+			assert(head != _true);
+			if(head != _false) {
+				if(truebody){
+					addTrueRule(grounddefinition, head);
+				} else{
+					addPCRule(grounddefinition, head,body,conj,_context._tseitin == TsType::RULE);
+				}
+			}
+		}while(_headgenerator->next());
+	}while(_bodygenerator->next());
+}
+
+void RuleGrounder::addTrueRule(GroundDefinition* const grounddefinition, int head) const {
+	addPCRule(grounddefinition, head,vector<int>(0),true,false);
+}
+
+void RuleGrounder::addFalseRule(GroundDefinition* const grounddefinition, int head) const {
+	addPCRule(grounddefinition, head,vector<int>(0),false,false);
+}
+
+void RuleGrounder::addPCRule(GroundDefinition* grounddefinition, int head, const vector<int>& body, bool conj, bool recursive) const {
+	grounddefinition->addPCRule(head, body, conj, recursive);
+}
+
+void RuleGrounder::addAggRule(GroundDefinition* grounddefinition, int head, int setnr, AggFunction aggtype, bool lower, double bound, bool recursive) const {
+	grounddefinition->addAggRule(head, setnr, aggtype, lower, bound, recursive);
+}
+
+HeadGrounder::HeadGrounder(AbstractGroundTheory* gt,
+							InstanceChecker* pc,
+							InstanceChecker* cc,
+							PFSymbol* s,
+							const vector<TermGrounder*>& sg,
+							const vector<SortTable*>& vst)
+		: _grounding(gt), _subtermgrounders(sg),
+		  _truechecker(pc), _falsechecker(cc),
+		  _symbol(gt->translator()->addSymbol(s)), // FIXME what does this do?
+		  _tables(vst),
+		  _pfsymbol(s){
 }
 
 int HeadGrounder::run() const {
@@ -60,62 +134,53 @@ int HeadGrounder::run() const {
 	return atom;
 }
 
-void RuleGrounder::run(unsigned int defid, GroundDefinition* grounddefinition) const {
-	bool conj = _bodygrounder->conjunctive();
-	if(not _bodygenerator->first()){
+LazyRuleGrounder::LazyRuleGrounder(HeadGrounder* hgr, FormulaGrounder* bgr, InstGenerator* big, GroundingContext& ct)
+			: RuleGrounder(hgr, bgr, NULL, big, ct), _grounding(dynamic_cast<SolverTheory*>(headgrounder()->grounding())) {
+	grounding()->translator()->notifyDefined(headgrounder()->pfsymbol(), this);
+}
+
+dominstlist LazyRuleGrounder::createInst(const ElementTuple& headargs){
+	dominstlist domlist;
+
+	// set the variable instantiations
+	for(uint i=0; i<headargs.size(); ++i){
+		assert(typeid(*headgrounder()->subtermgrounders()[i])==typeid(VarTermGrounder));
+		auto var = (dynamic_cast<VarTermGrounder*>(headgrounder()->subtermgrounders()[i]))->getElement();
+		domlist.push_back(dominst(var, headargs[i]));
+	}
+	return domlist;
+}
+
+void LazyRuleGrounder::notify(const Lit& lit, const ElementTuple& headargs){
+	grounding()->polNotifyDefined(lit, headargs, this);
+}
+
+void LazyRuleGrounder::ground(const Lit& head, const ElementTuple& headargs){
+	dominstlist headvarinstlist = createInst(headargs);
+
+	vector<const DomainElement*> originstantiation;
+	overwriteVars(originstantiation, headvarinstlist);
+
+	bool conj = bodygrounder()->conjunctive();
+	if(not bodygenerator()->first()){
 		return;
 	}
 	do {
 		vector<int>	body;
-		_bodygrounder->run(body);
-		if(not _headgenerator->first()) {
-			continue;
-		}
+		bodygrounder()->run(body);
 		bool falsebody = (body.empty() && !conj) || (body.size() == 1 && body[0] == _false);
 		bool truebody = (body.empty() && conj) || (body.size() == 1 && body[0] == _true);
 		if(falsebody){
 			continue;
 		}
 
-		do{
-			Lit head = _headgrounder->run();
-			assert(head != _true);
-			if(head != _false) {
-				if(truebody){
-					addTrueRule(grounddefinition, head);
-				} else{
-					addPCRule(grounddefinition, head,body,conj,_context._tseitin == TsType::RULE);
-				}
-			}
-		}while(_headgenerator->next());
-	}while(_bodygenerator->next());
-}
+		assert(head != _true && head!=_false);
+		if(truebody){
+			// FIXME addTrueRule(head);
+		} else{
+			// FIXME addPCRule(head,body,conj,_context._tseitin == TsType::RULE);
+		}
+	}while(bodygenerator()->next());
 
-void RuleGrounder::addTrueRule(GroundDefinition* const grounddefinition, int head) const {
-	addPCRule(grounddefinition, head,vector<int>(0),true,false);
-}
-
-void RuleGrounder::addFalseRule(GroundDefinition* const grounddefinition, int head) const {
-	addPCRule(grounddefinition, head,vector<int>(0),false,false);
-}
-
-void RuleGrounder::addPCRule(GroundDefinition* grounddefinition, int head, const vector<int>& body, bool conj, bool recursive) const {
-	grounddefinition->addPCRule(head, body, conj, recursive);
-}
-
-void RuleGrounder::addAggRule(GroundDefinition* grounddefinition, int head, int setnr, AggFunction aggtype, bool lower, double bound, bool recursive) const {
-	grounddefinition->addAggRule(head, setnr, aggtype, lower, bound, recursive);
-}
-
-unsigned int DefinitionGrounder::_currentdefnb = 1;
-
-DefinitionGrounder::DefinitionGrounder(AbstractGroundTheory* gt, std::vector<RuleGrounder*> subgr,int verb)
-		: TopLevelGrounder(gt,verb), _defnb(_currentdefnb++), _subgrounders(subgr), _grounddefinition(new GroundDefinition(_defnb, gt->translator())) {
-}
-
-bool DefinitionGrounder::run() const {
-	for(auto grounder = _subgrounders.begin(); grounder<_subgrounders.end(); ++grounder){
-		(*grounder)->run(id(), _grounddefinition);
-	}
-	return true;
+	restoreOrigVars(originstantiation, headvarinstlist);
 }

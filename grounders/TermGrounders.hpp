@@ -42,6 +42,8 @@ class VarTermGrounder : public TermGrounder {
 	public:
 		VarTermGrounder(const DomainElement** a) : _value(a) { }
 		GroundTerm run() const;
+
+		const DomainElement** getElement() const { return _value; }
 };
 
 class FuncTermGrounder : public TermGrounder {

@@ -8,18 +8,16 @@
 #include "groundtheories/AbstractGroundTheory.hpp"
 #include "groundtheories/SolverPolicy.hpp"
 #include "generator.hpp"
+#include "grounders/GroundUtils.hpp"
+
+#include <iostream>
 
 using namespace std;
 
 unsigned int LazyQuantGrounder::maxid = 1;
 
-Lit LazyQuantGrounder::createTseitin() const{
-	Lit tseitin = _translator->translate(this, _context._tseitin);
-	return isNegative()?-tseitin:tseitin;
-}
-
-void LazyQuantGrounder::requestGroundMore(const Lit& tseitin) {
-	notifyTheoryOccurence(tseitin);
+void LazyQuantGrounder::requestGroundMore(ResidualAndFreeInst * instance) {
+	notifyTheoryOccurence(instance);
 }
 
 void LazyQuantGrounder::groundMore() const{
@@ -33,9 +31,14 @@ void LazyQuantGrounder::groundMore() const{
 	grounding = true;
 
 	while(queuedtseitinstoground.size()>0){
-		Lit oldtseitin = queuedtseitinstoground.front();
+		ResidualAndFreeInst* instance = queuedtseitinstoground.front();
 		queuedtseitinstoground.pop();
+
+		vector<const DomainElement*> originstantiation;
+		overwriteVars(originstantiation, instance->freevarinst);
 		Lit lit = _subgrounder->run();
+		restoreOrigVars(originstantiation, instance->freevarinst);
+
 		if(decidesClause(lit)) {
 			lit = getDecidedValue();
 			lit = negatedclause_?-lit:lit;
@@ -45,11 +48,13 @@ void LazyQuantGrounder::groundMore() const{
 		GroundClause clause;
 		clause.push_back(lit);
 
+		Lit oldtseitin = instance->residual;
 		// FIXME notify lazy should check whether the tseitin already has a value and request more grounding immediately!
 		if(_generator->next()){
 			Lit newtseitin = _translator->nextNumber();
 			clause.push_back(newtseitin);
-			groundtheory_->notifyLazyResidual(newtseitin, this); // set on not-decide and add to watchlist
+			instance->residual = newtseitin;
+			groundtheory_->notifyLazyResidual(instance, this); // set on not-decide and add to watchlist
 		}
 		groundtheory_->add(oldtseitin, _context._tseitin, clause);
 	}
@@ -66,12 +71,33 @@ void LazyQuantGrounder::run(litlist& clause, bool negateclause) const {
 		return;
 	}
 
-	clause.push_back(createTseitin());
+	// TODO waar allemaal rekening houden met welke signs en contexten?
+
+	ResidualAndFreeInst* inst = new ResidualAndFreeInst();
+
+	clog <<"known free vars: \n\t";
+	printorig();
+	clog <<"The provided free vars: \n\t";
+	for(auto var=freevars.begin(); var!=freevars.end(); ++var){
+		clog <<(*var)->to_string() <<", ";
+	}
+	clog <<"\n\n\n";
+
+	for(auto var=freevars.begin(); var!=freevars.end(); ++var){
+		auto tuple = _realvarmap.at(*var);
+		inst->freevarinst.push_back(dominst(tuple, *tuple));
+	}
+
+	_translator->translate(this, inst, _context._tseitin);
+	if(isNegative()){
+		inst->residual = -inst->residual;
+	}
+	clause.push_back(inst->residual);
 }
 
-void LazyQuantGrounder::notifyTheoryOccurence(const Lit& tseitin) const{
+void LazyQuantGrounder::notifyTheoryOccurence(ResidualAndFreeInst * instance) const{
 	// restructured code to prevent recursion // FIXME duplication and const issues!
-	queuedtseitinstoground.push(tseitin);
+	queuedtseitinstoground.push(instance);
 	if(not grounding){
 		groundMore();
 	}

@@ -16,7 +16,7 @@ class FormulaGrounder {
 		GroundTranslator*							_translator;
 		GroundingContext							_context;
 		const Formula*								_origform;
-		std::map<Variable*,const DomainElement**>	_varmap;
+		std::map<Variable*,const DomainElement**>	_varmap, _realvarmap;
 		int											_verbosity;
 		void printorig() const;
 	public:
