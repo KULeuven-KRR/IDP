@@ -47,9 +47,9 @@ public:
 		delete(_termtranslator);
 	}
 
-	void 	addEmptyClause()	{ GroundClause c(0); add(c);	}
-	void 	addUnitClause(int l){ GroundClause c(1,l); add(c);	}
-	virtual void add(GroundClause& cl, bool skipfirst=false) = 0;
+	void 	addEmptyClause()	{ add(GroundClause{0});		}
+	void 	addUnitClause(int l){ add(GroundClause{1,l});	}
+	virtual void add(const GroundClause& cl, bool skipfirst=false) = 0;
 	virtual void add(GroundDefinition* d) = 0;
 	virtual void add(GroundFixpDef*) = 0;
 	virtual void add(int head, AggTsBody* body) = 0;
@@ -233,7 +233,7 @@ public:
 		Policy::polEndTheory();
 	}
 
-	void add(GroundClause& cl, bool skipfirst) {
+	void add(const GroundClause& cl, bool skipfirst = false) {
 		transformForAdd(cl,VIT_DISJ,ID_FOR_UNDEFINED,skipfirst);
 		Policy::polAdd(cl);
 	}

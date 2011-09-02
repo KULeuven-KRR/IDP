@@ -38,7 +38,7 @@ private:
 			QuantGrounder(gt,sub,sign, q, gen,ct),
 			id_(maxid++),
 			negatedclause_(false),
-			groundtheory_(groundtheory),
+			groundtheory_(groundtheory), // FIXME is there a reason why this is not part of every grounder, but translator always is?
 			grounding(false),
 			freevars(freevars){
 	}

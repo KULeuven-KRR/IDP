@@ -257,7 +257,7 @@ private:
 	std::vector<PFSymbol*>			_backsymbtable;	// map integer to the symbol of its corresponding atom
 	std::vector<ElementTuple>		_backargstable;	// map integer to the terms of its corresponding atom
 
-	std::map<PFSymbol*, LazyRuleGrounder*> symbol2rulegrounder; // map a symbol to a rulegrounder if the symbol is defined
+	std::map<uint, LazyRuleGrounder*> symbol2rulegrounder; // map a symbol to a rulegrounder if the symbol is defined
 
 	std::queue<int>		_freenumbers;		// keeps atom numbers that were freed and can be used again
 	std::queue<int>		_freesetnumbers;	// keeps set numbers that were freed and can be used again
@@ -457,6 +457,7 @@ class SetGrounder;
 class HeadGrounder;
 class RuleGrounder;
 
+typedef std::vector<Variable*> varlist;
 typedef std::map<Variable*,const DomainElement**> var2dommap;
 
 class GrounderFactory : public TheoryVisitor {
@@ -500,6 +501,14 @@ class GrounderFactory : public TheoryVisitor {
 		TopLevelGrounder*		_toplevelgrounder;
 		HeadGrounder*			_headgrounder;
 		RuleGrounder*			_rulegrounder;
+
+		AbstractStructure* structure() const { return _structure; }
+
+		const var2dommap& varmapping() const { return _varmapping; }
+		//var2dommap& varmapping() { return _varmapping; }
+
+		const DomainElement**	createVarMapping(Variable * const var);
+		template<class VarList> InstGenerator* 	createVarMapAndGenerator(const VarList& vars);
 
 	public:
 		// Constructor

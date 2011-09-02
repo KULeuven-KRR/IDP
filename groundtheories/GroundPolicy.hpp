@@ -74,7 +74,7 @@ public:
 		}
 	}
 
-	void polAdd(GroundClause& cl) {
+	void polAdd(const GroundClause& cl) {
 		_clauses.push_back(cl);
 	}
 

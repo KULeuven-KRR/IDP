@@ -22,10 +22,12 @@ void FormulaGrounder::setorig(const Formula* f, const map<Variable*, const Domai
 	_verbosity = verb;
 	map<Variable*,Variable*> mvv;
 	for(auto it = f->freevars().begin(); it != f->freevars().end(); ++it) {
+		_varmap[*it] = mvd.find(*it)->second;
+
+		// Clone variable to store original
 		Variable* v = new Variable((*it)->name(),(*it)->sort(),ParseInfo());
 		mvv[*it] = v;
-		_varmap[v] = mvd.find(*it)->second;
-		_realvarmap[*it] = mvd.find(*it)->second;
+		_origvarmap[v] = mvd.find(*it)->second;
 	}
 	_origform = f->clone(mvv);
 }
@@ -36,7 +38,7 @@ void FormulaGrounder::printorig() const {
 		clog << " with instance ";
 		for(auto it = _origform->freevars().begin(); it != _origform->freevars().end(); ++it) {
 			clog << (*it)->to_string() << " = ";
-			const DomainElement* e = *(_varmap.find(*it)->second);
+			const DomainElement* e = *(_origvarmap.find(*it)->second);
 			clog << e->to_string() << ' ';
 		}
 	}
@@ -52,7 +54,7 @@ AtomGrounder::AtomGrounder(GroundTranslator* gt, SIGN sign, PFSymbol* s,
 }
 
 Lit AtomGrounder::run() const {
-	if(_verbosity > 2) printorig();
+	if(verbosity() > 2) printorig();
 
 	// Run subterm grounders
 	bool alldomelts = true;
@@ -72,21 +74,21 @@ Lit AtomGrounder::run() const {
 		//TODO: only check positions that can be out of bounds!
 		if(not groundsubterms[n]._isvarid && not args[n]) {
 			//TODO: produce a warning!
-			if(_context._funccontext == Context::BOTH) {
+			if(context()._funccontext == Context::BOTH) {
 				// TODO: produce an error
 			}
-			if(_verbosity > 2) {
+			if(verbosity() > 2) {
 				clog << "Partial function went out of bounds\n";
-				clog << "Result is " << (_context._funccontext != Context::NEGATIVE  ? "true" : "false") << "\n";
+				clog << "Result is " << (context()._funccontext != Context::NEGATIVE  ? "true" : "false") << "\n";
 			}
-			return _context._funccontext != Context::NEGATIVE  ? _true : _false;
+			return context()._funccontext != Context::NEGATIVE  ? _true : _false;
 		}
 	}
 
 	// Checking out-of-bounds
 	for(unsigned int n = 0; n < args.size(); ++n) {
 		if(not groundsubterms[n]._isvarid && not _tables[n]->contains(args[n])) {
-			if(_verbosity > 2) {
+			if(verbosity() > 2) {
 				clog << "Term value out of predicate type\n";
 				clog << "Result is " << (isPos(_sign)? "false" : "true") << "\n";
 			}
@@ -97,16 +99,16 @@ Lit AtomGrounder::run() const {
 	// Run instance checkers
 	if(alldomelts) {
 		if(not _pchecker->isInInterpretation(args)) {
-			if(_verbosity > 2) {
+			if(verbosity() > 2) {
 				clog << "Possible checker failed\n";
 				clog << "Result is " << (_certainvalue ? "false" : "true") << "\n";
 			}
 			return _certainvalue ? _false : _true;	// TODO: dit is lelijk
 		}
 		if(_cchecker->isInInterpretation(args)) {
-			if(_verbosity > 2) {
+			if(verbosity() > 2) {
 				clog << "Certain checker succeeded\n";
-				clog << "Result is " << _translator->printAtom(_certainvalue) << "\n";
+				clog << "Result is " << translator()->printAtom(_certainvalue) << "\n";
 			}
 			return _certainvalue;
 		}
@@ -114,10 +116,10 @@ Lit AtomGrounder::run() const {
 
 	// Return grounding
 	if(alldomelts) {
-		int atom = _translator->translate(_symbol,args);
+		int atom = translator()->translate(_symbol,args);
 		if(isNeg(_sign)) atom = -atom;
-		if(_verbosity > 2) {
-			clog << "Result is " << _translator->printAtom(atom) << "\n";
+		if(verbosity() > 2) {
+			clog << "Result is " << translator()->printAtom(atom) << "\n";
 		}
 		return atom;
 	}
@@ -139,7 +141,7 @@ void AtomGrounder::run(vector<int>& clause) const {
 //	AtomGrounder(gt,sign,func,vtg,pic,cic,vst,ct), _termtranslator(tt) { }
 
 //int CPAtomGrounder::run() const {
-//	if(_verbosity > 2) printorig();
+//	if(verbosity() > 2) printorig();
 //	// Run subterm grounders
 //	for(unsigned int n = 0; n < _subtermgrounders.size(); ++n) {
 //		_args[n] = _subtermgrounders[n]->run();
@@ -150,21 +152,21 @@ void AtomGrounder::run(vector<int>& clause) const {
 //		//TODO: only check positions that can be out of bounds!
 //		if(!_args[n]) {
 //			//TODO: produce a warning!
-//			if(_context._funccontext == Context::BOTH) {
+//			if(context()._funccontext == Context::BOTH) {
 //				// TODO: produce an error
 //			}
-//			if(_verbosity > 2) {
+//			if(verbosity() > 2) {
 //				clog << "Partial function went out of bounds\n";
-//				clog << "Result is " << (_context._funccontext != Context::NEGATIVE  ? "true" : "false") << "\n";
+//				clog << "Result is " << (context()._funccontext != Context::NEGATIVE  ? "true" : "false") << "\n";
 //			}
-//			return _context._funccontext != Context::NEGATIVE  ? _true : _false;
+//			return context()._funccontext != Context::NEGATIVE  ? _true : _false;
 //		}
 //	}
 //
 //	// Checking out-of-bounds
 //	for(unsigned int n = 0; n < _args.size(); ++n) {
 //		if(!_tables[n]->contains(_args[n])) {
-//			if(_verbosity > 2) {
+//			if(verbosity() > 2) {
 //				clog << "Term value out of predicate type\n";
 //				clog << "Result is " << (_sign  ? "false" : "true") << "\n";
 //			}
@@ -174,30 +176,30 @@ void AtomGrounder::run(vector<int>& clause) const {
 //
 //	// Run instance checkers
 //	if(!(_pchecker->run(_args))) {
-//		if(_verbosity > 2) {
+//		if(verbosity() > 2) {
 //			clog << "Possible checker failed\n";
 //			clog << "Result is " << (_certainvalue ? "false" : "true") << "\n";
 //		}
 //		return _certainvalue ? _false : _true;	// TODO: dit is lelijk
 //	}
 //	if(_cchecker->run(_args)) {
-//		if(_verbosity > 2) {
+//		if(verbosity() > 2) {
 //			clog << "Certain checker succeeded\n";
-//			clog << "Result is " << _translator->printAtom(_certainvalue) << "\n";
+//			clog << "Result is " << translator()->printAtom(_certainvalue) << "\n";
 //		}
 //		return _certainvalue;
 //	}
 //
 //	// Return grounding
-//	assert(typeid(*(_translator->getSymbol(_symbol))) == typeid(Function)); // by definition...
-//	Function* func = static_cast<Function*>(_translator->getSymbol(_symbol));
+//	assert(typeid(*(translator()->getSymbol(_symbol))) == typeid(Function)); // by definition...
+//	Function* func = static_cast<Function*>(translator()->getSymbol(_symbol));
 //	ElementTuple args = _args; args.pop_back();
 //	int value = _args.back()->value()._int;
 //
 //	unsigned int varid = _termtranslator->translate(func,args); //FIXME conversion is nasty...
 //	CPTerm* leftterm = new CPVarTerm(varid);
 //	CPBound rightbound(value);
-//	int atom = _translator->translate(leftterm,CompType::EQ,rightbound,TsType::EQ);
+//	int atom = translator()->translate(leftterm,CompType::EQ,rightbound,TsType::EQ);
 //	if(!_sign) atom = -atom;
 //	return atom;
 //}
@@ -208,7 +210,7 @@ int ComparisonGrounder::run() const {
 
 	//XXX Is following check necessary??
 	if((not left._domelement && not left._varid) || (not right._domelement && not right._varid)) {
-		return _context._funccontext != Context::NEGATIVE  ? _true : _false;
+		return context()._funccontext != Context::NEGATIVE  ? _true : _false;
 	}
 
 	//TODO??? out-of-bounds check. Can out-of-bounds ever occur on </2, >/2, =/2???
@@ -217,14 +219,14 @@ int ComparisonGrounder::run() const {
 		CPTerm* leftterm = new CPVarTerm(left._varid);
 		if(right._isvarid) {
 			CPBound rightbound(right._varid);
-//			return _translator->translate(leftterm,_comparator,rightbound,_context._tseitin);
-			return _translator->translate(leftterm,_comparator,rightbound,TsType::EQ);
+//			return translator()->translate(leftterm,_comparator,rightbound,context()._tseitin);
+			return translator()->translate(leftterm,_comparator,rightbound,TsType::EQ);
 		}
 		else {
 			assert(not right._isvarid);
 			int rightvalue = right._domelement->value()._int;
 			CPBound rightbound(rightvalue);
-			return _translator->translate(leftterm,_comparator,rightbound,TsType::EQ);
+			return translator()->translate(leftterm,_comparator,rightbound,TsType::EQ);
 		}
 	}
 	else {
@@ -233,7 +235,7 @@ int ComparisonGrounder::run() const {
 		if(right._isvarid) {
 			CPTerm* rightterm = new CPVarTerm(right._varid);
 			CPBound leftbound(leftvalue);
-			return _translator->translate(rightterm,invertcomp(_comparator),leftbound,TsType::EQ);
+			return translator()->translate(rightterm,invertcomp(_comparator),leftbound,TsType::EQ);
 		}
 		else {
 			assert(not right._isvarid);
@@ -268,8 +270,8 @@ int AggGrounder::handleDoubleNegation(double boundvalue, int setnr) const {
 		case AGG_GT : newcomp = AGG_LT; break;
 		case AGG_EQ : assert(false); break;
 	}
-	TsType tp = _context._tseitin;
-	int tseitin = _translator->translate(boundvalue,newcomp,false,_type,setnr,tp);
+	TsType tp = context()._tseitin;
+	int tseitin = translator()->translate(boundvalue,newcomp,false,_type,setnr,tp);
 	return isPos(_sign)? -tseitin : tseitin;
 }
 
@@ -278,9 +280,9 @@ int AggGrounder::handleDoubleNegation(double boundvalue, int setnr) const {
  */
 int AggGrounder::finishCard(double truevalue, double boundvalue, int setnr) const {
 	int leftvalue = int(boundvalue - truevalue);
-	const TsSet& tsset = _translator->groundset(setnr);
+	const TsSet& tsset = translator()->groundset(setnr);
 	int maxposscard = tsset.size();
-	TsType tp = _context._tseitin;
+	TsType tp = context()._tseitin;
 	bool simplify = false;
 	bool conj;
 	bool negateset;
@@ -344,13 +346,13 @@ int AggGrounder::finishCard(double truevalue, double boundvalue, int setnr) cons
 	if(simplify) {
 		if(_doublenegtseitin) {
 			if(negateset) {
-				int tseitin = _translator->translate(tsset.literals(),!conj,tp);
+				int tseitin = translator()->translate(tsset.literals(),!conj,tp);
 				return isPos(_sign)? -tseitin : tseitin;
 			}
 			else {
 				vector<int> newsetlits(tsset.size());
 				for(unsigned int n = 0; n < tsset.size(); ++n) newsetlits[n] = -tsset.literal(n);
-				int tseitin = _translator->translate(newsetlits,!conj,tp);
+				int tseitin = translator()->translate(newsetlits,!conj,tp);
 				return isPos(_sign)? -tseitin : tseitin;
 			}
 		}
@@ -358,11 +360,11 @@ int AggGrounder::finishCard(double truevalue, double boundvalue, int setnr) cons
 			if(negateset) {
 				vector<int> newsetlits(tsset.size());
 				for(unsigned int n = 0; n < tsset.size(); ++n) newsetlits[n] = -tsset.literal(n);
-				int tseitin = _translator->translate(newsetlits,conj,tp);
+				int tseitin = translator()->translate(newsetlits,conj,tp);
 				return isPos(_sign)? tseitin : -tseitin;
 			}
 			else {
-				int tseitin = _translator->translate(tsset.literals(),conj,tp);
+				int tseitin = translator()->translate(tsset.literals(),conj,tp);
 				return isPos(_sign)? tseitin : -tseitin;
 			}
 		}
@@ -370,7 +372,7 @@ int AggGrounder::finishCard(double truevalue, double boundvalue, int setnr) cons
 	else {
 		if(_doublenegtseitin) return handleDoubleNegation(double(leftvalue),setnr);
 		else {
-			int tseitin = _translator->translate(double(leftvalue),_comp,true,AggFunction::CARD,setnr,tp);
+			int tseitin = translator()->translate(double(leftvalue),_comp,true,AggFunction::CARD,setnr,tp);
 			return isPos(_sign)? tseitin : -tseitin;
 		}
 	}
@@ -407,12 +409,12 @@ int AggGrounder::finish(double boundvalue, double newboundvalue, double minpossv
 		return handleDoubleNegation(newboundvalue,setnr);
 	else {
 		int tseitin;
-		TsType tp = _context._tseitin;
+		TsType tp = context()._tseitin;
 		if(isNeg(_sign)) {
 			if(tp == TsType::IMPL) tp = TsType::RIMPL;
 			else if(tp == TsType::RIMPL) tp = TsType::IMPL;
 		}
-		tseitin = _translator->translate(newboundvalue,_comp,true,_type,setnr,tp);
+		tseitin = translator()->translate(newboundvalue,_comp,true,_type,setnr,tp);
 		return isPos(_sign)? tseitin : -tseitin;
 	}
 }
@@ -430,7 +432,7 @@ int AggGrounder::run() const {
 	const DomainElement* bound = groundbound._domelement;
 
 	// Retrieve the set, note that weights might be changed when handling min and max aggregates.
-	TsSet& tsset = _translator->groundset(setnr);
+	TsSet& tsset = translator()->groundset(setnr);
 
 	// Retrieve the value of the bound
 	double boundvalue = bound->type() == DET_INT ? (double) bound->value()._int : bound->value()._double;
@@ -524,7 +526,7 @@ inline Lit ClauseGrounder::getEmtyFormulaValue() const {
 }
 
 TsType ClauseGrounder::getTseitinType() const{
-	return _context._tseitin;
+	return context()._tseitin;
 }
 
 Lit ClauseGrounder::createTseitin(const litlist& clause) const{
@@ -534,9 +536,9 @@ Lit ClauseGrounder::createTseitin(const litlist& clause) const{
 	}
 	Lit tseitin;
 	if(negativeDefinedContext()) {
-		tseitin = _translator->translate(clause,conn_==DISJ,type);
+		tseitin = translator()->translate(clause,conn_==DISJ,type);
 	}else{
-		tseitin = _translator->translate(clause,conn_==CONJ,type);
+		tseitin = translator()->translate(clause,conn_==CONJ,type);
 	}
 	return isNegative()?-tseitin:tseitin;
 }
@@ -569,7 +571,7 @@ void ClauseGrounder::run(litlist& clause) const {
 
 // NOTE: Optimized to avoid looping over the clause after construction
 void BoolGrounder::run(litlist& clause, bool negateclause) const {
-	if(_verbosity > 2) printorig();
+	if(verbosity() > 2) printorig();
 
 	for(auto g=_subgrounders.begin(); g<_subgrounders.end(); g++){
 		Lit lit = (*g)->run();
@@ -584,7 +586,7 @@ void BoolGrounder::run(litlist& clause, bool negateclause) const {
 }
 
 void QuantGrounder::run(litlist& clause, bool negateclause) const {
-	if(_verbosity > 2) printorig();
+	if(verbosity() > 2) printorig();
 
 	if(not _generator->first()) {
 		return;
@@ -607,7 +609,7 @@ Lit EquivGrounder::run() const {
 	run(clause);
 
 	if(clause.size()>1){
-		return _translator->translate(clause,true,_context._tseitin);
+		return translator()->translate(clause,true,context()._tseitin);
 	}else{
 		assert(clause.size()>0);
 		return clause[0];
@@ -615,7 +617,7 @@ Lit EquivGrounder::run() const {
 }
 
 void EquivGrounder::run(litlist& clause) const {
-	if(_verbosity > 2) printorig();
+	if(verbosity() > 2) printorig();
 
 	// Run subgrounders
 	Lit left = _leftgrounder->run();
@@ -642,9 +644,9 @@ void EquivGrounder::run(litlist& clause) const {
 	} else {
 		litlist cl1 = {left, isPositive()?-right:right};
 		litlist cl2 = {-left, isPositive()?right:-right};
-		TsType tp = _context._tseitin;
-		Lit ts1 = _translator->translate(cl1,false,tp);
-		Lit ts2 = _translator->translate(cl2,false,tp);
+		TsType tp = context()._tseitin;
+		Lit ts1 = translator()->translate(cl1,false,tp);
+		Lit ts2 = translator()->translate(cl2,false,tp);
 		clause.push_back(ts1); clause.push_back(ts2);
 	}
 }

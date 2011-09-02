@@ -71,7 +71,7 @@ public:
 		_termtranslator = termtranslator;
 	}
 
-	void polAdd(GroundClause& cl) {
+	void polAdd(const GroundClause& cl) {
 		MinisatID::Disjunction clause;
 		for(unsigned int n = 0; n < cl.size(); ++n) {
 			clause.literals.push_back(createLiteral(cl[n]));
@@ -108,10 +108,12 @@ public:
 		}
 	}
 
+	// NOTE: this method can be safely called from outside
 	void polAdd(int defnr, PCGroundRule* rule) {
 		polAddPCRule(defnr,rule->head(),rule->body(),(rule->type() == RT_CONJ), rule->recursive());
 	}
 
+	// NOTE: this method can be safely called from outside
 	void polAdd(int defnr, AggGroundRule* rule) {
 		polAddAggregate(defnr,rule->head(),rule->lower(),rule->setnr(),rule->aggtype(),TsType::RULE,rule->bound());
 	}
@@ -250,7 +252,10 @@ public:
 		}
 
 		virtual void requestGrounding(){
-			requestGroundingCB(inst);
+			if(not alreadyGround()){
+				MinisatID::LazyGroundingCommand::requestGrounding();
+				requestGroundingCB(inst);
+			}
 		}
 	};
 
@@ -277,7 +282,10 @@ public:
 		}
 
 		virtual void requestGrounding(){
-			requestgrounding(lit, args);
+			if(not alreadyGround()){
+				MinisatID::LazyGroundingCommand::requestGrounding();
+				requestgrounding(lit, args);
+			}
 		}
 	};
 

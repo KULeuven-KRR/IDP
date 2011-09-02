@@ -37,7 +37,7 @@ typedef MinisatID::WrappedPCSolver SATSolver;
 	Ground clauses
 *********************/
 
-typedef std::vector<int> GroundClause;
+typedef litlist GroundClause;
 
 /****************** 
 	Ground sets 
@@ -49,13 +49,13 @@ typedef std::vector<int> GroundClause;
 class GroundSet {
 	private:
 		unsigned int		_setnr;
-		std::vector<int>	_setlits;		// All literals in the ground set
+		litlist	_setlits;		// All literals in the ground set
 		std::vector<double>	_litweights;	// For each literal a corresponding weight
 
 	public:
 		// Constructors
 		GroundSet() { }
-		GroundSet(int setnr, const std::vector<int>& s, const std::vector<double>& lw) :
+		GroundSet(int setnr, const litlist& s, const std::vector<double>& lw) :
 			_setnr(setnr), _setlits(s), _litweights(lw) { }
 
 		// Inspectors
@@ -158,35 +158,37 @@ class GroundRule {
 		virtual GroundRule* accept(TheoryMutatingVisitor* v) = 0;
 };
 
+typedef std::vector<Lit> litlist;
+
 /**
  * class PCGroundRule
  *		This class represents ground rule bodies that are conjunctions or disjunctions of literals.
  */
 class PCGroundRule : public GroundRule {
-	private:
-		std::vector<int>	_body;	// The literals in the body
+private:
+	litlist	_body;	// The literals in the body
 
-	public:
-		// Constructors
-		PCGroundRule(int head, RuleType type, const std::vector<int>& body, bool rec) : GroundRule(head, type,rec), _body(body) { }
-		PCGroundRule(int head, PCTsBody* body, bool rec);
-		PCGroundRule(const PCGroundRule& grb): GroundRule(grb.head(), grb.type(),grb.recursive()), _body(grb._body) { }
+public:
+	// Constructors
+	PCGroundRule(int head, RuleType type, const litlist& body, bool rec) : GroundRule(head, type,rec), _body(body) { }
+	PCGroundRule(int head, PCTsBody* body, bool rec);
+	PCGroundRule(const PCGroundRule& grb): GroundRule(grb.head(), grb.type(),grb.recursive()), _body(grb._body) { }
 
-		~PCGroundRule() { }
+	~PCGroundRule() { }
 
-		// Inspectors
-		const std::vector<int>&	body()			const { return _body;								}
-		std::vector<int>&	body()					{ return _body;								}
-		void			body(const std::vector<int>& body) { _body = body;							}
-		unsigned int	size()					const { return _body.size();						}
-		bool			empty()					const { return _body.empty();						}
-		int				literal(unsigned int n)	const { return _body[n];							}
-		bool			isFalse()				const { return (_body.empty() && type() == RT_DISJ);	}
-		bool			isTrue()				const { return (_body.empty() && type() == RT_CONJ);	}
+	// Inspectors
+	const litlist&	body()					const	{ return _body;	}
+	litlist&		body()							{ return _body;	}
+	void			body(const litlist& body) 		{ _body = body;	}
+	unsigned int	size()					const	{ return _body.size();	}
+	bool			empty()					const	{ return _body.empty();	}
+	int				literal(unsigned int n)	const	{ return _body[n];		}
+	bool			isFalse()				const	{ return (_body.empty() && type() == RT_DISJ);	}
+	bool			isTrue()				const	{ return (_body.empty() && type() == RT_CONJ);	}
 
-		// Visitor
-		void accept(TheoryVisitor* v) const { v->visit(this);	}
-		GroundRule* accept(TheoryMutatingVisitor* v) { return v->visit(this);	}
+	// Visitor
+	void accept(TheoryVisitor* v) const { v->visit(this);	}
+	GroundRule* accept(TheoryMutatingVisitor* v) { return v->visit(this);	}
 };
 
 /**
@@ -228,42 +230,42 @@ class AggGroundRule : public GroundRule {
  *		This class represents ground definitions.
  */
 class GroundDefinition : public AbstractDefinition {
-	private:
-		unsigned int				_id;
-		GroundTranslator*			_translator;
-		std::map<int, GroundRule*>	_rules;
+private:
+	unsigned int				_id;
+	GroundTranslator*			_translator;
+	std::map<int, GroundRule*>	_rules;
 
-	public:
-		// Constructors
-		GroundDefinition(unsigned int id, GroundTranslator* tr) : _id(id), _translator(tr) { }
-		GroundDefinition* clone() const;
-		void recursiveDelete();
+public:
+	// Constructors
+	GroundDefinition(unsigned int id, GroundTranslator* tr) : _id(id), _translator(tr) { }
+	GroundDefinition* clone() const;
+	void recursiveDelete();
 
-		// Mutators
-		void addTrueRule(int head);
-		void addFalseRule(int head);
-		void addPCRule(int head, const std::vector<int>& body, bool conj, bool recursive);
-		void addAggRule(int head, int setnr, AggFunction aggtype, bool lower, double bound, bool recursive);
+	// Mutators
+	void addTrueRule(int head);
+	void addFalseRule(int head);
+	void addPCRule(int head, const litlist& body, bool conj, bool recursive);
+	void addAggRule(int head, int setnr, AggFunction aggtype, bool lower, double bound, bool recursive);
 
-		unsigned int id() const { return _id; }
+	unsigned int id() const { return _id; }
 
-		typedef std::map<int, GroundRule*>::iterator	ruleiterator;
-		ruleiterator	begin()			{ return _rules.begin();	}
-		ruleiterator	end()			{ return _rules.end();		}
+	typedef std::map<int, GroundRule*>::iterator	ruleiterator;
+	ruleiterator	begin()			{ return _rules.begin();	}
+	ruleiterator	end()			{ return _rules.end();		}
 
-		GroundTranslator*	translator()	const { return _translator;			}
+	GroundTranslator*	translator()	const { return _translator;			}
 
-		typedef std::map<int, GroundRule*>::const_iterator	const_ruleiterator;
-		const_ruleiterator	begin()			const { return _rules.begin();		}
-		const_ruleiterator	end()			const { return _rules.end();		}
+	typedef std::map<int, GroundRule*>::const_iterator	const_ruleiterator;
+	const_ruleiterator	begin()			const { return _rules.begin();		}
+	const_ruleiterator	end()			const { return _rules.end();		}
 
-		// Visitor
-		void 				accept(TheoryVisitor* v) const		{ v->visit(this);			}
-		AbstractDefinition*	accept(TheoryMutatingVisitor* v)	{ return v->visit(this);	}
+	// Visitor
+	void 				accept(TheoryVisitor* v) const		{ v->visit(this);			}
+	AbstractDefinition*	accept(TheoryMutatingVisitor* v)	{ return v->visit(this);	}
 
-		// Debugging
-		std::ostream&	put(std::ostream&,unsigned int spaces = 0) const;
-		std::string to_string(unsigned int spaces = 0) const;
+	// Debugging
+	std::ostream&	put(std::ostream&,unsigned int spaces = 0) const;
+	std::string to_string(unsigned int spaces = 0) const;
 };
 
 

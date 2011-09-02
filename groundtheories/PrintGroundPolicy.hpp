@@ -57,7 +57,7 @@ public:
 		printer().endTheory();
 	}
 
-	void polAdd(GroundClause& cl) {
+	void polAdd(const GroundClause& cl) {
 		printer().visit(cl);
 	}
 

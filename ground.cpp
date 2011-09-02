@@ -131,30 +131,31 @@ GroundTranslator::~GroundTranslator() {
 	_tsbodies2nr.clear(); // All TsBodies in this map should've been deleted through the other map.
 }
 
-int GroundTranslator::translate(unsigned int n, const ElementTuple& args) {
+Lit GroundTranslator::translate(unsigned int n, const ElementTuple& args) {
 	auto jt = _table[n].lower_bound(args);
+
+	Lit lit;
 	if(jt != _table[n].end() && jt->first == args) {
-		return jt->second;
+		lit = jt->second;
 	} else {
-		int nr = nextNumber();
-		_table[n].insert(jt,pair<ElementTuple,int>(args,nr));
-		_backsymbtable[nr] = _symboffsets[n];
-		_backargstable[nr] = args;
-		return nr;
+		lit = nextNumber();
+		_table[n].insert(jt,pair<ElementTuple,int>(args,lit));
+		_backsymbtable[lit] = _symboffsets[n];
+		_backargstable[lit] = args;
+
+		// FIXME expensive operation to do so often!
+		auto ruleit = symbol2rulegrounder.find(n);
+		if(ruleit!=symbol2rulegrounder.end()){
+			ruleit->second->notify(lit, args);
+		}
 	}
+
+	return lit;
 }
 
 Lit GroundTranslator::translate(PFSymbol* s, const ElementTuple& args) {
 	unsigned int offset = addSymbol(s);
-	Lit lit = translate(offset,args);
-
-	// FIXME expensive operation to do so often!
-	auto ruleit = symbol2rulegrounder.find(s);
-	if(ruleit!=symbol2rulegrounder.end()){
-		ruleit->second->notify(lit, args);
-	}
-
-	return lit;
+	return translate(offset,args);
 }
 
 Lit GroundTranslator::translate(const vector<Lit>& clause, bool conj, TsType tstype) {
@@ -184,8 +185,8 @@ Lit GroundTranslator::addTseitinBody(TsBody* tsbody){
 }
 
 void GroundTranslator::notifyDefined(PFSymbol* pfs, LazyRuleGrounder* const grounder){
-	assert(symbol2rulegrounder.find(pfs)==symbol2rulegrounder.end());
-	symbol2rulegrounder.insert(pair<PFSymbol*, LazyRuleGrounder*>(pfs, grounder));
+	assert(symbol2rulegrounder.find(addSymbol(pfs))==symbol2rulegrounder.end());
+	symbol2rulegrounder.insert(pair<uint, LazyRuleGrounder*>(addSymbol(pfs), grounder));
 }
 
 void GroundTranslator::translate(LazyQuantGrounder const* const lazygrounder, ResidualAndFreeInst* instance, TsType tstype) {
@@ -788,7 +789,7 @@ void GrounderFactory::visit(const Theory* theory) {
  * PARAMETERS
  *		pf	- the atomic formula
  * PRECONDITIONS
- *		Each free variable that occurs in pf occurs in _varmapping.
+ *		Each free variable that occurs in pf occurs in varmapping().
  * POSTCONDITIONS
  *		According to _context, the created grounder is assigned to
  *			CC_SENTENCE:	_toplevelgrounder
@@ -834,7 +835,7 @@ void GrounderFactory::visit(const PredForm* pf) {
 			}
 			_formgrounder = new ComparisonGrounder(_grounding->translator(),_grounding->termtranslator(),
 									subtermgrounders[0],comp,subtermgrounders[1],_context);
-			_formgrounder->setorig(ptranspf,_varmapping,_verbosity);
+			_formgrounder->setorig(ptranspf,varmapping(),_verbosity);
 			if(_context._component == CC_SENTENCE) { 
 				_toplevelgrounder = new SentenceGrounder(_grounding,_formgrounder,false,_verbosity);
 			}
@@ -863,7 +864,7 @@ void GrounderFactory::visit(const PredForm* pf) {
 				// Create the grounder
 				_formgrounder = new AtomGrounder(_grounding->translator(),ptranspf->sign(),ptranspf->symbol(),
 										subtermgrounders,possch,certainch,argsorttables,_context);
-				_formgrounder->setorig(ptranspf,_varmapping,_verbosity);
+				_formgrounder->setorig(ptranspf,varmapping(),_verbosity);
 				if(_context._component == CC_SENTENCE) { 
 					_toplevelgrounder = new SentenceGrounder(_grounding,_formgrounder,false,_verbosity);
 				}
@@ -891,7 +892,7 @@ void GrounderFactory::visit(const PredForm* pf) {
  * PARAMETERS
  *		bf	- the conjunction or disjunction
  * PRECONDITIONS
- *		Each free variable that occurs in bf occurs in _varmapping.
+ *		Each free variable that occurs in bf occurs in varmapping().
  * POSTCONDITIONS
  *		According to _context, the created grounder is assigned to
  *			CC_SENTENCE:	_toplevelgrounder
@@ -937,10 +938,17 @@ void GrounderFactory::visit(const BoolForm* bf) {
 		if(recursive(bf)) _context._tseitin = TsType::RULE;
 		_formgrounder = new BoolGrounder(_grounding->translator(),sub,bf->sign(),bf->conj(),_context);
 		RestoreContext();
-		_formgrounder->setorig(bf,_varmapping,_verbosity);
+		_formgrounder->setorig(bf,varmapping(),_verbosity);
 		if(_context._component == CC_SENTENCE) _toplevelgrounder = new SentenceGrounder(_grounding,_formgrounder,false,_verbosity);
 
 	}
+}
+
+const DomainElement** GrounderFactory::createVarMapping(Variable * const var){
+	const DomainElement** d = new const DomainElement*();
+	assert(varmapping().find(var)==varmapping().end());
+	_varmapping[var] = d;
+	return d;
 }
 
 /**
@@ -950,7 +958,7 @@ void GrounderFactory::visit(const BoolForm* bf) {
  * PARAMETERS
  *		qf	- the quantified formula
  * PRECONDITIONS
- *		Each free variable that occurs in qf occurs in _varmapping.
+ *		Each free variable that occurs in qf occurs in varmapping().
  * POSTCONDITIONS
  *		According to _context, the created grounder is assigned to
  *			CC_SENTENCE:	_toplevelgrounder
@@ -961,12 +969,11 @@ void GrounderFactory::visit(const QuantForm* qf) {
 	// Create instance generator
 	vector<const DomainElement**> vars;
 	vector<SortTable*>	tables;
-	for(std::set<Variable*>::const_iterator it = qf->quantvars().begin(); it != qf->quantvars().end(); ++it) {
-		const DomainElement** d = new const DomainElement*();
-		_varmapping[*it] = d;
-		vars.push_back(d);
-		SortTable* st = _structure->inter((*it)->sort());
-		if(!st->finite()) {
+	auto gen = createVarMapAndGenerator(qf->quantvars());
+
+	// Check for infinite grounding
+	for(auto it=tables.begin(); it<tables.end(); ++it){
+		if(not (*it)->finite()) {
 			cerr << "Warning: infinite grounding of formula ";
 			if(qf->pi().original()) {
 				cerr << *(qf->pi().original());
@@ -974,10 +981,7 @@ void GrounderFactory::visit(const QuantForm* qf) {
 			}
 			cerr << *qf << "\n";
 		}
-		tables.push_back(st);
 	}
-	GeneratorFactory gf;
-	InstGenerator* gen = gf.create(vars,tables);
 
 	// Handle top-level universal quantifiers efficiently
 	if(_context._component == CC_SENTENCE && qf->isUnivWithSign()) {
@@ -1014,7 +1018,7 @@ void GrounderFactory::visit(const QuantForm* qf) {
 		}
 
 		RestoreContext();
-		_formgrounder->setorig(qf,_varmapping,_verbosity);
+		_formgrounder->setorig(qf,varmapping(),_verbosity);
 		if(_context._component == CC_SENTENCE) _toplevelgrounder = new SentenceGrounder(_grounding,_formgrounder,false,_verbosity);
 	}
 }
@@ -1026,7 +1030,7 @@ void GrounderFactory::visit(const QuantForm* qf) {
  * PARAMETERS
  *		ef	- the equivalence
  * PRECONDITIONS
- *		Each free variable that occurs in ef occurs in _varmapping.
+ *		Each free variable that occurs in ef occurs in varmapping().
  * POSTCONDITIONS
  *		According to _context, the created grounder is assigned to
  *			CC_SENTENCE:	_toplevelgrounder
@@ -1109,9 +1113,9 @@ void GrounderFactory::visit(const EqChainForm* ef) {
  * 		Creates a grounder for a variable term.
  */
 void GrounderFactory::visit(const VarTerm* t) {
-	assert(_varmapping.find(t->var()) != _varmapping.end());
-	_termgrounder = new VarTermGrounder(_varmapping.find(t->var())->second);
-	_termgrounder->setorig(t,_varmapping,_verbosity);
+	assert(varmapping().find(t->var()) != varmapping().end());
+	_termgrounder = new VarTermGrounder(varmapping().find(t->var())->second);
+	_termgrounder->setorig(t,varmapping(),_verbosity);
 }
 
 /**
@@ -1121,7 +1125,7 @@ void GrounderFactory::visit(const VarTerm* t) {
  */
 void GrounderFactory::visit(const DomainTerm* t) {
 	_termgrounder = new DomTermGrounder(t->value());
-	_termgrounder->setorig(t,_varmapping,_verbosity);
+	_termgrounder->setorig(t,varmapping(),_verbosity);
 }
 
 /**
@@ -1146,7 +1150,7 @@ void GrounderFactory::visit(const FuncTerm* t) {
 	} else {
 		_termgrounder = new FuncTermGrounder(_grounding->termtranslator(),function,ftable,domain,subtermgrounders);
 	}
-	_termgrounder->setorig(t,_varmapping,_verbosity);
+	_termgrounder->setorig(t,varmapping(),_verbosity);
 }
 
 /**
@@ -1160,7 +1164,7 @@ void GrounderFactory::visit(const AggTerm* t) {
 
 	// Create term grounder
 	_termgrounder = new AggTermGrounder(_grounding->translator(),t->function(),_setgrounder);
-	_termgrounder->setorig(t,_varmapping,_verbosity);
+	_termgrounder->setorig(t,varmapping(),_verbosity);
 }
 
 /**
@@ -1195,14 +1199,7 @@ void GrounderFactory::visit(const QuantSetExpr* s) {
 	// Create instance generator
 	vector<SortTable*> vst;
 	vector<const DomainElement**> vars;
-	for(set<Variable*>::const_iterator it = s->quantvars().begin(); it != s->quantvars().end(); ++it) {
-		const DomainElement** d = new const DomainElement*();
-		_varmapping[*it] = d;
-		vst.push_back(_structure->inter((*it)->sort()));
-		vars.push_back(d);
-	}
-	GeneratorFactory gf;
-	InstGenerator* gen = gf.create(vars,vst);
+	auto gen = createVarMapAndGenerator(s->quantvars());
 	
 	// Create grounder for subformula
 	SaveContext();
@@ -1243,16 +1240,15 @@ void GrounderFactory::visit(const Definition* def) {
 	_context._defined.clear();
 }
 
-typedef std::vector<Variable*> varlist;
-
-InstGenerator* createGenerator(const varlist& vars, var2dommap& mapping, AbstractStructure* structure){
+template<class VarList>
+InstGenerator* GrounderFactory::createVarMapAndGenerator(const VarList& vars){
 	vector<SortTable*> hvst;
 	vector<const DomainElement**> hvars;
-	for(unsigned int n = 0; n < vars.size(); ++n) {
-		const DomainElement** d = new const DomainElement*();
-		mapping[vars[n]] = d;
-		hvst.push_back(structure->inter((vars[n])->sort()));
-		hvars.push_back(d);
+	for(auto it=vars.begin(); it!=vars.end(); ++it) {
+		auto domelem = createVarMapping(*it);
+		hvars.push_back(domelem);
+		auto sorttable = structure()->inter((*it)->sort());
+		hvst.push_back(sorttable);
 	}
 	GeneratorFactory gf;
 	return gf.create(hvars,hvst);
@@ -1270,21 +1266,23 @@ void GrounderFactory::visit(const Rule* rule) {
 
 	if(_options->groundlazily()){ // FIXME check we also have the correct groundtheory!
 		// for lazy ground rules, need a generator which generates bodies given a head, so only vars not occurring in the head!
-		vector<Variable*> bodyvars;
+		varlist bodyvars;
 		for(auto it = rule->quantvars().begin(); it != rule->quantvars().end(); ++it) {
 			if(not rule->head()->contains(*it)) {
 				bodyvars.push_back(*it);
+			}else{
+				createVarMapping(*it);
 			}
 		}
 
-		bodygen = createGenerator(bodyvars, _varmapping, _structure);
+		bodygen = createVarMapAndGenerator(bodyvars);
 	}else{
 		// Split the quantified variables in two categories:
 		//		1. the variables that only occur in the head
 		//		2. the variables that occur in the body (and possibly in the head)
 
-		vector<Variable*>	headvars;
-		vector<Variable*>	bodyvars;
+		varlist	headvars;
+		varlist	bodyvars;
 		for(auto it = rule->quantvars().begin(); it != rule->quantvars().end(); ++it) {
 			if(rule->body()->contains(*it)) {
 				bodyvars.push_back(*it);
@@ -1294,8 +1292,8 @@ void GrounderFactory::visit(const Rule* rule) {
 			}
 		}
 
-		headgen = createGenerator(headvars, _varmapping, _structure);
-		bodygen = createGenerator(bodyvars, _varmapping, _structure);
+		headgen = createVarMapAndGenerator(headvars);
+		bodygen = createVarMapAndGenerator(bodyvars);
 	}
 
 	// Create head grounder

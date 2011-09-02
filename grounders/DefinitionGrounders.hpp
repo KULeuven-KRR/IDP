@@ -48,16 +48,11 @@ class RuleGrounder {
 		FormulaGrounder* 	bodygrounder() const { return _bodygrounder; }
 		InstGenerator* 		headgenerator() const { return _headgenerator; }
 		InstGenerator* 		bodygenerator() const { return _bodygenerator; }
+		GroundingContext	context() const { return _context; }
 
 	public:
 		RuleGrounder(HeadGrounder* hgr, FormulaGrounder* bgr, InstGenerator* hig, InstGenerator* big, GroundingContext& ct);
 		void run(unsigned int defid, GroundDefinition* grounddefinition) const;
-
-		// Mutators
-		void addTrueRule(GroundDefinition* grounddefinition, int head) const;
-		void addFalseRule(GroundDefinition* grounddefinition, int head) const;
-		void addPCRule(GroundDefinition* grounddefinition, int head, const std::vector<int>& body, bool conj, bool recursive) const;
-		void addAggRule(GroundDefinition* grounddefinition, int head, int setnr, AggFunction aggtype, bool lower, double bound, bool recursive) const;
 };
 
 /** Grounder for a head of a rule **/
@@ -77,7 +72,7 @@ class HeadGrounder {
 		int	run() const;
 
 		const std::vector<TermGrounder*>& subtermgrounders() const { return _subtermgrounders; }
-		PFSymbol* pfsymbol() const { return pfsymbol(); }
+		PFSymbol* pfsymbol() const { return _pfsymbol; }
 		AbstractGroundTheory* grounding() const { return _grounding; }
 };
 

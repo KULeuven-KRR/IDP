@@ -97,6 +97,7 @@ class Options {
 		Language	language()				const;
 		bool		printtypes()			const;
 		bool		autocomplete()			const;
+		bool 		randomvaluechoice() 	const;
 		bool		cpsupport()				const;
 		int			nrmodels()				const;
 		int			satverbosity()			const;

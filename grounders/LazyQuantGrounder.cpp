@@ -21,7 +21,7 @@ void LazyQuantGrounder::requestGroundMore(ResidualAndFreeInst * instance) {
 }
 
 void LazyQuantGrounder::groundMore() const{
-	if(_verbosity > 2) printorig();
+	if(verbosity() > 2) printorig();
 
 	// add one more grounding to the formula => with correct sign depending on negateclause!
 	// if value is decided, allow to erase the formula
@@ -36,34 +36,36 @@ void LazyQuantGrounder::groundMore() const{
 
 		vector<const DomainElement*> originstantiation;
 		overwriteVars(originstantiation, instance->freevarinst);
-		Lit lit = _subgrounder->run();
+		Lit groundedlit = _subgrounder->run();
 		restoreOrigVars(originstantiation, instance->freevarinst);
 
-		if(decidesClause(lit)) {
-			lit = getDecidedValue();
-			lit = negatedclause_?-lit:lit;
-		}else if(isNotRedundantInClause(lit)){
-			lit = negatedclause_ ? -lit : lit;
+		if(decidesClause(groundedlit)) {
+			groundedlit = getDecidedValue();
+			groundedlit = negatedclause_?-groundedlit:groundedlit;
+		}else if(isNotRedundantInClause(groundedlit)){
+			groundedlit = negatedclause_ ? -groundedlit : groundedlit;
 		}
+
 		GroundClause clause;
-		clause.push_back(lit);
+		clause.push_back(groundedlit);
 
 		Lit oldtseitin = instance->residual;
 		// FIXME notify lazy should check whether the tseitin already has a value and request more grounding immediately!
 		if(_generator->next()){
-			Lit newtseitin = _translator->nextNumber();
-			clause.push_back(newtseitin);
-			instance->residual = newtseitin;
+			Lit newresidual = translator()->nextNumber();
+			clause.push_back(newresidual);
+			instance->residual = newresidual;
 			groundtheory_->notifyLazyResidual(instance, this); // set on not-decide and add to watchlist
 		}
-		groundtheory_->add(oldtseitin, _context._tseitin, clause);
+
+		groundtheory_->add(oldtseitin, context()._tseitin, clause);
 	}
 
 	grounding = false;
 }
 
 void LazyQuantGrounder::run(litlist& clause, bool negateclause) const {
-	if(_verbosity > 2) printorig();
+	if(verbosity() > 2) printorig();
 
 	negatedclause_ = negateclause;
 
@@ -75,20 +77,20 @@ void LazyQuantGrounder::run(litlist& clause, bool negateclause) const {
 
 	ResidualAndFreeInst* inst = new ResidualAndFreeInst();
 
-	clog <<"known free vars: \n\t";
+/*	clog <<"known free vars: \n\t";
 	printorig();
 	clog <<"The provided free vars: \n\t";
 	for(auto var=freevars.begin(); var!=freevars.end(); ++var){
 		clog <<(*var)->to_string() <<", ";
 	}
-	clog <<"\n\n\n";
+	clog <<"\n\n\n";*/
 
 	for(auto var=freevars.begin(); var!=freevars.end(); ++var){
-		auto tuple = _realvarmap.at(*var);
+		auto tuple = varmap().at(*var);
 		inst->freevarinst.push_back(dominst(tuple, *tuple));
 	}
 
-	_translator->translate(this, inst, _context._tseitin);
+	translator()->translate(this, inst, context()._tseitin);
 	if(isNegative()){
 		inst->residual = -inst->residual;
 	}

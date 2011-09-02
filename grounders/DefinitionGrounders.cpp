@@ -62,29 +62,12 @@ void RuleGrounder::run(unsigned int defid, GroundDefinition* grounddefinition) c
 			assert(head != _true);
 			if(head != _false) {
 				if(truebody){
-					addTrueRule(grounddefinition, head);
-				} else{
-					addPCRule(grounddefinition, head,body,conj,_context._tseitin == TsType::RULE);
+					body.clear();
 				}
+				grounddefinition->addPCRule(head, body, conj, context()._tseitin == TsType::RULE);
 			}
 		}while(_headgenerator->next());
 	}while(_bodygenerator->next());
-}
-
-void RuleGrounder::addTrueRule(GroundDefinition* const grounddefinition, int head) const {
-	addPCRule(grounddefinition, head,vector<int>(0),true,false);
-}
-
-void RuleGrounder::addFalseRule(GroundDefinition* const grounddefinition, int head) const {
-	addPCRule(grounddefinition, head,vector<int>(0),false,false);
-}
-
-void RuleGrounder::addPCRule(GroundDefinition* grounddefinition, int head, const vector<int>& body, bool conj, bool recursive) const {
-	grounddefinition->addPCRule(head, body, conj, recursive);
-}
-
-void RuleGrounder::addAggRule(GroundDefinition* grounddefinition, int head, int setnr, AggFunction aggtype, bool lower, double bound, bool recursive) const {
-	grounddefinition->addAggRule(head, setnr, aggtype, lower, bound, recursive);
 }
 
 HeadGrounder::HeadGrounder(AbstractGroundTheory* gt,
@@ -95,7 +78,7 @@ HeadGrounder::HeadGrounder(AbstractGroundTheory* gt,
 							const vector<SortTable*>& vst)
 		: _grounding(gt), _subtermgrounders(sg),
 		  _truechecker(pc), _falsechecker(cc),
-		  _symbol(gt->translator()->addSymbol(s)), // FIXME what does this do?
+		  _symbol(gt->translator()->addSymbol(s)),
 		  _tables(vst),
 		  _pfsymbol(s){
 }
@@ -113,13 +96,12 @@ int HeadGrounder::run() const {
 			args[n] = groundsubterms[n]._domelement;
 		}
 	}
-	//XXX All subterm grounders should return domain elements.
+	// TODO guarantee that all subterm grounders return domain elements
 	assert(alldomelts);
 
 	// Checking partial functions
 	for(unsigned int n = 0; n < args.size(); ++n) {
-		//TODO: only check positions that can be out of bounds or ...!
-		//TODO: produce a warning!
+		//TODO: only check positions that can be out of bounds or ...! Also produce a warning!
 		if(not args[n]) return _false;
 		if(not _tables[n]->contains(args[n])) return _false;
 	}
@@ -134,6 +116,8 @@ int HeadGrounder::run() const {
 	return atom;
 }
 
+// FIXME require a transformation such that there is only one headgrounder for any defined symbol
+// FIXME also handle tseitin defined rules!
 LazyRuleGrounder::LazyRuleGrounder(HeadGrounder* hgr, FormulaGrounder* bgr, InstGenerator* big, GroundingContext& ct)
 			: RuleGrounder(hgr, bgr, NULL, big, ct), _grounding(dynamic_cast<SolverTheory*>(headgrounder()->grounding())) {
 	grounding()->translator()->notifyDefined(headgrounder()->pfsymbol(), this);
@@ -156,6 +140,8 @@ void LazyRuleGrounder::notify(const Lit& lit, const ElementTuple& headargs){
 }
 
 void LazyRuleGrounder::ground(const Lit& head, const ElementTuple& headargs){
+	assert(head!=_true && head!=_false);
+
 	dominstlist headvarinstlist = createInst(headargs);
 
 	vector<const DomainElement*> originstantiation;
@@ -171,14 +157,14 @@ void LazyRuleGrounder::ground(const Lit& head, const ElementTuple& headargs){
 		bool falsebody = (body.empty() && !conj) || (body.size() == 1 && body[0] == _false);
 		bool truebody = (body.empty() && conj) || (body.size() == 1 && body[0] == _true);
 		if(falsebody){
+			grounding()->add(GroundClause{-head});
 			continue;
-		}
-
-		assert(head != _true && head!=_false);
-		if(truebody){
-			// FIXME addTrueRule(head);
-		} else{
-			// FIXME addPCRule(head,body,conj,_context._tseitin == TsType::RULE);
+		}else if(truebody){
+			grounding()->add(GroundClause{head});
+			continue;
+		}else{
+			// FIXME correct defID!
+			grounding()->polAdd(1, new PCGroundRule(head, (conj ? RT_CONJ : RT_DISJ), body, context()._tseitin == TsType::RULE));
 		}
 	}while(bodygenerator()->next());
 

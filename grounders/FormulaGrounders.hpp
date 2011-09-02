@@ -11,21 +11,37 @@
 
 /*** Formula grounders ***/
 
+typedef std::map<Variable*,const DomainElement**> var2domelemmap;
+
 class FormulaGrounder {
+	private:
+		GroundTranslator*	_translator;
+		GroundingContext	_context;
+
+		var2dommap			_varmap; // Maps the effective variables in the current formula to their instantiation;
+
+		int					_verbosity;
+
+		const Formula*		_origform;
+		var2dommap			_origvarmap; // Maps the (cloned) variables in the original formula to their instantiation
+
 	protected:
-		GroundTranslator*							_translator;
-		GroundingContext							_context;
-		const Formula*								_origform;
-		std::map<Variable*,const DomainElement**>	_varmap, _realvarmap;
-		int											_verbosity;
-		void printorig() const;
+		const var2dommap& 	varmap	()	const { return _varmap; }
+		int					verbosity	()	const { return _verbosity; }
+		GroundTranslator*	translator	() 	const { return _translator; }
+		GroundingContext	context		()	const { return _context; }
+
 	public:
 		FormulaGrounder(GroundTranslator* gt, const GroundingContext& ct): _translator(gt), _context(ct) { }
 		virtual ~FormulaGrounder() { }
 		virtual Lit		run()			const = 0;
 		virtual void	run(litlist&)	const = 0;
 		virtual bool	conjunctive()	const = 0;
+
+		// NOTE: required for correctness because it creates the associated varmap!
 		void setorig(const Formula* f, const std::map<Variable*, const DomainElement**>& mvd, int);
+
+		void printorig() const;
 };
 
 class AtomGrounder : public FormulaGrounder {
@@ -113,7 +129,7 @@ class ClauseGrounder : public FormulaGrounder {
 		CONN	conn_;
 
 		TsType getTseitinType() const;
-		bool negativeDefinedContext() const { return getTseitinType()==TsType::RULE && _context._monotone == Context::NEGATIVE; }
+		bool negativeDefinedContext() const { return getTseitinType()==TsType::RULE && context()._monotone == Context::NEGATIVE; }
 		Lit createTseitin(const litlist& clause) const;
 	public:
 		ClauseGrounder(GroundTranslator* gt, SIGN sign, bool conj, const GroundingContext& ct) :

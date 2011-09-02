@@ -43,6 +43,7 @@ Options::Options(const string& name, const ParseInfo& pi) : _name(name), _pi(pi)
 	_booloptions["longnames"]			= false;
 	_booloptions["relativepropsteps"]	= true;
 	_booloptions["createtranslation"]	= false;
+	_booloptions["randomvaluechoice"]	= false;
 
 	_intoptions["satverbosity"]			= new IntOption(0,numeric_limits<int>::max(),0);
 	_intoptions["groundverbosity"]		= new IntOption(0,numeric_limits<int>::max(),0);
@@ -209,6 +210,10 @@ int Options::nrpropsteps() const {
 
 int Options::longestbranch() const {
 	return _intoptions.find("longestbranch")->second->value();
+}
+
+bool Options::randomvaluechoice() const{
+	return _booloptions.find("randomvaluechoice")->second;
 }
 
 bool Options::cpsupport() const {

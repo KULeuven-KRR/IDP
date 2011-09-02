@@ -88,6 +88,8 @@ private:
 		MinisatID::SolverOption modes;
 		modes.nbmodels = options->nrmodels();
 		modes.verbosity = options->satverbosity();
+		modes.polarity = options->randomvaluechoice()?MinisatID::POL_RAND:MinisatID::POL_STORED;
+
 		//modes.remap = false;
 		return new SATSolver(modes);
 	}
