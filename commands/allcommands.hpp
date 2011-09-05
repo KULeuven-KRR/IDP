@@ -17,7 +17,6 @@
 #include "commands/clonestructure.hpp"
 #include "commands/clonetheory.hpp"
 #include "commands/pushnegations.hpp"
-#include "commands/removenesting.hpp"
 #include "commands/mergetheories.hpp"
 #include "commands/flatten.hpp"
 #include "commands/idptype.hpp"
@@ -38,6 +37,8 @@
 #include "commands/derefandincrement.hpp"
 #include "commands/help.hpp"
 #include "commands/optimization.hpp"
+#include "commands/entails.hpp"
+#include "commands/removenesting.hpp"
 #include "commands/simplify.hpp"
 
 //TODO add support for easily using these inferences directly in lua, by also providing a help/usage text and replacing idp_intern. with something easier
@@ -75,7 +76,6 @@ std::vector<Inference*> getAllInferences(){
 	inferences.push_back(new FlattenInference());
 	inferences.push_back(new MergeTheoriesInference());
 	inferences.push_back(new PushNegationsInference());
-	inferences.push_back(new RemoveNestingInference());
 	inferences.push_back(new QueryInference());
 	inferences.push_back(new CreateTupleInference());
 	inferences.push_back(new CreateRangeInference());
@@ -96,6 +96,8 @@ std::vector<Inference*> getAllInferences(){
 	inferences.push_back(new HelpInference());
 	inferences.push_back(new GroundAndPrintInference());
 	inferences.push_back(new OptimizationInference());
+	inferences.push_back(new EntailsInference());
+	inferences.push_back(new RemoveNestingInference());
 	inferences.push_back(new SimplifyInference());
 	return inferences;
 }

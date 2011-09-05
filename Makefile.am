@@ -44,7 +44,7 @@ gidl_SOURCES = \
 		interactive.hpp interactive.cpp\
 		main.cpp\
 		printers/print.hpp printers/print.cpp\
-		printers/idpprinter.hpp printers/ecnfprinter.hpp\
+		printers/idpprinter.hpp printers/ecnfprinter.hpp printers/tptpprinter.hpp\
 		checker.hpp checker.cpp\
 		generator.hpp generator.cpp\
 		propagate.hpp propagate.cpp\
@@ -88,6 +88,8 @@ gidl_SOURCES = \
 		commands/changevocabulary.hpp\
 		commands/estimatecosts.hpp\
 		commands/derefandincrement.hpp\
+		commands/entails.hpp\
+		commands/removenesting.hpp\
 		commands/simplify.hpp\
 		commands/createrange.hpp
 
