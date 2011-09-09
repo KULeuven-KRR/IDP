@@ -185,8 +185,9 @@ Lit GroundTranslator::addTseitinBody(TsBody* tsbody){
 }
 
 void GroundTranslator::notifyDefined(PFSymbol* pfs, LazyRuleGrounder* const grounder){
-	assert(symbol2rulegrounder.find(addSymbol(pfs))==symbol2rulegrounder.end());
-	symbol2rulegrounder.insert(pair<uint, LazyRuleGrounder*>(addSymbol(pfs), grounder));
+	if(symbol2rulegrounder.find(addSymbol(pfs))==symbol2rulegrounder.end()){
+		symbol2rulegrounder.insert(pair<uint, LazyRuleGrounder*>(addSymbol(pfs), grounder));
+	}
 }
 
 void GroundTranslator::translate(LazyQuantGrounder const* const lazygrounder, ResidualAndFreeInst* instance, TsType tstype) {
