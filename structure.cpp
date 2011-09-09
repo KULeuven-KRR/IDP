@@ -26,6 +26,10 @@ ostream& operator<<(ostream& out, const DomainElementType& domeltype) {
 	return out << DomElTypeStrings[domeltype];
 }
 
+DomainElement::DomainElement() : _type(DET_INT) {
+	_value._int = 0;
+}
+
 /**
  *	Constructor for domain elements that are integers
  */

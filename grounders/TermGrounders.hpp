@@ -16,7 +16,7 @@ class TermGrounder {
 		AbstractGroundTheory*						_grounding;
 		mutable SortTable*							_domain;
 		const Term*									_origterm;
-		std::map<Variable*,const DomainElement**>	_varmap;
+		std::map<Variable*,const DomElemContainer*>	_varmap;
 		int											_verbosity;
 		void printorig() const;
 	public:
@@ -24,7 +24,7 @@ class TermGrounder {
 		TermGrounder(AbstractGroundTheory* g, SortTable* dom) : _grounding(g), _domain(dom) { }
 		virtual ~TermGrounder() { }
 		virtual GroundTerm run() const = 0;
-		void setorig(const Term* t, const std::map<Variable*, const DomainElement**>& mvd, int);
+		void setorig(const Term* t, const std::map<Variable*, const DomElemContainer*>& mvd, int);
 		SortTable* domain() const { return _domain; }
 };
 
@@ -38,12 +38,12 @@ class DomTermGrounder : public TermGrounder {
 
 class VarTermGrounder : public TermGrounder {
 	private:
-		const DomainElement**	_value;
+		const DomElemContainer*	_value;
 	public:
-		VarTermGrounder(const DomainElement** a) : _value(a) { }
+		VarTermGrounder(const DomElemContainer* a) : _value(a) { }
 		GroundTerm run() const;
 
-		const DomainElement** getElement() const { return _value; }
+		const DomElemContainer* getElement() const { return _value; }
 };
 
 class FuncTermGrounder : public TermGrounder {

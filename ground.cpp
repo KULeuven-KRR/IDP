@@ -945,8 +945,8 @@ void GrounderFactory::visit(const BoolForm* bf) {
 	}
 }
 
-const DomainElement** GrounderFactory::createVarMapping(Variable * const var){
-	const DomainElement** d = new const DomainElement*();
+const DomElemContainer* GrounderFactory::createVarMapping(Variable * const var){
+	const DomElemContainer* d = new DomElemContainer();
 	assert(varmapping().find(var)==varmapping().end());
 	_varmapping[var] = d;
 	return d;
@@ -1244,7 +1244,7 @@ void GrounderFactory::visit(const Definition* def) {
 template<class VarList>
 InstGenerator* GrounderFactory::createVarMapAndGenerator(const VarList& vars){
 	vector<SortTable*> hvst;
-	vector<const DomainElement**> hvars;
+	vector<const DomElemContainer*> hvars;
 	for(auto it=vars.begin(); it!=vars.end(); ++it) {
 		auto domelem = createVarMapping(*it);
 		hvars.push_back(domelem);

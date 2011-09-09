@@ -53,18 +53,19 @@ class TestQuantKernelGenerator : public InstGenerator {
 class TrueQuantKernelGenerator : public InstGenerator {
 	private:
 		InstGenerator*					_quantgenerator;
-		vector<const DomainElement**>	_projectvars;
+		vector<const DomElemContainer*>	_projectvars;
 		mutable set<ElementTuple>		_memory;	
 	public:
 
-		TrueQuantKernelGenerator(InstGenerator* gen, const vector<const DomainElement**> projv) :
+		TrueQuantKernelGenerator(InstGenerator* gen, const vector<const DomElemContainer*> projv) :
 			_quantgenerator(gen), _projectvars(projv) { }
 
 		bool storetuple() const {
 			ElementTuple tuple;
-			for(vector<const DomainElement**>::const_iterator it = _projectvars.begin(); it != _projectvars.end(); ++it)
-				tuple.push_back(*(*it));
-			pair<set<ElementTuple>::iterator, bool> p = _memory.insert(tuple);
+			for(auto it = _projectvars.begin(); it != _projectvars.end(); ++it){
+				tuple.push_back((*it)->get());
+			}
+			auto p = _memory.insert(tuple);
 			return p.second;
 		}
 
@@ -94,16 +95,16 @@ class StrLessGenerator : public InstGenerator {
 	// FIXME: allow for different domains for left and right variable
 	private:
 		SortTable*				_table;
-		const DomainElement**	_leftvar;
-		const DomainElement**	_rightvar;
+		const DomElemContainer*	_leftvar;
+		const DomElemContainer*	_rightvar;
 		bool					_leftisinput;
 		mutable SortIterator	_left;
 		mutable SortIterator	_right;
 	public:
-		StrLessGenerator(SortTable* st, SortTable* fixme, const DomainElement** lv, const DomainElement** rv, bool inp) : 
+		StrLessGenerator(SortTable* st, SortTable* fixme, const DomElemContainer* lv, const DomElemContainer* rv, bool inp) :
 			_table(st), _leftvar(lv), _rightvar(rv), _leftisinput(inp), _left(_table->sortbegin()), _right(_table->sortbegin()) { }
 		bool first() const {
-			if(_leftisinput) _left = _table->sortiterator(*_leftvar);
+			if(_leftisinput) _left = _table->sortiterator(_leftvar->get());
 			else _left = _table->sortbegin();
 			_right = _left;
 			if(_right.hasNext()) {
@@ -147,16 +148,16 @@ class StrGreaterGenerator : public InstGenerator {
 	// FIXME: allow for different domains for left and right variable
 	private:
 		SortTable*				_table;
-		const DomainElement**	_leftvar;
-		const DomainElement**	_rightvar;
+		const DomElemContainer*	_leftvar;
+		const DomElemContainer*	_rightvar;
 		bool					_leftisinput;
 		mutable SortIterator	_left;
 		mutable SortIterator	_right;
 	public:
-		StrGreaterGenerator(SortTable* st, SortTable* fixme, const DomainElement** lv, const DomainElement** rv, bool inp) : 
+		StrGreaterGenerator(SortTable* st, SortTable* fixme, const DomElemContainer* lv, const DomElemContainer* rv, bool inp) :
 			_table(st), _leftvar(lv), _rightvar(rv), _leftisinput(inp), _left(_table->sortbegin()), _right(_table->sortbegin()) { }
 		bool first() const {
-			if(_leftisinput) _left = _table->sortiterator(*_leftvar);
+			if(_leftisinput) _left = _table->sortiterator(_leftvar->get());
 			else _left = _table->sortbegin();
 			_right = _table->sortbegin();
 			if(_left.hasNext() && _right.hasNext()) {
@@ -198,12 +199,12 @@ class StrGreaterGenerator : public InstGenerator {
 
 class InvUNAGenerator : public InstGenerator {
 	private:
-		vector<const DomainElement**>	_outvars;
+		vector<const DomElemContainer*>	_outvars;
 		vector<unsigned int>			_outpos;
 		Universe						_universe;
-		const DomainElement**			_resvar;
+		const DomElemContainer*			_resvar;
 	public:
-		InvUNAGenerator(const vector<bool>& pattern, const vector<const DomainElement**>& vars, const Universe& univ) {
+		InvUNAGenerator(const vector<bool>& pattern, const vector<const DomElemContainer*>& vars, const Universe& univ) {
 			_universe = univ;
 			for(unsigned int n = 0; n < pattern.size(); ++n) {
 				if(!pattern[n]) {
@@ -214,8 +215,8 @@ class InvUNAGenerator : public InstGenerator {
 			_resvar = vars.back();
 		}
 		bool first() const {
-			assert((*_resvar)->type() == DET_COMPOUND);
-			const Compound* c = (*_resvar)->value()._compound;
+			assert(_resvar->get()->type() == DET_COMPOUND);
+			const Compound* c = _resvar->get()->value()._compound;
 			unsigned int n = 0;
 			for(; n < _outpos.size(); ++n) {
 				if(_universe.tables()[_outpos[n]]->contains(c->arg(_outpos[n]))) {
@@ -232,140 +233,140 @@ class InvUNAGenerator : public InstGenerator {
 
 class PlusGenerator : public InstGenerator {
 	private:
-		const DomainElement**	_in1;
-		const DomainElement**	_in2;
-		const DomainElement**	_out;
+		const DomElemContainer*	_in1;
+		const DomElemContainer*	_in2;
+		const DomElemContainer*	_out;
 		bool					_int;
 		SortTable*				_outdom;
 	public:
-		PlusGenerator(const DomainElement** in1, const DomainElement** in2, const DomainElement** out, bool i, SortTable* dom) :
+		PlusGenerator(const DomElemContainer* in1, const DomElemContainer* in2, const DomElemContainer* out, bool i, SortTable* dom) :
 			_in1(in1), _in2(in2), _out(out), _int(i), _outdom(dom) { }
 		bool first() const { 
-			if(_int) *_out = DomainElementFactory::instance()->create((*_in1)->value()._int + (*_in2)->value()._int);	
+			if(_int) *_out = DomainElementFactory::instance()->create(_in1->get()->value()._int + _in2->get()->value()._int);
 			else {
-				double d1 = (*_in1)->type() == DET_DOUBLE ? (*_in1)->value()._double : double((*_in1)->value()._int);
-				double d2 = (*_in2)->type() == DET_DOUBLE ? (*_in2)->value()._double : double((*_in2)->value()._int);
+				double d1 = _in1->get()->type() == DET_DOUBLE ? _in1->get()->value()._double : double(_in1->get()->value()._int);
+				double d2 = _in2->get()->type() == DET_DOUBLE ? _in2->get()->value()._double : double(_in2->get()->value()._int);
 				*_out = DomainElementFactory::instance()->create(d1 + d2);
 			}
-			return _outdom->contains(*_out);
+			return _outdom->contains(_out->get());
 		}
 		bool next()	const	{ return false;	}
 };
 
 class MinusGenerator : public InstGenerator {
 	private:
-		const DomainElement**	_in1;
-		const DomainElement**	_in2;
-		const DomainElement**	_out;
+		const DomElemContainer*	_in1;
+		const DomElemContainer*	_in2;
+		const DomElemContainer*	_out;
 		bool					_int;
 		SortTable*				_outdom;
 	public:
-		MinusGenerator(const DomainElement** in1, const DomainElement** in2, const DomainElement** out, bool i, SortTable* dom) :
+		MinusGenerator(const DomElemContainer* in1, const DomElemContainer* in2, const DomElemContainer* out, bool i, SortTable* dom) :
 			_in1(in1), _in2(in2), _out(out), _int(i), _outdom(dom) { }
 		bool first() const { 
-			if(_int) *_out = DomainElementFactory::instance()->create((*_in1)->value()._int - (*_in2)->value()._int);	
+			if(_int) *_out = DomainElementFactory::instance()->create(_in1->get()->value()._int - _in2->get()->value()._int);
 			else {
-				double d1 = (*_in1)->type() == DET_DOUBLE ? (*_in1)->value()._double : double((*_in1)->value()._int);
-				double d2 = (*_in2)->type() == DET_DOUBLE ? (*_in2)->value()._double : double((*_in2)->value()._int);
+				double d1 = _in1->get()->type() == DET_DOUBLE ? _in1->get()->value()._double : double(_in1->get()->value()._int);
+				double d2 = _in2->get()->type() == DET_DOUBLE ? _in2->get()->value()._double : double(_in2->get()->value()._int);
 				*_out = DomainElementFactory::instance()->create(d1 - d2);
 			}
-			return _outdom->contains(*_out);
+			return _outdom->contains(_out->get());
 		}
 		bool next()	const	{ return false;	}
 };
 
 class TimesGenerator : public InstGenerator {
 	private:
-		const DomainElement**	_in1;
-		const DomainElement**	_in2;
-		const DomainElement**	_out;
+		const DomElemContainer*	_in1;
+		const DomElemContainer*	_in2;
+		const DomElemContainer*	_out;
 		bool					_int;
 		SortTable*				_outdom;
 	public:
-		TimesGenerator(const DomainElement** in1, const DomainElement** in2, const DomainElement** out, bool i, SortTable* dom) :
+		TimesGenerator(const DomElemContainer* in1, const DomElemContainer* in2, const DomElemContainer* out, bool i, SortTable* dom) :
 			_in1(in1), _in2(in2), _out(out), _int(i), _outdom(dom) { }
 		bool first() const { 
-			if(_int) *_out = DomainElementFactory::instance()->create((*_in1)->value()._int * (*_in2)->value()._int);	
+			if(_int) *_out = DomainElementFactory::instance()->create(_in1->get()->value()._int * _in2->get()->value()._int);
 			else {
-				double d1 = (*_in1)->type() == DET_DOUBLE ? (*_in1)->value()._double : double((*_in1)->value()._int);
-				double d2 = (*_in2)->type() == DET_DOUBLE ? (*_in2)->value()._double : double((*_in2)->value()._int);
+				double d1 = _in1->get()->type() == DET_DOUBLE ? _in1->get()->value()._double : double(_in1->get()->value()._int);
+				double d2 = _in2->get()->type() == DET_DOUBLE ? _in2->get()->value()._double : double(_in2->get()->value()._int);
 				*_out = DomainElementFactory::instance()->create(d1 * d2);
 			}
-			return _outdom->contains(*_out);
+			return _outdom->contains(_out->get());
 		}
 		bool next()	const	{ return false;	}
 };
 
 class DivGenerator : public InstGenerator {
 	private:
-		const DomainElement**	_in1;
-		const DomainElement**	_in2;
-		const DomainElement**	_out;
+		const DomElemContainer*	_in1;
+		const DomElemContainer*	_in2;
+		const DomElemContainer*	_out;
 		bool					_int;
 		SortTable*				_outdom;
 	public:
-		DivGenerator(const DomainElement** in1, const DomainElement** in2, const DomainElement** out, bool i, SortTable* dom) :
+		DivGenerator(const DomElemContainer* in1, const DomElemContainer* in2, const DomElemContainer* out, bool i, SortTable* dom) :
 			_in1(in1), _in2(in2), _out(out), _int(i), _outdom(dom) { }
 		bool first() const { 
 			if(_int) {
-				if((*_in2)->value()._int == 0) return false;
-				*_out = DomainElementFactory::instance()->create((*_in1)->value()._int * (*_in2)->value()._int);	
+				if(_in2->get()->value()._int == 0) return false;
+				*_out = DomainElementFactory::instance()->create(_in1->get()->value()._int * _in2->get()->value()._int);
 			}
 			else {
-				double d1 = (*_in1)->type() == DET_DOUBLE ? (*_in1)->value()._double : double((*_in1)->value()._int);
-				double d2 = (*_in2)->type() == DET_DOUBLE ? (*_in2)->value()._double : double((*_in2)->value()._int);
+				double d1 = _in1->get()->type() == DET_DOUBLE ? _in1->get()->value()._double : double(_in1->get()->value()._int);
+				double d2 = _in2->get()->type() == DET_DOUBLE ? _in2->get()->value()._double : double(_in2->get()->value()._int);
 				if(d2 == 0) return false;
 				*_out = DomainElementFactory::instance()->create(d1 / d2);
 			}
-			return _outdom->contains(*_out);
+			return _outdom->contains(_out->get());
 		}
 		bool next() const	{ return false;	}
 };
 
 class InvAbsGenerator : public InstGenerator {
 	private:
-		const DomainElement**	_in;
-		const DomainElement**	_out;
+		const DomElemContainer*	_in;
+		const DomElemContainer*	_out;
 		bool					_int;
 		SortTable*				_outdom;
 	public:
-		InvAbsGenerator(const DomainElement** in, const DomainElement** out, bool i, SortTable* dom) :
+		InvAbsGenerator(const DomElemContainer* in, const DomElemContainer* out, bool i, SortTable* dom) :
 			_in(in), _out(out), _int(i), _outdom(dom) { }
 		bool first() const { 
 			if(_int) {
-				*_out =  DomainElementFactory::instance()->create(-((*_in)->value()._int));
+				*_out =  DomainElementFactory::instance()->create(-(_in->get()->value()._int));
 			}
 			else {
-				double d = (*_in)->type() == DET_DOUBLE ? (*_in)->value()._double : double((*_in)->value()._int);
+				double d = _in->get()->type() == DET_DOUBLE ? _in->get()->value()._double : double(_in->get()->value()._int);
 				*_out = DomainElementFactory::instance()->create(-d);
 			}
-			if(_outdom->contains(*_out)) return true;
+			if(_outdom->contains(_out->get())) return true;
 			else return next();
 		}
 		bool next()	const { 
 			if(*_out == *_in) return false;
-			else { *_out = *_in; return _outdom->contains(*_out);	}
+			else { *_out = *_in; return _outdom->contains(_out->get());	}
 		}
 };
 
 class UminGenerator : public InstGenerator {
 	private:
-		const DomainElement**	_in;
-		const DomainElement**	_out;
+		const DomElemContainer*	_in;
+		const DomElemContainer*	_out;
 		bool					_int;
 		SortTable*				_outdom;
 	public:
-		UminGenerator(const DomainElement** in, const DomainElement** out, bool i, SortTable* dom) :
+		UminGenerator(const DomElemContainer* in, const DomElemContainer* out, bool i, SortTable* dom) :
 			_in(in), _out(out), _int(i), _outdom(dom) { }
 		bool first() const { 
 			if(_int) {
-				*_out =  DomainElementFactory::instance()->create(-((*_in)->value()._int));
+				*_out =  DomainElementFactory::instance()->create(-(_in->get()->value()._int));
 			}
 			else {
-				double d = (*_in)->type() == DET_DOUBLE ? (*_in)->value()._double : double((*_in)->value()._int);
+				double d = _in->get()->type() == DET_DOUBLE ? _in->get()->value()._double : double(_in->get()->value()._int);
 				*_out = DomainElementFactory::instance()->create(-d);
 			}
-			return _outdom->contains(*_out);
+			return _outdom->contains(_out->get());
 		}
 		bool next()	const { return false;	}
 };
@@ -376,21 +377,21 @@ class SimpleFuncGenerator : public InstGenerator {
 		InstGenerator*							_univgen;
 		vector<unsigned int>					_inposs;
 		vector<unsigned int>					_outposs;
-		vector<const DomainElement**>			_invars;
-		const DomainElement**					_outvar;
+		vector<const DomElemContainer*>			_invars;
+		const DomElemContainer*					_outvar;
 		mutable vector<const DomainElement*>	_currinput;
 		unsigned int							_check;
 	public:
-		SimpleFuncGenerator(const FuncTable*, const vector<bool>&, const vector<const DomainElement**>&, const Universe&, const vector<unsigned int>&);
+		SimpleFuncGenerator(const FuncTable*, const vector<bool>&, const vector<const DomElemContainer*>&, const Universe&, const vector<unsigned int>&);
 		bool first()	const;
 		bool next()		const;
 };
 
-SimpleFuncGenerator::SimpleFuncGenerator(const FuncTable* ft, const vector<bool>& pattern, const vector<const DomainElement**>& vars, const Universe& univ, const vector<unsigned int>& firstocc) : _function(ft), _currinput(pattern.size()-1) {
+SimpleFuncGenerator::SimpleFuncGenerator(const FuncTable* ft, const vector<bool>& pattern, const vector<const DomElemContainer*>& vars, const Universe& univ, const vector<unsigned int>& firstocc) : _function(ft), _currinput(pattern.size()-1) {
 	_invars = vars; _invars.pop_back();
 	_outvar = vars.back();
 	_check = firstocc[pattern.size() -1];
-	vector<const DomainElement**> univvars;
+	vector<const DomElemContainer*> univvars;
 	vector<SortTable*> univtabs;
 	for(unsigned int n = 0; n < pattern.size() - 1; ++n) {
 		if(pattern[n]) {
@@ -411,10 +412,10 @@ SimpleFuncGenerator::SimpleFuncGenerator(const FuncTable* ft, const vector<bool>
 bool SimpleFuncGenerator::first() const {
 	if(_univgen->first()) {
 		for(unsigned int n = 0; n < _inposs.size(); ++n) {
-			_currinput[_inposs[n]] = *_invars[_inposs[n]];
+			_currinput[_inposs[n]] = _invars[_inposs[n]]->get();
 		}
 		for(unsigned int n = 0; n < _outposs.size(); ++n) {
-			_currinput[_outposs[n]] = *_invars[_outposs[n]];
+			_currinput[_outposs[n]] = _invars[_outposs[n]]->get();
 		}
 		const DomainElement* d = _function->operator[](_currinput);
 		if(d) {
@@ -422,7 +423,7 @@ bool SimpleFuncGenerator::first() const {
 				*_outvar = d;
 				return true;
 			}
-			else if(*_invars[_check] == d) {
+			else if(_invars[_check]->get() == d) {
 				return true;
 			}
 			else return next();
@@ -435,7 +436,7 @@ bool SimpleFuncGenerator::first() const {
 bool SimpleFuncGenerator::next() const {
 	while(_univgen->next()) {
 		for(unsigned int n = 0; n < _outposs.size(); ++n) {
-			_currinput[_outposs[n]] = *_invars[_outposs[n]];
+			_currinput[_outposs[n]] = _invars[_outposs[n]]->get();
 		}
 		const DomainElement* d = _function->operator[](_currinput);
 		if(d) {
@@ -443,7 +444,7 @@ bool SimpleFuncGenerator::next() const {
 				*_outvar = d;
 				return true;
 			}
-			else if(*_invars[_check] == d) {
+			else if(_invars[_check]->get() == d) {
 				return true;
 			}
 		}
@@ -453,15 +454,15 @@ bool SimpleFuncGenerator::next() const {
 
 class EqualGenerator : public InstGenerator {
 	private:
-		const DomainElement**	_in;
-		const DomainElement**	_out;
+		const DomElemContainer*	_in;
+		const DomElemContainer*	_out;
 		SortTable*				_indom;
 		SortTable*				_outdom;
 		mutable SortIterator	_curr;
 	public:
-		EqualGenerator(const DomainElement** in, const DomainElement** out, SortTable* outdom) : 
+		EqualGenerator(const DomElemContainer* in, const DomElemContainer* out, SortTable* outdom) :
 			_in(in), _out(out), _indom(0), _outdom(outdom), _curr(_outdom->sortbegin()) { }
-		EqualGenerator(const DomainElement** in, const DomainElement** out, SortTable* indom, SortTable* outdom) : 
+		EqualGenerator(const DomElemContainer* in, const DomElemContainer* out, SortTable* indom, SortTable* outdom) :
 			_in(in), _out(out), _indom(indom), _outdom(outdom), _curr(_indom->sortbegin()) { }
 		bool first() const { 
 			if(_indom) {
@@ -470,7 +471,7 @@ class EqualGenerator : public InstGenerator {
 				*_in = *_curr;
 			}
 			*_out = *_in;	
-			if(_outdom->contains(*_out)) return true;
+			if(_outdom->contains(_out->get())) return true;
 			else return next();
 		}
 		bool next()	const { 
@@ -479,7 +480,7 @@ class EqualGenerator : public InstGenerator {
 				while(_curr.hasNext()) {
 					*_in = *_curr;
 					*_out = *_in;
-					if(_outdom->contains(*_out)) return true;
+					if(_outdom->contains(_out->get())) return true;
 					++_curr;
 				}
 			}
@@ -491,15 +492,15 @@ class GenerateAndTestGenerator : public InstGenerator {
 	private:	
 		const PredTable*							_table;		
 		PredTable*									_full;
-		vector<const DomainElement**>				_invars;
-		vector<const DomainElement**>				_outvars;
+		vector<const DomElemContainer*>				_invars;
+		vector<const DomElemContainer*>				_outvars;
 		vector<unsigned int>						_inposs;
 		vector<unsigned int>						_outposs;
 		vector<unsigned int>						_firstocc;
 		mutable TableIterator						_currpos;
 		mutable ElementTuple						_currtuple;
 	public:
-		GenerateAndTestGenerator(const PredTable*,const vector<bool>&, const vector<const DomainElement**>&, const vector<unsigned int>&, const Universe& univ);
+		GenerateAndTestGenerator(const PredTable*,const vector<bool>&, const vector<const DomElemContainer*>&, const vector<unsigned int>&, const Universe& univ);
 		bool first()	const;
 		bool next()		const;
 };
@@ -507,11 +508,11 @@ class GenerateAndTestGenerator : public InstGenerator {
 class SimpleLookupGenerator : public InstGenerator {
 	private:
 		const PredTable*						_table;
-		vector<const DomainElement**>			_invars;
+		vector<const DomElemContainer*>			_invars;
 		Universe								_universe;
 		mutable vector<const DomainElement*>	_currargs;
 	public:
-		SimpleLookupGenerator(const PredTable* t, const vector<const DomainElement**> in, const Universe& univ) :
+		SimpleLookupGenerator(const PredTable* t, const vector<const DomElemContainer*> in, const Universe& univ) :
 			_table(t), _invars(in), _universe(univ), _currargs(in.size()) { }
 		bool first()	const;
 		bool next()		const { return false;	}
@@ -522,13 +523,13 @@ typedef map<ElementTuple,vector<ElementTuple>,StrictWeakTupleOrdering> LookupTab
 class EnumLookupGenerator : public InstGenerator {
 	private:
 		const LookupTable&												_table;
-		vector<const DomainElement**>									_invars;
-		vector<const DomainElement**>									_outvars;
+		vector<const DomElemContainer*>									_invars;
+		vector<const DomElemContainer*>									_outvars;
 		mutable vector<const DomainElement*>							_currargs;
 		mutable LookupTable::const_iterator								_currpos;
 		mutable vector<vector<const DomainElement*> >::const_iterator	_iter;
 	public:
-		EnumLookupGenerator(const LookupTable& t, const vector<const DomainElement**>& in, const vector<const DomainElement**>& out) : _table(t), _invars(in), _outvars(out), _currargs(in.size()) { }
+		EnumLookupGenerator(const LookupTable& t, const vector<const DomElemContainer*>& in, const vector<const DomElemContainer*>& out) : _table(t), _invars(in), _outvars(out), _currargs(in.size()) { }
 		bool first()	const;
 		bool next()		const;
 };
@@ -536,10 +537,10 @@ class EnumLookupGenerator : public InstGenerator {
 class SortInstGenerator : public InstGenerator { 
 	private:
 		const InternalSortTable*	_table;
-		const DomainElement**		_outvar;
+		const DomElemContainer*		_outvar;
 		mutable SortIterator		_currpos;
 	public:
-		SortInstGenerator(const InternalSortTable* t, const DomainElement** out) : 
+		SortInstGenerator(const InternalSortTable* t, const DomElemContainer* out) :
 			_table(t), _outvar(out), _currpos(t->sortbegin()) { }
 		bool first() const;
 		bool next() const;
@@ -548,24 +549,24 @@ class SortInstGenerator : public InstGenerator {
 class SortLookUpGenerator : public InstGenerator {
 	private:
 		const InternalSortTable*	_table;
-		const DomainElement**		_invar;
+		const DomElemContainer*		_invar;
 	public:
-		SortLookUpGenerator(const InternalSortTable* t, const DomainElement** in) : _table(t), _invar(in) { }
-		bool first()	const { return _table->contains(*_invar);	}
+		SortLookUpGenerator(const InternalSortTable* t, const DomElemContainer* in) : _table(t), _invar(in) { }
+		bool first()	const { return _table->contains(_invar->get());	}
 		bool next()		const { return false;						}
 };
 
 class InverseInstGenerator : public InstGenerator {
 	private:
-		vector<const DomainElement**>	_univvars;
-		vector<const DomainElement**>	_outtabvars;
+		vector<const DomElemContainer*>	_univvars;
+		vector<const DomElemContainer*>	_outtabvars;
 		InstGenerator*					_univgen;
 		InstGenerator*					_outtablegen;
 		mutable bool					_outend;
 		bool outIsSmaller() const;
 		bool univIsSmaller() const;
 	public:
-		InverseInstGenerator(PredTable* t, const vector<bool>&, const vector<const DomainElement**>&);
+		InverseInstGenerator(PredTable* t, const vector<bool>&, const vector<const DomElemContainer*>&);
 		bool first() const;
 		bool next() const;
 };
@@ -669,7 +670,7 @@ TwoChildGeneratorNode::TwoChildGeneratorNode(InstGenerator* c, InstGenerator* g,
 	Constructors
 *******************/
 
-GenerateAndTestGenerator::GenerateAndTestGenerator(const PredTable* t, const vector<bool>& pattern, const vector<const DomainElement**>& vars, const vector<unsigned int>& firstocc, const Universe& univ) : _table(t), _firstocc(firstocc), _currtuple(pattern.size()) {
+GenerateAndTestGenerator::GenerateAndTestGenerator(const PredTable* t, const vector<bool>& pattern, const vector<const DomElemContainer*>& vars, const vector<unsigned int>& firstocc, const Universe& univ) : _table(t), _firstocc(firstocc), _currtuple(pattern.size()) {
 	vector<SortTable*> outuniv;
 	for(unsigned int n = 0; n < pattern.size(); ++n) {
 		if(pattern[n]) {
@@ -687,16 +688,16 @@ GenerateAndTestGenerator::GenerateAndTestGenerator(const PredTable* t, const vec
 	_full = new PredTable(new FullInternalPredTable(),Universe(outuniv));
 }
 
-InverseInstGenerator::InverseInstGenerator(PredTable* t, const vector<bool>& pattern, const vector<const DomainElement**>& vars) {
+InverseInstGenerator::InverseInstGenerator(PredTable* t, const vector<bool>& pattern, const vector<const DomElemContainer*>& vars) {
 	// TODO Code below is correct, but can be optimized in case there are output variables that occur more than once in 'vars'
-	vector<const DomainElement**> tabvars;
+	vector<const DomElemContainer*> tabvars;
 	for(unsigned int n = 0; n < pattern.size(); ++n) {
 		if(pattern[n]) {
 			tabvars.push_back(vars[n]);
 		}
 		else {
 			_univvars.push_back(vars[n]);
-			const DomainElement** d = new const DomainElement*();
+			const DomElemContainer* d = new const DomElemContainer();
 			_outtabvars.push_back(d);
 			tabvars.push_back(d);
 		}
@@ -709,16 +710,16 @@ InverseInstGenerator::InverseInstGenerator(PredTable* t, const vector<bool>& pat
 
 bool InverseInstGenerator::outIsSmaller() const {
 	for(unsigned int n = 0; n < _outtabvars.size(); ++n) {
-		if(*(*_outtabvars[n]) < *(*_univvars[n])) return true;
-		else if (*(*_outtabvars[n]) > *(*_univvars[n])) return false;
+		if(*_outtabvars[n] < *_univvars[n]) return true;
+		else if (*_outtabvars[n] > *_univvars[n]) return false;
 	}
 	return false;
 }
 
 bool InverseInstGenerator::univIsSmaller() const {
 	for(unsigned int n = 0; n < _outtabvars.size(); ++n) {
-		if(*(*_outtabvars[n]) > *(*_univvars[n])) return true;
-		else if (*(*_outtabvars[n]) < *(*_univvars[n])) return false;
+		if(*_outtabvars[n] > *_univvars[n]) return true;
+		else if (*_outtabvars[n] < *_univvars[n]) return false;
 	}
 	return false;
 }
@@ -748,7 +749,7 @@ bool GenerateAndTestGenerator::first() const {
 	if(_currpos.hasNext()) {
 		const ElementTuple& tuple = *_currpos;
 		for(unsigned int n = 0; n < _inposs.size(); ++n) {
-			_currtuple[_inposs[n]] = *(_invars[n]);
+			_currtuple[_inposs[n]] = _invars[n]->get();
 		}
 		for(unsigned int n = 0; n < _outposs.size(); ++n) {
 			_currtuple[_outposs[n]] = tuple[_firstocc[_outposs[n]]];
@@ -778,14 +779,14 @@ bool SortInstGenerator::first() const {
 
 bool SimpleLookupGenerator::first() const {
 	for(unsigned int n = 0; n < _invars.size(); ++n) {
-		_currargs[n] = *(_invars[n]);
+		_currargs[n] = _invars[n]->get();
 	}
 	return (_table->contains(_currargs) && _universe.contains(_currargs));
 }
 
 bool EnumLookupGenerator::first() const {
 	for(unsigned int n = 0; n < _invars.size(); ++n) {
-		_currargs[n] = *(_invars[n]);
+		_currargs[n] = _invars[n]->get();
 	}
 	_currpos = _table.find(_currargs);
 	if(_currpos == _table.end()) return false;
@@ -937,11 +938,11 @@ bool TreeInstGenerator::next() const {
 	Factory
 **************/
 
-InstGenerator* GeneratorFactory::create(const vector<const DomainElement**>& vars, const vector<SortTable*>& tabs) {
+InstGenerator* GeneratorFactory::create(const vector<const DomElemContainer*>& vars, const vector<SortTable*>& tabs) {
 	InstGenerator* gen = 0;
 	GeneratorNode* node = 0;
 	vector<SortTable*>::const_reverse_iterator jt = tabs.rbegin();
-	for(vector<const DomainElement**>::const_reverse_iterator it = vars.rbegin(); it != vars.rend(); ++it, ++jt) {
+	for(vector<const DomElemContainer*>::const_reverse_iterator it = vars.rbegin(); it != vars.rend(); ++it, ++jt) {
 		SortInstGenerator* tig = new SortInstGenerator((*jt)->interntable(),*it);
 		if(vars.size() == 1) {
 			gen = tig;
@@ -954,7 +955,7 @@ InstGenerator* GeneratorFactory::create(const vector<const DomainElement**>& var
 	return gen;
 }
 
-InstGenerator*	GeneratorFactory::create(const PredTable* pt, vector<bool> pattern, const vector<const DomainElement**>& vars, const Universe& universe) {
+InstGenerator*	GeneratorFactory::create(const PredTable* pt, vector<bool> pattern, const vector<const DomElemContainer*>& vars, const Universe& universe) {
 	_table = pt;
 	_pattern = pattern;
 	_vars = vars;
@@ -992,7 +993,7 @@ void GeneratorFactory::visit(const ProcInternalPredTable* ) {
 
 BDDToGenerator::BDDToGenerator(FOBDDManager* manager) : _manager(manager) { }
 
-InstGenerator* BDDToGenerator::create(const FOBDD* bdd, const vector<bool>& pattern, const vector<const DomainElement**>& vars, const vector<const FOBDDVariable*>& bddvars, AbstractStructure* structure, const Universe& universe) {
+InstGenerator* BDDToGenerator::create(const FOBDD* bdd, const vector<bool>& pattern, const vector<const DomElemContainer*>& vars, const vector<const FOBDDVariable*>& bddvars, AbstractStructure* structure, const Universe& universe) {
 
 cerr << "Creating a generator for\n";
 _manager->put(cerr,bdd);
@@ -1013,7 +1014,7 @@ _manager->put(cerr,bdd);
 		return new EmptyGenerator();
 	}
 	else if(bdd == _manager->truebdd()) {
-		vector<const DomainElement**> outvars;
+		vector<const DomElemContainer*> outvars;
 		vector<SortTable*> tables;
 		for(unsigned int n = 0; n < pattern.size(); ++n) {
 			if(!pattern[n]) {
@@ -1033,7 +1034,7 @@ _manager->put(cerr,bdd);
 	}
 }
 
-GeneratorNode* BDDToGenerator::createnode(const FOBDD* bdd, const vector<bool>& pattern, const vector<const DomainElement**>& vars, const vector<const FOBDDVariable*>& bddvars, AbstractStructure* structure, const Universe& universe) {
+GeneratorNode* BDDToGenerator::createnode(const FOBDD* bdd, const vector<bool>& pattern, const vector<const DomElemContainer*>& vars, const vector<const FOBDDVariable*>& bddvars, AbstractStructure* structure, const Universe& universe) {
 
 	// Detect double occurrences
 	vector<unsigned int> firstocc;
@@ -1052,7 +1053,7 @@ GeneratorNode* BDDToGenerator::createnode(const FOBDD* bdd, const vector<bool>& 
 		return new LeafGeneratorNode(eg);
 	}
 	else if(bdd == _manager->truebdd()) {
-		vector<const DomainElement**> outvars;
+		vector<const DomElemContainer*> outvars;
 		vector<SortTable*> tables;
 		for(unsigned int n = 0; n < pattern.size(); ++n) {
 			if(!pattern[n]) {
@@ -1069,7 +1070,7 @@ GeneratorNode* BDDToGenerator::createnode(const FOBDD* bdd, const vector<bool>& 
 	else {
 		// split variables
 		vector<bool> kernpattern;
-		vector<const DomainElement**> kerngenvars;
+		vector<const DomElemContainer*> kerngenvars;
 		vector<const FOBDDVariable*> kernvars;
 		vector<SortTable*> kerntables;
 		vector<bool> branchpattern;
@@ -1102,7 +1103,7 @@ GeneratorNode* BDDToGenerator::createnode(const FOBDD* bdd, const vector<bool>& 
 		else {
 			vector<bool> checkpattern(kernpattern.size(),true);
 			InstGenerator* kernelchecker = create(bdd->kernel(),checkpattern,kerngenvars,kernvars,structure,false,Universe(kerntables));
-			vector<const DomainElement**> kgvars(0);
+			vector<const DomElemContainer*> kgvars(0);
 			vector<SortTable*> kguniv;
 			for(unsigned int n = 0; n < kerngenvars.size(); ++n) {
 				if(!kernpattern[n]) {
@@ -1126,13 +1127,13 @@ GeneratorNode* BDDToGenerator::createnode(const FOBDD* bdd, const vector<bool>& 
 	}
 }
 
-InstGenerator* BDDToGenerator::create(const FOBDDKernel* kernel, const vector<bool>& pattern, const vector<const DomainElement**>& vars, const vector<const FOBDDVariable*>& kernelvars, AbstractStructure* structure, bool inverse, const Universe& universe) {
+InstGenerator* BDDToGenerator::create(const FOBDDKernel* kernel, const vector<bool>& pattern, const vector<const DomElemContainer*>& vars, const vector<const FOBDDVariable*>& kernelvars, AbstractStructure* structure, bool inverse, const Universe& universe) {
 	if(typeid(*kernel) == typeid(FOBDDAtomKernel)) {
 		const FOBDDAtomKernel* atom = dynamic_cast<const FOBDDAtomKernel*>(kernel);
 
 		// Create the pattern for the atom
 		vector<bool> atompattern;
-		vector<const DomainElement**> atomvars;
+		vector<const DomElemContainer*> atomvars;
 		vector<SortTable*> atomtables;
 		for(vector<const FOBDDArgument*>::const_iterator it = atom->args().begin(); it != atom->args().end(); ++it) {
 			if(typeid(*(*it)) == typeid(FOBDDVariable)) {
@@ -1148,7 +1149,7 @@ InstGenerator* BDDToGenerator::create(const FOBDDKernel* kernel, const vector<bo
 			}
 			else if(typeid(*(*it)) == typeid(FOBDDDomainTerm)) {
 				const FOBDDDomainTerm* domterm = dynamic_cast<const FOBDDDomainTerm*>(*it);
-				const DomainElement** domelement = new const DomainElement*();
+				const DomElemContainer* domelement = new const DomElemContainer();
 				*domelement = domterm->value(); 
 
 				Variable* termvar = new Variable(domterm->sort());
@@ -1156,7 +1157,7 @@ InstGenerator* BDDToGenerator::create(const FOBDDKernel* kernel, const vector<bo
 				const FOBDDKernel* termkernel = _manager->substitute(kernel,domterm,bddtermvar);
 
 				vector<bool> termpattern(pattern); termpattern.push_back(true);
-				vector<const DomainElement**> termvars(vars); termvars.push_back(domelement);
+				vector<const DomElemContainer*> termvars(vars); termvars.push_back(domelement);
 				vector<const FOBDDVariable*> termkernelvars(kernelvars); termkernelvars.push_back(bddtermvar);
 				vector<SortTable*> termuniv(universe.tables()); termuniv.push_back(structure->inter(domterm->sort()));
 				
@@ -1212,7 +1213,7 @@ InstGenerator* BDDToGenerator::create(const FOBDDKernel* kernel, const vector<bo
 		if(inverse) quantpattern = vector<bool>(pattern.size(),true);
 		else quantpattern = pattern;
 		quantpattern.push_back(false);
-		vector<const DomainElement**> quantvars(vars); quantvars.push_back(new const DomainElement*());
+		vector<const DomElemContainer*> quantvars(vars); quantvars.push_back(new const DomElemContainer());
 		vector<const FOBDDVariable*> bddquantvars(kernelvars); bddquantvars.push_back(bddquantvar);
 		vector<SortTable*> quantuniv = universe.tables(); quantuniv.push_back(structure->inter(quantkernel->sort()));
 		BDDToGenerator btg(_manager);
@@ -1222,7 +1223,7 @@ InstGenerator* BDDToGenerator::create(const FOBDDKernel* kernel, const vector<bo
 		InstGenerator* result = 0;
 		if(inverse) {
 			GeneratorFactory gf;
-			vector<const DomainElement**> univgenvars;
+			vector<const DomElemContainer*> univgenvars;
 			vector<SortTable*> univgentables;
 			for(unsigned int n = 0; n < pattern.size(); ++n) {
 				if(!pattern[n]) {
@@ -1274,7 +1275,7 @@ void GeneratorFactory::visit(const BDDInternalPredTable* table) {
 }
 
 void GeneratorFactory::visit(const FullInternalPredTable* ) {
-	vector<const DomainElement**> outvars;
+	vector<const DomElemContainer*> outvars;
 	vector<SortTable*> outtables;
 	for(unsigned int n = 0; n < _pattern.size(); ++n) {
 		if((!_pattern[n]) && _firstocc[n] == n) {
@@ -1330,8 +1331,8 @@ void GeneratorFactory::visit(const EnumeratedInternalPredTable* ) {
 	// TODO: Use dynamic programming to improve this
 	LookupTable* lpt = new LookupTable();
 	LookupTable& lookuptab = *lpt;
-	vector<const DomainElement**> invars;
-	vector<const DomainElement**> outvars;
+	vector<const DomElemContainer*> invars;
+	vector<const DomElemContainer*> outvars;
 	for(unsigned int n = 0; n < _pattern.size(); ++n) {
 		if(_firstocc[n] == n) {
 			if(_pattern[n]) invars.push_back(_vars[n]);
@@ -1370,7 +1371,7 @@ void GeneratorFactory::visit(const EqualInternalPredTable*) {
 	if(_pattern[0]) { assert(!_pattern[1]); _generator = new EqualGenerator(_vars[0],_vars[1],_universe.tables()[1]); }
 	else if(_pattern[1]) _generator = new EqualGenerator(_vars[1],_vars[0],_universe.tables()[0]);
 	else if(_firstocc[1] == 0) {
-		_generator = create(vector<const DomainElement**>(1,_vars[0]), vector<SortTable*>(1,_universe.tables()[0]));
+		_generator = create(vector<const DomElemContainer*>(1,_vars[0]), vector<SortTable*>(1,_universe.tables()[0]));
 	}
 	else _generator = new EqualGenerator(_vars[0],_vars[1],_universe.tables()[0],_universe.tables()[1]); 
 }
@@ -1430,8 +1431,8 @@ void GeneratorFactory::visit(const UNAInternalFuncTable* ) {
 void GeneratorFactory::visit(const EnumeratedInternalFuncTable*) {
 	// TODO: Use dynamic programming to improve this
 	LookupTable lookuptab;
-	vector<const DomainElement**> invars;
-	vector<const DomainElement**> outvars;
+	vector<const DomElemContainer*> invars;
+	vector<const DomElemContainer*> outvars;
 	for(unsigned int n = 0; n < _pattern.size(); ++n) {
 		if(_firstocc[n] == n) {
 			if(_pattern[n]) invars.push_back(_vars[n]);
@@ -1475,8 +1476,8 @@ void GeneratorFactory::visit(const PlusInternalFuncTable* pift) {
 		}
 		else {
 			const DomainElement* two = DomainElementFactory::instance()->create(2);
-			const DomainElement** twopointer = new const DomainElement*();
-			twopointer = &two;
+			const DomElemContainer* twopointer = new const DomElemContainer();
+			*twopointer = two;
 			_generator = new DivGenerator(_vars[2],twopointer,_vars[0],false,_universe.tables()[0]);
 		}
 	}

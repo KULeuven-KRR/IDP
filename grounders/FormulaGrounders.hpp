@@ -11,7 +11,7 @@
 
 /*** Formula grounders ***/
 
-typedef std::map<Variable*,const DomainElement**> var2domelemmap;
+typedef std::map<Variable*,const DomElemContainer*> var2domelemmap;
 
 class FormulaGrounder {
 	private:
@@ -39,7 +39,7 @@ class FormulaGrounder {
 		virtual bool	conjunctive()	const = 0;
 
 		// NOTE: required for correctness because it creates the associated varmap!
-		void setorig(const Formula* f, const std::map<Variable*, const DomainElement**>& mvd, int);
+		void setorig(const Formula* f, const std::map<Variable*, const DomElemContainer*>& mvd, int);
 
 		void printorig() const;
 };

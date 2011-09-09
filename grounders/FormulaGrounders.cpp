@@ -18,7 +18,7 @@
 
 using namespace std;
 
-void FormulaGrounder::setorig(const Formula* f, const map<Variable*, const DomainElement**>& mvd, int verb) {
+void FormulaGrounder::setorig(const Formula* f, const map<Variable*, const DomElemContainer*>& mvd, int verb) {
 	_verbosity = verb;
 	map<Variable*,Variable*> mvv;
 	for(auto it = f->freevars().begin(); it != f->freevars().end(); ++it) {
@@ -38,7 +38,7 @@ void FormulaGrounder::printorig() const {
 		clog << " with instance ";
 		for(auto it = _origform->freevars().begin(); it != _origform->freevars().end(); ++it) {
 			clog << (*it)->to_string() << " = ";
-			const DomainElement* e = *(_origvarmap.find(*it)->second);
+			const DomainElement* e = _origvarmap.find(*it)->second->get();
 			clog << e->to_string() << ' ';
 		}
 	}

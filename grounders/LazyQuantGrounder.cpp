@@ -87,7 +87,7 @@ void LazyQuantGrounder::run(litlist& clause, bool negateclause) const {
 
 	for(auto var=freevars.begin(); var!=freevars.end(); ++var){
 		auto tuple = varmap().at(*var);
-		inst->freevarinst.push_back(dominst(tuple, *tuple));
+		inst->freevarinst.push_back(dominst(tuple, tuple->get()));
 	}
 
 	translator()->translate(this, inst, context()._tseitin);

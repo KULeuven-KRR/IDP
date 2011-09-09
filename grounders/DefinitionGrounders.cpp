@@ -170,3 +170,7 @@ void LazyRuleGrounder::ground(const Lit& head, const ElementTuple& headargs){
 
 	restoreOrigVars(originstantiation, headvarinstlist);
 }
+
+void LazyRuleGrounder::run(unsigned int defid, GroundDefinition* grounddefinition) const {
+
+}

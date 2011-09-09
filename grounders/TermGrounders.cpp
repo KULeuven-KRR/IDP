@@ -17,7 +17,7 @@
 
 using namespace std;
 
-void TermGrounder::setorig(const Term* t, const map<Variable*,const DomainElement**>& mvd, int verb) {
+void TermGrounder::setorig(const Term* t, const map<Variable*,const DomElemContainer*>& mvd, int verb) {
 	_verbosity = verb;
 	map<Variable*,Variable*> mvv;
 	for(set<Variable*>::const_iterator it = t->freevars().begin(); it != t->freevars().end(); ++it) {
@@ -34,7 +34,7 @@ void TermGrounder::printorig() const {
 		clog << " with instance ";
 		for(set<Variable*>::const_iterator it = _origterm->freevars().begin(); it != _origterm->freevars().end(); ++it) {
 			clog << (*it)->to_string() << " = ";
-			const DomainElement* e = *(_varmap.find(*it)->second);
+			const DomainElement* e = _varmap.find(*it)->second->get();
 			clog << e->to_string() << ' ';
 		}
 	}
@@ -42,7 +42,7 @@ void TermGrounder::printorig() const {
 }
 
 GroundTerm VarTermGrounder::run() const {
-	return GroundTerm(*_value);
+	return GroundTerm(_value->get());
 }
 
 GroundTerm FuncTermGrounder::run() const {
@@ -57,6 +57,7 @@ GroundTerm FuncTermGrounder::run() const {
 		if(groundsubterms[n]._isvarid) {
 			calculable = false;
 		} else {
+			assert(groundsubterms[n]._domelement!=NULL);
 			args[n] = groundsubterms[n]._domelement;
 		}
 	}

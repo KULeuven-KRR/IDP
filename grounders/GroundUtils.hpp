@@ -12,7 +12,7 @@
 template<class DomElemList>
 void overwriteVars(DomElemList& originst, const dominstlist& freevarinst){
 	for(auto var2domelem=freevarinst.begin(); var2domelem<freevarinst.end(); ++var2domelem){
-		originst.push_back(*var2domelem->first);
+		originst.push_back(var2domelem->first->get());
 		(*var2domelem->first)=var2domelem->second;
 	}
 }

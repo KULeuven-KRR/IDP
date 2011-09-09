@@ -118,7 +118,7 @@ class AggTsBody : public TsBody {
 };
 
 class LazyQuantGrounder;
-typedef std::pair<const DomainElement**, const DomainElement*> dominst;
+typedef std::pair<const DomElemContainer*, const DomainElement*> dominst;
 typedef std::vector<dominst> dominstlist;
 
 struct ResidualAndFreeInst{
@@ -458,7 +458,7 @@ class HeadGrounder;
 class RuleGrounder;
 
 typedef std::vector<Variable*> varlist;
-typedef std::map<Variable*,const DomainElement**> var2dommap;
+typedef std::map<Variable*,const DomElemContainer*> var2dommap;
 
 class GrounderFactory : public TheoryVisitor {
 	private:
@@ -492,7 +492,7 @@ class GrounderFactory : public TheoryVisitor {
 
 		// Variable mapping
 		var2dommap	_varmapping; // Maps variables to their counterpart during grounding.
-								// That is, the corresponding const DomainElement** acts as a variable+value.
+								// That is, the corresponding const DomElemContainer* acts as a variable+value.
 
 		// Return values
 		FormulaGrounder*		_formgrounder;
@@ -507,7 +507,7 @@ class GrounderFactory : public TheoryVisitor {
 		const var2dommap& varmapping() const { return _varmapping; }
 		//var2dommap& varmapping() { return _varmapping; }
 
-		const DomainElement**	createVarMapping(Variable * const var);
+		const DomElemContainer*	createVarMapping(Variable * const var);
 		template<class VarList> InstGenerator* 	createVarMapAndGenerator(const VarList& vars);
 
 	public:

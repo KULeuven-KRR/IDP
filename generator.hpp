@@ -32,7 +32,7 @@ class GeneratorFactory : public StructureVisitor {
 	private:
 		const PredTable*					_table;
 		std::vector<bool>					_pattern;	//!< _pattern[n] == true iff the n'th column is an input column
-		std::vector<const DomainElement**>	_vars;		//!< the variables corresponding to each column
+		std::vector<const DomElemContainer*>	_vars;		//!< the variables corresponding to each column
 		Universe							_universe;	//!< the domains of the variables
 		std::vector<unsigned int>			_firstocc;	//!< for each of the variables, the position in _vars where this
 														//!< variable occurs first
@@ -71,8 +71,8 @@ class GeneratorFactory : public StructureVisitor {
 		void visit(const IntRangeInternalSortTable*);	
 
 	public:
-		InstGenerator*	create(const std::vector<const DomainElement**>&, const std::vector<SortTable*>&);
-		InstGenerator*	create(const PredTable*, std::vector<bool> pattern, const std::vector<const DomainElement**>&, const Universe&);
+		InstGenerator*	create(const std::vector<const DomElemContainer*>&, const std::vector<SortTable*>&);
+		InstGenerator*	create(const PredTable*, std::vector<bool> pattern, const std::vector<const DomElemContainer*>&, const Universe&);
 };
 
 /******************************
@@ -96,10 +96,10 @@ class BDDToGenerator {
 		BDDToGenerator(FOBDDManager* manager);
 
 		// Factory methods
-		InstGenerator* create(const FOBDD*, const std::vector<bool>&, const std::vector<const DomainElement**>&, const std::vector<const FOBDDVariable*>&, AbstractStructure* structure, const Universe&);
-		InstGenerator* create(const FOBDDKernel*, const std::vector<bool>&, const std::vector<const DomainElement**>&, const std::vector<const FOBDDVariable*>&, AbstractStructure* structure, bool, const Universe&);
+		InstGenerator* create(const FOBDD*, const std::vector<bool>&, const std::vector<const DomElemContainer*>&, const std::vector<const FOBDDVariable*>&, AbstractStructure* structure, const Universe&);
+		InstGenerator* create(const FOBDDKernel*, const std::vector<bool>&, const std::vector<const DomElemContainer*>&, const std::vector<const FOBDDVariable*>&, AbstractStructure* structure, bool, const Universe&);
 
-		GeneratorNode* createnode(const FOBDD*, const std::vector<bool>&, const std::vector<const DomainElement**>&, const std::vector<const FOBDDVariable*>&, AbstractStructure* structure, const Universe&);
+		GeneratorNode* createnode(const FOBDD*, const std::vector<bool>&, const std::vector<const DomElemContainer*>&, const std::vector<const FOBDDVariable*>&, AbstractStructure* structure, const Universe&);
 
 		// Visit
 //		void visit(const FOBDDAtomKernel* kernel);

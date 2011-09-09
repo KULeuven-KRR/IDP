@@ -39,13 +39,13 @@ public:
 		manager.optimizequery(bdd,bddvars,bddindices,structure);
 
 		// create a generator
-		std::vector<const DomainElement**> genvars;
+		std::vector<const DomElemContainer*> genvars;
 		std::vector<const FOBDDVariable*> vbddvars;
 		std::vector<bool> pattern;
 		std::vector<SortTable*> tables;
 		for(auto it = q->variables().begin(); it != q->variables().end(); ++it) {
 			pattern.push_back(false);
-			genvars.push_back(new const DomainElement*());
+			genvars.push_back(new const DomElemContainer());
 			vbddvars.push_back(manager.getVariable(*it));
             tables.push_back(structure->inter((*it)->sort()));
 		}
@@ -65,12 +65,12 @@ public:
 		ElementTuple currtuple(q->variables().size());
 		if(generator->first()) {
 			for(unsigned int n = 0; n < q->variables().size(); ++n) {
-				currtuple[n] = *(genvars[n]);
+				currtuple[n] = genvars[n]->get();
 			}
 			result->add(currtuple);
 			while(generator->next()) {
 				for(unsigned int n = 0; n < q->variables().size(); ++n) {
-					currtuple[n] = *(genvars[n]);
+					currtuple[n] = genvars[n]->get();
 				}
 				result->add(currtuple);
 			}

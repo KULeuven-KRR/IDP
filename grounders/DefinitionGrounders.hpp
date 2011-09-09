@@ -52,7 +52,7 @@ class RuleGrounder {
 
 	public:
 		RuleGrounder(HeadGrounder* hgr, FormulaGrounder* bgr, InstGenerator* hig, InstGenerator* big, GroundingContext& ct);
-		void run(unsigned int defid, GroundDefinition* grounddefinition) const;
+		virtual void run(unsigned int defid, GroundDefinition* grounddefinition) const;
 };
 
 /** Grounder for a head of a rule **/

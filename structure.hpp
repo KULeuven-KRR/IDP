@@ -69,6 +69,7 @@ class DomainElement {
 		DomainElementType	_type;		//!< The type of the domain element
 		DomainElementValue	_value;		//!< The value of the domain element
 
+		DomainElement();
 		DomainElement(int value);
 		DomainElement(double value);
 		DomainElement(const std::string* value);
@@ -84,7 +85,37 @@ class DomainElement {
 		std::string to_string()				const;
 
 		friend class DomainElementFactory;
+		friend class DomElemContainer;
 };
+
+class DomElemContainer{
+private:
+	mutable const DomainElement* domelem_;
+	mutable bool del;
+public:
+	DomElemContainer(): domelem_(new DomainElement()), del(true){}
+	~DomElemContainer() {
+		if(del){
+			delete(domelem_);
+		}
+	}
+
+	void operator=(const DomElemContainer* container) const { del=false; delete(domelem_); domelem_ = container->get(); }
+	void operator=(const DomElemContainer& container) const { del=false; delete(domelem_); domelem_ = container.get(); }
+	void operator=(const DomainElement* domelem) const { domelem_ = domelem; }
+
+	const DomainElement* get() const { assert(domelem_!=NULL); return domelem_; }
+};
+
+inline bool operator==(const DomElemContainer& left, const DomElemContainer& right){
+	return left.get()==right.get();
+}
+inline bool operator<(const DomElemContainer& left, const DomElemContainer& right){
+	return left.get()<right.get();
+}
+inline bool operator>(const DomElemContainer& left, const DomElemContainer& right){
+	return left.get()>right.get();
+}
 
 bool operator<(const DomainElement&, const DomainElement&);
 bool operator>(const DomainElement&, const DomainElement&);
