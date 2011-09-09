@@ -70,7 +70,7 @@ AC_ARG_ENABLE([sat],
   		 newm=true
 		;;
   *) AC_MSG_ERROR([bad value ${enableval} for --enable-sat]) ;;
-esac],[oldm=true])
+esac],[newm=true])
 
 AM_CONDITIONAL([USEMINISAT],[test x$oldm = xtrue])
 AM_CONDITIONAL([USEMINISAT09Z],[test x$hackm = xtrue])
