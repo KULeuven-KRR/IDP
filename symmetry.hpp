@@ -28,10 +28,16 @@ class OccurrencesCounter;
 /**
  * Definition of an IVSet: 
  * 	a set of domain elements elements_, 
- * 		occurring in the domain of all the sorts of a set of sorts sorts_, 
+ * 		occurring in the domain of all the sorts of sorts_,
+ * 		not occurring in the domain of all sorts not in sorts_, but whose parents are in sorts_.
+ *	a set of sorts sorts_,
+ *		which is a fixpoint under the "add parent sorts" operation.
  * 	and a set of PFSymbols relations_, 
- * 		which contains all the relations occurring in a theory who hava as argument at least one of the elements of sorts_
- * TODO: this must be checked more thoroughly, which requires a bit of refactoring...
+ * 		which contains all the relations occurring in a theory who have as argument at least one of the elements of sorts_
+ *
+ * INVARIANT: every IVSet has getSize()>1.
+ * INVARIANT: the domain elements of an IVSet all belong to the youngest sort in sorts_. The other sorts in sorts_ are parents of this youngest sort
+ * (unfortunately, the last invariant is not enforced by an assertion, even though it is assumed it holds)
  */
 class IVSet {
 	
@@ -43,10 +49,6 @@ class IVSet {
 		const std::set<PFSymbol*>			relations_;		//!< Relations which are permuted by the symmetry's
 		
 		// Inspectors
-		const std::set<const DomainElement*>& getElements() const;
-		const std::set<Sort*>& getSorts() const;
-		const std::set<PFSymbol*>& getRelations() const;
-		
 		std::pair<std::list<int>,std::list<int> > getSymmetricLiterals(AbstractGroundTheory*, const DomainElement*, const DomainElement*) const;
 
 	public:
@@ -61,7 +63,11 @@ class IVSet {
 
 		// Inspectors
 		const AbstractStructure* 	getStructure() const;
+		const std::set<const DomainElement*>& getElements() const;
+		const std::set<Sort*>& getSorts() const;
+		const std::set<PFSymbol*>& getRelations() const;
 		
+		int							getSize() const {return getElements().size();}
 		bool 						containsMultipleElements() const;
 		bool						hasRelevantRelationsAndSorts() const;
 		bool						isRelevantSymmetry() const;
@@ -71,7 +77,7 @@ class IVSet {
 		std::vector<const IVSet*>	splitBasedOnBinarySymmetries() const;
 		
 		void 						addSymBreakingPreds(AbstractGroundTheory*) const;
-		std::vector<std::map<int,int> >	getLiteralsSymmetries(AbstractGroundTheory*) const;
+		std::vector<std::map<int,int> >	getBreakingSymmetries(AbstractGroundTheory*) const;
 		std::vector<std::list<int> >getInterchangeableLiterals(AbstractGroundTheory*) const;
 		
 		// Output

@@ -41,47 +41,16 @@ public:
 		
 		// Execute symmetry breaking
 		if(options->symmetry()!=0){
-			std::cerr << "Symmetry detection... \n";
+			std::cerr << "Symmetry detection...\n";
 			clock_t start = clock();
-			//Break symmetry
 			std::vector<const IVSet*> ivsets = findIVSets(theory, structure);
 			float time = (float) (clock() - start)/CLOCKS_PER_SEC;
-			std::cerr << "*Symmetry_detection_finished_in: " << time << "\n";
+			std::cerr << "Symmetry detection finished in: " << time << "\n";
 			if(options->symmetry()==1){
-				/** method 1 **/
+				std::cerr << "Adding symmetry breaking clauses...\n";
 				addSymBreakingPredicates(grounding, ivsets);
-			}else if(options->symmetry()==2){
-				/** method 2 **/
-				for(std::vector<const IVSet*>::const_iterator ivsets_it=ivsets.begin(); ivsets_it!=ivsets.end(); ++ivsets_it){
-					std::vector<std::list<int> > symmetries = (*ivsets_it)->getInterchangeableLiterals(grounding);
-					
-					std::vector<std::vector<MinisatID::Literal> > satLiterals;
-					for(std::vector<std::list<int> >::const_iterator symmetries_it=symmetries.begin(); symmetries_it!=symmetries.end(); ++symmetries_it){
-						std::vector<MinisatID::Literal> satLiteral;
-						for(std::list<int>::const_iterator symmetries_it2=symmetries_it->begin(); symmetries_it2!=symmetries_it->end(); ++symmetries_it2){
-							satLiteral.push_back(MinisatID::Literal(*symmetries_it2,false));
-						}
-						satLiterals.push_back(satLiteral);
-					}
-					MinisatID::SymmetryLiterals temp;
-					temp.symmgroups=satLiterals;
-					solver->add(temp);
-				}
-			}else if(options->symmetry()==3){
-				/** method 3 **/
-				for(std::vector<const IVSet*>::const_iterator ivsets_it=ivsets.begin(); ivsets_it!=ivsets.end(); ++ivsets_it){
-					std::vector<std::map<int,int> > literalsSymmetries = (*ivsets_it)->getLiteralsSymmetries(grounding);
-					for(std::vector<std::map<int,int> >::const_iterator ls_it = literalsSymmetries.begin(); ls_it != literalsSymmetries.end(); ++ls_it){
-						MinisatID::Symmetry symmetry;
-						for(std::map<int,int>::const_iterator s_it = ls_it->begin(); s_it!=ls_it->end(); ++s_it){
-							MinisatID::Atom a1 = MinisatID::Atom(s_it->first);
-							MinisatID::Atom a2 = MinisatID::Atom(s_it->second);
-							std::pair<MinisatID::Atom,MinisatID::Atom> entry = std::pair<MinisatID::Atom,MinisatID::Atom>(a1,a2);
-							symmetry.symmetry.insert(entry);
-						}
-						solver->add(symmetry);
-					}
-				}
+			}else{
+				std::cerr << "Dynamical symmetry breaking not yet implemented...\n";
 			}
 		}
 
