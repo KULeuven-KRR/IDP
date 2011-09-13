@@ -23,12 +23,13 @@ public:
 	}
 
 	virtual void print(const std::string& text){
-		buffersize +=text.size();
+		std::cout <<text;
+		/*buffersize +=text.size();
 		buffer_ <<text;
 
 		if(buffersize>1000){
 			flush();
-		}
+		}*/
 	}
 
 	virtual void printerror(const std::string& text){
@@ -37,13 +38,13 @@ public:
 	}
 
 	virtual void flush() {
-		lua_getglobal(state(), "io");
+		/*lua_getglobal(state(), "io");
 		lua_getfield(state(), -1, "write");
 		lua_pushstring(state(),buffer_.str().c_str());
 		lua_call(state(),1,0);
 		lua_pop(state(), 1);
 		buffersize = 0;
-		buffer_.str("");
+		buffer_.str("");*/
 	}
 };
 
