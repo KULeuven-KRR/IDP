@@ -209,13 +209,12 @@ int Options::longestbranch() const {
 	return _intoptions.find("longestbranch")->second->value();
 }
 
-<<<<<<< HEAD
 int Options::symmetry() const {
 	return _intoptions.find("symmetry")->second->value();
-=======
+}
+
 int Options::provertimeout() const {
 	return _intoptions.find("provertimeout")->second->value();
->>>>>>> e55616b46c5fe9022ee036ebff56f932f7622034
 }
 
 bool Options::cpsupport() const {

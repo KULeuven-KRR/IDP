@@ -37,12 +37,9 @@
 #include "commands/derefandincrement.hpp"
 #include "commands/help.hpp"
 #include "commands/optimization.hpp"
-<<<<<<< HEAD
 #include "commands/detectsymmetry.hpp"
-=======
 #include "commands/entails.hpp"
 #include "commands/removenesting.hpp"
->>>>>>> e55616b46c5fe9022ee036ebff56f932f7622034
 #include "commands/simplify.hpp"
 
 //TODO add support for easily using these inferences directly in lua, by also providing a help/usage text and replacing idp_intern. with something easier
