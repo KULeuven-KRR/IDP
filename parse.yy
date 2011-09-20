@@ -241,10 +241,10 @@ idporblock		: idp
 				| execstatement
 				;
 
-idp		        : /* empty */
+idp		: /* empty */
 				| idp namespace 
 				| idp vocabulary 
-		        | idp theory
+				| idp theory
 				| idp structure
 				| idp asp_structure
 				| idp instructions
