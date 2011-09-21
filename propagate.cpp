@@ -696,7 +696,7 @@ FOPropagator* FOPropagatorFactory::create(const AbstractTheory* theory) {
 	TheoryUtils::removeNesting(newtheo);	// FIXME: remove nesting does not change F(x)=y to F(x,y) anymore, which is probably needed here	
 	TheoryUtils::graphFunctions(newtheo);
 	TheoryUtils::graphAggregates(newtheo);
-	TheoryUtils::removeEqchains(newtheo);
+	TheoryUtils::removeEqChains(newtheo);
 
 	// Add function constraints
 	for(auto it = _initbounds.begin(); it != _initbounds.end(); ++it) {

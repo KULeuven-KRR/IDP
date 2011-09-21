@@ -1880,6 +1880,7 @@ void GrounderFactory::visit(const PredForm* pf) {
 	}
 	else {	// The rewriting did not change the atom
 		PredForm* ptranspf = dynamic_cast<PredForm*>(transpf);
+//cerr << " -- Grounding PredFrom "; ptranspf->put(cerr,_longnames); cerr << " with symbol "; ptranspf->symbol()->put(cerr,_longnames); cerr << "\n";
 		// Create grounders for the subterms
 		vector<TermGrounder*> subtermgrounders;
 		vector<SortTable*>	  argsorttables;
