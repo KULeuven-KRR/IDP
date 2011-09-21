@@ -19,7 +19,7 @@ public:
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
 		const SortTable* st = args[0]._value._domain;
-		SortIterator* it = new SortIterator(st->sortbegin());
+		SortIterator* it = new SortIterator(st->sortBegin());
 		InternalArgument ia; ia._type = AT_DOMAINITERATOR;
 		ia._value._sortiterator = it;
 		return ia;

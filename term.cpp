@@ -19,10 +19,10 @@ using namespace std;
 void Term::setFreeVars() {
 	_freevars.clear();
 	for(vector<Term*>::const_iterator it = _subterms.begin(); it != _subterms.end(); ++it) {
-		_freevars.insert((*it)->freevars().begin(),(*it)->freevars().end());
+		_freevars.insert((*it)->freeVars().begin(),(*it)->freeVars().end());
 	}
 	for(vector<SetExpr*>::const_iterator it = _subsets.begin(); it != _subsets.end(); ++it) {
-		_freevars.insert((*it)->freevars().begin(),(*it)->freevars().end());
+		_freevars.insert((*it)->freeVars().begin(),(*it)->freeVars().end());
 	}
 }
 
@@ -230,10 +230,10 @@ ostream& AggTerm::put(ostream& output, bool longnames) const {
 void SetExpr::setFreeVars() {
 	_freevars.clear();
 	for(vector<Formula*>::const_iterator it = _subformulas.begin(); it != _subformulas.end(); ++it) {
-		_freevars.insert((*it)->freevars().begin(),(*it)->freevars().end());
+		_freevars.insert((*it)->freeVars().begin(),(*it)->freeVars().end());
 	}
 	for(vector<Term*>::const_iterator it = _subterms.begin(); it != _subterms.end(); ++it) {
-		_freevars.insert((*it)->freevars().begin(),(*it)->freevars().end());
+		_freevars.insert((*it)->freeVars().begin(),(*it)->freeVars().end());
 	}
 	for(set<Variable*>::const_iterator it = _quantvars.begin(); it != _quantvars.end(); ++it) {
 		_freevars.erase(*it);
@@ -372,7 +372,7 @@ QuantSetExpr* QuantSetExpr::clone() const {
 QuantSetExpr* QuantSetExpr::clone(const map<Variable*,Variable*>& mvv) const {
 	set<Variable*> newvars;
 	map<Variable*,Variable*> nmvv = mvv;
-	for(set<Variable*>::const_iterator it = quantvars().begin(); it != quantvars().end(); ++it) {
+	for(set<Variable*>::const_iterator it = quantVars().begin(); it != quantVars().end(); ++it) {
 		Variable* nv = new Variable((*it)->name(),(*it)->sort(),(*it)->pi());
 		newvars.insert(nv);
 		nmvv[*it] = nv;
@@ -409,7 +409,7 @@ SetExpr* QuantSetExpr::accept(TheoryMutatingVisitor* v) {
 
 ostream& QuantSetExpr::put(ostream& output, bool longnames) const {
 	output << "{";
-	for(set<Variable*>::const_iterator it = quantvars().begin(); it != quantvars().end(); ++it) {
+	for(set<Variable*>::const_iterator it = quantVars().begin(); it != quantVars().end(); ++it) {
 		output << ' '; (*it)->put(output,longnames);
 	}
 	output << " : "; subformulas()[0]->put(output,longnames);

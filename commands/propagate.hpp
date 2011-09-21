@@ -16,6 +16,85 @@
 #include "commandinterface.hpp"
 #include "monitors/propagatemonitor.hpp"
 
+#include "groundtheories/AbstractGroundTheory.hpp"
+#include "groundtheories/SolverPolicy.hpp"
+
+/**
+ * Implements symbolic propagation, followed by an evaluation of the BDDs to obtain a concrete structure
+ */
+class PropagateInference: public Inference {
+	public:
+		/** Collect symbolic propagation vocabulary **/
+		std::map<PFSymbol*,InitBoundType> propagateVocabulary(AbstractTheory* theory, AbstractStructure* structure) const {
+			std::map<PFSymbol*,InitBoundType> mpi;
+			Vocabulary* v = theory->vocabulary();
+			for(auto it = v->firstPred(); it != v->lastPred(); ++it) {
+				auto spi = it->second->nonbuiltins();
+				for(auto jt = spi.begin(); jt != spi.end(); ++jt) {
+					if(structure->vocabulary()->contains(*jt)) {
+						PredInter* pinter = structure->inter(*jt);
+						if(pinter->approxTwoValued()) { mpi[*jt] = IBT_TWOVAL; }
+						else if(pinter->ct()->approxEmpty()) {
+							if(pinter->cf()->approxEmpty()) { mpi[*jt] = IBT_NONE; }
+							else { mpi[*jt] = IBT_CF; }
+						}
+						else if(pinter->cf()->approxEmpty()) {
+							mpi[*jt] = IBT_CT;
+						}
+						else { mpi[*jt] = IBT_BOTH;  }
+					}
+					else { mpi[*jt] = IBT_NONE; }
+				}
+			}
+			for(auto it = v->firstFunc(); it != v->lastFunc(); ++it) {
+				auto sfi = it->second->nonbuiltins();
+				for(auto jt = sfi.begin(); jt != sfi.end(); ++jt) {
+					if(structure->vocabulary()->contains(*jt)) {
+						FuncInter* finter = structure->inter(*jt);
+						if(finter->approxTwoValued()) { mpi[*jt] = IBT_TWOVAL; }
+						else if(finter->graphInter()->ct()->approxEmpty()) {
+							if(finter->graphInter()->cf()->approxEmpty()) { mpi[*jt] = IBT_NONE; }
+							else { mpi[*jt] = IBT_CF; }
+						}
+						else if(finter->graphInter()->cf()->approxEmpty()) {
+							mpi[*jt] = IBT_CT;
+						}
+						else { mpi[*jt] = IBT_BOTH;  }
+					}
+					else { mpi[*jt] = IBT_NONE; }
+				}
+			}
+			return mpi;
+		}
+	
+		FOPropagator* createPropagator(AbstractTheory* theory, const std::map<PFSymbol*,InitBoundType> mpi, Options* options) const {
+			FOPropBDDDomainFactory* domainfactory = new FOPropBDDDomainFactory();
+			FOPropScheduler* scheduler = new FOPropScheduler();
+			FOPropagatorFactory propfactory(domainfactory,scheduler,true,mpi,options);
+			FOPropagator* propagator = propfactory.create(theory);
+			return propagator;
+		}
+	
+		PropagateInference(): Inference("propagate") {
+			add(AT_THEORY);
+			add(AT_STRUCTURE);
+			add(AT_OPTIONS);
+		}
+	
+		InternalArgument execute(const std::vector<InternalArgument>& args) const {
+			AbstractTheory*	theory = args[0].theory();
+			AbstractStructure* structure = args[1].structure();
+			Options* options = args[2].options();
+	
+			std::map<PFSymbol*,InitBoundType> mpi = propagateVocabulary(theory,structure);
+			FOPropagator* propagator = createPropagator(theory,mpi,options);
+			propagator->run();
+	
+			AbstractStructure* result = propagator->currstructure(structure);		// TODO: free allocated memory
+			return InternalArgument(result);
+		}
+};
+
 /**
  * Implements propagation by grounding and applying unit propagation on the ground theory
  */
@@ -24,10 +103,11 @@ class GroundPropagateInference : public Inference {
 		GroundPropagateInference() : Inference("groundpropagate") {
 			add(AT_THEORY);
 			add(AT_STRUCTURE);
-
 		}
 
 		InternalArgument execute(const std::vector<InternalArgument>& args) const {
+			// TODO: make a clean version of this implementation
+			// TODO: doens't work with cp support (because a.o.(?) backtranslation is not implemented)
 			AbstractTheory*	theory = args[0].theory();
 			AbstractStructure* structure = args[1].structure();
 
@@ -37,6 +117,7 @@ class GroundPropagateInference : public Inference {
 			modes.verbosity = 0;
 			modes.remap = false;
 			SATSolver solver(modes);
+			monitor.setSolver(&solver);
 			Options options("",ParseInfo());
 			options.setvalue("nrmodels",0);
 			GrounderFactory grounderfactory(structure,&options);
@@ -49,7 +130,6 @@ class GroundPropagateInference : public Inference {
 			opts.savemodels = MinisatID::SAVE_ALL;
 			opts.search = MinisatID::PROPAGATE;
 			MinisatID::Solution* abstractsolutions = new MinisatID::Solution(opts);
-			monitor.setSolver(&solver);
 			solver.solve(abstractsolutions);
 
 			GroundTranslator* translator = grounding->translator();
@@ -61,13 +141,13 @@ class GroundPropagateInference : public Inference {
 					const ElementTuple& args = translator->args(atomnr);
 					if(typeid(*symbol) == typeid(Predicate)) {
 						Predicate* pred = dynamic_cast<Predicate*>(symbol);
-						if(literal->hasSign()) result->inter(pred)->makeFalse(args);
-						else result->inter(pred)->makeTrue(args);
+						if(literal->hasSign()) { result->inter(pred)->makeFalse(args); }
+						else { result->inter(pred)->makeTrue(args); }
 					}
 					else {
 						Function* func = dynamic_cast<Function*>(symbol);
-						if(literal->hasSign()) result->inter(func)->graphinter()->makeFalse(args);
-						else result->inter(func)->graphinter()->makeTrue(args);
+						if(literal->hasSign()) { result->inter(func)->graphInter()->makeFalse(args); }
+						else { result->inter(func)->graphInter()->makeTrue(args); }
 					}
 				}
 			}
@@ -141,13 +221,13 @@ class OptimalPropagateInference : public Inference {
 					const ElementTuple& args = translator->args(atomnr);
 					if(typeid(*symbol) == typeid(Predicate)) {
 						Predicate* pred = dynamic_cast<Predicate*>(symbol);
-						if(*literal < 0) result->inter(pred)->makeFalse(args);
-						else result->inter(pred)->makeTrue(args);
+						if(*literal < 0) { result->inter(pred)->makeFalse(args); }
+						else { result->inter(pred)->makeTrue(args); }
 					}
 					else {
 						Function* func = dynamic_cast<Function*>(symbol);
-						if(*literal < 0) result->inter(func)->graphinter()->makeFalse(args);
-						else result->inter(func)->graphinter()->makeTrue(args);
+						if(*literal < 0) { result->inter(func)->graphInter()->makeFalse(args); }
+						else { result->inter(func)->graphInter()->makeTrue(args); }
 					}
 				}
 			}
@@ -155,61 +235,5 @@ class OptimalPropagateInference : public Inference {
 			return InternalArgument(result);
 		}
 };
-
-class PropagateInference: public Inference {
-public:
-	PropagateInference(): Inference("propagate") {
-		add(AT_THEORY);
-		add(AT_STRUCTURE);
-		add(AT_OPTIONS);
-	}
-
-	InternalArgument execute(const std::vector<InternalArgument>& args) const {
-		AbstractTheory*	theory = args[0].theory();
-		AbstractStructure* structure = args[1].structure();
-
-		std::map<PFSymbol*,InitBoundType> mpi;
-		Vocabulary* v = theory->vocabulary();
-		for(auto it = v->firstpred(); it != v->lastpred(); ++it) {
-			auto spi = it->second->nonbuiltins();
-			for(auto jt = spi.begin(); jt != spi.end(); ++jt) {
-				if(structure->vocabulary()->contains(*jt)) {
-					PredInter* pinter = structure->inter(*jt);
-					if(pinter->approxTwoValued()) mpi[*jt] = IBT_TWOVAL;
-					else {
-						// TODO
-						mpi[*jt] = IBT_NONE;
-					}
-				}
-				else mpi[*jt] = IBT_NONE;
-			}
-		}
-		for(auto it = v->firstfunc(); it != v->lastfunc(); ++it) {
-			auto sfi = it->second->nonbuiltins();
-			for(auto jt = sfi.begin(); jt != sfi.end(); ++jt) {
-				if(structure->vocabulary()->contains(*jt)) {
-					FuncInter* finter = structure->inter(*jt);
-					if(finter->approxTwoValued()) mpi[*jt] = IBT_TWOVAL;
-					else {
-						// TODO
-						mpi[*jt] = IBT_NONE;
-					}
-				}
-				else mpi[*jt] = IBT_NONE;
-			}
-		}
-
-		FOPropBDDDomainFactory* domainfactory = new FOPropBDDDomainFactory();
-		FOPropScheduler* scheduler = new FOPropScheduler();
-		FOPropagatorFactory propfactory(domainfactory,scheduler,true,mpi,args[2].options());
-		FOPropagator* propagator = propfactory.create(theory);
-		propagator->run();
-
-		// TODO: free allocated memory
-		// TODO: return a structure (instead of nil)
-		return nilarg();
-	}
-};
-
 
 #endif /* PROPAGATE_HPP_ */

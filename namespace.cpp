@@ -46,7 +46,7 @@ Namespace::~Namespace() {
 }
 
 /** Mutators **/
-void Namespace::add(Vocabulary* v) 			{ _vocabularies[v->name()] = v;	v->setnamespace(this);	}
+void Namespace::add(Vocabulary* v) 			{ _vocabularies[v->name()] = v;	v->setNamespace(this);	}
 void Namespace::add(Namespace* n)			{ _subspaces[n->name()] = n; 		}
 void Namespace::add(AbstractStructure* s)	{ _structures[s->name()] = s;		}
 void Namespace::add(AbstractTheory* t)		{ _theories[t->name()] = t; 		}
@@ -129,20 +129,20 @@ UserProcedure* Namespace::procedure(const string& lp) const {
 	return ((_procedures.find(lp))->second);
 }
 
-ostream& Namespace::putname(ostream& output) const {
-	if(isGlobal()) return output;
-	else if(_superspace && !_superspace->isGlobal()) {
-		_superspace->putname(output);
+ostream& Namespace::putName(ostream& output) const {
+	if(isGlobal()) { return output; }
+	else if(_superspace && not _superspace->isGlobal()) {
+		_superspace->putName(output);
 		output << "::";
 	}
 	output << _name;
 	return output;
 }
 
-ostream& Namespace::putluaname(ostream& output) const {
-	if(isGlobal()) return output;
-	else if(_superspace && !_superspace->isGlobal()) {
-		_superspace->putname(output);
+ostream& Namespace::putLuaName(ostream& output) const {
+	if(isGlobal()) { return output; }
+	else if(_superspace && not _superspace->isGlobal()) {
+		_superspace->putName(output);
 		output << '.';
 	}
 	output << _name;

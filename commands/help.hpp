@@ -19,14 +19,14 @@ std::string help(Namespace* ns) {
 		if(ns->isGlobal()) sstr << "There are no procedures in the global namespace\n";
 		else {
 			sstr << "There are no procedures in namespace ";
-			ns->putname(sstr);
+			ns->putName(sstr);
 			sstr << '\n';
 		}
 	}
 	else {
 		sstr << "The following procedures are available:\n\n";
 		std::stringstream prefixs;
-		ns->putname(prefixs);
+		ns->putName(prefixs);
 		std::string prefix = prefixs.str();
 		if(prefix != "") prefix += "::";
 		for(auto it = ns->procedures().begin(); it != ns->procedures().end(); ++it) {
@@ -45,7 +45,7 @@ std::string help(Namespace* ns) {
 		sstr << "\nThe following subspaces are available:\n\n";
 		for(auto it = ns->subspaces().begin(); it != ns->subspaces().end(); ++it) {
 			sstr << "    * ";
-			it->second->putname(sstr);
+			it->second->putName(sstr);
 			sstr << '\n';
 		}
 		sstr << "\nType help(<subspace>) for information on procedures in namespace <subspace>\n";

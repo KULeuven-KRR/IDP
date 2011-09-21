@@ -69,7 +69,7 @@ class SortDeriver : public TheoryMutatingVisitor {
 
 Formula* SortDeriver::visit(QuantForm* qf) {
 	if(_firstvisit) {
-		for(std::set<Variable*>::const_iterator it = qf->quantvars().begin(); it != qf->quantvars().end(); ++it) {
+		for(std::set<Variable*>::const_iterator it = qf->quantVars().begin(); it != qf->quantVars().end(); ++it) {
 			if(!((*it)->sort())) {
 				_untyped[*it] = set<Sort*>();
 				_changed = true;
@@ -118,7 +118,7 @@ Formula* SortDeriver::visit(EqChainForm* ef) {
 
 Rule* SortDeriver::visit(Rule* r) {
 	if(_firstvisit) {
-		for(set<Variable*>::const_iterator it = r->quantvars().begin(); it != r->quantvars().end(); ++it) {
+		for(set<Variable*>::const_iterator it = r->quantVars().begin(); it != r->quantVars().end(); ++it) {
 			if(!((*it)->sort())) _untyped[*it] = set<Sort*>();
 			_changed = true;
 		}
@@ -171,8 +171,8 @@ Term* SortDeriver::visit(FuncTerm* ft) {
 
 SetExpr* SortDeriver::visit(QuantSetExpr* qs) {
 	if(_firstvisit) {
-		for(std::set<Variable*>::const_iterator it = qs->quantvars().begin(); it != qs->quantvars().end(); ++it) {
-			if(!((*it)->sort())) {
+		for(std::set<Variable*>::const_iterator it = qs->quantVars().begin(); it != qs->quantVars().end(); ++it) {
+			if(not (*it)->sort()) {
 				_untyped[*it] = set<Sort*>();
 				_changed = true;
 			}
@@ -1139,7 +1139,7 @@ void Insert::closestructure() {
 	assert(_currstructure);
 	assignunknowntables();
 	if(_options->autocomplete()) _currstructure->autocomplete();
-	_currstructure->functioncheck();
+	_currstructure->functionCheck();
 	if(_currspace->isGlobal()) LuaConnection::addGlobal(_currstructure);
 	closeblock();
 }
@@ -1160,25 +1160,25 @@ void Insert::openprocedure(const string& name, YYLTYPE l) {
 			for(map<string,UserProcedure*>::const_iterator jt = (*it)->procedures().begin(); 
 				jt != (*it)->procedures().end(); ++jt) {
 				sstr << "local " << jt->second->name() << " = ";
-				(*it)->putluaname(sstr);
+				(*it)->putLuaName(sstr);
 				sstr << '.' << jt->second->name() << '\n';
 			}
 			for(map<string,Vocabulary*>::const_iterator jt = (*it)->vocabularies().begin(); 
 				jt != (*it)->vocabularies().end(); ++jt) {
 				sstr << "local " << jt->second->name() << " = ";
-				(*it)->putluaname(sstr);
+				(*it)->putLuaName(sstr);
 				sstr << '.' << jt->second->name() << '\n';
 			}
 			for(map<string,AbstractTheory*>::const_iterator jt = (*it)->theories().begin(); 
 				jt != (*it)->theories().end(); ++jt) {
 				sstr << "local " << jt->second->name() << " = ";
-				(*it)->putluaname(sstr);
+				(*it)->putLuaName(sstr);
 				sstr << '.' << jt->second->name() << '\n';
 			}
 			for(map<string,AbstractStructure*>::const_iterator jt = (*it)->structures().begin(); 
 				jt != (*it)->structures().end(); ++jt) {
 				sstr << "local " << jt->second->name() << " = ";
-				(*it)->putluaname(sstr);
+				(*it)->putLuaName(sstr);
 				sstr << '.' << jt->second->name() << '\n';
 			}
 			_currprocedure->add(sstr.str());
@@ -1490,7 +1490,7 @@ Rule* Insert::rule(const std::set<Variable*>& qv,Formula* head, Formula* body,YY
 }
 
 Rule* Insert::rule(const std::set<Variable*>& qv, Formula* head, YYLTYPE l) {
-	Formula* body = FormulaUtils::trueform();
+	Formula* body = FormulaUtils::trueFormula();
 	return rule(qv,head,body,l);
 }
 
@@ -1500,7 +1500,7 @@ Rule* Insert::rule(Formula* head, Formula* body, YYLTYPE l) {
 }
 
 Rule* Insert::rule(Formula* head,YYLTYPE l) {
-	Formula* body = FormulaUtils::trueform();
+	Formula* body = FormulaUtils::trueFormula();
 	return rule(head,body,l);
 }
 
@@ -2034,7 +2034,7 @@ void Insert::predinter(NSPair* nst, PredTable* t) const {
 	if(p && nst->_sortsincluded && (nst->_sorts).size() == t->arity()) p = p->resolve(nst->_sorts);
 	if(p) {
 		if(belongsToVoc(p)) {
-			PredTable* nt = new PredTable(t->interntable(),_currstructure->universe(p));
+			PredTable* nt = new PredTable(t->internTable(),_currstructure->universe(p));
 			delete(t);
 			PredInter* inter = _currstructure->inter(p);
 			inter->ctpt(nt);
@@ -2057,10 +2057,10 @@ void Insert::funcinter(NSPair* nst, FuncTable* t) const {
 	if(f && nst->_sortsincluded && (nst->_sorts).size() == t->arity()+1) f = f->resolve(nst->_sorts);
 	if(f) {
 		if(belongsToVoc(f)) {
-			FuncTable* nt = new FuncTable(t->interntable(),_currstructure->universe(f));
+			FuncTable* nt = new FuncTable(t->internTable(),_currstructure->universe(f));
 			delete(t);
 			FuncInter* inter = _currstructure->inter(f);
-			inter->functable(nt);
+			inter->funcTable(nt);
 		}
 		else Error::funcnotinstructvoc(nst->toString(),_currstructure->name(),pi);
 	}
@@ -2095,7 +2095,7 @@ void Insert::constructor(NSPair* nst) const {
 			UNAInternalFuncTable* uift = new UNAInternalFuncTable(f);
 			FuncTable* ft = new FuncTable(uift,_currstructure->universe(f));
 			FuncInter* inter = _currstructure->inter(f);
-			inter->functable(ft);
+			inter->funcTable(ft);
 		}
 		else Error::funcnotinstructvoc(nst->toString(),_currstructure->name(),pi);
 	}
@@ -2115,14 +2115,14 @@ void Insert::sortinter(NSPair* nst, SortTable* t) const {
 	if(s) {
 		if(belongsToVoc(s)) {
 			SortTable* st = _currstructure->inter(s);
-			st->interntable(t->interntable());
+			st->internTable(t->internTable());
 			delete(t);
 		}
 		else Error::sortnotinstructvoc(oneName(name),_currstructure->name(),pi);
 	}
 	else if(p) {
 		if(belongsToVoc(p)) {
-			PredTable* pt = new PredTable(t->interntable(),_currstructure->universe(p));
+			PredTable* pt = new PredTable(t->internTable(),_currstructure->universe(p));
 			PredInter* i = _currstructure->inter(p);
 			i->ctpt(pt);
 			delete(t);
@@ -2338,7 +2338,7 @@ void Insert::threepredinter(NSPair* nst, const string& utf, PredTable* t) {
 		}
 		else {
 			if(belongsToVoc(p)) {
-				PredTable* nt = new PredTable(t->interntable(),_currstructure->universe(p));
+				PredTable* nt = new PredTable(t->internTable(),_currstructure->universe(p));
 				delete(t);
 				switch(getUTF(utf,pi)) {
 					case UTF_UNKNOWN:
@@ -2382,7 +2382,7 @@ void Insert::threefuncinter(NSPair* nst, const string& utf, PredTable* t) {
 	if(f && nst->_sortsincluded && (nst->_sorts).size() == t->arity()) f = f->resolve(nst->_sorts);
 	if(f) {
 		if(belongsToVoc(f)) {
-			PredTable* nt = new PredTable(t->interntable(),_currstructure->universe(f));
+			PredTable* nt = new PredTable(t->internTable(),_currstructure->universe(f));
 			delete(t);
 			switch(getUTF(utf,pi)) {
 				case UTF_UNKNOWN:
@@ -2390,14 +2390,14 @@ void Insert::threefuncinter(NSPair* nst, const string& utf, PredTable* t) {
 					break;
 				case UTF_CT:
 				{	
-					PredInter* ft = _currstructure->inter(f)->graphinter();
+					PredInter* ft = _currstructure->inter(f)->graphInter();
 					ft->ct(nt);
 					_cfuncs[f] = UTF_CT;
 					break;
 				}
 				case UTF_CF:
 				{
-					PredInter* ft = _currstructure->inter(f)->graphinter();
+					PredInter* ft = _currstructure->inter(f)->graphInter();
 					ft->cf(nt);
 					_cfuncs[f] = UTF_CF;
 					break;
@@ -2414,7 +2414,7 @@ void Insert::threefuncinter(NSPair* nst, const string& utf, PredTable* t) {
 }
 
 void Insert::threepredinter(NSPair* nst, const string& utf, SortTable* t) {
-	PredTable* pt = new PredTable(t->interntable(),TableUtils::fullUniverse(1));
+	PredTable* pt = new PredTable(t->internTable(),TableUtils::fullUniverse(1));
 	delete(t);
 	threepredinter(nst,utf,pt);
 }
@@ -2670,16 +2670,16 @@ void Insert::assignunknowntables() {
 	for(map<Predicate*,PredTable*>::iterator it = _unknownpredtables.begin(); it != _unknownpredtables.end(); ++it) {
 		PredInter* pri = _currstructure->inter(it->first);
 		const PredTable* ctable = _cpreds[it->first] == UTF_CT ? pri->ct() : pri->cf();
-		PredTable* pt = new PredTable(ctable->interntable(),ctable->universe());
+		PredTable* pt = new PredTable(ctable->internTable(),ctable->universe());
 		for(TableIterator tit = it->second->begin() ; tit.hasNext(); ++tit) pt->add(*tit);
 		_cpreds[it->first] == UTF_CT ? pri->pt(pt) : pri->pf(pt);
 		delete(it->second);
 	}
 	// Assign the unknown function interpretations
 	for(map<Function*,PredTable*>::iterator it = _unknownfunctables.begin(); it != _unknownfunctables.end(); ++it) {
-		PredInter* pri = _currstructure->inter(it->first)->graphinter();
+		PredInter* pri = _currstructure->inter(it->first)->graphInter();
 		const PredTable* ctable = _cfuncs[it->first] == UTF_CT ? pri->ct() : pri->cf();
-		PredTable* pt = new PredTable(ctable->interntable(),ctable->universe());
+		PredTable* pt = new PredTable(ctable->internTable(),ctable->universe());
 		for(TableIterator tit = it->second->begin() ; tit.hasNext(); ++tit) pt->add(*tit);
 		_cfuncs[it->first] == UTF_CT ? pri->pt(pt) : pri->pf(pt);
 		delete(it->second);

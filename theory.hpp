@@ -98,20 +98,20 @@ class Formula : public TheoryComponent {
 				void	subformula(unsigned int n, Formula* f)			{ _subformulas[n] = f; setFreeVars();			}
 				void	subterms(const std::vector<Term*>& vt)			{ _subterms = vt; setFreeVars();				}
 				void	subformulas(const std::vector<Formula*>& vf)	{ _subformulas = vf; setFreeVars();			}
-				void	quantvars(const std::set<Variable*>& sv)		{ _quantvars = sv; setFreeVars();				}
+				void	quantVars(const std::set<Variable*>& sv)		{ _quantvars = sv; setFreeVars();				}
 
 		// Inspectors
 				bool					sign()						const { return _sign;			}
 				const FormulaParseInfo&	pi()						const { return _pi;				}
 				bool					contains(const Variable*)	const;	//!< true iff the formula contains the variable
 				bool					contains(const PFSymbol*)	const;	//!< true iff the formula contains the symbol
-		virtual	bool					trueformula()				const { return false;	}	
+		virtual	bool					trueFormula()				const { return false;	}	
 			//!< true iff the formula is the empty conjunction
-		virtual	bool					falseformula()				const { return false;	}
+		virtual	bool					falseFormula()				const { return false;	}
 			//!< true iff the formula is the empty disjunction
 			
-		const std::set<Variable*>&		freevars()		const { return _freevars;		}
-		const std::set<Variable*>&		quantvars()		const { return _quantvars;		}
+		const std::set<Variable*>&		freeVars()		const { return _freevars;		}
+		const std::set<Variable*>&		quantVars()		const { return _quantvars;		}
 		const std::vector<Term*>&		subterms()		const { return _subterms;		}
 		const std::vector<Formula*>&	subformulas()	const { return _subformulas;	}
 
@@ -258,8 +258,8 @@ class BoolForm : public Formula {
 
 		// Inspectors
 		bool	conj()			const	{ return _conj;											}
-		bool	trueformula()	const	{ return (subformulas().empty() && _conj == sign());	}
-		bool	falseformula()	const	{ return (subformulas().empty() && _conj != sign());	}
+		bool	trueFormula()	const	{ return (subformulas().empty() && _conj == sign());	}
+		bool	falseFormula()	const	{ return (subformulas().empty() && _conj != sign());	}
 
 		// Visitor
 		void		accept(TheoryVisitor* v) const;
@@ -279,7 +279,7 @@ class QuantForm : public Formula {
 	public:
 		// Constructors
 		QuantForm(bool sign, bool u, const std::set<Variable*>& v, Formula* sf, const FormulaParseInfo& pi) : 
-			Formula(sign,pi), _univ(u) { subformulas(std::vector<Formula*>(1,sf)); quantvars(v); }
+			Formula(sign,pi), _univ(u) { subformulas(std::vector<Formula*>(1,sf)); quantVars(v); }
 
 		QuantForm*	clone()										const;
 		QuantForm*	clone(const std::map<Variable*,Variable*>&)	const;
@@ -345,6 +345,22 @@ namespace FormulaUtils {
 	/** \brief Recursively rewrite all EqChainForms in the given formula to BoolForms **/
 	Formula* removeEqChains(Formula*,Vocabulary* v = 0);	
 
+	/** \brief Estimate the cost of the given query 
+	 *		Precondition: 
+	 *			- query does not contain any FuncTerm or AggTerm subterms
+	 *			- the query has a twovalue result in the given structure
+	 */
+	double estimatedCostAll(PredForm* query, const std::set<Variable*> freevars, bool inverse, AbstractStructure* structure);
+
+	/** \brief Recursively remove all nested terms **/
+	Formula* removeNesting(Formula*, PosContext poscontext = PC_POSITIVE);
+
+	/** \brief TODO **/
+	Formula* removeEquiv(Formula*);
+
+	/** \brief TODO **/
+	Formula* flatten(Formula*);
+
 	/** \brief Recursively rewrite all function terms to their predicate form **/
 	Formula* graphFunctions(Formula* f);	
 
@@ -355,6 +371,12 @@ namespace FormulaUtils {
 	Formula* moveThreeValuedTerms(Formula*,AbstractStructure*,PosContext,bool cpsupport=false,
 								const std::set<const PFSymbol*> cpsymbols=std::set<const PFSymbol*>());
 
+	/** \brief Returns true iff at least one FuncTerm occurs in the given formula **/
+	bool containsFuncTerms(Formula* f);
+
+	/** \brief Replace the given term by the given variable in the given formula **/
+	Formula* substitute(Formula*, Term*, Variable*);
+
 	/** \brief Returns true iff the aggregate formula is monotone **/
 	bool isMonotone(const AggForm* af);
 
@@ -362,9 +384,10 @@ namespace FormulaUtils {
 	bool isAntimonotone(const AggForm* af);
 
 	/** \brief Create the formula 'true' **/
-	BoolForm*	trueform();
+	BoolForm*	trueFormula();
+
 	/** \brief Create the formula 'false' **/
-	BoolForm*	falseform();
+	BoolForm*	falseFormula();
 }
 
 namespace TermUtils {
@@ -408,7 +431,7 @@ class Rule {
 		PredForm*					head()			const { return _head;		}
 		Formula*					body()			const { return _body;		}
 		const ParseInfo&			pi()			const { return _pi;			}
-		const std::set<Variable*>&	quantvars()		const { return _quantvars;	}
+		const std::set<Variable*>&	quantVars()		const { return _quantvars;	}
 
 		// Visitor
 		void	accept(TheoryVisitor* v) const;
@@ -469,6 +492,13 @@ class Definition : public AbstractDefinition {
 		// output
 		std::ostream& put(std::ostream&, bool longnames = true, unsigned int spaces = 0) const;
 };
+
+namespace DefinitionUtils {
+
+	/** Compute the open symbols of a definition **/
+	std::set<PFSymbol*>	opens(Definition*);
+
+}
 
 /***************************
 	Fixpoint definitions
@@ -604,6 +634,7 @@ class Theory : public AbstractTheory {
 		void	sentence(unsigned int n, Formula* f)		{ _sentences[n] = f;			}
 		void	definition(unsigned int n, Definition* d)	{ _definitions[n] = d;			}
 		void	fixpdef(unsigned int n, FixpDef* d)			{ _fixpdefs[n] = d;				}
+		void	remove(Definition* d);
 
 		std::vector<Formula*>&		sentences()		{ return _sentences;	}
 		std::vector<Definition*>&	definitions()	{ return _definitions;	}
@@ -635,13 +666,19 @@ namespace TheoryUtils {
 	void flatten(AbstractTheory*);			
 
 	/** \brief Rewrite chains of equalities to a conjunction or disjunction of atoms. **/
-	void removeEqchains(AbstractTheory*);	
+	void removeEqChains(AbstractTheory*);	
 
 	/** \brief Rewrite (! x : phi & chi) to ((! x : phi) & (!x : chi)), and similarly for ?. **/
 	void moveQuantifiers(AbstractTheory*);	
 
 	/** \brief Rewrite the theory so that there are no nested terms **/
 	void removeNesting(AbstractTheory*);
+
+	/** \brief Rewrite (F(x) = y) or (y = F(x)) to Graph_F(x,y) **/
+	void graphFunctions(AbstractTheory* t);
+
+	/** \brief Rewrite (AggTerm op BoundTerm) to an aggregate formula (op = '=', '<', or '>') **/
+	void graphAggregates(AbstractTheory* t);
 
 	/** \brief Replace all definitions in the theory by their completion **/
 	void completion(AbstractTheory*);

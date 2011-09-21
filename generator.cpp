@@ -11,6 +11,8 @@
 #include "checker.hpp"
 #include "fobdd.hpp"
 #include "generator.hpp"
+#include "term.hpp"
+#include "theory.hpp"
 #include <cstdlib>
 #include <typeinfo>
 #include <iostream>
@@ -101,31 +103,31 @@ class StrLessGenerator : public InstGenerator {
 		mutable SortIterator	_right;
 	public:
 		StrLessGenerator(SortTable* st, SortTable* fixme, const DomainElement** lv, const DomainElement** rv, bool inp) : 
-			_table(st), _leftvar(lv), _rightvar(rv), _leftisinput(inp), _left(_table->sortbegin()), _right(_table->sortbegin()) { }
+			_table(st), _leftvar(lv), _rightvar(rv), _leftisinput(inp), _left(_table->sortBegin()), _right(_table->sortBegin()) { }
 		bool first() const {
-			if(_leftisinput) _left = _table->sortiterator(*_leftvar);
-			else _left = _table->sortbegin();
+			if(_leftisinput) { _left = _table->sortIterator(*_leftvar); }
+			else { _left = _table->sortBegin(); }
 			_right = _left;
 			if(_right.hasNext()) {
 				++_right;
 				if(_right.hasNext()) {
 					*_rightvar = *_right;
-					if(!_leftisinput) *_leftvar = *_left;
+					if(not _leftisinput) { *_leftvar = *_left; }
 					return true;
 				}
-				else return false;
+				else { return false; }
 			}
-			else return false;
+			else { return false; }
 		}
 
 		bool next() const {
 			++_right;
 			if(_right.hasNext()) {
 				*_rightvar = *_right;
-				if(!_leftisinput) *_leftvar = *_left;
+				if(not _leftisinput) { *_leftvar = *_left; }
 				return true;
 			}
-			else if(!_leftisinput) {
+			else if(not _leftisinput) {
 				++_left;
 				if(_left.hasNext()) {
 					_right = _left;
@@ -135,11 +137,11 @@ class StrLessGenerator : public InstGenerator {
 						*_leftvar = *_left;
 						return true;
 					}
-					else return false;
+					else { return false; }
 				}
-				else return false;
+				else { return false; }
 			}
-			else return false;
+			else { return false; }
 		}
 };
 
@@ -154,20 +156,20 @@ class StrGreaterGenerator : public InstGenerator {
 		mutable SortIterator	_right;
 	public:
 		StrGreaterGenerator(SortTable* st, SortTable* fixme, const DomainElement** lv, const DomainElement** rv, bool inp) : 
-			_table(st), _leftvar(lv), _rightvar(rv), _leftisinput(inp), _left(_table->sortbegin()), _right(_table->sortbegin()) { }
+			_table(st), _leftvar(lv), _rightvar(rv), _leftisinput(inp), _left(_table->sortBegin()), _right(_table->sortBegin()) { }
 		bool first() const {
-			if(_leftisinput) _left = _table->sortiterator(*_leftvar);
-			else _left = _table->sortbegin();
-			_right = _table->sortbegin();
+			if(_leftisinput) { _left = _table->sortIterator(*_leftvar); }
+			else { _left = _table->sortBegin(); }
+			_right = _table->sortBegin();
 			if(_left.hasNext() && _right.hasNext()) {
 				if(*(*_left) > *(*_right)) {
 					*_rightvar = *_right;
-					if(!_leftisinput) *_leftvar = *_left;
+					if(not _leftisinput) { *_leftvar = *_left; }
 					return true;
 				}
-				else return next();
+				else { return next(); }
 			}
-			else return false;
+			else { return false; }
 		}
 
 		bool next() const {
@@ -175,24 +177,24 @@ class StrGreaterGenerator : public InstGenerator {
 			if(_left.hasNext() && _right.hasNext()) {
 				if(*(*_left) > *(*_right)) {
 					*_rightvar = *_right;
-					if(!_leftisinput) *_leftvar = *_left;
+					if(not _leftisinput) { *_leftvar = *_left; }
 					return true;
 				}
 			}
-			if(!_leftisinput && _left.hasNext()) {
+			if(not _leftisinput && _left.hasNext()) {
 				++_left;
-				_right = _table->sortbegin();
+				_right = _table->sortBegin();
 				if(_left.hasNext() && _right.hasNext()) {
 					if(*(*_left) > *(*_right)) {
 						*_rightvar = *_right;
 						*_leftvar = *_left;
 						return true;
 					}
-					else return false;
+					else { return false; }
 				}
-				else return false;
+				else { return false; }
 			}
-			else return false;
+			else { return false; }
 		}
 };
 
@@ -221,7 +223,7 @@ class InvUNAGenerator : public InstGenerator {
 				if(_universe.tables()[_outpos[n]]->contains(c->arg(_outpos[n]))) {
 					*(_outvars[n]) = c->arg(_outpos[n]);
 				}
-				else break;
+				else { break; }
 			}
 			return (n == _outpos.size());
 		}
@@ -241,7 +243,7 @@ class PlusGenerator : public InstGenerator {
 		PlusGenerator(const DomainElement** in1, const DomainElement** in2, const DomainElement** out, bool i, SortTable* dom) :
 			_in1(in1), _in2(in2), _out(out), _int(i), _outdom(dom) { }
 		bool first() const { 
-			if(_int) *_out = DomainElementFactory::instance()->create((*_in1)->value()._int + (*_in2)->value()._int);	
+			if(_int) { *_out = DomainElementFactory::instance()->create((*_in1)->value()._int + (*_in2)->value()._int);	}
 			else {
 				double d1 = (*_in1)->type() == DET_DOUBLE ? (*_in1)->value()._double : double((*_in1)->value()._int);
 				double d2 = (*_in2)->type() == DET_DOUBLE ? (*_in2)->value()._double : double((*_in2)->value()._int);
@@ -263,7 +265,7 @@ class MinusGenerator : public InstGenerator {
 		MinusGenerator(const DomainElement** in1, const DomainElement** in2, const DomainElement** out, bool i, SortTable* dom) :
 			_in1(in1), _in2(in2), _out(out), _int(i), _outdom(dom) { }
 		bool first() const { 
-			if(_int) *_out = DomainElementFactory::instance()->create((*_in1)->value()._int - (*_in2)->value()._int);	
+			if(_int) { *_out = DomainElementFactory::instance()->create((*_in1)->value()._int - (*_in2)->value()._int); }
 			else {
 				double d1 = (*_in1)->type() == DET_DOUBLE ? (*_in1)->value()._double : double((*_in1)->value()._int);
 				double d2 = (*_in2)->type() == DET_DOUBLE ? (*_in2)->value()._double : double((*_in2)->value()._int);
@@ -285,7 +287,7 @@ class TimesGenerator : public InstGenerator {
 		TimesGenerator(const DomainElement** in1, const DomainElement** in2, const DomainElement** out, bool i, SortTable* dom) :
 			_in1(in1), _in2(in2), _out(out), _int(i), _outdom(dom) { }
 		bool first() const { 
-			if(_int) *_out = DomainElementFactory::instance()->create((*_in1)->value()._int * (*_in2)->value()._int);	
+			if(_int) { *_out = DomainElementFactory::instance()->create((*_in1)->value()._int * (*_in2)->value()._int);	}
 			else {
 				double d1 = (*_in1)->type() == DET_DOUBLE ? (*_in1)->value()._double : double((*_in1)->value()._int);
 				double d2 = (*_in2)->type() == DET_DOUBLE ? (*_in2)->value()._double : double((*_in2)->value()._int);
@@ -308,7 +310,7 @@ class DivGenerator : public InstGenerator {
 			_in1(in1), _in2(in2), _out(out), _int(i), _outdom(dom) { }
 		bool first() const { 
 			if(_int) {
-				if((*_in2)->value()._int == 0) return false;
+				if((*_in2)->value()._int == 0) { return false; }
 				*_out = DomainElementFactory::instance()->create((*_in1)->value()._int * (*_in2)->value()._int);	
 			}
 			else {
@@ -339,11 +341,11 @@ class InvAbsGenerator : public InstGenerator {
 				double d = (*_in)->type() == DET_DOUBLE ? (*_in)->value()._double : double((*_in)->value()._int);
 				*_out = DomainElementFactory::instance()->create(-d);
 			}
-			if(_outdom->contains(*_out)) return true;
-			else return next();
+			if(_outdom->contains(*_out)) { return true; }
+			else { return next(); }
 		}
 		bool next()	const { 
-			if(*_out == *_in) return false;
+			if(*_out == *_in) { return false; }
 			else { *_out = *_in; return _outdom->contains(*_out);	}
 		}
 };
@@ -425,9 +427,9 @@ bool SimpleFuncGenerator::first() const {
 			else if(*_invars[_check] == d) {
 				return true;
 			}
-			else return next();
+			else { return next(); }
 		}
-		else return next();
+		else { return next(); }
 	}
 	else return false;
 }
@@ -460,18 +462,18 @@ class EqualGenerator : public InstGenerator {
 		mutable SortIterator	_curr;
 	public:
 		EqualGenerator(const DomainElement** in, const DomainElement** out, SortTable* outdom) : 
-			_in(in), _out(out), _indom(0), _outdom(outdom), _curr(_outdom->sortbegin()) { }
+			_in(in), _out(out), _indom(0), _outdom(outdom), _curr(_outdom->sortBegin()) { }
 		EqualGenerator(const DomainElement** in, const DomainElement** out, SortTable* indom, SortTable* outdom) : 
-			_in(in), _out(out), _indom(indom), _outdom(outdom), _curr(_indom->sortbegin()) { }
+			_in(in), _out(out), _indom(indom), _outdom(outdom), _curr(_indom->sortBegin()) { }
 		bool first() const { 
 			if(_indom) {
-				_curr = _indom->sortbegin();
-				if(!_curr.hasNext()) return false;
+				_curr = _indom->sortBegin();
+				if(not _curr.hasNext()) { return false; }
 				*_in = *_curr;
 			}
 			*_out = *_in;	
-			if(_outdom->contains(*_out)) return true;
-			else return next();
+			if(_outdom->contains(*_out)) { return true; }
+			else { return next(); }
 		}
 		bool next()	const { 
 			if(_indom) {
@@ -479,7 +481,7 @@ class EqualGenerator : public InstGenerator {
 				while(_curr.hasNext()) {
 					*_in = *_curr;
 					*_out = *_in;
-					if(_outdom->contains(*_out)) return true;
+					if(_outdom->contains(*_out)) { return true; }
 					++_curr;
 				}
 			}
@@ -540,7 +542,7 @@ class SortInstGenerator : public InstGenerator {
 		mutable SortIterator		_currpos;
 	public:
 		SortInstGenerator(const InternalSortTable* t, const DomainElement** out) : 
-			_table(t), _outvar(out), _currpos(t->sortbegin()) { }
+			_table(t), _outvar(out), _currpos(t->sortBegin()) { }
 		bool first() const;
 		bool next() const;
 };
@@ -767,7 +769,7 @@ bool GenerateAndTestGenerator::first() const {
 bool SortInstGenerator::first() const {
 	if(_table->approxEmpty()) return false;
 	else {
-		_currpos = _table->sortbegin();
+		_currpos = _table->sortBegin();
 		if(_currpos.hasNext()) { 
 			*_outvar = *_currpos; 
 			return true;	
@@ -942,19 +944,22 @@ InstGenerator* GeneratorFactory::create(const vector<const DomainElement**>& var
 	GeneratorNode* node = 0;
 	vector<SortTable*>::const_reverse_iterator jt = tabs.rbegin();
 	for(vector<const DomainElement**>::const_reverse_iterator it = vars.rbegin(); it != vars.rend(); ++it, ++jt) {
-		SortInstGenerator* tig = new SortInstGenerator((*jt)->interntable(),*it);
+		SortInstGenerator* tig = new SortInstGenerator((*jt)->internTable(),*it);
 		if(vars.size() == 1) {
 			gen = tig;
 			break;
 		}
-		else if(it == vars.rbegin()) node = new LeafGeneratorNode(tig);
-		else node = new OneChildGeneratorNode(tig,node);
+		else if(it == vars.rbegin()) { node = new LeafGeneratorNode(tig); }
+		else { node = new OneChildGeneratorNode(tig,node); }
 	}
-	if(!gen) gen = new TreeInstGenerator(node);
+	if(not gen) { gen = new TreeInstGenerator(node); }
 	return gen;
 }
 
 InstGenerator*	GeneratorFactory::create(const PredTable* pt, vector<bool> pattern, const vector<const DomainElement**>& vars, const Universe& universe) {
+//cerr << "Create on table " << pt << endl;
+//cerr << "Pattern = "; for(unsigned int n = 0; n < pattern.size(); ++n) cerr << (pattern[n] ? "true " : "false "); cerr << endl;
+//cerr << "Vars = "; for(unsigned int n = 0; n < vars.size(); ++n) cerr << "  " << vars[n]; cerr << endl;
 	_table = pt;
 	_pattern = pattern;
 	_vars = vars;
@@ -971,12 +976,21 @@ InstGenerator*	GeneratorFactory::create(const PredTable* pt, vector<bool> patter
 
 	unsigned int firstout = 0;
 	for( ; firstout < pattern.size(); ++firstout) {
-		if(!pattern[firstout]) break;
+		if(not pattern[firstout]) { break; }
 	}
 	if(firstout == pattern.size()) {	// no output variables
-		return new SimpleLookupGenerator(pt,vars,_universe);
+		if(typeid(*(pt->internTable())) != typeid(BDDInternalPredTable)) {
+//cerr << "result is a simple lookup generator " << endl;
+			return new SimpleLookupGenerator(pt,vars,_universe);
+		}
+		else { 
+//cerr << "result is a bdd lookup generator" << endl;
+			StructureVisitor::visit(pt);
+			return _generator;
+		}
 	}
 	else {
+//cerr << "not a lookup generator" << endl;
 		StructureVisitor::visit(pt);
 		return _generator;
 	}
@@ -994,8 +1008,10 @@ BDDToGenerator::BDDToGenerator(FOBDDManager* manager) : _manager(manager) { }
 
 InstGenerator* BDDToGenerator::create(const FOBDD* bdd, const vector<bool>& pattern, const vector<const DomainElement**>& vars, const vector<const FOBDDVariable*>& bddvars, AbstractStructure* structure, const Universe& universe) {
 
-cerr << "Creating a generator for\n";
-_manager->put(cerr,bdd);
+//cerr << "Create on bdd\n";
+//_manager->put(cerr,bdd);
+//cerr << "Pattern = "; for(unsigned int n = 0; n < pattern.size(); ++n) cerr << (pattern[n] ? "true " : "false "); cerr << endl;
+//cerr << "bddvars = "; for(unsigned int n = 0; n < bddvars.size(); ++n) cerr << "  " << *(bddvars[n]->variable()); cerr << endl;
 
 	// Detect double occurrences
 	vector<unsigned int> firstocc;
@@ -1126,9 +1142,322 @@ GeneratorNode* BDDToGenerator::createnode(const FOBDD* bdd, const vector<bool>& 
 	}
 }
 
+InstGenerator* BDDToGenerator::create(PredForm* atom, const vector<bool>& pattern, const vector<const DomainElement**>& vars, const vector<Variable*>& atomvars, AbstractStructure* structure, bool inverse, const Universe& universe) {
+
+//cerr << "Create on atom " << *atom << endl;
+//cerr << "Pattern = "; for(unsigned int n = 0; n < pattern.size(); ++n) cerr << (pattern[n] ? "true " : "false "); cerr << endl;
+//cerr << "Atomvars = "; for(unsigned int n = 0; n < atomvars.size(); ++n) cerr << "  " << *(atomvars[n]) << ' ' << atomvars[n]; cerr << endl;
+//cerr << "Inverse = " << (inverse ? "true" : "false") << endl;
+
+	if(FormulaUtils::containsFuncTerms(atom)) {
+
+		bool allinput = true;
+		for(auto it = pattern.begin(); it != pattern.end(); ++it) {
+			if(!(*it)) { allinput = false; break; }
+		}
+		if(allinput) {
+			for(unsigned int n = 0; n < pattern.size(); ++n) {
+				Term* solvedterm = solve(atom,atomvars[n]);
+				if(solvedterm) {
+					vector<Term*> newargs(2); 
+					newargs[0] = new VarTerm(atomvars[n],TermParseInfo()); newargs[1] = solvedterm;
+					PredForm* newatom = new PredForm(atom->sign(),atom->symbol(),newargs,atom->pi().clone());
+					delete(atom);
+					atom = newatom;
+					break;
+				}
+			}
+		}
+		else {
+
+			// The atom is of one of the following forms: 
+			//	(A)		P(t1,...,tn), 
+			//	(B)		F(t1,...,tn) = t, 
+			//  (C)		t = F(t1,...,tn),
+			//  (D)		(t_1 * x_11 * ... * x_1n_1) + ... + (t_m * x_m1 * ... * x_mn_m) = 0,
+			//  (E)		0 = (t_1 * x_11 * ... * x_1n_1) + ... + (t_m * x_m1 * ... * x_mn_m).
+
+			// Convert all cases to case (A)
+			if(atom->symbol()->name() == "=/2") {	// cases (B), (C), (D), and (E)
+				if(typeid(*(atom->subterms()[0])) == typeid(DomainTerm)) {	// Case (C) or (E)
+					assert(typeid(*(atom->subterms()[1])) == typeid(FuncTerm));
+					FuncTerm* ft = dynamic_cast<FuncTerm*>(atom->subterms()[1]);
+					if(SortUtils::resolve(ft->sort(),VocabularyUtils::floatsort()) && (ft->function()->name() == "*/2" || ft->function()->name() == "+/2")) {	// Case (E)
+						unsigned int n = 0;
+						for(unsigned int n = 0; n < pattern.size(); ++n) {
+							if(!pattern[n]) {
+								Term* solvedterm = solve(atom,atomvars[n]);
+								if(solvedterm) {
+									vector<Term*> newargs(2); 
+									newargs[0] = new VarTerm(atomvars[n],TermParseInfo()); newargs[1] = solvedterm;
+									PredForm* newatom = new PredForm(atom->sign(),atom->symbol(),newargs,atom->pi().clone());
+									delete(atom);
+									atom = newatom;
+									break;
+								}
+							}
+						}
+						if(n == pattern.size()) {
+							vector<Term*> vt = ft->subterms(); vt.push_back(atom->subterms()[0]);
+							PredForm* newatom = new PredForm(atom->sign(),ft->function(),vt,atom->pi().clone());
+							delete(atom); delete(ft);
+							atom = newatom;
+						}
+					}
+					else {	// Case (C)
+						vector<Term*> vt = ft->subterms(); vt.push_back(atom->subterms()[0]);
+						PredForm* newatom = new PredForm(atom->sign(),ft->function(),vt,atom->pi().clone());
+						delete(atom); delete(ft);
+						atom = newatom;
+					}
+				}
+				else if(typeid(*(atom->subterms()[1])) == typeid(DomainTerm)) {	// Case (B) or (D)
+					assert(typeid(*(atom->subterms()[0])) == typeid(FuncTerm));
+					FuncTerm* ft = dynamic_cast<FuncTerm*>(atom->subterms()[0]);
+					if(SortUtils::resolve(ft->sort(),VocabularyUtils::floatsort()) && (ft->function()->name() == "*/2" || ft->function()->name() == "+/2")) {	// Case (D)
+						unsigned int n = 0;
+						for(unsigned int n = 0; n < pattern.size(); ++n) {
+							if(!pattern[n]) {
+								Term* solvedterm = solve(atom,atomvars[n]);
+								if(solvedterm) {
+									vector<Term*> newargs(2); 
+									newargs[0] = new VarTerm(atomvars[n],TermParseInfo()); newargs[1] = solvedterm;
+									PredForm* newatom = new PredForm(atom->sign(),atom->symbol(),newargs,atom->pi().clone());
+									delete(atom);
+									atom = newatom;
+									break;
+								}
+							}
+						}
+						if(n == pattern.size()) {
+							vector<Term*> vt = ft->subterms(); vt.push_back(atom->subterms()[1]);
+							PredForm* newatom = new PredForm(atom->sign(),ft->function(),vt,atom->pi().clone());
+							delete(atom); delete(ft);
+							atom = newatom;
+						}
+					}
+					else {	// Case (B)
+						vector<Term*> vt = ft->subterms(); vt.push_back(atom->subterms()[1]);
+						PredForm* newatom = new PredForm(atom->sign(),ft->function(),vt,atom->pi().clone());
+						delete(atom); delete(ft);
+						atom = newatom;
+					}
+				}
+				else if(typeid(*(atom->subterms()[0])) == typeid(FuncTerm)) {	// Case (B)
+					FuncTerm* ft = dynamic_cast<FuncTerm*>(atom->subterms()[0]);
+					vector<Term*> vt = ft->subterms(); vt.push_back(atom->subterms()[1]);
+					PredForm* newatom = new PredForm(atom->sign(),ft->function(),vt,atom->pi().clone());
+					delete(atom); delete(ft);
+					atom = newatom;
+				}
+				else {	// Case (C)
+					FuncTerm* ft = dynamic_cast<FuncTerm*>(atom->subterms()[1]);
+					vector<Term*> vt = ft->subterms(); vt.push_back(atom->subterms()[0]);
+					PredForm* newatom = new PredForm(atom->sign(),ft->function(),vt,atom->pi().clone());
+					delete(atom); delete(ft);
+					atom = newatom;
+				}
+			}
+		}
+	}
+
+	if(FormulaUtils::containsFuncTerms(atom)) {
+//cerr << "HIERZO " << *atom << endl;
+		Formula* newform = FormulaUtils::removeNesting(atom,PC_NEGATIVE);
+		newform = FormulaUtils::removeEqChains(newform);
+		newform = FormulaUtils::graphFunctions(newform);
+		newform = FormulaUtils::flatten(newform);
+//cerr << "DAARZO " << *newform << endl;
+		assert(typeid(*newform) == typeid(QuantForm));
+		QuantForm* quantform = dynamic_cast<QuantForm*>(newform);
+		assert(typeid(*(quantform->subformula())) == typeid(BoolForm));
+		BoolForm* boolform = dynamic_cast<BoolForm*>(quantform->subformula());
+		vector<PredForm*> conjunction;
+		for(auto it = boolform->subformulas().begin(); it != boolform->subformulas().end(); ++it) {
+			assert(typeid(*(*it)) == typeid(PredForm));
+			conjunction.push_back(dynamic_cast<PredForm*>(*it));
+		}
+		PredForm* origatom = conjunction.back();
+		set<Variable*> still_free;
+		for(unsigned int n = 0; n < pattern.size(); ++n) {
+			if(not pattern[n]) { still_free.insert(atomvars[n]); }
+		}
+		for(auto it = quantform->quantVars().begin(); it != quantform->quantVars().end(); ++it) {
+			still_free.insert(*it);
+		}
+		set<PredForm*> atoms_to_order(conjunction.begin(),conjunction.end());
+		vector<PredForm*> orderedconjunction;
+//cerr << "Start ordering atoms " << endl;
+//cerr << "Still free:";
+//for(auto it = still_free.begin(); it != still_free.end(); ++it) cerr << " " << *(*it);
+//cerr << endl;
+		while(!atoms_to_order.empty()) {
+			PredForm* bestatom = 0;
+			double bestcost = numeric_limits<double>::max();
+			for(auto it = atoms_to_order.begin(); it != atoms_to_order.end(); ++it) {
+//cerr << "Checking atom " << *(*it) << endl;
+				bool currinverse = false;
+				if(*it == origatom) { currinverse = inverse; }
+				set<Variable*> projectedfree;
+				for(auto jt = still_free.begin(); jt != still_free.end(); ++jt) {
+					if((*it)->freeVars().find(*jt) != (*it)->freeVars().end()) { projectedfree.insert(*jt); }
+				}
+				double currcost = FormulaUtils::estimatedCostAll(*it,projectedfree,currinverse,structure);
+//cerr << "Estimated cost = " << currcost << endl;
+				if(currcost < bestcost) {
+					bestcost = currcost;
+					bestatom = *it;
+				}
+			}
+			if(not bestatom) { bestatom = *(atoms_to_order.begin()); }
+//cerr << "Choose " << *bestatom << endl;
+			orderedconjunction.push_back(bestatom);
+			atoms_to_order.erase(bestatom);
+			for(auto it = bestatom->freeVars().begin(); it != bestatom->freeVars().end(); ++it) {
+				still_free.erase(*it);
+			}
+//cerr << "Still free:";
+//for(auto it = still_free.begin(); it != still_free.end(); ++it) cerr << " " << *(*it) << endl;
+//cerr << endl;
+		}
+
+		vector<InstGenerator*> generators;
+		vector<bool> branchpattern = pattern;
+		vector<const DomainElement**> branchvars = vars;
+		vector<Variable*> branchfovars = atomvars;
+		vector<SortTable*> branchuniverse = universe.tables();
+		for(auto it = quantform->quantVars().begin(); it != quantform->quantVars().end(); ++it) {
+			branchpattern.push_back(false);
+			branchvars.push_back(new const DomainElement*());
+			branchfovars.push_back(*it);
+			branchuniverse.push_back(structure->inter((*it)->sort()));
+		}
+		for(auto it = orderedconjunction.begin(); it != orderedconjunction.end(); ++it) {
+			vector<bool> kernpattern;
+			vector<const DomainElement**> kernvars;
+			vector<Variable*> kernfovars;
+			vector<SortTable*> kerntables;
+			vector<bool> newbranchpattern;
+			for(unsigned int n = 0; n < branchpattern.size(); ++n) {
+				if((*it)->freeVars().find(branchfovars[n]) == (*it)->freeVars().end()) {
+					newbranchpattern.push_back(branchpattern[n]);
+				}
+				else {
+					kernpattern.push_back(branchpattern[n]);
+					kernvars.push_back(branchvars[n]);
+					kernfovars.push_back(branchfovars[n]);
+					kerntables.push_back(branchuniverse[n]);
+					newbranchpattern.push_back(true);
+				}
+			}
+			branchpattern = newbranchpattern;
+			if(*it == origatom) 
+				generators.push_back(create(*it,kernpattern,kernvars,kernfovars,structure,inverse,Universe(kerntables)));
+			else 
+				generators.push_back(create(*it,kernpattern,kernvars,kernfovars,structure,false,Universe(kerntables)));
+		}
+
+		if(generators.size() == 1) return generators[0];
+		else {
+			GeneratorNode* node = 0;
+			for(auto it = generators.rbegin(); it != generators.rend(); ++it) {
+				if(node) node = new OneChildGeneratorNode(*it,node);
+				else node = new LeafGeneratorNode(*it);
+			}
+			return new TreeInstGenerator(node);
+		}
+	}
+	else {
+		// Create the pattern for the atom
+		vector<bool> atompattern;
+		vector<const DomainElement**> datomvars;
+		vector<SortTable*> atomtables;
+		for(vector<Term*>::const_iterator it = atom->subterms().begin(); it != atom->subterms().end(); ++it) {
+			if(typeid(*(*it)) == typeid(VarTerm)) {
+				Variable* var = (dynamic_cast<VarTerm*>(*it))->var();
+				unsigned int pos = 0;
+				for(; pos < pattern.size(); ++pos) {
+					if(atomvars[pos] == var) break;
+				}
+				assert(pos < pattern.size());
+				atompattern.push_back(pattern[pos]);
+				datomvars.push_back(vars[pos]);
+				atomtables.push_back(universe.tables()[pos]);
+			}
+			else if(typeid(*(*it)) == typeid(DomainTerm)) {
+				DomainTerm* domterm = dynamic_cast<DomainTerm*>(*it);
+				const DomainElement** domelement = new const DomainElement*();
+				*domelement = domterm->value(); 
+
+				Variable* var = new Variable(domterm->sort());
+				PredForm* newatom = dynamic_cast<PredForm*>(FormulaUtils::substitute(atom,domterm,var));
+
+				vector<bool> termpattern(pattern); termpattern.push_back(true);
+				vector<const DomainElement**> termvars(vars); termvars.push_back(domelement);
+				vector<Variable*> fotermvars(atomvars); fotermvars.push_back(var);
+				vector<SortTable*> termuniv(universe.tables()); termuniv.push_back(structure->inter(domterm->sort()));
+				
+				return create(newatom,termpattern,termvars,fotermvars,structure,inverse,Universe(termuniv));
+			}
+			else assert(false);
+		}
+
+		// Construct the generator
+		PFSymbol* symbol = atom->symbol();
+		const PredInter* inter = 0;
+		if(typeid(*symbol) == typeid(Predicate)) inter = structure->inter(dynamic_cast<Predicate*>(symbol));
+		else {
+			assert(typeid(*symbol) == typeid(Function));
+			inter = structure->inter(dynamic_cast<Function*>(symbol))->graphInter();
+		}
+		const PredTable* table = 0;
+		if(typeid(*(atom->symbol())) == typeid(Predicate)) {
+			Predicate* predicate = dynamic_cast<Predicate*>(atom->symbol());
+			switch(predicate->type()) {
+				case ST_NONE:
+					table = inverse ? inter->cf() : inter->ct();
+					break;
+				case ST_CT:
+					table = inverse ? inter->pf() : inter->ct();
+					break;
+				case ST_CF:
+					table = inverse ? inter->pt() : inter->cf();
+					break;
+				case ST_PT:
+					table = inverse ? inter->cf() : inter->pt();
+					break;
+				case ST_PF:
+					table = inverse ? inter->ct() : inter->pf();
+					break;
+				default:
+					assert(false);
+			}
+		}
+		else table = inverse ? inter->cf() : inter->ct();
+		GeneratorFactory gf;
+		return gf.create(table,atompattern,datomvars,Universe(atomtables));
+	}
+}
+
 InstGenerator* BDDToGenerator::create(const FOBDDKernel* kernel, const vector<bool>& pattern, const vector<const DomainElement**>& vars, const vector<const FOBDDVariable*>& kernelvars, AbstractStructure* structure, bool inverse, const Universe& universe) {
+
+//cerr << "Create on kernel\n";
+//_manager->put(cerr,kernel);
+//cerr << "Pattern = "; for(unsigned int n = 0; n < pattern.size(); ++n) cerr << (pattern[n] ? "true " : "false "); cerr << endl;
+//cerr << "kernelvars = "; for(unsigned int n = 0; n < kernelvars.size(); ++n) cerr << "  " << *(kernelvars[n]->variable()); cerr << endl;
+//cerr << "inverse = " << (inverse ? "true" : "false") << endl;
+
 	if(typeid(*kernel) == typeid(FOBDDAtomKernel)) {
 		const FOBDDAtomKernel* atom = dynamic_cast<const FOBDDAtomKernel*>(kernel);
+
+		if(_manager->containsFuncTerms(atom)) {
+			Formula* atomform = _manager->toFormula(atom);
+			assert(typeid(*atomform) == typeid(PredForm));
+			PredForm* pf = dynamic_cast<PredForm*>(atomform);
+			vector<Variable*> atomvars;
+			for(auto it = kernelvars.begin(); it != kernelvars.end(); ++it) atomvars.push_back((*it)->variable());
+			return create(pf,pattern,vars,atomvars,structure,inverse,universe);
+		}
 
 		// Create the pattern for the atom
 		vector<bool> atompattern;
@@ -1162,12 +1491,7 @@ InstGenerator* BDDToGenerator::create(const FOBDDKernel* kernel, const vector<bo
 				
 				return create(termkernel,termpattern,termvars,termkernelvars,structure,inverse,Universe(termuniv));
 			}
-			else {
-				assert(typeid(*(*it)) == typeid(FOBDDFuncTerm));
-				const FOBDDFuncTerm* functerm = dynamic_cast<const FOBDDFuncTerm*>(*it);
-				// TODO
-				return 0;
-			}
+			else assert(false);
 		}
 
 		// Construct the generator
@@ -1176,7 +1500,7 @@ InstGenerator* BDDToGenerator::create(const FOBDDKernel* kernel, const vector<bo
 		if(typeid(*symbol) == typeid(Predicate)) inter = structure->inter(dynamic_cast<Predicate*>(symbol));
 		else {
 			assert(typeid(*symbol) == typeid(Function));
-			inter = structure->inter(dynamic_cast<Function*>(symbol))->graphinter();
+			inter = structure->inter(dynamic_cast<Function*>(symbol))->graphInter();
 		}
 		const PredTable* table = 0;
 		switch(atom->type()) {
@@ -1250,6 +1574,18 @@ InstGenerator* BDDToGenerator::create(const FOBDDKernel* kernel, const vector<bo
 	}
 }
 
+Term* BDDToGenerator::solve(PredForm* atom, Variable* var) {
+	FOBDDFactory factory(_manager);
+	const FOBDD* bdd = factory.run(atom);
+	assert(!_manager->isTruebdd(bdd));
+	assert(!_manager->isFalsebdd(bdd));
+	const FOBDDKernel* kernel = bdd->kernel();
+	const FOBDDArgument* arg = _manager->getVariable(var);
+	const FOBDDArgument* solved = _manager->solve(kernel,arg);
+	if(solved) return _manager->toTerm(solved);
+	else return 0;
+}
+
 void GeneratorFactory::visit(const BDDInternalPredTable* table) {
 
 	// Add necessary types to the bdd to ensure, if possible, finite querying
@@ -1290,11 +1626,11 @@ void GeneratorFactory::visit(const FuncInternalPredTable* fipt) {
 }
 
 void GeneratorFactory::visit(const UnionInternalPredTable* ) {
-	// TODO
+	assert(false); // TODO
 }
 
 void GeneratorFactory::visit(const UnionInternalSortTable*) {
-	// TODO
+	assert(false); // TODO
 }
 
 void GeneratorFactory::visit(const AllNaturalNumbers* t) {
@@ -1406,17 +1742,31 @@ void GeneratorFactory::visit(const StrGreaterInternalPredTable* ) {
 }
 
 void GeneratorFactory::visit(const InverseInternalPredTable* iip) {
-	// TODO: optimize by checking the type of the internal table!!!
-	PredTable* temp = new PredTable(iip->table(),_universe);
-	_generator = new InverseInstGenerator(temp,_pattern,_vars);
+	InternalPredTable* interntable = iip->table();
+	if(typeid(*interntable) == typeid(InverseInternalPredTable)) {
+		dynamic_cast<InverseInternalPredTable*>(interntable)->table()->accept(this);
+	}
+	else if(typeid(*interntable) == typeid(BDDInternalPredTable)) {
+		BDDInternalPredTable* bddintern = dynamic_cast<BDDInternalPredTable*>(interntable);
+		const FOBDD* invertedbdd = bddintern->manager()->negation(bddintern->bdd());
+		BDDInternalPredTable* invertedbddtable = new BDDInternalPredTable(invertedbdd,bddintern->manager(),bddintern->vars(),bddintern->structure());
+		visit(invertedbddtable);
+	}
+	else if(typeid(*interntable) == typeid(FullInternalPredTable)) {
+		_generator = new EmptyGenerator();
+	}
+	else {
+		PredTable* temp = new PredTable(iip->table(),_universe);
+		_generator = new InverseInstGenerator(temp,_pattern,_vars);
+	}
 }
 
 void GeneratorFactory::visit(const FuncTable* ft) {
-	if(!_pattern.back()) {
+	if(not _pattern.back()) {
 		// TODO: for the input positions, change universe to the universe of ft if this is smaller
 		_generator = new SimpleFuncGenerator(ft,_pattern,_vars,_universe,_firstocc);
 	}
-	else ft->interntable()->accept(this);
+	else ft->internTable()->accept(this);
 }
 
 void GeneratorFactory::visit(const ProcInternalFuncTable* ) {
@@ -1471,7 +1821,7 @@ void GeneratorFactory::visit(const PlusInternalFuncTable* pift) {
 	}
 	else if(_firstocc[1] == 0) {
 		if(pift->isInt()) {
-			// TODO
+			assert(false); // TODO
 		}
 		else {
 			const DomainElement* two = DomainElementFactory::instance()->create(2);
@@ -1494,7 +1844,7 @@ void GeneratorFactory::visit(const MinusInternalFuncTable* pift) {
 		_generator = new PlusGenerator(_vars[1],_vars[2],_vars[0],pift->isInt(),_universe.tables()[0]);
 	}
 	else if(_firstocc[1] == 0) {
-		// TODO
+		assert(false); // TODO
 	}
 	else {
 		notyetimplemented("Infinite generator for subtraction pattern (out,out,in)");
@@ -1510,7 +1860,7 @@ void GeneratorFactory::visit(const TimesInternalFuncTable* pift) {
 		_generator = new DivGenerator(_vars[2],_vars[1],_vars[0],pift->isInt(),_universe.tables()[0]);
 	}
 	else if(_firstocc[1] == 0) {
-		// TODO
+		assert(false); // TODO
 	}
 	else {
 		notyetimplemented("Infinite generator for multiplication pattern (out,out,in)");
@@ -1527,7 +1877,7 @@ void GeneratorFactory::visit(const DivInternalFuncTable* pift) {
 		_generator = new TimesGenerator(_vars[1],_vars[2],_vars[0],pift->isInt(),_universe.tables()[0]);
 	}
 	else if(_firstocc[1] == 0) {
-		// TODO
+		assert(false); // TODO
 	}
 	else {
 		notyetimplemented("Infinite generator for division pattern (out,out,in)");

@@ -234,7 +234,6 @@ class DomainAtom {
 		std::string		toString()			const;
 
 		friend class DomainAtomFactory;
-		
 };
 
 class DomainAtomFactory {
@@ -312,7 +311,23 @@ class CartesianInternalTableIterator : public InternalTableIterator {
 		CartesianInternalTableIterator(const std::vector<SortIterator>& vsi, const std::vector<SortIterator>& low, bool h = true); 
 		~CartesianInternalTableIterator() { }
 		CartesianInternalTableIterator*	clone()	const;
+};
 
+class InstGenerator;
+
+class GeneratorInternalTableIterator : public InternalTableIterator {
+	private:
+		InstGenerator*						_generator;
+		std::vector<const DomainElement**>	_vars;
+		bool								_hasNext;
+		mutable ElementTable				_deref;
+		bool								hasNext()	const { return _hasNext;	}
+		const ElementTuple&					operator*()	const;
+		void								operator++();
+	public:
+		GeneratorInternalTableIterator(InstGenerator* generator, const std::vector<const DomainElement**>& vars, bool reset = true, bool h = true);
+		~GeneratorInternalTableIterator() { }	// FIXME: creates memory leak
+		GeneratorInternalTableIterator* clone() const { return new GeneratorInternalTableIterator(_generator,_vars,false,_hasNext);	}
 };
 
 class SortInternalTableIterator : public InternalTableIterator {
@@ -326,7 +341,6 @@ class SortInternalTableIterator : public InternalTableIterator {
 		SortInternalTableIterator(InternalSortIterator* isi) : _iter(isi) { }
 		~SortInternalTableIterator();
 		SortInternalTableIterator*	clone()	const;
-
 };
 
 class EnumInternalIterator : public InternalTableIterator {
@@ -355,14 +369,19 @@ class EnumInternalFuncIterator : public InternalTableIterator {
 			_iter(it), _end(end) { }
 		~EnumInternalFuncIterator() { }
 		EnumInternalFuncIterator*	clone()	const;
-
 };
 
 class SortTable;
 class PredTable;
 class InternalPredTable; 
 
-typedef std::pair<bool,unsigned int> tablesize;
+enum TableSizeType { TST_APPROXIMATED, TST_INFINITE, TST_EXACT, TST_UNKNOWN };
+struct tablesize {
+	TableSizeType	_type;
+	unsigned int	_size;
+	tablesize(TableSizeType tp,unsigned int sz) : _type(tp), _size(sz) { }
+	tablesize() : _type(TST_UNKNOWN), _size(0) { }
+};
 
 class Universe {
 	private:
@@ -400,7 +419,6 @@ class InternalFuncIterator : public InternalTableIterator {
 			_curr(c), _function(f) { }
 		~InternalFuncIterator() {	}
 		InternalFuncIterator* clone() const { return new InternalFuncIterator(_function,_curr);	}
-		
 };
 
 class InternalPredTable;
@@ -420,7 +438,6 @@ class ProcInternalTableIterator : public InternalTableIterator {
 			_curr(c), _univ(univ), _predicate(p) { }
 		~ProcInternalTableIterator() {	}
 		ProcInternalTableIterator* clone() const { return new ProcInternalTableIterator(_predicate,_curr,_univ);	}
-		
 };
 
 class UnionInternalIterator : public InternalTableIterator {
@@ -580,7 +597,6 @@ class IntInternalSortIterator : public InternalSortIterator {
 		IntInternalSortIterator(int iter = std::numeric_limits<int>::min()) : _iter(iter) { }
 		~IntInternalSortIterator() { }
 		IntInternalSortIterator* clone()	const { return new IntInternalSortIterator(_iter);	}
-
 };
 
 class FloatInternalSortIterator : public InternalSortIterator {
@@ -593,7 +609,6 @@ class FloatInternalSortIterator : public InternalSortIterator {
 		FloatInternalSortIterator(double iter = std::numeric_limits<double>::min()) : _iter(iter) { }
 		~FloatInternalSortIterator() { }
 		FloatInternalSortIterator* clone()	const { return new FloatInternalSortIterator(_iter);	}
-
 };
 
 class StringInternalSortIterator : public InternalSortIterator {
@@ -606,7 +621,6 @@ class StringInternalSortIterator : public InternalSortIterator {
 		StringInternalSortIterator(const std::string& iter = "") : _iter(iter) { }
 		~StringInternalSortIterator() { }
 		StringInternalSortIterator* clone()	const { return new StringInternalSortIterator(_iter);	}
-
 };
 
 class CharInternalSortIterator : public InternalSortIterator {
@@ -620,7 +634,6 @@ class CharInternalSortIterator : public InternalSortIterator {
 		CharInternalSortIterator(char iter = std::numeric_limits<char>::min(), bool end = false) : _iter(iter), _end(end) { }
 		~CharInternalSortIterator() { }
 		CharInternalSortIterator* clone()	const { return new CharInternalSortIterator(_iter);	}
-
 };
 
 class EnumInternalSortIterator : public InternalSortIterator {
@@ -712,7 +725,7 @@ class ProcInternalPredTable : public InternalPredTable {
 		bool			empty(const Universe&)			const;
 		bool			approxFinite(const Universe&)	const;
 		bool			approxEmpty(const Universe&)	const;
-		tablesize		size(const Universe&)			const { return tablesize(false,0);	}
+		tablesize		size(const Universe& univ)		const; 
 
 		bool	contains(const ElementTuple& tuple,const Universe&)		const;
 
@@ -723,7 +736,6 @@ class ProcInternalPredTable : public InternalPredTable {
 
 		// Visitor
 		void accept(StructureVisitor* v)	const;
-
 };
 
 class FOBDDManager;
@@ -759,7 +771,6 @@ class BDDInternalPredTable : public InternalPredTable {
 
 		// Visitor
 		void accept(StructureVisitor* v)	const;
-
 };
 
 class FullInternalPredTable : public InternalPredTable {
@@ -784,8 +795,6 @@ class FullInternalPredTable : public InternalPredTable {
 
 		// Visitor
 		void accept(StructureVisitor* v)	const;
-
-
 };
 
 class FuncTable;
@@ -815,7 +824,6 @@ class FuncInternalPredTable : public InternalPredTable {
 
 		// Visitor
 		void accept(StructureVisitor* v)	const;
-
 };
 
 class PredTable;
@@ -837,7 +845,7 @@ class UnionInternalPredTable : public InternalPredTable {
 		bool			empty(const Universe&)			const;
 		bool			approxFinite(const Universe&)	const;
 		bool			approxEmpty(const Universe&)	const;
-		tablesize		size(const Universe& )			const { return tablesize(false,0);	}
+		tablesize		size(const Universe&)			const;
 
 		bool	contains(const ElementTuple& tuple,const Universe&) const;	
 
@@ -851,11 +859,9 @@ class UnionInternalPredTable : public InternalPredTable {
 		void	addOutTable(InternalPredTable* t)	{ _outtables.push_back(t); t->incrementRef();	}
 		InternalPredTable*	add(const ElementTuple& tuple);		
 		InternalPredTable*	remove(const ElementTuple& tuple);	
-	
 
 		// Visitor
 		void accept(StructureVisitor* v)	const;
-
 };
 
 
@@ -870,10 +876,9 @@ class EnumeratedInternalPredTable : public InternalPredTable {
 		bool			empty(const Universe&)			const { return _table.empty();	}
 		bool			approxFinite(const Universe&)	const { return true;			}
 		bool			approxEmpty(const Universe&)	const { return _table.empty();	}
-		tablesize		size(const Universe&)			const { return tablesize(true,_table.size());	}
+		tablesize		size(const Universe&)			const { return tablesize(TST_EXACT,_table.size());	}
 
 		bool			contains(const ElementTuple& tuple, const Universe&) const;
-
 
 		InternalTableIterator*		begin(const Universe&) const;
 
@@ -887,7 +892,6 @@ class EnumeratedInternalPredTable : public InternalPredTable {
 
 		// Visitor
 		void accept(StructureVisitor* v)	const;
-
 };
 
 class InternalSortTable;
@@ -923,7 +927,6 @@ class EqualInternalPredTable : public ComparisonInternalPredTable {
 
 		// Visitor
 		void accept(StructureVisitor* v)	const;
-
 };
 
 /**
@@ -945,7 +948,6 @@ class StrLessInternalPredTable : public ComparisonInternalPredTable {
 
 		// Visitor
 		void accept(StructureVisitor* v)	const;
-
 };
 
 /**
@@ -996,11 +998,10 @@ class InverseInternalPredTable : public InternalPredTable {
 
 		InternalTableIterator*	begin(const Universe&) const;
 
-		void	interntable(InternalPredTable*);
+		void	internTable(InternalPredTable*);
 
 		// Visitor
 		void accept(StructureVisitor* v)	const;
-
 };
 
 /********************************
@@ -1039,8 +1040,8 @@ class InternalSortTable : public InternalPredTable {
 				InternalSortTable*	remove(const ElementTuple& tuple)	{ return remove(tuple[0]);	}
 		virtual InternalSortTable*	add(int i1, int i2)					= 0;
 
-		virtual InternalSortIterator*	sortbegin()				const = 0;
-		virtual InternalSortIterator*	sortiterator(const DomainElement*)	const = 0;
+		virtual InternalSortIterator*	sortBegin()				const = 0;
+		virtual InternalSortIterator*	sortIterator(const DomainElement*)	const = 0;
 				InternalTableIterator*	begin()					const;
 				InternalTableIterator*	begin(const Universe&)	const { return begin();	}
 
@@ -1067,12 +1068,12 @@ class UnionInternalSortTable : public InternalSortTable {
 		bool		empty()			const;
 		bool		approxFinite()	const;
 		bool		approxEmpty()	const;
-		tablesize	size()			const { return tablesize(false,0);	}
+		tablesize	size()			const;
 
 		bool	contains(const DomainElement*) const;	
 
-		InternalSortIterator*	sortbegin()	const;
-		InternalSortIterator*	sortiterator(const DomainElement*)	const;
+		InternalSortIterator*	sortBegin()	const;
+		InternalSortIterator*	sortIterator(const DomainElement*)	const;
 
 	public:
 		UnionInternalSortTable();
@@ -1088,11 +1089,9 @@ class UnionInternalSortTable : public InternalSortTable {
 		const DomainElement*	first()		const;
 		const DomainElement*	last()		const;
 		bool					isRange()	const;
-	
 
 		// Visitor
 		void accept(StructureVisitor* v)	const;
-
 };
 
 class InfiniteInternalSortTable : public InternalSortTable {
@@ -1103,7 +1102,7 @@ class InfiniteInternalSortTable : public InternalSortTable {
 		bool		empty()			const { return false;	}
 		bool		approxFinite()	const { return false;	}
 		bool		approxEmpty()	const { return false;	}
-		tablesize	size()			const { return tablesize(false,0);	}
+		tablesize	size()			const { return tablesize(TST_INFINITE,0);	}
 	protected:
 		virtual ~InfiniteInternalSortTable() { }
 };
@@ -1114,8 +1113,8 @@ class InfiniteInternalSortTable : public InternalSortTable {
 class AllNaturalNumbers : public InfiniteInternalSortTable {
 	private:
 		bool					contains(const DomainElement*)	const;
-		InternalSortIterator*	sortbegin()	const;
-		InternalSortIterator*	sortiterator(const DomainElement*)	const;
+		InternalSortIterator*	sortBegin()	const;
+		InternalSortIterator*	sortIterator(const DomainElement*)	const;
 
 	protected:
 		~AllNaturalNumbers() { }
@@ -1126,7 +1125,6 @@ class AllNaturalNumbers : public InfiniteInternalSortTable {
 
 		// Visitor
 		void accept(StructureVisitor* v)	const;
-
 };
 
 /**
@@ -1135,8 +1133,8 @@ class AllNaturalNumbers : public InfiniteInternalSortTable {
 class AllIntegers : public InfiniteInternalSortTable {
 	private:
 		bool					contains(const DomainElement*)	const;
-		InternalSortIterator*	sortbegin()	const;
-		InternalSortIterator*	sortiterator(const DomainElement*)	const;
+		InternalSortIterator*	sortBegin()	const;
+		InternalSortIterator*	sortIterator(const DomainElement*)	const;
 
 	protected:
 		~AllIntegers() { }
@@ -1147,7 +1145,6 @@ class AllIntegers : public InfiniteInternalSortTable {
 
 		// Visitor
 		void accept(StructureVisitor* v)	const;
-
 };
 
 /**
@@ -1156,8 +1153,8 @@ class AllIntegers : public InfiniteInternalSortTable {
 class AllFloats : public InfiniteInternalSortTable {
 	private:
 		bool					contains(const DomainElement*)	const;
-		InternalSortIterator*	sortbegin()	const;
-		InternalSortIterator*	sortiterator(const DomainElement*)	const;
+		InternalSortIterator*	sortBegin()	const;
+		InternalSortIterator*	sortIterator(const DomainElement*)	const;
 
 	protected:
 		~AllFloats() { }
@@ -1168,7 +1165,6 @@ class AllFloats : public InfiniteInternalSortTable {
 
 		// Visitor
 		void accept(StructureVisitor* v)	const;
-
 };
 
 /**
@@ -1177,8 +1173,8 @@ class AllFloats : public InfiniteInternalSortTable {
 class AllStrings : public InfiniteInternalSortTable {
 	private:
 		bool					contains(const DomainElement*)	const;
-		InternalSortIterator*	sortbegin()	const;
-		InternalSortIterator*	sortiterator(const DomainElement*)	const;
+		InternalSortIterator*	sortBegin()	const;
+		InternalSortIterator*	sortIterator(const DomainElement*)	const;
 
 	protected:
 		~AllStrings() { }
@@ -1189,7 +1185,6 @@ class AllStrings : public InfiniteInternalSortTable {
 
 		// Visitor
 		void accept(StructureVisitor* v)	const;
-
 };
 
 /**
@@ -1202,8 +1197,8 @@ class AllChars : public InternalSortTable {
 		InternalSortTable*		remove(const DomainElement*);
 		InternalSortTable*		add(int i1, int i2);
 
-		InternalSortIterator*	sortbegin()	const;
-		InternalSortIterator*	sortiterator(const DomainElement*)	const;
+		InternalSortIterator*	sortBegin()	const;
+		InternalSortIterator*	sortIterator(const DomainElement*)	const;
 
 		bool		finite()		const { return true;	}
 		bool		empty()			const { return false;	}
@@ -1218,7 +1213,6 @@ class AllChars : public InternalSortTable {
 
 		// Visitor
 		void accept(StructureVisitor* v)	const;
-
 };
 
 /**
@@ -1230,14 +1224,14 @@ class EnumeratedInternalSortTable : public InternalSortTable {
 
 		bool					contains(const DomainElement*)	const;
 
-		InternalSortIterator*	sortbegin()	const;
-		InternalSortIterator*	sortiterator(const DomainElement*)	const;
+		InternalSortIterator*	sortBegin()	const;
+		InternalSortIterator*	sortIterator(const DomainElement*)	const;
 
-		bool finite()		const { return true;			}
-		bool empty()		const { return _table.empty();	}	
-		bool approxFinite()	const { return true;			}
-		bool approxEmpty()	const { return _table.empty();	}
-		tablesize	size()	const { return tablesize(true,_table.size());	}
+		bool		finite()		const { return approxFinite();	}
+		bool		empty()			const { return approxEmpty();	}
+		bool 		approxFinite()	const { return true;			}
+		bool 		approxEmpty()	const { return _table.empty();	}
+		tablesize	size()			const { return tablesize(TST_EXACT,_table.size());	}
 	protected:
 	public:
 		EnumeratedInternalSortTable() { }
@@ -1252,7 +1246,6 @@ class EnumeratedInternalSortTable : public InternalSortTable {
 
 		// Visitor
 		void accept(StructureVisitor* v)	const;
-
 };
 
 /**
@@ -1268,7 +1261,7 @@ class IntRangeInternalSortTable : public InternalSortTable {
 		bool				empty()			const	{ return approxEmpty();		}
 		bool				approxFinite()	const	{ return true;				}
 		bool				approxEmpty()	const	{ return _first > _last;	}
-		tablesize			size()			const	{ return tablesize(true,_last - _first + 1);	}
+		tablesize			size()			const	{ return tablesize(TST_EXACT,_last - _first + 1);	}
 		InternalSortTable*	add(const DomainElement*);
 		InternalSortTable*	remove(const DomainElement*);
 		InternalSortTable*	add(int i1, int i2);
@@ -1278,13 +1271,11 @@ class IntRangeInternalSortTable : public InternalSortTable {
 		bool contains(const DomainElement*) const;
 		bool isRange()						const { return true;	}
 
-		InternalSortIterator*	sortbegin()	const;
-		InternalSortIterator*	sortiterator(const DomainElement*)	const;
-
+		InternalSortIterator*	sortBegin()	const;
+		InternalSortIterator*	sortIterator(const DomainElement*)	const;
 
 		// Visitor
 		void accept(StructureVisitor* v)	const;
-
 };
 
 /************************************
@@ -1304,7 +1295,7 @@ class InternalFuncTable {
 		void decrementRef();	//!< Delete one reference. Deletes the table if the number of references becomes zero.
 		void incrementRef();	//!< Add one reference
 
-		virtual bool			finite(const Universe&)	const = 0;	//!< Returns true iff the table is finite
+		virtual bool			finite(const Universe&)		const = 0;	//!< Returns true iff the table is finite
 		virtual	bool			empty(const Universe&)		const = 0;	//!< Returns true iff the table is empty
 
 		virtual bool			approxFinite(const Universe&)			const = 0;
@@ -1314,7 +1305,7 @@ class InternalFuncTable {
 		virtual tablesize		size(const Universe&)					const = 0;
 		
 				bool				 contains(const ElementTuple& tuple,const Universe&)	const;
-		virtual const DomainElement* operator[](const ElementTuple& tuple)	const = 0;	
+		virtual const DomainElement* operator[](const ElementTuple& tuple)					const = 0;	
 			//!< Returns the value of the tuple according to the array.
 
 		virtual	InternalFuncTable*	add(const ElementTuple&)	= 0;	//!< Add a tuple to the table
@@ -1324,7 +1315,6 @@ class InternalFuncTable {
 
 		// Visitor
 		virtual void accept(StructureVisitor* v)	const = 0;
-
 };
 
 class ProcInternalFuncTable : public InternalFuncTable {
@@ -1340,7 +1330,7 @@ class ProcInternalFuncTable : public InternalFuncTable {
 		bool		empty(const Universe&)			const; 
 		bool		approxFinite(const Universe&)	const;
 		bool		approxEmpty(const Universe&)	const; 
-		tablesize	size(const Universe&)			const { return tablesize(false,0);	}
+		tablesize	size(const Universe&)			const;
 		
 		const DomainElement*	operator[](const ElementTuple& tuple) const;
 		InternalFuncTable*		add(const ElementTuple&);	
@@ -1350,7 +1340,6 @@ class ProcInternalFuncTable : public InternalFuncTable {
 
 		// Visitor
 		void accept(StructureVisitor* v)	const;
-
 };
 
 class UNAInternalFuncTable : public InternalFuncTable {
@@ -1376,7 +1365,6 @@ class UNAInternalFuncTable : public InternalFuncTable {
 
 		// Visitor
 		void accept(StructureVisitor* v)	const;
-
 };
 
 /**
@@ -1395,7 +1383,7 @@ class EnumeratedInternalFuncTable : public InternalFuncTable {
 		bool		empty(const Universe&)			const { return _table.empty();					}
 		bool		approxFinite(const Universe&)	const { return true;							}
 		bool		approxEmpty(const Universe&)	const { return _table.empty();					}
-		tablesize	size(const Universe&)			const { return tablesize(true,_table.size());	}
+		tablesize	size(const Universe&)			const { return tablesize(TST_EXACT,_table.size());	}
 		
 		const DomainElement*	operator[](const ElementTuple& tuple) const;
 		InternalFuncTable*		add(const ElementTuple&);	
@@ -1405,7 +1393,6 @@ class EnumeratedInternalFuncTable : public InternalFuncTable {
 
 		// Visitor
 		void accept(StructureVisitor* v)	const;
-
 };
 
 class IntFloatInternalFuncTable : public InternalFuncTable {
@@ -1419,7 +1406,7 @@ class IntFloatInternalFuncTable : public InternalFuncTable {
 		bool		empty(const Universe&)			const { return false;	}
 		bool		approxFinite(const Universe&)	const { return false;	}
 		bool		approxEmpty(const Universe&)	const { return false;	}
-		tablesize	size(const Universe&)			const { return tablesize(false,0);	}
+		tablesize	size(const Universe&)			const { return tablesize(TST_INFINITE,0);	}
 
 		bool		isInt()	const { return _int;	}
 
@@ -1437,7 +1424,6 @@ class PlusInternalFuncTable : public IntFloatInternalFuncTable {
 
 		// Visitor
 		void accept(StructureVisitor* v)	const;
-
 };
 
 class MinusInternalFuncTable : public IntFloatInternalFuncTable {
@@ -1448,7 +1434,6 @@ class MinusInternalFuncTable : public IntFloatInternalFuncTable {
 
 		// Visitor
 		void accept(StructureVisitor* v)	const;
-
 };
 
 class TimesInternalFuncTable : public IntFloatInternalFuncTable {
@@ -1459,7 +1444,6 @@ class TimesInternalFuncTable : public IntFloatInternalFuncTable {
 
 		// Visitor
 		void accept(StructureVisitor* v)	const;
-
 };
 
 class DivInternalFuncTable : public IntFloatInternalFuncTable {
@@ -1470,7 +1454,6 @@ class DivInternalFuncTable : public IntFloatInternalFuncTable {
 
 		// Visitor
 		void accept(StructureVisitor* v)	const;
-
 };
 
 class AbsInternalFuncTable : public IntFloatInternalFuncTable {
@@ -1481,7 +1464,6 @@ class AbsInternalFuncTable : public IntFloatInternalFuncTable {
 
 		// Visitor
 		void accept(StructureVisitor* v)	const;
-
 };
 
 class UminInternalFuncTable : public IntFloatInternalFuncTable {
@@ -1492,7 +1474,6 @@ class UminInternalFuncTable : public IntFloatInternalFuncTable {
 
 		// Visitor
 		void accept(StructureVisitor* v)	const;
-
 };
 
 class ExpInternalFuncTable : public InternalFuncTable {
@@ -1501,7 +1482,7 @@ class ExpInternalFuncTable : public InternalFuncTable {
 		bool		empty(const Universe&)			const { return false;	}
 		bool		approxFinite(const Universe&)	const { return false;	}
 		bool		approxEmpty(const Universe&)	const { return false;	}
-		tablesize	size(const Universe&)			const { return tablesize(false,0);	}
+		tablesize	size(const Universe&)			const { return tablesize(TST_INFINITE,0);	}
 		const DomainElement*	operator[](const ElementTuple&)	const;
 
 		InternalFuncTable*	add(const ElementTuple&);
@@ -1514,7 +1495,6 @@ class ExpInternalFuncTable : public InternalFuncTable {
 
 		// Visitor
 		void accept(StructureVisitor* v)	const;
-
 };
 
 class ModInternalFuncTable : public InternalFuncTable {
@@ -1525,7 +1505,7 @@ class ModInternalFuncTable : public InternalFuncTable {
 		bool		empty(const Universe&)			const { return false;	}
 		bool		approxFinite(const Universe&)	const { return false;	}
 		bool		approxEmpty(const Universe&)	const { return false;	}
-		tablesize	size(const Universe&)			const { return tablesize(false,0);	}
+		tablesize	size(const Universe&)			const { return tablesize(TST_INFINITE,0);	}
 		const DomainElement*	operator[](const ElementTuple&)	const;
 
 		InternalFuncTable*	add(const ElementTuple&);
@@ -1535,9 +1515,7 @@ class ModInternalFuncTable : public InternalFuncTable {
 
 		// Visitor
 		void accept(StructureVisitor* v)	const;
-
 };
-
 
 
 
@@ -1563,12 +1541,15 @@ class AbstractTable {
 
 		virtual	bool	contains(const ElementTuple& tuple)	const = 0;	
 			//!< Returns true iff the table contains the tuple. 
+
+		virtual AbstractTable* materialize() const = 0;	//!< Try to replace a symbolic table by an enumerated one. 
+														//!< Returns 0 in case this is impossible, or the table was
+														//!< already enumerated
 			
 		virtual void	add(const ElementTuple& tuple)		= 0;	//!< Add a tuple to the table
 		virtual void	remove(const ElementTuple& tuple)	= 0;	//!< Remove a tuple from the table
 
 		virtual TableIterator		begin()	const = 0;
-
 };
 
 
@@ -1595,9 +1576,10 @@ class PredTable : public AbstractTable {
 
 		TableIterator		begin() const;
 
-		InternalPredTable*	interntable()	const { return _table;	}
+		InternalPredTable*	internTable()	const { return _table;	}
 
-		const Universe&		universe()	const { return _universe;	}
+		const Universe&		universe()		const { return _universe;	}
+		PredTable*			materialize()	const;
 };
 
 /**
@@ -1610,7 +1592,7 @@ class SortTable : public AbstractTable {
 		SortTable(InternalSortTable* table); 
 		~SortTable();
 
-		void	interntable(InternalSortTable*);
+		void	internTable(InternalSortTable*);
 
 		bool			finite()							const	{ return _table->finite();			}
 		bool			empty()								const	{ return _table->empty();			}
@@ -1626,14 +1608,15 @@ class SortTable : public AbstractTable {
 		void			remove(const ElementTuple& tuple);	
 		void			remove(const DomainElement* el);	
 		TableIterator 	begin()								const;
-		SortIterator 	sortbegin()							const;
-		SortIterator	sortiterator(const DomainElement*)	const;
+		SortIterator 	sortBegin()							const;
+		SortIterator	sortIterator(const DomainElement*)	const;
 
 		const DomainElement*	first()		const { return _table->first();	}
 		const DomainElement*	last()		const { return _table->last();	}
 		bool					isRange()	const { return _table->isRange();	}
 
-		InternalSortTable*	interntable()	const { return _table;	}
+		InternalSortTable*	internTable()	const { return _table;	}
+		SortTable*			materialize()	const;
 };
 
 /**
@@ -1663,10 +1646,10 @@ class FuncTable : public AbstractTable {
 
 		TableIterator	begin()	const;
 
-		InternalFuncTable*	interntable()	const { return _table;	}
+		InternalFuncTable*	internTable()	const { return _table;	}
 
-		const Universe&	universe() const { return _universe;	}
-
+		const Universe&		universe()		const { return _universe;	}
+		FuncTable*			materialize()	const;
 };
 
 
@@ -1678,7 +1661,6 @@ class FuncTable : public AbstractTable {
  *	Class to represent a four-valued interpretation for a predicate
  */
 class PredInter {
-	
 	private:
 		PredTable*	_ct;	//!< stores certainly true tuples
 		PredTable*	_cf;	//!< stores certainly false tuples
@@ -1686,7 +1668,6 @@ class PredInter {
 		PredTable*	_pf;	//!< stores possibly false tuples
 
 	public:
-		
 		PredInter(PredTable* ctpf, PredTable* cfpt, bool ct, bool cf);
 		PredInter(PredTable* ctpf, bool ct);
 
@@ -1699,6 +1680,7 @@ class PredInter {
 		void pt(PredTable*);		//!< Replace the possibly true (and certainly false) tuples
 		void pf(PredTable*);        //!< Replace the possibly false (and certainly true) tuples
 		void ctpt(PredTable*);		//!< Replace the certainly and possibly true tuples
+		void materialize();			//!< Replace symbolic tables by enumerated ones if possible
 
 		void makeTrue(const ElementTuple&);		//!< Make the given tuple true
 		void makeFalse(const ElementTuple&);	//!< Make the given tuple false
@@ -1716,7 +1698,6 @@ class PredInter {
 		bool				approxTwoValued()							const;
 		const Universe&		universe()									const { return _ct->universe();	}
 		PredInter*			clone(const Universe&)						const;
-
 };
 
 class AbstractStructure;
@@ -1785,25 +1766,24 @@ class StrLessThanInterGeneratorGenerator : public PredInterGeneratorGenerator {
  *	Class to represent a four-valued interpretation for functions
  */
 class FuncInter {
-
 	private:
 		FuncTable*	_functable;		//!< the function table (if the interpretation is two-valued, nullpointer otherwise).
 		PredInter*	_graphinter;	//!< the interpretation for the graph of the function
 
 	public:
-		
 		FuncInter(FuncTable* ft);
 		FuncInter(PredInter* pt) : _functable(0), _graphinter(pt) { }
 
 		~FuncInter();
 
-		void	graphinter(PredInter*);
-		void	functable(FuncTable*);
+		void	graphInter(PredInter*);
+		void	funcTable(FuncTable*);
 		void	makeTrue(const ElementTuple&);
 		void	makeFalse(const ElementTuple&);
+		void	materialize();			//!< Replace symbolic tables by enumerated ones if possible
 
-		PredInter*	graphinter()		const { return _graphinter;			}
-		FuncTable*	functable()			const { return _functable;			}
+		PredInter*	graphInter()		const { return _graphinter;			}
+		FuncTable*	funcTable()			const { return _functable;			}
 		bool		approxTwoValued()	const { return _functable != 0;		}
 
 		const Universe&	universe()	const { return _graphinter->universe();	}
@@ -1910,6 +1890,7 @@ class AbstractStructure {
 		virtual void	inter(Function* f, FuncInter* i) = 0;	//!< set the interpretation of f to i
 		virtual void	clean()	= 0;							//!< make three-valued interpretations that are in fact
 																//!< two-valued, two-valued.
+		virtual void	materialize() = 0;						//!< Convert symbolic tables containing a finite number of tuples to enumerated tables.
 
 		// Inspectors
 				const std::string&	name()						const { return _name;		}
@@ -1946,9 +1927,11 @@ class Structure : public AbstractStructure {
 		void	inter(Predicate* p, PredInter* i);	//!< set the interpretation of p to i
 		void	inter(Function* f, FuncInter* i);	//!< set the interpretation of f to i
 		void	addStructure(AbstractStructure*);	
-		void	clean();
 
-		void	functioncheck();	//!< check the correctness of the function tables
+		void	clean();		//!< Try to represent two-valued interpretations by one table instead of two.
+		void	materialize();	//!< Convert symbolic tables containing a finite number of tuples to enumerated tables.
+
+		void	functionCheck();	//!< check the correctness of the function tables
 		void	autocomplete();		//!< make the domains consistent with the predicate and function tables				
 
 		// Inspectors
@@ -1982,9 +1965,9 @@ namespace TableUtils {
 
 class StructureVisitor {
 	public:
-		virtual void visit(const PredTable* pt)					{ pt->interntable()->accept(this);	}
-		virtual void visit(const FuncTable* ft)					{ ft->interntable()->accept(this);	}
-		virtual void visit(const SortTable* st)					{ st->interntable()->accept(this);	}
+		virtual void visit(const PredTable* pt)					{ pt->internTable()->accept(this);	}
+		virtual void visit(const FuncTable* ft)					{ ft->internTable()->accept(this);	}
+		virtual void visit(const SortTable* st)					{ st->internTable()->accept(this);	}
 		virtual void visit(const ProcInternalPredTable*)		{	}
 		virtual void visit(const BDDInternalPredTable*)			{	}
 		virtual void visit(const FullInternalPredTable*)		{	}

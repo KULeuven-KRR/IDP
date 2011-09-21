@@ -75,7 +75,7 @@ class GroundTheory : public AbstractGroundTheory, public Policy {
 	std::set<int>			_printedsets;			//!< Set numbers produced by the translator that occur in the theory.
 	std::set<int>			_printedconstraints;	//!< Atoms for which a connection to CP constraints are added.
 	std::set<CPTerm*>		_foldedterms;
-	std::map<PFSymbol*, std::set<int> >		_defined;	//list of defined symbols and the heads which have a rule
+	std::map<PFSymbol*, std::set<int> >		_defined;	//!< List of defined symbols and the heads which have a rule.
 
 	/**
 	 * GroundTheory<Policy>::transformForAdd(vector<int>& vi, VIType vit, int defnr, bool skipfirst)
@@ -252,7 +252,7 @@ public:
 
 private:
 	void notifyDefined(int tseitin){
-		if(!translator()->hasSymbolFor(tseitin)){
+		if(not translator()->hasSymbolFor(tseitin)){
 			return;
 		}
 		PFSymbol* symbol = translator()->atom2symbol(tseitin);
@@ -284,7 +284,7 @@ public:
 			TsSet& tsset = translator()->groundset(setnr);
 			transformForAdd(tsset.literals(),VIT_SET,defnr);
 			std::vector<double> weights;
-			if(weighted) weights = tsset.weights();
+			if(weighted) { weights = tsset.weights(); }
 			Policy::polAdd(tsset,setnr, weighted);
 		}
 	}
@@ -309,13 +309,13 @@ public:
 			StrictWeakNTupleEquality de(f->arity());
 			StrictWeakNTupleOrdering ds(f->arity());
 
-			const PredTable* ct = structure()->inter(f)->graphinter()->ct();
-			const PredTable* pt = structure()->inter(f)->graphinter()->pt();
+			const PredTable* ct = structure()->inter(f)->graphInter()->ct();
+			const PredTable* pt = structure()->inter(f)->graphInter()->pt();
 			SortTable* st = structure()->inter(f->outsort());
 
 			ElementTuple input(f->arity(),0);
 			TableIterator tit = ct->begin();
-			SortIterator sit = st->sortbegin();
+			SortIterator sit = st->sortBegin();
 			std::vector<std::vector<int> > sets;
 			std::vector<bool> weak;
 			for(auto it = tuples.begin(); it != tuples.end(); ) {
@@ -330,7 +330,7 @@ public:
 						++sit;
 					}
 					++it;
-					if(sit.hasNext()) ++sit;
+					if(sit.hasNext()) { ++sit; }
 				}
 				else {
 					if(!sets.empty() && sit.hasNext()) weak.back() = true;
@@ -351,7 +351,7 @@ public:
 					sets.push_back(std::vector<int>(0));
 					weak.push_back(false);
 					input = it->first; input.pop_back();
-					sit = st->sortbegin();
+					sit = st->sortBegin();
 				}
 			}
 			for(unsigned int s = 0; s < sets.size(); ++s) {
@@ -395,7 +395,6 @@ public:
 
 	virtual void			accept(TheoryVisitor* v) const		{ v->visit(this);			}
 	virtual AbstractTheory*	accept(TheoryMutatingVisitor* v)	{ return v->visit(this);	}
-
 };
 
 #endif /* ABSTRACTGROUNDTHEORY_HPP_ */

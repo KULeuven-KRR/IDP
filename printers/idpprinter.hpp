@@ -61,7 +61,7 @@ public:
 		assert(isTheoryOpen());
 		Vocabulary* voc = structure->vocabulary();
 
-		for(std::map<std::string,std::set<Sort*> >::const_iterator it = voc->firstsort(); it != voc->lastsort(); ++it) {
+		for(std::map<std::string,std::set<Sort*> >::const_iterator it = voc->firstSort(); it != voc->lastSort(); ++it) {
 			for(std::set<Sort*>::const_iterator jt = it->second.begin(); jt != it->second.end(); ++jt) {
 				Sort* s = *jt;
 				if(!s->builtin()) {
@@ -72,7 +72,7 @@ public:
 				}
 			}
 		}
-		for(std::map<std::string,Predicate*>::const_iterator it = voc->firstpred(); it != voc->lastpred(); ++it) {
+		for(std::map<std::string,Predicate*>::const_iterator it = voc->firstPred(); it != voc->lastPred(); ++it) {
 			std::set<Predicate*> sp = it->second->nonbuiltins();
 			for(std::set<Predicate*>::iterator jt = sp.begin(); jt != sp.end(); ++jt) {
 				Predicate* p = *jt;
@@ -97,19 +97,19 @@ public:
 				}
 			}
 		}
-		for(std::map<std::string,Function*>::const_iterator it = voc->firstfunc(); it != voc->lastfunc(); ++it) {
+		for(std::map<std::string,Function*>::const_iterator it = voc->firstFunc(); it != voc->lastFunc(); ++it) {
 			std::set<Function*> sf = it->second->nonbuiltins();
 			for(std::set<Function*>::iterator jt = sf.begin(); jt != sf.end(); ++jt) {
 				Function* f = *jt;
 				FuncInter* fi = structure->inter(f);
 				if(fi->approxTwoValued()) {
-					FuncTable* ft = fi->functable();
+					FuncTable* ft = fi->funcTable();
 					output() << *f << " = ";
 					visit(ft);
 					output() << '\n';
 				}
 				else {
-					PredInter* pi = fi->graphinter();
+					PredInter* pi = fi->graphInter();
 					const PredTable* ct = pi->ct();
 					output() << *f << "<ct> = ";
 					printAsFunc(ct);
@@ -125,15 +125,15 @@ public:
 
 	void visit(const Vocabulary* v) {
 		assert(isTheoryOpen());
-		for(std::map<std::string,std::set<Sort*> >::const_iterator it = v->firstsort(); it != v->lastsort(); ++it) {
+		for(std::map<std::string,std::set<Sort*> >::const_iterator it = v->firstSort(); it != v->lastSort(); ++it) {
 			for(std::set<Sort*>::iterator jt = it->second.begin(); jt != it->second.end(); ++jt) {
 				if(!(*jt)->builtin() || v == Vocabulary::std()) visit(*jt);
 			}
 		}
-		for(std::map<std::string,Predicate*>::const_iterator it = v->firstpred(); it != v->lastpred(); ++it) {
+		for(std::map<std::string,Predicate*>::const_iterator it = v->firstPred(); it != v->lastPred(); ++it) {
 			if(!it->second->builtin() || v == Vocabulary::std()) visit(it->second);
 		}
-		for(std::map<std::string,Function*>::const_iterator it = v->firstfunc(); it != v->lastfunc(); ++it) {
+		for(std::map<std::string,Function*>::const_iterator it = v->firstFunc(); it != v->lastFunc(); ++it) {
 			if(!it->second->builtin() || v == Vocabulary::std()) visit(it->second);
 		}
 	}
@@ -270,26 +270,15 @@ public:
 	void visit(const BoolForm* f) {
 		assert(isTheoryOpen());
 		if(f->subformulas().empty()) {
-			if(f->sign() == f->conj()) {
-				output() << "true";
-			}
-			else {
-				output() << "false";
-			}
+			if(f->sign() == f->conj()) { output() << "true"; }
+			else { output() << "false"; }
 		}
 		else {
-			if(not f->sign()) {
-				output() << '~';
-			}
+			if(not f->sign()) { output() << '~'; }
 			output() << '(';
 			f->subformulas()[0]->accept(this);
 			for(unsigned int n = 1; n < f->subformulas().size(); ++n) {
-				if(f->conj()) {
-					output() << " & ";
-				}
-				else {
-					output() << " | ";
-				}
+				output() << (f->conj() ? " & " : " | ");
 				f->subformulas()[n]->accept(this);
 			}
 			output() << ')';
@@ -298,22 +287,13 @@ public:
 
 	void visit(const QuantForm* f) {
 		assert(isTheoryOpen());
-		if(not f->sign()) {
-			output() << '~';
-		}
+		if(not f->sign()) { output() << '~'; }
 		output() << '(';
-		if(f->univ()) {
-			output() << '!';
-		}
-		else {
-			output() << '?';
-		}
-		for(std::set<Variable*>::const_iterator it = f->quantvars().begin(); it != f->quantvars().end(); ++it) {
+		output() << (f->univ() ? '!' : '?');
+		for(std::set<Variable*>::const_iterator it = f->quantVars().begin(); it != f->quantVars().end(); ++it) {
 			output() << ' ';
 			output() << (*it)->name();
-			if((*it)->sort()) {
-				output() << '[' << *((*it)->sort()) << ']';
-			}
+			if((*it)->sort()) { output() << '[' << (*it)->sort()->name() << ']'; }
 		}
 		output() << " : ";
 		f->subformulas()[0]->accept(this);
@@ -321,9 +301,7 @@ public:
 	}
 
 	void visit(const AggForm* f) {
-		if(not f->sign()) {
-			output() << '~';
-		}
+		if(not f->sign()) { output() << '~'; }
 		output() << '(';
 		f->left()->accept(this);
 		output() << ' ' << toString(f->comp()) << ' ';
@@ -337,9 +315,9 @@ public:
 	void visit(const Rule* r) {
 		assert(isTheoryOpen());
 		printTab();
-		if(not r->quantvars().empty()) {
+		if(not r->quantVars().empty()) {
 			output() << "!";
-			for(std::set<Variable*>::const_iterator it = r->quantvars().begin(); it != r->quantvars().end(); ++it) {
+			for(std::set<Variable*>::const_iterator it = r->quantVars().begin(); it != r->quantVars().end(); ++it) {
 				output() << " " << *(*it);
 			}
 			output() << " : ";
@@ -446,13 +424,11 @@ public:
 	}
 	
 	void visit(const QuantSetExpr* s) {
-		output() << "{";
-		for(std::set<Variable*>::const_iterator it = s->quantvars().begin(); it != s->quantvars().end(); ++it) {
-			output() << " ";
+		output() << '{';
+		for(std::set<Variable*>::const_iterator it = s->quantVars().begin(); it != s->quantVars().end(); ++it) {
+			output() << ' ';
 			output() << (*it)->name();
-			if((*it)->sort()) {
-				output() << "[" << (*it)->sort()->name() << "]";
-			}
+			if((*it)->sort()) { output() << '[' << (*it)->sort()->name() << ']'; }
 		}
 		output() << " : ";
 		s->subformulas()[0]->accept(this);
@@ -738,7 +714,7 @@ public:
 
 	void visit(SortTable* table) {
 		assert(isTheoryOpen());
-		SortIterator it = table->sortbegin();
+		SortIterator it = table->sortBegin();
 		output() << "{ ";
 		if(it.hasNext()) {
 			output() << (*it)->toString();

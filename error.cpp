@@ -698,6 +698,11 @@ namespace Warning {
 		cerr << ": ";
 	}
 
+	void cumulchance(double c) {
+		warning();
+		cerr << "Chance of " << c << " is impossible. Using chance 1 instead\n";
+	}
+
 	/** Ambiguous partial term **/
 	void ambigpartialterm(const string& term, const ParseInfo& thisplace) {
 		warning(thisplace);

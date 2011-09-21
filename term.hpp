@@ -74,7 +74,7 @@ class Term {
 				const TermParseInfo&			pi()			const { return _pi;				}
 		virtual	Sort*							sort()			const = 0;	//!< Returns the sort of the term
 		virtual TermType						type()			const = 0;
-				const std::set<Variable*>&		freevars()		const { return _freevars;		}
+				const std::set<Variable*>&		freeVars()		const { return _freevars;		}
 				const std::vector<Term*>&		subterms()		const { return _subterms;		}
 				const std::vector<SetExpr*>&	subsets()		const { return _subsets;		}
 
@@ -287,8 +287,8 @@ class SetExpr {
 		
 		// Inspectors
 		virtual Sort*							sort()						const = 0;	//!< Returns the sort of the set
-				const std::set<Variable*>&		freevars()					const { return _freevars;	}
-				const std::set<Variable*>&		quantvars()					const { return _quantvars;	}
+				const std::set<Variable*>&		freeVars()					const { return _freevars;	}
+				const std::set<Variable*>&		quantVars()					const { return _quantvars;	}
 				bool							contains(const Variable*)	const;
 				const std::vector<Formula*>&	subformulas()				const { return _subformulas;	}
 				const std::vector<Term*>&		subterms()					const { return _subterms;		}

@@ -138,6 +138,8 @@ namespace VarUtils {
 	Predicate and function symbols
 *************************************/
 
+enum SymbolType { ST_NONE, ST_CT, ST_CF, ST_PT, ST_PF };
+
 /** 
  *	\brief	Abstract base class to represent predicate and function symbols
  */
@@ -149,6 +151,9 @@ class PFSymbol {
 		std::vector<Sort*>			_sorts;			//!< Sorts of the arguments. 
 													//!< For a function symbol, the last sort is the output sort.
 		bool						_infix;			//!< True iff the symbol is infix
+
+		std::map<SymbolType,Predicate*>	_derivedsymbols;	//!< The symbols this<ct>, this<cf>, this<pt>, and this<pf>
+
 
 		// Destructor
 		virtual ~PFSymbol();	//!< Destructor
@@ -173,6 +178,7 @@ class PFSymbol {
 		bool						infix()				const;  //!< True iff the symbol is infix
 		bool						hasVocabularies()	const;	//!< Returns true iff the symbol occurs in a 
 																		//!< vocabulary
+		Predicate*						derivedSymbol(SymbolType);		//!< Return the derived symbol of the given type
 
 		virtual bool			builtin()		const = 0;	//!< Returns true iff the symbol is built-in
 		virtual bool			overloaded()	const = 0;	//!< Returns true iff the symbol is in fact a set of overloaded
@@ -185,7 +191,7 @@ class PFSymbol {
 
 		// Output
 		virtual std::ostream&	put(std::ostream&, bool longnames = true)	const = 0;
-				std::string		toString(bool longnames = true)	const;
+				std::string		toString(bool longnames = true)				const;
 
 		friend class Vocabulary;
 };
@@ -202,6 +208,9 @@ class AbstractStructure;
  */
 class Predicate : public PFSymbol {
 	private:
+		SymbolType				_type;				//!< The type of the symbol
+		PFSymbol*				_parent;			//!< The symbol this predicate is derived from. 
+													//!< Nullpointer if _type == ST_NONE.
 		static int				_npnr;				//!< Used to create unique new names for internal predicates
 		PredInterGenerator*		_interpretation;	//!< The interpretation if the predicate is built-in, a null-pointer
 													//!< otherwise.
@@ -222,8 +231,11 @@ class Predicate : public PFSymbol {
 		// Mutators
 		bool removeVocabulary(const Vocabulary*);	//!< Removes a vocabulary from the list of vocabularies
 		void addVocabulary(const Vocabulary*);		//!< Add a vocabulary to the list of vocabularies
+		void type(SymbolType,PFSymbol* parent);		//!< Set the type and parent of the predicate
 
 		// Inspectors
+		SymbolType		type()			const { return _type;	}
+		PFSymbol*		parent()		const { return _parent;	}
 		unsigned int	arity()			const;	//!< Returns the arity of the predicate
 		bool			builtin()		const;	
 		bool			overloaded()	const;			
@@ -240,7 +252,7 @@ class Predicate : public PFSymbol {
 												//!< and that are overloaded by 'this'.
 
 		// Output
-		std::ostream&	put(std::ostream&, bool longnames = true)	const;
+		std::ostream&	put(std::ostream&, bool longnames = false)	const;
 
 		friend class Sort;
 		friend class Vocabulary;
@@ -394,7 +406,7 @@ class Function : public PFSymbol {
 
 		// Output
 		std::ostream&	put(std::ostream&, bool longnames = true)	const;
-		std::string		toString(bool longnames = true)			const;
+		std::string		toString(bool longnames = true)				const;
 
 		friend class Vocabulary;
 };
@@ -554,7 +566,7 @@ class Vocabulary {
 		void addPred(Predicate*);			//!< Add the given predicate (and its sorts) to the vocabulary
 		void addFunc(Function*);			//!< Add the given function (and its sorts) to the vocabulary
 		void addVocabulary(Vocabulary*);	//!< Add all symbols of a given vocabulary to the vocabulary
-		void setnamespace(Namespace* n)		{ _namespace = n;	}
+		void setNamespace(Namespace* n)		{ _namespace = n;	}
 
 		// Inspectors
 		static Vocabulary*	std();	//!< Returns the standard vocabulary
@@ -565,19 +577,19 @@ class Vocabulary {
 		bool				contains(Function* f)	const;	//!< True iff the vocabulary contains the function
 		bool				contains(PFSymbol* s)	const; 	//!< True iff the vocabulary contains the symbol
 
-		std::map<std::string,std::set<Sort*> >::iterator	firstsort()	{ return _name2sort.begin();	}
-		std::map<std::string,Predicate*>::iterator			firstpred()	{ return _name2pred.begin();	}
-		std::map<std::string,Function*>::iterator			firstfunc()	{ return _name2func.begin();	}
-		std::map<std::string,std::set<Sort*> >::iterator	lastsort()	{ return _name2sort.end();		}
-		std::map<std::string,Predicate*>::iterator			lastpred()	{ return _name2pred.end();		}
-		std::map<std::string,Function*>::iterator			lastfunc()	{ return _name2func.end();		}
+		std::map<std::string,std::set<Sort*> >::iterator	firstSort()	{ return _name2sort.begin();	}
+		std::map<std::string,Predicate*>::iterator			firstPred()	{ return _name2pred.begin();	}
+		std::map<std::string,Function*>::iterator			firstFunc()	{ return _name2func.begin();	}
+		std::map<std::string,std::set<Sort*> >::iterator	lastSort()	{ return _name2sort.end();		}
+		std::map<std::string,Predicate*>::iterator			lastPred()	{ return _name2pred.end();		}
+		std::map<std::string,Function*>::iterator			lastFunc()	{ return _name2func.end();		}
 
-		std::map<std::string,std::set<Sort*> >::const_iterator	firstsort()	const { return _name2sort.begin();	}
-		std::map<std::string,Predicate*>::const_iterator		firstpred()	const { return _name2pred.begin();	}
-		std::map<std::string,Function*>::const_iterator			firstfunc()	const { return _name2func.begin();	}
-		std::map<std::string,std::set<Sort*> >::const_iterator	lastsort()	const { return _name2sort.end();	}
-		std::map<std::string,Predicate*>::const_iterator		lastpred()	const { return _name2pred.end();	}
-		std::map<std::string,Function*>::const_iterator			lastfunc()	const { return _name2func.end();	}
+		std::map<std::string,std::set<Sort*> >::const_iterator	firstSort()	const { return _name2sort.begin();	}
+		std::map<std::string,Predicate*>::const_iterator		firstPred()	const { return _name2pred.begin();	}
+		std::map<std::string,Function*>::const_iterator			firstFunc()	const { return _name2func.begin();	}
+		std::map<std::string,std::set<Sort*> >::const_iterator	lastSort()	const { return _name2sort.end();	}
+		std::map<std::string,Predicate*>::const_iterator		lastPred()	const { return _name2pred.end();	}
+		std::map<std::string,Function*>::const_iterator			lastFunc()	const { return _name2func.end();	}
 
 		const std::set<Sort*>*	sort(const std::string&)	const;	
 			//!< return the sorts with the given name
@@ -595,9 +607,9 @@ class Vocabulary {
 		InfArg getObject(const std::string& str) const;
 
 		// Output
-		std::ostream& putname(std::ostream&)					const;
+		std::ostream& putName(std::ostream&)					const;
 		std::ostream& put(std::ostream&, unsigned int tabs = 0)	const;
-		std::string toString(unsigned int tabs = 0)			const;
+		std::string toString(unsigned int tabs = 0)				const;
 
 		friend class Namespace;
 };
@@ -612,10 +624,12 @@ namespace VocabularyUtils {
 	Sort*	charsort();		//!< returns the sort 'char' of the standard vocabulary
 
 	Predicate*	equal(Sort* s);			//!< returns the predicate =/2 with sorts (s,s)
-	Predicate*	lessthan(Sort* s);		//!< returns the predicate </2 with sorts (s,s)
-	Predicate*	greaterthan(Sort* s);	//!< returns the predicate >/2 with sorts (s,s)
+	Predicate*	lessThan(Sort* s);		//!< returns the predicate </2 with sorts (s,s)
+	Predicate*	greaterThan(Sort* s);	//!< returns the predicate >/2 with sorts (s,s)
 
-	bool isComparisonPredicate(const PFSymbol*);
+	bool isComparisonPredicate(const PFSymbol*);	//!< returns true iff the given symbol is =/2, </2, or >/2
+	bool isNumeric(Sort*);							//!< returns true iff the given sort is a subsort of float
+
 }
 
 #endif

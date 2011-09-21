@@ -168,7 +168,7 @@ ostream& Sort::put(ostream& output, bool longnames) const {
 	if(longnames) {
 		for(set<const Vocabulary*>::iterator it = _vocabularies.begin(); it != _vocabularies.end(); ++it) {
 			if(not (*it)->sort(_name)->empty()) {
-				(*it)->putname(output);
+				(*it)->putName(output);
 				output << "::";
 				break;
 			}
@@ -289,6 +289,9 @@ vector<Variable*> VarUtils::makeNewVariables(const vector<Sort*>& sorts) {
 *******************************/
 
 PFSymbol::~PFSymbol() {
+	for(auto it = _derivedsymbols.begin(); it != _derivedsymbols.end(); ++it) {
+		delete(it->second);
+	}
 }
 
 PFSymbol::PFSymbol(const string& name, size_t nrsorts, bool infix) : 
@@ -329,6 +332,18 @@ bool PFSymbol::infix() const {
 
 bool PFSymbol::hasVocabularies() const {
 	return not _vocabularies.empty();
+}
+
+Predicate* PFSymbol::derivedSymbol(SymbolType type) {
+	assert(type != ST_NONE);
+	auto it = _derivedsymbols.find(type);
+	if(it == _derivedsymbols.end()) {
+		Predicate* derp = new Predicate(_name,_sorts,_pi,_infix);
+		derp->type(type,this);
+		_derivedsymbols[type] = derp;
+		return derp;
+	}
+	else return it->second;
 }
 
 string PFSymbol::toString(bool longnames) const {
@@ -382,25 +397,25 @@ void Predicate::addVocabulary(const Vocabulary* vocabulary) {
 
 
 Predicate::Predicate(const std::string& name,const std::vector<Sort*>& sorts, const ParseInfo& pi, bool infix) :
-	PFSymbol(name,sorts,pi,infix), _interpretation(0), _overpredgenerator(0) {
+	PFSymbol(name,sorts,pi,infix), _type(ST_NONE), _parent(0), _interpretation(0), _overpredgenerator(0) {
 }
 
 Predicate::Predicate(const std::string& name,const std::vector<Sort*>& sorts, bool infix) :
-	PFSymbol(name,sorts,infix), _interpretation(0), _overpredgenerator(0) {
+	PFSymbol(name,sorts,infix), _type(ST_NONE), _parent(0), _interpretation(0), _overpredgenerator(0) {
 }
 
 Predicate::Predicate(const vector<Sort*>& sorts) : 
-	PFSymbol("",sorts,ParseInfo()), _interpretation(0), _overpredgenerator(0) {
+	PFSymbol("",sorts,ParseInfo()), _type(ST_NONE), _parent(0), _interpretation(0), _overpredgenerator(0) {
 	_name = "_internal_predicate_" + convertToString(_npnr) + "/" + convertToString(sorts.size());
 	++_npnr;
 }
 
 Predicate::Predicate(const std::string& name, const std::vector<Sort*>& sorts, PredInterGenerator* inter, bool infix) :
-	PFSymbol(name,sorts,infix), _interpretation(inter), _overpredgenerator(0) {
+	PFSymbol(name,sorts,infix), _type(ST_NONE), _parent(0), _interpretation(inter), _overpredgenerator(0) {
 }
 
 Predicate::Predicate(PredGenerator* generator) :
-	PFSymbol(generator->name(),generator->arity(),generator->infix()), _interpretation(0), _overpredgenerator(generator) {
+	PFSymbol(generator->name(),generator->arity(),generator->infix()), _type(ST_NONE), _parent(0), _interpretation(0), _overpredgenerator(generator) {
 }
 
 unsigned int Predicate::arity() const {
@@ -413,6 +428,11 @@ bool Predicate::builtin() const {
 
 bool Predicate::overloaded() const {
 	return (_overpredgenerator != 0);
+}
+
+void Predicate::type(SymbolType type, PFSymbol* parent) {
+	_type = type;
+	_parent = parent;
 }
 
 /**
@@ -490,7 +510,7 @@ ostream& Predicate::put(ostream& output, bool longnames) const {
 	if(longnames) {
 		for(set<const Vocabulary*>::iterator it = _vocabularies.begin(); it != _vocabularies.end(); ++it) {
 			if(not (*it)->pred(_name)->overloaded()) {
-				(*it)->putname(output);
+				(*it)->putName(output);
 				output << "::";
 				break;
 			}
@@ -505,6 +525,14 @@ ostream& Predicate::put(ostream& output, bool longnames) const {
 			}
 			output << ']';
 		}
+	}
+	switch(_type) {
+		case ST_NONE: break;
+		case ST_CT: output << "<ct>"; break;
+		case ST_CF: output << "<cf>"; break;
+		case ST_PT: output << "<pt>"; break;
+		case ST_PF: output << "<pf>"; break;
+		default: assert(false);
 	}
 	return output;
 }
@@ -882,7 +910,7 @@ ostream& Function::put(ostream& output, bool longnames) const {
 	if(longnames) { 
 		for(set<const Vocabulary*>::iterator it = _vocabularies.begin(); it != _vocabularies.end(); ++it) {
 			if(not (*it)->func(_name)->overloaded()) {
-				(*it)->putname(output);
+				(*it)->putName(output);
 				output << "::";
 				break;
 			}
@@ -1276,15 +1304,15 @@ void Vocabulary::addFunc(Function* f) {
 }
 
 void Vocabulary::addVocabulary(Vocabulary* v) {
-	for(map<string,set<Sort*> >::iterator it = v->firstsort(); it != v->lastsort(); ++it) {
+	for(map<string,set<Sort*> >::iterator it = v->firstSort(); it != v->lastSort(); ++it) {
 		for(set<Sort*>::iterator jt = (it->second).begin(); jt != (it->second).end(); ++jt) {
 			addSort(*jt);
 		}
 	}
-	for(map<string,Predicate*>::iterator it = v->firstpred(); it != v->lastpred(); ++it) {
+	for(map<string,Predicate*>::iterator it = v->firstPred(); it != v->lastPred(); ++it) {
 		addPred(it->second);
 	}
-	for(map<string,Function*>::iterator it = v->firstfunc(); it != v->lastfunc(); ++it) {
+	for(map<string,Function*>::iterator it = v->firstFunc(); it != v->lastFunc(); ++it) {
 		addFunc(it->second);
 	}
 }
@@ -1518,9 +1546,9 @@ set<Function*> Vocabulary::func_no_arity(const string& name) const {
 	return vf;
 }
 
-ostream& Vocabulary::putname(ostream& output) const {
+ostream& Vocabulary::putName(ostream& output) const {
 	if(_namespace && not _namespace->isGlobal()) {
-		_namespace->putname(output);
+		_namespace->putName(output);
 		output << "::";
 	}
 	output << _name;
@@ -1579,12 +1607,12 @@ namespace VocabularyUtils {
 		return Vocabulary::std()->pred("=/2")->resolve(sorts);
 	}
 
-	Predicate* lessthan(Sort* s) {
+	Predicate* lessThan(Sort* s) {
 		vector<Sort*> sorts(2,s);
 		return Vocabulary::std()->pred("</2")->resolve(sorts);
 	}
 
-	Predicate* greaterthan(Sort* s) {
+	Predicate* greaterThan(Sort* s) {
 		vector<Sort*> sorts(2,s);
 		return Vocabulary::std()->pred(">/2")->resolve(sorts);
 	}
@@ -1592,5 +1620,9 @@ namespace VocabularyUtils {
 	bool isComparisonPredicate(const PFSymbol* symbol) {
 		string name = symbol->name();
 		return (typeid(*symbol) == typeid(Predicate)) && (name == "=/2" || name == "</2" || name == ">/2");
+	}
+
+	bool isNumeric(Sort* s) {
+		return SortUtils::isSubsort(s,floatsort());
 	}
 }

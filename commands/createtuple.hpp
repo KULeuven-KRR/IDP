@@ -12,7 +12,7 @@
 
 class CreateTupleInference: public Inference {
 public:
-	CreateTupleInference(): Inference("dummytuple") {
+	CreateTupleInference(): Inference("dummyTuple") {
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>&) const {

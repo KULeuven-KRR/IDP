@@ -78,14 +78,14 @@ public:
 	}
 
 	void polAdd(const TsSet& tsset, int setnr, bool weighted) {
-		if(!weighted){
+		if(not weighted) {
 			MinisatID::Set set;
 			set.setID = setnr;
 			for(unsigned int n = 0; n < tsset.size(); ++n) {
 				set.literals.push_back(createLiteral(tsset.literal(n)));
 			}
 			getSolver().add(set);
-		}else {
+		} else {
 			MinisatID::WSet set;
 			set.setID = setnr;
 			for(unsigned int n = 0; n < tsset.size(); ++n) {
@@ -98,9 +98,9 @@ public:
 
 	void polAdd(GroundDefinition* def){
 		for(auto i=def->begin(); i!=def->end(); ++i){
-			if(typeid(PCGroundRule*)==typeid((*i).second)){
+			if(typeid(PCGroundRule*)==typeid((*i).second)) {
 				polAdd(def->id(), dynamic_cast<PCGroundRule*>((*i).second));
-			}else{
+			} else {
 				polAdd(def->id(), dynamic_cast<AggGroundRule*>((*i).second));
 			}
 		}
@@ -277,7 +277,7 @@ private:
 				MinisatID::CPIntVarEnum cpvar;
 				cpvar.varID = varid;
 				if(_verbosity > 0) std::clog << "{ ";
-				for(SortIterator it = domain->sortbegin(); it.hasNext(); ++it) {
+				for(SortIterator it = domain->sortBegin(); it.hasNext(); ++it) {
 					int value = (*it)->value()._int;
 					cpvar.values.push_back(value);
 					if(_verbosity > 0) std::clog << value << "; ";
