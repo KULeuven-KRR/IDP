@@ -55,6 +55,7 @@ protected:
 public:
 	// Factory method
 	template<class Stream> static Printer* create(Options* opts, Stream& stream);
+	template<class Stream> static Printer* create(Options* opts, Stream& stream, bool arithmetic);
 
 	// Print methods
 	void visit(const Formula*);

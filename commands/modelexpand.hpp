@@ -11,6 +11,7 @@
 #include <iostream>
 #include "commandinterface.hpp"
 #include "monitors/tracemonitor.hpp"
+#include "symmetry.hpp"
 
 #include "groundtheories/AbstractGroundTheory.hpp"
 #include "groundtheories/SolverPolicy.hpp"
@@ -37,6 +38,21 @@ public:
 		// Run grounder
 		grounder->run();
 		AbstractGroundTheory* grounding = dynamic_cast<GroundTheory<SolverPolicy>*>(grounder->grounding());
+		
+		// Execute symmetry breaking
+		if(options->symmetry()!=0){
+			std::cerr << "Symmetry detection...\n";
+			clock_t start = clock();
+			std::vector<const IVSet*> ivsets = findIVSets(theory, structure);
+			float time = (float) (clock() - start)/CLOCKS_PER_SEC;
+			std::cerr << "Symmetry detection finished in: " << time << "\n";
+			if(options->symmetry()==1){
+				std::cerr << "Adding symmetry breaking clauses...\n";
+				addSymBreakingPredicates(grounding, ivsets);
+			}else{
+				std::cerr << "Dynamical symmetry breaking not yet implemented...\n";
+			}
+		}
 
 		// Run solver
 		MinisatID::Solution* abstractsolutions = initsolution(options);

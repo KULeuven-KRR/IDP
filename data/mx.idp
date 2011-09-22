@@ -31,6 +31,8 @@ namespace mx {
 	procedure printsol(T,S,Opts) {
 		local sols = modelexpand(T,S,Opts)
 		if #sols > 0 then
+			print("Number of models: ")
+			print(#sols)
 			for k,v in ipairs(sols) do
 				print("Model "..k)
 				kstr = tostring(k)

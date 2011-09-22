@@ -55,7 +55,7 @@ class EnumeratedStringOption : public StringOption {
 		virtual std::string	getPossibleValues() const;
 };
 
-enum Language { LAN_TXT, LAN_IDP, LAN_ECNF, LAN_LATEX, LAN_ASP, LAN_CNF };
+enum Language { LAN_TXT, LAN_IDP, LAN_ECNF, LAN_LATEX, LAN_ASP, LAN_CNF, LAN_TPTP };
 
 /**
  * Class to represent a block of options
@@ -102,11 +102,13 @@ class Options {
 		int			groundverbosity()		const;
 		int			propagateverbosity()	const;
 		int			nrpropsteps()			const;
+		int			provertimeout()			const;
 		bool		trace()					const;
 		bool		longnames()				const;
 		bool		relativepropsteps()		const;
 		bool 		writeTranslation() 		const;
 		int			longestbranch()			const;
+		int			symmetry()				const;
 
 		std::ostream&	put(std::ostream&)	const;
 		std::string		to_string()			const;	

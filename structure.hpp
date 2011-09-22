@@ -728,6 +728,7 @@ class ProcInternalPredTable : public InternalPredTable {
 
 class FOBDDManager;
 class FOBDD;
+class AbstractStructure;
 
 class BDDInternalPredTable : public InternalPredTable {
 	private:
