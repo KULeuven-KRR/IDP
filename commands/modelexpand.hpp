@@ -49,8 +49,23 @@ public:
 			if(options->symmetry()==1){
 				std::cerr << "Adding symmetry breaking clauses...\n";
 				addSymBreakingPredicates(grounding, ivsets);
+			}else if(options->symmetry()==2){
+				std::cerr << "Using symmetrical clause learning...\n";
+				for(auto ivsets_it=ivsets.begin(); ivsets_it!=ivsets.end(); ++ivsets_it){
+					std::vector<std::map<int,int> > breakingSymmetries = (*ivsets_it)->getBreakingSymmetries(grounding);
+					for(auto bs_it = breakingSymmetries.begin(); bs_it != breakingSymmetries.end(); ++bs_it){
+						MinisatID::Symmetry symmetry;
+						for(auto s_it = bs_it->begin(); s_it!=bs_it->end(); ++s_it){
+							MinisatID::Atom a1 = MinisatID::Atom(s_it->first);
+							MinisatID::Atom a2 = MinisatID::Atom(s_it->second);
+							std::pair<MinisatID::Atom,MinisatID::Atom> entry = std::pair<MinisatID::Atom,MinisatID::Atom>(a1,a2);
+							symmetry.symmetry.insert(entry);
+						}
+						solver->add(symmetry);
+					}
+				}
 			}else{
-				std::cerr << "Dynamical symmetry breaking not yet implemented...\n";
+				std::cerr << "Unknown symmetry option...\n";
 			}
 		}
 
