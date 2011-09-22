@@ -16,7 +16,7 @@
 std::string help(Namespace* ns) {
 	std::stringstream sstr;
 	if(ns->procedures().empty()) {
-		if(ns->isGlobal()) sstr << "There are no procedures in the global namespace\n";
+		if(ns->isGlobal()) { sstr << "There are no procedures in the global namespace\n"; }
 		else {
 			sstr << "There are no procedures in namespace ";
 			ns->putName(sstr);
@@ -28,12 +28,12 @@ std::string help(Namespace* ns) {
 		std::stringstream prefixs;
 		ns->putName(prefixs);
 		std::string prefix = prefixs.str();
-		if(prefix != "") prefix += "::";
+		if(prefix != "") { prefix += "::"; }
 		for(auto it = ns->procedures().begin(); it != ns->procedures().end(); ++it) {
 			sstr << "    * " << prefix << it->second->name() << '(';
-			if(!it->second->args().empty()) {
+			if(not it->second->args().empty()) {
 				sstr << it->second->args()[0];
-				for(unsigned int n = 1; n < it->second->args().size(); ++n) {
+				for(size_t n = 1; n < it->second->args().size(); ++n) {
 					sstr << ',' << it->second->args()[n];
 				}
 			}
@@ -41,7 +41,7 @@ std::string help(Namespace* ns) {
 			sstr << "        " << it->second->description() << "\n";
 		}
 	}
-	if(!ns->subspaces().empty()) {
+	if(not ns->subspaces().empty()) {
 		sstr << "\nThe following subspaces are available:\n\n";
 		for(auto it = ns->subspaces().begin(); it != ns->subspaces().end(); ++it) {
 			sstr << "    * ";

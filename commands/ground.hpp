@@ -66,7 +66,7 @@ class GroundAndPrintInference: public Inference {
 		}
 	
 	public:
-		GroundAndPrintInference(): Inference("printGrounding", true) {
+		GroundAndPrintInference(): Inference("printgrounding", true) {
 			add(AT_THEORY);
 			add(AT_STRUCTURE);
 			add(AT_OPTIONS);

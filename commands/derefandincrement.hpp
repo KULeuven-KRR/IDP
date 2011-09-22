@@ -26,7 +26,7 @@ public:
 			InternalArgument ia; ia._type = AT_TUPLE; ia._value._tuple = tuple;
 			return ia;
 		}
-		else{
+		else {
 			return nilarg();
 		}
 	}
@@ -40,7 +40,7 @@ InternalArgument derefValueAndIncrementIterator(Iterator it){
 		InternalArgument ia(element);
 		return ia;
 	}
-	else{
+	else {
 		return nilarg();
 	}
 }

@@ -12,7 +12,7 @@
 
 class PushNegationsInference: public Inference {
 public:
-	PushNegationsInference(): Inference("pushNegations") {
+	PushNegationsInference(): Inference("pushnegations") {
 		add(AT_THEORY);
 	}
 

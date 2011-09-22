@@ -15,21 +15,21 @@
  * Implements maketrue, makefalse, and makeunknown on a predicate interpretation and a tuple
  */
 class SetAtomValueInference: public Inference {
-	enum SETVALUE { SET_TRUE, SET_FALSE, SET_UNKNOWN};
+	enum SETVALUE { SET_TRUE, SET_FALSE, SET_UNKNOWN };
 private:
 	SETVALUE value_;
 public:
 	static Inference* getMakeAtomTrueInference(){
-		return new SetAtomValueInference("makeTrue", SET_TRUE);
+		return new SetAtomValueInference("maketrue",SET_TRUE);
 	}
 	static Inference* getMakeAtomFalseInference(){
-		return new SetAtomValueInference("makeFalse", SET_FALSE);
+		return new SetAtomValueInference("makefalse",SET_FALSE);
 	}
 	static Inference* getMakeAtomUnknownInference(){
-		return new SetAtomValueInference("makeUnknown", SET_UNKNOWN);
+		return new SetAtomValueInference("makeunknown",SET_UNKNOWN);
 	}
 
-	SetAtomValueInference(const char* command, SETVALUE value): Inference(command, true), value_(value) {
+	SetAtomValueInference(const char* command, SETVALUE value): Inference(command,true), value_(value) {
 		add(AT_PREDINTER);
 		add(AT_TUPLE);
 	}

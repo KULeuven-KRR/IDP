@@ -21,16 +21,16 @@ private:
 	SETVALUE value_;
 public:
 	static Inference* getMakeTableTrueInference(){
-		return new SetTableValueInference("makeTrue", SET_TRUE);
+		return new SetTableValueInference("maketrue",SET_TRUE);
 	}
 	static Inference* getMakeTableFalseInference(){
-		return new SetTableValueInference("makeFalse", SET_FALSE);
+		return new SetTableValueInference("makefalse",SET_FALSE);
 	}
 	static Inference* getMakeTableUnknownInference(){
-		return new SetTableValueInference("makeUnknown", SET_UNKNOWN);
+		return new SetTableValueInference("makeunknown",SET_UNKNOWN);
 	}
 
-	SetTableValueInference(const char* command, SETVALUE value): Inference(command, true), value_(value) {
+	SetTableValueInference(const char* command, SETVALUE value): Inference(command,true), value_(value) {
 		add(AT_PREDINTER);
 		add(AT_TABLE);
 	}
@@ -51,7 +51,6 @@ public:
 			default:
 				break;
 		}
-
 		return nilarg();
 	}
 

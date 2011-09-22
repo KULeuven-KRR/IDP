@@ -16,7 +16,7 @@
  */
 class TableIteratorInference: public Inference {
 public:
-	TableIteratorInference(): Inference("tableIterator") {
+	TableIteratorInference(): Inference("tableiterator") {
 		add(AT_PREDTABLE);
 	}
 

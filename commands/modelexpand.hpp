@@ -18,7 +18,7 @@
 
 class ModelExpandInference: public Inference {
 public:
-	ModelExpandInference(): Inference("modelExpand", false, true) {
+	ModelExpandInference(): Inference("modelexpand", false, true) {
 		add(AT_THEORY);
 		add(AT_STRUCTURE);
 		add(AT_OPTIONS);
@@ -50,7 +50,7 @@ public:
 
 		// Run grounder
 		grounder->run();
-		AbstractGroundTheory* grounding = dynamic_cast<GroundTheory<SolverPolicy>*>(grounder->grounding());
+		AbstractGroundTheory* grounding = grounder->grounding();
 
 		// Run solver
 		MinisatID::Solution* abstractsolutions = initsolution(options);
@@ -148,13 +148,14 @@ private:
 	bool calculateKnownDefinitions(Theory* theory, AbstractStructure* structure, Options* options) const {
 		// Collect the open symbols of all definitions
 		std::map<Definition*,std::set<PFSymbol*> > opens;
-		for(auto it = theory->definitions().begin(); it != theory->definitions().end(); ++it) 
+		for(auto it = theory->definitions().begin(); it != theory->definitions().end(); ++it) { 
 			opens[*it] = DefinitionUtils::opens(*it);
+		}
 
 		// Calculate the interpretation of the defined atoms from definitions that do not have
 		// three-valued open symbols
 		bool fixpoint = false;
-		while(!fixpoint) {
+		while(not fixpoint) {
 			fixpoint = true;
 			for(auto it = opens.begin(); it != opens.end(); ) {
 				auto currentdefinition = it++;
@@ -168,7 +169,7 @@ private:
 				// If no opens are left, calculate the interpretation of the defined atoms
 				if(currentdefinition->second.empty()) {
 					bool satisfiable = calculateDefinition(currentdefinition->first,structure,options);
-					if(!satisfiable) return false;
+					if(not satisfiable) { return false; }
 					opens.erase(currentdefinition);
 					theory->remove(currentdefinition->first);
 					fixpoint = false;

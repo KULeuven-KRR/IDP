@@ -13,7 +13,7 @@
 
 class NewTheoryInference: public Inference {
 public:
-	NewTheoryInference(): Inference("newTheory") {
+	NewTheoryInference(): Inference("newtheory") {
 		add(AT_VOCABULARY);
 	}
 

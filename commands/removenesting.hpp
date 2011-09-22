@@ -12,7 +12,7 @@
 
 class RemoveNestingInference : public Inference {
 public:
-	RemoveNestingInference (): Inference("removeNesting") {
+	RemoveNestingInference (): Inference("removenesting") {
 		add(AT_THEORY);
 	}
 

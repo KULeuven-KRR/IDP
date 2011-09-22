@@ -14,7 +14,7 @@
 
 class ChangeVocabularyInference: public Inference {
 public:
-	ChangeVocabularyInference(): Inference("changeVocabulary") {
+	ChangeVocabularyInference(): Inference("changevocabulary") {
 		add(AT_STRUCTURE);
 		add(AT_VOCABULARY);
 	}

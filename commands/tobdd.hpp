@@ -22,8 +22,11 @@ public:
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
 		Formula* f;
-		if(getArgumentTypes()[0] == AT_FORMULA) f = dynamic_cast<Formula*>(args[0]._value._formula);
-		else f = args[0]._value._query->query();
+		if(getArgumentTypes()[0] == AT_FORMULA) {
+			f = dynamic_cast<Formula*>(args[0]._value._formula);
+		} else {
+			f = args[0]._value._query->query();
+		}
 
 		FOBDDManager manager;
 		FOBDDFactory m(&manager);
