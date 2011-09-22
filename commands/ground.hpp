@@ -26,8 +26,8 @@ class GroundInference: public Inference {
 			propagator->run();
 			SymbolicStructure* symstructure = propagator->symbolicstructure();
 	
-std::cerr << "Computed the following symbolic structure:" << std::endl;
-symstructure->put(std::cerr);
+//std::cerr << "Computed the following symbolic structure:" << std::endl;
+//symstructure->put(std::cerr);
 	
 			// Grounding
 			GrounderFactory factory(structure,options,symstructure);

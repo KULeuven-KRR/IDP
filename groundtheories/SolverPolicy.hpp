@@ -47,7 +47,7 @@ public:
 	// Destructors
 	void polRecursiveDelete() { }
 
-	void polStartTheory(GroundTranslator* translator){}
+	void polStartTheory(GroundTranslator*){}
 	void polEndTheory(){}
 
 	inline MinisatID::Atom createAtom(int lit){
@@ -205,8 +205,8 @@ public:
 		}
 	}
 
-	std::ostream& polPut(std::ostream& s, GroundTranslator* translator, GroundTermTranslator* termtranslator)	const { assert(false); return s;	}
-	std::string polTo_string(GroundTranslator* translator, GroundTermTranslator* termtranslator) const { assert(false); return "";		}
+	std::ostream& 	polPut(std::ostream& s, GroundTranslator*, GroundTermTranslator*)	const { assert(false); return s;	}
+	std::string 	polToString(GroundTranslator*, GroundTermTranslator*) 				const { assert(false); return "";	}
 
 private:
 	void polAddAggregate(int definitionID, int head, bool lowerbound, int setnr, AggFunction aggtype, TsType sem, double bound) {

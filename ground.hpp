@@ -522,15 +522,15 @@ class FormulaGrounder {
 
 class AtomGrounder : public FormulaGrounder {
 	protected:
-		std::vector<TermGrounder*>		_subtermgrounders;
-		InstGenerator*					_pchecker;
-		InstGenerator*					_cchecker;
-		size_t							_symbol; // symbol's offset in translator's table.
-		std::vector<SortTable*>			_tables;
-		bool							_sign;
-		int								_certainvalue;
+		std::vector<TermGrounder*>			_subtermgrounders;
+		InstGenerator*						_pchecker;
+		InstGenerator*						_cchecker;
+		size_t								_symbol; // symbol's offset in translator's table.
+		std::vector<SortTable*>				_tables;
+		bool								_sign;
+		int									_certainvalue;
 		std::vector<const DomainElement**>	_checkargs;
-		PredInter*						_inter;
+		PredInter*							_inter;
 	public:
 		AtomGrounder(GroundTranslator*, bool sign, PFSymbol*,
 					const std::vector<TermGrounder*>, const std::vector<const DomainElement**>&,
