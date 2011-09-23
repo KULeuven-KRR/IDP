@@ -44,18 +44,14 @@ double MCPA = 1;	// TODO: constant currently used when pruning bdds. Should be m
 ****************************************/
 
 bool operator==(const TsBody& a, const TsBody& b) {
-	if(typeid(a) != typeid(b))
-		return false;
-	else
-		return a.equal(b);
+	if(typeid(a) != typeid(b)) { return false; }
+	else { return a.equal(b); }
 }
 
 bool operator<(const TsBody& a, const TsBody& b) {
 	// Order of TsBodies of different types is defined by lexical order of there typeids.
-	if(typeid(a) != typeid(b))
-		return (typeid(a).name() < typeid(b).name());
-	else
-		return a.compare(b);
+	if(typeid(a) != typeid(b)) { return (typeid(a).name() < typeid(b).name()); }
+	else { return a.compare(b); }
 }	
 
 bool TsBody::equal(const TsBody& other) const {
@@ -67,25 +63,24 @@ bool TsBody::compare(const TsBody& other) const {
 }
 
 bool CPTsBody::equal(const TsBody& other) const {
-	if(not TsBody::equal(other))
-		return false;
+	if(not TsBody::equal(other)) { return false; }
 	const CPTsBody& othercpt = static_cast<const CPTsBody&>(other);
 	return (*_left == *othercpt.left()) && (_comp == othercpt.comp()) && (_right == othercpt.right());
 }
 
 bool CPTsBody::compare(const TsBody& other) const {
-	if(TsBody::compare(other))
-		return true;
+	if(TsBody::compare(other)) { return true; }
 	else if(TsBody::equal(other)) {
 		const CPTsBody& othercpt = static_cast<const CPTsBody&>(other);
-		if(*_left < *othercpt.left())
+		if(*_left < *othercpt.left()) { 
 			return true;
-		else if(*_left == *othercpt.left()) {
-			if(_comp < othercpt.comp())
+		} else if(*_left == *othercpt.left()) {
+			if(_comp < othercpt.comp()) {
 				return true;
-			else if(_comp == othercpt.comp()) {
-				if(_right < othercpt.right()) 
+			} else if(_comp == othercpt.comp()) {
+				if(_right < othercpt.right()) {
 					return true;
+				}
 			}
 		}
 	}
@@ -95,17 +90,13 @@ bool CPTsBody::compare(const TsBody& other) const {
 /** Comparing CP terms and bounds **/
 
 bool operator==(const CPTerm& a, const CPTerm& b) {
-	if(typeid(a) != typeid(b))
-		return false;
-	else
-		return a.equal(b);
+	if(typeid(a) != typeid(b)) { return false; }
+	else { return a.equal(b); }
 }
 
 bool operator<(const CPTerm& a, const CPTerm& b) {
-	if(typeid(a) != typeid(b))
-		return (typeid(a).name() < typeid(b).name());
-	else
-		return a.compare(b);
+	if(typeid(a) != typeid(b)) { return (typeid(a).name() < typeid(b).name()); }
+	else { return a.compare(b); }
 }
 
 bool CPVarTerm::equal(const CPTerm& other) const {
@@ -140,14 +131,14 @@ bool CPWSumTerm::compare(const CPTerm& other) const {
 
 bool operator==(const CPBound& a, const CPBound& b) {
 	if(a._isvarid == b._isvarid) {
-		return a._isvarid ? (a._varid == b._varid) : (a._bound == b._bound);
+		return (a._isvarid ? (a._varid == b._varid) : (a._bound == b._bound));
 	}
 	return false;
 }
 
 bool operator<(const CPBound& a, const CPBound& b) {
 	if(a._isvarid == b._isvarid) {
-		return a._isvarid ? (a._varid < b._varid) : (a._bound < b._bound);
+		return (a._isvarid ? (a._varid < b._varid) : (a._bound < b._bound));
 	}
 	// CPBounds with a number value come before CPBounds with a CP variable identifier.
 	return (a._isvarid < b._isvarid);
@@ -160,8 +151,9 @@ bool operator<(const CPBound& a, const CPBound& b) {
 
 GroundTranslator::~GroundTranslator() {
 	// delete TsBodies
-	for(map<int,TsBody*>::iterator mapit = _nr2tsbodies.begin(); mapit != _nr2tsbodies.end(); ++mapit)
+	for(map<int,TsBody*>::iterator mapit = _nr2tsbodies.begin(); mapit != _nr2tsbodies.end(); ++mapit) {
 		delete mapit->second;
+	}
 	_nr2tsbodies.clear();
 	_tsbodies2nr.clear(); // All TsBodies in this map should've been deleted through the other map.
 }
@@ -207,7 +199,7 @@ int	GroundTranslator::translate(double bound, char comp, bool strict, AggFunctio
 			#warning "This is wrong if floating point weights are allowed!";
 			tsbody->_bound = (comp == '<') ? bound + 1 : bound - 1;	
 		} 
-		else tsbody->_bound = bound;
+		else { tsbody->_bound = bound; }
 		//_tsbodies2nr.insert(it,pair<TsBody*,int>(tsbody,nr));
 		_nr2tsbodies.insert(pair<int,TsBody*>(nr,tsbody));
 		return nr;
@@ -283,9 +275,7 @@ string GroundTranslator::printAtom(int nr) const {
 	nr = abs(nr);
 	if(nr == _true) { return "true"; }
 	if(nr == _false) { return "false"; }
-	if(nr >= int(_backsymbtable.size())) {
-		return "error";
-	}
+	if(nr >= int(_backsymbtable.size())) { return "error"; }
 	PFSymbol* pfs = atom2symbol(nr);
 	if(pfs) {
 		s << pfs->toString();
@@ -379,9 +369,10 @@ size_t GroundTermTranslator::nextNumber() {
 
 size_t GroundTermTranslator::addFunction(Function* func) {
 	map<Function*,size_t>::const_iterator found = _function2offset.find(func);
-	if(found != _function2offset.end())
+	if(found != _function2offset.end()) {
 		// Simply return number when function is already known
 		return found->second;
+	}
 	else {
 		// Add function and number when function is unknown
 		size_t offset = _offset2function.size();
@@ -394,9 +385,7 @@ size_t GroundTermTranslator::addFunction(Function* func) {
 
 string GroundTermTranslator::printTerm(const VarId& varid) const {
 	stringstream s;
-	if(varid >= _varid2function.size()) {
-		return "error";
-	}
+	if(varid >= _varid2function.size()) { return "error"; }
 	const Function* func = function(varid);
 	if(func) {
 		s << func->toString();
@@ -408,11 +397,11 @@ string GroundTermTranslator::printTerm(const VarId& varid) const {
 				} else {
 					s << (*gtit)._domelement->toString();
 				}
-				if(gtit != args(varid).end()-1) s << ",";
+				if(gtit != args(varid).end()-1) { s << ","; }
 			}
 			s << ")";
 		}
-	} else s << "var_" << varid;
+	} else { s << "var_" << varid; }
 	return s.str();
 }
 
@@ -434,7 +423,7 @@ bool TheoryGrounder::run() const {
 	}
 	for(unsigned int n = 0; n < _grounders.size(); ++n) {
 		bool b = _grounders[n]->run();
-		if(!b){
+		if(not b) {
 			return b;
 		}
 	}
@@ -443,11 +432,11 @@ bool TheoryGrounder::run() const {
 }
 
 bool SentenceGrounder::run() const {
-	if(_verbosity > 1) clog << "Grounding sentence " << "\n";
+	if(_verbosity > 1) { clog << "Grounding sentence " << "\n"; }
 	vector<int> cl;
 	_subgrounder->run(cl);
 	if(cl.empty()) {
-		return _conj ? true : false;
+		return (_conj ? true : false);
 	}
 	else if(cl.size() == 1) {
 		if(cl[0] == _false) {
@@ -458,12 +447,13 @@ bool SentenceGrounder::run() const {
 			_grounding->add(cl);
 			return true;
 		}
-		else return true;
+		else { return true; }
 	}
 	else {
 		if(_conj) {
-			for(unsigned int n = 0; n < cl.size(); ++n)
+			for(size_t n = 0; n < cl.size(); ++n) {
 				_grounding->addUnitClause(cl[n]);
+			}
 		}
 		else {
 			_grounding->add(cl);
@@ -473,16 +463,16 @@ bool SentenceGrounder::run() const {
 }
 
 bool UnivSentGrounder::run() const {
-	if(_verbosity > 1) clog << "Grounding a universally quantified sentence " << "\n";
+	if(_verbosity > 1) { clog << "Grounding a universally quantified sentence " << "\n"; }
 	if(_generator->first()) {
 		bool b = _subgrounder->run();
-		if(!b) {
+		if(not b) {
 			_grounding->addEmptyClause();
 			return b;
 		}
 		while(_generator->next()) {
 			b = _subgrounder->run();
-			if(!b) {
+			if(not b) {
 				_grounding->addEmptyClause();
 				return b;
 			}
@@ -596,15 +586,10 @@ int AtomGrounder::run() const {
 	if(alldomelts) {
 		int atom = _translator->translate(_symbol,args);
 		if(not _sign) { atom = -atom; }
-		if(_verbosity > 2) {
-			clog << "Result is " << _translator->printAtom(atom) << "\n";
-		}
+		if(_verbosity > 2) { clog << "Result is " << _translator->printAtom(atom) << "\n"; }
 		return atom;
 	}
 	else {
-		//TODO Should we handle CPSymbols (that are not comparisons) here? No!
-		//TODO Should we assert(alldomelts)? Maybe yes, if P(t) and (not isCPSymbol(P)) and isCPSymbol(t) then it should have been rewritten, right?
-		//TODO If not previous... Do we need a GroundTranslator::translate method that takes GroundTerms as args??
 		assert(false);
 	}
 }
@@ -628,15 +613,13 @@ int ComparisonGrounder::run() const {
 		CPTerm* leftterm = new CPVarTerm(left._varid);
 		if(right._isvarid) {
 			CPBound rightbound(right._varid);
-//			return _translator->translate(leftterm,_comparator,rightbound,_context._tseitin);
-			return _translator->translate(leftterm,_comparator,rightbound,TS_EQ);
+			return _translator->translate(leftterm,_comparator,rightbound,TS_EQ); //TODO use _context._tseitin?
 		}	
 		else {
 			assert(not right._isvarid);
 			int rightvalue = right._domelement->value()._int;
 			CPBound rightbound(rightvalue);
-//			return _translator->translate(leftterm,_comparator,rightbound,_context._tseitin);
-			return _translator->translate(leftterm,_comparator,rightbound,TS_EQ);
+			return _translator->translate(leftterm,_comparator,rightbound,TS_EQ); //TODO use _context._tseitin?
 		}
 	}
 	else {
@@ -645,25 +628,18 @@ int ComparisonGrounder::run() const {
 		if(right._isvarid) {
 			CPTerm* rightterm = new CPVarTerm(right._varid);
 			CPBound leftbound(leftvalue);
-//			return _translator->translate(rightterm,invertComp(_comparator),leftbound,_context._tseitin);
-			return _translator->translate(rightterm,invertComp(_comparator),leftbound,TS_EQ);
+			return _translator->translate(rightterm,invertComp(_comparator),leftbound,TS_EQ); //TODO use _context._tseitin?
 		}	
 		else {
 			assert(not right._isvarid);
 			int rightvalue = right._domelement->value()._int;
 			switch(_comparator) {
-				case CT_EQ:
-					return leftvalue == rightvalue ? _true : _false;
-				case CT_NEQ:
-					return leftvalue != rightvalue ? _true : _false;
-				case CT_LEQ:
-					return leftvalue <= rightvalue ? _true : _false;
-				case CT_GEQ:
-					return leftvalue >= rightvalue ? _true : _false;
-				case CT_LT:
-					return leftvalue < rightvalue ? _true : _false;
-				case CT_GT:	
-					return leftvalue > rightvalue ? _true : _false;
+				case CT_EQ: { return leftvalue == rightvalue ? _true : _false; }
+				case CT_NEQ: { return leftvalue != rightvalue ? _true : _false; }
+				case CT_LEQ: { return leftvalue <= rightvalue ? _true : _false; }
+				case CT_GEQ: { return leftvalue >= rightvalue ? _true : _false; }
+				case CT_LT: { return leftvalue < rightvalue ? _true : _false; }
+				case CT_GT:	{ return leftvalue > rightvalue ? _true : _false; }
 				default: assert(false);
 			}
 		}
@@ -772,7 +748,7 @@ int AggGrounder::finishCard(double truevalue, double boundvalue, int setnr) cons
 			}
 			else {
 				vector<int> newsetlits(tsset.size());
-				for(unsigned int n = 0; n < tsset.size(); ++n) {
+				for(size_t n = 0; n < tsset.size(); ++n) {
 					newsetlits[n] = -tsset.literal(n);
 				}
 				int tseitin = _translator->translate(newsetlits,!conj,tp);
@@ -782,7 +758,7 @@ int AggGrounder::finishCard(double truevalue, double boundvalue, int setnr) cons
 		else {
 			if(negateset) {
 				vector<int> newsetlits(tsset.size());
-				for(unsigned int n = 0; n < tsset.size(); ++n) {
+				for(size_t n = 0; n < tsset.size(); ++n) {
 					newsetlits[n] = -tsset.literal(n);
 				}
 				int tseitin = _translator->translate(newsetlits,conj,tp);
@@ -795,7 +771,7 @@ int AggGrounder::finishCard(double truevalue, double boundvalue, int setnr) cons
 		}
 	}
 	else {
-		if(_doublenegtseitin) return handleDoubleNegation(double(leftvalue),setnr);
+		if(_doublenegtseitin) { return handleDoubleNegation(double(leftvalue),setnr); }
 		else {
 			int tseitin = _translator->translate(double(leftvalue),_comp,true,AGG_CARD,setnr,tp);
 			return _sign ? tseitin : -tseitin;
@@ -963,19 +939,13 @@ inline int ClauseGrounder::result2() const {
 }
 
 int ClauseGrounder::finish(vector<int>& cl) const {
-	if(_verbosity > 2) {
-		printOrig();
-	}
+	if(_verbosity > 2) { printOrig(); }
 	if(cl.empty()) {
-		if(_verbosity > 2) {
-			clog << "Result = " << _translator->printAtom(result2()) << "\n";
-		}
+		if(_verbosity > 2) { clog << "Result = " << _translator->printAtom(result2()) << "\n"; }
 		return result2();
 	}
 	else if(cl.size() == 1) {
-		if(_verbosity > 2) {
-			clog << "Result = " << (_sign ? _translator->printAtom(cl[0]) : _translator->printAtom(-cl[0])) << "\n";
-		}
+		if(_verbosity > 2) { clog << "Result = " << (_sign ? _translator->printAtom(cl[0]) : _translator->printAtom(-cl[0])) << "\n"; }
 		return _sign ? cl[0] : -cl[0];
 	}
 	else {
@@ -985,13 +955,13 @@ int ClauseGrounder::finish(vector<int>& cl) const {
 			else if(tp == TS_RIMPL) { tp = TS_IMPL; }
 		}
 		if(_doublenegtseitin) {
-			for(unsigned int n = 0; n < cl.size(); ++n) { cl[n] = -cl[n]; }
+			for(size_t n = 0; n < cl.size(); ++n) { cl[n] = -cl[n]; }
 			int ts = _translator->translate(cl,!_conj,tp);
 			if(_verbosity > 2) {
 				clog << "Result = " << (_sign ? "~" : "");
 				clog << _translator->printAtom(cl[0]) << ' ';
-				for(unsigned int n = 1; n < cl.size(); ++n) { 
-					clog << (!_conj ? "& " : "| ") << _translator->printAtom(cl[n]) << ' ';
+				for(size_t n = 1; n < cl.size(); ++n) { 
+					clog << (not _conj ? "& " : "| ") << _translator->printAtom(cl[n]) << ' ';
 				}
 				clog << '\n';
 			}
@@ -1002,7 +972,7 @@ int ClauseGrounder::finish(vector<int>& cl) const {
 			if(_verbosity > 2) {
 				clog << "Result = " << (_sign ? "" : "~");
 				clog << _translator->printAtom(cl[0]) << ' ';
-				for(unsigned int n = 1; n < cl.size(); ++n) { 
+				for(size_t n = 1; n < cl.size(); ++n) { 
 					clog << (_conj ? "& " : "| ") << _translator->printAtom(cl[n]) << ' ';
 				}
 				clog << '\n';
@@ -1017,7 +987,7 @@ int BoolGrounder::run() const {
 	for(size_t n = 0; n < _subgrounders.size(); ++n) {
 		int l = _subgrounders[n]->run();
 		if(check1(l)) { return result1(); }
-		else if(! check2(l)) { cl.push_back(l); }
+		else if(not check2(l)) { cl.push_back(l); }
 	}
 	return finish(cl);
 }
@@ -1030,7 +1000,7 @@ void BoolGrounder::run(vector<int>& clause) const {
 			clause.push_back(result1());
 			return;
 		}
-		else if(!check2(l)) { clause.push_back(_sign ? l : -l); }
+		else if(not check2(l)) { clause.push_back(_sign ? l : -l); }
 	}
 }
 
@@ -1047,7 +1017,7 @@ int QuantGrounder::run() const {
 			if(_verbosity > 2) { clog << "Result = " << _translator->printAtom(result1()) << "\n"; }
 			return result1();
 		}
-		else if(! check2(l)) cl.push_back(l);
+		else if(not check2(l)) { cl.push_back(l); }
 		while(_generator->next()) {
 			if(_checker->first()) {
 				if(_verbosity > 2) { clog << "Result = " << _translator->printAtom(result1()) << "\n"; }
@@ -1058,7 +1028,7 @@ int QuantGrounder::run() const {
 				if(_verbosity > 2) { clog << "Result = " << _translator->printAtom(result1()) << "\n"; }
 				return result1();
 			}
-			else if(! check2(l)) { cl.push_back(l); }
+			else if(not check2(l)) { cl.push_back(l); }
 		}
 	}
 	return finish(cl);
@@ -1074,7 +1044,7 @@ void QuantGrounder::run(vector<int>& clause) const {
 			if(_verbosity > 2) { clog << "Result = " << _translator->printAtom(result1()) << "\n"; }
 			return;
 		}
-		else if(! check2(l)) { clause.push_back(_sign ? l : -l); }
+		else if(not check2(l)) { clause.push_back(_sign ? l : -l); }
 		while(_generator->next()) {
 			l = _subgrounder->run();
 			if(check1(l)) {
@@ -1083,7 +1053,7 @@ void QuantGrounder::run(vector<int>& clause) const {
 				if(_verbosity > 2) { clog << "Result = " << _translator->printAtom(result1()) << "\n"; }
 				return;
 			}
-			else if(! check2(l)) { clause.push_back(_sign ? l : -l); }
+			else if(not check2(l)) { clause.push_back(_sign ? l : -l); }
 		}
 	}
 	if(_verbosity > 2) {
@@ -1093,7 +1063,7 @@ void QuantGrounder::run(vector<int>& clause) const {
 		}
 		else {
 			clog << _translator->printAtom(clause[0]) << ' ';
-			for(unsigned int n = 1; n < clause.size(); ++n) {
+			for(size_t n = 1; n < clause.size(); ++n) {
 			   clog << (_conj ? "& " : "| ") << _translator->printAtom(clause[n]) << ' ';
 			}
 		}
@@ -1587,9 +1557,10 @@ set<const PFSymbol*> GrounderFactory::findCPSymbols(const AbstractTheory* theory
 	if(_verbosity > 1) {
 		clog << "User-defined symbols that can be handled by the constraint solver: ";
 		for(set<const PFSymbol*>::const_iterator it = _cpsymbols.begin(); it != _cpsymbols.end(); ++it) {
-			clog << (*it)->toString() << " ";
+			(*it)->put(clog,_longnames);
+			clog << ' ';
 		}
-		clog << "\n";
+		clog << '\n';
 	}
 	return _cpsymbols;
 }
@@ -1879,9 +1850,6 @@ void GrounderFactory::visit(const PredForm* pf) {
 	}
 	else {	// The rewriting did not change the atom
 		PredForm* newpf = dynamic_cast<PredForm*>(movedformula);
-//		if(not (_cpsupport && VocabularyUtils::isComparisonPredicate(newpf->symbol()))) {
-//			newpf = FormulaUtils::graphFunctions(newpf);
-//		}
 		// Create grounders for the subterms
 		vector<TermGrounder*> subtermgrounders;
 		vector<SortTable*>	  argsorttables;

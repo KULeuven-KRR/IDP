@@ -23,16 +23,18 @@ using namespace std;
  * Deletes the built-in interpretation and removes the sort from the sort hierarchy.
  */
 Sort::~Sort() {
-	for(set<Sort*>::iterator it = _parents.begin(); it != _parents.end(); ++it)
+	for(set<Sort*>::iterator it = _parents.begin(); it != _parents.end(); ++it) {
 		(*it)->removeChild(this);
-	for(set<Sort*>::iterator it = _children.begin(); it != _children.end(); ++it)
+	}
+	for(set<Sort*>::iterator it = _children.begin(); it != _children.end(); ++it) {
 		(*it)->removeParent(this);
-	if(_interpretation) delete(_interpretation);
+	}
+	if(_interpretation) { delete(_interpretation); }
 }
 
 void Sort::removeVocabulary(const Vocabulary* vocabulary) {
 	_vocabularies.erase(vocabulary);
-	if(_vocabularies.empty()) delete(this);
+	if(_vocabularies.empty()) { delete(this); }
 }
 
 void Sort::addVocabulary(const Vocabulary* vocabulary) {
@@ -96,12 +98,12 @@ Sort::Sort(const string& name, const ParseInfo& pi, SortTable* inter) : _name(na
  */
 void Sort::addParent(Sort* p) {
 	pair<set<Sort*>::iterator,bool> changed = _parents.insert(p);
-	if(changed.second) p->addChild(this);
+	if(changed.second) { p->addChild(this); }
 }
 
 void Sort::addChild(Sort* c) {
 	pair<set<Sort*>::iterator,bool> changed = _children.insert(c);
-	if(changed.second) c->addParent(this);
+	if(changed.second) { c->addParent(this); }
 }
 
 const string& Sort::name() const { 
@@ -133,7 +135,7 @@ const std::set<Sort*>& Sort::children() const {
 set<Sort*> Sort::ancestors(const Vocabulary* vocabulary) const {
 	set<Sort*> ancest;
 	for(set<Sort*>::const_iterator it = _parents.begin(); it != _parents.end(); ++it) {
-		if((!vocabulary) || vocabulary->contains(*it)) ancest.insert(*it);
+		if((not vocabulary) || vocabulary->contains(*it)) { ancest.insert(*it); }
 		set<Sort*> temp = (*it)->ancestors(vocabulary);
 		ancest.insert(temp.begin(),temp.end());
 	}
@@ -149,7 +151,7 @@ set<Sort*> Sort::ancestors(const Vocabulary* vocabulary) const {
 set<Sort*> Sort::descendents(const Vocabulary* vocabulary) const {
 	set<Sort*> descend;
 	for(set<Sort*>::const_iterator it = _children.begin(); it != _children.end(); ++it) {
-		if((!vocabulary) || vocabulary->contains(*it)) descend.insert(*it);
+		if((not vocabulary) || vocabulary->contains(*it)) { descend.insert(*it); }
 		set<Sort*> temp = (*it)->descendents(vocabulary);
 		descend.insert(temp.begin(),temp.end());
 	}
@@ -157,7 +159,7 @@ set<Sort*> Sort::descendents(const Vocabulary* vocabulary) const {
 }
 
 bool Sort::builtin() const {
-	return _interpretation != 0;
+	return (_interpretation != 0);
 }
 
 SortTable* Sort::interpretation() const {
@@ -178,9 +180,9 @@ ostream& Sort::put(ostream& output, bool longnames) const {
 	return output;
 }
 
-string Sort::toString() const {
+string Sort::toString(bool longnames) const {
 	stringstream output;
-	put(output);
+	put(output,longnames);
 	return output.str();
 }
 
@@ -199,24 +201,24 @@ namespace SortUtils {
 	 *	\return	The unique nearest common ancestor if it exists, a null-pointer otherwise.
 	 */ 
 	Sort* resolve(Sort* s1, Sort* s2, const Vocabulary* vocabulary) {
-		if((s1 == 0) || s2 == 0) return 0;
+		if((s1 == 0) || s2 == 0) { return 0; }
 		set<Sort*> ss1 = s1->ancestors(vocabulary); ss1.insert(s1);
 		set<Sort*> ss2 = s2->ancestors(vocabulary); ss2.insert(s2);
 		set<Sort*> ss;
 		for(set<Sort*>::iterator it = ss1.begin(); it != ss1.end(); ++it) {
-			if(ss2.find(*it) != ss2.end()) ss.insert(*it);
+			if(ss2.find(*it) != ss2.end()) { ss.insert(*it); }
 		}
 		vector<Sort*> vs = vector<Sort*>(ss.begin(),ss.end());
-		if(vs.empty()) return 0;
-		else if(vs.size() == 1) return vs[0];
+		if(vs.empty()) { return 0; }
+		else if(vs.size() == 1) { return vs[0]; }
 		else {
 			for(unsigned int n = 0; n < vs.size(); ++n) {
 				set<Sort*> ds = vs[n]->ancestors(vocabulary);
-				for(set<Sort*>::const_iterator it = ds.begin(); it != ds.end(); ++it) ss.erase(*it);
+				for(set<Sort*>::const_iterator it = ds.begin(); it != ds.end(); ++it) { ss.erase(*it); }
 			}
 			vs = vector<Sort*>(ss.begin(),ss.end());
-			if(vs.size() == 1) return vs[0];
-			else return 0;
+			if(vs.size() == 1) { return vs[0]; }
+			else { return 0; }
 		}
 	}
 
@@ -267,9 +269,9 @@ ostream& Variable::put(ostream& output, bool longnames) const {
 	return output;
 }
 
-string Variable::toString() const {
+string Variable::toString(bool longnames) const {
 	stringstream output;
-	put(output);
+	put(output,longnames);
 	return output.str();
 }
 
@@ -343,7 +345,7 @@ Predicate* PFSymbol::derivedSymbol(SymbolType type) {
 		_derivedsymbols[type] = derp;
 		return derp;
 	}
-	else return it->second;
+	else { return it->second; }
 }
 
 string PFSymbol::toString(bool longnames) const {
@@ -519,9 +521,9 @@ ostream& Predicate::put(ostream& output, bool longnames) const {
 	output << _name.substr(0,_name.rfind('/'));
 	if(longnames && not overloaded()) {
 		if(nrSorts() > 0) {
-			output << '['; sort(0);
+			output << '['; sort(0)->put(output,longnames);
 			for(size_t n = 1; n < nrSorts(); ++n){
-				output << ','; sort(n)->put(output);
+				output << ','; sort(n)->put(output,longnames);
 			}
 			output << ']';
 		}
@@ -1555,7 +1557,7 @@ ostream& Vocabulary::putName(ostream& output) const {
 	return output;
 }
 
-ostream& Vocabulary::put(ostream& output, unsigned int tabs) const {
+ostream& Vocabulary::put(ostream& output, size_t tabs, bool longnames) const {
 	//TODO Use put methods + add longnames option...
 	printTabs(output,tabs);
 	output << "Vocabulary " << _name << ":\n";
@@ -1565,7 +1567,8 @@ ostream& Vocabulary::put(ostream& output, unsigned int tabs) const {
 	for(map<string,set<Sort*> >::const_iterator it = _name2sort.begin(); it != _name2sort.end(); ++it) {
 		for(set<Sort*>::const_iterator jt = (it->second).begin(); jt != (it->second).end(); ++jt) {
 			printTabs(output,tabs);
-			output << *(*jt) << '\n';
+			(*jt)->put(output,longnames);
+			output << '\n';
 		}
 	}
 	--tabs; printTabs(output,tabs);
@@ -1573,25 +1576,27 @@ ostream& Vocabulary::put(ostream& output, unsigned int tabs) const {
 	++tabs;
 	for(map<string,Predicate*>::const_iterator it = _name2pred.begin(); it != _name2pred.end(); ++it) {
 		printTabs(output,tabs);
-		output << *(it->second) << '\n';
+		it->second->put(output,longnames);
+		output << '\n';
 	}
 	--tabs; printTabs(output,tabs);
 	output << "Functions:\n";
 	++tabs;
 	for(map<string,Function*>::const_iterator it = _name2func.begin(); it != _name2func.end(); ++it) {
 		printTabs(output,tabs);
-		output << *(it->second) << '\n';
+		it->second->put(output,longnames);
+		output << '\n';
 	}
 	return output;
 }
 
-string Vocabulary::toString(unsigned int tabs) const {
+string Vocabulary::toString(size_t tabs, bool longnames) const {
 	stringstream ss;
-	put(ss,tabs);
+	put(ss,tabs,longnames);
 	return ss.str();
 }
 
-ostream& operator<< (ostream& output,const Vocabulary& voc) {
+ostream& operator<< (ostream& output, const Vocabulary& voc) {
 	return voc.put(output);
 }
 

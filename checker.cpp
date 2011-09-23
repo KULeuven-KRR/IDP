@@ -13,8 +13,8 @@ using namespace std;
 
 InstanceChecker* CheckerFactory::create(PredInter* inter, bool ctpf, bool c) {
 	const PredTable* pt = ctpf ? (c ? inter->ct() : inter->pf()) : (c ? inter->cf() : inter->pt());
-	if(pt->approxEmpty()) return new FalseInstanceChecker();
-	else return new TableInstanceChecker(pt);
+	if(pt->approxEmpty()) { return new FalseInstanceChecker(); }
+	else { return new TableInstanceChecker(pt); }
 }
 
 inline bool TableInstanceChecker::run(const ElementTuple& vd) const {

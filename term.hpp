@@ -85,8 +85,8 @@ class Term {
 		virtual Term*	accept(TheoryMutatingVisitor*)  = 0;
 
 		// Output
-		virtual std::ostream&	put(std::ostream&, bool longnames = true)	const = 0;
-				std::string		toString()									const;	
+		virtual std::ostream&	put(std::ostream&, bool longnames = false)	const = 0;
+				std::string		toString(bool longnames = false)			const;	
 
 	friend class VarTerm;
 };
@@ -119,7 +119,7 @@ class VarTerm : public Term {
 		void	accept(TheoryVisitor*)	const;
 		Term*	accept(TheoryMutatingVisitor*);
 
-		std::ostream&	put(std::ostream&, bool longnames = true)	const;
+		std::ostream&	put(std::ostream&, bool longnames = false)	const;
 };
 
 
@@ -151,7 +151,7 @@ class FuncTerm : public Term {
 		void	accept(TheoryVisitor*)	const;
 		Term*	accept(TheoryMutatingVisitor*);
 
-		std::ostream&	put(std::ostream&, bool longnames = true)	const;
+		std::ostream&	put(std::ostream&, bool longnames = false)	const;
 };
 
 /**
@@ -181,7 +181,7 @@ class DomainTerm : public Term {
 		void	accept(TheoryVisitor*)	const;
 		Term*	accept(TheoryMutatingVisitor*);
 
-		std::ostream&	put(std::ostream&, bool longnames = true)	const;	
+		std::ostream&	put(std::ostream&, bool longnames = false)	const;	
 };
 
 /**
@@ -209,7 +209,7 @@ class AggTerm : public Term {
 		void	accept(TheoryVisitor*)	const;
 		Term*	accept(TheoryMutatingVisitor*);
 
-		std::ostream&	put(std::ostream&, bool longnames = true)	const;
+		std::ostream&	put(std::ostream&, bool longnames = false)	const;
 };
 
 namespace TermUtils {
@@ -299,8 +299,8 @@ class SetExpr {
 		virtual SetExpr*	accept(TheoryMutatingVisitor*)	= 0;
 
 		// Output
-		virtual std::ostream&	put(std::ostream&, bool longnames)	const = 0;
-				std::string		toString()							const;
+		virtual std::ostream&	put(std::ostream&, bool longnames = false)	const = 0;
+				std::string		toString(bool longnames = false)			const;
 };
 
 std::ostream& operator<<(std::ostream&,const SetExpr&);
@@ -324,7 +324,7 @@ class EnumSetExpr : public SetExpr {
 		void		accept(TheoryVisitor*)	const;
 		SetExpr*	accept(TheoryMutatingVisitor*);
 
-		std::ostream& put(std::ostream&, bool longnames = true) const;
+		std::ostream& put(std::ostream&, bool longnames = false) const;
 };
 
 /** 
@@ -344,7 +344,7 @@ class QuantSetExpr : public SetExpr {
 		void		accept(TheoryVisitor*)	const;
 		SetExpr*	accept(TheoryMutatingVisitor*);
 
-		std::ostream&	put(std::ostream&, bool longnames = true)	const;	
+		std::ostream&	put(std::ostream&, bool longnames = false)	const;	
 };
 
 class AbstractStructure;

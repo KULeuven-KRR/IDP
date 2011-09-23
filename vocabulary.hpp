@@ -73,8 +73,8 @@ class Sort {
 		SortTable*				interpretation()						const;	//!< Returns the interpretaion for built-in sorts
 
 		// Output
-		std::ostream&	put(std::ostream&, bool longnames = true)	const;
-		std::string		toString()									const;
+		std::ostream&	put(std::ostream&, bool longnames = false)	const;
+		std::string		toString(bool longnames = false)			const;
 
 		friend class Vocabulary;
 };
@@ -121,8 +121,8 @@ class Variable {
 		const ParseInfo&	pi()	const;	//!< Returns the parse info of the variable
 
 		// Output
-		std::ostream&	put(std::ostream&, bool longnames = true)	const;
-		std::string		toString()									const;
+		std::ostream&	put(std::ostream&, bool longnames = false)	const;
+		std::string		toString(bool longnames = false)			const;
 };
 
 std::ostream& operator<< (std::ostream&,const Variable&);
@@ -153,7 +153,6 @@ class PFSymbol {
 		bool						_infix;			//!< True iff the symbol is infix
 
 		std::map<SymbolType,Predicate*>	_derivedsymbols;	//!< The symbols this<ct>, this<cf>, this<pt>, and this<pf>
-
 
 		// Destructor
 		virtual ~PFSymbol();	//!< Destructor
@@ -190,8 +189,8 @@ class PFSymbol {
 		virtual PFSymbol*	disambiguate(const std::vector<Sort*>&, const Vocabulary* v = 0)	= 0;
 
 		// Output
-		virtual std::ostream&	put(std::ostream&, bool longnames = true)	const = 0;
-				std::string		toString(bool longnames = true)				const;
+		virtual std::ostream&	put(std::ostream&, bool longnames = false)	const = 0;
+				std::string		toString(bool longnames = false)			const;
 
 		friend class Vocabulary;
 };
@@ -216,7 +215,6 @@ class Predicate : public PFSymbol {
 													//!< otherwise.
 		PredGenerator*			_overpredgenerator;	//!< Generates new built-in, overloaded predicates. 
 													//!< Null-pointer if the predicate is not overloaded.
-
 
 	public:
 		// Constructors
@@ -245,7 +243,7 @@ class Predicate : public PFSymbol {
 		PredInter*	interpretation(const AbstractStructure*)	const;
 
 		// Overloaded symbols 
-		bool		contains(const Predicate* p)									const;
+		bool		contains(const Predicate* p)				const;
 		Predicate*	resolve(const std::vector<Sort*>&);
 		Predicate*	disambiguate(const std::vector<Sort*>&,const Vocabulary* v = 0);
 		std::set<Predicate*>	nonbuiltins();	//!< Returns the set of predicates that are not builtin
@@ -405,8 +403,8 @@ class Function : public PFSymbol {
 											//!< and that are overloaded by 'this'.
 
 		// Output
-		std::ostream&	put(std::ostream&, bool longnames = true)	const;
-		std::string		toString(bool longnames = true)				const;
+		std::ostream&	put(std::ostream&, bool longnames = false)	const;
+		std::string		toString(bool longnames = false)			const;
 
 		friend class Vocabulary;
 };
@@ -607,9 +605,9 @@ class Vocabulary {
 		InfArg getObject(const std::string& str) const;
 
 		// Output
-		std::ostream& putName(std::ostream&)					const;
-		std::ostream& put(std::ostream&, unsigned int tabs = 0)	const;
-		std::string toString(unsigned int tabs = 0)				const;
+		std::ostream& 	putName(std::ostream&)										const;
+		std::ostream& 	put(std::ostream&, size_t tabs = 0, bool longnames = false)	const;
+		std::string 	toString(size_t tabs = 0, bool longnames = false)			const;
 
 		friend class Namespace;
 };

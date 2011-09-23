@@ -64,8 +64,8 @@ public:
 		for(std::map<std::string,std::set<Sort*> >::const_iterator it = voc->firstSort(); it != voc->lastSort(); ++it) {
 			for(std::set<Sort*>::const_iterator jt = it->second.begin(); jt != it->second.end(); ++jt) {
 				Sort* s = *jt;
-				if(!s->builtin()) {
-					output() << *s << " = ";
+				if(not s->builtin()) {
+					output() << s->toString(_longnames) << " = ";
 					SortTable* st = structure->inter(s);
 					visit(st);
 					output() << '\n';
@@ -79,18 +79,18 @@ public:
 				if(p->arity() != 1 || p->sorts()[0]->pred() != p) {
 					PredInter* pi = structure->inter(p);
 					if(pi->approxTwoValued()) {
-						output() << *p << " = ";
+						output() << p->toString(_longnames) << " = ";
 						const PredTable* pt = pi->ct();
 						visit(pt);
 						output() << '\n';
 					}
 					else {
 						const PredTable* ct = pi->ct();
-						output() << *p << "<ct> = ";
+						output() << p->toString(_longnames) << "<ct> = ";
 						visit(ct);
 						output() << '\n';
 						const PredTable* cf = pi->cf();
-						output() << *p << "<cf> = ";
+						output() << p->toString(_longnames) << "<cf> = ";
 						visit(cf);
 						output() << '\n';
 					}
@@ -104,18 +104,18 @@ public:
 				FuncInter* fi = structure->inter(f);
 				if(fi->approxTwoValued()) {
 					FuncTable* ft = fi->funcTable();
-					output() << *f << " = ";
+					output() << f->toString(_longnames) << " = ";
 					visit(ft);
 					output() << '\n';
 				}
 				else {
 					PredInter* pi = fi->graphInter();
 					const PredTable* ct = pi->ct();
-					output() << *f << "<ct> = ";
+					output() << f->toString(_longnames) << "<ct> = ";
 					printAsFunc(ct);
 					output() << '\n';
 					const PredTable* cf = pi->cf();
-					output() << *f << "<cf> = ";
+					output() << f->toString(_longnames) << "<cf> = ";
 					printAsFunc(cf);
 					output() << '\n';
 				}
@@ -127,20 +127,20 @@ public:
 		assert(isTheoryOpen());
 		for(std::map<std::string,std::set<Sort*> >::const_iterator it = v->firstSort(); it != v->lastSort(); ++it) {
 			for(std::set<Sort*>::iterator jt = it->second.begin(); jt != it->second.end(); ++jt) {
-				if(!(*jt)->builtin() || v == Vocabulary::std()) visit(*jt);
+				if(not (*jt)->builtin() || v == Vocabulary::std()) { visit(*jt); }
 			}
 		}
 		for(std::map<std::string,Predicate*>::const_iterator it = v->firstPred(); it != v->lastPred(); ++it) {
-			if(!it->second->builtin() || v == Vocabulary::std()) visit(it->second);
+			if(not it->second->builtin() || v == Vocabulary::std()) { visit(it->second); }
 		}
 		for(std::map<std::string,Function*>::const_iterator it = v->firstFunc(); it != v->lastFunc(); ++it) {
-			if(!it->second->builtin() || v == Vocabulary::std()) visit(it->second);
+			if(not it->second->builtin() || v == Vocabulary::std()) { visit(it->second); }
 		}
 	}
 
 	void visit(const Namespace* s) {
 		assert(isTheoryOpen());
-		for(auto i=s->vocabularies().begin(); i!=s->vocabularies().end(); ++i) {
+		for(auto i = s->vocabularies().begin(); i != s->vocabularies().end(); ++i) {
 			printTab();
 			output() << "vocabulary " << (*i).second->name() << " {\n";
 			indent();
@@ -149,7 +149,7 @@ public:
 			printTab();
 			output() << "}\n";
 		}
-		for(auto i=s->theories().begin(); i!=s->theories().end(); ++i) {
+		for(auto i = s->theories().begin(); i != s->theories().end(); ++i) {
 			printTab();
 			output() << "theory " << (*i).second->name() <<" : " << (*i).second->vocabulary()->name() << " {\n";
 			indent();
@@ -158,7 +158,7 @@ public:
 			printTab();
 			output() << "}\n";
 		}
-		for(auto i=s->structures().begin(); i!=s->structures().end(); ++i) {
+		for(auto i = s->structures().begin(); i != s->structures().end(); ++i) {
 			printTab();
 			output() << "structure " << (*i).second->name();
 			output() << " : " << (*i).second->vocabulary()->name() << " {\n";
@@ -168,7 +168,7 @@ public:
 			printTab();
 			output() << "}\n";
 		}
-		for(auto i=s->subspaces().begin(); i!=s->subspaces().end(); ++i) {
+		for(auto i = s->subspaces().begin(); i != s->subspaces().end(); ++i) {
 			printTab();
 			output() << "namespace " << (*i).second->name() << " {\n";
 			indent();
@@ -202,24 +202,24 @@ public:
 		assert(isTheoryOpen());
 		_translator = g->translator();
 		_termtranslator = g->termtranslator();
-		for(unsigned int n = 0; n < g->nrClauses(); ++n) {
+		for(size_t n = 0; n < g->nrClauses(); ++n) {
 			visit(g->clause(n));
 		}
-		for(unsigned int n = 0; n < g->nrDefinitions(); ++n){
+		for(size_t n = 0; n < g->nrDefinitions(); ++n){
 			openDefinition(g->definition(n)->id());
 			g->definition(n)->accept(this);
 			closeDefinition();
 		}
-		for(unsigned int n = 0; n < g->nrSets(); ++n){
+		for(size_t n = 0; n < g->nrSets(); ++n){
 			g->set(n)->accept(this);
 		}
-		for(unsigned int n = 0; n < g->nrAggregates(); ++n){
+		for(size_t n = 0; n < g->nrAggregates(); ++n){
 			g->aggregate(n)->accept(this);
 		}
-		for(unsigned int n = 0; n < g->nrFixpDefs(); ++n){
+		for(size_t n = 0; n < g->nrFixpDefs(); ++n){
 			g->fixpdef(n)->accept(this);
 		}
-		for(unsigned int n = 0; n < g->nrCPReifications(); ++n){
+		for(size_t n = 0; n < g->nrCPReifications(); ++n){
 			g->cpreification(n)->accept(this);
 		}
 	}
@@ -277,7 +277,7 @@ public:
 			if(not f->sign()) { output() << '~'; }
 			output() << '(';
 			f->subformulas()[0]->accept(this);
-			for(unsigned int n = 1; n < f->subformulas().size(); ++n) {
+			for(size_t n = 1; n < f->subformulas().size(); ++n) {
 				output() << (f->conj() ? " & " : " | ");
 				f->subformulas()[n]->accept(this);
 			}

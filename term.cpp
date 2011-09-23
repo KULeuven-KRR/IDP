@@ -49,9 +49,9 @@ bool Term::contains(const Variable* v) const {
 	return false;
 }
 
-string Term::toString() const {
+string Term::toString(bool longnames) const {
 	stringstream sstr;
-	put(sstr);
+	put(sstr,longnames);
 	return sstr.str();
 }
 
@@ -83,7 +83,7 @@ VarTerm* VarTerm::clone() const {
 VarTerm* VarTerm::clone(const map<Variable*,Variable*>& mvv) const {
 	map<Variable*,Variable*>::const_iterator it = mvv.find(_var);
 	if(it != mvv.end()) { return new VarTerm(it->second,_pi); }
-	else return new VarTerm(_var,_pi.clone(mvv));
+	else { return new VarTerm(_var,_pi.clone(mvv)); }
 }
 
 inline Sort* VarTerm::sort() const {
@@ -142,7 +142,7 @@ ostream& FuncTerm::put(ostream& output, bool longnames) const {
 	if(not subterms().empty()) {
 		output << '('; 
 		subterms()[0]->put(output,longnames);
-		for(unsigned int n = 1; n < subterms().size(); ++n) {
+		for(size_t n = 1; n < subterms().size(); ++n) {
 			output << ',';
 			subterms()[n]->put(output,longnames);
 		}
@@ -255,28 +255,28 @@ void SetExpr::recursiveDelete() {
 
 bool SetExpr::contains(const Variable* v) const {
 	for(set<Variable*>::const_iterator it = _freevars.begin(); it != _freevars.end(); ++it) {
-		if(*it == v) return true;
+		if(*it == v) { return true; }
 	}
 	for(set<Variable*>::const_iterator it = _quantvars.begin(); it != _quantvars.end(); ++it) {
-		if(*it == v) return true;
+		if(*it == v) { return true; }
 	}
 	for(vector<Term*>::const_iterator it = _subterms.begin(); it != _subterms.end(); ++it) {
-		if((*it)->contains(v)) return true;
+		if((*it)->contains(v)) { return true; }
 	}
 	for(vector<Formula*>::const_iterator it = _subformulas.begin(); it != _subformulas.end(); ++it) {
-		if((*it)->contains(v)) return true;
+		if((*it)->contains(v)) { return true; }
 	}
 	return false;
 }
 
-std::string SetExpr::toString() const {
+std::string SetExpr::toString(bool longnames) const {
 	stringstream sstr;
-	put(sstr,true);
+	put(sstr,longnames);
 	return sstr.str();
 }
 
 ostream& operator<<(ostream& output,const SetExpr& set) {
-	return set.put(output,true);
+	return set.put(output);
 }
 
 /******************
@@ -439,10 +439,10 @@ void ApproxTwoValChecker::visit(const PredForm* pf) {
 	if(inter->approxTwoValued()) {
 		for(vector<Term*>::const_iterator it = pf->subterms().begin(); it != pf->subterms().end(); ++it) {
 			(*it)->accept(this);
-			if(!_returnvalue) return;
+			if(not _returnvalue) { return; }
 		}
 	}
-	else _returnvalue = false;
+	else { _returnvalue = false; }
 }
 
 void ApproxTwoValChecker::visit(const FuncTerm* ft) {
@@ -450,10 +450,10 @@ void ApproxTwoValChecker::visit(const FuncTerm* ft) {
 	if(inter->approxTwoValued()) {
 		for(vector<Term*>::const_iterator it = ft->subterms().begin(); it != ft->subterms().end(); ++it) {
 			(*it)->accept(this);
-			if(!_returnvalue) return;
+			if(not _returnvalue) { return; }
 		}
 	}
-	else _returnvalue = false;
+	else { _returnvalue = false; }
 }
 
 namespace SetUtils {
@@ -483,7 +483,7 @@ class PartialChecker : public TheoryVisitor {
 			}
 			else {
 				for(unsigned int argpos = 0; argpos < ft->subterms().size(); ++argpos) {
-					if(!SortUtils::isSubsort(ft->subterms()[argpos]->sort(),ft->function()->insort(argpos))) {
+					if(not SortUtils::isSubsort(ft->subterms()[argpos]->sort(),ft->function()->insort(argpos))) {
 						_result = true;
 						return;
 					}

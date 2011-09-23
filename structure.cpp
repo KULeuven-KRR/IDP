@@ -199,7 +199,7 @@ ostream& Compound::put(ostream& output) const {
 	output << *_function;
 	if(_function->arity() > 0) {
 		output << '(' << *_arguments[0];
-		for(unsigned int n = 1; n < _function->arity(); ++n) {
+		for(size_t n = 1; n < _function->arity(); ++n) {
 			output << ',' << *_arguments[n];
 		}
 		output << ')';
@@ -257,7 +257,7 @@ ostream& DomainAtom::put(ostream& output) const {
 	if(typeid(*_symbol) == typeid(Predicate)) {
 		if(!_symbol->sorts().empty()) {
 			output << '(' << *_args[0];
-			for(unsigned int n = 1; n < _args.size(); ++n) {
+			for(size_t n = 1; n < _args.size(); ++n) {
 				output << ',' << *_args[n];
 			}
 			output << ')';
@@ -267,7 +267,7 @@ ostream& DomainAtom::put(ostream& output) const {
 		Function* f = dynamic_cast<Function*>(_symbol);
 		if(f->arity() > 0) {
 			output << '(' << *_args[0];
-			for(unsigned int n = 1; n < f->arity(); ++n) {
+			for(size_t n = 1; n < f->arity(); ++n) {
 				output << ',' << *_args[n];
 			}
 			output << ") = " << *(_args.back());
