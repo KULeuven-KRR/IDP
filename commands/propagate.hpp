@@ -24,6 +24,33 @@
  */
 class PropagateInference: public Inference {
 	public:
+		PropagateInference(): Inference("propagate") {
+			add(AT_THEORY);
+			add(AT_STRUCTURE);
+			add(AT_OPTIONS);
+		}
+	
+		InternalArgument execute(const std::vector<InternalArgument>& args) const {
+			AbstractTheory*	theory = args[0].theory();
+			AbstractStructure* structure = args[1].structure();
+			Options* options = args[2].options();
+	
+			std::map<PFSymbol*,InitBoundType> mpi = propagateVocabulary(theory,structure);
+			FOPropagator* propagator = createPropagator(theory,mpi,options);
+			propagator->run();
+	
+			AbstractStructure* result = propagator->currstructure(structure);		// TODO: free allocated memory
+			return InternalArgument(result);
+		}
+
+		FOPropagator* createPropagator(AbstractTheory* theory, const std::map<PFSymbol*,InitBoundType> mpi, Options* options) const {
+			FOPropBDDDomainFactory* domainfactory = new FOPropBDDDomainFactory();
+			FOPropScheduler* scheduler = new FOPropScheduler();
+			FOPropagatorFactory propfactory(domainfactory,scheduler,true,mpi,options);
+			FOPropagator* propagator = propfactory.create(theory);
+			return propagator;
+		}
+
 		/** Collect symbolic propagation vocabulary **/
 		std::map<PFSymbol*,InitBoundType> propagateVocabulary(AbstractTheory* theory, AbstractStructure* structure) const {
 			std::map<PFSymbol*,InitBoundType> mpi;
@@ -65,33 +92,6 @@ class PropagateInference: public Inference {
 				}
 			}
 			return mpi;
-		}
-	
-		FOPropagator* createPropagator(AbstractTheory* theory, const std::map<PFSymbol*,InitBoundType> mpi, Options* options) const {
-			FOPropBDDDomainFactory* domainfactory = new FOPropBDDDomainFactory();
-			FOPropScheduler* scheduler = new FOPropScheduler();
-			FOPropagatorFactory propfactory(domainfactory,scheduler,true,mpi,options);
-			FOPropagator* propagator = propfactory.create(theory);
-			return propagator;
-		}
-	
-		PropagateInference(): Inference("propagate") {
-			add(AT_THEORY);
-			add(AT_STRUCTURE);
-			add(AT_OPTIONS);
-		}
-	
-		InternalArgument execute(const std::vector<InternalArgument>& args) const {
-			AbstractTheory*	theory = args[0].theory();
-			AbstractStructure* structure = args[1].structure();
-			Options* options = args[2].options();
-	
-			std::map<PFSymbol*,InitBoundType> mpi = propagateVocabulary(theory,structure);
-			FOPropagator* propagator = createPropagator(theory,mpi,options);
-			propagator->run();
-	
-			AbstractStructure* result = propagator->currstructure(structure);		// TODO: free allocated memory
-			return InternalArgument(result);
 		}
 };
 
@@ -194,7 +194,7 @@ class OptimalPropagateInference : public Inference {
 			solver.solve(abstractsolutions);
 
 			std::set<int> intersection;
-			if(abstractsolutions->getModels().empty()) return nilarg();
+			if(abstractsolutions->getModels().empty()) { return nilarg(); }
 			else { // Take the intersection of all models
 				MinisatID::Model* firstmodel = *(abstractsolutions->getModels().begin());
 				for(auto it = firstmodel->literalinterpretations.begin(); 
@@ -215,7 +215,7 @@ class OptimalPropagateInference : public Inference {
 			GroundTranslator* translator = grounding->translator();
 			AbstractStructure* result = structure->clone();
 			for(auto literal = intersection.begin(); literal != intersection.end(); ++literal) {
-				int atomnr = *literal > 0 ? *literal : (-1) * (*literal);
+				int atomnr = (*literal > 0) ? *literal : (-1) * (*literal);
 				PFSymbol* symbol = translator->atom2symbol(atomnr);
 				if(symbol) {
 					const ElementTuple& args = translator->args(atomnr);

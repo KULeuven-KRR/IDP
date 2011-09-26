@@ -186,7 +186,9 @@ string Sort::toString(bool longnames) const {
 	return output.str();
 }
 
-ostream& operator<<(ostream& output, const Sort& sort) { return sort.put(output);	}
+ostream& operator<<(ostream& output, const Sort& sort) { 
+	return sort.put(output); 
+}
 
 namespace SortUtils {
 
@@ -539,7 +541,9 @@ ostream& Predicate::put(ostream& output, bool longnames) const {
 	return output;
 }
 
-ostream& operator<< (ostream& output, const Predicate& p) { return p.put(output); }
+ostream& operator<< (ostream& output, const Predicate& p) { 
+	return p.put(output); 
+}
 
 PredGenerator::PredGenerator(const string& name, unsigned int arity, bool infix) : _name(name), _arity(arity), _infix(infix) {
 }

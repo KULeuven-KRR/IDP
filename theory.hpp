@@ -49,7 +49,7 @@ class TheoryComponent {
 		virtual TheoryComponent*	accept(TheoryMutatingVisitor*) 	= 0;
 
 		// Output
-		virtual std::ostream&	put(std::ostream&, bool longnames = true, unsigned int spaces = 0)	const = 0;
+		virtual std::ostream&	put(std::ostream&, bool longnames = false, unsigned int spaces = 0)	const = 0;
 				std::string 	toString(unsigned int spaces = 0)									const;
 };
 
@@ -120,7 +120,7 @@ class Formula : public TheoryComponent {
 		virtual Formula*	accept(TheoryMutatingVisitor* v)	= 0;
 
 		// Output
-		virtual std::ostream& put(std::ostream&, bool longnames = true, unsigned int spaces = 0) const = 0;
+		virtual std::ostream& put(std::ostream&, bool longnames = false, unsigned int spaces = 0) const = 0;
 
 	private:
 		void	setFreeVars();		//!< compute the free variables of the formula
@@ -159,7 +159,7 @@ class PredForm : public Formula {
 		Formula*	accept(TheoryMutatingVisitor* v);
 
 		// Output
-		std::ostream& put(std::ostream&, bool longnames = true, unsigned int spaces = 0) const;
+		std::ostream& put(std::ostream&, bool longnames = false, unsigned int spaces = 0) const;
 };
 
 /** 
@@ -198,7 +198,7 @@ class EqChainForm : public Formula {
 		Formula*	accept(TheoryMutatingVisitor* v);
 
 		// Output
-		std::ostream& put(std::ostream&, bool longnames = true, unsigned int spaces = 0) const;
+		std::ostream& put(std::ostream&, bool longnames = false, unsigned int spaces = 0) const;
 };
 
 /** 
@@ -230,7 +230,7 @@ class EquivForm : public Formula {
 		Formula*	accept(TheoryMutatingVisitor* v);
 
 		// Output
-		std::ostream& put(std::ostream&, bool longnames = true, unsigned int spaces = 0) const;
+		std::ostream& put(std::ostream&, bool longnames = false, unsigned int spaces = 0) const;
 };
 
 /** 
@@ -266,7 +266,7 @@ class BoolForm : public Formula {
 		Formula*	accept(TheoryMutatingVisitor* v);
 
 		// Debugging
-		std::ostream& put(std::ostream&, bool longnames = true, unsigned int spaces = 0)	const;
+		std::ostream& put(std::ostream&, bool longnames = false, unsigned int spaces = 0)	const;
 };
 
 /** 
@@ -301,7 +301,7 @@ class QuantForm : public Formula {
 		Formula*	accept(TheoryMutatingVisitor* v);
 
 		// Output
-		std::ostream& put(std::ostream&, bool longnames = true, unsigned int spaces = 0)	const;
+		std::ostream& put(std::ostream&, bool longnames = false, unsigned int spaces = 0)	const;
 };
 
 /** 
@@ -338,7 +338,7 @@ class AggForm : public Formula {
 		Formula*	accept(TheoryMutatingVisitor* v);
 
 		// Output
-		std::ostream& put(std::ostream&, bool longnames = true, unsigned int spaces = 0)	const;
+		std::ostream& put(std::ostream&, bool longnames = false, unsigned int spaces = 0)	const;
 };
 
 namespace FormulaUtils {
@@ -438,7 +438,7 @@ class Rule {
 		Rule*	accept(TheoryMutatingVisitor* v);
 
 		// Output
-		std::ostream&	put(std::ostream&, bool longnames = true, unsigned int spaces = 0) 	const;
+		std::ostream&	put(std::ostream&, bool longnames = false, unsigned int spaces = 0) 	const;
 		std::string		toString(unsigned int spaces = 0)									const;
 };
 
@@ -490,7 +490,7 @@ class Definition : public AbstractDefinition {
 		Definition*	accept(TheoryMutatingVisitor* v);
 
 		// output
-		std::ostream& put(std::ostream&, bool longnames = true, unsigned int spaces = 0) const;
+		std::ostream& put(std::ostream&, bool longnames = false, unsigned int spaces = 0) const;
 };
 
 namespace DefinitionUtils {
@@ -551,7 +551,7 @@ class FixpDef : public AbstractFixpDef {
 		FixpDef*	accept(TheoryMutatingVisitor* v);
 
 		// output
-		std::ostream& put(std::ostream&, bool longnames = true, unsigned int spaces = 0) const;
+		std::ostream& put(std::ostream&, bool longnames = false, unsigned int spaces = 0) const;
 };
 
 
@@ -651,7 +651,7 @@ class Theory : public AbstractTheory {
 		Theory*	accept(TheoryMutatingVisitor*);
 
 		// Output
-		std::ostream& put(std::ostream&, bool longnames = true, unsigned int spaces = 0) const;
+		std::ostream& put(std::ostream&, bool longnames = false, unsigned int spaces = 0) const;
 };
 
 namespace TheoryUtils {

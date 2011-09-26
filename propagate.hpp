@@ -170,8 +170,6 @@ class FOPropTableDomainFactory : public FOPropDomainFactory {
 		std::ostream&		put(std::ostream&,FOPropDomain*) const;
 };
 
-
-
 /**
  * 	A domain is split in a certainly true and a certainly false part.
  */
@@ -244,7 +242,7 @@ class FOPropagator : public TheoryVisitor {
 
 	public:
 		// Constructor
-		FOPropagator(FOPropDomainFactory* f, FOPropScheduler* s, Options* opts); 
+		FOPropagator(FOPropDomainFactory*, FOPropScheduler*, Options*); 
 
 		// Execution
 		void run();		//!< Apply propagations until the propagation queue is empty
@@ -276,6 +274,7 @@ class FOPropagator : public TheoryVisitor {
  */
 class FOPropagatorFactory : public TheoryVisitor {
 	private:
+		int									_verbosity;
 		FOPropagator*						_propagator;
 		std::map<PFSymbol*,PredForm*>		_leafconnectors;
 		std::map<PFSymbol*,InitBoundType>	_initbounds;
@@ -294,11 +293,10 @@ class FOPropagatorFactory : public TheoryVisitor {
 		void visit(const AggForm*);
 	public:
 		// Constructors
-		FOPropagatorFactory(FOPropDomainFactory* f, FOPropScheduler*, bool as, const std::map<PFSymbol*,InitBoundType>& in, Options* opts);
+		FOPropagatorFactory(FOPropDomainFactory*, FOPropScheduler*, bool as, const std::map<PFSymbol*,InitBoundType>&, Options*);
 
 		// Factory methods
-		FOPropagator* create(const AbstractTheory* t);
-	
+		FOPropagator* create(const AbstractTheory*);
 };
 
 #endif
