@@ -601,10 +601,10 @@ vector<map<int,int> > IVSet::getBreakingSymmetries(AbstractGroundTheory* gt) con
 	vector<map<int,int> > literalSymmetries;
 	set<const DomainElement*>::const_iterator smaller = getElements().begin();
 	set<const DomainElement*>::const_iterator bigger = getElements().begin(); ++bigger;
-	for(int i=1; i<=getSize(); ++i){
-		if(i==getSize()){
+	for(int i=1; i<getSize(); ++i){
+		if(bigger==getElements().end()){
 			smaller=getElements().begin();
-			bigger=getElements().end();
+			--bigger;
 		}
 		map<int,int> literalSymmetry;
 		pair<list<int>,list<int> > symmetricLiterals = getSymmetricLiterals(gt, *smaller, *bigger);
