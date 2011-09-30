@@ -49,7 +49,7 @@ public:
 			if(options->symmetry()==1){
 				std::cerr << "Adding symmetry breaking clauses...\n";
 				addSymBreakingPredicates(grounding, ivsets);
-			}else if(options->symmetry()==2){
+			}/*else if(options->symmetry()==2){
 				std::cerr << "Using symmetrical clause learning...\n";
 				for(auto ivsets_it=ivsets.begin(); ivsets_it!=ivsets.end(); ++ivsets_it){
 					std::vector<std::map<int,int> > breakingSymmetries = (*ivsets_it)->getBreakingSymmetries(grounding);
@@ -64,7 +64,7 @@ public:
 						solver->add(symmetry);
 					}
 				}
-			}else{
+			}*/else{
 				std::cerr << "Unknown symmetry option...\n";
 			}
 		}
