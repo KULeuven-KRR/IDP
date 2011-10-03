@@ -10,49 +10,45 @@
 #include <string>
 #include <vector>
 #include <string>
+#include <cassert>
 #include <map>
 #include "parseinfo.hpp"
 
 class InternalArgument;
 
-template<class T> class Option {
+template<class OptionValue> class RangeOption {
 private:
-	T		_value;
-	T		_lower;
-	T		_upper;
+	OptionValue chosenvalue_, lowerbound_, upperbound_;
+
+	const OptionValue&	lower() const { return lowerbound_;  }
+	const OptionValue&	upper() const { return upperbound_;  }
+
 public:
-	Option(T l, T u, T v) : _value(v), _lower(l), _upper(u) { }
-	bool	value(int v);
-	T		value()	const { return _value;	}
-	T		lower() const { return _lower; }
-	T		upper() const { return _upper; }
+	RangeOption(OptionValue lowerbound, OptionValue upperbound, OptionValue chosenvalue) : chosenvalue_(chosenvalue), lowerbound_(lowerbound), upperbound_(upperbound) { }
+	bool isAllowedValue(OptionValue value){
+		return value >= lower() && value <= upper();
+	}
+	void setValue(OptionValue chosenvalue){
+		assert(isAllowedValue(value));
+		chosenvalue_ = chosenvalue;
+	}
+	const OptionValue&	value()	const { return chosenvalue_; }
 };
 
-typedef Option<int> IntOption;
-typedef Option<float> FloatOption;
+typedef RangeOption<int> IntOption;
+typedef RangeOption<float> FloatOption;
 
-/**
- * A single option that has an string value
- */
-class StringOption {
-	public:
-		virtual ~StringOption() { }
-		virtual bool				value(const std::string& v)	= 0;
-		virtual const std::string&	value()					const = 0;
-
-		virtual std::string					getPossibleValues() const;
-};
-
-class EnumeratedStringOption : public StringOption {
-	private:
-		unsigned int	_value;
-		std::vector<std::string>	_possvalues;
-	public:
-		EnumeratedStringOption(const std::vector<std::string>& possvalues, const std::string& val);
-		~EnumeratedStringOption() { }
-		const std::string& value()	const;
-		bool value(const std::string& val);
-		virtual std::string	getPossibleValues() const;
+template<class OptionValue> class EnumeratedOption {
+private:
+	OptionValue 				chosenvalue_;
+	std::vector<OptionValue>	allowedvalues_;
+public:
+	EnumeratedOption(const std::vector<OptionValue>& allowedvalues, const OptionValue& chosenvalue): allowedvalues_(allowedvalues) {
+		setValue(chosenvalue);
+	}
+	const OptionValue& value()	const;
+	void setValue(const std::string& val);
+	virtual std::string	getPossibleValues() const;
 };
 
 enum Language { LAN_TXT, LAN_IDP, LAN_ECNF, LAN_LATEX, LAN_ASP, LAN_CNF, LAN_TPTP };

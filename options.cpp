@@ -11,14 +11,6 @@
 #include <algorithm>
 using namespace std;
 
-template<class T> bool Option<T>::value(int v) {
-	if(v >= _lower && v <= _upper) {
-		_value = v;
-		return true;
-	}
-	else return false;
-}
-
 EnumeratedStringOption::EnumeratedStringOption(const vector<string>& possvalues, const string& val) : _possvalues(possvalues) {
 	for(unsigned int n = 0; n < _possvalues.size(); ++n) {
 		if(_possvalues[n] == val) { _value = n; break;	}
