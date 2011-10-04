@@ -38,7 +38,7 @@ class GroundPropagateInference : public Inference {
 			modes.remap = false;
 			SATSolver solver(modes);
 			Options options("",ParseInfo());
-			options.setvalue("nrmodels",0);
+			options.setValue("nrmodels",0);
 			GrounderFactory grounderfactory(structure,&options);
 			TopLevelGrounder* grounder = grounderfactory.create(theory,&solver);
 			grounder->run();
@@ -100,7 +100,7 @@ class OptimalPropagateInference : public Inference {
 			modes.remap = false;
 			SATSolver solver(modes);
 			Options options("",ParseInfo());
-			options.setvalue("nrmodels",0);
+			options.setValue("nrmodels",0);
 			GrounderFactory grounderfactory(structure,&options);
 			TopLevelGrounder* grounder = grounderfactory.create(theory,&solver);
 			grounder->run();

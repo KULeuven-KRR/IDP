@@ -12,82 +12,162 @@
 #include <string>
 #include <cassert>
 #include <map>
+#include <sstream>
+#include <set>
 #include "parseinfo.hpp"
 
 class InternalArgument;
 
-template<class OptionValue> class RangeOption {
-private:
-	OptionValue chosenvalue_, lowerbound_, upperbound_;
+// TODO enum class does not yet support comparison operators in 4.4.3
 
-	const OptionValue&	lower() const { return lowerbound_;  }
-	const OptionValue&	upper() const { return upperbound_;  }
+enum Language { TXT, IDP, ECNF, LATEX, ASP, CNF, TPTP };
+enum Format { THREEVALUED, ALL, TWOVALUED};
+
+enum OptionType{
+	LANGUAGE, MODELFORMAT,
+	SATVERBOSITY, GROUNDVERBOSITY, PROPAGATEVERBOSITY, NRMODELS, NRPROPSTEPS, LONGESTBRANCH, SYMMETRY, PROVERTIMEOUT,
+	PRINTTYPES, CPSUPPORT, TRACE, AUTOCOMPLETE, LONGNAMES, RELATIVEPROPAGATIONSTEPS, CREATETRANSLATION
+};
+
+template<class TypeEnum, class ConcreteType>
+class TypedOption{
+private:
+	ConcreteType chosenvalue_;
 
 public:
-	RangeOption(OptionValue lowerbound, OptionValue upperbound, OptionValue chosenvalue) : chosenvalue_(chosenvalue), lowerbound_(lowerbound), upperbound_(upperbound) { }
-	bool isAllowedValue(OptionValue value){
-		return value >= lower() && value <= upper();
-	}
-	void setValue(OptionValue chosenvalue){
-		assert(isAllowedValue(value));
+	TypedOption(){}
+	~TypedOption(){}
+
+	virtual bool 		isAllowedValue(const ConcreteType& value) = 0;
+	virtual std::string printOption() const = 0;
+
+	const ConcreteType&	getValue() const { return chosenvalue_; }
+	void setValue(const ConcreteType& chosenvalue){
+		assert(isAllowedValue(chosenvalue));
 		chosenvalue_ = chosenvalue;
 	}
-	const OptionValue&	value()	const { return chosenvalue_; }
 };
 
-typedef RangeOption<int> IntOption;
-typedef RangeOption<float> FloatOption;
-
-template<class OptionValue> class EnumeratedOption {
+template<class TypeEnum, class ConcreteType>
+class RangeOption: public TypedOption<TypeEnum, ConcreteType> {
 private:
-	OptionValue 				chosenvalue_;
-	std::vector<OptionValue>	allowedvalues_;
+	ConcreteType lowerbound_, upperbound_;
+
+	const ConcreteType&	lower() const { return lowerbound_;  }
+	const ConcreteType&	upper() const { return upperbound_;  }
+
 public:
-	EnumeratedOption(const std::vector<OptionValue>& allowedvalues, const OptionValue& chosenvalue): allowedvalues_(allowedvalues) {
-		setValue(chosenvalue);
+	RangeOption(const ConcreteType& lowerbound, const ConcreteType& upperbound)
+		: lowerbound_(lowerbound), upperbound_(upperbound) { }
+
+	bool isAllowedValue(const ConcreteType& value){
+		return value >= lower() && value <= upper();
 	}
-	const OptionValue& value()	const;
-	void setValue(const std::string& val);
-	virtual std::string	getPossibleValues() const;
+
+	virtual std::string printOption() const {
+		std::stringstream ss; // TODO name
+		ss <<"<name>" <<" lies between " <<lower() <<" and " <<upper() <<". Current value is " <<TypedOption<TypeEnum, ConcreteType>::getValue() <<"\n";
+		return ss.str();
+	}
 };
 
-enum Language { LAN_TXT, LAN_IDP, LAN_ECNF, LAN_LATEX, LAN_ASP, LAN_CNF, LAN_TPTP };
+template<class TypeEnum, class ConcreteType>
+class EnumeratedOption: public TypedOption<TypeEnum, ConcreteType> {
+private:
+	std::set<ConcreteType>	allowedvalues_;
+	const std::set<ConcreteType>& getAllowedValues() const { return allowedvalues_; }
+
+public:
+	EnumeratedOption(const std::set<ConcreteType>& allowedvalues): allowedvalues_(allowedvalues) { }
+
+	bool isAllowedValue(const ConcreteType& value){
+		return getAllowedValues().find(value)!=getAllowedValues().end();
+	}
+
+	virtual std::string printOption() const {
+		std::stringstream ss;
+		ss <<"<name>" <<" is one of "; // TODO name
+		for(auto i=getAllowedValues().begin(); i!=getAllowedValues().end(); ++i){
+			ss <<*i <<", ";
+		}
+		ss <<". Current value is " <<TypedOption<TypeEnum, ConcreteType>::getValue() <<"\n";
+		return ss.str();
+	}
+};
 
 /**
  * Class to represent a block of options
  */
-class Options {
+class Options{
 	private:
 		std::string		_name;	//!< The name of the options block
 		ParseInfo		_pi;	//!< The place where the options were parsed
 
-		std::map<std::string,bool>			_booloptions;	//!< Options that have a boolean value
-		std::map<std::string,IntOption*>	_intoptions;	//!< Options that have an integer value
-		std::map<std::string,FloatOption*>	_floatoptions;	//!< Options that have a floating point number value
-		std::map<std::string,StringOption*>	_stringoptions;	//!< Options that have a string value
+		std::map<OptionType,TypedOption<OptionType, int>* > _intoptions;
+		std::map<OptionType,TypedOption<OptionType, bool>* > _booloptions;
+		std::map<OptionType,TypedOption<OptionType, std::string>* > _stringoptions;
+
+		template<class ConcreteType>
+		std::map<OptionType,TypedOption<OptionType, ConcreteType>* >& getOptions(const ConcreteType& value);
+
+		std::map<std::string, OptionType> _name2optionType;
+		std::map<OptionType, std::string> _optionType2name;
+
+		template<class ConcreteType>
+		void createOption(OptionType option, const std::string& name, const ConcreteType& lowerbound, const ConcreteType& upperbound, const ConcreteType& defaultValue){
+			_name2optionType[name] = option;
+			_optionType2name[option] = name;
+			auto newoption = new RangeOption<OptionType, ConcreteType>(lowerbound, upperbound);
+			newoption->setValue(defaultValue);
+			getOptions(defaultValue)[option] =  newoption;
+		}
+		template<class ConcreteType>
+		void createOption(OptionType option, const std::string& name, const std::set<ConcreteType>& values, const ConcreteType& defaultValue){
+			_name2optionType[name] = option;
+			_optionType2name[option] = name;
+			auto newoption = new EnumeratedOption<OptionType, ConcreteType>(values);
+			newoption->setValue(defaultValue);
+			getOptions(defaultValue)[option] = newoption;
+		}
 
 	public:
 		Options(const std::string& name, const ParseInfo& pi);
 		~Options();
 
-		InternalArgument	getvalue(const std::string&)		const;
+		InternalArgument getValue(OptionType name) const;
+		InternalArgument getValue(const std::string& name) const;
 
-		const std::string&	name()							const	{ return _name;	}
-		const ParseInfo&	pi()							const	{ return _pi;	}
+		template<class ValueType>
+		void setValue(const std::string& name, ValueType value){
+			setValue(_name2optionType.at(name), value);
+		}
+		template<class ValueType>
+		void setValue(OptionType type, ValueType value){
+			getOptions(value).at(type)->setValue(value);
+		}
 
-		const std::map<std::string,bool>&			booloptions()		const { return _booloptions;	}
-		const std::map<std::string,IntOption*>&		intoptions()		const { return _intoptions;		}
-		const std::map<std::string,FloatOption*>&	floatoptions()		const { return _floatoptions;	}
-		const std::map<std::string,StringOption*>&	stringoptions()		const { return _stringoptions;	}
+		template<class ValueType>
+		bool isAllowedValue(const std::string& name, ValueType value){
+			return isAllowedValue(_name2optionType.at(name), value);
+		}
+		template<class ValueType>
+		bool isAllowedValue(OptionType option, ValueType value){
+			auto it = getOptions(value).find(option);
+			if(it==getOptions(value).end()){
+				return false;
+			}
+			return it->second->isAllowedValue(value);
+		}
 
-		bool	isoption(const std::string&) const;
-		void	setvalues(Options*);
-		bool	setvalue(const std::string&,bool);
-		bool	setvalue(const std::string&,int);
-		bool	setvalue(const std::string&,double);
-		bool	setvalue(const std::string&,const std::string&);
+		const std::string&	name()	const	{ return _name;	}
+		const ParseInfo&	pi()	const	{ return _pi;	}
 
-		std::string getPossibleValues(const std::string& option) const;
+		bool	isOption(const std::string&) const;
+		void	copyValues(Options*);
+
+		std::string 	printAllowedValues	(const std::string& option) const;
+		std::ostream&	put					(std::ostream&)	const;
+		std::string		to_string			()			const;
 
 		Language	language()				const;
 		bool		printtypes()			const;
@@ -105,10 +185,6 @@ class Options {
 		bool 		writeTranslation() 		const;
 		int			longestbranch()			const;
 		int			symmetry()				const;
-
-		std::ostream&	put(std::ostream&)	const;
-		std::string		to_string()			const;	
-
 };
 
 #endif

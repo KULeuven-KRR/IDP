@@ -861,18 +861,18 @@ Definition* Completer::visit(Definition* def) {
 	_headvars.clear();
 	_interres.clear();
 	_result.clear();
-	for(set<PFSymbol*>::const_iterator it = def->defsymbols().begin(); it != def->defsymbols().end(); ++it) {
+	for(auto it = def->defsymbols().begin(); it != def->defsymbols().end(); ++it) {
 		vector<Variable*> vv;
-		for(vector<Sort*>::const_iterator jt = (*it)->sorts().begin(); jt != (*it)->sorts().end(); ++jt) {
+		for(auto jt = (*it)->sorts().begin(); jt != (*it)->sorts().end(); ++jt) {
 			vv.push_back(new Variable(*jt));
 		}
 		_headvars[*it] = vv;
 	}
-	for(vector<Rule*>::const_iterator it = def->rules().begin(); it != def->rules().end(); ++it) {
+	for(auto it = def->rules().begin(); it != def->rules().end(); ++it) {
 		(*it)->accept(this);
 	}
 
-	for(map<PFSymbol*,vector<Formula*> >::const_iterator it = _interres.begin(); it != _interres.end(); ++it) {
+	for(auto it = _interres.begin(); it != _interres.end(); ++it) {
 		assert(!it->second.empty());
 		Formula* b = it->second[0];
 		if(it->second.size() > 1) b = new BoolForm(true,false,it->second,FormulaParseInfo());
