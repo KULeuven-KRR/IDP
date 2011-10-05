@@ -11,253 +11,225 @@
 #include <algorithm>
 using namespace std;
 
-template<class T> bool Option<T>::value(int v) {
-	if(v >= _lower && v <= _upper) {
-		_value = v;
-		return true;
+std::string str(Language choice){
+	switch(choice){
+		case Language::TXT: return "txt";
+		case Language::IDP: return "idp";
+		case Language::ECNF: return "ecnf";
+		case Language::TPTP: return "tptp";
+		case Language::CNF: return "cnf";
+		case Language::ASP: return "asp";
+		case Language::LATEX: return "latex";
 	}
-	else return false;
 }
 
-EnumeratedStringOption::EnumeratedStringOption(const vector<string>& possvalues, const string& val) : _possvalues(possvalues) {
-	for(unsigned int n = 0; n < _possvalues.size(); ++n) {
-		if(_possvalues[n] == val) { _value = n; break;	}
+std::string str(Format choice){
+	switch(choice){
+		case Format::TWOVALUED: return "twovalued";
+		case Format::THREEVALUED: return "threevalued";
+		case Format::ALL: return "all";
 	}
-}
-const string& EnumeratedStringOption::value()	const { return _possvalues[_value];	}
-bool EnumeratedStringOption::value(const string& val) {
-	for(unsigned int n = 0; n < _possvalues.size(); ++n) {
-		if(_possvalues[n] == val) { _value = n; return true;	}
-	}
-	return false;
 }
 
-//TODO code van minisatid 2.3 of later gebruiken om makkelijker opties toe te voegen te doen
+// TODO add descriptions to options
 
 Options::Options(const string& name, const ParseInfo& pi) : _name(name), _pi(pi) {
-	_booloptions["printtypes"]			= true;
-	_booloptions["cpsupport"]			= false;
-	_booloptions["trace"]				= false;
-	_booloptions["autocomplete"]		= true;
-	_booloptions["longnames"]			= false;
-	_booloptions["relativepropsteps"]	= true;
-	_booloptions["createtranslation"]	= false;
+	std::set<bool> boolvalues{true, false};
+	BoolPol::createOption(BoolType::PRINTTYPES, "printtypes", boolvalues, true, _option2name);
+	BoolPol::createOption(BoolType::CPSUPPORT, "cpsupport", boolvalues, false, _option2name);
+	BoolPol::createOption(BoolType::TRACE, "trace", boolvalues, false, _option2name);
+	BoolPol::createOption(BoolType::AUTOCOMPLETE, "autocomplete", boolvalues, true, _option2name);
+	BoolPol::createOption(BoolType::LONGNAMES, "longnames", boolvalues, false, _option2name);
+	BoolPol::createOption(BoolType::RELATIVEPROPAGATIONSTEPS, "relativepropsteps", boolvalues, true, _option2name);
+	BoolPol::createOption(BoolType::CREATETRANSLATION, "createtranslation", boolvalues, false, _option2name);
 
-	_intoptions["satverbosity"]			= new IntOption(0,numeric_limits<int>::max(),0);
-	_intoptions["groundverbosity"]		= new IntOption(0,numeric_limits<int>::max(),0);
-	_intoptions["propagateverbosity"]	= new IntOption(0,numeric_limits<int>::max(),0);
-	_intoptions["nrmodels"]				= new IntOption(0,numeric_limits<int>::max(),1);
-	_intoptions["nrpropsteps"]			= new IntOption(0,numeric_limits<int>::max(),4);
-	_intoptions["longestbranch"]		= new IntOption(0,numeric_limits<int>::max(),8);
-	_intoptions["symmetry"]				= new IntOption(0,numeric_limits<int>::max(),0);
-	_intoptions["provertimeout"]		= new IntOption(0,numeric_limits<int>::max(),10000000);
+	IntPol::createOption(IntType::SATVERBOSITY, "satverbosity", 0,numeric_limits<int>::max(),0, _option2name);
+	IntPol::createOption(IntType::GROUNDVERBOSITY, "groundverbosity", 0,numeric_limits<int>::max(),0, _option2name);
+	IntPol::createOption(IntType::PROPAGATEVERBOSITY, "propagateverbosity", 0,numeric_limits<int>::max(),0, _option2name);
+	IntPol::createOption(IntType::NRMODELS, "nrmodels", 0,numeric_limits<int>::max(),1, _option2name);
+	IntPol::createOption(IntType::NRPROPSTEPS, "nrpropsteps", 0,numeric_limits<int>::max(),4, _option2name);
+	IntPol::createOption(IntType::LONGESTBRANCH, "longestbranch", 0,numeric_limits<int>::max(),8, _option2name);
+	IntPol::createOption(IntType::SYMMETRY, "symmetry", 0,numeric_limits<int>::max(),0, _option2name);
+	IntPol::createOption(IntType::PROVERTIMEOUT, "provertimeout", 0,numeric_limits<int>::max(),numeric_limits<int>::max(), _option2name);
 
-	vector<string> ls(4); ls[0] = "idp"; ls[1] = "txt"; ls[2] = "ecnf"; ls[3] = "tptp";
-	vector<string> mf(3); mf[0] = "threevalued"; mf[1] = "twovalued"; mf[2] = "all";
-	_stringoptions["language"]		= new EnumeratedStringOption(ls,"idp");
-	_stringoptions["modelformat"]	= new EnumeratedStringOption(mf,"threevalued");
+	StringPol::createOption(StringType::LANGUAGE,
+				"language",
+				std::set<std::string>{str(Language::TXT), str(Language::IDP),
+									str(Language::LATEX), str(Language::ECNF),
+									str(Language::ASP), str(Language::TPTP),
+									str(Language::ASP)},
+				str(Language::IDP)
+				, _option2name);
+	StringPol::createOption(StringType::MODELFORMAT,
+				"modelformat",
+				std::set<std::string>{str(Format::TWOVALUED),str(Format::THREEVALUED),str(Format::ALL)},
+				str(Format::THREEVALUED)
+				, _option2name);
 }
 
-Options::~Options() {
-	for(map<string,StringOption*>::const_iterator it = _stringoptions.begin(); it != _stringoptions.end(); ++it) {
-		delete(it->second);
+template<class EnumType, class ValueType>
+void OptionPolicy<EnumType, ValueType>::createOption(EnumType type, const std::string& name, const ValueType& lowerbound, const ValueType& upperbound, const ValueType& defaultValue, std::vector<std::string>& option2name){
+	_name2type[name] = type;
+	auto newoption = new RangeOption<EnumType, ValueType>(type, name, lowerbound, upperbound);
+	newoption->setValue(defaultValue);
+	std::vector<TypedOption<EnumType, ValueType>*>& options = _options;
+	if(options.size()<=type){
+		options.resize(type+1, NULL);
+		option2name.resize(type+1, "");
+		option2name[type] = name;
 	}
-	for(map<string,IntOption*>::const_iterator it = _intoptions.begin(); it != _intoptions.end(); ++it) {
-		delete(it->second);
+	options[type] =  newoption;
+}
+template<class EnumType, class ValueType>
+void OptionPolicy<EnumType, ValueType>::createOption(EnumType type, const std::string& name, const std::set<ValueType>& values, const ValueType& defaultValue, std::vector<std::string>& option2name){
+	_name2type[name] = type;
+	auto newoption = new EnumeratedOption<EnumType, ValueType>(type, name, values);
+	newoption->setValue(defaultValue);
+	std::vector<TypedOption<EnumType, ValueType>*>& options = _options;
+	if(options.size()<=type){
+		options.resize(type+1, NULL);
+		option2name.resize(type+1, "");
+		option2name[type] = name;
 	}
-	for(map<string,FloatOption*>::const_iterator it = _floatoptions.begin(); it != _floatoptions.end(); ++it) {
-		delete(it->second);
+	options[type] = newoption;
+}
+
+template<class EnumType, class ValueType>
+void OptionPolicy<EnumType, ValueType>::copyValues(Options* opts){
+	for(auto i=_options.begin(); i<_options.end(); ++i){
+		(*i)->setValue(opts->getValue((*i)->getType()));
 	}
 }
 
-std::string	StringOption::getPossibleValues() const{
-	stringstream ss;
-	ss <<"Allowed values: any string value";
+template<class EnumType, class ConcreteType>
+std::string RangeOption<EnumType, ConcreteType>::printOption() const {
+	std::stringstream ss; // TODO correct usage
+	ss <<"\t" <<TypedOption<EnumType, ConcreteType>::getName() <<" = " <<TypedOption<EnumType, ConcreteType>::getValue();
+	ss <<"\n\t\t => between " <<lower() <<" and " <<upper() <<".";
 	return ss.str();
 }
 
-std::string	EnumeratedStringOption::getPossibleValues() const{
-	stringstream ss;
-	ss <<"Allowed values: ";
+template<>
+std::string EnumeratedOption<BoolType, bool>::printOption() const {
+	std::stringstream ss;
+	ss <<"\t" <<TypedOption<BoolType, bool>::getName() <<" = " <<(TypedOption<BoolType, bool>::getValue()?"true":"false");
+
+	ss <<"\n\t\t => one of [";
 	bool begin = true;
-	for(auto i=_possvalues.begin(); i!=_possvalues.end(); ++i){
-		if(!begin){
-			ss <<" | ";
+	for(auto i=getAllowedValues().begin(); i!=getAllowedValues().end(); ++i){
+		if(not begin){
+			ss <<", ";
 		}
 		begin = false;
-		ss <<"\"" <<*i <<"\"";
+		ss <<((*i)?"true":"false");
 	}
+	ss <<"]";
 	return ss.str();
 }
+template<class EnumType, class ConcreteType>
+std::string EnumeratedOption<EnumType, ConcreteType>::printOption() const {
+	std::stringstream ss;
+	ss <<"\t" <<TypedOption<EnumType, ConcreteType>::getName() <<" = " <<TypedOption<EnumType, ConcreteType>::getValue();
 
-std::string Options::getPossibleValues(const string& option) const {
-	auto bit = _booloptions.find(option);
-	if(bit != _booloptions.end()) {
-		stringstream ss;
-		ss <<"Allowed values: true | false";
-		return ss.str();
+	ss <<"\n\t\t => one of [";
+	bool begin = true;
+	for(auto i=getAllowedValues().begin(); i!=getAllowedValues().end(); ++i){
+		if(not begin){
+			ss <<", ";
+		}
+		begin = false;
+		ss <<*i;
 	}
-	map<string,IntOption*>::const_iterator iit = _intoptions.find(option);
-	if(iit != _intoptions.end()) {
-		stringstream ss;
-		ss <<"Allowed values: integers between" <<(*iit).second->lower() <<" and " <<(*iit).second->upper();
-		return ss.str();
-	}
-	map<string,FloatOption*>::const_iterator fit = _floatoptions.find(option);
-	if(fit != _floatoptions.end()) {
-		stringstream ss;
-		ss <<"Allowed values: reals between" <<(*iit).second->lower() <<" and " <<(*iit).second->upper();
-		return ss.str();
-	}
-	map<string,StringOption*>::const_iterator sit = _stringoptions.find(option);
-	if(sit != _stringoptions.end()) {
-		return (*sit).second->getPossibleValues();
-	}
-	return "";
-}
-
-bool Options::isoption(const string& optname) const {
-	if(_stringoptions.find(optname) != _stringoptions.end())	return true;
-	if(_booloptions.find(optname) != _booloptions.end())		return true;
-	if(_intoptions.find(optname) != _intoptions.end())			return true;
-	if(_floatoptions.find(optname) != _floatoptions.end())		return true;
-	return false;
-}
-
-void Options::setvalues(Options* opts) {
-	for(map<string,StringOption*>::const_iterator it = opts->stringoptions().begin(); it != opts->stringoptions().end(); ++it) {
-		setvalue(it->first,it->second->value());
-	}
-	for(map<string,IntOption*>::const_iterator it = opts->intoptions().begin(); it != opts->intoptions().end(); ++it) {
-		setvalue(it->first,it->second->value());
-	}
-	for(map<string,FloatOption*>::const_iterator it = opts->floatoptions().begin(); it != opts->floatoptions().end(); ++it) {
-		setvalue(it->first,it->second->value());
-	}
-	for(map<string,bool>::const_iterator it = opts->booloptions().begin(); it != opts->booloptions().end(); ++it) {
-		setvalue(it->first,it->second);
-	}
-}
-
-bool Options::setvalue(const string& opt, int val) {
-	map<string,IntOption*>::iterator it = _intoptions.find(opt);
-	if(it != _intoptions.end()) {
-		return it->second->value(val);
-	}
-	else return false;
-}
-
-bool Options::setvalue(const string& opt, double val) {
-	map<string,FloatOption*>::iterator it = _floatoptions.find(opt);
-	if(it != _floatoptions.end()) {
-		return it->second->value(val);
-	}
-	else return false;
-}
-
-bool Options::setvalue(const string& opt, const string& val) {
-	map<string,StringOption*>::iterator it = _stringoptions.find(opt);
-	if(it != _stringoptions.end()) {
-		return it->second->value(val);
-	}
-	else return false;
-}
-
-bool Options::setvalue(const string& opt, bool val) {
-	map<string,bool>::iterator it = _booloptions.find(opt);
-	if(it != _booloptions.end()) {
-		_booloptions[opt] = val;
-		return true;
-	}
-	else return false;
+	ss <<"]";
+	return ss.str();
 }
 
 Language Options::language() const {
-	string lan = (_stringoptions.find("language")->second)->value();
-	if(lan == "idp") return LAN_IDP;
-	else if(lan == "txt") return LAN_TXT;
-	else if(lan == "ecnf") return LAN_ECNF;
-	else if(lan == "tptp") return LAN_TPTP;
-	else return LAN_IDP;
+	const std::string& value = StringPol::getValue(StringType::LANGUAGE);
+	if(value.compare(str(Language::TXT))==0){
+		return Language::TXT;
+	}else if(value.compare("tptp")==0){
+		return Language::TPTP;
+	}else if(value.compare("idp")==0){
+		return Language::IDP;
+	}else if(value.compare("ecnf")==0){
+		return Language::ECNF;
+	}else if(value.compare("asp")==0){
+		return Language::ASP;
+	}else{
+		assert(value.compare("latex")==0);
+		return Language::LATEX;
+	}
 }
 
-bool Options::printtypes() const {
-	return _booloptions.find("printtypes")->second;
+std::string Options::printAllowedValues(const std::string& name) const{
+	if(isIntOption(name)){
+		return IntPol::printOption(name);
+	}else if(isStringOption(name)){
+		return StringPol::printOption(name);
+	}else if(isDoubleOption(name)){
+		return DoublePol::printOption(name);
+	}else if(isBoolOption(name)){
+		return BoolPol::printOption(name);
+	}else{
+		return "";
+	}
 }
 
-int Options::nrmodels() const {
-	return _intoptions.find("nrmodels")->second->value();
+bool Options::isOption(const string& optname) const {
+	return isIntOption(optname)
+			|| isBoolOption(optname)
+			|| isStringOption(optname)
+			|| isDoubleOption(optname);
 }
 
-int Options::satverbosity() const {
-	return _intoptions.find("satverbosity")->second->value();
+bool Options::isStringOption(const std::string& optname) const{
+	return StringPol::isOption(optname);
+}
+bool Options::isBoolOption(const std::string& optname) const{
+	return BoolPol::isOption(optname);
+}
+bool Options::isIntOption(const std::string& optname) const{
+	return IntPol::isOption(optname);
+}
+bool Options::isDoubleOption(const std::string& optname) const{
+	return DoublePol::isOption(optname);
+}
+std::string Options::getStringValue(const std::string& optname) const{
+	return StringPol::getValue(optname);
+}
+double Options::getDoubleValue(const std::string& optname) const{
+	return DoublePol::getValue(optname);
+}
+int Options::getIntValue(const std::string& optname) const{
+	return IntPol::getValue(optname);
+}
+bool Options::getBoolValue(const std::string& optname) const{
+	return BoolPol::getValue(optname);
 }
 
-int Options::groundverbosity() const {
-	return _intoptions.find("groundverbosity")->second->value();
-}
-
-int Options::propagateverbosity() const {
-	return _intoptions.find("propagateverbosity")->second->value();
-}
-
-int Options::nrpropsteps() const {
-	return _intoptions.find("nrpropsteps")->second->value();
-}
-
-int Options::longestbranch() const {
-	return _intoptions.find("longestbranch")->second->value();
-}
-
-int Options::symmetry() const {
-	return _intoptions.find("symmetry")->second->value();
-}
-
-int Options::provertimeout() const {
-	return _intoptions.find("provertimeout")->second->value();
-}
-
-bool Options::cpsupport() const {
-	return _booloptions.find("cpsupport")->second;
-}
-
-bool Options::autocomplete() const {
-	return _booloptions.find("autocomplete")->second;
-}
-
-bool Options::trace() const {
-	return _booloptions.find("trace")->second;
-}
-
-bool Options::longnames() const {
-	return _booloptions.find("longnames")->second;
-}
-
-bool Options::relativepropsteps() const {
-	return _booloptions.find("relativepropsteps")->second;
-}
-
-bool Options::writeTranslation() const {
-	return _booloptions.find("createtranslation")->second;
+void Options::copyValues(Options* opts) {
+	StringPol::copyValues(opts);
+	BoolPol::copyValues(opts);
+	IntPol::copyValues(opts);
+	DoublePol::copyValues(opts);
 }
 
 template<class OptionList, class StringList>
 void getStringFromOption(const OptionList& list, StringList& newlist){
 	for(auto it = list.begin(); it != list.end(); ++it) {
 		stringstream ss;
-		ss << it->first << " = " << it->second->value();
+		ss << (*it)->getName() << " = " << (*it)->getValue();
 		newlist.push_back(ss.str());
 	}
 }
 
 ostream& Options::put(ostream& output) const {
 	vector<string> optionslines;
-	getStringFromOption(_stringoptions, optionslines);
-	getStringFromOption(_intoptions, optionslines);
-	getStringFromOption(_floatoptions, optionslines);
-	for(map<string,bool>::const_iterator it = _booloptions.begin(); it != _booloptions.end(); ++it) {
-		output << it->first << " = " << (it->second ? "true" : "false") << "\n";
-	}
+	StringPol::addOptionStrings(optionslines);
+	IntPol::addOptionStrings(optionslines);
+	BoolPol::addOptionStrings(optionslines);
+	DoublePol::addOptionStrings(optionslines);
 
 	sort(optionslines.begin(), optionslines.end());
 	for(auto i=optionslines.begin(); i<optionslines.end(); ++i){

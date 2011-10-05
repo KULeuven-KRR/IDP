@@ -23,11 +23,11 @@ int getIDForUndefined() { return ID_FOR_UNDEFINED; }
 template<class Stream>
 Printer* Printer::create(Options* opts, Stream& stream) {
 	switch(opts->language()) {
-		case LAN_IDP:
-			return new IDPPrinter<Stream>(opts->longnames(), stream);
-		case LAN_ECNF:
-			return new EcnfPrinter<Stream>(opts->writeTranslation(), stream);
-		case LAN_TPTP:
+		case Language::IDP:
+			return new IDPPrinter<Stream>(opts->getValue(BoolType::LONGNAMES), stream);
+		case Language::ECNF:
+			return new EcnfPrinter<Stream>(opts->getValue(BoolType::CREATETRANSLATION), stream);
+		case Language::TPTP:
 			return new TPTPPrinter<Stream>(false, stream);
 		default:
 			assert(false);
@@ -37,7 +37,7 @@ Printer* Printer::create(Options* opts, Stream& stream) {
 
 template<class Stream>
 Printer* Printer::create(Options* opts, Stream& stream, bool arithmetic) {
-	if (opts->language() == LAN_TPTP) {
+	if (opts->language() == Language::TPTP) {
 		return new TPTPPrinter<Stream>(arithmetic, stream);
 	} else {
 		return create<Stream>(opts, stream);

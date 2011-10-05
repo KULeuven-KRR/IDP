@@ -55,3 +55,9 @@ structure S : V {
 	Final = 3
 	Table = Table
 }
+
+#include <mx>
+
+procedure main(){
+	mx::printsol(T, S, stdoptions)
+}

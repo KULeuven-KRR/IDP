@@ -22,7 +22,7 @@ public:
 		const DomainAtom* atom = args[0]._value._domainatom;
 		Options* opts = args[1].options();
 		std::stringstream sstr;
-		atom->symbol()->put(sstr,opts->longnames());
+		atom->symbol()->put(sstr,opts->getValue(BoolType::LONGNAMES));
 		if(typeid(*(atom->symbol())) == typeid(Predicate)) {
 			if(!atom->symbol()->sorts().empty()) {
 				sstr << '(' << *(atom->args()[0]);

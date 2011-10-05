@@ -243,7 +243,7 @@ public:
 		// Call the prover with timeout.
 		if (!setjmp(Entails::_timeoutJump)) {
 			signal(SIGALRM, &Entails::timeout);
-			ualarm(opts->provertimeout(), 0);
+			ualarm(opts->getValue(IntType::PROVERTIMEOUT), 0);
 			system((applicationStream.str() + " " + arguments).c_str());
 		}
 		else {
