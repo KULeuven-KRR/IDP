@@ -24,9 +24,9 @@ template<class Stream>
 Printer* Printer::create(Options* opts, Stream& stream) {
 	switch(opts->language()) {
 		case Language::IDP:
-			return new IDPPrinter<Stream>(opts->longnames(), stream);
+			return new IDPPrinter<Stream>(opts->getValue(BoolType::LONGNAMES), stream);
 		case Language::ECNF:
-			return new EcnfPrinter<Stream>(opts->writeTranslation(), stream);
+			return new EcnfPrinter<Stream>(opts->getValue(BoolType::CREATETRANSLATION), stream);
 		case Language::TPTP:
 			return new TPTPPrinter<Stream>(false, stream);
 		default:

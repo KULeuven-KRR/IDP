@@ -270,13 +270,14 @@ ThreeValuedDomain::ThreeValuedDomain(const FOPropDomainFactory* factory, const P
 	}
 }
 
-FOPropagator::FOPropagator(FOPropDomainFactory* f, FOPropScheduler* s, Options* opts) : _verbosity(opts->propagateverbosity()), _factory(f), _scheduler(s) { 
-	_maxsteps = opts->nrpropsteps();
+FOPropagator::FOPropagator(FOPropDomainFactory* f, FOPropScheduler* s, Options* opts)
+		: _verbosity(_options->getValue(IntType::PROPAGATEVERBOSITY)), _factory(f), _scheduler(s) {
+	_maxsteps = opts->getValue(IntType::NRPROPSTEPS);
 	_options = opts;
 	if(typeid(*f) == typeid(FOPropBDDDomainFactory)) {
 		FOPropBDDDomainFactory* bddf = dynamic_cast<FOPropBDDDomainFactory*>(f);
-		if(_options->longestbranch()) {
-			_admissiblecheckers.push_back(new LongestBranchChecker(bddf->manager(),_options->longestbranch()));
+		if(_options->getValue(IntType::LONGESTBRANCH)!=0) {
+			_admissiblecheckers.push_back(new LongestBranchChecker(bddf->manager(),_options->getValue(IntType::LONGESTBRANCH)));
 		}
 	}
 } 
@@ -293,13 +294,13 @@ void FOPropagator::run() {
 			cerr << "  Propagate ";
 			if(_direction == DOWN) {
 				cerr << "downward from " << (_ct ? "the ct-bound of " : "the cf-bound of "); 
-				p->put(cerr,_options->longnames());
-				if(_child) { cerr << " to "; _child->put(cerr,_options->longnames());	}
+				p->put(cerr,_options->getValue(BoolType::LONGNAMES));
+				if(_child) { cerr << " to "; _child->put(cerr,_options->getValue(BoolType::LONGNAMES));	}
 			}
 			else {
 				cerr << "upward to " << ((_ct == p->sign()) ? "the ct-bound of " : "the cf-bound of ");
-				p->put(cerr,_options->longnames());
-				if(_child) { cerr << " from "; _child->put(cerr,_options->longnames());	}
+				p->put(cerr,_options->getValue(BoolType::LONGNAMES));
+				if(_child) { cerr << " from "; _child->put(cerr,_options->getValue(BoolType::LONGNAMES));	}
 			}
 			cerr << "\n";
 		}
@@ -627,11 +628,11 @@ void FOPropagator::visit(const AggForm*) {
 
 FOPropagatorFactory::FOPropagatorFactory(FOPropDomainFactory* factory, FOPropScheduler* scheduler, bool as, const map<PFSymbol*,InitBoundType>& init, Options* opts): _initbounds(init), _assertsentences(as) {
 	_propagator = new FOPropagator(factory, scheduler, opts);
-	_multiplymaxsteps = opts->relativepropsteps();
+	_multiplymaxsteps = opts->getValue(BoolType::RELATIVEPROPAGATIONSTEPS);
 }
 
 void FOPropagatorFactory::createleafconnector(PFSymbol* symbol) {
-	if(_propagator->_options->propagateverbosity() > 1) { cerr << "  Creating a leaf connector for " << *symbol << "\n";	}
+	if(_propagator->_options->getValue(IntType::PROPAGATEVERBOSITY) > 1) { cerr << "  Creating a leaf connector for " << *symbol << "\n";	}
 	vector<Variable*> vars = VarUtils::makeNewVariables(symbol->sorts());
 	vector<Term*> args = TermUtils::makeNewVarTerms(vars);
 	PredForm* leafconnector = new PredForm(true,symbol,args,FormulaParseInfo());
@@ -639,7 +640,7 @@ void FOPropagatorFactory::createleafconnector(PFSymbol* symbol) {
 	switch(_initbounds[symbol]) {
 		case IBT_TWOVAL:
 			_propagator->_domains[leafconnector] = ThreeValuedDomain(_propagator->_factory,leafconnector);
-			if(_propagator->_options->propagateverbosity() > 1) { cerr << "    The leaf connector is twovalued\n";	}
+			if(_propagator->_options->getValue(IntType::PROPAGATEVERBOSITY) > 1) { cerr << "    The leaf connector is twovalued\n";	}
 			break;
 		case IBT_BOTH:
 		case IBT_CT:
@@ -648,7 +649,7 @@ void FOPropagatorFactory::createleafconnector(PFSymbol* symbol) {
 			break;
 		case IBT_NONE:
 			initFalse(leafconnector);
-			if(_propagator->_options->propagateverbosity() > 1) { cerr << "    The leaf connector is completely unknown\n";	}
+			if(_propagator->_options->getValue(IntType::PROPAGATEVERBOSITY) > 1) { cerr << "    The leaf connector is completely unknown\n";	}
 			break;
 		default:
 			assert(false);
@@ -656,7 +657,7 @@ void FOPropagatorFactory::createleafconnector(PFSymbol* symbol) {
 }
 
 FOPropagator* FOPropagatorFactory::create(const AbstractTheory* theory) {
-	if(_propagator->_options->propagateverbosity() > 1) { cerr << "=== initialize propagation datastructures\n";	}
+	if(_propagator->_options->getValue(IntType::PROPAGATEVERBOSITY) > 1) { cerr << "=== initialize propagation datastructures\n";	}
 
 	// transform theory to a suitable normal form
 	AbstractTheory* newtheo = theory->clone();
@@ -700,7 +701,7 @@ void FOPropagatorFactory::visit(const Theory* theory) {
 }
 
 void FOPropagatorFactory::initFalse(const Formula* f) {
-	if(_propagator->_options->propagateverbosity() > 2) { cerr << "  Assigning the least precise bounds to " << *f << "\n";	}
+	if(_propagator->_options->getValue(IntType::PROPAGATEVERBOSITY) > 2) { cerr << "  Assigning the least precise bounds to " << *f << "\n";	}
 	if(_propagator->_domains.find(f) == _propagator->_domains.end()) {
 		_propagator->_domains[f] = ThreeValuedDomain(_propagator->_factory,false,false,f);
 	}

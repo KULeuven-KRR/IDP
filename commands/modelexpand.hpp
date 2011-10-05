@@ -40,16 +40,16 @@ public:
 		AbstractGroundTheory* grounding = dynamic_cast<GroundTheory<SolverPolicy>*>(grounder->grounding());
 		
 		// Execute symmetry breaking
-		if(options->symmetry()!=0){
+		if(options->getValue(IntType::SYMMETRY)!=0){
 			std::cerr << "Symmetry detection...\n";
 			clock_t start = clock();
 			std::vector<const IVSet*> ivsets = findIVSets(theory, structure);
 			float time = (float) (clock() - start)/CLOCKS_PER_SEC;
 			std::cerr << "Symmetry detection finished in: " << time << "\n";
-			if(options->symmetry()==1){
+			if(options->getValue(IntType::SYMMETRY)==1){
 				std::cerr << "Adding symmetry breaking clauses...\n";
 				addSymBreakingPredicates(grounding, ivsets);
-			}else if(options->symmetry()==2){
+			}else if(options->getValue(IntType::SYMMETRY)==2){
 				std::cerr << "Using symmetrical clause learning...\n";
 				for(auto ivsets_it=ivsets.begin(); ivsets_it!=ivsets.end(); ++ivsets_it){
 					std::vector<std::map<int,int> > breakingSymmetries = (*ivsets_it)->getBreakingSymmetries(grounding);
@@ -71,7 +71,7 @@ public:
 
 		// Run solver
 		MinisatID::Solution* abstractsolutions = initsolution(options);
-		if(options->trace()){
+		if(options->getValue(BoolType::TRACE)){
 			monitor->setTranslator(grounding->translator());
 			monitor->setSolver(solver);
 		}
@@ -95,7 +95,7 @@ public:
 		for(auto it = solutions.begin(); it != solutions.end(); ++it) {
 			result._value._table->push_back(InternalArgument(*it));
 		}
-		if(options->trace()) {
+		if(options->getValue(BoolType::TRACE)) {
 			InternalArgument randt;
 			randt._type = AT_MULT;
 			randt._value._table = new std::vector<InternalArgument>(1,result);
@@ -117,15 +117,15 @@ public:
 private:
 	SATSolver* createsolver(Options* options) const {
 		MinisatID::SolverOption modes;
-		modes.nbmodels = options->nrmodels();
-		modes.verbosity = options->satverbosity();
+		modes.nbmodels = options->getValue(IntType::NRMODELS);
+		modes.verbosity = options->getValue(IntType::SATVERBOSITY);
 		modes.remap = false;
 		return new SATSolver(modes);
 	}
 
 	MinisatID::Solution* initsolution(Options* options) const {
 		MinisatID::ModelExpandOptions opts;
-		opts.nbmodelstofind = options->nrmodels();
+		opts.nbmodelstofind = options->getValue(IntType::NRMODELS);
 		opts.printmodels = MinisatID::PRINT_NONE;
 		opts.savemodels = MinisatID::SAVE_ALL;
 		opts.search = MinisatID::MODELEXPAND;

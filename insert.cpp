@@ -1139,7 +1139,7 @@ void Insert::assignstructure(InternalArgument* arg, YYLTYPE l) {
 void Insert::closestructure() {
 	assert(_currstructure);
 	assignunknowntables();
-	if(_options->autocomplete()) _currstructure->autocomplete();
+	if(_options->getValue(BoolType::AUTOCOMPLETE)) _currstructure->autocomplete();
 	_currstructure->functioncheck();
 	if(_currspace->isGlobal()) LuaConnection::addGlobal(_currstructure);
 	closeblock();
