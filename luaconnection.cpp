@@ -133,30 +133,6 @@ const DomainElement* convertToElement(int arg, lua_State* L) {
 	}
 }
 
-/*
- * FIXME
-InternalArgument Options::getvalue(const string& opt) const {
-	map<string,bool>::const_iterator bit = _booloptions.find(opt);
-	if(bit != _booloptions.end()) {
-		return InternalArgument(bit->second);
-	}
-	map<string,IntOption*>::const_iterator iit = _intoptions.find(opt);
-	if(iit != _intoptions.end()) {
-		return InternalArgument(iit->second->value());
-	}
-	map<string,FloatOption*>::const_iterator fit = _floatoptions.find(opt);
-	if(fit != _floatoptions.end()) {
-		return InternalArgument(fit->second->value());
-	}
-	map<string,StringOption*>::const_iterator sit = _stringoptions.find(opt);
-	if(sit != _stringoptions.end()) {
-		return InternalArgument(StringPointer(sit->second->value()));
-	}
-
-	InternalArgument ia; ia._type = AT_NIL;
-	return ia;
-}*/
-
 namespace LuaConnection {
 
 	int InternalProcedure::operator()(lua_State* L) const {
@@ -1098,6 +1074,16 @@ namespace LuaConnection {
 		return lua_error(L);
 	}
 
+	InternalArgument getValue(Options* opts, const string& name){
+		if(opts->isIntOption(name)){
+			return InternalArgument(opts->getIntValue(name));
+		}else if(opts->isStringOption(name)){
+			return InternalArgument(new string(opts->getStringValue(name)));
+		}else if(opts->isBoolOption(name)){
+			return InternalArgument(opts->getBoolValue(name));
+		}
+	}
+
 	/**
 	 * Index function for options
 	 */
@@ -1105,9 +1091,10 @@ namespace LuaConnection {
 		Options* opts = *(Options**)lua_touserdata(L,1);
 		InternalArgument index = createArgument(2,L);
 		if(index._type == AT_STRING) {
-			return convertToLua(L,opts->getValue(*(index._value._string)));
-		}
-		else {
+			// TODO remove getvalue returning internalargument from options
+			// instead, add options isIntOption, getIntValue, ...
+			return convertToLua(L,getValue(opts, *(index._value._string)));
+		}else {
 			lua_pushstring(L,"Options can only be indexed by a string");
 			return lua_error(L);
 		}
@@ -1410,6 +1397,8 @@ namespace LuaConnection {
 			stringstream ss;
 			ss <<"There is no option named " <<option <<".\n";
 			lua_pushstring(L,ss.str().c_str());
+			// FIXME lua errors are not printed anymore?
+			cerr <<ss.str();
 			return lua_error(L);
 		}
 		switch(value._type) {

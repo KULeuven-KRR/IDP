@@ -16,8 +16,6 @@
 #include <set>
 #include "parseinfo.hpp"
 
-class InternalArgument;
-
 // TODO enum class does not yet support comparison operators in 4.4.3
 
 enum Language { TXT, IDP, ECNF, LATEX, ASP, CNF, TPTP };
@@ -29,14 +27,17 @@ enum OptionType{
 	PRINTTYPES, CPSUPPORT, TRACE, AUTOCOMPLETE, LONGNAMES, RELATIVEPROPAGATIONSTEPS, CREATETRANSLATION
 };
 
-template<class TypeEnum, class ConcreteType>
+template<class ConcreteType>
 class TypedOption{
 private:
+	const std::string name;
 	ConcreteType chosenvalue_;
 
 public:
-	TypedOption(){}
+	TypedOption(const std::string& name): name(name){}
 	~TypedOption(){}
+
+	const std::string& getName() const { return name; }
 
 	virtual bool 		isAllowedValue(const ConcreteType& value) = 0;
 	virtual std::string printOption() const = 0;
@@ -48,8 +49,8 @@ public:
 	}
 };
 
-template<class TypeEnum, class ConcreteType>
-class RangeOption: public TypedOption<TypeEnum, ConcreteType> {
+template<class ConcreteType>
+class RangeOption: public TypedOption<ConcreteType> {
 private:
 	ConcreteType lowerbound_, upperbound_;
 
@@ -57,8 +58,8 @@ private:
 	const ConcreteType&	upper() const { return upperbound_;  }
 
 public:
-	RangeOption(const ConcreteType& lowerbound, const ConcreteType& upperbound)
-		: lowerbound_(lowerbound), upperbound_(upperbound) { }
+	RangeOption(const std::string& name, const ConcreteType& lowerbound, const ConcreteType& upperbound)
+		: TypedOption<ConcreteType>(name), lowerbound_(lowerbound), upperbound_(upperbound) { }
 
 	bool isAllowedValue(const ConcreteType& value){
 		return value >= lower() && value <= upper();
@@ -66,19 +67,20 @@ public:
 
 	virtual std::string printOption() const {
 		std::stringstream ss; // TODO name
-		ss <<"<name>" <<" lies between " <<lower() <<" and " <<upper() <<". Current value is " <<TypedOption<TypeEnum, ConcreteType>::getValue() <<"\n";
+		ss <<"<name>" <<" lies between " <<lower() <<" and " <<upper() <<". Current value is " <<TypedOption<ConcreteType>::getValue() <<"\n";
 		return ss.str();
 	}
 };
 
-template<class TypeEnum, class ConcreteType>
-class EnumeratedOption: public TypedOption<TypeEnum, ConcreteType> {
+template<class ConcreteType>
+class EnumeratedOption: public TypedOption<ConcreteType> {
 private:
 	std::set<ConcreteType>	allowedvalues_;
 	const std::set<ConcreteType>& getAllowedValues() const { return allowedvalues_; }
 
 public:
-	EnumeratedOption(const std::set<ConcreteType>& allowedvalues): allowedvalues_(allowedvalues) { }
+	EnumeratedOption(const std::string& name, const std::set<ConcreteType>& allowedvalues)
+		: TypedOption<ConcreteType>(name), allowedvalues_(allowedvalues) { }
 
 	bool isAllowedValue(const ConcreteType& value){
 		return getAllowedValues().find(value)!=getAllowedValues().end();
@@ -90,10 +92,15 @@ public:
 		for(auto i=getAllowedValues().begin(); i!=getAllowedValues().end(); ++i){
 			ss <<*i <<", ";
 		}
-		ss <<". Current value is " <<TypedOption<TypeEnum, ConcreteType>::getValue() <<"\n";
+		ss <<". Current value is " <<TypedOption<ConcreteType>::getValue() <<"\n";
 		return ss.str();
 	}
 };
+
+template<class List>
+bool hasOption(const List& list, OptionType type){
+	return list.size()>type && list[type]!=NULL;
+}
 
 /**
  * Class to represent a block of options
@@ -103,67 +110,52 @@ class Options{
 		std::string		_name;	//!< The name of the options block
 		ParseInfo		_pi;	//!< The place where the options were parsed
 
-		std::map<OptionType,TypedOption<OptionType, int>* > _intoptions;
-		std::map<OptionType,TypedOption<OptionType, bool>* > _booloptions;
-		std::map<OptionType,TypedOption<OptionType, std::string>* > _stringoptions;
+		std::vector<TypedOption<int>* > _intoptions;
+		std::vector<TypedOption<bool>* > _booloptions;
+		std::vector<TypedOption<std::string>* > _stringoptions;
 
-		template<class ConcreteType>
-		std::map<OptionType,TypedOption<OptionType, ConcreteType>* >& getOptions(const ConcreteType& value);
-
+		std::vector<std::string> _option2name;
 		std::map<std::string, OptionType> _name2optionType;
-		std::map<OptionType, std::string> _optionType2name;
 
 		template<class ConcreteType>
-		void createOption(OptionType option, const std::string& name, const ConcreteType& lowerbound, const ConcreteType& upperbound, const ConcreteType& defaultValue){
-			_name2optionType[name] = option;
-			_optionType2name[option] = name;
-			auto newoption = new RangeOption<OptionType, ConcreteType>(lowerbound, upperbound);
-			newoption->setValue(defaultValue);
-			getOptions(defaultValue)[option] =  newoption;
-		}
+		std::vector<TypedOption<ConcreteType>* >& getOptions(const ConcreteType& value);
+
 		template<class ConcreteType>
-		void createOption(OptionType option, const std::string& name, const std::set<ConcreteType>& values, const ConcreteType& defaultValue){
-			_name2optionType[name] = option;
-			_optionType2name[option] = name;
-			auto newoption = new EnumeratedOption<OptionType, ConcreteType>(values);
-			newoption->setValue(defaultValue);
-			getOptions(defaultValue)[option] = newoption;
-		}
+		void createOption(OptionType type, const std::string& name, const ConcreteType& lowerbound, const ConcreteType& upperbound, const ConcreteType& defaultValue);
+		template<class ConcreteType>
+		void createOption(OptionType type, const std::string& name, const std::set<ConcreteType>& values, const ConcreteType& defaultValue);
 
 	public:
 		Options(const std::string& name, const ParseInfo& pi);
 		~Options();
 
-		InternalArgument getValue(OptionType name) const;
-		InternalArgument getValue(const std::string& name) const;
-
-		template<class ValueType>
-		void setValue(const std::string& name, ValueType value){
-			setValue(_name2optionType.at(name), value);
-		}
-		template<class ValueType>
-		void setValue(OptionType type, ValueType value){
-			getOptions(value).at(type)->setValue(value);
-		}
-
-		template<class ValueType>
-		bool isAllowedValue(const std::string& name, ValueType value){
-			return isAllowedValue(_name2optionType.at(name), value);
-		}
-		template<class ValueType>
-		bool isAllowedValue(OptionType option, ValueType value){
-			auto it = getOptions(value).find(option);
-			if(it==getOptions(value).end()){
-				return false;
-			}
-			return it->second->isAllowedValue(value);
-		}
-
 		const std::string&	name()	const	{ return _name;	}
 		const ParseInfo&	pi()	const	{ return _pi;	}
 
-		bool	isOption(const std::string&) const;
-		void	copyValues(Options*);
+		template<class ValueType>
+		void setValue(const std::string& name, ValueType value){
+			OptionType type = _name2optionType.at(name);
+			assert(hasOption(getOptions(value), type));
+			getOptions(value).at(type)->setValue(value);
+		}
+		template<class ValueType>
+		bool isAllowedValue(const std::string& name, ValueType value){
+			OptionType type = _name2optionType.at(name);
+			assert(hasOption(getOptions(value), type));
+			return getOptions(value).at(type)->isAllowedValue(value);
+		}
+
+		bool			isOption(const std::string&) const;
+
+		bool			isStringOption(const std::string&) const;
+		bool			isBoolOption(const std::string&) const;
+		bool			isIntOption(const std::string&) const;
+
+		int				getIntValue(const std::string&) const;
+		bool			getBoolValue(const std::string&) const;
+		std::string 	getStringValue(const std::string&) const;
+
+		void			copyValues(Options*);
 
 		std::string 	printAllowedValues	(const std::string& option) const;
 		std::ostream&	put					(std::ostream&)	const;
