@@ -37,8 +37,8 @@ enum DoubleType{
 template<class EnumType, class ConcreteType>
 class TypedOption{
 private:
-	const std::string name;
 	EnumType type;
+	const std::string name;
 	ConcreteType chosenvalue_;
 
 public:
@@ -74,11 +74,7 @@ public:
 		return value >= lower() && value <= upper();
 	}
 
-	virtual std::string printOption() const {
-		std::stringstream ss; // TODO correct usage
-		ss <<TypedOption<EnumType, ConcreteType>::getName() <<" lies between " <<lower() <<" and " <<upper() <<". Current value is " <<TypedOption<EnumType, ConcreteType>::getValue() <<"\n";
-		return ss.str();
-	}
+	virtual std::string printOption() const;
 };
 
 template<class EnumType, class ConcreteType>
@@ -95,15 +91,7 @@ public:
 		return getAllowedValues().find(value)!=getAllowedValues().end();
 	}
 
-	virtual std::string printOption() const {
-		std::stringstream ss;
-		ss <<TypedOption<EnumType, ConcreteType>::getName() <<" is one of "; // TODO correct usage
-		for(auto i=getAllowedValues().begin(); i!=getAllowedValues().end(); ++i){
-			ss <<*i <<", ";
-		}
-		ss <<". Current value is " <<TypedOption<EnumType, ConcreteType>::getValue() <<"\n";
-		return ss.str();
-	}
+	virtual std::string printOption() const;
 };
 
 class Options;
@@ -163,88 +151,90 @@ typedef OptionPolicy<StringType, std::string> StringPol;
  * Class to represent a block of options
  */
 class Options: public IntPol, public BoolPol, public DoublePol, public StringPol{
-	private:
-		std::string		_name;	//!< The name of the options block
-		ParseInfo		_pi;	//!< The place where the options were parsed
+private:
+	std::string		_name;	//!< The name of the options block
+	ParseInfo		_pi;	//!< The place where the options were parsed
 
-		std::vector<std::string> _option2name;
+	std::vector<std::string> _option2name;
 
-	public:
-		Options(const std::string& name, const ParseInfo& pi);
-		~Options(){}
+public:
+	Options(const std::string& name, const ParseInfo& pi);
+	~Options(){}
 
-		const std::string&	name()	const	{ return _name;	}
-		const ParseInfo&	pi()	const	{ return _pi;	}
+	const std::string&	name()	const	{ return _name;	}
+	const ParseInfo&	pi()	const	{ return _pi;	}
 
-		bool			isOption(const std::string&) const;
+	bool			isOption(const std::string&) const;
 
-		bool			isStringOption(const std::string&) const;
-		bool			isBoolOption(const std::string&) const;
-		bool			isIntOption(const std::string&) const;
-		bool			isDoubleOption(const std::string&) const;
+	bool			isStringOption(const std::string&) const;
+	bool			isBoolOption(const std::string&) const;
+	bool			isIntOption(const std::string&) const;
+	bool			isDoubleOption(const std::string&) const;
 
-		int				getIntValue(const std::string&) const;
-		bool			getBoolValue(const std::string&) const;
-		std::string 	getStringValue(const std::string&) const;
-		double 			getDoubleValue(const std::string&) const;
+	int				getIntValue(const std::string&) const;
+	bool			getBoolValue(const std::string&) const;
+	std::string 	getStringValue(const std::string&) const;
+	double 			getDoubleValue(const std::string&) const;
 
-		int getValue(IntType type){
-			return OptionPolicy<IntType, int>::getValue(type);
-		}
-		double getValue(DoubleType type){
-			return OptionPolicy<DoubleType, double>::getValue(type);
-		}
-		bool getValue(BoolType type){
-			return OptionPolicy<BoolType, bool>::getValue(type);
-		}
-		std::string getValue(StringType type){
-			return OptionPolicy<StringType, std::string>::getValue(type);
-		}
+	int getValue(IntType type){
+		return OptionPolicy<IntType, int>::getValue(type);
+	}
+	double getValue(DoubleType type){
+		return OptionPolicy<DoubleType, double>::getValue(type);
+	}
+	bool getValue(BoolType type){
+		return OptionPolicy<BoolType, bool>::getValue(type);
+	}
+	std::string getValue(StringType type){
+		return OptionPolicy<StringType, std::string>::getValue(type);
+	}
 
-		void setValue(IntType type, const int& value){
-			OptionPolicy<IntType, int>::setValue(type, value);
-		}
-		void setValue(DoubleType type, const double& value){
-			OptionPolicy<DoubleType, double>::setValue(type, value);
-		}
-		void setValue(BoolType type, const bool& value){
-			OptionPolicy<BoolType, bool>::setValue(type, value);
-		}
-		void setValue(StringType type, const std::string& value){
-			OptionPolicy<StringType, std::string>::setValue(type, value);
-		}
-		void setValue(const std::string& name, const int& value){
-			OptionPolicy<IntType, int>::setStrValue(name, value);
-		}
-		void setValue(const std::string& name, const double& value){
-			OptionPolicy<DoubleType, double>::setStrValue(name, value);
-		}
-		void setValue(const std::string& name, const bool& value){
-			OptionPolicy<BoolType, bool>::setStrValue(name, value);
-		}
-		void setValue(const std::string& name, const std::string& value){
-			OptionPolicy<StringType, std::string>::setStrValue(name, value);
-		}
-		bool isAllowedValue(const std::string& name, const int& value){
-			return OptionPolicy<IntType, int>::isAllowedValue(name, value);
-		}
-		bool isAllowedValue(const std::string& name, const double& value){
-			return OptionPolicy<DoubleType, double>::isAllowedValue(name, value);
-		}
-		bool isAllowedValue(const std::string& name, const bool& value){
-			return OptionPolicy<BoolType, bool>::isAllowedValue(name, value);
-		}
-		bool isAllowedValue(const std::string& name, const std::string& value){
-			return OptionPolicy<StringType, std::string>::isAllowedValue(name, value);
-		}
+	void setValue(IntType type, const int& value){
+		OptionPolicy<IntType, int>::setValue(type, value);
+	}
+	void setValue(DoubleType type, const double& value){
+		OptionPolicy<DoubleType, double>::setValue(type, value);
+	}
+	void setValue(BoolType type, const bool& value){
+		OptionPolicy<BoolType, bool>::setValue(type, value);
+	}
+	void setValue(StringType type, const std::string& value){
+		OptionPolicy<StringType, std::string>::setValue(type, value);
+	}
 
-		void			copyValues(Options*);
+	void			copyValues(Options*);
 
-		std::string 	printAllowedValues	(const std::string& option) const;
-		std::ostream&	put					(std::ostream&)	const;
-		std::string		to_string			()			const;
+	std::string 	printAllowedValues	(const std::string& option) const;
+	std::ostream&	put					(std::ostream&)	const;
+	std::string		to_string			()			const;
 
-		Language	language() const;
+	Language	language() const;
+
+	// NOTE: do NOT call this code outside luaconnection or other user interface methods.
+	void setValue(const std::string& name, const int& value){
+		OptionPolicy<IntType, int>::setStrValue(name, value);
+	}
+	void setValue(const std::string& name, const double& value){
+		OptionPolicy<DoubleType, double>::setStrValue(name, value);
+	}
+	void setValue(const std::string& name, const bool& value){
+		OptionPolicy<BoolType, bool>::setStrValue(name, value);
+	}
+	void setValue(const std::string& name, const std::string& value){
+		OptionPolicy<StringType, std::string>::setStrValue(name, value);
+	}
+	bool isAllowedValue(const std::string& name, const int& value){
+		return OptionPolicy<IntType, int>::isAllowedValue(name, value);
+	}
+	bool isAllowedValue(const std::string& name, const double& value){
+		return OptionPolicy<DoubleType, double>::isAllowedValue(name, value);
+	}
+	bool isAllowedValue(const std::string& name, const bool& value){
+		return OptionPolicy<BoolType, bool>::isAllowedValue(name, value);
+	}
+	bool isAllowedValue(const std::string& name, const std::string& value){
+		return OptionPolicy<StringType, std::string>::isAllowedValue(name, value);
+	}
 };
 
 #endif

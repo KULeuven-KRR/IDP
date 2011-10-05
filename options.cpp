@@ -101,6 +101,49 @@ void OptionPolicy<EnumType, ValueType>::copyValues(Options* opts){
 	}
 }
 
+template<class EnumType, class ConcreteType>
+std::string RangeOption<EnumType, ConcreteType>::printOption() const {
+	std::stringstream ss; // TODO correct usage
+	ss <<"\t" <<TypedOption<EnumType, ConcreteType>::getName() <<" = " <<TypedOption<EnumType, ConcreteType>::getValue();
+	ss <<"\n\t\t => between " <<lower() <<" and " <<upper() <<".";
+	return ss.str();
+}
+
+template<>
+std::string EnumeratedOption<BoolType, bool>::printOption() const {
+	std::stringstream ss;
+	ss <<"\t" <<TypedOption<BoolType, bool>::getName() <<" = " <<(TypedOption<BoolType, bool>::getValue()?"true":"false");
+
+	ss <<"\n\t\t => one of [";
+	bool begin = true;
+	for(auto i=getAllowedValues().begin(); i!=getAllowedValues().end(); ++i){
+		if(not begin){
+			ss <<", ";
+		}
+		begin = false;
+		ss <<((*i)?"true":"false");
+	}
+	ss <<"]";
+	return ss.str();
+}
+template<class EnumType, class ConcreteType>
+std::string EnumeratedOption<EnumType, ConcreteType>::printOption() const {
+	std::stringstream ss;
+	ss <<"\t" <<TypedOption<EnumType, ConcreteType>::getName() <<" = " <<TypedOption<EnumType, ConcreteType>::getValue();
+
+	ss <<"\n\t\t => one of [";
+	bool begin = true;
+	for(auto i=getAllowedValues().begin(); i!=getAllowedValues().end(); ++i){
+		if(not begin){
+			ss <<", ";
+		}
+		begin = false;
+		ss <<*i;
+	}
+	ss <<"]";
+	return ss.str();
+}
+
 Language Options::language() const {
 	const std::string& value = StringPol::getValue(StringType::LANGUAGE);
 	if(value.compare(str(Language::TXT))==0){
