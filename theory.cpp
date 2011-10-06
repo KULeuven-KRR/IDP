@@ -843,18 +843,18 @@ Definition* Completer::visit(Definition* def) {
 	_headvars.clear();
 	_interres.clear();
 	_result.clear();
-	for(set<PFSymbol*>::const_iterator it = def->defsymbols().begin(); it != def->defsymbols().end(); ++it) {
+	for(auto it = def->defsymbols().begin(); it != def->defsymbols().end(); ++it) {
 		vector<Variable*> vv;
-		for(vector<Sort*>::const_iterator jt = (*it)->sorts().begin(); jt != (*it)->sorts().end(); ++jt) {
+		for(auto jt = (*it)->sorts().begin(); jt != (*it)->sorts().end(); ++jt) {
 			vv.push_back(new Variable(*jt));
 		}
 		_headvars[*it] = vv;
 	}
-	for(vector<Rule*>::const_iterator it = def->rules().begin(); it != def->rules().end(); ++it) {
+	for(auto it = def->rules().begin(); it != def->rules().end(); ++it) {
 		(*it)->accept(this);
 	}
 
-	for(map<PFSymbol*,vector<Formula*> >::const_iterator it = _interres.begin(); it != _interres.end(); ++it) {
+	for(auto it = _interres.begin(); it != _interres.end(); ++it) {
 		assert(!it->second.empty());
 		Formula* b = it->second[0];
 		if(it->second.size() > 1) b = new BoolForm(SIGN::POS,false,it->second,FormulaParseInfo());
@@ -1453,30 +1453,34 @@ class FuncGrapher : public TheoryMutatingVisitor {
 };
 
 Formula* FuncGrapher::visit(PredForm* pf) {
-	PredForm* newpf = 0;
-	assert(pf->symbol()->name() == "=/2");
-	if(typeid(*(pf->subterms()[0])) == typeid(FuncTerm)) {
-		FuncTerm* ft = dynamic_cast<FuncTerm*>(pf->subterms()[0]);
-		vector<Term*> vt;
-		for(vector<Term*>::const_iterator it = ft->subterms().begin(); it != ft->subterms().end(); ++it) 
-			vt.push_back(*it);
-		vt.push_back(pf->subterms()[1]);
-		newpf = new PredForm(pf->sign(),ft->function(),vt,pf->pi().clone());
-		delete(ft);
-		delete(pf);
+	if(pf->symbol()->name() == "=/2") {
+		PredForm* newpf = 0;
+		if(typeid(*(pf->subterms()[0])) == typeid(FuncTerm)) {
+			FuncTerm* ft = dynamic_cast<FuncTerm*>(pf->subterms()[0]);
+			vector<Term*> vt;
+			for(vector<Term*>::const_iterator it = ft->subterms().begin(); it != ft->subterms().end(); ++it) 
+				vt.push_back(*it);
+			vt.push_back(pf->subterms()[1]);
+			newpf = new PredForm(pf->sign(),ft->function(),vt,pf->pi().clone());
+			delete(ft);
+			delete(pf);
+		}
+		else if(typeid(*(pf->subterms()[1])) == typeid(FuncTerm)) {
+			FuncTerm* ft = dynamic_cast<FuncTerm*>(pf->subterms()[1]);
+			vector<Term*> vt;
+			for(vector<Term*>::const_iterator it = ft->subterms().begin(); it != ft->subterms().end(); ++it) 
+				vt.push_back(*it);
+			vt.push_back(pf->subterms()[0]);
+			newpf = new PredForm(pf->sign(),ft->function(),vt,pf->pi().clone());
+			delete(ft);
+			delete(pf);
+		}
+		else newpf = pf;
+		return newpf;
 	}
-	else if(typeid(*(pf->subterms()[1])) == typeid(FuncTerm)) {
-		FuncTerm* ft = dynamic_cast<FuncTerm*>(pf->subterms()[1]);
-		vector<Term*> vt;
-		for(vector<Term*>::const_iterator it = ft->subterms().begin(); it != ft->subterms().end(); ++it) 
-			vt.push_back(*it);
-		vt.push_back(pf->subterms()[0]);
-		newpf = new PredForm(pf->sign(),ft->function(),vt,pf->pi().clone());
-		delete(ft);
-		delete(pf);
+	else {
+		return pf;
 	}
-	else newpf = pf;
-	return newpf;
 }
 
 Formula* FuncGrapher::visit(EqChainForm* ef) {

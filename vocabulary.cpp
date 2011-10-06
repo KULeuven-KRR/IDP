@@ -327,6 +327,16 @@ bool PFSymbol::hasVocabularies() const {
 	return !(_vocabularies.empty());
 }
 
+vector<unsigned int> PFSymbol::argumentNrs(const Sort* soort)	const{
+	vector<unsigned int> result;
+	for(unsigned int i=0; i<nrSorts(); ++i){
+		if(sort(i)==soort){
+			result.push_back(i);
+		}
+	}
+	return result;
+}
+
 string PFSymbol::to_string(bool longnames) const {
 	stringstream output;
 	put(output, longnames);

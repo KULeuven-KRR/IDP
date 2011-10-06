@@ -493,7 +493,7 @@ bool UnivSentGrounder::run() const {
 ******************************/
 
 GrounderFactory::GrounderFactory(AbstractStructure* structure, Options* opts)
-	: _structure(structure), _options(opts), _verbosity(opts->groundverbosity()), _cpsupport(opts->cpsupport()) {
+	: _structure(structure), _options(opts), _verbosity(opts->getValue(IntType::GROUNDVERBOSITY)), _cpsupport(opts->getValue(BoolType::CPSUPPORT)) {
 }
 
 set<const PFSymbol*> GrounderFactory::findCPSymbols(const AbstractTheory* theory) {

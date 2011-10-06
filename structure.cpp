@@ -3000,7 +3000,7 @@ inline bool PredInter::isinconsistent(const ElementTuple& tuple) const {
 }
 
 /**
- * \brief Returns false is the interpretation is not two-valued. May return true if it is two-valued.
+ * \brief Returns false if the interpretation is not two-valued. May return true if it is two-valued.
  *
  * NOTE: Simple check if _ct == _pt
  */
@@ -3330,7 +3330,6 @@ namespace TableUtils {
 		}
 		else return false;
 	}
-
 }
 
 /*****************

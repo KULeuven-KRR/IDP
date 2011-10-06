@@ -1139,7 +1139,7 @@ void Insert::assignstructure(InternalArgument* arg, YYLTYPE l) {
 void Insert::closestructure() {
 	assert(_currstructure);
 	assignunknowntables();
-	if(_options->autocomplete()) _currstructure->autocomplete();
+	if(_options->getValue(BoolType::AUTOCOMPLETE)) _currstructure->autocomplete();
 	_currstructure->functioncheck();
 	if(_currspace->isGlobal()) LuaConnection::addGlobal(_currstructure);
 	closeblock();
@@ -2610,47 +2610,42 @@ void Insert::procarg(const string& argname) const {
 	_currprocedure->addarg(argname);
 }
 
-void Insert::externoption(const vector<string>& name, YYLTYPE l) const {
+// FIXME typedef for long names
+// FIXME better name for oneName
+void Insert::externoption(const vector<string>& optionName, YYLTYPE l) const {
 	ParseInfo pi = parseinfo(l);
-	Options* opt = optionsInScope(name,pi);
-	if(opt) _curroptions->setvalues(opt);
-	else Error::undeclopt(oneName(name),pi);
+	Options* opt = optionsInScope(optionName,pi);
+	if(opt==NULL){
+		Error::undeclopt(oneName(optionName),pi);
+	}
+	_curroptions->copyValues(opt);
+}
+
+template<class OptionValue>
+void setOptionValue(Options* options, const string& opt, const OptionValue& val,const ParseInfo& pi){
+	if(!options->isOption(opt)){
+		Error::unknoption(opt,pi);
+	}
+	if(options->isAllowedValue(opt, val)) {
+		Error::wrongvalue(opt,toString(val),pi);
+	}
+	options->setValue(opt,val);
 }
 
 void Insert::option(const string& opt, const string& val,YYLTYPE l) const {
-	ParseInfo pi = parseinfo(l);
-	if(_curroptions->isoption(opt)) {
-		if(_curroptions->setvalue(opt,val)) { } // do nothing
-		else Error::wrongvalue(opt,val,pi);
-	}
-	else Error::unknoption(opt,pi);
+	setOptionValue(_curroptions, opt, val, parseinfo(l));
 }
 
-void Insert::option(const string& opt, double val,YYLTYPE l) const { 
-	ParseInfo pi = parseinfo(l);
-	if(_curroptions->isoption(opt)) {
-		if(_curroptions->setvalue(opt,val)) { } // do nothing
-		else Error::wrongvalue(opt,toString(val),pi);
-	}
-	else Error::unknoption(opt,pi);
+void Insert::option(const string& opt, double val,YYLTYPE l) const {
+	setOptionValue(_curroptions, opt, val, parseinfo(l));
 }
 
 void Insert::option(const string& opt, int val,YYLTYPE l) const {
-	ParseInfo pi = parseinfo(l);
-	if(_curroptions->isoption(opt)) {
-		if(_curroptions->setvalue(opt,val)) { } // do nothing
-		else Error::wrongvalue(opt,toString(val),pi);
-	}
-	else Error::unknoption(opt,pi);
+	setOptionValue(_curroptions, opt, val, parseinfo(l));
 }
 
 void Insert::option(const string& opt, bool val,YYLTYPE l) const {
-	ParseInfo pi = parseinfo(l);
-	if(_curroptions->isoption(opt)) {
-		if(_curroptions->setvalue(opt,val)) { } // do nothing
-		else Error::wrongvalue(opt,val ? "true" : "false",pi);
-	}
-	else Error::unknoption(opt,pi);
+	setOptionValue(_curroptions, opt, val, parseinfo(l));
 }
 
 void Insert::assignunknowntables() {

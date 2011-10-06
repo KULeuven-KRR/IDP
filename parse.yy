@@ -873,14 +873,16 @@ args				: args ',' identifier	{ insert.procarg(*$3);		}
 **************/
 
 options	: OPTION_HEADER option_name '{' optassigns '}'	{ insert.closeoptions();	}
-		;
+		| OPTION_HEADER option_name 
+			EXTERN pointer_name { insert.externoption(*$4,@4);	delete($4);	}
+			'{' optassigns '}'	{ insert.closeoptions();	}
+		; // Second rule allows to define an option as using by default the values of the provided option
 
 option_name	: identifier	{ insert.openoptions(*$1,@1);	}
 			;
 
 optassigns	: /* empty */
 			| optassigns optassign	
-			| optassigns EXTERN OPTIONS pointer_name	{ insert.externoption(*$4,@4);	delete($4);	}
 			;
 
 optassign	: identifier '=' strelement		{ insert.option(*$1,*$3,@1);	}
