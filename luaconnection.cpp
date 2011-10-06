@@ -1075,12 +1075,15 @@ namespace LuaConnection {
 	}
 
 	InternalArgument getValue(Options* opts, const string& name){
-		if(opts->isIntOption(name)){
-			return InternalArgument(opts->getIntValue(name));
-		}else if(opts->isStringOption(name)){
-			return InternalArgument(new string(opts->getStringValue(name)));
-		}else if(opts->isBoolOption(name)){
-			return InternalArgument(opts->getBoolValue(name));
+		if(opts->isOptionOfType<int>(name)){
+			return InternalArgument(opts->getValueOfType<int>(name));
+		}else if(opts->isOptionOfType<std::string>(name)){
+			return InternalArgument(new string(opts->getValueOfType<std::string>(name)));
+		}else if(opts->isOptionOfType<bool>(name)){
+			return InternalArgument(opts->getValueOfType<bool>(name));
+		}else{
+			assert(opts->isOptionOfType<double>(name));
+			return InternalArgument(opts->getValueOfType<double>(name));
 		}
 	}
 
