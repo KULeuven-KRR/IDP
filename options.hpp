@@ -27,9 +27,9 @@ enum StringType{
 enum IntType{
 	SATVERBOSITY, GROUNDVERBOSITY, PROPAGATEVERBOSITY, NRMODELS, NRPROPSTEPS, LONGESTBRANCH, SYMMETRY, PROVERTIMEOUT
 };
-#error add RANDOMCHOICE (of zoiets)
+
 enum BoolType{
-	PRINTTYPES, CPSUPPORT, TRACE, AUTOCOMPLETE, LONGNAMES, RELATIVEPROPAGATIONSTEPS, CREATETRANSLATION
+	PRINTTYPES, CPSUPPORT, TRACE, AUTOCOMPLETE, LONGNAMES, RELATIVEPROPAGATIONSTEPS, CREATETRANSLATION, MXRANDOMPOLARITYCHOICE, GROUNDLAZILY
 };
 enum DoubleType{
 
@@ -148,6 +148,14 @@ typedef OptionPolicy<BoolType, bool> BoolPol;
 typedef OptionPolicy<DoubleType, double> DoublePol;
 typedef OptionPolicy<StringType, std::string> StringPol;
 
+template<class T>
+struct PolTraits;
+
+template<>
+struct PolTraits<IntType> { int value; };
+template<>
+struct PolTraits<BoolType> { bool value; };
+
 /**
  * Class to represent a block of options
  */
@@ -178,29 +186,29 @@ public:
 	double 			getDoubleValue(const std::string&) const;
 
 	int getValue(IntType type){
-		return OptionPolicy<IntType, int>::getValue(type);
+		return IntPol::getValue(type);
 	}
 	double getValue(DoubleType type){
-		return OptionPolicy<DoubleType, double>::getValue(type);
+		return DoublePol::getValue(type);
 	}
 	bool getValue(BoolType type){
-		return OptionPolicy<BoolType, bool>::getValue(type);
+		return BoolPol::getValue(type);
 	}
 	std::string getValue(StringType type){
-		return OptionPolicy<StringType, std::string>::getValue(type);
+		return StringPol::getValue(type);
 	}
 
 	void setValue(IntType type, const int& value){
-		OptionPolicy<IntType, int>::setValue(type, value);
+		IntPol::setValue(type, value);
 	}
 	void setValue(DoubleType type, const double& value){
-		OptionPolicy<DoubleType, double>::setValue(type, value);
+		DoublePol::setValue(type, value);
 	}
 	void setValue(BoolType type, const bool& value){
-		OptionPolicy<BoolType, bool>::setValue(type, value);
+		BoolPol::setValue(type, value);
 	}
 	void setValue(StringType type, const std::string& value){
-		OptionPolicy<StringType, std::string>::setValue(type, value);
+		StringPol::setValue(type, value);
 	}
 
 	void			copyValues(Options*);
@@ -213,28 +221,28 @@ public:
 
 	// NOTE: do NOT call this code outside luaconnection or other user interface methods.
 	void setValue(const std::string& name, const int& value){
-		OptionPolicy<IntType, int>::setStrValue(name, value);
+		IntPol::setStrValue(name, value);
 	}
 	void setValue(const std::string& name, const double& value){
-		OptionPolicy<DoubleType, double>::setStrValue(name, value);
+		DoublePol::setStrValue(name, value);
 	}
 	void setValue(const std::string& name, const bool& value){
-		OptionPolicy<BoolType, bool>::setStrValue(name, value);
+		BoolPol::setStrValue(name, value);
 	}
 	void setValue(const std::string& name, const std::string& value){
-		OptionPolicy<StringType, std::string>::setStrValue(name, value);
+		StringPol::setStrValue(name, value);
 	}
 	bool isAllowedValue(const std::string& name, const int& value){
-		return OptionPolicy<IntType, int>::isAllowedValue(name, value);
+		return IntPol::isAllowedValue(name, value);
 	}
 	bool isAllowedValue(const std::string& name, const double& value){
-		return OptionPolicy<DoubleType, double>::isAllowedValue(name, value);
+		return DoublePol::isAllowedValue(name, value);
 	}
 	bool isAllowedValue(const std::string& name, const bool& value){
-		return OptionPolicy<BoolType, bool>::isAllowedValue(name, value);
+		return BoolPol::isAllowedValue(name, value);
 	}
 	bool isAllowedValue(const std::string& name, const std::string& value){
-		return OptionPolicy<StringType, std::string>::isAllowedValue(name, value);
+		return StringPol::isAllowedValue(name, value);
 	}
 };
 

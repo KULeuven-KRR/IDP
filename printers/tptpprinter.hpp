@@ -105,7 +105,9 @@ public:
 	/** Formulas **/
 
 	void visit(const PredForm* f) {
-		if(! f->sign())	(*_os) << "~";
+		if(isNeg(f->sign())){
+			(*_os) << "~";
+		}
 		if(f->symbol()->to_string(false) == "=") {
 			(*_os) << "(";
 			f->subterms()[0]->accept(this);
@@ -220,13 +222,15 @@ public:
 	}
 
 	void visit(const EqChainForm* f) {
-		if(! f->sign())	(*_os) << "~";
+		if(isNeg(f->sign())){
+			(*_os) << "~";
+		}
 		(*_os) << "(";
 		f->subterms()[0]->accept(this);
 		for(unsigned int n = 0; n < f->comps().size(); ++n) {
-			if(f->comps()[n] == CT_EQ)
+			if(f->comps()[n] == CompType::EQ)
 				(*_os) << " = ";
-			else if(f->comps()[n] == CT_NEQ)
+			else if(f->comps()[n] == CompType::NEQ)
 				(*_os) << " != ";
 			f->subterms()[n+1]->accept(this);
 			if(n+1 < f->comps().size()) {
@@ -241,7 +245,9 @@ public:
 	}
 
 	void visit(const EquivForm* f) {
-		if(! f->sign())	(*_os) << "~";
+		if(isNeg(f->sign())){
+			(*_os) << "~";
+		}
 		(*_os) << "(";
 		f->left()->accept(this);
 		(*_os) << " <=> ";
@@ -251,13 +257,16 @@ public:
 
 	void visit(const BoolForm* f) {
 		if(f->subformulas().empty()) {
-			if(f->sign() == f->conj())
+			if(f->isConjWithSign()){
 				(*_os) << "$true";
-			else
+			}else{
 				(*_os) << "$false";
+			}
 		}
 		else {
-			if(! f->sign())	(*_os) << "~";
+			if(isNeg(f->sign())){
+				(*_os) << "~";
+			}
 			(*_os) << "(";
 			f->subformulas()[0]->accept(this);
 			for(unsigned int n = 1; n < f->subformulas().size(); ++n) {
@@ -272,9 +281,11 @@ public:
 	}
 
 	void visit(const QuantForm* f) {
-		if(! f->sign())	(*_os) << "~";
+		if(isNeg(f->sign())){
+			(*_os) << "~";
+		}
 		(*_os) << "(";
-		if(f->univ())
+		if(f->isUniv())
 			(*_os) << "! [";
 		else
 			(*_os) << "? [";
@@ -300,8 +311,9 @@ public:
 		while(it != f->quantvars().end() && !(*it)->sort())
 			++ it;
 		if (it != f->quantvars().end()) {
-		 	if(f->univ())
+		 	if(f->isUniv()){
 				(*_os) << "~";
+		 	}
 			(*_os) << "(";
 			if(_types.find((*it)->sort()) == _types.end()) {
 				_types.insert((*it)->sort());
@@ -324,10 +336,11 @@ public:
 				}
 			}
 			(*_os) << ")";
-			if(f->univ())
+			if(f->isUniv()){
 				(*_os) << " | ";
-			else
+			}else{
 				(*_os) << " & ";
+			}
 		}
 		
 		(*_os) << "(";

@@ -110,6 +110,8 @@ bool isBinarySymmetry(const AbstractStructure* s, const DomainElement* first, co
 /**
  * 	given a symmetry in the form of two lists of domain elements which represent a bijection, this method adds CNF-clauses to the theory which break the symmetry.
  */
+// TODO split up
+// TODO originally, Jo used a separate add(groundclause) method which did not do transformforadd. Still waiting for his justification for the need of that method.
 void addSymBreakingClausesToGroundTheory(AbstractGroundTheory* gt, const list<int>& literals, const list<int>& symLiterals){
 	//the first two steps are initializers, initializing the first constraints and auxiliary variables
 	list<int>::const_iterator literals_it = literals.begin();
@@ -121,7 +123,7 @@ void addSymBreakingClausesToGroundTheory(AbstractGroundTheory* gt, const list<in
 		vector<int> firstClause (2);
 		firstClause[0]= -(*literals_it); 
 		firstClause[1]=  (*symLiterals_it);
-		gt->addPure(firstClause);
+		gt->add(firstClause);
 	}
 	if(literals.size()>1){
 		currentAuxVar = gt->translator()->nextNumber();
@@ -130,17 +132,17 @@ void addSymBreakingClausesToGroundTheory(AbstractGroundTheory* gt, const list<in
 		clause2[0]= -currentAuxVar;
 		clause2[1]=  (*literals_it);
 		clause2[2]= -(*symLiterals_it);
-		gt->addPure(clause2);
+		gt->add(clause2);
 		// (A2 | ~V1) 
 		vector<int> clause3 (2);
 		clause3[0]=  currentAuxVar;
 		clause3[1]= -(*literals_it);
-		gt->addPure(clause3);
+		gt->add(clause3);
 		// (A2 | V1*)
 		vector<int> clause4 (2);
 		clause4[0]=  currentAuxVar;
 		clause4[1]=  (*symLiterals_it);
-		gt->addPure(clause4);
+		gt->add(clause4);
 		// (~A2 | ~V2 | V2*)
 		++literals_it;
 		++symLiterals_it;
@@ -148,7 +150,7 @@ void addSymBreakingClausesToGroundTheory(AbstractGroundTheory* gt, const list<in
 		clause5[0]= -currentAuxVar;
 		clause5[1]= -(*literals_it);
 		clause5[2]=  (*symLiterals_it);
-		gt->addPure(clause5);
+		gt->add(clause5);
 	}
 	list<int>::const_iterator oneButLast_it = literals.end();
 	--oneButLast_it;
@@ -159,26 +161,26 @@ void addSymBreakingClausesToGroundTheory(AbstractGroundTheory* gt, const list<in
 		vector<int> clause1 (2);
 		clause1[0]= -currentAuxVar;
 		clause1[1]=  previousAuxVar;
-		gt->addPure(clause1);
+		gt->add(clause1);
 		// ( ~An | ~A_n-1 | V_n-1 | ~V_n-1* )
 		vector<int> clause4 (4);
 		clause4[0]= -currentAuxVar; 
 		clause4[1]= -previousAuxVar;
 		clause4[2]=  (*literals_it);
 		clause4[3]= -(*symLiterals_it);
-		gt->addPure(clause4);
+		gt->add(clause4);
 		// ( A_n | ~A_n-1 | ~V_n-1)
 		vector<int> clause2 (3);
 		clause2[0]=  currentAuxVar;
 		clause2[1]= -previousAuxVar; 
 		clause2[2]= -(*literals_it);
-		gt->addPure(clause2);
+		gt->add(clause2);
 		// ( A_n | ~A_n-1 | V_n-1*)
 		vector<int> clause3 (3);
 		clause3[0]=  currentAuxVar;
 		clause3[1]= -previousAuxVar;
 		clause3[2]=  (*symLiterals_it);
-		gt->addPure(clause3);
+		gt->add(clause3);
 		// ( ~An | ~Vn | Vn* )
 		++literals_it;
 		++symLiterals_it;
@@ -186,7 +188,7 @@ void addSymBreakingClausesToGroundTheory(AbstractGroundTheory* gt, const list<in
 		clause6[0]= -currentAuxVar;
 		clause6[1]= -(*literals_it);
 		clause6[2]=  (*symLiterals_it);
-		gt->addPure(clause6);
+		gt->add(clause6);
 	}
 }
 

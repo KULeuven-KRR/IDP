@@ -1012,7 +1012,7 @@ void GrounderFactory::visit(const QuantForm* qf) {
 		}
 
 		// FIXME better under-approximation of what to lazily ground
-		if(_options->groundlazily() && canlazyground && typeid(*_grounding)==typeid(SolverTheory)){
+		if(_options->getValue(BoolType::GROUNDLAZILY) && canlazyground && typeid(*_grounding)==typeid(SolverTheory)){
 			_formgrounder = new LazyQuantGrounder(qf->freevars(), dynamic_cast<SolverTheory*>(_grounding),_grounding->translator(),_formgrounder,qf->sign(),qf->quant(),gen,_context);
 		}else{
 			_formgrounder = new QuantGrounder(_grounding->translator(),_formgrounder,qf->sign(),qf->quant(),gen,_context);
@@ -1265,7 +1265,7 @@ void GrounderFactory::visit(const Rule* rule) {
 
 	InstGenerator *headgen = NULL, *bodygen = NULL;
 
-	if(_options->groundlazily()){ // FIXME check we also have the correct groundtheory!
+	if(_options->getValue(BoolType::GROUNDLAZILY)){ // FIXME check we also have the correct groundtheory!
 		// for lazy ground rules, need a generator which generates bodies given a head, so only vars not occurring in the head!
 		varlist bodyvars;
 		for(auto it = rule->quantvars().begin(); it != rule->quantvars().end(); ++it) {
@@ -1318,7 +1318,7 @@ void GrounderFactory::visit(const Rule* rule) {
 	// Create rule grounder
 	SaveContext();
 	if(recursive(rule->body())) _context._tseitin = TsType::RULE;
-	if(_options->groundlazily()){
+	if(_options->getValue(BoolType::GROUNDLAZILY)){
 		_rulegrounder = new LazyRuleGrounder(headgr,bodygr,bodygen,_context);
 	}else{
 		_rulegrounder = new RuleGrounder(headgr,bodygr,headgen,bodygen,_context);

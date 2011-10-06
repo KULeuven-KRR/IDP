@@ -263,7 +263,7 @@ class BoolForm : public Formula {
 		bool	trueformula()	const	{ return subformulas().empty() && isConjWithSign();	}
 		bool	falseformula()	const	{ return subformulas().empty() && not isConjWithSign();	}
 
-		bool 	isConjWithSign() const { return (conj() && sign()==SIGN::POS) || (not conj() && sign()==SIGN::NEG); }
+		bool 	isConjWithSign() const { return (conj() && isPos(sign())) || (not conj() && isNeg(sign())); }
 
 		// Visitor
 		void		accept(TheoryVisitor* v) const;

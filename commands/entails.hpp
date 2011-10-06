@@ -12,6 +12,7 @@
 #include "printers/tptpprinter.hpp"
 #include "theory.hpp"
 #include <cstdlib>
+#include <cstdio>
 #include <fstream>
 #include "vocabulary.hpp"
 #include <unistd.h>
@@ -41,7 +42,7 @@ class TheorySupportedChecker : public TheoryVisitor {
 };
 
 void TheorySupportedChecker::visit(const EqChainForm* f) {
-	CompType arithmeticComparator [4] = {CT_LEQ, CT_GEQ, CT_LT, CT_GT};
+	CompType arithmeticComparator [4] = {CompType::LEQ, CompType::GEQ, CompType::LT, CompType::GT};
 	for(unsigned int n = 0; n < f->comps().size(); ++n) {
 		for(unsigned int i = 0; i < 4; ++i) {
 			if(f->comps()[n] == arithmeticComparator[i]) {
@@ -90,6 +91,7 @@ public:
 		add(AT_OPTIONS);
 	}
 
+	// TODO passing options as internalarguments (e.g. the xsb path) is very ugly and absolutely not intended!
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
 		#if defined(__linux__)
 		#define COMMANDS_INDEX 0
@@ -241,6 +243,7 @@ public:
 		arguments.replace(pos, 2, ".tptpresult.txt");
 
 		// Call the prover with timeout.
+		// TODO replace signals with sigaction structures
 		if (!setjmp(Entails::_timeoutJump)) {
 			signal(SIGALRM, &Entails::timeout);
 			ualarm(opts->getValue(IntType::PROVERTIMEOUT), 0);
