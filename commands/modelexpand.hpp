@@ -121,6 +121,10 @@ private:
 		modes.verbosity = options->getValue(IntType::SATVERBOSITY);
 		modes.polarity = options->getValue(BoolType::MXRANDOMPOLARITYCHOICE)?MinisatID::POL_RAND:MinisatID::POL_STORED;
 
+		if(options->getValue(BoolType::GROUNDLAZILY)){
+			modes.lazy = true;
+		}
+
 //		modes.remap = false;
 		return new SATSolver(modes);
 	}
