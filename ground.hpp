@@ -264,7 +264,7 @@ class GroundTranslator {
 		bool					hasSymbolFor(int atom)		const	{ return 0<atom && (uint)atom<_backsymbtable.size(); }
 		PFSymbol*				atom2symbol(int atom)		const	{ return _backsymbtable[abs(atom)];			}
 		const ElementTuple&		args(int nr)				const	{ return _backargstable[abs(nr)];			}
-		bool					isTseitin(int atom)			const	{ return atom2symbol(atom) == 0;			}
+		bool					isTseitin(int atom)			const	{ return atom2symbol(atom) != 0;			}
 
 		TsBody*					tsbody(int l)				const	{ return _nr2tsbodies.find(abs(l))->second;	}
 		const TsSet&			groundset(int nr)			const	{ return _sets[nr];							}
