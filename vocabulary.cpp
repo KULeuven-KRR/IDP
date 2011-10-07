@@ -178,13 +178,13 @@ ostream& Sort::put(ostream& output, bool longnames) const {
 	return output;
 }
 
-string Sort::to_string() const {
+string Sort::to_string(bool longnames) const {
 	stringstream output;
-	put(output);
+	put(output, longnames);
 	return output.str();
 }
 
-ostream& operator<< (ostream& output, const Sort& sort) { return sort.put(output);	}
+ostream& operator<< (ostream& output, const Sort& sort) { return sort.put(output, false);	} // Also here, how to choose how to print it? => Use a visitor!
 
 namespace SortUtils {
 
@@ -350,7 +350,7 @@ string Function::to_string(bool longnames) const {
 }
 
 ostream& operator<<(ostream& output, const PFSymbol& s) {
-	return s.put(output);
+	return s.put(output, false); // FIXME can we solve that we have to choose how to print the longnames here?
 }
 
 int Predicate::_npnr = 0;
@@ -513,7 +513,7 @@ ostream& Predicate::put(ostream& output, bool longnames) const {
 	return output;
 }
 
-ostream& operator<< (ostream& output, const Predicate& p) { return p.put(output); }
+ostream& operator<< (ostream& output, const Predicate& p) { return p.put(output, false); } // TODO longnames issue
 
 PredGenerator::PredGenerator(const string& name, unsigned int arity, bool infix) : _name(name), _arity(arity), _infix(infix) {
 }
@@ -903,7 +903,7 @@ ostream& Function::put(ostream& output, bool longnames) const {
 	return output;
 }
 
-ostream& operator<< (ostream& output, const Function& f) { return f.put(output); }
+ostream& operator<< (ostream& output, const Function& f) { return f.put(output, false); } // TODO longnames issue
 
 const string& FuncGenerator::name() const {
 	return _name;

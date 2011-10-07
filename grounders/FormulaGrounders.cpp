@@ -108,7 +108,7 @@ Lit AtomGrounder::run() const {
 		if(_cchecker->isInInterpretation(args)) {
 			if(verbosity() > 2) {
 				clog << "Certain checker succeeded\n";
-				clog << "Result is " << translator()->printAtom(_certainvalue) << "\n";
+ 				clog << "Result is " << translator()->printAtom(_certainvalue, false) << "\n"; //TODO longnames?
 			}
 			return _certainvalue;
 		}
@@ -119,7 +119,7 @@ Lit AtomGrounder::run() const {
 		int atom = translator()->translate(_symbol,args);
 		if(isNeg(_sign)) atom = -atom;
 		if(verbosity() > 2) {
-			clog << "Result is " << translator()->printAtom(atom) << "\n";
+			clog << "Result is " << translator()->printAtom(atom, false) << "\n"; // TODO longnames?
 		}
 		return atom;
 	}

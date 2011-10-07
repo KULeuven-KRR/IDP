@@ -165,13 +165,13 @@ Language Options::language() const {
 }
 
 std::string Options::printAllowedValues(const std::string& name) const{
-	if(isIntOption(name)){
+	if(isOptionOfType<int>(name)){
 		return IntPol::printOption(name);
-	}else if(isStringOption(name)){
+	}else if(isOptionOfType<std::string>(name)){
 		return StringPol::printOption(name);
-	}else if(isDoubleOption(name)){
+	}else if(isOptionOfType<double>(name)){
 		return DoublePol::printOption(name);
-	}else if(isBoolOption(name)){
+	}else if(isOptionOfType<bool>(name)){
 		return BoolPol::printOption(name);
 	}else{
 		return "";
@@ -179,35 +179,10 @@ std::string Options::printAllowedValues(const std::string& name) const{
 }
 
 bool Options::isOption(const string& optname) const {
-	return isIntOption(optname)
-			|| isBoolOption(optname)
-			|| isStringOption(optname)
-			|| isDoubleOption(optname);
-}
-
-bool Options::isStringOption(const std::string& optname) const{
-	return StringPol::isOption(optname);
-}
-bool Options::isBoolOption(const std::string& optname) const{
-	return BoolPol::isOption(optname);
-}
-bool Options::isIntOption(const std::string& optname) const{
-	return IntPol::isOption(optname);
-}
-bool Options::isDoubleOption(const std::string& optname) const{
-	return DoublePol::isOption(optname);
-}
-std::string Options::getStringValue(const std::string& optname) const{
-	return StringPol::getValue(optname);
-}
-double Options::getDoubleValue(const std::string& optname) const{
-	return DoublePol::getValue(optname);
-}
-int Options::getIntValue(const std::string& optname) const{
-	return IntPol::getValue(optname);
-}
-bool Options::getBoolValue(const std::string& optname) const{
-	return BoolPol::getValue(optname);
+	return isOptionOfType<int>(optname)
+			|| isOptionOfType<bool>(optname)
+			|| isOptionOfType<double>(optname)
+			|| isOptionOfType<std::string>(optname);
 }
 
 void Options::copyValues(Options* opts) {

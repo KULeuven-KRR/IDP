@@ -33,6 +33,7 @@ bool DefinitionGrounder::run() const {
 	for(auto grounder = _subgrounders.begin(); grounder<_subgrounders.end(); ++grounder){
 		(*grounder)->run(id(), _grounddefinition);
 	}
+	_grounding->add(_grounddefinition); // FIXME check how it is handled in the lazy part
 	return true;
 }
 

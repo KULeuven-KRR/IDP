@@ -22,6 +22,7 @@
 #include "generator.hpp"
 #include "checker.hpp"
 #include "common.hpp"
+#include "GeneralUtils.hpp"
 #include "monitors/interactiveprintmonitor.hpp"
 #include "groundtheories/AbstractGroundTheory.hpp"
 #include "groundtheories/SolverPolicy.hpp"
@@ -124,24 +125,21 @@ bool operator<(const CPBound& a, const CPBound& b) {
 *********************************************/
 
 GroundTranslator::~GroundTranslator() {
-	// delete TsBodies
-	for(map<int,TsBody*>::iterator mapit = _nr2tsbodies.begin(); mapit != _nr2tsbodies.end(); ++mapit)
-		delete mapit->second;
-	_nr2tsbodies.clear();
-	_tsbodies2nr.clear(); // All TsBodies in this map should've been deleted through the other map.
+	deleteList<SymbolAndTuple>(atom2Tuple);
+	for(auto i=atom2TsBody.begin(); i<atom2TsBody.end(); ++i){
+		delete((*i).second);
+	}
 }
 
 Lit GroundTranslator::translate(unsigned int n, const ElementTuple& args) {
-	auto jt = _table[n].lower_bound(args);
-
 	Lit lit;
-	if(jt != _table[n].end() && jt->first == args) {
+	auto jt = symbols[n].tuple2atom.lower_bound(args);
+	if(jt != symbols[n].tuple2atom.end() && jt->first == args) {
 		lit = jt->second;
 	} else {
-		lit = nextNumber();
-		_table[n].insert(jt,pair<ElementTuple,int>(args,lit));
-		_backsymbtable[lit] = _symboffsets[n];
-		_backargstable[lit] = args;
+		lit = nextNumber(AtomType::INPUT);
+		symbols[n].tuple2atom.insert(jt,pair<ElementTuple,int>(args,lit));
+		atom2Tuple[lit] = new SymbolAndTuple(symbols[n].symbol, args);
 
 		// FIXME expensive operation to do so often!
 		auto ruleit = symbol2rulegrounder.find(n);
@@ -159,28 +157,28 @@ Lit GroundTranslator::translate(PFSymbol* s, const ElementTuple& args) {
 }
 
 Lit GroundTranslator::translate(const vector<Lit>& clause, bool conj, TsType tstype) {
-	int nr = nextNumber();
+	int nr = nextNumber(AtomType::TSEITINWITHSUBFORMULA);
 	return translate(nr, clause, conj, tstype);
 }
 
 Lit GroundTranslator::translate(const Lit& head, const vector<Lit>& clause, bool conj, TsType tstype) {
 	PCTsBody* tsbody = new PCTsBody(tstype,clause,conj);
-	_nr2tsbodies.insert(pair<int,TsBody*>(head,tsbody));
+	atom2TsBody[head] = tspair(head,tsbody);
 	return head;
 }
 
 // Adds a tseitin body only if it does not yet exist. TODO why does this seem only relevant for CP Terms?
 Lit GroundTranslator::addTseitinBody(TsBody* tsbody){
-	auto it = _tsbodies2nr.lower_bound(tsbody);
+// FIXME optimization: check whether the same comparison has already been added and reuse the tseitin.
+/*	auto it = _tsbodies2nr.lower_bound(tsbody);
 
 	if(it != _tsbodies2nr.end() && *(it->first) == *tsbody) { // Already exists
 		delete tsbody;
 		return it->second;
-	}
+	}*/
 
-	int nr = nextNumber();
-	_tsbodies2nr.insert(it,pair<TsBody*,int>(tsbody,nr));
-	_nr2tsbodies.insert(pair<int,TsBody*>(nr,tsbody));
+	int nr = nextNumber(AtomType::TSEITINWITHSUBFORMULA);
+	atom2TsBody[nr] = tspair(nr, tsbody);
 	return nr;
 }
 
@@ -191,9 +189,9 @@ void GroundTranslator::notifyDefined(PFSymbol* pfs, LazyRuleGrounder* const grou
 }
 
 void GroundTranslator::translate(LazyQuantGrounder const* const lazygrounder, ResidualAndFreeInst* instance, TsType tstype) {
-	instance->residual = nextNumber();
+	instance->residual = nextNumber(AtomType::TSEITINWITHSUBFORMULA);
 	LazyTsBody* tsbody = new LazyTsBody(lazygrounder->id(), lazygrounder, instance, tstype);
-	_nr2tsbodies.insert(pair<int,TsBody*>(instance->residual,tsbody));
+	atom2TsBody[instance->residual] = tspair(instance->residual, tsbody);
 }
 
 Lit	GroundTranslator::translate(double bound, char comp, bool strict, AggFunction aggtype, int setnr, TsType tstype) {
@@ -204,15 +202,16 @@ Lit	GroundTranslator::translate(double bound, char comp, bool strict, AggFunctio
 		return translate(cl,true,tstype);
 	}
 	else {
-		int nr = nextNumber();
+		Lit head = nextNumber(AtomType::TSEITINWITHSUBFORMULA);
 		AggTsBody* tsbody = new AggTsBody(tstype,bound,(comp == '<'),aggtype,setnr);
 		if(strict) {
 			#warning "This is wrong if floating point weights are allowed!";
 			tsbody->_bound = (comp == '<') ? bound + 1 : bound - 1;	
-		} 
-		else tsbody->_bound = bound;
-		_nr2tsbodies.insert(pair<int,TsBody*>(nr,tsbody));
-		return nr;
+		}else{
+			tsbody->_bound = bound;
+		}
+		atom2TsBody[head] = tspair(head,tsbody);
+		return head;
 	}
 }
 
@@ -245,14 +244,14 @@ int GroundTranslator::translateSet(const vector<int>& lits, const vector<double>
 	return setnr;
 }
 
-int GroundTranslator::nextNumber() {
+Lit GroundTranslator::nextNumber(AtomType type) {
 	if(_freenumbers.empty()) {
-		int nr = _backsymbtable.size(); 
-		_backsymbtable.push_back(NULL);
-		_backargstable.push_back(ElementTuple(0));
-		return nr;
-	}
-	else {
+		Lit atom = atomtype.size();
+		atom2TsBody.push_back(tspair(atom,NULL));
+		atom2Tuple.push_back(NULL);
+		atomtype.push_back(type);
+		return atom;
+	} else {
 		int nr = _freenumbers.front();
 		_freenumbers.pop();
 		return nr;
@@ -260,37 +259,49 @@ int GroundTranslator::nextNumber() {
 }
 
 unsigned int GroundTranslator::addSymbol(PFSymbol* pfs) {
-	for(unsigned int n = 0; n < _symboffsets.size(); ++n){
-		if(_symboffsets[n] == pfs){
+	for(unsigned int n = 0; n < symbols.size(); ++n){
+		if(symbols[n].symbol == pfs){
 			return n;
 		}
 	}
-	_symboffsets.push_back(pfs);
-	_table.push_back(map<ElementTuple,int,StrictWeakTupleOrdering>());
-	return _symboffsets.size()-1;
+	symbols.push_back(SymbolAndAtomMap(pfs));
+	return symbols.size()-1;
 }
 
-string GroundTranslator::printAtom(int nr) const {
+string GroundTranslator::printAtom(const Lit& atom, bool longnames) const {
 	stringstream s;
-	nr = abs(nr);
+	uint nr = abs(atom);
 	if(nr == _true) return "true";
 	else if(nr == _false) return "false";
-	if(nr >= int(_backsymbtable.size())) {
+	if(not isStored(nr)) {
 		return "error";
 	}
-	PFSymbol* pfs = atom2symbol(nr);
-	if(pfs) {
-		s << pfs->to_string();
-		if(!(args(nr).empty())) {
+
+	switch(atomtype[nr]){
+	case AtomType::INPUT:{
+		PFSymbol* pfs = getSymbol(nr);
+		s << pfs->to_string(longnames);
+		auto tuples = getArgs(nr);
+		if(not tuples.empty()) {
 			s << "(";
-			for(unsigned int c = 0; c < args(nr).size(); ++c) {
-				s << args(nr)[c]->to_string();
-				if(c !=  args(nr).size()-1) s << ",";
+			bool begin = true;
+			for(auto i = tuples.begin(); i!=tuples.end(); ++i){
+				if(not begin){
+					s <<", ";
+				}
+				begin = false;
+				s << (*i)->to_string();
 			}
 			s << ")";
 		}
+		break;}
+	case AtomType::TSEITINWITHSUBFORMULA:
+		s << "tseitin_" << nr;
+		break;
+	case AtomType::LONETSEITIN:
+		s << "tseitin_" << nr;
+		break;
 	}
-	else s << "tseitin_" << nr;
 	return s.str();
 }
 
@@ -384,19 +395,19 @@ size_t GroundTermTranslator::addFunction(Function* func) {
 	}
 }
 
-string GroundTermTranslator::printTerm(const VarId& varid) const {
+string GroundTermTranslator::printTerm(const VarId& varid, bool longnames) const {
 	stringstream s;
 	if(varid >= _varid2function.size()) {
 		return "error";
 	}
 	const Function* func = function(varid);
 	if(func) {
-		s << func->to_string();
+		s << func->to_string(longnames);
 		if(not args(varid).empty()) {
 			s << "(";
 			for(vector<GroundTerm>::const_iterator gtit = args(varid).begin(); gtit != args(varid).end(); ++gtit) {
 				if((*gtit)._isvarid) {
-					s << printTerm((*gtit)._varid);
+					s << printTerm((*gtit)._varid, longnames);
 				} else {
 					s << (*gtit)._domelement->to_string();
 				}
@@ -522,7 +533,7 @@ set<const PFSymbol*> GrounderFactory::findCPSymbols(const AbstractTheory* theory
 	if(_verbosity > 1) {
 		clog << "User-defined symbols that can be handled by the constraint solver: ";
 		for(set<const PFSymbol*>::const_iterator it = _cpsymbols.begin(); it != _cpsymbols.end(); ++it) {
-			clog << (*it)->to_string() << " ";
+			clog << (*it)->to_string(false) << " "; // TODO longnames?
 		}
 		clog << "\n";
 	}

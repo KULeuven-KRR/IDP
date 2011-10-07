@@ -27,18 +27,18 @@ enum class AggFunction { CARD, SUM, PROD, MIN, MAX };
 /**
  * Enumeration for the possible ways to define a tseitin atom in terms of the subformula it replaces.
  *		- TsType::EQ:		tseitin <=> subformula
- *		- TsType::RULE:	tseitin <- subformula
- *		- TsType::IMPL:	tseitin => subformula
+ *		- TsType::RULE:		tseitin <- subformula
+ *		- TsType::IMPL:		tseitin => subformula
  *		- TsType::RIMPL:	tseitin <= subformula
  */
 enum class TsType { EQ, RULE, IMPL, RIMPL };
 
 /**
  * The different comparison operators
- *	- CompType::EQ:	=
+ *	- CompType::EQ:		=
  *	- CompType::NEQ:	~=
- *	- CompType::LT:	<
- *	- CompType::GT:	>
+ *	- CompType::LT:		<
+ *	- CompType::GT:		>
  *	- CompType::LEQ:	=<
  *	- CompType::GEQ:	>=
  */

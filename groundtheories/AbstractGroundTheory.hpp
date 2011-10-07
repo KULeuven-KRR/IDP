@@ -96,9 +96,9 @@ class GroundTheory : public AbstractGroundTheory, public Policy {
 		if(skipfirst) ++n;
 		for(; n < vi.size(); ++n) {
 			int atom = abs(vi[n]);
-			if(translator()->isTseitin(atom) && _printedtseitins.find(atom) == _printedtseitins.end()) {
+			if(translator()->isTseitinWithSubformula(atom) && _printedtseitins.find(atom) == _printedtseitins.end()) {
 				_printedtseitins.insert(atom);
-				TsBody* tsbody = translator()->tsbody(atom);
+				TsBody* tsbody = translator()->getTsBody(atom);
 				if(typeid(*tsbody) == typeid(PCTsBody)) {
 					PCTsBody * body = dynamic_cast<PCTsBody*>(tsbody);
 					if(body->type() == TsType::IMPL || body->type() == TsType::EQ) {
@@ -254,16 +254,16 @@ public:
 	}
 
 private:
-	void notifyDefined(int tseitin){
-		if(!translator()->hasSymbolFor(tseitin)){
+	void notifyDefined(int inputatom){
+		if(not translator()->isInputAtom(inputatom)){
 			return;
 		}
-		PFSymbol* symbol = translator()->atom2symbol(tseitin);
+		PFSymbol* symbol = translator()->getSymbol(inputatom);
 		auto it = _defined.find(symbol);
 		if(it==_defined.end()){
 			it = _defined.insert(std::pair<PFSymbol*, std::set<int> >(symbol, std::set<int>())).first;
 		}
-		(*it).second.insert(tseitin);
+		(*it).second.insert(inputatom);
 	}
 
 public:
@@ -310,8 +310,8 @@ public:
 	 *		This method should be called before running the SAT solver and after grounding.
 	 */
 	void addFuncConstraints() {
-		for(unsigned int n = 0; n < translator()->nbSymbols(); ++n) {
-			PFSymbol* pfs = translator()->getSymbol(n);
+		for(unsigned int n = 0; n < translator()->nbManagedSymbols(); ++n) {
+			PFSymbol* pfs = translator()->getManagedSymbol(n);
 			auto tuples = translator()->getTuples(n);
 			if((typeid(*pfs)!=typeid(Function)) || tuples.empty()) {
 				continue;
@@ -382,8 +382,8 @@ public:
 	}
 
 	void addFalseDefineds() {
-		for(unsigned int n = 0; n < translator()->nbSymbols(); ++n) {
-			PFSymbol* s = translator()->getSymbol(n);
+		for(unsigned int n = 0; n < translator()->nbManagedSymbols(); ++n) {
+			PFSymbol* s = translator()->getManagedSymbol(n);
 			auto it = _defined.find(s);
 			if(it!=_defined.end()) {
 				auto tuples = translator()->getTuples(n);
@@ -396,12 +396,12 @@ public:
 		}
 	}
 
-	std::ostream& put(std::ostream& s, unsigned int) const{
-		return Policy::polPut(s, translator(), termtranslator());
+	std::ostream& put(std::ostream& s, unsigned int spaces) const{
+		return Policy::polPut(s, translator(), termtranslator(), false); // TODO longnames?
 	}
 
 	std::string to_string() const{
-		return Policy::polTo_string(translator(), termtranslator());
+		return Policy::polTo_string(translator(), termtranslator(), false);  // TODO longnames?
 	}
 
 	virtual void			accept(TheoryVisitor* v) const		{ v->visit(this);			}

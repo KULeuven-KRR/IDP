@@ -25,47 +25,46 @@ using namespace std;
 using namespace LuaConnection; //TODO add abstraction to remove lua dependence here
 
 class SortDeriver : public TheoryMutatingVisitor {
+private:
+	map<Variable*,set<Sort*> >	_untyped;			// The untyped variables, with their possible types
+	map<FuncTerm*,Sort*>		_overloadedterms;	// The terms with an overloaded function
+	set<PredForm*>				_overloadedatoms;	// The atoms with an overloaded predicate
+	set<DomainTerm*>			_domelements;		// The untyped domain elements
+	bool						_changed;
+	bool						_firstvisit;
+	Sort*						_assertsort;
+	Vocabulary*					_vocab;
 
-	private:
-		map<Variable*,set<Sort*> >	_untyped;			// The untyped variables, with their possible types
-		map<FuncTerm*,Sort*>		_overloadedterms;	// The terms with an overloaded function
-		set<PredForm*>				_overloadedatoms;	// The atoms with an overloaded predicate
-		set<DomainTerm*>			_domelements;		// The untyped domain elements
-		bool						_changed;
-		bool						_firstvisit;
-		Sort*						_assertsort;
-		Vocabulary*					_vocab;
+public:
+	// Constructor
+	SortDeriver(Formula* f,Vocabulary* v) : _vocab(v) { run(f); }
+	SortDeriver(Rule* r,Vocabulary* v)	: _vocab(v) { run(r); }
+	SortDeriver(Term* t, Vocabulary* v) : _vocab(v) { run(t);	}
+	virtual ~SortDeriver() {}
 
-	public:
-		// Constructor
-		SortDeriver(Formula* f,Vocabulary* v) : _vocab(v) { run(f); }
-		SortDeriver(Rule* r,Vocabulary* v)	: _vocab(v) { run(r); }
-		SortDeriver(Term* t, Vocabulary* v) : _vocab(v) { run(t);	}
+	// Run sort derivation
+	void run(Formula*);
+	void run(Rule*);
+	void run(Term*);
 
-		// Run sort derivation 
-		void run(Formula*);
-		void run(Rule*);
-		void run(Term*);
+	// Visit
+	Formula*	visit(QuantForm*);
+	Formula*	visit(PredForm*);
+	Formula*	visit(EqChainForm*);
+	Rule*		visit(Rule*);
+	Term*		visit(VarTerm*);
+	Term*		visit(DomainTerm*);
+	Term*		visit(FuncTerm*);
+	SetExpr*	visit(QuantSetExpr*);
 
-		// Visit 
-		Formula*	visit(QuantForm*);
-		Formula*	visit(PredForm*);
-		Formula*	visit(EqChainForm*);
-		Rule*		visit(Rule*);
-		Term*		visit(VarTerm*);
-		Term*		visit(DomainTerm*);
-		Term*		visit(FuncTerm*);
-		SetExpr*	visit(QuantSetExpr*);
+private:
+	// Auxiliary methods
+	void derivesorts();		// derive the sorts of the variables, based on the sorts in _untyped
+	void derivefuncs();		// disambiguate the overloaded functions
+	void derivepreds();		// disambiguate the overloaded predicates
 
-	private:
-		// Auxiliary methods
-		void derivesorts();		// derive the sorts of the variables, based on the sorts in _untyped
-		void derivefuncs();		// disambiguate the overloaded functions
-		void derivepreds();		// disambiguate the overloaded predicates
-
-		// Check
-		void check();
-		
+	// Check
+	void check();
 };
 
 Formula* SortDeriver::visit(QuantForm* qf) {
@@ -331,7 +330,6 @@ void SortDeriver::check() {
 }
 
 class SortChecker : public TheoryVisitor {
-
 	private:
 		Vocabulary* _vocab;
 
@@ -340,6 +338,7 @@ class SortChecker : public TheoryVisitor {
 		SortChecker(Term* t,Vocabulary* v)			: _vocab(v) { t->accept(this);	}
 		SortChecker(Definition* d,Vocabulary* v)	: _vocab(v) { d->accept(this);	}
 		SortChecker(FixpDef* d,Vocabulary* v)		: _vocab(v) { d->accept(this);	}
+		virtual ~SortChecker(){}
 
 		void visit(const PredForm*);
 		void visit(const EqChainForm*);
@@ -2623,10 +2622,10 @@ void Insert::externoption(const vector<string>& optionName, YYLTYPE l) const {
 
 template<class OptionValue>
 void setOptionValue(Options* options, const string& opt, const OptionValue& val,const ParseInfo& pi){
-	if(!options->isOption(opt)){
+	if(not options->isOption(opt)){
 		Error::unknoption(opt,pi);
 	}
-	if(options->isAllowedValue(opt, val)) {
+	if(not options->isAllowedValue(opt, val)) {
 		Error::wrongvalue(opt,toString(val),pi);
 	}
 	options->setValue(opt,val);

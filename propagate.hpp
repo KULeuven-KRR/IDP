@@ -246,9 +246,14 @@ class FOPropagator : public TheoryVisitor {
 
 		// Execution
 		void run();		//!< Apply propagations until the propagation queue is empty
-		AbstractStructure*	result(AbstractStructure* str) const;	
-			//!< Obtain the resulting structure 
-			//!< (the given structure is used to evaluate BDDs in case of symbolic propagation)
+
+		/**
+		 * Given a structure, returns a NEW structure which is the combination of the structure and its propagation.
+		 * The given structure is used to evaluate BDDs in case of symbolic propagation
+		 *
+		 * @post: returns an OWNING pointer
+		 */
+		AbstractStructure*	result(AbstractStructure* str) const;
 
 		// Visitor
 		void visit(const PredForm*);

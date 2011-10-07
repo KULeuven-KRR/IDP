@@ -118,9 +118,9 @@ public:
 			output() <<"=== Atomtranslation ===" << "\n";
 			GroundTranslator* translator = g->translator();
 			int atom = 1;
-			while(translator->hasSymbolFor(atom)){
-				if(!translator->isTseitin(atom)){
-					output() << atom <<"|" <<translator->printAtom(atom) <<"\n";
+			while(translator->isStored(atom)){
+				if(translator->isInputAtom(atom)){
+					output() << atom <<"|" <<translator->printAtom(atom, false) <<"\n"; // TODO longnames?
 				}
 				atom++;
 			}

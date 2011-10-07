@@ -73,7 +73,7 @@ GroundTerm FuncTermGrounder::run() const {
 	// assert(isCPSymbol(_function->symbol())) && some of the ground subterms are CP terms.
 	VarId varid = _termtranslator->translate(_function,groundsubterms);
 	if(_verbosity > 2) {
-		clog << "Result = " << _termtranslator->printTerm(varid) << "\n";
+		clog << "Result = " << _termtranslator->printTerm(varid, false) << "\n"; // TODO longnames
 	}
 	return GroundTerm(varid);
 }
@@ -177,7 +177,7 @@ GroundTerm SumTermGrounder::run() const {
 
 	// Return result
 	if(_verbosity > 2) {
-		clog << "Result = " << _termtranslator->printTerm(varid) << "\n";
+		clog << "Result = " << _termtranslator->printTerm(varid, false) << "\n"; // TODO longnames
 	}
 	return GroundTerm(varid);
 }

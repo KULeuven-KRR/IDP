@@ -738,51 +738,51 @@ private:
 		// The sign of the literal is handled on higher level.
 		atomnr = abs(atomnr);
 		// Get the atom's symbol from the translator.
-		PFSymbol* pfs = _translator->atom2symbol(atomnr);
-		if(pfs) {
-			// Print the symbol's name.
-			output() << pfs->name().substr(0,pfs->name().find('/'));
-			// Print the symbol's sorts.
-			if(pfs->nrSorts()) {
-				output() << '[';
-				for(unsigned int n = 0; n < pfs->nrSorts(); ++n) {
-					if(pfs->sort(n)) {
-						output() << pfs->sort(n)->name();
-						if(n != pfs->nrSorts()-1) output() << ',';
-					}
-				}
-				output() << ']';
-			}
-			// Get the atom's arguments for the translator.
-			const std::vector<const DomainElement*>& args = _translator->args(atomnr);
-			// Print the atom's arguments.
-			if(typeid(*pfs) == typeid(Predicate)) {
-				if(not args.empty()) {
-					output() << "(";
-					for(unsigned int n = 0; n < args.size(); ++n) {
-						output() << args[n]->to_string();
-						if(n != args.size()-1) output() << ",";
-					}
-					output() << ")";
+
+		if(not _translator->isInputAtom(atomnr)){
+			output() << "tseitin_" << atomnr;
+			return;
+		}
+
+		PFSymbol* pfs = _translator->getSymbol(atomnr);
+
+		// Print the symbol's name.
+		output() << pfs->name().substr(0,pfs->name().find('/'));
+		// Print the symbol's sorts.
+		if(pfs->nrSorts()) {
+			output() << '[';
+			for(unsigned int n = 0; n < pfs->nrSorts(); ++n) {
+				if(pfs->sort(n)) {
+					output() << pfs->sort(n)->name();
+					if(n != pfs->nrSorts()-1) output() << ',';
 				}
 			}
-			else {
-				assert(typeid(*pfs) == typeid(Function));
-				if(args.size() > 1) {
-					output() << "(";
-					for(unsigned int n = 0; n < args.size()-1; ++n) {
-						output() << args[n]->to_string();
-						if(n != args.size()-2) output() << ",";
-					}
-					output() << ")";
+			output() << ']';
+		}
+		// Get the atom's arguments for the translator.
+		const std::vector<const DomainElement*>& args = _translator->getArgs(atomnr);
+		// Print the atom's arguments.
+		if(typeid(*pfs) == typeid(Predicate)) {
+			if(not args.empty()) {
+				output() << "(";
+				for(unsigned int n = 0; n < args.size(); ++n) {
+					output() << args[n]->to_string();
+					if(n != args.size()-1) output() << ",";
 				}
-				output() << " = " << args.back()->to_string();
+				output() << ")";
 			}
 		}
 		else {
-			// If there was no symbol, then the atom is a tseitin.
-			assert(!pfs);
-			output() << "tseitin_" << atomnr;
+			assert(typeid(*pfs) == typeid(Function));
+			if(args.size() > 1) {
+				output() << "(";
+				for(unsigned int n = 0; n < args.size()-1; ++n) {
+					output() << args[n]->to_string();
+					if(n != args.size()-2) output() << ",";
+				}
+				output() << ")";
+			}
+			output() << " = " << args.back()->to_string();
 		}
 	}
 

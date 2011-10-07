@@ -14,7 +14,7 @@
 #include "groundtheories/AbstractGroundTheory.hpp"
 #include <list>
 #include <sstream>
-#include <iostream>  //TODO: wissen na debuggen :)
+#include <iostream>
 
 using namespace std;
 
@@ -126,7 +126,7 @@ void addSymBreakingClausesToGroundTheory(AbstractGroundTheory* gt, const list<in
 		gt->add(firstClause);
 	}
 	if(literals.size()>1){
-		currentAuxVar = gt->translator()->nextNumber();
+		currentAuxVar = gt->translator()->createNewUninterpretedNumber();
 		// (~A2 | V1 | ~V1*)
 		vector<int> clause2 (3);
 		clause2[0]= -currentAuxVar;
@@ -156,7 +156,7 @@ void addSymBreakingClausesToGroundTheory(AbstractGroundTheory* gt, const list<in
 	--oneButLast_it;
 	while(literals_it != oneButLast_it){
 		previousAuxVar = currentAuxVar;
-		currentAuxVar = gt->translator()->nextNumber();
+		currentAuxVar = gt->translator()->createNewUninterpretedNumber();
 		// ( ~A_n | A_n-1 )
 		vector<int> clause1 (2);
 		clause1[0]= -currentAuxVar;
@@ -320,9 +320,9 @@ string OccurrencesCounter::to_string() const{
 	stringstream ss;
 	ss << "COUNTER:" << endl;
 	ss << "structure: " << getStructure()->name() << endl;
-	for(map<pair<const PFSymbol*,const Sort*>,map<const DomainElement*,pair<int,int> > >::const_iterator occurrences_it= occurrences_.begin(); occurrences_it!=occurrences_.end(); ++occurrences_it){
-		ss << occurrences_it->first.first->to_string() << "-" << occurrences_it->first.second->to_string() << endl;
-		for(map<const DomainElement*,pair<int,int> >::const_iterator element_it=occurrences_it->second.begin(); element_it!=occurrences_it->second.end(); ++element_it){
+	for(auto occurrences_it= occurrences_.begin(); occurrences_it!=occurrences_.end(); ++occurrences_it){
+		ss << occurrences_it->first.first->to_string(false) << "-" << occurrences_it->first.second->to_string(false) << endl; // TODO longnames?
+		for(auto element_it=occurrences_it->second.begin(); element_it!=occurrences_it->second.end(); ++element_it){
 			ss << "   " << element_it->first->to_string() << ": " << element_it->second.first << "," << element_it->second.second << endl;
 		}
 	}
@@ -364,16 +364,16 @@ IVSet::IVSet(const AbstractStructure* s, const set<const DomainElement*> element
 string IVSet::to_string() const{
 	stringstream ss;
 	ss << "structure: " << getStructure()->name() << endl;
-	for(set<Sort*>::iterator sorts_it = getSorts().begin(); sorts_it!=getSorts().end(); ++sorts_it){
-		ss << (*sorts_it)->to_string() << " | ";
+	for(auto sorts_it = getSorts().begin(); sorts_it!=getSorts().end(); ++sorts_it){
+		ss << (*sorts_it)->to_string(false) << " | ";  // TODO longnames?
 	}
 	ss << endl;
-	for(set<PFSymbol*>::const_iterator relations_it = getRelations().begin(); relations_it!=getRelations().end(); ++relations_it){
-		ss << (*relations_it)->to_string() << " | ";
+	for(auto relations_it = getRelations().begin(); relations_it!=getRelations().end(); ++relations_it){
+		ss << (*relations_it)->to_string(false) << " | "; // TODO longnames?
 	}
 	ss << endl;
 	ss << getElements().size() << ": ";
-	for(set<const DomainElement*>::const_iterator elements_it = getElements().begin(); elements_it!=getElements().end(); ++elements_it){
+	for(auto elements_it = getElements().begin(); elements_it!=getElements().end(); ++elements_it){
 		ss << (*elements_it)->to_string() << " | ";
 	}
 	ss << endl;
@@ -858,7 +858,7 @@ set<const IVSet*> initializeIVSets(const AbstractStructure* s, const AbstractThe
 	}
 	cout << "forbiddenSorts:" << endl;
 	for(auto it=forbiddenSorts.begin(); it!=forbiddenSorts.end(); ++it){
-		cout << (*it)->to_string() << endl;
+		cout << (*it)->to_string(false) << endl; // TODO longnames?
 	}
 
 	set<Sort*> allowedSorts;
@@ -872,7 +872,7 @@ set<const IVSet*> initializeIVSets(const AbstractStructure* s, const AbstractThe
 
 	cout << "allowedSorts:" << endl;
 	for(auto it=allowedSorts.begin(); it!=allowedSorts.end(); ++it){
-		cout << (*it)->to_string() << endl;
+		cout << (*it)->to_string(false) << endl; // TODO longnames?
 	}
 
 	map<Sort*,set<const DomainElement*> > elementsForSorts = findElementsForSorts(s, allowedSorts, tsa.getForbiddenElements());

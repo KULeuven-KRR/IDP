@@ -38,6 +38,7 @@ gidl_SOURCES = \
 		parse.yy yyltype.hpp\
 		lex.ll\
 		clconst.hpp\
+		GeneralUtils.hpp\
 		insert.hpp insert.cpp\
 		error.hpp error.cpp\
 		common.hpp common.cpp\

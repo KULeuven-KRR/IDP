@@ -297,8 +297,8 @@ public:
 		getSolver().add(lc);
 	}
 
-	std::ostream& polPut(std::ostream& s, GroundTranslator*, GroundTermTranslator*)	const { assert(false); return s;	}
-	std::string polTo_string(GroundTranslator*, GroundTermTranslator*) const { assert(false); return "";		}
+	std::ostream& polPut(std::ostream& s, GroundTranslator* translator, GroundTermTranslator* termtranslator, bool longnames)	const { assert(false); return s;	}
+	std::string polTo_string(GroundTranslator* translator, GroundTermTranslator* termtranslator, bool longnames) const { assert(false); return "";		}
 
 private:
 	void polAddAggregate(int definitionID, int head, bool lowerbound, int setnr, AggFunction aggtype, TsType sem, double bound) {

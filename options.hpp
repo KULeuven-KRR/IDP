@@ -149,12 +149,50 @@ typedef OptionPolicy<DoubleType, double> DoublePol;
 typedef OptionPolicy<StringType, std::string> StringPol;
 
 template<class T>
-struct PolTraits;
+struct OptionValueTraits;
 
 template<>
-struct PolTraits<IntType> { int value; };
+struct OptionValueTraits<int>{
+	typedef IntType EnumType;
+};
+
 template<>
-struct PolTraits<BoolType> { bool value; };
+struct OptionValueTraits<double>{
+	typedef DoubleType EnumType;
+};
+
+template<>
+struct OptionValueTraits<bool>{
+	typedef BoolType EnumType;
+};
+
+template<>
+struct OptionValueTraits<std::string>{
+	typedef StringType EnumType;
+};
+
+template<class T>
+struct OptionTypeTraits;
+
+template<>
+struct OptionTypeTraits<IntType>{
+	typedef int ValueType;
+};
+
+template<>
+struct OptionTypeTraits<DoubleType>{
+	typedef double ValueType;
+};
+
+template<>
+struct OptionTypeTraits<BoolType>{
+	typedef bool ValueType;
+};
+
+template<>
+struct OptionTypeTraits<StringType>{
+	typedef std::string ValueType;
+};
 
 /**
  * Class to represent a block of options
@@ -175,40 +213,23 @@ public:
 
 	bool			isOption(const std::string&) const;
 
-	bool			isStringOption(const std::string&) const;
-	bool			isBoolOption(const std::string&) const;
-	bool			isIntOption(const std::string&) const;
-	bool			isDoubleOption(const std::string&) const;
-
-	int				getIntValue(const std::string&) const;
-	bool			getBoolValue(const std::string&) const;
-	std::string 	getStringValue(const std::string&) const;
-	double 			getDoubleValue(const std::string&) const;
-
-	int getValue(IntType type){
-		return IntPol::getValue(type);
+	template<class ValueType>
+	bool isOptionOfType(const std::string& optname) const{
+		return OptionPolicy<typename OptionValueTraits<ValueType>::EnumType, ValueType>::isOption(optname);
 	}
-	double getValue(DoubleType type){
-		return DoublePol::getValue(type);
-	}
-	bool getValue(BoolType type){
-		return BoolPol::getValue(type);
-	}
-	std::string getValue(StringType type){
-		return StringPol::getValue(type);
+	template<class ValueType>
+	ValueType getValueOfType(const std::string& optname) const{
+		return OptionPolicy<typename OptionValueTraits<ValueType>::EnumType, ValueType>::getValue(optname);
 	}
 
-	void setValue(IntType type, const int& value){
-		IntPol::setValue(type, value);
+	template<class EnumType>
+	typename OptionTypeTraits<EnumType>::ValueType getValue(EnumType type){
+		return OptionPolicy<EnumType, typename OptionTypeTraits<EnumType>::ValueType>::getValue(type);
 	}
-	void setValue(DoubleType type, const double& value){
-		DoublePol::setValue(type, value);
-	}
-	void setValue(BoolType type, const bool& value){
-		BoolPol::setValue(type, value);
-	}
-	void setValue(StringType type, const std::string& value){
-		StringPol::setValue(type, value);
+
+	template<class EnumType, class ValueType>
+	void setValue(EnumType type, const ValueType& value){
+		OptionPolicy<EnumType, ValueType>::setValue(type, value);
 	}
 
 	void			copyValues(Options*);
@@ -217,32 +238,17 @@ public:
 	std::ostream&	put					(std::ostream&)	const;
 	std::string		to_string			()			const;
 
-	Language	language() const;
+	Language		language() const;
 
 	// NOTE: do NOT call this code outside luaconnection or other user interface methods.
-	void setValue(const std::string& name, const int& value){
-		IntPol::setStrValue(name, value);
+	template<class ValueType>
+	void setValue(const std::string& name, const ValueType& value){
+		OptionPolicy<typename OptionValueTraits<ValueType>::EnumType, ValueType>::setStrValue(name, value);
 	}
-	void setValue(const std::string& name, const double& value){
-		DoublePol::setStrValue(name, value);
-	}
-	void setValue(const std::string& name, const bool& value){
-		BoolPol::setStrValue(name, value);
-	}
-	void setValue(const std::string& name, const std::string& value){
-		StringPol::setStrValue(name, value);
-	}
-	bool isAllowedValue(const std::string& name, const int& value){
-		return IntPol::isAllowedValue(name, value);
-	}
-	bool isAllowedValue(const std::string& name, const double& value){
-		return DoublePol::isAllowedValue(name, value);
-	}
-	bool isAllowedValue(const std::string& name, const bool& value){
-		return BoolPol::isAllowedValue(name, value);
-	}
-	bool isAllowedValue(const std::string& name, const std::string& value){
-		return StringPol::isAllowedValue(name, value);
+
+	template<class ValueType>
+	bool isAllowedValue(const std::string& name, const ValueType& value){
+		return OptionPolicy<typename OptionValueTraits<ValueType>::EnumType, ValueType>::isAllowedValue(name, value);
 	}
 };
 
