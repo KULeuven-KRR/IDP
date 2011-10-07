@@ -56,9 +56,10 @@ class GroundPropagateInference : public Inference {
 			AbstractStructure* result = structure->clone();
 			for(auto literal = monitor->model().begin(); literal != monitor->model().end(); ++literal) {
 				int atomnr = literal->getAtom().getValue();
-				PFSymbol* symbol = translator->atom2symbol(atomnr);
-				if(symbol) {
-					const ElementTuple& args = translator->args(atomnr);
+
+				if(translator->isInputAtom(atomnr)) {
+					PFSymbol* symbol = translator->getSymbol(atomnr);
+					const ElementTuple& args = translator->getArgs(atomnr);
 					if(typeid(*symbol) == typeid(Predicate)) {
 						Predicate* pred = dynamic_cast<Predicate*>(symbol);
 						if(literal->hasSign()) result->inter(pred)->makeFalse(args);
@@ -140,9 +141,9 @@ class OptimalPropagateInference : public Inference {
 			AbstractStructure* result = structure->clone();
 			for(auto literal = intersection.begin(); literal != intersection.end(); ++literal) {
 				int atomnr = *literal > 0 ? *literal : (-1) * (*literal);
-				PFSymbol* symbol = translator->atom2symbol(atomnr);
-				if(symbol) {
-					const ElementTuple& args = translator->args(atomnr);
+				if(translator->isInputAtom(atomnr)) {
+					PFSymbol* symbol = translator->getSymbol(atomnr);
+					const ElementTuple& args = translator->getArgs(atomnr);
 					if(typeid(*symbol) == typeid(Predicate)) {
 						Predicate* pred = dynamic_cast<Predicate*>(symbol);
 						if(*literal < 0) result->inter(pred)->makeFalse(args);

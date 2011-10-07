@@ -136,9 +136,10 @@ private:
 		for(auto literal = model->literalinterpretations.begin();
 			literal != model->literalinterpretations.end(); ++literal) {
 			int atomnr = literal->getAtom().getValue();
-			PFSymbol* symbol = translator->atom2symbol(atomnr);
-			if(symbol) {
-				const ElementTuple& args = translator->args(atomnr);
+
+			if(translator->isInputAtom(atomnr)) {
+				PFSymbol* symbol = translator->getSymbol(atomnr);
+				const ElementTuple& args = translator->getArgs(atomnr);
 				if(typeid(*symbol) == typeid(Predicate)) {
 					Predicate* pred = dynamic_cast<Predicate*>(symbol);
 					if(literal->hasSign()) init->inter(pred)->makeFalse(args);

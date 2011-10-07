@@ -28,6 +28,8 @@
 #include "groundtheories/GroundPolicy.hpp"
 #include "groundtheories/PrintGroundPolicy.hpp"
 
+#include "GeneralUtils.hpp"
+
 using namespace std;
 using namespace rel_ops;
 
@@ -156,23 +158,20 @@ bool operator<(const CPBound& a, const CPBound& b) {
 *********************************************/
 
 GroundTranslator::~GroundTranslator() {
-	// delete TsBodies
-	for(map<int,TsBody*>::iterator mapit = _nr2tsbodies.begin(); mapit != _nr2tsbodies.end(); ++mapit)
-		delete mapit->second;
-	_nr2tsbodies.clear();
-	_tsbodies2nr.clear(); // All TsBodies in this map should've been deleted through the other map.
+	deleteList<SymbolAndTuple>(atom2Tuple);
+	for(auto i=atom2TsBody.begin(); i<atom2TsBody.end(); ++i){
+		delete((*i).second);
+	}
 }
 
 int GroundTranslator::translate(unsigned int n, const ElementTuple& args) {
-	map<ElementTuple,int,StrictWeakTupleOrdering>::iterator jt = _table[n].lower_bound(args);
-	if(jt != _table[n].end() && jt->first == args) {
+	auto jt = symbols[n].tuple2atom.lower_bound(args);
+	if(jt != symbols[n].tuple2atom.end() && jt->first == args) {
 		return jt->second;
-	}
-	else {
-		int nr = nextNumber();
-		_table[n].insert(jt,pair<ElementTuple,int>(args,nr));
-		_backsymbtable[nr] = _symboffsets[n];
-		_backargstable[nr] = args;
+	}else {
+		int nr = nextNumber(AtomType::INPUT);
+		symbols[n].tuple2atom.insert(jt,pair<ElementTuple,int>(args,nr));
+		atom2Tuple[nr] = new SymbolAndTuple(symbols[n].symbol, args);
 		return nr;
 	}
 }
@@ -183,10 +182,8 @@ int GroundTranslator::translate(PFSymbol* s, const ElementTuple& args) {
 }
 
 int GroundTranslator::translate(const vector<int>& clause, bool conj, TsType tstype) {
-	int nr = nextNumber();
-	PCTsBody* tsbody = new PCTsBody(tstype,clause,conj);
-	//_tsbodies2nr.insert(it,pair<TsBody*,int>(tsbody,nr));
-	_nr2tsbodies.insert(pair<int,TsBody*>(nr,tsbody));
+	int nr = nextNumber(AtomType::TSEITINWITHSUBFORMULA);
+	atom2TsBody[nr] = tspair(nr, new PCTsBody(tstype,clause,conj));
 	return nr;
 }
 
@@ -198,32 +195,34 @@ int	GroundTranslator::translate(double bound, char comp, bool strict, AggFunctio
 		return translate(cl,true,tstype);
 	}
 	else {
-		int nr = nextNumber();
+		int nr = nextNumber(AtomType::TSEITINWITHSUBFORMULA);
 		AggTsBody* tsbody = new AggTsBody(tstype,bound,(comp == '<'),aggtype,setnr);
 		if(strict) {
 			#warning "This is wrong if floating point weights are allowed!";
 			tsbody->_bound = (comp == '<') ? bound + 1 : bound - 1;	
 		} 
-		else tsbody->_bound = bound;
-		//_tsbodies2nr.insert(it,pair<TsBody*,int>(tsbody,nr));
-		_nr2tsbodies.insert(pair<int,TsBody*>(nr,tsbody));
+		else{
+			tsbody->_bound = bound;
+		}
+		atom2TsBody[nr] = tspair(nr,tsbody);
 		return nr;
 	}
 }
 
 int GroundTranslator::translate(CPTerm* left, CompType comp, const CPBound& right, TsType tstype) {
 	CPTsBody* tsbody = new CPTsBody(tstype,left,comp,right);
-	map<TsBody*,int,StrictWeakTsBodyOrdering>::iterator it = _tsbodies2nr.lower_bound(tsbody);
-	if(it != _tsbodies2nr.end() && *(it->first) == *tsbody) {
+	// FIXME optimization: check whether the same comparison has already been added and reuse the tseitin.
+	// => this should be generalized to sharing detection!
+/*	auto it = lower_bound(atom2TsBody.begin(), atom2TsBody.end(), tspair(0,tsbody), compareTsPair);
+	if(it != atom2TsBody.end() && (*it).second == *tsbody) {
 		delete tsbody;
-		return it->second;
+		return (*it).first;
 	}
-	else {
-		int nr = nextNumber();
-		_tsbodies2nr.insert(it,pair<TsBody*,int>(tsbody,nr));
-		_nr2tsbodies.insert(pair<int,TsBody*>(nr,tsbody));
+	else {*/
+		int nr = nextNumber(AtomType::TSEITINWITHSUBFORMULA);
+		atom2TsBody[nr] = tspair(nr, tsbody);
 		return nr;
-	}
+	//}
 }
 
 int GroundTranslator::translateSet(const vector<int>& lits, const vector<double>& weights, const vector<double>& trueweights) {
@@ -250,14 +249,14 @@ int GroundTranslator::translateSet(const vector<int>& lits, const vector<double>
 	return setnr;
 }
 
-int GroundTranslator::nextNumber() {
+int GroundTranslator::nextNumber(AtomType type) {
 	if(_freenumbers.empty()) {
-		int nr = _backsymbtable.size(); 
-		_backsymbtable.push_back(0);
-		_backargstable.push_back(ElementTuple(0));
+		int nr = atomtype.size();
+		atom2TsBody.push_back(tspair(nr,NULL));
+		atom2Tuple.push_back(NULL);
+		atomtype.push_back(type);
 		return nr;
-	}
-	else {
+	} else {
 		int nr = _freenumbers.front();
 		_freenumbers.pop();
 		return nr;
@@ -265,14 +264,13 @@ int GroundTranslator::nextNumber() {
 }
 
 unsigned int GroundTranslator::addSymbol(PFSymbol* pfs) {
-	for(unsigned int n = 0; n < _symboffsets.size(); ++n){
-		if(_symboffsets[n] == pfs){
+	for(unsigned int n = 0; n < symbols.size(); ++n){
+		if(symbols[n].symbol == pfs){
 			return n;
 		}
 	}
-	_symboffsets.push_back(pfs);
-	_table.push_back(map<ElementTuple,int,StrictWeakTupleOrdering>());
-	return _symboffsets.size()-1;
+	symbols.push_back(SymbolAndAtomMap(pfs));
+	return symbols.size()-1;
 }
 
 string GroundTranslator::printAtom(int nr) const {
@@ -280,22 +278,35 @@ string GroundTranslator::printAtom(int nr) const {
 	nr = abs(nr);
 	if(nr == _true) return "true";
 	else if(nr == _false) return "false";
-	if(nr >= int(_backsymbtable.size())) {
+	if(not isStored(nr)) {
 		return "error";
 	}
-	PFSymbol* pfs = atom2symbol(nr);
-	if(pfs) {
+
+	switch(atomtype[nr]){
+	case AtomType::INPUT:{
+		PFSymbol* pfs = getSymbol(nr);
 		s << pfs->to_string();
-		if(!(args(nr).empty())) {
+		auto tuples = getArgs(nr);
+		if(not tuples.empty()) {
 			s << "(";
-			for(unsigned int c = 0; c < args(nr).size(); ++c) {
-				s << args(nr)[c]->to_string();
-				if(c !=  args(nr).size()-1) s << ",";
+			bool begin = true;
+			for(auto i = tuples.begin(); i!=tuples.end(); ++i){
+				if(begin){
+					s <<", ";
+				}
+				begin = false;
+				s << (*i)->to_string();
 			}
 			s << ")";
 		}
+		break;}
+	case AtomType::TSEITINWITHSUBFORMULA:
+		s << "tseitin_" << nr;
+		break;
+	case AtomType::LONETSEITIN:
+		s << "tseitin_" << nr;
+		break;
 	}
-	else s << "tseitin_" << nr;
 	return s.str();
 }
 

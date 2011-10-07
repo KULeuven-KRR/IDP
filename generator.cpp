@@ -517,7 +517,7 @@ class SimpleLookupGenerator : public InstGenerator {
 		bool next()		const { return false;	}
 };
 
-typedef map<ElementTuple,vector<ElementTuple>,StrictWeakTupleOrdering> LookupTable;
+typedef map<ElementTuple,vector<ElementTuple>,Compare<ElementTuple> > LookupTable;
 
 class EnumLookupGenerator : public InstGenerator {
 	private:

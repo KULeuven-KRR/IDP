@@ -14,7 +14,7 @@
 #include "groundtheories/AbstractGroundTheory.hpp"
 #include <list>
 #include <sstream>
-#include <iostream>  //TODO: wissen na debuggen :)
+#include <iostream>
 
 using namespace std;
 
@@ -124,7 +124,7 @@ void addSymBreakingClausesToGroundTheory(AbstractGroundTheory* gt, const list<in
 		gt->addPure(firstClause);
 	}
 	if(literals.size()>1){
-		currentAuxVar = gt->translator()->nextNumber();
+		currentAuxVar = gt->translator()->createNewUninterpretedNumber();
 		// (~A2 | V1 | ~V1*)
 		vector<int> clause2 (3);
 		clause2[0]= -currentAuxVar;
@@ -154,7 +154,7 @@ void addSymBreakingClausesToGroundTheory(AbstractGroundTheory* gt, const list<in
 	--oneButLast_it;
 	while(literals_it != oneButLast_it){
 		previousAuxVar = currentAuxVar;
-		currentAuxVar = gt->translator()->nextNumber();
+		currentAuxVar = gt->translator()->createNewUninterpretedNumber();
 		// ( ~A_n | A_n-1 )
 		vector<int> clause1 (2);
 		clause1[0]= -currentAuxVar;
