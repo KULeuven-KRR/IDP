@@ -24,23 +24,23 @@ class GroundPropagateInference : public Inference {
 		GroundPropagateInference() : Inference("groundpropagate") {
 			add(AT_THEORY);
 			add(AT_STRUCTURE);
-
 		}
+		virtual ~GroundPropagateInference(){}
 
 		InternalArgument execute(const std::vector<InternalArgument>& args) const {
 			AbstractTheory*	theory = args[0].theory();
 			AbstractStructure* structure = args[1].structure();
 
-			PropagateMonitor monitor;
+			PropagateMonitor* monitor = new PropagateMonitor();
 			MinisatID::SolverOption modes;
 			modes.nbmodels = 0;
 			modes.verbosity = 0;
 			modes.remap = false;
-			SATSolver solver(modes);
+			MinisatID::SATSolver* solver = new SATSolver(modes);
 			Options options("",ParseInfo());
 			options.setValue(IntType::NRMODELS,0);
 			GrounderFactory grounderfactory(structure,&options);
-			TopLevelGrounder* grounder = grounderfactory.create(theory,&solver);
+			TopLevelGrounder* grounder = grounderfactory.create(theory,solver);
 			grounder->run();
 			AbstractGroundTheory* grounding = grounder->grounding();
 			MinisatID::ModelExpandOptions opts;
@@ -49,12 +49,12 @@ class GroundPropagateInference : public Inference {
 			opts.savemodels = MinisatID::SAVE_ALL;
 			opts.search = MinisatID::PROPAGATE;
 			MinisatID::Solution* abstractsolutions = new MinisatID::Solution(opts);
-			monitor.setSolver(&solver);
-			solver.solve(abstractsolutions);
+			monitor->setSolver(solver);
+			solver->solve(abstractsolutions);
 
 			GroundTranslator* translator = grounding->translator();
 			AbstractStructure* result = structure->clone();
-			for(auto literal = monitor.model().begin(); literal != monitor.model().end(); ++literal) {
+			for(auto literal = monitor->model().begin(); literal != monitor->model().end(); ++literal) {
 				int atomnr = literal->getAtom().getValue();
 				PFSymbol* symbol = translator->atom2symbol(atomnr);
 				if(symbol) {
@@ -72,6 +72,9 @@ class GroundPropagateInference : public Inference {
 				}
 			}
 			result->clean();
+			delete(monitor);
+			delete(solver);
+
 			return InternalArgument(result);
 		}
 
@@ -86,6 +89,7 @@ class OptimalPropagateInference : public Inference {
 			add(AT_THEORY);
 			add(AT_STRUCTURE);
 		}
+		virtual ~OptimalPropagateInference(){}
 
 		InternalArgument execute(const std::vector<InternalArgument>& args) const {
 			AbstractTheory*	theory = args[0].theory();
@@ -163,6 +167,7 @@ public:
 		add(AT_STRUCTURE);
 		add(AT_OPTIONS);
 	}
+	virtual ~PropagateInference(){}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
 		AbstractTheory*	theory = args[0].theory();
@@ -204,10 +209,12 @@ public:
 		FOPropagatorFactory propfactory(domainfactory,scheduler,true,mpi,args[2].options());
 		FOPropagator* propagator = propfactory.create(theory);
 		propagator->run();
+		auto newstructure = propagator->result(structure);
+		delete(propagator);
+		delete(domainfactory);
+		delete(scheduler);
 
-		// TODO: free allocated memory
-		// TODO: return a structure (instead of nil)
-		return nilarg();
+		return newstructure;
 	}
 };
 

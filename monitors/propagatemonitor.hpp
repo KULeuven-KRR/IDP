@@ -20,13 +20,15 @@ class PropagateMonitor : public TraceMonitor {
 			MinisatID::Monitor* solvermonitor_ = new MinisatID::Monitor();
 			solvermonitor_->setPropagateCB(callbackprop);
 		}
-		~PropagateMonitor() { }
+		virtual ~PropagateMonitor() {
+			delete(_solvermonitor);
+		}
 
 		void backtrack(int )								{ assert(false);							}
 		void propagate(MinisatID::Literal lit, int )		{ _partialmodel.push_back(lit);				}
 		std::string* index() const							{ assert(false); return 0;					}
 		void setTranslator(GroundTranslator* )				{ assert(false);							}
-		void setSolver(SATSolver* solver)					{ solver->addMonitor(_solvermonitor);		}
+		virtual void setSolver(MinisatID::SATSolver* solver){ solver->addMonitor(_solvermonitor);		}
 		const std::vector<MinisatID::Literal>& model()		{ return _partialmodel;						}
 };
 
