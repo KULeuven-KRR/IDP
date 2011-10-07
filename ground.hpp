@@ -302,7 +302,7 @@ class GroundTranslator {
 		PFSymbol*			getManagedSymbol(uint n)	const	{ assert(isManagingSymbol(n)); return symbols[n].symbol;	}
 		const Tuple2Atom&	getTuples(uint n)			const	{ assert(isManagingSymbol(n)); return symbols[n].tuple2atom;	}
 
-		std::string	printAtom(int nr)	const;
+		std::string	printAtom(int nr, bool longnames)	const;
 };
 
 /**
@@ -367,7 +367,7 @@ class GroundTermTranslator {
 
 
 		// Debugging
-		std::string		printTerm(const VarId&)		const;
+		std::string		printTerm(const VarId&, bool longnames)		const;
 };
 
 /************************************

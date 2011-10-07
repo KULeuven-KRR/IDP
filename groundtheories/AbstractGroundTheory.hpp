@@ -389,12 +389,12 @@ public:
 		}
 	}
 
-	std::ostream& put(std::ostream& s, unsigned int) const{
-		return Policy::polPut(s, translator(), termtranslator());
+	std::ostream& put(std::ostream& s, unsigned int spaces) const{
+		return Policy::polPut(s, translator(), termtranslator(), false); // TODO longnames?
 	}
 
 	std::string to_string() const{
-		return Policy::polTo_string(translator(), termtranslator());
+		return Policy::polTo_string(translator(), termtranslator(), false);  // TODO longnames?
 	}
 
 	virtual void			accept(TheoryVisitor* v) const		{ v->visit(this);			}

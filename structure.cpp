@@ -83,7 +83,7 @@ ostream& DomainElement::put(ostream& output) const {
 			_value._compound->put(output);
 			break;
 		default:
-			assert(false); 
+			assert(false);
 	}
 	return output;
 }

@@ -120,7 +120,7 @@ public:
 			int atom = 1;
 			while(translator->isStored(atom)){
 				if(translator->isInputAtom(atom)){
-					output() << atom <<"|" <<translator->printAtom(atom) <<"\n";
+					output() << atom <<"|" <<translator->printAtom(atom, false) <<"\n"; // TODO longnames?
 				}
 				atom++;
 			}

@@ -101,8 +101,8 @@ public:
 		delete(reif);
 	}
 
-	std::ostream& polPut(std::ostream& s, GroundTranslator* translator, GroundTermTranslator* termtranslator)	const { assert(false); return s;	}
-	std::string polTo_string(GroundTranslator* translator, GroundTermTranslator* termtranslator) const { assert(false); return "";		}
+	std::ostream& polPut(std::ostream& s, GroundTranslator* translator, GroundTermTranslator* termtranslator, bool longnames)	const { assert(false); return s;	}
+	std::string polTo_string(GroundTranslator* translator, GroundTermTranslator* termtranslator, bool longnames) const { assert(false); return "";		}
 };
 
 #endif /* PRINTGROUNDTHEORY_HPP_ */
