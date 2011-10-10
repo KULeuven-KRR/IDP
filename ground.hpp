@@ -268,7 +268,7 @@ class GroundTranslator {
 		int	nextNumber(AtomType type);
 
 	public:
-		GroundTranslator() : atomtype(1, AtomType::LONETSEITIN),atom2Tuple(1, NULL), atom2TsBody(1, tspair(0,NULL)), _sets(1) { }
+		GroundTranslator() : atomtype(1, AtomType::LONETSEITIN),atom2Tuple(1, NULL), atom2TsBody(1, tspair(0,(TsBody*)NULL)), _sets(1) { }
 		~GroundTranslator();
 
 		int	translate(unsigned int,const ElementTuple&);

@@ -252,7 +252,7 @@ int GroundTranslator::translateSet(const vector<int>& lits, const vector<double>
 int GroundTranslator::nextNumber(AtomType type) {
 	if(_freenumbers.empty()) {
 		int nr = atomtype.size();
-		atom2TsBody.push_back(tspair(nr,NULL));
+		atom2TsBody.push_back(tspair(nr,(TsBody*)NULL));
 		atom2Tuple.push_back(NULL);
 		atomtype.push_back(type);
 		return nr;
