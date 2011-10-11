@@ -2342,7 +2342,7 @@ void GrounderFactory::visit(const QuantSetExpr* qs) {
 
 	// Create instance generator
 	Formula* clonedformula = qs->subformulas()[0]->clone();
-	Formula* movedformula = FormulaUtils::moveThreeValuedTerms(clonedformula,_structure,PC_POSITIVE); //TODO Check whether 3rd arg is correct (was 'true')
+	Formula* movedformula = FormulaUtils::moveThreeValuedTerms(clonedformula,_structure,PC_POSITIVE);
 	movedformula = FormulaUtils::removeEqChains(movedformula);
 	movedformula = FormulaUtils::graphFunctions(movedformula);
 	const FOBDD* generatorbdd = _symstructure->evaluate(movedformula,QT_PT);
