@@ -50,4 +50,19 @@ PosContext swapcontext(PosContext);	//!< Negate a context
 std::string* StringPointer(const char* str);			//!< Returns a shared pointer to the given string
 std::string* StringPointer(const std::string& str);	//!< Returns a shared pointer to the given string
 
+
+/*#include "loki/NullType.h"
+#include "loki/TypeTraits.h"
+#include "loki/static_check.h"
+#include <typeinfo>
+
+class CannotCompareTypeIDofPointers{};
+
+template<class T, class T2>
+bool safetypeid(const T& object){
+	LOKI_STATIC_CHECK(not Loki::TypeTraits<T>::isPointer, InvalidTypeIDCheck);
+	LOKI_STATIC_CHECK(not Loki::TypeTraits<T2>::isPointer, InvalidTypeIDCheck);
+	return typeid(object)==typeid(T2);
+}*/
+
 #endif

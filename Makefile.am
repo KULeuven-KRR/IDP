@@ -6,6 +6,8 @@ AM_CXXFLAGS = @AC_CXXFLAGS@ -Wall -Wextra\
 		-DDATADIR=\"$(datadir)\" -DRCDIR=\"$(localstatedir)\"\
 		-DINTERNALLIBARYNAME=\"idp_intern\" -DINTERNALLIBARYLUA=\"/std/idp_intern.lua\"\
 		-DINTERNALLIBARYIDP=\"/std/idp_intern.idp\" -DCONFIGFILENAME=\"/idp/.idprc\"
+	
+#		-I$(srcdir)/lib/loki-0.1.7/include
 		
 if USEINTERACTIVE
 AM_CXXFLAGS += -DUSEINTERACTIVE
