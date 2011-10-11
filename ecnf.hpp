@@ -136,11 +136,11 @@ class GroundRule {
 		RuleType	_type;					// The rule type (disjunction, conjunction, or aggregate
 		bool		_recursive;				// True iff the rule body contains defined literals
 
-	public:
+	protected:
 		GroundRule(int head, RuleType type, bool rec): _head(head), _type(type), _recursive(rec) { }
 
-		// Destructor
-		virtual		~GroundRule() { }
+	public:
+		virtual	~GroundRule() { }
 
 		// Inspectors
 				int			head()		const { return _head; 		}
@@ -247,7 +247,7 @@ class GroundDefinition : public AbstractDefinition {
 
 		unsigned int id() const { return _id; }
 
-		typedef std::map<int, GroundRule*>::iterator	ruleiterator;
+		typedef std::map<int, GroundRule*>::iterator ruleiterator;
 		ruleiterator	begin()			{ return _rules.begin();	}
 		ruleiterator	end()			{ return _rules.end();		}
 

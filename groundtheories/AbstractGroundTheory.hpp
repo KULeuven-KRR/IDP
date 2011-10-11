@@ -241,12 +241,12 @@ public:
 
 	void add(GroundDefinition* def) {
 		for(auto i=def->begin(); i!=def->end(); ++i) {
-			if(typeid(*((*i).second))==typeid(PCGroundRule)) {
+			if(typeid(*(*i).second)==typeid(PCGroundRule)) {
 				PCGroundRule* rule = dynamic_cast<PCGroundRule*>((*i).second);
 				transformForAdd(rule->body(),(rule->type()==RT_CONJ ? VIT_CONJ : VIT_DISJ), def->id());
 				notifyDefined(rule->head());
 			} else {
-				assert(typeid(*((*i).second))==typeid(AggGroundRule)); 
+				assert(typeid(*(*i).second)==typeid(AggGroundRule)); 
 				AggGroundRule* rule = dynamic_cast<AggGroundRule*>((*i).second);
 				add(rule->setnr(),def->id(),(rule->aggtype() != AGG_CARD));
 				notifyDefined(rule->head());

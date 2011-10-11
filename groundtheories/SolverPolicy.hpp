@@ -78,14 +78,14 @@ public:
 	}
 
 	void polAdd(const TsSet& tsset, int setnr, bool weighted) {
-		if(!weighted){
+		if(!weighted) {
 			MinisatID::Set set;
 			set.setID = setnr;
 			for(unsigned int n = 0; n < tsset.size(); ++n) {
 				set.literals.push_back(createLiteral(tsset.literal(n)));
 			}
 			getSolver().add(set);
-		}else {
+		} else {
 			MinisatID::WSet set;
 			set.setID = setnr;
 			for(unsigned int n = 0; n < tsset.size(); ++n) {
@@ -98,10 +98,10 @@ public:
 
 	void polAdd(GroundDefinition* def){
 		for(auto i=def->begin(); i!=def->end(); ++i){
-			if(typeid(*((*i).second))==typeid(PCGroundRule)) {
+			if(typeid(*(*i).second)==typeid(PCGroundRule)) {
 				polAdd(def->id(), dynamic_cast<PCGroundRule*>((*i).second));
 			} else {
-				assert(typeid(*((*i).second))==typeid(AggGroundRule));
+				assert(typeid(*(*i).second)==typeid(AggGroundRule));
 				polAdd(def->id(), dynamic_cast<AggGroundRule*>((*i).second));
 			}
 		}
