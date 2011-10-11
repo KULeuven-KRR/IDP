@@ -1,13 +1,12 @@
 SUBDIRS = lib pcsolver
 AM_CXXFLAGS = @AC_CXXFLAGS@ -Wall -Wextra\
 		-std=c++0x\
+		-I$(srcdir)/lib/loki-0.1.7/include\
 		-I$(srcdir)/lib/lua/etc -I$(srcdir)/lib/lua/src\
 		-I$(builddir)/lib/lua/src  -I $(srcdir)/lib/\
 		-DDATADIR=\"$(datadir)\" -DRCDIR=\"$(localstatedir)\"\
 		-DINTERNALLIBARYNAME=\"idp_intern\" -DINTERNALLIBARYLUA=\"/std/idp_intern.lua\"\
 		-DINTERNALLIBARYIDP=\"/std/idp_intern.idp\" -DCONFIGFILENAME=\"/idp/.idprc\"
-	
-#		-I$(srcdir)/lib/loki-0.1.7/include
 		
 if USEINTERACTIVE
 AM_CXXFLAGS += -DUSEINTERACTIVE

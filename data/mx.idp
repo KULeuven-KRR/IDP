@@ -1,6 +1,8 @@
 namespace mx {
 
 	/**
+	 * FIXME should NEVER override the options of the user
+	 *     rather, should give an error if one of the options is not the expected value?
 	 * Returns a structure that is a solution to the model expansion problem with input theory T and structure S
 	 */
 	procedure one(T,S,Opts) {
@@ -20,6 +22,7 @@ namespace mx {
 		if (not Opts) then Opts = stdoptions end
 		local oldnrmodels = Opts.nrmodels
 		Opts.nrmodels = 0
+		Opts.nbmodelequivalent = true
 		local solutions = modelexpand(T,S,Opts)
 		Opts.nrmodels = oldnrmodels
 		return solutions

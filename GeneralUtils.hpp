@@ -6,8 +6,8 @@
  * Written by Broes De Cat and Maarten Mariën, K.U.Leuven, Departement
  * Computerwetenschappen, Celestijnenlaan 200A, B-3001 Leuven, Belgium
  */
-#ifndef GENERALUTILS_HPP_
-#define GENERALUTILS_HPP_
+#ifndef GENUTILS_HPP_
+#define GENUTILS_HPP_
 
 #include <vector>
 #include <map>
@@ -86,4 +86,4 @@ bool fileIsReadable(T* filename) { //quick and dirty
 	return exists;
 }
 
-#endif /* GENERALUTILS_HPP_ */
+#endif /* GENUTILS_HPP_ */

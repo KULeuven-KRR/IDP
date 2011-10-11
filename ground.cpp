@@ -495,7 +495,6 @@ bool UnivSentGrounder::run() const {
 			return b;
 		}
 	}
-	_grounding->add(_grounddefinition);
 	return true;
 }
 
@@ -567,7 +566,7 @@ void GrounderFactory::InitContext() {
 	_context._funccontext	= Context::POSITIVE;
 	_context._monotone		= Context::POSITIVE;
 	_context._component		= CC_SENTENCE;
-	_context._tseitin		= TsType::IMPL;
+	_context._tseitin		= _options->getValue(MODELCOUNTEQUIVALENCE)?TsType::EQ:TsType::IMPL;
 	_context._defined.clear();
 }
 
@@ -1066,7 +1065,9 @@ void GrounderFactory::visit(const EquivForm* ef) {
 
 	// Create the grounder
 	SaveContext();
-	if(recursive(ef)) _context._tseitin = TsType::RULE;
+	if(recursive(ef)){
+		_context._tseitin = TsType::RULE;
+	}
 	_formgrounder = new EquivGrounder(_grounding->translator(),leftg,rightg,ef->sign(),_context);
 	RestoreContext();
 	if(_context._component == CC_SENTENCE) _toplevelgrounder = new SentenceGrounder(_grounding,_formgrounder,true,_verbosity);

@@ -32,7 +32,8 @@ class FormulaGrounder {
 		GroundingContext	context		()	const { return _context; }
 
 	public:
-		FormulaGrounder(GroundTranslator* gt, const GroundingContext& ct): _translator(gt), _context(ct) { }
+		// FIXME verbosity should be passed in (or perhaps full option block?)
+		FormulaGrounder(GroundTranslator* gt, const GroundingContext& ct): _translator(gt), _context(ct), _verbosity(0) { }
 		virtual ~FormulaGrounder() { }
 		virtual Lit		run()			const = 0;
 		virtual void	run(litlist&)	const = 0;

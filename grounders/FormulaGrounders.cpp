@@ -647,6 +647,8 @@ void EquivGrounder::run(litlist& clause) const {
 		TsType tp = context()._tseitin;
 		Lit ts1 = translator()->translate(cl1,false,tp);
 		Lit ts2 = translator()->translate(cl2,false,tp);
-		clause.push_back(ts1); clause.push_back(ts2);
+		litlist cl3 = {ts1, ts2};
+		Lit head = translator()->translate(cl3,true,tp);
+		clause.push_back(head);
 	}
 }
