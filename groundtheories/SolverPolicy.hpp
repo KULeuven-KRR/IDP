@@ -98,9 +98,10 @@ public:
 
 	void polAdd(GroundDefinition* def){
 		for(auto i=def->begin(); i!=def->end(); ++i){
-			if(typeid(PCGroundRule*)==typeid((*i).second)){
+			if(typeid(PCGroundRule)==typeid(*(*i).second)){
 				polAdd(def->id(), dynamic_cast<PCGroundRule*>((*i).second));
 			}else{
+				assert(typeid(AggGroundRule)==typeid(*(*i).second));
 				polAdd(def->id(), dynamic_cast<AggGroundRule*>((*i).second));
 			}
 		}

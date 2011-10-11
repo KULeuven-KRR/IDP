@@ -1545,6 +1545,7 @@ bool DefinitionGrounder::run() const {
 			return false;
 		}
 	}
+	_grounding->add(_grounddefinition);
 	return true;
 }
 
