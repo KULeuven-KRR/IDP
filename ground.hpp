@@ -29,8 +29,6 @@ class InstanceChecker;
 class SortTable;
 class DomainElement;
 class Options;
-class StrictWeakElementOrdering;
-class StrictWeakTupleOrdering;
 
 typedef std::vector<const DomainElement*> ElementTuple;
 typedef int Literal;
@@ -69,7 +67,7 @@ class TsSet {
  */
 class TsBody {
 	protected:
-		TsType _type;	// the type of "tseitin definition"
+		const TsType _type;	// the type of "tseitin definition"
 		TsBody(TsType type): _type(type) { }
 		virtual bool equal(const TsBody&) const;
 		virtual bool compare(const TsBody&) const;
@@ -79,13 +77,6 @@ class TsBody {
 		friend bool operator==(const TsBody&, const TsBody&);
 		friend bool operator<(const TsBody&, const TsBody&);
 	friend class GroundTranslator;
-};
-
-/**
- * Ordering class for tseitin bodies.
- */
-struct StrictWeakTsBodyOrdering {
-	bool operator()(const TsBody* a, const TsBody* b) const { return *a < *b; }
 };
 
 class PCTsBody : public TsBody {
@@ -233,50 +224,87 @@ class CPTsBody : public TsBody {
 /**
  * Ground translator 
  */
+typedef std::map<ElementTuple,int,Compare<ElementTuple> > Tuple2Atom;
+typedef std::map<TsBody*,int,Compare<TsBody> > Ts2Atom;
+typedef std::pair<uint, TsBody*> tspair;
+
+/**
+ * Translator stores:
+ * 		for a tseitin atom, what its interpretation is
+ * 		for an input atom, what symbol it refers to and what elementtuple
+ * 		for an atom which is neither, should not store anything, except that it is not stored.
+ */
+
+struct SymbolAndAtomMap{
+	PFSymbol* symbol;
+	Tuple2Atom tuple2atom;
+
+	SymbolAndAtomMap(PFSymbol* symbol): symbol(symbol){}
+};
+
+enum class AtomType{
+	INPUT, TSEITINWITHSUBFORMULA, LONETSEITIN
+};
+
+struct SymbolAndTuple{
+	PFSymbol* symbol;
+	ElementTuple tuple;
+
+	SymbolAndTuple(){}
+	SymbolAndTuple(PFSymbol* symbol, const ElementTuple& tuple): symbol(symbol), tuple(tuple){}
+};
+
 class GroundTranslator {
 	private:
-		std::vector<std::map<ElementTuple,int,StrictWeakTupleOrdering> >
-										_table;			// map atoms to integers
-		std::vector<PFSymbol*>			_symboffsets;	// map integer to symbol
-		std::vector<PFSymbol*>			_backsymbtable;	// map integer to the symbol of its corresponding atom
-		std::vector<ElementTuple>		_backargstable;	// map integer to the terms of its corresponding atom
+		std::vector<SymbolAndAtomMap>	symbols; // Each symbol added to the translated is associated a unique number, the index into this vector, at which the symbol is also stored
+
+		std::vector<AtomType>			atomtype;
+		std::vector<SymbolAndTuple*>	atom2Tuple;	// Pointers manager by the translator!
+		std::vector<tspair>				atom2TsBody; // Pointers manager by the translator!
 
 		std::queue<int>		_freenumbers;		// keeps atom numbers that were freed and can be used again
 		std::queue<int>		_freesetnumbers;	// keeps set numbers that were freed and can be used again
 
-		std::map<int,TsBody*>							_nr2tsbodies;	// keeps mapping between Tseitin numbers and bodies
-		std::map<TsBody*,int,StrictWeakTsBodyOrdering>	_tsbodies2nr;	// keeps mapping between Tseitin bodies and numbers
-
 		std::vector<TsSet>	_sets;	// keeps mapping between Set numbers and sets
 
+		int	nextNumber(AtomType type);
+
 	public:
-		GroundTranslator() : _backsymbtable(1), _backargstable(1), _sets(1) { }
+		GroundTranslator() : atomtype(1, AtomType::LONETSEITIN),atom2Tuple(1, NULL), atom2TsBody(1, tspair(0,(TsBody*)NULL)), _sets(1) { }
 		~GroundTranslator();
 
-		int				translate(unsigned int,const ElementTuple&);
-		int				translate(const std::vector<int>& cl, bool conj, TsType tp);
-		int				translate(double bound, char comp, bool strict, AggFunction aggtype, int setnr, TsType tstype);
-		int				translate(PFSymbol*,const ElementTuple&);
-		int				translate(CPTerm*, CompType, const CPBound&, TsType);
-		int				translateSet(const std::vector<int>&,const std::vector<double>&,const std::vector<double>&);
+		int	translate(unsigned int,const ElementTuple&);
+		int	translate(const std::vector<int>& cl, bool conj, TsType tp);
+		int	translate(double bound, char comp, bool strict, AggFunction aggtype, int setnr, TsType tstype);
+		int	translate(PFSymbol*,const ElementTuple&);
+		int	translate(CPTerm*, CompType, const CPBound&, TsType);
+		int	translateSet(const std::vector<int>&,const std::vector<double>&,const std::vector<double>&);
 
-		int				nextNumber();
 		unsigned int	addSymbol(PFSymbol* pfs);
 
-		bool					hasSymbolFor(int atom)		const	{ return 0<atom && (uint)atom<_backsymbtable.size(); }
-		PFSymbol*				atom2symbol(int atom)		const	{ return _backsymbtable[abs(atom)];			}
-		const ElementTuple&		args(int nr)				const	{ return _backargstable[abs(nr)];			}
-		bool					isTseitin(int atom)			const	{ return atom2symbol(atom) == 0;			}
+		bool 		isStored(int atom)	const { return atom>0 && atomtype.size()>atom; }
+		AtomType 	getType	(int atom)	const { return atomtype[atom]; }
 
-		TsBody*					tsbody(int l)				const	{ return _nr2tsbodies.find(abs(l))->second;	}
-		const TsSet&			groundset(int nr)			const	{ return _sets[nr];							}
-		TsSet&					groundset(int nr)					{ return _sets[nr];							}
-		unsigned int			nbSymbols()					const	{ return _symboffsets.size();				}
-		PFSymbol*				getSymbol(unsigned int n)	const	{ return _symboffsets[n];					}
-		const std::map<ElementTuple,int,StrictWeakTupleOrdering>&	
-								getTuples(unsigned int n)	const	{ return _table[n];							}
+		bool		isInputAtom	(int atom) 	const	{ return isStored(atom) && getType(atom)==AtomType::INPUT; }
+		PFSymbol*	getSymbol	(int atom) 	const	{ assert(isInputAtom(atom) && atom2Tuple[atom]->symbol!=NULL); return atom2Tuple[atom]->symbol; }
+		const ElementTuple& getArgs(int atom) const { assert(isInputAtom(atom) && atom2Tuple[atom]->symbol!=NULL); return atom2Tuple[atom]->tuple; }
 
-		std::string	printAtom(int nr)	const;
+		bool		isTseitinWithSubformula	(int atom)	const	{ return isStored(atom) && getType(atom)==AtomType::TSEITINWITHSUBFORMULA; }
+		TsBody*		getTsBody				(int atom)	const	{ assert(isTseitinWithSubformula(atom)); return atom2TsBody[atom].second;	}
+
+		int			createNewUninterpretedNumber(){
+			return nextNumber(AtomType::LONETSEITIN);
+		}
+
+		bool		isSet		(int setID) const	{ return _sets.size()>setID; }
+		TsSet&		groundset	(int setID)			{ assert(isSet(setID)); return _sets[setID];	} //FIXME check why cannot be const?
+
+		bool				isManagingSymbol(uint n) 	const	{ return symbols.size()>n; }
+		unsigned int		nbManagedSymbols()			const	{ return symbols.size(); }
+		PFSymbol*			getManagedSymbol(uint n)	const	{ assert(isManagingSymbol(n)); return symbols[n].symbol;	}
+		const Tuple2Atom&	getTuples(uint n)			const	{ assert(isManagingSymbol(n)); return symbols[n].tuple2atom;	}
+
+		std::string	printAtom(int nr, bool longnames = false)	const;
 };
 
 /**
@@ -340,7 +368,7 @@ class GroundTermTranslator {
 		const Function*	getFunction(size_t offset)	const { return _offset2function[offset];	}
 
 		// Debugging
-		std::string		printTerm(const VarId&)		const;
+		std::string		printTerm(const VarId&, bool longnames)		const;
 };
 
 /************************************

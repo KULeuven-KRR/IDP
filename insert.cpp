@@ -64,13 +64,12 @@ class SortDeriver : public TheoryMutatingVisitor {
 
 		// Check
 		void check();
-		
 };
 
 Formula* SortDeriver::visit(QuantForm* qf) {
 	if(_firstvisit) {
 		for(std::set<Variable*>::const_iterator it = qf->quantVars().begin(); it != qf->quantVars().end(); ++it) {
-			if(!((*it)->sort())) {
+			if(not (*it)->sort()) {
 				_untyped[*it] = set<Sort*>();
 				_changed = true;
 			}
@@ -100,7 +99,7 @@ Formula* SortDeriver::visit(PredForm* pf) {
 
 Formula* SortDeriver::visit(EqChainForm* ef) {
 	Sort* s = 0;
-	if(!_firstvisit) {
+	if(not _firstvisit) {
 		for(vector<Term*>::const_iterator it = ef->subterms().begin(); it != ef->subterms().end(); ++it) {
 			Sort* temp = (*it)->sort();
 			if(temp && temp->parents().empty() && temp->children().empty()) {
@@ -119,7 +118,7 @@ Formula* SortDeriver::visit(EqChainForm* ef) {
 Rule* SortDeriver::visit(Rule* r) {
 	if(_firstvisit) {
 		for(set<Variable*>::const_iterator it = r->quantVars().begin(); it != r->quantVars().end(); ++it) {
-			if(!((*it)->sort())) _untyped[*it] = set<Sort*>();
+			if(not (*it)->sort()) { _untyped[*it] = set<Sort*>(); }
 			_changed = true;
 		}
 	}
@@ -129,7 +128,7 @@ Rule* SortDeriver::visit(Rule* r) {
 }
 
 Term* SortDeriver::visit(VarTerm* vt) {
-	if((!(vt->sort())) && _assertsort) {
+	if(not vt->sort() && _assertsort) {
 		_untyped[vt->var()].insert(_assertsort);
 	}
 	return vt;
@@ -140,7 +139,7 @@ Term* SortDeriver::visit(DomainTerm* dt) {
 		_domelements.insert(dt);
 	}
 
-	if((!(dt->sort())) && _assertsort) {
+	if(not dt->sort() && _assertsort) {
 		dt->sort(_assertsort);
 		_changed = true;
 		_domelements.erase(dt);
@@ -184,23 +183,23 @@ SetExpr* SortDeriver::visit(QuantSetExpr* qs) {
 void SortDeriver::derivesorts() {
 	for(map<Variable*,std::set<Sort*> >::iterator it = _untyped.begin(); it != _untyped.end(); ) {
 		map<Variable*,std::set<Sort*> >::iterator jt = it; ++jt;
-		if(!((it->second).empty())) {
-			std::set<Sort*>::iterator kt = (it->second).begin(); 
+		if(not (*it).second.empty()) {
+			std::set<Sort*>::iterator kt = (*it).second.begin(); 
 			Sort* s = *kt;
 			++kt;
-			for(; kt != (it->second).end(); ++kt) {
+			for(; kt != (*it).second.end(); ++kt) {
 				s = SortUtils::resolve(s,*kt,_vocab);
-				if(!s) { // In case of conflicting sorts, assign the first sort. 
+				if(not s) { // In case of conflicting sorts, assign the first sort. 
 						 // Error message will be given during final check.
-					s = *((it->second).begin());
+					s = *((*it).second.begin());
 					break;
 				}
 			}
 			assert(s);
-			if((it->second).size() > 1 || s->builtin()) {	// Warning when the sort was resolved or builtin
-				Warning::derivevarsort(it->first->name(),s->name(),it->first->pi());
+			if((*it).second.size() > 1 || s->builtin()) {	// Warning when the sort was resolved or builtin
+				Warning::derivevarsort(it->first->name(),s->name(),(*it).first->pi());
 			}
-			it->first->sort(s);
+			(*it).first->sort(s);
 			_untyped.erase(it);
 			_changed = true;
 		}
@@ -220,7 +219,7 @@ void SortDeriver::derivefuncs() {
 		Function* rf = f->disambiguate(vs,_vocab);
 		if(rf) {
 			it->first->function(rf);
-			if(!rf->overloaded()) _overloadedterms.erase(it);
+			if(not rf->overloaded()) { _overloadedterms.erase(it); }
 			_changed = true;
 		}
 		it = jt;
@@ -238,7 +237,7 @@ void SortDeriver::derivepreds() {
 		PFSymbol* rp = p->disambiguate(vs,_vocab);
 		if(rp) {
 			(*it)->symbol(rp);
-			if(!rp->overloaded()) _overloadedatoms.erase(it);
+			if(not rp->overloaded()) { _overloadedatoms.erase(it); }
 			_changed = true;
 		}
 		it = jt;
@@ -330,7 +329,6 @@ void SortDeriver::check() {
 }
 
 class SortChecker : public TheoryVisitor {
-
 	private:
 		Vocabulary* _vocab;
 
@@ -339,6 +337,7 @@ class SortChecker : public TheoryVisitor {
 		SortChecker(Term* t,Vocabulary* v)			: _vocab(v) { t->accept(this);	}
 		SortChecker(Definition* d,Vocabulary* v)	: _vocab(v) { d->accept(this);	}
 		SortChecker(FixpDef* d,Vocabulary* v)		: _vocab(v) { d->accept(this);	}
+		virtual ~SortChecker(){}
 
 		void visit(const PredForm*);
 		void visit(const EqChainForm*);
@@ -1138,7 +1137,7 @@ void Insert::assignstructure(InternalArgument* arg, YYLTYPE l) {
 void Insert::closestructure() {
 	assert(_currstructure);
 	assignunknowntables();
-	if(_options->autocomplete()) _currstructure->autocomplete();
+	if(_options->getValue(BoolType::AUTOCOMPLETE)) _currstructure->autocomplete();
 	_currstructure->functionCheck();
 	if(_currspace->isGlobal()) LuaConnection::addGlobal(_currstructure);
 	closeblock();
@@ -2622,47 +2621,42 @@ void Insert::procarg(const string& argname) const {
 	_currprocedure->addarg(argname);
 }
 
-void Insert::externoption(const vector<string>& name, YYLTYPE l) const {
+// FIXME typedef for long names
+// FIXME better name for oneName
+void Insert::externoption(const vector<string>& optionName, YYLTYPE l) const {
 	ParseInfo pi = parseinfo(l);
-	Options* opt = optionsInScope(name,pi);
-	if(opt) _curroptions->setvalues(opt);
-	else Error::undeclopt(oneName(name),pi);
+	Options* opt = optionsInScope(optionName,pi);
+	if(opt==NULL){
+		Error::undeclopt(oneName(optionName),pi);
+	}
+	_curroptions->copyValues(opt);
+}
+
+template<class OptionValue>
+void setOptionValue(Options* options, const string& opt, const OptionValue& val,const ParseInfo& pi){
+	if(not options->isOption(opt)){
+		Error::unknoption(opt,pi);
+	}
+	if(not options->isAllowedValue(opt, val)) {
+		Error::wrongvalue(opt,convertToString(val),pi);
+	}
+	options->setValue(opt,val);
 }
 
 void Insert::option(const string& opt, const string& val,YYLTYPE l) const {
-	ParseInfo pi = parseinfo(l);
-	if(_curroptions->isoption(opt)) {
-		if(_curroptions->setvalue(opt,val)) { } // do nothing
-		else Error::wrongvalue(opt,val,pi);
-	}
-	else Error::unknoption(opt,pi);
+	setOptionValue(_curroptions, opt, val, parseinfo(l));
 }
 
-void Insert::option(const string& opt, double val,YYLTYPE l) const { 
-	ParseInfo pi = parseinfo(l);
-	if(_curroptions->isoption(opt)) {
-		if(_curroptions->setvalue(opt,val)) { } // do nothing
-		else Error::wrongvalue(opt,convertToString(val),pi);
-	}
-	else Error::unknoption(opt,pi);
+void Insert::option(const string& opt, double val,YYLTYPE l) const {
+	setOptionValue(_curroptions, opt, val, parseinfo(l));
 }
 
 void Insert::option(const string& opt, int val,YYLTYPE l) const {
-	ParseInfo pi = parseinfo(l);
-	if(_curroptions->isoption(opt)) {
-		if(_curroptions->setvalue(opt,val)) { } // do nothing
-		else Error::wrongvalue(opt,convertToString(val),pi);
-	}
-	else Error::unknoption(opt,pi);
+	setOptionValue(_curroptions, opt, val, parseinfo(l));
 }
 
 void Insert::option(const string& opt, bool val,YYLTYPE l) const {
-	ParseInfo pi = parseinfo(l);
-	if(_curroptions->isoption(opt)) {
-		if(_curroptions->setvalue(opt,val)) { } // do nothing
-		else Error::wrongvalue(opt,val ? "true" : "false",pi);
-	}
-	else Error::unknoption(opt,pi);
+	setOptionValue(_curroptions, opt, val, parseinfo(l));
 }
 
 void Insert::assignunknowntables() {

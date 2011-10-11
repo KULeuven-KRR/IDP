@@ -49,6 +49,7 @@ public:
 	void 	addEmptyClause()	{ GroundClause c(0); add(c);	}
 	void 	addUnitClause(int l){ GroundClause c(1,l); add(c);	}
 	virtual void add(GroundClause& cl, bool skipfirst=false) = 0;
+	virtual void addPure(GroundClause& cl) = 0;
 	virtual void add(GroundDefinition* d) = 0;
 	virtual void add(GroundFixpDef*) = 0;
 	virtual void add(int head, AggTsBody* body) = 0;
@@ -92,18 +93,18 @@ class GroundTheory : public AbstractGroundTheory, public Policy {
 	 *		implement unfolding
 	 */
 	void transformForAdd(const std::vector<int>& vi, VIType /*vit*/, int defnr, bool skipfirst = false) {
-		unsigned int n = 0;
+		size_t n = 0;
 		if(skipfirst) ++n;
 		for(; n < vi.size(); ++n) {
 			int atom = abs(vi[n]);
-			if(translator()->isTseitin(atom) && _printedtseitins.find(atom) == _printedtseitins.end()) {
+			if(translator()->isTseitinWithSubformula(atom) && _printedtseitins.find(atom) == _printedtseitins.end()) {
 				_printedtseitins.insert(atom);
-				TsBody* tsbody = translator()->tsbody(atom);
+				TsBody* tsbody = translator()->getTsBody(atom);
 				if(typeid(*tsbody) == typeid(PCTsBody)) {
 					PCTsBody* body = dynamic_cast<PCTsBody*>(tsbody);
 					if(body->type() == TS_IMPL || body->type() == TS_EQ) {
 						if(body->conj()) {
-							for(unsigned int m = 0; m < body->size(); ++m) {
+							for(size_t m = 0; m < body->size(); ++m) {
 								std::vector<int> cl(2,-atom);
 								cl[1] = body->literal(m);
 								add(cl,true);
@@ -111,7 +112,7 @@ class GroundTheory : public AbstractGroundTheory, public Policy {
 						}
 						else {
 							std::vector<int> cl(body->size()+1,-atom);
-							for(unsigned int m = 0; m < body->size(); ++m){
+							for(size_t m = 0; m < body->size(); ++m){
 								cl[m+1] = body->literal(m);
 							}
 							add(cl,true);
@@ -120,13 +121,13 @@ class GroundTheory : public AbstractGroundTheory, public Policy {
 					if(body->type() == TS_RIMPL || body->type() == TS_EQ) {
 						if(body->conj()) {
 							std::vector<int> cl(body->size()+1,atom);
-							for(unsigned int m = 0; m < body->size(); ++m){
+							for(size_t m = 0; m < body->size(); ++m){
 								cl[m+1] = -body->literal(m);
 							}
 							add(cl,true);
 						}
 						else {
-							for(unsigned int m = 0; m < body->size(); ++m) {
+							for(size_t m = 0; m < body->size(); ++m) {
 								std::vector<int> cl(2,atom);
 								cl[1] = -body->literal(m);
 								add(cl,true);
@@ -235,13 +236,18 @@ public:
 		Policy::polAdd(cl);
 	}
 
+	void addPure(GroundClause& cl) {
+		Policy::polAdd(cl);
+	}
+
 	void add(GroundDefinition* def) {
-		for(auto i=def->begin(); i!=def->end(); ++i){
-			if(typeid(PCGroundRule*)==typeid((*i).second)){
+		for(auto i=def->begin(); i!=def->end(); ++i) {
+			if(typeid(*(*i).second)==typeid(PCGroundRule)) {
 				PCGroundRule* rule = dynamic_cast<PCGroundRule*>((*i).second);
 				transformForAdd(rule->body(),(rule->type()==RT_CONJ ? VIT_CONJ : VIT_DISJ), def->id());
 				notifyDefined(rule->head());
-			}else{
+			} else {
+				assert(typeid(*(*i).second)==typeid(AggGroundRule)); 
 				AggGroundRule* rule = dynamic_cast<AggGroundRule*>((*i).second);
 				add(rule->setnr(),def->id(),(rule->aggtype() != AGG_CARD));
 				notifyDefined(rule->head());
@@ -251,16 +257,16 @@ public:
 	}
 
 private:
-	void notifyDefined(int tseitin){
-		if(not translator()->hasSymbolFor(tseitin)){
+	void notifyDefined(int inputatom){
+		if(not translator()->isInputAtom(inputatom)){
 			return;
 		}
-		PFSymbol* symbol = translator()->atom2symbol(tseitin);
+		PFSymbol* symbol = translator()->getSymbol(inputatom);
 		auto it = _defined.find(symbol);
 		if(it==_defined.end()){
 			it = _defined.insert(std::pair<PFSymbol*, std::set<int> >(symbol, std::set<int>())).first;
 		}
-		(*it).second.insert(tseitin);
+		(*it).second.insert(inputatom);
 	}
 
 public:
@@ -299,8 +305,8 @@ public:
 	 *		This method should be called before running the SAT solver and after grounding.
 	 */
 	void addFuncConstraints() {
-		for(unsigned int n = 0; n < translator()->nbSymbols(); ++n) {
-			PFSymbol* pfs = translator()->getSymbol(n);
+		for(size_t n = 0; n < translator()->nbManagedSymbols(); ++n) {
+			PFSymbol* pfs = translator()->getManagedSymbol(n);
 			auto tuples = translator()->getTuples(n);
 			if((typeid(*pfs)!=typeid(Function)) || tuples.empty()) {
 				continue;
@@ -333,7 +339,7 @@ public:
 					if(sit.hasNext()) { ++sit; }
 				}
 				else {
-					if(!sets.empty() && sit.hasNext()) weak.back() = true;
+					if(not sets.empty() && sit.hasNext()) { weak.back() = true; }
 					if(tit.hasNext()) {
 						const ElementTuple& tuple = *tit;
 						if(de(tuple,it->first)) {
@@ -354,12 +360,12 @@ public:
 					sit = st->sortBegin();
 				}
 			}
-			for(unsigned int s = 0; s < sets.size(); ++s) {
+			for(size_t s = 0; s < sets.size(); ++s) {
 				std::vector<double> lw(sets[s].size(),1);
 				std::vector<double> tw(0);
 				int setnr = translator()->translateSet(sets[s],lw,tw);
 				int tseitin;
-				if(f->partial() || !(st->finite()) || weak[s]) {
+				if(f->partial() || (not st->finite()) || weak[s]) {
 					tseitin = translator()->translate(1,'>',false,AGG_CARD,setnr,TS_IMPL);
 				}
 				else {
@@ -371,8 +377,8 @@ public:
 	}
 
 	void addFalseDefineds() {
-		for(unsigned int n = 0; n < translator()->nbSymbols(); ++n) {
-			PFSymbol* s = translator()->getSymbol(n);
+		for(size_t n = 0; n < translator()->nbManagedSymbols(); ++n) {
+			PFSymbol* s = translator()->getManagedSymbol(n);
 			auto it = _defined.find(s);
 			if(it!=_defined.end()) {
 				auto tuples = translator()->getTuples(n);
@@ -385,12 +391,12 @@ public:
 		}
 	}
 
-	std::ostream& put(std::ostream& s, bool, unsigned int) const {
-		return Policy::polPut(s, translator(), termtranslator());
+	std::ostream& put(std::ostream& s, bool longnames = false, unsigned int spaces = 0) const {
+		return Policy::polPut(s,translator(),termtranslator(),longnames);
 	}
 
-	std::string toString() const {
-		return Policy::polToString(translator(), termtranslator());
+	std::string toString(bool longnames = false, unsigned int spaces = 0) const {
+		return Policy::polToString(translator(),termtranslator(),longnames);
 	}
 
 	virtual void			accept(TheoryVisitor* v) const		{ v->visit(this);			}

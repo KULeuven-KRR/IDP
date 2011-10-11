@@ -71,7 +71,7 @@ public:
 
 	void polAdd(GroundClause& cl) {
 		MinisatID::Disjunction clause;
-		for(unsigned int n = 0; n < cl.size(); ++n) {
+		for(size_t n = 0; n < cl.size(); ++n) {
 			clause.literals.push_back(createLiteral(cl[n]));
 		}
 		getSolver().add(clause);
@@ -81,14 +81,14 @@ public:
 		if(not weighted) {
 			MinisatID::Set set;
 			set.setID = setnr;
-			for(unsigned int n = 0; n < tsset.size(); ++n) {
+			for(size_t n = 0; n < tsset.size(); ++n) {
 				set.literals.push_back(createLiteral(tsset.literal(n)));
 			}
 			getSolver().add(set);
 		} else {
 			MinisatID::WSet set;
 			set.setID = setnr;
-			for(unsigned int n = 0; n < tsset.size(); ++n) {
+			for(size_t n = 0; n < tsset.size(); ++n) {
 				set.literals.push_back(createLiteral(tsset.literal(n)));
 				set.weights.push_back(createWeight(tsset.weight(n)));
 			}
@@ -98,10 +98,11 @@ public:
 
 	void polAdd(GroundDefinition* def){
 		for(auto i=def->begin(); i!=def->end(); ++i){
-			if(typeid(PCGroundRule*)==typeid((*i).second)) {
-				polAdd(def->id(), dynamic_cast<PCGroundRule*>((*i).second));
+			if(typeid(*(*i).second)==typeid(PCGroundRule)) {
+				polAdd(def->id(),dynamic_cast<PCGroundRule*>((*i).second));
 			} else {
-				polAdd(def->id(), dynamic_cast<AggGroundRule*>((*i).second));
+				assert(typeid(*(*i).second)==typeid(AggGroundRule));
+				polAdd(def->id(),dynamic_cast<AggGroundRule*>((*i).second));
 			}
 		}
 	}
@@ -205,8 +206,8 @@ public:
 		}
 	}
 
-	std::ostream& 	polPut(std::ostream& s, GroundTranslator*, GroundTermTranslator*)	const { assert(false); return s;	}
-	std::string 	polToString(GroundTranslator*, GroundTermTranslator*) 				const { assert(false); return "";	}
+	std::ostream& 	polPut(std::ostream& s, GroundTranslator*, GroundTermTranslator*, bool longnames)	const { assert(false); return s;	}
+	std::string 	polToString(GroundTranslator*, GroundTermTranslator*, bool longnames) 				const { assert(false); return "";	}
 
 private:
 	void polAddAggregate(int definitionID, int head, bool lowerbound, int setnr, AggFunction aggtype, TsType sem, double bound) {

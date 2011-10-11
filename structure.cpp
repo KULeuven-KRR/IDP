@@ -83,6 +83,8 @@ ostream& DomainElement::put(ostream& output) const {
 		case DET_COMPOUND:
 			_value._compound->put(output);
 			break;
+		default:
+			assert(false);
 	}
 	return output;
 }
@@ -687,32 +689,38 @@ void UnionInternalIterator::setcurriterator() {
 	_curriterator = _iterators.begin();
 	for(; _curriterator != _iterators.end(); ) {
 		if(_curriterator->hasNext()) {
-			if(contains(*(*_curriterator))) break;
-			else  ++(*_curriterator); 
+			if(contains(*(*_curriterator))){
+				break;
+			}else{
+				++(*_curriterator);
+			}
 		}
-		else ++_curriterator;
+		else{
+			++_curriterator;
+		}
 	}
-	if(_curriterator != _iterators.end() && _curriterator->hasNext()) {
-		vector<TableIterator>::iterator jt = _curriterator; ++jt;
+	if(_curriterator->hasNext()) {
+		auto jt = _curriterator; ++jt;
 		for(; jt != _iterators.end(); ) {
 			if(jt->hasNext()) {
 				if(contains(*(*jt))) {
-					StrictWeakTupleOrdering swto;
-					ElementTuple tuple1 = *(*jt);
-					ElementTuple tuple2 = *(*_curriterator);
-					if(swto(tuple1,tuple2)) {
+					Compare<ElementTuple> swto;
+					if(swto(*(*jt),*(*_curriterator))) {
 						_curriterator = jt;
-						++jt;
-					}
-					else if(!swto(tuple2,tuple1)) {
+					} else if(not swto(*(*_curriterator),*(*jt))) {
 						++(*jt);
 						++jt;
+					} else {
+						++jt;
 					}
-					else ++jt;
 				}
-				else ++(*jt); 
+				else{
+					++(*jt);
+				}
 			}
-			else ++jt;
+			else{
+				++jt;
+			}
 		}
 	}
 }
@@ -1070,15 +1078,6 @@ bool Universe::contains(const ElementTuple& tuple) const {
 		if(!_tables[n]->contains(tuple[n])) return false;
 	}
 	return true;
-}
-
-bool StrictWeakTupleOrdering::operator()(const ElementTuple& t1, const ElementTuple& t2) const {
-	assert(t1.size() == t2.size());
-	for(unsigned int n = 0; n < t1.size(); ++n) {
-		if(*(t1[n]) < *(t2[n])) return true;
-		else if(*(t1[n]) > *(t2[n])) return false;
-	}
-	return false;
 }
 
 bool StrictWeakNTupleEquality::operator()(const ElementTuple& t1, const ElementTuple& t2) const {
@@ -2500,7 +2499,7 @@ InternalTableIterator* UNAInternalFuncTable::begin(const Universe& univ) const {
 }
 
 const DomainElement* EnumeratedInternalFuncTable::operator[](const ElementTuple& tuple) const {
-	ElementFunc::const_iterator it = _table.find(tuple);
+	Tuple2Elem::const_iterator it = _table.find(tuple);
 	if(it != _table.end()) return it->second;
 	else return 0;
 }
@@ -2518,7 +2517,7 @@ InternalFuncTable* EnumeratedInternalFuncTable::add(const ElementTuple& tuple) {
 	}
 	else {
 		if(_nrRefs > 1) {
-			ElementFunc newtable = _table;
+			Tuple2Elem newtable = _table;
 			newtable[key] = value;
 			return new EnumeratedInternalFuncTable(newtable);
 		}
@@ -2536,7 +2535,7 @@ InternalFuncTable* EnumeratedInternalFuncTable::remove(const ElementTuple& tuple
 	const DomainElement* computedvalue = operator[](key);
 	if(computedvalue == value) {
 		if(_nrRefs > 1) {
-			ElementFunc newtable = _table;
+			Tuple2Elem newtable = _table;
 			newtable.erase(key);
 			return new EnumeratedInternalFuncTable(newtable);
 		}
@@ -3157,7 +3156,7 @@ bool PredInter::isInconsistent(const ElementTuple& tuple) const {
 }
 
 /**
- * \brief Returns false is the interpretation is not two-valued. May return true if it is two-valued.
+ * \brief Returns false if the interpretation is not two-valued. May return true if it is two-valued.
  *
  * NOTE: Simple check if _ct == _pt
  */
@@ -3416,7 +3415,7 @@ FuncInter* MinInterGenerator::get(const AbstractStructure* structure) {
 	SortTable* st = structure->inter(_sort);
 	Universe univ(vector<SortTable*>(1,st));
 	ElementTuple t;
-	ElementFunc ef; ef[t] = st->first();
+	Tuple2Elem ef; ef[t] = st->first();
 	EnumeratedInternalFuncTable* ift = new EnumeratedInternalFuncTable(ef);
 	FuncTable* ft = new FuncTable(ift,univ);
 	return new FuncInter(ft);
@@ -3426,7 +3425,7 @@ FuncInter* MaxInterGenerator::get(const AbstractStructure* structure) {
 	SortTable* st = structure->inter(_sort);
 	Universe univ(vector<SortTable*>(1,st));
 	ElementTuple t;
-	ElementFunc ef; ef[t] = st->last();
+	Tuple2Elem ef; ef[t] = st->last();
 	EnumeratedInternalFuncTable* ift = new EnumeratedInternalFuncTable(ef);
 	FuncTable* ft = new FuncTable(ift,univ);
 	return new FuncInter(ft);
@@ -3508,7 +3507,6 @@ namespace TableUtils {
 		}
 		else return false;
 	}
-
 }
 
 /*****************

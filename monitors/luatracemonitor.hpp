@@ -60,15 +60,17 @@ public:
 		lua_setfield(_state,-2,"dl");
 		lua_pushboolean(_state,!lit.hasSign());
 		lua_setfield(_state,-2,"value");
-		PFSymbol* s = _translator->atom2symbol(lit.getAtom().getValue());
-		if(s) {
-			const ElementTuple& args = _translator->args(lit.getAtom().getValue());
+
+		int atomnr = lit.getAtom().getValue();
+		if(_translator->isInputAtom(atomnr)) {
+			PFSymbol* s = _translator->getSymbol(atomnr);
+			const ElementTuple& args = _translator->getArgs(lit.getAtom().getValue());
 			const DomainAtom* atom = DomainAtomFactory::instance()->create(s,args);
 			InternalArgument ia(atom);
 			LuaConnection::convertToLua(_state,ia);
 		}
 		else {
-			lua_pushstring(_state,_translator->printAtom(lit.getAtom().getValue()).c_str());
+			lua_pushstring(_state,_translator->printAtom(lit.getAtom().getValue(), false).c_str()); // TODO longnames?
 		}
 		lua_setfield(_state,-2,"atom");
 		lua_call(_state,2,0);

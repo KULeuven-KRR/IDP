@@ -178,6 +178,8 @@ class PFSymbol {
 		bool						hasVocabularies()	const;	//!< Returns true iff the symbol occurs in a 
 																		//!< vocabulary
 		Predicate*						derivedSymbol(SymbolType);		//!< Return the derived symbol of the given type
+		std::vector<unsigned int>		argumentNrs(const Sort*)const; 	//!< Returns the numbers of the arguments where this 
+																		//!< PFSymbol ranges over the given sort
 
 		virtual bool			builtin()		const = 0;	//!< Returns true iff the symbol is built-in
 		virtual bool			overloaded()	const = 0;	//!< Returns true iff the symbol is in fact a set of overloaded
@@ -236,7 +238,8 @@ class Predicate : public PFSymbol {
 		PFSymbol*		parent()		const { return _parent;	}
 		unsigned int	arity()			const;	//!< Returns the arity of the predicate
 		bool			builtin()		const;	
-		bool			overloaded()	const;			
+		bool			overloaded()	const;
+		bool			isSortPredicate()	const;	//!< Returns true iff this is a predicate representing a sort
 		std::set<Sort*> allsorts()		const;
 
 		// Built-in symbols

@@ -350,6 +350,16 @@ Predicate* PFSymbol::derivedSymbol(SymbolType type) {
 	else { return it->second; }
 }
 
+vector<unsigned int> PFSymbol::argumentNrs(const Sort* soort) const {
+	vector<unsigned int> result;
+	for(unsigned int i=0; i<nrSorts(); ++i){
+		if(sort(i)==soort){
+			result.push_back(i);
+		}
+	}
+	return result;
+}
+
 string PFSymbol::toString(bool longnames) const {
 	stringstream output;
 	put(output, longnames);
@@ -363,7 +373,7 @@ string Function::toString(bool longnames) const {
 }
 
 ostream& operator<<(ostream& output, const PFSymbol& s) {
-	return s.put(output);
+	return s.put(output, false); // FIXME can we solve that we have to choose how to print the longnames here?
 }
 
 int Predicate::_npnr = 0;
@@ -947,7 +957,7 @@ const string& FuncGenerator::name() const {
 	return _name;
 }
 
-unsigned	int FuncGenerator::arity() const {
+unsigned int FuncGenerator::arity() const {
 	return _arity;
 }
 

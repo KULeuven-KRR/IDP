@@ -4,6 +4,42 @@
 --	All code in this chunk is executed before input files are parsed
 -- ================================================================== --
 
+-- Options for "entails", for using external ATP systems
+-- =====================================================
+
+-- Specify what prover executable and arguments to use for what platform
+-- "fof" stands for a prover that accepts the TPTP FOF syntax
+-- "tff" stands for a prover that accepts the TPTP TFF syntax with arithmetic
+-- The commands must be represented as tables with 2 entries:
+-- 1. The path of the executable
+-- 2. The arguments. Use "%i" to indicate the input file, and "%o" to indicate the output file
+--	  If "%o" is not specified, output redirection is assumed. (> %o)
+-- The $PROVERDIR environment variable is automatically prepended.
+idp_intern.prover_fof_osx = {"E/PROVER/eprover", "-xAuto -tAuto --tptp3-format %i > %o"}
+idp_intern.prover_tff_osx = {"TPTP-v5.2.0/Systems/MetiTarski---1.8/run-metitarski", "%i > %o"}
+
+--idp_intern.prover_fof_osx = "/Users/roel/vakantiejob/E/PROVER/eprover -xAuto -tAuto --tptp3-format %i > %o"
+--idp_intern.prover_fof_osx = "\"/Users/roel/vakantiejob/SPASS 3.5/SPASS\" -TPTP %i > %o"
+--idp_intern.prover_fof_osx = "/Users/roel/vakantiejob/SPASS-3.7/builds/release/install/bin/SPASS -TPTP %i > %o"
+--idp_intern.prover_fof_osx = "/Users/roel/vakantiejob/vampires/vampire_mac --proof tptp --output_axiom_names on --mode casc --input_file %i > %o"
+--idp_intern.prover_tff_osx = "java -jar -Dfile.encoding=UTF-8 -Xmx512m -jar /Users/roel/vakantiejob/MELIA-0.1.2.jar -format tff-int %i > %o"
+--idp_intern.prover_tff_osx = "/Users/roel/vakantiejob/TPTP-v5.2.0/Systems/MetiTarski---1.8/run-metitarski %i > %o"
+--idp_intern.prover_fof_osx = "/Users/roel/vakantiejob/TPTP-v5.2.0/Systems/MetiTarski---1.8/run-metitarski %i > %o"
+
+idp_intern.prover_fof_win = {}
+idp_intern.prover_tff_win = {}
+idp_intern.prover_fof_linux = {}
+idp_intern.prover_tff_linux = {}
+
+-- Set the strings that should be matched on in the output.
+-- Set "truestrings" to the string to match on when the first theory entails the second one
+-- Set "falsestrings" to the string to match on when the first theory does not entail the second one
+idp_intern.prover_fof_truestrings = {"SZS status Theorem"}
+idp_intern.prover_fof_falsestrings = {"SZS status CounterSatisfiable"}
+idp_intern.prover_tff_truestrings = {"SZS status Theorem"}
+idp_intern.prover_tff_falsestrings = { }
+
+stdoptions.provertimeout = 10000000	-- The timeout for external ATP systems, in microseconds (0 for no timeout)
 
 -- Options for parsing files
 -- =========================

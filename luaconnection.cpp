@@ -133,28 +133,6 @@ const DomainElement* convertToElement(int arg, lua_State* L) {
 	}
 }
 
-InternalArgument Options::getvalue(const string& opt) const {
-	map<string,bool>::const_iterator bit = _booloptions.find(opt);
-	if(bit != _booloptions.end()) {
-		return InternalArgument(bit->second);
-	}
-	map<string,IntOption*>::const_iterator iit = _intoptions.find(opt);
-	if(iit != _intoptions.end()) {
-		return InternalArgument(iit->second->value());
-	}
-	map<string,FloatOption*>::const_iterator fit = _floatoptions.find(opt);
-	if(fit != _floatoptions.end()) {
-		return InternalArgument(fit->second->value());
-	}
-	map<string,StringOption*>::const_iterator sit = _stringoptions.find(opt);
-	if(sit != _stringoptions.end()) {
-		return InternalArgument(StringPointer(sit->second->value()));
-	}
-
-	InternalArgument ia; ia._type = AT_NIL;
-	return ia;
-}
-
 namespace LuaConnection {
 
 	int InternalProcedure::operator()(lua_State* L) const {
@@ -1116,6 +1094,19 @@ namespace LuaConnection {
 		return lua_error(L);
 	}
 
+	InternalArgument getValue(Options* opts, const string& name){
+		if(opts->isOptionOfType<int>(name)){
+			return InternalArgument(opts->getValueOfType<int>(name));
+		}else if(opts->isOptionOfType<std::string>(name)){
+			return InternalArgument(new string(opts->getValueOfType<std::string>(name)));
+		}else if(opts->isOptionOfType<bool>(name)){
+			return InternalArgument(opts->getValueOfType<bool>(name));
+		}else{
+			assert(opts->isOptionOfType<double>(name));
+			return InternalArgument(opts->getValueOfType<double>(name));
+		}
+	}
+
 	/**
 	 * Index function for options
 	 */
@@ -1123,9 +1114,10 @@ namespace LuaConnection {
 		Options* opts = *(Options**)lua_touserdata(L,1);
 		InternalArgument index = createArgument(2,L);
 		if(index._type == AT_STRING) {
-			return convertToLua(L,opts->getvalue(*(index._value._string)));
-		}
-		else {
+			// TODO remove getvalue returning internalargument from options
+			// instead, add options isIntOption, getIntValue, ...
+			return convertToLua(L,getValue(opts, *(index._value._string)));
+		}else {
 			lua_pushstring(L,"Options can only be indexed by a string");
 			return lua_error(L);
 		}
@@ -1396,13 +1388,23 @@ namespace LuaConnection {
 	int invalidOption(Options* options, lua_State* L, const string& option, const string& value){
 		stringstream ss;
 		ss <<"\""<<value <<"\" is not a valid value for " <<option <<".\n";
-		ss <<options->getPossibleValues(option) <<".\n";
+		ss <<options->printAllowedValues(option) <<".\n";
 		lua_pushstring(L,ss.str().c_str());
 		return lua_error(L);
 	}
 
+	template<class T>
+	int attempToSetValue(lua_State* L, Options* opts, const string& option, const T& value){
+		if(not opts->isAllowedValue(option,value)){
+			stringstream ss; ss<<value;
+			return invalidOption(opts, L, option, ss.str());
+		}
+		opts->setValue(option,value);
+		return 0;
+	}
+
 	/**
-	 * NewIndex function for options
+	 * FIXME what does it do?
 	 */
 	int optionsNewIndex(lua_State* L) {
 		Options* opts = *(Options**)lua_touserdata(L,1);
@@ -1414,44 +1416,30 @@ namespace LuaConnection {
 		}
 
 		string option = *(index._value._string);
-		if(!opts->isoption(option)){
+		if(!opts->isOption(option)){
 			stringstream ss;
 			ss <<"There is no option named " <<option <<".\n";
 			lua_pushstring(L,ss.str().c_str());
+			// FIXME lua errors are not printed anymore?
+			cerr <<ss.str();
 			return lua_error(L);
 		}
 		switch(value._type) {
 			case AT_INT:
-				if(!opts->setvalue(option,value._value._int)){
-					stringstream ss; ss<<value._value._int;
-					return invalidOption(opts, L, option, ss.str());
-				}
-				break;
-			case AT_DOUBLE:
-				if(!opts->setvalue(option,value._value._double)){
-					stringstream ss; ss<<value._value._double;
-					return invalidOption(opts, L, option, ss.str());
-				}
-				break;
+				return attempToSetValue(L, opts, option, value._value._int);
+			/*case AT_DOUBLE: // TODO currently there are not float options
+				return attempToSetValue(L, opts, option, value._value._double);*/
 			case AT_STRING:
-				if(!opts->setvalue(option,*value._value._string)){
-					return invalidOption(opts, L, option, *value._value._string);
-				}
-				break;
+				return attempToSetValue(L, opts, option, *value._value._string);
 			case AT_BOOLEAN:
-				if(!opts->setvalue(option,value._value._boolean)){
-					stringstream ss; ss<<value._value._boolean;
-					return invalidOption(opts, L, option, ss.str());
-				}
-				break;
+				return attempToSetValue(L, opts, option, value._value._boolean);
 			default:
 				stringstream ss;
 				ss <<"Wrong option value type for option " <<option <<".\n";
-				ss <<opts->getPossibleValues(option) <<".\n";
+				ss <<opts->printAllowedValues(option) <<".\n";
 				lua_pushstring(L,ss.str().c_str());
 				return lua_error(L);
 		}
-		return 0;
 	}
 
 	/**

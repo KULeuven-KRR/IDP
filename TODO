@@ -25,6 +25,13 @@ Bugs
 	outname = "/tmp/groundpacking"
 	out = io.open(outname, "w")
 	stdoptions.language="ecnf"
+	
+	- Modelexpand verandert structuur niet.  Originele structuur wordt geprint als model (bijv. SAT15puzzle)
+
+	- Definities worden niet geprint bij print(ground(...)) laad bijvoorbeeld definition.idp
+
+	- Propagate geeft een foutmelding: een assert faalt (bijv. SAT15puzzle)
+
 
 Optimalisaties
 ==============

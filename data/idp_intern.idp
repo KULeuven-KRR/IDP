@@ -159,3 +159,25 @@ procedure makeunknown(inter,tuple) {
 	idp_intern.makeunknown(inter,tuple)
 }
 
+/**
+ * Check whether theory T1 entails theory T2
+ */
+procedure entails(T1,T2) {
+	tmplang = stdoptions.language
+	stdoptions.language = "tptp"
+	fof_commands = {idp_intern.prover_fof_linux, idp_intern.prover_fof_win, idp_intern.prover_fof_osx}
+	tff_commands = {idp_intern.prover_tff_linux, idp_intern.prover_tff_win, idp_intern.prover_tff_osx}
+	result = idp_intern.entails(
+		T1,
+		T2,
+		fof_commands,
+		tff_commands,
+		idp_intern.prover_fof_truestrings,
+		idp_intern.prover_fof_falsestrings,
+		idp_intern.prover_tff_truestrings,
+		idp_intern.prover_tff_falsestrings,
+		stdoptions
+	)
+	stdoptions.language = tmplang
+	return result
+}
