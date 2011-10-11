@@ -19,6 +19,7 @@
 #include "ground.hpp"
 #include "vocabulary.hpp"
 #include "commontypes.hpp"
+#include "common.hpp"
 
 //FIXME definition numbers are passed directly to the solver. In future, solver input change might render this invalid
 
@@ -240,6 +241,7 @@ public:
 
 	void add(GroundDefinition* def) {
 		for(auto i=def->begin(); i!=def->end(); ++i){
+			//if(safetypeid<GroundRule, PCGroundRule>(*(*i).second)){
 			if(typeid(PCGroundRule)==typeid(*(*i).second)){
 				PCGroundRule* rule = dynamic_cast<PCGroundRule*>((*i).second);
 				transformForAdd(rule->body(),(rule->type()==RT_CONJ ? VIT_CONJ : VIT_DISJ), def->id());
