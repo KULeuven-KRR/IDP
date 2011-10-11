@@ -495,6 +495,7 @@ bool UnivSentGrounder::run() const {
 			return b;
 		}
 	}
+	_grounding->add(_grounddefinition);
 	return true;
 }
 
