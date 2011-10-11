@@ -115,13 +115,13 @@ if test "x$enablegecode" = "xyes" -a "x$hasgecodedir" = "xno"; then
 	if test "x$enablegecode" = "xno"; then
 		AC_MSG_WARN([gecode headers could not be found, disabling cp support])
 	else
-	    AC_CXXFLAGS+=" -D CPSUPPORT "
+	    AC_CXXFLAGS+=" -D GECODESUPPORT "
 	fi
 fi
 
 if test "x$enablegecode" = "xyes" -a "x$hasgecodedir" = "xyes"; then
 	echo "Expecting gecode directory to be correct, not verifying"
-	AC_CXXFLAGS+=" -D CPSUPPORT "
+	AC_CXXFLAGS+=" -D GECODESUPPORT "
 fi
 
 AM_CONDITIONAL([USEPERFTOOLS],[test x$perftools = xtrue])

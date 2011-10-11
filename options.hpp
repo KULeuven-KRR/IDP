@@ -19,23 +19,29 @@
 // TODO enum class does not yet support comparison operators in 4.4.3
 
 enum Language { TXT, IDP, ECNF, LATEX, ASP, CNF, TPTP };
-enum Format { THREEVALUED, ALL, TWOVALUED};
+enum Format { THREEVALUED, ALL, TWOVALUED };
 
-enum StringType{
+enum StringType {
 	LANGUAGE, MODELFORMAT
 };
-enum IntType{
+enum IntType {
 	SATVERBOSITY, GROUNDVERBOSITY, PROPAGATEVERBOSITY, NRMODELS, NRPROPSTEPS, LONGESTBRANCH, SYMMETRY, PROVERTIMEOUT
 };
-enum BoolType{
-	PRINTTYPES, CPSUPPORT, TRACE, AUTOCOMPLETE, LONGNAMES, RELATIVEPROPAGATIONSTEPS, CREATETRANSLATION
+enum BoolType {
+	PRINTTYPES, 
+	CPSUPPORT, 
+	TRACE, 
+	AUTOCOMPLETE, 
+	LONGNAMES, 
+	RELATIVEPROPAGATIONSTEPS, 
+	CREATETRANSLATION
 };
-enum DoubleType{
+enum DoubleType {
 
 };
 
 template<class EnumType, class ConcreteType>
-class TypedOption{
+class TypedOption {
 private:
 	EnumType type;
 	const std::string name;
