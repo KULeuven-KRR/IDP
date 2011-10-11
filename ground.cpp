@@ -1487,19 +1487,19 @@ int HeadGrounder::run() const {
 }
 
 void RuleGrounder::addTrueRule(GroundDefinition* const grounddefinition, int head) const {
-	addPCRule(grounddefinition, head,vector<int>(0),true,false);
+	addPCRule(grounddefinition,head,vector<int>(0),true,false);
 }
 
 void RuleGrounder::addFalseRule(GroundDefinition* const grounddefinition, int head) const {
-	addPCRule(grounddefinition, head,vector<int>(0),false,false);
+	addPCRule(grounddefinition,head,vector<int>(0),false,false);
 }
 
 void RuleGrounder::addPCRule(GroundDefinition* grounddefinition, int head, const vector<int>& body, bool conj, bool recursive) const {
-	grounddefinition->addPCRule(head, body, conj, recursive);
+	grounddefinition->addPCRule(head,body,conj,recursive);
 }
 
 void RuleGrounder::addAggRule(GroundDefinition* grounddefinition, int head, int setnr, AggFunction aggtype, bool lower, double bound, bool recursive) const {
-	grounddefinition->addAggRule(head, setnr, aggtype, lower, bound, recursive);
+	grounddefinition->addAggRule(head,setnr,aggtype,lower,bound,recursive);
 }
 
 bool RuleGrounder::run(unsigned int defid, GroundDefinition* grounddefinition) const {
@@ -1518,16 +1518,16 @@ bool RuleGrounder::run(unsigned int defid, GroundDefinition* grounddefinition) c
 						assert(head != _true);
 						if(head != _false) {
 							if(truebody){
-								addTrueRule(grounddefinition, head);
+								addTrueRule(grounddefinition,head);
 							}
 							else{
-								addPCRule(grounddefinition, head,body,conj,_context._tseitin == TS_RULE);
+								addPCRule(grounddefinition,head,body,conj,_context._tseitin == TS_RULE);
 							}
 						}
-					}while(_headgenerator->next());
+					} while(_headgenerator->next());
 				}
 			}
-		}while(_bodygenerator->next());
+		} while(_bodygenerator->next());
 	}
 	return true;
 }
@@ -1535,16 +1535,15 @@ bool RuleGrounder::run(unsigned int defid, GroundDefinition* grounddefinition) c
 unsigned int DefinitionGrounder::_currentdefnb = 1;
 
 DefinitionGrounder::DefinitionGrounder(AbstractGroundTheory* gt, std::vector<RuleGrounder*> subgr,int verb)
-		: TopLevelGrounder(gt,verb), _defnb(_currentdefnb++), _subgrounders(subgr), _grounddefinition(new GroundDefinition(_defnb, gt->translator())) {
+		: TopLevelGrounder(gt,verb), _defnb(_currentdefnb++), _subgrounders(subgr), _grounddefinition(new GroundDefinition(_defnb,gt->translator())) {
 }
 
 bool DefinitionGrounder::run() const {
 	for(unsigned int n = 0; n < _subgrounders.size(); ++n) {
-		bool b = _subgrounders[n]->run(id(), _grounddefinition);
-		if(!b) {
-			return false;
-		}
+		bool b = _subgrounders[n]->run(id(),_grounddefinition);
+		if(!b) { return false; }
 	}
+	_grounding->add(_grounddefinition);
 	return true;
 }
 

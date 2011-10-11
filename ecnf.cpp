@@ -34,47 +34,47 @@ GroundDefinition* GroundDefinition::clone() const {
 }
 
 void GroundDefinition::recursiveDelete() {
-	for(ruleiterator it = begin(); it != end(); ++it){
+	for(ruleiterator it = begin(); it != end(); ++it) {
 		delete((*it).second);
 	}
 	delete(this);
 }
 
 void GroundDefinition::addTrueRule(int head) {
-	addPCRule(head, vector<int>(0), true, false);
+	addPCRule(head,vector<int>(0),true,false);
 }
 
 void GroundDefinition::addFalseRule(int head) {
-	addPCRule(head, vector<int>(0), false, false);
+	addPCRule(head,vector<int>(0),false,false);
 }
 
 // FIXME check that all heads are correct!
 void GroundDefinition::addPCRule(int head, const vector<int>& body, bool conj, bool recursive) {
 	// Search for a rule with the same head
-	map<int, GroundRule*>::iterator it = _rules.find(head);
+	map<int,GroundRule*>::iterator it = _rules.find(head);
 
-	if (it == _rules.end()) { // There is not yet a rule with the same head
+	if(it == _rules.end()) { // There is not yet a rule with the same head
 		_rules[head] = new PCGroundRule(head, (conj ? RT_CONJ : RT_DISJ), body, recursive);
-	} else if ((it->second)->isFalse()) { // The existing rule is false
+	} else if((it->second)->isFalse()) { // The existing rule is false
 		PCGroundRule* grb = dynamic_cast<PCGroundRule*>(it->second);
 		grb->type(conj ? RT_CONJ : RT_DISJ);
 		grb->head(head);
 		grb->body(body);
 		grb->recursive(recursive);
-	} else if (body.empty()) { // We are adding a rule with a true or false body
-		if (conj) {
+	} else if(body.empty()) { // We are adding a rule with a true or false body
+		if(conj) {
 			delete (it->second);
 			it->second = new PCGroundRule(head, RT_CONJ, body, false);
 		}
-	} else if (!(it->second)->isTrue()) { // There is a rule with the same head, and it is not true or false
-		switch (it->second->type()) {
+	} else if(!(it->second)->isTrue()) { // There is a rule with the same head, and it is not true or false
+		switch(it->second->type()) {
 			case RT_DISJ: {
 				PCGroundRule* grb = dynamic_cast<PCGroundRule*>(it->second);
-				if ((!conj) || body.size() == 1) {
+				if((!conj) || body.size() == 1) {
 					for (unsigned int n = 0; n < body.size(); ++n){
 						grb->body().push_back(body[n]);
 					}
-				} else if (grb->body().size() == 1) {
+				} else if(grb->body().size() == 1) {
 					grb->type(RT_CONJ);
 					for (unsigned int n = 0; n < body.size(); ++n){
 						grb->body().push_back(body[n]);
