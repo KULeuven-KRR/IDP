@@ -2354,36 +2354,34 @@ InternalTableIterator* UNAInternalFuncTable::begin(const Universe& univ) const {
 }
 
 const DomainElement* EnumeratedInternalFuncTable::operator[](const ElementTuple& tuple) const {
-	Tuple2Elem::const_iterator it = _table.find(tuple);
-	if(it != _table.end()) return it->second;
-	else return 0;
+	auto it = _table.find(tuple);
+	if(it == _table.end()){
+		return NULL;
+	}
+	return it->second;
 }
 
-InternalFuncTable* EnumeratedInternalFuncTable::add(const ElementTuple& tuple) {
+EnumeratedInternalFuncTable* EnumeratedInternalFuncTable::add(const ElementTuple& tuple) {
 	ElementTuple key = tuple;
-	const DomainElement* value = key.back(); 
+	const DomainElement* mappedvalue = key.back();
 	key.pop_back();
-	const DomainElement* computedvalue = operator[](key);
-	if(computedvalue != 0) {
-		if(computedvalue == value) return this;
-		else { 
-			assert(false); return this;
-		}
-	}
-	else {
+	const DomainElement* computedvalue = this->operator[](key);
+	if(computedvalue == NULL) {
 		if(_nrRefs > 1) {
 			Tuple2Elem newtable = _table;
-			newtable[key] = value;
-			return new EnumeratedInternalFuncTable(newtable);
-		}
-		else {
-			_table[key] = value;
+			newtable[key] = mappedvalue;
+			return new EnumeratedInternalFuncTable(newtable); // FIXME mem management???
+		} else {
+			_table[key] = mappedvalue;
 			return this;
 		}
 	}
+
+	assert(computedvalue == mappedvalue);
+	return this;
 }
 
-InternalFuncTable* EnumeratedInternalFuncTable::remove(const ElementTuple& tuple) {
+EnumeratedInternalFuncTable* EnumeratedInternalFuncTable::remove(const ElementTuple& tuple) {
 	ElementTuple key = tuple;
 	const DomainElement* value = key.back(); 
 	key.pop_back();
@@ -3675,21 +3673,23 @@ Universe Structure::universe(const PFSymbol* s) const {
 }
 
 void Structure::clean() {
-	for(map<Predicate*,PredInter*>::iterator it = _predinter.begin(); it != _predinter.end(); ++it) {
-		if(!it->second->approxtwovalued()) {
-			if(TableUtils::approxIsInverse(it->second->ct(),it->second->cf())) {
-				PredTable* npt = new PredTable(it->second->ct()->interntable(),it->second->ct()->universe());
-				it->second->pt(npt);
-			}
+	for(auto it = _predinter.begin(); it != _predinter.end(); ++it) {
+		if(it->second->approxtwovalued()){
+			continue;
 		}
+		if(not TableUtils::approxIsInverse(it->second->ct(),it->second->cf())) {
+			continue;
+		}
+		PredTable* npt = new PredTable(it->second->ct()->interntable(),it->second->ct()->universe());
+		it->second->pt(npt);
 	}
-	for(map<Function*,FuncInter*>::iterator it = _funcinter.begin(); it != _funcinter.end(); ++it) {
+	for(auto it = _funcinter.begin(); it != _funcinter.end(); ++it) {
 		if(it->first->partial()) {
 			SortTable* lastsorttable = it->second->universe().tables().back();
-			for(TableIterator ctit = it->second->graphinter()->ct()->begin(); ctit.hasNext(); ++ctit) {
+			for(auto ctit = it->second->graphinter()->ct()->begin(); ctit.hasNext(); ++ctit) {
 				ElementTuple tuple = *ctit;
 				const DomainElement* ctvalue = tuple.back();
-				for(SortIterator sortit = lastsorttable->sortbegin(); sortit.hasNext(); ++sortit) {
+				for(auto sortit = lastsorttable->sortbegin(); sortit.hasNext(); ++sortit) {
 					const DomainElement* cfvalue = *sortit;
 					if(*cfvalue != *ctvalue) {
 						tuple.pop_back();
@@ -3699,16 +3699,21 @@ void Structure::clean() {
 				}
 			}
 		}
-		if(!it->second->approxtwovalued()) {
-			if(((not it->first->partial()) && TableUtils::approxTotalityCheck(it->second))
-			|| TableUtils::approxIsInverse(it->second->graphinter()->ct(),it->second->graphinter()->cf())) {
-				EnumeratedInternalFuncTable* eift = new EnumeratedInternalFuncTable();
-				for(TableIterator jt = it->second->graphinter()->ct()->begin(); jt.hasNext(); ++jt) {
-					eift->add(*jt);
-				}
-				it->second->functable(new FuncTable(eift,it->second->graphinter()->ct()->universe()));
-			}
+
+		if(it->second->approxtwovalued()){
+			continue;
 		}
+
+		// FIXME there is something incorrect about this code
+/*		if((it->first->partial() || not TableUtils::approxTotalityCheck(it->second))
+			&& not TableUtils::approxIsInverse(it->second->graphinter()->ct(),it->second->graphinter()->cf())){
+			continue;
+		}
+		EnumeratedInternalFuncTable* eift = new EnumeratedInternalFuncTable();
+		for(TableIterator jt = it->second->graphinter()->ct()->begin(); jt.hasNext(); ++jt) {
+			eift = eift->add(*jt); // FIXME mem management?
+		}
+		it->second->functable(new FuncTable(eift,it->second->graphinter()->ct()->universe()));*/
 	}
 }
 

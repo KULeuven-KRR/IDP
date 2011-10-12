@@ -30,20 +30,18 @@ public:
 		Options* options = args[2].options();
 		TraceMonitor* monitor = tracemonitor();
 
-		// Create solver and grounder
+		// Create solver and grounder and ground the theory
 		SATSolver* solver = createsolver(options);
 		GrounderFactory grounderfactory(structure,options);
 		TopLevelGrounder* grounder = grounderfactory.create(theory,solver);
-
-		// Run grounder
 		grounder->run();
-		AbstractGroundTheory* grounding = dynamic_cast<GroundTheory<SolverPolicy>*>(grounder->grounding());
+		AbstractGroundTheory* grounding = grounder->grounding();
 		
 		// Execute symmetry breaking
 		if(options->getValue(IntType::SYMMETRY)!=0){
 			std::cerr << "Symmetry detection...\n";
 			clock_t start = clock();
-			std::vector<const IVSet*> ivsets = findIVSets(theory, structure);
+			auto ivsets = findIVSets(theory, structure);
 			float time = (float) (clock() - start)/CLOCKS_PER_SEC;
 			std::cerr << "Symmetry detection finished in: " << time << "\n";
 			if(options->getValue(IntType::SYMMETRY)==1){

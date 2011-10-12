@@ -264,10 +264,10 @@ void ComparisonGrounder::run(vector<int>& clause) const {
  * 		Invert the comparator and the sign of the tseitin when the aggregate is in a doubly negated context.
  */
 int AggGrounder::handleDoubleNegation(double boundvalue, int setnr) const {
-	bool newcomp;
+	CompType newcomp;
 	switch(_comp) {
-		case AGG_LT : newcomp = AGG_GT; break;
-		case AGG_GT : newcomp = AGG_LT; break;
+		case AGG_LT : newcomp = CompType::GT; break;
+		case AGG_GT : newcomp = CompType::LT; break;
 		case AGG_EQ : assert(false); break;
 	}
 	TsType tp = context()._tseitin;
@@ -372,7 +372,14 @@ int AggGrounder::finishCard(double truevalue, double boundvalue, int setnr) cons
 	else {
 		if(_doublenegtseitin) return handleDoubleNegation(double(leftvalue),setnr);
 		else {
-			int tseitin = translator()->translate(double(leftvalue),_comp,true,AggFunction::CARD,setnr,tp);
+			// TODO define cast from AggComp to CompType
+			CompType comp = CompType::EQ;
+			switch(_comp){
+			case AGG_EQ: comp = CompType::EQ; break;
+			case AGG_LT: comp = CompType::LT; break;
+			case AGG_GT: comp = CompType::GT; break;
+			}
+			int tseitin = translator()->translate(double(leftvalue),comp,true,AggFunction::CARD,setnr,tp);
 			return isPos(_sign)? tseitin : -tseitin;
 		}
 	}
@@ -387,18 +394,22 @@ int AggGrounder::finishCard(double truevalue, double boundvalue, int setnr) cons
  */
 int AggGrounder::finish(double boundvalue, double newboundvalue, double minpossvalue, double maxpossvalue, int setnr) const {
 	// Check minimum and maximum possible values against the given bound
+	CompType comp = CompType::EQ;
 	switch(_comp) { //TODO more complicated propagation is possible!
 		case AGG_EQ:
+			comp = CompType::EQ;
 			if(minpossvalue > boundvalue || maxpossvalue < boundvalue)
 				return isPos(_sign)? _false : _true;
 			break;
 		case AGG_LT:
+			comp = CompType::LT;
 			if(boundvalue < minpossvalue)
 				return isPos(_sign)? _true : _false;
 			else if(boundvalue >= maxpossvalue)
 				return isPos(_sign)? _false : _true;
 			break;
 		case AGG_GT:
+			comp = CompType::GT;
 			if(boundvalue > maxpossvalue)
 				return isPos(_sign)? _true : _false;
 			else if(boundvalue <= minpossvalue)
@@ -414,7 +425,7 @@ int AggGrounder::finish(double boundvalue, double newboundvalue, double minpossv
 			if(tp == TsType::IMPL) tp = TsType::RIMPL;
 			else if(tp == TsType::RIMPL) tp = TsType::IMPL;
 		}
-		tseitin = translator()->translate(newboundvalue,_comp,true,_type,setnr,tp);
+		tseitin = translator()->translate(newboundvalue,comp,true,_type,setnr,tp);
 		return isPos(_sign)? tseitin : -tseitin;
 	}
 }

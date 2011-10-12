@@ -194,19 +194,19 @@ void GroundTranslator::translate(LazyQuantGrounder const* const lazygrounder, Re
 	atom2TsBody[instance->residual] = tspair(instance->residual, tsbody);
 }
 
-Lit	GroundTranslator::translate(double bound, char comp, bool strict, AggFunction aggtype, int setnr, TsType tstype) {
-	if(comp == '=') {
+Lit	GroundTranslator::translate(double bound, CompType comp, bool strict, AggFunction aggtype, int setnr, TsType tstype) {
+	if(comp == CompType::EQ) {
 		vector<int> cl(2);
-		cl[0] = translate(bound,'<',false,aggtype,setnr,tstype);
-		cl[1] = translate(bound,'>',false,aggtype,setnr,tstype);
+		cl[0] = translate(bound,CompType::LT,false,aggtype,setnr,tstype);
+		cl[1] = translate(bound,CompType::GT,false,aggtype,setnr,tstype);
 		return translate(cl,true,tstype);
 	}
 	else {
 		Lit head = nextNumber(AtomType::TSEITINWITHSUBFORMULA);
-		AggTsBody* tsbody = new AggTsBody(tstype,bound,(comp == '<'),aggtype,setnr);
+		AggTsBody* tsbody = new AggTsBody(tstype,bound,(comp == CompType::LT),aggtype,setnr);
 		if(strict) {
 			#warning "This is wrong if floating point weights are allowed!";
-			tsbody->_bound = (comp == '<') ? bound + 1 : bound - 1;	
+			tsbody->_bound = (comp == CompType::LT) ? bound + 1 : bound - 1;
 		}else{
 			tsbody->_bound = bound;
 		}

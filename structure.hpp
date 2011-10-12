@@ -1443,8 +1443,8 @@ class EnumeratedInternalFuncTable : public InternalFuncTable {
 		tablesize	size(const Universe&)			const { return tablesize(true,_table.size());	}
 
 		const DomainElement*	operator[](const ElementTuple& tuple) const;
-		InternalFuncTable*		add(const ElementTuple&);
-		InternalFuncTable*		remove(const ElementTuple&);
+		EnumeratedInternalFuncTable* add(const ElementTuple&);
+		EnumeratedInternalFuncTable* remove(const ElementTuple&);
 
 		InternalTableIterator*	begin(const Universe&)	const;
 
@@ -1942,10 +1942,7 @@ class AbstractStructure {
 		Vocabulary*		_vocabulary;	// The vocabulary of the structure.
 
 	public:
-		// Constructors
 		AbstractStructure(std::string name, const ParseInfo& pi) : _name(name), _pi(pi), _vocabulary(0) { }
-
-		// Destructor
 		virtual ~AbstractStructure() { }
 
 		// Mutators
@@ -1953,8 +1950,7 @@ class AbstractStructure {
 
 		virtual void	inter(Predicate* p, PredInter* i) = 0;	//!< set the interpretation of p to i
 		virtual void	inter(Function* f, FuncInter* i) = 0;	//!< set the interpretation of f to i
-		virtual void	clean()	= 0;							//!< make three-valued interpretations that are in fact
-																//!< two-valued, two-valued.
+		virtual void	clean()	= 0;							//!< make three-valued interpretations that are in fact two-valued, two-valued.
 
 		// Inspectors
 				const std::string&	name()						const { return _name;		}

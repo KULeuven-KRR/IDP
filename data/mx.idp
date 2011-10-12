@@ -27,25 +27,24 @@ namespace mx {
 		Opts.nrmodels = oldnrmodels
 		return solutions
 	}
-
+	
 	/**
-	 * Prints the solutions to the model expansion problem with input theory T, structure S, and options Opts
+	 * Prints a given list of models or unsatisfiable if the list is empty
 	 */
-	procedure printsol(T,S,Opts) {
-		local sols = modelexpand(T,S,Opts)
-		if #sols > 0 then
-			print("Number of models: ")
-			print(#sols)
-			for k,v in ipairs(sols) do
-				print("Model "..k)
-				kstr = tostring(k)
-				str = "======"
-				for i=1,string.len(kstr) do str = str.."=" end
-				print(str)
-				print(v)
-			end
-		else
+	procedure printsols(sols){
+		if #sols == 0 then
 			print("Unsatisfiable")
+		end
+
+		print("Number of models: ")
+		print(#sols)
+		for k,v in ipairs(sols) do
+			print("Model "..k)
+			kstr = tostring(k)
+			str = "======"
+			for i=1,string.len(kstr) do str = str.."=" end
+			print(str)
+			print(v)
 		end
 	}
 	

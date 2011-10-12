@@ -49,7 +49,7 @@ public:
 	}
 
 	void 	addEmptyClause()	{ add(GroundClause{0});		}
-	void 	addUnitClause(int l){ add(GroundClause{1,l});	}
+	void 	addUnitClause(Lit l){ add(GroundClause{l});	}
 	virtual void add(const GroundClause& cl, bool skipfirst=false) = 0;
 	virtual void add(GroundDefinition* d) = 0;
 	virtual void add(GroundFixpDef*) = 0;
@@ -229,6 +229,7 @@ public:
 	}
 	void closeTheory(){
 		// TODO arbitrary values?
+		// FIXME problem if a function does not occur in the theory/grounding! It might be arbitrary, but should still be a function?
 		addFalseDefineds();
 		addFuncConstraints();
 		Policy::polEndTheory();
@@ -308,17 +309,22 @@ public:
 	}
 
 	/**
-	 *		Adds constraints to the theory that state that each of the functions that occur in the theory is indeed a function.
-	 *		This method should be called before running the SAT solver and after grounding.
+	 *	Adds constraints to the theory that state that each of the functions that occur in the theory is indeed a function.
+	 *	This method should be called before running the SAT solver and after grounding.
 	 */
 	void addFuncConstraints() {
 		for(unsigned int n = 0; n < translator()->nbManagedSymbols(); ++n) {
-			PFSymbol* pfs = translator()->getManagedSymbol(n);
-			auto tuples = translator()->getTuples(n);
-			if((typeid(*pfs)!=typeid(Function)) || tuples.empty()) {
+			auto pfs = translator()->getManagedSymbol(n);
+			if(typeid(*pfs)!=typeid(Function)){
 				continue;
 			}
-			Function* f = dynamic_cast<Function*>(pfs);
+			auto f = dynamic_cast<Function*>(pfs);
+
+			auto tuples = translator()->getTuples(n);
+			if(tuples.empty()) {
+				continue;
+			}
+
 			StrictWeakNTupleEquality de(f->arity());
 			StrictWeakNTupleOrdering ds(f->arity());
 
@@ -329,7 +335,7 @@ public:
 			ElementTuple input(f->arity(),0);
 			TableIterator tit = ct->begin();
 			SortIterator sit = st->sortbegin();
-			std::vector<std::vector<int> > sets;
+			std::vector<litlist> sets;
 			std::vector<bool> weak;
 			for(auto it = tuples.begin(); it != tuples.end(); ) {
 				if(de(it->first,input) && !sets.empty()) {
@@ -343,7 +349,9 @@ public:
 						++sit;
 					}
 					++it;
-					if(sit.hasNext()) ++sit;
+					if(sit.hasNext()){
+						++sit;
+					}
 				}
 				else {
 					if(!sets.empty() && sit.hasNext()) weak.back() = true;
@@ -351,12 +359,13 @@ public:
 						const ElementTuple& tuple = *tit;
 						if(de(tuple,it->first)) {
 							do {
-								if(it->first != tuple) addUnitClause(-(it->second));
+								if(it->first != tuple){
+									addUnitClause(-(it->second));
+								}
 								++it;
 							} while(it != tuples.end() && de(tuple,it->first));
 							continue;
-						}
-						else if(ds(tuple,it->first)) {
+						} else if(ds(tuple,it->first)) {
 							do { ++tit; } while(tit.hasNext() && ds(*tit,it->first));
 							continue;
 						}
@@ -369,14 +378,12 @@ public:
 			}
 			for(unsigned int s = 0; s < sets.size(); ++s) {
 				std::vector<double> lw(sets[s].size(),1);
-				std::vector<double> tw(0);
-				int setnr = translator()->translateSet(sets[s],lw,tw);
+				int setnr = translator()->translateSet(sets[s],lw,{});
 				int tseitin;
-				if(f->partial() || !(st->finite()) || weak[s]) {
-					tseitin = translator()->translate(1,'>',false,AggFunction::CARD,setnr,TsType::IMPL);
-				}
-				else {
-					tseitin = translator()->translate(1,'=',true,AggFunction::CARD,setnr,TsType::IMPL);
+				if(f->partial() || not (st->finite()) || weak[s]) {
+					tseitin = translator()->translate(1,CompType::GT,false,AggFunction::CARD,setnr,TsType::IMPL);
+				} else {
+					tseitin = translator()->translate(1,CompType::EQ,true,AggFunction::CARD,setnr,TsType::IMPL);
 				}
 				addUnitClause(tseitin);
 			}
