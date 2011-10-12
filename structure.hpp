@@ -405,6 +405,7 @@ class SortTable;
 class PredTable;
 class InternalPredTable;
 
+// if the boolean is false, the size cannot be calculated TODO check this
 typedef std::pair<bool,unsigned int> tablesize;
 
 class Universe {

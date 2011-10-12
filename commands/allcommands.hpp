@@ -41,6 +41,7 @@
 #include "commands/entails.hpp"
 #include "commands/removenesting.hpp"
 #include "commands/simplify.hpp"
+#include "commands/tablesize.hpp"
 
 //TODO add support for easily using these inferences directly in lua, by also providing a help/usage text and replacing idp_intern. with something easier
 
@@ -55,6 +56,7 @@ std::vector<Inference*> getAllInferences(){
 	inferences.push_back(SetTableValueInference::getMakeTableTrueInference());
 	inferences.push_back(SetTableValueInference::getMakeTableFalseInference());
 	inferences.push_back(SetTableValueInference::getMakeTableUnknownInference());
+	inferences.push_back(new TableSizeInference());
 	inferences.push_back(new DomainIteratorInference());
 	inferences.push_back(new TableIteratorInference());
 	inferences.push_back(new OptimalPropagateInference());

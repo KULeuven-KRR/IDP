@@ -101,7 +101,8 @@ gidl_SOURCES = \
 		commands/entails.hpp\
 		commands/removenesting.hpp\
 		commands/simplify.hpp\
-		commands/createrange.hpp
+		commands/createrange.hpp\
+		commands/tablesize.hpp
 
 AM_CXXFLAGS+=-I $(top_srcdir)/pcsolver/src/ 
 

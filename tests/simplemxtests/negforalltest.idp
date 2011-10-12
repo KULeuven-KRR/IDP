@@ -5,7 +5,7 @@ vocabulary V{
 }
 
 theory T:V{
-	!x: p(x) | q(x).
+	~!x: p(x) | q(x).
 }
 
 structure S:V{
@@ -15,7 +15,7 @@ structure S:V{
 #include <mx>
 
 procedure main(){
-	local expected = 27
+	local expected = 37
 	local sols = mx::all(T, S)
 	if(#(sols)==expected) then
 		print("OK")

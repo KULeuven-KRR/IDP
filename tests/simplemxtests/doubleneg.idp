@@ -1,25 +1,27 @@
 vocabulary V{
-	type x
-	p(x)
-	q(x)
+	p
 }
 
 theory T:V{
-	!x: p(x) | q(x).
+	~(~p).
 }
 
 structure S:V{
-	x = {1..3}
 }
 
 #include <mx>
 
 procedure main(){
-	local expected = 27
+	local expected = 1
+
 	local sols = mx::all(T, S)
-	if(#(sols)==expected) then
-		print("OK")
-	else
+	if(not #(sols)==expected) then
 		print("ERROR, should have been "..expected..", but found "..#(sols).." solutions.")
+		return
 	end
+	if(idp_intern.size(sols[1][V::p].ct)==0) then
+		print("ERROR, p should have been false.")
+		return
+	end
+	print("OK")
 }
