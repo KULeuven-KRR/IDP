@@ -1,17 +1,14 @@
 vocabulary V{
+	p
 	type x isa int
-	type y isa int
 	a:x
-	b:y
 }
 
 theory T:V{
-	a>b.
 }
 
 structure S:V{
 	x = {1..5}
-	y = {0..3}
 }
 
 #include <mx>

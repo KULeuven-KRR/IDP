@@ -1,26 +1,24 @@
 vocabulary V{
-	type x isa int
-	type y isa int
+	type x
 	a:x
-	b:y
 }
 
 theory T:V{
-	a>b.
+	?x[x]: a=x.
 }
 
 structure S:V{
 	x = {1..5}
-	y = {0..3}
 }
 
 #include <mx>
 
 procedure main(){
-	local expected = 10
+	local expected = 5
 	local sols = mx::all(T, S)
 	if(not (#(sols)==expected)) then
 		print("ERROR, should have been "..expected..", but found "..#(sols).." solutions.")
+		mx::printsols(sols)
 		return
 	end
 	print("OK")

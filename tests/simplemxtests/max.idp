@@ -16,7 +16,7 @@ structure S:V{
 procedure main(){
 	local expected = 1
 	local sols = mx::all(T, S)
-	if(not #(sols)==expected) then
+	if(not (#(sols)==expected)) then
 		print("ERROR, should have been "..expected..", but found "..#(sols).." solutions.")
 		return
 	end

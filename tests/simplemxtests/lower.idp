@@ -1,6 +1,6 @@
 vocabulary V{
-	type x
-	type y
+	type x isa int
+	type y isa int
 	a:x
 	b:y
 }
@@ -19,7 +19,7 @@ structure S:V{
 procedure main(){
 	local expected = 10
 	local sols = mx::all(T, S)
-	if(not #(sols)==expected) then
+	if(not (#(sols)==expected)) then
 		print("ERROR, should have been "..expected..", but found "..#(sols).." solutions.")
 		return
 	end
