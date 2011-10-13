@@ -131,17 +131,6 @@ TsType reverseImplication(TsType type){
 	return type;
 }
 
-// Negate a context
-Context swapcontext(Context ct) {
-	Context temp;
-	switch(ct) {
-		case Context::BOTH: 	temp = Context::BOTH; break;
-		case Context::POSITIVE:	temp = Context::NEGATIVE; break;
-		case Context::NEGATIVE:	temp = Context::POSITIVE; break;
-	}
-	return temp;
-}
-
 bool isPos(SIGN s){
 	return s==SIGN::POS;
 }
@@ -159,6 +148,21 @@ SIGN operator~(SIGN rhs){
 
 QUANT operator not (QUANT t){
 	return t==QUANT::UNIV?QUANT::EXIST:QUANT::UNIV;
+}
+
+Context operator not(Context t){
+	switch(t) {
+		case Context::BOTH : return Context::BOTH;
+		case Context::POSITIVE: return Context::NEGATIVE;
+		case Context::NEGATIVE: return Context::POSITIVE;
+	}
+}
+Context operator~(Context t){
+	return not t;
+}
+
+bool isConj(SIGN sign, bool conj){
+	return (sign==SIGN::POS && conj) || (sign==SIGN::NEG && ~conj);
 }
 
 /*********************
@@ -225,23 +229,23 @@ CompType negatect(CompType ct) {
 	}
 }
 
-PosContext negateContext(PosContext ct) {
-	switch(ct) {
-		case PC_BOTH : return PC_BOTH;
-		case PC_POSITIVE : return PC_NEGATIVE;
-		case PC_NEGATIVE : return PC_POSITIVE;
-		default:
-			assert(false);
-			return PC_POSITIVE;
-	}
-}
-
-string AggTypeNames[5] = { "#", "sum", "prod", "min", "max" };
 ostream& operator<<(ostream& out, AggFunction aggtype) {
-	return out << AggTypeNames[aggtype];
+	switch(aggtype){
+	case AggFunction::CARD: out <<"#"; break;
+	case AggFunction::PROD: out <<"prod"; break;
+	case AggFunction::SUM: out <<"sum"; break;
+	case AggFunction::MIN: out <<"min"; break;
+	case AggFunction::MAX: out <<"max"; break;
+	}
+	return out;
 }
 
-string TsTypeNames[4] = { "<=>", "<-", "=>", "<=" };
 ostream& operator<<(ostream& out, TsType tstype) {
-	return out << TsTypeNames[tstype];
+	switch(tstype){
+	case TsType::RULE: out <<"<-"; break;
+	case TsType::IMPL: out <<"=>"; break;
+	case TsType::RIMPL: out <<"<="; break;
+	case TsType::EQ: out <<"<=>"; break;
+	}
+	return out;
 }

@@ -19,13 +19,14 @@ public:
 	virtual void print(const std::string& str)=0;
 	virtual void flush() = 0;
 	virtual void printerror(const std::string& str) = 0;
-};
 
-template<class T> InteractivePrintMonitor& operator<<(InteractivePrintMonitor& monitor, const T& object) {
-	std::stringstream ss;
-	ss <<object;
-	monitor.print(ss.str());
-	return monitor;
-}
+	template<class T>
+	InteractivePrintMonitor& operator<<(const T& object){
+		std::stringstream ss;
+		ss <<object;
+		print(ss.str());
+		return *this;
+	}
+};
 
 #endif /* INTERACTIVEPRINTMONITOR_HPP_ */

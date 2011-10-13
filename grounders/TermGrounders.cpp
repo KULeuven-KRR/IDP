@@ -41,6 +41,12 @@ void TermGrounder::printOrig() const {
 	clog << "\n";
 }
 
+GroundTerm DomTermGrounder::run() const {
+	//SortTable* _domain = new SortTable(new EnumeratedInternalSortTable());
+	//_domain->add(_value);
+	return GroundTerm(_value);
+}
+
 GroundTerm VarTermGrounder::run() const {
 	return GroundTerm(_value->get());
 }

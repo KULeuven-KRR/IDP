@@ -584,7 +584,7 @@ void CartesianInternalTableIterator::operator++() {
 	if(n < 0) _hasNext = false;
 }
 
-GeneratorInternalTableIterator::GeneratorInternalTableIterator(InstGenerator* generator, const vector<const DomainElement**>& vars, bool reset, bool h) : _generator(generator), _vars(vars) {
+GeneratorInternalTableIterator::GeneratorInternalTableIterator(InstGenerator* generator, const vector<const DomElemContainer*>& vars, bool reset, bool h) : _generator(generator), _vars(vars) {
 	if(reset) _hasNext = _generator->first();
 	else _hasNext = h;
 }
@@ -596,7 +596,7 @@ void GeneratorInternalTableIterator::operator++() {
 const ElementTuple& GeneratorInternalTableIterator::operator*() const {
 	ElementTuple tup;
 	for(auto it = _vars.begin(); it != _vars.end(); ++it) {
-		tup.push_back(*(*it));
+		tup.push_back((*it)->get());
 	}
 	_deref.push_back(tup);
 	return _deref.back();
@@ -1454,9 +1454,9 @@ tablesize BDDInternalPredTable::size(const Universe&) const {
 }
 
 bool BDDInternalPredTable::contains(const ElementTuple& tuple, const Universe& univ) const {
-	vector<const DomainElement**> doms;
+	vector<const DomElemContainer*> doms;
 	for(unsigned int n = 0; n < tuple.size(); ++n) {
-		const DomainElement** v = new const DomainElement*();
+		const DomElemContainer* v = new const DomElemContainer();
 		*v = tuple[n];
 		doms.push_back(v);
 	}
@@ -1486,9 +1486,9 @@ InternalPredTable* BDDInternalPredTable::remove(const ElementTuple& tuple) {
 }
 
 InternalTableIterator* BDDInternalPredTable::begin(const Universe& univ) const {
-	vector<const DomainElement**> doms;
+	vector<const DomElemContainer*> doms;
 	for(auto it = _vars.begin(); it != _vars.end(); ++it) {
-		doms.push_back(new const DomainElement*());
+		doms.push_back(new const DomElemContainer());
 	}
 	BDDInternalPredTable* temporary = new BDDInternalPredTable(_bdd,_manager,_vars,_structure);
 	PredTable temptable(temporary,univ);
@@ -3892,7 +3892,7 @@ void Structure::clean() {
 		if(not TableUtils::approxIsInverse(it->second->ct(),it->second->cf())) {
 			continue;
 		}
-		PredTable* npt = new PredTable(it->second->ct()->interntable(),it->second->ct()->universe());
+		PredTable* npt = new PredTable(it->second->ct()->internTable(),it->second->ct()->universe());
 		it->second->pt(npt);
 	}
 	for(auto it = _funcinter.begin(); it != _funcinter.end(); ++it) {

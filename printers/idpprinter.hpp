@@ -229,7 +229,7 @@ public:
 	void visit(const PredForm* f) {
 		assert(isTheoryOpen());
 		if(isNeg(f->sign()))	output() << "~";
-		output() <<f->symbol()->to_string(_longnames);
+		output() <<f->symbol()->toString(_longnames);
 		if(not f->subterms().empty()) {
 			output() << "(";
 			f->subterms()[0]->accept(this);
@@ -247,7 +247,7 @@ public:
 		output() << "(";
 		f->subterms()[0]->accept(this);
 		for(size_t n = 0; n < f->comps().size(); ++n) {
-			output() << ' ' << toString(f->comps()[n]) << ' ';
+			output() << ' ' << f->comps()[n] << ' ';
 			f->subterms()[n+1]->accept(this);
 			if(not f->conj() && (n+1 < f->comps().size())) {
 				output() << " | ";
@@ -313,10 +313,10 @@ public:
 	}
 
 	void visit(const AggForm* f) {
-		if(not f->sign()) { output() << '~'; }
+		if(isNeg(f->sign())) { output() << '~'; }
 		output() << '(';
 		f->left()->accept(this);
-		output() << ' ' << toString(f->comp()) << ' ';
+		output() << ' ' << f->comp() << ' ';
 		f->right()->accept(this);
 		output() << ')';
 	}
@@ -750,21 +750,7 @@ public:
 		output() << " ]\n";
 	}
 
-
 private:
-	std::string toString(CompType comp){
-		switch (comp) {
-			case CT_EQ: return "=";
-			case CT_NEQ: return "~=";
-			case CT_LEQ: return "=<";
-			case CT_GEQ: return ">=";
-			case CT_GT: return ">";
-			case CT_LT: return "<";
-		}
-		assert(false);
-		return "";
-	}
-
 	void printAtom(int atomnr) {
 		if(_translator==NULL){
 			assert(false);

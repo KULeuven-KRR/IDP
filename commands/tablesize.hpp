@@ -25,10 +25,12 @@ public:
 		const auto& size = pt->size();
 
 		InternalArgument ia; ia._type = AT_INT;
-		if(size.first){
-			ia._value._int = size.second;
-		}else{ // Size cannot be calculated
-			ia._value._int = -1; // TODO maybe a bit ugly?
+
+		switch(size._type){
+		case TST_INFINITE: ia._value._int = -1; break; // TODO maybe a bit ugly?
+		case TST_UNKNOWN: ia._value._int = -1; break; // TODO maybe a bit ugly?
+		case TST_EXACT: ia._value._int = size._size; break;
+		case TST_APPROXIMATED: ia._value._int = size._size; break; // TODO notify that it is approximate?
 		}
 		return ia;
 	}

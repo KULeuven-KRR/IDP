@@ -110,6 +110,7 @@ public:
 inline bool operator==(const DomElemContainer& left, const DomElemContainer& right){
 	return left.get()==right.get();
 }
+
 inline bool operator<(const DomElemContainer& left, const DomElemContainer& right){
 	return left.get()<right.get();
 }
@@ -361,14 +362,14 @@ class InstGenerator;
 class GeneratorInternalTableIterator : public InternalTableIterator {
 	private:
 		InstGenerator*						_generator;
-		std::vector<const DomainElement**>	_vars;
+		std::vector<const DomElemContainer*>	_vars;
 		bool								_hasNext;
 		mutable ElementTable				_deref;
 		bool								hasNext()	const { return _hasNext;	}
 		const ElementTuple&					operator*()	const;
 		void								operator++();
 	public:
-		GeneratorInternalTableIterator(InstGenerator* generator, const std::vector<const DomainElement**>& vars, bool reset = true, bool h = true);
+		GeneratorInternalTableIterator(InstGenerator* generator, const std::vector<const DomElemContainer*>& vars, bool reset = true, bool h = true);
 		~GeneratorInternalTableIterator() { }	// FIXME: creates memory leak
 		GeneratorInternalTableIterator* clone() const { return new GeneratorInternalTableIterator(_generator,_vars,false,_hasNext);	}
 };
@@ -2006,6 +2007,7 @@ namespace TableUtils {
 
 class StructureVisitor {
 	public:
+		virtual ~StructureVisitor() {}
 		virtual void visit(const PredTable* pt)					{ pt->internTable()->accept(this);	}
 		virtual void visit(const FuncTable* ft)					{ ft->internTable()->accept(this);	}
 		virtual void visit(const SortTable* st)					{ st->internTable()->accept(this);	}

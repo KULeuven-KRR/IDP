@@ -157,7 +157,7 @@ class StrGreaterGenerator : public InstGenerator {
 		mutable SortIterator	_right;
 	public:
 		StrGreaterGenerator(SortTable* st, SortTable* fixme, const DomElemContainer* lv, const DomElemContainer* rv, bool inp) :
-			_table(st), _leftvar(lv), _rightvar(rv), _leftisinput(inp), _left(_table->sortbegin()), _right(_table->sortBegin()) { }
+			_table(st), _leftvar(lv), _rightvar(rv), _leftisinput(inp), _left(_table->sortBegin()), _right(_table->sortBegin()) { }
 		bool first() const {
 			if(_leftisinput) _left = _table->sortIterator(_leftvar->get());
 			else _left = _table->sortBegin();
@@ -1140,7 +1140,7 @@ GeneratorNode* BDDToGenerator::createnode(const FOBDD* bdd, const vector<bool>& 
 	}
 }
 
-InstGenerator* BDDToGenerator::create(PredForm* atom, const vector<bool>& pattern, const vector<const DomainElement**>& vars, const vector<Variable*>& atomvars, AbstractStructure* structure, bool inverse, const Universe& universe) {
+InstGenerator* BDDToGenerator::create(PredForm* atom, const vector<bool>& pattern, const vector<const DomElemContainer*>& vars, const vector<Variable*>& atomvars, AbstractStructure* structure, bool inverse, const Universe& universe) {
 
 //cerr << "Create on atom " << *atom << endl;
 //cerr << "Pattern = "; for(unsigned int n = 0; n < pattern.size(); ++n) cerr << (pattern[n] ? "true " : "false "); cerr << endl;
@@ -1261,7 +1261,7 @@ InstGenerator* BDDToGenerator::create(PredForm* atom, const vector<bool>& patter
 
 	if(FormulaUtils::containsFuncTerms(atom)) {
 //cerr << "HIERZO " << *atom << endl;
-		Formula* newform = FormulaUtils::removeNesting(atom,PC_NEGATIVE);
+		Formula* newform = FormulaUtils::removeNesting(atom,Context::NEGATIVE);
 		newform = FormulaUtils::removeEqChains(newform);
 		newform = FormulaUtils::graphFunctions(newform);
 		newform = FormulaUtils::flatten(newform);
@@ -1321,18 +1321,18 @@ InstGenerator* BDDToGenerator::create(PredForm* atom, const vector<bool>& patter
 
 		vector<InstGenerator*> generators;
 		vector<bool> branchpattern = pattern;
-		vector<const DomainElement**> branchvars = vars;
+		vector<const DomElemContainer*> branchvars = vars;
 		vector<Variable*> branchfovars = atomvars;
 		vector<SortTable*> branchuniverse = universe.tables();
 		for(auto it = quantform->quantVars().begin(); it != quantform->quantVars().end(); ++it) {
 			branchpattern.push_back(false);
-			branchvars.push_back(new const DomainElement*());
+			branchvars.push_back(new const DomElemContainer());
 			branchfovars.push_back(*it);
 			branchuniverse.push_back(structure->inter((*it)->sort()));
 		}
 		for(auto it = orderedconjunction.begin(); it != orderedconjunction.end(); ++it) {
 			vector<bool> kernpattern;
-			vector<const DomainElement**> kernvars;
+			vector<const DomElemContainer*> kernvars;
 			vector<Variable*> kernfovars;
 			vector<SortTable*> kerntables;
 			vector<bool> newbranchpattern;
@@ -1368,7 +1368,7 @@ InstGenerator* BDDToGenerator::create(PredForm* atom, const vector<bool>& patter
 	else {
 		// Create the pattern for the atom
 		vector<bool> atompattern;
-		vector<const DomainElement**> datomvars;
+		vector<const DomElemContainer*> datomvars;
 		vector<SortTable*> atomtables;
 		for(vector<Term*>::const_iterator it = atom->subterms().begin(); it != atom->subterms().end(); ++it) {
 			if(typeid(*(*it)) == typeid(VarTerm)) {
@@ -1384,14 +1384,14 @@ InstGenerator* BDDToGenerator::create(PredForm* atom, const vector<bool>& patter
 			}
 			else if(typeid(*(*it)) == typeid(DomainTerm)) {
 				DomainTerm* domterm = dynamic_cast<DomainTerm*>(*it);
-				const DomainElement** domelement = new const DomainElement*();
+				const DomElemContainer* domelement = new const DomElemContainer();
 				*domelement = domterm->value(); 
 
 				Variable* var = new Variable(domterm->sort());
 				PredForm* newatom = dynamic_cast<PredForm*>(FormulaUtils::substitute(atom,domterm,var));
 
 				vector<bool> termpattern(pattern); termpattern.push_back(true);
-				vector<const DomainElement**> termvars(vars); termvars.push_back(domelement);
+				vector<const DomElemContainer*> termvars(vars); termvars.push_back(domelement);
 				vector<Variable*> fotermvars(atomvars); fotermvars.push_back(var);
 				vector<SortTable*> termuniv(universe.tables()); termuniv.push_back(structure->inter(domterm->sort()));
 				
@@ -1427,8 +1427,6 @@ InstGenerator* BDDToGenerator::create(PredForm* atom, const vector<bool>& patter
 				case ST_PF:
 					table = inverse ? inter->ct() : inter->pf();
 					break;
-				default:
-					assert(false);
 			}
 		}
 		else table = inverse ? inter->cf() : inter->ct();
@@ -1437,7 +1435,14 @@ InstGenerator* BDDToGenerator::create(PredForm* atom, const vector<bool>& patter
 	}
 }
 
-InstGenerator* BDDToGenerator::create(const FOBDDKernel* kernel, const vector<bool>& pattern, const vector<const DomainElement**>& vars, const vector<const FOBDDVariable*>& kernelvars, AbstractStructure* structure, bool inverse, const Universe& universe) {
+InstGenerator* BDDToGenerator::create(
+		const FOBDDKernel* kernel,
+		const vector<bool>& pattern,
+		const vector<const DomElemContainer*>& vars,
+		const vector<const FOBDDVariable*>& kernelvars,
+		AbstractStructure* structure,
+		bool inverse,
+		const Universe& universe) {
 
 //cerr << "Create on kernel\n";
 //_manager->put(cerr,kernel);

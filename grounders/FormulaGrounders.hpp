@@ -54,12 +54,20 @@ class AtomGrounder : public FormulaGrounder {
 		std::vector<SortTable*>			_tables;
 		SIGN							_sign;
 		int								_certainvalue;
-		std::vector<const DomainElement**>	_checkargs;
+		std::vector<const DomElemContainer*>	_checkargs;
 		PredInter*							_inter;
 	public:
-		AtomGrounder(GroundTranslator*, SIGN sign, PFSymbol*
-				, const std::vector<TermGrounder*>, InstGenerator*, InstGenerator*
-				, const std::vector<SortTable*>&, const GroundingContext&);
+		AtomGrounder(
+				GroundTranslator*,
+				SIGN sign,
+				PFSymbol*,
+				const std::vector<TermGrounder*>&,
+				const std::vector<const DomElemContainer*>& checkargs,
+				InstGenerator*,
+				InstGenerator*,
+				PredInter* inter,
+				const std::vector<SortTable*>&,
+				const GroundingContext&);
 		int		run() const;
 		void	run(litlist&)	const;
 		bool	conjunctive() const { return true;	}
@@ -82,7 +90,13 @@ class ComparisonGrounder : public FormulaGrounder {
 		TermGrounder*			_righttermgrounder;
 		CompType				_comparator;
 	public:
-		ComparisonGrounder(GroundTranslator* gt, GroundTermTranslator* tt, TermGrounder* ltg, CompType comp, TermGrounder* rtg, const GroundingContext& gc)
+		ComparisonGrounder(
+			GroundTranslator* gt,
+			GroundTermTranslator* tt,
+			TermGrounder* ltg,
+			CompType comp,
+			TermGrounder* rtg,
+			const GroundingContext& gc)
 			: FormulaGrounder(gt,gc), _termtranslator(tt), _lefttermgrounder(ltg), _righttermgrounder(rtg), _comparator(comp) { }
 		int		run() const;
 		void	run(litlist&)	const;
@@ -168,16 +182,24 @@ class BoolGrounder : public ClauseGrounder {
 };
 
 class QuantGrounder : public ClauseGrounder {
-	protected:
-		FormulaGrounder*	_subgrounder;
-		InstGenerator*		_generator;
+protected:
+	FormulaGrounder*	_subgrounder;
+	InstGenerator*		_generator;
+	InstGenerator*		_checker;
 
-	protected:
-		virtual void	run(litlist&, bool negatedclause = true)	const;
+protected:
+	virtual void	run(litlist&, bool negatedclause = true)	const;
 
-	public:
-		QuantGrounder(GroundTranslator* gt, FormulaGrounder* sub, SIGN sign, QUANT quant, InstGenerator* gen, const GroundingContext& ct):
-			ClauseGrounder(gt,sign,quant==QUANT::UNIV,ct), _subgrounder(sub), _generator(gen) { }
+public:
+	QuantGrounder(
+			GroundTranslator* gt,
+			FormulaGrounder* sub,
+			SIGN sign,
+			QUANT quant,
+			InstGenerator* gen,
+			InstGenerator* checker,
+			const GroundingContext& ct):
+		ClauseGrounder(gt,sign,quant==QUANT::UNIV,ct), _subgrounder(sub), _generator(gen), _checker(checker) { }
 };
 
 class EquivGrounder : public FormulaGrounder {

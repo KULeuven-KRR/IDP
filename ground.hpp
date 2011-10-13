@@ -13,6 +13,7 @@
 #include <set>
 #include <queue>
 #include <stack>
+#include <typeinfo>
 #include <cstdlib>
 #include "theory.hpp"
 #include "structure.hpp"
@@ -58,6 +59,8 @@ class TsSet {
 	friend class GroundTranslator;
 };
 
+enum class CompResult { BEFORE, EQUAL, AFTER};
+
 /**
  * A complete definition of a tseitin atom.
  */
@@ -68,9 +71,16 @@ class TsBody {
 	public:
 		virtual ~TsBody() { }
 		TsType type() const { return _type; }
-		friend bool operator==(const TsBody&, const TsBody&);
-		friend bool operator<(const TsBody&, const TsBody&);
-	friend class GroundTranslator;
+
+		bool operator==(TsBody const * const rhs) const {
+			return equals(rhs);
+		}
+		bool operator<(TsBody const * const rhs) const {
+			return compare(rhs)==CompResult::BEFORE;
+		}
+
+		virtual bool equals(TsBody const * const body) const;
+		virtual CompResult compare(TsBody const * const body) const;
 };
 
 class PCTsBody : public TsBody {
@@ -78,8 +88,6 @@ class PCTsBody : public TsBody {
 		std::vector<int> 	_body;	// the literals in the subformula replaced by the tseitin
 		bool				_conj;	// if true, the replaced subformula is the conjunction of the literals in _body,
 									// if false, the replaced subformula is the disjunction of the literals in _body
-		//bool equal(const TsBody&) const;
-		//bool compare(const TsBody&) const;
 	public:
 		PCTsBody(TsType type, const std::vector<int>& body, bool conj):
 			TsBody(type), _body(body), _conj(conj) { }
@@ -87,7 +95,35 @@ class PCTsBody : public TsBody {
 		unsigned int		size()					const { return _body.size();	}
 		int					literal(unsigned int n)	const { return _body[n];		}
 		bool				conj()					const { return _conj; 			}
-	friend class GroundTranslator;
+
+		// FIXME implement equals and compare!
+
+/*		bool equals(TsBody const * const body) const{
+			if(not TsBody::equals(body)){
+				return false;
+			}
+			auto rhs = dynamic_cast<PCTsBody*>(body);
+			return body()==rhs->body() && conj()==rhs->conj();
+		}
+		bool before(TsBody const * const body) const{
+			if(){
+
+			}
+			if(not safetypeid<PCTsBody>(*body)){
+				return typeid(PCTsBody)<typeid(*body);
+			}
+			if(equals(body)){
+				return false;
+			}
+			auto rhs = dynamic_cast<PCTsBody*>(body);
+			if(body()<rhs->body()){
+				return true;
+			}
+			if(conj()==rhs->conj()){
+				return true;
+			}
+			return TsBody::before(body);
+		}*/
 };
 
 class AggTsBody : public TsBody {
@@ -96,8 +132,6 @@ class AggTsBody : public TsBody {
 		AggFunction	_aggtype;
 		bool		_lower;
 		double		_bound;
-		//bool equal(const TsBody&) const;
-		//bool compare(const TsBody&) const;
 	public:
 		AggTsBody(TsType type, double bound, bool lower, AggFunction at, int setnr):
 			TsBody(type), _setnr(setnr), _aggtype(at), _lower(lower), _bound(bound) { }
@@ -105,7 +139,19 @@ class AggTsBody : public TsBody {
 		AggFunction	aggtype()	const { return _aggtype;	}
 		bool		lower()		const { return _lower;		}
 		double		bound()		const { return _bound;		}
-	friend class GroundTranslator;
+		void 		setBound(double bound)	{ _bound = bound; }
+
+/*		bool equals(TsBody const * const body) const{
+			if(not safetypeid<AggTsBody>(*body)){
+				return false;
+			}
+			auto rhs = dynamic_cast<AggTsBody*>(body);
+			return setnr()==rhs->setnr()
+					&& aggtype()==rhs->aggtype()
+					&& lower()==rhs->lower()
+					&& bound()==rhs->bound()
+					&& TsBody::equals(body);
+		}*/
 };
 
 class LazyQuantGrounder;
@@ -149,8 +195,8 @@ class CPTerm {
 	protected:
 		virtual ~CPTerm() {	}
 	private:
-		virtual bool equal(const CPTerm&) const = 0;
-		virtual bool compare(const CPTerm&) const = 0;
+//		virtual bool equal(const CPTerm&) const = 0;
+//		virtual bool compare(const CPTerm&) const = 0;
 	public:
 		virtual void accept(TheoryVisitor*) const = 0;
 		friend bool operator==(const CPTerm&, const CPTerm&);
@@ -469,6 +515,7 @@ class TermGrounder;
 class SetGrounder;
 class HeadGrounder;
 class RuleGrounder;
+class SymbolicStructure;
 
 typedef std::vector<Variable*> varlist;
 typedef std::map<Variable*,const DomElemContainer*> var2dommap;
@@ -529,7 +576,7 @@ class GrounderFactory : public TheoryVisitor {
 		const FOBDD*	improve_checker(const FOBDD*, double);
 
 	public:
-		GrounderFactory(AbstractStructure* structure, Options* opts);
+		GrounderFactory(AbstractStructure* structure, Options* opts, SymbolicStructure* symbstructure = NULL);
 		virtual ~GrounderFactory(){}
 
 		// Factory method

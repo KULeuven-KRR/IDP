@@ -255,6 +255,7 @@ class FOBDDVisitor;
 
 class FOBDDArgument {
 	public:
+		virtual ~FOBDDArgument() {}
 		virtual bool containsDeBruijnIndex(unsigned int index)	const = 0;
 				bool containsFreeDeBruijnIndex()				const { return containsDeBruijnIndex(0);	}
 
@@ -354,6 +355,7 @@ class FOBDDKernel {
 		KernelOrder	_order;
 	public:
 		FOBDDKernel(const KernelOrder& order) : _order(order) { }
+		virtual ~FOBDDKernel() {}
 
 				bool containsFreeDeBruijnIndex()			const { return containsDeBruijnIndex(0);	}
 		virtual bool containsDeBruijnIndex(unsigned int)	const { return false;						}
@@ -450,6 +452,7 @@ class FOBDDVisitor {
 		FOBDDManager*	_manager;
 	public:
 		FOBDDVisitor(FOBDDManager* manager) : _manager(manager) { }
+		virtual ~FOBDDVisitor() {}
 
 		virtual void visit(const FOBDD*);
 		virtual void visit(const FOBDDAtomKernel*);

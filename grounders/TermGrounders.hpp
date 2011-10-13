@@ -18,7 +18,7 @@ class TermGrounder {
 		const Term*									_origterm;
 		std::map<Variable*,const DomElemContainer*>	_varmap;
 		int											_verbosity;
-		void printorig() const;
+		void printOrig() const;
 	public:
 		TermGrounder() { }
 		TermGrounder(AbstractGroundTheory* g, SortTable* dom) : _grounding(g), _domain(dom) { }

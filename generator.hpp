@@ -20,6 +20,7 @@ class Universe;
 class InstGenerator {
 	public:
 		InstGenerator() { }
+		virtual ~InstGenerator(){}
 		virtual bool first() const = 0;
 		virtual bool next() const = 0; 
 };

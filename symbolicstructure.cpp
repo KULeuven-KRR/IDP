@@ -17,7 +17,6 @@ QueryType swapTF(QueryType type) {
 		case QT_PT: return QT_PF;
 		case QT_CF: return QT_CT;
 		case QT_CT: return QT_CF;
-		default: assert(false);
 	}
 }
 
@@ -38,7 +37,9 @@ void SymbolicStructure::visit(const PredForm* atom) {
 	}
 	else {
 		bool getct = (_type == QT_CT || _type == QT_PF);
-		if(!atom->sign()) getct = !getct;
+		if(isNeg(atom->sign())){
+			getct = !getct;
+		}
 		const FOBDD* bdd = getct ? _ctbounds[atom->symbol()] : _cfbounds[atom->symbol()];
 		map<const FOBDDVariable*, const FOBDDArgument*> mva;
 		const vector<const FOBDDVariable*>& vars = _vars[atom->symbol()];
@@ -53,9 +54,9 @@ void SymbolicStructure::visit(const PredForm* atom) {
 }
 
 void SymbolicStructure::visit(const BoolForm* boolform) {
-	bool conjunction = boolform->sign() == boolform->conj();
+	bool conjunction = boolform->isConjWithSign();
 	conjunction = (_type == QT_PF || _type == QT_CF) ? !conjunction : conjunction;
-	QueryType rectype = boolform->sign() ? _type : swapTF(_type);
+	QueryType rectype = boolform->sign()==SIGN::POS ? _type : swapTF(_type);
 
 	const FOBDD* currbdd;
 	if(conjunction) currbdd = _manager->truebdd();
@@ -69,9 +70,9 @@ void SymbolicStructure::visit(const BoolForm* boolform) {
 }
 
 void SymbolicStructure::visit(const QuantForm* quantform) {
-	bool universal = quantform->sign() == quantform->univ();
+	bool universal = quantform->isUnivWithSign();
 	universal = (_type == QT_PF || _type == QT_CF) ? !universal : universal;
-	QueryType rectype = quantform->sign() ? _type : swapTF(_type);
+	QueryType rectype = quantform->sign()==SIGN::POS ? _type : swapTF(_type);
 	const FOBDD* subbdd = evaluate(quantform->subformula(),rectype);
 	set<const FOBDDVariable*> vars = _manager->getVariables(quantform->quantVars());
 	_result = universal ? _manager->univquantify(vars,subbdd) : _manager->existsquantify(vars,subbdd);

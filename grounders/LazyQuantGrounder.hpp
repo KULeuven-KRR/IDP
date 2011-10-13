@@ -34,8 +34,9 @@ private:
 						SIGN sign,
 						QUANT q,
 						InstGenerator* gen,
+						InstGenerator* checker,
 						const GroundingContext& ct):
-			QuantGrounder(gt,sub,sign, q, gen,ct),
+			QuantGrounder(gt,sub,sign, q, gen, checker,ct),
 			id_(maxid++),
 			negatedclause_(false),
 			groundtheory_(groundtheory), // FIXME is there a reason why this is not part of every grounder, but translator always is?

@@ -18,7 +18,7 @@
 
 using namespace std;
 
-void FormulaGrounder::setorig(const Formula* f, const map<Variable*, const DomElemContainer*>& mvd, int verb) {
+void FormulaGrounder::setOrig(const Formula* f, const map<Variable*, const DomElemContainer*>& mvd, int verb) {
 	_verbosity = verb;
 	map<Variable*,Variable*> mvv;
 	for(auto it = f->freeVars().begin(); it != f->freeVars().end(); ++it) {
@@ -30,9 +30,9 @@ void FormulaGrounder::setorig(const Formula* f, const map<Variable*, const DomEl
 	_origform = f->clone(mvv);
 }
 
-void FormulaGrounder::printOrig() const {
+void FormulaGrounder::printorig() const {
 	clog << "Grounding formula " << _origform->toString();
-	if(not _origform->freevars().empty()) {
+	if(not _origform->freeVars().empty()) {
 		clog << " with instance ";
 		for(auto it = _origform->freeVars().begin(); it != _origform->freeVars().end(); ++it) {
 			clog << (*it)->toString() << " = ";
@@ -43,17 +43,23 @@ void FormulaGrounder::printOrig() const {
 	clog << "\n";
 }
 
-AtomGrounder::AtomGrounder(GroundTranslator* gt, SIGN sign, PFSymbol* s,
-							const vector<TermGrounder*> sg, const vector<const DomainElement**>& checkargs,
-							InstGenerator* pic, InstGenerator* cic,
-							const vector<SortTable*>& vst, const GroundingContext& ct) 
+AtomGrounder::AtomGrounder(
+		GroundTranslator* gt,
+		SIGN sign,
+		PFSymbol* s,
+		const vector<TermGrounder*>& sg,
+		const vector<const DomElemContainer*>& checkargs,
+		InstGenerator* pic, InstGenerator* cic,
+		PredInter* inter,
+		const vector<SortTable*>& vst,
+		const GroundingContext& ct)
 		: FormulaGrounder(gt,ct), _subtermgrounders(sg), _pchecker(pic), _cchecker(cic),
-		_symbol(gt->addSymbol(s)), _tables(vst), _sign(sign), _checkargs(checkargs), _inter(inter)
+		_symbol(gt->addSymbol(s)), _tables(vst), _sign(sign), _checkargs(checkargs), _inter(inter){
 	_certainvalue = ct._truegen ? _true : _false;
 }
 
 Lit AtomGrounder::run() const {
-	if(verbosity() > 2) printOrig();
+	if(verbosity() > 2) printorig();
 
 	// Run subterm grounders
 	bool alldomelts = true;
@@ -97,14 +103,14 @@ Lit AtomGrounder::run() const {
 
 	// Run instance checkers
 	if(alldomelts) {
-		if(not _pchecker->isInInterpretation(args)) {
+		if(not _pchecker->first()) {
 			if(verbosity() > 2) {
 				clog << "Possible checker failed\n";
 				clog << "Result is " << (_certainvalue ? "false" : "true") << "\n";
 			}
 			return _certainvalue ? _false : _true;	// TODO: dit is lelijk
 		}
-		if(_cchecker->isInInterpretation(args)) {
+		if(_cchecker->first()) {
 			if(verbosity() > 2) {
 				clog << "Certain checker succeeded\n";
  				clog << "Result is " << translator()->printAtom(_certainvalue, false) << "\n"; //TODO longnames?
@@ -164,7 +170,7 @@ int ComparisonGrounder::run() const {
 		if(right._isvarid) {
 			CPTerm* rightterm = new CPVarTerm(right._varid);
 			CPBound leftbound(leftvalue);
-			return translator()->translate(rightterm,invertcomp(_comparator),leftbound,TsType::EQ); //TODO use _context._tseitin?
+			return translator()->translate(rightterm,invertComp(_comparator),leftbound,TsType::EQ); //TODO use _context._tseitin?
 		}
 		else {
 			assert(not right._isvarid);
@@ -526,6 +532,7 @@ void BoolGrounder::run(litlist& clause, bool negateclause) const {
 }
 
 void QuantGrounder::run(litlist& clause, bool negateclause) const {
+#warning add checker code from origin/stef to all grounders
 	if(verbosity() > 2) printorig();
 
 	if(not _generator->first()) {
@@ -557,7 +564,7 @@ Lit EquivGrounder::run() const {
 }
 
 void EquivGrounder::run(litlist& clause) const {
-	if(verbosity() > 2) printOrig();
+	if(verbosity() > 2) printorig();
 
 	// Run subgrounders
 	Lit left = _leftgrounder->run();

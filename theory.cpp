@@ -635,22 +635,23 @@ class NegationPush : public TheoryMutatingVisitor {
 };
 
 Formula* NegationPush::visit(PredForm* pf) {
-	if(not pf->sign()) {
-		if(typeid(*(pf->symbol())) == typeid(Predicate)) {
-			Predicate* p = dynamic_cast<Predicate*>(pf->symbol());
-			if(p->type() != ST_NONE) {
-				Predicate* newsymbol;
-				switch(p->type()) {
-					case ST_CT: newsymbol = pf->symbol()->derivedSymbol(ST_PF); break;
-					case ST_CF: newsymbol = pf->symbol()->derivedSymbol(ST_PT); break;
-					case ST_PT: newsymbol = pf->symbol()->derivedSymbol(ST_CF); break;
-					case ST_PF: newsymbol = pf->symbol()->derivedSymbol(ST_CT); break;
-					default: assert(false);
-				}
-				PredForm* newpf = new PredForm(true,newsymbol,pf->subterms(),pf->pi().clone());
-				delete(pf);
-				pf = newpf;
+	if(isPos(pf->sign())){
+		return traverse(pf);
+	}
+	if(typeid(*(pf->symbol())) == typeid(Predicate)) {
+		Predicate* p = dynamic_cast<Predicate*>(pf->symbol());
+		if(p->type() != ST_NONE) {
+			Predicate* newsymbol;
+			switch(p->type()) {
+				case ST_CT: newsymbol = pf->symbol()->derivedSymbol(ST_PF); break;
+				case ST_CF: newsymbol = pf->symbol()->derivedSymbol(ST_PT); break;
+				case ST_PT: newsymbol = pf->symbol()->derivedSymbol(ST_CF); break;
+				case ST_PF: newsymbol = pf->symbol()->derivedSymbol(ST_CT); break;
+				case ST_NONE: assert(false); break; // TODO handle?
 			}
+			PredForm* newpf = new PredForm(SIGN::POS,newsymbol,pf->subterms(),pf->pi().clone());
+			delete(pf);
+			pf = newpf;
 		}
 	}
 	return traverse(pf);
@@ -708,7 +709,7 @@ Formula* NegationPush::visit(BoolForm* f) {
 Formula* NegationPush::visit(QuantForm* f) {
 	if(isNeg(f->sign())) {
 		f->negate();
-		f->subf()->negate();
+		f->subformula()->negate();
 		f->quant(not f->quant());
 	}
 	return traverse(f);
@@ -772,8 +773,8 @@ Formula* Flattener::visit(QuantForm* qf) {
 	if(typeid(*(qf->subformula())) == typeid(QuantForm)) {
 		QuantForm* sqf = dynamic_cast<QuantForm*>(qf->subformula());
 		if((qf->quant() == sqf->quant()) && isPos(sqf->sign())) {
-			qf->subf(sqf->subformula());
-			for(auto it = sqf->quantVars().begin(); it != sqf->quantVars().end(); ++it) 
+			qf->subformula(sqf->subformula());
+			for(auto it = sqf->quantVars().begin(); it != sqf->quantVars().end(); ++it){
 				qf->add(*it);
 			}
 			delete(sqf);
@@ -1107,7 +1108,7 @@ class TermMover : public TheoryMutatingVisitor {
 			Context savecontext = _context;
 			bool savemovecontext = _movecontext;
 			if(isNeg(f->sign())){
-				_context = negateContext(_context);
+				_context = not _context;
 			}
 			for(unsigned int n = 0; n < f->subterms().size(); ++n) {
 				f->subterm(n,f->subterms()[n]->accept(this));
@@ -1340,7 +1341,7 @@ class ThreeValuedTermMover : public TermMover {
 		const set<const PFSymbol*> 	_cpsymbols;
 
 	public:
-		ThreeValuedTermMover(AbstractStructure* str, PosContext context = PC_POSITIVE, 
+		ThreeValuedTermMover(AbstractStructure* str, Context context = Context::POSITIVE,
 				bool cps=false, const set<const PFSymbol*>& cpsymbols=set<const PFSymbol*>())
 			: TermMover(context,str->vocabulary()), _structure(str), _cpsupport(cps), _cpsymbols(cpsymbols) { }
 
@@ -1372,9 +1373,9 @@ class ThreeValuedTermMover : public TermMover {
 		}
 
 		Formula* traverse(PredForm* f) {
-			PosContext savecontext = _context;
+			Context savecontext = _context;
 			bool savemovecontext = _movecontext;
-			_context = (f->sign() ? _context : negateContext(_context));
+			_context = isPos(f->sign()) ? _context : not _context;
 			for(size_t n = 0; n < f->subterms().size(); ++n) {
 				if(_cpsupport) { _movecontext = not isCPSymbol(f->symbol()); }
 				f->subterm(n,f->subterms()[n]->accept(this));
@@ -1447,18 +1448,18 @@ Formula* FuncGrapher::visit(EqChainForm* ef) {
 	vector<Formula*> graphs;
 	for(unsigned int comppos = 0; comppos < ef->comps().size(); ++comppos) {
 		CompType comparison = ef->comps()[comppos];
-		if((comparison == CT_EQ && ef->conj()) || (comparison == CT_NEQ && not ef->conj())) {
+		if((comparison == CompType::EQ && ef->conj()) || (comparison == CompType::NEQ && not ef->conj())) {
 			if(typeid(*(ef->subterms()[comppos])) == typeid(FuncTerm)) {
 				FuncTerm* functerm = dynamic_cast<FuncTerm*>(ef->subterms()[comppos]);
 				vector<Term*> vt = functerm->subterms(); vt.push_back(ef->subterms()[comppos+1]);
-				graphs.push_back(new PredForm(ef->sign() == ef->conj(),functerm->function(),vt,FormulaParseInfo()));
+				graphs.push_back(new PredForm(ef->isConjWithSign()?SIGN::POS:SIGN::NEG,functerm->function(),vt,FormulaParseInfo()));
 				removecomps.insert(comppos);
 				removeterms.insert(comppos);
 			}
 			else if(typeid(*(ef->subterms()[comppos+1])) == typeid(FuncTerm)) {
 				FuncTerm* functerm = dynamic_cast<FuncTerm*>(ef->subterms()[comppos+1]);
 				vector<Term*> vt = functerm->subterms(); vt.push_back(ef->subterms()[comppos]);
-				graphs.push_back(new PredForm(ef->sign() == ef->conj(),functerm->function(),vt,FormulaParseInfo()));
+				graphs.push_back(new PredForm(ef->isConjWithSign()?SIGN::POS:SIGN::NEG,functerm->function(),vt,FormulaParseInfo()));
 				removecomps.insert(comppos);
 				removeterms.insert(comppos+1);
 			}
@@ -1497,7 +1498,7 @@ Formula* FuncGrapher::visit(EqChainForm* ef) {
 	if(graphs.empty()) { return nf; }
 	else {
 		graphs.push_back(nf);
-		return new BoolForm(true,nf->sign() == finalconj,graphs,finalpi.clone());
+		return new BoolForm(SIGN::POS,isConj(nf->sign(), finalconj),graphs,finalpi.clone());
 	}
 }
 
@@ -1515,27 +1516,27 @@ Formula* AggGrapher::visit(PredForm* pf) {
 	if(VocabularyUtils::isComparisonPredicate(pf->symbol())) {
 		CompType comparison;
 		if(pf->symbol()->name() == "=/2") {
-			if(pf->sign()) { comparison = CT_EQ; }
-			else { comparison = CT_NEQ; }
+			if(isPos(pf->sign())) { comparison = CompType::EQ; }
+			else { comparison = CompType::NEQ; }
 		}
 		else if(pf->symbol()->name() == "</2") {
-			if(pf->sign()) { comparison = CT_LT; }
-			else { comparison = CT_GEQ; }
+			if(isPos(pf->sign())) { comparison = CompType::LT; }
+			else { comparison = CompType::GEQ; }
 		}
 		else {
 			assert(pf->symbol()->name() == ">/2");
-			if(pf->sign()) { comparison = CT_GT; }
-			else { comparison = CT_LEQ; }
+			if(isPos(pf->sign())) { comparison = CompType::GT; }
+			else { comparison = CompType::LEQ; }
 		}
 		Formula* newpf = 0;
 		if(typeid(*(pf->subterms()[0])) == typeid(AggTerm)) {
 			AggTerm* at = dynamic_cast<AggTerm*>(pf->subterms()[0]);
-			newpf = new AggForm(true,pf->subterms()[1],comparison,at,pf->pi().clone());
+			newpf = new AggForm(SIGN::POS,pf->subterms()[1],comparison,at,pf->pi().clone());
 			delete(pf);
 		}
 		else if(typeid(*(pf->subterms()[1])) == typeid(AggTerm)) {
 			AggTerm* at = dynamic_cast<AggTerm*>(pf->subterms()[1]);
-			newpf = new AggForm(true,pf->subterms()[0],comparison,at,pf->pi().clone());
+			newpf = new AggForm(SIGN::POS,pf->subterms()[0],comparison,at,pf->pi().clone());
 			delete(pf);
 		}
 		else {
@@ -1627,7 +1628,7 @@ namespace FormulaUtils {
 	}
 
 
-	Formula* removeNesting(Formula* f, PosContext context)	{ 
+	Formula* removeNesting(Formula* f, Context context)	{
 		TermMover atm(context); 
 		return f->accept(&atm);			
 	}
@@ -1653,11 +1654,11 @@ namespace FormulaUtils {
 	}
 
 	BoolForm* trueFormula() {
-		return new BoolForm(true,true,vector<Formula*>(0),FormulaParseInfo());
+		return new BoolForm(SIGN::POS,true,vector<Formula*>(0),FormulaParseInfo());
 	}
 
 	BoolForm* falseFormula() {
-		return new BoolForm(true,false,vector<Formula*>(0),FormulaParseInfo());
+		return new BoolForm(SIGN::POS,false,vector<Formula*>(0),FormulaParseInfo());
 	}
 
 	Formula* removeEqChains(Formula* f, Vocabulary* v) {
@@ -1696,7 +1697,7 @@ namespace FormulaUtils {
 	 *		If rewriting was needed, pf can be deleted, but not recursively.
 	 *		
 	 */
-	Formula* moveThreeValuedTerms(Formula* f, AbstractStructure* str, PosContext posc, bool cpsupport, const set<const PFSymbol*> cpsymbols) {
+	Formula* moveThreeValuedTerms(Formula* f, AbstractStructure* str, Context posc, bool cpsupport, const set<const PFSymbol*> cpsymbols) {
 		ThreeValuedTermMover tvtm(str,posc,cpsupport,cpsymbols);
 		Formula* rewriting = f->accept(&tvtm);
 		return rewriting;

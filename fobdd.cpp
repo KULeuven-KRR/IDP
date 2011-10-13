@@ -1921,13 +1921,13 @@ void FOBDDFactory::visit(const PredForm* pf) {
 				case ST_CT: akt = AKT_CT; break;
 				case ST_PF: akt = AKT_CT; notinverse = false; break;
 				case ST_PT: akt = AKT_CF; notinverse = false; break;
-				default: assert(false);
 			}
 			symbol = predicate->parent();
 		}
 	}
 	_kernel = _manager->getAtomKernel(pf->symbol(),akt,args);
-	if(pf->sign() == notinverse) { _bdd = _manager->getBDD(_kernel,_manager->truebdd(),_manager->falsebdd()); }
+	bool invert = (notinverse && pf->sign()==SIGN::NEG) || (not notinverse && pf->sign()==SIGN::POS);
+	if(invert) { _bdd = _manager->getBDD(_kernel,_manager->truebdd(),_manager->falsebdd()); }
 	else { _bdd = _manager->getBDD(_kernel,_manager->falsebdd(),_manager->truebdd()); }
 }
 
@@ -2130,16 +2130,14 @@ class BDDToFormula : public FOBDDVisitor {
 			}
 			switch(atom->type()) {
 				case AKT_TWOVAL:
-					_currformula = new PredForm(true,atom->symbol(),args,FormulaParseInfo());
+					_currformula = new PredForm(SIGN::POS,atom->symbol(),args,FormulaParseInfo());
 					break;
 				case AKT_CT:
-					_currformula = new PredForm(true,atom->symbol()->derivedSymbol(ST_CT),args,FormulaParseInfo());
+					_currformula = new PredForm(SIGN::POS,atom->symbol()->derivedSymbol(ST_CT),args,FormulaParseInfo());
 					break;
 				case AKT_CF:
-					_currformula = new PredForm(true,atom->symbol()->derivedSymbol(ST_CF),args,FormulaParseInfo());
+					_currformula = new PredForm(SIGN::POS,atom->symbol()->derivedSymbol(ST_CF),args,FormulaParseInfo());
 					break;
-				default: 
-					assert(false);
 			}
 		}
 
@@ -2152,7 +2150,7 @@ class BDDToFormula : public FOBDDVisitor {
 			set<Variable*> quantvars;
 			quantvars.insert(_dbrmapping[_manager->getDeBruijnIndex(quantkernel->sort(),0)]);
 			_dbrmapping = savemapping;
-			_currformula = new QuantForm(true,false,quantvars,_currformula,FormulaParseInfo());
+			_currformula = new QuantForm(SIGN::POS,QUANT::EXIST,quantvars,_currformula,FormulaParseInfo());
 		}
 
 		void visit(const FOBDD* bdd) {
@@ -2164,7 +2162,7 @@ class BDDToFormula : public FOBDDVisitor {
 					if(not _manager->isTruebdd(bdd->truebranch())) {
 						Formula* kernelform = _currformula;
 						FOBDDVisitor::visit(bdd->truebranch());
-						_currformula = new BoolForm(true,true,kernelform,_currformula,FormulaParseInfo());
+						_currformula = new BoolForm(SIGN::POS,true,kernelform,_currformula,FormulaParseInfo());
 					}
 				}
 				else if(_manager->isFalsebdd(bdd->truebranch())) {
@@ -2172,7 +2170,7 @@ class BDDToFormula : public FOBDDVisitor {
 					if(not _manager->isTruebdd(bdd->falsebranch())) {
 						Formula* kernelform = _currformula;
 						FOBDDVisitor::visit(bdd->falsebranch());
-						_currformula = new BoolForm(true,true,kernelform,_currformula,FormulaParseInfo());
+						_currformula = new BoolForm(SIGN::POS,true,kernelform,_currformula,FormulaParseInfo());
 					}
 				}
 				else {
@@ -2180,22 +2178,22 @@ class BDDToFormula : public FOBDDVisitor {
 					Formula* negkernelform = kernelform->clone(); negkernelform->negate();
 					if(_manager->isTruebdd(bdd->falsebranch())) {
 						FOBDDVisitor::visit(bdd->truebranch());
-						BoolForm* bf = new BoolForm(true,true,kernelform,_currformula,FormulaParseInfo());
-						_currformula = new BoolForm(true,false,negkernelform,bf,FormulaParseInfo());
+						BoolForm* bf = new BoolForm(SIGN::POS,true,kernelform,_currformula,FormulaParseInfo());
+						_currformula = new BoolForm(SIGN::POS,false,negkernelform,bf,FormulaParseInfo());
 					}
 					else if(_manager->isTruebdd(bdd->truebranch())) {
 						FOBDDVisitor::visit(bdd->falsebranch());
-						BoolForm* bf = new BoolForm(true,true,negkernelform,_currformula,FormulaParseInfo());
-						_currformula = new BoolForm(true,false,kernelform,bf,FormulaParseInfo());
+						BoolForm* bf = new BoolForm(SIGN::POS,true,negkernelform,_currformula,FormulaParseInfo());
+						_currformula = new BoolForm(SIGN::POS,false,kernelform,bf,FormulaParseInfo());
 					}
 					else {
 						FOBDDVisitor::visit(bdd->truebranch());
 						Formula* trueform = _currformula;
 						FOBDDVisitor::visit(bdd->falsebranch());
 						Formula* falseform = _currformula;
-						BoolForm* bf1 = new BoolForm(true,true,kernelform,trueform,FormulaParseInfo());
-						BoolForm* bf2 = new BoolForm(true,true,negkernelform,falseform,FormulaParseInfo());
-						_currformula = new BoolForm(true,false,bf1,bf2,FormulaParseInfo());
+						BoolForm* bf1 = new BoolForm(SIGN::POS,true,kernelform,trueform,FormulaParseInfo());
+						BoolForm* bf2 = new BoolForm(SIGN::POS,true,negkernelform,falseform,FormulaParseInfo());
+						_currformula = new BoolForm(SIGN::POS,false,bf1,bf2,FormulaParseInfo());
 					}
 				}
 			}

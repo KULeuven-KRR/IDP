@@ -242,7 +242,7 @@ public:
 	}
 
 	void add(GroundDefinition* def) {
-		for(auto i=cdef->begin(); i!=def->cend(); ++i) {
+		for(auto i=def->begin(); i!=def->end(); ++i) {
 			if(safetypeid<PCGroundRule>(*(*i).second)) {
 				PCGroundRule* rule = dynamic_cast<PCGroundRule*>((*i).second);
 				transformForAdd(rule->body(),(rule->type()==RT_CONJ ? VIT_CONJ : VIT_DISJ), def->id());
@@ -382,9 +382,9 @@ public:
 				int setnr = translator()->translateSet(sets[s],lw,{});
 				int tseitin;
 				if(f->partial() || (not st->finite()) || weak[s]) {
-					tseitin = translator()->translate(1,CompType::GT,false,AGG_CARD,setnr,TS_IMPL);
+					tseitin = translator()->translate(1,CompType::GT,false,AggFunction::CARD,setnr,TsType::IMPL);
 				} else {
-					tseitin = translator()->translate(1,CompType::EQ,true,AGG_CARD,setnr,TS_IMPL);
+					tseitin = translator()->translate(1,CompType::EQ,true,AggFunction::CARD,setnr,TsType::IMPL);
 				}
 				addUnitClause(tseitin);
 			}

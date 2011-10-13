@@ -46,13 +46,17 @@ bool isPos(SIGN s);
 bool isNeg(SIGN s);
 
 SIGN operator not(SIGN rhs);
-
 SIGN operator~(SIGN rhs);
 
 QUANT operator not (QUANT t);
 
+Context operator not (Context t);
+Context operator~(Context t);
+
+bool isConj(SIGN sign, bool conj);
+
 template<class Stream>
-Stream& operator<<(Stream& out, AggFunction aggtype) {
+Stream& operator<<(Stream& out, const AggFunction& aggtype) {
 	switch(aggtype) {
 		case AggFunction::CARD: out << "#"; break;
 		case AggFunction::SUM:	out << "sum"; break;
@@ -63,7 +67,7 @@ Stream& operator<<(Stream& out, AggFunction aggtype) {
 	return out;
 }
 template<class Stream>
-Stream& operator<<(Stream& out, TsType tstype) {
+Stream& operator<<(Stream& out, const TsType& tstype) {
 	switch(tstype) {
 		case TsType::EQ: out << "<=>"; break;
 		case TsType::IMPL:	out << "=>"; break;
@@ -74,7 +78,7 @@ Stream& operator<<(Stream& out, TsType tstype) {
 }
 
 template<class Stream>
-Stream& operator<<(Stream& output, CompType type){
+Stream& operator<<(Stream& output, const CompType& type){
 	switch(type) {
 		case CompType::EQ: output << " = "; break;
 		case CompType::NEQ: output << " ~= "; break;
@@ -86,9 +90,7 @@ Stream& operator<<(Stream& output, CompType type){
 	return output;
 }
 
-PosContext negateContext(PosContext);	//!< Negate a context
-
-std::string* StringPointer(const char* str);			//!< Returns a shared pointer to the given string
+std::string* StringPointer(const char* str);		//!< Returns a shared pointer to the given string
 std::string* StringPointer(const std::string& str);	//!< Returns a shared pointer to the given string
 
 

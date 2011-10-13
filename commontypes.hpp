@@ -57,6 +57,7 @@ enum class QUANT { UNIV, EXIST};
 typedef int Lit;
 typedef std::vector<Lit> litlist;
 
+// TODO dynamically initialized global: no init order, so cannot safely use in other globals, might be unsafe?
 const Lit _true(std::numeric_limits<int>::max());
 const Lit _false(0);
 

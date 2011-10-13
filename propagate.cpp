@@ -621,7 +621,7 @@ void FOPropagator::visit(const QuantForm* qf) {
 		if(_ct != qf->isUnivWithSign()) {
 			set<Variable*> newvars;
 			map<Variable*,Variable*> mvv;
-			FOPropDomain* conjdomain = _factory->trueDomain(qf->subf());
+			FOPropDomain* conjdomain = _factory->trueDomain(qf->subformula());
 			vector<CompType> comps(1,CompType::EQ);
 			for(auto it = qf->quantVars().begin(); it != qf->quantVars().end(); ++it) {
 				Variable* newvar = new Variable((*it)->sort());
@@ -711,15 +711,15 @@ FOPropagator* FOPropagatorFactory::create(const AbstractTheory* theory) {
 			// Add  (! x : ? y : F(x) = y)
 			vector<Variable*> vars = VarUtils::makeNewVariables(function->sorts());
 			vector<Term*> terms = TermUtils::makeNewVarTerms(vars);
-			PredForm* atom = new PredForm(true,function,terms,FormulaParseInfo());
+			PredForm* atom = new PredForm(SIGN::POS,function,terms,FormulaParseInfo());
 			Variable* y = vars.back();
 			set<Variable*> yset;
 			yset.insert(y);
-			QuantForm* exists = new QuantForm(true,false,yset,atom,FormulaParseInfo());
+			QuantForm* exists = new QuantForm(SIGN::POS,QUANT::EXIST,yset,atom,FormulaParseInfo());
 			vars.pop_back();
 			set<Variable*> xset;
 			xset.insert(vars.begin(),vars.end());
-			QuantForm* univ1 = new QuantForm(true,true,xset,exists,FormulaParseInfo());
+			QuantForm* univ1 = new QuantForm(SIGN::POS,QUANT::UNIV,xset,exists,FormulaParseInfo());
 			newtheo->add(univ1);
 
 			// Add	(! z y1 y2 : F(z) ~= y1 | F(z) ~= y2 | y1 = y2)
@@ -733,15 +733,15 @@ FOPropagator* FOPropagatorFactory::create(const AbstractTheory* theory) {
 			vector<Term*> zy2terms = TermUtils::makeNewVarTerms(zy2vars);
 			vector<Term*> y1y2terms = TermUtils::makeNewVarTerms(y1y2vars);
 			vector<Formula*> atoms;
-			atoms.push_back(new PredForm(false,function,zy1terms,FormulaParseInfo()));
-			atoms.push_back(new PredForm(false,function,zy2terms,FormulaParseInfo()));
-			atoms.push_back(new PredForm(true,VocabularyUtils::equal(function->outsort()),y1y2terms,FormulaParseInfo()));
-			BoolForm* disjunction = new BoolForm(true,false,atoms,FormulaParseInfo());
+			atoms.push_back(new PredForm(SIGN::NEG,function,zy1terms,FormulaParseInfo()));
+			atoms.push_back(new PredForm(SIGN::NEG,function,zy2terms,FormulaParseInfo()));
+			atoms.push_back(new PredForm(SIGN::POS,VocabularyUtils::equal(function->outsort()),y1y2terms,FormulaParseInfo()));
+			BoolForm* disjunction = new BoolForm(SIGN::POS,false,atoms,FormulaParseInfo());
 			set<Variable*> zy1y2set;
 			zy1y2set.insert(zvars.begin(),zvars.end());
 			zy1y2set.insert(y1var);
 			zy1y2set.insert(y2var);
-			QuantForm* univ2 = new QuantForm(true,true,zy1y2set,disjunction,FormulaParseInfo());
+			QuantForm* univ2 = new QuantForm(SIGN::POS,QUANT::UNIV,zy1y2set,disjunction,FormulaParseInfo());
 			newtheo->add(univ2);
 		}
 	}

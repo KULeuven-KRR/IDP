@@ -79,6 +79,7 @@ class FOPropDomain {
 		std::vector<Variable*>	_vars;
 	public:
 		FOPropDomain(const std::vector<Variable*>& vars) : _vars(vars) { }
+		virtual ~FOPropDomain(){}
 		const std::vector<Variable*>&	vars()	const { return _vars;	}
 		virtual FOPropDomain* clone() const = 0;	//!< Take a deep copy of the domain
 };
@@ -114,6 +115,7 @@ struct ThreeValuedDomain;
  */
 class FOPropDomainFactory {
 	public:
+		virtual ~FOPropDomainFactory(){}
 		virtual FOPropDomain*	trueDomain(const Formula*)		const = 0;	//!< Create a domain containing all tuples
 		virtual FOPropDomain* 	falseDomain(const Formula*)		const = 0;	//!< Create an empty domain 
 		virtual FOPropDomain* 	formuladomain(const Formula*)	const = 0;
@@ -195,6 +197,7 @@ struct LeafConnectData {
 
 class AdmissibleBoundChecker {
 	public:
+		virtual ~AdmissibleBoundChecker(){}
 		virtual bool check(FOPropDomain*,FOPropDomain*) const = 0;
 };
 
