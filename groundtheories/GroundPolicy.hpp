@@ -110,38 +110,36 @@ public:
 	}
 
 	std::ostream& polPut(std::ostream& s, GroundTranslator* translator, GroundTermTranslator* termtranslator, bool longnames) const {
-		std::cerr <<"Printing ground theory\n";
-		std::cerr <<"Has " <<_clauses.size() <<" clauses." <<"\n";
-		for(unsigned int n = 0; n < _clauses.size(); ++n) {
-			if(_clauses[n].empty()) {
-				s << "false";
-			}
+		std::cerr << "Printing ground theory\n";
+		std::cerr << "Has " << _clauses.size() << " clauses." << "\n";
+		for(size_t n = 0; n < _clauses.size(); ++n) {
+			if(_clauses[n].empty()) { s << "false"; }
 			else {
-				for(unsigned int m = 0; m < _clauses[n].size(); ++m) {
-					if(_clauses[n][m] < 0) s << '~';
-					s << translator->printAtom(_clauses[n][m], longnames);
-					if(m < _clauses[n].size()-1) s << " | ";
+				for(size_t m = 0; m < _clauses[n].size(); ++m) {
+					if(_clauses[n][m] < 0) { s << '~'; }
+					s << translator->printAtom(_clauses[n][m],longnames);
+					if(m < _clauses[n].size()-1) { s << " | "; }
 				}
 			}
 			s << ". // ";
-			for(unsigned int m = 0; m < _clauses[n].size(); ++m) {
+			for(size_t m = 0; m < _clauses[n].size(); ++m) {
 				s << _clauses[n][m] << " ";
 			}
 			s << "0\n";
 		}
-		for(unsigned int n = 0; n < _definitions.size(); ++n) {
-			s << _definitions.at(n)->to_string();
+		for(size_t n = 0; n < _definitions.size(); ++n) {
+			s << _definitions.at(n)->toString(longnames);
 		}
-		for(unsigned int n = 0; n < _sets.size(); ++n) {
+		for(size_t n = 0; n < _sets.size(); ++n) {
 			s << "Set nr. " << _sets[n]->setnr() << " = [ ";
-			for(unsigned int m = 0; m < _sets[n]->size(); ++m) {
-				s << "(" << translator->printAtom(_sets[n]->literal(m), longnames);
+			for(size_t m = 0; m < _sets[n]->size(); ++m) {
+				s << "(" << translator->printAtom(_sets[n]->literal(m),longnames);
 				s << " = " << _sets[n]->weight(m) << ")";
-				if(m < _sets[n]->size()-1) s << "; ";
+				if(m < _sets[n]->size()-1) { s << "; "; }
 			}
 			s << "].\n";
 		}
-		for(unsigned int n = 0; n < _aggregates.size(); ++n) {
+		for(size_t n = 0; n < _aggregates.size(); ++n) {
 			const GroundAggregate* agg = _aggregates[n];
 			s << translator->printAtom(agg->head(), longnames) << ' ';
 			s << agg->arrow() << ' ';
@@ -152,14 +150,14 @@ public:
 		//TODO: repeat above for fixpoint definitions
 		for(std::vector<CPReification*>::const_iterator it = _cpreifications.begin(); it != _cpreifications.end(); ++it) {
 			CPReification* cpr = *it;
-			s << translator->printAtom(cpr->_head, longnames) << ' ' << cpr->_body->type() << ' ';
+			s << translator->printAtom(cpr->_head,longnames) << ' ' << cpr->_body->type() << ' ';
 			CPTerm* left = cpr->_body->left();
 			if(typeid(*left) == typeid(CPSumTerm)) {
 				CPSumTerm* cpt = dynamic_cast<CPSumTerm*>(left);
 				s << "sum[ ";
 				for(std::vector<unsigned int>::const_iterator vit = cpt->_varids.begin(); vit != cpt->_varids.end(); ++vit) {
 					s << termtranslator->printTerm(*vit, longnames);
-					if(vit != cpt->_varids.end()-1) s << "; ";
+					if(vit != cpt->_varids.end()-1) { s << "; "; }
 				}
 				s << " ]";
 			}
@@ -170,7 +168,7 @@ public:
 				s << "wsum[ ";
 				for(vit = cpt->_varids.begin(), wit = cpt->_weights.begin(); vit != cpt->_varids.end() && wit != cpt->_weights.end(); ++vit, ++wit) {
 					s << '(' << termtranslator->printTerm(*vit, longnames) << '=' << *wit << ')';
-					if(vit != cpt->_varids.end()-1) s << "; ";
+					if(vit != cpt->_varids.end()-1) { s << "; "; }
 				}
 				s << " ]";
 			}
@@ -181,19 +179,18 @@ public:
 			}
 			s << ' ' << cpr->_body->comp() << ' ';
 			CPBound right = cpr->_body->right();
-			if(right._isvarid) s << termtranslator->printTerm(right._varid, longnames);
-			else s << right._bound;
+			if(right._isvarid) { s << termtranslator->printTerm(right._varid, longnames); }
+			else { s << right._bound; }
 			s << '.' << "\n";
 		}
 		return s;
 	}
 
-	std::string polTo_string(GroundTranslator* translator, GroundTermTranslator* termtranslator, bool longnames) const {
+	std::string polToString(GroundTranslator* translator, GroundTermTranslator* termtranslator, bool longnames) const {
 		std::stringstream s;
 		polPut(s, translator, termtranslator, longnames);
 		return s.str();
 	}
 };
-
 
 #endif /* GROUNDTHEORY_HPP_ */

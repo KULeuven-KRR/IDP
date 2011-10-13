@@ -63,7 +63,7 @@ double toDouble(const string& s) {
 	else return d;
 }
 
-void printtabs(ostream& output, unsigned int tabs) {
+void printTabs(ostream& output, unsigned int tabs) {
 	for(unsigned int n = 0; n < tabs; ++n) 
 		output << ' ';
 }
@@ -76,25 +76,25 @@ double applyAgg(const AggFunction& agg, const vector<double>& args) {
 			break;
 		case AggFunction::SUM:
 			d = 0;
-			for(unsigned int n = 0; n < args.size(); ++n) d += args[n];
+			for(size_t n = 0; n < args.size(); ++n) { d += args[n]; }
 			break;
 		case AggFunction::PROD:
 			d = 1;
-			for(unsigned int n = 0; n < args.size(); ++n) d = d * args[n];
+			for(size_t n = 0; n < args.size(); ++n) { d = d * args[n]; }
 			break;
 		case AggFunction::MIN:
 			d = numeric_limits<double>::max();
-			for(unsigned int n = 0; n < args.size(); ++n) d = (d <= args[n] ? d : args[n]);
+			for(size_t n = 0; n < args.size(); ++n) { d = (d <= args[n] ? d : args[n]); }
 			break;
 		case AggFunction::MAX:
 			d = numeric_limits<double>::min();
-			for(unsigned int n = 0; n < args.size(); ++n) d = (d >= args[n] ? d : args[n]);
+			for(size_t n = 0; n < args.size(); ++n) { d = (d >= args[n] ? d : args[n]); }
 			break;
 	}
 	return d;
 }
 
-CompType invertcomp(CompType comp) {
+CompType invertComp(CompType comp) {
 	switch(comp) {
 		case CompType::EQ: case CompType::NEQ: return comp;
 		case CompType::LT: return CompType::GT;
@@ -107,7 +107,7 @@ CompType invertcomp(CompType comp) {
 	}
 }
 
-CompType negatecomp(CompType comp) {
+CompType negateComp(CompType comp) {
 	switch(comp) {
 		case CompType::EQ: return CompType::NEQ;
 		case CompType::NEQ: return CompType::EQ;
@@ -223,4 +223,25 @@ CompType negatect(CompType ct) {
 		case CompType::LEQ: return CompType::GT;
 		case CompType::GEQ: return CompType::LT;
 	}
+}
+
+PosContext negateContext(PosContext ct) {
+	switch(ct) {
+		case PC_BOTH : return PC_BOTH;
+		case PC_POSITIVE : return PC_NEGATIVE;
+		case PC_NEGATIVE : return PC_POSITIVE;
+		default:
+			assert(false);
+			return PC_POSITIVE;
+	}
+}
+
+string AggTypeNames[5] = { "#", "sum", "prod", "min", "max" };
+ostream& operator<<(ostream& out, AggFunction aggtype) {
+	return out << AggTypeNames[aggtype];
+}
+
+string TsTypeNames[4] = { "<=>", "<-", "=>", "<=" };
+ostream& operator<<(ostream& out, TsType tstype) {
+	return out << TsTypeNames[tstype];
 }

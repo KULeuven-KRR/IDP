@@ -382,7 +382,6 @@ class GroundTermTranslator {
 		size_t			getOffset(Function* func)	const { return _function2offset.at(func);	}
 		const Function*	getFunction(size_t offset)	const { return _offset2function[offset];	}
 
-
 		// Debugging
 		std::string		printTerm(const VarId&, bool longnames)		const;
 };
@@ -457,7 +456,6 @@ class UnivSentGrounder : public TopLevelGrounder {
 		bool run() const;
 };
 
-
 /***********************
 	Grounder Factory
 ***********************/
@@ -478,13 +476,15 @@ typedef std::map<Variable*,const DomElemContainer*> var2dommap;
 class GrounderFactory : public TheoryVisitor {
 	private:
 		// Data
-		AbstractStructure*		_structure;		// The structure that will be used to reduce the grounding
-		AbstractGroundTheory*	_grounding;		// The ground theory that will be produced
+		AbstractStructure*		_structure;		//!< The structure that will be used to reduce the grounding
+		SymbolicStructure*		_symstructure;	//!< Used approximation
+		AbstractGroundTheory*	_grounding;		//!< The ground theory that will be produced
 
 		// Options
 		Options*	_options;
 		int			_verbosity;
 		bool		_cpsupport;
+		bool		_longnames;
 
 		// Context
 		GroundingContext				_context;
@@ -524,6 +524,9 @@ class GrounderFactory : public TheoryVisitor {
 
 		const DomElemContainer*	createVarMapping(Variable * const var);
 		template<class VarList> InstGenerator* 	createVarMapAndGenerator(const VarList& vars);
+
+		const FOBDD*	improve_generator(const FOBDD*, const std::vector<Variable*>&, double);
+		const FOBDD*	improve_checker(const FOBDD*, double);
 
 	public:
 		GrounderFactory(AbstractStructure* structure, Options* opts);

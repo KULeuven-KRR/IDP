@@ -81,7 +81,7 @@ class IVSet {
 		std::vector<std::list<int> >getInterchangeableLiterals(AbstractGroundTheory*) const;
 		
 		// Output
-		std::string		to_string()									const;
+		std::string		toString()									const;
 };
 
 std::vector<const IVSet*> findIVSets(const AbstractTheory*, const AbstractStructure*);

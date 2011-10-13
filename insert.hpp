@@ -66,7 +66,7 @@ struct NSPair {
 	void includeFuncArity();
 	void includeArity(unsigned int n);
 
-	std::string to_string();
+	std::string toString();
 };
 
 // TODO no idea of meaning

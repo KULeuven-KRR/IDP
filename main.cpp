@@ -123,7 +123,7 @@ void executeproc(const string& proc) {
  **/
 void interactive() {
 	cout << "Running GidL in interactive mode.\n"
-		 << "  Type 'exit' to quit.\n"
+		 << "  Type 'exit()' to quit.\n"
 		 << "  Type 'help()' for help\n\n";
 
 #ifdef USEINTERACTIVE
@@ -131,7 +131,7 @@ void interactive() {
 	while(true) {
 		char* userline = rl_gets();
 		if(userline) {
-			if(string(userline) == "exit") {
+			if(string(userline) == "exit()") {
 				free(userline);
 				idp_rl_end();
 				return;
@@ -147,7 +147,7 @@ void interactive() {
 	cout << "> ";
 	string userline;
 	getline(cin,userline);
-	while(userline != "exit") {
+	while(userline != "exit()") {
 		string str = "##intern##{"+userline+'}';
 		parsestring(str);
 		cout << "> ";
@@ -171,7 +171,7 @@ int main(int argc, char* argv[]) {
 	if(cloptions._readfromstdin) parsestdin();
 
 	// Run
-	if(!Error::nr_of_errors()) {
+	if(not Error::nr_of_errors()) {
 		// Execute statements
 		executeproc(cloptions._exec);
 		if(cloptions._interactive) interactive();

@@ -70,13 +70,14 @@ public:
 	AbstractStructure*		structure()			const { return _structure;			}
 	AbstractGroundTheory*	clone()				const { assert(false); return NULL;/* TODO */	}
 };
+
 template<class Policy>
 class GroundTheory : public AbstractGroundTheory, public Policy {
 	std::set<int>			_printedtseitins;		//!< Tseitin atoms produced by the translator that occur in the theory.
 	std::set<int>			_printedsets;			//!< Set numbers produced by the translator that occur in the theory.
 	std::set<int>			_printedconstraints;	//!< Atoms for which a connection to CP constraints are added.
 	std::set<CPTerm*>		_foldedterms;
-	std::map<PFSymbol*, std::set<int> >		_defined;	//list of defined symbols and the heads which have a rule
+	std::map<PFSymbol*, std::set<int> >		_defined;	//!< List of defined symbols and the heads which have a rule.
 
 	/**
 	 * GroundTheory<Policy>::transformForAdd(vector<int>& vi, VIType vit, int defnr, bool skipfirst)
@@ -93,7 +94,7 @@ class GroundTheory : public AbstractGroundTheory, public Policy {
 	 *		implement unfolding
 	 */
 	void transformForAdd(const std::vector<int>& vi, VIType /*vit*/, int defnr, bool skipfirst = false) {
-		unsigned int n = 0;
+		size_t n = 0;
 		if(skipfirst) ++n;
 		for(; n < vi.size(); ++n) {
 			int atom = abs(vi[n]);
@@ -111,7 +112,7 @@ class GroundTheory : public AbstractGroundTheory, public Policy {
 						}
 						else {
 							std::vector<int> cl(body->size()+1,-atom);
-							for(unsigned int m = 0; m < body->size(); ++m){
+							for(size_t m = 0; m < body->size(); ++m){
 								cl[m+1] = body->literal(m);
 							}
 							add(cl,true);
@@ -120,13 +121,13 @@ class GroundTheory : public AbstractGroundTheory, public Policy {
 					if(body->type() == TsType::RIMPL || body->type() == TsType::EQ) {
 						if(body->conj()) {
 							std::vector<int> cl(body->size()+1,atom);
-							for(unsigned int m = 0; m < body->size(); ++m){
+							for(size_t m = 0; m < body->size(); ++m){
 								cl[m+1] = -body->literal(m);
 							}
 							add(cl,true);
 						}
 						else {
-							for(unsigned int m = 0; m < body->size(); ++m) {
+							for(size_t m = 0; m < body->size(); ++m) {
 								std::vector<int> cl(2,atom);
 								cl[1] = -body->literal(m);
 								add(cl,true);
@@ -241,13 +242,13 @@ public:
 	}
 
 	void add(GroundDefinition* def) {
-		for(auto i=def->begin(); i!=def->end(); ++i){
-			if(safetypeid<PCGroundRule>(*(*i).second)){
+		for(auto i=cdef->begin(); i!=def->cend(); ++i) {
+			if(safetypeid<PCGroundRule>(*(*i).second)) {
 				PCGroundRule* rule = dynamic_cast<PCGroundRule*>((*i).second);
 				transformForAdd(rule->body(),(rule->type()==RT_CONJ ? VIT_CONJ : VIT_DISJ), def->id());
 				notifyDefined(rule->head());
-			}else{
-				assert(typeid(AggGroundRule)==typeid(*(*i).second));
+			} else {
+				assert(safetypeid<AggGroundRule>(*(*i).second)); 
 				AggGroundRule* rule = dynamic_cast<AggGroundRule*>((*i).second);
 				add(rule->setnr(),def->id(),(rule->aggtype() != AggFunction::CARD));
 				notifyDefined(rule->head());
@@ -290,7 +291,7 @@ public:
 			TsSet& tsset = translator()->groundset(setnr);
 			transformForAdd(tsset.literals(),VIT_SET,defnr);
 			std::vector<double> weights;
-			if(weighted) weights = tsset.weights();
+			if(weighted) { weights = tsset.weights(); }
 			Policy::polAdd(tsset,setnr, weighted);
 		}
 	}
@@ -328,13 +329,13 @@ public:
 			StrictWeakNTupleEquality de(f->arity());
 			StrictWeakNTupleOrdering ds(f->arity());
 
-			const PredTable* ct = structure()->inter(f)->graphinter()->ct();
-			const PredTable* pt = structure()->inter(f)->graphinter()->pt();
+			const PredTable* ct = structure()->inter(f)->graphInter()->ct();
+			const PredTable* pt = structure()->inter(f)->graphInter()->pt();
 			SortTable* st = structure()->inter(f->outsort());
 
 			ElementTuple input(f->arity(),0);
 			TableIterator tit = ct->begin();
-			SortIterator sit = st->sortbegin();
+			SortIterator sit = st->sortBegin();
 			std::vector<litlist> sets;
 			std::vector<bool> weak;
 			for(auto it = tuples.begin(); it != tuples.end(); ) {
@@ -354,7 +355,7 @@ public:
 					}
 				}
 				else {
-					if(!sets.empty() && sit.hasNext()) weak.back() = true;
+					if(not sets.empty() && sit.hasNext()) { weak.back() = true; }
 					if(tit.hasNext()) {
 						const ElementTuple& tuple = *tit;
 						if(de(tuple,it->first)) {
@@ -373,17 +374,17 @@ public:
 					sets.push_back(std::vector<int>(0));
 					weak.push_back(false);
 					input = it->first; input.pop_back();
-					sit = st->sortbegin();
+					sit = st->sortBegin();
 				}
 			}
-			for(unsigned int s = 0; s < sets.size(); ++s) {
+			for(size_t s = 0; s < sets.size(); ++s) {
 				std::vector<double> lw(sets[s].size(),1);
 				int setnr = translator()->translateSet(sets[s],lw,{});
 				int tseitin;
-				if(f->partial() || not (st->finite()) || weak[s]) {
-					tseitin = translator()->translate(1,CompType::GT,false,AggFunction::CARD,setnr,TsType::IMPL);
+				if(f->partial() || (not st->finite()) || weak[s]) {
+					tseitin = translator()->translate(1,CompType::GT,false,AGG_CARD,setnr,TS_IMPL);
 				} else {
-					tseitin = translator()->translate(1,CompType::EQ,true,AggFunction::CARD,setnr,TsType::IMPL);
+					tseitin = translator()->translate(1,CompType::EQ,true,AGG_CARD,setnr,TS_IMPL);
 				}
 				addUnitClause(tseitin);
 			}
@@ -391,7 +392,7 @@ public:
 	}
 
 	void addFalseDefineds() {
-		for(unsigned int n = 0; n < translator()->nbManagedSymbols(); ++n) {
+		for(size_t n = 0; n < translator()->nbManagedSymbols(); ++n) {
 			PFSymbol* s = translator()->getManagedSymbol(n);
 			auto it = _defined.find(s);
 			if(it!=_defined.end()) {
@@ -405,17 +406,16 @@ public:
 		}
 	}
 
-	std::ostream& put(std::ostream& s, unsigned int spaces) const{
-		return Policy::polPut(s, translator(), termtranslator(), false); // TODO longnames?
+	std::ostream& put(std::ostream& s, bool longnames = false, unsigned int spaces = 0) const {
+		return Policy::polPut(s,translator(),termtranslator(),longnames);
 	}
 
-	std::string to_string() const{
-		return Policy::polTo_string(translator(), termtranslator(), false);  // TODO longnames?
+	std::string toString(bool longnames = false, unsigned int spaces = 0) const {
+		return Policy::polToString(translator(),termtranslator(),longnames);
 	}
 
 	virtual void			accept(TheoryVisitor* v) const		{ v->visit(this);			}
 	virtual AbstractTheory*	accept(TheoryMutatingVisitor* v)	{ return v->visit(this);	}
-
 };
 
 #endif /* ABSTRACTGROUNDTHEORY_HPP_ */

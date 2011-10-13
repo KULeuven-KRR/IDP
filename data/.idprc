@@ -45,4 +45,4 @@ stdoptions.provertimeout = 10000000	-- The timeout for external ATP systems, in 
 -- =========================
 
 stdoptions.autocomplete = true		-- use autocompletion for structures
-stdoptions.cpsupport = false			-- do not use a cp-solver
+stdoptions.cpsupport = false		-- do not use a cp-solver

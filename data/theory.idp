@@ -3,15 +3,15 @@ namespace theory {
 	/**
 	 * Push the negations of a given theory T inside until they are in front of atoms
 	 */
-	procedure push_negations(T) {
-		return idp_intern.push_negations(T)
+	procedure pushnegations(T) {
+		return idp_intern.pushnegations(T)
 	}
 
 	/**
 	 * Move nested terms
 	 */
-	procedure remove_nesting(T) {
-		return idp_intern.remove_nesting(T)
+	procedure removenesting(T) {
+		return idp_intern.removenesting(T)
 	}
 
 	/**

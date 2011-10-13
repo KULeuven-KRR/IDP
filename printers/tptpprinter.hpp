@@ -59,16 +59,16 @@ public:
 	}
 
 	void visit(const Vocabulary* v) {
-		for(std::map<std::string,std::set<Sort*> >::const_iterator it = v->firstsort(); it != v->lastsort(); ++it) {
+		for(std::map<std::string,std::set<Sort*> >::const_iterator it = v->firstSort(); it != v->lastSort(); ++it) {
 			for(std::set<Sort*>::iterator jt = it->second.begin(); jt != it->second.end(); ++jt) {
-				if(!(*jt)->builtin() || v == Vocabulary::std()) visit(*jt);
+				if(not (*jt)->builtin() || v == Vocabulary::std()) { visit(*jt); }
 			}
 		}
-		for(std::map<std::string,Predicate*>::const_iterator it = v->firstpred(); it != v->lastpred(); ++it) {
-			if(!it->second->builtin() || v == Vocabulary::std()) visit(it->second);
+		for(std::map<std::string,Predicate*>::const_iterator it = v->firstPred(); it != v->lastPred(); ++it) {
+			if(not it->second->builtin() || v == Vocabulary::std()) { visit(it->second); }
 		}
-		for(std::map<std::string,Function*>::const_iterator it = v->firstfunc(); it != v->lastfunc(); ++it) {
-			if(!it->second->builtin() || v == Vocabulary::std()) visit(it->second);
+		for(std::map<std::string,Function*>::const_iterator it = v->firstFunc(); it != v->lastFunc(); ++it) {
+			if(not it->second->builtin() || v == Vocabulary::std()) { visit(it->second); }
 		}
 	}
 
@@ -108,25 +108,25 @@ public:
 		if(isNeg(f->sign())){
 			(*_os) << "~";
 		}
-		if(f->symbol()->to_string(false) == "=") {
+		if(f->symbol()->toString(false) == "=") {
 			(*_os) << "(";
 			f->subterms()[0]->accept(this);
 			(*_os) << " = ";
 			f->subterms()[1]->accept(this);
 			(*_os) << ")";
-		} else if(f->symbol()->to_string(false) == ">") {
+		} else if(f->symbol()->toString(false) == ">") {
 			(*_os) << "$greater(";
 			f->subterms()[0]->accept(this);
 			(*_os) << ",";
 			f->subterms()[1]->accept(this);
 			(*_os) << ")";
-		} else if(f->symbol()->to_string(false) == "<") {
+		} else if(f->symbol()->toString(false) == "<") {
 			(*_os) << "$less(";
 			f->subterms()[0]->accept(this);
 			(*_os) << ",";
 			f->subterms()[1]->accept(this);
 			(*_os) << ")";
-		} else if(f->symbol()->to_string(false) == "+") {
+		} else if(f->symbol()->toString(false) == "+") {
 			(*_os) << "($sum(";
 			f->subterms()[0]->accept(this);
 			(*_os) << ",";
@@ -134,7 +134,7 @@ public:
 			(*_os) << ") = ";
 			f->subterms()[2]->accept(this);
 			(*_os) << ")";
-		} else if(f->symbol()->to_string(false) == "-" && f->subterms().size() == 3) {
+		} else if(f->symbol()->toString(false) == "-" && f->subterms().size() == 3) {
 			(*_os) << "($difference(";
 			f->subterms()[0]->accept(this);
 			(*_os) << ",";
@@ -142,13 +142,13 @@ public:
 			(*_os) << ") = ";
 			f->subterms()[2]->accept(this);
 			(*_os) << ")";
-		} else if(f->symbol()->to_string(false) == "-" && f->subterms().size() == 2) {
+		} else if(f->symbol()->toString(false) == "-" && f->subterms().size() == 2) {
 			(*_os) << "($uminus(";
 			f->subterms()[0]->accept(this);
 			(*_os) << ") = ";
 			f->subterms()[1]->accept(this);
 			(*_os) << ")";
-		} else if(f->symbol()->to_string(false) == "*") {
+		} else if(f->symbol()->toString(false) == "*") {
 			(*_os) << "($product(";
 			f->subterms()[0]->accept(this);
 			(*_os) << ",";
@@ -156,19 +156,19 @@ public:
 			(*_os) << ") = ";
 			f->subterms()[2]->accept(this);
 			(*_os) << ")";
-		} else if(f->symbol()->to_string(false) == "PRED") {
+		} else if(f->symbol()->toString(false) == "PRED") {
 			(*_os) << "($difference(";
 			f->subterms()[0]->accept(this);
 			(*_os) << ",1) = ";
 			f->subterms()[1]->accept(this);
 			(*_os) << ")";
-		} else if(f->symbol()->to_string(false) == "SUCC") {
+		} else if(f->symbol()->toString(false) == "SUCC") {
 			(*_os) << "($sum(";
 			f->subterms()[0]->accept(this);
 			(*_os) << ",1) = ";
 			f->subterms()[1]->accept(this);
 			(*_os) << ")";
-		} else if(f->symbol()->to_string(false) == "MAX") {
+		} else if(f->symbol()->toString(false) == "MAX") {
 			// NOTE: $itett is often unsupported
 			(*_os) << "($itett($greater(";
 			f->subterms()[0]->accept(this);
@@ -181,7 +181,7 @@ public:
 			(*_os) << ") = ";
 			f->subterms()[2]->accept(this);
 			(*_os) << ")";
-		} else if(f->symbol()->to_string(false) == "MIN") {
+		} else if(f->symbol()->toString(false) == "MIN") {
 			// NOTE: $itett is often unsupported
 			(*_os) << "($itett($less(";
 			f->subterms()[0]->accept(this);
@@ -194,7 +194,7 @@ public:
 			(*_os) << ") = ";
 			f->subterms()[2]->accept(this);
 			(*_os) << ")";
-		} else if(f->symbol()->to_string(false) == "abs") {
+		} else if(f->symbol()->toString(false) == "abs") {
 			// NOTE: $itett is often unsupported
 			(*_os) << "($itett($greater(";
 			f->subterms()[0]->accept(this);
@@ -208,7 +208,7 @@ public:
 			f->subterms()[1]->accept(this);
 			(*_os) << ")";
 		} else {
-			(*_os) << "p_" << rewriteLongname(f->symbol()->to_string(true));
+			(*_os) << "p_" << rewriteLongname(f->symbol()->toString(true));
 			if(!f->subterms().empty()) {
 				(*_os) << "(";
 				f->subterms()[0]->accept(this);
@@ -289,14 +289,14 @@ public:
 			(*_os) << "! [";
 		else
 			(*_os) << "? [";
-		auto it = f->quantvars().begin();
+		auto it = f->quantVars().begin();
 		(*_os) << "V_" << (*it)->name();
 		if(_arithmetic && (*it)->sort()) {
 			(*_os) << ": ";
 			(*_os) << TFFTypeString((*it)->sort());
 		}
 		++ it;
-		for(; it != f->quantvars().end(); ++it) {
+		for(; it != f->quantVars().end(); ++it) {
 			(*_os) << ",";
 			(*_os) << "V_" << (*it)->name();
 			if(_arithmetic && (*it)->sort()) {
@@ -307,10 +307,10 @@ public:
 		(*_os) << "] : (";
 		
 		// When quantifying over types, add these.
-		it = f->quantvars().begin();
-		while(it != f->quantvars().end() && !(*it)->sort())
+		it = f->quantVars().begin();
+		while(it != f->quantVars().end() && !(*it)->sort())
 			++ it;
-		if (it != f->quantvars().end()) {
+		if (it != f->quantVars().end()) {
 		 	if(f->isUniv()){
 				(*_os) << "~";
 		 	}
@@ -329,7 +329,7 @@ public:
 			}
 			(*_os) << "t_" << (*it)->sort()->name() << "(V_" << (*it)->name() << ")";
 			++ it;
-			for(; it != f->quantvars().end(); ++it) {
+			for(; it != f->quantVars().end(); ++it) {
 				if((*it)->sort()) {
 					(*_os) << " & ";
 					(*_os) << "t_" << (*it)->sort()->name() << "(V_" << (*it)->name() << ")";
@@ -468,14 +468,14 @@ private:
 				}
 			}
 			(*_os) << "] : (";
-			if(pfs->nrSorts() != 1 || pfs->to_string(false) != pfs->sort(0)->name())
+			if(pfs->nrSorts() != 1 || pfs->toString(false) != pfs->sort(0)->name())
 				(*_os) << "~";
-			(*_os) << "p_" << rewriteLongname(pfs->to_string(true)) << "(";
+			(*_os) << "p_" << rewriteLongname(pfs->toString(true)) << "(";
 			(*_os) << "V0";
 			for(unsigned int n = 1; n < pfs->nrSorts(); ++n) {
 				(*_os) << ",V" << n;
 			}
-			if(pfs->nrSorts() == 1 && pfs->to_string(false) == pfs->sort(0)->name())
+			if(pfs->nrSorts() == 1 && pfs->toString(false) == pfs->sort(0)->name())
 				(*_os) << ") <=> (";
 			else
 				(*_os) << ") | (";
@@ -495,7 +495,7 @@ private:
 		//_typeStream << "tff(t" << _count;
 		//_typeStream << ",type,(";
 		startAxiom("t", "type", &_typeStream);
-		(*_os) << "p_" << rewriteLongname(pfs->to_string(true));
+		(*_os) << "p_" << rewriteLongname(pfs->toString(true));
 		(*_os) << ": ";
 		if (pfs->nrSorts() > 1) {
 			(*_os) << "(";
@@ -611,7 +611,7 @@ private:
 	}
 
 	std::string domainTermNameString(const DomainTerm* t) {
-		std::string str = t->value()->to_string();
+		std::string str = t->value()->toString();
 		if(t->sort()) {
 			if(SortUtils::isSubsort(t->sort(),VocabularyUtils::stringsort())) {
 				std::stringstream result;
@@ -667,7 +667,7 @@ private:
 		(*_os) << "] : (";
 		if(f->partial())
 			(*_os) << "~";
-		(*_os) << "p_" << rewriteLongname(f->to_string(true)) << "(";
+		(*_os) << "p_" << rewriteLongname(f->toString(true)) << "(";
 		if(f->arity() > 0) {
 			(*_os) << "V0";
 			for(unsigned int n = 1; n < f->arity(); ++n) {

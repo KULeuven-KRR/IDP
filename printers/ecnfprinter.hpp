@@ -11,6 +11,7 @@
 #include "theory.hpp"
 #include "ground.hpp"
 #include "ecnf.hpp"
+#include "common.hpp"
 
 #include "groundtheories/AbstractGroundTheory.hpp"
 #include "groundtheories/GroundPolicy.hpp"
@@ -30,7 +31,7 @@ private:
 	bool writeTranlation() const { return writeTranslation_; }
 
 	using StreamPrinter<Stream>::output;
-	using StreamPrinter<Stream>::printtab;
+	using StreamPrinter<Stream>::printTab;
 	using StreamPrinter<Stream>::unindent;
 	using StreamPrinter<Stream>::indent;
 	using StreamPrinter<Stream>::isDefClosed;
@@ -278,7 +279,7 @@ private:
 				output() << "INTVAR " << varid << ' ' << minvalue << ' ' << maxvalue << ' ';
 			} else {
 				output() << "INTVARDOM " << varid << ' ';
-				for(SortIterator it = domain->sortbegin(); it.hasNext(); ++it) {
+				for(SortIterator it = domain->sortBegin(); it.hasNext(); ++it) {
 					int value = (*it)->value()._int;
 					output() << value << ' ';
 				}

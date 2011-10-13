@@ -28,21 +28,21 @@ using namespace std;
  * 	returns true if a sort has a domain fit to detect meaningful invariant permutations.
  */
 bool isSortForSymmetry(Sort* sort, const AbstractStructure* s){
-	return s->inter(sort)->approxfinite() && !s->inter(sort)->approxempty();
+	return s->inter(sort)->approxFinite() && !s->inter(sort)->approxEmpty();
 }
 
 /**
  *	returns true if an interpretation is trivial, which means either all ground elements are true or all are false for the given PFSymbol
  */
 bool hasTrivialInterpretation(const AbstractStructure* s, PFSymbol* relation){
-	return s->inter(relation)->pt()->approxempty() || s->inter(relation)->pf()->approxempty();
+	return s->inter(relation)->pt()->approxEmpty() || s->inter(relation)->pf()->approxEmpty();
 }
 
 /**
  *	returns true if a PFSymbol has an interpretation
  */
 bool hasInterpretation(const AbstractStructure* s, PFSymbol* relation){
-	return !(s->inter(relation)->ct()->approxempty() && s->inter(relation)->cf()->approxempty());
+	return !(s->inter(relation)->ct()->approxEmpty() && s->inter(relation)->cf()->approxEmpty());
 }
 
 /**
@@ -100,7 +100,7 @@ bool isBinarySymmetry(const AbstractStructure* s, const DomainElement* first, co
 	const PredInter* inter = s->inter(relation);
 	const PredTable* table = inter->ct();
 	bool result = isBinarySymmetryInPredTable(table, argumentPlaces, first, second);
-	if(!inter->approxtwovalued() && result==true){
+	if(!inter->approxTwoValued() && result==true){
 		table = inter->cf();
 		result = isBinarySymmetryInPredTable(table, argumentPlaces, first, second);
 	}
@@ -218,7 +218,7 @@ class OccurrencesCounter{
 		
 		// Inspectors
 		const AbstractStructure* 				getStructure() const;
-		string									to_string() const;
+		string									toString() const;
 		
 		//	Mutators
 		pair<int,int>							getOccurrences(const DomainElement*, PFSymbol*, Sort* );
@@ -316,14 +316,14 @@ map<const DomainElement*, vector<int> > OccurrencesCounter::getOccurrences(const
 	return result;
 }
 
-string OccurrencesCounter::to_string() const{
+string OccurrencesCounter::toString() const{
 	stringstream ss;
 	ss << "COUNTER:" << endl;
 	ss << "structure: " << getStructure()->name() << endl;
 	for(auto occurrences_it= occurrences_.begin(); occurrences_it!=occurrences_.end(); ++occurrences_it){
-		ss << occurrences_it->first.first->to_string(false) << "-" << occurrences_it->first.second->to_string(false) << endl; // TODO longnames?
+		ss << occurrences_it->first.first->toString(false) << "-" << occurrences_it->first.second->toString(false) << endl; // TODO longnames?
 		for(auto element_it=occurrences_it->second.begin(); element_it!=occurrences_it->second.end(); ++element_it){
-			ss << "   " << element_it->first->to_string() << ": " << element_it->second.first << "," << element_it->second.second << endl;
+			ss << "   " << element_it->first->toString() << ": " << element_it->second.first << "," << element_it->second.second << endl;
 		}
 	}
 	return ss.str();
@@ -361,20 +361,20 @@ IVSet::IVSet(const AbstractStructure* s, const set<const DomainElement*> element
 	assert(elements_.size()>1);
 }
 
-string IVSet::to_string() const{
+string IVSet::toString() const{
 	stringstream ss;
 	ss << "structure: " << getStructure()->name() << endl;
 	for(auto sorts_it = getSorts().begin(); sorts_it!=getSorts().end(); ++sorts_it){
-		ss << (*sorts_it)->to_string(false) << " | ";  // TODO longnames?
+		ss << (*sorts_it)->toString(false) << " | ";  // TODO longnames?
 	}
 	ss << endl;
 	for(auto relations_it = getRelations().begin(); relations_it!=getRelations().end(); ++relations_it){
-		ss << (*relations_it)->to_string(false) << " | "; // TODO longnames?
+		ss << (*relations_it)->toString(false) << " | "; // TODO longnames?
 	}
 	ss << endl;
 	ss << getElements().size() << ": ";
 	for(auto elements_it = getElements().begin(); elements_it!=getElements().end(); ++elements_it){
-		ss << (*elements_it)->to_string() << " | ";
+		ss << (*elements_it)->toString() << " | ";
 	}
 	ss << endl;
 	ss << "Enkelvoudig? " << isEnkelvoudig() << endl;
@@ -520,7 +520,7 @@ vector<const IVSet*> IVSet::splitBasedOnBinarySymmetries() const{
  */
 vector<vector<const DomainElement*> > fillGroundElementsOneRank(vector<vector<const DomainElement*> >& groundElements, const SortTable* domainTable, const int rank, const set<const DomainElement*>& excludedElements){
 	set<const DomainElement*> domain; //set to order the elements
-	for(SortIterator domain_it=domainTable->sortbegin(); domain_it.hasNext(); ++domain_it){
+	for(SortIterator domain_it=domainTable->sortBegin(); domain_it.hasNext(); ++domain_it){
 		if(!excludedElements.count(*domain_it)){
 			domain.insert(*domain_it);
 		}
@@ -750,12 +750,12 @@ void TheorySymmetryAnalyzer::visit(const FuncTerm* t){
 	if(t->function()->builtin() || t->function()->overloaded()){
 		if(t->function()->name()=="MIN/0"){
 			SortTable* st = getStructure()->inter(t->function()->outsort());
-			if(not st->approxempty()){
+			if(not st->approxEmpty()){
 				markAsUnfitForSymmetry(st->first());
 			}
 		}else if(t->function()->name()=="MAX/0"){
 			SortTable* st = getStructure()->inter(t->function()->outsort());
-			if(not st->approxempty()){
+			if(not st->approxEmpty()){
 				markAsUnfitForSymmetry(st->last());
 			}
 		}else{
@@ -773,7 +773,7 @@ void TheorySymmetryAnalyzer::visit(const DomainTerm* t){
 
 void TheorySymmetryAnalyzer::visit(const EqChainForm* ef){
 	Formula* f = ef->clone();
-	f = FormulaUtils::remove_eqchains(f,getStructure()->vocabulary());
+	f = FormulaUtils::removeEqChains(f,getStructure()->vocabulary());
 	f->accept(this);
 	f->recursiveDelete();
 	
@@ -806,7 +806,7 @@ map<Sort*,set<const DomainElement*> > findElementsForSorts(const AbstractStructu
 		for(set<Sort*>::const_iterator kids_it = (*sort_it)->children().begin(); kids_it != (*sort_it)->children().end(); ++kids_it){
 			kids.push_back(s->inter(*kids_it));
 		}
-		for(SortIterator parent_it = parent->sortbegin(); parent_it.hasNext(); ++parent_it){
+		for(SortIterator parent_it = parent->sortBegin(); parent_it.hasNext(); ++parent_it){
 			bool isUnique = forbiddenElements.find(*parent_it) == forbiddenElements.end();
 			for(vector<const SortTable*>::const_iterator kids_it2 = kids.begin(); kids_it2 != kids.end() && isUnique; ++kids_it2 ){
 				isUnique = not (*kids_it2)->contains(*parent_it);
@@ -858,7 +858,7 @@ set<const IVSet*> initializeIVSets(const AbstractStructure* s, const AbstractThe
 	}
 	cout << "forbiddenSorts:" << endl;
 	for(auto it=forbiddenSorts.begin(); it!=forbiddenSorts.end(); ++it){
-		cout << (*it)->to_string(false) << endl; // TODO longnames?
+		cout << (*it)->toString(false) << endl; // TODO longnames?
 	}
 
 	set<Sort*> allowedSorts;
@@ -872,7 +872,7 @@ set<const IVSet*> initializeIVSets(const AbstractStructure* s, const AbstractThe
 
 	cout << "allowedSorts:" << endl;
 	for(auto it=allowedSorts.begin(); it!=allowedSorts.end(); ++it){
-		cout << (*it)->to_string(false) << endl; // TODO longnames?
+		cout << (*it)->toString(false) << endl; // TODO longnames?
 	}
 
 	map<Sort*,set<const DomainElement*> > elementsForSorts = findElementsForSorts(s, allowedSorts, tsa.getForbiddenElements());
@@ -974,13 +974,13 @@ vector<const IVSet*> findIVSets(const AbstractTheory* t, const AbstractStructure
 
 	vector<const IVSet*> result = extractDontCares(potentials);
 	for(vector<const IVSet*>::const_iterator result_it=result.begin(); result_it!=result.end(); ++result_it){
-		cout << "##########" << endl << (*result_it)->to_string() << endl;
+		cout << "##########" << endl << (*result_it)->toString() << endl;
 	}
 
 	splitByOccurrences(potentials);
 	splitByBinarySymmetries(potentials);
 	for(set<const IVSet*>::const_iterator result_it=potentials.begin(); result_it!=potentials.end(); ++result_it){
-		cout << "@@@@@@@@@@" << endl << (*result_it)->to_string() << endl;
+		cout << "@@@@@@@@@@" << endl << (*result_it)->toString() << endl;
 	}
 	result.insert(result.end(),potentials.begin(),potentials.end());
 	return result;

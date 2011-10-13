@@ -13,7 +13,7 @@
 #include "structure.hpp"
 
 /**
- * Implements maketrue, makefalse, and makeunknown on a predicate interpretation and lua table
+ * Implements makeTrue, makeFalse, and makeUnknown on a predicate interpretation and lua table
  */
 class SetTableValueInference: public Inference {
 	enum SETVALUE { SET_TRUE, SET_FALSE, SET_UNKNOWN};
@@ -21,16 +21,16 @@ private:
 	SETVALUE value_;
 public:
 	static Inference* getMakeTableTrueInference(){
-		return new SetTableValueInference("maketrue", SET_TRUE);
+		return new SetTableValueInference("maketrue",SET_TRUE);
 	}
 	static Inference* getMakeTableFalseInference(){
-		return new SetTableValueInference("makefalse", SET_FALSE);
+		return new SetTableValueInference("makefalse",SET_FALSE);
 	}
 	static Inference* getMakeTableUnknownInference(){
-		return new SetTableValueInference("makeunknown", SET_UNKNOWN);
+		return new SetTableValueInference("makeunknown",SET_UNKNOWN);
 	}
 
-	SetTableValueInference(const char* command, SETVALUE value): Inference(command, true), value_(value) {
+	SetTableValueInference(const char* command, SETVALUE value): Inference(command,true), value_(value) {
 		add(AT_PREDINTER);
 		add(AT_TABLE);
 	}
@@ -51,7 +51,6 @@ public:
 			default:
 				break;
 		}
-
 		return nilarg();
 	}
 

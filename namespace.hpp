@@ -100,8 +100,8 @@ class Namespace {
 		void	add(const std::string& name, Term*);
 
 		// Output
-		std::ostream& putname(std::ostream&) const;
-		std::ostream& putluaname(std::ostream&) const;
+		std::ostream& putName(std::ostream&) const;
+		std::ostream& putLuaName(std::ostream&) const;
 };
 
 #endif

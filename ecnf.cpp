@@ -35,47 +35,47 @@ GroundDefinition* GroundDefinition::clone() const {
 }
 
 void GroundDefinition::recursiveDelete() {
-	for(ruleiterator it = begin(); it != end(); ++it){
+	for(ruleiterator it = begin(); it != end(); ++it) {
 		delete((*it).second);
 	}
 	delete(this);
 }
 
 void GroundDefinition::addTrueRule(int head) {
-	addPCRule(head, vector<int>(0), true, false);
+	addPCRule(head,vector<int>(0),true,false);
 }
 
 void GroundDefinition::addFalseRule(int head) {
-	addPCRule(head, vector<int>(0), false, false);
+	addPCRule(head,vector<int>(0),false,false);
 }
 
 // FIXME check that all heads are correct!
 void GroundDefinition::addPCRule(int head, const vector<int>& body, bool conj, bool recursive) {
 	// Search for a rule with the same head
-	map<int, GroundRule*>::iterator it = _rules.find(head);
+	map<int,GroundRule*>::iterator it = _rules.find(head);
 
-	if (it == _rules.end()) { // There is not yet a rule with the same head
+	if(it == _rules.end()) { // There is not yet a rule with the same head
 		_rules[head] = new PCGroundRule(head, (conj ? RT_CONJ : RT_DISJ), body, recursive);
-	} else if ((it->second)->isFalse()) { // The existing rule is false
+	} else if((it->second)->isFalse()) { // The existing rule is false
 		PCGroundRule* grb = dynamic_cast<PCGroundRule*>(it->second);
 		grb->type(conj ? RT_CONJ : RT_DISJ);
 		grb->head(head);
 		grb->body(body);
 		grb->recursive(recursive);
-	} else if (body.empty()) { // We are adding a rule with a true or false body
-		if (conj) {
+	} else if(body.empty()) { // We are adding a rule with a true or false body
+		if(conj) {
 			delete (it->second);
 			it->second = new PCGroundRule(head, RT_CONJ, body, false);
 		}
-	} else if (!(it->second)->isTrue()) { // There is a rule with the same head, and it is not true or false
-		switch (it->second->type()) {
+	} else if(!(it->second)->isTrue()) { // There is a rule with the same head, and it is not true or false
+		switch(it->second->type()) {
 			case RT_DISJ: {
 				PCGroundRule* grb = dynamic_cast<PCGroundRule*>(it->second);
-				if ((!conj) || body.size() == 1) {
+				if((!conj) || body.size() == 1) {
 					for (unsigned int n = 0; n < body.size(); ++n){
 						grb->body().push_back(body[n]);
 					}
-				} else if (grb->body().size() == 1) {
+				} else if(grb->body().size() == 1) {
 					grb->type(RT_CONJ);
 					for (unsigned int n = 0; n < body.size(); ++n){
 						grb->body().push_back(body[n]);
@@ -186,30 +186,30 @@ void GroundDefinition::addAggRule(int head, int setnr, AggFunction aggtype, bool
 	}
 }
 
-ostream& GroundDefinition::put(ostream& s, unsigned int ) const {
-	bool longnames = false; // TODO longnames?
+ostream& GroundDefinition::put(ostream& s, bool longnames, unsigned int) const {
 	s << "{\n";
 	for(auto it = _rules.begin(); it != _rules.end(); ++it) {
-		s << _translator->printAtom((*it).second->head(), longnames) << " <- ";
+		s << _translator->printAtom((*it).second->head(),longnames) << " <- ";
 		auto body = (*it).second;
 		if(body->type() == RT_AGG) {
 			const AggGroundRule* grb = dynamic_cast<const AggGroundRule*>(body);
-			s << grb->bound() << (grb->lower() ? " =< " : " >= ") <<grb->aggtype() << grb->setnr() << ".\n";
+			s << grb->bound() << (grb->lower() ? " =< " : " >= ");
+			s << grb->aggtype() << grb->setnr() << ".\n";
 		}
 		else {
 			const PCGroundRule* grb = dynamic_cast<const PCGroundRule*>(body);
 			char c = grb->type() == RT_CONJ ? '&' : '|';
-			if(!grb->body().empty()) {
-				if(grb->body()[0] < 0) s << '~';
-				s << _translator->printAtom(grb->body()[0], longnames);
-				for(unsigned int n = 1; n < grb->body().size(); ++n) {
+			if(not grb->body().empty()) {
+				if(grb->body()[0] < 0) { s << '~'; }
+				s << _translator->printAtom(grb->body()[0],longnames);
+				for(size_t n = 1; n < grb->body().size(); ++n) {
 					s << ' ' << c << ' ';
-					if(grb->body()[n] < 0) s << '~';
-					s << _translator->printAtom(grb->body()[n], longnames);
+					if(grb->body()[n] < 0) { s << '~'; }
+					s << _translator->printAtom(grb->body()[n],longnames);
 				}
 			}
-			else if(grb->type() == RT_CONJ) s << "true";
-			else s << "false";
+			else if(grb->type() == RT_CONJ) { s << "true"; }
+			else { s << "false"; }
 			s << ".\n";
 		}
 	}
@@ -217,7 +217,7 @@ ostream& GroundDefinition::put(ostream& s, unsigned int ) const {
 	return s;
 }
 
-string GroundDefinition::to_string(unsigned int) const {
+string GroundDefinition::toString(unsigned int) const {
 	stringstream sstr;
 	put(sstr);
 	return sstr.str();

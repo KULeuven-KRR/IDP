@@ -12,13 +12,13 @@
 
 class PushNegationsInference: public Inference {
 public:
-	PushNegationsInference(): Inference("push_negations") {
+	PushNegationsInference(): Inference("pushnegations") {
 		add(AT_THEORY);
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
 		AbstractTheory* t = args[0].theory();
-		TheoryUtils::push_negations(t);
+		TheoryUtils::pushNegations(t);
 		return InternalArgument(t);
 	}
 };

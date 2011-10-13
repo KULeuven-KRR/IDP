@@ -11,6 +11,7 @@
 #include <iostream>
 #include "commandinterface.hpp"
 #include "monitors/tracemonitor.hpp"
+#include "commands/propagate.hpp"
 #include "symmetry.hpp"
 
 #include "groundtheories/AbstractGroundTheory.hpp"
@@ -18,42 +19,55 @@
 
 class ModelExpandInference: public Inference {
 public:
-	ModelExpandInference(): Inference("mx", false, true) {
+	ModelExpandInference(): Inference("modelexpand", false, true) {
 		add(AT_THEORY);
 		add(AT_STRUCTURE);
 		add(AT_OPTIONS);
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
-		AbstractTheory* theory = args[0].theory();
-		AbstractStructure* structure = args[1].structure();
+		AbstractTheory* theory = args[0].theory()->clone();
+		AbstractStructure* structure = args[1].structure()->clone();
 		Options* options = args[2].options();
 		TraceMonitor* monitor = tracemonitor();
 
-		// Create solver and grounder and ground the theory
+		// Calculate known definitions
+		if(typeid(*theory) == typeid(Theory)) {
+			bool satisfiable = calculateKnownDefinitions(dynamic_cast<Theory*>(theory),structure,options);
+			if(not satisfiable) { return unsat(); }
+		}
+
+		// Symbolic propagation
+		PropagateInference propinference;
+		std::map<PFSymbol*,InitBoundType> mpi = propinference.propagateVocabulary(theory,structure);
+		FOPropagator* propagator = propinference.createPropagator(theory,mpi,options);
+		propagator->run();
+		SymbolicStructure* symstructure = propagator->symbolicstructure();
+
+		// Create solver and grounder
 		SATSolver* solver = createsolver(options);
-		GrounderFactory grounderfactory(structure,options);
+		GrounderFactory grounderfactory(structure,options,symstructure);
 		TopLevelGrounder* grounder = grounderfactory.create(theory,solver);
 		grounder->run();
 		AbstractGroundTheory* grounding = grounder->grounding();
 		
 		// Execute symmetry breaking
-		if(options->getValue(IntType::SYMMETRY)!=0){
+		if(options->getValue(IntType::SYMMETRY)!=0) {
 			std::cerr << "Symmetry detection...\n";
 			clock_t start = clock();
 			auto ivsets = findIVSets(theory, structure);
 			float time = (float) (clock() - start)/CLOCKS_PER_SEC;
 			std::cerr << "Symmetry detection finished in: " << time << "\n";
-			if(options->getValue(IntType::SYMMETRY)==1){
+			if(options->getValue(IntType::SYMMETRY)==1) {
 				std::cerr << "Adding symmetry breaking clauses...\n";
 				addSymBreakingPredicates(grounding, ivsets);
-			}else if(options->getValue(IntType::SYMMETRY)==2){
+			} else if(options->getValue(IntType::SYMMETRY)==2) {
 				std::cerr << "Using symmetrical clause learning...\n";
-				for(auto ivsets_it=ivsets.begin(); ivsets_it!=ivsets.end(); ++ivsets_it){
+				for(auto ivsets_it=ivsets.begin(); ivsets_it!=ivsets.end(); ++ivsets_it) {
 					std::vector<std::map<int,int> > breakingSymmetries = (*ivsets_it)->getBreakingSymmetries(grounding);
-					for(auto bs_it = breakingSymmetries.begin(); bs_it != breakingSymmetries.end(); ++bs_it){
+					for(auto bs_it = breakingSymmetries.begin(); bs_it != breakingSymmetries.end(); ++bs_it) {
 						MinisatID::Symmetry symmetry;
-						for(auto s_it = bs_it->begin(); s_it!=bs_it->end(); ++s_it){
+						for(auto s_it = bs_it->begin(); s_it!=bs_it->end(); ++s_it) {
 							MinisatID::Atom a1 = MinisatID::Atom(s_it->first);
 							MinisatID::Atom a2 = MinisatID::Atom(s_it->second);
 							std::pair<MinisatID::Atom,MinisatID::Atom> entry = std::pair<MinisatID::Atom,MinisatID::Atom>(a1,a2);
@@ -62,7 +76,7 @@ public:
 						solver->add(symmetry);
 					}
 				}
-			}else{
+			} else {
 				std::cerr << "Unknown symmetry option...\n";
 			}
 		}
@@ -76,6 +90,7 @@ public:
 		solver->solve(abstractsolutions);
 
 		// Collect solutions
+		structure = propagator->currstructure(structure);
 		std::vector<AbstractStructure*> solutions;
 		for(auto model = abstractsolutions->getModels().begin();
 			model != abstractsolutions->getModels().end(); ++model) {
@@ -113,6 +128,86 @@ public:
 	}
 
 private:
+	InternalArgument unsat() const {
+		// Return an empty table of solutions
+		InternalArgument result;
+		result._type = AT_TABLE;
+		result._value._table = new std::vector<InternalArgument>();
+		return result;
+	}
+
+	bool calculateDefinition(Definition* definition, AbstractStructure* structure, Options* options) const {
+		// Create solver and grounder
+		SATSolver* solver = createsolver(options);
+		GrounderFactory grounderfactory(structure,options);
+		Theory theory("",structure->vocabulary(),ParseInfo()); theory.add(definition);
+		TopLevelGrounder* grounder = grounderfactory.create(&theory,solver);
+
+		// Run grounder
+		grounder->run();
+		AbstractGroundTheory* grounding = dynamic_cast<GroundTheory<SolverPolicy>*>(grounder->grounding());
+
+		// TODO Add information that is abstracted in the grounding TODO this is done somewhere else? TODO
+		//grounding->addFuncConstraints();
+		//grounding->addFalseDefineds();
+
+		// Run solver
+		MinisatID::Solution* abstractsolutions = initsolution(options);
+		solver->solve(abstractsolutions);
+
+		// Collect solutions
+		if(abstractsolutions->getModels().empty()) {
+			return false;
+		} else {
+			assert(abstractsolutions->getModels().size() == 1);
+			auto model = *(abstractsolutions->getModels().begin());
+			addLiterals(model,grounding->translator(),structure);
+			addTerms(model,grounding->termtranslator(),structure);
+			structure->clean();
+		}
+
+		// Cleanup
+		grounding->recursiveDelete();
+		delete(solver);
+		delete(abstractsolutions);
+
+		return true;
+	}
+
+	bool calculateKnownDefinitions(Theory* theory, AbstractStructure* structure, Options* options) const {
+		// Collect the open symbols of all definitions
+		std::map<Definition*,std::set<PFSymbol*> > opens;
+		for(auto it = theory->definitions().begin(); it != theory->definitions().end(); ++it) { 
+			opens[*it] = DefinitionUtils::opens(*it);
+		}
+
+		// Calculate the interpretation of the defined atoms from definitions that do not have
+		// three-valued open symbols
+		bool fixpoint = false;
+		while(not fixpoint) {
+			fixpoint = true;
+			for(auto it = opens.begin(); it != opens.end(); ) {
+				auto currentdefinition = it++;
+				// Remove opens that have a two-valued interpretation
+				for(auto symbol = currentdefinition->second.begin(); symbol != currentdefinition->second.end(); ) {
+					auto currentsymbol = symbol++;
+					if(structure->inter(*currentsymbol)->approxTwoValued()) {
+						currentdefinition->second.erase(currentsymbol);
+					}
+				}
+				// If no opens are left, calculate the interpretation of the defined atoms
+				if(currentdefinition->second.empty()) {
+					bool satisfiable = calculateDefinition(currentdefinition->first,structure,options);
+					if(not satisfiable) { return false; }
+					opens.erase(currentdefinition);
+					theory->remove(currentdefinition->first);
+					fixpoint = false;
+				}
+			}
+		} 
+		return true;
+	}
+
 	SATSolver* createsolver(Options* options) const {
 		MinisatID::SolverOption modes;
 		modes.nbmodels = options->getValue(IntType::NRMODELS);
@@ -146,13 +241,13 @@ private:
 				const ElementTuple& args = translator->getArgs(atomnr);
 				if(typeid(*symbol) == typeid(Predicate)) {
 					Predicate* pred = dynamic_cast<Predicate*>(symbol);
-					if(literal->hasSign()) init->inter(pred)->makeFalse(args);
-					else init->inter(pred)->makeTrue(args);
+					if(literal->hasSign()) { init->inter(pred)->makeFalse(args); }
+					else { init->inter(pred)->makeTrue(args); }
 				}
 				else {
 					Function* func = dynamic_cast<Function*>(symbol);
-					if(literal->hasSign()) init->inter(func)->graphinter()->makeFalse(args);
-					else init->inter(func)->graphinter()->makeTrue(args);
+					if(literal->hasSign()) { init->inter(func)->graphInter()->makeFalse(args); }
+					else { init->inter(func)->graphInter()->makeTrue(args); }
 				}
 			}
 		}
@@ -176,7 +271,7 @@ private:
 				}
 				tuple.push_back(DomainElementFactory::instance()->create(cpvar->value));
 //				std::cerr << '=' << function->name() << tuple;
-				init->inter(function)->graphinter()->makeTrue(tuple);
+				init->inter(function)->graphInter()->makeTrue(tuple);
 			}
 //			std::cerr << ' ';
 		}

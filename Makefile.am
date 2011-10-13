@@ -53,6 +53,7 @@ gidl_SOURCES = \
 		ecnf.hpp ecnf.cpp\
 		ground.hpp ground.cpp\
 		fobdd.hpp fobdd.cpp\
+		symbolicstructure.hpp symbolicstructure.cpp\
         symmetry.hpp symmetry.cpp\
 		monitors/interactiveprintmonitor.hpp monitors/tracemonitor.hpp\
 		monitors/luatracemonitor.hpp monitors/luainteractiveprintmonitor.hpp\

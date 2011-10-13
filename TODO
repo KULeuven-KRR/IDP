@@ -15,6 +15,7 @@ Todo
 	- een niet bestaande optie in stdoptions setten geeft geen fout (bvb stdoptions.a=1) 
 	- modelexpansie algoritme moet beschikbaar zijn in verschillende andere inferenties (e.g., optimalpropagate). Moet dus ergens anders staan dan in 
 	  de klasse in modelexpand.hpp 
+	- zorgen dat integer deling niet truncate
 
 Bugs
 ====

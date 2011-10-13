@@ -24,8 +24,9 @@ class TermGrounder {
 		TermGrounder(AbstractGroundTheory* g, SortTable* dom) : _grounding(g), _domain(dom) { }
 		virtual ~TermGrounder() { }
 		virtual GroundTerm run() const = 0;
-		void setorig(const Term* t, const std::map<Variable*, const DomElemContainer*>& mvd, int);
-		SortTable* domain() const { return _domain; }
+		void setOrig(const Term* t, const std::map<Variable*, const DomElemContainer*>& mvd, int);
+		SortTable* 	getDomain() const 			{ return _domain; }
+		void		setDomain(SortTable* dom) 	{ _domain = dom; }
 };
 
 class DomTermGrounder : public TermGrounder {
@@ -33,7 +34,7 @@ class DomTermGrounder : public TermGrounder {
 		const DomainElement*	_value;
 	public:
 		DomTermGrounder(const DomainElement* val) : _value(val) { }
-		GroundTerm run() const { return GroundTerm(_value);	}
+		GroundTerm run() const;
 };
 
 class VarTermGrounder : public TermGrounder {
@@ -63,15 +64,19 @@ class FuncTermGrounder : public TermGrounder {
 		//			table lookup
 };
 
+enum SumType { ST_PLUS, ST_MINUS };
+
 class SumTermGrounder : public TermGrounder {
 	protected:
 		GroundTermTranslator* 	_termtranslator;
 		FuncTable*				_functable;
 		TermGrounder*			_lefttermgrounder;
 		TermGrounder*			_righttermgrounder;
+		SumType					_type;
 	public:
-		SumTermGrounder(AbstractGroundTheory* g, GroundTermTranslator* tt, FuncTable* ftable, SortTable* dom, TermGrounder* ltg, TermGrounder* rtg)
-			: TermGrounder(g,dom), _termtranslator(tt), _functable(ftable), _lefttermgrounder(ltg), _righttermgrounder(rtg) { }
+		SumTermGrounder(AbstractGroundTheory* g, GroundTermTranslator* tt, FuncTable* ftable
+			, SortTable* dom, TermGrounder* ltg, TermGrounder* rtg, SumType type = ST_PLUS)
+			: TermGrounder(g,dom), _termtranslator(tt), _functable(ftable), _lefttermgrounder(ltg), _righttermgrounder(rtg), _type(type) { }
 		GroundTerm run() const;
 };
 

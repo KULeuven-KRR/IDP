@@ -40,7 +40,7 @@ class FormulaGrounder {
 		virtual bool	conjunctive()	const = 0;
 
 		// NOTE: required for correctness because it creates the associated varmap!
-		void setorig(const Formula* f, const std::map<Variable*, const DomElemContainer*>& mvd, int);
+		void setOrig(const Formula* f, const std::map<Variable*, const DomElemContainer*>& mvd, int);
 
 		void printorig() const;
 };
@@ -48,16 +48,18 @@ class FormulaGrounder {
 class AtomGrounder : public FormulaGrounder {
 	protected:
 		std::vector<TermGrounder*>		_subtermgrounders;
-		InstanceChecker*				_pchecker;
-		InstanceChecker*				_cchecker;
+		InstGenerator*				_pchecker;
+		InstGenerator*				_cchecker;
 		size_t							_symbol; // symbol's offset in translator's table.
 		std::vector<SortTable*>			_tables;
 		SIGN							_sign;
 		int								_certainvalue;
+		std::vector<const DomainElement**>	_checkargs;
+		PredInter*							_inter;
 	public:
-		AtomGrounder(GroundTranslator*, SIGN sign, PFSymbol*,
-					const std::vector<TermGrounder*>, InstanceChecker*, InstanceChecker*,
-					const std::vector<SortTable*>&, const GroundingContext&);
+		AtomGrounder(GroundTranslator*, SIGN sign, PFSymbol*
+				, const std::vector<TermGrounder*>, InstGenerator*, InstGenerator*
+				, const std::vector<SortTable*>&, const GroundingContext&);
 		int		run() const;
 		void	run(litlist&)	const;
 		bool	conjunctive() const { return true;	}

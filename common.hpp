@@ -25,26 +25,22 @@ bool isInt(const std::string&);		//!< true iff the given string is an integer
 bool isDouble(const std::string&);	//!< true iff the given string is a double
 
 template<typename T>
-std::string	toString(T element){
+std::string	convertToString(T element) {
 	std::stringstream ss;
 	ss << element;
 	return ss.str();
 }
-int			toInt(const std::string&);	//!< convert string to int
-double		toDouble(const std::string&);	//!< convert string to double
+int		toInt(const std::string&);	//!< convert string to int
+double	toDouble(const std::string&);	//!< convert string to double
 
-void	printtabs(std::ostream&,unsigned int tabs);	//!< write a given number of tabs
+void	printTabs(std::ostream&,unsigned int tabs);	//!< write a given number of tabs
 
-double applyAgg(const AggFunction&,const std::vector<double>& args);	//!< apply an aggregate function to arguments
+double 	applyAgg(const AggFunction&,const std::vector<double>& args);	//!< apply an aggregate function to arguments
 
-CompType invertct(CompType ct);
-CompType invertcomp(CompType);	//!< Invert a comparison operator
-CompType negatecomp(CompType);	//!< Negate a comparison operator
+CompType invertComp(CompType);	//!< Invert a comparison operator
+CompType negateComp(CompType);	//!< Negate a comparison operator
 
 TsType reverseImplication(TsType type);
-
-// Negate a context
-Context swapcontext(Context ct);
 
 bool isPos(SIGN s);
 bool isNeg(SIGN s);
@@ -89,6 +85,8 @@ Stream& operator<<(Stream& output, CompType type){
 	}
 	return output;
 }
+
+PosContext negateContext(PosContext);	//!< Negate a context
 
 std::string* StringPointer(const char* str);			//!< Returns a shared pointer to the given string
 std::string* StringPointer(const std::string& str);	//!< Returns a shared pointer to the given string

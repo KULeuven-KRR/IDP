@@ -1,0 +1,25 @@
+vocabulary V{
+	p
+	q
+}
+
+theory T:V{
+	{
+		p <- q.
+	}
+}
+
+structure S:V{
+}
+
+#include <mx>
+
+procedure main(){
+	local expected = 2
+	local sols = mx::all(T, S)
+	if(not (#(sols)==expected)) then
+		print("ERROR, should have been "..expected..", but found "..#(sols).." solutions.")
+		return
+	end
+	print("OK")
+}

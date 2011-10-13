@@ -34,44 +34,78 @@
 #include "grounders/DefinitionGrounders.hpp"
 #include "grounders/LazyQuantGrounder.hpp"
 
+#include "fobdd.hpp"
+#include "symbolicstructure.hpp"
+
 using namespace std;
 using namespace rel_ops;
 
+// FIXME they are already defined somewhere?
+/** The two built-in literals 'true' and 'false' **/
+int _true = numeric_limits<int>::max();
+int _false = 0;
+
+double MCPA = 1;	// TODO: constant currently used when pruning bdds. Should be made context dependent
 
 /****************************************
 	Comparison operators for TsBodies
 ****************************************/
 
+// TODO verify operator code
 bool operator==(const TsBody& a, const TsBody& b) {
-	if(typeid(a) != typeid(b))
-		return false;
-	else
-		return (int)a.type() == (int)b.type();
+	if(typeid(a) != typeid(b)) { return false; }
+	else { return a.equal(b); }
 }
 
 bool operator<(const TsBody& a, const TsBody& b) {
 	// Order of TsBodies of different types is defined by lexical order of there typeids.
-	if(typeid(a) != typeid(b)){
-		return (typeid(a).name() < typeid(b).name());
-	}else{
-		return (int)a.type() < (int)b.type();
+	if(typeid(a) != typeid(b)) { return (typeid(a).name() < typeid(b).name()); }
+	else { return a.compare(b); }
+}	
+
+bool TsBody::equal(const TsBody& other) const {
+	return _type == other.type();
+}
+
+bool TsBody::compare(const TsBody& other) const {
+	return _type < other.type();
+}
+
+bool CPTsBody::equal(const TsBody& other) const {
+	if(not TsBody::equal(other)) { return false; }
+	const CPTsBody& othercpt = static_cast<const CPTsBody&>(other);
+	return (*_left == *othercpt.left()) && (_comp == othercpt.comp()) && (_right == othercpt.right());
+}
+
+bool CPTsBody::compare(const TsBody& other) const {
+	if(TsBody::compare(other)) { return true; }
+	else if(TsBody::equal(other)) {
+		const CPTsBody& othercpt = static_cast<const CPTsBody&>(other);
+		if(*_left < *othercpt.left()) { 
+			return true;
+		} else if(*_left == *othercpt.left()) {
+			if(_comp < othercpt.comp()) {
+				return true;
+			} else if(_comp == othercpt.comp()) {
+				if(_right < othercpt.right()) {
+					return true;
+				}
+			}
+		}
 	}
+	return false;
 }
 
 /** Comparing CP terms and bounds **/
 
 bool operator==(const CPTerm& a, const CPTerm& b) {
-	if(typeid(a) != typeid(b))
-		return false;
-	else
-		return a.equal(b);
+	if(typeid(a) != typeid(b)) { return false; }
+	else { return a.equal(b); }
 }
 
 bool operator<(const CPTerm& a, const CPTerm& b) {
-	if(typeid(a) != typeid(b))
-		return (typeid(a).name() < typeid(b).name());
-	else
-		return a.compare(b);
+	if(typeid(a) != typeid(b)) { return (typeid(a).name() < typeid(b).name()); }
+	else { return a.compare(b); }
 }
 
 bool CPVarTerm::equal(const CPTerm& other) const {
@@ -106,14 +140,14 @@ bool CPWSumTerm::compare(const CPTerm& other) const {
 
 bool operator==(const CPBound& a, const CPBound& b) {
 	if(a._isvarid == b._isvarid) {
-		return a._isvarid ? (a._varid == b._varid) : (a._bound == b._bound);
+		return (a._isvarid ? (a._varid == b._varid) : (a._bound == b._bound));
 	}
 	return false;
 }
 
 bool operator<(const CPBound& a, const CPBound& b) {
 	if(a._isvarid == b._isvarid) {
-		return a._isvarid ? (a._varid < b._varid) : (a._bound < b._bound);
+		return (a._isvarid ? (a._varid < b._varid) : (a._bound < b._bound));
 	}
 	// CPBounds with a number value come before CPBounds with a CP variable identifier.
 	return (a._isvarid < b._isvarid);
@@ -126,7 +160,7 @@ bool operator<(const CPBound& a, const CPBound& b) {
 
 GroundTranslator::~GroundTranslator() {
 	deleteList<SymbolAndTuple>(atom2Tuple);
-	for(auto i=atom2TsBody.begin(); i<atom2TsBody.end(); ++i){
+	for(auto i = atom2TsBody.begin(); i < atom2TsBody.end(); ++i){
 		delete((*i).second);
 	}
 }
@@ -217,7 +251,18 @@ Lit	GroundTranslator::translate(double bound, CompType comp, bool strict, AggFun
 
 Lit GroundTranslator::translate(CPTerm* left, CompType comp, const CPBound& right, TsType tstype) {
 	CPTsBody* tsbody = new CPTsBody(tstype,left,comp,right);
-	return addTseitinBody(tsbody);
+	// FIXME optimization: check whether the same comparison has already been added and reuse the tseitin.
+	// => this should be generalized to sharing detection!
+/*	auto it = lower_bound(atom2TsBody.begin(), atom2TsBody.end(), tspair(0,tsbody), compareTsPair);
+	if(it != atom2TsBody.end() && (*it).second == *tsbody) {
+		delete tsbody;
+		return (*it).first;
+	}
+	else {*/
+		int nr = nextNumber(AtomType::TSEITINWITHSUBFORMULA);
+		atom2TsBody[nr] = tspair(nr, tsbody);
+		return nr;
+	//}
 }
 
 int GroundTranslator::translateSet(const vector<int>& lits, const vector<double>& weights, const vector<double>& trueweights) {
@@ -270,37 +315,36 @@ unsigned int GroundTranslator::addSymbol(PFSymbol* pfs) {
 
 string GroundTranslator::printAtom(const Lit& atom, bool longnames) const {
 	stringstream s;
-	uint nr = abs(atom);
-	if(nr == _true) return "true";
-	else if(nr == _false) return "false";
+	uint nr = abs(nr);
+	if(nr == _true) { return "true"; }
+	if(nr == _false) { return "false"; }
 	if(not isStored(nr)) {
 		return "error";
 	}
 
 	switch(atomtype[nr]){
-	case AtomType::INPUT:{
-		PFSymbol* pfs = getSymbol(nr);
-		s << pfs->to_string(longnames);
-		auto tuples = getArgs(nr);
-		if(not tuples.empty()) {
-			s << "(";
-			bool begin = true;
-			for(auto i = tuples.begin(); i!=tuples.end(); ++i){
-				if(not begin){
-					s <<", ";
+		case AtomType::INPUT: {
+			PFSymbol* pfs = getSymbol(nr);
+			s << pfs->toString(longnames);
+			auto tuples = getArgs(nr);
+			if(not tuples.empty()) {
+				s << "(";
+				bool begin = true;
+				for(auto i = tuples.begin(); i!=tuples.end(); ++i){
+					if(not begin){ s <<", "; }
+					begin = false;
+					s << (*i)->toString();
 				}
-				begin = false;
-				s << (*i)->to_string();
+				s << ")";
 			}
-			s << ")";
+			break;
 		}
-		break;}
-	case AtomType::TSEITINWITHSUBFORMULA:
-		s << "tseitin_" << nr;
-		break;
-	case AtomType::LONETSEITIN:
-		s << "tseitin_" << nr;
-		break;
+		case AtomType::TSEITINWITHSUBFORMULA:
+			s << "tseitin_" << nr;
+			break;
+		case AtomType::LONETSEITIN:
+			s << "tseitin_" << nr;
+			break;
 	}
 	return s.str();
 }
@@ -382,9 +426,10 @@ size_t GroundTermTranslator::nextNumber() {
 
 size_t GroundTermTranslator::addFunction(Function* func) {
 	map<Function*,size_t>::const_iterator found = _function2offset.find(func);
-	if(found != _function2offset.end())
+	if(found != _function2offset.end()) {
 		// Simply return number when function is already known
 		return found->second;
+	}
 	else {
 		// Add function and number when function is unknown
 		size_t offset = _offset2function.size();
@@ -397,25 +442,23 @@ size_t GroundTermTranslator::addFunction(Function* func) {
 
 string GroundTermTranslator::printTerm(const VarId& varid, bool longnames) const {
 	stringstream s;
-	if(varid >= _varid2function.size()) {
-		return "error";
-	}
+	if(varid >= _varid2function.size()) { return "error"; }
 	const Function* func = function(varid);
 	if(func) {
-		s << func->to_string(longnames);
+		s << func->toString(longnames);
 		if(not args(varid).empty()) {
 			s << "(";
 			for(vector<GroundTerm>::const_iterator gtit = args(varid).begin(); gtit != args(varid).end(); ++gtit) {
 				if((*gtit)._isvarid) {
-					s << printTerm((*gtit)._varid, longnames);
+					s << printTerm((*gtit)._varid,longnames);
 				} else {
-					s << (*gtit)._domelement->to_string();
+					s << (*gtit)._domelement->toString();
 				}
-				if(gtit != args(varid).end()-1) s << ",";
+				if(gtit != args(varid).end()-1) { s << ","; }
 			}
 			s << ")";
 		}
-	} else s << "var_" << varid;
+	} else { s << "var_" << varid; }
 	return s.str();
 }
 
@@ -437,7 +480,7 @@ bool TheoryGrounder::run() const {
 	}
 	for(unsigned int n = 0; n < _grounders.size(); ++n) {
 		bool b = _grounders[n]->run();
-		if(!b){
+		if(not b) {
 			return b;
 		}
 	}
@@ -446,11 +489,11 @@ bool TheoryGrounder::run() const {
 }
 
 bool SentenceGrounder::run() const {
-	if(_verbosity > 1) clog << "Grounding sentence " << "\n";
+	if(_verbosity > 1) { clog << "Grounding sentence " << "\n"; }
 	vector<int> cl;
 	_subgrounder->run(cl);
 	if(cl.empty()) {
-		return _conj ? true : false;
+		return (_conj ? true : false);
 	}
 	else if(cl.size() == 1) {
 		if(cl[0] == _false) {
@@ -461,12 +504,13 @@ bool SentenceGrounder::run() const {
 			_grounding->add(cl);
 			return true;
 		}
-		else return true;
+		else { return true; }
 	}
 	else {
 		if(_conj) {
-			for(unsigned int n = 0; n < cl.size(); ++n)
+			for(size_t n = 0; n < cl.size(); ++n) {
 				_grounding->addUnitClause(cl[n]);
+			}
 		}
 		else {
 			_grounding->add(cl);
@@ -503,8 +547,66 @@ bool UnivSentGrounder::run() const {
 	GrounderFactory methods
 ******************************/
 
-GrounderFactory::GrounderFactory(AbstractStructure* structure, Options* opts)
-	: _structure(structure), _options(opts), _verbosity(opts->getValue(IntType::GROUNDVERBOSITY)), _cpsupport(opts->getValue(BoolType::CPSUPPORT)) {
+GrounderFactory::GrounderFactory(AbstractStructure* structure, Options* opts, SymbolicStructure* symstructure)
+	: _structure(structure), _symstructure(symstructure), _options(opts), 
+		_verbosity(opts->getValue(IntType::GROUNDVERBOSITY)), _cpsupport(opts->getValue(BoolType::CPSUPPORT)),
+		_longnames(opts->getValue(BoolType::LONGNAMES)) {
+
+	// Create a symbolic structure if no such structure is given
+	if(not _symstructure) {
+		FOBDDManager* manager = new FOBDDManager();
+		std::map<PFSymbol*,const FOBDD*> ctbounds;
+		std::map<PFSymbol*,const FOBDD*> cfbounds;
+		std::map<PFSymbol*,std::vector<const FOBDDVariable*> > vars;
+		Vocabulary* vocabulary = structure->vocabulary();
+		for(auto it = vocabulary->firstPred(); it != vocabulary->lastPred(); ++it) {
+			set<Predicate*> sp = it->second->nonbuiltins();
+			for(auto jt = sp.begin(); jt != sp.end(); ++jt) {
+				PredInter* pinter = structure->inter(*jt);
+				if(not pinter->approxTwoValued()) {
+					vector<Variable*> pvars = VarUtils::makeNewVariables((*jt)->sorts());
+					vector<const FOBDDVariable*> pbddvars(pvars.size());
+					vector<const FOBDDArgument*> pbddargs(pvars.size());
+					for(size_t n = 0; n < pvars.size(); ++n) {
+						const FOBDDVariable* bddvar = manager->getVariable(pvars[n]);
+						pbddvars[n] = bddvar; pbddargs[n] = bddvar;
+					}
+					vars[*jt] = pbddvars;
+					const FOBDDKernel* ctkernel = manager->getAtomKernel(*jt,AKT_CT,pbddargs);
+					const FOBDDKernel* cfkernel = manager->getAtomKernel(*jt,AKT_CF,pbddargs);
+					ctbounds[*jt] = manager->getBDD(ctkernel,manager->truebdd(),manager->falsebdd());
+					cfbounds[*jt] = manager->getBDD(cfkernel,manager->truebdd(),manager->falsebdd());
+				}
+			}
+		}
+		for(auto it = vocabulary->firstFunc(); it != vocabulary->lastFunc(); ++it) {
+			set<Function*> sf = it->second->nonbuiltins();
+			for(auto jt = sf.begin(); jt != sf.end(); ++jt) {
+				PredInter* pinter = structure->inter(*jt)->graphInter();
+				if(not pinter->approxTwoValued()) {
+					vector<Variable*> pvars = VarUtils::makeNewVariables((*jt)->sorts());
+					vector<const FOBDDVariable*> pbddvars(pvars.size());
+					vector<const FOBDDArgument*> pbddargs(pvars.size());
+					for(size_t n = 0; n < pvars.size(); ++n) {
+						const FOBDDVariable* bddvar = manager->getVariable(pvars[n]);
+						pbddvars[n] = bddvar; pbddargs[n] = bddvar;
+					}
+					vars[*jt] = pbddvars;
+					const FOBDDKernel* ctkernel = manager->getAtomKernel(*jt,AKT_CT,pbddargs);
+					const FOBDDKernel* cfkernel = manager->getAtomKernel(*jt,AKT_CF,pbddargs);
+					ctbounds[*jt] = manager->getBDD(ctkernel,manager->truebdd(),manager->falsebdd());
+					cfbounds[*jt] = manager->getBDD(cfkernel,manager->truebdd(),manager->falsebdd());
+				}
+			}
+		}
+		_symstructure = new SymbolicStructure(manager,ctbounds,cfbounds,vars);
+	}
+
+	if(_verbosity > 2) {
+		clog << "Using the following symbolic structure to ground: " << endl;
+		_symstructure->put(clog);
+	}
+
 }
 
 set<const PFSymbol*> GrounderFactory::findCPSymbols(const AbstractTheory* theory) {
@@ -515,7 +617,7 @@ set<const PFSymbol*> GrounderFactory::findCPSymbols(const AbstractTheory* theory
 //			_cpsymbols.insert(predicate);
 //		}
 //	}
-	for(map<string,Function*>::const_iterator funcit = vocabulary->firstfunc(); funcit != vocabulary->lastfunc(); ++funcit) {
+	for(map<string,Function*>::const_iterator funcit = vocabulary->firstFunc(); funcit != vocabulary->lastFunc(); ++funcit) {
 		Function* function = funcit->second;
 		bool passtocp = false;
 		// Check whether the (user-defined) function's outsort is over integers
@@ -528,7 +630,7 @@ set<const PFSymbol*> GrounderFactory::findCPSymbols(const AbstractTheory* theory
 		} else if(not function->builtin()) {
 			passtocp = (SortUtils::resolve(function->outsort(),intsort,vocabulary) == intsort);
 		}
-		if(passtocp) _cpsymbols.insert(function);
+		if(passtocp) { _cpsymbols.insert(function); }
 	}
 	if(_verbosity > 1) {
 		clog << "User-defined symbols that can be handled by the constraint solver: ";
@@ -551,7 +653,7 @@ bool GrounderFactory::isCPSymbol(const PFSymbol* symbol) const {
  */
 bool GrounderFactory::recursive(const Formula* f) {
 	for(set<PFSymbol*>::const_iterator it = _context._defined.begin(); it != _context._defined.end(); ++it) {
-		if(f->contains(*it)) return true;
+		if(f->contains(*it)) { return true; }
 	}
 	return false;
 }
@@ -605,7 +707,7 @@ void GrounderFactory::RestoreContext() {
  */
 void GrounderFactory::DeeperContext(SIGN sign) {
 	// One level deeper
-	if(_context._component == CC_SENTENCE) _context._component = CC_FORMULA;
+	if(_context._component == CC_SENTENCE) { _context._component = CC_FORMULA; }
 	// Swap positive, truegen and tseitin according to sign
 	if(isNeg(sign)) {
 		_context._truegen = !_context._truegen;
@@ -692,10 +794,8 @@ TopLevelGrounder* GrounderFactory::create(const AbstractTheory* theory) {
 	GroundTheory<GroundPolicy>* groundtheory = new GroundTheory<GroundPolicy>(theory->vocabulary(),_structure->clone());
 	_grounding = groundtheory;
 
-	// Find function that can be passed to CP solver.
-	if(_cpsupport){
-		findCPSymbols(theory);
-	}
+	// Find functions that can be passed to CP solver.
+	if(_cpsupport) { findCPSymbols(theory); }
 
 	// Create the grounder
 	theory->accept(this);
@@ -708,10 +808,8 @@ TopLevelGrounder* GrounderFactory::create(const AbstractTheory* theory, Interact
 	groundtheory->initialize(monitor, groundtheory->structure(), groundtheory->translator(), groundtheory->termtranslator(), opts);
 	_grounding = groundtheory;
 
-	// Find function that can be passed to CP solver.
-	if(_cpsupport){
-		findCPSymbols(theory);
-	}
+	// Find functions that can be passed to CP solver.
+	if(_cpsupport) { findCPSymbols(theory); }
 
 	// Create the grounder
 	theory->accept(this);
@@ -742,9 +840,7 @@ TopLevelGrounder* GrounderFactory::create(const AbstractTheory* theory, SATSolve
 	_grounding = groundtheory;
 
 	// Find function that can be passed to CP solver.
-	if(_cpsupport){
-		findCPSymbols(theory);
-	}
+	if(_cpsupport) { findCPSymbols(theory); }
 
 	// Create the grounder
 	theory->accept(this);
@@ -783,9 +879,13 @@ void GrounderFactory::visit(const Theory* theory) {
 
 	// Create grounders for all components
 	vector<TopLevelGrounder*> children(components.size());
-	for(unsigned int n = 0; n < components.size(); ++n) {
+	for(size_t n = 0; n < components.size(); ++n) {
 		InitContext();
-		if(_verbosity > 0) clog << "Creating a grounder for " << *(components[n]) << "\n";
+		if(_verbosity > 0) {
+			clog << "Creating a grounder for ";
+			components[n]->put(clog,_longnames);
+			clog << "\n";
+		}
 		components[n]->accept(this);
 		children[n] = _toplevelgrounder; 
 	}
@@ -814,26 +914,32 @@ void GrounderFactory::visit(const PredForm* pf) {
 	// we first clone it.
 	PredForm* newpf = pf->clone();
 	Formula* transpf = FormulaUtils::moveThreeValuedTerms(newpf,_structure,(_context._funccontext != Context::NEGATIVE),_cpsupport,_cpsymbols);
+	transpf = FormulaUtils::removeEqChains(transpf);
+	if(not _cpsupport) { 
+		transpf = FormulaUtils::graphFunctions(transpf); 
+	}
 
 	if(typeid(*transpf) != typeid(PredForm)) {	// The rewriting changed the atom
 		if(_verbosity > 1) {
-			clog << "Rewritten " << *pf << " to " << *transpf << "\n"; 
+			clog << "Rewritten "; pf->put(clog,_longnames);
+			clog << " to "; movedformula->put(clog,_longnames);
+		   	clog << "\n"; 
 		}
-		transpf->accept(this);
+		movedformula->accept(this);
 	}
 	else {	// The rewriting did not change the atom
-		PredForm* ptranspf = dynamic_cast<PredForm*>(transpf);
+		PredForm* newpf = dynamic_cast<PredForm*>(movedformula);
 		// Create grounders for the subterms
 		vector<TermGrounder*> subtermgrounders;
 		vector<SortTable*>	  argsorttables;
-		for(unsigned int n = 0; n < ptranspf->subterms().size(); ++n) {
-			descend(ptranspf->subterms()[n]);
+		for(size_t n = 0; n < newpf->subterms().size(); ++n) {
+			descend(newpf->subterms()[n]);
 			subtermgrounders.push_back(_termgrounder);
-			argsorttables.push_back(_structure->inter(ptranspf->symbol()->sorts()[n]));
+			argsorttables.push_back(_structure->inter(newpf->symbol()->sorts()[n]));
 		}
 		// Create checkers and grounder
-		if(_cpsupport && VocabularyUtils::isComparisonPredicate(ptranspf->symbol())) {
-			string name = ptranspf->symbol()->name();
+		if(_cpsupport && VocabularyUtils::isComparisonPredicate(newpf->symbol())) {
+			string name = newpf->symbol()->name();
 			CompType comp;
 			if(name == "=/2")
 				comp = isPos(pf->sign()) ? CompType::EQ : CompType::NEQ;
@@ -847,50 +953,57 @@ void GrounderFactory::visit(const PredForm* pf) {
 			}
 			_formgrounder = new ComparisonGrounder(_grounding->translator(),_grounding->termtranslator(),
 									subtermgrounders[0],comp,subtermgrounders[1],_context);
-			_formgrounder->setorig(ptranspf,varmapping(),_verbosity);
+			_formgrounder->setOrig(newpf,varmapping(),_verbosity);
 			if(_context._component == CC_SENTENCE) { 
 				_toplevelgrounder = new SentenceGrounder(_grounding,_formgrounder,false,_verbosity);
 			}
 		}
 		else {
-			PredInter* inter = _structure->inter(ptranspf->symbol());
+			PredInter* inter = _structure->inter(newpf->symbol());
 			CheckerFactory checkfactory;
 			if(_context._component == CC_HEAD) {
 				// Create instance checkers
 				InstanceChecker* truech = checkfactory.create(inter,CERTAIN_TRUE);
 				InstanceChecker* falsech = checkfactory.create(inter,CERTAIN_FALSE);
 				// Create the grounder
-				_headgrounder = new HeadGrounder(_grounding,truech,falsech,ptranspf->symbol(),subtermgrounders,argsorttables);
+				_headgrounder = new HeadGrounder(_grounding,truech,falsech,newpf->symbol(),subtermgrounders,argsorttables);
 			}
 			else {
 				// Create instance checkers
-				InstanceChecker* possch;
-				InstanceChecker* certainch;
-				if(_context._truegen == isPos(ptranspf->sign())) {
-					possch = checkfactory.create(inter,POSS_TRUE);
-					certainch = checkfactory.create(inter,CERTAIN_TRUE);
-				} else {
-					possch = checkfactory.create(inter,POSS_FALSE);
-					certainch = checkfactory.create(inter,CERTAIN_FALSE);
+				vector<Sort*> checksorts;
+				vector<const DomainElement**> checkargs;
+				vector<SortTable*> tables;
+				for(auto it = newpf->subterms().begin(); it != newpf->subterms().end(); ++it) {
+					checksorts.push_back((*it)->sort());
+					checkargs.push_back(new const DomainElement*());
+					tables.push_back(_structure->inter((*it)->sort()));
 				}
+				vector<Variable*> fovars = VarUtils::makeNewVariables(checksorts);
+				vector<Term*> foterms = TermUtils::makeNewVarTerms(fovars);
+				PredForm* checkpf = new PredForm(newpf->sign(),newpf->symbol(),foterms,FormulaParseInfo());
+				const FOBDD* possbdd;
+				const FOBDD* certbdd;
+				if(_context._truegen) {	
+					possbdd = _symstructure->evaluate(checkpf,QT_PT);
+					certbdd = _symstructure->evaluate(checkpf,QT_CT); 
+				}
+				else {	
+					possbdd = _symstructure->evaluate(checkpf,QT_PF);
+					certbdd = _symstructure->evaluate(checkpf,QT_CF); 
+				}
+				PredTable* posstable = new PredTable(new BDDInternalPredTable(possbdd,_symstructure->manager(),fovars,_structure),Universe(tables));
+				PredTable* certtable = new PredTable(new BDDInternalPredTable(certbdd,_symstructure->manager(),fovars,_structure),Universe(tables));
+				GeneratorFactory gf;
+				InstGenerator* possch = gf.create(posstable,vector<bool>(checkargs.size(),true),checkargs,Universe(tables));
+				InstGenerator* certainch = gf.create(certtable,vector<bool>(checkargs.size(),true),checkargs,Universe(tables));
 				// Create the grounder
+// FIXME verify use of newpf and transpf
 				_formgrounder = new AtomGrounder(_grounding->translator(),ptranspf->sign(),ptranspf->symbol(),
 										subtermgrounders,possch,certainch,argsorttables,_context);
-				_formgrounder->setorig(ptranspf,varmapping(),_verbosity);
+				_formgrounder->setOrig(ptranspf,varmapping(),_verbosity);
 				if(_context._component == CC_SENTENCE) { 
 					_toplevelgrounder = new SentenceGrounder(_grounding,_formgrounder,false,_verbosity);
 				}
-//XXX Old code XXX
-//				if(_cpsupport && (typeid(*(ptranspf->symbol())) == typeid(Function)) && isCPFunction(ptranspf->symbol())) { 
-//					Function* func = static_cast<Function*>(ptranspf->symbol());
-//					_formgrounder = new CPAtomGrounder(_grounding->translator(),_grounding->termtranslator(),ptranspf->sign(),func,
-//											subtermgrounders,possch,certainch,argsorttables,_context);
-//				} 
-//				else {
-//					_formgrounder = new AtomGrounder(_grounding->translator(),ptranspf->sign(),ptranspf->symbol(),
-//											subtermgrounders,possch,certainch,argsorttables,_context);
-//				}
-//XXX
 			}
 		}
 	}
@@ -917,13 +1030,13 @@ void GrounderFactory::visit(const BoolForm* bf) {
 		// If bf is a negated disjunction, push the negation one level deeper.
 		// Take a clone to avoid changing bf;
 		BoolForm* newbf = bf->clone();
-		if(!(newbf->conj())) {
+		if(not newbf->conj()) {
 			newbf->conj(true);
-			newbf->swapsign();
-			for(vector<Formula*>::const_iterator it = newbf->subformulas().begin(); it != newbf->subformulas().end(); ++it)
-				(*it)->swapsign();
+			newbf->negate();
+			for(vector<Formula*>::const_iterator it = newbf->subformulas().begin(); it != newbf->subformulas().end(); ++it) {
+				(*it)->negate();
+			}
 		}
-
 		// Visit the subformulas
 		vector<TopLevelGrounder*> sub;
 		for(vector<Formula*>::const_iterator it = newbf->subformulas().begin(); it != newbf->subformulas().end(); ++it) {
@@ -934,7 +1047,6 @@ void GrounderFactory::visit(const BoolForm* bf) {
 		_toplevelgrounder = new TheoryGrounder(_grounding,sub,_verbosity);
 	}
 	else {	// Formula bf is not a top-level conjunction
-
 		// Create grounders for subformulas
 		SaveContext();
 		DeeperContext(bf->sign());
@@ -947,12 +1059,13 @@ void GrounderFactory::visit(const BoolForm* bf) {
 
 		// Create grounder
 		SaveContext();
-		if(recursive(bf)) _context._tseitin = TsType::RULE;
+		if(recursive(bf)) { _context._tseitin = TS_RULE; }
 		_formgrounder = new BoolGrounder(_grounding->translator(),sub,bf->sign(),bf->conj(),_context);
 		RestoreContext();
-		_formgrounder->setorig(bf,varmapping(),_verbosity);
-		if(_context._component == CC_SENTENCE) _toplevelgrounder = new SentenceGrounder(_grounding,_formgrounder,false,_verbosity);
-
+		_formgrounder->setOrig(bf,_varmapping,_verbosity);
+		if(_context._component == CC_SENTENCE) { 
+			_toplevelgrounder = new SentenceGrounder(_grounding,_formgrounder,false,_verbosity);
+		}
 	}
 }
 
@@ -978,7 +1091,19 @@ const DomElemContainer* GrounderFactory::createVarMapping(Variable * const var){
  *			CC_HEAD is not possible
  */
 void GrounderFactory::visit(const QuantForm* qf) {
+//cerr << "visit of " << *qf << endl;
 	// Create instance generator
+	Formula* clonedformula = qf->subformula()->clone();
+	Formula* movedformula = FormulaUtils::moveThreeValuedTerms(clonedformula,_structure,_context._funccontext);
+	movedformula = FormulaUtils::removeEqChains(movedformula);
+	movedformula = FormulaUtils::graphFunctions(movedformula);
+//cerr << "body translated to " << *movedformula << endl;
+	const FOBDD* generatorbdd = _symstructure->evaluate(movedformula,(qf->univ() ? QT_PF : QT_PT));
+	const FOBDD* checkerbdd = _symstructure->evaluate(movedformula,(qf->univ() ? QT_CF : QT_CT));
+//cerr << "generatorbdd:\n";
+//_symstructure->manager()->put(cerr,generatorbdd);
+//cerr << "checkerbdd:\n";
+//_symstructure->manager()->put(cerr,checkerbdd);
 	vector<const DomainElement**> vars;
 	vector<SortTable*>	tables;
 	auto gen = createVarMapAndGenerator(qf->quantvars());
@@ -995,12 +1120,44 @@ void GrounderFactory::visit(const QuantForm* qf) {
 		}
 	}
 
-	// Handle top-level universal quantifiers efficiently
-	if(_context._component == CC_SENTENCE && qf->isUnivWithSign()) {
-		Formula* newsub = qf->subf()->clone();
-		if(not qf->isUniv()){
-			newsub->swapsign();
+// TODO add the bdd code here
+/*	vector<Variable*> fovars;
+	vector<Variable*> optivars;
+	vector<SortTable*> tables;
+	vector<bool> pattern;
+	for(std::set<Variable*>::const_iterator it = movedformula->freeVars().begin(); it != movedformula->freeVars().end(); ++it) {
+		if(qf->quantVars().find(*it) == qf->quantVars().end()) {
+			assert(_varmapping.find(*it) != _varmapping.end());
+			vars.push_back(_varmapping[*it]);
+			pattern.push_back(true);
 		}
+		else {
+			const DomainElement** d = new const DomainElement*();
+			_varmapping[*it] = d;
+			vars.push_back(d);
+			pattern.push_back(false);
+			optivars.push_back(*it);
+		}
+		fovars.push_back(*it);
+		SortTable* st = _structure->inter((*it)->sort());
+		tables.push_back(st);
+	}
+	generatorbdd = improve_generator(generatorbdd,optivars,MCPA);
+	checkerbdd = improve_checker(checkerbdd,MCPA);
+//cerr << "improved generatorbdd:\n";
+//_symstructure->manager()->put(cerr,generatorbdd);
+//cerr << "improved checkerbdd:\n";
+//_symstructure->manager()->put(cerr,checkerbdd);
+	PredTable* gentable = new PredTable(new BDDInternalPredTable(generatorbdd,_symstructure->manager(),fovars,_structure),Universe(tables));
+	PredTable* checktable = new PredTable(new BDDInternalPredTable(checkerbdd,_symstructure->manager(),fovars,_structure),Universe(tables));
+	GeneratorFactory gf;
+	InstGenerator* gen = gf.create(gentable,pattern,vars,Universe(tables));
+	InstGenerator* check = gf.create(checktable,vector<bool>(vars.size(),true),vars,Universe(tables));
+*/
+	// Handle top-level universal quantifiers efficiently
+	if(_context._component == CC_SENTENCE && (qf->sign() == qf->univ())) {
+		Formula* newsub = qf->subformula()->clone();
+		if(not qf->univ()) { newsub->negate(); }
 		descend(newsub);
 		newsub->recursiveDelete();
 		_toplevelgrounder = new UnivSentGrounder(_grounding,_toplevelgrounder,gen,_verbosity);
@@ -1009,13 +1166,13 @@ void GrounderFactory::visit(const QuantForm* qf) {
 		// Create grounder for subformula
 		SaveContext();
 		DeeperContext(qf->sign());
-		_context._truegen = not qf->isUniv();
-		descend(qf->subf());
+		_context._truegen = !(qf->univ()); 
+		descend(qf->subformula());
 		RestoreContext();
 
 		// Create the grounder
 		SaveContext();
-		if(recursive(qf)) _context._tseitin = TsType::RULE;
+		if(recursive(qf)) { _context._tseitin = TS_RULE; }
 
 		bool canlazyground = false;
 		if(not qf->isUniv() && _context._monotone==Context::POSITIVE && _context._tseitin==TsType::IMPL){
@@ -1026,12 +1183,14 @@ void GrounderFactory::visit(const QuantForm* qf) {
 		if(_options->getValue(BoolType::GROUNDLAZILY) && canlazyground && typeid(*_grounding)==typeid(SolverTheory)){
 			_formgrounder = new LazyQuantGrounder(qf->freevars(), dynamic_cast<SolverTheory*>(_grounding),_grounding->translator(),_formgrounder,qf->sign(),qf->quant(),gen,_context);
 		}else{
-			_formgrounder = new QuantGrounder(_grounding->translator(),_formgrounder,qf->sign(),qf->quant(),gen,_context);
+			_formgrounder = new QuantGrounder(_grounding->translator(),_formgrounder,qf->sign(),qf->quant(),gen,check,_context);
 		}
 
 		RestoreContext();
-		_formgrounder->setorig(qf,varmapping(),_verbosity);
-		if(_context._component == CC_SENTENCE) _toplevelgrounder = new SentenceGrounder(_grounding,_formgrounder,false,_verbosity);
+		_formgrounder->setOrig(qf,_varmapping,_verbosity);
+		if(_context._component == CC_SENTENCE) {
+			_toplevelgrounder = new SentenceGrounder(_grounding,_formgrounder,false,_verbosity);
+		}
 	}
 }
 
@@ -1070,7 +1229,9 @@ void GrounderFactory::visit(const EquivForm* ef) {
 	}
 	_formgrounder = new EquivGrounder(_grounding->translator(),leftg,rightg,ef->sign(),_context);
 	RestoreContext();
-	if(_context._component == CC_SENTENCE) _toplevelgrounder = new SentenceGrounder(_grounding,_formgrounder,true,_verbosity);
+	if(_context._component == CC_SENTENCE) {
+		_toplevelgrounder = new SentenceGrounder(_grounding,_formgrounder,true,_verbosity);
+	}
 }
 
 /**
@@ -1083,12 +1244,17 @@ void GrounderFactory::visit(const AggForm* af) {
 	Formula* transaf = FormulaUtils::moveThreeValuedTerms(newaf,_structure,(_context._funccontext != Context::NEGATIVE),_cpsupport,_cpsymbols);
 
 	if(typeid(*transaf) != typeid(AggForm)) {	// The rewriting changed the atom
+		if(_verbosity > 1) {
+			clog << "Rewritten "; af->put(clog,_longnames);
+			clog << " to "; movedformula->put(clog,_longnames);
+		   	clog << "\n"; 
+		}
 		transaf->accept(this);
 	}
 	else {	// The rewriting did not change the atom
-		AggForm* atransaf = dynamic_cast<AggForm*>(transaf);
+		AggForm* newaf = dynamic_cast<AggForm*>(movedformula);
 		// Create grounder for the bound
-		descend(atransaf->left());
+		descend(newaf->left());
 		TermGrounder* boundgr = _termgrounder;
 	
 		// Create grounder for the set
@@ -1098,13 +1264,20 @@ void GrounderFactory::visit(const AggForm* af) {
 		descend(atransaf->right()->set());
 		SetGrounder* setgr = _setgrounder;
 		RestoreContext();
-	
+
+// FIXME check correctnes of sign and comp combination!	
 		// Create aggregate grounder
 		SaveContext();
 		if(recursive(atransaf)) _context._tseitin = TsType::RULE;
+		if(not sgn) {
+			if(_context._tseitin == TS_IMPL) { _context._tseitin = TS_RIMPL; }
+			else if(_context._tseitin == TS_RIMPL) { _context._tseitin = TS_IMPL; }
+		}
 		_formgrounder = new AggGrounder(_grounding->translator(),_context,atransaf->right()->function(),setgr,boundgr,atransaf->comp(),atransaf->sign());
 		RestoreContext();
-		if(_context._component == CC_SENTENCE) _toplevelgrounder = new SentenceGrounder(_grounding,_formgrounder,true,_verbosity);
+		if(_context._component == CC_SENTENCE) {
+			_toplevelgrounder = new SentenceGrounder(_grounding,_formgrounder,true,_verbosity);
+		}
 	}
 	transaf->recursiveDelete();
 }
@@ -1116,7 +1289,7 @@ void GrounderFactory::visit(const AggForm* af) {
  */
 void GrounderFactory::visit(const EqChainForm* ef) {
 	Formula* f = ef->clone();
-	f = FormulaUtils::remove_eqchains(f,_grounding->vocabulary());
+	f = FormulaUtils::removeEqChains(f,_grounding->vocabulary());
 	f->accept(this);
 	f->recursiveDelete();
 }
@@ -1129,7 +1302,7 @@ void GrounderFactory::visit(const EqChainForm* ef) {
 void GrounderFactory::visit(const VarTerm* t) {
 	assert(varmapping().find(t->var()) != varmapping().end());
 	_termgrounder = new VarTermGrounder(varmapping().find(t->var())->second);
-	_termgrounder->setorig(t,varmapping(),_verbosity);
+	_termgrounder->setOrig(t,varmapping(),_verbosity);
 }
 
 /**
@@ -1139,7 +1312,7 @@ void GrounderFactory::visit(const VarTerm* t) {
  */
 void GrounderFactory::visit(const DomainTerm* t) {
 	_termgrounder = new DomTermGrounder(t->value());
-	_termgrounder->setorig(t,varmapping(),_verbosity);
+	_termgrounder->setOrig(t,varmapping(),_verbosity);
 }
 
 /**
@@ -1157,14 +1330,18 @@ void GrounderFactory::visit(const FuncTerm* t) {
 
 	// Create term grounder
 	Function* function = t->function();
-	FuncTable* ftable = _structure->inter(function)->functable();
+	FuncTable* ftable = _structure->inter(function)->funcTable();
 	SortTable* domain = _structure->inter(function->outsort());
 	if(_cpsupport && FuncUtils::isIntSum(function,_structure->vocabulary())) {
-		_termgrounder = new SumTermGrounder(_grounding,_grounding->termtranslator(),ftable,domain,subtermgrounders[0],subtermgrounders[1]);
+		if(function->name() == "-/2") {
+			_termgrounder = new SumTermGrounder(_grounding,_grounding->termtranslator(),ftable,domain,subtermgrounders[0],subtermgrounders[1],ST_MINUS);
+		} else {
+			_termgrounder = new SumTermGrounder(_grounding,_grounding->termtranslator(),ftable,domain,subtermgrounders[0],subtermgrounders[1]);
+		}
 	} else {
 		_termgrounder = new FuncTermGrounder(_grounding->termtranslator(),function,ftable,domain,subtermgrounders);
 	}
-	_termgrounder->setorig(t,varmapping(),_verbosity);
+	_termgrounder->setOrig(t,varmapping(),_verbosity);
 }
 
 /**
@@ -1178,7 +1355,7 @@ void GrounderFactory::visit(const AggTerm* t) {
 
 	// Create term grounder
 	_termgrounder = new AggTermGrounder(_grounding->translator(),t->function(),_setgrounder);
-	_termgrounder->setorig(t,varmapping(),_verbosity);
+	_termgrounder->setOrig(t,varmapping(),_verbosity);
 }
 
 /**
@@ -1188,20 +1365,20 @@ void GrounderFactory::visit(const AggTerm* t) {
  */
 void GrounderFactory::visit(const EnumSetExpr* s) {
 	// Create grounders for formulas and weights
-	vector<FormulaGrounder*> subgr;
+	vector<FormulaGrounder*> subfgr;
 	vector<TermGrounder*> subtgr;
 	SaveContext();
 	AggContext();
-	for(unsigned int n = 0; n < s->subformulas().size(); ++n) {
+	for(size_t n = 0; n < s->subformulas().size(); ++n) {
 		descend(s->subformulas()[n]);
-		subgr.push_back(_formgrounder);
+		subfgr.push_back(_formgrounder);
 		descend(s->subterms()[n]);
 		subtgr.push_back(_termgrounder);
 	}
 	RestoreContext();
 
 	// Create set grounder
-	_setgrounder = new EnumSetGrounder(_grounding->translator(),subgr,subtgr);
+	_setgrounder = new EnumSetGrounder(_grounding->translator(),subfgr,subtgr);
 }
 
 /**
@@ -1209,25 +1386,70 @@ void GrounderFactory::visit(const EnumSetExpr* s) {
  * DESCRIPTION
  * 		Creates a grounder for a quantified set.
  */
-void GrounderFactory::visit(const QuantSetExpr* s) {
+void GrounderFactory::visit(const QuantSetExpr* qs) {
+	// TODO Move three-valued terms in the set expression
+	//SetExpr* transqs = TermUtils::moveThreeValuedTerms(qs->clone(),_structure,_context._funccontext,_cpsupport,_cpsymbols);
+	//QuantSetExpr* newqs = dynamic_cast<QuantSetExpr*>(transqs);
+
+	//if(_verbosity > 1) {
+	//	clog << "Rewritten "; qs->put(clog,_longnames);
+	//	clog << " to "; newqs->put(clog,_longnames);
+	//   	clog << "\n"; 
+	//}
+
 	// Create instance generator
 	vector<SortTable*> vst;
+// FIXME add bdd code to rest
+/*	Formula* clonedformula = qs->subformulas()[0]->clone();
+	Formula* movedformula = FormulaUtils::moveThreeValuedTerms(clonedformula,_structure,PC_POSITIVE);
+	movedformula = FormulaUtils::removeEqChains(movedformula);
+	movedformula = FormulaUtils::graphFunctions(movedformula);
+	const FOBDD* generatorbdd = _symstructure->evaluate(movedformula,QT_PT);
+	const FOBDD* checkerbdd = _symstructure->evaluate(movedformula,QT_CT);*/
 	vector<const DomainElement**> vars;
 	auto gen = createVarMapAndGenerator(s->quantvars());
-	
+// FIXME
+/*	vector<Variable*> fovars;
+	vector<Variable*> optivars;
+	vector<SortTable*> tables;
+	vector<bool> pattern;
+	for(std::set<Variable*>::const_iterator it = movedformula->freeVars().begin(); it != movedformula->freeVars().end(); ++it) {
+		if(qs->quantVars().find(*it) == qs->quantVars().end()) {
+			vars.push_back(_varmapping[*it]);
+			pattern.push_back(true);
+		}
+		else {
+			const DomainElement** d = new const DomainElement*();
+			_varmapping[*it] = d;
+			vars.push_back(d);
+			pattern.push_back(false);
+			optivars.push_back(*it);
+		}
+		fovars.push_back(*it);
+		SortTable* st = _structure->inter((*it)->sort());
+		tables.push_back(st);
+	}
+	generatorbdd = improve_generator(generatorbdd,optivars,MCPA);
+	checkerbdd = improve_checker(checkerbdd,MCPA);
+	PredTable* gentable = new PredTable(new BDDInternalPredTable(generatorbdd,_symstructure->manager(),fovars,_structure),Universe(tables));
+	PredTable* checktable = new PredTable(new BDDInternalPredTable(checkerbdd,_symstructure->manager(),fovars,_structure),Universe(tables));
+	GeneratorFactory gf;
+	InstGenerator* gen = gf.create(gentable,pattern,vars,Universe(tables));
+	InstGenerator* check = gf.create(checktable,vector<bool>(vars.size(),true),vars,Universe(tables));*/
+
 	// Create grounder for subformula
 	SaveContext();
 	AggContext();
-	descend(s->subformulas()[0]);
-	FormulaGrounder* sub = _formgrounder;
+	descend(qs->subformulas()[0]);
+	FormulaGrounder* subgr = _formgrounder;
 	RestoreContext();
 
 	// Create grounder for weight
-	descend(s->subterms()[0]);
-	TermGrounder* wg = _termgrounder;
+	descend(qs->subterms()[0]);
+	TermGrounder* wgr = _termgrounder;
 
 	// Create grounder	
-	_setgrounder = new QuantSetGrounder(_grounding->translator(),sub,gen,wg);
+	_setgrounder = new QuantSetGrounder(_grounding->translator(),subgr,gen,check,wgr);
 }
 
 /**
@@ -1274,6 +1496,7 @@ InstGenerator* GrounderFactory::createVarMapAndGenerator(const VarList& vars){
  * 		Creates a grounder for a definitional rule.
  */
 void GrounderFactory::visit(const Rule* rule) {
+	// FIXME Move all three-valued terms outside the head
 	// TODO for lazygroundrules, need a generator for all variables NOT occurring in the head!
 
 	InstGenerator *headgen = NULL, *bodygen = NULL;

@@ -176,7 +176,7 @@ namespace LuaConnection {
 				lua_pop(state,1);
 			}
 			else {
-				procedure->setRegistryIndex("idp_compiled_procedure_" + toString(UserProcedure::getCompileNumber()));
+				procedure->setRegistryIndex("idp_compiled_procedure_" + convertToString(UserProcedure::getCompileNumber()));
 				UserProcedure::increaseCompileNumber();
 				lua_setfield(state,LUA_REGISTRYINDEX,procedure->registryindex().c_str());
 			}
@@ -396,7 +396,7 @@ namespace LuaConnection {
 			case LUA_TFUNCTION:
 			{
 				ia._type = AT_PROCEDURE;
-				std::string* registryindex = StringPointer(std::string("idp_argument_procedure_" + toString(argProcNumber())));
+				std::string* registryindex = StringPointer(std::string("idp_argument_procedure_" + convertToString(argProcNumber())));
 				++argProcNumber();
 				lua_pushvalue(L,arg);
 				lua_setfield(L,LUA_REGISTRYINDEX,registryindex->c_str());
@@ -562,12 +562,32 @@ namespace LuaConnection {
 		Error::error(ss.str());
 	}
 
+	/*
+	 "call": called when Lua calls a value.
+     function function_event (func, ...)
+       if type(func) == "function" then
+         return func(...)   -- primitive call
+       else
+         local h = metatable(func).__call
+         if h then
+           return h(func, ...)
+         else
+           error(···)
+         end
+       end
+     end
+	 */
+
 	int internalCall(lua_State* L) {
-		// get the list of possible procedures
+		// get the list of possible procedures (with the associated name?)
 		map<vector<ArgType>,InternalProcedure*>* procs = *(map<vector<ArgType>,InternalProcedure*>**)lua_touserdata(L,1);
 		assert(!procs->empty()); //otherwise lua should have thrown an exception
 
-		lua_remove(L,1);
+		/*for(auto i=procs->begin(); i!=procs->end(); ++i){
+			cerr <<(*i).second->getName() <<"/" <<(*i).second->getArgumentTypes().size() <<"\n";
+		}*/
+
+		lua_remove(L,1); // The function itself is the first argument
 
 		// get the list of possible argument types
 		vector<vector<ArgType> > argtypes;
@@ -627,7 +647,7 @@ namespace LuaConnection {
 		return 0;
 	}
 
-	int gcInternProc(lua_State* L) { /*return garbageCollect(*(map<vector<ArgType>,InternalProcedure*>**)lua_touserdata(L,1));*/ return 0; }
+	int gcInternProc(lua_State* ) { /*return garbageCollect(*(map<vector<ArgType>,InternalProcedure*>**)lua_touserdata(L,1));*/ return 0; }
 	int gcSort(lua_State* L) { return garbageCollect(*(set<Sort*>**)lua_touserdata(L,1)); }
 	int gcPredicate(lua_State* L) { return garbageCollect(*(set<Predicate*>**)lua_touserdata(L,1)); }
 	int gcFunction(lua_State* L) { return garbageCollect(*(set<Function*>**)lua_touserdata(L,1)); }
@@ -1017,7 +1037,7 @@ namespace LuaConnection {
 		InternalArgument index = createArgument(2, L);
 		if(index._type == AT_STRING) {
 			if(*(index._value._string) == "graph") {
-				InternalArgument predinter(funcinter->graphinter());
+				InternalArgument predinter(funcinter->graphInter());
 				return convertToLua(L,predinter);
 			}
 			else {
@@ -1249,10 +1269,10 @@ namespace LuaConnection {
 			}
 			assert(pt);
 			string str = *(index._value._string);
-			if(str == "ct") predinter->ct(new PredTable(pt->interntable(),univ));
-			else if(str == "pt") predinter->pt(new PredTable(pt->interntable(),univ));
-			else if(str == "cf") predinter->cf(new PredTable(pt->interntable(),univ));
-			else if(str == "pf") predinter->pf(new PredTable(pt->interntable(),univ));
+			if(str == "ct") { predinter->ct(new PredTable(pt->internTable(),univ)); }
+			else if(str == "pt") { predinter->pt(new PredTable(pt->internTable(),univ)); }
+			else if(str == "cf") { predinter->cf(new PredTable(pt->internTable(),univ)); }
+			else if(str == "pf") { predinter->pf(new PredTable(pt->internTable(),univ)); }
 			else {
 				lua_pushstring(L,"A predicate interpretation can only be indexed by \"ct\", \"cf\", \"pt\", and \"pf\"");
 				return lua_error(L);
@@ -1275,7 +1295,7 @@ namespace LuaConnection {
 		if(index._type == AT_STRING) {
 			if((*(index._value._string)) == "graph") {
 				if(value._type == AT_PREDINTER) {
-					funcinter->graphinter(value._value._predinter);
+					funcinter->graphInter(value._value._predinter);
 					return 0;
 				}
 				else {
@@ -1309,13 +1329,13 @@ namespace LuaConnection {
 					Sort* s = *(ss->begin());
 					if(value._type == AT_DOMAIN) {
 						SortTable* st = structure->inter(s);
-						st->interntable(value._value._domain->interntable());
+						st->internTable(value._value._domain->internTable());
 						return 0;
 					}
 					else if(value._type == AT_TABLE) {
 						SortTable* dom = toDomain(value._value._table,L);
 						SortTable* st = structure->inter(s);
-						st->interntable(dom->interntable());
+						st->internTable(dom->internTable());
 						delete(dom);
 						return 0;
 					}
@@ -1460,8 +1480,8 @@ namespace LuaConnection {
 	 */
 	int funcinterCall(lua_State* L) {
 		FuncInter* funcinter = *(FuncInter**)lua_touserdata(L,1);
-		if(funcinter->approxtwovalued()) {
-			FuncTable* ft = funcinter->functable();
+		if(funcinter->approxTwoValued()) {
+			FuncTable* ft = funcinter->funcTable();
 			lua_remove(L,1);
 			unsigned int nrargs = lua_gettop(L);
 			if(nrargs == 1) {
@@ -1787,11 +1807,12 @@ namespace LuaConnection {
 	 * map internal procedure names to the actual procedures
 	 */
 	typedef map<vector<ArgType>,InternalProcedure*> internalprocargmap;
-	typedef map<string,internalprocargmap > internalproclist;
-	internalproclist _internalprocedures;
+
+	// The mapping of all possible procedure names to a map with all their possible arguments and associated effective internal procedures
+	map<string, internalprocargmap> name2procedures;
 
 	void addInternalProcedure(Inference* inf){
-		_internalprocedures[inf->getName()][inf->getArgumentTypes()] = new InternalProcedure(inf);
+		name2procedures[inf->getName()][inf->getArgumentTypes()] = new InternalProcedure(inf);
 	}
 
 	void addInternalProcedures(lua_State* L) {
@@ -1804,9 +1825,14 @@ namespace LuaConnection {
 		// FIXME here, all hard coded internal procedures are added to the table with name getLibraryName(),
 		// in future, we might add some procedures to the basic namespace
 		lua_getglobal(L,getLibraryName().c_str());
-		for(internalproclist::iterator it =	_internalprocedures.begin(); it != _internalprocedures.end(); ++it) {
-			addUserData(L, new internalprocargmap(it->second), "internalprocedure");
-			lua_setfield(L,-2,it->first.c_str());
+
+		// For each procedurename, add a metatable with a map from its possible arguments to compiled procedures as argument
+		for(auto it = name2procedures.begin(); it != name2procedures.end(); ++it) {
+			const string& procedurename = it->first;
+			internalprocargmap* possiblearguments = new internalprocargmap(it->second);
+			// FIXME "internalprocedure" is the name of the metatable which is the type of the internal procedures, so should also not be hardcoded strings
+			addUserData(L, possiblearguments, "internalprocedure");
+			lua_setfield(L,-2,procedurename.c_str());
 		}
 		lua_pop(L,1);
 	}
@@ -1860,9 +1886,8 @@ namespace LuaConnection {
 	 */
 	void closeLuaConnection() {
 		lua_close(_state);
-		for(map<string,map<vector<ArgType>,InternalProcedure*> >::iterator it =	_internalprocedures.begin();
-			it != _internalprocedures.end(); ++it) {
-			for(map<vector<ArgType>,InternalProcedure*>::iterator jt = it->second.begin(); jt != it->second.end(); ++jt) {
+		for(auto it =	name2procedures.begin(); it!=name2procedures.end(); ++it) {
+			for(auto jt = it->second.begin(); jt != it->second.end(); ++jt) {
 				delete(jt->second);
 			}
 		}

@@ -33,7 +33,6 @@ class TheoryMutatingVisitor;
  *	Abstract base class to represent formulas, definitions, and fixpoint definitions.
  */
 class TheoryComponent {
-
 	public:
 		// Constructor
 		TheoryComponent() { }
@@ -50,8 +49,8 @@ class TheoryComponent {
 		virtual TheoryComponent*	accept(TheoryMutatingVisitor*) 	= 0;
 
 		// Output
-		virtual std::ostream& put(std::ostream&, unsigned int spaces = 0)	const = 0;
-				std::string to_string(unsigned int spaces = 0)				const;
+		virtual std::ostream&	put(std::ostream&, bool longnames = false, unsigned int spaces = 0)	const = 0;
+				std::string 	toString(unsigned int spaces = 0)									const;
 };
 
 std::ostream& operator<<(std::ostream&, const TheoryComponent&);
@@ -64,7 +63,6 @@ std::ostream& operator<<(std::ostream&, const TheoryComponent&);
  * Abstract base class to represent formulas
  */
 class Formula : public TheoryComponent {
-
 	private:
 		SIGN					_sign;			//!< the sign of the formula: NEG is that it is negated
 		std::set<Variable*>		_freevars;		//!< the free variables of the formula
@@ -73,10 +71,7 @@ class Formula : public TheoryComponent {
 		std::vector<Formula*>	_subformulas;	//!< the direct subformulas of the formula
 		FormulaParseInfo		_pi;			//!< the place where the formula was parsed 
 
-		void	setfvars();		//!< compute the free variables of the formula
-
 	public:
-
 		// Constructor
 		Formula(SIGN sign) : _sign(sign) { }
 		Formula(SIGN sign, const FormulaParseInfo& pi): _sign(sign), _pi(pi)  { }
@@ -93,30 +88,30 @@ class Formula : public TheoryComponent {
 			//!< delete the formula, but not its children
 
 		// Mutators
-		void	swapsign()	{ _sign = !_sign; if(_pi.original()) _pi.original()->swapsign();		}	
-			//!< swap the sign of the formula
+				void	negate()	{ _sign = !_sign; if(_pi.original()) _pi.original()->negate();		}	
+					//!< swap the sign of the formula
 
-		void	addsubterm(Term* t)								{ _subterms.push_back(t); setfvars();		}
-		void	addsubformula(Formula* f)						{ _subformulas.push_back(f); setfvars();	}
-		void	addquantvar(Variable* v)						{ _quantvars.insert(v); setfvars();			}
-		void	subterm(unsigned int n, Term* t)				{ _subterms[n] = t; setfvars();				}
-		void	subformula(unsigned int n, Formula* f)			{ _subformulas[n] = f; setfvars();			}
-		void	subterms(const std::vector<Term*>& vt)			{ _subterms = vt; setfvars();				}
-		void	subformulas(const std::vector<Formula*>& vf)	{ _subformulas = vf; setfvars();			}
-		void	quantvars(const std::set<Variable*>& sv)		{ _quantvars = sv; setfvars();				}
+				void	addSubterm(Term* t)								{ _subterms.push_back(t); setFreeVars();		}
+				void	addSubformula(Formula* f)						{ _subformulas.push_back(f); setFreeVars();	}
+				void	addQuantVar(Variable* v)						{ _quantvars.insert(v); setFreeVars();			}
+				void	subterm(unsigned int n, Term* t)				{ _subterms[n] = t; setFreeVars();				}
+				void	subformula(unsigned int n, Formula* f)			{ _subformulas[n] = f; setFreeVars();			}
+				void	subterms(const std::vector<Term*>& vt)			{ _subterms = vt; setFreeVars();				}
+				void	subformulas(const std::vector<Formula*>& vf)	{ _subformulas = vf; setFreeVars();			}
+				void	quantVars(const std::set<Variable*>& sv)		{ _quantvars = sv; setFreeVars();				}
 
 		// Inspectors
 				SIGN					sign()						const { return _sign;			}
 				const FormulaParseInfo&	pi()						const { return _pi;				}
 				bool					contains(const Variable*)	const;	//!< true iff the formula contains the variable
 				bool					contains(const PFSymbol*)	const;	//!< true iff the formula contains the symbol
-		virtual	bool					trueformula()				const { return false;	}	
+		virtual	bool					trueFormula()				const { return false;	}	
 			//!< true iff the formula is the empty conjunction
-		virtual	bool					falseformula()				const { return false;	}
+		virtual	bool					falseFormula()				const { return false;	}
 			//!< true iff the formula is the empty disjunction
 			
-		const std::set<Variable*>&		freevars()		const { return _freevars;		}
-		const std::set<Variable*>&		quantvars()		const { return _quantvars;		}
+		const std::set<Variable*>&		freeVars()		const { return _freevars;		}
+		const std::set<Variable*>&		quantVars()		const { return _quantvars;		}
 		const std::vector<Term*>&		subterms()		const { return _subterms;		}
 		const std::vector<Formula*>&	subformulas()	const { return _subformulas;	}
 
@@ -125,7 +120,10 @@ class Formula : public TheoryComponent {
 		virtual Formula*	accept(TheoryMutatingVisitor* v)	= 0;
 
 		// Output
-		virtual std::ostream& put(std::ostream&, unsigned int spaces = 0)	const = 0;
+		virtual std::ostream& put(std::ostream&, bool longnames = false, unsigned int spaces = 0) const = 0;
+
+	private:
+		void	setFreeVars();		//!< compute the free variables of the formula
 };
 
 std::ostream& operator<<(std::ostream&, const Formula&);
@@ -161,7 +159,7 @@ class PredForm : public Formula {
 		Formula*	accept(TheoryMutatingVisitor* v);
 
 		// Output
-		std::ostream& put(std::ostream&,unsigned int spaces = 0) const;
+		std::ostream& put(std::ostream&, bool longnames = false, unsigned int spaces = 0) const;
 };
 
 /** 
@@ -186,7 +184,7 @@ class EqChainForm : public Formula {
 		~EqChainForm() { }
 
 		// Mutators
-		void add(CompType ct, Term* t)			{ _comps.push_back(ct); addsubterm(t);	}
+		void add(CompType ct, Term* t)			{ _comps.push_back(ct); addSubterm(t);	}
 		void conj(bool b)						{ _conj = b;							}
 		void term(unsigned int n, Term* t)		{ subterm(n,t);							}
 		void comp(unsigned int n, CompType ct)	{ _comps[n] = ct;						}
@@ -200,7 +198,7 @@ class EqChainForm : public Formula {
 		Formula*	accept(TheoryMutatingVisitor* v);
 
 		// Output
-		std::ostream& put(std::ostream&, unsigned int spaces = 0) const;
+		std::ostream& put(std::ostream&, bool longnames = false, unsigned int spaces = 0) const;
 };
 
 /** 
@@ -211,7 +209,7 @@ class EquivForm : public Formula {
 	public:
 		// Constructors
 		EquivForm(SIGN sign, Formula* lf, Formula* rf, const FormulaParseInfo& pi) :
-			Formula(sign,pi) { addsubformula(lf); addsubformula(rf); }
+			Formula(sign,pi) { addSubformula(lf); addSubformula(rf); }
 
 		EquivForm*	clone()										const;
 		EquivForm*	clone(const std::map<Variable*,Variable*>&)	const;
@@ -232,7 +230,7 @@ class EquivForm : public Formula {
 		Formula*	accept(TheoryMutatingVisitor* v);
 
 		// Output
-		std::ostream& put(std::ostream&,unsigned int spaces = 0) const;
+		std::ostream& put(std::ostream&, bool longnames = false, unsigned int spaces = 0) const;
 };
 
 /** 
@@ -247,7 +245,7 @@ class BoolForm : public Formula {
 		BoolForm(SIGN sign, bool c, const std::vector<Formula*>& sb, const FormulaParseInfo& pi) :
 			Formula(sign,pi), _conj(c) { subformulas(sb); }
 		BoolForm(SIGN sign, bool c, Formula* left, Formula* right, const FormulaParseInfo& pi) :
-			Formula(sign,pi), _conj(c) { addsubformula(left); addsubformula(right);	}
+			Formula(sign,pi), _conj(c) { addSubformula(left); addSubformula(right);	}
 
 		BoolForm*	clone()										const;
 		BoolForm*	clone(const std::map<Variable*,Variable*>&)	const;
@@ -260,8 +258,8 @@ class BoolForm : public Formula {
 
 		// Inspectors
 		bool	conj()			const	{ return _conj;											}
-		bool	trueformula()	const	{ return subformulas().empty() && isConjWithSign();	}
-		bool	falseformula()	const	{ return subformulas().empty() && not isConjWithSign();	}
+		bool	trueFormula()	const	{ return subformulas().empty() && isConjWithSign();	}
+		bool	falseFormula()	const	{ return subformulas().empty() && not isConjWithSign();	}
 
 		bool 	isConjWithSign() const { return (conj() && isPos(sign())) || (not conj() && isNeg(sign())); }
 
@@ -270,7 +268,7 @@ class BoolForm : public Formula {
 		Formula*	accept(TheoryMutatingVisitor* v);
 
 		// Debugging
-		std::ostream& put(std::ostream&, unsigned int spaces = 0)	const;
+		std::ostream& put(std::ostream&, bool longnames = false, unsigned int spaces = 0)	const;
 };
 
 /** 
@@ -283,7 +281,7 @@ class QuantForm : public Formula {
 	public:
 		// Constructors
 		QuantForm(SIGN sign, QUANT quant, const std::set<Variable*>& v, Formula* sf, const FormulaParseInfo& pi) :
-			Formula(sign,pi), _quantifier(quant) { subformulas(std::vector<Formula*>(1,sf)); quantvars(v); }
+			Formula(sign,pi), _quantifier(quant) { subformulas(std::vector<Formula*>(1,sf)); quantVars(v); }
 
 		QuantForm*	clone()										const;
 		QuantForm*	clone(const std::map<Variable*,Variable*>&)	const;
@@ -292,9 +290,9 @@ class QuantForm : public Formula {
 		~QuantForm() { }
 
 		// Mutators
-		void	add(Variable* v)	{ addquantvar(v);	}
+		void	add(Variable* v)	{ addQuantVar(v);	}
 		void	quant(QUANT b)		{ _quantifier = b;		}
-		void	subf(Formula* f)	{ subformula(0,f);	}
+		void	subf(Formula* f)	{ Formula::subformula(0,f);	}
 
 		// Inspectors
 		Formula*	subf()	const { return subformulas()[0];	}
@@ -308,7 +306,7 @@ class QuantForm : public Formula {
 		Formula*	accept(TheoryMutatingVisitor* v);
 
 		// Output
-		std::ostream& put(std::ostream&,unsigned int spaces = 0)	const;
+		std::ostream& put(std::ostream&, bool longnames = false, unsigned int spaces = 0)	const;
 };
 
 /** 
@@ -345,34 +343,62 @@ class AggForm : public Formula {
 		Formula*	accept(TheoryMutatingVisitor* v);
 
 		// Output
-		std::ostream& put(std::ostream&,unsigned int spaces = 0)	const;
+		std::ostream& put(std::ostream&, bool longnames = false, unsigned int spaces = 0)	const;
 };
 
 namespace FormulaUtils {
-
 	/** \brief Recursively rewrite all EqChainForms in the given formula to BoolForms **/
-	Formula* remove_eqchains(Formula*,Vocabulary* v = 0);	
+	Formula* removeEqChains(Formula*,Vocabulary* v = 0);	
 
-	/** **/
-	Formula* graph_functions(Formula* f);	
+	/** \brief Estimate the cost of the given query 
+	 *		Precondition: 
+	 *			- query does not contain any FuncTerm or AggTerm subterms
+	 *			- the query has a twovalue result in the given structure
+	 */
+	double estimatedCostAll(PredForm* query, const std::set<Variable*> freevars, bool inverse, AbstractStructure* structure);
+
+	/** \brief Recursively remove all nested terms **/
+	Formula* removeNesting(Formula*, PosContext poscontext = PC_POSITIVE);
+
+	/** \brief TODO **/
+	Formula* removeEquiv(Formula*);
+
+	/** \brief TODO **/
+	Formula* flatten(Formula*);
+
+	/** \brief Recursively rewrite all function terms to their predicate form **/
+	Formula* graphFunctions(Formula* f);	
 
 	/** \brief Recursively move all partial terms outside atoms **/
 	Formula* movePartialTerms(Formula*, Vocabulary* voc = 0, Context = Context::POSITIVE);
 
 	/** \brief Non-recursively move terms that are three-valued in a given structure outside of the given atom **/
-	Formula* moveThreeValuedTerms(Formula*,AbstractStructure*,bool positive,bool cpsupport=false,
+	Formula* moveThreeValuedTerms(Formula*,AbstractStructure*,PosContext,bool cpsupport=false,
 								const std::set<const PFSymbol*> cpsymbols=std::set<const PFSymbol*>());
 
+	/** \brief Returns true iff at least one FuncTerm occurs in the given formula **/
+	bool containsFuncTerms(Formula* f);
+
+	/** \brief Replace the given term by the given variable in the given formula **/
+	Formula* substitute(Formula*, Term*, Variable*);
+
 	/** \brief Returns true iff the aggregate formula is monotone **/
-	bool monotone(const AggForm* af);
+	bool isMonotone(const AggForm* af);
 
 	/** \brief Returns true iff the aggregate formula is anti-monotone **/
-	bool antimonotone(const AggForm* af);
+	bool isAntimonotone(const AggForm* af);
 
 	/** \brief Create the formula 'true' **/
-	BoolForm*	trueform();
+	BoolForm*	trueFormula();
+
 	/** \brief Create the formula 'false' **/
-	BoolForm*	falseform();
+	BoolForm*	falseFormula();
+}
+
+namespace TermUtils {
+	/** \brief Rewrite set expressions by moving three-valued terms **/
+	SetExpr* moveThreeValuedTerms(SetExpr*,AbstractStructure*,PosContext,bool cpsupport=false,
+			const std::set<const PFSymbol*> cpsymbols=std::set<const PFSymbol*>());
 }
 
 
@@ -410,15 +436,15 @@ class Rule {
 		PredForm*					head()			const { return _head;		}
 		Formula*					body()			const { return _body;		}
 		const ParseInfo&			pi()			const { return _pi;			}
-		const std::set<Variable*>&	quantvars()		const { return _quantvars;	}
+		const std::set<Variable*>&	quantVars()		const { return _quantvars;	}
 
 		// Visitor
 		void	accept(TheoryVisitor* v) const;
 		Rule*	accept(TheoryMutatingVisitor* v);
 
 		// Output
-		std::ostream&	put(std::ostream&, unsigned int spaces = 0) const;
-		std::string		to_string(unsigned int spaces = 0)			const;
+		std::ostream&	put(std::ostream&, bool longnames = false, unsigned int spaces = 0) 	const;
+		std::string		toString(unsigned int spaces = 0)									const;
 };
 
 std::ostream& operator<<(std::ostream&,const Rule&);
@@ -469,8 +495,15 @@ class Definition : public AbstractDefinition {
 		Definition*	accept(TheoryMutatingVisitor* v);
 
 		// output
-		std::ostream& put(std::ostream&,unsigned int spaces = 0) const;
+		std::ostream& put(std::ostream&, bool longnames = false, unsigned int spaces = 0) const;
 };
+
+namespace DefinitionUtils {
+
+	/** Compute the open symbols of a definition **/
+	std::set<PFSymbol*>	opens(Definition*);
+
+}
 
 /***************************
 	Fixpoint definitions
@@ -523,7 +556,7 @@ class FixpDef : public AbstractFixpDef {
 		FixpDef*	accept(TheoryMutatingVisitor* v);
 
 		// output
-		std::ostream& put(std::ostream&,unsigned int spaces = 0) const;
+		std::ostream& put(std::ostream&, bool longnames = false, unsigned int spaces = 0) const;
 };
 
 
@@ -570,8 +603,8 @@ class AbstractTheory {
 		virtual AbstractTheory*	accept(TheoryMutatingVisitor*)	= 0;
 
 		// Output
-		virtual std::ostream&	put(std::ostream&,unsigned int spaces)	const = 0;
-				std::string		to_string(unsigned int spaces)			const;
+		virtual std::ostream&	put(std::ostream&, bool longnames, unsigned int spaces)	const = 0;
+				std::string		toString(unsigned int spaces)							const;
 };
 
 std::ostream& operator<<(std::ostream&,const AbstractTheory&);
@@ -606,6 +639,7 @@ class Theory : public AbstractTheory {
 		void	sentence(unsigned int n, Formula* f)		{ _sentences[n] = f;			}
 		void	definition(unsigned int n, Definition* d)	{ _definitions[n] = d;			}
 		void	fixpdef(unsigned int n, FixpDef* d)			{ _fixpdefs[n] = d;				}
+		void	remove(Definition* d);
 
 		std::vector<Formula*>&		sentences()		{ return _sentences;	}
 		std::vector<Definition*>&	definitions()	{ return _definitions;	}
@@ -622,28 +656,34 @@ class Theory : public AbstractTheory {
 		Theory*	accept(TheoryMutatingVisitor*);
 
 		// Output
-		std::ostream& put(std::ostream&,unsigned int spaces = 0) const;
+		std::ostream& put(std::ostream&, bool longnames = false, unsigned int spaces = 0) const;
 };
 
 namespace TheoryUtils {
 
 	/** \brief Push negations inside **/
-	void push_negations(AbstractTheory*);	
+	void pushNegations(AbstractTheory*);	
 
 	/** \brief Rewrite A <=> B to (A => B) & (B => A) **/
-	void remove_equiv(AbstractTheory*);		
+	void removeEquiv(AbstractTheory*);		
 
 	/** \brief Rewrite (! x : ! y : phi) to (! x y : phi), rewrite ((A & B) & C) to (A & B & C), etc. **/
 	void flatten(AbstractTheory*);			
 
 	/** \brief Rewrite chains of equalities to a conjunction or disjunction of atoms. **/
-	void remove_eqchains(AbstractTheory*);	
+	void removeEqChains(AbstractTheory*);	
 
 	/** \brief Rewrite (! x : phi & chi) to ((! x : phi) & (!x : chi)), and similarly for ?. **/
-	void move_quantifiers(AbstractTheory*);	
+	void moveQuantifiers(AbstractTheory*);	
 
 	/** \brief Rewrite the theory so that there are no nested terms **/
-	void remove_nesting(AbstractTheory*);
+	void removeNesting(AbstractTheory*);
+
+	/** \brief Rewrite (F(x) = y) or (y = F(x)) to Graph_F(x,y) **/
+	void graphFunctions(AbstractTheory* t);
+
+	/** \brief Rewrite (AggTerm op BoundTerm) to an aggregate formula (op = '=', '<', or '>') **/
+	void graphAggregates(AbstractTheory* t);
 
 	/** \brief Replace all definitions in the theory by their completion **/
 	void completion(AbstractTheory*);
@@ -685,7 +725,6 @@ template<class T> class GroundTheory;
  */
 class TheoryVisitor {
 	public:
-
 		// Theories
 		virtual void visit(const Theory*);
 

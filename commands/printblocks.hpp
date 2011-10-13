@@ -35,6 +35,8 @@ public:
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
 		AbstractStructure* structure = args[0].structure();
 		Options* opts = args[1].options();
+		structure->materialize();
+		structure->clean();
 		return InternalArgument(StringPointer(print(structure, opts)));
 	}
 };

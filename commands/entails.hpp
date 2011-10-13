@@ -58,10 +58,10 @@ void TheorySupportedChecker::visit(const EqChainForm* f) {
 void TheorySupportedChecker::visit(const FuncTerm* f) {
 	std::string arithmeticFunction [10] = {"+", "-", "/", "*", "%", "abs", "MAX", "MIN", "SUCC", "PRED"};
 	for(unsigned int n = 0; n < 5; ++n) {
-		if(f->function()->to_string(false) == arithmeticFunction[n])
+		if(f->function()->toString(false) == arithmeticFunction[n])
 			_arithmeticFound = true;
 	}
-	if(f->function()->to_string(false) == "%")
+	if(f->function()->toString(false) == "%")
 		_theorySupported = false;
 	if(!_arithmeticFound) {
 		traverse(f);
@@ -152,13 +152,13 @@ public:
 		bool arithmeticFound = sc.arithmeticFound();
 		
 		// Turn functions into predicates (for partial function support)
-		TheoryUtils::remove_nesting(axioms);
-		TheoryUtils::remove_nesting(conjectures);
+		TheoryUtils::removeNesting(axioms);
+		TheoryUtils::removeNesting(conjectures);
 		for(auto it = axioms->sentences().begin(); it != axioms->sentences().end(); ++it) {
-			FormulaUtils::graph_functions(*it);
+			FormulaUtils::graphFunctions(*it);
 		}
 		for(auto it = conjectures->sentences().begin(); it != conjectures->sentences().end(); ++it) {
-		 	FormulaUtils::graph_functions(*it);
+		 	FormulaUtils::graphFunctions(*it);
 		}
 		
 		// Clean up possibly existing files

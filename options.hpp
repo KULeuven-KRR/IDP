@@ -19,17 +19,25 @@
 // TODO enum class does not yet support comparison operators in 4.4.3
 
 enum Language { TXT, IDP, ECNF, LATEX, ASP, CNF, TPTP };
-enum Format { THREEVALUED, ALL, TWOVALUED};
+enum Format { THREEVALUED, ALL, TWOVALUED };
 
-enum StringType{
+enum StringType {
 	LANGUAGE, MODELFORMAT
 };
-enum IntType{
+enum IntType {
 	SATVERBOSITY, GROUNDVERBOSITY, PROPAGATEVERBOSITY, NRMODELS, NRPROPSTEPS, LONGESTBRANCH, SYMMETRY, PROVERTIMEOUT
 };
 
 enum BoolType{
-	PRINTTYPES, CPSUPPORT, TRACE, AUTOCOMPLETE, LONGNAMES, RELATIVEPROPAGATIONSTEPS, CREATETRANSLATION, MXRANDOMPOLARITYCHOICE, GROUNDLAZILY,
+	PRINTTYPES, 
+	CPSUPPORT, 
+	TRACE, 
+	AUTOCOMPLETE, 
+	LONGNAMES, 
+	RELATIVEPROPAGATIONSTEPS, 
+	CREATETRANSLATION, 
+	MXRANDOMPOLARITYCHOICE, 
+	GROUNDLAZILY,
 	MODELCOUNTEQUIVALENCE // TODO the equivalence might in fact become an enum itself?
 };
 enum DoubleType{
@@ -37,7 +45,7 @@ enum DoubleType{
 };
 
 template<class EnumType, class ConcreteType>
-class TypedOption{
+class TypedOption {
 private:
 	EnumType type;
 	const std::string name;
@@ -237,7 +245,7 @@ public:
 
 	std::string 	printAllowedValues	(const std::string& option) const;
 	std::ostream&	put					(std::ostream&)	const;
-	std::string		to_string			()			const;
+	std::string		toString			()			const;
 
 	Language		language() const;
 

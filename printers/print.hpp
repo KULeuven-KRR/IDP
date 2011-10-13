@@ -103,7 +103,7 @@ protected:
 	void indent() 				{ indentation_++; }
 	void unindent()				{ indentation_--; }
 	unsigned int getIndentation() const 	{ return indentation_; }
-	void printtab() {
+	void printTab() {
 		for(unsigned int n = 0; n < getIndentation(); ++n){
 			output() << "  ";
 		}

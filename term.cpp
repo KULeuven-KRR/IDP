@@ -9,19 +9,20 @@
 #include "structure.hpp"
 #include "term.hpp"
 #include "theory.hpp"
+#include "common.hpp"
 using namespace std;
 
 /*********************
 	Abstract terms
 *********************/
 
-void Term::setfvars() {
+void Term::setFreeVars() {
 	_freevars.clear();
 	for(vector<Term*>::const_iterator it = _subterms.begin(); it != _subterms.end(); ++it) {
-		_freevars.insert((*it)->freevars().begin(),(*it)->freevars().end());
+		_freevars.insert((*it)->freeVars().begin(),(*it)->freeVars().end());
 	}
 	for(vector<SetExpr*>::const_iterator it = _subsets.begin(); it != _subsets.end(); ++it) {
-		_freevars.insert((*it)->freevars().begin(),(*it)->freevars().end());
+		_freevars.insert((*it)->freeVars().begin(),(*it)->freeVars().end());
 	}
 }
 
@@ -37,20 +38,20 @@ void Term::recursiveDelete() {
 
 bool Term::contains(const Variable* v) const {
 	for(set<Variable*>::const_iterator it = _freevars.begin(); it != _freevars.end(); ++it) {
-		if(*it == v) return true;
+		if(*it == v) { return true; }
 	}
 	for(vector<Term*>::const_iterator it = _subterms.begin(); it != _subterms.end(); ++it) {
-		if((*it)->contains(v)) return true;
+		if((*it)->contains(v)) { return true; }
 	}
 	for(vector<SetExpr*>::const_iterator it = _subsets.begin(); it != _subsets.end(); ++it) {
-		if((*it)->contains(v)) return true;
+		if((*it)->contains(v)) { return true; }
 	}
 	return false;
 }
 
-string Term::to_string() const {
+string Term::toString(bool longnames) const {
 	stringstream sstr;
-	put(sstr);
+	put(sstr,longnames);
 	return sstr.str();
 }
 
@@ -62,7 +63,7 @@ ostream& operator<<(ostream& output, const Term& t) {
 	VarTerm
 ***************/
 
-void VarTerm::setfvars() {
+void VarTerm::setFreeVars() {
 	_freevars.clear();
 	_freevars.insert(_var);
 }
@@ -72,7 +73,7 @@ void VarTerm::sort(Sort* s) {
 }
 
 VarTerm::VarTerm(Variable* v, const TermParseInfo& pi) : Term(pi), _var(v) {
-	setfvars();
+	setFreeVars();
 }
 
 VarTerm* VarTerm::clone() const {
@@ -81,8 +82,8 @@ VarTerm* VarTerm::clone() const {
 
 VarTerm* VarTerm::clone(const map<Variable*,Variable*>& mvv) const {
 	map<Variable*,Variable*>::const_iterator it = mvv.find(_var);
-	if(it != mvv.end()) return new VarTerm(it->second,_pi);
-	else return new VarTerm(_var,_pi.clone(mvv));
+	if(it != mvv.end()) { return new VarTerm(it->second,_pi); }
+	else { return new VarTerm(_var,_pi.clone(mvv)); }
 }
 
 inline Sort* VarTerm::sort() const {
@@ -97,8 +98,8 @@ Term* VarTerm::accept(TheoryMutatingVisitor* v) {
 	return v->visit(this);
 }
 
-ostream& VarTerm::put(std::ostream& output) const {
-	output << *_var;
+ostream& VarTerm::put(std::ostream& output, bool longnames) const {
+	var()->put(output,longnames);
 	return output;
 }
 
@@ -118,8 +119,9 @@ FuncTerm* FuncTerm::clone() const {
 
 FuncTerm* FuncTerm::clone(const map<Variable*,Variable*>& mvv) const {
 	vector<Term*> newargs;
-	for(vector<Term*>::const_iterator it = subterms().begin(); it != subterms().end(); ++it)
+	for(vector<Term*>::const_iterator it = subterms().begin(); it != subterms().end(); ++it) {
 		newargs.push_back((*it)->clone(mvv));
+	}
 	return new FuncTerm(_function,newargs,_pi.clone(mvv));
 }
 
@@ -135,12 +137,14 @@ Term* FuncTerm::accept(TheoryMutatingVisitor* v) {
 	return v->visit(this);
 }
 
-ostream& FuncTerm::put(ostream& output) const {
-	output << *_function;
-	if(!subterms().empty()) {
-		output << '(' << *subterms()[0];
-		for(unsigned int n = 1; n < subterms().size(); ++n) {
-			output << ',' << *subterms()[n];
+ostream& FuncTerm::put(ostream& output, bool longnames) const {
+	function()->put(output,longnames);
+	if(not subterms().empty()) {
+		output << '('; 
+		subterms()[0]->put(output,longnames);
+		for(size_t n = 1; n < subterms().size(); ++n) {
+			output << ',';
+			subterms()[n]->put(output,longnames);
 		}
 		output << ')';
 	}
@@ -172,8 +176,8 @@ Term* DomainTerm::accept(TheoryMutatingVisitor* v) {
 	return v->visit(this);
 }
 
-ostream& DomainTerm::put(ostream& output) const {
-	output << *_value;
+ostream& DomainTerm::put(ostream& output, bool) const {
+	value()->put(output);
 	return output;
 }
 
@@ -183,7 +187,7 @@ ostream& DomainTerm::put(ostream& output) const {
 
 AggTerm::AggTerm(SetExpr* set, AggFunction function, const TermParseInfo& pi) :
 	Term(pi), _function(function) {
-	addset(set);
+	addSet(set);
 }
 
 AggTerm* AggTerm::clone() const {
@@ -213,15 +217,9 @@ Term* AggTerm::accept(TheoryMutatingVisitor* v) {
 	return v->visit(this);
 }
 
-ostream& AggTerm::put(ostream& output) const {
-	switch(_function) {
-		case AggFunction::CARD:	output << '#'; break;
-		case AggFunction::SUM:	output << "sum"; break;
-		case AggFunction::PROD:	output << "prod"; break;
-		case AggFunction::MIN:	output << "min"; break;
-		case AggFunction::MAX:	output << "max"; break;
-	}
-	output << *subsets()[0];
+ostream& AggTerm::put(ostream& output, bool longnames) const {
+	output << function(); 
+	subsets()[0]->put(output,longnames);
 	return output;
 }
 
@@ -229,13 +227,13 @@ ostream& AggTerm::put(ostream& output) const {
 	SetExpr
 **************/
 
-void SetExpr::setfvars() {
+void SetExpr::setFreeVars() {
 	_freevars.clear();
 	for(vector<Formula*>::const_iterator it = _subformulas.begin(); it != _subformulas.end(); ++it) {
-		_freevars.insert((*it)->freevars().begin(),(*it)->freevars().end());
+		_freevars.insert((*it)->freeVars().begin(),(*it)->freeVars().end());
 	}
 	for(vector<Term*>::const_iterator it = _subterms.begin(); it != _subterms.end(); ++it) {
-		_freevars.insert((*it)->freevars().begin(),(*it)->freevars().end());
+		_freevars.insert((*it)->freeVars().begin(),(*it)->freeVars().end());
 	}
 	for(set<Variable*>::const_iterator it = _quantvars.begin(); it != _quantvars.end(); ++it) {
 		_freevars.erase(*it);
@@ -257,23 +255,23 @@ void SetExpr::recursiveDelete() {
 
 bool SetExpr::contains(const Variable* v) const {
 	for(set<Variable*>::const_iterator it = _freevars.begin(); it != _freevars.end(); ++it) {
-		if(*it == v) return true;
+		if(*it == v) { return true; }
 	}
 	for(set<Variable*>::const_iterator it = _quantvars.begin(); it != _quantvars.end(); ++it) {
-		if(*it == v) return true;
+		if(*it == v) { return true; }
 	}
 	for(vector<Term*>::const_iterator it = _subterms.begin(); it != _subterms.end(); ++it) {
-		if((*it)->contains(v)) return true;
+		if((*it)->contains(v)) { return true; }
 	}
 	for(vector<Formula*>::const_iterator it = _subformulas.begin(); it != _subformulas.end(); ++it) {
-		if((*it)->contains(v)) return true;
+		if((*it)->contains(v)) { return true; }
 	}
 	return false;
 }
 
-std::string SetExpr::to_string() const {
+std::string SetExpr::toString(bool longnames) const {
 	stringstream sstr;
-	put(sstr);
+	put(sstr,longnames);
 	return sstr.str();
 }
 
@@ -289,7 +287,7 @@ EnumSetExpr::EnumSetExpr(const vector<Formula*>& subforms, const vector<Term*>& 
 	SetExpr(pi) {
 	_subformulas = subforms;
 	_subterms = weights;
-	setfvars();
+	setFreeVars();
 }
 
 EnumSetExpr* EnumSetExpr::clone() const {
@@ -312,14 +310,22 @@ EnumSetExpr* EnumSetExpr::clone(const map<Variable*,Variable*>& mvv) const {
 Sort* EnumSetExpr::sort() const {
 	Sort* currsort = VocabularyUtils::natsort();
 	for(vector<Term*>::const_iterator it = _subterms.begin(); it != _subterms.end(); ++it) {
-		if((*it)->sort()) currsort = SortUtils::resolve(currsort,(*it)->sort());
-		else return 0;
+		if((*it)->sort()) {
+			currsort = SortUtils::resolve(currsort,(*it)->sort());
+		}
+		else { return 0; }
 	}
 	if(currsort) {
-		if(SortUtils::isSubsort(currsort,VocabularyUtils::natsort())) return VocabularyUtils::natsort();
-		else if(SortUtils::isSubsort(currsort,VocabularyUtils::intsort())) return VocabularyUtils::intsort();
-		else if(SortUtils::isSubsort(currsort,VocabularyUtils::floatsort())) return VocabularyUtils::floatsort();
-		else return 0;
+		if(SortUtils::isSubsort(currsort,VocabularyUtils::natsort())) {
+			return VocabularyUtils::natsort();
+		}
+		else if(SortUtils::isSubsort(currsort,VocabularyUtils::intsort())) {
+			return VocabularyUtils::intsort();
+		}
+		else if(SortUtils::isSubsort(currsort,VocabularyUtils::floatsort())) {
+			return VocabularyUtils::floatsort();
+		}
+		else { return 0; }
 	}
 	else return 0;
 }
@@ -332,12 +338,14 @@ SetExpr* EnumSetExpr::accept(TheoryMutatingVisitor* v) {
 	return v->visit(this);
 }
 
-ostream& EnumSetExpr::put(ostream& output) const {
+ostream& EnumSetExpr::put(ostream& output, bool longnames) const {
 	output << "[ ";
-	if(!_subformulas.empty()) {
-		output << '(' << *_subformulas[0] << ',' << *_subterms[0] << ')';
-		for(unsigned int n = 1; n < _subformulas.size(); ++n) {
-			output << "; (" << *_subformulas[n] << ',' << *_subterms[n] << ')';
+	if(not subformulas().empty()) {
+		for(size_t n = 0; n < subformulas().size(); ++n) {
+			output << '('; subformulas()[n]->put(output,longnames); 
+			output << ','; subterms()[n]->put(output,longnames); 
+			output << ')';
+			if(n < subformulas().size()-1) { output << "; "; }
 		}
 	}
 	output << " ]";
@@ -348,12 +356,12 @@ ostream& EnumSetExpr::put(ostream& output) const {
 	QuantSetExpr
 *******************/
 
-QuantSetExpr::QuantSetExpr(const set<Variable*>& qvars, Term* term, Formula* formula, const SetParseInfo& pi) :
+QuantSetExpr::QuantSetExpr(const set<Variable*>& qvars, Formula* formula, Term* term, const SetParseInfo& pi) :
 	SetExpr(pi) {
 	_quantvars = qvars;
 	_subterms.push_back(term);
 	_subformulas.push_back(formula);
-	setfvars();
+	setFreeVars();
 }
 
 QuantSetExpr* QuantSetExpr::clone() const {
@@ -364,25 +372,31 @@ QuantSetExpr* QuantSetExpr::clone() const {
 QuantSetExpr* QuantSetExpr::clone(const map<Variable*,Variable*>& mvv) const {
 	set<Variable*> newvars;
 	map<Variable*,Variable*> nmvv = mvv;
-	for(set<Variable*>::const_iterator it = _quantvars.begin(); it != _quantvars.end(); ++it) {
+	for(set<Variable*>::const_iterator it = quantVars().begin(); it != quantVars().end(); ++it) {
 		Variable* nv = new Variable((*it)->name(),(*it)->sort(),(*it)->pi());
 		newvars.insert(nv);
 		nmvv[*it] = nv;
 	}
-	Term* newterm = _subterms[0]->clone(nmvv);
-	Formula* nf = _subformulas[0]->clone(nmvv);
-	return new QuantSetExpr(newvars,newterm,nf,_pi.clone(mvv));
+	Term* newterm = subterms()[0]->clone(nmvv);
+	Formula* nf = subformulas()[0]->clone(nmvv);
+	return new QuantSetExpr(newvars,nf,newterm,_pi.clone(mvv));
 }
 
 Sort* QuantSetExpr::sort() const {
 	Sort* termsort = (*_subterms.begin())->sort();
 	if(termsort) {
-		if(SortUtils::isSubsort(termsort,VocabularyUtils::natsort())) return VocabularyUtils::natsort();
-		else if(SortUtils::isSubsort(termsort,VocabularyUtils::intsort())) return VocabularyUtils::intsort();
-		else if(SortUtils::isSubsort(termsort,VocabularyUtils::floatsort())) return VocabularyUtils::floatsort();
-		else return 0;
+		if(SortUtils::isSubsort(termsort,VocabularyUtils::natsort())) {
+			return VocabularyUtils::natsort();
+		}
+		else if(SortUtils::isSubsort(termsort,VocabularyUtils::intsort())) {
+			return VocabularyUtils::intsort();
+		}
+		else if(SortUtils::isSubsort(termsort,VocabularyUtils::floatsort())) {
+			return VocabularyUtils::floatsort();
+		}
+		else { return 0; }
 	}
-	else return 0;
+	else { return 0; }
 }
 
 void QuantSetExpr::accept(TheoryVisitor* v) const {
@@ -393,15 +407,21 @@ SetExpr* QuantSetExpr::accept(TheoryMutatingVisitor* v) {
 	return v->visit(this);
 }
 
-ostream& QuantSetExpr::put(ostream& output) const {
+ostream& QuantSetExpr::put(ostream& output, bool longnames) const {
 	output << "{";
-	for(set<Variable*>::const_iterator it = _quantvars.begin(); it != _quantvars.end(); ++it) {
-		output << ' ' << *(*it);
+	for(set<Variable*>::const_iterator it = quantVars().begin(); it != quantVars().end(); ++it) {
+		output << ' '; (*it)->put(output,longnames);
 	}
-	output << " : " << *_subterms[0] << " : ";
-	output << *_subformulas[0] << " }";
+	output << " : "; subformulas()[0]->put(output,longnames);
+	output << " : "; subterms()[0]->put(output,longnames); 
+	output << " }";
 	return output;
 }
+
+
+/****************
+	Utilities
+****************/
 
 class ApproxTwoValChecker : public TheoryVisitor {
 	private:
@@ -416,34 +436,32 @@ class ApproxTwoValChecker : public TheoryVisitor {
 
 void ApproxTwoValChecker::visit(const PredForm* pf) {
 	PredInter* inter = _structure->inter(pf->symbol());
-	if(inter->approxtwovalued()) {
+	if(inter->approxTwoValued()) {
 		for(vector<Term*>::const_iterator it = pf->subterms().begin(); it != pf->subterms().end(); ++it) {
 			(*it)->accept(this);
-			if(!_returnvalue) return;
+			if(not _returnvalue) { return; }
 		}
 	}
-	else _returnvalue = false;
+	else { _returnvalue = false; }
 }
 
 void ApproxTwoValChecker::visit(const FuncTerm* ft) {
 	FuncInter* inter = _structure->inter(ft->function());
-	if(inter->approxtwovalued()) {
+	if(inter->approxTwoValued()) {
 		for(vector<Term*>::const_iterator it = ft->subterms().begin(); it != ft->subterms().end(); ++it) {
 			(*it)->accept(this);
-			if(!_returnvalue) return;
+			if(not _returnvalue) { return; }
 		}
 	}
-	else _returnvalue = false;
+	else { _returnvalue = false; }
 }
 
 namespace SetUtils {
-
 	bool approxTwoValued(SetExpr* exp, AbstractStructure* str) {
 		ApproxTwoValChecker tvc(str);
 		exp->accept(&tvc);
 		return tvc.returnvalue();
 	}
-
 }
 
 /**
@@ -465,7 +483,7 @@ class PartialChecker : public TheoryVisitor {
 			}
 			else {
 				for(unsigned int argpos = 0; argpos < ft->subterms().size(); ++argpos) {
-					if(!SortUtils::isSubsort(ft->subterms()[argpos]->sort(),ft->function()->insort(argpos))) {
+					if(not SortUtils::isSubsort(ft->subterms()[argpos]->sort(),ft->function()->insort(argpos))) {
 						_result = true;
 						return;
 					}

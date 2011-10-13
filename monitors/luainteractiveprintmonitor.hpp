@@ -45,6 +45,8 @@ public:
 		lua_pop(state(), 1);
 		buffersize = 0;
 		buffer_.str("");*/
+		std::cout << buffer_.str();
+		buffer_.str("");
 	}
 };
 

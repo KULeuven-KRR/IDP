@@ -197,10 +197,10 @@ public:
  */
 class AggGroundRule : public GroundRule {
 	private:
-		int		_setnr;		// The id of the set of the aggregate
+		int			_setnr;		// The id of the set of the aggregate
 		AggFunction _aggtype;	// The aggregate type (cardinality, sum, product, min, or max)
-		bool	_lower;		// True iff the bound is a lower bound
-		double	_bound;		// The bound on the aggregate
+		bool		_lower;		// True iff the bound is a lower bound
+		double		_bound;		// The bound on the aggregate
 
 	public:
 		// Constructors
@@ -264,8 +264,8 @@ class GroundDefinition : public AbstractDefinition {
 		AbstractDefinition*	accept(TheoryMutatingVisitor* v)	{ return v->visit(this);	}
 
 		// Debugging
-		std::ostream&	put(std::ostream&,unsigned int spaces = 0) const;
-		std::string to_string(unsigned int spaces = 0) const;
+		std::ostream&	put(std::ostream&, bool longnames = true, unsigned int spaces = 0) const;
+		std::string 	toString(unsigned int spaces = 0) const;
 };
 
 
@@ -295,7 +295,7 @@ class CPReification { //TODO ?
 		int 		_head;
 		CPTsBody* 	_body;
 		CPReification(int head, CPTsBody* body): _head(head), _body(body) { }
-		std::string to_string(unsigned int spaces = 0) const;
+		std::string toString(unsigned int spaces = 0) const;
 		void accept(TheoryVisitor* v) const { v->visit(this);	}
 };
 

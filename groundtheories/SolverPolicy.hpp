@@ -73,24 +73,24 @@ public:
 
 	void polAdd(const GroundClause& cl) {
 		MinisatID::Disjunction clause;
-		for(unsigned int n = 0; n < cl.size(); ++n) {
+		for(size_t n = 0; n < cl.size(); ++n) {
 			clause.literals.push_back(createLiteral(cl[n]));
 		}
 		getSolver().add(clause);
 	}
 
 	void polAdd(const TsSet& tsset, int setnr, bool weighted) {
-		if(!weighted){
+		if(not weighted) {
 			MinisatID::Set set;
 			set.setID = setnr;
-			for(unsigned int n = 0; n < tsset.size(); ++n) {
+			for(size_t n = 0; n < tsset.size(); ++n) {
 				set.literals.push_back(createLiteral(tsset.literal(n)));
 			}
 			getSolver().add(set);
-		}else {
+		} else {
 			MinisatID::WSet set;
 			set.setID = setnr;
-			for(unsigned int n = 0; n < tsset.size(); ++n) {
+			for(size_t n = 0; n < tsset.size(); ++n) {
 				set.literals.push_back(createLiteral(tsset.literal(n)));
 				set.weights.push_back(createWeight(tsset.weight(n)));
 			}
@@ -100,11 +100,11 @@ public:
 
 	void polAdd(GroundDefinition* def){
 		for(auto i=def->begin(); i!=def->end(); ++i){
-			if(typeid(PCGroundRule)==typeid(*(*i).second)){
-				polAdd(def->id(), dynamic_cast<PCGroundRule*>((*i).second));
-			}else{
-				assert(typeid(AggGroundRule)==typeid(*(*i).second));
-				polAdd(def->id(), dynamic_cast<AggGroundRule*>((*i).second));
+			if(typeid(*(*i).second)==typeid(PCGroundRule)) {
+				polAdd(def->id(),dynamic_cast<PCGroundRule*>((*i).second));
+			} else {
+				assert(typeid(*(*i).second)==typeid(AggGroundRule));
+				polAdd(def->id(),dynamic_cast<AggGroundRule*>((*i).second));
 			}
 		}
 	}
@@ -299,7 +299,7 @@ public:
 	}
 
 	std::ostream& polPut(std::ostream& s, GroundTranslator* translator, GroundTermTranslator* termtranslator, bool longnames)	const { assert(false); return s;	}
-	std::string polTo_string(GroundTranslator* translator, GroundTermTranslator* termtranslator, bool longnames) const { assert(false); return "";		}
+	std::string polToString(GroundTranslator* translator, GroundTermTranslator* termtranslator, bool longnames) const { assert(false); return "";		}
 
 private:
 	void polAddAggregate(int definitionID, int head, bool lowerbound, int setnr, AggFunction aggtype, TsType sem, double bound) {
@@ -355,7 +355,7 @@ private:
 			_addedvarids.insert(varid);
 			SortTable* domain = termtranslator->domain(varid);
 			assert(domain);
-			assert(domain->approxfinite());
+			assert(domain->approxFinite());
 			if(domain->isRange()) {
 				// the domain is a complete range from minvalue to maxvalue.
 				MinisatID::CPIntVarRange cpvar;
@@ -370,7 +370,7 @@ private:
 				MinisatID::CPIntVarEnum cpvar;
 				cpvar.varID = varid;
 				if(_verbosity > 0) std::clog << "{ ";
-				for(SortIterator it = domain->sortbegin(); it.hasNext(); ++it) {
+				for(SortIterator it = domain->sortBegin(); it.hasNext(); ++it) {
 					int value = (*it)->value()._int;
 					cpvar.values.push_back(value);
 					if(_verbosity > 0) std::clog << value << "; ";

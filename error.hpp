@@ -178,6 +178,9 @@ namespace Warning {
 	/** Reading from stdin **/
 	void readingfromstdin();
 
+	/** Wrong cumulative chance (due to rounding errors?) **/
+	void cumulchance(double c);
+
 }
 
 namespace Info {

@@ -90,10 +90,10 @@ procedure query(Q,S) {
  */
 procedure modelexpand(T,S,Opts) {
 	local clonetheo = clone(T)
-	idp_intern.push_negations(clonetheo)
+	idp_intern.pushnegations(clonetheo)
 	idp_intern.flatten(clonetheo)
 	if not Opts then Opts = stdoptions end
-	local solutions, trace =  idp_intern.mx(clonetheo,S,Opts) 
+	local solutions, trace =  idp_intern.modelexpand(clonetheo,S,Opts) 
 	return solutions, trace
 }
 
@@ -102,7 +102,7 @@ procedure modelexpand(T,S,Opts) {
  */
 procedure ground(T,S,Opts) {
 	local clonetheo = clone(T)
-	idp_intern.push_negations(clonetheo)
+	idp_intern.pushnegations(clonetheo)
 	idp_intern.flatten(clonetheo)
 	if not Opts then Opts = stdoptions end
 	return idp_intern.ground(clonetheo,S,Opts) 
@@ -114,7 +114,7 @@ procedure ground(T,S,Opts) {
  */
 procedure printgrounding(T,S,Opts) {
 	local clonetheo = clone(T)
-	idp_intern.push_negations(clonetheo)
+	idp_intern.pushnegations(clonetheo)
 	idp_intern.flatten(clonetheo)
 	if not Opts then Opts = stdoptions end
 	return idp_intern.printgrounding(clonetheo,S,Opts) 

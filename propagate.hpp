@@ -13,6 +13,7 @@
 #include <cassert>
 #include "theory.hpp"
 #include "options.hpp"
+#include "symbolicstructure.hpp"
 
 class Variable;
 class PFSymbol;
@@ -169,8 +170,6 @@ class FOPropTableDomainFactory : public FOPropDomainFactory {
 		std::ostream&		put(std::ostream&,FOPropDomain*) const;
 };
 
-
-
 /**
  * 	A domain is split in a certainly true and a certainly false part.
  */
@@ -220,6 +219,7 @@ class FOPropagator : public TheoryVisitor {
 		FOPropScheduler*										_scheduler;		//!< Schedules propagations
 		std::map<const Formula*,ThreeValuedDomain>				_domains;		//!< Map each formula to its current domain
 		std::map<const Formula*,std::set<Variable*> >			_quantvars;
+		std::map<PFSymbol*,PredForm*>							_leafconnectors;
 		std::map<const PredForm*,LeafConnectData>				_leafconnectdata;
 		std::map<const Formula*,const Formula*>					_upward;
 		std::map<const PredForm*,std::set<const PredForm*> >	_leafupward;
@@ -242,18 +242,10 @@ class FOPropagator : public TheoryVisitor {
 
 	public:
 		// Constructor
-		FOPropagator(FOPropDomainFactory* f, FOPropScheduler* s, Options* opts); 
+		FOPropagator(FOPropDomainFactory*, FOPropScheduler*, Options*); 
 
 		// Execution
 		void run();		//!< Apply propagations until the propagation queue is empty
-
-		/**
-		 * Given a structure, returns a NEW structure which is the combination of the structure and its propagation.
-		 * The given structure is used to evaluate BDDs in case of symbolic propagation
-		 *
-		 * @post: returns an OWNING pointer
-		 */
-		AbstractStructure*	result(AbstractStructure* str) const;
 
 		// Visitor
 		void visit(const PredForm*);
@@ -262,6 +254,15 @@ class FOPropagator : public TheoryVisitor {
 		void visit(const BoolForm*);
 		void visit(const QuantForm*);
 		void visit(const AggForm*);
+
+		// Inspectors
+		AbstractStructure*	currstructure(AbstractStructure* str) const;	
+			//!< Obtain the resulting structure 
+			//!< (the given structure is used to evaluate BDDs in case of symbolic propagation)
+		SymbolicStructure*	symbolicstructure()		const;
+			//!< Obtain the resulting structure (only works if the used domainfactory is a FOPropBDDDomainFactory)
+		FuncInter*	interpretation(Function* f)		const;	//!< Returns the current interpretation of function symbol f
+		PredInter*	interpretation(Predicate* p)	const;	//!< Returns the current interpretation of predicate symbol p
 
 	friend class FOPropagatorFactory;
 };
@@ -273,6 +274,7 @@ class FOPropagator : public TheoryVisitor {
  */
 class FOPropagatorFactory : public TheoryVisitor {
 	private:
+		int									_verbosity;
 		FOPropagator*						_propagator;
 		std::map<PFSymbol*,PredForm*>		_leafconnectors;
 		std::map<PFSymbol*,InitBoundType>	_initbounds;
@@ -291,11 +293,10 @@ class FOPropagatorFactory : public TheoryVisitor {
 		void visit(const AggForm*);
 	public:
 		// Constructors
-		FOPropagatorFactory(FOPropDomainFactory* f, FOPropScheduler*, bool as, const std::map<PFSymbol*,InitBoundType>& in, Options* opts);
+		FOPropagatorFactory(FOPropDomainFactory*, FOPropScheduler*, bool as, const std::map<PFSymbol*,InitBoundType>&, Options*);
 
 		// Factory methods
-		FOPropagator* create(const AbstractTheory* t);
-	
+		FOPropagator* create(const AbstractTheory*);
 };
 
 #endif

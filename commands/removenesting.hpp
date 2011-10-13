@@ -12,13 +12,13 @@
 
 class RemoveNestingInference : public Inference {
 public:
-	RemoveNestingInference (): Inference("remove_nesting") {
+	RemoveNestingInference (): Inference("removenesting") {
 		add(AT_THEORY);
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
 		AbstractTheory* t = args[0].theory();
-		TheoryUtils::remove_nesting(t);
+		TheoryUtils::removeNesting(t);
 		return InternalArgument(t);
 	}
 };
