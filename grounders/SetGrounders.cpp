@@ -43,7 +43,8 @@ int QuantSetGrounder::run() const {
 	if(_generator->first()) {
 		int l;
 		do {
-			l = _subgrounder->run();
+			if(_checker->first()) l = _true;
+			else l = _subgrounder->run();
 			if(l != _false) {
 				const GroundTerm& groundweight = _weightgrounder->run();
 				assert(not groundweight._isvarid);

@@ -21,40 +21,39 @@ using namespace std;
 void FormulaGrounder::setorig(const Formula* f, const map<Variable*, const DomElemContainer*>& mvd, int verb) {
 	_verbosity = verb;
 	map<Variable*,Variable*> mvv;
-	for(auto it = f->freevars().begin(); it != f->freevars().end(); ++it) {
-		_varmap[*it] = mvd.find(*it)->second;
-
-		// Clone variable to store original
+	for(auto it = f->freeVars().begin(); it != f->freeVars().end(); ++it) {
 		Variable* v = new Variable((*it)->name(),(*it)->sort(),ParseInfo());
 		mvv[*it] = v;
+		_varmap[*it] = mvd.find(*it)->second;
 		_origvarmap[v] = mvd.find(*it)->second;
 	}
 	_origform = f->clone(mvv);
 }
 
-void FormulaGrounder::printorig() const {
-	clog << "Grounding formula " << _origform->to_string();
+void FormulaGrounder::printOrig() const {
+	clog << "Grounding formula " << _origform->toString();
 	if(not _origform->freevars().empty()) {
 		clog << " with instance ";
-		for(auto it = _origform->freevars().begin(); it != _origform->freevars().end(); ++it) {
-			clog << (*it)->to_string() << " = ";
+		for(auto it = _origform->freeVars().begin(); it != _origform->freeVars().end(); ++it) {
+			clog << (*it)->toString() << " = ";
 			const DomainElement* e = _origvarmap.find(*it)->second->get();
-			clog << e->to_string() << ' ';
+			clog << e->toString() << ' ';
 		}
 	}
 	clog << "\n";
 }
 
 AtomGrounder::AtomGrounder(GroundTranslator* gt, SIGN sign, PFSymbol* s,
-							const vector<TermGrounder*> sg, InstanceChecker* pic, InstanceChecker* cic,
-							const vector<SortTable*>& vst, const GroundingContext& ct) :
-		FormulaGrounder(gt,ct), _subtermgrounders(sg), _pchecker(pic), _cchecker(cic),
-		_symbol(gt->addSymbol(s)), _tables(vst), _sign(sign){
+							const vector<TermGrounder*> sg, const vector<const DomainElement**>& checkargs,
+							InstGenerator* pic, InstGenerator* cic,
+							const vector<SortTable*>& vst, const GroundingContext& ct) 
+		: FormulaGrounder(gt,ct), _subtermgrounders(sg), _pchecker(pic), _cchecker(cic),
+		_symbol(gt->addSymbol(s)), _tables(vst), _sign(sign), _checkargs(checkargs), _inter(inter)
 	_certainvalue = ct._truegen ? _true : _false;
 }
 
 Lit AtomGrounder::run() const {
-	if(verbosity() > 2) printorig();
+	if(verbosity() > 2) printOrig();
 
 	// Run subterm grounders
 	bool alldomelts = true;
@@ -135,75 +134,6 @@ void AtomGrounder::run(vector<int>& clause) const {
 	clause.push_back(run());
 }
 
-//CPAtomGrounder::CPAtomGrounder(GroundTranslator* gt, GroundTermTranslator* tt, SIGN sign, Function* func,
-//							const vector<TermGrounder*> vtg, InstanceChecker* pic, InstanceChecker* cic,
-//							const vector<SortTable*>& vst, const GroundingContext& ct) :
-//	AtomGrounder(gt,sign,func,vtg,pic,cic,vst,ct), _termtranslator(tt) { }
-
-//int CPAtomGrounder::run() const {
-//	if(verbosity() > 2) printorig();
-//	// Run subterm grounders
-//	for(unsigned int n = 0; n < _subtermgrounders.size(); ++n) {
-//		_args[n] = _subtermgrounders[n]->run();
-//	}
-//
-//	// Checking partial functions
-//	for(unsigned int n = 0; n < _args.size(); ++n) {
-//		//TODO: only check positions that can be out of bounds!
-//		if(!_args[n]) {
-//			//TODO: produce a warning!
-//			if(context()._funccontext == Context::BOTH) {
-//				// TODO: produce an error
-//			}
-//			if(verbosity() > 2) {
-//				clog << "Partial function went out of bounds\n";
-//				clog << "Result is " << (context()._funccontext != Context::NEGATIVE  ? "true" : "false") << "\n";
-//			}
-//			return context()._funccontext != Context::NEGATIVE  ? _true : _false;
-//		}
-//	}
-//
-//	// Checking out-of-bounds
-//	for(unsigned int n = 0; n < _args.size(); ++n) {
-//		if(!_tables[n]->contains(_args[n])) {
-//			if(verbosity() > 2) {
-//				clog << "Term value out of predicate type\n";
-//				clog << "Result is " << (_sign  ? "false" : "true") << "\n";
-//			}
-//			return isPos(_sign)? _false : _true;
-//		}
-//	}
-//
-//	// Run instance checkers
-//	if(!(_pchecker->run(_args))) {
-//		if(verbosity() > 2) {
-//			clog << "Possible checker failed\n";
-//			clog << "Result is " << (_certainvalue ? "false" : "true") << "\n";
-//		}
-//		return _certainvalue ? _false : _true;	// TODO: dit is lelijk
-//	}
-//	if(_cchecker->run(_args)) {
-//		if(verbosity() > 2) {
-//			clog << "Certain checker succeeded\n";
-//			clog << "Result is " << translator()->printAtom(_certainvalue) << "\n";
-//		}
-//		return _certainvalue;
-//	}
-//
-//	// Return grounding
-//	assert(typeid(*(translator()->getSymbol(_symbol))) == typeid(Function)); // by definition...
-//	Function* func = static_cast<Function*>(translator()->getSymbol(_symbol));
-//	ElementTuple args = _args; args.pop_back();
-//	int value = _args.back()->value()._int;
-//
-//	unsigned int varid = _termtranslator->translate(func,args); //FIXME conversion is nasty...
-//	CPTerm* leftterm = new CPVarTerm(varid);
-//	CPBound rightbound(value);
-//	int atom = translator()->translate(leftterm,CompType::EQ,rightbound,TsType::EQ);
-//	if(!_sign) atom = -atom;
-//	return atom;
-//}
-
 int ComparisonGrounder::run() const {
 	const GroundTerm& left = _lefttermgrounder->run();
 	const GroundTerm& right = _righttermgrounder->run();
@@ -219,14 +149,13 @@ int ComparisonGrounder::run() const {
 		CPTerm* leftterm = new CPVarTerm(left._varid);
 		if(right._isvarid) {
 			CPBound rightbound(right._varid);
-//			return translator()->translate(leftterm,_comparator,rightbound,context()._tseitin);
-			return translator()->translate(leftterm,_comparator,rightbound,TsType::EQ);
+			return translator()->translate(leftterm,_comparator,rightbound,TsType::EQ); //TODO use _context._tseitin?
 		}
 		else {
 			assert(not right._isvarid);
 			int rightvalue = right._domelement->value()._int;
 			CPBound rightbound(rightvalue);
-			return translator()->translate(leftterm,_comparator,rightbound,TsType::EQ);
+			return translator()->translate(leftterm,_comparator,rightbound,TsType::EQ); //TODO use _context._tseitin?
 		}
 	}
 	else {
@@ -235,7 +164,7 @@ int ComparisonGrounder::run() const {
 		if(right._isvarid) {
 			CPTerm* rightterm = new CPVarTerm(right._varid);
 			CPBound leftbound(leftvalue);
-			return translator()->translate(rightterm,invertcomp(_comparator),leftbound,TsType::EQ);
+			return translator()->translate(rightterm,invertcomp(_comparator),leftbound,TsType::EQ); //TODO use _context._tseitin?
 		}
 		else {
 			assert(not right._isvarid);
@@ -628,7 +557,7 @@ Lit EquivGrounder::run() const {
 }
 
 void EquivGrounder::run(litlist& clause) const {
-	if(verbosity() > 2) printorig();
+	if(verbosity() > 2) printOrig();
 
 	// Run subgrounders
 	Lit left = _leftgrounder->run();
