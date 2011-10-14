@@ -579,36 +579,35 @@ class InverseInstGenerator : public InstGenerator {
 ********************************************/
 
 class GeneratorNode {
-	protected:
-		GeneratorNode*	_parent;
+protected:
+	GeneratorNode*	_parent;
 
-	public:
-		// Constructors
-		GeneratorNode() : _parent(0) { }
+public:
+	GeneratorNode() : _parent(0) { }
+	virtual ~GeneratorNode() {}
 
-		// Mutators
-		void	parent(GeneratorNode* n) { _parent = n;	}
+	// Mutators
+	void	parent(GeneratorNode* n) { _parent = n;	}
 
-		// Inspectors
-		GeneratorNode*	parent()	const { return _parent;	}
+	// Inspectors
+	GeneratorNode*	parent()	const { return _parent;	}
 
-		// Generate instances
-		virtual	GeneratorNode*	first()	const = 0;
-		virtual	GeneratorNode*	next()	const = 0;
+	// Generate instances
+	virtual	GeneratorNode*	first()	const = 0;
+	virtual	GeneratorNode*	next()	const = 0;
 };
 
 class LeafGeneratorNode : public GeneratorNode {
-	private:
-		InstGenerator*	_generator;
-		GeneratorNode*	_this;		//	equal to 'this'
-	
-	public:
-		// Constructor
-		LeafGeneratorNode(InstGenerator* gt) : GeneratorNode(), _generator(gt) { _this = this;	}
+private:
+	InstGenerator*	_generator;
+	GeneratorNode*	_this;		//	equal to 'this'
 
-		// Generate instances
-		GeneratorNode*	first()	const;
-		GeneratorNode*	next()	const;
+public:
+	LeafGeneratorNode(InstGenerator* gt) : GeneratorNode(), _generator(gt) { _this = this;	}
+
+	// Generate instances
+	GeneratorNode*	first()	const;
+	GeneratorNode*	next()	const;
 };
 
 class OneChildGeneratorNode : public GeneratorNode {
@@ -704,10 +703,9 @@ InverseInstGenerator::InverseInstGenerator(PredTable* t, const vector<bool>& pat
 			tabvars.push_back(d);
 		}
 	}
-	GeneratorFactory gf;
-	_outtablegen = gf.create(t,pattern,tabvars,t->universe());
+	_outtablegen = GeneratorFactory::create(t,pattern,tabvars,t->universe());
 	PredTable temp(new FullInternalPredTable(),t->universe());
-	_univgen = gf.create(&temp,pattern,vars,t->universe());	
+	_univgen = GeneratorFactory::create(&temp,pattern,vars,t->universe());
 }
 
 bool InverseInstGenerator::outIsSmaller() const {
@@ -909,15 +907,17 @@ GeneratorNode* OneChildGeneratorNode::next() const {
 
 GeneratorNode* TwoChildGeneratorNode::next() const {
 	while(true) {
-		if(!_generator->next()) return 0;
-		else {
+		if(not _generator->next()){
+			return NULL;
+		} else {
+			GeneratorNode* r;
 			if(_checker->first()) {
-				GeneratorNode* r = _right->first();
-				if(r) return r;
+				r = _right->first();
+			} else {
+				r = _left->first();
 			}
-			else {
-				GeneratorNode* r = _left->first();
-				if(r) return r;
+			if(r != NULL){
+				return r;
 			}
 		}
 	}
@@ -941,23 +941,32 @@ bool TreeInstGenerator::next() const {
 **************/
 
 InstGenerator* GeneratorFactory::create(const vector<const DomElemContainer*>& vars, const vector<SortTable*>& tabs) {
-	InstGenerator* gen = 0;
-	GeneratorNode* node = 0;
-	vector<SortTable*>::const_reverse_iterator jt = tabs.rbegin();
-	for(vector<const DomElemContainer*>::const_reverse_iterator it = vars.rbegin(); it != vars.rend(); ++it, ++jt) {
-		SortInstGenerator* tig = new SortInstGenerator((*jt)->internTable(),*it);
+	InstGenerator* gen = NULL;
+	GeneratorNode* node = NULL;
+	auto jt = tabs.crbegin();
+	for(auto it = vars.crbegin(); it != vars.crend(); ++it, ++jt) {
+		auto tig = new SortInstGenerator((*jt)->internTable(),*it);
 		if(vars.size() == 1) {
 			gen = tig;
 			break;
+		} else if(it == vars.rbegin()) {
+			node = new LeafGeneratorNode(tig);
+		} else {
+			node = new OneChildGeneratorNode(tig,node);
 		}
-		else if(it == vars.rbegin()) { node = new LeafGeneratorNode(tig); }
-		else { node = new OneChildGeneratorNode(tig,node); }
 	}
-	if(not gen) { gen = new TreeInstGenerator(node); }
+	if(gen == NULL) {
+		gen = new TreeInstGenerator(node);
+	}
 	return gen;
 }
 
-InstGenerator*	GeneratorFactory::create(const PredTable* pt, vector<bool> pattern, const vector<const DomElemContainer*>& vars, const Universe& universe) {
+InstGenerator* GeneratorFactory::create(const PredTable* pt, vector<bool> pattern, const vector<const DomElemContainer*>& vars, const Universe& universe) {
+	GeneratorFactory factory;
+	return factory.create(pt, pattern, vars, universe);
+}
+
+InstGenerator* GeneratorFactory::internalCreate(const PredTable* pt, vector<bool> pattern, const vector<const DomElemContainer*>& vars, const Universe& universe) {
 	_table = pt;
 	_pattern = pattern;
 	_vars = vars;
@@ -978,17 +987,14 @@ InstGenerator*	GeneratorFactory::create(const PredTable* pt, vector<bool> patter
 	}
 	if(firstout == pattern.size()) {	// no output variables
 		if(typeid(*(pt->internTable())) != typeid(BDDInternalPredTable)) {
-//cerr << "result is a simple lookup generator " << endl;
 			return new SimpleLookupGenerator(pt,vars,_universe);
 		}
 		else { 
-//cerr << "result is a bdd lookup generator" << endl;
 			StructureVisitor::visit(pt);
 			return _generator;
 		}
 	}
 	else {
-//cerr << "not a lookup generator" << endl;
 		StructureVisitor::visit(pt);
 		return _generator;
 	}
@@ -1409,29 +1415,19 @@ InstGenerator* BDDToGenerator::create(PredForm* atom, const vector<bool>& patter
 			inter = structure->inter(dynamic_cast<Function*>(symbol))->graphInter();
 		}
 		const PredTable* table = 0;
-		if(typeid(*(atom->symbol())) == typeid(Predicate)) {
+		if(safetypeid<Predicate>(*(atom->symbol()))) {
 			Predicate* predicate = dynamic_cast<Predicate*>(atom->symbol());
 			switch(predicate->type()) {
-				case ST_NONE:
-					table = inverse ? inter->cf() : inter->ct();
-					break;
-				case ST_CT:
-					table = inverse ? inter->pf() : inter->ct();
-					break;
-				case ST_CF:
-					table = inverse ? inter->pt() : inter->cf();
-					break;
-				case ST_PT:
-					table = inverse ? inter->cf() : inter->pt();
-					break;
-				case ST_PF:
-					table = inverse ? inter->ct() : inter->pf();
-					break;
+			case ST_NONE: table = inverse ? inter->cf() : inter->ct(); break;
+			case ST_CT: table = inverse ? inter->pf() : inter->ct(); break;
+			case ST_CF: table = inverse ? inter->pt() : inter->cf(); break;
+			case ST_PT: table = inverse ? inter->cf() : inter->pt(); break;
+			case ST_PF: table = inverse ? inter->ct() : inter->pf(); break;
 			}
+		} else{
+			table = inverse ? inter->cf() : inter->ct();
 		}
-		else table = inverse ? inter->cf() : inter->ct();
-		GeneratorFactory gf;
-		return gf.create(table,atompattern,datomvars,Universe(atomtables));
+		return GeneratorFactory::create(table,atompattern,datomvars,Universe(atomtables));
 	}
 }
 
@@ -1516,11 +1512,8 @@ InstGenerator* BDDToGenerator::create(
 			case AKT_CT:
 				table = inverse ? inter->pf() : inter->ct();
 				break;
-			default:
-				assert(false);
 		}
-		GeneratorFactory gf;
-		return gf.create(table,atompattern,atomvars,Universe(atomtables));
+		return GeneratorFactory::create(table,atompattern,atomvars,Universe(atomtables));
 	}
 	else {	// Quantification kernel
 		assert(typeid(*kernel) == typeid(FOBDDQuantKernel));

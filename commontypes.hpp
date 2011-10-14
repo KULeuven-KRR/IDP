@@ -22,7 +22,7 @@
  *	- AGGMIN:	min
  *	- AGGMAX:	max
  */
-enum class AggFunction { CARD, SUM, PROD, MIN, MAX };
+enum AggFunction { CARD, SUM, PROD, MIN, MAX };
 
 /**
  * Enumeration for the possible ways to define a tseitin atom in terms of the subformula it replaces.
@@ -31,7 +31,9 @@ enum class AggFunction { CARD, SUM, PROD, MIN, MAX };
  *		- TsType::IMPL:		tseitin => subformula
  *		- TsType::RIMPL:	tseitin <= subformula
  */
-enum class TsType { EQ, RULE, IMPL, RIMPL };
+enum TsType { EQ, RULE, IMPL, RIMPL };
+
+// FIXME: when better gcc compiler, add enum class here again (currently lacking default operators)
 
 /**
  * The different comparison operators
@@ -42,7 +44,7 @@ enum class TsType { EQ, RULE, IMPL, RIMPL };
  *	- CompType::LEQ:	=<
  *	- CompType::GEQ:	>=
  */
-enum class CompType { EQ, NEQ, LT, GT, LEQ, GEQ };
+enum class CompType { EQ, NEQ, LT, GT, LEQ, GEQ};
 
 /**
  * The context of a subformula

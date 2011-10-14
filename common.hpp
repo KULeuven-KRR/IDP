@@ -39,6 +39,9 @@ double 	applyAgg(const AggFunction&,const std::vector<double>& args);	//!< apply
 
 CompType invertComp(CompType);	//!< Invert a comparison operator
 CompType negateComp(CompType);	//!< Negate a comparison operator
+bool operator==(CompType left, CompType right);
+bool operator>(CompType left, CompType right);
+bool operator<(CompType left, CompType right);
 
 TsType reverseImplication(TsType type);
 

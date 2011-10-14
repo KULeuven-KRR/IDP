@@ -1913,7 +1913,7 @@ void FOBDDFactory::visit(const PredForm* pf) {
 	AtomKernelType akt = AKT_TWOVAL;
 	bool notinverse = true;
 	PFSymbol* symbol = pf->symbol();
-	if(typeid(*symbol) == typeid(Predicate)) {
+	if(safetypeid<Predicate>(*symbol)) {
 		Predicate* predicate = dynamic_cast<Predicate*>(symbol);
 		if(predicate->type() != ST_NONE) {
 			switch(predicate->type()) {
@@ -1921,6 +1921,7 @@ void FOBDDFactory::visit(const PredForm* pf) {
 				case ST_CT: akt = AKT_CT; break;
 				case ST_PF: akt = AKT_CT; notinverse = false; break;
 				case ST_PT: akt = AKT_CF; notinverse = false; break;
+				case ST_NONE: assert(false); break;
 			}
 			symbol = predicate->parent();
 		}

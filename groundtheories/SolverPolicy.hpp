@@ -154,31 +154,31 @@ public:
 		CPBound right = body->right();
 		if(typeid(*left) == typeid(CPVarTerm)) {
 			CPVarTerm* term = dynamic_cast<CPVarTerm*>(left);
-			polAddCPVariable(term->_varid, _termtranslator);
+			polAddCPVariable(term->varid(), _termtranslator);
 			if(right._isvarid) {
 				polAddCPVariable(right._varid, _termtranslator);
 				MinisatID::CPBinaryRelVar sentence;
 				sentence.head = createAtom(tseitin);
-				sentence.lhsvarID = term->_varid;
+				sentence.lhsvarID = term->varid();
 				sentence.rhsvarID = right._varid;
 				sentence.rel = comp;
 				getSolver().add(sentence);
 			} else {
 				MinisatID::CPBinaryRel sentence;
 				sentence.head = createAtom(tseitin);
-				sentence.varID = term->_varid;
+				sentence.varID = term->varid();
 				sentence.bound = right._bound;
 				sentence.rel = comp;
 				getSolver().add(sentence);
 			}
 		} else if(typeid(*left) == typeid(CPSumTerm)) {
 			CPSumTerm* term = dynamic_cast<CPSumTerm*>(left);
-			polAddCPVariables(term->_varids, _termtranslator);
+			polAddCPVariables(term->varids(), _termtranslator);
 			if(right._isvarid) {
 				polAddCPVariable(right._varid, _termtranslator);
-				std::vector<VarId> varids = term->_varids;
+				std::vector<VarId> varids = term->varids();
 				std::vector<int> weights;
-				weights.resize(1, term->_varids.size());
+				weights.resize(1, term->varids().size());
 
 				int bound = 0;
 				varids.push_back(right._varid);
@@ -186,18 +186,17 @@ public:
 
 				polAddWeightedSum(createAtom(tseitin), varids, weights, bound, comp, getSolver());
 			} else {
-				std::vector<int> weights;
-				weights.resize(1, term->_varids.size());
-				polAddWeightedSum(createAtom(tseitin), term->_varids, weights, right._bound, comp, getSolver());
+				std::vector<int> weights{(int)term->varids().size()};
+				polAddWeightedSum(createAtom(tseitin), term->varids(), weights, right._bound, comp, getSolver());
 			}
 		} else {
 			assert(typeid(*left) == typeid(CPWSumTerm));
 			CPWSumTerm* term = dynamic_cast<CPWSumTerm*>(left);
-			polAddCPVariables(term->_varids, _termtranslator);
+			polAddCPVariables(term->varids(), _termtranslator);
 			if(right._isvarid) {
 				polAddCPVariable(right._varid, _termtranslator);
-				std::vector<VarId> varids = term->_varids;
-				std::vector<int> weights = term->_weights;
+				std::vector<VarId> varids = term->varids();
+				std::vector<int> weights = term->weights();
 
 				int bound = 0;
 				varids.push_back(right._varid);
@@ -205,7 +204,7 @@ public:
 
 				polAddWeightedSum(createAtom(tseitin), varids, weights, bound, comp, getSolver());
 			} else {
-				polAddWeightedSum(createAtom(tseitin), term->_varids, term->_weights, right._bound, comp, getSolver());
+				polAddWeightedSum(createAtom(tseitin), term->varids(), term->weights(), right._bound, comp, getSolver());
 			}
 		}
 	}

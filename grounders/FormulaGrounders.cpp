@@ -103,6 +103,9 @@ Lit AtomGrounder::run() const {
 
 	// Run instance checkers
 	if(alldomelts) {
+		for(size_t n = 0; n < args.size(); ++n) {
+        	*(_checkargs[n]) = args[n];
+		}
 		if(not _pchecker->first()) {
 			if(verbosity() > 2) {
 				clog << "Possible checker failed\n";
@@ -117,6 +120,8 @@ Lit AtomGrounder::run() const {
 			}
 			return _certainvalue;
 		}
+		if(_inter->isTrue(args)) { return isPos(_sign)?_true:_false; }
+		if(_inter->isFalse(args)) { return isPos(_sign)?_false:_true; }
 	}
 
 	// Return grounding
@@ -144,7 +149,7 @@ int ComparisonGrounder::run() const {
 	const GroundTerm& left = _lefttermgrounder->run();
 	const GroundTerm& right = _righttermgrounder->run();
 
-	//XXX Is following check necessary??
+	//TODO Is following check necessary??
 	if((not left._domelement && not left._varid) || (not right._domelement && not right._varid)) {
 		return context()._funccontext != Context::NEGATIVE  ? _true : _false;
 	}
@@ -194,9 +199,7 @@ void ComparisonGrounder::run(vector<int>& clause) const {
 }
 
 /**
- * int AggGrounder::handleDoubleNegation(double boundvalue, int setnr) const
- * DESCRIPTION
- * 		Invert the comparator and the sign of the tseitin when the aggregate is in a doubly negated context.
+ * Invert the comparator and the sign of the tseitin when the aggregate is in a doubly negated context.
  */
 int AggGrounder::handleDoubleNegation(double boundvalue, int setnr) const {
 	CompType newcomp;
@@ -210,9 +213,6 @@ int AggGrounder::handleDoubleNegation(double boundvalue, int setnr) const {
 	return isPos(_sign)? -tseitin : tseitin;
 }
 
-/**
- * int AggGrounder::finishCard(double truevalue, double boundvalue, int setnr) const
- */
 int AggGrounder::finishCard(double truevalue, double boundvalue, int setnr) const {
 	int leftvalue = int(boundvalue - truevalue);
 	const TsSet& tsset = translator()->groundset(setnr);
@@ -321,11 +321,9 @@ int AggGrounder::finishCard(double truevalue, double boundvalue, int setnr) cons
 }
 
 /**
- * int AggGrounder::finish(double boundvalue, double newboundvalue, double minpossvalue, double maxpossvalue, int setnr) const
- * DESCRIPTION
- * 		General finish method for grounding of sum, product, minimum and maximum aggregates.
- * 		Checks whether the aggregate will be certainly true or false, based on minimum and maximum possible values and the given bound;
- * 		and creates a tseitin, handling double negation when necessary;
+ * General finish method for grounding of sum, product, minimum and maximum aggregates.
+ * Checks whether the aggregate will be certainly true or false, based on minimum and maximum possible values and the given bound;
+ * and creates a tseitin, handling double negation when necessary;
  */
 int AggGrounder::finish(double boundvalue, double newboundvalue, double minpossvalue, double maxpossvalue, int setnr) const {
 	// Check minimum and maximum possible values against the given bound
@@ -365,11 +363,6 @@ int AggGrounder::finish(double boundvalue, double newboundvalue, double minpossv
 	}
 }
 
-/**
- * int AggGrounder::run() const
- * DESCRIPTION
- * 		Run the aggregate grounder.
- */
 int AggGrounder::run() const {
 	// Run subgrounders
 	int setnr = _setgrounder->run();
@@ -531,14 +524,20 @@ void BoolGrounder::run(litlist& clause, bool negateclause) const {
 	}
 }
 
+// FIXME what are the "clause" semantics here? => apperently, these are unimportant, as the sentencegrounder currently magically "knows" what it will get back
 void QuantGrounder::run(litlist& clause, bool negateclause) const {
-#warning add checker code from origin/stef to all grounders
 	if(verbosity() > 2) printorig();
 
 	if(not _generator->first()) {
 		return;
 	}
+
 	do{
+		if(_checker->first()) {
+			Lit valuelit = getDecidedValue();
+			clause = litlist{negateclause?-valuelit:valuelit};
+			break;
+		}
 		Lit l = _subgrounder->run();
 		if(decidesClause(l)) {
 			Lit valuelit = getDecidedValue();
@@ -547,7 +546,7 @@ void QuantGrounder::run(litlist& clause, bool negateclause) const {
 		}else if(isNotRedundantInClause(l)){
 			clause.push_back(negateclause ? -l : l);
 		}
-	}while(_generator->next()); // TODO generators are not intuitive to understand (changing the underlying structure according to which grounding occurs?
+	}while(_generator->next());
 }
 
 Lit EquivGrounder::run() const {
@@ -594,8 +593,10 @@ void EquivGrounder::run(litlist& clause) const {
 		TsType tp = context()._tseitin;
 		Lit ts1 = translator()->translate(cl1,false,tp);
 		Lit ts2 = translator()->translate(cl2,false,tp);
-		litlist cl3 = {ts1, ts2};
+		clause = litlist{ts1, ts2};
+/*		litlist cl3 = {ts1, ts2};
 		Lit head = translator()->translate(cl3,true,tp);
-		clause.push_back(head);
+		clause.push_back(head);*/
+		// FIXME, we should not introduce the third tseitin, if the semantics of the returned datastructure are a conjunction instead of a clause
 	}
 }

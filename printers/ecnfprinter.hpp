@@ -191,35 +191,35 @@ public:
 		CPBound right = cpr->_body->right();
 		if(typeid(*left) == typeid(CPVarTerm)) {
 			CPVarTerm* term = dynamic_cast<CPVarTerm*>(left);
-			printCPVariable(term->_varid);
+			printCPVariable(term->varid());
 			if(right._isvarid) { // CPBinaryRelVar
 				printCPVariable(right._varid);
-				printCPReification("BINTRT",cpr->_head,term->_varid,comp,right._varid);
+				printCPReification("BINTRT",cpr->_head,term->varid(),comp,right._varid);
 			}
 			else { // CPBinaryRel
-				printCPReification("BINTRI",cpr->_head,term->_varid,comp,right._bound);
+				printCPReification("BINTRI",cpr->_head,term->varid(),comp,right._bound);
 			}
 		} else if(typeid(*left) == typeid(CPSumTerm)) {
 			CPSumTerm* term = dynamic_cast<CPSumTerm*>(left);
 			std::vector<int> weights;
-			weights.resize(term->_varids.size(), 1);
+			weights.resize(term->varids().size(), 1);
 
 			if(right._isvarid) {
-				std::vector<VarId> varids = term->_varids;
+				std::vector<VarId> varids = term->varids();
 				int bound = 0;
 				varids.push_back(right._varid);
 				weights.push_back(-1);
 
 				addWeightedSum(cpr->_head, varids, weights, bound, comp);
 			} else {
-				addWeightedSum(cpr->_head, term->_varids, weights, right._bound, comp);
+				addWeightedSum(cpr->_head, term->varids(), weights, right._bound, comp);
 			}
 		} else {
 			assert(typeid(*left) == typeid(CPWSumTerm));
 			CPWSumTerm* term = dynamic_cast<CPWSumTerm*>(left);
 			if(right._isvarid) {
-				std::vector<VarId> varids = term->_varids;
-				std::vector<int> weights = term->_weights;
+				std::vector<VarId> varids = term->varids();
+				std::vector<int> weights = term->weights();
 
 				int bound = 0;
 				varids.push_back(right._varid);
@@ -227,7 +227,7 @@ public:
 
 				addWeightedSum(cpr->_head, varids, weights, bound, comp);
 			} else {
-				addWeightedSum(cpr->_head, term->_varids, term->_weights, right._bound, comp);
+				addWeightedSum(cpr->_head, term->varids(), term->weights(), right._bound, comp);
 			}
 		}
 	}

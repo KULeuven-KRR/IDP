@@ -42,10 +42,10 @@ public:
 			StreamPrinter<Stream>(stream),
 			_conjecture(false),
 			_arithmetic(arithmetic),
-			_count(0),
 			_nats(false),
 			_ints(false),
-			_floats(false) { }
+			_floats(false),
+			_count(0){ }
 	
 	bool conjecture() {
 		return _conjecture;
@@ -55,7 +55,8 @@ public:
 		_conjecture = conjecture;
 	}
 
-	void visit(const AbstractStructure* structure) {
+	void visit(const AbstractStructure*) {
+		assert(false);
 	}
 
 	void visit(const Vocabulary* v) {
@@ -354,8 +355,9 @@ public:
 		(*_os) << "V_" << t->var()->name();
 	}
 
-	void visit(const FuncTerm* t) {
+	void visit(const FuncTerm*) {
 		// Functions have been replaced by predicates
+		assert(false);
 	}
 
 	void visit(const DomainTerm* t) {

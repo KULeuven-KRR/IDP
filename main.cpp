@@ -62,9 +62,16 @@ void setclconst(string name1, string name2) {
 
 struct CLOptions {
 	string	_exec;
+#ifdef USEINTERACTIVE
 	bool	_interactive;
+#endif
 	bool	_readfromstdin;
-	CLOptions() : _exec(""), _interactive(false), _readfromstdin(false) { }
+	CLOptions()
+		: _exec("")
+#ifdef USEINTERACTIVE
+		, _interactive(false)
+#endif
+		, _readfromstdin(false) { }
 };
 
 /** 
@@ -78,7 +85,9 @@ vector<string> read_options(int argc, char* argv[], CLOptions& cloptions) {
 		argc--; argv++;
 		if(str == "-e" || str == "--execute")			{ cloptions._exec = string(argv[0]); 
 														  argc--; argv++;					}
+#ifdef USEINTERACTIVE
 		else if(str == "-i" || str == "--interactive")	{ cloptions._interactive = true;	}
+#endif
 		else if(str == "-c")							{ str = argv[0];
 														  if(argc && (str.find('=') != string::npos)) {
 															  int p = str.find('=');
@@ -118,50 +127,39 @@ void executeproc(const string& proc) {
 	}
 }
 
+
+#ifdef USEINTERACTIVE
 /** 
  * Interactive mode 
  **/
 void interactive() {
-	cout << "Running GidL in interactive mode.\n"
-		 << "  Type 'exit()' to quit.\n"
-		 << "  Type 'help()' for help\n\n";
+	string help1 = "help", help2 = "help()", exit1 = "exit", exit2 = "exit()";
 
-#ifdef USEINTERACTIVE
+	cout << "Running GidL in interactive mode.\n"
+		 << "  Type 'exit' to quit.\n"
+		 << "  Type 'help' for help\n\n";
+
 	idp_rl_start();
 	while(true) {
 		char* userline = rl_gets();
-		if(userline) {
-			if(string(userline) == "exit()") {
+		if(userline!=NULL) {
+			string command(userline);
+			if(command==exit1 || command==exit2) {
 				free(userline);
 				idp_rl_end();
 				return;
 			}
-			else {
-				string str = "##intern##{"+string(userline)+'}';
-				parsestring(str);
+			if(command==help1){
+				command = help2;
 			}
+			parsestring("##intern##{"+command+'}');
 		}
 		else cout << "\n";
 	}
-#else
-	cout << "> ";
-	string userline;
-	getline(cin,userline);
-	while(userline != "exit()") {
-		string str = "##intern##{"+userline+'}';
-		parsestring(str);
-		cout << "> ";
-		getline(cin,userline);
-	}
-#endif
 }
+#endif
 
-/** 
- * Main 
- **/
 int main(int argc, char* argv[]) {
-
-	// Make lua connection
 	LuaConnection::makeLuaConnection();
 
 	// Parse idp input
@@ -172,19 +170,20 @@ int main(int argc, char* argv[]) {
 
 	// Run
 	if(not Error::nr_of_errors()) {
-		// Execute statements
 		executeproc(cloptions._exec);
-		if(cloptions._interactive) interactive();
-		else if(cloptions._exec == ""){
+#ifdef USEINTERACTIVE
+		if(cloptions._interactive){
+			interactive();
+		} else
+#endif
+		if(cloptions._exec == ""){
 			stringstream ss;
 			ss <<getLibraryName() <<".main()";
 			executeproc(ss.str());
 		}
 	}
 
-	// Close lua communication
 	LuaConnection::closeLuaConnection();
 
-	// Exit
 	return Error::nr_of_errors();
 }

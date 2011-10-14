@@ -148,34 +148,34 @@ public:
 			s << agg->type() << '(' << agg->setnr() << ")." << "\n";
 		}
 		//TODO: repeat above for fixpoint definitions
-		for(std::vector<CPReification*>::const_iterator it = _cpreifications.begin(); it != _cpreifications.end(); ++it) {
+		for(auto it = _cpreifications.begin(); it != _cpreifications.end(); ++it) {
 			CPReification* cpr = *it;
 			s << translator->printAtom(cpr->_head,longnames) << ' ' << cpr->_body->type() << ' ';
 			CPTerm* left = cpr->_body->left();
 			if(typeid(*left) == typeid(CPSumTerm)) {
 				CPSumTerm* cpt = dynamic_cast<CPSumTerm*>(left);
 				s << "sum[ ";
-				for(std::vector<unsigned int>::const_iterator vit = cpt->_varids.begin(); vit != cpt->_varids.end(); ++vit) {
+				bool begin = true;
+				for(auto vit = cpt->varids().begin(); vit != cpt->varids().end(); ++vit) {
+					if(not begin){ s << "; "; }	begin = false;
 					s << termtranslator->printTerm(*vit, longnames);
-					if(vit != cpt->_varids.end()-1) { s << "; "; }
 				}
 				s << " ]";
 			}
 			else if(typeid(*left) == typeid(CPWSumTerm)) {
 				CPWSumTerm* cpt = dynamic_cast<CPWSumTerm*>(left);
-				std::vector<unsigned int>::const_iterator vit;
-				std::vector<int>::const_iterator wit;
 				s << "wsum[ ";
-				for(vit = cpt->_varids.begin(), wit = cpt->_weights.begin(); vit != cpt->_varids.end() && wit != cpt->_weights.end(); ++vit, ++wit) {
+				bool begin = true;
+				for(auto vit = cpt->varids().begin(), wit = cpt->weights().begin(); vit != cpt->varids().end() && wit != cpt->weights().end(); ++vit, ++wit) {
+					if(not begin){ s << "; "; }	begin = false;
 					s << '(' << termtranslator->printTerm(*vit, longnames) << '=' << *wit << ')';
-					if(vit != cpt->_varids.end()-1) { s << "; "; }
 				}
 				s << " ]";
 			}
 			else {
 				assert(typeid(*left) == typeid(CPVarTerm));
 				CPVarTerm* cpt = dynamic_cast<CPVarTerm*>(left);
-				s << termtranslator->printTerm(cpt->_varid, longnames);
+				s << termtranslator->printTerm(cpt->varid(), longnames);
 			}
 			s << ' ' << cpr->_body->comp() << ' ';
 			CPBound right = cpr->_body->right();

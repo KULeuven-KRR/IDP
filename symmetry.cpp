@@ -349,8 +349,6 @@ const AbstractStructure* IVSet::getStructure() const{
 	return structure_;
 }
 
-IVSet::~IVSet(){};
-
 /**
  * 	The constructor of IVSet.
  * 	Since an IVSet is immutable, it is sufficient to check its invariants in the constructor to enforce those invariants.

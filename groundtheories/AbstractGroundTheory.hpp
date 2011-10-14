@@ -173,11 +173,11 @@ class GroundTheory : public AbstractGroundTheory, public Policy {
 			_foldedterms.insert(cpterm);
 			if(typeid(*cpterm) == typeid(CPVarTerm)) {
 				CPVarTerm* varterm = static_cast<CPVarTerm*>(cpterm);
-				if(not termtranslator()->function(varterm->_varid)) {
-					CPTsBody* cprelation = termtranslator()->cprelation(varterm->_varid);
+				if(not termtranslator()->function(varterm->varid())) {
+					CPTsBody* cprelation = termtranslator()->cprelation(varterm->varid());
 					CPTerm* left = foldCPTerm(cprelation->left());
 					if((typeid(*left) == typeid(CPSumTerm) || typeid(*left) == typeid(CPWSumTerm)) && cprelation->comp() == CompType::EQ) {
-						assert(cprelation->right()._isvarid && cprelation->right()._varid == varterm->_varid);
+						assert(cprelation->right()._isvarid && cprelation->right()._varid == varterm->varid());
 						return left;
 					}
 				}
@@ -185,21 +185,21 @@ class GroundTheory : public AbstractGroundTheory, public Policy {
 			else if(typeid(*cpterm) == typeid(CPSumTerm)) {
 				CPSumTerm* sumterm = static_cast<CPSumTerm*>(cpterm);
 				std::vector<VarId> newvarids;
-				for(auto it = sumterm->_varids.begin(); it != sumterm->_varids.end(); ++it) {
+				for(auto it = sumterm->varids().begin(); it != sumterm->varids().end(); ++it) {
 					if(not termtranslator()->function(*it)) {
 						CPTsBody* cprelation = termtranslator()->cprelation(*it);
 						CPTerm* left = foldCPTerm(cprelation->left());
 						if(typeid(*left) == typeid(CPSumTerm) && cprelation->comp() == CompType::EQ) {
 							CPSumTerm* subterm = static_cast<CPSumTerm*>(left);
 							assert(cprelation->right()._isvarid && cprelation->right()._varid == *it);
-							newvarids.insert(newvarids.end(),subterm->_varids.begin(),subterm->_varids.end());
+							newvarids.insert(newvarids.end(),subterm->varids().begin(),subterm->varids().end());
 						}
 						//TODO Need to do something special in other cases?
 						else newvarids.push_back(*it);
 					}
 					else newvarids.push_back(*it);
 				}
-				sumterm->_varids = newvarids;
+				sumterm->varids(newvarids);
 			}
 			else if(typeid(*cpterm) == typeid(CPWSumTerm)) {
 				//CPWSumTerm* wsumterm = static_cast<CPWSumTerm*>(cpterm);

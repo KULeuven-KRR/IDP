@@ -556,28 +556,26 @@ public:
 	void visit(const CPSumTerm* cpt) {
 		assert(isTheoryOpen());
 		output() << "sum[ ";
-		for(std::vector<unsigned int>::const_iterator vit = cpt->_varids.begin(); vit != cpt->_varids.end(); ++vit) {
+		for(std::vector<unsigned int>::const_iterator vit = cpt->varids().begin(); vit != cpt->varids().end(); ++vit) {
 			printTerm(*vit);
-			if(*vit != cpt->_varids.back()) output() << "; ";
+			if(*vit != cpt->varids().back()) output() << "; ";
 		}
 		output() << " ]";
 	}
 
 	void visit(const CPWSumTerm* cpt) {
 		assert(isTheoryOpen());
-		std::vector<unsigned int>::const_iterator vit;
-		std::vector<int>::const_iterator wit;
 		output() << "wsum[ ";
-		for(vit = cpt->_varids.begin(), wit = cpt->_weights.begin(); vit != cpt->_varids.end() && wit != cpt->_weights.end(); ++vit, ++wit) {
+		for(auto vit = cpt->varids().begin(), wit = cpt->weights().begin(); vit != cpt->varids().end() && wit != cpt->weights().end(); ++vit, ++wit) {
 			output() << '('; printTerm(*vit); output() << ',' << *wit << ')';
-			if(*vit != cpt->_varids.back()) output() << "; ";
+			if(*vit != cpt->varids().back()) output() << "; ";
 		}
 		output() << " ]";
 	}
 
 	void visit(const CPVarTerm* cpt) {
 		assert(isTheoryOpen());
-		printTerm(cpt->_varid);
+		printTerm(cpt->varid());
 	}
 
 	void visit(const PredTable* table) {

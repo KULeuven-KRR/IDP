@@ -52,11 +52,8 @@ class IVSet {
 		std::pair<std::list<int>,std::list<int> > getSymmetricLiterals(AbstractGroundTheory*, const DomainElement*, const DomainElement*) const;
 
 	public:
-		// Constructors 
 		IVSet(const AbstractStructure*, const std::set<const DomainElement*>, const std::set<Sort*>, const std::set<PFSymbol*>);  
-
-		// Destructor
-		~IVSet();	//!< Destructor
+		~IVSet(){}
 		
 		// Mutators
 		// none should come here, class is immutable :)

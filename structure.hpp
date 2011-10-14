@@ -90,7 +90,7 @@ class DomainElement {
 
 class DomElemContainer{
 private:
-	mutable const DomainElement* domelem_;
+	mutable const DomainElement* domelem_; // FIXME dit lijkt zeer loos :-)
 	mutable bool del;
 public:
 	DomElemContainer(): domelem_(new DomainElement()), del(true){}
@@ -105,18 +105,21 @@ public:
 	void operator=(const DomainElement* domelem) const { domelem_ = domelem; }
 
 	const DomainElement* get() const { assert(domelem_!=NULL); return domelem_; }
+
+	bool operator==(const DomElemContainer& right) const {
+		return get()==right.get();
+	}
+	bool operator<(const DomElemContainer& right) const{
+		return get()<right.get();
+	}
+	bool operator>(const DomElemContainer& right) const{
+		return get()>right.get();
+	}
 };
 
-inline bool operator==(const DomElemContainer& left, const DomElemContainer& right){
-	return left.get()==right.get();
-}
-
-inline bool operator<(const DomElemContainer& left, const DomElemContainer& right){
-	return left.get()<right.get();
-}
-inline bool operator>(const DomElemContainer& left, const DomElemContainer& right){
-	return left.get()>right.get();
-}
+/*bool operator==(const DomElemContainer& left, const DomElemContainer& right);
+bool operator<(const DomElemContainer& left, const DomElemContainer& right);
+bool operator>(const DomElemContainer& left, const DomElemContainer& right);*/
 
 bool operator<(const DomainElement&, const DomainElement&);
 bool operator>(const DomainElement&, const DomainElement&);

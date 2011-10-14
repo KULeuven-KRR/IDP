@@ -638,16 +638,16 @@ Formula* NegationPush::visit(PredForm* pf) {
 	if(isPos(pf->sign())){
 		return traverse(pf);
 	}
-	if(typeid(*(pf->symbol())) == typeid(Predicate)) {
+	if(safetypeid<Predicate>(*(pf->symbol()))) {
 		Predicate* p = dynamic_cast<Predicate*>(pf->symbol());
 		if(p->type() != ST_NONE) {
-			Predicate* newsymbol;
+			Predicate* newsymbol = NULL;
 			switch(p->type()) {
 				case ST_CT: newsymbol = pf->symbol()->derivedSymbol(ST_PF); break;
 				case ST_CF: newsymbol = pf->symbol()->derivedSymbol(ST_PT); break;
 				case ST_PT: newsymbol = pf->symbol()->derivedSymbol(ST_CF); break;
 				case ST_PF: newsymbol = pf->symbol()->derivedSymbol(ST_CT); break;
-				case ST_NONE: assert(false); break; // TODO handle?
+				case ST_NONE: assert(false); break;
 			}
 			PredForm* newpf = new PredForm(SIGN::POS,newsymbol,pf->subterms(),pf->pi().clone());
 			delete(pf);

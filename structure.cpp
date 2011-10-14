@@ -87,8 +87,6 @@ ostream& DomainElement::put(ostream& output) const {
 		case DET_COMPOUND:
 			_value._compound->put(output);
 			break;
-		default:
-			assert(false);
 	}
 	return output;
 }
@@ -113,49 +111,58 @@ ostream& operator<<(ostream& output, const ElementTuple& tuple) {
 	return output;
 }
 
+/*bool operator==(const DomElemContainer& left, const DomElemContainer& right){
+	return left.get()==right.get();
+}
+bool operator<(const DomElemContainer& left, const DomElemContainer& right){
+	return left.get()<right.get();
+}
+bool operator>(const DomElemContainer& left, const DomElemContainer& right){
+	return left.get()>right.get();
+}*/
+
 bool operator<(const DomainElement& d1, const DomainElement& d2) {
 	switch(d1.type()) {
-		case DET_INT:
-			switch(d2.type()) {
-				case DET_INT:
-					return d1.value()._int < d2.value()._int;
-				case DET_DOUBLE:
-					return double(d1.value()._int) < d2.value()._double;
-				case DET_STRING:
-				case DET_COMPOUND:
-					return true;
-			}
-		case DET_DOUBLE:
-			switch(d2.type()) {
-				case DET_INT:
-					return d1.value()._double < double(d2.value()._int);
-				case DET_DOUBLE:
-					return d1.value()._double < d2.value()._double;
-				case DET_STRING:
-				case DET_COMPOUND:
-					return true;
-			}
-		case DET_STRING:
-			switch(d2.type()) {
-				case DET_INT:
-				case DET_DOUBLE:
-					return false;
-				case DET_STRING:
-					return *(d1.value()._string) < *(d2.value()._string);
-				case DET_COMPOUND:
-					return true;
-			}
-			break;
-		case DET_COMPOUND:
-			switch(d2.type()) {
-				case DET_INT:
-				case DET_DOUBLE:
-				case DET_STRING:
-					return false;
-				case DET_COMPOUND:
-					return *(d1.value()._compound) < *(d2.value()._compound);
-			}
-			break;
+	case DET_INT:
+		switch(d2.type()) {
+			case DET_INT:
+				return d1.value()._int < d2.value()._int;
+			case DET_DOUBLE:
+				return double(d1.value()._int) < d2.value()._double;
+			case DET_STRING:
+			case DET_COMPOUND:
+				return true;
+		}break;
+	case DET_DOUBLE:
+		switch(d2.type()) {
+			case DET_INT:
+				return d1.value()._double < double(d2.value()._int);
+			case DET_DOUBLE:
+				return d1.value()._double < d2.value()._double;
+			case DET_STRING:
+			case DET_COMPOUND:
+				return true;
+		}break;
+	case DET_STRING:
+		switch(d2.type()) {
+			case DET_INT:
+			case DET_DOUBLE:
+				return false;
+			case DET_STRING:
+				return *(d1.value()._string) < *(d2.value()._string);
+			case DET_COMPOUND:
+				return true;
+		}break;
+	case DET_COMPOUND:
+		switch(d2.type()) {
+			case DET_INT:
+			case DET_DOUBLE:
+			case DET_STRING:
+				return false;
+			case DET_COMPOUND:
+				return *(d1.value()._compound) < *(d2.value()._compound);
+		}
+		break;
 	}
 	return false;
 }
@@ -1462,8 +1469,7 @@ bool BDDInternalPredTable::contains(const ElementTuple& tuple, const Universe& u
 	}
 	BDDInternalPredTable* temporary = new BDDInternalPredTable(_bdd,_manager,_vars,_structure);
 	PredTable temptable(temporary,univ);
-	GeneratorFactory factory;
-	InstGenerator* generator = factory.create(&temptable,vector<bool>(univ.tables().size(),true),doms,univ);
+	InstGenerator* generator = GeneratorFactory::create(&temptable,vector<bool>(univ.tables().size(),true),doms,univ);
 	bool result = generator->first();
 	delete(generator);
 	return result;
@@ -1492,8 +1498,7 @@ InternalTableIterator* BDDInternalPredTable::begin(const Universe& univ) const {
 	}
 	BDDInternalPredTable* temporary = new BDDInternalPredTable(_bdd,_manager,_vars,_structure);
 	PredTable temptable(temporary,univ);
-	GeneratorFactory factory;
-	InstGenerator* generator = factory.create(&temptable,vector<bool>(univ.tables().size(),false),doms,univ);
+	InstGenerator* generator = GeneratorFactory::create(&temptable,vector<bool>(univ.tables().size(),false),doms,univ);
 	return new GeneratorInternalTableIterator(generator,doms,true);
 }
 
@@ -3813,43 +3818,40 @@ void Structure::functionCheck() {
 }
 
 SortTable* Structure::inter(Sort* s) const {
-	if(s->builtin()) return s->interpretation();
-	else {
-		map<Sort*,SortTable*>::const_iterator it = _sortinter.find(s);
+	if(s->builtin()){
+		return s->interpretation();
+	} else {
+		auto it = _sortinter.find(s);
 		assert(it != _sortinter.end());
 		return it->second;
 	}
 }
 
 PredInter* Structure::inter(Predicate* p) const {
-	if(p->builtin()) return p->interpretation(this);
-	else if(p->type() != ST_NONE) {
+	if(p->builtin()){
+		return p->interpretation(this);
+	} else if(p->type() != ST_NONE) {
 		PredInter* pinter = inter(p->parent());
 		// FIXME: the code below creates a memory leak
 		switch(p->type()) {
-			case ST_CT:
-				return new PredInter(new PredTable(pinter->ct()->internTable(),pinter->universe()),true);
-			case ST_CF:
-				return new PredInter(new PredTable(pinter->cf()->internTable(),pinter->universe()),true);
-			case ST_PT:
-				return new PredInter(new PredTable(pinter->pt()->internTable(),pinter->universe()),true);
-			case ST_PF:
-				return new PredInter(new PredTable(pinter->pf()->internTable(),pinter->universe()),true);
-			default: assert(false); return 0;
+			case ST_CT: return new PredInter(new PredTable(pinter->ct()->internTable(),pinter->universe()),true);
+			case ST_CF: return new PredInter(new PredTable(pinter->cf()->internTable(),pinter->universe()),true);
+			case ST_PT: return new PredInter(new PredTable(pinter->pt()->internTable(),pinter->universe()),true);
+			case ST_PF: return new PredInter(new PredTable(pinter->pf()->internTable(),pinter->universe()),true);
+			case ST_NONE: assert(false); return NULL;
 		}
-	}
-	else {
-		map<Predicate*,PredInter*>::const_iterator it = _predinter.find(p);
-//cerr << this << " Predicate " << *p << ' ' << p << endl;
+	} else {
+		auto it = _predinter.find(p);
 		assert(it != _predinter.end());
 		return it->second;
 	}
 }
 
 FuncInter* Structure::inter(Function* f) const {
-	if(f->builtin()) return f->interpretation(this);
-	else {
-		map<Function*,FuncInter*>::const_iterator it = _funcinter.find(f);
+	if(f->builtin()){
+		return f->interpretation(this);
+	} else {
+		auto it = _funcinter.find(f);
 		assert(it != _funcinter.end());
 		return it->second;
 	}
