@@ -205,11 +205,12 @@ public:
 		for(size_t n = 0; n < g->nrClauses(); ++n) {
 			visit(g->clause(n));
 		}
-		for(size_t n = 0; n < g->nrDefinitions(); ++n){
-			openDefinition(g->definition(n)->id());
-			g->definition(n)->accept(this);
+		for(auto i=g->definitions().begin(); i!=g->definitions().end(); i++){
+			openDefinition((*i).second->id());
+			(*i).second->accept(this);
 			closeDefinition();
 		}
+
 		for(size_t n = 0; n < g->nrSets(); ++n){
 			g->set(n)->accept(this);
 		}
