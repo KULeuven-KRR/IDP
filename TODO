@@ -25,11 +25,15 @@ Bugs
 	out = io.open(outname, "w")
 	stdoptions.language="ecnf"
 	
-	- Modelexpand verandert structuur niet.  Originele structuur wordt geprint als model (bijv. SAT15puzzle)
+	- Modelexpand verandert structuur niet.  Originele structuur wordt geprint als model (bijv. SAT15puzzle) 
+		-> dit ligt aan de uitrekenbare definities die niet uitgerekend worden maar ook niet geground...
 
-	- Definities worden niet geprint bij print(ground(...)) laad bijvoorbeeld definition.idp
+	- Definities worden niet geprint bij print(ground(...))... laad bijvoorbeeld definition.idp 
+		-> idem vorige bug
 
 	- Propagate geeft een foutmelding: een assert faalt (bijv. SAT15puzzle)
+	
+	- print(ground(T,S,stdoptions)) geeft foutmelding out of bounds van een map::at (vb: SATTtrivial.mx)
 
 
 Optimalisaties
