@@ -45,6 +45,7 @@ public:
 	unsigned int 		nrCPReifications()				const { return _cpreifications.size();					}
 	GroundClause		clause(unsigned int n)			const { return _clauses[n];								}
 	GroundDefinition*	definition(unsigned int n)		const { return _definitions.at(n);						}
+	const std::map<int, GroundDefinition*>& definitions() const { return _definitions; }
 	GroundFixpDef*		fixpdef(unsigned int n)			const { return _fixpdefs[n];							}
 	GroundSet*			set(unsigned int n)				const { return _sets[n];								}
 	GroundAggregate*	aggregate(unsigned int n)		const { return _aggregates[n];							}
