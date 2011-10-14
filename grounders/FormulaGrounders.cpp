@@ -447,20 +447,21 @@ void AggGrounder::run(litlist& clause) const {
 	clause.push_back(run());
 }
 
-inline bool ClauseGrounder::isNotRedundantInClause(Lit l) const {
+bool ClauseGrounder::isNotRedundantInClause(Lit l) const {
 	return conn_==CONJ? l!=_true : l!=_false;
 }
+
 // True of the value of the literal immediately makes the tseitin formula true
-inline bool ClauseGrounder::decidesClause(Lit l) const {
+bool ClauseGrounder::decidesClause(Lit l) const {
 	return conn_==CONJ ? l == _false : l == _true;
 }
 
 // Get the value if one literal has decided the value of the tseitin formula (so false if it is a conjunction, true if it is a disjunction)
-inline Lit ClauseGrounder::getDecidedValue() const {
+Lit ClauseGrounder::getDecidedValue() const {
 	return conjunctive() ? _false : _true;
 }
 
-inline Lit ClauseGrounder::getEmtyFormulaValue() const {
+Lit ClauseGrounder::getEmtyFormulaValue() const {
 	return conjunctive() ? _true : _false;
 }
 
