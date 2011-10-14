@@ -963,7 +963,7 @@ InstGenerator* GeneratorFactory::create(const vector<const DomElemContainer*>& v
 
 InstGenerator* GeneratorFactory::create(const PredTable* pt, vector<bool> pattern, const vector<const DomElemContainer*>& vars, const Universe& universe) {
 	GeneratorFactory factory;
-	return factory.create(pt, pattern, vars, universe);
+	return factory.internalCreate(pt, pattern, vars, universe);
 }
 
 InstGenerator* GeneratorFactory::internalCreate(const PredTable* pt, vector<bool> pattern, const vector<const DomElemContainer*>& vars, const Universe& universe) {
