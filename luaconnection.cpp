@@ -36,6 +36,8 @@ extern void parsefile(const string&);
 int UserProcedure::_compilenumber = 0;
 int	LuaTraceMonitor::_tracenr = 0;
 
+extern int execresult; // FIXME very ugly, but easy for testing!
+
 template<class Arg>
 int addUserData(lua_State* l, Arg arg, const std::string& name){
 	Arg* ptr = (Arg*)lua_newuserdata(l,sizeof(Arg));
@@ -174,12 +176,11 @@ namespace LuaConnection {
 				Error::error(procedure->pi());
 				cerr << string(lua_tostring(state,-1)) << "\n";
 				lua_pop(state,1);
+				return;
 			}
-			else {
-				procedure->setRegistryIndex("idp_compiled_procedure_" + convertToString(UserProcedure::getCompileNumber()));
-				UserProcedure::increaseCompileNumber();
-				lua_setfield(state,LUA_REGISTRYINDEX,procedure->registryindex().c_str());
-			}
+			procedure->setRegistryIndex("idp_compiled_procedure_" + convertToString(UserProcedure::getCompileNumber()));
+			UserProcedure::increaseCompileNumber();
+			lua_setfield(state,LUA_REGISTRYINDEX,procedure->registryindex().c_str());
 		}
 	}
 
@@ -583,9 +584,9 @@ namespace LuaConnection {
 		map<vector<ArgType>,InternalProcedure*>* procs = *(map<vector<ArgType>,InternalProcedure*>**)lua_touserdata(L,1);
 		assert(!procs->empty()); //otherwise lua should have thrown an exception
 
-		/*for(auto i=procs->begin(); i!=procs->end(); ++i){
-			cerr <<(*i).second->getName() <<"/" <<(*i).second->getArgumentTypes().size() <<"\n";
-		}*/
+//		for(auto i=procs->begin(); i!=procs->end(); ++i){
+//			cerr <<(*i).second->getName() <<"/" <<(*i).second->getArgumentTypes().size() <<"\n";
+//		}
 
 		lua_remove(L,1); // The function itself is the first argument
 
@@ -647,6 +648,8 @@ namespace LuaConnection {
 		return 0;
 	}
 
+	// FIXME commented garbage collection?
+	// TODO cleanup garbage collection
 	int gcInternProc(lua_State* ) { /*return garbageCollect(*(map<vector<ArgType>,InternalProcedure*>**)lua_touserdata(L,1));*/ return 0; }
 	int gcSort(lua_State* L) { return garbageCollect(*(set<Sort*>**)lua_touserdata(L,1)); }
 	int gcPredicate(lua_State* L) { return garbageCollect(*(set<Predicate*>**)lua_touserdata(L,1)); }
@@ -1901,6 +1904,12 @@ namespace LuaConnection {
 			Error::error();
 			cerr << string(lua_tostring(_state,-1)) << "\n";
 			lua_pop(_state,1);
+		}else{
+			// FIXME would like to be able to return a value from here
+			/*const DomainElement* d = convertToElement(-1,_state);
+			if(d!=NULL && d->type()==DomainElementType::DET_INT){
+				execresult = d->value()._int;
+			}*/
 		}
 	}
 

@@ -14,8 +14,7 @@ endif
 		
 AM_LDFLAGS = @AC_LDFLAGS@
 
-YFLAGS = -d -v
-LFLAGS = 
+AM_YFLAGS = -d -v
 
 bin_PROGRAMS = gidl
 
@@ -25,7 +24,7 @@ gidl_LDADD += $(builddir)/pcsolver/src/libminisatid-2.0.la
 
 BUILT_SOURCES = parse.h
 
-gidl_SOURCES = \
+grounder_SOURCES = \
 		commontypes.hpp\
 		parseinfo.hpp parseinfo.cpp\
 		vocabulary.hpp vocabulary.cpp\
@@ -44,7 +43,6 @@ gidl_SOURCES = \
 		error.hpp error.cpp\
 		common.hpp common.cpp\
 		interactive.hpp interactive.cpp\
-		main.cpp\
 		printers/print.hpp printers/print.cpp\
 		printers/idpprinter.hpp printers/ecnfprinter.hpp printers/tptpprinter.hpp\
 		checker.hpp checker.cpp\
@@ -67,6 +65,7 @@ gidl_SOURCES = \
 		grounders/SetGrounders.hpp grounders/SetGrounders.cpp\
 		grounders/TermGrounders.hpp grounders/TermGrounders.cpp\
 		grounders/GroundUtils.hpp\
+		rungidl.hpp rungidl.cpp\
 		commands/allcommands.hpp\
 		commands/optimization.hpp\
 		commands/commandinterface.hpp\
@@ -104,6 +103,8 @@ gidl_SOURCES = \
 		commands/simplify.hpp\
 		commands/createrange.hpp\
 		commands/tablesize.hpp
+		
+gidl_SOURCES = main.cpp $(grounder_SOURCES)
 
 AM_CXXFLAGS+=-I $(top_srcdir)/pcsolver/src/ 
 
@@ -121,3 +122,14 @@ data_localdir = $(localstatedir)/idp
 data_local_DATA = data/.idprc
 
 dist_doc_DATA = README $(data_std_DATA) $(data_local_DATA)
+
+if BUILDTESTS
+bin_PROGRAMS += alltests
+endif 
+
+alltests_SOURCES = tests/googletestsnippet.cpp $(grounder_SOURCES)
+alltests_LDADD = -lgtest -lpthread $(gidl_LDADD)
+
+AM_CXXFLAGS += -DTESTDIR=\"$(srcdir)/tests/simplemxtests/\"
+
+TESTS = alltests

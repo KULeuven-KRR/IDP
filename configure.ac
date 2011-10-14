@@ -1,5 +1,11 @@
-AC_INIT([gidl],[2.0.0],[krr@cs.kuleuven.be])
+# Copyright 2007-2011 Katholieke Universiteit Leuven
+# Use of this software is governed by the GNU LGPLv3.0 license
+# Written by the KRR research group, K.U.Leuven, Departement
+# Computerwetenschappen, Celestijnenlaan 200A, B-3001 Leuven, Belgium
+AC_INIT([gidl],[m4_esyscmd([./m4/version.m4])],[krr@cs.kuleuven.be])
+AM_SILENT_RULES([yes])
 AC_CONFIG_HEADERS([config.h])
+AC_CONFIG_MACRO_DIR([m4])
 
 #this is not an ideal solution, but it overrides the default cxxflags, so those set later are not invalid
 if test -z $CXXFLAGS; then
@@ -11,10 +17,10 @@ AC_DECL_YYTEXT
 AC_DISABLE_SHARED
 AC_PROG_LIBTOOL
 AC_PROG_YACC
-AM_INIT_AUTOMAKE([tar-pax foreign subdir-objects]) #silent-rules FROM VERSION 1.11 #-ffloat-store
 AC_LANG([C++])
 
-#check for the necessary headers
+AM_INIT_AUTOMAKE([tar-pax foreign subdir-objects -Wall silent-rules])
+
 #check for the necessary headers
 AC_HEADER_STDC
 AC_CHECK_HEADERS([\
@@ -24,16 +30,16 @@ AC_CHECK_HEADERS([\
 	tr1/memory vector])
 AC_TYPE_SIZE_T
 
-
 # distribute additional compiler and linker flags
 AC_SUBST([AC_CXXFLAGS])
 AC_SUBST([AC_LDFLAGS])
 AC_SUBST([LIBS])
 
+GIDL_VERSION=m4_esyscmd([./m4/version.m4 | tr -d '\n'])
 AC_CXXFLAGS=" "
 AC_LDFLAGS=" "
 
-AC_CXXFLAGS+="-Wall -Wextra "
+AC_CXXFLAGS+="-Wall -Wextra -pedantic "
 
 AC_ARG_ENABLE([build],
 [  --enable-build    Turn on debugging (debug), profiling (profile), release version(release), static release version (static) or code cover building (codecover)],
@@ -85,14 +91,6 @@ AC_ARG_ENABLE([bits],
 	*) AC_MSG_ERROR([bad value ${enableval} for --enable-bits]) ;;
 esac],[])
 
-AC_ARG_ENABLE([perftools],
-[  --enable-perftools=false    Use the google perftools library for memory allocation],
-[case "${enableval}" in
-	no) perftools=false ;;
-	yes) perftools=true ;;
-	*) AC_MSG_ERROR([bad value ${enableval} for --enable-perftools]) ;;
-esac],[ perftools=false ])
-
 AC_ARG_ENABLE([cp],
 [  --enable-cp    Include constraint programming support [yes/no] ],
 [enablegecode=$enableval],[enablegecode=no])
@@ -124,7 +122,13 @@ if test "x$enablegecode" = "xyes" -a "x$hasgecodedir" = "xyes"; then
 	AC_CXXFLAGS+=" -D GECODESUPPORT "
 fi
 
-AM_CONDITIONAL([USEPERFTOOLS],[test x$perftools = xtrue])
+AC_ARG_ENABLE([tests],
+[  --enable-tests    Also compile in unit-tests (if you have an appropriate google-test library)],
+[case "${enableval}" in
+	yes) enabletests=yes ;;
+	no) enabletests=no ;;
+	*) AC_MSG_ERROR([bad value ${enableval} for --enable-tests]) ;;
+esac],[ tests=yes ])
 
 AC_ARG_WITH(
   [readline],
@@ -147,10 +151,12 @@ if test "x$use_readline" == "xyes"; then
     AC_LDFLAGS+=" -lreadline $lib "
   fi
 fi
+
+AM_CONDITIONAL([BUILDTESTS],[test x$enabletests = xyes])
 AM_CONDITIONAL([USEREADLINE],[test x$use_readline = xyes])
 AM_CONDITIONAL([USEINTERACTIVE],[test x$use_readline = xyes])
 
 AC_CONFIG_SUBDIRS([lib/lua pcsolver])
-AC_CONFIG_FILES([Makefile lib/Makefile ])
+AC_CONFIG_FILES([Makefile lib/Makefile])
 
 AC_OUTPUT
