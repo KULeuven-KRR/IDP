@@ -19,6 +19,8 @@ Todo
 
 Bugs
 ====
+	- FOBDD propagator does not work correctly (see oneruleonedef.idp)
+	- MinisatID crashes on oneruleonedef.idp with the FOBDD disabled
 	- printen van definities
 	- returnen van "clause" in de grounder->run methodes is zeer ambigu. Gaat zeker fout in de equivgrounder
 	- toevoegen dat ee partieel model dat uit mx komt (bvb door arbitraties) correct wordt uitgebreid naar een volledig model. Ook in de aanwezigheid van functies!
