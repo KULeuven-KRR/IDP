@@ -842,7 +842,7 @@ sort_pointer_tuple	: /* empty */							{ $$ = new std::vector<Sort*>(0);		}
 					| nonempty_spt							{ $$ = $1;							}
 					;
 					
-nonempty_spt		: sort_pointer_tuple ',' sort_pointer	{ $$ = $1; $$->push_back($3);		}
+nonempty_spt		: nonempty_spt ',' sort_pointer	{ $$ = $1; $$->push_back($3);		}
 					| sort_pointer							{ $$ = new std::vector<Sort*>(1,$1);		}
 					;
 

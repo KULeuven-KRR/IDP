@@ -1,0 +1,5 @@
+vocabulary V{
+	type x
+	type y isa x
+	type z isa , x
+}
