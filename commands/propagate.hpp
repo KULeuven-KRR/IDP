@@ -15,6 +15,7 @@
 #include "structure.hpp"
 #include "commandinterface.hpp"
 #include "monitors/propagatemonitor.hpp"
+#include "PropagatorFactory.hpp"
 
 #include "groundtheories/AbstractGroundTheory.hpp"
 #include "groundtheories/SolverPolicy.hpp"
@@ -41,14 +42,6 @@ class PropagateInference: public Inference {
 	
 			AbstractStructure* result = propagator->currstructure(structure);		// TODO: free allocated memory
 			return InternalArgument(result);
-		}
-
-		FOPropagator* createPropagator(AbstractTheory* theory, const std::map<PFSymbol*,InitBoundType> mpi, Options* options) const {
-			FOPropBDDDomainFactory* domainfactory = new FOPropBDDDomainFactory();
-			FOPropScheduler* scheduler = new FOPropScheduler();
-			FOPropagatorFactory propfactory(domainfactory,scheduler,true,mpi,options);
-			FOPropagator* propagator = propfactory.create(theory);
-			return propagator;
 		}
 
 		/** Collect symbolic propagation vocabulary **/

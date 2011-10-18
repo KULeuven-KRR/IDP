@@ -1,9 +1,19 @@
 #include "PropagatorFactory.hpp"
 
+#include "propagate.hpp"
+
 using namespace std;
 
+FOPropagator* createPropagator(AbstractTheory* theory, const std::map<PFSymbol*,InitBoundType> mpi, Options* options) {
+	auto domainfactory = new FOPropBDDDomainFactory();
+	auto scheduler = new FOPropScheduler();
+	FOPropagatorFactory<FOPropBDDDomainFactory, FOPropBDDDomain> propfactory(domainfactory,scheduler,true,mpi,options);
+	FOPropagator* propagator = propfactory.create(theory);
+	return propagator;
+}
+
 template<class InterpretationFactory, class PropDomain>
-FOPropagatorFactory<InterpretationFactory>::FOPropagatorFactory(InterpretationFactory* factory, FOPropScheduler* scheduler, bool as, const map<PFSymbol*,InitBoundType>& init, Options* opts)
+FOPropagatorFactory<InterpretationFactory, PropDomain>::FOPropagatorFactory(InterpretationFactory* factory, FOPropScheduler* scheduler, bool as, const map<PFSymbol*,InitBoundType>& init, Options* opts)
 	: _verbosity(opts->getValue(IntType::PROPAGATEVERBOSITY)), _initbounds(init), _assertsentences(as) {
 	_propagator = new FOPropagator<InterpretationFactory, PropDomain>(factory, scheduler, opts);
 	_multiplymaxsteps = opts->getValue(BoolType::RELATIVEPROPAGATIONSTEPS);
@@ -33,7 +43,8 @@ void FOPropagatorFactory::createleafconnector(PFSymbol* symbol) {
 	}
 }
 
-FOPropagator* FOPropagatorFactory::create(const AbstractTheory* theory) {
+template<class InterpretationFactory, class PropDomain>
+Propagator* FOPropagatorFactory<InterpretationFactory, PropDomain>::create(const AbstractTheory* theory) {
 	if(_verbosity > 1) { cerr << "=== initialize propagation datastructures\n";	}
 
 	// transform theory to a suitable normal form
@@ -46,45 +57,46 @@ FOPropagator* FOPropagatorFactory::create(const AbstractTheory* theory) {
 
 	// Add function constraints
 	for(auto it = _initbounds.begin(); it != _initbounds.end(); ++it) {
-		if(it->second != IBT_TWOVAL && typeid(*(it->first)) == typeid(Function)) {
-			Function* function = dynamic_cast<Function*>(it->first);
-
-			// Add  (! x : ? y : F(x) = y)
-			vector<Variable*> vars = VarUtils::makeNewVariables(function->sorts());
-			vector<Term*> terms = TermUtils::makeNewVarTerms(vars);
-			PredForm* atom = new PredForm(SIGN::POS,function,terms,FormulaParseInfo());
-			Variable* y = vars.back();
-			set<Variable*> yset;
-			yset.insert(y);
-			QuantForm* exists = new QuantForm(SIGN::POS,QUANT::EXIST,yset,atom,FormulaParseInfo());
-			vars.pop_back();
-			set<Variable*> xset;
-			xset.insert(vars.begin(),vars.end());
-			QuantForm* univ1 = new QuantForm(SIGN::POS,QUANT::UNIV,xset,exists,FormulaParseInfo());
-			newtheo->add(univ1);
-
-			// Add	(! z y1 y2 : F(z) ~= y1 | F(z) ~= y2 | y1 = y2)
-			vector<Variable*> zvars = VarUtils::makeNewVariables(function->insorts());
-			Variable* y1var = new Variable(function->outsort());
-			Variable* y2var = new Variable(function->outsort());
-			vector<Variable*> zy1vars = zvars; zy1vars.push_back(y1var);
-			vector<Variable*> zy2vars = zvars; zy2vars.push_back(y2var);
-			vector<Variable*> y1y2vars; y1y2vars.push_back(y1var); y1y2vars.push_back(y2var);
-			vector<Term*> zy1terms = TermUtils::makeNewVarTerms(zy1vars);
-			vector<Term*> zy2terms = TermUtils::makeNewVarTerms(zy2vars);
-			vector<Term*> y1y2terms = TermUtils::makeNewVarTerms(y1y2vars);
-			vector<Formula*> atoms;
-			atoms.push_back(new PredForm(SIGN::NEG,function,zy1terms,FormulaParseInfo()));
-			atoms.push_back(new PredForm(SIGN::NEG,function,zy2terms,FormulaParseInfo()));
-			atoms.push_back(new PredForm(SIGN::POS,VocabularyUtils::equal(function->outsort()),y1y2terms,FormulaParseInfo()));
-			BoolForm* disjunction = new BoolForm(SIGN::POS,false,atoms,FormulaParseInfo());
-			set<Variable*> zy1y2set;
-			zy1y2set.insert(zvars.begin(),zvars.end());
-			zy1y2set.insert(y1var);
-			zy1y2set.insert(y2var);
-			QuantForm* univ2 = new QuantForm(SIGN::POS,QUANT::UNIV,zy1y2set,disjunction,FormulaParseInfo());
-			newtheo->add(univ2);
+		if(it->second == IBT_TWOVAL || not safetypeid<Function>(*(it->first))) {
+			continue;
 		}
+		Function* function = dynamic_cast<Function*>(it->first);
+
+		// Add  (! x : ? y : F(x) = y)
+		vector<Variable*> vars = VarUtils::makeNewVariables(function->sorts());
+		vector<Term*> terms = TermUtils::makeNewVarTerms(vars);
+		PredForm* atom = new PredForm(SIGN::POS,function,terms,FormulaParseInfo());
+		Variable* y = vars.back();
+		set<Variable*> yset;
+		yset.insert(y);
+		QuantForm* exists = new QuantForm(SIGN::POS,QUANT::EXIST,yset,atom,FormulaParseInfo());
+		vars.pop_back();
+		set<Variable*> xset;
+		xset.insert(vars.begin(),vars.end());
+		QuantForm* univ1 = new QuantForm(SIGN::POS,QUANT::UNIV,xset,exists,FormulaParseInfo());
+		newtheo->add(univ1);
+
+		// Add	(! z y1 y2 : F(z) ~= y1 | F(z) ~= y2 | y1 = y2)
+		vector<Variable*> zvars = VarUtils::makeNewVariables(function->insorts());
+		Variable* y1var = new Variable(function->outsort());
+		Variable* y2var = new Variable(function->outsort());
+		vector<Variable*> zy1vars = zvars; zy1vars.push_back(y1var);
+		vector<Variable*> zy2vars = zvars; zy2vars.push_back(y2var);
+		vector<Variable*> y1y2vars; y1y2vars.push_back(y1var); y1y2vars.push_back(y2var);
+		vector<Term*> zy1terms = TermUtils::makeNewVarTerms(zy1vars);
+		vector<Term*> zy2terms = TermUtils::makeNewVarTerms(zy2vars);
+		vector<Term*> y1y2terms = TermUtils::makeNewVarTerms(y1y2vars);
+		vector<Formula*> atoms;
+		atoms.push_back(new PredForm(SIGN::NEG,function,zy1terms,FormulaParseInfo()));
+		atoms.push_back(new PredForm(SIGN::NEG,function,zy2terms,FormulaParseInfo()));
+		atoms.push_back(new PredForm(SIGN::POS,VocabularyUtils::equal(function->outsort()),y1y2terms,FormulaParseInfo()));
+		BoolForm* disjunction = new BoolForm(SIGN::POS,false,atoms,FormulaParseInfo());
+		set<Variable*> zy1y2set;
+		zy1y2set.insert(zvars.begin(),zvars.end());
+		zy1y2set.insert(y1var);
+		zy1y2set.insert(y2var);
+		QuantForm* univ2 = new QuantForm(SIGN::POS,QUANT::UNIV,zy1y2set,disjunction,FormulaParseInfo());
+		newtheo->add(univ2);
 	}
 
 	// Multiply maxsteps if requested

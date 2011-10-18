@@ -14,6 +14,7 @@
 #include "theory.hpp"
 #include "options.hpp"
 #include "symbolicstructure.hpp"
+#include "PropagatorFactory.hpp"
 
 class Variable;
 class PFSymbol;
@@ -35,8 +36,6 @@ class AbstractStructure;
  *	DOWN = from a formula to its subformulas
  */
 enum FOPropDirection { UP, DOWN };
-
-enum InitBoundType { IBT_TWOVAL, IBT_BOTH, IBT_CT, IBT_CF, IBT_NONE };
 
 /**
  * 	Class for scheduling propagation steps.	
@@ -107,7 +106,7 @@ class FOPropTableDomain : public FOPropDomain {
 		PredTable* table() const { return _table;	}
 };
 
-struct ThreeValuedDomain;
+template<class DomainType> struct ThreeValuedDomain;
 
 /**
  * Class to create and managed domains for formulas
@@ -127,7 +126,7 @@ class FOPropDomainFactory {
 		virtual PropagatorDomain*	disjunction(PropagatorDomain*,PropagatorDomain*) const = 0;
 		virtual PropagatorDomain*	substitute(PropagatorDomain*,const std::map<Variable*,Variable*>&) const = 0;
 		virtual bool			approxequals(PropagatorDomain*,PropagatorDomain*) const = 0;	//!< Checks if two domains are equal
-		virtual PredInter*		inter(const std::vector<Variable*>&, const ThreeValuedDomain&, AbstractStructure*) const = 0;
+		virtual PredInter*		inter(const std::vector<Variable*>&, const ThreeValuedDomain<PropagatorDomain>&, AbstractStructure*) const = 0;
 		virtual std::ostream&	put(std::ostream&,PropagatorDomain*) const = 0;
 };
 
@@ -148,7 +147,7 @@ class FOPropBDDDomainFactory : public FOPropDomainFactory<FOPropBDDDomain> {
 		FOPropBDDDomain*	disjunction(FOPropDomain*,FOPropDomain*) const;
 		FOPropBDDDomain*	substitute(FOPropDomain*,const std::map<Variable*,Variable*>&) const;
 		bool				approxequals(FOPropDomain*,FOPropDomain*)	const;
-		PredInter*			inter(const std::vector<Variable*>&, const ThreeValuedDomain&, AbstractStructure*) const;
+		PredInter*			inter(const std::vector<Variable*>&, const ThreeValuedDomain<FOPropBDDDomain>&, AbstractStructure*) const;
 		std::ostream&		put(std::ostream&,FOPropDomain*) const;
 };
 
@@ -168,107 +167,104 @@ class FOPropTableDomainFactory : public FOPropDomainFactory<FOPropTableDomain> {
 		FOPropTableDomain*	disjunction(FOPropDomain*,FOPropDomain*) const;
 		FOPropTableDomain*	substitute(FOPropDomain*,const std::map<Variable*,Variable*>&) const;
 		bool				equals(FOPropDomain*,FOPropDomain*)	const;
-		PredInter*			inter(const std::vector<Variable*>&, const ThreeValuedDomain&, AbstractStructure*) const;
+		PredInter*			inter(const std::vector<Variable*>&, const ThreeValuedDomain<FOPropBDDDomain>&, AbstractStructure*) const;
 		std::ostream&		put(std::ostream&,FOPropDomain*) const;
 };
 
 /**
  * 	A domain is split in a certainly true and a certainly false part.
  */
+template<class DomainType>
 struct ThreeValuedDomain {
-	FOPropDomain* 	_ctdomain;
-	FOPropDomain* 	_cfdomain;
+	DomainType* 	_ctdomain;
+	DomainType* 	_cfdomain;
 	bool			_twovalued;
 	ThreeValuedDomain() : _ctdomain(0), _cfdomain(0), _twovalued(false) { }
-	ThreeValuedDomain(const FOPropDomainFactory*, bool ctdom, bool cfdom, const Formula*);
-	ThreeValuedDomain(const FOPropDomainFactory*, const Formula*);
-	ThreeValuedDomain(const FOPropDomainFactory*, const PredForm*, InitBoundType);
+	ThreeValuedDomain(const FOPropDomainFactory<DomainType>*, bool ctdom, bool cfdom, const Formula*);
+	ThreeValuedDomain(const FOPropDomainFactory<DomainType>*, const Formula*);
+	ThreeValuedDomain(const FOPropDomainFactory<DomainType>*, const PredForm*, InitBoundType);
 };
 
 /**
  * Struct to represent the connection between atomic formulas over the same symbol
  */
+template<class DomainType>
 struct LeafConnectData {
 	PredForm*						_connector;
-	FOPropDomain*					_equalities;
+	DomainType*					_equalities;
 	std::map<Variable*,Variable*>	_leaftoconnector;
 	std::map<Variable*,Variable*>	_connectortoleaf;
 };
 
+template<class DomainType>
 class AdmissibleBoundChecker {
 	public:
 		virtual ~AdmissibleBoundChecker(){}
-		virtual bool check(FOPropDomain*,FOPropDomain*) const = 0;
+		virtual bool check(DomainType*,DomainType*) const = 0;
 };
 
-class LongestBranchChecker : public AdmissibleBoundChecker {
+template<class DomainType>
+class LongestBranchChecker : public AdmissibleBoundChecker<DomainType> {
 	private:
 		int				_treshhold;
 		FOBDDManager*	_manager;
 	public:
 		LongestBranchChecker(FOBDDManager* m, int th) : _treshhold(th), _manager(m) { }
-		bool check(FOPropDomain*,FOPropDomain*) const;
+		bool check(DomainType*,DomainType*) const;
 };
 
-/**
- * Constraint propagator for first-order theories
- */
 template<class InterpretationFactory, class Domain>
-class FOPropagator : public TheoryVisitor {
-	private:
-		Options*												_options;
-		int														_verbosity;
-		int														_maxsteps;		//!< Maximum number of propagations
-		InterpretationFactory*									_factory;		//!< Manages and creates domains for formulas
-		FOPropScheduler*										_scheduler;		//!< Schedules propagations
-		std::map<const Formula*,ThreeValuedDomain>				_domains;		//!< Map each formula to its current domain
-		std::map<const Formula*,std::set<Variable*> >			_quantvars;
-		std::map<PFSymbol*,PredForm*>							_leafconnectors;
-		std::map<const PredForm*,LeafConnectData>				_leafconnectdata;
-		std::map<const Formula*,const Formula*>					_upward;
-		std::map<const PredForm*,std::set<const PredForm*> >	_leafupward;
-		std::vector<AdmissibleBoundChecker*>					_admissiblecheckers;
+class TypedFOPropagator : public FOPropagator {
+private:
+	Options*												_options;
+	int														_verbosity;
+	int														_maxsteps;		//!< Maximum number of propagations
+	InterpretationFactory*									_factory;		//!< Manages and creates domains for formulas
+	FOPropScheduler*										_scheduler;		//!< Schedules propagations
+	std::map<const Formula*,ThreeValuedDomain<Domain> >				_domains;		//!< Map each formula to its current domain
+	std::map<const Formula*,std::set<Variable*> >			_quantvars;
+	std::map<PFSymbol*,PredForm*>							_leafconnectors;
+	std::map<const PredForm*,LeafConnectData<Domain> >				_leafconnectdata;
+	std::map<const Formula*,const Formula*>					_upward;
+	std::map<const PredForm*,std::set<const PredForm*> >	_leafupward;
+	std::vector<AdmissibleBoundChecker<Domain>*>			_admissiblecheckers;
 
-		// Variables to temporarily store a propagation
-		FOPropDirection		_direction;
-		bool				_ct;
-		const Formula*		_child;
+	// Variables to temporarily store a propagation
+	FOPropDirection		_direction;
+	bool				_ct;
+	const Formula*		_child;
 
-		Domain* addToConjunction(Domain* conjunction, Domain* newconjunct);
-		Domain* addToDisjunction(Domain* disjunction, Domain* newdisjunct);
-		Domain* addToExists(Domain* exists, const std::set<Variable*>&);
-		Domain* addToForall(Domain* forall, const std::set<Variable*>&);
+	Domain* addToConjunction(Domain* conjunction, Domain* newconjunct);
+	Domain* addToDisjunction(Domain* disjunction, Domain* newdisjunct);
+	Domain* addToExists(Domain* exists, const std::set<Variable*>&);
+	Domain* addToForall(Domain* forall, const std::set<Variable*>&);
 
-		void updateDomain(const Formula* tobeupdated,FOPropDirection,bool ct,Domain* newdomain,const Formula* child = 0);
-		void schedule(const Formula* par, FOPropDirection, bool, const Formula* child);
-		bool admissible(Domain*, Domain*) const;	//!< Returns true iff the first domain is an allowed
-																//!< replacement of the second domain
+	void updateDomain(const Formula* tobeupdated,FOPropDirection,bool ct,Domain* newdomain,const Formula* child = 0);
+	void schedule(const Formula* par, FOPropDirection, bool, const Formula* child);
+	bool admissible(Domain*, Domain*) const;	//!< Returns true iff the first domain is an allowed
+															//!< replacement of the second domain
 
-	public:
-		// Constructor
-		FOPropagator(InterpretationFactory*, FOPropScheduler*, Options*);
+public:
+	TypedFOPropagator(InterpretationFactory*, FOPropScheduler*, Options*);
 
-		// Execution
-		void run();		//!< Apply propagations until the propagation queue is empty
+	void run();		//!< Apply propagations until the propagation queue is empty
 
-		// Visitor
-		void visit(const PredForm*);
-		void visit(const EqChainForm*);
-		void visit(const EquivForm*);
-		void visit(const BoolForm*);
-		void visit(const QuantForm*);
-		void visit(const AggForm*);
+	// Visitor
+	void visit(const PredForm*);
+	void visit(const EqChainForm*);
+	void visit(const EquivForm*);
+	void visit(const BoolForm*);
+	void visit(const QuantForm*);
+	void visit(const AggForm*);
 
-		// Inspectors
-		AbstractStructure*	currstructure(AbstractStructure* str) const;	
-			//!< Obtain the resulting structure 
-			//!< (the given structure is used to evaluate BDDs in case of symbolic propagation)
-		SymbolicStructure*	symbolicstructure()		const;
-			//!< Obtain the resulting structure (only works if the used domainfactory is a FOPropBDDDomainFactory)
-		FuncInter*	interpretation(Function* f)		const;	//!< Returns the current interpretation of function symbol f
-		PredInter*	interpretation(Predicate* p)	const;	//!< Returns the current interpretation of predicate symbol p
-
-	friend class FOPropagatorFactory;
+	// Inspectors
+	AbstractStructure*	currstructure(AbstractStructure* str) const;
+		//!< Obtain the resulting structure
+		//!< (the given structure is used to evaluate BDDs in case of symbolic propagation)
+	SymbolicStructure*	symbolicstructure()		const;
+		//!< Obtain the resulting structure (only works if the used domainfactory is a FOPropBDDDomainFactory)
+	FuncInter*	interpretation(Function* f)		const;	//!< Returns the current interpretation of function symbol f
+	PredInter*	interpretation(Predicate* p)	const;	//!< Returns the current interpretation of predicate symbol p
 };
 
 #endif

@@ -23,7 +23,6 @@
 #include "ground.hpp"
 #include "ecnf.hpp"
 #include "fobdd.hpp"
-#include "propagate.hpp"
 #include "generator.hpp"
 #include "commands/allcommands.hpp"
 #include "monitors/luainteractiveprintmonitor.hpp"

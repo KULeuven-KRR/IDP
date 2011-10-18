@@ -21,7 +21,7 @@ private:
 		// Symbolic propagation
 		PropagateInference propinference;
 		std::map<PFSymbol*,InitBoundType> mpi = propinference.propagateVocabulary(theory,structure);
-		FOPropagator* propagator = propinference.createPropagator(theory,mpi,options);
+		FOPropagator* propagator = createPropagator(theory,mpi,options);
 		propagator->run();
 		SymbolicStructure* symstructure = propagator->symbolicstructure();
 
