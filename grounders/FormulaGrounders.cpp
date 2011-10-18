@@ -595,6 +595,11 @@ void EquivGrounder::run(litlist& clause) const {
 		Lit ts1 = translator()->translate(cl1,false,tp);
 		Lit ts2 = translator()->translate(cl2,false,tp);
 		clause = litlist{ts1, ts2};
+		// FIXME the semantics of the "clause" should be determined by the grounder itself!
+		// reason => here for instance, we might return (left and right) or (not left and not right)
+		// OR											(left or right) and (not left or not right)
+		// So the semantics are INCORRECTLY determined by the parent
+
 /*		litlist cl3 = {ts1, ts2};
 		Lit head = translator()->translate(cl3,true,tp);
 		clause.push_back(head);*/

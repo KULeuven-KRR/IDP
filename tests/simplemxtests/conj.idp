@@ -1,9 +1,11 @@
 vocabulary V{
 	p
+	q
+	r
 }
 
 theory T:V{
-	p.
+	p & q & r.
 }
 
 structure S:V{

@@ -29,12 +29,37 @@ public:
 		AbstractTheory* theory = args[0].theory()->clone();
 		AbstractStructure* structure = args[1].structure()->clone();
 		Options* options = args[2].options();
+
+		auto models = doModelExpansion(theory, structure, options);
+
+		// Convert to internal arguments
+		InternalArgument result;
+		result._type = AT_TABLE;
+		result._value._table = new std::vector<InternalArgument>();
+		for(auto it = models.begin(); it != models.end(); ++it) {
+			result._value._table->push_back(InternalArgument(*it));
+		}
+		if(options->getValue(BoolType::TRACE)) {
+			InternalArgument randt;
+			randt._type = AT_MULT;
+			randt._value._table = new std::vector<InternalArgument>(1,result);
+			InternalArgument trace;
+			trace._type = AT_REGISTRY;
+			//trace._value._string = monitor->index(); // FIXME what does this value mean exactly?
+			randt._value._table->push_back(trace);
+			result = randt;
+		}
+
+		return result;
+	}
+
+	std::vector<AbstractStructure*> doModelExpansion(AbstractTheory* theory, AbstractStructure* structure, Options* options) const {
 		TraceMonitor* monitor = tracemonitor();
 
 		// Calculate known definitions
 		if(typeid(*theory) == typeid(Theory)) {
 			bool satisfiable = calculateKnownDefinitions(dynamic_cast<Theory*>(theory),structure,options);
-			if(not satisfiable) { return unsat(); }
+			if(not satisfiable) { return std::vector<AbstractStructure*>{}; }
 		}
 
 		// Symbolic propagation
@@ -103,41 +128,14 @@ public:
 			solutions.push_back(newsolution);
 		}
 
-		// Convert to internal arguments
-		InternalArgument result;
-		result._type = AT_TABLE;
-		result._value._table = new std::vector<InternalArgument>();
-		for(auto it = solutions.begin(); it != solutions.end(); ++it) {
-			result._value._table->push_back(InternalArgument(*it));
-		}
-		if(options->getValue(BoolType::TRACE)) {
-			InternalArgument randt;
-			randt._type = AT_MULT;
-			randt._value._table = new std::vector<InternalArgument>(1,result);
-			InternalArgument trace;
-			trace._type = AT_REGISTRY;
-			trace._value._string = monitor->index();
-			randt._value._table->push_back(trace);
-			result = randt;
-		}
-
-		// Cleanup
 		grounding->recursiveDelete();
 		delete(solver);
 		delete(abstractsolutions);
 
-		return result;
+		return solutions;
 	}
 
 private:
-	InternalArgument unsat() const {
-		// Return an empty table of solutions
-		InternalArgument result;
-		result._type = AT_TABLE;
-		result._value._table = new std::vector<InternalArgument>();
-		return result;
-	}
-
 	bool calculateDefinition(Definition* definition, AbstractStructure* structure, Options* options) const {
 		// Create solver and grounder
 		SATSolver* solver = createsolver(options);

@@ -15,102 +15,56 @@
 using namespace std;
 
 namespace Tests{
-	int Factorial(int n){
-		if(n<=1){
-			return 1;
-		}else{
-			return n*Factorial(n-1);
+	class MXTest : public ::testing::TestWithParam<string> {
+
+	};
+
+	class LazyMXTest : public ::testing::TestWithParam<string> {
+
+	};
+
+	TEST_P(MXTest, DoesMX){
+		string testfile(string(TESTDIR)+"mxnbofmodelstest.idp");
+		run({string(TESTDIR)+GetParam(), testfile});
+		if(getTestStatus()==Status::FAIL){
+			cerr <<"Tested file " <<string(TESTDIR)+GetParam() <<"\n";
 		}
+		EXPECT_TRUE(getTestStatus()==Status::SUCCESS);
+		setTestStatus(Status::FAIL);
 	}
 
-	bool IsPrime(int n){
-		if(n<1){
-			return false;
-		}else if(n==1){
-			return false;
+	TEST_P(LazyMXTest, DoesMX){
+		string testfile(string(TESTDIR)+"lazymxnbofmodelstest.idp");
+		run({string(TESTDIR)+GetParam(), testfile});
+		if(getTestStatus()==Status::FAIL){
+			cerr <<"Tested file " <<string(TESTDIR)+GetParam() <<"\n";
 		}
-
-		int test = 2;
-		while(test<=sqrt(n)){
-			if(n%test==0){
-				return false;
-			}
-			test++;
-		}
-		return true;
+		EXPECT_TRUE(getTestStatus()==Status::SUCCESS);
+		setTestStatus(Status::FAIL);
 	}
 
-	// Tests Factorial().
+	vector<string> testlist{
+		"equiv.idp", "forall.idp", "exists.idp", "impl.idp", "revimpl.idp",
+		"conj.idp", "disj.idp",
+		"negequiv.idp", "negforall.idp", "negexists.idp", "negimpl.idp",
+		"negrevimpl.idp", "negconj.idp", "negdisj.idp",
+		"atom.idp", "doubleneg.idp", "negatom.idp", "arbitrary.idp",
+		"func.idp",
+		"defonerule.idp", "defmultihead.idp", "defunwellf.idp", "defunfset.idp", "multidef.idp",
+		"eq.idp", //"neq.idp", "leq.idp", "geq.idp", "lower.idp", "greater.idp",
+		//"card.idp", "sum.idp", "min.idp", "max.idp", "prod.idp",
+		// FIXME those tests go in infinite loop, quite irritating :)
+		// FIXME on parsing error of one of the files, a lot of later ones will also fail!
+	};
 
-	// Tests factorial of negative numbers.
-	TEST(FactorialTest, Negative) {
-	  // This test is named "Negative", and belongs to the "FactorialTest"
-	  // test case.
-	  EXPECT_EQ(1, Factorial(-5));
-	  EXPECT_EQ(1, Factorial(-1));
-	  EXPECT_TRUE(Factorial(-10) > 0);
+	INSTANTIATE_TEST_CASE_P(ModelExpansion,
+					  MXTest,
+					  ::testing::ValuesIn(testlist));
 
-	  // <TechnicalDetails>
-	  //
-	  // EXPECT_EQ(expected, actual) is the same as
-	  //
-	  //   EXPECT_TRUE((expected) == (actual))
-	  //
-	  // except that it will print both the expected value and the actual
-	  // value when the assertion fails.  This is very helpful for
-	  // debugging.  Therefore in this case EXPECT_EQ is preferred.
-	  //
-	  // On the other hand, EXPECT_TRUE accepts any Boolean expression,
-	  // and is thus more general.
-	  //
-	  // </TechnicalDetails>
-	}
-
-	// Tests factorial of 0.
-	TEST(FactorialTest, Zero) {
-	  EXPECT_EQ(1, Factorial(0));
-	}
-
-	// Tests factorial of positive numbers.
-	TEST(FactorialTest, Positive) {
-	  EXPECT_EQ(1, Factorial(1));
-	  EXPECT_EQ(2, Factorial(2));
-	  EXPECT_EQ(6, Factorial(3));
-	  EXPECT_EQ(40320, Factorial(8));
-	}
-
-
-	// Tests IsPrime()
-
-	// Tests negative input.
-	TEST(IsPrimeTest, Negative) {
-	  // This test belongs to the IsPrimeTest test case.
-
-	  EXPECT_FALSE(IsPrime(-1));
-	  EXPECT_FALSE(IsPrime(-2));
-	}
-
-	// Tests some trivial cases.
-	TEST(IsPrimeTest, Trivial) {
-	  EXPECT_FALSE(IsPrime(0));
-	  EXPECT_FALSE(IsPrime(1));
-	  EXPECT_TRUE(IsPrime(2));
-	  EXPECT_TRUE(IsPrime(3));
-	}
-
-	// Tests positive input.
-	TEST(IsPrimeTest, Positive) {
-	  EXPECT_FALSE(IsPrime(4));
-	  EXPECT_TRUE(IsPrime(5));
-	  EXPECT_FALSE(IsPrime(6));
-	  EXPECT_TRUE(IsPrime(23));
-	}
-
-	TEST(Mxtests, Basic){
-		EXPECT_TRUE(run(string(TESTDIR)+"eq.idp")==Status::SUCCESS);
-	}
+	INSTANTIATE_TEST_CASE_P(LazyModelExpansion,
+					  LazyMXTest,
+					  ::testing::ValuesIn(testlist));
 }
-
 
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);

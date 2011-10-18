@@ -36,8 +36,6 @@ extern void parsefile(const string&);
 int UserProcedure::_compilenumber = 0;
 int	LuaTraceMonitor::_tracenr = 0;
 
-extern int execresult; // FIXME very ugly, but easy for testing!
-
 template<class Arg>
 int addUserData(lua_State* l, Arg arg, const std::string& name){
 	Arg* ptr = (Arg*)lua_newuserdata(l,sizeof(Arg));

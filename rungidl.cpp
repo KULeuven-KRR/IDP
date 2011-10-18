@@ -14,6 +14,7 @@
 #include "luaconnection.hpp"
 #include "interactive.hpp"
 #include "rungidl.hpp"
+#include "insert.hpp"
 using namespace std;
 
 // seed
@@ -24,7 +25,14 @@ extern map<string,CLConst*>	clconsts;
 extern void parsestring(const string&);
 extern void parsefile(const string&);
 extern void parsestdin();
-int execresult = -1;
+
+Status teststatus = Status::FAIL;
+Status getTestStatus(){
+	return teststatus;
+}
+void setTestStatus(Status status){
+	teststatus = status;
+}
 
 /**
  * Print help message and stop
@@ -161,29 +169,34 @@ void interactive() {
 }
 #endif
 
-// TODO merge with main method
-Status run(const std::string& inputfileurl){
-	parse({inputfileurl});
+Insert insert;
 
-	// Run
+// TODO merge with main method
+void run(const std::string& inputfileurl){
+	run({inputfileurl});
+}
+
+void run(const std::vector<std::string>& inputfileurls){
+	insert = Insert();
+	LuaConnection::makeLuaConnection();
+
+	parse(inputfileurls);
+
 	if(not Error::nr_of_errors()) {
 		stringstream ss;
 		ss <<getLibraryName() <<".main()";
 		executeproc(ss.str());
 	}
 
-	Status status = Status::SUCCESS;
 	if(Error::nr_of_errors()>0){
-		status = Status::FAIL;
+		setTestStatus(Status::FAIL);
 	}
-	// FIXME execresult does not get set correctly by calls to lua functions
-	if(execresult==0){
-		status = Status::FAIL;
-	}
-	return status;
+
+	LuaConnection::closeLuaConnection();
 }
 
 int run(int argc, char* argv[]) {
+	insert = Insert();
 	LuaConnection::makeLuaConnection();
 
 	// Parse idp input

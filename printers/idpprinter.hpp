@@ -567,7 +567,9 @@ public:
 	void visit(const CPWSumTerm* cpt) {
 		assert(isTheoryOpen());
 		output() << "wsum[ ";
-		for(auto vit = cpt->varids().begin(), wit = cpt->weights().begin(); vit != cpt->varids().end() && wit != cpt->weights().end(); ++vit, ++wit) {
+		auto vit = cpt->varids().begin();
+		auto wit = cpt->weights().begin();
+		for(; vit != cpt->varids().end() && wit != cpt->weights().end(); ++vit, ++wit) {
 			output() << '('; printTerm(*vit); output() << ',' << *wit << ')';
 			if(*vit != cpt->varids().back()) output() << "; ";
 		}

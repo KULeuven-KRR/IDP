@@ -323,18 +323,21 @@ DomainElementFactory* DomainElementFactory::instance() {
  *	\brief Destructor for DomainElementFactory. Deletes all domain elements and compounds it created.
  */
 DomainElementFactory::~DomainElementFactory() {
-	for(vector<DomainElement*>::iterator it = _fastintelements.begin(); it != _fastintelements.end(); ++it) 
+	if(this==_instance){
+		_instance = NULL;
+	}
+	for(auto it = _fastintelements.begin(); it != _fastintelements.end(); ++it)
 		delete(*it);
-	for(map<int,DomainElement*>::iterator it = _intelements.begin(); it != _intelements.end(); ++it) 
+	for(auto it = _intelements.begin(); it != _intelements.end(); ++it)
 		delete(it->second);
-	for(map<double,DomainElement*>::iterator it = _doubleelements.begin(); it != _doubleelements.end(); ++it) 
+	for(auto it = _doubleelements.begin(); it != _doubleelements.end(); ++it)
 		delete(it->second);
-	for(map<const string*,DomainElement*>::iterator it = _stringelements.begin(); it != _stringelements.end(); ++it) 
+	for(auto it = _stringelements.begin(); it != _stringelements.end(); ++it)
 		delete(it->second);
-	for(map<const Compound*,DomainElement*>::iterator it = _compoundelements.begin(); it != _compoundelements.end(); ++it) 
+	for(auto it = _compoundelements.begin(); it != _compoundelements.end(); ++it)
 		delete(it->second);
-	for(map<Function*,map<ElementTuple,Compound*> >::iterator it = _compounds.begin(); it != _compounds.end(); ++it) {
-		for(map<ElementTuple,Compound*>::iterator jt = it->second.begin(); jt != it->second.end(); ++jt) {
+	for(auto it = _compounds.begin(); it != _compounds.end(); ++it) {
+		for(auto jt = it->second.begin(); jt != it->second.end(); ++jt) {
 			delete(jt->second);
 		}
 	}

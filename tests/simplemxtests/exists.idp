@@ -1,14 +1,16 @@
 vocabulary V{
-	p
+	type x
+	p(x)
 }
 
 theory T:V{
-	p.
+	?x: p(x).
 }
 
 structure S:V{
+	x = {1..3}
 }
 
 procedure getExpectedNbOfModels(){
-	return 1
+	return 7
 }

@@ -15,7 +15,7 @@
 extern int yylex();
 
 // Inserter
-Insert insert;
+extern Insert insert;
 
 // Errors
 void yyerror(const char* s);

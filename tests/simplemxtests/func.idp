@@ -11,15 +11,6 @@ structure S:V{
 	x = {1..5}
 }
 
-#include <mx>
-
-procedure main(){
-	local expected = 5
-	local sols = mx::all(T, S)
-	if(not (#(sols)==expected)) then
-		print("ERROR, should have been "..expected..", but found "..#(sols).." solutions.")
-		mx::printsols(sols)
-		return
-	end
-	print("OK")
+procedure getExpectedNbOfModels(){
+	return 5
 }

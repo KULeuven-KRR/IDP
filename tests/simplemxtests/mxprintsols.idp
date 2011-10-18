@@ -1,0 +1,7 @@
+#include <mx>
+
+procedure main(){
+	stdoptions.nrmodels=0
+	stdoptions.nbmodelequivalent = true
+	mx::printsols(mx::all(T, S, stdoptions))
+}

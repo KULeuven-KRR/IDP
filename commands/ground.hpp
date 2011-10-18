@@ -22,9 +22,10 @@ class GroundInference: public Inference {
 			// Symbolic propagation
 			PropagateInference propinference;
 			std::map<PFSymbol*,InitBoundType> mpi = propinference.propagateVocabulary(theory,structure);
-			FOPropagator* propagator = propinference.createPropagator(theory,mpi,options);
-			propagator->run();
-			SymbolicStructure* symstructure = propagator->symbolicstructure();
+//			FOPropagator* propagator = propinference.createPropagator(theory,mpi,options);
+//			propagator->run();
+//			SymbolicStructure* symstructure = propagator->symbolicstructure();
+			SymbolicStructure* symstructure = NULL; // FIXME add bdd code again
 	
 //std::cerr << "Computed the following symbolic structure:" << std::endl;
 //symstructure->put(std::cerr);

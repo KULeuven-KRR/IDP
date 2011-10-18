@@ -130,6 +130,6 @@ endif
 alltests_SOURCES = tests/googletestsnippet.cpp $(grounder_SOURCES)
 alltests_LDADD = -lgtest -lpthread $(gidl_LDADD)
 
-AM_CXXFLAGS += -DTESTDIR=\"$(srcdir)/tests/simplemxtests/\"
+AM_CXXFLAGS += -DTESTDIR=\"$(abs_srcdir)/tests/simplemxtests/\"
 
 TESTS = alltests

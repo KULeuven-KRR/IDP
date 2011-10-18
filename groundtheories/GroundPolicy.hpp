@@ -167,7 +167,9 @@ public:
 				CPWSumTerm* cpt = dynamic_cast<CPWSumTerm*>(left);
 				s << "wsum[ ";
 				bool begin = true;
-				for(auto vit = cpt->varids().begin(), wit = cpt->weights().begin(); vit != cpt->varids().end() && wit != cpt->weights().end(); ++vit, ++wit) {
+				auto vit = cpt->varids().begin();
+				auto wit = cpt->weights().begin();
+				for(; vit != cpt->varids().end() && wit != cpt->weights().end(); ++vit, ++wit) {
 					if(not begin){ s << "; "; }	begin = false;
 					s << '(' << termtranslator->printTerm(*vit, longnames) << '=' << *wit << ')';
 				}

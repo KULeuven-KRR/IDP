@@ -1,0 +1,7 @@
+#include <mx>
+
+procedure main(){
+	stdoptions.nrmodels=0
+	stdoptions.nbmodelequivalent = true
+	idp_intern.testmx(getExpectedNbOfModels(), T, S, stdoptions);
+}

@@ -1266,14 +1266,17 @@ Vocabulary::Vocabulary(const string& name, const ParseInfo& pi) : _name(name), _
 }
 
 Vocabulary::~Vocabulary() {
-	for(map<string,Predicate*>::iterator it = _name2pred.begin(); it != _name2pred.end(); ++it) {
+	if(this==_std){
+		_std = NULL;
+	}
+	for(auto it = _name2pred.begin(); it != _name2pred.end(); ++it) {
 		it->second->removeVocabulary(this);
 	}
-	for(map<string,Function*>::iterator it = _name2func.begin(); it != _name2func.end(); ++it) {
+	for(auto it = _name2func.begin(); it != _name2func.end(); ++it) {
 		it->second->removeVocabulary(this);
 	}
-	for(map<string,set<Sort*> >::iterator it = _name2sort.begin(); it != _name2sort.end(); ++it) {
-		for(set<Sort*>::iterator jt = it->second.begin(); jt != it->second.end(); ++jt) {
+	for(auto it = _name2sort.begin(); it != _name2sort.end(); ++it) {
+		for(auto jt = it->second.begin(); jt != it->second.end(); ++jt) {
 			(*jt)->removeVocabulary(this);
 		}
 	}

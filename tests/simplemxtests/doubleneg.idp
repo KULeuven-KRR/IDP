@@ -9,19 +9,11 @@ theory T:V{
 structure S:V{
 }
 
-#include <mx>
+procedure getExpectedNbOfModels(){
+	return 1
+}
 
-procedure main(){
-	local expected = 1
-
-	local sols = mx::all(T, S)
-	if(not #(sols)==expected) then
-		print("ERROR, should have been "..expected..", but found "..#(sols).." solutions.")
-		return
-	end
-	if(idp_intern.size(sols[1][V::p].ct)==0) then
+/*	if(idp_intern.size(sols[1][V::p].ct)==0) then
 		print("ERROR, p should have been false.")
 		return
-	end
-	print("OK")
-}
+*/

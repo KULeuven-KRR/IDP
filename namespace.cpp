@@ -4,7 +4,6 @@
 	(c) K.U.Leuven
 ************************************/
 
-
 #include <iostream>
 #include "vocabulary.hpp"
 #include "structure.hpp"
@@ -14,12 +13,10 @@
 #include "internalargument.hpp"
 using namespace std;
 
-/** Global namespace **/
-
 Namespace* Namespace::_global = 0; 
 
 Namespace* Namespace::global() {
-	if(!_global) {
+	if(_global==NULL) {
 		ParseInfo pi(1,1,0);
 		_global = new Namespace("global_namespace",0,pi);
 		_global->add(Vocabulary::std());
@@ -28,24 +25,24 @@ Namespace* Namespace::global() {
 	return _global;
 }
 
-/** Destructor **/
-
 Namespace::~Namespace() {
-	for(map<string,Namespace*>::iterator it = _subspaces.begin(); it != _subspaces.end(); ++it) 
+	if(this==_global){
+		_global = NULL;
+	}
+	for(auto it = _subspaces.begin(); it != _subspaces.end(); ++it)
 		delete(it->second);
-	for(map<string,AbstractStructure*>::iterator it = _structures.begin(); it != _structures.end(); ++it) 
+	for(auto it = _structures.begin(); it != _structures.end(); ++it)
 		delete(it->second);
-	for(map<string,AbstractTheory*>::iterator it = _theories.begin(); it != _theories.end(); ++it) 
+	for(auto it = _theories.begin(); it != _theories.end(); ++it)
 		it->second->recursiveDelete();
-	for(map<string,Options*>::iterator it = _options.begin(); it != _options.end(); ++it) 
+	for(auto it = _options.begin(); it != _options.end(); ++it)
 		delete(it->second);
-	for(map<string,UserProcedure*>::iterator it = _procedures.begin(); it != _procedures.end(); ++it) 
+	for(auto it = _procedures.begin(); it != _procedures.end(); ++it)
 		delete(it->second);
-	for(map<string,Vocabulary*>::iterator it = _vocabularies.begin(); it != _vocabularies.end(); ++it) 
+	for(auto it = _vocabularies.begin(); it != _vocabularies.end(); ++it)
 		delete(it->second);
 }
 
-/** Mutators **/
 void Namespace::add(Vocabulary* v) 			{ _vocabularies[v->name()] = v;	v->setNamespace(this);	}
 void Namespace::add(Namespace* n)			{ _subspaces[n->name()] = n; 		}
 void Namespace::add(AbstractStructure* s)	{ _structures[s->name()] = s;		}
@@ -54,8 +51,6 @@ void Namespace::add(Options* o)				{ _options[o->name()] = o; 			}
 void Namespace::add(UserProcedure* l)		{ _procedures[l->name()] = l;		}
 void Namespace::add(const string& name, Query* f)	{ _queries[name] = f;	}
 void Namespace::add(const string& name, Term* t)	{ _terms[name] = t;		}
-
-/** Find subparts **/
 
 bool Namespace::isSubspace(const string& sn) const {
 	return (_subspaces.find(sn) != _subspaces.end());

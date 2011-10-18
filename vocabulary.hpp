@@ -555,11 +555,9 @@ class Vocabulary {
 		static Vocabulary* _std;	//!< The standard vocabulary
 
 	public:
-		// Constructors
 		Vocabulary(const std::string& name); 
 		Vocabulary(const std::string& name, const ParseInfo& pi); 
 
-		// Destructor
 		~Vocabulary();
 
 		// Mutators

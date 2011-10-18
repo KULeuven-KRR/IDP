@@ -8,11 +8,15 @@
 #define RUNGIDL_HPP_
 
 #include <string>
+#include <vector>
 
 enum class Status {SUCCESS, FAIL};
 
-Status run(const std::string& inputfileurl);
+Status getTestStatus();
+void setTestStatus(Status status);
 
+void run(const std::string& inputfileurl);
+void run(const std::vector<std::string>& inputfileurls);
 int run(int argc, char* argv[]);
 
 #endif /* RUNGIDL_HPP_ */
