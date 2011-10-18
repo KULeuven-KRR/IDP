@@ -29,7 +29,6 @@ class AbstractStructure;
  * 	File contains classes for propagation on first-order level.
  */
 
-
 /**
  * Direction of propagation
  *	UP = from a subformula to its parents
@@ -113,25 +112,26 @@ struct ThreeValuedDomain;
 /**
  * Class to create and managed domains for formulas
  */
+template<class PropagatorDomain>
 class FOPropDomainFactory {
 	public:
 		virtual ~FOPropDomainFactory(){}
-		virtual FOPropDomain*	trueDomain(const Formula*)		const = 0;	//!< Create a domain containing all tuples
-		virtual FOPropDomain* 	falseDomain(const Formula*)		const = 0;	//!< Create an empty domain 
-		virtual FOPropDomain* 	formuladomain(const Formula*)	const = 0;
-		virtual FOPropDomain*	ctDomain(const PredForm*)		const = 0;
-		virtual FOPropDomain*	cfDomain(const PredForm*)		const = 0;
-		virtual FOPropDomain* 	exists(FOPropDomain*, const std::set<Variable*>&) const = 0;
-		virtual FOPropDomain* 	forall(FOPropDomain*, const std::set<Variable*>&) const = 0;
-		virtual FOPropDomain* 	conjunction(FOPropDomain*,FOPropDomain*) const = 0;
-		virtual FOPropDomain*	disjunction(FOPropDomain*,FOPropDomain*) const = 0;
-		virtual FOPropDomain*	substitute(FOPropDomain*,const std::map<Variable*,Variable*>&) const = 0;
-		virtual bool			approxequals(FOPropDomain*,FOPropDomain*) const = 0;	//!< Checks if two domains are equal
+		virtual PropagatorDomain*	trueDomain(const Formula*)		const = 0;	//!< Create a domain containing all tuples
+		virtual PropagatorDomain* 	falseDomain(const Formula*)		const = 0;	//!< Create an empty domain
+		virtual PropagatorDomain* 	formuladomain(const Formula*)	const = 0;
+		virtual PropagatorDomain*	ctDomain(const PredForm*)		const = 0;
+		virtual PropagatorDomain*	cfDomain(const PredForm*)		const = 0;
+		virtual PropagatorDomain* 	exists(PropagatorDomain*, const std::set<Variable*>&) const = 0;
+		virtual PropagatorDomain* 	forall(PropagatorDomain*, const std::set<Variable*>&) const = 0;
+		virtual PropagatorDomain* 	conjunction(PropagatorDomain*,PropagatorDomain*) const = 0;
+		virtual PropagatorDomain*	disjunction(PropagatorDomain*,PropagatorDomain*) const = 0;
+		virtual PropagatorDomain*	substitute(PropagatorDomain*,const std::map<Variable*,Variable*>&) const = 0;
+		virtual bool			approxequals(PropagatorDomain*,PropagatorDomain*) const = 0;	//!< Checks if two domains are equal
 		virtual PredInter*		inter(const std::vector<Variable*>&, const ThreeValuedDomain&, AbstractStructure*) const = 0;
-		virtual std::ostream&	put(std::ostream&,FOPropDomain*) const = 0;
+		virtual std::ostream&	put(std::ostream&,PropagatorDomain*) const = 0;
 };
 
-class FOPropBDDDomainFactory : public FOPropDomainFactory {
+class FOPropBDDDomainFactory : public FOPropDomainFactory<FOPropBDDDomain> {
 	private:
 		FOBDDManager* _manager;
 	public:
@@ -152,7 +152,7 @@ class FOPropBDDDomainFactory : public FOPropDomainFactory {
 		std::ostream&		put(std::ostream&,FOPropDomain*) const;
 };
 
-class FOPropTableDomainFactory : public FOPropDomainFactory {
+class FOPropTableDomainFactory : public FOPropDomainFactory<FOPropTableDomain> {
 	private:
 		AbstractStructure*	_structure;
 	public:
@@ -213,12 +213,13 @@ class LongestBranchChecker : public AdmissibleBoundChecker {
 /**
  * Constraint propagator for first-order theories
  */
+template<class InterpretationFactory, class Domain>
 class FOPropagator : public TheoryVisitor {
 	private:
 		Options*												_options;
 		int														_verbosity;
 		int														_maxsteps;		//!< Maximum number of propagations
-		FOPropDomainFactory*									_factory;		//!< Manages and creates domains for formulas
+		InterpretationFactory*									_factory;		//!< Manages and creates domains for formulas
 		FOPropScheduler*										_scheduler;		//!< Schedules propagations
 		std::map<const Formula*,ThreeValuedDomain>				_domains;		//!< Map each formula to its current domain
 		std::map<const Formula*,std::set<Variable*> >			_quantvars;
@@ -233,19 +234,19 @@ class FOPropagator : public TheoryVisitor {
 		bool				_ct;
 		const Formula*		_child;
 
-		FOPropDomain* addToConjunction(FOPropDomain* conjunction, FOPropDomain* newconjunct);
-		FOPropDomain* addToDisjunction(FOPropDomain* disjunction, FOPropDomain* newdisjunct);
-		FOPropDomain* addToExists(FOPropDomain* exists, const std::set<Variable*>&);
-		FOPropDomain* addToForall(FOPropDomain* forall, const std::set<Variable*>&);
+		Domain* addToConjunction(Domain* conjunction, Domain* newconjunct);
+		Domain* addToDisjunction(Domain* disjunction, Domain* newdisjunct);
+		Domain* addToExists(Domain* exists, const std::set<Variable*>&);
+		Domain* addToForall(Domain* forall, const std::set<Variable*>&);
 
-		void updateDomain(const Formula* tobeupdated,FOPropDirection,bool ct,FOPropDomain* newdomain,const Formula* child = 0);
+		void updateDomain(const Formula* tobeupdated,FOPropDirection,bool ct,Domain* newdomain,const Formula* child = 0);
 		void schedule(const Formula* par, FOPropDirection, bool, const Formula* child);
-		bool admissible(FOPropDomain*, FOPropDomain*) const;	//!< Returns true iff the first domain is an allowed
+		bool admissible(Domain*, Domain*) const;	//!< Returns true iff the first domain is an allowed
 																//!< replacement of the second domain
 
 	public:
 		// Constructor
-		FOPropagator(FOPropDomainFactory*, FOPropScheduler*, Options*); 
+		FOPropagator(InterpretationFactory*, FOPropScheduler*, Options*);
 
 		// Execution
 		void run();		//!< Apply propagations until the propagation queue is empty
@@ -268,38 +269,6 @@ class FOPropagator : public TheoryVisitor {
 		PredInter*	interpretation(Predicate* p)	const;	//!< Returns the current interpretation of predicate symbol p
 
 	friend class FOPropagatorFactory;
-};
-
-
-/**
- * 	Factory class for creating a FOPropagator and initializing the scheduler
- * 	and domains for formulas in a theory.
- */
-class FOPropagatorFactory : public TheoryVisitor {
-	private:
-		int									_verbosity;
-		FOPropagator*						_propagator;
-		std::map<PFSymbol*,PredForm*>		_leafconnectors;
-		std::map<PFSymbol*,InitBoundType>	_initbounds;
-		bool								_assertsentences;
-		bool								_multiplymaxsteps;
-		
-		void createleafconnector(PFSymbol*);
-		void initFalse(const Formula*);		//!< Set the ct- and cf-domains of the given formula to empty
-
-		void visit(const Theory*);
-		void visit(const PredForm*);
-		void visit(const EqChainForm*);
-		void visit(const EquivForm*);
-		void visit(const BoolForm*);
-		void visit(const QuantForm*);
-		void visit(const AggForm*);
-	public:
-		// Constructors
-		FOPropagatorFactory(FOPropDomainFactory*, FOPropScheduler*, bool as, const std::map<PFSymbol*,InitBoundType>&, Options*);
-
-		// Factory methods
-		FOPropagator* create(const AbstractTheory*);
 };
 
 #endif

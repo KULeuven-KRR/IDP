@@ -65,11 +65,9 @@ public:
 		// Symbolic propagation
 		PropagateInference propinference;
 		std::map<PFSymbol*,InitBoundType> mpi = propinference.propagateVocabulary(theory,structure);
-		// FIXME bugged
-		//FOPropagator* propagator = propinference.createPropagator(theory,mpi,options);
-		//propagator->run();
-		//SymbolicStructure* symstructure = propagator->symbolicstructure();
-		SymbolicStructure* symstructure = NULL;
+		FOPropagator* propagator = propinference.createPropagator(theory,mpi,options);
+		propagator->run();
+		SymbolicStructure* symstructure = propagator->symbolicstructure();
 
 		// Create solver and grounder
 		SATSolver* solver = createsolver(options);
@@ -117,7 +115,7 @@ public:
 		solver->solve(abstractsolutions);
 
 		// Collect solutions
-		//FIXME structure = propagator->currstructure(structure);
+		structure = propagator->currstructure(structure);
 		std::vector<AbstractStructure*> solutions;
 		for(auto model = abstractsolutions->getModels().begin();
 			model != abstractsolutions->getModels().end(); ++model) {
@@ -143,13 +141,8 @@ private:
 		Theory theory("",structure->vocabulary(),ParseInfo()); theory.add(definition);
 		TopLevelGrounder* grounder = grounderfactory.create(&theory,solver);
 
-		// Run grounder
 		grounder->run();
 		AbstractGroundTheory* grounding = dynamic_cast<GroundTheory<SolverPolicy>*>(grounder->grounding());
-
-		// TODO Add information that is abstracted in the grounding TODO this is done somewhere else? TODO
-		//grounding->addFuncConstraints();
-		//grounding->addFalseDefineds();
 
 		// Run solver
 		MinisatID::Solution* abstractsolutions = initsolution(options);
@@ -218,7 +211,7 @@ private:
 			modes.lazy = true;
 		}
 
-//		modes.remap = false;
+//		modes.remap = false; // FIXME no longer allowed, because solver needs the remapping for extra literals.
 		return new SATSolver(modes);
 	}
 
@@ -254,28 +247,24 @@ private:
 	}
 
 	void addTerms(MinisatID::Model* model, GroundTermTranslator* termtranslator, AbstractStructure* init) const {
-//		std::cerr << "Adding terms based on var-val pairs from CP solver, pairs are { ";
 		for(auto cpvar = model->variableassignments.begin(); cpvar != model->variableassignments.end(); ++cpvar) {
-//			std::cerr << cpvar->variable << '=' << cpvar->value;
 			Function* function = termtranslator->function(cpvar->variable);
-			if(function) {
-				const std::vector<GroundTerm>& gtuple = termtranslator->args(cpvar->variable);
-				ElementTuple tuple;
-				for(auto it = gtuple.begin(); it != gtuple.end(); ++it) {
-					if(it->_isvarid) {
-						int value = model->variableassignments[it->_varid].value;
-						tuple.push_back(DomainElementFactory::instance()->create(value));
-					} else {
-						tuple.push_back(it->_domelement);
-					}
-				}
-				tuple.push_back(DomainElementFactory::instance()->create(cpvar->value));
-//				std::cerr << '=' << function->name() << tuple;
-				init->inter(function)->graphInter()->makeTrue(tuple);
+			if(function==NULL){
+				continue;
 			}
-//			std::cerr << ' ';
+			const auto& gtuple = termtranslator->args(cpvar->variable);
+			ElementTuple tuple;
+			for(auto it = gtuple.begin(); it != gtuple.end(); ++it) {
+				if(it->_isvarid) {
+					int value = model->variableassignments[it->_varid].value;
+					tuple.push_back(DomainElementFactory::instance()->create(value));
+				} else {
+					tuple.push_back(it->_domelement);
+				}
+			}
+			tuple.push_back(DomainElementFactory::instance()->create(cpvar->value));
+			init->inter(function)->graphInter()->makeTrue(tuple);
 		}
-//		std::cerr << '}' << "\n";
 	}
 };
 
