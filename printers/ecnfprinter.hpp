@@ -96,10 +96,16 @@ public:
 		for(unsigned int n = 0; n < g->nrClauses(); ++n) {
 			visit(g->clause(n));
 		}
-		for(unsigned int n = 0; n < g->nrDefinitions(); ++n) {
-			_currentdefnr = g->definition(n)->id();
+//		for(unsigned int n = 0; n < g->nrDefinitions(); ++n) {
+//			_currentdefnr = g->definition(n)->id();//TODO REMOVE ONE OF TWO FIXME
+//			openDefinition(_currentdefnr);
+//			g->definition(n)->accept(this);
+//			closeDefinition();
+//		}
+		for(auto i=g->definitions().begin(); i!=g->definitions().end(); i++){
+			_currentdefnr= (*i).second->id();
 			openDefinition(_currentdefnr);
-			g->definition(n)->accept(this);
+			(*i).second->accept(this);
 			closeDefinition();
 		}
 		for(unsigned int n = 0; n < g->nrSets(); ++n){ //IMPORTANT: Print sets before aggregates!!
