@@ -68,7 +68,7 @@ FOPropBDDDomain* FOPropBDDDomainFactory::formuladomain(const Formula* f) const {
 FOPropBDDDomain* FOPropBDDDomainFactory::ctDomain(const PredForm* pf) const {
 	vector<const FOBDDArgument*> args;
 	FOBDDFactory bddfactory(_manager);
-	for(vector<Term*>::const_iterator it = pf->subterms().begin(); it != pf->subterms().end(); ++it) {
+	for(auto it = pf->subterms().begin(); it != pf->subterms().end(); ++it) {
 		args.push_back(bddfactory.run(*it));
 	}
 	const FOBDDKernel* k = _manager->getAtomKernel(pf->symbol(),AKT_CT,args);
@@ -80,7 +80,7 @@ FOPropBDDDomain* FOPropBDDDomainFactory::ctDomain(const PredForm* pf) const {
 FOPropBDDDomain* FOPropBDDDomainFactory::cfDomain(const PredForm* pf) const {
 	vector<const FOBDDArgument*> args;
 	FOBDDFactory bddfactory(_manager);
-	for(vector<Term*>::const_iterator it = pf->subterms().begin(); it != pf->subterms().end(); ++it) {
+	for(auto it = pf->subterms().begin(); it != pf->subterms().end(); ++it) {
 		args.push_back(bddfactory.run(*it));
 	}
 	const FOBDDKernel* k = _manager->getAtomKernel(pf->symbol(),AKT_CF,args);
@@ -289,7 +289,7 @@ AbstractStructure* TypedFOPropagator<Factory, Domain>::currstructure(AbstractStr
 		const PredForm* connector = it->first;
 		PFSymbol* symbol = connector->symbol();
 		vector<Variable*> vv;
-		for(vector<Term*>::const_iterator jt = connector->subterms().begin(); jt != connector->subterms().end(); ++jt) {
+		for(auto jt = connector->subterms().begin(); jt != connector->subterms().end(); ++jt) {
 			vv.push_back(*((*jt)->freeVars().begin()));
 		}
 		PredInter* pinter = _factory->inter(vv,_domains.find(connector)->second,structure);
@@ -480,7 +480,7 @@ void TypedFOPropagator<Factory, Domain>::visit(const PredForm* pf) {
 		//TODO?
 		/*set<Variable*> freevars;
 		map<Variable*,Variable*> mvv;
-		for(set<Variable*>::const_iterator it = pf->freeVars().begin(); it != pf->freeVars().end(); ++it) {
+		for(auto it = pf->freeVars().begin(); it != pf->freeVars().end(); ++it) {
 			Variable* clone = new Variable((*it)->sort());
 			freevars.insert(clone);
 			mvv[(*it)] = clone;
@@ -501,7 +501,7 @@ void TypedFOPropagator<Factory, Domain>::visit(const PredForm* pf) {
 		delete(temp);
 		/*set<Variable*> freevars;
 		map<Variable*,Variable*> mvv;
-		for(set<Variable*>::const_iterator it = connector->freeVars().begin(); it != connector->freeVars().end(); ++it) {
+		for(auto it = connector->freeVars().begin(); it != connector->freeVars().end(); ++it) {
 			Variable* clone = new Variable((*it)->sort());
 			freevars.insert(clone);
 			mvv[(*it)] = clone;

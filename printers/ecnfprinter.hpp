@@ -270,7 +270,7 @@ private:
 	}
 
 	void printCPVariables(std::vector<unsigned int> varids) {
-		for(std::vector<unsigned int>::const_iterator it = varids.begin(); it != varids.end(); ++it) {
+		for(auto it = varids.begin(); it != varids.end(); ++it) {
 			printCPVariable(*it);
 		}
 	}
@@ -313,11 +313,11 @@ private:
 
 	void printCPReification(std::string type, int head, std::vector<unsigned int> varids, std::vector<int> weights, CompType comp, long right) {
 		output() << type << ' ' << head << ' ';
-		for(std::vector<unsigned int>::const_iterator it = varids.begin(); it != varids.end(); ++it){
+		for(auto it = varids.begin(); it != varids.end(); ++it){
 			output() << *it << ' ';
 		}
 		output() << " | ";
-		for(std::vector<int>::const_iterator it = weights.begin(); it != weights.end(); ++it){
+		for(auto it = weights.begin(); it != weights.end(); ++it){
 			output() << *it << ' ';
 		}
 		output() << toString(comp) << ' ' << right << " 0" << "\n";

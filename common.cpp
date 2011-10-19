@@ -216,7 +216,7 @@ class StringPointers {
 };
 
 StringPointers::~StringPointers() {
-	for(MSSP::iterator it = _sharedstrings.begin(); it != _sharedstrings.end(); ++it) {
+	for(auto it = _sharedstrings.begin(); it != _sharedstrings.end(); ++it) {
 		delete(it->second);
 	}
 }

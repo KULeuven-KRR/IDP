@@ -683,6 +683,7 @@ class CharInternalSortIterator : public InternalSortIterator {
 		CharInternalSortIterator* clone()	const { return new CharInternalSortIterator(_iter);	}
 };
 
+// FIXME wat met iterator invalidation?
 class EnumInternalSortIterator : public InternalSortIterator {
 	private:
 		SortedElementTuple::const_iterator	_iter;

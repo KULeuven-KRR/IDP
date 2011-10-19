@@ -61,8 +61,8 @@ public:
 		assert(isTheoryOpen());
 		Vocabulary* voc = structure->vocabulary();
 
-		for(std::map<std::string,std::set<Sort*> >::const_iterator it = voc->firstSort(); it != voc->lastSort(); ++it) {
-			for(std::set<Sort*>::const_iterator jt = it->second.begin(); jt != it->second.end(); ++jt) {
+		for(auto it = voc->firstSort(); it != voc->lastSort(); ++it) {
+			for(auto jt = it->second.begin(); jt != it->second.end(); ++jt) {
 				Sort* s = *jt;
 				if(not s->builtin()) {
 					output() << s->toString(_longnames) << " = ";
@@ -72,9 +72,9 @@ public:
 				}
 			}
 		}
-		for(std::map<std::string,Predicate*>::const_iterator it = voc->firstPred(); it != voc->lastPred(); ++it) {
+		for(auto it = voc->firstPred(); it != voc->lastPred(); ++it) {
 			std::set<Predicate*> sp = it->second->nonbuiltins();
-			for(std::set<Predicate*>::iterator jt = sp.begin(); jt != sp.end(); ++jt) {
+			for(auto jt = sp.begin(); jt != sp.end(); ++jt) {
 				Predicate* p = *jt;
 				if(p->arity() != 1 || p->sorts()[0]->pred() != p) {
 					PredInter* pi = structure->inter(p);
@@ -97,9 +97,9 @@ public:
 				}
 			}
 		}
-		for(std::map<std::string,Function*>::const_iterator it = voc->firstFunc(); it != voc->lastFunc(); ++it) {
+		for(auto it = voc->firstFunc(); it != voc->lastFunc(); ++it) {
 			std::set<Function*> sf = it->second->nonbuiltins();
-			for(std::set<Function*>::iterator jt = sf.begin(); jt != sf.end(); ++jt) {
+			for(auto jt = sf.begin(); jt != sf.end(); ++jt) {
 				Function* f = *jt;
 				FuncInter* fi = structure->inter(f);
 				if(fi->approxTwoValued()) {
@@ -125,15 +125,15 @@ public:
 
 	void visit(const Vocabulary* v) {
 		assert(isTheoryOpen());
-		for(std::map<std::string,std::set<Sort*> >::const_iterator it = v->firstSort(); it != v->lastSort(); ++it) {
-			for(std::set<Sort*>::iterator jt = it->second.begin(); jt != it->second.end(); ++jt) {
+		for(auto it = v->firstSort(); it != v->lastSort(); ++it) {
+			for(auto jt = it->second.begin(); jt != it->second.end(); ++jt) {
 				if(not (*jt)->builtin() || v == Vocabulary::std()) { visit(*jt); }
 			}
 		}
-		for(std::map<std::string,Predicate*>::const_iterator it = v->firstPred(); it != v->lastPred(); ++it) {
+		for(auto it = v->firstPred(); it != v->lastPred(); ++it) {
 			if(not it->second->builtin() || v == Vocabulary::std()) { visit(it->second); }
 		}
-		for(std::map<std::string,Function*>::const_iterator it = v->firstFunc(); it != v->lastFunc(); ++it) {
+		for(auto it = v->firstFunc(); it != v->lastFunc(); ++it) {
 			if(not it->second->builtin() || v == Vocabulary::std()) { visit(it->second); }
 		}
 	}
@@ -438,7 +438,7 @@ public:
 	
 	void visit(const QuantSetExpr* s) {
 		output() << '{';
-		for(std::set<Variable*>::const_iterator it = s->quantVars().begin(); it != s->quantVars().end(); ++it) {
+		for(auto it = s->quantVars().begin(); it != s->quantVars().end(); ++it) {
 			output() << ' ';
 			output() << (*it)->name();
 			if((*it)->sort()) { output() << '[' << (*it)->sort()->name() << ']'; }
@@ -557,7 +557,7 @@ public:
 	void visit(const CPSumTerm* cpt) {
 		assert(isTheoryOpen());
 		output() << "sum[ ";
-		for(std::vector<unsigned int>::const_iterator vit = cpt->varids().begin(); vit != cpt->varids().end(); ++vit) {
+		for(auto vit = cpt->varids().begin(); vit != cpt->varids().end(); ++vit) {
 			printTerm(*vit);
 			if(*vit != cpt->varids().back()) output() << "; ";
 		}
@@ -590,7 +590,7 @@ public:
 				if(kt.hasNext()) {
 					ElementTuple tuple = *kt;
 					output() << tuple[0]->toString();
-					for(ElementTuple::const_iterator lt = ++tuple.begin(); lt != tuple.end(); ++lt) {
+					for(auto lt = ++tuple.begin(); lt != tuple.end(); ++lt) {
 						output() << ',' << (*lt)->toString();
 					}
 					++kt;
@@ -598,7 +598,7 @@ public:
 						output() << "; ";
 						tuple = *kt;
 						output() << tuple[0]->toString();
-						for(ElementTuple::const_iterator lt = ++tuple.begin(); lt != tuple.end(); ++lt) {
+						for(auto lt = ++tuple.begin(); lt != tuple.end(); ++lt) {
 							output() << ',' << (*lt)->toString();
 						}
 					}
@@ -834,7 +834,7 @@ private:
 			if(not args.empty()) {
 				output() << "(";
 				bool begin = true;
-				for(std::vector<GroundTerm>::const_iterator gtit = args.begin(); gtit != args.end(); ++gtit) {
+				for(auto gtit = args.begin(); gtit != args.end(); ++gtit) {
 					if(not begin){
 						output() << ",";
 					}

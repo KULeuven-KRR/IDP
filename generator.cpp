@@ -1362,7 +1362,7 @@ InstGenerator* BDDToGenerator::create(PredForm* atom, const vector<bool>& patter
 		vector<bool> atompattern;
 		vector<const DomElemContainer*> datomvars;
 		vector<SortTable*> atomtables;
-		for(vector<Term*>::const_iterator it = atom->subterms().begin(); it != atom->subterms().end(); ++it) {
+		for(auto it = atom->subterms().begin(); it != atom->subterms().end(); ++it) {
 			if(typeid(*(*it)) == typeid(VarTerm)) {
 				Variable* var = (dynamic_cast<VarTerm*>(*it))->var();
 				unsigned int pos = 0;
@@ -1448,7 +1448,7 @@ InstGenerator* BDDToGenerator::create(
 		vector<bool> atompattern;
 		vector<const DomElemContainer*> atomvars;
 		vector<SortTable*> atomtables;
-		for(vector<const FOBDDArgument*>::const_iterator it = atom->args().begin(); it != atom->args().end(); ++it) {
+		for(auto it = atom->args().begin(); it != atom->args().end(); ++it) {
 			if(typeid(*(*it)) == typeid(FOBDDVariable)) {
 				const FOBDDVariable* var = dynamic_cast<const FOBDDVariable*>(*it);
 				unsigned int pos = 0;

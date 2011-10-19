@@ -20,7 +20,7 @@ using namespace std;
 void TermGrounder::setOrig(const Term* t, const map<Variable*,const DomElemContainer*>& mvd, int verb) {
 	_verbosity = verb;
 	map<Variable*,Variable*> mvv;
-	for(set<Variable*>::const_iterator it = t->freeVars().begin(); it != t->freeVars().end(); ++it) {
+	for(auto it = t->freeVars().begin(); it != t->freeVars().end(); ++it) {
 		Variable* v = new Variable((*it)->name(),(*it)->sort(),ParseInfo());
 		mvv[*it] = v;
 		_varmap[v] = mvd.find(*it)->second;

@@ -736,20 +736,20 @@ GrounderFactory::GrounderFactory(AbstractStructure* structure, Options* opts, Sy
 
 set<const PFSymbol*> GrounderFactory::findCPSymbols(const AbstractTheory* theory) {
 	Vocabulary* vocabulary = theory->vocabulary();
-//	for(map<string,Predicate*>::const_iterator predit = vocabulary->firstpred(); predit != vocabulary->lastpred(); ++predit) {
+//	for(auto predit = vocabulary->firstpred(); predit != vocabulary->lastpred(); ++predit) {
 //		Predicate* predicate = predit->second;
 //		if(VocabularyUtils::isComparisonPredicate(predicate)) {
 //			_cpsymbols.insert(predicate);
 //		}
 //	}
-	for(map<string,Function*>::const_iterator funcit = vocabulary->firstFunc(); funcit != vocabulary->lastFunc(); ++funcit) {
+	for(auto funcit = vocabulary->firstFunc(); funcit != vocabulary->lastFunc(); ++funcit) {
 		Function* function = funcit->second;
 		bool passtocp = false;
 		// Check whether the (user-defined) function's outsort is over integers
 		Sort* intsort = *(vocabulary->sort("int")->begin());
 		if(function->overloaded()) {
 			set<Function*> nonbuiltins = function->nonbuiltins();
-			for(set<Function*>::const_iterator nbfit = nonbuiltins.begin(); nbfit != nonbuiltins.end(); ++nbfit) {
+			for(auto nbfit = nonbuiltins.begin(); nbfit != nonbuiltins.end(); ++nbfit) {
 				passtocp = (SortUtils::resolve(function->outsort(),intsort,vocabulary) == intsort);
 			}
 		} else if(not function->builtin()) {
@@ -759,7 +759,7 @@ set<const PFSymbol*> GrounderFactory::findCPSymbols(const AbstractTheory* theory
 	}
 	if(_verbosity > 1) {
 		clog << "User-defined symbols that can be handled by the constraint solver: ";
-		for(set<const PFSymbol*>::const_iterator it = _cpsymbols.begin(); it != _cpsymbols.end(); ++it) {
+		for(auto it = _cpsymbols.begin(); it != _cpsymbols.end(); ++it) {
 			clog << (*it)->toString(false) << " "; // TODO longnames?
 		}
 		clog << "\n";
@@ -777,7 +777,7 @@ bool GrounderFactory::isCPSymbol(const PFSymbol* symbol) const {
  * 		Finds out whether a formula contains recursively defined symbols.
  */
 bool GrounderFactory::recursive(const Formula* f) {
-	for(set<PFSymbol*>::const_iterator it = _context._defined.begin(); it != _context._defined.end(); ++it) {
+	for(auto it = _context._defined.begin(); it != _context._defined.end(); ++it) {
 		if(f->contains(*it)) { return true; }
 	}
 	return false;
@@ -1159,13 +1159,13 @@ void GrounderFactory::visit(const BoolForm* bf) {
 		if(not newbf->conj()) {
 			newbf->conj(true);
 			newbf->negate();
-			for(vector<Formula*>::const_iterator it = newbf->subformulas().begin(); it != newbf->subformulas().end(); ++it) {
+			for(auto it = newbf->subformulas().begin(); it != newbf->subformulas().end(); ++it) {
 				(*it)->negate();
 			}
 		}
 		// Visit the subformulas
 		vector<TopLevelGrounder*> sub;
-		for(vector<Formula*>::const_iterator it = newbf->subformulas().begin(); it != newbf->subformulas().end(); ++it) {
+		for(auto it = newbf->subformulas().begin(); it != newbf->subformulas().end(); ++it) {
 			descend(*it);
 			sub.push_back(_toplevelgrounder);
 		}
@@ -1177,7 +1177,7 @@ void GrounderFactory::visit(const BoolForm* bf) {
 		SaveContext();
 		DeeperContext(bf->sign());
 		vector<FormulaGrounder*> sub;
-		for(vector<Formula*>::const_iterator it = bf->subformulas().begin(); it != bf->subformulas().end(); ++it) {
+		for(auto it = bf->subformulas().begin(); it != bf->subformulas().end(); ++it) {
 			descend(*it);
 			sub.push_back(_formgrounder);
 		}
@@ -1245,7 +1245,7 @@ void GrounderFactory::visit(const QuantForm* qf) {
 	vector<Variable*> fovars;
 	vector<Variable*> optivars;
 	vector<bool> pattern;
-	for(std::set<Variable*>::const_iterator it = movedformula->freeVars().begin(); it != movedformula->freeVars().end(); ++it) {
+	for(auto it = movedformula->freeVars().begin(); it != movedformula->freeVars().end(); ++it) {
 		if(qf->quantVars().find(*it) == qf->quantVars().end()) {
 			assert(_varmapping.find(*it) != _varmapping.end());
 			vars.push_back(_varmapping[*it]);
@@ -1497,7 +1497,7 @@ void GrounderFactory::visit(const DomainTerm* t) {
 void GrounderFactory::visit(const FuncTerm* t) {
 	// Create grounders for subterms
 	vector<TermGrounder*> subtermgrounders;
-	for(vector<Term*>::const_iterator it = t->subterms().begin(); it != t->subterms().end(); ++it) {
+	for(auto it = t->subterms().begin(); it != t->subterms().end(); ++it) {
 		(*it)->accept(this);
 		if(_termgrounder) subtermgrounders.push_back(_termgrounder);
 	}
@@ -1585,7 +1585,7 @@ void GrounderFactory::visit(const QuantSetExpr* qs) {
 	vector<Variable*> optivars;
 	vector<SortTable*> tables;
 	vector<bool> pattern;
-	for(std::set<Variable*>::const_iterator it = movedformula->freeVars().begin(); it != movedformula->freeVars().end(); ++it) {
+	for(auto it = movedformula->freeVars().begin(); it != movedformula->freeVars().end(); ++it) {
 		if(qs->quantVars().find(*it) == qs->quantVars().end()) {
 			vars.push_back(_varmapping[*it]);
 			pattern.push_back(true);
@@ -1630,13 +1630,13 @@ void GrounderFactory::visit(const QuantSetExpr* qs) {
  */
 void GrounderFactory::visit(const Definition* def) {
 	// Store defined predicates
-	for(set<PFSymbol*>::const_iterator it = def->defsymbols().begin(); it != def->defsymbols().end(); ++it) {
+	for(auto it = def->defsymbols().begin(); it != def->defsymbols().end(); ++it) {
 		_context._defined.insert(*it);
 	}
 	
 	// Create rule grounders
 	vector<RuleGrounder*> subgrounders;
-	for(vector<Rule*>::const_iterator it = def->rules().begin(); it != def->rules().end(); ++it) {
+	for(auto it = def->rules().begin(); it != def->rules().end(); ++it) {
 		descend(*it);
 		subgrounders.push_back(_rulegrounder);
 	}

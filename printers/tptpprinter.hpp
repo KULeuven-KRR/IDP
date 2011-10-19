@@ -60,15 +60,15 @@ public:
 	}
 
 	void visit(const Vocabulary* v) {
-		for(std::map<std::string,std::set<Sort*> >::const_iterator it = v->firstSort(); it != v->lastSort(); ++it) {
-			for(std::set<Sort*>::iterator jt = it->second.begin(); jt != it->second.end(); ++jt) {
+		for(auto it = v->firstSort(); it != v->lastSort(); ++it) {
+			for(auto jt = it->second.begin(); jt != it->second.end(); ++jt) {
 				if(not (*jt)->builtin() || v == Vocabulary::std()) { visit(*jt); }
 			}
 		}
-		for(std::map<std::string,Predicate*>::const_iterator it = v->firstPred(); it != v->lastPred(); ++it) {
+		for(auto it = v->firstPred(); it != v->lastPred(); ++it) {
 			if(not it->second->builtin() || v == Vocabulary::std()) { visit(it->second); }
 		}
-		for(std::map<std::string,Function*>::const_iterator it = v->firstFunc(); it != v->lastFunc(); ++it) {
+		for(auto it = v->firstFunc(); it != v->lastFunc(); ++it) {
 			if(not it->second->builtin() || v == Vocabulary::std()) { visit(it->second); }
 		}
 	}

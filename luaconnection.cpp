@@ -740,8 +740,8 @@ namespace LuaConnection {
 		if(index._type == AT_SORT) {
 			set<Sort*>* sort = index.sort();
 			set<Predicate*>* newpred = new set<Predicate*>();
-			for(set<Sort*>::const_iterator it = sort->begin(); it != sort->end(); ++it) {
-				for(set<Predicate*>::const_iterator jt = pred->begin(); jt != pred->end(); ++jt) {
+			for(auto it = sort->begin(); it != sort->end(); ++it) {
+				for(auto jt = pred->begin(); jt != pred->end(); ++jt) {
 					if((*jt)->arity() == 1) {
 						if((*jt)->resolve(vector<Sort*>(1,(*it)))) newpred->insert(*jt);
 					}
@@ -752,7 +752,7 @@ namespace LuaConnection {
 		}
 		else if(index._type == AT_TABLE) {
 			vector<InternalArgument>* table = index._value._table;
-			for(vector<InternalArgument>::const_iterator it =table->begin(); it != table->end(); ++it) {
+			for(auto it =table->begin(); it != table->end(); ++it) {
 				if(it->_type != AT_SORT) {
 					lua_pushstring(L,"A predicate can only be indexed by a tuple of types");
 					return lua_error(L);
@@ -764,7 +764,7 @@ namespace LuaConnection {
 			while(true) {
 				vector<Sort*> currsorts(table->size());
 				for(unsigned int n = 0; n < table->size(); ++n) currsorts[n] = *(carry[n]);
-				for(set<Predicate*>::const_iterator it = pred->begin(); it != pred->end(); ++it) {
+				for(auto it = pred->begin(); it != pred->end(); ++it) {
 					if((*it)->arity() == table->size()) {
 						if((*it)->resolve(currsorts)) newpred->insert(*it);
 					}
@@ -814,7 +814,7 @@ namespace LuaConnection {
 			while(true) {
 				vector<Sort*> currsorts(newtable.size());
 				for(unsigned int n = 0; n < newtable.size(); ++n) currsorts[n] = *(carry[n]);
-				for(set<Function*>::const_iterator it = func->begin(); it != func->end(); ++it) {
+				for(auto it = func->begin(); it != func->end(); ++it) {
 					if((*it)->arity() == newtable.size()) {
 						if((*it)->resolve(currsorts)) newfunc->insert(*it);
 					}
@@ -916,10 +916,10 @@ namespace LuaConnection {
 			else {
 				OverloadedSymbol* os = new OverloadedSymbol();
 				if(sorts) {
-					for(set<Sort*>::const_iterator it = sorts->begin(); it != sorts->end(); ++it) os->insert(*it);
+					for(auto it = sorts->begin(); it != sorts->end(); ++it) os->insert(*it);
 				}
-				for(set<Predicate*>::const_iterator it = preds.begin(); it != preds.end(); ++it) os->insert(*it);
-				for(set<Function*>::const_iterator it = funcs.begin(); it != funcs.end(); ++it) os->insert(*it);
+				for(auto it = preds.begin(); it != preds.end(); ++it) os->insert(*it);
+				for(auto it = funcs.begin(); it != funcs.end(); ++it) os->insert(*it);
 				InternalArgument s(os);
 				return convertToLua(L,s);
 			}
@@ -1192,7 +1192,7 @@ namespace LuaConnection {
 	SortTable* toDomain(vector<InternalArgument>* table, lua_State* L) {
 		EnumeratedInternalSortTable* ist = new EnumeratedInternalSortTable();
 		SortTable* st = new SortTable(ist);
-		for(vector<InternalArgument>::const_iterator it = table->begin(); it != table->end(); ++it) {
+		for(auto it = table->begin(); it != table->end(); ++it) {
 			switch(it->_type) {
 				case AT_INT:
 					st->add(DomainElementFactory::instance()->create(it->_value._int)); break;
@@ -1214,10 +1214,10 @@ namespace LuaConnection {
 
 	PredTable* toPredTable(vector<InternalArgument>* table, lua_State* L, const Universe& univ) {
 		EnumeratedInternalPredTable* ipt = new EnumeratedInternalPredTable();
-		for(vector<InternalArgument>::const_iterator it = table->begin(); it != table->end(); ++it) {
+		for(auto it = table->begin(); it != table->end(); ++it) {
 			if(it->_type == AT_TABLE) {
 				ElementTuple tuple;
-				for(vector<InternalArgument>::const_iterator jt = it->_value._table->begin();
+				for(auto jt = it->_value._table->begin();
 					jt != it->_value._table->end(); ++jt) {
 					switch(jt->_type) {
 						case AT_INT:
@@ -1531,7 +1531,7 @@ namespace LuaConnection {
 		InternalArgument arity = createArgument(2,L);
 		if(arity._type == AT_INT) {
 			set<Predicate*>* newpred = new set<Predicate*>();
-			for(set<Predicate*>::const_iterator it = pred->begin(); it != pred->end(); ++it) {
+			for(auto it = pred->begin(); it != pred->end(); ++it) {
 				if((int)(*it)->arity() == arity._value._int) newpred->insert(*it);
 			}
 			InternalArgument np(newpred);
@@ -1551,7 +1551,7 @@ namespace LuaConnection {
 		InternalArgument arity = createArgument(2,L);
 		if(arity._type == AT_INT) {
 			set<Function*>* newfunc = new set<Function*>();
-			for(set<Function*>::const_iterator it = func->begin(); it != func->end(); ++it) {
+			for(auto it = func->begin(); it != func->end(); ++it) {
 				if((int)(*it)->arity() == arity._value._int) newfunc->insert(*it);
 			}
 			InternalArgument nf(newfunc);
@@ -1943,7 +1943,7 @@ namespace LuaConnection {
 
 	const DomainElement* funccall(string* procedure, const ElementTuple& input) {
 		lua_getfield(_state,LUA_REGISTRYINDEX,procedure->c_str());
-		for(ElementTuple::const_iterator it = input.begin(); it != input.end(); ++it) {
+		for(auto it = input.begin(); it != input.end(); ++it) {
 			convertToLua(_state,*it);
 		}
 		int err = lua_pcall(_state,input.size(),1,0);
@@ -1962,7 +1962,7 @@ namespace LuaConnection {
 
 	bool predcall(string* procedure, const ElementTuple& input) {
 		lua_getfield(_state,LUA_REGISTRYINDEX,procedure->c_str());
-		for(ElementTuple::const_iterator it = input.begin(); it != input.end(); ++it) {
+		for(auto it = input.begin(); it != input.end(); ++it) {
 			convertToLua(_state,*it);
 		}
 		int err = lua_pcall(_state,input.size(),1,0);

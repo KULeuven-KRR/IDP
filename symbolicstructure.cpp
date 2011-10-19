@@ -99,7 +99,7 @@ void SymbolicStructure::visit(const AggForm*) {
 }
 
 ostream& SymbolicStructure::put(ostream& output) const {
-	for(map<PFSymbol*,vector<const FOBDDVariable*> >::const_iterator it = _vars.begin(); it != _vars.end(); ++it) {
+	for(auto it = _vars.begin(); it != _vars.end(); ++it) {
 		output << "   "; (it->first)->put(output); output << endl;
 		output << "      vars:";
 		for(auto jt = it->second.begin(); jt != it->second.end(); ++jt) {
