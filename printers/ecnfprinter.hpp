@@ -102,7 +102,7 @@ public:
 //			g->definition(n)->accept(this);
 //			closeDefinition();
 //		}
-		for(auto i=g->definitions().begin(); i!=g->definitions().end(); i++){
+		for(auto i=g->definitions().cbegin(); i!=g->definitions().cend(); i++){
 			_currentdefnr= (*i).second->id();
 			openDefinition(_currentdefnr);
 			(*i).second->accept(this);
@@ -242,7 +242,7 @@ private:
 
 	void addWeightedSum(int head, const std::vector<VarId>& varids, const std::vector<int> weights, const int& bound, CompType rel){
 		assert(varids.size()==weights.size());
-		for(auto i=varids.begin(); i<varids.end(); ++i){
+		for(auto i=varids.cbegin(); i<varids.cend(); ++i){
 			printCPVariable(*i);
 		}
 		printCPReification("SUMSTSIRI",head,varids,weights,rel,bound);
@@ -270,13 +270,13 @@ private:
 	}
 
 	void printCPVariables(std::vector<unsigned int> varids) {
-		for(auto it = varids.begin(); it != varids.end(); ++it) {
+		for(auto it = varids.cbegin(); it != varids.cend(); ++it) {
 			printCPVariable(*it);
 		}
 	}
 
 	void printCPVariable(unsigned int varid) {
-		if(_printedvarids.find(varid) == _printedvarids.end()) {
+		if(_printedvarids.find(varid) == _printedvarids.cend()) {
 			_printedvarids.insert(varid);
 			SortTable* domain = _termtranslator->domain(varid);
 			if(domain->isRange()) {
@@ -313,11 +313,11 @@ private:
 
 	void printCPReification(std::string type, int head, std::vector<unsigned int> varids, std::vector<int> weights, CompType comp, long right) {
 		output() << type << ' ' << head << ' ';
-		for(auto it = varids.begin(); it != varids.end(); ++it){
+		for(auto it = varids.cbegin(); it != varids.cend(); ++it){
 			output() << *it << ' ';
 		}
 		output() << " | ";
-		for(auto it = weights.begin(); it != weights.end(); ++it){
+		for(auto it = weights.cbegin(); it != weights.cend(); ++it){
 			output() << *it << ' ';
 		}
 		output() << toString(comp) << ' ' << right << " 0" << "\n";

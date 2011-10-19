@@ -25,7 +25,7 @@ public:
 		AbstractStructure* structure = args[1].structure();
 		FOBDDManager manager;
 		FOBDDFactory m(&manager);
-		std::set<Variable*> sv(q->variables().begin(),q->variables().end());
+		std::set<Variable*> sv(q->variables().cbegin(),q->variables().cend());
 		std::set<const FOBDDVariable*> svbdd = manager.getVariables(sv);
 		std::set<const FOBDDDeBruijnIndex*> si;
 		const FOBDD* bdd = m.run(q->query());
@@ -48,7 +48,7 @@ public:
 		AbstractStructure* structure = args[1].structure();
 		FOBDDManager manager;
 		FOBDDFactory m(&manager);
-		std::set<Variable*> sv(q->variables().begin(),q->variables().end());
+		std::set<Variable*> sv(q->variables().cbegin(),q->variables().cend());
 		std::set<const FOBDDVariable*> svbdd = manager.getVariables(sv);
 		std::set<const FOBDDDeBruijnIndex*> si;
 		const FOBDD* bdd = m.run(q->query());

@@ -21,7 +21,7 @@ using namespace std;
 void FormulaGrounder::setOrig(const Formula* f, const map<Variable*, const DomElemContainer*>& mvd, int verb) {
 	_verbosity = verb;
 	map<Variable*,Variable*> mvv;
-	for(auto it = f->freeVars().begin(); it != f->freeVars().end(); ++it) {
+	for(auto it = f->freeVars().cbegin(); it != f->freeVars().cend(); ++it) {
 		Variable* v = new Variable((*it)->name(),(*it)->sort(),ParseInfo());
 		mvv[*it] = v;
 		_varmap[*it] = mvd.find(*it)->second;
@@ -34,7 +34,7 @@ void FormulaGrounder::printorig() const {
 	clog << "Grounding formula " << _origform->toString();
 	if(not _origform->freeVars().empty()) {
 		clog << " with instance ";
-		for(auto it = _origform->freeVars().begin(); it != _origform->freeVars().end(); ++it) {
+		for(auto it = _origform->freeVars().cbegin(); it != _origform->freeVars().cend(); ++it) {
 			clog << (*it)->toString() << " = ";
 			const DomainElement* e = _origvarmap.find(*it)->second->get();
 			clog << e->toString() << ' ';
@@ -529,7 +529,7 @@ void ClauseGrounder::run(litlist& clause) const {
 void BoolGrounder::run(litlist& clause, bool negate) const {
 	if(verbosity() > 2) printorig();
 
-	for(auto g=_subgrounders.begin(); g<_subgrounders.end(); g++){
+	for(auto g=_subgrounders.cbegin(); g<_subgrounders.cend(); g++){
 		Lit lit = (*g)->run();
 		if(makesFormulaFalse(lit, negate)){
 			clause = litlist{negate?-_false:_false};

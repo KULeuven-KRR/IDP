@@ -320,7 +320,7 @@ public:
 
 	void addToLeafUpward(PredForm* index, const PredForm* pf) { _leafupward[index].insert(pf); }
 
-	bool hasDomain(const Formula* f) const { return _domains.find(f)!=_domains.end(); }
+	bool hasDomain(const Formula* f) const { return _domains.find(f)!=_domains.cend(); }
 	const ThreeValuedDomain<Domain>& getDomain(const Formula* f) const { assert(hasDomain(f)); return _domains.at(f); }
 	void setCFOfDomain(const Formula* f, Domain* d) { _domains.at(f)._cfdomain = d; }
 	void setCTOfDomain(const Formula* f, Domain* d) { _domains.at(f)._ctdomain = d; }

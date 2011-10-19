@@ -29,7 +29,7 @@ std::string help(Namespace* ns) {
 		ns->putName(prefixs);
 		std::string prefix = prefixs.str();
 		if(prefix != "") { prefix += "::"; }
-		for(auto it = ns->procedures().begin(); it != ns->procedures().end(); ++it) {
+		for(auto it = ns->procedures().cbegin(); it != ns->procedures().cend(); ++it) {
 			sstr << "    * " << prefix << it->second->name() << '(';
 			if(not it->second->args().empty()) {
 				sstr << it->second->args()[0];
@@ -43,7 +43,7 @@ std::string help(Namespace* ns) {
 	}
 	if(not ns->subspaces().empty()) {
 		sstr << "\nThe following subspaces are available:\n\n";
-		for(auto it = ns->subspaces().begin(); it != ns->subspaces().end(); ++it) {
+		for(auto it = ns->subspaces().cbegin(); it != ns->subspaces().cend(); ++it) {
 			sstr << "    * ";
 			it->second->putName(sstr);
 			sstr << '\n';

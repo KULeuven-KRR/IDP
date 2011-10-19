@@ -30,7 +30,7 @@ DefinitionGrounder::DefinitionGrounder(AbstractGroundTheory* gt, std::vector<Rul
 }
 
 bool DefinitionGrounder::run() const {
-	for(auto grounder = _subgrounders.begin(); grounder<_subgrounders.end(); ++grounder){
+	for(auto grounder = _subgrounders.cbegin(); grounder<_subgrounders.cend(); ++grounder){
 		(*grounder)->run(id(), _grounddefinition);
 	}
 	_grounding->add(_grounddefinition); // FIXME check how it is handled in the lazy part

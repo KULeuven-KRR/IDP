@@ -27,7 +27,7 @@ public:
 		// translate the formula to a bdd
 		FOBDDManager manager;
 		FOBDDFactory factory(&manager);
-		std::set<Variable*> vars(q->variables().begin(),q->variables().end());
+		std::set<Variable*> vars(q->variables().cbegin(),q->variables().cend());
 		std::set<const FOBDDVariable*> bddvars = manager.getVariables(vars);
 		std::set<const FOBDDDeBruijnIndex*> bddindices;
 		const FOBDD* bdd = factory.run(q->query());
@@ -40,7 +40,7 @@ public:
 		std::vector<const FOBDDVariable*> vbddvars;
 		std::vector<bool> pattern;
 		std::vector<SortTable*> tables;
-		for(auto it = q->variables().begin(); it != q->variables().end(); ++it) {
+		for(auto it = q->variables().cbegin(); it != q->variables().cend(); ++it) {
 			pattern.push_back(false);
 			genvars.push_back(new const DomElemContainer());
 			vbddvars.push_back(manager.getVariable(*it));
@@ -52,7 +52,7 @@ public:
 		// Create an empty table
 		EnumeratedInternalPredTable* interntable = new EnumeratedInternalPredTable();
 		std::vector<SortTable*> vst;
-		for(auto it = q->variables().begin(); it != q->variables().end(); ++it) {
+		for(auto it = q->variables().cbegin(); it != q->variables().cend(); ++it) {
 			vst.push_back(structure->inter((*it)->sort()));
 		}
 		Universe univ(vst);

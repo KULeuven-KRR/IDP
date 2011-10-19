@@ -256,8 +256,8 @@ class GroundDefinition : public AbstractDefinition {
 		GroundTranslator*	translator()	const { return _translator;			}
 
 		typedef std::map<int, GroundRule*>::const_iterator	const_ruleiterator;
-		const_ruleiterator	begin()			const { return _rules.begin();		}
-		const_ruleiterator	end()			const { return _rules.end();		}
+		const_ruleiterator	begin()			const { return _rules.cbegin();		}
+		const_ruleiterator	end()			const { return _rules.cend();		}
 
 		// Visitor
 		void 				accept(TheoryVisitor* v) const		{ v->visit(this);			}

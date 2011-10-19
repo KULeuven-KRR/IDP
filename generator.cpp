@@ -64,7 +64,7 @@ class TrueQuantKernelGenerator : public InstGenerator {
 
 		bool storetuple() const {
 			ElementTuple tuple;
-			for(auto it = _projectvars.begin(); it != _projectvars.end(); ++it){
+			for(auto it = _projectvars.cbegin(); it != _projectvars.cend(); ++it){
 				tuple.push_back((*it)->get());
 			}
 			auto p = _memory.insert(tuple);
@@ -789,9 +789,9 @@ bool EnumLookupGenerator::first() const {
 		_currargs[n] = _invars[n]->get();
 	}
 	_currpos = _table.find(_currargs);
-	if(_currpos == _table.end()) return false;
+	if(_currpos == _table.cend()) return false;
 	else {
-		_iter = _currpos->second.begin();
+		_iter = _currpos->second.cbegin();
 		for(unsigned int n = 0; n < _outvars.size(); ++n) {
 			*(_outvars[n]) = (*_iter)[n];
 		}
@@ -883,7 +883,7 @@ bool SortInstGenerator::next() const {
 
 bool EnumLookupGenerator::next() const {
 	++_iter;
-	if(_iter != _currpos->second.end()) {
+	if(_iter != _currpos->second.cend()) {
 		for(unsigned int n = 0; n < _outvars.size(); ++n) {
 			*(_outvars[n]) = (*_iter)[n];
 		}
@@ -1153,7 +1153,7 @@ GeneratorNode* BDDToGenerator::createnode(const FOBDD* bdd, const vector<bool>& 
 InstGenerator* BDDToGenerator::create(PredForm* atom, const vector<bool>& pattern, const vector<const DomElemContainer*>& vars, const vector<Variable*>& atomvars, AbstractStructure* structure, bool inverse, const Universe& universe) {
 	if(FormulaUtils::containsFuncTerms(atom)) {
 		bool allinput = true;
-		for(auto it = pattern.begin(); it != pattern.end(); ++it) {
+		for(auto it = pattern.cbegin(); it != pattern.cend(); ++it) {
 			if(!(*it)) { allinput = false; break; }
 		}
 		if(allinput) {
@@ -1273,7 +1273,7 @@ InstGenerator* BDDToGenerator::create(PredForm* atom, const vector<bool>& patter
 		assert(safetypeid<BoolForm>(*(quantform->subformula())));
 		BoolForm* boolform = dynamic_cast<BoolForm*>(quantform->subformula());
 		vector<PredForm*> conjunction;
-		for(auto it = boolform->subformulas().begin(); it != boolform->subformulas().end(); ++it) {
+		for(auto it = boolform->subformulas().cbegin(); it != boolform->subformulas().cend(); ++it) {
 			assert(typeid(*(*it)) == typeid(PredForm));
 			conjunction.push_back(dynamic_cast<PredForm*>(*it));
 		}
@@ -1282,20 +1282,20 @@ InstGenerator* BDDToGenerator::create(PredForm* atom, const vector<bool>& patter
 		for(unsigned int n = 0; n < pattern.size(); ++n) {
 			if(not pattern[n]) { still_free.insert(atomvars[n]); }
 		}
-		for(auto it = quantform->quantVars().begin(); it != quantform->quantVars().end(); ++it) {
+		for(auto it = quantform->quantVars().cbegin(); it != quantform->quantVars().cend(); ++it) {
 			still_free.insert(*it);
 		}
-		set<PredForm*> atoms_to_order(conjunction.begin(),conjunction.end());
+		set<PredForm*> atoms_to_order(conjunction.cbegin(),conjunction.cend());
 		vector<PredForm*> orderedconjunction;
 		while(!atoms_to_order.empty()) {
 			PredForm* bestatom = 0;
 			double bestcost = numeric_limits<double>::max();
-			for(auto it = atoms_to_order.begin(); it != atoms_to_order.end(); ++it) {
+			for(auto it = atoms_to_order.cbegin(); it != atoms_to_order.cend(); ++it) {
 				bool currinverse = false;
 				if(*it == origatom) { currinverse = inverse; }
 				set<Variable*> projectedfree;
-				for(auto jt = still_free.begin(); jt != still_free.end(); ++jt) {
-					if((*it)->freeVars().find(*jt) != (*it)->freeVars().end()) { projectedfree.insert(*jt); }
+				for(auto jt = still_free.cbegin(); jt != still_free.cend(); ++jt) {
+					if((*it)->freeVars().find(*jt) != (*it)->freeVars().cend()) { projectedfree.insert(*jt); }
 				}
 				double currcost = FormulaUtils::estimatedCostAll(*it,projectedfree,currinverse,structure);
 				if(currcost < bestcost) {
@@ -1303,10 +1303,10 @@ InstGenerator* BDDToGenerator::create(PredForm* atom, const vector<bool>& patter
 					bestatom = *it;
 				}
 			}
-			if(not bestatom) { bestatom = *(atoms_to_order.begin()); }
+			if(not bestatom) { bestatom = *(atoms_to_order.cbegin()); }
 			orderedconjunction.push_back(bestatom);
 			atoms_to_order.erase(bestatom);
-			for(auto it = bestatom->freeVars().begin(); it != bestatom->freeVars().end(); ++it) {
+			for(auto it = bestatom->freeVars().cbegin(); it != bestatom->freeVars().cend(); ++it) {
 				still_free.erase(*it);
 			}
 		}
@@ -1316,20 +1316,20 @@ InstGenerator* BDDToGenerator::create(PredForm* atom, const vector<bool>& patter
 		vector<const DomElemContainer*> branchvars = vars;
 		vector<Variable*> branchfovars = atomvars;
 		vector<SortTable*> branchuniverse = universe.tables();
-		for(auto it = quantform->quantVars().begin(); it != quantform->quantVars().end(); ++it) {
+		for(auto it = quantform->quantVars().cbegin(); it != quantform->quantVars().cend(); ++it) {
 			branchpattern.push_back(false);
 			branchvars.push_back(new const DomElemContainer());
 			branchfovars.push_back(*it);
 			branchuniverse.push_back(structure->inter((*it)->sort()));
 		}
-		for(auto it = orderedconjunction.begin(); it != orderedconjunction.end(); ++it) {
+		for(auto it = orderedconjunction.cbegin(); it != orderedconjunction.cend(); ++it) {
 			vector<bool> kernpattern;
 			vector<const DomElemContainer*> kernvars;
 			vector<Variable*> kernfovars;
 			vector<SortTable*> kerntables;
 			vector<bool> newbranchpattern;
 			for(unsigned int n = 0; n < branchpattern.size(); ++n) {
-				if((*it)->freeVars().find(branchfovars[n]) == (*it)->freeVars().end()) {
+				if((*it)->freeVars().find(branchfovars[n]) == (*it)->freeVars().cend()) {
 					newbranchpattern.push_back(branchpattern[n]);
 				}
 				else {
@@ -1362,7 +1362,7 @@ InstGenerator* BDDToGenerator::create(PredForm* atom, const vector<bool>& patter
 		vector<bool> atompattern;
 		vector<const DomElemContainer*> datomvars;
 		vector<SortTable*> atomtables;
-		for(auto it = atom->subterms().begin(); it != atom->subterms().end(); ++it) {
+		for(auto it = atom->subterms().cbegin(); it != atom->subterms().cend(); ++it) {
 			if(typeid(*(*it)) == typeid(VarTerm)) {
 				Variable* var = (dynamic_cast<VarTerm*>(*it))->var();
 				unsigned int pos = 0;
@@ -1440,7 +1440,7 @@ InstGenerator* BDDToGenerator::create(
 			assert(typeid(*atomform) == typeid(PredForm));
 			PredForm* pf = dynamic_cast<PredForm*>(atomform);
 			vector<Variable*> atomvars;
-			for(auto it = kernelvars.begin(); it != kernelvars.end(); ++it) atomvars.push_back((*it)->variable());
+			for(auto it = kernelvars.cbegin(); it != kernelvars.cend(); ++it) atomvars.push_back((*it)->variable());
 			return create(pf,pattern,vars,atomvars,structure,inverse,universe);
 		}
 
@@ -1448,7 +1448,7 @@ InstGenerator* BDDToGenerator::create(
 		vector<bool> atompattern;
 		vector<const DomElemContainer*> atomvars;
 		vector<SortTable*> atomtables;
-		for(auto it = atom->args().begin(); it != atom->args().end(); ++it) {
+		for(auto it = atom->args().cbegin(); it != atom->args().cend(); ++it) {
 			if(typeid(*(*it)) == typeid(FOBDDVariable)) {
 				const FOBDDVariable* var = dynamic_cast<const FOBDDVariable*>(*it);
 				unsigned int pos = 0;

@@ -61,7 +61,7 @@ public:
 
 	void visit(const Vocabulary* v) {
 		for(auto it = v->firstSort(); it != v->lastSort(); ++it) {
-			for(auto jt = it->second.begin(); jt != it->second.end(); ++jt) {
+			for(auto jt = it->second.cbegin(); jt != it->second.cend(); ++jt) {
 				if(not (*jt)->builtin() || v == Vocabulary::std()) { visit(*jt); }
 			}
 		}
@@ -75,22 +75,22 @@ public:
 
 	void visit(const Theory* t) {
 		if(!_conjecture) {
-			for(auto it = t->sentences().begin(); it != t->sentences().end(); ++it) {
+			for(auto it = t->sentences().cbegin(); it != t->sentences().cend(); ++it) {
 				startAxiom("a");
 				(*it)->accept(this);
 				endAxiom();
 				_count ++;
 			}
-		} else if (t->sentences().begin() != t->sentences().end()) {
+		} else if (t->sentences().cbegin() != t->sentences().cend()) {
 			// Output a conjecture as a conjunction.
 			startAxiom("cnj");
-			auto it = t->sentences().begin();
-			while(it != t->sentences().end()) {
+			auto it = t->sentences().cbegin();
+			while(it != t->sentences().cend()) {
 				_conjectureStream << "(";
 				(*it)->accept(this);
 				_conjectureStream << ")";
 				++ it;
-				if(it != t->sentences().end()) {
+				if(it != t->sentences().cend()) {
 					_conjectureStream << " & ";
 				}
 			}
@@ -290,14 +290,14 @@ public:
 			(*_os) << "! [";
 		else
 			(*_os) << "? [";
-		auto it = f->quantVars().begin();
+		auto it = f->quantVars().cbegin();
 		(*_os) << "V_" << (*it)->name();
 		if(_arithmetic && (*it)->sort()) {
 			(*_os) << ": ";
 			(*_os) << TFFTypeString((*it)->sort());
 		}
 		++ it;
-		for(; it != f->quantVars().end(); ++it) {
+		for(; it != f->quantVars().cend(); ++it) {
 			(*_os) << ",";
 			(*_os) << "V_" << (*it)->name();
 			if(_arithmetic && (*it)->sort()) {
@@ -308,15 +308,15 @@ public:
 		(*_os) << "] : (";
 		
 		// When quantifying over types, add these.
-		it = f->quantVars().begin();
-		while(it != f->quantVars().end() && !(*it)->sort())
+		it = f->quantVars().cbegin();
+		while(it != f->quantVars().cend() && !(*it)->sort())
 			++ it;
-		if (it != f->quantVars().end()) {
+		if (it != f->quantVars().cend()) {
 		 	if(f->isUniv()){
 				(*_os) << "~";
 		 	}
 			(*_os) << "(";
-			if(_types.find((*it)->sort()) == _types.end()) {
+			if(_types.find((*it)->sort()) == _types.cend()) {
 				_types.insert((*it)->sort());
 			}
 			if(SortUtils::isSubsort((*it)->sort(),VocabularyUtils::natsort())) {
@@ -330,7 +330,7 @@ public:
 			}
 			(*_os) << "t_" << (*it)->sort()->name() << "(V_" << (*it)->name() << ")";
 			++ it;
-			for(; it != f->quantVars().end(); ++it) {
+			for(; it != f->quantVars().cend(); ++it) {
 				if((*it)->sort()) {
 					(*_os) << " & ";
 					(*_os) << "t_" << (*it)->sort()->name() << "(V_" << (*it)->name() << ")";
@@ -361,7 +361,7 @@ public:
 	}
 
 	void visit(const DomainTerm* t) {
-		if(t->sort() && _typedDomainElements.find(const_cast<DomainElement*>(t->value())) == _typedDomainElements.end()) {
+		if(t->sort() && _typedDomainElements.find(const_cast<DomainElement*>(t->value())) == _typedDomainElements.cend()) {
 			_typedDomainElements.insert(const_cast<DomainElement*>(t->value()));
 			_typedDomainTerms.insert(const_cast<DomainTerm*>(t));
 			if(SortUtils::isSubsort(t->sort(),VocabularyUtils::natsort())) {
@@ -374,7 +374,7 @@ public:
 				_floats = true;
 			}
 		}
-		if(t->sort() && _types.find(t->sort()) == _types.end()) {
+		if(t->sort() && _types.find(t->sort()) == _types.cend()) {
 			_types.insert(t->sort());
 		}
 		(*_os) << domainTermNameString(t);
@@ -389,10 +389,10 @@ public:
 				(*_os) << TFFTypeString(s);
 			}
 			(*_os) << "] : (~" << "t_" << s->name() << "(X) | ";
-			auto it = s->parents().begin();
+			auto it = s->parents().cbegin();
 			(*_os) << "(" << "t_" << (*it)->name() << "(X)";
 			++it;
-			for(; it != s->parents().end(); ++it) {
+			for(; it != s->parents().cend(); ++it) {
 				(*_os) << " & " << "t_" << (*it)->name() << "(X)";
 			}
 			(*_os) << "))";
@@ -522,7 +522,7 @@ private:
 	
 	void outputDomainTermTypeAxioms() {
 		std::vector<DomainTerm*> strings;
-		for(auto it = _typedDomainTerms.begin(); it != _typedDomainTerms.end(); ++ it) {
+		for(auto it = _typedDomainTerms.cbegin(); it != _typedDomainTerms.cend(); ++ it) {
 			startAxiom("dtta", &_typeAxiomStream);
 			std::string sortName = (*it)->sort()->name();
 			(*_os) << "t_" << sortName << "(";
@@ -542,7 +542,7 @@ private:
 			// _count ++;
 		}
 		if(_arithmetic) {
-			for(auto it = _types.begin(); it != _types.end(); ++ it) {
+			for(auto it = _types.cbegin(); it != _types.cend(); ++ it) {
  				_typeStream << "tff(";
  				_typeStream << "dtt";
  				_typeStream << _count << ",type,(";

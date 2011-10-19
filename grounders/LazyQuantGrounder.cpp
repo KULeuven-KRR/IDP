@@ -81,12 +81,12 @@ void LazyQuantGrounder::run(litlist& clause, bool negateclause) const {
 /*	clog <<"known free vars: \n\t";
 	printorig();
 	clog <<"The provided free vars: \n\t";
-	for(auto var=freevars.begin(); var!=freevars.end(); ++var){
+	for(auto var=freevars.cbegin(); var!=freevars.cend(); ++var){
 		clog <<(*var)->to_string() <<", ";
 	}
 	clog <<"\n\n\n";*/
 
-	for(auto var=freevars.begin(); var!=freevars.end(); ++var){
+	for(auto var=freevars.cbegin(); var!=freevars.cend(); ++var){
 		auto tuple = varmap().at(*var);
 		inst->freevarinst.push_back(dominst(tuple, tuple->get()));
 	}

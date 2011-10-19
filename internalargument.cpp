@@ -16,7 +16,7 @@ void addToGarbageCollection(SortTable* table){
 
 void garbageCollect(SortTable* table){
 	auto it = domains.find(table);
-	if(it != domains.end()) {
+	if(it != domains.cend()) {
 		delete(*it);
 		domains.erase(table);
 	}

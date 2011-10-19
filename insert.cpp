@@ -68,7 +68,7 @@ class SortDeriver : public TheoryMutatingVisitor {
 
 Formula* SortDeriver::visit(QuantForm* qf) {
 	if(_firstvisit) {
-		for(auto it = qf->quantVars().begin(); it != qf->quantVars().end(); ++it) {
+		for(auto it = qf->quantVars().cbegin(); it != qf->quantVars().cend(); ++it) {
 			if(not (*it)->sort()) {
 				_untyped[*it] = set<Sort*>();
 				_changed = true;
@@ -88,9 +88,9 @@ Formula* SortDeriver::visit(PredForm* pf) {
 	}
 
 	// Visit the children while asserting the sorts of the predicate
-	vector<Sort*>::const_iterator it = p->sorts().begin();
-	vector<Term*>::const_iterator jt = pf->subterms().begin();
-	for(; it != p->sorts().end(); ++it, ++jt) {
+	vector<Sort*>::const_iterator it = p->sorts().cbegin();
+	vector<Term*>::const_iterator jt = pf->subterms().cbegin();
+	for(; it != p->sorts().cend(); ++it, ++jt) {
 		_assertsort = *it;
 		(*jt)->accept(this);
 	}
@@ -100,7 +100,7 @@ Formula* SortDeriver::visit(PredForm* pf) {
 Formula* SortDeriver::visit(EqChainForm* ef) {
 	Sort* s = 0;
 	if(not _firstvisit) {
-		for(auto it = ef->subterms().begin(); it != ef->subterms().end(); ++it) {
+		for(auto it = ef->subterms().cbegin(); it != ef->subterms().cend(); ++it) {
 			Sort* temp = (*it)->sort();
 			if(temp && temp->parents().empty() && temp->children().empty()) {
 				s = temp;
@@ -108,7 +108,7 @@ Formula* SortDeriver::visit(EqChainForm* ef) {
 			}
 		}
 	}
-	for(auto it = ef->subterms().begin(); it != ef->subterms().end(); ++it) {
+	for(auto it = ef->subterms().cbegin(); it != ef->subterms().cend(); ++it) {
 		_assertsort = s;
 		(*it)->accept(this);
 	}
@@ -117,7 +117,7 @@ Formula* SortDeriver::visit(EqChainForm* ef) {
 
 Rule* SortDeriver::visit(Rule* r) {
 	if(_firstvisit) {
-		for(auto it = r->quantVars().begin(); it != r->quantVars().end(); ++it) {
+		for(auto it = r->quantVars().cbegin(); it != r->quantVars().cend(); ++it) {
 			if(not (*it)->sort()) { _untyped[*it] = set<Sort*>(); }
 			_changed = true;
 		}
@@ -152,16 +152,16 @@ Term* SortDeriver::visit(FuncTerm* ft) {
 
 	// At first visit, insert the terms over overloaded functions
 	if(f->overloaded()) {
-		if(_firstvisit || _overloadedterms.find(ft) == _overloadedterms.end() || _assertsort != _overloadedterms[ft]) {
+		if(_firstvisit || _overloadedterms.find(ft) == _overloadedterms.cend() || _assertsort != _overloadedterms[ft]) {
 			_changed = true;
 			_overloadedterms[ft] = _assertsort;
 		}
 	}
 
 	// Visit the children while asserting the sorts of the predicate
-	vector<Sort*>::const_iterator it = f->insorts().begin();
-	vector<Term*>::const_iterator jt = ft->subterms().begin();
-	for(; it != f->insorts().end(); ++it, ++jt) {
+	vector<Sort*>::const_iterator it = f->insorts().cbegin();
+	vector<Term*>::const_iterator jt = ft->subterms().cbegin();
+	for(; it != f->insorts().cend(); ++it, ++jt) {
 		_assertsort = *it;
 		(*jt)->accept(this);
 	}
@@ -170,7 +170,7 @@ Term* SortDeriver::visit(FuncTerm* ft) {
 
 SetExpr* SortDeriver::visit(QuantSetExpr* qs) {
 	if(_firstvisit) {
-		for(auto it = qs->quantVars().begin(); it != qs->quantVars().end(); ++it) {
+		for(auto it = qs->quantVars().cbegin(); it != qs->quantVars().cend(); ++it) {
 			if(not (*it)->sort()) {
 				_untyped[*it] = set<Sort*>();
 				_changed = true;
@@ -184,14 +184,14 @@ void SortDeriver::derivesorts() {
 	for(auto it = _untyped.begin(); it != _untyped.end(); ) {
 		map<Variable*,std::set<Sort*> >::iterator jt = it; ++jt;
 		if(not (*it).second.empty()) {
-			std::set<Sort*>::iterator kt = (*it).second.begin(); 
+			std::set<Sort*>::iterator kt = (*it).second.cbegin(); 
 			Sort* s = *kt;
 			++kt;
-			for(; kt != (*it).second.end(); ++kt) {
+			for(; kt != (*it).second.cend(); ++kt) {
 				s = SortUtils::resolve(s,*kt,_vocab);
 				if(not s) { // In case of conflicting sorts, assign the first sort. 
 						 // Error message will be given during final check.
-					s = *((*it).second.begin());
+					s = *((*it).second.cbegin());
 					break;
 				}
 			}
@@ -212,7 +212,7 @@ void SortDeriver::derivefuncs() {
 		map<FuncTerm*,Sort*>::iterator jt = it; ++jt;
 		Function* f = it->first->function();
 		vector<Sort*> vs;
-		for(auto kt = it->first->subterms().begin(); kt != it->first->subterms().end(); ++kt) {
+		for(auto kt = it->first->subterms().cbegin(); kt != it->first->subterms().cend(); ++kt) {
 			vs.push_back((*kt)->sort());
 		}
 		vs.push_back(it->second);
@@ -227,11 +227,11 @@ void SortDeriver::derivefuncs() {
 }
 
 void SortDeriver::derivepreds() {
-	for(auto it = _overloadedatoms.begin(); it != _overloadedatoms.end(); ) {
+	for(auto it = _overloadedatoms.cbegin(); it != _overloadedatoms.cend(); ) {
 		std::set<PredForm*>::iterator jt = it; ++jt;
 		PFSymbol* p = (*it)->symbol();
 		vector<Sort*> vs;
-		for(auto kt = (*it)->subterms().begin(); kt != (*it)->subterms().end(); ++kt) {
+		for(auto kt = (*it)->subterms().cbegin(); kt != (*it)->subterms().cend(); ++kt) {
 			vs.push_back((*kt)->sort());
 		}
 		PFSymbol* rp = p->disambiguate(vs,_vocab);
@@ -276,7 +276,7 @@ void SortDeriver::run(Term* t) {
 
 void SortDeriver::run(Rule* r) {
 	// Set the sort of the terms in the head
-	vector<Sort*>::const_iterator jt = r->head()->symbol()->sorts().begin();
+	vector<Sort*>::const_iterator jt = r->head()->symbol()->sorts().cbegin();
 	for(unsigned int n = 0; n < r->head()->subterms().size(); ++n, ++jt) {
 		Sort* hs = r->head()->subterms()[n]->sort();
 		if(hs) {
@@ -312,18 +312,18 @@ void SortDeriver::run(Rule* r) {
 }
 
 void SortDeriver::check() {
-	for(auto it = _untyped.begin(); it != _untyped.end(); ++it) {
+	for(auto it = _untyped.cbegin(); it != _untyped.cend(); ++it) {
 		assert((it->second).empty());
 		Error::novarsort(it->first->name(),it->first->pi());
 	}
-	for(auto it = _overloadedatoms.begin(); it != _overloadedatoms.end(); ++it) {
+	for(auto it = _overloadedatoms.cbegin(); it != _overloadedatoms.cend(); ++it) {
 		if(typeid(*((*it)->symbol())) == typeid(Predicate)) Error::nopredsort((*it)->symbol()->name(),(*it)->pi());
 		else Error::nofuncsort((*it)->symbol()->name(),(*it)->pi());
 	}
-	for(auto it = _overloadedterms.begin(); it != _overloadedterms.end(); ++it) {
+	for(auto it = _overloadedterms.cbegin(); it != _overloadedterms.cend(); ++it) {
 		Error::nofuncsort(it->first->function()->name(),it->first->pi());
 	}
-	for(auto it = _domelements.begin(); it != _domelements.end(); ++it) {
+	for(auto it = _domelements.cbegin(); it != _domelements.cend(); ++it) {
 		Error::nodomsort((*it)->toString(),(*it)->pi());
 	}
 }
@@ -348,9 +348,9 @@ class SortChecker : public TheoryVisitor {
 
 void SortChecker::visit(const PredForm* pf) {
 	PFSymbol* s = pf->symbol();
-	vector<Sort*>::const_iterator it = s->sorts().begin();
-	vector<Term*>::const_iterator jt = pf->subterms().begin();
-	for(; it != s->sorts().end(); ++it, ++jt) {
+	vector<Sort*>::const_iterator it = s->sorts().cbegin();
+	vector<Term*>::const_iterator jt = pf->subterms().cbegin();
+	for(; it != s->sorts().cend(); ++it, ++jt) {
 		Sort* s1 = *it;
 		Sort* s2 = (*jt)->sort();
 		if(s1 && s2) {
@@ -364,9 +364,9 @@ void SortChecker::visit(const PredForm* pf) {
 
 void SortChecker::visit(const FuncTerm* ft) {
 	Function* f = ft->function();
-	vector<Sort*>::const_iterator it = f->insorts().begin();
-	vector<Term*>::const_iterator jt = ft->subterms().begin();
-	for(; it != f->insorts().end(); ++it, ++jt) {
+	vector<Sort*>::const_iterator it = f->insorts().cbegin();
+	vector<Term*>::const_iterator jt = ft->subterms().cbegin();
+	for(; it != f->insorts().cend(); ++it, ++jt) {
 		Sort* s1 = *it;
 		Sort* s2 = (*jt)->sort();
 		if(s1 && s2) {
@@ -380,12 +380,12 @@ void SortChecker::visit(const FuncTerm* ft) {
 
 void SortChecker::visit(const EqChainForm* ef) {
 	Sort* s = 0;
-	vector<Term*>::const_iterator it = ef->subterms().begin();
-	while(!s && it != ef->subterms().end()) {
+	vector<Term*>::const_iterator it = ef->subterms().cbegin();
+	while(!s && it != ef->subterms().cend()) {
 		s = (*it)->sort();
 		++it;
 	}
-	for(; it != ef->subterms().end(); ++it) {
+	for(; it != ef->subterms().cend(); ++it) {
 		Sort* t = (*it)->sort();
 		if(t) {
 			if(!SortUtils::resolve(s,t,_vocab)) {
@@ -402,7 +402,7 @@ bool isNumeric(Sort* sort, Vocabulary* voc){
 
 void SortChecker::visit(const AggTerm* at) {
 	auto subterms = at->set()->subterms();
-	for(auto it = subterms.begin(); it != subterms.end(); ++it) {
+	for(auto it = subterms.cbegin(); it != subterms.cend(); ++it) {
 		if((*it)->sort()!=NULL && !isNumeric((*it)->sort(),_vocab)) {
 			Error::wrongsort((*it)->toString(),(*it)->sort()->name(),"int or float",(*it)->pi());
 		}
@@ -514,7 +514,7 @@ std::set<Predicate*> Insert::noArPredInScope(const string& name) const {
 	std::set<Predicate*> vp;
 	for(unsigned int n = 0; n < _usingvocab.size(); ++n) {
 		std::set<Predicate*> nvp = _usingvocab[n]->pred_no_arity(name);
-		vp.insert(nvp.begin(),nvp.end());
+		vp.insert(nvp.cbegin(),nvp.cend());
 	}
 	return vp;
 }
@@ -537,7 +537,7 @@ std::set<Function*> Insert::noArFuncInScope(const string& name) const {
 	std::set<Function*> vf;
 	for(unsigned int n = 0; n < _usingvocab.size(); ++n) {
 		std::set<Function*> nvf = _usingvocab[n]->func_no_arity(name);
-		vf.insert(nvf.begin(),nvf.end());
+		vf.insert(nvf.cbegin(),nvf.cend());
 	}
 	return vf;
 }
@@ -913,7 +913,7 @@ SetParseInfo Insert::setparseinfo(SetExpr* s, YYLTYPE l) const {
 set<Variable*> Insert::freevars(const ParseInfo& pi) {
 	std::set<Variable*> vv;
 	string vs;
-	for(auto i = _curr_vars.begin(); i != _curr_vars.end(); ++i) {
+	for(auto i = _curr_vars.cbegin(); i != _curr_vars.cend(); ++i) {
 		vv.insert(i->_var);
 		vs = vs + ' ' + i->_name;
 	}
@@ -923,7 +923,7 @@ set<Variable*> Insert::freevars(const ParseInfo& pi) {
 }
 
 void Insert::remove_vars(const std::vector<Variable*>& v) {
-	for(auto it = v.begin(); it != v.end(); ++it) {
+	for(auto it = v.cbegin(); it != v.cend(); ++it) {
 		for(auto i = _curr_vars.begin(); i != _curr_vars.end(); ++i) {
 			if(i->_name == (*it)->name()) {
 				_curr_vars.erase(i);
@@ -934,7 +934,7 @@ void Insert::remove_vars(const std::vector<Variable*>& v) {
 }
 
 void Insert::remove_vars(const std::set<Variable*>& v) {
-	for(auto it = v.begin(); it != v.end(); ++it) {
+	for(auto it = v.cbegin(); it != v.cend(); ++it) {
 		for(auto i = _curr_vars.begin(); i != _curr_vars.end(); ++i) {
 			if(i->_name == (*it)->name()) {
 				_curr_vars.erase(i);
@@ -1095,7 +1095,7 @@ void Insert::closetheory() {
 void Insert::closequery(Query* q) {
 	_curr_vars.clear();
 	if(q) {
-		std::set<Variable*> sv(q->variables().begin(),q->variables().end());
+		std::set<Variable*> sv(q->variables().cbegin(),q->variables().cend());
 		QuantForm* qf = new QuantForm(SIGN::POS,QUANT::UNIV,sv,q->query(),FormulaParseInfo());
 		SortDeriver sd(qf,_currvocabulary); 
 		SortChecker sc(qf,_currvocabulary);
@@ -1153,29 +1153,29 @@ void Insert::openprocedure(const string& name, YYLTYPE l) {
 	_currspace->add(_currprocedure);
 
 	// include the namespaces and vocabularies in scope
-	for(auto it = _usingspace.begin(); it != _usingspace.end(); ++it) {
+	for(auto it = _usingspace.cbegin(); it != _usingspace.cend(); ++it) {
 		if(!(*it)->isGlobal()) {
 			stringstream sstr;
-			for(auto jt = (*it)->procedures().begin(); 
-				jt != (*it)->procedures().end(); ++jt) {
+			for(auto jt = (*it)->procedures().cbegin(); 
+				jt != (*it)->procedures().cend(); ++jt) {
 				sstr << "local " << jt->second->name() << " = ";
 				(*it)->putLuaName(sstr);
 				sstr << '.' << jt->second->name() << '\n';
 			}
-			for(auto jt = (*it)->vocabularies().begin(); 
-				jt != (*it)->vocabularies().end(); ++jt) {
+			for(auto jt = (*it)->vocabularies().cbegin(); 
+				jt != (*it)->vocabularies().cend(); ++jt) {
 				sstr << "local " << jt->second->name() << " = ";
 				(*it)->putLuaName(sstr);
 				sstr << '.' << jt->second->name() << '\n';
 			}
-			for(auto jt = (*it)->theories().begin(); 
-				jt != (*it)->theories().end(); ++jt) {
+			for(auto jt = (*it)->theories().cbegin(); 
+				jt != (*it)->theories().cend(); ++jt) {
 				sstr << "local " << jt->second->name() << " = ";
 				(*it)->putLuaName(sstr);
 				sstr << '.' << jt->second->name() << '\n';
 			}
-			for(auto jt = (*it)->structures().begin(); 
-				jt != (*it)->structures().end(); ++jt) {
+			for(auto jt = (*it)->structures().cbegin(); 
+				jt != (*it)->structures().cend(); ++jt) {
 				sstr << "local " << jt->second->name() << " = ";
 				(*it)->putLuaName(sstr);
 				sstr << '.' << jt->second->name() << '\n';
@@ -1317,7 +1317,7 @@ Sort* Insert::sort(const string& name, const vector<Sort*> sups, const vector<So
 		if(sups[n]) {
 			for(unsigned int m = 0; m < subs.size(); ++m) {
 				if(subs[m]) {
-					if(subsa[m].find(sups[n]) == subsa[m].end()) {
+					if(subsa[m].find(sups[n]) == subsa[m].cend()) {
 						Error::notsubsort(subs[m]->name(),sups[n]->name(),parseinfo(l));
 					}
 				}
@@ -1331,7 +1331,7 @@ Sort* Insert::sort(const string& name, const vector<Sort*> sups, const vector<So
 		if(subs[n]) {
 			for(unsigned int m = 0; m < sups.size(); ++m) {
 				if(sups[m]) {
-					if(supsa[m].find(subs[n]) != supsa[m].end()) {
+					if(supsa[m].find(subs[n]) != supsa[m].cend()) {
 						Error::cyclichierarchy(subs[n]->name(),sups[m]->name(),parseinfo(l));
 					}
 				}
@@ -1461,11 +1461,11 @@ Rule* Insert::rule(const std::set<Variable*>& qv,Formula* head, Formula* body,YY
 		// Split quantified variables in head and body variables
 		std::set<Variable*> hv;
 		std::set<Variable*> bv;
-		for(auto it = qv.begin(); it != qv.end(); ++it) {
+		for(auto it = qv.cbegin(); it != qv.cend(); ++it) {
 			if(head->contains(*it)) hv.insert(*it);
 			else bv.insert(*it);
 		}
-		for(auto it = vv.begin(); it != vv.end(); ++it) {
+		for(auto it = vv.cbegin(); it != vv.cend(); ++it) {
 			if(head->contains(*it)) hv.insert(*it);
 			else bv.insert(*it);
 		}
@@ -1483,7 +1483,7 @@ Rule* Insert::rule(const std::set<Variable*>& qv,Formula* head, Formula* body,YY
 		_curr_vars.clear();
 		if(head) head->recursiveDelete();
 		if(body) body->recursiveDelete();
-		for(auto it = qv.begin(); it != qv.end(); ++it) delete(*it);
+		for(auto it = qv.cbegin(); it != qv.cend(); ++it) delete(*it);
 		return 0;
 	}
 }
@@ -1532,7 +1532,7 @@ Formula* Insert::predform(NSPair* nst, const vector<Term*>& vt, YYLTYPE l) const
 			for(; n < vt.size(); ++n) { if(!vt[n]) break; }
 			if(n == vt.size()) {
 				vector<Term*> vtpi;
-				for(auto it = vt.begin(); it != vt.end(); ++it) {
+				for(auto it = vt.cbegin(); it != vt.cend(); ++it) {
 					if((*it)->pi().original()) vtpi.push_back((*it)->pi().original()->clone());
 					else vtpi.push_back((*it)->clone());
 				}
@@ -1576,7 +1576,7 @@ Formula* Insert::funcgraphform(NSPair* nst, const vector<Term*>& vt, Term* t, YY
 			if(n == vt.size() && t) {
 				vector<Term*> vt2(vt); vt2.push_back(t);
 				vector<Term*> vtpi;
-				for(auto it = vt2.begin(); it != vt2.end(); ++it) {
+				for(auto it = vt2.cbegin(); it != vt2.cend(); ++it) {
 					if((*it)->pi().original()) vtpi.push_back((*it)->pi().original()->clone());
 					else vtpi.push_back((*it)->clone());
 				}
@@ -1657,7 +1657,7 @@ Formula* Insert::quantform(bool univ, const std::set<Variable*>& vv, Formula* f,
 	if(f) {
 		std::set<Variable*> pivv;
 		map<Variable*,Variable*> mvv;
-		for(auto it = vv.begin(); it != vv.end(); ++it) {
+		for(auto it = vv.cbegin(); it != vv.cend(); ++it) {
 			Variable* v = new Variable((*it)->name(),(*it)->sort(),(*it)->pi());
 			pivv.insert(v);
 			mvv[*it] = v;
@@ -1668,7 +1668,7 @@ Formula* Insert::quantform(bool univ, const std::set<Variable*>& vv, Formula* f,
 		return new QuantForm(SIGN::POS,quant,vv,f,pi);
 	}
 	else {
-		for(auto it = vv.begin(); it != vv.end(); ++it) delete(*it);
+		for(auto it = vv.cbegin(); it != vv.cend(); ++it) delete(*it);
 		return 0;
 	}
 }
@@ -1776,7 +1776,7 @@ Term* Insert::functerm(NSPair* nst, const vector<Term*>& vt) {
 			for(; n < vt.size(); ++n) { if(!vt[n]) break; }
 			if(n == vt.size()) {
 				vector<Term*> vtpi;
-				for(auto it = vt.begin(); it != vt.end(); ++it) {
+				for(auto it = vt.cbegin(); it != vt.cend(); ++it) {
 					if((*it)->pi().original()) vtpi.push_back((*it)->pi().original()->clone());
 					else vtpi.push_back((*it)->clone());
 				}
@@ -1798,7 +1798,7 @@ Term* Insert::functerm(NSPair* nst, const vector<Term*>& vt) {
 }
 
 Variable* Insert::getVar(const string& name) const {
-	for(auto i = _curr_vars.begin(); i != _curr_vars.end(); ++i) {
+	for(auto i = _curr_vars.cbegin(); i != _curr_vars.cend(); ++i) {
 		if(name == i->_name) return i->_var;
 	}
 	return 0;
@@ -1920,7 +1920,7 @@ Query* Insert::query(const std::vector<Variable*>& vv, Formula* f, YYLTYPE l) {
 		return new Query(vv,f,pi);
 	}
 	else {
-		for(auto it = vv.begin(); it != vv.end(); ++it) delete(*it);
+		for(auto it = vv.cbegin(); it != vv.cend(); ++it) delete(*it);
 		return 0;
 	}
 }
@@ -1930,7 +1930,7 @@ SetExpr* Insert::set(const std::set<Variable*>& vv, Formula* f, Term* counter, Y
 	if(f && counter) {
 		std::set<Variable*> pivv;
 		map<Variable*,Variable*> mvv;
-		for(auto it = vv.begin(); it != vv.end(); ++it) {
+		for(auto it = vv.cbegin(); it != vv.cend(); ++it) {
 			Variable* v = new Variable((*it)->name(),(*it)->sort(),(*it)->pi());
 			pivv.insert(v);
 			mvv[*it] = v;
@@ -1943,7 +1943,7 @@ SetExpr* Insert::set(const std::set<Variable*>& vv, Formula* f, Term* counter, Y
 	else {
 		if(f) { f->recursiveDelete(); }
 		if(counter) { counter->recursiveDelete(); }
-		for(auto it = vv.begin(); it != vv.end(); ++it) {
+		for(auto it = vv.cbegin(); it != vv.cend(); ++it) {
 			delete(*it);
 		}
 		return 0;
@@ -2010,7 +2010,7 @@ void Insert::emptyinter(NSPair* nst) const {
 		std::set<Predicate*> vp = noArPredInScope(nst->_name,pi);
 		if(vp.empty()) Error::undeclpred(nst->toString(),pi);
 		else if(vp.size() > 1) {
-			std::set<Predicate*>::const_iterator it = vp.begin();
+			std::set<Predicate*>::const_iterator it = vp.cbegin();
 			Predicate* p1 = *it; 
 			++it;
 			Predicate* p2 = *it;
@@ -2018,7 +2018,7 @@ void Insert::emptyinter(NSPair* nst) const {
 		}
 		else {
 			EnumeratedInternalPredTable* ipt = new EnumeratedInternalPredTable();
-			PredTable* pt = new PredTable(ipt,TableUtils::fullUniverse((*(vp.begin()))->arity()));
+			PredTable* pt = new PredTable(ipt,TableUtils::fullUniverse((*(vp.cbegin()))->arity()));
 			predinter(nst,pt);
 		}
 	}
@@ -2083,13 +2083,13 @@ void Insert::constructor(NSPair* nst) const {
 		std::set<Function*> vf = noArFuncInScope(nst->_name,pi);
 		if(vf.empty()) Error::undeclfunc(nst->toString(),pi);
 		else if(vf.size() > 1) {
-			std::set<Function*>::const_iterator it = vf.begin();
+			std::set<Function*>::const_iterator it = vf.cbegin();
 			Function* f1 = *it; 
 			++it;
 			Function* f2 = *it;
 			Error::overloadedfunc(nst->toString(),f1->pi(),f2->pi(),pi);
 		}
-		else f = *(vf.begin());
+		else f = *(vf.cbegin());
 	}
 	if(f) {
 		if(belongsToVoc(f)) {
@@ -2257,7 +2257,7 @@ void Insert::inter(NSPair* nsp, const longname& procedure, YYLTYPE l) const {
 	if(proc) {
 		vector<SortTable*> univ;
 		if(nsp->_sortsincluded) {
-			for(auto it = nsp->_sorts.begin(); it != nsp->_sorts.end(); ++it) {
+			for(auto it = nsp->_sorts.cbegin(); it != nsp->_sorts.cend(); ++it) {
 				if(*it) {
 					univ.push_back(_currstructure->inter(*it));
 				}
@@ -2278,14 +2278,14 @@ void Insert::inter(NSPair* nsp, const longname& procedure, YYLTYPE l) const {
 			std::set<Predicate*> vp = noArPredInScope(nsp->_name,pi);
 			if(vp.empty()) Error::undeclpred(nsp->toString(),pi);
 			else if(vp.size() > 1) {
-				std::set<Predicate*>::const_iterator it = vp.begin();
+				std::set<Predicate*>::const_iterator it = vp.cbegin();
 				Predicate* p1 = *it; 
 				++it;
 				Predicate* p2 = *it;
 				Error::overloadedpred(nsp->toString(),p1->pi(),p2->pi(),pi);
 			}
 			else {
-				for(auto it = (*(vp.begin()))->sorts().begin(); it != (*(vp.begin()))->sorts().end(); ++it) {
+				for(auto it = (*(vp.cbegin()))->sorts().cbegin(); it != (*(vp.cbegin()))->sorts().cend(); ++it) {
 					if(*it) {
 						univ.push_back(_currstructure->inter(*it));
 					}
@@ -2310,7 +2310,7 @@ void Insert::emptythreeinter(NSPair* nst, const string& utf) {
 		std::set<Predicate*> vp = noArPredInScope(nst->_name,pi);
 		if(vp.empty()) Error::undeclpred(nst->toString(),pi);
 		else if(vp.size() > 1) {
-			std::set<Predicate*>::const_iterator it = vp.begin();
+			std::set<Predicate*>::const_iterator it = vp.cbegin();
 			Predicate* p1 = *it; 
 			++it;
 			Predicate* p2 = *it;
@@ -2318,7 +2318,7 @@ void Insert::emptythreeinter(NSPair* nst, const string& utf) {
 		}
 		else {
 			EnumeratedInternalPredTable* ipt = new EnumeratedInternalPredTable();
-			PredTable* pt = new PredTable(ipt,TableUtils::fullUniverse((*(vp.begin()))->arity()));
+			PredTable* pt = new PredTable(ipt,TableUtils::fullUniverse((*(vp.cbegin()))->arity()));
 			threepredinter(nst,utf,pt);
 		}
 	}
@@ -2482,8 +2482,8 @@ void Insert::predatom(NSPair* nst, const vector<ElRange>& args, bool t) const {
 	if(p && nst->_sortsincluded && (nst->_sorts).size() == args.size()) p = p->resolve(nst->_sorts);
 	if(p) {
 		if(belongsToVoc(p)) {
-			if(p->arity() == 1 && p == (*(p->sorts().begin()))->pred()) {
-				Sort* s = *(p->sorts().begin());	
+			if(p->arity() == 1 && p == (*(p->sorts().cbegin()))->pred()) {
+				Sort* s = *(p->sorts().cbegin());	
 				SortTable* st = _currstructure->inter(s);
 				switch(args[0]._type) {
 					case ERE_EL:
@@ -2650,7 +2650,7 @@ void Insert::option(const string& opt, bool val,YYLTYPE l) const {
 
 void Insert::assignunknowntables() {
 	// Assign the unknown predicate interpretations
-	for(auto it = _unknownpredtables.begin(); it != _unknownpredtables.end(); ++it) {
+	for(auto it = _unknownpredtables.cbegin(); it != _unknownpredtables.cend(); ++it) {
 		PredInter* pri = _currstructure->inter(it->first);
 		const PredTable* ctable = _cpreds[it->first] == UTF_CT ? pri->ct() : pri->cf();
 		PredTable* pt = new PredTable(ctable->internTable(),ctable->universe());
@@ -2659,7 +2659,7 @@ void Insert::assignunknowntables() {
 		delete(it->second);
 	}
 	// Assign the unknown function interpretations
-	for(auto it = _unknownfunctables.begin(); it != _unknownfunctables.end(); ++it) {
+	for(auto it = _unknownfunctables.cbegin(); it != _unknownfunctables.cend(); ++it) {
 		PredInter* pri = _currstructure->inter(it->first)->graphInter();
 		const PredTable* ctable = _cfuncs[it->first] == UTF_CT ? pri->ct() : pri->cf();
 		PredTable* pt = new PredTable(ctable->internTable(),ctable->universe());

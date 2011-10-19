@@ -98,7 +98,7 @@ public:
 		: TypedOption<EnumType, ConcreteType>(type, name), allowedvalues_(allowedvalues) { }
 
 	bool isAllowedValue(const ConcreteType& value){
-		return getAllowedValues().find(value)!=getAllowedValues().end();
+		return getAllowedValues().find(value)!=getAllowedValues().cend();
 	}
 
 	virtual std::string printOption() const;
@@ -116,12 +116,12 @@ protected:
 	void createOption(EnumType type, const std::string& name, const std::set<ValueType>& values, const ValueType& defaultValue, std::vector<std::string>& option2name);
 public:
 	~OptionPolicy(){
-		for(auto i=_options.begin(); i!=_options.end(); ++i) {
+		for(auto i=_options.cbegin(); i!=_options.cend(); ++i) {
 			delete(*i);
 		}
 	}
 	bool isOption(const std::string& name) const{
-		return _name2type.find(name)!=_name2type.end();
+		return _name2type.find(name)!=_name2type.cend();
 	}
 	ValueType getValue(const std::string& name) const{
 		assert(isOption(name));
@@ -144,7 +144,7 @@ public:
 		return _options.at(_name2type.at(name))->printOption();
 	}
 	void addOptionStrings(std::vector<std::string>& optionlines) const {
-		for(auto i=_options.begin(); i<_options.end(); ++i){
+		for(auto i=_options.cbegin(); i<_options.cend(); ++i){
 			optionlines.push_back((*i)->printOption());
 		}
 	}

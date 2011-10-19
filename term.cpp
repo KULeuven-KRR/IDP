@@ -18,32 +18,32 @@ using namespace std;
 
 void Term::setFreeVars() {
 	_freevars.clear();
-	for(auto it = _subterms.begin(); it != _subterms.end(); ++it) {
-		_freevars.insert((*it)->freeVars().begin(),(*it)->freeVars().end());
+	for(auto it = _subterms.cbegin(); it != _subterms.cend(); ++it) {
+		_freevars.insert((*it)->freeVars().cbegin(),(*it)->freeVars().cend());
 	}
-	for(auto it = _subsets.begin(); it != _subsets.end(); ++it) {
-		_freevars.insert((*it)->freeVars().begin(),(*it)->freeVars().end());
+	for(auto it = _subsets.cbegin(); it != _subsets.cend(); ++it) {
+		_freevars.insert((*it)->freeVars().cbegin(),(*it)->freeVars().cend());
 	}
 }
 
 void Term::recursiveDelete() {
-	for(auto it = _subterms.begin(); it != _subterms.end(); ++it) {
+	for(auto it = _subterms.cbegin(); it != _subterms.cend(); ++it) {
 		(*it)->recursiveDelete();
 	}
-	for(auto it = _subsets.begin(); it != _subsets.end(); ++it) {
+	for(auto it = _subsets.cbegin(); it != _subsets.cend(); ++it) {
 		(*it)->recursiveDelete();
 	}
 	delete(this);
 }
 
 bool Term::contains(const Variable* v) const {
-	for(auto it = _freevars.begin(); it != _freevars.end(); ++it) {
+	for(auto it = _freevars.cbegin(); it != _freevars.cend(); ++it) {
 		if(*it == v) { return true; }
 	}
-	for(auto it = _subterms.begin(); it != _subterms.end(); ++it) {
+	for(auto it = _subterms.cbegin(); it != _subterms.cend(); ++it) {
 		if((*it)->contains(v)) { return true; }
 	}
-	for(auto it = _subsets.begin(); it != _subsets.end(); ++it) {
+	for(auto it = _subsets.cbegin(); it != _subsets.cend(); ++it) {
 		if((*it)->contains(v)) { return true; }
 	}
 	return false;
@@ -82,7 +82,7 @@ VarTerm* VarTerm::clone() const {
 
 VarTerm* VarTerm::clone(const map<Variable*,Variable*>& mvv) const {
 	map<Variable*,Variable*>::const_iterator it = mvv.find(_var);
-	if(it != mvv.end()) { return new VarTerm(it->second,_pi); }
+	if(it != mvv.cend()) { return new VarTerm(it->second,_pi); }
 	else { return new VarTerm(_var,_pi.clone(mvv)); }
 }
 
@@ -119,7 +119,7 @@ FuncTerm* FuncTerm::clone() const {
 
 FuncTerm* FuncTerm::clone(const map<Variable*,Variable*>& mvv) const {
 	vector<Term*> newargs;
-	for(auto it = subterms().begin(); it != subterms().end(); ++it) {
+	for(auto it = subterms().cbegin(); it != subterms().cend(); ++it) {
 		newargs.push_back((*it)->clone(mvv));
 	}
 	return new FuncTerm(_function,newargs,_pi.clone(mvv));
@@ -229,41 +229,41 @@ ostream& AggTerm::put(ostream& output, bool longnames) const {
 
 void SetExpr::setFreeVars() {
 	_freevars.clear();
-	for(auto it = _subformulas.begin(); it != _subformulas.end(); ++it) {
-		_freevars.insert((*it)->freeVars().begin(),(*it)->freeVars().end());
+	for(auto it = _subformulas.cbegin(); it != _subformulas.cend(); ++it) {
+		_freevars.insert((*it)->freeVars().cbegin(),(*it)->freeVars().cend());
 	}
-	for(auto it = _subterms.begin(); it != _subterms.end(); ++it) {
-		_freevars.insert((*it)->freeVars().begin(),(*it)->freeVars().end());
+	for(auto it = _subterms.cbegin(); it != _subterms.cend(); ++it) {
+		_freevars.insert((*it)->freeVars().cbegin(),(*it)->freeVars().cend());
 	}
-	for(auto it = _quantvars.begin(); it != _quantvars.end(); ++it) {
+	for(auto it = _quantvars.cbegin(); it != _quantvars.cend(); ++it) {
 		_freevars.erase(*it);
 	}
 }
 
 void SetExpr::recursiveDelete() {
-	for(auto it = _subformulas.begin(); it != _subformulas.end(); ++it) {
+	for(auto it = _subformulas.cbegin(); it != _subformulas.cend(); ++it) {
 		(*it)->recursiveDelete();
 	}
-	for(auto it = _subterms.begin(); it != _subterms.end(); ++it) {
+	for(auto it = _subterms.cbegin(); it != _subterms.cend(); ++it) {
 		(*it)->recursiveDelete();
 	}
-	for(auto it = _quantvars.begin(); it != _quantvars.end(); ++it) {
+	for(auto it = _quantvars.cbegin(); it != _quantvars.cend(); ++it) {
 		delete(*it);
 	}
 	delete(this);
 }
 
 bool SetExpr::contains(const Variable* v) const {
-	for(auto it = _freevars.begin(); it != _freevars.end(); ++it) {
+	for(auto it = _freevars.cbegin(); it != _freevars.cend(); ++it) {
 		if(*it == v) { return true; }
 	}
-	for(auto it = _quantvars.begin(); it != _quantvars.end(); ++it) {
+	for(auto it = _quantvars.cbegin(); it != _quantvars.cend(); ++it) {
 		if(*it == v) { return true; }
 	}
-	for(auto it = _subterms.begin(); it != _subterms.end(); ++it) {
+	for(auto it = _subterms.cbegin(); it != _subterms.cend(); ++it) {
 		if((*it)->contains(v)) { return true; }
 	}
-	for(auto it = _subformulas.begin(); it != _subformulas.end(); ++it) {
+	for(auto it = _subformulas.cbegin(); it != _subformulas.cend(); ++it) {
 		if((*it)->contains(v)) { return true; }
 	}
 	return false;
@@ -298,10 +298,10 @@ EnumSetExpr* EnumSetExpr::clone() const {
 EnumSetExpr* EnumSetExpr::clone(const map<Variable*,Variable*>& mvv) const {
 	vector<Formula*> newforms;
 	vector<Term*> newweights;
-	for(auto it = _subformulas.begin(); it != _subformulas.end(); ++it) {
+	for(auto it = _subformulas.cbegin(); it != _subformulas.cend(); ++it) {
 		newforms.push_back((*it)->clone(mvv));
 	}
-	for(auto it = _subterms.begin(); it != _subterms.end(); ++it) {
+	for(auto it = _subterms.cbegin(); it != _subterms.cend(); ++it) {
 		newweights.push_back((*it)->clone(mvv));
 	}
 	return new EnumSetExpr(newforms,newweights,_pi.clone(mvv));
@@ -309,7 +309,7 @@ EnumSetExpr* EnumSetExpr::clone(const map<Variable*,Variable*>& mvv) const {
 
 Sort* EnumSetExpr::sort() const {
 	Sort* currsort = VocabularyUtils::natsort();
-	for(auto it = _subterms.begin(); it != _subterms.end(); ++it) {
+	for(auto it = _subterms.cbegin(); it != _subterms.cend(); ++it) {
 		if((*it)->sort()) {
 			currsort = SortUtils::resolve(currsort,(*it)->sort());
 		}
@@ -372,7 +372,7 @@ QuantSetExpr* QuantSetExpr::clone() const {
 QuantSetExpr* QuantSetExpr::clone(const map<Variable*,Variable*>& mvv) const {
 	set<Variable*> newvars;
 	map<Variable*,Variable*> nmvv = mvv;
-	for(auto it = quantVars().begin(); it != quantVars().end(); ++it) {
+	for(auto it = quantVars().cbegin(); it != quantVars().cend(); ++it) {
 		Variable* nv = new Variable((*it)->name(),(*it)->sort(),(*it)->pi());
 		newvars.insert(nv);
 		nmvv[*it] = nv;
@@ -383,7 +383,7 @@ QuantSetExpr* QuantSetExpr::clone(const map<Variable*,Variable*>& mvv) const {
 }
 
 Sort* QuantSetExpr::sort() const {
-	Sort* termsort = (*_subterms.begin())->sort();
+	Sort* termsort = (*_subterms.cbegin())->sort();
 	if(termsort) {
 		if(SortUtils::isSubsort(termsort,VocabularyUtils::natsort())) {
 			return VocabularyUtils::natsort();
@@ -409,7 +409,7 @@ SetExpr* QuantSetExpr::accept(TheoryMutatingVisitor* v) {
 
 ostream& QuantSetExpr::put(ostream& output, bool longnames) const {
 	output << "{";
-	for(auto it = quantVars().begin(); it != quantVars().end(); ++it) {
+	for(auto it = quantVars().cbegin(); it != quantVars().cend(); ++it) {
 		output << ' '; (*it)->put(output,longnames);
 	}
 	output << " : "; subformulas()[0]->put(output,longnames);
@@ -437,7 +437,7 @@ class ApproxTwoValChecker : public TheoryVisitor {
 void ApproxTwoValChecker::visit(const PredForm* pf) {
 	PredInter* inter = _structure->inter(pf->symbol());
 	if(inter->approxTwoValued()) {
-		for(auto it = pf->subterms().begin(); it != pf->subterms().end(); ++it) {
+		for(auto it = pf->subterms().cbegin(); it != pf->subterms().cend(); ++it) {
 			(*it)->accept(this);
 			if(not _returnvalue) { return; }
 		}
@@ -448,7 +448,7 @@ void ApproxTwoValChecker::visit(const PredForm* pf) {
 void ApproxTwoValChecker::visit(const FuncTerm* ft) {
 	FuncInter* inter = _structure->inter(ft->function());
 	if(inter->approxTwoValued()) {
-		for(auto it = ft->subterms().begin(); it != ft->subterms().end(); ++it) {
+		for(auto it = ft->subterms().cbegin(); it != ft->subterms().cend(); ++it) {
 			(*it)->accept(this);
 			if(not _returnvalue) { return; }
 		}
@@ -504,7 +504,7 @@ namespace TermUtils {
 
 	vector<Term*> makeNewVarTerms(const vector<Variable*>& vars) {
 		vector<Term*> terms;
-		for(auto it = vars.begin(); it != vars.end(); ++it) {
+		for(auto it = vars.cbegin(); it != vars.cend(); ++it) {
 			terms.push_back(new VarTerm(*it,TermParseInfo()));
 		}
 		return terms;

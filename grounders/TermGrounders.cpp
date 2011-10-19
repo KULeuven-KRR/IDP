@@ -20,7 +20,7 @@ using namespace std;
 void TermGrounder::setOrig(const Term* t, const map<Variable*,const DomElemContainer*>& mvd, int verb) {
 	_verbosity = verb;
 	map<Variable*,Variable*> mvv;
-	for(auto it = t->freeVars().begin(); it != t->freeVars().end(); ++it) {
+	for(auto it = t->freeVars().cbegin(); it != t->freeVars().cend(); ++it) {
 		Variable* v = new Variable((*it)->name(),(*it)->sort(),ParseInfo());
 		mvv[*it] = v;
 		_varmap[v] = mvd.find(*it)->second;
@@ -32,7 +32,7 @@ void TermGrounder::printOrig() const {
 	clog << "Grounding term " << _origterm->toString();
 	if(not _origterm->freeVars().empty()) {
 		clog << " with instance ";
-		for(auto it = _origterm->freeVars().begin(); it != _origterm->freeVars().end(); ++it) {
+		for(auto it = _origterm->freeVars().cbegin(); it != _origterm->freeVars().cend(); ++it) {
 			clog << (*it)->toString() << " = ";
 			const DomainElement* e = _varmap.find(*it)->second->get();
 			clog << e->toString() << ' ';

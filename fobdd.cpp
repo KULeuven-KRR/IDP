@@ -94,11 +94,11 @@ void FOBDDManager::moveDown(const FOBDDKernel* kernel) {
 		unsigned int nr = kernel->number();
 		vector<const FOBDD*> falseerase;
 		vector<const FOBDD*> trueerase;
-		if(_kernels[cat].find(nr+1) != _kernels[cat].end()) {
+		if(_kernels[cat].find(nr+1) != _kernels[cat].cend()) {
 			const FOBDDKernel* nextkernel = _kernels[cat][nr+1];
 			const MBDDMBDDBDD& bdds = _bddtable[kernel];
-			for(auto it = bdds.begin(); it != bdds.end(); ++it) {
-				for(auto jt = it->second.begin(); jt != it->second.end(); ++jt) {
+			for(auto it = bdds.cbegin(); it != bdds.cend(); ++it) {
+				for(auto jt = it->second.cbegin(); jt != it->second.cend(); ++jt) {
 					FOBDD* bdd = jt->second;
 					bool swapfalse = (nextkernel == it->first->kernel());
 					bool swaptrue = (nextkernel == jt->first->kernel());
@@ -345,11 +345,11 @@ const FOBDD* FOBDDManager::getBDD(const FOBDDKernel* kernel,const FOBDD* truebra
 
 	// Lookup
 	BDDTable::const_iterator it = _bddtable.find(kernel);
-	if(it != _bddtable.end()) {
+	if(it != _bddtable.cend()) {
 		MBDDMBDDBDD::const_iterator jt = it->second.find(falsebranch);
-		if(jt != it->second.end()) {
+		if(jt != it->second.cend()) {
 			MBDDBDD::const_iterator kt = jt->second.find(truebranch);
-			if(kt != jt->second.end()) {
+			if(kt != jt->second.cend()) {
 				return kt->second;
 			}
 		}
@@ -383,7 +383,7 @@ class FOBDDCopy : public FOBDDVisitor {
 
 		void visit(const FOBDDFuncTerm* term) {
 			vector<const FOBDDArgument*> newargs;
-			for(auto it = term->args().begin(); it != term->args().end(); ++it) {
+			for(auto it = term->args().cbegin(); it != term->args().cend(); ++it) {
 				newargs.push_back(copy(*it));
 			}
 			_argument = _copymanager->getFuncTerm(term->func(),newargs);
@@ -396,7 +396,7 @@ class FOBDDCopy : public FOBDDVisitor {
 
 		void visit(const FOBDDAtomKernel* kernel) {
 			vector<const FOBDDArgument*> newargs;
-			for(auto it = kernel->args().begin(); it != kernel->args().end(); ++it) {
+			for(auto it = kernel->args().cbegin(); it != kernel->args().cend(); ++it) {
 				newargs.push_back(copy(*it));
 			}
 			_kernel = _copymanager->getAtomKernel(kernel->symbol(),kernel->type(),newargs);
@@ -503,11 +503,11 @@ const FOBDDKernel* FOBDDManager::getAtomKernel(PFSymbol* symbol,AtomKernelType a
 
 	// Lookup
 	AtomKernelTable::const_iterator it = _atomkerneltable.find(symbol);
-	if(it != _atomkerneltable.end()) {
+	if(it != _atomkerneltable.cend()) {
 		MAKTMVAGAK::const_iterator jt = it->second.find(akt);
-		if(jt != it->second.end()) {
+		if(jt != it->second.cend()) {
 			MVAGAK::const_iterator kt = jt->second.find(args);
-			if(kt != jt->second.end()) {
+			if(kt != jt->second.cend()) {
 				return kt->second;
 			}
 		}
@@ -541,9 +541,9 @@ const FOBDDKernel* FOBDDManager::getQuantKernel(Sort* sort,const FOBDD* bdd) {
 
 	// Lookup
 	QuantKernelTable::const_iterator it = _quantkerneltable.find(sort);
-	if(it != _quantkerneltable.end()) {
+	if(it != _quantkerneltable.cend()) {
 		MBDDQK::const_iterator jt = it->second.find(bdd);
-		if(jt != it->second.end()) {
+		if(jt != it->second.cend()) {
 			return jt->second;
 		}
 	}
@@ -562,7 +562,7 @@ FOBDDQuantKernel* FOBDDManager::addQuantKernel(Sort* sort,const FOBDD* bdd) {
 const FOBDDVariable* FOBDDManager::getVariable(Variable* var) {
 	// Lookup
 	VariableTable::const_iterator it = _variabletable.find(var);
-	if(it != _variabletable.end()) {
+	if(it != _variabletable.cend()) {
 		return it->second;
 	}
 
@@ -572,7 +572,7 @@ const FOBDDVariable* FOBDDManager::getVariable(Variable* var) {
 
 set<const FOBDDVariable*> FOBDDManager::getVariables(const set<Variable*>& vars) {
 	set<const FOBDDVariable*> bddvars;
-	for(auto it = vars.begin(); it != vars.end(); ++it) {
+	for(auto it = vars.cbegin(); it != vars.cend(); ++it) {
 		bddvars.insert(getVariable(*it));
 	}
 	return bddvars;
@@ -587,9 +587,9 @@ FOBDDVariable* FOBDDManager::addVariable(Variable* var) {
 const FOBDDDeBruijnIndex* FOBDDManager::getDeBruijnIndex(Sort* sort, unsigned int index) {
 	// Lookup
 	DeBruijnIndexTable::const_iterator it = _debruijntable.find(sort);
-	if(it != _debruijntable.end()) {
+	if(it != _debruijntable.cend()) {
 		MUIDB::const_iterator jt = it->second.find(index);
-		if(jt != it->second.end()) {
+		if(jt != it->second.cend()) {
 			return jt->second;
 		}
 	}
@@ -606,7 +606,7 @@ FOBDDDeBruijnIndex* FOBDDManager::addDeBruijnIndex(Sort* sort, unsigned int inde
 const FOBDDArgument* FOBDDManager::getFuncTerm(Function* func, const vector<const FOBDDArgument*>& args) {
 
 //cerr << "Get functerm on function " << *func << " and arguments ";
-//for(auto it = args.begin(); it != args.end(); ++it) {
+//for(auto it = args.cbegin(); it != args.cend(); ++it) {
 //	put(cerr,*it); cerr << "   ";
 //}
 //cerr << endl;
@@ -815,9 +815,9 @@ const FOBDDArgument* FOBDDManager::getFuncTerm(Function* func, const vector<cons
 	
 	// Lookup
 	FuncTermTable::const_iterator it = _functermtable.find(func);
-	if(it != _functermtable.end()) {
+	if(it != _functermtable.cend()) {
 		MVAFT::const_iterator jt = it->second.find(args);
-		if(jt != it->second.end()) {
+		if(jt != it->second.cend()) {
 			return jt->second;
 		}
 	}
@@ -834,9 +834,9 @@ FOBDDFuncTerm* FOBDDManager::addFuncTerm(Function* func, const vector<const FOBD
 const FOBDDDomainTerm* FOBDDManager::getDomainTerm(Sort* sort, const DomainElement* value) {
 	// Lookup
 	DomainTermTable::const_iterator it = _domaintermtable.find(sort);
-	if(it != _domaintermtable.end()) {
+	if(it != _domaintermtable.cend()) {
 		MTEDT::const_iterator jt = it->second.find(value);
-		if(jt != it->second.end()) {
+		if(jt != it->second.cend()) {
 			return jt->second;
 		}
 	}
@@ -861,7 +861,7 @@ const FOBDD* FOBDDManager::negation(const FOBDD* bdd) {
 
 	// Recursive case
 	map<const FOBDD*,const FOBDD*>::iterator it = _negationtable.find(bdd);
-	if(it != _negationtable.end()) { return it->second; }
+	if(it != _negationtable.cend()) { return it->second; }
 	else {
 		const FOBDD* falsebranch = negation(bdd->falsebranch());
 		const FOBDD* truebranch = negation(bdd->truebranch());
@@ -881,9 +881,9 @@ const FOBDD* FOBDDManager::conjunction(const FOBDD* bdd1, const FOBDD* bdd2) {
 	// Recursive case
 	if(bdd2 < bdd1) { const FOBDD* temp = bdd1; bdd1 = bdd2; bdd2 = temp; }
 	map<const FOBDD*,map<const FOBDD*,const FOBDD*> >::iterator it = _conjunctiontable.find(bdd1);
-	if(it != _conjunctiontable.end()) {
+	if(it != _conjunctiontable.cend()) {
 		map<const FOBDD*,const FOBDD*>::iterator jt = it->second.find(bdd2);
-		if(jt != it->second.end()) { return jt->second; }
+		if(jt != it->second.cend()) { return jt->second; }
 	}
 	const FOBDD* result = 0;
 	if(*(bdd1->kernel()) < *(bdd2->kernel())) {
@@ -916,9 +916,9 @@ const FOBDD* FOBDDManager::disjunction(const FOBDD* bdd1, const FOBDD* bdd2) {
 	// Recursive case
 	if(bdd2 < bdd1) { const FOBDD* temp = bdd1; bdd1 = bdd2; bdd2 = temp; }
 	map<const FOBDD*,map<const FOBDD*,const FOBDD*> >::iterator it = _disjunctiontable.find(bdd1);
-	if(it != _disjunctiontable.end()) {
+	if(it != _disjunctiontable.cend()) {
 		map<const FOBDD*,const FOBDD*>::iterator jt = it->second.find(bdd2);
-		if(jt != it->second.end()) { return jt->second; }
+		if(jt != it->second.cend()) { return jt->second; }
 	}
 	const FOBDD* result = 0;
 	if(*(bdd1->kernel()) < *(bdd2->kernel())) {
@@ -943,11 +943,11 @@ const FOBDD* FOBDDManager::disjunction(const FOBDD* bdd1, const FOBDD* bdd2) {
 
 const FOBDD* FOBDDManager::ifthenelse(const FOBDDKernel* kernel, const FOBDD* truebranch, const FOBDD* falsebranch) {
 	auto it = _ifthenelsetable.find(kernel);
-	if(it != _ifthenelsetable.end()) {
+	if(it != _ifthenelsetable.cend()) {
 		auto jt = it->second.find(truebranch);
-		if(jt != it->second.end()) {
+		if(jt != it->second.cend()) {
 			auto kt = jt->second.find(falsebranch);
-			if(kt != jt->second.end()) {
+			if(kt != jt->second.cend()) {
 				return kt->second;
 			}
 		}
@@ -1026,7 +1026,7 @@ const FOBDD* FOBDDManager::existsquantify(const FOBDDVariable* var, const FOBDD*
 
 const FOBDD* FOBDDManager::existsquantify(const set<const FOBDDVariable*>& qvars, const FOBDD* bdd) {
 	const FOBDD* result = bdd;
-	for(auto it = qvars.begin(); it != qvars.end(); ++it) {
+	for(auto it = qvars.cbegin(); it != qvars.cend(); ++it) {
 		result = existsquantify(*it,result);
 	}
 	return result;
@@ -1041,9 +1041,9 @@ const FOBDD* FOBDDManager::quantify(Sort* sort, const FOBDD* bdd) {
 	
 	// Recursive case
 	auto it = _quanttable.find(sort);
-	if(it != _quanttable.end()) {
+	if(it != _quanttable.cend()) {
 		auto jt = it->second.find(bdd);
-		if(jt != it->second.end()) { return jt->second; }
+		if(jt != it->second.cend()) { return jt->second; }
 	}
 	if(bdd->kernel()->category() == STANDARDCATEGORY) {
 		const FOBDD* newfalse = quantify(sort,bdd->falsebranch());
@@ -1066,7 +1066,7 @@ class Substitute : public FOBDDVisitor {
 
 		const FOBDDVariable* change(const FOBDDVariable* v) {
 			map<const FOBDDVariable*,const FOBDDVariable*>::const_iterator it = _mvv.find(v);
-			if(it != _mvv.end()) { return it->second; }
+			if(it != _mvv.cend()) { return it->second; }
 			else { return v; }
 		}
 };
@@ -1085,7 +1085,7 @@ class VarSubstitute : public FOBDDVisitor {
 
 		const FOBDDArgument* change(const FOBDDVariable* v) {
 			auto it = _mva.find(v);
-			if(it != _mva.end()) { return it->second; }
+			if(it != _mva.cend()) { return it->second; }
 			else { return v; }
 		}
 };
@@ -1170,7 +1170,7 @@ class ArithChecker : public FOBDDVisitor {
 		bool check(const FOBDDArgument* a)	{ _result = true; a->accept(this); return _result;	}
 
 		void visit(const FOBDDAtomKernel* kernel) {
-			for(auto it = kernel->args().begin(); it != kernel->args().end(); ++it) {
+			for(auto it = kernel->args().cbegin(); it != kernel->args().cend(); ++it) {
 				if(_result) { (*it)->accept(this); }
 			}
 			_result = _result && Vocabulary::std()->contains(kernel->symbol());
@@ -1193,7 +1193,7 @@ class ArithChecker : public FOBDDVisitor {
 		}
 
 		void visit(const FOBDDFuncTerm* functerm) {
-			for(auto it = functerm->args().begin(); it != functerm->args().end(); ++it) {
+			for(auto it = functerm->args().cbegin(); it != functerm->args().cend(); ++it) {
 				if(_result) { (*it)->accept(this); }
 			}
 			_result = _result && Vocabulary::std()->contains(functerm->func());
@@ -1428,7 +1428,7 @@ class MultOrderer : public FOBDDVisitor {
 				for(size_t n = 0; n < multterms.size(); ++n) {
 					// TODO? recursive call on all elements of multterms
 				}
-				std::sort(multterms.begin(),multterms.end(),&FactorSWOrdering); 
+				std::sort(multterms.begin(),multterms.end(),&FactorSWOrdering);
 				const FOBDDArgument* currarg = multterms.back();
 				for(size_t n = multterms.size()-1; n != 0; --n) {
 					const FOBDDArgument* nextarg = multterms[n-1];
@@ -1590,7 +1590,7 @@ class AddOrderer : public FOBDDVisitor {
 					// TODO? recursive call on all elements of addterms
 				}
 				AddTermSWOrdering mtswo;
-				std::sort(addterms.begin(),addterms.end(),mtswo); 
+				std::sort(addterms.begin(),addterms.end(),mtswo);
 				const FOBDDArgument* currarg = addterms.back();
 				for(size_t n = addterms.size()-1; n != 0; --n) {
 					const FOBDDArgument* nextarg = addterms[n-1];
@@ -1774,7 +1774,7 @@ class ArgChecker : public FOBDDVisitor {
 				return;
 			}
 			else {
-				for(auto it = ft->args().begin(); it != ft->args().end(); ++it) {
+				for(auto it = ft->args().cbegin(); it != ft->args().cend(); ++it) {
 					(*it)->accept(this);
 					if(_result) { return; }
 				}
@@ -1935,7 +1935,7 @@ void FOBDDFactory::visit(const PredForm* pf) {
 void FOBDDFactory::visit(const BoolForm* bf) {
 	if(bf->conj()) {
 		const FOBDD* temp = _manager->truebdd();
-		for(auto it = bf->subformulas().begin(); it != bf->subformulas().end(); ++it) {
+		for(auto it = bf->subformulas().cbegin(); it != bf->subformulas().cend(); ++it) {
 			(*it)->accept(this);
 			temp = _manager->conjunction(temp,_bdd);
 		}
@@ -1943,7 +1943,7 @@ void FOBDDFactory::visit(const BoolForm* bf) {
 	}
 	else {
 		const FOBDD* temp = _manager->falsebdd();
-		for(auto it = bf->subformulas().begin(); it != bf->subformulas().end(); ++it) {
+		for(auto it = bf->subformulas().cbegin(); it != bf->subformulas().cend(); ++it) {
 			(*it)->accept(this);
 			temp = _manager->disjunction(temp,_bdd);
 		}
@@ -1955,7 +1955,7 @@ void FOBDDFactory::visit(const BoolForm* bf) {
 void FOBDDFactory::visit(const QuantForm* qf) {
 	qf->subformula()->accept(this);
 	const FOBDD* qbdd = _bdd;
-	for(auto it = qf->quantVars().begin(); it != qf->quantVars().end(); ++it) {
+	for(auto it = qf->quantVars().cbegin(); it != qf->quantVars().cend(); ++it) {
 		const FOBDDVariable* qvar = _manager->getVariable(*it);
 		if(qf->isUniv()){
 			qbdd = _manager->univquantify(qvar,qbdd);
@@ -2098,7 +2098,7 @@ class BDDToFormula : public FOBDDVisitor {
 		void visit(const FOBDDDeBruijnIndex* index) {
 			auto it = _dbrmapping.find(index);
 			Variable* v;
-			if(it == _dbrmapping.end()) {
+			if(it == _dbrmapping.cend()) {
 				Variable* v = new Variable(index->sort());
 				_dbrmapping[index] = v;
 			}
@@ -2116,7 +2116,7 @@ class BDDToFormula : public FOBDDVisitor {
 
 		void visit(const FOBDDFuncTerm* ft) {
 			vector<Term*> args;
-			for(auto it = ft->args().begin(); it != ft->args().end(); ++it) {
+			for(auto it = ft->args().cbegin(); it != ft->args().cend(); ++it) {
 				(*it)->accept(this);
 				args.push_back(_currterm);
 			}
@@ -2125,7 +2125,7 @@ class BDDToFormula : public FOBDDVisitor {
 
 		void visit(const FOBDDAtomKernel* atom) {
 			vector<Term*> args;
-			for(auto it = atom->args().begin(); it != atom->args().end(); ++it) {
+			for(auto it = atom->args().cbegin(); it != atom->args().cend(); ++it) {
 				(*it)->accept(this);
 				args.push_back(_currterm);
 			}
@@ -2145,7 +2145,7 @@ class BDDToFormula : public FOBDDVisitor {
 		void visit(const FOBDDQuantKernel* quantkernel) {
 			map<const FOBDDDeBruijnIndex*,Variable*> savemapping = _dbrmapping;
 			_dbrmapping.clear();
-			for(auto it = savemapping.begin(); it != savemapping.end(); ++it) 
+			for(auto it = savemapping.cbegin(); it != savemapping.cend(); ++it) 
 				_dbrmapping[_manager->getDeBruijnIndex(it->first->sort(),it->first->index()+1)] = it->second;
 			FOBDDVisitor::visit(quantkernel->bdd());
 			set<Variable*> quantvars;
@@ -2276,7 +2276,7 @@ class BDDPartialChecker : public FOBDDVisitor {
 				return;
 			}
 			else {
-				for(auto it = ft->args().begin(); it != ft->args().end(); ++it) {
+				for(auto it = ft->args().cbegin(); it != ft->args().cend(); ++it) {
 					(*it)->accept(this);
 					if(_result) return;
 				}
@@ -2361,9 +2361,9 @@ bool FOBDDManager::contains(const FOBDDKernel* kernel, Variable* v) {
  */
 tablesize univNrAnswers(const set<const FOBDDVariable*>& vars, const set<const FOBDDDeBruijnIndex*>& indices, AbstractStructure* structure) {
 	vector<SortTable*> vst; 
-	for(auto it = vars.begin(); it != vars.end(); ++it) 
+	for(auto it = vars.cbegin(); it != vars.cend(); ++it) 
 		vst.push_back(structure->inter((*it)->variable()->sort()));
-	for(auto it = indices.begin(); it != indices.end(); ++it)
+	for(auto it = indices.cbegin(); it != indices.cend(); ++it)
 		vst.push_back(structure->inter((*it)->sort()));
 	Universe univ(vst);
 	return univ.size();
@@ -2383,13 +2383,13 @@ vector<vector<pair<bool,const FOBDDKernel*> > > FOBDDManager::pathsToFalse(const
 	else if(bdd != _truebdd) {
 		vector<vector<pair<bool,const FOBDDKernel*> > > falsepaths = pathsToFalse(bdd->falsebranch());
 		vector<vector<pair<bool,const FOBDDKernel*> > > truepaths = pathsToFalse(bdd->truebranch());
-		for(auto it = falsepaths.begin(); it != falsepaths.end(); ++it) {
+		for(auto it = falsepaths.cbegin(); it != falsepaths.cend(); ++it) {
 			result.push_back(vector<pair<bool,const FOBDDKernel*> >(1,pair<bool,const FOBDDKernel*>(false,bdd->kernel())));
 			for(auto jt = it->begin(); jt != it->end(); ++jt) {
 				result.back().push_back(*jt);
 			}
 		}
-		for(auto it = truepaths.begin(); it != truepaths.end(); ++it) {
+		for(auto it = truepaths.cbegin(); it != truepaths.cend(); ++it) {
 			result.push_back(vector<pair<bool,const FOBDDKernel*> >(1,pair<bool,const FOBDDKernel*>(true,bdd->kernel())));
 			for(auto jt = it->begin(); jt != it->end(); ++jt) {
 				result.back().push_back(*jt);
@@ -2407,12 +2407,12 @@ set<const FOBDDKernel*> FOBDDManager::allkernels(const FOBDD* bdd) {
 	if(bdd != _truebdd && bdd != _falsebdd) {
 		set<const FOBDDKernel*> falsekernels = allkernels(bdd->falsebranch());
 		set<const FOBDDKernel*> truekernels = allkernels(bdd->truebranch());
-		result.insert(falsekernels.begin(),falsekernels.end());
-		result.insert(truekernels.begin(),truekernels.end());
+		result.insert(falsekernels.cbegin(),falsekernels.cend());
+		result.insert(truekernels.cbegin(),truekernels.cend());
 		result.insert(bdd->kernel());
 		if(typeid(*(bdd->kernel())) == typeid(FOBDDQuantKernel)) {
 			set<const FOBDDKernel*> kernelkernels = allkernels(dynamic_cast<const FOBDDQuantKernel*>(bdd->kernel())->bdd());
-			result.insert(kernelkernels.begin(),kernelkernels.end());
+			result.insert(kernelkernels.cbegin(),kernelkernels.cend());
 		}
 	}
 	return result;
@@ -2426,8 +2426,8 @@ set<const FOBDDKernel*> FOBDDManager::nonnestedkernels(const FOBDD* bdd) {
 	if(bdd != _truebdd && bdd != _falsebdd) {
 		set<const FOBDDKernel*> falsekernels = nonnestedkernels(bdd->falsebranch());
 		set<const FOBDDKernel*> truekernels = nonnestedkernels(bdd->truebranch());
-		result.insert(falsekernels.begin(),falsekernels.end());
-		result.insert(truekernels.begin(),truekernels.end());
+		result.insert(falsekernels.cbegin(),falsekernels.cend());
+		result.insert(truekernels.cbegin(),truekernels.cend());
 		result.insert(bdd->kernel());
 	}
 	return result;
@@ -2439,7 +2439,7 @@ set<const FOBDDKernel*> FOBDDManager::nonnestedkernels(const FOBDD* bdd) {
 map<const FOBDDKernel*,double> FOBDDManager::kernelAnswers(const FOBDD* bdd, AbstractStructure* structure) {
 	map<const FOBDDKernel*,double> result;
 	set<const FOBDDKernel*> kernels = nonnestedkernels(bdd);
-	for(auto it = kernels.begin(); it != kernels.end(); ++it) {
+	for(auto it = kernels.cbegin(); it != kernels.cend(); ++it) {
 		set<const FOBDDVariable*> vars = variables(*it);
 		set<const FOBDDDeBruijnIndex*> indices = FOBDDManager::indices(*it);
 		result[*it] = estimatedNrAnswers(*it,vars,indices,structure);
@@ -2522,7 +2522,7 @@ set<const FOBDDDeBruijnIndex*> FOBDDManager::indices(const FOBDDKernel* kernel) 
 map<const FOBDDKernel*,tablesize> FOBDDManager::kernelUnivs(const FOBDD* bdd, AbstractStructure* structure) {
 	map<const FOBDDKernel*,tablesize> result;
 	set<const FOBDDKernel*> kernels = nonnestedkernels(bdd);
-	for(auto it = kernels.begin(); it != kernels.end(); ++it) {
+	for(auto it = kernels.cbegin(); it != kernels.cend(); ++it) {
 		set<const FOBDDVariable*> vars = variables(*it);
 		set<const FOBDDDeBruijnIndex*> indices = FOBDDManager::indices(*it);
 		result[*it] = univNrAnswers(vars,indices,structure);
@@ -2541,7 +2541,7 @@ double FOBDDManager::estimatedChance(const FOBDDKernel* kernel, AbstractStructur
 		const PredTable* pt = atomkernel->type() == AKT_CF ? pinter->cf() : pinter->ct();
 		tablesize symbolsize = pt->size();
 		double univsize = 1;
-		for(auto it = atomkernel->args().begin(); it != atomkernel->args().end(); ++it) {
+		for(auto it = atomkernel->args().cbegin(); it != atomkernel->args().cend(); ++it) {
 			tablesize argsize = structure->inter((*it)->sort())->size();
 			if(argsize._type == TST_APPROXIMATED || argsize._type == TST_EXACT) {
 				univsize = univsize * argsize._size;
@@ -2638,7 +2638,7 @@ double FOBDDManager::estimatedChance(const FOBDDKernel* kernel, AbstractStructur
 
 					// randomly choose a path
 					double toss = double(rand()) / double(RAND_MAX) * cumulative_chance;
-					unsigned int chosenpathnr = lower_bound(cumulative_pathsposs.begin(),cumulative_pathsposs.end(),toss) - cumulative_pathsposs.begin();
+					unsigned int chosenpathnr = lower_bound(cumulative_pathsposs.cbegin(),cumulative_pathsposs.cend(),toss) - cumulative_pathsposs.cbegin();
 					for(unsigned int nodenr = 0; nodenr < paths[chosenpathnr].size(); ++nodenr) {
 						if(paths[chosenpathnr][nodenr].first) 
 							dynsubkernels[paths[chosenpathnr][nodenr].second] += -(1.0);
@@ -3080,14 +3080,14 @@ double FOBDDManager::estimatedCostAll(bool sign, const FOBDDKernel* kernel, cons
 		unsigned int nrinfinite = 0;
 		const FOBDDVariable* infinitevar = 0;
 		const FOBDDDeBruijnIndex* infiniteindex = 0;
-		for(auto it = vars.begin(); it != vars.end(); ++it) {
+		for(auto it = vars.cbegin(); it != vars.cend(); ++it) {
 			varsvector.push_back(*it);
 			SortTable* st = structure->inter((*it)->sort());
 			tablesize stsize = st->size();
 			if(stsize._type == TST_EXACT || stsize._type == TST_APPROXIMATED) varunivsizes.push_back(double(stsize._size));
 			else { varunivsizes.push_back(maxdouble); ++nrinfinite; if(!infinitevar) infinitevar = *it; }
 		}
-		for(auto it = indices.begin(); it != indices.end(); ++it) {
+		for(auto it = indices.cbegin(); it != indices.cend(); ++it) {
 			indicesvector.push_back(*it);
 			SortTable* st = structure->inter((*it)->sort());
 			tablesize stsize = st->size();
@@ -3120,10 +3120,10 @@ double FOBDDManager::estimatedCostAll(bool sign, const FOBDDKernel* kernel, cons
 		}
 		else {
 			double maxresult = 1;
-			for(auto it = varunivsizes.begin(); it != varunivsizes.end(); ++it) {
+			for(auto it = varunivsizes.cbegin(); it != varunivsizes.cend(); ++it) {
 				maxresult = (maxresult * (*it) < maxdouble) ? (maxresult * (*it)) : maxdouble;
 			}
-			for(auto it = indexunivsizes.begin(); it != indexunivsizes.end(); ++it) {
+			for(auto it = indexunivsizes.cbegin(); it != indexunivsizes.cend(); ++it) {
 				maxresult = (maxresult * (*it) < maxdouble) ? (maxresult * (*it)) : maxdouble;
 			}
 			if(maxresult < maxdouble) {
@@ -3162,16 +3162,16 @@ double FOBDDManager::estimatedCostAll(bool sign, const FOBDDKernel* kernel, cons
 		}
 
 		vector<bool> pattern;
-		for(auto it = atomkernel->args().begin(); it != atomkernel->args().end(); ++it) {
+		for(auto it = atomkernel->args().cbegin(); it != atomkernel->args().cend(); ++it) {
 			bool input = true;
-			for(auto jt = vars.begin(); jt != vars.end(); ++jt) {
+			for(auto jt = vars.cbegin(); jt != vars.cend(); ++jt) {
 				if(contains(*it,*jt)) {
 					input = false;
 					break;
 				}
 			}
 			if(input) {
-				for(auto jt = indices.begin(); jt != indices.end(); ++jt) {
+				for(auto jt = indices.cbegin(); jt != indices.cend(); ++jt) {
 					if((*it)->containsDeBruijnIndex((*jt)->index())) {
 						input = false;
 						break;
@@ -3189,7 +3189,7 @@ double FOBDDManager::estimatedCostAll(bool sign, const FOBDDKernel* kernel, cons
 		// NOTE: implement a better estimator if backjumping on bdds is implemented
 		const FOBDDQuantKernel* quantkernel = dynamic_cast<const FOBDDQuantKernel*>(kernel);
 		set<const FOBDDDeBruijnIndex*> newindices;
-		for(auto it = indices.begin(); it != indices.end(); ++it) {
+		for(auto it = indices.cbegin(); it != indices.cend(); ++it) {
 			newindices.insert(getDeBruijnIndex((*it)->sort(),(*it)->index()+1));
 		}
 		newindices.insert(getDeBruijnIndex(quantkernel->sort(),0));
@@ -3214,24 +3214,24 @@ double FOBDDManager::estimatedCostAll(const FOBDD* bdd, const set<const FOBDDVar
 		set<const FOBDDDeBruijnIndex*> kernelindices = FOBDDManager::indices(bdd->kernel());
 		set<const FOBDDVariable*> bddvars;
 		set<const FOBDDDeBruijnIndex*> bddindices;
-		for(auto it = vars.begin(); it != vars.end(); ++it) {
-			if(kernelvars.find(*it) == kernelvars.end()) bddvars.insert(*it);
+		for(auto it = vars.cbegin(); it != vars.cend(); ++it) {
+			if(kernelvars.find(*it) == kernelvars.cend()) bddvars.insert(*it);
 		}
-		for(auto it = indices.begin(); it != indices.end(); ++it) {
-			if(kernelindices.find(*it) == kernelindices.end()) bddindices.insert(*it);
+		for(auto it = indices.cbegin(); it != indices.cend(); ++it) {
+			if(kernelindices.find(*it) == kernelindices.cend()) bddindices.insert(*it);
 		}
 		set<const FOBDDVariable*> removevars;
 		set<const FOBDDDeBruijnIndex*> removeindices;
-		for(auto it = kernelvars.begin(); it != kernelvars.end(); ++it) {
-			if(vars.find(*it) == vars.end()) removevars.insert(*it);
+		for(auto it = kernelvars.cbegin(); it != kernelvars.cend(); ++it) {
+			if(vars.find(*it) == vars.cend()) removevars.insert(*it);
 		}
-		for(auto it = kernelindices.begin(); it != kernelindices.end(); ++it) {
-			if(indices.find(*it) == indices.end()) removeindices.insert(*it);
+		for(auto it = kernelindices.cbegin(); it != kernelindices.cend(); ++it) {
+			if(indices.find(*it) == indices.cend()) removeindices.insert(*it);
 		}
-		for(auto it = removevars.begin(); it != removevars.end(); ++it) {
+		for(auto it = removevars.cbegin(); it != removevars.cend(); ++it) {
 			kernelvars.erase(*it);
 		}
-		for(auto it = removeindices.begin(); it != removeindices.end(); ++it) {
+		for(auto it = removeindices.cbegin(); it != removeindices.cend(); ++it) {
 			kernelindices.erase(*it);
 		}
 
@@ -3281,7 +3281,7 @@ double FOBDDManager::estimatedCostAll(const FOBDD* bdd, const set<const FOBDDVar
 void FOBDDManager::optimizequery(const FOBDD* query, const set<const FOBDDVariable*>& vars, const set<const FOBDDDeBruijnIndex*>& indices, AbstractStructure* structure) {
 	if(query != _truebdd && query != _falsebdd) {
 		set<const FOBDDKernel*> kernels = allkernels(query);
-		for(auto it = kernels.begin(); it != kernels.end(); ++it) {
+		for(auto it = kernels.cbegin(); it != kernels.cend(); ++it) {
 			double bestscore = estimatedCostAll(query,vars,indices,structure);
 			int bestposition = 0;
 			// move upward
@@ -3329,12 +3329,12 @@ const FOBDD* FOBDDManager::make_more_false(const FOBDD* bdd, const set<const FOB
 		set<const FOBDDVariable*> branchvars;
 		set<const FOBDDDeBruijnIndex*> kernelindices;
 		set<const FOBDDDeBruijnIndex*> branchindices;
-		for(auto it = vars.begin(); it != vars.end(); ++it) {
-			if(kvars.find(*it) == kvars.end()) branchvars.insert(*it);
+		for(auto it = vars.cbegin(); it != vars.cend(); ++it) {
+			if(kvars.find(*it) == kvars.cend()) branchvars.insert(*it);
 			else kernelvars.insert(*it);
 		}
-		for(auto it = indices.begin(); it != indices.end(); ++it) {
-			if(kindices.find(*it) == kindices.end()) branchindices.insert(*it);
+		for(auto it = indices.cbegin(); it != indices.cend(); ++it) {
+			if(kindices.find(*it) == kindices.cend()) branchindices.insert(*it);
 			else kernelindices.insert(*it);
 		}
 
@@ -3407,12 +3407,12 @@ const FOBDD* FOBDDManager::make_more_false(const FOBDD* bdd, const set<const FOB
 		set<const FOBDDVariable*> branchvars;
 		set<const FOBDDDeBruijnIndex*> kernelindices;
 		set<const FOBDDDeBruijnIndex*> branchindices;
-		for(auto it = vars.begin(); it != vars.end(); ++it) {
-			if(kvars.find(*it) == kvars.end()) branchvars.insert(*it);
+		for(auto it = vars.cbegin(); it != vars.cend(); ++it) {
+			if(kvars.find(*it) == kvars.cend()) branchvars.insert(*it);
 			else kernelvars.insert(*it);
 		}
-		for(auto it = indices.begin(); it != indices.end(); ++it) {
-			if(kindices.find(*it) == kindices.end()) branchindices.insert(*it);
+		for(auto it = indices.cbegin(); it != indices.cend(); ++it) {
+			if(kindices.find(*it) == kindices.cend()) branchindices.insert(*it);
 			else kernelindices.insert(*it);
 		}
 
@@ -3495,12 +3495,12 @@ const FOBDD* FOBDDManager::make_more_true(const FOBDD* bdd, const set<const FOBD
 		set<const FOBDDVariable*> branchvars;
 		set<const FOBDDDeBruijnIndex*> kernelindices;
 		set<const FOBDDDeBruijnIndex*> branchindices;
-		for(auto it = vars.begin(); it != vars.end(); ++it) {
-			if(kvars.find(*it) == kvars.end()) branchvars.insert(*it);
+		for(auto it = vars.cbegin(); it != vars.cend(); ++it) {
+			if(kvars.find(*it) == kvars.cend()) branchvars.insert(*it);
 			else kernelvars.insert(*it);
 		}
-		for(auto it = indices.begin(); it != indices.end(); ++it) {
-			if(kindices.find(*it) == kindices.end()) branchindices.insert(*it);
+		for(auto it = indices.cbegin(); it != indices.cend(); ++it) {
+			if(kindices.find(*it) == kindices.cend()) branchindices.insert(*it);
 			else kernelindices.insert(*it);
 		}
 
@@ -3649,7 +3649,7 @@ void FOBDDVisitor::visit(const FOBDD* bdd) {
 }
 
 void FOBDDVisitor::visit(const FOBDDAtomKernel* kernel) {
-	for(auto it = kernel->args().begin(); it != kernel->args().end(); ++it) {
+	for(auto it = kernel->args().cbegin(); it != kernel->args().cend(); ++it) {
 		(*it)->accept(this);
 	}
 }
@@ -3671,7 +3671,7 @@ void FOBDDVisitor::visit(const FOBDDDomainTerm* ) {
 }
 
 void FOBDDVisitor::visit(const FOBDDFuncTerm* term) {
-	for(auto it = term->args().begin(); it != term->args().end(); ++it) {
+	for(auto it = term->args().cbegin(); it != term->args().cend(); ++it) {
 		(*it)->accept(this);
 	}
 }
@@ -3689,7 +3689,7 @@ const FOBDD* FOBDDVisitor::change(const FOBDD* bdd) {
 
 const FOBDDKernel* FOBDDVisitor::change(const FOBDDAtomKernel* kernel) {
 	vector<const FOBDDArgument*>	nargs;
-	for(auto it = kernel->args().begin(); it != kernel->args().end(); ++it) {
+	for(auto it = kernel->args().cbegin(); it != kernel->args().cend(); ++it) {
 		nargs.push_back((*it)->acceptchange(this));
 	}
 	return _manager->getAtomKernel(kernel->symbol(),kernel->type(),nargs);
@@ -3714,7 +3714,7 @@ const FOBDDArgument* FOBDDVisitor::change(const FOBDDDomainTerm* term) {
 
 const FOBDDArgument* FOBDDVisitor::change(const FOBDDFuncTerm* term) {
 	vector<const FOBDDArgument*>	nargs;
-	for(auto it = term->args().begin(); it != term->args().end(); ++it) {
+	for(auto it = term->args().cbegin(); it != term->args().cend(); ++it) {
 		nargs.push_back((*it)->acceptchange(this));
 	}
 	return _manager->getFuncTerm(term->func(),nargs);
