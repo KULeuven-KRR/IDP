@@ -9,6 +9,12 @@
 #include <map>
 #include <vector>
 
+#include "theory.hpp"
+
+class FOBDDManager;
+class FOBDD;
+class FOBDDVariable;
+
 enum QueryType { QT_CT, QT_CF, QT_PT, QT_PF };
 
 class SymbolicStructure : public TheoryVisitor {

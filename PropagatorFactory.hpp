@@ -10,7 +10,14 @@ class EquivForm;
 class BoolForm;
 class AggForm;
 class QuantForm;
+class FuncInter;
+class PredInter;
+class Options;
+class SymbolicStructure;
 class FOPropScheduler;
+class Predicate;
+class Function;
+class PredTable;
 template<class InterpretationFactory, class PropDomain> class TypedFOPropagator;
 
 enum InitBoundType { IBT_TWOVAL, IBT_BOTH, IBT_CT, IBT_CF, IBT_NONE };
@@ -19,28 +26,17 @@ enum InitBoundType { IBT_TWOVAL, IBT_BOTH, IBT_CT, IBT_CF, IBT_NONE };
  * Constraint propagator for first-order theories
  */
 class FOPropagator : public TheoryVisitor {
-protected:
-	FOPropagator();
 public:
-	// Execution
-	virtual void run();		//!< Apply propagations until the propagation queue is empty
+	virtual ~FOPropagator() {}
 
-	// Visitor
-	virtual void visit(const PredForm*);
-	virtual void visit(const EqChainForm*);
-	virtual void visit(const EquivForm*);
-	virtual void visit(const BoolForm*);
-	virtual void visit(const QuantForm*);
-	virtual void visit(const AggForm*);
+	virtual void run() = 0;		//!< Apply propagations until the propagation queue is empty
 
 	// Inspectors
-	virtual AbstractStructure*	currstructure(AbstractStructure* str) const;
+	virtual AbstractStructure*	currstructure(AbstractStructure* str) const = 0;
 		//!< Obtain the resulting structure
 		//!< (the given structure is used to evaluate BDDs in case of symbolic propagation)
-	virtual SymbolicStructure*	symbolicstructure()		const;
+	virtual SymbolicStructure*	symbolicstructure()		const = 0;
 		//!< Obtain the resulting structure (only works if the used domainfactory is a FOPropBDDDomainFactory)
-	virtual FuncInter*	interpretation(Function* f)		const;	//!< Returns the current interpretation of function symbol f
-	virtual PredInter*	interpretation(Predicate* p)	const;	//!< Returns the current interpretation of predicate symbol p
 };
 
 /**

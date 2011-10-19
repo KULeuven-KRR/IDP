@@ -41,69 +41,72 @@ enum FOPropDirection { UP, DOWN };
  * 	Class for scheduling propagation steps.	
  */
 class FOPropScheduler {
-	private:
-		std::queue<FOPropagation*>	_queue;		//!< The queue of scheduled propagations
-	public:
-		// Mutators
-		void			add(FOPropagation*);	//!< Push a propagation on the queue
-		FOPropagation*	next();					//!< Pop the first propagation from the queue and return it
-	
-		// Inspectors
-		bool 			hasNext() const;		//!< True iff the queue is non-empty
+private:
+	std::queue<FOPropagation*>	_queue;		//!< The queue of scheduled propagations
+public:
+	void			add(FOPropagation*);	//!< Push a propagation on the queue
+	FOPropagation*	next();					//!< Pop the first propagation from the queue and return it
+
+	bool 			hasNext() const;		//!< True iff the queue is non-empty
 };
 
 /**
  * 	Class representing a single propagation step.
  */
 class FOPropagation {
-	private:
-		const Formula* 	_parent;		//!< The parent formula
-		FOPropDirection	_direction;		//!< Direction of propagation (from parent to child or vice versa)
-		bool			_ct;			//!< Indicates which domain is propagated
-										//!< If _direction == DOWN and _ct == true, 
-										//!< then the ct-domain of the parent is propagated the child, etc.
-		const Formula*	_child;			//!< The subformula
-	public:
-		FOPropagation(const Formula* p, FOPropDirection dir, bool ct, const Formula* c = 0):
-			_parent(p), _direction(dir), _ct(ct), _child(c) { }
-	friend class FOPropagator;
+private:
+	const Formula* 	_parent;		//!< The parent formula
+	FOPropDirection	_direction;		//!< Direction of propagation (from parent to child or vice versa)
+	bool			_ct;			//!< Indicates which domain is propagated
+									//!< If _direction == DOWN and _ct == true,
+									//!< then the ct-domain of the parent is propagated to the child, etc.
+	const Formula*	_child;			//!< The subformula // NOTE child can be NULL
+public:
+	FOPropagation(const Formula* p, FOPropDirection dir, bool ct, const Formula* c)
+			:_parent(p), _direction(dir), _ct(ct), _child(c) {
+	}
+
+	const Formula* getChild() const { return _child; }
+	FOPropDirection getDirection() const { return _direction; }
+	const Formula* getParent() const { return _parent; }
+	bool isCT() const { return _ct; }
 };
 
 /**
  * 	Class representing domains for formulas.
  */
 class FOPropDomain {
-	protected:
-		std::vector<Variable*>	_vars;
-	public:
-		FOPropDomain(const std::vector<Variable*>& vars) : _vars(vars) { }
-		virtual ~FOPropDomain(){}
-		const std::vector<Variable*>&	vars()	const { return _vars;	}
-		virtual FOPropDomain* clone() const = 0;	//!< Take a deep copy of the domain
+protected:
+	std::vector<Variable*>	_vars;
+public:
+	FOPropDomain(const std::vector<Variable*>& vars) : _vars(vars) { }
+	virtual ~FOPropDomain(){}
+	const std::vector<Variable*>&	vars()	const { return _vars;	}
+	virtual FOPropDomain* clone() const = 0;	//!< Take a deep copy of the domain
 };
 
 /**
  * A domain represented by a first-order BDD
  */
 class FOPropBDDDomain : public FOPropDomain {
-	private:
-		const FOBDD* _bdd;
-	public:
-		FOPropBDDDomain(const FOBDD* bdd, const std::vector<Variable*>& vars): FOPropDomain(vars), _bdd(bdd) { }
-		FOPropBDDDomain* clone() const { return new FOPropBDDDomain(_bdd,_vars);	}
-		const FOBDD*	bdd() const { return _bdd;	}
+private:
+	const FOBDD* _bdd;
+public:
+	FOPropBDDDomain(const FOBDD* bdd, const std::vector<Variable*>& vars): FOPropDomain(vars), _bdd(bdd) { }
+	FOPropBDDDomain* clone() const { return new FOPropBDDDomain(_bdd,_vars);	}
+	const FOBDD*	bdd() const { return _bdd;	}
 };
 
 /**
  * A domain represented by a predicate table
  */
 class FOPropTableDomain : public FOPropDomain {
-	private:
-		PredTable*				_table;
-	public:
-		FOPropTableDomain(PredTable* t, const std::vector<Variable*>& v) : FOPropDomain(v), _table(t) { }
-		FOPropTableDomain* clone() const;
-		PredTable* table() const { return _table;	}
+private:
+	PredTable*				_table;
+public:
+	FOPropTableDomain(PredTable* t, const std::vector<Variable*>& v) : FOPropDomain(v), _table(t) { }
+	FOPropTableDomain* clone() const;
+	PredTable* table() const { return _table;	}
 };
 
 template<class DomainType> struct ThreeValuedDomain;
@@ -141,14 +144,14 @@ class FOPropBDDDomainFactory : public FOPropDomainFactory<FOPropBDDDomain> {
 		FOPropBDDDomain*	formuladomain(const Formula*)	const;
 		FOPropBDDDomain*	ctDomain(const PredForm*)		const;
 		FOPropBDDDomain*	cfDomain(const PredForm*)		const;
-		FOPropBDDDomain*	exists(FOPropDomain*, const std::set<Variable*>&) const;
-		FOPropBDDDomain*	forall(FOPropDomain*, const std::set<Variable*>&) const;
-		FOPropBDDDomain*	conjunction(FOPropDomain*,FOPropDomain*) const;
-		FOPropBDDDomain*	disjunction(FOPropDomain*,FOPropDomain*) const;
-		FOPropBDDDomain*	substitute(FOPropDomain*,const std::map<Variable*,Variable*>&) const;
-		bool				approxequals(FOPropDomain*,FOPropDomain*)	const;
+		FOPropBDDDomain*	exists(FOPropBDDDomain*, const std::set<Variable*>&) const;
+		FOPropBDDDomain*	forall(FOPropBDDDomain*, const std::set<Variable*>&) const;
+		FOPropBDDDomain*	conjunction(FOPropBDDDomain*,FOPropBDDDomain*) const;
+		FOPropBDDDomain*	disjunction(FOPropBDDDomain*,FOPropBDDDomain*) const;
+		FOPropBDDDomain*	substitute(FOPropBDDDomain*,const std::map<Variable*,Variable*>&) const;
+		bool				approxequals(FOPropBDDDomain*,FOPropBDDDomain*)	const;
 		PredInter*			inter(const std::vector<Variable*>&, const ThreeValuedDomain<FOPropBDDDomain>&, AbstractStructure*) const;
-		std::ostream&		put(std::ostream&,FOPropDomain*) const;
+		std::ostream&		put(std::ostream&,FOPropBDDDomain*) const;
 };
 
 class FOPropTableDomainFactory : public FOPropDomainFactory<FOPropTableDomain> {
@@ -161,14 +164,14 @@ class FOPropTableDomainFactory : public FOPropDomainFactory<FOPropTableDomain> {
 		FOPropTableDomain*	formuladomain(const Formula*)	const;
 		FOPropTableDomain*	ctDomain(const PredForm*)		const;
 		FOPropTableDomain*	cfDomain(const PredForm*)		const;
-		FOPropTableDomain*	exists(FOPropDomain*, const std::set<Variable*>&) const;
-		FOPropTableDomain*	forall(FOPropDomain*, const std::set<Variable*>&) const;
-		FOPropTableDomain*	conjunction(FOPropDomain*,FOPropDomain*) const;
-		FOPropTableDomain*	disjunction(FOPropDomain*,FOPropDomain*) const;
-		FOPropTableDomain*	substitute(FOPropDomain*,const std::map<Variable*,Variable*>&) const;
-		bool				equals(FOPropDomain*,FOPropDomain*)	const;
-		PredInter*			inter(const std::vector<Variable*>&, const ThreeValuedDomain<FOPropBDDDomain>&, AbstractStructure*) const;
-		std::ostream&		put(std::ostream&,FOPropDomain*) const;
+		FOPropTableDomain*	exists(FOPropTableDomain*, const std::set<Variable*>&) const;
+		FOPropTableDomain*	forall(FOPropTableDomain*, const std::set<Variable*>&) const;
+		FOPropTableDomain*	conjunction(FOPropTableDomain*,FOPropTableDomain*) const;
+		FOPropTableDomain*	disjunction(FOPropTableDomain*,FOPropTableDomain*) const;
+		FOPropTableDomain*	substitute(FOPropTableDomain*,const std::map<Variable*,Variable*>&) const;
+		bool				equals(FOPropTableDomain*,FOPropTableDomain*)	const;
+		PredInter*			inter(const std::vector<Variable*>&, const ThreeValuedDomain<FOPropTableDomain>&, AbstractStructure*) const;
+		std::ostream&		put(std::ostream&,FOPropTableDomain*) const;
 };
 
 /**
@@ -179,10 +182,44 @@ struct ThreeValuedDomain {
 	DomainType* 	_ctdomain;
 	DomainType* 	_cfdomain;
 	bool			_twovalued;
-	ThreeValuedDomain() : _ctdomain(0), _cfdomain(0), _twovalued(false) { }
-	ThreeValuedDomain(const FOPropDomainFactory<DomainType>*, bool ctdom, bool cfdom, const Formula*);
-	ThreeValuedDomain(const FOPropDomainFactory<DomainType>*, const Formula*);
-	ThreeValuedDomain(const FOPropDomainFactory<DomainType>*, const PredForm*, InitBoundType);
+	//ThreeValuedDomain() : _ctdomain(NULL), _cfdomain(NULL), _twovalued(false) { }
+
+	ThreeValuedDomain(const FOPropDomainFactory<DomainType>* factory, bool ctdom, bool cfdom, const Formula* f) {
+		_ctdomain = ctdom ? factory->trueDomain(f) : factory->falseDomain(f);
+		_cfdomain = cfdom ? factory->trueDomain(f) : factory->falseDomain(f);
+		_twovalued = ctdom || cfdom;
+		assert(_ctdomain!=NULL);
+		assert(_cfdomain!=NULL);
+	}
+
+	ThreeValuedDomain(const FOPropDomainFactory<DomainType>* factory, const Formula* f) {
+		_ctdomain = factory->formuladomain(f);
+		Formula* negf = f->clone(); negf->negate();
+		_cfdomain = factory->formuladomain(negf);
+		_twovalued = true;
+		assert(_ctdomain!=NULL);
+		assert(_cfdomain!=NULL);
+	}
+
+	ThreeValuedDomain(const FOPropDomainFactory<DomainType>* factory, const PredForm* pf, InitBoundType ibt) {
+		_twovalued = false;
+		switch(ibt) {
+		case IBT_CT:
+			_ctdomain = factory->ctDomain(pf);
+			_cfdomain = factory->falseDomain(pf);
+			break;
+		case IBT_CF:
+			_ctdomain = factory->falseDomain(pf);
+			_cfdomain = factory->cfDomain(pf);
+			break;
+		case IBT_BOTH:
+			_ctdomain = factory->ctDomain(pf);
+			_cfdomain = factory->cfDomain(pf);
+			break;
+		}
+		assert(_ctdomain!=NULL);
+		assert(_cfdomain!=NULL);
+	}
 };
 
 /**
@@ -191,26 +228,25 @@ struct ThreeValuedDomain {
 template<class DomainType>
 struct LeafConnectData {
 	PredForm*						_connector;
-	DomainType*					_equalities;
+	DomainType*						_equalities;
 	std::map<Variable*,Variable*>	_leaftoconnector;
 	std::map<Variable*,Variable*>	_connectortoleaf;
 };
 
 template<class DomainType>
 class AdmissibleBoundChecker {
-	public:
-		virtual ~AdmissibleBoundChecker(){}
-		virtual bool check(DomainType*,DomainType*) const = 0;
+public:
+	virtual ~AdmissibleBoundChecker(){}
+	virtual bool check(DomainType*,DomainType*) const = 0;
 };
 
-template<class DomainType>
-class LongestBranchChecker : public AdmissibleBoundChecker<DomainType> {
-	private:
-		int				_treshhold;
-		FOBDDManager*	_manager;
-	public:
-		LongestBranchChecker(FOBDDManager* m, int th) : _treshhold(th), _manager(m) { }
-		bool check(DomainType*,DomainType*) const;
+class LongestBranchChecker : public AdmissibleBoundChecker<FOPropBDDDomain> {
+private:
+	int				_treshhold;
+	FOBDDManager*	_manager;
+public:
+	LongestBranchChecker(FOBDDManager* m, int th) : _treshhold(th), _manager(m) { }
+	bool check(FOPropBDDDomain*,FOPropBDDDomain*) const;
 };
 
 template<class InterpretationFactory, class Domain>
@@ -221,10 +257,10 @@ private:
 	int														_maxsteps;		//!< Maximum number of propagations
 	InterpretationFactory*									_factory;		//!< Manages and creates domains for formulas
 	FOPropScheduler*										_scheduler;		//!< Schedules propagations
-	std::map<const Formula*,ThreeValuedDomain<Domain> >				_domains;		//!< Map each formula to its current domain
+	std::map<const Formula*,ThreeValuedDomain<Domain> >		_domains;		//!< Map each formula to its current domain
 	std::map<const Formula*,std::set<Variable*> >			_quantvars;
 	std::map<PFSymbol*,PredForm*>							_leafconnectors;
-	std::map<const PredForm*,LeafConnectData<Domain> >				_leafconnectdata;
+	std::map<const PredForm*,LeafConnectData<Domain> >		_leafconnectdata;
 	std::map<const Formula*,const Formula*>					_upward;
 	std::map<const PredForm*,std::set<const PredForm*> >	_leafupward;
 	std::vector<AdmissibleBoundChecker<Domain>*>			_admissiblecheckers;
@@ -240,7 +276,6 @@ private:
 	Domain* addToForall(Domain* forall, const std::set<Variable*>&);
 
 	void updateDomain(const Formula* tobeupdated,FOPropDirection,bool ct,Domain* newdomain,const Formula* child = 0);
-	void schedule(const Formula* par, FOPropDirection, bool, const Formula* child);
 	bool admissible(Domain*, Domain*) const;	//!< Returns true iff the first domain is an allowed
 															//!< replacement of the second domain
 
@@ -257,7 +292,6 @@ public:
 	void visit(const QuantForm*);
 	void visit(const AggForm*);
 
-	// Inspectors
 	AbstractStructure*	currstructure(AbstractStructure* str) const;
 		//!< Obtain the resulting structure
 		//!< (the given structure is used to evaluate BDDs in case of symbolic propagation)
@@ -265,6 +299,33 @@ public:
 		//!< Obtain the resulting structure (only works if the used domainfactory is a FOPropBDDDomainFactory)
 	FuncInter*	interpretation(Function* f)		const;	//!< Returns the current interpretation of function symbol f
 	PredInter*	interpretation(Predicate* p)	const;	//!< Returns the current interpretation of predicate symbol p
+
+	void schedule(const Formula* par, FOPropDirection, bool, const Formula* child);
+
+	// FIXME check that domains can never contain nullpointers!
+
+	int getVerbosity() const { return _verbosity; }
+	int getMaxSteps() const { return _maxsteps; }
+	void setMaxSteps(int steps) { _maxsteps = steps; }
+	const Options* getOptions() const { return _options; }
+
+	const std::map<const Formula*,const Formula*>& getUpward() const { return _upward; }
+	const std::map<PFSymbol*,PredForm*>& getLeafConnectors() const { return _leafconnectors; }
+
+	void setDomain(const Formula* key, const ThreeValuedDomain<Domain>& value ) { _domains.insert(std::pair<const Formula*, const ThreeValuedDomain<Domain> >(key, value)); }
+	void setQuantVar(const Formula* key, const std::set<Variable*>& value) { _quantvars[key] = value;}
+	void setUpward(const Formula* key, const Formula* value) { _upward[key] = value;}
+	void setLeafConnector(PFSymbol* key,PredForm* value) { _leafconnectors[key] = value; }
+	void setLeafConnectData(const PredForm* key, const LeafConnectData<Domain>& value) { _leafconnectdata[key] = value;}
+
+	void addToLeafUpward(PredForm* index, const PredForm* pf) { _leafupward[index].insert(pf); }
+
+	bool hasDomain(const Formula* f) const { return _domains.find(f)!=_domains.end(); }
+	const ThreeValuedDomain<Domain>& getDomain(const Formula* f) const { assert(hasDomain(f)); return _domains.at(f); }
+	void setCFOfDomain(const Formula* f, Domain* d) { _domains.at(f)._cfdomain = d; }
+	void setCTOfDomain(const Formula* f, Domain* d) { _domains.at(f)._ctdomain = d; }
+
+	InterpretationFactory* getFactory() const { return _factory; }
 };
 
 #endif
