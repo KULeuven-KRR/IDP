@@ -57,7 +57,8 @@ public:
 		TraceMonitor* monitor = tracemonitor();
 
 		// Calculate known definitions
-		if(typeid(*theory) == typeid(Theory)) {
+		// FIXME currently skipping if working lazily!
+		if(not options->getValue(BoolType::GROUNDLAZILY) && safetypeid<Theory>(*theory)){
 			bool satisfiable = calculateKnownDefinitions(dynamic_cast<Theory*>(theory),structure,options);
 			if(not satisfiable) { return std::vector<AbstractStructure*>{}; }
 		}

@@ -97,7 +97,7 @@ public:
 	void run(unsigned int defid, GroundDefinition* grounddefinition) const;
 
 	void ground(const Lit& head, const ElementTuple& headargs);
-	void notify(const Lit& lit, const ElementTuple& headargs);
+	void notify(const Lit& lit, const ElementTuple& headargs, const std::vector<LazyRuleGrounder*>& grounders);
 
 	dominstlist createInst(const ElementTuple& headargs);
 };

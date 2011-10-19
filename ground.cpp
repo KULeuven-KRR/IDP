@@ -293,9 +293,9 @@ Lit GroundTranslator::translate(unsigned int n, const ElementTuple& args) {
 		atom2Tuple[lit] = new SymbolAndTuple(symbols[n].symbol, args);
 
 		// FIXME expensive operation to do so often!
-		auto ruleit = symbol2rulegrounder.find(n);
-		if(ruleit!=symbol2rulegrounder.end()){
-			ruleit->second->notify(lit, args);
+		auto rulesit = symbol2rulegrounder.find(n);
+		if(rulesit!=symbol2rulegrounder.end() && rulesit->second.size()>0){
+			(*rulesit->second.begin())->notify(lit, args, rulesit->second);
 		}
 	}
 
@@ -334,9 +334,17 @@ Lit GroundTranslator::addTseitinBody(TsBody* tsbody){
 }
 
 void GroundTranslator::notifyDefined(PFSymbol* pfs, LazyRuleGrounder* const grounder){
-	if(symbol2rulegrounder.find(addSymbol(pfs))==symbol2rulegrounder.end()){
-		symbol2rulegrounder.insert(pair<uint, LazyRuleGrounder*>(addSymbol(pfs), grounder));
+	int symbolnumber = addSymbol(pfs);
+	auto it = symbol2rulegrounder.find(symbolnumber);
+	if(symbol2rulegrounder.find(symbolnumber)==symbol2rulegrounder.end()){
+		it = symbol2rulegrounder.insert(pair<uint, std::vector<LazyRuleGrounder*> >(symbolnumber, {})).first;
 	}
+	for(auto grounderit = it->second.begin(); grounderit<it->second.end(); ++grounderit){
+		if(grounder==*grounderit){
+			return;
+		}
+	}
+	it->second.push_back(grounder);
 }
 
 void GroundTranslator::translate(LazyQuantGrounder const* const lazygrounder, ResidualAndFreeInst* instance, TsType tstype) {
