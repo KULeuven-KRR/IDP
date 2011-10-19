@@ -1108,8 +1108,10 @@ void GrounderFactory::visit(const PredForm* pf) {
 					possbdd = _symstructure->evaluate(checkpf,QT_PF);
 					certbdd = _symstructure->evaluate(checkpf,QT_CF); 
 				}
-				PredTable* posstable = new PredTable(new BDDInternalPredTable(possbdd,_symstructure->manager(),fovars,_structure),Universe(tables));
-				PredTable* certtable = new PredTable(new BDDInternalPredTable(certbdd,_symstructure->manager(),fovars,_structure),Universe(tables));
+				//FIXME restore: PredTable* posstable = new PredTable(new BDDInternalPredTable(possbdd,_symstructure->manager(),fovars,_structure),Universe(tables));
+				//FIXME restore: PredTable* certtable = new PredTable(new BDDInternalPredTable(certbdd,_symstructure->manager(),fovars,_structure),Universe(tables));
+				PredTable* posstable = new PredTable(new FullInternalPredTable(),Universe(tables));
+				PredTable* certtable = new PredTable(new InverseInternalPredTable(new FullInternalPredTable()),Universe(tables));
 				InstGenerator* possch = GeneratorFactory::create(posstable,vector<bool>(checkargs.size(),true),checkargs,Universe(tables));
 				InstGenerator* certainch = GeneratorFactory::create(certtable,vector<bool>(checkargs.size(),true),checkargs,Universe(tables));
 				// Create the grounder

@@ -1146,15 +1146,12 @@ GeneratorNode* BDDToGenerator::createnode(const FOBDD* bdd, const vector<bool>& 
 	}
 }
 
+// FIXME error in removenesting if this does not introduce a quantifier
+// FIXME very ugly code
+// FIXME a code in BDDTOGenerator that does not take a bdd and does not return something with bdds?
+// TODO what should the method do exactly?
 InstGenerator* BDDToGenerator::create(PredForm* atom, const vector<bool>& pattern, const vector<const DomElemContainer*>& vars, const vector<Variable*>& atomvars, AbstractStructure* structure, bool inverse, const Universe& universe) {
-
-//cerr << "Create on atom " << *atom << endl;
-//cerr << "Pattern = "; for(unsigned int n = 0; n < pattern.size(); ++n) cerr << (pattern[n] ? "true " : "false "); cerr << endl;
-//cerr << "Atomvars = "; for(unsigned int n = 0; n < atomvars.size(); ++n) cerr << "  " << *(atomvars[n]) << ' ' << atomvars[n]; cerr << endl;
-//cerr << "Inverse = " << (inverse ? "true" : "false") << endl;
-
 	if(FormulaUtils::containsFuncTerms(atom)) {
-
 		bool allinput = true;
 		for(auto it = pattern.begin(); it != pattern.end(); ++it) {
 			if(!(*it)) { allinput = false; break; }
@@ -1182,6 +1179,7 @@ InstGenerator* BDDToGenerator::create(PredForm* atom, const vector<bool>& patter
 			//  (E)		0 = (t_1 * x_11 * ... * x_1n_1) + ... + (t_m * x_m1 * ... * x_mn_m).
 
 			// Convert all cases to case (A)
+			// FIXME no hardcoded string comparisons!
 			if(atom->symbol()->name() == "=/2") {	// cases (B), (C), (D), and (E)
 				if(typeid(*(atom->subterms()[0])) == typeid(DomainTerm)) {	// Case (C) or (E)
 					assert(typeid(*(atom->subterms()[1])) == typeid(FuncTerm));
@@ -1266,15 +1264,13 @@ InstGenerator* BDDToGenerator::create(PredForm* atom, const vector<bool>& patter
 	}
 
 	if(FormulaUtils::containsFuncTerms(atom)) {
-//cerr << "HIERZO " << *atom << endl;
 		Formula* newform = FormulaUtils::removeNesting(atom,Context::NEGATIVE);
 		newform = FormulaUtils::removeEqChains(newform);
 		newform = FormulaUtils::graphFunctions(newform);
 		newform = FormulaUtils::flatten(newform);
-//cerr << "DAARZO " << *newform << endl;
-		assert(typeid(*newform) == typeid(QuantForm));
+		assert(safetypeid<QuantForm>(*newform));
 		QuantForm* quantform = dynamic_cast<QuantForm*>(newform);
-		assert(typeid(*(quantform->subformula())) == typeid(BoolForm));
+		assert(safetypeid<BoolForm>(*(quantform->subformula())));
 		BoolForm* boolform = dynamic_cast<BoolForm*>(quantform->subformula());
 		vector<PredForm*> conjunction;
 		for(auto it = boolform->subformulas().begin(); it != boolform->subformulas().end(); ++it) {
@@ -1291,15 +1287,10 @@ InstGenerator* BDDToGenerator::create(PredForm* atom, const vector<bool>& patter
 		}
 		set<PredForm*> atoms_to_order(conjunction.begin(),conjunction.end());
 		vector<PredForm*> orderedconjunction;
-//cerr << "Start ordering atoms " << endl;
-//cerr << "Still free:";
-//for(auto it = still_free.begin(); it != still_free.end(); ++it) cerr << " " << *(*it);
-//cerr << endl;
 		while(!atoms_to_order.empty()) {
 			PredForm* bestatom = 0;
 			double bestcost = numeric_limits<double>::max();
 			for(auto it = atoms_to_order.begin(); it != atoms_to_order.end(); ++it) {
-//cerr << "Checking atom " << *(*it) << endl;
 				bool currinverse = false;
 				if(*it == origatom) { currinverse = inverse; }
 				set<Variable*> projectedfree;
@@ -1307,22 +1298,17 @@ InstGenerator* BDDToGenerator::create(PredForm* atom, const vector<bool>& patter
 					if((*it)->freeVars().find(*jt) != (*it)->freeVars().end()) { projectedfree.insert(*jt); }
 				}
 				double currcost = FormulaUtils::estimatedCostAll(*it,projectedfree,currinverse,structure);
-//cerr << "Estimated cost = " << currcost << endl;
 				if(currcost < bestcost) {
 					bestcost = currcost;
 					bestatom = *it;
 				}
 			}
 			if(not bestatom) { bestatom = *(atoms_to_order.begin()); }
-//cerr << "Choose " << *bestatom << endl;
 			orderedconjunction.push_back(bestatom);
 			atoms_to_order.erase(bestatom);
 			for(auto it = bestatom->freeVars().begin(); it != bestatom->freeVars().end(); ++it) {
 				still_free.erase(*it);
 			}
-//cerr << "Still free:";
-//for(auto it = still_free.begin(); it != still_free.end(); ++it) cerr << " " << *(*it) << endl;
-//cerr << endl;
 		}
 
 		vector<InstGenerator*> generators;

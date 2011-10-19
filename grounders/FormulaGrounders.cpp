@@ -106,12 +106,12 @@ Lit AtomGrounder::run() const {
 		for(size_t n = 0; n < args.size(); ++n) {
         	*(_checkargs[n]) = args[n];
 		}
-		if(not _pchecker->first()) {
+		if(not _pchecker->first()) { // FIXME the semantics of FIRST or not FIRST are UNCLEAR
 			if(verbosity() > 2) {
 				clog << "Possible checker failed\n";
 				clog << "Result is " << (_certainvalue ? "false" : "true") << "\n";
 			}
-			return _certainvalue ? _false : _true;	// TODO: dit is lelijk
+			return _certainvalue ? _false : _true;	// TODO: een int voor certainvalue is lelijk
 		}
 		if(_cchecker->first()) {
 			if(verbosity() > 2) {
@@ -447,18 +447,34 @@ void AggGrounder::run(litlist& clause) const {
 	clause.push_back(run());
 }
 
-bool ClauseGrounder::isNotRedundantInClause(Lit l) const {
-	return conn_==CONJ? l!=_true : l!=_false;
+bool ClauseGrounder::isRedundantInFormula(Lit l, bool negated) const {
+	if(negated){
+		return conn_==CONJ? l==_false : l==_true;
+	}else{
+		return conn_==CONJ? l==_true : l==_false;
+	}
 }
 
-// True of the value of the literal immediately makes the tseitin formula true
-bool ClauseGrounder::decidesClause(Lit l) const {
-	return conn_==CONJ ? l == _false : l == _true;
+/**
+ * conjunction: never true by a literal
+ * disjunction: true if literal is true
+ * negated conjunction: true if literal is false
+ * negated disjunction: never true by a literal
+ */
+bool ClauseGrounder::makesFormulaTrue(Lit l, bool negated) const {
+	return (negated && conn_==CONJ && l == _false)
+			|| (~negated && conn_==DISJ && l == _true);
 }
 
-// Get the value if one literal has decided the value of the tseitin formula (so false if it is a conjunction, true if it is a disjunction)
-Lit ClauseGrounder::getDecidedValue() const {
-	return conjunctive() ? _false : _true;
+/**
+ * conjunction: false if a literal is false
+ * disjunction: never false by a literal
+ * negated conjunction: never false by a literal
+ * negated disjunction: false if a literal is true
+ */
+bool ClauseGrounder::makesFormulaFalse(Lit l, bool negated) const {
+	return (negated && conn_==DISJ && l == _true)
+			|| (not negated && conn_==CONJ && l == _false);
 }
 
 Lit ClauseGrounder::getEmtyFormulaValue() const {
@@ -510,23 +526,26 @@ void ClauseGrounder::run(litlist& clause) const {
 }
 
 // NOTE: Optimized to avoid looping over the clause after construction
-void BoolGrounder::run(litlist& clause, bool negateclause) const {
+void BoolGrounder::run(litlist& clause, bool negate) const {
 	if(verbosity() > 2) printorig();
 
 	for(auto g=_subgrounders.begin(); g<_subgrounders.end(); g++){
 		Lit lit = (*g)->run();
-		if(decidesClause(lit)) {
-			Lit valuelit = getDecidedValue();
-			clause = litlist{negateclause?-valuelit:valuelit};
+		if(makesFormulaFalse(lit, negate)){
+			clause = litlist{negate?-_false:_false};
 			break;
-		}else if(isNotRedundantInClause(lit)){
-			clause.push_back(negateclause?-lit:lit);
+		}else if(makesFormulaTrue(lit, negate)){
+			clause = litlist{negate?-_true:_true};
+			break;
+		}else if(not isRedundantInFormula(lit, negate)){
+			// FIXME true and false occur here apparently, look what I missed?
+			clause.push_back(negate?-lit:lit);
 		}
 	}
 }
 
-// FIXME what are the "clause" semantics here? => apperently, these are unimportant, as the sentencegrounder currently magically "knows" what it will get back
-void QuantGrounder::run(litlist& clause, bool negateclause) const {
+// FIXME what are the "clause" semantics here? => apparently, these are unimportant, as the sentencegrounder currently magically "knows" what it will get back
+void QuantGrounder::run(litlist& clause, bool negated) const {
 	if(verbosity() > 2) printorig();
 
 	if(not _generator->first()) {
@@ -534,18 +553,19 @@ void QuantGrounder::run(litlist& clause, bool negateclause) const {
 	}
 
 	do{
-		if(_checker->first()) {
-			Lit valuelit = getDecidedValue();
-			clause = litlist{negateclause?-valuelit:valuelit};
+		if(_checker->first()) { // FIXME should this be NOT first() ?
+			clause = litlist{negated?-_false:_false}; // FIXME should this be false
 			break;
 		}
 		Lit l = _subgrounder->run();
-		if(decidesClause(l)) {
-			Lit valuelit = getDecidedValue();
-			clause = litlist{negateclause?-valuelit:valuelit};
+		if(makesFormulaFalse(l, negated)) {
+			clause = litlist{negated?-_false:_false}; // FIXME should negateclause be checked as part of "makesformulafalse"?
 			break;
-		}else if(isNotRedundantInClause(l)){
-			clause.push_back(negateclause ? -l : l);
+		}else if(makesFormulaTrue(l, negated)){
+			clause = litlist{negated?-_true:_true};
+			break;
+		}else if(not isRedundantInFormula(l, negated)){
+			clause.push_back(negated? -l : l);
 		}
 	}while(_generator->next());
 }

@@ -21,9 +21,10 @@ private:
 		// Symbolic propagation
 		PropagateInference propinference;
 		std::map<PFSymbol*,InitBoundType> mpi = propinference.propagateVocabulary(theory,structure);
-		FOPropagator* propagator = createPropagator(theory,mpi,options);
-		propagator->run();
-		SymbolicStructure* symstructure = propagator->symbolicstructure();
+//		FOPropagator* propagator = createPropagator(theory,mpi,options);
+//		propagator->run();
+//		SymbolicStructure* symstructure = propagator->symbolicstructure();
+		SymbolicStructure* symstructure = NULL; // FIXME propagator code broken!
 
 		// Grounding
 		GrounderFactory factory(structure,options,symstructure);

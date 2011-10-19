@@ -65,9 +65,10 @@ public:
 		// Symbolic propagation
 		PropagateInference propinference;
 		std::map<PFSymbol*,InitBoundType> mpi = propinference.propagateVocabulary(theory,structure);
-		FOPropagator* propagator = createPropagator(theory,mpi,options);
-		propagator->run();
-		SymbolicStructure* symstructure = propagator->symbolicstructure();
+//		FOPropagator* propagator = createPropagator(theory,mpi,options);
+//		propagator->run();
+//		SymbolicStructure* symstructure = propagator->symbolicstructure();
+		SymbolicStructure* symstructure = NULL; // FIXME propagator code broken!
 
 		// Create solver and grounder
 		SATSolver* solver = createsolver(options);
@@ -115,7 +116,7 @@ public:
 		solver->solve(abstractsolutions);
 
 		// Collect solutions
-		structure = propagator->currstructure(structure);
+		//FIXME propagator code broken structure = propagator->currstructure(structure);
 		std::vector<AbstractStructure*> solutions;
 		for(auto model = abstractsolutions->getModels().begin();
 			model != abstractsolutions->getModels().end(); ++model) {

@@ -9,8 +9,8 @@ vocabulary V{
 theory T:V{
 	reachable(query).
 	{
-		reachable(start).
-		!x: reachable(x) <- (?y: edge(x, y) & reachable(y)).
+//		reachable(start).
+		!x: reachable(x) <- start=x | (?y: edge(x, y) & reachable(y)).
 	}
 }
 

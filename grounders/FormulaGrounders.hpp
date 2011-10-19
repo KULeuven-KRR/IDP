@@ -48,8 +48,8 @@ class FormulaGrounder {
 class AtomGrounder : public FormulaGrounder {
 	protected:
 		std::vector<TermGrounder*>		_subtermgrounders;
-		InstGenerator*				_pchecker;
-		InstGenerator*				_cchecker;
+		InstGenerator*					_pchecker;
+		InstGenerator*					_cchecker;
 		size_t							_symbol; // symbol's offset in translator's table.
 		std::vector<SortTable*>			_tables;
 		SIGN							_sign;
@@ -155,9 +155,9 @@ class ClauseGrounder : public FormulaGrounder {
 			conn_(conj?CONJ:DISJ){}
 	protected:
 		Lit 	getReification(litlist& clause) const;
-		bool 	decidesClause(Lit l) const;
-		bool 	isNotRedundantInClause(Lit l) const;
-		Lit 	getDecidedValue() const;
+		bool 	makesFormulaTrue(Lit l, bool negated) const;
+		bool 	makesFormulaFalse(Lit l, bool negated) const;
+		bool 	isRedundantInFormula(Lit l, bool negated) const;
 		Lit 	getEmtyFormulaValue() const;
 		bool	conjunctive() const { return (conn_==CONJ && isPositive()) || (conn_==DISJ && isNegative());	}
 

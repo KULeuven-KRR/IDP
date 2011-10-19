@@ -39,10 +39,11 @@ void LazyQuantGrounder::groundMore() const{
 		Lit groundedlit = _subgrounder->run();
 		restoreOrigVars(originstantiation, instance->freevarinst);
 
-		if(decidesClause(groundedlit)) {
-			groundedlit = getDecidedValue();
-			groundedlit = negatedclause_?-groundedlit:groundedlit;
-		}else if(isNotRedundantInClause(groundedlit)){
+		if(makesFormulaFalse(groundedlit, negatedclause_)) { // FIXME same issue of order of negatedclause
+			groundedlit = negatedclause_?-_false:_false;
+		} else if(makesFormulaTrue(groundedlit, negatedclause_)) {
+			groundedlit = negatedclause_?-_true:_true;
+		}else if(not isRedundantInFormula(groundedlit, negatedclause_)){
 			groundedlit = negatedclause_ ? -groundedlit : groundedlit;
 		}
 
