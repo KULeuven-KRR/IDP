@@ -46,7 +46,9 @@ grounder_SOURCES = \
 		printers/print.hpp printers/print.cpp\
 		printers/idpprinter.hpp printers/ecnfprinter.hpp printers/tptpprinter.hpp\
 		checker.hpp checker.cpp\
-		generator.hpp generator.cpp\
+		generators/Generators.cpp\
+		generators/GeneratorFactory.cpp\
+		generators/BDDBasedGeneratorFactory.cpp\
 		propagate.hpp propagate.cpp\
 		ecnf.hpp ecnf.cpp\
 		ground.hpp ground.cpp\

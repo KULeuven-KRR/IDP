@@ -12,7 +12,7 @@
 #include "grounders/TermGrounders.hpp"
 #include "grounders/SetGrounders.hpp"
 #include "common.hpp"
-#include "generator.hpp"
+#include "generators/InstGenerator.hpp"
 #include "checker.hpp"
 #include <cmath>
 
@@ -120,6 +120,7 @@ Lit AtomGrounder::run() const {
 			}
 			return _certainvalue;
 		}
+		cerr <<"Inter used for decisions: " <<*_inter <<"\n";
 		if(_inter->isTrue(args)) { return isPos(_sign)?_true:_false; }
 		if(_inter->isFalse(args)) { return isPos(_sign)?_false:_true; }
 	}

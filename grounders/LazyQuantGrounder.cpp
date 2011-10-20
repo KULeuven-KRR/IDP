@@ -7,7 +7,7 @@
 #include "grounders/LazyQuantGrounder.hpp"
 #include "groundtheories/AbstractGroundTheory.hpp"
 #include "groundtheories/SolverPolicy.hpp"
-#include "generator.hpp"
+#include "generators/InstGenerator.hpp"
 #include "grounders/GroundUtils.hpp"
 
 #include <iostream>

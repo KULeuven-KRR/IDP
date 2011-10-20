@@ -20,7 +20,8 @@
 #include "term.hpp"
 #include "ecnf.hpp"
 #include "options.hpp"
-#include "generator.hpp"
+#include "generators/GeneratorFactory.hpp"
+#include "generators/InstGenerator.hpp"
 #include "checker.hpp"
 #include "common.hpp"
 #include "GeneralUtils.hpp"
@@ -652,18 +653,13 @@ bool UnivSentGrounder::run() const {
 		}
 		return true;
 	}
-	bool b = _subgrounder->run();
-	if(!b) {
-		_grounding->addEmptyClause();
-		return b;
-	}
-	while(_generator->next()) {
-		b = _subgrounder->run();
-		if(!b) {
+	do{
+		bool b = _subgrounder->run();
+		if(not b) {
 			_grounding->addEmptyClause();
 			return b;
 		}
-	}
+	}while(_generator->next());
 	return true;
 }
 
@@ -1051,8 +1047,7 @@ void GrounderFactory::visit(const PredForm* pf) {
 		   	clog << "\n"; 
 		}
 		transpf->accept(this);
-	}
-	else {	// The rewriting did not change the atom
+	} else {	// The rewriting did not change the atom
 		PredForm* newpf = dynamic_cast<PredForm*>(transpf);
 		// Create grounders for the subterms
 		vector<TermGrounder*> subtermgrounders;
@@ -1085,6 +1080,7 @@ void GrounderFactory::visit(const PredForm* pf) {
 		}
 		else {
 			PredInter* inter = _structure->inter(newpf->symbol());
+			cerr <<*inter <<"\n";
 			CheckerFactory checkfactory;
 			if(_context._component == CC_HEAD) {
 				// Create instance checkers

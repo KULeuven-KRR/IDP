@@ -15,7 +15,8 @@
 #include "error.hpp"
 #include "fobdd.hpp"
 #include "luaconnection.hpp" //FIXME break connection with lua!
-#include "generator.hpp"
+#include "generators/GeneratorFactory.hpp"
+#include "generators/InstGenerator.hpp"
 using namespace std;
 
 /**********************
@@ -2707,6 +2708,38 @@ InternalTableIterator* UminInternalFuncTable::begin(const Universe& univ) const 
 	return new InternalFuncIterator(this,univ);
 }
 
+
+std::ostream& operator<<(std::ostream& stream, const AbstractTable& table){
+	table.print(stream);
+	return stream;
+}
+
+void PredTable::print(std::ostream& stream) const{
+	if(not finite()){
+		stream <<"infinite interpretation";
+		return;
+	}
+	if(empty()){
+		stream <<"{}";
+		return;
+	}
+	stream <<"{";
+	bool start = true;
+	for(auto it=begin(); it.hasNext(); ++it){
+		if(not start){ stream <<"; "; } start = false;
+		stream <<*it;
+	}
+	stream <<"}";
+}
+
+void FuncTable::print(std::ostream& stream) const{
+	// TODO
+}
+
+void SortTable::print(std::ostream& stream) const{
+	// TODO
+}
+
 /****************
 	PredTable
 ****************/
@@ -3333,6 +3366,14 @@ PredInter* PredInter::clone(const Universe& univ) const {
 		}
 		return new PredInter(nctpf,ncfpt,ct,cf);
 	}
+}
+
+std::ostream& operator<<(std::ostream& stream, const PredInter& interpretation){
+	stream <<"Certainly true: " <<*interpretation.ct() <<"\n";
+	stream <<"Certainly false: " <<*interpretation.cf() <<"\n";
+	stream <<"Possibly true: " <<*interpretation.pt() <<"\n";
+	stream <<"Possibly false: " <<*interpretation.pf() <<"\n";
+	return stream;
 }
 
 PredInter* EqualInterGenerator::get(const AbstractStructure* structure) {
