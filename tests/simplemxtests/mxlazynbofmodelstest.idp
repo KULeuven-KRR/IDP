@@ -4,5 +4,7 @@ procedure main(){
 	stdoptions.nrmodels=0
 	stdoptions.nbmodelequivalent = true
 	stdoptions.groundlazily = true
+	stdoptions.groundverbosity=4
+	stdoptions.satverbosity=4
 	idp_intern.testmx(getExpectedNbOfModels(), T, S, stdoptions);
 }

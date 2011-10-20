@@ -31,7 +31,7 @@
 // Support for deleting lists of pointer elements
 template<class T>
 void deleteList(std::vector<T*>& l){
-	for(auto i=l.begin(); i!=l.end(); ++i){
+	for(auto i=l.cbegin(); i!=l.cend(); ++i){
 		if(*i!=NULL){
 			delete(*i);
 		}
@@ -41,7 +41,7 @@ void deleteList(std::vector<T*>& l){
 
 template<class T>
 void deleteList(std::vector<std::vector<T*> >& l){
-	for(auto i=l.begin(); i!=l.end(); ++i){
+	for(auto i=l.cbegin(); i!=l.cend(); ++i){
 		deleteList(*i);
 	}
 	l.clear();
@@ -49,7 +49,7 @@ void deleteList(std::vector<std::vector<T*> >& l){
 
 template<class T, class K>
 void deleteList(std::map<K, T*>& l){
-	for(auto i=l.begin(); i!=l.end(); ++i){
+	for(auto i=l.cbegin(); i!=l.cend(); ++i){
 		if((*i).second!=NULL){
 			delete((*i).second);
 		}
@@ -59,9 +59,9 @@ void deleteList(std::map<K, T*>& l){
 
 template<class T, class K>
 void deleteList(std::map<K, std::map<K, std::vector<T*> > >& l){
-	for(auto i=l.begin(); i!=l.end(); ++i){
-		for(auto j=(*i).second.begin(); j!=(*i).second.end(); ++j){
-			for(auto k=(*j).second.begin(); k!=(*j).second.end(); ++k){
+	for(auto i=l.cbegin(); i!=l.cend(); ++i){
+		for(auto j=(*i).second.cbegin(); j!=(*i).second.cend(); ++j){
+			for(auto k=(*j).second.cbegin(); k!=(*j).second.cend(); ++k){
 				if((*k).second!=NULL){
 					delete((*k).second);
 				}
@@ -73,7 +73,7 @@ void deleteList(std::map<K, std::map<K, std::vector<T*> > >& l){
 
 template<class List, class Elem>
 bool contains(const List& l, const Elem& e){
-	return l.find(e)!=l.end();
+	return l.find(e)!=l.cend();
 }
 
 template<class T>

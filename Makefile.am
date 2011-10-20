@@ -102,7 +102,8 @@ grounder_SOURCES = \
 		commands/removenesting.hpp\
 		commands/simplify.hpp\
 		commands/createrange.hpp\
-		commands/tablesize.hpp
+		commands/tablesize.hpp\
+		PropagatorFactory.hpp PropagatorFactory.cpp
 		
 gidl_SOURCES = main.cpp $(grounder_SOURCES)
 

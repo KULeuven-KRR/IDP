@@ -29,7 +29,7 @@ const FOBDD* SymbolicStructure::evaluate(Formula* f, QueryType type) {
 }
 
 void SymbolicStructure::visit(const PredForm* atom) {
-	if(_ctbounds.find(atom->symbol()) == _ctbounds.end()) {
+	if(_ctbounds.find(atom->symbol()) == _ctbounds.cend()) {
 		FOBDDFactory factory(_manager);
 		const FOBDD* bdd = factory.run(atom);
 		if(_type == QT_CF || _type == QT_PF) bdd = _manager->negation(bdd);
@@ -62,7 +62,7 @@ void SymbolicStructure::visit(const BoolForm* boolform) {
 	if(conjunction) currbdd = _manager->truebdd();
 	else currbdd = _manager->falsebdd();
 	
-	for(auto it = boolform->subformulas().begin(); it != boolform->subformulas().end(); ++it) {
+	for(auto it = boolform->subformulas().cbegin(); it != boolform->subformulas().cend(); ++it) {
 		const FOBDD* newbdd = evaluate(*it,rectype);
 		currbdd = conjunction ? _manager->conjunction(currbdd,newbdd) : _manager->disjunction(currbdd,newbdd);
 	}
@@ -99,10 +99,10 @@ void SymbolicStructure::visit(const AggForm*) {
 }
 
 ostream& SymbolicStructure::put(ostream& output) const {
-	for(map<PFSymbol*,vector<const FOBDDVariable*> >::const_iterator it = _vars.begin(); it != _vars.end(); ++it) {
+	for(auto it = _vars.cbegin(); it != _vars.cend(); ++it) {
 		output << "   "; (it->first)->put(output); output << endl;
 		output << "      vars:";
-		for(auto jt = it->second.begin(); jt != it->second.end(); ++jt) {
+		for(auto jt = it->second.cbegin(); jt != it->second.cend(); ++jt) {
 			output << ' ';
 			_manager->put(output,*jt);
 		}
@@ -121,7 +121,7 @@ const FOBDD* SymbolicStructure::prunebdd(const FOBDD* bdd, const vector<const FO
 cerr << "filtering the bdd\n";
 _manager->put(cerr,bdd);
 cerr << "input variables are";
-for(auto it = bddvars.begin(); it != bddvars.end(); ++it) cerr << ' ' << *((*it)->variable());
+for(auto it = bddvars.cbegin(); it != bddvars.cend(); ++it) cerr << ' ' << *((*it)->variable());
 cerr << endl;
 
 		// 1. Optimize the query
@@ -129,7 +129,7 @@ cerr << endl;
 		const FOBDD* copybdd = optimizemanager.getBDD(bdd,_manager);
 		set<const FOBDDVariable*> copyvars;
 		set<const FOBDDDeBruijnIndex*> indices;
-		for(auto it = bddvars.begin(); it != bddvars.end(); ++it) 
+		for(auto it = bddvars.cbegin(); it != bddvars.cend(); ++it) 
 			copyvars.insert(optimizemanager.getVariable((*it)->variable()));
 		optimizemanager.optimizequery(copybdd,copyvars,indices,structure);
 

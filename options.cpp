@@ -99,7 +99,7 @@ void OptionPolicy<EnumType, ValueType>::createOption(EnumType type, const std::s
 
 template<class EnumType, class ValueType>
 void OptionPolicy<EnumType, ValueType>::copyValues(Options* opts){
-	for(auto i=_options.begin(); i<_options.end(); ++i){
+	for(auto i=_options.cbegin(); i<_options.cend(); ++i){
 		(*i)->setValue(opts->getValue((*i)->getType()));
 	}
 }
@@ -119,7 +119,7 @@ std::string EnumeratedOption<BoolType, bool>::printOption() const {
 
 	ss <<"\n\t\t => one of [";
 	bool begin = true;
-	for(auto i=getAllowedValues().begin(); i!=getAllowedValues().end(); ++i){
+	for(auto i=getAllowedValues().cbegin(); i!=getAllowedValues().cend(); ++i){
 		if(not begin){
 			ss <<", ";
 		}
@@ -136,7 +136,7 @@ std::string EnumeratedOption<EnumType, ConcreteType>::printOption() const {
 
 	ss <<"\n\t\t => one of [";
 	bool begin = true;
-	for(auto i=getAllowedValues().begin(); i!=getAllowedValues().end(); ++i){
+	for(auto i=getAllowedValues().cbegin(); i!=getAllowedValues().cend(); ++i){
 		if(not begin){
 			ss <<", ";
 		}
@@ -195,7 +195,7 @@ void Options::copyValues(Options* opts) {
 
 template<class OptionList, class StringList>
 void getStringFromOption(const OptionList& list, StringList& newlist){
-	for(auto it = list.begin(); it != list.end(); ++it) {
+	for(auto it = list.cbegin(); it != list.cend(); ++it) {
 		stringstream ss;
 		ss << (*it)->getName() << " = " << (*it)->getValue();
 		newlist.push_back(ss.str());
@@ -210,7 +210,7 @@ ostream& Options::put(ostream& output) const {
 	DoublePol::addOptionStrings(optionslines);
 
 	sort(optionslines.begin(), optionslines.end());
-	for(auto i=optionslines.begin(); i<optionslines.end(); ++i){
+	for(auto i=optionslines.cbegin(); i<optionslines.cend(); ++i){
 		output <<*i <<"\n";
 	}
 

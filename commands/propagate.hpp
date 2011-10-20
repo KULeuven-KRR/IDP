@@ -15,6 +15,7 @@
 #include "structure.hpp"
 #include "commandinterface.hpp"
 #include "monitors/propagatemonitor.hpp"
+#include "PropagatorFactory.hpp"
 
 #include "groundtheories/AbstractGroundTheory.hpp"
 #include "groundtheories/SolverPolicy.hpp"
@@ -43,21 +44,13 @@ class PropagateInference: public Inference {
 			return InternalArgument(result);
 		}
 
-		FOPropagator* createPropagator(AbstractTheory* theory, const std::map<PFSymbol*,InitBoundType> mpi, Options* options) const {
-			FOPropBDDDomainFactory* domainfactory = new FOPropBDDDomainFactory();
-			FOPropScheduler* scheduler = new FOPropScheduler();
-			FOPropagatorFactory propfactory(domainfactory,scheduler,true,mpi,options);
-			FOPropagator* propagator = propfactory.create(theory);
-			return propagator;
-		}
-
 		/** Collect symbolic propagation vocabulary **/
 		std::map<PFSymbol*,InitBoundType> propagateVocabulary(AbstractTheory* theory, AbstractStructure* structure) const {
 			std::map<PFSymbol*,InitBoundType> mpi;
 			Vocabulary* v = theory->vocabulary();
 			for(auto it = v->firstPred(); it != v->lastPred(); ++it) {
 				auto spi = it->second->nonbuiltins();
-				for(auto jt = spi.begin(); jt != spi.end(); ++jt) {
+				for(auto jt = spi.cbegin(); jt != spi.cend(); ++jt) {
 					if(structure->vocabulary()->contains(*jt)) {
 						PredInter* pinter = structure->inter(*jt);
 						if(pinter->approxTwoValued()) { mpi[*jt] = IBT_TWOVAL; }
@@ -75,7 +68,7 @@ class PropagateInference: public Inference {
 			}
 			for(auto it = v->firstFunc(); it != v->lastFunc(); ++it) {
 				auto sfi = it->second->nonbuiltins();
-				for(auto jt = sfi.begin(); jt != sfi.end(); ++jt) {
+				for(auto jt = sfi.cbegin(); jt != sfi.cend(); ++jt) {
 					if(structure->vocabulary()->contains(*jt)) {
 						FuncInter* finter = structure->inter(*jt);
 						if(finter->approxTwoValued()) { mpi[*jt] = IBT_TWOVAL; }
@@ -135,7 +128,7 @@ class GroundPropagateInference : public Inference {
 
 			GroundTranslator* translator = grounding->translator();
 			AbstractStructure* result = structure->clone();
-			for(auto literal = monitor->model().begin(); literal != monitor->model().end(); ++literal) {
+			for(auto literal = monitor->model().cbegin(); literal != monitor->model().cend(); ++literal) {
 				int atomnr = literal->getAtom().getValue();
 
 				if(translator->isInputAtom(atomnr)) {
@@ -202,16 +195,16 @@ class OptimalPropagateInference : public Inference {
 			std::set<int> intersection;
 			if(abstractsolutions->getModels().empty()) { return nilarg(); }
 			else { // Take the intersection of all models
-				MinisatID::Model* firstmodel = *(abstractsolutions->getModels().begin());
-				for(auto it = firstmodel->literalinterpretations.begin(); 
-					it != firstmodel->literalinterpretations.end(); ++it) {
+				MinisatID::Model* firstmodel = *(abstractsolutions->getModels().cbegin());
+				for(auto it = firstmodel->literalinterpretations.cbegin(); 
+					it != firstmodel->literalinterpretations.cend(); ++it) {
 					intersection.insert(it->getValue());
 				}
-				for(auto currmodel = (abstractsolutions->getModels().begin()); 
-					currmodel != abstractsolutions->getModels().end(); ++currmodel) {
-					for(auto it = (*currmodel)->literalinterpretations.begin(); 
-						it != (*currmodel)->literalinterpretations.end(); ++it) {
-						if(intersection.find(it->getValue()) == intersection.end()) {
+				for(auto currmodel = (abstractsolutions->getModels().cbegin()); 
+					currmodel != abstractsolutions->getModels().cend(); ++currmodel) {
+					for(auto it = (*currmodel)->literalinterpretations.cbegin(); 
+						it != (*currmodel)->literalinterpretations.cend(); ++it) {
+						if(intersection.find(it->getValue()) == intersection.cend()) {
 							intersection.erase((-1) * it->getValue());
 						}
 					}
@@ -220,7 +213,7 @@ class OptimalPropagateInference : public Inference {
 
 			GroundTranslator* translator = grounding->translator();
 			AbstractStructure* result = structure->clone();
-			for(auto literal = intersection.begin(); literal != intersection.end(); ++literal) {
+			for(auto literal = intersection.cbegin(); literal != intersection.cend(); ++literal) {
 				int atomnr = (*literal > 0) ? *literal : (-1) * (*literal);
 				if(translator->isInputAtom(atomnr)) {
 					PFSymbol* symbol = translator->getSymbol(atomnr);

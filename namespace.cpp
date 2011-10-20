@@ -29,17 +29,17 @@ Namespace::~Namespace() {
 	if(this==_global){
 		_global = NULL;
 	}
-	for(auto it = _subspaces.begin(); it != _subspaces.end(); ++it)
+	for(auto it = _subspaces.cbegin(); it != _subspaces.cend(); ++it)
 		delete(it->second);
-	for(auto it = _structures.begin(); it != _structures.end(); ++it)
+	for(auto it = _structures.cbegin(); it != _structures.cend(); ++it)
 		delete(it->second);
-	for(auto it = _theories.begin(); it != _theories.end(); ++it)
+	for(auto it = _theories.cbegin(); it != _theories.cend(); ++it)
 		it->second->recursiveDelete();
-	for(auto it = _options.begin(); it != _options.end(); ++it)
+	for(auto it = _options.cbegin(); it != _options.cend(); ++it)
 		delete(it->second);
-	for(auto it = _procedures.begin(); it != _procedures.end(); ++it)
+	for(auto it = _procedures.cbegin(); it != _procedures.cend(); ++it)
 		delete(it->second);
-	for(auto it = _vocabularies.begin(); it != _vocabularies.end(); ++it)
+	for(auto it = _vocabularies.cbegin(); it != _vocabularies.cend(); ++it)
 		delete(it->second);
 }
 
@@ -53,35 +53,35 @@ void Namespace::add(const string& name, Query* f)	{ _queries[name] = f;	}
 void Namespace::add(const string& name, Term* t)	{ _terms[name] = t;		}
 
 bool Namespace::isSubspace(const string& sn) const {
-	return (_subspaces.find(sn) != _subspaces.end());
+	return (_subspaces.find(sn) != _subspaces.cend());
 }
 
 bool Namespace::isVocab(const string& vn) const {
-	return (_vocabularies.find(vn) != _vocabularies.end());
+	return (_vocabularies.find(vn) != _vocabularies.cend());
 }
 
 bool Namespace::isQuery(const string& fn) const {
-	return (_queries.find(fn) != _queries.end());
+	return (_queries.find(fn) != _queries.cend());
 }
 
 bool Namespace::isTerm(const string& tn) const {
-	return (_terms.find(tn) != _terms.end());
+	return (_terms.find(tn) != _terms.cend());
 }
 
 bool Namespace::isTheory(const string& tn) const {
-	return (_theories.find(tn) != _theories.end());
+	return (_theories.find(tn) != _theories.cend());
 }
 
 bool Namespace::isStructure(const string& sn) const {
-	return (_structures.find(sn) != _structures.end());
+	return (_structures.find(sn) != _structures.cend());
 }
 
 bool Namespace::isOptions(const string& on) const {
-	return (_options.find(on) != _options.end());
+	return (_options.find(on) != _options.cend());
 }
 
 bool Namespace::isProc(const string& lp) const {
-	return (_procedures.find(lp) != _procedures.end());
+	return (_procedures.find(lp) != _procedures.cend());
 }
 
 Namespace* Namespace::subspace(const string& sn) const {

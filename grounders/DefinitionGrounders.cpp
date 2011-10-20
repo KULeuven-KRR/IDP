@@ -30,7 +30,7 @@ DefinitionGrounder::DefinitionGrounder(AbstractGroundTheory* gt, std::vector<Rul
 }
 
 bool DefinitionGrounder::run() const {
-	for(auto grounder = _subgrounders.begin(); grounder<_subgrounders.end(); ++grounder){
+	for(auto grounder = _subgrounders.cbegin(); grounder<_subgrounders.cend(); ++grounder){
 		(*grounder)->run(id(), _grounddefinition);
 	}
 	_grounding->add(_grounddefinition); // FIXME check how it is handled in the lazy part
@@ -129,6 +129,7 @@ dominstlist LazyRuleGrounder::createInst(const ElementTuple& headargs){
 
 	// set the variable instantiations
 	for(uint i=0; i<headargs.size(); ++i){
+		// FIXME what if it is not a VarTermGrounder! (e.g. if it is a constant => we should check whether it can unify with it)
 		assert(typeid(*headgrounder()->subtermgrounders()[i])==typeid(VarTermGrounder));
 		auto var = (dynamic_cast<VarTermGrounder*>(headgrounder()->subtermgrounders()[i]))->getElement();
 		domlist.push_back(dominst(var, headargs[i]));
@@ -136,8 +137,9 @@ dominstlist LazyRuleGrounder::createInst(const ElementTuple& headargs){
 	return domlist;
 }
 
-void LazyRuleGrounder::notify(const Lit& lit, const ElementTuple& headargs){
-	grounding()->polNotifyDefined(lit, headargs, this);
+void LazyRuleGrounder::notify(const Lit& lit, const ElementTuple& headargs, const std::vector<LazyRuleGrounder*>& grounders){
+	// FIXME do this for all grounders with the same grounding (which should be all, is other TODO?)?
+	grounding()->polNotifyDefined(lit, headargs, grounders);
 }
 
 void LazyRuleGrounder::ground(const Lit& head, const ElementTuple& headargs){

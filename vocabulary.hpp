@@ -583,12 +583,12 @@ class Vocabulary {
 		std::map<std::string,Predicate*>::iterator			lastPred()	{ return _name2pred.end();		}
 		std::map<std::string,Function*>::iterator			lastFunc()	{ return _name2func.end();		}
 
-		std::map<std::string,std::set<Sort*> >::const_iterator	firstSort()	const { return _name2sort.begin();	}
-		std::map<std::string,Predicate*>::const_iterator		firstPred()	const { return _name2pred.begin();	}
-		std::map<std::string,Function*>::const_iterator			firstFunc()	const { return _name2func.begin();	}
-		std::map<std::string,std::set<Sort*> >::const_iterator	lastSort()	const { return _name2sort.end();	}
-		std::map<std::string,Predicate*>::const_iterator		lastPred()	const { return _name2pred.end();	}
-		std::map<std::string,Function*>::const_iterator			lastFunc()	const { return _name2func.end();	}
+		std::map<std::string,std::set<Sort*> >::const_iterator	firstSort()	const { return _name2sort.cbegin();	}
+		std::map<std::string,Predicate*>::const_iterator		firstPred()	const { return _name2pred.cbegin();	}
+		std::map<std::string,Function*>::const_iterator			firstFunc()	const { return _name2func.cbegin();	}
+		std::map<std::string,std::set<Sort*> >::const_iterator	lastSort()	const { return _name2sort.cend();	}
+		std::map<std::string,Predicate*>::const_iterator		lastPred()	const { return _name2pred.cend();	}
+		std::map<std::string,Function*>::const_iterator			lastFunc()	const { return _name2func.cend();	}
 
 		const std::set<Sort*>*	sort(const std::string&)	const;	
 			//!< return the sorts with the given name

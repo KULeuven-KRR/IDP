@@ -216,15 +216,16 @@ class StringPointers {
 };
 
 StringPointers::~StringPointers() {
-	for(MSSP::iterator it = _sharedstrings.begin(); it != _sharedstrings.end(); ++it) {
+	for(auto it = _sharedstrings.begin(); it != _sharedstrings.end(); ++it) {
 		delete(it->second);
 	}
 }
 
 string* StringPointers::stringpointer(const string& s) {
 	MSSP::iterator it = _sharedstrings.find(s);
-	if(it != _sharedstrings.end()) return it->second;
-	else {
+	if(it != _sharedstrings.end()){
+		return it->second;
+	} else {
 		string* sp = new string(s);
 		_sharedstrings[s] = sp;
 		return sp;

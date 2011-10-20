@@ -29,7 +29,7 @@ AggGroundRule::AggGroundRule(int head, AggTsBody* body, bool rec)
 GroundDefinition* GroundDefinition::clone() const {
 	assert(false); //TODO
 	GroundDefinition* newdef = new GroundDefinition(_id, _translator);
-//	for(ruleit = _rules.begin(); ruleit != _rules.end(); ++ruleit)
+//	for(ruleit = _rules.cbegin(); ruleit != _rules.cend(); ++ruleit)
 		//TODO clone rules...	
 	return newdef;
 }
@@ -54,7 +54,7 @@ void GroundDefinition::addPCRule(int head, const vector<int>& body, bool conj, b
 	// Search for a rule with the same head
 	map<int,GroundRule*>::iterator it = _rules.find(head);
 
-	if(it == _rules.end()) { // There is not yet a rule with the same head
+	if(it == _rules.cend()) { // There is not yet a rule with the same head
 		_rules[head] = new PCGroundRule(head, (conj ? RT_CONJ : RT_DISJ), body, recursive);
 	} else if((it->second)->isFalse()) { // The existing rule is false
 		PCGroundRule* grb = dynamic_cast<PCGroundRule*>(it->second);
@@ -141,7 +141,7 @@ void GroundDefinition::addAggRule(int head, int setnr, AggFunction aggtype, bool
 	// Check if there exists a rule with the same head
 	map<int,GroundRule*>::iterator it = _rules.find(head);
 
-	if(it == _rules.end()) {
+	if(it == _rules.cend()) {
 		_rules[head] = new AggGroundRule(head, setnr,aggtype,lower,bound,recursive);
 	}
 	else if((it->second)->isFalse()) {
@@ -188,7 +188,7 @@ void GroundDefinition::addAggRule(int head, int setnr, AggFunction aggtype, bool
 
 ostream& GroundDefinition::put(ostream& s, bool longnames, unsigned int) const {
 	s << "{\n";
-	for(auto it = _rules.begin(); it != _rules.end(); ++it) {
+	for(auto it = _rules.cbegin(); it != _rules.cend(); ++it) {
 		s << _translator->printAtom((*it).second->head(),longnames) << " <- ";
 		auto body = (*it).second;
 		if(body->type() == RT_AGG) {

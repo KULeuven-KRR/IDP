@@ -154,10 +154,10 @@ public:
 		// Turn functions into predicates (for partial function support)
 		TheoryUtils::removeNesting(axioms);
 		TheoryUtils::removeNesting(conjectures);
-		for(auto it = axioms->sentences().begin(); it != axioms->sentences().end(); ++it) {
+		for(auto it = axioms->sentences().cbegin(); it != axioms->sentences().cend(); ++it) {
 			FormulaUtils::graphFunctions(*it);
 		}
-		for(auto it = conjectures->sentences().begin(); it != conjectures->sentences().end(); ++it) {
+		for(auto it = conjectures->sentences().cbegin(); it != conjectures->sentences().cend(); ++it) {
 		 	FormulaUtils::graphFunctions(*it);
 		}
 		

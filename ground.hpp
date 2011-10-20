@@ -292,8 +292,7 @@ private:
 	std::vector<SymbolAndTuple*>	atom2Tuple;	// Pointers manager by the translator!
 	std::vector<tspair>				atom2TsBody; // Pointers manager by the translator!
 
-	//FIXME moet een vector worden! (als er meer dan 1 rule per head kan zijn)
-	std::map<uint, LazyRuleGrounder*> symbol2rulegrounder; // map a symbol to a rulegrounder if the symbol is defined
+	std::map<uint, std::vector<LazyRuleGrounder*> > symbol2rulegrounder; // map a symbol to the rulegrounders in which the symbol occurs as a head
 
 	std::queue<int>		_freenumbers;		// keeps atom numbers that were freed and can be used again
 	std::queue<int>		_freesetnumbers;	// keeps set numbers that were freed and can be used again

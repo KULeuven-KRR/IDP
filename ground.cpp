@@ -277,7 +277,7 @@ bool CPBound::operator<(const CPBound& rhs) const{
 
 GroundTranslator::~GroundTranslator() {
 	deleteList<SymbolAndTuple>(atom2Tuple);
-	for(auto i = atom2TsBody.begin(); i < atom2TsBody.end(); ++i){
+	for(auto i = atom2TsBody.cbegin(); i < atom2TsBody.cend(); ++i){
 		delete((*i).second);
 	}
 }
@@ -285,7 +285,7 @@ GroundTranslator::~GroundTranslator() {
 Lit GroundTranslator::translate(unsigned int n, const ElementTuple& args) {
 	Lit lit = 0;
 	auto jt = symbols[n].tuple2atom.lower_bound(args);
-	if(jt != symbols[n].tuple2atom.end() && jt->first == args) {
+	if(jt != symbols[n].tuple2atom.cend() && jt->first == args) {
 		lit = jt->second;
 	} else {
 		lit = nextNumber(AtomType::INPUT);
@@ -293,9 +293,9 @@ Lit GroundTranslator::translate(unsigned int n, const ElementTuple& args) {
 		atom2Tuple[lit] = new SymbolAndTuple(symbols[n].symbol, args);
 
 		// FIXME expensive operation to do so often!
-		auto ruleit = symbol2rulegrounder.find(n);
-		if(ruleit!=symbol2rulegrounder.end()){
-			ruleit->second->notify(lit, args);
+		auto rulesit = symbol2rulegrounder.find(n);
+		if(rulesit!=symbol2rulegrounder.cend() && rulesit->second.size()>0){
+			(*rulesit->second.cbegin())->notify(lit, args, rulesit->second);
 		}
 	}
 
@@ -323,7 +323,7 @@ Lit GroundTranslator::addTseitinBody(TsBody* tsbody){
 // FIXME optimization: check whether the same comparison has already been added and reuse the tseitin.
 /*	auto it = _tsbodies2nr.lower_bound(tsbody);
 
-	if(it != _tsbodies2nr.end() && *(it->first) == *tsbody) { // Already exists
+	if(it != _tsbodies2nr.cend() && *(it->first) == *tsbody) { // Already exists
 		delete tsbody;
 		return it->second;
 	}*/
@@ -334,9 +334,17 @@ Lit GroundTranslator::addTseitinBody(TsBody* tsbody){
 }
 
 void GroundTranslator::notifyDefined(PFSymbol* pfs, LazyRuleGrounder* const grounder){
-	if(symbol2rulegrounder.find(addSymbol(pfs))==symbol2rulegrounder.end()){
-		symbol2rulegrounder.insert(pair<uint, LazyRuleGrounder*>(addSymbol(pfs), grounder));
+	int symbolnumber = addSymbol(pfs);
+	auto it = symbol2rulegrounder.find(symbolnumber);
+	if(symbol2rulegrounder.find(symbolnumber)==symbol2rulegrounder.cend()){
+		it = symbol2rulegrounder.insert(pair<uint, std::vector<LazyRuleGrounder*> >(symbolnumber, {})).first;
 	}
+	for(auto grounderit = it->second.cbegin(); grounderit<it->second.cend(); ++grounderit){
+		if(grounder==*grounderit){
+			return;
+		}
+	}
+	it->second.push_back(grounder);
 }
 
 void GroundTranslator::translate(LazyQuantGrounder const* const lazygrounder, ResidualAndFreeInst* instance, TsType tstype) {
@@ -370,8 +378,8 @@ Lit GroundTranslator::translate(CPTerm* left, CompType comp, const CPBound& righ
 	CPTsBody* tsbody = new CPTsBody(tstype,left,comp,right);
 	// FIXME optimization: check whether the same comparison has already been added and reuse the tseitin.
 	// => this should be generalized to sharing detection!
-/*	auto it = lower_bound(atom2TsBody.begin(), atom2TsBody.end(), tspair(0,tsbody), compareTsPair);
-	if(it != atom2TsBody.end() && (*it).second == *tsbody) {
+/*	auto it = lower_bound(atom2TsBody.cbegin(), atom2TsBody.cend(), tspair(0,tsbody), compareTsPair);
+	if(it != atom2TsBody.cend() && (*it).second == *tsbody) {
 		delete tsbody;
 		return (*it).first;
 	}
@@ -447,7 +455,7 @@ string GroundTranslator::printAtom(const Lit& atom, bool longnames) const {
 			if(not tuples.empty()) {
 				s << "(";
 				bool begin = true;
-				for(auto i = tuples.begin(); i!=tuples.end(); ++i){
+				for(auto i = tuples.cbegin(); i!=tuples.cend(); ++i){
 					if(not begin){ s <<", "; }
 					begin = false;
 					s << (*i)->toString();
@@ -488,7 +496,7 @@ bool operator<(const GroundTerm& a, const GroundTerm& b) {
 
 VarId GroundTermTranslator::translate(size_t offset, const vector<GroundTerm>& args) {
 	map<vector<GroundTerm>,VarId>::iterator it = _functerm2varid_table[offset].lower_bound(args);
-	if(it != _functerm2varid_table[offset].end() && it->first == args) {
+	if(it != _functerm2varid_table[offset].cend() && it->first == args) {
 		return it->second;
 	}
 	else {
@@ -543,7 +551,7 @@ size_t GroundTermTranslator::nextNumber() {
 
 size_t GroundTermTranslator::addFunction(Function* func) {
 	map<Function*,size_t>::const_iterator found = _function2offset.find(func);
-	if(found != _function2offset.end()) {
+	if(found != _function2offset.cend()) {
 		// Simply return number when function is already known
 		return found->second;
 	}
@@ -565,13 +573,13 @@ string GroundTermTranslator::printTerm(const VarId& varid, bool longnames) const
 		s << func->toString(longnames);
 		if(not args(varid).empty()) {
 			s << "(";
-			for(auto gtit = args(varid).begin(); gtit != args(varid).end(); ++gtit) {
+			for(auto gtit = args(varid).cbegin(); gtit != args(varid).cend(); ++gtit) {
 				if((*gtit)._isvarid) {
 					s << printTerm((*gtit)._varid,longnames);
 				} else {
 					s << (*gtit)._domelement->toString();
 				}
-				if(gtit != args(varid).end()-1) { s << ","; }
+				if(gtit != args(varid).cend()-1) { s << ","; }
 			}
 			s << ")";
 		}
@@ -678,7 +686,7 @@ GrounderFactory::GrounderFactory(AbstractStructure* structure, Options* opts, Sy
 		Vocabulary* vocabulary = structure->vocabulary();
 		for(auto it = vocabulary->firstPred(); it != vocabulary->lastPred(); ++it) {
 			set<Predicate*> sp = it->second->nonbuiltins();
-			for(auto jt = sp.begin(); jt != sp.end(); ++jt) {
+			for(auto jt = sp.cbegin(); jt != sp.cend(); ++jt) {
 				PredInter* pinter = structure->inter(*jt);
 				if(not pinter->approxTwoValued()) {
 					vector<Variable*> pvars = VarUtils::makeNewVariables((*jt)->sorts());
@@ -698,7 +706,7 @@ GrounderFactory::GrounderFactory(AbstractStructure* structure, Options* opts, Sy
 		}
 		for(auto it = vocabulary->firstFunc(); it != vocabulary->lastFunc(); ++it) {
 			set<Function*> sf = it->second->nonbuiltins();
-			for(auto jt = sf.begin(); jt != sf.end(); ++jt) {
+			for(auto jt = sf.cbegin(); jt != sf.cend(); ++jt) {
 				PredInter* pinter = structure->inter(*jt)->graphInter();
 				if(not pinter->approxTwoValued()) {
 					vector<Variable*> pvars = VarUtils::makeNewVariables((*jt)->sorts());
@@ -728,20 +736,20 @@ GrounderFactory::GrounderFactory(AbstractStructure* structure, Options* opts, Sy
 
 set<const PFSymbol*> GrounderFactory::findCPSymbols(const AbstractTheory* theory) {
 	Vocabulary* vocabulary = theory->vocabulary();
-//	for(map<string,Predicate*>::const_iterator predit = vocabulary->firstpred(); predit != vocabulary->lastpred(); ++predit) {
+//	for(auto predit = vocabulary->firstpred(); predit != vocabulary->lastpred(); ++predit) {
 //		Predicate* predicate = predit->second;
 //		if(VocabularyUtils::isComparisonPredicate(predicate)) {
 //			_cpsymbols.insert(predicate);
 //		}
 //	}
-	for(map<string,Function*>::const_iterator funcit = vocabulary->firstFunc(); funcit != vocabulary->lastFunc(); ++funcit) {
+	for(auto funcit = vocabulary->firstFunc(); funcit != vocabulary->lastFunc(); ++funcit) {
 		Function* function = funcit->second;
 		bool passtocp = false;
 		// Check whether the (user-defined) function's outsort is over integers
 		Sort* intsort = *(vocabulary->sort("int")->begin());
 		if(function->overloaded()) {
 			set<Function*> nonbuiltins = function->nonbuiltins();
-			for(set<Function*>::const_iterator nbfit = nonbuiltins.begin(); nbfit != nonbuiltins.end(); ++nbfit) {
+			for(auto nbfit = nonbuiltins.cbegin(); nbfit != nonbuiltins.cend(); ++nbfit) {
 				passtocp = (SortUtils::resolve(function->outsort(),intsort,vocabulary) == intsort);
 			}
 		} else if(not function->builtin()) {
@@ -751,7 +759,7 @@ set<const PFSymbol*> GrounderFactory::findCPSymbols(const AbstractTheory* theory
 	}
 	if(_verbosity > 1) {
 		clog << "User-defined symbols that can be handled by the constraint solver: ";
-		for(set<const PFSymbol*>::const_iterator it = _cpsymbols.begin(); it != _cpsymbols.end(); ++it) {
+		for(auto it = _cpsymbols.cbegin(); it != _cpsymbols.cend(); ++it) {
 			clog << (*it)->toString(false) << " "; // TODO longnames?
 		}
 		clog << "\n";
@@ -760,7 +768,7 @@ set<const PFSymbol*> GrounderFactory::findCPSymbols(const AbstractTheory* theory
 }
 
 bool GrounderFactory::isCPSymbol(const PFSymbol* symbol) const {
-	return VocabularyUtils::isComparisonPredicate(symbol) || (_cpsymbols.find(symbol) != _cpsymbols.end());
+	return VocabularyUtils::isComparisonPredicate(symbol) || (_cpsymbols.find(symbol) != _cpsymbols.cend());
 }
 
 /**
@@ -769,7 +777,7 @@ bool GrounderFactory::isCPSymbol(const PFSymbol* symbol) const {
  * 		Finds out whether a formula contains recursively defined symbols.
  */
 bool GrounderFactory::recursive(const Formula* f) {
-	for(set<PFSymbol*>::const_iterator it = _context._defined.begin(); it != _context._defined.end(); ++it) {
+	for(auto it = _context._defined.cbegin(); it != _context._defined.cend(); ++it) {
 		if(f->contains(*it)) { return true; }
 	}
 	return false;
@@ -989,7 +997,7 @@ void GrounderFactory::visit(const AbstractGroundTheory* ecnf) {
 void GrounderFactory::visit(const Theory* theory) {
 	// Collect all components (sentences, definitions, and fixpoint definitions) of the theory
 	set<TheoryComponent*> tcomps = theory->components();
-	vector<TheoryComponent*> components(tcomps.begin(),tcomps.end());
+	vector<TheoryComponent*> components(tcomps.cbegin(),tcomps.cend());
 
 	// Order components the components to optimize the grounding process
 	// TODO
@@ -1090,7 +1098,7 @@ void GrounderFactory::visit(const PredForm* pf) {
 				vector<Sort*> checksorts;
 				vector<const DomElemContainer*> checkargs;
 				vector<SortTable*> tables;
-				for(auto it = newpf->subterms().begin(); it != newpf->subterms().end(); ++it) {
+				for(auto it = newpf->subterms().cbegin(); it != newpf->subterms().cend(); ++it) {
 					checksorts.push_back((*it)->sort());
 					checkargs.push_back(new const DomElemContainer());
 					tables.push_back(_structure->inter((*it)->sort()));
@@ -1108,8 +1116,10 @@ void GrounderFactory::visit(const PredForm* pf) {
 					possbdd = _symstructure->evaluate(checkpf,QT_PF);
 					certbdd = _symstructure->evaluate(checkpf,QT_CF); 
 				}
-				PredTable* posstable = new PredTable(new BDDInternalPredTable(possbdd,_symstructure->manager(),fovars,_structure),Universe(tables));
-				PredTable* certtable = new PredTable(new BDDInternalPredTable(certbdd,_symstructure->manager(),fovars,_structure),Universe(tables));
+				//FIXME restore: PredTable* posstable = new PredTable(new BDDInternalPredTable(possbdd,_symstructure->manager(),fovars,_structure),Universe(tables));
+				//FIXME restore: PredTable* certtable = new PredTable(new BDDInternalPredTable(certbdd,_symstructure->manager(),fovars,_structure),Universe(tables));
+				PredTable* posstable = new PredTable(new FullInternalPredTable(),Universe(tables));
+				PredTable* certtable = new PredTable(new InverseInternalPredTable(new FullInternalPredTable()),Universe(tables));
 				InstGenerator* possch = GeneratorFactory::create(posstable,vector<bool>(checkargs.size(),true),checkargs,Universe(tables));
 				InstGenerator* certainch = GeneratorFactory::create(certtable,vector<bool>(checkargs.size(),true),checkargs,Universe(tables));
 				// Create the grounder
@@ -1149,13 +1159,13 @@ void GrounderFactory::visit(const BoolForm* bf) {
 		if(not newbf->conj()) {
 			newbf->conj(true);
 			newbf->negate();
-			for(vector<Formula*>::const_iterator it = newbf->subformulas().begin(); it != newbf->subformulas().end(); ++it) {
+			for(auto it = newbf->subformulas().cbegin(); it != newbf->subformulas().cend(); ++it) {
 				(*it)->negate();
 			}
 		}
 		// Visit the subformulas
 		vector<TopLevelGrounder*> sub;
-		for(vector<Formula*>::const_iterator it = newbf->subformulas().begin(); it != newbf->subformulas().end(); ++it) {
+		for(auto it = newbf->subformulas().cbegin(); it != newbf->subformulas().cend(); ++it) {
 			descend(*it);
 			sub.push_back(_toplevelgrounder);
 		}
@@ -1167,7 +1177,7 @@ void GrounderFactory::visit(const BoolForm* bf) {
 		SaveContext();
 		DeeperContext(bf->sign());
 		vector<FormulaGrounder*> sub;
-		for(vector<Formula*>::const_iterator it = bf->subformulas().begin(); it != bf->subformulas().end(); ++it) {
+		for(auto it = bf->subformulas().cbegin(); it != bf->subformulas().cend(); ++it) {
 			descend(*it);
 			sub.push_back(_formgrounder);
 		}
@@ -1187,7 +1197,7 @@ void GrounderFactory::visit(const BoolForm* bf) {
 
 const DomElemContainer* GrounderFactory::createVarMapping(Variable * const var){
 	const DomElemContainer* d = new DomElemContainer();
-	assert(varmapping().find(var)==varmapping().end());
+	assert(varmapping().find(var)==varmapping().cend());
 	_varmapping[var] = d;
 	return d;
 }
@@ -1219,7 +1229,7 @@ void GrounderFactory::visit(const QuantForm* qf) {
 	vector<SortTable*>	tables;
 
 	// Check for infinite grounding
-	for(auto it=tables.begin(); it<tables.end(); ++it){
+	for(auto it=tables.cbegin(); it<tables.cend(); ++it){
 		if(not (*it)->finite()) {
 			cerr << "Warning: infinite grounding of formula ";
 			if(qf->pi().original()) {
@@ -1235,9 +1245,9 @@ void GrounderFactory::visit(const QuantForm* qf) {
 	vector<Variable*> fovars;
 	vector<Variable*> optivars;
 	vector<bool> pattern;
-	for(std::set<Variable*>::const_iterator it = movedformula->freeVars().begin(); it != movedformula->freeVars().end(); ++it) {
-		if(qf->quantVars().find(*it) == qf->quantVars().end()) {
-			assert(_varmapping.find(*it) != _varmapping.end());
+	for(auto it = movedformula->freeVars().cbegin(); it != movedformula->freeVars().cend(); ++it) {
+		if(qf->quantVars().find(*it) == qf->quantVars().cend()) {
+			assert(_varmapping.find(*it) != _varmapping.cend());
 			vars.push_back(_varmapping[*it]);
 			pattern.push_back(true);
 		}
@@ -1304,7 +1314,7 @@ const FOBDD* GrounderFactory::improve_generator(const FOBDD* bdd, const vector<V
 
 /*cerr << "improving\n";
 manager->put(cerr,bdd);
-set<Variable*> sv(fovars.begin(),fovars.end());
+set<Variable*> sv(fovars.cbegin(),fovars.cend());
 set<const FOBDDVariable*> sfv = manager->getVariables(sv);
 set<const FOBDDDeBruijnIndex*> id;
 cerr << "current cost = " << manager->estimatedCostAll(bdd,sfv,id,_structure) << endl;
@@ -1314,7 +1324,7 @@ cerr << "current cost = " << manager->estimatedCostAll(bdd,sfv,id,_structure) <<
 	const FOBDD* copybdd = optimizemanager.getBDD(bdd,manager);
 	set<const FOBDDVariable*> copyvars;
 	set<const FOBDDDeBruijnIndex*> indices;
-	for(auto it = fovars.begin(); it != fovars.end(); ++it) {
+	for(auto it = fovars.cbegin(); it != fovars.cend(); ++it) {
 			copyvars.insert(optimizemanager.getVariable(*it));
 	}
 	optimizemanager.optimizequery(copybdd,copyvars,indices,_structure);
@@ -1464,7 +1474,7 @@ void GrounderFactory::visit(const EqChainForm* ef) {
  * 		Creates a grounder for a variable term.
  */
 void GrounderFactory::visit(const VarTerm* t) {
-	assert(varmapping().find(t->var()) != varmapping().end());
+	assert(varmapping().find(t->var()) != varmapping().cend());
 	_termgrounder = new VarTermGrounder(varmapping().find(t->var())->second);
 	_termgrounder->setOrig(t,varmapping(),_verbosity);
 }
@@ -1487,7 +1497,7 @@ void GrounderFactory::visit(const DomainTerm* t) {
 void GrounderFactory::visit(const FuncTerm* t) {
 	// Create grounders for subterms
 	vector<TermGrounder*> subtermgrounders;
-	for(vector<Term*>::const_iterator it = t->subterms().begin(); it != t->subterms().end(); ++it) {
+	for(auto it = t->subterms().cbegin(); it != t->subterms().cend(); ++it) {
 		(*it)->accept(this);
 		if(_termgrounder) subtermgrounders.push_back(_termgrounder);
 	}
@@ -1575,8 +1585,8 @@ void GrounderFactory::visit(const QuantSetExpr* qs) {
 	vector<Variable*> optivars;
 	vector<SortTable*> tables;
 	vector<bool> pattern;
-	for(std::set<Variable*>::const_iterator it = movedformula->freeVars().begin(); it != movedformula->freeVars().end(); ++it) {
-		if(qs->quantVars().find(*it) == qs->quantVars().end()) {
+	for(auto it = movedformula->freeVars().cbegin(); it != movedformula->freeVars().cend(); ++it) {
+		if(qs->quantVars().find(*it) == qs->quantVars().cend()) {
 			vars.push_back(_varmapping[*it]);
 			pattern.push_back(true);
 		}
@@ -1620,13 +1630,13 @@ void GrounderFactory::visit(const QuantSetExpr* qs) {
  */
 void GrounderFactory::visit(const Definition* def) {
 	// Store defined predicates
-	for(set<PFSymbol*>::const_iterator it = def->defsymbols().begin(); it != def->defsymbols().end(); ++it) {
+	for(auto it = def->defsymbols().cbegin(); it != def->defsymbols().cend(); ++it) {
 		_context._defined.insert(*it);
 	}
 	
 	// Create rule grounders
 	vector<RuleGrounder*> subgrounders;
-	for(vector<Rule*>::const_iterator it = def->rules().begin(); it != def->rules().end(); ++it) {
+	for(auto it = def->rules().cbegin(); it != def->rules().cend(); ++it) {
 		descend(*it);
 		subgrounders.push_back(_rulegrounder);
 	}
@@ -1641,7 +1651,7 @@ template<class VarList>
 InstGenerator* GrounderFactory::createVarMapAndGenerator(const VarList& vars){
 	vector<SortTable*> hvst;
 	vector<const DomElemContainer*> hvars;
-	for(auto it=vars.begin(); it!=vars.end(); ++it) {
+	for(auto it=vars.cbegin(); it!=vars.cend(); ++it) {
 		auto domelem = createVarMapping(*it);
 		hvars.push_back(domelem);
 		auto sorttable = structure()->inter((*it)->sort());
@@ -1665,7 +1675,7 @@ void GrounderFactory::visit(const Rule* rule) {
 	if(_options->getValue(BoolType::GROUNDLAZILY)){ // FIXME check we also have the correct groundtheory!
 		// for lazy ground rules, need a generator which generates bodies given a head, so only vars not occurring in the head!
 		varlist bodyvars;
-		for(auto it = rule->quantVars().begin(); it != rule->quantVars().end(); ++it) {
+		for(auto it = rule->quantVars().cbegin(); it != rule->quantVars().cend(); ++it) {
 			if(not rule->head()->contains(*it)) {
 				bodyvars.push_back(*it);
 			}else{
@@ -1681,7 +1691,7 @@ void GrounderFactory::visit(const Rule* rule) {
 
 		varlist	headvars;
 		varlist	bodyvars;
-		for(auto it = rule->quantVars().begin(); it != rule->quantVars().end(); ++it) {
+		for(auto it = rule->quantVars().cbegin(); it != rule->quantVars().cend(); ++it) {
 			if(rule->body()->contains(*it)) {
 				bodyvars.push_back(*it);
 			}

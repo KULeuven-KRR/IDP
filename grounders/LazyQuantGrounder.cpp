@@ -39,10 +39,11 @@ void LazyQuantGrounder::groundMore() const{
 		Lit groundedlit = _subgrounder->run();
 		restoreOrigVars(originstantiation, instance->freevarinst);
 
-		if(decidesClause(groundedlit)) {
-			groundedlit = getDecidedValue();
-			groundedlit = negatedclause_?-groundedlit:groundedlit;
-		}else if(isNotRedundantInClause(groundedlit)){
+		if(makesFormulaFalse(groundedlit, negatedclause_)) { // FIXME same issue of order of negatedclause
+			groundedlit = negatedclause_?-_false:_false;
+		} else if(makesFormulaTrue(groundedlit, negatedclause_)) {
+			groundedlit = negatedclause_?-_true:_true;
+		}else if(not isRedundantInFormula(groundedlit, negatedclause_)){
 			groundedlit = negatedclause_ ? -groundedlit : groundedlit;
 		}
 
@@ -80,12 +81,12 @@ void LazyQuantGrounder::run(litlist& clause, bool negateclause) const {
 /*	clog <<"known free vars: \n\t";
 	printorig();
 	clog <<"The provided free vars: \n\t";
-	for(auto var=freevars.begin(); var!=freevars.end(); ++var){
+	for(auto var=freevars.cbegin(); var!=freevars.cend(); ++var){
 		clog <<(*var)->to_string() <<", ";
 	}
 	clog <<"\n\n\n";*/
 
-	for(auto var=freevars.begin(); var!=freevars.end(); ++var){
+	for(auto var=freevars.cbegin(); var!=freevars.cend(); ++var){
 		auto tuple = varmap().at(*var);
 		inst->freevarinst.push_back(dominst(tuple, tuple->get()));
 	}

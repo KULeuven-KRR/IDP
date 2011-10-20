@@ -50,9 +50,9 @@ bool hasInterpretation(const AbstractStructure* s, PFSymbol* relation){
  */
 set<unsigned int> argumentNrs(const PFSymbol* relation, const set<Sort*>& sorts){
 	set<unsigned int> result;
-	for(set<Sort*>::const_iterator sorts_it=sorts.begin(); sorts_it!=sorts.end(); ++sorts_it){
+	for(auto sorts_it=sorts.cbegin(); sorts_it!=sorts.cend(); ++sorts_it){
 		vector<unsigned int> argumentPlaces=relation->argumentNrs(*sorts_it);
-		result.insert(argumentPlaces.begin(), argumentPlaces.end());
+		result.insert(argumentPlaces.cbegin(), argumentPlaces.cend());
 	}
 	return result;
 }
@@ -62,7 +62,7 @@ set<unsigned int> argumentNrs(const PFSymbol* relation, const set<Sort*>& sorts)
  */
 ElementTuple symmetricalTuple(const ElementTuple& original, const DomainElement* first, const DomainElement* second, const set<unsigned int>& argumentPlaces){
 	ElementTuple symmetrical = original;
-	for(set<unsigned int>::const_iterator argumentPlaces_it = argumentPlaces.begin(); argumentPlaces_it!=argumentPlaces.end(); ++argumentPlaces_it){
+	for(auto argumentPlaces_it = argumentPlaces.cbegin(); argumentPlaces_it!=argumentPlaces.cend(); ++argumentPlaces_it){
 		if(symmetrical[*argumentPlaces_it]==first){
 			symmetrical[*argumentPlaces_it]=second;
 		}else if(symmetrical[*argumentPlaces_it]==second){
@@ -114,8 +114,8 @@ bool isBinarySymmetry(const AbstractStructure* s, const DomainElement* first, co
 // TODO originally, Jo used a separate add(groundclause) method which did not do transformforadd. Still waiting for his justification for the need of that method.
 void addSymBreakingClausesToGroundTheory(AbstractGroundTheory* gt, const list<int>& literals, const list<int>& symLiterals){
 	//the first two steps are initializers, initializing the first constraints and auxiliary variables
-	list<int>::const_iterator literals_it = literals.begin();
-	list<int>::const_iterator symLiterals_it = symLiterals.begin();
+	list<int>::const_iterator literals_it = literals.cbegin();
+	list<int>::const_iterator symLiterals_it = symLiterals.cbegin();
 	int currentAuxVar;
 	int previousAuxVar;
 	if(literals.size()>0){
@@ -152,7 +152,7 @@ void addSymBreakingClausesToGroundTheory(AbstractGroundTheory* gt, const list<in
 		clause5[2]=  (*symLiterals_it);
 		gt->add(clause5);
 	}
-	list<int>::const_iterator oneButLast_it = literals.end();
+	list<int>::const_iterator oneButLast_it = literals.cend();
 	--oneButLast_it;
 	while(literals_it != oneButLast_it){
 		previousAuxVar = currentAuxVar;
@@ -240,10 +240,10 @@ map<const DomainElement*,pair<int,int> > OccurrencesCounter::count(PFSymbol* rel
 	map<const DomainElement*,pair<int,int> > result;
 	const PredTable* ct = getStructure()->inter(relation)->ct();
 	for(TableIterator ct_it = ct->begin(); ct_it.hasNext(); ++ct_it){
-		for(vector<unsigned int>::const_iterator it=arguments.begin(); it!=arguments.end(); ++it){
+		for(auto it=arguments.cbegin(); it!=arguments.cend(); ++it){
 			const DomainElement* element = (*ct_it)[*it];
 			map<const DomainElement*,pair<int,int> >::iterator result_it = result.find(element);
-			if(result_it==result.end()){
+			if(result_it==result.cend()){
 				result[element]=pair<int,int>(1,0);
 			}else{
 				++(result_it->second.first);
@@ -252,10 +252,10 @@ map<const DomainElement*,pair<int,int> > OccurrencesCounter::count(PFSymbol* rel
 	}
 	const PredTable* cf = getStructure()->inter(relation)->cf();
 	for(TableIterator cf_it = cf->begin(); cf_it.hasNext(); ++cf_it){
-		for(vector<unsigned int>::const_iterator it=arguments.begin(); it!=arguments.end(); ++it){
+		for(auto it=arguments.cbegin(); it!=arguments.cend(); ++it){
 			const DomainElement* element = (*cf_it)[*it];
 			map<const DomainElement*,pair<int,int> >::iterator result_it = result.find(element);
-			if(result_it==result.end()){
+			if(result_it==result.cend()){
 				result[element]=pair<int,int>(0,1);
 			}else{
 				++(result_it->second.second);
@@ -275,9 +275,9 @@ map<const DomainElement*,pair<int,int> > OccurrencesCounter::count(PFSymbol* rel
 pair<int,int> OccurrencesCounter::getOccurrences(const DomainElement* element, PFSymbol* relation, Sort* sort){
 	assert(!relation->argumentNrs(sort).empty());
 	map<pair<const PFSymbol*,const Sort*>,map<const DomainElement*,pair<int,int> > >::iterator occurrences_it = occurrences_.find(pair<const PFSymbol*,const Sort*>(relation,sort) );
-	if(occurrences_it!=occurrences_.end()){
+	if(occurrences_it!=occurrences_.cend()){
 		map<const DomainElement*,pair<int,int> >::const_iterator result_it = occurrences_it->second.find(element);
-		if(result_it!=occurrences_it->second.end()){
+		if(result_it!=occurrences_it->second.cend()){
 			return result_it->second;
 		}else{
 			return pair<int,int>(0,0);
@@ -285,7 +285,7 @@ pair<int,int> OccurrencesCounter::getOccurrences(const DomainElement* element, P
 	}else{
 		map<const DomainElement*,pair<int,int> > counts = count(relation, sort);
 		map<const DomainElement*,pair<int,int> >::const_iterator counts_it = counts.find(element);
-		if(counts_it!=counts.end()){
+		if(counts_it!=counts.cend()){
 			return counts_it->second;
 		}else{
 			return pair<int,int>(0,0);
@@ -298,11 +298,11 @@ pair<int,int> OccurrencesCounter::getOccurrences(const DomainElement* element, P
  */
 map<const DomainElement*, vector<int> > OccurrencesCounter::getOccurrences(const set<const DomainElement*>& elements, const set<PFSymbol*>& relations, const set<Sort*>& sorts){
 	map<const DomainElement*, vector<int> > result;
-	for(set<const DomainElement*>::const_iterator elements_it=elements.begin(); elements_it!=elements.end(); ++elements_it){
+	for(auto elements_it=elements.cbegin(); elements_it!=elements.cend(); ++elements_it){
 		vector<int> values;
-		for(set<PFSymbol*>::const_iterator relations_it=relations.begin(); relations_it!=relations.end(); ++relations_it){
+		for(auto relations_it=relations.cbegin(); relations_it!=relations.cend(); ++relations_it){
 			if(hasInterpretation(getStructure(),*relations_it)){
-				for(set<Sort*>::const_iterator sorts_it=sorts.begin(); sorts_it!=sorts.end(); ++sorts_it){
+				for(auto sorts_it=sorts.cbegin(); sorts_it!=sorts.cend(); ++sorts_it){
 					if(!(*relations_it)->argumentNrs(*sorts_it).empty()){
 						pair<int,int> temp = getOccurrences(*elements_it,*relations_it,*sorts_it); 
 						values.push_back(temp.first);
@@ -320,9 +320,9 @@ string OccurrencesCounter::toString() const{
 	stringstream ss;
 	ss << "COUNTER:" << endl;
 	ss << "structure: " << getStructure()->name() << endl;
-	for(auto occurrences_it= occurrences_.begin(); occurrences_it!=occurrences_.end(); ++occurrences_it){
+	for(auto occurrences_it= occurrences_.cbegin(); occurrences_it!=occurrences_.cend(); ++occurrences_it){
 		ss << occurrences_it->first.first->toString(false) << "-" << occurrences_it->first.second->toString(false) << endl; // TODO longnames?
-		for(auto element_it=occurrences_it->second.begin(); element_it!=occurrences_it->second.end(); ++element_it){
+		for(auto element_it=occurrences_it->second.cbegin(); element_it!=occurrences_it->second.cend(); ++element_it){
 			ss << "   " << element_it->first->toString() << ": " << element_it->second.first << "," << element_it->second.second << endl;
 		}
 	}
@@ -362,16 +362,16 @@ IVSet::IVSet(const AbstractStructure* s, const set<const DomainElement*> element
 string IVSet::toString() const{
 	stringstream ss;
 	ss << "structure: " << getStructure()->name() << endl;
-	for(auto sorts_it = getSorts().begin(); sorts_it!=getSorts().end(); ++sorts_it){
+	for(auto sorts_it = getSorts().cbegin(); sorts_it!=getSorts().cend(); ++sorts_it){
 		ss << (*sorts_it)->toString(false) << " | ";  // TODO longnames?
 	}
 	ss << endl;
-	for(auto relations_it = getRelations().begin(); relations_it!=getRelations().end(); ++relations_it){
+	for(auto relations_it = getRelations().cbegin(); relations_it!=getRelations().cend(); ++relations_it){
 		ss << (*relations_it)->toString(false) << " | "; // TODO longnames?
 	}
 	ss << endl;
 	ss << getElements().size() << ": ";
-	for(auto elements_it = getElements().begin(); elements_it!=getElements().end(); ++elements_it){
+	for(auto elements_it = getElements().cbegin(); elements_it!=getElements().cend(); ++elements_it){
 		ss << (*elements_it)->toString() << " | ";
 	}
 	ss << endl;
@@ -387,14 +387,14 @@ bool IVSet::hasRelevantRelationsAndSorts() const{
 		return false;
 	}
 	bool hasOnlyInterpretedRelations = true;
-	for(set<PFSymbol*>::const_iterator relations_it=getRelations().begin(); relations_it!=getRelations().end() && hasOnlyInterpretedRelations; ++relations_it){
+	for(auto relations_it=getRelations().cbegin(); relations_it!=getRelations().cend() && hasOnlyInterpretedRelations; ++relations_it){
 		hasOnlyInterpretedRelations = hasInterpretation(getStructure(), *relations_it);
 	}
 	if(hasOnlyInterpretedRelations){
 		return false;
 	}
 	bool everyRelationHasASort = true;
-	for(set<PFSymbol*>::const_iterator relations_it=getRelations().begin(); relations_it!=getRelations().end() && everyRelationHasASort; ++relations_it){
+	for(auto relations_it=getRelations().cbegin(); relations_it!=getRelations().cend() && everyRelationHasASort; ++relations_it){
 		everyRelationHasASort = argumentNrs(*relations_it, getSorts()).size()>0;
 	}
 	if(!everyRelationHasASort){
@@ -418,7 +418,7 @@ bool IVSet::isRelevantSymmetry() const{
 bool IVSet::isDontCare() const{
 	bool result = true;
 	set<PFSymbol*> relations = getRelations();
-	for(set<PFSymbol*>::const_iterator relations_it = relations.begin(); relations_it!=relations.end() && result; ++relations_it){
+	for(auto relations_it = relations.cbegin(); relations_it!=relations.cend() && result; ++relations_it){
 		result=!hasInterpretation(getStructure(), *relations_it);
 	}
 	return result;
@@ -430,7 +430,7 @@ bool IVSet::isDontCare() const{
  */
 bool IVSet::isEnkelvoudig() const{
 	bool result = true;
-	for(set<PFSymbol*>::const_iterator relations_it=getRelations().begin(); relations_it!=getRelations().end() && result==true; ++relations_it){
+	for(auto relations_it=getRelations().cbegin(); relations_it!=getRelations().cend() && result==true; ++relations_it){
 		if(!hasInterpretation(getStructure(), *relations_it)){
 			result=argumentNrs(*relations_it, getSorts()).size()==1;
 		}
@@ -446,9 +446,9 @@ vector<const IVSet*> IVSet::splitBasedOnOccurrences(OccurrencesCounter* counter)
 	assert(counter->getStructure()==this->getStructure());
 	map<vector<int>,set<const DomainElement*> > subSets;
 	map<const DomainElement*, vector<int> > occurrences = counter->getOccurrences(getElements(), getRelations(), getSorts());
-	for(map<const DomainElement*, vector<int> >::const_iterator occurrences_it=occurrences.begin(); occurrences_it!=occurrences.end(); ++occurrences_it){
+	for(auto occurrences_it=occurrences.cbegin(); occurrences_it!=occurrences.cend(); ++occurrences_it){
 		map<vector<int>,set<const DomainElement*> >::iterator subSets_it= subSets.find(occurrences_it->second);
-		if(subSets_it!=subSets.end()){
+		if(subSets_it!=subSets.cend()){
 			subSets_it->second.insert(occurrences_it->first);
 		}else{
 			set<const DomainElement*> temp;
@@ -457,7 +457,7 @@ vector<const IVSet*> IVSet::splitBasedOnOccurrences(OccurrencesCounter* counter)
 		}
 	}	
 	vector<const IVSet*> result;
-	for(map<vector<int>,set<const DomainElement*> >::const_iterator subSets_it=subSets.begin(); subSets_it!=subSets.end(); ++subSets_it){
+	for(auto subSets_it=subSets.cbegin(); subSets_it!=subSets.cend(); ++subSets_it){
 		if(subSets_it->second.size()>1){
 			IVSet* ivset = new IVSet(getStructure(),subSets_it->second,getSorts(),getRelations());
 			if(ivset->isRelevantSymmetry()){
@@ -477,16 +477,16 @@ vector<const IVSet*> IVSet::splitBasedOnOccurrences(OccurrencesCounter* counter)
 vector<const IVSet*> IVSet::splitBasedOnBinarySymmetries() const{
 	vector<const IVSet*> result;
 	set<const DomainElement*> elements = getElements();
-	set<const DomainElement*>::iterator elements_it=elements.begin();
-	while(elements_it!=elements.end()){
+	set<const DomainElement*>::iterator elements_it=elements.cbegin();
+	while(elements_it!=elements.cend()){
 		set<const DomainElement*> elementsIVSet;
 		elementsIVSet.insert(*elements_it);
 		set<const DomainElement*>::iterator elements_it2 = elements_it;
 		++elements_it2;
-		while(elements_it2!=elements.end()){
+		while(elements_it2!=elements.cend()){
 			bool isSymmetry = true;
-			for(set<PFSymbol*>::const_iterator relations_it=getRelations().begin(); relations_it!=getRelations().end() && isSymmetry; ++relations_it){
-				for(set<Sort*>::const_iterator sorts_it=getSorts().begin(); sorts_it!=getSorts().end() && isSymmetry; ++sorts_it){
+			for(auto relations_it=getRelations().cbegin(); relations_it!=getRelations().cend() && isSymmetry; ++relations_it){
+				for(auto sorts_it=getSorts().cbegin(); sorts_it!=getSorts().cend() && isSymmetry; ++sorts_it){
 					isSymmetry = isBinarySymmetry(getStructure(), *elements_it, *elements_it2, *relations_it, getSorts());
 				}
 			}
@@ -526,7 +526,7 @@ vector<vector<const DomainElement*> > fillGroundElementsOneRank(vector<vector<co
 	vector<vector<const DomainElement*> > newGroundElements(groundElements.size()*domain.size());
 	for(unsigned int ge=0; ge<groundElements.size(); ++ge){
 		int index=0;
-		for(set<const DomainElement*>::const_iterator domain_it=domain.begin(); domain_it!=domain.end(); ++domain_it){
+		for(auto domain_it=domain.cbegin(); domain_it!=domain.cend(); ++domain_it){
 			newGroundElements[ge*domain.size()+index]=groundElements[ge];
 			newGroundElements[ge*domain.size()+index][rank]=(*domain_it);
 			++index;
@@ -548,10 +548,10 @@ pair<list<int>,list<int> > IVSet::getSymmetricLiterals(AbstractGroundTheory* gt,
 	
 	list<int> originals;
 	list<int> symmetricals;
-	for(set<PFSymbol*>::const_iterator relations_it=getRelations().begin(); relations_it!=getRelations().end(); ++relations_it){
+	for(auto relations_it=getRelations().cbegin(); relations_it!=getRelations().cend(); ++relations_it){
 		if(!hasInterpretation(getStructure(), *relations_it)){
 			set<unsigned int> argumentPlaces=argumentNrs(*relations_it,getSorts());
-			for(set<unsigned int>::const_iterator arguments_it=argumentPlaces.begin(); arguments_it!=argumentPlaces.end(); ++arguments_it){
+			for(auto arguments_it=argumentPlaces.cbegin(); arguments_it!=argumentPlaces.cend(); ++arguments_it){
 				vector<vector<const DomainElement*> > groundElements(1);
 				groundElements[0] = vector<const DomainElement*>((*relations_it)->nrSorts());
 				for(unsigned int argument = 0; argument<*arguments_it; ++argument){
@@ -569,7 +569,7 @@ pair<list<int>,list<int> > IVSet::getSymmetricLiterals(AbstractGroundTheory* gt,
 					Sort* currSort = (*relations_it)->sort(argument);
 					groundElements = fillGroundElementsOneRank(groundElements, getStructure()->inter(currSort), argument, emptySet);			
 				}
-				for(vector<vector<const DomainElement*> >::const_iterator ge_it=groundElements.begin(); ge_it!=groundElements.end(); ++ge_it){
+				for(auto ge_it=groundElements.cbegin(); ge_it!=groundElements.cend(); ++ge_it){
 					ElementTuple original = *ge_it;
 					ElementTuple symmetrical = symmetricalTuple(original, smaller, bigger, argumentPlaces);
 					originals.push_back(gt->translator()->translate(*relations_it, original));
@@ -585,9 +585,9 @@ pair<list<int>,list<int> > IVSet::getSymmetricLiterals(AbstractGroundTheory* gt,
  * 	For every binary symmetry permuting two succeeding domain elements of an IVSet, this method adds the symmetry breaking clauses to a given theory.
  */
 void IVSet::addSymBreakingPreds(AbstractGroundTheory* gt) const{
-	set<const DomainElement*>::const_iterator smaller = getElements().begin();
-	set<const DomainElement*>::const_iterator bigger = getElements().begin(); ++bigger;
-	for(; bigger!=getElements().end(); ++bigger, ++smaller){
+	set<const DomainElement*>::const_iterator smaller = getElements().cbegin();
+	set<const DomainElement*>::const_iterator bigger = getElements().cbegin(); ++bigger;
+	for(; bigger!=getElements().cend(); ++bigger, ++smaller){
 		pair<list<int>,list<int> > literals = getSymmetricLiterals(gt, *smaller, *bigger);
 		addSymBreakingClausesToGroundTheory(gt, literals.first, literals.second);
 	}
@@ -599,17 +599,17 @@ void IVSet::addSymBreakingPreds(AbstractGroundTheory* gt) const{
  */
 vector<map<int,int> > IVSet::getBreakingSymmetries(AbstractGroundTheory* gt) const{
 	vector<map<int,int> > literalSymmetries;
-	set<const DomainElement*>::const_iterator smaller = getElements().begin();
-	set<const DomainElement*>::const_iterator bigger = getElements().begin(); ++bigger;
+	set<const DomainElement*>::const_iterator smaller = getElements().cbegin();
+	set<const DomainElement*>::const_iterator bigger = getElements().cbegin(); ++bigger;
 	for(int i=1; i<getSize(); ++i){
-		if(bigger==getElements().end()){
-			smaller=getElements().begin();
+		if(bigger==getElements().cend()){
+			smaller=getElements().cbegin();
 			--bigger;
 		}
 		map<int,int> literalSymmetry;
 		pair<list<int>,list<int> > symmetricLiterals = getSymmetricLiterals(gt, *smaller, *bigger);
-		list<int>::const_iterator first_it=symmetricLiterals.first.begin();
-		for(list<int>::const_iterator second_it=symmetricLiterals.second.begin(); second_it!=symmetricLiterals.second.end(); ++first_it, ++second_it){
+		list<int>::const_iterator first_it=symmetricLiterals.first.cbegin();
+		for(auto second_it=symmetricLiterals.second.cbegin(); second_it!=symmetricLiterals.second.cend(); ++first_it, ++second_it){
 			literalSymmetry[*first_it]=*second_it;
 			literalSymmetry[*second_it]=*first_it;
 		}
@@ -632,14 +632,14 @@ vector<list<int> > IVSet::getInterchangeableLiterals(AbstractGroundTheory* gt) c
 	
 	const set<const DomainElement*> emptySet;
 	vector<list<int> > result;
-	for(auto elements_it= getElements().begin(); elements_it!=getElements().end(); ++elements_it){
+	for(auto elements_it= getElements().cbegin(); elements_it!=getElements().cend(); ++elements_it){
 		result.push_back(list<int>());
 	}
-	const DomainElement* smallest = *(getElements().begin());
-	for(set<PFSymbol*>::const_iterator relations_it=getRelations().begin(); relations_it!=getRelations().end(); ++relations_it){
+	const DomainElement* smallest = *(getElements().cbegin());
+	for(auto relations_it=getRelations().cbegin(); relations_it!=getRelations().cend(); ++relations_it){
 		if(!hasInterpretation(getStructure(), *relations_it)){
 			set<unsigned int> argumentPlaces = argumentNrs(*relations_it,getSorts());
-			unsigned int argumentPlace = *(argumentPlaces.begin());
+			unsigned int argumentPlace = *(argumentPlaces.cbegin());
 			vector<vector<const DomainElement*> > groundElements(1);
 			groundElements[0] = vector<const DomainElement*>((*relations_it)->nrSorts());
 			for(unsigned int argument = 0; argument<argumentPlace; ++argument){
@@ -654,8 +654,8 @@ vector<list<int> > IVSet::getInterchangeableLiterals(AbstractGroundTheory* gt) c
 				groundElements = fillGroundElementsOneRank(groundElements, getStructure()->inter(currSort), argument, emptySet);
 			}
 			int list=0;
-			for(auto elements_it= getElements().begin(); elements_it!=getElements().end(); ++elements_it){
-				for(auto ge_it=groundElements.begin(); ge_it!=groundElements.end(); ++ge_it){
+			for(auto elements_it= getElements().cbegin(); elements_it!=getElements().cend(); ++elements_it){
+				for(auto ge_it=groundElements.cbegin(); ge_it!=groundElements.cend(); ++ge_it){
 					ElementTuple symmetrical;
 					if(*elements_it!=smallest){
 						symmetrical = symmetricalTuple(*ge_it, smallest, *elements_it, argumentPlaces);
@@ -797,16 +797,16 @@ void TheorySymmetryAnalyzer::visit(const EqChainForm* ef){
  */
 map<Sort*,set<const DomainElement*> > findElementsForSorts(const AbstractStructure* s, set<Sort*>& sorts, const set<const DomainElement*>& forbiddenElements){
 	map<Sort*,set<const DomainElement*> > result; 
-	for(set<Sort*>::const_iterator sort_it = sorts.begin(); sort_it != sorts.end(); ++sort_it){
+	for(auto sort_it = sorts.cbegin(); sort_it != sorts.cend(); ++sort_it){
 		const SortTable* parent = s->inter(*sort_it);
 		set<const DomainElement*> uniqueDomainElements;
 		vector<const SortTable*> kids;
-		for(set<Sort*>::const_iterator kids_it = (*sort_it)->children().begin(); kids_it != (*sort_it)->children().end(); ++kids_it){
+		for(auto kids_it = (*sort_it)->children().cbegin(); kids_it != (*sort_it)->children().cend(); ++kids_it){
 			kids.push_back(s->inter(*kids_it));
 		}
 		for(SortIterator parent_it = parent->sortBegin(); parent_it.hasNext(); ++parent_it){
-			bool isUnique = forbiddenElements.find(*parent_it) == forbiddenElements.end();
-			for(vector<const SortTable*>::const_iterator kids_it2 = kids.begin(); kids_it2 != kids.end() && isUnique; ++kids_it2 ){
+			bool isUnique = forbiddenElements.find(*parent_it) == forbiddenElements.cend();
+			for(auto kids_it2 = kids.cbegin(); kids_it2 != kids.cend() && isUnique; ++kids_it2 ){
 				isUnique = not (*kids_it2)->contains(*parent_it);
 			}
 			if(isUnique){
@@ -825,9 +825,9 @@ map<Sort*,set<const DomainElement*> > findElementsForSorts(const AbstractStructu
  */
 set<PFSymbol*> findNonTrivialRelationsWithSort(const AbstractStructure* s, const set<Sort*>& sorts, const set<PFSymbol*>& relations){
 	set<PFSymbol*> result;
-	for(set<PFSymbol*>::const_iterator relation_it=relations.begin(); relation_it!=relations.end(); ++relation_it){
+	for(auto relation_it=relations.cbegin(); relation_it!=relations.cend(); ++relation_it){
 		bool rangesOverSorts = hasTrivialInterpretation(s, *relation_it);
-		for(vector<Sort*>::const_iterator sort_it=(*relation_it)->sorts().begin(); sort_it!=(*relation_it)->sorts().end() && !rangesOverSorts; ++sort_it){
+		for(auto sort_it=(*relation_it)->sorts().cbegin(); sort_it!=(*relation_it)->sorts().cend() && !rangesOverSorts; ++sort_it){
 			rangesOverSorts = sorts.count(*sort_it);
 		}
 		if(rangesOverSorts){
@@ -847,21 +847,21 @@ set<const IVSet*> initializeIVSets(const AbstractStructure* s, const AbstractThe
 	TheorySymmetryAnalyzer tsa(s);
 	t->accept(&tsa);	
 	set<const Sort*> forbiddenSorts;
-	for(set<const Sort*>::const_iterator sort_it = tsa.getForbiddenSorts().begin(); sort_it!=tsa.getForbiddenSorts().end(); ++sort_it){
+	for(auto sort_it = tsa.getForbiddenSorts().cbegin(); sort_it!=tsa.getForbiddenSorts().cend(); ++sort_it){
 		forbiddenSorts.insert(*sort_it);
 		set<Sort*> descendents = (*sort_it)->descendents();
-		for(set<Sort*>::const_iterator sort_it2 = descendents.begin(); sort_it2 != descendents.end(); ++sort_it2){
+		for(auto sort_it2 = descendents.cbegin(); sort_it2 != descendents.cend(); ++sort_it2){
 			forbiddenSorts.insert(*sort_it2);
 		}
 	}
 	cout << "forbiddenSorts:" << endl;
-	for(auto it=forbiddenSorts.begin(); it!=forbiddenSorts.end(); ++it){
+	for(auto it=forbiddenSorts.cbegin(); it!=forbiddenSorts.cend(); ++it){
 		cout << (*it)->toString(false) << endl; // TODO longnames?
 	}
 
 	set<Sort*> allowedSorts;
-	for(set<PFSymbol*>::const_iterator relation_it=tsa.getUsedRelations().begin(); relation_it!=tsa.getUsedRelations().end(); ++relation_it){
-		for(vector<Sort*>::const_iterator sort_it=(*relation_it)->sorts().begin(); sort_it!=(*relation_it)->sorts().end(); ++sort_it){
+	for(auto relation_it=tsa.getUsedRelations().cbegin(); relation_it!=tsa.getUsedRelations().cend(); ++relation_it){
+		for(auto sort_it=(*relation_it)->sorts().cbegin(); sort_it!=(*relation_it)->sorts().cend(); ++sort_it){
 			if(!forbiddenSorts.count(*sort_it) && isSortForSymmetry(*sort_it, s)){
 				allowedSorts.insert(*sort_it);
 			}
@@ -869,17 +869,17 @@ set<const IVSet*> initializeIVSets(const AbstractStructure* s, const AbstractThe
 	}
 
 	cout << "allowedSorts:" << endl;
-	for(auto it=allowedSorts.begin(); it!=allowedSorts.end(); ++it){
+	for(auto it=allowedSorts.cbegin(); it!=allowedSorts.cend(); ++it){
 		cout << (*it)->toString(false) << endl; // TODO longnames?
 	}
 
 	map<Sort*,set<const DomainElement*> > elementsForSorts = findElementsForSorts(s, allowedSorts, tsa.getForbiddenElements());
 	set<const IVSet*> result;
-	for(map<Sort*,set<const DomainElement*> >::const_iterator ivset_it = elementsForSorts.begin(); ivset_it!=elementsForSorts.end(); ++ivset_it){
+	for(auto ivset_it = elementsForSorts.cbegin(); ivset_it!=elementsForSorts.cend(); ++ivset_it){
 		set<Sort*> sorts;
 		sorts.insert(ivset_it->first);
 		set<Sort*> ancestors = ivset_it->first->ancestors(t->vocabulary());
-		for(set<Sort*>::const_iterator ancestors_it=ancestors.begin(); ancestors_it!=ancestors.end(); ++ancestors_it){
+		for(auto ancestors_it=ancestors.cbegin(); ancestors_it!=ancestors.cend(); ++ancestors_it){
 			if(allowedSorts.count(*ancestors_it)){
 				sorts.insert(*ancestors_it);
 			}
@@ -903,8 +903,8 @@ set<const IVSet*> initializeIVSets(const AbstractStructure* s, const AbstractThe
  */
 vector<const IVSet*> extractDontCares(set<const IVSet*>& potentials){
 	vector<const IVSet*> result;
-	set<const IVSet*>::iterator potentials_it=potentials.begin();
-	while(potentials_it!=potentials.end()){
+	set<const IVSet*>::iterator potentials_it=potentials.cbegin();
+	while(potentials_it!=potentials.cend()){
 		set<const IVSet*>::iterator erase_it = potentials_it++;
 		if((*erase_it)->isDontCare()){
 			result.push_back(*erase_it);
@@ -919,17 +919,17 @@ vector<const IVSet*> extractDontCares(set<const IVSet*>& potentials){
  */
 void splitByOccurrences(set<const IVSet*>& potentials){
 	if(!potentials.empty()){
-		OccurrencesCounter counter((*potentials.begin())->getStructure());
+		OccurrencesCounter counter((*potentials.cbegin())->getStructure());
 		vector<vector<const IVSet*> > splittedSets;
-		set<const IVSet*>::iterator potentials_it=potentials.begin(); 
-		while(potentials_it!=potentials.end()){
+		set<const IVSet*>::iterator potentials_it=potentials.cbegin(); 
+		while(potentials_it!=potentials.cend()){
 			splittedSets.push_back((*potentials_it)->splitBasedOnOccurrences(&counter));
 			delete (*potentials_it);
 			set<const IVSet*>::iterator erase_it=potentials_it++;
 			potentials.erase(erase_it);
 		}
-		for(vector<vector<const IVSet*> >::const_iterator it1=splittedSets.begin(); it1!=splittedSets.end(); ++it1){
-			for(vector<const IVSet*>::const_iterator it2=it1->begin(); it2!=it1->end(); ++it2){
+		for(auto it1=splittedSets.cbegin(); it1!=splittedSets.cend(); ++it1){
+			for(auto it2=it1->begin(); it2!=it1->end(); ++it2){
 				potentials.insert(*it2);
 			}
 		}
@@ -941,15 +941,15 @@ void splitByOccurrences(set<const IVSet*>& potentials){
  */
 void splitByBinarySymmetries(set<const IVSet*>& potentials){
 	vector<vector<const IVSet*> > splittedSets;
-	set<const IVSet*>::iterator potentials_it=potentials.begin(); 
-	while(potentials_it!=potentials.end()){
+	set<const IVSet*>::iterator potentials_it=potentials.cbegin(); 
+	while(potentials_it!=potentials.cend()){
 		splittedSets.push_back((*potentials_it)->splitBasedOnBinarySymmetries());
 		delete (*potentials_it);
 		set<const IVSet*>::iterator erase_it=potentials_it++;
 		potentials.erase(erase_it);
 	}
-	for(vector<vector<const IVSet*> >::const_iterator it1=splittedSets.begin(); it1!=splittedSets.end(); ++it1){
-		for(vector<const IVSet*>::const_iterator it2=it1->begin(); it2!=it1->end(); ++it2){
+	for(auto it1=splittedSets.cbegin(); it1!=splittedSets.cend(); ++it1){
+		for(auto it2=it1->begin(); it2!=it1->end(); ++it2){
 			potentials.insert(*it2);
 		}
 	}
@@ -971,16 +971,16 @@ vector<const IVSet*> findIVSets(const AbstractTheory* t, const AbstractStructure
 	cout << "extract dont cares..." << endl;
 
 	vector<const IVSet*> result = extractDontCares(potentials);
-	for(vector<const IVSet*>::const_iterator result_it=result.begin(); result_it!=result.end(); ++result_it){
+	for(auto result_it=result.cbegin(); result_it!=result.cend(); ++result_it){
 		cout << "##########" << endl << (*result_it)->toString() << endl;
 	}
 
 	splitByOccurrences(potentials);
 	splitByBinarySymmetries(potentials);
-	for(set<const IVSet*>::const_iterator result_it=potentials.begin(); result_it!=potentials.end(); ++result_it){
+	for(auto result_it=potentials.cbegin(); result_it!=potentials.cend(); ++result_it){
 		cout << "@@@@@@@@@@" << endl << (*result_it)->toString() << endl;
 	}
-	result.insert(result.end(),potentials.begin(),potentials.end());
+	result.insert(result.end(),potentials.cbegin(),potentials.cend());
 	return result;
 }
 
@@ -990,7 +990,7 @@ vector<const IVSet*> findIVSets(const AbstractTheory* t, const AbstractStructure
  * 	@post: the ivsets are deleted
  */
 void addSymBreakingPredicates(AbstractGroundTheory* gt, vector<const IVSet*> ivsets){
-	for(vector<const IVSet*>::const_iterator ivsets_it=ivsets.begin(); ivsets_it!=ivsets.end(); ++ivsets_it){
+	for(auto ivsets_it=ivsets.cbegin(); ivsets_it!=ivsets.cend(); ++ivsets_it){
 		(*ivsets_it)->addSymBreakingPreds(gt);
 		delete (*ivsets_it);
 	}
