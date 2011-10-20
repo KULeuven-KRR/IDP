@@ -660,7 +660,7 @@ bool UnivSentGrounder::run() const {
 	while(_generator->next()) {
 		b = _subgrounder->run();
 		if(!b) {
-			_grounding->addEmptyClause();
+			_grounding->addEmptyClause();//FIXME together wit the SentenceGrounder::run(), two empty clauses are added.  (if subgrounder is a sentencegrounder and the clause is false)
 			return b;
 		}
 	}

@@ -48,7 +48,7 @@ public:
 		delete(_termtranslator);
 	}
 
-	void 	addEmptyClause()	{ add(GroundClause{0});		}
+	void 	addEmptyClause()	{ add(GroundClause{});		}
 	void 	addUnitClause(Lit l){ add(GroundClause{l});	}
 	virtual void add(const GroundClause& cl, bool skipfirst=false) = 0;
 	virtual void add(GroundDefinition* d) = 0;
