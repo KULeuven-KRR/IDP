@@ -10,7 +10,7 @@
 #include "grounders/TermGrounders.hpp"
 #include "grounders/FormulaGrounders.hpp"
 #include "common.hpp"
-#include "generator.hpp"
+#include "generators/InstGenerator.hpp"
 
 using namespace std;
 

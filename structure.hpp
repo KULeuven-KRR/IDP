@@ -1599,7 +1599,11 @@ class AbstractTable {
 		virtual void	remove(const ElementTuple& tuple)	= 0;	//!< Remove a tuple from the table
 
 		virtual TableIterator		begin()	const = 0;
+
+		virtual void print(std::ostream& stream) const = 0;
 };
+
+std::ostream& operator<<(std::ostream& stream, const AbstractTable& table);
 
 
 /**
@@ -1629,6 +1633,8 @@ class PredTable : public AbstractTable {
 
 		const Universe&		universe()		const { return _universe;	}
 		PredTable*			materialize()	const;
+
+		virtual void print(std::ostream& stream) const;
 };
 
 /**
@@ -1666,6 +1672,8 @@ class SortTable : public AbstractTable {
 
 		InternalSortTable*	internTable()	const { return _table;	}
 		SortTable*			materialize()	const;
+
+		virtual void print(std::ostream& stream) const;
 };
 
 /**
@@ -1699,6 +1707,8 @@ class FuncTable : public AbstractTable {
 
 		const Universe&		universe()		const { return _universe;	}
 		FuncTable*			materialize()	const;
+
+		virtual void print(std::ostream& stream) const;
 };
 
 
@@ -1748,6 +1758,8 @@ class PredInter {
 		const Universe&		universe()									const { return _ct->universe();	}
 		PredInter*			clone(const Universe&)						const;
 };
+
+std::ostream& operator<<(std::ostream& stream, const PredInter& interpretation);
 
 class AbstractStructure;
 

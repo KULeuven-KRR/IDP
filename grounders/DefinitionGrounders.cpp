@@ -13,7 +13,7 @@
 #include "groundtheories/AbstractGroundTheory.hpp"
 #include "groundtheories/SolverPolicy.hpp"
 
-#include "generator.hpp"
+#include "generators/InstGenerator.hpp"
 #include "checker.hpp"
 #include "common.hpp"
 #include "vocabulary.hpp"

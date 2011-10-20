@@ -4,10 +4,11 @@
 	(c) K.U.Leuven
 ************************************/
 
-#ifndef INSTGENERATOR_HPP
-#define INSTGENERATOR_HPP
+#ifndef GENERATORFACTORY_HPP
+#define GENERATORFACTORY_HPP
 
 #include <vector>
+#include <structure.hpp>
 
 class PredTable;
 class PredInter;
@@ -16,17 +17,6 @@ class DomainElement;
 class InstanceChecker;
 class GeneratorNode;
 class Universe;
-
-class InstGenerator {
-public:
-	virtual ~InstGenerator(){}
-	virtual bool first() const = 0;
-	virtual bool next() const = 0;
-};
-
-/**************
-	Factory
-**************/
 
 class GeneratorFactory : public StructureVisitor {
 private:
@@ -77,38 +67,4 @@ public:
 	static InstGenerator* create(const PredTable*, std::vector<bool> pattern, const std::vector<const DomElemContainer*>&, const Universe&);
 };
 
-/******************************
-	From BDDs to generators
-******************************/
-
-class FOBDDManager;
-class FOBDDVariable;
-class FOBDD;
-class FOBDDKernel;
-
-/**
- * Class to convert a bdd into a generator
- */
-class BDDToGenerator {
-	private:
-		FOBDDManager*	_manager;
-
-		Term* solve(PredForm* atom, Variable* var);
-	public:
-
-		// Constructor
-		BDDToGenerator(FOBDDManager* manager);
-
-		// Factory methods
-		InstGenerator* create(PredForm*, const std::vector<bool>&, const std::vector<const DomElemContainer*>&, const std::vector<Variable*>&, AbstractStructure*, bool, const Universe&);
-		InstGenerator* create(const FOBDD*, const std::vector<bool>&, const std::vector<const DomElemContainer*>&, const std::vector<const FOBDDVariable*>&, AbstractStructure* structure, const Universe&);
-		InstGenerator* create(const FOBDDKernel*, const std::vector<bool>&, const std::vector<const DomElemContainer*>&, const std::vector<const FOBDDVariable*>&, AbstractStructure* structure, bool, const Universe&);
-
-		GeneratorNode* createnode(const FOBDD*, const std::vector<bool>&, const std::vector<const DomElemContainer*>&, const std::vector<const FOBDDVariable*>&, AbstractStructure* structure, const Universe&);
-
-		// Visit
-//		void visit(const FOBDDAtomKernel* kernel);
-//		void visit(const FOBDDQuantKernel* kernel);
-};
-
-#endif
+#endif /* GENERATORFACTORY_HPP */

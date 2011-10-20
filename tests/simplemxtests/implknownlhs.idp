@@ -1,0 +1,18 @@
+vocabulary V{
+	type node
+	reachable(node)
+	query(node)
+}
+
+theory T:V{
+	!x: query(x) => reachable(x).
+}
+
+structure S:V{
+	node = {1..5}
+	query = {5}
+}
+
+procedure getExpectedNbOfModels(){
+	return 16
+}
