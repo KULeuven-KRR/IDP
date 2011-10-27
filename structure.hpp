@@ -327,7 +327,8 @@ class SortIterator {
 		SortIterator(InternalSortIterator* iter) : _iterator(iter) { }
 		SortIterator(const SortIterator&);
 		SortIterator& operator=(const SortIterator&);
-		bool					hasNext()	const;
+//		bool					hasNext()	const;
+		bool isAtEnd() const;
 		const DomainElement*	operator*()	const;
 		SortIterator&			operator++();
 		~SortIterator();
@@ -556,41 +557,6 @@ class EqualInternalIterator : public InternalTableIterator {
 		EqualInternalIterator(const SortIterator& iter);
 		~EqualInternalIterator() { }
 		EqualInternalIterator*	clone()	const;
-};
-
-class StrLessThanInternalIterator : public InternalTableIterator {
-	private:
-		SortIterator			_leftiterator;
-		SortIterator			_rightiterator;
-		mutable	ElementTable	_deref;
-
-		bool					hasNext()	const;
-		const ElementTuple&		operator*()	const;
-		void					operator++();
-	public:
-		StrLessThanInternalIterator(const SortIterator& si);
-		StrLessThanInternalIterator(const SortIterator& l, const SortIterator& r) :
-			_leftiterator(l), _rightiterator(r) { }
-		~StrLessThanInternalIterator() { }
-		StrLessThanInternalIterator*	clone()	const;
-};
-
-class StrGreaterThanInternalIterator : public InternalTableIterator {
-	private:
-		SortIterator			_leftiterator;
-		SortIterator			_rightiterator;
-		SortIterator			_lowest;
-		mutable	ElementTable	_deref;
-
-		bool					hasNext()	const;
-		const ElementTuple&		operator*()	const;
-		void					operator++();
-	public:
-		StrGreaterThanInternalIterator(const SortIterator& si);
-		StrGreaterThanInternalIterator(const SortIterator& l, const SortIterator& r, const SortIterator& m) :
-			_leftiterator(l), _rightiterator(r), _lowest(m) { }
-		~StrGreaterThanInternalIterator() { }
-		StrGreaterThanInternalIterator*	clone()	const;
 };
 
 class InternalSortIterator {

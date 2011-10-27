@@ -595,13 +595,19 @@ void CartesianInternalTableIterator::operator++() {
 	if(n < 0) _hasNext = false;
 }
 
+// TODO bool flags
 GeneratorInternalTableIterator::GeneratorInternalTableIterator(InstGenerator* generator, const vector<const DomElemContainer*>& vars, bool reset, bool h) : _generator(generator), _vars(vars) {
-	if(reset) _hasNext = _generator->first();
-	else _hasNext = h;
+	if(reset){
+		_generator->begin();
+		_hasNext = not _generator->isAtEnd();
+	} else{
+		_hasNext = h;
+	}
 }
 
 void GeneratorInternalTableIterator::operator++() {
-	_hasNext = _generator->next();
+	_generator->operator ++();
+	_hasNext = not _generator->isAtEnd();
 }
 
 const ElementTuple& GeneratorInternalTableIterator::operator*() const {
@@ -1462,18 +1468,23 @@ tablesize BDDInternalPredTable::size(const Universe&) const {
 	else return tablesize(TST_UNKNOWN,0);
 }
 
-bool BDDInternalPredTable::contains(const ElementTuple& tuple, const Universe& univ) const {
-	vector<const DomElemContainer*> doms;
+std::vector<const DomElemContainer*> createVarSubstitutionFrom(const ElementTuple& tuple){
+	vector<const DomElemContainer*> vars;
 	for(unsigned int n = 0; n < tuple.size(); ++n) {
 		const DomElemContainer* v = new const DomElemContainer();
 		*v = tuple[n];
-		doms.push_back(v);
+		vars.push_back(v);
 	}
+	return vars;
+}
+
+// TODO univ?
+bool BDDInternalPredTable::contains(const ElementTuple& tuple, const Universe& univ) const {
 	BDDInternalPredTable* temporary = new BDDInternalPredTable(_bdd,_manager,_vars,_structure);
 	PredTable temptable(temporary,univ);
-	InstGenerator* generator = GeneratorFactory::create(&temptable,vector<bool>(univ.tables().size(),true),doms,univ);
-	bool result = generator->first();
-	delete(generator);
+	InstChecker* checker = GeneratorFactory::create(&temptable,vector<bool>(univ.tables().size(),true),createVarSubstitutionFrom(tuple),univ);
+	bool result = checker->check();
+	delete(checker);
 	return result;
 }
 

@@ -48,12 +48,12 @@ class FormulaGrounder {
 class AtomGrounder : public FormulaGrounder {
 	protected:
 		std::vector<TermGrounder*>		_subtermgrounders;
-		InstGenerator*					_pchecker;
-		InstGenerator*					_cchecker;
+		InstChecker*					_pchecker;
+		InstChecker*					_cchecker;
 		size_t							_symbol; // symbol's offset in translator's table.
 		std::vector<SortTable*>			_tables;
 		SIGN							_sign;
-		int								_certainvalue;
+		GenType							gentype;
 		std::vector<const DomElemContainer*>	_checkargs;
 		PredInter*							_inter;
 	public:
@@ -63,8 +63,8 @@ class AtomGrounder : public FormulaGrounder {
 				PFSymbol*,
 				const std::vector<TermGrounder*>&,
 				const std::vector<const DomElemContainer*>& checkargs,
-				InstGenerator*,
-				InstGenerator*,
+				InstChecker*,
+				InstChecker*,
 				PredInter* inter,
 				const std::vector<SortTable*>&,
 				const GroundingContext&);
@@ -185,7 +185,7 @@ class QuantGrounder : public ClauseGrounder {
 protected:
 	FormulaGrounder*	_subgrounder;
 	InstGenerator*		_generator;
-	InstGenerator*		_checker;
+	InstChecker*		_checker;
 
 protected:
 	virtual void	run(litlist&, bool negatedclause = true)	const;
@@ -197,7 +197,7 @@ public:
 			SIGN sign,
 			QUANT quant,
 			InstGenerator* gen,
-			InstGenerator* checker,
+			InstChecker* checker,
 			const GroundingContext& ct):
 		ClauseGrounder(gt,sign,quant==QUANT::UNIV,ct), _subgrounder(sub), _generator(gen), _checker(checker) { }
 };

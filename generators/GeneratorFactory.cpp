@@ -24,18 +24,12 @@
 #include "generators/SortInstGenerator.hpp"
 #include "generators/SimpleLookupGenerator.hpp"
 #include "generators/EnumLookupGenerator.hpp"
-#include "generators/DivGenerator.hpp"
-#include "generators/TimesGenerator.hpp"
-#include "generators/StrLessGenerator.hpp"
-#include "generators/StrGreaterGenerator.hpp"
 #include "generators/SortLookupGenerator.hpp"
 #include "generators/InvUnaGenerator.hpp"
 #include "generators/EqualGenerator.hpp"
 #include "generators/EmptyGenerator.hpp"
-#include "generators/PlusGenerator.hpp"
-#include "generators/MinusGenerator.hpp"
 #include "generators/UminGenerator.hpp"
-#include "generators/InvAbsGenerator.hpp"
+#include "generators/ArithmeticOperatorsGenerator.hpp"
 using namespace std;
 
 InstGenerator* GeneratorFactory::create(const vector<const DomElemContainer*>& vars, const vector<SortTable*>& tabs) {
@@ -59,12 +53,12 @@ InstGenerator* GeneratorFactory::create(const vector<const DomElemContainer*>& v
 	return gen;
 }
 
-InstGenerator* GeneratorFactory::create(const PredTable* pt, vector<bool> pattern, const vector<const DomElemContainer*>& vars, const Universe& universe) {
+InstGenerator* GeneratorFactory::create(const PredTable* pt, vector<Pattern> pattern, const vector<const DomElemContainer*>& vars, const Universe& universe) {
 	GeneratorFactory factory;
 	return factory.internalCreate(pt, pattern, vars, universe);
 }
 
-InstGenerator* GeneratorFactory::internalCreate(const PredTable* pt, vector<bool> pattern, const vector<const DomElemContainer*>& vars, const Universe& universe) {
+InstGenerator* GeneratorFactory::internalCreate(const PredTable* pt, vector<Pattern> pattern, const vector<const DomElemContainer*>& vars, const Universe& universe) {
 	_table = pt;
 	_pattern = pattern;
 	_vars = vars;
@@ -413,7 +407,9 @@ void GeneratorFactory::visit(const ModInternalFuncTable* ) {
 
 void GeneratorFactory::visit(const AbsInternalFuncTable* aift) {
 	assert(!_pattern[0]);
-	_generator = new InvAbsGenerator(_vars[1],_vars[0],aift->isInt(),_universe.tables()[0]);
+#warning not implemented
+	assert(false);
+	//FIXME _generator = new InvAbsGenerator(_vars[1],_vars[0],aift->isInt(),_universe.tables()[0]);
 }
 
 void GeneratorFactory::visit(const UminInternalFuncTable* uift) {

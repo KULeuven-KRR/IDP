@@ -839,7 +839,7 @@ private:
 						output() << ",";
 					}
 					begin = false;
-					if((*gtit)._isvarid) {
+					if((*gtit).isVariable) {
 						printTerm((*gtit)._varid);
 					} else {
 						output() << (*gtit)._domelement->toString();

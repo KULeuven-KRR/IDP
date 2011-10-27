@@ -287,9 +287,9 @@ InstGenerator* BDDToGenerator::create(PredForm* atom, const vector<bool>& patter
 		newform = FormulaUtils::removeEqChains(newform);
 		newform = FormulaUtils::graphFunctions(newform);
 		newform = FormulaUtils::flatten(newform);
-		assert(safetypeid<QuantForm>(*newform));
+		assert(sametypeid<QuantForm>(*newform));
 		QuantForm* quantform = dynamic_cast<QuantForm*>(newform);
-		assert(safetypeid<BoolForm>(*(quantform->subformula())));
+		assert(sametypeid<BoolForm>(*(quantform->subformula())));
 		BoolForm* boolform = dynamic_cast<BoolForm*>(quantform->subformula());
 		vector<PredForm*> conjunction;
 		for(auto it = boolform->subformulas().cbegin(); it != boolform->subformulas().cend(); ++it) {
@@ -420,7 +420,7 @@ InstGenerator* BDDToGenerator::create(PredForm* atom, const vector<bool>& patter
 			inter = structure->inter(dynamic_cast<Function*>(symbol))->graphInter();
 		}
 		const PredTable* table = 0;
-		if(safetypeid<Predicate>(*(atom->symbol()))) {
+		if(sametypeid<Predicate>(*(atom->symbol()))) {
 			Predicate* predicate = dynamic_cast<Predicate*>(atom->symbol());
 			switch(predicate->type()) {
 			case ST_NONE: table = inverse ? inter->cf() : inter->ct(); break;

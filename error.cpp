@@ -703,6 +703,11 @@ namespace Warning {
 		cerr << "Chance of " << c << " is impossible. Using chance 1 instead\n";
 	}
 
+	void possiblyInfiniteGrounding(const std::string& formula, const std::string& internalformula){
+		cerr << "Warning: infinite grounding of formula " <<formula <<"\n";
+		cerr << "\t Internal representation: " << internalformula << "\n";
+	}
+
 	/** Ambiguous partial term **/
 	void ambigpartialterm(const string& term, const ParseInfo& thisplace) {
 		warning(thisplace);

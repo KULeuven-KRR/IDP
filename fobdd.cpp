@@ -1913,7 +1913,7 @@ void FOBDDFactory::visit(const PredForm* pf) {
 	AtomKernelType akt = AKT_TWOVAL;
 	bool notinverse = true;
 	PFSymbol* symbol = pf->symbol();
-	if(safetypeid<Predicate>(*symbol)) {
+	if(sametypeid<Predicate>(*symbol)) {
 		Predicate* predicate = dynamic_cast<Predicate*>(symbol);
 		if(predicate->type() != ST_NONE) {
 			switch(predicate->type()) {

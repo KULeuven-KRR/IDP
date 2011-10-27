@@ -346,14 +346,14 @@ public:
  * Ground terms
  */
 struct GroundTerm {
-	bool _isvarid;
+	bool isVariable;
 	union {
 		const DomainElement*	_domelement;
 		VarId					_varid;
 	};
 	GroundTerm() { }
-	GroundTerm(const DomainElement* domel): _isvarid(false), _domelement(domel) { }
-	GroundTerm(const VarId& varid): _isvarid(true), _varid(varid) { }
+	GroundTerm(const DomainElement* domel): isVariable(false), _domelement(domel) { }
+	GroundTerm(const VarId& varid): isVariable(true), _varid(varid) { }
 	friend bool operator==(const GroundTerm&, const GroundTerm&);
 	friend bool operator<(const GroundTerm&, const GroundTerm&);
 };
@@ -410,16 +410,16 @@ class GroundTermTranslator {
 	Optimized grounding algorithm
 ************************************/
 
-enum CompContext { CC_SENTENCE, CC_HEAD, CC_FORMULA };
+enum class CompContext { CC_SENTENCE, CC_HEAD, CC_FORMULA };
+enum class GenType { CANMAKETRUE, CANMAKEFALSE };
 
 struct GroundingContext {
-	bool				_truegen;		// Indicates whether the variables are instantiated in order to obtain
-										// a ground formula that is possibly true.
+	GenType				gentype; // if a certainly checker succeeds, then this type applies. if a possible checker fails, then the formula is irrelevant
 	Context				_funccontext;
 	Context				_monotone;
 	CompContext			_component;		// Indicates the context of the visited formula
 	TsType				_tseitin;		// Indicates the type of tseitin definition that needs to be used.
-	std::set<PFSymbol*>	_defined;		// Indicates whether the visited rule is recursive.
+	std::set<PFSymbol*>	_defined;		// Indicates whether the visited rule is recursive. // FIXME why is this context dependent (possibly expensive copy on going deeper?)
 };
 
 
@@ -466,7 +466,8 @@ class SentenceGrounder : public TopLevelGrounder {
 		bool run() const;
 };
 
-class UnivSentGrounder : public TopLevelGrounder {
+// TODO originally, there was a special sentence grounder for universally quantified sentences. As this seemed superfluous and led to code duplication, was scrapped unless good reason for?
+/*class UnivSentGrounder : public TopLevelGrounder {
 	private:
 		TopLevelGrounder*	_subgrounder;
 		InstGenerator*		_generator;	
@@ -474,7 +475,7 @@ class UnivSentGrounder : public TopLevelGrounder {
 		UnivSentGrounder(AbstractGroundTheory* gt, TopLevelGrounder* sub, InstGenerator* gen, int verb) : 
 			TopLevelGrounder(gt,verb), _subgrounder(sub), _generator(gen) { }
 		bool run() const;
-};
+};*/
 
 /***********************
 	Grounder Factory
@@ -544,7 +545,16 @@ class GrounderFactory : public TheoryVisitor {
 		//var2dommap& varmapping() { return _varmapping; }
 
 		const DomElemContainer*	createVarMapping(Variable * const var);
-		template<class VarList> InstGenerator* 	createVarMapAndGenerator(const VarList& vars);
+
+		struct GenAndChecker{
+			InstGenerator* _generator;
+			InstChecker* _checker;
+
+			GenAndChecker(InstGenerator* generator, InstChecker* checker)
+					:_generator(generator), _checker(checker){}
+		};
+		template<typename OrigConstruct>
+		GenAndChecker createVarsAndGenerators(Formula* formula, OrigConstruct* orig, QueryType generatortype, QueryType checkertype);
 
 		const FOBDD*	improve_generator(const FOBDD*, const std::vector<Variable*>&, double);
 		const FOBDD*	improve_checker(const FOBDD*, double);

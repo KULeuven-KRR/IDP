@@ -640,7 +640,7 @@ Formula* NegationPush::visit(PredForm* pf) {
 	if(isPos(pf->sign())){
 		return traverse(pf);
 	}
-	if(safetypeid<Predicate>(*(pf->symbol()))) {
+	if(sametypeid<Predicate>(*(pf->symbol()))) {
 		Predicate* p = dynamic_cast<Predicate*>(pf->symbol());
 		if(p->type() != ST_NONE) {
 			Predicate* newsymbol = NULL;

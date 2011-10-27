@@ -14,71 +14,6 @@
 
 using namespace std;
 
-SimpleFuncGenerator::SimpleFuncGenerator(const FuncTable* ft, const vector<bool>& pattern, const vector<const DomElemContainer*>& vars, const Universe& univ, const vector<unsigned int>& firstocc) : _function(ft), _currinput(pattern.size()-1) {
-	_invars = vars; _invars.pop_back();
-	_outvar = vars.back();
-	_check = firstocc[pattern.size() -1];
-	vector<const DomElemContainer*> univvars;
-	vector<SortTable*> univtabs;
-	for(unsigned int n = 0; n < pattern.size() - 1; ++n) {
-		if(pattern[n]) {
-			_inposs.push_back(n);
-		}
-		else {
-			_outposs.push_back(n);
-			if(firstocc[n] == n) {
-				univvars.push_back(vars[n]);
-				univtabs.push_back(univ.tables()[n]);
-			}
-		}
-	}
-	GeneratorFactory gf;
-	_univgen = gf.create(univvars,univtabs);
-}
-
-bool SimpleFuncGenerator::first() const {
-	if(_univgen->first()) {
-		for(unsigned int n = 0; n < _inposs.size(); ++n) {
-			_currinput[_inposs[n]] = _invars[_inposs[n]]->get();
-		}
-		for(unsigned int n = 0; n < _outposs.size(); ++n) {
-			_currinput[_outposs[n]] = _invars[_outposs[n]]->get();
-		}
-		const DomainElement* d = _function->operator[](_currinput);
-		if(d) {
-			if(_check == _invars.size()) {
-				*_outvar = d;
-				return true;
-			}
-			else if(_invars[_check]->get() == d) {
-				return true;
-			}
-			else { return next(); }
-		}
-		else { return next(); }
-	}
-	else return false;
-}
-
-bool SimpleFuncGenerator::next() const {
-	while(_univgen->next()) {
-		for(unsigned int n = 0; n < _outposs.size(); ++n) {
-			_currinput[_outposs[n]] = _invars[_outposs[n]]->get();
-		}
-		const DomainElement* d = _function->operator[](_currinput);
-		if(d) {
-			if(_check == _invars.size()) {
-				*_outvar = d;
-				return true;
-			}
-			else if(_invars[_check]->get() == d) {
-				return true;
-			}
-		}
-	}
-	return false;
-}
-
 TwoChildGeneratorNode::TwoChildGeneratorNode(InstGenerator* c, InstGenerator* g, GeneratorNode* l, GeneratorNode* r) :
 	_checker(c), _generator(g), _left(l), _right(r) {
 	_left->parent(this);
@@ -183,39 +118,6 @@ bool GenerateAndTestGenerator::first() const {
 	else return false;
 }
 
-bool SortInstGenerator::first() const {
-	if(_table->approxEmpty()) return false;
-	else {
-		_currpos = _table->sortBegin();
-		if(_currpos.hasNext()) {
-			*_outvar = *_currpos;
-			return true;
-		}
-		else return false;
-	}
-}
-
-bool SimpleLookupGenerator::first() const {
-	for(unsigned int n = 0; n < _invars.size(); ++n) {
-		_currargs[n] = _invars[n]->get();
-	}
-	return (_table->contains(_currargs) && _universe.contains(_currargs));
-}
-
-bool EnumLookupGenerator::first() const {
-	for(unsigned int n = 0; n < _invars.size(); ++n) {
-		_currargs[n] = _invars[n]->get();
-	}
-	_currpos = _table.find(_currargs);
-	if(_currpos == _table.cend()) return false;
-	else {
-		_iter = _currpos->second.cbegin();
-		for(unsigned int n = 0; n < _outvars.size(); ++n) {
-			*(_outvars[n]) = (*_iter)[n];
-		}
-		return true;
-	}
-}
 
 GeneratorNode* LeafGeneratorNode::first() const {
 	if(_generator->first()) return _this;
@@ -290,25 +192,6 @@ bool GenerateAndTestGenerator::next() const {
 	return false;
 }
 
-bool SortInstGenerator::next() const {
-	++_currpos;
-	if(_currpos.hasNext()) {
-		*_outvar = *_currpos;
-		return true;
-	}
-	return false;
-}
-
-bool EnumLookupGenerator::next() const {
-	++_iter;
-	if(_iter != _currpos->second.cend()) {
-		for(unsigned int n = 0; n < _outvars.size(); ++n) {
-			*(_outvars[n]) = (*_iter)[n];
-		}
-		return true;
-	}
-	else return false;
-}
 
 GeneratorNode* LeafGeneratorNode::next() const {
 	if(_generator->next()) return _this;

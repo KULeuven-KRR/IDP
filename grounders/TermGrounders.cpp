@@ -60,7 +60,7 @@ GroundTerm FuncTermGrounder::run() const {
 	ElementTuple args(_subtermgrounders.size());
 	for(unsigned int n = 0; n < _subtermgrounders.size(); ++n) {
 		groundsubterms[n] = _subtermgrounders[n]->run();
-		if(groundsubterms[n]._isvarid) {
+		if(groundsubterms[n].isVariable) {
 			calculable = false;
 		} else {
 			assert(groundsubterms[n]._domelement!=NULL);
@@ -110,11 +110,11 @@ GroundTerm SumTermGrounder::run() const {
 
 	// Compute domain for the sum term
 	if(not _domain || not _domain->approxFinite()) {
-		if(not left._isvarid) {
+		if(not left.isVariable) {
 			leftdomain = new SortTable(new EnumeratedInternalSortTable());
 			leftdomain->add(left._domelement);
 		}
-		if(not right._isvarid) {
+		if(not right.isVariable) {
 			rightdomain = new SortTable(new EnumeratedInternalSortTable());
 			rightdomain->add(right._domelement);
 		}
@@ -147,12 +147,12 @@ GroundTerm SumTermGrounder::run() const {
 	}
 
 	VarId varid;
-	if(left._isvarid) {
-		if(right._isvarid) {
+	if(left.isVariable) {
+		if(right.isVariable) {
 			CPTerm* sumterm = createSumTerm(_type,left._varid,right._varid);
 			varid = _termtranslator->translate(sumterm,_domain);
 		} else {
-			assert(not right._isvarid);
+			assert(not right.isVariable);
 			VarId rightvarid = _termtranslator->translate(right._domelement);
 			// Create tseitin
 			CPTsBody* cpelement = _termtranslator->cprelation(rightvarid);
@@ -163,9 +163,9 @@ GroundTerm SumTermGrounder::run() const {
 			varid = _termtranslator->translate(sumterm,_domain);
 		}
 	} else {
-		assert(not left._isvarid);
+		assert(not left.isVariable);
 
-		if(right._isvarid) {
+		if(right.isVariable) {
 			VarId leftvarid = _termtranslator->translate(left._domelement);
 			// Create tseitin
 			CPTsBody* cpelement = _termtranslator->cprelation(leftvarid);
@@ -175,7 +175,7 @@ GroundTerm SumTermGrounder::run() const {
 			CPTerm* sumterm = createSumTerm(_type,leftvarid,right._varid);
 			varid = _termtranslator->translate(sumterm,_domain);
 		} else { // Both subterms are domain elements, so lookup the result in the function table.
-			assert(not right._isvarid);
+			assert(not right.isVariable);
 			assert(_functable);
 			ElementTuple args(2); args[0] = left._domelement; args[1] = right._domelement;
 			const DomainElement* result = (*_functable)[args];

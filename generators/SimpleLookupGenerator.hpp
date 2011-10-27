@@ -9,18 +9,35 @@
 
 #include "generators/InstGenerator.hpp"
 
-class SimpleLookupGenerator : public InstGenerator {
-	private:
-		const PredTable*						_table;
-		std::vector<const DomElemContainer*>			_invars;
-		Universe								_universe;
-		mutable std::vector<const DomainElement*>	_currargs;
-	public:
-		SimpleLookupGenerator(const PredTable* t, const std::vector<const DomElemContainer*> in, const Universe& univ) :
-			_table(t), _invars(in), _universe(univ), _currargs(in.size()) { }
-		bool first()	const;
-		bool next()		const { return false;	}
-};
+/**
+ * A generator which checks whether a fully instantiated list of variables is a valid tuple for a certain predicate
+ */
+class LookupGenerator : public InstGenerator {
+private:
+	const PredTable*						_table;
+	std::vector<const DomElemContainer*>	_vars;
+	Universe								_universe; // FIXME waarvoor is dit universe nu juist nodig?
 
+public:
+	LookupGenerator(const PredTable* t, const std::vector<const DomElemContainer*> vars, const Universe& univ)
+			:_table(t), _vars(vars), _universe(univ) {
+		assert(t->size()==vars.size());
+	}
+
+	bool check() const{
+		std::vector<const DomainElement*> _currargs;
+		for(auto i=_vars.begin(); i<_vars.end(); ++i){
+			_currargs.push_back((*i)->get());
+		}
+		return (_table->contains(_currargs) && _universe.contains(_currargs));
+	}
+
+	void reset(){
+	}
+
+	void next(){
+		assert(false);
+	}
+};
 
 #endif /* SIMPLELOOKUPGENERATOR_HPP_ */

@@ -91,7 +91,7 @@ int HeadGrounder::run() const {
 	ElementTuple args(_subtermgrounders.size());
 	for(unsigned int n = 0; n < _subtermgrounders.size(); ++n) {
 		groundsubterms[n] = _subtermgrounders[n]->run();
-		if(groundsubterms[n]._isvarid) {
+		if(groundsubterms[n].isVariable) {
 			alldomelts = false;
 		} else {
 			args[n] = groundsubterms[n]._domelement;

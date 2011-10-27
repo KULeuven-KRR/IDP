@@ -181,6 +181,8 @@ namespace Warning {
 	/** Wrong cumulative chance (due to rounding errors?) **/
 	void cumulchance(double c);
 
+	void possiblyInfiniteGrounding(const std::string& formula, const std::string& internalformula);
+
 }
 
 namespace Info {

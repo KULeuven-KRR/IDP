@@ -34,7 +34,7 @@ private:
 						SIGN sign,
 						QUANT q,
 						InstGenerator* gen,
-						InstGenerator* checker,
+						InstChecker* checker,
 						const GroundingContext& ct):
 			QuantGrounder(gt,sub,sign, q, gen, checker,ct),
 			id_(maxid++),

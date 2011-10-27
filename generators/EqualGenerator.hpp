@@ -9,40 +9,49 @@
 
 #include "generators/InstGenerator.hpp"
 
+/**
+ * Given two variables x and y, generate all tuples such that x=y
+ * TODO loop over the smallest of both?
+ * TODO eliminate equalinternatiterator (same performance as this)
+ */
 class EqualGenerator : public InstGenerator {
-	private:
-		const DomElemContainer*	_in;
-		const DomElemContainer*	_out;
-		SortTable*				_indom;
-		SortTable*				_outdom;
-		mutable SortIterator	_curr;
-	public:
-		EqualGenerator(const DomElemContainer* in, const DomElemContainer* out, SortTable* outdom) :
-			_in(in), _out(out), _indom(0), _outdom(outdom), _curr(_outdom->sortBegin()) { }
-		EqualGenerator(const DomElemContainer* in, const DomElemContainer* out, SortTable* indom, SortTable* outdom) :
-			_in(in), _out(out), _indom(indom), _outdom(outdom), _curr(_indom->sortBegin()) { }
-		bool first() const {
-			if(_indom) {
-				_curr = _indom->sortBegin();
-				if(not _curr.hasNext()) { return false; }
-				*_in = *_curr;
+private:
+	const DomElemContainer *left, *right;
+	SortTable				*leftdom, *rightdom;
+	SortIterator			_leftcurr;
+public:
+	EqualGenerator(const DomElemContainer* left, const DomElemContainer* right, SortTable* leftdom, SortTable* rightdom) :
+		left(left), right(right), leftdom(leftdom), rightdom(rightdom) { }
+
+	void reset(){
+		_leftcurr = leftdom->sortBegin();
+
+		while(not _leftcurr.isAtEnd()){
+			auto domelem = *_leftcurr;
+			++_leftcurr;
+			if(rightdom->contains(domelem)){
+				return;
 			}
-			*_out = *_in;
-			if(_outdom->contains(_out->get())) return true;
-			else return next();
 		}
-		bool next()	const {
-			if(_indom) {
-				++_curr;
-				while(_curr.hasNext()) {
-					*_in = *_curr;
-					*_out = *_in;
-					if(_outdom->contains(_out->get())) return true;
-					++_curr;
-				}
+		if(_leftcurr.isAtEnd()){
+			notifyAtEnd();
+		}
+	}
+
+	void next(){
+		while(not _leftcurr.isAtEnd()){
+			auto domelem = *_leftcurr;
+			++_leftcurr;
+			if(rightdom->contains(domelem)){
+				*left = domelem;
+				*right = domelem;
+				break;
 			}
-			return false;
 		}
+		if(_leftcurr.isAtEnd()){
+			notifyAtEnd();
+		}
+	}
 };
 
 #endif /* EQUALGENERATOR_HPP_ */

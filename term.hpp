@@ -331,20 +331,18 @@ class EnumSetExpr : public SetExpr {
  * \brief Set expression of the form { x1 ... xn : phi : t }
  **/
 class QuantSetExpr : public SetExpr {
-	public:
-		QuantSetExpr(const std::set<Variable*>& v, Formula* s, Term* t, const SetParseInfo& pi);
+public:
+	QuantSetExpr(const std::set<Variable*>& v, Formula* s, Term* t, const SetParseInfo& pi);
 
-		QuantSetExpr* clone()										const;
-		QuantSetExpr* clone(const std::map<Variable*,Variable*>&)	const;
+	QuantSetExpr* clone()										const;
+	QuantSetExpr* clone(const std::map<Variable*,Variable*>&)	const;
 
-		~QuantSetExpr() { }
+	Sort*	sort()	const;
 
-		Sort*	sort()	const;
+	void		accept(TheoryVisitor*)	const;
+	SetExpr*	accept(TheoryMutatingVisitor*);
 
-		void		accept(TheoryVisitor*)	const;
-		SetExpr*	accept(TheoryMutatingVisitor*);
-
-		std::ostream&	put(std::ostream&, bool longnames = false)	const;	
+	std::ostream&	put(std::ostream&, bool longnames = false)	const;
 };
 
 class AbstractStructure;

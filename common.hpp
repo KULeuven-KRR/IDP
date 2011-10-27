@@ -105,7 +105,7 @@ std::string* StringPointer(const std::string& str);	//!< Returns a shared pointe
 class CannotCompareTypeIDofPointers{};
 
 template<class T2, class T>
-bool safetypeid(const T& object){
+bool sametypeid(const T& object){
 	LOKI_STATIC_CHECK(not Loki::TypeTraits<T>::isPointer, InvalidTypeIDCheck);
 	LOKI_STATIC_CHECK(not Loki::TypeTraits<T2>::isPointer, InvalidTypeIDCheck);
 	return typeid(object)==typeid(T2);
