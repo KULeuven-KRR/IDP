@@ -12,7 +12,6 @@ public:
 	// TODO enum?
 	// FIXME do not set output variables
 	virtual bool check() = 0; // Check whether current input + output is correct
-	virtual bool checkInput() = 0; // Check whether current input still has at least one output instantiation
 };
 
 class InstGenerator: public InstChecker {
