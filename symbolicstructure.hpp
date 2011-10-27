@@ -15,8 +15,6 @@ class FOBDDManager;
 class FOBDD;
 class FOBDDVariable;
 
-enum QueryType { QT_CT, QT_CF, QT_PT, QT_PF };
-
 class SymbolicStructure : public TheoryVisitor {
 	private:
 		FOBDDManager*											_manager;
@@ -24,7 +22,7 @@ class SymbolicStructure : public TheoryVisitor {
 		std::map<PFSymbol*,const FOBDD*>						_cfbounds;
 		std::map<PFSymbol*,std::vector<const FOBDDVariable*> >	_vars;
 
-		QueryType		_type;
+		TruthType		_type;
 		const FOBDD*	_result;
 		void visit(const PredForm*);
 		void visit(const BoolForm*);
@@ -38,7 +36,7 @@ class SymbolicStructure : public TheoryVisitor {
 		SymbolicStructure(FOBDDManager* m,const std::map<PFSymbol*,const FOBDD*>& ct, const std::map<PFSymbol*,const FOBDD*>& cf, const std::map<PFSymbol*,std::vector<const FOBDDVariable*> >& v) : 
 			_manager(m), _ctbounds(ct), _cfbounds(cf), _vars(v) { }
 		FOBDDManager*	manager()						const { return _manager;	}
-		const FOBDD*	evaluate(Formula*,QueryType);
+		const FOBDD*	evaluate(Formula*,TruthType);
 
 		/** Make the symbolic structure less precise, based on the given structure **/
 		void filter(AbstractStructure* structure, double max_cost_per_answer);

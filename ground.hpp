@@ -26,6 +26,7 @@ class FuncTable;
 class AbstractStructure;
 class AbstractGroundTheory;
 class InstGenerator;
+class InstChecker;
 class InstanceChecker;
 class SortTable;
 class DomainElement;
@@ -545,6 +546,8 @@ class GrounderFactory : public TheoryVisitor {
 		//var2dommap& varmapping() { return _varmapping; }
 
 		const DomElemContainer*	createVarMapping(Variable * const var);
+		template<class VarList>
+		InstGenerator* createVarMapAndGenerator(const VarList& vars);
 
 		struct GenAndChecker{
 			InstGenerator* _generator;
@@ -554,7 +557,7 @@ class GrounderFactory : public TheoryVisitor {
 					:_generator(generator), _checker(checker){}
 		};
 		template<typename OrigConstruct>
-		GenAndChecker createVarsAndGenerators(Formula* formula, OrigConstruct* orig, QueryType generatortype, QueryType checkertype);
+		GenAndChecker createVarsAndGenerators(Formula* formula, OrigConstruct* orig, TruthType generatortype, TruthType checkertype);
 
 		const FOBDD*	improve_generator(const FOBDD*, const std::vector<Variable*>&, double);
 		const FOBDD*	improve_checker(const FOBDD*, double);

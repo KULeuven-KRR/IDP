@@ -17,34 +17,21 @@ private:
 	const InternalSortTable*	_table;
 	const DomElemContainer*		_var;
 	SortIterator				_curr;
-	bool first;
 public:
 	SortInstGenerator(const InternalSortTable* table, const DomElemContainer* var)
-			:_table(table), _var(var), first(true) {
-		if(_table->approxEmpty()){ // FIXME what if approxempty is false, but it is in fact empty?
-									// FIXME 2 is also not checked everywhere (in other generator)
-			notifyAtEnd();
-		}
+			:_table(table), _var(var), _curr(_table->sortBegin()) {
 	}
 
 	void reset(){
-		first = true;
-		if(_table->approxEmpty()){ // FIXME what if approxempty is false, but it is in fact empty?
+		_curr = _table->sortBegin();
+		if(_curr.isAtEnd()){
 			notifyAtEnd();
 		}
 	}
 
-	void next(){ // TODO check invariant everywhere that reset is called before first next
-		if(first){
-			_curr = _table->sortBegin(); // FIXME also check whether the curr it not immediately at end!
-			first = false; // FIXME this is quite bug-prone, change it?
-		}else{
-			++_curr;
-		}
-		*var = *_curr;
-		if(_curr.isAtEnd()){
-			notifyAtEnd();
-		}
+	void next(){
+		*_var = *_curr;
+		++_curr;
 	}
 };
 

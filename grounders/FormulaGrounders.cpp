@@ -548,15 +548,12 @@ void BoolGrounder::run(litlist& clause, bool negate) const {
 void QuantGrounder::run(litlist& clause, bool negated) const {
 	if(verbosity() > 2) printorig();
 
-	if(not _generator->first()) {
-		return;
-	}
-
-	do{
-		if(_checker->first()) { // FIXME should this be NOT first() ?
-			clause = litlist{negated?-_false:_false}; // FIXME should this be false
+	for(_generator->begin(); not _generator->isAtEnd(); _generator->operator ++()){
+		if(_checker->check()){
+			clause = litlist{context().gentype==GenType::CANMAKETRUE? _false: _true};
 			break;
 		}
+
 		Lit l = _subgrounder->run();
 		if(makesFormulaFalse(l, negated)) {
 			clause = litlist{negated?-_false:_false}; // FIXME should negateclause be checked as part of "makesformulafalse"?
@@ -567,7 +564,7 @@ void QuantGrounder::run(litlist& clause, bool negated) const {
 		}else if(not isRedundantInFormula(l, negated)){
 			clause.push_back(negated? -l : l);
 		}
-	}while(_generator->next());
+	}
 }
 
 Lit EquivGrounder::run() const {

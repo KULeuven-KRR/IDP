@@ -11,17 +11,17 @@
 #include "symbolicstructure.hpp"
 using namespace std;
 
-QueryType swapTF(QueryType type) {
+TruthType swapTF(TruthType type) {
 	switch(type) {
-		case QT_PF: return QT_PT;
-		case QT_PT: return QT_PF;
-		case QT_CF: return QT_CT;
-		case QT_CT: return QT_CF;
+		case TruthType::PF: return TruthType::PT;
+		case TruthType::PT: return TruthType::PF;
+		case TruthType::CF: return TruthType::CT;
+		case TruthType::CT: return TruthType::CF;
 	}
 }
 
 
-const FOBDD* SymbolicStructure::evaluate(Formula* f, QueryType type) {
+const FOBDD* SymbolicStructure::evaluate(Formula* f, TruthType type) {
 	_type = type;
 	_result = 0;
 	f->accept(this);
@@ -32,11 +32,11 @@ void SymbolicStructure::visit(const PredForm* atom) {
 	if(_ctbounds.find(atom->symbol()) == _ctbounds.cend()) {
 		FOBDDFactory factory(_manager);
 		const FOBDD* bdd = factory.run(atom);
-		if(_type == QT_CF || _type == QT_PF) bdd = _manager->negation(bdd);
+		if(_type == TruthType::CF || _type == TruthType::PF) bdd = _manager->negation(bdd);
 		_result = bdd;
 	}
 	else {
-		bool getct = (_type == QT_CT || _type == QT_PF);
+		bool getct = (_type == TruthType::CT || _type == TruthType::PF);
 		if(isNeg(atom->sign())){
 			getct = !getct;
 		}
@@ -48,15 +48,15 @@ void SymbolicStructure::visit(const PredForm* atom) {
 			mva[vars[n]] = factory.run(atom->subterms()[n]);
 		}
 		bdd = _manager->substitute(bdd,mva);
-		if(_type == QT_PT || _type == QT_PF) bdd = _manager->negation(bdd);
+		if(_type == TruthType::PT || _type == TruthType::PF) bdd = _manager->negation(bdd);
 		_result = bdd;
 	}
 }
 
 void SymbolicStructure::visit(const BoolForm* boolform) {
 	bool conjunction = boolform->isConjWithSign();
-	conjunction = (_type == QT_PF || _type == QT_CF) ? !conjunction : conjunction;
-	QueryType rectype = boolform->sign()==SIGN::POS ? _type : swapTF(_type);
+	conjunction = (_type == TruthType::PF || _type == TruthType::CF) ? !conjunction : conjunction;
+	TruthType rectype = boolform->sign()==SIGN::POS ? _type : swapTF(_type);
 
 	const FOBDD* currbdd;
 	if(conjunction) currbdd = _manager->truebdd();
@@ -71,8 +71,8 @@ void SymbolicStructure::visit(const BoolForm* boolform) {
 
 void SymbolicStructure::visit(const QuantForm* quantform) {
 	bool universal = quantform->isUnivWithSign();
-	universal = (_type == QT_PF || _type == QT_CF) ? !universal : universal;
-	QueryType rectype = quantform->sign()==SIGN::POS ? _type : swapTF(_type);
+	universal = (_type == TruthType::PF || _type == TruthType::CF) ? !universal : universal;
+	TruthType rectype = quantform->sign()==SIGN::POS ? _type : swapTF(_type);
 	const FOBDD* subbdd = evaluate(quantform->subformula(),rectype);
 	set<const FOBDDVariable*> vars = _manager->getVariables(quantform->quantVars());
 	_result = universal ? _manager->univquantify(vars,subbdd) : _manager->existsquantify(vars,subbdd);
@@ -94,7 +94,7 @@ void SymbolicStructure::visit(const EquivForm* equivform) {
 
 void SymbolicStructure::visit(const AggForm*) {
 	// TODO: better evaluation function?
-	if(_type == QT_PT || _type == QT_PF) _result = _manager->truebdd();
+	if(_type == TruthType::PT || _type == TruthType::PF) _result = _manager->truebdd();
 	else _result =  _manager->falsebdd();
 }
 

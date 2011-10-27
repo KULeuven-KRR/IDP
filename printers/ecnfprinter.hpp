@@ -279,7 +279,7 @@ private:
 				output() << "INTVAR " << varid << ' ' << minvalue << ' ' << maxvalue << ' ';
 			} else {
 				output() << "INTVARDOM " << varid << ' ';
-				for(SortIterator it = domain->sortBegin(); it.hasNext(); ++it) {
+				for(SortIterator it = domain->sortBegin(); not it.isAtEnd(); ++it) {
 					int value = (*it)->value()._int;
 					output() << value << ' ';
 				}

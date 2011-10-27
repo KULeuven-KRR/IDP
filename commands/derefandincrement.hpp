@@ -20,29 +20,27 @@ public:
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
 		TableIterator* it = args[0]._value._tableiterator;
-		if(it->hasNext()) {
-			ElementTuple* tuple = new ElementTuple(*(*it));
-			it->operator++();
-			InternalArgument ia; ia._type = AT_TUPLE; ia._value._tuple = tuple;
-			return ia;
-		}
-		else {
+		if(it->isAtEnd()){
 			return nilarg();
 		}
+
+		ElementTuple* tuple = new ElementTuple(*(*it));
+		it->operator++();
+		InternalArgument ia; ia._type = AT_TUPLE; ia._value._tuple = tuple;
+		return ia;
 	}
 };
 
 template<class Iterator>
 InternalArgument derefValueAndIncrementIterator(Iterator it){
-	if(it->hasNext()) {
-		const DomainElement* element = *(*it);
-		it->operator++();
-		InternalArgument ia(element);
-		return ia;
-	}
-	else {
+	if(it->isAtEnd()){
 		return nilarg();
 	}
+
+	const DomainElement* element = *(*it);
+	it->operator++();
+	InternalArgument ia(element);
+	return ia;
 }
 
 class IntDerefAndIncrementInference: public Inference {

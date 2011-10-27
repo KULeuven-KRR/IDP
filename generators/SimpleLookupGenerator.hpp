@@ -21,7 +21,7 @@ private:
 public:
 	LookupGenerator(const PredTable* t, const std::vector<const DomElemContainer*> vars, const Universe& univ)
 			:_table(t), _vars(vars), _universe(univ) {
-		assert(t->size()==vars.size());
+		assert(t->arity()==vars.size());
 	}
 
 	bool check() const{

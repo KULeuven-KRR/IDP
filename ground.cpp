@@ -1225,7 +1225,7 @@ void GrounderFactory::visit(const QuantForm* qf) {
 
 	// !x phi(x) => generate all x possibly false
 	// !x phi(x) => check for x certainly false
-	GenAndChecker gc = createVarsAndGenerators(movedformula, qf, qf->isUniv() ? QT_PF : QT_PT, qf->isUniv() ? QT_CF : QT_CT);
+	GenAndChecker gc = createVarsAndGenerators(movedformula, qf, qf->isUniv() ? TruthType::PF : TruthType::PT, qf->isUniv() ? TruthType::CF : TruthTypeCT);
 
 	// Handle top-level universal quantifiers efficiently
 /*	if(_context._component == CC_SENTENCE && qf->isUnivWithSign()) {
@@ -1524,7 +1524,7 @@ void GrounderFactory::visit(const EnumSetExpr* s) {
 
 // TODO verify
 template<typename OrigConstruct>
-GrounderFactory::GenAndChecker GrounderFactory::createVarsAndGenerators(Formula* formula, OrigConstruct* orig, QueryType generatortype, QueryType checkertype){
+GrounderFactory::GenAndChecker GrounderFactory::createVarsAndGenerators(Formula* formula, OrigConstruct* orig, TruthType generatortype, TruthType checkertype){
 	vector<const DomElemContainer*> vars;
 	vector<SortTable*>	tables;
 	vector<Variable*> fovars, quantfovars;
@@ -1590,7 +1590,7 @@ void GrounderFactory::visit(const QuantSetExpr* qs) {
 	movedformula = FormulaUtils::graphFunctions(movedformula);
 
 	// NOTE: generator generates possibly true instances, checker checks the certainly true ones
-	GenAndChecker gc = createVarsAndGenerators(movedformula, qs, QT_PT, QT_CT);
+	GenAndChecker gc = createVarsAndGenerators(movedformula, qs, TruthType::PT, TruthType::CT);
 
 	// Create grounder for subformula
 	SaveContext();

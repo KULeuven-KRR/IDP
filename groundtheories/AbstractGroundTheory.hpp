@@ -350,13 +350,13 @@ public:
 						++sit;
 					}
 					++it;
-					if(sit.hasNext()){
+					if(not sit.isAtEnd()){
 						++sit;
 					}
 				}
 				else {
-					if(not sets.empty() && sit.hasNext()) { weak.back() = true; }
-					if(tit.hasNext()) {
+					if(not sets.empty() && not sit.isAtEnd()) { weak.back() = true; }
+					if(not tit.isAtEnd()) {
 						const ElementTuple& tuple = *tit;
 						if(de(tuple,it->first)) {
 							do {
@@ -367,7 +367,7 @@ public:
 							} while(it != tuples.end() && de(tuple,it->first));
 							continue;
 						} else if(ds(tuple,it->first)) {
-							do { ++tit; } while(tit.hasNext() && ds(*tit,it->first));
+							do { ++tit; } while(not tit.isAtEnd() && ds(*tit,it->first));
 							continue;
 						}
 					}

@@ -2435,7 +2435,7 @@ pair<int,int>* Insert::range(int i1, int i2, YYLTYPE l) const {
 		i2 = i1;
 		Error::invalidrange(i1,i2,parseinfo(l));
 	}
-	pair<int,int>* p = new pair<int,int>(i1,i2);
+	auto p = new pair<int,int>(i1,i2);
 	return p;
 }
 
@@ -2444,7 +2444,7 @@ pair<char,char>* Insert::range(char c1, char c2, YYLTYPE l) const {
 		c2 = c1;
 		Error::invalidrange(c1,c2,parseinfo(l));
 	}
-	pair<char,char>* p = new pair<char,char>(c1,c2);
+	auto p = new pair<char,char>(c1,c2);
 	return p;
 }
 
@@ -2654,7 +2654,7 @@ void Insert::assignunknowntables() {
 		PredInter* pri = _currstructure->inter(it->first);
 		const PredTable* ctable = _cpreds[it->first] == UTF_CT ? pri->ct() : pri->cf();
 		PredTable* pt = new PredTable(ctable->internTable(),ctable->universe());
-		for(TableIterator tit = it->second->begin() ; tit.hasNext(); ++tit) pt->add(*tit);
+		for(TableIterator tit = it->second->begin() ; not tit.isAtEnd(); ++tit) pt->add(*tit);
 		_cpreds[it->first] == UTF_CT ? pri->pt(pt) : pri->pf(pt);
 		delete(it->second);
 	}
@@ -2663,7 +2663,7 @@ void Insert::assignunknowntables() {
 		PredInter* pri = _currstructure->inter(it->first)->graphInter();
 		const PredTable* ctable = _cfuncs[it->first] == UTF_CT ? pri->ct() : pri->cf();
 		PredTable* pt = new PredTable(ctable->internTable(),ctable->universe());
-		for(TableIterator tit = it->second->begin() ; tit.hasNext(); ++tit) pt->add(*tit);
+		for(TableIterator tit = it->second->begin() ; not tit.isAtEnd(); ++tit) pt->add(*tit);
 		_cfuncs[it->first] == UTF_CT ? pri->pt(pt) : pri->pf(pt);
 		delete(it->second);
 	}

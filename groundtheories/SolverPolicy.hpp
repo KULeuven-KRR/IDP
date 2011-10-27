@@ -373,7 +373,7 @@ private:
 				MinisatID::CPIntVarEnum cpvar;
 				cpvar.varID = varid;
 				if(_verbosity > 0) std::clog << "{ ";
-				for(SortIterator it = domain->sortBegin(); it.hasNext(); ++it) {
+				for(SortIterator it = domain->sortBegin(); not it.isAtEnd(); ++it) {
 					int value = (*it)->value()._int;
 					cpvar.values.push_back(value);
 					if(_verbosity > 0) std::clog << value << "; ";

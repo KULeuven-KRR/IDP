@@ -56,6 +56,8 @@ enum class SIGN{ NEG, POS};
 
 enum class QUANT { UNIV, EXIST};
 
+enum class TruthType { CT, CF, PT, PF };
+
 typedef int Lit;
 typedef std::vector<Lit> litlist;
 

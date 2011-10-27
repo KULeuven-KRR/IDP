@@ -313,7 +313,8 @@ class TableIterator {
 		TableIterator(const TableIterator&);
 		TableIterator(InternalTableIterator* iter) : _iterator(iter) { }
 		TableIterator& operator=(const TableIterator&);
-		bool					hasNext()	const;
+		//bool					hasNext()	const;
+		bool isAtEnd() const;
 		const ElementTuple&		operator*()	const;
 		void					operator++();
 		~TableIterator();
@@ -458,7 +459,7 @@ class InternalFuncIterator : public InternalTableIterator {
 		TableIterator					_curr;
 		mutable ElementTable			_deref;
 		const InternalFuncTable*		_function;
-		bool							hasNext()	const { return _curr.hasNext();	}
+		bool							hasNext()	const { return not _curr.isAtEnd();	}
 		const ElementTuple&				operator*()	const;
 		void							operator++();
 	public:
@@ -477,7 +478,7 @@ class ProcInternalTableIterator : public InternalTableIterator {
 		Universe						_univ;
 		mutable ElementTable			_deref;
 		const InternalPredTable*		_predicate;
-		bool							hasNext()	const { return _curr.hasNext();	}
+		bool							hasNext()	const { return not _curr.isAtEnd();	}
 		const ElementTuple&				operator*()	const;
 		void							operator++();
 	public:
@@ -561,7 +562,7 @@ class EqualInternalIterator : public InternalTableIterator {
 
 class InternalSortIterator {
 	public:
-		virtual bool					hasNext()	const = 0;
+		virtual bool					hasNext()	const = 0; // FIXME should become isAtEnd
 		virtual const DomainElement*	operator*()	const = 0;
 		virtual void					operator++() = 0;
 		virtual ~InternalSortIterator() { }
