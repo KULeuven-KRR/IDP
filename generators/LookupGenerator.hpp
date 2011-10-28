@@ -32,6 +32,7 @@ public:
 		return (_table->contains(_currargs) && _universe.contains(_currargs));
 	}
 
+	// TODO can ONLY be used for checking
 	void reset(){
 	}
 

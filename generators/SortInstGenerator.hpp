@@ -22,6 +22,10 @@ public:
 			:_table(table), _var(var), _curr(_table->sortBegin()) {
 	}
 
+	bool check() const{
+		return _table->contains(_var->get());
+	}
+
 	void reset(){
 		_curr = _table->sortBegin();
 		if(_curr.isAtEnd()){
@@ -32,6 +36,9 @@ public:
 	void next(){
 		*_var = *_curr;
 		++_curr;
+		if(_curr.isAtEnd()){
+			notifyAtEnd();
+		}
 	}
 };
 

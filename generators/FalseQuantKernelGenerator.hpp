@@ -10,18 +10,21 @@
 #include "generators/InstGenerator.hpp"
 
 /**
- * Given a universe generator and a checker whether it is in the quantkernel, generate all tuples in the falsequantkernel.
- *
- * FIXME is this code what is meant? what does the FALSEquantkernelgen do here?
+ * Generate all x such that ?x phi(x) is false.
+ * Given is a generator for the universe and a checker which returns true if phi(x) is true.
  */
 class FalseQuantKernelGenerator : public InstGenerator {
 private:
 	InstGenerator*	universeGenerator;
-	InstChecker*	inQuantKernelChecker;
+	InstChecker*	quantKernelTrueChecker;
 
 public:
-	FalseQuantKernelGenerator(InstGenerator* universegenerator, InstChecker* quantchecker)
-			: universeGenerator(universegenerator), inQuantKernelChecker(quantchecker){ }
+	FalseQuantKernelGenerator(InstGenerator* universegenerator, InstChecker* bddtruechecker)
+			: universeGenerator(universegenerator), quantKernelTrueChecker(bddtruechecker){ }
+
+	bool check() const{
+		return not quantKernelTrueChecker->check();
+	}
 
 	void reset(){
 		universeGenerator->reset();
@@ -31,7 +34,8 @@ public:
 	}
 
 	void next(){
-		while(not inQuantKernelChecker->check()){
+		universeGenerator->next();
+		while(not universeGenerator->isAtEnd() && quantKernelTrueChecker->check()){
 			universeGenerator->next();
 		}
 		if(universeGenerator->isAtEnd()){

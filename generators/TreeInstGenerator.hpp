@@ -1,9 +1,3 @@
-/************************************
-	TreeInstGenerator.hpp
-	this file belongs to GidL 2.0
-	(c) K.U.Leuven
-************************************/
-
 #ifndef TREEINSTGENERATOR_HPP_
 #define TREEINSTGENERATOR_HPP_
 
@@ -11,80 +5,165 @@
 
 class GeneratorNode;
 
-class TreeInstGenerator : public InstGenerator {
-	private:
-				GeneratorNode*	_root;
-		mutable	GeneratorNode*	_curr;	// Remember the last position of a match
+class TreeInstGenerator: public InstGenerator {
+private:
+	GeneratorNode* _root;
 
-	public:
-		// Constructor
-		TreeInstGenerator(GeneratorNode* r) : _root(r), _curr(0) { }
+public:
+	TreeInstGenerator(GeneratorNode* r)
+			: _root(r) {
+	}
 
-		// Generate instances
-		bool	first()	const;
-		bool	next()	const;
+	void reset() {
+		_root->begin();
+		if (_root->isAtEnd()) {
+			notifyAtEnd();
+		}
+	}
+
+	void next() {
+		_root->next();
+		if (_root->isAtEnd()) {
+			notifyAtEnd();
+		}
+	}
 };
 
 class GeneratorNode {
-protected:
-	GeneratorNode*	_parent;
-
-public:
-	GeneratorNode() : _parent(0) { }
-	virtual ~GeneratorNode() {}
-
-	// Mutators
-	void	parent(GeneratorNode* n) { _parent = n;	}
-
-	// Inspectors
-	GeneratorNode*	parent()	const { return _parent;	}
-
-	// Generate instances
-	virtual	GeneratorNode*	first()	const = 0;
-	virtual	GeneratorNode*	next()	const = 0;
-};
-
-class LeafGeneratorNode : public GeneratorNode {
 private:
-	InstGenerator*	_generator;
-	GeneratorNode*	_this;		//	equal to 'this'
+	bool atEnd;
+protected:
+	void notifyAtEnd() {
+		atEnd = true;
+	}
+
+	virtual void reset()= 0;
 
 public:
-	LeafGeneratorNode(InstGenerator* gt) : GeneratorNode(), _generator(gt) { _this = this;	}
+	GeneratorNode()
+		: atEnd(false) {
+	}
+	virtual ~GeneratorNode() {
+	}
 
-	// Generate instances
-	GeneratorNode*	first()	const;
-	GeneratorNode*	next()	const;
+	bool isAtEnd() const {
+		return atEnd;
+	}
+	virtual void next() = 0;
+	void begin() {
+		atEnd = false;
+		reset();
+	}
 };
 
-class OneChildGeneratorNode : public GeneratorNode {
-	private:
-		InstGenerator*	_generator;
-		GeneratorNode*	_child;
+class LeafGeneratorNode: public GeneratorNode {
+private:
+	InstGenerator* _generator;
+public:
+	LeafGeneratorNode(InstGenerator* gt)
+			: GeneratorNode(), _generator(gt) {
+	}
 
-	public:
-		// Constructor
-		OneChildGeneratorNode(InstGenerator* gt, GeneratorNode* c) : GeneratorNode(), _generator(gt), _child(c) { _child->parent(this);	}
-
-		// Generate instances
-		GeneratorNode*	first()	const;
-		GeneratorNode*	next()	const;
+	virtual void next() {
+		_generator->next();
+		if (_generator->isAtEnd()) {
+			notifyAtEnd();
+		}
+	}
+	virtual void reset() {
+		_generator->begin();
+		if (_generator->isAtEnd()) {
+			notifyAtEnd();
+		}
+	}
 };
 
-class TwoChildGeneratorNode : public GeneratorNode {
-	private:
-		InstGenerator*		_checker;
-		InstGenerator*		_generator;
-		GeneratorNode*		_left;
-		GeneratorNode*		_right;
+class OneChildGeneratorNode: public GeneratorNode {
+private:
+	InstGenerator* _generator;
+	GeneratorNode* _child;
 
-	public:
-		// Constructor
-		TwoChildGeneratorNode(InstGenerator* c, InstGenerator* g, GeneratorNode* l, GeneratorNode* r);
+public:
+	OneChildGeneratorNode(InstGenerator* gt, GeneratorNode* c)
+			: _generator(gt), _child(c) {
+	}
 
-		// Generate instances
-		GeneratorNode*	first()	const;
-		GeneratorNode*	next()	const;
+	virtual void next() {
+		_child->next();
+		if (_child->isAtEnd()) {
+			_generator->next();
+			if (_generator->isAtEnd()) {
+				notifyAtEnd();
+			}else{
+				next();
+			}
+		}
+	}
+	virtual void reset() {
+		for (_generator->begin(); not _generator->isAtEnd(); _generator->next()) {
+			_child->begin();
+			if (not _child->isAtEnd()) {
+				break;
+			}
+		}
+		if (_generator->isAtEnd()) {
+			notifyAtEnd();
+		}
+	}
+};
+
+class TwoChildGeneratorNode: public GeneratorNode {
+private:
+	InstChecker* _checker;
+	InstGenerator* _generator;
+	GeneratorNode* _truecheckbranch, *_falsecheckbranch;
+
+public:
+	TwoChildGeneratorNode(InstChecker* c, InstGenerator* g, GeneratorNode* falsecheckbranch,
+			GeneratorNode* truecheckbranch)
+			: _checker(c), _generator(g), _falsecheckbranch(falsecheckbranch), _truecheckbranch(truecheckbranch) {
+	}
+
+	virtual void next() {
+		bool ended = false;
+		if (_checker->check()) {
+			_truecheckbranch->next();
+			if (_truecheckbranch->isAtEnd()) {
+				ended = true;
+			}
+		} else {
+			_falsecheckbranch->next();
+			if (_falsecheckbranch->isAtEnd()) {
+				ended = true;
+			}
+		}
+		if(ended){
+			_generator->next();
+			if (_generator->isAtEnd()) {
+				notifyAtEnd();
+			}else{
+				next();
+			}
+		}
+	}
+	virtual void reset() {
+		for (_generator->begin(); not _generator->isAtEnd(); _generator->next()) {
+			if (_checker->check()) {
+				_truecheckbranch->begin();
+				if (not _truecheckbranch->isAtEnd()) {
+					break;
+				}
+			} else {
+				_falsecheckbranch->begin();
+				if (not _falsecheckbranch->isAtEnd()) {
+					break;
+				}
+			}
+		}
+		if (_generator->isAtEnd()) {
+			notifyAtEnd();
+		}
+	}
 };
 
 #endif /* TREEINSTGENERATOR_HPP_ */

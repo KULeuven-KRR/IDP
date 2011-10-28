@@ -245,8 +245,8 @@ class DomainElementFactory {
 
 		static DomainElementFactory*	instance();
 
-		const DomainElement*	create(int value);
-		const DomainElement*	create(double value, bool certnotint = false);
+		const DomainElement*	create(int value, NumType createType = NumType::INT);
+		const DomainElement*	create(double value, NumType createType = NumType::DOUBLE);
 		const DomainElement*	create(const std::string* value, bool certnotdouble = false);
 		const DomainElement*	create(const Compound* value);
 		const DomainElement*	create(Function*,const ElementTuple&);

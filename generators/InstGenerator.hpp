@@ -11,7 +11,8 @@ class InstChecker{
 public:
 	// TODO enum?
 	// FIXME do not set output variables
-	virtual bool check() = 0; // Check whether current input + output is correct
+	// or checker should only be created if there are not output variables?
+	virtual bool check() const = 0; // Check whether current input + output is correct
 };
 
 class InstGenerator: public InstChecker {
@@ -22,6 +23,10 @@ protected:
 		end = true;
 	}
 
+	// Semantics: next should set the variables to a NOT-YET-SEEN instantiation.
+	//		the combination of reset + next should set the variables to the first matching instantation.
+	//	No assumption is made about calling reset on its own.
+	//	Next will never be called when already at end.
 	virtual void next() = 0;
 	virtual void reset() = 0;
 

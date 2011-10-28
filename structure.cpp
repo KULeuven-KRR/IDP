@@ -385,7 +385,11 @@ const Compound* DomainElementFactory::compound(Function* function, const Element
  * PARAMETERS
  *		- value: the given value
  */
-const DomainElement* DomainElementFactory::create(int value) {
+const DomainElement* DomainElementFactory::create(int value, NumType createType) {
+	if(createType == NumType::DOUBLE){
+		return create(double(value), NumType);
+	}
+
 	DomainElement* element = 0;
 	// Check if the value is within the efficient range
 	if (value >= _firstfastint && value < _lastfastint) {
@@ -416,9 +420,10 @@ const DomainElement* DomainElementFactory::create(int value) {
  *		- value:		the given value
  *		- certnotint:	true iff the caller of this method asserts that the value is not an integer
  */
-const DomainElement* DomainElementFactory::create(double value, bool certnotint) {
-	if (!certnotint && isInt(value))
+const DomainElement* DomainElementFactory::create(double value, NumType createType) {
+	if (createType==NumType::INT){
 		return create(int(value));
+	}
 
 	DomainElement* element;
 	map<double, DomainElement*>::const_iterator it = _doubleelements.find(value);
