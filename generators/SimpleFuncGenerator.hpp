@@ -27,7 +27,7 @@ public:
 	// FIXME did not understand code
 	SimpleFuncGenerator(const FuncTable* ft, const std::vector<bool>& pattern, const std::vector<const DomElemContainer*>& vars, const Universe& univ)
 			: _function(ft) {
-/*		_invars = vars; _invars.pop_back();
+		_invars = vars; _invars.pop_back();
 		_outvar = vars.back();
 		std::vector<const DomElemContainer*> univvars;
 		std::vector<SortTable*> univtabs;
@@ -44,11 +44,11 @@ public:
 			}
 		}
 		GeneratorFactory gf;
-		_univgen = gf.create(univvars,univtabs);*/
+		_univgen = gf.create(univvars,univtabs);
 	}
 
 	void reset(){
-/*		std::vector<const DomElemContainer*> univvars;
+		std::vector<const DomElemContainer*> univvars;
 		std::vector<SortTable*> univtabs;
 		for(unsigned int n = 0; n < pattern.size() - 1; ++n) {
 			if(pattern[n]) {
@@ -63,10 +63,10 @@ public:
 			}
 		}
 		GeneratorFactory gf;
-		_univgen = gf.create(univvars,univtabs);*/
+		_univgen = gf.create(univvars,univtabs);
 	}
 
-/*	bool first()	const{
+	bool first()	const{
 		if(_univgen->first()) {
 			for(unsigned int n = 0; n < _inposs.size(); ++n) {
 				_currinput[_inposs[n]] = _invars[_inposs[n]]->get();
@@ -106,7 +106,7 @@ public:
 			}
 		}
 		return false;
-	}*/
+	}
 };
 
 #endif /* SIMPLEFUNCGENERATOR_HPP_ */

@@ -271,6 +271,8 @@ void GeneratorFactory::visit(const InverseInternalPredTable* iip) {
 	}
 }
 
+// NOTE: for any function, if the range is an output variable, we can use the simple func generator
+// if the range is input, we need more specialized generators depending on the function type
 void GeneratorFactory::visit(const FuncTable* ft) {
 	if(not _pattern.back()) {
 		// TODO: for the input positions, change universe to the universe of ft if this is smaller
@@ -283,6 +285,7 @@ void GeneratorFactory::visit(const ProcInternalFuncTable* ) {
 	_generator = new GenerateAndTestGenerator(_table,_pattern,_vars,_firstocc,_universe);
 }
 
+//
 void GeneratorFactory::visit(const UNAInternalFuncTable* ) {
 	_generator = new InvUNAGenerator(_pattern,_vars,_universe);
 }

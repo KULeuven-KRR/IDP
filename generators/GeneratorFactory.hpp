@@ -30,6 +30,8 @@ private:
 													//!< variable occurs first
 	InstGenerator*						_generator;
 
+	// NOTE: for any function, if the range is an output variable, we can use the simple func generator
+	// if the range is input, we need more specialized generators depending on the function type
 	void visit(const FuncTable* ft);
 	void visit(const ProcInternalPredTable*);
 	void visit(const BDDInternalPredTable*);
