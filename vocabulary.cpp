@@ -373,7 +373,7 @@ string Function::toString(bool longnames) const {
 }
 
 ostream& operator<<(ostream& output, const PFSymbol& s) {
-	return s.put(output, false); // FIXME can we solve that we have to choose how to print the longnames here?
+	return s.put(output, false); // TODO longnames
 }
 
 int Predicate::_npnr = 0;

@@ -302,7 +302,7 @@ public:
 
 	void schedule(const Formula* par, FOPropDirection, bool, const Formula* child);
 
-	// FIXME check that domains can never contain nullpointers!
+	// TODO check that domains can never contain nullpointers!
 
 	int getVerbosity() const { return _verbosity; }
 	int getMaxSteps() const { return _maxsteps; }

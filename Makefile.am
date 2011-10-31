@@ -107,7 +107,6 @@ grounder_SOURCES = \
 		generators/ComparisonGenerator.hpp\
 		generators/EmptyGenerator.hpp\
 		generators/EnumLookupGenerator.hpp\
-		generators/EqualGenerator.hpp\
 		generators/FalseQuantGenerator.hpp\
 		generators/InstGenerator.hpp\
 		generators/InverseAbsValueGenerator.hpp\

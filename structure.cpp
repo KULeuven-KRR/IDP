@@ -13,10 +13,12 @@
 #include "vocabulary.hpp"
 #include "structure.hpp"
 #include "error.hpp"
+#include "GeneralUtils.hpp"
 #include "fobdd.hpp"
-#include "luaconnection.hpp" //FIXME break connection with lua!
+#include "luaconnection.hpp" //TODO break connection with lua!
 #include "generators/GeneratorFactory.hpp"
 #include "generators/InstGenerator.hpp"
+#include "generators/ComparisonGenerator.hpp"
 using namespace std;
 
 /**********************
@@ -1760,8 +1762,8 @@ tablesize StrLessInternalPredTable::size(const Universe& univ) const {
 }
 
 InternalTableIterator* StrLessInternalPredTable::begin(const Universe& univ) const {
-#warning what to do with strlessthan
-	//return new StrLessThanInternalIterator(univ.tables()[0]->sortBegin());
+	vector<const DomElemContainer*> vars{new DomElemContainer(), new DomElemContainer()};
+	return new GeneratorInternalTableIterator(new ComparisonGenerator(univ.tables()[0], univ.tables()[0], new DomElemContainer(), new DomElemContainer(), Input::NONE, Comp::LT), vars);
 }
 
 /**
@@ -1834,8 +1836,8 @@ tablesize StrGreaterInternalPredTable::size(const Universe& univ) const {
 }
 
 InternalTableIterator* StrGreaterInternalPredTable::begin(const Universe& univ) const {
-#warning what to do with strgreaterthan
-	//return new StrGreaterThanInternalIterator(univ.tables()[0]->sortBegin());
+	vector<const DomElemContainer*> vars{new DomElemContainer(), new DomElemContainer()};
+	return new GeneratorInternalTableIterator(new ComparisonGenerator(univ.tables()[0], univ.tables()[0], new DomElemContainer(), new DomElemContainer(), Input::NONE, Comp::GT), vars);
 }
 
 /*************************
@@ -2652,7 +2654,7 @@ EnumeratedInternalFuncTable* EnumeratedInternalFuncTable::add(const ElementTuple
 		if (_nrRefs > 1) {
 			Tuple2Elem newtable = _table;
 			newtable[key] = mappedvalue;
-			return new EnumeratedInternalFuncTable(newtable); // FIXME mem management???
+			return new EnumeratedInternalFuncTable(newtable); // TODO memory leak
 		} else {
 			_table[key] = mappedvalue;
 			return this;
@@ -3739,6 +3741,8 @@ Structure::~Structure() {
 		delete (it->second);
 	for (auto it = _funcinter.cbegin(); it != _funcinter.cend(); ++it)
 		delete (it->second);
+
+	deleteList<PredInter>(_intersToDelete);
 }
 
 Structure* Structure::clone() const {
@@ -4044,27 +4048,35 @@ SortTable* Structure::inter(Sort* s) const {
 PredInter* Structure::inter(Predicate* p) const {
 	if (p->builtin()) {
 		return p->interpretation(this);
-	} else if (p->type() != ST_NONE) {
-		PredInter* pinter = inter(p->parent());
-		// FIXME: the code below creates a memory leak
-		switch (p->type()) {
-			case ST_CT:
-				return new PredInter(new PredTable(pinter->ct()->internTable(), pinter->universe()), true);
-			case ST_CF:
-				return new PredInter(new PredTable(pinter->cf()->internTable(), pinter->universe()), true);
-			case ST_PT:
-				return new PredInter(new PredTable(pinter->pt()->internTable(), pinter->universe()), true);
-			case ST_PF:
-				return new PredInter(new PredTable(pinter->pf()->internTable(), pinter->universe()), true);
-			case ST_NONE:
-				assert(false);
-				return NULL;
-		}
-	} else {
+	}
+
+	if(p->type()==ST_NONE){
 		auto it = _predinter.find(p);
 		assert(it != _predinter.cend());
 		return it->second;
 	}
+
+	PredInter* pinter = inter(p->parent());
+	PredInter* newinter = NULL;
+	switch (p->type()) {
+		case ST_CT:
+			newinter = new PredInter(new PredTable(pinter->ct()->internTable(), pinter->universe()), true);
+			break;
+		case ST_CF:
+			newinter = new PredInter(new PredTable(pinter->cf()->internTable(), pinter->universe()), true);
+			break;
+		case ST_PT:
+			newinter = new PredInter(new PredTable(pinter->pt()->internTable(), pinter->universe()), true);
+			break;
+		case ST_PF:
+			newinter = new PredInter(new PredTable(pinter->pf()->internTable(), pinter->universe()), true);
+			break;
+		case ST_NONE:
+			assert(false);
+			return NULL;
+	}
+	_intersToDelete.push_back(newinter);
+	return newinter;
 }
 
 FuncInter* Structure::inter(Function* f) const {
@@ -4140,7 +4152,7 @@ void Structure::clean() {
 			continue;
 		}
 
-		// FIXME there is something incorrect about this code
+		// TODO this code should be corrected and added again
 		/*		if(((not it->first->partial()) && TableUtils::approxTotalityCheck(it->second))
 		 || TableUtils::approxIsInverse(it->second->graphInter()->ct(),it->second->graphInter()->cf())) {
 		 EnumeratedInternalFuncTable* eift = new EnumeratedInternalFuncTable();

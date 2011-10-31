@@ -333,7 +333,9 @@ public:
 	int			createNewUninterpretedNumber(){	return nextNumber(AtomType::LONETSEITIN); }
 
 	bool		isSet		(int setID) const	{ return _sets.size()>setID; }
-	TsSet&		groundset	(int setID)			{ assert(isSet(setID)); return _sets[setID];	} //FIXME check why cannot be const?
+
+	const TsSet& groundset	(int setID)	const { assert(isSet(setID)); return _sets[setID]; }
+	TsSet& groundset	(int setID)	{ assert(isSet(setID)); return _sets[setID]; }
 
 	bool				isManagingSymbol(uint n) 	const	{ return symbols.size()>n; }
 	unsigned int		nbManagedSymbols()			const	{ return symbols.size(); }
@@ -422,7 +424,7 @@ struct GroundingContext {
 	Context				_monotone;
 	CompContext			_component;		// Indicates the context of the visited formula
 	TsType				_tseitin;		// Indicates the type of tseitin definition that needs to be used.
-	std::set<PFSymbol*>	_defined;		// Indicates whether the visited rule is recursive. // FIXME why is this context dependent (possibly expensive copy on going deeper?)
+	std::set<PFSymbol*>	_defined;		// Indicates whether the visited rule is recursive.
 };
 
 

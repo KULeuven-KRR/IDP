@@ -2629,8 +2629,10 @@ double FOBDDManager::estimatedChance(const FOBDDKernel* kernel, AbstractStructur
 					cumulative_chance += currchance;
 					cumulative_pathsposs.push_back(cumulative_chance);
 				}
-				if(cumulative_chance > 1) {	// FIXME: looks like a bug :-)
-					Warning::cumulchance(cumulative_chance);
+
+				// TODO there is a bug in the probability code, leading to P > 1, such that the following check is necessary
+				if(cumulative_chance > 1) {
+					//Warning::cumulchance(cumulative_chance);
 					cumulative_chance = 1;
 				}
 				if(cumulative_chance > 0) {	// there is a possible path to false

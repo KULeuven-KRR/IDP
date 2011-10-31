@@ -93,7 +93,7 @@ public:
 
 class DomElemContainer {
 private:
-	mutable const DomainElement* domelem_; // FIXME dit lijkt zeer loos :-)
+	mutable const DomainElement* domelem_;
 	mutable bool del;
 public:
 	DomElemContainer() :
@@ -174,7 +174,7 @@ struct Compare {
 };
 
 typedef std::set<ElementTuple, Compare<ElementTuple> > SortedElementTable;
-typedef std::set<const DomainElement*, Compare<DomainElement> > SortedElementTuple; // FIXME naam trekt er niet op?
+typedef std::set<const DomainElement*, Compare<DomainElement> > SortedElementTuple; // TODO naam trekt er niet op?
 typedef std::map<ElementTuple, const DomainElement*, Compare<ElementTuple> > Tuple2Elem;
 
 struct StrictWeakNTupleEquality {
@@ -420,8 +420,6 @@ private:
 	void operator++();
 public:
 	GeneratorInternalTableIterator(InstGenerator* generator, const std::vector<const DomElemContainer*>& vars, bool reset = true, bool h = true);
-	~GeneratorInternalTableIterator() {
-	} // FIXME: creates memory leak
 	GeneratorInternalTableIterator* clone() const {
 		return new GeneratorInternalTableIterator(_generator, _vars, false, _hasNext);
 	}
@@ -659,7 +657,7 @@ public:
 
 class InternalSortIterator {
 public:
-	virtual bool hasNext() const = 0; // FIXME should become isAtEnd
+	virtual bool hasNext() const = 0; // TODO should become isAtEnd
 	virtual const DomainElement* operator*() const = 0;
 	virtual void operator++() = 0;
 	virtual ~InternalSortIterator() {
@@ -796,7 +794,7 @@ public:
 	}
 };
 
-// FIXME wat met iterator invalidation?
+// TODO danger of not detecting iterator invalidation when the sortedelementtuple is changed in the associated table
 class EnumInternalSortIterator: public InternalSortIterator {
 private:
 	SortedElementTuple::const_iterator _iter;
@@ -2129,7 +2127,6 @@ public:
 	PredInter(PredTable* ctpf, PredTable* cfpt, bool ct, bool cf);
 	PredInter(PredTable* ctpf, bool ct);
 
-	// Destructor
 	~PredInter();
 
 	// Mutators
@@ -2175,6 +2172,7 @@ class AbstractStructure;
 class PredInterGenerator {
 public:
 	virtual PredInter* get(const AbstractStructure* structure) = 0;
+	virtual ~PredInterGenerator(){}
 };
 
 class SinglePredInterGenerator: public PredInterGenerator {
@@ -2227,6 +2225,7 @@ public:
 class PredInterGeneratorGenerator {
 public:
 	virtual PredInterGenerator* get(const std::vector<Sort*>&) = 0;
+	virtual ~PredInterGeneratorGenerator(){}
 };
 
 class EqualInterGeneratorGenerator: public PredInterGeneratorGenerator {
@@ -2348,6 +2347,7 @@ public:
 class FuncInterGeneratorGenerator {
 public:
 	virtual FuncInterGenerator* get(const std::vector<Sort*>&) = 0;
+	virtual ~FuncInterGeneratorGenerator(){}
 };
 
 class MinInterGeneratorGenerator: public FuncInterGeneratorGenerator {
@@ -2432,13 +2432,12 @@ private:
 	std::map<Predicate*, PredInter*> _predinter; //!< The interpretations of the predicate symbols.
 	std::map<Function*, FuncInter*> _funcinter; //!< The interpretations of the function symbols.
 
+	mutable std::vector<PredInter*> _intersToDelete; // Interpretations which were created and not yet deleted // TODO do this in a cleaner way!
+
 public:
-	// Constructors
 	Structure(const std::string& name, const ParseInfo& pi) :
 			AbstractStructure(name, pi) {
 	}
-
-	// Destructor
 	~Structure();
 
 	// Mutators
@@ -2455,6 +2454,7 @@ public:
 
 	// Inspectors
 	SortTable* inter(Sort* s) const; //!< Return the domain of s.
+
 	PredInter* inter(Predicate* p) const; //!< Return the interpretation of p.
 	FuncInter* inter(Function* f) const; //!< Return the interpretation of f.
 	PredInter* inter(PFSymbol* s) const; //!< Return the interpretation of s.

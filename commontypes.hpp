@@ -33,7 +33,7 @@ enum AggFunction { CARD, SUM, PROD, MIN, MAX };
  */
 enum TsType { EQ, RULE, IMPL, RIMPL };
 
-// FIXME: when better gcc compiler, add enum class here again (currently lacking default operators)
+// TODO when better gcc compiler, add enum class here again (currently lacking default operators)
 
 /**
  * The different comparison operators
