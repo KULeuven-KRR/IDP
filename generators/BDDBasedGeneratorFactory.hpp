@@ -1,11 +1,8 @@
-/************************************
- BBD2BDDBasedGeneratorFactory.hpp
- this file belongs to GidL 2.0
- (c) K.U.Leuven
- ************************************/
-
 #ifndef BDDBASEDGENERATORFACTORY_HPP_
 #define BDDBASEDGENERATORFACTORY_HPP_
+
+#include "commontypes.hpp"
+#include "generators/GeneratorFactory.hpp"
 
 class FOBDDManager;
 class FOBDDVariable;

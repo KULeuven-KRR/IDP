@@ -9,6 +9,9 @@
 
 #include "generators/InstGenerator.hpp"
 
+/**
+ * Generate a domelem if the input is in the sorttable (TODO is in fact a checker).
+ */
 class SortLookUpGenerator: public InstGenerator {
 private:
 	const InternalSortTable* _table;

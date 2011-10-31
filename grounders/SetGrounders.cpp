@@ -11,6 +11,7 @@
 #include "grounders/FormulaGrounders.hpp"
 #include "common.hpp"
 #include "generators/InstGenerator.hpp"
+#include "generators/BasicCheckers.hpp"
 
 using namespace std;
 
@@ -26,7 +27,7 @@ void groundSetLiteral(const LitGrounder& sublitgrounder, const TermGrounder& sub
 		return;
 	}
 	const auto& groundweight = subtermgrounder.run();
-	assert(not groundweight._isvarid);
+	assert(not groundweight.isVariable);
 	const auto& d = groundweight._domelement;
 	double w = d->type() == DET_INT ? (double) d->value()._int : d->value()._double;
 	if(l == _true){
@@ -41,7 +42,7 @@ int EnumSetGrounder::run() const {
 	vector<int>	literals;
 	vector<double> weights;
 	vector<double> trueweights;
-	InstChecker* checker = new TrueInstanceChecker();
+	InstChecker* checker = new TrueInstChecker();
 	for(unsigned int n = 0; n < _subgrounders.size(); ++n) {
 		groundSetLiteral(*_subgrounders[n], *_subtermgrounders[n], literals, weights, trueweights, *checker);
 	}

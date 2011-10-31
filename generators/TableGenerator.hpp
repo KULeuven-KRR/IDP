@@ -36,8 +36,8 @@ public:
 	}
 
 	void next(){
-		if(reset){
-			reset = false;
+		if(_reset){
+			_reset = false;
 			for(auto i=_allvars.begin(); i<_allvars.end(); ++i){
 				_currenttuple.push_back((*i)->get());
 			}

@@ -411,8 +411,10 @@ class GroundTermTranslator {
 	Optimized grounding algorithm
 ************************************/
 
-enum class CompContext { CC_SENTENCE, CC_HEAD, CC_FORMULA };
+enum class CompContext { SENTENCE, HEAD, FORMULA };
 enum class GenType { CANMAKETRUE, CANMAKEFALSE };
+
+GenType operator not(GenType orig);
 
 struct GroundingContext {
 	GenType				gentype; // if a certainly checker succeeds, then this type applies. if a possible checker fails, then the formula is irrelevant

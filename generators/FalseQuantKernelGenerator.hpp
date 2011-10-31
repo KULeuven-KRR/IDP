@@ -27,16 +27,15 @@ public:
 	}
 
 	void reset(){
-		universeGenerator->reset();
+		universeGenerator->begin();
 		if(universeGenerator->isAtEnd()){
 			notifyAtEnd();
 		}
 	}
 
 	void next(){
-		universeGenerator->next();
 		while(not universeGenerator->isAtEnd() && quantKernelTrueChecker->check()){
-			universeGenerator->next();
+			universeGenerator->operator ++();
 		}
 		if(universeGenerator->isAtEnd()){
 			notifyAtEnd();

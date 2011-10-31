@@ -212,7 +212,7 @@ FOPropTableDomain* FOPropTableDomainFactory::exists(FOPropTableDomain* domain, c
 		cerr << "Probably entering an infinte loop when trying to project a possibly infinite table...\n";
 	}
 	PredTable* npt = new PredTable(new EnumeratedInternalPredTable(),Universe(newunivcols));
-	for(TableIterator it = domain->table()->begin(); it.hasNext(); ++it) {
+	for(TableIterator it = domain->table()->begin(); not it.isAtEnd(); ++it) {
 		const ElementTuple& tuple = *it;
 		ElementTuple newtuple;
 		for(size_t n = 0; n < tuple.size(); ++n) {

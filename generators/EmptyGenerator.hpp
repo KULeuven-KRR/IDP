@@ -10,7 +10,7 @@
 #include "generators/InstGenerator.hpp"
 
 /**
- * A generates which generates an empty set of instances
+ * Generates an empty set of instances
  */
 class EmptyGenerator : public InstGenerator {
 public:

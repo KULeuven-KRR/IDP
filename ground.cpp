@@ -42,6 +42,13 @@
 using namespace std;
 using namespace rel_ops;
 
+GenType operator not(GenType orig){
+	switch(orig){
+	case GenType::CANMAKEFALSE: return GenType::CANMAKETRUE;
+	case GenType::CANMAKETRUE: return GenType::CANMAKEFALSE;
+	}
+}
+
 double MCPA = 1;	// TODO: constant currently used when pruning bdds. Should be made context dependent
 
 bool TsBody::operator==(const TsBody& body) const{
@@ -788,7 +795,7 @@ void GrounderFactory::InitContext() {
 	_context.gentype		= GenType::CANMAKEFALSE;
 	_context._funccontext	= Context::POSITIVE;
 	_context._monotone		= Context::POSITIVE;
-	_context._component		= CC_SENTENCE;
+	_context._component		= CompContext::SENTENCE;
 	_context._tseitin		= _options->getValue(MODELCOUNTEQUIVALENCE)?TsType::EQ:TsType::IMPL;
 	_context._defined.clear();
 }
@@ -797,7 +804,7 @@ void GrounderFactory::AggContext() {
 	_context.gentype = GenType::CANMAKEFALSE;
 	_context._funccontext = Context::POSITIVE;
 	_context._tseitin = (_context._tseitin == TsType::RULE) ? TsType::RULE : TsType::EQ;
-	_context._component = CC_FORMULA;
+	_context._component = CompContext::FORMULA;
 }
 
 /**
@@ -828,10 +835,10 @@ void GrounderFactory::RestoreContext() {
  */
 void GrounderFactory::DeeperContext(SIGN sign) {
 	// One level deeper
-	if(_context._component == CC_SENTENCE) { _context._component = CC_FORMULA; }
+	if(_context._component == CompContext::SENTENCE) { _context._component = CompContext::FORMULA; }
 	// Swap positive, truegen and tseitin according to sign
 	if(isNeg(sign)) {
-		_context.gentype = !_context.gentype;
+		_context.gentype = not _context.gentype;
 
 		if(_context._funccontext == Context::POSITIVE) _context._funccontext = Context::NEGATIVE;
 		else if(_context._funccontext == Context::NEGATIVE) _context._funccontext = Context::POSITIVE;
@@ -1025,9 +1032,9 @@ void GrounderFactory::visit(const Theory* theory) {
  *		Each free variable that occurs in pf occurs in varmapping().
  * POSTCONDITIONS
  *		According to _context, the created grounder is assigned to
- *			CC_SENTENCE:	_toplevelgrounder
- *			CC_HEAD:		_headgrounder
- *			CC_FORMULA:		_formgrounder
+ *			CompContext::SENTENCE:	_toplevelgrounder
+ *			CompContext::HEAD:		_headgrounder
+ *			CompContext::FORMULA:		_formgrounder
  */
 void GrounderFactory::visit(const PredForm* pf) {
 	// Move all functions and aggregates that are three-valued according 
@@ -1073,13 +1080,13 @@ void GrounderFactory::visit(const PredForm* pf) {
 		}
 		_formgrounder = new ComparisonGrounder(_grounding->translator(),_grounding->termtranslator(), subtermgrounders[0],comp,subtermgrounders[1],_context);
 		_formgrounder->setOrig(newpf,varmapping(),_verbosity);
-		if(_context._component == CC_SENTENCE) { // TODO Refactor outside?
+		if(_context._component == CompContext::SENTENCE) { // TODO Refactor outside?
 			_toplevelgrounder = new SentenceGrounder(_grounding,_formgrounder,false,_verbosity);
 		}
 		return;
 	}
 
-	if(_context._component == CC_HEAD) {
+	if(_context._component == CompContext::HEAD) {
 		PredInter* inter = _structure->inter(newpf->symbol());
 		CheckerFactory checkfactory;
 		InstanceChecker* truech = checkfactory.create(inter,CERTAIN_TRUE);
@@ -1125,7 +1132,7 @@ void GrounderFactory::visit(const PredForm* pf) {
 	_formgrounder = new AtomGrounder(_grounding->translator(),newpf->sign(),newpf->symbol(), subtermgrounders,checkargs, possch,certainch, _structure->inter(newpf->symbol()), argsorttables,_context);
 
 	_formgrounder->setOrig(newpf,varmapping(),_verbosity);
-	if(_context._component == CC_SENTENCE) {
+	if(_context._component == CompContext::SENTENCE) {
 		_toplevelgrounder = new SentenceGrounder(_grounding,_formgrounder,false,_verbosity); // FIXME false? is this whether the grounder will return a conj clause?
 	}
 	newpf->recursiveDelete();
@@ -1141,13 +1148,13 @@ void GrounderFactory::visit(const PredForm* pf) {
  *		Each free variable that occurs in bf occurs in varmapping().
  * POSTCONDITIONS
  *		According to _context, the created grounder is assigned to
- *			CC_SENTENCE:	_toplevelgrounder
- *			CC_FORMULA:		_formgrounder
- *			CC_HEAD is not possible
+ *			CompContext::SENTENCE:	_toplevelgrounder
+ *			CompContext::FORMULA:		_formgrounder
+ *			CompContext::HEAD is not possible
  */
 void GrounderFactory::visit(const BoolForm* bf) {
 	// Handle a top-level conjunction without creating tseitin atoms
-	if(_context._component == CC_SENTENCE && bf->isConjWithSign()) {
+	if(_context._component == CompContext::SENTENCE && bf->isConjWithSign()) {
 		// If bf is a negated disjunction, push the negation one level deeper.
 		// Take a clone to avoid changing bf;
 		BoolForm* newbf = bf->clone();
@@ -1184,7 +1191,7 @@ void GrounderFactory::visit(const BoolForm* bf) {
 		_formgrounder = new BoolGrounder(_grounding->translator(),sub,bf->sign(),bf->conj(),_context);
 		RestoreContext();
 		_formgrounder->setOrig(bf,_varmapping,_verbosity);
-		if(_context._component == CC_SENTENCE) { 
+		if(_context._component == CompContext::SENTENCE) {
 			_toplevelgrounder = new SentenceGrounder(_grounding,_formgrounder,false,_verbosity);
 		}
 	}
@@ -1207,9 +1214,9 @@ const DomElemContainer* GrounderFactory::createVarMapping(Variable * const var){
  *		Each free variable that occurs in qf occurs in varmapping().
  * POSTCONDITIONS
  *		According to _context, the created grounder is assigned to
- *			CC_SENTENCE:	_toplevelgrounder
- *			CC_FORMULA:		_formgrounder
- *			CC_HEAD is not possible
+ *			CompContext::SENTENCE:	_toplevelgrounder
+ *			CompContext::FORMULA:		_formgrounder
+ *			CompContext::HEAD is not possible
  */
 void GrounderFactory::visit(const QuantForm* qf) {
 	// TODO guarantee that no double negations exist? => FLAGS bijhouden van wat er met de theorie gebeurd
@@ -1225,10 +1232,10 @@ void GrounderFactory::visit(const QuantForm* qf) {
 
 	// !x phi(x) => generate all x possibly false
 	// !x phi(x) => check for x certainly false
-	GenAndChecker gc = createVarsAndGenerators(movedformula, qf, qf->isUniv() ? TruthType::PF : TruthType::PT, qf->isUniv() ? TruthType::CF : TruthTypeCT);
+	GenAndChecker gc = createVarsAndGenerators(movedformula, qf, qf->isUniv() ? TruthType::PF : TruthType::PT, qf->isUniv() ? TruthType::CF : TruthType::CT);
 
 	// Handle top-level universal quantifiers efficiently
-/*	if(_context._component == CC_SENTENCE && qf->isUnivWithSign()) {
+/*	if(_context._component == CompContext::SENTENCE && qf->isUnivWithSign()) {
 		Formula* newsub = qf->subformula()->clone();
 		if(not qf->isUniv()) {
 			newsub->negate();
@@ -1242,7 +1249,7 @@ void GrounderFactory::visit(const QuantForm* qf) {
 	// Create grounder for subformula
 	SaveContext();
 	DeeperContext(qf->sign());
-	_context.gentype = not (qf->isUniv());
+	_context.gentype = qf->isUniv()?GenType::CANMAKEFALSE:GenType::CANMAKEFALSE;
 	descend(qf->subformula());
 	RestoreContext();
 
@@ -1267,7 +1274,7 @@ void GrounderFactory::visit(const QuantForm* qf) {
 
 	_formgrounder->setOrig(qf,_varmapping,_verbosity);
 
-	if(_context._component == CC_SENTENCE) {
+	if(_context._component == CompContext::SENTENCE) {
 		_toplevelgrounder = new SentenceGrounder(_grounding,_formgrounder,false,_verbosity);
 	}
 	//}
@@ -1340,9 +1347,9 @@ const FOBDD* GrounderFactory::improve_checker(const FOBDD* bdd, double mcpa) {
  *		Each free variable that occurs in ef occurs in varmapping().
  * POSTCONDITIONS
  *		According to _context, the created grounder is assigned to
- *			CC_SENTENCE:	_toplevelgrounder
- *			CC_FORMULA:		_formgrounder
- *			CC_HEAD is not possible
+ *			CompContext::SENTENCE:	_toplevelgrounder
+ *			CompContext::FORMULA:		_formgrounder
+ *			CompContext::HEAD is not possible
  */
 void GrounderFactory::visit(const EquivForm* ef) {
 	// Create grounders for the subformulas
@@ -1365,7 +1372,7 @@ void GrounderFactory::visit(const EquivForm* ef) {
 	}
 	_formgrounder = new EquivGrounder(_grounding->translator(),leftg,rightg,ef->sign(),_context);
 	RestoreContext();
-	if(_context._component == CC_SENTENCE) {
+	if(_context._component == CompContext::SENTENCE) {
 		_toplevelgrounder = new SentenceGrounder(_grounding,_formgrounder,true,_verbosity);
 	}
 }
@@ -1415,7 +1422,7 @@ void GrounderFactory::visit(const AggForm* af) {
 		}
 		_formgrounder = new AggGrounder(_grounding->translator(),_context,newaf->right()->function(),setgr,boundgr,newaf->comp(),newaf->sign());
 		RestoreContext();
-		if(_context._component == CC_SENTENCE) {
+		if(_context._component == CompContext::SENTENCE) {
 			_toplevelgrounder = new SentenceGrounder(_grounding,_formgrounder,true,_verbosity);
 		}
 	}
@@ -1542,7 +1549,7 @@ GrounderFactory::GenAndChecker GrounderFactory::createVarsAndGenerators(Formula*
 		tables.push_back(st);
 	}
 	for(auto it = formula->freeVars().cbegin(); it != formula->freeVars().cend(); ++it) {
-		assert(qf->quantVars().find(*it) == qf->quantVars().cend());
+		assert(orig->quantVars().find(*it) == orig->quantVars().cend());
 		assert(_varmapping.find(*it) != _varmapping.cend());
 		vars.push_back(_varmapping[*it]);
 		pattern.push_back(Pattern::INPUT);
@@ -1690,7 +1697,7 @@ void GrounderFactory::visit(const Rule* rule) {
 
 	// Create head grounder
 	SaveContext();
-	_context._component = CC_HEAD;
+	_context._component = CompContext::HEAD;
 	descend(rule->head());
 	HeadGrounder* headgr = _headgrounder;
 	RestoreContext();
@@ -1700,7 +1707,7 @@ void GrounderFactory::visit(const Rule* rule) {
 	_context._funccontext = Context::NEGATIVE;		// minimize truth value of rule bodies
 	_context._monotone = Context::POSITIVE;
 	_context.gentype = GenType::CANMAKETRUE;				// body instance generator corresponds to an existential quantifier
-	_context._component = CC_FORMULA;
+	_context._component = CompContext::FORMULA;
 	_context._tseitin = TsType::EQ;
 	descend(rule->body());
 	FormulaGrounder* bodygr = _formgrounder;

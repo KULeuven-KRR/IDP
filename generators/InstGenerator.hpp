@@ -9,10 +9,8 @@
 
 class InstChecker{
 public:
-	// TODO enum?
-	// FIXME do not set output variables
-	// or checker should only be created if there are not output variables?
-	virtual bool check() const = 0; // Check whether current input + output is correct
+	// FIXME Checker should only be created if there are no output variables
+	virtual bool check() = 0;
 };
 
 class InstGenerator: public InstChecker {
@@ -32,6 +30,11 @@ protected:
 
 public:
 	virtual ~InstGenerator(){}
+
+	virtual bool check() {
+		begin();
+		return isAtEnd();
+	}
 
 	// Can also be used for resets
 	// SETS the instance to the FIRST value if it exists

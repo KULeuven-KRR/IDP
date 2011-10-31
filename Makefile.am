@@ -46,9 +46,6 @@ grounder_SOURCES = \
 		printers/print.hpp printers/print.cpp\
 		printers/idpprinter.hpp printers/ecnfprinter.hpp printers/tptpprinter.hpp\
 		checker.hpp checker.cpp\
-		generators/Generators.cpp\
-		generators/GeneratorFactory.cpp\
-		generators/BDDBasedGeneratorFactory.cpp\
 		propagate.hpp propagate.cpp\
 		ecnf.hpp ecnf.cpp\
 		ground.hpp ground.cpp\
@@ -105,7 +102,28 @@ grounder_SOURCES = \
 		commands/simplify.hpp\
 		commands/createrange.hpp\
 		commands/tablesize.hpp\
-		PropagatorFactory.hpp PropagatorFactory.cpp
+		PropagatorFactory.hpp PropagatorFactory.cpp\
+		generators/ArithmeticOperatorsGenerator.hpp\
+		generators/ComparisonGenerator.hpp\
+		generators/EmptyGenerator.hpp\
+		generators/EnumLookupGenerator.hpp\
+		generators/EqualGenerator.hpp\
+		generators/FalseQuantGenerator.hpp\
+		generators/InstGenerator.hpp\
+		generators/InverseAbsValueGenerator.hpp\
+		generators/InverseUnaFunctionGenerator.hpp\
+		generators/InvertNumericGenerator.hpp\
+		generators/LookupGenerator.hpp\
+		generators/SimpleFuncGenerator.hpp\
+		generators/SortInstGenerator.hpp\
+		generators/SortLookupGenerator.hpp\
+		generators/TableGenerator.hpp\
+		generators/TreeInstGenerator.hpp\
+		generators/BasicCheckers.hpp\
+		generators/GeneratorNodes.hpp\
+		generators/TrueQuantKernelGenerator.hpp\
+		generators/GeneratorFactory.cpp\
+		generators/BDDBasedGeneratorFactory.cpp
 		
 gidl_SOURCES = main.cpp $(grounder_SOURCES)
 

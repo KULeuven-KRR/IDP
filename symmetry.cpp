@@ -77,7 +77,7 @@ ElementTuple symmetricalTuple(const ElementTuple& original, const DomainElement*
  */
 bool isBinarySymmetryInPredTable(const PredTable* table, const set<unsigned int>& argumentPlaces, const DomainElement* first, const DomainElement* second){
 	bool isSymmetry = true;
-	for(TableIterator table_it = table->begin(); table_it.hasNext() && isSymmetry; ++table_it){
+	for(TableIterator table_it = table->begin(); not table_it.isAtEnd() && isSymmetry; ++table_it){
 		ElementTuple symmetrical = symmetricalTuple(*table_it, first, second, argumentPlaces);
 		if(symmetrical!=*table_it){
 			isSymmetry=table->contains(symmetrical);
@@ -239,7 +239,7 @@ map<const DomainElement*,pair<int,int> > OccurrencesCounter::count(PFSymbol* rel
 	vector<unsigned int> arguments = relation->argumentNrs(sort);
 	map<const DomainElement*,pair<int,int> > result;
 	const PredTable* ct = getStructure()->inter(relation)->ct();
-	for(TableIterator ct_it = ct->begin(); ct_it.hasNext(); ++ct_it){
+	for(TableIterator ct_it = ct->begin(); not ct_it.isAtEnd(); ++ct_it){
 		for(auto it=arguments.cbegin(); it!=arguments.cend(); ++it){
 			const DomainElement* element = (*ct_it)[*it];
 			map<const DomainElement*,pair<int,int> >::iterator result_it = result.find(element);
@@ -251,7 +251,7 @@ map<const DomainElement*,pair<int,int> > OccurrencesCounter::count(PFSymbol* rel
 		}
 	}
 	const PredTable* cf = getStructure()->inter(relation)->cf();
-	for(TableIterator cf_it = cf->begin(); cf_it.hasNext(); ++cf_it){
+	for(TableIterator cf_it = cf->begin(); not cf_it.isAtEnd(); ++cf_it){
 		for(auto it=arguments.cbegin(); it!=arguments.cend(); ++it){
 			const DomainElement* element = (*cf_it)[*it];
 			map<const DomainElement*,pair<int,int> >::iterator result_it = result.find(element);
@@ -518,7 +518,7 @@ vector<const IVSet*> IVSet::splitBasedOnBinarySymmetries() const{
  */
 vector<vector<const DomainElement*> > fillGroundElementsOneRank(vector<vector<const DomainElement*> >& groundElements, const SortTable* domainTable, const int rank, const set<const DomainElement*>& excludedElements){
 	set<const DomainElement*> domain; //set to order the elements
-	for(SortIterator domain_it=domainTable->sortBegin(); domain_it.hasNext(); ++domain_it){
+	for(SortIterator domain_it=domainTable->sortBegin(); not domain_it.isAtEnd(); ++domain_it){
 		if(!excludedElements.count(*domain_it)){
 			domain.insert(*domain_it);
 		}
@@ -804,7 +804,7 @@ map<Sort*,set<const DomainElement*> > findElementsForSorts(const AbstractStructu
 		for(auto kids_it = (*sort_it)->children().cbegin(); kids_it != (*sort_it)->children().cend(); ++kids_it){
 			kids.push_back(s->inter(*kids_it));
 		}
-		for(SortIterator parent_it = parent->sortBegin(); parent_it.hasNext(); ++parent_it){
+		for(SortIterator parent_it = parent->sortBegin(); not parent_it.isAtEnd(); ++parent_it){
 			bool isUnique = forbiddenElements.find(*parent_it) == forbiddenElements.cend();
 			for(auto kids_it2 = kids.cbegin(); kids_it2 != kids.cend() && isUnique; ++kids_it2 ){
 				isUnique = not (*kids_it2)->contains(*parent_it);

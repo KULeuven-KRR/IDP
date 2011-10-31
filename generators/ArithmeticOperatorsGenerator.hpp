@@ -22,12 +22,13 @@ private:
 	const DomElemContainer*	_in2;
 	const DomElemContainer*	_out;
 	SortTable*				_outdom;
+	NumType					_requestedType;
 	bool 					alreadyrun;
 protected:
 	virtual ARITHRESULT doCalculation(double left, double right, double& result) const = 0;
 public:
-	ArithOpGenerator(const DomElemContainer* in1, const DomElemContainer* in2, const DomElemContainer* out, SortTable* dom) :
-		_in1(in1), _in2(in2), _out(out), _outdom(dom), alreadyrun(false) {
+	ArithOpGenerator(const DomElemContainer* in1, const DomElemContainer* in2, const DomElemContainer* out, NumType requestedType, SortTable* dom) :
+		_in1(in1), _in2(in2), _out(out), _outdom(dom), _requestedType(requestedType), alreadyrun(false) {
 	}
 
 	void reset(){
@@ -52,7 +53,7 @@ public:
 			notifyAtEnd();
 			return;
 		}
-		*_out = DomainElementFactory::instance()->create(type==DET_INT?int(result):result);
+		*_out = DomainElementFactory::instance()->create(type==DET_INT?int(result):result, _requestedType);
 		if(not _outdom->contains(_out->get())){
 			notifyAtEnd();
 		}
@@ -69,7 +70,7 @@ private:
 	double getValue(const DomElemContainer* cont) const{
 		auto domelem = cont->get();
 		assert(domelem->type()==DET_DOUBLE || domelem->type()==DET_INT);
-		if(domelem->type==DET_DOUBLE){
+		if(domelem->type()==DET_DOUBLE){
 			return domelem->value()._double;
 		}else{
 			return domelem->value()._int;
@@ -81,7 +82,7 @@ private:
 // FIXME handle overflows
 class DivGenerator : public ArithOpGenerator {
 protected:
-	double doCalculation(double left, double right, double& result) const {
+	ARITHRESULT doCalculation(double left, double right, double& result) const {
 		if(right == 0){ // cannot divide by zero
 			return ARITHRESULT::INVALID;
 		}
@@ -89,44 +90,44 @@ protected:
 		return ARITHRESULT::VALID;
 	};
 public:
-	DivGenerator(const DomElemContainer* in1, const DomElemContainer* in2, const DomElemContainer* out, SortTable* dom) :
-		ArithOpGenerator(in1, in2, out, dom) {
+	DivGenerator(const DomElemContainer* in1, const DomElemContainer* in2, const DomElemContainer* out, NumType requestedType, SortTable* dom) :
+		ArithOpGenerator(in1, in2, out, requestedType, dom) {
 	}
 };
 
 class TimesGenerator : public ArithOpGenerator {
 protected:
-	double doCalculation(double left, double right, double& result) const {
+	ARITHRESULT doCalculation(double left, double right, double& result) const {
 		result = left * right;
 		return ARITHRESULT::VALID;
 	};
 public:
-	TimesGenerator(const DomElemContainer* in1, const DomElemContainer* in2, const DomElemContainer* out, SortTable* dom) :
-		ArithOpGenerator(in1, in2, out, dom) {
+	TimesGenerator(const DomElemContainer* in1, const DomElemContainer* in2, const DomElemContainer* out, NumType requestedType, SortTable* dom) :
+		ArithOpGenerator(in1, in2, out, requestedType, dom) {
 	}
 };
 
 class MinusGenerator : public ArithOpGenerator {
 protected:
-	double doCalculation(double left, double right, double& result) const {
+	ARITHRESULT doCalculation(double left, double right, double& result) const {
 		result = left - right;
 		return ARITHRESULT::VALID;
 	};
 public:
-	MinusGenerator(const DomElemContainer* in1, const DomElemContainer* in2, const DomElemContainer* out, SortTable* dom) :
-		ArithOpGenerator(in1, in2, out, dom) {
+	MinusGenerator(const DomElemContainer* in1, const DomElemContainer* in2, const DomElemContainer* out, NumType requestedType, SortTable* dom) :
+		ArithOpGenerator(in1, in2, out, requestedType, dom) {
 	}
 };
 
 class PlusGenerator : public ArithOpGenerator {
 protected:
-	double doCalculation(double left, double right, double& result) const {
+	ARITHRESULT doCalculation(double left, double right, double& result) const {
 		result = left + right;
 		return ARITHRESULT::VALID;
 	};
 public:
-	PlusGenerator(const DomElemContainer* in1, const DomElemContainer* in2, const DomElemContainer* out, SortTable* dom) :
-		ArithOpGenerator(in1, in2, out, dom) {
+	PlusGenerator(const DomElemContainer* in1, const DomElemContainer* in2, const DomElemContainer* out, NumType requestedType, SortTable* dom) :
+		ArithOpGenerator(in1, in2, out, requestedType, dom) {
 	}
 };
 

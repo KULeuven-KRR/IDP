@@ -30,16 +30,15 @@ public:
 	}
 
 	void reset(){
-		_quantgenerator->reset();
+		_quantgenerator->begin();
 		if(_quantgenerator->isAtEnd()){
 			notifyAtEnd();
 		}
 	}
 
 	void next(){
-		_quantgenerator->next();
 		while(not _quantgenerator->isAtEnd()){
-			_quantgenerator->next();
+			_quantgenerator->operator ++();
 		}
 		if(_quantgenerator->isAtEnd()){
 			notifyAtEnd();

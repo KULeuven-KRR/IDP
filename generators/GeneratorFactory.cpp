@@ -19,17 +19,18 @@
 
 #include "generators/SimpleFuncGenerator.hpp"
 #include "generators/TreeInstGenerator.hpp"
-#include "generators/GenerateAndTestGenerator.hpp"
 #include "generators/InverseInstGenerator.hpp"
 #include "generators/SortInstGenerator.hpp"
-#include "generators/SimpleLookupGenerator.hpp"
 #include "generators/EnumLookupGenerator.hpp"
 #include "generators/SortLookupGenerator.hpp"
-#include "generators/InvUnaGenerator.hpp"
+#include "generators/TableGenerator.hpp"
 #include "generators/EqualGenerator.hpp"
+#include "generators/SimpleFuncGenerator.hpp"
 #include "generators/EmptyGenerator.hpp"
-#include "generators/UminGenerator.hpp"
 #include "generators/ArithmeticOperatorsGenerator.hpp"
+#include "generators/InverseUnaFunctionGenerator.hpp"
+#include "generators/InvertNumericGenerator.hpp"
+#include "generators/InverseAbsValueGenerator.hpp"
 using namespace std;
 
 InstGenerator* GeneratorFactory::create(const vector<const DomElemContainer*>& vars, const vector<SortTable*>& tabs) {
@@ -79,7 +80,7 @@ InstGenerator* GeneratorFactory::internalCreate(const PredTable* pt, vector<Patt
 	}
 	if(firstout == pattern.size()) {	// no output variables
 		if(typeid(*(pt->internTable())) != typeid(BDDInternalPredTable)) {
-			return new SimpleLookupGenerator(pt,vars,_universe);
+			return new LookupGenerator(pt,vars,_universe);
 		}
 		else { 
 			StructureVisitor::visit(pt);
@@ -93,7 +94,7 @@ InstGenerator* GeneratorFactory::internalCreate(const PredTable* pt, vector<Patt
 }
 
 void GeneratorFactory::visit(const ProcInternalPredTable* ) {
-	_generator = new GenerateAndTestGenerator(_table,_pattern,_vars,_firstocc,_universe);
+	_generator = new TableGenerator(_table,_pattern,_vars,_firstocc,_universe);
 }
 
 void GeneratorFactory::visit(const BDDInternalPredTable* table) {
@@ -184,7 +185,7 @@ void GeneratorFactory::visit(const EnumeratedInternalPredTable* ) {
 			else outvars.push_back(_vars[n]);
 		}
 	}
-	for(TableIterator it = _table->begin(); it.hasNext(); ++it) {
+	for(TableIterator it = _table->begin(); not it.isAtEnd(); ++it) {
 		const ElementTuple& tuple = *it;
 		bool ok = true;
 		for(unsigned int n = 0; n < _pattern.size(); ++n) {
@@ -213,15 +214,18 @@ void GeneratorFactory::visit(const EnumeratedInternalPredTable* ) {
 }
 
 void GeneratorFactory::visit(const EqualInternalPredTable*) {
-	if(_pattern[0]) { assert(!_pattern[1]); _generator = new EqualGenerator(_vars[0],_vars[1],_universe.tables()[1]); }
+	/* FIXME
+	if(_pattern[0]) { assert(!_pattern[1]); _generator = new EqualGenerator(_vars[0],_vars[1],_universe.tables()[0], _universe.tables()[1]); }
 	else if(_pattern[1]) _generator = new EqualGenerator(_vars[1],_vars[0],_universe.tables()[0]);
 	else if(_firstocc[1] == 0) {
 		_generator = create(vector<const DomElemContainer*>(1,_vars[0]), vector<SortTable*>(1,_universe.tables()[0]));
 	}
-	else _generator = new EqualGenerator(_vars[0],_vars[1],_universe.tables()[0],_universe.tables()[1]); 
+	else _generator = new EqualGenerator(_vars[0],_vars[1],_universe.tables()[0],_universe.tables()[1]);
+	*/
 }
 
 void GeneratorFactory::visit(const StrLessInternalPredTable* ) {
+	/* FIXME
 	if(_pattern[0]) {
 		_generator = new StrLessGenerator(_universe.tables()[0],_universe.tables()[1],_vars[0],_vars[1],true);
 	}
@@ -233,10 +237,11 @@ void GeneratorFactory::visit(const StrLessInternalPredTable* ) {
 	}
 	else {
 		_generator = new StrLessGenerator(_universe.tables()[0],_universe.tables()[1],_vars[0],_vars[1],false);
-	}
+	}*/
 }
 
 void GeneratorFactory::visit(const StrGreaterInternalPredTable* ) {
+	/* FIXME
 	if(_pattern[0]) {
 		_generator = new StrGreaterGenerator(_universe.tables()[0],_universe.tables()[1],_vars[0],_vars[1],true);
 	}
@@ -248,7 +253,7 @@ void GeneratorFactory::visit(const StrGreaterInternalPredTable* ) {
 	}
 	else {
 		_generator = new StrGreaterGenerator(_universe.tables()[0],_universe.tables()[1],_vars[0],_vars[1],false);
-	}
+	}*/
 }
 
 void GeneratorFactory::visit(const InverseInternalPredTable* iip) {
@@ -282,12 +287,12 @@ void GeneratorFactory::visit(const FuncTable* ft) {
 }
 
 void GeneratorFactory::visit(const ProcInternalFuncTable* ) {
-	_generator = new GenerateAndTestGenerator(_table,_pattern,_vars,_firstocc,_universe);
+	_generator = new TableGenerator(_table,_pattern,_vars,_firstocc,_universe);
 }
 
 //
 void GeneratorFactory::visit(const UNAInternalFuncTable* ) {
-	_generator = new InvUNAGenerator(_pattern,_vars,_universe);
+	_generator = new InverseUNAFuncGenerator(_pattern,_vars,_universe);
 }
 
 void GeneratorFactory::visit(const EnumeratedInternalFuncTable*) {
@@ -301,7 +306,7 @@ void GeneratorFactory::visit(const EnumeratedInternalFuncTable*) {
 			else outvars.push_back(_vars[n]);
 		}
 	}
-	for(TableIterator it = _table->begin(); it.hasNext(); ++it) {
+	for(TableIterator it = _table->begin(); not it.isAtEnd(); ++it) {
 		const ElementTuple& tuple = *it;
 		bool ok = true;
 		for(unsigned int n = 0; n < _pattern.size(); ++n) {
@@ -327,20 +332,19 @@ void GeneratorFactory::visit(const EnumeratedInternalFuncTable*) {
 
 void GeneratorFactory::visit(const PlusInternalFuncTable* pift) {
 	if(_pattern[0]) {
-		_generator = new MinusGenerator(_vars[2],_vars[0],_vars[1],pift->isInt(),_universe.tables()[1]);
+		_generator = new MinusGenerator(_vars[2],_vars[0],_vars[1],pift->getType(),_universe.tables()[1]);
 	}
 	else if(_pattern[1]) {
-		_generator = new MinusGenerator(_vars[2],_vars[1],_vars[0],pift->isInt(),_universe.tables()[0]);
+		_generator = new MinusGenerator(_vars[2],_vars[1],_vars[0],pift->getType(),_universe.tables()[0]);
 	}
 	else if(_firstocc[1] == 0) {
-		if(pift->isInt()) {
+		if(pift->getType()==NumType::INT) {
 			assert(false); // TODO
-		}
-		else {
+		} else {
 			const DomainElement* two = DomainElementFactory::instance()->create(2);
 			const DomElemContainer* twopointer = new const DomElemContainer();
 			*twopointer = two;
-			_generator = new DivGenerator(_vars[2],twopointer,_vars[0],false,_universe.tables()[0]);
+			_generator = new DivGenerator(_vars[2],twopointer,_vars[0],NumType::DOUBLE,_universe.tables()[0]);
 		}
 	}
 	else {
@@ -351,10 +355,10 @@ void GeneratorFactory::visit(const PlusInternalFuncTable* pift) {
 
 void GeneratorFactory::visit(const MinusInternalFuncTable* pift) {
 	if(_pattern[0]) {
-		_generator = new MinusGenerator(_vars[0],_vars[2],_vars[1],pift->isInt(),_universe.tables()[1]);
+		_generator = new MinusGenerator(_vars[0],_vars[2],_vars[1],pift->getType(),_universe.tables()[1]);
 	}
 	else if(_pattern[1]) {
-		_generator = new PlusGenerator(_vars[1],_vars[2],_vars[0],pift->isInt(),_universe.tables()[0]);
+		_generator = new PlusGenerator(_vars[1],_vars[2],_vars[0],pift->getType(),_universe.tables()[0]);
 	}
 	else if(_firstocc[1] == 0) {
 		assert(false); // TODO
@@ -367,10 +371,10 @@ void GeneratorFactory::visit(const MinusInternalFuncTable* pift) {
 
 void GeneratorFactory::visit(const TimesInternalFuncTable* pift) {
 	if(_pattern[0]) {
-		_generator = new DivGenerator(_vars[2],_vars[0],_vars[1],pift->isInt(),_universe.tables()[1]);
+		_generator = new DivGenerator(_vars[2],_vars[0],_vars[1],pift->getType(),_universe.tables()[1]);
 	}
 	else if(_pattern[1]) {
-		_generator = new DivGenerator(_vars[2],_vars[1],_vars[0],pift->isInt(),_universe.tables()[0]);
+		_generator = new DivGenerator(_vars[2],_vars[1],_vars[0],pift->getType(),_universe.tables()[0]);
 	}
 	else if(_firstocc[1] == 0) {
 		assert(false); // TODO
@@ -383,11 +387,11 @@ void GeneratorFactory::visit(const TimesInternalFuncTable* pift) {
 
 void GeneratorFactory::visit(const DivInternalFuncTable* pift) {
 	if(_pattern[0]) {
-		_generator = new DivGenerator(_vars[0],_vars[2],_vars[1],pift->isInt(),_universe.tables()[1]);
+		_generator = new DivGenerator(_vars[0],_vars[2],_vars[1],pift->getType(),_universe.tables()[1]);
 	}
 	else if(_pattern[1]) {
 		// FIXME: wrong in case of integers. E.g., a / 2 = 1 should result in a \in { 2,3 } instead of a \in { 2 }
-		_generator = new TimesGenerator(_vars[1],_vars[2],_vars[0],pift->isInt(),_universe.tables()[0]);
+		_generator = new TimesGenerator(_vars[1],_vars[2],_vars[0],pift->getType(),_universe.tables()[0]);
 	}
 	else if(_firstocc[1] == 0) {
 		assert(false); // TODO
@@ -410,14 +414,12 @@ void GeneratorFactory::visit(const ModInternalFuncTable* ) {
 
 void GeneratorFactory::visit(const AbsInternalFuncTable* aift) {
 	assert(!_pattern[0]);
-#warning not implemented
-	assert(false);
-	//FIXME _generator = new InvAbsGenerator(_vars[1],_vars[0],aift->isInt(),_universe.tables()[0]);
+	_generator = new InverseAbsValueGenerator(_vars[1],_vars[0],_universe.tables()[0], aift->getType());
 }
 
 void GeneratorFactory::visit(const UminInternalFuncTable* uift) {
 	assert(!_pattern[0]);
-	_generator = new UminGenerator(_vars[1],_vars[0],uift->isInt(),_universe.tables()[0]);
+	_generator = new InvertNumericGenerator(_vars[1],_vars[0],_universe.tables()[0], uift->getType());
 }
 
 

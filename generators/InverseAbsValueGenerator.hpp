@@ -4,8 +4,8 @@
  (c) K.U.Leuven
  ************************************/
 
-#ifndef UMINGENERATOR_HPP_
-#define UMINGENERATOR_HPP_
+#ifndef INVABSGENERATOR_HPP_
+#define INVABSGENERATOR_HPP_
 
 #include "generators/InstGenerator.hpp"
 #include "commontypes.hpp"
@@ -73,4 +73,4 @@ private:
 	}
 };
 
-#endif /* UMINGENERATOR_HPP_ */
+#endif /* INVABSGENERATOR_HPP_ */

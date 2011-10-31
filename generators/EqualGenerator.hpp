@@ -21,7 +21,7 @@ private:
 	SortIterator			_leftcurr;
 public:
 	EqualGenerator(const DomElemContainer* left, const DomElemContainer* right, SortTable* leftdom, SortTable* rightdom) :
-		left(left), right(right), leftdom(leftdom), rightdom(rightdom) { }
+		left(left), right(right), leftdom(leftdom), rightdom(rightdom), _leftcurr(leftdom->sortBegin()) { }
 
 	void reset(){
 		_leftcurr = leftdom->sortBegin();

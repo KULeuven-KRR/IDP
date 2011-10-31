@@ -60,7 +60,7 @@ public:
 
 	void next(){
 		for(auto i=0; i<_copiedoutvars.size(); ++i){
-			_outvars[i]->get() = _copiedoutvars[i];
+			_outvars[i]->operator =(_copiedoutvars[i]);
 		}
 		while(not _universegen->isAtEnd()){
 			if(not _predchecker->check()){ // It is NOT a tuple in the table

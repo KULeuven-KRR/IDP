@@ -1,9 +1,3 @@
-/************************************
- BDDBasedGeneratorFactory.cpp
- this file belongs to GidL 2.0
- (c) K.U.Leuven
- ************************************/
-
 #include <cassert>
 
 #include "term.hpp"
@@ -14,7 +8,6 @@
 #include "generators/InstGenerator.hpp"
 #include "generators/SimpleFuncGenerator.hpp"
 #include "generators/TreeInstGenerator.hpp"
-#include "generators/GenerateAndTestGenerator.hpp"
 #include "generators/InverseInstGenerator.hpp"
 #include "generators/SortInstGenerator.hpp"
 #include "generators/LookupGenerator.hpp"
@@ -30,9 +23,8 @@ BDDToGenerator::BDDToGenerator(FOBDDManager* manager) :
 		_manager(manager) {
 }
 
-InstGenerator* BDDToGenerator::create(const FOBDD* bdd, const vector<Pattern>& pattern,
-		const vector<const DomElemContainer*>& vars, const vector<const FOBDDVariable*>& bddvars,
-		AbstractStructure* structure, const Universe& universe) {
+InstGenerator* BDDToGenerator::create(const FOBDD* bdd, const vector<Pattern>& pattern, const vector<const DomElemContainer*>& vars,
+		const vector<const FOBDDVariable*>& bddvars, AbstractStructure* structure, const Universe& universe) {
 
 //cerr << "Create on bdd\n";
 //_manager->put(cerr,bdd);
@@ -73,9 +65,8 @@ InstGenerator* BDDToGenerator::create(const FOBDD* bdd, const vector<Pattern>& p
 	}
 }
 
-GeneratorNode* BDDToGenerator::createnode(const FOBDD* bdd, const vector<Pattern>& pattern,
-		const vector<const DomElemContainer*>& vars, const vector<const FOBDDVariable*>& bddvars,
-		AbstractStructure* structure, const Universe& universe) {
+GeneratorNode* BDDToGenerator::createnode(const FOBDD* bdd, const vector<Pattern>& pattern, const vector<const DomElemContainer*>& vars,
+		const vector<const FOBDDVariable*>& bddvars, AbstractStructure* structure, const Universe& universe) {
 
 	// Detect double occurrences
 	vector<unsigned int> firstocc;
@@ -128,24 +119,19 @@ GeneratorNode* BDDToGenerator::createnode(const FOBDD* bdd, const vector<Pattern
 		// recursive case
 		if (bdd->falsebranch() == _manager->falsebdd()) {
 			// Only generate the true branch possibilities
-			InstGenerator* kernelgenerator = create(bdd->kernel(), kernpattern, kerngenvars, kernvars, structure,
-					false, Universe(kerntables));
-			GeneratorNode* truegenerator = createnode(bdd->truebranch(), branchpattern, vars, bddvars, structure,
-					universe);
+			InstGenerator* kernelgenerator = create(bdd->kernel(), kernpattern, kerngenvars, kernvars, structure, false, Universe(kerntables));
+			GeneratorNode* truegenerator = createnode(bdd->truebranch(), branchpattern, vars, bddvars, structure, universe);
 			return new OneChildGeneratorNode(kernelgenerator, truegenerator);
 		}
 
 		else if (bdd->truebranch() == _manager->falsebdd()) {
 			// Only generate the false branch possibilities
-			InstGenerator* kernelgenerator = create(bdd->kernel(), kernpattern, kerngenvars, kernvars, structure,
-					true, Universe(kerntables));
-			GeneratorNode* falsegenerator = createnode(bdd->falsebranch(), branchpattern, vars, bddvars, structure,
-					universe);
+			InstGenerator* kernelgenerator = create(bdd->kernel(), kernpattern, kerngenvars, kernvars, structure, true, Universe(kerntables));
+			GeneratorNode* falsegenerator = createnode(bdd->falsebranch(), branchpattern, vars, bddvars, structure, universe);
 			return new OneChildGeneratorNode(kernelgenerator, falsegenerator);
 		} else {
-			vector<bool> checkpattern(kernpattern.size(), true);
-			InstChecker* kernelchecker = create(bdd->kernel(), checkpattern, kerngenvars, kernvars, structure,
-					false, Universe(kerntables));
+			vector<Pattern> checkpattern(kernpattern.size(), Pattern::INPUT);
+			InstChecker* kernelchecker = create(bdd->kernel(), checkpattern, kerngenvars, kernvars, structure, false, Universe(kerntables));
 			vector<const DomElemContainer*> kgvars(0);
 			vector<SortTable*> kguniv;
 			for (unsigned int n = 0; n < kerngenvars.size(); ++n) {
@@ -163,10 +149,8 @@ GeneratorNode* BDDToGenerator::createnode(const FOBDD* bdd, const vector<Pattern
 			}
 			GeneratorFactory gf;
 			InstGenerator* kernelgenerator = gf.create(kgvars, kguniv); // Both branches possible, so just generate all possibilities
-			GeneratorNode* truegenerator = createnode(bdd->truebranch(), branchpattern, vars, bddvars, structure,
-					universe);
-			GeneratorNode* falsegenerator = createnode(bdd->falsebranch(), branchpattern, vars, bddvars, structure,
-					universe);
+			GeneratorNode* truegenerator = createnode(bdd->truebranch(), branchpattern, vars, bddvars, structure, universe);
+			GeneratorNode* falsegenerator = createnode(bdd->falsebranch(), branchpattern, vars, bddvars, structure, universe);
 			return new TwoChildGeneratorNode(kernelchecker, kernelgenerator, falsegenerator, truegenerator);
 		}
 		return 0;
@@ -177,9 +161,8 @@ GeneratorNode* BDDToGenerator::createnode(const FOBDD* bdd, const vector<Pattern
 // FIXME very ugly code
 // FIXME a code in BDDTOGenerator that does not take a bdd and does not return something with bdds?
 // TODO what should the method do exactly?
-InstGenerator* BDDToGenerator::create(PredForm* atom, const vector<Pattern>& pattern,
-		const vector<const DomElemContainer*>& vars, const vector<Variable*>& atomvars,
-		AbstractStructure* structure, bool inverse, const Universe& universe) {
+InstGenerator* BDDToGenerator::create(PredForm* atom, const vector<Pattern>& pattern, const vector<const DomElemContainer*>& vars,
+		const vector<Variable*>& atomvars, AbstractStructure* structure, bool inverse, const Universe& universe) {
 	if (FormulaUtils::containsFuncTerms(atom)) {
 		bool allinput = true;
 		for (auto it = pattern.cbegin(); it != pattern.cend(); ++it) {
@@ -226,8 +209,7 @@ InstGenerator* BDDToGenerator::create(PredForm* atom, const vector<Pattern>& pat
 									vector<Term*> newargs(2);
 									newargs[0] = new VarTerm(atomvars[n], TermParseInfo());
 									newargs[1] = solvedterm;
-									PredForm* newatom = new PredForm(atom->sign(), atom->symbol(), newargs,
-											atom->pi().clone());
+									PredForm* newatom = new PredForm(atom->sign(), atom->symbol(), newargs, atom->pi().clone());
 									delete (atom);
 									atom = newatom;
 									break;
@@ -263,8 +245,7 @@ InstGenerator* BDDToGenerator::create(PredForm* atom, const vector<Pattern>& pat
 									vector<Term*> newargs(2);
 									newargs[0] = new VarTerm(atomvars[n], TermParseInfo());
 									newargs[1] = solvedterm;
-									PredForm* newatom = new PredForm(atom->sign(), atom->symbol(), newargs,
-											atom->pi().clone());
+									PredForm* newatom = new PredForm(atom->sign(), atom->symbol(), newargs, atom->pi().clone());
 									delete (atom);
 									atom = newatom;
 									break;
@@ -380,7 +361,7 @@ InstGenerator* BDDToGenerator::create(PredForm* atom, const vector<Pattern>& pat
 			vector<const DomElemContainer*> kernvars;
 			vector<Variable*> kernfovars;
 			vector<SortTable*> kerntables;
-			vector<bool> newbranchpattern;
+			vector<Pattern> newbranchpattern;
 			for (unsigned int n = 0; n < branchpattern.size(); ++n) {
 				if ((*it)->freeVars().find(branchfovars[n]) == (*it)->freeVars().cend()) {
 					newbranchpattern.push_back(branchpattern[n]);
@@ -389,7 +370,7 @@ InstGenerator* BDDToGenerator::create(PredForm* atom, const vector<Pattern>& pat
 					kernvars.push_back(branchvars[n]);
 					kernfovars.push_back(branchfovars[n]);
 					kerntables.push_back(branchuniverse[n]);
-					newbranchpattern.push_back(true);
+					newbranchpattern.push_back(Pattern::INPUT);
 				}
 			}
 			branchpattern = newbranchpattern;
@@ -485,9 +466,8 @@ InstGenerator* BDDToGenerator::create(PredForm* atom, const vector<Pattern>& pat
 	}
 }
 
-InstGenerator* BDDToGenerator::create(const FOBDDKernel* kernel, const vector<Pattern>& pattern,
-		const vector<const DomElemContainer*>& vars, const vector<const FOBDDVariable*>& kernelvars,
-		AbstractStructure* structure, bool inverse, const Universe& universe) {
+InstGenerator* BDDToGenerator::create(const FOBDDKernel* kernel, const vector<Pattern>& pattern, const vector<const DomElemContainer*>& vars,
+		const vector<const FOBDDVariable*>& kernelvars, AbstractStructure* structure, bool inverse, const Universe& universe) {
 
 //cerr << "Create on kernel\n";
 //_manager->put(cerr,kernel);
@@ -541,8 +521,7 @@ InstGenerator* BDDToGenerator::create(const FOBDDKernel* kernel, const vector<Pa
 				vector<SortTable*> termuniv(universe.tables());
 				termuniv.push_back(structure->inter(domterm->sort()));
 
-				return create(termkernel, termpattern, termvars, termkernelvars, structure, inverse,
-						Universe(termuniv));
+				return create(termkernel, termpattern, termvars, termkernelvars, structure, inverse, Universe(termuniv));
 			} else
 				assert(false);
 		}
@@ -584,7 +563,7 @@ InstGenerator* BDDToGenerator::create(const FOBDDKernel* kernel, const vector<Pa
 		// Create a generator for then quantified formula
 		vector<Pattern> quantpattern;
 		if (inverse)
-			quantpattern = vector<bool>(pattern.size(), true);
+			quantpattern = vector<Pattern>(pattern.size(), Pattern::INPUT);
 		else
 			quantpattern = pattern;
 		quantpattern.push_back(Pattern::OUTPUT);
@@ -609,8 +588,7 @@ InstGenerator* BDDToGenerator::create(const FOBDDKernel* kernel, const vector<Pa
 				}
 			}
 			InstGenerator* univgenerator = gf.create(univgenvars, univgentables);
-			InstChecker* bddtruechecker = btg.create(quantbdd, quantpattern, quantvars, bddquantvars, structure,
-					Universe(quantuniv)); // TODO review checking?
+			InstChecker* bddtruechecker = btg.create(quantbdd, quantpattern, quantvars, bddquantvars, structure, Universe(quantuniv)); // TODO review checking?
 			result = new FalseQuantKernelGenerator(univgenerator, bddtruechecker);
 		} else {
 			unsigned int firstout = 0;
@@ -619,13 +597,11 @@ InstGenerator* BDDToGenerator::create(const FOBDDKernel* kernel, const vector<Pa
 					break;
 			}
 			if (firstout == pattern.size()) {
-				InstGenerator* quantgenerator = btg.create(quantbdd,
-						vector<Pattern>(quantvars.size(), Pattern::INPUT), quantvars, bddquantvars, structure,
-						Universe(quantuniv));
+				InstGenerator* quantgenerator = btg.create(quantbdd, vector<Pattern>(quantvars.size(), Pattern::INPUT), quantvars, bddquantvars,
+						structure, Universe(quantuniv));
 				result = new TrueQuantKernelGenerator(quantgenerator);
 			} else {
-				InstGenerator* quantgenerator = btg.create(quantbdd, quantpattern, quantvars, bddquantvars,
-						structure, Universe(quantuniv));
+				InstGenerator* quantgenerator = btg.create(quantbdd, quantpattern, quantvars, bddquantvars, structure, Universe(quantuniv));
 				result = new TrueQuantKernelGenerator(quantgenerator);
 			}
 		}
