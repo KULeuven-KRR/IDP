@@ -1,0 +1,36 @@
+namespace Root{
+	namespace A{
+		vocabulary vocA{
+			C
+		}
+		
+		vocabulary vocA2{
+			C
+		}
+	
+		theory theoryA: vocA{
+			C.
+		}
+	
+		structure structA: vocA{
+		}
+	}
+	
+	namespace B{
+		using namespace A
+//		using vocabulary vocA
+		
+		theory theoryB: vocA{
+			C.
+		}
+
+		procedure main(){
+			mx(A::theoryA, Root::A::structA)
+			print(C)
+		}
+	}
+}
+
+procedure main2(){
+	Root::B::main()
+}
