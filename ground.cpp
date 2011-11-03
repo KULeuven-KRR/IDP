@@ -1121,11 +1121,11 @@ void GrounderFactory::visit(const PredForm* pf) {
 	 PredTable* certtable = new PredTable(new BDDInternalPredTable(certbdd,_symstructure->manager(),fovars,_structure),Universe(tables));*/
 	PredTable* posstable = new PredTable(new FullInternalPredTable(), Universe(tables));
 	PredTable* certtable = new PredTable(new InverseInternalPredTable(new FullInternalPredTable()), Universe(tables));
-	cerr <<"Certainly table: \n";
+	/*cerr <<"Certainly table: \n";
 	certtable->print(std::cerr);
 	cerr <<"\nPossible table: \n";
 	posstable->print(std::cerr);
-	cerr <<"\n";
+	cerr <<"\n";*/
 	InstChecker* possch = GeneratorFactory::create(posstable, vector<Pattern>(checkargs.size(), Pattern::INPUT), checkargs, Universe(tables));
 	InstChecker* certainch = GeneratorFactory::create(certtable, vector<Pattern>(checkargs.size(), Pattern::INPUT), checkargs, Universe(tables));
 
@@ -1594,11 +1594,11 @@ GrounderFactory::GenAndChecker GrounderFactory::createVarsAndGenerators(Formula*
 */
 	PredTable* gentable = new PredTable(new FullInternalPredTable(), Universe(tables));
 	PredTable* checktable = new PredTable(new InverseInternalPredTable(new FullInternalPredTable), Universe(tables));
-	cerr <<"Generator table: \n";
+	/*cerr <<"Generator table: \n";
 	gentable->print(std::cerr);
 	cerr <<"\nChecker table: \n";
 	checktable->print(std::cerr);
-	cerr <<"\n";
+	cerr <<"\n";*/
 	InstGenerator* gen = GeneratorFactory::create(gentable, pattern, vars, Universe(tables));
 	InstChecker* check = GeneratorFactory::create(checktable, vector<Pattern>(vars.size(), Pattern::INPUT), vars, Universe(tables));
 	return GenAndChecker(gen, check);

@@ -9,6 +9,7 @@
 
 #include "generators/InstGenerator.hpp"
 #include "generators/LookupGenerator.hpp"
+#include "generators/GeneratorFactory.hpp"
 
 /**
  * Given a predicate table, generate tuples which, given the input, are not in the predicate table
@@ -22,46 +23,51 @@ private:
 	PredTable* _table;
 	InstGenerator *_universegen;
 	InstChecker *_predchecker;
-	std::vector<const DomElemContainer*> _outvars, _copiedoutvars;
+	std::vector<const DomElemContainer*> _outvars, _copiedoutvars, fulltempvars;
+	bool _reset;
 
 public:
-	InverseInstGenerator(PredTable* t, const std::vector<Pattern>& pattern, const std::vector<const DomElemContainer*>& vars)
-			: _table(t){
-		auto tempvars = vars;
+	InverseInstGenerator(PredTable* table, const std::vector<Pattern>& pattern, const std::vector<const DomElemContainer*>& vars)
+			: _table(table), _reset(true){
+		// NOTE: Use tempvars so we can safely iterate over then and later only have to set the output
+		std::vector<const DomElemContainer*> tempvars;
+		std::vector<SortTable*> temptables;
 		for(auto i=0; i<pattern.size(); ++i){
 			if(pattern[i]==Pattern::OUTPUT){
-				tempvars[i] = new DomElemContainer();
+				tempvars.push_back(new DomElemContainer());
+				fulltempvars.push_back(tempvars.back());
+				temptables.push_back(table->universe().tables()[i]);
 				_outvars.push_back(vars[i]);
-				_copiedoutvars.push_back(tempvars[i]);
+				_copiedoutvars.push_back(tempvars.back());
+			}else{
+				fulltempvars.push_back(vars[i]);
 			}
 		}
-		PredTable temp(new FullInternalPredTable(), t->universe());
-		_universegen = GeneratorFactory::create(&temp, pattern, tempvars, t->universe()); // Use tempvars so we can safely iterate over then and later only have to set the output
-		_predchecker = new LookupGenerator(t, tempvars, t->universe());
+		Universe universe(temptables);
+		PredTable temp(new FullInternalPredTable(), universe);
+		_universegen = GeneratorFactory::create(&temp, pattern, tempvars, universe);
+		_predchecker = new LookupGenerator(table, fulltempvars, table->universe());
 	}
 
 	void reset(){
-		_universegen->begin();
-		while(not _universegen->isAtEnd()){
-			if(not _predchecker->check()){ // It is NOT a tuple in the table
-				break;
-			}
-			_universegen->operator ++();
-		}
-		if(_universegen->isAtEnd()){
-			notifyAtEnd();
-		}
+		_reset = true;
 	}
 
 	void next(){
-		for(auto i=0; i<_copiedoutvars.size(); ++i){
-			_outvars[i]->operator =(_copiedoutvars[i]);
-		}
-		while(not _universegen->isAtEnd()){
-			if(not _predchecker->check()){ // It is NOT a tuple in the table
-				break;
-			}
+		if(_reset){
+			_reset = false;
+			_universegen->begin();
+		}else{
 			_universegen->operator ++();
+		}
+
+		for(; not _universegen->isAtEnd(); _universegen->operator ++()){
+
+			if(not _predchecker->check()){ // It is NOT a tuple in the table
+				for(auto i=0; i<_copiedoutvars.size(); ++i){
+					_outvars[i]->operator =(_copiedoutvars[i]);
+				}
+			}
 		}
 		if(_universegen->isAtEnd()){
 			notifyAtEnd();

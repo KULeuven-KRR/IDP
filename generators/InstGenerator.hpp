@@ -7,6 +7,8 @@
 #ifndef INSTGENERATOR_HPP_
 #define INSTGENERATOR_HPP_
 
+enum class Pattern { INPUT, OUTPUT};
+
 class InstChecker{
 public:
 	// FIXME Checker should only be created if there are no output variables
