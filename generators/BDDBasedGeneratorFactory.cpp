@@ -49,7 +49,7 @@ InstGenerator* BDDToGenerator::create(const FOBDD* bdd, const vector<Pattern>& p
 		vector<const DomElemContainer*> outvars;
 		vector<SortTable*> tables;
 		for (unsigned int n = 0; n < pattern.size(); ++n) {
-			if (!pattern[n]) {
+			if (pattern[n] == Pattern::OUTPUT) {
 				if (firstocc[n] == n) {
 					outvars.push_back(vars[n]);
 					tables.push_back(universe.tables()[n]);
@@ -84,19 +84,20 @@ GeneratorNode* BDDToGenerator::createnode(const FOBDD* bdd, const vector<Pattern
 		EmptyGenerator* eg = new EmptyGenerator();
 		return new LeafGeneratorNode(eg);
 	} else if (bdd == _manager->truebdd()) {
-		vector<const DomElemContainer*> outvars;
+		FullGenerator* eg = new FullGenerator();
+		return new LeafGeneratorNode(eg);
+		/*vector<const DomElemContainer*> outvars;
 		vector<SortTable*> tables;
 		for (unsigned int n = 0; n < pattern.size(); ++n) {
-			if (!pattern[n]) {
+			if (pattern[n] == Pattern::OUTPUT) {
 				if (firstocc[n] == n) {
 					outvars.push_back(vars[n]);
 					tables.push_back(universe.tables()[n]);
 				}
 			}
 		}
-		GeneratorFactory gf;
-		InstGenerator* ig = gf.create(outvars, tables);
-		return new LeafGeneratorNode(ig);
+		InstGenerator* ig = GeneratorFactory::create(outvars, tables);
+		return new LeafGeneratorNode(ig);*/
 	} else {
 		// split variables
 		vector<Pattern> kernpattern;
@@ -135,7 +136,7 @@ GeneratorNode* BDDToGenerator::createnode(const FOBDD* bdd, const vector<Pattern
 			vector<const DomElemContainer*> kgvars(0);
 			vector<SortTable*> kguniv;
 			for (unsigned int n = 0; n < kerngenvars.size(); ++n) {
-				if (!kernpattern[n]) {
+				if (kernpattern[n]==Pattern::OUTPUT) {
 					unsigned int m = 0;
 					for (; m < kgvars.size(); ++m) {
 						if (kgvars[m] == kerngenvars[n])
@@ -147,8 +148,7 @@ GeneratorNode* BDDToGenerator::createnode(const FOBDD* bdd, const vector<Pattern
 					}
 				}
 			}
-			GeneratorFactory gf;
-			InstGenerator* kernelgenerator = gf.create(kgvars, kguniv); // Both branches possible, so just generate all possibilities
+			InstGenerator* kernelgenerator = GeneratorFactory::create(kgvars, kguniv); // Both branches possible, so just generate all possibilities
 			GeneratorNode* truegenerator = createnode(bdd->truebranch(), branchpattern, vars, bddvars, structure, universe);
 			GeneratorNode* falsegenerator = createnode(bdd->falsebranch(), branchpattern, vars, bddvars, structure, universe);
 			return new TwoChildGeneratorNode(kernelchecker, kernelgenerator, falsegenerator, truegenerator);
@@ -166,7 +166,7 @@ InstGenerator* BDDToGenerator::create(PredForm* atom, const vector<Pattern>& pat
 	if (FormulaUtils::containsFuncTerms(atom)) {
 		bool allinput = true;
 		for (auto it = pattern.cbegin(); it != pattern.cend(); ++it) {
-			if (!(*it)) {
+			if (*it==Pattern::OUTPUT) {
 				allinput = false;
 				break;
 			}
@@ -203,7 +203,7 @@ InstGenerator* BDDToGenerator::create(PredForm* atom, const vector<Pattern>& pat
 							&& (ft->function()->name() == "*/2" || ft->function()->name() == "+/2")) { // Case (E)
 						unsigned int n = 0;
 						for (unsigned int n = 0; n < pattern.size(); ++n) {
-							if (!pattern[n]) {
+							if (pattern[n] == Pattern::OUTPUT) {
 								Term* solvedterm = solve(atom, atomvars[n]);
 								if (solvedterm) {
 									vector<Term*> newargs(2);
@@ -239,7 +239,7 @@ InstGenerator* BDDToGenerator::create(PredForm* atom, const vector<Pattern>& pat
 							&& (ft->function()->name() == "*/2" || ft->function()->name() == "+/2")) { // Case (D)
 						unsigned int n = 0;
 						for (unsigned int n = 0; n < pattern.size(); ++n) {
-							if (!pattern[n]) {
+							if (pattern[n] == Pattern::OUTPUT) {
 								Term* solvedterm = solve(atom, atomvars[n]);
 								if (solvedterm) {
 									vector<Term*> newargs(2);
@@ -297,8 +297,8 @@ InstGenerator* BDDToGenerator::create(PredForm* atom, const vector<Pattern>& pat
 		assert(sametypeid<QuantForm>(*newform));
 		QuantForm* quantform = dynamic_cast<QuantForm*>(newform);
 		assert(sametypeid<BoolForm>(*(quantform->subformula())));
-		BoolForm* boolform = dynamic_cast<BoolForm*>(quantform->subformula());
-		vector<PredForm*> conjunction;
+		BoolForm* boolform = dynamic_cast<BoolForm*>(quantform->subformula());vector
+		<PredForm*> conjunction;
 		for (auto it = boolform->subformulas().cbegin(); it != boolform->subformulas().cend(); ++it) {
 			assert(typeid(*(*it)) == typeid(PredForm));
 			conjunction.push_back(dynamic_cast<PredForm*>(*it));
@@ -306,7 +306,7 @@ InstGenerator* BDDToGenerator::create(PredForm* atom, const vector<Pattern>& pat
 		PredForm* origatom = conjunction.back();
 		set<Variable*> still_free;
 		for (unsigned int n = 0; n < pattern.size(); ++n) {
-			if (not pattern[n]) {
+			if (pattern[n]==Pattern::OUTPUT) {
 				still_free.insert(atomvars[n]);
 			}
 		}
@@ -416,7 +416,7 @@ InstGenerator* BDDToGenerator::create(PredForm* atom, const vector<Pattern>& pat
 				Variable* var = new Variable(domterm->sort());
 				PredForm* newatom = dynamic_cast<PredForm*>(FormulaUtils::substitute(atom, domterm, var));
 
-				vector<Pattern> termpattern(pattern);
+vector				<Pattern> termpattern(pattern);
 				termpattern.push_back(Pattern::INPUT);
 				vector<const DomElemContainer*> termvars(vars);
 				termvars.push_back(domelement);
@@ -441,23 +441,22 @@ InstGenerator* BDDToGenerator::create(PredForm* atom, const vector<Pattern>& pat
 		}
 		const PredTable* table = 0;
 		if (sametypeid<Predicate>(*(atom->symbol()))) {
-			Predicate* predicate = dynamic_cast<Predicate*>(atom->symbol());
-			switch (predicate->type()) {
+			Predicate* predicate = dynamic_cast<Predicate*>(atom->symbol());switch (predicate->type()) {
 				case ST_NONE:
-					table = inverse ? inter->cf() : inter->ct();
-					break;
+				table = inverse ? inter->cf() : inter->ct();
+				break;
 				case ST_CT:
-					table = inverse ? inter->pf() : inter->ct();
-					break;
+				table = inverse ? inter->pf() : inter->ct();
+				break;
 				case ST_CF:
-					table = inverse ? inter->pt() : inter->cf();
-					break;
+				table = inverse ? inter->pt() : inter->cf();
+				break;
 				case ST_PT:
-					table = inverse ? inter->cf() : inter->pt();
-					break;
+				table = inverse ? inter->cf() : inter->pt();
+				break;
 				case ST_PF:
-					table = inverse ? inter->ct() : inter->pf();
-					break;
+				table = inverse ? inter->ct() : inter->pf();
+				break;
 			}
 		} else {
 			table = inverse ? inter->cf() : inter->ct();
@@ -537,15 +536,15 @@ InstGenerator* BDDToGenerator::create(const FOBDDKernel* kernel, const vector<Pa
 		}
 		const PredTable* table = 0;
 		switch (atom->type()) {
-			case AKT_TWOVAL:
-				table = inverse ? inter->cf() : inter->ct();
-				break;
-			case AKT_CF:
-				table = inverse ? inter->pt() : inter->cf();
-				break;
-			case AKT_CT:
-				table = inverse ? inter->pf() : inter->ct();
-				break;
+		case AKT_TWOVAL:
+			table = inverse ? inter->cf() : inter->ct();
+			break;
+		case AKT_CF:
+			table = inverse ? inter->pt() : inter->cf();
+			break;
+		case AKT_CT:
+			table = inverse ? inter->pf() : inter->ct();
+			break;
 		}
 		return GeneratorFactory::create(table, atompattern, atomvars, Universe(atomtables));
 	} else { // Quantification kernel
@@ -582,7 +581,7 @@ InstGenerator* BDDToGenerator::create(const FOBDDKernel* kernel, const vector<Pa
 			vector<const DomElemContainer*> univgenvars;
 			vector<SortTable*> univgentables;
 			for (unsigned int n = 0; n < pattern.size(); ++n) {
-				if (!pattern[n]) {
+				if (pattern[n] == Pattern::OUTPUT) {
 					univgenvars.push_back(vars[n]);
 					univgentables.push_back(universe.tables()[n]);
 				}
@@ -593,8 +592,9 @@ InstGenerator* BDDToGenerator::create(const FOBDDKernel* kernel, const vector<Pa
 		} else {
 			unsigned int firstout = 0;
 			for (; firstout < pattern.size(); ++firstout) {
-				if (!pattern[firstout])
+				if (pattern[firstout]==Pattern::OUTPUT){
 					break;
+				}
 			}
 			if (firstout == pattern.size()) {
 				InstGenerator* quantgenerator = btg.create(quantbdd, vector<Pattern>(quantvars.size(), Pattern::INPUT), quantvars, bddquantvars,

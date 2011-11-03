@@ -18,7 +18,7 @@ class InstanceChecker;
 class GeneratorNode;
 class Universe;
 
-enum Pattern { INPUT, OUTPUT};
+enum class Pattern { INPUT, OUTPUT};
 
 class GeneratorFactory : public StructureVisitor {
 private:

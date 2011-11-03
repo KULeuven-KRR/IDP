@@ -27,7 +27,6 @@ private:
 public:
 	InverseInstGenerator(PredTable* t, const std::vector<Pattern>& pattern, const std::vector<const DomElemContainer*>& vars)
 			: _table(t){
-
 		auto tempvars = vars;
 		for(auto i=0; i<pattern.size(); ++i){
 			if(pattern[i]==Pattern::OUTPUT){
@@ -41,17 +40,13 @@ public:
 		_predchecker = new LookupGenerator(t, tempvars, t->universe());
 	}
 
-	bool check() const{
-		assert(_outvars.size()==0);
-		return not _predchecker->check();
-	}
-
 	void reset(){
 		_universegen->begin();
 		while(not _universegen->isAtEnd()){
 			if(not _predchecker->check()){ // It is NOT a tuple in the table
 				break;
 			}
+			_universegen->operator ++();
 		}
 		if(_universegen->isAtEnd()){
 			notifyAtEnd();
@@ -66,6 +61,7 @@ public:
 			if(not _predchecker->check()){ // It is NOT a tuple in the table
 				break;
 			}
+			_universegen->operator ++();
 		}
 		if(_universegen->isAtEnd()){
 			notifyAtEnd();

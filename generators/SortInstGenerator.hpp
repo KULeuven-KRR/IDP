@@ -17,30 +17,29 @@ private:
 	const InternalSortTable*	_table;
 	const DomElemContainer*		_var;
 	SortIterator				_curr;
+	bool _reset;
 public:
 	SortInstGenerator(const InternalSortTable* table, const DomElemContainer* var)
-			:_table(table), _var(var), _curr(_table->sortBegin()) {
-	}
-
-	bool check() const{
-		return _table->contains(_var->get());
+			:_table(table), _var(var), _curr(_table->sortBegin()), _reset(true) {
 	}
 
 	void reset(){
-		_curr = _table->sortBegin();
-		if(_curr.isAtEnd()){
-			notifyAtEnd();
-		}
+		_reset = true;
 	}
 
 	void next(){
-		*_var = *_curr;
-		++_curr;
+		if(_reset){
+			_reset = false;
+			_curr = _table->sortBegin();
+		}else{
+			++_curr;
+		}
 		if(_curr.isAtEnd()){
 			notifyAtEnd();
+		}else{
+			*_var = *_curr;
 		}
 	}
 };
-
 
 #endif /* SORTINSTGENERATOR_HPP_ */

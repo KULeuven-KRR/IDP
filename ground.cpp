@@ -35,6 +35,9 @@
 #include "grounders/DefinitionGrounders.hpp"
 #include "grounders/LazyQuantGrounder.hpp"
 
+#include "generators/EmptyGenerator.hpp"
+#include "generators/TableGenerator.hpp"
+
 #include "fobdd.hpp"
 #include "symbolicstructure.hpp"
 
@@ -610,11 +613,6 @@ string GroundTermTranslator::printTerm(const VarId& varid, bool longnames) const
  Optimized grounding algorithm
  *************************************/
 
-bool CopyGrounder::run() const {
-	// TODO TODO TODO
-	return true;
-}
-
 bool TheoryGrounder::run() const {
 	_grounding->startTheory();
 	if (_verbosity > 0) {
@@ -1003,19 +1001,6 @@ TopLevelGrounder* GrounderFactory::create(const AbstractTheory* theory, SATSolve
 }
 
 /**
- * void GrounderFactory::visit(const EcnfTheory* ecnf)
- * DESCRIPTION
- *		Creates a grounder for a ground ecnf theory. This grounder returns a (reduced) copy of the ecnf theory.
- * PARAMETERS
- *		ecnf	- the given ground ecnf theory
- * POSTCONDITIONS
- *		_toplevelgrounder is equal to the created grounder.
- */
-void GrounderFactory::visit(const AbstractGroundTheory* ecnf) {
-	_toplevelgrounder = new CopyGrounder(_grounding, ecnf, _verbosity);
-}
-
-/**
  * void GrounderFactory::visit(const Theory* theory)
  * DESCRIPTION
  *		Creates a grounder for a non-ground theory.
@@ -1117,8 +1102,8 @@ void GrounderFactory::visit(const PredForm* pf) {
 	if (_context._component == CompContext::HEAD) {
 		PredInter* inter = _structure->inter(newpf->symbol());
 		CheckerFactory checkfactory;
-		InstanceChecker* truech = checkfactory.create(inter, CERTAIN_TRUE);
-		InstanceChecker* falsech = checkfactory.create(inter, CERTAIN_FALSE);
+		InstanceChecker* truech = checkfactory.create(inter, TruthType::CERTAIN_TRUE);
+		InstanceChecker* falsech = checkfactory.create(inter, TruthType::CERTAIN_FALSE);
 		_headgrounder = new HeadGrounder(_grounding, truech, falsech, newpf->symbol(), subtermgrounders, argsorttables);
 		return;
 	}
@@ -1137,23 +1122,28 @@ void GrounderFactory::visit(const PredForm* pf) {
 	}
 
 	// TODO enable bdds after debugging
-	/*	vector<Variable*> fovars = VarUtils::makeNewVariables(checksorts);
+/*	vector<Variable*> fovars = VarUtils::makeNewVariables(checksorts);
 	 vector<Term*> foterms = TermUtils::makeNewVarTerms(fovars);
 	 PredForm* checkpf = new PredForm(newpf->sign(),newpf->symbol(),foterms,FormulaParseInfo());
 	 const FOBDD* possbdd;
 	 const FOBDD* certbdd;
-	 if(_context.gentype) { //TOdo refactor
-	 possbdd = _symstructure->evaluate(checkpf,QT_PT);
-	 certbdd = _symstructure->evaluate(checkpf,QT_CT);
+	 if(_context.gentype == GenType::CANMAKETRUE) { //TOdo refactor
+		 possbdd = _symstructure->evaluate(checkpf,TruthType::POSS_TRUE);
+		 certbdd = _symstructure->evaluate(checkpf,TruthType::CERTAIN_TRUE);
 	 } else {
-	 possbdd = _symstructure->evaluate(checkpf,QT_PF);
-	 certbdd = _symstructure->evaluate(checkpf,QT_CF);
+		 possbdd = _symstructure->evaluate(checkpf,TruthType::POSS_FALSE);
+		 certbdd = _symstructure->evaluate(checkpf,TruthType::CERTAIN_FALSE);
 	 }
 
 	 PredTable* posstable = new PredTable(new BDDInternalPredTable(possbdd,_symstructure->manager(),fovars,_structure),Universe(tables));
 	 PredTable* certtable = new PredTable(new BDDInternalPredTable(certbdd,_symstructure->manager(),fovars,_structure),Universe(tables));*/
 	PredTable* posstable = new PredTable(new FullInternalPredTable(), Universe(tables));
 	PredTable* certtable = new PredTable(new InverseInternalPredTable(new FullInternalPredTable()), Universe(tables));
+	cerr <<"Certainly table: \n";
+	certtable->print(std::cerr);
+	cerr <<"\nPossible table: \n";
+	posstable->print(std::cerr);
+	cerr <<"\n";
 	InstChecker* possch = GeneratorFactory::create(posstable, vector<Pattern>(checkargs.size(), Pattern::INPUT), checkargs, Universe(tables));
 	InstChecker* certainch = GeneratorFactory::create(certtable, vector<Pattern>(checkargs.size(), Pattern::INPUT), checkargs, Universe(tables));
 
@@ -1263,8 +1253,8 @@ void GrounderFactory::visit(const QuantForm* qf) {
 	// !x phi(x) => generate all x possibly false
 	// !x phi(x) => check for x certainly false
 	// FIXME SUBFORMULA got cloned, not the formula itself! REVIEW CODE!
-	GenAndChecker gc = createVarsAndGenerators(newsubformula, qf, qf->isUniv() ? TruthType::PF : TruthType::PT,
-			qf->isUniv() ? TruthType::CF : TruthType::CT);
+	GenAndChecker gc = createVarsAndGenerators(newsubformula, qf, qf->isUniv() ? TruthType::POSS_FALSE : TruthType::POSS_TRUE,
+			qf->isUniv() ? TruthType::CERTAIN_FALSE : TruthType::CERTAIN_TRUE);
 
 	// Handle top-level universal quantifiers efficiently
 	/*	if(_context._component == CompContext::SENTENCE && qf->isUnivWithSign()) {
@@ -1308,7 +1298,10 @@ void GrounderFactory::visit(const QuantForm* qf) {
 	_formgrounder->setOrig(qf, _varmapping, _verbosity);
 
 	if (_context._component == CompContext::SENTENCE) {
-		_toplevelgrounder = new SentenceGrounder(_grounding, _formgrounder, false, _verbosity);
+		_toplevelgrounder = new SentenceGrounder(_grounding, _formgrounder, qf->isUnivWithSign(), _verbosity);
+		// FIXME should we take sign into account here
+		// FIXME conj should be returned rather than passed on
+		// FIXME correct in other grounders
 	}
 	//}
 
@@ -1599,12 +1592,31 @@ GrounderFactory::GenAndChecker GrounderFactory::createVarsAndGenerators(Formula*
 	}
 
 	// FIXME => unsafe to have to pass in fovars explicitly (order is never checked?)
-	const FOBDD* generatorbdd = _symstructure->evaluate(subformula, generatortype); // !x phi(x) => generate all x possibly false
+/*	const FOBDD* generatorbdd = _symstructure->evaluate(subformula, generatortype); // !x phi(x) => generate all x possibly false
 	const FOBDD* checkerbdd = _symstructure->evaluate(subformula, checkertype); // !x phi(x) => check for x certainly false
+	// FIXME checker is incorrect
+	cerr <<"Generator bdd: \n";
+	_symstructure->manager()->put(std::cerr, generatorbdd);
+	cerr <<"\nChecker bdd: \n";
+	_symstructure->manager()->put(std::cerr, generatorbdd);
+	cerr <<"\n";
 	generatorbdd = improve_generator(generatorbdd, quantfovars, MCPA);
 	checkerbdd = improve_checker(checkerbdd, MCPA);
+	cerr <<"Improved generator bdd: \n";
+	_symstructure->manager()->put(std::cerr, generatorbdd);
+	cerr <<"\nImproved checker bdd: \n";
+	_symstructure->manager()->put(std::cerr, generatorbdd);
+	cerr <<"\n";
 	PredTable* gentable = new PredTable(new BDDInternalPredTable(generatorbdd, _symstructure->manager(), fovars, _structure), Universe(tables));
 	PredTable* checktable = new PredTable(new BDDInternalPredTable(checkerbdd, _symstructure->manager(), fovars, _structure), Universe(tables));
+*/
+	PredTable* gentable = new PredTable(new FullInternalPredTable(), Universe(tables));
+	PredTable* checktable = new PredTable(new InverseInternalPredTable(new FullInternalPredTable), Universe(tables));
+	cerr <<"Generator table: \n";
+	gentable->print(std::cerr);
+	cerr <<"\nChecker table: \n";
+	checktable->print(std::cerr);
+	cerr <<"\n";
 	InstGenerator* gen = GeneratorFactory::create(gentable, pattern, vars, Universe(tables));
 	InstChecker* check = GeneratorFactory::create(checktable, vector<Pattern>(vars.size(), Pattern::INPUT), vars, Universe(tables));
 	return GenAndChecker(gen, check);
@@ -1631,7 +1643,7 @@ void GrounderFactory::visit(const QuantSetExpr* qs) {
 	newsubformula = FormulaUtils::graphFunctions(newsubformula);
 
 	// NOTE: generator generates possibly true instances, checker checks the certainly true ones
-	GenAndChecker gc = createVarsAndGenerators(newsubformula, qs, TruthType::PT, TruthType::CT);
+	GenAndChecker gc = createVarsAndGenerators(newsubformula, qs, TruthType::POSS_TRUE, TruthType::CERTAIN_TRUE);
 
 	// Create grounder for subformula
 	SaveContext();

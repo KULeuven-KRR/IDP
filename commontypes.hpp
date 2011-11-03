@@ -56,9 +56,10 @@ enum class SIGN{ NEG, POS};
 
 enum class QUANT { UNIV, EXIST};
 
-enum class TruthType { CT, CF, PT, PF };
+enum class TruthType { POSS_TRUE, POSS_FALSE, CERTAIN_TRUE, CERTAIN_FALSE};
 
-enum class NumType { DOUBLE, INT };
+// NOTE: int and double domain elements are DISJOINT! It is never allowed to create a double domainelement if it in fact refers to an int, so have to check for this
+enum class NumType { CERTAINLYINT, POSSIBLYINT};
 
 typedef int Lit;
 typedef std::vector<Lit> litlist;

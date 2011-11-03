@@ -220,9 +220,6 @@ COMMENTLINE		"//".*
 		Lua
 	**********/
 
-<*>"##intern##"				{ BEGIN(procedure); 
-							  return EXEC_HEADER;
-							}
 <procedure>"{"				{ advancecol();
 							  BEGIN(lua);
 							  ++bracketcounter;		

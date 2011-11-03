@@ -18,4 +18,19 @@ public:
 	virtual void reset() { notifyAtEnd(); }
 };
 
+class FullGenerator : public InstGenerator {
+private:
+	bool first;
+public:
+	FullGenerator():first(true){}
+	virtual void next() {
+		if(first){
+			first = false;
+		}else{
+			notifyAtEnd();
+		}
+	}
+	virtual void reset() { first = true;}
+};
+
 #endif /* EMPTYGENERATOR_HPP_ */

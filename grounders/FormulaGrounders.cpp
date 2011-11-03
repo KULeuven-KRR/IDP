@@ -554,6 +554,7 @@ void QuantGrounder::run(litlist& clause, bool negated) const {
 			break;
 		}
 
+		// FIXME als toplevel, moet hier een clause meegegeven worden, zodat er geen extra tseitins worden aangemaakt!!!
 		Lit l = _subgrounder->run();
 		if(makesFormulaFalse(l, negated)) {
 			clause = litlist{negated?-_false:_false}; // FIXME should negateclause be checked as part of "makesformulafalse"?

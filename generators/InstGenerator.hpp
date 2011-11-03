@@ -33,7 +33,7 @@ public:
 
 	virtual bool check() {
 		begin();
-		return isAtEnd();
+		return not isAtEnd();
 	}
 
 	// Can also be used for resets

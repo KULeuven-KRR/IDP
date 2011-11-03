@@ -18,26 +18,32 @@ private:
 	std::vector<const DomElemContainer*>	_vars;
 	Universe								_universe; // FIXME waarvoor is dit universe nu juist nodig?
 
+	bool _reset;
+
 public:
 	LookupGenerator(const PredTable* t, const std::vector<const DomElemContainer*> vars, const Universe& univ)
-			:_table(t), _vars(vars), _universe(univ) {
+			:_table(t), _vars(vars), _universe(univ), _reset(true) {
 		assert(t->arity()==vars.size());
 	}
 
-	bool check() const{
-		std::vector<const DomainElement*> _currargs;
-		for(auto i=_vars.begin(); i<_vars.end(); ++i){
-			_currargs.push_back((*i)->get());
-		}
-		return (_table->contains(_currargs) && _universe.contains(_currargs));
-	}
-
-	// TODO can ONLY be used for checking
 	void reset(){
+		_reset = true;
 	}
 
 	void next(){
-		assert(false);
+		if(_reset){
+			_reset = false;
+			std::vector<const DomainElement*> _currargs;
+			for(auto i=_vars.begin(); i<_vars.end(); ++i){
+				_currargs.push_back((*i)->get());
+			}
+			bool allowedvalue = (_table->contains(_currargs) && _universe.contains(_currargs));
+			if(not allowedvalue){
+				notifyAtEnd();
+			}
+		}else{
+			notifyAtEnd();
+		}
 	}
 };
 

@@ -48,7 +48,7 @@ DomainElement::DomainElement(int value) :
  */
 DomainElement::DomainElement(double value) :
 		_type(DET_DOUBLE) {
-	assert(!isInt(value));
+	assert(!isInt(value)); // TODO check rest of code
 	_value._double = value;
 }
 
@@ -387,11 +387,7 @@ const Compound* DomainElementFactory::compound(Function* function, const Element
  * PARAMETERS
  *		- value: the given value
  */
-const DomainElement* DomainElementFactory::create(int value, NumType createType) {
-	if(createType == NumType::DOUBLE){
-		return create(double(value), createType);
-	}
-
+const DomainElement* DomainElementFactory::create(int value) {
 	DomainElement* element = 0;
 	// Check if the value is within the efficient range
 	if (value >= _firstfastint && value < _lastfastint) {
@@ -422,13 +418,13 @@ const DomainElement* DomainElementFactory::create(int value, NumType createType)
  *		- value:		the given value
  *		- certnotint:	true iff the caller of this method asserts that the value is not an integer
  */
-const DomainElement* DomainElementFactory::create(double value, NumType createType) {
-	if (createType==NumType::INT){
+const DomainElement* DomainElementFactory::create(double value, NumType type) {
+	if (type==NumType::CERTAINLYINT || isInt(value)){
 		return create(int(value));
 	}
 
 	DomainElement* element;
-	map<double, DomainElement*>::const_iterator it = _doubleelements.find(value);
+	auto it = _doubleelements.find(value);
 	if (it == _doubleelements.cend()) {
 		element = new DomainElement(value);
 		_doubleelements[value] = element;
@@ -446,8 +442,10 @@ const DomainElement* DomainElementFactory::create(double value, NumType createTy
  *		- certnotdouble:	true iff the caller of this method asserts that the value is not a floating point number
  */
 const DomainElement* DomainElementFactory::create(const string* value, bool certnotdouble) {
-	if (!certnotdouble && isDouble(*value))
-		return create(toDouble(*value), NumType::DOUBLE);
+	if (!certnotdouble && isDouble(*value)){
+		return create(toDouble(*value), NumType::POSSIBLYINT);
+	}
+
 
 	DomainElement* element;
 	map<const string*, DomainElement*>::const_iterator it = _stringelements.find(value);
@@ -2713,7 +2711,7 @@ InternalTableIterator* ModInternalFuncTable::begin(const Universe& univ) const {
 const DomainElement* ExpInternalFuncTable::operator[](const ElementTuple& tuple) const {
 	double a1 = tuple[0]->type() == DET_DOUBLE ? tuple[0]->value()._double : double(tuple[0]->value()._int);
 	double a2 = tuple[1]->type() == DET_DOUBLE ? tuple[1]->value()._double : double(tuple[1]->value()._int);
-	return DomainElementFactory::instance()->create(pow(a1, a2), NumType::DOUBLE);
+	return DomainElementFactory::instance()->create(pow(a1, a2), NumType::POSSIBLYINT);
 }
 
 InternalFuncTable* ExpInternalFuncTable::add(const ElementTuple&) {
@@ -2741,14 +2739,14 @@ InternalFuncTable* IntFloatInternalFuncTable::remove(const ElementTuple&) {
 }
 
 const DomainElement* PlusInternalFuncTable::operator[](const ElementTuple& tuple) const {
-	if (getType()==NumType::INT) {
+	if (getType()==NumType::CERTAINLYINT) {
 		int a1 = tuple[0]->value()._int;
 		int a2 = tuple[1]->value()._int;
 		return DomainElementFactory::instance()->create(a1 + a2);
 	} else {
 		double a1 = tuple[0]->type() == DET_DOUBLE ? tuple[0]->value()._double : double(tuple[0]->value()._int);
 		double a2 = tuple[1]->type() == DET_DOUBLE ? tuple[1]->value()._double : double(tuple[1]->value()._int);
-		return DomainElementFactory::instance()->create(a1 + a2, NumType::DOUBLE);
+		return DomainElementFactory::instance()->create(a1 + a2, NumType::POSSIBLYINT);
 	}
 }
 
@@ -2757,14 +2755,14 @@ InternalTableIterator* PlusInternalFuncTable::begin(const Universe& univ) const 
 }
 
 const DomainElement* MinusInternalFuncTable::operator[](const ElementTuple& tuple) const {
-	if (getType()==NumType::INT) {
+	if (getType()==NumType::CERTAINLYINT) {
 		int a1 = tuple[0]->value()._int;
 		int a2 = tuple[1]->value()._int;
 		return DomainElementFactory::instance()->create(a1 - a2);
 	} else {
 		double a1 = tuple[0]->type() == DET_DOUBLE ? tuple[0]->value()._double : double(tuple[0]->value()._int);
 		double a2 = tuple[1]->type() == DET_DOUBLE ? tuple[1]->value()._double : double(tuple[1]->value()._int);
-		return DomainElementFactory::instance()->create(a1 - a2, NumType::DOUBLE);
+		return DomainElementFactory::instance()->create(a1 - a2, NumType::POSSIBLYINT);
 	}
 }
 
@@ -2773,14 +2771,14 @@ InternalTableIterator* MinusInternalFuncTable::begin(const Universe& univ) const
 }
 
 const DomainElement* TimesInternalFuncTable::operator[](const ElementTuple& tuple) const {
-	if (getType()==NumType::INT) {
+	if (getType()==NumType::CERTAINLYINT) {
 		int a1 = tuple[0]->value()._int;
 		int a2 = tuple[1]->value()._int;
 		return DomainElementFactory::instance()->create(a1 * a2);
 	} else {
 		double a1 = tuple[0]->type() == DET_DOUBLE ? tuple[0]->value()._double : double(tuple[0]->value()._int);
 		double a2 = tuple[1]->type() == DET_DOUBLE ? tuple[1]->value()._double : double(tuple[1]->value()._int);
-		return DomainElementFactory::instance()->create(a1 * a2, NumType::DOUBLE);
+		return DomainElementFactory::instance()->create(a1 * a2, NumType::POSSIBLYINT);
 	}
 }
 
@@ -2789,7 +2787,7 @@ InternalTableIterator* TimesInternalFuncTable::begin(const Universe& univ) const
 }
 
 const DomainElement* DivInternalFuncTable::operator[](const ElementTuple& tuple) const {
-	if (getType()==NumType::INT) {
+	if (getType()==NumType::CERTAINLYINT) {
 		int a1 = tuple[0]->value()._int;
 		int a2 = tuple[1]->value()._int;
 		if (a2 == 0)
@@ -2802,7 +2800,7 @@ const DomainElement* DivInternalFuncTable::operator[](const ElementTuple& tuple)
 		if (a2 == 0)
 			return 0;
 		else
-			return DomainElementFactory::instance()->create(a1 / a2, NumType::DOUBLE);
+			return DomainElementFactory::instance()->create(a1 / a2, NumType::POSSIBLYINT);
 	}
 }
 
@@ -2815,7 +2813,7 @@ const DomainElement* AbsInternalFuncTable::operator[](const ElementTuple& tuple)
 		int val = tuple[0]->value()._int;
 		return DomainElementFactory::instance()->create(val < 0 ? -val : val);
 	} else {
-		return DomainElementFactory::instance()->create(abs(tuple[0]->value()._double), NumType::INT);
+		return DomainElementFactory::instance()->create(abs(tuple[0]->value()._double), NumType::POSSIBLYINT);
 	}
 }
 
@@ -2827,7 +2825,7 @@ const DomainElement* UminInternalFuncTable::operator[](const ElementTuple& tuple
 	if (tuple[0]->type() == DET_INT) {
 		return DomainElementFactory::instance()->create(-(tuple[0]->value()._int));
 	} else {
-		return DomainElementFactory::instance()->create(-(tuple[0]->value()._double), NumType::INT);
+		return DomainElementFactory::instance()->create(-(tuple[0]->value()._double), NumType::POSSIBLYINT);
 	}
 }
 
@@ -2843,10 +2841,6 @@ std::ostream& operator<<(std::ostream& stream, const AbstractTable& table) {
 void PredTable::print(std::ostream& stream) const {
 	if (not finite()) {
 		stream << "infinite interpretation";
-		return;
-	}
-	if (empty()) {
-		stream << "{}";
 		return;
 	}
 	stream << "{";

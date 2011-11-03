@@ -103,7 +103,6 @@ typedef std::list<isp>				lisp;
 %token NAMESPACE_HEADER
 %token PROCEDURE_HEADER
 %token OPTION_HEADER
-%token EXEC_HEADER
 %token QUERY_HEADER
 %token TERM_HEADER
 
@@ -233,10 +232,6 @@ typedef std::list<isp>				lisp;
 /*********************
 	Global structure
 *********************/
-
-idporblock		: idp
-				| execstatement
-				;
 
 idp		: /* empty */
 				| idp namespace 
@@ -851,9 +846,6 @@ nonempty_spt		: nonempty_spt ',' sort_pointer	{ $$ = $1; $$->push_back($3);		}
 /*******************
 	Instructions
 *******************/
-
-execstatement		: EXEC_HEADER '{' LUACHUNK 		{ insert.exec($3); delete($3);	}
-					;
 
 instructions		: PROCEDURE_HEADER proc_name proc_sig '{' LUACHUNK 		{ insert.closeprocedure($5); delete($5);	}
 					;

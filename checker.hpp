@@ -12,8 +12,6 @@
 class PredTable;
 class PredInter;
 
-enum TABLE_VALUE { POSS_TRUE, POSS_FALSE, CERTAIN_TRUE, CERTAIN_FALSE};
-
 /**
  * Class, associated with a relationship, which given a ElementTuple of domain elements, checks whether it is in the interpretation of that relationship
  */
@@ -43,7 +41,7 @@ class TableInstanceChecker : public InstanceChecker {
 
 class CheckerFactory {
 	public:
-		InstanceChecker* create(PredInter*, TABLE_VALUE type);
+		InstanceChecker* create(PredInter*, TruthType type);
 };
 
 #endif

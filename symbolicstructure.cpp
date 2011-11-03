@@ -13,10 +13,10 @@ using namespace std;
 
 TruthType swapTF(TruthType type) {
 	switch(type) {
-		case TruthType::PF: return TruthType::PT;
-		case TruthType::PT: return TruthType::PF;
-		case TruthType::CF: return TruthType::CT;
-		case TruthType::CT: return TruthType::CF;
+		case TruthType::POSS_FALSE: return TruthType::POSS_TRUE;
+		case TruthType::POSS_TRUE: return TruthType::POSS_FALSE;
+		case TruthType::CERTAIN_FALSE: return TruthType::CERTAIN_TRUE;
+		case TruthType::CERTAIN_TRUE: return TruthType::CERTAIN_FALSE;
 	}
 }
 
@@ -32,11 +32,11 @@ void SymbolicStructure::visit(const PredForm* atom) {
 	if(_ctbounds.find(atom->symbol()) == _ctbounds.cend()) {
 		FOBDDFactory factory(_manager);
 		const FOBDD* bdd = factory.run(atom);
-		if(_type == TruthType::CF || _type == TruthType::PF) bdd = _manager->negation(bdd);
+		if(_type == TruthType::CERTAIN_FALSE || _type == TruthType::POSS_FALSE) bdd = _manager->negation(bdd);
 		_result = bdd;
 	}
 	else {
-		bool getct = (_type == TruthType::CT || _type == TruthType::PF);
+		bool getct = (_type == TruthType::CERTAIN_TRUE || _type == TruthType::POSS_FALSE);
 		if(isNeg(atom->sign())){
 			getct = !getct;
 		}
@@ -48,14 +48,14 @@ void SymbolicStructure::visit(const PredForm* atom) {
 			mva[vars[n]] = factory.run(atom->subterms()[n]);
 		}
 		bdd = _manager->substitute(bdd,mva);
-		if(_type == TruthType::PT || _type == TruthType::PF) bdd = _manager->negation(bdd);
+		if(_type == TruthType::POSS_TRUE || _type == TruthType::POSS_FALSE) bdd = _manager->negation(bdd);
 		_result = bdd;
 	}
 }
 
 void SymbolicStructure::visit(const BoolForm* boolform) {
 	bool conjunction = boolform->isConjWithSign();
-	conjunction = (_type == TruthType::PF || _type == TruthType::CF) ? !conjunction : conjunction;
+	conjunction = (_type == TruthType::POSS_FALSE || _type == TruthType::CERTAIN_FALSE) ? !conjunction : conjunction;
 	TruthType rectype = boolform->sign()==SIGN::POS ? _type : swapTF(_type);
 
 	const FOBDD* currbdd;
@@ -71,7 +71,7 @@ void SymbolicStructure::visit(const BoolForm* boolform) {
 
 void SymbolicStructure::visit(const QuantForm* quantform) {
 	bool universal = quantform->isUnivWithSign();
-	universal = (_type == TruthType::PF || _type == TruthType::CF) ? !universal : universal;
+	universal = (_type == TruthType::POSS_FALSE || _type == TruthType::CERTAIN_FALSE) ? !universal : universal;
 	TruthType rectype = quantform->sign()==SIGN::POS ? _type : swapTF(_type);
 	const FOBDD* subbdd = evaluate(quantform->subformula(),rectype);
 	set<const FOBDDVariable*> vars = _manager->getVariables(quantform->quantVars());
@@ -94,7 +94,7 @@ void SymbolicStructure::visit(const EquivForm* equivform) {
 
 void SymbolicStructure::visit(const AggForm*) {
 	// TODO: better evaluation function?
-	if(_type == TruthType::PT || _type == TruthType::PF) _result = _manager->truebdd();
+	if(_type == TruthType::POSS_TRUE || _type == TruthType::POSS_FALSE) _result = _manager->truebdd();
 	else _result =  _manager->falsebdd();
 }
 

@@ -2596,8 +2596,8 @@ vector<ElRange>* Insert::domaintuple(pair<char,char>* p) const {
 	return dt;
 }
 
-void Insert::exec(stringstream* chunk) const {
-	LuaConnection::execute(chunk);
+const DomainElement* Insert::exec(const std::string& chunk) {
+	return LuaConnection::execute(chunk);
 }
 
 void Insert::procarg(const string& argname) const {

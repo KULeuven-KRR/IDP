@@ -268,8 +268,8 @@ public:
 
 	static DomainElementFactory* instance();
 
-	const DomainElement* create(int value, NumType createType = NumType::INT);
-	const DomainElement* create(double value, NumType createType = NumType::DOUBLE);
+	const DomainElement* create(int value);
+	const DomainElement* create(double value, NumType type = NumType::POSSIBLYINT);
 	const DomainElement* create(const std::string* value, bool certnotdouble = false);
 	const DomainElement* create(const Compound* value);
 	const DomainElement* create(Function*, const ElementTuple&);
@@ -383,8 +383,7 @@ private:
 	virtual const ElementTuple& operator*() const = 0;
 	virtual void operator++() = 0;
 public:
-	virtual ~InternalTableIterator() {
-	}
+	virtual ~InternalTableIterator() {	}
 	virtual InternalTableIterator* clone() const = 0;
 	friend class TableIterator;
 };
@@ -400,8 +399,6 @@ private:
 	void operator++();
 public:
 	CartesianInternalTableIterator(const std::vector<SortIterator>& vsi, const std::vector<SortIterator>& low, bool h = true);
-	~CartesianInternalTableIterator() {
-	}
 	CartesianInternalTableIterator* clone() const;
 };
 
@@ -1742,7 +1739,7 @@ protected:
 public:
 
 	IntFloatInternalFuncTable(bool i) :
-			_type(i ? NumType::INT : NumType::DOUBLE) {
+			_type(i ? NumType::CERTAINLYINT : NumType::POSSIBLYINT) {
 	}
 
 	bool finite(const Universe&) const {

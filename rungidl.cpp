@@ -26,12 +26,9 @@ extern void parsestring(const string&);
 extern void parsefile(const string&);
 extern void parsestdin();
 
-Status teststatus = Status::FAIL;
-Status getTestStatus(){
-	return teststatus;
-}
-void setTestStatus(Status status){
-	teststatus = status;
+std::ostream& operator<<(std::ostream& stream, Status status){
+	stream <<(status==Status::FAIL?"failed":"success");
+	return stream;
 }
 
 /**
@@ -130,11 +127,11 @@ void parse(const vector<string>& inputfiles) {
 /** 
  * Execute a procecure 
  **/
-void executeproc(const string& proc) {
+const DomainElement* executeproc(const string& proc) {
 	if(proc != "") {
-		string str = "##intern##{"+proc+'}';
-		parsestring(str);
+		return Insert::exec(proc);
 	}
+	return NULL;
 }
 
 
@@ -176,23 +173,29 @@ void run(const std::string& inputfileurl){
 	run({inputfileurl});
 }
 
-void run(const std::vector<std::string>& inputfileurls){
+Status run(const std::vector<std::string>& inputfileurls){
 	insert = Insert();
 	LuaConnection::makeLuaConnection();
 
 	parse(inputfileurls);
 
-	if(not Error::nr_of_errors()) {
+	Status result = Status::FAIL;
+	if(Error::nr_of_errors() == 0) {
 		stringstream ss;
 		ss <<getLibraryName() <<".main()";
-		executeproc(ss.str());
+		auto value = executeproc(ss.str());
+		if(value!=NULL && value->type()==DomainElementType::DET_INT && value->value()._int == 1){
+			result = Status::SUCCESS;
+		}
 	}
 
 	if(Error::nr_of_errors()>0){
-		setTestStatus(Status::FAIL);
+		result = Status::FAIL;
 	}
 
 	LuaConnection::closeLuaConnection();
+
+	return result;
 }
 
 int run(int argc, char* argv[]) {
