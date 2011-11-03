@@ -1252,17 +1252,18 @@ void GrounderFactory::visit(const QuantForm* qf) {
 	// TODO guarantee that no double negations exist? => FLAGS bijhouden van wat er met de theorie gebeurd
 
 	// Create instance generator
-	Formula* clonedformula = qf->subformula()->clone();
-	Formula* movedformula = FormulaUtils::moveThreeValuedTerms(clonedformula, _structure, _context._funccontext);
-	movedformula = FormulaUtils::removeEqChains(movedformula);
-	movedformula = FormulaUtils::graphFunctions(movedformula);
+	Formula* newsubformula = qf->subformula()->clone();
+	newsubformula = FormulaUtils::moveThreeValuedTerms(newsubformula, _structure, _context._funccontext);
+	newsubformula = FormulaUtils::removeEqChains(newsubformula);
+	newsubformula = FormulaUtils::graphFunctions(newsubformula);
 
 	// NOTE: if the checker return valid, then the value of the formula can be decided from the value of the checked instantiation
 	//	for universal: checker valid => formula false, for existential: checker valid => formula true
 
 	// !x phi(x) => generate all x possibly false
 	// !x phi(x) => check for x certainly false
-	GenAndChecker gc = createVarsAndGenerators(movedformula, qf, qf->isUniv() ? TruthType::PF : TruthType::PT,
+	// FIXME SUBFORMULA got cloned, not the formula itself! REVIEW CODE!
+	GenAndChecker gc = createVarsAndGenerators(newsubformula, qf, qf->isUniv() ? TruthType::PF : TruthType::PT,
 			qf->isUniv() ? TruthType::CF : TruthType::CT);
 
 	// Handle top-level universal quantifiers efficiently
@@ -1311,7 +1312,7 @@ void GrounderFactory::visit(const QuantForm* qf) {
 	}
 	//}
 
-	movedformula->recursiveDelete();
+	newsubformula->recursiveDelete();
 }
 
 const FOBDD* GrounderFactory::improve_generator(const FOBDD* bdd, const vector<Variable*>& fovars, double mcpa) {
@@ -1566,29 +1567,26 @@ void GrounderFactory::visit(const EnumSetExpr* s) {
 
 // TODO verify
 template<typename OrigConstruct>
-GrounderFactory::GenAndChecker GrounderFactory::createVarsAndGenerators(Formula* formula, OrigConstruct* orig, TruthType generatortype,
+GrounderFactory::GenAndChecker GrounderFactory::createVarsAndGenerators(Formula* subformula, OrigConstruct* orig, TruthType generatortype,
 		TruthType checkertype) {
 	vector<const DomElemContainer*> vars;
 	vector<SortTable*> tables;
 	vector<Variable*> fovars, quantfovars;
 	vector<Pattern> pattern;
 
-	quantfovars.insert(fovars.end(), formula->quantVars().cbegin(), formula->quantVars().cend());
-	fovars.insert(fovars.end(), formula->quantVars().cbegin(), formula->quantVars().cend());
-	fovars.insert(fovars.end(), formula->freeVars().cbegin(), formula->freeVars().cend());
-	for (auto it = formula->quantVars().cbegin(); it != formula->quantVars().cend(); ++it) {
-		const DomElemContainer* d = new const DomElemContainer();
-		_varmapping[*it] = d;
-		vars.push_back(d);
-		pattern.push_back(Pattern::OUTPUT);
-		SortTable* st = _structure->inter((*it)->sort());
-		tables.push_back(st);
-	}
-	for (auto it = formula->freeVars().cbegin(); it != formula->freeVars().cend(); ++it) {
-		assert(orig->quantVars().find(*it) == orig->quantVars().cend());
-		assert(_varmapping.find(*it) != _varmapping.cend());
-		vars.push_back(_varmapping[*it]);
-		pattern.push_back(Pattern::INPUT);
+	for(auto it = subformula->freeVars().cbegin(); it != subformula->freeVars().cend(); ++it) {
+		if(orig->quantVars().find(*it) == orig->quantVars().cend()) { // It is a free var of the quantified formula
+			assert(_varmapping.find(*it) != _varmapping.cend()); // So should already have a varmapping
+			vars.push_back(_varmapping[*it]);
+			pattern.push_back(Pattern::INPUT);
+		}else { // It is a var quantified in the orig formula, so should create a new varmapping for it
+			const DomElemContainer* d = new const DomElemContainer();
+			_varmapping[*it] = d;
+			vars.push_back(d);
+			pattern.push_back(Pattern::OUTPUT);
+			quantfovars.push_back(*it);
+		}
+		fovars.push_back(*it);
 		SortTable* st = _structure->inter((*it)->sort());
 		tables.push_back(st);
 	}
@@ -1600,8 +1598,9 @@ GrounderFactory::GenAndChecker GrounderFactory::createVarsAndGenerators(Formula*
 		}
 	}
 
-	const FOBDD* generatorbdd = _symstructure->evaluate(formula, generatortype); // !x phi(x) => generate all x possibly false
-	const FOBDD* checkerbdd = _symstructure->evaluate(formula, checkertype); // !x phi(x) => check for x certainly false
+	// FIXME => unsafe to have to pass in fovars explicitly (order is never checked?)
+	const FOBDD* generatorbdd = _symstructure->evaluate(subformula, generatortype); // !x phi(x) => generate all x possibly false
+	const FOBDD* checkerbdd = _symstructure->evaluate(subformula, checkertype); // !x phi(x) => check for x certainly false
 	generatorbdd = improve_generator(generatorbdd, quantfovars, MCPA);
 	checkerbdd = improve_checker(checkerbdd, MCPA);
 	PredTable* gentable = new PredTable(new BDDInternalPredTable(generatorbdd, _symstructure->manager(), fovars, _structure), Universe(tables));
@@ -1627,12 +1626,12 @@ void GrounderFactory::visit(const QuantSetExpr* qs) {
 	//}
 
 	Formula* clonedformula = qs->subformulas()[0]->clone();
-	Formula* movedformula = FormulaUtils::moveThreeValuedTerms(clonedformula, _structure, Context::POSITIVE);
-	movedformula = FormulaUtils::removeEqChains(movedformula);
-	movedformula = FormulaUtils::graphFunctions(movedformula);
+	Formula* newsubformula = FormulaUtils::moveThreeValuedTerms(clonedformula, _structure, Context::POSITIVE);
+	newsubformula = FormulaUtils::removeEqChains(newsubformula);
+	newsubformula = FormulaUtils::graphFunctions(newsubformula);
 
 	// NOTE: generator generates possibly true instances, checker checks the certainly true ones
-	GenAndChecker gc = createVarsAndGenerators(movedformula, qs, TruthType::PT, TruthType::CT);
+	GenAndChecker gc = createVarsAndGenerators(newsubformula, qs, TruthType::PT, TruthType::CT);
 
 	// Create grounder for subformula
 	SaveContext();

@@ -1,18 +1,13 @@
-/************************************
- StrGreaterGenerator.hpp
- this file belongs to GidL 2.0
- (c) K.U.Leuven
- ************************************/
-
 #ifndef GTGenerator_HPP_
 #define GTGenerator_HPP_
 
 #include <cassert>
 #include "generators/InstGenerator.hpp"
+#include "structure.hpp"
 
-enum class Comp {
-	GT, LT, LEQ, GEQ, EQ
-};
+class SortTable;
+class DomElemContainer;
+
 enum class Input {
 	BOTH, NONE, LEFT, RIGHT
 };
@@ -26,126 +21,158 @@ class ComparisonGenerator: public InstGenerator {
 private:
 	SortTable *_leftsort, *_rightsort;
 	const DomElemContainer *_leftvar, *_rightvar;
+	CompType comparison;
+	Input input; // NOTE: is never RIGHT after initialization
 	SortIterator _left, _right;
-	Comp comparison;
 
 	enum class CompResult {
 		VALID, INVALID
 	};
 
-	Input input; // NOTE: is never RIGHT after initialization
+	bool _reset;
 
 public:
 	ComparisonGenerator(SortTable* leftsort, SortTable* rightsort, const DomElemContainer* leftvalue, const DomElemContainer* rightvalue, Input input,
-			Comp type) :
-			_leftsort(leftsort), _rightsort(rightsort), _leftvar(leftvalue), _rightvar(rightvalue), comparison(type), input(input), _left(leftsort->sortBegin()), _right(rightsort->sortBegin()) {
+			CompType type) :
+			_leftsort(leftsort), _rightsort(rightsort), _leftvar(leftvalue), _rightvar(rightvalue), comparison(type), input(input), _left(
+					leftsort->sortBegin()), _right(rightsort->sortBegin()), _reset(true) {
 		if (input == Input::RIGHT) {
 			_leftsort = rightsort;
 			_rightsort = leftsort;
 			_leftvar = rightvalue;
 			_rightvar = leftvalue;
-			input == Input::LEFT;
+			input = Input::LEFT;
+			comparison = negateComp(comparison);
 		}
 	}
 
 	void reset() {
-		switch (input) {
-		case Input::NONE:
-			notifyAtEnd();
-			break;
-		case Input::BOTH:
-			_left = _leftsort->sortBegin();
-			_right = _rightsort->sortBegin();
-			if (_left.isAtEnd() || _right.isAtEnd()) {
-				notifyAtEnd();
-			}
-			break;
-		case Input::LEFT:
-			_right = _rightsort->sortBegin();
-			if (_right.isAtEnd()) {
-				notifyAtEnd();
-			}
-			break;
-		default: assert(false); break;
-		}
+		_reset = true;
 	}
 
 	void next() {
 		switch (input) {
-		case Input::NONE:
-			break;
 		case Input::BOTH:
-			while (not _right.isAtEnd()) {
-				while (not _left.isAtEnd()) {
-					if (checkAndSet() == CompResult::VALID) {
-						++_left;
-						break;
-					}
-					++_left;
-				}
-				_left = _leftsort->sortBegin();
-				++_right;
-			}
-
-			if (_left.isAtEnd() || _right.isAtEnd()) {
+			if(_reset && correct()){
+				_reset = false;
+			}else{
 				notifyAtEnd();
 			}
 			break;
-		case Input::LEFT:
-			while (not _right.isAtEnd()) {
-				if (checkAndSet() == CompResult::VALID) {
-					++_right;
+		case Input::NONE:{
+			if(_reset){
+				_reset = false;
+				_left = _leftsort->sortBegin();
+				_right = _rightsort->sortBegin();
+			}else{
+				++_left;
+			}
+			bool stop = false;
+			for(; not _right.isAtEnd() && not stop; ++_right){
+				for(; not _left.isAtEnd() && not stop; ++_left){
+					if (checkAndSet() == CompResult::VALID) {
+						stop = true;
+						break;
+					}
+				}
+				if(stop){
 					break;
 				}
+				_left = _leftsort->sortBegin();
+			}
+			if (_right.isAtEnd()) {
+				notifyAtEnd();
+			}
+			break;}
+		case Input::LEFT:
+			if(_reset){
+				_reset = false;
+				_right = _rightsort->sortBegin();
+			}else{
 				++_right;
 			}
-
+			for(; not _right.isAtEnd(); ++_right){
+				if (checkAndSet() == CompResult::VALID) {
+					break;
+				}
+			}
 			if (_right.isAtEnd()) {
 				notifyAtEnd();
 			}
 			break;
-		default: assert(false); break;
+		default:
+			assert(false);
+			break;
 		}
 	}
 
 private:
+	bool leftIsInput() const{
+		return input==Input::BOTH || input==Input::LEFT;
+	}
+	bool rightIsInput() const{
+		return input==Input::BOTH;
+	}
+
 	CompResult checkAndSet() {
-		auto leftelem = *_left;
-		auto rightelem = *_right;
+		if (correct()) {
+			if(not leftIsInput()){
+				_leftvar->operator =(*_left);
+			}
+			if(not rightIsInput()){
+				_rightvar->operator =(*_right);
+			}
+			return CompResult::VALID;
+		}
+		return CompResult::INVALID;
+	}
+
+	bool correct(){
+		const DomainElement *leftelem, *rightelem;
+		if(leftIsInput()){
+			leftelem = _leftvar->get();
+		}else{
+			leftelem = *_left;
+		}
+		if(rightIsInput()){
+			rightelem = _rightvar->get();
+		}else{
+			rightelem = *_right;
+		}
 		bool compsuccess = false;
 		switch (comparison) {
-		case Comp::LT:
+		case CompType::LT:
 			if (*leftelem < *rightelem) {
 				compsuccess = true;
 			}
 			break;
-		case Comp::LEQ:
+		case CompType::LEQ:
 			if (*leftelem <= *rightelem) {
 				compsuccess = true;
 			}
 			break;
-		case Comp::GT:
+		case CompType::GT:
 			if (*leftelem > *rightelem) {
 				compsuccess = true;
 			}
 			break;
-		case Comp::GEQ:
+		case CompType::GEQ:
 			if (*leftelem >= *rightelem) {
 				compsuccess = true;
 			}
 			break;
-		case Comp::EQ:
+		case CompType::EQ:
 			if (*leftelem == *rightelem) {
 				compsuccess = true;
 			}
 			break;
+		case CompType::NEQ:
+			if (*leftelem != *rightelem) {
+				compsuccess = true;
+			}
+			break;
 		}
-		if (compsuccess) {
-			_leftvar->operator =(leftelem);
-			_rightvar->operator =(rightelem);
-			return CompResult::VALID;
-		}
-		return CompResult::INVALID;
+		return compsuccess;
 	}
 };
 

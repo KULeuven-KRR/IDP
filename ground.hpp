@@ -561,7 +561,7 @@ class GrounderFactory : public TheoryVisitor {
 					:_generator(generator), _checker(checker){}
 		};
 		template<typename OrigConstruct>
-		GenAndChecker createVarsAndGenerators(Formula* formula, OrigConstruct* orig, TruthType generatortype, TruthType checkertype);
+		GenAndChecker createVarsAndGenerators(Formula* subformula, OrigConstruct* orig, TruthType generatortype, TruthType checkertype);
 
 		const FOBDD*	improve_generator(const FOBDD*, const std::vector<Variable*>&, double);
 		const FOBDD*	improve_checker(const FOBDD*, double);

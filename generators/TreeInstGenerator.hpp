@@ -6,7 +6,7 @@
 
 class TreeInstGenerator: public InstGenerator {
 private:
-	GeneratorNode* _root;
+	GeneratorNode* const _root;
 
 public:
 	TreeInstGenerator(GeneratorNode* r)

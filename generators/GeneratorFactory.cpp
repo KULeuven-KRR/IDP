@@ -234,15 +234,14 @@ void GeneratorFactory::visit(const EnumeratedInternalPredTable*) {
 }
 
 Input getBinaryPattern(Pattern left, Pattern right) {
-	Input input = Input::NONE;
+	Input input = Input::BOTH;
 	if (left == Pattern::OUTPUT && right == Pattern::OUTPUT) {
-		input = Input::BOTH;
+		input = Input::NONE;
 	} else if (left == Pattern::INPUT && right == Pattern::OUTPUT) {
 		input = Input::LEFT;
 	} else if (left == Pattern::OUTPUT && right == Pattern::INPUT) {
 		input = Input::RIGHT;
 	}
-
 	return input;
 }
 
@@ -251,7 +250,7 @@ void GeneratorFactory::visit(const EqualInternalPredTable*) {
 		_generator = create(vector<const DomElemContainer*>(1, _vars[0]), vector<SortTable*>(1, _universe.tables()[0]));
 	}
 	Input input = getBinaryPattern(_pattern[0], _pattern[1]);
-	_generator = new ComparisonGenerator(_universe.tables()[0], _universe.tables()[1], _vars[0], _vars[1], input, Comp::EQ);
+	_generator = new ComparisonGenerator(_universe.tables()[0], _universe.tables()[1], _vars[0], _vars[1], input, CompType::EQ);
 }
 
 void GeneratorFactory::visit(const StrLessInternalPredTable*) {
@@ -260,7 +259,7 @@ void GeneratorFactory::visit(const StrLessInternalPredTable*) {
 		return;
 	}
 	Input input = getBinaryPattern(_pattern[0], _pattern[1]);
-	_generator = new ComparisonGenerator(_universe.tables()[0], _universe.tables()[1], _vars[0], _vars[1], input, Comp::LT);
+	_generator = new ComparisonGenerator(_universe.tables()[0], _universe.tables()[1], _vars[0], _vars[1], input, CompType::LT);
 }
 
 void GeneratorFactory::visit(const StrGreaterInternalPredTable*) {
@@ -269,7 +268,7 @@ void GeneratorFactory::visit(const StrGreaterInternalPredTable*) {
 		return;
 	}
 	Input input = getBinaryPattern(_pattern[0], _pattern[1]);
-	_generator = new ComparisonGenerator(_universe.tables()[0], _universe.tables()[1], _vars[0], _vars[1], input, Comp::GT);
+	_generator = new ComparisonGenerator(_universe.tables()[0], _universe.tables()[1], _vars[0], _vars[1], input, CompType::GT);
 }
 
 void GeneratorFactory::visit(const InverseInternalPredTable* iip) {
