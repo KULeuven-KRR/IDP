@@ -1894,19 +1894,19 @@ namespace LuaConnection {
 		delete(DomainElementFactory::instance());
 	}
 
-	void execute(stringstream* chunk) {
-		int err = luaL_dostring(_state,chunk->str().c_str());
+	const DomainElement* execute(const std::string& chunk) {
+		stringstream ss;
+		ss <<"return " <<chunk;
+		std::cerr << ss.str();
+		int err = luaL_dostring(_state,ss.str().c_str());
 		if(err) {
 			Error::error();
 			cerr << string(lua_tostring(_state,-1)) << "\n";
 			lua_pop(_state,1);
-		}else{
-			// FIXME would like to be able to return a value from here
-			/*const DomainElement* d = convertToElement(-1,_state);
-			if(d!=NULL && d->type()==DomainElementType::DET_INT){
-				execresult = d->value()._int;
-			}*/
+			return NULL;
 		}
+
+		return convertToElement(-1,_state);
 	}
 
 	void pushglobal(const vector<string>& name, const ParseInfo& pi) {

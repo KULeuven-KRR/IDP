@@ -243,12 +243,12 @@ public:
 
 	void add(GroundDefinition* def) {
 		for(auto i=def->begin(); i!=def->end(); ++i) {
-			if(safetypeid<PCGroundRule>(*(*i).second)) {
+			if(sametypeid<PCGroundRule>(*(*i).second)) {
 				PCGroundRule* rule = dynamic_cast<PCGroundRule*>((*i).second);
 				transformForAdd(rule->body(),(rule->type()==RT_CONJ ? VIT_CONJ : VIT_DISJ), def->id());
 				notifyDefined(rule->head());
 			} else {
-				assert(safetypeid<AggGroundRule>(*(*i).second)); 
+				assert(sametypeid<AggGroundRule>(*(*i).second)); 
 				AggGroundRule* rule = dynamic_cast<AggGroundRule*>((*i).second);
 				add(rule->setnr(),def->id(),(rule->aggtype() != AggFunction::CARD));
 				notifyDefined(rule->head());
@@ -350,13 +350,13 @@ public:
 						++sit;
 					}
 					++it;
-					if(sit.hasNext()){
+					if(not sit.isAtEnd()){
 						++sit;
 					}
 				}
 				else {
-					if(not sets.empty() && sit.hasNext()) { weak.back() = true; }
-					if(tit.hasNext()) {
+					if(not sets.empty() && not sit.isAtEnd()) { weak.back() = true; }
+					if(not tit.isAtEnd()) {
 						const ElementTuple& tuple = *tit;
 						if(de(tuple,it->first)) {
 							do {
@@ -367,7 +367,7 @@ public:
 							} while(it != tuples.end() && de(tuple,it->first));
 							continue;
 						} else if(ds(tuple,it->first)) {
-							do { ++tit; } while(tit.hasNext() && ds(*tit,it->first));
+							do { ++tit; } while(not tit.isAtEnd() && ds(*tit,it->first));
 							continue;
 						}
 					}

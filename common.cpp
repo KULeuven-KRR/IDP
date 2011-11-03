@@ -121,7 +121,7 @@ CompType negateComp(CompType comp) {
 	}
 }
 
-// FIXME remove when all are using gcc 4.5
+// TODO remove when all are using gcc 4.5
 vector<int> fillMap(){
 	vector<int> comp2int;
 	comp2int.resize(((int)CompType::EQ)+1, 0);

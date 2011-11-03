@@ -24,10 +24,10 @@ class QuantSetGrounder : public SetGrounder {
 	private:
 		FormulaGrounder*	_subgrounder;
 		InstGenerator*		_generator;
-		InstGenerator*		_checker;
+		InstChecker*		_checker;
 		TermGrounder*		_weightgrounder;
 	public:
-		QuantSetGrounder(GroundTranslator* gt, FormulaGrounder* gr, InstGenerator* ig, InstGenerator* checker, TermGrounder* w) :
+		QuantSetGrounder(GroundTranslator* gt, FormulaGrounder* gr, InstGenerator* ig, InstChecker* checker, TermGrounder* w) :
 			SetGrounder(gt), _subgrounder(gr), _generator(ig), _checker(checker), _weightgrounder(w) { }
 		int run() const;
 };

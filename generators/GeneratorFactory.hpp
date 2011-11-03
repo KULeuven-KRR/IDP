@@ -18,16 +18,20 @@ class InstanceChecker;
 class GeneratorNode;
 class Universe;
 
+enum class Pattern { INPUT, OUTPUT};
+
 class GeneratorFactory : public StructureVisitor {
 private:
 	const PredTable*					_table;
-	std::vector<bool>					_pattern;	//!< _pattern[n] == true iff the n'th column is an input column
+	std::vector<Pattern>					_pattern;	//!< _pattern[n] == true iff the n'th column is an input column
 	std::vector<const DomElemContainer*>	_vars;		//!< the variables corresponding to each column
 	Universe							_universe;	//!< the domains of the variables
 	std::vector<unsigned int>			_firstocc;	//!< for each of the variables, the position in _vars where this
 													//!< variable occurs first
 	InstGenerator*						_generator;
 
+	// NOTE: for any function, if the range is an output variable, we can use the simple func generator
+	// if the range is input, we need more specialized generators depending on the function type
 	void visit(const FuncTable* ft);
 	void visit(const ProcInternalPredTable*);
 	void visit(const BDDInternalPredTable*);
@@ -60,11 +64,11 @@ private:
 	void visit(const EnumeratedInternalSortTable*);
 	void visit(const IntRangeInternalSortTable*);
 
-	InstGenerator* internalCreate(const PredTable*, std::vector<bool> pattern, const std::vector<const DomElemContainer*>&, const Universe&);
+	InstGenerator* internalCreate(const PredTable*, std::vector<Pattern> pattern, const std::vector<const DomElemContainer*>&, const Universe&);
 
 public:
 	static InstGenerator* create(const std::vector<const DomElemContainer*>&, const std::vector<SortTable*>&);
-	static InstGenerator* create(const PredTable*, std::vector<bool> pattern, const std::vector<const DomElemContainer*>&, const Universe&);
+	static InstGenerator* create(const PredTable*, std::vector<Pattern> pattern, const std::vector<const DomElemContainer*>&, const Universe&);
 };
 
 #endif /* GENERATORFACTORY_HPP */

@@ -40,10 +40,10 @@ public:
 		// create a generator
 		std::vector<const DomElemContainer*> genvars;
 		std::vector<const FOBDDVariable*> vbddvars;
-		std::vector<bool> pattern;
+		std::vector<Pattern> pattern;
 		std::vector<SortTable*> tables;
 		for(auto it = q->variables().cbegin(); it != q->variables().cend(); ++it) {
-			pattern.push_back(false);
+			pattern.push_back(Pattern::OUTPUT);
 			genvars.push_back(new const DomElemContainer());
 			vbddvars.push_back(manager.getVariable(*it));
             tables.push_back(structure->inter((*it)->sort()));
@@ -62,17 +62,11 @@ public:
 
 		// execute the query
 		ElementTuple currtuple(q->variables().size());
-		if(generator->first()) {
+		for(generator->begin(); not generator->isAtEnd(); generator->operator ++()){
 			for(unsigned int n = 0; n < q->variables().size(); ++n) {
 				currtuple[n] = genvars[n]->get();
 			}
 			result->add(currtuple);
-			while(generator->next()) {
-				for(unsigned int n = 0; n < q->variables().size(); ++n) {
-					currtuple[n] = genvars[n]->get();
-				}
-				result->add(currtuple);
-			}
 		}
 
 		// return the result

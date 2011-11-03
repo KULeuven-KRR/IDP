@@ -587,14 +587,14 @@ public:
 			TableIterator kt = table->begin();
 			if(table->arity()) {
 				output() << "{ ";
-				if(kt.hasNext()) {
+				if(not kt.isAtEnd()) {
 					ElementTuple tuple = *kt;
 					output() << tuple[0]->toString();
 					for(auto lt = ++tuple.cbegin(); lt != tuple.cend(); ++lt) {
 						output() << ',' << (*lt)->toString();
 					}
 					++kt;
-					for(; kt.hasNext(); ++kt) {
+					for(; not kt.isAtEnd(); ++kt) {
 						output() << "; ";
 						tuple = *kt;
 						output() << tuple[0]->toString();
@@ -605,7 +605,7 @@ public:
 				}
 				output() << " }";
 			}
-			else if(kt.hasNext()) output() << "true";
+			else if(not kt.isAtEnd()) output() << "true";
 			else output() << "false";
 		}
 		else output() << "possibly infinite table";
@@ -616,7 +616,7 @@ public:
 		if(table->approxFinite()) {
 			TableIterator kt = table->begin();
 			output() << "{ ";
-			if(kt.hasNext()) {
+			if(not kt.isAtEnd()) {
 				ElementTuple tuple = *kt;
 				if(tuple.size() > 1) { output() << tuple[0]->toString(); }
 				for(size_t n = 1; n < tuple.size() - 1; ++n) {
@@ -624,7 +624,7 @@ public:
 				}
 				output() << "->" << tuple.back()->toString();
 				++kt;
-				for(; kt.hasNext(); ++kt) {
+				for(; not kt.isAtEnd(); ++kt) {
 					output() << "; ";
 					tuple = *kt;
 					if(tuple.size() > 1) { output() << tuple[0]->toString(); }
@@ -648,7 +648,7 @@ public:
 			TableIterator kt = table->begin();
 			if(table->arity() != 0) {
 				output() << "{ ";
-				if(kt.hasNext()) {
+				if(not kt.isAtEnd()) {
 					ElementTuple tuple = *kt;
 					output() << tuple[0]->toString();
 					for(unsigned int n = 1; n < tuple.size() - 1; ++n) {
@@ -656,7 +656,7 @@ public:
 					}
 					output() << "->" << tuple.back()->toString();
 					++kt;
-					for(; kt.hasNext(); ++kt) {
+					for(; not kt.isAtEnd(); ++kt) {
 						output() << "; ";
 						tuple = *kt;
 						output() << tuple[0]->toString();
@@ -668,7 +668,7 @@ public:
 				}
 				output() << " }";
 			}
-			else if(kt.hasNext()) output() << (*kt)[0]->toString();
+			else if(not kt.isAtEnd()) output() << (*kt)[0]->toString();
 			else output() << "{ }";
 		}
 		else output() << "possibly infinite table";
@@ -729,10 +729,10 @@ public:
 		assert(isTheoryOpen());
 		SortIterator it = table->sortBegin();
 		output() << "{ ";
-		if(it.hasNext()) {
+		if(not it.isAtEnd()) {
 			output() << (*it)->toString();
 			++it;
-			for(; it.hasNext(); ++it) {
+			for(; not it.isAtEnd(); ++it) {
 				output() << "; " << (*it)->toString();
 			}
 		}
@@ -839,7 +839,7 @@ private:
 						output() << ",";
 					}
 					begin = false;
-					if((*gtit)._isvarid) {
+					if((*gtit).isVariable) {
 						printTerm((*gtit)._varid);
 					} else {
 						output() << (*gtit)._domelement->toString();
@@ -870,7 +870,7 @@ private:
 		if(table->approxFinite()) {
 			TableIterator kt = table->begin();
 			output() << "{ ";
-			if(kt.hasNext()) {
+			if(not kt.isAtEnd()) {
 				ElementTuple tuple = *kt;
 				if(tuple.size() > 1) output() << tuple[0]->toString();
 				for(unsigned int n = 1; n < tuple.size() - 1; ++n) {
@@ -878,7 +878,7 @@ private:
 				}
 				output() << "->" << tuple.back()->toString();
 				++kt;
-				for(; kt.hasNext(); ++kt) {
+				for(; not kt.isAtEnd(); ++kt) {
 					output() << "; ";
 					tuple = *kt;
 					if(tuple.size() > 1) output() << tuple[0]->toString();

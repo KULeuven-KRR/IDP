@@ -220,9 +220,6 @@ COMMENTLINE		"//".*
 		Lua
 	**********/
 
-<*>"##intern##"				{ BEGIN(procedure); 
-							  return EXEC_HEADER;
-							}
 <procedure>"{"				{ advancecol();
 							  BEGIN(lua);
 							  ++bracketcounter;		
@@ -267,7 +264,7 @@ COMMENTLINE		"//".*
 "structure"				{ BEGIN(structure);
 						  advancecol();
 						  return STRUCT_HEADER;		}
-"asp_structure"			{ BEGIN(aspstructure);
+"aspstructure"			{ BEGIN(aspstructure);
 						  advancecol();
 						  return ASP_HEADER;		}
 "namespace"				{ BEGIN(spacename);
@@ -447,12 +444,12 @@ COMMENTLINE		"//".*
 		Identifiers
 	******************/
 
-<*>"using"					{ advancecol();
-							  return USING;				}
-<*>"vocabulary"				{ advancecol();
-							  return VOCABULARY;		}
-<*>"namespace"				{ advancecol();
-							  return NAMESPACE;			}
+<*>"using vocabulary"		{ advancecol();
+							  return USINGVOCABULARY;				
+							}
+<*>"using namespace"		{ advancecol();
+							  return USINGNAMESPACE;			
+							}
 <*>{CH}						{ advancecol();
 							  yylval.chr = *yytext;
 							  return CHARACTER;			}

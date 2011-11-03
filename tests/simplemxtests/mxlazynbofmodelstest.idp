@@ -6,5 +6,10 @@ procedure main(){
 	stdoptions.groundlazily = true
 	stdoptions.groundverbosity=4
 	stdoptions.satverbosity=4
-	idp_intern.testmx(getExpectedNbOfModels(), T, S, stdoptions);
+	solutions = mx::all(T, S, stdoptions)
+	io.stderr:write("Found "..#solutions.." models, expected "..getExpectedNbOfModels().." models.\n")
+	if(#solutions==getExpectedNbOfModels())
+		then return 1
+	else return 0
+	end
 }

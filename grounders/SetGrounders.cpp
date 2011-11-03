@@ -11,22 +11,23 @@
 #include "grounders/FormulaGrounders.hpp"
 #include "common.hpp"
 #include "generators/InstGenerator.hpp"
+#include "generators/BasicCheckers.hpp"
 
 using namespace std;
 
 template<class LitGrounder, class TermGrounder>
-void groundSetLiteral(const LitGrounder& lg, const TermGrounder& tg, vector<int>& literals, vector<double>& weights, vector<double>& trueweights, InstGenerator* checker = NULL){
+void groundSetLiteral(const LitGrounder& sublitgrounder, const TermGrounder& subtermgrounder, vector<int>& literals, vector<double>& weights, vector<double>& trueweights, InstChecker& checker){
 	Lit l;
-	if(checker!=NULL && checker->first()){
+	if(checker.check()){
 		l = _true;
 	}else{
-		l = lg.run();
+		l = sublitgrounder.run();
 	}
 	if(l==_false){
 		return;
 	}
-	const auto& groundweight = tg.run();
-	assert(not groundweight._isvarid);
+	const auto& groundweight = subtermgrounder.run();
+	assert(not groundweight.isVariable);
 	const auto& d = groundweight._domelement;
 	double w = d->type() == DET_INT ? (double) d->value()._int : d->value()._double;
 	if(l == _true){
@@ -41,8 +42,9 @@ int EnumSetGrounder::run() const {
 	vector<int>	literals;
 	vector<double> weights;
 	vector<double> trueweights;
+	InstChecker* checker = new TrueInstChecker();
 	for(unsigned int n = 0; n < _subgrounders.size(); ++n) {
-		groundSetLiteral(*_subgrounders[n], *_subtermgrounders[n], literals, weights, trueweights);
+		groundSetLiteral(*_subgrounders[n], *_subtermgrounders[n], literals, weights, trueweights, *checker);
 	}
 	int s = _translator->translateSet(literals,weights,trueweights);
 	return s;
@@ -52,10 +54,8 @@ int QuantSetGrounder::run() const {
 	vector<int> literals;
 	vector<double> weights;
 	vector<double> trueweights;
-	if(_generator->first()) {
-		do {
-			groundSetLiteral(*_subgrounder, *_weightgrounder, literals, weights, trueweights, _checker);
-		}while(_generator->next());
+	for(_generator->begin(); not _generator->isAtEnd(); _generator->operator ++()){
+		groundSetLiteral(*_subgrounder, *_weightgrounder, literals, weights, trueweights, *_checker);
 	}
 	Lit s = _translator->translateSet(literals,weights,trueweights);
 	return s;

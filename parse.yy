@@ -103,7 +103,6 @@ typedef std::list<isp>				lisp;
 %token NAMESPACE_HEADER
 %token PROCEDURE_HEADER
 %token OPTION_HEADER
-%token EXEC_HEADER
 %token QUERY_HEADER
 %token TERM_HEADER
 
@@ -118,7 +117,8 @@ typedef std::list<isp>				lisp;
 %token EXTERN
 %token P_MINAGG P_MAXAGG P_CARD P_PROD P_SOM
 %token FALSE
-%token USING
+%token USINGVOCABULARY
+%token USINGNAMESPACE
 %token TYPE
 %token TRUE
 %token ABS
@@ -233,10 +233,6 @@ typedef std::list<isp>				lisp;
 	Global structure
 *********************/
 
-idporblock		: idp
-				| execstatement
-				;
-
 idp		: /* empty */
 				| idp namespace 
 				| idp vocabulary 
@@ -256,8 +252,8 @@ namespace		: NAMESPACE_HEADER namespace_name '{' idp '}'	{ insert.closespace();	
 namespace_name	: identifier									{ insert.openspace(*$1,@1); }
 				;
 
-using			: USING VOCABULARY pointer_name					{ insert.usingvocab(*$3,@1); delete($3);	}
-				| USING NAMESPACE pointer_name					{ insert.usingspace(*$3,@1); delete($3);	}
+using			: USINGNAMESPACE pointer_name					{ insert.usingspace(*$2,@1); delete($2);	}
+				| USINGVOCABULARY pointer_name					{ insert.usingvocab(*$2,@1); delete($2);	}
 				;
 
  
@@ -850,9 +846,6 @@ nonempty_spt		: nonempty_spt ',' sort_pointer	{ $$ = $1; $$->push_back($3);		}
 /*******************
 	Instructions
 *******************/
-
-execstatement		: EXEC_HEADER '{' LUACHUNK 		{ insert.exec($3); delete($3);	}
-					;
 
 instructions		: PROCEDURE_HEADER proc_name proc_sig '{' LUACHUNK 		{ insert.closeprocedure($5); delete($5);	}
 					;

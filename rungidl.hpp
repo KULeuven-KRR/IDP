@@ -9,14 +9,14 @@
 
 #include <string>
 #include <vector>
+#include <ostream>
 
 enum class Status {SUCCESS, FAIL};
 
-Status getTestStatus();
-void setTestStatus(Status status);
+std::ostream& operator<<(std::ostream& stream, Status status);
 
 void run(const std::string& inputfileurl);
-void run(const std::vector<std::string>& inputfileurls);
+Status run(const std::vector<std::string>& inputfileurls);
 int run(int argc, char* argv[]);
 
 #endif /* RUNGIDL_HPP_ */

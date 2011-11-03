@@ -25,22 +25,20 @@ namespace Tests{
 
 	TEST_P(MXTest, DoesMX){
 		string testfile(string(TESTDIR)+"mxnbofmodelstest.idp");
-		run({string(TESTDIR)+GetParam(), testfile});
-		if(getTestStatus()==Status::FAIL){
+		auto result = run({string(TESTDIR)+GetParam(), testfile});
+		if(result==Status::FAIL){
 			cerr <<"Tested file " <<string(TESTDIR)+GetParam() <<"\n";
 		}
-		EXPECT_TRUE(getTestStatus()==Status::SUCCESS);
-		setTestStatus(Status::FAIL);
+		EXPECT_EQ(result, Status::SUCCESS);
 	}
 
 	TEST_P(LazyMXTest, DoesMX){
-		string testfile(string(TESTDIR)+"lazymxnbofmodelstest.idp");
-		run({string(TESTDIR)+GetParam(), testfile});
-		if(getTestStatus()==Status::FAIL){
+		string testfile(string(TESTDIR)+"mxlazynbofmodelstest.idp");
+		auto result = run({string(TESTDIR)+GetParam(), testfile});
+		if(result==Status::FAIL){
 			cerr <<"Tested file " <<string(TESTDIR)+GetParam() <<"\n";
 		}
-		EXPECT_TRUE(getTestStatus()==Status::SUCCESS);
-		setTestStatus(Status::FAIL);
+		EXPECT_EQ(result, Status::SUCCESS);
 	}
 
 	vector<string> testlist{
@@ -64,9 +62,4 @@ namespace Tests{
 	INSTANTIATE_TEST_CASE_P(LazyModelExpansion,
 					  LazyMXTest,
 					  ::testing::ValuesIn(testlist));
-}
-
-int main(int argc, char **argv) {
-  ::testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
 }

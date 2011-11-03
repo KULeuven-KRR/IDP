@@ -9,17 +9,37 @@
 
 #include "generators/InstGenerator.hpp"
 
+/**
+ * Instantiate a given variable with all possible values for the given sort
+ */
 class SortInstGenerator : public InstGenerator {
-	private:
-		const InternalSortTable*	_table;
-		const DomElemContainer*		_outvar;
-		mutable SortIterator		_currpos;
-	public:
-		SortInstGenerator(const InternalSortTable* t, const DomElemContainer* out) :
-			_table(t), _outvar(out), _currpos(t->sortBegin()) { }
-		bool first() const;
-		bool next() const;
-};
+private:
+	const InternalSortTable*	_table;
+	const DomElemContainer*		_var;
+	SortIterator				_curr;
+	bool _reset;
+public:
+	SortInstGenerator(const InternalSortTable* table, const DomElemContainer* var)
+			:_table(table), _var(var), _curr(_table->sortBegin()), _reset(true) {
+	}
 
+	void reset(){
+		_reset = true;
+	}
+
+	void next(){
+		if(_reset){
+			_reset = false;
+			_curr = _table->sortBegin();
+		}else{
+			++_curr;
+		}
+		if(_curr.isAtEnd()){
+			notifyAtEnd();
+		}else{
+			*_var = *_curr;
+		}
+	}
+};
 
 #endif /* SORTINSTGENERATOR_HPP_ */

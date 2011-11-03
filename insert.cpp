@@ -1,9 +1,3 @@
-/************************************
-	insert.cpp	
-	this file belongs to GidL 2.0
-	(c) K.U.Leuven
-************************************/
-
 #include <cassert>
 #include <sstream>
 #include <iostream>
@@ -413,7 +407,7 @@ void SortChecker::visit(const AggTerm* at) {
 /**
  * Rewrite a vector of strings s1,s2,...,sn to the single string s1::s2::...::sn
  */
-string oneName(const longname& vs) {
+string toString(const longname& vs) {
 	stringstream sstr;
 	if(!vs.empty()) {
 		sstr << vs[0];
@@ -424,7 +418,7 @@ string oneName(const longname& vs) {
 
 string predName(const longname& name, const vector<Sort*>& vs) {
 	stringstream sstr;
-	sstr << oneName(name);
+	sstr << toString(name);
 	if(!vs.empty()) {
 		sstr << '[' << vs[0]->name();
 		for(unsigned int n = 1; n < vs.size(); ++n) sstr << ',' << vs[n]->name();
@@ -436,7 +430,7 @@ string predName(const longname& name, const vector<Sort*>& vs) {
 string funcName(const longname& name, const vector<Sort*>& vs) {
 	assert(!vs.empty());
 	stringstream sstr;
-	sstr << oneName(name) << '[';
+	sstr << toString(name) << '[';
 	if(vs.size() > 1) {
 		sstr << vs[0]->name();
 		for(unsigned int n = 1; n < vs.size()-1; ++n) sstr << ',' << vs[n]->name();
@@ -958,14 +952,14 @@ void Insert::usingvocab(const longname& vs, YYLTYPE l) {
 	ParseInfo pi = parseinfo(l);
 	Vocabulary* v = vocabularyInScope(vs,pi);
 	if(v) usevocabulary(v);
-	else Error::undeclvoc(oneName(vs),pi);
+	else Error::undeclvoc(toString(vs),pi);
 }
 
 void Insert::usingspace(const longname& vs, YYLTYPE l) {
 	ParseInfo pi = parseinfo(l);
 	Namespace* s = namespaceInScope(vs,pi);
 	if(s) usenamespace(s);
-	else Error::undeclspace(oneName(vs),pi);
+	else Error::undeclspace(toString(vs),pi);
 }
 
 void Insert::openblock() {
@@ -1038,7 +1032,7 @@ void Insert::setvocab(const longname& vs, YYLTYPE l) {
 		else if(_currtheory) _currtheory->vocabulary(v);
 	}
 	else {
-		Error::undeclvoc(oneName(vs),pi);
+		Error::undeclvoc(toString(vs),pi);
 		_currvocabulary = Vocabulary::std();
 		if(_currstructure) _currstructure->vocabulary(Vocabulary::std());
 		else if(_currtheory) _currtheory->vocabulary(Vocabulary::std());
@@ -1049,7 +1043,7 @@ void Insert::externvocab(const vector<string>& vname, YYLTYPE l) const {
 	ParseInfo pi = parseinfo(l);
 	Vocabulary* v = vocabularyInScope(vname,pi);
 	if(v) _currvocabulary->addVocabulary(v); 
-	else Error::undeclvoc(oneName(vname),pi);
+	else Error::undeclvoc(toString(vname),pi);
 }
 
 void Insert::openquery(const string& qname, YYLTYPE l) {
@@ -1224,7 +1218,7 @@ Function* Insert::function(Function* f) const {
 Sort* Insert::sortpointer(const longname& vs, YYLTYPE l) const {
 	ParseInfo pi = parseinfo(l);
 	Sort* s = sortInScope(vs,pi);
-	if(!s) Error::undeclsort(oneName(vs),pi);
+	if(!s) Error::undeclsort(toString(vs),pi);
 	return s;
 }
 
@@ -1232,7 +1226,7 @@ Predicate* Insert::predpointer(longname& vs, int arity, YYLTYPE l) const {
 	ParseInfo pi = parseinfo(l);
 	vs.back() = vs.back() + '/' + convertToString(arity);
 	Predicate* p = predInScope(vs,pi);
-	if(!p) Error::undeclpred(oneName(vs),pi);
+	if(!p) Error::undeclpred(toString(vs),pi);
 	return p;
 }
 
@@ -1249,7 +1243,7 @@ Function* Insert::funcpointer(longname& vs, int arity, YYLTYPE l) const {
 	ParseInfo pi = parseinfo(l);
 	vs.back() = vs.back() + '/' + convertToString(arity);
 	Function* f = funcInScope(vs,pi);
-	if(!f) Error::undeclfunc(oneName(vs),pi);
+	if(!f) Error::undeclfunc(toString(vs),pi);
 	return f;
 }
 
@@ -1750,7 +1744,7 @@ Sort* Insert::theosortpointer(const vector<string>& vs, YYLTYPE l) const {
 		}
 		else {
 			ParseInfo pi = parseinfo(l);
-			string uname = oneName(vs);
+			string uname = toString(vs);
 			if(_currtheory) Error::sortnotintheovoc(uname,_currtheory->name(),pi);
 			else if(_currstructure) Error::sortnotinstructvoc(uname,_currstructure->name(),pi);
 			return 0;
@@ -2119,7 +2113,7 @@ void Insert::sortinter(NSPair* nst, SortTable* t) const {
 			st->internTable(t->internTable());
 			delete(t);
 		}
-		else Error::sortnotinstructvoc(oneName(name),_currstructure->name(),pi);
+		else Error::sortnotinstructvoc(toString(name),_currstructure->name(),pi);
 	}
 	else if(p) {
 		if(belongsToVoc(p)) {
@@ -2435,7 +2429,7 @@ pair<int,int>* Insert::range(int i1, int i2, YYLTYPE l) const {
 		i2 = i1;
 		Error::invalidrange(i1,i2,parseinfo(l));
 	}
-	pair<int,int>* p = new pair<int,int>(i1,i2);
+	auto p = new pair<int,int>(i1,i2);
 	return p;
 }
 
@@ -2444,7 +2438,7 @@ pair<char,char>* Insert::range(char c1, char c2, YYLTYPE l) const {
 		c2 = c1;
 		Error::invalidrange(c1,c2,parseinfo(l));
 	}
-	pair<char,char>* p = new pair<char,char>(c1,c2);
+	auto p = new pair<char,char>(c1,c2);
 	return p;
 }
 
@@ -2602,21 +2596,19 @@ vector<ElRange>* Insert::domaintuple(pair<char,char>* p) const {
 	return dt;
 }
 
-void Insert::exec(stringstream* chunk) const {
-	LuaConnection::execute(chunk);
+const DomainElement* Insert::exec(const std::string& chunk) {
+	return LuaConnection::execute(chunk);
 }
 
 void Insert::procarg(const string& argname) const {
 	_currprocedure->addarg(argname);
 }
 
-// FIXME typedef for long names
-// FIXME better name for oneName
 void Insert::externoption(const vector<string>& optionName, YYLTYPE l) const {
 	ParseInfo pi = parseinfo(l);
 	Options* opt = optionsInScope(optionName,pi);
 	if(opt==NULL){
-		Error::undeclopt(oneName(optionName),pi);
+		Error::undeclopt(toString(optionName),pi);
 	}
 	_curroptions->copyValues(opt);
 }
@@ -2654,7 +2646,7 @@ void Insert::assignunknowntables() {
 		PredInter* pri = _currstructure->inter(it->first);
 		const PredTable* ctable = _cpreds[it->first] == UTF_CT ? pri->ct() : pri->cf();
 		PredTable* pt = new PredTable(ctable->internTable(),ctable->universe());
-		for(TableIterator tit = it->second->begin() ; tit.hasNext(); ++tit) pt->add(*tit);
+		for(TableIterator tit = it->second->begin() ; not tit.isAtEnd(); ++tit) pt->add(*tit);
 		_cpreds[it->first] == UTF_CT ? pri->pt(pt) : pri->pf(pt);
 		delete(it->second);
 	}
@@ -2663,7 +2655,7 @@ void Insert::assignunknowntables() {
 		PredInter* pri = _currstructure->inter(it->first)->graphInter();
 		const PredTable* ctable = _cfuncs[it->first] == UTF_CT ? pri->ct() : pri->cf();
 		PredTable* pt = new PredTable(ctable->internTable(),ctable->universe());
-		for(TableIterator tit = it->second->begin() ; tit.hasNext(); ++tit) pt->add(*tit);
+		for(TableIterator tit = it->second->begin() ; not tit.isAtEnd(); ++tit) pt->add(*tit);
 		_cfuncs[it->first] == UTF_CT ? pri->pt(pt) : pri->pf(pt);
 		delete(it->second);
 	}

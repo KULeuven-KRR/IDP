@@ -9,10 +9,28 @@
 
 #include "generators/InstGenerator.hpp"
 
+/**
+ * Generates an empty set of instances
+ */
 class EmptyGenerator : public InstGenerator {
-	public:
-		bool first()	const { return false;	}
-		bool next()		const { return false;	}
+public:
+	virtual void next() {}
+	virtual void reset() { notifyAtEnd(); }
+};
+
+class FullGenerator : public InstGenerator {
+private:
+	bool first;
+public:
+	FullGenerator():first(true){}
+	virtual void next() {
+		if(first){
+			first = false;
+		}else{
+			notifyAtEnd();
+		}
+	}
+	virtual void reset() { first = true;}
 };
 
 #endif /* EMPTYGENERATOR_HPP_ */

@@ -49,13 +49,13 @@ AtomGrounder::AtomGrounder(
 		PFSymbol* s,
 		const vector<TermGrounder*>& sg,
 		const vector<const DomElemContainer*>& checkargs,
-		InstGenerator* pic, InstGenerator* cic,
+		InstChecker* pic, InstChecker* cic,
 		PredInter* inter,
 		const vector<SortTable*>& vst,
 		const GroundingContext& ct)
 		: FormulaGrounder(gt,ct), _subtermgrounders(sg), _pchecker(pic), _cchecker(cic),
 		_symbol(gt->addSymbol(s)), _tables(vst), _sign(sign), _checkargs(checkargs), _inter(inter){
-	_certainvalue = ct._truegen ? _true : _false;
+	gentype = ct.gentype;
 }
 
 Lit AtomGrounder::run() const {
@@ -67,81 +67,80 @@ Lit AtomGrounder::run() const {
 	ElementTuple args(_subtermgrounders.size());
 	for(unsigned int n = 0; n < _subtermgrounders.size(); ++n) {
 		groundsubterms[n] = _subtermgrounders[n]->run();
-		if(groundsubterms[n]._isvarid) {
+		if(groundsubterms[n].isVariable) {
 			alldomelts = false;
 		} else {
 			args[n] = groundsubterms[n]._domelement;
+			// Check partial functions
+			if(args[n]==NULL) {
+				assert(false);
+				// FIXME what should happen here?
+				/*//TODO: produce a warning!
+				if(context()._funccontext == Context::BOTH) {
+					// TODO: produce an error
+				}
+				if(verbosity() > 2) {
+					clog << "Partial function went out of bounds\n";
+					clog << "Result is " << (context()._funccontext != Context::NEGATIVE  ? "true" : "false") << "\n";
+				}
+				return context()._funccontext != Context::NEGATIVE  ? _true : _false;*/
+			}
+
+			// Checking out-of-bounds
+			if(not _tables[n]->contains(args[n])) {
+				if(verbosity() > 2) {
+					clog << "Term value out of predicate type\n";
+					clog << "Result is " << (isPos(_sign)? "false" : "true") << "\n";
+				}
+				return isPos(_sign)? _false : _true;
+			}
 		}
 	}
 
-	// Checking partial functions
-	for(unsigned int n = 0; n < args.size(); ++n) {
-		//TODO: only check positions that can be out of bounds!
-		if(not groundsubterms[n]._isvarid && not args[n]) {
-			//TODO: produce a warning!
-			if(context()._funccontext == Context::BOTH) {
-				// TODO: produce an error
-			}
-			if(verbosity() > 2) {
-				clog << "Partial function went out of bounds\n";
-				clog << "Result is " << (context()._funccontext != Context::NEGATIVE  ? "true" : "false") << "\n";
-			}
-			return context()._funccontext != Context::NEGATIVE  ? _true : _false;
-		}
-	}
-
-	// Checking out-of-bounds
-	for(unsigned int n = 0; n < args.size(); ++n) {
-		if(not groundsubterms[n]._isvarid && not _tables[n]->contains(args[n])) {
-			if(verbosity() > 2) {
-				clog << "Term value out of predicate type\n";
-				clog << "Result is " << (isPos(_sign)? "false" : "true") << "\n";
-			}
-			return isPos(_sign)? _false : _true;
-		}
-	}
-
-	// Run instance checkers
-	if(alldomelts) {
-		for(size_t n = 0; n < args.size(); ++n) {
-        	*(_checkargs[n]) = args[n];
-		}
-		if(not _pchecker->first()) { // FIXME the semantics of FIRST or not FIRST are UNCLEAR
-			if(verbosity() > 2) {
-				clog << "Possible checker failed\n";
-				clog << "Result is " << (_certainvalue ? "false" : "true") << "\n";
-			}
-			return _certainvalue ? _false : _true;	// TODO: een int voor certainvalue is lelijk
-		}
-		if(_cchecker->first()) {
-			if(verbosity() > 2) {
-				clog << "Certain checker succeeded\n";
- 				clog << "Result is " << translator()->printAtom(_certainvalue, false) << "\n"; //TODO longnames?
-			}
-			return _certainvalue;
-		}
-		cerr <<"Inter used for decisions: " <<*_inter <<"\n";
-		if(_inter->isTrue(args)) { return isPos(_sign)?_true:_false; }
-		if(_inter->isFalse(args)) { return isPos(_sign)?_false:_true; }
-	}
-
-	// Return grounding
-	if(alldomelts) {
-		int atom = translator()->translate(_symbol,args);
-		if(isNeg(_sign)) atom = -atom;
-		if(verbosity() > 2) {
-			clog << "Result is " << translator()->printAtom(atom, false) << "\n"; // TODO longnames?
-		}
-		return atom;
-	}
-	else {
+	if(not alldomelts){
 		//TODO Should we handle CPSymbols (that are not comparisons) here? No!
 		//TODO Should we assert(alldomelts)? Maybe yes, if P(t) and (not isCPSymbol(P)) and isCPSymbol(t) then it should have been rewritten, right?
 		//TODO If not previous... Do we need a GroundTranslator::translate method that takes GroundTerms as args??
 		assert(false);
 	}
+
+	// Run instance checkers
+	for(size_t n = 0; n < args.size(); ++n) {
+		*(_checkargs[n]) = args[n];
+	}
+	if(not _pchecker->check()){ // Literal is irrelevant in its occurrences
+		if(verbosity() > 2) {
+			clog << "Possible checker failed\n";
+			clog << "Result is " << (gentype==GenType::CANMAKETRUE ? "false" : "true") << "\n";
+		}
+		return gentype==GenType::CANMAKETRUE ? _false : _true;
+	}
+	if(_cchecker->check()) { // Literal decides formula if checker succeeds
+		if(verbosity() > 2) {
+			clog << "Certain checker succeeded\n";
+			clog << "Result is " << translator()->printAtom(gentype==GenType::CANMAKETRUE ? _true : _false, false) << "\n"; //TODO longnames?
+		}
+		return gentype==GenType::CANMAKETRUE ? _true : _false;
+	}
+	if(_inter->isTrue(args)) {
+		return isPos(_sign)?_true:_false;
+	}
+	if(_inter->isFalse(args)) {
+		return isPos(_sign)?_false:_true;
+	}
+
+	// Return grounding
+	Lit lit = translator()->translate(_symbol,args);
+	if(isNeg(_sign)){
+		lit = -lit;
+	}
+	if(verbosity() > 2) {
+		clog << "Result is " << translator()->printAtom(lit, false) << "\n"; // TODO longnames?
+	}
+	return lit;
 }
 
+// TODO refactor clause
 void AtomGrounder::run(vector<int>& clause) const {
 	clause.push_back(run());
 }
@@ -157,29 +156,29 @@ int ComparisonGrounder::run() const {
 
 	//TODO??? out-of-bounds check. Can out-of-bounds ever occur on </2, >/2, =/2???
 
-	if(left._isvarid) {
+	if(left.isVariable) {
 		CPTerm* leftterm = new CPVarTerm(left._varid);
-		if(right._isvarid) {
+		if(right.isVariable) {
 			CPBound rightbound(right._varid);
 			return translator()->translate(leftterm,_comparator,rightbound,TsType::EQ); //TODO use _context._tseitin?
 		}
 		else {
-			assert(not right._isvarid);
+			assert(not right.isVariable);
 			int rightvalue = right._domelement->value()._int;
 			CPBound rightbound(rightvalue);
 			return translator()->translate(leftterm,_comparator,rightbound,TsType::EQ); //TODO use _context._tseitin?
 		}
 	}
 	else {
-		assert(not left._isvarid);
+		assert(not left.isVariable);
 		int leftvalue = left._domelement->value()._int;
-		if(right._isvarid) {
+		if(right.isVariable) {
 			CPTerm* rightterm = new CPVarTerm(right._varid);
 			CPBound leftbound(leftvalue);
 			return translator()->translate(rightterm,invertComp(_comparator),leftbound,TsType::EQ); //TODO use _context._tseitin?
 		}
 		else {
-			assert(not right._isvarid);
+			assert(not right.isVariable);
 			int rightvalue = right._domelement->value()._int;
 			switch(_comparator) {
 				case CompType::EQ: return leftvalue == rightvalue ? _true : _false;
@@ -368,7 +367,7 @@ int AggGrounder::run() const {
 	// Run subgrounders
 	int setnr = _setgrounder->run();
 	const GroundTerm& groundbound = _boundgrounder->run();
-	assert(not groundbound._isvarid); //TODO
+	assert(not groundbound.isVariable); //TODO
 	const DomainElement* bound = groundbound._domelement;
 
 	// Retrieve the set, note that weights might be changed when handling min and max aggregates.
@@ -549,15 +548,13 @@ void BoolGrounder::run(litlist& clause, bool negate) const {
 void QuantGrounder::run(litlist& clause, bool negated) const {
 	if(verbosity() > 2) printorig();
 
-	if(not _generator->first()) {
-		return;
-	}
-
-	do{
-		if(_checker->first()) { // FIXME should this be NOT first() ?
-			clause = litlist{negated?-_false:_false}; // FIXME should this be false
+	for(_generator->begin(); not _generator->isAtEnd(); _generator->operator ++()){
+		if(_checker->check()){
+			clause = litlist{context().gentype==GenType::CANMAKETRUE? _false: _true};
 			break;
 		}
+
+		// FIXME als toplevel, moet hier een clause meegegeven worden, zodat er geen extra tseitins worden aangemaakt!!!
 		Lit l = _subgrounder->run();
 		if(makesFormulaFalse(l, negated)) {
 			clause = litlist{negated?-_false:_false}; // FIXME should negateclause be checked as part of "makesformulafalse"?
@@ -568,7 +565,7 @@ void QuantGrounder::run(litlist& clause, bool negated) const {
 		}else if(not isRedundantInFormula(l, negated)){
 			clause.push_back(negated? -l : l);
 		}
-	}while(_generator->next());
+	}
 }
 
 Lit EquivGrounder::run() const {

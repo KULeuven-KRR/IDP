@@ -52,7 +52,8 @@ void LazyQuantGrounder::groundMore() const{
 
 		Lit oldtseitin = instance->residual;
 		// FIXME notify lazy should check whether the tseitin already has a value and request more grounding immediately!
-		if(_generator->next()){
+		_generator->operator ++();
+		if(not _generator->isAtEnd()){
 			Lit newresidual = translator()->createNewUninterpretedNumber();
 			clause.push_back(newresidual);
 			instance->residual = newresidual;
@@ -70,7 +71,8 @@ void LazyQuantGrounder::run(litlist& clause, bool negateclause) const {
 
 	negatedclause_ = negateclause;
 
-	if(not _generator->first()) {
+	_generator->begin();
+	if(_generator->isAtEnd()){
 		return;
 	}
 

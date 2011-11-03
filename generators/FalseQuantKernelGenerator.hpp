@@ -9,25 +9,38 @@
 
 #include "generators/InstGenerator.hpp"
 
+/**
+ * Generate all x such that ?x phi(x) is false.
+ * Given is a generator for the universe and a checker which returns true if phi(x) is true.
+ */
 class FalseQuantKernelGenerator : public InstGenerator {
-	private:
-		InstGenerator*	_quantgenerator;
-		InstGenerator*	_univgenerator;
-	public:
-		FalseQuantKernelGenerator(InstGenerator* q, InstGenerator* u) : _quantgenerator(q), _univgenerator(u) { }
-		bool first() const {
-			if(_univgenerator->first()) {
-				if(_quantgenerator->first()) return next();
-				else return true;
-			}
-			else return false;
+private:
+	InstGenerator*	universeGenerator;
+	InstChecker*	quantKernelTrueChecker;
+
+public:
+	FalseQuantKernelGenerator(InstGenerator* universegenerator, InstChecker* bddtruechecker)
+			: universeGenerator(universegenerator), quantKernelTrueChecker(bddtruechecker){ }
+
+	bool check() const{
+		return not quantKernelTrueChecker->check();
+	}
+
+	void reset(){
+		universeGenerator->begin();
+		if(universeGenerator->isAtEnd()){
+			notifyAtEnd();
 		}
-		bool next() const {
-			while(_univgenerator->next()) {
-				if(!_quantgenerator->first()) return true;
-			}
-			return false;
+	}
+
+	void next(){
+		while(not universeGenerator->isAtEnd() && quantKernelTrueChecker->check()){
+			universeGenerator->operator ++();
 		}
+		if(universeGenerator->isAtEnd()){
+			notifyAtEnd();
+		}
+	}
 };
 
 #endif /* FALSEQUANTKERNELGENERATOR_HPP_ */

@@ -43,10 +43,7 @@ RuleGrounder::RuleGrounder(HeadGrounder* hgr, FormulaGrounder* bgr, InstGenerato
 
 void RuleGrounder::run(unsigned int defid, GroundDefinition* grounddefinition) const {
 	bool conj = _bodygrounder->conjunctive();
-	if(not _bodygenerator->first()){
-		return;
-	}
-	do {
+	for(bodygenerator()->begin(); not bodygenerator()->isAtEnd(); bodygenerator()->operator ++()){
 		vector<int>	body;
 		_bodygrounder->run(body);
 		bool falsebody = (body.empty() && !conj) || (body.size() == 1 && body[0] == _false);
@@ -55,10 +52,7 @@ void RuleGrounder::run(unsigned int defid, GroundDefinition* grounddefinition) c
 			continue;
 		}
 
-		if(not _headgenerator->first()) {
-			continue;
-		}
-		do{
+		for(_headgenerator->begin(); not _headgenerator->isAtEnd(); _headgenerator->operator ++()){
 			Lit head = _headgrounder->run();
 			assert(head != _true);
 			if(head != _false) {
@@ -67,8 +61,8 @@ void RuleGrounder::run(unsigned int defid, GroundDefinition* grounddefinition) c
 				}
 				grounddefinition->addPCRule(head, body, conj, context()._tseitin == TsType::RULE);
 			}
-		}while(_headgenerator->next());
-	}while(_bodygenerator->next());
+		};
+	}
 }
 
 HeadGrounder::HeadGrounder(AbstractGroundTheory* gt,
@@ -91,7 +85,7 @@ int HeadGrounder::run() const {
 	ElementTuple args(_subtermgrounders.size());
 	for(unsigned int n = 0; n < _subtermgrounders.size(); ++n) {
 		groundsubterms[n] = _subtermgrounders[n]->run();
-		if(groundsubterms[n]._isvarid) {
+		if(groundsubterms[n].isVariable) {
 			alldomelts = false;
 		} else {
 			args[n] = groundsubterms[n]._domelement;
@@ -151,10 +145,8 @@ void LazyRuleGrounder::ground(const Lit& head, const ElementTuple& headargs){
 	overwriteVars(originstantiation, headvarinstlist);
 
 	bool conj = bodygrounder()->conjunctive();
-	if(not bodygenerator()->first()){
-		return;
-	}
-	do {
+
+	for(bodygenerator()->begin(); not bodygenerator()->isAtEnd(); bodygenerator()->operator ++()){
 		vector<int>	body;
 		bodygrounder()->run(body);
 		bool falsebody = (body.empty() && !conj) || (body.size() == 1 && body[0] == _false);
@@ -169,7 +161,7 @@ void LazyRuleGrounder::ground(const Lit& head, const ElementTuple& headargs){
 			// FIXME correct defID!
 			grounding()->polAdd(1, new PCGroundRule(head, (conj ? RT_CONJ : RT_DISJ), body, context()._tseitin == TsType::RULE));
 		}
-	}while(bodygenerator()->next());
+	}
 
 	restoreOrigVars(originstantiation, headvarinstlist);
 }

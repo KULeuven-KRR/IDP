@@ -262,7 +262,7 @@ public:
 	void notifyLazyResidual(ResidualAndFreeInst* inst, LazyQuantGrounder const* const grounder){
 		LazyClauseMon* mon = new LazyClauseMon(inst);
 		MinisatID::LazyGroundLit lc(false, createLiteral(inst->residual), mon);
-		callbackgrounding cbmore(const_cast<LazyQuantGrounder*>(grounder), &LazyQuantGrounder::requestGroundMore); // FIXME for some reason, cannot seem to pass in const function pointers?
+		callbackgrounding cbmore(const_cast<LazyQuantGrounder*>(grounder), &LazyQuantGrounder::requestGroundMore);
 		mon->setRequestMoreGrounding(cbmore);
 		getSolver().add(lc);
 	}
@@ -272,20 +272,14 @@ public:
 	private:
 		Lit lit;
 		ElementTuple args;
-		//callbackrulegrounding requestgrounding;
 		std::vector<LazyRuleGrounder*> grounders;
 
 	public:
 		LazyRuleMon(const Lit& lit, const ElementTuple& args, const std::vector<LazyRuleGrounder*>& grounders): lit(lit), args(args), grounders(grounders){}
 
-		/*void setRequestRuleGrounding(callbackrulegrounding cb){
-			//requestgrounding = cb;
-		}*/
-
 		virtual void requestGrounding(){
 			if(not alreadyGround()){
 				MinisatID::LazyGroundingCommand::requestGrounding();
-				//requestgrounding(lit, args);
 				for(auto i=grounders.begin(); i<grounders.end(); ++i){
 					(*i)->ground(lit, args);
 				}
@@ -373,7 +367,7 @@ private:
 				MinisatID::CPIntVarEnum cpvar;
 				cpvar.varID = varid;
 				if(_verbosity > 0) std::clog << "{ ";
-				for(SortIterator it = domain->sortBegin(); it.hasNext(); ++it) {
+				for(SortIterator it = domain->sortBegin(); not it.isAtEnd(); ++it) {
 					int value = (*it)->value()._int;
 					cpvar.values.push_back(value);
 					if(_verbosity > 0) std::clog << value << "; ";

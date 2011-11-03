@@ -58,7 +58,7 @@ public:
 
 		// Calculate known definitions
 		// FIXME currently skipping if working lazily!
-		if(not options->getValue(BoolType::GROUNDLAZILY) && safetypeid<Theory>(*theory)){
+		if(not options->getValue(BoolType::GROUNDLAZILY) && sametypeid<Theory>(*theory)){
 			bool satisfiable = calculateKnownDefinitions(dynamic_cast<Theory*>(theory),structure,options);
 			if(not satisfiable) { return std::vector<AbstractStructure*>{}; }
 		}
@@ -257,7 +257,7 @@ private:
 			const auto& gtuple = termtranslator->args(cpvar->variable);
 			ElementTuple tuple;
 			for(auto it = gtuple.cbegin(); it != gtuple.cend(); ++it) {
-				if(it->_isvarid) {
+				if(it->isVariable) {
 					int value = model->variableassignments[it->_varid].value;
 					tuple.push_back(DomainElementFactory::instance()->create(value));
 				} else {

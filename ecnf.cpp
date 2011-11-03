@@ -49,7 +49,6 @@ void GroundDefinition::addFalseRule(int head) {
 	addPCRule(head,vector<int>(0),false,false);
 }
 
-// FIXME check that all heads are correct!
 void GroundDefinition::addPCRule(int head, const vector<int>& body, bool conj, bool recursive) {
 	// Search for a rule with the same head
 	map<int,GroundRule*>::iterator it = _rules.find(head);

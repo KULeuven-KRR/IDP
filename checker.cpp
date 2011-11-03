@@ -11,19 +11,19 @@
 
 using namespace std;
 
-InstanceChecker* CheckerFactory::create(PredInter* inter, TABLE_VALUE type) {
+InstanceChecker* CheckerFactory::create(PredInter* inter, TruthType type) {
 	const PredTable* pt = NULL;
 	switch (type) {
-		case POSS_FALSE:
+		case TruthType::POSS_FALSE:
 			pt = inter->pf();
 			break;
-		case POSS_TRUE:
+		case TruthType::POSS_TRUE:
 			pt = inter->pt();
 			break;
-		case CERTAIN_FALSE:
+		case TruthType::CERTAIN_FALSE:
 			pt = inter->cf();
 			break;
-		case CERTAIN_TRUE:
+		case TruthType::CERTAIN_TRUE:
 			pt = inter->ct();
 			break;
 	}

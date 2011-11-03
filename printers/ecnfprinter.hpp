@@ -170,7 +170,7 @@ public:
 
 	void visit(const GroundAggregate* b) {
 		assert(isTheoryOpen());
-		//FIXME -1 should be the minisatid undefined
+		//TODO -1 should be the minisatid constant for an undefined aggregate (or create some shared ecnf format)
 		printAggregate(b->type(),b->arrow(),-1,b->lower(),b->head(),b->setnr(),b->bound());
 	}
 
@@ -279,7 +279,7 @@ private:
 				output() << "INTVAR " << varid << ' ' << minvalue << ' ' << maxvalue << ' ';
 			} else {
 				output() << "INTVARDOM " << varid << ' ';
-				for(SortIterator it = domain->sortBegin(); it.hasNext(); ++it) {
+				for(SortIterator it = domain->sortBegin(); not it.isAtEnd(); ++it) {
 					int value = (*it)->value()._int;
 					output() << value << ' ';
 				}
