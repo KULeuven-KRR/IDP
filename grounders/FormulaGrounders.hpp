@@ -8,12 +8,13 @@
 #define FORMULAGROUNDERS_HPP_
 
 #include "ground.hpp"
+#include "grounders/Grounder.hpp"
 
 /*** Formula grounders ***/
 
 typedef std::map<Variable*,const DomElemContainer*> var2domelemmap;
 
-class FormulaGrounder {
+class FormulaGrounder: public Grounder {
 private:
 	GroundTranslator*	_translator;
 	GroundingContext	_context;

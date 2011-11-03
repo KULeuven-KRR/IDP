@@ -579,48 +579,6 @@ struct GroundingContext {
 	std::set<PFSymbol*> _defined; // Indicates whether the visited rule is recursive.
 };
 
-/*** Top level grounders ***/
-
-class TopLevelGrounder {
-protected:
-	AbstractGroundTheory* _grounding;
-	int _verbosity;
-public:
-	TopLevelGrounder(AbstractGroundTheory* gt, int verb) :
-			_grounding(gt), _verbosity(verb) {
-	}
-	virtual ~TopLevelGrounder() {
-	}
-
-	virtual bool run() const = 0;
-	AbstractGroundTheory* grounding() const {
-		return _grounding;
-	}
-};
-
-class TheoryGrounder: public TopLevelGrounder {
-private:
-	std::vector<TopLevelGrounder*> _grounders;
-public:
-	TheoryGrounder(AbstractGroundTheory* gt, const std::vector<TopLevelGrounder*>& fgs, int verb) :
-			TopLevelGrounder(gt, verb), _grounders(fgs) {
-	}
-	bool run() const;
-};
-
-class FormulaGrounder;
-
-class SentenceGrounder: public TopLevelGrounder {
-private:
-	bool _conj;
-	FormulaGrounder* _subgrounder;
-public:
-	SentenceGrounder(AbstractGroundTheory* gt, FormulaGrounder* sub, bool conj, int verb) :
-			TopLevelGrounder(gt, verb), _conj(conj), _subgrounder(sub) {
-	}
-	bool run() const;
-};
-
 /***********************
  Grounder Factory
  ***********************/
@@ -638,6 +596,8 @@ class SymbolicStructure;
 
 typedef std::vector<Variable*> varlist;
 typedef std::map<Variable*, const DomElemContainer*> var2dommap;
+
+class Grounder;
 
 class GrounderFactory: public TheoryVisitor {
 private:
@@ -679,7 +639,6 @@ private:
 	FormulaGrounder* _formgrounder;
 	TermGrounder* _termgrounder;
 	SetGrounder* _setgrounder;
-	TopLevelGrounder* _toplevelgrounder;
 	HeadGrounder* _headgrounder;
 	RuleGrounder* _rulegrounder;
 
@@ -716,9 +675,9 @@ public:
 	}
 
 	// Factory method
-	TopLevelGrounder* create(const AbstractTheory*);
-	TopLevelGrounder* create(const AbstractTheory*, MinisatID::WrappedPCSolver*);
-	TopLevelGrounder* create(const AbstractTheory* theory, InteractivePrintMonitor* monitor, Options* opts);
+	Grounder* create(const AbstractTheory*);
+	Grounder* create(const AbstractTheory*, MinisatID::WrappedPCSolver*);
+	Grounder* create(const AbstractTheory* theory, InteractivePrintMonitor* monitor, Options* opts);
 
 	// Determine what should be passed to CP solver
 	std::set<const PFSymbol*> findCPSymbols(const AbstractTheory*);

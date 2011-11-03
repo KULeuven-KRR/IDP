@@ -8,6 +8,7 @@
 #define DEFINITIONGROUNDERS_HPP_
 
 #include "ground.hpp"
+#include "grounders/Grounder.hpp"
 
 /*** Definition grounders ***/
 
@@ -20,7 +21,7 @@ typedef GroundTheory<SolverPolicy> SolverTheory;
 // TODO optimize grounding of definitions by grouping rules with the same head and grounding them atom by atom
 //	(using approximation to derive given a head query which bodies might be true). This would allow to write out rules without
 //	first constructing and storing the full ground definition to remove duplicate heads
-class DefinitionGrounder : public TopLevelGrounder {
+class DefinitionGrounder : public Grounder {
 	private:
 		static unsigned int _currentdefnb;
 		unsigned int _defnb;
@@ -78,7 +79,7 @@ class HeadGrounder {
 
 class LazyRuleGrounder;
 
-class LazyDefinitionGrounder : public TopLevelGrounder {
+class LazyDefinitionGrounder : public Grounder {
 	private:
 		unsigned int _defnb;
 		std::vector<LazyRuleGrounder*>	_subgrounders;	//!< Grounders for the rules of the definition.
