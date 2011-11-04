@@ -124,10 +124,7 @@ void parse(const vector<string>& inputfiles) {
 	}
 }
 
-/** 
- * Execute a procecure 
- **/
-const DomainElement* executeproc(const string& proc) {
+const DomainElement* executeProcedure(const string& proc) {
 	if(proc != "") {
 		return Insert::exec(proc);
 	}
@@ -149,19 +146,21 @@ void interactive() {
 	idp_rl_start();
 	while(true) {
 		char* userline = rl_gets();
-		if(userline!=NULL) {
-			string command(userline);
-			if(command==exit1 || command==exit2) {
-				free(userline);
-				idp_rl_end();
-				return;
-			}
-			if(command==help1){
-				command = help2;
-			}
-			parsestring("##intern##{"+command+'}');
+		if(userline==NULL){
+			cout << "\n";
+			continue;
 		}
-		else cout << "\n";
+
+		string command(userline);
+		if(command==exit1 || command==exit2) {
+			free(userline);
+			idp_rl_end();
+			return;
+		}
+		if(command==help1){
+			command = help2;
+		}
+		executeProcedure(command);
 	}
 }
 #endif
@@ -182,8 +181,8 @@ Status run(const std::vector<std::string>& inputfileurls){
 	Status result = Status::FAIL;
 	if(Error::nr_of_errors() == 0) {
 		stringstream ss;
-		ss <<getLibraryName() <<".main()";
-		auto value = executeproc(ss.str());
+		ss <<"return " <<getLibraryName() <<".main()";
+		auto value = executeProcedure(ss.str());
 		if(value!=NULL && value->type()==DomainElementType::DET_INT && value->value()._int == 1){
 			result = Status::SUCCESS;
 		}
@@ -210,7 +209,7 @@ int run(int argc, char* argv[]) {
 
 	// Run
 	if(not Error::nr_of_errors()) {
-		executeproc(cloptions._exec);
+		executeProcedure(cloptions._exec); // TODO add return here too?
 #ifdef USEINTERACTIVE
 		if(cloptions._interactive){
 			interactive();
@@ -218,8 +217,8 @@ int run(int argc, char* argv[]) {
 #endif
 		if(cloptions._exec == ""){
 			stringstream ss;
-			ss <<getLibraryName() <<".main()";
-			executeproc(ss.str());
+			ss <<"return " <<getLibraryName() <<".main()";
+			executeProcedure(ss.str());
 		}
 	}
 

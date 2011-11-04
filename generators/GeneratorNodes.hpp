@@ -12,8 +12,8 @@ protected:
 	virtual void reset()= 0;
 
 public:
-	GeneratorNode()
-		: atEnd(false) {
+	GeneratorNode() :
+			atEnd(false) {
 	}
 	virtual ~GeneratorNode() {
 	}
@@ -25,28 +25,34 @@ public:
 	void begin() {
 		atEnd = false;
 		reset();
+		if(not isAtEnd()){
+			next();
+		}
 	}
 };
 
 class LeafGeneratorNode: public GeneratorNode {
 private:
 	InstGenerator* _generator;
+	bool _reset;
 public:
-	LeafGeneratorNode(InstGenerator* gt)
-			: GeneratorNode(), _generator(gt) {
+	LeafGeneratorNode(InstGenerator* gt) :
+			GeneratorNode(), _generator(gt), _reset(true) {
 	}
 
 	virtual void next() {
-		_generator->operator ++();
+		if(_reset){
+			_reset = false;
+			_generator->begin();
+		}else{
+			_generator->operator ++();
+		}
 		if (_generator->isAtEnd()) {
 			notifyAtEnd();
 		}
 	}
 	virtual void reset() {
-		_generator->begin();
-		if (_generator->isAtEnd()) {
-			notifyAtEnd();
-		}
+		_reset = true;
 	}
 };
 
@@ -55,32 +61,40 @@ private:
 	InstGenerator* _generator;
 	GeneratorNode* _child;
 
+	bool _reset;
+
 public:
-	OneChildGeneratorNode(InstGenerator* gt, GeneratorNode* c)
-			: _generator(gt), _child(c) {
+	OneChildGeneratorNode(InstGenerator* gt, GeneratorNode* c) :
+			_generator(gt), _child(c), _reset(true) {
 	}
 
 	virtual void next() {
-		_child->next();
-		if (_child->isAtEnd()) {
-			_generator->operator ++();
-			if (_generator->isAtEnd()) {
-				notifyAtEnd();
-			}else{
-				next();
+		if (_reset) {
+			_reset = false;
+			_generator->begin();
+		} else {
+			if (not _child->isAtEnd()) {
+				_child->next();
 			}
+			if (not _child->isAtEnd()) {
+				return;
+			}
+			_generator->operator ++();
 		}
-	}
-	virtual void reset() {
-		for (_generator->begin(); not _generator->isAtEnd(); _generator->operator ++()) {
+		// Here, the generator is at a new value
+		for (; not _generator->isAtEnd(); _generator->operator ++()) {
 			_child->begin();
 			if (not _child->isAtEnd()) {
-				break;
+				return;
 			}
 		}
 		if (_generator->isAtEnd()) {
 			notifyAtEnd();
 		}
+	}
+
+	virtual void reset() {
+		_reset = true;
 	}
 };
 
@@ -89,52 +103,61 @@ private:
 	InstChecker* _checker;
 	InstGenerator* _generator;
 	GeneratorNode* _truecheckbranch, *_falsecheckbranch;
+	bool _reset;
 
 public:
-	TwoChildGeneratorNode(InstChecker* c, InstGenerator* g, GeneratorNode* falsecheckbranch,
-			GeneratorNode* truecheckbranch)
-			: _checker(c), _generator(g), _falsecheckbranch(falsecheckbranch), _truecheckbranch(truecheckbranch) {
+	TwoChildGeneratorNode(InstChecker* c, InstGenerator* g, GeneratorNode* falsecheckbranch, GeneratorNode* truecheckbranch) :
+			_checker(c), _generator(g), _falsecheckbranch(falsecheckbranch), _truecheckbranch(truecheckbranch), _reset(true) {
 	}
 
 	virtual void next() {
-		bool ended = false;
-		if (_checker->check()) {
-			_truecheckbranch->next();
-			if (_truecheckbranch->isAtEnd()) {
-				ended = true;
-			}
+		if (_reset) {
+			_reset = false;
+			_generator->begin();
 		} else {
-			_falsecheckbranch->next();
-			if (_falsecheckbranch->isAtEnd()) {
-				ended = true;
+			if (_checker->check()) {
+				if (_truecheckbranch->isAtEnd()) {
+					_generator->operator ++();
+				} else {
+					_truecheckbranch->next();
+					if (not _truecheckbranch->isAtEnd()) {
+						return;
+					}
+				}
+			} else {
+				if (_falsecheckbranch->isAtEnd()) {
+					_generator->operator ++();
+				} else {
+					_falsecheckbranch->next();
+					if (not _falsecheckbranch->isAtEnd()) {
+						return;
+					}
+				}
 			}
+
 		}
-		if(ended){
-			_generator->operator ++();
-			if (_generator->isAtEnd()) {
-				notifyAtEnd();
-			}else{
-				next();
-			}
-		}
-	}
-	virtual void reset() {
-		for (_generator->begin(); not _generator->isAtEnd(); _generator->operator ++()) {
+		// Here, the generator is at a new value
+		for (; not _generator->isAtEnd(); _generator->operator ++()) {
 			if (_checker->check()) {
 				_truecheckbranch->begin();
 				if (not _truecheckbranch->isAtEnd()) {
-					break;
+					return;
 				}
 			} else {
 				_falsecheckbranch->begin();
 				if (not _falsecheckbranch->isAtEnd()) {
-					break;
+					return;
 				}
 			}
+
 		}
 		if (_generator->isAtEnd()) {
 			notifyAtEnd();
 		}
+	}
+
+	virtual void reset() {
+		_reset = true;
 	}
 };
 

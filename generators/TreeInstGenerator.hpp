@@ -7,21 +7,24 @@
 class TreeInstGenerator: public InstGenerator {
 private:
 	GeneratorNode* const _root;
+	bool _reset;
 
 public:
 	TreeInstGenerator(GeneratorNode* r)
-			: _root(r) {
+			: _root(r), _reset(true) {
 	}
 
 	void reset() {
-		_root->begin();
-		if (_root->isAtEnd()) {
-			notifyAtEnd();
-		}
+		_reset = true;
 	}
 
 	void next() {
-		_root->next();
+		if(_reset){
+			_reset = false;
+			_root->begin();
+		}else{
+			_root->next();
+		}
 		if (_root->isAtEnd()) {
 			notifyAtEnd();
 		}

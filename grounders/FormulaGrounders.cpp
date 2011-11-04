@@ -1,9 +1,3 @@
-/************************************
- FormulaGrounders.cpp
- this file belongs to GidL 2.0
- (c) K.U.Leuven
- ************************************/
-
 #include "grounders/FormulaGrounders.hpp"
 
 #include <iostream>
@@ -20,9 +14,9 @@ using namespace std;
 
 void FormulaGrounder::setOrig(const Formula* f, const map<Variable*, const DomElemContainer*>& mvd, int verb) {
 	_verbosity = verb;
-	map<Variable*,Variable*> mvv;
-	for(auto it = f->freeVars().cbegin(); it != f->freeVars().cend(); ++it) {
-		Variable* v = new Variable((*it)->name(),(*it)->sort(),ParseInfo());
+	map<Variable*, Variable*> mvv;
+	for (auto it = f->freeVars().cbegin(); it != f->freeVars().cend(); ++it) {
+		Variable* v = new Variable((*it)->name(), (*it)->sort(), ParseInfo());
 		mvv[*it] = v;
 		_varmap[*it] = mvd.find(*it)->second;
 		_origvarmap[v] = mvd.find(*it)->second;
@@ -32,9 +26,9 @@ void FormulaGrounder::setOrig(const Formula* f, const map<Variable*, const DomEl
 
 void FormulaGrounder::printorig() const {
 	clog << "Grounding formula " << _origform->toString();
-	if(not _origform->freeVars().empty()) {
+	if (not _origform->freeVars().empty()) {
 		clog << " with instance ";
-		for(auto it = _origform->freeVars().cbegin(); it != _origform->freeVars().cend(); ++it) {
+		for (auto it = _origform->freeVars().cbegin(); it != _origform->freeVars().cend(); ++it) {
 			clog << (*it)->toString() << " = ";
 			const DomainElement* e = _origvarmap.find(*it)->second->get();
 			clog << e->toString() << ' ';
@@ -43,61 +37,55 @@ void FormulaGrounder::printorig() const {
 	clog << "\n";
 }
 
-AtomGrounder::AtomGrounder(
-		GroundTranslator* gt,
-		SIGN sign,
-		PFSymbol* s,
-		const vector<TermGrounder*>& sg,
-		const vector<const DomElemContainer*>& checkargs,
-		InstChecker* pic, InstChecker* cic,
-		PredInter* inter,
-		const vector<SortTable*>& vst,
-		const GroundingContext& ct)
-		: FormulaGrounder(gt,ct), _subtermgrounders(sg), _pchecker(pic), _cchecker(cic),
-		_symbol(gt->addSymbol(s)), _tables(vst), _sign(sign), _checkargs(checkargs), _inter(inter){
+AtomGrounder::AtomGrounder(GroundTranslator* gt, SIGN sign, PFSymbol* s, const vector<TermGrounder*>& sg,
+		const vector<const DomElemContainer*>& checkargs, InstChecker* pic, InstChecker* cic, PredInter* inter, const vector<SortTable*>& vst,
+		const GroundingContext& ct) :
+		FormulaGrounder(gt, ct), _subtermgrounders(sg), _pchecker(pic), _cchecker(cic), _symbol(gt->addSymbol(s)), _tables(vst), _sign(sign), _checkargs(
+				checkargs), _inter(inter) {
 	gentype = ct.gentype;
 }
 
 Lit AtomGrounder::run() const {
-	if(verbosity() > 2) printorig();
+	if (verbosity() > 2) printorig();
 
 	// Run subterm grounders
 	bool alldomelts = true;
 	vector<GroundTerm> groundsubterms(_subtermgrounders.size());
 	ElementTuple args(_subtermgrounders.size());
-	for(unsigned int n = 0; n < _subtermgrounders.size(); ++n) {
+
+	for (unsigned int n = 0; n < _subtermgrounders.size(); ++n) {
 		groundsubterms[n] = _subtermgrounders[n]->run();
-		if(groundsubterms[n].isVariable) {
+		if (groundsubterms[n].isVariable) {
 			alldomelts = false;
 		} else {
 			args[n] = groundsubterms[n]._domelement;
 			// Check partial functions
-			if(args[n]==NULL) {
+			if (args[n] == NULL) {
 				assert(false);
 				// FIXME what should happen here?
 				/*//TODO: produce a warning!
-				if(context()._funccontext == Context::BOTH) {
-					// TODO: produce an error
-				}
-				if(verbosity() > 2) {
-					clog << "Partial function went out of bounds\n";
-					clog << "Result is " << (context()._funccontext != Context::NEGATIVE  ? "true" : "false") << "\n";
-				}
-				return context()._funccontext != Context::NEGATIVE  ? _true : _false;*/
+				 if(context()._funccontext == Context::BOTH) {
+				 // TODO: produce an error
+				 }
+				 if(verbosity() > 2) {
+				 clog << "Partial function went out of bounds\n";
+				 clog << "Result is " << (context()._funccontext != Context::NEGATIVE  ? "true" : "false") << "\n";
+				 }
+				 return context()._funccontext != Context::NEGATIVE  ? _true : _false;*/
 			}
 
 			// Checking out-of-bounds
-			if(not _tables[n]->contains(args[n])) {
-				if(verbosity() > 2) {
+			if (not _tables[n]->contains(args[n])) {
+				if (verbosity() > 2) {
 					clog << "Term value out of predicate type\n";
-					clog << "Result is " << (isPos(_sign)? "false" : "true") << "\n";
+					clog << "Result is " << (isPos(_sign) ? "false" : "true") << "\n";
 				}
-				return isPos(_sign)? _false : _true;
+				return isPos(_sign) ? _false : _true;
 			}
 		}
 	}
 
-	if(not alldomelts){
+	if (not alldomelts) {
 		//TODO Should we handle CPSymbols (that are not comparisons) here? No!
 		//TODO Should we assert(alldomelts)? Maybe yes, if P(t) and (not isCPSymbol(P)) and isCPSymbol(t) then it should have been rewritten, right?
 		//TODO If not previous... Do we need a GroundTranslator::translate method that takes GroundTerms as args??
@@ -105,44 +93,44 @@ Lit AtomGrounder::run() const {
 	}
 
 	// Run instance checkers
+	// NOTE: set all the variables representing the subterms to their current value (these are used in the checkers)
 	for(size_t n = 0; n < args.size(); ++n) {
 		*(_checkargs[n]) = args[n];
 	}
-	if(not _pchecker->check()){ // Literal is irrelevant in its occurrences
-		if(verbosity() > 2) {
+	if (not _pchecker->check()) { // Literal is irrelevant in its occurrences
+		if (verbosity() > 2) {
 			clog << "Possible checker failed\n";
-			clog << "Result is " << (gentype==GenType::CANMAKETRUE ? "false" : "true") << "\n";
+			clog << "Result is " << (gentype == GenType::CANMAKETRUE ? "false" : "true") << "\n";
 		}
-		return gentype==GenType::CANMAKETRUE ? _false : _true;
+		return gentype == GenType::CANMAKETRUE ? _false : _true;
 	}
-	if(_cchecker->check()) { // Literal decides formula if checker succeeds
-		if(verbosity() > 2) {
+	if (_cchecker->check()) { // Literal decides formula if checker succeeds
+		if (verbosity() > 2) {
 			clog << "Certain checker succeeded\n";
-			clog << "Result is " << translator()->printAtom(gentype==GenType::CANMAKETRUE ? _true : _false, false) << "\n"; //TODO longnames?
+			clog << "Result is " << translator()->printAtom(gentype == GenType::CANMAKETRUE ? _true : _false, false) << "\n"; //TODO longnames?
 		}
-		return gentype==GenType::CANMAKETRUE ? _true : _false;
+		return gentype == GenType::CANMAKETRUE ? _true : _false;
 	}
-	if(_inter->isTrue(args)) {
-		return isPos(_sign)?_true:_false;
+	if (_inter->isTrue(args)) {
+		return isPos(_sign) ? _true : _false;
 	}
-	if(_inter->isFalse(args)) {
-		return isPos(_sign)?_false:_true;
+	if (_inter->isFalse(args)) {
+		return isPos(_sign) ? _false : _true;
 	}
 
 	// Return grounding
-	Lit lit = translator()->translate(_symbol,args);
-	if(isNeg(_sign)){
+	Lit lit = translator()->translate(_symbol, args);
+	if (isNeg(_sign)) {
 		lit = -lit;
 	}
-	if(verbosity() > 2) {
+	if (verbosity() > 2) {
 		clog << "Result is " << translator()->printAtom(lit, false) << "\n"; // TODO longnames?
 	}
 	return lit;
 }
 
-// TODO refactor clause
-void AtomGrounder::run(vector<int>& clause) const {
-	clause.push_back(run());
+void AtomGrounder::run(ConjOrDisj& formula) const {
+	formula.literals.push_back(run());
 }
 
 int ComparisonGrounder::run() const {
@@ -150,52 +138,67 @@ int ComparisonGrounder::run() const {
 	const GroundTerm& right = _righttermgrounder->run();
 
 	//TODO Is following check necessary??
-	if((not left._domelement && not left._varid) || (not right._domelement && not right._varid)) {
-		return context()._funccontext != Context::NEGATIVE  ? _true : _false;
+	if ((not left._domelement && not left._varid) || (not right._domelement && not right._varid)) {
+		return context()._funccontext != Context::NEGATIVE ? _true : _false;
 	}
 
 	//TODO??? out-of-bounds check. Can out-of-bounds ever occur on </2, >/2, =/2???
 
-	if(left.isVariable) {
+	if (left.isVariable) {
 		CPTerm* leftterm = new CPVarTerm(left._varid);
-		if(right.isVariable) {
+		if (right.isVariable) {
 			CPBound rightbound(right._varid);
-			return translator()->translate(leftterm,_comparator,rightbound,TsType::EQ); //TODO use _context._tseitin?
-		}
-		else {
+			return translator()->translate(leftterm, _comparator, rightbound, TsType::EQ); //TODO use _context._tseitin?
+		} else {
 			assert(not right.isVariable);
 			int rightvalue = right._domelement->value()._int;
 			CPBound rightbound(rightvalue);
-			return translator()->translate(leftterm,_comparator,rightbound,TsType::EQ); //TODO use _context._tseitin?
+			return translator()->translate(leftterm, _comparator, rightbound, TsType::EQ); //TODO use _context._tseitin?
 		}
-	}
-	else {
+	} else {
 		assert(not left.isVariable);
 		int leftvalue = left._domelement->value()._int;
-		if(right.isVariable) {
+		if (right.isVariable) {
 			CPTerm* rightterm = new CPVarTerm(right._varid);
 			CPBound leftbound(leftvalue);
-			return translator()->translate(rightterm,invertComp(_comparator),leftbound,TsType::EQ); //TODO use _context._tseitin?
-		}
-		else {
+			return translator()->translate(rightterm, invertComp(_comparator), leftbound, TsType::EQ); //TODO use _context._tseitin?
+		} else {
 			assert(not right.isVariable);
 			int rightvalue = right._domelement->value()._int;
-			switch(_comparator) {
-				case CompType::EQ: return leftvalue == rightvalue ? _true : _false;
-				case CompType::NEQ: return leftvalue != rightvalue ? _true : _false;
-				case CompType::LEQ: return leftvalue <= rightvalue ? _true : _false;
-				case CompType::GEQ: return leftvalue >= rightvalue ? _true : _false;
-				case CompType::LT: return leftvalue < rightvalue ? _true : _false;
-				case CompType::GT: return leftvalue > rightvalue ? _true : _false;
+			switch (_comparator) {
+			case CompType::EQ:
+				return leftvalue == rightvalue ? _true : _false;
+			case CompType::NEQ:
+				return leftvalue != rightvalue ? _true : _false;
+			case CompType::LEQ:
+				return leftvalue <= rightvalue ? _true : _false;
+			case CompType::GEQ:
+				return leftvalue >= rightvalue ? _true : _false;
+			case CompType::LT:
+				return leftvalue < rightvalue ? _true : _false;
+			case CompType::GT:
+				return leftvalue > rightvalue ? _true : _false;
 			}
 		}
 	}
+
 	assert(false);
 	return 0;
 }
 
-void ComparisonGrounder::run(vector<int>& clause) const {
-	clause.push_back(run());
+void ComparisonGrounder::run(ConjOrDisj& formula) const {
+	formula.literals.push_back(run()); // TODO can do better?
+}
+
+CompType Agg2Comp(AGG_COMP_TYPE comp){
+	switch (comp) {
+	case AGG_EQ:
+		return CompType::EQ;
+	case AGG_LT:
+		return CompType::LT;
+	case AGG_GT:
+		return CompType::GT;
+	}
 }
 
 /**
@@ -203,14 +206,20 @@ void ComparisonGrounder::run(vector<int>& clause) const {
  */
 int AggGrounder::handleDoubleNegation(double boundvalue, int setnr) const {
 	CompType newcomp;
-	switch(_comp) {
-		case AGG_LT : newcomp = CompType::GT; break;
-		case AGG_GT : newcomp = CompType::LT; break;
-		case AGG_EQ : assert(false); break;
+	switch (_comp) {
+	case AGG_LT:
+		newcomp = CompType::GT;
+		break;
+	case AGG_GT:
+		newcomp = CompType::LT;
+		break;
+	case AGG_EQ:
+		assert(false);
+		break;
 	}
 	TsType tp = context()._tseitin;
-	int tseitin = translator()->translate(boundvalue,newcomp,false,_type,setnr,tp);
-	return isPos(_sign)? -tseitin : tseitin;
+	int tseitin = translator()->translate(boundvalue, newcomp, false, _type, setnr, tp);
+	return isPos(_sign) ? -tseitin : tseitin;
 }
 
 int AggGrounder::finishCard(double truevalue, double boundvalue, int setnr) const {
@@ -221,101 +230,87 @@ int AggGrounder::finishCard(double truevalue, double boundvalue, int setnr) cons
 	bool simplify = false;
 	bool conj;
 	bool negateset;
-	switch(_comp) {
-		case AGG_EQ:
-			if(leftvalue < 0 || leftvalue > maxposscard) {
-				return isPos(_sign)? _false : _true;
-			}
-			else if(leftvalue == 0) {
-				simplify = true;
-				conj = true;
-				negateset = true;
-			}
-			else if(leftvalue == maxposscard) {
-				simplify = true;
-				conj = true;
-				negateset = false;
-			}
-			break;
-		case AGG_LT:
-			if(leftvalue < 0) {
-				return isPos(_sign)? _true : _false;
-			}
-			else if(leftvalue == 0) {
-				simplify = true;
-				conj = false;
-				negateset = false;
-			}
-			else if(leftvalue == maxposscard-1) {
-				simplify = true;
-				conj = true;
-				negateset = false;
-			}
-			else if(leftvalue >= maxposscard) {
-				return isPos(_sign)? _false : _true;
-			}
-			break;
-		case AGG_GT:
-			if(leftvalue <= 0) {
-				return isPos(_sign)? _false : _true;
-			}
-			else if(leftvalue == 1) {
-				simplify = true;
-				conj = true;
-				negateset = true;
-			}
-			else if(leftvalue == maxposscard) {
-				simplify = true;
-				conj = false;
-				negateset = true;
-			}
-			else if(leftvalue > maxposscard) {
-				return isPos(_sign)? _true : _false;
-			}
-			break;
+	switch (_comp) {
+	case AGG_EQ:
+		if (leftvalue < 0 || leftvalue > maxposscard) {
+			return isPos(_sign) ? _false : _true;
+		} else if (leftvalue == 0) {
+			simplify = true;
+			conj = true;
+			negateset = true;
+		} else if (leftvalue == maxposscard) {
+			simplify = true;
+			conj = true;
+			negateset = false;
+		}
+		break;
+	case AGG_LT:
+		if (leftvalue < 0) {
+			return isPos(_sign) ? _true : _false;
+		} else if (leftvalue == 0) {
+			simplify = true;
+			conj = false;
+			negateset = false;
+		} else if (leftvalue == maxposscard - 1) {
+			simplify = true;
+			conj = true;
+			negateset = false;
+		} else if (leftvalue >= maxposscard) {
+			return isPos(_sign) ? _false : _true;
+		}
+		break;
+	case AGG_GT:
+		if (leftvalue <= 0) {
+			return isPos(_sign) ? _false : _true;
+		} else if (leftvalue == 1) {
+			simplify = true;
+			conj = true;
+			negateset = true;
+		} else if (leftvalue == maxposscard) {
+			simplify = true;
+			conj = false;
+			negateset = true;
+		} else if (leftvalue > maxposscard) {
+			return isPos(_sign) ? _true : _false;
+		}
+		break;
 	}
-	if(isNeg(_sign)) {
-		if(tp == TsType::IMPL) tp = TsType::RIMPL;
-		else if(tp == TsType::RIMPL) tp = TsType::IMPL;
+	if (isNeg(_sign)) {
+		if (tp == TsType::IMPL)
+			tp = TsType::RIMPL;
+		else if (tp == TsType::RIMPL) tp = TsType::IMPL;
 	}
-	if(simplify) {
-		if(_doublenegtseitin) {
-			if(negateset) {
-				int tseitin = translator()->translate(tsset.literals(),!conj,tp);
-				return isPos(_sign)? -tseitin : tseitin;
-			}
-			else {
+	if (simplify) {
+		if (_doublenegtseitin) {
+			if (negateset) {
+				int tseitin = translator()->translate(tsset.literals(), !conj, tp);
+				return isPos(_sign) ? -tseitin : tseitin;
+			} else {
 				vector<int> newsetlits(tsset.size());
-				for(unsigned int n = 0; n < tsset.size(); ++n) newsetlits[n] = -tsset.literal(n);
-				int tseitin = translator()->translate(newsetlits,!conj,tp);
-				return isPos(_sign)? -tseitin : tseitin;
+				for (unsigned int n = 0; n < tsset.size(); ++n)
+					newsetlits[n] = -tsset.literal(n);
+				int tseitin = translator()->translate(newsetlits, !conj, tp);
+				return isPos(_sign) ? -tseitin : tseitin;
+			}
+		} else {
+			if (negateset) {
+				vector<int> newsetlits(tsset.size());
+				for (unsigned int n = 0; n < tsset.size(); ++n)
+					newsetlits[n] = -tsset.literal(n);
+				int tseitin = translator()->translate(newsetlits, conj, tp);
+				return isPos(_sign) ? tseitin : -tseitin;
+			} else {
+				int tseitin = translator()->translate(tsset.literals(), conj, tp);
+				return isPos(_sign) ? tseitin : -tseitin;
 			}
 		}
+	} else {
+		if (_doublenegtseitin)
+			return handleDoubleNegation(double(leftvalue), setnr);
 		else {
-			if(negateset) {
-				vector<int> newsetlits(tsset.size());
-				for(unsigned int n = 0; n < tsset.size(); ++n) newsetlits[n] = -tsset.literal(n);
-				int tseitin = translator()->translate(newsetlits,conj,tp);
-				return isPos(_sign)? tseitin : -tseitin;
-			}
-			else {
-				int tseitin = translator()->translate(tsset.literals(),conj,tp);
-				return isPos(_sign)? tseitin : -tseitin;
-			}
-		}
-	}
-	else {
-		if(_doublenegtseitin) return handleDoubleNegation(double(leftvalue),setnr);
-		else {
-			// TODO define cast from AggComp to CompType
-			CompType comp = CompType::EQ;
-			switch(_comp){
-			case AGG_EQ: comp = CompType::EQ; break;
-			case AGG_LT: comp = CompType::LT; break;
-			case AGG_GT: comp = CompType::GT; break;
-			}
-			int tseitin = translator()->translate(double(leftvalue),comp,true,AggFunction::CARD,setnr,tp);
-			return isPos(_sign)? tseitin : -tseitin;
+			CompType comp = Agg2Comp(_comp);
+			int tseitin = translator()->translate(double(leftvalue), comp, true, AggFunction::CARD, setnr, tp);
+			return isPos(_sign) ? tseitin : -tseitin;
 		}
 	}
 }
@@ -328,38 +323,36 @@ int AggGrounder::finishCard(double truevalue, double boundvalue, int setnr) cons
 int AggGrounder::finish(double boundvalue, double newboundvalue, double minpossvalue, double maxpossvalue, int setnr) const {
 	// Check minimum and maximum possible values against the given bound
 	CompType comp = CompType::EQ;
-	switch(_comp) { //TODO more complicated propagation is possible!
-		case AGG_EQ:
-			comp = CompType::EQ;
-			if(minpossvalue > boundvalue || maxpossvalue < boundvalue)
-				return isPos(_sign)? _false : _true;
-			break;
-		case AGG_LT:
-			comp = CompType::LT;
-			if(boundvalue < minpossvalue)
-				return isPos(_sign)? _true : _false;
-			else if(boundvalue >= maxpossvalue)
-				return isPos(_sign)? _false : _true;
-			break;
-		case AGG_GT:
-			comp = CompType::GT;
-			if(boundvalue > maxpossvalue)
-				return isPos(_sign)? _true : _false;
-			else if(boundvalue <= minpossvalue)
-				return isPos(_sign)? _false : _true;
-			break;
+	switch (_comp) { //TODO more complicated propagation is possible!
+	case AGG_EQ:
+		comp = CompType::EQ;
+		if (minpossvalue > boundvalue || maxpossvalue < boundvalue) return isPos(_sign) ? _false : _true;
+		break;
+	case AGG_LT:
+		comp = CompType::LT;
+		if (boundvalue < minpossvalue)
+			return isPos(_sign) ? _true : _false;
+		else if (boundvalue >= maxpossvalue) return isPos(_sign) ? _false : _true;
+		break;
+	case AGG_GT:
+		comp = CompType::GT;
+		if (boundvalue > maxpossvalue)
+			return isPos(_sign) ? _true : _false;
+		else if (boundvalue <= minpossvalue) return isPos(_sign) ? _false : _true;
+		break;
 	}
-	if(_doublenegtseitin)
-		return handleDoubleNegation(newboundvalue,setnr);
+	if (_doublenegtseitin)
+		return handleDoubleNegation(newboundvalue, setnr);
 	else {
 		int tseitin;
 		TsType tp = context()._tseitin;
-		if(isNeg(_sign)) {
-			if(tp == TsType::IMPL) tp = TsType::RIMPL;
-			else if(tp == TsType::RIMPL) tp = TsType::IMPL;
+		if (isNeg(_sign)) {
+			if (tp == TsType::IMPL)
+				tp = TsType::RIMPL;
+			else if (tp == TsType::RIMPL) tp = TsType::IMPL;
 		}
-		tseitin = translator()->translate(newboundvalue,comp,true,_type,setnr,tp);
-		return isPos(_sign)? tseitin : -tseitin;
+		tseitin = translator()->translate(newboundvalue, comp, true, _type, setnr, tp);
+		return isPos(_sign) ? tseitin : -tseitin;
 	}
 }
 
@@ -367,7 +360,8 @@ int AggGrounder::run() const {
 	// Run subgrounders
 	int setnr = _setgrounder->run();
 	const GroundTerm& groundbound = _boundgrounder->run();
-	assert(not groundbound.isVariable); //TODO
+	assert(not groundbound.isVariable);
+
 	const DomainElement* bound = groundbound._domelement;
 
 	// Retrieve the set, note that weights might be changed when handling min and max aggregates.
@@ -377,15 +371,21 @@ int AggGrounder::run() const {
 	double boundvalue = bound->type() == DET_INT ? (double) bound->value()._int : bound->value()._double;
 
 	// Compute the value of the aggregate based on weights of literals that are certainly true.
-	double truevalue = applyAgg(_type,tsset.trueweights());
+	double truevalue = applyAgg(_type, tsset.trueweights());
 
 	// When the set is empty, return an answer based on the current value of the aggregate.
-	if(tsset.literals().empty()) {
+	if (tsset.literals().empty()) {
 		bool returnvalue;
-		switch(_comp) {
-			case AGG_LT : returnvalue = boundvalue < truevalue; break;
-			case AGG_GT : returnvalue = boundvalue > truevalue; break;
-			case AGG_EQ : returnvalue = boundvalue == truevalue; break;
+		switch (_comp) {
+		case AGG_LT:
+			returnvalue = boundvalue < truevalue;
+			break;
+		case AGG_GT:
+			returnvalue = boundvalue > truevalue;
+			break;
+		case AGG_EQ:
+			returnvalue = boundvalue == truevalue;
+			break;
 		}
 		return isPos(_sign) == returnvalue ? _true : _false;
 	}
@@ -394,64 +394,65 @@ int AggGrounder::run() const {
 	int tseitin;
 	double minpossvalue = truevalue;
 	double maxpossvalue = truevalue;
-	switch(_type) {
-		case AggFunction::CARD:
-			tseitin = finishCard(truevalue,boundvalue,setnr);
-			break;
-		case AggFunction::SUM:
-			// Compute the minimum and maximum possible value of the sum.
-			for(unsigned int n = 0; n < tsset.size(); ++n) {
-				if(tsset.weight(n) > 0) maxpossvalue += tsset.weight(n);
-				else if(tsset.weight(n) < 0) minpossvalue += tsset.weight(n);
-			}
-			// Finish
-			tseitin = finish(boundvalue,(boundvalue-truevalue),minpossvalue,maxpossvalue,setnr);
-			break;
-		case AggFunction::PROD: {
-			// Compute the minimum and maximum possible value of the product.
-			bool containsneg = false;
-			for(unsigned int n = 0; n < tsset.size(); ++n) {
-				maxpossvalue *= abs(tsset.weight(n));
-				if(tsset.weight(n) < 0) containsneg = true;
-			}
-			if(containsneg) minpossvalue = -maxpossvalue;
-			// Finish
-			tseitin = finish(boundvalue,(boundvalue/truevalue),minpossvalue,maxpossvalue,setnr);
-			break;
+	switch (_type) {
+	case AggFunction::CARD:
+		tseitin = finishCard(truevalue, boundvalue, setnr);
+		break;
+	case AggFunction::SUM:
+		// Compute the minimum and maximum possible value of the sum.
+		for (unsigned int n = 0; n < tsset.size(); ++n) {
+			if (tsset.weight(n) > 0)
+				maxpossvalue += tsset.weight(n);
+			else if (tsset.weight(n) < 0) minpossvalue += tsset.weight(n);
 		}
-		case AggFunction::MIN:
-			// Compute the minimum possible value of the set.
-			for(unsigned int n = 0; n < tsset.size(); ++n) {
-				minpossvalue = (tsset.weight(n) < minpossvalue) ? tsset.weight(n) : minpossvalue;
-				// Decrease all weights greater than truevalue to truevalue. // TODO why not just drop all those?
-				if(tsset.weight(n) > truevalue) tsset.setWeight(n,truevalue);
-			}
-			// Finish
-			tseitin = finish(boundvalue,boundvalue,minpossvalue,maxpossvalue,setnr);
-			break;
-		case AggFunction::MAX:
-			// Compute the maximum possible value of the set.
-			for(unsigned int n = 0; n < tsset.size(); ++n) {
-				maxpossvalue = (tsset.weight(n) > maxpossvalue) ? tsset.weight(n) : maxpossvalue;
-				// Increase all weights less than truevalue to truevalue. // TODO why not just drop all those?
-				if(tsset.weight(n) < truevalue) tsset.setWeight(n,truevalue);
-			}
-			// Finish
-			tseitin = finish(boundvalue,boundvalue,minpossvalue,maxpossvalue,setnr);
-			break;
+		// Finish
+		tseitin = finish(boundvalue, (boundvalue - truevalue), minpossvalue, maxpossvalue, setnr);
+		break;
+	case AggFunction::PROD: {
+		// Compute the minimum and maximum possible value of the product.
+		bool containsneg = false;
+		for (unsigned int n = 0; n < tsset.size(); ++n) {
+			maxpossvalue *= abs(tsset.weight(n));
+			if (tsset.weight(n) < 0) containsneg = true;
+		}
+		if (containsneg) minpossvalue = -maxpossvalue;
+		// Finish
+		tseitin = finish(boundvalue, (boundvalue / truevalue), minpossvalue, maxpossvalue, setnr);
+		break;
+	}
+	case AggFunction::MIN:
+		// Compute the minimum possible value of the set.
+		for (unsigned int n = 0; n < tsset.size(); ++n) {
+			minpossvalue = (tsset.weight(n) < minpossvalue) ? tsset.weight(n) : minpossvalue;
+			// Decrease all weights greater than truevalue to truevalue. // TODO why not just drop all those?
+			if (tsset.weight(n) > truevalue) tsset.setWeight(n, truevalue);
+		}
+		// Finish
+		tseitin = finish(boundvalue, boundvalue, minpossvalue, maxpossvalue, setnr);
+		break;
+	case AggFunction::MAX:
+		// Compute the maximum possible value of the set.
+		for (unsigned int n = 0; n < tsset.size(); ++n) {
+			maxpossvalue = (tsset.weight(n) > maxpossvalue) ? tsset.weight(n) : maxpossvalue;
+			// Increase all weights less than truevalue to truevalue. // TODO why not just drop all those?
+			if (tsset.weight(n) < truevalue) tsset.setWeight(n, truevalue);
+		}
+		// Finish
+		tseitin = finish(boundvalue, boundvalue, minpossvalue, maxpossvalue, setnr);
+		break;
 	}
 	return tseitin;
 }
 
-void AggGrounder::run(litlist& clause) const {
-	clause.push_back(run());
+void AggGrounder::run(ConjOrDisj& formula) const {
+	formula.literals.push_back(run()); // TODO can do better?
 }
 
 bool ClauseGrounder::isRedundantInFormula(Lit l, bool negated) const {
-	if(negated){
-		return conn_==CONJ? l==_false : l==_true;
-	}else{
-		return conn_==CONJ? l==_true : l==_false;
+	if (negated) {
+		return conn_ == Conn::CONJ ? l == _false : l == _true;
+	} else {
+		return conn_ == Conn::CONJ ? l == _true : l == _false;
 	}
 }
 
@@ -462,8 +463,7 @@ bool ClauseGrounder::isRedundantInFormula(Lit l, bool negated) const {
  * negated disjunction: never true by a literal
  */
 bool ClauseGrounder::makesFormulaTrue(Lit l, bool negated) const {
-	return (negated && conn_==CONJ && l == _false)
-			|| (~negated && conn_==DISJ && l == _true);
+	return (negated && conn_ == Conn::CONJ && l == _false) || (~negated && conn_ == Conn::DISJ && l == _true);
 }
 
 /**
@@ -473,154 +473,149 @@ bool ClauseGrounder::makesFormulaTrue(Lit l, bool negated) const {
  * negated disjunction: false if a literal is true
  */
 bool ClauseGrounder::makesFormulaFalse(Lit l, bool negated) const {
-	return (negated && conn_==DISJ && l == _true)
-			|| (not negated && conn_==CONJ && l == _false);
+	return (negated && conn_ == Conn::DISJ && l == _true) || (not negated && conn_ == Conn::CONJ && l == _false);
 }
 
 Lit ClauseGrounder::getEmtyFormulaValue() const {
 	return conjunctive() ? _true : _false;
 }
 
-TsType ClauseGrounder::getTseitinType() const{
+TsType ClauseGrounder::getTseitinType() const {
 	return context()._tseitin;
 }
 
-Lit ClauseGrounder::createTseitin(const litlist& clause) const{
+// Takes context into account!
+Lit ClauseGrounder::createTseitin(const ConjOrDisj& formula) const {
 	TsType type = getTseitinType();
-	if(isNegative()) {
+	if (isNegative()) {
 		type = reverseImplication(type);
 	}
+
 	Lit tseitin;
-	if(negativeDefinedContext()) {
-		tseitin = translator()->translate(clause,conn_==DISJ,type);
-	}else{
-		tseitin = translator()->translate(clause,conn_==CONJ,type);
+	bool asConjunction = formula.type == Conn::CONJ;
+	if (negativeDefinedContext()) {
+		asConjunction = not asConjunction;
 	}
-	return isNegative()?-tseitin:tseitin;
+	tseitin = translator()->translate(formula.literals, asConjunction, type);
+	return isNegative() ? -tseitin : tseitin;
 }
 
-Lit ClauseGrounder::getReification(litlist& clause) const {
-	if(clause.empty()) {
+Lit ClauseGrounder::getReification(const ConjOrDisj& formula) const {
+	if (formula.literals.empty()) {
 		return getEmtyFormulaValue();
 	}
 
-	if(clause.size() == 1) {
-		return clause[0];
+	if (formula.literals.size() == 1) {
+		return formula.literals[0];
 	}
 
-	return createTseitin(clause);
+	return createTseitin(formula);
 }
 
-// FIXME unittests
-// FIXME add printing code again
 Lit ClauseGrounder::run() const {
-	litlist clause;
-	bool negateclause = isNegative() && not negativeDefinedContext();
-	negateclause &= isPositive() && negativeDefinedContext();
-	run(clause, negateclause);
-	return getReification(clause);
+	ConjOrDisj formula;
+	bool negateformula = isNegative() && not negativeDefinedContext();
+	negateformula &= isPositive() && negativeDefinedContext();
+	run(formula, negateformula);
+	return getReification(formula);
 }
 
-void ClauseGrounder::run(litlist& clause) const {
-	run(clause, isNegative());
+void ClauseGrounder::run(ConjOrDisj& formula) const {
+	run(formula, isNegative());
 }
 
-// NOTE: Optimized to avoid looping over the clause after construction
-void BoolGrounder::run(litlist& clause, bool negate) const {
-	if(verbosity() > 2) printorig();
+// NOTE: Optimized to avoid looping over the formula after construction
+void BoolGrounder::run(ConjOrDisj& formula, bool negate) const {
+	if (verbosity() > 2) printorig();
 
-	for(auto g=_subgrounders.cbegin(); g<_subgrounders.cend(); g++){
+	formula.type = conn_;
+
+	for (auto g = _subgrounders.cbegin(); g < _subgrounders.cend(); g++) {
 		Lit lit = (*g)->run();
-		if(makesFormulaFalse(lit, negate)){
-			clause = litlist{negate?-_false:_false};
-			break;
-		}else if(makesFormulaTrue(lit, negate)){
-			clause = litlist{negate?-_true:_true};
-			break;
-		}else if(not isRedundantInFormula(lit, negate)){
-			// FIXME true and false occur here apparently, look what I missed?
-			clause.push_back(negate?-lit:lit);
+		if (makesFormulaFalse(lit, negate)) {
+			formula.literals = litlist { negate ? -_false : _false };
+			return;
+		} else if (makesFormulaTrue(lit, negate)) {
+			formula.literals = litlist { negate ? -_true : _true };
+			return;
+		} else if (not isRedundantInFormula(lit, negate)) {
+			formula.literals.push_back(negate ? -lit : lit);
 		}
 	}
 }
 
-// FIXME what are the "clause" semantics here? => apparently, these are unimportant, as the sentencegrounder currently magically "knows" what it will get back
-void QuantGrounder::run(litlist& clause, bool negated) const {
-	if(verbosity() > 2) printorig();
+void QuantGrounder::run(ConjOrDisj& formula, bool negated) const {
+	if (verbosity() > 2) printorig();
 
-	for(_generator->begin(); not _generator->isAtEnd(); _generator->operator ++()){
-		if(_checker->check()){
-			clause = litlist{context().gentype==GenType::CANMAKETRUE? _false: _true};
-			break;
+	formula.type = conn_;
+
+	for (_generator->begin(); not _generator->isAtEnd(); _generator->operator ++()) {
+		if (_checker->check()) {
+			formula.literals = litlist { context().gentype == GenType::CANMAKETRUE ? _false : _true };
+			return;
 		}
 
-		// FIXME als toplevel, moet hier een clause meegegeven worden, zodat er geen extra tseitins worden aangemaakt!!!
+		// TODO als toplevel, moet hier een formula meegegeven worden, zodat er geen extra tseitins worden aangemaakt!!!
 		Lit l = _subgrounder->run();
-		if(makesFormulaFalse(l, negated)) {
-			clause = litlist{negated?-_false:_false}; // FIXME should negateclause be checked as part of "makesformulafalse"?
-			break;
-		}else if(makesFormulaTrue(l, negated)){
-			clause = litlist{negated?-_true:_true};
-			break;
-		}else if(not isRedundantInFormula(l, negated)){
-			clause.push_back(negated? -l : l);
+		if (makesFormulaFalse(l, negated)) {
+			formula.literals = litlist { negated ? -_false : _false };
+			return;
+		} else if (makesFormulaTrue(l, negated)) {
+			formula.literals = litlist { negated ? -_true : _true };
+			return;
+		} else if (not isRedundantInFormula(l, negated)) {
+			formula.literals.push_back(negated ? -l : l);
 		}
 	}
 }
 
 Lit EquivGrounder::run() const {
-	litlist clause;
+	ConjOrDisj formula;
 
-	run(clause);
+	run(formula);
 
-	if(clause.size()>1){
-		return translator()->translate(clause,true,context()._tseitin);
-	}else{
-		assert(clause.size()>0);
-		return clause[0];
+	if (formula.literals.size() > 1) {
+		return translator()->translate(formula.literals, formula.type == Conn::CONJ, context()._tseitin);
+	} else {
+		assert(formula.literals.size()>0);
+		return formula.literals[0];
 	}
 }
 
-void EquivGrounder::run(litlist& clause) const {
-	if(verbosity() > 2) printorig();
+void EquivGrounder::run(ConjOrDisj& formula) const {
+	if (verbosity() > 2) printorig();
 
 	// Run subgrounders
 	Lit left = _leftgrounder->run();
 	Lit right = _rightgrounder->run();
 
-	if(left == right) {
-		clause.push_back(isPositive() ? _true : _false);
-	}else if(left == _true) {
-		if(right == _false) {
-			clause.push_back(isPositive() ? _false : _true);
+	if (left == right) {
+		formula.literals = litlist { isPositive() ? _true : _false };
+	} else if (left == _true) {
+		if (right == _false) {
+			formula.literals = litlist { isPositive() ? _false : _true };
 		} else {
-			clause.push_back(isPositive() ? right : -right);
+			formula.literals = litlist { isPositive() ? right : -right };
 		}
-	} else if(left == _false) {
-		if(right == _true) {
-			clause.push_back(isPositive() ? _false : _true);
+	} else if (left == _false) {
+		if (right == _true) {
+			formula.literals = litlist { isPositive() ? _false : _true };
 		} else {
-			clause.push_back(isPositive() ? -right : right);
+			formula.literals = litlist { isPositive() ? -right : right };
 		}
-	} else if(right == _true) {  // left is not true or false
-		clause.push_back(isPositive() ? left : -left);
-	} else if(right == _false) {
-		clause.push_back(isPositive() ? -left : left);
+	} else if (right == _true) { // left is not true or false
+		formula.literals = litlist { isPositive() ? left : -left };
+	} else if (right == _false) {
+		formula.literals = litlist { isPositive() ? -left : left };
 	} else {
-		litlist cl1 = {left, isPositive()?-right:right};
-		litlist cl2 = {-left, isPositive()?right:-right};
+		// Two ways of encoding A <=> B  => 1: (A and B) or (~A and ~B)
+		//									2: (A or ~B) and (~A or B) => already CNF => much better!
+		litlist aornotb = { left, isPositive() ? -right : right };
+		litlist notaorb = { -left, isPositive() ? right : -right };
 		TsType tp = context()._tseitin;
-		Lit ts1 = translator()->translate(cl1,false,tp);
-		Lit ts2 = translator()->translate(cl2,false,tp);
-		clause = litlist{ts1, ts2};
-		// FIXME the semantics of the "clause" should be determined by the grounder itself!
-		// reason => here for instance, we might return (left and right) or (not left and not right)
-		// OR											(left or right) and (not left or not right)
-		// So the semantics are INCORRECTLY determined by the parent
-
-/*		litlist cl3 = {ts1, ts2};
-		Lit head = translator()->translate(cl3,true,tp);
-		clause.push_back(head);*/
-		// FIXME, we should not introduce the third tseitin, if the semantics of the returned datastructure are a conjunction instead of a clause
+		Lit ts1 = translator()->translate(aornotb, false, tp);
+		Lit ts2 = translator()->translate(notaorb, false, tp);
+		formula.literals = litlist { ts1, ts2 };
+		formula.type = Conn::CONJ;
 	}
 }

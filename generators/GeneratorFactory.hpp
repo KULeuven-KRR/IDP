@@ -9,6 +9,7 @@
 
 #include <vector>
 #include <structure.hpp>
+#include "generators/InstGenerator.hpp"
 
 class PredTable;
 class PredInter;
@@ -17,8 +18,6 @@ class DomainElement;
 class InstanceChecker;
 class GeneratorNode;
 class Universe;
-
-enum class Pattern { INPUT, OUTPUT};
 
 class GeneratorFactory : public StructureVisitor {
 private:

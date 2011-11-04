@@ -49,10 +49,10 @@ namespace Tests{
 		"atom.idp", "doubleneg.idp", "negatom.idp", "arbitrary.idp",
 		"func.idp",
 		"defonerule.idp", "defmultihead.idp", "defunwellf.idp", "defunfset.idp", "multidef.idp",
-		"eq.idp", //"neq.idp", "leq.idp", "geq.idp", "lower.idp", "greater.idp",
-		//"card.idp", "sum.idp", "min.idp", "max.idp", "prod.idp",
-		// FIXME those tests go in infinite loop, quite irritating :)
-		// FIXME on parsing error of one of the files, a lot of later ones will also fail!
+		"eq.idp", "neq.idp", "leq.idp", "geq.idp", "lower.idp", "greater.idp",
+		"card.idp", "sum.idp", "min.idp", "max.idp", "prod.idp",
+		// TODO prevent infinite running bugs
+		// TODO on parsing error of one of the files, a lot of later ones will also fail!
 	};
 
 	INSTANTIATE_TEST_CASE_P(ModelExpansion,

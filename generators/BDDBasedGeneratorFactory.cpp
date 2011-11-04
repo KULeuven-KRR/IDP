@@ -12,7 +12,7 @@
 #include "generators/SortInstGenerator.hpp"
 #include "generators/LookupGenerator.hpp"
 #include "generators/EnumLookupGenerator.hpp"
-#include "generators/EmptyGenerator.hpp"
+#include "generators/BasicGenerators.hpp"
 #include "generators/GeneratorFactory.hpp"
 #include "generators/FalseQuantKernelGenerator.hpp"
 #include "generators/TrueQuantKernelGenerator.hpp"

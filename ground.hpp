@@ -579,6 +579,7 @@ struct GroundingContext {
 	std::set<PFSymbol*> _defined; // Indicates whether the visited rule is recursive.
 };
 
+
 /***********************
  Grounder Factory
  ***********************/

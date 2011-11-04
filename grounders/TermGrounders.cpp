@@ -204,11 +204,12 @@ GroundTerm AggTermGrounder::run() const {
 //TODO Should this grounder return a VarId in some cases?
 	int setnr = _setgrounder->run();
 	const TsSet& tsset = _translator->groundset(setnr);
-	assert(tsset.empty());
+	assert(not tsset.empty());
 	double value = applyAgg(_type,tsset.trueweights());
 	const DomainElement* result = DomainElementFactory::instance()->create(value);
 	if(_verbosity > 2) {
 		clog << "Result = " << *result << "\n";
 	}
+	// FIXME if grounding aggregates, with an upper and lower bound, should not return a domelem from the subgrounder, but a vardomain or something?
 	return GroundTerm(result);
 }

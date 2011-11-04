@@ -105,9 +105,9 @@ grounder_SOURCES = \
 		PropagatorFactory.hpp PropagatorFactory.cpp\
 		generators/ArithmeticOperatorsGenerator.hpp\
 		generators/ComparisonGenerator.hpp\
-		generators/EmptyGenerator.hpp\
+		generators/BasicGenerators.hpp\
 		generators/EnumLookupGenerator.hpp\
-		generators/FalseQuantGenerator.hpp\
+		generators/FalseQuantKernelGenerator.hpp\
 		generators/InstGenerator.hpp\
 		generators/InverseAbsValueGenerator.hpp\
 		generators/InverseUnaFunctionGenerator.hpp\
@@ -122,7 +122,8 @@ grounder_SOURCES = \
 		generators/GeneratorNodes.hpp\
 		generators/TrueQuantKernelGenerator.hpp\
 		generators/GeneratorFactory.cpp\
-		generators/BDDBasedGeneratorFactory.cpp
+		generators/BDDBasedGeneratorFactory.cpp\
+		OptionsStack.hpp OptionsStack.cpp
 		
 gidl_SOURCES = main.cpp $(grounder_SOURCES)
 
