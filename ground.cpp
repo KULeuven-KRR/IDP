@@ -633,27 +633,27 @@ bool SentenceGrounder::run() const {
 	if (_verbosity > 1) {
 		clog << "Grounding sentence " << "\n";
 	}
-	vector<int> cl;
-	_subgrounder->run(cl);
-	if (cl.empty()) {
-		return (_conj ? true : false);
-	} else if (cl.size() == 1) {
-		if (cl[0] == _false) {
+	ConjOrDisj formula;
+	_subgrounder->run(formula);
+	if (formula.literals.empty()) {
+		return (formula.type==Conn::CONJ ? true : false);
+	} else if (formula.literals.size() == 1) {
+		if (formula.literals[0] == _false) {
 			_grounding->addEmptyClause();
 			return false;
-		} else if (cl[0] != _true) {
-			_grounding->add(cl);
+		} else if (formula.literals[0] != _true) {
+			_grounding->add(formula.literals);
 			return true;
 		} else {
 			return true;
 		}
 	} else {
-		if (_conj) {
-			for (size_t n = 0; n < cl.size(); ++n) {
-				_grounding->addUnitClause(cl[n]);
+		if (formula.type==Conn::CONJ) {
+			for (size_t n = 0; n < formula.literals.size(); ++n) {
+				_grounding->addUnitClause(formula.literals[n]);
 			}
 		} else {
-			_grounding->add(cl);
+			_grounding->add(formula.literals);
 		}
 		return true;
 	}
@@ -1089,7 +1089,7 @@ void GrounderFactory::visit(const PredForm* pf) {
 				_context);
 		_formgrounder->setOrig(newpf, varmapping(), _verbosity);
 		if (_context._component == CompContext::SENTENCE) { // TODO Refactor outside?
-			_toplevelgrounder = new SentenceGrounder(_grounding, _formgrounder, false, _verbosity);
+			_toplevelgrounder = new SentenceGrounder(_grounding, _formgrounder, _verbosity);
 		}
 		return;
 	}
@@ -1147,7 +1147,7 @@ void GrounderFactory::visit(const PredForm* pf) {
 
 	_formgrounder->setOrig(newpf, varmapping(), _verbosity);
 	if (_context._component == CompContext::SENTENCE) {
-		_toplevelgrounder = new SentenceGrounder(_grounding, _formgrounder, false, _verbosity); // FIXME false? is this whether the grounder will return a conj clause?
+		_toplevelgrounder = new SentenceGrounder(_grounding, _formgrounder, _verbosity);
 	}
 	newpf->recursiveDelete();
 }
@@ -1207,7 +1207,7 @@ void GrounderFactory::visit(const BoolForm* bf) {
 		RestoreContext();
 		_formgrounder->setOrig(bf, _varmapping, _verbosity);
 		if (_context._component == CompContext::SENTENCE) {
-			_toplevelgrounder = new SentenceGrounder(_grounding, _formgrounder, false, _verbosity);
+			_toplevelgrounder = new SentenceGrounder(_grounding, _formgrounder, _verbosity);
 		}
 	}
 }
@@ -1293,10 +1293,7 @@ void GrounderFactory::visit(const QuantForm* qf) {
 	_formgrounder->setOrig(qf, _varmapping, _verbosity);
 
 	if (_context._component == CompContext::SENTENCE) {
-		_toplevelgrounder = new SentenceGrounder(_grounding, _formgrounder, qf->isUnivWithSign(), _verbosity);
-		// FIXME should we take sign into account here
-		// FIXME conj should be returned rather than passed on
-		// FIXME correct in other grounders
+		_toplevelgrounder = new SentenceGrounder(_grounding, _formgrounder, _verbosity);
 	}
 	//}
 
@@ -1393,7 +1390,7 @@ void GrounderFactory::visit(const EquivForm* ef) {
 	_formgrounder = new EquivGrounder(_grounding->translator(), leftg, rightg, ef->sign(), _context);
 	RestoreContext();
 	if (_context._component == CompContext::SENTENCE) {
-		_toplevelgrounder = new SentenceGrounder(_grounding, _formgrounder, true, _verbosity);
+		_toplevelgrounder = new SentenceGrounder(_grounding, _formgrounder, _verbosity);
 	}
 }
 
@@ -1446,7 +1443,7 @@ void GrounderFactory::visit(const AggForm* af) {
 		_formgrounder = new AggGrounder(_grounding->translator(), _context, newaf->right()->function(), setgr, boundgr, newaf->comp(), newaf->sign());
 		RestoreContext();
 		if (_context._component == CompContext::SENTENCE) {
-			_toplevelgrounder = new SentenceGrounder(_grounding, _formgrounder, true, _verbosity);
+			_toplevelgrounder = new SentenceGrounder(_grounding, _formgrounder, _verbosity);
 		}
 	}
 	transaf->recursiveDelete();

@@ -612,11 +612,10 @@ class FormulaGrounder;
 
 class SentenceGrounder: public TopLevelGrounder {
 private:
-	bool _conj;
 	FormulaGrounder* _subgrounder;
 public:
-	SentenceGrounder(AbstractGroundTheory* gt, FormulaGrounder* sub, bool conj, int verb) :
-			TopLevelGrounder(gt, verb), _conj(conj), _subgrounder(sub) {
+	SentenceGrounder(AbstractGroundTheory* gt, FormulaGrounder* sub, int verb) :
+			TopLevelGrounder(gt, verb), _subgrounder(sub) {
 	}
 	bool run() const;
 };

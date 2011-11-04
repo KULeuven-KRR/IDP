@@ -13,6 +13,7 @@
 #include "monitors/tracemonitor.hpp"
 #include "commands/propagate.hpp"
 #include "symmetry.hpp"
+#include "OptionsStack.hpp"
 
 #include "groundtheories/AbstractGroundTheory.hpp"
 #include "groundtheories/SolverPolicy.hpp"
@@ -54,6 +55,8 @@ public:
 	}
 
 	std::vector<AbstractStructure*> doModelExpansion(AbstractTheory* theory, AbstractStructure* structure, Options* options) const {
+		Option::pushOptions(options);
+
 		TraceMonitor* monitor = tracemonitor();
 
 		// Calculate known definitions

@@ -122,7 +122,8 @@ grounder_SOURCES = \
 		generators/GeneratorNodes.hpp\
 		generators/TrueQuantKernelGenerator.hpp\
 		generators/GeneratorFactory.cpp\
-		generators/BDDBasedGeneratorFactory.cpp
+		generators/BDDBasedGeneratorFactory.cpp\
+		OptionsStack.hpp OptionsStack.cpp
 		
 gidl_SOURCES = main.cpp $(grounder_SOURCES)
 
