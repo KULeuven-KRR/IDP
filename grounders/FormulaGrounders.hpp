@@ -55,7 +55,7 @@ protected:
 	std::vector<SortTable*>			_tables;
 	SIGN							_sign;
 	GenType							gentype;
-	std::vector<const DomElemContainer*>	_checkargs;
+	std::vector<const DomElemContainer*>	_checkargs; // The variables representing the subterms of the atom. These are used in the generators and checkers
 	PredInter*							_inter;
 public:
 	AtomGrounder(

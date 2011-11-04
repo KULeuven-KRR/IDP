@@ -1038,6 +1038,7 @@ void GrounderFactory::visit(const PredForm* pf) {
 		clog << pf->toString() <<"\n";
 	}
 	// FIXME verkeerde type afgeleid voor vergelijkingen a=b (zou bvb range die beide omvat moeten zijn, is nu niet het geval).
+	// FIXME aggregaten moeten correct worden herschreven als ze niet tweewaardig zijn
 	Formula* transpf = FormulaUtils::moveThreeValuedTerms(pf->clone(), _structure, _context._funccontext, _cpsupport, _cpsymbols);
 	if (_verbosity > 3) {
 		clog << transpf->toString() <<"\n";

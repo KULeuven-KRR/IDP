@@ -105,9 +105,9 @@ grounder_SOURCES = \
 		PropagatorFactory.hpp PropagatorFactory.cpp\
 		generators/ArithmeticOperatorsGenerator.hpp\
 		generators/ComparisonGenerator.hpp\
-		generators/EmptyGenerator.hpp\
+		generators/BasicGenerators.hpp\
 		generators/EnumLookupGenerator.hpp\
-		generators/FalseQuantGenerator.hpp\
+		generators/FalseQuantKernelGenerator.hpp\
 		generators/InstGenerator.hpp\
 		generators/InverseAbsValueGenerator.hpp\
 		generators/InverseUnaFunctionGenerator.hpp\
