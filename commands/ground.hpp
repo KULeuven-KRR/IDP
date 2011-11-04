@@ -28,8 +28,8 @@ private:
 
 		// Grounding
 		GrounderFactory factory(structure,options,symstructure);
-		TopLevelGrounder* grounder = factory.create(theory);
-		grounder->run();
+		Grounder* grounder = factory.create(theory);
+		grounder->toplevelRun();
 		AbstractGroundTheory* grounding = grounder->grounding();
 		delete(grounder);
 		return grounding;
@@ -54,8 +54,8 @@ class GroundAndPrintInference: public Inference {
 private:
 	AbstractTheory* ground(AbstractTheory* theory, AbstractStructure* structure, Options* options, InteractivePrintMonitor* monitor) const {
 		GrounderFactory factory(structure,options);
-		TopLevelGrounder* grounder = factory.create(theory,monitor,options);
-		grounder->run();
+		Grounder* grounder = factory.create(theory,monitor,options);
+		grounder->toplevelRun();
 		AbstractGroundTheory* grounding = grounder->grounding();
 		delete(grounder);
 		monitor->flush();

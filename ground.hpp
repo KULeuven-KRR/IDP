@@ -577,6 +577,10 @@ struct GroundingContext {
 	CompContext _component; // Indicates the context of the visited formula
 	TsType _tseitin; // Indicates the type of tseitin definition that needs to be used.
 	std::set<PFSymbol*> _defined; // Indicates whether the visited rule is recursive.
+
+	bool _conjPathUntilNode, _conjunctivePathFromRoot;
+	// If true, there is a conjunctive path from the root of the sentence parsetree to this node.
+	// NOTE advantage: can optimize by creating less tseitins by using the knowledge that the formula can be added directly into cnf
 };
 
 
@@ -593,12 +597,12 @@ class TermGrounder;
 class SetGrounder;
 class HeadGrounder;
 class RuleGrounder;
+class FormulaGrounder;
 class SymbolicStructure;
+class Grounder;
 
 typedef std::vector<Variable*> varlist;
 typedef std::map<Variable*, const DomElemContainer*> var2dommap;
-
-class Grounder;
 
 class GrounderFactory: public TheoryVisitor {
 private:
@@ -642,6 +646,7 @@ private:
 	SetGrounder* _setgrounder;
 	HeadGrounder* _headgrounder;
 	RuleGrounder* _rulegrounder;
+	Grounder* _topgrounder;
 
 	AbstractStructure* structure() const {
 		return _structure;

@@ -77,8 +77,8 @@ public:
 		// Create solver and grounder
 		SATSolver* solver = createsolver(options);
 		GrounderFactory grounderfactory(structure,options,symstructure);
-		TopLevelGrounder* grounder = grounderfactory.create(theory,solver);
-		grounder->run();
+		Grounder* grounder = grounderfactory.create(theory,solver);
+		grounder->toplevelRun();
 		AbstractGroundTheory* grounding = grounder->grounding();
 		
 		// Execute symmetry breaking
@@ -144,9 +144,9 @@ private:
 		SATSolver* solver = createsolver(options);
 		GrounderFactory grounderfactory(structure,options);
 		Theory theory("",structure->vocabulary(),ParseInfo()); theory.add(definition);
-		TopLevelGrounder* grounder = grounderfactory.create(&theory,solver);
+		Grounder* grounder = grounderfactory.create(&theory,solver);
 
-		grounder->run();
+		grounder->toplevelRun();
 		AbstractGroundTheory* grounding = dynamic_cast<GroundTheory<SolverPolicy>*>(grounder->grounding());
 
 		// Run solver

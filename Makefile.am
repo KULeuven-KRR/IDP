@@ -56,7 +56,7 @@ grounder_SOURCES = \
 		monitors/luatracemonitor.hpp monitors/luainteractiveprintmonitor.hpp\
 		groundtheories/PrintGroundPolicy.hpp\
 		groundtheories/GroundPolicy.hpp\
-		groundtheories/SolverPolicy.hpp\
+		groundtheories/SolverPolicy.hpp groundtheories/SolverPolicy.cpp\
 		groundtheories/AbstractGroundTheory.hpp\
 		grounders/LazyQuantGrounder.hpp grounders/LazyQuantGrounder.cpp\
 		grounders/DefinitionGrounders.hpp grounders/DefinitionGrounders.cpp\
@@ -64,6 +64,7 @@ grounder_SOURCES = \
 		grounders/SetGrounders.hpp grounders/SetGrounders.cpp\
 		grounders/TermGrounders.hpp grounders/TermGrounders.cpp\
 		grounders/GroundUtils.hpp\
+		grounders/Grounder.hpp grounders/Grounder.cpp\
 		rungidl.hpp rungidl.cpp\
 		commands/allcommands.hpp\
 		commands/optimization.hpp\

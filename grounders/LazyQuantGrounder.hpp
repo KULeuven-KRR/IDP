@@ -9,6 +9,7 @@
 
 #include "ground.hpp"
 #include "grounders/FormulaGrounders.hpp"
+#include "groundtheories/SolverPolicy.hpp"
 
 #include <map>
 
@@ -29,20 +30,12 @@ private:
 #warning currently only non-defined!
 	LazyQuantGrounder(const std::set<Variable*>& freevars,
 						SolverTheory* groundtheory,
-						GroundTranslator* gt,
 						FormulaGrounder* sub,
 						SIGN sign,
 						QUANT q,
 						InstGenerator* gen,
 						InstChecker* checker,
-						const GroundingContext& ct):
-			QuantGrounder(gt,sub,sign, q, gen, checker,ct),
-			id_(maxid++),
-			negatedclause_(false),
-			groundtheory_(groundtheory), // FIXME is there a reason why this is not part of every grounder, but translator always is?
-			grounding(false),
-			freevars(freevars){
-	}
+						const GroundingContext& ct);
 
 	// TODO for some reason, the callback framework does not compile when using the const method groundmore directly.
 	void requestGroundMore(ResidualAndFreeInst* instance);

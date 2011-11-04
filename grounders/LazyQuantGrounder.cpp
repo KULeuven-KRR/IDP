@@ -16,6 +16,22 @@ using namespace std;
 
 unsigned int LazyQuantGrounder::maxid = 1;
 
+LazyQuantGrounder::LazyQuantGrounder(const std::set<Variable*>& freevars,
+					SolverTheory* groundtheory,
+					FormulaGrounder* sub,
+					SIGN sign,
+					QUANT q,
+					InstGenerator* gen,
+					InstChecker* checker,
+					const GroundingContext& ct):
+		QuantGrounder(groundtheory,sub,sign, q, gen, checker,ct),
+		id_(maxid++),
+		negatedclause_(false),
+		groundtheory_(groundtheory),
+		grounding(false),
+		freevars(freevars){
+}
+
 void LazyQuantGrounder::requestGroundMore(ResidualAndFreeInst * instance) {
 	notifyTheoryOccurence(instance);
 }
@@ -36,16 +52,11 @@ void LazyQuantGrounder::groundMore() const{
 
 		vector<const DomainElement*> originstantiation;
 		overwriteVars(originstantiation, instance->freevarinst);
-		Lit groundedlit = _subgrounder->run();
+		ConjOrDisj formula;
+		runSubGrounder(_subgrounder, context()._conjunctivePathFromRoot, formula, false); // TODO negation?
 		restoreOrigVars(originstantiation, instance->freevarinst);
 
-		if(makesFormulaFalse(groundedlit, negatedclause_)) { // FIXME same issue of order of negatedclause
-			groundedlit = negatedclause_?-_false:_false;
-		} else if(makesFormulaTrue(groundedlit, negatedclause_)) {
-			groundedlit = negatedclause_?-_true:_true;
-		}else if(not isRedundantInFormula(groundedlit, negatedclause_)){
-			groundedlit = negatedclause_ ? -groundedlit : groundedlit;
-		}
+		Lit groundedlit = getReification(formula);
 
 		GroundClause clause;
 		clause.push_back(groundedlit);
