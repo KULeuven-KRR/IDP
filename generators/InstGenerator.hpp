@@ -13,6 +13,7 @@ class InstChecker{
 public:
 	// FIXME Checker should only be created if there are no output variables
 	virtual bool check() = 0;
+	virtual InstChecker* clone() = 0;
 };
 
 class InstGenerator: public InstChecker {
@@ -57,6 +58,8 @@ public:
 		assert(not isAtEnd());
 		next();
 	}
+
+	virtual InstGenerator* clone() = 0;
 };
 
 #endif /* INSTGENERATOR_HPP_ */

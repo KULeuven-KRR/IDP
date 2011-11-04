@@ -31,6 +31,10 @@ public:
 		_in1(in1), _in2(in2), _out(out), _outdom(dom), _requestedType(requestedType), alreadyrun(false) {
 	}
 
+	ArithOpGenerator* clone(){
+		return new ArithOpGenerator(*this);
+	}
+
 	void reset(){
 		alreadyrun = false;
 	}

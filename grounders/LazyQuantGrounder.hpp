@@ -19,15 +19,17 @@ class LazyQuantGrounder : public QuantGrounder {
 private:
 	static unsigned int maxid;
 	unsigned int id_;
-	mutable bool negatedclause_;
+
 	SolverTheory* groundtheory_;
-	mutable std::queue<ResidualAndFreeInst *> queuedtseitinstoground;
-	mutable bool grounding;
-	const std::set<Variable*> freevars;
+
+	mutable bool _negatedformula;
+
+	mutable bool currentlyGrounding; // If true, groundMore is currently already on the stack, so do not call it again!
+	mutable std::queue<ResidualAndFreeInst *> queuedtseitinstoground; // Stack of what we still have to ground
+
+	const std::set<Variable*> freevars; // The freevariables according to which we have to ground
 
 	public:
-#warning only create in cases where it reduces to an existential quantifier!!!!
-#warning currently only non-defined!
 	LazyQuantGrounder(const std::set<Variable*>& freevars,
 						SolverTheory* groundtheory,
 						FormulaGrounder* sub,
@@ -46,7 +48,7 @@ private:
 	void notifyTheoryOccurence(ResidualAndFreeInst* instance) const;
 
 protected:
-	virtual void	run(litlist&, bool negatedclause = true)	const;
+	virtual void run(ConjOrDisj& literals, bool negatedformula) const;
 };
 
 #endif /* LAZYQUANTGROUNDER_HPP_ */

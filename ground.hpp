@@ -205,12 +205,13 @@ typedef std::pair<const DomElemContainer*, const DomainElement*> dominst;
 typedef std::vector<dominst> dominstlist;
 
 struct ResidualAndFreeInst {
+	InstGenerator* generator;
 	Lit residual;
 	dominstlist freevarinst;
 
-	bool operator==(const ResidualAndFreeInst& rhs) const {
+/*	bool operator==(const ResidualAndFreeInst& rhs) const {
 		return rhs.residual == residual && freevarinst == rhs.freevarinst;
-	}
+	}*/
 };
 
 class LazyTsBody: public TsBody {
