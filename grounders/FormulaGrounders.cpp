@@ -94,6 +94,10 @@ Lit AtomGrounder::run() const {
 	}
 
 	// Run instance checkers
+	// NOTE: set all the variables representing the subterms to their current value (these are used in the checkers)
+	for(size_t n = 0; n < args.size(); ++n) {
+		*(_checkargs[n]) = args[n];
+	}
 	if (not _pchecker->check()) { // Literal is irrelevant in its occurrences
 		if (verbosity() > 2) {
 			clog << "Possible checker failed\n";
