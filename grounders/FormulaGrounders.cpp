@@ -65,6 +65,8 @@ Lit AtomGrounder::run() const {
 	bool alldomelts = true;
 	vector<GroundTerm> groundsubterms(_subtermgrounders.size());
 	ElementTuple args(_subtermgrounders.size());
+
+	// FIXME if grounding aggregates, with an upper and lower bound, should not return a domelem from the subgrounder, but a vardomain or something?
 	for(unsigned int n = 0; n < _subtermgrounders.size(); ++n) {
 		groundsubterms[n] = _subtermgrounders[n]->run();
 		if(groundsubterms[n].isVariable) {
@@ -105,9 +107,6 @@ Lit AtomGrounder::run() const {
 	}
 
 	// Run instance checkers
-	for(size_t n = 0; n < args.size(); ++n) {
-		*(_checkargs[n]) = args[n];
-	}
 	if(not _pchecker->check()){ // Literal is irrelevant in its occurrences
 		if(verbosity() > 2) {
 			clog << "Possible checker failed\n";

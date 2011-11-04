@@ -1,11 +1,5 @@
-/************************************
-	EmptyGenerator.hpp
-	this file belongs to GidL 2.0
-	(c) K.U.Leuven
-************************************/
-
-#ifndef EMPTYGENERATOR_HPP_
-#define EMPTYGENERATOR_HPP_
+#ifndef BASICGENERATOR_HPP_
+#define BASICGENERATOR_HPP_
 
 #include "generators/InstGenerator.hpp"
 
@@ -33,4 +27,4 @@ public:
 	virtual void reset() { first = true;}
 };
 
-#endif /* EMPTYGENERATOR_HPP_ */
+#endif /* BASICGENERATOR_HPP_ */

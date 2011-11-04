@@ -1895,10 +1895,7 @@ namespace LuaConnection {
 	}
 
 	const DomainElement* execute(const std::string& chunk) {
-		stringstream ss;
-		ss <<"return " <<chunk;
-		std::cerr << ss.str();
-		int err = luaL_dostring(_state,ss.str().c_str());
+		int err = luaL_dostring(_state,chunk.c_str());
 		if(err) {
 			Error::error();
 			cerr << string(lua_tostring(_state,-1)) << "\n";

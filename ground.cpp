@@ -35,7 +35,7 @@
 #include "grounders/DefinitionGrounders.hpp"
 #include "grounders/LazyQuantGrounder.hpp"
 
-#include "generators/EmptyGenerator.hpp"
+#include "generators/BasicGenerators.hpp"
 #include "generators/TableGenerator.hpp"
 
 #include "fobdd.hpp"
@@ -1034,10 +1034,23 @@ void GrounderFactory::visit(const PredForm* pf) {
 	// Move all functions and aggregates that are three-valued according
 	// to _structure outside the atom. To avoid changing the original atom,
 	// we first clone it.
+	if (_verbosity > 3) {
+		clog << pf->toString() <<"\n";
+	}
+	// FIXME verkeerde type afgeleid voor vergelijkingen a=b (zou bvb range die beide omvat moeten zijn, is nu niet het geval).
 	Formula* transpf = FormulaUtils::moveThreeValuedTerms(pf->clone(), _structure, _context._funccontext, _cpsupport, _cpsymbols);
+	if (_verbosity > 3) {
+		clog << transpf->toString() <<"\n";
+	}
 	transpf = FormulaUtils::removeEqChains(transpf);
+	if (_verbosity > 3) {
+		clog << transpf->toString() <<"\n";
+	}
 	if (not _cpsupport) { // TODO Check not present in quantgrounder
 		transpf = FormulaUtils::graphFunctions(transpf);
+		if (_verbosity > 3) {
+			clog << transpf->toString() <<"\n";
+		}
 	}
 
 	if (not sametypeid<PredForm>(*transpf)) { // The rewriting changed the atom

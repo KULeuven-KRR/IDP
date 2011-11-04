@@ -26,7 +26,7 @@
 #include "generators/TableGenerator.hpp"
 #include "generators/ComparisonGenerator.hpp"
 #include "generators/SimpleFuncGenerator.hpp"
-#include "generators/EmptyGenerator.hpp"
+#include "generators/BasicGenerators.hpp"
 #include "generators/ArithmeticOperatorsGenerator.hpp"
 #include "generators/InverseUnaFunctionGenerator.hpp"
 #include "generators/InvertNumericGenerator.hpp"
@@ -66,6 +66,11 @@ InstGenerator* GeneratorFactory::create(const PredTable* pt, vector<Pattern> pat
 
 InstGenerator* GeneratorFactory::internalCreate(const PredTable* pt, vector<Pattern> pattern, const vector<const DomElemContainer*>& vars,
 		const Universe& universe) {
+
+	assert(pt->arity()==pattern.size());
+	assert(pattern.size()==vars.size());
+	assert(pattern.size()==universe.tables().size());
+
 	_table = pt;
 	_pattern = pattern;
 	_vars = vars;

@@ -43,6 +43,8 @@ namespace Tests{
 			auto tuple = pair<int, int>(leftvar->get()->value()._int, rightvar->get()->value()._int);
 			genvalues.insert(tuple);
 			EXPECT_EQ(tuple.first, tuple.second);
+			EXPECT_LT(tuple.first, 11);
+			EXPECT_GT(tuple.first, -1);
 		}
 		EXPECT_EQ(genvalues.size(), 11);
 	}
@@ -187,14 +189,17 @@ namespace Tests{
 		for(gen->begin(); not gen->isAtEnd(); gen->operator ++()){
 			auto value = var2->get()->value()._int;
 			genvalues.insert(value);
-			EXPECT_TRUE(value==-1 || value==2);
+			EXPECT_FALSE(value==-1 || value==2);
 		}
+		EXPECT_EQ(genvalues.size(), 3);
+
+		genvalues.clear();
 		var1->operator =(DomainElementFactory::instance()->create(-2));
 		for(gen->begin(); not gen->isAtEnd(); gen->operator ++()){
 			auto value = var2->get()->value()._int;
 			genvalues.insert(value);
-			EXPECT_EQ(value, 0);
+			EXPECT_NE(value, 0);
 		}
-		EXPECT_EQ(genvalues.size(), 3);
+		EXPECT_EQ(genvalues.size(), 4);
 	}
 }
