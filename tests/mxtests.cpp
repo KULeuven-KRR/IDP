@@ -25,7 +25,7 @@ namespace Tests{
 
 	TEST_P(MXTest, DoesMX){
 		string testfile(string(TESTDIR)+"mxnbofmodelstest.idp");
-		auto result = run({string(TESTDIR)+GetParam(), testfile});
+		auto result = test({string(TESTDIR)+GetParam(), testfile});
 		if(result==Status::FAIL){
 			cerr <<"Tested file " <<string(TESTDIR)+GetParam() <<"\n";
 		}
@@ -34,7 +34,7 @@ namespace Tests{
 
 	TEST_P(LazyMXTest, DoesMX){
 		string testfile(string(TESTDIR)+"mxlazynbofmodelstest.idp");
-		auto result = run({string(TESTDIR)+GetParam(), testfile});
+		auto result = test({string(TESTDIR)+GetParam(), testfile});
 		if(result==Status::FAIL){
 			cerr <<"Tested file " <<string(TESTDIR)+GetParam() <<"\n";
 		}

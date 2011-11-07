@@ -15,8 +15,8 @@ enum class Status {SUCCESS, FAIL};
 
 std::ostream& operator<<(std::ostream& stream, Status status);
 
-void run(const std::string& inputfileurl);
-Status run(const std::vector<std::string>& inputfileurls);
 int run(int argc, char* argv[]);
+
+Status test(const std::vector<std::string>& inputfileurls);
 
 #endif /* RUNGIDL_HPP_ */

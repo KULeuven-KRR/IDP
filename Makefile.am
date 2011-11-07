@@ -135,6 +135,9 @@ AM_CXXFLAGS+=-I $(top_srcdir)/pcsolver/src/
 LIBSRCDIR = $(srcdir)/lib
 LIBBLDDIR = $(builddir)/lib
 
+# THREADING SUPPORT
+AM_LDFLAGS += -lpthread
+
 # CALLBACK FRAMEWORK
 AM_CXXFLAGS += -I $(LIBSRCDIR)/pluscallback1.7/
 
