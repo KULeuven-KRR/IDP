@@ -41,6 +41,11 @@ public:
 		_predchecker = new LookupGenerator(table, vars, table->universe());
 	}
 
+	// FIXME reimplemnt clone
+	InverseInstGenerator* clone() const{
+		return new InverseInstGenerator(*this);
+	}
+
 	void reset(){
 		_reset = true;
 	}

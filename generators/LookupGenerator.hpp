@@ -26,6 +26,11 @@ public:
 		assert(t->arity()==vars.size());
 	}
 
+	LookupGenerator* clone() const{
+		return new LookupGenerator(*this);
+	}
+
+
 	void reset(){
 		_reset = true;
 	}

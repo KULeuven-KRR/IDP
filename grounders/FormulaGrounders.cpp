@@ -521,41 +521,29 @@ Lit ClauseGrounder::getReification(const ConjOrDisj& formula) const {
 	return createTseitin(formula);
 }
 
-/*Lit ClauseGrounder::run() const {
-	ConjOrDisj formula;
-	bool negateformula = isNegative() && not negativeDefinedContext();
-	negateformula &= isPositive() && negativeDefinedContext();
-	run(formula, negateformula);
-	if(context()._conjunctivePathFromRoot){
-		return _true;
-	}else{
-		return getReification(formula);
-	}
-}*/
-
 void ClauseGrounder::run(ConjOrDisj& formula) const {
 	run(formula, isNegative());
 }
 
-void ClauseGrounder::runSubGrounder(Grounder* subgrounder, bool conjFromRoot, ConjOrDisj& formula, bool negated) const{
+FormStat ClauseGrounder::runSubGrounder(Grounder* subgrounder, bool conjFromRoot, ConjOrDisj& formula, bool negated) const{
 	ConjOrDisj subformula;
 	subgrounder->run(subformula);
 
 	if(subformula.literals.size()==0){
 		formula = subformula;
-		return;
+		return FormStat::UNKNOWN;
 	}else if(subformula.literals.size()==1){
 		Lit l = subformula.literals[0];
 		if (makesFormulaFalse(l, negated)) {
 			formula.literals = litlist { negated ? -_false : _false };
-			return;
+			return FormStat::DECIDED;
 		} else if (makesFormulaTrue(l, negated)) {
 			formula.literals = litlist { negated ? -_true : _true };
-			return;
+			return FormStat::DECIDED;
 		} else if (not isRedundantInFormula(l, negated)) {
 			formula.literals.push_back(negated ? -l : l);
 		}
-		return;
+		return FormStat::UNKNOWN;
 	} // otherwise INVAR: subformula is not true nor false and does not contain true nor false literals
 
 	if(conjFromRoot && conjunctive()){
@@ -573,6 +561,7 @@ void ClauseGrounder::runSubGrounder(Grounder* subgrounder, bool conjFromRoot, Co
 			formula.literals.push_back(getReification(subformula));
 		}
 	}
+	return FormStat::UNKNOWN;
 }
 
 // NOTE: Optimized to avoid looping over the formula after construction
@@ -582,7 +571,9 @@ void BoolGrounder::run(ConjOrDisj& formula, bool negate) const {
 	formula.type = conn_;
 
 	for (auto g = _subgrounders.cbegin(); g < _subgrounders.cend(); g++) {
-		runSubGrounder(*g, context()._conjunctivePathFromRoot, formula, negate);
+		if(runSubGrounder(*g, context()._conjunctivePathFromRoot, formula, negate)==FormStat::DECIDED){
+			return;
+		}
 	}
 }
 
@@ -599,22 +590,11 @@ void QuantGrounder::run(ConjOrDisj& formula, bool negated) const {
 			return;
 		}
 
-		runSubGrounder(_subgrounder, context()._conjunctivePathFromRoot, formula, negated);
+		if(runSubGrounder(_subgrounder, context()._conjunctivePathFromRoot, formula, negated)==FormStat::DECIDED){
+			return;
+		}
 	}
 }
-
-/*Lit EquivGrounder::run() const {
-	ConjOrDisj formula;
-
-	run(formula);
-
-	if (formula.literals.size() > 1) {
-		return translator()->translate(formula.literals, formula.type == Conn::CONJ, context()._tseitin);
-	} else {
-		assert(formula.literals.size()>0);
-		return formula.literals[0];
-	}
-}*/
 
 void EquivGrounder::run(ConjOrDisj& formula, bool negated) const {
 	assert(not negated);

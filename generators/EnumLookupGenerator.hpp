@@ -27,6 +27,10 @@ public:
 			: _table(t), _invars(in), _outvars(out) {
 	}
 
+	EnumLookupGenerator* clone() const{
+		return new EnumLookupGenerator(*this);
+	}
+
 	void reset(){
 		std::vector<const DomainElement*> _currargs;
 		for(unsigned int n = 0; n < _invars.size(); ++n) {

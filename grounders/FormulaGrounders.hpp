@@ -148,9 +148,11 @@ public:
 	}
 };
 
+enum class FormStat { UNKNOWN, DECIDED};
+
 class ClauseGrounder: public FormulaGrounder {
 protected:
-	SIGN sign_;
+	SIGN sign_; // FIXME when can such a sign not be removed?
 	Conn conn_;
 
 	TsType getTseitinType() const;
@@ -183,7 +185,8 @@ protected:
 	}
 
 	virtual void run(ConjOrDisj& formula, bool negatedformula) const = 0;
-	void runSubGrounder(Grounder* subgrounder, bool conjFromRoot, ConjOrDisj& formula, bool negated) const;
+
+	FormStat runSubGrounder(Grounder* subgrounder, bool conjFromRoot, ConjOrDisj& formula, bool negated) const;
 };
 
 class BoolGrounder: public ClauseGrounder {

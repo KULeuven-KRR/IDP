@@ -46,6 +46,10 @@ public:
 		}
 	}
 
+	ComparisonGenerator* clone() const{
+		return new ComparisonGenerator(*this);
+	}
+
 	void reset() {
 		_reset = true;
 	}

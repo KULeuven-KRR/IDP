@@ -22,6 +22,11 @@ public:
 	FalseQuantKernelGenerator(InstGenerator* universegenerator, InstChecker* bddtruechecker)
 			: universeGenerator(universegenerator), quantKernelTrueChecker(bddtruechecker){ }
 
+	// FIXME reimplemnt clone
+	FalseQuantKernelGenerator* clone() const{
+		return new FalseQuantKernelGenerator(*this);
+	}
+
 	bool check() const{
 		return not quantKernelTrueChecker->check();
 	}

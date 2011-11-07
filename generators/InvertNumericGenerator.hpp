@@ -25,6 +25,10 @@ public:
 			_in(in), _out(out), _outdom(dom), _reset(true), _outputShouldBeInt(outputShouldBeInt) {
 	}
 
+	InvertNumericGenerator* clone() const{
+		return new InvertNumericGenerator(*this);
+	}
+
 	void reset(){
 		_reset = true;
 	}

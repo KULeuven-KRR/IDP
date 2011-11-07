@@ -64,6 +64,11 @@ public:
 		}
 	}
 
+	// FIXME reimplement (clone generator)
+	SimpleFuncGenerator* clone() const{
+		return new SimpleFuncGenerator(*this);
+	}
+
 	void reset(){
 		_reset = true;
 	}

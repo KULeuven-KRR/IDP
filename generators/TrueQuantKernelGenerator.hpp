@@ -20,9 +20,13 @@ class TrueQuantKernelGenerator: public InstGenerator {
 private:
 	InstGenerator* _quantgenerator;
 public:
-
 	TrueQuantKernelGenerator(InstGenerator* gen) :
 			_quantgenerator(gen) {
+	}
+
+	// FIXME reimplement (deep clone)
+	TrueQuantKernelGenerator* clone() const{
+		return new TrueQuantKernelGenerator(*this);
 	}
 
 	bool check() const{

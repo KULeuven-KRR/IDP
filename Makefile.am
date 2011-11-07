@@ -1,7 +1,7 @@
 SUBDIRS = lib pcsolver
 AM_CXXFLAGS = @AC_CXXFLAGS@ -Wall -Wextra\
 		-std=c++0x\
-		-I$(srcdir)/lib/loki-0.1.7/include\
+		-I$(srcdir)/lib/loki/include\
 		-I$(srcdir)/lib/lua/etc -I$(srcdir)/lib/lua/src\
 		-I$(builddir)/lib/lua/src  -I $(srcdir)/lib/\
 		-DDATADIR=\"$(datadir)\" -DRCDIR=\"$(localstatedir)\"\
@@ -125,6 +125,8 @@ grounder_SOURCES = \
 		generators/GeneratorFactory.cpp\
 		generators/BDDBasedGeneratorFactory.cpp\
 		OptionsStack.hpp OptionsStack.cpp
+		
+gidl_dist = $(srcdir)/lib/loki-0.1.7
 		
 gidl_SOURCES = main.cpp $(grounder_SOURCES)
 

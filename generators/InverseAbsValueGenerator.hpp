@@ -30,6 +30,10 @@ public:
 			_in(in), _out(out), _outdom(dom), _state(State::RESET), _outputShouldBeInt(outputShouldBeInt) {
 	}
 
+	InverseAbsValueGenerator* clone() const{
+		return new InverseAbsValueGenerator(*this);
+	}
+
 	void reset(){
 		_state = State::RESET;
 	}

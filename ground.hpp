@@ -224,8 +224,8 @@ public:
 	LazyTsBody(int id, LazyQuantGrounder const* const grounder, ResidualAndFreeInst* inst, TsType type) :
 			TsBody(type), id_(id), grounder_(grounder), inst(inst) {
 	}
-	bool operator==(const TsBody& rhs) const;
-	bool operator<(const TsBody& rhs) const;
+	//bool operator==(const TsBody& rhs) const;
+	//bool operator<(const TsBody& rhs) const;
 
 	unsigned int id() const {
 		return id_;

@@ -162,14 +162,14 @@ bool CPTsBody::operator<(const TsBody& body) const {
 	}
 	return false;
 }
-bool LazyTsBody::operator==(const TsBody& body) const {
+/*bool LazyTsBody::operator==(const TsBody& body) const {
 	if (not TsBody::operator==(body)) {
 		return false;
 	}
 	auto rhs = dynamic_cast<const LazyTsBody&>(body);
 	return id_ == rhs.id_ && grounder_ == rhs.grounder_ && (*inst) == (*rhs.inst);
-}
-bool LazyTsBody::operator<(const TsBody& body) const {
+}*/
+/*bool LazyTsBody::operator<(const TsBody& body) const {
 	if (TsBody::operator<(body)) {
 		return true;
 	} else if (TsBody::operator>(body)) {
@@ -190,7 +190,7 @@ bool LazyTsBody::operator<(const TsBody& body) const {
 		return true;
 	}
 	return false;
-}
+}*/
 
 bool CPTerm::operator==(const CPTerm& body) const {
 	return typeid(*this) == typeid(body);

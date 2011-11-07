@@ -14,6 +14,11 @@ public:
 			: _root(r), _reset(true) {
 	}
 
+	// FIXME reimplement (deep clone)
+	TreeInstGenerator* clone() const{
+		return new TreeInstGenerator(*this);
+	}
+
 	void reset() {
 		_reset = true;
 	}
