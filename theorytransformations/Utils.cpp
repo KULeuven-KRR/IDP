@@ -66,6 +66,10 @@ Formula* graphFunctions(Formula* f) {
 	return transform<GraphFunctions>(f);
 }
 
+Formula* graphAggregates(Formula* f) {
+	return transform<GraphAggregates>(f);
+}
+
 Formula* unnestPartialTerms(Formula* f, Context context, Vocabulary* voc) {
 	return transform<UnnestPartialTerms>(f, context, voc);
 }

@@ -4,13 +4,13 @@ vocabulary V{
 }
 
 theory T:V{
-	#{x: p(x)}=2.
+	#{x: p(x)}=48.
 }
 
 structure S:V{
-	x = {1..50}
+	x = {45..50}
 }
 
 procedure getExpectedNbOfModels(){
-	return 1
+	return 8
 }

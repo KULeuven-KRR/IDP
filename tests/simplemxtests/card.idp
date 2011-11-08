@@ -8,9 +8,9 @@ theory T:V{
 }
 
 structure S:V{
-	x = {1..50}
+	x = {1..10}
 }
 
 procedure getExpectedNbOfModels(){
-	return 1
+	return 90
 }

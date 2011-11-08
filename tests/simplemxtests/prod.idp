@@ -4,13 +4,13 @@ vocabulary V{
 }
 
 theory T:V{
-	#{x: p(x)}=2.
+	prod{x: p(x)}=10.
 }
 
 structure S:V{
-	x = {1..50}
+	x = {1..10}
 }
 
 procedure getExpectedNbOfModels(){
-	return 1
+	return 10
 }
