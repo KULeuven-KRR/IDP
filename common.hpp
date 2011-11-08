@@ -18,10 +18,10 @@
 #include "loki/static_check.h"
 #include <typeinfo>
 
-std::string getLibraryName();
-std::string getLuaLibraryFilename();
-std::string getIDPLibraryFilename();
-std::string getConfigFilename();
+std::string getTablenameForInternals();
+std::string getPathOfLuaInternals();
+std::string getPathOfIdpInternals();
+std::string getPathOfConfigFile();
 
 void notyetimplemented(const std::string&);
 

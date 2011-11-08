@@ -170,7 +170,7 @@ class FlatMult : public FOBDDVisitor {
 
 		void avoidempty() {
 			if(_result.empty()) {
-				_result.push_back(_manager->getDomainTerm(VocabularyUtils::natsort(),DomainElementFactory::instance()->create(1)));
+				_result.push_back(_manager->getDomainTerm(VocabularyUtils::natsort(),createDomElem(1)));
 			}
 		}
 		void visit(const FOBDDDomainTerm* dt) { 
@@ -210,7 +210,7 @@ class FlatAdd : public FOBDDVisitor {
 
 		void avoidempty() {
 			if(_result.empty()) {
-				_result.push_back(_manager->getDomainTerm(VocabularyUtils::natsort(),DomainElementFactory::instance()->create(0)));
+				_result.push_back(_manager->getDomainTerm(VocabularyUtils::natsort(),createDomElem(0)));
 			}
 		}
 		void visit(const FOBDDDomainTerm* dt) { 
@@ -439,7 +439,7 @@ FOBDD* FOBDDManager::addBDD(const FOBDDKernel* kernel,const FOBDD* truebranch,co
 }
 
 const FOBDDArgument* FOBDDManager::invert(const FOBDDArgument* arg) {
-	const DomainElement* minus_one = DomainElementFactory::instance()->create(-1);
+	const DomainElement* minus_one = createDomElem(-1);
 	const FOBDDArgument* minus_one_term = getDomainTerm(VocabularyUtils::intsort(),minus_one);
 	Function* times = Vocabulary::std()->func("*/2");
 	times = times->disambiguate(vector<Sort*>(3,SortUtils::resolve(VocabularyUtils::intsort(),arg->sort())),0);
@@ -476,8 +476,8 @@ const FOBDDKernel* FOBDDManager::getAtomKernel(PFSymbol* symbol,AtomKernelType a
 		const FOBDDArgument* rightarg = args[1];
 		if(VocabularyUtils::isNumeric(rightarg->sort())) {
 			assert(VocabularyUtils::isNumeric(leftarg->sort()));
-			if(typeid(*rightarg) != typeid(FOBDDDomainTerm) || dynamic_cast<const FOBDDDomainTerm*>(rightarg)->value() != DomainElementFactory::instance()->create(0)) {
-				const DomainElement* zero = DomainElementFactory::instance()->create(0);
+			if(typeid(*rightarg) != typeid(FOBDDDomainTerm) || dynamic_cast<const FOBDDDomainTerm*>(rightarg)->value() != createDomElem(0)) {
+				const DomainElement* zero = createDomElem(0);
 				const FOBDDDomainTerm* zero_term = getDomainTerm(VocabularyUtils::natsort(),zero);
 				const FOBDDArgument* minus_rightarg = invert(rightarg);
 				Function* plus = Vocabulary::std()->func("+/2");
@@ -1263,7 +1263,7 @@ class TermsToLeft : public FOBDDVisitor {
 
 			if(lhs && rhs) {
 				if(SortUtils::isSubsort(rhs->sort(),VocabularyUtils::floatsort())) {
-					const DomainElement* zero = DomainElementFactory::instance()->create(0);
+					const DomainElement* zero = createDomElem(0);
 					const FOBDDDomainTerm* zero_term = _manager->getDomainTerm(rhs->sort(),zero);
 					if(rhs != zero_term) {
 						Sort* minussort = SortUtils::resolve(lhs->sort(),rhs->sort());
@@ -1302,7 +1302,7 @@ class RemoveMinus : public FOBDDVisitor {
 				vector<const FOBDDArgument*> newargs;
 				newargs.push_back(functerm->args(0));
 				const FOBDDArgument* rhs = functerm->args(1);
-				const DomainElement* minusone = DomainElementFactory::instance()->create(-1);
+				const DomainElement* minusone = createDomElem(-1);
 				const FOBDDDomainTerm* minusone_term = _manager->getDomainTerm(rhs->sort(),minusone);
 				vector<const FOBDDArgument*> rhsargs; 
 				rhsargs.push_back(minusone_term);
@@ -1315,7 +1315,7 @@ class RemoveMinus : public FOBDDVisitor {
 				return newterm->acceptchange(this);
 			}
 			else if(functerm->func()->name() == "-/1") {
-				const DomainElement* minusone = DomainElementFactory::instance()->create(-1);
+				const DomainElement* minusone = createDomElem(-1);
 				const FOBDDDomainTerm* minusone_term = _manager->getDomainTerm(functerm->args(0)->sort(),minusone);
 				vector<const FOBDDArgument*> newargs; 
 				newargs.push_back(minusone_term);
@@ -1620,7 +1620,7 @@ class ConstTermExtractor : public FOBDDVisitor {
 	public:
 		ConstTermExtractor(FOBDDManager* m) : FOBDDVisitor(m) { }
 		const FOBDDDomainTerm* run(const FOBDDArgument* arg) {
-			const DomainElement* d = DomainElementFactory::instance()->create(1);
+			const DomainElement* d = createDomElem(1);
 			_result = _manager->getDomainTerm(arg->sort(),d);
 			arg->accept(this);
 			return _result;
@@ -1713,15 +1713,15 @@ class Neutralizer : public FOBDDVisitor {
 				if(ft->func()->name() == "+/2") {
 					if(typeid(*(ft->args(0))) == typeid(FOBDDDomainTerm)) {
 						const FOBDDDomainTerm* dt = dynamic_cast<const FOBDDDomainTerm*>(ft->args(0));
-						const DomainElement* zero = DomainElementFactory::instance()->create(0);
+						const DomainElement* zero = createDomElem(0);
 						if(zero == dt->value()) { return ft->args(1)->acceptchange(this); }
 					}
 				}
 				else if(ft->func()->name() == "*/2") {
 					if(typeid(*(ft->args(0))) == typeid(FOBDDDomainTerm)) {
 						const FOBDDDomainTerm* dt = dynamic_cast<const FOBDDDomainTerm*>(ft->args(0));
-						const DomainElement* zero = DomainElementFactory::instance()->create(0);
-						const DomainElement* one = DomainElementFactory::instance()->create(1);
+						const DomainElement* zero = createDomElem(0);
+						const DomainElement* one = createDomElem(1);
 						if(one == dt->value()) { return ft->args(1)->acceptchange(this); }
 						else if(zero == dt->value()) { return _manager->getDomainTerm(ft->sort(),zero); }
 					}
@@ -1853,7 +1853,7 @@ const FOBDDArgument* FOBDDManager::solve(const FOBDDKernel* kernel, const FOBDDA
 								double d = constant->value()->type() == DET_INT ? 
 									(double(1) / double(constant->value()->value()._int)) : 
 									(double(1) / constant->value()->value()._double);
-								timesargs[1] = getDomainTerm(VocabularyUtils::floatsort(),DomainElementFactory::instance()->create(d));
+								timesargs[1] = getDomainTerm(VocabularyUtils::floatsort(),createDomElem(d));
 								d = -d;
 								return getFuncTerm(times,timesargs);
 							}

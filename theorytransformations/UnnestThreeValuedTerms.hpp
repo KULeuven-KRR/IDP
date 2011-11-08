@@ -40,8 +40,7 @@ private:
 	const std::set<const PFSymbol*> _cpsymbols;
 
 public:
-	UnnestThreeValuedTerms(AbstractStructure* str, Context context, bool cpsupport,
-			const std::set<const PFSymbol*>& cpsymbols);
+	UnnestThreeValuedTerms(AbstractStructure* str, Context context, bool cpsupport, const std::set<const PFSymbol*>& cpsymbols);
 
 	Formula* traverse(PredForm* f);
 

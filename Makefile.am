@@ -5,7 +5,7 @@ AM_CXXFLAGS = @AC_CXXFLAGS@ -Wall -Wextra\
 		-I$(srcdir)/lib/lua/etc -I$(srcdir)/lib/lua/src\
 		-I$(builddir)/lib/lua/src  -I $(srcdir)/lib/\
 		-DDATADIR=\"$(datadir)\" -DRCDIR=\"$(localstatedir)\"\
-		-DINTERNALLIBARYNAME=\"idp_intern\" -DINTERNALLIBARYLUA=\"/std/idp_intern.lua\"\
+		-DINTERNALLIBARYLUA=\"/std/idp_intern.lua\"\
 		-DINTERNALLIBARYIDP=\"/std/idp_intern.idp\" -DCONFIGFILENAME=\"/idp/.idprc\"
 		
 if USEINTERACTIVE
@@ -146,7 +146,8 @@ grounder_SOURCES = \
 		theorytransformations/UnnestThreeValuedTerms.hpp theorytransformations/UnnestThreeValuedTerms.cpp\
 		TheoryVisitor.hpp TheoryVisitor.cpp\
 		TheoryMutatingVisitor.hpp TheoryMutatingVisitor.cpp\
-		theorytransformations/Utils.hpp theorytransformations/Utils.cpp
+		theorytransformations/Utils.hpp theorytransformations/Utils.cpp\
+		GlobalData.hpp GlobalData.cpp
 		
 gidl_dist = $(srcdir)/lib/loki-0.1.7
 		

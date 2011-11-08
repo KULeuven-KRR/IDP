@@ -205,7 +205,7 @@ Status test(const std::vector<std::string>& inputfileurls){
 	Status result = Status::FAIL;
 	if(Error::nr_of_errors() == 0) {
 		stringstream ss;
-		ss <<"return " <<getLibraryName() <<".main()";
+		ss <<"return " <<getTablenameForInternals() <<".main()";
 		auto value = executeProcedure(ss.str());
 		if(value!=NULL && value->type()==DomainElementType::DET_INT && value->value()._int == 1){
 			result = Status::SUCCESS;
@@ -217,6 +217,7 @@ Status test(const std::vector<std::string>& inputfileurls){
 	}
 
 	LuaConnection::closeLuaConnection();
+	GlobalData::close();
 
 	return result;
 }
@@ -231,7 +232,7 @@ int run(int argc, char* argv[]) {
 	if(cloptions._readfromstdin) parsestdin();
 	if(cloptions._exec == ""){
 		stringstream ss;
-		ss <<"return " <<getLibraryName() <<".main()";
+		ss <<"return " <<getTablenameForInternals() <<".main()";
 		cloptions._exec = ss.str();
 	}
 
@@ -248,6 +249,7 @@ int run(int argc, char* argv[]) {
 	}
 
 	LuaConnection::closeLuaConnection();
+	GlobalData::close();
 
 	return Error::nr_of_errors();
 }

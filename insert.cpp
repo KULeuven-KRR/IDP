@@ -22,6 +22,8 @@
 #include "internalargument.hpp"
 #include "luaconnection.hpp"
 
+#include "GlobalData.hpp"
+
 #include "theorytransformations/Utils.hpp"
 
 using namespace std;
@@ -505,7 +507,7 @@ UTF getUTF(const string& utf, const ParseInfo& pi) {
 Insert::Insert() {
 	openblock();
 	_currfile = 0;
-	_currspace = Namespace::global();
+	_currspace = GlobalData::getGlobalNamespace();
 	_options = _currspace->options("stdoptions");
 	usenamespace(_currspace);
 }
@@ -1546,35 +1548,35 @@ Term* Insert::arterm(const string& s, Term* t, YYLTYPE l) const {
 }
 
 Term* Insert::domterm(int i, YYLTYPE l) const {
-	const DomainElement* d = DomainElementFactory::instance()->create(i);
+	const DomainElement* d = createDomElem(i);
 	Sort* s = (i >= 0 ? VocabularyUtils::natsort() : VocabularyUtils::intsort());
 	TermParseInfo pi = termparseinfo(new DomainTerm(s, d, TermParseInfo()), l);
 	return new DomainTerm(s, d, pi);
 }
 
 Term* Insert::domterm(double f, YYLTYPE l) const {
-	const DomainElement* d = DomainElementFactory::instance()->create(f);
+	const DomainElement* d = createDomElem(f);
 	Sort* s = VocabularyUtils::floatsort();
 	TermParseInfo pi = termparseinfo(new DomainTerm(s, d, TermParseInfo()), l);
 	return new DomainTerm(s, d, pi);
 }
 
 Term* Insert::domterm(std::string* e, YYLTYPE l) const {
-	const DomainElement* d = DomainElementFactory::instance()->create(e);
+	const DomainElement* d = createDomElem(e);
 	Sort* s = VocabularyUtils::stringsort();
 	TermParseInfo pi = termparseinfo(new DomainTerm(s, d, TermParseInfo()), l);
 	return new DomainTerm(s, d, pi);
 }
 
 Term* Insert::domterm(char c, YYLTYPE l) const {
-	const DomainElement* d = DomainElementFactory::instance()->create(StringPointer(string(1, c)));
+	const DomainElement* d = createDomElem(StringPointer(string(1, c)));
 	Sort* s = VocabularyUtils::charsort();
 	TermParseInfo pi = termparseinfo(new DomainTerm(s, d, TermParseInfo()), l);
 	return new DomainTerm(s, d, pi);
 }
 
 Term* Insert::domterm(std::string* e, Sort* s, YYLTYPE l) const {
-	const DomainElement* d = DomainElementFactory::instance()->create(e);
+	const DomainElement* d = createDomElem(e);
 	TermParseInfo pi = termparseinfo(new DomainTerm(s, d, TermParseInfo()), l);
 	return new DomainTerm(s, d, pi);
 }
@@ -1629,7 +1631,7 @@ SetExpr* Insert::set(const std::set<Variable*>& vv, Formula* f, Term* counter, Y
 }
 
 SetExpr* Insert::set(const std::set<Variable*>& vv, Formula* f, YYLTYPE l) {
-	const DomainElement* d = DomainElementFactory::instance()->create(1);
+	const DomainElement* d = createDomElem(1);
 	Term* counter = new DomainTerm(VocabularyUtils::natsort(), d, TermParseInfo());
 	return set(vv, f, counter, l);
 }
@@ -1664,7 +1666,7 @@ void Insert::addFT(EnumSetExpr* s, Formula* f, Term* t) const {
 }
 
 void Insert::addFormula(EnumSetExpr* s, Formula* f) const {
-	const DomainElement* d = DomainElementFactory::instance()->create(1);
+	const DomainElement* d = createDomElem(1);
 	Term* t = new DomainTerm(VocabularyUtils::natsort(), d, TermParseInfo());
 	addFT(s, f, t);
 }
@@ -1810,22 +1812,22 @@ void Insert::sortinter(NSPair* nst, SortTable* t) const {
 }
 
 void Insert::addElement(SortTable* s, int i) const {
-	const DomainElement* d = DomainElementFactory::instance()->create(i);
+	const DomainElement* d = createDomElem(i);
 	s->add(d);
 }
 
 void Insert::addElement(SortTable* s, double f) const {
-	const DomainElement* d = DomainElementFactory::instance()->create(f);
+	const DomainElement* d = createDomElem(f);
 	s->add(d);
 }
 
 void Insert::addElement(SortTable* s, std::string* e) const {
-	const DomainElement* d = DomainElementFactory::instance()->create(e);
+	const DomainElement* d = createDomElem(e);
 	s->add(d);
 }
 
 void Insert::addElement(SortTable* s, const Compound* c) const {
-	const DomainElement* d = DomainElementFactory::instance()->create(c);
+	const DomainElement* d = createDomElem(c);
 	s->add(d);
 }
 
@@ -1880,23 +1882,23 @@ void Insert::addTuple(PredTable* pt, YYLTYPE l) const {
 }
 
 const DomainElement* Insert::element(int i) const {
-	return DomainElementFactory::instance()->create(i);
+	return createDomElem(i);
 }
 
 const DomainElement* Insert::element(double d) const {
-	return DomainElementFactory::instance()->create(d);
+	return createDomElem(d);
 }
 
 const DomainElement* Insert::element(char c) const {
-	return DomainElementFactory::instance()->create(StringPointer(string(1, c)));
+	return createDomElem(StringPointer(string(1, c)));
 }
 
 const DomainElement* Insert::element(std::string* s) const {
-	return DomainElementFactory::instance()->create(s);
+	return createDomElem(s);
 }
 
 const DomainElement* Insert::element(const Compound* c) const {
-	return DomainElementFactory::instance()->create(c);
+	return createDomElem(c);
 }
 
 FuncTable* Insert::createFuncTable(unsigned int arity) const {
@@ -2126,7 +2128,7 @@ const Compound* Insert::compound(NSPair* nst, const vector<const DomainElement*>
 	if (f && nst->_sortsincluded && (nst->_sorts).size() == vte.size() + 1) f = f->resolve(nst->_sorts);
 	if (f) {
 		if (belongsToVoc(f))
-			return DomainElementFactory::instance()->compound(f, vte);
+			return createCompound(f, vte);
 		else
 			Error::funcnotinstructvoc(nst->toString(), _currstructure->name(), pi);
 	} else
@@ -2162,7 +2164,7 @@ void Insert::predatom(NSPair* nst, const vector<ElRange>& args, bool t) const {
 					break;
 				case ERE_CHAR:
 					for (char c = args[0]._value._charrange->first; c != args[0]._value._charrange->second; ++c) {
-						st->add(DomainElementFactory::instance()->create(StringPointer(string(1, c))));
+						st->add(createDomElem(StringPointer(string(1, c))));
 					}
 					break;
 				}
@@ -2174,10 +2176,10 @@ void Insert::predatom(NSPair* nst, const vector<ElRange>& args, bool t) const {
 						tuple[n] = args[n]._value._element;
 						break;
 					case ERE_INT:
-						tuple[n] = DomainElementFactory::instance()->create(args[n]._value._intrange->first);
+						tuple[n] = createDomElem(args[n]._value._intrange->first);
 						break;
 					case ERE_CHAR:
-						tuple[n] = DomainElementFactory::instance()->create(StringPointer(string(1, args[n]._value._charrange->first)));
+						tuple[n] = createDomElem(StringPointer(string(1, args[n]._value._charrange->first)));
 						break;
 					}
 				}
@@ -2201,7 +2203,7 @@ void Insert::predatom(NSPair* nst, const vector<ElRange>& args, bool t) const {
 								++current;
 								end = true;
 							}
-							tuple[n] = DomainElementFactory::instance()->create(current);
+							tuple[n] = createDomElem(current);
 							break;
 						}
 						case ERE_CHAR: {
@@ -2212,7 +2214,7 @@ void Insert::predatom(NSPair* nst, const vector<ElRange>& args, bool t) const {
 								++current;
 								end = true;
 							}
-							tuple[n] = DomainElementFactory::instance()->create(StringPointer(string(1, current)));
+							tuple[n] = createDomElem(StringPointer(string(1, current)));
 							break;
 						}
 						}

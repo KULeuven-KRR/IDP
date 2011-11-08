@@ -18,6 +18,8 @@
 #include "parseinfo.hpp"
 #include "common.hpp"
 
+#include "GlobalData.hpp"
+
 /**
  * \file structure.hpp
  *
@@ -241,8 +243,6 @@ std::ostream& operator<<(std::ostream&, const Compound&);
  */
 class DomainElementFactory {
 private:
-	static DomainElementFactory* _instance; //!< The single instance of DomainElementFactory
-
 	std::map<Function*, std::map<ElementTuple, Compound*> > _compounds;
 	//!< Maps a function and tuple of elements to the corresponding compound.
 
@@ -266,7 +266,7 @@ private:
 public:
 	~DomainElementFactory();
 
-	static DomainElementFactory* instance();
+	static DomainElementFactory* createGlobal();
 
 	const DomainElement* create(int value);
 	const DomainElement* create(double value, NumType type = NumType::POSSIBLYINT);
@@ -276,6 +276,21 @@ public:
 
 	const Compound* compound(Function*, const ElementTuple&);
 };
+
+template<typename Value>
+const DomainElement* createDomElem(const Value& value){
+	return GlobalData::getGlobalDomElemFactory()->create(value);
+}
+
+template<typename Value, typename Type>
+const DomainElement* createDomElem(const Value& value, const Type& t){
+	return GlobalData::getGlobalDomElemFactory()->create(value, t);
+}
+
+template<typename Function, typename Value>
+const Compound* createCompound(Function* f, const Value& tuple){
+	return GlobalData::getGlobalDomElemFactory()->compound(f, tuple);
+}
 
 /*******************
  Domain atoms
@@ -691,7 +706,7 @@ private:
 		return true;
 	}
 	const DomainElement* operator*() const {
-		return DomainElementFactory::instance()->create(_iter);
+		return createDomElem(_iter);
 	}
 	void operator++() {
 		++_iter;
@@ -714,7 +729,7 @@ private:
 		return true;
 	}
 	const DomainElement* operator*() const {
-		return DomainElementFactory::instance()->create(_iter);
+		return createDomElem(_iter);
 	}
 	void operator++() {
 		++_iter;
@@ -737,7 +752,7 @@ private:
 		return true;
 	}
 	const DomainElement* operator*() const {
-		return DomainElementFactory::instance()->create(_iter);
+		return createDomElem(_iter);
 	}
 	void operator++() {
 		++_iter;
@@ -825,7 +840,7 @@ private:
 		return _current <= _last;
 	}
 	const DomainElement* operator*() const {
-		return DomainElementFactory::instance()->create(_current);
+		return createDomElem(_current);
 	}
 	void operator++() {
 		++_current;
