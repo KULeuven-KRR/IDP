@@ -364,6 +364,7 @@ private:
 public:
 	SortIterator(InternalSortIterator* iter) :
 			_iterator(iter) {
+		assert(iter!=NULL);
 	}
 	SortIterator(const SortIterator&);
 	SortIterator& operator=(const SortIterator&);
@@ -2419,6 +2420,10 @@ public:
 
 	virtual Universe universe(const PFSymbol*) const = 0;
 
+	virtual bool approxTwoValued() const =0;
+	virtual std::vector<AbstractStructure*> allTwoValuedMorePreciseStructures() const = 0;
+
+
 };
 
 /** Structures as constructed by the parser **/
@@ -2430,6 +2435,8 @@ private:
 	std::map<Function*, FuncInter*> _funcinter; //!< The interpretations of the function symbols.
 
 	mutable std::vector<PredInter*> _intersToDelete; // Interpretations which were created and not yet deleted // TODO do this in a cleaner way!
+    void canIncrement(TableIterator & domainIterator) const;
+    void addAllMorePreciesStructuresToResult(Structure *s1, std::vector<AbstractStructure*> & result) const;
 
 public:
 	Structure(const std::string& name, const ParseInfo& pi) :
@@ -2456,7 +2463,8 @@ public:
 	FuncInter* inter(Function* f) const; //!< Return the interpretation of f.
 	PredInter* inter(PFSymbol* s) const; //!< Return the interpretation of s.
 	Structure* clone() const; //!< take a clone of this structure
-
+	bool approxTwoValued() const;
+	std::vector<AbstractStructure*> allTwoValuedMorePreciseStructures() const;
 	Universe universe(const PFSymbol*) const;
 };
 
