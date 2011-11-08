@@ -55,15 +55,18 @@ public:
 		return result;
 	}
 
-	std::vector<AbstractStructure*> doModelExpansion(AbstractTheory* theory, AbstractStructure* structure, Options* options) const {
+	std::vector<AbstractStructure*> doModelExpansion(AbstractTheory* theory,
+			AbstractStructure* structure, Options* options) const {
 		Option::pushOptions(options);
 
 		TraceMonitor* monitor = tracemonitor();
 
 		// Calculate known definitions
 		// FIXME currently skipping if working lazily!
-		if (not options->getValue(BoolType::GROUNDLAZILY) && sametypeid<Theory>(*theory)) {
-			bool satisfiable = calculateKnownDefinitions(dynamic_cast<Theory*>(theory), structure, options);
+		if (not options->getValue(BoolType::GROUNDLAZILY)
+				&& sametypeid<Theory>(*theory)) {
+			bool satisfiable = calculateKnownDefinitions(
+					dynamic_cast<Theory*>(theory), structure, options);
 			if (not satisfiable) {
 				return std::vector<AbstractStructure*> { };
 			}
@@ -71,7 +74,8 @@ public:
 
 		// Symbolic propagation
 		PropagateInference propinference;
-		std::map<PFSymbol*, InitBoundType> mpi = propinference.propagateVocabulary(theory, structure);
+		std::map<PFSymbol*, InitBoundType> mpi =
+				propinference.propagateVocabulary(theory, structure);
 //		FOPropagator* propagator = createPropagator(theory,mpi,options);
 //		propagator->run();
 //		SymbolicStructure* symstructure = propagator->symbolicstructure();
@@ -96,14 +100,20 @@ public:
 				addSymBreakingPredicates(grounding, ivsets);
 			} else if (options->getValue(IntType::SYMMETRY) == 2) {
 				std::cerr << "Using symmetrical clause learning...\n";
-				for (auto ivsets_it = ivsets.cbegin(); ivsets_it != ivsets.cend(); ++ivsets_it) {
-					std::vector<std::map<int, int> > breakingSymmetries = (*ivsets_it)->getBreakingSymmetries(grounding);
-					for (auto bs_it = breakingSymmetries.cbegin(); bs_it != breakingSymmetries.cend(); ++bs_it) {
+				for (auto ivsets_it = ivsets.cbegin();
+						ivsets_it != ivsets.cend(); ++ivsets_it) {
+					std::vector<std::map<int, int> > breakingSymmetries =
+							(*ivsets_it)->getBreakingSymmetries(grounding);
+					for (auto bs_it = breakingSymmetries.cbegin();
+							bs_it != breakingSymmetries.cend(); ++bs_it) {
 						MinisatID::Symmetry symmetry;
-						for (auto s_it = bs_it->begin(); s_it != bs_it->end(); ++s_it) {
+						for (auto s_it = bs_it->begin(); s_it != bs_it->end();
+								++s_it) {
 							MinisatID::Atom a1 = MinisatID::Atom(s_it->first);
 							MinisatID::Atom a2 = MinisatID::Atom(s_it->second);
-							std::pair<MinisatID::Atom, MinisatID::Atom> entry = std::pair<MinisatID::Atom, MinisatID::Atom>(a1, a2);
+							std::pair<MinisatID::Atom, MinisatID::Atom> entry =
+									std::pair<MinisatID::Atom, MinisatID::Atom>(
+											a1, a2);
 							symmetry.symmetry.insert(entry);
 						}
 						solver->add(symmetry);
@@ -125,12 +135,24 @@ public:
 		// Collect solutions
 		//FIXME propagator code broken structure = propagator->currstructure(structure);
 		std::vector<AbstractStructure*> solutions;
-		for (auto model = abstractsolutions->getModels().cbegin(); model != abstractsolutions->getModels().cend(); ++model) {
+		for (auto model = abstractsolutions->getModels().cbegin();
+				model != abstractsolutions->getModels().cend(); ++model) {
 			AbstractStructure* newsolution = structure->clone();
 			addLiterals(*model, grounding->translator(), newsolution);
 			addTerms(*model, grounding->termtranslator(), newsolution);
 			newsolution->clean();
 			solutions.push_back(newsolution);
+			//MOVED THIS CODE TO THE TWOVALUEDEXTENSIONSINFERENCE
+//			if (!newsolution->approxTwoValued()) {
+//				std::vector<AbstractStructure*> allTwoValuedMorePreciseStructures =
+//						newsolution->allTwoValuedMorePreciseStructures();
+//				solutions.insert(solutions.end(),
+//						allTwoValuedMorePreciseStructures.begin(),
+//						allTwoValuedMorePreciseStructures.end());
+//
+//			} else {
+//				solutions.push_back(newsolution);
+//			}
 		}
 
 		grounding->recursiveDelete();
@@ -141,7 +163,8 @@ public:
 	}
 
 private:
-	bool calculateDefinition(Definition* definition, AbstractStructure* structure, Options* options) const {
+	bool calculateDefinition(Definition* definition,
+			AbstractStructure* structure, Options* options) const {
 		// Create solver and grounder
 		SATSolver* solver = createsolver(options);
 		GrounderFactory grounderfactory(structure, options);
@@ -150,10 +173,11 @@ private:
 		Grounder* grounder = grounderfactory.create(&theory, solver);
 
 		grounder->toplevelRun();
-		AbstractGroundTheory* grounding = dynamic_cast<GroundTheory<SolverPolicy>*>(grounder->grounding());
+		AbstractGroundTheory* grounding =
+				dynamic_cast<GroundTheory<SolverPolicy>*>(grounder->grounding());
 
 		// Run solver
-MinisatID		::Solution* abstractsolutions = initsolution(options);
+		MinisatID::Solution* abstractsolutions = initsolution(options);
 		solver->solve(abstractsolutions);
 
 		// Collect solutions
@@ -175,10 +199,12 @@ MinisatID		::Solution* abstractsolutions = initsolution(options);
 		return true;
 	}
 
-	bool calculateKnownDefinitions(Theory* theory, AbstractStructure* structure, Options* options) const {
+	bool calculateKnownDefinitions(Theory* theory, AbstractStructure* structure,
+			Options* options) const {
 		// Collect the open symbols of all definitions
 		std::map<Definition*, std::set<PFSymbol*> > opens;
-		for (auto it = theory->definitions().cbegin(); it != theory->definitions().cend(); ++it) {
+		for (auto it = theory->definitions().cbegin();
+				it != theory->definitions().cend(); ++it) {
 			opens[*it] = DefinitionUtils::opens(*it);
 		}
 
@@ -190,7 +216,8 @@ MinisatID		::Solution* abstractsolutions = initsolution(options);
 			for (auto it = opens.begin(); it != opens.end();) {
 				auto currentdefinition = it++;
 				// Remove opens that have a two-valued interpretation
-				for (auto symbol = currentdefinition->second.cbegin(); symbol != currentdefinition->second.cend();) {
+				for (auto symbol = currentdefinition->second.cbegin();
+						symbol != currentdefinition->second.cend();) {
 					auto currentsymbol = symbol++;
 					if (structure->inter(*currentsymbol)->approxTwoValued()) {
 						currentdefinition->second.erase(currentsymbol);
@@ -198,7 +225,8 @@ MinisatID		::Solution* abstractsolutions = initsolution(options);
 				}
 				// If no opens are left, calculate the interpretation of the defined atoms
 				if (currentdefinition->second.empty()) {
-					bool satisfiable = calculateDefinition(currentdefinition->first, structure, options);
+					bool satisfiable = calculateDefinition(
+							currentdefinition->first, structure, options);
 					if (not satisfiable) {
 						return false;
 					}
@@ -215,7 +243,9 @@ MinisatID		::Solution* abstractsolutions = initsolution(options);
 		MinisatID::SolverOption modes;
 		modes.nbmodels = options->getValue(IntType::NRMODELS);
 		modes.verbosity = options->getValue(IntType::SATVERBOSITY);
-		modes.polarity = options->getValue(BoolType::MXRANDOMPOLARITYCHOICE) ? MinisatID::POL_RAND : MinisatID::POL_STORED;
+		modes.polarity =
+				options->getValue(BoolType::MXRANDOMPOLARITYCHOICE) ?
+						MinisatID::POL_RAND : MinisatID::POL_STORED;
 
 		if (options->getValue(BoolType::GROUNDLAZILY)) {
 			modes.lazy = true;
@@ -234,8 +264,10 @@ MinisatID		::Solution* abstractsolutions = initsolution(options);
 		return new MinisatID::Solution(opts);
 	}
 
-	void addLiterals(MinisatID::Model* model, GroundTranslator* translator, AbstractStructure* init) const {
-		for (auto literal = model->literalinterpretations.cbegin(); literal != model->literalinterpretations.cend(); ++literal) {
+	void addLiterals(MinisatID::Model* model, GroundTranslator* translator,
+			AbstractStructure* init) const {
+		for (auto literal = model->literalinterpretations.cbegin();
+				literal != model->literalinterpretations.cend(); ++literal) {
 			int atomnr = literal->getAtom().getValue();
 
 			if (translator->isInputAtom(atomnr)) {
@@ -260,8 +292,10 @@ MinisatID		::Solution* abstractsolutions = initsolution(options);
 		}
 	}
 
-	void addTerms(MinisatID::Model* model, GroundTermTranslator* termtranslator, AbstractStructure* init) const {
-		for (auto cpvar = model->variableassignments.cbegin(); cpvar != model->variableassignments.cend(); ++cpvar) {
+	void addTerms(MinisatID::Model* model, GroundTermTranslator* termtranslator,
+			AbstractStructure* init) const {
+		for (auto cpvar = model->variableassignments.cbegin();
+				cpvar != model->variableassignments.cend(); ++cpvar) {
 			Function* function = termtranslator->function(cpvar->variable);
 			if (function == NULL) {
 				continue;
@@ -271,12 +305,14 @@ MinisatID		::Solution* abstractsolutions = initsolution(options);
 			for (auto it = gtuple.cbegin(); it != gtuple.cend(); ++it) {
 				if (it->isVariable) {
 					int value = model->variableassignments[it->_varid].value;
-					tuple.push_back(DomainElementFactory::instance()->create(value));
+					tuple.push_back(
+							DomainElementFactory::instance()->create(value));
 				} else {
 					tuple.push_back(it->_domelement);
 				}
 			}
-			tuple.push_back(DomainElementFactory::instance()->create(cpvar->value));
+			tuple.push_back(
+					DomainElementFactory::instance()->create(cpvar->value));
 			init->inter(function)->graphInter()->makeTrue(tuple);
 		}
 	}
