@@ -15,7 +15,7 @@
 #include <set>
 #include <assert.h>
 
-#include "theory.hpp" // for TheoryVisitor
+#include "TheoryVisitor.hpp"
 
 class Options;
 class Vocabulary;

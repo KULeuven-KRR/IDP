@@ -16,6 +16,8 @@
 #include <sstream>
 #include <iostream>
 
+#include "theorytransformations/Utils.hpp"
+
 using namespace std;
 
 // TODO: detection of symmetry using intricated type hierarchies may not yet be correct. Please verify the detected symmetries manually...
@@ -771,7 +773,7 @@ void TheorySymmetryAnalyzer::visit(const DomainTerm* t){
 
 void TheorySymmetryAnalyzer::visit(const EqChainForm* ef){
 	Formula* f = ef->clone();
-	f = FormulaUtils::removeEqChains(f,getStructure()->vocabulary());
+	f = FormulaUtils::splitComparisonChains(f,getStructure()->vocabulary());
 	f->accept(this);
 	f->recursiveDelete();
 	

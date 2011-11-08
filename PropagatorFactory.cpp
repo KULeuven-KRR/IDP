@@ -7,6 +7,8 @@
 #include "term.hpp"
 #include "propagate.hpp"
 
+#include "theorytransformations/Utils.hpp"
+
 using namespace std;
 
 FOPropagator* createPropagator(AbstractTheory* theory, const std::map<PFSymbol*,InitBoundType> mpi, Options* options) {
@@ -55,11 +57,11 @@ TypedFOPropagator<Factory, Domain>* FOPropagatorFactory<Factory, Domain>::create
 
 	// transform theory to a suitable normal form
 	AbstractTheory* newtheo = theory->clone();
-	TheoryUtils::completion(newtheo);
-	TheoryUtils::removeNesting(newtheo);	// FIXME: remove nesting does not change F(x)=y to F(x,y) anymore, which is probably needed here
-	TheoryUtils::graphFunctions(newtheo);
-	TheoryUtils::graphAggregates(newtheo);
-	TheoryUtils::removeEqChains(newtheo);
+	FormulaUtils::addCompletion(newtheo);
+	FormulaUtils::unnestTerms(newtheo);	// FIXME: remove nesting does not change F(x)=y to F(x,y) anymore, which is probably needed here
+	FormulaUtils::graphFunctions(newtheo);
+	FormulaUtils::graphAggregates(newtheo);
+	FormulaUtils::splitComparisonChains(newtheo);
 
 	// Add function constraints
 	for(auto it = _initbounds.cbegin(); it != _initbounds.cend(); ++it) {
@@ -106,7 +108,7 @@ TypedFOPropagator<Factory, Domain>* FOPropagatorFactory<Factory, Domain>::create
 	}
 
 	// Multiply maxsteps if requested
-	if(_multiplymaxsteps) _propagator->setMaxSteps(_propagator->getMaxSteps() * TheoryUtils::nrSubformulas(newtheo));
+	if(_multiplymaxsteps) _propagator->setMaxSteps(_propagator->getMaxSteps() * FormulaUtils::nrSubformulas(newtheo));
 
 	// create leafconnectors
 	Vocabulary* voc = newtheo->vocabulary();

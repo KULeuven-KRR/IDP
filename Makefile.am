@@ -124,7 +124,29 @@ grounder_SOURCES = \
 		generators/TrueQuantKernelGenerator.hpp\
 		generators/GeneratorFactory.cpp\
 		generators/BDDBasedGeneratorFactory.cpp\
-		OptionsStack.hpp OptionsStack.cpp
+		OptionsStack.hpp OptionsStack.cpp\
+		theoryinformation/CollectOpensOfDefinitions.hpp theoryinformation/CollectOpensOfDefinitions.cpp\
+		theoryinformation/CheckContainment.hpp theoryinformation/CheckContainment.cpp\
+		theoryinformation/CheckContainsFuncTerms.hpp\
+		theoryinformation/CheckSorts.hpp theoryinformation/CheckSorts.cpp\
+		theorytransformations/PushNegations.hpp theorytransformations/PushNegations.cpp\
+		theorytransformations/Flatten.hpp theorytransformations/Flatten.cpp\
+		theorytransformations/CountSubformulas.hpp\
+		theorytransformations/CheckFuncTerms.hpp\
+		theorytransformations/DeriveSorts.hpp theorytransformations/DeriveSorts.cpp\
+		theorytransformations/AddCompletion.hpp theorytransformations/AddCompletion.cpp\
+		theorytransformations/GraphFunctions.hpp theorytransformations/GraphFunctions.cpp\
+		theorytransformations/GraphAggregates.hpp theorytransformations/GraphAggregates.cpp\
+		theorytransformations/PushQuantifications.hpp theorytransformations/PushQuantifications.cpp\
+		theorytransformations/RemoveEquivalences.hpp theorytransformations/RemoveEquivalences.cpp\
+		theorytransformations/SplitComparisonChains.hpp theorytransformations/SplitComparisonChains.cpp\
+		theorytransformations/SubstituteTerm.hpp\
+		theorytransformations/UnnestPartialTerms.hpp\
+		theorytransformations/UnnestTerms.hpp theorytransformations/UnnestTerms.cpp\
+		theorytransformations/UnnestThreeValuedTerms.hpp theorytransformations/UnnestThreeValuedTerms.cpp\
+		TheoryVisitor.hpp TheoryVisitor.cpp\
+		TheoryMutatingVisitor.hpp TheoryMutatingVisitor.cpp\
+		theorytransformations/Utils.hpp theorytransformations/Utils.cpp
 		
 gidl_dist = $(srcdir)/lib/loki-0.1.7
 		

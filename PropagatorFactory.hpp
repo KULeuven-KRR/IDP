@@ -3,6 +3,8 @@
 
 #include <map>
 #include "theory.hpp"
+#include "TheoryVisitor.hpp"
+#include "TheoryMutatingVisitor.hpp"
 class PFSymbol;
 class PredForm;
 class EqChainForm;

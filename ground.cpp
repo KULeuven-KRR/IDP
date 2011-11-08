@@ -38,6 +38,8 @@
 #include "generators/BasicGenerators.hpp"
 #include "generators/TableGenerator.hpp"
 
+#include "theorytransformations/Utils.hpp"
+
 #include "fobdd.hpp"
 #include "symbolicstructure.hpp"
 
@@ -999,11 +1001,11 @@ void GrounderFactory::visit(const PredForm* pf) {
 	}
 	// FIXME verkeerde type afgeleid voor vergelijkingen a=b (zou bvb range die beide omvat moeten zijn, is nu niet het geval).
 	// FIXME aggregaten moeten correct worden herschreven als ze niet tweewaardig zijn
-	Formula* transpf = FormulaUtils::moveThreeValuedTerms(pf->clone(), _structure, _context._funccontext, _cpsupport, _cpsymbols);
+	Formula* transpf = FormulaUtils::unnestThreeValuedTerms(pf->clone(), _structure, _context._funccontext, _cpsupport, _cpsymbols);
 	if (_verbosity > 3) {
 		clog << transpf->toString() <<"\n";
 	}
-	transpf = FormulaUtils::removeEqChains(transpf);
+	transpf = FormulaUtils::splitComparisonChains(transpf, NULL);
 	if (_verbosity > 3) {
 		clog << transpf->toString() <<"\n";
 	}
@@ -1208,8 +1210,8 @@ void GrounderFactory::visit(const QuantForm* qf) {
 
 	// Create instance generator
 	Formula* newsubformula = qf->subformula()->clone();
-	newsubformula = FormulaUtils::moveThreeValuedTerms(newsubformula, _structure, _context._funccontext);
-	newsubformula = FormulaUtils::removeEqChains(newsubformula);
+	newsubformula = FormulaUtils::unnestThreeValuedTerms(newsubformula, _structure, _context._funccontext);
+	newsubformula = FormulaUtils::splitComparisonChains(newsubformula, NULL);
 	newsubformula = FormulaUtils::graphFunctions(newsubformula);
 
 	// NOTE: if the checker return valid, then the value of the formula can be decided from the value of the checked instantiation
@@ -1363,7 +1365,7 @@ void GrounderFactory::visit(const AggForm* af) {
 	_context._conjunctivePathFromRoot = false;
 
 	AggForm* newaf = af->clone();
-	Formula* transaf = FormulaUtils::moveThreeValuedTerms(newaf, _structure, _context._funccontext, _cpsupport, _cpsymbols);
+	Formula* transaf = FormulaUtils::unnestThreeValuedTerms(newaf, _structure, _context._funccontext, _cpsupport, _cpsymbols);
 
 	if (typeid(*transaf) != typeid(AggForm)) { // The rewriting changed the atom
 		if (_verbosity > 1) {
@@ -1415,7 +1417,7 @@ void GrounderFactory::visit(const EqChainForm* ef) {
 	_context._conjunctivePathFromRoot = false;
 
 	Formula* f = ef->clone();
-	f = FormulaUtils::removeEqChains(f, _grounding->vocabulary());
+	f = FormulaUtils::splitComparisonChains(f, _grounding->vocabulary());
 	f->accept(this);
 	f->recursiveDelete();
 }
@@ -1591,8 +1593,8 @@ void GrounderFactory::visit(const QuantSetExpr* qs) {
 	//}
 
 	Formula* clonedformula = qs->subformulas()[0]->clone();
-	Formula* newsubformula = FormulaUtils::moveThreeValuedTerms(clonedformula, _structure, Context::POSITIVE);
-	newsubformula = FormulaUtils::removeEqChains(newsubformula);
+	Formula* newsubformula = FormulaUtils::unnestThreeValuedTerms(clonedformula, _structure, Context::POSITIVE);
+	newsubformula = FormulaUtils::splitComparisonChains(newsubformula, NULL);
 	newsubformula = FormulaUtils::graphFunctions(newsubformula);
 
 	// NOTE: generator generates possibly true instances, checker checks the certainly true ones

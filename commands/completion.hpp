@@ -10,6 +10,7 @@
 #include <vector>
 #include "commandinterface.hpp"
 #include "theory.hpp"
+#include "theorytransformations/Utils.hpp"
 
 class CompletionInference: public Inference {
 public:
@@ -19,8 +20,8 @@ public:
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
 		AbstractTheory* theory = args[0].theory();
-		TheoryUtils::completion(theory);
-		return nilarg();
+		theory = FormulaUtils::addCompletion(theory);
+		return InternalArgument(theory);
 	}
 };
 

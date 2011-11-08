@@ -9,6 +9,7 @@
 #include <vector>
 #include "commandinterface.hpp"
 #include "theory.hpp"
+#include "theorytransformations/Utils.hpp"
 
 class PushNegationsInference: public Inference {
 public:
@@ -18,7 +19,7 @@ public:
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
 		AbstractTheory* t = args[0].theory();
-		TheoryUtils::pushNegations(t);
+		t = FormulaUtils::pushNegations(t);
 		return InternalArgument(t);
 	}
 };

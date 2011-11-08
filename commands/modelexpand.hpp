@@ -13,6 +13,9 @@
 #include "monitors/tracemonitor.hpp"
 #include "commands/propagate.hpp"
 #include "symmetry.hpp"
+
+#include "theorytransformations/Utils.hpp"
+
 #include "OptionsStack.hpp"
 
 #include "groundtheories/AbstractGroundTheory.hpp"

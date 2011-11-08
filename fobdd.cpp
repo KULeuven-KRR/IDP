@@ -19,6 +19,8 @@
 #include "structure.hpp"
 #include "error.hpp"
 
+#include "theorytransformations/Utils.hpp"
+
 
 using namespace std;
 
@@ -1870,7 +1872,7 @@ const FOBDDArgument* FOBDDManager::solve(const FOBDDKernel* kernel, const FOBDDA
 
 const FOBDD* FOBDDFactory::run(const Formula* f) {
 	Formula* cf = f->clone();
-	cf = FormulaUtils::movePartialTerms(cf);
+	cf = FormulaUtils::unnestPartialTerms(cf, Context::POSITIVE);
 	cf->accept(this);
 	cf->recursiveDelete();
 	return _bdd;
@@ -1968,7 +1970,7 @@ void FOBDDFactory::visit(const QuantForm* qf) {
 
 void FOBDDFactory::visit(const EqChainForm* ef) {
 	EqChainForm* efclone = ef->clone();
-	Formula* f = FormulaUtils::removeEqChains(efclone,_vocabulary);
+	Formula* f = FormulaUtils::splitComparisonChains(efclone,_vocabulary);
 	f->accept(this);
 	f->recursiveDelete();
 }
