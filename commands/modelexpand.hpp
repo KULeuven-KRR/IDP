@@ -141,16 +141,18 @@ public:
 			addLiterals(*model, grounding->translator(), newsolution);
 			addTerms(*model, grounding->termtranslator(), newsolution);
 			newsolution->clean();
-			if (!newsolution->approxTwoValued()) {
-				std::vector<AbstractStructure*> allTwoValuedMorePreciseStructures =
-						newsolution->allTwoValuedMorePreciseStructures();
-				solutions.insert(solutions.end(),
-						allTwoValuedMorePreciseStructures.begin(),
-						allTwoValuedMorePreciseStructures.end());
-
-			} else {
-				solutions.push_back(newsolution);
-			}
+			solutions.push_back(newsolution);
+			//MOVED THIS CODE TO THE TWOVALUEDEXTENSIONSINFERENCE
+//			if (!newsolution->approxTwoValued()) {
+//				std::vector<AbstractStructure*> allTwoValuedMorePreciseStructures =
+//						newsolution->allTwoValuedMorePreciseStructures();
+//				solutions.insert(solutions.end(),
+//						allTwoValuedMorePreciseStructures.begin(),
+//						allTwoValuedMorePreciseStructures.end());
+//
+//			} else {
+//				solutions.push_back(newsolution);
+//			}
 		}
 
 		grounding->recursiveDelete();

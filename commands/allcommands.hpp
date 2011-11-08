@@ -43,6 +43,7 @@
 #include "commands/removenesting.hpp"
 #include "commands/simplify.hpp"
 #include "commands/tablesize.hpp"
+#include "commands/twovaluedextensions.hpp"
 
 //TODO add support for easily using these inferences directly in lua, by also providing a help/usage text and replacing idp_intern. with something easier
 
@@ -105,6 +106,8 @@ std::vector<Inference*> getAllInferences(){
 	inferences.push_back(new EntailsInference());
 	inferences.push_back(new RemoveNestingInference());
 	inferences.push_back(new SimplifyInference());
+	inferences.push_back(new TwoValuedExtensionsInference(AT_TABLE));
+	inferences.push_back(new TwoValuedExtensionsInference(AT_STRUCTURE));
 	return inferences;
 }
 
