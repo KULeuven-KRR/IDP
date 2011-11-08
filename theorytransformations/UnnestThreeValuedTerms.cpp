@@ -34,6 +34,7 @@ bool UnnestThreeValuedTerms::shouldMove(Term* t) {
 	return false;
 }
 
+// BUG: allowed to move is default false???
 Formula* UnnestThreeValuedTerms::traverse(PredForm* f) {
 	Context savecontext = getContext();
 	bool savemovecontext = getAllowedToUnnest();

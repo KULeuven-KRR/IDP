@@ -63,7 +63,7 @@ Formula* flatten(Formula* f) {
 }
 
 Formula* graphFunctions(Formula* f) {
-	return transform<RemoveEquivalences>(f);
+	return transform<GraphFunctions>(f);
 }
 
 Formula* unnestPartialTerms(Formula* f, Context context, Vocabulary* voc) {
