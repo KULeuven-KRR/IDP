@@ -40,7 +40,10 @@
 
 #include "theorytransformations/Utils.hpp"
 
-#include "fobdd.hpp"
+#include "fobdds/FoBdd.hpp"
+#include "fobdds/FoBddManager.hpp"
+#include "fobdds/FoBddVariable.hpp"
+#include "fobdds/FoBddFactory.hpp"
 #include "symbolicstructure.hpp"
 
 using namespace std;

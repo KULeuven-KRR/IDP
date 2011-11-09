@@ -14,6 +14,9 @@
 #include "query.hpp"
 #include "generators/BDDBasedGeneratorFactory.hpp"
 #include "generators/InstGenerator.hpp"
+#include "fobdds/FoBdd.hpp"
+#include "fobdds/FoBddManager.hpp"
+#include "fobdds/FoBddFactory.hpp"
 
 class QueryInference: public Inference {
 public:

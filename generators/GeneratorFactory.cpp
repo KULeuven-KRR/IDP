@@ -9,7 +9,9 @@
 #include "vocabulary.hpp"
 #include "structure.hpp"
 #include "checker.hpp"
-#include "fobdd.hpp"
+#include "fobdds/FoBdd.hpp"
+#include "fobdds/FoBddFactory.hpp"
+#include "fobdds/FoBddManager.hpp"
 #include "term.hpp"
 #include "theory.hpp"
 

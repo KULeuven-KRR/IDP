@@ -82,9 +82,9 @@ class Sort {
 std::ostream& operator<< (std::ostream&,const Sort&);
 
 namespace SortUtils {
-	Sort*	resolve(Sort* s1, Sort* s2, const Vocabulary* v = 0);	
+	Sort*	resolve(Sort* s1, Sort* s2, const Vocabulary* v = 0);
 		//!< Return the unique nearest common ancestor of two sorts
-	bool	isSubsort(Sort* a, Sort* b); 
+	bool	isSubsort(Sort* a, Sort* b);
 		//!< returns true iff sort a is a subsort of sort b
 }
 

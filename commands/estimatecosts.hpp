@@ -12,6 +12,9 @@
 #include "commandinterface.hpp"
 #include "query.hpp"
 #include "structure.hpp"
+#include "fobdds/FoBdd.hpp"
+#include "fobdds/FoBddManager.hpp"
+#include "fobdds/FoBddFactory.hpp"
 
 class EstimateBDDCostInference: public Inference {
 public:

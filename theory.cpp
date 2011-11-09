@@ -14,7 +14,8 @@
 #include "term.hpp"
 #include "theory.hpp"
 #include "error.hpp"
-#include "fobdd.hpp"
+#include "fobdds/FoBdd.hpp"
+#include "fobdds/FoBddManager.hpp"
 
 #include "theoryinformation/CollectOpensOfDefinitions.hpp"
 #include "theoryinformation/CheckContainment.hpp"

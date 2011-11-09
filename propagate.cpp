@@ -6,7 +6,9 @@
 
 #include <typeinfo>
 #include <iostream>
-#include "fobdd.hpp"
+#include "fobdds/FoBdd.hpp"
+#include "fobdds/FoBddManager.hpp"
+#include "fobdds/FoBddFactory.hpp"
 #include "vocabulary.hpp"
 #include "term.hpp"
 #include "theory.hpp"
