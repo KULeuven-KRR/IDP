@@ -9,6 +9,8 @@
 #include "structure.hpp"
 #include "term.hpp"
 #include "theory.hpp"
+#include "TheoryVisitor.hpp"
+#include "TheoryMutatingVisitor.hpp"
 #include "common.hpp"
 using namespace std;
 

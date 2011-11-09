@@ -15,6 +15,9 @@
 #include "interactive.hpp"
 #include "rungidl.hpp"
 #include "insert.hpp"
+
+#include "GeneralUtils.hpp"
+
 using namespace std;
 
 // seed
@@ -22,7 +25,6 @@ int global_seed;	//!< seed used for bdd estimators
 
 // Parser stuff
 extern map<string,CLConst*>	clconsts;
-extern void parsestring(const string&);
 extern void parsefile(const string&);
 extern void parsestdin();
 
@@ -124,11 +126,34 @@ void parse(const vector<string>& inputfiles) {
 	}
 }
 
+// FIXME add signal handling code to kill the process by using the signalhandling thread in an infinite loop and some mutexes
+#include <thread>
+
+void execProcedure(const string& proc, const DomainElement** result){
+	*result = Insert::exec(proc);
+}
+
+void handleAndRun(const string& proc, const DomainElement** result){
+	thread execution(execProcedure, proc, result);
+	execution.join();
+}
+
+/**
+ * @return the return value of the executed lua procedure if applicable
+ */
 const DomainElement* executeProcedure(const string& proc) {
+	const DomainElement* result = NULL;
+
 	if(proc != "") {
-		return Insert::exec(proc);
+		// NOTE: as we allow in lua to replace . with ::, we have to convert the other way here!
+		string temp = proc;
+		replaceAll<std::string>(temp, "::", ".");
+
+		thread signalhandling(handleAndRun, temp, &result);
+		signalhandling.join();
 	}
-	return NULL;
+
+	return result;
 }
 
 
@@ -167,12 +192,11 @@ void interactive() {
 
 Insert insert;
 
-// TODO merge with main method
-void run(const std::string& inputfileurl){
-	run({inputfileurl});
-}
-
-Status run(const std::vector<std::string>& inputfileurls){
+/**
+ * Runs the main method given a number of inputfiles and checks whether the main method returns the int 1.
+ * In that case, test return SUCCESS, in all other cases it returns FAIL.
+ */
+Status test(const std::vector<std::string>& inputfileurls){
 	insert = Insert();
 	LuaConnection::makeLuaConnection();
 
@@ -181,7 +205,7 @@ Status run(const std::vector<std::string>& inputfileurls){
 	Status result = Status::FAIL;
 	if(Error::nr_of_errors() == 0) {
 		stringstream ss;
-		ss <<"return " <<getLibraryName() <<".main()";
+		ss <<"return " <<getTablenameForInternals() <<".main()";
 		auto value = executeProcedure(ss.str());
 		if(value!=NULL && value->type()==DomainElementType::DET_INT && value->value()._int == 1){
 			result = Status::SUCCESS;
@@ -193,6 +217,7 @@ Status run(const std::vector<std::string>& inputfileurls){
 	}
 
 	LuaConnection::closeLuaConnection();
+	GlobalData::close();
 
 	return result;
 }
@@ -201,28 +226,30 @@ int run(int argc, char* argv[]) {
 	insert = Insert();
 	LuaConnection::makeLuaConnection();
 
-	// Parse idp input
 	CLOptions cloptions;
 	vector<string> inputfiles = read_options(argc,argv,cloptions);
 	parse(inputfiles);
 	if(cloptions._readfromstdin) parsestdin();
+	if(cloptions._exec == ""){
+		stringstream ss;
+		ss <<"return " <<getTablenameForInternals() <<".main()";
+		cloptions._exec = ss.str();
+	}
 
-	// Run
-	if(not Error::nr_of_errors()) {
-		executeProcedure(cloptions._exec); // TODO add return here too?
+	if(Error::nr_of_errors()==0) {
 #ifdef USEINTERACTIVE
 		if(cloptions._interactive){
 			interactive();
-		} else
-#endif
-		if(cloptions._exec == ""){
-			stringstream ss;
-			ss <<"return " <<getLibraryName() <<".main()";
-			executeProcedure(ss.str());
+		}else{
+			executeProcedure(cloptions._exec);
 		}
+#else
+		executeProcedure(cloptions._exec);
+#endif
 	}
 
 	LuaConnection::closeLuaConnection();
+	GlobalData::close();
 
 	return Error::nr_of_errors();
 }

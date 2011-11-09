@@ -259,13 +259,7 @@ public:
 		}
 	};
 
-	void notifyLazyResidual(ResidualAndFreeInst* inst, LazyQuantGrounder const* const grounder){
-		LazyClauseMon* mon = new LazyClauseMon(inst);
-		MinisatID::LazyGroundLit lc(false, createLiteral(inst->residual), mon);
-		callbackgrounding cbmore(const_cast<LazyQuantGrounder*>(grounder), &LazyQuantGrounder::requestGroundMore);
-		mon->setRequestMoreGrounding(cbmore);
-		getSolver().add(lc);
-	}
+	void notifyLazyResidual(ResidualAndFreeInst* inst, LazyQuantGrounder const* const grounder);
 
 	typedef cb::Callback2<void, const Lit&, const std::vector<const DomainElement*>&> callbackrulegrounding;
 	class LazyRuleMon: public MinisatID::LazyGroundingCommand{

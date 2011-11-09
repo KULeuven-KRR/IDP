@@ -28,7 +28,7 @@ ostream& operator<<(ostream& stream, pair<T, T2> p){
 
 template<typename T>
 const DomainElement* domelem(T t){
-	return DomainElementFactory::instance()->create(t);
+	return createDomElem(t);
 }
 
 namespace Tests{
@@ -71,7 +71,7 @@ namespace Tests{
 		DomElemContainer *leftvar = new DomElemContainer(), *rightvar = new DomElemContainer();
 		ComparisonGenerator* gen = new ComparisonGenerator(left, right, leftvar, rightvar, Input::LEFT, CompType::GT);
 		set<pair<int, int> > genvalues;
-		leftvar->operator =(DomainElementFactory::instance()->create(1));
+		leftvar->operator =(createDomElem(1));
 		for(gen->begin(); not gen->isAtEnd(); gen->operator ++()){
 			auto tuple = pair<int, int>(leftvar->get()->value()._int, rightvar->get()->value()._int);
 			genvalues.insert(tuple);
@@ -100,7 +100,7 @@ namespace Tests{
 		Universe universe({sort});
 		auto gen = new LookupGenerator(new PredTable(new FullInternalPredTable(), universe), {var}, universe);
 
-		var->operator =(DomainElementFactory::instance()->create(-2));
+		var->operator =(createDomElem(-2));
 		EXPECT_TRUE(gen->check());
 		int count = 0;
 		for(gen->begin(); not gen->isAtEnd(); gen->operator ++()){
@@ -108,7 +108,7 @@ namespace Tests{
 		}
 		EXPECT_EQ(count, 1);
 
-		var->operator =(DomainElementFactory::instance()->create(1));
+		var->operator =(createDomElem(1));
 		EXPECT_TRUE(gen->check());
 		count = 0;
 		for(gen->begin(); not gen->isAtEnd(); gen->operator ++()){
@@ -116,7 +116,7 @@ namespace Tests{
 		}
 		EXPECT_EQ(count, 1);
 
-		var->operator =(DomainElementFactory::instance()->create(-10));
+		var->operator =(createDomElem(-10));
 		EXPECT_FALSE(gen->check());
 		count = 0;
 		for(gen->begin(); not gen->isAtEnd(); gen->operator ++()){
@@ -141,8 +141,8 @@ namespace Tests{
 
 		auto gen = new LookupGenerator(predtable, {var1, var2}, universe);
 
-		var1->operator =(DomainElementFactory::instance()->create(-2));
-		var2->operator =(DomainElementFactory::instance()->create(0));
+		var1->operator =(createDomElem(-2));
+		var2->operator =(createDomElem(0));
 		EXPECT_TRUE(gen->check());
 		int count = 0;
 		for(gen->begin(); not gen->isAtEnd(); gen->operator ++()){
@@ -150,8 +150,8 @@ namespace Tests{
 		}
 		EXPECT_EQ(count, 1);
 
-		var1->operator =(DomainElementFactory::instance()->create(1));
-		var2->operator =(DomainElementFactory::instance()->create(2));
+		var1->operator =(createDomElem(1));
+		var2->operator =(createDomElem(2));
 		EXPECT_TRUE(gen->check());
 		count = 0;
 		for(gen->begin(); not gen->isAtEnd(); gen->operator ++()){
@@ -159,8 +159,8 @@ namespace Tests{
 		}
 		EXPECT_EQ(count, 1);
 
-		var1->operator =(DomainElementFactory::instance()->create(2));
-		var2->operator =(DomainElementFactory::instance()->create(2));
+		var1->operator =(createDomElem(2));
+		var2->operator =(createDomElem(2));
 		EXPECT_FALSE(gen->check());
 		count = 0;
 		for(gen->begin(); not gen->isAtEnd(); gen->operator ++()){
@@ -185,7 +185,7 @@ namespace Tests{
 		auto gen = new InverseInstGenerator(predtable, {Pattern::INPUT, Pattern::OUTPUT}, {var1, var2});
 
 		set<int> genvalues;
-		var1->operator =(DomainElementFactory::instance()->create(1));
+		var1->operator =(createDomElem(1));
 		for(gen->begin(); not gen->isAtEnd(); gen->operator ++()){
 			auto value = var2->get()->value()._int;
 			genvalues.insert(value);
@@ -194,7 +194,7 @@ namespace Tests{
 		EXPECT_EQ(genvalues.size(), 3);
 
 		genvalues.clear();
-		var1->operator =(DomainElementFactory::instance()->create(-2));
+		var1->operator =(createDomElem(-2));
 		for(gen->begin(); not gen->isAtEnd(); gen->operator ++()){
 			auto value = var2->get()->value()._int;
 			genvalues.insert(value);

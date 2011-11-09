@@ -36,6 +36,10 @@ public:
 		_resvar = vars.back();
 	}
 
+	InverseUNAFuncGenerator* clone() const{
+		return new InverseUNAFuncGenerator(*this);
+	}
+
 	void reset(){
 		_reset = true;
 	}

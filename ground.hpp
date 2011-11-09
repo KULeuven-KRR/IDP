@@ -16,6 +16,9 @@
 #include <typeinfo>
 #include <cstdlib>
 #include "theory.hpp"
+#include "TheoryVisitor.hpp"
+#include "TheoryMutatingVisitor.hpp"
+
 #include "structure.hpp"
 #include "commontypes.hpp"
 #include "pcsolver/src/external/ExternalInterface.hpp"
@@ -205,12 +208,13 @@ typedef std::pair<const DomElemContainer*, const DomainElement*> dominst;
 typedef std::vector<dominst> dominstlist;
 
 struct ResidualAndFreeInst {
+	InstGenerator* generator;
 	Lit residual;
 	dominstlist freevarinst;
 
-	bool operator==(const ResidualAndFreeInst& rhs) const {
+/*	bool operator==(const ResidualAndFreeInst& rhs) const {
 		return rhs.residual == residual && freevarinst == rhs.freevarinst;
-	}
+	}*/
 };
 
 class LazyTsBody: public TsBody {
@@ -223,8 +227,8 @@ public:
 	LazyTsBody(int id, LazyQuantGrounder const* const grounder, ResidualAndFreeInst* inst, TsType type) :
 			TsBody(type), id_(id), grounder_(grounder), inst(inst) {
 	}
-	bool operator==(const TsBody& rhs) const;
-	bool operator<(const TsBody& rhs) const;
+	//FIXME bool operator==(const TsBody& rhs) const;
+	//FIXME bool operator<(const TsBody& rhs) const;
 
 	unsigned int id() const {
 		return id_;
@@ -577,48 +581,12 @@ struct GroundingContext {
 	CompContext _component; // Indicates the context of the visited formula
 	TsType _tseitin; // Indicates the type of tseitin definition that needs to be used.
 	std::set<PFSymbol*> _defined; // Indicates whether the visited rule is recursive.
+
+	bool _conjPathUntilNode, _conjunctivePathFromRoot;
+	// If true, there is a conjunctive path from the root of the sentence parsetree to this node.
+	// NOTE advantage: can optimize by creating less tseitins by using the knowledge that the formula can be added directly into cnf
 };
 
-/*** Top level grounders ***/
-
-class TopLevelGrounder {
-protected:
-	AbstractGroundTheory* _grounding;
-	int _verbosity;
-public:
-	TopLevelGrounder(AbstractGroundTheory* gt, int verb) :
-			_grounding(gt), _verbosity(verb) {
-	}
-	virtual ~TopLevelGrounder() {
-	}
-
-	virtual bool run() const = 0;
-	AbstractGroundTheory* grounding() const {
-		return _grounding;
-	}
-};
-
-class TheoryGrounder: public TopLevelGrounder {
-private:
-	std::vector<TopLevelGrounder*> _grounders;
-public:
-	TheoryGrounder(AbstractGroundTheory* gt, const std::vector<TopLevelGrounder*>& fgs, int verb) :
-			TopLevelGrounder(gt, verb), _grounders(fgs) {
-	}
-	bool run() const;
-};
-
-class FormulaGrounder;
-
-class SentenceGrounder: public TopLevelGrounder {
-private:
-	FormulaGrounder* _subgrounder;
-public:
-	SentenceGrounder(AbstractGroundTheory* gt, FormulaGrounder* sub, int verb) :
-			TopLevelGrounder(gt, verb), _subgrounder(sub) {
-	}
-	bool run() const;
-};
 
 /***********************
  Grounder Factory
@@ -633,7 +601,9 @@ class TermGrounder;
 class SetGrounder;
 class HeadGrounder;
 class RuleGrounder;
+class FormulaGrounder;
 class SymbolicStructure;
+class Grounder;
 
 typedef std::vector<Variable*> varlist;
 typedef std::map<Variable*, const DomElemContainer*> var2dommap;
@@ -678,9 +648,9 @@ private:
 	FormulaGrounder* _formgrounder;
 	TermGrounder* _termgrounder;
 	SetGrounder* _setgrounder;
-	TopLevelGrounder* _toplevelgrounder;
 	HeadGrounder* _headgrounder;
 	RuleGrounder* _rulegrounder;
+	Grounder* _topgrounder;
 
 	AbstractStructure* structure() const {
 		return _structure;
@@ -715,9 +685,9 @@ public:
 	}
 
 	// Factory method
-	TopLevelGrounder* create(const AbstractTheory*);
-	TopLevelGrounder* create(const AbstractTheory*, MinisatID::WrappedPCSolver*);
-	TopLevelGrounder* create(const AbstractTheory* theory, InteractivePrintMonitor* monitor, Options* opts);
+	Grounder* create(const AbstractTheory*);
+	Grounder* create(const AbstractTheory*, MinisatID::WrappedPCSolver*);
+	Grounder* create(const AbstractTheory* theory, InteractivePrintMonitor* monitor, Options* opts);
 
 	// Determine what should be passed to CP solver
 	std::set<const PFSymbol*> findCPSymbols(const AbstractTheory*);

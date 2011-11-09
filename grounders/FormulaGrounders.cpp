@@ -7,10 +7,19 @@
 #include "grounders/SetGrounders.hpp"
 #include "common.hpp"
 #include "generators/InstGenerator.hpp"
+#include "groundtheories/AbstractGroundTheory.hpp"
 #include "checker.hpp"
 #include <cmath>
 
 using namespace std;
+
+FormulaGrounder::FormulaGrounder(AbstractGroundTheory* grounding, const GroundingContext& ct)
+		:Grounder(grounding, ct), _verbosity(0) {
+}
+
+inline GroundTranslator* FormulaGrounder::translator() const {
+	return grounding()->translator();
+}
 
 void FormulaGrounder::setOrig(const Formula* f, const map<Variable*, const DomElemContainer*>& mvd, int verb) {
 	_verbosity = verb;
@@ -37,10 +46,10 @@ void FormulaGrounder::printorig() const {
 	clog << "\n";
 }
 
-AtomGrounder::AtomGrounder(GroundTranslator* gt, SIGN sign, PFSymbol* s, const vector<TermGrounder*>& sg,
+AtomGrounder::AtomGrounder(AbstractGroundTheory* grounding, SIGN sign, PFSymbol* s, const vector<TermGrounder*>& sg,
 		const vector<const DomElemContainer*>& checkargs, InstChecker* pic, InstChecker* cic, PredInter* inter, const vector<SortTable*>& vst,
 		const GroundingContext& ct) :
-		FormulaGrounder(gt, ct), _subtermgrounders(sg), _pchecker(pic), _cchecker(cic), _symbol(gt->addSymbol(s)), _tables(vst), _sign(sign), _checkargs(
+		FormulaGrounder(grounding, ct), _subtermgrounders(sg), _pchecker(pic), _cchecker(cic), _symbol(translator()->addSymbol(s)), _tables(vst), _sign(sign), _checkargs(
 				checkargs), _inter(inter) {
 	gentype = ct.gentype;
 }
@@ -512,16 +521,47 @@ Lit ClauseGrounder::getReification(const ConjOrDisj& formula) const {
 	return createTseitin(formula);
 }
 
-Lit ClauseGrounder::run() const {
-	ConjOrDisj formula;
-	bool negateformula = isNegative() && not negativeDefinedContext();
-	negateformula &= isPositive() && negativeDefinedContext();
-	run(formula, negateformula);
-	return getReification(formula);
-}
-
 void ClauseGrounder::run(ConjOrDisj& formula) const {
 	run(formula, isNegative());
+}
+
+FormStat ClauseGrounder::runSubGrounder(Grounder* subgrounder, bool conjFromRoot, ConjOrDisj& formula, bool negated) const{
+	ConjOrDisj subformula;
+	subgrounder->run(subformula);
+
+	if(subformula.literals.size()==0){
+		formula = subformula;
+		return FormStat::UNKNOWN;
+	}else if(subformula.literals.size()==1){
+		Lit l = subformula.literals[0];
+		if (makesFormulaFalse(l, negated)) {
+			formula.literals = litlist { negated ? -_false : _false };
+			return FormStat::DECIDED;
+		} else if (makesFormulaTrue(l, negated)) {
+			formula.literals = litlist { negated ? -_true : _true };
+			return FormStat::DECIDED;
+		} else if (not isRedundantInFormula(l, negated)) {
+			formula.literals.push_back(negated ? -l : l);
+		}
+		return FormStat::UNKNOWN;
+	} // otherwise INVAR: subformula is not true nor false and does not contain true nor false literals
+
+	if(conjFromRoot && conjunctive()){
+		if(subformula.type==Conn::CONJ){
+			for(auto i=subformula.literals.cbegin(); i<subformula.literals.cend(); ++i){
+				grounding()->addUnitClause(*i);
+			}
+		}else{
+			grounding()->add(subformula.literals);
+		}
+	}else{
+		if(subformula.type==formula.type){
+			formula.literals.insert(formula.literals.begin(), subformula.literals.cbegin(), subformula.literals.cend());
+		}else{
+			formula.literals.push_back(getReification(subformula));
+		}
+	}
+	return FormStat::UNKNOWN;
 }
 
 // NOTE: Optimized to avoid looping over the formula after construction
@@ -531,18 +571,13 @@ void BoolGrounder::run(ConjOrDisj& formula, bool negate) const {
 	formula.type = conn_;
 
 	for (auto g = _subgrounders.cbegin(); g < _subgrounders.cend(); g++) {
-		Lit lit = (*g)->run();
-		if (makesFormulaFalse(lit, negate)) {
-			formula.literals = litlist { negate ? -_false : _false };
+		if(runSubGrounder(*g, context()._conjunctivePathFromRoot, formula, negate)==FormStat::DECIDED){
 			return;
-		} else if (makesFormulaTrue(lit, negate)) {
-			formula.literals = litlist { negate ? -_true : _true };
-			return;
-		} else if (not isRedundantInFormula(lit, negate)) {
-			formula.literals.push_back(negate ? -lit : lit);
 		}
 	}
 }
+
+// TODO do toplevel checks in all grounders
 
 void QuantGrounder::run(ConjOrDisj& formula, bool negated) const {
 	if (verbosity() > 2) printorig();
@@ -555,39 +590,24 @@ void QuantGrounder::run(ConjOrDisj& formula, bool negated) const {
 			return;
 		}
 
-		// TODO als toplevel, moet hier een formula meegegeven worden, zodat er geen extra tseitins worden aangemaakt!!!
-		Lit l = _subgrounder->run();
-		if (makesFormulaFalse(l, negated)) {
-			formula.literals = litlist { negated ? -_false : _false };
+		if(runSubGrounder(_subgrounder, context()._conjunctivePathFromRoot, formula, negated)==FormStat::DECIDED){
 			return;
-		} else if (makesFormulaTrue(l, negated)) {
-			formula.literals = litlist { negated ? -_true : _true };
-			return;
-		} else if (not isRedundantInFormula(l, negated)) {
-			formula.literals.push_back(negated ? -l : l);
 		}
 	}
 }
 
-Lit EquivGrounder::run() const {
-	ConjOrDisj formula;
-
-	run(formula);
-
-	if (formula.literals.size() > 1) {
-		return translator()->translate(formula.literals, formula.type == Conn::CONJ, context()._tseitin);
-	} else {
-		assert(formula.literals.size()>0);
-		return formula.literals[0];
-	}
-}
-
-void EquivGrounder::run(ConjOrDisj& formula) const {
+void EquivGrounder::run(ConjOrDisj& formula, bool negated) const {
+	assert(not negated);
 	if (verbosity() > 2) printorig();
 
 	// Run subgrounders
-	Lit left = _leftgrounder->run();
-	Lit right = _rightgrounder->run();
+	ConjOrDisj leftformula, rightformula;
+	runSubGrounder(_leftgrounder, false, leftformula, false);
+	runSubGrounder(_rightgrounder, false, rightformula, false);
+	assert(leftformula.literals.size()==1);
+	assert(rightformula.literals.size()==1);
+	Lit left = leftformula.literals[0];
+	Lit right = rightformula.literals[0];
 
 	if (left == right) {
 		formula.literals = litlist { isPositive() ? _true : _false };

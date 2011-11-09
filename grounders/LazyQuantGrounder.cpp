@@ -16,94 +16,100 @@ using namespace std;
 
 unsigned int LazyQuantGrounder::maxid = 1;
 
+LazyQuantGrounder::LazyQuantGrounder(const std::set<Variable*>& freevars, SolverTheory* groundtheory, FormulaGrounder* sub, SIGN sign, QUANT q,
+		InstGenerator* gen, InstChecker* checker, const GroundingContext& ct) :
+		QuantGrounder(groundtheory, sub, sign, q, gen, checker, ct), id_(maxid++), _negatedformula(false), groundtheory_(groundtheory), currentlyGrounding(
+				false), freevars(freevars) {
+	assert(not conjunctive()); // TODO: currently, can only lazy ground existential quants
+	assert(ct._tseitin != TsType::RULE); // TODO: currently only lazy ground formulas outside of definitions
+}
+
 void LazyQuantGrounder::requestGroundMore(ResidualAndFreeInst * instance) {
 	notifyTheoryOccurence(instance);
 }
 
-void LazyQuantGrounder::groundMore() const{
-	if(verbosity() > 2) printorig();
+// TODO toplevelquants?
+// TODO lazy disjunctions and conjunctions?
+// TODO delete free var ref and generator when at end
+// TODO use the checker
+// NOTE: generators are CLONED, SAVED and REUSED!
 
-	// add one more grounding to the formula => with correct sign depending on negateclause!
+void LazyQuantGrounder::groundMore() const {
+	if (verbosity() > 2){
+		printorig();
+	}
+
 	// if value is decided, allow to erase the formula
 
-	// TODO check that if we come here, "next" SHOULD already have been called AND been succesful (otherwise the formula was fully ground and we should not come here again), check this!
-
-	grounding = true;
-
-	while(queuedtseitinstoground.size()>0){
+	currentlyGrounding = true;
+	while (queuedtseitinstoground.size() > 0) {
 		ResidualAndFreeInst* instance = queuedtseitinstoground.front();
 		queuedtseitinstoground.pop();
 
 		vector<const DomainElement*> originstantiation;
 		overwriteVars(originstantiation, instance->freevarinst);
-		Lit groundedlit = _subgrounder->run();
+
+		ConjOrDisj formula;
+		runSubGrounder(_subgrounder, context()._conjunctivePathFromRoot, formula, _negatedformula);
+
 		restoreOrigVars(originstantiation, instance->freevarinst);
 
-		if(makesFormulaFalse(groundedlit, negatedclause_)) { // FIXME same issue of order of negatedclause
-			groundedlit = negatedclause_?-_false:_false;
-		} else if(makesFormulaTrue(groundedlit, negatedclause_)) {
-			groundedlit = negatedclause_?-_true:_true;
-		}else if(not isRedundantInFormula(groundedlit, negatedclause_)){
-			groundedlit = negatedclause_ ? -groundedlit : groundedlit;
-		}
+		Lit groundedlit = getReification(formula);
 
 		GroundClause clause;
 		clause.push_back(groundedlit);
 
 		Lit oldtseitin = instance->residual;
-		// FIXME notify lazy should check whether the tseitin already has a value and request more grounding immediately!
-		_generator->operator ++();
-		if(not _generator->isAtEnd()){
+		// TODO notify lazy should check whether the tseitin already has a value and request more grounding immediately!
+		instance->generator->operator ++();
+		if (not instance->generator->isAtEnd()) {
 			Lit newresidual = translator()->createNewUninterpretedNumber();
 			clause.push_back(newresidual);
 			instance->residual = newresidual;
 			groundtheory_->notifyLazyResidual(instance, this); // set on not-decide and add to watchlist
+		}else{
+			// TODO deletion
 		}
 
 		groundtheory_->add(oldtseitin, context()._tseitin, clause);
 	}
 
-	grounding = false;
+	currentlyGrounding = false;
 }
 
-void LazyQuantGrounder::run(litlist& clause, bool negateclause) const {
-	if(verbosity() > 2) printorig();
+void LazyQuantGrounder::run(ConjOrDisj& formula, bool negatedformula) const {
+	assert(not conjunctive());
+	if (verbosity() > 2){
+		printorig();
+	}
 
-	negatedclause_ = negateclause;
+	_negatedformula = negatedformula;
 
 	_generator->begin();
-	if(_generator->isAtEnd()){
+	if (_generator->isAtEnd()) {
 		return;
 	}
 
-	// TODO waar allemaal rekening houden met welke signs en contexten?
-
+	// Save the current instantiation of the free variables
 	ResidualAndFreeInst* inst = new ResidualAndFreeInst();
-
-/*	clog <<"known free vars: \n\t";
-	printorig();
-	clog <<"The provided free vars: \n\t";
-	for(auto var=freevars.cbegin(); var!=freevars.cend(); ++var){
-		clog <<(*var)->to_string() <<", ";
-	}
-	clog <<"\n\n\n";*/
-
-	for(auto var=freevars.cbegin(); var!=freevars.cend(); ++var){
+	for (auto var = freevars.cbegin(); var != freevars.cend(); ++var) {
 		auto tuple = varmap().at(*var);
 		inst->freevarinst.push_back(dominst(tuple, tuple->get()));
 	}
+	inst->generator = _generator->clone();
 
 	translator()->translate(this, inst, context()._tseitin);
-	if(isNegative()){
+	if (isNegative()) {
 		inst->residual = -inst->residual;
 	}
-	clause.push_back(inst->residual);
+	formula.literals.push_back(inst->residual);
 }
 
-void LazyQuantGrounder::notifyTheoryOccurence(ResidualAndFreeInst * instance) const{
-	// restructured code to prevent recursion // FIXME duplication and const issues!
+// restructured code to prevent recursion
+void LazyQuantGrounder::notifyTheoryOccurence(ResidualAndFreeInst* instance) const {
+	// FIXME duplication and const issues!
 	queuedtseitinstoground.push(instance);
-	if(not grounding){
+	if (not currentlyGrounding) {
 		groundMore();
 	}
 }

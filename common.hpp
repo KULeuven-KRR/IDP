@@ -13,10 +13,15 @@
 #include <vector>
 #include "commontypes.hpp"
 
-std::string getLibraryName();
-std::string getLuaLibraryFilename();
-std::string getIDPLibraryFilename();
-std::string getConfigFilename();
+#include "loki/NullType.h"
+#include "loki/TypeTraits.h"
+#include "loki/static_check.h"
+#include <typeinfo>
+
+std::string getTablenameForInternals();
+std::string getPathOfLuaInternals();
+std::string getPathOfIdpInternals();
+std::string getPathOfConfigFile();
 
 void notyetimplemented(const std::string&);
 
@@ -96,11 +101,6 @@ Stream& operator<<(Stream& output, const CompType& type){
 std::string* StringPointer(const char* str);		//!< Returns a shared pointer to the given string
 std::string* StringPointer(const std::string& str);	//!< Returns a shared pointer to the given string
 
-
-#include "loki/NullType.h"
-#include "loki/TypeTraits.h"
-#include "loki/static_check.h"
-#include <typeinfo>
 
 class CannotCompareTypeIDofPointers{};
 

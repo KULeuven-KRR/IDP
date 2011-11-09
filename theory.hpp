@@ -347,60 +347,7 @@ public:
 	std::ostream& put(std::ostream&, bool longnames = false, unsigned int spaces = 0)	const;
 };
 
-namespace FormulaUtils {
-	/** \brief Recursively rewrite all EqChainForms in the given formula to BoolForms **/
-	Formula* removeEqChains(Formula*,Vocabulary* v = 0);	
 
-	/** \brief Estimate the cost of the given query 
-	 *		Precondition: 
-	 *			- query does not contain any FuncTerm or AggTerm subterms
-	 *			- the query has a twovalue result in the given structure
-	 */
-	double estimatedCostAll(PredForm* query, const std::set<Variable*> freevars, bool inverse, AbstractStructure* structure);
-
-	/** \brief Recursively remove all nested terms **/
-	Formula* removeNesting(Formula*, Context poscontext = Context::POSITIVE);
-
-	/** \brief TODO **/
-	Formula* removeEquiv(Formula*);
-
-	/** \brief TODO **/
-	Formula* flatten(Formula*);
-
-	/** \brief Recursively rewrite all function terms to their predicate form **/
-	Formula* graphFunctions(Formula* f);	
-
-	/** \brief Recursively move all partial terms outside atoms **/
-	Formula* movePartialTerms(Formula*, Vocabulary* voc = 0, Context = Context::POSITIVE);
-
-	/** \brief Non-recursively move terms that are three-valued in a given structure outside of the given atom **/
-	Formula* moveThreeValuedTerms(Formula*,AbstractStructure*,Context context,bool cpsupport=false,
-								const std::set<const PFSymbol*> cpsymbols=std::set<const PFSymbol*>());
-
-	/** \brief Returns true iff at least one FuncTerm occurs in the given formula **/
-	bool containsFuncTerms(Formula* f);
-
-	/** \brief Replace the given term by the given variable in the given formula **/
-	Formula* substitute(Formula*, Term*, Variable*);
-
-	/** \brief Returns true iff the aggregate formula is monotone **/
-	bool isMonotone(const AggForm* af);
-
-	/** \brief Returns true iff the aggregate formula is anti-monotone **/
-	bool isAntimonotone(const AggForm* af);
-
-	/** \brief Create the formula 'true' **/
-	BoolForm*	trueFormula();
-
-	/** \brief Create the formula 'false' **/
-	BoolForm*	falseFormula();
-}
-
-namespace TermUtils {
-	/** \brief Rewrite set expressions by moving three-valued terms **/
-	SetExpr* moveThreeValuedTerms(SetExpr*,AbstractStructure*,Context context,bool cpsupport=false,
-			const std::set<const PFSymbol*> cpsymbols=std::set<const PFSymbol*>());
-}
 
 
 /******************
@@ -499,11 +446,7 @@ public:
 	std::ostream& put(std::ostream&, bool longnames = false, unsigned int spaces = 0) const;
 };
 
-namespace DefinitionUtils {
-	/** Compute the open symbols of a definition **/
-	std::set<PFSymbol*>	opens(Definition*);
 
-}
 
 /***************************
 	Fixpoint definitions
@@ -658,41 +601,5 @@ public:
 	// Output
 	std::ostream& put(std::ostream&, bool longnames = false, unsigned int spaces = 0) const;
 };
-
-namespace TheoryUtils {
-
-	/** \brief Push negations inside **/
-	void pushNegations(AbstractTheory*);	
-
-	/** \brief Rewrite A <=> B to (A => B) & (B => A) **/
-	void removeEquiv(AbstractTheory*);		
-
-	/** \brief Rewrite (! x : ! y : phi) to (! x y : phi), rewrite ((A & B) & C) to (A & B & C), etc. **/
-	void flatten(AbstractTheory*);			
-
-	/** \brief Rewrite chains of equalities to a conjunction or disjunction of atoms. **/
-	void removeEqChains(AbstractTheory*);	
-
-	/** \brief Rewrite (! x : phi & chi) to ((! x : phi) & (!x : chi)), and similarly for ?. **/
-	void moveQuantifiers(AbstractTheory*);	
-
-	/** \brief Rewrite the theory so that there are no nested terms **/
-	void removeNesting(AbstractTheory*);
-
-	/** \brief Rewrite (F(x) = y) or (y = F(x)) to Graph_F(x,y) **/
-	void graphFunctions(AbstractTheory* t);
-
-	/** \brief Rewrite (AggTerm op BoundTerm) to an aggregate formula (op = '=', '<', or '>') **/
-	void graphAggregates(AbstractTheory* t);
-
-	/** \brief Replace all definitions in the theory by their completion **/
-	void completion(AbstractTheory*);
-
-	/** \brief Count the number of subformulas in the theory **/
-	int nrSubformulas(AbstractTheory*);
-
-	/** \brief Merge two theories **/
-	AbstractTheory* merge(AbstractTheory*,AbstractTheory*);
-}
 
 #endif

@@ -10,6 +10,10 @@ class EmptyGenerator : public InstGenerator {
 public:
 	virtual void next() {}
 	virtual void reset() { notifyAtEnd(); }
+
+	EmptyGenerator* clone() const{
+		return new EmptyGenerator(*this);
+	}
 };
 
 class FullGenerator : public InstGenerator {
@@ -17,6 +21,11 @@ private:
 	bool first;
 public:
 	FullGenerator():first(true){}
+
+	FullGenerator* clone() const{
+		return new FullGenerator(*this);
+	}
+
 	virtual void next() {
 		if(first){
 			first = false;

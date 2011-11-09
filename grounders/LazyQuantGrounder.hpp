@@ -9,6 +9,7 @@
 
 #include "ground.hpp"
 #include "grounders/FormulaGrounders.hpp"
+#include "groundtheories/SolverPolicy.hpp"
 
 #include <map>
 
@@ -18,31 +19,25 @@ class LazyQuantGrounder : public QuantGrounder {
 private:
 	static unsigned int maxid;
 	unsigned int id_;
-	mutable bool negatedclause_;
+
 	SolverTheory* groundtheory_;
-	mutable std::queue<ResidualAndFreeInst *> queuedtseitinstoground;
-	mutable bool grounding;
-	const std::set<Variable*> freevars;
+
+	mutable bool _negatedformula;
+
+	mutable bool currentlyGrounding; // If true, groundMore is currently already on the stack, so do not call it again!
+	mutable std::queue<ResidualAndFreeInst *> queuedtseitinstoground; // Stack of what we still have to ground
+
+	const std::set<Variable*> freevars; // The freevariables according to which we have to ground
 
 	public:
-#warning only create in cases where it reduces to an existential quantifier!!!!
-#warning currently only non-defined!
 	LazyQuantGrounder(const std::set<Variable*>& freevars,
 						SolverTheory* groundtheory,
-						GroundTranslator* gt,
 						FormulaGrounder* sub,
 						SIGN sign,
 						QUANT q,
 						InstGenerator* gen,
 						InstChecker* checker,
-						const GroundingContext& ct):
-			QuantGrounder(gt,sub,sign, q, gen, checker,ct),
-			id_(maxid++),
-			negatedclause_(false),
-			groundtheory_(groundtheory), // FIXME is there a reason why this is not part of every grounder, but translator always is?
-			grounding(false),
-			freevars(freevars){
-	}
+						const GroundingContext& ct);
 
 	// TODO for some reason, the callback framework does not compile when using the const method groundmore directly.
 	void requestGroundMore(ResidualAndFreeInst* instance);
@@ -53,7 +48,7 @@ private:
 	void notifyTheoryOccurence(ResidualAndFreeInst* instance) const;
 
 protected:
-	virtual void	run(litlist&, bool negatedclause = true)	const;
+	virtual void run(ConjOrDisj& literals, bool negatedformula) const;
 };
 
 #endif /* LAZYQUANTGROUNDER_HPP_ */

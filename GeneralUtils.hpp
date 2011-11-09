@@ -86,4 +86,13 @@ bool fileIsReadable(T* filename) { //quick and dirty
 	return exists;
 }
 
+template<typename T>
+void replaceAll(T& str, const T& from, const T& to) {
+    size_t start_pos = 0;
+    while((start_pos = str.find(from, start_pos)) != std::string::npos) {
+        str.replace(start_pos, from.length(), to);
+        start_pos += to.length(); // In case 'to' contains 'from', like replacing 'x' with 'yx'
+    }
+}
+
 #endif /* GENUTILS_HPP_ */

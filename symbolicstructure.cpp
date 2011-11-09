@@ -9,6 +9,9 @@
 #include "theory.hpp"
 #include "fobdd.hpp"
 #include "symbolicstructure.hpp"
+
+#include "theorytransformations/Utils.hpp"
+
 using namespace std;
 
 TruthType swapTF(TruthType type) {
@@ -80,14 +83,14 @@ void SymbolicStructure::visit(const QuantForm* quantform) {
 
 void SymbolicStructure::visit(const EqChainForm* eqchainform) {
 	Formula* cloned = eqchainform->clone();
-	cloned = FormulaUtils::removeEqChains(cloned);
+	cloned = FormulaUtils::splitComparisonChains(cloned);
 	_result = evaluate(cloned,_type);
 	cloned->recursiveDelete();
 }
 
 void SymbolicStructure::visit(const EquivForm* equivform) {
 	Formula* cloned = equivform->clone();
-	cloned = FormulaUtils::removeEquiv(cloned);
+	cloned = FormulaUtils::removeEquivalences(cloned);
 	_result = evaluate(cloned,_type);
 	cloned->recursiveDelete();
 }

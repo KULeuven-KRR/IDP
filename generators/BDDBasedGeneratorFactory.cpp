@@ -17,6 +17,8 @@
 #include "generators/FalseQuantKernelGenerator.hpp"
 #include "generators/TrueQuantKernelGenerator.hpp"
 
+#include "theorytransformations/Utils.hpp"
+
 using namespace std;
 
 BDDToGenerator::BDDToGenerator(FOBDDManager* manager) :
@@ -87,17 +89,17 @@ GeneratorNode* BDDToGenerator::createnode(const FOBDD* bdd, const vector<Pattern
 		FullGenerator* eg = new FullGenerator();
 		return new LeafGeneratorNode(eg);
 		/*vector<const DomElemContainer*> outvars;
-		vector<SortTable*> tables;
-		for (unsigned int n = 0; n < pattern.size(); ++n) {
-			if (pattern[n] == Pattern::OUTPUT) {
-				if (firstocc[n] == n) {
-					outvars.push_back(vars[n]);
-					tables.push_back(universe.tables()[n]);
-				}
-			}
-		}
-		InstGenerator* ig = GeneratorFactory::create(outvars, tables);
-		return new LeafGeneratorNode(ig);*/
+		 vector<SortTable*> tables;
+		 for (unsigned int n = 0; n < pattern.size(); ++n) {
+		 if (pattern[n] == Pattern::OUTPUT) {
+		 if (firstocc[n] == n) {
+		 outvars.push_back(vars[n]);
+		 tables.push_back(universe.tables()[n]);
+		 }
+		 }
+		 }
+		 InstGenerator* ig = GeneratorFactory::create(outvars, tables);
+		 return new LeafGeneratorNode(ig);*/
 	} else {
 		// split variables
 		vector<Pattern> kernpattern;
@@ -136,11 +138,10 @@ GeneratorNode* BDDToGenerator::createnode(const FOBDD* bdd, const vector<Pattern
 			vector<const DomElemContainer*> kgvars(0);
 			vector<SortTable*> kguniv;
 			for (unsigned int n = 0; n < kerngenvars.size(); ++n) {
-				if (kernpattern[n]==Pattern::OUTPUT) {
+				if (kernpattern[n] == Pattern::OUTPUT) {
 					unsigned int m = 0;
 					for (; m < kgvars.size(); ++m) {
-						if (kgvars[m] == kerngenvars[n])
-							break;
+						if (kgvars[m] == kerngenvars[n]) break;
 					}
 					if (m == kgvars.size()) {
 						kgvars.push_back(kerngenvars[n]);
@@ -166,7 +167,7 @@ InstGenerator* BDDToGenerator::create(PredForm* atom, const vector<Pattern>& pat
 	if (FormulaUtils::containsFuncTerms(atom)) {
 		bool allinput = true;
 		for (auto it = pattern.cbegin(); it != pattern.cend(); ++it) {
-			if (*it==Pattern::OUTPUT) {
+			if (*it == Pattern::OUTPUT) {
 				allinput = false;
 				break;
 			}
@@ -290,15 +291,15 @@ InstGenerator* BDDToGenerator::create(PredForm* atom, const vector<Pattern>& pat
 	}
 
 	if (FormulaUtils::containsFuncTerms(atom)) {
-		Formula* newform = FormulaUtils::removeNesting(atom, Context::NEGATIVE);
-		newform = FormulaUtils::removeEqChains(newform);
+		Formula* newform = FormulaUtils::unnestTerms(atom, Context::NEGATIVE);
+		newform = FormulaUtils::splitComparisonChains(newform);
 		newform = FormulaUtils::graphFunctions(newform);
 		newform = FormulaUtils::flatten(newform);
 		assert(sametypeid<QuantForm>(*newform));
 		QuantForm* quantform = dynamic_cast<QuantForm*>(newform);
 		assert(sametypeid<BoolForm>(*(quantform->subformula())));
-		BoolForm* boolform = dynamic_cast<BoolForm*>(quantform->subformula());vector
-		<PredForm*> conjunction;
+		BoolForm* boolform = dynamic_cast<BoolForm*>(quantform->subformula());
+		vector<PredForm*> conjunction;
 		for (auto it = boolform->subformulas().cbegin(); it != boolform->subformulas().cend(); ++it) {
 			assert(typeid(*(*it)) == typeid(PredForm));
 			conjunction.push_back(dynamic_cast<PredForm*>(*it));
@@ -306,7 +307,7 @@ InstGenerator* BDDToGenerator::create(PredForm* atom, const vector<Pattern>& pat
 		PredForm* origatom = conjunction.back();
 		set<Variable*> still_free;
 		for (unsigned int n = 0; n < pattern.size(); ++n) {
-			if (pattern[n]==Pattern::OUTPUT) {
+			if (pattern[n] == Pattern::OUTPUT) {
 				still_free.insert(atomvars[n]);
 			}
 		}
@@ -402,8 +403,7 @@ InstGenerator* BDDToGenerator::create(PredForm* atom, const vector<Pattern>& pat
 				Variable* var = (dynamic_cast<VarTerm*>(*it))->var();
 				unsigned int pos = 0;
 				for (; pos < pattern.size(); ++pos) {
-					if (atomvars[pos] == var)
-						break;
+					if (atomvars[pos] == var) break;
 				}assert(pos < pattern.size());
 				atompattern.push_back(pattern[pos]);
 				datomvars.push_back(vars[pos]);
@@ -414,9 +414,9 @@ InstGenerator* BDDToGenerator::create(PredForm* atom, const vector<Pattern>& pat
 				*domelement = domterm->value();
 
 				Variable* var = new Variable(domterm->sort());
-				PredForm* newatom = dynamic_cast<PredForm*>(FormulaUtils::substitute(atom, domterm, var));
+				PredForm* newatom = dynamic_cast<PredForm*>(FormulaUtils::substituteTerm(atom, domterm, var));
 
-vector				<Pattern> termpattern(pattern);
+				vector<Pattern> termpattern(pattern);
 				termpattern.push_back(Pattern::INPUT);
 				vector<const DomElemContainer*> termvars(vars);
 				termvars.push_back(domelement);
@@ -441,20 +441,21 @@ vector				<Pattern> termpattern(pattern);
 		}
 		const PredTable* table = 0;
 		if (sametypeid<Predicate>(*(atom->symbol()))) {
-			Predicate* predicate = dynamic_cast<Predicate*>(atom->symbol());switch (predicate->type()) {
-				case ST_NONE:
+			Predicate* predicate = dynamic_cast<Predicate*>(atom->symbol());
+			switch (predicate->type()) {
+			case ST_NONE:
 				table = inverse ? inter->cf() : inter->ct();
 				break;
-				case ST_CT:
+			case ST_CT:
 				table = inverse ? inter->pf() : inter->ct();
 				break;
-				case ST_CF:
+			case ST_CF:
 				table = inverse ? inter->pt() : inter->cf();
 				break;
-				case ST_PT:
+			case ST_PT:
 				table = inverse ? inter->cf() : inter->pt();
 				break;
-				case ST_PF:
+			case ST_PF:
 				table = inverse ? inter->ct() : inter->pf();
 				break;
 			}
@@ -496,8 +497,7 @@ InstGenerator* BDDToGenerator::create(const FOBDDKernel* kernel, const vector<Pa
 				const FOBDDVariable* var = dynamic_cast<const FOBDDVariable*>(*it);
 				unsigned int pos = 0;
 				for (; pos < pattern.size(); ++pos) {
-					if (kernelvars[pos] == var)
-						break;
+					if (kernelvars[pos] == var) break;
 				}assert(pos < pattern.size());
 				atompattern.push_back(pattern[pos]);
 				atomvars.push_back(vars[pos]);
@@ -592,7 +592,7 @@ InstGenerator* BDDToGenerator::create(const FOBDDKernel* kernel, const vector<Pa
 		} else {
 			unsigned int firstout = 0;
 			for (; firstout < pattern.size(); ++firstout) {
-				if (pattern[firstout]==Pattern::OUTPUT){
+				if (pattern[firstout] == Pattern::OUTPUT) {
 					break;
 				}
 			}

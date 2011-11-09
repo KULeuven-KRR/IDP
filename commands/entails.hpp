@@ -19,6 +19,8 @@
 #include <signal.h>
 #include <setjmp.h>
 
+#include "theorytransformations/Utils.hpp"
+
 class TheorySupportedChecker : public TheoryVisitor {
 	private:
 		bool		_arithmeticFound;
@@ -117,12 +119,9 @@ public:
 		InternalArgument& tffCommand = tffCommands[COMMANDS_INDEX];
 		#endif
 		
-		Theory* axioms;
-		Theory* conjectures;
-		try {
-			axioms = dynamic_cast<Theory*>(args[0].theory()->clone());
-			conjectures = dynamic_cast<Theory*>(args[1].theory()->clone());
-		} catch (std::bad_cast&) {
+		AbstractTheory* axioms = args[0].theory()->clone();
+		AbstractTheory* conjectures = args[1].theory()->clone();
+		if(not sametypeid<Theory>(*axioms) || not sametypeid<Theory>(*conjectures)){
 			Error::error("\"entails\" can only take regular Theory objects as axioms and conjectures.\n");
 			return nilarg();
 		}
@@ -136,7 +135,7 @@ public:
 		if (sc.definitionFound()) {
 			Info::print("Replacing a definition by its (potentially weaker) completion. "
 					"The prover may wrongly decide that the first theory does not entail the second theory.");
-			TheoryUtils::completion(axioms);
+			axioms = FormulaUtils::addCompletion(axioms);
 			sc.definitionFound(false);
 		}
 		conjectures->accept(&sc);
@@ -152,14 +151,11 @@ public:
 		bool arithmeticFound = sc.arithmeticFound();
 		
 		// Turn functions into predicates (for partial function support)
-		TheoryUtils::removeNesting(axioms);
-		TheoryUtils::removeNesting(conjectures);
-		for(auto it = axioms->sentences().cbegin(); it != axioms->sentences().cend(); ++it) {
-			FormulaUtils::graphFunctions(*it);
-		}
-		for(auto it = conjectures->sentences().cbegin(); it != conjectures->sentences().cend(); ++it) {
-		 	FormulaUtils::graphFunctions(*it);
-		}
+		axioms = FormulaUtils::unnestTerms(axioms);
+		axioms = FormulaUtils::graphFunctions(axioms);
+
+		conjectures = FormulaUtils::unnestTerms(conjectures);
+		conjectures = FormulaUtils::graphFunctions(conjectures);
 		
 		// Clean up possibly existing files
 		remove(".tptpfile.tptp");
@@ -176,11 +172,12 @@ public:
 		
 		// Print the theories to a TPTP file
 		printer->visit(axioms->vocabulary());
-		printer->visit(axioms);
+		axioms->accept(printer);
 		printer->conjecture(true);
-		if(axioms->vocabulary() != conjectures->vocabulary())
+		if(axioms->vocabulary() != conjectures->vocabulary()){
 			printer->visit(conjectures->vocabulary());
-		printer->visit(conjectures);
+		}
+		conjectures->accept(printer);
 		delete(printer);
 		
 		std::ofstream tptpFile;

@@ -22,6 +22,10 @@ public:
 			: _table(t), _invar(in), _reset(true) {
 	}
 
+	SortLookUpGenerator* clone() const{
+		return new SortLookUpGenerator(*this);
+	}
+
 	void reset() {
 		_reset = true;
 	}

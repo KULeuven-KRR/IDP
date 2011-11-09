@@ -25,6 +25,10 @@ public:
 			_in(in), _out(out), _outdom(dom), _reset(true), _outputShouldBeInt(outputShouldBeInt) {
 	}
 
+	InvertNumericGenerator* clone() const{
+		return new InvertNumericGenerator(*this);
+	}
+
 	void reset(){
 		_reset = true;
 	}
@@ -34,11 +38,11 @@ public:
 			auto var = _in->get();
 			if(var->type() == DET_INT){
 				int newvalue = - var->value()._int;
-				*_out = DomainElementFactory::instance()->create(newvalue, _outputShouldBeInt);
+				*_out = createDomElem(newvalue, _outputShouldBeInt);
 			}else{
 				assert(var->type() == DET_DOUBLE);
 				double newvalue = -1 * var->value()._double;
-				*_out = DomainElementFactory::instance()->create(newvalue, _outputShouldBeInt);
+				*_out = createDomElem(newvalue, _outputShouldBeInt);
 			}
 			if(_outdom->contains(_out->get())){
 				notifyAtEnd();

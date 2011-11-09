@@ -1,11 +1,11 @@
 SUBDIRS = lib pcsolver
 AM_CXXFLAGS = @AC_CXXFLAGS@ -Wall -Wextra\
 		-std=c++0x\
-		-I$(srcdir)/lib/loki-0.1.7/include\
+		-I$(srcdir)/lib/loki/include\
 		-I$(srcdir)/lib/lua/etc -I$(srcdir)/lib/lua/src\
 		-I$(builddir)/lib/lua/src  -I $(srcdir)/lib/\
 		-DDATADIR=\"$(datadir)\" -DRCDIR=\"$(localstatedir)\"\
-		-DINTERNALLIBARYNAME=\"idp_intern\" -DINTERNALLIBARYLUA=\"/std/idp_intern.lua\"\
+		-DINTERNALLIBARYLUA=\"/std/idp_intern.lua\"\
 		-DINTERNALLIBARYIDP=\"/std/idp_intern.idp\" -DCONFIGFILENAME=\"/idp/.idprc\"
 		
 if USEINTERACTIVE
@@ -56,7 +56,7 @@ grounder_SOURCES = \
 		monitors/luatracemonitor.hpp monitors/luainteractiveprintmonitor.hpp\
 		groundtheories/PrintGroundPolicy.hpp\
 		groundtheories/GroundPolicy.hpp\
-		groundtheories/SolverPolicy.hpp\
+		groundtheories/SolverPolicy.hpp groundtheories/SolverPolicy.cpp\
 		groundtheories/AbstractGroundTheory.hpp\
 		grounders/LazyQuantGrounder.hpp grounders/LazyQuantGrounder.cpp\
 		grounders/DefinitionGrounders.hpp grounders/DefinitionGrounders.cpp\
@@ -64,6 +64,7 @@ grounder_SOURCES = \
 		grounders/SetGrounders.hpp grounders/SetGrounders.cpp\
 		grounders/TermGrounders.hpp grounders/TermGrounders.cpp\
 		grounders/GroundUtils.hpp\
+		grounders/Grounder.hpp grounders/Grounder.cpp\
 		rungidl.hpp rungidl.cpp\
 		visitors/StructureVisitor.hpp visitors/StructureVisitor.cpp\
 		visitors/TheoryVisitor.hpp visitors/TheoryVisitor.cpp\
@@ -143,7 +144,32 @@ grounder_SOURCES = \
 		generators/TrueQuantKernelGenerator.hpp\
 		generators/GeneratorFactory.cpp\
 		generators/BDDBasedGeneratorFactory.cpp\
-		OptionsStack.hpp OptionsStack.cpp
+		OptionsStack.hpp OptionsStack.cpp\
+		theoryinformation/CollectOpensOfDefinitions.hpp theoryinformation/CollectOpensOfDefinitions.cpp\
+		theoryinformation/CheckContainment.hpp theoryinformation/CheckContainment.cpp\
+		theoryinformation/CheckContainsFuncTerms.hpp\
+		theoryinformation/CheckSorts.hpp theoryinformation/CheckSorts.cpp\
+		theorytransformations/PushNegations.hpp theorytransformations/PushNegations.cpp\
+		theorytransformations/Flatten.hpp theorytransformations/Flatten.cpp\
+		theorytransformations/CountSubformulas.hpp\
+		theorytransformations/CheckFuncTerms.hpp\
+		theorytransformations/DeriveSorts.hpp theorytransformations/DeriveSorts.cpp\
+		theorytransformations/AddCompletion.hpp theorytransformations/AddCompletion.cpp\
+		theorytransformations/GraphFunctions.hpp theorytransformations/GraphFunctions.cpp\
+		theorytransformations/GraphAggregates.hpp theorytransformations/GraphAggregates.cpp\
+		theorytransformations/PushQuantifications.hpp theorytransformations/PushQuantifications.cpp\
+		theorytransformations/RemoveEquivalences.hpp theorytransformations/RemoveEquivalences.cpp\
+		theorytransformations/SplitComparisonChains.hpp theorytransformations/SplitComparisonChains.cpp\
+		theorytransformations/SubstituteTerm.hpp\
+		theorytransformations/UnnestPartialTerms.hpp\
+		theorytransformations/UnnestTerms.hpp theorytransformations/UnnestTerms.cpp\
+		theorytransformations/UnnestThreeValuedTerms.hpp theorytransformations/UnnestThreeValuedTerms.cpp\
+		TheoryVisitor.hpp TheoryVisitor.cpp\
+		TheoryMutatingVisitor.hpp TheoryMutatingVisitor.cpp\
+		theorytransformations/Utils.hpp theorytransformations/Utils.cpp\
+		GlobalData.hpp GlobalData.cpp
+		
+gidl_dist = $(srcdir)/lib/loki-0.1.7
 		
 gidl_SOURCES = main.cpp $(grounder_SOURCES)
 
@@ -151,6 +177,9 @@ AM_CXXFLAGS+=-I $(top_srcdir)/pcsolver/src/
 
 LIBSRCDIR = $(srcdir)/lib
 LIBBLDDIR = $(builddir)/lib
+
+# THREADING SUPPORT
+AM_LDFLAGS += -lpthread
 
 # CALLBACK FRAMEWORK
 AM_CXXFLAGS += -I $(LIBSRCDIR)/pluscallback1.7/

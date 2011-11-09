@@ -25,16 +25,18 @@ using namespace std;
 
 unsigned int DefinitionGrounder::_currentdefnb = 1;
 
-DefinitionGrounder::DefinitionGrounder(AbstractGroundTheory* gt, std::vector<RuleGrounder*> subgr,int verb)
-		: TopLevelGrounder(gt,verb), _defnb(_currentdefnb++), _subgrounders(subgr), _grounddefinition(new GroundDefinition(_defnb, gt->translator())) {
+// INVAR: definition is always toplevel, so certainly conjunctive path to the root
+DefinitionGrounder::DefinitionGrounder(AbstractGroundTheory* gt, std::vector<RuleGrounder*> subgr, const GroundingContext& context)
+		: Grounder(gt,context), _defnb(_currentdefnb++), _subgrounders(subgr), _grounddefinition(new GroundDefinition(_defnb, gt->translator())) {
 }
 
-bool DefinitionGrounder::run() const {
+void DefinitionGrounder::run(ConjOrDisj& formula) const {
 	for(auto grounder = _subgrounders.cbegin(); grounder<_subgrounders.cend(); ++grounder){
 		(*grounder)->run(id(), _grounddefinition);
 	}
-	_grounding->add(_grounddefinition); // FIXME check how it is handled in the lazy part
-	return true;
+	grounding()->add(_grounddefinition); // FIXME check how it is handled in the lazy part
+
+	formula.type = Conn::CONJ; // Empty conjunction, so always true
 }
 
 RuleGrounder::RuleGrounder(HeadGrounder* hgr, FormulaGrounder* bgr, InstGenerator* hig, InstGenerator* big, GroundingContext& ct)

@@ -21,7 +21,7 @@ void groundSetLiteral(const LitGrounder& sublitgrounder, const TermGrounder& sub
 	if(checker.check()){
 		l = _true;
 	}else{
-		l = sublitgrounder.run();
+		l = sublitgrounder.groundAndReturnLit();
 	}
 	if(l==_false){
 		return;

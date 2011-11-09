@@ -61,7 +61,6 @@ public:
 
 	//NOTE: have to call these!
 	//TODO check whether they are called correctly (currently in theorygrounder->run), but probably missing several usecases
-	virtual void startTheory() = 0;
 	virtual void closeTheory() = 0;
 
 	// Inspectors
@@ -213,8 +212,12 @@ public:
 	const int ID_FOR_UNDEFINED;
 
 	// Constructors
-	GroundTheory(AbstractStructure* str): AbstractGroundTheory(str), ID_FOR_UNDEFINED(-1){}
-	GroundTheory(Vocabulary* voc, AbstractStructure* str): AbstractGroundTheory(voc, str), ID_FOR_UNDEFINED(-1){}
+	GroundTheory(AbstractStructure* str): AbstractGroundTheory(str), ID_FOR_UNDEFINED(-1){
+		Policy::polStartTheory(translator());
+	}
+	GroundTheory(Vocabulary* voc, AbstractStructure* str): AbstractGroundTheory(voc, str), ID_FOR_UNDEFINED(-1){
+		Policy::polStartTheory(translator());
+	}
 
 	virtual	~GroundTheory(){}
 
@@ -225,9 +228,6 @@ public:
 
 	virtual void recursiveDelete(){ Policy::polRecursiveDelete(); }
 
-	void startTheory(){
-		Policy::polStartTheory(translator());
-	}
 	void closeTheory(){
 		// TODO arbitrary values?
 		// FIXME problem if a function does not occur in the theory/grounding! It might be arbitrary, but should still be a function?

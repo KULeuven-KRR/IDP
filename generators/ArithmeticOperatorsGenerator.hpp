@@ -53,7 +53,7 @@ public:
 			notifyAtEnd();
 			return;
 		}
-		*_out = DomainElementFactory::instance()->create(type==DET_INT?int(result):result, _requestedType);
+		*_out = createDomElem(type==DET_INT?int(result):result, _requestedType);
 		if(not _outdom->contains(_out->get())){
 			notifyAtEnd();
 		}
@@ -93,6 +93,10 @@ public:
 	DivGenerator(const DomElemContainer* in1, const DomElemContainer* in2, const DomElemContainer* out, NumType requestedType, SortTable* dom) :
 		ArithOpGenerator(in1, in2, out, requestedType, dom) {
 	}
+
+	DivGenerator* clone() const{
+		return new DivGenerator(*this);
+	}
 };
 
 class TimesGenerator : public ArithOpGenerator {
@@ -104,6 +108,10 @@ protected:
 public:
 	TimesGenerator(const DomElemContainer* in1, const DomElemContainer* in2, const DomElemContainer* out, NumType requestedType, SortTable* dom) :
 		ArithOpGenerator(in1, in2, out, requestedType, dom) {
+	}
+
+	TimesGenerator* clone() const{
+		return new TimesGenerator(*this);
 	}
 };
 
@@ -117,6 +125,10 @@ public:
 	MinusGenerator(const DomElemContainer* in1, const DomElemContainer* in2, const DomElemContainer* out, NumType requestedType, SortTable* dom) :
 		ArithOpGenerator(in1, in2, out, requestedType, dom) {
 	}
+
+	MinusGenerator* clone() const{
+		return new MinusGenerator(*this);
+	}
 };
 
 class PlusGenerator : public ArithOpGenerator {
@@ -128,6 +140,10 @@ protected:
 public:
 	PlusGenerator(const DomElemContainer* in1, const DomElemContainer* in2, const DomElemContainer* out, NumType requestedType, SortTable* dom) :
 		ArithOpGenerator(in1, in2, out, requestedType, dom) {
+	}
+
+	PlusGenerator* clone() const{
+		return new PlusGenerator(*this);
 	}
 };
 

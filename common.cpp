@@ -18,14 +18,24 @@
 
 using namespace std;
 
-string libraryname = INTERNALLIBARYNAME;
-string lualibraryfilename = INTERNALLIBARYLUA;
-string idplibraryfilename = INTERNALLIBARYIDP;
-string configfilename = CONFIGFILENAME;
-string getLibraryName() { return libraryname; }
-string getLuaLibraryFilename() { return lualibraryfilename; }
-string getIDPLibraryFilename() { return idplibraryfilename; }
-string getConfigFilename() { return configfilename; }
+string getTablenameForInternals() {
+	return "idp_intern";
+}
+
+string getPathOfLuaInternals() {
+	stringstream ss;
+	ss <<DATADIR <<INTERNALLIBARYLUA;
+	return ss.str();
+}
+string getPathOfIdpInternals() {
+	stringstream ss;
+	ss <<DATADIR <<INTERNALLIBARYIDP;
+	return ss.str();
+}
+string getPathOfConfigFile() {
+	stringstream ss;
+	ss <<RCDIR <<CONFIGFILENAME;
+	return ss.str(); }
 
 void notyetimplemented(const string& message) {
 	cerr << "WARNING or ERROR: The following feature is not yet implemented:\n"

@@ -375,7 +375,7 @@ void GeneratorFactory::visit(const PlusInternalFuncTable* pift) {
 		_generator = new MinusGenerator(_vars[2], _vars[1], _vars[0], pift->getType(), _universe.tables()[0]);
 	} else if (_firstocc[1] == 0) {
 		// if (pift->getType() == NumType::CERTAINLYINT) { // TODO (optimize code)
-		const DomainElement* two = DomainElementFactory::instance()->create(2);
+		const DomainElement* two = createDomElem(2);
 		const DomElemContainer* twopointer = new const DomElemContainer();
 		*twopointer = two;
 		_generator = new DivGenerator(_vars[2], twopointer, _vars[0], NumType::POSSIBLYINT, _universe.tables()[0]);

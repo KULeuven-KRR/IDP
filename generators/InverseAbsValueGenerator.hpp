@@ -30,6 +30,10 @@ public:
 			_in(in), _out(out), _outdom(dom), _state(State::RESET), _outputShouldBeInt(outputShouldBeInt) {
 	}
 
+	InverseAbsValueGenerator* clone() const{
+		return new InverseAbsValueGenerator(*this);
+	}
+
 	void reset(){
 		_state = State::RESET;
 	}
@@ -61,14 +65,14 @@ private:
 			if(negate){
 				newvalue = -newvalue;
 			}
-			*_out = DomainElementFactory::instance()->create(newvalue, _outputShouldBeInt);
+			*_out = createDomElem(newvalue, _outputShouldBeInt);
 		}else{
 			assert(var->type() == DET_DOUBLE);
 			double newvalue = var->value()._double;
 			if(negate){
 				newvalue = -newvalue;
 			}
-			*_out = DomainElementFactory::instance()->create(newvalue, _outputShouldBeInt);
+			*_out = createDomElem(newvalue, _outputShouldBeInt);
 		}
 	}
 };

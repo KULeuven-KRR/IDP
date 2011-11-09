@@ -23,6 +23,10 @@ public:
 			:_table(table), _var(var), _curr(_table->sortBegin()), _reset(true) {
 	}
 
+	SortInstGenerator* clone() const{
+		return new SortInstGenerator(*this);
+	}
+
 	void reset(){
 		_reset = true;
 	}

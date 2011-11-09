@@ -94,7 +94,8 @@ procedure modelexpand(T,S,Opts) {
 	idp_intern.flatten(clonetheo)
 	if not Opts then Opts = stdoptions end
 	local solutions, trace =  idp_intern.modelexpand(clonetheo,S,Opts) 
-	return solutions, trace
+	local solutions2 = idp_intern.alltwovaluedextensions(solutions)
+	return solutions2, trace
 }
 
 /**

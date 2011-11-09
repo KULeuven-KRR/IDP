@@ -114,8 +114,8 @@ class GroundPropagateInference : public Inference {
 			Options options("",ParseInfo());
 			options.setValue(IntType::NRMODELS,0);
 			GrounderFactory grounderfactory(structure,&options);
-			TopLevelGrounder* grounder = grounderfactory.create(theory,solver);
-			grounder->run();
+			Grounder* grounder = grounderfactory.create(theory,solver);
+			grounder->toplevelRun();
 			AbstractGroundTheory* grounding = grounder->grounding();
 			MinisatID::ModelExpandOptions opts;
 			opts.nbmodelstofind = options.getValue(IntType::NRMODELS);
@@ -181,8 +181,8 @@ class OptimalPropagateInference : public Inference {
 			Options options("",ParseInfo());
 			options.setValue(IntType::NRMODELS,0);
 			GrounderFactory grounderfactory(structure,&options);
-			TopLevelGrounder* grounder = grounderfactory.create(theory,&solver);
-			grounder->run();
+			Grounder* grounder = grounderfactory.create(theory,&solver);
+			grounder->toplevelRun();
 			AbstractGroundTheory* grounding = grounder->grounding();
 			MinisatID::ModelExpandOptions opts;
 			opts.nbmodelstofind = options.getValue(IntType::NRMODELS);
