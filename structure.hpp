@@ -1,8 +1,8 @@
 /************************************
- structure.hpp
- this file belongs to GidL 2.0
- (c) K.U.Leuven
- ************************************/
+	structure.hpp
+	this file belongs to GidL 2.0
+	(c) K.U.Leuven
+************************************/
 
 #ifndef STRUCTURE_HPP
 #define STRUCTURE_HPP
@@ -28,10 +28,11 @@
  *		  vocabulary to corresponding interpretations of the correct type.
  *
  * NAMING CONVENTION
- *		- 'Interpretation' means a possibly three-valued, or even four-valued interpretation for a symbol.
+ *		- 'Interpretation' means a possibly three-valued, or even four-valued 
+ *			interpretation for a symbol.
  *		- 'Table' means a two-value table
- *		- if a name of a methods begins with 'approx', the method is fast, but provides a under approximation of
- *		  the desired result.
+ *		- if a name of a methods begins with 'approx', the method is fast, but 
+ *			provides a under approximation of the desired result.
  */
 
 /**********************
@@ -2474,82 +2475,5 @@ Universe fullUniverse(unsigned int arity);
 bool approxTotalityCheck(const FuncInter*);
 //!< Check whether there is a value for every tuple in the given function interpretation.
 }
-
-/**************
- Visitor
- **************/
-
-class StructureVisitor {
-public:
-	virtual ~StructureVisitor() {
-	}
-	virtual void visit(const PredTable* pt) {
-		pt->internTable()->accept(this);
-	}
-	virtual void visit(const FuncTable* ft) {
-		ft->internTable()->accept(this);
-	}
-	virtual void visit(const SortTable* st) {
-		st->internTable()->accept(this);
-	}
-	virtual void visit(const ProcInternalPredTable*) {
-	}
-	virtual void visit(const BDDInternalPredTable*) {
-	}
-	virtual void visit(const FullInternalPredTable*) {
-	}
-	virtual void visit(const FuncInternalPredTable*) {
-	}
-	virtual void visit(const UnionInternalPredTable*) {
-	}
-	virtual void visit(const EnumeratedInternalPredTable*) {
-	}
-	virtual void visit(const EqualInternalPredTable*) {
-	}
-	virtual void visit(const StrLessInternalPredTable*) {
-	}
-	virtual void visit(const StrGreaterInternalPredTable*) {
-	}
-	virtual void visit(const InverseInternalPredTable*) {
-	}
-	virtual void visit(const UnionInternalSortTable*) {
-	}
-	virtual void visit(const AllNaturalNumbers*) {
-	}
-	virtual void visit(const AllIntegers*) {
-	}
-	virtual void visit(const AllFloats*) {
-	}
-	virtual void visit(const AllChars*) {
-	}
-	virtual void visit(const AllStrings*) {
-	}
-	virtual void visit(const EnumeratedInternalSortTable*) {
-	}
-	virtual void visit(const IntRangeInternalSortTable*) {
-	}
-	virtual void visit(const ProcInternalFuncTable*) {
-	}
-	virtual void visit(const UNAInternalFuncTable*) {
-	}
-	virtual void visit(const EnumeratedInternalFuncTable*) {
-	}
-	virtual void visit(const PlusInternalFuncTable*) {
-	}
-	virtual void visit(const MinusInternalFuncTable*) {
-	}
-	virtual void visit(const TimesInternalFuncTable*) {
-	}
-	virtual void visit(const DivInternalFuncTable*) {
-	}
-	virtual void visit(const AbsInternalFuncTable*) {
-	}
-	virtual void visit(const UminInternalFuncTable*) {
-	}
-	virtual void visit(const ExpInternalFuncTable*) {
-	}
-	virtual void visit(const ModInternalFuncTable*) {
-	}
-};
 
 #endif
