@@ -11,6 +11,7 @@
 #include <map>
 #include <string>
 #include "theory.hpp"
+#include "visitors/TheoryVisitor.hpp"
 
 class Sort;
 class PFSymbol;

@@ -65,6 +65,26 @@ grounder_SOURCES = \
 		grounders/TermGrounders.hpp grounders/TermGrounders.cpp\
 		grounders/GroundUtils.hpp\
 		rungidl.hpp rungidl.cpp\
+		visitors/StructureVisitor.hpp visitors/StructureVisitor.cpp\
+		visitors/TheoryVisitor.hpp visitors/TheoryVisitor.cpp\
+		visitors/TheoryMutatingVisitor.hpp visitors/TheoryMutatingVisitor.cpp\
+		analysis/structure/Materializer.hpp\
+		analysis/theory/ContainmentChecker.hpp\
+		analysis/theory/FormulaCounter.hpp\
+		analysis/theory/FormulaFuncTermChecker.hpp\
+		analysis/theory/OpenCollector.hpp\
+		transformations/theory/AggGrapher.hpp\
+		transformations/theory/Completer.hpp\
+		transformations/theory/EqChainRemover.hpp\
+		transformations/theory/EquivRemover.hpp\
+		transformations/theory/Flattener.hpp\
+		transformations/theory/FuncGrapher.hpp\
+		transformations/theory/NegationPush.hpp\
+		transformations/theory/PartialTermMover.hpp\
+		transformations/theory/QuantMover.hpp\
+		transformations/theory/Substituter.hpp\
+		transformations/theory/TermMover.hpp\
+		transformations/theory/ThreeValuedTermMover.hpp\
 		commands/allcommands.hpp\
 		commands/optimization.hpp\
 		commands/commandinterface.hpp\
