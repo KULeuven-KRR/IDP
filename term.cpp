@@ -432,6 +432,7 @@ class ApproxTwoValChecker : public TheoryVisitor {
 		bool	returnvalue()	const { return _returnvalue;	}
 		void	visit(const PredForm*);
 		void	visit(const FuncTerm*);
+		void 	visit(const SetExpr*) { /* TODO */ assert(false); }
 };
 
 void ApproxTwoValChecker::visit(const PredForm* pf) {
