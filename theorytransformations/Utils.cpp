@@ -26,17 +26,11 @@
 
 using namespace std;
 
-// FIXME why does the theorymutatingvisitor returns its formulas also?
-// TODO should the abstracttheory methods then also return?
-
 namespace TermUtils {
 SetExpr* moveThreeValuedTerms(SetExpr* f, AbstractStructure* structure, Context context, bool cpsupport, const std::set<const PFSymbol*> cpsymbols) {
 	return transform<UnnestThreeValuedTerms>(f, structure, context, cpsupport, cpsymbols);
 }
 }
-
-// FIXME rewrite all visitors so that they have a run method which is the only one which can be called by anyone (and friends for the accepts)
-// Then we can write a really generic template too
 
 namespace DefinitionUtils {
 std::set<PFSymbol*> opens(Definition* d) {
