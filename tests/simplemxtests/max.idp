@@ -1,10 +1,10 @@
 vocabulary V{
-	type x
+	type x isa int
 	p(x)
 }
 
 theory T:V{
-	#{x: p(x)}=48.
+	max{x: p(x): x}=48.
 }
 
 structure S:V{

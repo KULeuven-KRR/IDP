@@ -1,10 +1,10 @@
 vocabulary V{
-	type x
+	type x isa int
 	p(x)
 }
 
 theory T:V{
-	prod{x: p(x)}=10.
+	prod{x: p(x): x}=10.
 }
 
 structure S:V{
@@ -12,5 +12,5 @@ structure S:V{
 }
 
 procedure getExpectedNbOfModels(){
-	return 10
+	return 4
 }
