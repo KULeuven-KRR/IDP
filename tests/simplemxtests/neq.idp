@@ -1,19 +1,19 @@
-vocabulary V{
+vocabulary V {
 	type x isa int
 	type y isa int
 	a:x
 	b:y
 }
 
-theory T:V{
+theory T:V {
 	a~=b.
 }
 
-structure S:V{
+structure S:V {
 	x = {1..5}
 	y = {0..3}
 }
 
-procedure getExpectedNbOfModels(){
-	return 20
+procedure getExpectedNbOfModels() {
+	return 20-3
 }

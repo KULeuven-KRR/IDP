@@ -1,16 +1,16 @@
-vocabulary V{
+vocabulary V {
 	p
 	type x isa int
 	a:x
 }
 
-theory T:V{
+theory T:V {
 }
 
-structure S:V{
+structure S:V {
 	x = {1..5}
 }
 
-procedure getExpectedNbOfModels(){
+procedure getExpectedNbOfModels() {
 	return 10
 }
