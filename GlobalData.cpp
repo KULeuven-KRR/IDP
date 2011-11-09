@@ -5,7 +5,7 @@
 using namespace std;
 
 GlobalData::GlobalData() :
-		_globalNamespace(Namespace::createGlobal()), _domainelemFactory(DomainElementFactory::createGlobal()), _options(NULL) {
+		_globalNamespace(Namespace::createGlobal()), _domainelemFactory(DomainElementFactory::createGlobal()), _options(NULL), _errorcount(0) {
 }
 
 GlobalData::~GlobalData() {
