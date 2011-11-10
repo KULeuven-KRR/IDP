@@ -43,6 +43,7 @@ private:
 	void visit(const QuantForm* qf);
 	void visit(const EqChainForm* ef);
 	void visit(const AggForm* af);
+	void visit(const EquivForm* af);
 
 public:
 	FOBDDFactory(FOBDDManager* m, Vocabulary* v = 0) :

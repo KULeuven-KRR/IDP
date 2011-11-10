@@ -51,7 +51,9 @@ grounder_SOURCES = \
 		ground.hpp ground.cpp\
 		symbolicstructure.hpp symbolicstructure.cpp\
         symmetry.hpp symmetry.cpp\
-		monitors/interactiveprintmonitor.hpp monitors/tracemonitor.hpp\
+		monitors/interactiveprintmonitor.hpp\
+		monitors/tracemonitor.hpp\
+		monitors/propagatemonitor.hpp\
 		monitors/luatracemonitor.hpp monitors/luainteractiveprintmonitor.hpp\
 		groundtheories/PrintGroundPolicy.hpp\
 		groundtheories/GroundPolicy.hpp\
@@ -66,8 +68,8 @@ grounder_SOURCES = \
 		grounders/Grounder.hpp grounders/Grounder.cpp\
 		rungidl.hpp rungidl.cpp\
 		commands/allcommands.hpp\
-		commands/optimization.hpp\
 		commands/commandinterface.hpp\
+		commands/optimization.hpp\
 		commands/printblocks.hpp\
 		commands/printdomainatom.hpp\
 		commands/printoptions.hpp\
@@ -102,6 +104,8 @@ grounder_SOURCES = \
 		commands/simplify.hpp\
 		commands/createrange.hpp\
 		commands/tablesize.hpp\
+		commands/twovaluedextensions.hpp\
+		commands/materialize.hpp\
 		PropagatorFactory.hpp PropagatorFactory.cpp\
 		generators/ArithmeticOperatorsGenerator.hpp\
 		generators/ComparisonGenerator.hpp\
@@ -116,13 +120,15 @@ grounder_SOURCES = \
 		generators/SimpleFuncGenerator.hpp\
 		generators/SortInstGenerator.hpp\
 		generators/SortLookupGenerator.hpp\
+		generators/LookupGenerator.hpp\
+		generators/InverseInstGenerator.hpp\
 		generators/TableGenerator.hpp\
 		generators/TreeInstGenerator.hpp\
 		generators/BasicCheckers.hpp\
 		generators/GeneratorNodes.hpp\
 		generators/TrueQuantKernelGenerator.hpp\
-		generators/GeneratorFactory.cpp\
-		generators/BDDBasedGeneratorFactory.cpp\
+		generators/GeneratorFactory.hpp generators/GeneratorFactory.cpp\
+		generators/BDDBasedGeneratorFactory.hpp generators/BDDBasedGeneratorFactory.cpp\
 		OptionsStack.hpp OptionsStack.cpp\
 		theoryinformation/CollectOpensOfDefinitions.hpp theoryinformation/CollectOpensOfDefinitions.cpp\
 		theoryinformation/CheckContainment.hpp theoryinformation/CheckContainment.cpp\
@@ -130,7 +136,7 @@ grounder_SOURCES = \
 		theoryinformation/CheckSorts.hpp theoryinformation/CheckSorts.cpp\
 		theorytransformations/PushNegations.hpp theorytransformations/PushNegations.cpp\
 		theorytransformations/Flatten.hpp theorytransformations/Flatten.cpp\
-		theorytransformations/CountSubformulas.hpp\
+		theoryinformation/CountNbOfSubFormulas.hpp\
 		theorytransformations/CheckFuncTerms.hpp\
 		theorytransformations/DeriveSorts.hpp theorytransformations/DeriveSorts.cpp\
 		theorytransformations/AddCompletion.hpp theorytransformations/AddCompletion.cpp\
@@ -186,8 +192,6 @@ grounder_SOURCES = \
 		fobdds/bddvisitors/FirstConstTermInFunc.hpp\
 		fobdds/bddvisitors/CollectSameOperationTerms.hpp
 		
-gidl_dist = $(srcdir)/lib/loki-0.1.7
-		
 gidl_SOURCES = main.cpp $(grounder_SOURCES)
 
 AM_CXXFLAGS+=-I $(top_srcdir)/pcsolver/src/ 
@@ -208,7 +212,7 @@ data_std_DATA = data/idp_intern.idp data/idp_intern.lua data/mx.idp data/theory.
 data_localdir = $(localstatedir)/idp
 data_local_DATA = data/.idprc
 
-dist_doc_DATA = README $(data_std_DATA) $(data_local_DATA)
+dist_doc_DATA = README $(data_std_DATA) $(data_local_DATA) $(top_srcdir)/tests/ $(top_srcdir)/lib/loki
 
 if BUILDTESTS
 bin_PROGRAMS += alltests

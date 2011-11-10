@@ -16,6 +16,8 @@ Todo
 	- modelexpansie algoritme moet beschikbaar zijn in verschillende andere inferenties (e.g., optimalpropagate). Moet dus ergens anders staan dan in 
 	  de klasse in modelexpand.hpp 
 	- zorgen dat integer deling niet truncate
+	- distcheck: test directory is copied from build instead of from source dir into the tarball?
+	- installed data files: should have the option to pass in a url to the folder of those files. This is also necessary for the unit tests as no install is run then.
 
 Bugs
 ====
