@@ -126,7 +126,7 @@ void parse(const vector<string>& inputfiles) {
 	}
 }
 
-// FIXME add signal handling code to kill the process by using the signalhandling thread in an infinite loop and some mutexes
+// TODO add threading and signal handling code to kill the process by using the signalhandling thread in an infinite loop and some mutexes
 #include <thread>
 
 void execProcedure(const string& proc, const DomainElement** result){
@@ -134,8 +134,16 @@ void execProcedure(const string& proc, const DomainElement** result){
 }
 
 void handleAndRun(const string& proc, const DomainElement** result){
-	thread execution(execProcedure, proc, result);
-	execution.join();
+	try{
+		execProcedure(proc, result);
+	}catch(const std::exception& ex){
+		stringstream ss;
+		ss <<"Exception caught: " <<ex.what() <<".\n";
+		Error::error(ss.str());
+		*result = NULL;
+	}
+	//thread execution(execProcedure, proc, result);
+	//execution.join();
 }
 
 /**
@@ -149,8 +157,9 @@ const DomainElement* executeProcedure(const string& proc) {
 		string temp = proc;
 		replaceAll<std::string>(temp, "::", ".");
 
-		thread signalhandling(handleAndRun, temp, &result);
-		signalhandling.join();
+		handleAndRun(temp, &result);
+		//thread signalhandling(handleAndRun, temp, &result);
+		//signalhandling.join();
 	}
 
 	return result;
