@@ -28,9 +28,9 @@ using namespace std;
 
 extern int global_seed; // TODO part of global data or options!
 
-static int STANDARDCATEGORY = 2;
+static int STANDARDCATEGORY = 1;
 static int DEBRUIJNCATEGORY = 2;
-static int TRUEFALSECATEGORY = 2;
+static int TRUEFALSECATEGORY = 3;
 
 KernelOrder FOBDDManager::newOrder(unsigned int category) {
 	KernelOrder order(category, _nextorder[category]);
