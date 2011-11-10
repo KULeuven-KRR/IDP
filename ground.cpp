@@ -38,6 +38,8 @@
 #include "generators/BasicGenerators.hpp"
 #include "generators/TableGenerator.hpp"
 
+#include "theorytransformations/Utils.hpp"
+
 #include "fobdd.hpp"
 #include "symbolicstructure.hpp"
 
@@ -999,16 +1001,17 @@ void GrounderFactory::visit(const PredForm* pf) {
 	}
 	// FIXME verkeerde type afgeleid voor vergelijkingen a=b (zou bvb range die beide omvat moeten zijn, is nu niet het geval).
 	// FIXME aggregaten moeten correct worden herschreven als ze niet tweewaardig zijn
-	Formula* transpf = FormulaUtils::moveThreeValuedTerms(pf->clone(), _structure, _context._funccontext, _cpsupport, _cpsymbols);
+	Formula* transpf = FormulaUtils::unnestThreeValuedTerms(pf->clone(), _structure, _context._funccontext, _cpsupport, _cpsymbols);
 	if (_verbosity > 3) {
 		clog << transpf->toString() <<"\n";
 	}
-	transpf = FormulaUtils::removeEqChains(transpf);
+	transpf = FormulaUtils::splitComparisonChains(transpf, NULL);
 	if (_verbosity > 3) {
 		clog << transpf->toString() <<"\n";
 	}
 	if (not _cpsupport) { // TODO Check not present in quantgrounder
 		transpf = FormulaUtils::graphFunctions(transpf);
+		transpf = FormulaUtils::graphAggregates(transpf); // FIXME where does this all have to be added
 		if (_verbosity > 3) {
 			clog << transpf->toString() <<"\n";
 		}
@@ -1208,8 +1211,8 @@ void GrounderFactory::visit(const QuantForm* qf) {
 
 	// Create instance generator
 	Formula* newsubformula = qf->subformula()->clone();
-	newsubformula = FormulaUtils::moveThreeValuedTerms(newsubformula, _structure, _context._funccontext);
-	newsubformula = FormulaUtils::removeEqChains(newsubformula);
+	newsubformula = FormulaUtils::unnestThreeValuedTerms(newsubformula, _structure, _context._funccontext);
+	newsubformula = FormulaUtils::splitComparisonChains(newsubformula, NULL);
 	newsubformula = FormulaUtils::graphFunctions(newsubformula);
 
 	// NOTE: if the checker return valid, then the value of the formula can be decided from the value of the checked instantiation
@@ -1363,7 +1366,7 @@ void GrounderFactory::visit(const AggForm* af) {
 	_context._conjunctivePathFromRoot = false;
 
 	AggForm* newaf = af->clone();
-	Formula* transaf = FormulaUtils::moveThreeValuedTerms(newaf, _structure, _context._funccontext, _cpsupport, _cpsymbols);
+	Formula* transaf = FormulaUtils::unnestThreeValuedTerms(newaf, _structure, _context._funccontext, _cpsupport, _cpsymbols);
 
 	if (typeid(*transaf) != typeid(AggForm)) { // The rewriting changed the atom
 		if (_verbosity > 1) {
@@ -1415,7 +1418,7 @@ void GrounderFactory::visit(const EqChainForm* ef) {
 	_context._conjunctivePathFromRoot = false;
 
 	Formula* f = ef->clone();
-	f = FormulaUtils::removeEqChains(f, _grounding->vocabulary());
+	f = FormulaUtils::splitComparisonChains(f, _grounding->vocabulary());
 	f->accept(this);
 	f->recursiveDelete();
 }
@@ -1578,35 +1581,39 @@ GrounderFactory::GenAndChecker GrounderFactory::createVarsAndGenerators(Formula*
  * DESCRIPTION
  * 		Creates a grounder for a quantified set.
  */
-void GrounderFactory::visit(const QuantSetExpr* qs) {
+void GrounderFactory::visit(const QuantSetExpr* origqs) {
 	_context._conjunctivePathFromRoot = false;
 
-	// TODO Move three-valued terms in the set expression
-	//SetExpr* transqs = TermUtils::moveThreeValuedTerms(qs->clone(),_structure,_context._funccontext,_cpsupport,_cpsymbols);
-	//QuantSetExpr* newqs = dynamic_cast<QuantSetExpr*>(transqs);
-	//if(_verbosity > 1) {
-	//	clog << "Rewritten "; qs->put(clog,_longnames);
-	//	clog << " to "; newqs->put(clog,_longnames);
-	//   	clog << "\n";
-	//}
+	// Move three-valued terms in the set expression
+	auto transqs = TermUtils::moveThreeValuedTerms(origqs->clone(),_structure,_context._funccontext,_cpsupport,_cpsymbols);
+	if(not sametypeid<QuantSetExpr>(*transqs)){
+		if(_verbosity > 1) {
+			clog << "Rewritten "; origqs->put(clog,_longnames);
+			clog << " to "; transqs->put(clog,_longnames);
+		   	clog << "\n";
+		}
+		transqs->accept(this);
+		return;
+	}
 
-	Formula* clonedformula = qs->subformulas()[0]->clone();
-	Formula* newsubformula = FormulaUtils::moveThreeValuedTerms(clonedformula, _structure, Context::POSITIVE);
-	newsubformula = FormulaUtils::removeEqChains(newsubformula);
+	auto newqs = dynamic_cast<QuantSetExpr*>(transqs);
+	Formula* clonedformula = newqs->subformulas()[0]->clone();
+	Formula* newsubformula = FormulaUtils::unnestThreeValuedTerms(clonedformula, _structure, Context::POSITIVE);
+	newsubformula = FormulaUtils::splitComparisonChains(newsubformula, NULL);
 	newsubformula = FormulaUtils::graphFunctions(newsubformula);
 
 	// NOTE: generator generates possibly true instances, checker checks the certainly true ones
-	GenAndChecker gc = createVarsAndGenerators(newsubformula, qs, TruthType::POSS_TRUE, TruthType::CERTAIN_TRUE);
+	GenAndChecker gc = createVarsAndGenerators(newsubformula, newqs, TruthType::POSS_TRUE, TruthType::CERTAIN_TRUE);
 
 	// Create grounder for subformula
 	SaveContext();
 	AggContext();
-	descend(qs->subformulas()[0]);
+	descend(newqs->subformulas()[0]);
 	FormulaGrounder* subgr = _formgrounder;
 	RestoreContext();
 
 	// Create grounder for weight
-	descend(qs->subterms()[0]);
+	descend(newqs->subterms()[0]);
 	TermGrounder* wgr = _termgrounder;
 
 	// Create grounder

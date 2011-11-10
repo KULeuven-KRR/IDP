@@ -329,24 +329,17 @@ DomainElementFactory::DomainElementFactory(int firstfastint, int lastfastint) :
 	_fastintelements = vector<DomainElement*>(lastfastint - firstfastint, (DomainElement*) 0);
 }
 
-DomainElementFactory* DomainElementFactory::_instance = 0;
-
 /**
  *	\brief Returns the unique instance of DomainElementFactory
  */
-DomainElementFactory* DomainElementFactory::instance() {
-	if (!_instance)
-		_instance = new DomainElementFactory();
-	return _instance;
+DomainElementFactory* DomainElementFactory::createGlobal() {
+	return new DomainElementFactory();
 }
 
 /**
  *	\brief Destructor for DomainElementFactory. Deletes all domain elements and compounds it created.
  */
 DomainElementFactory::~DomainElementFactory() {
-	if (this == _instance) {
-		_instance = NULL;
-	}
 	for (auto it = _fastintelements.cbegin(); it != _fastintelements.cend(); ++it)
 		delete (*it);
 	for (auto it = _intelements.cbegin(); it != _intelements.cend(); ++it)
@@ -885,7 +878,7 @@ bool UNAInternalIterator::hasNext() const {
 
 const ElementTuple& UNAInternalIterator::operator*() const {
 	_deref.push_back(_currtuple);
-	_deref.back().push_back(DomainElementFactory::instance()->create(_function, _deref.back()));
+	_deref.back().push_back(createDomElem(_function, _deref.back()));
 	return _deref.back();
 }
 
@@ -1002,16 +995,16 @@ void StringInternalSortIterator::operator++() {
 }
 
 const DomainElement* StringInternalSortIterator::operator*() const {
-	return DomainElementFactory::instance()->create(StringPointer(_iter));
+	return createDomElem(StringPointer(_iter));
 }
 
 const DomainElement* CharInternalSortIterator::operator*() const {
 	if ('0' <= _iter && _iter <= '9') {
 		int i = _iter - '0';
-		return DomainElementFactory::instance()->create(i);
+		return createDomElem(i);
 	} else {
 		string* s = StringPointer(string(1, _iter));
-		return DomainElementFactory::instance()->create(s);
+		return createDomElem(s);
 	}
 }
 
@@ -1881,7 +1874,7 @@ InternalSortTable* EnumeratedInternalSortTable::add(int i1, int i2) {
 	}
 	InternalSortTable* temp = this;
 	for (int n = i1; n <= i2; ++n) {
-		temp = temp->add(DomainElementFactory::instance()->create(n));
+		temp = temp->add(createDomElem(n));
 	}
 	return temp;
 }
@@ -1972,10 +1965,10 @@ InternalSortTable* IntRangeInternalSortTable::remove(const DomainElement* d) {
 		}
 		EnumeratedInternalSortTable* eist = new EnumeratedInternalSortTable();
 		for (int n = _first; n < d->value()._int; ++n) {
-			eist->add(DomainElementFactory::instance()->create(n));
+			eist->add(createDomElem(n));
 		}
 		for (int n = d->value()._int + 1; n <= _last; ++n) {
-			eist->add(DomainElementFactory::instance()->create(n));
+			eist->add(createDomElem(n));
 		}
 		return eist;
 	} else
@@ -1996,7 +1989,7 @@ InternalSortTable* IntRangeInternalSortTable::add(int i1, int i2) {
 	} else {
 		EnumeratedInternalSortTable* eist = new EnumeratedInternalSortTable();
 		for (int n = _first; n <= _last; ++n)
-			eist->add(DomainElementFactory::instance()->create(n));
+			eist->add(createDomElem(n));
 		InternalSortTable* ist = eist->add(i1, i2);
 		if (ist != eist)
 			delete (eist);
@@ -2005,11 +1998,11 @@ InternalSortTable* IntRangeInternalSortTable::add(int i1, int i2) {
 }
 
 const DomainElement* IntRangeInternalSortTable::first() const {
-	return DomainElementFactory::instance()->create(_first);
+	return createDomElem(_first);
 }
 
 const DomainElement* IntRangeInternalSortTable::last() const {
-	return DomainElementFactory::instance()->create(_last);
+	return createDomElem(_last);
 }
 
 bool IntRangeInternalSortTable::contains(const DomainElement* d) const {
@@ -2132,7 +2125,7 @@ bool UnionInternalSortTable::contains(const DomainElement* d) const {
 InternalSortTable* UnionInternalSortTable::add(int i1, int i2) {
 	InternalSortTable* temp = this;
 	for (int n = i1; n <= i2; ++n) {
-		temp = temp->add(DomainElementFactory::instance()->create(n));
+		temp = temp->add(createDomElem(n));
 	}
 	return temp;
 }
@@ -2279,11 +2272,11 @@ InternalSortIterator* AllNaturalNumbers::sortIterator(const DomainElement* d) co
 }
 
 const DomainElement* AllNaturalNumbers::first() const {
-	return DomainElementFactory::instance()->create(0);
+	return createDomElem(0);
 }
 
 const DomainElement* AllNaturalNumbers::last() const {
-	return DomainElementFactory::instance()->create(numeric_limits<int>::max());
+	return createDomElem(numeric_limits<int>::max());
 }
 
 InternalSortTable* AllNaturalNumbers::add(int i1, int i2) {
@@ -2293,7 +2286,7 @@ InternalSortTable* AllNaturalNumbers::add(int i1, int i2) {
 		int stop = i2 > 0 ? 0 : i2;
 		InternalSortTable* temp = this;
 		for (int n = i1; n < stop; ++n) {
-			temp = temp->add(DomainElementFactory::instance()->create(n));
+			temp = temp->add(createDomElem(n));
 		}
 		return temp;
 	}
@@ -2316,11 +2309,11 @@ InternalSortTable* AllIntegers::add(int, int) {
 }
 
 const DomainElement* AllIntegers::first() const {
-	return DomainElementFactory::instance()->create(numeric_limits<int>::min());
+	return createDomElem(numeric_limits<int>::min());
 }
 
 const DomainElement* AllIntegers::last() const {
-	return DomainElementFactory::instance()->create(numeric_limits<int>::max());
+	return createDomElem(numeric_limits<int>::max());
 }
 
 bool AllFloats::contains(const DomainElement* d) const {
@@ -2341,11 +2334,11 @@ InternalSortTable* AllFloats::add(int, int) {
 }
 
 const DomainElement* AllFloats::first() const {
-	return DomainElementFactory::instance()->create(numeric_limits<double>::min());
+	return createDomElem(numeric_limits<double>::min());
 }
 
 const DomainElement* AllFloats::last() const {
-	return DomainElementFactory::instance()->create(numeric_limits<double>::max());
+	return createDomElem(numeric_limits<double>::max());
 }
 
 bool AllStrings::contains(const DomainElement* d) const {
@@ -2372,7 +2365,7 @@ InternalSortIterator* AllStrings::sortIterator(const DomainElement* d) const {
 }
 
 const DomainElement* AllStrings::first() const {
-	return DomainElementFactory::instance()->create(StringPointer(""));
+	return createDomElem(StringPointer(""));
 }
 
 const DomainElement* AllStrings::last() const {
@@ -2392,7 +2385,7 @@ bool AllChars::contains(const DomainElement* d) const {
 InternalSortTable* AllChars::add(int i1, int i2) {
 	InternalSortTable* temp = this;
 	for (int n = i1; n <= i2; ++n) {
-		temp = temp->add(DomainElementFactory::instance()->create(n));
+		temp = temp->add(createDomElem(n));
 	}
 	return temp;
 }
@@ -2405,10 +2398,10 @@ InternalSortTable* AllChars::add(const DomainElement* d) {
 		for (char c = numeric_limits<char>::min(); c <= numeric_limits<char>::max(); ++c) {
 			if ('0' <= c && c <= '9') {
 				int i = c - '0';
-				ist->add(DomainElementFactory::instance()->create(i));
+				ist->add(createDomElem(i));
 			} else {
 				string* s = StringPointer(string(1, c));
-				ist->add(DomainElementFactory::instance()->create(s));
+				ist->add(createDomElem(s));
 			}
 		}
 		ist->add(d);
@@ -2424,10 +2417,10 @@ InternalSortTable* AllChars::remove(const DomainElement* d) {
 		for (char c = numeric_limits<char>::min(); c <= numeric_limits<char>::max(); ++c) {
 			if ('0' <= c && c <= '9') {
 				int i = c - '0';
-				ist->add(DomainElementFactory::instance()->create(i));
+				ist->add(createDomElem(i));
 			} else {
 				string* s = StringPointer(string(1, c));
-				ist->add(DomainElementFactory::instance()->create(s));
+				ist->add(createDomElem(s));
 			}
 		}
 		ist->remove(d);
@@ -2449,11 +2442,11 @@ InternalSortIterator* AllChars::sortIterator(const DomainElement* d) const {
 }
 
 const DomainElement* AllChars::first() const {
-	return DomainElementFactory::instance()->create(StringPointer(string(1, numeric_limits<char>::min())));
+	return createDomElem(StringPointer(string(1, numeric_limits<char>::min())));
 }
 
 const DomainElement* AllChars::last() const {
-	return DomainElementFactory::instance()->create(StringPointer(string(1, numeric_limits<char>::max())));
+	return createDomElem(StringPointer(string(1, numeric_limits<char>::max())));
 }
 
 tablesize AllChars::size() const {
@@ -2612,7 +2605,7 @@ tablesize UNAInternalFuncTable::size(const Universe& univ) const {
 }
 
 const DomainElement* UNAInternalFuncTable::operator[](const ElementTuple& tuple) const {
-	return DomainElementFactory::instance()->create(_function, tuple);
+	return createDomElem(_function, tuple);
 }
 
 InternalFuncTable* UNAInternalFuncTable::add(const ElementTuple&) {
@@ -2689,7 +2682,7 @@ const DomainElement* ModInternalFuncTable::operator[](const ElementTuple& tuple)
 	if (a2 == 0)
 		return 0;
 	else
-		return DomainElementFactory::instance()->create(a1 % a2);
+		return createDomElem(a1 % a2);
 }
 
 InternalFuncTable* ModInternalFuncTable::add(const ElementTuple&) {
@@ -2709,7 +2702,7 @@ InternalTableIterator* ModInternalFuncTable::begin(const Universe& univ) const {
 const DomainElement* ExpInternalFuncTable::operator[](const ElementTuple& tuple) const {
 	double a1 = tuple[0]->type() == DET_DOUBLE ? tuple[0]->value()._double : double(tuple[0]->value()._int);
 	double a2 = tuple[1]->type() == DET_DOUBLE ? tuple[1]->value()._double : double(tuple[1]->value()._int);
-	return DomainElementFactory::instance()->create(pow(a1, a2), NumType::POSSIBLYINT);
+	return createDomElem(pow(a1, a2), NumType::POSSIBLYINT);
 }
 
 InternalFuncTable* ExpInternalFuncTable::add(const ElementTuple&) {
@@ -2740,11 +2733,11 @@ const DomainElement* PlusInternalFuncTable::operator[](const ElementTuple& tuple
 	if (getType() == NumType::CERTAINLYINT) {
 		int a1 = tuple[0]->value()._int;
 		int a2 = tuple[1]->value()._int;
-		return DomainElementFactory::instance()->create(a1 + a2);
+		return createDomElem(a1 + a2);
 	} else {
 		double a1 = tuple[0]->type() == DET_DOUBLE ? tuple[0]->value()._double : double(tuple[0]->value()._int);
 		double a2 = tuple[1]->type() == DET_DOUBLE ? tuple[1]->value()._double : double(tuple[1]->value()._int);
-		return DomainElementFactory::instance()->create(a1 + a2, NumType::POSSIBLYINT);
+		return createDomElem(a1 + a2, NumType::POSSIBLYINT);
 	}
 }
 
@@ -2756,11 +2749,11 @@ const DomainElement* MinusInternalFuncTable::operator[](const ElementTuple& tupl
 	if (getType() == NumType::CERTAINLYINT) {
 		int a1 = tuple[0]->value()._int;
 		int a2 = tuple[1]->value()._int;
-		return DomainElementFactory::instance()->create(a1 - a2);
+		return createDomElem(a1 - a2);
 	} else {
 		double a1 = tuple[0]->type() == DET_DOUBLE ? tuple[0]->value()._double : double(tuple[0]->value()._int);
 		double a2 = tuple[1]->type() == DET_DOUBLE ? tuple[1]->value()._double : double(tuple[1]->value()._int);
-		return DomainElementFactory::instance()->create(a1 - a2, NumType::POSSIBLYINT);
+		return createDomElem(a1 - a2, NumType::POSSIBLYINT);
 	}
 }
 
@@ -2772,11 +2765,11 @@ const DomainElement* TimesInternalFuncTable::operator[](const ElementTuple& tupl
 	if (getType() == NumType::CERTAINLYINT) {
 		int a1 = tuple[0]->value()._int;
 		int a2 = tuple[1]->value()._int;
-		return DomainElementFactory::instance()->create(a1 * a2);
+		return createDomElem(a1 * a2);
 	} else {
 		double a1 = tuple[0]->type() == DET_DOUBLE ? tuple[0]->value()._double : double(tuple[0]->value()._int);
 		double a2 = tuple[1]->type() == DET_DOUBLE ? tuple[1]->value()._double : double(tuple[1]->value()._int);
-		return DomainElementFactory::instance()->create(a1 * a2, NumType::POSSIBLYINT);
+		return createDomElem(a1 * a2, NumType::POSSIBLYINT);
 	}
 }
 
@@ -2791,14 +2784,14 @@ const DomainElement* DivInternalFuncTable::operator[](const ElementTuple& tuple)
 		if (a2 == 0)
 			return 0;
 		else
-			return DomainElementFactory::instance()->create(a1 / a2);
+			return createDomElem(a1 / a2);
 	} else {
 		double a1 = tuple[0]->type() == DET_DOUBLE ? tuple[0]->value()._double : double(tuple[0]->value()._int);
 		double a2 = tuple[1]->type() == DET_DOUBLE ? tuple[1]->value()._double : double(tuple[1]->value()._int);
 		if (a2 == 0)
 			return 0;
 		else
-			return DomainElementFactory::instance()->create(a1 / a2, NumType::POSSIBLYINT);
+			return createDomElem(a1 / a2, NumType::POSSIBLYINT);
 	}
 }
 
@@ -2809,9 +2802,9 @@ InternalTableIterator* DivInternalFuncTable::begin(const Universe& univ) const {
 const DomainElement* AbsInternalFuncTable::operator[](const ElementTuple& tuple) const {
 	if (tuple[0]->type() == DET_INT) {
 		int val = tuple[0]->value()._int;
-		return DomainElementFactory::instance()->create(val < 0 ? -val : val);
+		return createDomElem(val < 0 ? -val : val);
 	} else {
-		return DomainElementFactory::instance()->create(abs(tuple[0]->value()._double), NumType::POSSIBLYINT);
+		return createDomElem(abs(tuple[0]->value()._double), NumType::POSSIBLYINT);
 	}
 }
 
@@ -2821,9 +2814,9 @@ InternalTableIterator* AbsInternalFuncTable::begin(const Universe& univ) const {
 
 const DomainElement* UminInternalFuncTable::operator[](const ElementTuple& tuple) const {
 	if (tuple[0]->type() == DET_INT) {
-		return DomainElementFactory::instance()->create(-(tuple[0]->value()._int));
+		return createDomElem(-(tuple[0]->value()._int));
 	} else {
-		return DomainElementFactory::instance()->create(-(tuple[0]->value()._double), NumType::POSSIBLYINT);
+		return createDomElem(-(tuple[0]->value()._double), NumType::POSSIBLYINT);
 	}
 }
 

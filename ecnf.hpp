@@ -15,6 +15,8 @@
 #include <ostream>
 
 #include "theory.hpp"
+#include "TheoryVisitor.hpp" // TODO calls should go into cpp
+#include "TheoryMutatingVisitor.hpp" // TODO calls should go into cpp
 #include "commontypes.hpp"
 #include "pcsolver/src/external/ExternalInterface.hpp"
 

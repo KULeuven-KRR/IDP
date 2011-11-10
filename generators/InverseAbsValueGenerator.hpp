@@ -65,14 +65,14 @@ private:
 			if(negate){
 				newvalue = -newvalue;
 			}
-			*_out = DomainElementFactory::instance()->create(newvalue, _outputShouldBeInt);
+			*_out = createDomElem(newvalue, _outputShouldBeInt);
 		}else{
 			assert(var->type() == DET_DOUBLE);
 			double newvalue = var->value()._double;
 			if(negate){
 				newvalue = -newvalue;
 			}
-			*_out = DomainElementFactory::instance()->create(newvalue, _outputShouldBeInt);
+			*_out = createDomElem(newvalue, _outputShouldBeInt);
 		}
 	}
 };

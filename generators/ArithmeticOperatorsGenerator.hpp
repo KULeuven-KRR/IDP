@@ -53,7 +53,7 @@ public:
 			notifyAtEnd();
 			return;
 		}
-		*_out = DomainElementFactory::instance()->create(type==DET_INT?int(result):result, _requestedType);
+		*_out = createDomElem(type==DET_INT?int(result):result, _requestedType);
 		if(not _outdom->contains(_out->get())){
 			notifyAtEnd();
 		}

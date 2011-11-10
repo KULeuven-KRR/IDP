@@ -206,7 +206,7 @@ GroundTerm AggTermGrounder::run() const {
 	const TsSet& tsset = _translator->groundset(setnr);
 	assert(not tsset.empty());
 	double value = applyAgg(_type,tsset.trueweights());
-	const DomainElement* result = DomainElementFactory::instance()->create(value);
+	const DomainElement* result = createDomElem(value);
 	if(_verbosity > 2) {
 		clog << "Result = " << *result << "\n";
 	}

@@ -16,6 +16,9 @@
 #include <typeinfo>
 #include <cstdlib>
 #include "theory.hpp"
+#include "TheoryVisitor.hpp"
+#include "TheoryMutatingVisitor.hpp"
+
 #include "structure.hpp"
 #include "commontypes.hpp"
 #include "pcsolver/src/external/ExternalInterface.hpp"
@@ -224,8 +227,8 @@ public:
 	LazyTsBody(int id, LazyQuantGrounder const* const grounder, ResidualAndFreeInst* inst, TsType type) :
 			TsBody(type), id_(id), grounder_(grounder), inst(inst) {
 	}
-	//bool operator==(const TsBody& rhs) const;
-	//bool operator<(const TsBody& rhs) const;
+	//FIXME bool operator==(const TsBody& rhs) const;
+	//FIXME bool operator<(const TsBody& rhs) const;
 
 	unsigned int id() const {
 		return id_;

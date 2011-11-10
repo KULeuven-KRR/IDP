@@ -13,22 +13,16 @@
 #include "internalargument.hpp"
 using namespace std;
 
-Namespace* Namespace::_global = 0; 
 
-Namespace* Namespace::global() {
-	if(_global==NULL) {
-		ParseInfo pi(1,1,0);
-		_global = new Namespace("global_namespace",0,pi);
-		_global->add(Vocabulary::std());
-		_global->add(new Options("stdoptions",pi));
-	}
-	return _global;
+Namespace* Namespace::createGlobal() {
+	ParseInfo pi(1,1,0);
+	auto global = new Namespace("global_namespace",0,pi);
+	global->add(Vocabulary::std());
+	global->add(new Options("stdoptions",pi));
+	return global;
 }
 
 Namespace::~Namespace() {
-	if(this==_global){
-		_global = NULL;
-	}
 	for(auto it = _subspaces.cbegin(); it != _subspaces.cend(); ++it)
 		delete(it->second);
 	for(auto it = _structures.cbegin(); it != _structures.cend(); ++it)

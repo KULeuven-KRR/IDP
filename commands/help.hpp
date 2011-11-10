@@ -13,6 +13,8 @@
 #include "namespace.hpp"
 #include "monitors/interactiveprintmonitor.hpp"
 
+#include "GlobalData.hpp"
+
 std::string help(Namespace* ns) {
 	std::stringstream sstr;
 	if(ns->procedures().empty()) {
@@ -59,7 +61,7 @@ public:
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>&) const {
-		std::string str = help(Namespace::global());
+		std::string str = help(GlobalData::getGlobalNamespace());
 		printmonitor()->print(str);
 		return nilarg();
 	}

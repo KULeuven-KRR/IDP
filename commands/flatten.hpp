@@ -9,6 +9,7 @@
 #include <vector>
 #include "commandinterface.hpp"
 #include "theory.hpp"
+#include "theorytransformations/Utils.hpp"
 
 class FlattenInference: public Inference {
 public:
@@ -18,7 +19,7 @@ public:
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
 		AbstractTheory* t = args[0].theory();
-		TheoryUtils::flatten(t);
+		t = FormulaUtils::flatten(t);
 		return InternalArgument(t);
 	}
 };
