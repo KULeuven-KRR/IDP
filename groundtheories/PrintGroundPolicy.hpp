@@ -47,10 +47,10 @@ public:
 		printer().setTranslator(translator);
 		printer().setTermTranslator(termtranslator);
 		printer().setStructure(str);
+		printer().startTheory();
 	}
 
-	void polStartTheory(GroundTranslator*){
-		printer().startTheory();
+	void polStartTheory(GroundTranslator* ){
 	}
 
 	void polEndTheory(){

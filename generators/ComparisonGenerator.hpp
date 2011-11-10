@@ -43,7 +43,7 @@ public:
 			_leftvar = rightvalue;
 			_rightvar = leftvalue;
 			input = Input::LEFT;
-			comparison = invertComp(comparison);//FIXME::klopt niet!!!
+			comparison = invertComp(comparison);
 		}
 	}
 
