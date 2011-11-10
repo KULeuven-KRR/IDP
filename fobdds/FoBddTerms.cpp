@@ -5,6 +5,10 @@
 #include "fobdds/FoBddDomainTerm.hpp"
 #include "fobdds/FoBddVariable.hpp"
 #include "fobdds/FoBddVisitor.hpp"
+#include "fobdds/FoBddManager.hpp"
+
+#include "vocabulary.hpp"
+#include "structure.hpp"
 
 using namespace std;
 

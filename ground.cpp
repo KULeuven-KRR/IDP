@@ -643,8 +643,8 @@ GrounderFactory::GrounderFactory(AbstractStructure* structure, Options* opts, Sy
 						pbddargs[n] = bddvar;
 					}
 					vars[*jt] = pbddvars;
-					const FOBDDKernel* ctkernel = manager->getAtomKernel(*jt, AKT_CT, pbddargs);
-					const FOBDDKernel* cfkernel = manager->getAtomKernel(*jt, AKT_CF, pbddargs);
+					const FOBDDKernel* ctkernel = manager->getAtomKernel(*jt, AtomKernelType::AKT_CT, pbddargs);
+					const FOBDDKernel* cfkernel = manager->getAtomKernel(*jt, AtomKernelType::AKT_CF, pbddargs);
 					ctbounds[*jt] = manager->getBDD(ctkernel, manager->truebdd(), manager->falsebdd());
 					cfbounds[*jt] = manager->getBDD(cfkernel, manager->truebdd(), manager->falsebdd());
 				}
@@ -664,8 +664,8 @@ GrounderFactory::GrounderFactory(AbstractStructure* structure, Options* opts, Sy
 						pbddargs[n] = bddvar;
 					}
 					vars[*jt] = pbddvars;
-					const FOBDDKernel* ctkernel = manager->getAtomKernel(*jt, AKT_CT, pbddargs);
-					const FOBDDKernel* cfkernel = manager->getAtomKernel(*jt, AKT_CF, pbddargs);
+					const FOBDDKernel* ctkernel = manager->getAtomKernel(*jt, AtomKernelType::AKT_CT, pbddargs);
+					const FOBDDKernel* cfkernel = manager->getAtomKernel(*jt, AtomKernelType::AKT_CF, pbddargs);
 					ctbounds[*jt] = manager->getBDD(ctkernel, manager->truebdd(), manager->falsebdd());
 					cfbounds[*jt] = manager->getBDD(cfkernel, manager->truebdd(), manager->falsebdd());
 				}

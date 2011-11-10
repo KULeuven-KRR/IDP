@@ -4,7 +4,6 @@
 #include "fobdds/bddvisitors/OrderTerms.hpp"
 #include "fobdds/bddvisitors/TermOccursNested.hpp"
 #include "fobdds/bddvisitors/ContainsPartialFunctions.hpp"
-#include "fobdds/bddvisitors/ExtractFirstNonFuncTerm.hpp"
 #include "fobdds/bddvisitors/TermCollector.hpp"
 #include "fobdds/bddvisitors/IndexCollector.hpp"
 #include "fobdds/bddvisitors/VariableCollector.hpp"
@@ -17,12 +16,21 @@
 #include "fobdds/bddvisitors/RemoveMinus.hpp"
 #include "fobdds/bddvisitors/UngraphFunctions.hpp"
 #include "fobdds/bddvisitors/CollectSameOperationTerms.hpp"
+#include "fobdds/bddvisitors/BddToFormula.hpp"
+#include "fobdds/bddvisitors/CheckIsArithmeticFormula.hpp"
+#include "fobdds/bddvisitors/ApplyDistributivity.hpp"
+#include "fobdds/bddvisitors/ContainsTerm.hpp"
+#include "fobdds/bddvisitors/CombineConstsOfMults.hpp"
+
+#include "fobdds/EstimateBDDInferenceCost.hpp"
 
 using namespace std;
 
-static unsigned int STANDARDCATEGORY = 1;
-static unsigned int DEBRUIJNCATEGORY = 2;
-static unsigned int TRUEFALSECATEGORY = 3;
+extern int global_seed; // TODO part of global data or options!
+
+static int STANDARDCATEGORY = 2;
+static int DEBRUIJNCATEGORY = 2;
+static int TRUEFALSECATEGORY = 2;
 
 KernelOrder FOBDDManager::newOrder(unsigned int category) {
 	KernelOrder order(category, _nextorder[category]);
@@ -74,57 +82,58 @@ void FOBDDManager::moveDown(const FOBDDKernel* kernel) {
 		unsigned int nr = kernel->number();
 		vector<const FOBDD*> falseerase;
 		vector<const FOBDD*> trueerase;
-		if (_kernels[cat].find(nr + 1) != _kernels[cat].cend()) {
-			const FOBDDKernel* nextkernel = _kernels[cat][nr + 1];
-			const MBDDMBDDBDD& bdds = _bddtable[kernel];
-			for (auto it = bdds.cbegin(); it != bdds.cend(); ++it) {
-				for (auto jt = it->second.cbegin(); jt != it->second.cend(); ++jt) {
-					FOBDD* bdd = jt->second;
-					bool swapfalse = (nextkernel == it->first->kernel());
-					bool swaptrue = (nextkernel == jt->first->kernel());
-					if (swapfalse || swaptrue) {
-						falseerase.push_back(it->first);
-						trueerase.push_back(jt->first);
-					}
-					if (swapfalse) {
-						if (swaptrue) {
-							const FOBDD* newfalse = getBDD(kernel, jt->first->falsebranch(), it->first->falsebranch());
-							const FOBDD* newtrue = getBDD(kernel, jt->first->truebranch(), it->first->truebranch());
-							bdd->replacefalse(newfalse);
-							bdd->replacetrue(newtrue);
-							bdd->replacekernel(nextkernel);
-							_bddtable[nextkernel][newfalse][newtrue] = bdd;
-						} else {
-							const FOBDD* newfalse = getBDD(kernel, jt->first, it->first->falsebranch());
-							const FOBDD* newtrue = getBDD(kernel, jt->first, it->first->truebranch());
-							bdd->replacefalse(newfalse);
-							bdd->replacetrue(newtrue);
-							bdd->replacekernel(nextkernel);
-							_bddtable[nextkernel][newfalse][newtrue] = bdd;
-						}
-					} else if (swaptrue) {
-						const FOBDD* newfalse = getBDD(kernel, jt->first->falsebranch(), it->first);
-						const FOBDD* newtrue = getBDD(kernel, jt->first->truebranch(), it->first);
+		if (_kernels[cat].find(nr + 1) == _kernels[cat].cend()) {
+			return;
+		}
+		const FOBDDKernel* nextkernel = _kernels[cat][nr + 1];
+		const MBDDMBDDBDD& bdds = _bddtable[kernel];
+		for (auto it = bdds.cbegin(); it != bdds.cend(); ++it) {
+			for (auto jt = it->second.cbegin(); jt != it->second.cend(); ++jt) {
+				FOBDD* bdd = jt->second;
+				bool swapfalse = (nextkernel == it->first->kernel());
+				bool swaptrue = (nextkernel == jt->first->kernel());
+				if (swapfalse || swaptrue) {
+					falseerase.push_back(it->first);
+					trueerase.push_back(jt->first);
+				}
+				if (swapfalse) {
+					if (swaptrue) {
+						const FOBDD* newfalse = getBDD(kernel, jt->first->falsebranch(), it->first->falsebranch());
+						const FOBDD* newtrue = getBDD(kernel, jt->first->truebranch(), it->first->truebranch());
+						bdd->replacefalse(newfalse);
+						bdd->replacetrue(newtrue);
+						bdd->replacekernel(nextkernel);
+						_bddtable[nextkernel][newfalse][newtrue] = bdd;
+					} else {
+						const FOBDD* newfalse = getBDD(kernel, jt->first, it->first->falsebranch());
+						const FOBDD* newtrue = getBDD(kernel, jt->first, it->first->truebranch());
 						bdd->replacefalse(newfalse);
 						bdd->replacetrue(newtrue);
 						bdd->replacekernel(nextkernel);
 						_bddtable[nextkernel][newfalse][newtrue] = bdd;
 					}
+				} else if (swaptrue) {
+					const FOBDD* newfalse = getBDD(kernel, jt->first->falsebranch(), it->first);
+					const FOBDD* newtrue = getBDD(kernel, jt->first->truebranch(), it->first);
+					bdd->replacefalse(newfalse);
+					bdd->replacetrue(newtrue);
+					bdd->replacekernel(nextkernel);
+					_bddtable[nextkernel][newfalse][newtrue] = bdd;
 				}
 			}
-			for (unsigned int n = 0; n < falseerase.size(); ++n) {
-				_bddtable[kernel][falseerase[n]].erase(trueerase[n]);
-				if (_bddtable[kernel][falseerase[n]].empty()) {
-					_bddtable[kernel].erase(falseerase[n]);
-				}
-			}
-			FOBDDKernel* tkernel = _kernels[cat][nr];
-			FOBDDKernel* nkernel = _kernels[cat][nr + 1];
-			nkernel->replacenumber(nr);
-			tkernel->replacenumber(nr + 1);
-			_kernels[cat][nr] = nkernel;
-			_kernels[cat][nr + 1] = tkernel;
 		}
+		for (unsigned int n = 0; n < falseerase.size(); ++n) {
+			_bddtable[kernel][falseerase[n]].erase(trueerase[n]);
+			if (_bddtable[kernel][falseerase[n]].empty()) {
+				_bddtable[kernel].erase(falseerase[n]);
+			}
+		}
+		FOBDDKernel* tkernel = _kernels[cat][nr];
+		FOBDDKernel* nkernel = _kernels[cat][nr + 1];
+		nkernel->replacenumber(nr);
+		tkernel->replacenumber(nr + 1);
+		_kernels[cat][nr] = nkernel;
+		_kernels[cat][nr + 1] = tkernel;
 	}
 }
 
@@ -196,7 +205,7 @@ const FOBDDKernel* FOBDDManager::getAtomKernel(PFSymbol* symbol, AtomKernelType 
 
 	// Arithmetic rewriting
 	// 1. Remove functions
-	if (typeid(*symbol) == typeid(Function) && akt == AKT_TWOVAL) {
+	if (typeid(*symbol) == typeid(Function) && akt == AtomKernelType::AKT_TWOVALUED) {
 		Function* f = dynamic_cast<Function*>(symbol);
 		Sort* s = SortUtils::resolve(f->outsort(), args.back()->sort());
 		Predicate* equal = VocabularyUtils::equal(s);
@@ -206,7 +215,7 @@ const FOBDDKernel* FOBDDManager::getAtomKernel(PFSymbol* symbol, AtomKernelType 
 		vector<const FOBDDArgument*> newargs;
 		newargs.push_back(functerm);
 		newargs.push_back(args.back());
-		return getAtomKernel(equal, AKT_TWOVAL, newargs);
+		return getAtomKernel(equal, AtomKernelType::AKT_TWOVALUED, newargs);
 	}
 	// 2. Move all arithmetic terms to the lefthand side of an (in)equality
 	if (VocabularyUtils::isComparisonPredicate(symbol)) {
@@ -235,7 +244,7 @@ const FOBDDKernel* FOBDDManager::getAtomKernel(PFSymbol* symbol, AtomKernelType 
 
 	// Comparison rewriting
 	if (VocabularyUtils::isComparisonPredicate(symbol)) {
-		if (FactorSWOrdering(args[0], args[1])) {
+		if (Multiplication::before(args[0], args[1])) {
 			vector<const FOBDDArgument*> newargs(2);
 			newargs[0] = args[1];
 			newargs[1] = args[0];
@@ -454,7 +463,7 @@ const FOBDDArgument* FOBDDManager::getFuncTerm(Function* func, const vector<cons
 						return getFuncTerm(times2, newargs);
 					}
 				}
-				if (FactorSWOrdering(args[1], leftterm->args(1))) {
+				if (Multiplication::before(args[1], leftterm->args(1))) {
 					Function* times = Vocabulary::std()->func("*/2");
 					Function* times1 = times->disambiguate(vector<Sort*>(3, SortUtils::resolve(args[1]->sort(), leftterm->args(0)->sort())), 0);
 					vector<const FOBDDArgument*> leftargs(2);
@@ -475,13 +484,13 @@ const FOBDDArgument* FOBDDManager::getFuncTerm(Function* func, const vector<cons
 				newargs[0] = args[1];
 				newargs[1] = args[0];
 				return getFuncTerm(func, newargs);
-			} else if (FactorSWOrdering(args[1], args[0])) {
+			} else if (Multiplication::before(args[1], args[0])) {
 				vector<const FOBDDArgument*> newargs(2);
 				newargs[0] = args[1];
 				newargs[1] = args[0];
 				return getFuncTerm(func, newargs);
 			}
-		} else if (FactorSWOrdering(args[1], args[0])) {
+		} else if (Multiplication::before(args[1], args[0])) {
 			vector<const FOBDDArgument*> newargs(2);
 			newargs[0] = args[1];
 			newargs[1] = args[0];
@@ -526,7 +535,7 @@ const FOBDDArgument* FOBDDManager::getFuncTerm(Function* func, const vector<cons
 						return getFuncTerm(plus2, newargs);
 					}
 				}
-				if (TermSWOrdering(args[1], leftterm->args(1), this)) {
+				if (TermOrder::before(args[1], leftterm->args(1), this)) {
 					Function* plus = Vocabulary::std()->func("+/2");
 					Function* plus1 = plus->disambiguate(vector<Sort*>(3, SortUtils::resolve(args[1]->sort(), leftterm->args(0)->sort())), 0);
 					vector<const FOBDDArgument*> leftargs(2);
@@ -547,13 +556,13 @@ const FOBDDArgument* FOBDDManager::getFuncTerm(Function* func, const vector<cons
 				newargs[0] = args[1];
 				newargs[1] = args[0];
 				return getFuncTerm(func, newargs);
-			} else if (TermSWOrdering(args[1], args[0], this)) {
+			} else if (TermOrder::before(args[1], args[0], this)) {
 				vector<const FOBDDArgument*> newargs(2);
 				newargs[0] = args[1];
 				newargs[1] = args[0];
 				return getFuncTerm(func, newargs);
 			}
-		} else if (TermSWOrdering(args[1], args[0], this)) {
+		} else if (TermOrder::before(args[1], args[0], this)) {
 			vector<const FOBDDArgument*> newargs(2);
 			newargs[0] = args[1];
 			newargs[1] = args[0];
@@ -571,7 +580,7 @@ const FOBDDArgument* FOBDDManager::getFuncTerm(Function* func, const vector<cons
 			} else {
 				right = args[0];
 			}
-		} else{
+		} else {
 			right = args[0];
 		}
 		CollectSameOperationTerms<Multiplication> collect(this);
@@ -888,12 +897,14 @@ const FOBDD* FOBDDManager::substitute(const FOBDD* bdd, const map<const FOBDDVar
 }
 
 const FOBDDKernel* FOBDDManager::substitute(const FOBDDKernel* kernel, const FOBDDDomainTerm* term, const FOBDDVariable* variable) {
-	SubstituteTerms<FOBDDVariable, FOBDDDomainTerm> s(this, term, variable);
+	map<const FOBDDDomainTerm*, const FOBDDVariable*> map;
+	map.insert(pair<const FOBDDDomainTerm*, const FOBDDVariable*>(term, variable));
+	SubstituteTerms<FOBDDDomainTerm, FOBDDVariable> s(this, map);
 	return kernel->acceptchange(&s);
 }
 
 const FOBDD* FOBDDManager::substitute(const FOBDD* bdd, const FOBDDDeBruijnIndex* index, const FOBDDVariable* variable) {
-	SubstituteIndices<FOBDDVariable> s(this, index, variable);
+	SubstituteIndex s(this, index, variable);
 	return s.FOBDDVisitor::change(bdd);
 }
 
@@ -918,14 +929,10 @@ int FOBDDManager::longestbranch(const FOBDD* bdd) {
 	}
 }
 
-bool FOBDDManager::isArithmetic(const FOBDDKernel* k) {
-	ArithChecker ac(this);
-	return ac.check(k);
-}
-
-bool FOBDDManager::isArithmetic(const FOBDDArgument* a) {
-	ArithChecker ac(this);
-	return ac.check(a);
+template<typename BddNode>
+bool isArithmetic(const BddNode* k, FOBDDManager* manager) {
+	CheckIsArithmeticFormula ac(manager);
+	return ac.isArithmeticFormula(k);
 }
 
 const FOBDD* FOBDDManager::simplify(const FOBDD* bdd) {
@@ -935,7 +942,7 @@ const FOBDD* FOBDDManager::simplify(const FOBDD* bdd) {
 	bdd = ttl.FOBDDVisitor::change(bdd);
 	RewriteMinus rm(this);
 	bdd = rm.FOBDDVisitor::change(bdd);
-	Distributivity dsbtvt(this);
+	ApplyDistributivity dsbtvt(this);
 	bdd = dsbtvt.FOBDDVisitor::change(bdd);
 	OrderTerms<Multiplication> mo(this);
 	bdd = mo.FOBDDVisitor::change(bdd);
@@ -944,7 +951,7 @@ const FOBDD* FOBDDManager::simplify(const FOBDD* bdd) {
 	OrderTerms<Addition> ao(this);
 	bdd = ao.FOBDDVisitor::change(bdd);
 	bdd = ms.FOBDDVisitor::change(bdd);
-	TermAdder ta(this);
+	CombineConstsOfMults ta(this);
 	bdd = ta.FOBDDVisitor::change(bdd);
 	AddMultSimplifier neut(this);
 	bdd = neut.FOBDDVisitor::change(bdd);
@@ -952,8 +959,8 @@ const FOBDD* FOBDDManager::simplify(const FOBDD* bdd) {
 }
 
 bool FOBDDManager::contains(const FOBDDArgument* super, const FOBDDArgument* arg) {
-	ContainsFuncTerms ac(this);
-	return ac.check(super, arg);
+	ContainsTerm ac(this);
+	return ac.contains(super, arg);
 }
 
 const FOBDDArgument* FOBDDManager::solve(const FOBDDKernel* kernel, const FOBDDArgument* argument) {
@@ -1060,9 +1067,9 @@ ostream& FOBDDManager::put(ostream& output, const FOBDDKernel* kernel, unsigned 
 		PFSymbol* symbol = atomkernel->symbol();
 		printTabs(output, spaces);
 		output << *symbol;
-		if (atomkernel->type() == AKT_CF) {
+		if (atomkernel->type() == AtomKernelType::AKT_CF) {
 			output << "<cf>";
-		} else if (atomkernel->type() == AKT_CT) {
+		} else if (atomkernel->type() == AtomKernelType::AKT_CT) {
 			output << "<ct>";
 		}
 		if (typeid(*symbol) == typeid(Predicate)) {
@@ -1133,17 +1140,17 @@ ostream& FOBDDManager::put(ostream& output, const FOBDDArgument* arg) const {
 
 Formula* FOBDDManager::toFormula(const FOBDD* bdd) {
 	BDDToFormula btf(this);
-	return btf.run(bdd);
+	return btf.createFormula(bdd);
 }
 
 Formula* FOBDDManager::toFormula(const FOBDDKernel* kernel) {
 	BDDToFormula btf(this);
-	return btf.run(kernel);
+	return btf.createFormula(kernel);
 }
 
 Term* FOBDDManager::toTerm(const FOBDDArgument* arg) {
 	BDDToFormula btf(this);
-	return btf.run(arg);
+	return btf.createTerm(arg);
 }
 
 bool FOBDDManager::containsFuncTerms(const FOBDDKernel* kernel) {
@@ -1244,16 +1251,16 @@ vector<vector<pair<bool, const FOBDDKernel*> > > FOBDDManager::pathsToFalse(cons
 	if (bdd == _falsebdd) {
 		result.push_back(vector<pair<bool, const FOBDDKernel*> >(0));
 	} else if (bdd != _truebdd) {
-		vector<vector<pair<bool, const FOBDDKernel*> > > falsepaths = pathsToFalse(bdd->falsebranch());
-		vector<vector<pair<bool, const FOBDDKernel*> > > truepaths = pathsToFalse(bdd->truebranch());
+		auto falsepaths = pathsToFalse(bdd->falsebranch());
+		auto truepaths = pathsToFalse(bdd->truebranch());
 		for (auto it = falsepaths.cbegin(); it != falsepaths.cend(); ++it) {
-			result.push_back(vector < pair<bool, const FOBDDKernel*> > (1, pair<bool, const FOBDDKernel*>(false, bdd->kernel())));
+			result.push_back( { pair<bool, const FOBDDKernel*>(false, bdd->kernel()) });
 			for (auto jt = it->begin(); jt != it->end(); ++jt) {
 				result.back().push_back(*jt);
 			}
 		}
 		for (auto it = truepaths.cbegin(); it != truepaths.cend(); ++it) {
-			result.push_back(vector < pair<bool, const FOBDDKernel*> > (1, pair<bool, const FOBDDKernel*>(true, bdd->kernel())));
+			result.push_back( { pair<bool, const FOBDDKernel*>(true, bdd->kernel()) });
 			for (auto jt = it->begin(); jt != it->end(); ++jt) {
 				result.back().push_back(*jt);
 			}
@@ -1268,13 +1275,13 @@ vector<vector<pair<bool, const FOBDDKernel*> > > FOBDDManager::pathsToFalse(cons
 set<const FOBDDKernel*> FOBDDManager::allkernels(const FOBDD* bdd) {
 	set<const FOBDDKernel*> result;
 	if (bdd != _truebdd && bdd != _falsebdd) {
-		set<const FOBDDKernel*> falsekernels = allkernels(bdd->falsebranch());
-		set<const FOBDDKernel*> truekernels = allkernels(bdd->truebranch());
+		auto falsekernels = allkernels(bdd->falsebranch());
+		auto truekernels = allkernels(bdd->truebranch());
 		result.insert(falsekernels.cbegin(), falsekernels.cend());
 		result.insert(truekernels.cbegin(), truekernels.cend());
 		result.insert(bdd->kernel());
 		if (typeid(*(bdd->kernel())) == typeid(FOBDDQuantKernel)) {
-			set<const FOBDDKernel*> kernelkernels = allkernels(dynamic_cast<const FOBDDQuantKernel*>(bdd->kernel())->bdd());
+			auto kernelkernels = allkernels(dynamic_cast<const FOBDDQuantKernel*>(bdd->kernel())->bdd());
 			result.insert(kernelkernels.cbegin(), kernelkernels.cend());
 		}
 	}
@@ -1364,7 +1371,7 @@ double FOBDDManager::estimatedChance(const FOBDDKernel* kernel, AbstractStructur
 		} else {
 			pinter = structure->inter(dynamic_cast<Function*>(symbol))->graphInter();
 		}
-		const PredTable* pt = atomkernel->type() == AKT_CF ? pinter->cf() : pinter->ct();
+		const PredTable* pt = atomkernel->type() == AtomKernelType::AKT_CF ? pinter->cf() : pinter->ct();
 		tablesize symbolsize = pt->size();
 		double univsize = 1;
 		for (auto it = atomkernel->args().cbegin(); it != atomkernel->args().cend(); ++it) {
@@ -1537,7 +1544,7 @@ double FOBDDManager::estimatedNrAnswers(const FOBDD* bdd, const set<const FOBDDV
 double FOBDDManager::estimatedCostAll(bool sign, const FOBDDKernel* kernel, const set<const FOBDDVariable*>& vars,
 		const set<const FOBDDDeBruijnIndex*>& indices, AbstractStructure* structure) {
 	double maxdouble = numeric_limits<double>::max();
-	if (isArithmetic(kernel)) {
+	if (isArithmetic(kernel, this)) {
 		vector<double> varunivsizes;
 		vector<double> indexunivsizes;
 		vector<const FOBDDVariable*> varsvector;
@@ -1632,13 +1639,13 @@ double FOBDDManager::estimatedCostAll(bool sign, const FOBDDKernel* kernel, cons
 		}
 		const PredTable* pt;
 		if (sign) {
-			if (atomkernel->type() == AKT_CF) {
+			if (atomkernel->type() == AtomKernelType::AKT_CF) {
 				pt = pinter->cf();
 			} else {
 				pt = pinter->ct();
 			}
 		} else {
-			if (atomkernel->type() == AKT_CF) {
+			if (atomkernel->type() == AtomKernelType::AKT_CF) {
 				pt = pinter->pt();
 			} else {
 				pt = pinter->pf();
@@ -1665,7 +1672,7 @@ double FOBDDManager::estimatedCostAll(bool sign, const FOBDDKernel* kernel, cons
 			pattern.push_back(input);
 		}
 
-		TableCostEstimator tce;
+		EstimateBDDInferenceCost tce;
 		double result = tce.run(pt, pattern);
 		return result;
 	} else {

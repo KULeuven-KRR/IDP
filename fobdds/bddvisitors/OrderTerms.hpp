@@ -10,7 +10,6 @@
 #include "fobdds/FoBddDomainTerm.hpp"
 #include "fobdds/FoBddFuncTerm.hpp"
 #include "fobdds/bddvisitors/TermCollector.hpp"
-#include "fobdds/bddvisitors/ExtractFirstNonFuncTerm.hpp"
 
 #include "vocabulary.hpp"
 
@@ -32,7 +31,7 @@ public:
 
 		TermCollector mte(_manager); // Collects all subterms which are reachable only by functerms of the provided type
 		auto terms = mte.getTerms(functerm, Ordering::getFuncName());
-		for (auto i = terms.cbegin(); i < terms.cend(); ++i) {
+		for (auto i = terms.begin(); i < terms.end(); ++i) {
 			*i = (*i)->acceptchange(this);
 		}
 

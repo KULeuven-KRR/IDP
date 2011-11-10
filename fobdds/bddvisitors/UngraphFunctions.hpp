@@ -18,7 +18,7 @@ public:
 	}
 
 	const FOBDDKernel* change(const FOBDDAtomKernel* atom) {
-		if (not sametypeid<Function>(*(atom->symbol())) || not atom->type() == AKT_TWOVAL) {
+		if (not sametypeid<Function>(*(atom->symbol())) || atom->type() != AtomKernelType::AKT_TWOVALUED) {
 			return atom;
 		}
 
@@ -29,7 +29,7 @@ public:
 		auto funcargs = atom->args();
 		funcargs.pop_back();
 		auto functerm = _manager->getFuncTerm(function, funcargs);
-		return _manager->getAtomKernel(equalpred, AKT_TWOVAL, {functerm, atom->args().back()});
+		return _manager->getAtomKernel(equalpred, AtomKernelType::AKT_TWOVALUED, {functerm, atom->args().back()});
 	}
 };
 

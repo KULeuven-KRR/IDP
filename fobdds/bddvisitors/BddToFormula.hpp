@@ -1,138 +1,183 @@
-/************************************
-	BddToFormula.hpp
-	this file belongs to GidL 2.0
-	(c) K.U.Leuven
-************************************/
-
 #ifndef BDDTOFORMULA_HPP_
 #define BDDTOFORMULA_HPP_
 
-class BDDToFormula : public FOBDDVisitor {
-	private:
-		Formula* _currformula;
-		Term* _currterm;
-		map<const FOBDDDeBruijnIndex*,Variable*> _dbrmapping;
+#include <vector>
+#include <map>
+#include <set>
+#include "fobdds/FoBddVisitor.hpp"
+#include "fobdds/FoBddManager.hpp"
+#include "fobdds/FoBddFuncTerm.hpp"
+#include "fobdds/FoBddDomainTerm.hpp"
+#include "fobdds/FoBddVariable.hpp"
+#include "fobdds/FoBddIndex.hpp"
+#include "fobdds/FoBddAtomKernel.hpp"
+#include "fobdds/FoBddQuantKernel.hpp"
+#include "fobdds/FoBddUtils.hpp"
+#include "fobdds/FoBdd.hpp"
 
-		void visit(const FOBDDDeBruijnIndex* index) {
-			auto it = _dbrmapping.find(index);
-			Variable* v;
-			if(it == _dbrmapping.cend()) {
-				Variable* v = new Variable(index->sort());
-				_dbrmapping[index] = v;
+#include "vocabulary.hpp"
+#include "term.hpp"
+#include "theory.hpp"
+#include "theorytransformations/Utils.hpp"
+
+/**
+ * Given a bdd or a kernel, creates the associated formula.
+ * Given a bddterm, creates the associated term.
+ */
+class BDDToFormula: public FOBDDVisitor {
+private:
+	Formula* _currformula;
+	Term* _currterm;
+	std::map<const FOBDDDeBruijnIndex*, Variable*> _dbrmapping;
+
+	void reset(){
+		_currformula = NULL;
+		_currterm = NULL;
+		_dbrmapping.clear();
+	}
+
+public:
+	BDDToFormula(FOBDDManager* m) :
+			FOBDDVisitor(m), _currformula(NULL), _currterm(NULL) {
+		_dbrmapping.clear();
+	}
+
+	template<typename BddNode>
+	Formula* createFormula(const BddNode* kernel) {
+		reset();
+		kernel->accept(this);
+		return _currformula;
+	}
+
+	template<typename BddTerm>
+	Term* createTerm(const BddTerm* arg) {
+		reset();
+		arg->accept(this);
+		return _currterm;
+	}
+
+private:
+	void visit(const FOBDDDeBruijnIndex* index) {
+		auto it = _dbrmapping.find(index);
+		Variable* v;
+		if (it == _dbrmapping.cend()) {
+			v = new Variable(index->sort());
+			_dbrmapping[index] = v;
+		} else {
+			v = it->second;
+		}
+		_currterm = new VarTerm(v, TermParseInfo());
+	}
+
+	void visit(const FOBDDVariable* var) {
+		_currterm = new VarTerm(var->variable(), TermParseInfo());
+	}
+
+	void visit(const FOBDDDomainTerm* dt) {
+		_currterm = new DomainTerm(dt->sort(), dt->value(), TermParseInfo());
+	}
+
+	void visit(const FOBDDFuncTerm* ft) {
+		std::vector<Term*> args;
+		for (auto it = ft->args().cbegin(); it != ft->args().cend(); ++it) {
+			(*it)->accept(this);
+			args.push_back(_currterm);
+		}
+		_currterm = new FuncTerm(ft->func(), args, TermParseInfo());
+	}
+
+	void visit(const FOBDDAtomKernel* atom) {
+		std::vector<Term*> args;
+		for (auto it = atom->args().cbegin(); it != atom->args().cend(); ++it) {
+			(*it)->accept(this);
+			args.push_back(_currterm);
+		}
+		switch (atom->type()) {
+		case AtomKernelType::AKT_TWOVALUED:
+			_currformula = new PredForm(SIGN::POS, atom->symbol(), args, FormulaParseInfo());
+			break;
+		case AtomKernelType::AKT_CT:
+			_currformula = new PredForm(SIGN::POS, atom->symbol()->derivedSymbol(ST_CT), args, FormulaParseInfo());
+			break;
+		case AtomKernelType::AKT_CF:
+			_currformula = new PredForm(SIGN::POS, atom->symbol()->derivedSymbol(ST_CF), args, FormulaParseInfo());
+			break;
+		}
+	}
+
+	void visit(const FOBDDQuantKernel* quantkernel) {
+		std::map<const FOBDDDeBruijnIndex*, Variable*> savedmapping = _dbrmapping;
+		_dbrmapping.clear();
+		for (auto it = savedmapping.cbegin(); it != savedmapping.cend(); ++it){
+			_dbrmapping[_manager->getDeBruijnIndex(it->first->sort(), it->first->index() + 1)] = it->second;
+		}
+
+		FOBDDVisitor::visit(quantkernel->bdd());
+
+		auto quantvar = _dbrmapping[_manager->getDeBruijnIndex(quantkernel->sort(), NULL)];
+		_dbrmapping = savedmapping;
+		_currformula = new QuantForm(SIGN::POS, QUANT::EXIST, {quantvar}, _currformula, FormulaParseInfo());
+	}
+
+	void visit(const FOBDD* bdd) {
+		if (_manager->isTruebdd(bdd)) {
+			_currformula = FormulaUtils::trueFormula();
+			return;
+		}
+
+		if (_manager->isFalsebdd(bdd)) {
+			_currformula = FormulaUtils::falseFormula();
+			return;
+		}
+
+		bdd->kernel()->accept(this);
+		// NOTE afterwards, _currformula is a formula representing the kernel
+
+		if (_manager->isFalsebdd(bdd->falsebranch())) {
+			if(_manager->isTruebdd(bdd->truebranch())){
+				return; // kernel is the whole formula
 			}
-			else { v = it->second; }
-			_currterm = new VarTerm(v,TermParseInfo());
-		}
+			auto kernelformula = _currformula;
+			FOBDDVisitor::visit(bdd->truebranch());
+			auto branchformula = _currformula;
+			_currformula = new BoolForm(SIGN::POS, true, kernelformula, branchformula, FormulaParseInfo());
 
-		void visit(const FOBDDVariable* var) {
-			_currterm = new VarTerm(var->variable(),TermParseInfo());
-		}
+		} else if (_manager->isFalsebdd(bdd->truebranch())) {
+			_currformula->negate();
 
-		void visit(const FOBDDDomainTerm* dt) {
-			_currterm = new DomainTerm(dt->sort(),dt->value(),TermParseInfo());
-		}
-
-		void visit(const FOBDDFuncTerm* ft) {
-			vector<Term*> args;
-			for(auto it = ft->args().cbegin(); it != ft->args().cend(); ++it) {
-				(*it)->accept(this);
-				args.push_back(_currterm);
+			if(_manager->isTruebdd(bdd->truebranch())){
+				return; // \lnot kernel is the whole formula
 			}
-			_currterm = new FuncTerm(ft->func(),args,TermParseInfo());
-		}
 
-		void visit(const FOBDDAtomKernel* atom) {
-			vector<Term*> args;
-			for(auto it = atom->args().cbegin(); it != atom->args().cend(); ++it) {
-				(*it)->accept(this);
-				args.push_back(_currterm);
-			}
-			switch(atom->type()) {
-				case AKT_TWOVAL:
-					_currformula = new PredForm(SIGN::POS,atom->symbol(),args,FormulaParseInfo());
-					break;
-				case AKT_CT:
-					_currformula = new PredForm(SIGN::POS,atom->symbol()->derivedSymbol(ST_CT),args,FormulaParseInfo());
-					break;
-				case AKT_CF:
-					_currformula = new PredForm(SIGN::POS,atom->symbol()->derivedSymbol(ST_CF),args,FormulaParseInfo());
-					break;
-			}
-		}
+			auto kernelformula = _currformula;
+			FOBDDVisitor::visit(bdd->falsebranch());
+			auto branchformula = _currformula;
+			_currformula = new BoolForm(SIGN::POS, true, kernelformula, branchformula, FormulaParseInfo());
 
-		void visit(const FOBDDQuantKernel* quantkernel) {
-			map<const FOBDDDeBruijnIndex*,Variable*> savemapping = _dbrmapping;
-			_dbrmapping.clear();
-			for(auto it = savemapping.cbegin(); it != savemapping.cend(); ++it)
-				_dbrmapping[_manager->getDeBruijnIndex(it->first->sort(),it->first->index()+1)] = it->second;
-			FOBDDVisitor::visit(quantkernel->bdd());
-			set<Variable*> quantvars;
-			quantvars.insert(_dbrmapping[_manager->getDeBruijnIndex(quantkernel->sort(),0)]);
-			_dbrmapping = savemapping;
-			_currformula = new QuantForm(SIGN::POS,QUANT::EXIST,quantvars,_currformula,FormulaParseInfo());
-		}
+		} else { // No branch is false
+			auto kernelformula = _currformula;
+			auto negkernelformula = kernelformula->clone();
+			negkernelformula->negate();
 
-		void visit(const FOBDD* bdd) {
-			if(_manager->isTruebdd(bdd)) { _currformula =  FormulaUtils::trueFormula(); }
-			else if(_manager->isFalsebdd(bdd)) { _currformula = FormulaUtils::falseFormula(); }
-			else {
-				bdd->kernel()->accept(this);
-				if(_manager->isFalsebdd(bdd->falsebranch())) {
-					if(not _manager->isTruebdd(bdd->truebranch())) {
-						Formula* kernelform = _currformula;
-						FOBDDVisitor::visit(bdd->truebranch());
-						_currformula = new BoolForm(SIGN::POS,true,kernelform,_currformula,FormulaParseInfo());
-					}
-				}
-				else if(_manager->isFalsebdd(bdd->truebranch())) {
-					_currformula->negate();
-					if(not _manager->isTruebdd(bdd->falsebranch())) {
-						Formula* kernelform = _currformula;
-						FOBDDVisitor::visit(bdd->falsebranch());
-						_currformula = new BoolForm(SIGN::POS,true,kernelform,_currformula,FormulaParseInfo());
-					}
-				}
-				else {
-					Formula* kernelform = _currformula;
-					Formula* negkernelform = kernelform->clone(); negkernelform->negate();
-					if(_manager->isTruebdd(bdd->falsebranch())) {
-						FOBDDVisitor::visit(bdd->truebranch());
-						BoolForm* bf = new BoolForm(SIGN::POS,true,kernelform,_currformula,FormulaParseInfo());
-						_currformula = new BoolForm(SIGN::POS,false,negkernelform,bf,FormulaParseInfo());
-					}
-					else if(_manager->isTruebdd(bdd->truebranch())) {
-						FOBDDVisitor::visit(bdd->falsebranch());
-						BoolForm* bf = new BoolForm(SIGN::POS,true,negkernelform,_currformula,FormulaParseInfo());
-						_currformula = new BoolForm(SIGN::POS,false,kernelform,bf,FormulaParseInfo());
-					}
-					else {
-						FOBDDVisitor::visit(bdd->truebranch());
-						Formula* trueform = _currformula;
-						FOBDDVisitor::visit(bdd->falsebranch());
-						Formula* falseform = _currformula;
-						BoolForm* bf1 = new BoolForm(SIGN::POS,true,kernelform,trueform,FormulaParseInfo());
-						BoolForm* bf2 = new BoolForm(SIGN::POS,true,negkernelform,falseform,FormulaParseInfo());
-						_currformula = new BoolForm(SIGN::POS,false,bf1,bf2,FormulaParseInfo());
-					}
-				}
+			if (_manager->isTruebdd(bdd->falsebranch())) {
+				FOBDDVisitor::visit(bdd->truebranch());
+				auto bf = new BoolForm(SIGN::POS, true, kernelformula, _currformula, FormulaParseInfo());
+				_currformula = new BoolForm(SIGN::POS, false, negkernelformula, bf, FormulaParseInfo());
+			} else if (_manager->isTruebdd(bdd->truebranch())) {
+				FOBDDVisitor::visit(bdd->falsebranch());
+				auto bf = new BoolForm(SIGN::POS, true, negkernelformula, _currformula, FormulaParseInfo());
+				_currformula = new BoolForm(SIGN::POS, false, kernelformula, bf, FormulaParseInfo());
+			} else {
+				FOBDDVisitor::visit(bdd->truebranch());
+				auto  trueform = _currformula;
+				FOBDDVisitor::visit(bdd->falsebranch());
+				auto falseform = _currformula;
+				auto bf1 = new BoolForm(SIGN::POS, true, kernelformula, trueform, FormulaParseInfo());
+				auto bf2 = new BoolForm(SIGN::POS, true, negkernelformula, falseform, FormulaParseInfo());
+				_currformula = new BoolForm(SIGN::POS, false, bf1, bf2, FormulaParseInfo());
 			}
 		}
-
-	public:
-		BDDToFormula(FOBDDManager* m) : FOBDDVisitor(m) { }
-		Formula* run(const FOBDDKernel* kernel) {
-			kernel->accept(this);
-			return _currformula;
-		}
-		Formula* run(const FOBDD* bdd) {
-			FOBDDVisitor::visit(bdd);
-			return _currformula;
-		}
-		Term* run(const FOBDDArgument* arg) {
-			arg->accept(this);
-			return _currterm;
-		}
+	}
 };
-
 
 #endif /* BDDTOFORMULA_HPP_ */

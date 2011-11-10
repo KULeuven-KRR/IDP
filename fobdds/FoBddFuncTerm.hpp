@@ -1,6 +1,7 @@
 #ifndef FOBDDFUNCTERM_HPP_
 #define FOBDDFUNCTERM_HPP_
 
+#include <vector>
 #include "fobdds/FoBddTerm.hpp"
 
 class Function;

@@ -12,7 +12,7 @@ class SubstituteTerms: public FOBDDVisitor {
 protected:
 	std::map<const From*, const To*> _from2to;
 
-	std::map<const From*, const To*>& getFrom2To(){
+	std::map<const From*, const To*>& getFrom2To() {
 		return _from2to;
 	}
 public:
@@ -20,7 +20,7 @@ public:
 			FOBDDVisitor(manager), _from2to(map) {
 	}
 
-	const FOBDDVariable* change(const From* v) {
+	const FOBDDArgument* change(const From* v) {
 		auto it = _from2to.find(v);
 		if (it != _from2to.cend()) {
 			return it->second;
@@ -30,23 +30,26 @@ public:
 	}
 };
 
-template<typename To>
-class SubstituteIndices: public SubstituteTerms<FOBDDDeBruijnIndex, To> {
-	typedef SubstituteTerms<FOBDDDeBruijnIndex, To> Parent;
+class SubstituteIndex: public FOBDDVisitor {
+private:
+	const FOBDDDeBruijnIndex* _index;
+	const FOBDDVariable* _variable;
 public:
-	SubstituteIndices(FOBDDManager* manager, const std::map<const FOBDDDeBruijnIndex*, const To*> map) :
-			Parent(manager, map) {
+	SubstituteIndex(FOBDDManager* manager, const FOBDDDeBruijnIndex* index, const FOBDDVariable* variable) :
+			FOBDDVisitor(manager), _index(index), _variable(variable) {
 	}
-
-	const FOBDDKernel* change(const FOBDDQuantKernel* k) {
-		auto kernel = k;
-		for(auto i=Parent::getFrom2To().begin(); i<Parent::getFrom2To().end(); ++i){
-			(*i).first = Parent::_manager->getDeBruijnIndex((*i).first->sort(), (*i).first->index() + 1);
-			const FOBDD* nbdd = FOBDDVisitor::change(kernel->bdd());
-			(*i).first = Parent::_manager->getDeBruijnIndex((*i).first->sort(), (*i).first->index() - 1);
-			kernel = Parent::_manager->getQuantKernel(kernel->sort(), nbdd);
+	const FOBDDArgument* change(const FOBDDDeBruijnIndex* i) {
+		if (i == _index) {
+			return _variable;
+		} else {
+			return i;
 		}
-		return kernel;
+	}
+	const FOBDDKernel* change(const FOBDDQuantKernel* k) {
+		_index = _manager->getDeBruijnIndex(_index->sort(), _index->index() + 1);
+		const FOBDD* nbdd = FOBDDVisitor::change(k->bdd());
+		_index = _manager->getDeBruijnIndex(_index->sort(), _index->index() - 1);
+		return _manager->getQuantKernel(k->sort(), nbdd);
 	}
 };
 

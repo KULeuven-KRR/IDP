@@ -1,4 +1,5 @@
 #include "fobdds/FoBddVariable.hpp"
+#include "fobdds/FoBddFuncTerm.hpp"
 #include "vocabulary.hpp"
 
 using namespace std;

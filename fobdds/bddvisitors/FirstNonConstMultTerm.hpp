@@ -12,11 +12,14 @@
 
 #include "vocabulary.hpp"
 
-class ExtractFirstNonFuncTerm: public FOBDDVisitor {
+/**
+ * Return first term which is not a multiplication with a const left hand side.
+ */
+class FirstNonConstMultTerm: public FOBDDVisitor {
 private:
 	const FOBDDArgument* _result;
 public:
-	ExtractFirstNonFuncTerm() :
+	FirstNonConstMultTerm() :
 			FOBDDVisitor(NULL) {
 	}
 
@@ -36,7 +39,7 @@ public:
 		_result = dt;
 	}
 	void visit(const FOBDDFuncTerm* ft) {
-		if (ft->func()->name() == "*/2" && sametypeid<FOBDDDomainTerm>(*(ft->args(0)))) {
+		if (isMultiplication(ft) && sametypeid<FOBDDDomainTerm>(*(ft->args(0)))) {
 			ft->args(1)->accept(this);
 		} else {
 			_result = ft;

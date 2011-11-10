@@ -190,9 +190,6 @@ public:
 														  //!< this function returns the same bdd, but created
 														  //!< by the manager 'this'
 
-	bool isArithmetic(const FOBDDKernel*); //!< Returns true iff the kernel is an equation or inequality of
-										   //!< arithmetic terms
-	bool isArithmetic(const FOBDDArgument*); //!< Returns true iff the argument is an arithmetic term
 	const FOBDDArgument* solve(const FOBDDKernel*, const FOBDDArgument*);
 	//!< Try to rewrite the given arithmetic kernel such that the right-hand side is the given argument,
 	//!< and such that the given argument does not occur in the left-hand side.

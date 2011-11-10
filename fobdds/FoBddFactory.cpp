@@ -57,17 +57,17 @@ void FOBDDFactory::visit(const PredForm* pf) {
 		pf->subterms()[n]->accept(this);
 		args[n] = _argument;
 	}
-	AtomKernelType akt = AKT_TWOVAL;
+	AtomKernelType akt = AtomKernelType::AKT_TWOVALUED;
 	bool notinverse = true;
 	PFSymbol* symbol = pf->symbol();
 	if(sametypeid<Predicate>(*symbol)) {
 		Predicate* predicate = dynamic_cast<Predicate*>(symbol);
 		if(predicate->type() != ST_NONE) {
 			switch(predicate->type()) {
-				case ST_CF: akt = AKT_CF; break;
-				case ST_CT: akt = AKT_CT; break;
-				case ST_PF: akt = AKT_CT; notinverse = false; break;
-				case ST_PT: akt = AKT_CF; notinverse = false; break;
+				case ST_CF: akt = AtomKernelType::AKT_CF; break;
+				case ST_CT: akt = AtomKernelType::AKT_CT; break;
+				case ST_PF: akt = AtomKernelType::AKT_CT; notinverse = false; break;
+				case ST_PT: akt = AtomKernelType::AKT_CF; notinverse = false; break;
 				case ST_NONE: assert(false); break;
 			}
 			symbol = predicate->parent();

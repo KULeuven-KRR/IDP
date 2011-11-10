@@ -545,13 +545,13 @@ InstGenerator* BDDToGenerator::create(const FOBDDKernel* kernel, const vector<Pa
 		}
 		const PredTable* table = 0;
 		switch (atom->type()) {
-		case AKT_TWOVAL:
+		case AtomKernelType::AKT_TWOVALUED:
 			table = inverse ? inter->cf() : inter->ct();
 			break;
-		case AKT_CF:
+		case AtomKernelType::AKT_CF:
 			table = inverse ? inter->pt() : inter->cf();
 			break;
-		case AKT_CT:
+		case AtomKernelType::AKT_CT:
 			table = inverse ? inter->pf() : inter->ct();
 			break;
 		}
