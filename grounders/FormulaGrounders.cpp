@@ -17,7 +17,7 @@ FormulaGrounder::FormulaGrounder(AbstractGroundTheory* grounding, const Groundin
 		:Grounder(grounding, ct), _verbosity(0) {
 }
 
-inline GroundTranslator* FormulaGrounder::translator() const {
+GroundTranslator* FormulaGrounder::translator() const {
 	return grounding()->translator();
 }
 
