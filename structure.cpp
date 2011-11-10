@@ -14,7 +14,8 @@
 #include "structure.hpp"
 #include "error.hpp"
 #include "GeneralUtils.hpp"
-#include "fobdd.hpp"
+#include "fobdds/FoBdd.hpp"
+#include "fobdds/FoBddManager.hpp"
 #include "luaconnection.hpp" //TODO break connection with lua!
 #include "generators/GeneratorFactory.hpp"
 #include "generators/InstGenerator.hpp"

@@ -9,6 +9,9 @@
 
 #include <vector>
 #include "commandinterface.hpp"
+#include "fobdds/FoBdd.hpp"
+#include "fobdds/FoBddManager.hpp"
+#include "fobdds/FoBddFactory.hpp"
 
 /**
  *	Class to test simplification of bdds. 
