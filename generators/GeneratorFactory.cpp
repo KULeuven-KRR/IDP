@@ -213,6 +213,7 @@ void GeneratorFactory::visit(const IntRangeInternalSortTable* t) {
 
 void GeneratorFactory::visit(const EnumeratedInternalPredTable*) {
 	// TODO: Use dynamic programming to improve this
+#error this is incorrect i think (as the lookupgenerator is empty)
 	LookupTable* lpt = new LookupTable();
 	LookupTable& lookuptab = *lpt;
 	vector<const DomElemContainer*> invars;

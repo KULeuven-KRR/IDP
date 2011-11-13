@@ -34,6 +34,13 @@ public:
 			notifyAtEnd();
 		}
 	}
+
+	virtual std::ostream& put(std::ostream& stream){
+		stream <<"TreeInstGenerator - ";
+		_root->put(stream);
+		stream <<"\n";
+		return stream;
+	}
 };
 
 #endif /* TREEINSTGENERATOR_HPP_ */
