@@ -220,7 +220,7 @@ if BUILDTESTS
 bin_PROGRAMS += alltests
 endif 
 
-alltests_SOURCES = tests/testsuite.cpp tests/mxtests.cpp tests/generatortests.cpp $(grounder_SOURCES)
+alltests_SOURCES = tests/testsuite.cpp tests/mxtests.cpp tests/generatortests.cpp tests/bddtests.cpp $(grounder_SOURCES)
 alltests_LDADD = -lgtest -lpthread $(gidl_LDADD)
 
 AM_CXXFLAGS += -DTESTDIR=\"$(abs_srcdir)/tests/simplemxtests/\"
