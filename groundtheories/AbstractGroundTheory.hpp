@@ -473,6 +473,7 @@ public:
 				Lit translation = translator()->translate(s, (*ptIterator));
 				if (it->second.find(translation) == it->second.end()) {
 					addUnitClause(-translation);
+					// TODO if not in translator, should make the structure more precise (do not add it to the grounding, that is useless)
 				}
 			}
 

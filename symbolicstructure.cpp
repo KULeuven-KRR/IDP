@@ -7,7 +7,10 @@
 #include <iostream>
 #include "vocabulary.hpp"
 #include "theory.hpp"
-#include "fobdd.hpp"
+#include "fobdds/FoBdd.hpp"
+#include "fobdds/FoBddFactory.hpp"
+#include "fobdds/FoBddManager.hpp"
+#include "fobdds/FoBddVariable.hpp"
 #include "symbolicstructure.hpp"
 
 #include "theorytransformations/Utils.hpp"

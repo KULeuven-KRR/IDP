@@ -20,6 +20,7 @@
 #include "term.hpp"
 
 #include <iostream>
+#include <exception>
 
 using namespace std;
 
@@ -126,7 +127,10 @@ dominstlist LazyRuleGrounder::createInst(const ElementTuple& headargs){
 	// set the variable instantiations
 	for(uint i=0; i<headargs.size(); ++i){
 		// FIXME what if it is not a VarTermGrounder! (e.g. if it is a constant => we should check whether it can unify with it)
-		assert(typeid(*headgrounder()->subtermgrounders()[i])==typeid(VarTermGrounder));
+		if(not sametypeid<VarTermGrounder>(*headgrounder()->subtermgrounders()[i])){
+			notyetimplemented("Lazygrounding with functions.\n");
+			throw std::exception();
+		}
 		auto var = (dynamic_cast<VarTermGrounder*>(headgrounder()->subtermgrounders()[i]))->getElement();
 		domlist.push_back(dominst(var, headargs[i]));
 	}

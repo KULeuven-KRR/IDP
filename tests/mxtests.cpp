@@ -12,54 +12,66 @@
 #include "gtest/gtest.h"
 #include "rungidl.hpp"
 
+#include <dirent.h>
+#include <exception>
+
 using namespace std;
 
-namespace Tests{
-	class MXTest : public ::testing::TestWithParam<string> {
+namespace Tests {
 
-	};
-
-	class LazyMXTest : public ::testing::TestWithParam<string> {
-
-	};
-
-	TEST_P(MXTest, DoesMX){
-		string testfile(string(TESTDIR)+"mxnbofmodelstest.idp");
-		auto result = test({string(TESTDIR)+GetParam(), testfile});
-		if(result==Status::FAIL){
-			cerr <<"Tested file " <<string(TESTDIR)+GetParam() <<"\n";
+// TODO prevent infinite running bugs
+// TODO on parsing error of one of the files, a lot of later ones will also fail!
+vector<string> generateListOfMXFiles() {
+	vector<string> mxtests;
+	DIR *dir;
+	struct dirent *ent;
+	dir = opendir(string(TESTDIR).c_str());
+	if (dir != NULL) {
+		while ((ent = readdir(dir)) != NULL) {
+			if(ent->d_name[0]!='.'){
+				mxtests.push_back(ent->d_name);
+			}
 		}
-		EXPECT_EQ(result, Status::SUCCESS);
+		closedir(dir);
+	} else {
+		cerr <<"FAIL    |  Could not open directory of MX tests.\n";
 	}
+	return mxtests;
+}
 
-	TEST_P(LazyMXTest, DoesMX){
-		string testfile(string(TESTDIR)+"mxlazynbofmodelstest.idp");
-		auto result = test({string(TESTDIR)+GetParam(), testfile});
-		if(result==Status::FAIL){
-			cerr <<"Tested file " <<string(TESTDIR)+GetParam() <<"\n";
-		}
-		EXPECT_EQ(result, Status::SUCCESS);
-	}
+class MXTest: public ::testing::TestWithParam<string> {
 
-	vector<string> testlist{
-		"equiv.idp", "forall.idp", "exists.idp", "impl.idp", "revimpl.idp",
-		"conj.idp", "disj.idp",
-		"negequiv.idp", "negforall.idp", "negexists.idp", "negimpl.idp",
-		"negrevimpl.idp", "negconj.idp", "negdisj.idp",
-		"atom.idp", "doubleneg.idp", "negatom.idp", "arbitrary.idp",
-		"func.idp",
-		"defonerule.idp", "defmultihead.idp", "defunwellf.idp", "defunfset.idp", "multidef.idp",
-		"eq.idp", "neq.idp", "leq.idp", "geq.idp", "lower.idp", "greater.idp",
-		"card.idp", "sum.idp", "min.idp", "max.idp", "prod.idp",
-		// TODO prevent infinite running bugs
-		// TODO on parsing error of one of the files, a lot of later ones will also fail!
-	};
+};
 
-	INSTANTIATE_TEST_CASE_P(ModelExpansion,
-					  MXTest,
-					  ::testing::ValuesIn(testlist));
+class LazyMXTest: public ::testing::TestWithParam<string> {
 
-	INSTANTIATE_TEST_CASE_P(LazyModelExpansion,
-					  LazyMXTest,
-					  ::testing::ValuesIn(testlist));
+};
+
+void throwexc(){
+	throw exception();
+}
+
+TEST_P(MXTest, DoesMX) {
+	string testfile(string(TESTDIR) + "../mxnbofmodelstest.idp"); // TODO TESTDIR should be one HIGHER
+	cerr << "Testing " << string(TESTDIR) + GetParam() << "\n";
+	Status result = Status::FAIL;
+	ASSERT_NO_THROW(
+		result = test( { string(TESTDIR) + GetParam(), testfile });
+	);
+	ASSERT_EQ(result, Status::SUCCESS);
+}
+
+TEST_P(LazyMXTest, DoesMX) {
+	string testfile(string(TESTDIR) + "../mxlazynbofmodelstest.idp"); // TODO TESTDIR should be one HIGHER
+	cerr << "Testing " << string(TESTDIR) + GetParam() << "\n";
+	Status result = Status::FAIL;
+	ASSERT_NO_THROW(
+		result = test( { string(TESTDIR) + GetParam(), testfile });
+	);
+	ASSERT_EQ(result, Status::SUCCESS);
+}
+
+INSTANTIATE_TEST_CASE_P(ModelExpansion, MXTest, ::testing::ValuesIn(generateListOfMXFiles()));
+
+INSTANTIATE_TEST_CASE_P(LazyModelExpansion, LazyMXTest, ::testing::ValuesIn(generateListOfMXFiles()));
 }
