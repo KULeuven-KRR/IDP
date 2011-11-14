@@ -67,6 +67,7 @@ grounder_SOURCES = \
 		grounders/GroundUtils.hpp\
 		grounders/Grounder.hpp grounders/Grounder.cpp\
 		rungidl.hpp rungidl.cpp\
+		ModelExpansion.hpp ModelExpansion.cpp\
 		commands/allcommands.hpp\
 		commands/commandinterface.hpp\
 		commands/optimization.hpp\
@@ -212,7 +213,8 @@ data_std_DATA = data/idp_intern.idp data/idp_intern.lua data/mx.idp data/theory.
 data_localdir = $(localstatedir)/idp
 data_local_DATA = data/.idprc
 
-dist_doc_DATA = README $(data_std_DATA) $(data_local_DATA) $(top_srcdir)/tests $(top_srcdir)/lib/loki
+dist_doc_DATA = README $(data_std_DATA) $(data_local_DATA)
+#  tests lib/loki
 
 if BUILDTESTS
 bin_PROGRAMS += alltests

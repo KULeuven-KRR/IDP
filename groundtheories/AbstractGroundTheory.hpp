@@ -392,14 +392,19 @@ public:
 	}
 
 	void addFalseDefineds() {
+		std::cerr <<"Adding false defineds.\n";
 		for(size_t n = 0; n < translator()->nbManagedSymbols(); ++n) {
 			PFSymbol* s = translator()->getManagedSymbol(n);
 			auto it = _defined.find(s);
 			if(it!=_defined.end()) {
+				std::cerr <<"Adding false defineds for one symbol.\n";
 				auto tuples = translator()->getTuples(n);
 				for(auto jt = tuples.begin(); jt != tuples.end(); ++jt) {
+					std::cerr <<"Checking whether no rule for it.\n";
 					if(it->second.find(jt->second) == it->second.end()){
+						std::cerr <<"No rule for it.\n";
 						addUnitClause(-jt->second);
+						// TODO if not in translator, should make the structure more precise (do not add it to the grounding, that is useless)
 					}
 				}
 			}
