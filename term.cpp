@@ -9,8 +9,8 @@
 #include "structure.hpp"
 #include "term.hpp"
 #include "theory.hpp"
-#include "TheoryVisitor.hpp"
-#include "TheoryMutatingVisitor.hpp"
+#include "visitors/TheoryVisitor.hpp"
+#include "visitors/TheoryMutatingVisitor.hpp"
 #include "common.hpp"
 using namespace std;
 
@@ -425,97 +425,15 @@ ostream& QuantSetExpr::put(ostream& output, bool longnames) const {
 	Utilities
 ****************/
 
-class ApproxTwoValChecker : public TheoryVisitor {
-	private:
-		AbstractStructure*	_structure;
-		bool				_returnvalue;
-	public:
-		ApproxTwoValChecker(AbstractStructure* str) : _structure(str), _returnvalue(true) { }
-		bool	returnvalue()	const { return _returnvalue;	}
-		void	visit(const PredForm*);
-		void	visit(const FuncTerm*);
-		void 	visit(const SetExpr*) { /* TODO */ assert(false); }
-};
-
-void ApproxTwoValChecker::visit(const PredForm* pf) {
-	PredInter* inter = _structure->inter(pf->symbol());
-	if(inter->approxTwoValued()) {
-		for(auto it = pf->subterms().cbegin(); it != pf->subterms().cend(); ++it) {
-			(*it)->accept(this);
-			if(not _returnvalue) { return; }
-		}
-	}
-	else { _returnvalue = false; }
-}
-
-void ApproxTwoValChecker::visit(const FuncTerm* ft) {
-	FuncInter* inter = _structure->inter(ft->function());
-	if(inter->approxTwoValued()) {
-		for(auto it = ft->subterms().cbegin(); it != ft->subterms().cend(); ++it) {
-			(*it)->accept(this);
-			if(not _returnvalue) { return; }
-		}
-	}
-	else { _returnvalue = false; }
-}
-
-namespace SetUtils {
-	bool approxTwoValued(SetExpr* exp, AbstractStructure* str) {
-		ApproxTwoValChecker tvc(str);
-		exp->accept(&tvc);
-		return tvc.returnvalue();
-	}
-}
-
-/**
- * Class to implement TermUtils::isPartial
- */
-class PartialChecker : public TheoryVisitor {
-	private:
-		bool			_result;
-
-		void visit(const VarTerm* ) { }
-		void visit(const DomainTerm* ) { }
-		void visit(const AggTerm* ) { }	// NOTE: we are not interested whether at contains partial functions. 
-										// So we don't visit it recursively.
-
-		void visit(const FuncTerm* ft) {
-			if(ft->function()->partial()) { 
-				_result = true; 
-				return;	
-			}
-			else {
-				for(unsigned int argpos = 0; argpos < ft->subterms().size(); ++argpos) {
-					if(not SortUtils::isSubsort(ft->subterms()[argpos]->sort(),ft->function()->insort(argpos))) {
-						_result = true;
-						return;
-					}
-				}
-				TheoryVisitor::traverse(ft);
-			}
-		}
-
-	public:
-		bool run(Term* t) {
-			_result = false;
-			t->accept(this);
-			return _result;
-		}
-};
-
 namespace TermUtils {
 
-	vector<Term*> makeNewVarTerms(const vector<Variable*>& vars) {
-		vector<Term*> terms;
-		for(auto it = vars.cbegin(); it != vars.cend(); ++it) {
-			terms.push_back(new VarTerm(*it,TermParseInfo()));
-		}
-		return terms;
+vector<Term*> makeNewVarTerms(const vector<Variable*>& vars) {
+	vector<Term*> terms;
+	for(auto it = vars.cbegin(); it != vars.cend(); ++it) {
+		terms.push_back(new VarTerm(*it,TermParseInfo()));
 	}
+	return terms;
+}
 
-	bool isPartial(Term* term) {
-		PartialChecker pc;
-		return pc.run(term);
-	}
 }
 

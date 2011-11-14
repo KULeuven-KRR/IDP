@@ -1,15 +1,16 @@
 /************************************
+  	flatten.hpp
 	this file belongs to GidL 2.0
 	(c) K.U.Leuven
 ************************************/
 
-#ifndef FLATTEN_HPP_
-#define FLATTEN_HPP_
+#ifndef CMD_FLATTEN_HPP_
+#define CMD_FLATTEN_HPP_
 
 #include <vector>
 #include "commandinterface.hpp"
 #include "theory.hpp"
-#include "theorytransformations/Utils.hpp"
+#include "utils/TheoryUtils.hpp"
 
 class FlattenInference: public Inference {
 public:
@@ -24,4 +25,4 @@ public:
 	}
 };
 
-#endif /* FLATTEN_HPP_ */
+#endif /* CMD_FLATTEN_HPP_ */

@@ -1,4 +1,5 @@
 /************************************
+  	symbolicstructure.cpp
 	this file belongs to GidL 2.0
 	(c) K.U.Leuven
 ************************************/
@@ -10,7 +11,7 @@
 #include "fobdd.hpp"
 #include "symbolicstructure.hpp"
 
-#include "theorytransformations/Utils.hpp"
+#include "utils/TheoryUtils.hpp"
 
 using namespace std;
 

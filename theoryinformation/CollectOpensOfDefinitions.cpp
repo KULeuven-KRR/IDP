@@ -1,3 +1,9 @@
+/************************************
+  	CollectOpensOfDefinitions.cpp
+	this file belongs to GidL 2.0
+	(c) K.U.Leuven
+************************************/
+
 #include "theoryinformation/CollectOpensOfDefinitions.hpp"
 
 #include "vocabulary.hpp"

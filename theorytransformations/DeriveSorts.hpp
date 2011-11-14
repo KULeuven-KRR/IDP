@@ -1,10 +1,16 @@
+/************************************
+	DeriveSorts.hpp
+	this file belongs to GidL 2.0
+	(c) K.U.Leuven
+************************************/
+
 #ifndef DERIVESORTS_HPP_
 #define DERIVESORTS_HPP_
 
 #include <set>
 #include <map>
 
-#include "TheoryMutatingVisitor.hpp"
+#include "visitors/TheoryMutatingVisitor.hpp"
 
 class Sort;
 class Variable;

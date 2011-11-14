@@ -1,3 +1,9 @@
+/************************************
+  	UnnestPartialTerms.hpp
+	this file belongs to GidL 2.0
+	(c) K.U.Leuven
+************************************/
+
 #ifndef REMOVEPARTIALTERMS_HPP_
 #define REMOVEPARTIALTERMS_HPP_
 

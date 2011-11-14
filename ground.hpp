@@ -1,8 +1,8 @@
 /************************************
- ground.hpp
- this file belongs to GidL 2.0
- (c) K.U.Leuven
- ************************************/
+	ground.hpp
+	this file belongs to GidL 2.0
+	(c) K.U.Leuven
+************************************/
 
 #ifndef GROUND_HPP
 #define GROUND_HPP
@@ -16,8 +16,8 @@
 #include <typeinfo>
 #include <cstdlib>
 #include "theory.hpp"
-#include "TheoryVisitor.hpp"
-#include "TheoryMutatingVisitor.hpp"
+#include "visitors/TheoryVisitor.hpp"
+#include "visitors/TheoryMutatingVisitor.hpp"
 
 #include "structure.hpp"
 #include "commontypes.hpp"
@@ -38,8 +38,8 @@ class Options;
 typedef unsigned int VarId;
 
 /**********************************************
- Translate from ground atoms to numbers
- **********************************************/
+	Translate from ground atoms to numbers
+**********************************************/
 
 /**
  * Set corresponding to a tseitin.
@@ -562,8 +562,8 @@ public:
 };
 
 /************************************
- Optimized grounding algorithm
- ************************************/
+	Optimized grounding algorithm
+************************************/
 
 enum class CompContext {
 	SENTENCE, HEAD, FORMULA
@@ -589,8 +589,8 @@ struct GroundingContext {
 
 
 /***********************
- Grounder Factory
- ***********************/
+	Grounder Factory
+***********************/
 
 /*
  * Class to produce grounders 

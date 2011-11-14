@@ -1,16 +1,25 @@
-#include "theorytransformations/Utils.hpp"
+/************************************
+  	TheoryUtils.cpp
+	this file belongs to GidL 2.0
+	(c) K.U.Leuven
+************************************/
+
+#include "utils/TheoryUtils.hpp"
 
 #include "theory.hpp"
 #include "vocabulary.hpp"
 #include "term.hpp"
 #include "fobdd.hpp"
-#include "theoryinformation/CollectOpensOfDefinitions.hpp"
+#include "theoryinformation/ApproxCheckTwoValued.hpp"
 #include "theoryinformation/CheckContainment.hpp"
+#include "theoryinformation/CheckContainsFuncTerms.hpp"
+#include "theoryinformation/CheckFuncTerms.hpp"
+#include "theoryinformation/CheckPartialTerm.hpp"
 #include "theoryinformation/CheckSorts.hpp"
+#include "theoryinformation/CollectOpensOfDefinitions.hpp"
 #include "theoryinformation/CountNbOfSubFormulas.hpp"
 #include "theorytransformations/PushNegations.hpp"
 #include "theorytransformations/Flatten.hpp"
-#include "theorytransformations/CheckFuncTerms.hpp"
 #include "theorytransformations/DeriveSorts.hpp"
 #include "theorytransformations/AddCompletion.hpp"
 #include "theorytransformations/GraphFunctions.hpp"
@@ -22,7 +31,6 @@
 #include "theorytransformations/UnnestPartialTerms.hpp"
 #include "theorytransformations/UnnestTerms.hpp"
 #include "theorytransformations/UnnestThreeValuedTerms.hpp"
-#include "theoryinformation/CheckContainsFuncTerms.hpp"
 
 using namespace std;
 
@@ -30,8 +38,22 @@ using namespace std;
 // TODO should the abstracttheory methods then also return?
 
 namespace TermUtils {
-SetExpr* moveThreeValuedTerms(SetExpr* f, AbstractStructure* structure, Context context, bool cpsupport, const std::set<const PFSymbol*> cpsymbols) {
+SetExpr* moveThreeValuedTerms(SetExpr* f, AbstractStructure* structure, 
+		Context context, bool cpsupport, const std::set<const PFSymbol*> cpsymbols) {
 	return transform<UnnestThreeValuedTerms>(f, structure, context, cpsupport, cpsymbols);
+}
+
+bool isPartial(Term* term) {
+	CheckPartialTerm pc;
+	return pc.run(term);
+}
+}
+
+namespace SetUtils {
+bool approxTwoValued(SetExpr* exp, AbstractStructure* str) {
+	ApproxCheckTwoValued tvc(str);
+	exp->accept(&tvc);
+	return tvc.returnvalue();
 }
 }
 

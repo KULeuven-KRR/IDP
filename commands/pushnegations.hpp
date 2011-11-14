@@ -1,15 +1,16 @@
 /************************************
+  	pushnegations.hpp
 	this file belongs to GidL 2.0
 	(c) K.U.Leuven
 ************************************/
 
-#ifndef PUSHNEGATIONS_HPP_
-#define PUSHNEGATIONS_HPP_
+#ifndef CMD_PUSHNEGATIONS_HPP_
+#define CMD_PUSHNEGATIONS_HPP_
 
 #include <vector>
 #include "commandinterface.hpp"
 #include "theory.hpp"
-#include "theorytransformations/Utils.hpp"
+#include "utils/TheoryUtils.hpp"
 
 class PushNegationsInference: public Inference {
 public:
@@ -24,4 +25,4 @@ public:
 	}
 };
 
-#endif /* PUSHNEGATIONS_HPP_ */
+#endif /* CMD_PUSHNEGATIONS_HPP_ */

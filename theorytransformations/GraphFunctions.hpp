@@ -1,7 +1,13 @@
+/************************************
+  	GraphFunctions.hpp
+	this file belongs to GidL 2.0
+	(c) K.U.Leuven
+************************************/
+
 #ifndef GRAPHFUNCTIONS_HPP_
 #define GRAPHFUNCTIONS_HPP_
 
-#include "TheoryMutatingVisitor.hpp"
+#include "visitors/TheoryMutatingVisitor.hpp"
 
 /***********************************
  Replace F(x) = y by P_F(x,y)

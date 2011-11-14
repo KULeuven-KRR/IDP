@@ -1,10 +1,17 @@
+/************************************
+	PropagatorFactory.hpp
+	this file belongs to GidL 2.0
+	(c) K.U.Leuven
+************************************/
+
 #ifndef PROPAGATORFACTORY_HPP_
 #define PROPAGATORFACTORY_HPP_
 
 #include <map>
 #include "theory.hpp"
-#include "TheoryVisitor.hpp"
-#include "TheoryMutatingVisitor.hpp"
+#include "visitors/TheoryVisitor.hpp"
+#include "visitors/TheoryMutatingVisitor.hpp"
+
 class PFSymbol;
 class PredForm;
 class EqChainForm;

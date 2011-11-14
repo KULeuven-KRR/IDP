@@ -1,8 +1,14 @@
+/************************************
+  	SplitComparisonChains.hpp
+	this file belongs to GidL 2.0
+	(c) K.U.Leuven
+************************************/
+
 #ifndef REMOVEEQUATIONCHAINS_HPP_
 #define REMOVEEQUATIONCHAINS_HPP_
 
 #include <vector>
-#include "TheoryMutatingVisitor.hpp"
+#include "visitors/TheoryMutatingVisitor.hpp"
 
 class Vocabulary;
 

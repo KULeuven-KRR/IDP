@@ -1,7 +1,13 @@
+/************************************
+  	GraphAggregates.hpp
+	this file belongs to GidL 2.0
+	(c) K.U.Leuven
+************************************/
+
 #ifndef GRAPHAGGREGATES_HPP_
 #define GRAPHAGGREGATES_HPP_
 
-#include "TheoryMutatingVisitor.hpp"
+#include "visitors/TheoryMutatingVisitor.hpp"
 
 class GraphAggregates: public TheoryMutatingVisitor {
 private:

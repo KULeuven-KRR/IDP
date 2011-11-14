@@ -1,3 +1,9 @@
+/************************************
+	insert.cpp
+	this file belongs to GidL 2.0
+	(c) K.U.Leuven
+************************************/
+
 #include <cassert>
 #include <sstream>
 #include <iostream>
@@ -8,8 +14,8 @@
 #include "structure.hpp"
 #include "term.hpp"
 #include "theory.hpp"
-#include "TheoryVisitor.hpp"
-#include "TheoryMutatingVisitor.hpp"
+#include "visitors/TheoryVisitor.hpp"
+#include "visitors/TheoryMutatingVisitor.hpp"
 
 #include "theoryinformation/CheckSorts.hpp"
 #include "theorytransformations/DeriveSorts.hpp"
@@ -24,7 +30,7 @@
 
 #include "GlobalData.hpp"
 
-#include "theorytransformations/Utils.hpp"
+#include "utils/TheoryUtils.hpp"
 
 using namespace std;
 using namespace LuaConnection;

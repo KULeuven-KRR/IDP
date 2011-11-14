@@ -18,7 +18,7 @@
 #include "luaconnection.hpp" //TODO break connection with lua!
 
 #include "visitors/StructureVisitor.hpp"
-#include "analysis/structure/Materializer.hpp"
+#include "structureanalysis/EnumerateSymbolicTable.hpp"
 
 #include "generators/GeneratorFactory.hpp"
 #include "generators/InstGenerator.hpp"
@@ -4358,15 +4358,15 @@ void ModInternalFuncTable::accept(StructureVisitor* v) const {
 ******************/
 
 SortTable* SortTable::materialize() const {
-	Materializer m;
+	EnumerateSymbolicTable m;
 	return m.run(this);
 }
 PredTable* PredTable::materialize() const {
-	Materializer m;
+	EnumerateSymbolicTable m;
 	return m.run(this);
 }
 FuncTable* FuncTable::materialize() const {
-	Materializer m;
+	EnumerateSymbolicTable m;
 	return m.run(this);
 }
 

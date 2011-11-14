@@ -1,15 +1,16 @@
 /************************************
+  	removenesting.hpp
 	this file belongs to GidL 2.0
 	(c) K.U.Leuven
 ************************************/
 
-#ifndef REMOVENESTING_HPP_
-#define REMOVENESTING_HPP_
+#ifndef CMD_REMOVENESTING_HPP_
+#define CMD_REMOVENESTING_HPP_
 
 #include <vector>
 #include "commandinterface.hpp"
 #include "theory.hpp"
-#include "theorytransformations/Utils.hpp"
+#include "utils/TheoryUtils.hpp"
 
 class RemoveNestingInference : public Inference {
 public:
@@ -24,4 +25,4 @@ public:
 	}
 };
 
-#endif /* REMOVENESTING_HPP_ */
+#endif /* CMD_REMOVENESTING_HPP_ */

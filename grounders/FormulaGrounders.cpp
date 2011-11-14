@@ -1,3 +1,9 @@
+/************************************
+	FormulaGrounders.hpp
+	this file belongs to GidL 2.0
+	(c) K.U.Leuven
+************************************/
+
 #include "grounders/FormulaGrounders.hpp"
 
 #include <iostream>
@@ -17,7 +23,7 @@ FormulaGrounder::FormulaGrounder(AbstractGroundTheory* grounding, const Groundin
 		:Grounder(grounding, ct), _verbosity(0) {
 }
 
-inline GroundTranslator* FormulaGrounder::translator() const {
+GroundTranslator* FormulaGrounder::translator() const {
 	return grounding()->translator();
 }
 

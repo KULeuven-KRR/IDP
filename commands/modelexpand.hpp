@@ -14,7 +14,7 @@
 #include "commands/propagate.hpp"
 #include "symmetry.hpp"
 
-#include "theorytransformations/Utils.hpp"
+#include "utils/TheoryUtils.hpp"
 
 #include "OptionsStack.hpp"
 

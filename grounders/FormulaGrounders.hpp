@@ -1,3 +1,9 @@
+/************************************
+	FormulaGrounders.hpp
+	this file belongs to GidL 2.0
+	(c) K.U.Leuven
+************************************/
+
 #ifndef FORMULAGROUNDERS_HPP_
 #define FORMULAGROUNDERS_HPP_
 
@@ -62,16 +68,6 @@ public:
 		return true;
 	}
 };
-
-//class CPAtomGrounder : public AtomGrounder {
-//	private:
-//		GroundTermTranslator*	_termtranslator;
-//	public:
-//		CPAtomGrounder(GroundTranslator*, GroundTermTranslator*, SIGN sign, Function*,
-//					const std::vector<TermGrounder*>, InstanceChecker*, InstanceChecker*,
-//					const std::vector<SortTable*>&, const GroundingContext&);
-//		int	run() const;
-//};
 
 class ComparisonGrounder: public FormulaGrounder {
 private:

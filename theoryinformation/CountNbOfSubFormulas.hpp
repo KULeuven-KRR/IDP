@@ -1,5 +1,5 @@
 /************************************
-	CountSubformulas.hpp
+	CountNrOfSubformulas.hpp
 	this file belongs to GidL 2.0
 	(c) K.U.Leuven
 ************************************/

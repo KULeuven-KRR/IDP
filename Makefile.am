@@ -66,26 +66,6 @@ grounder_SOURCES = \
 		grounders/GroundUtils.hpp\
 		grounders/Grounder.hpp grounders/Grounder.cpp\
 		rungidl.hpp rungidl.cpp\
-		visitors/StructureVisitor.hpp visitors/StructureVisitor.cpp\
-		visitors/TheoryVisitor.hpp visitors/TheoryVisitor.cpp\
-		visitors/TheoryMutatingVisitor.hpp visitors/TheoryMutatingVisitor.cpp\
-		analysis/structure/Materializer.hpp\
-		analysis/theory/ContainmentChecker.hpp\
-		analysis/theory/FormulaCounter.hpp\
-		analysis/theory/FormulaFuncTermChecker.hpp\
-		analysis/theory/OpenCollector.hpp\
-		transformations/theory/AggGrapher.hpp\
-		transformations/theory/Completer.hpp\
-		transformations/theory/EqChainRemover.hpp\
-		transformations/theory/EquivRemover.hpp\
-		transformations/theory/Flattener.hpp\
-		transformations/theory/FuncGrapher.hpp\
-		transformations/theory/NegationPush.hpp\
-		transformations/theory/PartialTermMover.hpp\
-		transformations/theory/QuantMover.hpp\
-		transformations/theory/Substituter.hpp\
-		transformations/theory/TermMover.hpp\
-		transformations/theory/ThreeValuedTermMover.hpp\
 		commands/allcommands.hpp\
 		commands/optimization.hpp\
 		commands/commandinterface.hpp\
@@ -145,14 +125,20 @@ grounder_SOURCES = \
 		generators/GeneratorFactory.cpp\
 		generators/BDDBasedGeneratorFactory.cpp\
 		OptionsStack.hpp OptionsStack.cpp\
+		visitors/StructureVisitor.hpp visitors/StructureVisitor.cpp\
+		visitors/TheoryVisitor.hpp visitors/TheoryVisitor.cpp\
+		visitors/TheoryMutatingVisitor.hpp visitors/TheoryMutatingVisitor.cpp\
+        structureanalysis/EnumerateSymbolicTable.hpp\
 		theoryinformation/CollectOpensOfDefinitions.hpp theoryinformation/CollectOpensOfDefinitions.cpp\
 		theoryinformation/CheckContainment.hpp theoryinformation/CheckContainment.cpp\
 		theoryinformation/CheckContainsFuncTerms.hpp\
 		theoryinformation/CheckSorts.hpp theoryinformation/CheckSorts.cpp\
+		theoryinformation/CountSubformulas.hpp\
+		theoryinformation/CheckFuncTerms.hpp\
+		theoryinformation/CheckPartialTerm.hpp\
+		theoryinformation/ApproxCheckTwoValued.hpp theoryinformation/ApproxCheckTwoValued.cpp\
 		theorytransformations/PushNegations.hpp theorytransformations/PushNegations.cpp\
 		theorytransformations/Flatten.hpp theorytransformations/Flatten.cpp\
-		theorytransformations/CountSubformulas.hpp\
-		theorytransformations/CheckFuncTerms.hpp\
 		theorytransformations/DeriveSorts.hpp theorytransformations/DeriveSorts.cpp\
 		theorytransformations/AddCompletion.hpp theorytransformations/AddCompletion.cpp\
 		theorytransformations/GraphFunctions.hpp theorytransformations/GraphFunctions.cpp\
@@ -164,9 +150,7 @@ grounder_SOURCES = \
 		theorytransformations/UnnestPartialTerms.hpp\
 		theorytransformations/UnnestTerms.hpp theorytransformations/UnnestTerms.cpp\
 		theorytransformations/UnnestThreeValuedTerms.hpp theorytransformations/UnnestThreeValuedTerms.cpp\
-		TheoryVisitor.hpp TheoryVisitor.cpp\
-		TheoryMutatingVisitor.hpp TheoryMutatingVisitor.cpp\
-		theorytransformations/Utils.hpp theorytransformations/Utils.cpp\
+		utils/TheoryUtils.hpp utils/TheoryUtils.cpp\
 		GlobalData.hpp GlobalData.cpp
 		
 gidl_dist = $(srcdir)/lib/loki-0.1.7

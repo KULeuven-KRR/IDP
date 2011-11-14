@@ -1,7 +1,13 @@
+/************************************
+  	CheckSorts.hpp
+	this file belongs to GidL 2.0
+	(c) K.U.Leuven
+************************************/
+
 #ifndef CHECKSORTS_HPP_
 #define CHECKSORTS_HPP_
 
-#include "TheoryVisitor.hpp"
+#include "visitors/TheoryVisitor.hpp"
 
 class Vocabulary;
 

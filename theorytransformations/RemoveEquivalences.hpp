@@ -1,7 +1,13 @@
+/************************************
+  	RemoveEquivalences.hpp
+	this file belongs to GidL 2.0
+	(c) K.U.Leuven
+************************************/
+
 #ifndef REMOVEEQUIVALENCES_HPP_
 #define REMOVEEQUIVALENCES_HPP_
 
-#include "TheoryMutatingVisitor.hpp"
+#include "visitors/TheoryMutatingVisitor.hpp"
 
 #include "theory.hpp"
 

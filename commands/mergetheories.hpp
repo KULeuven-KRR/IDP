@@ -1,4 +1,5 @@
 /************************************
+  	mergetheories.hpp
 	this file belongs to GidL 2.0
 	(c) K.U.Leuven
 ************************************/
@@ -9,7 +10,7 @@
 #include <vector>
 #include "commandinterface.hpp"
 #include "theory.hpp"
-#include "theorytransformations/Utils.hpp"
+#include "utils/TheoryUtils.hpp"
 
 class MergeTheoriesInference: public Inference {
 public:

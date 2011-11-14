@@ -19,7 +19,8 @@
 #include "structure.hpp"
 #include "error.hpp"
 
-#include "theorytransformations/Utils.hpp"
+#include "visitors/StructureVisitor.hpp"
+#include "utils/TheoryUtils.hpp"
 
 
 using namespace std;

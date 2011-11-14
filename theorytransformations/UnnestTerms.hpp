@@ -1,3 +1,9 @@
+/************************************
+  	UnnestTerms.hpp
+	this file belongs to GidL 2.0
+	(c) K.U.Leuven
+************************************/
+
 #ifndef MOVETERMS_HPP_
 #define MOVETERMS_HPP_
 
@@ -7,7 +13,7 @@
 #include "theory.hpp"
 #include "term.hpp"
 
-#include "TheoryMutatingVisitor.hpp"
+#include "visitors/TheoryMutatingVisitor.hpp"
 
 class Vocabulary;
 class Variable;

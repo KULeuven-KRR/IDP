@@ -16,7 +16,7 @@
 #include <sstream>
 #include <iostream>
 
-#include "theorytransformations/Utils.hpp"
+#include "utils/TheoryUtils.hpp"
 
 using namespace std;
 

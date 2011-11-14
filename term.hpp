@@ -345,12 +345,4 @@ public:
 	std::ostream&	put(std::ostream&, bool longnames = false)	const;
 };
 
-class AbstractStructure;
-
-namespace SetUtils {
-	bool approxTwoValued(SetExpr*,AbstractStructure*);	
-		//!< Returns false if the set expression is not two-valued in the given structure. May return true
-		//!< if the set expression is two-valued in the structure.
-}
-
 #endif 

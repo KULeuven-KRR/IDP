@@ -1,8 +1,8 @@
 /************************************
- theory.cpp
- this file belongs to GidL 2.0
- (c) K.U.Leuven
- ************************************/
+	theory.cpp
+	this file belongs to GidL 2.0
+	(c) K.U.Leuven
+************************************/
 
 #include <cassert>
 #include <sstream>
@@ -19,14 +19,14 @@
 #include "theoryinformation/CollectOpensOfDefinitions.hpp"
 #include "theoryinformation/CheckContainment.hpp"
 
-#include "TheoryVisitor.hpp"
-#include "TheoryMutatingVisitor.hpp"
+#include "visitors/TheoryVisitor.hpp"
+#include "visitors/TheoryMutatingVisitor.hpp"
 
 using namespace std;
 
 /**********************
- TheoryComponent
- **********************/
+	TheoryComponent
+**********************/
 
 string TheoryComponent::toString(unsigned int spaces) const {
 	stringstream sstr;
@@ -35,8 +35,8 @@ string TheoryComponent::toString(unsigned int spaces) const {
 }
 
 /**************
- Formula
- **************/
+	Formula
+**************/
 
 void Formula::setFreeVars() {
 	_freevars.clear();
@@ -94,8 +94,8 @@ ostream& operator<<(ostream& output, const Formula& f) {
 }
 
 /***************
- PredForm
- ***************/
+	PredForm
+***************/
 
 PredForm* PredForm::clone() const {
 	map<Variable*, Variable*> mvv;
@@ -154,8 +154,8 @@ ostream& PredForm::put(ostream& output, bool longnames, unsigned int spaces) con
 }
 
 /******************
- EqChainForm
- ******************/
+	EqChainForm
+******************/
 
 EqChainForm* EqChainForm::clone() const {
 	map<Variable*, Variable*> mvv;
@@ -197,8 +197,8 @@ ostream& EqChainForm::put(ostream& output, bool longnames, unsigned int spaces) 
 }
 
 /****************
- EquivForm
- ****************/
+	EquivForm
+****************/
 
 EquivForm* EquivForm::clone() const {
 	map<Variable*, Variable*> mvv;
@@ -231,8 +231,8 @@ ostream& EquivForm::put(ostream& output, bool longnames, unsigned int spaces) co
 }
 
 /***************
- BoolForm
- ***************/
+	BoolForm
+***************/
 
 BoolForm* BoolForm::clone() const {
 	map<Variable*, Variable*> mvv;
@@ -277,8 +277,8 @@ ostream& BoolForm::put(ostream& output, bool longnames, unsigned int spaces) con
 }
 
 /****************
- QuantForm
- ****************/
+	QuantForm
+****************/
 
 QuantForm* QuantForm::clone() const {
 	map<Variable*, Variable*> mvv;
@@ -322,8 +322,8 @@ ostream& QuantForm::put(ostream& output, bool longnames, unsigned int spaces) co
 }
 
 /**************
- AggForm
- **************/
+	AggForm
+**************/
 
 AggForm::AggForm(SIGN sign, Term* l, CompType c, AggTerm* r, const FormulaParseInfo& pi) :
 		Formula(sign, pi), _comp(c), _aggterm(r) {
@@ -362,8 +362,8 @@ ostream& AggForm::put(ostream& output, bool longnames, unsigned int spaces) cons
 }
 
 /***********
- Rule
- ***********/
+	Rule
+***********/
 
 Rule* Rule::clone() const {
 	map<Variable*, Variable*> mvv;
@@ -420,8 +420,8 @@ ostream& operator<<(ostream& output, const Rule& r) {
 }
 
 /******************
- Definitions
- ******************/
+	Definitions
+******************/
 
 Definition* Definition::clone() const {
 	Definition* newdef = new Definition();
@@ -471,8 +471,8 @@ ostream& Definition::put(ostream& output, bool longnames, unsigned int spaces) c
 }
 
 /***************************
- Fixpoint definitions
- ***************************/
+	Fixpoint definitions
+***************************/
 
 FixpDef* FixpDef::clone() const {
 	FixpDef* newfd = new FixpDef(_lfp);
@@ -530,8 +530,8 @@ ostream& FixpDef::put(ostream& output, bool longnames, unsigned int spaces) cons
 }
 
 /***************
- Theories
- ***************/
+	Theories
+***************/
 
 Theory* Theory::clone() const {
 	Theory* newtheory = new Theory(_name, _vocabulary, ParseInfo());
