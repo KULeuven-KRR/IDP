@@ -10,6 +10,7 @@ private:
 	Namespace* _globalNamespace;
 	DomainElementFactory* _domainelemFactory;
 	Options* _options;
+	unsigned int _errorcount;
 
 	GlobalData();
 
@@ -34,6 +35,14 @@ public:
 	}
 	void setOptions(Options* options) {
 		_options = options;
+	}
+
+	void notifyOfError(){
+		_errorcount++;
+	}
+
+	unsigned int getErrorCount(){
+		return _errorcount;
 	}
 };
 

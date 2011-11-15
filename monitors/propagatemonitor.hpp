@@ -1,14 +1,9 @@
-/************************************
-	luatracemonitor.hpp
-	this file belongs to GidL 2.0
-	(c) K.U.Leuven
-************************************/
-
 #ifndef PROPAGATEMONITOR_HPP_
 #define PROPAGATEMONITOR_HPP_
 
 #include "monitors/tracemonitor.hpp"
 #include "external/SearchMonitor.hpp"
+#include "external/ExternalInterface.hpp"
 
 class PropagateMonitor : public TraceMonitor {
 	private:
@@ -28,7 +23,7 @@ class PropagateMonitor : public TraceMonitor {
 		void propagate(MinisatID::Literal lit, int )		{ _partialmodel.push_back(lit);				}
 		std::string* index() const							{ assert(false); return 0;					}
 		void setTranslator(GroundTranslator* )				{ assert(false);							}
-		virtual void setSolver(MinisatID::SATSolver* solver){ solver->addMonitor(_solvermonitor);		}
+		virtual void setSolver(MinisatID::WrappedPCSolver* solver){ solver->addMonitor(_solvermonitor);		}
 		const std::vector<MinisatID::Literal>& model()		{ return _partialmodel;						}
 };
 

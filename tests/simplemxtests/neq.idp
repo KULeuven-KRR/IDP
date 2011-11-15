@@ -14,6 +14,6 @@ structure S:V {
 	y = {0..3}
 }
 
-procedure getExpectedNbOfModels() {
-	return 20-3
+procedure getExpectedNbOfModels(){
+	return 17
 }

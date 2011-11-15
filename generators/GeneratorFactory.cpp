@@ -1,15 +1,11 @@
-/************************************
- generator.hpp
- this file belongs to GidL 2.0
- (c) K.U.Leuven
- ************************************/
-
 #include "common.hpp"
 #include "parseinfo.hpp"
 #include "vocabulary.hpp"
 #include "structure.hpp"
 #include "checker.hpp"
-#include "fobdd.hpp"
+#include "fobdds/FoBdd.hpp"
+#include "fobdds/FoBddFactory.hpp"
+#include "fobdds/FoBddManager.hpp"
 #include "term.hpp"
 #include "theory.hpp"
 
@@ -109,28 +105,32 @@ void GeneratorFactory::visit(const ProcInternalPredTable*) {
 }
 
 void GeneratorFactory::visit(const BDDInternalPredTable* table) {
+	BddGeneratorData data;
+	data.pattern = _pattern;
+	data.vars = _vars;
+	data.structure = table->structure();
+	data.universe = _universe;
 
 	// Add necessary types to the bdd to ensure, if possible, finite querying
 	FOBDDManager optimizemanager;
-	const FOBDD* copybdd = optimizemanager.getBDD(table->bdd(), table->manager());
+	data.bdd = optimizemanager.getBDD(table->bdd(), table->manager());
 	// TODO
 
 	// Optimize the bdd for querying
 	set<const FOBDDVariable*> outvars;
-	vector<const FOBDDVariable*> allvars;
 	for (unsigned int n = 0; n < _pattern.size(); ++n) {
 		const FOBDDVariable* var = optimizemanager.getVariable(table->vars()[n]);
-		allvars.push_back(var);
+		data.bddvars.push_back(var);
 		if (_pattern[n] == Pattern::OUTPUT) {
 			outvars.insert(var);
 		}
 	}
 	set<const FOBDDDeBruijnIndex*> indices;
-	optimizemanager.optimizequery(copybdd, outvars, indices, table->structure());
+	optimizemanager.optimizequery(data.bdd, outvars, indices, table->structure());
 
 	// Generate a generator for the optimized bdd
 	BDDToGenerator btg(&optimizemanager);
-	_generator = btg.create(copybdd, _pattern, _vars, allvars, table->structure(), _universe);
+	_generator = btg.create(data);
 }
 
 void GeneratorFactory::visit(const FullInternalPredTable*) {
@@ -210,43 +210,43 @@ void GeneratorFactory::visit(const IntRangeInternalSortTable* t) {
 }
 
 void GeneratorFactory::visit(const EnumeratedInternalPredTable*) {
-	// TODO: Use dynamic programming to improve this
-	LookupTable* lpt = new LookupTable();
-	LookupTable& lookuptab = *lpt;
-	vector<const DomElemContainer*> invars;
-	vector<const DomElemContainer*> outvars;
+	LookupTable lookuptab;
+	vector<const DomElemContainer*> invars, outvars;
 	for (unsigned int n = 0; n < _pattern.size(); ++n) {
-		if (_firstocc[n] == n) {
-			if (_pattern[n] == Pattern::INPUT) {
-				invars.push_back(_vars[n]);
-			} else {
-				outvars.push_back(_vars[n]);
-			}
+		if (_firstocc[n] != n) {
+			continue;
+		}
+		if (_pattern[n] == Pattern::INPUT) {
+			invars.push_back(_vars[n]);
+		} else {
+			outvars.push_back(_vars[n]);
 		}
 	}
-	for (TableIterator it = _table->begin(); not it.isAtEnd(); ++it) {
-		const ElementTuple& tuple = *it;
-		bool ok = true;
+	for (auto it = _table->begin(); not it.isAtEnd(); ++it) {
+		const auto& tuple = *it;
+		bool validunderocc = true;
 		for (unsigned int n = 0; n < _pattern.size(); ++n) {
+			// Skip tuples which do no have the same values for multiple occurrences of some variable // TODO: Use dynamic programming to improve this
 			if (_firstocc[n] != n && tuple[n] != tuple[_firstocc[n]]) {
-				ok = false;
+				validunderocc = false;
 				break;
 			}
 		}
-		if (ok) {
-			ElementTuple intuple;
-			ElementTuple outtuple;
-			for (unsigned int n = 0; n < _pattern.size(); ++n) {
-				if (_firstocc[n] == n) {
-					if (_pattern[n] == Pattern::INPUT) {
-						intuple.push_back(tuple[n]);
-					} else if (_firstocc[n] == n) {
-						outtuple.push_back(tuple[n]);
-					}
-				}
-			}
-			lookuptab[intuple].push_back(outtuple);
+		if(not validunderocc){
+			continue;
 		}
+		ElementTuple intuple, outtuple;
+		for (unsigned int n = 0; n < _pattern.size(); ++n) {
+			if (_firstocc[n] != n) {
+				continue;
+			}
+			if (_pattern[n] == Pattern::INPUT) {
+				intuple.push_back(tuple[n]);
+			} else if (_firstocc[n] == n) {
+				outtuple.push_back(tuple[n]);
+			}
+		}
+		lookuptab[intuple].push_back(outtuple);
 	}
 	_generator = new EnumLookupGenerator(lookuptab, invars, outvars);
 }

@@ -1,16 +1,16 @@
 vocabulary V{
-	type x
+	type x isa int
 	p(x)
 }
 
 theory T:V{
-	#{x: p(x)}=2.
+	sum{x: p(x): x}=7.
 }
 
 structure S:V{
-	x = {1..50}
+	x = {1..10}
 }
 
 procedure getExpectedNbOfModels(){
-	return 1
+	return 5
 }

@@ -1,0 +1,63 @@
+/************************************
+	TermCollector.hpp
+	this file belongs to GidL 2.0
+	(c) K.U.Leuven
+************************************/
+
+#ifndef TERMEXTRACTOR_HPP_
+#define TERMEXTRACTOR_HPP_
+
+#include <vector>
+#include "fobdds/FoBddVisitor.hpp"
+#include "fobdds/FoBddManager.hpp"
+#include "fobdds/FoBddTerm.hpp"
+#include "fobdds/FoBddDomainTerm.hpp"
+#include "fobdds/FoBddFuncTerm.hpp"
+#include "fobdds/FoBddIndex.hpp"
+#include "fobdds/FoBddVariable.hpp"
+
+#include "vocabulary.hpp"
+
+/**
+ * Collects all subterms of a given term which are reachable from root only by functerms of the provided type.
+ */
+class TermCollector: public FOBDDVisitor {
+private:
+	std::vector<const FOBDDArgument*> _terms;
+	std::string _funcname;
+public:
+	TermCollector(FOBDDManager* m) :
+			FOBDDVisitor(m), _funcname("") {
+	}
+
+	const std::vector<const FOBDDArgument*>& getTerms(const FOBDDArgument* arg, const std::string& funcname) {
+		_funcname = funcname;
+		_terms.clear();
+		arg->accept(this);
+		return _terms;
+	}
+
+	void visit(const FOBDDDomainTerm* domterm) {
+		_terms.push_back(domterm);
+	}
+
+	void visit(const FOBDDDeBruijnIndex* dbrterm) {
+		_terms.push_back(dbrterm);
+	}
+
+	void visit(const FOBDDVariable* varterm) {
+		_terms.push_back(varterm);
+	}
+
+	void visit(const FOBDDFuncTerm* functerm) {
+		if (functerm->func()->name() == _funcname) {
+			for(auto i=functerm->args().cbegin(); i<functerm->args().cend(); ++i){
+				(*i)->accept(this);
+			}
+		} else {
+			_terms.push_back(functerm);
+		}
+	}
+};
+
+#endif /* TERMEXTRACTOR_HPP_ */

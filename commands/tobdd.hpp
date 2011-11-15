@@ -11,6 +11,9 @@
 #include <sstream>
 #include "commandinterface.hpp"
 #include "theory.hpp"
+#include "fobdds/FoBdd.hpp"
+#include "fobdds/FoBddManager.hpp"
+#include "fobdds/FoBddFactory.hpp"
 
 /**
  * Class to convert a formula to a bdd and return a string representation of the bdd

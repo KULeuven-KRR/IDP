@@ -20,6 +20,8 @@ class Variable;
 
 /**
  * Moves nested terms out
+ *
+ * NOTE: equality is NOT rewritten! (rewriting f(x)=y to ?z: f(x)=z & z=y is quite useless)
  */
 class UnnestTerms: public TheoryMutatingVisitor {
 private:

@@ -59,6 +59,7 @@ Formula* flatten(Formula*);
 
 /** Recursively rewrite all function terms to their predicate form **/
 Formula* graphFunctions(Formula* f);
+Formula* graphAggregates(Formula* f);
 
 /** Recursively move all partial terms outside atoms **/
 Formula* unnestPartialTerms(Formula* f, Context context, Vocabulary* voc = NULL);

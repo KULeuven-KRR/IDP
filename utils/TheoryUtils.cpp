@@ -9,8 +9,11 @@
 #include "theory.hpp"
 #include "vocabulary.hpp"
 #include "term.hpp"
-#include "fobdd.hpp"
 #include "theoryinformation/ApproxCheckTwoValued.hpp"
+#include "fobdds/FoBdd.hpp"
+#include "fobdds/FoBddFactory.hpp"
+#include "fobdds/FoBddManager.hpp"
+#include "theoryinformation/CollectOpensOfDefinitions.hpp"
 #include "theoryinformation/CheckContainment.hpp"
 #include "theoryinformation/CheckContainsFuncTerms.hpp"
 #include "theoryinformation/CheckFuncTerms.hpp"
@@ -34,9 +37,6 @@
 
 using namespace std;
 
-// FIXME why does the theorymutatingvisitor returns its formulas also?
-// TODO should the abstracttheory methods then also return?
-
 namespace TermUtils {
 SetExpr* moveThreeValuedTerms(SetExpr* f, AbstractStructure* structure, 
 		Context context, bool cpsupport, const std::set<const PFSymbol*> cpsymbols) {
@@ -56,9 +56,6 @@ bool approxTwoValued(SetExpr* exp, AbstractStructure* str) {
 	return tvc.returnvalue();
 }
 }
-
-// FIXME rewrite all visitors so that they have a run method which is the only one which can be called by anyone (and friends for the accepts)
-// Then we can write a really generic template too
 
 namespace DefinitionUtils {
 std::set<PFSymbol*> opens(Definition* d) {
@@ -86,6 +83,10 @@ Formula* flatten(Formula* f) {
 
 Formula* graphFunctions(Formula* f) {
 	return transform<GraphFunctions>(f);
+}
+
+Formula* graphAggregates(Formula* f) {
+	return transform<GraphAggregates>(f);
 }
 
 Formula* unnestPartialTerms(Formula* f, Context context, Vocabulary* voc) {

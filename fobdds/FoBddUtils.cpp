@@ -1,0 +1,75 @@
+#include "fobdds/FoBddUtils.hpp"
+
+#include "fobdds/FoBddTerm.hpp"
+#include "fobdds/FoBddDomainTerm.hpp"
+#include "fobdds/bddvisitors/FirstNonConstMultTerm.hpp"
+
+#include "structure.hpp"
+
+using namespace std;
+
+const DomainElement* Addition::getNeutralElement() {
+	return createDomElem(0);
+}
+
+bool Addition::operator()(const FOBDDArgument* arg1, const FOBDDArgument* arg2) {
+	FirstNonConstMultTerm extractor;
+	auto arg1first = extractor.run(arg1);
+	auto arg2first = extractor.run(arg2);
+
+	if (arg1first == arg2first) {
+		return arg1 < arg2;
+	} else if (isBddDomainTerm(arg1first)) {
+		if (isBddDomainTerm(arg2first)) {
+			return arg1 < arg2;
+		} else {
+			return true;
+		}
+	} else if (isBddDomainTerm(arg2first)) {
+		return false;
+	} else {
+		return arg1first < arg2first;
+	}
+}
+
+const DomainElement* Multiplication::getNeutralElement() {
+	return createDomElem(1);
+}
+
+// Ordering method: true if ordered before
+// TODO comment and check what they do!
+bool Multiplication::operator()(const FOBDDArgument* arg1, const FOBDDArgument* arg2) {
+	if (isBddDomainTerm(arg1)) {
+		if (isBddDomainTerm(arg2)) {
+			return arg1 < arg2;
+		} else {
+			return true;
+		}
+	} else if (isBddDomainTerm(arg2)) {
+		return false;
+	} else {
+		return arg1 < arg2;
+	}
+}
+
+#include "fobdds/bddvisitors/CollectSameOperationTerms.hpp"
+
+bool TermOrder::before(const FOBDDArgument* arg1, const FOBDDArgument* arg2, FOBDDManager* manager) {
+	CollectSameOperationTerms<Multiplication> fa(manager);
+	auto flat1 = fa.getTerms(arg1);
+	auto flat2 = fa.getTerms(arg2);
+	if (flat1.size() < flat2.size()) {
+		return true;
+	} else if (flat1.size() > flat2.size()) {
+		return false;
+	} else {
+		for (size_t n = 1; n < flat1.size(); ++n) {
+			if (Multiplication::before(flat1[n], flat2[n])) {
+				return true;
+			} else if (Multiplication::before(flat2[n], flat1[n])) {
+				return false;
+			}
+		}
+		return false;
+	}
+}

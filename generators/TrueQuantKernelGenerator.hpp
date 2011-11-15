@@ -48,6 +48,13 @@ public:
 			notifyAtEnd();
 		}
 	}
+
+	virtual std::ostream& put(std::ostream& stream){
+		stream <<"TrueQuantKernelGenerator - ";
+		_quantgenerator->put(stream);
+		stream <<"\n";
+		return stream;
+	}
 };
 
 #endif /* TRUEQUANTKERNELGENERATOR_HPP_ */

@@ -1,0 +1,69 @@
+/************************************
+	TermsToLeft.hpp
+	this file belongs to GidL 2.0
+	(c) K.U.Leuven
+************************************/
+
+#ifndef TERMSTOLEFT_HPP_
+#define TERMSTOLEFT_HPP_
+
+#include <vector>
+#include <cassert>
+#include <string>
+#include "fobdds/FoBddVisitor.hpp"
+#include "fobdds/FoBddManager.hpp"
+#include "fobdds/FoBddFuncTerm.hpp"
+#include "fobdds/FoBddDomainTerm.hpp"
+#include "fobdds/FoBddUtils.hpp"
+#include "fobdds/FoBddAtomKernel.hpp"
+
+/**
+ * Class to move all terms in a comparison to the left hand side
+ */
+class TermsToLeft: public FOBDDVisitor {
+public:
+	TermsToLeft(FOBDDManager* m) :
+			FOBDDVisitor(m) {
+	}
+
+	const FOBDDKernel* change(const FOBDDAtomKernel* atom) {
+		const FOBDDArgument* lhs = NULL;
+		const FOBDDArgument* rhs = NULL;
+		if (sametypeid<Function>(*(atom->symbol()))) { // f(\xx)=y
+			auto lhsterms = atom->args();
+			lhsterms.pop_back();
+			lhs = _manager->getFuncTerm(dynamic_cast<Function*>(atom->symbol()), lhsterms);
+			rhs = atom->args().back();
+		} else { // x op y
+			auto predname = atom->symbol()->name();
+			if (predname == "=/2" || predname == "</2" || predname == ">/2") { // FIXME ugly, create a function ISCOMPARISON
+				lhs = atom->args(0);
+				rhs = atom->args(1);
+			}
+		}
+
+		if (lhs == NULL || rhs == NULL || not SortUtils::isSubsort(rhs->sort(), VocabularyUtils::floatsort())) {
+			return atom;
+		}
+
+		auto zeroterm = _manager->getDomainTerm(rhs->sort(), createDomElem(0));
+		if (rhs == zeroterm) {
+			return atom;
+		}
+
+		auto sort = SortUtils::resolve(lhs->sort(), rhs->sort());
+		if (sort == NULL) { // No common ancestor, so cannot do minus? TODO (can we allow this, or even simplify (can never become equal?) Maybe this is done somewhere else
+			return atom;
+		}
+
+		// => got a comparison lhs op rhs, rhs is the only term not on the left (op is =, < or >
+		// so move it by negating and setting the other side to 0
+		auto minus = Vocabulary::std()->func("-/2");
+		minus = minus->disambiguate(std::vector<Sort*>(2, sort), NULL);
+		assert(minus!=NULL);
+		auto newlhs = _manager->getFuncTerm(minus, {lhs, rhs});
+		return _manager->getAtomKernel(atom->symbol(), atom->type(), {newlhs, zeroterm});
+	}
+};
+
+#endif /* TERMSTOLEFT_HPP_ */

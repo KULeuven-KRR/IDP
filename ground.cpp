@@ -40,7 +40,10 @@
 
 #include "utils/TheoryUtils.hpp"
 
-#include "fobdd.hpp"
+#include "fobdds/FoBdd.hpp"
+#include "fobdds/FoBddManager.hpp"
+#include "fobdds/FoBddVariable.hpp"
+#include "fobdds/FoBddFactory.hpp"
 #include "symbolicstructure.hpp"
 
 using namespace std;
@@ -640,8 +643,8 @@ GrounderFactory::GrounderFactory(AbstractStructure* structure, Options* opts, Sy
 						pbddargs[n] = bddvar;
 					}
 					vars[*jt] = pbddvars;
-					const FOBDDKernel* ctkernel = manager->getAtomKernel(*jt, AKT_CT, pbddargs);
-					const FOBDDKernel* cfkernel = manager->getAtomKernel(*jt, AKT_CF, pbddargs);
+					const FOBDDKernel* ctkernel = manager->getAtomKernel(*jt, AtomKernelType::AKT_CT, pbddargs);
+					const FOBDDKernel* cfkernel = manager->getAtomKernel(*jt, AtomKernelType::AKT_CF, pbddargs);
 					ctbounds[*jt] = manager->getBDD(ctkernel, manager->truebdd(), manager->falsebdd());
 					cfbounds[*jt] = manager->getBDD(cfkernel, manager->truebdd(), manager->falsebdd());
 				}
@@ -661,8 +664,8 @@ GrounderFactory::GrounderFactory(AbstractStructure* structure, Options* opts, Sy
 						pbddargs[n] = bddvar;
 					}
 					vars[*jt] = pbddvars;
-					const FOBDDKernel* ctkernel = manager->getAtomKernel(*jt, AKT_CT, pbddargs);
-					const FOBDDKernel* cfkernel = manager->getAtomKernel(*jt, AKT_CF, pbddargs);
+					const FOBDDKernel* ctkernel = manager->getAtomKernel(*jt, AtomKernelType::AKT_CT, pbddargs);
+					const FOBDDKernel* cfkernel = manager->getAtomKernel(*jt, AtomKernelType::AKT_CF, pbddargs);
 					ctbounds[*jt] = manager->getBDD(ctkernel, manager->truebdd(), manager->falsebdd());
 					cfbounds[*jt] = manager->getBDD(cfkernel, manager->truebdd(), manager->falsebdd());
 				}
@@ -1011,6 +1014,7 @@ void GrounderFactory::visit(const PredForm* pf) {
 	}
 	if (not _cpsupport) { // TODO Check not present in quantgrounder
 		transpf = FormulaUtils::graphFunctions(transpf);
+		transpf = FormulaUtils::graphAggregates(transpf); // FIXME where does this all have to be added
 		if (_verbosity > 3) {
 			clog << transpf->toString() <<"\n";
 		}
@@ -1580,35 +1584,39 @@ GrounderFactory::GenAndChecker GrounderFactory::createVarsAndGenerators(Formula*
  * DESCRIPTION
  * 		Creates a grounder for a quantified set.
  */
-void GrounderFactory::visit(const QuantSetExpr* qs) {
+void GrounderFactory::visit(const QuantSetExpr* origqs) {
 	_context._conjunctivePathFromRoot = false;
 
-	// TODO Move three-valued terms in the set expression
-	//SetExpr* transqs = TermUtils::moveThreeValuedTerms(qs->clone(),_structure,_context._funccontext,_cpsupport,_cpsymbols);
-	//QuantSetExpr* newqs = dynamic_cast<QuantSetExpr*>(transqs);
-	//if(_verbosity > 1) {
-	//	clog << "Rewritten "; qs->put(clog,_longnames);
-	//	clog << " to "; newqs->put(clog,_longnames);
-	//   	clog << "\n";
-	//}
+	// Move three-valued terms in the set expression
+	auto transqs = TermUtils::moveThreeValuedTerms(origqs->clone(),_structure,_context._funccontext,_cpsupport,_cpsymbols);
+	if(not sametypeid<QuantSetExpr>(*transqs)){
+		if(_verbosity > 1) {
+			clog << "Rewritten "; origqs->put(clog,_longnames);
+			clog << " to "; transqs->put(clog,_longnames);
+		   	clog << "\n";
+		}
+		transqs->accept(this);
+		return;
+	}
 
-	Formula* clonedformula = qs->subformulas()[0]->clone();
+	auto newqs = dynamic_cast<QuantSetExpr*>(transqs);
+	Formula* clonedformula = newqs->subformulas()[0]->clone();
 	Formula* newsubformula = FormulaUtils::unnestThreeValuedTerms(clonedformula, _structure, Context::POSITIVE);
 	newsubformula = FormulaUtils::splitComparisonChains(newsubformula, NULL);
 	newsubformula = FormulaUtils::graphFunctions(newsubformula);
 
 	// NOTE: generator generates possibly true instances, checker checks the certainly true ones
-	GenAndChecker gc = createVarsAndGenerators(newsubformula, qs, TruthType::POSS_TRUE, TruthType::CERTAIN_TRUE);
+	GenAndChecker gc = createVarsAndGenerators(newsubformula, newqs, TruthType::POSS_TRUE, TruthType::CERTAIN_TRUE);
 
 	// Create grounder for subformula
 	SaveContext();
 	AggContext();
-	descend(qs->subformulas()[0]);
+	descend(newqs->subformulas()[0]);
 	FormulaGrounder* subgr = _formgrounder;
 	RestoreContext();
 
 	// Create grounder for weight
-	descend(qs->subterms()[0]);
+	descend(newqs->subterms()[0]);
 	TermGrounder* wgr = _termgrounder;
 
 	// Create grounder

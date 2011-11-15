@@ -49,10 +49,11 @@ grounder_SOURCES = \
 		propagate.hpp propagate.cpp\
 		ecnf.hpp ecnf.cpp\
 		ground.hpp ground.cpp\
-		fobdd.hpp fobdd.cpp\
 		symbolicstructure.hpp symbolicstructure.cpp\
         symmetry.hpp symmetry.cpp\
-		monitors/interactiveprintmonitor.hpp monitors/tracemonitor.hpp\
+		monitors/interactiveprintmonitor.hpp\
+		monitors/tracemonitor.hpp\
+		monitors/propagatemonitor.hpp\
 		monitors/luatracemonitor.hpp monitors/luainteractiveprintmonitor.hpp\
 		groundtheories/PrintGroundPolicy.hpp\
 		groundtheories/GroundPolicy.hpp\
@@ -66,9 +67,10 @@ grounder_SOURCES = \
 		grounders/GroundUtils.hpp\
 		grounders/Grounder.hpp grounders/Grounder.cpp\
 		rungidl.hpp rungidl.cpp\
+		ModelExpansion.hpp ModelExpansion.cpp\
 		commands/allcommands.hpp\
-		commands/optimization.hpp\
 		commands/commandinterface.hpp\
+		commands/optimization.hpp\
 		commands/printblocks.hpp\
 		commands/printdomainatom.hpp\
 		commands/printoptions.hpp\
@@ -103,6 +105,8 @@ grounder_SOURCES = \
 		commands/simplify.hpp\
 		commands/createrange.hpp\
 		commands/tablesize.hpp\
+		commands/twovaluedextensions.hpp\
+		commands/materialize.hpp\
 		PropagatorFactory.hpp PropagatorFactory.cpp\
 		generators/ArithmeticOperatorsGenerator.hpp\
 		generators/ComparisonGenerator.hpp\
@@ -117,13 +121,15 @@ grounder_SOURCES = \
 		generators/SimpleFuncGenerator.hpp\
 		generators/SortInstGenerator.hpp\
 		generators/SortLookupGenerator.hpp\
+		generators/LookupGenerator.hpp\
+		generators/InverseInstGenerator.hpp\
 		generators/TableGenerator.hpp\
 		generators/TreeInstGenerator.hpp\
 		generators/BasicCheckers.hpp\
 		generators/GeneratorNodes.hpp\
 		generators/TrueQuantKernelGenerator.hpp\
-		generators/GeneratorFactory.cpp\
-		generators/BDDBasedGeneratorFactory.cpp\
+		generators/GeneratorFactory.hpp generators/GeneratorFactory.cpp\
+		generators/BDDBasedGeneratorFactory.hpp generators/BDDBasedGeneratorFactory.cpp\
 		OptionsStack.hpp OptionsStack.cpp\
 		visitors/StructureVisitor.hpp visitors/StructureVisitor.cpp\
 		visitors/TheoryVisitor.hpp visitors/TheoryVisitor.cpp\
@@ -133,7 +139,7 @@ grounder_SOURCES = \
 		theoryinformation/CheckContainment.hpp theoryinformation/CheckContainment.cpp\
 		theoryinformation/CheckContainsFuncTerms.hpp\
 		theoryinformation/CheckSorts.hpp theoryinformation/CheckSorts.cpp\
-		theoryinformation/CountSubformulas.hpp\
+		theoryinformation/CountNbOfSubformulas.hpp\
 		theoryinformation/CheckFuncTerms.hpp\
 		theoryinformation/CheckPartialTerm.hpp\
 		theoryinformation/ApproxCheckTwoValued.hpp theoryinformation/ApproxCheckTwoValued.cpp\
@@ -151,9 +157,45 @@ grounder_SOURCES = \
 		theorytransformations/UnnestTerms.hpp theorytransformations/UnnestTerms.cpp\
 		theorytransformations/UnnestThreeValuedTerms.hpp theorytransformations/UnnestThreeValuedTerms.cpp\
 		utils/TheoryUtils.hpp utils/TheoryUtils.cpp\
-		GlobalData.hpp GlobalData.cpp
-		
-gidl_dist = $(srcdir)/lib/loki-0.1.7
+		GlobalData.hpp GlobalData.cpp\
+		fobdds/FoBdd.hpp fobdds/FoBdd.cpp\
+		fobdds/FoBddKernel.hpp\
+		fobdds/FoBddKernels.cpp\
+		fobdds/FoBddAtomKernel.hpp\
+		fobdds/FoBddQuantKernel.hpp\
+		fobdds/FoBddTerm.hpp\
+		fobdds/FoBddTerms.cpp\
+		fobdds/FoBddDomainTerm.hpp\
+		fobdds/FoBddVariable.hpp fobdds/FoBddVariable.cpp\
+		fobdds/FoBddIndex.hpp\
+		fobdds/FoBddFuncTerm.hpp\
+		fobdds/FoBddFactory.hpp fobdds/FoBddFactory.cpp\
+		fobdds/FoBddManager.hpp fobdds/FoBddManager.cpp\
+		fobdds/FoBddUtils.hpp fobdds/FoBddUtils.cpp\
+		fobdds/FoBddVisitor.hpp fobdds/FoBddVisitor.cpp\
+		fobdds/bddvisitors/OrderTerms.hpp\
+		fobdds/bddvisitors/TermOccursNested.hpp\
+		fobdds/bddvisitors/ContainsPartialFunctions.hpp\
+		fobdds/bddvisitors/FirstNonConstMultTerm.hpp\
+		fobdds/bddvisitors/TermCollector.hpp\
+		fobdds/bddvisitors/IndexCollector.hpp\
+		fobdds/bddvisitors/VariableCollector.hpp\
+		fobdds/bddvisitors/AddMultSimplifier.hpp\
+		fobdds/bddvisitors/SubstituteTerms.hpp\
+		fobdds/bddvisitors/ContainsFuncTerms.hpp\
+		fobdds/bddvisitors/BumpIndices.hpp\
+		fobdds/bddvisitors/TermsToLeft.hpp\
+		fobdds/bddvisitors/CheckIsArithmeticFormula.hpp\
+		fobdds/bddvisitors/Copy.hpp\
+		fobdds/bddvisitors/BddToFormula.hpp\
+		fobdds/bddvisitors/RemoveMinus.hpp\
+		fobdds/bddvisitors/UngraphFunctions.hpp\
+		fobdds/bddvisitors/ContainsTerm.hpp\
+		fobdds/bddvisitors/CombineConstsOfMults.hpp\
+		fobdds/EstimateBDDInferenceCost.hpp\
+		fobdds/bddvisitors/ApplyDistributivity.hpp\
+		fobdds/bddvisitors/FirstConstTermInFunc.hpp\
+		fobdds/bddvisitors/CollectSameOperationTerms.hpp
 		
 gidl_SOURCES = main.cpp $(grounder_SOURCES)
 
@@ -176,12 +218,13 @@ data_localdir = $(localstatedir)/idp
 data_local_DATA = data/.idprc
 
 dist_doc_DATA = README $(data_std_DATA) $(data_local_DATA)
+#  tests lib/loki
 
 if BUILDTESTS
 bin_PROGRAMS += alltests
 endif 
 
-alltests_SOURCES = tests/testsuite.cpp tests/mxtests.cpp tests/generatortests.cpp $(grounder_SOURCES)
+alltests_SOURCES = tests/testsuite.cpp tests/mxtests.cpp tests/generatortests.cpp tests/bddtests.cpp $(grounder_SOURCES)
 alltests_LDADD = -lgtest -lpthread $(gidl_LDADD)
 
 AM_CXXFLAGS += -DTESTDIR=\"$(abs_srcdir)/tests/simplemxtests/\"

@@ -15,6 +15,7 @@
 #include "generators/SortInstGenerator.hpp"
 #include "generators/InverseInstGenerator.hpp"
 #include "generators/LookupGenerator.hpp"
+#include "generators/EnumLookupGenerator.hpp"
 #include "structure.hpp"
 #include <iostream>
 
@@ -42,11 +43,11 @@ namespace Tests{
 		for(gen->begin(); not gen->isAtEnd(); gen->operator ++()){
 			auto tuple = pair<int, int>(leftvar->get()->value()._int, rightvar->get()->value()._int);
 			genvalues.insert(tuple);
-			EXPECT_EQ(tuple.first, tuple.second);
-			EXPECT_LT(tuple.first, 11);
-			EXPECT_GT(tuple.first, -1);
+			ASSERT_EQ(tuple.first, tuple.second);
+			ASSERT_LT(tuple.first, 11);
+			ASSERT_GT(tuple.first, -1);
 		}
-		EXPECT_EQ(genvalues.size(), 11);
+		ASSERT_EQ(genvalues.size(), 11);
 	}
 
 	TEST(ComparisonGenerator, FiniteLT){
@@ -59,9 +60,9 @@ namespace Tests{
 		for(gen->begin(); not gen->isAtEnd(); gen->operator ++()){
 			auto tuple = pair<int, int>(leftvar->get()->value()._int, rightvar->get()->value()._int);
 			genvalues.insert(tuple);
-			EXPECT_LT(tuple.first, tuple.second);
+			ASSERT_LT(tuple.first, tuple.second);
 		}
-		EXPECT_EQ(genvalues.size(), 19);
+		ASSERT_EQ(genvalues.size(), 19);
 	}
 
 	TEST(ComparisonGenerator, FiniteGTLeftInput){
@@ -75,9 +76,9 @@ namespace Tests{
 		for(gen->begin(); not gen->isAtEnd(); gen->operator ++()){
 			auto tuple = pair<int, int>(leftvar->get()->value()._int, rightvar->get()->value()._int);
 			genvalues.insert(tuple);
-			EXPECT_GT(tuple.first, tuple.second);
+			ASSERT_GT(tuple.first, tuple.second);
 		}
-		EXPECT_EQ(genvalues.size(), 2);
+		ASSERT_EQ(genvalues.size(), 2);
 	}
 
 	TEST(SortGenerator, FiniteSort){
@@ -88,10 +89,10 @@ namespace Tests{
 		for(gen->begin(); not gen->isAtEnd(); gen->operator ++()){
 			auto value = var->get()->value()._int;
 			genvalues.insert(value);
-			EXPECT_LT(value, 3);
-			EXPECT_GT(value, -3);
+			ASSERT_LT(value, 3);
+			ASSERT_GT(value, -3);
 		}
-		EXPECT_EQ(genvalues.size(), 5);
+		ASSERT_EQ(genvalues.size(), 5);
 	}
 
 	TEST(LookupGenerator, FiniteSort){
@@ -101,28 +102,28 @@ namespace Tests{
 		auto gen = new LookupGenerator(new PredTable(new FullInternalPredTable(), universe), {var}, universe);
 
 		var->operator =(createDomElem(-2));
-		EXPECT_TRUE(gen->check());
+		ASSERT_TRUE(gen->check());
 		int count = 0;
 		for(gen->begin(); not gen->isAtEnd(); gen->operator ++()){
 			count++;
 		}
-		EXPECT_EQ(count, 1);
+		ASSERT_EQ(count, 1);
 
 		var->operator =(createDomElem(1));
-		EXPECT_TRUE(gen->check());
+		ASSERT_TRUE(gen->check());
 		count = 0;
 		for(gen->begin(); not gen->isAtEnd(); gen->operator ++()){
 			count++;
 		}
-		EXPECT_EQ(count, 1);
+		ASSERT_EQ(count, 1);
 
 		var->operator =(createDomElem(-10));
-		EXPECT_FALSE(gen->check());
+		ASSERT_FALSE(gen->check());
 		count = 0;
 		for(gen->begin(); not gen->isAtEnd(); gen->operator ++()){
 			count++;
 		}
-		EXPECT_EQ(count, 0);
+		ASSERT_EQ(count, 0);
 	}
 
 	TEST(LookupGenerator, Enum){
@@ -143,30 +144,30 @@ namespace Tests{
 
 		var1->operator =(createDomElem(-2));
 		var2->operator =(createDomElem(0));
-		EXPECT_TRUE(gen->check());
+		ASSERT_TRUE(gen->check());
 		int count = 0;
 		for(gen->begin(); not gen->isAtEnd(); gen->operator ++()){
 			count++;
 		}
-		EXPECT_EQ(count, 1);
+		ASSERT_EQ(count, 1);
 
 		var1->operator =(createDomElem(1));
 		var2->operator =(createDomElem(2));
-		EXPECT_TRUE(gen->check());
+		ASSERT_TRUE(gen->check());
 		count = 0;
 		for(gen->begin(); not gen->isAtEnd(); gen->operator ++()){
 			count++;
 		}
-		EXPECT_EQ(count, 1);
+		ASSERT_EQ(count, 1);
 
 		var1->operator =(createDomElem(2));
 		var2->operator =(createDomElem(2));
-		EXPECT_FALSE(gen->check());
+		ASSERT_FALSE(gen->check());
 		count = 0;
 		for(gen->begin(); not gen->isAtEnd(); gen->operator ++()){
 			count++;
 		}
-		EXPECT_EQ(count, 0);
+		ASSERT_EQ(count, 0);
 	}
 
 	TEST(InverseTableGenerator, FiniteSort){
@@ -189,17 +190,51 @@ namespace Tests{
 		for(gen->begin(); not gen->isAtEnd(); gen->operator ++()){
 			auto value = var2->get()->value()._int;
 			genvalues.insert(value);
-			EXPECT_FALSE(value==-1 || value==2);
+			ASSERT_FALSE(value==-1 || value==2);
 		}
-		EXPECT_EQ(genvalues.size(), 3);
+		ASSERT_EQ(genvalues.size(), 3);
 
 		genvalues.clear();
 		var1->operator =(createDomElem(-2));
 		for(gen->begin(); not gen->isAtEnd(); gen->operator ++()){
 			auto value = var2->get()->value()._int;
 			genvalues.insert(value);
-			EXPECT_NE(value, 0);
+			ASSERT_NE(value, 0);
 		}
-		EXPECT_EQ(genvalues.size(), 4);
+		ASSERT_EQ(genvalues.size(), 4);
+	}
+
+	TEST(EnumLookupGenerator, Enum){
+		auto sort1 = new SortTable(new IntRangeInternalSortTable(-2, 1));
+		auto sort2 = new SortTable(new IntRangeInternalSortTable(-2, 2));
+
+		auto var1 = new DomElemContainer();
+		auto var2 = new DomElemContainer();
+		Universe universe({sort1, sort2});
+		LookupTable table;
+		table[ElementTuple{domelem(1)}]={{domelem(2)}};
+		table[ElementTuple{domelem(1)}]={{domelem(-1)}};
+		table[ElementTuple{domelem(-2)}]={{domelem(0)}};
+
+		auto gen = new EnumLookupGenerator(table, {var1}, {var2});
+
+		var1->operator =(createDomElem(-2));
+		ASSERT_TRUE(gen->check());
+		int count = 0;
+		for(gen->begin(); not gen->isAtEnd(); gen->operator ++()){
+			count++;
+			ASSERT_EQ(var2->get()->type(), DomainElementType::DET_INT);
+			ASSERT_EQ(var2->get()->value()._int, 0);
+		}
+		ASSERT_EQ(count, 1);
+
+		var1->operator =(createDomElem(1));
+		ASSERT_TRUE(gen->check());
+		count = 0;
+		for(gen->begin(); not gen->isAtEnd(); gen->operator ++()){
+			count++;
+			ASSERT_EQ(var2->get()->type(), DomainElementType::DET_INT);
+		}
+		ASSERT_EQ(count, 1);
 	}
 }

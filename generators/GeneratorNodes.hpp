@@ -29,6 +29,8 @@ public:
 			next();
 		}
 	}
+
+	virtual std::ostream& put(std::ostream& stream) = 0;
 };
 
 class LeafGeneratorNode: public GeneratorNode {
@@ -53,6 +55,13 @@ public:
 	}
 	virtual void reset() {
 		_reset = true;
+	}
+
+	virtual std::ostream& put(std::ostream& stream){
+		stream <<"Leaf:";
+		_generator->put(stream);
+		stream <<"\n";
+		return stream;
 	}
 };
 
@@ -96,13 +105,22 @@ public:
 	virtual void reset() {
 		_reset = true;
 	}
+
+	virtual std::ostream& put(std::ostream& stream){
+		stream <<"Node:";
+		_generator->put(stream);
+		stream <<"Child:";
+		_child->put(stream);
+		stream <<"\n";
+		return stream;
+	}
 };
 
 class TwoChildGeneratorNode: public GeneratorNode {
 private:
 	InstChecker* _checker;
 	InstGenerator* _generator;
-	GeneratorNode* _truecheckbranch, *_falsecheckbranch;
+	GeneratorNode *_falsecheckbranch, *_truecheckbranch;
 	bool _reset;
 
 public:
@@ -158,6 +176,19 @@ public:
 
 	virtual void reset() {
 		_reset = true;
+	}
+
+	virtual std::ostream& put(std::ostream& stream){
+		stream <<"Node:";
+		_generator->put(stream);
+		stream <<"Checker:";
+		_checker->put(stream);
+		stream <<"Left child:";
+		_truecheckbranch->put(stream);
+		stream <<"Right child:";
+		_falsecheckbranch->put(stream);
+		stream <<"\n";
+		return stream;
 	}
 };
 

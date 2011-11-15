@@ -59,7 +59,7 @@ public:
 
 		_univgen = GeneratorFactory::create(_outvars,outtabs);
 
-		for(auto i = 0; i<_vars.size(); ++i){
+		for(uint i = 0; i<_vars.size(); ++i){
 			_currenttuple.push_back(_vars[i]->get());
 		}
 	}
@@ -78,10 +78,10 @@ public:
 			_reset = false;
 			_univgen->begin();
 
-			for(auto i = 0; i<_vars.size(); ++i){
+			for(uint i = 0; i<_vars.size(); ++i){
 				_currenttuple[i] = _vars[i]->get();
 			}
-			for(auto i=0; i<_inpos.size(); ++i){
+			for(uint i=0; i<_inpos.size(); ++i){
 				_currenttuple[_inpos[i]] = _invars[i]->get();
 			}
 		}
@@ -89,7 +89,7 @@ public:
 			notifyAtEnd();
 		}
 
-		for(auto i=0; i<_outpos.size(); ++i){
+		for(uint i=0; i<_outpos.size(); ++i){
 			_currenttuple[_outpos[i]] = _outvars[i]->get();
 		}
 		_rangevar->operator =(_function->operator [](_currenttuple));

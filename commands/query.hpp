@@ -14,6 +14,9 @@
 #include "query.hpp"
 #include "generators/BDDBasedGeneratorFactory.hpp"
 #include "generators/InstGenerator.hpp"
+#include "fobdds/FoBdd.hpp"
+#include "fobdds/FoBddManager.hpp"
+#include "fobdds/FoBddFactory.hpp"
 
 class QueryInference: public Inference {
 public:
@@ -38,18 +41,18 @@ public:
 		manager.optimizequery(bdd,bddvars,bddindices,structure);
 
 		// create a generator
-		std::vector<const DomElemContainer*> genvars;
-		std::vector<const FOBDDVariable*> vbddvars;
-		std::vector<Pattern> pattern;
-		std::vector<SortTable*> tables;
+		BddGeneratorData data;
+		data.bdd = bdd;
+		data.structure = structure;
 		for(auto it = q->variables().cbegin(); it != q->variables().cend(); ++it) {
-			pattern.push_back(Pattern::OUTPUT);
-			genvars.push_back(new const DomElemContainer());
-			vbddvars.push_back(manager.getVariable(*it));
-            tables.push_back(structure->inter((*it)->sort()));
+			data.pattern.push_back(Pattern::OUTPUT);
+			data.vars.push_back(new const DomElemContainer());
+			data.bddvars.push_back(manager.getVariable(*it));
+			data.universe.addTable(structure->inter((*it)->sort()));
 		}
 		BDDToGenerator btg(&manager);
-		InstGenerator* generator = btg.create(bdd,pattern,genvars,vbddvars,structure,Universe(tables));
+
+		InstGenerator* generator = btg.create(data);
 
 		// Create an empty table
 		EnumeratedInternalPredTable* interntable = new EnumeratedInternalPredTable();
@@ -64,7 +67,7 @@ public:
 		ElementTuple currtuple(q->variables().size());
 		for(generator->begin(); not generator->isAtEnd(); generator->operator ++()){
 			for(unsigned int n = 0; n < q->variables().size(); ++n) {
-				currtuple[n] = genvars[n]->get();
+				currtuple[n] = data.vars[n]->get();
 			}
 			result->add(currtuple);
 		}

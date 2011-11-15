@@ -4,6 +4,7 @@
 #include <cassert>
 #include "generators/InstGenerator.hpp"
 #include "structure.hpp"
+#include <iostream> //for debugging only TODO remove
 
 class SortTable;
 class DomElemContainer;
@@ -42,7 +43,7 @@ public:
 			_leftvar = rightvalue;
 			_rightvar = leftvalue;
 			input = Input::LEFT;
-			comparison = negateComp(comparison);
+			comparison = invertComp(comparison);
 		}
 	}
 
@@ -73,13 +74,13 @@ public:
 			}
 			bool stop = false;
 			for(; not _right.isAtEnd() && not stop; ++_right){
-				for(; not _left.isAtEnd() && not stop; ++_left){
+				for (; not _left.isAtEnd() && not stop; ++_left) {
 					if (checkAndSet() == CompResult::VALID) {
 						stop = true;
 						break;
 					}
 				}
-				if(stop){
+				if (stop) {
 					break;
 				}
 				_left = _leftsort->sortBegin();
