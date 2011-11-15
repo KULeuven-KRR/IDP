@@ -1,9 +1,3 @@
-/************************************
-	EnumLookupGenerator.hpp
-	this file belongs to GidL 2.0
-	(c) K.U.Leuven
-************************************/
-
 #ifndef ENUMLOOKUPGENERATOR_HPP_
 #define ENUMLOOKUPGENERATOR_HPP_
 
@@ -17,15 +11,27 @@ typedef std::map<ElementTuple,std::vector<ElementTuple>,Compare<ElementTuple> > 
  */
 class EnumLookupGenerator : public InstGenerator {
 private:
-	const LookupTable&						_table;
-	std::vector<const DomElemContainer*>	_invars;
-	std::vector<const DomElemContainer*>	_outvars;
+	LookupTable								_table;
 	LookupTable::const_iterator				_currpos;
 	std::vector<std::vector<const DomainElement*> >::const_iterator	_iter;
+	std::vector<const DomElemContainer*>	_invars, _outvars;
 	bool _reset;
 public:
 	EnumLookupGenerator(const LookupTable& t, const std::vector<const DomElemContainer*>& in, const std::vector<const DomElemContainer*>& out)
 			: _table(t), _invars(in), _outvars(out), _reset(true) {
+#ifdef DEBUG
+		for(auto i=_table.cbegin(); i!=_table.cend(); ++i){
+			for(auto j=(*i).second.cbegin(); j<(*i).second.cend(); ++j){
+				assert((*j).size()==out.size());
+			}
+		}
+		for(auto i=in.cbegin(); i<in.cend(); ++i){
+			assert(*i != NULL);
+		}
+		for(auto i=out.cbegin(); i<out.cend(); ++i){
+			assert(*i != NULL);
+		}
+#endif
 	}
 
 	EnumLookupGenerator* clone() const{
@@ -36,12 +42,13 @@ public:
 		_reset = true;
 	}
 
+	// Increment is done AFTER returning a tuple!
 	void next(){
 		if(_reset){
 			_reset = false;
 			std::vector<const DomainElement*> _currargs;
-			for(unsigned int n = 0; n < _invars.size(); ++n) {
-				_currargs[n] = _invars[n]->get();
+			for(auto i=_invars.cbegin(); i<_invars.cend(); ++i) {
+				_currargs.push_back((*i)->get());
 			}
 			_currpos = _table.find(_currargs);
 			if(_currpos == _table.cend() || _currpos->second.size()==0){
@@ -50,14 +57,16 @@ public:
 			}
 			_iter = _currpos->second.cbegin();
 		}else{
-			++_iter;
+			if(_iter == _currpos->second.cend()){
+				notifyAtEnd();
+				return;
+			}
 		}
+		assert(_iter!=_currpos->second.cend());
 		for(unsigned int n = 0; n < _outvars.size(); ++n) {
 			*(_outvars[n]) = (*_iter)[n];
 		}
-		if(_iter == _currpos->second.cend()){
-			notifyAtEnd();
-		}
+		++_iter;
 	}
 };
 

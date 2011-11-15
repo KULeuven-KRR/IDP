@@ -190,11 +190,13 @@ public:
 														  //!< this function returns the same bdd, but created
 														  //!< by the manager 'this'
 
+	/**
+	 * Try to rewrite the given arithmetic kernel such that the right-hand side is the given argument,
+	 * and such that the given argument does not occur in the left-hand side.
+	 * Returns a null-pointer in case this is impossible.
+	 * Only guaranteed to work correctly on variables and indices.
+	 */
 	const FOBDDArgument* solve(const FOBDDKernel*, const FOBDDArgument*);
-	//!< Try to rewrite the given arithmetic kernel such that the right-hand side is the given argument,
-	//!< and such that the given argument does not occur in the left-hand side.
-	//!< Returns a null-pointer in case this is impossible.
-	//!< Only guaranteed to work correctly on variables and indices.
 
 	bool partial(const FOBDDArgument*); //!< Returns true iff the given term is partial
 };

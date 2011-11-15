@@ -120,7 +120,7 @@ class TwoChildGeneratorNode: public GeneratorNode {
 private:
 	InstChecker* _checker;
 	InstGenerator* _generator;
-	GeneratorNode* _truecheckbranch, *_falsecheckbranch;
+	GeneratorNode *_falsecheckbranch, *_truecheckbranch;
 	bool _reset;
 
 public:

@@ -1,4 +1,5 @@
 #include <cassert>
+#include <iostream>
 
 #include "fobdds/FoBddFactory.hpp"
 #include "fobdds/FoBddManager.hpp"
@@ -16,11 +17,12 @@
 using namespace std;
 
 // TODO why clone the formula and not clone the term?
+// FIXME should not CLONE in fobdd factory, because variables get copied and the bddmanager keeps an internel mapping
 const FOBDD* FOBDDFactory::run(const Formula* f) {
-	Formula* cf = f->clone();
-	cf = FormulaUtils::unnestPartialTerms(cf, Context::POSITIVE);
-	cf->accept(this);
-	cf->recursiveDelete();
+//	Formula* cf = f->clone();
+//	cf = FormulaUtils::unnestPartialTerms(cf, Context::POSITIVE);
+	f->accept(this);
+	//cf->recursiveDelete(); FIXME variables from the cloned cf are used in the bdd, and they are deleted when using recursive delete. What should be the solution? Use variables from f?
 	return _bdd;
 }
 
@@ -122,10 +124,12 @@ void FOBDDFactory::visit(const EquivForm* bf) {
 }
 
 void FOBDDFactory::visit(const QuantForm* qf) {
+	cerr <<"Visited quantform\n";
 	qf->subformula()->accept(this);
 	const FOBDD* qbdd = _bdd;
 	for (auto it = qf->quantVars().cbegin(); it != qf->quantVars().cend(); ++it) {
 		const FOBDDVariable* qvar = _manager->getVariable(*it);
+		cerr <<"Added variable\n";
 		if (qf->isUniv()) {
 			qbdd = _manager->univquantify(qvar, qbdd);
 		} else {
@@ -138,10 +142,12 @@ void FOBDDFactory::visit(const QuantForm* qf) {
 }
 
 void FOBDDFactory::visit(const EqChainForm* ef) {
-	EqChainForm* efclone = ef->clone();
+	assert(false);
+	// FIXME cannot clone
+/*	EqChainForm* efclone = ef->clone();
 	Formula* f = FormulaUtils::splitComparisonChains(efclone, _vocabulary);
 	f->accept(this);
-	f->recursiveDelete();
+	f->recursiveDelete();*/
 }
 
 void FOBDDFactory::visit(const AggForm*) {

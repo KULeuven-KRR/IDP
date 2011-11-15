@@ -17,6 +17,19 @@ class DomElemContainer;
 class AbstractStructure;
 class Universe;
 
+struct BddGeneratorData{
+	const FOBDD* bdd;
+	std::vector<Pattern> pattern;
+	std::vector<const DomElemContainer*> vars;
+	std::vector<const FOBDDVariable*> bddvars;
+	AbstractStructure* structure;
+	Universe universe;
+
+	bool check() const {
+		return pattern.size()==vars.size() && pattern.size()==bddvars.size() && pattern.size()==universe.tables().size();
+	}
+};
+
 /**
  * Class to convert a bdd into a generator
  */
@@ -24,19 +37,20 @@ class BDDToGenerator {
 private:
 	FOBDDManager* _manager;
 
-	Term* solve(PredForm* atom, Variable* var);
+	InstGenerator* createFromPredForm(PredForm*, const std::vector<Pattern>&, const std::vector<const DomElemContainer*>&, const std::vector<Variable*>&,
+				AbstractStructure*, bool, const Universe&);
+	InstGenerator* createFromKernel(const FOBDDKernel*, const std::vector<Pattern>&, const std::vector<const DomElemContainer*>&,
+				const std::vector<const FOBDDVariable*>&, AbstractStructure* structure, bool, const Universe&);
+
+	GeneratorNode* createnode(const BddGeneratorData& data);
+
 public:
 	BDDToGenerator(FOBDDManager* manager);
 
-	InstGenerator* create(PredForm*, const std::vector<Pattern>&, const std::vector<const DomElemContainer*>&, const std::vector<Variable*>&,
-			AbstractStructure*, bool, const Universe&);
-	InstGenerator* create(const FOBDD*, const std::vector<Pattern>&, const std::vector<const DomElemContainer*>&,
-			const std::vector<const FOBDDVariable*>&, AbstractStructure* structure, const Universe&);
-	InstGenerator* create(const FOBDDKernel*, const std::vector<Pattern>&, const std::vector<const DomElemContainer*>&,
-			const std::vector<const FOBDDVariable*>&, AbstractStructure* structure, bool, const Universe&);
-
-	GeneratorNode* createnode(const FOBDD*, const std::vector<Pattern>&, const std::vector<const DomElemContainer*>&,
-			const std::vector<const FOBDDVariable*>&, AbstractStructure* structure, const Universe&);
+	/**
+	 * Create a generator which generates all instances for which the formula is CERTAINLY TRUE in the given structure.
+	 */
+	InstGenerator* create(const BddGeneratorData& data);
 };
 
 #endif /* BDDBASEDGENERATORFACTORY_HPP_ */

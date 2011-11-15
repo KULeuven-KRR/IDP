@@ -1,9 +1,3 @@
-/************************************
-	SimpleLookupGenerator.hpp
-	this file belongs to GidL 2.0
-	(c) K.U.Leuven
-************************************/
-
 #ifndef SIMPLELOOKUPGENERATOR_HPP_
 #define SIMPLELOOKUPGENERATOR_HPP_
 

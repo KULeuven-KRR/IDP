@@ -20,6 +20,7 @@
 #include "theory.hpp"
 #include "fobdds/FoBddManager.hpp"
 #include "fobdds/FoBddFactory.hpp"
+#include "fobdds/FoBddVariable.hpp"
 #include "term.hpp"
 #include "generators/BDDBasedGeneratorFactory.hpp"
 #include <iostream>
@@ -48,10 +49,13 @@ namespace Tests{
 		formula = new QuantForm(SIGN::POS, QUANT::EXIST, {variable}, formula, FormulaParseInfo());
 		FOBDDManager manager;
 		FOBDDFactory bddfactory(&manager, NULL);
-		auto bdd = bddfactory.run(formula);
-		auto bddvarset = manager.getVariables({variable});
 
-		std::vector<const FOBDDVariable*> bddvarlist(bddvarset.cbegin(), bddvarset.cend());
+		BddGeneratorData data;
+
+		data.bdd = bddfactory.run(formula);
+		auto bddset = manager.getVariables({variable});
+		assert(bddset.size()==1);
+		data.bddvars = vector<const FOBDDVariable*>(bddset.cbegin(), bddset.cend());
 
 		BDDToGenerator genfactory(&manager);
 		auto var = new DomElemContainer();
@@ -63,20 +67,43 @@ namespace Tests{
 		auto structure = new Structure("S", ParseInfo());
 		structure->vocabulary(vocabulary);
 		auto predinter = structure->inter(symbol);
-		predinter->isTrue({createDomElem(1)});
-		predinter->isFalse({createDomElem(2)});
-		manager.put(std::cerr, bdd);
-		auto gen = genfactory.create(bdd, {Pattern::OUTPUT}, {var}, bddvarlist, structure, u);
+		predinter->makeTrue({createDomElem(1)});
+		predinter->makeFalse({createDomElem(2)});
+		predinter->makeTrue({createDomElem(-2)});
+		manager.put(std::cerr, data.bdd);
+		data.pattern = {Pattern::OUTPUT};
+		data.vars = {var};
+		data.structure = structure;
+		data.universe = u;
+		auto gen = genfactory.create(data);
 		gen->put(std::cerr);
 
 		set<int> genvalues;
 		for(gen->begin(); not gen->isAtEnd(); gen->operator ++()){
 			auto value = var->get()->value()._int;
 			genvalues.insert(value);
-			cerr <<"x = " <<value <<"\n";
-			EXPECT_LT(value, 3);
-			EXPECT_GT(value, -3);
 		}
-		EXPECT_EQ(genvalues.size(), 5);
+		ASSERT_EQ(genvalues.size(), 2);
+		ASSERT_TRUE(genvalues.find(-2)!=genvalues.end());
+		ASSERT_TRUE(genvalues.find(1)!=genvalues.end());
+	}
+
+	TEST(BddGenerator, ExistsPredFormBddConstructionOperators){
+		auto sorttable = new SortTable(new IntRangeInternalSortTable(-2, 2));
+		auto sort = new Sort("x", sorttable);
+		auto variable = new Variable(sort);
+		auto sortterm = new VarTerm(variable, TermParseInfo());
+		auto symbol = new Predicate("P", {sort}, false);
+		Formula* formula = new PredForm(SIGN::POS, symbol, {sortterm}, FormulaParseInfo());
+		formula = new QuantForm(SIGN::POS, QUANT::EXIST, {variable}, formula, FormulaParseInfo());
+		FOBDDManager manager;
+		FOBDDFactory bddfactory(&manager, NULL);
+		auto bdd = bddfactory.run(formula);
+
+		auto bddvar = manager.getVariable(variable);
+		auto predkernel = manager.getAtomKernel(symbol, AtomKernelType::AKT_TWOVALUED, vector<const FOBDDArgument*>{bddvar});
+		auto testbdd = manager.getBDD(predkernel, manager.truebdd(), manager.falsebdd());
+
+		ASSERT_EQ(testbdd, bdd);
 	}
 }

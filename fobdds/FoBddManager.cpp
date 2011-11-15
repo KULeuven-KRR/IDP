@@ -1,4 +1,5 @@
 #include <cassert>
+#include <iostream>
 
 #include "fobdds/FoBddManager.hpp"
 #include "fobdds/bddvisitors/OrderTerms.hpp"
@@ -1073,7 +1074,8 @@ ostream& FOBDDManager::put(ostream& output, const FOBDDKernel* kernel, unsigned 
 			output << "<ct>";
 		}
 		if (typeid(*symbol) == typeid(Predicate)) {
-			if (symbol->nrSorts()) {
+			assert(atomkernel->args().size()==symbol->nrSorts());
+			if (symbol->nrSorts()>0) {
 				output << "(";
 				put(output, atomkernel->args(0));
 				for (size_t n = 1; n < symbol->nrSorts(); ++n) {

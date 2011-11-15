@@ -532,6 +532,9 @@ public:
 	const std::vector<SortTable*>& tables() const {
 		return _tables;
 	}
+	void addTable(SortTable* table){
+		_tables.push_back(table);
+	}
 	unsigned int arity() const {
 		return _tables.size();
 	}

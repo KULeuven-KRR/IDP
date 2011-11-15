@@ -15,6 +15,7 @@
 #include "generators/SortInstGenerator.hpp"
 #include "generators/InverseInstGenerator.hpp"
 #include "generators/LookupGenerator.hpp"
+#include "generators/EnumLookupGenerator.hpp"
 #include "structure.hpp"
 #include <iostream>
 
@@ -201,5 +202,39 @@ namespace Tests{
 			ASSERT_NE(value, 0);
 		}
 		ASSERT_EQ(genvalues.size(), 4);
+	}
+
+	TEST(EnumLookupGenerator, Enum){
+		auto sort1 = new SortTable(new IntRangeInternalSortTable(-2, 1));
+		auto sort2 = new SortTable(new IntRangeInternalSortTable(-2, 2));
+
+		auto var1 = new DomElemContainer();
+		auto var2 = new DomElemContainer();
+		Universe universe({sort1, sort2});
+		LookupTable table;
+		table[ElementTuple{domelem(1)}]={{domelem(2)}};
+		table[ElementTuple{domelem(1)}]={{domelem(-1)}};
+		table[ElementTuple{domelem(-2)}]={{domelem(0)}};
+
+		auto gen = new EnumLookupGenerator(table, {var1}, {var2});
+
+		var1->operator =(createDomElem(-2));
+		ASSERT_TRUE(gen->check());
+		int count = 0;
+		for(gen->begin(); not gen->isAtEnd(); gen->operator ++()){
+			count++;
+			ASSERT_EQ(var2->get()->type(), DomainElementType::DET_INT);
+			ASSERT_EQ(var2->get()->value()._int, 0);
+		}
+		ASSERT_EQ(count, 1);
+
+		var1->operator =(createDomElem(1));
+		ASSERT_TRUE(gen->check());
+		count = 0;
+		for(gen->begin(); not gen->isAtEnd(); gen->operator ++()){
+			count++;
+			ASSERT_EQ(var2->get()->type(), DomainElementType::DET_INT);
+		}
+		ASSERT_EQ(count, 1);
 	}
 }
