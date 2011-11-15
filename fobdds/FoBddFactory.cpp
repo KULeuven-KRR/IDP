@@ -124,16 +124,13 @@ void FOBDDFactory::visit(const EquivForm* bf) {
 }
 
 void FOBDDFactory::visit(const QuantForm* qf) {
-	cerr <<"Visited quantform\n";
 	qf->subformula()->accept(this);
-	const FOBDD* qbdd = _bdd;
 	for (auto it = qf->quantVars().cbegin(); it != qf->quantVars().cend(); ++it) {
 		const FOBDDVariable* qvar = _manager->getVariable(*it);
-		cerr <<"Added variable\n";
 		if (qf->isUniv()) {
-			qbdd = _manager->univquantify(qvar, qbdd);
+			_bdd = _manager->univquantify(qvar, _bdd);
 		} else {
-			qbdd = _manager->existsquantify(qvar, qbdd);
+			_bdd = _manager->existsquantify(qvar, _bdd);
 		}
 	}
 	if(isNeg(qf->sign())){

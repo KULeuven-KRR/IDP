@@ -46,7 +46,6 @@ namespace Tests{
 		auto sortterm = new VarTerm(variable, TermParseInfo());
 		auto symbol = new Predicate("P", {sort}, false);
 		Formula* formula = new PredForm(SIGN::POS, symbol, {sortterm}, FormulaParseInfo());
-		formula = new QuantForm(SIGN::POS, QUANT::EXIST, {variable}, formula, FormulaParseInfo());
 		FOBDDManager manager;
 		FOBDDFactory bddfactory(&manager, NULL);
 
@@ -103,6 +102,7 @@ namespace Tests{
 		auto bddvar = manager.getVariable(variable);
 		auto predkernel = manager.getAtomKernel(symbol, AtomKernelType::AKT_TWOVALUED, vector<const FOBDDArgument*>{bddvar});
 		auto testbdd = manager.getBDD(predkernel, manager.truebdd(), manager.falsebdd());
+		testbdd = manager.existsquantify(bddvar, testbdd);
 
 		ASSERT_EQ(testbdd, bdd);
 	}

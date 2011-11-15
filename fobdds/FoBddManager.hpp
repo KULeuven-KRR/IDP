@@ -63,10 +63,6 @@ private:
 	// Order
 	std::map<unsigned int, unsigned int> _nextorder;
 
-	KernelOrder newOrder(unsigned int category);
-	KernelOrder newOrder(const std::vector<const FOBDDArgument*>& args);
-	KernelOrder newOrder(const FOBDD* bdd);
-
 	// Global tables
 	BDDTable _bddtable;
 	AtomKernelTable _atomkerneltable;
@@ -77,36 +73,12 @@ private:
 	DomainTermTable _domaintermtable;
 	KernelTable _kernels;
 
-	FOBDD* addBDD(const FOBDDKernel* kernel, const FOBDD* falsebranch, const FOBDD* truebranch);
-	FOBDDAtomKernel* addAtomKernel(PFSymbol* symbol, AtomKernelType akt, const std::vector<const FOBDDArgument*>& args);
-	FOBDDQuantKernel* addQuantKernel(Sort* sort, const FOBDD* bdd);
-	FOBDDVariable* addVariable(Variable* var);
-	FOBDDDeBruijnIndex* addDeBruijnIndex(Sort* sort, unsigned int index);
-	FOBDDFuncTerm* addFuncTerm(Function* func, const std::vector<const FOBDDArgument*>& args);
-	FOBDDDomainTerm* addDomainTerm(Sort* sort, const DomainElement* value);
-
 	// Dynamic programming tables
 	std::map<const FOBDD*, const FOBDD*> _negationtable;
 	std::map<const FOBDD*, std::map<const FOBDD*, const FOBDD*> > _conjunctiontable;
 	std::map<const FOBDD*, std::map<const FOBDD*, const FOBDD*> > _disjunctiontable;
 	std::map<const FOBDDKernel*, std::map<const FOBDD*, std::map<const FOBDD*, const FOBDD*> > > _ifthenelsetable;
 	std::map<Sort*, std::map<const FOBDD*, const FOBDD*> > _quanttable;
-	void clearDynamicTables();
-
-	const FOBDD* quantify(Sort* sort, const FOBDD* bdd);
-
-	std::set<const FOBDDVariable*> variables(const FOBDDKernel*);
-	std::set<const FOBDDVariable*> variables(const FOBDD*);
-	std::set<const FOBDDDeBruijnIndex*> indices(const FOBDDKernel*);
-	std::set<const FOBDDDeBruijnIndex*> indices(const FOBDD*);
-	std::map<const FOBDDKernel*, tablesize> kernelUnivs(const FOBDD*, AbstractStructure* structure);
-
-	std::vector<std::vector<std::pair<bool, const FOBDDKernel*> > > pathsToFalse(const FOBDD* bdd);
-	std::set<const FOBDDKernel*> nonnestedkernels(const FOBDD* bdd);
-	std::set<const FOBDDKernel*> allkernels(const FOBDD* bdd);
-	std::map<const FOBDDKernel*, double> kernelAnswers(const FOBDD*, AbstractStructure*);
-	double estimatedChance(const FOBDDKernel*, AbstractStructure*);
-	double estimatedChance(const FOBDD*, AbstractStructure*);
 
 public:
 	FOBDDManager();
@@ -148,11 +120,6 @@ public:
 	const FOBDDKernel* substitute(const FOBDDKernel*, const FOBDDDomainTerm*, const FOBDDVariable*);
 	const FOBDD* substitute(const FOBDD*, const std::map<const FOBDDVariable*, const FOBDDArgument*>&);
 
-	const FOBDDArgument* invert(const FOBDDArgument*);
-
-	int longestbranch(const FOBDDKernel*);
-	int longestbranch(const FOBDD*);
-
 	std::ostream& put(std::ostream&, const FOBDD*, unsigned int spaces = 0) const;
 	std::ostream& put(std::ostream&, const FOBDDKernel*, unsigned int spaces = 0) const;
 	std::ostream& put(std::ostream&, const FOBDDArgument*) const;
@@ -176,8 +143,6 @@ public:
 			AbstractStructure*);
 	double estimatedCostAll(const FOBDD*, const std::set<const FOBDDVariable*>&, const std::set<const FOBDDDeBruijnIndex*>&, AbstractStructure*);
 
-	void moveDown(const FOBDDKernel*); //!< Swap the given kernel with its successor in the kernelorder
-	void moveUp(const FOBDDKernel*); //!< Swap the given kernel with its predecessor in the kernelorder
 	void optimizequery(const FOBDD*, const std::set<const FOBDDVariable*>&, const std::set<const FOBDDDeBruijnIndex*>&, AbstractStructure*);
 	const FOBDD* make_more_false(const FOBDD*, const std::set<const FOBDDVariable*>&, const std::set<const FOBDDDeBruijnIndex*>&, AbstractStructure*,
 			double weight_per_ans);
@@ -199,6 +164,44 @@ public:
 	const FOBDDArgument* solve(const FOBDDKernel*, const FOBDDArgument*);
 
 	bool partial(const FOBDDArgument*); //!< Returns true iff the given term is partial
+
+	int longestbranch(const FOBDDKernel*);
+	int longestbranch(const FOBDD*);
+
+private:
+	KernelOrder newOrder(unsigned int category);
+	KernelOrder newOrder(const std::vector<const FOBDDArgument*>& args);
+	KernelOrder newOrder(const FOBDD* bdd);
+
+	FOBDD* addBDD(const FOBDDKernel* kernel, const FOBDD* falsebranch, const FOBDD* truebranch);
+	FOBDDAtomKernel* addAtomKernel(PFSymbol* symbol, AtomKernelType akt, const std::vector<const FOBDDArgument*>& args);
+	FOBDDQuantKernel* addQuantKernel(Sort* sort, const FOBDD* bdd);
+	FOBDDVariable* addVariable(Variable* var);
+	FOBDDDeBruijnIndex* addDeBruijnIndex(Sort* sort, unsigned int index);
+	FOBDDFuncTerm* addFuncTerm(Function* func, const std::vector<const FOBDDArgument*>& args);
+	FOBDDDomainTerm* addDomainTerm(Sort* sort, const DomainElement* value);
+
+	void clearDynamicTables();
+
+	const FOBDD* quantify(Sort* sort, const FOBDD* bdd);
+
+	std::set<const FOBDDVariable*> variables(const FOBDDKernel*);
+	std::set<const FOBDDVariable*> variables(const FOBDD*);
+	std::set<const FOBDDDeBruijnIndex*> indices(const FOBDDKernel*);
+	std::set<const FOBDDDeBruijnIndex*> indices(const FOBDD*);
+	std::map<const FOBDDKernel*, tablesize> kernelUnivs(const FOBDD*, AbstractStructure* structure);
+
+	std::vector<std::vector<std::pair<bool, const FOBDDKernel*> > > pathsToFalse(const FOBDD* bdd);
+	std::set<const FOBDDKernel*> nonnestedkernels(const FOBDD* bdd);
+	std::set<const FOBDDKernel*> allkernels(const FOBDD* bdd);
+	std::map<const FOBDDKernel*, double> kernelAnswers(const FOBDD*, AbstractStructure*);
+	double estimatedChance(const FOBDDKernel*, AbstractStructure*);
+	double estimatedChance(const FOBDD*, AbstractStructure*);
+
+	const FOBDDArgument* invert(const FOBDDArgument*);
+
+	void moveDown(const FOBDDKernel*); //!< Swap the given kernel with its successor in the kernelorder
+	void moveUp(const FOBDDKernel*); //!< Swap the given kernel with its predecessor in the kernelorder
 };
 
 #endif
