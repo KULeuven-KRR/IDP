@@ -41,10 +41,10 @@ void FOBDDFactory::visit(const DomainTerm* dt) {
 }
 
 void FOBDDFactory::visit(const FuncTerm* ft) {
-	vector<const FOBDDArgument*> args(ft->function()->arity());
-	for (size_t n = 0; n < args.size(); ++n) {
-		ft->subterms()[n]->accept(this);
-		args[n] = _argument;
+	vector<const FOBDDArgument*> args;
+	for (auto i = ft->subterms().cbegin(); i < ft->subterms().cend(); ++i) {
+		(*i)->accept(this);
+		args.push_back(_argument);
 	}
 	_argument = _manager->getFuncTerm(ft->function(), args);
 }
@@ -55,41 +55,37 @@ void FOBDDFactory::visit(const AggTerm*) {
 }
 
 void FOBDDFactory::visit(const PredForm* pf) {
-	vector<const FOBDDArgument*> args(pf->symbol()->nrSorts());
-	for (size_t n = 0; n < args.size(); ++n) {
-		pf->subterms()[n]->accept(this);
-		args[n] = _argument;
+	vector<const FOBDDArgument*> args;
+	for (auto i = pf->subterms().cbegin(); i < pf->subterms().cend(); ++i) {
+		(*i)->accept(this);
+		args.push_back(_argument);
 	}
-	AtomKernelType akt = AtomKernelType::AKT_TWOVALUED;
-	bool inverse = false;
+	auto akt = AtomKernelType::AKT_TWOVALUED;
+	auto invert = isNeg(pf->sign());
 	auto symbol = pf->symbol();
 	if (sametypeid<Predicate>(*symbol)) {
 		auto predicate = dynamic_cast<Predicate*>(symbol);
-		if (predicate->type() != ST_NONE) {
-			switch (predicate->type()) {
-			case ST_CF:
-				akt = AtomKernelType::AKT_CF;
-				break;
-			case ST_CT:
-				akt = AtomKernelType::AKT_CT;
-				break;
-			case ST_PF:
-				akt = AtomKernelType::AKT_CT;
-				inverse = false;
-				break;
-			case ST_PT:
-				akt = AtomKernelType::AKT_CF;
-				inverse = false;
-				break;
-			case ST_NONE:
-				assert(false);
-				break;
-			}
-			symbol = predicate->parent();
+		switch (predicate->type()) {
+		case ST_CF:
+			akt = AtomKernelType::AKT_CF;
+			break;
+		case ST_CT:
+			akt = AtomKernelType::AKT_CT;
+			break;
+		case ST_PF:
+			akt = AtomKernelType::AKT_CT;
+			invert = true;
+			break;
+		case ST_PT:
+			akt = AtomKernelType::AKT_CF;
+			invert = true;
+			break;
+		case ST_NONE:
+			break;
 		}
+		symbol = predicate->parent();
 	}
-	_kernel = _manager->getAtomKernel(pf->symbol(), akt, args);
-	bool invert = (not inverse && pf->sign() == SIGN::NEG) || (inverse && pf->sign() == SIGN::POS);
+	_kernel = _manager->getAtomKernel(symbol, akt, args);
 	if (invert) {
 		_bdd = _manager->getBDD(_kernel, _manager->falsebdd(), _manager->truebdd());
 	} else {
@@ -99,21 +95,21 @@ void FOBDDFactory::visit(const PredForm* pf) {
 
 void FOBDDFactory::visit(const BoolForm* bf) {
 	if (bf->conj()) {
-		const FOBDD* temp = _manager->truebdd();
+		auto temp = _manager->truebdd();
 		for (auto it = bf->subformulas().cbegin(); it != bf->subformulas().cend(); ++it) {
 			(*it)->accept(this);
 			temp = _manager->conjunction(temp, _bdd);
 		}
 		_bdd = temp;
 	} else {
-		const FOBDD* temp = _manager->falsebdd();
+		auto temp = _manager->falsebdd();
 		for (auto it = bf->subformulas().cbegin(); it != bf->subformulas().cend(); ++it) {
 			(*it)->accept(this);
 			temp = _manager->disjunction(temp, _bdd);
 		}
 		_bdd = temp;
 	}
-	if(isNeg(bf->sign())){
+	if (isNeg(bf->sign())) {
 		_bdd = _manager->negation(_bdd);
 	}
 }
@@ -133,7 +129,7 @@ void FOBDDFactory::visit(const QuantForm* qf) {
 			_bdd = _manager->existsquantify(qvar, _bdd);
 		}
 	}
-	if(isNeg(qf->sign())){
+	if (isNeg(qf->sign())) {
 		_bdd = _manager->negation(_bdd);
 	}
 }
@@ -141,10 +137,10 @@ void FOBDDFactory::visit(const QuantForm* qf) {
 void FOBDDFactory::visit(const EqChainForm* ef) {
 	assert(false);
 	// FIXME cannot clone
-/*	EqChainForm* efclone = ef->clone();
-	Formula* f = FormulaUtils::splitComparisonChains(efclone, _vocabulary);
-	f->accept(this);
-	f->recursiveDelete();*/
+	/*	EqChainForm* efclone = ef->clone();
+	 Formula* f = FormulaUtils::splitComparisonChains(efclone, _vocabulary);
+	 f->accept(this);
+	 f->recursiveDelete();*/
 }
 
 void FOBDDFactory::visit(const AggForm*) {

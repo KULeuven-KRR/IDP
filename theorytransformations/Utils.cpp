@@ -155,14 +155,7 @@ double estimatedCostAll(PredForm* query, const std::set<Variable*> freevars, boo
 	if (inverse) {
 		bdd = manager.negation(bdd);
 	}
-	set<const FOBDDDeBruijnIndex*> indices;
-//cerr << "Estimating the cost of bdd\n";
-//manager.put(cerr,bdd);
-//cerr << "With variables ";
-//for(auto it = freevars.cbegin(); it != freevars.cend(); ++it) cerr << *(*it) << ' ';
-//cerr << endl;
-	double res = manager.estimatedCostAll(bdd, manager.getVariables(freevars), indices, structure);
-//cerr << "Estimated " << res << endl;
+	double res = manager.estimatedCostAll(bdd, manager.getVariables(freevars), {}, structure);
 	return res;
 }
 
