@@ -22,3 +22,5 @@ ylwrap
 *.settings/*
 *config.*
 *ltmain.sh
+documentation/generateddocs
+documentation/generateddocs/*
