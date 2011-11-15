@@ -3873,6 +3873,7 @@ std::vector<AbstractStructure*> Structure::allTwoValuedMorePreciseStructures() c
 			continue;
 		}
 
+		auto ct = fi->graphInter()->ct();
 		auto cf = fi->graphInter()->cf();
 		Universe universe = fi->graphInter()->universe();
 		const vector<SortTable*>& sorts = universe.tables();
@@ -3896,9 +3897,29 @@ std::vector<AbstractStructure*> Structure::allTwoValuedMorePreciseStructures() c
 		//If the function is not a constant, set a domain element.
 		//If the function is a constant, we leave domainElementWithoutValue to be blank.
 		if (hasNext) {
-			domainElementWithoutValue = *domainIterator;
+			auto ctIterator = ct->begin();
+			auto cfIterator = cf->begin();
+			StrictWeakNTupleEquality eq(f->arity());
+			StrictWeakNTupleOrdering so(f->arity());
+			//here make a loop to find the first domain element without a value
+			for (; not domainIterator.isAtEnd(); ++domainIterator) {
+				domainElementWithoutValue = *domainIterator;
+				while (not ctIterator.isAtEnd() && so(*ctIterator, domainElementWithoutValue)) {
+					++ctIterator;
+				}
+				if (not ctIterator.isAtEnd() && eq(domainElementWithoutValue, *ctIterator)) {
+					continue;
+				}
+				while (not cfIterator.isAtEnd() && so(*cfIterator, domainElementWithoutValue)) {
+					++cfIterator;
+				}
+				if (not cfIterator.isAtEnd() && eq(domainElementWithoutValue, *cfIterator)) {
+					continue;
+				}
+				break;
+			}
+			assert(not domainIterator.isAtEnd());//We know that at least one domainelement should have no ct or cf value
 		}
-
 		//Now, choose an image for this domainelement
 		for (; not imageIterator.isAtEnd(); ++imageIterator) {
 			ElementTuple tuple(domainElementWithoutValue);
