@@ -15,5 +15,5 @@ structure S:V{
 }
 
 procedure getExpectedNbOfModels(){
-	return 15
+	return 3
 }
