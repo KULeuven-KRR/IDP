@@ -1,0 +1,19 @@
+vocabulary V{
+	p
+}
+
+theory T:V{
+	~(~p).
+}
+
+structure S:V{
+}
+
+procedure getExpectedNbOfModels(){
+	return 1
+}
+
+/*	if(idp_intern.size(sols[1][V::p].ct)==0) then
+		print("ERROR, p should have been false.")
+		return
+*/

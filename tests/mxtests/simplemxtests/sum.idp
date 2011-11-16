@@ -1,0 +1,16 @@
+vocabulary V{
+	type x isa int
+	p(x)
+}
+
+theory T:V{
+	sum{x: p(x): x}=7.
+}
+
+structure S:V{
+	x = {1..10}
+}
+
+procedure getExpectedNbOfModels(){
+	return 5
+}

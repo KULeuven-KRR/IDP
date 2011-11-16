@@ -1,0 +1,22 @@
+/*********************************
+	N-Queens with functions
+*********************************/
+vocabulary V{
+type Row isa int
+type Col isa int
+Queen(Row):Col
+}
+
+theory T: V{
+! r1 r2 : Queen(r1) = Queen(r2) => r1 = r2.
+! r1 r2 c1[Col] c2[Col]: ((r2 - r1 = c2 - c1)|(r2 - r1 = c1 - c2) ) => ~(r2 ~= r1 & Queen(r2) = c2 & Queen(r1) = c1).
+}
+
+structure S:V{
+Row = {1..8}
+Col = {1..8}
+}
+
+procedure getExpectedNbOfModels(){
+	return 92
+}

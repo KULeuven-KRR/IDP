@@ -1168,6 +1168,7 @@ void GrounderFactory::visit(const BoolForm* bf) {
 		for (auto it = bf->subformulas().cbegin(); it != bf->subformulas().cend(); ++it) {
 			descend(*it);
 			sub.push_back(_formgrounder);
+			//TODO: here we could check for true/false formulas.  Useful?
 		}
 		RestoreContext();
 
