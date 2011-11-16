@@ -183,6 +183,8 @@ namespace Warning {
 
 	void possiblyInfiniteGrounding(const std::string& formula, const std::string& internalformula);
 
+	void triedAddingSubtypeToVocabulary(const std::string& boundedpredname, const std::string& predname, const std::string& vocname);
+
 }
 
 namespace Info {

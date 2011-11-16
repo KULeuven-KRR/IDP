@@ -191,7 +191,8 @@ grounder_SOURCES = \
 		fobdds/EstimateBDDInferenceCost.hpp\
 		fobdds/bddvisitors/ApplyDistributivity.hpp\
 		fobdds/bddvisitors/FirstConstTermInFunc.hpp\
-		fobdds/bddvisitors/CollectSameOperationTerms.hpp
+		fobdds/bddvisitors/CollectSameOperationTerms.hpp\
+		IdpException.hpp
 		
 gidl_SOURCES = main.cpp $(grounder_SOURCES)
 

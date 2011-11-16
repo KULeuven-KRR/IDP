@@ -675,7 +675,7 @@ void Insert::openvocab(const string& vname, YYLTYPE l) {
 void Insert::assignvocab(InternalArgument* arg, YYLTYPE l) {
 	Vocabulary* v = LuaConnection::vocabulary(arg);
 	if (v) {
-		_currvocabulary->addVocabulary(v);
+		_currvocabulary->add(v);
 	} else {
 		ParseInfo pi = parseinfo(l);
 		Error::vocabexpected(pi);
@@ -710,7 +710,7 @@ void Insert::externvocab(const vector<string>& vname, YYLTYPE l) const {
 	ParseInfo pi = parseinfo(l);
 	Vocabulary* v = vocabularyInScope(vname, pi);
 	if (v)
-		_currvocabulary->addVocabulary(v);
+		_currvocabulary->add(v);
 	else
 		Error::undeclvoc(toString(vname), pi);
 }
@@ -868,17 +868,17 @@ void Insert::closeoptions() {
 }
 
 Sort* Insert::sort(Sort* s) const {
-	if (s) _currvocabulary->addSort(s);
+	if (s) _currvocabulary->add(s);
 	return s;
 }
 
 Predicate* Insert::predicate(Predicate* p) const {
-	if (p) _currvocabulary->addPred(p);
+	if (p) _currvocabulary->add(p);
 	return p;
 }
 
 Function* Insert::function(Function* f) const {
-	if (f) _currvocabulary->addFunc(f);
+	if (f) _currvocabulary->add(f);
 	return f;
 }
 
@@ -955,7 +955,7 @@ Sort* Insert::sort(const string& name, const vector<Sort*> sups, const vector<So
 	Sort* s = new Sort(name, pi);
 
 	// Add the sort to the current vocabulary
-	_currvocabulary->addSort(s);
+	_currvocabulary->add(s);
 
 	// Collect the ancestors of all super- and subsorts
 	vector<std::set<Sort*> > supsa(sups.size());
@@ -1035,7 +1035,7 @@ Predicate* Insert::predicate(const string& name, const vector<Sort*>& sorts, YYL
 		if (!sorts[n]) return 0;
 	}
 	Predicate* p = new Predicate(nar, sorts, pi);
-	_currvocabulary->addPred(p);
+	_currvocabulary->add(p);
 	return p;
 }
 
@@ -1052,7 +1052,7 @@ Function* Insert::function(const string& name, const vector<Sort*>& insorts, Sor
 	}
 	if (!outsort) return 0;
 	Function* f = new Function(nar, insorts, outsort, pi);
-	_currvocabulary->addFunc(f);
+	_currvocabulary->add(f);
 	return f;
 }
 
@@ -1069,7 +1069,7 @@ Function* Insert::aritfunction(const string& name, const vector<Sort*>& sorts, Y
 	Function* orig = _currvocabulary->func(name);
 	unsigned int binding = orig ? orig->binding() : 0;
 	Function* f = new Function(name, sorts, pi, binding);
-	_currvocabulary->addFunc(f);
+	_currvocabulary->add(f);
 	return f;
 }
 

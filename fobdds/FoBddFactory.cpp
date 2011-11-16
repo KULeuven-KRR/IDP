@@ -54,15 +54,11 @@ void FOBDDFactory::visit(const AggTerm*) {
 	assert(false);
 }
 
-void FOBDDFactory::visit(const PredForm* pf) {
-	vector<const FOBDDArgument*> args;
-	for (auto i = pf->subterms().cbegin(); i < pf->subterms().cend(); ++i) {
-		(*i)->accept(this);
-		args.push_back(_argument);
-	}
-	auto akt = AtomKernelType::AKT_TWOVALUED;
-	auto invert = isNeg(pf->sign());
-	auto symbol = pf->symbol();
+/**
+ * If it is a predicate, we have to check if we are working with a bounded version of a parent predicate,
+ * if so, set the relevant kerneltype and inversion.
+ */
+void checkIfBoundedPredicate(PFSymbol*& symbol, AtomKernelType& akt, bool& invert){
 	if (sametypeid<Predicate>(*symbol)) {
 		auto predicate = dynamic_cast<Predicate*>(symbol);
 		switch (predicate->type()) {
@@ -83,8 +79,24 @@ void FOBDDFactory::visit(const PredForm* pf) {
 		case ST_NONE:
 			break;
 		}
-		symbol = predicate->parent();
+		if(predicate->type()!=ST_NONE){
+			symbol = predicate->parent();
+		}
 	}
+}
+
+void FOBDDFactory::visit(const PredForm* pf) {
+	vector<const FOBDDArgument*> args;
+	for (auto i = pf->subterms().cbegin(); i < pf->subterms().cend(); ++i) {
+		(*i)->accept(this);
+		args.push_back(_argument);
+	}
+	auto akt = AtomKernelType::AKT_TWOVALUED;
+	auto invert = isNeg(pf->sign());
+	auto symbol = pf->symbol();
+
+	checkIfBoundedPredicate(symbol, akt, invert);
+
 	_kernel = _manager->getAtomKernel(symbol, akt, args);
 	if (invert) {
 		_bdd = _manager->getBDD(_kernel, _manager->falsebdd(), _manager->truebdd());

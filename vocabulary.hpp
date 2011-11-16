@@ -571,10 +571,11 @@ public:
 	~Vocabulary();
 
 	// Mutators
-	void addSort(Sort*); //!< Add the given sort (and its ancestors) to the vocabulary
-	void addPred(Predicate*); //!< Add the given predicate (and its sorts) to the vocabulary
-	void addFunc(Function*); //!< Add the given function (and its sorts) to the vocabulary
-	void addVocabulary(Vocabulary*); //!< Add all symbols of a given vocabulary to the vocabulary
+	void add(Sort*); //!< Add the given sort (and its ancestors) to the vocabulary
+	void add(PFSymbol*); //!< Add the given predicate (and its sorts) to the vocabulary
+	void add(Predicate*); //!< Add the given predicate (and its sorts) to the vocabulary
+	void add(Function*); //!< Add the given function (and its sorts) to the vocabulary
+	void add(Vocabulary*); //!< Add all symbols of a given vocabulary to the vocabulary
 	void setNamespace(Namespace* n) {
 		_namespace = n;
 	}
