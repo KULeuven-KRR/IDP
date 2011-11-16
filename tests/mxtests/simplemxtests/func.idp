@@ -1,0 +1,16 @@
+vocabulary V{
+	type x
+	a(x):x
+}
+
+theory T:V{
+	?x[x]: a(x)=x.
+}
+
+structure S:V{
+	x = {1..2}
+}
+
+procedure getExpectedNbOfModels(){
+	return 3
+}

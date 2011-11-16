@@ -25,16 +25,40 @@ vector<string> generateListOfMXFiles() {
 	vector<string> mxtests;
 	DIR *dir;
 	struct dirent *ent;
-	dir = opendir(string(TESTDIR).c_str());
-	if (dir != NULL) {
-		while ((ent = readdir(dir)) != NULL) {
-			if(ent->d_name[0]!='.'){
-				mxtests.push_back(ent->d_name);
+	vector<string> testdirs {"simplemxtests/", "applicationmxtests/" }; //TODO automize
+	for (auto currTestDir = testdirs.cbegin(); currTestDir != testdirs.cend(); ++currTestDir) {
+		dir = opendir((string(TESTDIR) + "mxtests/" + (*currTestDir)).c_str());
+		if (dir != NULL) {
+			while ((ent = readdir(dir)) != NULL) {
+				if (ent->d_name[0] != '.') {
+					mxtests.push_back("mxtests/" + (*currTestDir) +ent->d_name);
+				}
 			}
+			closedir(dir);
+		} else {
+			cerr << "FAIL    |  Could not open directory of MX tests.\n";
 		}
-		closedir(dir);
-	} else {
-		cerr <<"FAIL    |  Could not open directory of MX tests.\n";
+	}
+	return mxtests;
+}
+
+vector<string> generateListOfLazyMXFiles() {
+	vector<string> mxtests;
+	DIR *dir;
+	struct dirent *ent;
+	vector<string> testdirs {"simplemxtests/", "applicationmxtests/" };
+	for (auto currTestDir = testdirs.cbegin(); currTestDir != testdirs.cend(); ++currTestDir) {
+		dir = opendir((string(TESTDIR) + "lazymxtests/" + (*currTestDir)).c_str());
+		if (dir != NULL) {
+			while ((ent = readdir(dir)) != NULL) {
+				if (ent->d_name[0] != '.') {
+					mxtests.push_back("lazymxtests/" +(*currTestDir) + ent->d_name);
+				}
+			}
+			closedir(dir);
+		} else {
+			cerr << "FAIL    |  Could not open directory of lazy MX tests.\n";
+		}
 	}
 	return mxtests;
 }
@@ -47,31 +71,27 @@ class LazyMXTest: public ::testing::TestWithParam<string> {
 
 };
 
-void throwexc(){
+void throwexc() {
 	throw exception();
 }
 
 TEST_P(MXTest, DoesMX) {
-	string testfile(string(TESTDIR) + "../mxnbofmodelstest.idp"); // TODO TESTDIR should be one HIGHER
+	string testfile(string(TESTDIR) + "mxnbofmodelstest.idp"); // TODO TESTDIR should be one HIGHER
 	cerr << "Testing " << string(TESTDIR) + GetParam() << "\n";
 	Status result = Status::FAIL;
-	ASSERT_NO_THROW(
-		result = test( { string(TESTDIR) + GetParam(), testfile });
-	);
+	ASSERT_NO_THROW( result = test( { string(TESTDIR) + GetParam(), testfile }););
 	ASSERT_EQ(result, Status::SUCCESS);
 }
 
 TEST_P(LazyMXTest, DoesMX) {
-	string testfile(string(TESTDIR) + "../mxlazynbofmodelstest.idp"); // TODO TESTDIR should be one HIGHER
+	string testfile(string(TESTDIR) + "mxlazynbofmodelstest.idp"); // TODO TESTDIR should be one HIGHER
 	cerr << "Testing " << string(TESTDIR) + GetParam() << "\n";
 	Status result = Status::FAIL;
-	ASSERT_NO_THROW(
-		result = test( { string(TESTDIR) + GetParam(), testfile });
-	);
+	ASSERT_NO_THROW( result = test( { string(TESTDIR) + GetParam(), testfile }););
 	ASSERT_EQ(result, Status::SUCCESS);
 }
 
 INSTANTIATE_TEST_CASE_P(ModelExpansion, MXTest, ::testing::ValuesIn(generateListOfMXFiles()));
 
-INSTANTIATE_TEST_CASE_P(LazyModelExpansion, LazyMXTest, ::testing::ValuesIn(generateListOfMXFiles()));
+INSTANTIATE_TEST_CASE_P(LazyModelExpansion, LazyMXTest, ::testing::ValuesIn(generateListOfLazyMXFiles()));
 }

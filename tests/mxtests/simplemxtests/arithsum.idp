@@ -1,0 +1,15 @@
+vocabulary V{
+	type t isa int
+}
+
+theory T:V{
+	? x[t] y[t] z[t]: x+y=z. 
+}
+
+structure S:V{
+	t = {1..5}
+}
+
+procedure getExpectedNbOfModels(){
+	return 1
+}

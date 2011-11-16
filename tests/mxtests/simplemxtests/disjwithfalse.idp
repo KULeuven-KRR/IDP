@@ -1,0 +1,15 @@
+vocabulary V{
+A
+}
+
+theory T:V{
+false | A.
+}
+
+structure S:V{
+
+}
+
+procedure getExpectedNbOfModels(){
+	return 1
+}

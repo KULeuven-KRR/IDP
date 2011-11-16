@@ -1,0 +1,23 @@
+vocabulary V{
+	type x
+	p(x)
+	q(x)
+	r(x)
+}
+
+theory T:V{
+	!x: p(x) | q(x). // Should ground as the disjunctions
+	!x: (p(x) & q(x)) | r(x). // Should ground as disjunctions with one tseitin each
+	!x: (p(x) | q(x)) & r(x). // Should ground without tseitins
+	?x: p(x). // should ground without tseitins
+	?x: p(x) | q(x). // should ground without tseitins
+	?x: p(x) & q(x). // should ground with one tseitin each
+}
+
+structure S:V{
+	x = {1..3}
+}
+
+procedure getExpectedNbOfModels(){
+	return 19
+}
