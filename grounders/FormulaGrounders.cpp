@@ -1,8 +1,8 @@
 /************************************
-	FormulaGrounders.hpp
-	this file belongs to GidL 2.0
-	(c) K.U.Leuven
-************************************/
+ FormulaGrounders.hpp
+ this file belongs to GidL 2.0
+ (c) K.U.Leuven
+ ************************************/
 
 #include "grounders/FormulaGrounders.hpp"
 
@@ -554,8 +554,10 @@ FormStat ClauseGrounder::runSubGrounder(Grounder* subgrounder, bool conjFromRoot
 		} else if (makesFormulaFalse(value, negated)) {
 			formula.literals = litlist { negated ? -_false : _false };
 			return FormStat::DECIDED;
+		} else if (subformula.type != formula.type) {
+			formula.literals.push_back(negated ? -value : value);
+			return (FormStat::UNKNOWN);
 		}
-		formula = subformula;
 		return (FormStat::UNKNOWN);
 	} else if (subformula.literals.size() == 1) {
 		Lit l = subformula.literals[0];

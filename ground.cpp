@@ -1225,6 +1225,7 @@ void GrounderFactory::visit(const QuantForm* qf) {
 	// !x phi(x) => generate all x possibly false
 	// !x phi(x) => check for x certainly false
 	// FIXME SUBFORMULA got cloned, not the formula itself! REVIEW CODE!
+
 	GenAndChecker gc = createVarsAndGenerators(newsubformula, qf, qf->isUniv() ? TruthType::POSS_FALSE : TruthType::POSS_TRUE,
 			qf->isUniv() ? TruthType::CERTAIN_FALSE : TruthType::CERTAIN_TRUE);
 
@@ -1234,7 +1235,7 @@ void GrounderFactory::visit(const QuantForm* qf) {
 		_context._conjPathUntilNode = false;
 	}
 	DeeperContext(qf->sign());
-	_context.gentype = qf->isUniv() ? GenType::CANMAKEFALSE : GenType::CANMAKEFALSE;
+	_context.gentype = qf->isUniv() ? GenType::CANMAKEFALSE : GenType::CANMAKETRUE;
 	descend(qf->subformula());
 	RestoreContext();
 
