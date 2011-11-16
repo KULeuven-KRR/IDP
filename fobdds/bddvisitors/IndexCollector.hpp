@@ -1,3 +1,9 @@
+/************************************
+	IndexCollector.hpp
+	this file belongs to GidL 2.0
+	(c) K.U.Leuven
+************************************/
+
 #ifndef INDEXCOLLECTOR_HPP_
 #define INDEXCOLLECTOR_HPP_
 

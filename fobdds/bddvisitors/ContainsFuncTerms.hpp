@@ -1,3 +1,9 @@
+/************************************
+	ContainsFuncTerms.hpp
+	this file belongs to GidL 2.0
+	(c) K.U.Leuven
+************************************/
+
 #ifndef CONTAINSFUNCTERMS_HPP_
 #define CONTAINSFUNCTERMS_HPP_
 

@@ -7,6 +7,8 @@
 #ifndef SUBSTITUTETERM_HPP_
 #define SUBSTITUTETERM_HPP_
 
+#include "visitors/TheoryMutatingVisitor.hpp"
+
 class SubstituteTerm: public TheoryMutatingVisitor {
 private:
 	Term* _term;

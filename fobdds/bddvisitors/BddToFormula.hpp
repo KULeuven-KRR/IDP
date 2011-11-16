@@ -1,3 +1,9 @@
+/************************************
+	BddToFormula.hpp
+	this file belongs to GidL 2.0
+	(c) K.U.Leuven
+************************************/
+
 #ifndef BDDTOFORMULA_HPP_
 #define BDDTOFORMULA_HPP_
 
@@ -18,7 +24,7 @@
 #include "vocabulary.hpp"
 #include "term.hpp"
 #include "theory.hpp"
-#include "theorytransformations/Utils.hpp"
+#include "utils/TheoryUtils.hpp"
 
 /**
  * Given a bdd or a kernel, creates the associated formula.

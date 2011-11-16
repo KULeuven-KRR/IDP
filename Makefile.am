@@ -131,14 +131,20 @@ grounder_SOURCES = \
 		generators/GeneratorFactory.hpp generators/GeneratorFactory.cpp\
 		generators/BDDBasedGeneratorFactory.hpp generators/BDDBasedGeneratorFactory.cpp\
 		OptionsStack.hpp OptionsStack.cpp\
+		visitors/StructureVisitor.hpp visitors/StructureVisitor.cpp\
+		visitors/TheoryVisitor.hpp visitors/TheoryVisitor.cpp\
+		visitors/TheoryMutatingVisitor.hpp visitors/TheoryMutatingVisitor.cpp\
+        structureanalysis/EnumerateSymbolicTable.hpp\
 		theoryinformation/CollectOpensOfDefinitions.hpp theoryinformation/CollectOpensOfDefinitions.cpp\
 		theoryinformation/CheckContainment.hpp theoryinformation/CheckContainment.cpp\
 		theoryinformation/CheckContainsFuncTerms.hpp\
 		theoryinformation/CheckSorts.hpp theoryinformation/CheckSorts.cpp\
+		theoryinformation/CountNbOfSubformulas.hpp\
+		theoryinformation/CheckFuncTerms.hpp\
+		theoryinformation/CheckPartialTerm.hpp\
+		theoryinformation/ApproxCheckTwoValued.hpp theoryinformation/ApproxCheckTwoValued.cpp\
 		theorytransformations/PushNegations.hpp theorytransformations/PushNegations.cpp\
 		theorytransformations/Flatten.hpp theorytransformations/Flatten.cpp\
-		theoryinformation/CountNbOfSubFormulas.hpp\
-		theorytransformations/CheckFuncTerms.hpp\
 		theorytransformations/DeriveSorts.hpp theorytransformations/DeriveSorts.cpp\
 		theorytransformations/AddCompletion.hpp theorytransformations/AddCompletion.cpp\
 		theorytransformations/GraphFunctions.hpp theorytransformations/GraphFunctions.cpp\
@@ -150,9 +156,7 @@ grounder_SOURCES = \
 		theorytransformations/UnnestPartialTerms.hpp\
 		theorytransformations/UnnestTerms.hpp theorytransformations/UnnestTerms.cpp\
 		theorytransformations/UnnestThreeValuedTerms.hpp theorytransformations/UnnestThreeValuedTerms.cpp\
-		TheoryVisitor.hpp TheoryVisitor.cpp\
-		TheoryMutatingVisitor.hpp TheoryMutatingVisitor.cpp\
-		theorytransformations/Utils.hpp theorytransformations/Utils.cpp\
+		utils/TheoryUtils.hpp utils/TheoryUtils.cpp\
 		GlobalData.hpp GlobalData.cpp\
 		fobdds/FoBdd.hpp fobdds/FoBdd.cpp\
 		fobdds/FoBddKernel.hpp\
@@ -224,6 +228,6 @@ endif
 alltests_SOURCES = tests/testsuite.cpp tests/mxtests.cpp tests/generatortests.cpp tests/bddtests.cpp $(grounder_SOURCES)
 alltests_LDADD = -lgtest -lpthread $(gidl_LDADD)
 
-AM_CXXFLAGS += -DTESTDIR=\"$(abs_srcdir)/tests/simplemxtests/\"
+AM_CXXFLAGS += -DTESTDIR=\"$(abs_srcdir)/tests/\"
 
 TESTS = alltests

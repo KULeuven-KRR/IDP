@@ -1,3 +1,9 @@
+/************************************
+	TermCollector.hpp
+	this file belongs to GidL 2.0
+	(c) K.U.Leuven
+************************************/
+
 #ifndef TERMEXTRACTOR_HPP_
 #define TERMEXTRACTOR_HPP_
 

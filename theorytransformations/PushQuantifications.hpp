@@ -1,7 +1,13 @@
-#ifndef MOVEQUANTIFICATIONS_HPP_
-#define MOVEQUANTIFICATIONS_HPP_
+/************************************
+  	PushQuantifications.hpp
+	this file belongs to GidL 2.0
+	(c) K.U.Leuven
+************************************/
 
-#include "TheoryMutatingVisitor.hpp"
+#ifndef PUSHQUANTIFICATIONS_HPP_
+#define PUSHQUANTIFICATIONS_HPP_
+
+#include "visitors/TheoryMutatingVisitor.hpp"
 
 class PushQuantifications: public TheoryMutatingVisitor {
 public:
@@ -12,4 +18,4 @@ public:
 	Formula* visit(QuantForm*);
 };
 
-#endif /* MOVEQUANTIFICATIONS_HPP_ */
+#endif /* PUSHQUANTIFICATIONS_HPP_ */

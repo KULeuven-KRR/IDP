@@ -1,7 +1,13 @@
+/************************************
+  	CheckContainment.hpp
+	this file belongs to GidL 2.0
+	(c) K.U.Leuven
+************************************/
+
 #ifndef CONTAINMENTCHECKER_HPP_
 #define CONTAINMENTCHECKER_HPP_
 
-#include "TheoryVisitor.hpp"
+#include "visitors/TheoryVisitor.hpp"
 
 class PFSymbol;
 

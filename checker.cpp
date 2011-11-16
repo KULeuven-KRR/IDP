@@ -1,8 +1,8 @@
 /************************************
- checker.cpp
- this file belongs to GidL 2.0
- (c) K.U.Leuven
- ************************************/
+	checker.cpp
+	this file belongs to GidL 2.0
+	(c) K.U.Leuven
+************************************/
 
 #include "parseinfo.hpp"
 #include "vocabulary.hpp"

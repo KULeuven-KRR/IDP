@@ -1,9 +1,15 @@
+/************************************
+	AddCompletion.hpp
+	this file belongs to GidL 2.0
+	(c) K.U.Leuven
+************************************/
+
 #ifndef ADDCOMPLETION_HPP_
 #define ADDCOMPLETION_HPP_
 
 #include <vector>
 #include <map>
-#include "TheoryMutatingVisitor.hpp"
+#include "visitors/TheoryMutatingVisitor.hpp"
 
 class Variable;
 class PFSymbol;

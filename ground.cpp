@@ -1,8 +1,8 @@
 /************************************
- ground.cpp
- this file belongs to GidL 2.0
- (c) K.U.Leuven
- ************************************/
+	ground.cpp
+	this file belongs to GidL 2.0
+	(c) K.U.Leuven
+************************************/
 
 #include "ground.hpp"
 #include "common.hpp"
@@ -38,7 +38,7 @@
 #include "generators/BasicGenerators.hpp"
 #include "generators/TableGenerator.hpp"
 
-#include "theorytransformations/Utils.hpp"
+#include "utils/TheoryUtils.hpp"
 
 #include "fobdds/FoBdd.hpp"
 #include "fobdds/FoBddManager.hpp"
@@ -292,8 +292,8 @@ bool CPBound::operator<(const CPBound& rhs) const {
 }
 
 /*********************************************
- Translate from ground atoms to numbers
- *********************************************/
+	Translate from ground atoms to numbers
+*********************************************/
 
 GroundTranslator::~GroundTranslator() {
 	deleteList<SymbolAndTuple>(atom2Tuple);
@@ -499,8 +499,8 @@ string GroundTranslator::printAtom(const Lit& atom, bool longnames) const {
 }
 
 /*********************************************
- Translate from ground terms to numbers
- *********************************************/
+	Translate from ground terms to numbers
+*********************************************/
 
 bool operator==(const GroundTerm& a, const GroundTerm& b) {
 	if (a.isVariable == b.isVariable) {
@@ -615,8 +615,8 @@ string GroundTermTranslator::printTerm(const VarId& varid, bool longnames) const
 }
 
 /******************************
- GrounderFactory methods
- ******************************/
+	GrounderFactory methods
+******************************/
 
 GrounderFactory::GrounderFactory(AbstractStructure* structure, Options* opts, SymbolicStructure* symstructure) :
 		_structure(structure), _symstructure(symstructure), _options(opts), _verbosity(opts->getValue(IntType::GROUNDVERBOSITY)), _cpsupport(
@@ -1168,6 +1168,7 @@ void GrounderFactory::visit(const BoolForm* bf) {
 		for (auto it = bf->subformulas().cbegin(); it != bf->subformulas().cend(); ++it) {
 			descend(*it);
 			sub.push_back(_formgrounder);
+			//TODO: here we could check for true/false formulas.  Useful?
 		}
 		RestoreContext();
 
@@ -1739,8 +1740,8 @@ void GrounderFactory::visit(const Rule* rule) {
 }
 
 /**************
- Visitor
- **************/
+	Visitor
+**************/
 
 void TheoryVisitor::visit(const CPVarTerm*) {
 	// TODO

@@ -1,3 +1,9 @@
+/************************************
+	ContainsTerm.hpp
+	this file belongs to GidL 2.0
+	(c) K.U.Leuven
+************************************/
+
 #ifndef CONTAINSTERM_HPP_
 #define CONTAINSTERM_HPP_
 

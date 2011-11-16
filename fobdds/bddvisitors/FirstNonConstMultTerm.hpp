@@ -1,3 +1,9 @@
+/************************************
+	FirstNonConstMultTerm.hpp
+	this file belongs to GidL 2.0
+	(c) K.U.Leuven
+************************************/
+
 #ifndef NONCONSTTERMEXTRACTOR_HPP_
 #define NONCONSTTERMEXTRACTOR_HPP_
 

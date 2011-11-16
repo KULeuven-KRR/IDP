@@ -8,8 +8,9 @@
 #define GENERATORFACTORY_HPP
 
 #include <vector>
-#include <structure.hpp>
+#include "structure.hpp"
 #include "generators/InstGenerator.hpp"
+#include "visitors/StructureVisitor.hpp"
 
 class PredTable;
 class PredInter;
@@ -21,13 +22,13 @@ class Universe;
 
 class GeneratorFactory : public StructureVisitor {
 private:
-	const PredTable*					_table;
+	const PredTable*						_table;
 	std::vector<Pattern>					_pattern;	//!< _pattern[n] == true iff the n'th column is an input column
 	std::vector<const DomElemContainer*>	_vars;		//!< the variables corresponding to each column
-	Universe							_universe;	//!< the domains of the variables
-	std::vector<unsigned int>			_firstocc;	//!< for each of the variables, the position in _vars where this
-													//!< variable occurs first
-	InstGenerator*						_generator;
+	Universe								_universe;	//!< the domains of the variables
+	std::vector<unsigned int>				_firstocc;	//!< for each of the variables, the position in _vars where this
+														//!< variable occurs first
+	InstGenerator*							_generator;
 
 	// NOTE: for any function, if the range is an output variable, we can use the simple func generator
 	// if the range is input, we need more specialized generators depending on the function type

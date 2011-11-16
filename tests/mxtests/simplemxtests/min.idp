@@ -1,0 +1,16 @@
+vocabulary V{
+	type x isa int
+	p(x)
+}
+
+theory T:V{
+	min{x: p(x): x}=3.
+}
+
+structure S:V{
+	x = {1..5}
+}
+
+procedure getExpectedNbOfModels(){
+	return 4
+}

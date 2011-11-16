@@ -1,9 +1,15 @@
+/************************************
+  	CollectOpensOfDefinitions.hpp
+	this file belongs to GidL 2.0
+	(c) K.U.Leuven
+************************************/
+
 #ifndef COLLECTOPENSOFDEFINITIONS_HPP_
 #define COLLECTOPENSOFDEFINITIONS_HPP_
 
 #include <set>
 
-#include "TheoryVisitor.hpp"
+#include "visitors/TheoryVisitor.hpp"
 
 class Definition;
 class PFSymbol;

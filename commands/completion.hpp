@@ -10,7 +10,7 @@
 #include <vector>
 #include "commandinterface.hpp"
 #include "theory.hpp"
-#include "theorytransformations/Utils.hpp"
+#include "utils/TheoryUtils.hpp"
 
 class CompletionInference: public Inference {
 public:

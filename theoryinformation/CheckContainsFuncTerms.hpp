@@ -1,7 +1,13 @@
-#ifndef CONTAINMSFUNCTERMS_HPP_
-#define CONTAINMSFUNCTERMS_HPP_
+/************************************
+  	CheckContainsFuncTerms.hpp
+	this file belongs to GidL 2.0
+	(c) K.U.Leuven
+************************************/
 
-#include "TheoryVisitor.hpp"
+#ifndef CONTAINSFUNCTERMS_HPP_
+#define CONTAINSFUNCTERMS_HPP_
+
+#include "visitors/TheoryVisitor.hpp"
 
 class PFSymbol;
 
@@ -24,4 +30,4 @@ public:
 	}
 };
 
-#endif /* CONTAINMSFUNCTERMS_HPP_ */
+#endif /* CONTAINSFUNCTERMS_HPP_ */

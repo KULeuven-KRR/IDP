@@ -1,10 +1,16 @@
+/************************************
+	ModelExpansion.cpp
+	this file belongs to GidL 2.0
+	(c) K.U.Leuven
+************************************/
+
 #include "ModelExpansion.hpp"
 
 #include "monitors/tracemonitor.hpp"
 #include "commands/propagate.hpp"
 #include "symmetry.hpp"
 
-#include "theorytransformations/Utils.hpp"
+#include "utils/TheoryUtils.hpp"
 
 #include "groundtheories/AbstractGroundTheory.hpp"
 #include "groundtheories/SolverPolicy.hpp"

@@ -1,3 +1,9 @@
+/************************************
+	CollectSameOperationTerms.hpp
+	this file belongs to GidL 2.0
+	(c) K.U.Leuven
+************************************/
+
 #ifndef FLATMULT_HPP_
 #define FLATMULT_HPP_
 

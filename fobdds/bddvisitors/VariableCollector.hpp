@@ -1,3 +1,9 @@
+/************************************
+	VariableCollector.hpp
+	this file belongs to GidL 2.0
+	(c) K.U.Leuven
+************************************/
+
 #ifndef VARIABLECOLLECTOR_HPP_
 #define VARIABLECOLLECTOR_HPP_
 

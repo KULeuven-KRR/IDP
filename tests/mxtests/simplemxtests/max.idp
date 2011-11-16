@@ -1,0 +1,16 @@
+vocabulary V{
+	type x isa int
+	p(x)
+}
+
+theory T:V{
+	max{x: p(x): x}=48.
+}
+
+structure S:V{
+	x = {45..50}
+}
+
+procedure getExpectedNbOfModels(){
+	return 8
+}

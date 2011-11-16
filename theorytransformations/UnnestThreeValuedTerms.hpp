@@ -1,3 +1,9 @@
+/************************************
+  	UnnestThreeValuedTerms.hpp
+	this file belongs to GidL 2.0
+	(c) K.U.Leuven
+************************************/
+
 #ifndef REMOVETHREEVALUEDTERMS_HPP_
 #define REMOVETHREEVALUEDTERMS_HPP_
 

@@ -1,3 +1,9 @@
+/************************************
+	PropagatorFactory.cpp
+	this file belongs to GidL 2.0
+	(c) K.U.Leuven
+************************************/
+
 #include "PropagatorFactory.hpp"
 
 #include <iostream>
@@ -7,7 +13,7 @@
 #include "term.hpp"
 #include "propagate.hpp"
 
-#include "theorytransformations/Utils.hpp"
+#include "utils/TheoryUtils.hpp"
 
 using namespace std;
 

@@ -26,7 +26,7 @@
 #include "generators/FalseQuantKernelGenerator.hpp"
 #include "generators/TrueQuantKernelGenerator.hpp"
 
-#include "theorytransformations/Utils.hpp"
+#include "utils/TheoryUtils.hpp"
 
 using namespace std;
 

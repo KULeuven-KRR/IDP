@@ -1,3 +1,9 @@
+/************************************
+	AddMultSimplifier.hpp
+	this file belongs to GidL 2.0
+	(c) K.U.Leuven
+************************************/
+
 #ifndef ADDMULTSIMPLIFIER_HPP_
 #define ADDMULTSIMPLIFIER_HPP_
 

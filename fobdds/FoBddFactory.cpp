@@ -1,3 +1,9 @@
+/************************************
+	FoBddFactory.cpp
+	this file belongs to GidL 2.0
+	(c) K.U.Leuven
+************************************/
+
 #include <cassert>
 #include <iostream>
 
@@ -12,7 +18,7 @@
 #include "vocabulary.hpp"
 #include "theory.hpp"
 #include "term.hpp"
-#include "theorytransformations/Utils.hpp"
+#include "utils/TheoryUtils.hpp"
 
 using namespace std;
 

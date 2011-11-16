@@ -1,3 +1,9 @@
+/************************************
+	Copy.hpp
+	this file belongs to GidL 2.0
+	(c) K.U.Leuven
+************************************/
+
 #ifndef COPY_HPP_
 #define COPY_HPP_
 

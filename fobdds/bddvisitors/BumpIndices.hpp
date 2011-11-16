@@ -1,3 +1,9 @@
+/************************************
+	BumpIndices.hpp
+	this file belongs to GidL 2.0
+	(c) K.U.Leuven
+************************************/
+
 #ifndef BUMP_HPP_
 #define BUMP_HPP_
 

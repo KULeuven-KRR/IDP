@@ -1,3 +1,9 @@
+/************************************
+	CheckIsArithmeticFormula.hpp
+	this file belongs to GidL 2.0
+	(c) K.U.Leuven
+************************************/
+
 #ifndef ARITHCHECKER_HPP_
 #define ARITHCHECKER_HPP_
 

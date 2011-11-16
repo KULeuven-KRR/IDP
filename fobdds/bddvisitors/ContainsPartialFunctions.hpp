@@ -1,3 +1,9 @@
+/************************************
+	ContainsPartialFunctions.hpp
+	this file belongs to GidL 2.0
+	(c) K.U.Leuven
+************************************/
+
 #ifndef BDDPARTIALCHECKER_HPP_
 #define BDDPARTIALCHECKER_HPP_
 

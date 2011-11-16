@@ -11,6 +11,7 @@
 #include <vector>
 #include "common.hpp"
 #include "parseinfo.hpp"
+#include "visitors/TheoryVisitor.hpp"
 
 /*****************************************************************************
 	Abstract base class for formulas, definitions and fixpoint definitions

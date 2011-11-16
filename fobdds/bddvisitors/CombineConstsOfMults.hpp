@@ -1,3 +1,9 @@
+/************************************
+	CombineConstsOfMults.hpp
+	this file belongs to GidL 2.0
+	(c) K.U.Leuven
+************************************/
+
 #ifndef TERMADDER_HPP_
 #define TERMADDER_HPP_
 

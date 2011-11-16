@@ -1,7 +1,13 @@
+/************************************
+	FoBddFactory.hpp
+	this file belongs to GidL 2.0
+	(c) K.U.Leuven
+************************************/
+
 #ifndef FOBDDFACTORY_HPP_
 #define FOBDDFACTORY_HPP_
 
-#include "TheoryVisitor.hpp"
+#include "visitors/TheoryVisitor.hpp"
 
 class Formula;
 class Term;

@@ -1,3 +1,9 @@
+/************************************
+	TermsToLeft.hpp
+	this file belongs to GidL 2.0
+	(c) K.U.Leuven
+************************************/
+
 #ifndef TERMSTOLEFT_HPP_
 #define TERMSTOLEFT_HPP_
 

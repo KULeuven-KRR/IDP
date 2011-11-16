@@ -1,3 +1,9 @@
+/************************************
+	FirstConstTermInFunc.hpp
+	this file belongs to GidL 2.0
+	(c) K.U.Leuven
+************************************/
+
 #ifndef CONSTTERMEXTRACTOR_HPP_
 #define CONSTTERMEXTRACTOR_HPP_
 

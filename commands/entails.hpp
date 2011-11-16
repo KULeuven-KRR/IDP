@@ -7,19 +7,19 @@
 #ifndef ENTAILS_HPP_
 #define ENTAILS_HPP_
 
+#include <cstdlib>
+#include <cstdio>
+#include <fstream>
+#include <unistd.h>
+#include <signal.h>
+#include <setjmp.h>
 #include "commandinterface.hpp"
 #include "printers/print.hpp"
 #include "printers/tptpprinter.hpp"
 #include "theory.hpp"
-#include <cstdlib>
-#include <cstdio>
-#include <fstream>
 #include "vocabulary.hpp"
-#include <unistd.h>
-#include <signal.h>
-#include <setjmp.h>
 
-#include "theorytransformations/Utils.hpp"
+#include "utils/TheoryUtils.hpp"
 
 class TheorySupportedChecker : public TheoryVisitor {
 	private:

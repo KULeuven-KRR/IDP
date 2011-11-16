@@ -1,3 +1,9 @@
+/************************************
+	RemoveMinus.hpp
+	this file belongs to GidL 2.0
+	(c) K.U.Leuven
+************************************/
+
 #ifndef REMOVEMINUS_HPP_
 #define REMOVEMINUS_HPP_
 

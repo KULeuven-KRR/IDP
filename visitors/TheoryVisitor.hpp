@@ -1,7 +1,18 @@
-#ifndef THEORYVISITOR_HPP_
-#define THEORYVISITOR_HPP_
+/************************************
+	TheoryVisitor.hpp
+	this file belongs to GidL 2.0
+	(c) K.U.Leuven
+************************************/
+
+#ifndef THEORYVISITOR_HPP
+#define THEORYVISITOR_HPP
 
 class Theory;
+
+class GroundPolicy;
+class PrintGroundPolicy;
+class SolverPolicy;
+template<class T> class GroundTheory;
 
 class Formula;
 class PredForm;
@@ -12,12 +23,11 @@ class QuantForm;
 class AggForm;
 
 class GroundDefinition;
+class GroundRule;
 class PCGroundRule;
 class AggGroundRule;
 class GroundSet;
 class GroundAggregate;
-
-class CPReification;
 
 class Rule;
 class Definition;
@@ -29,22 +39,23 @@ class FuncTerm;
 class DomainTerm;
 class AggTerm;
 
+class CPTerm;
 class CPVarTerm;
 class CPWSumTerm;
 class CPSumTerm;
+class CPReification;
+
 class SetExpr;
 class EnumSetExpr;
 class QuantSetExpr;
 
-class GroundPolicy;
-class PrintGroundPolicy;
-class SolverPolicy;
-template<class T> class GroundTheory;
 
 /**
- * A class for visiting all elements in a logical theory. The theory is NOT changed.
+ * A class for visiting all elements in a logical theory. 
+ * The theory is NOT changed.
  *
- * By default, it is traversed depth-first, allowing subimplementations to only implement some of the traversals specifically.
+ * By default, it is traversed depth-first, allowing subimplementations
+ * to only implement some of the traversals specifically.
  */
 class TheoryVisitor {
 protected:
@@ -53,8 +64,7 @@ protected:
 	void traverse(const SetExpr*);
 
 public:
-	virtual ~TheoryVisitor() {
-	}
+	virtual ~TheoryVisitor() {}
 	// Theories
 	virtual void visit(const Theory*);
 
@@ -96,7 +106,6 @@ public:
 	// Set expressions
 	virtual void visit(const EnumSetExpr*);
 	virtual void visit(const QuantSetExpr*);
-
 };
 
-#endif /* THEORYVISITOR_HPP_ */
+#endif

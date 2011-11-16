@@ -1,3 +1,9 @@
+/************************************
+  	TheoryUtils.hpp
+	this file belongs to GidL 2.0
+	(c) K.U.Leuven
+************************************/
+
 #ifndef THEORYUTILS_HPP_
 #define THEORYUTILS_HPP_
 
@@ -116,8 +122,13 @@ AbstractTheory* merge(AbstractTheory*, AbstractTheory*);
 
 namespace TermUtils {
 /** Rewrite set expressions by moving three-valued terms **/
-SetExpr* moveThreeValuedTerms(SetExpr*, AbstractStructure*, Context context, bool cpsupport = false, const std::set<const PFSymbol*> cpsymbols =
-		std::set<const PFSymbol*>());
+SetExpr* moveThreeValuedTerms(SetExpr*, AbstractStructure*, Context context, bool cpsupport = false, const std::set<const PFSymbol*> cpsymbols = std::set<const PFSymbol*>());
+}
+
+namespace SetUtils {
+/** Returns false if the set expression is not two-valued in the given structure. 
+May return true if the set expression is two-valued in the structure. **/
+bool approxTwoValued(SetExpr*,AbstractStructure*);	
 }
 
 namespace DefinitionUtils {

@@ -1,3 +1,9 @@
+/************************************
+  	CheckSorts.cpp
+	this file belongs to GidL 2.0
+	(c) K.U.Leuven
+************************************/
+
 #include "theoryinformation/CheckSorts.hpp"
 
 #include "vocabulary.hpp"

@@ -1,3 +1,9 @@
+/************************************
+	FormulaGrounders.hpp
+	this file belongs to GidL 2.0
+	(c) K.U.Leuven
+************************************/
+
 #include "grounders/FormulaGrounders.hpp"
 
 #include <iostream>
@@ -13,8 +19,8 @@
 
 using namespace std;
 
-FormulaGrounder::FormulaGrounder(AbstractGroundTheory* grounding, const GroundingContext& ct)
-		:Grounder(grounding, ct), _verbosity(0) {
+FormulaGrounder::FormulaGrounder(AbstractGroundTheory* grounding, const GroundingContext& ct) :
+		Grounder(grounding, ct), _verbosity(0) {
 }
 
 GroundTranslator* FormulaGrounder::translator() const {
@@ -49,13 +55,14 @@ void FormulaGrounder::printorig() const {
 AtomGrounder::AtomGrounder(AbstractGroundTheory* grounding, SIGN sign, PFSymbol* s, const vector<TermGrounder*>& sg,
 		const vector<const DomElemContainer*>& checkargs, InstChecker* pic, InstChecker* cic, PredInter* inter, const vector<SortTable*>& vst,
 		const GroundingContext& ct) :
-		FormulaGrounder(grounding, ct), _subtermgrounders(sg), _pchecker(pic), _cchecker(cic), _symbol(translator()->addSymbol(s)), _tables(vst), _sign(sign), _checkargs(
-				checkargs), _inter(inter) {
+		FormulaGrounder(grounding, ct), _subtermgrounders(sg), _pchecker(pic), _cchecker(cic), _symbol(translator()->addSymbol(s)), _tables(vst), _sign(
+				sign), _checkargs(checkargs), _inter(inter) {
 	gentype = ct.gentype;
 }
 
 Lit AtomGrounder::run() const {
-	if (verbosity() > 2) printorig();
+	if (verbosity() > 2)
+		printorig();
 
 	// Run subterm grounders
 	bool alldomelts = true;
@@ -103,7 +110,7 @@ Lit AtomGrounder::run() const {
 
 	// Run instance checkers
 	// NOTE: set all the variables representing the subterms to their current value (these are used in the checkers)
-	for(size_t n = 0; n < args.size(); ++n) {
+	for (size_t n = 0; n < args.size(); ++n) {
 		*(_checkargs[n]) = args[n];
 	}
 	if (not _pchecker->check()) { // Literal is irrelevant in its occurrences
@@ -199,7 +206,7 @@ void ComparisonGrounder::run(ConjOrDisj& formula) const {
 	formula.literals.push_back(run()); // TODO can do better?
 }
 
-CompType Agg2Comp(AGG_COMP_TYPE comp){
+CompType Agg2Comp(AGG_COMP_TYPE comp) {
 	switch (comp) {
 	case AGG_EQ:
 		return CompType::EQ;
@@ -287,7 +294,8 @@ int AggGrounder::finishCard(double truevalue, double boundvalue, int setnr) cons
 	if (isNeg(_sign)) {
 		if (tp == TsType::IMPL)
 			tp = TsType::RIMPL;
-		else if (tp == TsType::RIMPL) tp = TsType::IMPL;
+		else if (tp == TsType::RIMPL)
+			tp = TsType::IMPL;
 	}
 	if (simplify) {
 		if (_doublenegtseitin) {
@@ -335,19 +343,22 @@ int AggGrounder::finish(double boundvalue, double newboundvalue, double minpossv
 	switch (_comp) { //TODO more complicated propagation is possible!
 	case AGG_EQ:
 		comp = CompType::EQ;
-		if (minpossvalue > boundvalue || maxpossvalue < boundvalue) return isPos(_sign) ? _false : _true;
+		if (minpossvalue > boundvalue || maxpossvalue < boundvalue)
+			return isPos(_sign) ? _false : _true;
 		break;
 	case AGG_LT:
 		comp = CompType::LT;
 		if (boundvalue < minpossvalue)
 			return isPos(_sign) ? _true : _false;
-		else if (boundvalue >= maxpossvalue) return isPos(_sign) ? _false : _true;
+		else if (boundvalue >= maxpossvalue)
+			return isPos(_sign) ? _false : _true;
 		break;
 	case AGG_GT:
 		comp = CompType::GT;
 		if (boundvalue > maxpossvalue)
 			return isPos(_sign) ? _true : _false;
-		else if (boundvalue <= minpossvalue) return isPos(_sign) ? _false : _true;
+		else if (boundvalue <= minpossvalue)
+			return isPos(_sign) ? _false : _true;
 		break;
 	}
 	if (_doublenegtseitin)
@@ -358,7 +369,8 @@ int AggGrounder::finish(double boundvalue, double newboundvalue, double minpossv
 		if (isNeg(_sign)) {
 			if (tp == TsType::IMPL)
 				tp = TsType::RIMPL;
-			else if (tp == TsType::RIMPL) tp = TsType::IMPL;
+			else if (tp == TsType::RIMPL)
+				tp = TsType::IMPL;
 		}
 		tseitin = translator()->translate(newboundvalue, comp, true, _type, setnr, tp);
 		return isPos(_sign) ? tseitin : -tseitin;
@@ -412,7 +424,8 @@ int AggGrounder::run() const {
 		for (unsigned int n = 0; n < tsset.size(); ++n) {
 			if (tsset.weight(n) > 0)
 				maxpossvalue += tsset.weight(n);
-			else if (tsset.weight(n) < 0) minpossvalue += tsset.weight(n);
+			else if (tsset.weight(n) < 0)
+				minpossvalue += tsset.weight(n);
 		}
 		// Finish
 		tseitin = finish(boundvalue, (boundvalue - truevalue), minpossvalue, maxpossvalue, setnr);
@@ -422,9 +435,11 @@ int AggGrounder::run() const {
 		bool containsneg = false;
 		for (unsigned int n = 0; n < tsset.size(); ++n) {
 			maxpossvalue *= abs(tsset.weight(n));
-			if (tsset.weight(n) < 0) containsneg = true;
+			if (tsset.weight(n) < 0)
+				containsneg = true;
 		}
-		if (containsneg) minpossvalue = -maxpossvalue;
+		if (containsneg)
+			minpossvalue = -maxpossvalue;
 		// Finish
 		tseitin = finish(boundvalue, (boundvalue / truevalue), minpossvalue, maxpossvalue, setnr);
 		break;
@@ -434,7 +449,8 @@ int AggGrounder::run() const {
 		for (unsigned int n = 0; n < tsset.size(); ++n) {
 			minpossvalue = (tsset.weight(n) < minpossvalue) ? tsset.weight(n) : minpossvalue;
 			// Decrease all weights greater than truevalue to truevalue. // TODO why not just drop all those?
-			if (tsset.weight(n) > truevalue) tsset.setWeight(n, truevalue);
+			if (tsset.weight(n) > truevalue)
+				tsset.setWeight(n, truevalue);
 		}
 		// Finish
 		tseitin = finish(boundvalue, boundvalue, minpossvalue, maxpossvalue, setnr);
@@ -444,7 +460,8 @@ int AggGrounder::run() const {
 		for (unsigned int n = 0; n < tsset.size(); ++n) {
 			maxpossvalue = (tsset.weight(n) > maxpossvalue) ? tsset.weight(n) : maxpossvalue;
 			// Increase all weights less than truevalue to truevalue. // TODO why not just drop all those?
-			if (tsset.weight(n) < truevalue) tsset.setWeight(n, truevalue);
+			if (tsset.weight(n) < truevalue)
+				tsset.setWeight(n, truevalue);
 		}
 		// Finish
 		tseitin = finish(boundvalue, boundvalue, minpossvalue, maxpossvalue, setnr);
@@ -525,14 +542,22 @@ void ClauseGrounder::run(ConjOrDisj& formula) const {
 	run(formula, isNegative());
 }
 
-FormStat ClauseGrounder::runSubGrounder(Grounder* subgrounder, bool conjFromRoot, ConjOrDisj& formula, bool negated) const{
+FormStat ClauseGrounder::runSubGrounder(Grounder* subgrounder, bool conjFromRoot, ConjOrDisj& formula, bool negated) const {
 	ConjOrDisj subformula;
 	subgrounder->run(subformula);
 
-	if(subformula.literals.size()==0){
+	if (subformula.literals.size() == 0) {
+		Lit value = subformula.type == Conn::CONJ ? _true : _false;
+		if (makesFormulaTrue(value, negated)) {
+			formula.literals = litlist { negated ? -_true : _true };
+			return FormStat::DECIDED;
+		} else if (makesFormulaFalse(value, negated)) {
+			formula.literals = litlist { negated ? -_false : _false };
+			return FormStat::DECIDED;
+		}
 		formula = subformula;
-		return FormStat::UNKNOWN;
-	}else if(subformula.literals.size()==1){
+		return (FormStat::UNKNOWN);
+	} else if (subformula.literals.size() == 1) {
 		Lit l = subformula.literals[0];
 		if (makesFormulaFalse(l, negated)) {
 			formula.literals = litlist { negated ? -_false : _false };
@@ -545,19 +570,18 @@ FormStat ClauseGrounder::runSubGrounder(Grounder* subgrounder, bool conjFromRoot
 		}
 		return FormStat::UNKNOWN;
 	} // otherwise INVAR: subformula is not true nor false and does not contain true nor false literals
-
-	if(conjFromRoot && conjunctive()){
-		if(subformula.type==Conn::CONJ){
-			for(auto i=subformula.literals.cbegin(); i<subformula.literals.cend(); ++i){
+	if (conjFromRoot && conjunctive()) {
+		if (subformula.type == Conn::CONJ) {
+			for (auto i = subformula.literals.cbegin(); i < subformula.literals.cend(); ++i) {
 				grounding()->addUnitClause(*i);
 			}
-		}else{
+		} else {
 			grounding()->add(subformula.literals);
 		}
-	}else{
-		if(subformula.type==formula.type){
+	} else {
+		if (subformula.type == formula.type) {
 			formula.literals.insert(formula.literals.begin(), subformula.literals.cbegin(), subformula.literals.cend());
-		}else{
+		} else {
 			formula.literals.push_back(getReification(subformula));
 		}
 	}
@@ -566,12 +590,11 @@ FormStat ClauseGrounder::runSubGrounder(Grounder* subgrounder, bool conjFromRoot
 
 // NOTE: Optimized to avoid looping over the formula after construction
 void BoolGrounder::run(ConjOrDisj& formula, bool negate) const {
-	if (verbosity() > 2) printorig();
-
+	if (verbosity() > 2)
+		printorig();
 	formula.type = conn_;
-
 	for (auto g = _subgrounders.cbegin(); g < _subgrounders.cend(); g++) {
-		if(runSubGrounder(*g, context()._conjunctivePathFromRoot, formula, negate)==FormStat::DECIDED){
+		if (runSubGrounder(*g, context()._conjunctivePathFromRoot, formula, negate) == FormStat::DECIDED) {
 			return;
 		}
 	}
@@ -580,7 +603,8 @@ void BoolGrounder::run(ConjOrDisj& formula, bool negate) const {
 // TODO do toplevel checks in all grounders
 
 void QuantGrounder::run(ConjOrDisj& formula, bool negated) const {
-	if (verbosity() > 2) printorig();
+	if (verbosity() > 2)
+		printorig();
 
 	formula.type = conn_;
 
@@ -590,7 +614,7 @@ void QuantGrounder::run(ConjOrDisj& formula, bool negated) const {
 			return;
 		}
 
-		if(runSubGrounder(_subgrounder, context()._conjunctivePathFromRoot, formula, negated)==FormStat::DECIDED){
+		if (runSubGrounder(_subgrounder, context()._conjunctivePathFromRoot, formula, negated) == FormStat::DECIDED) {
 			return;
 		}
 	}
@@ -598,7 +622,8 @@ void QuantGrounder::run(ConjOrDisj& formula, bool negated) const {
 
 void EquivGrounder::run(ConjOrDisj& formula, bool negated) const {
 	assert(not negated);
-	if (verbosity() > 2) printorig();
+	if (verbosity() > 2)
+		printorig();
 
 	// Run subgrounders
 	ConjOrDisj leftformula, rightformula;

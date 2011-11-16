@@ -1,7 +1,13 @@
+/************************************
+  	PushNegations.hpp
+	this file belongs to GidL 2.0
+	(c) K.U.Leuven
+************************************/
+
 #ifndef PUSHNEGATIONS_HPP_
 #define PUSHNEGATIONS_HPP_
 
-#include "TheoryMutatingVisitor.hpp"
+#include "visitors/TheoryMutatingVisitor.hpp"
 
 class PushNegations: public TheoryMutatingVisitor {
 public:

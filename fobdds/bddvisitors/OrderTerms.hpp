@@ -1,3 +1,9 @@
+/************************************
+	OrderTerms.hpp
+	this file belongs to GidL 2.0
+	(c) K.U.Leuven
+************************************/
+
 #ifndef ORDERTERMS_HPP_
 #define ORDERTERMS_HPP_
 

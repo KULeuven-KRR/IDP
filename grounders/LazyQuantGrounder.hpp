@@ -1,8 +1,8 @@
 /************************************
- LazyQuantGrounder.hpp
- this file belongs to GidL 2.0
- (c) K.U.Leuven
- ************************************/
+	LazyQuantGrounder.hpp
+	this file belongs to GidL 2.0
+	(c) K.U.Leuven
+************************************/
 
 #ifndef LAZYQUANTGROUNDER_HPP_
 #define LAZYQUANTGROUNDER_HPP_

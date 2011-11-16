@@ -1,3 +1,9 @@
+/************************************
+	EstimateBDDInferenceCost.hpp
+	this file belongs to GidL 2.0
+	(c) K.U.Leuven
+************************************/
+
 #ifndef TABLECOSTESTIMATOR_HPP_
 #define TABLECOSTESTIMATOR_HPP_
 
@@ -5,7 +11,7 @@
 #include <limits>
 #include <cmath>
 
-#include "structure.hpp"
+#include "visitors/StructureVisitor.hpp"
 
 // TODO review
 

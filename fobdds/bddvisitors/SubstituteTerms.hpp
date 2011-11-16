@@ -1,3 +1,9 @@
+/************************************
+	SubstituteTerms.hpp
+	this file belongs to GidL 2.0
+	(c) K.U.Leuven
+************************************/
+
 #ifndef SUBSTITUTE_HPP_
 #define SUBSTITUTE_HPP_
 

@@ -1,3 +1,9 @@
+/************************************
+	ModelExpansion.hpp
+	this file belongs to GidL 2.0
+	(c) K.U.Leuven
+************************************/
+
 #ifndef MODELEXPANSION_HPP_
 #define MODELEXPANSION_HPP_
 

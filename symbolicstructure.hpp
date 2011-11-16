@@ -1,4 +1,5 @@
 /************************************
+  	symbolicstructure.hpp
 	this file belongs to GidL 2.0
 	(c) K.U.Leuven
 ************************************/
@@ -9,7 +10,7 @@
 #include <map>
 #include <vector>
 
-#include "theory.hpp"
+#include "visitors/TheoryVisitor.hpp"
 
 class FOBDDManager;
 class FOBDD;
