@@ -24,6 +24,7 @@
 #include "term.hpp"
 #include "generators/BDDBasedGeneratorFactory.hpp"
 #include <iostream>
+#include "IdpException.hpp"
 
 using namespace std;
 
@@ -39,13 +40,73 @@ const DomainElement* domelem(T t){
 }
 
 namespace Tests{
-	TEST(BddGenerator, ExistsPredForm){
+	TEST(BddGenerator, PredForm){
 		auto sorttable = new SortTable(new IntRangeInternalSortTable(-2, 2));
 		auto sort = new Sort("x", sorttable);
 		auto variable = new Variable(sort);
 		auto sortterm = new VarTerm(variable, TermParseInfo());
 		auto symbol = new Predicate("P", {sort}, false);
 		Formula* formula = new PredForm(SIGN::POS, symbol, {sortterm}, FormulaParseInfo());
+		auto vocabulary = new Vocabulary("V");
+		vocabulary->add(sort);
+		vocabulary->add(symbol);
+		auto structure = new Structure("S", ParseInfo());
+		structure->vocabulary(vocabulary);
+		auto predinter = structure->inter(symbol);
+		predinter->makeTrue({createDomElem(1)});
+		predinter->makeFalse({createDomElem(2)});
+		predinter->makeTrue({createDomElem(-2)});
+
+		FOBDDManager manager;
+		FOBDDFactory bddfactory(&manager, NULL);
+
+		BddGeneratorData data;
+
+		data.bdd = bddfactory.run(formula);
+		auto bddset = manager.getVariables({variable});
+		assert(bddset.size()==1);
+		data.bddvars = vector<const FOBDDVariable*>(bddset.cbegin(), bddset.cend());
+
+		BDDToGenerator genfactory(&manager);
+		auto var = new DomElemContainer();
+		Universe u({sorttable});
+		data.pattern = {Pattern::OUTPUT};
+		data.vars = {var};
+		data.structure = structure;
+		data.universe = u;
+		auto gen = genfactory.create(data);
+
+		set<int> genvalues;
+		for(gen->begin(); not gen->isAtEnd(); gen->operator ++()){
+			auto value = var->get()->value()._int;
+			genvalues.insert(value);
+		}
+		ASSERT_EQ(genvalues.size(), 2);
+		ASSERT_TRUE(genvalues.find(-2)!=genvalues.end());
+		ASSERT_TRUE(genvalues.find(1)!=genvalues.end());
+	}
+
+	// TODO move to nonbdd test
+	TEST(Vocabulary, CreatePTInter){
+		auto sorttable = new SortTable(new IntRangeInternalSortTable(-2, 2));
+		auto sort = new Sort("x", sorttable);
+		auto symbol = new Predicate("P", {sort}, false);
+		auto derivedsymbol = symbol->derivedSymbol(ST_PT);
+		auto vocabulary = new Vocabulary("V");
+		vocabulary->add(sort);
+		EXPECT_NO_THROW(vocabulary->add(derivedsymbol));
+		EXPECT_TRUE(vocabulary->contains(symbol));
+		EXPECT_TRUE(vocabulary->contains(derivedsymbol));
+	}
+
+	TEST(BddGenerator, PTPredForm){
+		auto sorttable = new SortTable(new IntRangeInternalSortTable(-2, 2));
+		auto sort = new Sort("x", sorttable);
+		auto variable = new Variable(sort);
+		auto sortterm = new VarTerm(variable, TermParseInfo());
+		auto symbol = new Predicate("P", {sort}, false);
+		auto derivedsymbol = symbol->derivedSymbol(ST_PT);
+		auto formula = new PredForm(SIGN::POS, derivedsymbol, {sortterm}, FormulaParseInfo());
 		FOBDDManager manager;
 		FOBDDFactory bddfactory(&manager, NULL);
 
@@ -61,30 +122,27 @@ namespace Tests{
 		Universe u({sorttable});
 
 		auto vocabulary = new Vocabulary("V");
-		vocabulary->addSort(sort);
-		vocabulary->addPred(symbol);
+		vocabulary->add(sort);
+		vocabulary->add(symbol);
 		auto structure = new Structure("S", ParseInfo());
 		structure->vocabulary(vocabulary);
 		auto predinter = structure->inter(symbol);
 		predinter->makeTrue({createDomElem(1)});
 		predinter->makeFalse({createDomElem(2)});
 		predinter->makeTrue({createDomElem(-2)});
-		manager.put(std::cerr, data.bdd);
 		data.pattern = {Pattern::OUTPUT};
 		data.vars = {var};
 		data.structure = structure;
 		data.universe = u;
 		auto gen = genfactory.create(data);
-		gen->put(std::cerr);
 
 		set<int> genvalues;
 		for(gen->begin(); not gen->isAtEnd(); gen->operator ++()){
 			auto value = var->get()->value()._int;
 			genvalues.insert(value);
 		}
-		ASSERT_EQ(genvalues.size(), 2);
-		ASSERT_TRUE(genvalues.find(-2)!=genvalues.end());
-		ASSERT_TRUE(genvalues.find(1)!=genvalues.end());
+		ASSERT_EQ(genvalues.size(), 4);
+		ASSERT_TRUE(genvalues.find(2)==genvalues.end());
 	}
 
 	TEST(BddGenerator, ExistsPredFormBddConstructionOperators){

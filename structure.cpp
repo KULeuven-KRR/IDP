@@ -26,6 +26,7 @@
 #include "generators/ComparisonGenerator.hpp"
 
 #include "printers/idpprinter.hpp" //TODO only for debugging
+#include "IdpException.hpp"
 using namespace std;
 
 /**********************
@@ -4171,7 +4172,9 @@ PredInter* Structure::inter(Predicate* p) const {
 
 	if (p->type() == ST_NONE) {
 		auto it = _predinter.find(p);
-		assert(it != _predinter.cend());
+		if(it==_predinter.cend()){
+			throw IdpException("The structure does not contain the predicate ");
+		}
 		return it->second;
 	}
 

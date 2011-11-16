@@ -729,6 +729,10 @@ void possiblyInfiniteGrounding(const std::string& formula, const std::string& in
 	cerr << "\t Internal representation: " << internalformula << "\n";
 }
 
+void triedAddingSubtypeToVocabulary(const std::string& boundedpredname, const std::string& predname, const std::string& vocname) {
+	cerr << "Warning: tried to add " << boundedpredname << " to " <<vocname <<", instead " <<predname <<" was added to that vocabulary.\n";
+}
+
 /** Ambiguous partial term **/
 void ambigpartialterm(const string& term, const ParseInfo& thisplace) {
 	warning(thisplace);
