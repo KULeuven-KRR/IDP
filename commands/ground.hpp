@@ -14,6 +14,7 @@
 #include "structure.hpp"
 #include "options.hpp"
 #include "commands/propagate.hpp"
+#include "grounders/Grounder.hpp"
 
 class GroundInference: public Inference {
 private:

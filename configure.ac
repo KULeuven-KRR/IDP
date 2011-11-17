@@ -157,6 +157,6 @@ AM_CONDITIONAL([USEREADLINE],[test x$use_readline = xyes])
 AM_CONDITIONAL([USEINTERACTIVE],[test x$use_readline = xyes])
 
 AC_CONFIG_SUBDIRS([lib/lua pcsolver])
-AC_CONFIG_FILES([Makefile lib/Makefile])
+AC_CONFIG_FILES([Makefile lib/Makefile parser/Makefile])
 
 AC_OUTPUT

@@ -19,6 +19,7 @@
 
 #include "groundtheories/AbstractGroundTheory.hpp"
 #include "groundtheories/SolverPolicy.hpp"
+#include "grounders/Grounder.hpp"
 
 /**
  * Implements symbolic propagation, followed by an evaluation of the BDDs to obtain a concrete structure
