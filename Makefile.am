@@ -1,4 +1,4 @@
-SUBDIRS = lib pcsolver
+SUBDIRS = lib pcsolver parser
 AM_CXXFLAGS = @AC_CXXFLAGS@ -Wall -Wextra\
 		-std=c++0x\
 		-I$(srcdir)/lib/loki/include\
@@ -22,7 +22,7 @@ gidl_LDADD = $(builddir)/lib/lua/src/.libs/liblua.la
 gidl_LDADD += $(builddir)/pcsolver/src/libminisatid-2.0.la
 
 
-BUILT_SOURCES = parse.h
+BUILT_SOURCES = parser/parser.h
 
 grounder_SOURCES = \
 		commontypes.hpp\
@@ -35,9 +35,10 @@ grounder_SOURCES = \
 		luaconnection.hpp luaconnection.cpp\
 		internalargument.hpp internalargument.cpp\
 		namespace.hpp namespace.cpp\
-		parse.yy yyltype.hpp\
-		lex.ll\
-		clconst.hpp\
+		parser/parser.yy\
+		parser/yyltype.hpp\
+		parser/lex.ll\
+		parser/clconst.hpp\
 		GeneralUtils.hpp\
 		insert.hpp insert.cpp\
 		error.hpp error.cpp\

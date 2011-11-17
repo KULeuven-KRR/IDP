@@ -21,8 +21,8 @@
 #include "theorytransformations/DeriveSorts.hpp"
 
 #include "namespace.hpp"
-#include "yyltype.hpp"
-#include "parse.h"
+#include "parser/yyltype.hpp"
+#include "parser/parser.h"
 #include "error.hpp"
 #include "options.hpp"
 #include "internalargument.hpp"

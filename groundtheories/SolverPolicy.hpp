@@ -81,8 +81,8 @@ public:
 
 	void polNotifyDefined(const Lit& lit, const ElementTuple& args, std::vector<LazyRuleGrounder*> grounders);
 
-	std::ostream& polPut(std::ostream& s, GroundTranslator* translator, GroundTermTranslator* termtranslator, bool longnames)	const { assert(false); return s;	}
-	std::string polToString(GroundTranslator* translator, GroundTermTranslator* termtranslator, bool longnames) const { assert(false); return "";		}
+	std::ostream& polPut(std::ostream& s, GroundTranslator*, GroundTermTranslator*, bool)	const { assert(false); return s;	}
+	std::string polToString(GroundTranslator*, GroundTermTranslator*, bool) const { assert(false); return "";		}
 
 private:
 	void polAddAggregate(int definitionID, int head, bool lowerbound, int setnr, AggFunction aggtype, TsType sem, double bound);

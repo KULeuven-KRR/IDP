@@ -1,20 +1,14 @@
-/************************************
-	main.cpp
-	this file belongs to GidL 2.0
-	(c) K.U.Leuven
-************************************/
-
 #include <cstdio>
 #include <iostream>
 #include <cstdlib>
 #include <map>
-#include "clconst.hpp"
 #include "common.hpp"
 #include "error.hpp"
 #include "luaconnection.hpp"
 #include "interactive.hpp"
 #include "rungidl.hpp"
 #include "insert.hpp"
+#include "GlobalData.hpp"
 
 #include "GeneralUtils.hpp"
 
@@ -24,7 +18,6 @@ using namespace std;
 int global_seed;	//!< seed used for bdd estimators
 
 // Parser stuff
-extern map<string,CLConst*>	clconsts;
 extern void parsefile(const string&);
 extern void parsestdin();
 
@@ -53,21 +46,6 @@ void usage() {
 /** 
  * Parse command line constants 
  **/
-void setclconst(string name1, string name2) {
-	CLConst* c;
-	if(isInt(name2)) 
-		c = new IntClConst(toInt(name2));
-	else if(isDouble(name2)) 
-		c = new DoubleClConst(toDouble(name2));
-	else if(name2.size() == 1) 
-		c = new CharCLConst(name2[0],false);
-	else if(name2.size() == 3 && name2[0] == '\'' && name2[2] == '\'') 
-		c = new CharCLConst(name2[1],true); 
-	else if(name2.size() >= 2 && name2[0] == '"' && name2[name2.size()-1] == '"') 
-		c = new StrClConst(name2.substr(1,name2.size()-2),true);
-	else c = new StrClConst(name2,false);
-	clconsts[name1] = c;
-}
 
 struct CLOptions {
 	string	_exec;
@@ -102,7 +80,7 @@ vector<string> read_options(int argc, char* argv[], CLOptions& cloptions) {
 															  int p = str.find('=');
 															  string name1 = str.substr(0,p);
 															  string name2 = str.substr(p+1,str.size());
-															  setclconst(name1,name2); 
+															  GlobalData::instance()->setConstValue(name1,name2);
 														  }
 														  else Error::constsetexp();
 														  argc--; argv++;
