@@ -75,6 +75,14 @@ void throwexc() {
 	throw exception();
 }
 
+TEST(ParsingTest, FailAndContinue){
+	string testfile1(string(TESTDIR) + "mxtests/parseerror.idp");
+	string testfile2(string(TESTDIR) + "mxtests/simplemxtests/atom.idp");
+	string testfilemx(string(TESTDIR) + "mxlazynbofmodelstest.idp");
+	ASSERT_EQ(Status::FAIL, test( { testfile1, testfilemx }));
+	ASSERT_EQ(Status::SUCCESS, test( { testfile2, testfilemx }));
+}
+
 TEST_P(MXTest, DoesMX) {
 	string testfile(string(TESTDIR) + "mxnbofmodelstest.idp"); // TODO TESTDIR should be one HIGHER
 	cerr << "Testing " << string(TESTDIR) + GetParam() << "\n";

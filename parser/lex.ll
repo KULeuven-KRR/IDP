@@ -148,6 +148,7 @@ ParserData data;
 
 void reset(){
 	data = ParserData();
+	BEGIN(0);
 }
 
 

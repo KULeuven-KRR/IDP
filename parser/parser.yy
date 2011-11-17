@@ -886,6 +886,8 @@ optassign	: identifier '=' strelement		{ getInserter().option(*$1,*$3,@1);	}
 #include <iostream>
 #include "error.hpp"
 
+void yyrestart(FILE*);
+
 extern FILE* yyin;
 extern void reset();
 
@@ -900,10 +902,9 @@ void parsefile(const std::string& str) {
 	yylloc.first_line = 1;
 	yylloc.first_column = 1;
 	yylloc.descr = 0;
-	yyin = GlobalData::instance()->openFile(str.c_str(),"r");
+	yyrestart(GlobalData::instance()->openFile(str.c_str(),"r"));
 	if(yyin) {
 		getInserter().currfile(str);
-		std::cerr <<"parsing " <<str <<"\n";
 		yyparse();
 		GlobalData::instance()->closeFile(yyin);
 	}
@@ -916,7 +917,7 @@ void parsestdin() {
 	yylloc.first_line = 1;
 	yylloc.first_column = 1;
 	yylloc.descr = 0;
-	yyin = stdin;
+	yyrestart(stdin);
 	getInserter().currfile(NULL);
 	yyparse();
 }

@@ -15,7 +15,6 @@ GlobalData::~GlobalData() {
 	delete (_globalNamespace);
 	delete (_domainelemFactory);
 	for(auto i=_openfiles.cbegin(); i!=_openfiles.cend(); ++i){
-		cerr <<"closing " <<*i <<"\n";
 		fclose(*i);
 	}
 }
@@ -40,7 +39,6 @@ void GlobalData::close() {
 	assert(_instance!=NULL);
 	delete (_instance);
 	_instance = NULL;
-	cerr <<"Deleted global data.\n";
 }
 
 void GlobalData::setConstValue(const std::string& name1, const std::string& name2){
@@ -65,7 +63,6 @@ FILE* GlobalData::openFile(const char* filename, const char* mode){
 		return f;
 		//throw IdpException("Could not open file.\n");
 	}
-	cerr <<"opened " <<filename <<" as " <<f <<"\n";
 	_openfiles.insert(f);
 	return f;
 }
