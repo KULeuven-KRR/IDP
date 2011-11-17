@@ -199,14 +199,11 @@ void interactive() {
 }
 #endif
 
-Insert insert;
-
 /**
  * Runs the main method given a number of inputfiles and checks whether the main method returns the int 1.
  * In that case, test return SUCCESS, in all other cases it returns FAIL.
  */
 Status test(const std::vector<std::string>& inputfileurls){
-	insert = Insert();
 	LuaConnection::makeLuaConnection();
 
 	parse(inputfileurls);
@@ -232,7 +229,6 @@ Status test(const std::vector<std::string>& inputfileurls){
 }
 
 int run(int argc, char* argv[]) {
-	insert = Insert();
 	LuaConnection::makeLuaConnection();
 
 	CLOptions cloptions;

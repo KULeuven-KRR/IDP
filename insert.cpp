@@ -510,10 +510,11 @@ UTF getUTF(const string& utf, const ParseInfo& pi) {
 	}
 }
 
-Insert::Insert() {
+Insert::Insert(Namespace * ns) {
+	assert(ns!=NULL);
 	openblock();
 	_currfile = 0;
-	_currspace = GlobalData::getGlobalNamespace();
+	_currspace = ns;
 	_options = _currspace->options("stdoptions");
 	usenamespace(_currspace);
 }
