@@ -202,6 +202,9 @@ GroundTerm SumTermGrounder::run() const {
 
 GroundTerm AggTermGrounder::run() const {
 //TODO Should this grounder return a VarId in some cases?
+	if(_verbosity > 2) {
+		printOrig();
+	}
 	int setnr = _setgrounder->run();
 	const TsSet& tsset = _translator->groundset(setnr);
 	assert(not tsset.empty());

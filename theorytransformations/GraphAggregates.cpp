@@ -65,7 +65,7 @@ Formula* GraphAggregates::visit(EqChainForm* ef) {
 		ef = dynamic_cast<EqChainForm*>(traverse(ef));
 	}
 	bool containsaggregates = false;
-	for (unsigned int n = 0; n < ef->subterms().size(); ++n) {
+	for (size_t n = 0; n < ef->subterms().size(); ++n) {
 		if (typeid(*(ef->subterms()[n])) == typeid(AggTerm)) {
 			containsaggregates = true;
 			break;

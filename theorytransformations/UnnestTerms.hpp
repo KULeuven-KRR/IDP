@@ -25,11 +25,11 @@ class Variable;
  */
 class UnnestTerms: public TheoryMutatingVisitor {
 private:
-	Vocabulary* _vocabulary; //!< Used to do type derivation during rewrites
-	Context _context; //!< Keeps track of the current context where terms are moved
-	bool allowedToUnnest; // Indicates whether in the current context, it is allowed to unnest terms
-	std::vector<Formula*> _equalities; //!< used to temporarily store the equalities generated when moving terms
-	std::set<Variable*> _variables; //!< used to temporarily store the freshly introduced variables
+	Vocabulary* 			_vocabulary; //!< Used to do type derivation during rewrites
+	Context 				_context; //!< Keeps track of the current context where terms are moved
+	bool 					allowedToUnnest; // Indicates whether in the current context, it is allowed to unnest terms
+	std::vector<Formula*> 	_equalities; //!< used to temporarily store the equalities generated when moving terms
+	std::set<Variable*> 	_variables; //!< used to temporarily store the freshly introduced variables
 
 	void contextProblem(Term* t);
 
