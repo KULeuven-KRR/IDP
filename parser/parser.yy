@@ -102,8 +102,6 @@ typedef std::list<isp>				lisp;
 
 /** Keywords **/
 %token CONSTRUCTOR
-%token VOCABULARY
-%token NAMESPACE
 %token PROCEDURE
 %token OPTIONS
 %token PARTIAL
@@ -112,6 +110,7 @@ typedef std::list<isp>				lisp;
 %token P_MINAGG P_MAXAGG P_CARD P_PROD P_SOM
 %token FALSE
 %token USINGVOCABULARY
+%token EXTERNVOCABULARY
 %token USINGNAMESPACE
 %token TYPE
 %token TRUE
@@ -270,8 +269,8 @@ vocab_pointer		: pointer_name	{ getInserter().setvocab(*$1,@1); delete($1); }
 
 vocab_content		: /* empty */
 					| vocab_content symbol_declaration
-					| vocab_content EXTERN extern_symbol
-					| vocab_content EXTERN VOCABULARY pointer_name	{ getInserter().externvocab(*$4,@4); delete($4);	}
+					| vocab_content EXTERN extern_symbol 
+					| vocab_content EXTERNVOCABULARY pointer_name	{ getInserter().externvocab(*$3,@3); delete($3);	}
 					| vocab_content using
 					| vocab_content error
 					;
@@ -774,8 +773,6 @@ floatnr			: FLNUMBER			{ $$ = $1;		}
 
 identifier		: IDENTIFIER	{ $$ = $1;	}
 				| CHARACTER		{ $$ = StringPointer(std::string(1,$1)); } 
-				| VOCABULARY	{ $$ = StringPointer(std::string("vocabulary"));	}
-				| NAMESPACE		{ $$ = StringPointer(std::string("namespace"));	}
 				;
 
 /********************
