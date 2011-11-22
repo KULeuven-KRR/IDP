@@ -1,9 +1,3 @@
-/************************************
-	PropagatorFactory.cpp
-	this file belongs to GidL 2.0
-	(c) K.U.Leuven
-************************************/
-
 #include "PropagatorFactory.hpp"
 
 #include <iostream>
@@ -12,24 +6,25 @@
 #include "theory.hpp"
 #include "term.hpp"
 #include "propagate.hpp"
-
+#include "GlobalData.hpp"
 #include "utils/TheoryUtils.hpp"
 
 using namespace std;
 
-FOPropagator* createPropagator(AbstractTheory* theory, const std::map<PFSymbol*,InitBoundType> mpi, Options* options) {
+FOPropagator* createPropagator(AbstractTheory* theory, const std::map<PFSymbol*,InitBoundType> mpi) {
 	auto domainfactory = new FOPropBDDDomainFactory();
 	auto scheduler = new FOPropScheduler();
-	FOPropagatorFactory<FOPropBDDDomainFactory, FOPropBDDDomain> propfactory(domainfactory,scheduler,true,mpi,options);
+	FOPropagatorFactory<FOPropBDDDomainFactory, FOPropBDDDomain> propfactory(domainfactory,scheduler,true,mpi);
 	auto propagator = propfactory.create(theory);
 	return propagator;
 }
 
 template<class InterpretationFactory, class PropDomain>
-FOPropagatorFactory<InterpretationFactory, PropDomain>::FOPropagatorFactory(InterpretationFactory* factory, FOPropScheduler* scheduler, bool as, const map<PFSymbol*,InitBoundType>& init, Options* opts)
-	: _verbosity(opts->getValue(IntType::PROPAGATEVERBOSITY)), _initbounds(init), _assertsentences(as) {
-	_propagator = new TypedFOPropagator<InterpretationFactory, PropDomain>(factory, scheduler, opts);
-	_multiplymaxsteps = opts->getValue(BoolType::RELATIVEPROPAGATIONSTEPS);
+FOPropagatorFactory<InterpretationFactory, PropDomain>::FOPropagatorFactory(InterpretationFactory* factory, FOPropScheduler* scheduler, bool as, const map<PFSymbol*,InitBoundType>& init)
+	: _verbosity(GlobalData::instance()->getOptions()->getValue(IntType::PROPAGATEVERBOSITY)), _initbounds(init), _assertsentences(as) {
+	auto options = GlobalData::instance()->getOptions();
+	_propagator = new TypedFOPropagator<InterpretationFactory, PropDomain>(factory, scheduler, options);
+	_multiplymaxsteps = options->getValue(BoolType::RELATIVEPROPAGATIONSTEPS);
 }
 
 template<class Factory, class Domain>

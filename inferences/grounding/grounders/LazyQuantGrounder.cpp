@@ -1,14 +1,11 @@
-/************************************
- LazyQuantGrounder.cpp
- this file belongs to GidL 2.0
- (c) K.U.Leuven
- ************************************/
-
-#include "grounders/LazyQuantGrounder.hpp"
+#include "inferences/grounding/grounders/LazyQuantGrounder.hpp"
 #include "groundtheories/AbstractGroundTheory.hpp"
+#include "groundtheories/GroundTheory.hpp"
 #include "groundtheories/SolverPolicy.hpp"
 #include "generators/InstGenerator.hpp"
-#include "grounders/GroundUtils.hpp"
+#include "inferences/grounding/grounders/GroundUtils.hpp"
+#include "inferences/grounding/GroundTranslator.hpp"
+#include "structure.hpp"
 
 #include <iostream>
 

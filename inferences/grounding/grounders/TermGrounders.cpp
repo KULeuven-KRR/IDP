@@ -1,13 +1,10 @@
-/************************************
- TermGrounders.cpp
- this file belongs to GidL 2.0
- (c) K.U.Leuven
- ************************************/
+#include "TermGrounders.hpp"
 
-#include "grounders/TermGrounders.hpp"
-
-#include "grounders/SetGrounders.hpp"
+#include "SetGrounders.hpp"
 #include "groundtheories/AbstractGroundTheory.hpp"
+
+#include "inferences/grounding/GroundTranslator.hpp"
+#include "inferences/grounding/GroundTermTranslator.hpp"
 
 #include "common.hpp"
 #include "vocabulary.hpp"
@@ -202,6 +199,9 @@ GroundTerm SumTermGrounder::run() const {
 
 GroundTerm AggTermGrounder::run() const {
 //TODO Should this grounder return a VarId in some cases?
+	if(_verbosity > 2) {
+		printOrig();
+	}
 	int setnr = _setgrounder->run();
 	const TsSet& tsset = _translator->groundset(setnr);
 	assert(not tsset.empty());

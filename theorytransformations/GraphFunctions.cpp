@@ -54,7 +54,7 @@ Formula* GraphFunctions::visit(EqChainForm* ef) {
 	set<unsigned int> removecomps;
 	set<unsigned int> removeterms;
 	vector<Formula*> graphs;
-	for (unsigned int comppos = 0; comppos < ef->comps().size(); ++comppos) {
+	for (size_t comppos = 0; comppos < ef->comps().size(); ++comppos) {
 		CompType comparison = ef->comps()[comppos];
 		if ((comparison == CompType::EQ && ef->conj()) || (comparison == CompType::NEQ && not ef->conj())) {
 			if (typeid(*(ef->subterms()[comppos])) == typeid(FuncTerm)) {

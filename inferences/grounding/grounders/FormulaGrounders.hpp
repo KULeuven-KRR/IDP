@@ -1,14 +1,20 @@
-/************************************
-	FormulaGrounders.hpp
-	this file belongs to GidL 2.0
-	(c) K.U.Leuven
-************************************/
-
 #ifndef FORMULAGROUNDERS_HPP_
 #define FORMULAGROUNDERS_HPP_
 
-#include "ground.hpp"
-#include "grounders/Grounder.hpp"
+#include "inferences/grounding/grounders/Grounder.hpp"
+
+#include "common.hpp"
+
+class TermGrounder;
+class InstChecker;
+class InstGenerator;
+class SetGrounder;
+class PredInter;
+class Formula;
+class SortTable;
+class GroundTranslator;
+class GroundTermTranslator;
+class PFSymbol;
 
 /*** Formula grounders ***/
 

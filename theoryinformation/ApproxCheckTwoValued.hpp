@@ -21,7 +21,7 @@ class ApproxCheckTwoValued : public TheoryVisitor {
 		bool	returnvalue()	const { return _returnvalue;	}
 		void	visit(const PredForm*);
 		void	visit(const FuncTerm*);
-		void 	visit(const SetExpr*) { /* TODO */ assert(false); }
+		void 	visit(const SetExpr*);
 };
 
 #endif /* APPROXCHECKTWOVALUED_HPP_ */

@@ -202,7 +202,7 @@ private:
 	void assignunknowntables();
 
 public:
-	Insert();
+	Insert(Namespace* ns);
 
 	std::string* currfile() const; //!< return the current filename
 	void currfile(const std::string& s); //!< set the current filename

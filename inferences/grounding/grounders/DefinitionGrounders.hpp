@@ -1,16 +1,26 @@
-/************************************
- DefinitionGrounders.hpp
- this file belongs to GidL 2.0
- (c) K.U.Leuven
- ************************************/
-
 #ifndef DEFINITIONGROUNDERS_HPP_
 #define DEFINITIONGROUNDERS_HPP_
 
-#include "ground.hpp"
-#include "grounders/Grounder.hpp"
+#include "inferences/grounding/grounders/Grounder.hpp"
+#include "GroundUtils.hpp"
 
-/*** Definition grounders ***/
+#include "groundtheories/GroundTheory.hpp"
+#include "groundtheories/SolverPolicy.hpp"
+
+class TermGrounder;
+class InstChecker;
+class InstanceChecker;
+class GroundDefinition;
+class FormulaGrounder;
+class TermGrounder;
+class InstGenerator;
+class SetGrounder;
+class PredInter;
+class Formula;
+class SortTable;
+class GroundTranslator;
+class GroundTermTranslator;
+class PFSymbol;
 
 class RuleGrounder;
 typedef GroundTheory<SolverPolicy> SolverTheory;

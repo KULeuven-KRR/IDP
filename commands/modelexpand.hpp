@@ -11,7 +11,7 @@
 #include <iostream>
 #include "commandinterface.hpp"
 
-#include "ModelExpansion.hpp"
+#include "inferences/ModelExpansion.hpp"
 
 class ModelExpandInference: public Inference {
 public:

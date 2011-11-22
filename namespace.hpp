@@ -1,16 +1,8 @@
-/************************************
- namespace.hpp
- this file belongs to GidL 2.0
- (c) K.U.Leuven
- ************************************/
-
 #ifndef NAMESPACE_HPP
 #define NAMESPACE_HPP
 
-#include <string>
-#include <vector>
-#include <map>
-#include <set>
+#include "commontypes.hpp"
+
 class Vocabulary;
 class AbstractStructure;
 class AbstractTheory;
@@ -20,6 +12,8 @@ class Query;
 class Term;
 
 #include "parseinfo.hpp"
+
+#include "GlobalData.hpp"
 
 /*****************
  Namespaces

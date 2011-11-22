@@ -1,15 +1,8 @@
-/************************************
- DefinitionGrounders.cpp
- this file belongs to GidL 2.0
- (c) K.U.Leuven
- ************************************/
+#include "inferences/grounding/grounders/DefinitionGrounders.hpp"
 
-#include "grounders/DefinitionGrounders.hpp"
-
-#include "grounders/TermGrounders.hpp"
-
-#include "grounders/FormulaGrounders.hpp"
-#include "grounders/GroundUtils.hpp"
+#include "inferences/grounding/grounders/TermGrounders.hpp"
+#include "inferences/grounding/grounders/FormulaGrounders.hpp"
+#include "inferences/grounding/grounders/GroundUtils.hpp"
 #include "groundtheories/AbstractGroundTheory.hpp"
 #include "groundtheories/SolverPolicy.hpp"
 

@@ -1,17 +1,11 @@
-/************************************
-	symmetry.cpp
-	this file belongs to GidL 2.0
-	(c) K.U.Leuven
-************************************/
-
 #include "symmetry.hpp"
 #include "structure.hpp"
 #include "vocabulary.hpp"
 #include "theory.hpp"
 #include "term.hpp"
 #include "ecnf.hpp"
-#include "ground.hpp"
 #include "groundtheories/AbstractGroundTheory.hpp"
+#include "inferences/grounding/GroundTranslator.hpp"
 #include <list>
 #include <sstream>
 #include <iostream>

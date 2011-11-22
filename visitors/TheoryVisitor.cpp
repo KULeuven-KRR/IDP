@@ -26,15 +26,7 @@ void TheoryVisitor::visit(const Theory* t) {
 	}
 }
 
-void TheoryVisitor::visit(const GroundTheory<GroundPolicy>* ) {
-	// TODO
-}
-
-void TheoryVisitor::visit(const GroundTheory<SolverPolicy>* ) {
-	// TODO
-}
-
-void TheoryVisitor::visit(const GroundTheory<PrintGroundPolicy>* ) {
+void TheoryVisitor::visit(const AbstractGroundTheory* ) {
 	// TODO
 }
 

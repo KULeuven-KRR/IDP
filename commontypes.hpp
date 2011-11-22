@@ -1,14 +1,13 @@
-/************************************
-	commontypes.hpp
-	this file belongs to GidL 2.0
-	(c) K.U.Leuven
-************************************/
-
 #ifndef COMMONTYPES_HPP
 #define COMMONTYPES_HPP
 
 #include <limits>
 #include <vector>
+#include <map>
+#include <set>
+#include <cassert>
+#include <string>
+#include <queue>
 
 /**
  *	\file This file contains some frequently used typedefs and enumerations

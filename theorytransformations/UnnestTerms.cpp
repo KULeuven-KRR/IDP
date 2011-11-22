@@ -68,7 +68,7 @@ Formula* UnnestTerms::rewrite(Formula* formula) {
 	}
 	if (not _equalities.empty()) {
 		_equalities.push_back(formula);
-		if (!_variables.empty()) {
+		if (not _variables.empty()) {
 			formula = new BoolForm(SIGN::POS, !univ_and_disj, _equalities, origpi);
 		} else {
 			formula = new BoolForm(SIGN::POS, !univ_and_disj, _equalities, FormulaParseInfo());
@@ -86,7 +86,7 @@ Formula* UnnestTerms::rewrite(Formula* formula) {
  *	Visit all parts of the theory, assuming positive context for sentences
  */
 Theory* UnnestTerms::visit(Theory* theory) {
-	for (unsigned int n = 0; n < theory->sentences().size(); ++n) {
+	for (size_t n = 0; n < theory->sentences().size(); ++n) {
 		_context = Context::POSITIVE;
 		setAllowedToUnnest(false);
 		theory->sentence(n, theory->sentences()[n]->accept(this));
@@ -138,7 +138,7 @@ Formula* UnnestTerms::traverse(Formula* f) {
 	if (isNeg(f->sign())) {
 		_context = not _context;
 	}
-	for (unsigned int n = 0; n < f->subterms().size(); ++n) {
+	for (size_t n = 0; n < f->subterms().size(); ++n) {
 		f->subterm(n, f->subterms()[n]->accept(this));
 	}
 	for (size_t n = 0; n < f->subformulas().size(); ++n) {
@@ -150,7 +150,7 @@ Formula* UnnestTerms::traverse(Formula* f) {
 }
 
 Formula* UnnestTerms::traverse(PredForm* f) {
-//TODO Very ugly static cast!! XXX This need to be done differently!! FIXME
+//TODO Very ugly static cast!! XXX This needs to be done differently!! FIXME
 	return traverse(static_cast<Formula*>(f));
 }
 

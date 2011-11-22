@@ -1,9 +1,3 @@
-/************************************
-	ground.hpp
-	this file belongs to GidL 2.0
-	(c) K.U.Leuven
-************************************/
-
 #ifndef GROUND_HPP_
 #define GROUND_HPP_
 
@@ -13,18 +7,19 @@
 #include "theory.hpp"
 #include "structure.hpp"
 #include "options.hpp"
-#include "commands/propagate.hpp"
+#include "inferences/propagation/SymbolicPropagation.hpp"
+#include "inferences/grounding/grounders/Grounder.hpp"
+#include "inferences/grounding/GrounderFactory.hpp"
 
 class GroundInference: public Inference {
 private:
 	AbstractTheory* ground(AbstractTheory* theory, AbstractStructure* structure, Options* options) const {
 		// Symbolic propagation
-		PropagateInference propinference;
+		SymbolicPropagation propinference;
 		std::map<PFSymbol*,InitBoundType> mpi = propinference.propagateVocabulary(theory,structure);
-//		FOPropagator* propagator = createPropagator(theory,mpi,options);
-//		propagator->run();
-//		SymbolicStructure* symstructure = propagator->symbolicstructure();
-		SymbolicStructure* symstructure = NULL; // FIXME propagator code broken!
+		auto propagator = createPropagator(theory,mpi);
+		propagator->run();
+		SymbolicStructure* symstructure = propagator->symbolicstructure();
 
 		// Grounding
 		GrounderFactory factory(structure,options,symstructure);

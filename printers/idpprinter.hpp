@@ -1,20 +1,13 @@
-/************************************
-	idpprinter.hpp
-	this file belongs to GidL 2.0
-	(c) K.U.Leuven
-************************************/
-
 #ifndef IDPPRINTER_HPP_
 #define IDPPRINTER_HPP_
 
 #include "printers/print.hpp"
-#include "ground.hpp"
 #include "theory.hpp"
 #include "vocabulary.hpp"
 #include "ecnf.hpp"
 #include "namespace.hpp"
 
-#include "groundtheories/AbstractGroundTheory.hpp"
+#include "groundtheories/GroundTheory.hpp"
 #include "groundtheories/GroundPolicy.hpp"
 
 //TODO is not guaranteed to generate correct idp files!

@@ -1,9 +1,3 @@
-/************************************
-	PropagatorFactory.hpp
-	this file belongs to GidL 2.0
-	(c) K.U.Leuven
-************************************/
-
 #ifndef PROPAGATORFACTORY_HPP_
 #define PROPAGATORFACTORY_HPP_
 
@@ -74,11 +68,11 @@ class FOPropagatorFactory : public TheoryVisitor {
 		void visit(const QuantForm*);
 		void visit(const AggForm*);
 	public:
-		FOPropagatorFactory(InterpretationFactory*, FOPropScheduler*, bool as, const std::map<PFSymbol*,InitBoundType>&, Options*);
+		FOPropagatorFactory(InterpretationFactory*, FOPropScheduler*, bool as, const std::map<PFSymbol*,InitBoundType>&);
 
 		Propagator* create(const AbstractTheory*);
 };
 
-FOPropagator* createPropagator(AbstractTheory* theory, const std::map<PFSymbol*,InitBoundType> mpi, Options* options);
+FOPropagator* createPropagator(AbstractTheory* theory, const std::map<PFSymbol*,InitBoundType> mpi);
 
 #endif /* PROPAGATORFACTORY_HPP_ */

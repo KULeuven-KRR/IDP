@@ -1,14 +1,8 @@
-/************************************
-	LazyQuantGrounder.hpp
-	this file belongs to GidL 2.0
-	(c) K.U.Leuven
-************************************/
-
-#ifndef LAZYQUANTGROUNDER_HPP_
+ #ifndef LAZYQUANTGROUNDER_HPP_
 #define LAZYQUANTGROUNDER_HPP_
 
-#include "ground.hpp"
-#include "grounders/FormulaGrounders.hpp"
+#include "inferences/grounding/grounders/FormulaGrounders.hpp"
+#include "groundtheories/GroundTheory.hpp"
 #include "groundtheories/SolverPolicy.hpp"
 
 #include <map>

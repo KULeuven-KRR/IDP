@@ -1,27 +1,17 @@
-/************************************
-	GroundTheory.hpp
-	this file belongs to GidL 2.0
-	(c) K.U.Leuven
-************************************/
-
 #ifndef GROUNDTHEORY_HPP_
 #define GROUNDTHEORY_HPP_
 
-#include <string>
-#include <vector>
-#include <map>
-#include <set>
-#include <cassert>
+#include "commontypes.hpp"
 #include <ostream>
 #include <iostream>
 
 #include "ecnf.hpp"
 #include "common.hpp"
 
-#include "ground.hpp"
 #include <sstream>
 
-#include <assert.h>
+#include "inferences/grounding/GroundTranslator.hpp"
+#include "inferences/grounding/GroundTermTranslator.hpp"
 
 class GroundPolicy {
 private:
@@ -36,7 +26,6 @@ private:
 	GroundTranslator* polTranslator() const { return _translator; }
 
 public:
-	// Inspectors
 	unsigned int		nrClauses()						const { return _clauses.size();							}
 	unsigned int		nrDefinitions()					const { return _definitions.size();						}
 	unsigned int		nrFixpDefs()					const { return _fixpdefs.size();						}

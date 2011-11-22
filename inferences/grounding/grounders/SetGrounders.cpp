@@ -1,17 +1,13 @@
-/************************************
- SetGrounders.cpp
- this file belongs to GidL 2.0
- (c) K.U.Leuven
- ************************************/
+#include "SetGrounders.hpp"
 
-#include "grounders/SetGrounders.hpp"
-
-#include <cassert>
-#include "grounders/TermGrounders.hpp"
-#include "grounders/FormulaGrounders.hpp"
 #include "common.hpp"
+#include "TermGrounders.hpp"
+#include "FormulaGrounders.hpp"
 #include "generators/InstGenerator.hpp"
 #include "generators/BasicCheckers.hpp"
+#include "ecnf.hpp"
+#include "structure.hpp"
+#include "inferences/grounding/GroundTranslator.hpp"
 
 using namespace std;
 

@@ -21,8 +21,8 @@
 #include "theorytransformations/DeriveSorts.hpp"
 
 #include "namespace.hpp"
-#include "yyltype.hpp"
-#include "parse.h"
+#include "parser/yyltype.hpp"
+#include "parser/parser.h"
 #include "error.hpp"
 #include "options.hpp"
 #include "internalargument.hpp"
@@ -510,10 +510,11 @@ UTF getUTF(const string& utf, const ParseInfo& pi) {
 	}
 }
 
-Insert::Insert() {
+Insert::Insert(Namespace * ns) {
+	assert(ns!=NULL);
 	openblock();
 	_currfile = 0;
-	_currspace = GlobalData::getGlobalNamespace();
+	_currspace = ns;
 	_options = _currspace->options("stdoptions");
 	usenamespace(_currspace);
 }

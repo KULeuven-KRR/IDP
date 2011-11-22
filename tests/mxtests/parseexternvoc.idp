@@ -1,0 +1,7 @@
+vocabulary V {
+}
+
+vocabulary V2 {
+  extern vocabulary V
+}
+

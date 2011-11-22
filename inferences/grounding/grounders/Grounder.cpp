@@ -1,6 +1,7 @@
 #include <cassert>
-#include "grounders/Grounder.hpp"
+#include "Grounder.hpp"
 #include "groundtheories/AbstractGroundTheory.hpp"
+#include "inferences/grounding/GroundTranslator.hpp"
 
 using namespace std;
 
