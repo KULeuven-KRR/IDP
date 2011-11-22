@@ -1000,23 +1000,24 @@ void GrounderFactory::visit(const PredForm* pf) {
 	// to _structure outside the atom. To avoid changing the original atom,
 	// we first clone it.
 	if (_verbosity > 3) {
-		clog << pf->toString() <<"\n";
+		clog << pf->toString() << " (Original)" <<"\n";
 	}
 	// FIXME verkeerde type afgeleid voor vergelijkingen a=b (zou bvb range die beide omvat moeten zijn, is nu niet het geval).
 	// FIXME aggregaten moeten correct worden herschreven als ze niet tweewaardig zijn
 	Formula* transpf = FormulaUtils::unnestThreeValuedTerms(pf->clone(), _structure, _context._funccontext, _cpsupport, _cpsymbols);
 	if (_verbosity > 3) {
-		clog << transpf->toString() <<"\n";
+		clog << transpf->toString() << " (3-valued terms moved)" <<"\n";
 	}
 	transpf = FormulaUtils::splitComparisonChains(transpf, NULL);
 	if (_verbosity > 3) {
-		clog << transpf->toString() <<"\n";
+		clog << transpf->toString() << " (Comparison chains split)" <<"\n";
 	}
 	if (not _cpsupport) { // TODO Check not present in quantgrounder
-		transpf = FormulaUtils::graphFunctions(transpf);
+		// NOTE: Graph aggregates before graphing functions! Ambiguity in (FuncTerm = AggTerm).
 		transpf = FormulaUtils::graphAggregates(transpf); // FIXME where does this all have to be added
+		transpf = FormulaUtils::graphFunctions(transpf);
 		if (_verbosity > 3) {
-			clog << transpf->toString() <<"\n";
+			clog << transpf->toString() << " (Aggregates and functions graphed)" <<"\n";
 		}
 	}
 
