@@ -50,7 +50,6 @@ private:
 	GroundingContext _context;
 	std::stack<GroundingContext> _contextstack;
 
-	void InitContext(); // Initialize the context
 	void AggContext();
 	void SaveContext(); // Push the current context onto the stack
 	void RestoreContext(); // Set _context to the top of the stack and pop the stack
@@ -121,6 +120,10 @@ public:
 	// Recursive check
 	bool recursive(const Formula*);
 
+	// Context
+	void InitContext(); // Initialize the context - public for debugging purposes
+
+
 	// Visitors
 	void visit(const Theory*);
 
@@ -141,6 +144,15 @@ public:
 
 	void visit(const Definition*);
 	void visit(const Rule*);
+
+	// Getters
+	GroundingContext getContext(){
+		return _context;
+	}
+	FormulaGrounder* getFormGrounder(){
+		return _formgrounder;
+	}
+
 };
 
 #endif
