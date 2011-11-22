@@ -236,14 +236,17 @@ void GrounderFactory::DeeperContext(SIGN sign) {
 
 		if (_context._funccontext == Context::POSITIVE)
 			_context._funccontext = Context::NEGATIVE;
-		else if (_context._funccontext == Context::NEGATIVE) _context._funccontext = Context::POSITIVE;
+		else if (_context._funccontext == Context::NEGATIVE)
+			_context._funccontext = Context::POSITIVE;
 		if (_context._monotone == Context::POSITIVE)
 			_context._monotone = Context::NEGATIVE;
-		else if (_context._monotone == Context::NEGATIVE) _context._monotone = Context::POSITIVE;
+		else if (_context._monotone == Context::NEGATIVE)
+			_context._monotone = Context::POSITIVE;
 
 		if (_context._tseitin == TsType::IMPL)
 			_context._tseitin = TsType::RIMPL;
-		else if (_context._tseitin == TsType::RIMPL) _context._tseitin = TsType::IMPL;
+		else if (_context._tseitin == TsType::RIMPL)
+			_context._tseitin = TsType::IMPL;
 
 	}
 }
@@ -427,30 +430,31 @@ void GrounderFactory::visit(const Theory* theory) {
  *			CompContext::FORMULA:		_formgrounder
  */
 void GrounderFactory::visit(const PredForm* pf) {
-	_context._conjunctivePathFromRoot = false; //FIXME: shouldn't this depend on the context of one lever higher?
+	_context._conjunctivePathFromRoot = _context._conjPathUntilNode;
+	_context._conjPathUntilNode = false;
 
 	// Move all functions and aggregates that are three-valued according
 	// to _structure outside the atom. To avoid changing the original atom,
 	// we first clone it.
 	if (_verbosity > 3) {
-		clog << pf->toString() << " (Original)" <<"\n";
+		clog << pf->toString() << " (Original)" << "\n";
 	}
 	// FIXME verkeerde type afgeleid voor vergelijkingen a=b (zou bvb range die beide omvat moeten zijn, is nu niet het geval).
 	// FIXME aggregaten moeten correct worden herschreven als ze niet tweewaardig zijn
 	Formula* transpf = FormulaUtils::unnestThreeValuedTerms(pf->clone(), _structure, _context._funccontext, _cpsupport, _cpsymbols);
 	if (_verbosity > 3) {
-		clog << transpf->toString() << " (3-valued terms moved)" <<"\n";
+		clog << transpf->toString() << " (3-valued terms moved)" << "\n";
 	}
 	transpf = FormulaUtils::splitComparisonChains(transpf, NULL);
 	if (_verbosity > 3) {
-		clog << transpf->toString() << " (Comparison chains split)" <<"\n";
+		clog << transpf->toString() << " (Comparison chains split)" << "\n";
 	}
 	if (not _cpsupport) { // TODO Check not present in quantgrounder
 		// NOTE: Graph aggregates before graphing functions! Ambiguity in (FuncTerm = AggTerm).
 		transpf = FormulaUtils::graphAggregates(transpf); // FIXME where does this all have to be added
 		transpf = FormulaUtils::graphFunctions(transpf);
 		if (_verbosity > 3) {
-			clog << transpf->toString() << " (Aggregates and functions graphed)" <<"\n";
+			clog << transpf->toString() << " (Aggregates and functions graphed)" << "\n";
 		}
 	}
 
@@ -468,14 +472,13 @@ void GrounderFactory::visit(const PredForm* pf) {
 	// Create grounders for the subterms
 	vector<TermGrounder*> subtermgrounders;
 	vector<SortTable*> argsorttables;
+	SaveContext();
 	for (auto n = 0; n < newpf->subterms().size(); ++n) {
-		//if (_context._conjunctivePathFromRoot) { // FIXME
-		//	_context._conjunctivePathFromRoot = true;
-		//}
 		descend(newpf->subterms()[n]);
 		subtermgrounders.push_back(_termgrounder);
 		argsorttables.push_back(_structure->inter(newpf->symbol()->sorts()[n]));
 	}
+	RestoreContext();
 
 	// Create checkers and grounder
 	if (_cpsupport && VocabularyUtils::isComparisonPredicate(newpf->symbol())) {
@@ -571,8 +574,11 @@ void GrounderFactory::visit(const PredForm* pf) {
  *			CompContext::HEAD is not possible
  */
 void GrounderFactory::visit(const BoolForm* bf) {
+	_context._conjunctivePathFromRoot = _context._conjPathUntilNode;
+	_context._conjPathUntilNode = _context._conjunctivePathFromRoot && bf->isConjWithSign();
+
 	// Handle a top-level conjunction without creating tseitin atoms
-	if (_context._component == CompContext::SENTENCE && bf->isConjWithSign()) { // FIXME resolve in clean way with conjpathtoroot
+	if (_context._conjPathUntilNode) {
 		// If bf is a negated disjunction, push the negation one level deeper.
 		// Take a clone to avoid changing bf;
 		BoolForm* newbf = bf->clone();
@@ -583,6 +589,7 @@ void GrounderFactory::visit(const BoolForm* bf) {
 				(*it)->negate();
 			}
 		}
+
 		// Visit the subformulas
 		vector<Grounder*> sub;
 		for (auto it = newbf->subformulas().cbegin(); it != newbf->subformulas().cend(); ++it) {
@@ -590,13 +597,12 @@ void GrounderFactory::visit(const BoolForm* bf) {
 			sub.push_back(_topgrounder);
 		}
 		newbf->recursiveDelete();
+
 		_topgrounder = new BoolGrounder(_grounding, sub, SIGN::POS, true, _context);
+
 	} else { // Formula bf is not a top-level conjunction
 		// Create grounders for subformulas
 		SaveContext();
-		if (not bf->isConjWithSign()) {
-			_context._conjPathUntilNode = false;
-		}
 		DeeperContext(bf->sign());
 		vector<Grounder*> sub;
 		for (auto it = bf->subformulas().cbegin(); it != bf->subformulas().cend(); ++it) {
@@ -608,9 +614,6 @@ void GrounderFactory::visit(const BoolForm* bf) {
 
 		// Create grounder
 		SaveContext();
-		if (not bf->isConjWithSign()) {
-			_context._conjPathUntilNode = false;
-		}
 		if (recursive(bf)) {
 			_context._tseitin = TsType::RULE;
 		}
@@ -645,6 +648,8 @@ const DomElemContainer* GrounderFactory::createVarMapping(Variable * const var) 
  *			CompContext::HEAD is not possible
  */
 void GrounderFactory::visit(const QuantForm* qf) {
+	_context._conjunctivePathFromRoot = _context._conjPathUntilNode;
+	_context._conjPathUntilNode = _context._conjunctivePathFromRoot && qf->isUnivWithSign();
 	// TODO guarantee that e.g. no more double negations exist? => FLAGS bijhouden van wat er met de theorie gebeurd
 
 	// Create instance generator
@@ -660,49 +665,70 @@ void GrounderFactory::visit(const QuantForm* qf) {
 	// !x phi(x) => check for x certainly false
 	// FIXME SUBFORMULA got cloned, not the formula itself! REVIEW CODE!
 
-	GenAndChecker gc = createVarsAndGenerators(newsubformula, qf, qf->isUniv() ? TruthType::POSS_FALSE : TruthType::POSS_TRUE,
-			qf->isUniv() ? TruthType::CERTAIN_FALSE : TruthType::CERTAIN_TRUE);
+	GenAndChecker gc = createVarsAndGenerators(newsubformula, qf, qf->isUnivWithSign() ? TruthType::POSS_FALSE : TruthType::POSS_TRUE,
+			qf->isUnivWithSign() ? TruthType::CERTAIN_FALSE : TruthType::CERTAIN_TRUE);
 
-	// Create grounder for subformula
-	SaveContext();
-	if (not qf->isUnivWithSign()) {
-		_context._conjPathUntilNode = false;
-	}
-	DeeperContext(qf->sign());
-	_context.gentype = qf->isUniv() ? GenType::CANMAKEFALSE : GenType::CANMAKETRUE;
-	descend(qf->subformula());
-	RestoreContext();
+	// Handle a top-level conjunction without creating tseitin atoms
+	if (_context._conjPathUntilNode) {
+		// If qf is a negated exist, push the negation one level deeper.
+		// Take a clone to avoid changing qf;
+		QuantForm* newqf = qf->clone();
+		if (not newqf->isUnivWithSign()) {
+			newqf->quant(QUANT::UNIV);
+			newqf->negate();
+			newqf->subformula()->negate();
+		}
 
-	// Create the grounder
-	SaveContext();
-	if (recursive(qf)) {
-		_context._tseitin = TsType::RULE;
-	}
-	if (not qf->isUnivWithSign()) {
-		_context._conjPathUntilNode = false;
-	}
+		// Visit the subformulas
+		SaveContext();
+		_context.gentype = qf->isUnivWithSign() ? GenType::CANMAKEFALSE : GenType::CANMAKETRUE;
+		descend(newsubformula);
+		RestoreContext();
 
-	bool canlazyground = false;
-	if (not qf->isUniv() && _context._monotone == Context::POSITIVE && _context._tseitin == TsType::IMPL) {
-		canlazyground = true;
-	}
+		newqf->recursiveDelete();
 
-	// FIXME add better under-approximation of what to lazily ground
-	if (_options->getValue(BoolType::GROUNDLAZILY) && canlazyground && typeid(*_grounding) == typeid(SolverTheory)) {
-		_formgrounder = new LazyQuantGrounder(qf->freeVars(), dynamic_cast<SolverTheory*>(_grounding), _formgrounder, qf->sign(), qf->quant(),
-				gc._generator, gc._checker, _context);
+		//FIXME: lazy stuff in this case?
+		_topgrounder = new QuantGrounder(_grounding, dynamic_cast<FormulaGrounder*>(_topgrounder), SIGN::POS, QUANT::UNIV, gc._generator, gc._checker,
+				_context);
 	} else {
-		_formgrounder = new QuantGrounder(_grounding, _formgrounder, qf->sign(), qf->quant(), gc._generator, gc._checker, _context);
+
+		// Create grounder for subformula
+		SaveContext();
+
+		DeeperContext(qf->sign());
+		_context.gentype = qf->isUnivWithSign() ? GenType::CANMAKEFALSE : GenType::CANMAKETRUE;
+		descend(qf->subformula());
+		RestoreContext();
+
+		// Create the grounder
+		SaveContext();
+		if (recursive(qf)) {
+			_context._tseitin = TsType::RULE;
+		}
+
+		bool canlazyground = false;
+		if (not qf->isUniv() && _context._monotone == Context::POSITIVE && _context._tseitin == TsType::IMPL) {
+			canlazyground = true;
+		}
+
+		// FIXME add better under-approximation of what to lazily ground
+		if (_options->getValue(BoolType::GROUNDLAZILY) && canlazyground && typeid(*_grounding) == typeid(SolverTheory)) {
+			_formgrounder = new LazyQuantGrounder(qf->freeVars(), dynamic_cast<SolverTheory*>(_grounding), _formgrounder, qf->sign(), qf->quant(),
+					gc._generator, gc._checker, _context);
+		} else {
+			_formgrounder = new QuantGrounder(_grounding, _formgrounder, qf->sign(), qf->quant(), gc._generator, gc._checker, _context);
+		}
+		RestoreContext();
+
+		_formgrounder->setOrig(qf, _varmapping, _verbosity);
+
+		if (_context._component == CompContext::SENTENCE) {
+			_topgrounder = _formgrounder;
+		}
+
 	}
-	RestoreContext();
-
-	_formgrounder->setOrig(qf, _varmapping, _verbosity);
-
-	if (_context._component == CompContext::SENTENCE) {
-		_topgrounder = _formgrounder;
-	}
-
 	newsubformula->recursiveDelete();
+
 }
 
 const FOBDD* GrounderFactory::improve_generator(const FOBDD* bdd, const vector<Variable*>& fovars, double mcpa) {
@@ -774,8 +800,8 @@ const FOBDD* GrounderFactory::improve_checker(const FOBDD* bdd, double mcpa) {
  *			CompContext::HEAD is not possible
  */
 void GrounderFactory::visit(const EquivForm* ef) {
-	_context._conjunctivePathFromRoot = false;
-
+	_context._conjunctivePathFromRoot = _context._conjPathUntilNode;
+	_context._conjPathUntilNode = false;
 	// Create grounders for the subformulas
 	SaveContext();
 	DeeperContext(ef->sign());
@@ -802,7 +828,8 @@ void GrounderFactory::visit(const EquivForm* ef) {
 }
 
 void GrounderFactory::visit(const AggForm* af) {
-	_context._conjunctivePathFromRoot = false;
+	_context._conjunctivePathFromRoot = _context._conjPathUntilNode;
+	_context._conjPathUntilNode = false;
 
 	AggForm* newaf = af->clone();
 	Formula* transaf = FormulaUtils::unnestThreeValuedTerms(newaf, _structure, _context._funccontext, _cpsupport, _cpsymbols);
@@ -854,7 +881,6 @@ void GrounderFactory::visit(const AggForm* af) {
 }
 
 void GrounderFactory::visit(const EqChainForm* ef) {
-	_context._conjunctivePathFromRoot = false;
 
 	Formula* f = ef->clone();
 	f = FormulaUtils::splitComparisonChains(f, _grounding->vocabulary());
@@ -863,7 +889,8 @@ void GrounderFactory::visit(const EqChainForm* ef) {
 }
 
 void GrounderFactory::visit(const VarTerm* t) {
-	_context._conjunctivePathFromRoot = false;
+	_context._conjunctivePathFromRoot = _context._conjPathUntilNode;
+	_context._conjPathUntilNode = false;
 
 	assert(varmapping().find(t->var()) != varmapping().cend());
 	_termgrounder = new VarTermGrounder(varmapping().find(t->var())->second);
@@ -871,7 +898,8 @@ void GrounderFactory::visit(const VarTerm* t) {
 }
 
 void GrounderFactory::visit(const DomainTerm* t) {
-	_context._conjunctivePathFromRoot = false;
+	_context._conjunctivePathFromRoot = _context._conjPathUntilNode;
+	_context._conjPathUntilNode = false;
 
 	_termgrounder = new DomTermGrounder(t->value());
 	_termgrounder->setOrig(t, varmapping(), _verbosity);
@@ -883,13 +911,15 @@ void GrounderFactory::visit(const DomainTerm* t) {
  * 		Creates a grounder for a function term.
  */
 void GrounderFactory::visit(const FuncTerm* t) {
-	_context._conjunctivePathFromRoot = false;
+	_context._conjunctivePathFromRoot = _context._conjPathUntilNode;
+	_context._conjPathUntilNode = false;
 
 	// Create grounders for subterms
 	vector<TermGrounder*> subtermgrounders;
 	for (auto it = t->subterms().cbegin(); it != t->subterms().cend(); ++it) {
 		(*it)->accept(this);
-		if (_termgrounder) subtermgrounders.push_back(_termgrounder);
+		if (_termgrounder)
+			subtermgrounders.push_back(_termgrounder);
 	}
 
 	// Create term grounder
@@ -915,7 +945,8 @@ void GrounderFactory::visit(const FuncTerm* t) {
  * 		Creates a grounder for a aggregate term.
  */
 void GrounderFactory::visit(const AggTerm* t) {
-	_context._conjunctivePathFromRoot = false;
+	_context._conjunctivePathFromRoot = _context._conjPathUntilNode;
+	_context._conjPathUntilNode = false;
 
 	// Create set grounder
 	t->set()->accept(this);
@@ -931,7 +962,8 @@ void GrounderFactory::visit(const AggTerm* t) {
  * 		Creates a grounder for an enumarated set.
  */
 void GrounderFactory::visit(const EnumSetExpr* s) {
-	_context._conjunctivePathFromRoot = false;
+	_context._conjunctivePathFromRoot = _context._conjPathUntilNode;
+	_context._conjPathUntilNode = false;
 
 	// Create grounders for formulas and weights
 	vector<FormulaGrounder*> subfgr;
@@ -1021,7 +1053,8 @@ GrounderFactory::GenAndChecker GrounderFactory::createVarsAndGenerators(Formula*
  * 		Creates a grounder for a quantified set.
  */
 void GrounderFactory::visit(const QuantSetExpr* origqs) {
-	_context._conjunctivePathFromRoot = false;
+	_context._conjunctivePathFromRoot = _context._conjPathUntilNode;
+	_context._conjPathUntilNode = false;
 
 	// Move three-valued terms in the set expression
 	auto transqs = TermUtils::moveThreeValuedTerms(origqs->clone(), _structure, _context._funccontext, _cpsupport, _cpsymbols);
@@ -1067,7 +1100,8 @@ void GrounderFactory::visit(const QuantSetExpr* origqs) {
  * 		Creates a grounder for a definition.
  */
 void GrounderFactory::visit(const Definition* def) {
-	_context._conjunctivePathFromRoot = false;
+	_context._conjunctivePathFromRoot = _context._conjPathUntilNode;
+	_context._conjPathUntilNode = false;
 
 	// Store defined predicates
 	for (auto it = def->defsymbols().cbegin(); it != def->defsymbols().cend(); ++it) {
@@ -1106,7 +1140,8 @@ InstGenerator* GrounderFactory::createVarMapAndGenerator(const VarList& vars) {
  * 		Creates a grounder for a definitional rule.
  */
 void GrounderFactory::visit(const Rule* rule) {
-	_context._conjunctivePathFromRoot = false;
+	_context._conjunctivePathFromRoot = _context._conjPathUntilNode;
+	_context._conjPathUntilNode = false;
 
 	// FIXME Move all three-valued terms outside the head
 	// TODO for lazygroundrules, we need a generator for all variables NOT occurring in the head!
@@ -1166,7 +1201,8 @@ void GrounderFactory::visit(const Rule* rule) {
 
 	// Create rule grounder
 	SaveContext();
-	if (recursive(rule->body())) _context._tseitin = TsType::RULE;
+	if (recursive(rule->body()))
+		_context._tseitin = TsType::RULE;
 	if (_options->getValue(BoolType::GROUNDLAZILY)) {
 		_rulegrounder = new LazyRuleGrounder(headgr, bodygr, bodygen, _context);
 	} else {

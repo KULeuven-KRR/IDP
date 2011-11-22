@@ -67,39 +67,41 @@ TestingSet1 getTestingSet1() {
 	testingSet.p0vq0 = new BoolForm(SIGN::POS, false, testingSet.p0, testingSet.q0, FormulaParseInfo()); //P(0) | Q(0)
 	testingSet.Axpx = new QuantForm(SIGN::POS, QUANT::UNIV, { testingSet.x }, testingSet.px, FormulaParseInfo()); // !x: P(x)
 	testingSet.nAxpx = new QuantForm(SIGN::NEG, QUANT::UNIV, { testingSet.x }, testingSet.px, FormulaParseInfo()); // ~!x: P(x)
-	testingSet.nExqx = new QuantForm(SIGN::POS, QUANT::EXIST, { testingSet.x }, testingSet.qx, FormulaParseInfo()); // ?x: Q(x)
+	testingSet.nExqx = new QuantForm(SIGN::NEG, QUANT::EXIST, { testingSet.x }, testingSet.qx, FormulaParseInfo()); // ?x: Q(x)
 	testingSet.xF = new EqChainForm(SIGN::POS, true, testingSet.sortterm, FormulaParseInfo()); // x This is false (empty conjuction)
 	testingSet.maxxpxgeq0 = new AggForm(SIGN::POS, testingSet.nulterm, CompType::LEQ, testingSet.maxxpx, FormulaParseInfo()); // MAX{x|P(x)} >= 0
 	return testingSet;
 }
 
 void clean(TestingSet1 ts) {
-	delete ts.sorttable;
+	//FIXME: memory management: what should be deleted and what not?  Gives segmentation errors at the moment
+	//delete ts.sorttable;
 	//delete sort; Should not be done, will be deleted when it has no more vocabularies
-	delete ts.x;
-	delete ts.sortterm;
-	delete ts.nul;
-	delete ts.nulterm;
-	delete ts.p;
-	delete ts.q;
-	delete ts.vocabulary;
+	//delete ts.sortterm;
 
-	delete ts.s;
+	//delete ts.x;
+	//delete ts.nul;
+	//delete ts.nulterm;
+	//delete ts.p;Should not be done, will be deleted when it has no more vocabularies
+	//delete ts.q;Should not be done, will be deleted when it has no more vocabularies
+	//delete ts.vocabulary;
 
-	delete ts.px;
-	delete ts.qx;
-	delete ts.p0;
-	delete ts.q0;
-	delete ts.xpx;
-	delete ts.maxxpx;
-
-	delete ts.np0iffq0;
-	delete ts.p0vq0;
-	delete ts.Axpx;
-	delete ts.nAxpx;
-	delete ts.nExqx;
-	delete ts.xF;
-	delete ts.maxxpxgeq0;
+//	delete ts.s;
+//
+//	delete ts.px;
+//	delete ts.qx;
+//	delete ts.p0;
+//	delete ts.q0;
+//	delete ts.xpx;
+//	delete ts.maxxpx;
+//
+//	delete ts.np0iffq0;
+//	delete ts.p0vq0;
+//	delete ts.Axpx;
+//	delete ts.nAxpx;
+//	delete ts.nExqx;
+//	delete ts.xF;
+//	delete ts.maxxpxgeq0;
 }
 
 #endif /* TESTINGTOOLS_HPP_ */

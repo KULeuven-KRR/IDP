@@ -54,12 +54,13 @@ TEST(Grounderfactory, Context) {
 	gf->InitContext();
 	t = new Theory("T", ts.vocabulary, ParseInfo());
 	t->add(ts.Axpx);
-	context = dynamic_cast<BoolGrounder*>((gf->create(t)))->getSubGrounders().at(0)->context();
+	QuantGrounder* qg = dynamic_cast<QuantGrounder*>(dynamic_cast<BoolGrounder*>((gf->create(t)))->getSubGrounders().at(0));
+	context = qg->context();
 	ASSERT_TRUE(CompContext::SENTENCE==context._component);
 	ASSERT_TRUE(context._conjPathUntilNode);
 	ASSERT_TRUE(context._conjunctivePathFromRoot);
-	context = dynamic_cast<QuantGrounder*>(gf->getFormGrounder())->getSubGrounder()->context();
-	ASSERT_TRUE(CompContext::FORMULA==context._component);
+	context = qg->getSubGrounder()->context();
+	//ASSERT_TRUE(CompContext::FORMULA==context._component); removed this because of the conjpathfromroot simplifications TODO: rethink about this
 	ASSERT_TRUE(context._conjunctivePathFromRoot);
 	ASSERT_TRUE(GenType::CANMAKEFALSE==context.gentype);
 	delete t;
@@ -67,12 +68,13 @@ TEST(Grounderfactory, Context) {
 	gf->InitContext();
 	t = new Theory("T", ts.vocabulary, ParseInfo());
 	t->add(ts.nAxpx);
-	context = dynamic_cast<BoolGrounder*>((gf->create(t)))->getSubGrounders().at(0)->context();
+	qg = dynamic_cast<QuantGrounder*>(dynamic_cast<BoolGrounder*>((gf->create(t)))->getSubGrounders().at(0));
+	context = qg->context();
 	ASSERT_TRUE(CompContext::SENTENCE==context._component);
 	ASSERT_FALSE(context._conjPathUntilNode);
 	ASSERT_TRUE(context._conjunctivePathFromRoot);
-	context = dynamic_cast<QuantGrounder*>(gf->getFormGrounder())->getSubGrounder()->context();
-	ASSERT_TRUE(CompContext::FORMULA==context._component);
+	context = qg->getSubGrounder()->context();
+	//ASSERT_TRUE(CompContext::FORMULA==context._component); removed this because of the conjpathfromroot simplifications TODO: rethink about this
 	ASSERT_FALSE(context._conjunctivePathFromRoot);
 	ASSERT_TRUE(GenType::CANMAKETRUE==context.gentype);
 	delete t;
@@ -80,12 +82,13 @@ TEST(Grounderfactory, Context) {
 	gf->InitContext();
 	t = new Theory("T", ts.vocabulary, ParseInfo());
 	t->add(ts.nExqx);
-	context = dynamic_cast<BoolGrounder*>((gf->create(t)))->getSubGrounders().at(0)->context();
+	qg = dynamic_cast<QuantGrounder*>(dynamic_cast<BoolGrounder*>((gf->create(t)))->getSubGrounders().at(0));
+	context = qg->context();
 	ASSERT_TRUE(CompContext::SENTENCE==context._component);
 	ASSERT_TRUE(context._conjPathUntilNode);
 	ASSERT_TRUE(context._conjunctivePathFromRoot);
-	context = dynamic_cast<QuantGrounder*>(gf->getFormGrounder())->getSubGrounder()->context();
-	ASSERT_TRUE(CompContext::FORMULA==context._component);
+	context = qg->getSubGrounder()->context();
+	//ASSERT_TRUE(CompContext::FORMULA==context._component); removed this because of the conjpathfromroot simplifications TODO: rethink about this
 	ASSERT_TRUE(context._conjunctivePathFromRoot);
 	ASSERT_TRUE(GenType::CANMAKEFALSE==context.gentype);
 	delete t;
@@ -113,7 +116,7 @@ TEST(Grounderfactory, Context) {
 	delete options;
 	delete gf;
 
-	clean(ts);
+	//clean(ts);
 
 }
 
