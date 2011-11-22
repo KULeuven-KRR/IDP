@@ -146,7 +146,7 @@ public:
 	void visit(const Rule*);
 
 	// Getters
-	GroundingContext* getContext(){
+	GroundingContext getContext(){
 		return _context;
 	}
 	FormulaGrounder* getFormGrounder(){
