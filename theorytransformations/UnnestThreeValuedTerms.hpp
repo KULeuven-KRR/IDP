@@ -41,8 +41,8 @@ class PFSymbol;
  */
 class UnnestThreeValuedTerms: public UnnestTerms {
 private:
-	AbstractStructure* _structure;
-	bool _cpsupport;
+	AbstractStructure* 				_structure;
+	bool 							_cpsupport;
 	const std::set<const PFSymbol*> _cpsymbols;
 
 public:

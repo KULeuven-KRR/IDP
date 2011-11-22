@@ -67,16 +67,16 @@ void Formula::recursiveDelete() {
 
 bool Formula::contains(const Variable* v) const {
 	for (auto it = _freevars.cbegin(); it != _freevars.cend(); ++it) {
-		if (*it == v) return true;
+		if (*it == v) { return true; }
 	}
 	for (auto it = _quantvars.cbegin(); it != _quantvars.cend(); ++it) {
-		if (*it == v) return true;
+		if (*it == v) { return true; }
 	}
 	for (auto it = _subterms.cbegin(); it != _subterms.cend(); ++it) {
-		if ((*it)->contains(v)) return true;
+		if ((*it)->contains(v)) { return true; }
 	}
 	for (auto it = _subformulas.cbegin(); it != _subformulas.cend(); ++it) {
-		if ((*it)->contains(v)) return true;
+		if ((*it)->contains(v)) { return true; }
 	}
 	return false;
 }
@@ -105,8 +105,9 @@ PredForm* PredForm::clone() const {
 
 PredForm* PredForm::clone(const map<Variable*, Variable*>& mvv) const {
 	vector<Term*> na;
-	for (auto it = subterms().cbegin(); it != subterms().cend(); ++it)
+	for (auto it = subterms().cbegin(); it != subterms().cend(); ++it) {
 		na.push_back((*it)->clone(mvv));
+	}
 	PredForm* pf = new PredForm(sign(), _symbol, na, pi().clone(mvv));
 	return pf;
 }
@@ -182,10 +183,10 @@ Formula* EqChainForm::accept(TheoryMutatingVisitor* v) {
 
 ostream& EqChainForm::put(ostream& output, bool longnames, unsigned int spaces) const {
 	printTabs(output, spaces);
-	if (isNeg(sign())) output << '~';
+	if (isNeg(sign())) { output << '~'; }
 	output << '(';
 	subterms()[0]->put(output, longnames);
-	for (unsigned int n = 0; n < _comps.size(); ++n) {
+	for (size_t n = 0; n < _comps.size(); ++n) {
 		output << ' ' << comps()[n] << ' ';
 		subterms()[n + 1]->put(output, longnames);
 		if (not _conj && n + 1 < _comps.size()) {
@@ -242,8 +243,9 @@ BoolForm* BoolForm::clone() const {
 
 BoolForm* BoolForm::clone(const map<Variable*, Variable*>& mvv) const {
 	vector<Formula*> ns;
-	for (auto it = subformulas().cbegin(); it != subformulas().cend(); ++it)
+	for (auto it = subformulas().cbegin(); it != subformulas().cend(); ++it) {
 		ns.push_back((*it)->clone(mvv));
+	}
 	BoolForm* bf = new BoolForm(sign(), _conj, ns, pi().clone(mvv));
 	return bf;
 }
@@ -259,12 +261,13 @@ Formula* BoolForm::accept(TheoryMutatingVisitor* v) {
 ostream& BoolForm::put(ostream& output, bool longnames, unsigned int spaces) const {
 	printTabs(output, spaces);
 	if (subformulas().empty()) {
-		if (isConjWithSign())
+		if (isConjWithSign()) {
 			output << "true";
-		else
+		} else {
 			output << "false";
+		}
 	} else {
-		if (isNeg(sign())) output << '~';
+		if (isNeg(sign())) { output << '~'; }
 		output << '(';
 		for (size_t n = 0; n < subformulas().size(); ++n) {
 			subformulas()[n]->put(output, longnames);
@@ -309,7 +312,7 @@ Formula* QuantForm::accept(TheoryMutatingVisitor* v) {
 
 ostream& QuantForm::put(ostream& output, bool longnames, unsigned int spaces) const {
 	printTabs(output, spaces);
-	if (isNeg(sign())) output << '~';
+	if (isNeg(sign())) { output << '~'; }
 	output << '(';
 	output << (isUniv() ? '!' : '?');
 	for (auto it = quantVars().cbegin(); it != quantVars().cend(); ++it) {
@@ -353,7 +356,7 @@ Formula* AggForm::accept(TheoryMutatingVisitor* v) {
 
 ostream& AggForm::put(ostream& output, bool longnames, unsigned int spaces) const {
 	printTabs(output, spaces);
-	if (isNeg(sign())) output << '~';
+	if (isNeg(sign())) { output << '~'; }
 	output << '(';
 	left()->put(output, longnames);
 	output << ' ' << _comp << ' ';
@@ -380,8 +383,9 @@ Rule* Rule::clone() const {
 void Rule::recursiveDelete() {
 	_head->recursiveDelete();
 	_body->recursiveDelete();
-	for (auto it = _quantvars.cbegin(); it != _quantvars.cend(); ++it)
+	for (auto it = _quantvars.cbegin(); it != _quantvars.cend(); ++it) {
 		delete (*it);
+	}
 	delete (this);
 }
 
@@ -426,14 +430,16 @@ ostream& operator<<(ostream& output, const Rule& r) {
 
 Definition* Definition::clone() const {
 	Definition* newdef = new Definition();
-	for (auto it = _rules.cbegin(); it != _rules.cend(); ++it)
+	for (auto it = _rules.cbegin(); it != _rules.cend(); ++it) {
 		newdef->add((*it)->clone());
+	}
 	return newdef;
 }
 
 void Definition::recursiveDelete() {
-	for (size_t n = 0; n < _rules.size(); ++n)
+	for (size_t n = 0; n < _rules.size(); ++n) {
 		_rules[n]->recursiveDelete();
+	}
 	delete (this);
 }
 
@@ -445,8 +451,9 @@ void Definition::add(Rule* r) {
 void Definition::rule(unsigned int n, Rule* r) {
 	_rules[n] = r;
 	_defsyms.clear();
-	for (auto it = _rules.cbegin(); it != _rules.cend(); ++it)
+	for (auto it = _rules.cbegin(); it != _rules.cend(); ++it) {
 		_defsyms.insert((*it)->head()->symbol());
+	}
 }
 
 void Definition::accept(TheoryVisitor* v) const {
@@ -477,18 +484,22 @@ ostream& Definition::put(ostream& output, bool longnames, unsigned int spaces) c
 
 FixpDef* FixpDef::clone() const {
 	FixpDef* newfd = new FixpDef(_lfp);
-	for (auto it = _defs.cbegin(); it != _defs.cend(); ++it)
+	for (auto it = _defs.cbegin(); it != _defs.cend(); ++it) {
 		newfd->add((*it)->clone());
-	for (auto it = _rules.cbegin(); it != _rules.cend(); ++it)
+	}
+	for (auto it = _rules.cbegin(); it != _rules.cend(); ++it) {
 		newfd->add((*it)->clone());
+	}
 	return newfd;
 }
 
 void FixpDef::recursiveDelete() {
-	for (auto it = _defs.cbegin(); it != _defs.cend(); ++it)
+	for (auto it = _defs.cbegin(); it != _defs.cend(); ++it) {
 		delete (*it);
-	for (auto it = _rules.cbegin(); it != _rules.cend(); ++it)
+	}
+	for (auto it = _rules.cbegin(); it != _rules.cend(); ++it) {
 		delete (*it);
+	}
 	delete (this);
 }
 
@@ -500,8 +511,9 @@ void FixpDef::add(Rule* r) {
 void FixpDef::rule(unsigned int n, Rule* r) {
 	_rules[n] = r;
 	_defsyms.clear();
-	for (auto it = _rules.cbegin(); it != _rules.cend(); ++it)
+	for (auto it = _rules.cbegin(); it != _rules.cend(); ++it) {
 		_defsyms.insert((*it)->head()->symbol());
+	}
 }
 
 void FixpDef::accept(TheoryVisitor* v) const {
@@ -536,12 +548,15 @@ ostream& FixpDef::put(ostream& output, bool longnames, unsigned int spaces) cons
 
 Theory* Theory::clone() const {
 	Theory* newtheory = new Theory(_name, _vocabulary, ParseInfo());
-	for (auto it = _sentences.cbegin(); it != _sentences.cend(); ++it)
+	for (auto it = _sentences.cbegin(); it != _sentences.cend(); ++it) {
 		newtheory->add((*it)->clone());
-	for (auto it = _definitions.cbegin(); it != _definitions.cend(); ++it)
+	}
+	for (auto it = _definitions.cbegin(); it != _definitions.cend(); ++it) {
 		newtheory->add((*it)->clone());
-	for (auto it = _fixpdefs.cbegin(); it != _fixpdefs.cend(); ++it)
+	}
+	for (auto it = _fixpdefs.cbegin(); it != _fixpdefs.cend(); ++it) {
 		newtheory->add((*it)->clone());
+	}
 	return newtheory;
 }
 
@@ -550,30 +565,36 @@ void Theory::addTheory(AbstractTheory*) {
 }
 
 void Theory::recursiveDelete() {
-	for (auto it = _sentences.cbegin(); it != _sentences.cend(); ++it)
+	for (auto it = _sentences.cbegin(); it != _sentences.cend(); ++it) {
 		(*it)->recursiveDelete();
-	for (auto it = _definitions.cbegin(); it != _definitions.cend(); ++it)
+	}
+	for (auto it = _definitions.cbegin(); it != _definitions.cend(); ++it) {
 		(*it)->recursiveDelete();
-	for (auto it = _fixpdefs.cbegin(); it != _fixpdefs.cend(); ++it)
+	}
+	for (auto it = _fixpdefs.cbegin(); it != _fixpdefs.cend(); ++it) {
 		(*it)->recursiveDelete();
+	}
 	delete (this);
 }
 
 set<TheoryComponent*> Theory::components() const {
 	set<TheoryComponent*> stc;
-	for (auto it = _sentences.cbegin(); it != _sentences.cend(); ++it)
+	for (auto it = _sentences.cbegin(); it != _sentences.cend(); ++it) {
 		stc.insert(*it);
-	for (auto it = _definitions.cbegin(); it != _definitions.cend(); ++it)
+	}
+	for (auto it = _definitions.cbegin(); it != _definitions.cend(); ++it) {
 		stc.insert(*it);
-	for (auto it = _fixpdefs.cbegin(); it != _fixpdefs.cend(); ++it)
+	}
+	for (auto it = _fixpdefs.cbegin(); it != _fixpdefs.cend(); ++it) {
 		stc.insert(*it);
+	}
 	return stc;
 }
 
 void Theory::remove(Definition* d) {
 	auto it = _definitions.begin();
 	for (; it != _definitions.end(); ++it) {
-		if (*it == d) break;
+		if (*it == d) { break; }
 	}
 	if (it != _definitions.end()) {
 		_definitions.erase(it);
@@ -595,12 +616,15 @@ std::ostream& Theory::put(std::ostream& output, bool longnames, unsigned int spa
 		output << " : " << vocabulary()->name();
 	}
 	output << " {\n";
-	for (auto it = _sentences.cbegin(); it != _sentences.cend(); ++it)
+	for (auto it = _sentences.cbegin(); it != _sentences.cend(); ++it) {
 		(*it)->put(output, longnames, spaces + 2);
-	for (auto it = _definitions.cbegin(); it != _definitions.cend(); ++it)
+	}
+	for (auto it = _definitions.cbegin(); it != _definitions.cend(); ++it) {
 		(*it)->put(output, longnames, spaces + 2);
-	for (auto it = _fixpdefs.cbegin(); it != _fixpdefs.cend(); ++it)
+	}
+	for (auto it = _fixpdefs.cbegin(); it != _fixpdefs.cend(); ++it) {
 		(*it)->put(output, longnames, spaces + 2);
+	}
 	output << "}\n";
 	return output;
 }

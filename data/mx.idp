@@ -36,8 +36,7 @@ namespace mx {
 			print("Unsatisfiable")
 		end
 
-		print("Number of models: ")
-		print(#sols)
+		print("Number of models: "..#sols)
 		for k,v in ipairs(sols) do
 			print("Model "..k)
 			kstr = tostring(k)

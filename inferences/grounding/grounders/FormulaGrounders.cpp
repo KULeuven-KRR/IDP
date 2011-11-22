@@ -57,15 +57,14 @@ AtomGrounder::AtomGrounder(AbstractGroundTheory* grounding, SIGN sign, PFSymbol*
 }
 
 Lit AtomGrounder::run() const {
-	if (verbosity() > 2)
-		printorig();
+	if (verbosity() > 2) { printorig(); }
 
 	// Run subterm grounders
 	bool alldomelts = true;
 	vector<GroundTerm> groundsubterms(_subtermgrounders.size());
 	ElementTuple args(_subtermgrounders.size());
 
-	for (unsigned int n = 0; n < _subtermgrounders.size(); ++n) {
+	for (size_t n = 0; n < _subtermgrounders.size(); ++n) {
 		groundsubterms[n] = _subtermgrounders[n]->run();
 		if (groundsubterms[n].isVariable) {
 			alldomelts = false;
@@ -97,12 +96,7 @@ Lit AtomGrounder::run() const {
 		}
 	}
 
-	if (not alldomelts) {
-		//TODO Should we handle CPSymbols (that are not comparisons) here? No!
-		//TODO Should we assert(alldomelts)? Maybe yes, if P(t) and (not isCPSymbol(P)) and isCPSymbol(t) then it should have been rewritten, right?
-		//TODO If not previous... Do we need a GroundTranslator::translate method that takes GroundTerms as args??
-		assert(false);
-	}
+	assert(alldomelts); // If P(t) and (not isCPSymbol(P)) and isCPSymbol(t) then it should have been rewritten, right? 
 
 	// Run instance checkers
 	// NOTE: set all the variables representing the subterms to their current value (these are used in the checkers)

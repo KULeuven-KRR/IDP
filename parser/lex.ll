@@ -353,6 +353,8 @@ COMMENTLINE		"//".*
 								  return EXTENDS;			}
 <vocabulary>"extern"			{ data.advancecol();
 								  return EXTERN;			}
+<vocabulary>"extern vocabulary"	{ data.advancecol();
+								  return EXTERNVOCABULARY;	}
 	
 	/**************
 		Options
