@@ -32,3 +32,14 @@ void ApproxCheckTwoValued::visit(const FuncTerm* ft) {
 	else { _returnvalue = false; }
 }
 
+void ApproxCheckTwoValued::visit(const SetExpr* se) {
+	for(auto it = se->subformulas().cbegin(); it != se->subformulas().cend(); ++it) {
+		(*it)->accept(this);
+		if(not _returnvalue) { return; }
+	}
+	for(auto it = se->subterms().cbegin(); it != se->subterms().cend(); ++it) {
+		(*it)->accept(this);
+		if(not _returnvalue) { return; }
+	}
+	_returnvalue = true;
+}
