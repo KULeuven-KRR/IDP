@@ -45,6 +45,8 @@ public:
 	void setOrig(const Formula* f, const std::map<Variable*, const DomElemContainer*>& mvd, int);
 
 	void printorig() const;
+
+
 };
 
 class AtomGrounder: public FormulaGrounder {
@@ -196,6 +198,11 @@ public:
 	BoolGrounder(AbstractGroundTheory* grounding, const std::vector<Grounder*> sub, SIGN sign, bool conj, const GroundingContext& ct) :
 			ClauseGrounder(grounding, sign, conj, ct), _subgrounders(sub) {
 	}
+
+	std::vector<Grounder*> getSubGrounders(){
+		return _subgrounders;
+	}
+
 };
 
 class QuantGrounder: public ClauseGrounder {
@@ -211,6 +218,11 @@ public:
 	QuantGrounder(AbstractGroundTheory* grounding, FormulaGrounder* sub, SIGN sign, QUANT quant, InstGenerator* gen, InstChecker* checker,
 			const GroundingContext& ct) :
 			ClauseGrounder(grounding, sign, quant == QUANT::UNIV, ct), _subgrounder(sub), _generator(gen), _checker(checker) {
+	}
+
+	//Getter
+	FormulaGrounder* getSubGrounder(){
+		return _subgrounder;
 	}
 };
 

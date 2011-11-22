@@ -994,7 +994,7 @@ void GrounderFactory::visit(const Theory* theory) {
  *			CompContext::FORMULA:		_formgrounder
  */
 void GrounderFactory::visit(const PredForm* pf) {
-	_context._conjunctivePathFromRoot = false;
+	_context._conjunctivePathFromRoot = false; //FIXME: shouldn't this depend on the context of one lever higher?
 
 	// Move all functions and aggregates that are three-valued according
 	// to _structure outside the atom. To avoid changing the original atom,
