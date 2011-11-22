@@ -1,15 +1,13 @@
-/************************************
- SetGrounders.hpp
- this file belongs to GidL 2.0
- (c) K.U.Leuven
- ************************************/
-
 #ifndef SETGROUNDERS_HPP_
 #define SETGROUNDERS_HPP_
 
-#include "ground.hpp"
+#include "common.hpp"
 
-/*** Set grounders ***/
+class GroundTranslator;
+class InstGenerator;
+class InstChecker;
+class TermGrounder;
+class FormulaGrounder;
 
 class SetGrounder {
 	protected:

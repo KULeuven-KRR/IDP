@@ -7,8 +7,9 @@
 #include <set>
 #include <cassert>
 
-#include "ground.hpp" // TODO should remove
-#include "ecnf.hpp" // TODO should remove
+#include "external/ExternalInterface.hpp"
+
+#include "ecnf.hpp"
 
 namespace MinisatID{
  	 class WrappedPCSolver;
@@ -16,6 +17,9 @@ namespace MinisatID{
 typedef MinisatID::WrappedPCSolver SATSolver;
 
 class TsSet;
+class LazyRuleGrounder;
+class DomainElement;
+typedef std::vector<const DomainElement*> ElementTuple;
 
 /**
  *	A SolverTheory is a ground theory, stored as an instance of a SAT solver

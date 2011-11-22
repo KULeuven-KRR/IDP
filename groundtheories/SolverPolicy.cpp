@@ -2,11 +2,13 @@
 
 #include <iostream>
 
-#include "ground.hpp"
 #include "ecnf.hpp"
 #include "commontypes.hpp"
-#include "grounders/LazyQuantGrounder.hpp"
-#include "grounders/DefinitionGrounders.hpp"
+#include "inferences/grounding/grounders/LazyQuantGrounder.hpp"
+#include "inferences/grounding/grounders/DefinitionGrounders.hpp"
+
+#include "inferences/grounding/GroundTermTranslator.hpp"
+#include "structure.hpp"
 
 using namespace std;
 

@@ -12,6 +12,7 @@
 #include <sstream>
 #include <vector>
 #include "commontypes.hpp"
+#include <utility>
 
 #include "loki/NullType.h"
 #include "loki/TypeTraits.h"

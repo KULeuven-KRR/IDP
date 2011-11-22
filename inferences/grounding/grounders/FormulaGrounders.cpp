@@ -1,16 +1,12 @@
-/************************************
- FormulaGrounders.hpp
- this file belongs to GidL 2.0
- (c) K.U.Leuven
- ************************************/
-
-#include "grounders/FormulaGrounders.hpp"
+#include "inferences/grounding/grounders/FormulaGrounders.hpp"
 
 #include <iostream>
 #include "vocabulary.hpp"
 #include "ecnf.hpp"
-#include "grounders/TermGrounders.hpp"
-#include "grounders/SetGrounders.hpp"
+#include "inferences/grounding/grounders/TermGrounders.hpp"
+#include "inferences/grounding/grounders/SetGrounders.hpp"
+#include "inferences/grounding/GroundTranslator.hpp"
+#include "inferences/grounding/GroundTermTranslator.hpp"
 #include "common.hpp"
 #include "generators/InstGenerator.hpp"
 #include "groundtheories/AbstractGroundTheory.hpp"

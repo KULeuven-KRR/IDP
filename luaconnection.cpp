@@ -20,7 +20,6 @@
 #include "namespace.hpp"
 #include "error.hpp"
 #include "printers/print.hpp"
-#include "ground.hpp"
 #include "ecnf.hpp"
 #include "GlobalData.hpp"
 #include "commands/allcommands.hpp"

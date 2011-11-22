@@ -27,17 +27,7 @@ Theory* TheoryMutatingVisitor::visit(Theory* t) {
 	return t;
 }
 
-GroundTheory<GroundPolicy>* TheoryMutatingVisitor::visit(GroundTheory<GroundPolicy>* t) {
-	// TODO
-	return t;
-}
-
-GroundTheory<SolverPolicy>* TheoryMutatingVisitor::visit(GroundTheory<SolverPolicy>* t) {
-	// TODO
-	return t;
-}
-
-GroundTheory<PrintGroundPolicy>* TheoryMutatingVisitor::visit(GroundTheory<PrintGroundPolicy>* t) {
+AbstractGroundTheory* TheoryMutatingVisitor::visit(AbstractGroundTheory* t) {
 	// TODO
 	return t;
 }

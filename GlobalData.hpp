@@ -56,6 +56,9 @@ public:
 	void setOptions(Options* options) {
 		_options = options;
 	}
+	void resetOptions(){
+		_options = NULL;
+	}
 
 	void notifyOfError(){
 		_errorcount++;

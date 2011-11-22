@@ -3529,6 +3529,11 @@ std::ostream& operator<<(std::ostream& stream, const PredInter& interpretation) 
 	return stream;
 }
 
+PredInter* InconsistentPredInterGenerator::get(const AbstractStructure* structure) {
+	auto emptytable = new PredTable(new EnumeratedInternalPredTable(), structure->universe(_predicate));
+	return new PredInter(emptytable, emptytable, false, false);
+}
+
 PredInter* EqualInterGenerator::get(const AbstractStructure* structure) {
 	SortTable* st = structure->inter(_sort);
 	Universe univ(vector<SortTable*>(2, st));
@@ -3618,6 +3623,11 @@ FuncInter* FuncInter::clone(const Universe& univ) const {
 		PredInter* npi = _graphinter->clone(univ);
 		return new FuncInter(npi);
 	}
+}
+
+FuncInter* InconsistentFuncInterGenerator::get(const AbstractStructure* structure) {
+	auto emptytable = new PredTable(new EnumeratedInternalPredTable(), structure->universe(_function));
+	return new FuncInter(new PredInter(emptytable, emptytable, false, false));
 }
 
 FuncInter* MinInterGenerator::get(const AbstractStructure* structure) {

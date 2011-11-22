@@ -12,8 +12,10 @@
 #include "common.hpp"
 #include "vocabulary.hpp"
 #include "structure.hpp"
-#include "ground.hpp"
 #include "pcsolver/src/external/ExternalInterface.hpp"
+
+#include "inferences/grounding/GroundTranslator.hpp"
+#include "inferences/grounding/grounders/LazyQuantGrounder.hpp"
 
 using namespace std;
 
@@ -263,4 +265,254 @@ GroundRule* TheoryMutatingVisitor::visit(AggGroundRule* r) {
 GroundRule* TheoryMutatingVisitor::visit(PCGroundRule* r) {
 	// TODO
 	return r;
+}
+
+bool operator==(const GroundTerm& a, const GroundTerm& b) {
+	if (a.isVariable == b.isVariable) {
+		return a.isVariable ? (a._varid == b._varid) : (a._domelement == b._domelement);
+	}
+	return false;
+}
+
+bool operator<(const GroundTerm& a, const GroundTerm& b) {
+	if (a.isVariable == b.isVariable) {
+		return a.isVariable ? (a._varid < b._varid) : (a._domelement < b._domelement);
+	}
+	// GroundTerms with a domain element come before GroundTerms with a CP variable identifier.
+	return (a.isVariable < b.isVariable);
+}
+
+bool TsBody::operator==(const TsBody& body) const {
+	if (typeid(*this) != typeid(body)) {
+		return false;
+	}
+	return type() == body.type();
+}
+
+bool TsBody::operator<(const TsBody& body) const {
+	if (typeid(*this).before(typeid(body))) {
+		return true;
+	} else if (typeid(body).before(typeid(*this))) {
+		return false;
+	} else if (type() < body.type()) {
+		return true;
+	} else {
+		return false;
+	}
+}
+
+bool AggTsBody::operator==(const TsBody& body) const {
+	if (not (*this == body)) {
+		return false;
+	}
+	auto rhs = dynamic_cast<const AggTsBody&>(body);
+	return bound() == rhs.bound() && setnr() == rhs.setnr() && lower() == rhs.lower() && aggtype() == rhs.aggtype();
+}
+bool AggTsBody::operator<(const TsBody& body) const {
+	if (TsBody::operator<(body)) {
+		return true;
+	} else if (TsBody::operator>(body)) {
+		return false;
+	}
+	auto rhs = dynamic_cast<const AggTsBody&>(body);
+	if (bound() < rhs.bound()) {
+		return true;
+	} else if (bound() > rhs.bound()) {
+		return false;
+	}
+	if (lower() < rhs.lower()) {
+		return true;
+	} else if (lower() > rhs.lower()) {
+		return false;
+	}
+	if (lower() < rhs.lower()) {
+		return true;
+	} else if (lower() > rhs.lower()) {
+		return false;
+	}
+	if (aggtype() < rhs.aggtype()) {
+		return true;
+	}
+	return false;
+}
+bool PCTsBody::operator==(const TsBody& other) const {
+	if (not TsBody::operator==(other)) {
+		return false;
+	}
+	auto rhs = dynamic_cast<const PCTsBody&>(other);
+	return body() == rhs.body() && conj() == rhs.conj();
+}
+bool PCTsBody::operator<(const TsBody& other) const {
+	if (TsBody::operator<(other)) {
+		return true;
+	} else if (TsBody::operator>(other)) {
+		return false;
+	}
+	auto rhs = dynamic_cast<const PCTsBody&>(other);
+	if (conj() < rhs.conj()) {
+		return true;
+	} else if (conj() > rhs.conj()) {
+		return false;
+	}
+	if (body() < rhs.body()) {
+		return true;
+	}
+	return false;
+}
+
+bool CPTsBody::operator==(const TsBody& body) const {
+	if (not TsBody::operator==(body)) {
+		return false;
+	}
+	auto rhs = dynamic_cast<const CPTsBody&>(body);
+	return comp() == rhs.comp() && left() == rhs.left() && right() == rhs.right();
+}
+bool CPTsBody::operator<(const TsBody& body) const {
+	if (TsBody::operator<(body)) {
+		return true;
+	} else if (TsBody::operator>(body)) {
+		return false;
+	}
+	auto rhs = dynamic_cast<const CPTsBody&>(body);
+	if (comp() < rhs.comp()) {
+		return true;
+	} else if (comp() > rhs.comp()) {
+		return false;
+	}
+	if (left() < rhs.left()) {
+		return true;
+	} else if (left() > rhs.left()) {
+		return false;
+	}
+	if (right() < rhs.right()) {
+		return true;
+	}
+	return false;
+}
+/*bool LazyTsBody::operator==(const TsBody& body) const {
+	if (not TsBody::operator==(body)) {
+		return false;
+	}
+	auto rhs = dynamic_cast<const LazyTsBody&>(body);
+	return id_ == rhs.id_ && grounder_ == rhs.grounder_ && (*inst) == (*rhs.inst);
+}*/
+/*bool LazyTsBody::operator<(const TsBody& body) const {
+	if (TsBody::operator<(body)) {
+		return true;
+	} else if (TsBody::operator>(body)) {
+		return false;
+	}
+	auto rhs = dynamic_cast<const LazyTsBody&>(body);
+	if (id_ < rhs.id_) {
+		return true;
+	} else if (id_ > rhs.id_) {
+		return false;
+	}
+	if (grounder_ < rhs.grounder_) {
+		return true;
+	} else if (grounder_ > rhs.grounder_) {
+		return false;
+	}
+	if ((*inst) == (*rhs.inst)) {
+		return true;
+	}
+	return false;
+}*/
+
+bool CPTerm::operator==(const CPTerm& body) const {
+	return typeid(*this) == typeid(body);
+}
+
+bool CPTerm::operator<(const CPTerm& body) const {
+	return typeid(*this).before(typeid(body));
+}
+
+bool CPVarTerm::operator==(const CPTerm& body) const {
+	if (not CPTerm::operator==(body)) {
+		return false;
+	}
+	auto rhs = dynamic_cast<const CPVarTerm&>(body);
+	return _varid == rhs._varid;
+}
+bool CPVarTerm::operator<(const CPTerm& body) const {
+	if (CPTerm::operator<(body)) {
+		return true;
+	} else if (CPTerm::operator>(body)) {
+		return false;
+	}
+	auto rhs = dynamic_cast<const CPVarTerm&>(body);
+	if (_varid < rhs._varid) {
+		return true;
+	}
+	return false;
+}
+bool CPSumTerm::operator==(const CPTerm& body) const {
+	if (not CPTerm::operator==(body)) {
+		return false;
+	}
+	auto rhs = dynamic_cast<const CPSumTerm&>(body);
+	return _varids == rhs._varids;
+}
+bool CPSumTerm::operator<(const CPTerm& body) const {
+	if (CPTerm::operator<(body)) {
+		return true;
+	} else if (CPTerm::operator>(body)) {
+		return false;
+	}
+	auto rhs = dynamic_cast<const CPSumTerm&>(body);
+	if (_varids < rhs._varids) {
+		return true;
+	}
+	return false;
+}
+bool CPWSumTerm::operator==(const CPTerm& body) const {
+	if (not CPTerm::operator==(body)) {
+		return false;
+	}
+	auto rhs = dynamic_cast<const CPWSumTerm&>(body);
+	return _varids == rhs._varids;
+}
+bool CPWSumTerm::operator<(const CPTerm& body) const {
+	if (CPTerm::operator<(body)) {
+		return true;
+	} else if (CPTerm::operator>(body)) {
+		return false;
+	}
+	auto rhs = dynamic_cast<const CPWSumTerm&>(body);
+	if (_varids < rhs._varids) {
+		return true;
+	} else if (_varids > rhs._varids) {
+		return false;
+	}
+	if (_weights < rhs._weights) {
+		return true;
+	}
+	return false;
+}
+
+bool CPBound::operator==(const CPBound& rhs) const {
+	if (_isvarid != rhs._isvarid) {
+		return false;
+	}
+	if (_isvarid) {
+		return _varid == rhs._varid;
+	} else {
+		return _bound == rhs._bound;
+	}
+}
+bool CPBound::operator<(const CPBound& rhs) const {
+	if (_isvarid < rhs._isvarid) {
+		return true;
+	} else if (_isvarid > rhs._isvarid) {
+		return false;
+	}
+	if (_isvarid) {
+		return _varid < rhs._varid;
+	} else {
+		return _bound < rhs._bound;
+	}
+}
+
+void LazyTsBody::notifyTheoryOccurence() {
+	grounder_->notifyTheoryOccurence(inst);
 }

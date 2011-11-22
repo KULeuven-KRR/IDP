@@ -13,11 +13,8 @@
  *		This file contains the classes to represent first-order terms and first-order sets
  */
 
-#include <set>
-#include <vector>
-#include <map>
 #include "parseinfo.hpp"
-#include "commontypes.hpp"
+#include "common.hpp"
 
 class Sort;
 class Variable;

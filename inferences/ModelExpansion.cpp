@@ -12,8 +12,10 @@
 
 #include "utils/TheoryUtils.hpp"
 
-#include "groundtheories/AbstractGroundTheory.hpp"
+#include "groundtheories/GroundTheory.hpp"
 #include "groundtheories/SolverPolicy.hpp"
+
+#include "inferences/grounding/GroundTranslator.hpp"
 
 #include "OptionsStack.hpp"
 
@@ -31,8 +33,7 @@ std::vector<AbstractStructure*> ModelExpansion::expand(AbstractTheory* theory, A
 		}
 	}
 
-	// Symbolic propagation
-	PropagateInference propinference;
+	SymbolicPropagation propinference;
 	std::map<PFSymbol*, InitBoundType> mpi = propinference.propagateVocabulary(theory, structure);
 //		FOPropagator* propagator = createPropagator(theory,mpi,options);
 //		propagator->run();

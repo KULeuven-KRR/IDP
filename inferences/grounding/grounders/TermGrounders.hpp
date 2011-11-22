@@ -1,15 +1,20 @@
-/************************************
- TermGrounders.hpp
- this file belongs to GidL 2.0
- (c) K.U.Leuven
- ************************************/
-
 #ifndef TERMGROUNDERS_HPP_
 #define TERMGROUNDERS_HPP_
 
-#include "ground.hpp"
+#include "common.hpp"
 
-/*** Term grounders ***/
+class AbstractGroundTheory;
+class SortTable;
+class Term;
+class Variable;
+class GroundTerm;
+class DomainElement;
+class DomElemContainer;
+class FuncTable;
+class Function;
+
+class GroundTranslator;
+class GroundTermTranslator;
 
 class TermGrounder {
 	protected:

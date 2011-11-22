@@ -1,9 +1,3 @@
-/************************************
-	print.cpp
-	this file belongs to GidL 2.0
-	(c) K.U.Leuven
-************************************/
-
 #include "term.hpp"
 #include "theory.hpp"
 #include "options.hpp"
@@ -13,7 +7,6 @@
 #include "printers/idpprinter.hpp"
 #include "printers/ecnfprinter.hpp"
 #include "printers/tptpprinter.hpp"
-
 using namespace std;
 using namespace rel_ops;
 

@@ -1,8 +1,8 @@
 /************************************
-	structure.hpp
-	this file belongs to GidL 2.0
-	(c) K.U.Leuven
-************************************/
+ structure.hpp
+ this file belongs to GidL 2.0
+ (c) K.U.Leuven
+ ************************************/
 
 #ifndef STRUCTURE_HPP
 #define STRUCTURE_HPP
@@ -279,17 +279,17 @@ public:
 };
 
 template<typename Value>
-const DomainElement* createDomElem(const Value& value){
+const DomainElement* createDomElem(const Value& value) {
 	return GlobalData::getGlobalDomElemFactory()->create(value);
 }
 
 template<typename Value, typename Type>
-const DomainElement* createDomElem(const Value& value, const Type& t){
+const DomainElement* createDomElem(const Value& value, const Type& t) {
 	return GlobalData::getGlobalDomElemFactory()->create(value, t);
 }
 
 template<typename Function, typename Value>
-const Compound* createCompound(Function* f, const Value& tuple){
+const Compound* createCompound(Function* f, const Value& tuple) {
 	return GlobalData::getGlobalDomElemFactory()->compound(f, tuple);
 }
 
@@ -400,7 +400,8 @@ private:
 	virtual const ElementTuple& operator*() const = 0;
 	virtual void operator++() = 0;
 public:
-	virtual ~InternalTableIterator() {	}
+	virtual ~InternalTableIterator() {
+	}
 	virtual InternalTableIterator* clone() const = 0;
 	friend class TableIterator;
 };
@@ -533,7 +534,7 @@ public:
 	const std::vector<SortTable*>& tables() const {
 		return _tables;
 	}
-	void addTable(SortTable* table){
+	void addTable(SortTable* table) {
 		_tables.push_back(table);
 	}
 	unsigned int arity() const {
@@ -2189,7 +2190,8 @@ class AbstractStructure;
 class PredInterGenerator {
 public:
 	virtual PredInter* get(const AbstractStructure* structure) = 0;
-	virtual ~PredInterGenerator(){}
+	virtual ~PredInterGenerator() {
+	}
 };
 
 class SinglePredInterGenerator: public PredInterGenerator {
@@ -2208,6 +2210,16 @@ public:
 };
 
 class Sort;
+
+class InconsistentPredInterGenerator: public PredInterGenerator {
+private:
+	Predicate* _predicate;
+public:
+	InconsistentPredInterGenerator(Predicate* predicate) :
+			_predicate(predicate){
+	}
+	PredInter* get(const AbstractStructure* structure);
+};
 
 class EqualInterGenerator: public PredInterGenerator {
 private:
@@ -2242,7 +2254,8 @@ public:
 class PredInterGeneratorGenerator {
 public:
 	virtual PredInterGenerator* get(const std::vector<Sort*>&) = 0;
-	virtual ~PredInterGeneratorGenerator(){}
+	virtual ~PredInterGeneratorGenerator() {
+	}
 };
 
 class EqualInterGeneratorGenerator: public PredInterGeneratorGenerator {
@@ -2320,6 +2333,16 @@ public:
 	}
 };
 
+class InconsistentFuncInterGenerator: public FuncInterGenerator {
+private:
+	Function* _function;
+public:
+	InconsistentFuncInterGenerator(Function* function) :
+		_function(function){
+	}
+	FuncInter* get(const AbstractStructure* structure);
+};
+
 class OneSortInterGenerator: public FuncInterGenerator {
 protected:
 	Sort* _sort;
@@ -2364,7 +2387,8 @@ public:
 class FuncInterGeneratorGenerator {
 public:
 	virtual FuncInterGenerator* get(const std::vector<Sort*>&) = 0;
-	virtual ~FuncInterGeneratorGenerator(){}
+	virtual ~FuncInterGeneratorGenerator() {
+	}
 };
 
 class MinInterGeneratorGenerator: public FuncInterGeneratorGenerator {
@@ -2442,7 +2466,6 @@ public:
 	virtual bool approxTwoValued() const =0;
 	virtual std::vector<AbstractStructure*> allTwoValuedMorePreciseStructures() const = 0;
 
-
 };
 
 /** Structures as constructed by the parser **/
@@ -2454,8 +2477,8 @@ private:
 	std::map<Function*, FuncInter*> _funcinter; //!< The interpretations of the function symbols.
 
 	mutable std::vector<PredInter*> _intersToDelete; // Interpretations which were created and not yet deleted // TODO do this in a cleaner way!
-    void canIncrement(TableIterator & domainIterator) const;
-    void addAllMorePreciesStructuresToResult(Structure *s1, std::vector<AbstractStructure*> & result) const;
+	void canIncrement(TableIterator & domainIterator) const;
+	void addAllMorePreciesStructuresToResult(Structure *s1, std::vector<AbstractStructure*> & result) const;
 
 public:
 	Structure(const std::string& name, const ParseInfo& pi) :

@@ -20,7 +20,6 @@
 #include "monitors/interactiveprintmonitor.hpp"
 
 #include "printers/ecnfprinter.hpp"
-#include "ground.hpp"
 #include "options.hpp"
 #include "error.hpp"
 

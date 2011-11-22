@@ -9,11 +9,10 @@
 
 #include "printers/print.hpp"
 #include "theory.hpp"
-#include "ground.hpp"
 #include "ecnf.hpp"
 #include "common.hpp"
 
-#include "groundtheories/AbstractGroundTheory.hpp"
+#include "groundtheories/GroundTheory.hpp"
 #include "groundtheories/GroundPolicy.hpp"
 
 // FIXME rewrite the printers to correctly handle visiting incrementally, making sure all arguments are instantiated, ...
