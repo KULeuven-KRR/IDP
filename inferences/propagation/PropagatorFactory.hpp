@@ -16,7 +16,7 @@ class QuantForm;
 class FuncInter;
 class PredInter;
 class Options;
-class SymbolicStructure;
+class GenerateBDDAccordingToBounds;
 class FOPropScheduler;
 class Predicate;
 class Function;
@@ -38,7 +38,7 @@ public:
 	virtual AbstractStructure*	currstructure(AbstractStructure* str) const = 0;
 		//!< Obtain the resulting structure
 		//!< (the given structure is used to evaluate BDDs in case of symbolic propagation)
-	virtual SymbolicStructure*	symbolicstructure()		const = 0;
+	virtual GenerateBDDAccordingToBounds*	symbolicstructure()		const = 0;
 		//!< Obtain the resulting structure (only works if the used domainfactory is a FOPropBDDDomainFactory)
 };
 
@@ -74,5 +74,7 @@ class FOPropagatorFactory : public TheoryVisitor {
 };
 
 FOPropagator* createPropagator(AbstractTheory* theory, const std::map<PFSymbol*,InitBoundType> mpi);
+GenerateBDDAccordingToBounds* generateNaiveApproxBounds(AbstractTheory* theory, AbstractStructure* structure);
+GenerateBDDAccordingToBounds* generateApproxBounds(AbstractTheory* theory, AbstractStructure* structure);
 
 #endif /* PROPAGATORFACTORY_HPP_ */

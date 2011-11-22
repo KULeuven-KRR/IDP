@@ -4,11 +4,12 @@
 #include "parser/clconst.hpp"
 #include "IdpException.hpp"
 #include <iostream>
+#include "options.hpp"
 
 using namespace std;
 
 GlobalData::GlobalData() :
-		_globalNamespace(Namespace::createGlobal()), _inserter(_globalNamespace), _domainelemFactory(DomainElementFactory::createGlobal()), _options(NULL), _errorcount(0) {
+		_globalNamespace(Namespace::createGlobal()), _inserter(_globalNamespace), _domainelemFactory(DomainElementFactory::createGlobal()), _options(new Options("stdoptions", ParseInfo())), _errorcount(0) {
 }
 
 GlobalData::~GlobalData() {
@@ -17,6 +18,11 @@ GlobalData::~GlobalData() {
 	for(auto i=_openfiles.cbegin(); i!=_openfiles.cend(); ++i){
 		fclose(*i);
 	}
+}
+
+void GlobalData::setOptions(Options* options) {
+	assert(_options!=NULL);
+	_options = options;
 }
 
 GlobalData* _instance = NULL;
@@ -69,7 +75,6 @@ FILE* GlobalData::openFile(const char* filename, const char* mode){
 
 void GlobalData::closeFile(FILE* filepointer){
 	assert(filepointer!=NULL);
-	cerr <<"closing " <<filepointer <<"\n";
 	_openfiles.erase(filepointer);
 	fclose(filepointer);
 }

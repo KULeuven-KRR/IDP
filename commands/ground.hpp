@@ -13,20 +13,15 @@
 
 class GroundInference: public Inference {
 private:
-	AbstractTheory* ground(AbstractTheory* theory, AbstractStructure* structure, Options* options) const {
-		// Symbolic propagation
-		SymbolicPropagation propinference;
-		std::map<PFSymbol*,InitBoundType> mpi = propinference.propagateVocabulary(theory,structure);
-		auto propagator = createPropagator(theory,mpi);
-		propagator->run();
-		SymbolicStructure* symstructure = propagator->symbolicstructure();
-
-		// Grounding
-		GrounderFactory factory(structure,options,symstructure);
-		Grounder* grounder = factory.create(theory);
+	AbstractTheory* ground(AbstractTheory* theory, AbstractStructure* structure) const {
+		// TODO bugged! auto symstructure = generateApproxBounds(theory, structure);
+		auto symstructure = generateNaiveApproxBounds(theory, structure);
+		GrounderFactory factory(structure,symstructure);
+		auto grounder = factory.create(theory);
 		grounder->toplevelRun();
-		AbstractGroundTheory* grounding = grounder->grounding();
+		auto grounding = grounder->grounding();
 		delete(grounder);
+
 		return grounding;
 	}
 
@@ -38,7 +33,8 @@ public:
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
-		AbstractTheory* grounding = ground(args[0].theory(),args[1].structure(),args[2].options());
+		GlobalData::instance()->setOptions(args[2].options());
+		AbstractTheory* grounding = ground(args[0].theory(),args[1].structure());
 		return InternalArgument(grounding);
 	}
 };
@@ -47,11 +43,12 @@ public:
 
 class GroundAndPrintInference: public Inference {
 private:
-	AbstractTheory* ground(AbstractTheory* theory, AbstractStructure* structure, Options* options, InteractivePrintMonitor* monitor) const {
-		GrounderFactory factory(structure,options);
-		Grounder* grounder = factory.create(theory,monitor,options);
+	AbstractTheory* ground(AbstractTheory* theory, AbstractStructure* structure, InteractivePrintMonitor* monitor) const {
+		auto symstructure = generateNaiveApproxBounds(theory, structure);
+		GrounderFactory factory(structure, symstructure);
+		auto grounder = factory.create(theory,monitor);
 		grounder->toplevelRun();
-		AbstractGroundTheory* grounding = grounder->grounding();
+		auto grounding = grounder->grounding();
 		delete(grounder);
 		monitor->flush();
 		return grounding;
@@ -65,7 +62,8 @@ public:
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
-		AbstractTheory* grounding = ground(args[0].theory(),args[1].structure(),args[2].options(), printmonitor());
+		GlobalData::instance()->setOptions(args[2].options());
+		auto grounding = ground(args[0].theory(),args[1].structure(), printmonitor());
 		return InternalArgument(grounding);
 	}
 };

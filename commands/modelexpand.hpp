@@ -25,9 +25,9 @@ public:
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
 		AbstractTheory* theory = args[0].theory()->clone();
 		AbstractStructure* structure = args[1].structure()->clone();
-		Options* options = args[2].options();
+		GlobalData::instance()->setOptions(args[2].options());
 
-		auto models = ModelExpansion::doModelExpansion(theory, structure, options, tracemonitor());
+		auto models = ModelExpansion::doModelExpansion(theory, structure, tracemonitor());
 
 		// Convert to internal arguments
 		InternalArgument result;
@@ -36,7 +36,7 @@ public:
 		for (auto it = models.cbegin(); it != models.cend(); ++it) {
 			result._value._table->push_back(InternalArgument(*it));
 		}
-		if (options->getValue(BoolType::TRACE)) {
+		if (GlobalData::instance()->getOptions()->getValue(BoolType::TRACE)) {
 			InternalArgument randt;
 			randt._type = AT_MULT;
 			randt._value._table = new std::vector<InternalArgument>(1, result);

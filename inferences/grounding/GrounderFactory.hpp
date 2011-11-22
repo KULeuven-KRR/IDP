@@ -29,7 +29,7 @@ class SetGrounder;
 class HeadGrounder;
 class RuleGrounder;
 class FormulaGrounder;
-class SymbolicStructure;
+class GenerateBDDAccordingToBounds;
 class Grounder;
 class FOBDD;
 
@@ -37,7 +37,7 @@ class GrounderFactory: public TheoryVisitor {
 private:
 	// Data
 	AbstractStructure* _structure; //!< The structure that will be used to reduce the grounding
-	SymbolicStructure* _symstructure; //!< Used approximation
+	GenerateBDDAccordingToBounds* _symstructure; //!< Used approximation
 	AbstractGroundTheory* _grounding; //!< The ground theory that will be produced
 
 	// Options
@@ -105,14 +105,14 @@ private:
 	const FOBDD* improve_checker(const FOBDD*, double);
 
 public:
-	GrounderFactory(AbstractStructure* structure, Options* opts, SymbolicStructure* symbstructure = NULL);
+	GrounderFactory(AbstractStructure* structure, GenerateBDDAccordingToBounds* symbstructure);
 	virtual ~GrounderFactory() {
 	}
 
 	// Factory method
 	Grounder* create(const AbstractTheory*);
 	Grounder* create(const AbstractTheory*, MinisatID::WrappedPCSolver*);
-	Grounder* create(const AbstractTheory* theory, InteractivePrintMonitor* monitor, Options* opts);
+	Grounder* create(const AbstractTheory* theory, InteractivePrintMonitor* monitor);
 
 	// Determine what should be passed to CP solver
 	std::set<const PFSymbol*> findCPSymbols(const AbstractTheory*);

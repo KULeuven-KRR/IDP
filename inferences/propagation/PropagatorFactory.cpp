@@ -8,8 +8,63 @@
 #include "propagate.hpp"
 #include "GlobalData.hpp"
 #include "utils/TheoryUtils.hpp"
+#include "SymbolicPropagation.hpp"
+#include "fobdds/FoBddManager.hpp"
+#include "fobdds/FoBddTerm.hpp"
+#include "fobdds/FoBddVariable.hpp"
+#include "GenerateBDDAccordingToBounds.hpp"
 
 using namespace std;
+
+typedef std::map<PFSymbol*, const FOBDD*> Bound;
+
+GenerateBDDAccordingToBounds* generateApproxBounds(AbstractTheory* theory, AbstractStructure* structure){
+	SymbolicPropagation propinference;
+	std::map<PFSymbol*,InitBoundType> mpi = propinference.propagateVocabulary(theory,structure);
+	auto propagator = createPropagator(theory,mpi);
+	propagator->run();
+	return propagator->symbolicstructure();
+}
+
+void generateNaiveBounds(FOBDDManager& manager, AbstractStructure* structure, PFSymbol* symbol, std::map<PFSymbol*, std::vector<const FOBDDVariable*> >& vars, Bound& ctbounds, Bound& cfbounds){
+	auto pinter = structure->inter(symbol);
+	if(pinter->approxTwoValued()){
+		return;
+	}
+	auto pvars = VarUtils::makeNewVariables(symbol->sorts());
+	vector<const FOBDDVariable*> bddvarlist;
+	vector<const FOBDDArgument*> bddarglist;
+	for (size_t n = 0; n < pvars.size(); ++n) {
+		const FOBDDVariable* bddvar = manager.getVariable(pvars[n]);
+		bddvarlist.push_back(bddvar);
+		bddarglist.push_back(bddvar);
+	}
+	vars[symbol] = bddvarlist;
+	auto ctkernel = manager.getAtomKernel(symbol, AtomKernelType::AKT_CT, bddarglist);
+	auto cfkernel = manager.getAtomKernel(symbol, AtomKernelType::AKT_CF, bddarglist);
+	ctbounds[symbol] = manager.getBDD(ctkernel, manager.truebdd(), manager.falsebdd());
+	cfbounds[symbol] = manager.getBDD(cfkernel, manager.truebdd(), manager.falsebdd());
+}
+
+GenerateBDDAccordingToBounds* generateNaiveApproxBounds(AbstractTheory* theory, AbstractStructure* structure){
+	auto manager = new FOBDDManager();
+	Bound ctbounds, cfbounds;
+	std::map<PFSymbol*, std::vector<const FOBDDVariable*> > vars;
+	auto vocabulary = structure->vocabulary();
+	for (auto it = vocabulary->firstPred(); it != vocabulary->lastPred(); ++it) {
+		auto preds = it->second->nonbuiltins();
+		for (auto jt = preds.cbegin(); jt != preds.cend(); ++jt) {
+			generateNaiveBounds(*manager, structure, *jt, vars, ctbounds, cfbounds);
+		}
+	}
+	for (auto it = vocabulary->firstFunc(); it != vocabulary->lastFunc(); ++it) {
+		auto functions = it->second->nonbuiltins();
+		for (auto jt = functions.cbegin(); jt != functions.cend(); ++jt) {
+			generateNaiveBounds(*manager, structure, *jt, vars, ctbounds, cfbounds);
+		}
+	}
+	return new GenerateBDDAccordingToBounds(manager, ctbounds, cfbounds, vars);
+}
 
 FOPropagator* createPropagator(AbstractTheory* theory, const std::map<PFSymbol*,InitBoundType> mpi) {
 	auto domainfactory = new FOPropBDDDomainFactory();

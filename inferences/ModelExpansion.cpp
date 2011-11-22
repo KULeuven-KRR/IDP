@@ -1,9 +1,3 @@
-/************************************
-	ModelExpansion.cpp
-	this file belongs to GidL 2.0
-	(c) K.U.Leuven
-************************************/
-
 #include "ModelExpansion.hpp"
 
 #include "monitors/tracemonitor.hpp"
@@ -18,46 +12,43 @@
 #include "inferences/grounding/GroundTranslator.hpp"
 
 #include "OptionsStack.hpp"
+#include "inferences/propagation/PropagatorFactory.hpp"
 
 using namespace std;
 
-std::vector<AbstractStructure*> ModelExpansion::expand(AbstractTheory* theory, AbstractStructure* structure, Options* options, TraceMonitor* monitor) const {
-	Option::pushOptions(options);
+std::vector<AbstractStructure*> ModelExpansion::expand(AbstractTheory* theory, AbstractStructure* structure, TraceMonitor* monitor) const {
+	auto opts = GlobalData::instance()->getOptions();
+	// TODO Option::pushOptions(options);
 
 	// Calculate known definitions
 	// FIXME currently skipping if working lazily!
-	if (not options->getValue(BoolType::GROUNDLAZILY) && sametypeid<Theory>(*theory)) {
-		bool satisfiable = calculateKnownDefinitions(dynamic_cast<Theory*>(theory), structure, options);
+	if (not opts->getValue(BoolType::GROUNDLAZILY) && sametypeid<Theory>(*theory)) {
+		bool satisfiable = calculateKnownDefinitions(dynamic_cast<Theory*>(theory), structure);
 		if (not satisfiable) {
 			return std::vector<AbstractStructure*> { };
 		}
 	}
 
-	SymbolicPropagation propinference;
-	std::map<PFSymbol*, InitBoundType> mpi = propinference.propagateVocabulary(theory, structure);
-//		FOPropagator* propagator = createPropagator(theory,mpi,options);
-//		propagator->run();
-//		SymbolicStructure* symstructure = propagator->symbolicstructure();
-	SymbolicStructure* symstructure = NULL; // FIXME propagator code broken!
-
 	// Create solver and grounder
-	SATSolver* solver = createsolver(options);
-	GrounderFactory grounderfactory(structure, options, symstructure);
+	SATSolver* solver = createsolver();
+	auto symstructure = generateNaiveApproxBounds(theory, structure);
+	// TODO bugged! auto symstructure = generateApproxBounds(theory, structure);
+	GrounderFactory grounderfactory(structure, symstructure);
 	Grounder* grounder = grounderfactory.create(theory, solver);
 	grounder->toplevelRun();
 	AbstractGroundTheory* grounding = grounder->grounding();
 
 	// Execute symmetry breaking
-	if (options->getValue(IntType::SYMMETRY) != 0) {
+	if (opts->getValue(IntType::SYMMETRY) != 0) {
 		std::cerr << "Symmetry detection...\n";
 		clock_t start = clock();
 		auto ivsets = findIVSets(theory, structure);
 		float time = (float) (clock() - start) / CLOCKS_PER_SEC;
 		std::cerr << "Symmetry detection finished in: " << time << "\n";
-		if (options->getValue(IntType::SYMMETRY) == 1) {
+		if (opts->getValue(IntType::SYMMETRY) == 1) {
 			std::cerr << "Adding symmetry breaking clauses...\n";
 			addSymBreakingPredicates(grounding, ivsets);
-		} else if (options->getValue(IntType::SYMMETRY) == 2) {
+		} else if (opts->getValue(IntType::SYMMETRY) == 2) {
 			std::cerr << "Using symmetrical clause learning...\n";
 			for (auto ivsets_it = ivsets.cbegin(); ivsets_it != ivsets.cend(); ++ivsets_it) {
 				std::vector<std::map<int, int> > breakingSymmetries = (*ivsets_it)->getBreakingSymmetries(grounding);
@@ -78,8 +69,8 @@ std::vector<AbstractStructure*> ModelExpansion::expand(AbstractTheory* theory, A
 	}
 
 	// Run solver
-	MinisatID::Solution* abstractsolutions = initsolution(options);
-	if (options->getValue(BoolType::TRACE)) {
+	MinisatID::Solution* abstractsolutions = initsolution();
+	if (opts->getValue(BoolType::TRACE)) {
 		monitor->setTranslator(grounding->translator());
 		monitor->setSolver(solver);
 	}
@@ -103,19 +94,21 @@ std::vector<AbstractStructure*> ModelExpansion::expand(AbstractTheory* theory, A
 	return solutions;
 }
 
-bool ModelExpansion::calculateDefinition(Definition* definition, AbstractStructure* structure, Options* options) const {
+bool ModelExpansion::calculateDefinition(Definition* definition, AbstractStructure* structure) const {
 	// Create solver and grounder
-	SATSolver* solver = createsolver(options);
-	GrounderFactory grounderfactory(structure, options);
+	SATSolver* solver = createsolver();
 	Theory theory("", structure->vocabulary(), ParseInfo());
 	theory.add(definition);
+
+	auto symstructure = generateNaiveApproxBounds(&theory, structure);
+	GrounderFactory grounderfactory(structure, symstructure);
 	Grounder* grounder = grounderfactory.create(&theory, solver);
 
 	grounder->toplevelRun();
 	AbstractGroundTheory* grounding = dynamic_cast<GroundTheory<SolverPolicy>*>(grounder->grounding());
 
 	// Run solver
-	MinisatID::Solution* abstractsolutions = initsolution(options);
+	MinisatID::Solution* abstractsolutions = initsolution();
 	solver->solve(abstractsolutions);
 
 	// Collect solutions
@@ -137,7 +130,7 @@ bool ModelExpansion::calculateDefinition(Definition* definition, AbstractStructu
 	return true;
 }
 
-bool ModelExpansion::calculateKnownDefinitions(Theory* theory, AbstractStructure* structure, Options* options) const {
+bool ModelExpansion::calculateKnownDefinitions(Theory* theory, AbstractStructure* structure) const {
 	// Collect the open symbols of all definitions
 	std::map<Definition*, std::set<PFSymbol*> > opens;
 	for (auto it = theory->definitions().cbegin(); it != theory->definitions().cend(); ++it) {
@@ -160,7 +153,7 @@ bool ModelExpansion::calculateKnownDefinitions(Theory* theory, AbstractStructure
 			}
 			// If no opens are left, calculate the interpretation of the defined atoms
 			if (currentdefinition->second.empty()) {
-				bool satisfiable = calculateDefinition(currentdefinition->first, structure, options);
+				bool satisfiable = calculateDefinition(currentdefinition->first, structure);
 				if (not satisfiable) {
 					return false;
 				}
@@ -173,7 +166,8 @@ bool ModelExpansion::calculateKnownDefinitions(Theory* theory, AbstractStructure
 	return true;
 }
 
-SATSolver* ModelExpansion::createsolver(Options* options) const {
+SATSolver* ModelExpansion::createsolver() const {
+	auto options = GlobalData::instance()->getOptions();
 	MinisatID::SolverOption modes;
 	modes.nbmodels = options->getValue(IntType::NRMODELS);
 	modes.verbosity = options->getValue(IntType::SATVERBOSITY);
@@ -187,7 +181,8 @@ SATSolver* ModelExpansion::createsolver(Options* options) const {
 	return new SATSolver(modes);
 }
 
-MinisatID::Solution* ModelExpansion::initsolution(Options* options) const {
+MinisatID::Solution* ModelExpansion::initsolution() const {
+	auto options = GlobalData::instance()->getOptions();
 	MinisatID::ModelExpandOptions opts;
 	opts.nbmodelstofind = options->getValue(IntType::NRMODELS);
 	opts.printmodels = MinisatID::PRINT_NONE;

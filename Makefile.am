@@ -48,7 +48,6 @@ grounder_SOURCES = \
 		printers/idpprinter.hpp printers/ecnfprinter.hpp printers/tptpprinter.hpp\
 		checker.hpp checker.cpp\
 		ecnf.hpp ecnf.cpp\
-		symbolicstructure.hpp symbolicstructure.cpp\
         symmetry.hpp symmetry.cpp\
 		monitors/interactiveprintmonitor.hpp\
 		monitors/tracemonitor.hpp\
@@ -77,6 +76,7 @@ grounder_SOURCES = \
 		inferences/propagation/GroundingPropagation.hpp\
 		inferences/propagation/propagate.hpp inferences/propagation/propagate.cpp\
 		inferences/propagation/PropagatorFactory.hpp inferences/propagation/PropagatorFactory.cpp\
+		inferences/propagation/GenerateBDDAccordingToBounds.hpp inferences/propagation/GenerateBDDAccordingToBounds.cpp\
 		rungidl.hpp rungidl.cpp\
 		commands/allcommands.hpp\
 		commands/commandinterface.hpp\

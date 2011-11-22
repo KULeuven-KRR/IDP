@@ -52,6 +52,8 @@ class Term {
 
 		virtual Term* clone()										const = 0;	
 			//!< create a copy of the term while keeping the free variables
+		virtual	Term*	cloneKeepVars()								const = 0;
+		//!< copy the term while keeping all variables
 		virtual Term* clone(const std::map<Variable*,Variable*>&)	const = 0;	
 			//!< create a copy of the term and substitute the free variables according to the given map
 
@@ -103,6 +105,7 @@ class VarTerm : public Term {
 		VarTerm(Variable* v, const TermParseInfo& pi);
 
 		VarTerm* clone()										const;
+		VarTerm* cloneKeepVars()								const;
 		VarTerm* clone(const std::map<Variable*,Variable*>&)	const;
 
 		~VarTerm() { }
@@ -134,6 +137,7 @@ class FuncTerm : public Term {
 		FuncTerm(Function* function, const std::vector<Term*>& args, const TermParseInfo& pi);
 
 		FuncTerm* clone()										const;
+		FuncTerm* cloneKeepVars()								const;
 		FuncTerm* clone(const std::map<Variable*,Variable*>&)	const;
 
 		~FuncTerm() { }
@@ -165,6 +169,7 @@ class DomainTerm : public Term {
 		DomainTerm(Sort* sort, const DomainElement* value, const TermParseInfo& pi);
 
 		DomainTerm* clone()										const;
+		DomainTerm* cloneKeepVars()								const;
 		DomainTerm* clone(const std::map<Variable*,Variable*>&)	const;
 
 		~DomainTerm() { }
@@ -194,6 +199,7 @@ class AggTerm : public Term {
 		AggTerm(SetExpr* set, AggFunction function, const TermParseInfo& pi);
 
 		AggTerm* clone()										const;
+		AggTerm* cloneKeepVars()								const;
 		AggTerm* clone(const std::map<Variable*,Variable*>&)	const;
 
 		~AggTerm() { }
@@ -268,6 +274,8 @@ class SetExpr {
 
 		virtual SetExpr* clone()										const = 0;
 			//!< create a copy of the set while keeping the free variables
+		virtual	SetExpr*	cloneKeepVars()								const = 0;
+		//!< copy the set while keeping all variables
 		virtual SetExpr* clone(const std::map<Variable*,Variable*>&)	const = 0;
 			//!< create a copy of the set and substitute the free variables according to the given map
 
@@ -312,6 +320,7 @@ class EnumSetExpr : public SetExpr {
 		EnumSetExpr(const std::vector<Formula*>& s, const std::vector<Term*>& w, const SetParseInfo& pi);
 
 		EnumSetExpr* clone()										const;
+		EnumSetExpr* cloneKeepVars()								const;
 		EnumSetExpr* clone(const std::map<Variable*,Variable*>&)	const;
 
 		~EnumSetExpr() { }
@@ -332,6 +341,7 @@ public:
 	QuantSetExpr(const std::set<Variable*>& v, Formula* s, Term* t, const SetParseInfo& pi);
 
 	QuantSetExpr* clone()										const;
+	QuantSetExpr* cloneKeepVars()								const;
 	QuantSetExpr* clone(const std::map<Variable*,Variable*>&)	const;
 
 	Sort*	sort()	const;

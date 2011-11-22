@@ -28,21 +28,21 @@ namespace MinisatID{
 
 class ModelExpansion {
 public:
-	static std::vector<AbstractStructure*> doModelExpansion(AbstractTheory* theory, AbstractStructure* structure, Options* options, TraceMonitor* tracemonitor){
+	static std::vector<AbstractStructure*> doModelExpansion(AbstractTheory* theory, AbstractStructure* structure, TraceMonitor* tracemonitor){
 		ModelExpansion m;
-		return m.expand(theory, structure, options, tracemonitor);
+		return m.expand(theory, structure, tracemonitor);
 	}
 
 private:
-	std::vector<AbstractStructure*> expand(AbstractTheory* theory, AbstractStructure* structure, Options* options, TraceMonitor* tracemonitor) const;
+	std::vector<AbstractStructure*> expand(AbstractTheory* theory, AbstractStructure* structure, TraceMonitor* tracemonitor) const;
 
-	bool calculateDefinition(Definition* definition, AbstractStructure* structure, Options* options) const;
+	bool calculateDefinition(Definition* definition, AbstractStructure* structure) const;
 
-	bool calculateKnownDefinitions(Theory* theory, AbstractStructure* structure, Options* options) const;
+	bool calculateKnownDefinitions(Theory* theory, AbstractStructure* structure) const;
 
-	MinisatID::WrappedPCSolver* createsolver(Options* options) const;
+	MinisatID::WrappedPCSolver* createsolver() const;
 
-	MinisatID::Solution* initsolution(Options* options) const;
+	MinisatID::Solution* initsolution() const;
 
 	void addLiterals(MinisatID::Model* model, GroundTranslator* translator, AbstractStructure* init) const;
 

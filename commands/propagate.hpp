@@ -12,11 +12,12 @@ InternalArgument executePropagation(Propagator& propagator, const std::vector<In
 	AbstractTheory* theory = args[0].theory();
 	AbstractStructure* structure = args[1].structure();
 
+	auto origoptions = GlobalData::instance()->getOptions();
 	GlobalData::instance()->setOptions(args[2].options());
 
 	AbstractStructure* result = propagator.propagate(theory, structure);
 
-	GlobalData::instance()->resetOptions();
+	GlobalData::instance()->setOptions(origoptions);
 
 	return InternalArgument(result);
 }

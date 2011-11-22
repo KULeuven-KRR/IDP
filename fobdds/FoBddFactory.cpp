@@ -1,8 +1,8 @@
 /************************************
-	FoBddFactory.cpp
-	this file belongs to GidL 2.0
-	(c) K.U.Leuven
-************************************/
+ FoBddFactory.cpp
+ this file belongs to GidL 2.0
+ (c) K.U.Leuven
+ ************************************/
 
 #include <cassert>
 #include <iostream>
@@ -23,10 +23,9 @@
 using namespace std;
 
 // TODO why clone the formula and not clone the term?
-// FIXME should not CLONE in fobdd factory, because variables get copied and the bddmanager keeps an internel mapping
 const FOBDD* FOBDDFactory::run(const Formula* f) {
-//	Formula* cf = f->clone();
-//	cf = FormulaUtils::unnestPartialTerms(cf, Context::POSITIVE);
+	auto cf = f->cloneKeepVars();
+	cf = FormulaUtils::unnestPartialTerms(cf, Context::POSITIVE);
 	f->accept(this);
 	//cf->recursiveDelete(); FIXME variables from the cloned cf are used in the bdd, and they are deleted when using recursive delete. What should be the solution? Use variables from f?
 	return _bdd;
@@ -64,7 +63,7 @@ void FOBDDFactory::visit(const AggTerm*) {
  * If it is a predicate, we have to check if we are working with a bounded version of a parent predicate,
  * if so, set the relevant kerneltype and inversion.
  */
-void checkIfBoundedPredicate(PFSymbol*& symbol, AtomKernelType& akt, bool& invert){
+void checkIfBoundedPredicate(PFSymbol*& symbol, AtomKernelType& akt, bool& invert) {
 	if (sametypeid<Predicate>(*symbol)) {
 		auto predicate = dynamic_cast<Predicate*>(symbol);
 		switch (predicate->type()) {
@@ -85,7 +84,7 @@ void checkIfBoundedPredicate(PFSymbol*& symbol, AtomKernelType& akt, bool& inver
 		case ST_NONE:
 			break;
 		}
-		if(predicate->type()!=ST_NONE){
+		if (predicate->type() != ST_NONE) {
 			symbol = predicate->parent();
 		}
 	}
@@ -153,12 +152,10 @@ void FOBDDFactory::visit(const QuantForm* qf) {
 }
 
 void FOBDDFactory::visit(const EqChainForm* ef) {
-	assert(false);
-	// FIXME cannot clone
-	/*	EqChainForm* efclone = ef->clone();
-	 Formula* f = FormulaUtils::splitComparisonChains(efclone, _vocabulary);
-	 f->accept(this);
-	 f->recursiveDelete();*/
+	auto efclone = ef->clone();
+	auto f = FormulaUtils::splitComparisonChains(efclone, _vocabulary);
+	f->accept(this);
+	// f->recursiveDelete(); TODO deletes variables also!
 }
 
 void FOBDDFactory::visit(const AggForm*) {

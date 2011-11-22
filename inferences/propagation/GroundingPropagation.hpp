@@ -13,6 +13,7 @@
 #include "inferences/grounding/grounders/Grounder.hpp"
 #include "inferences/grounding/GrounderFactory.hpp"
 #include "inferences/grounding/GroundTranslator.hpp"
+#include "PropagatorFactory.hpp"
 
 /**
  * Given a theory and a structure, return a new structure which is at least as precise as the structure
@@ -32,7 +33,10 @@ public:
 		MinisatID::SATSolver* solver = new SATSolver(modes);
 		Options options("", ParseInfo());
 		options.setValue(IntType::NRMODELS, 0);
-		GrounderFactory grounderfactory(structure, &options);
+		auto origoptions = GlobalData::instance()->getOptions();
+		GlobalData::instance()->setOptions(&options);
+		auto symstructure = generateNaiveApproxBounds(theory, structure);
+		GrounderFactory grounderfactory(structure, symstructure);
 		auto grounder = grounderfactory.create(theory, solver);
 		grounder->toplevelRun();
 		auto grounding = grounder->grounding();
@@ -71,6 +75,7 @@ public:
 			}
 		}
 		result->clean();
+		GlobalData::instance()->setOptions(origoptions);
 		delete (monitor);
 		delete (solver);
 

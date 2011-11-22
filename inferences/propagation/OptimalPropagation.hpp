@@ -10,7 +10,7 @@
 #include "groundtheories/AbstractGroundTheory.hpp"
 #include "groundtheories/SolverPolicy.hpp"
 #include "inferences/grounding/grounders/Grounder.hpp"
-
+#include "PropagatorFactory.hpp"
 
 #include "structure.hpp"
 
@@ -43,7 +43,10 @@ public:
 		SATSolver solver(modes);
 		Options options("", ParseInfo());
 		options.setValue(IntType::NRMODELS, 0);
-		GrounderFactory grounderfactory(structure, &options);
+		auto origoptions = GlobalData::instance()->getOptions();
+		GlobalData::instance()->setOptions(&options);
+		auto symstructure = generateNaiveApproxBounds(theory, structure);
+		GrounderFactory grounderfactory(structure, symstructure);
 		Grounder* grounder = grounderfactory.create(theory, &solver);
 		grounder->toplevelRun();
 		AbstractGroundTheory* grounding = grounder->grounding();
@@ -99,6 +102,7 @@ public:
 			}
 		}
 		result->clean();
+		GlobalData::instance()->setOptions(origoptions);
 		return result;
 	}
 };

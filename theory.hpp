@@ -79,7 +79,9 @@ public:
 
 	// Virtual constructors
 	virtual	Formula*	clone()										const = 0;
-		//!< copy the formula while keeping the free variables
+	//!< copy the formula while keeping the free variables
+	virtual	Formula*	cloneKeepVars()								const = 0;
+	//!< copy the formula while keeping all variables
 	virtual	Formula*	clone(const std::map<Variable*,Variable*>&)	const = 0;
 		//!< copy the formulas, and replace the free variables as indicated by the map
 
@@ -143,6 +145,7 @@ public:
 		Formula(sign,pi), _symbol(s) { subterms(a); }
 
 	PredForm*	clone()										const;
+	PredForm*	cloneKeepVars()								const;
 	PredForm*	clone(const std::map<Variable*,Variable*>&)	const;
 
 	~PredForm() { }
@@ -179,6 +182,7 @@ public:
 		Formula(s,pi), _conj(c), _comps(vc) { subterms(vt); }
 
 	EqChainForm*	clone()										const;
+	EqChainForm*	cloneKeepVars()								const;
 	EqChainForm*	clone(const std::map<Variable*,Variable*>&)	const;
 
 	// Destructor
@@ -213,6 +217,7 @@ public:
 		Formula(sign,pi) { addSubformula(lf); addSubformula(rf); }
 
 	EquivForm*	clone()										const;
+	EquivForm*	cloneKeepVars()								const;
 	EquivForm*	clone(const std::map<Variable*,Variable*>&)	const;
 
 	// Destructor
@@ -249,6 +254,7 @@ public:
 		Formula(sign,pi), _conj(c) { addSubformula(left); addSubformula(right);	}
 
 	BoolForm*	clone()										const;
+	BoolForm*	cloneKeepVars()								const;
 	BoolForm*	clone(const std::map<Variable*,Variable*>&)	const;
 
 	// Destructor
@@ -285,6 +291,7 @@ public:
 		Formula(sign,pi), _quantifier(quant) { subformulas(std::vector<Formula*>(1,sf)); quantVars(v); }
 
 	QuantForm*	clone()										const;
+	QuantForm*	cloneKeepVars()								const;
 	QuantForm*	clone(const std::map<Variable*,Variable*>&)	const;
 
 	// Destructor
@@ -326,6 +333,7 @@ public:
 	AggForm(SIGN sign, Term* l, CompType c, AggTerm* r, const FormulaParseInfo& pi);
 
 	AggForm*	clone()										const;
+	AggForm*	cloneKeepVars()								const;
 	AggForm*	clone(const std::map<Variable*,Variable*>&)	const;
 
 	// Destructor

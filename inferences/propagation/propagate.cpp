@@ -1,9 +1,3 @@
-/************************************
- propagate.cpp
- this file belongs to GidL 2.0
- (c) K.U.Leuven
- ************************************/
-
 #include <typeinfo>
 #include <iostream>
 #include "fobdds/FoBdd.hpp"
@@ -14,6 +8,7 @@
 #include "theory.hpp"
 #include "structure.hpp"
 #include "propagate.hpp"
+#include "GenerateBDDAccordingToBounds.hpp"
 
 using namespace std;
 
@@ -314,7 +309,7 @@ AbstractStructure* TypedFOPropagator<Factory, Domain>::currstructure(AbstractStr
 }
 
 template<class Factory, class Domain>
-SymbolicStructure* TypedFOPropagator<Factory, Domain>::symbolicstructure() const {
+GenerateBDDAccordingToBounds* TypedFOPropagator<Factory, Domain>::symbolicstructure() const {
 	map<PFSymbol*, vector<const FOBDDVariable*> > vars;
 	map<PFSymbol*, const FOBDD*> ctbounds;
 	map<PFSymbol*, const FOBDD*> cfbounds;
@@ -331,7 +326,7 @@ SymbolicStructure* TypedFOPropagator<Factory, Domain>::symbolicstructure() const
 		}
 		vars[it->first] = bddvars;
 	}
-	return new SymbolicStructure(manager, ctbounds, cfbounds, vars);
+	return new GenerateBDDAccordingToBounds(manager, ctbounds, cfbounds, vars);
 }
 
 template<class Factory, class Domain>

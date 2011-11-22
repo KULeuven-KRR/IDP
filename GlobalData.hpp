@@ -53,12 +53,7 @@ public:
 	Options* getOptions() {
 		return _options;
 	}
-	void setOptions(Options* options) {
-		_options = options;
-	}
-	void resetOptions(){
-		_options = NULL;
-	}
+	void setOptions(Options* options);
 
 	void notifyOfError(){
 		_errorcount++;

@@ -38,7 +38,7 @@
 #include "fobdds/FoBddManager.hpp"
 #include "fobdds/FoBddVariable.hpp"
 #include "fobdds/FoBddFactory.hpp"
-#include "symbolicstructure.hpp"
+#include "inferences/propagation/GenerateBDDAccordingToBounds.hpp"
 
 using namespace std;
 using namespace rel_ops;
@@ -54,62 +54,14 @@ GenType operator not(GenType orig) {
 
 double MCPA = 1; // TODO: constant currently used when pruning bdds. Should be made context dependent
 
-GrounderFactory::GrounderFactory(AbstractStructure* structure, Options* opts, SymbolicStructure* symstructure) :
-		_structure(structure), _symstructure(symstructure), _options(opts), _verbosity(opts->getValue(IntType::GROUNDVERBOSITY)), _cpsupport(
-				opts->getValue(BoolType::CPSUPPORT)), _longnames(opts->getValue(BoolType::LONGNAMES)) {
+GrounderFactory::GrounderFactory(AbstractStructure* structure, GenerateBDDAccordingToBounds* symstructure) :
+		_structure(structure), _symstructure(symstructure), _options(GlobalData::instance()->getOptions()), _verbosity(
+				_options->getValue(IntType::GROUNDVERBOSITY)), _cpsupport(_options->getValue(BoolType::CPSUPPORT)), _longnames(
+				_options->getValue(BoolType::LONGNAMES)) {
+
+	assert(_symstructure!=NULL);
 
 	// Create a symbolic structure if no such structure is given
-	if (_symstructure == NULL) {
-		FOBDDManager* manager = new FOBDDManager();
-		std::map<PFSymbol*, const FOBDD*> ctbounds;
-		std::map<PFSymbol*, const FOBDD*> cfbounds;
-		std::map<PFSymbol*, std::vector<const FOBDDVariable*> > vars;
-		Vocabulary* vocabulary = structure->vocabulary();
-		for (auto it = vocabulary->firstPred(); it != vocabulary->lastPred(); ++it) {
-			set<Predicate*> sp = it->second->nonbuiltins();
-			for (auto jt = sp.cbegin(); jt != sp.cend(); ++jt) {
-				PredInter* pinter = structure->inter(*jt);
-				if (not pinter->approxTwoValued()) {
-					vector<Variable*> pvars = VarUtils::makeNewVariables((*jt)->sorts());
-					vector<const FOBDDVariable*> pbddvars(pvars.size());
-					vector<const FOBDDArgument*> pbddargs(pvars.size());
-					for (size_t n = 0; n < pvars.size(); ++n) {
-						const FOBDDVariable* bddvar = manager->getVariable(pvars[n]);
-						pbddvars[n] = bddvar;
-						pbddargs[n] = bddvar;
-					}
-					vars[*jt] = pbddvars;
-					const FOBDDKernel* ctkernel = manager->getAtomKernel(*jt, AtomKernelType::AKT_CT, pbddargs);
-					const FOBDDKernel* cfkernel = manager->getAtomKernel(*jt, AtomKernelType::AKT_CF, pbddargs);
-					ctbounds[*jt] = manager->getBDD(ctkernel, manager->truebdd(), manager->falsebdd());
-					cfbounds[*jt] = manager->getBDD(cfkernel, manager->truebdd(), manager->falsebdd());
-				}
-			}
-		}
-		for (auto it = vocabulary->firstFunc(); it != vocabulary->lastFunc(); ++it) {
-			set<Function*> sf = it->second->nonbuiltins();
-			for (auto jt = sf.cbegin(); jt != sf.cend(); ++jt) {
-				PredInter* pinter = structure->inter(*jt)->graphInter();
-				if (not pinter->approxTwoValued()) {
-					vector<Variable*> pvars = VarUtils::makeNewVariables((*jt)->sorts());
-					vector<const FOBDDVariable*> pbddvars(pvars.size());
-					vector<const FOBDDArgument*> pbddargs(pvars.size());
-					for (size_t n = 0; n < pvars.size(); ++n) {
-						const FOBDDVariable* bddvar = manager->getVariable(pvars[n]);
-						pbddvars[n] = bddvar;
-						pbddargs[n] = bddvar;
-					}
-					vars[*jt] = pbddvars;
-					const FOBDDKernel* ctkernel = manager->getAtomKernel(*jt, AtomKernelType::AKT_CT, pbddargs);
-					const FOBDDKernel* cfkernel = manager->getAtomKernel(*jt, AtomKernelType::AKT_CF, pbddargs);
-					ctbounds[*jt] = manager->getBDD(ctkernel, manager->truebdd(), manager->falsebdd());
-					cfbounds[*jt] = manager->getBDD(cfkernel, manager->truebdd(), manager->falsebdd());
-				}
-			}
-		}
-		_symstructure = new SymbolicStructure(manager, ctbounds, cfbounds, vars);
-	}
-
 	if (_verbosity > 2) {
 		clog << "Using the following symbolic structure to ground: " << endl;
 		_symstructure->put(clog);
@@ -119,6 +71,7 @@ GrounderFactory::GrounderFactory(AbstractStructure* structure, Options* opts, Sy
 
 set<const PFSymbol*> GrounderFactory::findCPSymbols(const AbstractTheory* theory) {
 	Vocabulary* vocabulary = theory->vocabulary();
+// TODO
 //	for(auto predit = vocabulary->firstpred(); predit != vocabulary->lastpred(); ++predit) {
 //		Predicate* predicate = predit->second;
 //		if(VocabularyUtils::isComparisonPredicate(predicate)) {
@@ -157,9 +110,7 @@ bool GrounderFactory::isCPSymbol(const PFSymbol* symbol) const {
 }
 
 /**
- * bool GrounderFactory::recursive(const Formula*)
- * DESCRIPTION
- * 		Finds out whether a formula contains recursively defined symbols.
+ * 	Finds out whether a formula contains recursively defined symbols.
  */
 bool GrounderFactory::recursive(const Formula* f) {
 	for (auto it = _context._defined.cbegin(); it != _context._defined.cend(); ++it) {
@@ -171,9 +122,7 @@ bool GrounderFactory::recursive(const Formula* f) {
 }
 
 /**
- * void GrounderFactory::InitContext()
- * DESCRIPTION
- *		Initializes the context of the GrounderFactory before visiting a sentence.
+ *	Initializes the context of the GrounderFactory before visiting a sentence.
  */
 void GrounderFactory::InitContext() {
 	_context.gentype = GenType::CANMAKEFALSE;
@@ -330,9 +279,9 @@ Grounder* GrounderFactory::create(const AbstractTheory* theory) {
 }
 
 // TODO comment
-Grounder* GrounderFactory::create(const AbstractTheory* theory, InteractivePrintMonitor* monitor, Options* opts) {
+Grounder* GrounderFactory::create(const AbstractTheory* theory, InteractivePrintMonitor* monitor) {
 	GroundTheory<PrintGroundPolicy>* groundtheory = new GroundTheory<PrintGroundPolicy>(_structure->clone());
-	groundtheory->initialize(monitor, groundtheory->structure(), groundtheory->translator(), groundtheory->termtranslator(), opts);
+	groundtheory->initialize(monitor, groundtheory->structure(), groundtheory->translator(), groundtheory->termtranslator(), _options);
 	_grounding = groundtheory;
 
 	// Find functions that can be passed to CP solver.
@@ -433,24 +382,24 @@ void GrounderFactory::visit(const PredForm* pf) {
 	// to _structure outside the atom. To avoid changing the original atom,
 	// we first clone it.
 	if (_verbosity > 3) {
-		clog << pf->toString() << " (Original)" <<"\n";
+		clog << pf->toString() << " (Original)" << "\n";
 	}
 	// FIXME verkeerde type afgeleid voor vergelijkingen a=b (zou bvb range die beide omvat moeten zijn, is nu niet het geval).
 	// FIXME aggregaten moeten correct worden herschreven als ze niet tweewaardig zijn
 	Formula* transpf = FormulaUtils::unnestThreeValuedTerms(pf->clone(), _structure, _context._funccontext, _cpsupport, _cpsymbols);
 	if (_verbosity > 3) {
-		clog << transpf->toString() << " (3-valued terms moved)" <<"\n";
+		clog << transpf->toString() << " (3-valued terms moved)" << "\n";
 	}
 	transpf = FormulaUtils::splitComparisonChains(transpf, NULL);
 	if (_verbosity > 3) {
-		clog << transpf->toString() << " (Comparison chains split)" <<"\n";
+		clog << transpf->toString() << " (Comparison chains split)" << "\n";
 	}
 	if (not _cpsupport) { // TODO Check not present in quantgrounder
 		// NOTE: Graph aggregates before graphing functions! Ambiguity in (FuncTerm = AggTerm).
 		transpf = FormulaUtils::graphAggregates(transpf); // FIXME where does this all have to be added
 		transpf = FormulaUtils::graphFunctions(transpf);
 		if (_verbosity > 3) {
-			clog << transpf->toString() << " (Aggregates and functions graphed)" <<"\n";
+			clog << transpf->toString() << " (Aggregates and functions graphed)" << "\n";
 		}
 	}
 
@@ -520,22 +469,22 @@ void GrounderFactory::visit(const PredForm* pf) {
 		tables.push_back(_structure->inter((*it)->sort()));
 	}
 
-	// TODO enable bdds after debugging
-	/*	vector<Variable*> fovars = VarUtils::makeNewVariables(checksorts);
-	 vector<Term*> foterms = TermUtils::makeNewVarTerms(fovars);
-	 PredForm* checkpf = new PredForm(newpf->sign(),newpf->symbol(),foterms,FormulaParseInfo());
-	 const FOBDD* possbdd;
-	 const FOBDD* certbdd;
-	 if(_context.gentype == GenType::CANMAKETRUE) { //TOdo refactor
-	 possbdd = _symstructure->evaluate(checkpf,TruthType::POSS_TRUE);
-	 certbdd = _symstructure->evaluate(checkpf,TruthType::CERTAIN_TRUE);
-	 } else {
-	 possbdd = _symstructure->evaluate(checkpf,TruthType::POSS_FALSE);
-	 certbdd = _symstructure->evaluate(checkpf,TruthType::CERTAIN_FALSE);
-	 }
+	// TODO add bdd code when they work correctly
+/*	auto fovars = VarUtils::makeNewVariables(checksorts);
+	auto foterms = TermUtils::makeNewVarTerms(fovars);
+	auto checkpf = new PredForm(newpf->sign(), newpf->symbol(), foterms, FormulaParseInfo());
+	const FOBDD* possbdd;
+	const FOBDD* certbdd;
+	if (_context.gentype == GenType::CANMAKETRUE) {
+		possbdd = _symstructure->evaluate(checkpf, TruthType::POSS_TRUE);
+		certbdd = _symstructure->evaluate(checkpf, TruthType::CERTAIN_TRUE);
+	} else {
+		possbdd = _symstructure->evaluate(checkpf, TruthType::POSS_FALSE);
+		certbdd = _symstructure->evaluate(checkpf, TruthType::CERTAIN_FALSE);
+	}
 
-	 PredTable* posstable = new PredTable(new BDDInternalPredTable(possbdd,_symstructure->manager(),fovars,_structure),Universe(tables));
-	 PredTable* certtable = new PredTable(new BDDInternalPredTable(certbdd,_symstructure->manager(),fovars,_structure),Universe(tables));*/
+	auto posstable = new PredTable(new BDDInternalPredTable(possbdd, _symstructure->manager(), fovars, _structure), Universe(tables));
+	auto certtable = new PredTable(new BDDInternalPredTable(certbdd, _symstructure->manager(), fovars, _structure), Universe(tables));*/
 	PredTable* posstable = new PredTable(new FullInternalPredTable(), Universe(tables));
 	PredTable* certtable = new PredTable(new InverseInternalPredTable(new FullInternalPredTable()), Universe(tables));
 	/*cerr <<"Certainly table: \n";
@@ -543,8 +492,8 @@ void GrounderFactory::visit(const PredForm* pf) {
 	 cerr <<"\nPossible table: \n";
 	 posstable->print(std::cerr);
 	 cerr <<"\n";*/
-	InstChecker* possch = GeneratorFactory::create(posstable, vector<Pattern>(checkargs.size(), Pattern::INPUT), checkargs, Universe(tables));
-	InstChecker* certainch = GeneratorFactory::create(certtable, vector<Pattern>(checkargs.size(), Pattern::INPUT), checkargs, Universe(tables));
+	auto possch = GeneratorFactory::create(posstable, vector<Pattern>(checkargs.size(), Pattern::INPUT), checkargs, Universe(tables));
+	auto certainch = GeneratorFactory::create(certtable, vector<Pattern>(checkargs.size(), Pattern::INPUT), checkargs, Universe(tables));
 
 	_formgrounder = new AtomGrounder(_grounding, newpf->sign(), newpf->symbol(), subtermgrounders, checkargs, possch, certainch,
 			_structure->inter(newpf->symbol()), argsorttables, _context);
