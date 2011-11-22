@@ -100,7 +100,7 @@ Lit AtomGrounder::run() const {
 		}
 	}
 
-	assert(alldomelts); // If P(t) and (not isCPSymbol(P)) and isCPSymbol(t) then it should have been rewritten, right? 
+	assert(alldomelts); //NOTE: If P(t) and (not isCPSymbol(P)) and isCPSymbol(t) then it should have been rewritten, right? 
 
 	// Run instance checkers
 	// NOTE: set all the variables representing the subterms to their current value (these are used in the checkers)
@@ -122,9 +122,15 @@ Lit AtomGrounder::run() const {
 		return gentype == GenType::CANMAKETRUE ? _true : _false;
 	}
 	if (_inter->isTrue(args)) {
+		if (verbosity() > 2) {
+			clog << "Result is " << (isPos(_sign) ? "true" : "false") << "\n";
+		}
 		return isPos(_sign) ? _true : _false;
 	}
 	if (_inter->isFalse(args)) {
+		if (verbosity() > 2) {
+			clog << "Result is " << (isPos(_sign) ? "false" : "true") << "\n";
+		}
 		return isPos(_sign) ? _false : _true;
 	}
 
@@ -134,7 +140,7 @@ Lit AtomGrounder::run() const {
 		lit = -lit;
 	}
 	if (verbosity() > 2) {
-		clog << "Result is " << translator()->printAtom(lit, false) << "\n"; // TODO longnames?
+		clog << "Result is " << (isNeg(_sign) ? "~" : "") << translator()->printAtom(abs(lit), false) << "\n"; // TODO longnames?
 	}
 	return lit;
 }

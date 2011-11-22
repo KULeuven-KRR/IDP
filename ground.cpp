@@ -456,9 +456,9 @@ unsigned int GroundTranslator::addSymbol(PFSymbol* pfs) {
 	return symbols.size() - 1;
 }
 
-string GroundTranslator::printAtom(const Lit& atom, bool longnames) const {
+//XXX: should not be used to print Literals!
+string GroundTranslator::printAtom(const uint& nr, bool longnames) const {
 	stringstream s;
-	uint nr = atom;
 	if (nr == _true) {
 		return "true";
 	}

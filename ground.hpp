@@ -473,7 +473,7 @@ public:
 		return symbols[n].tuple2atom;
 	}
 
-	std::string printAtom(const Lit& atom, bool longnames) const;
+	std::string printAtom(const uint& n, bool longnames) const;
 };
 
 /**
