@@ -1,0 +1,23 @@
+vocabulary V{
+	type node
+	edge(node, node)
+	start:node
+	reachable(node)
+}
+
+theory T:V{
+	{
+		reachable(start).
+		!x: reachable(x) <- (?y: edge(x, y) & reachable(y)).
+	}
+}
+
+structure S:V{
+	node = {1..5}
+	start = 1
+	edge = {1,2;2,3;3,4;4,4;}
+}
+
+procedure getExpectedNbOfModels(){
+	return 1
+}

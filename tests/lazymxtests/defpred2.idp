@@ -1,0 +1,20 @@
+vocabulary V{
+	type t
+	p(t,t)
+	q(t,t)
+}
+
+theory T:V{
+	{
+		!x y: p(x,y) <- q(x,y).
+	}
+}
+
+structure S:V{
+	t = {1..5}
+	q = {1,2}
+}
+
+procedure getExpectedNbOfModels(){
+	return 1
+}
