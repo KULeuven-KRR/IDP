@@ -58,8 +58,47 @@ namespace Tests{
 		auto propagator = generateApproxBounds(theory, structure);
 		//cerr <<"Derived bounds: \n";
 		//propagator->put(std::cerr);
-		auto bdd = propagator->evaluate(forallpximplqx, TruthType::CERTAIN_FALSE);
+		auto bdd = propagator->evaluate(qx, TruthType::CERTAIN_TRUE);
 		//propagator->manager()->put(std::cerr, bdd);
-		ASSERT_EQ(bdd, propagator->manager()->falsebdd());
+		BDDToGenerator generatorfactory(propagator->manager());
+		BddGeneratorData data;
+		data.bdd = bdd;
+		data.structure = structure;
+		data.universe = pinter->universe();
+		data.vars = {new DomElemContainer()};
+		data.bddvars = {propagator->manager()->getVariable(variable)};
+		data.pattern = {Pattern::OUTPUT};
+		auto gen = generatorfactory.create(data);
+		int counter = 0;
+		for(gen->begin(); not gen->isAtEnd(); gen->operator ++()){
+			counter++;
+		}
+		ASSERT_EQ(counter, 5);
+	}
+
+	TEST(PropagationTest, EquivForm){
+		auto sorttable = new SortTable(new IntRangeInternalSortTable(-2, 2));
+		auto sort = new Sort("x", sorttable);
+		auto variable = new Variable(sort);
+		auto x = new VarTerm(variable, TermParseInfo());
+		auto p = new Predicate("p", {sort}, false);
+		auto q = new Predicate("q", {sort}, false);
+		auto notpx = new PredForm(SIGN::NEG, p, {x}, FormulaParseInfo());
+		auto qx = new PredForm(SIGN::POS, q, {x}, FormulaParseInfo());
+		auto pxeqqx = new EquivForm(SIGN::POS, notpx, qx, FormulaParseInfo());
+		auto forallpxeqqx = new QuantForm(SIGN::POS, QUANT::UNIV, {variable}, pxeqqx, FormulaParseInfo());
+		auto vocabulary = new Vocabulary("V");
+		vocabulary->add(p);
+		vocabulary->add(q);
+		auto theory = new Theory("T", vocabulary, ParseInfo());
+		auto structure = new Structure("S", ParseInfo());
+		structure->vocabulary(vocabulary);
+		auto pinter = structure->inter(p);
+		pinter->pf(new PredTable(new FullInternalPredTable(), pinter->universe()));
+		auto propagator = generateApproxBounds(theory, structure);
+		//cerr <<"Derived bounds: \n";
+		//propagator->put(std::cerr);
+		auto bdd = propagator->evaluate(forallpxeqqx, TruthType::CERTAIN_TRUE);
+		// TODO
 	}
 }

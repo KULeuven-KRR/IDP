@@ -296,8 +296,6 @@ public:
 		//!< (the given structure is used to evaluate BDDs in case of symbolic propagation)
 	GenerateBDDAccordingToBounds*	symbolicstructure()		const;
 		//!< Obtain the resulting structure (only works if the used domainfactory is a FOPropBDDDomainFactory)
-	FuncInter*	interpretation(Function* f)		const;	//!< Returns the current interpretation of function symbol f
-	PredInter*	interpretation(Predicate* p)	const;	//!< Returns the current interpretation of predicate symbol p
 
 	void schedule(const Formula* par, FOPropDirection, bool, const Formula* child);
 

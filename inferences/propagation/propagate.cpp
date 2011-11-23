@@ -330,20 +330,6 @@ GenerateBDDAccordingToBounds* TypedFOPropagator<Factory, Domain>::symbolicstruct
 }
 
 template<class Factory, class Domain>
-FuncInter* TypedFOPropagator<Factory, Domain>::interpretation(Function*) const {
-	assert(false);
-	// TODO
-	return 0;
-}
-
-template<class Factory, class Domain>
-PredInter* TypedFOPropagator<Factory, Domain>::interpretation(Predicate*) const {
-	assert(false);
-	// TODO
-	return 0;
-}
-
-template<class Factory, class Domain>
 Domain* TypedFOPropagator<Factory, Domain>::addToConjunction(Domain* conjunction, Domain* newconjunct) {
 	FOPropDomain* temp = conjunction;
 	conjunction = _factory->conjunction(conjunction, newconjunct);
@@ -528,7 +514,7 @@ void TypedFOPropagator<Factory, Domain>::visit(const PredForm* pf) {
 
 template<class Factory, class Domain>
 void TypedFOPropagator<Factory, Domain>::visit(const EqChainForm*) {
-	assert(false);
+	thrownotyetimplemented("Creating a propagator for comparison chains has not yet been implemented.");
 }
 
 template<class Factory, class Domain>

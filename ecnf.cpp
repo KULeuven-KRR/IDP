@@ -29,10 +29,10 @@ AggGroundRule::AggGroundRule(int head, AggTsBody* body, bool rec)
 		:GroundRule(head, RT_AGG,rec), _setnr(body->setnr()), _aggtype(body->aggtype()), _lower(body->lower()), _bound(body->bound()) { }
 
 GroundDefinition* GroundDefinition::clone() const {
-	assert(false); //TODO
+	thrownotyetimplemented("Cloning grounddefinitions is not implemented.");
 	GroundDefinition* newdef = new GroundDefinition(_id, _translator);
 //	for(ruleit = _rules.cbegin(); ruleit != _rules.cend(); ++ruleit)
-		//TODO clone rules...	
+		//TODO clone rules...
 	return newdef;
 }
 

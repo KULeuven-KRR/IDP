@@ -25,6 +25,7 @@
 #include "commands/allcommands.hpp"
 #include "monitors/luainteractiveprintmonitor.hpp"
 #include "monitors/luatracemonitor.hpp"
+#include "IdpException.hpp"
 using namespace std;
 using namespace LuaConnection;
 
@@ -178,12 +179,8 @@ int convertToLua(lua_State* L, const DomainElement* d) {
 	case DET_STRING:
 		lua_pushstring(L, d->value()._string->c_str());
 		return 1;
-	case DET_COMPOUND: {
+	case DET_COMPOUND:
 		return addUserData(L, d->value()._compound, AT_COMPOUND);
-	}
-	default:
-		assert(false);
-		return 0;
 	}
 }
 
@@ -329,13 +326,9 @@ int convertToLua(lua_State* L, InternalArgument arg) {
 		}
 		return nrres;
 	}
-	case AT_REGISTRY: {
+	case AT_REGISTRY:
 		lua_getfield(L, LUA_REGISTRYINDEX, arg._value._string->c_str());
 		return 1;
-	}
-	default:
-		assert(false);
-		return 0;
 	}
 }
 
@@ -459,19 +452,16 @@ InternalArgument createArgument(int arg, lua_State* L) {
 			ia._value._overloaded = *(OverloadedObject**) lua_touserdata(L, arg);
 			break;
 		default:
-			assert(false);
+			thrownotyetimplemented("Encountered a lua USERDATA for which not internal type exists (or it is not handled correctly).");
 		}
 		break;
 	}
 	case LUA_TTHREAD:
-		assert(false);
-		break;
+		throw IdpException("Invalid request to create a lua object from a THREAD object.");
 	case LUA_TLIGHTUSERDATA:
-		assert(false);
-		break;
+		throw IdpException("Invalid request to create a lua object from a LIGHTUSERDATA object.");
 	case LUA_TNONE:
-		assert(false);
-		break;
+		throw IdpException("Invalid request to create a lua object from an empty object.");
 	}
 	return ia;
 }
@@ -522,14 +512,11 @@ vector<ArgType> getArgTypes(lua_State* L, unsigned int arg) {
 		break;
 	}
 	case LUA_TTHREAD:
-		assert(false);
-		break;
+		throw IdpException("Invalid request to create a lua object from a THREAD object.");
 	case LUA_TLIGHTUSERDATA:
-		assert(false);
-		break;
+		throw IdpException("Invalid request to create a lua object from a LIGHTUSERDATA object.");
 	case LUA_TNONE:
-		assert(false);
-		break;
+		throw IdpException("Invalid request to create a lua object from an empty object.");
 	}
 	return result;
 }
@@ -1202,8 +1189,8 @@ int namespaceIndex(lua_State* L) {
 			}
 			if (term) {
 				return convertToLua(L, InternalArgument(term));
-			}assert(false);
-			return 0;
+			}
+			thrownotyetimplemented("Some element could not be transformed into a lua object.");
 		} else {
 			OverloadedObject* oo = new OverloadedObject();
 			oo->insert(subsp);

@@ -72,7 +72,7 @@ Lit AtomGrounder::run() const {
 			args[n] = groundsubterms[n]._domelement;
 			// Check partial functions
 			if (args[n] == NULL) {
-				assert(false);
+				thrownotyetimplemented("Partial function issue in grounding an atom.");
 				// FIXME what should happen here?
 				/*//TODO: produce a warning!
 				 if(context()._funccontext == Context::BOTH) {
@@ -187,9 +187,6 @@ int ComparisonGrounder::run() const {
 			}
 		}
 	}
-
-	assert(false);
-	return 0;
 }
 
 void ComparisonGrounder::run(ConjOrDisj& formula) const {
@@ -220,7 +217,7 @@ int AggGrounder::handleDoubleNegation(double boundvalue, int setnr) const {
 		newcomp = CompType::LT;
 		break;
 	case AGG_EQ:
-		assert(false);
+		thrownotyetimplemented("Cannot ground aggregates with equality directly.");
 		break;
 	}
 	TsType tp = context()._tseitin;

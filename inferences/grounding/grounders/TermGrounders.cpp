@@ -139,7 +139,7 @@ GroundTerm SumTermGrounder::run() const {
 			}
 			//TODO one of the domains is unknown or infinite...
 			//TODO one case when left or right is a domain element!
-			assert(false);
+			thrownotyetimplemented("One of the domains in a sumtermgrounder is infinite.");
 		}
 	}
 

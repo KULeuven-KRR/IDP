@@ -1,8 +1,8 @@
 /************************************
-  	TheoryUtils.cpp
-	this file belongs to GidL 2.0
-	(c) K.U.Leuven
-************************************/
+ TheoryUtils.cpp
+ this file belongs to GidL 2.0
+ (c) K.U.Leuven
+ ************************************/
 
 #include "utils/TheoryUtils.hpp"
 
@@ -38,8 +38,7 @@
 using namespace std;
 
 namespace TermUtils {
-SetExpr* moveThreeValuedTerms(SetExpr* f, AbstractStructure* structure, 
-		Context context, bool cpsupport, const std::set<const PFSymbol*> cpsymbols) {
+SetExpr* moveThreeValuedTerms(SetExpr* f, AbstractStructure* structure, Context context, bool cpsupport, const std::set<const PFSymbol*> cpsymbols) {
 	return transform<UnnestThreeValuedTerms>(f, structure, context, cpsupport, cpsymbols);
 }
 
@@ -93,7 +92,8 @@ Formula* unnestPartialTerms(Formula* f, Context context, Vocabulary* voc) {
 	return transform<UnnestPartialTerms>(f, context, voc);
 }
 
-Formula* unnestThreeValuedTerms(Formula* f, AbstractStructure* structure, Context context, bool cpsupport, const std::set<const PFSymbol*> cpsymbols) {
+Formula* unnestThreeValuedTerms(Formula* f, AbstractStructure* structure, Context context, bool cpsupport,
+		const std::set<const PFSymbol*> cpsymbols) {
 	return transform<UnnestThreeValuedTerms>(f, structure, context, cpsupport, cpsymbols);
 }
 
@@ -118,31 +118,31 @@ Formula* substituteTerm(Formula* f, Term* t, Variable* v) {
 	return transform<SubstituteTerm>(f, t, v);
 }
 
-AbstractTheory* removeEquivalences(AbstractTheory* f){
+AbstractTheory* removeEquivalences(AbstractTheory* f) {
 	return transform<RemoveEquivalences>(f);
 }
 
-AbstractTheory* flatten(AbstractTheory* f){
+AbstractTheory* flatten(AbstractTheory* f) {
 	return transform<Flatten>(f);
 }
 
-AbstractTheory* splitComparisonChains(AbstractTheory* f){
+AbstractTheory* splitComparisonChains(AbstractTheory* f) {
 	return transform<SplitComparisonChains>(f);
 }
 
-AbstractTheory* pushQuantifiers(AbstractTheory* f){
+AbstractTheory* pushQuantifiers(AbstractTheory* f) {
 	return transform<PushQuantifications>(f);
 }
 
-AbstractTheory* graphAggregates(AbstractTheory* f){
+AbstractTheory* graphAggregates(AbstractTheory* f) {
 	return transform<GraphAggregates>(f);
 }
 
-AbstractTheory* addCompletion(AbstractTheory* f){
+AbstractTheory* addCompletion(AbstractTheory* f) {
 	return transform<AddCompletion>(f);
 }
 
-int nrSubformulas(AbstractTheory* f){
+int nrSubformulas(AbstractTheory* f) {
 	CountNbOfSubFormulas checker;
 	f->accept(&checker);
 	return checker.result();
@@ -150,25 +150,23 @@ int nrSubformulas(AbstractTheory* f){
 
 AbstractTheory* merge(AbstractTheory* at1, AbstractTheory* at2) {
 	if (typeid(*at1) != typeid(Theory) || typeid(*at2) != typeid(Theory)) {
-		notyetimplemented("Only merging of normal theories has been implemented...");
+		thrownotyetimplemented("Only merging of normal theories has been implemented...");
 	}
-	//TODO merge vocabularies?
-	if (at1->vocabulary() == at2->vocabulary()) {
-		AbstractTheory* at = at1->clone();
-		Theory* t2 = static_cast<Theory*>(at2);
-		for (auto it = t2->sentences().cbegin(); it != t2->sentences().cend(); ++it) {
-			at->add((*it)->clone());
-		}
-		for (auto it = t2->definitions().cbegin(); it != t2->definitions().cend(); ++it) {
-			at->add((*it)->clone());
-		}
-		for (auto it = t2->fixpdefs().cbegin(); it != t2->fixpdefs().cend(); ++it) {
-			at->add((*it)->clone());
-		}
-		return at;
-	} else {
-		return NULL;
+	if (at1->vocabulary() != at2->vocabulary()) {
+		thrownotyetimplemented("Only merging of theories over the same vocabularies has been implemented...");
 	}
+	AbstractTheory* at = at1->clone();
+	Theory* t2 = static_cast<Theory*>(at2);
+	for (auto it = t2->sentences().cbegin(); it != t2->sentences().cend(); ++it) {
+		at->add((*it)->clone());
+	}
+	for (auto it = t2->definitions().cbegin(); it != t2->definitions().cend(); ++it) {
+		at->add((*it)->clone());
+	}
+	for (auto it = t2->fixpdefs().cbegin(); it != t2->fixpdefs().cend(); ++it) {
+		at->add((*it)->clone());
+	}
+	return at;
 }
 
 double estimatedCostAll(PredForm* query, const std::set<Variable*> freevars, bool inverse, AbstractStructure* structure) {
@@ -178,7 +176,7 @@ double estimatedCostAll(PredForm* query, const std::set<Variable*> freevars, boo
 	if (inverse) {
 		bdd = manager.negation(bdd);
 	}
-	double res = manager.estimatedCostAll(bdd, manager.getVariables(freevars), {}, structure);
+	double res = manager.estimatedCostAll(bdd, manager.getVariables(freevars), { }, structure);
 	return res;
 }
 

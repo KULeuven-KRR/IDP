@@ -470,7 +470,7 @@ void GrounderFactory::visit(const PredForm* pf) {
 	}
 
 	// TODO add bdd code when they work correctly
-/*	auto fovars = VarUtils::makeNewVariables(checksorts);
+	auto fovars = VarUtils::makeNewVariables(checksorts);
 	auto foterms = TermUtils::makeNewVarTerms(fovars);
 	auto checkpf = new PredForm(newpf->sign(), newpf->symbol(), foterms, FormulaParseInfo());
 	const FOBDD* possbdd;
@@ -484,9 +484,9 @@ void GrounderFactory::visit(const PredForm* pf) {
 	}
 
 	auto posstable = new PredTable(new BDDInternalPredTable(possbdd, _symstructure->manager(), fovars, _structure), Universe(tables));
-	auto certtable = new PredTable(new BDDInternalPredTable(certbdd, _symstructure->manager(), fovars, _structure), Universe(tables));*/
-	PredTable* posstable = new PredTable(new FullInternalPredTable(), Universe(tables));
-	PredTable* certtable = new PredTable(new InverseInternalPredTable(new FullInternalPredTable()), Universe(tables));
+	auto certtable = new PredTable(new BDDInternalPredTable(certbdd, _symstructure->manager(), fovars, _structure), Universe(tables));
+//	PredTable* posstable = new PredTable(new FullInternalPredTable(), Universe(tables));
+//	PredTable* certtable = new PredTable(new InverseInternalPredTable(new FullInternalPredTable()), Universe(tables));
 	/*cerr <<"Certainly table: \n";
 	 certtable->print(std::cerr);
 	 cerr <<"\nPossible table: \n";

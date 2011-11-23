@@ -284,7 +284,7 @@ public:
 			const PredTable* pt = structure()->inter(f)->graphInter()->pt();
 			SortTable* outSortTable = structure()->inter(f->outsort());
 			if (not pt->finite()) {
-				notyetimplemented("Functions using infinite types");
+				thrownotyetimplemented("Functions using infinite types");
 				//FIXME make this work for functions with infintie domains and/or infinite out-sorts.  Take a look at lower code...
 			}
 

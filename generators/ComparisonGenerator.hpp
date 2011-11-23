@@ -105,8 +105,8 @@ public:
 				notifyAtEnd();
 			}
 			break;
-		default:
-			assert(false);
+		case Input::RIGHT:
+			assert(false); // Guaranteed not to happen
 			break;
 		}
 	}

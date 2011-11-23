@@ -275,7 +275,7 @@ void FOPropagatorFactory<Factory, Domain>::visit(const AggForm* af) {
 
 template<class Factory, class Domain>
 void FOPropagatorFactory<Factory, Domain>::visit(const EqChainForm* ) {
-	assert(false);
+	thrownotyetimplemented("Creating a propagator for comparison chains has not yet been implemented.");
 }
 
 template<class Factory, class Domain>

@@ -55,8 +55,7 @@ void FOBDDFactory::visit(const FuncTerm* ft) {
 }
 
 void FOBDDFactory::visit(const AggTerm*) {
-	// TODO
-	assert(false);
+	thrownotyetimplemented("Creating a bdd for aggregate terms has not yet been implemented.");
 }
 
 /**
@@ -132,8 +131,7 @@ void FOBDDFactory::visit(const BoolForm* bf) {
 }
 
 void FOBDDFactory::visit(const EquivForm* bf) {
-	// TODO
-	assert(false);
+	thrownotyetimplemented("Creating a bdd for equivalences has not yet been implemented.");
 }
 
 void FOBDDFactory::visit(const QuantForm* qf) {
@@ -159,6 +157,5 @@ void FOBDDFactory::visit(const EqChainForm* ef) {
 }
 
 void FOBDDFactory::visit(const AggForm*) {
-	// TODO
-	assert(false);
+	thrownotyetimplemented("Creating a bdd for aggregate formulas has not yet been implemented.");
 }

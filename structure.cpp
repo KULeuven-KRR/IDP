@@ -2693,13 +2693,11 @@ const DomainElement* ModInternalFuncTable::operator[](const ElementTuple& tuple)
 }
 
 InternalFuncTable* ModInternalFuncTable::add(const ElementTuple&) {
-	assert(false);
-	return 0;
+	throw IdpException("Cannot add elements to this table.");
 }
 
 InternalFuncTable* ModInternalFuncTable::remove(const ElementTuple&) {
-	assert(false);
-	return 0;
+	throw IdpException("Cannot remove elements from this table.");
 }
 
 InternalTableIterator* ModInternalFuncTable::begin(const Universe& univ) const {
@@ -2713,13 +2711,11 @@ const DomainElement* ExpInternalFuncTable::operator[](const ElementTuple& tuple)
 }
 
 InternalFuncTable* ExpInternalFuncTable::add(const ElementTuple&) {
-	assert(false);
-	return 0;
+	throw IdpException("Cannot add elements to this table.");
 }
 
 InternalFuncTable* ExpInternalFuncTable::remove(const ElementTuple&) {
-	assert(false);
-	return 0;
+	throw IdpException("Cannot remove elements from this table.");
 }
 
 InternalTableIterator* ExpInternalFuncTable::begin(const Universe& univ) const {
@@ -2727,13 +2723,11 @@ InternalTableIterator* ExpInternalFuncTable::begin(const Universe& univ) const {
 }
 
 InternalFuncTable* IntFloatInternalFuncTable::add(const ElementTuple&) {
-	assert(false);
-	return 0;
+	throw IdpException("Cannot add elements to this table.");
 }
 
 InternalFuncTable* IntFloatInternalFuncTable::remove(const ElementTuple&) {
-	assert(false);
-	return 0;
+	throw IdpException("Cannot remove elements from this table.");
 }
 
 const DomainElement* PlusInternalFuncTable::operator[](const ElementTuple& tuple) const {
@@ -3947,7 +3941,6 @@ std::vector<AbstractStructure*> Structure::allTwoValuedMorePreciseStructures() c
 			s->inter(f)->graphInter()->makeTrue(tuple);
 			addAllMorePreciesStructuresToResult(s, result);
 		}
-		return result;
 	}
 
 	//If some predicate is not two-valued, calculate all structures that are more precise in which this function is two-valued
@@ -3969,10 +3962,8 @@ std::vector<AbstractStructure*> Structure::allTwoValuedMorePreciseStructures() c
 			s2->inter(p)->makeFalse(*ptIterator);
 			addAllMorePreciesStructuresToResult(s1, result);
 			addAllMorePreciesStructuresToResult(s2, result);
-
-			return result;
 		}
-	}assert(false);
+	}
 	return result;
 }
 
@@ -4008,8 +3999,7 @@ void completeSortTable(const PredTable* pt, PFSymbol* symbol, const string& stru
 }
 
 void addUNAPattern(Function*) {
-	// TODO
-	notyetimplemented("una pattern type");
+	thrownotyetimplemented("una pattern type");
 }
 
 void Structure::autocomplete() {
@@ -4190,6 +4180,7 @@ PredInter* Structure::inter(Predicate* p) const {
 
 	PredInter* pinter = inter(p->parent());
 	PredInter* newinter = NULL;
+	assert(p->type()!=ST_NONE);
 	switch (p->type()) {
 	case ST_CT:
 		newinter = new PredInter(new PredTable(pinter->ct()->internTable(), pinter->universe()), true);
@@ -4203,9 +4194,8 @@ PredInter* Structure::inter(Predicate* p) const {
 	case ST_PF:
 		newinter = new PredInter(new PredTable(pinter->pf()->internTable(), pinter->universe()), true);
 		break;
-	case ST_NONE:
-		assert(false);
-		return NULL;
+	default:
+		break;
 	}
 	_intersToDelete.push_back(newinter);
 	return newinter;

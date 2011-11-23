@@ -150,13 +150,11 @@ void GeneratorFactory::visit(const FuncInternalPredTable* fipt) {
 }
 
 void GeneratorFactory::visit(const UnionInternalPredTable*) {
-	assert(false);
-	// TODO
+	thrownotyetimplemented("Create a generator from a union pred table");
 }
 
 void GeneratorFactory::visit(const UnionInternalSortTable*) {
-	assert(false);
-	// TODO
+	thrownotyetimplemented("Create a generator from a union sort table");
 }
 
 void GeneratorFactory::visit(const AllNaturalNumbers* t) {
@@ -381,8 +379,7 @@ void GeneratorFactory::visit(const PlusInternalFuncTable* pift) {
 		_generator = new DivGenerator(_vars[2], twopointer, _vars[0], NumType::POSSIBLYINT, _universe.tables()[0]);
 		//}
 	} else {
-		notyetimplemented("Infinite generator for addition pattern (out,out,in)");
-		exit(1);
+		thrownotyetimplemented("Infinite generator for addition pattern (out,out,in)");
 	}
 }
 
@@ -392,11 +389,9 @@ void GeneratorFactory::visit(const MinusInternalFuncTable* pift) {
 	} else if (_pattern[1] == Pattern::INPUT) {
 		_generator = new PlusGenerator(_vars[1], _vars[2], _vars[0], pift->getType(), _universe.tables()[0]);
 	} else if (_firstocc[1] == 0) {
-		assert(false);
-		// TODO
+		thrownotyetimplemented("Create a generator for x-x=y, with x output");
 	} else {
-		notyetimplemented("Infinite generator for subtraction pattern (out,out,in)");
-		exit(1);
+		thrownotyetimplemented("Infinite generator for subtraction pattern (out,out,in)");
 	}
 }
 
@@ -406,11 +401,9 @@ void GeneratorFactory::visit(const TimesInternalFuncTable* pift) {
 	} else if (_pattern[1] == Pattern::INPUT) {
 		_generator = new DivGenerator(_vars[2], _vars[1], _vars[0], pift->getType(), _universe.tables()[0]);
 	} else if (_firstocc[1] == 0) {
-		assert(false);
-		// TODO
+		thrownotyetimplemented("Create a generator for x*x=y, with x output");
 	} else {
-		notyetimplemented("Infinite generator for multiplication pattern (out,out,in)");
-		exit(1);
+		thrownotyetimplemented("Infinite generator for multiplication pattern (out,out,in)");
 	}
 }
 
@@ -421,22 +414,18 @@ void GeneratorFactory::visit(const DivInternalFuncTable* pift) {
 		// TODO: wrong in case of integers. E.g., a / 2 = 1 should result in a \in { 2,3 } instead of a \in { 2 }
 		_generator = new TimesGenerator(_vars[1], _vars[2], _vars[0], pift->getType(), _universe.tables()[0]);
 	} else if (_firstocc[1] == 0) {
-		assert(false);
-		// TODO
+		thrownotyetimplemented("Create a generator for x/x=y, with x output");
 	} else {
-		notyetimplemented("Infinite generator for division pattern (out,out,in)");
-		exit(1);
+		thrownotyetimplemented("Infinite generator for division pattern (out,out,in)");
 	}
 }
 
 void GeneratorFactory::visit(const ExpInternalFuncTable*) {
-	notyetimplemented("Infinite generator for exponentiation pattern (?,?,in)");
-	exit(1);
+	thrownotyetimplemented("Infinite generator for exponentiation pattern (?,?,in)");
 }
 
 void GeneratorFactory::visit(const ModInternalFuncTable*) {
-	notyetimplemented("Infinite generator for remainder pattern (?,?,in)");
-	exit(1);
+	thrownotyetimplemented("Infinite generator for remainder pattern (?,?,in)");
 }
 
 void GeneratorFactory::visit(const AbsInternalFuncTable* aift) {

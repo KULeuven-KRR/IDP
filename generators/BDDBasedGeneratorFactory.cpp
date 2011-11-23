@@ -315,8 +315,8 @@ InstGenerator* BDDToGenerator::createFromPredForm(PredForm* atom, const vector<P
 		assert(sametypeid<QuantForm>(*newform));
 		QuantForm* quantform = dynamic_cast<QuantForm*>(newform);
 		assert(sametypeid<BoolForm>(*(quantform->subformula())));
-		BoolForm* boolform = dynamic_cast<BoolForm*>(quantform->subformula());
-		vector<PredForm*> conjunction;
+		BoolForm* boolform = dynamic_cast<BoolForm*>(quantform->subformula());vector
+		<PredForm*> conjunction;
 		for (auto it = boolform->subformulas().cbegin(); it != boolform->subformulas().cend(); ++it) {
 			assert(typeid(*(*it)) == typeid(PredForm));
 			conjunction.push_back(dynamic_cast<PredForm*>(*it));
@@ -416,22 +416,38 @@ InstGenerator* BDDToGenerator::createFromPredForm(PredForm* atom, const vector<P
 		vector<const DomElemContainer*> datomvars;
 		vector<SortTable*> atomtables;
 		for (auto it = atom->subterms().cbegin(); it != atom->subterms().cend(); ++it) {
+			if(not sametypeid<VarTerm>(**it) && not sametypeid<DomainTerm>(**it)){
+				thrownotyetimplemented("Could not create a bdd from this predform, probably missing a transformation.");
+			}
 			if (typeid(*(*it)) == typeid(VarTerm)) {
 				Variable* var = (dynamic_cast<VarTerm*>(*it))->var();
 				unsigned int pos = 0;
 				for (; pos < pattern.size(); ++pos) {
-					if (atomvars[pos] == var) break;
-				}assert(pos < pattern.size());
+					if (atomvars[pos] == var){
+						break;
+					}
+				}
+				assert(pos < pattern.size());
 				atompattern.push_back(pattern[pos]);
 				datomvars.push_back(vars[pos]);
 				atomtables.push_back(universe.tables()[pos]);
-			} else if (typeid(*(*it)) == typeid(DomainTerm)) {
-				DomainTerm* domterm = dynamic_cast<DomainTerm*>(*it);
-				const DomElemContainer* domelement = new const DomElemContainer();
+			} else { // Domain term
+				auto domterm = dynamic_cast<DomainTerm*>(*it);
+				auto domelement = new const DomElemContainer();
 				*domelement = domterm->value();
 
 				Variable* var = new Variable(domterm->sort());
 				PredForm* newatom = dynamic_cast<PredForm*>(FormulaUtils::substituteTerm(atom, domterm, var));
+
+#ifdef DEBUG
+				bool found = false;
+				for (auto it = newatom->subterms().cbegin(); it != newatom->subterms().cend(); ++it) {
+					if(sametypeid<VarTerm>(**it) && dynamic_cast<VarTerm*>(*it)->var()==var){
+						found = true;
+					}
+				}
+				assert(found);
+#endif
 
 				vector<Pattern> termpattern(pattern);
 				termpattern.push_back(Pattern::INPUT);
@@ -442,9 +458,9 @@ InstGenerator* BDDToGenerator::createFromPredForm(PredForm* atom, const vector<P
 				vector<SortTable*> termuniv(universe.tables());
 				termuniv.push_back(structure->inter(domterm->sort()));
 
+				// Recursive case!
 				return createFromPredForm(newatom, termpattern, termvars, fotermvars, structure, inverse, Universe(termuniv));
-			} else
-				assert(false);
+			}
 		}
 
 		// Construct the generator
@@ -458,21 +474,20 @@ InstGenerator* BDDToGenerator::createFromPredForm(PredForm* atom, const vector<P
 		}
 		const PredTable* table = 0;
 		if (sametypeid<Predicate>(*(atom->symbol()))) {
-			Predicate* predicate = dynamic_cast<Predicate*>(atom->symbol());
-			switch (predicate->type()) {
-			case ST_NONE:
+			Predicate* predicate = dynamic_cast<Predicate*>(atom->symbol());switch (predicate->type()) {
+				case ST_NONE:
 				table = inverse ? inter->cf() : inter->ct();
 				break;
-			case ST_CT:
+				case ST_CT:
 				table = inverse ? inter->pf() : inter->ct();
 				break;
-			case ST_CF:
+				case ST_CF:
 				table = inverse ? inter->pt() : inter->cf();
 				break;
-			case ST_PT:
+				case ST_PT:
 				table = inverse ? inter->cf() : inter->pt();
 				break;
-			case ST_PF:
+				case ST_PF:
 				table = inverse ? inter->ct() : inter->pf();
 				break;
 			}

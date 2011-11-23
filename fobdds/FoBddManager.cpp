@@ -1105,7 +1105,7 @@ ostream& FOBDDManager::put(ostream& output, const FOBDDKernel* kernel, unsigned 
 		printTabs(output, spaces);
 		output << "}";
 	} else {
-		assert(false);
+		thrownotyetimplemented("Cannot print kerneltype, missing case in switch.");
 	}
 	output << '\n';
 	return output;
@@ -1135,7 +1135,7 @@ ostream& FOBDDManager::put(ostream& output, const FOBDDArgument* arg) const {
 		const FOBDDDomainTerm* dt = dynamic_cast<const FOBDDDomainTerm*>(arg);
 		output << *(dt->value()) << "[" << *(dt->sort()) << "]";
 	} else {
-		assert(false);
+		thrownotyetimplemented("Cannot print bddterm, missing case in switch.");
 	}
 	return output;
 }
@@ -1423,8 +1423,7 @@ double FOBDDManager::estimatedChance(const FOBDDKernel* kernel, AbstractStructur
 				double bddchance = estimatedChance(quantkernel->bdd(), structure);
 				return bddchance == 0 ? 0 : 1;
 			} else {
-				// TODO TODO TODO
-				assert(false);
+				// FIXME implement correctly
 				return 0.5;
 			}
 		}

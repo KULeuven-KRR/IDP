@@ -15,34 +15,36 @@
 
 using namespace std;
 
+// DELETES original predform!
+PredForm* getDerivedPredForm(PredForm* pf, SymbolType t){
+	assert(t!=ST_NONE);
+	auto newsymbol = pf->symbol()->derivedSymbol(t);
+	PredForm* newpf = new PredForm(SIGN::POS, newsymbol, pf->subterms(), pf->pi().clone());
+	delete (pf);
+	return newpf;
+}
+
 Formula* PushNegations::visit(PredForm* pf) {
 	if (isPos(pf->sign())) {
 		return traverse(pf);
 	}
 	if (sametypeid<Predicate>(*(pf->symbol()))) {
-		Predicate* p = dynamic_cast<Predicate*>(pf->symbol());
-		if (p->type() != ST_NONE) {
-			Predicate* newsymbol = NULL;
-			switch (p->type()) {
-			case ST_CT:
-				newsymbol = pf->symbol()->derivedSymbol(ST_PF);
-				break;
-			case ST_CF:
-				newsymbol = pf->symbol()->derivedSymbol(ST_PT);
-				break;
-			case ST_PT:
-				newsymbol = pf->symbol()->derivedSymbol(ST_CF);
-				break;
-			case ST_PF:
-				newsymbol = pf->symbol()->derivedSymbol(ST_CT);
-				break;
-			case ST_NONE:
-				assert(false);
-				break;
-			}
-			PredForm* newpf = new PredForm(SIGN::POS, newsymbol, pf->subterms(), pf->pi().clone());
-			delete (pf);
-			pf = newpf;
+		auto p = dynamic_cast<Predicate*>(pf->symbol());
+		switch (p->type()) {
+		case ST_CT:
+			pf = getDerivedPredForm(pf, ST_PF);
+			break;
+		case ST_CF:
+			pf = getDerivedPredForm(pf, ST_PT);
+			break;
+		case ST_PT:
+			pf = getDerivedPredForm(pf, ST_CF);
+			break;
+		case ST_PF:
+			pf = getDerivedPredForm(pf, ST_CT);
+			break;
+		case ST_NONE:
+			break;
 		}
 	}
 	return traverse(pf);

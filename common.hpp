@@ -26,6 +26,10 @@ std::string getPathOfConfigFile();
 
 void notyetimplemented(const std::string&);
 
+// Guaranteed to throw (but cannot tell this to gcc unfortunately)
+// Counts as a TODO (but cannot tell this to eclipse unfortunately)
+void thrownotyetimplemented(const std::string&);
+
 bool isInt(double);					//!< true iff the given double is an integer
 bool isInt(const std::string&);		//!< true iff the given string is an integer
 bool isDouble(const std::string&);	//!< true iff the given string is a double

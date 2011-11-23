@@ -121,8 +121,7 @@ dominstlist LazyRuleGrounder::createInst(const ElementTuple& headargs){
 	for(uint i=0; i<headargs.size(); ++i){
 		// FIXME what if it is not a VarTermGrounder! (e.g. if it is a constant => we should check whether it can unify with it)
 		if(not sametypeid<VarTermGrounder>(*headgrounder()->subtermgrounders()[i])){
-			notyetimplemented("Lazygrounding with functions.\n");
-			throw std::exception();
+			thrownotyetimplemented("Lazygrounding with functions.\n");
 		}
 		auto var = (dynamic_cast<VarTermGrounder*>(headgrounder()->subtermgrounders()[i]))->getElement();
 		domlist.push_back(dominst(var, headargs[i]));
