@@ -8,6 +8,8 @@
  */
 
 #include <cmath>
+#include <map>
+
 
 #include "gtest/gtest.h"
 #include "rungidl.hpp"
@@ -21,6 +23,9 @@
 #include "term.hpp"
 #include "IdpException.hpp"
 #include "tests/testingtools.hpp"
+#include "inferences/propagation/GenerateBDDAccordingToBounds.hpp"
+#include "fobdds/FoBddManager.hpp"
+
 
 using namespace std;
 
@@ -30,7 +35,10 @@ TEST(Grounderfactory, Context) {
 
 
 	auto options = new Options("opt", ParseInfo());
-	auto gf = new GrounderFactory(ts.s, options);
+	//TODO: move the following line to the constructor of GrounderFactory for in case no GenerateBDD... is given?
+	auto gddatb = new GenerateBDDAccordingToBounds(new FOBDDManager(),*(new Bound()),  *(new Bound()),*(new std::map<PFSymbol*, std::vector<const FOBDDVariable*> >()));
+
+	auto gf = new GrounderFactory(ts.s, gddatb);
 
 	gf->InitContext();
 	auto t = new Theory("T", ts.vocabulary, ParseInfo());
