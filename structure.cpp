@@ -3853,6 +3853,37 @@ bool Structure::approxTwoValued() const {
 	return result;
 }
 
+void generateMorePreciseStructures(const PredTable* cf, const ElementTuple& domainElementWithoutValue, const SortTable* imageSort, Function* function, const FuncInter* inter, vector<AbstractStructure*>& extensions){
+	// go over all saved structures and generate a new structure for each possible value for it
+	vector<AbstractStructure*> newstructs;
+	auto imageIterator = SortIterator(imageSort->internTable()->sortBegin());
+	vector<AbstractStructure*> partialfalsestructs;
+	if(function->partial()){
+		for (auto j = extensions.begin(); j < extensions.end(); ++j) {
+			partialfalsestructs.push_back((*j)->clone());
+		}
+	}
+	for (; not imageIterator.isAtEnd(); ++imageIterator) {
+		ElementTuple tuple(domainElementWithoutValue);
+		tuple.push_back(*imageIterator);
+		if (cf->contains(tuple)) {
+			continue;
+		}
+
+		for (auto j = extensions.begin(); j < extensions.end(); ++j) {
+			auto news = (*j)->clone();
+			news->inter(function)->graphInter()->makeTrue(tuple);
+			newstructs.push_back(news);
+		}
+		for(auto j = partialfalsestructs.begin(); j<partialfalsestructs.end(); ++j){
+			(*j)->inter(function)->graphInter()->makeFalse(tuple);
+		}
+	}
+	assert(newstructs.size()>0);
+	extensions = newstructs;
+	extensions.insert(extensions.end(), partialfalsestructs.cbegin(), partialfalsestructs.cend());
+}
+
 /*
  * Can only be called if this structure is cleaned; calculates all more precise two-valued structures
  * TODO assert(iscleaned) and refactor methods
@@ -3868,6 +3899,7 @@ std::vector<AbstractStructure*> Structure::generateAllTwoValuedExtensions() cons
 
 	// TODO if going through the vocabulary, it is not guaranteed that the struct has an interpretation for it (otherwise, could make this a global method). But is this logical, or should a monitor be added such that a struct is extended if its vocabulary changes?
 	for (auto i = _funcinter.begin(); i != _funcinter.end(); ++i) {
+		auto function = (*i).first;
 		auto inter = (*i).second;
 		if (inter->approxTwoValued()) {
 			continue;
@@ -3917,43 +3949,10 @@ std::vector<AbstractStructure*> Structure::generateAllTwoValuedExtensions() cons
 					continue;
 				}
 
-				vector<AbstractStructure*> newstructs;
-				auto imageIterator = SortIterator(sorts.back()->internTable()->sortBegin());
-				for (; not imageIterator.isAtEnd(); ++imageIterator) {
-					ElementTuple tuple(domainElementWithoutValue);
-					tuple.push_back(*imageIterator);
-					if (cf->contains(tuple)) {
-						continue;
-					}
-
-					for (auto j = extensions.begin(); j < extensions.end(); ++j) {
-						auto news = (*j)->clone();
-						news->inter((*i).first)->graphInter()->makeTrue(tuple);
-						newstructs.push_back(news);
-					}
-				}
-				assert(newstructs.size()>0);
-				extensions = newstructs;
+				generateMorePreciseStructures(cf, domainElementWithoutValue, sorts.back(), function, inter, extensions);
 			}
 		}else{
-			// go over all saved structures and generate a new structure for each possible value for it
-			vector<AbstractStructure*> newstructs;
-			auto imageIterator = SortIterator(sorts.back()->internTable()->sortBegin());
-			for (; not imageIterator.isAtEnd(); ++imageIterator) {
-				ElementTuple tuple(domainElementWithoutValue);
-				tuple.push_back(*imageIterator);
-				if (cf->contains(tuple)) {
-					continue;
-				}
-
-				for (auto j = extensions.begin(); j < extensions.end(); ++j) {
-					auto news = (*j)->clone();
-					news->inter((*i).first)->graphInter()->makeTrue(tuple);
-					newstructs.push_back(news);
-				}
-			}
-			assert(newstructs.size()>0);
-			extensions = newstructs;
+			generateMorePreciseStructures(cf, domainElementWithoutValue, sorts.back(), function, inter, extensions);
 		}
 	}
 
@@ -4297,7 +4296,7 @@ void Structure::clean() {
 			continue;
 		}
 
-		// TODO this code should be corrected!
+		// TODO this code should be reviewed!
 		if (((not it->first->partial()) && TableUtils::approxTotalityCheck(it->second))
 				|| TableUtils::approxIsInverse(it->second->graphInter()->ct(), it->second->graphInter()->cf())) {
 			EnumeratedInternalFuncTable* eift = new EnumeratedInternalFuncTable();

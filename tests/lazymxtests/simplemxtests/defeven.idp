@@ -1,0 +1,19 @@
+vocabulary V{
+	type t isa int
+	even(t)
+}
+
+theory T:V{
+	{
+		!x: even(x) <- x=0.
+		!x: even(x) <- ~even(x-1).
+	}
+}
+
+structure S:V{
+	t = {0..10}
+}
+
+procedure getExpectedNbOfModels(){
+	return 1
+}

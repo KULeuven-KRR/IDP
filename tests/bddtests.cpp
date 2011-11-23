@@ -84,6 +84,7 @@ namespace Tests{
 		ASSERT_EQ(genvalues.size(), 2);
 		ASSERT_TRUE(genvalues.find(-2)!=genvalues.end());
 		ASSERT_TRUE(genvalues.find(1)!=genvalues.end());
+
 	}
 
 	// TODO move to nonbdd test
