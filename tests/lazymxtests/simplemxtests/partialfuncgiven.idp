@@ -1,0 +1,17 @@
+vocabulary V{
+	type t isa int
+	partial f(t):t
+}
+
+theory T:V{
+
+}
+
+structure S:V{
+	t = {1..2}
+	f= {1->2}
+}
+
+procedure getExpectedNbOfModels(){
+	return 1
+}
