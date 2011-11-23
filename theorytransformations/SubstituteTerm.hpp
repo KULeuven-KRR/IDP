@@ -1,9 +1,3 @@
-/************************************
-	SubstituteTerm.hpp
-	this file belongs to GidL 2.0
-	(c) K.U.Leuven
-************************************/
-
 #ifndef SUBSTITUTETERM_HPP_
 #define SUBSTITUTETERM_HPP_
 
@@ -14,6 +8,7 @@ private:
 	Term* _term;
 	Variable* _variable;
 
+protected:
 	Term* traverse(Term* t) {
 		if (t == _term) {
 			return new VarTerm(_variable, TermParseInfo());
