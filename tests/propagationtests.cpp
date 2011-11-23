@@ -26,6 +26,7 @@
 #include <iostream>
 #include "IdpException.hpp"
 #include "inferences/propagation/PropagatorFactory.hpp"
+#include "inferences/propagation/GenerateBDDAccordingToBounds.hpp"
 
 using namespace std;
 
@@ -43,12 +44,22 @@ namespace Tests{
 		auto p = new Predicate("p", {sort}, false);
 		auto q = new Predicate("q", {sort}, false);
 		auto notpx = new PredForm(SIGN::NEG, p, {x}, FormulaParseInfo());
-		auto qx = new PredForm(SIGN::POS, p, {x}, FormulaParseInfo());
+		auto qx = new PredForm(SIGN::POS, q, {x}, FormulaParseInfo());
 		auto pximplqx = new BoolForm(SIGN::POS, true, notpx, qx, FormulaParseInfo());
-		auto forallpximplqx = new QuantForm(SIGN::POS, QUANT::UNIV, set<Variable*>{x}, pximplqx, FormulaParseInfo());
+		auto forallpximplqx = new QuantForm(SIGN::POS, QUANT::UNIV, {variable}, pximplqx, FormulaParseInfo());
 		auto vocabulary = new Vocabulary("V");
+		vocabulary->add(p);
+		vocabulary->add(q);
 		auto theory = new Theory("T", vocabulary, ParseInfo());
-		// TODO
-		//auto propagator = createPropagator(theory, InitBoundType::IBT_TWOVAL, {});
+		auto structure = new Structure("S", ParseInfo());
+		structure->vocabulary(vocabulary);
+		auto pinter = structure->inter(p);
+		pinter->pf(new PredTable(new FullInternalPredTable(), pinter->universe()));
+		auto propagator = generateApproxBounds(theory, structure);
+		//cerr <<"Derived bounds: \n";
+		//propagator->put(std::cerr);
+		auto bdd = propagator->evaluate(forallpximplqx, TruthType::CERTAIN_FALSE);
+		//propagator->manager()->put(std::cerr, bdd);
+		ASSERT_EQ(bdd, propagator->manager()->falsebdd());
 	}
 }
