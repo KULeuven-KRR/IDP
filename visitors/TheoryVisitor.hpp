@@ -50,9 +50,9 @@ class AbstractGroundTheory;
  */
 class TheoryVisitor {
 protected:
-	void traverse(const Formula*);
-	void traverse(const Term*);
-	void traverse(const SetExpr*);
+	virtual void traverse(const Formula*);
+	virtual void traverse(const Term*);
+	virtual void traverse(const SetExpr*);
 
 public:
 	virtual ~TheoryVisitor() {}

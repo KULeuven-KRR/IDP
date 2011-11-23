@@ -57,9 +57,9 @@ class QuantSetExpr;
  */
 class TheoryMutatingVisitor {
 protected:
-	Formula* traverse(Formula*);
-	Term* traverse(Term*);
-	SetExpr* traverse(SetExpr*);
+	virtual Formula* traverse(Formula*);
+	virtual Term* traverse(Term*);
+	virtual SetExpr* traverse(SetExpr*);
 
 public:
 	virtual ~TheoryMutatingVisitor(){}
