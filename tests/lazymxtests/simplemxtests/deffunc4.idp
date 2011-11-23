@@ -1,0 +1,18 @@
+vocabulary V{
+	type t isa int
+	f(t):t
+}
+
+theory T:V{
+	{
+		!x: f(x)=1 <- f(x)~= 2.
+	}
+}
+
+structure S:V{
+	t = {1..3}
+}
+
+procedure getExpectedNbOfModels(){
+	return 1
+}
