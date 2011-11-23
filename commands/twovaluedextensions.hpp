@@ -1,9 +1,3 @@
-/************************************
- changevocabulary.hpp
- this file belongs to GidL 2.0
- (c) K.U.Leuven
- ************************************/
-
 #ifndef TWOVALUEDEXTENSIONSINFERENCE_HPP_
 #define TWOVALUEDEXTENSIONSINFERENCE_HPP_
 
@@ -28,8 +22,8 @@ public:
 
 	void addAllMorePreciseToResult(AbstractStructure *s, std::vector<InternalArgument> *& result) const {
 		if (!s->approxTwoValued()) {
-			std::vector<AbstractStructure*> allTwoValuedMorePreciseStructures = s->allTwoValuedMorePreciseStructures();
-			result->insert(result->end(), allTwoValuedMorePreciseStructures.begin(), allTwoValuedMorePreciseStructures.end());
+			auto extensions = s->generateAllTwoValuedExtensions();
+			result->insert(result->end(), extensions.begin(), extensions.end());
 
 		} else {
 			result->push_back(s);

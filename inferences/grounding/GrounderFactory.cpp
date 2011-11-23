@@ -470,30 +470,34 @@ void GrounderFactory::visit(const PredForm* pf) {
 	}
 
 	// TODO add bdd code when they work correctly
-	auto fovars = VarUtils::makeNewVariables(checksorts);
-	auto foterms = TermUtils::makeNewVarTerms(fovars);
-	auto checkpf = new PredForm(newpf->sign(), newpf->symbol(), foterms, FormulaParseInfo());
-	const FOBDD* possbdd;
-	const FOBDD* certbdd;
-	if (_context.gentype == GenType::CANMAKETRUE) {
-		possbdd = _symstructure->evaluate(checkpf, TruthType::POSS_TRUE);
-		certbdd = _symstructure->evaluate(checkpf, TruthType::CERTAIN_TRUE);
-	} else {
-		possbdd = _symstructure->evaluate(checkpf, TruthType::POSS_FALSE);
-		certbdd = _symstructure->evaluate(checkpf, TruthType::CERTAIN_FALSE);
-	}
-
-	auto posstable = new PredTable(new BDDInternalPredTable(possbdd, _symstructure->manager(), fovars, _structure), Universe(tables));
-	auto certtable = new PredTable(new BDDInternalPredTable(certbdd, _symstructure->manager(), fovars, _structure), Universe(tables));
-//	PredTable* posstable = new PredTable(new FullInternalPredTable(), Universe(tables));
-//	PredTable* certtable = new PredTable(new InverseInternalPredTable(new FullInternalPredTable()), Universe(tables));
-	/*cerr <<"Certainly table: \n";
-	 certtable->print(std::cerr);
-	 cerr <<"\nPossible table: \n";
-	 posstable->print(std::cerr);
-	 cerr <<"\n";*/
+//	auto fovars = VarUtils::makeNewVariables(checksorts);
+//	auto foterms = TermUtils::makeNewVarTerms(fovars);
+//	auto checkpf = new PredForm(newpf->sign(), newpf->symbol(), foterms, FormulaParseInfo());
+//	const FOBDD* possbdd;
+//	const FOBDD* certbdd;
+//	if (_context.gentype == GenType::CANMAKETRUE) {
+//		possbdd = _symstructure->evaluate(checkpf, TruthType::POSS_TRUE);
+//		certbdd = _symstructure->evaluate(checkpf, TruthType::CERTAIN_TRUE);
+//	} else {
+//		possbdd = _symstructure->evaluate(checkpf, TruthType::POSS_FALSE);
+//		certbdd = _symstructure->evaluate(checkpf, TruthType::CERTAIN_FALSE);
+//	}
+//
+//	auto posstable = new PredTable(new BDDInternalPredTable(possbdd, _symstructure->manager(), fovars, _structure), Universe(tables));
+//	auto certtable = new PredTable(new BDDInternalPredTable(certbdd, _symstructure->manager(), fovars, _structure), Universe(tables));
+	auto posstable = new PredTable(new FullInternalPredTable(), Universe(tables));
+	auto certtable = new PredTable(new InverseInternalPredTable(new FullInternalPredTable()), Universe(tables));
 	auto possch = GeneratorFactory::create(posstable, vector<Pattern>(checkargs.size(), Pattern::INPUT), checkargs, Universe(tables));
 	auto certainch = GeneratorFactory::create(certtable, vector<Pattern>(checkargs.size(), Pattern::INPUT), checkargs, Universe(tables));
+/*	cerr <<"Certainly table: \n";
+	certtable->print(std::cerr);
+	cerr <<"\nPossible table: \n";
+	posstable->print(std::cerr);
+	cerr <<"\n";
+	cerr <<"Possible checker: \n";
+	possch->put(std::cerr);
+	cerr <<"Certain checker: \n";
+	certainch->put(std::cerr);*/
 
 	_formgrounder = new AtomGrounder(_grounding, newpf->sign(), newpf->symbol(), subtermgrounders, checkargs, possch, certainch,
 			_structure->inter(newpf->symbol()), argsorttables, _context);

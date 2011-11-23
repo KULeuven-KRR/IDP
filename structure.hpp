@@ -2464,8 +2464,8 @@ public:
 	virtual Universe universe(const PFSymbol*) const = 0;
 
 	virtual bool approxTwoValued() const =0;
-	virtual std::vector<AbstractStructure*> allTwoValuedMorePreciseStructures() const = 0;
 
+	virtual std::vector<AbstractStructure*> generateAllTwoValuedExtensions() const = 0;
 };
 
 /** Structures as constructed by the parser **/
@@ -2478,7 +2478,6 @@ private:
 
 	mutable std::vector<PredInter*> _intersToDelete; // Interpretations which were created and not yet deleted // TODO do this in a cleaner way!
 	void canIncrement(TableIterator & domainIterator) const;
-	void addAllMorePreciesStructuresToResult(Structure *s1, std::vector<AbstractStructure*> & result) const;
 
 public:
 	Structure(const std::string& name, const ParseInfo& pi) :
@@ -2506,8 +2505,9 @@ public:
 	PredInter* inter(PFSymbol* s) const; //!< Return the interpretation of s.
 	Structure* clone() const; //!< take a clone of this structure
 	bool approxTwoValued() const;
-	std::vector<AbstractStructure*> allTwoValuedMorePreciseStructures() const;
 	Universe universe(const PFSymbol*) const;
+
+	std::vector<AbstractStructure*> generateAllTwoValuedExtensions() const;
 };
 
 /************************

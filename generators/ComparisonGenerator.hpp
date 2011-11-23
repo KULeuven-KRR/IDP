@@ -23,7 +23,7 @@ private:
 	SortTable *_leftsort, *_rightsort;
 	const DomElemContainer *_leftvar, *_rightvar;
 	CompType comparison;
-	Input input; // NOTE: is never RIGHT after initialization
+	Input _input; // NOTE: is never RIGHT after initialization
 	SortIterator _left, _right;
 
 	enum class CompResult {
@@ -35,14 +35,14 @@ private:
 public:
 	ComparisonGenerator(SortTable* leftsort, SortTable* rightsort, const DomElemContainer* leftvalue, const DomElemContainer* rightvalue, Input input,
 			CompType type) :
-			_leftsort(leftsort), _rightsort(rightsort), _leftvar(leftvalue), _rightvar(rightvalue), comparison(type), input(input), _left(
+			_leftsort(leftsort), _rightsort(rightsort), _leftvar(leftvalue), _rightvar(rightvalue), comparison(type), _input(input), _left(
 					leftsort->sortBegin()), _right(rightsort->sortBegin()), _reset(true) {
-		if (input == Input::RIGHT) {
+		if (_input == Input::RIGHT) {
 			_leftsort = rightsort;
 			_rightsort = leftsort;
 			_leftvar = rightvalue;
 			_rightvar = leftvalue;
-			input = Input::LEFT;
+			_input = Input::LEFT;
 			comparison = invertComp(comparison);
 		}
 	}
@@ -56,7 +56,7 @@ public:
 	}
 
 	void next() {
-		switch (input) {
+		switch (_input) {
 		case Input::BOTH:
 			if(_reset && correct()){
 				_reset = false;
@@ -113,10 +113,10 @@ public:
 
 private:
 	bool leftIsInput() const{
-		return input==Input::BOTH || input==Input::LEFT;
+		return _input==Input::BOTH || _input==Input::LEFT;
 	}
 	bool rightIsInput() const{
-		return input==Input::BOTH;
+		return _input==Input::BOTH;
 	}
 
 	CompResult checkAndSet() {
