@@ -89,11 +89,24 @@ public:
 				notifyAtEnd();
 			}
 			break;}
-		case Input::LEFT:
+		case Input::LEFT: // NOTE: optimized EQ comparison
 			if(_reset){
 				_reset = false;
-				_right = _rightsort->sortBegin();
+				if(comparison==CompType::EQ){
+					if(_rightsort->contains(_leftvar->get())){
+						_rightvar->operator =(_leftvar->get());
+					}else{
+						notifyAtEnd();
+					}
+					return;
+				}else{
+					_right = _rightsort->sortBegin();
+				}
 			}else{
+				if(comparison==CompType::EQ){
+					notifyAtEnd();
+					return;
+				}
 				++_right;
 			}
 			for(; not _right.isAtEnd(); ++_right){
@@ -119,7 +132,7 @@ private:
 		return _input==Input::BOTH;
 	}
 
-	CompResult checkAndSet() {
+	CompResult checkAndSet() { // TODO optimize eq comparison
 		if (correct()) {
 			if(not leftIsInput()){
 				_leftvar->operator =(*_left);
