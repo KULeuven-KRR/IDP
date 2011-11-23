@@ -1,8 +1,8 @@
 /************************************
-	structure.cpp
-	this file belongs to GidL 2.0
-	(c) K.U.Leuven
-************************************/
+ structure.cpp
+ this file belongs to GidL 2.0
+ (c) K.U.Leuven
+ ************************************/
 
 #include <cmath> // double std::abs(double) and double std::pow(double,double)
 #include <cstdlib> // int std::abs(int)
@@ -17,7 +17,6 @@
 #include "fobdds/FoBdd.hpp"
 #include "fobdds/FoBddManager.hpp"
 #include "luaconnection.hpp" //TODO break connection with lua!
-
 #include "visitors/StructureVisitor.hpp"
 #include "structureanalysis/EnumerateSymbolicTable.hpp"
 
@@ -3879,7 +3878,9 @@ void Structure::addAllMorePreciesStructuresToResult(Structure* s, std::vector<Ab
  */
 std::vector<AbstractStructure*> Structure::allTwoValuedMorePreciseStructures() const {
 	std::vector<AbstractStructure*> result;
-	assert( not approxTwoValued());
+	if (approxTwoValued()) {
+		return {this->clone()};
+	}
 
 	//If some function is not two-valued, calculate all structures that are more precise in which this function is two-valued
 	for (auto funcInterIterator = _funcinter.cbegin(); funcInterIterator != _funcinter.cend(); funcInterIterator++) {
@@ -3910,7 +3911,7 @@ std::vector<AbstractStructure*> Structure::allTwoValuedMorePreciseStructures() c
 		TableIterator domainIterator(internal);
 
 		ElementTuple domainElementWithoutValue;
-		//If the function is not a constant, set a domain element.
+		//If the function is not a constant, choose the fust domain element without value.
 		//If the function is a constant, we leave domainElementWithoutValue to be blank.
 		if (hasNext) {
 			auto ctIterator = ct->begin();
@@ -3934,8 +3935,13 @@ std::vector<AbstractStructure*> Structure::allTwoValuedMorePreciseStructures() c
 				}
 				break;
 			}
-			assert(not domainIterator.isAtEnd());//We know that at least one domainelement should have no ct or cf value
+			assert(not domainIterator.isAtEnd());
+			//We know that at least one domainelement should have no ct or cf value
 		}
+		//If f is partial, we should also include the possibility that this domainelement has no value, therefor, for ever image element
+		// we will make (dom,im) false in one specific structure
+		Structure* partial = this->clone();
+
 		//Now, choose an image for this domainelement
 		for (; not imageIterator.isAtEnd(); ++imageIterator) {
 			ElementTuple tuple(domainElementWithoutValue);
@@ -3946,7 +3952,14 @@ std::vector<AbstractStructure*> Structure::allTwoValuedMorePreciseStructures() c
 			Structure* s = this->clone();
 			s->inter(f)->graphInter()->makeTrue(tuple);
 			addAllMorePreciesStructuresToResult(s, result);
+			if (f->partial()) {
+				partial->inter(f)->graphInter()->makeFalse(tuple);
+			}
 		}
+		if (f->partial()) {
+			addAllMorePreciesStructuresToResult(partial, result);
+		}
+
 		return result;
 	}
 
@@ -4182,7 +4195,7 @@ PredInter* Structure::inter(Predicate* p) const {
 
 	if (p->type() == ST_NONE) {
 		auto it = _predinter.find(p);
-		if(it==_predinter.cend()){
+		if (it == _predinter.cend()) {
 			throw IdpException("The structure does not contain the predicate ");
 		}
 		return it->second;
@@ -4284,7 +4297,7 @@ void Structure::clean() {
 			continue;
 		}
 
-		// TODO this code should be corrected!
+		// TODO this code should be reviewed!
 		if (((not it->first->partial()) && TableUtils::approxTotalityCheck(it->second))
 				|| TableUtils::approxIsInverse(it->second->graphInter()->ct(), it->second->graphInter()->cf())) {
 			EnumeratedInternalFuncTable* eift = new EnumeratedInternalFuncTable();
@@ -4297,8 +4310,8 @@ void Structure::clean() {
 }
 
 /**************
-	Visitor
-**************/
+ Visitor
+ **************/
 
 void ProcInternalPredTable::accept(StructureVisitor* v) const {
 	v->visit(this);
@@ -4389,8 +4402,8 @@ void ModInternalFuncTable::accept(StructureVisitor* v) const {
 }
 
 /******************
-	Materialize
-******************/
+ Materialize
+ ******************/
 
 SortTable* SortTable::materialize() const {
 	EnumerateSymbolicTable m;
