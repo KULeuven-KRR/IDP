@@ -1,0 +1,80 @@
+procedure getExpectedAModel(){
+	return true
+}
+
+/*******************************************
+	5 Houses problem
+*******************************************/
+
+vocabulary V{
+type { 
+	Colours = {Blue; Green; Red; White; Yellow}
+	Nationalities = {Brit; Dane; German;  Norwegian; Swede}
+	Beverages = {Beer; Coffee; Milk; Tea; Water}
+	Cigars = {BlueMaster;Dunhill;PallMall;Prince;Blend}
+	Pets = {Cat;Bird;Dog;Fish;Horse}
+	HouseNumbers
+}
+Nr1 : HouseNumbers
+Nr3 : HouseNumbers
+NeighbourAux(HouseNumbers,HouseNumbers)
+
+ 
+Colour(Colours,HouseNumbers)
+Nationality(Nationalities,HouseNumbers)
+Beverage(Beverages,HouseNumbers)
+Cigar(Cigars,HouseNumbers)
+Pet(Pets,HouseNumbers)
+
+ 
+Neighbour(HouseNumbers,HouseNumbers)
+HouseNumber(HouseNumbers)
+Answer(Nationalities)
+
+
+}
+
+theory T : V { 
+!h: ? c: Colour(c,h).// h means housenumber
+!h: ? n: Nationality(n,h).
+!h: ? b: Beverage(b,h).
+!h: ? r: Cigar(r,h).
+!h: ? p: Pet(p,h).
+!h: HouseNumber(h).
+//!h c n b r p : Colour(c,h) & Nationality(n,h) & Beverage(b,h) & Cigar(r,h) & Pet(p,h).
+!c1 c2 h : Colour(c1,h) & Colour(c2,h)=> c1=c2 .
+!n1 n2 h : Nationality(n1,h) & Nationality(n2,h) => n1=n2.
+!b1 b2 h : Beverage(b1,h) & Beverage(b2,h) => b1=b2.
+!r1 r2 h : Cigar(r1,h) & Cigar(r2,h)=> r1=r2.
+!p1 p2 h : Pet(p1,h) & Pet(p2,h)=> p1=p2.
+
+{ Neighbour(x,y)<-NeighbourAux(x,y) | NeighbourAux(y,x).  }
+
+? h: Colour(Red,h) & Nationality(Brit,h).
+? h : Nationality(Swede,h) & Pet(Dog,h).
+? h : Nationality(Dane,h) & Beverage(Tea,h).
+? h1 h2 : Neighbour(h1,h2) & Colour(Green,h1) & Colour(White,h2).
+? h: Colour(Green,h) & Beverage(Coffee,h).
+? h :Cigar(PallMall,h) & Pet(Bird,h).
+? h :Colour(Yellow,h) & Cigar(Dunhill,h).
+  Beverage(Milk,Nr3).
+  Nationality(Norwegian,Nr1).
+? h1 h2 : Neighbour(h1,h2) & Cigar(Blend,h1) & Pet(Cat,h2).
+? h1 h2 : Neighbour(h1,h2) & Pet(Horse,h1) & Cigar(Dunhill,h2).
+? h : Beverage(Beer,h) & Cigar(BlueMaster,h).
+? h : Nationality(German,h) & Cigar(Prince,h).
+? h1 h2: Neighbour(h1,h2) & Nationality(Norwegian,h1) & Colour(Blue,h2).
+? h1 h2: Neighbour(h1,h2) & Cigar(Blend,h1) & Beverage(Water,h2).
+
+{ Answer(n)<- (Nationality(n,h) & Pet(Fish,h)).  }
+
+
+}
+
+structure S : V{ 
+HouseNumbers = {1..5}
+NeighbourAux= {1,2; 2,3; 3,4; 4,5}
+Nr1 = 1
+Nr3 = 3
+
+}

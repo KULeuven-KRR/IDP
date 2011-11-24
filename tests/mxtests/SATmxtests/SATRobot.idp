@@ -1,0 +1,60 @@
+procedure getExpectedAModel(){
+	return true
+}
+
+vocabulary V{
+	type Step isa int
+	type Action 
+	Move: Action
+	Grab:Action
+	Drop:Action
+	type Pos
+	InitRobot : Pos
+	InitGold : Pos
+	GoalPos : Pos
+	Adj(Pos,Pos)
+ 
+	Final : Step
+	Robot(Step,Pos)
+	Gold(Step,Pos)
+ 
+	partial Do(Step) : Action
+}
+
+theory T : V { 
+	{ Robot(0,InitRobot). 
+	  Robot(t+1,y) <- Robot(t,x) & Adj(x,y) & Do(t) = Move.
+	  Robot(t+1,y) <- Robot(t,y) & Do(t) ~= Move.
+	  Gold(0,InitGold).
+	  Gold(t+1,y) <- Gold(t,y) & Do(t) ~= Grab.
+	  Gold(t+1,y) <- Robot(t,y) & Do(t) = Drop.
+	}
+
+	// Grab only if there is gold
+	! t : Do(t)=Grab => ? y : Robot(t,y) & Gold(t,y).
+
+	// Drop only if the robot has gold
+	! t : Do(t)=Drop => ~(? y : Gold(t,y)).
+
+	// Stop at final
+	! t : t < Final => ? a : Do(t) = a.
+	! t : t >= Final => ~(? a : Do(t) = a).
+
+	// Goal must be reached
+	Gold(Final,GoalPos).
+	  
+	
+}
+
+structure S : V{ 
+	Action= {m;g;d}
+	Move = m
+	Grab = g
+	Drop = d
+	Step = {0..10}
+	Pos = {a;b;c;d}
+	Adj = {a,b; b,c; c,d; d,a }
+	InitRobot = a
+	GoalPos = a
+	InitGold = c
+}

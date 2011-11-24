@@ -5,6 +5,7 @@ procedure main(){
 	stdoptions.nbmodelequivalent = true
 	stdoptions.groundlazily = true
 	stdoptions.groundverbosity=0
+	stdoptions.groundwitbounds=false
 	stdoptions.satverbosity=0
 	solutions = mx::all(T, S, stdoptions)
 	io.stderr:write("Found "..#solutions.." models, expected "..getExpectedNbOfModels().." models.\n")

@@ -1,0 +1,23 @@
+procedure getExpectedAModel(){
+	return false
+}
+
+vocabulary V{
+	type N isa int
+
+ 
+	Q(N)
+	
+}
+
+theory T : V { 
+	{
+		Q(y) <- sum{x: Q(x):x}=<3.
+		Q(1) <-.
+	}
+
+}
+
+structure S : V{ 
+N =  {1..5}
+}

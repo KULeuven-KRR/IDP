@@ -1,0 +1,51 @@
+procedure getExpectedAModel(){
+	return true
+}
+
+vocabulary V{
+	type Num isa int
+	type Cost isa int
+ 
+	A(Num)
+	B(Num, Cost)
+	C(Cost)
+	D(Num, Cost)
+	F(Num, Cost)
+	Q(Num, Cost)
+/*	A(Num)
+	B(Num)
+	C(Num)
+	Q(Num)*/
+}
+
+theory T : V { 
+	{
+/*		!x[Num] y[Cost]: A(x) <- (B(x, y) & ~C(y) & Q(x, y)) | D(x, y).
+		!x[Num] y[Cost]: B(x, y) <- C(y) & D(x, y).
+		!x[Num] y[Cost]: C(y) <- ~A(x) | B(x, y) | D(x, y).				
+		!x[Num] y[Cost]: D(x, y) <- F(x, y).
+		!x[Num] y[Cost]: F(x, y).*/
+		!x[Num] y[Cost]: A(x) <- (B(x, y) & ~C(y) & Q(x, y)) & D(x, y).
+		!x[Num] y[Cost]: B(x, y) <- C(y) & D(x, y).
+		!x[Num] y[Cost]: C(y) <- ~A(x) & B(x, y) & D(x, y).				
+		!x[Num] y[Cost]: D(x, y) <- F(x, y).
+		!x[Num] y[Cost]: F(x, y).
+		
+		
+/*		!x[Num]: A(x) <- B(x) & ~C(x) & Q(x).
+		!x[Num]: B(x) <- C(x).
+		!x[Num]: C(x) <- ~A(x) & B(x).
+		!x[Num] y[Cost]: A(x) <- B(x, y) & ~C(y) & Q(x, y).
+		!x[Num] y[Cost]: B(x, y) <- C(y).
+		!x[Num] y[Cost]: C(y) <- ~A(x) & B(x, y).*/
+	}
+
+//yices 2 sneller met definities, veel trager met deze agg erbij
+//	!x[Num]: 50=< sum{ y[Cost] :  Q(x, y) } =<100.
+	
+}
+
+structure S : V{ 
+	Num = {1..2}
+	Cost = {1..2}
+}

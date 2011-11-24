@@ -1,0 +1,89 @@
+procedure getExpectedAModel(){
+	return true
+}
+
+/*************************************
+	WaterBucket problem
+*************************************/
+
+vocabulary V{
+type Volume isa int
+type Timestep isa int
+type Num isa int
+Possible1(Volume)
+Possible2(Volume)
+Goal(Volume,Volume)
+Initially(Volume,Volume)
+MaxVolume(Volume,Volume)
+T0:Timestep
+TFinal : Timestep
+Number(Num)
+
+ 
+Pour(Volume,Volume,Timestep )
+
+ 
+PourFill(Volume,Timestep)
+Bottle(Volume,Volume,Timestep)
+Succ(Timestep,Timestep)
+
+}
+
+theory T : V { 
+{
+   Bottle(j1,j2,T0) <- Initially(j1,j2).    /*j1,j2 is current volume of bucket 1 and 2*/
+
+   /* Fill  bucket1*/
+   Bottle(m1,j2,t2) <- MaxVolume(m1,m2) & Succ(t2,t1) & Bottle(j1,j2,t1)& Pour(j,0,t1) & j1<m1 & j+j1=m1.
+
+   /*Fill  bucket2 */
+   Bottle(j1,m2,t2) <- MaxVolume(m1,m2) & Succ(t2,t1) & Bottle(j1,j2,t1)& Pour(0,j,t1) & j2<m2 & j+j2=m2.
+
+   /*Empty bucket 1*/
+   Bottle(0,j2,t2)  <- Succ(t2,t1) & Bottle(j1,j2,t1) & Pour(j1,0,t1) & j1>0.
+
+   /*Empty bucket 2*/
+   Bottle(j1,0,t2)  <- Succ(t2,t1) & Bottle(j1,j2,t1) & Pour(0,j2,t1) & j2>0.
+
+   /* Empty bucket1 in bucket2 as far as possible */
+   Bottle(0,j3,t2)  <- MaxVolume(m1,m2) & Succ(t2,t1) & Bottle(j1,j2,t1) & PourFill(j1,t1) & j1+j2=j3  &(j3<m2|j3=m2)& Possible1(j1) & Possible2(j2).
+   Bottle(j4,m2,t2) <- MaxVolume(m1,m2) & Succ(t2,t1) & Bottle(j1,j2,t1) & PourFill(x,t1) & j1+j2=j3 & Number(j3)& j3>m2 & j3-m2=j4 &j2+x=m2 & Possible1(j1) & Possible2(j2).
+
+   /* Empty bucket2 in bucket1 as far as possible */
+   Bottle(j3,0,t2)  <- MaxVolume(m1,m2) & Succ(t2,t1) & Bottle(j1,j2,t1) & PourFill(j2,t1)  & j1+j2=j3 & (j3<m1|j3=m1) & Possible1(j1) & Possible2(j2).
+   Bottle(m1,j4,t2) <- MaxVolume(m1,m2) & Succ(t2,t1) & Bottle(j1,j2,t1) & PourFill(x,t1) & j1+j2=j3 & Number(j3)& j3>m1 & j3-m1=j4 &j1+x=m1 & Possible1(j1) & Possible2(j2).
+}
+
+{ Succ(t2,t1) <- t2 = t1 + 1. }
+
+
+ !x y t: Pour(x,y,t)=>(x=0|y=0).
+ !x y t: Pour(x,y,t)=>Possible1(x) & Possible2(y).
+ !x t:   PourFill(x,t)=>Possible2(x).
+
+/*the bottle can only be poured once at one timestep*/
+ !x1 x2 y1 y2 t: Pour(x1,y1,t) & Pour(x2,y2,t) => (x1=x2 & y1=y2).
+ !x1 x2 t : PourFill(x1,t) & PourFill(x2,t) => x1=x2.
+ !x y z t : ~(Pour(x,y,t) & PourFill(z,t)).
+/*After final state don't pour*/
+!x y : ~Pour(x,y,TFinal).
+!x : ~PourFill(x,TFinal).
+/*Goal must be reached*/
+!x y : Goal(x,y)=>Bottle(x,y,TFinal).
+
+}
+
+structure S : V{ 
+Volume = {0..4}
+Timestep = {0..6}
+Num = {2..7}
+Goal = {2,0}
+Initially = {0,0}
+MaxVolume = {4,3}
+Possible1= {0..4}
+Possible2= {0..3}
+Number = {2..7}
+T0 = 0
+TFinal = 6
+
+}

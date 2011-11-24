@@ -1,0 +1,100 @@
+procedure getExpectedAModel(){
+	return true
+}
+
+vocabulary V{
+	type Row isa int
+	type Col isa int
+	type Obj
+	type DiagDir 
+	Up: DiagDir
+	Down:DiagDir
+	MaxRow : Row
+	MaxCol : Col
+ 
+	Triangle(Obj)
+	Square(Obj)
+	Pentagon(Obj)
+	Small(Obj)
+	Medium(Obj)
+	Large(Obj)
+	Pos(Obj,Row,Col)
+ 
+	Used(Obj)
+	Smaller(Obj,Obj)
+	Larger(Obj,Obj)
+	LeftOf(Obj,Obj)
+	RightOf(Obj,Obj)
+	FrontOf(Obj,Obj)
+	BackOf(Obj,Obj)
+	Between(Obj,Obj,Obj)
+
+	ObjRow(Obj,Row)
+	ObjCol(Obj,Col)
+	SameRow(Obj,Obj)
+	SameCol(Obj,Obj)
+	Edge(Row,Col,DiagDir)
+	OnDiag(Row,Col,DiagDir,Row,Col)
+	OnDiagObj(Row,Col,DiagDir,Obj)
+
+}
+
+theory T : V { 
+	// Each used object has exactly one position
+	! x : Used(x) => ?1 r c : Pos(x,r,c).
+	// Dont place two objects on the same position
+	! x y rx ry cx cy : Pos(x,rx,cx) & Pos(y,ry,cy) & x < y => (rx ~= ry | cx ~= cy).
+	// Definitions of Smaller and Larger
+	{ Smaller(x,y) <- Large(y) & ~Large(x).
+	  Smaller(x,y) <- Medium(y) & Small(x). }
+	{ Larger(x,y) <- Small(y) & ~Small(x).
+	  Larger(x,y) <- Medium(y) & Large(x). }
+	// Definitions of LeftOf, RightOf, FrontOf and BackOf
+	{ ObjRow(x,r) <- Pos(x,r,c). }
+	{ ObjCol(x,c) <- Pos(x,r,c). }
+	{ FrontOf(x,y) <- ObjRow(x,rx) & rx < ry & ObjRow(y,ry). }
+	{ BackOf(x,y) <- ObjRow(x,rx) & rx > ry & ObjRow(y,ry). }
+	{ LeftOf(x,y) <- ObjCol(x,cx) & cx < cy & ObjCol(y,cy). }
+	{ RightOf(x,y) <- ObjCol(x,cx) & cx > cy & ObjCol(y,cy). }
+	// Definiton of Between
+	{ Edge(1,c,Down) <- c < MaxCol-2.  
+	  Edge(r,1,Down) <- r < MaxRow-2. 
+	  Edge(r,1,Up) <- r > 2. 
+	  Edge(MaxRow,c,Up) <- c < MaxCol-2. }
+	{ OnDiag(rd,cd,Down,r,c) <- Edge(rd,cd,Down) & r-rd = c-cd.
+	  OnDiag(rd,cd,Up,r,c) <- Edge(rd,cd,Up) & r-rd = cd-c. }
+	{ OnDiagObj(rd,cd,dd,x) <- OnDiag(rd,cd,dd,r,c) & Pos(x,r,c). }
+	{ SameCol(x,y) <- ObjCol(x,c) & ObjCol(y,c). }
+	{ SameRow(x,y) <- ObjRow(x,c) & ObjRow(y,c). }
+	{ Between(z,x,y) <- SameRow(x,y) & SameRow(x,z) & LeftOf(x,z) & LeftOf(z,y).
+	  Between(z,x,y) <- SameRow(x,y) & SameRow(x,z) & LeftOf(y,z) & LeftOf(z,x).
+	  Between(z,x,y) <- SameCol(x,y) & SameCol(x,z) & FrontOf(x,z) & FrontOf(z,y).
+	  Between(z,x,y) <- SameCol(x,y) & SameCol(x,z) & FrontOf(y,z) & FrontOf(z,x).
+	  Between(z,x,y) <- OnDiagObj(rd,cd,dd,z) & OnDiagObj(rd,cd,dd,x) & OnDiagObj(rd,cd,dd,y) & LeftOf(x,y) & LeftOf(y,z).
+	  Between(z,x,y) <- OnDiagObj(rd,cd,dd,z) & OnDiagObj(rd,cd,dd,x) & OnDiagObj(rd,cd,dd,y) & LeftOf(y,z) & LeftOf(z,x).
+	}
+	// A used object has exactly one of the three shapes.
+	! x : Used(x) => #[Triangle(x); Square(x); Pentagon(x)] = 1.
+	// A used object has exactly one of the three sizes.
+	! x : Used(x) => #[Small(x); Medium(x); Large(x)] = 1.
+	// Break symmetries
+	! x y : Used(y) & x < y => Used(x).
+	! x : (Square(x) | Triangle(x) | Pentagon(x)) => Used(x).
+	! x : (Small(x) | Medium(x) | Large(x)) => Used(x).
+	! x r c : Pos(x,r,c) => Used(x).
+	! x : Used(x).
+}
+
+structure S : V{ 
+	DiagDir = {u;d}
+	Up = u
+	Down = d
+	Row = {1..8}
+	MaxRow = 8
+	Col = {1..8}
+	MaxCol = 8
+	Obj = {a..j}
+
+}
+
+

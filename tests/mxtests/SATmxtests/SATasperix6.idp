@@ -1,0 +1,22 @@
+procedure getExpectedAModel(){
+	return true
+}
+
+vocabulary V{
+	type P
+ 
+	A(P)
+	B(P)
+	AA(P,P)
+	BB(P,P)
+}
+
+theory T : V { 
+	{ B(x) <- ~A(x). }
+	{ AA(x,y) <- A(x) & ~A(y).
+	  BB(x,y) <- B(x) & ~B(y). }
+}
+
+structure S : V{ 
+	P = { 1..100 }
+}

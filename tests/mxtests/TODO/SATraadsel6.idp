@@ -1,0 +1,101 @@
+procedure getExpectedAModel(){
+	return true
+}
+
+vocabulary V{
+	type Time
+ isa int
+	type Position
+ isa int
+	type Person
+	type Act
+	A1: Person
+	A2: Person
+	A3: Person
+	A4: Person
+	E: Person
+	B1: Person
+	B2: Person
+	B3: Person
+	B4: Person
+	JL: Act
+	JR: Act
+	ML: Act
+	MR: Act
+	
+	WalkLeft(Person)
+	WalkRight(Person)
+	Initial(Person, Position)
+
+ 
+	Terminate(Person, Position, Time)
+	MoveL(Person, Time)
+	MoveR(Person, Time)	
+	JumpL(Person, Time)
+	JumpR(Person, Time)
+
+ 
+	Inline(Person, Position,Time)
+	Action(Act, Time)
+
+}
+
+theory T : V { 
+	{
+		Inline(p, pos, 0)      <- Initial(p, pos).
+		Inline(p, pos, t+1)    <- Inline(p, pos, t) & ~Terminate(p, pos, t).
+		Inline(p, pos2, t+1)   <- (MoveL(p,t) | MoveR(p,t) | JumpR(p,t) | JumpL(p,t)) & Inline(E, pos2, t).
+		Inline(E, pos, t+1)    <- (MoveL(p,t) | MoveR(p,t) | JumpR(p,t) | JumpL(p,t)) & Inline(p, pos, t).
+
+		Terminate(p, pos, t)   <- (MoveL(p,t) | MoveR(p,t) | JumpR(p,t) | JumpL(p,t)) & Inline(p, pos, t).
+		Terminate(E, pos2, t)  <- (MoveL(p,t) | MoveR(p,t) | JumpR(p,t) | JumpL(p,t)) & Inline(E, pos2, t).
+	}
+
+	//one action at any one time
+	!a1 a2 t: Action(a1, t) & Action(a2, t) => a1 = a2.
+
+	!t p: ?pos[Position] pos2[Position]: MoveL(p, t) => WalkLeft(p) & Inline(p, pos, t) & pos2=pos-1 & Inline(E, pos2, t)  & Action(ML, t).
+	!t p: ?pos[Position] pos2[Position]: JumpL(p, t) => WalkLeft(p) & Inline(p, pos, t) & pos2=pos-2 & Inline(E, pos2, t)  & Action(JL, t).
+	!t p: ?pos[Position] pos2[Position]: MoveR(p, t) => WalkRight(p) & Inline(p, pos, t) & pos2=pos+1 & Inline(E, pos2, t) & Action(MR, t).
+	!t p: ?pos[Position] pos2[Position]: JumpR(p, t) => WalkRight(p) & Inline(p, pos, t) & pos2=pos+2 & Inline(E, pos2, t) & Action(JR, t).
+
+	//one person at any one time at any place
+	!t p pos1 pos2: pos1=pos2 | ~Inline(p,pos1,t) | ~Inline(p,pos2,t).
+	!t p1 p2 pos: p1=p2 | ~Inline(p1,pos,t) | ~Inline(p2,pos,t).
+	!t p: ?pos: Inline(p, pos, t).
+
+	Inline(B1,1,24).
+	Inline(B2,2,24).
+	Inline(B3,3,24).
+	Inline(B4,4,24).
+	Inline(E, 5,24).
+	Inline(A1,6,24).
+	Inline(A2,7,24).
+	Inline(A3,8,24).
+	Inline(A4,9,24).
+
+}
+
+structure S : V{ 
+	Person  = {a1;a2;a3;a4;e;b1;b2;b3;b4}
+	A1 = a1
+	A2 = a2
+	A3 = a3
+	A4 = a4
+	E = e
+	B1 = b1
+	B2 = b2
+	B3 = b3
+	B4 = b4
+	
+	Act =  {jL;jR;mL;mR}
+	JL=jL
+	JR=jR
+	ML=mL
+	MR=mR
+	Time = {0..24}
+	Position = {1..9}
+	WalkRight = {a1;a2;a3;a4;e;}
+	WalkLeft = {e;b1;b2;b3;b4}
+	Initial = {a1,1;a2,2;a3,3;a4,4;e,5;b1,6;b2,7;b3,8;b4,9;}
+}
