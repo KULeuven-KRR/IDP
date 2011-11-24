@@ -1,0 +1,71 @@
+procedure getExpectedAModel(){
+	return true
+}
+
+/*********************
+   Blocks World
+*********************/
+
+vocabulary V{
+type Time isa int
+type Block
+
+InitOn(Block,Block)
+GoalOn(Block,Block)
+Init : Time
+Final : Time
+Table : Block
+
+
+ 
+Move(Block,Block,Time)
+
+On(Block,Block,Time)
+Free(Block,Time)
+}
+
+theory T : V { 
+
+
+{ !x[Block] y[Block]: On(x,y,Init) <- InitOn(x,y).
+  !x[Block] y[Block] t[Time] t2[Time]:On(x,y,t2) <- Move(x,y,t) & t2=t+1.
+  !x[Block] y[Block] t[Time] t2[Time]:On(x,y,t2) <- On(x,y,t) & ~ (? z[Block] : Move(x,z,t)) & t2=t+1. 
+}
+
+
+
+
+{ !t[Time]: Free(Table,t).
+  !x[Block] t[Time]: Free(x,t) <- ~( ? y[Block] : On(y,x,t) ). }
+
+// At most one block is moved each timestep.
+! x1[Block] x2[Block] y1[Block] y2[Block] t[Time] : Move(x1,y1,t) & Move(x2,y2,t) => (x1 = x2 & y1 = y2).
+
+// After the final stage, don't move a block.
+! x[Block] t[Time] y[Block]: t >= Final => ~Move(x,y,t).
+
+// Only free blocks can be moved.
+! x[Block] y[Block] t[Time] : Move(x,y,t) => Free(x,t) & Free(y,t).
+
+// Don't move the table.
+! x[Block] t[Time] : ~Move(Table,x,t).
+
+// Goal must be reached.
+! x[Block] y[Block] : GoalOn(x,y) => On(x,y,Final).
+
+
+}
+
+structure S : V{ 
+Time = {0..11}
+Block = {A..F;N..S;Table}
+
+InitOn = {A,B; B,C; C,D; D,E; E,F; 
+			 N,O; O,P; P,Q; Q,R; R,S;
+			 F,Table;S,Table}
+GoalOn = {A,B;B,C;C,D;D,E;E,F;F,N;N,O;O,P;P,Q;Q,R;R,S;S,Table}
+
+Init = 0
+Final = 11 
+Table = Table
+}

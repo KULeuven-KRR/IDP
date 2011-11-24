@@ -1,0 +1,32 @@
+procedure getExpectedAModel(){
+	return false
+}
+
+vocabulary V{
+	type Vtx isa int
+	type Col
+	C1 : Col
+	C2 : Col
+ 
+	Edge(Vtx,Vtx)
+ 
+	Colouring(Vtx) : Col
+}
+
+theory T : V { 
+	{ Edge(1,x) <- x ~= 1.
+	  Edge(x,x+1).
+	  Edge(1000,2).
+	}
+	! x y c : Edge(x,y) & Colouring(x) = c => Colouring(y) ~= c.
+//	! x c1 c2 c3: Colouring(x) ~= c1 & c1 ~= c2 & Colouring(x) ~= c2 & c1 ~= c3 & c2 ~= c3 => Colouring(x) = c3.
+//	Colouring(1) = C1.
+//	Colouring(2) = C2.
+}
+
+structure S : V{ 
+	Vtx = { 1..1000 }
+	Col = { 1..3}
+	C1 = 1
+	C2 = 2
+}

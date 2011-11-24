@@ -1,0 +1,128 @@
+procedure getExpectedAModel(){
+	return true
+}
+
+/**********************************************
+   Erich Friedman Mirror Puzzle
+   http://www.stetson.edu/~efriedma/mirror
+***********************************************/
+
+vocabulary V{
+type Direction
+Down:Direction
+Left:Direction
+Up: Direction
+Right:Direction
+type Object 
+Person:Object
+MirrorBT:Object
+MirrorTB:Object
+
+type Row isa int
+type Col isa int
+type Num isa int
+type Line isa int
+type Step isa int
+StartLine(Line,Row,Col,Direction)
+NumLine(Line,Num)
+
+ 
+Contains(Row,Col,Object)
+
+NumOfPersons(Line,Num,Step)
+NextR(Row,Row,Direction)
+NextC(Col,Col,Direction)
+Turn(Direction,Object,Direction)
+DrawLine(Line,Step,Row,Col,Direction)
+
+}
+
+theory T : V { 
+
+// Some auxiliary predicates
+
+{ NextR(r,pr,Down) <- r = pr + 1.
+  NextR(r,r,Left).
+  NextR(r,r,Right).
+  NextR(r,pr,Up) <- r = pr - 1.  
+  }
+
+{ NextC(c,pc,Right) <- c = pc + 1.
+  NextC(c,c,Down).
+  NextC(c,c,Up).
+  NextC(c,pc,Left) <- c = pc - 1.  }
+
+{ Turn(d,Person,d).
+  Turn(Left,MirrorTB,Up).
+  Turn(Right,MirrorTB,Down).
+  Turn(Left,MirrorBT,Down).
+  Turn(Right,MirrorBT,Up).
+  Turn(d1,o,d2) <- Turn(d2,o,d1). }
+
+
+// Every square contains an object.
+! r c : Row(r) & Col(c) => ? o : Contains(r,c,o).
+
+// A square cannot contain only one object.
+! r c o1 o2 : Contains(r,c,o1) & Contains(r,c,o2) => o1 = o2.
+
+// Definition of a line of sight.
+{ DrawLine(l,1,r,c,d) <- StartLine(l,r,c,d). 
+  DrawLine(l,s,r,c,d) <- DrawLine(l,ps,pr,pc,pd) & 
+                         Contains(pr,pc,o)       &
+                         Turn(pd,o,d)            &
+                         s = ps + 1              &
+                         NextR(r,pr,d)           &
+                         NextC(c,pc,d).              
+}
+
+// Number of persons on a line.
+{ NumOfPersons(l,0,1).
+  NumOfPersons(l,n,s) <- DrawLine(l,ps,pr,pc,pd) &
+                         Contains(pr,pc,Person)  &
+                         NumOfPersons(l,pn,ps)   &  
+                         n = pn + 1              &
+                         s = ps + 1.
+  NumOfPersons(l,n,s) <- DrawLine(l,ps,pr,pc,pd) &
+                         ~Contains(pr,pc,Person) &
+                         NumOfPersons(l, n,ps)   &  
+                         s = ps + 1.                 
+}
+
+{ NumLine(l,n) <- NumOfPersons(l,n,s)				&
+						(! nn[Num] ns[Step] : nn = n+1 & ns = s+1 => ~NumOfPersons(l,nn,ns)	&
+						~NumOfPersons(l,n,ns)).
+}
+
+}
+
+structure S : V{ 
+Direction =   {l;r;u;d}
+Left=l 
+Right = r
+Up = u
+Down=d
+Object = {p;bt;tb}
+Person=p
+MirrorBT=bt
+MirrorTB=tb
+
+Row = {1..4}
+Col = {1..4}
+Num = {0..6}
+Line = {1..5}
+Step = {1..11}
+
+
+StartLine = { 1,3,4,l;
+              2,4,1,u;
+              3,4,2,u;
+              4,4,3,u;
+              5,4,4,u }
+
+NumLine = { 1,2;
+            2,3;
+            3,4;
+				4,5;
+				5,6 }
+}

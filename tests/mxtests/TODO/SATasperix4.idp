@@ -1,0 +1,32 @@
+procedure getExpectedAModel(){
+	return true
+}
+
+vocabulary V{
+	type Vtx
+	Start : Vtx
+ 
+	Edge(Vtx,Vtx)
+ 
+	In(Vtx,Vtx)
+	
+	//DECLARE
+	R(Vtx)
+}
+
+theory T : V { 
+	{ Edge(x,y). }
+	! x y : In(x,y) => Edge(x,y).
+	! x y z : In(x,y) & In(x,z) => y=z.
+	! x y z : In(y,x) & In(z,x) => y=z.
+
+	{ R(x) <- In(Start,x).
+	  R(x) <- In(y,x) & R(y).
+	}
+	! x : R(x).
+}
+
+structure S : V{ 
+	Vtx = { 1..100 }
+	Start = 1
+}

@@ -1,0 +1,70 @@
+procedure getExpectedAModel(){
+	return true
+}
+
+vocabulary V{
+	type Team 
+	A: Team
+	B: Team
+	E: Team
+	type Pos isa int
+	type Time isa int
+	MaxPos : Pos
+	MaxTime : Time
+ 
+	Move(Time) : Pos
+ 
+	Contains(Time,Pos,Team)
+	InitContains(Pos,Team)
+	ExitContains(Pos,Team)
+}
+
+theory T : V { 
+
+	// Initial position
+	{ InitContains(p,A) <- p < MaxPos/2 + 1.
+	  InitContains(p,E) <- p = MaxPos/2 + 1.
+	  InitContains(p,B) <- p > MaxPos/2 + 1.
+	}
+
+	// Final position
+	{ ExitContains(p,B) <- p < MaxPos/2 + 1.
+	  ExitContains(p,E) <- p = MaxPos/2 + 1.
+	  ExitContains(p,A) <- p > MaxPos/2 + 1.
+	}
+
+	// Allowed moves
+	! t pp pn : Move(t)=pn & Contains(t,pp,E) => abs(pn - pp) =< 2.				// Don't move more than 2 places
+	! t pp pn : Move(t)=pn & pp < pn & Contains(t,pp,E) => Contains(t,pn,B).	// B moves left
+	! t pp pn : Move(t)=pn & pp > pn & Contains(t,pp,E) => Contains(t,pn,A).	// A moves right
+
+	// Contains in function of Move
+	{ Contains(0,p,m)   <- InitContains(p,m).
+	  Contains(t+1,pn,E) <- Move(t) = pn.
+	  Contains(t+1,pp,m) <- Contains(t,pp,E) & Contains(t,pn,m) & Move(t) = pn.
+	  Contains(t+1,p,m) <- ~Contains(t,p,E) & Move(t) ~= p & Contains(t,p,m) & Time(t).
+	}
+
+	// Goal: reach final position
+	! p m : ExitContains(p,m) => Contains(MaxTime,p,m).
+
+	// Optimisations
+/*	! t : ?1 p : Contains(t,p,E).
+	! t : ?3 p : Contains(t,p,A).
+	! t : ?3 p : Contains(t,p,B).
+	! t : ! p : (p =< MaxPos - 3) => 
+		~(Contains(t,p,A) & Contains(t,p+1,A) & Contains(t,p+2,B) & Contains(t,p+3,B)).
+	Move(0) = MaxPos/2.
+*/
+}
+
+structure S : V{ 
+	Team = {a;b;e}
+	A = a
+	B= b
+	E= e
+	Pos = { 1..7 }
+	MaxPos = 7
+	Time = { 0..30 }
+	MaxTime = 30
+}

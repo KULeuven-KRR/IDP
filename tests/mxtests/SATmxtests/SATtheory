@@ -1,0 +1,25 @@
+procedure getExpectedAModel(){
+	return true
+}
+
+vocabulary V{
+	type N
+	E(N, N)
+
+ 
+	R(N, N)
+	
+}
+
+theory T : V { 
+	{
+		R(x, y) <- E(x,y) | E(y, x).
+		R(x, z) <- R(x,y) & E(y, z) & #{w: R(x,w)}>2.
+	}
+
+}
+
+structure S : V{ 
+	N = {1..5}
+	E = {1,2;2,3;3,4;4,5;}
+}

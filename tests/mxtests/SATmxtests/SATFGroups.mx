@@ -1,0 +1,30 @@
+procedure getExpectedAModel(){
+	return true
+}
+
+/*****************************
+        Find all groups
+*****************************/
+
+vocabulary V{
+type G
+Nul : G
+
+ 
+Plus(G,G):G
+
+}
+
+theory T : V { 
+
+! x y z v w u : Plus(x,y) = z & Plus(z,u) = v & Plus(y,u) = w => Plus(x,w) = v.
+! x : Plus(x,Nul) = x & Plus(Nul,x) = x.
+! x : ? y : Plus(x,y) = Nul & Plus(y,x) = Nul.
+
+}
+
+structure S : V{ 
+G = {A..D}
+Nul = A
+
+}

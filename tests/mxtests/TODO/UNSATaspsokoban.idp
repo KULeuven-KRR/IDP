@@ -1,0 +1,126 @@
+procedure getExpectedAModel(){
+	return false
+}
+
+vocabulary V{
+	type Loc
+	type Step isa int
+	type Dir 
+	R:Dir
+	L:Dir
+	B:Dir
+	T: Dir
+	Right(Loc,Loc)
+	Top(Loc,Loc)
+	Box(Loc)
+	Solution(Loc)
+	Sokoban(Loc)
+
+	FinalStep : Step
+ 
+	PushStart(Step) : Loc
+	PushEnd(Step) : Loc
+	PushDir(Step) : Dir
+ 
+
+	Box(Step,Loc)
+	Sokoban(Loc,Step)
+
+	Reachable(Loc,Step)
+	NoCorner(Loc)
+	Adj(Loc,Loc)
+	PushableR(Loc,Loc,Step)
+	PushableL(Loc,Loc,Step)
+	PushableT(Loc,Loc,Step)
+	PushableB(Loc,Loc,Step)
+
+}
+
+theory T : V { 
+	{ Adj(l1,l2) <- Right(l1,l2) | Right(l2,l1) | Top(l1,l2) | Top(l2,l1).  }
+
+	{ Box(0,l) <- Box(l).
+	  Box(s+1,l) <- Box(s,l) & PushStart(s) ~= l.
+	  Box(s+1,l) <- PushEnd(s) = l.
+
+	  Sokoban(l,0) <- Sokoban(l).
+	  Sokoban(l,s+1) <- PushEnd(s) = l2 & PushDir(s) = R & Right(l,l2).
+	  Sokoban(l,s+1) <- PushEnd(s) = l2 & PushDir(s) = L & Right(l2,l).
+	  Sokoban(l,s+1) <- PushEnd(s) = l2 & PushDir(s) = T & Top(l,l2).
+	  Sokoban(l,s+1) <- PushEnd(s) = l2 & PushDir(s) = B & Top(l2,l).
+	}
+
+	{ Reachable(l,s) <- Sokoban(l,s).
+	  Reachable(l,s) <- Adj(ol,l) & Reachable(ol,s) & ~Box(s,l). }
+
+	{ PushableR(l1,l2,s) <- Box(s,l1) & Right(l1,l2) & ~Box(s,l2).
+	  PushableR(l1,l2,s) <- PushableR(l1,l3,s) & Right(l3,l2) & ~Box(s,l2). 
+	  PushableL(l1,l2,s) <- Box(s,l1) & Right(l2,l1) & ~Box(s,l2).
+     PushableL(l1,l2,s) <- PushableL(l1,l3,s) & Right(l2,l3) & ~Box(s,l2). 
+	  PushableT(l1,l2,s) <- Box(s,l1) & Top(l1,l2) & ~Box(s,l2).
+     PushableT(l1,l2,s) <- PushableT(l1,l3,s) & Top(l3,l2) & ~Box(s,l2). 
+	  PushableB(l1,l2,s) <- Box(s,l1) & Top(l2,l1) & ~Box(s,l2).
+     PushableB(l1,l2,s) <- PushableB(l1,l3,s) & Top(l2,l3) & ~Box(s,l2). 
+	}
+
+	! s l l1: Right(l1,l) & PushStart(s) = l & PushDir(s) = R => Reachable(l1,s).
+	! s l l1: Right(l,l1) & PushStart(s) = l & PushDir(s) = L => Reachable(l1,s).
+	! s l l1: Top(l1,l) & PushStart(s) = l & PushDir(s) = T => Reachable(l1,s).
+	! s l l1: Top(l,l1) & PushStart(s) = l & PushDir(s) = B => Reachable(l1,s).
+	! s ls le: PushStart(s) = ls & PushEnd(s) = le & PushDir(s) = R => PushableR(ls,le,s).
+	! s ls le: PushStart(s) = ls & PushEnd(s) = le & PushDir(s) = L => PushableL(ls,le,s).
+	! s ls le: PushStart(s) = ls & PushEnd(s) = le & PushDir(s) = T => PushableT(ls,le,s).
+	! s ls le: PushStart(s) = ls & PushEnd(s) = le & PushDir(s) = B => PushableB(ls,le,s).
+	! s l : PushEnd(s) = l & s < FinalStep => NoCorner(l).
+
+	! l : Box(FinalStep,l) => Solution(l).
+
+	{ NoCorner(l) <- Right(l,l1) & Right(l2,l).
+	  NoCorner(l) <- Top(l,l1) & Top(l2,l).
+	  NoCorner(l) <- Solution(l). }
+
+}
+
+structure S : V{ 
+
+/* 
+  #######
+  #     #
+  #  $$ #
+  # $ $@#
+  #..####
+  #..#
+  ####
+*/
+Loc = { Col1row1;
+		  Col2row1;
+		  Col3row1;
+		  Col4row1;
+		  Col5row1;
+		  Col1row2;
+		  Col2row2;
+		  Col3row2;
+		  Col4row2;
+		  Col5row2;
+		  Col1row3;
+		  Col2row3;
+		  Col3row3;
+		  Col4row3;
+		  Col5row3;
+		  Col1row4;
+		  Col2row4;
+		  Col1row5;
+		  Col2row5 }
+Dir = {r;l;t;b}
+R=r
+L=l
+T=t
+B=b
+Step = {0..9}
+FinalStep = 9
+Top = { Col5row3,Col5row2; Col5row2,Col5row1; Col4row2,Col4row1; Col4row3,Col4row2; Col3row3,Col3row2; Col3row2,Col3row1; Col2row2,Col2row1; Col2row3,Col2row2; Col2row4,Col2row3; Col2row5,Col2row4; Col1row5,Col1row4; Col1row4,Col1row3; Col1row3,Col1row2; Col1row2,Col1row1; }
+Right = { Col1row1,Col2row1; Col1row2,Col2row2; Col1row3,Col2row3; Col1row4,Col2row4; Col1row5,Col2row5; Col2row3,Col3row3; Col2row2,Col3row2; Col2row1,Col3row1; Col3row2,Col4row2; Col3row3,Col4row3; Col4row2,Col5row2; Col4row1,Col5row1; Col3row1,Col4row1; Col4row3,Col5row3 }
+Box = { Col4row2; Col4row3; Col3row2; Col2row3; }
+Solution ={ Col2row4; Col2row5; Col1row5; Col1row4; }
+Sokoban = {Col5row3 }
+}

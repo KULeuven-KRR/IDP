@@ -1,0 +1,107 @@
+procedure getExpectedAModel(){
+	return false
+}
+
+/*********************
+   Blocks World
+*********************/
+
+vocabulary V{
+type Time isa int
+type Block
+// Initial and goal state predicates.
+InitiallyOn(Block,Block)
+InitiallyOnTable(Block)
+GoalOn(Block,Block)
+GoalOnTable(Block)
+TFinal : Time
+
+ 
+// Move(x,y,t) means: at time t, x is placed on y
+// MoveToTable(x,y,t) means: at time t, x is placed on the table
+Move(Block,Block,Time)
+MoveToTable(Block,Time)
+
+ 
+// On(x,y,t) means: at time t, x is on y.
+// OnTable(x,t) means: at time t, x is on the table.
+On(Block,Block,Time)
+OnTable(Block,Time)
+// Top(x,t) means: at time t, there is no block on x.
+Top(Block,Time)
+// NotMoved(x,t) means: at time t, block x is not moved.
+NotMoved(Block,Time)
+// NotPlacedOn(x,t) means: at time t, there is no block placed on x.
+NotPlacedOn(Block,Time)
+
+}
+
+theory T : V { 
+{  !x[Block] y[Block]: On(x,y,0)    <- InitiallyOn(x,y).
+   !x[Block] y[Block] t1[Time] t2[Time]: On(x,y,t2) <- Move(x,y,t1) & t2=t1+1.
+   !x[Block] y[Block] t1[Time] t2[Time]: On(x,y,t2) <- On(x,y,t1) & NotMoved(x,t1) & t2=t1+1.
+}
+
+{  !x[Block]: OnTable(x,0)    <- InitiallyOnTable(x).
+   !x[Block] t1[Time] t2[Time]: OnTable(x,t2) <- MoveToTable(x,t1) & t2=t1+1.
+   !x[Block] t1[Time] t2[Time]: OnTable(x,t2) <- OnTable(x,t1) & NotMoved(x,t1) & t2=t1+1.
+}
+
+{  !x[Block] t[Time]: NotMoved(x,t) <- (! y[Block] : ~Move(x,y,t) & ~MoveToTable(x,t)).
+}
+
+{  !x[Block] t[Time]: NotPlacedOn(x,t) <- ! y[Block] : ~Move(y,x,t).
+}
+
+{  !x[Block]: Top(x,0)    <- ! y[Block] : ~InitiallyOn(y,x).
+   !x[Block] y[Block] t1[Time] t2[Time]: Top(x,t2) <- Move(x,y,t1) & t2=t1+1.
+   !x[Block] y[Block] t1[Time]t2[Time]: Top(x,t2) <- On(y,x,t1) & MoveToTable(y,t1) & t2=t1+1.
+   !x[Block] y[Block] z[Block] t1[Time] t2[Time]: Top(x,t2) <- On(y,x,t1) & Move(y,z,t1) & ~(z = x) & t2=t1+1.
+   !x[Block] t1[Time] t2[Time]: Top(x,t2) <- MoveToTable(x,t1) & t2=t1+1.
+   !x[Block] t1[Time] t2[Time]: Top(x,t2) <- Top(x,t1) & NotPlacedOn(x,t1) & t2=t1+1.
+}
+
+// At most one block is moved each timestep.
+! x1[Block] x2[Block] y1[Block] y2[Block] t[Time] : (Move(x1,y1,t) & Move(x2,y2,t)) => (x1 = x2 & y1 = y2).
+! x1[Block] x2[Block] t[Time] : (MoveToTable(x1,t) & MoveToTable(x2,t)) => (x1 = x2).
+! x[Block] y[Block] z[Block] t[Time] : ~(Move(x,y,t) & MoveToTable(z,t)).
+! x[Block] t[Time] : ~Move(x,x,t).
+
+// After the final stage, don't move a block.
+! x[Block] y[Block] : ~Move(x,y,TFinal).
+! x[Block] : ~MoveToTable(x,TFinal).
+
+// Only free blocks can be moved.
+! x[Block] y[Block] t[Time] : Move(x,y,t) => Top(x,t) & Top(y,t).
+! x[Block] t[Time] : MoveToTable(x,t) => Top(x,t).
+
+// Goal must be reached.
+! x[Block] y[Block] : GoalOn(x,y) => On(x,y,TFinal).
+! x[Block] : GoalOnTable(x) => OnTable(x,TFinal).
+
+}
+
+structure S : V{ 
+/*Time = {0..10}
+Block = {A..E}
+
+InitiallyOn = {C,B; B,A}
+InitiallyOnTable = {A}
+GoalOn = {B,C; A,B}
+GoalOnTable = {C}
+
+TFinal = 3*/
+
+Time = {0..11}
+Block = {A..F;N..S;Table}
+
+InitiallyOn = 
+  {A,B; B,C; C,D; D,E; E,F; 
+	N,O; O,P; P,Q; Q,R; R,S;}
+InitiallyOnTable={F;S}
+GoalOn = {A,B;B,C;C,D;D,E;E,F;F,N;N,O;O,P;P,Q;Q,R;S,R;}
+GoalOnTable = {S}
+
+TFinal = 11
+
+}

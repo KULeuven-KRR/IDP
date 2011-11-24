@@ -1,0 +1,39 @@
+procedure getExpectedAModel(){
+	return true
+}
+
+/**************************************************
+	Example from Predicate introduction paper
+**************************************************/
+
+vocabulary V{
+type Rule
+type Proposition
+
+Head(Rule,Proposition)
+Prec(Rule,Proposition)
+HoldsInitially(Proposition)
+
+ 
+Holds(Proposition)
+
+}
+
+theory T : V { 
+{  Holds(p) <- HoldsInitially(p).
+   Holds(p) <- Head(r,p) & (! q: Prec(r,q) => Holds(q)).  }
+
+
+}
+
+structure S : V{ 
+Rule = {R;S}
+Proposition = {P;P1;P2;P3;P4}
+
+//   P is caused if P1,P2,P3
+//   P3 is caused if P2,P4
+Head = { R,P; S,P3 }
+Prec = { R,P1; R,P2; R,P3; S,P2; S,P4 }
+
+HoldsInitially = {P1;P2;P4}
+}

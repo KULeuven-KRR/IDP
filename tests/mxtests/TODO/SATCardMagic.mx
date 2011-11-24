@@ -1,0 +1,17 @@
+procedure getExpectedAModel(){
+	return true
+}
+
+vocabulary V{
+	type Num isa int
+ 
+	El(Num) : Num
+}
+
+theory T : V { 
+	! x : El(x) = #{ y :  El(y) = x }.
+}
+
+structure S : V{ 
+	Num = {0..100}
+}

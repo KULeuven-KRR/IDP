@@ -1,0 +1,93 @@
+procedure getExpectedAModel(){
+	return true
+}
+
+/*****************************************
+        Missionaries & Cannibals
+*****************************************/
+
+/*
+ 3 missionaries, 3 cannibals
+
+
+ Situation(b,ml,mr,cl,cr,t) :
+     At timestep t, the boat is at riverside b, there are ml missionaries on the left riverside,
+     mr missionaries on the right riverside, cl cannibals on the left riverside,
+     and cr cannibals on the right riverside.
+
+ Carry(m,c,t) : The boat carries m missionaries and c cannibals at timestep t
+                (they arrive before successor-timestep).
+*/
+
+
+vocabulary V{
+type Timestep isa int
+type Num  isa int
+type Side
+Left:Side
+Right:Side
+
+
+OneOrTwo(Num,Num)
+PossibleNumbers(Num,Num)
+
+//Carry(Num,Num,Timestep)
+ 
+Carry(Num,Num,Timestep)
+
+Situation(Side,Num,Num,Num,Num,Timestep)
+Unsafe(Num,Num,Num,Num)
+Goal(Timestep)
+
+}
+
+theory T : V { 
+{ Situation(Left,3,0,3,0,0).
+  Situation(Left,ml,mr,cl,cr,t+1) <-
+      PossibleNumbers(ml,mr) &
+      PossibleNumbers(cl,cr) &
+		Carry(m,c,t) &
+      mlp+m=ml & mrp-m=mr & clp+c=cl & crp-c=cr &
+      ~Unsafe(ml,mr,cl,cr) &
+      Situation(Right,mlp,mrp,clp,crp,t).
+  Situation(Right,ml,mr,cl,cr,t+1) <-
+      ~Unsafe(ml,mr,cl,cr) &
+      PossibleNumbers(ml,mr) &
+      PossibleNumbers(cl,cr) &
+      mlp-m=ml & mrp+m=mr & clp-c=cl & crp+c=cr &
+		Carry(m,c,t) & 
+      Situation(Left,mlp,mrp,clp,crp,t).
+}
+
+{
+  Unsafe(ml,mr,cl,cr) <-
+      PossibleNumbers(ml,mr) &
+      PossibleNumbers(cl,cr) &
+      (((ml < cl) & ~(ml = 0)) | (~(mr = 0) & mr < cr)).
+}
+
+// goal situation: everybody on the other side
+{  Goal(t) <- Situation(Right,0,3,0,3,t). }
+
+// goal situation must be reached
+? t : Goal(t).
+
+// the boat must carry one or two people
+! m c t : Carry(m,c,t) => OneOrTwo(m,c).
+
+// the boat can only cross once at each timestep
+! m1 c1 m2 c2 t: Carry(m1,c1,t) & Carry(m2,c2,t) => (m1 = m2 & c1 = c2).
+! t tg m c : (Goal(tg) & t >= tg) => ~Carry(m,c,t).
+
+}
+
+structure S:V{
+Side = {l;r}
+Left = l
+Right = r
+Timestep = {0..11}
+Num = {0..3}
+PossibleNumbers = { 0,3; 1,2; 2,1; 3,0 }
+OneOrTwo = {0,1;0,2;1,0;1,1;2,0}
+//Carry = {0,1,1; 0,1,3; 0,1,7; 0,1,9; 0,2,0; 0,2,2; 0,2,8; 0,2,10; 1,0,11; 1,1,5; 2,0,4; 2,0,6}
+}

@@ -1,0 +1,122 @@
+procedure getExpectedAModel(){
+	return true
+}
+
+/*********
+	DPLL
+*********/
+
+vocabulary V{
+	type Step isa int
+	type Lit
+	type Clause
+	type Sign 
+	Pos:Sign
+	Neg:Sign
+	
+	InClause(Clause,Lit)
+	Neg(Lit) : Lit
+
+ 
+	SAT
+
+// 
+	partial ChoiceLit(Step) : Lit
+	Conflict(Step)
+	Assigned(Step,Lit)
+	True(Step,Lit)
+	PropTrue(Step,Lit)
+	BTStep(Step,Step)
+	MaxStep : Step
+	BackTracked(Step,Step)
+	SAT(Step)
+	UNSAT(Step)
+
+}
+
+theory T : V { 
+
+// TODO: Er is nog iets mis met het backtrack mechanisme
+// TODO: Initialisatie...
+
+	// Choose only unknown atoms
+	{ Assigned(s,l) <- True(s,l) | True(s,Neg(l)). }
+	! s l : ChoiceLit(s)=l => ~Assigned(s,l).
+	! s : s < MaxStep <=> (? l : ChoiceLit(s)=l).
+//	! s : s < MaxStep <=> (? l : ChoiceLit(s)=l).
+
+	// Unit propagation
+	{ PropTrue(s,l) <- ChoiceLit(s)=l.
+	  PropTrue(s,l) <- ~Assigned(s,l) & 
+								(? c : InClause(c,l) & (! l2 : InClause(c,l2) & l2~=l => (True(s,Neg(l2)) | PropTrue(s,Neg(l2))))).
+	}
+
+	// Conflict
+	{ Conflict(s) <- ? l : PropTrue(s,l) & (True(s,Neg(l)) | PropTrue(s,Neg(l))).	}
+
+	// True literals
+	{ True(s+1,l) <- ~Conflict(s) & PropTrue(s,l).
+	  True(s+1,l) <- ~Conflict(s) & True(s,l).
+	  True(s+1,l) <- Conflict(s) & BTStep(s,bt) & True(bt-1,l).
+	}
+
+	// Backtracking
+	{ BackTracked(s+1,ps) <- BackTracked(s,ps).
+	  BackTracked(s+1,ps) <- Conflict(s) & BTStep(s,ps).
+	}
+	{ BTStep(0,0).
+	  BTStep(s+1,s+1) <- ~Conflict(s).
+	  BTStep(s+1,bt) <- bt =< s & Conflict(s) & BTStep(bt,bt) & ~BackTracked(s,bt) & ! obt : s >= obt > bt => (~BTStep(obt,obt) | BackTracked(s,obt)).
+	}
+	! s bt : Conflict(s) & BTStep(s,bt) & s < 20 => ChoiceLit(s+1)=Neg(ChoiceLit(bt)). //20 zelfde als max Step!
+
+	// SAT, UNSAT and UNKNOWN
+	{ SAT(s) <- ! l : (True(s,l) | True(s,Neg(l))). 
+	  UNSAT(s) <- ! bt : ~BTStep(s,bt).
+	}
+
+	? s : SAT(s) | UNSAT(s).
+	! s : s+1 < MaxStep => ~(SAT(s) | UNSAT(s)).
+	
+	{ SAT <- SAT(s).	}
+
+}
+
+structure S : V{ 
+ 	Sign = { p;n}
+ 	Pos = p
+ 	Neg = n
+	// Nr of choices + backtracks
+	Step = { 0..20 }
+
+/*
+	// CNF
+	// 1 2 0
+	// -1 -2 0
+	// 1 3 0
+
+	Lit = { 1;2;3;min1;min2;min3 }
+	Neg = { 1->min1; 2->min2; 3->min3; min1->1; min2->2; min3->3 }
+	Clause = { 1..3 }
+	InClause = { 1,1; 1,2; 2,min1; 2,min2; 3,1; 3,3 }
+*/
+
+	// CNF
+	// -1 2 0
+	// -2 3 0
+	// -3 -1 0
+	// 1 -2 0
+	// 2 -3 0
+	// 3 1 0
+
+	Lit = { 1;2;3;min1;min2;min3 }
+	Neg = { 1->min1; 2->min2; 3->min3; min1->1; min2->2; min3->3 }
+	Clause = {1..6}
+	InClause = { 1,min1; 1,2;
+					 2,min2; 2,3;
+					 3,min3;	3,min1;
+					 4,1; 4,min2;
+					 5,2; 5,min3;
+					 6,3; 6,1 }
+
+}

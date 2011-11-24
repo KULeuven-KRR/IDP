@@ -1,0 +1,112 @@
+procedure getExpectedAModel(){
+	return true
+}
+
+/**********************************************
+   Erich Friedman Mirror Puzzle
+   http://www.stetson.edu/~efriedma/mirror
+***********************************************/
+
+vocabulary V{
+	type Dir
+Down:Dir
+Left:Dir
+Up: Dir
+Right:Dir
+type Obj 
+Person:Obj
+MirrorBT:Obj
+MirrorTB:Obj
+
+type Row isa int
+type Col isa int
+type Num isa int
+type Line 
+Start(Line,Row,Col,Dir)
+Nr(Line) : Num
+
+
+Contains(Row,Col) : Obj
+
+
+// Auxiliary predicates 
+
+	 NextR(Row,Row,Dir)
+	 NextC(Col,Col,Dir)
+	 Turn(Dir,Obj,Dir)
+	 Passes(Line,Row,Col,Dir)
+
+}
+
+theory T : V { 
+	
+	
+
+	{ NextR(r,pr,Down) <- r = pr + 1.
+     NextR(r,r,Left).
+     NextR(r,r,Right).
+     NextR(r,pr,Up) <- r = pr - 1.  }
+
+	{ NextC(c,pc,Right) <- c = pc + 1.
+	  NextC(c,c,Down).
+	  NextC(c,c,Up).
+	  NextC(c,pc,Left) <- c = pc - 1.  }
+
+	{ Turn(d,Person,d).
+	  Turn(Left,MirrorTB,Up).
+	  Turn(Right,MirrorTB,Down).
+	  Turn(Left,MirrorBT,Down).
+	  Turn(Right,MirrorBT,Up).
+	  Turn(d1,o,d2) <- Turn(d2,o,d1). }
+
+	{ Passes(l,r,c,d) <- Start(l,r,c,d).
+	  Passes(l,r,c,d) <- Passes(l,or,oc,od) & Contains(or,oc) = o & Turn(od,o,d) & NextR(r,or,d) & NextC(c,oc,d).  }
+
+	! l : #{ r c d : Passes(l,r,c,d) & Contains(r,c) = Person } = Nr(l).
+
+}
+
+structure S : V{ 
+Dir =  {l;r;u;d}
+Left=l 
+Right = r
+Up = u
+Down=d
+Obj = {p;bt;tb}
+Person=p
+MirrorBT=bt
+MirrorTB=tb
+
+/*
+Row = {1..3}
+Col = {1..3}
+Num = {0;2;5}
+Line = {a..c}
+
+Start = { a,1,3,d;
+          b,2,1,r;
+          c,3,2,u }
+
+Nr = { a -> 5;
+       b -> 0;
+       c -> 2 }
+*/
+
+Row = {1..4}
+Col = {1..4}
+Num = {2..6}
+Line = {a..e}
+
+Start = { a,3,4,l;
+          b,4,1,u;
+          c,4,2,u;
+          d,4,3,u;
+          e,4,4,u }
+
+Nr = { a -> 2;
+       b -> 3;
+       c -> 4;
+		 d -> 5;
+		 e -> 6 }
+
+}

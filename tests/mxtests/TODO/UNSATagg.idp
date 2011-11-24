@@ -1,0 +1,39 @@
+procedure getExpectedAModel(){
+	return false
+}
+
+vocabulary V{
+	type Num isa int
+	type Cost isa int
+	
+
+ 
+	P(Num, Cost)
+	Q(Num, Cost)
+	R(Num, Cost)
+	S(Num, Cost)
+	T(Num, Cost)
+	U(Num, Cost)
+
+}
+
+theory T : V { 
+//sat versie
+/*	!x[Num]: 1=< #{ y[Cost] :  P(x, y) } =<10.
+	!x[Num]: 1=< sum{ y[Cost] :  Q(x, y) } =<10.
+	!x[Num]: 1=< min{ y[Cost] :  R(x, y) } =<10.
+	!x[Num]: 1=< max{ y[Cost] :  S(x, y) } =<10.
+	!x[Num]: ?1 y[Cost]: T(x, y).*/
+//werkt nog niet !x[Num]: 1=< prod{ y[Cost] :  U(x, y) } =<10.
+
+//unsat versie
+	!x[Num]: 4=< min{ y[Cost] :  P(x, y):y } =<10.
+	!x[Num]: 1=< sum{ y[Cost] :  P(x, y):y } =<3.
+
+	
+}
+
+structure S : V{ 
+	Num = {1..2}
+	Cost = {1..20}
+}

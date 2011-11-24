@@ -1,0 +1,117 @@
+procedure getExpectedAModel(){
+	return true
+}
+
+vocabulary V{
+
+	type Row isa int
+	type Col isa int
+	type Num isa int
+	type Dir
+	Hor:Dir
+	Ver:Dir
+	type Ship
+
+
+RowNum(Row) : Num
+ColNum(Col) : Num
+Length(Ship) : Num
+
+MaxCol : Col
+MaxRow : Row
+
+ 
+Direction(Ship,Dir)
+Init(Ship,Row,Col)
+
+ 
+Neighbour(Row,Col,Row,Col)
+HasShip(Row,Col) 
+HasShip(Row,Col,Ship)
+
+}
+
+theory T : V { 
+
+// Assert Direction and Init are functions
+! s : ?1 d : Direction(s,d).
+! s : ?1 r c : Init(s,r,c).
+
+// Place ships
+//declare { HasShip(Row,Col) HasShip(Row,Col,Ship) }
+
+{ HasShip(r,c,s) <- Init(s,r,c).
+  HasShip(r,c,s) <- Init(s,r1,c) & Direction(s,Ver) & r > r1 & (r - r1) < Length(s).
+  HasShip(r,c,s) <- Init(s,r,c1) & Direction(s,Hor) & c > c1 & (c - c1) < Length(s). 
+  HasShip(r,c) <- ? s : HasShip(r,c,s). }
+
+// Ships cannot touch each other.
+//declare Neighbour(Row,Col,Row,Col).
+
+{ Neighbour(r1,c1,r2,c2) <- (r1 = r2 | r1 - r2 = 1 | r2 - r1 = 1) &
+									 (c1 = c2 | c1 - c2 = 1 | c2 - c1 = 1).   }
+
+! r1 c1 r2 c2 s1 s2: Neighbour(r1,c1,r2,c2) & HasShip(r1,c1,s1) & HasShip(r2,c2,s2) => s1 = s2.
+
+// Check the given colums and row numbers:
+
+! r : #{ c : HasShip(r,c)} = RowNum(r).
+! c : #{ r : HasShip(r,c)} = ColNum(c).
+
+// Avoid some symmetric models:
+! s : Length(s) = 1 => Direction(s,Hor).
+
+// Data for this particular instance
+~HasShip(5,2).
+HasShip(6,2).
+HasShip(7,2).
+~HasShip(1,9).
+~HasShip(5,7).
+~HasShip(5,8).
+~HasShip(8,7).
+~HasShip(9,10).
+
+
+}
+
+structure S : V{ 
+Dir = {h;v}
+Hor = h
+Ver = v
+
+Row = {1..10}
+Col = {1..10}
+Num = {0..10}
+
+MaxRow = 10
+MaxCol = 10
+
+Ship = { Submarine1; Submarine2; Submarine3; Submarine4; Destroyer1; Destroyer2; Destroyer3; Cruiser1; Cruiser2; Battleship }
+Length = {	Submarine1 -> 1; Submarine2 -> 1; Submarine3 -> 1; Submarine4 -> 1; 
+				Destroyer1 -> 2; Destroyer2 -> 2 ; Destroyer3 -> 2; 
+				Cruiser1 -> 3; Cruiser2 -> 3; 
+				Battleship -> 4 
+			}
+
+RowNum = { 1 -> 4;
+			  2 -> 3;
+			  3 -> 2;
+			  4 -> 0;
+			  5 -> 3;
+			  6 -> 1;
+			  7 -> 1;
+			  8 -> 1;
+			  9 -> 4;
+			  10 -> 1; }
+
+ColNum = { 1 -> 3;
+			  2 -> 3;
+			  3 -> 4;
+			  4 -> 1;
+			  5 -> 1;
+			  6 -> 0;
+			  7 -> 4;
+			  8 -> 1;
+			  9 -> 1;
+			  10 -> 2; }
+}

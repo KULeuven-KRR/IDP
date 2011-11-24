@@ -1,0 +1,33 @@
+procedure getExpectedAModel(){
+	return true
+}
+
+/******************************
+      n-Queens problem
+******************************/
+
+vocabulary V{
+type Num isa int
+
+ 
+Queen(Num,Num)
+
+ 
+Diag(Num,Num,Num,Num)
+
+}
+
+theory T : V { 
+{ Diag(x1,y1,x2,y2) <- x1 < x2 & abs(x1-x2) = abs(y1-y2). }
+! x : ? y : Queen(x,y).
+! y : ? x : Queen(x,y).
+! x y1 y2 : y1 =< y2 & Queen(x,y1) & Queen(x,y2) => y1 = y2.
+! y x1 x2 : x1 =< x2 & Queen(x1,y) & Queen(x2,y) => x1 = x2.
+! x1 y1 x2 y2 : Diag(x1,y1,x2,y2) => ~(Queen(x1,y1) & Queen(x2,y2)).
+
+}
+
+structure S : V{ 
+Num = {1..31}
+
+}

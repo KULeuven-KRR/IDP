@@ -1,0 +1,101 @@
+procedure getExpectedAModel(){
+	return true
+}
+
+vocabulary V{
+	type Puzzelstuk
+	type Rij isa int
+	type Kolom isa int
+	type Rotatie isa int
+	type Kleur
+	type HS 
+	Hoofd:HS
+	Staart:HS
+	type Richting 
+	Noord:Richting
+	Zuid:Richting
+	Oost:Richting
+	West:Richting
+	
+
+	KleurStuk(Puzzelstuk,Richting) : Kleur
+	HSStuk(Puzzelstuk,Richting) : HS
+
+ 
+	RijVan(Puzzelstuk) : Rij
+	KolomVan(Puzzelstuk) : Kolom
+	RotatieVan(Puzzelstuk) : Rotatie
+
+ 
+	RichtingNaRotatie(Richting,Rotatie,Richting)
+	KleurNaRot(Puzzelstuk,Richting) : Kleur
+	HSNaRot(Puzzelstuk,Richting) : HS
+	KleurPos(Rij,Kolom,Richting) : Kleur
+	HSPos(Rij,Kolom,Richting) : HS
+	Aansluitend(Rij,Kolom,Richting,Rij,Kolom,Richting)
+
+}
+
+theory T : V { 
+	
+	// Op elke positie komt maar een puzzelstuk
+	! r k : ?1 p : RijVan(p) = r & KolomVan(p) = k.
+
+	// Kleur en HS na rotatie
+	{ RichtingNaRotatie(r,0,r).
+	  RichtingNaRotatie(Zuid,90,West). RichtingNaRotatie(West,90,Noord). 
+	  RichtingNaRotatie(Noord,90,Oost). RichtingNaRotatie(Oost,90,Zuid).
+	  RichtingNaRotatie(Noord,180,Zuid). RichtingNaRotatie(West,180,Oost). 
+	  RichtingNaRotatie(x,180,y) <- RichtingNaRotatie(y,180,x).
+	  RichtingNaRotatie(x,270,y) <- RichtingNaRotatie(y,90,x).
+	}
+	{ KleurNaRot(p,r)=k <- KleurStuk(p,rp) = k & RotatieVan(p) = rot & RichtingNaRotatie(rp,rot,r). }
+	{ HSNaRot(p,r)=h <- HSStuk(p,rp) = h & RotatieVan(p) = rot & RichtingNaRotatie(rp,rot,r). }
+
+	// Kleur en HS op elke positie
+	{ KleurPos(r,k,ri)=kl <- RijVan(s) = r & KolomVan(s) = k & KleurNaRot(s,ri) = kl. }
+	{ HSPos(r,k,ri)=h <- RijVan(s) = r & KolomVan(s) = k & HSNaRot(s,ri) = h. }
+
+	// Aansluitende posities
+	{ Aansluitend(r1,k1,Zuid,r1+1,k1,Noord).
+	  Aansluitend(r1,k1,Oost,r1,k1+1,West). }
+
+	// Aansluitende posities moeten overeen komen
+	! r1 r2 k1 k2 ri1 ri2 : Aansluitend(r1,k1,ri1,r2,k2,ri2) => HSPos(r1,k1,ri1) ~= HSPos(r2,k2,ri2).
+	! r1 r2 k1 k2 ri1 ri2 : Aansluitend(r1,k1,ri1,r2,k2,ri2) => KleurPos(r1,k1,ri1) = KleurPos(r2,k2,ri2).
+
+}
+
+structure S : V{ 
+	HS = {h;s}
+	Richting = {n;o;z;w}
+	Noord = n
+	Oost = o
+	Zuid = z
+	West = w
+	Hoofd = h
+	Staart = s
+	Puzzelstuk = { 1..9 }
+	Rij = { 1..3 }
+	Kolom = { 1..3 }
+	Rotatie = { 0; 90; 180; 270 }
+	Kleur = { Rood; Bruin; Oranje; Groen }
+	KleurStuk = { 1,n -> Bruin; 1,o -> Rood; 1,z -> Oranje; 1,w -> Groen;
+					  2,n -> Bruin; 2,o -> Rood; 2,z -> Oranje; 2,w -> Rood;
+					  3,n -> Bruin; 3,o -> Rood; 3,z -> Oranje; 3,w -> Groen;
+					  4,n -> Bruin; 4,o -> Groen; 4,z -> Oranje; 4,w -> Rood;
+					  5,n -> Bruin; 5,o -> Groen; 5,z -> Rood; 5,w -> Oranje;
+					  6,n -> Bruin; 6,o -> Oranje; 6,z -> Groen; 6,w -> Rood;
+					  7,n -> Oranje; 7,o -> Groen; 7,z -> Bruin; 7,w -> Groen;
+					  8,n -> Oranje; 8,o -> Rood; 8,z -> Groen; 8,w -> Bruin;
+					  9,n -> Rood; 9,o -> Oranje; 9,z -> Groen; 9,w -> Bruin }
+	HSStuk = { 1,n -> s; 1,o -> h; 1,z -> h; 1,w -> s;
+				  2,n -> s; 2,o -> h; 2,z -> h; 2,w -> s;
+				  3,n -> s; 3,o -> h; 3,z -> h; 3,w -> s;
+				  4,n -> s; 4,o -> h; 4,z -> h; 4,w -> s;
+				  5,n -> s; 5,o -> h; 5,z -> h; 5,w -> s;
+				  6,n -> h; 6,o -> s; 6,z -> s; 6,w -> h;
+				  7,n -> s; 7,o -> h; 7,z -> h; 7,w -> s;
+				  8,n -> s; 8,o -> h; 8,z -> h; 8,w -> s;
+				  9,n -> s; 9,o -> s; 9,z -> h; 9,w -> h }
+}

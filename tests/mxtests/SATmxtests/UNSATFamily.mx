@@ -1,0 +1,34 @@
+procedure getExpectedAModel(){
+	return false
+}
+
+/*************************************
+	Example from KR exercise session
+*************************************/
+
+
+vocabulary V{
+type Person
+Man(Person)
+Woman(Person)
+Married(Person,Person)
+Parent(Person,Person)
+
+ 
+Brother(Person,Person)
+
+}
+
+theory T : V { 
+{ Brother(x,y)<- Man(x) & Parent(z,x) & Parent(z,y).  }
+! x y: Brother(x,y) => ~(x=y).
+
+}
+
+structure S : V{ 
+Person = {A;D;F;I;K;Gm;B;C;G;J}
+Man = { A; D; F; I; K}
+Woman = { Gm; B; C; G; J}
+Parent = { Gm,A; Gm,B; A,F; C,F; A,G; C,G; B,I; D,I; B,J; B,K; D,K}
+Married = { A,C; C,A; B,D; D,B; F,J; J,F; G,I; I,G}
+}

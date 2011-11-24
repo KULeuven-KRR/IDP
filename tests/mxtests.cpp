@@ -21,7 +21,7 @@ namespace Tests {
 
 // TODO prevent infinite running bugs
 // TODO on parsing error of one of the files, a lot of later ones will also fail!
-vector<string> generateListOfMXFiles() {
+vector<string> generateListOfMXnbFiles() {
 	vector<string> mxtests;
 	DIR *dir;
 	struct dirent *ent;
@@ -41,8 +41,28 @@ vector<string> generateListOfMXFiles() {
 	}
 	return mxtests;
 }
+vector<string> generateListOfMXsatFiles() {
+	vector<string> mxtests;
+	DIR *dir;
+	struct dirent *ent;
+	vector<string> testdirs {"SATmxtests/" }; //TODO automize
+	for (auto currTestDir = testdirs.cbegin(); currTestDir != testdirs.cend(); ++currTestDir) {
+		dir = opendir((string(TESTDIR) + "mxtests/" + (*currTestDir)).c_str());
+		if (dir != NULL) {
+			while ((ent = readdir(dir)) != NULL) {
+				if (ent->d_name[0] != '.') {
+					mxtests.push_back("mxtests/" + (*currTestDir) +ent->d_name);
+				}
+			}
+			closedir(dir);
+		} else {
+			cerr << "FAIL    |  Could not open directory of MX tests.\n";
+		}
+	}
+	return mxtests;
+}
 
-vector<string> generateListOfLazyMXFiles() {
+vector<string> generateListOfLazyMXnbFiles() {
 	vector<string> mxtests;
 	DIR *dir;
 	struct dirent *ent;
@@ -63,11 +83,15 @@ vector<string> generateListOfLazyMXFiles() {
 	return mxtests;
 }
 
-class MXTest: public ::testing::TestWithParam<string> {
+class MXnbTest: public ::testing::TestWithParam<string> {
 
 };
 
-class LazyMXTest: public ::testing::TestWithParam<string> {
+class MXsatTest: public ::testing::TestWithParam<string> {
+
+};
+
+class LazyMXnbTest: public ::testing::TestWithParam<string> {
 
 };
 
@@ -83,23 +107,33 @@ TEST(ParsingTest, FailAndContinue){
 	ASSERT_EQ(Status::SUCCESS, test( { testfile2, testfilemx }));
 }
 
-TEST_P(MXTest, DoesMX) {
-	string testfile(string(TESTDIR) + "mxnbofmodelstest.idp"); // TODO TESTDIR should be one HIGHER
+TEST_P(MXnbTest, DoesMX) {
+	string testfile(string(TESTDIR) + "mxnbofmodelstest.idp");
 	cerr << "Testing " << string(TESTDIR) + GetParam() << "\n";
 	Status result = Status::FAIL;
 	ASSERT_NO_THROW( result = test( { string(TESTDIR) + GetParam(), testfile }););
 	ASSERT_EQ(result, Status::SUCCESS);
 }
 
-TEST_P(LazyMXTest, DoesMX) {
-	string testfile(string(TESTDIR) + "mxlazynbofmodelstest.idp"); // TODO TESTDIR should be one HIGHER
+TEST_P(MXsatTest, DoesMX) {
+	string testfile(string(TESTDIR) + "mxsattest.idp");
 	cerr << "Testing " << string(TESTDIR) + GetParam() << "\n";
 	Status result = Status::FAIL;
 	ASSERT_NO_THROW( result = test( { string(TESTDIR) + GetParam(), testfile }););
 	ASSERT_EQ(result, Status::SUCCESS);
 }
 
-INSTANTIATE_TEST_CASE_P(ModelExpansion, MXTest, ::testing::ValuesIn(generateListOfMXFiles()));
+TEST_P(LazyMXnbTest, DoesMX) {
+	string testfile(string(TESTDIR) + "mxlazynbofmodelstest.idp");
+	cerr << "Testing " << string(TESTDIR) + GetParam() << "\n";
+	Status result = Status::FAIL;
+	ASSERT_NO_THROW( result = test( { string(TESTDIR) + GetParam(), testfile }););
+	ASSERT_EQ(result, Status::SUCCESS);
+}
 
-INSTANTIATE_TEST_CASE_P(LazyModelExpansion, LazyMXTest, ::testing::ValuesIn(generateListOfLazyMXFiles()));
+INSTANTIATE_TEST_CASE_P(ModelExpansion, MXnbTest, ::testing::ValuesIn(generateListOfMXnbFiles()));
+
+INSTANTIATE_TEST_CASE_P(ModelExpansion, MXsatTest, ::testing::ValuesIn(generateListOfMXsatFiles()));
+
+INSTANTIATE_TEST_CASE_P(LazyModelExpansion, LazyMXnbTest, ::testing::ValuesIn(generateListOfLazyMXnbFiles()));
 }

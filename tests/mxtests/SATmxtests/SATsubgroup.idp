@@ -1,0 +1,37 @@
+procedure getExpectedAModel(){
+	return true
+}
+
+/********************
+	Proper subgroup
+********************/
+
+ vocabulary V{
+
+// Original group
+type Dom				
+F(Dom,Dom) : Dom
+Neutral : Dom
+
+// Domain of subgroup
+SGDom(Dom)
+}
+theory T: V{
+
+// The group operation is internal in the subgroup
+! x y z : SGDom(x) & SGDom(y) & F(x,y)=z => SGDom(z).
+
+// The subgroup is not empty
+? x : SGDom(x).
+
+// Find a proper subgroup
+? x : ~SGDom(x).
+
+
+}
+structure S: V{
+
+Dom = {a;b;c;d}
+Neutral = a
+F = {a,a->a; a,b->b; a,c->c; a,d->d; b,a->b; b,b->c; b,c->d; b,d->a; c,a->c; c,b->d; c,c->a; c,d->b; d,a->d; d,b->a; d,c->b; d,d->c}
+}

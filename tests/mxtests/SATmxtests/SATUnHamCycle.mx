@@ -1,0 +1,45 @@
+procedure getExpectedAModel(){
+	return true
+}
+
+/*************************************
+        Hamiltonian circuit problem
+*************************************/
+
+vocabulary V{
+type Vertex
+Edge(Vertex,Vertex)
+Start : Vertex
+
+ 
+In(Vertex,Vertex)
+
+ 
+Reached(Vertex)
+
+}
+
+theory T : V { 
+// In(x,y) means: the edge from x to y is in the hamiltonian circuit.
+// Reached(x) means: the path represented by In/2 reaches node x.
+
+! x y : In(x,y) => Edge(x,y).
+
+{ Reached(x) <- In(Start,x).
+  Reached(x) <- In(y,x) & Reached(y). }
+
+// At most one hamiltonian edge arrives and departs from any node.
+! x y z : In(x,y) & In(x,z) => y = z.
+! x y z : In(y,x) & In(z,x) => y = z.
+
+// Every node must be reached.
+! x : Reached(x).
+
+}
+
+structure S : V{ 
+Vertex = {A..E}
+Edge = { A,B; A,C; B,A; C,D; C,E; D,E; B,E; D,B; E,A }
+Start = A
+
+}

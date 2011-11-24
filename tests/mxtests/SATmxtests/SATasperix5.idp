@@ -1,0 +1,29 @@
+procedure getExpectedAModel(){
+	return true
+}
+
+vocabulary V{
+	type Bird
+	type Penguin isa Bird
+	type SuperPenguin isa Penguin
+	type Ostrich isa Bird
+ 
+	Fly(Bird)
+	NotFly(Bird)
+}
+
+theory T : V { 
+	{ Fly(x) <- ~Penguin(x) & ~Ostrich(x).
+	  Fly(x) <- SuperPenguin(x). 
+	}
+	{ NotFly(x) <- Penguin(x) & ~SuperPenguin(x).
+	  NotFly(x) <- Ostrich(x).
+	}
+}
+
+structure S : V{ 
+	Bird = { 1..100 }
+	Ostrich = { 1..50 }
+	Penguin = { 51..100 }
+	SuperPenguin = { 55..70 }
+}

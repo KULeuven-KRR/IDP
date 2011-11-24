@@ -1,0 +1,25 @@
+procedure getExpectedAModel(){
+	return true
+}
+
+vocabulary V{
+	type Number isa int
+	type Part 
+	Assigned(Number,Part)
+
+ 
+	Inpart(Number) : Part
+
+}
+
+theory T : V { 
+	! x p : Assigned(x,p) => Inpart(x) = p.
+	! x y p : (x =< y & Inpart(x) = p & Inpart(y) = p) => Inpart(x+y) ~= p.
+
+}
+
+structure S : V{ 
+	Number = {1..100}
+	Part = {1..6}
+	Assigned = { 1,1; 2,2; 3,1; 4,3; 5,2; 6,3; 7,1; 8,2; 9,4; 10,4; 11,3; 12,1; 13,4; 14,5; 15,2; }
+}

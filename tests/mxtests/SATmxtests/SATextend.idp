@@ -1,0 +1,27 @@
+procedure getExpectedAModel(){
+	return true
+}
+
+vocabulary V{
+	type A
+ 
+	Edge(A,A)
+}
+
+theory T : V { 
+	! x y : Edge(x,y) <=> Edge(y,x).
+
+	// eta(0,2)
+	! y1 y2 : y1 ~= y2 => (? z : ~Edge(z,y1) & ~Edge(z,y2)).
+
+	// eta(1,1)
+	! x y : x ~=y => (? z : Edge(z,x) & ~Edge(z,y)).
+
+	// eta(2,0)
+	! x1 x2 : x1 ~= x2 => (? z : Edge(z,x1) & Edge(z,x2)).
+
+}
+
+structure S : V{ 
+	A = {1..10}
+}
