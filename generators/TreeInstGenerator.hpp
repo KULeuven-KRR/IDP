@@ -35,11 +35,11 @@ public:
 		}
 	}
 
-	virtual std::ostream& put(std::ostream& stream){
-		stream <<"TreeInstGenerator - ";
-		_root->put(stream);
-		stream <<"\n";
-		return stream;
+	virtual void put(std::ostream& stream){
+		stream <<"TreeInstGenerator\n";
+		pushtab();
+		stream <<tabs() <<toString(_root);
+		poptab();
 	}
 };
 

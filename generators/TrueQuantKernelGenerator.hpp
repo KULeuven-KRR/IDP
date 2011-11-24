@@ -49,11 +49,8 @@ public:
 		}
 	}
 
-	virtual std::ostream& put(std::ostream& stream){
-		stream <<"TrueQuantKernelGenerator - ";
-		_quantgenerator->put(stream);
-		stream <<"\n";
-		return stream;
+	virtual void put(std::ostream& stream){
+		stream <<tabs() <<"generate: TrueQuantKernelGenerator = " <<toString(_quantgenerator) <<"\n";
 	}
 };
 

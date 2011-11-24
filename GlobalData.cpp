@@ -9,7 +9,9 @@
 using namespace std;
 
 GlobalData::GlobalData() :
-		_globalNamespace(Namespace::createGlobal()), _inserter(_globalNamespace), _domainelemFactory(DomainElementFactory::createGlobal()), _options(new Options("stdoptions", ParseInfo())), _errorcount(0) {
+		_globalNamespace(Namespace::createGlobal()), _inserter(_globalNamespace), _domainelemFactory(DomainElementFactory::createGlobal()),
+		_options(new Options("stdoptions", ParseInfo())), _tabsizestack(), _errorcount(0) {
+	_tabsizestack.push(0);
 }
 
 GlobalData::~GlobalData() {
@@ -77,4 +79,16 @@ void GlobalData::closeFile(FILE* filepointer){
 	assert(filepointer!=NULL);
 	_openfiles.erase(filepointer);
 	fclose(filepointer);
+}
+
+void GlobalData::setTabSize(unsigned int size){
+	_tabsizestack.push(size);
+}
+void GlobalData::resetTabSize(){
+	if(_tabsizestack.size()>0){
+		_tabsizestack.pop();
+	}
+}
+unsigned int GlobalData::getTabSize() const{
+	return _tabsizestack.top();
 }

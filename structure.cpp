@@ -2824,12 +2824,7 @@ InternalTableIterator* UminInternalFuncTable::begin(const Universe& univ) const 
 	return new InternalFuncIterator(this, univ);
 }
 
-std::ostream& operator<<(std::ostream& stream, const AbstractTable& table) {
-	table.print(stream);
-	return stream;
-}
-
-void PredTable::print(std::ostream& stream) const {
+void PredTable::put(std::ostream& stream) const {
 	if (not finite()) {
 		stream << "infinite interpretation";
 		return;
@@ -2846,12 +2841,12 @@ void PredTable::print(std::ostream& stream) const {
 	stream << "}";
 }
 
-void FuncTable::print(std::ostream& stream) const {
-	// TODO
+void FuncTable::put(std::ostream& stream) const {
+	stream <<toString(_table);
 }
 
-void SortTable::print(std::ostream& stream) const {
-	// TODO
+void SortTable::put(std::ostream& stream) const {
+	stream <<toString(_table) <<"[" <<toString(first()) <<", " <<toString(last()) <<"]";
 }
 
 /****************
@@ -2902,6 +2897,14 @@ void InternalPredTable::decrementRef() {
 
 void InternalPredTable::incrementRef() {
 	++_nrRefs;
+}
+
+void InternalPredTable::put(std::ostream& stream) const{
+	stream <<typeid(*this).name();
+}
+
+void InternalFuncTable::put(std::ostream& stream) const{
+	stream <<typeid(*this).name();
 }
 
 ProcInternalPredTable::~ProcInternalPredTable() {
@@ -3512,10 +3515,10 @@ PredInter* PredInter::clone(const Universe& univ) const {
 }
 
 std::ostream& operator<<(std::ostream& stream, const PredInter& interpretation) {
-	stream << "Certainly true: " << *interpretation.ct() << "\n";
-	stream << "Certainly false: " << *interpretation.cf() << "\n";
-	stream << "Possibly true: " << *interpretation.pt() << "\n";
-	stream << "Possibly false: " << *interpretation.pf() << "\n";
+	stream << "Certainly true: " <<toString(interpretation.ct()) << "\n";
+	stream << "Certainly false: " <<toString(interpretation.cf()) << "\n";
+	stream << "Possibly true: " <<toString(interpretation.pt()) << "\n";
+	stream << "Possibly false: " <<toString(interpretation.pf()) << "\n";
 	return stream;
 }
 

@@ -157,8 +157,8 @@ bool ModelExpansion::calculateKnownDefinitions(Theory* theory, AbstractStructure
 				if (not satisfiable) {
 					return false;
 				}
-				opens.erase(currentdefinition);
 				theory->remove(currentdefinition->first);
+				opens.erase(currentdefinition);
 				fixpoint = false;
 			}
 		}

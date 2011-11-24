@@ -91,6 +91,14 @@ TEST_P(MXTest, DoesMX) {
 	ASSERT_EQ(result, Status::SUCCESS);
 }
 
+TEST_P(MXTest, DoesMXWithBounds) {
+	string testfile(string(TESTDIR) + "mxnbofmodelstestwithbounds.idp"); // TODO TESTDIR should be one HIGHER
+	cerr << "Testing " << string(TESTDIR) + GetParam() << "\n";
+	Status result = Status::FAIL;
+	ASSERT_NO_THROW( result = test( { string(TESTDIR) + GetParam(), testfile }););
+	ASSERT_EQ(result, Status::SUCCESS);
+}
+
 TEST_P(LazyMXTest, DoesMX) {
 	string testfile(string(TESTDIR) + "mxlazynbofmodelstest.idp"); // TODO TESTDIR should be one HIGHER
 	cerr << "Testing " << string(TESTDIR) + GetParam() << "\n";

@@ -225,8 +225,12 @@ PredForm* graphFunction(PredForm* atom, FuncTerm* ft, Term* rangeTerm){
 InstGenerator* BDDToGenerator::createFromPredForm(PredForm* atom, const vector<Pattern>& pattern, const vector<const DomElemContainer*>& vars,
 		const vector<Variable*>& atomvars, AbstractStructure* structure, bool inverse, const Universe& universe) {
 
+	if (GlobalData::instance()->getOptions()->getValue(IntType::GROUNDVERBOSITY) > 3) {
+		clog <<"BDDGeneratorFactory visiting: " << atom->toString() <<"\n";
+	}
+
 	if (FormulaUtils::containsFuncTerms(atom)) {
-		/*bool allinput = true;
+		/*bool allinput = true; // TODO usage of this section?
 		for (auto it = pattern.cbegin(); allinput && it != pattern.cend(); ++it) {
 			if (*it == Pattern::OUTPUT) {
 				allinput = false;
@@ -283,7 +287,9 @@ InstGenerator* BDDToGenerator::createFromPredForm(PredForm* atom, const vector<P
 		newform = FormulaUtils::graphFunctions(newform);
 		newform = FormulaUtils::graphAggregates(newform);
 		newform = FormulaUtils::flatten(newform);
-		assert(sametypeid<QuantForm>(*newform));
+		if(not sametypeid<QuantForm>(*newform)){
+			thrownotyetimplemented("Creating a bdd in which unnesting does not introduce quantifiers.");
+		}
 		QuantForm* quantform = dynamic_cast<QuantForm*>(newform);
 		assert(sametypeid<BoolForm>(*(quantform->subformula())));
 		BoolForm* boolform = dynamic_cast<BoolForm*>(quantform->subformula());vector
@@ -334,6 +340,11 @@ InstGenerator* BDDToGenerator::createFromPredForm(PredForm* atom, const vector<P
 			}
 		}
 
+//		clog <<"Ordered conjunction: \n";
+//		for(auto i=orderedconjunction.cbegin(); i<orderedconjunction.cend(); ++i){
+//			clog <<toString(*i) <<"\n";
+//		}
+
 		vector<InstGenerator*> generators;
 		vector<Pattern> branchpattern = pattern;
 		vector<const DomElemContainer*> branchvars = vars;
@@ -363,10 +374,11 @@ InstGenerator* BDDToGenerator::createFromPredForm(PredForm* atom, const vector<P
 				}
 			}
 			branchpattern = newbranchpattern;
-			if (*it == origatom)
+			if (*it == origatom){
 				generators.push_back(createFromPredForm(*it, kernpattern, kernvars, kernfovars, structure, inverse, Universe(kerntables)));
-			else
+			}else{
 				generators.push_back(createFromPredForm(*it, kernpattern, kernvars, kernfovars, structure, false, Universe(kerntables)));
+			}
 		}
 
 		if (generators.size() == 1)
@@ -456,7 +468,11 @@ InstGenerator* BDDToGenerator::createFromKernel(const FOBDDKernel* kernel, const
 			for (auto it = origkernelvars.cbegin(); it != origkernelvars.cend(); ++it) {
 				atomvars.push_back((*it)->variable());
 			}
-			return createFromPredForm(pf, origpattern, origvars, atomvars, structure, generateFalsebranch, origuniverse);
+			auto gen = createFromPredForm(pf, origpattern, origvars, atomvars, structure, generateFalsebranch, origuniverse);
+			if(GlobalData::instance()->getOptions()->getValue(IntType::GROUNDVERBOSITY)>3){
+				clog <<"Created kernel generator: " <<toString(gen) <<"\n";
+			}
+			return gen;
 		}
 
 		// Replace all fobbddomainterms with an instantiated variable (necessary for the generators)

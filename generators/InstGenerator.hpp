@@ -8,6 +8,7 @@
 #define INSTGENERATOR_HPP_
 
 #include <typeinfo>
+#include <sstream>
 
 enum class Pattern { INPUT, OUTPUT};
 
@@ -19,9 +20,8 @@ public:
 	// NOTE: should be a deep clone
 	virtual InstChecker* clone() const = 0; // FIXME need to reimplemnt some as a deep clone!
 
-	virtual std::ostream& put(std::ostream& stream){
-		stream <<"Generator: " <<typeid(*this).name() <<"\n";
-		return stream;
+	virtual void put(std::ostream& stream){
+		stream <<"generate: " <<typeid(*this).name();
 	}
 };
 

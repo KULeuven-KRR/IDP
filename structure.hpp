@@ -910,6 +910,8 @@ public:
 
 	friend class PredTable;
 	friend class SortTable;
+
+	virtual void put(std::ostream&) const;
 };
 
 class ProcInternalPredTable: public InternalPredTable {
@@ -1657,6 +1659,8 @@ public:
 
 	// Visitor
 	virtual void accept(StructureVisitor* v) const = 0;
+
+	virtual void put(std::ostream& stream) const;
 };
 
 class ProcInternalFuncTable: public InternalFuncTable {
@@ -1959,10 +1963,8 @@ public:
 
 	virtual TableIterator begin() const = 0;
 
-	virtual void print(std::ostream& stream) const = 0;
+	virtual void put(std::ostream& stream) const = 0;
 };
-
-std::ostream& operator<<(std::ostream& stream, const AbstractTable& table);
 
 /**
  *	This class implements tables for predicate symbols.
@@ -2010,7 +2012,7 @@ public:
 	}
 	PredTable* materialize() const;
 
-	virtual void print(std::ostream& stream) const;
+	virtual void put(std::ostream& stream) const;
 };
 
 /**
@@ -2073,7 +2075,7 @@ public:
 	}
 	SortTable* materialize() const;
 
-	virtual void print(std::ostream& stream) const;
+	virtual void put(std::ostream& stream) const;
 };
 
 /**
@@ -2124,7 +2126,7 @@ public:
 	}
 	FuncTable* materialize() const;
 
-	virtual void print(std::ostream& stream) const;
+	virtual void put(std::ostream& stream) const;
 };
 
 /**********************

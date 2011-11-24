@@ -1,9 +1,3 @@
-/************************************
- common.cpp
- this file belongs to GidL 2.0
- (c) K.U.Leuven
- ************************************/
-
 #include <string>
 #include <iostream>
 #include <ostream>
@@ -16,6 +10,7 @@
 
 #include "common.hpp"
 #include "IdpException.hpp"
+#include "GlobalData.hpp"
 
 using namespace std;
 
@@ -37,6 +32,22 @@ string getPathOfConfigFile() {
 	stringstream ss;
 	ss << RCDIR << CONFIGFILENAME;
 	return ss.str();
+}
+
+std::string tabs(){
+	stringstream ss;
+	unsigned int nb = GlobalData::instance()->getTabSize();
+	for(unsigned int i=0; i<nb; ++i){
+		ss <<"    ";
+	}
+	return ss.str();
+}
+
+void pushtab(){
+	GlobalData::instance()->setTabSize(GlobalData::instance()->getTabSize()+1);
+}
+void poptab(){
+	GlobalData::instance()->resetTabSize();
 }
 
 void notyetimplemented(const string& message) {

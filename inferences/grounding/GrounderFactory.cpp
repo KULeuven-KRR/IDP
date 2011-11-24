@@ -379,32 +379,23 @@ void GrounderFactory::visit(const Theory* theory) {
  *			CompContext::FORMULA:		_formgrounder
  */
 void GrounderFactory::visit(const PredForm* pf) {
+	if (_verbosity > 3) {
+		clog <<"Grounderfactory visiting: " << pf->toString() <<"\n";
+	}
 	_context._conjunctivePathFromRoot = _context._conjPathUntilNode;
 	_context._conjPathUntilNode = false;
 
 	// Move all functions and aggregates that are three-valued according
 	// to _structure outside the atom. To avoid changing the original atom,
 	// we first clone it.
-	if (_verbosity > 3) {
-		clog << pf->toString() << " (Original)" << "\n";
-	}
 	// FIXME verkeerde type afgeleid voor vergelijkingen a=b (zou bvb range die beide omvat moeten zijn, is nu niet het geval).
 	// FIXME aggregaten moeten correct worden herschreven als ze niet tweewaardig zijn
 	Formula* transpf = FormulaUtils::unnestThreeValuedTerms(pf->clone(), _structure, _context._funccontext, _cpsupport, _cpsymbols);
-	if (_verbosity > 3) {
-		clog << transpf->toString() << " (3-valued terms moved)" << "\n";
-	}
 	transpf = FormulaUtils::splitComparisonChains(transpf, NULL);
-	if (_verbosity > 3) {
-		clog << transpf->toString() << " (Comparison chains split)" << "\n";
-	}
 	if (not _cpsupport) { // TODO Check not present in quantgrounder
 		// NOTE: Graph aggregates before graphing functions! Ambiguity in (FuncTerm = AggTerm).
 		transpf = FormulaUtils::graphAggregates(transpf); // FIXME where does this all have to be added
 		transpf = FormulaUtils::graphFunctions(transpf);
-		if (_verbosity > 3) {
-			clog << transpf->toString() << " (Aggregates and functions graphed)" << "\n";
-		}
 	}
 
 	if (not sametypeid<PredForm>(*transpf)) { // The rewriting changed the atom
@@ -472,35 +463,36 @@ void GrounderFactory::visit(const PredForm* pf) {
 		tables.push_back(_structure->inter((*it)->sort()));
 	}
 
-	// TODO add bdd code when they work correctly
-	auto fovars = VarUtils::makeNewVariables(checksorts);
-	auto foterms = TermUtils::makeNewVarTerms(fovars);
-	auto checkpf = new PredForm(newpf->sign(), newpf->symbol(), foterms, FormulaParseInfo());
-	const FOBDD* possbdd;
-	const FOBDD* certbdd;
-	if (_context.gentype == GenType::CANMAKETRUE) {
-		possbdd = _symstructure->evaluate(checkpf, TruthType::POSS_TRUE);
-		certbdd = _symstructure->evaluate(checkpf, TruthType::CERTAIN_TRUE);
-	} else {
-		possbdd = _symstructure->evaluate(checkpf, TruthType::POSS_FALSE);
-		certbdd = _symstructure->evaluate(checkpf, TruthType::CERTAIN_FALSE);
+	PredTable *posstable = NULL, *certtable = NULL;
+	if(GlobalData::instance()->getOptions()->getValue(BoolType::GROUNDWITHBOUNDS)){
+		auto fovars = VarUtils::makeNewVariables(checksorts);
+		auto foterms = TermUtils::makeNewVarTerms(fovars);
+		auto checkpf = new PredForm(newpf->sign(), newpf->symbol(), foterms, FormulaParseInfo());
+		const FOBDD* possbdd;
+		const FOBDD* certbdd;
+		if (_context.gentype == GenType::CANMAKETRUE) {
+			possbdd = _symstructure->evaluate(checkpf, TruthType::POSS_TRUE);
+			certbdd = _symstructure->evaluate(checkpf, TruthType::CERTAIN_TRUE);
+		} else {
+			possbdd = _symstructure->evaluate(checkpf, TruthType::POSS_FALSE);
+			certbdd = _symstructure->evaluate(checkpf, TruthType::CERTAIN_FALSE);
+		}
+
+		posstable = new PredTable(new BDDInternalPredTable(possbdd, _symstructure->manager(), fovars, _structure), Universe(tables));
+		certtable = new PredTable(new BDDInternalPredTable(certbdd, _symstructure->manager(), fovars, _structure), Universe(tables));
+	}else{
+		posstable = new PredTable(new FullInternalPredTable(), Universe(tables));
+		certtable = new PredTable(new InverseInternalPredTable(new FullInternalPredTable()), Universe(tables));
 	}
 
-	auto posstable = new PredTable(new BDDInternalPredTable(possbdd, _symstructure->manager(), fovars, _structure), Universe(tables));
-	auto certtable = new PredTable(new BDDInternalPredTable(certbdd, _symstructure->manager(), fovars, _structure), Universe(tables));
-//	auto posstable = new PredTable(new FullInternalPredTable(), Universe(tables));
-//	auto certtable = new PredTable(new InverseInternalPredTable(new FullInternalPredTable()), Universe(tables));
 	auto possch = GeneratorFactory::create(posstable, vector<Pattern>(checkargs.size(), Pattern::INPUT), checkargs, Universe(tables));
 	auto certainch = GeneratorFactory::create(certtable, vector<Pattern>(checkargs.size(), Pattern::INPUT), checkargs, Universe(tables));
-/*	cerr <<"Certainly table: \n";
-	certtable->print(std::cerr);
-	cerr <<"\nPossible table: \n";
-	posstable->print(std::cerr);
-	cerr <<"\n";
-	cerr <<"Possible checker: \n";
-	possch->put(std::cerr);
-	cerr <<"Certain checker: \n";
-	certainch->put(std::cerr);*/
+	if(GlobalData::instance()->getOptions()->getValue(IntType::GROUNDVERBOSITY)>3){
+		clog <<"Certainly table: \n" <<toString(certtable) <<"\n";
+		clog <<"Possible table: \n" <<toString(posstable) <<"\n";
+		clog <<"Possible checker: \n" <<toString(possch) <<"\n";
+		clog <<"Certain checker: \n" <<toString(certainch) <<"\n";
+	}
 
 	_formgrounder = new AtomGrounder(_grounding, newpf->sign(), newpf->symbol(), subtermgrounders, checkargs, possch, certainch,
 			_structure->inter(newpf->symbol()), argsorttables, _context);
@@ -527,6 +519,10 @@ void GrounderFactory::visit(const PredForm* pf) {
  *			CompContext::HEAD is not possible
  */
 void GrounderFactory::visit(const BoolForm* bf) {
+	if (_verbosity > 3) {
+		clog <<"Grounderfactory visiting: " << bf->toString() <<"\n";
+	}
+
 	_context._conjunctivePathFromRoot = _context._conjPathUntilNode;
 	_context._conjPathUntilNode = _context._conjunctivePathFromRoot && bf->isConjWithSign();
 
@@ -601,6 +597,9 @@ const DomElemContainer* GrounderFactory::createVarMapping(Variable * const var) 
  *			CompContext::HEAD is not possible
  */
 void GrounderFactory::visit(const QuantForm* qf) {
+	if (_verbosity > 3) {
+		clog <<"Grounderfactory visiting: " << qf->toString() <<"\n";
+	}
 	_context._conjunctivePathFromRoot = _context._conjPathUntilNode;
 	_context._conjPathUntilNode = _context._conjunctivePathFromRoot && qf->isUnivWithSign();
 	// TODO guarantee that e.g. no more double negations exist? => FLAGS bijhouden van wat er met de theorie gebeurd
@@ -687,13 +686,6 @@ void GrounderFactory::visit(const QuantForm* qf) {
 const FOBDD* GrounderFactory::improve_generator(const FOBDD* bdd, const vector<Variable*>& fovars, double mcpa) {
 	FOBDDManager* manager = _symstructure->manager();
 
-	/*cerr << "improving\n";
-	 manager->put(cerr,bdd);
-	 set<Variable*> sv(fovars.cbegin(),fovars.cend());
-	 set<const FOBDDVariable*> sfv = manager->getVariables(sv);
-	 set<const FOBDDDeBruijnIndex*> id;
-	 cerr << "current cost = " << manager->estimatedCostAll(bdd,sfv,id,_structure) << endl;
-	 */
 	// 1. Optimize the query
 	FOBDDManager optimizemanager;
 	const FOBDD* copybdd = optimizemanager.getBDD(bdd, manager);
@@ -703,19 +695,9 @@ const FOBDD* GrounderFactory::improve_generator(const FOBDD* bdd, const vector<V
 		copyvars.insert(optimizemanager.getVariable(*it));
 	}
 	optimizemanager.optimizequery(copybdd, copyvars, indices, _structure);
-	/*
-	 cerr << "optimized version\n";
-	 optimizemanager.put(cerr,copybdd);
-	 sfv = optimizemanager.getVariables(sv);
-	 cerr << "cost is now: " << optimizemanager.estimatedCostAll(copybdd,sfv,id,_structure) << endl;
-	 */
 
 	// 2. Remove certain leaves
 	const FOBDD* pruned = optimizemanager.make_more_true(copybdd, copyvars, indices, _structure, mcpa);
-	/*
-	 cerr << "pruned version\n";
-	 optimizemanager.put(cerr,pruned);
-	 */
 
 	// 3. Replace result
 	return manager->getBDD(pruned, &optimizemanager);

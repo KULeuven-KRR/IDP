@@ -26,6 +26,12 @@ private:
 	bool 					alreadyrun;
 protected:
 	virtual ARITHRESULT doCalculation(double left, double right, double& result) const = 0;
+
+	const DomElemContainer*	getIn1() const { return _in1; }
+	const DomElemContainer*	getIn2() const { return _in2; }
+	const DomElemContainer*	getOut1() const { return _out; }
+	SortTable*			 	getOutDom() const { return _outdom; }
+
 public:
 	ArithOpGenerator(const DomElemContainer* in1, const DomElemContainer* in2, const DomElemContainer* out, NumType requestedType, SortTable* dom) :
 		_in1(in1), _in2(in2), _out(out), _outdom(dom), _requestedType(requestedType), alreadyrun(false) {
@@ -97,6 +103,10 @@ public:
 	DivGenerator* clone() const{
 		return new DivGenerator(*this);
 	}
+
+	virtual void put(std::ostream& stream){
+		stream <<getIn1() <<"(in)" <<" / " <<getIn2() <<"(in)" <<" = " <<getOutDom() <<"["<<toString(getOutDom()) <<"]" <<"(out)";
+	}
 };
 
 class TimesGenerator : public ArithOpGenerator {
@@ -112,6 +122,10 @@ public:
 
 	TimesGenerator* clone() const{
 		return new TimesGenerator(*this);
+	}
+
+	virtual void put(std::ostream& stream){
+		stream <<getIn1() <<"(in)" <<" * " <<getIn2() <<"(in)" <<" = " <<getOutDom() <<"["<<toString(getOutDom()) <<"]" <<"(out)";
 	}
 };
 
@@ -129,6 +143,10 @@ public:
 	MinusGenerator* clone() const{
 		return new MinusGenerator(*this);
 	}
+
+	virtual void put(std::ostream& stream){
+		stream <<getIn1() <<"(in)" <<" - " <<getIn2() <<"(in)" <<" = " <<getOutDom() <<"["<<toString(getOutDom()) <<"]" <<"(out)";
+	}
 };
 
 class PlusGenerator : public ArithOpGenerator {
@@ -144,6 +162,10 @@ public:
 
 	PlusGenerator* clone() const{
 		return new PlusGenerator(*this);
+	}
+
+	virtual void put(std::ostream& stream){
+		stream <<getIn1() <<"(in)" <<" + " <<getIn2() <<"(in)" <<" = " <<getOutDom() <<"["<<toString(getOutDom()) <<"]" <<"(out)";
 	}
 };
 

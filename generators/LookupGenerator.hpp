@@ -10,7 +10,7 @@ class LookupGenerator : public InstGenerator {
 private:
 	const PredTable*						_table;
 	std::vector<const DomElemContainer*>	_vars;
-	Universe								_universe; // FIXME waarvoor is dit universe nu juist nodig?
+	Universe								_universe; // FIXME waarvoor is dit universe nu juist nodig? => om het juiste supertype mee te geven, je moet niet perse genereren over het type van de tabel
 
 	bool _reset;
 
@@ -43,6 +43,19 @@ public:
 		}else{
 			notifyAtEnd();
 		}
+	}
+
+	virtual void put(std::ostream& stream){
+		stream <<toString(_table) <<"(";
+		bool begin = true;
+		for(unsigned int n = 0; n<_vars.size(); ++n){
+			if(not begin){
+				stream <<", ";
+			}
+			begin = false;
+			stream <<_vars[n] <<"(in)";
+		}
+		stream <<")";
 	}
 };
 

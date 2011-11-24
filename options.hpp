@@ -38,6 +38,7 @@ enum BoolType{
 	CREATETRANSLATION, 
 	MXRANDOMPOLARITYCHOICE, 
 	GROUNDLAZILY,
+	GROUNDWITHBOUNDS,
 	MODELCOUNTEQUIVALENCE // TODO the equivalence might in fact become an enum itself?
 };
 enum DoubleType{

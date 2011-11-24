@@ -11,6 +11,7 @@
 #include <iostream>
 #include "GlobalData.hpp"
 #include "options.hpp"
+#include <typeinfo>
 
 class Definition;
 class SetExpr;
@@ -37,9 +38,9 @@ template<typename Transformer, typename Construct, typename ... Values>
 Construct* transform(Construct* object, Values ... parameters) {
 	Transformer t(parameters...);
 	if(GlobalData::instance()->getOptions()->getValue(IntType::GROUNDVERBOSITY)>1){
-		std::cerr <<"Transforming: ";
+		std::cerr <<"Executing " <<typeid(Transformer).name() <<" on: ";
 		object->put(std::cerr);
-		std::cerr <<" into ";
+		std::cerr <<"\nResulted in: ";
 	}
 	auto result = object->accept(&t);
 	if(GlobalData::instance()->getOptions()->getValue(IntType::GROUNDVERBOSITY)>1){

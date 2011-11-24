@@ -30,7 +30,7 @@ public:
 		}
 	}
 
-	virtual std::ostream& put(std::ostream& stream) = 0;
+	virtual void put(std::ostream& stream) = 0;
 };
 
 class LeafGeneratorNode: public GeneratorNode {
@@ -57,11 +57,8 @@ public:
 		_reset = true;
 	}
 
-	virtual std::ostream& put(std::ostream& stream){
-		stream <<"Leaf:";
-		_generator->put(stream);
-		stream <<"\n";
-		return stream;
+	virtual void put(std::ostream& stream){
+		stream <<"generate " <<toString(_generator);
 	}
 };
 
@@ -106,13 +103,12 @@ public:
 		_reset = true;
 	}
 
-	virtual std::ostream& put(std::ostream& stream){
-		stream <<"Node:";
-		_generator->put(stream);
-		stream <<"Child:";
-		_child->put(stream);
-		stream <<"\n";
-		return stream;
+	virtual void put(std::ostream& stream){
+		stream <<"generate: " <<toString(_generator) <<"\n";
+		stream <<tabs() <<"then ";
+		pushtab();
+		stream <<toString(_child);
+		poptab();
 	}
 };
 
@@ -178,17 +174,13 @@ public:
 		_reset = true;
 	}
 
-	virtual std::ostream& put(std::ostream& stream){
-		stream <<"Node:";
-		_generator->put(stream);
-		stream <<"Checker:";
-		_checker->put(stream);
-		stream <<"Left child:";
-		_truecheckbranch->put(stream);
-		stream <<"Right child:";
-		_falsecheckbranch->put(stream);
-		stream <<"\n";
-		return stream;
+	virtual void put(std::ostream& stream){
+		stream <<"generate: " <<toString(_generator) <<"\n";
+		stream <<tabs() <<"then\n";
+		pushtab();
+		stream <<tabs() <<"truebranch "<<toString(_truecheckbranch) <<"\n";
+		stream <<tabs() <<"falsebranch "<<toString(_falsecheckbranch);
+		poptab();
 	}
 };
 

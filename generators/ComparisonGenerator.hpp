@@ -16,7 +16,7 @@ enum class Input {
 /**
  * Formula: x op y, with op one of {=<, <, =>, >, =}, possibly different domains
  *
- * TODO can halve runtime in the case of both output and certainty of enumerating according to < order (by storing the previous first match).
+ * TODO can halve runtime in the case of NONE input and of enumerating according to < order (by storing the previous first match).
  */
 class ComparisonGenerator: public InstGenerator {
 private:
@@ -30,13 +30,13 @@ private:
 		VALID, INVALID
 	};
 
-	bool _reset;
+	bool _reset, certainlylast;
 
 public:
 	ComparisonGenerator(SortTable* leftsort, SortTable* rightsort, const DomElemContainer* leftvalue, const DomElemContainer* rightvalue, Input input,
 			CompType type) :
 			_leftsort(leftsort), _rightsort(rightsort), _leftvar(leftvalue), _rightvar(rightvalue), comparison(type), _input(input), _left(
-					leftsort->sortBegin()), _right(rightsort->sortBegin()), _reset(true) {
+					leftsort->sortBegin()), _right(rightsort->sortBegin()), _reset(true), certainlylast(false) {
 		if (_input == Input::RIGHT) {
 			_leftsort = rightsort;
 			_rightsort = leftsort;
@@ -47,15 +47,59 @@ public:
 		}
 	}
 
+	virtual void put(std::ostream& stream){
+		stream <<_leftvar <<"[" <<toString(_leftsort) <<"]" <<(_input!=Input::NONE?"(in)":"(out)");
+		stream <<comparison;
+		stream <<_rightvar <<"[" <<toString(_rightsort) <<"]" <<(_input==Input::BOTH?"(in)":"(out)");
+	}
+
 	ComparisonGenerator* clone() const{
 		return new ComparisonGenerator(*this);
 	}
 
 	void reset() {
 		_reset = true;
+		certainlylast = false;
+	}
+
+	/**
+	 * The first argument is the finite one of such is available.
+	 * NOTE: optimized for EQ comparison
+	 */
+	void findNext(SortIterator* finiteside, SortIterator* undefinedside, SortTable* undefinedSort, const DomElemContainer* finiteContainer, const DomElemContainer* undefinedContainer){
+		bool stop = false;
+		for(; not finiteside->isAtEnd() && not stop; ++(*finiteside)){
+			if(comparison!=CompType::EQ){
+				for (; not (*undefinedside).isAtEnd() && not stop; ++(*undefinedside)) {
+					if (checkAndSet() == CompResult::VALID) {
+						stop = true;
+						break;
+					}
+				}
+				if (stop) {
+					break;
+				}
+				*undefinedside = undefinedSort->sortBegin();
+			}else{
+				if(undefinedSort->contains(**finiteside)){
+					finiteContainer->operator =(**finiteside);
+					undefinedContainer->operator =(**finiteside);
+					certainlylast = true;
+					return;
+				}
+			}
+
+		}
+		if ((*finiteside).isAtEnd()) {
+			notifyAtEnd();
+		}
 	}
 
 	void next() {
+		if(certainlylast){
+			notifyAtEnd();
+			return;
+		}
 		switch (_input) {
 		case Input::BOTH:
 			if(_reset && correct()){
@@ -73,26 +117,17 @@ public:
 				++_left;
 			}
 			bool stop = false;
-			for(; not _right.isAtEnd() && not stop; ++_right){
-				for (; not _left.isAtEnd() && not stop; ++_left) {
-					if (checkAndSet() == CompResult::VALID) {
-						stop = true;
-						break;
-					}
-				}
-				if (stop) {
-					break;
-				}
-				_left = _leftsort->sortBegin();
-			}
-			if (_right.isAtEnd()) {
-				notifyAtEnd();
+			if(_leftsort->finite()){ // NOTE: optimized for looping over non-finite sort first (if available)
+				findNext(&_left, &_right, _rightsort, _leftvar, _rightvar);
+			}else{
+				findNext(&_right, &_left, _leftsort, _rightvar, _leftvar);
 			}
 			break;}
 		case Input::LEFT: // NOTE: optimized EQ comparison
 			if(_reset){
 				_reset = false;
 				if(comparison==CompType::EQ){
+					certainlylast = true;
 					if(_rightsort->contains(_leftvar->get())){
 						_rightvar->operator =(_leftvar->get());
 					}else{
@@ -103,10 +138,6 @@ public:
 					_right = _rightsort->sortBegin();
 				}
 			}else{
-				if(comparison==CompType::EQ){
-					notifyAtEnd();
-					return;
-				}
 				++_right;
 			}
 			for(; not _right.isAtEnd(); ++_right){
@@ -132,7 +163,7 @@ private:
 		return _input==Input::BOTH;
 	}
 
-	CompResult checkAndSet() { // TODO optimize eq comparison
+	CompResult checkAndSet() {
 		if (correct()) {
 			if(not leftIsInput()){
 				_leftvar->operator =(*_left);
