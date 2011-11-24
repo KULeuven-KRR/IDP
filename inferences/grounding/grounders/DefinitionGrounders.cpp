@@ -54,6 +54,7 @@ void RuleGrounder::run(unsigned int defid, GroundDefinition* grounddefinition) c
 			if(head != _false) {
 				if(truebody){
 					body.literals.clear();
+					conj = true;
 				}
 				grounddefinition->addPCRule(head, body.literals, conj, context()._tseitin == TsType::RULE);
 			}
