@@ -54,10 +54,42 @@ InstGenerator* GeneratorFactory::create(const vector<const DomElemContainer*>& v
 	return gen;
 }
 
-InstGenerator* GeneratorFactory::create(const PredTable* pt, vector<Pattern> pattern, const vector<const DomElemContainer*>& vars,
+InstGenerator* GeneratorFactory::create(const PredTable* pt, const vector<Pattern>& pattern, const vector<const DomElemContainer*>& vars,
 		const Universe& universe) {
 	GeneratorFactory factory;
 	return factory.internalCreate(pt, pattern, vars, universe);
+}
+
+InstGenerator* GeneratorFactory::create(const PredForm* atom, AbstractStructure* structure, bool inverse, const vector<Pattern>& pattern, const vector<const DomElemContainer*>& vars,
+		const Universe& universe){
+	PFSymbol* symbol = atom->symbol();
+	const PredTable* table = NULL;
+	if (sametypeid<Predicate>(*(atom->symbol()))) {
+		auto predicate = dynamic_cast<Predicate*>(atom->symbol());
+		auto inter = structure->inter(predicate);
+		switch (predicate->type()) {
+			case ST_NONE:
+			table = inverse ? inter->cf() : inter->ct();
+			break;
+			case ST_CT:
+			table = inverse ? inter->pf() : inter->ct();
+			break;
+			case ST_CF:
+			table = inverse ? inter->pt() : inter->cf();
+			break;
+			case ST_PT:
+			table = inverse ? inter->cf() : inter->pt();
+			break;
+			case ST_PF:
+			table = inverse ? inter->ct() : inter->pf();
+			break;
+		}
+	} else {
+		assert(sametypeid<Function>(*(atom->symbol())));
+		auto inter = structure->inter(dynamic_cast<Function*>(symbol))->graphInter();
+		table = inverse ? inter->cf() : inter->ct();
+	}
+	return GeneratorFactory::create(table, pattern, vars, universe);
 }
 
 InstGenerator* GeneratorFactory::internalCreate(const PredTable* pt, vector<Pattern> pattern, const vector<const DomElemContainer*>& vars,

@@ -1,7 +1,7 @@
 vocabulary V {
   type X isa int
   type Y isa int
-  F(X):Y
+  partial F(X):Y
 }
 
 theory T: V {
@@ -14,5 +14,5 @@ structure S: V {
 }
 
 procedure getExpectedNbOfModels() {
-	return 9
+	return 16
 }

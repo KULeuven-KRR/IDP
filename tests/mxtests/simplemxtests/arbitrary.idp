@@ -3,9 +3,6 @@ vocabulary V {
 	type y isa int
 	p
 	p(x)
-	p(x, y)
-	a:x
-	a(y):x
 }
 
 theory T:V {
@@ -13,9 +10,8 @@ theory T:V {
 
 structure S:V {
 	x = {1..3}
-	y = {1..2}
 }
 
 procedure getExpectedNbOfModels() {
-	return 27648
+	return 8
 }

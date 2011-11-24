@@ -16,6 +16,7 @@
 #include "theoryinformation/CollectOpensOfDefinitions.hpp"
 #include "theoryinformation/CheckContainment.hpp"
 #include "theoryinformation/CheckContainsFuncTerms.hpp"
+#include "theoryinformation/CheckContainsAggTerms.hpp"
 #include "theoryinformation/CheckFuncTerms.hpp"
 #include "theoryinformation/CheckPartialTerm.hpp"
 #include "theoryinformation/CheckSorts.hpp"
@@ -100,6 +101,11 @@ Formula* unnestThreeValuedTerms(Formula* f, AbstractStructure* structure, Contex
 bool containsFuncTerms(Formula* f) {
 	CheckContainsFuncTerms checker;
 	return checker.containsFuncTerms(f);
+}
+
+bool containsAggTerms(Formula* f) {
+	CheckContainsAggTerms checker;
+	return checker.containsAggTerms(f);
 }
 
 AbstractTheory* pushNegations(AbstractTheory* f) {

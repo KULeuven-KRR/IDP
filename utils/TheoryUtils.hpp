@@ -7,8 +7,10 @@
 #ifndef THEORYUTILS_HPP_
 #define THEORYUTILS_HPP_
 
-#include <set>
-#include "commontypes.hpp"
+#include "common.hpp"
+#include <iostream>
+#include "GlobalData.hpp"
+#include "options.hpp"
 
 class Definition;
 class SetExpr;
@@ -34,7 +36,17 @@ Construct* transform(Construct* object) {
 template<typename Transformer, typename Construct, typename ... Values>
 Construct* transform(Construct* object, Values ... parameters) {
 	Transformer t(parameters...);
-	return object->accept(&t);
+	if(GlobalData::instance()->getOptions()->getValue(IntType::GROUNDVERBOSITY)>1){
+		std::cerr <<"Transforming: ";
+		object->put(std::cerr);
+		std::cerr <<" into ";
+	}
+	auto result = object->accept(&t);
+	if(GlobalData::instance()->getOptions()->getValue(IntType::GROUNDVERBOSITY)>1){
+		result->put(std::cerr);
+		std::cerr <<"\n";
+	}
+	return result;
 }
 
 namespace FormulaUtils {
@@ -68,8 +80,9 @@ Formula* unnestPartialTerms(Formula* f, Context context, Vocabulary* voc = NULL)
 Formula* unnestThreeValuedTerms(Formula*, AbstractStructure*, Context context, bool cpsupport = false, const std::set<const PFSymbol*> cpsymbols =
 		std::set<const PFSymbol*>());
 
-/** Returns true iff at least one FuncTerm occurs in the given formula **/
+/** Returns true iff at least one FuncTerm/AggTerm occurs in the given formula **/
 bool containsFuncTerms(Formula* f);
+bool containsAggTerms(Formula* f);
 
 /** Replace the given term by the given variable in the given formula **/
 Formula* substituteTerm(Formula*, Term*, Variable*);

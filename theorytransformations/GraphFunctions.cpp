@@ -1,11 +1,6 @@
-/************************************
-  	GraphFunctions.cpp
-	this file belongs to GidL 2.0
-	(c) K.U.Leuven
-************************************/
-
 #include <vector>
 #include <cassert>
+#include <iostream>
 
 #include "theorytransformations/GraphFunctions.hpp"
 #include "theorytransformations/SplitComparisonChains.hpp"
