@@ -125,7 +125,7 @@ double applyAgg(const AggFunction& agg, const vector<double>& args) {
 		}
 		break;
 	case AggFunction::MAX:
-		d = numeric_limits<double>::min();
+		d = - numeric_limits<double>::max();
 		for (size_t n = 0; n < args.size(); ++n) {
 			d = (d >= args[n] ? d : args[n]);
 		}

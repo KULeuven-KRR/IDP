@@ -763,7 +763,7 @@ private:
 		++_iter;
 	}
 public:
-	FloatInternalSortIterator(double iter = std::numeric_limits<double>::min()) :
+	FloatInternalSortIterator(double iter = - std::numeric_limits<double>::max()) :
 			_iter(iter) {
 	}
 	~FloatInternalSortIterator() {

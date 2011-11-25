@@ -2340,7 +2340,7 @@ InternalSortTable* AllFloats::add(int, int) {
 }
 
 const DomainElement* AllFloats::first() const {
-	return createDomElem(numeric_limits<double>::min());
+	return createDomElem(- numeric_limits<double>::max());
 }
 
 const DomainElement* AllFloats::last() const {

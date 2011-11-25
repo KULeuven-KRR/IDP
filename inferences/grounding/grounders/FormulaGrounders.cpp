@@ -381,8 +381,9 @@ int AggGrounder::run() const {
 	// Compute the value of the aggregate based on weights of literals that are certainly true.
 	double truevalue = applyAgg(_type, tsset.trueweights());
 
+
 	// When the set is empty, return an answer based on the current value of the aggregate.
-	if (tsset.literals().empty()) {
+	if (tsset.empty()) {
 		bool returnvalue;
 		switch (_comp) {
 		case AGG_LT:
