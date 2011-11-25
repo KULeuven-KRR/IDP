@@ -4,7 +4,7 @@
 #include <cassert>
 #include "generators/InstGenerator.hpp"
 #include "structure.hpp"
-#include <iostream> //for debugging only TODO remove
+#include <iostream> //for debugging
 
 class SortTable;
 class DomElemContainer;
@@ -30,13 +30,13 @@ private:
 		VALID, INVALID
 	};
 
-	bool _reset, certainlylast;
+	bool _reset, increaseouter;
 
 public:
 	ComparisonGenerator(SortTable* leftsort, SortTable* rightsort, const DomElemContainer* leftvalue, const DomElemContainer* rightvalue, Input input,
 			CompType type) :
 			_leftsort(leftsort), _rightsort(rightsort), _leftvar(leftvalue), _rightvar(rightvalue), comparison(type), _input(input), _left(
-					leftsort->sortBegin()), _right(rightsort->sortBegin()), _reset(true), certainlylast(false) {
+					leftsort->sortBegin()), _right(rightsort->sortBegin()), _reset(true), increaseouter(false) {
 		if (_input == Input::RIGHT) {
 			_leftsort = rightsort;
 			_rightsort = leftsort;
@@ -59,7 +59,7 @@ public:
 
 	void reset() {
 		_reset = true;
-		certainlylast = false;
+		increaseouter = false;
 	}
 
 	/**
@@ -73,7 +73,7 @@ public:
 				for (; not (*undefinedside).isAtEnd() && not stop; ++(*undefinedside)) {
 					if (checkAndSet() == CompResult::VALID) {
 						stop = true;
-						break;
+						break; // NOTE: essential to prevent ++
 					}
 				}
 				if (stop) {
@@ -84,11 +84,10 @@ public:
 				if(undefinedSort->contains(**finiteside)){
 					finiteContainer->operator =(**finiteside);
 					undefinedContainer->operator =(**finiteside);
-					certainlylast = true;
+					increaseouter = true;
 					return;
 				}
 			}
-
 		}
 		if ((*finiteside).isAtEnd()) {
 			notifyAtEnd();
@@ -96,10 +95,6 @@ public:
 	}
 
 	void next() {
-		if(certainlylast){
-			notifyAtEnd();
-			return;
-		}
 		switch (_input) {
 		case Input::BOTH:
 			if(_reset && correct()){
@@ -114,7 +109,21 @@ public:
 				_left = _leftsort->sortBegin();
 				_right = _rightsort->sortBegin();
 			}else{
-				++_left;
+				if(_leftsort->finite()){
+					if(increaseouter){
+						++_left;
+						increaseouter = false;
+					}else{
+						++_right;
+					}
+				}else{
+					if(increaseouter){
+						++_right;
+						increaseouter = false;
+					}else{
+						++_left;
+					}
+				}
 			}
 			bool stop = false;
 			if(_leftsort->finite()){ // NOTE: optimized for looping over non-finite sort first (if available)
@@ -127,7 +136,6 @@ public:
 			if(_reset){
 				_reset = false;
 				if(comparison==CompType::EQ){
-					certainlylast = true;
 					if(_rightsort->contains(_leftvar->get())){
 						_rightvar->operator =(_leftvar->get());
 					}else{
@@ -138,6 +146,10 @@ public:
 					_right = _rightsort->sortBegin();
 				}
 			}else{
+				if(comparison==CompType::EQ){
+					notifyAtEnd();
+					break;
+				}
 				++_right;
 			}
 			for(; not _right.isAtEnd(); ++_right){
