@@ -34,9 +34,11 @@ private:
 	std::vector<const DomElemContainer*> _invars;
 	std::vector<unsigned int> _inpos;
 
+	Universe _universe;
+
 public:
 	SimpleFuncGenerator(const FuncTable* ft, const std::vector<Pattern>& pattern, const std::vector<const DomElemContainer*>& vars, const Universe& univ, const std::vector<uint>& firstocc)
-			: _function(ft), _rangevar(vars.back()), _vars(vars) {
+			: _function(ft), _rangevar(vars.back()), _vars(vars), _universe(univ) {
 		assert(pattern.back()==Pattern::OUTPUT);
 		auto domainpattern = pattern;
 		domainpattern.pop_back();
@@ -112,6 +114,7 @@ public:
 			}
 			begin = false;
 			stream <<_vars[n];
+			stream <<toString(_universe.tables()[n]);
 			for(auto i=_outpos.begin(); i<_outpos.end(); ++i){
 				if(n==*i){
 					stream <<"(out)";
@@ -123,7 +126,7 @@ public:
 				}
 			}
 		}
-		stream <<"):" <<_rangevar <<"(out)";
+		stream <<"):" <<_rangevar <<toString(_universe.tables().back()) <<"(out)";
 	}
 };
 
