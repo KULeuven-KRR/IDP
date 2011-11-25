@@ -57,7 +57,9 @@ AtomGrounder::AtomGrounder(AbstractGroundTheory* grounding, SIGN sign, PFSymbol*
 }
 
 Lit AtomGrounder::run() const {
-	if (verbosity() > 2) { printorig(); }
+	if (verbosity() > 2) {
+		printorig();
+	}
 
 	// Run subterm grounders
 	bool alldomelts = true;
@@ -96,7 +98,8 @@ Lit AtomGrounder::run() const {
 		}
 	}
 
-	assert(alldomelts); // If P(t) and (not isCPSymbol(P)) and isCPSymbol(t) then it should have been rewritten, right? 
+	assert(alldomelts);
+	// If P(t) and (not isCPSymbol(P)) and isCPSymbol(t) then it should have been rewritten, right?
 
 	// Run instance checkers
 	// NOTE: set all the variables representing the subterms to their current value (these are used in the checkers)
@@ -381,7 +384,6 @@ int AggGrounder::run() const {
 	// Compute the value of the aggregate based on weights of literals that are certainly true.
 	double truevalue = applyAgg(_type, tsset.trueweights());
 
-
 	// When the set is empty, return an answer based on the current value of the aggregate.
 	if (tsset.empty()) {
 		bool returnvalue;
@@ -422,12 +424,16 @@ int AggGrounder::run() const {
 		// Compute the minimum and maximum possible value of the product.
 		bool containsneg = false;
 		for (unsigned int n = 0; n < tsset.size(); ++n) {
-			maxpossvalue *= abs(tsset.weight(n));
+			if (abs(tsset.weight(n)) > 1) {
+				maxpossvalue *= abs(tsset.weight(n));
+			} else if(tsset.weight(n) != 0){
+				minpossvalue *= abs(tsset.weight(n));
+			}
 			if (tsset.weight(n) < 0)
 				containsneg = true;
 		}
 		if (containsneg)
-			minpossvalue = -maxpossvalue;
+			minpossvalue = (-maxpossvalue < minpossvalue ? -maxpossvalue : minpossvalue);
 		// Finish
 		tseitin = finish(boundvalue, (boundvalue / truevalue), minpossvalue, maxpossvalue, setnr);
 		break;
@@ -437,6 +443,8 @@ int AggGrounder::run() const {
 		for (unsigned int n = 0; n < tsset.size(); ++n) {
 			minpossvalue = (tsset.weight(n) < minpossvalue) ? tsset.weight(n) : minpossvalue;
 			// Decrease all weights greater than truevalue to truevalue. // TODO why not just drop all those?
+			// FIXME: what if some set is used in multiple expressions? Then we are changing weights???
+			// TODO: what advantage does this have?
 			if (tsset.weight(n) > truevalue)
 				tsset.setWeight(n, truevalue);
 		}
