@@ -1,0 +1,18 @@
+vocabulary V{
+	type x isa int
+	p(x)
+}
+
+theory T:V{
+	?y[x]: min{x: p(x): x}=y.
+	!x : ~p(x).
+}
+
+structure S:V{
+	x = {0..5}
+}
+
+	//empty set has no minimum
+procedure getExpectedNbOfModels(){
+	return 0
+}

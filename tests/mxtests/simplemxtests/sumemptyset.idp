@@ -1,0 +1,18 @@
+vocabulary V{
+	type x isa int
+	p(x)
+	q:x
+}
+
+theory T:V{
+	sum{x: p(x): x}=q.
+}
+
+structure S:V{
+	x = {0..5}
+	p={}
+}
+
+procedure getExpectedNbOfModels(){
+	return 1
+}
