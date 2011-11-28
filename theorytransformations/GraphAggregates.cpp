@@ -45,7 +45,7 @@ Formula* GraphAggregates::visit(PredForm* pf) {
 		Formula* newpf = 0;
 		if (typeid(*(pf->subterms()[0])) == typeid(AggTerm)) {
 			AggTerm* at = dynamic_cast<AggTerm*>(pf->subterms()[0]);
-			newpf = new AggForm(SIGN::POS, pf->subterms()[1], comparison, at, pf->pi().clone());
+			newpf = new AggForm(SIGN::POS, pf->subterms()[1], invertComp(comparison), at, pf->pi().clone());
 			delete (pf);
 		} else if (typeid(*(pf->subterms()[1])) == typeid(AggTerm)) {
 			AggTerm* at = dynamic_cast<AggTerm*>(pf->subterms()[1]);
