@@ -444,7 +444,7 @@ int AggGrounder::run() const {
 			minpossvalue = (tsset.weight(n) < minpossvalue) ? tsset.weight(n) : minpossvalue;
 			// Decrease all weights greater than truevalue to truevalue. // TODO why not just drop all those?
 			// FIXME: what if some set is used in multiple expressions? Then we are changing weights???
-			// TODO: what advantage does this have?
+			// TODO: what advantage does this have? -> Issue 55773
 			if (tsset.weight(n) > truevalue)
 				tsset.setWeight(n, truevalue);
 		}

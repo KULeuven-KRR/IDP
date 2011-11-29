@@ -177,7 +177,15 @@ bool Sort::builtin() const {
 }
 
 SortTable* Sort::interpretation() const {
+
 	return _interpretation;
+}
+
+const Vocabulary* Sort::firstVocabulary() const {
+	return *(_vocabularies.cbegin());
+}
+const Vocabulary* Sort::lastVocabulary() const {
+	return *(_vocabularies.cend());
 }
 
 ostream& Sort::put(ostream& output, bool longnames) const {

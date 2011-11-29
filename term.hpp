@@ -278,6 +278,12 @@ class SetExpr {
 		//!< copy the set while keeping all variables
 		virtual SetExpr* clone(const std::map<Variable*,Variable*>&)	const = 0;
 			//!< create a copy of the set and substitute the free variables according to the given map
+		virtual SetExpr* positiveSubset() const = 0;
+			//!< generate the subset of positive terms ({x:p(x):t(x)} becomes {x:p(x)&t(x)>0: t(x)})
+		virtual SetExpr* negativeSubset() const = 0;
+			//!< generate the subset of negated negative terms ({x:p(x):t(x)} becomes {x:p(x)&t(x)<0: -t(x)})
+		virtual SetExpr* zeroSubset() const = 0;
+			//!< generate the subset of zero terms ({x:p(x):t(x)} becomes {x:p(x)&t(x)=0: 0})
 
 		// Destructors
 		virtual ~SetExpr() { }		//!< Delete the set, but not 
@@ -292,12 +298,12 @@ class SetExpr {
 		
 		// Inspectors
 		virtual Sort*							sort()						const = 0;	//!< Returns the sort of the set
-				const std::set<Variable*>&		freeVars()					const { return _freevars;	}
-				const std::set<Variable*>&		quantVars()					const { return _quantvars;	}
-				bool							contains(const Variable*)	const;
-				const std::vector<Formula*>&	subformulas()				const { return _subformulas;	}
-				const std::vector<Term*>&		subterms()					const { return _subterms;		}
-				const SetParseInfo&				pi()						const { return _pi;				}
+		const std::set<Variable*>&		freeVars()					const { return _freevars;	}
+		const std::set<Variable*>&		quantVars()					const { return _quantvars;	}
+		bool							contains(const Variable*)	const;
+		const std::vector<Formula*>&	subformulas()				const { return _subformulas;	}
+		const std::vector<Term*>&		subterms()					const { return _subterms;		}
+		const SetParseInfo&				pi()						const { return _pi;				}
 
 		// Visitor
 		virtual void		accept(TheoryVisitor*)			const = 0;
@@ -322,6 +328,9 @@ class EnumSetExpr : public SetExpr {
 		EnumSetExpr* clone()										const;
 		EnumSetExpr* cloneKeepVars()								const;
 		EnumSetExpr* clone(const std::map<Variable*,Variable*>&)	const;
+		EnumSetExpr* positiveSubset() const ;
+		EnumSetExpr* negativeSubset() const ;
+		EnumSetExpr* zeroSubset() const ;
 
 		~EnumSetExpr() { }
 
@@ -343,6 +352,9 @@ public:
 	QuantSetExpr* clone()										const;
 	QuantSetExpr* cloneKeepVars()								const;
 	QuantSetExpr* clone(const std::map<Variable*,Variable*>&)	const;
+	QuantSetExpr* positiveSubset() const ;
+	QuantSetExpr* negativeSubset() const ;
+	QuantSetExpr* zeroSubset() const ;
 
 	Sort*	sort()	const;
 

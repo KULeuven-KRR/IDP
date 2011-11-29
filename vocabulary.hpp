@@ -71,6 +71,8 @@ public:
 	std::set<Sort*> descendents(const Vocabulary* v = 0) const; //!< Returns the descendents of the sort
 	bool builtin() const; //!< True iff the sort is built-in
 	SortTable* interpretation() const; //!< Returns the interpretaion for built-in sorts
+	const Vocabulary* firstVocabulary() const ;
+	const Vocabulary* lastVocabulary() const ;
 
 	// Output
 	std::ostream& put(std::ostream&, bool longnames = false) const;

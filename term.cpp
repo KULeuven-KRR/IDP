@@ -358,6 +358,47 @@ EnumSetExpr* EnumSetExpr::clone(const map<Variable*, Variable*>& mvv) const {
 	}
 	return new EnumSetExpr(newforms, newweights, _pi.clone(mvv));
 }
+EnumSetExpr* EnumSetExpr::positiveSubset() const {
+	std::vector<Formula*> newsubforms(0);
+	auto term = _subterms.cbegin();
+	auto nul = DomainElementFactory::createGlobal()->create(0);
+	for (auto form = _subformulas.cbegin(); form < _subformulas.cend(); form++, term++) {
+		auto nulterm = new DomainTerm((*term)->sort(), nul, (*term)->pi());
+		auto termpos = new EqChainForm(SIGN::POS, true, { *term, nulterm }, { CompType::GT }, (*form)->pi());
+		newsubforms.push_back(new BoolForm(SIGN::POS, true, { *form, termpos }, (*form)->pi()));
+	}
+	return new EnumSetExpr(newsubforms, _subterms, _pi);
+
+}
+EnumSetExpr* EnumSetExpr::negativeSubset() const {
+	std::vector<Formula*> newsubforms(0);
+	std::vector<Term*> newterms(0);
+	auto term = _subterms.cbegin();
+	auto nul = DomainElementFactory::createGlobal()->create(0);
+
+	for (auto form = _subformulas.cbegin(); form < _subformulas.cend(); form++, term++) {
+
+		auto nulterm = new DomainTerm((*term)->sort(), nul, (*term)->pi());
+		newterms.push_back(new FuncTerm((*term)->sort()->firstVocabulary()->func("-/2"), { nulterm, *term }, (*term)->pi()));
+		auto termneg = new EqChainForm(SIGN::POS, true, { *term, nulterm }, { CompType::LT }, (*form)->pi());
+		newsubforms.push_back(new BoolForm(SIGN::POS, true, { *form, termneg }, (*form)->pi()));
+	}
+	return new EnumSetExpr(newsubforms, newterms, _pi);
+}
+
+EnumSetExpr* EnumSetExpr::zeroSubset() const {
+	std::vector<Formula*> newsubforms(0);
+	std::vector<Term*> newterms(0);
+	auto term = _subterms.cbegin();
+	auto nul = DomainElementFactory::createGlobal()->create(0);
+	for (auto form = _subformulas.cbegin(); form < _subformulas.cend(); form++, term++) {
+		auto nulterm = new DomainTerm((*term)->sort(), nul, (*term)->pi());
+		newterms.push_back(nulterm);
+		auto termisnul = new EqChainForm(SIGN::POS, true, { *term, nulterm }, { CompType::EQ }, (*form)->pi());
+		newsubforms.push_back(new BoolForm(SIGN::POS, true, { *form, termisnul }, (*form)->pi()));
+	}
+	return new EnumSetExpr(newsubforms, newterms, _pi);
+}
 
 Sort* EnumSetExpr::sort() const {
 	Sort* currsort = VocabularyUtils::natsort();
@@ -432,6 +473,7 @@ QuantSetExpr* QuantSetExpr::cloneKeepVars() const {
 }
 
 QuantSetExpr* QuantSetExpr::clone(const map<Variable*, Variable*>& mvv) const {
+
 	set<Variable*> newvars;
 	map<Variable*, Variable*> nmvv = mvv;
 	for (auto it = quantVars().cbegin(); it != quantVars().cend(); ++it) {
@@ -442,6 +484,37 @@ QuantSetExpr* QuantSetExpr::clone(const map<Variable*, Variable*>& mvv) const {
 	Term* newterm = subterms()[0]->clone(nmvv);
 	Formula* nf = subformulas()[0]->clone(nmvv);
 	return new QuantSetExpr(newvars, nf, newterm, _pi.clone(mvv));
+}
+
+QuantSetExpr* QuantSetExpr::positiveSubset() const {
+	auto form = _subformulas.at(0);
+	auto term = _subterms.at(0);
+	auto nul = DomainElementFactory::createGlobal()->create(0);
+
+	auto termpos = new EqChainForm(SIGN::POS, true, { term, new DomainTerm(term->sort(), nul, term->pi()) }, { CompType::GT },
+			form->pi());
+	auto newform = new BoolForm(SIGN::POS, true, { form, termpos }, form->pi());
+	return new QuantSetExpr(_quantvars, newform, term, _pi);
+}
+QuantSetExpr* QuantSetExpr::negativeSubset() const {
+	auto form = _subformulas.at(0);
+	auto term = _subterms.at(0);
+	auto nul = DomainElementFactory::createGlobal()->create(0);
+	auto nulterm = new DomainTerm(term->sort(), nul, term->pi());
+	auto newterm = new FuncTerm(term->sort()->firstVocabulary()->func("-/2"), { nulterm, term }, term->pi());
+	auto termneg = new EqChainForm(SIGN::POS, true, { term, nulterm }, { CompType::LT }, form->pi());
+	auto newform = new BoolForm(SIGN::POS, true, { form, termneg }, form->pi());
+	return new QuantSetExpr(_quantvars, newform, newterm, _pi);
+}
+
+QuantSetExpr* QuantSetExpr::zeroSubset() const {
+	auto form = _subformulas.at(0);
+	auto term = _subterms.at(0);
+	auto nul = DomainElementFactory::createGlobal()->create(0);
+	auto nulterm = new DomainTerm(term->sort(), nul, term->pi());
+	auto termisnul = new EqChainForm(SIGN::POS, true, { term, nulterm }, { CompType::EQ }, form->pi());
+	auto newform = new BoolForm(SIGN::POS, true, { form, termisnul }, form->pi());
+	return new QuantSetExpr(_quantvars, newform, nulterm, _pi);
 }
 
 Sort* QuantSetExpr::sort() const {
