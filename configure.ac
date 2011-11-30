@@ -139,9 +139,9 @@ AC_ARG_WITH(
 
 # Check for readline
 if test "x$use_readline" == "xyes"; then
-  AC_CHECK_LIB([readline], [readline], [lib=" -ltermcap "], [use_readline=no], [-lncurses])
+  AC_CHECK_LIB([readline], [readline], [lib=" -lncurses "], [use_readline=no], [-lncurses])
   if test "x$use_readline" == "xno"; then
-	AC_CHECK_LIB([readline], [readline], [lib=" -lncurses "], [use_readline=no], [-ltermcap])
+	AC_CHECK_LIB([readline], [readline], [lib=" -ltermcap "], [use_readline=no], [-ltermcap])
   fi
   AC_CHECK_LIB([readline], [readline], [], [use_readline=no], [$lib])
   AC_CHECK_HEADERS([readline/readline.h readline/history.h], [], [use_readline=no])

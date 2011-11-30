@@ -1,3 +1,4 @@
+#include <ctime>
 #include "ModelExpansion.hpp"
 
 #include "monitors/tracemonitor.hpp"

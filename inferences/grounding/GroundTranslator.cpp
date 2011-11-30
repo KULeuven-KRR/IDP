@@ -7,6 +7,12 @@
 
 using namespace std;
 
+GroundTranslator::GroundTranslator() :
+		atomtype(1, AtomType::LONETSEITIN), _sets(1) {
+	atom2Tuple.push_back(NULL);
+	atom2TsBody.push_back(std::pair<Lit, TsBody*>(0, NULL));
+}
+
 GroundTranslator::~GroundTranslator() {
 	deleteList<SymbolAndTuple>(atom2Tuple);
 	for (auto i = atom2TsBody.cbegin(); i < atom2TsBody.cend(); ++i) {

@@ -102,6 +102,7 @@ public:
 		#elif defined(__APPLE__)
 		#define COMMANDS_INDEX 2
 		#else
+		#define COMMANDS_INDEX 3 // TODO purely for compilation, should remove this
 		Error::error("\"entails\" is not supported on this platform.\n");
 		return nilarg();
 		#endif
