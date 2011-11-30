@@ -213,8 +213,8 @@ ostream& DomainTerm::put(ostream& output, bool) const {
  AggTerm
  **************/
 
-AggTerm::AggTerm(SetExpr* set, AggFunction function, const TermParseInfo& pi) :
-		Term(pi), _function(function) {
+AggTerm::AggTerm(SetExpr* set, AggFunction function, const TermParseInfo& pi, bool split) :
+		Term(pi), _function(function), _split(split) {
 	addSet(set);
 }
 
@@ -225,12 +225,12 @@ AggTerm* AggTerm::clone() const {
 
 AggTerm* AggTerm::cloneKeepVars() const {
 	auto newset = subsets()[0]->cloneKeepVars();
-	return new AggTerm(newset, _function, _pi.clone());
+	return new AggTerm(newset, _function, _pi.clone(), _split);
 }
 
 AggTerm* AggTerm::clone(const map<Variable*, Variable*>& mvv) const {
 	SetExpr* newset = subsets()[0]->clone(mvv);
-	return new AggTerm(newset, _function, _pi.clone(mvv));
+	return new AggTerm(newset, _function, _pi.clone(mvv), _split);
 }
 
 Sort* AggTerm::sort() const {
@@ -379,7 +379,9 @@ EnumSetExpr* EnumSetExpr::negativeSubset() const {
 	for (auto form = _subformulas.cbegin(); form < _subformulas.cend(); form++, term++) {
 
 		auto nulterm = new DomainTerm((*term)->sort(), nul, (*term)->pi());
-		newterms.push_back(new FuncTerm((*term)->sort()->firstVocabulary()->func("-/2"), { nulterm, *term }, (*term)->pi()));
+		auto minSymbol = (*((*term)->sort()->firstVocabulary()))->func("-/2");
+
+		newterms.push_back(new FuncTerm(minSymbol, { nulterm, *term }, (*term)->pi()));
 		auto termneg = new EqChainForm(SIGN::POS, true, { *term, nulterm }, { CompType::LT }, (*form)->pi());
 		newsubforms.push_back(new BoolForm(SIGN::POS, true, { *form, termneg }, (*form)->pi()));
 	}
@@ -501,7 +503,8 @@ QuantSetExpr* QuantSetExpr::negativeSubset() const {
 	auto term = _subterms.at(0);
 	auto nul = DomainElementFactory::createGlobal()->create(0);
 	auto nulterm = new DomainTerm(term->sort(), nul, term->pi());
-	auto newterm = new FuncTerm(term->sort()->firstVocabulary()->func("-/2"), { nulterm, term }, term->pi());
+	auto minSymbol = (*(term->sort()->firstVocabulary()))->func("-/2");
+	auto newterm = new FuncTerm(minSymbol, { nulterm, term }, term->pi());
 	auto termneg = new EqChainForm(SIGN::POS, true, { term, nulterm }, { CompType::LT }, form->pi());
 	auto newform = new BoolForm(SIGN::POS, true, { form, termneg }, form->pi());
 	return new QuantSetExpr(_quantvars, newform, newterm, _pi);

@@ -7,6 +7,7 @@
 #include "visitors/TheoryVisitor.hpp"
 #include "inferences/grounding/Utils.hpp"
 #include "external/ExternalInterface.hpp"
+#include "inferences/propagation/GenerateBDDAccordingToBounds.hpp"
 
 class PFSymbol;
 class Variable;
