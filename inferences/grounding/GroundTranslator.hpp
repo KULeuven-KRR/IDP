@@ -73,7 +73,7 @@ public:
 	Lit translate(unsigned int, const ElementTuple&);
 	Lit translate(const std::vector<int>& cl, bool conj, TsType tp);
 	Lit translate(const Lit& head, const std::vector<Lit>& clause, bool conj, TsType tstype);
-	Lit translate(double bound, CompType comp, bool strict, AggFunction aggtype, int setnr, TsType tstype);
+	Lit translate(double bound, CompType comp, AggFunction aggtype, int setnr, TsType tstype);
 	Lit translate(PFSymbol*, const ElementTuple&);
 	Lit translate(CPTerm*, CompType, const CPBound&, TsType);
 	Lit translateSet(const std::vector<int>&, const std::vector<double>&, const std::vector<double>&);

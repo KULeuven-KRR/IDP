@@ -15,6 +15,8 @@
 
 using namespace std;
 
+//TODO: a lot of the "int" returns here should be "Lit": Issue 57199
+
 FormulaGrounder::FormulaGrounder(AbstractGroundTheory* grounding, const GroundingContext& ct) :
 		Grounder(grounding, ct), _verbosity(0) {
 }
@@ -208,23 +210,12 @@ CompType Agg2Comp(AGG_COMP_TYPE comp) {
 }
 
 /**
- * Invert the comparator and the sign of the tseitin when the aggregate is in a doubly negated context.
+ * Negate the comparator and invert the sign of the tseitin when the aggregate is in a doubly negated context.
  */
+//TODO:why?
 int AggGrounder::handleDoubleNegation(double boundvalue, int setnr) const {
-	CompType newcomp;
-	switch (_comp) {
-	case AGG_LT:
-		newcomp = CompType::GT;
-		break;
-	case AGG_GT:
-		newcomp = CompType::LT;
-		break;
-	case AGG_EQ:
-		thrownotyetimplemented("Cannot ground aggregates with equality directly.");
-		break;
-	}
 	TsType tp = context()._tseitin;
-	int tseitin = translator()->translate(boundvalue, newcomp, false, _type, setnr, tp);
+	int tseitin = translator()->translate(boundvalue, negateComp(Agg2Comp(_comp)),  _type, setnr, tp);
 	return isPos(_sign) ? -tseitin : tseitin;
 }
 
@@ -316,7 +307,7 @@ int AggGrounder::finishCard(double truevalue, double boundvalue, int setnr) cons
 			return handleDoubleNegation(double(leftvalue), setnr);
 		else {
 			CompType comp = Agg2Comp(_comp);
-			int tseitin = translator()->translate(double(leftvalue), comp, true, AggFunction::CARD, setnr, tp);
+			int tseitin = translator()->translate(double(leftvalue), comp, AggFunction::CARD, setnr, tp);
 			return isPos(_sign) ? tseitin : -tseitin;
 		}
 	}
@@ -329,22 +320,18 @@ int AggGrounder::finishCard(double truevalue, double boundvalue, int setnr) cons
  */
 int AggGrounder::finish(double boundvalue, double newboundvalue, double minpossvalue, double maxpossvalue, int setnr) const {
 	// Check minimum and maximum possible values against the given bound
-	CompType comp = CompType::EQ;
 	switch (_comp) { //TODO more complicated propagation is possible!
 	case AGG_EQ:
-		comp = CompType::EQ;
 		if (minpossvalue > boundvalue || maxpossvalue < boundvalue)
 			return isPos(_sign) ? _false : _true;
 		break;
 	case AGG_LT:
-		comp = CompType::LT;
 		if (boundvalue < minpossvalue)
 			return isPos(_sign) ? _true : _false;
 		else if (boundvalue >= maxpossvalue)
 			return isPos(_sign) ? _false : _true;
 		break;
 	case AGG_GT:
-		comp = CompType::GT;
 		if (boundvalue > maxpossvalue)
 			return isPos(_sign) ? _true : _false;
 		else if (boundvalue <= minpossvalue)
@@ -362,7 +349,7 @@ int AggGrounder::finish(double boundvalue, double newboundvalue, double minpossv
 			else if (tp == TsType::RIMPL)
 				tp = TsType::IMPL;
 		}
-		tseitin = translator()->translate(newboundvalue, comp, true, _type, setnr, tp);
+		tseitin = translator()->translate(newboundvalue, Agg2Comp(_comp), _type, setnr, tp);
 		return isPos(_sign) ? tseitin : -tseitin;
 	}
 }

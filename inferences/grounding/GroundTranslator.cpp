@@ -10,7 +10,7 @@ using namespace std;
 GroundTranslator::GroundTranslator() :
 		atomtype(1, AtomType::LONETSEITIN), _sets(1) {
 	atom2Tuple.push_back(NULL);
-	atom2TsBody.push_back(std::pair<Lit, TsBody*>(0, (TsBody*)NULL));
+	atom2TsBody.push_back(std::pair<Lit, TsBody*>(0, (TsBody*) NULL));
 }
 
 GroundTranslator::~GroundTranslator() {
@@ -91,25 +91,22 @@ void GroundTranslator::translate(LazyQuantGrounder const* const lazygrounder, Re
 	atom2TsBody[instance->residual] = tspair(instance->residual, tsbody);
 }
 
-Lit GroundTranslator::translate(double bound, CompType comp, bool strict, AggFunction aggtype, int setnr, TsType tstype) {
+Lit GroundTranslator::translate(double bound, CompType comp, AggFunction aggtype, int setnr, TsType tstype) {
 	if (comp == CompType::EQ) {
 		vector<int> cl(2);
-		cl[0] = translate(bound, CompType::LT, false, aggtype, setnr, tstype);
-		cl[1] = translate(bound, CompType::GT, false, aggtype, setnr, tstype);
+		cl[0] = translate(bound, CompType::LEQ, aggtype, setnr, tstype);
+		cl[1] = translate(bound, CompType::GEQ, aggtype, setnr, tstype);
 		return translate(cl, true, tstype);
-	} //FIXME:This method is total bullshit.  Boolean strict should disappear because comp already has this information! Also, the solver only accepts comptype LEQ and GEQ
-	//ISSUE 57070
-	else {
+	} else if (comp == CompType::NEQ) {
+		vector<int> cl(2);
+		cl[0] = translate(bound, CompType::GT, aggtype, setnr, tstype);
+		cl[1] = translate(bound, CompType::LT, aggtype, setnr, tstype);
+		return translate(cl, false, tstype);
+	} else {
 		Lit head = nextNumber(AtomType::TSEITINWITHSUBFORMULA);
-		AggTsBody* tsbody = new AggTsBody(tstype, bound, (comp == CompType::LT), aggtype, setnr);
-		if (strict) {
-#warning "This is wrong if floating point weights are allowed!";
-			tsbody->setBound((comp == CompType::LT) ? bound + 1 : bound - 1);
-		} else {
-			tsbody->setBound(bound);
-		}
+		AggTsBody* tsbody = new AggTsBody(tstype, bound, (comp == CompType::LEQ || comp == CompType::GT), aggtype, setnr);
 		atom2TsBody[head] = tspair(head, tsbody);
-		return head;
+		return (comp == CompType::LT || comp == CompType::GT) ? -head : head;
 	}
 }
 

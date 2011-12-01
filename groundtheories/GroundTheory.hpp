@@ -378,9 +378,9 @@ public:
 				int setnr = translator()->translateSet(sets[s], lw, { });
 				int tseitin;
 				if (f->partial() || (not outSortTable->finite())) {
-					tseitin = translator()->translate(1, CompType::GT, false, AggFunction::CARD, setnr, TsType::IMPL);
+					tseitin = translator()->translate(1, CompType::GT, AggFunction::CARD, setnr, TsType::IMPL);
 				} else {
-					tseitin = translator()->translate(1, CompType::EQ, true, AggFunction::CARD, setnr, TsType::IMPL);
+					tseitin = translator()->translate(1, CompType::EQ, AggFunction::CARD, setnr, TsType::IMPL);
 				}
 				addUnitClause(tseitin);
 			}
