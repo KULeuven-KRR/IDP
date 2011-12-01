@@ -97,7 +97,8 @@ Lit GroundTranslator::translate(double bound, CompType comp, bool strict, AggFun
 		cl[0] = translate(bound, CompType::LT, false, aggtype, setnr, tstype);
 		cl[1] = translate(bound, CompType::GT, false, aggtype, setnr, tstype);
 		return translate(cl, true, tstype);
-	} else {
+	} //FIXME:This method is total bullshit.  Boolean strict should disappear because comp already has this information! Also, the solver only accepts comptype LEQ and GEQ
+	else {
 		Lit head = nextNumber(AtomType::TSEITINWITHSUBFORMULA);
 		AggTsBody* tsbody = new AggTsBody(tstype, bound, (comp == CompType::LT), aggtype, setnr);
 		if (strict) {
@@ -188,30 +189,30 @@ string GroundTranslator::printAtom(const Lit& atom, bool longnames) const {
 	}
 
 	switch (atomtype[nr]) {
-		case AtomType::INPUT: {
-			PFSymbol* pfs = getSymbol(nr);
-			s << pfs->toString(longnames);
-			auto tuples = getArgs(nr);
-			if (not tuples.empty()) {
-				s << "(";
-				bool begin = true;
-				for (auto i = tuples.cbegin(); i != tuples.cend(); ++i) {
-					if (not begin) {
-						s << ", ";
-					}
-					begin = false;
-					s << (*i)->toString();
+	case AtomType::INPUT: {
+		PFSymbol* pfs = getSymbol(nr);
+		s << pfs->toString(longnames);
+		auto tuples = getArgs(nr);
+		if (not tuples.empty()) {
+			s << "(";
+			bool begin = true;
+			for (auto i = tuples.cbegin(); i != tuples.cend(); ++i) {
+				if (not begin) {
+					s << ", ";
 				}
-				s << ")";
+				begin = false;
+				s << (*i)->toString();
 			}
-			break;
+			s << ")";
 		}
-		case AtomType::TSEITINWITHSUBFORMULA:
-			s << "tseitin_" << nr;
-			break;
-		case AtomType::LONETSEITIN:
-			s << "tseitin_" << nr;
-			break;
+		break;
+	}
+	case AtomType::TSEITINWITHSUBFORMULA:
+		s << "tseitin_" << nr;
+		break;
+	case AtomType::LONETSEITIN:
+		s << "tseitin_" << nr;
+		break;
 	}
 	return s.str();
 }
