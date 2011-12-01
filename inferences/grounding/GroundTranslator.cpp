@@ -98,6 +98,7 @@ Lit GroundTranslator::translate(double bound, CompType comp, bool strict, AggFun
 		cl[1] = translate(bound, CompType::GT, false, aggtype, setnr, tstype);
 		return translate(cl, true, tstype);
 	} //FIXME:This method is total bullshit.  Boolean strict should disappear because comp already has this information! Also, the solver only accepts comptype LEQ and GEQ
+	//ISSUE 57070
 	else {
 		Lit head = nextNumber(AtomType::TSEITINWITHSUBFORMULA);
 		AggTsBody* tsbody = new AggTsBody(tstype, bound, (comp == CompType::LT), aggtype, setnr);
