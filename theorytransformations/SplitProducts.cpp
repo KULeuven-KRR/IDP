@@ -18,10 +18,7 @@
 #include "term.hpp"
 
 using namespace std;
-
-Formula* SplitProducts::visit(AggForm* af) {
-	std::cerr << "yeah\n";
-	/*Here, we transform something of the form PROD{x:p(x):f(x)} = c to
+/*Here, we transform something of the form PROD{x:p(x):f(x)} = c to
 	 *
 	 * (c = 0 <=> #{x: p(x) & f(x) = 0:f(x)}~= 0) &
 	 * (c ~= 0 <=>
@@ -33,9 +30,10 @@ Formula* SplitProducts::visit(AggForm* af) {
 	 *				(prod{x : p(x) & x>0 : x} * prod{x : p(x) & x<0 : -x} * -1 = c)
 	 *  			& card{x : p(x) & x<0}%2~=0))
 	 *  */
+Formula* SplitProducts::visit(AggForm* af) {
 	auto aggterm = af->right();
 	auto otherterm = af->left();
-	if (aggterm->function() != AggFunction::PROD || aggterm->split()) {
+	if (aggterm->function() != AggFunction::PROD ) {
 		return af;
 	}
 
@@ -65,10 +63,8 @@ Formula* SplitProducts::visit(AggForm* af) {
 	auto minusoneterm =  new DomainTerm(intsort, minusone, aggterm->pi());
 
 	auto prodPos = new AggTerm(posset,AggFunction::PROD,aggterm->pi());
-	prodPos->split(true);
 
 	auto prodNeg = new AggTerm(negset,AggFunction::PROD,aggterm->pi());
-	prodNeg->split(true);
 	auto trueform = new BoolForm(SIGN::POS,true,{},af->pi());
 	auto prodsetone = new EnumSetExpr({trueform,trueform},{prodPos,prodNeg},set->pi());
 	auto prodsetminusone = new EnumSetExpr({trueform,trueform,trueform},{prodPos,prodNeg,minusoneterm},set->pi());
@@ -76,8 +72,6 @@ Formula* SplitProducts::visit(AggForm* af) {
 	auto prodone = new AggTerm(prodsetone, AggFunction::PROD,aggterm->pi());
 	auto prodminusone = new AggTerm(prodsetminusone, AggFunction::PROD,aggterm->pi());
 
-	prodone->split(true);
-	prodminusone->split(true);
 	auto prodWithOne = new AggForm(SIGN::POS,otherterm, af->comp(),prodone,af->pi()); //prod{x : p(x) & x>0 : x} * prod{x : p(x) & x<0 : -x} = c)
 	auto prodWithMinusOne = new AggForm(SIGN::POS,otherterm, af->comp(),prodminusone,af->pi()); //prod{x : p(x) & x>0 : x} * prod{x : p(x) & x<0 : -x} * -1= c)
 

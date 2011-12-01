@@ -343,16 +343,12 @@ Grounder* GrounderFactory::create(const AbstractTheory* theory, SATSolver* solve
 void GrounderFactory::visit(const Theory* theory) {
 	// Collect all components (sentences, definitions, and fixpoint definitions) of the theory
 
-	auto newTheory = theory->clone();
-	newTheory  = dynamic_cast<Theory*>(FormulaUtils::graphAggregates(newTheory));
-	newTheory  = dynamic_cast<Theory*>(FormulaUtils::splitProducts(newTheory));
-
-
-	set<TheoryComponent*> tcomps = newTheory->components();
+	set<TheoryComponent*> tcomps = theory->components();
 	vector<TheoryComponent*> components(tcomps.cbegin(), tcomps.cend());
 
 	// Order components the components to optimize the grounding process
-	// TODO
+	// TODO issue 57048.  I think that HERE, we should graphaggregate, graphfunctions, splitproducts (splitEQchains?), ...
+	// TODO issue 54941.  Splitproducts
 
 	InitContext();
 

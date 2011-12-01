@@ -90,10 +90,6 @@ Formula* graphAggregates(Formula* f) {
 	return transform<GraphAggregates>(f);
 }
 
-Formula* splitProdcuts(Formula* f) {
-	return transform<SplitProducts>(f);
-}
-
 
 Formula* unnestPartialTerms(Formula* f, Context context, Vocabulary* voc) {
 	return transform<UnnestPartialTerms>(f, context, voc);

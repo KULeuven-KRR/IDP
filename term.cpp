@@ -213,8 +213,8 @@ ostream& DomainTerm::put(ostream& output, bool) const {
  AggTerm
  **************/
 
-AggTerm::AggTerm(SetExpr* set, AggFunction function, const TermParseInfo& pi, bool split) :
-		Term(pi), _function(function), _split(split) {
+AggTerm::AggTerm(SetExpr* set, AggFunction function, const TermParseInfo& pi) :
+		Term(pi), _function(function) {
 	addSet(set);
 }
 
@@ -225,12 +225,12 @@ AggTerm* AggTerm::clone() const {
 
 AggTerm* AggTerm::cloneKeepVars() const {
 	auto newset = subsets()[0]->cloneKeepVars();
-	return new AggTerm(newset, _function, _pi.clone(), _split);
+	return new AggTerm(newset, _function, _pi.clone());
 }
 
 AggTerm* AggTerm::clone(const map<Variable*, Variable*>& mvv) const {
 	SetExpr* newset = subsets()[0]->clone(mvv);
-	return new AggTerm(newset, _function, _pi.clone(mvv), _split);
+	return new AggTerm(newset, _function, _pi.clone(mvv));
 }
 
 Sort* AggTerm::sort() const {

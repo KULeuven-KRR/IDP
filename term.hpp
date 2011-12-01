@@ -194,10 +194,9 @@ class DomainTerm : public Term {
 class AggTerm : public Term {
 	private:
 		AggFunction		_function;	//!< The aggregate function
-		bool			_split; //!< whether or not this (product) aggterm has been split in pos and negatives (SplitProducts.cpp)
 
 	public:
-		AggTerm(SetExpr* set, AggFunction function, const TermParseInfo& pi, bool split = false);
+		AggTerm(SetExpr* set, AggFunction function, const TermParseInfo& pi);
 
 		AggTerm* clone()										const;
 		AggTerm* cloneKeepVars()								const;
@@ -209,9 +208,6 @@ class AggTerm : public Term {
 		TermType	type()		const	{ return TT_AGG;		}
 		SetExpr*	set()		const	{ return subsets()[0];	}
 		AggFunction	function()	const	{ return _function;		}
-		bool 		split() 	const 	{return _split;}
-
-		void 		split(bool split)	{_split = split;}
 
 		void	accept(TheoryVisitor*)	const;
 		Term*	accept(TheoryMutatingVisitor*);
