@@ -16,9 +16,9 @@
 template<typename Stream>
 class IDPPrinter: public StreamPrinter<Stream> {
 private:
-	bool						_longnames;
-	const GroundTranslator*		_translator;
-	const GroundTermTranslator*	_termtranslator;
+	bool _longnames;
+	const GroundTranslator* _translator;
+	const GroundTermTranslator* _termtranslator;
 
 	using StreamPrinter<Stream>::output;
 	using StreamPrinter<Stream>::printTab;
@@ -33,20 +33,24 @@ private:
 	using StreamPrinter<Stream>::openTheory;
 
 public:
-	IDPPrinter(bool longnames, Stream& stream):
-			StreamPrinter<Stream>(stream),
-			_longnames(longnames),
-			_translator(NULL),
-			_termtranslator(NULL){ }
+	IDPPrinter(bool longnames, Stream& stream) :
+			StreamPrinter<Stream>(stream), _longnames(longnames), _translator(NULL), _termtranslator(NULL) {
+	}
 
-	virtual void setLongNames(bool longnames){ _longnames = longnames; }
-	virtual void setTranslator(GroundTranslator* t){ _translator = t; }
-	virtual void setTermTranslator(GroundTermTranslator* t){ _termtranslator = t; }
+	virtual void setLongNames(bool longnames) {
+		_longnames = longnames;
+	}
+	virtual void setTranslator(GroundTranslator* t) {
+		_translator = t;
+	}
+	virtual void setTermTranslator(GroundTermTranslator* t) {
+		_termtranslator = t;
+	}
 
-	virtual void startTheory(){
+	virtual void startTheory() {
 		openTheory();
 	}
-	virtual void endTheory(){
+	virtual void endTheory() {
 		closeTheory();
 	}
 
@@ -54,10 +58,10 @@ public:
 		assert(isTheoryOpen());
 		Vocabulary* voc = structure->vocabulary();
 
-		for(auto it = voc->firstSort(); it != voc->lastSort(); ++it) {
-			for(auto jt = it->second.cbegin(); jt != it->second.cend(); ++jt) {
+		for (auto it = voc->firstSort(); it != voc->lastSort(); ++it) {
+			for (auto jt = it->second.cbegin(); jt != it->second.cend(); ++jt) {
 				Sort* s = *jt;
-				if(not s->builtin()) {
+				if (not s->builtin()) {
 					output() << s->toString(_longnames) << " = ";
 					SortTable* st = structure->inter(s);
 					visit(st);
@@ -65,19 +69,18 @@ public:
 				}
 			}
 		}
-		for(auto it = voc->firstPred(); it != voc->lastPred(); ++it) {
+		for (auto it = voc->firstPred(); it != voc->lastPred(); ++it) {
 			std::set<Predicate*> sp = it->second->nonbuiltins();
-			for(auto jt = sp.cbegin(); jt != sp.cend(); ++jt) {
+			for (auto jt = sp.cbegin(); jt != sp.cend(); ++jt) {
 				Predicate* p = *jt;
-				if(p->arity() != 1 || p->sorts()[0]->pred() != p) {
+				if (p->arity() != 1 || p->sorts()[0]->pred() != p) {
 					PredInter* pi = structure->inter(p);
-					if(pi->approxTwoValued()) {
+					if (pi->approxTwoValued()) {
 						output() << p->toString(_longnames) << " = ";
 						const PredTable* pt = pi->ct();
 						visit(pt);
 						output() << '\n';
-					}
-					else {
+					} else {
 						const PredTable* ct = pi->ct();
 						output() << p->toString(_longnames) << "<ct> = ";
 						visit(ct);
@@ -90,18 +93,17 @@ public:
 				}
 			}
 		}
-		for(auto it = voc->firstFunc(); it != voc->lastFunc(); ++it) {
+		for (auto it = voc->firstFunc(); it != voc->lastFunc(); ++it) {
 			std::set<Function*> sf = it->second->nonbuiltins();
-			for(auto jt = sf.cbegin(); jt != sf.cend(); ++jt) {
+			for (auto jt = sf.cbegin(); jt != sf.cend(); ++jt) {
 				Function* f = *jt;
 				FuncInter* fi = structure->inter(f);
-				if(fi->approxTwoValued()) {
+				if (fi->approxTwoValued()) {
 					FuncTable* ft = fi->funcTable();
 					output() << f->toString(_longnames) << " = ";
 					visit(ft);
 					output() << '\n';
-				}
-				else {
+				} else {
 					PredInter* pi = fi->graphInter();
 					const PredTable* ct = pi->ct();
 					output() << f->toString(_longnames) << "<ct> = ";
@@ -118,22 +120,28 @@ public:
 
 	void visit(const Vocabulary* v) {
 		assert(isTheoryOpen());
-		for(auto it = v->firstSort(); it != v->lastSort(); ++it) {
-			for(auto jt = it->second.cbegin(); jt != it->second.cend(); ++jt) {
-				if(not (*jt)->builtin() || v == Vocabulary::std()) { visit(*jt); }
+		for (auto it = v->firstSort(); it != v->lastSort(); ++it) {
+			for (auto jt = it->second.cbegin(); jt != it->second.cend(); ++jt) {
+				if (not (*jt)->builtin() || v == Vocabulary::std()) {
+					visit(*jt);
+				}
 			}
 		}
-		for(auto it = v->firstPred(); it != v->lastPred(); ++it) {
-			if(not it->second->builtin() || v == Vocabulary::std()) { visit(it->second); }
+		for (auto it = v->firstPred(); it != v->lastPred(); ++it) {
+			if (not it->second->builtin() || v == Vocabulary::std()) {
+				visit(it->second);
+			}
 		}
-		for(auto it = v->firstFunc(); it != v->lastFunc(); ++it) {
-			if(not it->second->builtin() || v == Vocabulary::std()) { visit(it->second); }
+		for (auto it = v->firstFunc(); it != v->lastFunc(); ++it) {
+			if (not it->second->builtin() || v == Vocabulary::std()) {
+				visit(it->second);
+			}
 		}
 	}
 
 	void visit(const Namespace* s) {
 		assert(isTheoryOpen());
-		for(auto i = s->vocabularies().cbegin(); i != s->vocabularies().cend(); ++i) {
+		for (auto i = s->vocabularies().cbegin(); i != s->vocabularies().cend(); ++i) {
 			printTab();
 			output() << "vocabulary " << (*i).second->name() << " {\n";
 			indent();
@@ -142,16 +150,16 @@ public:
 			printTab();
 			output() << "}\n";
 		}
-		for(auto i = s->theories().cbegin(); i != s->theories().cend(); ++i) {
+		for (auto i = s->theories().cbegin(); i != s->theories().cend(); ++i) {
 			printTab();
-			output() << "theory " << (*i).second->name() <<" : " << (*i).second->vocabulary()->name() << " {\n";
+			output() << "theory " << (*i).second->name() << " : " << (*i).second->vocabulary()->name() << " {\n";
 			indent();
 			Printer::visit((*i).second);
 			unindent();
 			printTab();
 			output() << "}\n";
 		}
-		for(auto i = s->structures().cbegin(); i != s->structures().cend(); ++i) {
+		for (auto i = s->structures().cbegin(); i != s->structures().cend(); ++i) {
 			printTab();
 			output() << "structure " << (*i).second->name();
 			output() << " : " << (*i).second->vocabulary()->name() << " {\n";
@@ -161,7 +169,7 @@ public:
 			printTab();
 			output() << "}\n";
 		}
-		for(auto i = s->subspaces().cbegin(); i != s->subspaces().cend(); ++i) {
+		for (auto i = s->subspaces().cbegin(); i != s->subspaces().cend(); ++i) {
 			printTab();
 			output() << "namespace " << (*i).second->name() << " {\n";
 			indent();
@@ -175,18 +183,19 @@ public:
 	void visit(const GroundFixpDef*) {
 		assert(isTheoryOpen());
 		/*TODO not implemented yet*/
-		output() <<"(printing fixpoint definitions is not yet implemented)\n";
+		output() << "(printing fixpoint definitions is not yet implemented)\n";
 	}
 
 	void visit(const Theory* t) {
 		assert(isTheoryOpen());
-		for(auto it = t->sentences().cbegin(); it != t->sentences().cend(); ++it) {
-			(*it)->accept(this); output() << ".\n";
+		for (auto it = t->sentences().cbegin(); it != t->sentences().cend(); ++it) {
+			(*it)->accept(this);
+			output() << ".\n";
 		}
-		for(auto it = t->definitions().cbegin(); it != t->definitions().cend(); ++it) {
+		for (auto it = t->definitions().cbegin(); it != t->definitions().cend(); ++it) {
 			(*it)->accept(this);
 		}
-		for(auto it = t->fixpdefs().cbegin(); it != t->fixpdefs().cend(); ++it) {
+		for (auto it = t->fixpdefs().cbegin(); it != t->fixpdefs().cend(); ++it) {
 			(*it)->accept(this);
 		}
 	}
@@ -195,25 +204,25 @@ public:
 		assert(isTheoryOpen());
 		_translator = g->translator();
 		_termtranslator = g->termtranslator();
-		for(size_t n = 0; n < g->nrClauses(); ++n) {
+		for (size_t n = 0; n < g->nrClauses(); ++n) {
 			visit(g->clause(n));
 		}
-		for(auto i=g->definitions().cbegin(); i!=g->definitions().cend(); i++){
+		for (auto i = g->definitions().cbegin(); i != g->definitions().cend(); i++) {
 			openDefinition((*i).second->id());
 			(*i).second->accept(this);
 			closeDefinition();
 		}
 
-		for(size_t n = 0; n < g->nrSets(); ++n){
+		for (size_t n = 0; n < g->nrSets(); ++n) {
 			g->set(n)->accept(this);
 		}
-		for(size_t n = 0; n < g->nrAggregates(); ++n){
+		for (size_t n = 0; n < g->nrAggregates(); ++n) {
 			g->aggregate(n)->accept(this);
 		}
-		for(size_t n = 0; n < g->nrFixpDefs(); ++n){
+		for (size_t n = 0; n < g->nrFixpDefs(); ++n) {
 			g->fixpdef(n)->accept(this);
 		}
-		for(size_t n = 0; n < g->nrCPReifications(); ++n){
+		for (size_t n = 0; n < g->nrCPReifications(); ++n) {
 			g->cpreification(n)->accept(this);
 		}
 	}
@@ -222,12 +231,12 @@ public:
 
 	void visit(const PredForm* f) {
 		assert(isTheoryOpen());
-		if(isNeg(f->sign()))	output() << "~";
-		output() <<f->symbol()->toString(_longnames);
-		if(not f->subterms().empty()) {
+		if (isNeg(f->sign())) output() << "~";
+		output() << f->symbol()->toString(_longnames);
+		if (not f->subterms().empty()) {
 			output() << "(";
 			f->subterms()[0]->accept(this);
-			for(size_t n = 1; n < f->subterms().size(); ++n) {
+			for (size_t n = 1; n < f->subterms().size(); ++n) {
 				output() << ',';
 				f->subterms()[n]->accept(this);
 			}
@@ -237,15 +246,17 @@ public:
 
 	void visit(const EqChainForm* f) {
 		assert(isTheoryOpen());
-		if(isNeg(f->sign())) { output() << "~"; }
+		if (isNeg(f->sign())) {
+			output() << "~";
+		}
 		output() << "(";
 		f->subterms()[0]->accept(this);
-		for(size_t n = 0; n < f->comps().size(); ++n) {
+		for (size_t n = 0; n < f->comps().size(); ++n) {
 			output() << ' ' << f->comps()[n] << ' ';
-			f->subterms()[n+1]->accept(this);
-			if(not f->conj() && (n+1 < f->comps().size())) {
+			f->subterms()[n + 1]->accept(this);
+			if (not f->conj() && (n + 1 < f->comps().size())) {
 				output() << " | ";
-				f->subterms()[n+1]->accept(this);
+				f->subterms()[n + 1]->accept(this);
 			}
 		}
 		output() << ')';
@@ -253,7 +264,7 @@ public:
 
 	void visit(const EquivForm* f) {
 		assert(isTheoryOpen());
-		if(isNeg(f->sign())){
+		if (isNeg(f->sign())) {
 			output() << "~";
 		}
 		output() << "(";
@@ -265,19 +276,19 @@ public:
 
 	void visit(const BoolForm* f) {
 		assert(isTheoryOpen());
-		if(f->subformulas().empty()) {
-			if(f->isConjWithSign()){
+		if (f->subformulas().empty()) {
+			if (f->isConjWithSign()) {
 				output() << "true";
-			} else{
+			} else {
 				output() << "false";
 			}
 		} else {
-			if(isNeg(f->sign())){
+			if (isNeg(f->sign())) {
 				output() << "~";
 			}
 			output() << "(";
 			f->subformulas()[0]->accept(this);
-			for(size_t n = 1; n < f->subformulas().size(); ++n) {
+			for (size_t n = 1; n < f->subformulas().size(); ++n) {
 				output() << (f->conj() ? " & " : " | ");
 				f->subformulas()[n]->accept(this);
 			}
@@ -287,19 +298,21 @@ public:
 
 	void visit(const QuantForm* f) {
 		assert(isTheoryOpen());
-		if(isNeg(f->sign())){
+		if (isNeg(f->sign())) {
 			output() << "~";
 		}
 		output() << "(";
-		if(f->isUniv()){
+		if (f->isUniv()) {
 			output() << "!";
-		}else{
+		} else {
 			output() << "?";
 		}
-		for(auto it = f->quantVars().cbegin(); it != f->quantVars().cend(); ++it) {
+		for (auto it = f->quantVars().cbegin(); it != f->quantVars().cend(); ++it) {
 			output() << " ";
 			output() << (*it)->name();
-			if((*it)->sort()) { output() << '[' << (*it)->sort()->name() << ']'; }
+			if ((*it)->sort()) {
+				output() << '[' << (*it)->sort()->name() << ']';
+			}
 		}
 		output() << " : ";
 		f->subformulas()[0]->accept(this);
@@ -307,7 +320,9 @@ public:
 	}
 
 	void visit(const AggForm* f) {
-		if(isNeg(f->sign())) { output() << '~'; }
+		if (isNeg(f->sign())) {
+			output() << '~';
+		}
 		output() << '(';
 		f->left()->accept(this);
 		output() << ' ' << f->comp() << ' ';
@@ -315,15 +330,14 @@ public:
 		output() << ')';
 	}
 
-
 	/** Definitions **/
 
 	void visit(const Rule* r) {
 		assert(isTheoryOpen());
 		printTab();
-		if(not r->quantVars().empty()) {
+		if (not r->quantVars().empty()) {
 			output() << "!";
-			for(auto it = r->quantVars().cbegin(); it != r->quantVars().cend(); ++it) {
+			for (auto it = r->quantVars().cbegin(); it != r->quantVars().cend(); ++it) {
 				output() << " " << *(*it);
 			}
 			output() << " : ";
@@ -339,7 +353,7 @@ public:
 		printTab();
 		output() << "{\n";
 		indent();
-		for(auto it = d->rules().cbegin(); it != d->rules().cend(); ++it) {
+		for (auto it = d->rules().cbegin(); it != d->rules().cend(); ++it) {
 			(*it)->accept(this);
 			output() << "\n";
 		}
@@ -353,11 +367,11 @@ public:
 		printTab();
 		output() << (d->lfp() ? "LFD" : "GFD") << " [\n";
 		indent();
-		for(auto it = d->rules().cbegin(); it != d->rules().cend(); ++it) {
+		for (auto it = d->rules().cbegin(); it != d->rules().cend(); ++it) {
 			(*it)->accept(this);
 			output() << "\n";
 		}
-		for(auto it = d->defs().cbegin(); it != d->defs().cend(); ++it) {
+		for (auto it = d->defs().cbegin(); it != d->defs().cend(); ++it) {
 			(*it)->accept(this);
 		}
 		unindent();
@@ -375,10 +389,10 @@ public:
 	void visit(const FuncTerm* t) {
 		assert(isTheoryOpen());
 		output() << t->function()->toString(_longnames);
-		if(not t->subterms().empty()) {
+		if (not t->subterms().empty()) {
 			output() << "(";
 			t->subterms()[0]->accept(this);
-			for(unsigned int n = 1; n < t->subterms().size(); ++n) {
+			for (unsigned int n = 1; n < t->subterms().size(); ++n) {
 				output() << ",";
 				t->subterms()[n]->accept(this);
 			}
@@ -389,28 +403,36 @@ public:
 	void visit(const DomainTerm* t) {
 		assert(isTheoryOpen());
 		std::string str = t->value()->toString();
-		if(t->sort()) {
-			if(SortUtils::isSubsort(t->sort(),VocabularyUtils::charsort())) {
+		if (t->sort()) {
+			if (SortUtils::isSubsort(t->sort(), VocabularyUtils::charsort())) {
 				output() << '\'' << str << '\'';
-			}
-			else if(SortUtils::isSubsort(t->sort(),VocabularyUtils::stringsort())) {
+			} else if (SortUtils::isSubsort(t->sort(), VocabularyUtils::stringsort())) {
 				output() << '\"' << str << '\"';
-			}
-			else {
+			} else {
 				output() << str;
 			}
-		}
-		else output() << '@' << str;
+		} else
+			output() << '@' << str;
 	}
 
 	void visit(const AggTerm* t) {
 		assert(isTheoryOpen());
-		switch(t->function()) {
-			case AggFunction::CARD: output() << '#'; break;
-			case AggFunction::SUM: output() << "sum"; break;
-			case AggFunction::PROD: output() << "prod"; break;
-			case AggFunction::MIN: output() << "min"; break;
-			case AggFunction::MAX: output() << "max"; break;
+		switch (t->function()) {
+		case AggFunction::CARD:
+			output() << '#';
+			break;
+		case AggFunction::SUM:
+			output() << "sum";
+			break;
+		case AggFunction::PROD:
+			output() << "prod";
+			break;
+		case AggFunction::MIN:
+			output() << "min";
+			break;
+		case AggFunction::MAX:
+			output() << "max";
+			break;
 		}
 		t->set()->accept(this);
 	}
@@ -419,47 +441,48 @@ public:
 
 	void visit(const EnumSetExpr* s) {
 		output() << "[ ";
-		if(not s->subformulas().empty()) {
+		if (not s->subformulas().empty()) {
 			s->subformulas()[0]->accept(this);
-			for(unsigned int n = 1; n < s->subformulas().size(); ++n) {
+			for (unsigned int n = 1; n < s->subformulas().size(); ++n) {
 				output() << ";";
 				s->subformulas()[n]->accept(this);
 			}
 		}
 		output() << " ]";
 	}
-	
+
 	void visit(const QuantSetExpr* s) {
 		output() << '{';
-		for(auto it = s->quantVars().cbegin(); it != s->quantVars().cend(); ++it) {
+		for (auto it = s->quantVars().cbegin(); it != s->quantVars().cend(); ++it) {
 			output() << ' ';
 			output() << (*it)->name();
-			if((*it)->sort()) { output() << '[' << (*it)->sort()->name() << ']'; }
+			if ((*it)->sort()) {
+				output() << '[' << (*it)->sort()->name() << ']';
+			}
 		}
 		output() << " : ";
 		s->subformulas()[0]->accept(this);
-		if(not s->subterms().empty()) {
+		if (not s->subterms().empty()) {
 			output() << " : ";
 			s->subterms()[0]->accept(this);
 		}
 		output() << " }";
 	}
 
-	void visit(const GroundClause& g){
-		if(g.empty()) {
+	void visit(const GroundClause& g) {
+		if (g.empty()) {
 			output() << "false";
-		}
-		else {
-			for(unsigned int m = 0; m < g.size(); ++m) {
-				if(g[m] < 0) output() << '~';
+		} else {
+			for (unsigned int m = 0; m < g.size(); ++m) {
+				if (g[m] < 0) output() << '~';
 				printAtom(g[m]);
-				if(m < g.size()-1) output() << " | ";
+				if (m < g.size() - 1) output() << " | ";
 			}
 		}
-		output() << "." <<"\n";
+		output() << "." << "\n";
 	}
 
-	void openDefinition(int defid){
+	void openDefinition(int defid) {
 		assert(isDefClosed());
 		openDef(defid);
 		printTab();
@@ -467,16 +490,16 @@ public:
 		indent();
 	}
 
-	void closeDefinition(){
+	void closeDefinition() {
 		assert(not isDefClosed());
 		closeDef();
 		unindent();
 		output() << "}\n";
 	}
 
-	void visit(GroundDefinition* d){
+	void visit(GroundDefinition* d) {
 		assert(isTheoryOpen());
-		for(auto it=d->begin(); it!=d->end(); ++it) {
+		for (auto it = d->begin(); it != d->end(); ++it) {
 			(*it).second->accept(this);
 		}
 	}
@@ -486,16 +509,19 @@ public:
 		printAtom(b->head());
 		output() << " <- ";
 		char c = (b->type() == RT_CONJ ? '&' : '|');
-		if(not b->empty()) {
-			for(unsigned int n = 0; n < b->size(); ++n) {
-				if(b->literal(n) < 0) { output() << '~'; }
+		if (not b->empty()) {
+			for (unsigned int n = 0; n < b->size(); ++n) {
+				if (b->literal(n) < 0) {
+					output() << '~';
+				}
 				printAtom(b->literal(n));
-				if(n != b->size()-1) { output() << ' ' << c << ' '; }
+				if (n != b->size() - 1) {
+					output() << ' ' << c << ' ';
+				}
 			}
-		}
-		else {
+		} else {
 			assert(b->empty());
-			if(b->type() == RT_CONJ)
+			if (b->type() == RT_CONJ)
 				output() << "true";
 			else
 				output() << "false";
@@ -507,52 +533,81 @@ public:
 		assert(isTheoryOpen());
 		printAtom(b->head());
 		output() << " <- ";
-		printAggregate(b->bound(),b->lower(),b->aggtype(),b->setnr());
+		printAggregate(b->bound(), b->lower(), b->aggtype(), b->setnr());
 		output() << ".\n";
 	}
 
 	void visit(const GroundAggregate* a) {
 		assert(isTheoryOpen());
 		printAtom(a->head());
-		switch(a->arrow()) {
-			case TsType::IMPL: 	output() << " => "; break;
-			case TsType::RIMPL: 	output() << " <= "; break;
-			case TsType::EQ: 	output() << " <=> "; break;
-			case TsType::RULE: break;
+		switch (a->arrow()) {
+		case TsType::IMPL:
+			output() << " => ";
+			break;
+		case TsType::RIMPL:
+			output() << " <= ";
+			break;
+		case TsType::EQ:
+			output() << " <=> ";
+			break;
+		case TsType::RULE:
+			break;
 		}
-		printAggregate(a->bound(),a->lower(),a->type(),a->setnr());
+		printAggregate(a->bound(), a->lower(), a->type(), a->setnr());
 	}
 
 	void visit(const CPReification* cpr) {
 		assert(isTheoryOpen());
 		printAtom(cpr->_head);
-		switch(cpr->_body->type()) {
-			case TsType::RULE: 	output() << " <- "; break;
-			case TsType::IMPL: 	output() << " => "; break;
-			case TsType::RIMPL: 	output() << " <= "; break;
-			case TsType::EQ: 	output() << " <=> "; break;
+		switch (cpr->_body->type()) {
+		case TsType::RULE:
+			output() << " <- ";
+			break;
+		case TsType::IMPL:
+			output() << " => ";
+			break;
+		case TsType::RIMPL:
+			output() << " <= ";
+			break;
+		case TsType::EQ:
+			output() << " <=> ";
+			break;
 		}
 		cpr->_body->left()->accept(this);
-		switch(cpr->_body->comp()) {
-			case CompType::EQ:		output() << " = "; break;
-			case CompType::NEQ:	output() << " ~= "; break;
-			case CompType::LEQ:	output() << " =< "; break;
-			case CompType::GEQ:	output() << " >= "; break;
-			case CompType::LT:		output() << " < "; break;
-			case CompType::GT:		output() << " > "; break;
+		switch (cpr->_body->comp()) {
+		case CompType::EQ:
+			output() << " = ";
+			break;
+		case CompType::NEQ:
+			output() << " ~= ";
+			break;
+		case CompType::LEQ:
+			output() << " =< ";
+			break;
+		case CompType::GEQ:
+			output() << " >= ";
+			break;
+		case CompType::LT:
+			output() << " < ";
+			break;
+		case CompType::GT:
+			output() << " > ";
+			break;
 		}
 		CPBound right = cpr->_body->right();
-		if(right._isvarid) printTerm(right._varid);
-		else output() << right._bound;
+		if (right._isvarid)
+			printTerm(right._varid);
+		else
+			output() << right._bound;
 		output() << ".\n";
 	}
 
 	void visit(const CPSumTerm* cpt) {
 		assert(isTheoryOpen());
 		output() << "sum[ ";
-		for(auto vit = cpt->varids().cbegin(); vit != cpt->varids().cend(); ++vit) {
+		for (auto vit = cpt->varids().cbegin(); vit != cpt->varids().cend(); ++vit) {
 			printTerm(*vit);
-			if(*vit != cpt->varids().back()) output() << "; ";
+			if (*vit != cpt->varids().back()) output() << "; ";
 		}
 		output() << " ]";
 	}
@@ -562,9 +617,11 @@ public:
 		output() << "wsum[ ";
 		auto vit = cpt->varids().cbegin();
 		auto wit = cpt->weights().cbegin();
-		for(; vit != cpt->varids().cend() && wit != cpt->weights().cend(); ++vit, ++wit) {
-			output() << '('; printTerm(*vit); output() << ',' << *wit << ')';
-			if(*vit != cpt->varids().back()) output() << "; ";
+		for (; vit != cpt->varids().cend() && wit != cpt->weights().cend(); ++vit, ++wit) {
+			output() << '(';
+			printTerm(*vit);
+			output() << ',' << *wit << ')';
+			if (*vit != cpt->varids().back()) output() << "; ";
 		}
 		output() << " ]";
 	}
@@ -576,60 +633,68 @@ public:
 
 	void visit(const PredTable* table) {
 		assert(isTheoryOpen());
-		if(table->approxFinite()) {
-			TableIterator kt = table->begin();
-			if(table->arity()) {
-				output() << "{ ";
-				if(not kt.isAtEnd()) {
-					ElementTuple tuple = *kt;
-					output() << tuple[0]->toString();
-					for(auto lt = ++tuple.cbegin(); lt != tuple.cend(); ++lt) {
-						output() << ',' << (*lt)->toString();
-					}
-					++kt;
-					for(; not kt.isAtEnd(); ++kt) {
+		if (not table->approxFinite()) {
+			output() << "possibly infinite table";
+		}
+		TableIterator kt = table->begin();
+		if (table->arity()>0) {
+			output() << "{ ";
+			if (not kt.isAtEnd()) {
+				bool begintuple = true, beginlist = true;
+				for (; not kt.isAtEnd(); ++kt) {
+					if(not beginlist){
 						output() << "; ";
-						tuple = *kt;
-						output() << tuple[0]->toString();
-						for(auto lt = ++tuple.cbegin(); lt != tuple.cend(); ++lt) {
-							output() << ',' << (*lt)->toString();
+					}
+					beginlist = false;
+					ElementTuple tuple = *kt;
+					bool begintuple = true;
+					for (auto lt = tuple.cbegin(); lt != tuple.cend(); ++lt) {
+						if(not begintuple){
+							output() <<',';
 						}
+						begintuple = false;
+						output() <<(*lt)->toString();
 					}
 				}
-				output() << " }";
 			}
-			else if(not kt.isAtEnd()) output() << "true";
-			else output() << "false";
+			output() << " }";
+		} else if (not kt.isAtEnd()){
+			output() << "true";
+		}else{
+			output() << "false";
 		}
-		else output() << "possibly infinite table";
 	}
 
 	void printasfunc(const PredTable* table) {
 		assert(isTheoryOpen());
-		if(table->approxFinite()) {
+		if (table->approxFinite()) {
 			TableIterator kt = table->begin();
 			output() << "{ ";
-			if(not kt.isAtEnd()) {
+			if (not kt.isAtEnd()) {
 				ElementTuple tuple = *kt;
-				if(tuple.size() > 1) { output() << tuple[0]->toString(); }
-				for(size_t n = 1; n < tuple.size() - 1; ++n) {
+				if (tuple.size() > 1) {
+					output() << tuple[0]->toString();
+				}
+				for (size_t n = 1; n < tuple.size() - 1; ++n) {
 					output() << ',' << tuple[n]->toString();
 				}
 				output() << "->" << tuple.back()->toString();
 				++kt;
-				for(; not kt.isAtEnd(); ++kt) {
+				for (; not kt.isAtEnd(); ++kt) {
 					output() << "; ";
 					tuple = *kt;
-					if(tuple.size() > 1) { output() << tuple[0]->toString(); }
-					for(size_t n = 1; n < tuple.size() - 1; ++n) {
+					if (tuple.size() > 1) {
+						output() << tuple[0]->toString();
+					}
+					for (size_t n = 1; n < tuple.size() - 1; ++n) {
 						output() << ',' << tuple[n]->toString();
 					}
 					output() << "->" << tuple.back()->toString();
 				}
 			}
 			output() << " }";
-		}
-		else output() << "possibly infinite table";
+		} else
+			output() << "possibly infinite table";
 	}
 
 	void visit(FuncTable* table) {
@@ -637,44 +702,46 @@ public:
 		std::vector<SortTable*> vst = table->universe().tables();
 		vst.pop_back();
 		Universe univ(vst);
-		if(univ.approxFinite()) {
+		if (univ.approxFinite()) {
 			TableIterator kt = table->begin();
-			if(table->arity() != 0) {
+			if (table->arity() != 0) {
 				output() << "{ ";
-				if(not kt.isAtEnd()) {
+				if (not kt.isAtEnd()) {
 					ElementTuple tuple = *kt;
 					output() << tuple[0]->toString();
-					for(unsigned int n = 1; n < tuple.size() - 1; ++n) {
+					for (unsigned int n = 1; n < tuple.size() - 1; ++n) {
 						output() << ',' << tuple[n]->toString();
 					}
 					output() << "->" << tuple.back()->toString();
 					++kt;
-					for(; not kt.isAtEnd(); ++kt) {
+					for (; not kt.isAtEnd(); ++kt) {
 						output() << "; ";
 						tuple = *kt;
 						output() << tuple[0]->toString();
-						for(unsigned int n = 1; n < tuple.size() - 1; ++n) {
+						for (unsigned int n = 1; n < tuple.size() - 1; ++n) {
 							output() << ',' << tuple[n]->toString();
 						}
 						output() << "->" << tuple.back()->toString();
 					}
 				}
 				output() << " }";
-			}
-			else if(not kt.isAtEnd()) output() << (*kt)[0]->toString();
-			else output() << "{ }";
-		}
-		else output() << "possibly infinite table";
+			} else if (not kt.isAtEnd())
+				output() << (*kt)[0]->toString();
+			else
+				output() << "{ }";
+		} else
+			output() << "possibly infinite table";
 	}
 
 	void visit(const Sort* s) {
 		assert(isTheoryOpen());
 		printTab();
 		output() << "type " << s->name();
-		if(not s->parents().empty()) {
+		if (not s->parents().empty()) {
 			output() << " isa " << (*(s->parents().cbegin()))->name();
-			std::set<Sort*>::const_iterator it = s->parents().cbegin(); ++it;
-			for(; it != s->parents().cend(); ++it)
+			std::set<Sort*>::const_iterator it = s->parents().cbegin();
+			++it;
+			for (; it != s->parents().cend(); ++it)
 				output() << "," << (*it)->name();
 		}
 		output() << "\n";
@@ -683,14 +750,13 @@ public:
 	void visit(const Predicate* p) {
 		assert(isTheoryOpen());
 		printTab();
-		if(p->overloaded()) {
+		if (p->overloaded()) {
 			output() << "overloaded predicate " << p->name() << '\n';
-		}
-		else {
-			output() << p->name().substr(0,p->name().find('/'));
-			if(p->arity() > 0) {
+		} else {
+			output() << p->name().substr(0, p->name().find('/'));
+			if (p->arity() > 0) {
 				output() << "(" << p->sort(0)->name();
-				for(unsigned int n = 1; n < p->arity(); ++n)
+				for (unsigned int n = 1; n < p->arity(); ++n)
 					output() << "," << p->sort(n)->name();
 				output() << ")";
 			}
@@ -701,16 +767,14 @@ public:
 	void visit(const Function* f) {
 		assert(isTheoryOpen());
 		printTab();
-		if(f->overloaded()) {
+		if (f->overloaded()) {
 			output() << "overloaded function " << f->name() << '\n';
-		}
-		else {
-			if(f->partial())
-				output() << "partial ";
-			output() << f->name().substr(0,f->name().find('/'));
-			if(f->arity() > 0) {
+		} else {
+			if (f->partial()) output() << "partial ";
+			output() << f->name().substr(0, f->name().find('/'));
+			if (f->arity() > 0) {
 				output() << "(" << f->insort(0)->name();
-				for(unsigned int n = 1; n < f->arity(); ++n)
+				for (unsigned int n = 1; n < f->arity(); ++n)
 					output() << "," << f->insort(n)->name();
 				output() << ")";
 			}
@@ -722,10 +786,10 @@ public:
 		assert(isTheoryOpen());
 		SortIterator it = table->sortBegin();
 		output() << "{ ";
-		if(not it.isAtEnd()) {
+		if (not it.isAtEnd()) {
 			output() << (*it)->toString();
 			++it;
-			for(; not it.isAtEnd(); ++it) {
+			for (; not it.isAtEnd(); ++it) {
 				output() << "; " << (*it)->toString();
 			}
 		}
@@ -735,18 +799,18 @@ public:
 	void visit(const GroundSet* s) {
 		assert(isTheoryOpen());
 		output() << "set_" << s->setnr() << " = [ ";
-		for(unsigned int n = 0; n < s->size(); ++n) {
-				if(s->weighted()) output() << '(';
-				printAtom(s->literal(n));
-				if(s->weighted()) output() << ',' << s->weight(n) << ')';
-				if(n < s->size()-1) output() << "; ";
+		for (unsigned int n = 0; n < s->size(); ++n) {
+			if (s->weighted()) output() << '(';
+			printAtom(s->literal(n));
+			if (s->weighted()) output() << ',' << s->weight(n) << ')';
+			if (n < s->size() - 1) output() << "; ";
 		}
 		output() << " ]\n";
 	}
 
 private:
 	void printAtom(int atomnr) {
-		if(_translator==NULL){
+		if (_translator == NULL) {
 			assert(false);
 			return;
 		}
@@ -755,7 +819,7 @@ private:
 		atomnr = abs(atomnr);
 		// Get the atom's symbol from the translator.
 
-		if(not _translator->isInputAtom(atomnr)){
+		if (not _translator->isInputAtom(atomnr)) {
 			output() << "tseitin_" << atomnr;
 			return;
 		}
@@ -763,14 +827,16 @@ private:
 		PFSymbol* pfs = _translator->getSymbol(atomnr);
 
 		// Print the symbol's name.
-		output() << pfs->name().substr(0,pfs->name().find('/'));
+		output() << pfs->name().substr(0, pfs->name().find('/'));
 		// Print the symbol's sorts.
-		if(pfs->nrSorts()) {
+		if (pfs->nrSorts()) {
 			output() << '[';
-			for(size_t n = 0; n < pfs->nrSorts(); ++n) {
-				if(pfs->sort(n)) {
+			for (size_t n = 0; n < pfs->nrSorts(); ++n) {
+				if (pfs->sort(n)) {
 					output() << pfs->sort(n)->name();
-					if(n != pfs->nrSorts()-1) { output() << ','; }
+					if (n != pfs->nrSorts() - 1) {
+						output() << ',';
+					}
 				}
 			}
 			output() << ']';
@@ -778,23 +844,26 @@ private:
 		// Get the atom's arguments for the translator.
 		const std::vector<const DomainElement*>& args = _translator->getArgs(atomnr);
 		// Print the atom's arguments.
-		if(typeid(*pfs) == typeid(Predicate)) {
-			if(not args.empty()) {
+		if (typeid(*pfs) == typeid(Predicate)) {
+			if (not args.empty()) {
 				output() << "(";
-				for(size_t n = 0; n < args.size(); ++n) {
+				for (size_t n = 0; n < args.size(); ++n) {
 					output() << args[n]->toString();
-					if(n != args.size()-1) { output() << ","; }
+					if (n != args.size() - 1) {
+						output() << ",";
+					}
 				}
 				output() << ")";
 			}
-		}
-		else {
+		} else {
 			assert(typeid(*pfs) == typeid(Function));
-			if(args.size() > 1) {
+			if (args.size() > 1) {
 				output() << "(";
-				for(size_t n = 0; n < args.size()-1; ++n) {
+				for (size_t n = 0; n < args.size() - 1; ++n) {
 					output() << args[n]->toString();
-					if(n != args.size()-2) { output() << ","; }
+					if (n != args.size() - 2) {
+						output() << ",";
+					}
 				}
 				output() << ")";
 			}
@@ -807,16 +876,18 @@ private:
 		assert(_termtranslator);
 		// Get information from the term translator.
 		const Function* func = _termtranslator->function(termnr);
-		if(func) {
+		if (func) {
 			// Print the symbol's name.
-			output() << func->name().substr(0,func->name().find('/'));
+			output() << func->name().substr(0, func->name().find('/'));
 			// Print the symbol's sorts.
-			if(func->nrSorts()) {
+			if (func->nrSorts()) {
 				output() << '[';
-				for(size_t n = 0; n < func->nrSorts(); ++n) {
-					if(func->sort(n)) {
+				for (size_t n = 0; n < func->nrSorts(); ++n) {
+					if (func->sort(n)) {
 						output() << func->sort(n)->name();
-						if(n != func->nrSorts()-1) { output() << ','; }
+						if (n != func->nrSorts() - 1) {
+							output() << ',';
+						}
 					}
 				}
 				output() << ']';
@@ -824,15 +895,15 @@ private:
 			// Get the arguments from the translator.
 			const std::vector<GroundTerm>& args = _termtranslator->args(termnr);
 			// Print the arguments.
-			if(not args.empty()) {
+			if (not args.empty()) {
 				output() << "(";
 				bool begin = true;
-				for(auto gtit = args.cbegin(); gtit != args.cend(); ++gtit) {
-					if(not begin){
+				for (auto gtit = args.cbegin(); gtit != args.cend(); ++gtit) {
+					if (not begin) {
 						output() << ",";
 					}
 					begin = false;
-					if((*gtit).isVariable) {
+					if ((*gtit).isVariable) {
 						printTerm((*gtit)._varid);
 					} else {
 						output() << (*gtit)._domelement->toString();
@@ -842,48 +913,61 @@ private:
 			}
 		} else {
 			output() << "var_" << termnr;
-	//		CPTsBody* cprelation = _termtranslator->cprelation(varid);
-	//		CPReification(1,cprelation).accept(this);
+			//		CPTsBody* cprelation = _termtranslator->cprelation(varid);
+			//		CPReification(1,cprelation).accept(this);
 		}
 	}
 
 	void printAggregate(double bound, bool lower, AggFunction aggtype, unsigned int setnr) {
 		output() << bound << (lower ? " =< " : " >= ");
-		switch(aggtype) {
-			case AggFunction::CARD: 	output() << "card("; break;
-			case AggFunction::SUM: 	output() << "sum("; break;
-			case AggFunction::PROD: 	output() << "prod("; break;
-			case AggFunction::MIN: 	output() << "min("; break;
-			case AggFunction::MAX: 	output() << "max("; break;
+		switch (aggtype) {
+		case AggFunction::CARD:
+			output() << "card(";
+			break;
+		case AggFunction::SUM:
+			output() << "sum(";
+			break;
+		case AggFunction::PROD:
+			output() << "prod(";
+			break;
+		case AggFunction::MIN:
+			output() << "min(";
+			break;
+		case AggFunction::MAX:
+			output() << "max(";
+			break;
 		}
-		output() << "set_" << setnr << ")." <<"\n";
+		output() << "set_" << setnr << ")." << "\n";
 	}
 
 	void printAsFunc(const PredTable* table) {
-		if(table->approxFinite()) {
-			TableIterator kt = table->begin();
-			output() << "{ ";
-			if(not kt.isAtEnd()) {
-				ElementTuple tuple = *kt;
-				if(tuple.size() > 1) output() << tuple[0]->toString();
-				for(unsigned int n = 1; n < tuple.size() - 1; ++n) {
+		if (not table->approxFinite()) {
+			output() << "possibly infinite table";
+			return;
+		}
+		TableIterator kt = table->begin();
+		output() << "{ ";
+		if (not kt.isAtEnd()) {
+			ElementTuple tuple = *kt;
+			if (tuple.size() > 1) {
+				output() << tuple[0]->toString();
+			}
+			for (unsigned int n = 1; n < tuple.size() - 1; ++n) {
+				output() << ',' << tuple[n]->toString();
+			}
+			output() << "->" << tuple.back()->toString();
+			++kt;
+			for (; not kt.isAtEnd(); ++kt) {
+				output() << "; ";
+				tuple = *kt;
+				if (tuple.size() > 1) output() << tuple[0]->toString();
+				for (unsigned int n = 1; n < tuple.size() - 1; ++n) {
 					output() << ',' << tuple[n]->toString();
 				}
 				output() << "->" << tuple.back()->toString();
-				++kt;
-				for(; not kt.isAtEnd(); ++kt) {
-					output() << "; ";
-					tuple = *kt;
-					if(tuple.size() > 1) output() << tuple[0]->toString();
-					for(unsigned int n = 1; n < tuple.size() - 1; ++n) {
-						output() << ',' << tuple[n]->toString();
-					}
-					output() << "->" << tuple.back()->toString();
-				}
 			}
-			output() << " }";
 		}
-		else output() << "possibly infinite table";
+		output() << " }";
 	}
 
 };

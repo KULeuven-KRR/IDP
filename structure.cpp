@@ -3876,6 +3876,7 @@ void generateMorePreciseStructures(const PredTable* cf, const ElementTuple& doma
 		for (auto j = extensions.begin(); j < extensions.end(); ++j) {
 			auto news = (*j)->clone();
 			news->inter(function)->graphInter()->makeTrue(tuple);
+			news->clean();
 			newstructs.push_back(news);
 		}
 		for(auto j = partialfalsestructs.begin(); j<partialfalsestructs.end(); ++j){

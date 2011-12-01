@@ -185,17 +185,14 @@ void GrounderFactory::DeeperContext(SIGN sign) {
 
 		if (_context._funccontext == Context::POSITIVE)
 			_context._funccontext = Context::NEGATIVE;
-		else if (_context._funccontext == Context::NEGATIVE)
-			_context._funccontext = Context::POSITIVE;
+		else if (_context._funccontext == Context::NEGATIVE) _context._funccontext = Context::POSITIVE;
 		if (_context._monotone == Context::POSITIVE)
 			_context._monotone = Context::NEGATIVE;
-		else if (_context._monotone == Context::NEGATIVE)
-			_context._monotone = Context::POSITIVE;
+		else if (_context._monotone == Context::NEGATIVE) _context._monotone = Context::POSITIVE;
 
 		if (_context._tseitin == TsType::IMPL)
 			_context._tseitin = TsType::RIMPL;
-		else if (_context._tseitin == TsType::RIMPL)
-			_context._tseitin = TsType::IMPL;
+		else if (_context._tseitin == TsType::RIMPL) _context._tseitin = TsType::IMPL;
 
 	}
 }
@@ -380,7 +377,7 @@ void GrounderFactory::visit(const Theory* theory) {
  */
 void GrounderFactory::visit(const PredForm* pf) {
 	if (_verbosity > 3) {
-		clog <<"Grounderfactory visiting: " << pf->toString() <<"\n";
+		clog << "Grounderfactory visiting: " << pf->toString() << "\n";
 	}
 	_context._conjunctivePathFromRoot = _context._conjPathUntilNode;
 	_context._conjPathUntilNode = false;
@@ -464,7 +461,7 @@ void GrounderFactory::visit(const PredForm* pf) {
 	}
 
 	PredTable *posstable = NULL, *certtable = NULL;
-	if(GlobalData::instance()->getOptions()->getValue(BoolType::GROUNDWITHBOUNDS)){
+	if (GlobalData::instance()->getOptions()->getValue(BoolType::GROUNDWITHBOUNDS)) {
 		auto fovars = VarUtils::makeNewVariables(checksorts);
 		auto foterms = TermUtils::makeNewVarTerms(fovars);
 		auto checkpf = new PredForm(newpf->sign(), newpf->symbol(), foterms, FormulaParseInfo());
@@ -480,18 +477,18 @@ void GrounderFactory::visit(const PredForm* pf) {
 
 		posstable = new PredTable(new BDDInternalPredTable(possbdd, _symstructure->manager(), fovars, _structure), Universe(tables));
 		certtable = new PredTable(new BDDInternalPredTable(certbdd, _symstructure->manager(), fovars, _structure), Universe(tables));
-	}else{
+	} else {
 		posstable = new PredTable(new FullInternalPredTable(), Universe(tables));
 		certtable = new PredTable(new InverseInternalPredTable(new FullInternalPredTable()), Universe(tables));
 	}
 
 	auto possch = GeneratorFactory::create(posstable, vector<Pattern>(checkargs.size(), Pattern::INPUT), checkargs, Universe(tables));
 	auto certainch = GeneratorFactory::create(certtable, vector<Pattern>(checkargs.size(), Pattern::INPUT), checkargs, Universe(tables));
-	if(GlobalData::instance()->getOptions()->getValue(IntType::GROUNDVERBOSITY)>3){
-		clog <<"Certainly table: \n" <<toString(certtable) <<"\n";
-		clog <<"Possible table: \n" <<toString(posstable) <<"\n";
-		clog <<"Possible checker: \n" <<toString(possch) <<"\n";
-		clog <<"Certain checker: \n" <<toString(certainch) <<"\n";
+	if (GlobalData::instance()->getOptions()->getValue(IntType::GROUNDVERBOSITY) > 3) {
+		clog << "Certainly table: \n" << toString(certtable) << "\n";
+		clog << "Possible table: \n" << toString(posstable) << "\n";
+		clog << "Possible checker: \n" << toString(possch) << "\n";
+		clog << "Certain checker: \n" << toString(certainch) << "\n";
 	}
 
 	_formgrounder = new AtomGrounder(_grounding, newpf->sign(), newpf->symbol(), subtermgrounders, checkargs, possch, certainch,
@@ -520,7 +517,7 @@ void GrounderFactory::visit(const PredForm* pf) {
  */
 void GrounderFactory::visit(const BoolForm* bf) {
 	if (_verbosity > 3) {
-		clog <<"Grounderfactory visiting: " << bf->toString() <<"\n";
+		clog << "Grounderfactory visiting: " << bf->toString() << "\n";
 	}
 
 	_context._conjunctivePathFromRoot = _context._conjPathUntilNode;
@@ -598,7 +595,7 @@ const DomElemContainer* GrounderFactory::createVarMapping(Variable * const var) 
  */
 void GrounderFactory::visit(const QuantForm* qf) {
 	if (_verbosity > 3) {
-		clog <<"Grounderfactory visiting: " << qf->toString() <<"\n";
+		clog << "Grounderfactory visiting: " << qf->toString() << "\n";
 	}
 	_context._conjunctivePathFromRoot = _context._conjPathUntilNode;
 	_context._conjPathUntilNode = _context._conjunctivePathFromRoot && qf->isUnivWithSign();
@@ -853,8 +850,7 @@ void GrounderFactory::visit(const FuncTerm* t) {
 	vector<TermGrounder*> subtermgrounders;
 	for (auto it = t->subterms().cbegin(); it != t->subterms().cend(); ++it) {
 		(*it)->accept(this);
-		if (_termgrounder)
-			subtermgrounders.push_back(_termgrounder);
+		if (_termgrounder) subtermgrounders.push_back(_termgrounder);
 	}
 
 	// Create term grounder
@@ -952,33 +948,18 @@ GrounderFactory::GenAndChecker GrounderFactory::createVarsAndGenerators(Formula*
 	}
 
 	// FIXME => unsafe to have to pass in fovars explicitly (order is never checked?)
-	/*	const FOBDD* generatorbdd = _symstructure->evaluate(subformula, generatortype); // !x phi(x) => generate all x possibly false
-	 const FOBDD* checkerbdd = _symstructure->evaluate(subformula, checkertype); // !x phi(x) => check for x certainly false
-	 // FIXME checker is incorrect
-	 cerr <<"Generator bdd: \n";
-	 _symstructure->manager()->put(std::cerr, generatorbdd);
-	 cerr <<"\nChecker bdd: \n";
-	 _symstructure->manager()->put(std::cerr, generatorbdd);
-	 cerr <<"\n";
-	 generatorbdd = improve_generator(generatorbdd, quantfovars, MCPA);
-	 checkerbdd = improve_checker(checkerbdd, MCPA);
-	 cerr <<"Improved generator bdd: \n";
-	 _symstructure->manager()->put(std::cerr, generatorbdd);
-	 cerr <<"\nImproved checker bdd: \n";
-	 _symstructure->manager()->put(std::cerr, generatorbdd);
-	 cerr <<"\n";
-	 PredTable* gentable = new PredTable(new BDDInternalPredTable(generatorbdd, _symstructure->manager(), fovars, _structure), Universe(tables));
-	 PredTable* checktable = new PredTable(new BDDInternalPredTable(checkerbdd, _symstructure->manager(), fovars, _structure), Universe(tables));
-	 */
-	PredTable* gentable = new PredTable(new FullInternalPredTable(), Universe(tables));
-	PredTable* checktable = new PredTable(new InverseInternalPredTable(new FullInternalPredTable), Universe(tables));
-	/*cerr <<"Generator table: \n";
-	 gentable->print(std::cerr);
-	 cerr <<"\nChecker table: \n";
-	 checktable->print(std::cerr);
-	 cerr <<"\n";*/
-	InstGenerator* gen = GeneratorFactory::create(gentable, pattern, vars, Universe(tables));
-	InstChecker* check = GeneratorFactory::create(checktable, vector<Pattern>(vars.size(), Pattern::INPUT), vars, Universe(tables));
+	auto generatorbdd = _symstructure->evaluate(subformula, generatortype); // !x phi(x) => generate all x possibly false
+	auto checkerbdd = _symstructure->evaluate(subformula, checkertype); // !x phi(x) => check for x certainly false
+	generatorbdd = improve_generator(generatorbdd, quantfovars, MCPA);
+	checkerbdd = improve_checker(checkerbdd, MCPA);
+	PredTable* gentable = new PredTable(new BDDInternalPredTable(generatorbdd, _symstructure->manager(), fovars, _structure), Universe(tables));
+	PredTable* checktable = new PredTable(new BDDInternalPredTable(checkerbdd, _symstructure->manager(), fovars, _structure), Universe(tables));
+
+//	PredTable* gentable = new PredTable(new FullInternalPredTable(), Universe(tables));
+//	PredTable* checktable = new PredTable(new InverseInternalPredTable(new FullInternalPredTable), Universe(tables));
+
+	auto gen = GeneratorFactory::create(gentable, pattern, vars, Universe(tables));
+	auto check = GeneratorFactory::create(checktable, vector<Pattern>(vars.size(), Pattern::INPUT), vars, Universe(tables));
 	return GenAndChecker(gen, check);
 }
 
@@ -1136,8 +1117,7 @@ void GrounderFactory::visit(const Rule* rule) {
 
 	// Create rule grounder
 	SaveContext();
-	if (recursive(rule->body()))
-		_context._tseitin = TsType::RULE;
+	if (recursive(rule->body())) _context._tseitin = TsType::RULE;
 	if (_options->getValue(BoolType::GROUNDLAZILY)) {
 		_rulegrounder = new LazyRuleGrounder(headgr, bodygr, bodygen, _context);
 	} else {

@@ -1,8 +1,8 @@
 /************************************
-	insert.cpp
-	this file belongs to GidL 2.0
-	(c) K.U.Leuven
-************************************/
+ insert.cpp
+ this file belongs to GidL 2.0
+ (c) K.U.Leuven
+ ************************************/
 
 #include <cassert>
 #include <sstream>
@@ -238,13 +238,15 @@ Predicate* Insert::predInScope(const vector<string>& vs, const ParseInfo& pi) co
 		return predInScope(vs[0]);
 	} else {
 		vector<string> vv(vs.size() - 1);
-		for (unsigned int n = 0; n < vv.size(); ++n)
+		for (unsigned int n = 0; n < vv.size(); ++n) {
 			vv[n] = vs[n];
+		}
 		Vocabulary* v = vocabularyInScope(vv, pi);
-		if (v)
+		if (v) {
 			return v->pred(vs.back());
-		else
+		} else {
 			return 0;
+		}
 	}
 }
 
@@ -768,7 +770,8 @@ void Insert::closequery(Query* q) {
 	if (q) {
 		std::set<Variable*> sv(q->variables().cbegin(), q->variables().cend());
 		QuantForm* qf = new QuantForm(SIGN::POS, QUANT::UNIV, sv, q->query(), FormulaParseInfo());
-		DeriveSorts sd(qf, _currvocabulary);
+		DeriveSorts sd(_currvocabulary);
+		sd.run(qf);
 		CheckSorts sc(qf, _currvocabulary);
 		delete (qf);
 		_currspace->add(_currquery, q);
@@ -779,11 +782,15 @@ void Insert::closequery(Query* q) {
 
 void Insert::closeterm(Term* t) {
 	_curr_vars.clear();
-	if (t) {
-		DeriveSorts sd(t, _currvocabulary);
-		CheckSorts sc(t, _currvocabulary);
-		_currspace->add(_currterm, t);
-		if (_currspace->isGlobal()) LuaConnection::addGlobal(_currterm, t);
+	if (t == NULL) {
+		return;
+	}
+	DeriveSorts sd(_currvocabulary);
+	sd.run(t);
+	CheckSorts sc(t, _currvocabulary);
+	_currspace->add(_currterm, t);
+	if (_currspace->isGlobal()) {
+		LuaConnection::addGlobal(_currterm, t);
 	}
 }
 
@@ -1095,17 +1102,25 @@ void Insert::definition(Definition* d) const {
 }
 
 void Insert::sentence(Formula* f) {
-	if (f) {
-		// 1. Quantify the free variables universally
-		std::set<Variable*> vv = freevars(f->pi());
-		if (!vv.empty()) f = new QuantForm(SIGN::POS, QUANT::UNIV, vv, f, f->pi());
-		// 2. Sort derivation & checking
-		DeriveSorts sd(f, _currvocabulary);
-		CheckSorts sc(f, _currvocabulary);
-		// 3. Add the formula to the current theory
-		_currtheory->add(f);
-	} else
+	if (f == NULL) {
 		_curr_vars.clear();
+		return;
+	}
+
+	// 1. Quantify the free variables universally
+	auto vv = freevars(f->pi());
+	if (not vv.empty()){
+		f = new QuantForm(SIGN::POS, QUANT::UNIV, vv, f, f->pi());
+	}
+
+	// 2. Sort derivation & checking
+	DeriveSorts sd(_currvocabulary);
+	sd.run(f);
+	CheckSorts sc(f, _currvocabulary);
+
+	// 3. Add the formula to the current theory
+	_currtheory->add(f);
+
 }
 
 void Insert::fixpdef(FixpDef* d) const {
@@ -1128,27 +1143,31 @@ Rule* Insert::rule(const std::set<Variable*>& qv, Formula* head, Formula* body, 
 		std::set<Variable*> vv = freevars(head->pi());
 		remove_vars(vv);
 		// Split quantified variables in head and body variables
-		std::set<Variable*> hv;
-		std::set<Variable*> bv;
+		std::set<Variable*> hv, bv;
 		for (auto it = qv.cbegin(); it != qv.cend(); ++it) {
-			if (head->contains(*it))
+			if (head->contains(*it)){
 				hv.insert(*it);
-			else
+			} else{
 				bv.insert(*it);
+			}
 		}
 		for (auto it = vv.cbegin(); it != vv.cend(); ++it) {
-			if (head->contains(*it))
+			if (head->contains(*it)){
 				hv.insert(*it);
-			else
+			} else{
 				bv.insert(*it);
+			}
 		}
 		// Create a new rule
-		if (!(bv.empty())) body = new QuantForm(SIGN::POS, QUANT::EXIST, bv, body, FormulaParseInfo((body->pi())));
+		if (not (bv.empty())){
+			body = new QuantForm(SIGN::POS, QUANT::EXIST, bv, body, FormulaParseInfo((body->pi())));
+		}
 		assert(typeid(*head) == typeid(PredForm));
-		PredForm* pfhead = dynamic_cast<PredForm*>(head);
-		Rule* r = new Rule(hv, pfhead, body, pi);
+		auto pfhead = dynamic_cast<PredForm*>(head);
+		auto r = new Rule(hv, pfhead, body, pi);
 		// Sort derivation
-		DeriveSorts sd(r, _currvocabulary);
+		DeriveSorts sd(_currvocabulary);
+		sd.run(r);
 		// Return the rule
 		return r;
 	} else {
@@ -1716,17 +1735,21 @@ void Insert::predinter(NSPair* nst, PredTable* t) const {
 	}
 	nst->includeArity(t->arity());
 	Predicate* p = predInScope(nst->_name, pi);
-	if (p && nst->_sortsincluded && (nst->_sorts).size() == t->arity()) p = p->resolve(nst->_sorts);
-	if (p) {
+	if (p != NULL && nst->_sortsincluded && (nst->_sorts).size() == t->arity()) {
+		p = p->resolve(nst->_sorts);
+	}
+	if (p != NULL) {
 		if (belongsToVoc(p)) {
 			PredTable* nt = new PredTable(t->internTable(), _currstructure->universe(p));
 			delete (t);
 			PredInter* inter = _currstructure->inter(p);
 			inter->ctpt(nt);
-		} else
+		} else {
 			Error::prednotinstructvoc(nst->toString(), _currstructure->name(), pi);
-	} else
+		}
+	} else {
 		Error::undeclpred(nst->toString(), pi);
+	}
 	delete (nst);
 }
 

@@ -1,10 +1,5 @@
-/************************************
-	DeriveSorts.cpp
-	this file belongs to GidL 2.0
-	(c) K.U.Leuven
-************************************/
-
 #include <vector>
+#include <iostream>
 #include <cassert>
 
 #include "theorytransformations/DeriveSorts.hpp"
@@ -16,82 +11,62 @@
 
 using namespace std;
 
-Formula* DeriveSorts::visit(QuantForm* qf) {
+void DeriveSorts::checkVars(const set<Variable*>& quantvars){
 	if (_firstvisit) {
-		for (auto it = qf->quantVars().cbegin(); it != qf->quantVars().cend(); ++it) {
-			if (not (*it)->sort()) {
-				_untyped[*it] = set<Sort*>();
+		for (auto it = quantvars.cbegin(); it != quantvars.cend(); ++it) {
+			if ((*it)->sort()==NULL) {
+				_untypedvariables.insert(*it);
 				_changed = true;
 			}
 		}
 	}
+}
+
+Formula* DeriveSorts::visit(QuantForm* qf) {
+	checkVars(qf->quantVars());
 	return traverse(qf);
 }
 
-Formula* DeriveSorts::visit(PredForm* pf) {
-	PFSymbol* p = pf->symbol();
-
-	// At first visit, insert the atoms over overloaded predicates
-	if (_firstvisit && p->overloaded()) {
-		_overloadedatoms.insert(pf);
-		_changed = true;
-	}
-
-	// Visit the children while asserting the sorts of the predicate
-	vector<Sort*>::const_iterator it = p->sorts().cbegin();
-	vector<Term*>::const_iterator jt = pf->subterms().cbegin();
-	for (; it != p->sorts().cend(); ++it, ++jt) {
-		_assertsort = *it;
-		(*jt)->accept(this);
-	}
-	return pf;
-}
-
-Formula* DeriveSorts::visit(EqChainForm* ef) {
-	Sort* s = 0;
-	if (not _firstvisit) {
-		for (auto it = ef->subterms().cbegin(); it != ef->subterms().cend(); ++it) {
-			Sort* temp = (*it)->sort();
-			if (temp && temp->parents().empty() && temp->children().empty()) {
-				s = temp;
-				break;
-			}
-		}
-	}
-	for (auto it = ef->subterms().cbegin(); it != ef->subterms().cend(); ++it) {
-		_assertsort = s;
-		(*it)->accept(this);
-	}
-	return ef;
-}
-
 Rule* DeriveSorts::visit(Rule* r) {
-	if (_firstvisit) {
-		for (auto it = r->quantVars().cbegin(); it != r->quantVars().cend(); ++it) {
-			if (not (*it)->sort()) {
-				_untyped[*it] = set<Sort*>();
-			}
-			_changed = true;
-		}
-	}
+	checkVars(r->quantVars());
 	r->head()->accept(this);
 	r->body()->accept(this);
 	return r;
 }
 
+SetExpr* DeriveSorts::visit(QuantSetExpr* qs) {
+	checkVars(qs->quantVars());
+	return traverse(qs);
+}
+
 Term* DeriveSorts::visit(VarTerm* vt) {
-	if (not vt->sort() && _assertsort) {
-		_untyped[vt->var()].insert(_assertsort);
+	if(_underivable){
+		_underivableVariables.insert(vt->var());
+		return vt;
+	}
+	if(_assertsort!=NULL && _underivableVariables.find(vt->var())==_underivableVariables.end()){
+		Sort* newsort = NULL;
+		if(vt->sort()==NULL){
+			newsort = _assertsort;
+		}else{
+			newsort = SortUtils::resolve(vt->sort(), _assertsort);
+		}
+		if(newsort==NULL){
+			_underivableVariables.insert(vt->var());
+		}else{
+			vt->sort(newsort);
+		}
 	}
 	return vt;
 }
 
 Term* DeriveSorts::visit(DomainTerm* dt) {
-	if (_firstvisit && (!(dt->sort()))) {
+	if (_firstvisit && dt->sort()==NULL) {
 		_domelements.insert(dt);
 	}
 
-	if (not dt->sort() && _assertsort) {
+	// TODO assert that it has to be a valid sort?
+	if (dt->sort()==NULL && _assertsort!=NULL) {
 		dt->sort(_assertsort);
 		_changed = true;
 		_domelements.erase(dt);
@@ -99,79 +74,130 @@ Term* DeriveSorts::visit(DomainTerm* dt) {
 	return dt;
 }
 
-Term* DeriveSorts::visit(FuncTerm* ft) {
-	Function* f = ft->function();
+Term* DeriveSorts::visit(FuncTerm* term) {
+	auto f = term->function();
 
-	// At first visit, insert the terms over overloaded functions
+	auto origunderivable = _underivable;
 	if (f->overloaded()) {
-		if (_firstvisit || _overloadedterms.find(ft) == _overloadedterms.cend() || _assertsort != _overloadedterms[ft]) {
-			_changed = true;
-			_overloadedterms[ft] = _assertsort;
-		}
+		_underivable = true;
+		_overloadedterms.insert(term);
 	}
+	// TODO builtin?
 
-	// Visit the children while asserting the sorts of the predicate
-	vector<Sort*>::const_iterator it = f->insorts().cbegin();
-	vector<Term*>::const_iterator jt = ft->subterms().cbegin();
+	auto it = f->insorts().cbegin();
+	auto jt = term->subterms().cbegin();
 	for (; it != f->insorts().cend(); ++it, ++jt) {
 		_assertsort = *it;
 		(*jt)->accept(this);
 	}
-	return ft;
+	_underivable = origunderivable;
+	return term;
 }
 
-SetExpr* DeriveSorts::visit(QuantSetExpr* qs) {
-	if (_firstvisit) {
-		for (auto it = qs->quantVars().cbegin(); it != qs->quantVars().cend(); ++it) {
-			if (not (*it)->sort()) {
-				_untyped[*it] = set<Sort*>();
-				_changed = true;
+Formula* DeriveSorts::visit(PredForm* f) {
+	auto p = f->symbol();
+
+	auto origunderivable = _underivable;
+	if(p->overloaded()){
+		_overloadedatoms.insert(f);
+	}
+	if(p->overloaded() && not p->builtin()){
+		_underivable = true;
+	}
+
+	if(p->builtin()){
+		// TODO only correct for builtin with the same sorts on all positions
+		Sort* temp = NULL;
+		if(not _firstvisit){
+			for (auto i = f->subterms().cbegin(); i != f->subterms().cend(); ++i) {
+				if((*i)->sort()!=NULL){
+					if(temp==NULL){
+						temp = (*i)->sort();
+					}else{
+						temp = SortUtils::resolve(temp, (*i)->sort());
+					}
+				}
+			}
+		}
+		for (auto i = f->subterms().cbegin(); i != f->subterms().cend(); ++i) {
+			_assertsort = temp;
+			(*i)->accept(this);
+		}
+	}else{
+		auto it = p->sorts().cbegin();
+		auto jt = f->subterms().cbegin();
+		for (; it != p->sorts().cend(); ++it, ++jt) {
+			_assertsort = *it;
+			(*jt)->accept(this);
+		}
+	}
+
+	_underivable = origunderivable;
+
+	return f;
+}
+
+Formula* DeriveSorts::visit(EqChainForm* formula) {
+	Sort* temp = NULL;
+	if (not _firstvisit) {
+		for (auto i = formula->subterms().cbegin(); i != formula->subterms().cend(); ++i) {
+			if((*i)->sort()!=NULL){
+				if(temp==NULL){
+					temp = (*i)->sort();
+				}else{
+					temp = SortUtils::resolve(temp, (*i)->sort());
+				}
 			}
 		}
 	}
-	return traverse(qs);
+	for (auto i = formula->subterms().cbegin(); i != formula->subterms().cend(); ++i) {
+		_assertsort = temp;
+		(*i)->accept(this);
+	}
+	return formula;
 }
 
 void DeriveSorts::derivesorts() {
-	for (auto it = _untyped.begin(); it != _untyped.end();) {
-		map<Variable*, std::set<Sort*> >::iterator jt = it;
-		++jt;
-		if (not (*it).second.empty()) {
-			std::set<Sort*>::iterator kt = (*it).second.cbegin();
-			Sort* s = *kt;
-			++kt;
-			for (; kt != (*it).second.cend(); ++kt) {
-				s = SortUtils::resolve(s, *kt, _vocab);
-				if (not s) { // In case of conflicting sorts, assign the first sort.
-							 // Error message will be given during final check.
-					s = *((*it).second.cbegin());
-					break;
-				}
-			}assert(s);
-			if ((*it).second.size() > 1 || s->builtin()) { // Warning when the sort was resolved or builtin
-				Warning::derivevarsort(it->first->name(), s->name(), (*it).first->pi());
-			}
-			(*it).first->sort(s);
-			_untyped.erase(it);
-			_changed = true;
+/*	for (auto it = _untyped.begin(); it != _untyped.end();) {
+		if ((*it).second.empty()) {
+			 ++it;
+			continue;
 		}
-		it = jt;
-	}
+
+		auto sortit = (*it).second.cbegin();
+		auto sort = *sortit;
+		++sortit;
+		for (; sortit != (*it).second.cend(); ++sortit) {
+			sort = SortUtils::resolve(sort, *sortit, _vocab);
+			if (sort == NULL) { // In case of conflicting sorts, assign the first sort.
+				// Error message will be given during final check.
+				sort = *((*it).second.cbegin());
+				break;
+			}
+		}
+		assert(sort!=NULL);
+		if ((*it).second.size() > 1 || sort->builtin()) { // Warning when the sort was resolved or builtin
+			Warning::derivevarsort(it->first->name(), sort->name(), (*it).first->pi());
+		}
+		(*it).first->sort(sort);
+		_untyped.erase(it++); // NOTE: erases the original and sets it correctly to the next element
+		_changed = true;
+	}*/
 }
 
 void DeriveSorts::derivefuncs() {
 	for (auto it = _overloadedterms.begin(); it != _overloadedterms.end();) {
-		map<FuncTerm*, Sort*>::iterator jt = it;
+		auto jt = it;
 		++jt;
-		Function* f = it->first->function();
+		auto f = (*it)->function();
 		vector<Sort*> vs;
-		for (auto kt = it->first->subterms().cbegin(); kt != it->first->subterms().cend(); ++kt) {
+		for (auto kt = (*it)->subterms().cbegin(); kt != (*it)->subterms().cend(); ++kt) {
 			vs.push_back((*kt)->sort());
 		}
-		vs.push_back(it->second);
-		Function* rf = f->disambiguate(vs, _vocab);
+		vs.push_back(NULL); // TODO should be output position
+		auto rf = f->disambiguate(vs, _vocab);
 		if (rf) {
-			it->first->function(rf);
+			(*it)->function(rf);
 			if (not rf->overloaded()) {
 				_overloadedterms.erase(it);
 			}
@@ -183,15 +209,15 @@ void DeriveSorts::derivefuncs() {
 
 void DeriveSorts::derivepreds() {
 	for (auto it = _overloadedatoms.cbegin(); it != _overloadedatoms.cend();) {
-		std::set<PredForm*>::iterator jt = it;
+		auto jt = it;
 		++jt;
-		PFSymbol* p = (*it)->symbol();
+		auto p = (*it)->symbol();
 		vector<Sort*> vs;
 		for (auto kt = (*it)->subterms().cbegin(); kt != (*it)->subterms().cend(); ++kt) {
 			vs.push_back((*kt)->sort());
 		}
-		PFSymbol* rp = p->disambiguate(vs, _vocab);
-		if (rp) {
+		auto rp = p->disambiguate(vs, _vocab);
+		if (rp!=NULL) {
 			(*it)->symbol(rp);
 			if (not rp->overloaded()) {
 				_overloadedatoms.erase(it);
@@ -202,76 +228,66 @@ void DeriveSorts::derivepreds() {
 	}
 }
 
-void DeriveSorts::deriveSorts(Formula* f) {
-	_changed = false;
-	_firstvisit = true;
-	f->accept(this); // First visit: collect untyped symbols, set types of variables that occur in typed positions.
-	_firstvisit = false;
-	while (_changed) {
-		_changed = false;
-		derivesorts();
-		derivefuncs();
-		derivepreds();
-		f->accept(this); // Next visit: type derivation over overloaded predicates or functions.
-	}
-	check();
-}
-
-void DeriveSorts::deriveSorts(Term* t) {
-	_changed = false;
-	_firstvisit = true;
-	t->accept(this);
-	_firstvisit = false;
-	while (_changed) {
-		_changed = false;
-		derivesorts();
-		derivefuncs();
-		derivepreds();
-		t->accept(this);
-	}
-	check();
-}
-
-void DeriveSorts::deriveSorts(Rule* r) {
-	// Set the sort of the terms in the head
-	vector<Sort*>::const_iterator jt = r->head()->symbol()->sorts().cbegin();
-	for (unsigned int n = 0; n < r->head()->subterms().size(); ++n, ++jt) {
-		Sort* hs = r->head()->subterms()[n]->sort();
-		if (hs) {
-			if (!SortUtils::isSubsort(hs, *jt)) {
-				Variable* nv = new Variable(*jt);
-				VarTerm* nvt1 = new VarTerm(nv, TermParseInfo());
-				VarTerm* nvt2 = new VarTerm(nv, TermParseInfo());
-				EqChainForm* ecf = new EqChainForm(SIGN::POS, true, nvt1, FormulaParseInfo());
-				ecf->add(CompType::EQ, r->head()->subterms()[n]);
-				BoolForm* bf = new BoolForm(SIGN::POS, true, r->body(), ecf, FormulaParseInfo());
-				r->body(bf);
-				r->head()->arg(n, nvt2);
-				r->addvar(nv);
+void DeriveSorts::put(ostream& stream) {
+/*	for (auto i = _untyped.cbegin(); i != _untyped.cend(); ++i) {
+		stream << "Variable " << toString((*i).first) << " has possible sorts ";
+		bool begin = true;
+		for (auto j = (*i).second.cbegin(); j != (*i).second.cend(); ++j) {
+			if (not begin) {
+				stream << ", ";
 			}
-		} else {
-			r->head()->subterms()[n]->sort(*jt);
+			begin = false;
+			stream << toString(*j);
 		}
+		stream << "\n" << tabs();
 	}
-	// Rest of the algorithm
-	_changed = false;
-	_firstvisit = true;
-	r->accept(this);
-	_firstvisit = false;
-	while (_changed) {
-		_changed = false;
-		derivesorts();
-		derivefuncs();
-		derivepreds();
-		r->accept(this);
+	for (auto i = _overloadedterms.cbegin(); i != _overloadedterms.cend(); ++i) {
+		if((*i).second==NULL){
+			stream << "Functerm " << toString((*i).first) << " does not have a sort yet." << "\n" << tabs();
+		}else{
+			stream << "Functerm " << toString((*i).first) << " has sort " << toString((*i).second) << "\n" << tabs();
+		}
+	}*/
+	for (auto i = _domelements.cbegin(); i != _domelements.cend(); ++i) {
+		stream << "Untyped domainterms " << toString(*i) << "\n" << tabs();
 	}
-	check();
+}
+
+template<>
+void DeriveSorts::run(Rule* r) {
+	// Set the sort of the terms in the head
+	auto jt = r->head()->symbol()->sorts().cbegin();
+	for (unsigned int n = 0; n < r->head()->subterms().size(); ++n, ++jt) {
+		auto hs = r->head()->subterms()[n]->sort();
+		if (hs == NULL) {
+			r->head()->subterms()[n]->sort(*jt);
+			continue;
+		}
+		if (SortUtils::isSubsort(hs, *jt)) {
+			continue;
+		}
+
+		auto nv = new Variable(*jt);
+		auto nvt1 = new VarTerm(nv, TermParseInfo());
+		auto nvt2 = new VarTerm(nv, TermParseInfo());
+		auto ecf = new EqChainForm(SIGN::POS, true, nvt1, FormulaParseInfo());
+		ecf->add(CompType::EQ, r->head()->subterms()[n]);
+		auto bf = new BoolForm(SIGN::POS, true, r->body(), ecf, FormulaParseInfo());
+		r->body(bf);
+		r->head()->arg(n, nvt2);
+		r->addvar(nv);
+	}
+	deriveSorts(r);
 }
 
 void DeriveSorts::check() {
-	for (auto it = _untyped.cbegin(); it != _untyped.cend(); ++it) {
-		assert((it->second).empty());
-		Error::novarsort(it->first->name(), it->first->pi());
+	// TODO sorts can also be builtin! (does this matter?)
+	for(auto i=_untypedvariables.cbegin(); i!=_untypedvariables.cend(); ++i) {
+		if ((*i)->sort()==NULL) {
+			Error::novarsort((*i)->name(), (*i)->pi());
+		}else{
+			Warning::derivevarsort((*i)->name(), (*i)->sort()->name(), (*i)->pi());
+		}
 	}
 	for (auto it = _overloadedatoms.cbegin(); it != _overloadedatoms.cend(); ++it) {
 		if (typeid(*((*it)->symbol())) == typeid(Predicate))
@@ -280,7 +296,7 @@ void DeriveSorts::check() {
 			Error::nofuncsort((*it)->symbol()->name(), (*it)->pi());
 	}
 	for (auto it = _overloadedterms.cbegin(); it != _overloadedterms.cend(); ++it) {
-		Error::nofuncsort(it->first->function()->name(), it->first->pi());
+		Error::nofuncsort((*it)->function()->name(), (*it)->pi());
 	}
 	for (auto it = _domelements.cbegin(); it != _domelements.cend(); ++it) {
 		Error::nodomsort((*it)->toString(), (*it)->pi());

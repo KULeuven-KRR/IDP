@@ -743,22 +743,26 @@ Predicate* ComparisonPredGenerator::resolve(const vector<Sort*>& sorts) {
  *	given vocabulary
  */
 Predicate* ComparisonPredGenerator::disambiguate(const vector<Sort*>& sorts, const Vocabulary* vocabulary) {
-	Sort* predSort = 0;
+	Sort* predSort = NULL;
 	bool sortsContainsZero = false;
 	for (auto it = sorts.cbegin(); it != sorts.cend(); ++it) {
-		if (*it) {
-			if (predSort) {
-				predSort = SortUtils::resolve(predSort, *it, vocabulary);
-				if (!predSort) return 0;
-			} else
-				predSort = *it;
-		} else
+		if((*it)==NULL){
 			sortsContainsZero = true;
+			continue;
+		}
+		if (predSort!=NULL) {
+			predSort = SortUtils::resolve(predSort, *it, vocabulary);
+			if (predSort==NULL){
+				return NULL;
+			}
+		} else{
+			predSort = *it;
+		}
 	}
 
-	Predicate* pred = 0;
-	if (predSort && (!sortsContainsZero || !predSort->ancestors(vocabulary).empty())) {
-		map<Sort*, Predicate*>::const_iterator it = _overpreds.find(predSort);
+	Predicate* pred = NULL;
+	if (predSort && (not sortsContainsZero || not predSort->ancestors(vocabulary).empty())) {
+		auto it = _overpreds.find(predSort);
 		if (it != _overpreds.cend())
 			pred = it->second;
 		else {

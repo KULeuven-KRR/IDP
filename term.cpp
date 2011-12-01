@@ -181,7 +181,12 @@ ostream& FuncTerm::put(ostream& output, bool longnames) const {
 
 DomainTerm::DomainTerm(Sort* sort, const DomainElement* value, const TermParseInfo& pi) :
 		Term(pi), _sort(sort), _value(value) {
+	assert(_sort!=NULL);
+}
 
+void DomainTerm::sort(Sort* s) {
+	assert(_sort!=NULL);
+	_sort = s;
 }
 
 DomainTerm* DomainTerm::clone() const {
