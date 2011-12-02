@@ -2,7 +2,6 @@
 #define GROUDING_GROUNDTHEORY_HPP_
 
 #include "commontypes.hpp"
-#include <iostream> //TODO remove (debug)
 #include "groundtheories/AbstractGroundTheory.hpp"
 
 #include "vocabulary.hpp"

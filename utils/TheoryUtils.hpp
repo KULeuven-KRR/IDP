@@ -83,6 +83,10 @@ Formula* unnestPartialTerms(Formula* f, Context context, Vocabulary* voc = NULL)
 Formula* unnestThreeValuedTerms(Formula*, AbstractStructure*, Context context, bool cpsupport = false, const std::set<const PFSymbol*> cpsymbols =
 		std::set<const PFSymbol*>());
 
+/** Non-recursively move terms that are three-valued in a given structure outside of the head of the rule **/
+Rule* unnestThreeValuedTerms(Rule*, AbstractStructure*, Context context, bool cpsupport = false, const std::set<const PFSymbol*> cpsymbols =
+		std::set<const PFSymbol*>());
+
 /** Returns true iff at least one FuncTerm/AggTerm occurs in the given formula **/
 bool containsFuncTerms(Formula* f);
 bool containsAggTerms(Formula* f);

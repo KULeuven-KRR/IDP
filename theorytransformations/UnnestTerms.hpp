@@ -27,7 +27,7 @@ class UnnestTerms: public TheoryMutatingVisitor {
 private:
 	Vocabulary* 			_vocabulary; //!< Used to do type derivation during rewrites
 	Context 				_context; //!< Keeps track of the current context where terms are moved
-	bool 					allowedToUnnest; // Indicates whether in the current context, it is allowed to unnest terms
+	bool 					_allowedToUnnest; // Indicates whether in the current context, it is allowed to unnest terms
 	std::vector<Formula*> 	_equalities; //!< used to temporarily store the equalities generated when moving terms
 	std::set<Variable*> 	_variables; //!< used to temporarily store the freshly introduced variables
 
@@ -36,17 +36,17 @@ private:
 protected:
 	virtual bool shouldMove(Term* t);
 	bool getAllowedToUnnest(){
-		return allowedToUnnest;
+		return _allowedToUnnest;
 	}
 	void setAllowedToUnnest(bool allowed){
-		allowedToUnnest = allowed;
+		_allowedToUnnest = allowed;
 	}
 	Context getContext() { return _context; }
 	void setContext(const Context& context) { _context = context; }
 
 public:
 	UnnestTerms(Context context = Context::POSITIVE, Vocabulary* v = NULL) :
-			_vocabulary(v), _context(context), allowedToUnnest(false) {
+			_vocabulary(v), _context(context), _allowedToUnnest(false) {
 	}
 
 	VarTerm* move(Term* term);

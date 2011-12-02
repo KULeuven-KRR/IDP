@@ -22,6 +22,7 @@ bool UnnestThreeValuedTerms::isCPSymbol(const PFSymbol* symbol) const {
 }
 
 bool UnnestThreeValuedTerms::shouldMove(Term* t) {
+	std::cerr << "allowed? " << getAllowedToUnnest();
 	if(getAllowedToUnnest()) {
 		switch (t->type()) {
 		case TT_FUNC: {
@@ -48,6 +49,7 @@ Formula* UnnestThreeValuedTerms::traverse(PredForm* f) {
 	bool savemovecontext = getAllowedToUnnest();
 	if(isNeg(f->sign())) {
 		setContext(not getContext());
+		//FIXME: is this right?
 	}
 	for(size_t n = 0; n < f->subterms().size(); ++n) {
 		if (_cpsupport) {
@@ -59,3 +61,5 @@ Formula* UnnestThreeValuedTerms::traverse(PredForm* f) {
 	setAllowedToUnnest(savemovecontext);
 	return f;
 }
+
+

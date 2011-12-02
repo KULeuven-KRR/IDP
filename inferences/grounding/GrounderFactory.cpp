@@ -392,7 +392,7 @@ void GrounderFactory::visit(const PredForm* pf) {
 	// to _structure outside the atom. To avoid changing the original atom,
 	// we first clone it.
 	// FIXME verkeerde type afgeleid voor vergelijkingen a=b (zou bvb range die beide omvat moeten zijn, is nu niet het geval).
-	// FIXME aggregaten moeten correct worden herschreven als ze niet tweewaardig zijn
+	// FIXME aggregaten moeten correct worden herschreven als ze niet tweewaardig zijn -> issue 57048?
 	Formula* transpf = FormulaUtils::unnestThreeValuedTerms(pf->clone(), _structure, _context._funccontext, _cpsupport, _cpsymbols);
 	transpf = FormulaUtils::splitComparisonChains(transpf, NULL);
 	if (not _cpsupport) { // TODO Check not present in quantgrounder
@@ -402,6 +402,7 @@ void GrounderFactory::visit(const PredForm* pf) {
 	}
 
 	if (not sametypeid<PredForm>(*transpf)) { // The rewriting changed the atom
+		Assert(_context._component != CompContext::HEAD);
 		if (_verbosity > 1) {
 			clog << "Rewritten " << pf->toString() << " to " << transpf->toString() << "\n";
 		}
@@ -1082,9 +1083,8 @@ void GrounderFactory::visit(const Rule* rule) {
 	_context._conjunctivePathFromRoot = _context._conjPathUntilNode;
 	_context._conjPathUntilNode = false;
 
-	// FIXME Move all three-valued terms outside the head
 	// TODO for lazygroundrules, we need a generator for all variables NOT occurring in the head!
-
+	Rule* newrule = FormulaUtils::unnestThreeValuedTerms(rule->clone(), _structure, _context._funccontext, _cpsupport, _cpsymbols);
 	InstGenerator *headgen = NULL, *bodygen = NULL;
 
 	if (_options->getValue(BoolType::GROUNDLAZILY)) {
@@ -1092,8 +1092,8 @@ void GrounderFactory::visit(const Rule* rule) {
 		// TODO resolve this in a clean way
 		// for lazy ground rules, need a generator which generates bodies given a head, so only vars not occurring in the head!
 		varlist bodyvars;
-		for (auto it = rule->quantVars().cbegin(); it != rule->quantVars().cend(); ++it) {
-			if (not rule->head()->contains(*it)) {
+		for (auto it = newrule->quantVars().cbegin(); it != newrule->quantVars().cend(); ++it) {
+			if (not newrule->head()->contains(*it)) {
 				bodyvars.push_back(*it);
 			} else {
 				createVarMapping(*it);
@@ -1108,8 +1108,8 @@ void GrounderFactory::visit(const Rule* rule) {
 
 		varlist headvars;
 		varlist bodyvars;
-		for (auto it = rule->quantVars().cbegin(); it != rule->quantVars().cend(); ++it) {
-			if (rule->body()->contains(*it)) {
+		for (auto it = newrule->quantVars().cbegin(); it != newrule->quantVars().cend(); ++it) {
+			if (newrule->body()->contains(*it)) {
 				bodyvars.push_back(*it);
 			} else {
 				headvars.push_back(*it);
@@ -1123,7 +1123,7 @@ void GrounderFactory::visit(const Rule* rule) {
 	// Create head grounder
 	SaveContext();
 	_context._component = CompContext::HEAD;
-	descend(rule->head());
+	descend(newrule->head());
 	HeadGrounder* headgr = _headgrounder;
 	RestoreContext();
 
@@ -1134,13 +1134,13 @@ void GrounderFactory::visit(const Rule* rule) {
 	_context.gentype = GenType::CANMAKETRUE; // body instance generator corresponds to an existential quantifier
 	_context._component = CompContext::FORMULA;
 	_context._tseitin = TsType::EQ;
-	descend(rule->body());
+	descend(newrule->body());
 	FormulaGrounder* bodygr = _formgrounder;
 	RestoreContext();
 
 	// Create rule grounder
 	SaveContext();
-	if (recursive(rule->body()))
+	if (recursive(newrule->body()))
 		_context._tseitin = TsType::RULE;
 	if (_options->getValue(BoolType::GROUNDLAZILY)) {
 		_rulegrounder = new LazyRuleGrounder(headgr, bodygr, bodygen, _context);

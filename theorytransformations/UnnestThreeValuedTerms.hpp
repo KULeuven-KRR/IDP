@@ -49,6 +49,7 @@ public:
 	UnnestThreeValuedTerms(AbstractStructure* str, Context context, bool cpsupport, const std::set<const PFSymbol*>& cpsymbols);
 
 	Formula* traverse(PredForm* f);
+	Rule* traverse(Rule* r);
 
 protected:
 	bool shouldMove(Term* t);

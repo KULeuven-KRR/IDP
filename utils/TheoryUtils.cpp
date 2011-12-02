@@ -100,6 +100,11 @@ Formula* unnestThreeValuedTerms(Formula* f, AbstractStructure* structure, Contex
 	return transform<UnnestThreeValuedTerms>(f, structure, context, cpsupport, cpsymbols);
 }
 
+Rule* unnestThreeValuedTerms(Rule* r, AbstractStructure* structure, Context context, bool cpsupport,
+		const std::set<const PFSymbol*> cpsymbols) {
+	return transform<UnnestThreeValuedTerms>(r, structure, context, cpsupport, cpsymbols);
+}
+
 bool containsFuncTerms(Formula* f) {
 	CheckContainsFuncTerms checker;
 	return checker.containsFuncTerms(f);
