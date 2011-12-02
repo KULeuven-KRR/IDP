@@ -1,12 +1,4 @@
-/************************************
-  	RemoveEquivalences.cpp
-	this file belongs to GidL 2.0
-	(c) K.U.Leuven
-************************************/
-
-#include <vector>
-#include <cassert>
-
+#include "common.hpp"
 #include "theorytransformations/RemoveEquivalences.hpp"
 
 #include "vocabulary.hpp"

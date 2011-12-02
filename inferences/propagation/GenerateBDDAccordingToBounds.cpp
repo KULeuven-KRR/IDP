@@ -1,5 +1,4 @@
-#include <cassert>
-#include <iostream>
+#include "common.hpp"
 #include "vocabulary.hpp"
 #include "theory.hpp"
 #include "fobdds/FoBdd.hpp"

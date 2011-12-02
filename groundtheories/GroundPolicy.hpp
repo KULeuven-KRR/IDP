@@ -164,7 +164,7 @@ public:
 				s << " ]";
 			}
 			else {
-				assert(typeid(*left) == typeid(CPVarTerm));
+				Assert(typeid(*left) == typeid(CPVarTerm));
 				CPVarTerm* cpt = dynamic_cast<CPVarTerm*>(left);
 				s << termtranslator->printTerm(cpt->varid(), longnames);
 			}

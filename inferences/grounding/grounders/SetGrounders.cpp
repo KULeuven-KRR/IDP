@@ -23,7 +23,7 @@ void groundSetLiteral(const LitGrounder& sublitgrounder, const TermGrounder& sub
 		return;
 	}
 	const auto& groundweight = subtermgrounder.run();
-	assert(not groundweight.isVariable);
+	Assert(not groundweight.isVariable);
 	const auto& d = groundweight._domelement;
 	double w = d->type() == DET_INT ? (double) d->value()._int : d->value()._double;
 	if(l == _true){

@@ -50,7 +50,7 @@ void RuleGrounder::run(unsigned int defid, GroundDefinition* grounddefinition) c
 
 		for(_headgenerator->begin(); not _headgenerator->isAtEnd(); _headgenerator->operator ++()){
 			Lit head = _headgrounder->run();
-			assert(head != _true);
+			Assert(head != _true);
 			if(head != _false) {
 				if(truebody){
 					body.literals.clear();
@@ -89,7 +89,7 @@ int HeadGrounder::run() const {
 		}
 	}
 	// TODO guarantee that all subterm grounders return domain elements
-	assert(alldomelts);
+	Assert(alldomelts);
 
 	// Checking partial functions
 	for(unsigned int n = 0; n < args.size(); ++n) {
@@ -136,7 +136,7 @@ void LazyRuleGrounder::notify(const Lit& lit, const ElementTuple& headargs, cons
 }
 
 void LazyRuleGrounder::ground(const Lit& head, const ElementTuple& headargs){
-	assert(head!=_true && head!=_false);
+	Assert(head!=_true && head!=_false);
 
 	dominstlist headvarinstlist = createInst(headargs);
 

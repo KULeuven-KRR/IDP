@@ -39,7 +39,7 @@ private:
 public:
 	SimpleFuncGenerator(const FuncTable* ft, const std::vector<Pattern>& pattern, const std::vector<const DomElemContainer*>& vars, const Universe& univ, const std::vector<uint>& firstocc)
 			: _function(ft), _rangevar(vars.back()), _vars(vars), _universe(univ) {
-		assert(pattern.back()==Pattern::OUTPUT);
+		Assert(pattern.back()==Pattern::OUTPUT);
 		auto domainpattern = pattern;
 		domainpattern.pop_back();
 

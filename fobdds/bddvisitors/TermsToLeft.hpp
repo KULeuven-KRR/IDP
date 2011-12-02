@@ -1,15 +1,7 @@
-/************************************
-	TermsToLeft.hpp
-	this file belongs to GidL 2.0
-	(c) K.U.Leuven
-************************************/
-
 #ifndef TERMSTOLEFT_HPP_
 #define TERMSTOLEFT_HPP_
 
-#include <vector>
-#include <cassert>
-#include <string>
+#include "common.hpp"
 #include "fobdds/FoBddVisitor.hpp"
 #include "fobdds/FoBddManager.hpp"
 #include "fobdds/FoBddFuncTerm.hpp"
@@ -60,7 +52,7 @@ public:
 		// so move it by negating and setting the other side to 0
 		auto minus = Vocabulary::std()->func("-/2");
 		minus = minus->disambiguate(std::vector<Sort*>(2, sort), NULL);
-		assert(minus!=NULL);
+		Assert(minus!=NULL);
 		auto newlhs = _manager->getFuncTerm(minus, {lhs, rhs});
 		return _manager->getAtomKernel(atom->symbol(), atom->type(), {newlhs, zeroterm});
 	}

@@ -1,14 +1,7 @@
-/************************************
-	FirstConstTermInFunc.hpp
-	this file belongs to GidL 2.0
-	(c) K.U.Leuven
-************************************/
-
 #ifndef CONSTTERMEXTRACTOR_HPP_
 #define CONSTTERMEXTRACTOR_HPP_
 
-#include <vector>
-#include <cassert>
+#include "common.hpp"
 #include "fobdds/FoBddVisitor.hpp"
 #include "fobdds/FoBddManager.hpp"
 #include "fobdds/FoBddTerm.hpp"
@@ -38,7 +31,7 @@ public:
 	}
 	void visit(const FOBDDFuncTerm* ft) {
 		if (isBddDomainTerm(ft->args(0))) {
-			assert(not isBddDomainTerm(ft->args(1)));
+			Assert(not isBddDomainTerm(ft->args(1)));
 			_result = getBddDomainTerm(ft->args(0));
 		}
 	}

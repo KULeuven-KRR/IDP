@@ -1,7 +1,4 @@
-#include <vector>
-#include <cassert>
-#include <iostream>
-
+#include "common.hpp"
 #include "theorytransformations/GraphFunctions.hpp"
 #include "theorytransformations/SplitComparisonChains.hpp"
 

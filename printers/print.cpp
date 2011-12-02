@@ -23,7 +23,7 @@ Printer* Printer::create(Options* opts, Stream& stream) {
 		case Language::TPTP:
 			return new TPTPPrinter<Stream>(false, stream);
 		default:
-			assert(false);
+			Assert(false);
 			return NULL;
 	}
 }

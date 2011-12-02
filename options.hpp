@@ -1,19 +1,7 @@
-/************************************
-	options.hpp
-	this file belongs to GidL 2.0
-	(c) K.U.Leuven
-************************************/
-
 #ifndef OPTIONS_HPP
 #define OPTIONS_HPP
 
-#include <string>
-#include <vector>
-#include <string>
-#include <cassert>
-#include <map>
-#include <sstream>
-#include <set>
+#include "common.hpp"
 #include "parseinfo.hpp"
 
 // TODO enum class does not yet support comparison operators in 4.4.3
@@ -64,7 +52,7 @@ public:
 
 	const ConcreteType&	getValue() const { return chosenvalue_; }
 	void setValue(const ConcreteType& chosenvalue){
-		assert(isAllowedValue(chosenvalue));
+		Assert(isAllowedValue(chosenvalue));
 		chosenvalue_ = chosenvalue;
 	}
 };
@@ -125,14 +113,14 @@ public:
 		return _name2type.find(name)!=_name2type.cend();
 	}
 	ValueType getValue(const std::string& name) const{
-		assert(isOption(name));
+		Assert(isOption(name));
 		return _options.at(_name2type.at(name))->getValue();
 	}
 	ValueType getValue(EnumType option) const{
 		return _options.at(option)->getValue();
 	}
 	void setStrValue(const std::string& name, const ValueType& value){
-		assert(isOption(name));
+		Assert(isOption(name));
 		_options.at(_name2type.at(name))->setValue(value);
 	}
 	void setValue(EnumType type, const ValueType& value){

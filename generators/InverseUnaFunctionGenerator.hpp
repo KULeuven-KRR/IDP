@@ -2,7 +2,7 @@
 #define INVUNAGENERATOR_HPP_
 
 #include "generators/InstGenerator.hpp"
-#include <cassert>
+#include "common.hpp"
 
 class InverseUNAFuncGenerator: public InstGenerator {
 private:
@@ -47,11 +47,11 @@ public:
 	void next(){
 		if(_reset){
 			_reset = false;
-			assert(_resvar->get()->type() == DET_COMPOUND);
+			Assert(_resvar->get()->type() == DET_COMPOUND);
 			const Compound* c = _resvar->get()->value()._compound;
 #ifdef DEBUG
 			for (uint n = 0; n < _inpos.size(); ++n) {
-				assert(_invars[n]->get()==c->arg(_inpos[n]));
+				Assert(_invars[n]->get()==c->arg(_inpos[n]));
 			}
 #endif
 			for (uint n = 0; n < _outpos.size(); ++n) {

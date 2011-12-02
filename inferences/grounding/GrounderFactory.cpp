@@ -59,7 +59,7 @@ GrounderFactory::GrounderFactory(AbstractStructure* structure, GenerateBDDAccord
 				_options->getValue(IntType::GROUNDVERBOSITY)), _cpsupport(_options->getValue(BoolType::CPSUPPORT)), _longnames(
 				_options->getValue(BoolType::LONGNAMES)) {
 
-	assert(_symstructure!=NULL);
+	Assert(_symstructure!=NULL);
 
 	// Create a symbolic structure if no such structure is given
 	if (_verbosity > 2) {
@@ -429,7 +429,7 @@ void GrounderFactory::visit(const PredForm* pf) {
 		} else if (name == "</2") {
 			comp = isPos(pf->sign()) ? CompType::LT : CompType::GEQ;
 		} else {
-			assert(name == ">/2");
+			Assert(name == ">/2");
 			comp = isPos(pf->sign()) ? CompType::GT : CompType::LEQ;
 		}
 
@@ -577,7 +577,7 @@ void GrounderFactory::visit(const BoolForm* bf) {
 
 const DomElemContainer* GrounderFactory::createVarMapping(Variable * const var) {
 	const DomElemContainer* d = new DomElemContainer();
-	assert(varmapping().find(var)==varmapping().cend());
+	Assert(varmapping().find(var)==varmapping().cend());
 	_varmapping[var] = d;
 	return d;
 }
@@ -787,7 +787,7 @@ void GrounderFactory::visit(const AggForm* af) {
 		// Create grounder for the set
 		SaveContext();
 		if (recursive(newaf)) {
-			assert(FormulaUtils::isMonotone(newaf) || FormulaUtils::isAntimonotone(newaf));
+			Assert(FormulaUtils::isMonotone(newaf) || FormulaUtils::isAntimonotone(newaf));
 		}
 		DeeperContext((not FormulaUtils::isAntimonotone(newaf)) ? SIGN::POS : SIGN::NEG);
 		descend(newaf->right()->set());
@@ -827,7 +827,7 @@ void GrounderFactory::visit(const VarTerm* t) {
 	_context._conjunctivePathFromRoot = _context._conjPathUntilNode;
 	_context._conjPathUntilNode = false;
 
-	assert(varmapping().find(t->var()) != varmapping().cend());
+	Assert(varmapping().find(t->var()) != varmapping().cend());
 	_termgrounder = new VarTermGrounder(varmapping().find(t->var())->second);
 	_termgrounder->setOrig(t, varmapping(), _verbosity);
 }
@@ -928,7 +928,7 @@ GrounderFactory::GenAndChecker GrounderFactory::createVarsAndGenerators(Formula*
 
 	for (auto it = subformula->freeVars().cbegin(); it != subformula->freeVars().cend(); ++it) {
 		if (orig->quantVars().find(*it) == orig->quantVars().cend()) { // It is a free var of the quantified formula
-			assert(_varmapping.find(*it) != _varmapping.cend());
+			Assert(_varmapping.find(*it) != _varmapping.cend());
 			// So should already have a varmapping
 			vars.push_back(_varmapping[*it]);
 			pattern.push_back(Pattern::INPUT);
@@ -1084,7 +1084,7 @@ void GrounderFactory::visit(const Rule* rule) {
 	InstGenerator *headgen = NULL, *bodygen = NULL;
 
 	if (_options->getValue(BoolType::GROUNDLAZILY)) {
-		assert(sametypeid<SolverTheory>(*_grounding));
+		Assert(sametypeid<SolverTheory>(*_grounding));
 		// TODO resolve this in a clean way
 		// for lazy ground rules, need a generator which generates bodies given a head, so only vars not occurring in the head!
 		varlist bodyvars;

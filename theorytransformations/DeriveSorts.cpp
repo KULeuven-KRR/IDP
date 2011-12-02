@@ -1,12 +1,4 @@
-/************************************
-	DeriveSorts.cpp
-	this file belongs to GidL 2.0
-	(c) K.U.Leuven
-************************************/
-
-#include <vector>
-#include <cassert>
-
+#include "common.hpp"
 #include "theorytransformations/DeriveSorts.hpp"
 
 #include "vocabulary.hpp"
@@ -147,7 +139,7 @@ void DeriveSorts::derivesorts() {
 					s = *((*it).second.cbegin());
 					break;
 				}
-			}assert(s);
+			}Assert(s);
 			if ((*it).second.size() > 1 || s->builtin()) { // Warning when the sort was resolved or builtin
 				Warning::derivevarsort(it->first->name(), s->name(), (*it).first->pi());
 			}
@@ -270,7 +262,7 @@ void DeriveSorts::deriveSorts(Rule* r) {
 
 void DeriveSorts::check() {
 	for (auto it = _untyped.cbegin(); it != _untyped.cend(); ++it) {
-		assert((it->second).empty());
+		Assert((it->second).empty());
 		Error::novarsort(it->first->name(), it->first->pi());
 	}
 	for (auto it = _overloadedatoms.cbegin(); it != _overloadedatoms.cend(); ++it) {

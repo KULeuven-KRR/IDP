@@ -169,14 +169,29 @@ Stream& operator<<(Stream& output, const CompType& type) {
 std::string* StringPointer(const char* str); //!< Returns a shared pointer to the given string
 std::string* StringPointer(const std::string& str); //!< Returns a shared pointer to the given string
 
-class CannotCompareTypeIDofPointers {
-};
-
 template<class T2, class T>
 bool sametypeid(const T& object) {
-	LOKI_STATIC_CHECK(not Loki::TypeTraits<T>::isPointer, InvalidTypeIDCheck);
-	LOKI_STATIC_CHECK(not Loki::TypeTraits<T2>::isPointer, InvalidTypeIDCheck);
+	LOKI_STATIC_CHECK(not Loki::TypeTraits<T>::isPointer, CannotCompareTypeIDofPointers);
+	LOKI_STATIC_CHECK(not Loki::TypeTraits<T2>::isPointer, CannotCompareTypeIDofPointers);
 	return typeid(object) == typeid(T2);
 }
+
+#ifdef DEBUG
+template<typename T>
+class AssertionException{
+	const char* what(){
+		return typeid(T).name();
+	}
+};
+template<typename T>
+inline void AssertCall(T test){
+	if(not test){
+		throw AssertionException<T>();
+	}
+}
+#define Assert(x) (AssertCall(x))
+#else
+#define Assert(x) do {} while(0)
+#endif
 
 #endif

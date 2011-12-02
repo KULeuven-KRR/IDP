@@ -56,7 +56,7 @@ public:
 	}
 
 	void visit(const AbstractStructure*) {
-		assert(false);
+		Assert(false);
 	}
 
 	void visit(const Vocabulary* v) {
@@ -357,7 +357,7 @@ public:
 
 	void visit(const FuncTerm*) {
 		// Functions have been replaced by predicates
-		assert(false);
+		Assert(false);
 	}
 
 	void visit(const DomainTerm* t) {

@@ -1,12 +1,4 @@
-/************************************
-  	GraphAggregates.cpp
-	this file belongs to GidL 2.0
-	(c) K.U.Leuven
-************************************/
-
-#include <vector>
-#include <cassert>
-
+#include "common.hpp"
 #include "theorytransformations/GraphAggregates.hpp"
 #include "theorytransformations/SplitComparisonChains.hpp"
 
@@ -35,7 +27,7 @@ Formula* GraphAggregates::visit(PredForm* pf) {
 				comparison = CompType::GEQ;
 			}
 		} else {
-			assert(pf->symbol()->name() == ">/2");
+			Assert(pf->symbol()->name() == ">/2");
 			if (isPos(pf->sign())) {
 				comparison = CompType::GT;
 			} else {

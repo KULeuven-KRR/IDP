@@ -94,11 +94,11 @@ public:
 		return isStored(atom) && getType(atom) == AtomType::INPUT;
 	}
 	PFSymbol* getSymbol(int atom) const {
-		assert(isInputAtom(atom) && atom2Tuple[atom]->symbol!=NULL);
+		Assert(isInputAtom(atom) && atom2Tuple[atom]->symbol!=NULL);
 		return atom2Tuple[atom]->symbol;
 	}
 	const ElementTuple& getArgs(int atom) const {
-		assert(isInputAtom(atom) && atom2Tuple[atom]->symbol!=NULL);
+		Assert(isInputAtom(atom) && atom2Tuple[atom]->symbol!=NULL);
 		return atom2Tuple[atom]->tuple;
 	}
 
@@ -106,7 +106,7 @@ public:
 		return isStored(atom) && getType(atom) == AtomType::TSEITINWITHSUBFORMULA;
 	}
 	TsBody* getTsBody(int atom) const {
-		assert(isTseitinWithSubformula(atom));
+		Assert(isTseitinWithSubformula(atom));
 		return atom2TsBody[atom].second;
 	}
 
@@ -119,11 +119,11 @@ public:
 	}
 
 	const TsSet& groundset(int setID) const {
-		assert(isSet(setID));
+		Assert(isSet(setID));
 		return _sets[setID];
 	}
 	TsSet& groundset(int setID) {
-		assert(isSet(setID));
+		Assert(isSet(setID));
 		return _sets[setID];
 	}
 
@@ -134,11 +134,11 @@ public:
 		return symbols.size();
 	}
 	PFSymbol* getManagedSymbol(uint n) const {
-		assert(isManagingSymbol(n));
+		Assert(isManagingSymbol(n));
 		return symbols[n].symbol;
 	}
 	const Tuple2AtomMap& getTuples(uint n) const {
-		assert(isManagingSymbol(n));
+		Assert(isManagingSymbol(n));
 		return symbols[n].tuple2atom;
 	}
 

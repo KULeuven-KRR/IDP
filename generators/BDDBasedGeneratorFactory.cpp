@@ -1,6 +1,4 @@
-#include <cassert>
-#include <iostream>
-
+#include "common.hpp"
 #include "term.hpp"
 #include "vocabulary.hpp"
 #include "structure.hpp"
@@ -34,8 +32,8 @@ using namespace std;
 Term* solve(FOBDDManager& manager, PredForm* atom, Variable* var) {
 	FOBDDFactory factory(&manager);
 	auto bdd = factory.run(atom);
-	assert(not manager.isTruebdd(bdd));
-	assert(not manager.isFalsebdd(bdd));
+	Assert(not manager.isTruebdd(bdd));
+	Assert(not manager.isFalsebdd(bdd));
 	auto kernel = bdd->kernel();
 	auto arg = manager.getVariable(var);
 	auto rewrittenarg = manager.solve(kernel, arg);
@@ -77,7 +75,7 @@ void extractFirstOccurringOutputs(const BddGeneratorData& data, const vector<uns
 }
 
 InstGenerator* BDDToGenerator::create(const BddGeneratorData& data) {
-	assert(data.check());
+	Assert(data.check());
 	vector<unsigned int> firstocc = detectDoubleOccurences(data.vars);
 
 	if (data.bdd == _manager->falsebdd()) {
@@ -95,7 +93,7 @@ InstGenerator* BDDToGenerator::create(const BddGeneratorData& data) {
 }
 
 GeneratorNode* BDDToGenerator::createnode(const BddGeneratorData& data) {
-	assert(data.check());
+	Assert(data.check());
 	vector<unsigned int> firstocc = detectDoubleOccurences(data.vars);
 
 	if (data.bdd == _manager->falsebdd()) {
@@ -249,7 +247,7 @@ InstGenerator* BDDToGenerator::createFromPredForm(PredForm* atom, const vector<P
 
 			// TODO review what this does exactly
 			if(sametypeid<DomainTerm>(*(atom->subterms()[0]))){ // Case (B) or (D)
-				assert(sametypeid<FuncTerm>(*(atom->subterms()[1])));
+				Assert(sametypeid<FuncTerm>(*(atom->subterms()[1])));
 				auto ft = dynamic_cast<FuncTerm*>(atom->subterms()[1]);
 				if (SortUtils::resolve(ft->sort(), VocabularyUtils::floatsort()) && (ft->function()->name() == "*/2" || ft->function()->name() == "+/2")) { // Case (D)
 					atom = removeSumChain(atom, ft, atom->subterms()[0], pattern, atomvars, _manager);
@@ -257,7 +255,7 @@ InstGenerator* BDDToGenerator::createFromPredForm(PredForm* atom, const vector<P
 					atom = graphFunction(atom, ft, atom->subterms()[0]);
 				}
 			} else if (sametypeid<DomainTerm>(*(atom->subterms()[1]))) { // Case (A) or (C)
-				assert(sametypeid<FuncTerm>(*(atom->subterms()[0])));
+				Assert(sametypeid<FuncTerm>(*(atom->subterms()[0])));
 				auto ft = dynamic_cast<FuncTerm*>(atom->subterms()[0]);
 				if (SortUtils::resolve(ft->sort(), VocabularyUtils::floatsort()) && (ft->function()->name() == "*/2" || ft->function()->name() == "+/2")) { // Case (C)
 					atom = removeSumChain(atom, ft, atom->subterms()[1], pattern, atomvars, _manager);
@@ -274,7 +272,7 @@ InstGenerator* BDDToGenerator::createFromPredForm(PredForm* atom, const vector<P
 		}
 
 		// NOTE should now have a predicate formula which is allinput or does not contain equality
-		//assert(allinput || atom->symbol()->name() != "=/2");
+		//Assert(allinput || atom->symbol()->name() != "=/2");
 		//cerr <<"Allinput: " <<(allinput?"true":"false") <<"\n";
 		//cerr <<"Atom: "; atom->put(cerr); cerr <<"\n";
 	}
@@ -291,11 +289,11 @@ InstGenerator* BDDToGenerator::createFromPredForm(PredForm* atom, const vector<P
 			thrownotyetimplemented("Creating a bdd in which unnesting does not introduce quantifiers.");
 		}
 		QuantForm* quantform = dynamic_cast<QuantForm*>(newform);
-		assert(sametypeid<BoolForm>(*(quantform->subformula())));
+		Assert(sametypeid<BoolForm>(*(quantform->subformula())));
 		BoolForm* boolform = dynamic_cast<BoolForm*>(quantform->subformula());vector
 		<PredForm*> conjunction;
 		for (auto it = boolform->subformulas().cbegin(); it != boolform->subformulas().cend(); ++it) {
-			assert(typeid(*(*it)) == typeid(PredForm));
+			Assert(typeid(*(*it)) == typeid(PredForm));
 			conjunction.push_back(dynamic_cast<PredForm*>(*it));
 		}
 		PredForm* origatom = conjunction.back();
@@ -395,14 +393,14 @@ InstGenerator* BDDToGenerator::createFromPredForm(PredForm* atom, const vector<P
 		}
 	}
 
-	assert(not FormulaUtils::containsFuncTerms(atom) && not FormulaUtils::containsAggTerms(atom));
+	Assert(not FormulaUtils::containsFuncTerms(atom) && not FormulaUtils::containsAggTerms(atom));
 
 	// Create the pattern for an atom with only Var and DomainTerms.
 	vector<Pattern> atompattern;
 	vector<const DomElemContainer*> datomvars;
 	vector<SortTable*> atomtables;
 	for (auto it = atom->subterms().cbegin(); it != atom->subterms().cend(); ++it) {
-		assert(sametypeid<VarTerm>(**it) || sametypeid<DomainTerm>(**it));
+		Assert(sametypeid<VarTerm>(**it) || sametypeid<DomainTerm>(**it));
 		if (typeid(*(*it)) == typeid(VarTerm)) {
 			auto var = (dynamic_cast<VarTerm*>(*it))->var();
 
@@ -413,7 +411,7 @@ InstGenerator* BDDToGenerator::createFromPredForm(PredForm* atom, const vector<P
 					break;
 				}
 			}
-			assert(pos < pattern.size());
+			Assert(pos < pattern.size());
 			atompattern.push_back(pattern[pos]);
 			datomvars.push_back(vars[pos]);
 			atomtables.push_back(universe.tables()[pos]);
@@ -431,9 +429,9 @@ InstGenerator* BDDToGenerator::createFromPredForm(PredForm* atom, const vector<P
 				if(sametypeid<VarTerm>(**it) && dynamic_cast<VarTerm*>(*it)->var()==var) {
 					found = true;
 				}
-				assert((*it)!=domterm);
+				Assert((*it)!=domterm);
 			}
-			assert(found);
+			Assert(found);
 #endif
 
 			vector<Pattern> termpattern(pattern);
@@ -462,7 +460,7 @@ InstGenerator* BDDToGenerator::createFromKernel(const FOBDDKernel* kernel, const
 
 		if (_manager->containsFuncTerms(atom)) {
 			auto atomform = _manager->toFormula(atom);
-			assert(typeid(*atomform) == typeid(PredForm));
+			Assert(typeid(*atomform) == typeid(PredForm));
 			auto pf = dynamic_cast<PredForm*>(atomform);
 			vector<Variable*> atomvars;
 			for (auto it = origkernelvars.cbegin(); it != origkernelvars.cend(); ++it) {
@@ -491,7 +489,7 @@ InstGenerator* BDDToGenerator::createFromKernel(const FOBDDKernel* kernel, const
 			auto termvar = new Variable(domterm->sort());
 			auto bddtermvar = _manager->getVariable(termvar);
 			auto termkernel = _manager->substitute(kernel, domterm, bddtermvar); // NOTE: should not introduce quantifications!
-			assert(sametypeid<FOBDDAtomKernel>(*termkernel));
+			Assert(sametypeid<FOBDDAtomKernel>(*termkernel));
 
 			newpattern.push_back(Pattern::INPUT);
 			newvars.push_back(domelement);
@@ -508,7 +506,7 @@ InstGenerator* BDDToGenerator::createFromKernel(const FOBDDKernel* kernel, const
 		vector<SortTable*> atomtables;
 		for (auto it = atom->args().cbegin(); it != atom->args().cend(); ++it) {
 			// An atomkernel without functerms can only have variables and domainterms (and the last have been removed)
-			assert(sametypeid<FOBDDVariable>(**it));
+			Assert(sametypeid<FOBDDVariable>(**it));
 			auto var = dynamic_cast<const FOBDDVariable*>(*it);
 			unsigned int pos = 0;
 			for (; pos < newkernelvars.size(); ++pos) {
@@ -517,7 +515,7 @@ InstGenerator* BDDToGenerator::createFromKernel(const FOBDDKernel* kernel, const
 				}
 			}
 
-			assert(pos < newkernelvars.size());
+			Assert(pos < newkernelvars.size());
 			// Each variable in the atomkernel should occur in kernelvars
 			atompattern.push_back(newpattern[pos]);
 			atomvars.push_back(newvars[pos]);
@@ -530,7 +528,7 @@ InstGenerator* BDDToGenerator::createFromKernel(const FOBDDKernel* kernel, const
 		if (sametypeid<Predicate>(*symbol)) {
 			inter = structure->inter(dynamic_cast<Predicate*>(symbol));
 		} else {
-			assert(sametypeid<Function>(*symbol));
+			Assert(sametypeid<Function>(*symbol));
 			inter = structure->inter(dynamic_cast<Function*>(symbol))->graphInter();
 		}
 		const PredTable* table = 0;
@@ -549,7 +547,7 @@ InstGenerator* BDDToGenerator::createFromKernel(const FOBDDKernel* kernel, const
 	}
 
 	// Quantification kernel
-	assert(sametypeid<FOBDDQuantKernel>(*kernel));
+	Assert(sametypeid<FOBDDQuantKernel>(*kernel));
 	auto quantkernel = dynamic_cast<const FOBDDQuantKernel*>(kernel);
 
 	BddGeneratorData quantdata;

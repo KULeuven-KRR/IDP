@@ -98,7 +98,7 @@ Lit AtomGrounder::run() const {
 		}
 	}
 
-	assert(alldomelts);
+	Assert(alldomelts);
 	// If P(t) and (not isCPSymbol(P)) and isCPSymbol(t) then it should have been rewritten, right?
 
 	// Run instance checkers
@@ -159,20 +159,20 @@ int ComparisonGrounder::run() const {
 			CPBound rightbound(right._varid);
 			return translator()->translate(leftterm, _comparator, rightbound, TsType::EQ); //TODO use _context._tseitin?
 		} else {
-			assert(not right.isVariable);
+			Assert(not right.isVariable);
 			int rightvalue = right._domelement->value()._int;
 			CPBound rightbound(rightvalue);
 			return translator()->translate(leftterm, _comparator, rightbound, TsType::EQ); //TODO use _context._tseitin?
 		}
 	} else {
-		assert(not left.isVariable);
+		Assert(not left.isVariable);
 		int leftvalue = left._domelement->value()._int;
 		if (right.isVariable) {
 			CPTerm* rightterm = new CPVarTerm(right._varid);
 			CPBound leftbound(leftvalue);
 			return translator()->translate(rightterm, invertComp(_comparator), leftbound, TsType::EQ); //TODO use _context._tseitin?
 		} else {
-			assert(not right.isVariable);
+			Assert(not right.isVariable);
 			int rightvalue = right._domelement->value()._int;
 			switch (_comparator) {
 			case CompType::EQ:
@@ -371,7 +371,7 @@ int AggGrounder::run() const {
 	// Run subgrounders
 	int setnr = _setgrounder->run();
 	const GroundTerm& groundbound = _boundgrounder->run();
-	assert(not groundbound.isVariable);
+	Assert(not groundbound.isVariable);
 
 	const DomainElement* bound = groundbound._domelement;
 
@@ -619,7 +619,7 @@ void QuantGrounder::run(ConjOrDisj& formula, bool negated) const {
 }
 
 void EquivGrounder::run(ConjOrDisj& formula, bool negated) const {
-	assert(not negated);
+	Assert(not negated);
 	if (verbosity() > 2)
 		printorig();
 
@@ -627,8 +627,8 @@ void EquivGrounder::run(ConjOrDisj& formula, bool negated) const {
 	ConjOrDisj leftformula, rightformula;
 	runSubGrounder(_leftgrounder, false, leftformula, false);
 	runSubGrounder(_rightgrounder, false, rightformula, false);
-	assert(leftformula.literals.size()==1);
-	assert(rightformula.literals.size()==1);
+	Assert(leftformula.literals.size()==1);
+	Assert(rightformula.literals.size()==1);
 	Lit left = leftformula.literals[0];
 	Lit right = rightformula.literals[0];
 

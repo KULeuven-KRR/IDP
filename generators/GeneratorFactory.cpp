@@ -30,7 +30,7 @@
 using namespace std;
 
 InstGenerator* GeneratorFactory::create(const vector<const DomElemContainer*>& vars, const vector<SortTable*>& tabs) {
-	assert(vars.size()==tabs.size());
+	Assert(vars.size()==tabs.size());
 	if(vars.size()==0){
 		return new FullGenerator(); // TODO check if this is always correct?
 	}
@@ -85,7 +85,7 @@ InstGenerator* GeneratorFactory::create(const PredForm* atom, AbstractStructure*
 			break;
 		}
 	} else {
-		assert(sametypeid<Function>(*(atom->symbol())));
+		Assert(sametypeid<Function>(*(atom->symbol())));
 		auto inter = structure->inter(dynamic_cast<Function*>(symbol))->graphInter();
 		table = inverse ? inter->cf() : inter->ct();
 	}
@@ -95,9 +95,9 @@ InstGenerator* GeneratorFactory::create(const PredForm* atom, AbstractStructure*
 InstGenerator* GeneratorFactory::internalCreate(const PredTable* pt, vector<Pattern> pattern, const vector<const DomElemContainer*>& vars,
 		const Universe& universe) {
 
-	assert(pt->arity()==pattern.size());
-	assert(pattern.size()==vars.size());
-	assert(pattern.size()==universe.tables().size());
+	Assert(pt->arity()==pattern.size());
+	Assert(pattern.size()==vars.size());
+	Assert(pattern.size()==universe.tables().size());
 
 	_table = pt;
 	_pattern = pattern;
@@ -461,12 +461,12 @@ void GeneratorFactory::visit(const ModInternalFuncTable*) {
 }
 
 void GeneratorFactory::visit(const AbsInternalFuncTable* aift) {
-	assert(_pattern[0]==Pattern::OUTPUT);
+	Assert(_pattern[0]==Pattern::OUTPUT);
 	_generator = new InverseAbsValueGenerator(_vars[1], _vars[0], _universe.tables()[0], aift->getType());
 }
 
 void GeneratorFactory::visit(const UminInternalFuncTable* uift) {
-	assert(_pattern[0]==Pattern::OUTPUT);
+	Assert(_pattern[0]==Pattern::OUTPUT);
 	_generator = new InvertNumericGenerator(_vars[1], _vars[0], _universe.tables()[0], uift->getType());
 }
 

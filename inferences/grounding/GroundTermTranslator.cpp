@@ -38,7 +38,7 @@ VarId GroundTermTranslator::translate(const DomainElement* element) {
 	// Create a new CP variable term
 	CPVarTerm* cpterm = new CPVarTerm(varid);
 	// Create a new CP bound based on the domain element
-	assert(element->type() == DET_INT);
+	Assert(element->type() == DET_INT);
 	CPBound bound(element->value()._int);
 	// Add a new CP constraint
 	CPTsBody* cprelation = new CPTsBody(TsType::EQ, cpterm, CompType::EQ, bound);

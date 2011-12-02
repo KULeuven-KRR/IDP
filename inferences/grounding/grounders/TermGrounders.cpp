@@ -60,7 +60,7 @@ GroundTerm FuncTermGrounder::run() const {
 		if(groundsubterms[n].isVariable) {
 			calculable = false;
 		} else {
-			assert(groundsubterms[n]._domelement!=NULL);
+			Assert(groundsubterms[n]._domelement!=NULL);
 			args[n] = groundsubterms[n]._domelement;
 		}
 	}
@@ -73,7 +73,7 @@ GroundTerm FuncTermGrounder::run() const {
 			return GroundTerm(result);
 		}
 	}
-	// assert(isCPSymbol(_function->symbol())) && some of the ground subterms are CP terms.
+	// Assert(isCPSymbol(_function->symbol())) && some of the ground subterms are CP terms.
 	VarId varid = _termtranslator->translate(_function,groundsubterms);
 	if(_verbosity > 2) {
 		clog << "Result = " << _termtranslator->printTerm(varid, false) << "\n"; // TODO longnames
@@ -149,7 +149,7 @@ GroundTerm SumTermGrounder::run() const {
 			CPTerm* sumterm = createSumTerm(_type,left._varid,right._varid);
 			varid = _termtranslator->translate(sumterm,_domain);
 		} else {
-			assert(not right.isVariable);
+			Assert(not right.isVariable);
 			VarId rightvarid = _termtranslator->translate(right._domelement);
 			// Create tseitin
 			CPTsBody* cpelement = _termtranslator->cprelation(rightvarid);
@@ -160,7 +160,7 @@ GroundTerm SumTermGrounder::run() const {
 			varid = _termtranslator->translate(sumterm,_domain);
 		}
 	} else {
-		assert(not left.isVariable);
+		Assert(not left.isVariable);
 
 		if(right.isVariable) {
 			VarId leftvarid = _termtranslator->translate(left._domelement);
@@ -172,11 +172,11 @@ GroundTerm SumTermGrounder::run() const {
 			CPTerm* sumterm = createSumTerm(_type,leftvarid,right._varid);
 			varid = _termtranslator->translate(sumterm,_domain);
 		} else { // Both subterms are domain elements, so lookup the result in the function table.
-			assert(not right.isVariable);
-			assert(_functable);
+			Assert(not right.isVariable);
+			Assert(_functable);
 			ElementTuple args(2); args[0] = left._domelement; args[1] = right._domelement;
 			const DomainElement* result = (*_functable)[args];
-			assert(result);
+			Assert(result);
 			if(_verbosity > 2) {
 				clog << "Result = " << *result << "\n";
 			}
@@ -204,7 +204,7 @@ GroundTerm AggTermGrounder::run() const {
 	}
 	int setnr = _setgrounder->run();
 	const TsSet& tsset = _translator->groundset(setnr);
-	assert(not tsset.empty());
+	Assert(not tsset.empty());
 	double value = applyAgg(_type,tsset.trueweights());
 	const DomainElement* result = createDomElem(value);
 	if(_verbosity > 2) {

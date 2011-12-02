@@ -1,14 +1,7 @@
-/************************************
-	CombineConstsOfMults.hpp
-	this file belongs to GidL 2.0
-	(c) K.U.Leuven
-************************************/
-
 #ifndef TERMADDER_HPP_
 #define TERMADDER_HPP_
 
-#include <vector>
-#include <cassert>
+#include "common.hpp"
 #include "fobdds/FoBddVisitor.hpp"
 #include "fobdds/FoBddManager.hpp"
 #include "fobdds/FoBddFuncTerm.hpp"
@@ -51,12 +44,12 @@ public:
 				auto mult = Vocabulary::std()->func("*/2");
 				auto multsort = SortUtils::resolve(addterm->sort(), leftncte->sort());
 				mult = mult->disambiguate(std::vector<Sort*>(3, multsort), NULL);
-				assert(mult!=NULL);
+				Assert(mult!=NULL);
 				auto newterm = _manager->getFuncTerm(mult, {addterm, leftncte});
 				auto plus = Vocabulary::std()->func("+/2");
 				auto plussort = SortUtils::resolve(newterm->sort(), rightterm->args(1)->sort());
 				plus = plus->disambiguate(std::vector<Sort*>(3, plussort), NULL);
-				assert(plus!=NULL);
+				Assert(plus!=NULL);
 				auto addbddterm = _manager->getFuncTerm(plus, {newterm,rightterm->args(1)});
 				return addbddterm->acceptchange(this);
 			}
@@ -71,7 +64,7 @@ public:
 			auto mult = Vocabulary::std()->func("*/2");
 			auto multsort = SortUtils::resolve(addterm->sort(), leftncte->sort());
 			mult = mult->disambiguate(std::vector<Sort*>(3, multsort), NULL);
-			assert(mult!=NULL);
+			Assert(mult!=NULL);
 			return _manager->getFuncTerm(mult, {addterm, leftncte});
 		}
 

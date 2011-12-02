@@ -1,14 +1,7 @@
-/************************************
-	RemoveMinus.hpp
-	this file belongs to GidL 2.0
-	(c) K.U.Leuven
-************************************/
-
 #ifndef REMOVEMINUS_HPP_
 #define REMOVEMINUS_HPP_
 
-#include <vector>
-#include <cassert>
+#include "common.hpp"
 #include "fobdds/FoBddVisitor.hpp"
 #include "fobdds/FoBddManager.hpp"
 #include "fobdds/FoBddFuncTerm.hpp"
@@ -28,7 +21,7 @@ public:
 	const FOBDDArgument* rewriteBinaryMinus(const FOBDDFuncTerm *& functerm) {
 		auto plus = Vocabulary::std()->func("+/2");
 		plus = plus->disambiguate(functerm->func()->sorts(), NULL);
-		assert(plus!=NULL);
+		Assert(plus!=NULL);
 		auto rhs = functerm->args(1);
 		auto minusoneterm = _manager->getDomainTerm(rhs->sort(), createDomElem(-1));
 		auto times = Vocabulary::std()->func("*/2");

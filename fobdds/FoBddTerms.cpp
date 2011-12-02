@@ -1,5 +1,4 @@
-#include <cassert>
-#include <vector>
+#include "common.hpp"
 #include "fobdds/FoBddIndex.hpp"
 #include "fobdds/FoBddFuncTerm.hpp"
 #include "fobdds/FoBddDomainTerm.hpp"
@@ -49,7 +48,7 @@ const FOBDDDomainTerm* add(FOBDDManager* manager, const FOBDDDomainTerm* d1, con
 	auto addsort = SortUtils::resolve(d1->sort(), d2->sort());
 	auto addfunc = Vocabulary::std()->func("+/2");
 	addfunc = addfunc->disambiguate(std::vector<Sort*>(3, addsort), NULL);
-	assert(addfunc!=NULL);
+	Assert(addfunc!=NULL);
 	auto inter = addfunc->interpretation(NULL);
 	auto result = inter->funcTable()->operator[]({d1->value(), d2->value()});
 	return manager->getDomainTerm(addsort, result);

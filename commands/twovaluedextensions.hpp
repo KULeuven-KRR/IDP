@@ -16,7 +16,7 @@ public:
 	}
 	TwoValuedExtensionsInference(ArgType type) :
 			Inference("alltwovaluedextensions"), _typeIsTable(type == ArgType::AT_TABLE) {
-		assert(type==ArgType::AT_STRUCTURE||type == ArgType::AT_TABLE);
+		Assert(type==ArgType::AT_STRUCTURE||type == ArgType::AT_TABLE);
 		add(type);
 	}
 

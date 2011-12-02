@@ -1,13 +1,7 @@
-/************************************
-	PlusGenerator.hpp
-	this file belongs to GidL 2.0
-	(c) K.U.Leuven
-************************************/
-
 #ifndef PLUSGENERATOR_HPP_
 #define PLUSGENERATOR_HPP_
 
-#include <cassert>
+#include "common.hpp"
 #include "generators/InstGenerator.hpp"
 
 enum class ARITHRESULT { VALID, INVALID};
@@ -48,10 +42,10 @@ public:
 		}
 		const DomainElement* left = _in1->get();
 		const DomainElement* right = _in2->get();
-		assert(left->type()==right->type());
+		Assert(left->type()==right->type());
 
 		DomainElementType type = left->type();
-		assert(type==DET_INT || type==DET_DOUBLE);
+		Assert(type==DET_INT || type==DET_DOUBLE);
 
 		double result;
 		ARITHRESULT status = doCalculation(getValue(_in1), getValue(_in2), result);
@@ -75,7 +69,7 @@ public:
 private:
 	double getValue(const DomElemContainer* cont) const{
 		auto domelem = cont->get();
-		assert(domelem->type()==DET_DOUBLE || domelem->type()==DET_INT);
+		Assert(domelem->type()==DET_DOUBLE || domelem->type()==DET_INT);
 		if(domelem->type()==DET_DOUBLE){
 			return domelem->value()._double;
 		}else{

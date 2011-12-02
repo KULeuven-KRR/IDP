@@ -214,22 +214,22 @@ void FOPropagatorFactory<Factory, Domain>::visit(const PredForm* pf) {
 	if(symbol->builtin()) {
 		auto it = _propagator->getUpward().find(pf);
 		if(it != _propagator->getUpward().cend()) {
-			assert(it->second!=NULL);
+			Assert(it->second!=NULL);
 			_propagator->setDomain(pf, ThreeValuedDomain<Domain>(_propagator->getFactory(),pf));
 			_propagator->schedule(it->second,UP,true,pf);
 			_propagator->schedule(it->second,UP,false,pf);
 		}
 	}
 	else {
-		assert(_leafconnectors.find(symbol) != _leafconnectors.cend());
+		Assert(_leafconnectors.find(symbol) != _leafconnectors.cend());
 		PredForm* leafconnector = _leafconnectors[symbol];
 		_propagator->addToLeafUpward(leafconnector, pf);
 		LeafConnectData<Domain> lcd;
 		lcd._connector = leafconnector;
 		lcd._equalities = _propagator->getFactory()->trueDomain(leafconnector);
 		for(unsigned int n = 0; n < symbol->sorts().size(); ++n) {
-			assert(typeid(*(pf->subterms()[n])) == typeid(VarTerm));
-			assert(typeid(*(leafconnector->subterms()[n])) == typeid(VarTerm));
+			Assert(typeid(*(pf->subterms()[n])) == typeid(VarTerm));
+			Assert(typeid(*(leafconnector->subterms()[n])) == typeid(VarTerm));
 			Variable* leafvar = *(pf->subterms()[n]->freeVars().cbegin());
 			Variable* connectvar = *(leafconnector->subterms()[n]->freeVars().cbegin());
 			if(lcd._leaftoconnector.find(leafvar) == lcd._leaftoconnector.cend()) {

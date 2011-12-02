@@ -22,14 +22,14 @@ public:
 #ifdef DEBUG
 		for(auto i=_table.cbegin(); i!=_table.cend(); ++i){
 			for(auto j=(*i).second.cbegin(); j<(*i).second.cend(); ++j){
-				assert((*j).size()==out.size());
+				Assert((*j).size()==out.size());
 			}
 		}
 		for(auto i=in.cbegin(); i<in.cend(); ++i){
-			assert(*i != NULL);
+			Assert(*i != NULL);
 		}
 		for(auto i=out.cbegin(); i<out.cend(); ++i){
-			assert(*i != NULL);
+			Assert(*i != NULL);
 		}
 #endif
 	}
@@ -62,7 +62,7 @@ public:
 				return;
 			}
 		}
-		assert(_iter!=_currpos->second.cend());
+		Assert(_iter!=_currpos->second.cend());
 		for(unsigned int n = 0; n < _outvars.size(); ++n) {
 			*(_outvars[n]) = (*_iter)[n];
 		}

@@ -1,15 +1,9 @@
 #ifndef SOLVERTHEORY_HPP_
 #define SOLVERTHEORY_HPP_
 
-#include <string>
-#include <vector>
-#include <map>
-#include <set>
-#include <cassert>
-
-#include "external/ExternalInterface.hpp"
-
+#include "common.hpp"
 #include "ecnf.hpp"
+#include "external/ExternalInterface.hpp"
 
 namespace MinisatID{
  	 class WrappedPCSolver;
@@ -85,8 +79,8 @@ public:
 
 	void polNotifyDefined(const Lit& lit, const ElementTuple& args, std::vector<LazyRuleGrounder*> grounders);
 
-	std::ostream& polPut(std::ostream& s, GroundTranslator*, GroundTermTranslator*, bool)	const { assert(false); return s;	}
-	std::string polToString(GroundTranslator*, GroundTermTranslator*, bool) const { assert(false); return "";		}
+	std::ostream& polPut(std::ostream& s, GroundTranslator*, GroundTermTranslator*, bool)	const { Assert(false); return s;	}
+	std::string polToString(GroundTranslator*, GroundTermTranslator*, bool) const { Assert(false); return "";		}
 
 private:
 	void polAddAggregate(int definitionID, int head, bool lowerbound, int setnr, AggFunction aggtype, TsType sem, double bound);

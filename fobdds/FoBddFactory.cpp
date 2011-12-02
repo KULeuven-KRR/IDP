@@ -1,12 +1,3 @@
-/************************************
- FoBddFactory.cpp
- this file belongs to GidL 2.0
- (c) K.U.Leuven
- ************************************/
-
-#include <cassert>
-#include <iostream>
-
 #include "fobdds/FoBddFactory.hpp"
 #include "fobdds/FoBddManager.hpp"
 #include "fobdds/FoBddVariable.hpp"

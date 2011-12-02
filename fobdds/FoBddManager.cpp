@@ -1,6 +1,3 @@
-#include <cassert>
-#include <iostream>
-
 #include "fobdds/FoBddManager.hpp"
 #include "fobdds/bddvisitors/OrderTerms.hpp"
 #include "fobdds/bddvisitors/TermOccursNested.hpp"
@@ -223,14 +220,14 @@ const FOBDDKernel* FOBDDManager::getAtomKernel(PFSymbol* symbol, AtomKernelType 
 		const FOBDDArgument* leftarg = args[0];
 		const FOBDDArgument* rightarg = args[1];
 		if (VocabularyUtils::isNumeric(rightarg->sort())) {
-			assert(VocabularyUtils::isNumeric(leftarg->sort()));
+			Assert(VocabularyUtils::isNumeric(leftarg->sort()));
 			if (typeid(*rightarg) != typeid(FOBDDDomainTerm) || dynamic_cast<const FOBDDDomainTerm*>(rightarg)->value() != createDomElem(0)) {
 				const DomainElement* zero = createDomElem(0);
 				const FOBDDDomainTerm* zero_term = getDomainTerm(VocabularyUtils::natsort(), zero);
 				const FOBDDArgument* minus_rightarg = invert(rightarg);
 				Function* plus = Vocabulary::std()->func("+/2");
 				plus = plus->disambiguate(vector<Sort*>(3, SortUtils::resolve(leftarg->sort(), rightarg->sort())), 0);
-				assert(plus);
+				Assert(plus);
 				vector<const FOBDDArgument*> plusargs(2);
 				plusargs[0] = leftarg;
 				plusargs[1] = minus_rightarg;
@@ -722,7 +719,7 @@ const FOBDD* FOBDDManager::conjunction(const FOBDD* bdd1, const FOBDD* bdd2) {
 		const FOBDD* truebranch = conjunction(bdd1, bdd2->truebranch());
 		result = getBDD(bdd2->kernel(), truebranch, falsebranch);
 	} else {
-		assert(bdd1->kernel() == bdd2->kernel());
+		Assert(bdd1->kernel() == bdd2->kernel());
 		const FOBDD* falsebranch = conjunction(bdd1->falsebranch(), bdd2->falsebranch());
 		const FOBDD* truebranch = conjunction(bdd1->truebranch(), bdd2->truebranch());
 		result = getBDD(bdd1->kernel(), truebranch, falsebranch);
@@ -769,7 +766,7 @@ const FOBDD* FOBDDManager::disjunction(const FOBDD* bdd1, const FOBDD* bdd2) {
 		const FOBDD* truebranch = disjunction(bdd1, bdd2->truebranch());
 		result = getBDD(bdd2->kernel(), truebranch, falsebranch);
 	} else {
-		assert(bdd1->kernel() == bdd2->kernel());
+		Assert(bdd1->kernel() == bdd2->kernel());
 		const FOBDD* falsebranch = disjunction(bdd1->falsebranch(), bdd2->falsebranch());
 		const FOBDD* truebranch = disjunction(bdd1->truebranch(), bdd2->truebranch());
 		result = getBDD(bdd1->kernel(), truebranch, falsebranch);
@@ -799,7 +796,7 @@ const FOBDD* FOBDDManager::ifthenelse(const FOBDDKernel* kernel, const FOBDD* tr
 		} else if (kernel == falsekernel) {
 			return getBDD(kernel, truebranch, falsebranch->falsebranch());
 		} else {
-			assert(*kernel > *falsekernel);
+			Assert(*kernel > *falsekernel);
 			const FOBDD* newtrue = ifthenelse(kernel, truebranch, falsebranch->truebranch());
 			const FOBDD* newfalse = ifthenelse(kernel, truebranch, falsebranch->falsebranch());
 			return getBDD(falsekernel, newtrue, newfalse);
@@ -810,13 +807,13 @@ const FOBDD* FOBDDManager::ifthenelse(const FOBDDKernel* kernel, const FOBDD* tr
 		} else if (kernel == falsekernel) {
 			return getBDD(kernel, truebranch->truebranch(), falsebranch->falsebranch());
 		} else {
-			assert(*kernel > *falsekernel);
+			Assert(*kernel > *falsekernel);
 			const FOBDD* newtrue = ifthenelse(kernel, truebranch, falsebranch->truebranch());
 			const FOBDD* newfalse = ifthenelse(kernel, truebranch, falsebranch->falsebranch());
 			return getBDD(falsekernel, newtrue, newfalse);
 		}
 	} else {
-		assert(*kernel > *truekernel);
+		Assert(*kernel > *truekernel);
 		if (*kernel < *falsekernel || kernel == falsekernel || *truekernel < *falsekernel) {
 			const FOBDD* newtrue = ifthenelse(kernel, truebranch->truebranch(), falsebranch);
 			const FOBDD* newfalse = ifthenelse(kernel, truebranch->falsebranch(), falsebranch);
@@ -826,7 +823,7 @@ const FOBDD* FOBDDManager::ifthenelse(const FOBDDKernel* kernel, const FOBDD* tr
 			const FOBDD* newfalse = ifthenelse(kernel, truebranch->falsebranch(), falsebranch->falsebranch());
 			return getBDD(truekernel, newtrue, newfalse);
 		} else {
-			assert(*falsekernel < *truekernel);
+			Assert(*falsekernel < *truekernel);
 			const FOBDD* newtrue = ifthenelse(kernel, truebranch, falsebranch->truebranch());
 			const FOBDD* newfalse = ifthenelse(kernel, truebranch, falsebranch->falsebranch());
 			return getBDD(falsekernel, newtrue, newfalse);
@@ -913,7 +910,7 @@ int FOBDDManager::longestbranch(const FOBDDKernel* kernel) {
 	if (typeid(*kernel) == typeid(FOBDDAtomKernel)) {
 		return 1;
 	} else {
-		assert(typeid(*kernel) == typeid(FOBDDQuantKernel));
+		Assert(typeid(*kernel) == typeid(FOBDDQuantKernel));
 		const FOBDDQuantKernel* qk = dynamic_cast<const FOBDDQuantKernel*>(kernel);
 		return longestbranch(qk->bdd()) + 1;
 	}
@@ -1074,7 +1071,7 @@ ostream& FOBDDManager::put(ostream& output, const FOBDDKernel* kernel, unsigned 
 			output << "<ct>";
 		}
 		if (typeid(*symbol) == typeid(Predicate)) {
-			assert(atomkernel->args().size()==symbol->nrSorts());
+			Assert(atomkernel->args().size()==symbol->nrSorts());
 			if (symbol->nrSorts()>0) {
 				output << "(";
 				put(output, atomkernel->args(0));
@@ -1199,7 +1196,7 @@ bool FOBDDManager::contains(const FOBDDKernel* kernel, const FOBDDVariable* v) {
 		}
 		return false;
 	} else {
-		assert(typeid(*kernel) == typeid(FOBDDQuantKernel));
+		Assert(typeid(*kernel) == typeid(FOBDDQuantKernel));
 		const FOBDDQuantKernel* quantkernel = dynamic_cast<const FOBDDQuantKernel*>(kernel);
 		return contains(quantkernel->bdd(), v);
 	}
@@ -1403,7 +1400,7 @@ double FOBDDManager::estimatedChance(const FOBDDKernel* kernel, AbstractStructur
 		}
 		return chance;
 	} else { // case of a quantification kernel
-		assert(typeid(*kernel) == typeid(FOBDDQuantKernel));
+		Assert(typeid(*kernel) == typeid(FOBDDQuantKernel));
 		const FOBDDQuantKernel* quantkernel = dynamic_cast<const FOBDDQuantKernel*>(kernel);
 
 		// get the table of the sort of the quantified variable
@@ -1583,7 +1580,7 @@ double FOBDDManager::estimatedCostAll(bool sign, const FOBDDKernel* kernel, cons
 			if (infinitevar) {
 				if (!solve(kernel, infinitevar)) return maxdouble;
 			} else {
-				assert(infiniteindex);
+				Assert(infiniteindex);
 				if (!solve(kernel, infiniteindex)) return maxdouble;
 			}
 			double result = 1;
@@ -1922,8 +1919,8 @@ const FOBDD* FOBDDManager::make_more_false(const FOBDD* bdd, const set<const FOB
 	 bdd = getBDD(bdd->kernel(),newtrue,newfalse);
 	 if(isFalsebdd(bdd)) return bdd;
 	 else {
-	 assert(!isTruebdd(bdd));
-	 assert(typeid(*(bdd->kernel())) == typeid(FOBDDQuantKernel));
+	 Assert(!isTruebdd(bdd));
+	 Assert(typeid(*(bdd->kernel())) == typeid(FOBDDQuantKernel));
 	 const FOBDDQuantKernel* quantkernel = dynamic_cast<const FOBDDQuantKernel*>(bdd->kernel());
 
 	 set<const FOBDDVariable*> emptyvars;
@@ -2068,8 +2065,8 @@ const FOBDD* FOBDDManager::make_more_true(const FOBDD* bdd, const set<const FOBD
 		 bdd = getBDD(bdd->kernel(),newtrue,newfalse);
 		 if(isTruebdd(bdd)) return bdd;
 		 else {
-		 assert(!isFalsebdd(bdd));
-		 assert(typeid(*(bdd->kernel())) == typeid(FOBDDQuantKernel));
+		 Assert(!isFalsebdd(bdd));
+		 Assert(typeid(*(bdd->kernel())) == typeid(FOBDDQuantKernel));
 		 const FOBDDQuantKernel* quantkernel = dynamic_cast<const FOBDDQuantKernel*>(bdd->kernel());
 
 		 set<const FOBDDVariable*> emptyvars;

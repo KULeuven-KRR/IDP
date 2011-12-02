@@ -64,7 +64,7 @@ namespace Tests{
 
 		data.bdd = bddfactory.run(formula);
 		auto bddset = manager.getVariables({variable});
-		assert(bddset.size()==1);
+		Assert(bddset.size()==1);
 		data.bddvars = vector<const FOBDDVariable*>(bddset.cbegin(), bddset.cend());
 
 		BDDToGenerator genfactory(&manager);
@@ -115,7 +115,7 @@ namespace Tests{
 
 		data.bdd = bddfactory.run(formula);
 		auto bddset = manager.getVariables({variable});
-		assert(bddset.size()==1);
+		Assert(bddset.size()==1);
 		data.bddvars = vector<const FOBDDVariable*>(bddset.cbegin(), bddset.cend());
 
 		BDDToGenerator genfactory(&manager);

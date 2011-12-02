@@ -313,7 +313,7 @@ GenerateBDDAccordingToBounds* TypedFOPropagator<Factory, Domain>::symbolicstruct
 	map<PFSymbol*, vector<const FOBDDVariable*> > vars;
 	map<PFSymbol*, const FOBDD*> ctbounds;
 	map<PFSymbol*, const FOBDD*> cfbounds;
-	assert(typeid(*_factory) == typeid(FOPropBDDDomainFactory));
+	Assert(typeid(*_factory) == typeid(FOPropBDDDomainFactory));
 	FOBDDManager* manager = (dynamic_cast<FOPropBDDDomainFactory*>(_factory))->manager();
 	for (auto it = _leafconnectors.cbegin(); it != _leafconnectors.cend(); ++it) {
 		ThreeValuedDomain<Domain> tvd = (_domains.find(it->second))->second;
@@ -321,7 +321,7 @@ GenerateBDDAccordingToBounds* TypedFOPropagator<Factory, Domain>::symbolicstruct
 		cfbounds[it->first] = dynamic_cast<FOPropBDDDomain*>(tvd._cfdomain)->bdd();
 		vector<const FOBDDVariable*> bddvars;
 		for (auto jt = it->second->subterms().cbegin(); jt != it->second->subterms().cend(); ++jt) {
-			assert(typeid(*(*jt)) == typeid(VarTerm));
+			Assert(typeid(*(*jt)) == typeid(VarTerm));
 			bddvars.push_back(manager->getVariable((dynamic_cast<VarTerm*>(*jt))->var()));
 		}
 		vars[it->first] = bddvars;
@@ -402,7 +402,7 @@ void TypedFOPropagator<Factory, Domain>::schedule(const Formula* p, FOPropDirect
 
 template<class Factory, class Domain>
 void TypedFOPropagator<Factory, Domain>::updateDomain(const Formula* f, FOPropDirection dir, bool ct, Domain* newdomain, const Formula* child) {
-	assert(newdomain!=NULL && f!=NULL && hasDomain(f));
+	Assert(newdomain!=NULL && f!=NULL && hasDomain(f));
 	if (_verbosity > 2) {
 		cerr << "    Derived the following " << (ct ? "ct " : "cf ") << "domain for " << *f << ":\n";
 		_factory->put(cerr, newdomain);
@@ -427,12 +427,12 @@ void TypedFOPropagator<Factory, Domain>::updateDomain(const Formula* f, FOPropDi
 						}
 					}
 				} else {
-					assert(_leafconnectdata.find(pf) != _leafconnectdata.cend());
+					Assert(_leafconnectdata.find(pf) != _leafconnectdata.cend());
 					schedule(pf, DOWN, ct, 0);
 				}
 			}
 		} else {
-			assert(dir == UP);
+			Assert(dir == UP);
 			auto it = _upward.find(f);
 			if (it != _upward.cend()) {
 				schedule(it->second, UP, ct, f);
@@ -463,11 +463,11 @@ bool TypedFOPropagator<Factory, Domain>::admissible(Domain* newd, Domain* oldd) 
 
 template<class Factory, class Domain>
 void TypedFOPropagator<Factory, Domain>::visit(const PredForm* pf) {
-	assert(_leafconnectdata.find(pf) != _leafconnectdata.cend());
-	assert(pf!=NULL);
+	Assert(_leafconnectdata.find(pf) != _leafconnectdata.cend());
+	Assert(pf!=NULL);
 	auto lcd = _leafconnectdata[pf];
 	PredForm* connector = lcd._connector;
-	assert(connector!=NULL);
+	Assert(connector!=NULL);
 	Domain* deriveddomain;
 	Domain* temp;
 	if (_direction == DOWN) {
@@ -490,8 +490,8 @@ void TypedFOPropagator<Factory, Domain>::visit(const PredForm* pf) {
 		 deriveddomain = addToExists(deriveddomain,freevars);*/
 		updateDomain(connector, DOWN, (_ct == isPos(pf->sign())), deriveddomain, pf);
 	} else {
-		assert(_direction == UP);
-		assert(_domains.find(connector) != _domains.cend());
+		Assert(_direction == UP);
+		Assert(_domains.find(connector) != _domains.cend());
 		deriveddomain = _ct ? getDomain(connector)._ctdomain->clone() : getDomain(connector)._cfdomain->clone();
 		// deriveddomain = _factory->conjunction(deriveddomain,lcd->_equalities);
 		temp = deriveddomain;
@@ -519,9 +519,9 @@ void TypedFOPropagator<Factory, Domain>::visit(const EqChainForm*) {
 
 template<class Factory, class Domain>
 void TypedFOPropagator<Factory, Domain>::visit(const EquivForm* ef) {
-	assert(ef!=NULL && ef->left()!=NULL && ef->right()!=NULL);
+	Assert(ef!=NULL && ef->left()!=NULL && ef->right()!=NULL);
 	// FIXME child can be NULL, code should handle this?
-	assert(_child!=NULL);
+	Assert(_child!=NULL);
 
 	Formula* otherchild = (_child == ef->left() ? ef->right() : ef->left());
 	const ThreeValuedDomain<Domain>& tvd = getDomain(otherchild);
@@ -550,11 +550,11 @@ void TypedFOPropagator<Factory, Domain>::visit(const EquivForm* ef) {
 
 template<class Factory, class Domain>
 void TypedFOPropagator<Factory, Domain>::visit(const BoolForm* bf) {
-	assert(bf!=NULL);
+	Assert(bf!=NULL);
 	switch (_direction) {
 	case DOWN: {
 		Domain* bfdomain = _ct ? getDomain(bf)._ctdomain : getDomain(bf)._cfdomain;
-		assert(bfdomain!=NULL);
+		Assert(bfdomain!=NULL);
 		vector<Domain*> subdomains;
 		bool longnewdomain = (_ct != (bf->conj() == isPos(bf->sign())));
 		if (longnewdomain) {
@@ -565,7 +565,7 @@ void TypedFOPropagator<Factory, Domain>::visit(const BoolForm* bf) {
 		}
 		for (size_t n = 0; n < bf->subformulas().size(); ++n) {
 			Formula* subform = bf->subformulas()[n];
-			assert(subform!=NULL);
+			Assert(subform!=NULL);
 			if (_child == NULL || subform == _child) {
 				const ThreeValuedDomain<Domain>& subfdomain = getDomain(subform);
 				if (not subfdomain._twovalued) {
@@ -610,10 +610,10 @@ void TypedFOPropagator<Factory, Domain>::visit(const BoolForm* bf) {
 
 template<class Factory, class Domain>
 void TypedFOPropagator<Factory, Domain>::visit(const QuantForm* qf) {
-	assert(qf!=NULL && qf->subformula()!=NULL);
+	Assert(qf!=NULL && qf->subformula()!=NULL);
 	switch (_direction) {
 	case DOWN: {
-		assert(_domains.find(qf) != _domains.cend());
+		Assert(_domains.find(qf) != _domains.cend());
 		const ThreeValuedDomain<Domain>& tvd = getDomain(qf);
 		Domain* deriveddomain = _ct ? tvd._ctdomain->clone() : tvd._cfdomain->clone();
 		if (_ct != qf->isUnivWithSign()) {

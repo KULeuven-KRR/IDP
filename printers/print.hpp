@@ -75,7 +75,7 @@ public:
 	void checkOrOpen(int defid) {
 		if(!isDefOpen(defid)){
 			_pastopendefs.insert(opendef_);
-			assert(_pastopendefs.find(defid)==_pastopendefs.cend());
+			Assert(_pastopendefs.find(defid)==_pastopendefs.cend());
 		}
 	}
 
