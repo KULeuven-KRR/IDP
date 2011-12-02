@@ -48,7 +48,6 @@ Formula* UnnestThreeValuedTerms::traverse(PredForm* f) {
 	bool savemovecontext = getAllowedToUnnest();
 	if(isNeg(f->sign())) {
 		setContext(not getContext());
-		//FIXME: is this right?
 	}
 	for(size_t n = 0; n < f->subterms().size(); ++n) {
 		if (_cpsupport) {
