@@ -1,0 +1,34 @@
+procedure getExpectedAModel(){
+	return true
+}
+
+/***************
+   Clique 
+***************/
+
+vocabulary V{
+type Vtx
+Edge(Vtx,Vtx)
+SEdge(Vtx,Vtx)
+Clique(Vtx)
+}
+ theory T: V{
+
+// Create symmetric closure of the input graph.
+{ SEdge(x,y) <- Edge(x,y) | Edge(y,x). }
+
+// General theory
+! x y : Clique(x) & Clique(y) => (x = y | SEdge(x,y)).
+
+// Some extra constraints to get nicer models.
+? x : Clique(x).
+! x : ( ! y : Clique(y) => SEdge(x,y)) => Clique(x).
+
+
+
+} 
+
+structure S: V{
+Vtx = {1..8}
+Edge = {1,2; 1,3; 2,3; 2,4; 2,5; 3,5; 3,6; 4,5; 5,6}
+}

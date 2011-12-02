@@ -79,42 +79,42 @@ bool Namespace::isProc(const string& lp) const {
 }
 
 Namespace* Namespace::subspace(const string& sn) const {
-	assert(isSubspace(sn));
+	Assert(isSubspace(sn));
 	return ((_subspaces.find(sn))->second);
 }
 
 Vocabulary* Namespace::vocabulary(const string& vn) const {
-	assert(isVocab(vn));
+	Assert(isVocab(vn));
 	return ((_vocabularies.find(vn))->second);
 }
 
 AbstractTheory* Namespace::theory(const string& tn) const {
-	assert(isTheory(tn));
+	Assert(isTheory(tn));
 	return ((_theories.find(tn))->second);
 }
 
 Query* Namespace::query(const string& fn) const {
-	assert(isQuery(fn));
+	Assert(isQuery(fn));
 	return ((_queries.find(fn))->second);
 }
 
 Term* Namespace::term(const string& tn) const {
-	assert(isTerm(tn));
+	Assert(isTerm(tn));
 	return ((_terms.find(tn))->second);
 }
 
 AbstractStructure* Namespace::structure(const string& sn) const {
-	assert(isStructure(sn));
+	Assert(isStructure(sn));
 	return ((_structures.find(sn))->second);
 }
 
 Options* Namespace::options(const string& on) const {
-	assert(isOptions(on));
+	Assert(isOptions(on));
 	return ((_options.find(on))->second);
 }
 
 UserProcedure* Namespace::procedure(const string& lp) const { 
-	assert(isProc(lp));
+	Assert(isProc(lp));
 	return ((_procedures.find(lp))->second);
 }
 

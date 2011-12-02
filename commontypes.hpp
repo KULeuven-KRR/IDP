@@ -1,14 +1,12 @@
-/************************************
-	commontypes.hpp
-	this file belongs to GidL 2.0
-	(c) K.U.Leuven
-************************************/
-
 #ifndef COMMONTYPES_HPP
 #define COMMONTYPES_HPP
 
 #include <limits>
 #include <vector>
+#include <map>
+#include <set>
+#include <string>
+#include <queue>
 
 /**
  *	\file This file contains some frequently used typedefs and enumerations
@@ -66,6 +64,6 @@ typedef std::vector<Lit> litlist;
 
 // TODO dynamically initialized global: no init order, so cannot safely use in other globals, might be unsafe?
 const Lit _true(std::numeric_limits<int>::max());
-const Lit _false(0);
+const Lit _false(-std::numeric_limits<int>::max());
 
 #endif

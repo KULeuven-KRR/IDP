@@ -70,7 +70,7 @@ public:
 			LuaConnection::convertToLua(_state,ia);
 		}
 		else {
-			lua_pushstring(_state,_translator->printAtom(lit.getAtom().getValue(), false).c_str()); // TODO longnames?
+			lua_pushstring(_state,_translator->printLit(lit.getAtom().getValue(), false).c_str()); // TODO longnames?
 		}
 		lua_setfield(_state,-2,"atom");
 		lua_call(_state,2,0);

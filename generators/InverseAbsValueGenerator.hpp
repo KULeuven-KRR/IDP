@@ -1,15 +1,8 @@
-/************************************
- UminGenerator.hpp
- this file belongs to GidL 2.0
- (c) K.U.Leuven
- ************************************/
-
 #ifndef INVABSGENERATOR_HPP_
 #define INVABSGENERATOR_HPP_
 
 #include "generators/InstGenerator.hpp"
-#include "commontypes.hpp"
-#include <cassert>
+#include "common.hpp"
 
 using namespace std;
 
@@ -67,7 +60,7 @@ private:
 			}
 			*_out = createDomElem(newvalue, _outputShouldBeInt);
 		}else{
-			assert(var->type() == DET_DOUBLE);
+			Assert(var->type() == DET_DOUBLE);
 			double newvalue = var->value()._double;
 			if(negate){
 				newvalue = -newvalue;

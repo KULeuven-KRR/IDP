@@ -1,0 +1,276 @@
+procedure getExpectedAModel(){
+	return true
+}
+
+vocabulary V{
+	type Time isa int
+	type XPos isa int
+	type YPos isa int 
+	type Block
+   Square     (XPos, YPos)
+   Goal       (XPos, YPos)
+   InitManX           : XPos
+   InitManY           : YPos
+   InitBlockX (Block) : XPos
+   InitBlockY (Block) : YPos
+
+	MaxTime : Time
+
+ 
+   Move   (Time) : Block
+   MoveTo (Time,XPos,YPos)
+ 
+   Block     (Time, Block, XPos, YPos)
+   Man       (Time, XPos, YPos)
+   Reachable (Time, XPos, YPos)
+   NoBlock   (Time, XPos, YPos)
+   FreeX     (Time, XPos, XPos, YPos)
+   FreeY     (Time, XPos, YPos, YPos)
+   NextTo    (XPos, YPos, XPos, YPos)
+
+Corner(XPos,YPos)
+}
+
+theory T : V { 
+
+	// neighbour positions
+   {  NextTo(x1,y1,x2,y2) <- abs(x1-x2) + abs(y1-y2) = 1 & Square(x1,y1) & Square(x2,y2).  }
+
+	// free positions at each timestep
+   {  NoBlock(t,x,y) <- Square(x,y) & ~(? b : Block(t,b,x,y)).  }
+   
+	// reachable positions at each timestep
+   {  Reachable(t,x,y) <- Man(t,x,y).
+      Reachable(t,x,y) <- Reachable(t,x1,y1) & NoBlock(t,x,y) & NextTo(x,y,x1,y1).  }
+   
+	// one move per timestep
+   ! t x1 y1 x2 y2 : MoveTo(t,x1,y1) & MoveTo(t,x2,y2) => x1=x2 & y1=y2.
+	! x y : ~MoveTo(MaxTime,x,y).
+
+	// move only to squares
+   ! t x y : MoveTo(t,x,y) => Square(x,y).
+
+	// the block moves over a free line
+   ! t b x y : MoveTo(t,x,y) & Move(t)=b =>
+                  (? y_old : Block(t,b,x,y_old) & FreeY(t,x,y,y_old)) | 
+                  (? x_old : Block(t,b,x_old,y) & FreeX(t,x,x_old,y)).
+                  
+	// the block to be moved must be reachable
+   ! t b x x_old y : MoveTo(t,x,y) & Move(t)=b & Block(t,b,x_old,y) & x<x_old => Reachable(t,x_old+1,y).
+   ! t b x x_old y : MoveTo(t,x,y) & Move(t)=b & Block(t,b,x_old,y) & x>x_old => Reachable(t,x_old-1,y).
+   ! t b x y y_old : MoveTo(t,x,y) & Move(t)=b & Block(t,b,x,y_old) & y<y_old => Reachable(t,x,y_old+1).
+   ! t b x y y_old : MoveTo(t,x,y) & Move(t)=b & Block(t,b,x,y_old) & y>y_old => Reachable(t,x,y_old-1).
+   
+	// free lines
+   {  FreeX(t,x_new,x_old,y) <- x_new < x_old & (! x : x_new =< x & x < x_old => Square(x,y) & NoBlock(t,x,y)).
+      FreeX(t,x_new,x_old,y) <- x_new > x_old & (! x : x_new >= x & x > x_old => Square(x,y) & NoBlock(t,x,y)).  }
+   {  FreeY(t,x,y_new,y_old) <- y_new < y_old & (! y : y_new =< y & y < y_old => Square(x,y) & NoBlock(t,x,y)).
+      FreeY(t,x,y_new,y_old) <- y_new > y_old & (! y : y_new >= y & y > y_old => Square(x,y) & NoBlock(t,x,y)).  }
+   
+	// position of the man and the blocks
+   {  Man(0,InitManX,InitManY).
+      Man(t+1,x+1,y) <- MoveTo(t,x,y) & Move(t)=b & Block(t,b,x_old,y) & x<x_old.
+      Man(t+1,x-1,y) <- MoveTo(t,x,y) & Move(t)=b & Block(t,b,x_old,y) & x>x_old.
+      Man(t+1,x,y+1) <- MoveTo(t,x,y) & Move(t)=b & Block(t,b,x,y_old) & y<y_old.
+      Man(t+1,x,y-1) <- MoveTo(t,x,y) & Move(t)=b & Block(t,b,x,y_old) & y>y_old.
+      
+      Block(0,b,InitBlockX(b),InitBlockY(b)).
+      Block(t+1,b,x,y) <- Move(t)~=b & Block(t,b,x,y).
+		Block(t+1,b,x,y) <- Move(t)=b & Block(t,b,x,y) & ! xx yy : ~MoveTo(t,xx,yy).
+      Block(t+1,b,x,y) <- Move(t)=b & MoveTo(t,x,y).
+   }
+
+	// goal
+	! x y : Goal(x,y) => ? b : Block(MaxTime,b,x,y).
+
+	/** Extra redundant constraints **/
+
+	// A block can never be at two places
+	! t b x1 y1 x2 y2 : Block(t,b,x1,y1) & Block(t,b,x2,y2) => (x1 = x2 & y1 = y2). 
+
+
+	{ Corner(x,y) <- Square(x,y) & ~Square(x+1,y) & ~Square(x,y+1).
+	  Corner(x,y) <- Square(x,y) & ~Square(x+1,y) & ~Square(x,y-1).
+	  Corner(x,y) <- Square(x,y) & ~Square(x-1,y) & ~Square(x,y+1).
+	  Corner(x,y) <- Square(x,y) & ~Square(x-1,y) & ~Square(x,y-1). }
+
+	// Never push a block in a corner that is not a goal
+	! t x y : Corner(x,y) & ~Goal(x,y) & Time(t) => NoBlock(t,x,y).
+
+/*	declare Double(XPos,YPos,XPos,YPos).
+	{ Double(x,y,x+1,y) <- Square(x,y) & Square(x+1,y) & ~Square(x,y+1) & ~Square(x+1,y+1).
+	  Double(x,y,x+1,y) <- Square(x,y) & Square(x+1,y) & ~Square(x,y-1) & ~Square(x+1,y-1).
+	  Double(x,y,x,y+1) <- Square(x,y) & Square(x,y+1) & ~Square(x+1,y) & ~Square(x+1,y+1).
+	  Double(x,y,x,y+1) <- Square(x,y) & Square(x,y+1) & ~Square(x-1,y) & ~Square(x-1,y+1). }
+
+	// Never push two blocks next to each other against a wall
+	! t x1 y1 x2 y2 : Double(x1,y1,x2,y2) & (~Goal(x1,y1) | ~Goal(x2,y2)) & Time(t) => (NoBlock(t,x1,y1) | NoBlock(t,x2,y2)).
+*/
+
+}
+
+structure S : V{ 
+
+
+// KSokoban 3
+
+XPos = {1..4}
+YPos = {1..7}
+Time = {0..8}
+Block = {a;b}
+
+MaxTime = 8
+
+Square = {         1,3;1,4;
+			  2,1;2,2;2,3;2,4;2,5;2,6;2,7; 
+			  3,1;    3,3;3,4;    3,6;3,7; 
+			  4,1;4,2;4,3;4,4;    4,6;4,7 }
+
+Goal = { 4,2; 4,4 }
+
+InitManX = 4
+InitManY = 6
+InitBlockX = {a->3;b->2}
+InitBlockY = {a->6;b->6}
+
+
+// KSokoban 4
+/*XPos = {1..4}
+YPos = {1..6}
+Time = {0..6}
+Block = {a;b;c}
+
+MaxTime = 6
+
+Square = { 1,1;1,2;1,3;1,4;1,5;1,6;
+			  2,1;2,2;2,3;2,4;2,5;2,6; 
+			  3,1;3,2;3,3;3,4;3,5;3,6; 
+			                  4,5;4,6 }
+
+Goal = { 2,2; 2,3; 2,4 }
+
+InitManX = 2
+InitManY = 6
+InitBlockX = {a->2;b->2;c->2}
+InitBlockY = {a->3;b->4;c->5}
+*/
+
+// KSokoban 17 
+/*XPos = {1..5}
+YPos = {1..4}
+Time = {0..7}
+Block = {a;b;c}
+
+MaxTime = 7
+
+Square = { 1,1;1,2;1,3;
+			  2,1;2,2;2,3; 
+			  3,1;3,2;3,3; 
+			  4,1;4,2;4,3;4,4;
+			  5,1;5,2;5,3;5,4 }
+
+Goal = { 2,1; 2,2; 2,3 }
+
+InitManX = 1
+InitManY = 2
+InitBlockX = {a->3;b->3;c->3}
+InitBlockY = {a->1;b->2;c->3}*/
+
+// KSokoban 5
+/*XPos = {1..5}
+YPos = {1..6}
+Time = {0..6}
+Block = {a;b;c;d}
+
+MaxTime = 6
+
+Square = { 1,2;1,3;1,4;1,5;1,6;
+			  2,2;2,3;2,4;2,5;2,6; 
+			  3,2;3,3;3,4;3,5;3,6; 
+			  4,1;4,2;4,3;4,4;4,5;4,6; 
+			  5,1;5,2;5,3;5,4;5,5;5,6 }
+
+Goal = { 2,3; 2,5; 4,3; 4,5 }
+
+InitManX = 3
+InitManY = 4
+InitBlockX = {a->2;b->3;c->3;d->4}
+InitBlockY = {a->4;b->3;c->5;d->4}*/
+
+// Level 9
+/*
+XPos = {1..5}
+YPos = {1..4}
+Time = {0..9}
+Block = {a;b}
+
+MaxTime = 9 
+
+Square = { 1,1;1,2;1,3;
+			  2,1;2,2;2,3;2,4; 
+			      3,2;3,3;3,4; 
+			          4,3;4,4; 
+			              5,4 }
+
+Goal = { 1,1; 5,4 }
+
+InitManX = 2
+InitManY = 1
+InitBlockX = {a->2;b->2}
+InitBlockY = {a->2;b->3}
+*/
+
+// Level 28
+/*
+XPos = {1..5}
+YPos = {1..5}
+Time = {0..7}
+Block = {a;b}
+
+MaxTime = 7
+
+Square = { 1,1;1,2;1,3;    
+			  2,1;2,2;2,3;                 
+			  3,1;3,2;3,3;                 
+			      4,2;4,3;4,4;4,5;         
+			      5,2;5,3;5,4;5,5 }
+
+Goal = { 4,2; 4,4 }
+
+InitManX = 2
+InitManY = 3
+InitBlockX = {a->3;b->3}
+InitBlockY = {a->2;b->3}
+*/
+
+
+
+/*******************************************
+	From the KSokoban Sasquatch collection
+*******************************************/
+
+// Level 2
+/*
+XPos = {1..7}
+YPos = {1..7}
+Time = {0..20}
+Block = {a;b;c;d}
+
+MaxTime = 20
+
+Square = {                 1,5;1,6;1,7;
+			              2,4;2,5;2,6;2,7; 
+			          3,3;3,4;3,5;3,6;3,7; 
+			      4,2;4,3;4,4;4,5; 
+			  5,1;5,2;5,3;5,4;
+			  6,1;6,2;6,3;
+			  7,1;7,2;7,3
+			}
+
+Goal = { 1,6; 2,6; 6,1; 6,2 }
+
+InitManX = 4
+InitManY = 4
+InitBlockX = {a->2;b->3;c->4;d->5}
+InitBlockY = {a->5;b->4;c->3;d->2}*/
+}

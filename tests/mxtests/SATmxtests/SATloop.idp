@@ -1,0 +1,45 @@
+procedure getExpectedAModel(){
+	return true
+}
+
+vocabulary V{
+	type Node isa int
+	Edge(Node,Node)
+ 
+	Loop(Node)
+	Path(Node,Node)
+ 
+	Start : Node
+	Reached(Node)
+}
+
+theory T : V { 
+
+	~Loop(1).
+
+	{ Loop(x) <- Path(x,y).	}
+
+	! x y : Path(x,y) => Edge(x,y).
+	! x : Loop(x) => ?1 y : Path(x,y).
+	! y : Loop(y) => ?1 x : Path(x,y).
+	
+	Loop(Start).
+	! x : Loop(x) => x >= Start.
+
+	{ Reached(y) <- Path(Start,y).
+	  Reached(y) <- Path(x,y) & Reached(x).
+	}
+
+	! x : Loop(x) => Reached(x).
+
+}
+
+structure S : V{ 
+	Node = { 1..6 }
+	Edge = { 1,2; 1,3; 1,4; 1,5; 1,6;
+				2,1; 2,3; 2,4;
+				3,2; 3,5;
+				4,2; 4,6;
+				5,2; 5,3;
+				6,2; 6,4 }
+}

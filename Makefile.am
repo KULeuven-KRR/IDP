@@ -47,10 +47,7 @@ grounder_SOURCES = \
 		printers/print.hpp printers/print.cpp\
 		printers/idpprinter.hpp printers/ecnfprinter.hpp printers/tptpprinter.hpp\
 		checker.hpp checker.cpp\
-		propagate.hpp propagate.cpp\
 		ecnf.hpp ecnf.cpp\
-		ground.hpp ground.cpp\
-		symbolicstructure.hpp symbolicstructure.cpp\
         symmetry.hpp symmetry.cpp\
 		monitors/interactiveprintmonitor.hpp\
 		monitors/tracemonitor.hpp\
@@ -59,16 +56,28 @@ grounder_SOURCES = \
 		groundtheories/PrintGroundPolicy.hpp\
 		groundtheories/GroundPolicy.hpp\
 		groundtheories/SolverPolicy.hpp groundtheories/SolverPolicy.cpp\
-		groundtheories/AbstractGroundTheory.hpp\
-		grounders/LazyQuantGrounder.hpp grounders/LazyQuantGrounder.cpp\
-		grounders/DefinitionGrounders.hpp grounders/DefinitionGrounders.cpp\
-		grounders/FormulaGrounders.hpp grounders/FormulaGrounders.cpp\
-		grounders/SetGrounders.hpp grounders/SetGrounders.cpp\
-		grounders/TermGrounders.hpp grounders/TermGrounders.cpp\
-		grounders/GroundUtils.hpp\
-		grounders/Grounder.hpp grounders/Grounder.cpp\
+		groundtheories/AbstractGroundTheory.hpp groundtheories/AbstractGroundTheory.cpp\
+		groundtheories/GroundTheory.hpp\
+		inferences/grounding/grounders/LazyQuantGrounder.hpp inferences/grounding/grounders/LazyQuantGrounder.cpp\
+		inferences/grounding/grounders/DefinitionGrounders.hpp inferences/grounding/grounders/DefinitionGrounders.cpp\
+		inferences/grounding/grounders/FormulaGrounders.hpp inferences/grounding/grounders/FormulaGrounders.cpp\
+		inferences/grounding/grounders/SetGrounders.hpp inferences/grounding/grounders/SetGrounders.cpp\
+		inferences/grounding/grounders/TermGrounders.hpp inferences/grounding/grounders/TermGrounders.cpp\
+		inferences/grounding/GroundUtils.hpp\
+		inferences/grounding/GroundingContext.hpp\
+		inferences/grounding/GroundTermTranslator.hpp inferences/grounding/GroundTermTranslator.cpp\
+		inferences/grounding/GroundTranslator.hpp inferences/grounding/GroundTranslator.cpp\
+		inferences/grounding/Utils.hpp\
+		inferences/grounding/GrounderFactory.hpp inferences/grounding/GrounderFactory.cpp\
+		inferences/grounding/grounders/Grounder.hpp inferences/grounding/grounders/Grounder.cpp\
+		inferences/ModelExpansion.hpp inferences/ModelExpansion.cpp\
+		inferences/propagation/SymbolicPropagation.hpp\
+		inferences/propagation/OptimalPropagation.hpp\
+		inferences/propagation/GroundingPropagation.hpp\
+		inferences/propagation/propagate.hpp inferences/propagation/propagate.cpp\
+		inferences/propagation/PropagatorFactory.hpp inferences/propagation/PropagatorFactory.cpp\
+		inferences/propagation/GenerateBDDAccordingToBounds.hpp inferences/propagation/GenerateBDDAccordingToBounds.cpp\
 		rungidl.hpp rungidl.cpp\
-		ModelExpansion.hpp ModelExpansion.cpp\
 		commands/allcommands.hpp\
 		commands/commandinterface.hpp\
 		commands/optimization.hpp\
@@ -108,7 +117,6 @@ grounder_SOURCES = \
 		commands/tablesize.hpp\
 		commands/twovaluedextensions.hpp\
 		commands/materialize.hpp\
-		PropagatorFactory.hpp PropagatorFactory.cpp\
 		generators/ArithmeticOperatorsGenerator.hpp\
 		generators/ComparisonGenerator.hpp\
 		generators/BasicGenerators.hpp\
@@ -149,6 +157,7 @@ grounder_SOURCES = \
 		theorytransformations/DeriveSorts.hpp theorytransformations/DeriveSorts.cpp\
 		theorytransformations/AddCompletion.hpp theorytransformations/AddCompletion.cpp\
 		theorytransformations/GraphFunctions.hpp theorytransformations/GraphFunctions.cpp\
+		theorytransformations/SplitProducts.hpp theorytransformations/SplitProducts.cpp\
 		theorytransformations/GraphAggregates.hpp theorytransformations/GraphAggregates.cpp\
 		theorytransformations/PushQuantifications.hpp theorytransformations/PushQuantifications.cpp\
 		theorytransformations/RemoveEquivalences.hpp theorytransformations/RemoveEquivalences.cpp\
@@ -226,7 +235,7 @@ if BUILDTESTS
 bin_PROGRAMS += alltests
 endif 
 
-alltests_SOURCES = tests/testsuite.cpp tests/mxtests.cpp tests/generatortests.cpp tests/bddtests.cpp $(grounder_SOURCES)
+alltests_SOURCES = tests/testsuite.cpp tests/mxtests.cpp tests/generatortests.cpp tests/bddtests.cpp tests/grounderfactorytests.cpp tests/propagationtests.cpp $(grounder_SOURCES)
 alltests_LDADD = -lgtest -lpthread $(gidl_LDADD)
 
 AM_CXXFLAGS += -DTESTDIR=\"$(abs_srcdir)/tests/\"

@@ -13,11 +13,8 @@
  *		This file contains the classes to represent first-order terms and first-order sets
  */
 
-#include <set>
-#include <vector>
-#include <map>
 #include "parseinfo.hpp"
-#include "commontypes.hpp"
+#include "common.hpp"
 
 class Sort;
 class Variable;
@@ -55,6 +52,8 @@ class Term {
 
 		virtual Term* clone()										const = 0;	
 			//!< create a copy of the term while keeping the free variables
+		virtual	Term*	cloneKeepVars()								const = 0;
+		//!< copy the term while keeping all variables
 		virtual Term* clone(const std::map<Variable*,Variable*>&)	const = 0;	
 			//!< create a copy of the term and substitute the free variables according to the given map
 
@@ -106,6 +105,7 @@ class VarTerm : public Term {
 		VarTerm(Variable* v, const TermParseInfo& pi);
 
 		VarTerm* clone()										const;
+		VarTerm* cloneKeepVars()								const;
 		VarTerm* clone(const std::map<Variable*,Variable*>&)	const;
 
 		~VarTerm() { }
@@ -137,6 +137,7 @@ class FuncTerm : public Term {
 		FuncTerm(Function* function, const std::vector<Term*>& args, const TermParseInfo& pi);
 
 		FuncTerm* clone()										const;
+		FuncTerm* cloneKeepVars()								const;
 		FuncTerm* clone(const std::map<Variable*,Variable*>&)	const;
 
 		~FuncTerm() { }
@@ -168,6 +169,7 @@ class DomainTerm : public Term {
 		DomainTerm(Sort* sort, const DomainElement* value, const TermParseInfo& pi);
 
 		DomainTerm* clone()										const;
+		DomainTerm* cloneKeepVars()								const;
 		DomainTerm* clone(const std::map<Variable*,Variable*>&)	const;
 
 		~DomainTerm() { }
@@ -197,6 +199,7 @@ class AggTerm : public Term {
 		AggTerm(SetExpr* set, AggFunction function, const TermParseInfo& pi);
 
 		AggTerm* clone()										const;
+		AggTerm* cloneKeepVars()								const;
 		AggTerm* clone(const std::map<Variable*,Variable*>&)	const;
 
 		~AggTerm() { }
@@ -271,8 +274,16 @@ class SetExpr {
 
 		virtual SetExpr* clone()										const = 0;
 			//!< create a copy of the set while keeping the free variables
+		virtual	SetExpr*	cloneKeepVars()								const = 0;
+		//!< copy the set while keeping all variables
 		virtual SetExpr* clone(const std::map<Variable*,Variable*>&)	const = 0;
 			//!< create a copy of the set and substitute the free variables according to the given map
+		virtual SetExpr* positiveSubset() const = 0;
+			//!< generate the subset of positive terms ({x:p(x):t(x)} becomes {x:p(x)&t(x)>0: t(x)})
+		virtual SetExpr* negativeSubset() const = 0;
+			//!< generate the subset of negated negative terms ({x:p(x):t(x)} becomes {x:p(x)&t(x)<0: -t(x)})
+		virtual SetExpr* zeroSubset() const = 0;
+			//!< generate the subset of zero terms ({x:p(x):t(x)} becomes {x:p(x)&t(x)=0: 0})
 
 		// Destructors
 		virtual ~SetExpr() { }		//!< Delete the set, but not 
@@ -287,12 +298,12 @@ class SetExpr {
 		
 		// Inspectors
 		virtual Sort*							sort()						const = 0;	//!< Returns the sort of the set
-				const std::set<Variable*>&		freeVars()					const { return _freevars;	}
-				const std::set<Variable*>&		quantVars()					const { return _quantvars;	}
-				bool							contains(const Variable*)	const;
-				const std::vector<Formula*>&	subformulas()				const { return _subformulas;	}
-				const std::vector<Term*>&		subterms()					const { return _subterms;		}
-				const SetParseInfo&				pi()						const { return _pi;				}
+		const std::set<Variable*>&		freeVars()					const { return _freevars;	}
+		const std::set<Variable*>&		quantVars()					const { return _quantvars;	}
+		bool							contains(const Variable*)	const;
+		const std::vector<Formula*>&	subformulas()				const { return _subformulas;	}
+		const std::vector<Term*>&		subterms()					const { return _subterms;		}
+		const SetParseInfo&				pi()						const { return _pi;				}
 
 		// Visitor
 		virtual void		accept(TheoryVisitor*)			const = 0;
@@ -315,7 +326,11 @@ class EnumSetExpr : public SetExpr {
 		EnumSetExpr(const std::vector<Formula*>& s, const std::vector<Term*>& w, const SetParseInfo& pi);
 
 		EnumSetExpr* clone()										const;
+		EnumSetExpr* cloneKeepVars()								const;
 		EnumSetExpr* clone(const std::map<Variable*,Variable*>&)	const;
+		EnumSetExpr* positiveSubset() const ;
+		EnumSetExpr* negativeSubset() const ;
+		EnumSetExpr* zeroSubset() const ;
 
 		~EnumSetExpr() { }
 
@@ -335,7 +350,11 @@ public:
 	QuantSetExpr(const std::set<Variable*>& v, Formula* s, Term* t, const SetParseInfo& pi);
 
 	QuantSetExpr* clone()										const;
+	QuantSetExpr* cloneKeepVars()								const;
 	QuantSetExpr* clone(const std::map<Variable*,Variable*>&)	const;
+	QuantSetExpr* positiveSubset() const ;
+	QuantSetExpr* negativeSubset() const ;
+	QuantSetExpr* zeroSubset() const ;
 
 	Sort*	sort()	const;
 

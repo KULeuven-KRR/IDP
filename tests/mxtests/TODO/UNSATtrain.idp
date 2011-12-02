@@ -1,0 +1,70 @@
+procedure getExpectedAModel(){
+	return false
+}
+
+vocabulary V{
+	type Train
+	type Segment	
+	type Station
+	type Direction
+	F: Direction
+	B: Direction
+	type Time isa int
+
+	Follows(Segment,Segment)
+	Location(Station,Segment)
+	TrInitAt(Train) : Segment 
+	Schedule(Train,Time,Station)
+	Broken(Segment)
+
+ 
+	partial MoveTo(Train,Time) : Segment
+
+ 
+	Dir(Train,Time) : Direction
+	TrIsAt(Train,Time,Segment)
+
+}
+
+theory T : V { 
+	// Only one train per segment per timepoint
+	! t s : ?<2 tr : TrIsAt(tr,t,s).
+	// Schedule must be respected
+	! tr t st : Schedule(tr,t,st) => ? s : Location(st,s) & TrIsAt(tr,t,s).
+	// Trains don't fly  :-) 
+	! tr t s ns : Dir(tr,t) = F & TrIsAt(tr,t,s) & MoveTo(tr,t) = ns => Follows(s,ns).
+	! tr t s ns : Dir(tr,t) = B & TrIsAt(tr,t,s) & MoveTo(tr,t) = ns => Follows(ns,s).
+	// Don't use broken segments
+	! s : Broken(s) => ! t tr : ~TrIsAt(tr,t,s).
+
+	// Define where the train is.
+	{ TrIsAt(tr,0,TrInitAt(tr)).
+	  TrIsAt(tr,t+1,s) <- TrIsAt(tr,t,s) & ! s : MoveTo(tr,t) ~= s. 
+	  TrIsAt(tr,t+1,MoveTo(tr,t)) <- Time(t). }
+
+}
+
+structure S : V{ 
+	Direction  = { f; b}
+	F=f
+	B=b
+	Time = {0..50}
+	Train = {Tr1;Tr2}
+	Station = {Oostende; Brugge; Aalter; Gent; Kortrijk; Harelbeke; Waregem; Deinze; DePinte}
+	Segment = {1..17;20..42}
+
+	Follows = { 1,2; 2,3; 3,4; 3,20; 4,5; 5,6; 6,7; 7,8; 8,9; 9,10; 
+					10,11; 11,12; 12,13; 13,14; 14,15; 15,16; 16,17; 16,42; 
+					20,21; 21,22; 22,23; 23,24; 23,35; 24,25; 25,26; 25,36; 26,27; 27,28; 28,29; 29,15;
+					30,31; 31,32; 32,33; 33,34; 34,23; 35,25; 36,37; 37,38; 38,39; 39,40;
+					40,41; 41,16 }
+	Location = { Oostende,31; Brugge,35; Brugge,24; Aalter,37; Gent,42; Gent,17; Kortrijk,2; Harelbeke,4; Waregem,6; Deinze,9; DePinte,11 }
+	Broken = { 24; 35}
+	TrInitAt = { Tr1->2; Tr2->1 } 
+	Schedule = { Tr1,2,Harelbeke; Tr1,3,Harelbeke; 
+					 Tr1,5,Waregem; Tr1,6,Waregem;
+					 Tr1,9,Deinze; Tr1,10,Deinze; 
+					 Tr1,12,DePinte; Tr1,13,DePinte;
+					 Tr1,19,Gent;
+					 Tr2,16,Gent }
+}

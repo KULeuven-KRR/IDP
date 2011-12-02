@@ -25,10 +25,10 @@ private:
 	bool _changed;
 	bool _firstvisit;
 	Sort* _assertsort;
-	Vocabulary* _vocab;
+	const Vocabulary* _vocab;
 
 public:
-	DeriveSorts(Formula* f, Vocabulary* v) :
+	DeriveSorts(Formula* f, const Vocabulary* v) :
 			_vocab(v) {
 		deriveSorts(f);
 	}

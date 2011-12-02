@@ -1,0 +1,37 @@
+procedure getExpectedAModel(){
+	return true
+}
+
+/************************************************
+	Find a Spannning Tree for a given graph
+************************************************/
+
+vocabulary V{
+type Vertex
+Edge(Vertex,Vertex)
+SpRoot : Vertex
+
+ 
+SpTree(Vertex,Vertex)
+SpReached(Vertex)
+
+}
+
+theory T : V { 
+! x y : SpTree(x,y) => Edge(x,y).
+! x : ~SpTree(x,SpRoot).
+! x1 x2 y : SpTree(x1,y) & SpTree(x2,y) => x1 = x2.
+
+{ SpReached(SpRoot).
+  SpReached(y) <- SpTree(x,y) & SpReached(x).
+}
+
+! x : SpReached(x).
+
+}
+
+structure S : V{ 
+Vertex = {A..E}
+SpRoot = A
+Edge = {A,B; A,C; C,D; D,A; B,D; B,E; E,D }
+}

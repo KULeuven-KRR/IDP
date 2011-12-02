@@ -1,0 +1,22 @@
+procedure getExpectedAModel(){
+	return true
+}
+
+vocabulary V{
+	type Land
+	type Kleur
+	IsBuurland(Land,Land)
+ 
+	K(Land) : Kleur
+}
+
+theory T : V { 
+	! x y : IsBuurland(x,y) => K(x) ~= K(y).
+}
+
+structure S : V{ 
+	Land = { Belgie; Nederland; Frankrijk; Duitsland; Luxemburg }
+	Kleur = { Rood; Oranje; Geel; Groen }
+	IsBuurland = { Belgie,Nederland; Belgie,Frankrijk; Belgie,Duitsland; Belgie,Luxemburg; Frankrijk,Duitsland; Luxemburg,Duitsland; Luxemburg,Frankrijk;
+						Nederland, Duitsland; }
+}

@@ -34,14 +34,18 @@ private:
 	std::vector<const DomElemContainer*> _invars;
 	std::vector<unsigned int> _inpos;
 
+	Universe _universe;
+
 public:
 	SimpleFuncGenerator(const FuncTable* ft, const std::vector<Pattern>& pattern, const std::vector<const DomElemContainer*>& vars, const Universe& univ, const std::vector<uint>& firstocc)
-			: _function(ft), _rangevar(vars.back()), _vars(vars) {
-		assert(pattern.back()==Pattern::OUTPUT);
+			: _function(ft), _rangevar(vars.back()), _vars(vars), _universe(univ) {
+		Assert(pattern.back()==Pattern::OUTPUT);
+		auto domainpattern = pattern;
+		domainpattern.pop_back();
 
 		std::vector<SortTable*> outtabs;
-		for (unsigned int n = 0; n < pattern.size(); ++n) {
-			switch(pattern[n]){
+		for (unsigned int n = 0; n < domainpattern.size(); ++n) {
+			switch(domainpattern[n]){
 			case Pattern::OUTPUT:
 				if(firstocc[n]==n){
 					_outvars.push_back(vars[n]);
@@ -59,9 +63,10 @@ public:
 
 		_univgen = GeneratorFactory::create(_outvars,outtabs);
 
-		for(uint i = 0; i<_vars.size(); ++i){
+		for(uint i = 0; i<domainpattern.size(); ++i){
 			_currenttuple.push_back(_vars[i]->get());
 		}
+		_currenttuple.push_back(_rangevar->get());
 	}
 
 	// FIXME reimplement (clone generator)
@@ -98,6 +103,30 @@ public:
 		if(_univgen->isAtEnd()){
 			notifyAtEnd();
 		}
+	}
+
+	virtual void put(std::ostream& stream){
+		stream <<toString(_function) <<"(";
+		bool begin = true;
+		for(unsigned int n = 0; n<_vars.size()-1; ++n){
+			if(not begin){
+				stream <<", ";
+			}
+			begin = false;
+			stream <<_vars[n];
+			stream <<toString(_universe.tables()[n]);
+			for(auto i=_outpos.begin(); i<_outpos.end(); ++i){
+				if(n==*i){
+					stream <<"(out)";
+				}
+			}
+			for(auto i=_inpos.begin(); i<_inpos.end(); ++i){
+				if(n==*i){
+					stream <<"(in)";
+				}
+			}
+		}
+		stream <<"):" <<_rangevar <<toString(_universe.tables().back()) <<"(out)";
 	}
 };
 

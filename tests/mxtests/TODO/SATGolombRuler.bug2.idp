@@ -1,0 +1,123 @@
+procedure getExpectedAModel(){
+	return true
+}
+
+vocabulary V{
+   type Ruler isa int
+   type  Mark  isa int
+    
+   Location(Mark,Ruler)
+   InvLoc(Mark,Ruler)
+   MaxMark:Mark
+   MaxRuler:Ruler
+ Sec:Ruler
+ SecLast:Ruler
+
+ 
+   Marked(Ruler)
+   MarkedPair(Ruler,Ruler)
+
+}
+
+theory T : V { 
+//! x y u v d: Marked(x) & Marked(y) & x<y & Marked(u) & Marked(v) & 
+//       	y-x=d & v-u =d     =>  x=u.
+//
+// Het standaard splits-algoritme produceert 
+// Split op y  
+// ! x y d: Marked(y) & x<y & y-x=d =>  Ty(x,d).
+//// !x d u v: Ty(x,d)&Marked(x)&Marked(u)&Marked(v)& u<v& v-u=d => x=u. 
+//
+// Splits 2de clause op x
+//
+//! x d u: T(x,d) & Marked(x) => x=u | Tx(u,d).
+//! u d v: Tx(u,d) & Marked(u)  & Marked(v) &  v-u=d => false.
+//
+// Van 5de naar 3de : niet slecht. 
+//
+// Een alternatieve oplossing:
+
+
+{ MarkedPair(x,d) <- Marked(x) & d>0 & Marked(x+d). }
+// <=> MarkedPair(x,d) <- Ruler(x) & Ruler(d) & Ruler(y) & y=x+d & 
+//       		       Marked(x) & Marked(y).
+
+! x u d: MarkedPair(x,d) & MarkedPair(u,d) & x =< u  => x=u.
+
+/* De inductieve definitie van Location? of de constraints?  Wat is
+het snelste? Merk op: met de ID weet het systeem in principe dat deze
+altijd satisfiable is. Aangezien Location verder niet voorkomt in de
+theorie kan dit predicaat feitelijk a posteriori uitgerekend worden.
+*/
+
+/* Definitie  9 -44 : 38.9024 s
+ Definitie  9 -44 + 1 redundante constraint :  79.349 s
+ Definitie  9 -44 + 1 redundante constraint :  40.1225 s
+
+
+
+   { Location(1,0) <- .
+     Location(m+1,p) <- // Mark(m+1) & 
+     	   Marked(p) & Location(m,p1) &  p1 < p & 
+	   ! p2 : (Marked(p2) => p2 =< p1 | p =< p2). } 
+*/
+/*
+Constraints 9 - 44:  63.88 s
+Constraints 9 - 44 + 1 redundante constraint : 32.346 s
+Constraints 9 - 44 + 2 redundante constraint  : 12.3688 s
+
+*/
+
+
+
+! m : ?1 r: Location(m,r).  
+! r : (? m: Location(m,r)) <=> Marked(r).
+! m r n s : Location(m,r)  & Location(n,s) & m < n => r < s.
+
+
+Marked(0).
+
+/* Hoe toevoegen dat Marked evenveel elemented als Mark moet bevatten?
+Dit is impliciet in de FO expressie van Location maar niet in 
+de definitie van Location. Dus is in de FO versie volgende constraint
+redundant, maar niet in de definitie versie. Ook hier zijn
+verschillende versies uit te testen. */
+
+{ MaxMark=m <- Mark(m) & !x: Mark(x) => x =< m.}
+{ MaxRuler=m <- Ruler(m) & !x: Ruler(x) => x =< m.}
+
+// MaxMark= #{x:Mark(x)}.
+// MaxRuler= #{x:Ruler(x)} - 1.
+
+# {m : Marked(m)} = MaxMark.
+
+/* Redundante constraints */ 
+
+! m r: Location(m,r) => r >= (m * (m-1))/2.
+//! m r: Location(m,r) => r =< MaxRuler - ((MaxMark-m+1) * (MaxMark-m))/2.
+
+// buggy definition {InvLoc(m,r) <- Mark(m) & Ruler(r) & Location(MaxMark+1-m,MaxRuler-r).}
+!m r: InvLoc(m,r) <=> Mark(m) & Ruler(r) & Location(MaxMark+1-m,MaxRuler-r).
+! m r: InvLoc(m,r) => r >= (m * (m-1))/2.
+
+
+/* Spiegeling: de grootste afstand tussen twee marks in de eerst helft moet strict kleiner zijn dan de grootste afstand tussen twee marks in de tweede helft. */ 
+
+
+{Sec=r <- Location(2,r).}
+{SecLast=rm-rm1 <- MaxMark=mm & Location(mm,rm) & Location(mm-1,rm1).}
+
+
+MaxMark>2 => Sec<SecLast.
+
+}
+
+structure S : V{ 
+
+Mark = {1..9}
+Ruler = {0..44}
+
+/* Bug:  Geeft unsatisfiable wegens de definitie van SecLast.
+Als deze definitie omgezet wordt tot 
+!rm rm1: SecLast=rm-rm1 <= Location(MaxMark,rm) & Location(MaxMark-1,rm1).Dan werkt het wel. */  
+}

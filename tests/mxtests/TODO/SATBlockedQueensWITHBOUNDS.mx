@@ -1,0 +1,40 @@
+procedure getExpectedAModel(){
+	return true
+}
+
+/***********************************
+     Blocked n-Queens problem
+************************************/
+
+vocabulary V{
+type Num isa int
+Block(Num,Num)
+
+ 
+Queen(Num,Num)
+
+ 
+Diag(Num,Num,Num,Num)
+Abs(Num,Num,Num)
+
+}
+
+theory T : V { 
+{ Abs(x,y,z) <- z = x - y.
+  Abs(x,y,z) <- z = y - x. }
+
+{ Diag(x1,y1,x2,y2) <- Abs(x1,x2,x) & Abs(y1,y2,y) & x = y & x1 < x2. }
+
+! x : ? y : Queen(x,y).
+! x y z : y < z => ~(Queen(x,y) & Queen(x,z)).
+! x y z : x < y => ~(Queen(x,z) & Queen(y,z)).
+! x1 y1 x2 y2 : Diag(x1,y1,x2,y2) => ~(Queen(x1,y1) & Queen(x2,y2)).
+
+! x y : Block(x,y) => ~Queen(x,y).
+
+}
+
+structure S : V{ 
+Num = {1..4}
+Block = {1,2; 3,3}
+}

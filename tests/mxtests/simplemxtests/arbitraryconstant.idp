@@ -1,0 +1,16 @@
+vocabulary V {
+  type X isa int
+  F:X
+}
+
+theory T: V {
+
+}
+
+structure S: V {
+  X={1..3}
+}
+
+procedure getExpectedNbOfModels() {
+	return 3
+}

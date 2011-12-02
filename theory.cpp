@@ -1,14 +1,7 @@
-/************************************
-	theory.cpp
-	this file belongs to GidL 2.0
-	(c) K.U.Leuven
-************************************/
-
-#include <cassert>
+#include "common.hpp"
 #include <sstream>
 #include <iostream>
 #include <typeinfo>
-#include "common.hpp"
 #include "vocabulary.hpp"
 #include "structure.hpp"
 #include "term.hpp"
@@ -103,6 +96,15 @@ PredForm* PredForm::clone() const {
 	return clone(mvv);
 }
 
+PredForm*	PredForm::cloneKeepVars() const{
+	vector<Term*> na;
+	for (auto it = subterms().cbegin(); it != subterms().cend(); ++it) {
+		na.push_back((*it)->cloneKeepVars());
+	}
+	PredForm* pf = new PredForm(sign(), _symbol, na, pi().clone());
+	return pf;
+}
+
 PredForm* PredForm::clone(const map<Variable*, Variable*>& mvv) const {
 	vector<Term*> na;
 	for (auto it = subterms().cbegin(); it != subterms().cend(); ++it) {
@@ -138,7 +140,7 @@ ostream& PredForm::put(ostream& output, bool longnames, unsigned int spaces) con
 			output << ')';
 		}
 	} else {
-		assert(typeid(*_symbol) == typeid(Function));
+		Assert(typeid(*_symbol) == typeid(Function));
 		if (subterms().size() > 1) {
 			output << '(';
 			for (size_t n = 0; n < subterms().size() - 1; ++n) {
@@ -162,6 +164,15 @@ ostream& PredForm::put(ostream& output, bool longnames, unsigned int spaces) con
 EqChainForm* EqChainForm::clone() const {
 	map<Variable*, Variable*> mvv;
 	return clone(mvv);
+}
+
+EqChainForm*	EqChainForm::cloneKeepVars() const{
+	vector<Term*> nt;
+	for (auto it = subterms().cbegin(); it != subterms().cend(); ++it) {
+		nt.push_back((*it)->cloneKeepVars());
+	}
+	EqChainForm* ef = new EqChainForm(sign(), _conj, nt, _comps, pi().clone());
+	return ef;
 }
 
 EqChainForm* EqChainForm::clone(const map<Variable*, Variable*>& mvv) const {
@@ -207,6 +218,13 @@ EquivForm* EquivForm::clone() const {
 	return clone(mvv);
 }
 
+EquivForm*	EquivForm::cloneKeepVars() const{
+	Formula* nl = left()->cloneKeepVars();
+	Formula* nr = right()->cloneKeepVars();
+	EquivForm* ef = new EquivForm(sign(), nl, nr, pi().clone());
+	return ef;
+}
+
 EquivForm* EquivForm::clone(const map<Variable*, Variable*>& mvv) const {
 	Formula* nl = left()->clone(mvv);
 	Formula* nr = right()->clone(mvv);
@@ -239,6 +257,15 @@ ostream& EquivForm::put(ostream& output, bool longnames, unsigned int spaces) co
 BoolForm* BoolForm::clone() const {
 	map<Variable*, Variable*> mvv;
 	return clone(mvv);
+}
+
+BoolForm*	BoolForm::cloneKeepVars() const{
+	vector<Formula*> ns;
+	for (auto it = subformulas().cbegin(); it != subformulas().cend(); ++it) {
+		ns.push_back((*it)->cloneKeepVars());
+	}
+	BoolForm* bf = new BoolForm(sign(), _conj, ns, pi().clone());
+	return bf;
 }
 
 BoolForm* BoolForm::clone(const map<Variable*, Variable*>& mvv) const {
@@ -287,6 +314,11 @@ ostream& BoolForm::put(ostream& output, bool longnames, unsigned int spaces) con
 QuantForm* QuantForm::clone() const {
 	map<Variable*, Variable*> mvv;
 	return clone(mvv);
+}
+
+QuantForm*	QuantForm::cloneKeepVars() const{
+	auto nf = subformula()->cloneKeepVars();
+	return new QuantForm(sign(), quant(), quantVars(), nf, pi().clone());
 }
 
 QuantForm* QuantForm::clone(const map<Variable*, Variable*>& mvv) const {
@@ -338,6 +370,12 @@ AggForm::AggForm(SIGN sign, Term* l, CompType c, AggTerm* r, const FormulaParseI
 AggForm* AggForm::clone() const {
 	map<Variable*, Variable*> mvv;
 	return clone(mvv);
+}
+
+AggForm*	AggForm::cloneKeepVars() const{
+	auto nl = left()->cloneKeepVars();
+	auto nr = right()->cloneKeepVars();
+	return new AggForm(sign(), nl, _comp, nr, pi().clone());
 }
 
 AggForm* AggForm::clone(const map<Variable*, Variable*>& mvv) const {

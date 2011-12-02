@@ -1,12 +1,4 @@
-/************************************
-  	UnnestTerms.cpp
-	this file belongs to GidL 2.0
-	(c) K.U.Leuven
-************************************/
-
-#include <vector>
-#include <cassert>
-
+#include "common.hpp"
 #include "theorytransformations/UnnestTerms.hpp"
 
 #include "vocabulary.hpp"
@@ -29,7 +21,7 @@ void UnnestTerms::contextProblem(Term* t) {
  * (this is the most important method to overwrite in subclasses)
  */
 bool UnnestTerms::shouldMove(Term* t) {
-	assert(t->type() != TT_VAR);
+	Assert(t->type() != TT_VAR);
 	return getAllowedToUnnest();
 }
 

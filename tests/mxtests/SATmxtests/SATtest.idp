@@ -1,0 +1,21 @@
+procedure getExpectedAModel(){
+	return true
+}
+
+vocabulary V{
+	type Vtx
+	type Clr
+	Edge(Vtx,Vtx)
+ 
+	Col(Vtx,Clr)
+}
+
+theory T : V { 
+	! x y c : Col(x,c) & Col(y,c) & x ~= y => ~Edge(x,y).
+}
+
+structure S : V{ 
+	Vtx = { 1..6 }
+	Clr = { 1..3 }
+	Edge = { 1,2; 1,3; 2,3; 2,4; 2,5; 3,5; 3,6; 4,5; 5,6 }
+}

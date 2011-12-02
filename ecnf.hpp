@@ -1,24 +1,12 @@
-/************************************
-	ecnf.hpp
-	this file belongs to GidL 2.0
-	(c) K.U.Leuven
-************************************/
-
 #ifndef ECNF_HPP
 #define ECNF_HPP
 
-#include <string>
-#include <vector>
-#include <map>
-#include <set>
-#include <cassert>
+#include "common.hpp"
 #include <ostream>
 
 #include "theory.hpp"
 #include "visitors/TheoryVisitor.hpp" // TODO calls should go into cpp
 #include "visitors/TheoryMutatingVisitor.hpp" // TODO calls should go into cpp
-#include "commontypes.hpp"
-#include "pcsolver/src/external/ExternalInterface.hpp"
 
 class GroundTranslator;
 class GroundTermTranslator;
@@ -27,12 +15,12 @@ class AggTsBody;
 class CPTsBody;
 class SortTable;
 
-typedef unsigned int VarId;
+class LazyQuantGrounder;
+class DomElemContainer;
+class DomainElement;
+class InstGenerator;
 
-namespace MinisatID{
- 	 class WrappedPCSolver;
-}
-typedef MinisatID::WrappedPCSolver SATSolver;
+typedef unsigned int VarId;
 
 
 /*********************
@@ -102,10 +90,10 @@ class GroundAggregate {
 		// Constructors
 		GroundAggregate(AggFunction t, bool l, TsType e, int h, int s, double b) :
 			_head(h), _arrow(e), _bound(b), _lower(l), _type(t), _set(s) 
-			{ assert(e != TsType::RULE); }
+			{ Assert(e != TsType::RULE); }
 		GroundAggregate(const GroundAggregate& a) : 
 			_head(a._head), _arrow(a._arrow), _bound(a._bound), _lower(a._lower), _type(a._type), _set(a._set)
-			{ assert(a._arrow != TsType::RULE); }
+			{ Assert(a._arrow != TsType::RULE); }
 		GroundAggregate() { }
 
 		// Inspectors
@@ -299,6 +287,322 @@ class CPReification { //TODO ?
 		CPReification(int head, CPTsBody* body): _head(head), _body(body) { }
 		std::string toString(unsigned int spaces = 0) const;
 		void accept(TheoryVisitor* v) const { v->visit(this);	}
+};
+
+struct GroundTerm {
+	bool isVariable;
+	union {
+		const DomainElement* _domelement;
+		VarId _varid;
+	};
+	GroundTerm() {
+	}
+	GroundTerm(const DomainElement* domel) :
+			isVariable(false), _domelement(domel) {
+	}
+	GroundTerm(const VarId& varid) :
+			isVariable(true), _varid(varid) {
+	}
+	friend bool operator==(const GroundTerm&, const GroundTerm&);
+	friend bool operator<(const GroundTerm&, const GroundTerm&);
+};
+
+/**
+ * Set corresponding to a tseitin.
+ */
+class TsSet {
+private:
+	std::vector<int> _setlits; // All literals in the ground set
+	std::vector<double> _litweights; // For each literal a corresponding weight
+	std::vector<double> _trueweights; // The weights of the true literals in the set
+public:
+	// Modifiers
+	void setWeight(unsigned int n, double w) {
+		_litweights[n] = w;
+	}
+	// Inspectors
+	std::vector<int> literals() const {
+		return _setlits;
+	}
+	std::vector<double> weights() const {
+		return _litweights;
+	}
+	std::vector<double> trueweights() const {
+		return _trueweights;
+	}
+	unsigned int size() const {
+		return _setlits.size();
+	}
+	bool empty() const {
+		return _setlits.empty();
+	}
+	int literal(unsigned int n) const {
+		return _setlits[n];
+	}
+	double weight(unsigned int n) const {
+		return _litweights[n];
+	}
+	friend class GroundTranslator;
+};
+
+/**
+ * A complete definition of a tseitin atom.
+ */
+class TsBody {
+protected:
+	const TsType _type; // the type of "tseitin definition"
+	TsBody(TsType type) :
+			_type(type) {
+	}
+public:
+	virtual ~TsBody() {
+	}
+	TsType type() const {
+		return _type;
+	}
+
+	virtual bool operator==(const TsBody& rhs) const;
+	virtual bool operator<(const TsBody& rhs) const;
+	bool operator>(const TsBody& rhs) const {
+		return not (*this == rhs && *this < rhs);
+	}
+};
+
+class PCTsBody: public TsBody {
+private:
+	std::vector<int> _body; // the literals in the subformula replaced by the tseitin
+	bool _conj; // if true, the replaced subformula is the conjunction of the literals in _body,
+				// if false, the replaced subformula is the disjunction of the literals in _body
+public:
+	PCTsBody(TsType type, const std::vector<int>& body, bool conj) :
+			TsBody(type), _body(body), _conj(conj) {
+	}
+	std::vector<int> body() const {
+		return _body;
+	}
+	unsigned int size() const {
+		return _body.size();
+	}
+	int literal(unsigned int n) const {
+		return _body[n];
+	}
+	bool conj() const {
+		return _conj;
+	}
+	bool operator==(const TsBody& rhs) const;
+	bool operator<(const TsBody& rhs) const;
+};
+
+class AggTsBody: public TsBody {
+private:
+	int _setnr;
+	AggFunction _aggtype;
+	bool _lower; //comptype == CompType::LT
+	double _bound; //The other side of the equation.
+	//If _lower is true this means CARD{_setnr}=<_bound
+	//If _lower is false this means CARD{_setnr}>=_bound
+public:
+	AggTsBody(TsType type, double bound, bool lower, AggFunction at, int setnr) :
+			TsBody(type), _setnr(setnr), _aggtype(at), _lower(lower), _bound(bound) {
+	}
+	int setnr() const {
+		return _setnr;
+	}
+	AggFunction aggtype() const {
+		return _aggtype;
+	}
+	bool lower() const {
+		return _lower;
+	}
+	double bound() const {
+		return _bound;
+	}
+	void setBound(double bound) {
+		_bound = bound;
+	}
+	bool operator==(const TsBody& rhs) const;
+	bool operator<(const TsBody& rhs) const;
+};
+
+class CPTerm;
+
+/**
+ * A bound in a CP constraint can be an integer or a CP variable.
+ */
+struct CPBound {
+public:
+	bool _isvarid;
+	union {
+		int _bound;
+		VarId _varid;
+	};
+	CPBound(const int& bound) :
+			_isvarid(false), _bound(bound) {
+	}
+	CPBound(const VarId& varid) :
+			_isvarid(true), _varid(varid) {
+	}
+	bool operator==(const CPBound& rhs) const;
+	bool operator<(const CPBound& rhs) const;
+};
+
+/**
+ * Tseitin body consisting of a CP constraint.
+ */
+class CPTsBody: public TsBody {
+private:
+	CPTerm* _left;
+	CompType _comp;
+	CPBound _right;
+public:
+	CPTsBody(TsType type, CPTerm* left, CompType comp, const CPBound& right) :
+			TsBody(type), _left(left), _comp(comp), _right(right) {
+	}
+	CPTerm* left() const {
+		return _left;
+	}
+	CompType comp() const {
+		return _comp;
+	}
+	CPBound right() const {
+		return _right;
+	}
+	bool operator==(const TsBody& rhs) const;
+	bool operator<(const TsBody& rhs) const;
+};
+
+typedef std::pair<const DomElemContainer*, const DomainElement*> dominst;
+typedef std::vector<dominst> dominstlist;
+
+struct ResidualAndFreeInst {
+	InstGenerator* generator;
+	Lit residual;
+	dominstlist freevarinst;
+
+/*	bool operator==(const ResidualAndFreeInst& rhs) const {
+		return rhs.residual == residual && freevarinst == rhs.freevarinst;
+	}*/
+};
+
+class LazyTsBody: public TsBody {
+private:
+	unsigned int id_;
+	LazyQuantGrounder const* const grounder_;
+	ResidualAndFreeInst* inst;
+
+public:
+	LazyTsBody(int id, LazyQuantGrounder const* const grounder, ResidualAndFreeInst* inst, TsType type) :
+			TsBody(type), id_(id), grounder_(grounder), inst(inst) {
+	}
+	//FIXME bool operator==(const TsBody& rhs) const;
+	//FIXME bool operator<(const TsBody& rhs) const;
+
+	unsigned int id() const {
+		return id_;
+	}
+
+	void notifyTheoryOccurence();
+};
+
+/* Sets and terms that will be handled by a constraint solver */
+
+/**
+ * Abstract CP term class.
+ */
+class CPTerm {
+protected:
+	CPTerm() {
+	}
+public:
+	virtual ~CPTerm() {
+	}
+	virtual void accept(TheoryVisitor*) const = 0;
+	virtual bool operator==(const CPTerm& body) const;
+	virtual bool operator<(const CPTerm& body) const;
+	bool operator>(const CPTerm& rhs) const {
+		return not (*this == rhs && *this < rhs);
+	}
+};
+
+/**
+ * CP term consisting of one CP variable.
+ */
+class CPVarTerm: public CPTerm {
+private:
+	VarId _varid;
+public:
+	CPVarTerm(const VarId& varid) :
+			_varid(varid) {
+	}
+
+	const VarId& varid() const {
+		return _varid;
+	}
+
+	bool operator==(const CPTerm&) const;
+	bool operator<(const CPTerm&) const;
+
+	void accept(TheoryVisitor* v) const {
+		v->visit(this);
+	}
+};
+
+/**
+ * CP term consisting of a sum of CP variables.
+ */
+class CPSumTerm: public CPTerm {
+private:
+	std::vector<VarId> _varids;
+public:
+	CPSumTerm(const VarId& left, const VarId& right) :
+			_varids(2) {
+		_varids[0] = left;
+		_varids[1] = right;
+	}
+	CPSumTerm(const std::vector<VarId>& varids) :
+			_varids(varids) {
+	}
+
+	const std::vector<VarId>& varids() const {
+		return _varids;
+	}
+	void varids(const std::vector<VarId>& newids) {
+		_varids = newids;
+	}
+
+	bool operator==(const CPTerm&) const;
+	bool operator<(const CPTerm&) const;
+
+	void accept(TheoryVisitor* v) const {
+		v->visit(this);
+	}
+};
+
+/**
+ * CP term consisting of a weighted sum of CP variables.
+ */
+class CPWSumTerm: public CPTerm {
+private:
+	std::vector<VarId> _varids;
+	std::vector<int> _weights;
+public:
+	CPWSumTerm(const std::vector<VarId>& varids, const std::vector<int>& weights) :
+			_varids(varids), _weights(weights) {
+	}
+
+	const std::vector<VarId>& varids() const {
+		return _varids;
+	}
+	const std::vector<int>& weights() const {
+		return _weights;
+	}
+
+	bool operator==(const CPTerm&) const;
+	bool operator<(const CPTerm&) const;
+
+	void accept(TheoryVisitor* v) const {
+		v->visit(this);
+	}
 };
 
 #endif

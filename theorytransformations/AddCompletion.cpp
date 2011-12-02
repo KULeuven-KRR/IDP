@@ -1,12 +1,4 @@
-/************************************
-	AddCompletion.cpp
-	this file belongs to GidL 2.0
-	(c) K.U.Leuven
-************************************/
-
-#include <vector>
-#include <cassert>
-
+#include "common.hpp"
 #include "theorytransformations/AddCompletion.hpp"
 
 #include "vocabulary.hpp"
@@ -42,7 +34,7 @@ Definition* AddCompletion::visit(Definition* def) {
 	}
 
 	for (auto it = _interres.cbegin(); it != _interres.cend(); ++it) {
-		assert(!it->second.empty());
+		Assert(!it->second.empty());
 		Formula* b = it->second[0];
 		if (it->second.size() > 1) b = new BoolForm(SIGN::POS, false, it->second, FormulaParseInfo());
 		PredForm* h = new PredForm(SIGN::POS, it->first, TermUtils::makeNewVarTerms(_headvars[it->first]), FormulaParseInfo());

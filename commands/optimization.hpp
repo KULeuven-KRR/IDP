@@ -17,12 +17,11 @@
 class OptimizationInference: public Inference {
 public:
 	OptimizationInference(): Inference("optimize") {
-		//TODO
+		// TODO
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& /* args */) const {
-		//TODO not implemented
-		assert(false);
+		thrownotyetimplemented("Optimization inference.");
 	}
 };
 

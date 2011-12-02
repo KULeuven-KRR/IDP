@@ -1,0 +1,20 @@
+procedure getExpectedAModel(){
+	return false
+}
+
+vocabulary V{
+	type Hole
+	type Pigeon
+ 
+	Put(Pigeon) : Hole
+}
+
+theory T : V { 
+	! h1 h2 p1 p2 : Put(p1) ~= h1 | h1 >= h2 | p1 < p2 | Put(p2) ~= h2.
+	! h : ?<2 p : Put(p) = h.
+}
+
+structure S : V{ 
+	Hole = {1..49}
+	Pigeon = {1..50}
+}

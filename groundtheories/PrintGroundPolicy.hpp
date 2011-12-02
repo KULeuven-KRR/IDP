@@ -20,7 +20,6 @@
 #include "monitors/interactiveprintmonitor.hpp"
 
 #include "printers/ecnfprinter.hpp"
-#include "ground.hpp"
 #include "options.hpp"
 #include "error.hpp"
 
@@ -101,8 +100,8 @@ public:
 		delete(reif);
 	}
 
-	std::ostream& 	polPut(std::ostream& s, GroundTranslator*, GroundTermTranslator*, bool longnames = false)	const { assert(false); return s;	}
-	std::string 	polToString(GroundTranslator*, GroundTermTranslator*, bool longnames = false) 				const { assert(false); return "";	}
+	std::ostream& 	polPut(std::ostream& s, GroundTranslator*, GroundTermTranslator*, bool longnames = false)	const { Assert(false); return s;	}
+	std::string 	polToString(GroundTranslator*, GroundTermTranslator*, bool longnames = false) 				const { Assert(false); return "";	}
 };
 
 #endif /* PRINTGROUNDTHEORY_HPP_ */

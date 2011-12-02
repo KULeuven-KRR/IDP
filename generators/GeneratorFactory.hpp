@@ -1,9 +1,3 @@
-/************************************
-	generator.hpp
-	this file belongs to GidL 2.0
-	(c) K.U.Leuven
-************************************/
-
 #ifndef GENERATORFACTORY_HPP
 #define GENERATORFACTORY_HPP
 
@@ -19,6 +13,8 @@ class DomainElement;
 class InstanceChecker;
 class GeneratorNode;
 class Universe;
+class PredForm;
+class AbstractStructure;
 
 class GeneratorFactory : public StructureVisitor {
 private:
@@ -68,7 +64,9 @@ private:
 
 public:
 	static InstGenerator* create(const std::vector<const DomElemContainer*>&, const std::vector<SortTable*>&);
-	static InstGenerator* create(const PredTable*, std::vector<Pattern> pattern, const std::vector<const DomElemContainer*>&, const Universe&);
+	static InstGenerator* create(const PredTable*, const std::vector<Pattern>& pattern, const std::vector<const DomElemContainer*>&, const Universe&);
+	static InstGenerator* create(const PredForm* atom, AbstractStructure* structure, bool inverse, const std::vector<Pattern>& pattern, const std::vector<const DomElemContainer*>& vars,
+			const Universe& universe);
 };
 
 #endif /* GENERATORFACTORY_HPP */

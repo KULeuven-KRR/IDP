@@ -4,6 +4,7 @@
 #include "insert.hpp" // TODO remove inclusion (and make it a pointer)
 #include <cstdio>
 #include <set>
+#include <stack>
 #include <string>
 #include <map>
 
@@ -18,7 +19,10 @@ private:
 	Insert _inserter;
 	std::map<std::string,CLConst*> clconsts;
 	DomainElementFactory* _domainelemFactory;
+
 	Options* _options;
+	std::stack<unsigned int> _tabsizestack;
+
 	unsigned int _errorcount;
 	std::set<FILE*> _openfiles;
 
@@ -53,9 +57,7 @@ public:
 	Options* getOptions() {
 		return _options;
 	}
-	void setOptions(Options* options) {
-		_options = options;
-	}
+	void setOptions(Options* options);
 
 	void notifyOfError(){
 		_errorcount++;
@@ -67,6 +69,10 @@ public:
 
 	FILE* openFile(const char* filename, const char* mode);
 	void closeFile(FILE* file);
+
+	void setTabSize(unsigned int);
+	void resetTabSize();
+	unsigned int getTabSize() const;
 };
 
 #endif /* GLOBALDATA_HPP_ */

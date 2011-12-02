@@ -1,0 +1,39 @@
+procedure getExpectedAModel(){
+	return true
+}
+
+/***************************************
+	Modelling SAT with IDP
+***************************************/
+
+
+vocabulary V{
+type Atom
+type Clause
+PosIn(Atom,Clause) // atom occurs positively in clause
+NegIn(Atom,Clause) // atom occurs negatively in clause
+
+ 
+IsTrue(Atom)
+
+}
+
+theory T : V { 
+! c: ? a: (PosIn(a,c) & IsTrue(a)) | (NegIn(a,c) & ~IsTrue(a)).
+
+
+
+}
+
+structure S : V{ 
+
+// p cnf
+// 1 -2 4 0
+// 2 -3 0
+// -1 -3 0
+
+Atom = {1..4}
+Clause = {1..3}
+PosIn = { 1,1; 2,2; 4,1 }
+NegIn = { 2,1; 3,2; 1,3; 3,3 }
+}

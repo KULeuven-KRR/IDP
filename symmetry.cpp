@@ -1,17 +1,11 @@
-/************************************
-	symmetry.cpp
-	this file belongs to GidL 2.0
-	(c) K.U.Leuven
-************************************/
-
 #include "symmetry.hpp"
 #include "structure.hpp"
 #include "vocabulary.hpp"
 #include "theory.hpp"
 #include "term.hpp"
 #include "ecnf.hpp"
-#include "ground.hpp"
 #include "groundtheories/AbstractGroundTheory.hpp"
+#include "inferences/grounding/GroundTranslator.hpp"
 #include <list>
 #include <sstream>
 #include <iostream>
@@ -237,7 +231,7 @@ const AbstractStructure* OccurrencesCounter::getStructure() const {
  *	@pre: !relation->argumentNrs(sort).empty()
  */
 map<const DomainElement*,pair<int,int> > OccurrencesCounter::count(PFSymbol* relation, Sort* sort){
-	assert(!relation->argumentNrs(sort).empty());
+	Assert(!relation->argumentNrs(sort).empty());
 	vector<unsigned int> arguments = relation->argumentNrs(sort);
 	map<const DomainElement*,pair<int,int> > result;
 	const PredTable* ct = getStructure()->inter(relation)->ct();
@@ -275,7 +269,7 @@ map<const DomainElement*,pair<int,int> > OccurrencesCounter::count(PFSymbol* rel
  *	@pre: !relation->argumentNrs(sort).empty()
  */
 pair<int,int> OccurrencesCounter::getOccurrences(const DomainElement* element, PFSymbol* relation, Sort* sort){
-	assert(!relation->argumentNrs(sort).empty());
+	Assert(!relation->argumentNrs(sort).empty());
 	map<pair<const PFSymbol*,const Sort*>,map<const DomainElement*,pair<int,int> > >::iterator occurrences_it = occurrences_.find(pair<const PFSymbol*,const Sort*>(relation,sort) );
 	if(occurrences_it!=occurrences_.cend()){
 		map<const DomainElement*,pair<int,int> >::const_iterator result_it = occurrences_it->second.find(element);
@@ -358,7 +352,7 @@ const AbstractStructure* IVSet::getStructure() const{
  */
 IVSet::IVSet(const AbstractStructure* s, const set<const DomainElement*> elements, const set<Sort*> sorts, const set<PFSymbol*> relations) 
 	: structure_(s), elements_(elements), sorts_(sorts), relations_(relations){
-	assert(elements_.size()>1);
+	Assert(elements_.size()>1);
 }
 
 string IVSet::toString() const{
@@ -445,7 +439,7 @@ bool IVSet::isEnkelvoudig() const{
  *	The given counter keeps track of already counted domain elements, so no double work is done.
  */
 vector<const IVSet*> IVSet::splitBasedOnOccurrences(OccurrencesCounter* counter) const{
-	assert(counter->getStructure()==this->getStructure());
+	Assert(counter->getStructure()==this->getStructure());
 	map<vector<int>,set<const DomainElement*> > subSets;
 	map<const DomainElement*, vector<int> > occurrences = counter->getOccurrences(getElements(), getRelations(), getSorts());
 	for(auto occurrences_it=occurrences.cbegin(); occurrences_it!=occurrences.cend(); ++occurrences_it){
@@ -630,7 +624,7 @@ vector<map<int,int> > IVSet::getBreakingSymmetries(AbstractGroundTheory* gt) con
  *	@pre: this->isEnkelvoudig()
  */
 vector<list<int> > IVSet::getInterchangeableLiterals(AbstractGroundTheory* gt) const{
-	assert(this->isEnkelvoudig());
+	Assert(this->isEnkelvoudig());
 	
 	const set<const DomainElement*> emptySet;
 	vector<list<int> > result;
@@ -845,7 +839,7 @@ set<PFSymbol*> findNonTrivialRelationsWithSort(const AbstractStructure* s, const
  *	@pre: t->vocabulary()==s->vocabulary()
  */
 set<const IVSet*> initializeIVSets(const AbstractStructure* s, const AbstractTheory* t){
-	assert(t->vocabulary()==s->vocabulary());
+	Assert(t->vocabulary()==s->vocabulary());
 	TheorySymmetryAnalyzer tsa(s);
 	t->accept(&tsa);	
 	set<const Sort*> forbiddenSorts;
@@ -964,7 +958,7 @@ void splitByBinarySymmetries(set<const IVSet*>& potentials){
  */
 
 vector<const IVSet*> findIVSets(const AbstractTheory* t, const AbstractStructure* s){
-	assert(t->vocabulary()==s->vocabulary());
+	Assert(t->vocabulary()==s->vocabulary());
 	
 	cout << "initialize ivsets..." << endl;
 	

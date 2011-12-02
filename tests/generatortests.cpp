@@ -50,6 +50,23 @@ namespace Tests{
 		ASSERT_EQ(genvalues.size(), 11);
 	}
 
+	TEST(ComparisonGenerator, FiniteInfiniteEquality){
+		SortTable *left, *right;
+		right = new SortTable(new IntRangeInternalSortTable(-10, 10));
+		left = new SortTable(new AllIntegers());
+		DomElemContainer *leftvar = new DomElemContainer(), *rightvar = new DomElemContainer();
+		ComparisonGenerator* gen = new ComparisonGenerator(left, right, leftvar, rightvar, Input::NONE, CompType::EQ);
+		set<pair<int, int> > genvalues;
+		for(gen->begin(); not gen->isAtEnd(); gen->operator ++()){
+			auto tuple = pair<int, int>(leftvar->get()->value()._int, rightvar->get()->value()._int);
+			genvalues.insert(tuple);
+			ASSERT_EQ(tuple.first, tuple.second);
+			ASSERT_LT(tuple.first, 11);
+			ASSERT_GT(tuple.first, -11);
+		}
+		ASSERT_EQ(genvalues.size(), 21);
+	}
+
 	TEST(ComparisonGenerator, FiniteLT){
 		SortTable *left, *right;
 		left = new SortTable(new IntRangeInternalSortTable(-2, 2));
@@ -58,7 +75,7 @@ namespace Tests{
 		ComparisonGenerator* gen = new ComparisonGenerator(left, right, leftvar, rightvar, Input::NONE, CompType::LT);
 		set<pair<int, int> > genvalues;
 		for(gen->begin(); not gen->isAtEnd(); gen->operator ++()){
-			auto tuple = pair<int, int>(leftvar->get()->value()._int, rightvar->get()->value()._int);
+			pair<int, int> tuple = pair<int, int>(leftvar->get()->value()._int, rightvar->get()->value()._int);
 			genvalues.insert(tuple);
 			ASSERT_LT(tuple.first, tuple.second);
 		}

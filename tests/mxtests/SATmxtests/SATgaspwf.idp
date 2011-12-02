@@ -1,0 +1,22 @@
+procedure getExpectedAModel(){
+	return true
+}
+
+vocabulary V{
+	type Q isa int
+ 
+	R(Q,Q)
+	P(Q,Q)
+	H(Q,Q)
+}
+
+theory T : V { 
+	{ P(x,x+1). }
+	{ H(x,y) <- P(x,y).
+	  H(x,y) <- P(x,z) & H(z,y). }
+	{ R(x,y) <- H(x,y) & ~P(x,y). }
+}
+
+structure S : V{ 
+	Q = {0..10}
+}

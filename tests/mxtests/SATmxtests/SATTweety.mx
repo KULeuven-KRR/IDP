@@ -1,0 +1,27 @@
+procedure getExpectedAModel(){
+	return true
+}
+
+/*************************
+	Tweety the penguin
+**************************/
+
+vocabulary V{
+type Bird
+
+ 
+CanFly(Bird)
+AbnormalFlier(Bird)
+Penguin(Bird)
+
+}
+
+theory T : V { 
+{  CanFly(x) <- ~AbnormalFlier(x).}
+! x: Penguin(x) => AbnormalFlier(x).
+
+}
+
+structure S : V{ 
+Bird = {Tweety}
+}

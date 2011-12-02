@@ -1,0 +1,25 @@
+procedure getExpectedAModel(){
+	return true
+}
+
+/*************************************************************
+        The most well-known example from the papers :-)
+        Enjoy!
+*************************************************************/
+vocabulary V{
+ 
+P Q A B
+
+}
+
+theory T : V { 
+{ P <- Q. }
+{ Q <- P. }
+
+{ A <- B.
+  B <- A. }
+
+}
+
+structure S : V{ 
+}

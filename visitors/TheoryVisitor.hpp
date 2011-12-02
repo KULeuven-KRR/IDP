@@ -1,18 +1,7 @@
-/************************************
-	TheoryVisitor.hpp
-	this file belongs to GidL 2.0
-	(c) K.U.Leuven
-************************************/
-
 #ifndef THEORYVISITOR_HPP
 #define THEORYVISITOR_HPP
 
 class Theory;
-
-class GroundPolicy;
-class PrintGroundPolicy;
-class SolverPolicy;
-template<class T> class GroundTheory;
 
 class Formula;
 class PredForm;
@@ -49,6 +38,8 @@ class SetExpr;
 class EnumSetExpr;
 class QuantSetExpr;
 
+class AbstractGroundTheory;
+
 
 /**
  * A class for visiting all elements in a logical theory. 
@@ -59,18 +50,16 @@ class QuantSetExpr;
  */
 class TheoryVisitor {
 protected:
-	void traverse(const Formula*);
-	void traverse(const Term*);
-	void traverse(const SetExpr*);
+	virtual void traverse(const Formula*);
+	virtual void traverse(const Term*);
+	virtual void traverse(const SetExpr*);
 
 public:
 	virtual ~TheoryVisitor() {}
 	// Theories
 	virtual void visit(const Theory*);
 
-	virtual void visit(const GroundTheory<GroundPolicy>*);
-	virtual void visit(const GroundTheory<PrintGroundPolicy>*);
-	virtual void visit(const GroundTheory<SolverPolicy>*);
+	virtual void visit(const AbstractGroundTheory*);
 
 	// Formulas
 	virtual void visit(const PredForm*);
@@ -86,7 +75,9 @@ public:
 	virtual void visit(const GroundSet*);
 	virtual void visit(const GroundAggregate*);
 
-	virtual void visit(const CPReification*);
+	virtual void visit(const CPReification*){
+		// TODO
+	}
 
 	// Definitions
 	virtual void visit(const Rule*);
@@ -99,9 +90,15 @@ public:
 	virtual void visit(const DomainTerm*);
 	virtual void visit(const AggTerm*);
 
-	virtual void visit(const CPVarTerm*);
-	virtual void visit(const CPWSumTerm*);
-	virtual void visit(const CPSumTerm*);
+	virtual void visit(const CPVarTerm*){
+		// TODO
+	}
+	virtual void visit(const CPWSumTerm*){
+		// TODO
+	}
+	virtual void visit(const CPSumTerm*){
+		// TODO
+	}
 
 	// Set expressions
 	virtual void visit(const EnumSetExpr*);

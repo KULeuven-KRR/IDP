@@ -1,0 +1,25 @@
+procedure getExpectedAModel(){
+	return true
+}
+
+vocabulary V{
+	type N  isa int
+
+ 
+	R(N, N)
+	Q(N, N)
+	
+}
+
+theory T : V { 
+	{
+		!x: R(x+1, y) <- max{z: Q(x, z): z}>=1.
+		! x y : Q(x, y) <- R(x, y).
+		! x: Q(x, 1) <-.
+	}
+
+}
+
+structure S : V{ 
+N = {1..3}
+}

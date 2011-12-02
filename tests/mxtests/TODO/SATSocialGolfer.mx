@@ -1,0 +1,46 @@
+procedure getExpectedAModel(){
+	return true
+}
+
+/**********************************
+	Social Golfer from Asparagus
+**********************************/
+
+vocabulary V{
+
+type Players 
+type	Groups 
+type	Weeks
+
+
+Groupsize : Players
+
+ SameGroup(Weeks,Players,Players)
+Plays(Weeks,Groups,Players)
+Map(Weeks,Players,Players)
+}
+
+theory T : V { 
+
+// Each golfer plays in exactly one group every week.
+! p w : ? g : Plays(w,g,p).
+! p w g1 g2 : Plays(w,g1,p) & Plays(w,g2,p) => g1 = g2.
+
+// Each pair of players only meets once.
+
+{ SameGroup(w,p1,p2) <- Plays(w,g,p1) & Plays(w,g,p2) & p1 ~= p2. }
+! p1 p2 w1 w2 : SameGroup(w1,p1,p2) & SameGroup(w2,p1,p2) => w1 = w2. 
+
+// The number of players in each group is equal to groupsize.
+
+! w p : ? n : n =< Groupsize & Map(w,p,n).
+! w p1 p2 n : ~(SameGroup(w,p1,p2) & Map(w,p1,n) & Map(w,p2,n)).
+
+}
+
+structure S : V{ 
+Players = {1..32}
+Groups = {1..8}
+Weeks = {1..6}
+Groupsize = 4
+}

@@ -177,7 +177,15 @@ bool Sort::builtin() const {
 }
 
 SortTable* Sort::interpretation() const {
+
 	return _interpretation;
+}
+
+std::set<const Vocabulary*>::const_iterator Sort::firstVocabulary() const {
+	return _vocabularies.cbegin();
+}
+std::set<const Vocabulary*>::const_iterator Sort::lastVocabulary() const {
+	return _vocabularies.cend();
 }
 
 ostream& Sort::put(ostream& output, bool longnames) const {
@@ -370,7 +378,7 @@ bool PFSymbol::hasVocabularies() const {
 }
 
 Predicate* PFSymbol::derivedSymbol(SymbolType type) {
-	assert(type != ST_NONE);
+	Assert(type != ST_NONE);
 	auto it = _derivedsymbols.find(type);
 	if (it == _derivedsymbols.cend()) {
 		Predicate* derp = new Predicate(_name, _sorts, _pi, _infix);
@@ -713,7 +721,7 @@ ComparisonPredGenerator::~ComparisonPredGenerator() {
  */
 bool ComparisonPredGenerator::contains(const Predicate* predicate) const {
 	if (predicate->name() == _name) {
-		assert(predicate->arity() == 2);
+		Assert(predicate->arity() == 2);
 		return predicate->sort(0) == predicate->sort(1);
 	} else
 		return false;
@@ -797,7 +805,7 @@ set<Predicate*> ComparisonPredGenerator::nonbuiltins() const {
 namespace PredUtils {
 
 Predicate* overload(Predicate* p1, Predicate* p2) {
-	assert(p1->name() == p2->name());
+	Assert(p1->name() == p2->name());
 	if (p1 == p2) return p1;
 	set<Predicate*> sp;
 	sp.insert(p1);
@@ -1134,7 +1142,7 @@ bool IntFloatFuncGenerator::contains(const Function* function) const {
  * the float function if it only contains float, and a null-pointer otherwise.
  */
 Function* IntFloatFuncGenerator::resolve(const vector<Sort*>& sorts) {
-	assert(sorts.size() == 2 || sorts.size() == 3);
+	Assert(sorts.size() == 2 || sorts.size() == 3);
 	if (sorts[0] == sorts[1] && (sorts.size() == 2 || sorts[1] == sorts[2])) {
 		Sort* intsort = *((Vocabulary::std()->sort("int"))->begin());
 		Sort* floatsort = *((Vocabulary::std()->sort("float"))->begin());
@@ -1240,7 +1248,7 @@ Function* OrderFuncGenerator::resolve(const vector<Sort*>& sorts) {
 		if (sorts[n] != sorts[n - 1]) {
 			return 0;
 		}
-	}assert(!sorts.empty());
+	}Assert(!sorts.empty());
 	map<Sort*, Function*>::const_iterator it = _overfuncs.find(sorts[0]);
 	if (it == _overfuncs.cend()) {
 		return disambiguate(sorts);
@@ -1307,7 +1315,7 @@ set<Function*> OrderFuncGenerator::nonbuiltins() const {
 namespace FuncUtils {
 
 Function* overload(Function* f1, Function* f2) {
-	assert(f1->name() == f2->name());
+	Assert(f1->name() == f2->name());
 	if (f1 == f2) {
 		return f1;
 	}
@@ -1392,7 +1400,7 @@ void Vocabulary::add(PFSymbol* symbol){
 	if(sametypeid<Predicate>(*symbol)){
 		add(dynamic_cast<Predicate*>(symbol));
 	}else{
-		assert(sametypeid<Function>(*symbol));
+		Assert(sametypeid<Function>(*symbol));
 		add(dynamic_cast<Function*>(symbol));
 	}
 }
@@ -1624,7 +1632,7 @@ bool Vocabulary::contains(PFSymbol* s) const {
 	if (typeid(*s) == typeid(Predicate)) {
 		return contains(dynamic_cast<Predicate*>(s));
 	} else {
-		assert(typeid(*s) == typeid(Function));
+		Assert(typeid(*s) == typeid(Function));
 		return contains(dynamic_cast<Function*>(s));
 	}
 }

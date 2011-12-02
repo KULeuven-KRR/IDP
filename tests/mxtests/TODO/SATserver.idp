@@ -1,0 +1,45 @@
+procedure getExpectedAModel(){
+	return true
+}
+
+vocabulary V{
+	type PC
+	type Switch
+	type Interface
+	Link(Interface,Interface)
+	partial IntfPC(Interface) : PC 
+	partial IntfSw(Interface) : Switch
+
+ 
+	SymLink(Interface,Interface)
+	Connected(Interface,Interface)
+	SameSubnet(PC,PC)
+	Subnet(PC)
+
+ 
+	DHCP(PC)
+
+}
+
+theory T : V { 
+	{ SymLink(i,j) <- Link(i,j).
+	  SymLink(i,j) <- Link(j,i).  }
+	{ Connected(i,j) <- SymLink(i,j).
+	  Connected(i,j) <- IntfSw(i) = s & IntfSw(j) = s.  
+	  Connected(i,j) <- IntfPC(i) = p & IntfPC(j) = p.  
+	  Connected(i,j) <- Connected(i,k) & Connected(k,j).  }
+	{ SameSubnet(p,q) <- IntfPC(i) = p & IntfPC(j) = q & Connected(i,j). }
+	{ Subnet(p) <- ! q : SameSubnet(p,q) => p =< q. }
+
+	! p : Subnet(p) => ?2 q : SameSubnet(p,q) & DHCP(q).
+
+}
+
+structure S : V{ 
+	PC = { A..E}
+	Switch = { S1;S2 }
+	Interface = { A1; B1; S11; S12; S13; S21; S22; S23; S24; C1; D1; E1 }
+	Link = { A1,S11; B1,S12; S13,S21; S22,C1; S23,D1; S24,E1 }
+	IntfPC = { A1->A; B1->B; C1->C; D1->D; E1->E }
+	IntfSw = { S11->S1; S12->S1; S13->S1; S21->S2; S22->S2; S23->S2; S24->S2 }
+}

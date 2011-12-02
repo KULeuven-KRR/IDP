@@ -1,0 +1,60 @@
+procedure getExpectedAModel(){
+	return true
+}
+
+vocabulary V{
+	type Row isa int
+	type Col isa int
+	type Num isa int
+	type Dir 
+	Left:Dir
+	Right:Dir
+	Up:Dir
+	Down:Dir
+	
+	Black(Row,Col)
+	ContN(Row,Col,Num)
+ 
+	ContL(Row,Col)
+ 
+	Illum(Row,Col)
+	Illum(Row,Col,Dir)
+	NextTo(Row,Col,Row,Col)
+	Border(Row,Col)
+}
+
+theory T : V { 
+	{ Border(r,c) <- r=0 | r=8 | c=0 | c=8. }
+	{ NextTo(r1,c1,r2,c2) <- abs(r1-r2) + abs(c1-c2) = 1. }
+	! r c : ContN(r,c,0) => ! rn cn : NextTo(r,c,rn,cn) => ~ContL(rn,cn).
+	! r c : ContN(r,c,4) => ! rn cn : NextTo(r,c,rn,cn) => ContL(rn,cn).
+	! r c : ContN(r,c,1) => ?1 rn cn : NextTo(r,c,rn,cn) & ContL(rn,cn).
+	! r c : ContN(r,c,3) => ?1 rn cn :  NextTo(r,c,rn,cn) & ~ContL(rn,cn).
+	! r c : ContN(r,c,2) => ? rn1 cn1 rn2 cn2 : NextTo(r,c,rn1,cn1) & rn1 ~= rn2 & cn1 ~= cn2 & NextTo(r,c,rn2,cn2) & ContL(rn1,cn1) & ContL(rn2,cn2).
+	! r c : ContN(r,c,2) => ? rn1 cn1 rn2 cn2 : NextTo(r,c,rn1,cn1) & rn1 ~= rn2 & cn1 ~= cn2 & NextTo(r,c,rn2,cn2) & ~ContL(rn1,cn1) & ~ContL(rn2,cn2).
+	{ Illum(r,c) <- Illum(r,c,d). 
+	  Illum(r,c,Left) <- ~Black(r,c) & ContL(r,c-1).
+	  Illum(r,c,Right) <- ~Black(r,c) & ContL(r,c+1).
+	  Illum(r,c,Up) <- ~Black(r,c) & ContL(r-1,c).
+	  Illum(r,c,Down) <- ~Black(r,c) & ContL(r+1,c). 
+	  Illum(r,c,Left) <- ~Black(r,c) & Illum(r,c-1,Left).
+	  Illum(r,c,Right) <- ~Black(r,c) & Illum(r,c+1,Right).
+	  Illum(r,c,Up) <- ~Black(r,c) & Illum(r-1,c,Up).
+	  Illum(r,c,Down) <- ~Black(r,c) & Illum(r+1,c,Down). 
+	}
+	! r c : ~Black(r,c) & ~ContL(r,c) & ~Border(r,c)  => Illum(r,c).
+	! r c : ContL(r,c) => ~Illum(r,c).
+}
+
+structure S : V{ 
+	Dir = {d;l;r;u}
+	Left = l
+	Right = r
+	Up = u
+	Down = d
+	Row = {0..8}
+	Col = {0..8}
+	Num = {0..3}
+	Black = { 1,6; 2,1; 2,5; 3,2; 4,4; 5,6; 6,3; 6,7; 7,2 }
+	ContN = { 1,6,0; 2,1,1; 2,5,1; 3,2,2; 4,4,1; 5,6,2; 6,7,3 }
+}

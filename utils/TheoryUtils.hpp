@@ -7,8 +7,11 @@
 #ifndef THEORYUTILS_HPP_
 #define THEORYUTILS_HPP_
 
-#include <set>
-#include "commontypes.hpp"
+#include "common.hpp"
+#include <iostream>
+#include "GlobalData.hpp"
+#include "options.hpp"
+#include <typeinfo>
 
 class Definition;
 class SetExpr;
@@ -34,7 +37,17 @@ Construct* transform(Construct* object) {
 template<typename Transformer, typename Construct, typename ... Values>
 Construct* transform(Construct* object, Values ... parameters) {
 	Transformer t(parameters...);
-	return object->accept(&t);
+	if(GlobalData::instance()->getOptions()->getValue(IntType::GROUNDVERBOSITY)>1){
+		std::cerr <<"Executing " <<typeid(Transformer).name() <<" on: ";
+		object->put(std::cerr);
+		std::cerr <<"\nResulted in: ";
+	}
+	auto result = object->accept(&t);
+	if(GlobalData::instance()->getOptions()->getValue(IntType::GROUNDVERBOSITY)>1){
+		result->put(std::cerr);
+		std::cerr <<"\n";
+	}
+	return result;
 }
 
 namespace FormulaUtils {
@@ -61,6 +74,8 @@ Formula* flatten(Formula*);
 Formula* graphFunctions(Formula* f);
 Formula* graphAggregates(Formula* f);
 
+Formula* splitProducts(Formula* f);
+
 /** Recursively move all partial terms outside atoms **/
 Formula* unnestPartialTerms(Formula* f, Context context, Vocabulary* voc = NULL);
 
@@ -68,8 +83,9 @@ Formula* unnestPartialTerms(Formula* f, Context context, Vocabulary* voc = NULL)
 Formula* unnestThreeValuedTerms(Formula*, AbstractStructure*, Context context, bool cpsupport = false, const std::set<const PFSymbol*> cpsymbols =
 		std::set<const PFSymbol*>());
 
-/** Returns true iff at least one FuncTerm occurs in the given formula **/
+/** Returns true iff at least one FuncTerm/AggTerm occurs in the given formula **/
 bool containsFuncTerms(Formula* f);
+bool containsAggTerms(Formula* f);
 
 /** Replace the given term by the given variable in the given formula **/
 Formula* substituteTerm(Formula*, Term*, Variable*);
@@ -109,6 +125,8 @@ AbstractTheory* graphFunctions(AbstractTheory*);
 
 /** Rewrite (AggTerm op BoundTerm) to an aggregate formula (op = '=', '<', or '>') **/
 AbstractTheory* graphAggregates(AbstractTheory* t);
+
+AbstractTheory* splitProducts(AbstractTheory* f);
 
 /** Replace all definitions in the theory by their completion **/
 AbstractTheory* addCompletion(AbstractTheory*);

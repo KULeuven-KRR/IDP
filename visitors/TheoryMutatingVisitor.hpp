@@ -9,10 +9,7 @@
 
 class Theory;
 
-class GroundPolicy;
-class PrintGroundPolicy;
-class SolverPolicy;
-template<class T> class GroundTheory;
+class AbstractGroundTheory;
 
 class Formula;
 class PredForm;
@@ -60,17 +57,15 @@ class QuantSetExpr;
  */
 class TheoryMutatingVisitor {
 protected:
-	Formula* traverse(Formula*);
-	Term* traverse(Term*);
-	SetExpr* traverse(SetExpr*);
+	virtual Formula* traverse(Formula*);
+	virtual Term* traverse(Term*);
+	virtual SetExpr* traverse(SetExpr*);
 
 public:
 	virtual ~TheoryMutatingVisitor(){}
 	// Theories
 	virtual Theory* visit(Theory*);
-	virtual GroundTheory<GroundPolicy>* visit(GroundTheory<GroundPolicy>*);
-	virtual GroundTheory<PrintGroundPolicy>* visit(GroundTheory<PrintGroundPolicy>*);
-	virtual GroundTheory<SolverPolicy>* visit(GroundTheory<SolverPolicy>*);
+	virtual AbstractGroundTheory* visit(AbstractGroundTheory*);
 
 	// Formulas
 	virtual Formula* visit(PredForm*);

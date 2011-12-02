@@ -1,0 +1,13 @@
+#include <mx>
+
+procedure main(){
+	stdoptions.nrmodels=0
+	stdoptions.nbmodelequivalent = true
+	stdoptions.groundwithbounds = true
+	solutions = mx::all(T, S, stdoptions)
+	io.stderr:write("Found "..#solutions.." models, expected "..getExpectedNbOfModels().." models.\n")
+	if(#solutions==getExpectedNbOfModels())
+		then return 1
+	else return 0
+	end
+}

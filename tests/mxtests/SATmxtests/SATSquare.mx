@@ -1,0 +1,51 @@
+procedure getExpectedAModel(){
+	return true
+}
+
+vocabulary V{
+	type Pos isa int
+	type Nat isa int
+	Dim : Pos
+ 
+	F(Pos,Pos) : Nat
+	Mc : Nat
+	RCount(Pos,Pos,Nat)
+	CCount(Pos,Pos,Nat)
+	D1Count(Pos,Nat)
+	D2Count(Pos,Nat)
+}
+
+theory T : V { 
+	! x y : F(x,y) =< Dim * Dim.
+	! x1 x2 y1 y2 : F(x1,y1) = F(x2,y2) => x1 = x2 & y1 = y2.
+
+	  
+	Mc = Dim * (Dim * Dim + 1) / 2.
+
+	 
+	{ RCount(r,1,n) <- F(r,1) = n.
+	  RCount(r,c+1,n) <- RCount(r,c,m) & n = m + F(r,c+1).  }
+	! r : Pos(r) => RCount(r,Dim,Mc).
+
+	 
+	{ CCount(1,c,n) <- F(1,c) = n.
+	  CCount(r+1,c,n) <- CCount(r,c,m) & n = m + F(r+1,c).  }
+	! c : Pos(c) => CCount(Dim,c,Mc).
+
+	 
+	{ D1Count(1,n) <- F(1,1) = n.
+	  D1Count(p+1,n) <- D1Count(p,m) & n = m + F(p+1,p+1). }
+	D1Count(Dim,Mc).
+	
+	 
+	{ D2Count(1,n) <- F(1,Dim) = n.
+	  D2Count(p+1,n) <- D2Count(p,m) & n = m + F(p+1,Dim - p).
+	}
+	D2Count(Dim,Mc).
+}
+
+structure S : V{ 
+	Pos = {1..3}
+	Dim = 3
+	Nat = {1..15}
+}

@@ -1,9 +1,4 @@
-/************************************
-	interactive.cpp
-	this file belongs to GidL 2.0
-	(c) K.U.Leuven
-************************************/
-
+#include <cstdio> // Because of error in cygwin readline library (not including this because of older standard)
 #include "interactive.hpp"
 
 /** Interactive mode **/

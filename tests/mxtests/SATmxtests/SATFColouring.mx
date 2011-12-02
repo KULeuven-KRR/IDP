@@ -1,0 +1,31 @@
+procedure getExpectedAModel(){
+	return true
+}
+
+/**************************************
+        Graph Colouring Problem
+**************************************/
+
+vocabulary V{
+type  Colour 
+type Vertex 
+Edge(Vertex,Vertex)
+
+ 
+Colouring(Vertex) : Colour
+
+}
+
+theory T : V { 
+// Neighbours cannot have the same colour.
+// ! n1 n2 : Edge(n1,n2) =>  Colouring(n1) ~= Colouring(n2).
+! n1 n2 c: ~(Edge(n1,n2) & Colouring(n1) = c & Colouring(n2) = c).
+
+}
+
+structure S : V{ 
+Colour = {Blue; Red; Green }
+Vertex = {A;B;C;D}
+Edge =  { A,B; A,C; B,C; B,D; D,C}
+
+}

@@ -1,8 +1,8 @@
 /************************************
-	structure.cpp
-	this file belongs to GidL 2.0
-	(c) K.U.Leuven
-************************************/
+ structure.cpp
+ this file belongs to GidL 2.0
+ (c) K.U.Leuven
+ ************************************/
 
 #include <cmath> // double std::abs(double) and double std::pow(double,double)
 #include <cstdlib> // int std::abs(int)
@@ -17,7 +17,6 @@
 #include "fobdds/FoBdd.hpp"
 #include "fobdds/FoBddManager.hpp"
 #include "luaconnection.hpp" //TODO break connection with lua!
-
 #include "visitors/StructureVisitor.hpp"
 #include "structureanalysis/EnumerateSymbolicTable.hpp"
 
@@ -56,7 +55,7 @@ DomainElement::DomainElement(int value) :
  */
 DomainElement::DomainElement(double value) :
 		_type(DET_DOUBLE) {
-	assert(!isInt(value));
+	Assert(!isInt(value));
 	// TODO check rest of code
 	_value._double = value;
 }
@@ -66,7 +65,7 @@ DomainElement::DomainElement(double value) :
  */
 DomainElement::DomainElement(const string* value) :
 		_type(DET_STRING) {
-	assert(!isDouble(*value));
+	Assert(!isDouble(*value));
 	_value._string = value;
 }
 
@@ -215,7 +214,7 @@ bool operator>=(const DomainElement& d1, const DomainElement& d2) {
 
 Compound::Compound(Function* function, const ElementTuple& arguments) :
 		_function(function), _arguments(arguments) {
-	assert(function != 0);
+	Assert(function != 0);
 }
 
 /**
@@ -332,7 +331,7 @@ string DomainAtom::toString() const {
  */
 DomainElementFactory::DomainElementFactory(int firstfastint, int lastfastint) :
 		_firstfastint(firstfastint), _lastfastint(lastfastint) {
-	assert(firstfastint < lastfastint);
+	Assert(firstfastint < lastfastint);
 	_fastintelements = vector<DomainElement*>(lastfastint - firstfastint, (DomainElement*) 0);
 }
 
@@ -485,7 +484,7 @@ const DomainElement* DomainElementFactory::create(const Compound* value) {
  *		- args:		the arguments of the given compound value
  */
 const DomainElement* DomainElementFactory::create(Function* function, const ElementTuple& args) {
-	assert(function != 0);
+	Assert(function != 0);
 	const Compound* value = compound(function, args);
 	return create(value);
 }
@@ -790,7 +789,7 @@ bool UnionInternalIterator::hasNext() const {
 }
 
 const ElementTuple& UnionInternalIterator::operator*() const {
-	assert(not _curriterator->isAtEnd());
+	Assert(not _curriterator->isAtEnd());
 	return *(*_curriterator);
 }
 
@@ -840,14 +839,14 @@ void InverseInternalIterator::operator++() {
 	do {
 		int pos = _curr.size() - 1;
 		for (auto it = _curr.rbegin(); it != _curr.rend(); ++it, --pos) {
-			assert(not it->isAtEnd());
+			Assert(not it->isAtEnd());
 			++(*it);
 			if (not it->isAtEnd()) {
 				_currtuple[pos] = *(*it);
 				break;
 			} else {
 				_curr[pos] = _lowest[pos];
-				assert(not _curr[pos].isAtEnd());
+				Assert(not _curr[pos].isAtEnd());
 				_currtuple[pos] = *(_curr[pos]);
 			}
 		}
@@ -892,14 +891,14 @@ const ElementTuple& UNAInternalIterator::operator*() const {
 void UNAInternalIterator::operator++() {
 	int pos = _curr.size() - 1;
 	for (vector<SortIterator>::reverse_iterator it = _curr.rbegin(); it != _curr.rend(); ++it, --pos) {
-		assert(not it->isAtEnd());
+		Assert(not it->isAtEnd());
 		++(*it);
 		if (not it->isAtEnd()) {
 			_currtuple[pos] = *(*it);
 			break;
 		} else {
 			_curr[pos] = _lowest[pos];
-			assert(not _curr[pos].isAtEnd());
+			Assert(not _curr[pos].isAtEnd());
 			_currtuple[pos] = *(_curr[pos]);
 		}
 	}
@@ -980,7 +979,7 @@ bool UnionInternalSortIterator::hasNext() const {
 }
 
 const DomainElement* UnionInternalSortIterator::operator*() const {
-	assert(not _curriterator->isAtEnd());
+	Assert(not _curriterator->isAtEnd());
 	return *(*_curriterator);
 }
 
@@ -1376,7 +1375,7 @@ InternalPredTable* UnionInternalPredTable::add(const ElementTuple& tuple) {
 	if (_nrRefs > 1) {
 		UnionInternalPredTable* newtable = new UnionInternalPredTable(_intables, _outtables);
 		InternalPredTable* temp = newtable->add(tuple);
-		assert(temp == newtable);
+		Assert(temp == newtable);
 		return temp;
 	} else {
 		InternalPredTable* temp = _intables[0]->add(tuple);
@@ -1407,11 +1406,11 @@ InternalPredTable* UnionInternalPredTable::add(const ElementTuple& tuple) {
  *		A pointer to the updated table
  */
 InternalPredTable* UnionInternalPredTable::remove(const ElementTuple& tuple) {
-	assert(!_outtables.empty());
+	Assert(!_outtables.empty());
 	if (_nrRefs > 1) {
 		UnionInternalPredTable* newtable = new UnionInternalPredTable(_intables, _outtables);
 		InternalPredTable* temp = newtable->remove(tuple);
-		assert(temp == newtable);
+		Assert(temp == newtable);
 		return temp;
 	} else {
 		InternalPredTable* temp = _outtables[0]->add(tuple);
@@ -1634,7 +1633,7 @@ InternalPredTable* ComparisonInternalPredTable::remove(const ElementTuple& tuple
  *		tuple	- the given tuple
  */
 bool EqualInternalPredTable::contains(const ElementTuple& tuple, const Universe& univ) const {
-	assert(tuple.size() == 2);
+	Assert(tuple.size() == 2);
 	return (tuple[0] == tuple[1] && univ.contains(tuple));
 }
 
@@ -1691,7 +1690,7 @@ InternalTableIterator* EqualInternalPredTable::begin(const Universe& univ) const
  *		tuple	- the given tuple
  */
 bool StrLessInternalPredTable::contains(const ElementTuple& tuple, const Universe& univ) const {
-	assert(tuple.size() == 2);
+	Assert(tuple.size() == 2);
 	return (*(tuple[0]) < *(tuple[1]) && univ.contains(tuple));
 }
 
@@ -1767,7 +1766,7 @@ InternalTableIterator* StrLessInternalPredTable::begin(const Universe& univ) con
  *		tuple	- the given tuple
  */
 bool StrGreaterInternalPredTable::contains(const ElementTuple& tuple, const Universe& univ) const {
-	assert(tuple.size() == 2);
+	Assert(tuple.size() == 2);
 	return (*(tuple[0]) > *(tuple[1]) && univ.contains(tuple));
 }
 
@@ -2150,7 +2149,7 @@ InternalSortTable* UnionInternalSortTable::add(const DomainElement* d) {
 			}
 			UnionInternalSortTable* newtable = new UnionInternalSortTable(newin, newout);
 			InternalSortTable* temp = newtable->add(d);
-			assert(temp == newtable);
+			Assert(temp == newtable);
 			return newtable;
 		} else {
 			bool in = false;
@@ -2164,7 +2163,7 @@ InternalSortTable* UnionInternalSortTable::add(const DomainElement* d) {
 				for (unsigned int n = 0; n < _outtables.size(); ++n)
 					_outtables[n]->remove(d);
 			} else {
-				assert(!_intables.empty());
+				Assert(!_intables.empty());
 				_intables[0]->add(d);
 			}
 			return this;
@@ -2174,7 +2173,7 @@ InternalSortTable* UnionInternalSortTable::add(const DomainElement* d) {
 }
 
 InternalSortTable* UnionInternalSortTable::remove(const DomainElement* d) {
-	assert(!_outtables.empty());
+	Assert(!_outtables.empty());
 	if (_nrRefs > 1) {
 		vector<SortTable*> newin;
 		vector<SortTable*> newout;
@@ -2186,7 +2185,7 @@ InternalSortTable* UnionInternalSortTable::remove(const DomainElement* d) {
 		}
 		UnionInternalSortTable* newtable = new UnionInternalSortTable(newin, newout);
 		InternalSortTable* temp = newtable->remove(d);
-		assert(temp == newtable);
+		Assert(temp == newtable);
 		return newtable;
 	} else {
 		_outtables[0]->add(d);
@@ -2341,7 +2340,7 @@ InternalSortTable* AllFloats::add(int, int) {
 }
 
 const DomainElement* AllFloats::first() const {
-	return createDomElem(numeric_limits<double>::min());
+	return createDomElem(- numeric_limits<double>::max());
 }
 
 const DomainElement* AllFloats::last() const {
@@ -2657,7 +2656,7 @@ EnumeratedInternalFuncTable* EnumeratedInternalFuncTable::add(const ElementTuple
 		}
 	}
 
-	assert(computedvalue == mappedvalue);
+	Assert(computedvalue == mappedvalue);
 	return this;
 }
 
@@ -2693,13 +2692,11 @@ const DomainElement* ModInternalFuncTable::operator[](const ElementTuple& tuple)
 }
 
 InternalFuncTable* ModInternalFuncTable::add(const ElementTuple&) {
-	assert(false);
-	return 0;
+	throw IdpException("Cannot add elements to this table.");
 }
 
 InternalFuncTable* ModInternalFuncTable::remove(const ElementTuple&) {
-	assert(false);
-	return 0;
+	throw IdpException("Cannot remove elements from this table.");
 }
 
 InternalTableIterator* ModInternalFuncTable::begin(const Universe& univ) const {
@@ -2713,13 +2710,11 @@ const DomainElement* ExpInternalFuncTable::operator[](const ElementTuple& tuple)
 }
 
 InternalFuncTable* ExpInternalFuncTable::add(const ElementTuple&) {
-	assert(false);
-	return 0;
+	throw IdpException("Cannot add elements to this table.");
 }
 
 InternalFuncTable* ExpInternalFuncTable::remove(const ElementTuple&) {
-	assert(false);
-	return 0;
+	throw IdpException("Cannot remove elements from this table.");
 }
 
 InternalTableIterator* ExpInternalFuncTable::begin(const Universe& univ) const {
@@ -2727,13 +2722,11 @@ InternalTableIterator* ExpInternalFuncTable::begin(const Universe& univ) const {
 }
 
 InternalFuncTable* IntFloatInternalFuncTable::add(const ElementTuple&) {
-	assert(false);
-	return 0;
+	throw IdpException("Cannot add elements to this table.");
 }
 
 InternalFuncTable* IntFloatInternalFuncTable::remove(const ElementTuple&) {
-	assert(false);
-	return 0;
+	throw IdpException("Cannot remove elements from this table.");
 }
 
 const DomainElement* PlusInternalFuncTable::operator[](const ElementTuple& tuple) const {
@@ -2831,12 +2824,7 @@ InternalTableIterator* UminInternalFuncTable::begin(const Universe& univ) const 
 	return new InternalFuncIterator(this, univ);
 }
 
-std::ostream& operator<<(std::ostream& stream, const AbstractTable& table) {
-	table.print(stream);
-	return stream;
-}
-
-void PredTable::print(std::ostream& stream) const {
+void PredTable::put(std::ostream& stream) const {
 	if (not finite()) {
 		stream << "infinite interpretation";
 		return;
@@ -2853,12 +2841,12 @@ void PredTable::print(std::ostream& stream) const {
 	stream << "}";
 }
 
-void FuncTable::print(std::ostream& stream) const {
-	// TODO
+void FuncTable::put(std::ostream& stream) const {
+	stream <<toString(_table);
 }
 
-void SortTable::print(std::ostream& stream) const {
-	// TODO
+void SortTable::put(std::ostream& stream) const {
+	stream <<toString(_table) <<"[" <<toString(first()) <<", " <<toString(last()) <<"]";
 }
 
 /****************
@@ -2909,6 +2897,14 @@ void InternalPredTable::decrementRef() {
 
 void InternalPredTable::incrementRef() {
 	++_nrRefs;
+}
+
+void InternalPredTable::put(std::ostream& stream) const{
+	stream <<typeid(*this).name();
+}
+
+void InternalFuncTable::put(std::ostream& stream) const{
+	stream <<typeid(*this).name();
 }
 
 ProcInternalPredTable::~ProcInternalPredTable() {
@@ -3058,7 +3054,7 @@ InternalPredTable* InverseInternalPredTable::add(const ElementTuple& tuple) {
 	if (_nrRefs > 1) {
 		InverseInternalPredTable* newtable = new InverseInternalPredTable(_invtable);
 		InternalPredTable* temp = newtable->add(tuple);
-		assert(temp == newtable);
+		Assert(temp == newtable);
 		return newtable;
 	} else {
 		InternalPredTable* temp = _invtable->remove(tuple);
@@ -3084,7 +3080,7 @@ InternalPredTable* InverseInternalPredTable::remove(const ElementTuple& tuple) {
 	if (_nrRefs > 1) {
 		InverseInternalPredTable* newtable = new InverseInternalPredTable(_invtable);
 		InternalPredTable* temp = newtable->remove(tuple);
-		assert(temp == newtable);
+		Assert(temp == newtable);
 		return newtable;
 	} else {
 		InternalPredTable* temp = _invtable->add(tuple);
@@ -3232,7 +3228,7 @@ void FuncTable::remove(const ElementTuple& tuple) {
  *		tuple	- the given tuple
  */
 bool FuncTable::contains(const ElementTuple& tuple) const {
-	assert(tuple.size() == arity()+1);
+	Assert(tuple.size() == arity()+1);
 	ElementTuple key = tuple;
 	const DomainElement* value = key.back();
 	key.pop_back();
@@ -3368,8 +3364,7 @@ void PredInter::makeUnknown(const ElementTuple& tuple) {
 		_ct->remove(tuple);
 		old->incrementRef();
 		if (_ct->internTable() != old) {
-			InverseInternalPredTable* internpf = dynamic_cast<InverseInternalPredTable*>(_pf->internTable());
-			internpf->internTable(_ct->internTable());
+			InverseInternalPredTable* internpf = dynamic_cast<InverseInternalPredTable*>(_pf->internTable());internpf->internTable(_ct->internTable());
 		}
 	} else {
 		_pf->internTable()->decrementRef();
@@ -3409,8 +3404,7 @@ void PredInter::makeTrue(const ElementTuple& tuple) {
 		_ct->add(tuple);
 		old->incrementRef();
 		if (_ct->internTable() != old) {
-			InverseInternalPredTable* internpf = dynamic_cast<InverseInternalPredTable*>(_pf->internTable());
-			internpf->internTable(_ct->internTable());
+			InverseInternalPredTable* internpf = dynamic_cast<InverseInternalPredTable*>(_pf->internTable());internpf->internTable(_ct->internTable());
 		}
 	} else {
 		_pf->internTable()->decrementRef();
@@ -3431,8 +3425,7 @@ void PredInter::makeFalse(const ElementTuple& tuple) {
 		_cf->add(tuple);
 		old->incrementRef();
 		if (_cf->internTable() != old) {
-			InverseInternalPredTable* internpt = dynamic_cast<InverseInternalPredTable*>(_pt->internTable());
-			internpt->internTable(_cf->internTable());
+			InverseInternalPredTable* internpt = dynamic_cast<InverseInternalPredTable*>(_pt->internTable());internpt->internTable(_cf->internTable());
 		}
 	} else {
 		_pt->internTable()->decrementRef();
@@ -3522,11 +3515,16 @@ PredInter* PredInter::clone(const Universe& univ) const {
 }
 
 std::ostream& operator<<(std::ostream& stream, const PredInter& interpretation) {
-	stream << "Certainly true: " << *interpretation.ct() << "\n";
-	stream << "Certainly false: " << *interpretation.cf() << "\n";
-	stream << "Possibly true: " << *interpretation.pt() << "\n";
-	stream << "Possibly false: " << *interpretation.pf() << "\n";
+	stream << "Certainly true: " <<toString(interpretation.ct()) << "\n";
+	stream << "Certainly false: " <<toString(interpretation.cf()) << "\n";
+	stream << "Possibly true: " <<toString(interpretation.pt()) << "\n";
+	stream << "Possibly false: " <<toString(interpretation.pf()) << "\n";
 	return stream;
+}
+
+PredInter* InconsistentPredInterGenerator::get(const AbstractStructure* structure) {
+	auto emptytable = new PredTable(new EnumeratedInternalPredTable(), structure->universe(_predicate));
+	return new PredInter(emptytable, emptytable, false, false);
 }
 
 PredInter* EqualInterGenerator::get(const AbstractStructure* structure) {
@@ -3618,6 +3616,11 @@ FuncInter* FuncInter::clone(const Universe& univ) const {
 		PredInter* npi = _graphinter->clone(univ);
 		return new FuncInter(npi);
 	}
+}
+
+FuncInter* InconsistentFuncInterGenerator::get(const AbstractStructure* structure) {
+	auto emptytable = new PredTable(new EnumeratedInternalPredTable(), structure->universe(_function));
+	return new FuncInter(new PredInter(emptytable, emptytable, false, false));
 }
 
 FuncInter* MinInterGenerator::get(const AbstractStructure* structure) {
@@ -3853,62 +3856,88 @@ bool Structure::approxTwoValued() const {
 	return result;
 }
 
-void Structure::addAllMorePreciesStructuresToResult(Structure* s, std::vector<AbstractStructure*> & result) const {
-	s->clean();
-	if (s->approxTwoValued()) {
-		result.push_back(s);
-	} else {
-		auto morePrecise = s->allTwoValuedMorePreciseStructures();
-		result.insert(result.end(), morePrecise.begin(), morePrecise.end());
+void generateMorePreciseStructures(const PredTable* cf, const ElementTuple& domainElementWithoutValue, const SortTable* imageSort, Function* function, const FuncInter* inter, vector<AbstractStructure*>& extensions){
+	// go over all saved structures and generate a new structure for each possible value for it
+	vector<AbstractStructure*> newstructs;
+	auto imageIterator = SortIterator(imageSort->internTable()->sortBegin());
+	vector<AbstractStructure*> partialfalsestructs;
+	if(function->partial()){
+		for (auto j = extensions.begin(); j < extensions.end(); ++j) {
+			partialfalsestructs.push_back((*j)->clone());
+		}
 	}
-}
-
-/*
- * Can only be called if structure is not two-valued and this structure is cleaned; calculate all more precise two-valued structures
- * TODO assert(iscleaned)
- */
-std::vector<AbstractStructure*> Structure::allTwoValuedMorePreciseStructures() const {
-	std::vector<AbstractStructure*> result;
-	assert( not approxTwoValued());
-
-	//If some function is not two-valued, calculate all structures that are more precise in which this function is two-valued
-	for (auto funcInterIterator = _funcinter.cbegin(); funcInterIterator != _funcinter.cend(); funcInterIterator++) {
-		auto f = (*funcInterIterator).first;
-		auto fi = (*funcInterIterator).second;
-		if (fi->approxTwoValued()) {
+	for (; not imageIterator.isAtEnd(); ++imageIterator) {
+		ElementTuple tuple(domainElementWithoutValue);
+		tuple.push_back(*imageIterator);
+		if (cf->contains(tuple)) {
 			continue;
 		}
 
-		auto ct = fi->graphInter()->ct();
-		auto cf = fi->graphInter()->cf();
-		Universe universe = fi->graphInter()->universe();
-		const vector<SortTable*>& sorts = universe.tables();
-		vector<SortIterator> domainIterators;
+		for (auto j = extensions.begin(); j < extensions.end(); ++j) {
+			auto news = (*j)->clone();
+			news->inter(function)->graphInter()->makeTrue(tuple);
+			newstructs.push_back(news);
+		}
+		for(auto j = partialfalsestructs.begin(); j<partialfalsestructs.end(); ++j){
+			(*j)->inter(function)->graphInter()->makeFalse(tuple);
+		}
+	}
+	Assert(newstructs.size()>0);
+	extensions = newstructs;
+	extensions.insert(extensions.end(), partialfalsestructs.cbegin(), partialfalsestructs.cend());
+}
 
-		bool hasNext = false;
+/*
+ * Can only be called if this structure is cleaned; calculates all more precise two-valued structures
+ * TODO Assert(iscleaned) and refactor methods
+ */
+std::vector<AbstractStructure*> Structure::generateAllTwoValuedExtensions() const {
+	vector<AbstractStructure*> extensions;
+
+	extensions.push_back(this->clone());
+
+	if (approxTwoValued()) {
+		return extensions;
+	}
+
+	// TODO if going through the vocabulary, it is not guaranteed that the struct has an interpretation for it (otherwise, could make this a global method). But is this logical, or should a monitor be added such that a struct is extended if its vocabulary changes?
+	for (auto i = _funcinter.begin(); i != _funcinter.end(); ++i) {
+		auto function = (*i).first;
+		auto inter = (*i).second;
+		if (inter->approxTwoValued()) {
+			continue;
+		}
+		// create a generator for the interpretation
+		auto universe = inter->graphInter()->universe();
+		const auto& sorts = universe.tables();
+
+		vector<SortIterator> domainIterators;
+		bool allempty = true;
 		for (auto sort = sorts.cbegin(); sort != sorts.cend(); ++sort) {
-			const SortIterator& temp = SortIterator((*sort)->internTable()->sortBegin());
+			const auto& temp = SortIterator((*sort)->internTable()->sortBegin());
 			domainIterators.push_back(temp);
-			if (!temp.isAtEnd()) {
-				hasNext = true;
+			if (not temp.isAtEnd()) {
+				allempty = false;
 			}
 		}
-		SortIterator imageIterator = domainIterators.back();
 		domainIterators.pop_back();
 
-		CartesianInternalTableIterator* internal = new CartesianInternalTableIterator(domainIterators, domainIterators, hasNext);
-		TableIterator domainIterator(internal);
+		auto ct = inter->graphInter()->ct();
+		auto cf = inter->graphInter()->cf();
 
+		//Now, choose an image for this domainelement
 		ElementTuple domainElementWithoutValue;
-		//If the function is not a constant, set a domain element.
-		//If the function is a constant, we leave domainElementWithoutValue to be blank.
-		if (hasNext) {
+		if (sorts.size() > 0) {
+			auto internaliterator = new CartesianInternalTableIterator(domainIterators, domainIterators, not allempty);
+			TableIterator domainIterator(internaliterator);
+
 			auto ctIterator = ct->begin();
 			auto cfIterator = cf->begin();
-			StrictWeakNTupleEquality eq(f->arity());
-			StrictWeakNTupleOrdering so(f->arity());
-			//here make a loop to find the first domain element without a value
-			for (; not domainIterator.isAtEnd(); ++domainIterator) {
+			StrictWeakNTupleEquality eq((*i).first->arity());
+			StrictWeakNTupleOrdering so((*i).first->arity());
+
+			for (; not allempty && not domainIterator.isAtEnd(); ++domainIterator) {
+				// get unassigned domain element
 				domainElementWithoutValue = *domainIterator;
 				while (not ctIterator.isAtEnd() && so(*ctIterator, domainElementWithoutValue)) {
 					++ctIterator;
@@ -3922,48 +3951,45 @@ std::vector<AbstractStructure*> Structure::allTwoValuedMorePreciseStructures() c
 				if (not cfIterator.isAtEnd() && eq(domainElementWithoutValue, *cfIterator)) {
 					continue;
 				}
-				break;
+
+				generateMorePreciseStructures(cf, domainElementWithoutValue, sorts.back(), function, inter, extensions);
 			}
-			assert(not domainIterator.isAtEnd());//We know that at least one domainelement should have no ct or cf value
+		}else{
+			generateMorePreciseStructures(cf, domainElementWithoutValue, sorts.back(), function, inter, extensions);
 		}
-		//Now, choose an image for this domainelement
-		for (; not imageIterator.isAtEnd(); ++imageIterator) {
-			ElementTuple tuple(domainElementWithoutValue);
-			tuple.push_back(*imageIterator);
-			if (cf->contains(tuple)) {
-				continue;
-			}
-			Structure* s = this->clone();
-			s->inter(f)->graphInter()->makeTrue(tuple);
-			addAllMorePreciesStructuresToResult(s, result);
-		}
-		return result;
 	}
 
 	//If some predicate is not two-valued, calculate all structures that are more precise in which this function is two-valued
-	for (auto predInterIterator = _predinter.cbegin(); predInterIterator != _predinter.cend(); predInterIterator++) {
-		PredInter* pi = (*predInterIterator).second;
-		Predicate* p = (*predInterIterator).first;
-		if (pi->approxTwoValued()) {
+	for (auto i = _predinter.begin(); i != _predinter.end(); i++) {
+		auto pred = (*i).first;
+		auto inter = (*i).second;
+		Assert(inter!=NULL);
+		if (inter->approxTwoValued()) {
 			continue;
 		}
 
-		const PredTable* pf = pi->pf();
-		for (TableIterator ptIterator = pi->pt()->begin(); !ptIterator.isAtEnd(); ++ptIterator) {
-			if (!pf->contains(*ptIterator)) {
+		const PredTable* pf = inter->pf();
+		for (TableIterator ptIterator = inter->pt()->begin(); not ptIterator.isAtEnd(); ++ptIterator) {
+			if (not pf->contains(*ptIterator)) {
 				continue;
 			}
-			Structure* s1 = this->clone();
-			s1->inter(p)->makeTrue(*ptIterator);
-			Structure* s2 = this->clone();
-			s2->inter(p)->makeFalse(*ptIterator);
-			addAllMorePreciesStructuresToResult(s1, result);
-			addAllMorePreciesStructuresToResult(s2, result);
 
-			return result;
+			vector<AbstractStructure*> newstructs;
+			for (auto j = extensions.begin(); j < extensions.end(); ++j) {
+				auto news = (*j)->clone();
+				news->inter(pred)->makeTrue(*ptIterator);
+				newstructs.push_back(news);
+				news = (*j)->clone();
+				news->inter(pred)->makeFalse(*ptIterator);
+				newstructs.push_back(news);
+			}
+			extensions = newstructs;
 		}
-	}assert(false);
-	return result;
+	}
+
+	// TODO delete all structures which are clone and discarded afterwards
+
+	return extensions;
 }
 
 void computescore(Sort* s, map<Sort*, unsigned int>& scores) {
@@ -3998,8 +4024,7 @@ void completeSortTable(const PredTable* pt, PFSymbol* symbol, const string& stru
 }
 
 void addUNAPattern(Function*) {
-	// TODO
-	notyetimplemented("una pattern type");
+	thrownotyetimplemented("una pattern type");
 }
 
 void Structure::autocomplete() {
@@ -4160,7 +4185,7 @@ SortTable* Structure::inter(Sort* s) const {
 		return s->interpretation();
 	} else {
 		auto it = _sortinter.find(s);
-		assert(it != _sortinter.cend());
+		Assert(it != _sortinter.cend());
 		return it->second;
 	}
 }
@@ -4172,7 +4197,7 @@ PredInter* Structure::inter(Predicate* p) const {
 
 	if (p->type() == ST_NONE) {
 		auto it = _predinter.find(p);
-		if(it==_predinter.cend()){
+		if (it == _predinter.cend()) {
 			throw IdpException("The structure does not contain the predicate ");
 		}
 		return it->second;
@@ -4180,6 +4205,7 @@ PredInter* Structure::inter(Predicate* p) const {
 
 	PredInter* pinter = inter(p->parent());
 	PredInter* newinter = NULL;
+	Assert(p->type()!=ST_NONE);
 	switch (p->type()) {
 	case ST_CT:
 		newinter = new PredInter(new PredTable(pinter->ct()->internTable(), pinter->universe()), true);
@@ -4193,9 +4219,8 @@ PredInter* Structure::inter(Predicate* p) const {
 	case ST_PF:
 		newinter = new PredInter(new PredTable(pinter->pf()->internTable(), pinter->universe()), true);
 		break;
-	case ST_NONE:
-		assert(false);
-		return NULL;
+	default:
+		break;
 	}
 	_intersToDelete.push_back(newinter);
 	return newinter;
@@ -4206,7 +4231,7 @@ FuncInter* Structure::inter(Function* f) const {
 		return f->interpretation(this);
 	} else {
 		auto it = _funcinter.find(f);
-		assert(it != _funcinter.cend());
+		Assert(it != _funcinter.cend());
 		return it->second;
 	}
 }
@@ -4274,7 +4299,7 @@ void Structure::clean() {
 			continue;
 		}
 
-		// TODO this code should be corrected!
+		// TODO this code should be reviewed!
 		if (((not it->first->partial()) && TableUtils::approxTotalityCheck(it->second))
 				|| TableUtils::approxIsInverse(it->second->graphInter()->ct(), it->second->graphInter()->cf())) {
 			EnumeratedInternalFuncTable* eift = new EnumeratedInternalFuncTable();
@@ -4287,8 +4312,8 @@ void Structure::clean() {
 }
 
 /**************
-	Visitor
-**************/
+ Visitor
+ **************/
 
 void ProcInternalPredTable::accept(StructureVisitor* v) const {
 	v->visit(this);
@@ -4379,8 +4404,8 @@ void ModInternalFuncTable::accept(StructureVisitor* v) const {
 }
 
 /******************
-	Materialize
-******************/
+ Materialize
+ ******************/
 
 SortTable* SortTable::materialize() const {
 	EnumerateSymbolicTable m;
