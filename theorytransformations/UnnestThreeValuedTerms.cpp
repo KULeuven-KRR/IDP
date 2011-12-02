@@ -22,7 +22,6 @@ bool UnnestThreeValuedTerms::isCPSymbol(const PFSymbol* symbol) const {
 }
 
 bool UnnestThreeValuedTerms::shouldMove(Term* t) {
-	std::cerr << "allowed? " << getAllowedToUnnest();
 	if(getAllowedToUnnest()) {
 		switch (t->type()) {
 		case TT_FUNC: {
