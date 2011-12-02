@@ -28,6 +28,8 @@
 #include "inferences/grounding/grounders/SetGrounders.hpp"
 #include "inferences/grounding/grounders/DefinitionGrounders.hpp"
 #include "inferences/grounding/grounders/LazyQuantGrounder.hpp"
+#include "theorytransformations/SplitProducts.hpp"
+#include "visitors/TheoryMutatingVisitor.hpp"
 
 #include "generators/BasicGenerators.hpp"
 #include "generators/TableGenerator.hpp"
@@ -38,7 +40,6 @@
 #include "fobdds/FoBddManager.hpp"
 #include "fobdds/FoBddVariable.hpp"
 #include "fobdds/FoBddFactory.hpp"
-#include "inferences/propagation/GenerateBDDAccordingToBounds.hpp"
 
 using namespace std;
 using namespace rel_ops;
@@ -341,11 +342,13 @@ Grounder* GrounderFactory::create(const AbstractTheory* theory, SATSolver* solve
  */
 void GrounderFactory::visit(const Theory* theory) {
 	// Collect all components (sentences, definitions, and fixpoint definitions) of the theory
+
 	set<TheoryComponent*> tcomps = theory->components();
 	vector<TheoryComponent*> components(tcomps.cbegin(), tcomps.cend());
 
 	// Order components the components to optimize the grounding process
-	// TODO
+	// TODO issue 57048.  I think that HERE, we should graphaggregate, graphfunctions, splitproducts (splitEQchains?), ...
+	// TODO issue 54941.  Splitproducts
 
 	InitContext();
 
@@ -408,6 +411,7 @@ void GrounderFactory::visit(const PredForm* pf) {
 	}
 
 	PredForm* newpf = dynamic_cast<PredForm*>(transpf);
+
 
 	// Create grounders for the subterms
 	vector<TermGrounder*> subtermgrounders;

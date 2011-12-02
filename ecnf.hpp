@@ -397,8 +397,10 @@ class AggTsBody: public TsBody {
 private:
 	int _setnr;
 	AggFunction _aggtype;
-	bool _lower;
-	double _bound;
+	bool _lower; //comptype == CompType::LT
+	double _bound; //The other side of the equation.
+	//If _lower is true this means CARD{_setnr}=<_bound
+	//If _lower is false this means CARD{_setnr}>=_bound
 public:
 	AggTsBody(TsType type, double bound, bool lower, AggFunction at, int setnr) :
 			TsBody(type), _setnr(setnr), _aggtype(at), _lower(lower), _bound(bound) {

@@ -114,16 +114,16 @@ void GroundDefinition::addPCRule(int head, const vector<int>& body, bool conj, b
 			}
 			case RT_AGG: {
 				AggGroundRule* grb = dynamic_cast<AggGroundRule*>(it->second);
-				CompType comp = (grb->lower() ? CompType::LT : CompType::GT);
+				CompType comp = (grb->lower() ? CompType::LEQ : CompType::GEQ);
 				if ((!conj) || body.size() == 1) {
-					int ts = _translator->translate(grb->bound(), comp, false, grb->aggtype(), grb->setnr(),
+					int ts = _translator->translate(grb->bound(), comp, grb->aggtype(), grb->setnr(),
 							(grb->recursive() ? TsType::RULE : TsType::EQ));
 					PCGroundRule* newgrb = new PCGroundRule(head, RT_DISJ, body, (recursive || grb->recursive()));
 					newgrb->body().push_back(ts);
 					delete (grb);
 					it->second = newgrb;
 				} else {
-					int ts1 = _translator->translate(grb->bound(), comp, false, grb->aggtype(), grb->setnr(),
+					int ts1 = _translator->translate(grb->bound(), comp, grb->aggtype(), grb->setnr(),
 							(grb->recursive() ? TsType::RULE : TsType::EQ));
 					int ts2 = _translator->translate(body, conj, (recursive ? TsType::RULE : TsType::EQ));
 					vector<int> vi(2);
@@ -153,14 +153,14 @@ void GroundDefinition::addAggRule(int head, int setnr, AggFunction aggtype, bool
 		switch(it->second->type()) {
 			case RT_DISJ: {
 				PCGroundRule* grb = dynamic_cast<PCGroundRule*>(it->second);
-				int ts = _translator->translate(bound,(lower?CompType::LT:CompType::GT),false,aggtype,setnr,(recursive ? TsType::RULE : TsType::EQ));
+				int ts = _translator->translate(bound,(lower?CompType::LEQ:CompType::GEQ),aggtype,setnr,(recursive ? TsType::RULE : TsType::EQ));
 				grb->body().push_back(ts);
 				grb->recursive(grb->recursive() || recursive);
 				break;
 			}
 			case RT_CONJ: {
 				PCGroundRule* grb = dynamic_cast<PCGroundRule*>(it->second);
-				int ts2 = _translator->translate(bound,(lower?CompType::LT:CompType::GT),false,aggtype,setnr,(recursive ? TsType::RULE : TsType::EQ));
+				int ts2 = _translator->translate(bound,(lower?CompType::LEQ:CompType::GEQ),aggtype,setnr,(recursive ? TsType::RULE : TsType::EQ));
 				if(grb->body().size() == 1) {
 					grb->type(RT_DISJ);
 					grb->body().push_back(ts2);
@@ -176,8 +176,8 @@ void GroundDefinition::addAggRule(int head, int setnr, AggFunction aggtype, bool
 			}
 			case RT_AGG: {
 				AggGroundRule* grb = dynamic_cast<AggGroundRule*>(it->second);
-				int ts1 = _translator->translate(grb->bound(),(grb->lower()?CompType::LT:CompType::GT),false,grb->aggtype(),grb->setnr(),(grb->recursive() ? TsType::RULE : TsType::EQ));
-				int ts2 = _translator->translate(bound,(lower ?CompType::LT:CompType::GT),false,aggtype,setnr,(recursive ? TsType::RULE : TsType::EQ));
+				int ts1 = _translator->translate(grb->bound(),(grb->lower()?CompType::LEQ:CompType::GEQ),grb->aggtype(),grb->setnr(),(grb->recursive() ? TsType::RULE : TsType::EQ));
+				int ts2 = _translator->translate(bound,(lower ?CompType::LEQ:CompType::GEQ),aggtype,setnr,(recursive ? TsType::RULE : TsType::EQ));
 				vector<int> vi(2); vi[0] = ts1; vi[1] = ts2;
 				it->second = new PCGroundRule(head, RT_DISJ,vi,(recursive || grb->recursive()));
 				delete(grb);
@@ -190,7 +190,7 @@ void GroundDefinition::addAggRule(int head, int setnr, AggFunction aggtype, bool
 ostream& GroundDefinition::put(ostream& s, bool longnames, unsigned int) const {
 	s << "{\n";
 	for(auto it = _rules.cbegin(); it != _rules.cend(); ++it) {
-		s << _translator->printAtom((*it).second->head(),longnames) << " <- ";
+		s << _translator->printLit((*it).second->head(),longnames) << " <- ";
 		auto body = (*it).second;
 		if(body->type() == RT_AGG) {
 			const AggGroundRule* grb = dynamic_cast<const AggGroundRule*>(body);
@@ -202,11 +202,11 @@ ostream& GroundDefinition::put(ostream& s, bool longnames, unsigned int) const {
 			char c = grb->type() == RT_CONJ ? '&' : '|';
 			if(not grb->body().empty()) {
 				if(grb->body()[0] < 0) { s << '~'; }
-				s << _translator->printAtom(grb->body()[0],longnames);
+				s << _translator->printLit(grb->body()[0],longnames);
 				for(size_t n = 1; n < grb->body().size(); ++n) {
 					s << ' ' << c << ' ';
 					if(grb->body()[n] < 0) { s << '~'; }
-					s << _translator->printAtom(grb->body()[n],longnames);
+					s << _translator->printLit(grb->body()[n],longnames);
 				}
 			}
 			else if(grb->type() == RT_CONJ) { s << "true"; }

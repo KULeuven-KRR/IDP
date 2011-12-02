@@ -12,5 +12,6 @@ structure S:V{
 }
 
 procedure getExpectedNbOfModels(){
-	return 27
+	return 64
+	--	return 27 this is the mathematically correct answer, but our convention is that the empty set has maximum -\infty, which is smaller than 48
 }

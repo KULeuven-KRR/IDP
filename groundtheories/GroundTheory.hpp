@@ -2,7 +2,7 @@
 #define GROUDING_GROUNDTHEORY_HPP_
 
 #include "commontypes.hpp"
-
+#include <iostream> //TODO remove (debug)
 #include "groundtheories/AbstractGroundTheory.hpp"
 
 #include "vocabulary.hpp"
@@ -36,14 +36,15 @@ class GroundTheory: public AbstractGroundTheory, public Policy {
 	 */
 	void transformForAdd(const std::vector<int>& vi, VIType /*vit*/, int defnr, bool skipfirst = false) {
 		size_t n = 0;
-		if (skipfirst)
+		if (skipfirst) {
 			++n;
+		}
 		for (; n < vi.size(); ++n) {
 			int atom = abs(vi[n]);
 			if (translator()->isTseitinWithSubformula(atom) && _printedtseitins.find(atom) == _printedtseitins.end()) {
 				_printedtseitins.insert(atom);
 				TsBody* tsbody = translator()->getTsBody(atom);
-				if (typeid(*tsbody) == typeid(PCTsBody)) {
+				if (typeid(*tsbody) == typeid(PCTsBody)){
 					PCTsBody * body = dynamic_cast<PCTsBody*>(tsbody);
 					if (body->type() == TsType::IMPL || body->type() == TsType::EQ) {
 						if (body->conj()) {
@@ -83,6 +84,7 @@ class GroundTheory: public AbstractGroundTheory, public Policy {
 					AggTsBody* body = dynamic_cast<AggTsBody*>(tsbody);
 					if (body->type() == TsType::RULE) {
 						Assert(defnr != ID_FOR_UNDEFINED);
+						add(body->setnr(), ID_FOR_UNDEFINED, (body->aggtype() != AggFunction::CARD));
 						Policy::polAdd(defnr, new AggGroundRule(atom, body, true)); //TODO true (recursive) might not always be the case?
 					} else {
 						add(atom, body);
@@ -378,9 +380,9 @@ public:
 				int setnr = translator()->translateSet(sets[s], lw, { });
 				int tseitin;
 				if (f->partial() || (not outSortTable->finite())) {
-					tseitin = translator()->translate(1, CompType::GT, false, AggFunction::CARD, setnr, TsType::IMPL);
+					tseitin = translator()->translate(1, CompType::GT, AggFunction::CARD, setnr, TsType::IMPL);
 				} else {
-					tseitin = translator()->translate(1, CompType::EQ, true, AggFunction::CARD, setnr, TsType::IMPL);
+					tseitin = translator()->translate(1, CompType::EQ, AggFunction::CARD, setnr, TsType::IMPL);
 				}
 				addUnitClause(tseitin);
 			}
