@@ -54,6 +54,11 @@ Options::Options(const string& name, const ParseInfo& pi) : _name(name), _pi(pi)
 	IntPol::createOption(IntType::NRPROPSTEPS, "nrpropsteps", 0,numeric_limits<int>::max(),4, _option2name);
 	IntPol::createOption(IntType::LONGESTBRANCH, "longestbranch", 0,numeric_limits<int>::max(),8, _option2name);
 	IntPol::createOption(IntType::SYMMETRY, "symmetry", 0,numeric_limits<int>::max(),0, _option2name);
+
+	// NOTE: set this to infinity, so he always starts timing, even when the options have not been read in yet.
+	// Afterwards, setting them to 0 stops the timing
+	IntPol::createOption(IntType::TIMEOUT, "timeout", 0,numeric_limits<int>::max(),numeric_limits<int>::max(), _option2name);
+
 	IntPol::createOption(IntType::PROVERTIMEOUT, "provertimeout", 0,numeric_limits<int>::max(),numeric_limits<int>::max(), _option2name);
 
 	StringPol::createOption(StringType::LANGUAGE,

@@ -8,6 +8,8 @@
 #include <string>
 #include <map>
 
+#include "options.hpp"
+
 class Namespace;
 class DomainElementFactory;
 class Options;
@@ -19,6 +21,8 @@ private:
 	Insert _inserter;
 	std::map<std::string,CLConst*> clconsts;
 	DomainElementFactory* _domainelemFactory;
+
+	bool _terminateRequested;
 
 	Options* _options;
 	std::stack<unsigned int> _tabsizestack;
@@ -35,6 +39,9 @@ public:
 	static DomainElementFactory* getGlobalDomElemFactory();
 	static Namespace* getGlobalNamespace();
 	static void close();
+
+	bool terminateRequested() const { return _terminateRequested; }
+	void notifyTerminateRequested() { _terminateRequested = true; }
 
 	Namespace* getNamespace() {
 		return _globalNamespace;
@@ -74,5 +81,12 @@ public:
 	void resetTabSize();
 	unsigned int getTabSize() const;
 };
+
+GlobalData* getGlobal();
+
+template<typename OptionType>
+typename OptionTypeTraits<OptionType>::ValueType getOption(OptionType type){
+	return GlobalData::instance()->getOptions()->getValue(type);
+}
 
 #endif /* GLOBALDATA_HPP_ */

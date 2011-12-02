@@ -20,6 +20,9 @@ class Vocabulary;
  * 	TODO domelem = domelem ?
  */
 
+// TODO default behavior by macros
+// TODO friend macros and protected visits
+// TODO run always in constructor? Or just never? Now it cannot be called multiple times here
 class DeriveSorts: public TheoryMutatingVisitor {
 private:
 	std::set<Variable*> _underivableVariables;
@@ -33,7 +36,7 @@ private:
 
 public:
 	DeriveSorts(Vocabulary* v) :
-			_vocab(v) {
+			_assertsort(NULL), _vocab(v) {
 	}
 
 	template<typename T>
@@ -50,6 +53,7 @@ protected:
 	Rule* visit(Rule*);
 	Term* visit(VarTerm*);
 	Term* visit(DomainTerm*);
+	Term* visit(AggTerm* t);
 	Term* visit(FuncTerm*);
 	SetExpr* visit(QuantSetExpr*);
 

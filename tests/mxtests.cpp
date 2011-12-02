@@ -68,11 +68,11 @@ vector<string> generateListOfLazyMXnbFiles() {
 	struct dirent *ent;
 	vector<string> testdirs {"simplemxtests/", "applicationmxtests/" };
 	for (auto currTestDir = testdirs.cbegin(); currTestDir != testdirs.cend(); ++currTestDir) {
-		dir = opendir((string(TESTDIR) + "lazymxtests/" + (*currTestDir)).c_str());
+		dir = opendir((string(TESTDIR) + "mxtests/" + (*currTestDir)).c_str());
 		if (dir != NULL) {
 			while ((ent = readdir(dir)) != NULL) {
 				if (ent->d_name[0] != '.') {
-					mxtests.push_back("lazymxtests/" +(*currTestDir) + ent->d_name);
+					mxtests.push_back("mxtests/" +(*currTestDir) + ent->d_name);
 				}
 			}
 			closedir(dir);

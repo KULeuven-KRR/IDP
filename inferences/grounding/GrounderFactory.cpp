@@ -32,6 +32,8 @@
 #include "generators/BasicGenerators.hpp"
 #include "generators/TableGenerator.hpp"
 
+#include "IdpException.hpp"
+
 #include "utils/TheoryUtils.hpp"
 
 #include "fobdds/FoBdd.hpp"
@@ -813,7 +815,6 @@ void GrounderFactory::visit(const AggForm* af) {
 }
 
 void GrounderFactory::visit(const EqChainForm* ef) {
-
 	Formula* f = ef->clone();
 	f = FormulaUtils::splitComparisonChains(f, _grounding->vocabulary());
 	f->accept(this);
@@ -837,11 +838,6 @@ void GrounderFactory::visit(const DomainTerm* t) {
 	_termgrounder->setOrig(t, varmapping(), _verbosity);
 }
 
-/**
- * void GrounderFactory::visit(const FuncTerm* t)
- * DESCRIPTION
- * 		Creates a grounder for a function term.
- */
 void GrounderFactory::visit(const FuncTerm* t) {
 	_context._conjunctivePathFromRoot = _context._conjPathUntilNode;
 	_context._conjPathUntilNode = false;
@@ -870,11 +866,6 @@ void GrounderFactory::visit(const FuncTerm* t) {
 	_termgrounder->setOrig(t, varmapping(), _verbosity);
 }
 
-/**
- * void GrounderFactory::visit(const AggTerm* at)
- * DESCRIPTION
- * 		Creates a grounder for a aggregate term.
- */
 void GrounderFactory::visit(const AggTerm* t) {
 	_context._conjunctivePathFromRoot = _context._conjPathUntilNode;
 	_context._conjPathUntilNode = false;
@@ -887,11 +878,6 @@ void GrounderFactory::visit(const AggTerm* t) {
 	_termgrounder->setOrig(t, varmapping(), _verbosity);
 }
 
-/**
- * void GrounderFactory::visit(const EnumSetExpr* s)
- * DESCRIPTION
- * 		Creates a grounder for an enumarated set.
- */
 void GrounderFactory::visit(const EnumSetExpr* s) {
 	_context._conjunctivePathFromRoot = _context._conjPathUntilNode;
 	_context._conjPathUntilNode = false;
@@ -944,30 +930,32 @@ GrounderFactory::GenAndChecker GrounderFactory::createVarsAndGenerators(Formula*
 	for (auto it = tables.cbegin(); it < tables.cend(); ++it) {
 		if (not (*it)->finite()) {
 			Warning::possiblyInfiniteGrounding(orig->pi().original() != NULL ? orig->pi().original()->toString() : "", orig->toString());
+			if(not GlobalData::instance()->getOptions()->getValue(BoolType::GROUNDWITHBOUNDS)){ // TODO and not lazy?
+				// If not grounding with bounds, we will certainly ground infinitely, so do not even start
+				throw IdpException("Infinite grounding");
+			}
 		}
 	}
 
 	// FIXME => unsafe to have to pass in fovars explicitly (order is never checked?)
-	auto generatorbdd = _symstructure->evaluate(subformula, generatortype); // !x phi(x) => generate all x possibly false
-	auto checkerbdd = _symstructure->evaluate(subformula, checkertype); // !x phi(x) => check for x certainly false
-	generatorbdd = improve_generator(generatorbdd, quantfovars, MCPA);
-	checkerbdd = improve_checker(checkerbdd, MCPA);
-	PredTable* gentable = new PredTable(new BDDInternalPredTable(generatorbdd, _symstructure->manager(), fovars, _structure), Universe(tables));
-	PredTable* checktable = new PredTable(new BDDInternalPredTable(checkerbdd, _symstructure->manager(), fovars, _structure), Universe(tables));
-
-//	PredTable* gentable = new PredTable(new FullInternalPredTable(), Universe(tables));
-//	PredTable* checktable = new PredTable(new InverseInternalPredTable(new FullInternalPredTable), Universe(tables));
+	PredTable *gentable = NULL, *checktable = NULL;
+	if(GlobalData::instance()->getOptions()->getValue(BoolType::GROUNDWITHBOUNDS)){
+		auto generatorbdd = _symstructure->evaluate(subformula, generatortype); // !x phi(x) => generate all x possibly false
+		auto checkerbdd = _symstructure->evaluate(subformula, checkertype); // !x phi(x) => check for x certainly false
+		generatorbdd = improve_generator(generatorbdd, quantfovars, MCPA);
+		checkerbdd = improve_checker(checkerbdd, MCPA);
+		gentable = new PredTable(new BDDInternalPredTable(generatorbdd, _symstructure->manager(), fovars, _structure), Universe(tables));
+		checktable = new PredTable(new BDDInternalPredTable(checkerbdd, _symstructure->manager(), fovars, _structure), Universe(tables));
+	}else{
+		gentable = new PredTable(new FullInternalPredTable(), Universe(tables));
+		checktable = new PredTable(new InverseInternalPredTable(new FullInternalPredTable), Universe(tables));
+	}
 
 	auto gen = GeneratorFactory::create(gentable, pattern, vars, Universe(tables));
 	auto check = GeneratorFactory::create(checktable, vector<Pattern>(vars.size(), Pattern::INPUT), vars, Universe(tables));
 	return GenAndChecker(gen, check);
 }
 
-/**
- * void GrounderFactory::visit(const QuantSetExpr* s)
- * DESCRIPTION
- * 		Creates a grounder for a quantified set.
- */
 void GrounderFactory::visit(const QuantSetExpr* origqs) {
 	_context._conjunctivePathFromRoot = _context._conjPathUntilNode;
 	_context._conjPathUntilNode = false;

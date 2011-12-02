@@ -60,10 +60,28 @@ std::ostream& operator<<(std::ostream&, const TheoryComponent&);
 	Formulas
 ***************/
 
+#define DECLAREVISITORS() \
+	class ApproxCheckTwoValued;\
+	class CheckContainment;\
+	class CheckContainsAggTerms;\
+	class CheckContainsFuncTerms;\
+	class CheckPartialTerm;
+
+#define VISITORFRIENDS() \
+	friend class ApproxCheckTwoValued; \
+	friend class CheckContainment; \
+	friend class CheckContainsAggTerms; \
+	friend class CheckContainsFuncTerms; \
+	friend class CheckPartialTerm;
+
+
+DECLAREVISITORS()
+
 /**
  * Abstract base class to represent formulas
  */
 class Formula : public TheoryComponent {
+	VISITORFRIENDS()
 private:
 	SIGN					_sign;			//!< the sign of the formula: NEG is that it is negated
 	std::set<Variable*>		_freevars;		//!< the free variables of the formula
@@ -136,6 +154,7 @@ std::ostream& operator<<(std::ostream&, const Formula&);
  * If F is a function symbol, the atomic formula F(t_1,...,t_n) represents the formula F(t_1,...,t_n-1) = t_n.
  */
 class PredForm : public Formula {
+	VISITORFRIENDS()
 private:
 	PFSymbol*			_symbol;		//!< the predicate or function symbol
 
@@ -170,6 +189,7 @@ public:
  * Class to represent chains of equalities and inequalities 
  */
 class EqChainForm : public Formula {
+	VISITORFRIENDS()
 private:
 	bool					_conj;	//!< Indicates whether the chain is a conjunction or disjunction of (in)equalties
 	std::vector<CompType>	_comps;	//!< The consecutive comparisons in the chain
@@ -211,6 +231,7 @@ public:
  * Equivalences 
  */
 class EquivForm : public Formula {
+	VISITORFRIENDS()
 public:
 	// Constructors
 	EquivForm(SIGN sign, Formula* lf, Formula* rf, const FormulaParseInfo& pi) :
@@ -243,6 +264,7 @@ public:
  * Conjunctions and disjunctions 
  */
 class BoolForm : public Formula {
+	VISITORFRIENDS()
 private:
 	bool	_conj;	//!< true (false) if the formula is a conjunction (disjunction)
 
@@ -282,6 +304,7 @@ public:
  *	Universally and existentially quantified formulas 
  */	
 class QuantForm : public Formula {
+	VISITORFRIENDS()
 private:
 	QUANT	_quantifier;
 
@@ -324,6 +347,7 @@ public:
  */
 
 class AggForm : public Formula {
+	VISITORFRIENDS()
 private:
 	CompType	_comp;		//!< the comparison operator
 	AggTerm*	_aggterm;	//!< the aggregate term
@@ -355,9 +379,6 @@ public:
 	std::ostream& put(std::ostream&, bool longnames = false, unsigned int spaces = 0)	const;
 };
 
-
-
-
 /******************
 	Definitions
 ******************/
@@ -366,6 +387,7 @@ public:
  * Class to represent a single rule of a definition or fixpoint definition
  */
 class Rule {
+	VISITORFRIENDS()
 private:
 	PredForm*				_head;		//!< the head of the rule
 	Formula*				_body;		//!< the body of the rule
@@ -424,6 +446,7 @@ public:
  * \brief Class to represent inductive definitions
  */
 class Definition : public AbstractDefinition {
+	VISITORFRIENDS()
 private:
 	std::vector<Rule*>		_rules;		//!< The rules in the definition
 	std::set<PFSymbol*>		_defsyms;	//!< Symbols defined by the definition
@@ -461,6 +484,7 @@ public:
 ***************************/
 
 class AbstractFixpDef : public TheoryComponent {
+	VISITORFRIENDS()
 public:
 	virtual AbstractFixpDef* clone() const = 0;
 
@@ -519,6 +543,7 @@ public:
  * \brief Abstract base class for theories
  */
 class AbstractTheory {
+	VISITORFRIENDS()
 protected:
 	std::string		_name;			//!< the name of the theory
 	Vocabulary*		_vocabulary;	//!< the vocabulary of the theory

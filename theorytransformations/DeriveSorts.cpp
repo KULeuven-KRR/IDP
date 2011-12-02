@@ -23,11 +23,13 @@ void DeriveSorts::checkVars(const set<Variable*>& quantvars){
 }
 
 Formula* DeriveSorts::visit(QuantForm* qf) {
+	assert(_assertsort == NULL);
 	checkVars(qf->quantVars());
 	return traverse(qf);
 }
 
 Rule* DeriveSorts::visit(Rule* r) {
+	assert(_assertsort == NULL);
 	checkVars(r->quantVars());
 	r->head()->accept(this);
 	r->body()->accept(this);
@@ -35,6 +37,7 @@ Rule* DeriveSorts::visit(Rule* r) {
 }
 
 SetExpr* DeriveSorts::visit(QuantSetExpr* qs) {
+	assert(_assertsort == NULL);
 	checkVars(qs->quantVars());
 	return traverse(qs);
 }
@@ -44,7 +47,7 @@ Term* DeriveSorts::visit(VarTerm* vt) {
 		_underivableVariables.insert(vt->var());
 		return vt;
 	}
-	if(_assertsort!=NULL && _underivableVariables.find(vt->var())==_underivableVariables.end()){
+	if(_assertsort!=NULL && _untypedvariables.find(vt->var())!=_untypedvariables.end()){
 		Sort* newsort = NULL;
 		if(vt->sort()==NULL){
 			newsort = _assertsort;
@@ -74,21 +77,42 @@ Term* DeriveSorts::visit(DomainTerm* dt) {
 	return dt;
 }
 
+Term* DeriveSorts::visit(AggTerm* t) {
+	if(_assertsort != NULL){
+		assert(SortUtils::resolve(_assertsort, VocabularyUtils::intsort())!=NULL);
+	}
+	_assertsort = NULL; // TODO reset afterwards?
+	return TheoryMutatingVisitor::visit(t);
+}
+
 Term* DeriveSorts::visit(FuncTerm* term) {
 	auto f = term->function();
 
+	if(_assertsort != NULL && term->sort()!=NULL){
+		assert(SortUtils::resolve(_assertsort, term->sort())!=NULL);
+	}
+	_assertsort = NULL;
+
 	auto origunderivable = _underivable;
 	if (f->overloaded()) {
-		_underivable = true;
-		_overloadedterms.insert(term);
+		if(f->builtin()){
+			for (auto i = term->subterms().cbegin(); i!= term->subterms().cend(); ++i) {
+				(*i)->accept(this);
+				_assertsort = NULL;
+			}
+			return term;
+		}else{
+			_underivable = true;
+			_overloadedterms.insert(term);
+		}
 	}
-	// TODO builtin?
 
 	auto it = f->insorts().cbegin();
 	auto jt = term->subterms().cbegin();
 	for (; it != f->insorts().cend(); ++it, ++jt) {
 		_assertsort = *it;
 		(*jt)->accept(this);
+		_assertsort = NULL;
 	}
 	_underivable = origunderivable;
 	return term;
@@ -100,13 +124,13 @@ Formula* DeriveSorts::visit(PredForm* f) {
 	auto origunderivable = _underivable;
 	if(p->overloaded()){
 		_overloadedatoms.insert(f);
-	}
-	if(p->overloaded() && not p->builtin()){
-		_underivable = true;
+		if(not p->builtin()){
+			_underivable = true;
+		}
 	}
 
 	if(p->builtin()){
-		// TODO only correct for builtin with the same sorts on all positions
+		// TODO for which builtins which action?
 		Sort* temp = NULL;
 		if(not _firstvisit){
 			for (auto i = f->subterms().cbegin(); i != f->subterms().cend(); ++i) {
@@ -122,6 +146,7 @@ Formula* DeriveSorts::visit(PredForm* f) {
 		for (auto i = f->subterms().cbegin(); i != f->subterms().cend(); ++i) {
 			_assertsort = temp;
 			(*i)->accept(this);
+			_assertsort = NULL;
 		}
 	}else{
 		auto it = p->sorts().cbegin();
@@ -129,6 +154,7 @@ Formula* DeriveSorts::visit(PredForm* f) {
 		for (; it != p->sorts().cend(); ++it, ++jt) {
 			_assertsort = *it;
 			(*jt)->accept(this);
+			_assertsort = NULL;
 		}
 	}
 
@@ -153,6 +179,7 @@ Formula* DeriveSorts::visit(EqChainForm* formula) {
 	for (auto i = formula->subterms().cbegin(); i != formula->subterms().cend(); ++i) {
 		_assertsort = temp;
 		(*i)->accept(this);
+		_assertsort = NULL;
 	}
 	return formula;
 }
@@ -281,13 +308,15 @@ void DeriveSorts::run(Rule* r) {
 }
 
 void DeriveSorts::check() {
-	// TODO sorts can also be builtin! (does this matter?)
 	for(auto i=_untypedvariables.cbegin(); i!=_untypedvariables.cend(); ++i) {
 		if ((*i)->sort()==NULL) {
 			Error::novarsort((*i)->name(), (*i)->pi());
 		}else{
 			Warning::derivevarsort((*i)->name(), (*i)->sort()->name(), (*i)->pi());
 		}
+	}
+	for(auto i=_underivableVariables.cbegin(); i!=_underivableVariables.cend(); ++i) {
+		Error::novarsort((*i)->name(), (*i)->pi());
 	}
 	for (auto it = _overloadedatoms.cbegin(); it != _overloadedatoms.cend(); ++it) {
 		if (typeid(*((*it)->symbol())) == typeid(Predicate))

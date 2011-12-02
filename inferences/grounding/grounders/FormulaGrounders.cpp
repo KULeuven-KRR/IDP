@@ -612,6 +612,13 @@ void QuantGrounder::run(ConjOrDisj& formula, bool negated) const {
 			return;
 		}
 
+		// Allows to jump out when grounding infinitely
+		// TODO should be a faster check?
+		// TODO add on other places
+		if(GlobalData::instance()->terminateRequested()){
+			throw IdpException("Terminate requested");
+		}
+
 		if (runSubGrounder(_subgrounder, context()._conjunctivePathFromRoot, formula, negated) == FormStat::DECIDED) {
 			return;
 		}

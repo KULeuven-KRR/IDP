@@ -8,6 +8,8 @@
 #include "commontypes.hpp"
 #include <utility>
 
+#include "IdpException.hpp"
+
 #include "loki/NullType.h"
 #include "loki/TypeTraits.h"
 #include "loki/static_check.h"

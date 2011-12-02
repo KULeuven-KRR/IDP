@@ -9,6 +9,7 @@
 #include "rungidl.hpp"
 #include "insert.hpp"
 #include "GlobalData.hpp"
+#include <csignal>
 
 #include "GeneralUtils.hpp"
 
@@ -107,21 +108,46 @@ void parse(const vector<string>& inputfiles) {
 // TODO add threading and signal handling code to kill the process by using the signalhandling thread in an infinite loop and some mutexes
 #include <thread>
 
-void execProcedure(const string& proc, const DomainElement** result){
-	*result = Insert::exec(proc);
-}
-
 void handleAndRun(const string& proc, const DomainElement** result){
 	try{
-		execProcedure(proc, result);
+		*result = Insert::exec(proc);
 	}catch(const std::exception& ex){
 		stringstream ss;
 		ss <<"Exception caught: " <<ex.what() <<".\n";
 		Error::error(ss.str());
 		*result = NULL;
 	}
-	//thread execution(execProcedure, proc, result);
-	//execution.join();
+}
+
+
+bool stoptiming;
+
+bool shouldStop(){
+	return stoptiming;
+}
+
+void setStop(bool value){
+	stoptiming = value;
+}
+
+void timeout(){
+	int time = 0;
+	while(not shouldStop()){
+		sleep(1);
+		time++;
+		if(getOption(IntType::TIMEOUT)<time){
+			getGlobal()->notifyTerminateRequested();
+			break;
+		}
+		if(getOption(IntType::TIMEOUT)==0){
+			return;
+		}
+	}
+}
+
+void SIGINT_handler(int) {
+	// TODO on which int (ctrl-c might not be what we want)
+	// GlobalData::instance()->notifyTerminateRequested();
 }
 
 /**
@@ -135,9 +161,12 @@ const DomainElement* executeProcedure(const string& proc) {
 		string temp = proc;
 		replaceAll<std::string>(temp, "::", ".");
 
+		setStop(false);
+		signal(SIGINT, SIGINT_handler);
+		thread signalhandling(timeout);
 		handleAndRun(temp, &result);
-		//thread signalhandling(handleAndRun, temp, &result);
-		//signalhandling.join();
+		setStop(true);
+		signalhandling.join();
 	}
 
 	return result;
