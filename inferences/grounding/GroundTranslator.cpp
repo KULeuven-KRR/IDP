@@ -173,14 +173,18 @@ unsigned int GroundTranslator::addSymbol(PFSymbol* pfs) {
 	return symbols.size() - 1;
 }
 
-string GroundTranslator::printAtom(const Lit& atom, bool longnames) const {
+string GroundTranslator::printLit(const Lit& lit, bool longnames) const {
 	stringstream s;
-	uint nr = atom;
+	int nr = lit;
 	if (nr == _true) {
 		return "true";
 	}
 	if (nr == _false) {
 		return "false";
+	}
+	if(nr < 0){
+		s << "~";
+		nr = -nr;
 	}
 	if (not isStored(nr)) {
 		return "error";

@@ -142,7 +142,7 @@ public:
 		return symbols[n].tuple2atom;
 	}
 
-	std::string printAtom(const Lit& atom, bool longnames) const;
+	std::string printLit(const Lit& atom, bool longnames) const;
 };
 
 #endif /* GROUNDTRANSLATOR_HPP_ */

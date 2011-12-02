@@ -106,7 +106,7 @@ public:
 			else {
 				for(size_t m = 0; m < _clauses[n].size(); ++m) {
 					if(_clauses[n][m] < 0) { s << '~'; }
-					s << translator->printAtom(_clauses[n][m],longnames);
+					s << translator->printLit(_clauses[n][m],longnames);
 					if(m < _clauses[n].size()-1) { s << " | "; }
 				}
 			}
@@ -122,7 +122,7 @@ public:
 		for(size_t n = 0; n < _sets.size(); ++n) {
 			s << "Set nr. " << _sets[n]->setnr() << " = [ ";
 			for(size_t m = 0; m < _sets[n]->size(); ++m) {
-				s << "(" << translator->printAtom(_sets[n]->literal(m),longnames);
+				s << "(" << translator->printLit(_sets[n]->literal(m),longnames);
 				s << " = " << _sets[n]->weight(m) << ")";
 				if(m < _sets[n]->size()-1) { s << "; "; }
 			}
@@ -130,7 +130,7 @@ public:
 		}
 		for(size_t n = 0; n < _aggregates.size(); ++n) {
 			const GroundAggregate* agg = _aggregates[n];
-			s << translator->printAtom(agg->head(), longnames) << ' ';
+			s << translator->printLit(agg->head(), longnames) << ' ';
 			s << agg->arrow() << ' ';
 			s << agg->bound();
 			s << (agg->lower() ? " =< " : " >= ");
@@ -139,7 +139,7 @@ public:
 		//TODO: repeat above for fixpoint definitions
 		for(auto it = _cpreifications.begin(); it != _cpreifications.end(); ++it) {
 			CPReification* cpr = *it;
-			s << translator->printAtom(cpr->_head,longnames) << ' ' << cpr->_body->type() << ' ';
+			s << translator->printLit(cpr->_head,longnames) << ' ' << cpr->_body->type() << ' ';
 			CPTerm* left = cpr->_body->left();
 			if(typeid(*left) == typeid(CPSumTerm)) {
 				CPSumTerm* cpt = dynamic_cast<CPSumTerm*>(left);

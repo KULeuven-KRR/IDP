@@ -118,7 +118,7 @@ Lit AtomGrounder::run() const {
 	if (_cchecker->check()) { // Literal decides formula if checker succeeds
 		if (verbosity() > 2) {
 			clog << "Certain checker succeeded\n";
-			clog << "Result is " << translator()->printAtom(gentype == GenType::CANMAKETRUE ? _true : _false, false) << "\n"; //TODO longnames?
+			clog << "Result is " << translator()->printLit(gentype == GenType::CANMAKETRUE ? _true : _false, false) << "\n"; //TODO longnames?
 		}
 		return gentype == GenType::CANMAKETRUE ? _true : _false;
 	}
@@ -135,7 +135,7 @@ Lit AtomGrounder::run() const {
 		lit = -lit;
 	}
 	if (verbosity() > 2) {
-		clog << "Result is " << translator()->printAtom(lit, false) << "\n"; // TODO longnames?
+		clog << "Result is " << translator()->printLit(lit, false) << "\n"; // TODO longnames?
 	}
 	return lit;
 }

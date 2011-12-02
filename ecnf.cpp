@@ -190,7 +190,7 @@ void GroundDefinition::addAggRule(int head, int setnr, AggFunction aggtype, bool
 ostream& GroundDefinition::put(ostream& s, bool longnames, unsigned int) const {
 	s << "{\n";
 	for(auto it = _rules.cbegin(); it != _rules.cend(); ++it) {
-		s << _translator->printAtom((*it).second->head(),longnames) << " <- ";
+		s << _translator->printLit((*it).second->head(),longnames) << " <- ";
 		auto body = (*it).second;
 		if(body->type() == RT_AGG) {
 			const AggGroundRule* grb = dynamic_cast<const AggGroundRule*>(body);
@@ -202,11 +202,11 @@ ostream& GroundDefinition::put(ostream& s, bool longnames, unsigned int) const {
 			char c = grb->type() == RT_CONJ ? '&' : '|';
 			if(not grb->body().empty()) {
 				if(grb->body()[0] < 0) { s << '~'; }
-				s << _translator->printAtom(grb->body()[0],longnames);
+				s << _translator->printLit(grb->body()[0],longnames);
 				for(size_t n = 1; n < grb->body().size(); ++n) {
 					s << ' ' << c << ' ';
 					if(grb->body()[n] < 0) { s << '~'; }
-					s << _translator->printAtom(grb->body()[n],longnames);
+					s << _translator->printLit(grb->body()[n],longnames);
 				}
 			}
 			else if(grb->type() == RT_CONJ) { s << "true"; }
