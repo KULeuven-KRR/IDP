@@ -3,6 +3,7 @@
 
 #include <string>
 #include <ostream>
+#include <iostream>
 #include <sstream>
 #include <vector>
 #include "commontypes.hpp"
@@ -177,19 +178,11 @@ bool sametypeid(const T& object) {
 }
 
 #ifdef DEBUG
-template<typename T>
 class AssertionException{
-	const char* what(){
-		return typeid(T).name();
-	}
+
 };
-template<typename T>
-inline void AssertCall(T test){
-	if(not test){
-		throw AssertionException<T>();
-	}
-}
-#define Assert(x) (AssertCall(x))
+
+#define Assert(condition) { if(!(condition)){ std::cerr << "ASSERT FAILED: " << #condition << " @ " << __FILE__ << " (" << __LINE__ << ")" << std::endl; throw AssertionException();} }
 #else
 #define Assert(x) do {} while(0)
 #endif
