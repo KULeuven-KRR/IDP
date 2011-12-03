@@ -36,7 +36,7 @@ public:
 		for (auto it = models.cbegin(); it != models.cend(); ++it) {
 			result._value._table->push_back(InternalArgument(*it));
 		}
-		if (GlobalData::instance()->getOptions()->getValue(BoolType::TRACE)) {
+		if (getOption(BoolType::TRACE)) {
 			InternalArgument randt;
 			randt._type = AT_MULT;
 			randt._value._table = new std::vector<InternalArgument>(1, result);

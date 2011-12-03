@@ -44,7 +44,7 @@ void GenerateBDDAccordingToBounds::visit(const PredForm* atom) {
 	FOBDDFactory factory(_manager);
 
 	if (_ctbounds.find(atom->symbol()) == _ctbounds.cend()) {
-		auto bdd = factory.run(atom);
+		auto bdd = factory.turnIntoBdd(atom);
 		if(needFalse(_type)){
 			bdd = _manager->negation(bdd);
 		}
@@ -58,7 +58,7 @@ void GenerateBDDAccordingToBounds::visit(const PredForm* atom) {
 		map<const FOBDDVariable*, const FOBDDArgument*> mva;
 		const auto& vars = _vars[atom->symbol()];
 		for (unsigned int n = 0; n < vars.size(); ++n) {
-			mva[vars[n]] = factory.run(atom->subterms()[n]);
+			mva[vars[n]] = factory.turnIntoBdd(atom->subterms()[n]);
 		}
 		bdd = _manager->substitute(bdd, mva);
 		if (needPossible(_type)){ // Negate because we have CERTAIN bounds

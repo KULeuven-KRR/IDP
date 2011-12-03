@@ -2468,6 +2468,8 @@ public:
 	virtual bool approxTwoValued() const =0;
 
 	virtual std::vector<AbstractStructure*> generateAllTwoValuedExtensions() const = 0;
+
+	virtual void put(std::ostream&){} // TODO implement
 };
 
 /** Structures as constructed by the parser **/

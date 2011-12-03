@@ -33,7 +33,7 @@ using namespace std;
 
 Term* solve(FOBDDManager& manager, PredForm* atom, Variable* var) {
 	FOBDDFactory factory(&manager);
-	auto bdd = factory.run(atom);
+	auto bdd = factory.turnIntoBdd(atom);
 	assert(not manager.isTruebdd(bdd));
 	assert(not manager.isFalsebdd(bdd));
 	auto kernel = bdd->kernel();
@@ -225,8 +225,8 @@ PredForm* graphFunction(PredForm* atom, FuncTerm* ft, Term* rangeTerm){
 InstGenerator* BDDToGenerator::createFromPredForm(PredForm* atom, const vector<Pattern>& pattern, const vector<const DomElemContainer*>& vars,
 		const vector<Variable*>& atomvars, AbstractStructure* structure, bool inverse, const Universe& universe) {
 
-	if (GlobalData::instance()->getOptions()->getValue(IntType::GROUNDVERBOSITY) > 3) {
-		clog <<"BDDGeneratorFactory visiting: " << atom->toString() <<"\n";
+	if (getOption(IntType::GROUNDVERBOSITY) > 3) {
+		clog <<"BDDGeneratorFactory visiting: " <<toString(atom) <<"\n";
 	}
 
 	if (FormulaUtils::containsFuncTerms(atom)) {
@@ -469,7 +469,7 @@ InstGenerator* BDDToGenerator::createFromKernel(const FOBDDKernel* kernel, const
 				atomvars.push_back((*it)->variable());
 			}
 			auto gen = createFromPredForm(pf, origpattern, origvars, atomvars, structure, generateFalsebranch, origuniverse);
-			if(GlobalData::instance()->getOptions()->getValue(IntType::GROUNDVERBOSITY)>3){
+			if(getOption(IntType::GROUNDVERBOSITY)>3){
 				clog <<"Created kernel generator: " <<toString(gen) <<"\n";
 			}
 			return gen;

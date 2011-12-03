@@ -106,14 +106,6 @@ inline Sort* VarTerm::sort() const {
 	return _var->sort();
 }
 
-void VarTerm::accept(TheoryVisitor* v) const {
-	v->visit(this);
-}
-
-Term* VarTerm::accept(TheoryMutatingVisitor* v) {
-	return v->visit(this);
-}
-
 ostream& VarTerm::put(std::ostream& output, bool longnames) const {
 	var()->put(output, longnames);
 	return output;
@@ -151,14 +143,6 @@ FuncTerm* FuncTerm::clone(const map<Variable*, Variable*>& mvv) const {
 
 Sort* FuncTerm::sort() const {
 	return _function->outsort();
-}
-
-void FuncTerm::accept(TheoryVisitor* v) const {
-	v->visit(this);
-}
-
-Term* FuncTerm::accept(TheoryMutatingVisitor* v) {
-	return v->visit(this);
 }
 
 ostream& FuncTerm::put(ostream& output, bool longnames) const {
@@ -201,14 +185,6 @@ DomainTerm* DomainTerm::clone(const map<Variable*, Variable*>& mvv) const {
 	return new DomainTerm(_sort, _value, _pi.clone(mvv));
 }
 
-void DomainTerm::accept(TheoryVisitor* v) const {
-	v->visit(this);
-}
-
-Term* DomainTerm::accept(TheoryMutatingVisitor* v) {
-	return v->visit(this);
-}
-
 ostream& DomainTerm::put(ostream& output, bool) const {
 	value()->put(output);
 	return output;
@@ -244,14 +220,6 @@ Sort* AggTerm::sort() const {
 	} else {
 		return set()->sort();
 	}
-}
-
-void AggTerm::accept(TheoryVisitor* v) const {
-	v->visit(this);
-}
-
-Term* AggTerm::accept(TheoryMutatingVisitor* v) {
-	return v->visit(this);
 }
 
 ostream& AggTerm::put(ostream& output, bool longnames) const {
@@ -387,14 +355,6 @@ Sort* EnumSetExpr::sort() const {
 		return 0;
 }
 
-void EnumSetExpr::accept(TheoryVisitor* v) const {
-	v->visit(this);
-}
-
-SetExpr* EnumSetExpr::accept(TheoryMutatingVisitor* v) {
-	return v->visit(this);
-}
-
 ostream& EnumSetExpr::put(ostream& output, bool longnames) const {
 	output << "[ ";
 	if (not subformulas().empty()) {
@@ -464,14 +424,6 @@ Sort* QuantSetExpr::sort() const {
 	} else {
 		return 0;
 	}
-}
-
-void QuantSetExpr::accept(TheoryVisitor* v) const {
-	v->visit(this);
-}
-
-SetExpr* QuantSetExpr::accept(TheoryMutatingVisitor* v) {
-	return v->visit(this);
 }
 
 ostream& QuantSetExpr::put(ostream& output, bool longnames) const {

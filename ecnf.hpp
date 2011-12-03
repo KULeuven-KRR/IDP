@@ -7,7 +7,7 @@
 #include "theory.hpp"
 #include "visitors/TheoryVisitor.hpp" // TODO calls should go into cpp
 #include "visitors/TheoryMutatingVisitor.hpp" // TODO calls should go into cpp
-
+#include "visitors/VisitorFriends.hpp"
 class GroundTranslator;
 class GroundTermTranslator;
 class PCTsBody;
@@ -22,46 +22,48 @@ class InstGenerator;
 
 typedef unsigned int VarId;
 
-
 /*********************
-	Ground clauses
-*********************/
+ Ground clauses
+ *********************/
 
 typedef litlist GroundClause;
 
-/****************** 
-	Ground sets 
-******************/
-
-/**
- * class GroundSet
- */
 class GroundSet {
-	private:
-		unsigned int		_setnr;
-		litlist	_setlits;		// All literals in the ground set
-		std::vector<double>	_litweights;	// For each literal a corresponding weight
+	ACCEPTNONMUTATING()
+private:
+	unsigned int _setnr;
+	litlist _setlits; // All literals in the ground set
+	std::vector<double> _litweights; // For each literal a corresponding weight
 
-	public:
-		// Constructors
-		GroundSet() { }
-		GroundSet(int setnr, const litlist& s, const std::vector<double>& lw) :
-			_setnr(setnr), _setlits(s), _litweights(lw) { }
+public:
+	// Constructors
+	GroundSet() {
+	}
+	GroundSet(int setnr, const litlist& s, const std::vector<double>& lw) :
+			_setnr(setnr), _setlits(s), _litweights(lw) {
+	}
 
-		// Inspectors
-		unsigned int	setnr() 				const { return _setnr; 			}
-		unsigned int	size()					const { return _setlits.size();	}
-		int				literal(unsigned int n)	const { return _setlits[n];		}
-		double			weight(unsigned int n)	const { return (not _litweights.empty()) ? _litweights[n] : 1;	}
-		bool			weighted()				const { return not _litweights.empty(); }
-
-		// Visitor
-		void accept(TheoryVisitor* v) const { v->visit(this);	}
+	// Inspectors
+	unsigned int setnr() const {
+		return _setnr;
+	}
+	unsigned int size() const {
+		return _setlits.size();
+	}
+	int literal(unsigned int n) const {
+		return _setlits[n];
+	}
+	double weight(unsigned int n) const {
+		return (not _litweights.empty()) ? _litweights[n] : 1;
+	}
+	bool weighted() const {
+		return not _litweights.empty();
+	}
 };
 
 /********************************
-	Ground aggregate formulas
-********************************/
+ Ground aggregate formulas
+ ********************************/
 
 /**
  * class GroundAggregate
@@ -76,160 +78,207 @@ class GroundSet {
  *			set is a ground set
  */
 class GroundAggregate {
-	private:
-		// Attributes
-		int			_head;		// the head literal
-		TsType		_arrow;		// the relation between head and aggregate expression
-								// INVARIANT: this should never be TsType::RULE
-		double		_bound;		// the bound
-		bool		_lower;		// true iff the bound is a lower bound for the aggregate
-		AggFunction	_type;		// the aggregate function
-		int			_set;		// the set id
+	ACCEPTNONMUTATING()
+private:
+	// Attributes
+	int _head; // the head literal
+	TsType _arrow; // the relation between head and aggregate expression
+				   // INVARIANT: this should never be TsType::RULE
+	double _bound; // the bound
+	bool _lower; // true iff the bound is a lower bound for the aggregate
+	AggFunction _type; // the aggregate function
+	int _set; // the set id
 
-	public:
-		// Constructors
-		GroundAggregate(AggFunction t, bool l, TsType e, int h, int s, double b) :
-			_head(h), _arrow(e), _bound(b), _lower(l), _type(t), _set(s) 
-			{ assert(e != TsType::RULE); }
-		GroundAggregate(const GroundAggregate& a) : 
-			_head(a._head), _arrow(a._arrow), _bound(a._bound), _lower(a._lower), _type(a._type), _set(a._set)
-			{ assert(a._arrow != TsType::RULE); }
-		GroundAggregate() { }
+public:
+	// Constructors
+	GroundAggregate(AggFunction t, bool l, TsType e, int h, int s, double b) :
+			_head(h), _arrow(e), _bound(b), _lower(l), _type(t), _set(s) {
+		assert(e != TsType::RULE);
+	}
+	GroundAggregate(const GroundAggregate& a) :
+			_head(a._head), _arrow(a._arrow), _bound(a._bound), _lower(a._lower), _type(a._type), _set(a._set) {
+		assert(a._arrow != TsType::RULE);
+	}
+	GroundAggregate() {
+	}
 
-		// Inspectors
-		int				head()	const { return _head;	}
-		TsType			arrow()	const { return _arrow;	}
-		double			bound()	const { return _bound;	}
-		bool			lower()	const { return _lower;	}
-		AggFunction		type()	const { return _type;	}
-		unsigned int	setnr()	const { return _set; 	}
-
-		// Visitor
-		void accept(TheoryVisitor* v) const { v->visit(this);	}
+	// Inspectors
+	int head() const {
+		return _head;
+	}
+	TsType arrow() const {
+		return _arrow;
+	}
+	double bound() const {
+		return _bound;
+	}
+	bool lower() const {
+		return _lower;
+	}
+	AggFunction type() const {
+		return _type;
+	}
+	unsigned int setnr() const {
+		return _set;
+	}
 };
 
-
 /*************************
-	Ground definitions
-*************************/
+ Ground definitions
+ *************************/
 
 // Enumeration type for rules
-enum RuleType { RT_CONJ, RT_DISJ, RT_AGG };
+enum RuleType {
+	RT_CONJ, RT_DISJ, RT_AGG
+};
 
 /**
  * class GroundRule
  *		This class represents a ground rule body, where literals are represented by integers.
- */ 
+ */
 class GroundRule {
-	private:
-		int			_head;
-		RuleType	_type;					// The rule type (disjunction, conjunction, or aggregate
-		bool		_recursive;				// True iff the rule body contains defined literals
+	ACCEPTDECLAREBOTH(GroundRule)
+private:
+	int _head;
+	RuleType _type; // The rule type (disjunction, conjunction, or aggregate
+	bool _recursive; // True iff the rule body contains defined literals
 
-	protected:
-		GroundRule(int head, RuleType type, bool rec): _head(head), _type(type), _recursive(rec) { }
+protected:
+	GroundRule(int head, RuleType type, bool rec) :
+			_head(head), _type(type), _recursive(rec) {
+	}
 
-	public:
-		virtual	~GroundRule() { }
+public:
+	virtual ~GroundRule() {
+	}
 
-		// Inspectors
-				int			head()		const { return _head; 		}
-				RuleType	type()		const { return _type; 		}
-				bool		recursive()	const { return _recursive;	}
-		virtual	bool		isFalse()	const = 0;
-		virtual	bool		isTrue()	const = 0;
+	// Inspectors
+	int head() const {
+		return _head;
+	}
+	RuleType type() const {
+		return _type;
+	}
+	bool recursive() const {
+		return _recursive;
+	}
+	virtual bool isFalse() const = 0;
+	virtual bool isTrue() const = 0;
 
-		void head(int head) { _head = head; 		}
-		void type(RuleType type) { _type = type; 		}
-		void recursive(bool recursive) { _recursive = recursive; 		}
-
-		// Visitor
-		virtual void accept(TheoryVisitor*) const = 0;
-		virtual GroundRule* accept(TheoryMutatingVisitor* v) = 0;
+	void head(int head) {
+		_head = head;
+	}
+	void type(RuleType type) {
+		_type = type;
+	}
+	void recursive(bool recursive) {
+		_recursive = recursive;
+	}
 };
 
 typedef std::vector<Lit> litlist;
 
-/**
- * class PCGroundRule
- *		This class represents ground rule bodies that are conjunctions or disjunctions of literals.
- */
-class PCGroundRule : public GroundRule {
+class PCGroundRule: public GroundRule {
+	ACCEPTBOTH(GroundRule)
 private:
-	litlist	_body;	// The literals in the body
+	litlist _body; // The literals in the body
 
 public:
 	// Constructors
-	PCGroundRule(int head, RuleType type, const litlist& body, bool rec) : GroundRule(head, type,rec), _body(body) { }
+	PCGroundRule(int head, RuleType type, const litlist& body, bool rec) :
+			GroundRule(head, type, rec), _body(body) {
+	}
 	PCGroundRule(int head, PCTsBody* body, bool rec);
-	PCGroundRule(const PCGroundRule& grb): GroundRule(grb.head(), grb.type(),grb.recursive()), _body(grb._body) { }
+	PCGroundRule(const PCGroundRule& grb) :
+			GroundRule(grb.head(), grb.type(), grb.recursive()), _body(grb._body) {
+	}
 
-	~PCGroundRule() { }
+	~PCGroundRule() {
+	}
 
 	// Inspectors
-	const litlist&	body()					const	{ return _body;	}
-	litlist&		body()							{ return _body;	}
-	void			body(const litlist& body) 		{ _body = body;	}
-	unsigned int	size()					const	{ return _body.size();	}
-	bool			empty()					const	{ return _body.empty();	}
-	int				literal(unsigned int n)	const	{ return _body[n];		}
-	bool			isFalse()				const	{ return (_body.empty() && type() == RT_DISJ);	}
-	bool			isTrue()				const	{ return (_body.empty() && type() == RT_CONJ);	}
-
-	// Visitor
-	void accept(TheoryVisitor* v) const { v->visit(this);	}
-	GroundRule* accept(TheoryMutatingVisitor* v) { return v->visit(this);	}
+	const litlist& body() const {
+		return _body;
+	}
+	litlist& body() {
+		return _body;
+	}
+	void body(const litlist& body) {
+		_body = body;
+	}
+	unsigned int size() const {
+		return _body.size();
+	}
+	bool empty() const {
+		return _body.empty();
+	}
+	int literal(unsigned int n) const {
+		return _body[n];
+	}
+	bool isFalse() const {
+		return (_body.empty() && type() == RT_DISJ);
+	}
+	bool isTrue() const {
+		return (_body.empty() && type() == RT_CONJ);
+	}
 };
 
-/**
- * class AggGroundRule
- *		This class represents ground rule bodies that are aggregates.
- */
-class AggGroundRule : public GroundRule {
-	private:
-		int			_setnr;		// The id of the set of the aggregate
-		AggFunction _aggtype;	// The aggregate type (cardinality, sum, product, min, or max)
-		bool		_lower;		// True iff the bound is a lower bound
-		double		_bound;		// The bound on the aggregate
+class AggGroundRule: public GroundRule {
+	ACCEPTBOTH(GroundRule)
+private:
+	int _setnr; // The id of the set of the aggregate
+	AggFunction _aggtype; // The aggregate type (cardinality, sum, product, min, or max)
+	bool _lower; // True iff the bound is a lower bound
+	double _bound; // The bound on the aggregate
 
-	public:
-		// Constructors
-		AggGroundRule(int head, int setnr, AggFunction at, bool lower, double bound, bool rec):
-			GroundRule(head, RT_AGG,rec), _setnr(setnr), _aggtype(at), _lower(lower), _bound(bound) { }
-		AggGroundRule(int head, AggTsBody* body, bool rec);
-		AggGroundRule(const AggGroundRule& grb):
-			GroundRule(grb.head(), RT_AGG,grb.recursive()), _setnr(grb._setnr), _aggtype(grb._aggtype), _lower(grb._lower), _bound(grb._bound) { }
+public:
+	// Constructors
+	AggGroundRule(int head, int setnr, AggFunction at, bool lower, double bound, bool rec) :
+			GroundRule(head, RT_AGG, rec), _setnr(setnr), _aggtype(at), _lower(lower), _bound(bound) {
+	}
+	AggGroundRule(int head, AggTsBody* body, bool rec);
+	AggGroundRule(const AggGroundRule& grb) :
+			GroundRule(grb.head(), RT_AGG, grb.recursive()), _setnr(grb._setnr), _aggtype(grb._aggtype), _lower(grb._lower), _bound(grb._bound) {
+	}
 
-		~AggGroundRule() { }
+	~AggGroundRule() {
+	}
 
-		// Inspectors
-		unsigned int	setnr()		const { return _setnr;		}
-		AggFunction		aggtype()	const { return _aggtype;	}
-		bool			lower()		const { return _lower;		}
-		double			bound()		const { return _bound;		}
-		bool			isFalse()	const { return false;		}
-		bool			isTrue()	const { return false;		}
-
-		// Visitor
-		void accept(TheoryVisitor* v) const { v->visit(this);	}
-		GroundRule* accept(TheoryMutatingVisitor* v) { return v->visit(this);	}
+	// Inspectors
+	unsigned int setnr() const {
+		return _setnr;
+	}
+	AggFunction aggtype() const {
+		return _aggtype;
+	}
+	bool lower() const {
+		return _lower;
+	}
+	double bound() const {
+		return _bound;
+	}
+	bool isFalse() const {
+		return false;
+	}
+	bool isTrue() const {
+		return false;
+	}
 };
 
-/**
- * class GroundDefinition
- *		This class represents ground definitions.
- */
-class GroundDefinition : public AbstractDefinition {
-	private:
-		unsigned int				_id;
-		GroundTranslator*			_translator;
-		std::map<int, GroundRule*>	_rules;
+class GroundDefinition: public AbstractDefinition {
+	ACCEPTBOTH(AbstractDefinition)
+private:
+	unsigned int _id;
+	GroundTranslator* _translator;
+	std::map<int, GroundRule*> _rules;
 
-	public:
-		// Constructors
-		GroundDefinition(unsigned int id, GroundTranslator* tr) : _id(id), _translator(tr) { }
-		GroundDefinition* clone() const;
-		void recursiveDelete();
+public:
+	// Constructors
+	GroundDefinition(unsigned int id, GroundTranslator* tr) :
+			_id(id), _translator(tr) {
+	}
+	GroundDefinition* clone() const;
+	void recursiveDelete();
 
 	// Mutators
 	void addTrueRule(int head);
@@ -237,56 +286,64 @@ class GroundDefinition : public AbstractDefinition {
 	void addPCRule(int head, const litlist& body, bool conj, bool recursive);
 	void addAggRule(int head, int setnr, AggFunction aggtype, bool lower, double bound, bool recursive);
 
-		unsigned int id() const { return _id; }
+	unsigned int id() const {
+		return _id;
+	}
 
-		typedef std::map<int, GroundRule*>::iterator ruleiterator;
-		ruleiterator	begin()			{ return _rules.begin();	}
-		ruleiterator	end()			{ return _rules.end();		}
+	typedef std::map<int, GroundRule*>::iterator ruleiterator;
+	ruleiterator begin() {
+		return _rules.begin();
+	}
+	ruleiterator end() {
+		return _rules.end();
+	}
 
-		GroundTranslator*	translator()	const { return _translator;			}
+	GroundTranslator* translator() const {
+		return _translator;
+	}
 
-		typedef std::map<int, GroundRule*>::const_iterator	const_ruleiterator;
-		const_ruleiterator	begin()			const { return _rules.cbegin();		}
-		const_ruleiterator	end()			const { return _rules.cend();		}
+	typedef std::map<int, GroundRule*>::const_iterator const_ruleiterator;
+	const_ruleiterator begin() const {
+		return _rules.cbegin();
+	}
+	const_ruleiterator end() const {
+		return _rules.cend();
+	}
 
-		// Visitor
-		void 				accept(TheoryVisitor* v) const		{ v->visit(this);			}
-		AbstractDefinition*	accept(TheoryMutatingVisitor* v)	{ return v->visit(this);	}
-
-		// Debugging
-		std::ostream&	put(std::ostream&, bool longnames = true, unsigned int spaces = 0) const;
-		std::string 	toString(unsigned int spaces = 0) const;
+	// Debugging
+	std::ostream& put(std::ostream&, bool longnames = true, unsigned int spaces = 0) const;
+	std::string toString(unsigned int spaces = 0) const;
 };
-
 
 /****************************************
-	Ground nested fixpoint definitions 
-****************************************/
+ Ground nested fixpoint definitions
+ ****************************************/
 
-class GroundFixpDef : public AbstractDefinition {
-	private:
+class GroundFixpDef: public AbstractDefinition {
+private:
 //		std::map<int,GroundRule*>	_rules;		// the direct subrules
 //		std::vector<GroundFixpDef*>		_subdefs;	// the direct subdefinitions
-	public:
-		//TODO
+public:
+	//TODO
 };
 
-
 /**********************
-	CP reifications
-**********************/
+ CP reifications
+ **********************/
 
 /**
  * class CPReification
  * 		This class represents CP constraints.
  */
 class CPReification { //TODO ?
-	public:
-		int 		_head;
-		CPTsBody* 	_body;
-		CPReification(int head, CPTsBody* body): _head(head), _body(body) { }
-		std::string toString(unsigned int spaces = 0) const;
-		void accept(TheoryVisitor* v) const { v->visit(this);	}
+	ACCEPTNONMUTATING()
+public:
+	int _head;
+	CPTsBody* _body;
+	CPReification(int head, CPTsBody* body) :
+			_head(head), _body(body) {
+	}
+	std::string toString(unsigned int spaces = 0) const;
 };
 
 struct GroundTerm {
@@ -477,9 +534,9 @@ struct ResidualAndFreeInst {
 	Lit residual;
 	dominstlist freevarinst;
 
-/*	bool operator==(const ResidualAndFreeInst& rhs) const {
-		return rhs.residual == residual && freevarinst == rhs.freevarinst;
-	}*/
+	/*	bool operator==(const ResidualAndFreeInst& rhs) const {
+	 return rhs.residual == residual && freevarinst == rhs.freevarinst;
+	 }*/
 };
 
 class LazyTsBody: public TsBody {
@@ -504,10 +561,8 @@ public:
 
 /* Sets and terms that will be handled by a constraint solver */
 
-/**
- * Abstract CP term class.
- */
 class CPTerm {
+	VISITORS()
 protected:
 	CPTerm() {
 	}
@@ -526,6 +581,7 @@ public:
  * CP term consisting of one CP variable.
  */
 class CPVarTerm: public CPTerm {
+	ACCEPTNONMUTATING()
 private:
 	VarId _varid;
 public:
@@ -539,16 +595,13 @@ public:
 
 	bool operator==(const CPTerm&) const;
 	bool operator<(const CPTerm&) const;
-
-	void accept(TheoryVisitor* v) const {
-		v->visit(this);
-	}
 };
 
 /**
  * CP term consisting of a sum of CP variables.
  */
 class CPSumTerm: public CPTerm {
+	ACCEPTNONMUTATING()
 private:
 	std::vector<VarId> _varids;
 public:
@@ -570,16 +623,13 @@ public:
 
 	bool operator==(const CPTerm&) const;
 	bool operator<(const CPTerm&) const;
-
-	void accept(TheoryVisitor* v) const {
-		v->visit(this);
-	}
 };
 
 /**
  * CP term consisting of a weighted sum of CP variables.
  */
 class CPWSumTerm: public CPTerm {
+	ACCEPTNONMUTATING()
 private:
 	std::vector<VarId> _varids;
 	std::vector<int> _weights;
@@ -597,10 +647,6 @@ public:
 
 	bool operator==(const CPTerm&) const;
 	bool operator<(const CPTerm&) const;
-
-	void accept(TheoryVisitor* v) const {
-		v->visit(this);
-	}
 };
 
 #endif

@@ -34,6 +34,7 @@ class Grounder;
 class FOBDD;
 
 class GrounderFactory: public TheoryVisitor {
+	VISITORFRIENDS()
 private:
 	// Data
 	AbstractStructure* _structure; //!< The structure that will be used to reduce the grounding
@@ -123,8 +124,15 @@ public:
 	// Context
 	void InitContext(); // Initialize the context - public for debugging purposes
 
+	// Getters
+	GroundingContext getContext(){
+		return _context;
+	}
+	FormulaGrounder* getFormGrounder(){
+		return _formgrounder;
+	}
 
-	// Visitors
+protected:
 	void visit(const Theory*);
 
 	void visit(const PredForm*);
@@ -144,15 +152,6 @@ public:
 
 	void visit(const Definition*);
 	void visit(const Rule*);
-
-	// Getters
-	GroundingContext getContext(){
-		return _context;
-	}
-	FormulaGrounder* getFormGrounder(){
-		return _formgrounder;
-	}
-
 };
 
 #endif

@@ -1,9 +1,3 @@
-/************************************
-  	CheckContainment.hpp
-	this file belongs to GidL 2.0
-	(c) K.U.Leuven
-************************************/
-
 #ifndef CONTAINMENTCHECKER_HPP_
 #define CONTAINMENTCHECKER_HPP_
 
@@ -12,19 +6,16 @@
 class PFSymbol;
 
 class CheckContainment: public TheoryVisitor {
+	VISITORFRIENDS()
 private:
 	const PFSymbol* _symbol;
 	bool _result;
 
 public:
-	CheckContainment(const PFSymbol* s) :
-			TheoryVisitor(), _symbol(s), _result(false) {
-	}
+	bool execute(const PFSymbol* s, const Formula* f);
 
-	bool containsSymbol(const Formula* f);
-
+protected:
 	void visit(const PredForm* pf);
-
 	void visit(const FuncTerm* ft);
 };
 

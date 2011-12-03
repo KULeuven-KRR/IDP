@@ -36,6 +36,7 @@ typedef std::vector<int> GroundClause;
 int getIDForUndefined();
 
 class Printer : public TheoryVisitor {
+	VISITORFRIENDS()
 private:
 	int	opendef_; 	//the id of the currenlty open definition
 	bool theoryopen_;
@@ -52,12 +53,7 @@ protected:
 	void closeTheory() { theoryopen_ = false; }
 	void openTheory() { theoryopen_ = true; }
 
-public:
-	// Factory method
-	template<class Stream> static Printer* create(Options* opts, Stream& stream);
-	template<class Stream> static Printer* create(Options* opts, Stream& stream, bool arithmetic);
-
-	// Print methods
+protected:
 	void visit(const Formula*);
 	void visit(const AbstractTheory*);
 
@@ -72,6 +68,11 @@ public:
 	virtual void visit(const GroundAggregate* cpr) = 0;
 	virtual void visit(const CPReification* cpr) = 0;
 
+public:
+	// Factory method
+	template<class Stream> static Printer* create(Options* opts, Stream& stream);
+	template<class Stream> static Printer* create(Options* opts, Stream& stream, bool arithmetic);
+
 	void checkOrOpen(int defid) {
 		if(!isDefOpen(defid)){
 			_pastopendefs.insert(opendef_);
@@ -85,10 +86,24 @@ public:
 	virtual void setTranslator(GroundTranslator*){}
 	virtual void setTermTranslator(GroundTermTranslator*){}
 	virtual void setStructure(AbstractStructure*){}
+
+	template<typename T>
+	void print(const T* t){
+		t->accept(this);
+	}
+	void print(const GroundClause& clause){
+		visit(clause);
+	}
 };
+
+// FIXME: these should get normal accept methods (but NOT THEORYvisitors!)
+template<> void Printer::print(const AbstractStructure* b);
+template<> void Printer::print(const Namespace* b);
+template<> void Printer::print(const Vocabulary* b);
 
 template<typename Stream>
 class StreamPrinter : public Printer {
+	VISITORFRIENDS()
 private:
 	Stream& _out;
 	unsigned int indentation_;

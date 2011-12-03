@@ -14,19 +14,11 @@
 #include <exception>
 #include <fstream>
 
-#ifdef __GXX_EXPERIMENTAL_CXX0X__
-	#include <memory>
-	template<class T>
-	struct sharedptr{
-		typedef std::shared_ptr<T> ptr;
-	};
-#else
-	#include <tr1/memory>
-	template<class T>
-	struct sharedptr{
-		typedef std::tr1::shared_ptr<T> ptr;
-	};
-#endif
+#include <memory>
+template<class T>
+struct sharedptr{
+	typedef std::shared_ptr<T> ptr;
+};
 
 // Support for deleting lists of pointer elements
 template<class T>

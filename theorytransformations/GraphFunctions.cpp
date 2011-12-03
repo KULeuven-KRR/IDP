@@ -2,6 +2,7 @@
 #include <cassert>
 #include <iostream>
 
+#include "utils/TheoryUtils.hpp"
 #include "theorytransformations/GraphFunctions.hpp"
 #include "theorytransformations/SplitComparisonChains.hpp"
 
@@ -98,8 +99,7 @@ Formula* GraphFunctions::visit(EqChainForm* ef) {
 	}
 	Formula* nf = 0;
 	if (remainingfuncterms) {
-		SplitComparisonChains splitter;
-		auto f = splitter.visit(ef);
+		auto f = FormulaUtils::splitComparisonChains(ef);
 		nf = f->accept(this);
 	} else {
 		nf = ef;

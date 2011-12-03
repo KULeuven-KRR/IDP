@@ -1,21 +1,20 @@
-/************************************
-  	GraphAggregates.hpp
-	this file belongs to GidL 2.0
-	(c) K.U.Leuven
-************************************/
-
 #ifndef GRAPHAGGREGATES_HPP_
 #define GRAPHAGGREGATES_HPP_
 
 #include "visitors/TheoryMutatingVisitor.hpp"
 
 class GraphAggregates: public TheoryMutatingVisitor {
+	VISITORFRIENDS()
 private:
 	bool _recursive;
 public:
-	GraphAggregates(bool recursive = false) :
-			_recursive(recursive) {
+	template<typename T>
+	T execute(T t, bool recursive = false){
+		_recursive = recursive;
+		return t->accept(this);
 	}
+
+protected:
 	Formula* visit(PredForm* pf);
 	Formula* visit(EqChainForm* ef);
 };

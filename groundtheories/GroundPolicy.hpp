@@ -76,7 +76,7 @@ public:
 		_cpreifications.push_back(new CPReification(tseitin,body));
 	}
 
-	void polAdd(const TsSet& tsset, int setnr, bool weighted) {
+	void polAdd(const TsSet& tsset, int setnr, bool) {
 		_sets.push_back(new GroundSet(setnr,tsset.literals(),tsset.weights()));
 	}
 

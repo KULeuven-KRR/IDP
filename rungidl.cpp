@@ -132,10 +132,19 @@ void setStop(bool value){
 
 void timeout(){
 	int time = 0;
+	int sleep = 10;
 	while(not shouldStop()){
-		sleep(1);
-		time++;
-		if(getOption(IntType::TIMEOUT)<time){
+		usleep(sleep);
+		if(sleep<1000){
+			if(sleep<100){
+				sleep +=10;
+			}else{
+				sleep +=100;
+			}
+		}
+		time+=sleep;
+		if(getOption(IntType::TIMEOUT)<time/1000){
+			cerr <<"Timed-out\n";
 			getGlobal()->notifyTerminateRequested();
 			break;
 		}
@@ -147,7 +156,8 @@ void timeout(){
 
 void SIGINT_handler(int) {
 	// TODO on which int (ctrl-c might not be what we want)
-	// GlobalData::instance()->notifyTerminateRequested();
+	cerr <<"Requested terminate\n";
+	GlobalData::instance()->notifyTerminateRequested();
 }
 
 /**
@@ -206,12 +216,25 @@ void interactive() {
 }
 #endif
 
+// TODO manage globaldataobject here instead of singleton?
+
+// Guarantees destruction after return/throw
+class DataManager{
+public:
+	DataManager(){
+		LuaConnection::makeLuaConnection();
+	}
+	~DataManager(){
+		LuaConnection::closeLuaConnection();
+		GlobalData::close();
+	}
+};
 /**
  * Runs the main method given a number of inputfiles and checks whether the main method returns the int 1.
  * In that case, test return SUCCESS, in all other cases it returns FAIL.
  */
 Status test(const std::vector<std::string>& inputfileurls){
-	LuaConnection::makeLuaConnection();
+	DataManager m;
 
 	parse(inputfileurls);
 
@@ -229,14 +252,11 @@ Status test(const std::vector<std::string>& inputfileurls){
 		result = Status::FAIL;
 	}
 
-	LuaConnection::closeLuaConnection();
-	GlobalData::close();
-
 	return result;
 }
 
 int run(int argc, char* argv[]) {
-	LuaConnection::makeLuaConnection();
+	DataManager m;
 
 	CLOptions cloptions;
 	vector<string> inputfiles = read_options(argc,argv,cloptions);
@@ -259,9 +279,6 @@ int run(int argc, char* argv[]) {
 		executeProcedure(cloptions._exec);
 #endif
 	}
-
-	LuaConnection::closeLuaConnection();
-	GlobalData::close();
 
 	return Error::nr_of_errors();
 }

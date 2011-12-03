@@ -1,9 +1,3 @@
-/************************************
-  	ApproxCheckTwoValued.hpp
-	this file belongs to GidL 2.0
-	(c) K.U.Leuven
-************************************/
-
 #ifndef APPROXCHECKTWOVALUED_HPP_
 #define APPROXCHECKTWOVALUED_HPP_
 
@@ -12,16 +6,23 @@
 
 class AbstractStructure;
 
-class ApproxCheckTwoValued : public TheoryVisitor {
-	private:
-		AbstractStructure*	_structure;
-		bool				_returnvalue;
-	public:
-		ApproxCheckTwoValued(AbstractStructure* str) : _structure(str), _returnvalue(true) { }
-		bool	returnvalue()	const { return _returnvalue;	}
-		void	visit(const PredForm*);
-		void	visit(const FuncTerm*);
-		void 	visit(const SetExpr*);
+class ApproxCheckTwoValued: public TheoryVisitor {
+	VISITORFRIENDS()
+private:
+	AbstractStructure* _structure;
+	bool _returnvalue;
+public:
+	template<typename T>
+	bool execute(AbstractStructure* str, const T f){
+		_structure = str;
+		_returnvalue = true;
+		f->accept(this);
+		return _returnvalue;
+	}
+protected:
+	void visit(const PredForm*);
+	void visit(const FuncTerm*);
+	void visit(const SetExpr*);
 };
 
 #endif /* APPROXCHECKTWOVALUED_HPP_ */

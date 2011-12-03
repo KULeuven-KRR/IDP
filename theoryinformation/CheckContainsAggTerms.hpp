@@ -6,19 +6,18 @@
 class PFSymbol;
 
 class CheckContainsAggTerms: public TheoryVisitor {
+	VISITORFRIENDS()
 private:
 	bool _result;
 
 public:
-	CheckContainsAggTerms() :
-			TheoryVisitor(), _result(false) {
-	}
-
-	bool containsAggTerms(const Formula* f){
+	bool execute(const Formula* f){
+		_result = false;
 		f->accept(this);
 		return _result;
 	}
 
+protected:
 	void visit(const AggTerm*){
 		_result = true;
 	}

@@ -125,7 +125,6 @@ public:
 					}
 				}
 			}
-			bool stop = false;
 			if(_leftsort->finite()){ // NOTE: optimized for looping over non-finite sort first (if available)
 				findNext(&_left, &_right, _rightsort, _leftvar, _rightvar);
 			}else{

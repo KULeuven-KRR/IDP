@@ -1,9 +1,3 @@
-/************************************
-  	UnnestThreeValuedTerms.hpp
-	this file belongs to GidL 2.0
-	(c) K.U.Leuven
-************************************/
-
 #ifndef REMOVETHREEVALUEDTERMS_HPP_
 #define REMOVETHREEVALUEDTERMS_HPP_
 
@@ -12,6 +6,7 @@
 #include "commontypes.hpp"
 #include "theory.hpp"
 #include "term.hpp"
+#include "structure.hpp"
 
 #include "theorytransformations/UnnestTerms.hpp"
 
@@ -40,18 +35,25 @@ class PFSymbol;
  *
  */
 class UnnestThreeValuedTerms: public UnnestTerms {
+	VISITORFRIENDS()
 private:
 	AbstractStructure* 				_structure;
 	bool 							_cpsupport;
-	const std::set<const PFSymbol*> _cpsymbols;
+	std::set<const PFSymbol*> _cpsymbols;
 
 public:
-	UnnestThreeValuedTerms(AbstractStructure* str, Context context, bool cpsupport, const std::set<const PFSymbol*>& cpsymbols);
-
-	Formula* traverse(PredForm* f);
+	template<typename T>
+	T execute(T t, AbstractStructure* str, Context context, bool cpsupport, const std::set<const PFSymbol*>& cpsymbols){
+		_structure = str;
+		_cpsupport = cpsupport;
+		_cpsymbols = cpsymbols;
+		return UnnestTerms::execute(t, context, str->vocabulary());
+	}
 
 protected:
 	bool shouldMove(Term* t);
+
+	Formula* traverse(PredForm* f);
 
 private:
 	bool isCPSymbol(const PFSymbol* symbol) const;

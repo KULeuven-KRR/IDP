@@ -15,6 +15,7 @@
 
 template<typename Stream>
 class IDPPrinter: public StreamPrinter<Stream> {
+	VISITORFRIENDS()
 private:
 	bool _longnames;
 	const GroundTranslator* _translator;

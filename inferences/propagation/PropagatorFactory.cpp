@@ -22,7 +22,7 @@ GenerateBDDAccordingToBounds* generateApproxBounds(AbstractTheory* theory, Abstr
 	SymbolicPropagation propinference;
 	std::map<PFSymbol*,InitBoundType> mpi = propinference.propagateVocabulary(theory,structure);
 	auto propagator = createPropagator(theory,mpi);
-	propagator->run();
+	propagator->doPropagation();
 	return propagator->symbolicstructure();
 }
 
@@ -76,7 +76,7 @@ FOPropagator* createPropagator(AbstractTheory* theory, const std::map<PFSymbol*,
 
 template<class InterpretationFactory, class PropDomain>
 FOPropagatorFactory<InterpretationFactory, PropDomain>::FOPropagatorFactory(InterpretationFactory* factory, FOPropScheduler* scheduler, bool as, const map<PFSymbol*,InitBoundType>& init)
-	: _verbosity(GlobalData::instance()->getOptions()->getValue(IntType::PROPAGATEVERBOSITY)), _initbounds(init), _assertsentences(as) {
+	: _verbosity(getOption(IntType::PROPAGATEVERBOSITY)), _initbounds(init), _assertsentences(as) {
 	auto options = GlobalData::instance()->getOptions();
 	_propagator = new TypedFOPropagator<InterpretationFactory, PropDomain>(factory, scheduler, options);
 	_multiplymaxsteps = options->getValue(BoolType::RELATIVEPROPAGATIONSTEPS);

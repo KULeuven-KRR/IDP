@@ -281,7 +281,9 @@ void DeriveSorts::put(ostream& stream) {
 }
 
 template<>
-void DeriveSorts::run(Rule* r) {
+void DeriveSorts::execute(Rule* r, Vocabulary* v) {
+	_assertsort = NULL;
+	_vocab = v;
 	// Set the sort of the terms in the head
 	auto jt = r->head()->symbol()->sorts().cbegin();
 	for (unsigned int n = 0; n < r->head()->subterms().size(); ++n, ++jt) {

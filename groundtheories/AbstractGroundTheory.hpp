@@ -5,6 +5,7 @@
 
 #include "theory.hpp"
 #include "ecnf.hpp"
+#include "visitors/VisitorFriends.hpp"
 
 class GroundTermTranslator;
 class GroundTranslator;
@@ -20,6 +21,7 @@ enum VIType {
  * Implements base class for ground theories
  */
 class AbstractGroundTheory: public AbstractTheory {
+	VISITORS()
 private:
 	AbstractStructure* _structure; //!< The ground theory may be partially reduced with respect to this structure.
 	GroundTranslator* _translator; //!< Link between ground atoms and SAT-solver literals.

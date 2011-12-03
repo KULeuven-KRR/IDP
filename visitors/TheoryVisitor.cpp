@@ -31,6 +31,7 @@ void TheoryVisitor::visit(const AbstractGroundTheory* ) {
 }
 
 class DefaultFormulaVisitor: TheoryVisitor{
+	VISITORFRIENDS()
 protected:
 	void visit(const Formula* f);
 };

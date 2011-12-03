@@ -1,20 +1,12 @@
-/************************************
- term.hpp
- this file belongs to GidL 2.0
- (c) K.U.Leuven
- ************************************/
-
 #ifndef TERM_HPP
 #define TERM_HPP
 
-/**
- * \file term.hpp
- *
- *		This file contains the classes to represent first-order terms and first-order sets
- */
-
 #include "parseinfo.hpp"
 #include "common.hpp"
+
+#include "visitors/VisitorFriends.hpp"
+#include "visitors/TheoryVisitor.hpp"
+#include "visitors/TheoryMutatingVisitor.hpp"
 
 class Sort;
 class Variable;
@@ -37,6 +29,7 @@ class VarTerm;
  * Abstract class to represent terms
  */
 class Term {
+	ACCEPTDECLAREBOTH(Term)
 private:
 	std::set<Variable*> _freevars; //!< the set of free variables of the term
 	std::vector<Term*> _subterms; //!< the subterms of the term
@@ -105,10 +98,6 @@ public:
 
 	bool contains(const Variable*) const; //!< true iff the term contains the variable
 
-	// Visitor
-	virtual void accept(TheoryVisitor*) const = 0;
-	virtual Term* accept(TheoryMutatingVisitor*) = 0;
-
 	// Output
 	virtual std::ostream& put(std::ostream&, bool longnames = false) const = 0;
 	std::string toString(bool longnames = false) const;
@@ -122,6 +111,7 @@ std::ostream& operator<<(std::ostream&, const Term&);
  *	\brief Class to represent terms that are variables
  */
 class VarTerm: public Term {
+	ACCEPTBOTH(Term)
 private:
 	Variable* _var; //!< the variable of the term
 
@@ -147,9 +137,6 @@ public:
 		return _var;
 	}
 
-	void accept(TheoryVisitor*) const;
-	Term* accept(TheoryMutatingVisitor*);
-
 	std::ostream& put(std::ostream&, bool longnames = false) const;
 };
 
@@ -160,6 +147,7 @@ public:
  *
  */
 class FuncTerm: public Term {
+	ACCEPTBOTH(Term)
 private:
 	Function* _function; //!< the function
 
@@ -188,9 +176,6 @@ public:
 		return subterms();
 	}
 
-	void accept(TheoryVisitor*) const;
-	Term* accept(TheoryMutatingVisitor*);
-
 	std::ostream& put(std::ostream&, bool longnames = false) const;
 };
 
@@ -200,6 +185,7 @@ public:
  *
  */
 class DomainTerm: public Term {
+	ACCEPTBOTH(Term)
 private:
 	Sort* _sort; //!< the sort of the domain element
 	const DomainElement* _value; //!< the actual domain element
@@ -226,9 +212,6 @@ public:
 		return _value;
 	}
 
-	void accept(TheoryVisitor*) const;
-	Term* accept(TheoryMutatingVisitor*);
-
 	std::ostream& put(std::ostream&, bool longnames = false) const;
 };
 
@@ -238,6 +221,7 @@ public:
  *
  */
 class AggTerm: public Term {
+	ACCEPTBOTH(Term)
 private:
 	AggFunction _function; //!< The aggregate function
 
@@ -261,9 +245,6 @@ public:
 	AggFunction function() const {
 		return _function;
 	}
-
-	void accept(TheoryVisitor*) const;
-	Term* accept(TheoryMutatingVisitor*);
 
 	std::ostream& put(std::ostream&, bool longnames = false) const;
 };
@@ -314,11 +295,10 @@ public:
  **********************/
 
 /** 
- *
- *	\brief Abstract base class for first-order set expressions 
- *
+ *	\brief Abstract base class for first-order set expressions
  */
 class SetExpr {
+	ACCEPTDECLAREBOTH(SetExpr)
 protected:
 	std::set<Variable*> _freevars; //!< The free variables of the set expression
 	std::set<Variable*> _quantvars; //!< The quantified variables of the set expression
@@ -387,10 +367,6 @@ public:
 		return _pi;
 	}
 
-	// Visitor
-	virtual void accept(TheoryVisitor*) const = 0;
-	virtual SetExpr* accept(TheoryMutatingVisitor*) = 0;
-
 	// Output
 	virtual std::ostream& put(std::ostream&, bool longnames = false) const = 0;
 	std::string toString(bool longnames = false) const;
@@ -402,6 +378,7 @@ std::ostream& operator<<(std::ostream&, const SetExpr&);
  *	\brief Set expression of the form [ (phi_1,w_1); ... ; (phi_n,w_n) ] 
  */
 class EnumSetExpr: public SetExpr {
+	ACCEPTBOTH(SetExpr)
 public:
 	// Constructors
 	EnumSetExpr(const SetParseInfo& pi) :
@@ -418,9 +395,6 @@ public:
 
 	Sort* sort() const;
 
-	void accept(TheoryVisitor*) const;
-	SetExpr* accept(TheoryMutatingVisitor*);
-
 	std::ostream& put(std::ostream&, bool longnames = false) const;
 };
 
@@ -428,6 +402,7 @@ public:
  * \brief Set expression of the form { x1 ... xn : phi : t }
  **/
 class QuantSetExpr: public SetExpr {
+	ACCEPTBOTH(SetExpr)
 public:
 	QuantSetExpr(const std::set<Variable*>& v, Formula* s, Term* t, const SetParseInfo& pi);
 
@@ -436,9 +411,6 @@ public:
 	QuantSetExpr* clone(const std::map<Variable*, Variable*>&) const;
 
 	Sort* sort() const;
-
-	void accept(TheoryVisitor*) const;
-	SetExpr* accept(TheoryMutatingVisitor*);
 
 	std::ostream& put(std::ostream&, bool longnames = false) const;
 };

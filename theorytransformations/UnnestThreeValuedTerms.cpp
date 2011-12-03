@@ -1,9 +1,3 @@
-/************************************
-  	UnnestThreeValuedTerms.cpp
-	this file belongs to GidL 2.0
-	(c) K.U.Leuven
-************************************/
-
 #include "theorytransformations/UnnestThreeValuedTerms.hpp"
 
 #include "vocabulary.hpp"
@@ -12,10 +6,6 @@
 #include "utils/TheoryUtils.hpp"
 
 using namespace std;
-
-UnnestThreeValuedTerms::UnnestThreeValuedTerms(AbstractStructure* str, Context context, bool cpsupport, const std::set<const PFSymbol*>& cpsymbols) :
-		UnnestTerms(context, str->vocabulary()), _structure(str), _cpsupport(cpsupport), _cpsymbols(cpsymbols) {
-}
 
 bool UnnestThreeValuedTerms::isCPSymbol(const PFSymbol* symbol) const {
 	return (VocabularyUtils::isComparisonPredicate(symbol)) || (_cpsymbols.find(symbol) != _cpsymbols.cend());

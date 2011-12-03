@@ -1,9 +1,3 @@
-/************************************
-	tptpprinter.hpp
-	this file belongs to GidL 2.0
-	(c) K.U.Leuven
-************************************/
-
 #ifndef TPTPPRINTER_HPP_
 #define TPTPPRINTER_HPP_
 
@@ -15,9 +9,11 @@
 #include <iostream>
 
 #include "groundtheories/GroundPolicy.hpp"
+#include "visitors/VisitorFriends.hpp"
 
 template<typename Stream>
 class TPTPPrinter: public StreamPrinter<Stream> {
+	VISITORFRIENDS()
 private:
 	bool						_conjecture;
 	bool						_arithmetic;
@@ -55,6 +51,10 @@ public:
 		_conjecture = conjecture;
 	}
 
+	void startTheory() { }
+	void endTheory() { }
+
+protected:
 	void visit(const AbstractStructure*) {
 		assert(false);
 	}
@@ -425,8 +425,6 @@ public:
 	void visit(const GroundAggregate*) { }
 	void visit(const CPReification*) { }
 	void visit(const PCGroundRule*) { }
-	void startTheory() { }
-	void endTheory() { }
 
 private:
 	void startAxiom(std::string prefix) {

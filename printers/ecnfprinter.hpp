@@ -19,6 +19,7 @@
 
 template<typename Stream>
 class EcnfPrinter : public StreamPrinter<Stream> {
+	VISITORFRIENDS()
 private:
 	int							_currenthead;
 	unsigned int 				_currentdefnr;

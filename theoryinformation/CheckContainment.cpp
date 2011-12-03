@@ -1,9 +1,3 @@
-/************************************
-  	CheckContainment.cpp
-	this file belongs to GidL 2.0
-	(c) K.U.Leuven
-************************************/
-
 #include "theoryinformation/CheckContainment.hpp"
 
 #include "vocabulary.hpp"
@@ -12,7 +6,8 @@
 
 using namespace std;
 
-bool CheckContainment::containsSymbol(const Formula* f) {
+bool CheckContainment::execute(const PFSymbol* s, const Formula* f) {
+	_symbol = s;
 	_result = false;
 	f->accept(this);
 	return _result;

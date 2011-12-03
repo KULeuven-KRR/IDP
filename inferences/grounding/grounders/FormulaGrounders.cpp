@@ -36,7 +36,7 @@ void FormulaGrounder::setOrig(const Formula* f, const map<Variable*, const DomEl
 }
 
 void FormulaGrounder::printorig() const {
-	clog << "Grounding formula " << _origform->toString();
+	clog << "Grounding formula " <<toString(_origform);
 	if (not _origform->freeVars().empty()) {
 		clog << " with instance ";
 		for (auto it = _origform->freeVars().cbegin(); it != _origform->freeVars().cend(); ++it) {

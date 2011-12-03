@@ -18,6 +18,11 @@ void SolverPolicy::initialize(SATSolver* solver, int verbosity, GroundTermTransl
 	_termtranslator = termtranslator;
 }
 
+inline MinisatID::Weight SolverPolicy::createWeight(double weight){
+#warning "Dangerous cast from double to int in adding rules to the solver"
+	return MinisatID::Weight(int(weight));	// TODO: remove cast when supported by the solver
+}
+
 void SolverPolicy::polAdd(const GroundClause& cl) {
 	MinisatID::Disjunction clause;
 	for(size_t n = 0; n < cl.size(); ++n) {

@@ -1,9 +1,3 @@
-/************************************
-  	GraphFunctions.hpp
-	this file belongs to GidL 2.0
-	(c) K.U.Leuven
-************************************/
-
 #ifndef GRAPHFUNCTIONS_HPP_
 #define GRAPHFUNCTIONS_HPP_
 
@@ -14,12 +8,16 @@
  ***********************************/
 
 class GraphFunctions: public TheoryMutatingVisitor {
+	VISITORFRIENDS()
 private:
 	bool _recursive;
 public:
-	GraphFunctions(bool recursive = false) :
-			_recursive(recursive) {
+	template<typename T>
+	T execute(T t, bool recursive = false){
+		_recursive = recursive;
+		return t->accept(this);
 	}
+protected:
 	Formula* visit(PredForm* pf);
 	Formula* visit(EqChainForm* ef);
 };

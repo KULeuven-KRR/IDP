@@ -379,7 +379,7 @@ void GrounderFactory::visit(const Theory* theory) {
  */
 void GrounderFactory::visit(const PredForm* pf) {
 	if (_verbosity > 3) {
-		clog << "Grounderfactory visiting: " << pf->toString() << "\n";
+		clog << "Grounderfactory visiting: " <<toString(pf) << "\n";
 	}
 	_context._conjunctivePathFromRoot = _context._conjPathUntilNode;
 	_context._conjPathUntilNode = false;
@@ -399,7 +399,7 @@ void GrounderFactory::visit(const PredForm* pf) {
 
 	if (not sametypeid<PredForm>(*transpf)) { // The rewriting changed the atom
 		if (_verbosity > 1) {
-			clog << "Rewritten " << pf->toString() << " to " << transpf->toString() << "\n";
+			clog << "Rewritten " <<toString(pf) << " to " <<toString(transpf) << "\n";
 		}
 		transpf->accept(this);
 		transpf->recursiveDelete();
@@ -463,7 +463,7 @@ void GrounderFactory::visit(const PredForm* pf) {
 	}
 
 	PredTable *posstable = NULL, *certtable = NULL;
-	if (GlobalData::instance()->getOptions()->getValue(BoolType::GROUNDWITHBOUNDS)) {
+	if (getOption(BoolType::GROUNDWITHBOUNDS)) {
 		auto fovars = VarUtils::makeNewVariables(checksorts);
 		auto foterms = TermUtils::makeNewVarTerms(fovars);
 		auto checkpf = new PredForm(newpf->sign(), newpf->symbol(), foterms, FormulaParseInfo());
@@ -486,7 +486,7 @@ void GrounderFactory::visit(const PredForm* pf) {
 
 	auto possch = GeneratorFactory::create(posstable, vector<Pattern>(checkargs.size(), Pattern::INPUT), checkargs, Universe(tables));
 	auto certainch = GeneratorFactory::create(certtable, vector<Pattern>(checkargs.size(), Pattern::INPUT), checkargs, Universe(tables));
-	if (GlobalData::instance()->getOptions()->getValue(IntType::GROUNDVERBOSITY) > 3) {
+	if (getOption(IntType::GROUNDVERBOSITY) > 3) {
 		clog << "Certainly table: \n" << toString(certtable) << "\n";
 		clog << "Possible table: \n" << toString(posstable) << "\n";
 		clog << "Possible checker: \n" << toString(possch) << "\n";
@@ -519,7 +519,7 @@ void GrounderFactory::visit(const PredForm* pf) {
  */
 void GrounderFactory::visit(const BoolForm* bf) {
 	if (_verbosity > 3) {
-		clog << "Grounderfactory visiting: " << bf->toString() << "\n";
+		clog << "Grounderfactory visiting: " <<toString(bf) << "\n";
 	}
 
 	_context._conjunctivePathFromRoot = _context._conjPathUntilNode;
@@ -597,7 +597,7 @@ const DomElemContainer* GrounderFactory::createVarMapping(Variable * const var) 
  */
 void GrounderFactory::visit(const QuantForm* qf) {
 	if (_verbosity > 3) {
-		clog << "Grounderfactory visiting: " << qf->toString() << "\n";
+		clog << "Grounderfactory visiting: " <<toString(qf) << "\n";
 	}
 	_context._conjunctivePathFromRoot = _context._conjPathUntilNode;
 	_context._conjPathUntilNode = _context._conjunctivePathFromRoot && qf->isUnivWithSign();
@@ -910,7 +910,9 @@ GrounderFactory::GenAndChecker GrounderFactory::createVarsAndGenerators(Formula*
 
 	for (auto it = subformula->freeVars().cbegin(); it != subformula->freeVars().cend(); ++it) {
 		if (orig->quantVars().find(*it) == orig->quantVars().cend()) { // It is a free var of the quantified formula
-			assert(_varmapping.find(*it) != _varmapping.cend());
+			if(_varmapping.find(*it) == _varmapping.cend()){
+				throw IdpException("Varmapping is missing a variable"); // TODO make Assert
+			}
 			// So should already have a varmapping
 			vars.push_back(_varmapping[*it]);
 			pattern.push_back(Pattern::INPUT);
@@ -929,8 +931,8 @@ GrounderFactory::GenAndChecker GrounderFactory::createVarsAndGenerators(Formula*
 	// Check for infinite grounding
 	for (auto it = tables.cbegin(); it < tables.cend(); ++it) {
 		if (not (*it)->finite()) {
-			Warning::possiblyInfiniteGrounding(orig->pi().original() != NULL ? orig->pi().original()->toString() : "", orig->toString());
-			if(not GlobalData::instance()->getOptions()->getValue(BoolType::GROUNDWITHBOUNDS)){ // TODO and not lazy?
+			Warning::possiblyInfiniteGrounding(orig->pi().original() != NULL ? toString(orig->pi().original()) : "", toString(orig));
+			if(not getOption(BoolType::GROUNDWITHBOUNDS)){ // TODO and not lazy?
 				// If not grounding with bounds, we will certainly ground infinitely, so do not even start
 				throw IdpException("Infinite grounding");
 			}
@@ -939,7 +941,7 @@ GrounderFactory::GenAndChecker GrounderFactory::createVarsAndGenerators(Formula*
 
 	// FIXME => unsafe to have to pass in fovars explicitly (order is never checked?)
 	PredTable *gentable = NULL, *checktable = NULL;
-	if(GlobalData::instance()->getOptions()->getValue(BoolType::GROUNDWITHBOUNDS)){
+	if(getOption(BoolType::GROUNDWITHBOUNDS)){
 		auto generatorbdd = _symstructure->evaluate(subformula, generatortype); // !x phi(x) => generate all x possibly false
 		auto checkerbdd = _symstructure->evaluate(subformula, checkertype); // !x phi(x) => check for x certainly false
 		generatorbdd = improve_generator(generatorbdd, quantfovars, MCPA);

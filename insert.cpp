@@ -770,9 +770,8 @@ void Insert::closequery(Query* q) {
 	if (q) {
 		std::set<Variable*> sv(q->variables().cbegin(), q->variables().cend());
 		QuantForm* qf = new QuantForm(SIGN::POS, QUANT::UNIV, sv, q->query(), FormulaParseInfo());
-		DeriveSorts sd(_currvocabulary);
-		sd.run(qf);
-		CheckSorts sc(qf, _currvocabulary);
+		FormulaUtils::deriveSorts(_currvocabulary, qf);
+		FormulaUtils::checkSorts(_currvocabulary, qf);
 		delete (qf);
 		_currspace->add(_currquery, q);
 		if (_currspace->isGlobal()) LuaConnection::addGlobal(_currquery, q);
@@ -785,9 +784,8 @@ void Insert::closeterm(Term* t) {
 	if (t == NULL) {
 		return;
 	}
-	DeriveSorts sd(_currvocabulary);
-	sd.run(t);
-	CheckSorts sc(t, _currvocabulary);
+	FormulaUtils::deriveSorts(_currvocabulary, t);
+	FormulaUtils::checkSorts(_currvocabulary, t);
 	_currspace->add(_currterm, t);
 	if (_currspace->isGlobal()) {
 		LuaConnection::addGlobal(_currterm, t);
@@ -1114,9 +1112,8 @@ void Insert::sentence(Formula* f) {
 	}
 
 	// 2. Sort derivation & checking
-	DeriveSorts sd(_currvocabulary);
-	sd.run(f);
-	CheckSorts sc(f, _currvocabulary);
+	FormulaUtils::deriveSorts(_currvocabulary, f);
+	FormulaUtils::checkSorts(_currvocabulary, f);
 
 	// 3. Add the formula to the current theory
 	_currtheory->add(f);
@@ -1166,8 +1163,7 @@ Rule* Insert::rule(const std::set<Variable*>& qv, Formula* head, Formula* body, 
 		auto pfhead = dynamic_cast<PredForm*>(head);
 		auto r = new Rule(hv, pfhead, body, pi);
 		// Sort derivation
-		DeriveSorts sd(_currvocabulary);
-		sd.run(r);
+		FormulaUtils::deriveSorts(_currvocabulary, r);
 		// Return the rule
 		return r;
 	} else {

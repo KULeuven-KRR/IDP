@@ -86,7 +86,7 @@ GlobalData* getGlobal();
 
 template<typename OptionType>
 typename OptionTypeTraits<OptionType>::ValueType getOption(OptionType type){
-	return GlobalData::instance()->getOptions()->getValue(type);
+	return getGlobal()->getOptions()->getValue(type);
 }
 
 #endif /* GLOBALDATA_HPP_ */

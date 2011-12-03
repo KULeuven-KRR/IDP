@@ -24,6 +24,7 @@ class Vocabulary;
 // TODO friend macros and protected visits
 // TODO run always in constructor? Or just never? Now it cannot be called multiple times here
 class DeriveSorts: public TheoryMutatingVisitor {
+	VISITORFRIENDS()
 private:
 	std::set<Variable*> _underivableVariables;
 	std::set<Variable*> _untypedvariables;
@@ -35,12 +36,10 @@ private:
 	Vocabulary* _vocab;
 
 public:
-	DeriveSorts(Vocabulary* v) :
-			_assertsort(NULL), _vocab(v) {
-	}
-
 	template<typename T>
-	void run(T f) {
+	void execute(T f, Vocabulary* v) {
+		_assertsort = NULL;
+		_vocab = v;
 		deriveSorts(f);
 	}
 
@@ -86,6 +85,6 @@ private:
 };
 
 class Rule;
-template<> void DeriveSorts::run(Rule* r);
+template<> void DeriveSorts::execute(Rule* r, Vocabulary* v);
 
 #endif /* DERIVESORTS_HPP_ */

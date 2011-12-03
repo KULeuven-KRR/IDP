@@ -47,3 +47,16 @@ void Printer::visit(const AbstractTheory* t){
 void Printer::visit(const Formula* f){
 	f->accept(this);
 }
+
+template<>
+void Printer::print(const AbstractStructure* b){
+	visit(b);
+}
+template<>
+void Printer::print(const Namespace* b){
+	visit(b);
+}
+template<>
+void Printer::print(const Vocabulary* b){
+	visit(b);
+}

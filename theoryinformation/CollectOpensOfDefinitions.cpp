@@ -1,9 +1,3 @@
-/************************************
-  	CollectOpensOfDefinitions.cpp
-	this file belongs to GidL 2.0
-	(c) K.U.Leuven
-************************************/
-
 #include "theoryinformation/CollectOpensOfDefinitions.hpp"
 
 #include "vocabulary.hpp"
@@ -12,7 +6,7 @@
 
 using namespace std;
 
-const std::set<PFSymbol*>& CollectOpensOfDefinitions::run(Definition* d) {
+const std::set<PFSymbol*>& CollectOpensOfDefinitions::execute(Definition* d) {
 	_definition = d;
 	_result.clear();
 	d->accept(this);

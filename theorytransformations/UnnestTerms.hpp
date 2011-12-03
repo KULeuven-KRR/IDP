@@ -1,9 +1,3 @@
-/************************************
-  	UnnestTerms.hpp
-	this file belongs to GidL 2.0
-	(c) K.U.Leuven
-************************************/
-
 #ifndef MOVETERMS_HPP_
 #define MOVETERMS_HPP_
 
@@ -24,6 +18,7 @@ class Variable;
  * NOTE: equality is NOT rewritten! (rewriting f(x)=y to ?z: f(x)=z & z=y is quite useless)
  */
 class UnnestTerms: public TheoryMutatingVisitor {
+	VISITORFRIENDS()
 private:
 	Vocabulary* 			_vocabulary; //!< Used to do type derivation during rewrites
 	Context 				_context; //!< Keeps track of the current context where terms are moved
@@ -45,45 +40,34 @@ protected:
 	void setContext(const Context& context) { _context = context; }
 
 public:
-	UnnestTerms(Context context = Context::POSITIVE, Vocabulary* v = NULL) :
-			_vocabulary(v), _context(context), allowedToUnnest(false) {
+	template<typename T>
+	T execute(T t, Context context = Context::POSITIVE, Vocabulary* v = NULL){
+		_context = context;
+		_vocabulary = v;
+		allowedToUnnest = false;
+		return t->accept(this);
 	}
+
+protected:
+	Formula* rewrite(Formula* formula);
 
 	VarTerm* move(Term* term);
 
-	Formula* rewrite(Formula* formula) ;
-
 	Theory* visit(Theory* theory);
-
 	virtual Rule* visit(Rule* rule);
-
 	virtual Formula* traverse(Formula* f);
-
 	virtual Formula* traverse(PredForm* f);
-
 	virtual Formula* visit(EquivForm* ef);
-
 	virtual Formula* visit(AggForm* af);
-
 	virtual Formula* visit(EqChainForm* ef);
-
 	virtual Formula* visit(PredForm* predform);
-
 	virtual Term* traverse(Term* term);
-
 	VarTerm* visit(VarTerm* t);
-
 	virtual Term* visit(DomainTerm* t) ;
-
 	virtual Term* visit(AggTerm* t);
-
 	virtual Term* visit(FuncTerm* ft);
-
 	virtual SetExpr* visit(EnumSetExpr* s);
-
 	virtual SetExpr* visit(QuantSetExpr* s);
 };
-
-
 
 #endif /* MOVETERMS_HPP_ */

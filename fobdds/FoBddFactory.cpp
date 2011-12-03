@@ -23,7 +23,7 @@
 using namespace std;
 
 // TODO why clone the formula and not clone the term?
-const FOBDD* FOBDDFactory::run(const Formula* f) {
+const FOBDD* FOBDDFactory::turnIntoBdd(const Formula* f) {
 	auto cf = f->cloneKeepVars();
 	cf = FormulaUtils::unnestPartialTerms(cf, Context::POSITIVE);
 	f->accept(this);
@@ -31,7 +31,7 @@ const FOBDD* FOBDDFactory::run(const Formula* f) {
 	return _bdd;
 }
 
-const FOBDDArgument* FOBDDFactory::run(const Term* t) {
+const FOBDDArgument* FOBDDFactory::turnIntoBdd(const Term* t) {
 	// FIXME: move partial functions in aggregates that occur in t
 	t->accept(this);
 	return _argument;

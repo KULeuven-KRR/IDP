@@ -1,9 +1,3 @@
-/************************************
-  	CheckContainsFuncTerms.hpp
-	this file belongs to GidL 2.0
-	(c) K.U.Leuven
-************************************/
-
 #ifndef CONTAINSFUNCTERMS_HPP_
 #define CONTAINSFUNCTERMS_HPP_
 
@@ -12,19 +6,18 @@
 class PFSymbol;
 
 class CheckContainsFuncTerms: public TheoryVisitor {
+	VISITORFRIENDS()
 private:
 	bool _result;
 
 public:
-	CheckContainsFuncTerms() :
-			TheoryVisitor(), _result(false) {
-	}
-
-	bool containsFuncTerms(const Formula* f){
+	bool execute(const Formula* f){
+		_result = false;
 		f->accept(this);
 		return _result;
 	}
 
+protected:
 	void visit(const FuncTerm*){
 		_result = true;
 	}

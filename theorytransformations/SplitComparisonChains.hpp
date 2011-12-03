@@ -1,9 +1,3 @@
-/************************************
-  	SplitComparisonChains.hpp
-	this file belongs to GidL 2.0
-	(c) K.U.Leuven
-************************************/
-
 #ifndef REMOVEEQUATIONCHAINS_HPP_
 #define REMOVEEQUATIONCHAINS_HPP_
 
@@ -13,16 +7,17 @@
 class Vocabulary;
 
 class SplitComparisonChains: public TheoryMutatingVisitor {
+	VISITORFRIENDS()
 private:
 	Vocabulary* _vocab;
 public:
-	SplitComparisonChains() :
-			TheoryMutatingVisitor(), _vocab(0) {
-	}
-	SplitComparisonChains(Vocabulary* v) :
-			TheoryMutatingVisitor(), _vocab(v) {
+	template<typename T>
+	T execute(T t, Vocabulary* v = NULL){
+		_vocab = v;
+		return t->accept(this);
 	}
 
+protected:
 	Formula* visit(EqChainForm*);
 };
 

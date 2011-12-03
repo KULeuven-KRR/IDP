@@ -23,23 +23,27 @@ class Function;
 class PredTable;
 template<class InterpretationFactory, class PropDomain> class TypedFOPropagator;
 
-enum InitBoundType { IBT_TWOVAL, IBT_BOTH, IBT_CT, IBT_CF, IBT_NONE };
+enum InitBoundType {
+	IBT_TWOVAL, IBT_BOTH, IBT_CT, IBT_CF, IBT_NONE
+};
 
 /**
  * Constraint propagator for first-order theories
  */
-class FOPropagator : public TheoryVisitor {
+class FOPropagator: public TheoryVisitor {
+	VISITORFRIENDS()
 public:
-	virtual ~FOPropagator() {}
+	virtual ~FOPropagator() {
+	}
 
-	virtual void run() = 0;		//!< Apply propagations until the propagation queue is empty
+	virtual void doPropagation() = 0; //!< Apply propagations until the propagation queue is empty
 
 	// Inspectors
-	virtual AbstractStructure*	currstructure(AbstractStructure* str) const = 0;
-		//!< Obtain the resulting structure
-		//!< (the given structure is used to evaluate BDDs in case of symbolic propagation)
-	virtual GenerateBDDAccordingToBounds*	symbolicstructure()		const = 0;
-		//!< Obtain the resulting structure (only works if the used domainfactory is a FOPropBDDDomainFactory)
+	virtual AbstractStructure* currstructure(AbstractStructure* str) const = 0;
+	//!< Obtain the resulting structure
+	//!< (the given structure is used to evaluate BDDs in case of symbolic propagation)
+	virtual GenerateBDDAccordingToBounds* symbolicstructure() const = 0;
+	//!< Obtain the resulting structure (only works if the used domainfactory is a FOPropBDDDomainFactory)
 };
 
 /**
@@ -47,33 +51,35 @@ public:
  * 	and domains for formulas in a theory.
  */
 template<class InterpretationFactory, class PropDomain>
-class FOPropagatorFactory : public TheoryVisitor {
+class FOPropagatorFactory: public TheoryVisitor {
+	VISITORFRIENDS()
 	typedef TypedFOPropagator<InterpretationFactory, PropDomain> Propagator;
-	private:
-		int									_verbosity;
-		Propagator*							_propagator;
-		std::map<PFSymbol*,PredForm*>		_leafconnectors;
-		std::map<PFSymbol*,InitBoundType>	_initbounds;
-		bool								_assertsentences;
-		bool								_multiplymaxsteps;
+private:
+	int _verbosity;
+	Propagator* _propagator;
+	std::map<PFSymbol*, PredForm*> _leafconnectors;
+	std::map<PFSymbol*, InitBoundType> _initbounds;
+	bool _assertsentences;
+	bool _multiplymaxsteps;
 
-		void createleafconnector(PFSymbol*);
-		void initFalse(const Formula*);		//!< Set the ct- and cf-domains of the given formula to empty
+	void createleafconnector(PFSymbol*);
+	void initFalse(const Formula*); //!< Set the ct- and cf-domains of the given formula to empty
 
-		void visit(const Theory*);
-		void visit(const PredForm*);
-		void visit(const EqChainForm*);
-		void visit(const EquivForm*);
-		void visit(const BoolForm*);
-		void visit(const QuantForm*);
-		void visit(const AggForm*);
-	public:
-		FOPropagatorFactory(InterpretationFactory*, FOPropScheduler*, bool as, const std::map<PFSymbol*,InitBoundType>&);
+protected:
+	void visit(const Theory*);
+	void visit(const PredForm*);
+	void visit(const EqChainForm*);
+	void visit(const EquivForm*);
+	void visit(const BoolForm*);
+	void visit(const QuantForm*);
+	void visit(const AggForm*);
+public:
+	FOPropagatorFactory(InterpretationFactory*, FOPropScheduler*, bool as, const std::map<PFSymbol*, InitBoundType>&);
 
-		Propagator* create(const AbstractTheory*);
+	Propagator* create(const AbstractTheory*);
 };
 
-FOPropagator* createPropagator(AbstractTheory* theory, const std::map<PFSymbol*,InitBoundType> mpi);
+FOPropagator* createPropagator(AbstractTheory* theory, const std::map<PFSymbol*, InitBoundType> mpi);
 GenerateBDDAccordingToBounds* generateNaiveApproxBounds(AbstractTheory* theory, AbstractStructure* structure);
 GenerateBDDAccordingToBounds* generateApproxBounds(AbstractTheory* theory, AbstractStructure* structure);
 
