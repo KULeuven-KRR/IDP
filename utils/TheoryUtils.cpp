@@ -1,9 +1,3 @@
-/************************************
- TheoryUtils.cpp
- this file belongs to GidL 2.0
- (c) K.U.Leuven
- ************************************/
-
 #include "utils/TheoryUtils.hpp"
 
 #include "theory.hpp"
@@ -107,6 +101,10 @@ Formula* graphAggregates(Formula* f) {
 	return transform<GraphAggregates, Formula*>(f);
 }
 
+Formula* splitProducts(Formula* f){
+	return transform<SplitProducts, Formula*>(f);
+}
+
 
 Formula* unnestPartialTerms(Formula* f, Context context, Vocabulary* voc) {
 	return transform<UnnestPartialTerms, Formula*>(f, context, voc);
@@ -119,7 +117,7 @@ Formula* unnestThreeValuedTerms(Formula* f, AbstractStructure* structure, Contex
 
 Rule* unnestThreeValuedTerms(Rule* r, AbstractStructure* structure, Context context, bool cpsupport,
 		const std::set<const PFSymbol*> cpsymbols) {
-	return transform<UnnestThreeValuedTerms>(r, structure, context, cpsupport, cpsymbols);
+	return transform<UnnestThreeValuedTerms, Rule*>(r, structure, context, cpsupport, cpsymbols);
 }
 
 bool containsFuncTerms(Formula* f) {
@@ -168,10 +166,6 @@ AbstractTheory* pushQuantifiers(AbstractTheory* f) {
 
 AbstractTheory* graphAggregates(AbstractTheory* f) {
 	return transform<GraphAggregates, AbstractTheory*>(f);
-}
-
-AbstractTheory* splitProducts(AbstractTheory* f){
-	return transform<SplitProducts>(f);
 }
 
 AbstractTheory* addCompletion(AbstractTheory* f) {

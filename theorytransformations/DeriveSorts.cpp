@@ -20,13 +20,13 @@ void DeriveSorts::checkVars(const set<Variable*>& quantvars){
 }
 
 Formula* DeriveSorts::visit(QuantForm* qf) {
-	assert(_assertsort == NULL);
+	Assert(_assertsort == NULL);
 	checkVars(qf->quantVars());
 	return traverse(qf);
 }
 
 Rule* DeriveSorts::visit(Rule* r) {
-	assert(_assertsort == NULL);
+	Assert(_assertsort == NULL);
 	checkVars(r->quantVars());
 	r->head()->accept(this);
 	r->body()->accept(this);
@@ -34,7 +34,7 @@ Rule* DeriveSorts::visit(Rule* r) {
 }
 
 SetExpr* DeriveSorts::visit(QuantSetExpr* qs) {
-	assert(_assertsort == NULL);
+	Assert(_assertsort == NULL);
 	checkVars(qs->quantVars());
 	return traverse(qs);
 }
@@ -76,7 +76,7 @@ Term* DeriveSorts::visit(DomainTerm* dt) {
 
 Term* DeriveSorts::visit(AggTerm* t) {
 	if(_assertsort != NULL){
-		assert(SortUtils::resolve(_assertsort, VocabularyUtils::intsort())!=NULL);
+		Assert(SortUtils::resolve(_assertsort, VocabularyUtils::intsort())!=NULL);
 	}
 	_assertsort = NULL; // TODO reset afterwards?
 	return TheoryMutatingVisitor::visit(t);
@@ -86,7 +86,7 @@ Term* DeriveSorts::visit(FuncTerm* term) {
 	auto f = term->function();
 
 	if(_assertsort != NULL && term->sort()!=NULL){
-		assert(SortUtils::resolve(_assertsort, term->sort())!=NULL);
+		Assert(SortUtils::resolve(_assertsort, term->sort())!=NULL);
 	}
 	_assertsort = NULL;
 
@@ -220,7 +220,7 @@ void DeriveSorts::derivefuncs() {
 		}
 		vs.push_back(NULL); // TODO should be output position
 		auto rf = f->disambiguate(vs, _vocab);
-		if (rf) {
+		if (rf!=NULL) {
 			(*it)->function(rf);
 			if (not rf->overloaded()) {
 				_overloadedterms.erase(it);

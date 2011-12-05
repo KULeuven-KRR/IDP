@@ -44,7 +44,7 @@ public:
 	T execute(T t, Context context = Context::POSITIVE, Vocabulary* v = NULL){
 		_context = context;
 		_vocabulary = v;
-		allowedToUnnest = false;
+		_allowedToUnnest = false;
 		return t->accept(this);
 	}
 

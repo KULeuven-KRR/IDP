@@ -16,14 +16,14 @@
 using namespace std;
 
 // seed
-int global_seed;	//!< seed used for bdd estimators
+int global_seed; //!< seed used for bdd estimators
 
 // Parser stuff
 extern void parsefile(const string&);
 extern void parsestdin();
 
-std::ostream& operator<<(std::ostream& stream, Status status){
-	stream <<(status==Status::FAIL?"failed":"success");
+std::ostream& operator<<(std::ostream& stream, Status status) {
+	stream << (status == Status::FAIL ? "failed" : "success");
 	return stream;
 }
 
@@ -31,16 +31,13 @@ std::ostream& operator<<(std::ostream& stream, Status status){
  * Print help message and stop
  **/
 void usage() {
-	cout << "Usage:\n"
-		 << "   gidl [options] [filename [filename [...]]]\n\n";
+	cout << "Usage:\n" << "   gidl [options] [filename [filename [...]]]\n\n";
 	cout << "Options:\n";
 	cout << "    -i, --interactive    run in interactive mode\n";
 	cout << "    -e \"<proc>\"          run procedure <proc> after parsing\n"
-		 << "    -c <name1>=<name2>   substitute <name2> for <name1> in the input\n"
-		 << "    --seed=N             use N as seed for the random generator\n"
-		 << "    -I                   read from stdin\n"
-		 << "    -v, --version        show version number and stop\n"
-		 << "    -h, --help           show this help message\n\n";
+			<< "    -c <name1>=<name2>   substitute <name2> for <name1> in the input\n"
+			<< "    --seed=N             use N as seed for the random generator\n" << "    -I                   read from stdin\n"
+			<< "    -v, --version        show version number and stop\n" << "    -h, --help           show this help message\n\n";
 	exit(0);
 }
 
@@ -49,17 +46,18 @@ void usage() {
  **/
 
 struct CLOptions {
-	string	_exec;
+	string _exec;
 #ifdef USEINTERACTIVE
-	bool	_interactive;
+	bool _interactive;
 #endif
-	bool	_readfromstdin;
-	CLOptions()
-		: _exec("")
+	bool _readfromstdin;
+	CLOptions() :
+			_exec("")
 #ifdef USEINTERACTIVE
-		, _interactive(false)
+					, _interactive(false)
 #endif
-		, _readfromstdin(false) { }
+					, _readfromstdin(false) {
+	}
 };
 
 /** 
@@ -67,31 +65,46 @@ struct CLOptions {
  **/
 vector<string> read_options(int argc, char* argv[], CLOptions& cloptions) {
 	vector<string> inputfiles;
-	argc--; argv++;
-	while(argc) {
+	argc--;
+	argv++;
+	while (argc) {
 		string str(argv[0]);
-		argc--; argv++;
-		if(str == "-e" || str == "--execute")			{ cloptions._exec = string(argv[0]); 
-														  argc--; argv++;					}
+		argc--;
+		argv++;
+		if (str == "-e" || str == "--execute") {
+			cloptions._exec = string(argv[0]);
+			argc--;
+			argv++;
+		}
 #ifdef USEINTERACTIVE
-		else if(str == "-i" || str == "--interactive")	{ cloptions._interactive = true;	}
+		else if(str == "-i" || str == "--interactive") {cloptions._interactive = true;}
 #endif
-		else if(str == "-c")							{ str = argv[0];
-														  if(argc && (str.find('=') != string::npos)) {
-															  int p = str.find('=');
-															  string name1 = str.substr(0,p);
-															  string name2 = str.substr(p+1,str.size());
-															  GlobalData::instance()->setConstValue(name1,name2);
-														  }
-														  else Error::constsetexp();
-														  argc--; argv++;
-														}
-		else if(str.substr(0,7) == "--seed=")			{ global_seed = toInt(str.substr(7,str.size()));	}
-		else if(str == "-I")							{ cloptions._readfromstdin = true;	}
-		else if(str == "-v" || str == "--version")		{ cout << "GidL 2.0.1\n"; exit(0);	}
-		else if(str == "-h" || str == "--help")			{ usage(); exit(0);					}
-		else if(str[0] == '-')							{ Error::unknoption(str);			}
-		else											{ inputfiles.push_back(str);		}
+		else if (str == "-c") {
+			str = argv[0];
+			if (argc && (str.find('=') != string::npos)) {
+				int p = str.find('=');
+				string name1 = str.substr(0, p);
+				string name2 = str.substr(p + 1, str.size());
+				GlobalData::instance()->setConstValue(name1, name2);
+			} else
+				Error::constsetexp();
+			argc--;
+			argv++;
+		} else if (str.substr(0, 7) == "--seed=") {
+			global_seed = toInt(str.substr(7, str.size()));
+		} else if (str == "-I") {
+			cloptions._readfromstdin = true;
+		} else if (str == "-v" || str == "--version") {
+			cout << "GidL 2.0.1\n";
+			exit(0);
+		} else if (str == "-h" || str == "--help") {
+			usage();
+			exit(0);
+		} else if (str[0] == '-') {
+			Error::unknoption(str);
+		} else {
+			inputfiles.push_back(str);
+		}
 	}
 	return inputfiles;
 }
@@ -100,7 +113,7 @@ vector<string> read_options(int argc, char* argv[], CLOptions& cloptions) {
  * Parse all input files
  */
 void parse(const vector<string>& inputfiles) {
-	for(unsigned int n = 0; n < inputfiles.size(); ++n) {
+	for (unsigned int n = 0; n < inputfiles.size(); ++n) {
 		parsefile(inputfiles[n]);
 	}
 }
@@ -108,58 +121,59 @@ void parse(const vector<string>& inputfiles) {
 // TODO add threading and signal handling code to kill the process by using the signalhandling thread in an infinite loop and some mutexes
 #include <thread>
 
-void handleAndRun(const string& proc, const DomainElement** result){
-	try{
+void handleAndRun(const string& proc, const DomainElement** result) {
+	try {
 		*result = Insert::exec(proc);
-	}catch(const std::exception& ex){
+	} catch (const std::exception& ex) {
 		stringstream ss;
-		ss <<"Exception caught: " <<ex.what() <<".\n";
+		ss << "Exception caught: " << ex.what() << ".\n";
 		Error::error(ss.str());
 		*result = NULL;
 	}
 }
 
-
 bool stoptiming;
 
-bool shouldStop(){
+bool shouldStop() {
 	return stoptiming;
 }
 
-void setStop(bool value){
+void setStop(bool value) {
 	stoptiming = value;
 }
 
-void timeout(){
+void timeout() {
 	int time = 0;
 	int sleep = 10;
 	//cerr <<"Timeout: " <<getOption(IntType::TIMEOUT) <<", currently at " <<time/1000 <<"\n";
-	while(not shouldStop()){
-		time+=sleep;
-		usleep(sleep*1000);
-		if(sleep<1000){
-			if(sleep<100){
-				sleep +=10;
-			}else{
-				sleep +=100;
+	while (not shouldStop()) {
+		time += sleep;
+		usleep(sleep * 1000);
+		if (sleep < 1000) {
+			if (sleep < 100) {
+				sleep += 10;
+			} else {
+				sleep += 100;
 			}
 		}
 		//cerr <<"Timeout: " <<getOption(IntType::TIMEOUT) <<", currently at " <<time/1000 <<"\n";
-		if(getOption(IntType::TIMEOUT)<time/1000){
-			cerr <<"Timed-out\n";
+		if (getOption(IntType::TIMEOUT) < time / 1000) {
+			cerr << "Timed-out\n";
 			getGlobal()->notifyTerminateRequested();
 			break;
 		}
-		if(getOption(IntType::TIMEOUT)==0){
+		if (getOption(IntType::TIMEOUT) == 0) {
 			return;
 		}
 	}
 }
 
 void SIGINT_handler(int) {
-	// TODO on which int (ctrl-c might not be what we want)
-	//cerr <<"Requested terminate\n";
-	GlobalData::instance()->notifyTerminateRequested();
+	if(shouldStop()){
+		GlobalData::instance()->notifyTerminateRequested();
+	}else{
+		exit(1);
+	}
 }
 
 /**
@@ -168,22 +182,29 @@ void SIGINT_handler(int) {
 const DomainElement* executeProcedure(const string& proc) {
 	const DomainElement* result = NULL;
 
-	if(proc != "") {
+	if (proc != "") {
 		// NOTE: as we allow in lua to replace . with ::, we have to convert the other way here!
 		string temp = proc;
 		replaceAll<std::string>(temp, "::", ".");
 
 		setStop(false);
-		signal(SIGINT, SIGINT_handler);
+
+		struct sigaction sigIntHandler;
+		sigIntHandler.sa_handler = sigIntHandler;
+		sigemptyset(&sigIntHandler.sa_mask);
+		sigIntHandler.sa_flags = 0;
+		sigaction(SIGINT, &sigIntHandler, NULL);
+
 		thread signalhandling(timeout);
+
 		handleAndRun(temp, &result);
+
 		setStop(true);
 		signalhandling.join();
 	}
 
 	return result;
 }
-
 
 #ifdef USEINTERACTIVE
 /** 
@@ -193,13 +214,13 @@ void interactive() {
 	string help1 = "help", help2 = "help()", exit1 = "exit", exit2 = "exit()";
 
 	cout << "Running GidL in interactive mode.\n"
-		 << "  Type 'exit' to quit.\n"
-		 << "  Type 'help' for help\n\n";
+	<< "  Type 'exit' to quit.\n"
+	<< "  Type 'help' for help\n\n";
 
 	idp_rl_start();
 	while(true) {
 		char* userline = rl_gets();
-		if(userline==NULL){
+		if(userline==NULL) {
 			cout << "\n";
 			continue;
 		}
@@ -210,7 +231,7 @@ void interactive() {
 			idp_rl_end();
 			return;
 		}
-		if(command==help1){
+		if(command==help1) {
 			command = help2;
 		}
 		executeProcedure(command);
@@ -221,12 +242,12 @@ void interactive() {
 // TODO manage globaldataobject here instead of singleton?
 
 // Guarantees destruction after return/throw
-class DataManager{
+class DataManager {
 public:
-	DataManager(){
+	DataManager() {
 		LuaConnection::makeLuaConnection();
 	}
-	~DataManager(){
+	~DataManager() {
 		LuaConnection::closeLuaConnection();
 		GlobalData::close();
 	}
@@ -235,22 +256,22 @@ public:
  * Runs the main method given a number of inputfiles and checks whether the main method returns the int 1.
  * In that case, test return SUCCESS, in all other cases it returns FAIL.
  */
-Status test(const std::vector<std::string>& inputfileurls){
+Status test(const std::vector<std::string>& inputfileurls) {
 	DataManager m;
 
 	parse(inputfileurls);
 
 	Status result = Status::FAIL;
-	if(Error::nr_of_errors() == 0) {
+	if (Error::nr_of_errors() == 0) {
 		stringstream ss;
-		ss <<"return " <<getTablenameForInternals() <<".main()";
+		ss << "return " << getTablenameForInternals() << ".main()";
 		auto value = executeProcedure(ss.str());
-		if(value!=NULL && value->type()==DomainElementType::DET_INT && value->value()._int == 1){
+		if (value != NULL && value->type() == DomainElementType::DET_INT && value->value()._int == 1) {
 			result = Status::SUCCESS;
 		}
 	}
 
-	if(Error::nr_of_errors()>0){
+	if (Error::nr_of_errors() > 0) {
 		result = Status::FAIL;
 	}
 
@@ -261,20 +282,21 @@ int run(int argc, char* argv[]) {
 	DataManager m;
 
 	CLOptions cloptions;
-	vector<string> inputfiles = read_options(argc,argv,cloptions);
+	vector<string> inputfiles = read_options(argc, argv, cloptions);
 	parse(inputfiles);
-	if(cloptions._readfromstdin) parsestdin();
-	if(cloptions._exec == ""){
+	if (cloptions._readfromstdin)
+		parsestdin();
+	if (cloptions._exec == "") {
 		stringstream ss;
-		ss <<"return " <<getTablenameForInternals() <<".main()";
+		ss << "return " << getTablenameForInternals() << ".main()";
 		cloptions._exec = ss.str();
 	}
 
-	if(Error::nr_of_errors()==0) {
+	if (Error::nr_of_errors() == 0) {
 #ifdef USEINTERACTIVE
-		if(cloptions._interactive){
+		if(cloptions._interactive) {
 			interactive();
-		}else{
+		} else {
 			executeProcedure(cloptions._exec);
 		}
 #else

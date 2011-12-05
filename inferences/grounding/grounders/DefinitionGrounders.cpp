@@ -39,6 +39,9 @@ RuleGrounder::RuleGrounder(HeadGrounder* hgr, FormulaGrounder* bgr, InstGenerato
 
 void RuleGrounder::run(unsigned int defid, GroundDefinition* grounddefinition) const {
 	for(bodygenerator()->begin(); not bodygenerator()->isAtEnd(); bodygenerator()->operator ++()){
+		if(GlobalData::instance()->terminateRequested()){
+			throw IdpException("Terminate requested");
+		}
 		ConjOrDisj body;
 		_bodygrounder->run(body);
 		bool conj = body.type==Conn::CONJ;
@@ -49,6 +52,9 @@ void RuleGrounder::run(unsigned int defid, GroundDefinition* grounddefinition) c
 		}
 
 		for(_headgenerator->begin(); not _headgenerator->isAtEnd(); _headgenerator->operator ++()){
+			if(GlobalData::instance()->terminateRequested()){
+				throw IdpException("Terminate requested");
+			}
 			Lit head = _headgrounder->run();
 			Assert(head != _true);
 			if(head != _false) {
@@ -144,6 +150,10 @@ void LazyRuleGrounder::ground(const Lit& head, const ElementTuple& headargs){
 	overwriteVars(originstantiation, headvarinstlist);
 
 	for(bodygenerator()->begin(); not bodygenerator()->isAtEnd(); bodygenerator()->operator ++()){
+		if(GlobalData::instance()->terminateRequested()){
+			throw IdpException("Terminate requested");
+		}
+
 		ConjOrDisj body;
 		bodygrounder()->run(body);
 		bool conj = body.type==Conn::CONJ;

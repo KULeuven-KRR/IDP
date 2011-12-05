@@ -25,6 +25,7 @@ class TheorySymmetryAnalyzer;
 template<typename Stream> class TPTPPrinter;
 template<typename Stream> class EcnfPrinter;
 template<typename Stream> class IDPPrinter;
+class SplitProducts;
 
 #define VISITORS() \
 		friend class TheoryVisitor; \
@@ -64,6 +65,7 @@ template<typename Stream> class IDPPrinter;
 		friend class SubstituteTerm; \
 		friend class UnnestTerms; \
 		friend class UnnestPartialTerms; \
+		friend class SplitProducts; \
 		friend class UnnestThreeValuedTerms;
 
 class AbstractTheory;

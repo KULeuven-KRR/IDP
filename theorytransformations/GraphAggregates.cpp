@@ -1,6 +1,7 @@
 #include "common.hpp"
 #include "theorytransformations/GraphAggregates.hpp"
 #include "theorytransformations/SplitComparisonChains.hpp"
+#include "utils/TheoryUtils.hpp"
 
 #include "vocabulary.hpp"
 #include "theory.hpp"
