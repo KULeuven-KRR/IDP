@@ -133,8 +133,10 @@ void setStop(bool value){
 void timeout(){
 	int time = 0;
 	int sleep = 10;
+	//cerr <<"Timeout: " <<getOption(IntType::TIMEOUT) <<", currently at " <<time/1000 <<"\n";
 	while(not shouldStop()){
-		usleep(sleep);
+		time+=sleep;
+		usleep(sleep*1000);
 		if(sleep<1000){
 			if(sleep<100){
 				sleep +=10;
@@ -142,7 +144,7 @@ void timeout(){
 				sleep +=100;
 			}
 		}
-		time+=sleep;
+		//cerr <<"Timeout: " <<getOption(IntType::TIMEOUT) <<", currently at " <<time/1000 <<"\n";
 		if(getOption(IntType::TIMEOUT)<time/1000){
 			cerr <<"Timed-out\n";
 			getGlobal()->notifyTerminateRequested();
@@ -156,7 +158,7 @@ void timeout(){
 
 void SIGINT_handler(int) {
 	// TODO on which int (ctrl-c might not be what we want)
-	cerr <<"Requested terminate\n";
+	//cerr <<"Requested terminate\n";
 	GlobalData::instance()->notifyTerminateRequested();
 }
 

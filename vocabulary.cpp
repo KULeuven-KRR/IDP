@@ -910,7 +910,7 @@ bool Function::partial() const {
 }
 
 bool Function::builtin() const {
-	return _interpretation != 0;
+	return _interpretation!=NULL || Vocabulary::std()->contains(this);
 }
 
 bool Function::overloaded() const {
@@ -1596,17 +1596,18 @@ const ParseInfo& Vocabulary::pi() const {
 	return _pi;
 }
 
-bool Vocabulary::contains(Sort* s) const {
-	map<string, set<Sort*> >::const_iterator it = _name2sort.find(s->name());
+bool Vocabulary::contains(const Sort* s) const {
+	auto it = _name2sort.find(s->name());
 	if (it != _name2sort.cend()) {
-		if ((it->second).find(s) != (it->second).cend()) {
+		if (it->second.find(const_cast<Sort*>(s)) != (it->second).cend()) { // TODO const cast ugly but no way around?
 			return true;
 		}
 	}
+
 	return false;
 }
 
-bool Vocabulary::contains(Predicate* p) const {
+bool Vocabulary::contains(const Predicate* p) const {
 	map<string, Predicate*>::const_iterator it = _name2pred.find(p->name());
 	if (it != _name2pred.cend()) {
 		return it->second->contains(p);
@@ -1615,8 +1616,8 @@ bool Vocabulary::contains(Predicate* p) const {
 	}
 }
 
-bool Vocabulary::contains(Function* f) const {
-	map<string, Function*>::const_iterator it = _name2func.find(f->name());
+bool Vocabulary::contains(const Function* f) const {
+	auto it = _name2func.find(f->name());
 	if (it != _name2func.cend()) {
 		return it->second->contains(f);
 	} else {
@@ -1624,12 +1625,12 @@ bool Vocabulary::contains(Function* f) const {
 	}
 }
 
-bool Vocabulary::contains(PFSymbol* s) const {
+bool Vocabulary::contains(const PFSymbol* s) const {
 	if (typeid(*s) == typeid(Predicate)) {
-		return contains(dynamic_cast<Predicate*>(s));
+		return contains(dynamic_cast<const Predicate*>(s));
 	} else {
 		assert(typeid(*s) == typeid(Function));
-		return contains(dynamic_cast<Function*>(s));
+		return contains(dynamic_cast<const Function*>(s));
 	}
 }
 

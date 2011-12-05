@@ -95,6 +95,7 @@ Term* DeriveSorts::visit(FuncTerm* term) {
 
 	auto origunderivable = _underivable;
 	if (f->overloaded()) {
+		_overloadedterms.insert(term);
 		if(f->builtin()){
 			for (auto i = term->subterms().cbegin(); i!= term->subterms().cend(); ++i) {
 				(*i)->accept(this);
@@ -103,7 +104,6 @@ Term* DeriveSorts::visit(FuncTerm* term) {
 			return term;
 		}else{
 			_underivable = true;
-			_overloadedterms.insert(term);
 		}
 	}
 

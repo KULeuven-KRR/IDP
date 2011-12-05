@@ -584,10 +584,10 @@ public:
 	static Vocabulary* std(); //!< Returns the standard vocabulary
 	const std::string& name() const; //!< Returns the name of the vocabulary
 	const ParseInfo& pi() const; //!< Returns the parse info of the vocabulary
-	bool contains(Sort* s) const; //!< True iff the vocabulary contains the sort
-	bool contains(Predicate* p) const; //!< True iff the vocabulary contains the predicate
-	bool contains(Function* f) const; //!< True iff the vocabulary contains the function
-	bool contains(PFSymbol* s) const; //!< True iff the vocabulary contains the symbol
+	bool contains(const Sort* s) const; //!< True iff the vocabulary contains the sort
+	bool contains(const Predicate* p) const; //!< True iff the vocabulary contains the predicate
+	bool contains(const Function* f) const; //!< True iff the vocabulary contains the function
+	bool contains(const PFSymbol* s) const; //!< True iff the vocabulary contains the symbol
 
 	std::map<std::string, std::set<Sort*> >::iterator firstSort() {
 		return _name2sort.begin();
