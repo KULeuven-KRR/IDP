@@ -218,7 +218,11 @@ void DeriveSorts::derivefuncs() {
 		for (auto kt = (*it)->subterms().cbegin(); kt != (*it)->subterms().cend(); ++kt) {
 			vs.push_back((*kt)->sort());
 		}
-		vs.push_back(NULL); // TODO should be output position
+		if(f->builtin()){
+			vs.push_back(VocabularyUtils::intsort()); // FIXME very incorrect
+		}else{
+			vs.push_back(NULL); // TODO should be output position
+		}
 		auto rf = f->disambiguate(vs, _vocab);
 		if (rf!=NULL) {
 			(*it)->function(rf);

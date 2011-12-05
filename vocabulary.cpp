@@ -984,11 +984,13 @@ Function* Function::resolve(const vector<Sort*>& sorts) {
  *		- vocabulary:	the vocabulary used for resolving the sorts. Defaults to 0.
  */
 Function* Function::disambiguate(const vector<Sort*>& sorts, const Vocabulary* vocabulary) {
-	if (overloaded())
+	if (overloaded()){
 		return _overfuncgenerator->disambiguate(sorts, vocabulary);
-	else {
+	}else {
 		for (unsigned int n = 0; n < _sorts.size(); ++n) {
-			if (sorts[n] && !SortUtils::resolve(sorts[n], _sorts[n], vocabulary)) return 0;
+			if (sorts[n]!=NULL && not SortUtils::resolve(sorts[n], _sorts[n], vocabulary)){
+				return NULL;
+			}
 		}
 		return this;
 	}

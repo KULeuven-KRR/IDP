@@ -133,13 +133,24 @@ void handleAndRun(const string& proc, const DomainElement** result) {
 }
 
 bool stoptiming;
-
+bool hasStopped;
 bool shouldStop() {
 	return stoptiming;
 }
 
 void setStop(bool value) {
 	stoptiming = value;
+}
+
+void monitorShutdown() {
+	int monitoringtime = 0;
+	while(not hasStopped && monitoringtime<1000000){
+		usleep(1000);
+		monitoringtime+=1000;
+	}
+	if(not hasStopped){
+		abort();
+	}
 }
 
 void timeout() {
@@ -160,6 +171,8 @@ void timeout() {
 		if (getOption(IntType::TIMEOUT) < time / 1000) {
 			cerr << "Timed-out\n";
 			getGlobal()->notifyTerminateRequested();
+			thread shutdown(monitorShutdown);
+			shutdown.join();
 			break;
 		}
 		if (getOption(IntType::TIMEOUT) == 0) {
@@ -188,9 +201,10 @@ const DomainElement* executeProcedure(const string& proc) {
 		replaceAll<std::string>(temp, "::", ".");
 
 		setStop(false);
+		hasStopped = false;
 
 		struct sigaction sigIntHandler;
-		sigIntHandler.sa_handler = sigIntHandler;
+		sigIntHandler.sa_handler = SIGINT_handler;
 		sigemptyset(&sigIntHandler.sa_mask);
 		sigIntHandler.sa_flags = 0;
 		sigaction(SIGINT, &sigIntHandler, NULL);
@@ -198,6 +212,8 @@ const DomainElement* executeProcedure(const string& proc) {
 		thread signalhandling(timeout);
 
 		handleAndRun(temp, &result);
+
+		hasStopped = true;
 
 		setStop(true);
 		signalhandling.join();

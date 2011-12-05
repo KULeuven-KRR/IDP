@@ -60,7 +60,7 @@ private:
 	template<typename T>
 	void deriveSorts(T f) {
 		_underivable = false;
-		_changed = false;
+		_changed = true;
 		_firstvisit = true;
 		f->accept(this); // First visit: collect untyped symbols, set types of variables that occur in typed positions.
 
