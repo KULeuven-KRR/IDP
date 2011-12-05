@@ -29,7 +29,7 @@ class VarTerm;
  * Abstract class to represent terms
  */
 class Term {
-	ACCEPTDECLAREBOTH(Term)
+ACCEPTDECLAREBOTH(Term)
 private:
 	std::set<Variable*> _freevars; //!< the set of free variables of the term
 	std::vector<Term*> _subterms; //!< the subterms of the term
@@ -111,7 +111,7 @@ std::ostream& operator<<(std::ostream&, const Term&);
  *	\brief Class to represent terms that are variables
  */
 class VarTerm: public Term {
-	ACCEPTBOTH(Term)
+ACCEPTBOTH(Term)
 private:
 	Variable* _var; //!< the variable of the term
 
@@ -147,7 +147,7 @@ public:
  *
  */
 class FuncTerm: public Term {
-	ACCEPTBOTH(Term)
+ACCEPTBOTH(Term)
 private:
 	Function* _function; //!< the function
 
@@ -185,7 +185,7 @@ public:
  *
  */
 class DomainTerm: public Term {
-	ACCEPTBOTH(Term)
+ACCEPTBOTH(Term)
 private:
 	Sort* _sort; //!< the sort of the domain element
 	const DomainElement* _value; //!< the actual domain element
@@ -221,7 +221,7 @@ public:
  *
  */
 class AggTerm: public Term {
-	ACCEPTBOTH(Term)
+ACCEPTBOTH(Term)
 private:
 	AggFunction _function; //!< The aggregate function
 
@@ -298,7 +298,7 @@ public:
  *	\brief Abstract base class for first-order set expressions
  */
 class SetExpr {
-	ACCEPTDECLAREBOTH(SetExpr)
+ACCEPTDECLAREBOTH(SetExpr)
 protected:
 	std::set<Variable*> _freevars; //!< The free variables of the set expression
 	std::set<Variable*> _quantvars; //!< The quantified variables of the set expression
@@ -320,12 +320,12 @@ public:
 	//!< copy the set while keeping all variables
 	virtual SetExpr* clone(const std::map<Variable*, Variable*>&) const = 0;
 	//!< create a copy of the set and substitute the free variables according to the given map
-		virtual SetExpr* positiveSubset() const = 0;
-			//!< generate the subset of positive terms ({x:p(x):t(x)} becomes {x:p(x)&t(x)>0: t(x)})
-		virtual SetExpr* negativeSubset() const = 0;
-			//!< generate the subset of negated negative terms ({x:p(x):t(x)} becomes {x:p(x)&t(x)<0: -t(x)})
-		virtual SetExpr* zeroSubset() const = 0;
-			//!< generate the subset of zero terms ({x:p(x):t(x)} becomes {x:p(x)&t(x)=0: 0})
+	virtual SetExpr* positiveSubset() const = 0;
+	//!< generate the subset of positive terms ({x:p(x):t(x)} becomes {x:p(x)&t(x)>0: t(x)})
+	virtual SetExpr* negativeSubset() const = 0;
+	//!< generate the subset of negated negative terms ({x:p(x):t(x)} becomes {x:p(x)&t(x)<0: -t(x)})
+	virtual SetExpr* zeroSubset() const = 0;
+	//!< generate the subset of zero terms ({x:p(x):t(x)} becomes {x:p(x)&t(x)=0: 0})
 
 	// Destructors
 	virtual ~SetExpr() {
@@ -384,7 +384,7 @@ std::ostream& operator<<(std::ostream&, const SetExpr&);
  *	\brief Set expression of the form [ (phi_1,w_1); ... ; (phi_n,w_n) ] 
  */
 class EnumSetExpr: public SetExpr {
-	ACCEPTBOTH(SetExpr)
+ACCEPTBOTH(SetExpr)
 public:
 	// Constructors
 	EnumSetExpr(const SetParseInfo& pi) :
@@ -395,6 +395,9 @@ public:
 	EnumSetExpr* clone() const;
 	EnumSetExpr* cloneKeepVars() const;
 	EnumSetExpr* clone(const std::map<Variable*, Variable*>&) const;
+	EnumSetExpr* positiveSubset() const;
+	EnumSetExpr* negativeSubset() const;
+	EnumSetExpr* zeroSubset() const;
 
 	~EnumSetExpr() {
 	}
@@ -408,18 +411,16 @@ public:
  * \brief Set expression of the form { x1 ... xn : phi : t }
  **/
 class QuantSetExpr: public SetExpr {
-	ACCEPTBOTH(SetExpr)
+ACCEPTBOTH(SetExpr)
 public:
 	QuantSetExpr(const std::set<Variable*>& v, Formula* s, Term* t, const SetParseInfo& pi);
 
 	QuantSetExpr* clone() const;
 	QuantSetExpr* cloneKeepVars() const;
 	QuantSetExpr* clone(const std::map<Variable*, Variable*>&) const;
-	QuantSetExpr* positiveSubset() const ;
-	QuantSetExpr* negativeSubset() const ;
-	QuantSetExpr* zeroSubset() const ;
-
-	Sort*	sort()	const;
+	QuantSetExpr* positiveSubset() const;
+	QuantSetExpr* negativeSubset() const;
+	QuantSetExpr* zeroSubset() const;
 
 	Sort* sort() const;
 
