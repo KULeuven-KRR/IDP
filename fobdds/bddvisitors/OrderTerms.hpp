@@ -1,15 +1,8 @@
-/************************************
-	OrderTerms.hpp
-	this file belongs to GidL 2.0
-	(c) K.U.Leuven
-************************************/
-
 #ifndef ORDERTERMS_HPP_
 #define ORDERTERMS_HPP_
 
-#include <vector>
+#include "common.hpp"
 #include <algorithm>
-#include <cassert>
 #include "fobdds/FoBddVisitor.hpp"
 #include "fobdds/FoBddManager.hpp"
 #include "fobdds/FoBddTerm.hpp"
@@ -50,7 +43,7 @@ public:
 			auto sort = SortUtils::resolve(currarg->sort(), nextarg->sort());
 			auto add = Vocabulary::std()->func(Ordering::getFuncName());
 			add = add->disambiguate(std::vector<Sort*>(3, sort), NULL);
-			assert(add!=NULL);
+			Assert(add!=NULL);
 			currarg = _manager->getFuncTerm(add, { nextarg, currarg });
 		}
 		return currarg;

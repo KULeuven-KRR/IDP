@@ -54,6 +54,7 @@ protected:
 	bool shouldMove(Term* t);
 
 	Formula* traverse(PredForm* f);
+	Rule* traverse(Rule* r);
 
 private:
 	bool isCPSymbol(const PFSymbol* symbol) const;

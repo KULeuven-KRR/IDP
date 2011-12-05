@@ -81,7 +81,7 @@ public:
 	}
 
 	void visit(const GroundClause& g){
-		assert(isTheoryOpen());
+		Assert(isTheoryOpen());
 		for(unsigned int m = 0; m < g.size(); ++m){
 			output() << g[m] << ' ';
 		}
@@ -89,7 +89,7 @@ public:
 	}
 
 	void visit(const GroundTheory<GroundPolicy>* g) {
-		assert(isTheoryOpen());
+		Assert(isTheoryOpen());
 		setStructure(g->structure());
 		setTermTranslator(g->termtranslator());
 		startTheory();
@@ -121,7 +121,7 @@ public:
 			int atom = 1;
 			while(translator->isStored(atom)){
 				if(translator->isInputAtom(atom)){
-					output() << atom <<"|" <<translator->printAtom(atom, false) <<"\n"; // TODO longnames?
+					output() << atom <<"|" <<translator->printLit(atom, false) <<"\n"; // TODO longnames?
 				}
 				atom++;
 			}
@@ -136,25 +136,25 @@ public:
 	}
 
 	void openDefinition(int defid){
-		assert(isDefClosed());
+		Assert(isDefClosed());
 		openDef(defid);
 	}
 
 	void closeDefinition(){
-		assert(!isDefClosed());
+		Assert(!isDefClosed());
 		closeDef();
 	}
 
 	//FIXME a visitor for definitions does not work!
 	void visit(const GroundDefinition* d) {
-		assert(isTheoryOpen());
+		Assert(isTheoryOpen());
 		for(auto it = d->begin(); it != d->end(); ++it) {
 			(*it).second->accept(this);
 		}
 	}
 
 	void visit(const PCGroundRule* b) {
-		assert(isTheoryOpen());
+		Assert(isTheoryOpen());
 		output() << (b->type() == RT_CONJ ? "C " : "D ");
 		output() << "<- " << _currentdefnr << ' ' << b->head() << ' ';
 		for(unsigned int n = 0; n < b->size(); ++n){
@@ -164,18 +164,18 @@ public:
 	}
 
 	void visit(const AggGroundRule* a) {
-		assert(isTheoryOpen());
+		Assert(isTheoryOpen());
 		printAggregate(a->aggtype(),TsType::RULE,_currentdefnr,a->lower(),a->head(),a->setnr(),a->bound());
 	}
 
 	void visit(const GroundAggregate* b) {
-		assert(isTheoryOpen());
+		Assert(isTheoryOpen());
 		//TODO -1 should be the minisatid constant for an undefined aggregate (or create some shared ecnf format)
 		printAggregate(b->type(),b->arrow(),-1,b->lower(),b->head(),b->setnr(),b->bound());
 	}
 
 	void visit(const GroundSet* s) {
-		assert(isTheoryOpen());
+		Assert(isTheoryOpen());
 		output() << (s->weighted() ? "WSet" : "Set") << ' ' << s->setnr();
 		for(unsigned int n = 0; n < s->size(); ++n) {
 			output() << ' ' << s->literal(n);
@@ -185,7 +185,7 @@ public:
 	}
 
 	void visit(const CPReification* cpr) {
-		assert(isTheoryOpen());
+		Assert(isTheoryOpen());
 		CompType comp = cpr->_body->comp();
 		CPTerm* left = cpr->_body->left();
 		CPBound right = cpr->_body->right();
@@ -215,7 +215,7 @@ public:
 				addWeightedSum(cpr->_head, term->varids(), weights, right._bound, comp);
 			}
 		} else {
-			assert(typeid(*left) == typeid(CPWSumTerm));
+			Assert(typeid(*left) == typeid(CPWSumTerm));
 			CPWSumTerm* term = dynamic_cast<CPWSumTerm*>(left);
 			if(right._isvarid) {
 				std::vector<VarId> varids = term->varids();
@@ -235,7 +235,7 @@ public:
 private:
 
 	void addWeightedSum(int head, const std::vector<VarId>& varids, const std::vector<int> weights, const int& bound, CompType rel){
-		assert(varids.size()==weights.size());
+		Assert(varids.size()==weights.size());
 		for(auto i=varids.cbegin(); i<varids.cend(); ++i){
 			printCPVariable(*i);
 		}
@@ -256,7 +256,7 @@ private:
 				output() << "C ";
 				break;
 			case TsType::RULE:
-				assert(isDefOpen(defnr));
+				Assert(isDefOpen(defnr));
 				output() << "<- " << defnr << ' ';
 				break;
 		}
@@ -297,7 +297,7 @@ private:
 			case CompType::GT: return ">";
 			case CompType::LT: return "<";
 		}
-		assert(false);
+		Assert(false);
 		return "";
 	}
 

@@ -3,6 +3,7 @@
 
 #include <string>
 #include <ostream>
+#include <iostream>
 #include <sstream>
 #include <vector>
 #include "commontypes.hpp"
@@ -171,14 +172,21 @@ Stream& operator<<(Stream& output, const CompType& type) {
 std::string* StringPointer(const char* str); //!< Returns a shared pointer to the given string
 std::string* StringPointer(const std::string& str); //!< Returns a shared pointer to the given string
 
-class CannotCompareTypeIDofPointers {
-};
-
 template<class T2, class T>
 bool sametypeid(const T& object) {
-	LOKI_STATIC_CHECK(not Loki::TypeTraits<T>::isPointer, InvalidTypeIDCheck);
-	LOKI_STATIC_CHECK(not Loki::TypeTraits<T2>::isPointer, InvalidTypeIDCheck);
+	LOKI_STATIC_CHECK(not Loki::TypeTraits<T>::isPointer, CannotCompareTypeIDofPointers);
+	LOKI_STATIC_CHECK(not Loki::TypeTraits<T2>::isPointer, CannotCompareTypeIDofPointers);
 	return typeid(object) == typeid(T2);
 }
+
+#ifdef DEBUG
+class AssertionException{
+
+};
+
+#define Assert(condition) { if(!(condition)){ std::cerr << "ASSERT FAILED: " << #condition << " @ " << __FILE__ << " (" << __LINE__ << ")" << std::endl; throw AssertionException();} }
+#else
+#define Assert(x) do {} while(0)
+#endif
 
 #endif

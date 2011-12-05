@@ -1,7 +1,7 @@
 #ifndef APPROXCHECKTWOVALUED_HPP_
 #define APPROXCHECKTWOVALUED_HPP_
 
-#include <cassert>
+#include "common.hpp"
 #include "visitors/TheoryVisitor.hpp"
 
 class AbstractStructure;

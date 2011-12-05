@@ -1,16 +1,7 @@
-/************************************
-	propagate.hpp
-	this file belongs to GidL 2.0
-	(c) K.U.Leuven
-************************************/
-
 #ifndef PROPAGATE_HPP
 #define PROPAGATE_HPP
 
-#include <vector>
-#include <queue>
-#include <map>
-#include <cassert>
+#include "common.hpp"
 #include "theory.hpp"
 #include "options.hpp"
 #include "PropagatorFactory.hpp"
@@ -187,8 +178,8 @@ struct ThreeValuedDomain {
 		_ctdomain = ctdom ? factory->trueDomain(f) : factory->falseDomain(f);
 		_cfdomain = cfdom ? factory->trueDomain(f) : factory->falseDomain(f);
 		_twovalued = ctdom || cfdom;
-		assert(_ctdomain!=NULL);
-		assert(_cfdomain!=NULL);
+		Assert(_ctdomain!=NULL);
+		Assert(_cfdomain!=NULL);
 	}
 
 	ThreeValuedDomain(const FOPropDomainFactory<DomainType>* factory, const Formula* f) {
@@ -196,8 +187,8 @@ struct ThreeValuedDomain {
 		Formula* negf = f->clone(); negf->negate();
 		_cfdomain = factory->formuladomain(negf);
 		_twovalued = true;
-		assert(_ctdomain!=NULL);
-		assert(_cfdomain!=NULL);
+		Assert(_ctdomain!=NULL);
+		Assert(_cfdomain!=NULL);
 	}
 
 	ThreeValuedDomain(const FOPropDomainFactory<DomainType>* factory, const PredForm* pf, InitBoundType ibt) {
@@ -216,8 +207,8 @@ struct ThreeValuedDomain {
 			_cfdomain = factory->cfDomain(pf);
 			break;
 		}
-		assert(_ctdomain!=NULL);
-		assert(_cfdomain!=NULL);
+		Assert(_ctdomain!=NULL);
+		Assert(_cfdomain!=NULL);
 	}
 };
 
@@ -319,7 +310,7 @@ public:
 	void addToLeafUpward(PredForm* index, const PredForm* pf) { _leafupward[index].insert(pf); }
 
 	bool hasDomain(const Formula* f) const { return _domains.find(f)!=_domains.cend(); }
-	const ThreeValuedDomain<Domain>& getDomain(const Formula* f) const { assert(hasDomain(f)); return _domains.at(f); }
+	const ThreeValuedDomain<Domain>& getDomain(const Formula* f) const { Assert(hasDomain(f)); return _domains.at(f); }
 	void setCFOfDomain(const Formula* f, Domain* d) { _domains.at(f)._cfdomain = d; }
 	void setCTOfDomain(const Formula* f, Domain* d) { _domains.at(f)._ctdomain = d; }
 

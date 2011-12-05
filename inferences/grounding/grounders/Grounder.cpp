@@ -1,4 +1,4 @@
-#include <cassert>
+#include "common.hpp"
 #include "Grounder.hpp"
 #include "groundtheories/AbstractGroundTheory.hpp"
 #include "inferences/grounding/GroundTranslator.hpp"
@@ -6,7 +6,7 @@
 using namespace std;
 
 void Grounder::toplevelRun() const{
-	//assert(context()._conjunctivePathFromRoot);
+	//Assert(context()._conjunctivePathFromRoot);
 	ConjOrDisj formula;
 	run(formula);
 	if(formula.literals.size()==0){

@@ -2,7 +2,6 @@
 #define GROUDING_GROUNDTHEORY_HPP_
 
 #include "commontypes.hpp"
-
 #include "groundtheories/AbstractGroundTheory.hpp"
 
 #include "vocabulary.hpp"
@@ -41,14 +40,15 @@ class GroundTheory: public AbstractGroundTheory, public Policy {
 	 */
 	void transformForAdd(const std::vector<int>& vi, VIType /*vit*/, int defnr, bool skipfirst = false) {
 		size_t n = 0;
-		if (skipfirst)
+		if (skipfirst) {
 			++n;
+		}
 		for (; n < vi.size(); ++n) {
 			int atom = abs(vi[n]);
 			if (translator()->isTseitinWithSubformula(atom) && _printedtseitins.find(atom) == _printedtseitins.end()) {
 				_printedtseitins.insert(atom);
 				TsBody* tsbody = translator()->getTsBody(atom);
-				if (typeid(*tsbody) == typeid(PCTsBody)) {
+				if (typeid(*tsbody) == typeid(PCTsBody)){
 					PCTsBody * body = dynamic_cast<PCTsBody*>(tsbody);
 					if (body->type() == TsType::IMPL || body->type() == TsType::EQ) {
 						if (body->conj()) {
@@ -81,13 +81,14 @@ class GroundTheory: public AbstractGroundTheory, public Policy {
 					}
 					if (body->type() == TsType::RULE) {
 						// FIXME when doing this lazily, the rule should not be here until the tseitin has a value!
-						assert(defnr != ID_FOR_UNDEFINED);
+						Assert(defnr != ID_FOR_UNDEFINED);
 						Policy::polAdd(defnr, new PCGroundRule(atom, body, true)); //TODO true (recursive) might not always be the case?
 					}
 				} else if (typeid(*tsbody) == typeid(AggTsBody)) {
 					AggTsBody* body = dynamic_cast<AggTsBody*>(tsbody);
 					if (body->type() == TsType::RULE) {
-						assert(defnr != ID_FOR_UNDEFINED);
+						Assert(defnr != ID_FOR_UNDEFINED);
+						add(body->setnr(), ID_FOR_UNDEFINED, (body->aggtype() != AggFunction::CARD));
 						Policy::polAdd(defnr, new AggGroundRule(atom, body, true)); //TODO true (recursive) might not always be the case?
 					} else {
 						add(atom, body);
@@ -95,13 +96,13 @@ class GroundTheory: public AbstractGroundTheory, public Policy {
 				} else if (typeid(*tsbody) == typeid(CPTsBody)) {
 					CPTsBody* body = dynamic_cast<CPTsBody*>(tsbody);
 					if (body->type() == TsType::RULE) {
-						assert(false);
+						Assert(false);
 						//TODO Does this ever happen?
 					} else {
 						add(atom, body);
 					}
 				} else {
-					assert(typeid(*tsbody) == typeid(LazyTsBody));
+					Assert(typeid(*tsbody) == typeid(LazyTsBody));
 					LazyTsBody* body = dynamic_cast<LazyTsBody*>(tsbody);
 					body->notifyTheoryOccurence();
 				}
@@ -118,7 +119,7 @@ class GroundTheory: public AbstractGroundTheory, public Policy {
 					CPTsBody* cprelation = termtranslator()->cprelation(varterm->varid());
 					CPTerm* left = foldCPTerm(cprelation->left());
 					if ((typeid(*left) == typeid(CPSumTerm) || typeid(*left) == typeid(CPWSumTerm)) && cprelation->comp() == CompType::EQ) {
-						assert(cprelation->right()._isvarid && cprelation->right()._varid == varterm->varid());
+						Assert(cprelation->right()._isvarid && cprelation->right()._varid == varterm->varid());
 						return left;
 					}
 				}
@@ -131,7 +132,7 @@ class GroundTheory: public AbstractGroundTheory, public Policy {
 						CPTerm* left = foldCPTerm(cprelation->left());
 						if (typeid(*left) == typeid(CPSumTerm) && cprelation->comp() == CompType::EQ) {
 							CPSumTerm* subterm = static_cast<CPSumTerm*>(left);
-							assert(cprelation->right()._isvarid && cprelation->right()._varid == *it);
+							Assert(cprelation->right()._isvarid && cprelation->right()._varid == *it);
 							newvarids.insert(newvarids.end(), subterm->varids().begin(), subterm->varids().end());
 						}
 						//TODO Need to do something special in other cases?
@@ -167,13 +168,13 @@ public:
 
 	// Mutators
 	void add(Formula*) {
-		assert(false);
+		Assert(false);
 	}
 	void add(Definition*) {
-		assert(false);
+		Assert(false);
 	}
 	void add(FixpDef*) {
-		assert(false);
+		Assert(false);
 	}
 
 	virtual void recursiveDelete() {
@@ -200,7 +201,7 @@ public:
 				transformForAdd(rule->body(), (rule->type() == RT_CONJ ? VIT_CONJ : VIT_DISJ), def->id());
 				notifyDefined(rule->head());
 			} else {
-				assert(sametypeid<AggGroundRule>(*(*i).second));
+				Assert(sametypeid<AggGroundRule>(*(*i).second));
 				AggGroundRule* rule = dynamic_cast<AggGroundRule*>((*i).second);
 				add(rule->setnr(), def->id(), (rule->aggtype() != AggFunction::CARD));
 				notifyDefined(rule->head());
@@ -224,7 +225,7 @@ private:
 
 public:
 	void add(GroundFixpDef*) {
-		assert(false);
+		Assert(false);
 		//TODO
 	}
 
@@ -383,9 +384,9 @@ public:
 				int setnr = translator()->translateSet(sets[s], lw, { });
 				int tseitin;
 				if (f->partial() || (not outSortTable->finite())) {
-					tseitin = translator()->translate(1, CompType::GT, false, AggFunction::CARD, setnr, TsType::IMPL);
+					tseitin = translator()->translate(1, CompType::GT, AggFunction::CARD, setnr, TsType::IMPL);
 				} else {
-					tseitin = translator()->translate(1, CompType::EQ, true, AggFunction::CARD, setnr, TsType::IMPL);
+					tseitin = translator()->translate(1, CompType::EQ, AggFunction::CARD, setnr, TsType::IMPL);
 				}
 				addUnitClause(tseitin);
 			}

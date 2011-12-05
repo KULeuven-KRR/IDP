@@ -24,7 +24,7 @@ AM_INIT_AUTOMAKE([tar-pax foreign subdir-objects -Wall silent-rules])
 #check for the necessary headers
 AC_HEADER_STDC
 AC_CHECK_HEADERS([\
-	algorithm assert.h cassert cerrno cstdio cstdlib cstring ctime exception float.h \
+	algorithm cerrno cstdio cstdlib cstring ctime exception float.h \
 	fstream inttypes.h iostream limits limits.h list map queue \
 	set sstream stack stdexcept stdint.h stdio.h stdlib.h string \
 	tr1/memory vector])

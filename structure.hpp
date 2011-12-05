@@ -1,18 +1,7 @@
-/************************************
- structure.hpp
- this file belongs to GidL 2.0
- (c) K.U.Leuven
- ************************************/
-
 #ifndef STRUCTURE_HPP
 #define STRUCTURE_HPP
 
-#include <string>
-#include <vector>
-#include <set>
-#include <map>
-#include <cassert>
-#include <ostream>
+#include "common.hpp"
 #include <limits>
 #include <cstdlib>
 #include "parseinfo.hpp"
@@ -123,7 +112,7 @@ public:
 	}
 
 	const DomainElement* get() const {
-		assert(domelem_!=NULL);
+		Assert(domelem_!=NULL);
 		return domelem_;
 	}
 
@@ -380,7 +369,7 @@ private:
 public:
 	SortIterator(InternalSortIterator* iter) :
 			_iterator(iter) {
-		assert(iter!=NULL);
+		Assert(iter!=NULL);
 	}
 	SortIterator(const SortIterator&);
 	SortIterator& operator=(const SortIterator&);

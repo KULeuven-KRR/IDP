@@ -1,9 +1,3 @@
-/************************************
- PrintGroundTheory.hpp
- this file belongs to GidL 2.0
- (c) K.U.Leuven
- ************************************/
-
 #ifndef PRINTGROUNDTHEORY_HPP_
 #define PRINTGROUNDTHEORY_HPP_
 
@@ -104,11 +98,11 @@ public:
 	}
 
 	std::ostream& polPut(std::ostream& s, GroundTranslator*, GroundTermTranslator*, bool longnames = false) const {
-		assert(false);
+		Assert(false);
 		return s;
 	}
 	std::string polToString(GroundTranslator*, GroundTermTranslator*, bool longnames = false) const {
-		assert(false);
+		Assert(false);
 		return "";
 	}
 };

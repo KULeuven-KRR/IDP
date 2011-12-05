@@ -17,8 +17,8 @@ LazyQuantGrounder::LazyQuantGrounder(const std::set<Variable*>& freevars, Solver
 		InstGenerator* gen, InstChecker* checker, const GroundingContext& ct) :
 		QuantGrounder(groundtheory, sub, sign, q, gen, checker, ct), id_(maxid++), _negatedformula(false), groundtheory_(groundtheory), currentlyGrounding(
 				false), freevars(freevars) {
-	assert(not conjunctive()); // TODO: currently, can only lazy ground existential quants
-	assert(ct._tseitin != TsType::RULE); // TODO: currently only lazy ground formulas outside of definitions
+	Assert(not conjunctive()); // TODO: currently, can only lazy ground existential quants
+	Assert(ct._tseitin != TsType::RULE); // TODO: currently only lazy ground formulas outside of definitions
 }
 
 void LazyQuantGrounder::requestGroundMore(ResidualAndFreeInst * instance) {
@@ -79,7 +79,7 @@ void LazyQuantGrounder::groundMore() const {
 }
 
 void LazyQuantGrounder::run(ConjOrDisj& formula, bool negatedformula) const {
-	assert(not conjunctive());
+	Assert(not conjunctive());
 	if (verbosity() > 2){
 		printorig();
 	}

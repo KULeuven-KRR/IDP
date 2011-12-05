@@ -1,7 +1,4 @@
-#include <vector>
-#include <iostream>
-#include <cassert>
-
+#include "common.hpp"
 #include "theorytransformations/DeriveSorts.hpp"
 
 #include "vocabulary.hpp"

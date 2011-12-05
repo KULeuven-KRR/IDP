@@ -1,14 +1,7 @@
-/************************************
-	theory.cpp
-	this file belongs to GidL 2.0
-	(c) K.U.Leuven
-************************************/
-
-#include <cassert>
+#include "common.hpp"
 #include <sstream>
 #include <iostream>
 #include <typeinfo>
-#include "common.hpp"
 #include "vocabulary.hpp"
 #include "structure.hpp"
 #include "term.hpp"
@@ -130,7 +123,7 @@ ostream& PredForm::put(ostream& output, bool longnames, unsigned int spaces) con
 			output << ')';
 		}
 	} else {
-		assert(typeid(*_symbol) == typeid(Function));
+		Assert(typeid(*_symbol) == typeid(Function));
 		if (subterms().size() > 1) {
 			output << '(';
 			for (size_t n = 0; n < subterms().size() - 1; ++n) {

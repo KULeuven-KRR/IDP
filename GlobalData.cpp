@@ -24,7 +24,7 @@ GlobalData::~GlobalData() {
 }
 
 void GlobalData::setOptions(Options* options) {
-	assert(_options!=NULL);
+	Assert(_options!=NULL);
 	_options = options;
 }
 
@@ -45,7 +45,7 @@ Namespace* GlobalData::getGlobalNamespace(){
 }
 
 void GlobalData::close() {
-	assert(_instance!=NULL);
+	Assert(_instance!=NULL);
 	delete (_instance);
 	_instance = NULL;
 }
@@ -77,7 +77,7 @@ FILE* GlobalData::openFile(const char* filename, const char* mode){
 }
 
 void GlobalData::closeFile(FILE* filepointer){
-	assert(filepointer!=NULL);
+	Assert(filepointer!=NULL);
 	_openfiles.erase(filepointer);
 	fclose(filepointer);
 }

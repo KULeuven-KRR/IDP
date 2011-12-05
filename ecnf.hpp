@@ -93,11 +93,11 @@ public:
 	// Constructors
 	GroundAggregate(AggFunction t, bool l, TsType e, int h, int s, double b) :
 			_head(h), _arrow(e), _bound(b), _lower(l), _type(t), _set(s) {
-		assert(e != TsType::RULE);
+		Assert(e != TsType::RULE);
 	}
 	GroundAggregate(const GroundAggregate& a) :
 			_head(a._head), _arrow(a._arrow), _bound(a._bound), _lower(a._lower), _type(a._type), _set(a._set) {
-		assert(a._arrow != TsType::RULE);
+		Assert(a._arrow != TsType::RULE);
 	}
 	GroundAggregate() {
 	}
@@ -454,8 +454,10 @@ class AggTsBody: public TsBody {
 private:
 	int _setnr;
 	AggFunction _aggtype;
-	bool _lower;
-	double _bound;
+	bool _lower; //comptype == CompType::LT
+	double _bound; //The other side of the equation.
+	//If _lower is true this means CARD{_setnr}=<_bound
+	//If _lower is false this means CARD{_setnr}>=_bound
 public:
 	AggTsBody(TsType type, double bound, bool lower, AggFunction at, int setnr) :
 			TsBody(type), _setnr(setnr), _aggtype(at), _lower(lower), _bound(bound) {

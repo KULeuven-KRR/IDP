@@ -1,12 +1,4 @@
-/************************************
-  	SplitComparisonChains.cpp
-	this file belongs to GidL 2.0
-	(c) K.U.Leuven
-************************************/
-
-#include <vector>
-#include <cassert>
-
+#include "common.hpp"
 #include "theorytransformations/SplitComparisonChains.hpp"
 
 #include "vocabulary.hpp"
@@ -42,7 +34,7 @@ Formula* SplitComparisonChains::visit(EqChainForm* ef) {
 		vs[0] = ef->subterms()[n]->sort();
 		vs[1] = ef->subterms()[n + 1]->sort();
 		p = p->disambiguate(vs, _vocab);
-		assert(p);
+		Assert(p);
 		vector<Term*> vt(2);
 		if (n) {
 			vt[0] = ef->subterms()[n]->clone();

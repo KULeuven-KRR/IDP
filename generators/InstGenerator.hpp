@@ -64,7 +64,7 @@ public:
 	bool isAtEnd() const { return end; }
 
 	void operator++() {
-		assert(not isAtEnd());
+		Assert(not isAtEnd());
 		next();
 	}
 

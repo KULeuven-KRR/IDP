@@ -78,11 +78,17 @@ void deriveSorts(Vocabulary* v, Formula* f);
 Formula* graphFunctions(Formula* f);
 Formula* graphAggregates(Formula* f);
 
+Formula* splitProducts(Formula* f);
+
 /** Recursively move all partial terms outside atoms **/
 Formula* unnestPartialTerms(Formula* f, Context context, Vocabulary* voc = NULL);
 
 /** Non-recursively move terms that are three-valued in a given structure outside of the given atom **/
 Formula* unnestThreeValuedTerms(Formula*, AbstractStructure*, Context context, bool cpsupport = false, const std::set<const PFSymbol*> cpsymbols =
+		std::set<const PFSymbol*>());
+
+/** Non-recursively move terms that are three-valued in a given structure outside of the head of the rule **/
+Rule* unnestThreeValuedTerms(Rule*, AbstractStructure*, Context context, bool cpsupport = false, const std::set<const PFSymbol*> cpsymbols =
 		std::set<const PFSymbol*>());
 
 /** Returns true iff at least one FuncTerm/AggTerm occurs in the given formula **/
@@ -128,6 +134,8 @@ AbstractTheory* graphFunctions(AbstractTheory*);
 
 /** Rewrite (AggTerm op BoundTerm) to an aggregate formula (op = '=', '<', or '>') **/
 AbstractTheory* graphAggregates(AbstractTheory* t);
+
+AbstractTheory* splitProducts(AbstractTheory* f);
 
 /** Replace all definitions in the theory by their completion **/
 AbstractTheory* addCompletion(AbstractTheory*);

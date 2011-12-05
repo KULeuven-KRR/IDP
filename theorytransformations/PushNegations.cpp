@@ -1,12 +1,4 @@
-/************************************
-  	PushNegations.cpp
-	this file belongs to GidL 2.0
-	(c) K.U.Leuven
-************************************/
-
-#include <vector>
-#include <cassert>
-
+#include "common.hpp"
 #include "theorytransformations/PushNegations.hpp"
 
 #include "vocabulary.hpp"
@@ -17,7 +9,7 @@ using namespace std;
 
 // DELETES original predform!
 PredForm* getDerivedPredForm(PredForm* pf, SymbolType t){
-	assert(t!=ST_NONE);
+	Assert(t!=ST_NONE);
 	auto newsymbol = pf->symbol()->derivedSymbol(t);
 	PredForm* newpf = new PredForm(SIGN::POS, newsymbol, pf->subterms(), pf->pi().clone());
 	delete (pf);

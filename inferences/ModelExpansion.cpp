@@ -116,7 +116,7 @@ bool ModelExpansion::calculateDefinition(Definition* definition, AbstractStructu
 	if (abstractsolutions->getModels().empty()) {
 		return false;
 	} else {
-		assert(abstractsolutions->getModels().size() == 1);
+		Assert(abstractsolutions->getModels().size() == 1);
 		auto model = *(abstractsolutions->getModels().cbegin());
 		addLiterals(model, grounding->translator(), structure);
 		addTerms(model, grounding->termtranslator(), structure);

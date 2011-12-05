@@ -96,7 +96,7 @@ const DomainElement* convertToElement(int arg, lua_State* L) {
 		lua_getmetatable(L, arg);
 		lua_getfield(L, -1, _typefield);
 		ArgType type = (ArgType) lua_tointeger(L, -1);
-		assert(type != AT_NIL);
+		Assert(type != AT_NIL);
 		lua_pop(L, 2);
 		return type == AT_COMPOUND ? createDomElem(*(Compound**) lua_touserdata(L, arg)) : NULL;
 	}
@@ -382,7 +382,7 @@ InternalArgument createArgument(int arg, lua_State* L) {
 		lua_getmetatable(L, arg);
 		lua_getfield(L, -1, getTypeField());
 		ia._type = (ArgType) lua_tointeger(L, -1);
-		assert(ia._type != AT_NIL);
+		Assert(ia._type != AT_NIL);
 		lua_pop(L, 2);
 		switch (ia._type) {
 		case AT_SORT:
@@ -561,7 +561,7 @@ void errorNoSuchProcedure(map<vector<ArgType>, InternalProcedure*> const * const
 int internalCall(lua_State* L) {
 	// get the list of possible procedures (with the associated name?)
 	map<vector<ArgType>, InternalProcedure*>* procs = *(map<vector<ArgType>, InternalProcedure*>**) lua_touserdata(L, 1);
-	assert(!procs->empty());
+	Assert(!procs->empty());
 	//otherwise lua should have thrown an exception
 
 //		for(auto i=procs->begin(); i!=procs->end(); ++i){
@@ -918,7 +918,7 @@ int vocabularyIndex(lua_State* L) {
 				InternalArgument np(newpreds);
 				return convertToLua(L, np);
 			} else {
-				assert(!funcs.empty());
+				Assert(!funcs.empty());
 				set<Function*>* newfuncs = new set<Function*>(funcs);
 				InternalArgument nf(newfuncs);
 				return convertToLua(L, nf);
@@ -1100,7 +1100,7 @@ InternalArgument getValue(Options* opts, const string& name) {
 	} else if (opts->isOptionOfType<bool>(name)) {
 		return InternalArgument(opts->getValueOfType<bool>(name));
 	} else {
-		assert(opts->isOptionOfType<double>(name));
+		Assert(opts->isOptionOfType<double>(name));
 		return InternalArgument(opts->getValueOfType<double>(name));
 	}
 }
@@ -1291,7 +1291,7 @@ int predinterNewIndex(lua_State* L) {
 		} else {
 			lua_pushstring(L, "Wrong argument to __newindex procedure of a predicate interpretation");
 			return lua_error(L);
-		}assert(pt);
+		}Assert(pt);
 		string str = *(index._value._string);
 		if (str == "ct") {
 			predinter->ct(new PredTable(pt->internTable(), univ));
@@ -1614,7 +1614,7 @@ typedef pair<int(*)(lua_State*), string> tablecolheader;
 
 void createNewTable(lua_State* L, ArgType type, vector<tablecolheader> elements) {
 	bool newtable = luaL_newmetatable(L, toCString(type)) != 0;
-	assert(newtable);
+	Assert(newtable);
 	if (newtable) {
 		lua_pushinteger(L, type);
 		lua_setfield(L, -2, _typefield);
@@ -1632,7 +1632,7 @@ void internProcMetaTable(lua_State* L) {
 	elements.push_back(tablecolheader(&internalCall, "__call"));
 
 	bool newtable = luaL_newmetatable(L, "internalprocedure") != 0;
-	assert(newtable);
+	Assert(newtable);
 	if (newtable) {
 		for (auto i = elements.cbegin(); i < elements.cend(); ++i) {
 			lua_pushcfunction(L, (*i).first);

@@ -55,7 +55,7 @@ void SolverPolicy::polAdd(GroundDefinition* def){
 		if(typeid(*(*i).second)==typeid(PCGroundRule)) {
 			polAdd(def->id(),dynamic_cast<PCGroundRule*>((*i).second));
 		} else {
-			assert(typeid(*(*i).second)==typeid(AggGroundRule));
+			Assert(typeid(*(*i).second)==typeid(AggGroundRule));
 			polAdd(def->id(),dynamic_cast<AggGroundRule*>((*i).second));
 		}
 	}
@@ -77,7 +77,7 @@ void SolverPolicy::polAdd(int defnr, int head, AggGroundRule* body, bool) {
 
 
 void SolverPolicy::polAdd(int head, AggTsBody* body) {
-	assert(body->type() != TsType::RULE);
+	Assert(body->type() != TsType::RULE);
 	//FIXME correct undefined id numbering instead of -1 (should be the number the solver takes as undefined, so should but it in the solver interface)
 	polAddAggregate(-1,head,body->lower(),body->setnr(),body->aggtype(),body->type(),body->bound());
 }
@@ -142,7 +142,7 @@ void SolverPolicy::polAdd(int tseitin, CPTsBody* body) {
 			polAddWeightedSum(createAtom(tseitin), term->varids(), weights, right._bound, comp, getSolver());
 		}
 	} else {
-		assert(typeid(*left) == typeid(CPWSumTerm));
+		Assert(typeid(*left) == typeid(CPWSumTerm));
 		CPWSumTerm* term = dynamic_cast<CPWSumTerm*>(left);
 		polAddCPVariables(term->varids(), _termtranslator);
 		if(right._isvarid) {
@@ -165,7 +165,7 @@ void SolverPolicy::polAdd(int tseitin, CPTsBody* body) {
 void SolverPolicy::polAdd(Lit tseitin, TsType type, const GroundClause& clause){
 	switch(type){
 		case TsType::RIMPL:{
-			assert(false);// FIXME add equivalence or rule or impl
+			Assert(false);// FIXME add equivalence or rule or impl
 			break;}
 		case TsType::IMPL:{
 			MinisatID::Disjunction d;
@@ -176,7 +176,7 @@ void SolverPolicy::polAdd(Lit tseitin, TsType type, const GroundClause& clause){
 			getSolver().add(d);
 			break;}
 		case TsType::RULE:{
-			assert(false);// FIXME add equivalence or rule or impl
+			Assert(false);// FIXME add equivalence or rule or impl
 			break;}
 		case TsType::EQ:{
 			MinisatID::Equivalence eq;
@@ -291,8 +291,8 @@ void SolverPolicy::polAddCPVariable(const VarId& varid, GroundTermTranslator* te
 	if(_addedvarids.find(varid) == _addedvarids.end()) {
 		_addedvarids.insert(varid);
 		SortTable* domain = termtranslator->domain(varid);
-		assert(domain);
-		assert(domain->approxFinite());
+		Assert(domain);
+		Assert(domain->approxFinite());
 		if(domain->isRange()) {
 			// the domain is a complete range from minvalue to maxvalue.
 			MinisatID::CPIntVarRange cpvar;

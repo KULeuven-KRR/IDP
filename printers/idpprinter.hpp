@@ -56,7 +56,7 @@ public:
 	}
 
 	void visit(const AbstractStructure* structure) {
-		assert(isTheoryOpen());
+		Assert(isTheoryOpen());
 		Vocabulary* voc = structure->vocabulary();
 
 		for (auto it = voc->firstSort(); it != voc->lastSort(); ++it) {
@@ -120,7 +120,7 @@ public:
 	}
 
 	void visit(const Vocabulary* v) {
-		assert(isTheoryOpen());
+		Assert(isTheoryOpen());
 		for (auto it = v->firstSort(); it != v->lastSort(); ++it) {
 			for (auto jt = it->second.cbegin(); jt != it->second.cend(); ++jt) {
 				if (not (*jt)->builtin() || v == Vocabulary::std()) {
@@ -141,7 +141,7 @@ public:
 	}
 
 	void visit(const Namespace* s) {
-		assert(isTheoryOpen());
+		Assert(isTheoryOpen());
 		for (auto i = s->vocabularies().cbegin(); i != s->vocabularies().cend(); ++i) {
 			printTab();
 			output() << "vocabulary " << (*i).second->name() << " {\n";
@@ -182,13 +182,13 @@ public:
 	}
 
 	void visit(const GroundFixpDef*) {
-		assert(isTheoryOpen());
+		Assert(isTheoryOpen());
 		/*TODO not implemented yet*/
 		output() << "(printing fixpoint definitions is not yet implemented)\n";
 	}
 
 	void visit(const Theory* t) {
-		assert(isTheoryOpen());
+		Assert(isTheoryOpen());
 		for (auto it = t->sentences().cbegin(); it != t->sentences().cend(); ++it) {
 			(*it)->accept(this);
 			output() << ".\n";
@@ -202,7 +202,7 @@ public:
 	}
 
 	void visit(const GroundTheory<GroundPolicy>* g) {
-		assert(isTheoryOpen());
+		Assert(isTheoryOpen());
 		_translator = g->translator();
 		_termtranslator = g->termtranslator();
 		for (size_t n = 0; n < g->nrClauses(); ++n) {
@@ -231,7 +231,7 @@ public:
 	/** Formulas **/
 
 	void visit(const PredForm* f) {
-		assert(isTheoryOpen());
+		Assert(isTheoryOpen());
 		if (isNeg(f->sign())) output() << "~";
 		output() << f->symbol()->toString(_longnames);
 		if (not f->subterms().empty()) {
@@ -246,7 +246,7 @@ public:
 	}
 
 	void visit(const EqChainForm* f) {
-		assert(isTheoryOpen());
+		Assert(isTheoryOpen());
 		if (isNeg(f->sign())) {
 			output() << "~";
 		}
@@ -264,7 +264,7 @@ public:
 	}
 
 	void visit(const EquivForm* f) {
-		assert(isTheoryOpen());
+		Assert(isTheoryOpen());
 		if (isNeg(f->sign())) {
 			output() << "~";
 		}
@@ -276,7 +276,7 @@ public:
 	}
 
 	void visit(const BoolForm* f) {
-		assert(isTheoryOpen());
+		Assert(isTheoryOpen());
 		if (f->subformulas().empty()) {
 			if (f->isConjWithSign()) {
 				output() << "true";
@@ -298,7 +298,7 @@ public:
 	}
 
 	void visit(const QuantForm* f) {
-		assert(isTheoryOpen());
+		Assert(isTheoryOpen());
 		if (isNeg(f->sign())) {
 			output() << "~";
 		}
@@ -334,7 +334,7 @@ public:
 	/** Definitions **/
 
 	void visit(const Rule* r) {
-		assert(isTheoryOpen());
+		Assert(isTheoryOpen());
 		printTab();
 		if (not r->quantVars().empty()) {
 			output() << "!";
@@ -350,7 +350,7 @@ public:
 	}
 
 	void visit(const Definition* d) {
-		assert(isTheoryOpen());
+		Assert(isTheoryOpen());
 		printTab();
 		output() << "{\n";
 		indent();
@@ -364,7 +364,7 @@ public:
 	}
 
 	void visit(const FixpDef* d) {
-		assert(isTheoryOpen());
+		Assert(isTheoryOpen());
 		printTab();
 		output() << (d->lfp() ? "LFD" : "GFD") << " [\n";
 		indent();
@@ -383,12 +383,12 @@ public:
 	/** Terms **/
 
 	void visit(const VarTerm* t) {
-		assert(isTheoryOpen());
+		Assert(isTheoryOpen());
 		output() << t->var()->name();
 	}
 
 	void visit(const FuncTerm* t) {
-		assert(isTheoryOpen());
+		Assert(isTheoryOpen());
 		output() << t->function()->toString(_longnames);
 		if (not t->subterms().empty()) {
 			output() << "(";
@@ -402,7 +402,7 @@ public:
 	}
 
 	void visit(const DomainTerm* t) {
-		assert(isTheoryOpen());
+		Assert(isTheoryOpen());
 		std::string str = t->value()->toString();
 		if (t->sort()) {
 			if (SortUtils::isSubsort(t->sort(), VocabularyUtils::charsort())) {
@@ -417,7 +417,7 @@ public:
 	}
 
 	void visit(const AggTerm* t) {
-		assert(isTheoryOpen());
+		Assert(isTheoryOpen());
 		switch (t->function()) {
 		case AggFunction::CARD:
 			output() << '#';
@@ -484,7 +484,7 @@ public:
 	}
 
 	void openDefinition(int defid) {
-		assert(isDefClosed());
+		Assert(isDefClosed());
 		openDef(defid);
 		printTab();
 		output() << "{\n";
@@ -492,21 +492,21 @@ public:
 	}
 
 	void closeDefinition() {
-		assert(not isDefClosed());
+		Assert(not isDefClosed());
 		closeDef();
 		unindent();
 		output() << "}\n";
 	}
 
 	void visit(GroundDefinition* d) {
-		assert(isTheoryOpen());
+		Assert(isTheoryOpen());
 		for (auto it = d->begin(); it != d->end(); ++it) {
 			(*it).second->accept(this);
 		}
 	}
 
 	void visit(const PCGroundRule* b) {
-		assert(isTheoryOpen());
+		Assert(isTheoryOpen());
 		printAtom(b->head());
 		output() << " <- ";
 		char c = (b->type() == RT_CONJ ? '&' : '|');
@@ -521,7 +521,7 @@ public:
 				}
 			}
 		} else {
-			assert(b->empty());
+			Assert(b->empty());
 			if (b->type() == RT_CONJ)
 				output() << "true";
 			else
@@ -531,7 +531,7 @@ public:
 	}
 
 	void visit(const AggGroundRule* b) {
-		assert(isTheoryOpen());
+		Assert(isTheoryOpen());
 		printAtom(b->head());
 		output() << " <- ";
 		printAggregate(b->bound(), b->lower(), b->aggtype(), b->setnr());
@@ -539,7 +539,7 @@ public:
 	}
 
 	void visit(const GroundAggregate* a) {
-		assert(isTheoryOpen());
+		Assert(isTheoryOpen());
 		printAtom(a->head());
 		switch (a->arrow()) {
 		case TsType::IMPL:
@@ -558,7 +558,7 @@ public:
 	}
 
 	void visit(const CPReification* cpr) {
-		assert(isTheoryOpen());
+		Assert(isTheoryOpen());
 		printAtom(cpr->_head);
 		switch (cpr->_body->type()) {
 		case TsType::RULE:
@@ -604,7 +604,7 @@ public:
 	}
 
 	void visit(const CPSumTerm* cpt) {
-		assert(isTheoryOpen());
+		Assert(isTheoryOpen());
 		output() << "sum[ ";
 		for (auto vit = cpt->varids().cbegin(); vit != cpt->varids().cend(); ++vit) {
 			printTerm(*vit);
@@ -614,7 +614,7 @@ public:
 	}
 
 	void visit(const CPWSumTerm* cpt) {
-		assert(isTheoryOpen());
+		Assert(isTheoryOpen());
 		output() << "wsum[ ";
 		auto vit = cpt->varids().cbegin();
 		auto wit = cpt->weights().cbegin();
@@ -628,12 +628,12 @@ public:
 	}
 
 	void visit(const CPVarTerm* cpt) {
-		assert(isTheoryOpen());
+		Assert(isTheoryOpen());
 		printTerm(cpt->varid());
 	}
 
 	void visit(const PredTable* table) {
-		assert(isTheoryOpen());
+		Assert(isTheoryOpen());
 		if (not table->approxFinite()) {
 			output() << "possibly infinite table";
 		}
@@ -667,7 +667,7 @@ public:
 	}
 
 	void printasfunc(const PredTable* table) {
-		assert(isTheoryOpen());
+		Assert(isTheoryOpen());
 		if (table->approxFinite()) {
 			TableIterator kt = table->begin();
 			output() << "{ ";
@@ -699,7 +699,7 @@ public:
 	}
 
 	void visit(FuncTable* table) {
-		assert(isTheoryOpen());
+		Assert(isTheoryOpen());
 		std::vector<SortTable*> vst = table->universe().tables();
 		vst.pop_back();
 		Universe univ(vst);
@@ -735,7 +735,7 @@ public:
 	}
 
 	void visit(const Sort* s) {
-		assert(isTheoryOpen());
+		Assert(isTheoryOpen());
 		printTab();
 		output() << "type " << s->name();
 		if (not s->parents().empty()) {
@@ -749,7 +749,7 @@ public:
 	}
 
 	void visit(const Predicate* p) {
-		assert(isTheoryOpen());
+		Assert(isTheoryOpen());
 		printTab();
 		if (p->overloaded()) {
 			output() << "overloaded predicate " << p->name() << '\n';
@@ -766,7 +766,7 @@ public:
 	}
 
 	void visit(const Function* f) {
-		assert(isTheoryOpen());
+		Assert(isTheoryOpen());
 		printTab();
 		if (f->overloaded()) {
 			output() << "overloaded function " << f->name() << '\n';
@@ -784,7 +784,7 @@ public:
 	}
 
 	void visit(SortTable* table) {
-		assert(isTheoryOpen());
+		Assert(isTheoryOpen());
 		SortIterator it = table->sortBegin();
 		output() << "{ ";
 		if (not it.isAtEnd()) {
@@ -798,7 +798,7 @@ public:
 	}
 
 	void visit(const GroundSet* s) {
-		assert(isTheoryOpen());
+		Assert(isTheoryOpen());
 		output() << "set_" << s->setnr() << " = [ ";
 		for (unsigned int n = 0; n < s->size(); ++n) {
 			if (s->weighted()) output() << '(';
@@ -812,7 +812,7 @@ public:
 private:
 	void printAtom(int atomnr) {
 		if (_translator == NULL) {
-			assert(false);
+			Assert(false);
 			return;
 		}
 
@@ -857,7 +857,7 @@ private:
 				output() << ")";
 			}
 		} else {
-			assert(typeid(*pfs) == typeid(Function));
+			Assert(typeid(*pfs) == typeid(Function));
 			if (args.size() > 1) {
 				output() << "(";
 				for (size_t n = 0; n < args.size() - 1; ++n) {
@@ -874,7 +874,7 @@ private:
 
 	void printTerm(unsigned int termnr) {
 		// Make sure there is a translator.
-		assert(_termtranslator);
+		Assert(_termtranslator);
 		// Get information from the term translator.
 		const Function* func = _termtranslator->function(termnr);
 		if (func) {

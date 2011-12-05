@@ -35,6 +35,7 @@
 #include "theorytransformations/UnnestPartialTerms.hpp"
 #include "theorytransformations/UnnestTerms.hpp"
 #include "theorytransformations/UnnestThreeValuedTerms.hpp"
+#include "theorytransformations/SplitProducts.hpp"
 
 using namespace std;
 
@@ -106,6 +107,7 @@ Formula* graphAggregates(Formula* f) {
 	return transform<GraphAggregates, Formula*>(f);
 }
 
+
 Formula* unnestPartialTerms(Formula* f, Context context, Vocabulary* voc) {
 	return transform<UnnestPartialTerms, Formula*>(f, context, voc);
 }
@@ -113,6 +115,11 @@ Formula* unnestPartialTerms(Formula* f, Context context, Vocabulary* voc) {
 Formula* unnestThreeValuedTerms(Formula* f, AbstractStructure* structure, Context context, bool cpsupport,
 		const std::set<const PFSymbol*> cpsymbols) {
 	return transform<UnnestThreeValuedTerms, Formula*>(f, structure, context, cpsupport, cpsymbols);
+}
+
+Rule* unnestThreeValuedTerms(Rule* r, AbstractStructure* structure, Context context, bool cpsupport,
+		const std::set<const PFSymbol*> cpsymbols) {
+	return transform<UnnestThreeValuedTerms>(r, structure, context, cpsupport, cpsymbols);
 }
 
 bool containsFuncTerms(Formula* f) {
@@ -161,6 +168,10 @@ AbstractTheory* pushQuantifiers(AbstractTheory* f) {
 
 AbstractTheory* graphAggregates(AbstractTheory* f) {
 	return transform<GraphAggregates, AbstractTheory*>(f);
+}
+
+AbstractTheory* splitProducts(AbstractTheory* f){
+	return transform<SplitProducts>(f);
 }
 
 AbstractTheory* addCompletion(AbstractTheory* f) {

@@ -1,10 +1,9 @@
 #ifndef GTGenerator_HPP_
 #define GTGenerator_HPP_
 
-#include <cassert>
+#include "common.hpp"
 #include "generators/InstGenerator.hpp"
 #include "structure.hpp"
-#include <iostream> //for debugging
 
 class SortTable;
 class DomElemContainer;
@@ -161,7 +160,7 @@ public:
 			}
 			break;
 		case Input::RIGHT:
-			assert(false); // Guaranteed not to happen
+			Assert(false); // Guaranteed not to happen
 			break;
 		}
 	}

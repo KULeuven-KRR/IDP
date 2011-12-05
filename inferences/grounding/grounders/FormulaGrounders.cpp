@@ -15,6 +15,8 @@
 
 using namespace std;
 
+//TODO: a lot of the "int" returns here should be "Lit": Issue 57199
+
 FormulaGrounder::FormulaGrounder(AbstractGroundTheory* grounding, const GroundingContext& ct) :
 		Grounder(grounding, ct), _verbosity(0) {
 }
@@ -98,7 +100,7 @@ Lit AtomGrounder::run() const {
 		}
 	}
 
-	assert(alldomelts);
+	Assert(alldomelts);
 	// If P(t) and (not isCPSymbol(P)) and isCPSymbol(t) then it should have been rewritten, right?
 
 	// Run instance checkers
@@ -116,7 +118,7 @@ Lit AtomGrounder::run() const {
 	if (_cchecker->check()) { // Literal decides formula if checker succeeds
 		if (verbosity() > 2) {
 			clog << "Certain checker succeeded\n";
-			clog << "Result is " << translator()->printAtom(gentype == GenType::CANMAKETRUE ? _true : _false, false) << "\n"; //TODO longnames?
+			clog << "Result is " << translator()->printLit(gentype == GenType::CANMAKETRUE ? _true : _false, false) << "\n"; //TODO longnames?
 		}
 		return gentype == GenType::CANMAKETRUE ? _true : _false;
 	}
@@ -133,7 +135,7 @@ Lit AtomGrounder::run() const {
 		lit = -lit;
 	}
 	if (verbosity() > 2) {
-		clog << "Result is " << translator()->printAtom(lit, false) << "\n"; // TODO longnames?
+		clog << "Result is " << translator()->printLit(lit, false) << "\n"; // TODO longnames?
 	}
 	return lit;
 }
@@ -159,20 +161,20 @@ int ComparisonGrounder::run() const {
 			CPBound rightbound(right._varid);
 			return translator()->translate(leftterm, _comparator, rightbound, TsType::EQ); //TODO use _context._tseitin?
 		} else {
-			assert(not right.isVariable);
+			Assert(not right.isVariable);
 			int rightvalue = right._domelement->value()._int;
 			CPBound rightbound(rightvalue);
 			return translator()->translate(leftterm, _comparator, rightbound, TsType::EQ); //TODO use _context._tseitin?
 		}
 	} else {
-		assert(not left.isVariable);
+		Assert(not left.isVariable);
 		int leftvalue = left._domelement->value()._int;
 		if (right.isVariable) {
 			CPTerm* rightterm = new CPVarTerm(right._varid);
 			CPBound leftbound(leftvalue);
 			return translator()->translate(rightterm, invertComp(_comparator), leftbound, TsType::EQ); //TODO use _context._tseitin?
 		} else {
-			assert(not right.isVariable);
+			Assert(not right.isVariable);
 			int rightvalue = right._domelement->value()._int;
 			switch (_comparator) {
 			case CompType::EQ:
@@ -208,23 +210,12 @@ CompType Agg2Comp(AGG_COMP_TYPE comp) {
 }
 
 /**
- * Invert the comparator and the sign of the tseitin when the aggregate is in a doubly negated context.
+ * Negate the comparator and invert the sign of the tseitin when the aggregate is in a doubly negated context.
  */
+//TODO:why?
 int AggGrounder::handleDoubleNegation(double boundvalue, int setnr) const {
-	CompType newcomp;
-	switch (_comp) {
-	case AGG_LT:
-		newcomp = CompType::GT;
-		break;
-	case AGG_GT:
-		newcomp = CompType::LT;
-		break;
-	case AGG_EQ:
-		thrownotyetimplemented("Cannot ground aggregates with equality directly.");
-		break;
-	}
 	TsType tp = context()._tseitin;
-	int tseitin = translator()->translate(boundvalue, newcomp, false, _type, setnr, tp);
+	int tseitin = translator()->translate(boundvalue, negateComp(Agg2Comp(_comp)),  _type, setnr, tp);
 	return isPos(_sign) ? -tseitin : tseitin;
 }
 
@@ -316,7 +307,7 @@ int AggGrounder::finishCard(double truevalue, double boundvalue, int setnr) cons
 			return handleDoubleNegation(double(leftvalue), setnr);
 		else {
 			CompType comp = Agg2Comp(_comp);
-			int tseitin = translator()->translate(double(leftvalue), comp, true, AggFunction::CARD, setnr, tp);
+			int tseitin = translator()->translate(double(leftvalue), comp, AggFunction::CARD, setnr, tp);
 			return isPos(_sign) ? tseitin : -tseitin;
 		}
 	}
@@ -329,22 +320,18 @@ int AggGrounder::finishCard(double truevalue, double boundvalue, int setnr) cons
  */
 int AggGrounder::finish(double boundvalue, double newboundvalue, double minpossvalue, double maxpossvalue, int setnr) const {
 	// Check minimum and maximum possible values against the given bound
-	CompType comp = CompType::EQ;
 	switch (_comp) { //TODO more complicated propagation is possible!
 	case AGG_EQ:
-		comp = CompType::EQ;
 		if (minpossvalue > boundvalue || maxpossvalue < boundvalue)
 			return isPos(_sign) ? _false : _true;
 		break;
 	case AGG_LT:
-		comp = CompType::LT;
 		if (boundvalue < minpossvalue)
 			return isPos(_sign) ? _true : _false;
 		else if (boundvalue >= maxpossvalue)
 			return isPos(_sign) ? _false : _true;
 		break;
 	case AGG_GT:
-		comp = CompType::GT;
 		if (boundvalue > maxpossvalue)
 			return isPos(_sign) ? _true : _false;
 		else if (boundvalue <= minpossvalue)
@@ -362,7 +349,7 @@ int AggGrounder::finish(double boundvalue, double newboundvalue, double minpossv
 			else if (tp == TsType::RIMPL)
 				tp = TsType::IMPL;
 		}
-		tseitin = translator()->translate(newboundvalue, comp, true, _type, setnr, tp);
+		tseitin = translator()->translate(newboundvalue, Agg2Comp(_comp), _type, setnr, tp);
 		return isPos(_sign) ? tseitin : -tseitin;
 	}
 }
@@ -371,7 +358,7 @@ int AggGrounder::run() const {
 	// Run subgrounders
 	int setnr = _setgrounder->run();
 	const GroundTerm& groundbound = _boundgrounder->run();
-	assert(not groundbound.isVariable);
+	Assert(not groundbound.isVariable);
 
 	const DomainElement* bound = groundbound._domelement;
 
@@ -444,7 +431,7 @@ int AggGrounder::run() const {
 			minpossvalue = (tsset.weight(n) < minpossvalue) ? tsset.weight(n) : minpossvalue;
 			// Decrease all weights greater than truevalue to truevalue. // TODO why not just drop all those?
 			// FIXME: what if some set is used in multiple expressions? Then we are changing weights???
-			// TODO: what advantage does this have?
+			// TODO: what advantage does this have? -> Issue 55773
 			if (tsset.weight(n) > truevalue)
 				tsset.setWeight(n, truevalue);
 		}
@@ -626,7 +613,7 @@ void QuantGrounder::run(ConjOrDisj& formula, bool negated) const {
 }
 
 void EquivGrounder::run(ConjOrDisj& formula, bool negated) const {
-	assert(not negated);
+	Assert(not negated);
 	if (verbosity() > 2)
 		printorig();
 
@@ -634,8 +621,8 @@ void EquivGrounder::run(ConjOrDisj& formula, bool negated) const {
 	ConjOrDisj leftformula, rightformula;
 	runSubGrounder(_leftgrounder, false, leftformula, false);
 	runSubGrounder(_rightgrounder, false, rightformula, false);
-	assert(leftformula.literals.size()==1);
-	assert(rightformula.literals.size()==1);
+	Assert(leftformula.literals.size()==1);
+	Assert(rightformula.literals.size()==1);
 	Lit left = leftformula.literals[0];
 	Lit right = rightformula.literals[0];
 

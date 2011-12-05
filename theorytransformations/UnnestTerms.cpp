@@ -1,12 +1,4 @@
-/************************************
-  	UnnestTerms.cpp
-	this file belongs to GidL 2.0
-	(c) K.U.Leuven
-************************************/
-
-#include <vector>
-#include <cassert>
-
+#include "common.hpp"
 #include "theorytransformations/UnnestTerms.hpp"
 
 #include "vocabulary.hpp"
@@ -29,7 +21,7 @@ void UnnestTerms::contextProblem(Term* t) {
  * (this is the most important method to overwrite in subclasses)
  */
 bool UnnestTerms::shouldMove(Term* t) {
-	assert(t->type() != TT_VAR);
+	Assert(t->type() != TT_VAR);
 	return getAllowedToUnnest();
 }
 
@@ -37,7 +29,8 @@ bool UnnestTerms::shouldMove(Term* t) {
  * Create a variable and an equation for the given term
  */
 VarTerm* UnnestTerms::move(Term* term) {
-	if (_context == Context::BOTH) contextProblem(term);
+	if (_context == Context::BOTH)
+		contextProblem(term);
 
 	Variable* introduced_var = new Variable(term->sort());
 
@@ -106,6 +99,8 @@ Theory* UnnestTerms::visit(Theory* theory) {
  */
 Rule* UnnestTerms::visit(Rule* rule) {
 // Visit head
+	auto saveallowed = getAllowedToUnnest();
+	setAllowedToUnnest(true);
 	for (size_t termposition = 0; termposition < rule->head()->subterms().size(); ++termposition) {
 		Term* term = rule->head()->subterms()[termposition];
 		if (shouldMove(term)) {
@@ -117,8 +112,9 @@ Rule* UnnestTerms::visit(Rule* rule) {
 		for (auto it = _variables.cbegin(); it != _variables.cend(); ++it) {
 			rule->addvar(*it);
 		}
-
-		_equalities.push_back(rule->body());
+		if (not rule->body()->trueFormula()) {
+			_equalities.push_back(rule->body());
+		}
 		rule->body(new BoolForm(SIGN::POS, true, _equalities, FormulaParseInfo()));
 
 		_equalities.clear();
@@ -129,6 +125,7 @@ Rule* UnnestTerms::visit(Rule* rule) {
 	_context = Context::NEGATIVE;
 	setAllowedToUnnest(false);
 	rule->body(rule->body()->accept(this));
+	setAllowedToUnnest(saveallowed);
 	return rule;
 }
 

@@ -166,7 +166,7 @@ Language Options::language() const {
 	}else if(value.compare("asp")==0){
 		return Language::ASP;
 	}else{
-		assert(value.compare("latex")==0);
+		Assert(value.compare("latex")==0);
 		return Language::LATEX;
 	}
 }

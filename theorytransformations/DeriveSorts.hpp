@@ -33,7 +33,7 @@ private:
 	std::set<DomainTerm*> _domelements; // The untyped domain elements
 	bool _changed, _firstvisit, _underivable;
 	Sort* _assertsort;
-	Vocabulary* _vocab;
+	const Vocabulary* _vocab;
 
 public:
 	template<typename T>

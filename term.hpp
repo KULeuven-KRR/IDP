@@ -320,6 +320,12 @@ public:
 	//!< copy the set while keeping all variables
 	virtual SetExpr* clone(const std::map<Variable*, Variable*>&) const = 0;
 	//!< create a copy of the set and substitute the free variables according to the given map
+		virtual SetExpr* positiveSubset() const = 0;
+			//!< generate the subset of positive terms ({x:p(x):t(x)} becomes {x:p(x)&t(x)>0: t(x)})
+		virtual SetExpr* negativeSubset() const = 0;
+			//!< generate the subset of negated negative terms ({x:p(x):t(x)} becomes {x:p(x)&t(x)<0: -t(x)})
+		virtual SetExpr* zeroSubset() const = 0;
+			//!< generate the subset of zero terms ({x:p(x):t(x)} becomes {x:p(x)&t(x)=0: 0})
 
 	// Destructors
 	virtual ~SetExpr() {
@@ -409,6 +415,11 @@ public:
 	QuantSetExpr* clone() const;
 	QuantSetExpr* cloneKeepVars() const;
 	QuantSetExpr* clone(const std::map<Variable*, Variable*>&) const;
+	QuantSetExpr* positiveSubset() const ;
+	QuantSetExpr* negativeSubset() const ;
+	QuantSetExpr* zeroSubset() const ;
+
+	Sort*	sort()	const;
 
 	Sort* sort() const;
 

@@ -1,14 +1,5 @@
-/************************************
- insert.cpp
- this file belongs to GidL 2.0
- (c) K.U.Leuven
- ************************************/
-
-#include <cassert>
-#include <sstream>
-#include <iostream>
-#include <typeinfo>
 #include "common.hpp"
+#include <typeinfo>
 #include "insert.hpp"
 #include "vocabulary.hpp"
 #include "structure.hpp"
@@ -62,7 +53,7 @@ string predName(const longname& name, const vector<Sort*>& vs) {
 }
 
 string funcName(const longname& name, const vector<Sort*>& vs) {
-	assert(!vs.empty());
+	Assert(!vs.empty());
 	stringstream sstr;
 	sstr << toString(name) << '[';
 	if (vs.size() > 1) {
@@ -79,25 +70,25 @@ string funcName(const longname& name, const vector<Sort*>& vs) {
  *************/
 
 void NSPair::includePredArity() {
-	assert(_sortsincluded && !_arityincluded);
+	Assert(_sortsincluded && !_arityincluded);
 	_name.back() = _name.back() + '/' + convertToString(_sorts.size());
 	_arityincluded = true;
 }
 
 void NSPair::includeFuncArity() {
-	assert(_sortsincluded && !_arityincluded);
+	Assert(_sortsincluded && !_arityincluded);
 	_name.back() = _name.back() + '/' + convertToString(_sorts.size() - 1);
 	_arityincluded = true;
 }
 
 void NSPair::includeArity(unsigned int n) {
-	assert(!_arityincluded);
+	Assert(!_arityincluded);
 	_name.back() = _name.back() + '/' + convertToString(n);
 	_arityincluded = true;
 }
 
 string NSPair::toString() {
-	assert(!_name.empty());
+	Assert(!_name.empty());
 	string str = _name[0];
 	for (unsigned int n = 1; n < _name.size(); ++n)
 		str = str + "::" + _name[n];
@@ -152,7 +143,7 @@ std::set<Predicate*> Insert::noArPredInScope(const string& name) const {
 }
 
 std::set<Predicate*> Insert::noArPredInScope(const vector<string>& vs, const ParseInfo& pi) const {
-	assert(!vs.empty());
+	Assert(!vs.empty());
 	if (vs.size() == 1) {
 		return noArPredInScope(vs[0]);
 	} else {
@@ -177,7 +168,7 @@ std::set<Function*> Insert::noArFuncInScope(const string& name) const {
 }
 
 std::set<Function*> Insert::noArFuncInScope(const vector<string>& vs, const ParseInfo& pi) const {
-	assert(!vs.empty());
+	Assert(!vs.empty());
 	if (vs.size() == 1) {
 		return noArFuncInScope(vs[0]);
 	} else {
@@ -205,7 +196,7 @@ Function* Insert::funcInScope(const string& name) const {
 }
 
 Function* Insert::funcInScope(const vector<string>& vs, const ParseInfo& pi) const {
-	assert(!vs.empty());
+	Assert(!vs.empty());
 	if (vs.size() == 1) {
 		return funcInScope(vs[0]);
 	} else {
@@ -233,7 +224,7 @@ Predicate* Insert::predInScope(const string& name) const {
 }
 
 Predicate* Insert::predInScope(const vector<string>& vs, const ParseInfo& pi) const {
-	assert(!vs.empty());
+	Assert(!vs.empty());
 	if (vs.size() == 1) {
 		return predInScope(vs[0]);
 	} else {
@@ -271,7 +262,7 @@ Sort* Insert::sortInScope(const string& name, const ParseInfo& pi) const {
 }
 
 Sort* Insert::sortInScope(const vector<string>& vs, const ParseInfo& pi) const {
-	assert(!vs.empty());
+	Assert(!vs.empty());
 	if (vs.size() == 1) {
 		return sortInScope(vs[0], pi);
 	} else {
@@ -311,7 +302,7 @@ Namespace* Insert::namespaceInScope(const string& name, const ParseInfo& pi) con
 }
 
 Namespace* Insert::namespaceInScope(const vector<string>& vs, const ParseInfo& pi) const {
-	assert(!vs.empty());
+	Assert(!vs.empty());
 	if (vs.size() == 1) {
 		return namespaceInScope(vs[0], pi);
 	} else {
@@ -340,7 +331,7 @@ Vocabulary* Insert::vocabularyInScope(const string& name, const ParseInfo& pi) c
 }
 
 Vocabulary* Insert::vocabularyInScope(const vector<string>& vs, const ParseInfo& pi) const {
-	assert(!vs.empty());
+	Assert(!vs.empty());
 	if (vs.size() == 1) {
 		return vocabularyInScope(vs[0], pi);
 	} else {
@@ -375,7 +366,7 @@ AbstractStructure* Insert::structureInScope(const string& name, const ParseInfo&
 }
 
 AbstractStructure* Insert::structureInScope(const vector<string>& vs, const ParseInfo& pi) const {
-	assert(!vs.empty());
+	Assert(!vs.empty());
 	if (vs.size() == 1) {
 		return structureInScope(vs[0], pi);
 	} else {
@@ -446,7 +437,7 @@ UserProcedure* Insert::procedureInScope(const string& name, const ParseInfo& pi)
 }
 
 UserProcedure* Insert::procedureInScope(const vector<string>& vs, const ParseInfo& pi) const {
-	assert(!vs.empty());
+	Assert(!vs.empty());
 	if (vs.size() == 1) {
 		return procedureInScope(vs[0], pi);
 	} else {
@@ -478,7 +469,7 @@ Options* Insert::optionsInScope(const string& name, const ParseInfo& pi) const {
 }
 
 Options* Insert::optionsInScope(const vector<string>& vs, const ParseInfo& pi) const {
-	assert(!vs.empty());
+	Assert(!vs.empty());
 	if (vs.size() == 1) {
 		return optionsInScope(vs[0], pi);
 	} else {
@@ -513,7 +504,7 @@ UTF getUTF(const string& utf, const ParseInfo& pi) {
 }
 
 Insert::Insert(Namespace * ns) {
-	assert(ns!=NULL);
+	Assert(ns!=NULL);
 	openblock();
 	_currfile = 0;
 	_currspace = ns;
@@ -667,7 +658,7 @@ void Insert::openspace(const string& sname, YYLTYPE l) {
 void Insert::closespace() {
 	if (_currspace->super()->isGlobal()) LuaConnection::addGlobal(_currspace);
 	_currspace = _currspace->super();
-	assert(_currspace);
+	Assert(_currspace);
 	closeblock();
 }
 
@@ -692,7 +683,7 @@ void Insert::assignvocab(InternalArgument* arg, YYLTYPE l) {
 }
 
 void Insert::closevocab() {
-	assert(_currvocabulary);
+	Assert(_currvocabulary);
 	if (_currspace->isGlobal()) LuaConnection::addGlobal(_currvocabulary);
 	closeblock();
 }
@@ -760,7 +751,7 @@ void Insert::assigntheory(InternalArgument* arg, YYLTYPE l) {
 }
 
 void Insert::closetheory() {
-	assert(_currtheory);
+	Assert(_currtheory);
 	if (_currspace->isGlobal()) LuaConnection::addGlobal(_currtheory);
 	closeblock();
 }
@@ -812,7 +803,7 @@ void Insert::assignstructure(InternalArgument* arg, YYLTYPE l) {
 }
 
 void Insert::closestructure() {
-	assert(_currstructure);
+	Assert(_currstructure);
 	assignunknowntables();
 	if (_options->getValue(BoolType::AUTOCOMPLETE)) _currstructure->autocomplete();
 	_currstructure->functionCheck();
@@ -1159,7 +1150,7 @@ Rule* Insert::rule(const std::set<Variable*>& qv, Formula* head, Formula* body, 
 		if (not (bv.empty())){
 			body = new QuantForm(SIGN::POS, QUANT::EXIST, bv, body, FormulaParseInfo((body->pi())));
 		}
-		assert(typeid(*head) == typeid(PredForm));
+		Assert(typeid(*head) == typeid(PredForm));
 		auto pfhead = dynamic_cast<PredForm*>(head);
 		auto r = new Rule(hv, pfhead, body, pi);
 		// Sort derivation
@@ -1400,7 +1391,7 @@ void Insert::negate(Formula* f) const {
 
 Formula* Insert::eqchain(CompType c, Formula* f, Term* t, YYLTYPE) const {
 	if (f && t) {
-		assert(typeid(*f) == typeid(EqChainForm));
+		Assert(typeid(*f) == typeid(EqChainForm));
 		EqChainForm* ecf = dynamic_cast<EqChainForm*>(f);
 		ecf->add(c, t);
 		Formula* orig = ecf->pi().original();
@@ -1541,7 +1532,7 @@ Term* Insert::functerm(NSPair* nst) {
 Term* Insert::arterm(char c, Term* lt, Term* rt, YYLTYPE l) const {
 	if (lt && rt) {
 		Function* f = _currvocabulary->func(string(1, c) + "/2");
-		assert(f);
+		Assert(f);
 		vector<Term*> vt(2);
 		vt[0] = lt;
 		vt[1] = rt;
@@ -1559,7 +1550,7 @@ Term* Insert::arterm(char c, Term* lt, Term* rt, YYLTYPE l) const {
 Term* Insert::arterm(const string& s, Term* t, YYLTYPE l) const {
 	if (t) {
 		Function* f = _currvocabulary->func(s + "/1");
-		assert(f);
+		Assert(f);
 		vector<Term*> vt(1, t);
 		vector<Term*> pivt(1, t->pi().original() ? t->pi().original()->clone() : t->clone());
 		return new FuncTerm(f, vt, termparseinfo(new FuncTerm(f, pivt, TermParseInfo()), l));

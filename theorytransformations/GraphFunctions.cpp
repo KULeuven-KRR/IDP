@@ -1,7 +1,4 @@
-#include <vector>
-#include <cassert>
-#include <iostream>
-
+#include "common.hpp"
 #include "utils/TheoryUtils.hpp"
 #include "theorytransformations/GraphFunctions.hpp"
 #include "theorytransformations/SplitComparisonChains.hpp"
@@ -42,7 +39,7 @@ Formula* GraphFunctions::visit(PredForm* pf) {
 }
 
 Formula* GraphFunctions::visit(EqChainForm* ef) {
-	const FormulaParseInfo& finalpi = ef->pi();
+	auto finalpi = ef->pi();
 	bool finalconj = ef->conj();
 	if (_recursive) {
 		ef = dynamic_cast<EqChainForm*>(traverse(ef));
