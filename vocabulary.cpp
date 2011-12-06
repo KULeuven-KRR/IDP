@@ -761,24 +761,26 @@ Predicate* ComparisonPredGenerator::resolve(const vector<Sort*>& sorts) {
  *	given vocabulary
  */
 Predicate* ComparisonPredGenerator::disambiguate(const vector<Sort*>& sorts, const Vocabulary* vocabulary) {
-	Sort* predSort = 0;
+	Sort* predSort = NULL;
 	bool sortsContainsZero = false;
 	for (auto it = sorts.cbegin(); it != sorts.cend(); ++it) {
-		if (*it) {
-			if (predSort) {
-				predSort = SortUtils::resolve(predSort, *it, vocabulary);
-				if (not predSort) { return 0; }
-			} else {
-				predSort = *it;
+		if((*it)==NULL) {
+			sortsContainsZero = true;
+			continue;
+		}
+		if (predSort!=NULL) {
+			predSort = SortUtils::resolve(predSort, *it, vocabulary);
+			if (predSort==NULL) {
+				return NULL;
 			}
 		} else {
-			sortsContainsZero = true;
+			predSort = *it;
 		}
 	}
 
-	Predicate* pred = 0;
-	if (predSort && (!sortsContainsZero || !predSort->ancestors(vocabulary).empty())) {
-		map<Sort*, Predicate*>::const_iterator it = _overpreds.find(predSort);
+	Predicate* pred = NULL;
+	if (predSort && (not sortsContainsZero || not predSort->ancestors(vocabulary).empty())) {
+		auto it = _overpreds.find(predSort);
 		if (it != _overpreds.cend()) {
 			pred = it->second;
 		} else {
@@ -923,7 +925,7 @@ bool Function::partial() const {
 }
 
 bool Function::builtin() const {
-	return _interpretation != 0;
+	return _interpretation!=NULL || Vocabulary::std()->contains(this);
 }
 
 bool Function::overloaded() const {
@@ -1002,8 +1004,8 @@ Function* Function::disambiguate(const vector<Sort*>& sorts, const Vocabulary* v
 		return _overfuncgenerator->disambiguate(sorts, vocabulary);
 	} else {
 		for (size_t n = 0; n < _sorts.size(); ++n) {
-			if (sorts[n] && not SortUtils::resolve(sorts[n], _sorts[n], vocabulary)) { 
-				return 0;
+			if (sorts[n]!=NULL && not SortUtils::resolve(sorts[n], _sorts[n], vocabulary)) {
+				return NULL;
 			}
 		}
 		return this;
@@ -1616,17 +1618,18 @@ const ParseInfo& Vocabulary::pi() const {
 	return _pi;
 }
 
-bool Vocabulary::contains(Sort* s) const {
-	map<string, set<Sort*> >::const_iterator it = _name2sort.find(s->name());
+bool Vocabulary::contains(const Sort* s) const {
+	auto it = _name2sort.find(s->name());
 	if (it != _name2sort.cend()) {
-		if ((it->second).find(s) != (it->second).cend()) {
+		if (it->second.find(const_cast<Sort*>(s)) != (it->second).cend()) { // TODO const cast ugly but no way around?
 			return true;
 		}
 	}
+
 	return false;
 }
 
-bool Vocabulary::contains(Predicate* p) const {
+bool Vocabulary::contains(const Predicate* p) const {
 	map<string, Predicate*>::const_iterator it = _name2pred.find(p->name());
 	if (it != _name2pred.cend()) {
 		return it->second->contains(p);
@@ -1635,8 +1638,8 @@ bool Vocabulary::contains(Predicate* p) const {
 	}
 }
 
-bool Vocabulary::contains(Function* f) const {
-	map<string, Function*>::const_iterator it = _name2func.find(f->name());
+bool Vocabulary::contains(const Function* f) const {
+	auto it = _name2func.find(f->name());
 	if (it != _name2func.cend()) {
 		return it->second->contains(f);
 	} else {
@@ -1644,12 +1647,12 @@ bool Vocabulary::contains(Function* f) const {
 	}
 }
 
-bool Vocabulary::contains(PFSymbol* s) const {
+bool Vocabulary::contains(const PFSymbol* s) const {
 	if (typeid(*s) == typeid(Predicate)) {
-		return contains(dynamic_cast<Predicate*>(s));
+		return contains(dynamic_cast<const Predicate*>(s));
 	} else {
 		Assert(typeid(*s) == typeid(Function));
-		return contains(dynamic_cast<Function*>(s));
+		return contains(dynamic_cast<const Function*>(s));
 	}
 }
 

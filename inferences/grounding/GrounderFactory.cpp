@@ -34,6 +34,8 @@
 #include "generators/BasicGenerators.hpp"
 #include "generators/TableGenerator.hpp"
 
+#include "IdpException.hpp"
+
 #include "utils/TheoryUtils.hpp"
 
 #include "fobdds/FoBdd.hpp"
@@ -186,17 +188,14 @@ void GrounderFactory::DeeperContext(SIGN sign) {
 
 		if (_context._funccontext == Context::POSITIVE)
 			_context._funccontext = Context::NEGATIVE;
-		else if (_context._funccontext == Context::NEGATIVE)
-			_context._funccontext = Context::POSITIVE;
+		else if (_context._funccontext == Context::NEGATIVE) _context._funccontext = Context::POSITIVE;
 		if (_context._monotone == Context::POSITIVE)
 			_context._monotone = Context::NEGATIVE;
-		else if (_context._monotone == Context::NEGATIVE)
-			_context._monotone = Context::POSITIVE;
+		else if (_context._monotone == Context::NEGATIVE) _context._monotone = Context::POSITIVE;
 
 		if (_context._tseitin == TsType::IMPL)
 			_context._tseitin = TsType::RIMPL;
-		else if (_context._tseitin == TsType::RIMPL)
-			_context._tseitin = TsType::IMPL;
+		else if (_context._tseitin == TsType::RIMPL) _context._tseitin = TsType::IMPL;
 
 	}
 }
@@ -383,7 +382,7 @@ void GrounderFactory::visit(const Theory* theory) {
  */
 void GrounderFactory::visit(const PredForm* pf) {
 	if (_verbosity > 3) {
-		clog <<"Grounderfactory visiting: " << pf->toString() <<"\n";
+		clog << "Grounderfactory visiting: " <<toString(pf) << "\n";
 	}
 	_context._conjunctivePathFromRoot = _context._conjPathUntilNode;
 	_context._conjPathUntilNode = false;
@@ -392,7 +391,7 @@ void GrounderFactory::visit(const PredForm* pf) {
 	// to _structure outside the atom. To avoid changing the original atom,
 	// we first clone it.
 	// FIXME verkeerde type afgeleid voor vergelijkingen a=b (zou bvb range die beide omvat moeten zijn, is nu niet het geval).
-	// FIXME aggregaten moeten correct worden herschreven als ze niet tweewaardig zijn
+	// FIXME aggregaten moeten correct worden herschreven als ze niet tweewaardig zijn -> issue 57048?
 	Formula* transpf = FormulaUtils::unnestThreeValuedTerms(pf->clone(), _structure, _context._funccontext, _cpsupport, _cpsymbols);
 	transpf = FormulaUtils::splitComparisonChains(transpf, NULL);
 	if (not _cpsupport) { // TODO Check not present in quantgrounder
@@ -402,8 +401,9 @@ void GrounderFactory::visit(const PredForm* pf) {
 	}
 
 	if (not sametypeid<PredForm>(*transpf)) { // The rewriting changed the atom
+		Assert(_context._component != CompContext::HEAD);
 		if (_verbosity > 1) {
-			clog << "Rewritten " << pf->toString() << " to " << transpf->toString() << "\n";
+			clog << "Rewritten " <<toString(pf) << " to " <<toString(transpf) << "\n";
 		}
 		transpf->accept(this);
 		transpf->recursiveDelete();
@@ -468,7 +468,7 @@ void GrounderFactory::visit(const PredForm* pf) {
 	}
 
 	PredTable *posstable = NULL, *certtable = NULL;
-	if(GlobalData::instance()->getOptions()->getValue(BoolType::GROUNDWITHBOUNDS)){
+	if (getOption(BoolType::GROUNDWITHBOUNDS)) {
 		auto fovars = VarUtils::makeNewVariables(checksorts);
 		auto foterms = TermUtils::makeNewVarTerms(fovars);
 		auto checkpf = new PredForm(newpf->sign(), newpf->symbol(), foterms, FormulaParseInfo());
@@ -484,18 +484,18 @@ void GrounderFactory::visit(const PredForm* pf) {
 
 		posstable = new PredTable(new BDDInternalPredTable(possbdd, _symstructure->manager(), fovars, _structure), Universe(tables));
 		certtable = new PredTable(new BDDInternalPredTable(certbdd, _symstructure->manager(), fovars, _structure), Universe(tables));
-	}else{
+	} else {
 		posstable = new PredTable(new FullInternalPredTable(), Universe(tables));
 		certtable = new PredTable(new InverseInternalPredTable(new FullInternalPredTable()), Universe(tables));
 	}
 
 	auto possch = GeneratorFactory::create(posstable, vector<Pattern>(checkargs.size(), Pattern::INPUT), checkargs, Universe(tables));
 	auto certainch = GeneratorFactory::create(certtable, vector<Pattern>(checkargs.size(), Pattern::INPUT), checkargs, Universe(tables));
-	if(GlobalData::instance()->getOptions()->getValue(IntType::GROUNDVERBOSITY)>3){
-		clog <<"Certainly table: \n" <<toString(certtable) <<"\n";
-		clog <<"Possible table: \n" <<toString(posstable) <<"\n";
-		clog <<"Possible checker: \n" <<toString(possch) <<"\n";
-		clog <<"Certain checker: \n" <<toString(certainch) <<"\n";
+	if (getOption(IntType::GROUNDVERBOSITY) > 3) {
+		clog << "Certainly table: \n" << toString(certtable) << "\n";
+		clog << "Possible table: \n" << toString(posstable) << "\n";
+		clog << "Possible checker: \n" << toString(possch) << "\n";
+		clog << "Certain checker: \n" << toString(certainch) << "\n";
 	}
 
 	_formgrounder = new AtomGrounder(_grounding, newpf->sign(), newpf->symbol(), subtermgrounders, checkargs, possch, certainch,
@@ -524,7 +524,7 @@ void GrounderFactory::visit(const PredForm* pf) {
  */
 void GrounderFactory::visit(const BoolForm* bf) {
 	if (_verbosity > 3) {
-		clog <<"Grounderfactory visiting: " << bf->toString() <<"\n";
+		clog << "Grounderfactory visiting: " <<toString(bf) << "\n";
 	}
 
 	_context._conjunctivePathFromRoot = _context._conjPathUntilNode;
@@ -602,7 +602,7 @@ const DomElemContainer* GrounderFactory::createVarMapping(Variable * const var) 
  */
 void GrounderFactory::visit(const QuantForm* qf) {
 	if (_verbosity > 3) {
-		clog <<"Grounderfactory visiting: " << qf->toString() <<"\n";
+		clog << "Grounderfactory visiting: " <<toString(qf) << "\n";
 	}
 	_context._conjunctivePathFromRoot = _context._conjPathUntilNode;
 	_context._conjPathUntilNode = _context._conjunctivePathFromRoot && qf->isUnivWithSign();
@@ -820,7 +820,6 @@ void GrounderFactory::visit(const AggForm* af) {
 }
 
 void GrounderFactory::visit(const EqChainForm* ef) {
-
 	Formula* f = ef->clone();
 	f = FormulaUtils::splitComparisonChains(f, _grounding->vocabulary());
 	f->accept(this);
@@ -844,11 +843,6 @@ void GrounderFactory::visit(const DomainTerm* t) {
 	_termgrounder->setOrig(t, varmapping(), _verbosity);
 }
 
-/**
- * void GrounderFactory::visit(const FuncTerm* t)
- * DESCRIPTION
- * 		Creates a grounder for a function term.
- */
 void GrounderFactory::visit(const FuncTerm* t) {
 	_context._conjunctivePathFromRoot = _context._conjPathUntilNode;
 	_context._conjPathUntilNode = false;
@@ -857,8 +851,7 @@ void GrounderFactory::visit(const FuncTerm* t) {
 	vector<TermGrounder*> subtermgrounders;
 	for (auto it = t->subterms().cbegin(); it != t->subterms().cend(); ++it) {
 		(*it)->accept(this);
-		if (_termgrounder)
-			subtermgrounders.push_back(_termgrounder);
+		if (_termgrounder) subtermgrounders.push_back(_termgrounder);
 	}
 
 	// Create term grounder
@@ -878,11 +871,6 @@ void GrounderFactory::visit(const FuncTerm* t) {
 	_termgrounder->setOrig(t, varmapping(), _verbosity);
 }
 
-/**
- * void GrounderFactory::visit(const AggTerm* at)
- * DESCRIPTION
- * 		Creates a grounder for a aggregate term.
- */
 void GrounderFactory::visit(const AggTerm* t) {
 	_context._conjunctivePathFromRoot = _context._conjPathUntilNode;
 	_context._conjPathUntilNode = false;
@@ -895,11 +883,6 @@ void GrounderFactory::visit(const AggTerm* t) {
 	_termgrounder->setOrig(t, varmapping(), _verbosity);
 }
 
-/**
- * void GrounderFactory::visit(const EnumSetExpr* s)
- * DESCRIPTION
- * 		Creates a grounder for an enumarated set.
- */
 void GrounderFactory::visit(const EnumSetExpr* s) {
 	_context._conjunctivePathFromRoot = _context._conjPathUntilNode;
 	_context._conjPathUntilNode = false;
@@ -951,46 +934,33 @@ GrounderFactory::GenAndChecker GrounderFactory::createVarsAndGenerators(Formula*
 	// Check for infinite grounding
 	for (auto it = tables.cbegin(); it < tables.cend(); ++it) {
 		if (not (*it)->finite()) {
-			Warning::possiblyInfiniteGrounding(orig->pi().original() != NULL ? orig->pi().original()->toString() : "", orig->toString());
+			Warning::possiblyInfiniteGrounding(orig->pi().original() != NULL ? toString(orig->pi().original()) : "", toString(orig));
+			if(not getOption(BoolType::GROUNDWITHBOUNDS)){ // TODO and not lazy?
+				// If not grounding with bounds, we will certainly ground infinitely, so do not even start
+				throw IdpException("Infinite grounding");
+			}
 		}
 	}
 
 	// FIXME => unsafe to have to pass in fovars explicitly (order is never checked?)
-	/*	const FOBDD* generatorbdd = _symstructure->evaluate(subformula, generatortype); // !x phi(x) => generate all x possibly false
-	 const FOBDD* checkerbdd = _symstructure->evaluate(subformula, checkertype); // !x phi(x) => check for x certainly false
-	 // FIXME checker is incorrect
-	 cerr <<"Generator bdd: \n";
-	 _symstructure->manager()->put(std::cerr, generatorbdd);
-	 cerr <<"\nChecker bdd: \n";
-	 _symstructure->manager()->put(std::cerr, generatorbdd);
-	 cerr <<"\n";
-	 generatorbdd = improve_generator(generatorbdd, quantfovars, MCPA);
-	 checkerbdd = improve_checker(checkerbdd, MCPA);
-	 cerr <<"Improved generator bdd: \n";
-	 _symstructure->manager()->put(std::cerr, generatorbdd);
-	 cerr <<"\nImproved checker bdd: \n";
-	 _symstructure->manager()->put(std::cerr, generatorbdd);
-	 cerr <<"\n";
-	 PredTable* gentable = new PredTable(new BDDInternalPredTable(generatorbdd, _symstructure->manager(), fovars, _structure), Universe(tables));
-	 PredTable* checktable = new PredTable(new BDDInternalPredTable(checkerbdd, _symstructure->manager(), fovars, _structure), Universe(tables));
-	 */
-	PredTable* gentable = new PredTable(new FullInternalPredTable(), Universe(tables));
-	PredTable* checktable = new PredTable(new InverseInternalPredTable(new FullInternalPredTable), Universe(tables));
-	/*cerr <<"Generator table: \n";
-	 gentable->print(std::cerr);
-	 cerr <<"\nChecker table: \n";
-	 checktable->print(std::cerr);
-	 cerr <<"\n";*/
-	InstGenerator* gen = GeneratorFactory::create(gentable, pattern, vars, Universe(tables));
-	InstChecker* check = GeneratorFactory::create(checktable, vector<Pattern>(vars.size(), Pattern::INPUT), vars, Universe(tables));
+	PredTable *gentable = NULL, *checktable = NULL;
+	if(getOption(BoolType::GROUNDWITHBOUNDS)){
+		auto generatorbdd = _symstructure->evaluate(subformula, generatortype); // !x phi(x) => generate all x possibly false
+		auto checkerbdd = _symstructure->evaluate(subformula, checkertype); // !x phi(x) => check for x certainly false
+		generatorbdd = improve_generator(generatorbdd, quantfovars, MCPA);
+		checkerbdd = improve_checker(checkerbdd, MCPA);
+		gentable = new PredTable(new BDDInternalPredTable(generatorbdd, _symstructure->manager(), fovars, _structure), Universe(tables));
+		checktable = new PredTable(new BDDInternalPredTable(checkerbdd, _symstructure->manager(), fovars, _structure), Universe(tables));
+	}else{
+		gentable = new PredTable(new FullInternalPredTable(), Universe(tables));
+		checktable = new PredTable(new InverseInternalPredTable(new FullInternalPredTable), Universe(tables));
+	}
+
+	auto gen = GeneratorFactory::create(gentable, pattern, vars, Universe(tables));
+	auto check = GeneratorFactory::create(checktable, vector<Pattern>(vars.size(), Pattern::INPUT), vars, Universe(tables));
 	return GenAndChecker(gen, check);
 }
 
-/**
- * void GrounderFactory::visit(const QuantSetExpr* s)
- * DESCRIPTION
- * 		Creates a grounder for a quantified set.
- */
 void GrounderFactory::visit(const QuantSetExpr* origqs) {
 	_context._conjunctivePathFromRoot = _context._conjPathUntilNode;
 	_context._conjPathUntilNode = false;
@@ -1039,6 +1009,9 @@ void GrounderFactory::visit(const QuantSetExpr* origqs) {
  * 		Creates a grounder for a definition.
  */
 void GrounderFactory::visit(const Definition* def) {
+	if (_verbosity > 3) {
+			clog << "Grounderfactory visiting: " <<toString(def) << "\n";
+		}
 	_context._conjunctivePathFromRoot = _context._conjPathUntilNode;
 	_context._conjPathUntilNode = false;
 
@@ -1079,12 +1052,14 @@ InstGenerator* GrounderFactory::createVarMapAndGenerator(const VarList& vars) {
  * 		Creates a grounder for a definitional rule.
  */
 void GrounderFactory::visit(const Rule* rule) {
+	if (_verbosity > 3) {
+			clog << "Grounderfactory visiting: " <<toString(rule) << "\n";
+		}
 	_context._conjunctivePathFromRoot = _context._conjPathUntilNode;
 	_context._conjPathUntilNode = false;
 
-	// FIXME Move all three-valued terms outside the head
 	// TODO for lazygroundrules, we need a generator for all variables NOT occurring in the head!
-
+	Rule* newrule = FormulaUtils::unnestThreeValuedTerms(rule->clone(), _structure, _context._funccontext, _cpsupport, _cpsymbols);
 	InstGenerator *headgen = NULL, *bodygen = NULL;
 
 	if (_options->getValue(BoolType::GROUNDLAZILY)) {
@@ -1092,8 +1067,8 @@ void GrounderFactory::visit(const Rule* rule) {
 		// TODO resolve this in a clean way
 		// for lazy ground rules, need a generator which generates bodies given a head, so only vars not occurring in the head!
 		varlist bodyvars;
-		for (auto it = rule->quantVars().cbegin(); it != rule->quantVars().cend(); ++it) {
-			if (not rule->head()->contains(*it)) {
+		for (auto it = newrule->quantVars().cbegin(); it != newrule->quantVars().cend(); ++it) {
+			if (not newrule->head()->contains(*it)) {
 				bodyvars.push_back(*it);
 			} else {
 				createVarMapping(*it);
@@ -1108,8 +1083,8 @@ void GrounderFactory::visit(const Rule* rule) {
 
 		varlist headvars;
 		varlist bodyvars;
-		for (auto it = rule->quantVars().cbegin(); it != rule->quantVars().cend(); ++it) {
-			if (rule->body()->contains(*it)) {
+		for (auto it = newrule->quantVars().cbegin(); it != newrule->quantVars().cend(); ++it) {
+			if (newrule->body()->contains(*it)) {
 				bodyvars.push_back(*it);
 			} else {
 				headvars.push_back(*it);
@@ -1123,7 +1098,7 @@ void GrounderFactory::visit(const Rule* rule) {
 	// Create head grounder
 	SaveContext();
 	_context._component = CompContext::HEAD;
-	descend(rule->head());
+	descend(newrule->head());
 	HeadGrounder* headgr = _headgrounder;
 	RestoreContext();
 
@@ -1134,14 +1109,15 @@ void GrounderFactory::visit(const Rule* rule) {
 	_context.gentype = GenType::CANMAKETRUE; // body instance generator corresponds to an existential quantifier
 	_context._component = CompContext::FORMULA;
 	_context._tseitin = TsType::EQ;
-	descend(rule->body());
+	descend(newrule->body());
 	FormulaGrounder* bodygr = _formgrounder;
 	RestoreContext();
 
 	// Create rule grounder
 	SaveContext();
-	if (recursive(rule->body()))
-		_context._tseitin = TsType::RULE;
+	if (recursive(newrule->body())){
+		_context._tseitin = TsType::RULE;//TODO: is this right??? Shouldn't it be higher (before createing the bodygrounder)?
+	}
 	if (_options->getValue(BoolType::GROUNDLAZILY)) {
 		_rulegrounder = new LazyRuleGrounder(headgr, bodygr, bodygen, _context);
 	} else {

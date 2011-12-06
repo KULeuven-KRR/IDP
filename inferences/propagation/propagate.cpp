@@ -59,14 +59,14 @@ FOPropBDDDomain* FOPropBDDDomainFactory::falseDomain(const Formula* f) const {
 FOPropBDDDomain* FOPropBDDDomainFactory::formuladomain(const Formula* f) const {
 	FOBDDFactory bddfactory(_manager);
 	vector<Variable*> vv(f->freeVars().cbegin(), f->freeVars().cend());
-	return new FOPropBDDDomain(bddfactory.run(f), vv);
+	return new FOPropBDDDomain(bddfactory.turnIntoBdd(f), vv);
 }
 
 FOPropBDDDomain* FOPropBDDDomainFactory::ctDomain(const PredForm* pf) const {
 	vector<const FOBDDArgument*> args;
 	FOBDDFactory bddfactory(_manager);
 	for (auto it = pf->subterms().cbegin(); it != pf->subterms().cend(); ++it) {
-		args.push_back(bddfactory.run(*it));
+		args.push_back(bddfactory.turnIntoBdd(*it));
 	}
 	const FOBDDKernel* k = _manager->getAtomKernel(pf->symbol(), AtomKernelType::AKT_CT, args);
 	const FOBDD* bdd = _manager->getBDD(k, _manager->truebdd(), _manager->falsebdd());
@@ -78,7 +78,7 @@ FOPropBDDDomain* FOPropBDDDomainFactory::cfDomain(const PredForm* pf) const {
 	vector<const FOBDDArgument*> args;
 	FOBDDFactory bddfactory(_manager);
 	for (auto it = pf->subterms().cbegin(); it != pf->subterms().cend(); ++it) {
-		args.push_back(bddfactory.run(*it));
+		args.push_back(bddfactory.turnIntoBdd(*it));
 	}
 	const FOBDDKernel* k = _manager->getAtomKernel(pf->symbol(), AtomKernelType::AKT_CF, args);
 	const FOBDD* bdd = _manager->getBDD(k, _manager->truebdd(), _manager->falsebdd());
@@ -244,7 +244,7 @@ TypedFOPropagator<FOPropBDDDomainFactory, FOPropBDDDomain>::TypedFOPropagator(FO
 }
 
 template<class Factory, class DomainType>
-void TypedFOPropagator<Factory, DomainType>::run() {
+void TypedFOPropagator<Factory, DomainType>::doPropagation() {
 	if (_verbosity > 1) {
 		cerr << "=== Start propagation ===\n";
 	}

@@ -56,6 +56,9 @@ GroundTerm FuncTermGrounder::run() const {
 	vector<GroundTerm> groundsubterms(_subtermgrounders.size());
 	ElementTuple args(_subtermgrounders.size());
 	for(unsigned int n = 0; n < _subtermgrounders.size(); ++n) {
+		if(GlobalData::instance()->terminateRequested()){
+			throw IdpException("Terminate requested");
+		}
 		groundsubterms[n] = _subtermgrounders[n]->run();
 		if(groundsubterms[n].isVariable) {
 			calculable = false;
@@ -153,7 +156,7 @@ GroundTerm SumTermGrounder::run() const {
 			VarId rightvarid = _termtranslator->translate(right._domelement);
 			// Create tseitin
 			CPTsBody* cpelement = _termtranslator->cprelation(rightvarid);
-			int tseitin = _grounding->translator()->translate(cpelement->left(),cpelement->comp(),cpelement->right(),TsType::EQ);
+			Lit tseitin = _grounding->translator()->translate(cpelement->left(),cpelement->comp(),cpelement->right(),TsType::EQ);
 			_grounding->addUnitClause(tseitin);
 			// Create cp sum term
 			CPTerm* sumterm = createSumTerm(_type,left._varid,rightvarid);

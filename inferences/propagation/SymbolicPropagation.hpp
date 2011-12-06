@@ -23,7 +23,7 @@ public:
 	AbstractStructure* propagate(AbstractTheory* theory, AbstractStructure* structure) {
 		auto mpi = propagateVocabulary(theory, structure);
 		auto propagator = createPropagator(theory, mpi);
-		propagator->run();
+		propagator->doPropagation();
 		return propagator->currstructure(structure);
 	}
 

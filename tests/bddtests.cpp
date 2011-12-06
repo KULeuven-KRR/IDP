@@ -1,12 +1,3 @@
-/*
- * Copyright 2007-2011 Katholieke Universiteit Leuven
- *
- * Use of this software is governed by the GNU LGPLv3.0 license
- *
- * Written by Broes De Cat and Maarten Mariën, K.U.Leuven, Departement
- * Computerwetenschappen, Celestijnenlaan 200A, B-3001 Leuven, Belgium
- */
-
 #include <cmath>
 
 #include "gtest/gtest.h"
@@ -62,7 +53,7 @@ namespace Tests{
 
 		BddGeneratorData data;
 
-		data.bdd = bddfactory.run(formula);
+		data.bdd = bddfactory.turnIntoBdd(formula);
 		auto bddset = manager.getVariables({variable});
 		Assert(bddset.size()==1);
 		data.bddvars = vector<const FOBDDVariable*>(bddset.cbegin(), bddset.cend());
@@ -113,7 +104,7 @@ namespace Tests{
 
 		BddGeneratorData data;
 
-		data.bdd = bddfactory.run(formula);
+		data.bdd = bddfactory.turnIntoBdd(formula);
 		auto bddset = manager.getVariables({variable});
 		Assert(bddset.size()==1);
 		data.bddvars = vector<const FOBDDVariable*>(bddset.cbegin(), bddset.cend());
@@ -156,7 +147,7 @@ namespace Tests{
 		formula = new QuantForm(SIGN::POS, QUANT::EXIST, {variable}, formula, FormulaParseInfo());
 		FOBDDManager manager;
 		FOBDDFactory bddfactory(&manager, NULL);
-		auto bdd = bddfactory.run(formula);
+		auto bdd = bddfactory.turnIntoBdd(formula);
 
 		auto bddvar = manager.getVariable(variable);
 		auto predkernel = manager.getAtomKernel(symbol, AtomKernelType::AKT_TWOVALUED, vector<const FOBDDArgument*>{bddvar});

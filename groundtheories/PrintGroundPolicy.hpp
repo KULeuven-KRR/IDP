@@ -1,9 +1,3 @@
-/************************************
-	PrintGroundTheory.hpp
-	this file belongs to GidL 2.0
-	(c) K.U.Leuven
-************************************/
-
 #ifndef PRINTGROUNDTHEORY_HPP_
 #define PRINTGROUNDTHEORY_HPP_
 
@@ -32,14 +26,18 @@ class TsSet;
 class PrintGroundPolicy {
 private:
 	InteractivePrintMonitor* monitor_;
-	Printer*			printer_;
+	Printer* printer_;
 
 public:
-	void polRecursiveDelete() { }
+	void polRecursiveDelete() {
+	}
 
-	Printer&	printer() { return *printer_; }
+	Printer& printer() {
+		return *printer_;
+	}
 
-	void initialize(InteractivePrintMonitor* monitor, AbstractStructure* str, GroundTranslator* translator, GroundTermTranslator* termtranslator, Options* opts){
+	void initialize(InteractivePrintMonitor* monitor, AbstractStructure* str, GroundTranslator* translator, GroundTermTranslator* termtranslator,
+			Options* opts) {
 		monitor_ = monitor;
 		printer_ = Printer::create(opts, *monitor);
 		//TODO translation option as argument to constructor
@@ -49,35 +47,35 @@ public:
 		printer().startTheory();
 	}
 
-	void polStartTheory(GroundTranslator* ){
+	void polStartTheory(GroundTranslator*) {
 	}
 
-	void polEndTheory(){
+	void polEndTheory() {
 		printer().endTheory();
 	}
 
 	void polAdd(const GroundClause& cl) {
-		printer().visit(cl);
+		printer().print(cl);
 	}
 
 	void polAdd(const TsSet& tsset, int setnr, bool weighted) {
-		GroundSet* set = new GroundSet(setnr,tsset.literals(),tsset.weights());
-		printer().visit(set);
-		delete(set);
+		auto set = new GroundSet(setnr, tsset.literals(), tsset.weights());
+		printer().print(set);
+		delete (set);
 	}
 
 	void polAdd(int head, AggTsBody* body) {
-		GroundAggregate* agg = new GroundAggregate(body->aggtype(),body->lower(),body->type(),head,body->setnr(),body->bound());
-		printer().visit(agg);
-		delete(agg);
+		auto agg = new GroundAggregate(body->aggtype(), body->lower(), body->type(), head, body->setnr(), body->bound());
+		printer().print(agg);
+		delete (agg);
 	}
 
-
-	void polAdd(GroundDefinition* def){
-		for(auto i=def->begin(); i!=def->end(); ++i){
-			if(typeid(PCGroundRule*)==typeid((*i).second)){
+	void polAdd(GroundDefinition* def) {
+		for (auto i = def->begin(); i != def->end(); ++i) {
+			if(sametypeid<PCGroundRule>(*(*i).second)){
 				polAdd(def->id(), dynamic_cast<PCGroundRule*>((*i).second));
-			}else{
+			} else {
+				Assert(sametypeid<AggGroundRule>(*(*i).second));
 				polAdd(def->id(), dynamic_cast<AggGroundRule*>((*i).second));
 			}
 		}
@@ -85,23 +83,29 @@ public:
 
 	void polAdd(int defnr, PCGroundRule* rule) {
 		printer().checkOrOpen(defnr);
-		printer().visit(rule);
-		delete(rule);
+		printer().print(rule);
+		delete (rule);
 	}
 
 	void polAdd(int defnr, AggGroundRule* rule) {
 		printer().checkOrOpen(defnr);
-		printer().visit(rule);
+		printer().print(rule);
 	}
 
 	void polAdd(int tseitin, CPTsBody* body) {
-		CPReification* reif = new CPReification(tseitin,body);
-		printer().visit(reif);
-		delete(reif);
+		auto reif = new CPReification(tseitin, body);
+		printer().print(reif);
+		delete (reif);
 	}
 
-	std::ostream& 	polPut(std::ostream& s, GroundTranslator*, GroundTermTranslator*, bool longnames = false)	const { Assert(false); return s;	}
-	std::string 	polToString(GroundTranslator*, GroundTermTranslator*, bool longnames = false) 				const { Assert(false); return "";	}
+	std::ostream& polPut(std::ostream& s, GroundTranslator*, GroundTermTranslator*, bool longnames = false) const {
+		Assert(false);
+		return s;
+	}
+	std::string polToString(GroundTranslator*, GroundTermTranslator*, bool longnames = false) const {
+		Assert(false);
+		return "";
+	}
 };
 
 #endif /* PRINTGROUNDTHEORY_HPP_ */

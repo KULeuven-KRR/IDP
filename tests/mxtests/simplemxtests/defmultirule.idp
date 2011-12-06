@@ -1,14 +1,18 @@
 vocabulary V{
-	type x isa int
-	p(x)
+	type t
+	p(t)
+	q(t)
 }
 
 theory T:V{
-	prod{x: p(x): x}=10.
+	{
+		!x: p(x) <- ~q(x).
+		!y: p(y) <- q(y).
+	}
 }
 
 structure S:V{
-	x = {1..10}
+	t = {1..2}
 }
 
 procedure getExpectedNbOfModels(){

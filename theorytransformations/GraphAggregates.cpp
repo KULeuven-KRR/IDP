@@ -1,6 +1,7 @@
 #include "common.hpp"
 #include "theorytransformations/GraphAggregates.hpp"
 #include "theorytransformations/SplitComparisonChains.hpp"
+#include "utils/TheoryUtils.hpp"
 
 #include "vocabulary.hpp"
 #include "theory.hpp"
@@ -64,8 +65,7 @@ Formula* GraphAggregates::visit(EqChainForm* ef) {
 		}
 	}
 	if (containsaggregates) {
-		SplitComparisonChains splitter;
-		auto f = splitter.visit(ef);
+		auto f = FormulaUtils::splitComparisonChains(ef);
 		return f->accept(this);
 	} else {
 		return ef;

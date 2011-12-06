@@ -39,6 +39,9 @@ RuleGrounder::RuleGrounder(HeadGrounder* hgr, FormulaGrounder* bgr, InstGenerato
 
 void RuleGrounder::run(unsigned int defid, GroundDefinition* grounddefinition) const {
 	for(bodygenerator()->begin(); not bodygenerator()->isAtEnd(); bodygenerator()->operator ++()){
+		if(GlobalData::instance()->terminateRequested()){
+			throw IdpException("Terminate requested");
+		}
 		ConjOrDisj body;
 		_bodygrounder->run(body);
 		bool conj = body.type==Conn::CONJ;
@@ -49,6 +52,9 @@ void RuleGrounder::run(unsigned int defid, GroundDefinition* grounddefinition) c
 		}
 
 		for(_headgenerator->begin(); not _headgenerator->isAtEnd(); _headgenerator->operator ++()){
+			if(GlobalData::instance()->terminateRequested()){
+				throw IdpException("Terminate requested");
+			}
 			Lit head = _headgrounder->run();
 			Assert(head != _true);
 			if(head != _false) {
@@ -58,7 +64,7 @@ void RuleGrounder::run(unsigned int defid, GroundDefinition* grounddefinition) c
 				}
 				grounddefinition->addPCRule(head, body.literals, conj, context()._tseitin == TsType::RULE);
 			}
-		};
+		}
 	}
 }
 
@@ -75,12 +81,15 @@ HeadGrounder::HeadGrounder(AbstractGroundTheory* gt,
 		  _pfsymbol(s){
 }
 
-int HeadGrounder::run() const {
+Lit HeadGrounder::run() const {
 	// Run subterm grounders
 	bool alldomelts = true;
 	vector<GroundTerm> groundsubterms(_subtermgrounders.size());
 	ElementTuple args(_subtermgrounders.size());
 	for(unsigned int n = 0; n < _subtermgrounders.size(); ++n) {
+		if(GlobalData::instance()->terminateRequested()){
+			throw IdpException("Terminate requested");
+		}
 		groundsubterms[n] = _subtermgrounders[n]->run();
 		if(groundsubterms[n].isVariable) {
 			alldomelts = false;
@@ -99,7 +108,7 @@ int HeadGrounder::run() const {
 	}
 
 	// Run instance checkers and return grounding
-	int atom = _grounding->translator()->translate(_symbol,args);
+	Lit atom = _grounding->translator()->translate(_symbol,args);
 	if(_truechecker->isInInterpretation(args)) {
 		_grounding->addUnitClause(atom);
 	}else if(_falsechecker->isInInterpretation(args)) {
@@ -144,6 +153,10 @@ void LazyRuleGrounder::ground(const Lit& head, const ElementTuple& headargs){
 	overwriteVars(originstantiation, headvarinstlist);
 
 	for(bodygenerator()->begin(); not bodygenerator()->isAtEnd(); bodygenerator()->operator ++()){
+		if(GlobalData::instance()->terminateRequested()){
+			throw IdpException("Terminate requested");
+		}
+
 		ConjOrDisj body;
 		bodygrounder()->run(body);
 		bool conj = body.type==Conn::CONJ;

@@ -2047,8 +2047,10 @@ const FOBDD* FOBDDManager::make_more_true(const FOBDD* bdd, const set<const FOBD
 		} else {
 			if (chance > 0)
 				invkernelans = numeric_limits<double>::max();
-			else
+			else{
 				kernelans = 1;
+				return bdd; // FIXME was no here orginally!
+			}
 		}
 		double falsebranchweight =
 				(invkernelans * weight_per_ans < numeric_limits<double>::max()) ? invkernelans * weight_per_ans : numeric_limits<double>::max();

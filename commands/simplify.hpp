@@ -29,7 +29,7 @@ public:
 		// Translate the query to a bdd
 		FOBDDManager manager;
 		FOBDDFactory factory(&manager);
-		const FOBDD* bdd = factory.run(q->query());
+		const FOBDD* bdd = factory.turnIntoBdd(q->query());
 		
 		// Simplify the bdd
 		const FOBDD* simplifiedbdd = manager.simplify(bdd);

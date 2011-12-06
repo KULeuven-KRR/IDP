@@ -1,9 +1,3 @@
-/************************************
-	CountNrOfSubformulas.hpp
-	this file belongs to GidL 2.0
-	(c) K.U.Leuven
-************************************/
-
 #ifndef COUNTSUBFORMULAS_HPP_
 #define COUNTSUBFORMULAS_HPP_
 
@@ -11,6 +5,7 @@
  * Count the number of subformulas
  */
 class CountNbOfSubFormulas: public TheoryVisitor {
+	VISITORFRIENDS()
 private:
 	int _result;
 	void addAndTraverse(const Formula* f) {
@@ -18,12 +13,13 @@ private:
 		traverse(f);
 	}
 public:
-	CountNbOfSubFormulas() :
-			_result(0) {
-	}
-	int result() const {
+	template<typename T>
+	int execute(const T t){
+		_result = 0;
+		t->accept(this);
 		return _result;
 	}
+protected:
 	void visit(const PredForm* f) {
 		addAndTraverse(f);
 	}

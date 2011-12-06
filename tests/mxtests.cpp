@@ -68,11 +68,11 @@ vector<string> generateListOfLazyMXnbFiles() {
 	struct dirent *ent;
 	vector<string> testdirs {"simplemxtests/", "applicationmxtests/" };
 	for (auto currTestDir = testdirs.cbegin(); currTestDir != testdirs.cend(); ++currTestDir) {
-		dir = opendir((string(TESTDIR) + "lazymxtests/" + (*currTestDir)).c_str());
+		dir = opendir((string(TESTDIR) + "mxtests/" + (*currTestDir)).c_str());
 		if (dir != NULL) {
 			while ((ent = readdir(dir)) != NULL) {
 				if (ent->d_name[0] != '.') {
-					mxtests.push_back("lazymxtests/" +(*currTestDir) + ent->d_name);
+					mxtests.push_back("mxtests/" +(*currTestDir) + ent->d_name);
 				}
 			}
 			closedir(dir);
@@ -115,13 +115,13 @@ TEST_P(MXnbTest, DoesMX) {
 	ASSERT_EQ(result, Status::SUCCESS);
 }
 
-TEST_P(MXnbTest, DoesMXWithBounds) {
+/*TEST_P(MXnbTest, DoesMXWithBounds) {
 	string testfile(string(TESTDIR) + "mxnbofmodelstestwithbounds.idp");
 	cerr << "Testing " << string(TESTDIR) + GetParam() << "\n";
 	Status result = Status::FAIL;
 	ASSERT_NO_THROW( result = test( { string(TESTDIR) + GetParam(), testfile }););
 	ASSERT_EQ(result, Status::SUCCESS);
-}
+}*/
 
 TEST_P(MXsatTest, DoesMX) {
 	string testfile(string(TESTDIR) + "mxsattest.idp");
@@ -131,13 +131,13 @@ TEST_P(MXsatTest, DoesMX) {
 	ASSERT_EQ(result, Status::SUCCESS);
 }
 
-TEST_P(LazyMXnbTest, DoesMX) {
+/*TEST_P(LazyMXnbTest, DoesMX) {
 	string testfile(string(TESTDIR) + "mxlazynbofmodelstest.idp");
 	cerr << "Testing " << string(TESTDIR) + GetParam() << "\n";
 	Status result = Status::FAIL;
 	ASSERT_NO_THROW( result = test( { string(TESTDIR) + GetParam(), testfile }););
 	ASSERT_EQ(result, Status::SUCCESS);
-}
+}*/
 
 INSTANTIATE_TEST_CASE_P(ModelExpansion, MXnbTest, ::testing::ValuesIn(generateListOfMXnbFiles()));
 

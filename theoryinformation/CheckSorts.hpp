@@ -1,9 +1,3 @@
-/************************************
-  	CheckSorts.hpp
-	this file belongs to GidL 2.0
-	(c) K.U.Leuven
-************************************/
-
 #ifndef CHECKSORTS_HPP_
 #define CHECKSORTS_HPP_
 
@@ -12,17 +6,18 @@
 class Vocabulary;
 
 class CheckSorts: public TheoryVisitor {
+	VISITORFRIENDS()
 private:
 	Vocabulary* _vocab;
 
 public:
-	CheckSorts(Formula* f, Vocabulary* v);
-	CheckSorts(Term* t, Vocabulary* v);
-	CheckSorts(Definition* d, Vocabulary* v);
-	CheckSorts(FixpDef* d, Vocabulary* v);
+	template<typename T>
+	void execute(T f, Vocabulary* v){
+		_vocab = v;
+		f->accept(this);
+	}
 
-	virtual ~CheckSorts() {}
-
+protected:
 	void visit(const PredForm*);
 	void visit(const EqChainForm*);
 	void visit(const FuncTerm*);

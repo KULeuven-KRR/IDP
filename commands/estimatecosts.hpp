@@ -31,7 +31,7 @@ public:
 		FOBDDFactory m(&manager);
 		std::set<Variable*> sv(q->variables().cbegin(), q->variables().cend());
 		auto svbdd = manager.getVariables(sv);
-		auto bdd = m.run(q->query());
+		auto bdd = m.turnIntoBdd(q->query());
 		InternalArgument ia;
 		ia._type = AT_DOUBLE;
 		manager.optimizequery(bdd, svbdd, { }, structure);
@@ -56,7 +56,7 @@ public:
 		std::set<Variable*> sv(q->variables().cbegin(), q->variables().cend());
 		std::set<const FOBDDVariable*> svbdd = manager.getVariables(sv);
 		std::set<const FOBDDDeBruijnIndex*> si;
-		const FOBDD* bdd = m.run(q->query());
+		const FOBDD* bdd = m.turnIntoBdd(q->query());
 		InternalArgument ia;
 		ia._type = AT_DOUBLE;
 		ia._value._double = manager.estimatedNrAnswers(bdd, svbdd, si, structure);

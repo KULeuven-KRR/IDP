@@ -1,9 +1,3 @@
-/************************************
-	FoBddFactory.hpp
-	this file belongs to GidL 2.0
-	(c) K.U.Leuven
-************************************/
-
 #ifndef FOBDDFACTORY_HPP_
 #define FOBDDFACTORY_HPP_
 
@@ -30,6 +24,7 @@ class FOBDDManager;
  * Class to transform first-order formulas to BDDs
  */
 class FOBDDFactory: public TheoryVisitor {
+	VISITORFRIENDS()
 private:
 	FOBDDManager* _manager;
 	Vocabulary* _vocabulary;
@@ -56,8 +51,8 @@ public:
 			_manager(m), _vocabulary(v) {
 	}
 
-	const FOBDD* run(const Formula* f);
-	const FOBDDArgument* run(const Term* t);
+	const FOBDD* turnIntoBdd(const Formula* f);
+	const FOBDDArgument* turnIntoBdd(const Term* t);
 };
 
 #endif /* FOBDDFACTORY_HPP_ */

@@ -16,17 +16,9 @@
 #include "visitors/TheoryVisitor.hpp"
 #include "visitors/TheoryMutatingVisitor.hpp"
 
+#include "utils/TheoryUtils.hpp"
+
 using namespace std;
-
-/**********************
-	TheoryComponent
-**********************/
-
-string TheoryComponent::toString(unsigned int spaces) const {
-	stringstream sstr;
-	put(sstr, spaces);
-	return sstr.str();
-}
 
 /**************
 	Formula
@@ -75,8 +67,7 @@ bool Formula::contains(const Variable* v) const {
 }
 
 bool Formula::contains(const PFSymbol* s) const {
-	CheckContainment cc(s);
-	return cc.containsSymbol(this);
+	return FormulaUtils::containsSymbol(s, this);
 }
 
 ostream& operator<<(ostream& output, const TheoryComponent& f) {
@@ -112,14 +103,6 @@ PredForm* PredForm::clone(const map<Variable*, Variable*>& mvv) const {
 	}
 	PredForm* pf = new PredForm(sign(), _symbol, na, pi().clone(mvv));
 	return pf;
-}
-
-void PredForm::accept(TheoryVisitor* v) const {
-	v->visit(this);
-}
-
-Formula* PredForm::accept(TheoryMutatingVisitor* v) {
-	return v->visit(this);
 }
 
 ostream& PredForm::put(ostream& output, bool longnames, unsigned int spaces) const {
@@ -184,14 +167,6 @@ EqChainForm* EqChainForm::clone(const map<Variable*, Variable*>& mvv) const {
 	return ef;
 }
 
-void EqChainForm::accept(TheoryVisitor* v) const {
-	v->visit(this);
-}
-
-Formula* EqChainForm::accept(TheoryMutatingVisitor* v) {
-	return v->visit(this);
-}
-
 ostream& EqChainForm::put(ostream& output, bool longnames, unsigned int spaces) const {
 	printTabs(output, spaces);
 	if (isNeg(sign())) { output << '~'; }
@@ -232,14 +207,6 @@ EquivForm* EquivForm::clone(const map<Variable*, Variable*>& mvv) const {
 	return ef;
 }
 
-void EquivForm::accept(TheoryVisitor* v) const {
-	v->visit(this);
-}
-
-Formula* EquivForm::accept(TheoryMutatingVisitor* v) {
-	return v->visit(this);
-}
-
 ostream& EquivForm::put(ostream& output, bool longnames, unsigned int spaces) const {
 	printTabs(output, spaces);
 	output << '(';
@@ -275,14 +242,6 @@ BoolForm* BoolForm::clone(const map<Variable*, Variable*>& mvv) const {
 	}
 	BoolForm* bf = new BoolForm(sign(), _conj, ns, pi().clone(mvv));
 	return bf;
-}
-
-void BoolForm::accept(TheoryVisitor* v) const {
-	v->visit(this);
-}
-
-Formula* BoolForm::accept(TheoryMutatingVisitor* v) {
-	return v->visit(this);
 }
 
 ostream& BoolForm::put(ostream& output, bool longnames, unsigned int spaces) const {
@@ -334,14 +293,6 @@ QuantForm* QuantForm::clone(const map<Variable*, Variable*>& mvv) const {
 	return qf;
 }
 
-void QuantForm::accept(TheoryVisitor* v) const {
-	v->visit(this);
-}
-
-Formula* QuantForm::accept(TheoryMutatingVisitor* v) {
-	return v->visit(this);
-}
-
 ostream& QuantForm::put(ostream& output, bool longnames, unsigned int spaces) const {
 	printTabs(output, spaces);
 	if (isNeg(sign())) { output << '~'; }
@@ -384,14 +335,6 @@ AggForm* AggForm::clone(const map<Variable*, Variable*>& mvv) const {
 	return new AggForm(sign(), nl, _comp, nr, pi().clone(mvv));
 }
 
-void AggForm::accept(TheoryVisitor* v) const {
-	v->visit(this);
-}
-
-Formula* AggForm::accept(TheoryMutatingVisitor* v) {
-	return v->visit(this);
-}
-
 ostream& AggForm::put(ostream& output, bool longnames, unsigned int spaces) const {
 	printTabs(output, spaces);
 	if (isNeg(sign())) { output << '~'; }
@@ -425,14 +368,6 @@ void Rule::recursiveDelete() {
 		delete (*it);
 	}
 	delete (this);
-}
-
-void Rule::accept(TheoryVisitor* v) const {
-	v->visit(this);
-}
-
-Rule* Rule::accept(TheoryMutatingVisitor* v) {
-	return v->visit(this);
 }
 
 ostream& Rule::put(ostream& output, bool longnames, unsigned int spaces) const {
@@ -494,14 +429,6 @@ void Definition::rule(unsigned int n, Rule* r) {
 	}
 }
 
-void Definition::accept(TheoryVisitor* v) const {
-	v->visit(this);
-}
-
-Definition* Definition::accept(TheoryMutatingVisitor* v) {
-	return v->visit(this);
-}
-
 ostream& Definition::put(ostream& output, bool longnames, unsigned int spaces) const {
 	printTabs(output, spaces);
 	output << "{ ";
@@ -552,14 +479,6 @@ void FixpDef::rule(unsigned int n, Rule* r) {
 	for (auto it = _rules.cbegin(); it != _rules.cend(); ++it) {
 		_defsyms.insert((*it)->head()->symbol());
 	}
-}
-
-void FixpDef::accept(TheoryVisitor* v) const {
-	v->visit(this);
-}
-
-FixpDef* FixpDef::accept(TheoryMutatingVisitor* v) {
-	return v->visit(this);
 }
 
 ostream& FixpDef::put(ostream& output, bool longnames, unsigned int spaces) const {
@@ -639,31 +558,25 @@ void Theory::remove(Definition* d) {
 	}
 }
 
-void Theory::accept(TheoryVisitor* v) const {
-	v->visit(this);
-}
-
-Theory* Theory::accept(TheoryMutatingVisitor* v) {
-	return v->visit(this);
-}
-
-std::ostream& Theory::put(std::ostream& output, bool longnames, unsigned int spaces) const {
-	printTabs(output, spaces);
+std::ostream& Theory::put(std::ostream& output) const {
 	output << "theory " << name();
 	if (_vocabulary) {
 		output << " : " << vocabulary()->name();
 	}
 	output << " {\n";
+	pushtab();
+	output <<tabs();
 	for (auto it = _sentences.cbegin(); it != _sentences.cend(); ++it) {
-		(*it)->put(output, longnames, spaces + 2);
+		output <<toString(*it);
 	}
 	for (auto it = _definitions.cbegin(); it != _definitions.cend(); ++it) {
-		(*it)->put(output, longnames, spaces + 2);
+		output <<toString(*it);
 	}
 	for (auto it = _fixpdefs.cbegin(); it != _fixpdefs.cend(); ++it) {
-		(*it)->put(output, longnames, spaces + 2);
+		output <<toString(*it);
 	}
-	output << "}\n";
+	poptab();
+	output << "}";
 	return output;
 }
 

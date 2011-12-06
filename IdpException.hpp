@@ -18,7 +18,7 @@ public:
 
 	const char* what() const throw(){
 		std::stringstream ss;
-		ss <<exception::what() <<"\n" <<message <<"\n";
+		ss <<"IdpException: " <<message;
 		return ss.str().c_str();
 	}
 };

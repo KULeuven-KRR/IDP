@@ -1,20 +1,16 @@
-/************************************
-  	PushNegations.hpp
-	this file belongs to GidL 2.0
-	(c) K.U.Leuven
-************************************/
-
 #ifndef PUSHNEGATIONS_HPP_
 #define PUSHNEGATIONS_HPP_
 
 #include "visitors/TheoryMutatingVisitor.hpp"
 
 class PushNegations: public TheoryMutatingVisitor {
+	VISITORFRIENDS()
 public:
-	PushNegations() :
-			TheoryMutatingVisitor() {
+	template<typename T>
+	T execute(T t){
+		return t->accept(this);
 	}
-
+protected:
 	Formula* visit(PredForm*);
 	Formula* visit(EqChainForm*);
 	Formula* visit(EquivForm*);

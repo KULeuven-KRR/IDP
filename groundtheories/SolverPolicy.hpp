@@ -45,10 +45,7 @@ public:
 		return MinisatID::Literal(abs(lit),lit<0);
 	}
 
-	inline MinisatID::Weight createWeight(double weight){
-	#warning "Dangerous cast from double to int in adding rules to the solver"
-		return MinisatID::Weight(int(weight));	// TODO: remove cast when supported by the solver
-	}
+	MinisatID::Weight createWeight(double weight);
 
 	void initialize(SATSolver* solver, int verbosity, GroundTermTranslator* termtranslator);
 

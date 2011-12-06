@@ -30,6 +30,12 @@ void TheoryVisitor::visit(const AbstractGroundTheory* ) {
 	// TODO
 }
 
+class DefaultFormulaVisitor: TheoryVisitor{
+	VISITORFRIENDS()
+protected:
+	void visit(const Formula* f);
+};
+
 void TheoryVisitor::traverse(const Formula* f) {
 	for(size_t n = 0; n < f->subterms().size(); ++n) {
 		f->subterms()[n]->accept(this);

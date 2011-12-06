@@ -33,7 +33,7 @@ public:
 
 		FOBDDManager manager;
 		FOBDDFactory m(&manager);
-		const FOBDD* bdd = m.run(f);
+		const FOBDD* bdd = m.turnIntoBdd(f);
 
 		std::stringstream sstr;
 		manager.put(sstr,bdd);

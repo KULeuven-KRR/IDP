@@ -3863,10 +3863,16 @@ void generateMorePreciseStructures(const PredTable* cf, const ElementTuple& doma
 	vector<AbstractStructure*> partialfalsestructs;
 	if(function->partial()){
 		for (auto j = extensions.begin(); j < extensions.end(); ++j) {
+			if(GlobalData::instance()->terminateRequested()){
+				throw IdpException("Terminate requested");
+			}
 			partialfalsestructs.push_back((*j)->clone());
 		}
 	}
 	for (; not imageIterator.isAtEnd(); ++imageIterator) {
+		if(GlobalData::instance()->terminateRequested()){
+			throw IdpException("Terminate requested");
+		}
 		ElementTuple tuple(domainElementWithoutValue);
 		tuple.push_back(*imageIterator);
 		if (cf->contains(tuple)) {
@@ -3874,11 +3880,18 @@ void generateMorePreciseStructures(const PredTable* cf, const ElementTuple& doma
 		}
 
 		for (auto j = extensions.begin(); j < extensions.end(); ++j) {
+			if(GlobalData::instance()->terminateRequested()){
+				throw IdpException("Terminate requested");
+			}
 			auto news = (*j)->clone();
 			news->inter(function)->graphInter()->makeTrue(tuple);
+			news->clean();
 			newstructs.push_back(news);
 		}
 		for(auto j = partialfalsestructs.begin(); j<partialfalsestructs.end(); ++j){
+			if(GlobalData::instance()->terminateRequested()){
+				throw IdpException("Terminate requested");
+			}
 			(*j)->inter(function)->graphInter()->makeFalse(tuple);
 		}
 	}
@@ -3919,6 +3932,10 @@ std::vector<AbstractStructure*> Structure::generateAllTwoValuedExtensions() cons
 			if (not temp.isAtEnd()) {
 				allempty = false;
 			}
+
+			if(GlobalData::instance()->terminateRequested()){
+				throw IdpException("Terminate requested");
+			}
 		}
 		domainIterators.pop_back();
 
@@ -3957,10 +3974,16 @@ std::vector<AbstractStructure*> Structure::generateAllTwoValuedExtensions() cons
 		}else{
 			generateMorePreciseStructures(cf, domainElementWithoutValue, sorts.back(), function, inter, extensions);
 		}
+		if(GlobalData::instance()->terminateRequested()){
+			throw IdpException("Terminate requested");
+		}
 	}
 
 	//If some predicate is not two-valued, calculate all structures that are more precise in which this function is two-valued
 	for (auto i = _predinter.begin(); i != _predinter.end(); i++) {
+		if(GlobalData::instance()->terminateRequested()){
+			throw IdpException("Terminate requested");
+		}
 		auto pred = (*i).first;
 		auto inter = (*i).second;
 		Assert(inter!=NULL);
@@ -3970,12 +3993,19 @@ std::vector<AbstractStructure*> Structure::generateAllTwoValuedExtensions() cons
 
 		const PredTable* pf = inter->pf();
 		for (TableIterator ptIterator = inter->pt()->begin(); not ptIterator.isAtEnd(); ++ptIterator) {
+			if(GlobalData::instance()->terminateRequested()){
+				throw IdpException("Terminate requested");
+			}
+
 			if (not pf->contains(*ptIterator)) {
 				continue;
 			}
 
 			vector<AbstractStructure*> newstructs;
 			for (auto j = extensions.begin(); j < extensions.end(); ++j) {
+				if(GlobalData::instance()->terminateRequested()){
+					throw IdpException("Terminate requested");
+				}
 				auto news = (*j)->clone();
 				news->inter(pred)->makeTrue(*ptIterator);
 				newstructs.push_back(news);
@@ -4181,6 +4211,9 @@ void Structure::functionCheck() {
 }
 
 SortTable* Structure::inter(Sort* s) const {
+	if(s==NULL){ // TODO prevent error by introducing UnknownSort object (prevent nullpointers)
+		throw IdpException("Sort was NULL"); // TODO should become Assert
+	}
 	if (s->builtin()) {
 		return s->interpretation();
 	} else {
@@ -4267,6 +4300,7 @@ void Structure::materialize() {
 	}
 }
 
+//TODO Shouldn't this be approxClean?
 void Structure::clean() {
 	for (auto it = _predinter.cbegin(); it != _predinter.cend(); ++it) {
 		if (it->second->approxTwoValued()) {

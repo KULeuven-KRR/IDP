@@ -8,10 +8,18 @@
 #include <string>
 #include <map>
 
+#include "options.hpp"
+
 class Namespace;
 class DomainElementFactory;
 class Options;
 class CLConst;
+
+class TerminateMonitor{
+public:
+	virtual ~TerminateMonitor(){}
+	virtual void notifyTerminateRequested() = 0;
+};
 
 class GlobalData {
 private:
@@ -20,11 +28,15 @@ private:
 	std::map<std::string,CLConst*> clconsts;
 	DomainElementFactory* _domainelemFactory;
 
+	bool _terminateRequested;
+
 	Options* _options;
 	std::stack<unsigned int> _tabsizestack;
 
 	unsigned int _errorcount;
 	std::set<FILE*> _openfiles;
+
+	std::vector<TerminateMonitor*> monitors;
 
 	GlobalData();
 
@@ -35,6 +47,17 @@ public:
 	static DomainElementFactory* getGlobalDomElemFactory();
 	static Namespace* getGlobalNamespace();
 	static void close();
+
+	bool terminateRequested() const { return _terminateRequested; }
+	void addTerminationMonitor(TerminateMonitor* m){
+		monitors.push_back(m);
+	}
+	void notifyTerminateRequested() {
+		_terminateRequested = true;
+		for(auto i=monitors.cbegin(); i<monitors.cend(); ++i){
+			(*i)->notifyTerminateRequested();
+		}
+	}
 
 	Namespace* getNamespace() {
 		return _globalNamespace;
@@ -74,5 +97,12 @@ public:
 	void resetTabSize();
 	unsigned int getTabSize() const;
 };
+
+GlobalData* getGlobal();
+
+template<typename OptionType>
+typename OptionTypeTraits<OptionType>::ValueType getOption(OptionType type){
+	return getGlobal()->getOptions()->getValue(type);
+}
 
 #endif /* GLOBALDATA_HPP_ */

@@ -1,9 +1,3 @@
-/************************************
-	AddCompletion.hpp
-	this file belongs to GidL 2.0
-	(c) K.U.Leuven
-************************************/
-
 #ifndef ADDCOMPLETION_HPP_
 #define ADDCOMPLETION_HPP_
 
@@ -15,15 +9,19 @@ class Variable;
 class PFSymbol;
 
 class AddCompletion: public TheoryMutatingVisitor {
+	VISITORFRIENDS()
 private:
 	std::vector<Formula*> _result;
 	std::map<PFSymbol*, std::vector<Variable*> > _headvars;
 	std::map<PFSymbol*, std::vector<Formula*> > _interres;
 
 public:
-	AddCompletion() {
+	template<typename T>
+	T execute(T t){
+		return t->accept(this);
 	}
 
+protected:
 	Theory* visit(Theory*);
 	Definition* visit(Definition*);
 	Rule* visit(Rule*);

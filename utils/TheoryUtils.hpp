@@ -1,9 +1,3 @@
-/************************************
-  	TheoryUtils.hpp
-	this file belongs to GidL 2.0
-	(c) K.U.Leuven
-************************************/
-
 #ifndef THEORYUTILS_HPP_
 #define THEORYUTILS_HPP_
 
@@ -28,26 +22,29 @@ class AggForm;
 
 // TODO what does it mean to pass NULL as vocabulary?
 
-template<typename Transformer, typename Construct>
-Construct* transform(Construct* object) {
+// FIXME printing
+template<typename Transformer, typename ReturnType, typename Construct, typename ... Values>
+ReturnType transform(Construct* object, Values ... parameters) {
 	Transformer t;
-	return object->accept(&t);
+	if(getOption(IntType::GROUNDVERBOSITY)>1){
+		std::cerr <<"Executing " <<typeid(Transformer).name() <<" on: " <<toString(object) <<"\nResulted in: ";
+	}
+	ReturnType result = t.execute(object, parameters...);
+	if(getOption(IntType::GROUNDVERBOSITY)>1){
+		std::cerr <<"\n";
+		//FIXME make everything printable? std::clog <<toString(result) <<"\n";
+		// => create a static checkable condition whether something is printable via put! If not, do <<
+	}
+	return result;
 }
 
 template<typename Transformer, typename Construct, typename ... Values>
-Construct* transform(Construct* object, Values ... parameters) {
-	Transformer t(parameters...);
-	if(GlobalData::instance()->getOptions()->getValue(IntType::GROUNDVERBOSITY)>1){
-		std::cerr <<"Executing " <<typeid(Transformer).name() <<" on: ";
-		object->put(std::cerr);
-		std::cerr <<"\nResulted in: ";
+void transform(Construct* object, Values ... parameters) {
+	Transformer t;
+	if(getOption(IntType::GROUNDVERBOSITY)>1){
+		std::cerr <<"Executing " <<typeid(Transformer).name() <<" on: " <<toString(object) <<"\nResulted in: ";
 	}
-	auto result = object->accept(&t);
-	if(GlobalData::instance()->getOptions()->getValue(IntType::GROUNDVERBOSITY)>1){
-		result->put(std::cerr);
-		std::cerr <<"\n";
-	}
-	return result;
+	t.execute(object, parameters...);
 }
 
 namespace FormulaUtils {
@@ -70,6 +67,14 @@ Formula* removeEquivalences(Formula*);
 /** Move all nested terms out of all formulas **/
 Formula* flatten(Formula*);
 
+void checkSorts(Vocabulary* v, Term* f);
+void checkSorts(Vocabulary* v, Rule* f);
+void checkSorts(Vocabulary* v, Formula* f);
+
+void deriveSorts(Vocabulary* v, Term* f);
+void deriveSorts(Vocabulary* v, Rule* f);
+void deriveSorts(Vocabulary* v, Formula* f);
+
 /** Recursively rewrite all function terms to their predicate form **/
 Formula* graphFunctions(Formula* f);
 Formula* graphAggregates(Formula* f);
@@ -83,9 +88,14 @@ Formula* unnestPartialTerms(Formula* f, Context context, Vocabulary* voc = NULL)
 Formula* unnestThreeValuedTerms(Formula*, AbstractStructure*, Context context, bool cpsupport = false, const std::set<const PFSymbol*> cpsymbols =
 		std::set<const PFSymbol*>());
 
+/** Non-recursively move terms that are three-valued in a given structure outside of the head of the rule **/
+Rule* unnestThreeValuedTerms(Rule*, AbstractStructure*, Context context, bool cpsupport = false, const std::set<const PFSymbol*> cpsymbols =
+		std::set<const PFSymbol*>());
+
 /** Returns true iff at least one FuncTerm/AggTerm occurs in the given formula **/
 bool containsFuncTerms(Formula* f);
 bool containsAggTerms(Formula* f);
+bool containsSymbol(const PFSymbol* s, const Formula* f);
 
 /** Replace the given term by the given variable in the given formula **/
 Formula* substituteTerm(Formula*, Term*, Variable*);

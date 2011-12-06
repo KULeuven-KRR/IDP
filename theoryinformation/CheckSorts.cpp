@@ -1,9 +1,3 @@
-/************************************
-  	CheckSorts.cpp
-	this file belongs to GidL 2.0
-	(c) K.U.Leuven
-************************************/
-
 #include "theoryinformation/CheckSorts.hpp"
 
 #include "vocabulary.hpp"
@@ -12,23 +6,6 @@
 #include "error.hpp"
 
 using namespace std;
-
-CheckSorts::CheckSorts(Formula* f, Vocabulary* v) :
-		_vocab(v) {
-	f->accept(this);
-}
-CheckSorts::CheckSorts(Term* t, Vocabulary* v) :
-		_vocab(v) {
-	t->accept(this);
-}
-CheckSorts::CheckSorts(Definition* d, Vocabulary* v) :
-		_vocab(v) {
-	d->accept(this);
-}
-CheckSorts::CheckSorts(FixpDef* d, Vocabulary* v) :
-		_vocab(v) {
-	d->accept(this);
-}
 
 void CheckSorts::visit(const PredForm* pf) {
 	PFSymbol* s = pf->symbol();

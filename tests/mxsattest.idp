@@ -2,6 +2,7 @@
 
 procedure main(){
 	stdoptions.nrmodels=1
+	stdoptions.timeout = 5
 	stdoptions.nbmodelequivalent = true
 	stdoptions.groundwithbounds = false
 	solution = mx::one(T, S, stdoptions)

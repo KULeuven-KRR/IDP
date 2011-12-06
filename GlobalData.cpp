@@ -10,6 +10,7 @@ using namespace std;
 
 GlobalData::GlobalData() :
 		_globalNamespace(Namespace::createGlobal()), _inserter(_globalNamespace), _domainelemFactory(DomainElementFactory::createGlobal()),
+		_terminateRequested(false),
 		_options(new Options("stdoptions", ParseInfo())), _tabsizestack(), _errorcount(0) {
 	_tabsizestack.push(0);
 }
@@ -91,4 +92,8 @@ void GlobalData::resetTabSize(){
 }
 unsigned int GlobalData::getTabSize() const{
 	return _tabsizestack.top();
+}
+
+GlobalData* getGlobal(){
+	return GlobalData::instance();
 }

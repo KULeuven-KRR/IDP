@@ -1,9 +1,3 @@
-/************************************
- TheoryUtils.cpp
- this file belongs to GidL 2.0
- (c) K.U.Leuven
- ************************************/
-
 #include "utils/TheoryUtils.hpp"
 
 #include "theory.hpp"
@@ -41,123 +35,145 @@ using namespace std;
 
 namespace TermUtils {
 SetExpr* moveThreeValuedTerms(SetExpr* f, AbstractStructure* structure, Context context, bool cpsupport, const std::set<const PFSymbol*> cpsymbols) {
-	return transform<UnnestThreeValuedTerms>(f, structure, context, cpsupport, cpsymbols);
+	transform<UnnestThreeValuedTerms>(f, structure, context, cpsupport, cpsymbols);
+	return f;
 }
 
 bool isPartial(Term* term) {
-	CheckPartialTerm pc;
-	return pc.run(term);
+	return transform<CheckPartialTerm, bool>(term);
 }
 }
 
 namespace SetUtils {
 bool approxTwoValued(SetExpr* exp, AbstractStructure* str) {
-	ApproxCheckTwoValued tvc(str);
-	exp->accept(&tvc);
-	return tvc.returnvalue();
+	return transform<ApproxCheckTwoValued, bool>(str, exp);
 }
 }
 
 namespace DefinitionUtils {
 std::set<PFSymbol*> opens(Definition* d) {
-	CollectOpensOfDefinitions collector;
-	return collector.run(d);
+	return transform<CollectOpensOfDefinitions, std::set<PFSymbol*>>(d);
 }
 }
 
 namespace FormulaUtils {
 Formula* splitComparisonChains(Formula* f, Vocabulary* v) {
-	return transform<SplitComparisonChains>(f, v);
+	return transform<SplitComparisonChains, Formula*>(f, v);
 }
 
 Formula* unnestTerms(Formula* f, Context poscontext) {
-	return transform<UnnestTerms>(f, poscontext);
+	return transform<UnnestTerms, Formula*>(f, poscontext);
 }
 
 Formula* removeEquivalences(Formula* f) {
-	return transform<RemoveEquivalences>(f);
+	return transform<RemoveEquivalences, Formula*>(f);
 }
 
 Formula* flatten(Formula* f) {
-	return transform<RemoveEquivalences>(f);
+	return transform<RemoveEquivalences, Formula*>(f);
+}
+
+void checkSorts(Vocabulary* v, Rule* f){
+	transform<CheckSorts>(f, v);
+}
+void checkSorts(Vocabulary* v, Formula* f){
+	transform<CheckSorts>(f, v);
+}
+void checkSorts(Vocabulary* v, Term* f){
+	transform<CheckSorts>(f, v);
+}
+
+void deriveSorts(Vocabulary* v, Rule* f){
+	transform<DeriveSorts>(f, v);
+}
+void deriveSorts(Vocabulary* v, Formula* f){
+	transform<DeriveSorts>(f, v);
+}
+void deriveSorts(Vocabulary* v, Term* f){
+	transform<DeriveSorts>(f, v);
 }
 
 Formula* graphFunctions(Formula* f) {
-	return transform<GraphFunctions>(f);
+	return transform<GraphFunctions, Formula*>(f);
 }
 
 Formula* graphAggregates(Formula* f) {
-	return transform<GraphAggregates>(f);
+	return transform<GraphAggregates, Formula*>(f);
+}
+
+Formula* splitProducts(Formula* f){
+	return transform<SplitProducts, Formula*>(f);
 }
 
 
 Formula* unnestPartialTerms(Formula* f, Context context, Vocabulary* voc) {
-	return transform<UnnestPartialTerms>(f, context, voc);
+	return transform<UnnestPartialTerms, Formula*>(f, context, voc);
 }
 
 Formula* unnestThreeValuedTerms(Formula* f, AbstractStructure* structure, Context context, bool cpsupport,
 		const std::set<const PFSymbol*> cpsymbols) {
-	return transform<UnnestThreeValuedTerms>(f, structure, context, cpsupport, cpsymbols);
+	return transform<UnnestThreeValuedTerms, Formula*>(f, structure, context, cpsupport, cpsymbols);
+}
+
+Rule* unnestThreeValuedTerms(Rule* r, AbstractStructure* structure, Context context, bool cpsupport,
+		const std::set<const PFSymbol*> cpsymbols) {
+	return transform<UnnestThreeValuedTerms, Rule*>(r, structure, context, cpsupport, cpsymbols);
 }
 
 bool containsFuncTerms(Formula* f) {
-	CheckContainsFuncTerms checker;
-	return checker.containsFuncTerms(f);
+	return transform<CheckContainsFuncTerms, bool>(f);
 }
 
 bool containsAggTerms(Formula* f) {
-	CheckContainsAggTerms checker;
-	return checker.containsAggTerms(f);
+	return transform<CheckContainsFuncTerms, bool>(f);
+}
+
+bool containsSymbol(const PFSymbol* s, const Formula* f) {
+	return transform<CheckContainment, bool>(s, f);
 }
 
 AbstractTheory* pushNegations(AbstractTheory* f) {
-	return transform<PushNegations>(f);
+	return transform<PushNegations, AbstractTheory*>(f);
 }
 
 AbstractTheory* graphFunctions(AbstractTheory* f) {
-	return transform<GraphFunctions>(f);
+	return transform<GraphFunctions, AbstractTheory*>(f);
 }
 
 AbstractTheory* unnestTerms(AbstractTheory* f) {
-	return transform<UnnestTerms>(f);
+	return transform<UnnestTerms, AbstractTheory*>(f);
 }
 
 Formula* substituteTerm(Formula* f, Term* t, Variable* v) {
-	return transform<SubstituteTerm>(f, t, v);
+	return transform<SubstituteTerm, Formula*>(f, t, v);
 }
 
 AbstractTheory* removeEquivalences(AbstractTheory* f) {
-	return transform<RemoveEquivalences>(f);
+	return transform<RemoveEquivalences, AbstractTheory*>(f);
 }
 
 AbstractTheory* flatten(AbstractTheory* f) {
-	return transform<Flatten>(f);
+	return transform<Flatten, AbstractTheory*>(f);
 }
 
 AbstractTheory* splitComparisonChains(AbstractTheory* f) {
-	return transform<SplitComparisonChains>(f);
+	return transform<SplitComparisonChains, AbstractTheory*>(f);
 }
 
 AbstractTheory* pushQuantifiers(AbstractTheory* f) {
-	return transform<PushQuantifications>(f);
+	return transform<PushQuantifications, AbstractTheory*>(f);
 }
 
 AbstractTheory* graphAggregates(AbstractTheory* f) {
-	return transform<GraphAggregates>(f);
-}
-
-AbstractTheory* splitProducts(AbstractTheory* f){
-	return transform<SplitProducts>(f);
+	return transform<GraphAggregates, AbstractTheory*>(f);
 }
 
 AbstractTheory* addCompletion(AbstractTheory* f) {
-	return transform<AddCompletion>(f);
+	return transform<AddCompletion, AbstractTheory*>(f);
 }
 
 int nrSubformulas(AbstractTheory* f) {
-	CountNbOfSubFormulas checker;
-	f->accept(&checker);
-	return checker.result();
+	return transform<CountNbOfSubFormulas, int>(f);
 }
 
 AbstractTheory* merge(AbstractTheory* at1, AbstractTheory* at2) {
@@ -184,7 +200,7 @@ AbstractTheory* merge(AbstractTheory* at1, AbstractTheory* at2) {
 double estimatedCostAll(PredForm* query, const std::set<Variable*> freevars, bool inverse, AbstractStructure* structure) {
 	FOBDDManager manager;
 	FOBDDFactory factory(&manager);
-	const FOBDD* bdd = factory.run(query);
+	auto bdd = factory.turnIntoBdd(query);
 	if (inverse) {
 		bdd = manager.negation(bdd);
 	}

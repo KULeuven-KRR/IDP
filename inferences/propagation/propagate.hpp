@@ -241,6 +241,7 @@ public:
 
 template<class InterpretationFactory, class Domain>
 class TypedFOPropagator : public FOPropagator {
+	VISITORFRIENDS()
 private:
 	Options*												_options;
 	int														_verbosity;
@@ -269,18 +270,18 @@ private:
 	bool admissible(Domain*, Domain*) const;	//!< Returns true iff the first domain is an allowed
 															//!< replacement of the second domain
 
-public:
-	TypedFOPropagator(InterpretationFactory*, FOPropScheduler*, Options*);
-
-	void run();		//!< Apply propagations until the propagation queue is empty
-
-	// Visitor
+protected:
 	void visit(const PredForm*);
 	void visit(const EqChainForm*);
 	void visit(const EquivForm*);
 	void visit(const BoolForm*);
 	void visit(const QuantForm*);
 	void visit(const AggForm*);
+
+public:
+	TypedFOPropagator(InterpretationFactory*, FOPropScheduler*, Options*);
+
+	void doPropagation();		//!< Apply propagations until the propagation queue is empty
 
 	AbstractStructure*	currstructure(AbstractStructure* str) const;
 		//!< Obtain the resulting structure

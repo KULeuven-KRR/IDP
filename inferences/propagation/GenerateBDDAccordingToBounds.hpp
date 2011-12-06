@@ -13,6 +13,7 @@ class FOBDDVariable;
 typedef std::map<PFSymbol*, const FOBDD*> Bound;
 
 class GenerateBDDAccordingToBounds: public TheoryVisitor {
+	VISITORFRIENDS()
 private:
 	FOBDDManager* _manager;
 	Bound _ctbounds, _cfbounds;
@@ -20,16 +21,19 @@ private:
 
 	TruthType _type;
 	const FOBDD* _result;
+
+	const FOBDD* prunebdd(const FOBDD*, const std::vector<const FOBDDVariable*>&, AbstractStructure*, double);
+
+	/** Make the symbolic structure less precise, based on the given structure **/
+	void filter(AbstractStructure* structure, double max_cost_per_answer);
+
+protected:
 	void visit(const PredForm*);
 	void visit(const BoolForm*);
 	void visit(const QuantForm*);
 	void visit(const EqChainForm*);
 	void visit(const AggForm*);
 	void visit(const EquivForm*);
-	const FOBDD* prunebdd(const FOBDD*, const std::vector<const FOBDDVariable*>&, AbstractStructure*, double);
-
-	/** Make the symbolic structure less precise, based on the given structure **/
-	void filter(AbstractStructure* structure, double max_cost_per_answer);
 
 public:
 	GenerateBDDAccordingToBounds(FOBDDManager* m, const Bound& ctbounds, const Bound& cfbounds,

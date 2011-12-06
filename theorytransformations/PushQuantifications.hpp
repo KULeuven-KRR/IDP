@@ -1,20 +1,17 @@
-/************************************
-  	PushQuantifications.hpp
-	this file belongs to GidL 2.0
-	(c) K.U.Leuven
-************************************/
-
 #ifndef PUSHQUANTIFICATIONS_HPP_
 #define PUSHQUANTIFICATIONS_HPP_
 
 #include "visitors/TheoryMutatingVisitor.hpp"
 
 class PushQuantifications: public TheoryMutatingVisitor {
+	VISITORFRIENDS()
 public:
-	PushQuantifications() :
-			TheoryMutatingVisitor() {
+	template<typename T>
+	T execute(T t){
+		return t->accept(this);
 	}
 
+protected:
 	Formula* visit(QuantForm*);
 };
 

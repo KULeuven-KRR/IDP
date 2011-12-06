@@ -93,7 +93,7 @@ private:
 public:
 	HeadGrounder(AbstractGroundTheory* gt, InstanceChecker* pc, InstanceChecker* cc, PFSymbol* s, const std::vector<TermGrounder*>&,
 			const std::vector<SortTable*>&);
-	int run() const;
+	Lit run() const;
 
 	const std::vector<TermGrounder*>& subtermgrounders() const {
 		return _subtermgrounders;
