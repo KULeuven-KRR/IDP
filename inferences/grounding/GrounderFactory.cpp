@@ -56,9 +56,9 @@ GenType operator not(GenType orig) {
 double MCPA = 1; // TODO: constant currently used when pruning bdds. Should be made context dependent
 
 GrounderFactory::GrounderFactory(AbstractStructure* structure, GenerateBDDAccordingToBounds* symstructure) :
-		_structure(structure), _symstructure(symstructure), _options(GlobalData::instance()->getOptions()), _verbosity(
-				_options->getValue(IntType::GROUNDVERBOSITY)), _cpsupport(_options->getValue(BoolType::CPSUPPORT)), _longnames(
-				_options->getValue(BoolType::LONGNAMES)) {
+		_structure(structure), _symstructure(symstructure), _options(GlobalData::instance()->getOptions()), 
+		_verbosity(_options->getValue(IntType::GROUNDVERBOSITY)), _cpsupport(_options->getValue(BoolType::CPSUPPORT)), 
+		_longnames(_options->getValue(BoolType::LONGNAMES)) {
 
 	Assert(_symstructure!=NULL);
 
