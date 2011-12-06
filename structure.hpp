@@ -2097,6 +2097,7 @@ public:
 		return _table->size(_universe);
 	}
 
+
 	const DomainElement* operator[](const ElementTuple& tuple) const {
 		return _table->operator[](tuple);
 	}
@@ -2167,6 +2168,7 @@ public:
 	bool isFalse(const ElementTuple& tuple) const;
 	bool isUnknown(const ElementTuple& tuple) const;
 	bool isInconsistent(const ElementTuple& tuple) const;
+	bool isConsistent() const;
 	bool approxTwoValued() const;
 	const Universe& universe() const {
 		return _ct->universe();
@@ -2295,6 +2297,7 @@ public:
 	bool approxTwoValued() const {
 		return _functable != 0;
 	}
+	bool isConsistent() const;
 
 	const Universe& universe() const {
 		return _graphinter->universe();
@@ -2455,6 +2458,7 @@ public:
 	virtual Universe universe(const PFSymbol*) const = 0;
 
 	virtual bool approxTwoValued() const =0;
+	virtual bool isConsistent() const = 0;
 
 	virtual std::vector<AbstractStructure*> generateAllTwoValuedExtensions() const = 0;
 
@@ -2498,6 +2502,8 @@ public:
 	PredInter* inter(PFSymbol* s) const; //!< Return the interpretation of s.
 	Structure* clone() const; //!< take a clone of this structure
 	bool approxTwoValued() const;
+	bool isConsistent() const;
+
 	Universe universe(const PFSymbol*) const;
 
 	std::vector<AbstractStructure*> generateAllTwoValuedExtensions() const;

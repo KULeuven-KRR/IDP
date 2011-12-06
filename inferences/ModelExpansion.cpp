@@ -99,6 +99,7 @@ std::vector<AbstractStructure*> ModelExpansion::expand(AbstractTheory* theory, A
 		addTerms(*model, grounding->termtranslator(), newsolution);
 		newsolution->clean();
 		solutions.push_back(newsolution);
+		Assert(newsolution->isConsistent());
 	}
 
 	grounding->recursiveDelete();

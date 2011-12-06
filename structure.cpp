@@ -3348,6 +3348,30 @@ bool PredInter::isInconsistent(const ElementTuple& tuple) const {
 	}
 }
 
+bool PredInter::isConsistent() const {
+	auto ctIterator = _ct->begin();
+	auto cfIterator = _cf->begin();
+
+	StrictWeakNTupleEquality eq(_ct->arity());
+	StrictWeakNTupleOrdering so(_ct->arity());
+	for (; not ctIterator.isAtEnd();++ctIterator) {
+//#ifdef DEBUG
+//			Assert(not _pf->contains(*ctIterator));
+//#endif
+		// get unassigned domain element
+		while (not cfIterator.isAtEnd() && so(*cfIterator, *ctIterator)) {
+			++cfIterator;
+//#ifdef DEBUG
+//			Assert(not _pt->contains(*cfIterator));
+//#endif
+		}
+		if (not cfIterator.isAtEnd() && eq(*cfIterator, *ctIterator)) {
+			return false;
+		}
+	}
+	return true;
+}
+
 /**
  * \brief Returns false if the interpretation is not two-valued. May return true if it is two-valued.
  *
@@ -3608,6 +3632,13 @@ void FuncInter::materialize() {
 	}
 }
 
+bool FuncInter::isConsistent() const{
+	if(not _functable == NULL){
+		return true; //TODO ok?
+	}
+	else return _graphinter->isConsistent();
+}
+
 FuncInter* FuncInter::clone(const Universe& univ) const {
 	if (_functable) {
 		FuncTable* nft = new FuncTable(_functable->internTable(), univ);
@@ -3837,24 +3868,42 @@ void Structure::inter(Function* f, FuncInter* i) {
 	_funcinter[f] = i;
 }
 bool Structure::approxTwoValued() const {
-	bool result = true;
 	for (std::map<Function*, FuncInter*>::const_iterator funcInterIterator = _funcinter.cbegin(); funcInterIterator != _funcinter.cend();
 			funcInterIterator++) {
 		FuncInter* fi = (*funcInterIterator).second;
 		if (!fi->approxTwoValued()) {
-			result = false;
+			return false;
 		}
 	}
 	for (std::map<Predicate*, PredInter*>::const_iterator predInterIterator = _predinter.cbegin(); predInterIterator != _predinter.cend();
 			predInterIterator++) {
 		PredInter* pi = (*predInterIterator).second;
 		if (!pi->approxTwoValued()) {
-			result = false;
+			return false;
 		}
 	}
 
-	return result;
+	return true;
 }
+bool Structure::isConsistent() const{
+		for (std::map<Function*, FuncInter*>::const_iterator funcInterIterator = _funcinter.cbegin(); funcInterIterator != _funcinter.cend();
+				funcInterIterator++) {
+			FuncInter* fi = (*funcInterIterator).second;
+			if (!fi->isConsistent()) {
+				return false;
+			}
+		}
+		for (std::map<Predicate*, PredInter*>::const_iterator predInterIterator = _predinter.cbegin(); predInterIterator != _predinter.cend();
+				predInterIterator++) {
+			PredInter* pi = (*predInterIterator).second;
+			if (!pi->isConsistent()) {
+				return false;
+			}
+		}
+
+	return true;
+}
+
 
 void generateMorePreciseStructures(const PredTable* cf, const ElementTuple& domainElementWithoutValue, const SortTable* imageSort, Function* function, const FuncInter* inter, vector<AbstractStructure*>& extensions){
 	// go over all saved structures and generate a new structure for each possible value for it
