@@ -64,7 +64,7 @@ void RuleGrounder::run(unsigned int defid, GroundDefinition* grounddefinition) c
 				}
 				grounddefinition->addPCRule(head, body.literals, conj, context()._tseitin == TsType::RULE);
 			}
-		};
+		}
 	}
 }
 
@@ -87,6 +87,9 @@ int HeadGrounder::run() const {
 	vector<GroundTerm> groundsubterms(_subtermgrounders.size());
 	ElementTuple args(_subtermgrounders.size());
 	for(unsigned int n = 0; n < _subtermgrounders.size(); ++n) {
+		if(GlobalData::instance()->terminateRequested()){
+			throw IdpException("Terminate requested");
+		}
 		groundsubterms[n] = _subtermgrounders[n]->run();
 		if(groundsubterms[n].isVariable) {
 			alldomelts = false;

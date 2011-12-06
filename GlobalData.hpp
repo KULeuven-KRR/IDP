@@ -15,6 +15,12 @@ class DomainElementFactory;
 class Options;
 class CLConst;
 
+class TerminateMonitor{
+public:
+	virtual ~TerminateMonitor(){}
+	virtual void notifyTerminateRequested() = 0;
+};
+
 class GlobalData {
 private:
 	Namespace* _globalNamespace;
@@ -30,6 +36,8 @@ private:
 	unsigned int _errorcount;
 	std::set<FILE*> _openfiles;
 
+	std::vector<TerminateMonitor*> monitors;
+
 	GlobalData();
 
 public:
@@ -41,7 +49,15 @@ public:
 	static void close();
 
 	bool terminateRequested() const { return _terminateRequested; }
-	void notifyTerminateRequested() { _terminateRequested = true; }
+	void addTerminationMonitor(TerminateMonitor* m){
+		monitors.push_back(m);
+	}
+	void notifyTerminateRequested() {
+		_terminateRequested = true;
+		for(auto i=monitors.cbegin(); i<monitors.cend(); ++i){
+			(*i)->notifyTerminateRequested();
+		}
+	}
 
 	Namespace* getNamespace() {
 		return _globalNamespace;

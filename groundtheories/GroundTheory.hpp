@@ -270,6 +270,9 @@ public:
 	 */
 	void addFuncConstraints() {
 		for (unsigned int n = 0; n < translator()->nbManagedSymbols(); ++n) {
+			if(GlobalData::instance()->terminateRequested()){
+				throw IdpException("Terminate requested");
+			}
 			auto pfs = translator()->getManagedSymbol(n);
 			if (typeid(*pfs) != typeid(Function)) {
 				continue;
@@ -300,6 +303,9 @@ public:
 			std::vector<litlist> sets; //NOTE: for every domain element (x1,x2): one set containing all (x1,x2,y).  The cardinality of this set should be 1
 
 			for (auto ptIterator = pt->begin(); not ptIterator.isAtEnd(); ++ptIterator) {
+				if(GlobalData::instance()->terminateRequested()){
+					throw IdpException("Terminate requested");
+				}
 				ElementTuple current((*ptIterator));
 				if (not tuplesFirstNEqual(current, domainElement) || sets.empty()) {
 					if (not ctIterator.isAtEnd()) {
@@ -312,6 +318,9 @@ public:
 							continue;
 						} else if (tuplesFirstNSmaller(certainly, current)) {
 							do {
+								if(GlobalData::instance()->terminateRequested()){
+									throw IdpException("Terminate requested");
+								}
 								++ctIterator;
 							} while (not ctIterator.isAtEnd() && tuplesFirstNSmaller(*ctIterator, current));
 							continue;
@@ -379,7 +388,9 @@ public:
 			 }
 			 }*/
 			for (size_t s = 0; s < sets.size(); ++s) {
-
+				if(GlobalData::instance()->terminateRequested()){
+					throw IdpException("Terminate requested");
+				}
 				std::vector<double> lw(sets[s].size(), 1);
 				int setnr = translator()->translateSet(sets[s], lw, { });
 				int tseitin;
@@ -394,6 +405,9 @@ public:
 	}
 	void addFalseDefineds() {
 		for (size_t n = 0; n < translator()->nbManagedSymbols(); ++n) {
+			if(GlobalData::instance()->terminateRequested()){
+				throw IdpException("Terminate requested");
+			}
 			PFSymbol* s = translator()->getManagedSymbol(n);
 			auto it = _defined.find(s);
 			if (it == _defined.end()) {
@@ -401,6 +415,9 @@ public:
 			}
 			const PredTable* pt = structure()->inter(s)->pt();
 			for (auto ptIterator = pt->begin(); not ptIterator.isAtEnd(); ++ptIterator) {
+				if(GlobalData::instance()->terminateRequested()){
+					throw IdpException("Terminate requested");
+				}
 				Lit translation = translator()->translate(s, (*ptIterator));
 				if (it->second.find(translation) == it->second.end()) {
 					addUnitClause(-translation);

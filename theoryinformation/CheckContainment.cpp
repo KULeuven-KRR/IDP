@@ -17,14 +17,16 @@ void CheckContainment::visit(const PredForm* pf) {
 	if (pf->symbol() == _symbol) {
 		_result = true;
 		return;
-	} else
+	} else{
 		traverse(pf);
+	}
 }
 
 void CheckContainment::visit(const FuncTerm* ft) {
 	if (ft->function() == _symbol) {
 		_result = true;
 		return;
-	} else
+	} else{
 		traverse(ft);
+	}
 }

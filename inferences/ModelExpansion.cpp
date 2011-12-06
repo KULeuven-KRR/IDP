@@ -15,7 +15,16 @@
 #include "OptionsStack.hpp"
 #include "inferences/propagation/PropagatorFactory.hpp"
 
+#include "external/TerminationManagement.hpp"
+
 using namespace std;
+
+class SolverTermination: public TerminateMonitor{
+public:
+	void notifyTerminateRequested(){
+		requestTermination();
+	}
+};
 
 std::vector<AbstractStructure*> ModelExpansion::expand(AbstractTheory* theory, AbstractStructure* structure, TraceMonitor* monitor) const {
 	auto opts = GlobalData::instance()->getOptions();
@@ -75,7 +84,11 @@ std::vector<AbstractStructure*> ModelExpansion::expand(AbstractTheory* theory, A
 		monitor->setTranslator(grounding->translator());
 		monitor->setSolver(solver);
 	}
+	getGlobal()->addTerminationMonitor(new SolverTermination());
 	solver->solve(abstractsolutions);
+	if(getGlobal()->terminateRequested()){
+		throw IdpException("Solver was terminated");
+	}
 
 	// Collect solutions
 	//FIXME propagator code broken structure = propagator->currstructure(structure);
@@ -111,6 +124,9 @@ bool ModelExpansion::calculateDefinition(Definition* definition, AbstractStructu
 	// Run solver
 	MinisatID::Solution* abstractsolutions = initsolution();
 	solver->solve(abstractsolutions);
+	if(getGlobal()->terminateRequested()){
+		throw IdpException("Solver was terminated");
+	}
 
 	// Collect solutions
 	if (abstractsolutions->getModels().empty()) {

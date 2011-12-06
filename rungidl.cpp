@@ -132,8 +132,9 @@ void handleAndRun(const string& proc, const DomainElement** result) {
 	}
 }
 
-bool stoptiming;
-bool hasStopped;
+bool stoptiming = true;
+bool hasStopped = true;
+bool running = false;
 bool shouldStop() {
 	return stoptiming;
 }
@@ -149,6 +150,7 @@ void monitorShutdown() {
 		monitoringtime+=1000;
 	}
 	if(not hasStopped){
+		cerr <<"Shutdown failed, aborting.\n";
 		abort();
 	}
 }
@@ -182,7 +184,7 @@ void timeout() {
 }
 
 void SIGINT_handler(int) {
-	if(shouldStop()){
+	if(not shouldStop() && running){
 		GlobalData::instance()->notifyTerminateRequested();
 	}else{
 		exit(1);
@@ -202,6 +204,7 @@ const DomainElement* executeProcedure(const string& proc) {
 
 		setStop(false);
 		hasStopped = false;
+		running = true;
 
 		struct sigaction sigIntHandler;
 		sigIntHandler.sa_handler = SIGINT_handler;
@@ -214,7 +217,7 @@ const DomainElement* executeProcedure(const string& proc) {
 		handleAndRun(temp, &result);
 
 		hasStopped = true;
-
+		running = false;
 		setStop(true);
 		signalhandling.join();
 	}

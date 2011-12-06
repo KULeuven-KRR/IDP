@@ -115,13 +115,13 @@ TEST_P(MXnbTest, DoesMX) {
 	ASSERT_EQ(result, Status::SUCCESS);
 }
 
-TEST_P(MXnbTest, DoesMXWithBounds) {
+/*TEST_P(MXnbTest, DoesMXWithBounds) {
 	string testfile(string(TESTDIR) + "mxnbofmodelstestwithbounds.idp");
 	cerr << "Testing " << string(TESTDIR) + GetParam() << "\n";
 	Status result = Status::FAIL;
 	ASSERT_NO_THROW( result = test( { string(TESTDIR) + GetParam(), testfile }););
 	ASSERT_EQ(result, Status::SUCCESS);
-}
+}*/
 
 TEST_P(MXsatTest, DoesMX) {
 	string testfile(string(TESTDIR) + "mxsattest.idp");
@@ -131,13 +131,13 @@ TEST_P(MXsatTest, DoesMX) {
 	ASSERT_EQ(result, Status::SUCCESS);
 }
 
-TEST_P(LazyMXnbTest, DoesMX) {
+/*TEST_P(LazyMXnbTest, DoesMX) {
 	string testfile(string(TESTDIR) + "mxlazynbofmodelstest.idp");
 	cerr << "Testing " << string(TESTDIR) + GetParam() << "\n";
 	Status result = Status::FAIL;
 	ASSERT_NO_THROW( result = test( { string(TESTDIR) + GetParam(), testfile }););
 	ASSERT_EQ(result, Status::SUCCESS);
-}
+}*/
 
 INSTANTIATE_TEST_CASE_P(ModelExpansion, MXnbTest, ::testing::ValuesIn(generateListOfMXnbFiles()));
 

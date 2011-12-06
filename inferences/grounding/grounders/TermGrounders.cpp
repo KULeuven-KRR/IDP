@@ -56,6 +56,9 @@ GroundTerm FuncTermGrounder::run() const {
 	vector<GroundTerm> groundsubterms(_subtermgrounders.size());
 	ElementTuple args(_subtermgrounders.size());
 	for(unsigned int n = 0; n < _subtermgrounders.size(); ++n) {
+		if(GlobalData::instance()->terminateRequested()){
+			throw IdpException("Terminate requested");
+		}
 		groundsubterms[n] = _subtermgrounders[n]->run();
 		if(groundsubterms[n].isVariable) {
 			calculable = false;

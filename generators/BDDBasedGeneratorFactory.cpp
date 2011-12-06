@@ -124,7 +124,7 @@ GeneratorNode* BDDToGenerator::createnode(const BddGeneratorData& data) {
 			if (data.pattern[n] == Pattern::OUTPUT) {
 				bool firstocc = true;
 				for (uint m = 0; m < kernoutputvars.size(); ++m) {
-					if (kernoutputvars[m] == kernvars[n]) {
+					if (kernoutputvars[m] == kernvars.back()) {
 						firstocc = false;
 						break;
 					}
