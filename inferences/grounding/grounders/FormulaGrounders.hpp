@@ -108,15 +108,15 @@ private:
 	AGG_COMP_TYPE _comp;
 	SIGN _sign;
 	bool _doublenegtseitin;
-	int handleDoubleNegation(double boundvalue, int setnr) const;
-	int finishCard(double truevalue, double boundvalue, int setnr) const;
-	int finishSum(double truevalue, double boundvalue, int setnr) const;
-	int finishProduct(double truevalue, double boundvalue, int setnr) const;
-	int finishMaximum(double truevalue, double boundvalue, int setnr) const;
-	int finishMinimum(double truevalue, double boundvalue, int setnr) const;
-	int finish(double boundvalue, double newboundvalue, double maxpossvalue, double minpossvalue, int setnr) const;
+	Lit handleDoubleNegation(double boundvalue, int setnr) const;
+	Lit finishCard(double truevalue, double boundvalue, int setnr) const;
+	Lit finishSum(double truevalue, double boundvalue, int setnr) const;
+	Lit finishProduct(double truevalue, double boundvalue, int setnr) const;
+	Lit finishMaximum(double truevalue, double boundvalue, int setnr) const;
+	Lit finishMinimum(double truevalue, double boundvalue, int setnr) const;
+	Lit finish(double boundvalue, double newboundvalue, double maxpossvalue, double minpossvalue, int setnr) const;
 
-	int run() const;
+	Lit run() const;
 public:
 	AggGrounder(AbstractGroundTheory* grounding, GroundingContext gc, AggFunction tp, SetGrounder* sg, TermGrounder* bg, CompType comp, SIGN sign) :
 			FormulaGrounder(grounding, gc), _setgrounder(sg), _boundgrounder(bg), _type(tp), _comp(AGG_EQ), _sign(SIGN::POS) {

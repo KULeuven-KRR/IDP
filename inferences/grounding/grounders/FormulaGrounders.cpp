@@ -144,7 +144,7 @@ void AtomGrounder::run(ConjOrDisj& formula) const {
 	formula.literals.push_back(run());
 }
 
-int ComparisonGrounder::run() const {
+Lit ComparisonGrounder::run() const {
 	const GroundTerm& left = _lefttermgrounder->run();
 	const GroundTerm& right = _righttermgrounder->run();
 
@@ -213,13 +213,13 @@ CompType Agg2Comp(AGG_COMP_TYPE comp) {
  * Negate the comparator and invert the sign of the tseitin when the aggregate is in a doubly negated context.
  */
 //TODO:why?
-int AggGrounder::handleDoubleNegation(double boundvalue, int setnr) const {
+Lit AggGrounder::handleDoubleNegation(double boundvalue, int setnr) const {
 	TsType tp = context()._tseitin;
 	int tseitin = translator()->translate(boundvalue, negateComp(Agg2Comp(_comp)),  _type, setnr, tp);
 	return isPos(_sign) ? -tseitin : tseitin;
 }
 
-int AggGrounder::finishCard(double truevalue, double boundvalue, int setnr) const {
+Lit AggGrounder::finishCard(double truevalue, double boundvalue, int setnr) const {
 	int leftvalue = int(boundvalue - truevalue);
 	const TsSet& tsset = translator()->groundset(setnr);
 	int maxposscard = tsset.size();
@@ -318,7 +318,7 @@ int AggGrounder::finishCard(double truevalue, double boundvalue, int setnr) cons
  * Checks whether the aggregate will be certainly true or false, based on minimum and maximum possible values and the given bound;
  * and creates a tseitin, handling double negation when necessary;
  */
-int AggGrounder::finish(double boundvalue, double newboundvalue, double minpossvalue, double maxpossvalue, int setnr) const {
+Lit AggGrounder::finish(double boundvalue, double newboundvalue, double minpossvalue, double maxpossvalue, int setnr) const {
 	// Check minimum and maximum possible values against the given bound
 	switch (_comp) { //TODO more complicated propagation is possible!
 	case AGG_EQ:
@@ -354,7 +354,7 @@ int AggGrounder::finish(double boundvalue, double newboundvalue, double minpossv
 	}
 }
 
-int AggGrounder::run() const {
+Lit AggGrounder::run() const {
 	// Run subgrounders
 	int setnr = _setgrounder->run();
 	const GroundTerm& groundbound = _boundgrounder->run();

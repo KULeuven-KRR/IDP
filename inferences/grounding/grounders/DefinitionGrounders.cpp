@@ -81,7 +81,7 @@ HeadGrounder::HeadGrounder(AbstractGroundTheory* gt,
 		  _pfsymbol(s){
 }
 
-int HeadGrounder::run() const {
+Lit HeadGrounder::run() const {
 	// Run subterm grounders
 	bool alldomelts = true;
 	vector<GroundTerm> groundsubterms(_subtermgrounders.size());
@@ -108,7 +108,7 @@ int HeadGrounder::run() const {
 	}
 
 	// Run instance checkers and return grounding
-	int atom = _grounding->translator()->translate(_symbol,args);
+	Lit atom = _grounding->translator()->translate(_symbol,args);
 	if(_truechecker->isInInterpretation(args)) {
 		_grounding->addUnitClause(atom);
 	}else if(_falsechecker->isInInterpretation(args)) {
