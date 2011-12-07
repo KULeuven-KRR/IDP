@@ -156,7 +156,7 @@ GroundTerm SumTermGrounder::run() const {
 			VarId rightvarid = _termtranslator->translate(right._domelement);
 			// Create tseitin
 			CPTsBody* cpelement = _termtranslator->cprelation(rightvarid);
-			int tseitin = _grounding->translator()->translate(cpelement->left(),cpelement->comp(),cpelement->right(),TsType::EQ);
+			Lit tseitin = _grounding->translator()->translate(cpelement->left(),cpelement->comp(),cpelement->right(),TsType::EQ);
 			_grounding->addUnitClause(tseitin);
 			// Create cp sum term
 			CPTerm* sumterm = createSumTerm(_type,left._varid,rightvarid);

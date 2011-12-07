@@ -89,13 +89,8 @@ void GroundDefinition::addPCRule(int head, const vector<int>& body, bool conj, b
 				for (unsigned int n = 0; n < body.size(); ++n) {
 					grb->body().push_back(body[n]);
 				}
-			} else if (grb->body().size() == 1) {
-				grb->type(RT_CONJ);
-				for (unsigned int n = 0; n < body.size(); ++n) {
-					grb->body().push_back(body[n]);
-				}
 			} else {
-				int ts = _translator->translate(body, conj, (recursive ? TsType::RULE : TsType::EQ));
+				int ts = _translator->translate(body, conj, (recursive ? TsType::RULE : TsType::EQ)); //TODO TSType ok?  Not TSType::Rule?
 				grb->body().push_back(ts);
 			}
 			grb->recursive(grb->recursive() || recursive);
@@ -103,12 +98,12 @@ void GroundDefinition::addPCRule(int head, const vector<int>& body, bool conj, b
 		}
 		case RT_CONJ: {
 			PCGroundRule* grb = dynamic_cast<PCGroundRule*>(it->second);
-			if (grb->body().size() == 1) {
-				grb->type(conj ? RT_CONJ : RT_DISJ);
+			if (grb->body().size() == 1 && ((!conj) || body.size() == 1)){
+				grb->type(RT_DISJ);
 				for (unsigned int n = 0; n < body.size(); ++n)
 					grb->body().push_back(body[n]);
 			}
-			if ((!conj) || body.size() == 1) {
+			else if ((!conj) || body.size() == 1) {
 				int ts = _translator->translate(grb->body(), true, (grb->recursive() ? TsType::RULE : TsType::EQ));
 				grb->type(RT_DISJ);
 				grb->body(body);

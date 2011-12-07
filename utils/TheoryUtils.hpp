@@ -31,6 +31,7 @@ ReturnType transform(Construct* object, Values ... parameters) {
 	}
 	ReturnType result = t.execute(object, parameters...);
 	if(getOption(IntType::GROUNDVERBOSITY)>1){
+		std::cerr <<"\n";
 		//FIXME make everything printable? std::clog <<toString(result) <<"\n";
 		// => create a static checkable condition whether something is printable via put! If not, do <<
 	}

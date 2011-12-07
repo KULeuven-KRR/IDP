@@ -1009,6 +1009,9 @@ void GrounderFactory::visit(const QuantSetExpr* origqs) {
  * 		Creates a grounder for a definition.
  */
 void GrounderFactory::visit(const Definition* def) {
+	if (_verbosity > 3) {
+			clog << "Grounderfactory visiting: " <<toString(def) << "\n";
+		}
 	_context._conjunctivePathFromRoot = _context._conjPathUntilNode;
 	_context._conjPathUntilNode = false;
 
@@ -1049,6 +1052,9 @@ InstGenerator* GrounderFactory::createVarMapAndGenerator(const VarList& vars) {
  * 		Creates a grounder for a definitional rule.
  */
 void GrounderFactory::visit(const Rule* rule) {
+	if (_verbosity > 3) {
+			clog << "Grounderfactory visiting: " <<toString(rule) << "\n";
+		}
 	_context._conjunctivePathFromRoot = _context._conjPathUntilNode;
 	_context._conjPathUntilNode = false;
 
@@ -1110,7 +1116,7 @@ void GrounderFactory::visit(const Rule* rule) {
 	// Create rule grounder
 	SaveContext();
 	if (recursive(newrule->body())){
-		_context._tseitin = TsType::RULE;
+		_context._tseitin = TsType::RULE;//TODO: is this right??? Shouldn't it be higher (before createing the bodygrounder)?
 	}
 	if (_options->getValue(BoolType::GROUNDLAZILY)) {
 		_rulegrounder = new LazyRuleGrounder(headgr, bodygr, bodygen, _context);

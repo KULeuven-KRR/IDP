@@ -16,6 +16,12 @@
 #include "loki/static_check.h"
 #include <typeinfo>
 
+#ifdef DEBUG
+#define Assert(condition) { if(!(condition)){ std::stringstream ss; ss << "ASSERT FAILED: " << #condition << " @ " << __FILE__ << " (" << __LINE__ << ")"; throw AssertionException(ss.str());} }
+#else
+#define Assert(x) do {} while(0)
+#endif
+
 std::string getTablenameForInternals();
 std::string getPathOfLuaInternals();
 std::string getPathOfIdpInternals();
@@ -88,6 +94,26 @@ CompType negateComp(CompType); //!< Negate a comparison operator
 bool operator==(CompType left, CompType right);
 bool operator>(CompType left, CompType right);
 bool operator<(CompType left, CompType right);
+template<typename NumberType, typename NumberType2>
+bool compare(NumberType a, CompType comp, NumberType2 b){
+	switch(comp){
+	case CompType::EQ:
+		return a == b;
+	case CompType::NEQ:
+		return a != b;
+	case CompType::LEQ:
+		return a <= b;
+	case CompType::GEQ:
+		return a >= b;
+	case CompType::LT:
+		return a<b;
+	case CompType::GT:
+		return a>b;
+	}
+	Assert(false);
+	return true;
+}
+
 
 TsType reverseImplication(TsType type);
 
@@ -179,10 +205,4 @@ bool sametypeid(const T& object) {
 	return typeid(object) == typeid(T2);
 }
 
-#ifdef DEBUG
-#define Assert(condition) { if(!(condition)){ std::stringstream ss; ss << "ASSERT FAILED: " << #condition << " @ " << __FILE__ << " (" << __LINE__ << ")"; throw AssertionException(ss.str());} }
-#else
-#define Assert(x) do {} while(0)
-#endif
-
-#endif
+#endif //COMMON_HPP

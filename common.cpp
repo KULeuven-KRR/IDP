@@ -142,6 +142,8 @@ bool operator<(CompType left, CompType right) {
 	return not (left == right || left > right);
 }
 
+
+
 TsType reverseImplication(TsType type) {
 	if (type == TsType::IMPL) {
 		return TsType::RIMPL;

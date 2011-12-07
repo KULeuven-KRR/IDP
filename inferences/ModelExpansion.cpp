@@ -41,10 +41,14 @@ std::vector<AbstractStructure*> ModelExpansion::expand(AbstractTheory* theory, A
 
 	// Create solver and grounder
 	SATSolver* solver = createsolver();
-	clog <<"Approximation\n";
+	if(getOption(IntType::GROUNDVERBOSITY)>1){
+		clog <<"Approximation\n";
+	}
 	auto symstructure = generateNaiveApproxBounds(theory, structure);
 	// TODO bugged! auto symstructure = generateApproxBounds(theory, structure);
-	clog <<"Grounding\n";
+	if(getOption(IntType::GROUNDVERBOSITY)>1){
+		clog <<"Grounding\n";
+	}
 	GrounderFactory grounderfactory(structure, symstructure);
 	Grounder* grounder = grounderfactory.create(theory, solver);
 	grounder->toplevelRun();
@@ -52,7 +56,9 @@ std::vector<AbstractStructure*> ModelExpansion::expand(AbstractTheory* theory, A
 
 	// Execute symmetry breaking
 	if (opts->getValue(IntType::SYMMETRY) != 0) {
-		clog <<"Symmetry breaking\n";
+		if(getOption(IntType::GROUNDVERBOSITY)>1){
+			clog <<"Symmetry breaking\n";
+		}
 		clock_t start = clock();
 		auto ivsets = findIVSets(theory, structure);
 		float time = (float) (clock() - start) / CLOCKS_PER_SEC;
@@ -83,7 +89,9 @@ std::vector<AbstractStructure*> ModelExpansion::expand(AbstractTheory* theory, A
 		monitor->setTranslator(grounding->translator());
 		monitor->setSolver(solver);
 	}
-	clog <<"Solving\n";
+	if(getOption(IntType::GROUNDVERBOSITY)>1){
+		clog <<"Solving\n";
+	}
 	getGlobal()->addTerminationMonitor(new SolverTermination());
 	solver->solve(abstractsolutions);
 	if(getGlobal()->terminateRequested()){
@@ -93,13 +101,16 @@ std::vector<AbstractStructure*> ModelExpansion::expand(AbstractTheory* theory, A
 	// Collect solutions
 	//FIXME propagator code broken structure = propagator->currstructure(structure);
 	std::vector<AbstractStructure*> solutions;
-	clog <<"Generate 2-valued models\n";
+	if(getOption(IntType::GROUNDVERBOSITY)>1){
+		clog <<"Generate 2-valued models\n";
+	}
 	for (auto model = abstractsolutions->getModels().cbegin(); model != abstractsolutions->getModels().cend(); ++model) {
 		AbstractStructure* newsolution = structure->clone();
 		addLiterals(*model, grounding->translator(), newsolution);
 		addTerms(*model, grounding->termtranslator(), newsolution);
 		newsolution->clean();
 		solutions.push_back(newsolution);
+		Assert(newsolution->isConsistent());
 	}
 
 	grounding->recursiveDelete();

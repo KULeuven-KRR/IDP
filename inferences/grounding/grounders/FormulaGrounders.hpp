@@ -96,55 +96,30 @@ public:
 	}
 };
 
-enum AGG_COMP_TYPE {
-	AGG_EQ, AGG_LT, AGG_GT
-};
-
 class AggGrounder: public FormulaGrounder {
 private:
 	SetGrounder* _setgrounder;
 	TermGrounder* _boundgrounder;
 	AggFunction _type;
-	AGG_COMP_TYPE _comp;
+	CompType _comp;
 	SIGN _sign;
 	bool _doublenegtseitin;
-	int handleDoubleNegation(double boundvalue, int setnr) const;
-	int finishCard(double truevalue, double boundvalue, int setnr) const;
-	int finishSum(double truevalue, double boundvalue, int setnr) const;
-	int finishProduct(double truevalue, double boundvalue, int setnr) const;
-	int finishMaximum(double truevalue, double boundvalue, int setnr) const;
-	int finishMinimum(double truevalue, double boundvalue, int setnr) const;
-	int finish(double boundvalue, double newboundvalue, double maxpossvalue, double minpossvalue, int setnr) const;
+	Lit handleDoubleNegation(double boundvalue, int setnr) const;
+	Lit finishCard(double truevalue, double boundvalue, int setnr) const;
+	Lit finishSum(double truevalue, double boundvalue, int setnr) const;
+	Lit finishProduct(double truevalue, double boundvalue, int setnr) const;
+	Lit finishMaximum(double truevalue, double boundvalue, int setnr) const;
+	Lit finishMinimum(double truevalue, double boundvalue, int setnr) const;
+	Lit finish(double boundvalue, double newboundvalue, double maxpossvalue, double minpossvalue, int setnr) const;
 
-	int run() const;
+	Lit run() const;
 public:
 	AggGrounder(AbstractGroundTheory* grounding, GroundingContext gc, AggFunction tp, SetGrounder* sg, TermGrounder* bg, CompType comp, SIGN sign) :
-			FormulaGrounder(grounding, gc), _setgrounder(sg), _boundgrounder(bg), _type(tp), _comp(AGG_EQ), _sign(SIGN::POS) {
-		switch (comp) {
-		case CompType::EQ:
-			_comp = AGG_EQ;
-			break;
-		case CompType::NEQ:
-			_comp = AGG_EQ;
-			_sign = not _sign;
-			break;
-		case CompType::LT:
-			_comp = AGG_LT;
-			break;
-		case CompType::LEQ:
-			_comp = AGG_GT;
-			_sign = not _sign;
-			break;
-		case CompType::GT:
-			_comp = AGG_GT;
-			break;
-		case CompType::GEQ:
-			_comp = AGG_LT;
-			_sign = not _sign;
-			break;
-		}
+			FormulaGrounder(grounding, gc), _setgrounder(sg), _boundgrounder(bg), _type(tp), _comp(comp), _sign(sign) {
+		bool noAggComp = comp ==CompType::NEQ ||comp ==CompType::LEQ||comp ==CompType::GEQ ;
+		bool signPosIfStrict = isPos(_sign) == not noAggComp;
 		_doublenegtseitin = (gc._tseitin == TsType::RULE)
-				&& ((gc._monotone == Context::POSITIVE && isPos(_sign)) || (gc._monotone == Context::NEGATIVE && isNeg(_sign)));
+				&& ((gc._monotone == Context::POSITIVE && signPosIfStrict) || (gc._monotone == Context::NEGATIVE && not signPosIfStrict));
 	}
 	void run(ConjOrDisj& formula) const;
 	bool conjunctive() const {
