@@ -1,10 +1,4 @@
-/************************************
-	StructureVisitor.cpp
-	this file belongs to GidL 2.0
-	(c) K.U.Leuven
-************************************/
-
-#include "visitors/StructureVisitor.hpp"
+#include "StructureVisitor.hpp"
 
 #include "structure.hpp"
 

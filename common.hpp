@@ -179,12 +179,8 @@ bool sametypeid(const T& object) {
 	return typeid(object) == typeid(T2);
 }
 
-class AssertionException: public std::exception{
-
-};
-
 #ifdef DEBUG
-#define Assert(condition) { if(!(condition)){ std::cerr << "ASSERT FAILED: " << #condition << " @ " << __FILE__ << " (" << __LINE__ << ")" << std::endl; throw AssertionException();} }
+#define Assert(condition) { if(!(condition)){ std::stringstream ss; ss << "ASSERT FAILED: " << #condition << " @ " << __FILE__ << " (" << __LINE__ << ")"; throw AssertionException(ss.str());} }
 #else
 #define Assert(x) do {} while(0)
 #endif

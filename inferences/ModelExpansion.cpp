@@ -41,8 +41,10 @@ std::vector<AbstractStructure*> ModelExpansion::expand(AbstractTheory* theory, A
 
 	// Create solver and grounder
 	SATSolver* solver = createsolver();
+	clog <<"Approximation\n";
 	auto symstructure = generateNaiveApproxBounds(theory, structure);
 	// TODO bugged! auto symstructure = generateApproxBounds(theory, structure);
+	clog <<"Grounding\n";
 	GrounderFactory grounderfactory(structure, symstructure);
 	Grounder* grounder = grounderfactory.create(theory, solver);
 	grounder->toplevelRun();
@@ -50,16 +52,13 @@ std::vector<AbstractStructure*> ModelExpansion::expand(AbstractTheory* theory, A
 
 	// Execute symmetry breaking
 	if (opts->getValue(IntType::SYMMETRY) != 0) {
-		std::cerr << "Symmetry detection...\n";
+		clog <<"Symmetry breaking\n";
 		clock_t start = clock();
 		auto ivsets = findIVSets(theory, structure);
 		float time = (float) (clock() - start) / CLOCKS_PER_SEC;
-		std::cerr << "Symmetry detection finished in: " << time << "\n";
 		if (opts->getValue(IntType::SYMMETRY) == 1) {
-			std::cerr << "Adding symmetry breaking clauses...\n";
 			addSymBreakingPredicates(grounding, ivsets);
 		} else if (opts->getValue(IntType::SYMMETRY) == 2) {
-			std::cerr << "Using symmetrical clause learning...\n";
 			for (auto ivsets_it = ivsets.cbegin(); ivsets_it != ivsets.cend(); ++ivsets_it) {
 				std::vector<std::map<int, int> > breakingSymmetries = (*ivsets_it)->getBreakingSymmetries(grounding);
 				for (auto bs_it = breakingSymmetries.cbegin(); bs_it != breakingSymmetries.cend(); ++bs_it) {
@@ -84,6 +83,7 @@ std::vector<AbstractStructure*> ModelExpansion::expand(AbstractTheory* theory, A
 		monitor->setTranslator(grounding->translator());
 		monitor->setSolver(solver);
 	}
+	clog <<"Solving\n";
 	getGlobal()->addTerminationMonitor(new SolverTermination());
 	solver->solve(abstractsolutions);
 	if(getGlobal()->terminateRequested()){
@@ -93,6 +93,7 @@ std::vector<AbstractStructure*> ModelExpansion::expand(AbstractTheory* theory, A
 	// Collect solutions
 	//FIXME propagator code broken structure = propagator->currstructure(structure);
 	std::vector<AbstractStructure*> solutions;
+	clog <<"Generate 2-valued models\n";
 	for (auto model = abstractsolutions->getModels().cbegin(); model != abstractsolutions->getModels().cend(); ++model) {
 		AbstractStructure* newsolution = structure->clone();
 		addLiterals(*model, grounding->translator(), newsolution);

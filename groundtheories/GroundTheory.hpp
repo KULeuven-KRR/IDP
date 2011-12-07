@@ -16,139 +16,13 @@
 
 template<class Policy>
 class GroundTheory: public AbstractGroundTheory, public Policy {
-	ACCEPTBOTH(AbstractTheory)
+	//ACCEPTBOTH(AbstractTheory)
 
 	std::set<int> _printedtseitins; //!< Tseitin atoms produced by the translator that occur in the theory.
 	std::set<int> _printedsets; //!< Set numbers produced by the translator that occur in the theory.
 	std::set<int> _printedconstraints; //!< Atoms for which a connection to CP constraints are added.
 	std::set<CPTerm*> _foldedterms;
 	std::map<PFSymbol*, std::set<int> > _defined; //!< List of defined symbols and the heads which have a rule.
-
-	/**
-	 * GroundTheory<Policy>::transformForAdd(vector<int>& vi, VIType vit, int defnr, bool skipfirst)
-	 * DESCRIPTION
-	 *		Adds defining rules for tseitin literals in a given vector of literals to the ground theory.
-	 *		This method may apply unfolding which changes the given vector of literals.
-	 * PARAMETERS
-	 *		vi			- given vector of literals
-	 *		vit			- indicates whether vi represents a disjunction, conjunction or set of literals
-	 *		defnr		- number of the definition vi belongs to. Is NODEF when vi does not belong to a definition
-	 *		skipfirst	- if true, the defining rule for the first literal is not added to the ground theory
-	 *			is an OPTIMIZATION
-	 * TODO
-	 *		implement unfolding
-	 */
-	void transformForAdd(const std::vector<int>& vi, VIType /*vit*/, int defnr, bool skipfirst = false) {
-		size_t n = 0;
-		if (skipfirst) {
-			++n;
-		}
-		for (; n < vi.size(); ++n) {
-			int atom = abs(vi[n]);
-			if (translator()->isTseitinWithSubformula(atom) && _printedtseitins.find(atom) == _printedtseitins.end()) {
-				_printedtseitins.insert(atom);
-				TsBody* tsbody = translator()->getTsBody(atom);
-				if (typeid(*tsbody) == typeid(PCTsBody)){
-					PCTsBody * body = dynamic_cast<PCTsBody*>(tsbody);
-					if (body->type() == TsType::IMPL || body->type() == TsType::EQ) {
-						if (body->conj()) {
-							for (unsigned int m = 0; m < body->size(); ++m) {
-								std::vector<int> cl { -atom, body->literal(m) };
-								add(cl, true);
-							}
-						} else {
-							std::vector<int> cl(body->size() + 1, -atom);
-							for (size_t m = 0; m < body->size(); ++m) {
-								cl[m + 1] = body->literal(m);
-							}
-							add(cl, true);
-						}
-					}
-					if (body->type() == TsType::RIMPL || body->type() == TsType::EQ) {
-						if (body->conj()) {
-							std::vector<int> cl(body->size() + 1, atom);
-							for (size_t m = 0; m < body->size(); ++m) {
-								cl[m + 1] = -body->literal(m);
-							}
-							add(cl, true);
-						} else {
-							for (size_t m = 0; m < body->size(); ++m) {
-								std::vector<int> cl(2, atom);
-								cl[1] = -body->literal(m);
-								add(cl, true);
-							}
-						}
-					}
-					if (body->type() == TsType::RULE) {
-						// FIXME when doing this lazily, the rule should not be here until the tseitin has a value!
-						Assert(defnr != ID_FOR_UNDEFINED);
-						Policy::polAdd(defnr, new PCGroundRule(atom, body, true)); //TODO true (recursive) might not always be the case?
-					}
-				} else if (typeid(*tsbody) == typeid(AggTsBody)) {
-					AggTsBody* body = dynamic_cast<AggTsBody*>(tsbody);
-					if (body->type() == TsType::RULE) {
-						Assert(defnr != ID_FOR_UNDEFINED);
-						add(body->setnr(), ID_FOR_UNDEFINED, (body->aggtype() != AggFunction::CARD));
-						Policy::polAdd(defnr, new AggGroundRule(atom, body, true)); //TODO true (recursive) might not always be the case?
-					} else {
-						add(atom, body);
-					}
-				} else if (typeid(*tsbody) == typeid(CPTsBody)) {
-					CPTsBody* body = dynamic_cast<CPTsBody*>(tsbody);
-					if (body->type() == TsType::RULE) {
-						Assert(false);
-						//TODO Does this ever happen?
-					} else {
-						add(atom, body);
-					}
-				} else {
-					Assert(typeid(*tsbody) == typeid(LazyTsBody));
-					LazyTsBody* body = dynamic_cast<LazyTsBody*>(tsbody);
-					body->notifyTheoryOccurence();
-				}
-			}
-		}
-	}
-
-	CPTerm* foldCPTerm(CPTerm* cpterm) {
-		if (_foldedterms.find(cpterm) == _foldedterms.end()) {
-			_foldedterms.insert(cpterm);
-			if (typeid(*cpterm) == typeid(CPVarTerm)) {
-				CPVarTerm* varterm = static_cast<CPVarTerm*>(cpterm);
-				if (not termtranslator()->function(varterm->varid())) {
-					CPTsBody* cprelation = termtranslator()->cprelation(varterm->varid());
-					CPTerm* left = foldCPTerm(cprelation->left());
-					if ((typeid(*left) == typeid(CPSumTerm) || typeid(*left) == typeid(CPWSumTerm)) && cprelation->comp() == CompType::EQ) {
-						Assert(cprelation->right()._isvarid && cprelation->right()._varid == varterm->varid());
-						return left;
-					}
-				}
-			} else if (typeid(*cpterm) == typeid(CPSumTerm)) {
-				CPSumTerm* sumterm = static_cast<CPSumTerm*>(cpterm);
-				std::vector<VarId> newvarids;
-				for (auto it = sumterm->varids().begin(); it != sumterm->varids().end(); ++it) {
-					if (not termtranslator()->function(*it)) {
-						CPTsBody* cprelation = termtranslator()->cprelation(*it);
-						CPTerm* left = foldCPTerm(cprelation->left());
-						if (typeid(*left) == typeid(CPSumTerm) && cprelation->comp() == CompType::EQ) {
-							CPSumTerm* subterm = static_cast<CPSumTerm*>(left);
-							Assert(cprelation->right()._isvarid && cprelation->right()._varid == *it);
-							newvarids.insert(newvarids.end(), subterm->varids().begin(), subterm->varids().end());
-						}
-						//TODO Need to do something special in other cases?
-						else
-							newvarids.push_back(*it);
-					} else
-						newvarids.push_back(*it);
-				}
-				sumterm->varids(newvarids);
-			} else if (typeid(*cpterm) == typeid(CPWSumTerm)) {
-				//CPWSumTerm* wsumterm = static_cast<CPWSumTerm*>(cpterm);
-				//TODO
-			}
-		}
-		return cpterm;
-	}
 
 public:
 	const int ID_FOR_UNDEFINED;
@@ -262,6 +136,130 @@ public:
 	void add(int head, AggTsBody* body) {
 		add(body->setnr(), ID_FOR_UNDEFINED, (body->aggtype() != AggFunction::CARD));
 		Policy::polAdd(head, body);
+	}
+
+	std::ostream& put(std::ostream& s) const {
+		return Policy::polPut(s, translator(), termtranslator(), true);
+	}
+
+	void accept(TheoryVisitor* v) const {
+		v->visit(this);
+	}
+
+	AbstractTheory* accept(TheoryMutatingVisitor* v) {
+		return v->visit(this);
+	}
+
+	void transformForAdd(const std::vector<int>& vi, VIType /*vit*/, int defnr, bool skipfirst = false) {
+		size_t n = 0;
+		if (skipfirst) {
+			++n;
+		}
+		for (; n < vi.size(); ++n) {
+			int atom = abs(vi[n]);
+			if (translator()->isTseitinWithSubformula(atom) && _printedtseitins.find(atom) == _printedtseitins.end()) {
+				_printedtseitins.insert(atom);
+				TsBody* tsbody = translator()->getTsBody(atom);
+				if (typeid(*tsbody) == typeid(PCTsBody)){
+					PCTsBody * body = dynamic_cast<PCTsBody*>(tsbody);
+					if (body->type() == TsType::IMPL || body->type() == TsType::EQ) {
+						if (body->conj()) {
+							for (unsigned int m = 0; m < body->size(); ++m) {
+								std::vector<int> cl { -atom, body->literal(m) };
+								add(cl, true);
+							}
+						} else {
+							std::vector<int> cl(body->size() + 1, -atom);
+							for (size_t m = 0; m < body->size(); ++m) {
+								cl[m + 1] = body->literal(m);
+							}
+							add(cl, true);
+						}
+					}
+					if (body->type() == TsType::RIMPL || body->type() == TsType::EQ) {
+						if (body->conj()) {
+							std::vector<int> cl(body->size() + 1, atom);
+							for (size_t m = 0; m < body->size(); ++m) {
+								cl[m + 1] = -body->literal(m);
+							}
+							add(cl, true);
+						} else {
+							for (size_t m = 0; m < body->size(); ++m) {
+								std::vector<int> cl(2, atom);
+								cl[1] = -body->literal(m);
+								add(cl, true);
+							}
+						}
+					}
+					if (body->type() == TsType::RULE) {
+						// FIXME when doing this lazily, the rule should not be here until the tseitin has a value!
+						Assert(defnr != ID_FOR_UNDEFINED);
+						Policy::polAdd(defnr, new PCGroundRule(atom, body, true)); //TODO true (recursive) might not always be the case?
+					}
+				} else if (typeid(*tsbody) == typeid(AggTsBody)) {
+					AggTsBody* body = dynamic_cast<AggTsBody*>(tsbody);
+					if (body->type() == TsType::RULE) {
+						Assert(defnr != ID_FOR_UNDEFINED);
+						add(body->setnr(), ID_FOR_UNDEFINED, (body->aggtype() != AggFunction::CARD));
+						Policy::polAdd(defnr, new AggGroundRule(atom, body, true)); //TODO true (recursive) might not always be the case?
+					} else {
+						add(atom, body);
+					}
+				} else if (typeid(*tsbody) == typeid(CPTsBody)) {
+					CPTsBody* body = dynamic_cast<CPTsBody*>(tsbody);
+					if (body->type() == TsType::RULE) {
+						Assert(false);
+						//TODO Does this ever happen?
+					} else {
+						add(atom, body);
+					}
+				} else {
+					Assert(typeid(*tsbody) == typeid(LazyTsBody));
+					LazyTsBody* body = dynamic_cast<LazyTsBody*>(tsbody);
+					body->notifyTheoryOccurence();
+				}
+			}
+		}
+	}
+
+	CPTerm* foldCPTerm(CPTerm* cpterm) {
+		if (_foldedterms.find(cpterm) == _foldedterms.end()) {
+			_foldedterms.insert(cpterm);
+			if (typeid(*cpterm) == typeid(CPVarTerm)) {
+				CPVarTerm* varterm = static_cast<CPVarTerm*>(cpterm);
+				if (not termtranslator()->function(varterm->varid())) {
+					CPTsBody* cprelation = termtranslator()->cprelation(varterm->varid());
+					CPTerm* left = foldCPTerm(cprelation->left());
+					if ((typeid(*left) == typeid(CPSumTerm) || typeid(*left) == typeid(CPWSumTerm)) && cprelation->comp() == CompType::EQ) {
+						Assert(cprelation->right()._isvarid && cprelation->right()._varid == varterm->varid());
+						return left;
+					}
+				}
+			} else if (typeid(*cpterm) == typeid(CPSumTerm)) {
+				CPSumTerm* sumterm = static_cast<CPSumTerm*>(cpterm);
+				std::vector<VarId> newvarids;
+				for (auto it = sumterm->varids().begin(); it != sumterm->varids().end(); ++it) {
+					if (not termtranslator()->function(*it)) {
+						CPTsBody* cprelation = termtranslator()->cprelation(*it);
+						CPTerm* left = foldCPTerm(cprelation->left());
+						if (typeid(*left) == typeid(CPSumTerm) && cprelation->comp() == CompType::EQ) {
+							CPSumTerm* subterm = static_cast<CPSumTerm*>(left);
+							Assert(cprelation->right()._isvarid && cprelation->right()._varid == *it);
+							newvarids.insert(newvarids.end(), subterm->varids().begin(), subterm->varids().end());
+						}
+						//TODO Need to do something special in other cases?
+						else
+							newvarids.push_back(*it);
+					} else
+						newvarids.push_back(*it);
+				}
+				sumterm->varids(newvarids);
+			} else if (typeid(*cpterm) == typeid(CPWSumTerm)) {
+				//CPWSumTerm* wsumterm = static_cast<CPWSumTerm*>(cpterm);
+				//TODO
+			}
+		}
+		return cpterm;
 	}
 
 	/**
@@ -403,6 +401,7 @@ public:
 			}
 		}
 	}
+
 	void addFalseDefineds() {
 		for (size_t n = 0; n < translator()->nbManagedSymbols(); ++n) {
 			if(GlobalData::instance()->terminateRequested()){
@@ -426,10 +425,6 @@ public:
 			}
 
 		}
-	}
-
-	std::ostream& put(std::ostream& s) const {
-		return Policy::polPut(s, translator(), termtranslator(), true);
 	}
 };
 
