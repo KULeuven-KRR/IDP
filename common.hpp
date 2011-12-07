@@ -16,6 +16,17 @@
 #include "loki/static_check.h"
 #include <typeinfo>
 
+class AssertionException: public std::exception{
+
+};
+
+#ifdef DEBUG
+#define Assert(condition) { if(!(condition)){ std::cerr << "ASSERT FAILED: " << #condition << " @ " << __FILE__ << " (" << __LINE__ << ")" << std::endl; throw AssertionException();} }
+#else
+#define Assert(x) do {} while(0)
+#endif //DEBUG
+
+
 std::string getTablenameForInternals();
 std::string getPathOfLuaInternals();
 std::string getPathOfIdpInternals();
@@ -88,6 +99,26 @@ CompType negateComp(CompType); //!< Negate a comparison operator
 bool operator==(CompType left, CompType right);
 bool operator>(CompType left, CompType right);
 bool operator<(CompType left, CompType right);
+template<typename NumberType, typename NumberType2>
+bool compare(NumberType a, CompType comp, NumberType2 b){
+	switch(comp){
+	case CompType::EQ:
+		return a == b;
+	case CompType::NEQ:
+		return a != b;
+	case CompType::LEQ:
+		return a <= b;
+	case CompType::GEQ:
+		return a >= b;
+	case CompType::LT:
+		return a<b;
+	case CompType::GT:
+		return a>b;
+	}
+	Assert(false);
+	return true;
+}
+
 
 TsType reverseImplication(TsType type);
 
@@ -179,14 +210,5 @@ bool sametypeid(const T& object) {
 	return typeid(object) == typeid(T2);
 }
 
-class AssertionException: public std::exception{
+#endif //COMMON_HPP
 
-};
-
-#ifdef DEBUG
-#define Assert(condition) { if(!(condition)){ std::cerr << "ASSERT FAILED: " << #condition << " @ " << __FILE__ << " (" << __LINE__ << ")" << std::endl; throw AssertionException();} }
-#else
-#define Assert(x) do {} while(0)
-#endif
-
-#endif

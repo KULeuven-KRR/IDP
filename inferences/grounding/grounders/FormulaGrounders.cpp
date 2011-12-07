@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include "vocabulary.hpp"
+#include "common.hpp"
 #include "ecnf.hpp"
 #include "inferences/grounding/grounders/TermGrounders.hpp"
 #include "inferences/grounding/grounders/SetGrounders.hpp"
@@ -38,7 +39,7 @@ void FormulaGrounder::setOrig(const Formula* f, const map<Variable*, const DomEl
 }
 
 void FormulaGrounder::printorig() const {
-	clog << "Grounding formula " <<toString(_origform);
+	clog << "Grounding formula " << toString(_origform);
 	if (not _origform->freeVars().empty()) {
 		clog << " with instance ";
 		for (auto it = _origform->freeVars().cbegin(); it != _origform->freeVars().cend(); ++it) {
@@ -204,24 +205,13 @@ void ComparisonGrounder::run(ConjOrDisj& formula) const {
 	formula.literals.push_back(run()); // TODO can do better?
 }
 
-CompType Agg2Comp(AGG_COMP_TYPE comp) {
-	switch (comp) {
-	case AGG_EQ:
-		return CompType::EQ;
-	case AGG_LT:
-		return CompType::LT;
-	case AGG_GT:
-		return CompType::GT;
-	}
-}
-
 /**
  * Negate the comparator and invert the sign of the tseitin when the aggregate is in a doubly negated context.
  */
 //TODO:why?
 Lit AggGrounder::handleDoubleNegation(double boundvalue, int setnr) const {
 	TsType tp = context()._tseitin;
-	int tseitin = translator()->translate(boundvalue, negateComp(Agg2Comp(_comp)),  _type, setnr, tp);
+	int tseitin = translator()->translate(boundvalue, negateComp(_comp), _type, setnr, tp);
 	return isPos(_sign) ? -tseitin : tseitin;
 }
 
@@ -234,47 +224,50 @@ Lit AggGrounder::finishCard(double truevalue, double boundvalue, int setnr) cons
 	bool conj;
 	bool negateset;
 	switch (_comp) {
-	case AGG_EQ:
+	case CompType::EQ: // x = #{..}
+	case CompType::NEQ: // x ~= #{..}
 		if (leftvalue < 0 || leftvalue > maxposscard) {
-			return isPos(_sign) ? _false : _true;
-		} else if (leftvalue == 0) {
+			return ((_comp == CompType::EQ) == isPos(_sign)) ? _false : _true;
+		} else if (leftvalue == 0) { //0 = #{..} ---> !x: ~... OF 0 ~= #{..} ---> ?x:..
 			simplify = true;
-			conj = true;
-			negateset = true;
-		} else if (leftvalue == maxposscard) {
+			conj = _comp == CompType::EQ;
+			negateset = _comp == CompType::EQ;
+		} else if (leftvalue == maxposscard) { //= = #{..} ---> !x: ... OF m ~= #{..} ---> ?x:~..
 			simplify = true;
-			conj = true;
-			negateset = false;
+			conj = _comp == CompType::EQ;
+			negateset = _comp != CompType::EQ;
 		}
 		break;
-	case AGG_LT:
+	case CompType::LT: // x < #{..}
+	case CompType::GEQ: // ~(x < #{..})
 		if (leftvalue < 0) {
-			return isPos(_sign) ? _true : _false;
+			return ((_comp == CompType::LT) == isPos(_sign)) ? _true : _false;
 		} else if (leftvalue == 0) {
 			simplify = true;
-			conj = false;
-			negateset = false;
+			conj = _comp != CompType::LT;
+			negateset = _comp != CompType::LT;
 		} else if (leftvalue == maxposscard - 1) {
 			simplify = true;
-			conj = true;
-			negateset = false;
+			conj = _comp == CompType::LT;
+			negateset = _comp != CompType::LT;
 		} else if (leftvalue >= maxposscard) {
-			return isPos(_sign) ? _false : _true;
+			return ((_comp == CompType::LT) == isPos(_sign)) ? _false : _true;
 		}
 		break;
-	case AGG_GT:
+	case CompType::GT: // x < #{..}
+	case CompType::LEQ: // ~(x < #{..})
 		if (leftvalue <= 0) {
-			return isPos(_sign) ? _false : _true;
+			return ((_comp == CompType::GT) == isPos(_sign)) ? _false : _true;
 		} else if (leftvalue == 1) {
 			simplify = true;
-			conj = true;
-			negateset = true;
+			conj = (_comp == CompType::GT);
+			negateset = (_comp == CompType::GT);
 		} else if (leftvalue == maxposscard) {
 			simplify = true;
-			conj = false;
-			negateset = true;
+			conj = (_comp != CompType::GT);
+			negateset = (_comp == CompType::GT);
 		} else if (leftvalue > maxposscard) {
-			return isPos(_sign) ? _true : _false;
+			return ((_comp == CompType::GT) == isPos(_sign)) ? _true : _false;
 		}
 		break;
 	}
@@ -312,8 +305,7 @@ Lit AggGrounder::finishCard(double truevalue, double boundvalue, int setnr) cons
 		if (_doublenegtseitin)
 			return handleDoubleNegation(double(leftvalue), setnr);
 		else {
-			CompType comp = Agg2Comp(_comp);
-			int tseitin = translator()->translate(double(leftvalue), comp, AggFunction::CARD, setnr, tp);
+			int tseitin = translator()->translate(double(leftvalue), _comp, AggFunction::CARD, setnr, tp);
 			return isPos(_sign) ? tseitin : -tseitin;
 		}
 	}
@@ -326,23 +318,32 @@ Lit AggGrounder::finishCard(double truevalue, double boundvalue, int setnr) cons
  */
 Lit AggGrounder::finish(double boundvalue, double newboundvalue, double minpossvalue, double maxpossvalue, int setnr) const {
 	// Check minimum and maximum possible values against the given bound
-	switch (_comp) { //TODO more complicated propagation is possible!
-	case AGG_EQ:
-		if (minpossvalue > boundvalue || maxpossvalue < boundvalue)
-			return isPos(_sign) ? _false : _true;
+	switch (_comp) {
+	case CompType::EQ:
+	case CompType::NEQ:
+		if (minpossvalue > boundvalue || maxpossvalue < boundvalue) {
+			return (isPos(_sign) == (_comp == CompType::EQ)) ? _false : _true;
+		}
 		break;
-	case AGG_LT:
-		if (boundvalue < minpossvalue)
+	case CompType::GEQ:
+	case CompType::GT:
+		if (compare(boundvalue, _comp, maxpossvalue)) {
 			return isPos(_sign) ? _true : _false;
-		else if (boundvalue >= maxpossvalue)
+		}
+		if (compare(boundvalue, negateComp(_comp), minpossvalue)) {
 			return isPos(_sign) ? _false : _true;
+		}
 		break;
-	case AGG_GT:
-		if (boundvalue > maxpossvalue)
+	case CompType::LEQ:
+	case CompType::LT:
+		if (compare(boundvalue, _comp, minpossvalue)) {
 			return isPos(_sign) ? _true : _false;
-		else if (boundvalue <= minpossvalue)
+		}
+		if (compare(boundvalue, negateComp(_comp), maxpossvalue)) {
 			return isPos(_sign) ? _false : _true;
+		}
 		break;
+
 	}
 	if (_doublenegtseitin)
 		return handleDoubleNegation(newboundvalue, setnr);
@@ -355,7 +356,7 @@ Lit AggGrounder::finish(double boundvalue, double newboundvalue, double minpossv
 			else if (tp == TsType::RIMPL)
 				tp = TsType::IMPL;
 		}
-		tseitin = translator()->translate(newboundvalue, Agg2Comp(_comp), _type, setnr, tp);
+		tseitin = translator()->translate(newboundvalue, _comp, _type, setnr, tp);
 		return isPos(_sign) ? tseitin : -tseitin;
 	}
 }
@@ -377,20 +378,9 @@ Lit AggGrounder::run() const {
 	// Compute the value of the aggregate based on weights of literals that are certainly true.
 	double truevalue = applyAgg(_type, tsset.trueweights());
 
-	// When the set is empty, return an answer based on the current value of the aggregate.
+	// When the set is empty (no more unknown values), return an answer based on the current value of the aggregate.
 	if (tsset.empty()) {
-		bool returnvalue;
-		switch (_comp) {
-		case AGG_LT:
-			returnvalue = boundvalue < truevalue;
-			break;
-		case AGG_GT:
-			returnvalue = boundvalue > truevalue;
-			break;
-		case AGG_EQ:
-			returnvalue = boundvalue == truevalue;
-			break;
-		}
+		bool returnvalue = compare(boundvalue, _comp, truevalue);
 		return isPos(_sign) == returnvalue ? _true : _false;
 	}
 
@@ -419,7 +409,7 @@ Lit AggGrounder::run() const {
 		for (unsigned int n = 0; n < tsset.size(); ++n) {
 			if (abs(tsset.weight(n)) > 1) {
 				maxpossvalue *= abs(tsset.weight(n));
-			} else if(tsset.weight(n) != 0){
+			} else if (tsset.weight(n) != 0) {
 				minpossvalue *= abs(tsset.weight(n));
 			}
 			if (tsset.weight(n) < 0)
@@ -608,7 +598,7 @@ void QuantGrounder::run(ConjOrDisj& formula, bool negated) const {
 		// Allows to jump out when grounding infinitely
 		// TODO should be a faster check?
 		// TODO add on other places
-		if(GlobalData::instance()->terminateRequested()){
+		if (GlobalData::instance()->terminateRequested()) {
 			throw IdpException("Terminate requested");
 		}
 
