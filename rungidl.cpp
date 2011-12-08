@@ -150,6 +150,8 @@ void setStop(bool value) {
 
 void monitorShutdown() {
 	int monitoringtime = 0;
+	setOption(IntType::GROUNDVERBOSITY, 4);
+	cerr <<"Verbosity set to " <<getOption(IntType::GROUNDVERBOSITY) <<"\n";
 	while(not hasStopped && monitoringtime<3000000){
 		usleep(1000);
 		monitoringtime+=1000;

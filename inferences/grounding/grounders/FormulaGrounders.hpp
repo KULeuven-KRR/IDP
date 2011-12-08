@@ -20,11 +20,11 @@ class PFSymbol;
 
 typedef std::map<Variable*, const DomElemContainer*> var2domelemmap;
 
+int verbosity();
+
 class FormulaGrounder: public Grounder {
 private:
 	var2dommap _varmap; // Maps the effective variables in the current formula to their instantiation;
-
-	int _verbosity;
 
 	const Formula* _origform;
 	var2dommap _origvarmap; // Maps the (cloned) variables in the original formula to their instantiation
@@ -32,9 +32,6 @@ private:
 protected:
 	const var2dommap& varmap() const {
 		return _varmap;
-	}
-	int verbosity() const {
-		return _verbosity;
 	}
 	GroundTranslator* translator() const;
 

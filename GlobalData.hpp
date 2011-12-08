@@ -108,4 +108,9 @@ typename OptionTypeTraits<OptionType>::ValueType getOption(OptionType type){
 	return getGlobal()->getOptions()->getValue(type);
 }
 
+template<typename OptionType>
+void setOption(OptionType type, typename OptionTypeTraits<OptionType>::ValueType value){
+	return getGlobal()->getOptions()->setValue(type, value);
+}
+
 #endif /* GLOBALDATA_HPP_ */

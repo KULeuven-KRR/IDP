@@ -1,9 +1,3 @@
-/************************************
-	interactive.hpp	
-	this file belongs to GidL 2.0
-	(c) K.U.Leuven
-************************************/
-
 #ifndef INTERACTIVE_HPP
 #define INTERACTIVE_HPP
 
