@@ -12,6 +12,7 @@
 #include <vector>
 #include <string>
 #include <list>
+#include <ostream>
 
 class DomainElement;
 class AbstractStructure;
@@ -78,7 +79,7 @@ class IVSet {
 		std::vector<std::list<int> >getInterchangeableLiterals(AbstractGroundTheory*) const;
 		
 		// Output
-		std::string		toString()									const;
+		std::ostream& put(std::ostream& output) const;
 };
 
 std::vector<const IVSet*> findIVSets(const AbstractTheory*, const AbstractStructure*);

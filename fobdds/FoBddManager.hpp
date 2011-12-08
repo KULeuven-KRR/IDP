@@ -120,8 +120,8 @@ public:
 	const FOBDDKernel* substitute(const FOBDDKernel*, const FOBDDDomainTerm*, const FOBDDVariable*);
 	const FOBDD* substitute(const FOBDD*, const std::map<const FOBDDVariable*, const FOBDDArgument*>&);
 
-	std::ostream& put(std::ostream&, const FOBDD*, unsigned int spaces = 0) const;
-	std::ostream& put(std::ostream&, const FOBDDKernel*, unsigned int spaces = 0) const;
+	std::ostream& put(std::ostream&, const FOBDD*) const;
+	std::ostream& put(std::ostream&, const FOBDDKernel*) const;
 	std::ostream& put(std::ostream&, const FOBDDArgument*) const;
 
 	bool contains(const FOBDDKernel*, Variable*);

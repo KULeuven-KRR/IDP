@@ -26,13 +26,13 @@ void TermGrounder::setOrig(const Term* t, const map<Variable*,const DomElemConta
 }
 
 void TermGrounder::printOrig() const {
-	clog << "Grounding term " << _origterm->toString();
+	clog << "Grounding term " << toString(_origterm);
 	if(not _origterm->freeVars().empty()) {
 		clog << " with instance ";
 		for(auto it = _origterm->freeVars().cbegin(); it != _origterm->freeVars().cend(); ++it) {
-			clog << (*it)->toString() << " = ";
+			clog << toString(*it) << " = ";
 			const DomainElement* e = _varmap.find(*it)->second->get();
-			clog << e->toString() << ' ';
+			clog << toString(e) << ' ';
 		}
 	}
 	clog << "\n";
@@ -79,7 +79,7 @@ GroundTerm FuncTermGrounder::run() const {
 	// Assert(isCPSymbol(_function->symbol())) && some of the ground subterms are CP terms.
 	VarId varid = _termtranslator->translate(_function,groundsubterms);
 	if(_verbosity > 2) {
-		clog << "Result = " << _termtranslator->printTerm(varid, false) << "\n"; // TODO longnames
+		clog << "Result = " << _termtranslator->printTerm(varid) << "\n";
 	}
 	return GroundTerm(varid);
 }
@@ -195,7 +195,7 @@ GroundTerm SumTermGrounder::run() const {
 
 	// Return result
 	if(_verbosity > 2) {
-		clog << "Result = " << _termtranslator->printTerm(varid, false) << "\n"; // TODO longnames
+		clog << "Result = " << _termtranslator->printTerm(varid) << "\n";
 	}
 	return GroundTerm(varid);
 }

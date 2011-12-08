@@ -429,7 +429,7 @@ public:
 	}
 
 	std::ostream& put(std::ostream& s) const {
-		return Policy::polPut(s, translator(), termtranslator(), true);
+		return Policy::polPut(s, translator(), termtranslator());
 	}
 };
 

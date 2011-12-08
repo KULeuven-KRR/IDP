@@ -109,25 +109,25 @@ protected:
 		if(isNeg(f->sign())){
 			(*_os) << "~";
 		}
-		if(f->symbol()->toString(false) == "=") {
+		if(toString(f->symbol()) == "=") {
 			(*_os) << "(";
 			f->subterms()[0]->accept(this);
 			(*_os) << " = ";
 			f->subterms()[1]->accept(this);
 			(*_os) << ")";
-		} else if(f->symbol()->toString(false) == ">") {
+		} else if(toString(f->symbol()) == ">") {
 			(*_os) << "$greater(";
 			f->subterms()[0]->accept(this);
 			(*_os) << ",";
 			f->subterms()[1]->accept(this);
 			(*_os) << ")";
-		} else if(f->symbol()->toString(false) == "<") {
+		} else if(toString(f->symbol()) == "<") {
 			(*_os) << "$less(";
 			f->subterms()[0]->accept(this);
 			(*_os) << ",";
 			f->subterms()[1]->accept(this);
 			(*_os) << ")";
-		} else if(f->symbol()->toString(false) == "+") {
+		} else if(toString(f->symbol()) == "+") {
 			(*_os) << "($sum(";
 			f->subterms()[0]->accept(this);
 			(*_os) << ",";
@@ -135,7 +135,7 @@ protected:
 			(*_os) << ") = ";
 			f->subterms()[2]->accept(this);
 			(*_os) << ")";
-		} else if(f->symbol()->toString(false) == "-" && f->subterms().size() == 3) {
+		} else if(toString(f->symbol()) == "-" && f->subterms().size() == 3) {
 			(*_os) << "($difference(";
 			f->subterms()[0]->accept(this);
 			(*_os) << ",";
@@ -143,13 +143,13 @@ protected:
 			(*_os) << ") = ";
 			f->subterms()[2]->accept(this);
 			(*_os) << ")";
-		} else if(f->symbol()->toString(false) == "-" && f->subterms().size() == 2) {
+		} else if(toString(f->symbol()) == "-" && f->subterms().size() == 2) {
 			(*_os) << "($uminus(";
 			f->subterms()[0]->accept(this);
 			(*_os) << ") = ";
 			f->subterms()[1]->accept(this);
 			(*_os) << ")";
-		} else if(f->symbol()->toString(false) == "*") {
+		} else if(toString(f->symbol()) == "*") {
 			(*_os) << "($product(";
 			f->subterms()[0]->accept(this);
 			(*_os) << ",";
@@ -157,19 +157,19 @@ protected:
 			(*_os) << ") = ";
 			f->subterms()[2]->accept(this);
 			(*_os) << ")";
-		} else if(f->symbol()->toString(false) == "PRED") {
+		} else if(toString(f->symbol()) == "PRED") {
 			(*_os) << "($difference(";
 			f->subterms()[0]->accept(this);
 			(*_os) << ",1) = ";
 			f->subterms()[1]->accept(this);
 			(*_os) << ")";
-		} else if(f->symbol()->toString(false) == "SUCC") {
+		} else if(toString(f->symbol()) == "SUCC") {
 			(*_os) << "($sum(";
 			f->subterms()[0]->accept(this);
 			(*_os) << ",1) = ";
 			f->subterms()[1]->accept(this);
 			(*_os) << ")";
-		} else if(f->symbol()->toString(false) == "MAX") {
+		} else if(toString(f->symbol()) == "MAX") {
 			// NOTE: $itett is often unsupported
 			(*_os) << "($itett($greater(";
 			f->subterms()[0]->accept(this);
@@ -182,7 +182,7 @@ protected:
 			(*_os) << ") = ";
 			f->subterms()[2]->accept(this);
 			(*_os) << ")";
-		} else if(f->symbol()->toString(false) == "MIN") {
+		} else if(toString(f->symbol()) == "MIN") {
 			// NOTE: $itett is often unsupported
 			(*_os) << "($itett($less(";
 			f->subterms()[0]->accept(this);
@@ -195,7 +195,7 @@ protected:
 			(*_os) << ") = ";
 			f->subterms()[2]->accept(this);
 			(*_os) << ")";
-		} else if(f->symbol()->toString(false) == "abs") {
+		} else if(toString(f->symbol()) == "abs") {
 			// NOTE: $itett is often unsupported
 			(*_os) << "($itett($greater(";
 			f->subterms()[0]->accept(this);
@@ -209,7 +209,7 @@ protected:
 			f->subterms()[1]->accept(this);
 			(*_os) << ")";
 		} else {
-			(*_os) << "p_" << rewriteLongname(f->symbol()->toString(true));
+			(*_os) << "p_" << rewriteLongname(toString(f->symbol()));
 			if(!f->subterms().empty()) {
 				(*_os) << "(";
 				f->subterms()[0]->accept(this);
@@ -468,14 +468,14 @@ private:
 				}
 			}
 			(*_os) << "] : (";
-			if(pfs->nrSorts() != 1 || pfs->toString(false) != pfs->sort(0)->name())
+			if(pfs->nrSorts() != 1 || toString(pfs) != pfs->sort(0)->name())
 				(*_os) << "~";
-			(*_os) << "p_" << rewriteLongname(pfs->toString(true)) << "(";
+			(*_os) << "p_" << rewriteLongname(toString(pfs)) << "("; //TODO: because of the rewrite, the longname options cant be given here!
 			(*_os) << "V0";
 			for(unsigned int n = 1; n < pfs->nrSorts(); ++n) {
 				(*_os) << ",V" << n;
 			}
-			if(pfs->nrSorts() == 1 && pfs->toString(false) == pfs->sort(0)->name())
+			if(pfs->nrSorts() == 1 && toString(pfs) == pfs->sort(0)->name())
 				(*_os) << ") <=> (";
 			else
 				(*_os) << ") | (";
@@ -495,7 +495,7 @@ private:
 		//_typeStream << "tff(t" << _count;
 		//_typeStream << ",type,(";
 		startAxiom("t", "type", &_typeStream);
-		(*_os) << "p_" << rewriteLongname(pfs->toString(true));
+		(*_os) << "p_" << rewriteLongname(toString(pfs));
 		(*_os) << ": ";
 		if (pfs->nrSorts() > 1) {
 			(*_os) << "(";
@@ -568,6 +568,7 @@ private:
 		_types.clear();
 	}
 	
+	//FIXME: everywhere this method was called, the longname option was given.  However, this option disappeared!
 	std::string rewriteLongname(const std::string& longname) {
 		// Fancy stuff here.
 		std::string result = longname;
@@ -611,7 +612,7 @@ private:
 	}
 
 	std::string domainTermNameString(const DomainTerm* t) {
-		std::string str = t->value()->toString();
+		std::string str = toString(t->value());
 		if(t->sort()) {
 			if(SortUtils::isSubsort(t->sort(),VocabularyUtils::stringsort())) {
 				std::stringstream result;
@@ -667,7 +668,7 @@ private:
 		(*_os) << "] : (";
 		if(f->partial())
 			(*_os) << "~";
-		(*_os) << "p_" << rewriteLongname(f->toString(true)) << "(";
+		(*_os) << "p_" << rewriteLongname(toString(f)) << "(";
 		if(f->arity() > 0) {
 			(*_os) << "V0";
 			for(unsigned int n = 1; n < f->arity(); ++n) {

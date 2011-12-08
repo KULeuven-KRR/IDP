@@ -98,7 +98,7 @@ public:
 		_definitions.at(defnr)->addAggRule(rule->head(), rule->setnr(), rule->aggtype(), rule->lower(), rule->bound(), rule->recursive());
 	}
 
-	std::ostream& polPut(std::ostream& s, GroundTranslator* translator, GroundTermTranslator* termtranslator, bool longnames) const {
+	std::ostream& polPut(std::ostream& s, GroundTranslator* translator, GroundTermTranslator* termtranslator) const {
 		std::cerr << "Printing ground theory\n";
 		std::cerr << "Has " << _clauses.size() << " clauses." << "\n";
 		for(size_t n = 0; n < _clauses.size(); ++n) {
@@ -106,7 +106,7 @@ public:
 			else {
 				for(size_t m = 0; m < _clauses[n].size(); ++m) {
 					if(_clauses[n][m] < 0) { s << '~'; }
-					s << translator->printLit(_clauses[n][m],longnames);
+					s << translator->printLit(_clauses[n][m]);
 					if(m < _clauses[n].size()-1) { s << " | "; }
 				}
 			}
@@ -117,12 +117,12 @@ public:
 			s << "0\n";
 		}
 		for(size_t n = 0; n < _definitions.size(); ++n) {
-			s << _definitions.at(n)->toString(longnames);
+			s << toString(_definitions.at(n));
 		}
 		for(size_t n = 0; n < _sets.size(); ++n) {
 			s << "Set nr. " << _sets[n]->setnr() << " = [ ";
 			for(size_t m = 0; m < _sets[n]->size(); ++m) {
-				s << "(" << translator->printLit(_sets[n]->literal(m),longnames);
+				s << "(" << translator->printLit(_sets[n]->literal(m));
 				s << " = " << _sets[n]->weight(m) << ")";
 				if(m < _sets[n]->size()-1) { s << "; "; }
 			}
@@ -130,7 +130,7 @@ public:
 		}
 		for(size_t n = 0; n < _aggregates.size(); ++n) {
 			const GroundAggregate* agg = _aggregates[n];
-			s << translator->printLit(agg->head(), longnames) << ' ';
+			s << translator->printLit(agg->head()) << ' ';
 			s << agg->arrow() << ' ';
 			s << agg->bound();
 			s << (agg->lower() ? " =< " : " >= ");
@@ -139,7 +139,7 @@ public:
 		//TODO: repeat above for fixpoint definitions
 		for(auto it = _cpreifications.begin(); it != _cpreifications.end(); ++it) {
 			CPReification* cpr = *it;
-			s << translator->printLit(cpr->_head,longnames) << ' ' << cpr->_body->type() << ' ';
+			s << translator->printLit(cpr->_head) << ' ' << cpr->_body->type() << ' ';
 			CPTerm* left = cpr->_body->left();
 			if(typeid(*left) == typeid(CPSumTerm)) {
 				CPSumTerm* cpt = dynamic_cast<CPSumTerm*>(left);
@@ -147,7 +147,7 @@ public:
 				bool begin = true;
 				for(auto vit = cpt->varids().begin(); vit != cpt->varids().end(); ++vit) {
 					if(not begin){ s << "; "; }	begin = false;
-					s << termtranslator->printTerm(*vit, longnames);
+					s << termtranslator->printTerm(*vit);
 				}
 				s << " ]";
 			}
@@ -159,27 +159,27 @@ public:
 				auto wit = cpt->weights().begin();
 				for(; vit != cpt->varids().end() && wit != cpt->weights().end(); ++vit, ++wit) {
 					if(not begin){ s << "; "; }	begin = false;
-					s << '(' << termtranslator->printTerm(*vit, longnames) << '=' << *wit << ')';
+					s << '(' << termtranslator->printTerm(*vit) << '=' << *wit << ')';
 				}
 				s << " ]";
 			}
 			else {
 				Assert(typeid(*left) == typeid(CPVarTerm));
 				CPVarTerm* cpt = dynamic_cast<CPVarTerm*>(left);
-				s << termtranslator->printTerm(cpt->varid(), longnames);
+				s << termtranslator->printTerm(cpt->varid());
 			}
 			s << ' ' << cpr->_body->comp() << ' ';
 			CPBound right = cpr->_body->right();
-			if(right._isvarid) { s << termtranslator->printTerm(right._varid, longnames); }
+			if(right._isvarid) { s << termtranslator->printTerm(right._varid); }
 			else { s << right._bound; }
 			s << '.' << "\n";
 		}
 		return s;
 	}
 
-	std::string polToString(GroundTranslator* translator, GroundTermTranslator* termtranslator, bool longnames) const {
+	std::string polToString(GroundTranslator* translator, GroundTermTranslator* termtranslator) const {
 		std::stringstream s;
-		polPut(s, translator, termtranslator, longnames);
+		polPut(s, translator, termtranslator);
 		return s.str();
 	}
 };

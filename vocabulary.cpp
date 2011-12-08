@@ -182,8 +182,8 @@ std::set<const Vocabulary*>::const_iterator Sort::lastVocabulary() const {
 	return _vocabularies.cend();
 }
 
-ostream& Sort::put(ostream& output, bool longnames) const {
-	if (longnames) {
+ostream& Sort::put(ostream& output) const {
+	if (getOption(BoolType::LONGNAMES)) {
 		for (auto it = _vocabularies.cbegin(); it != _vocabularies.cend(); ++it) {
 			if (not (*it)->sort(_name)->empty()) {
 				(*it)->putName(output);
@@ -196,11 +196,7 @@ ostream& Sort::put(ostream& output, bool longnames) const {
 	return output;
 }
 
-string Sort::toString(bool longnames) const {
-	stringstream output;
-	put(output, longnames);
-	return output.str();
-}
+
 
 ostream& operator<<(ostream& output, const Sort& sort) {
 	return sort.put(output);
@@ -294,20 +290,14 @@ const ParseInfo& Variable::pi() const {
 	return _pi;
 }
 
-ostream& Variable::put(ostream& output, bool longnames) const {
+ostream& Variable::put(ostream& output) const {
 	output << _name;
 	if (_sort) {
 		output << '[';
-		_sort->put(output, longnames);
+		_sort->put(output);
 		output << ']';
 	}
 	return output;
-}
-
-string Variable::toString(bool longnames) const {
-	stringstream output;
-	put(output, longnames);
-	return output.str();
 }
 
 ostream& operator<<(ostream& output, const Variable& var) {
@@ -394,20 +384,8 @@ vector<unsigned int> PFSymbol::argumentNrs(const Sort* soort) const {
 	return result;
 }
 
-string PFSymbol::toString(bool longnames) const {
-	stringstream output;
-	put(output, longnames);
-	return output.str();
-}
-
-string Function::toString(bool longnames) const {
-	stringstream output;
-	put(output, longnames);
-	return output.str();
-}
-
 ostream& operator<<(ostream& output, const PFSymbol& s) {
-	return s.put(output, false); // TODO longnames
+	return s.put(output);
 }
 
 int Predicate::_npnr = 0;
@@ -424,13 +402,16 @@ set<Sort*> Predicate::allsorts() const {
 }
 
 Predicate::~Predicate() {
-	if (_interpretation) delete (_interpretation);
-	if (_overpredgenerator) delete (_overpredgenerator);
+	if (_interpretation)
+		delete (_interpretation);
+	if (_overpredgenerator)
+		delete (_overpredgenerator);
 }
 
 bool Predicate::removeVocabulary(const Vocabulary* vocabulary) {
 	_vocabularies.erase(vocabulary);
-	if (overloaded()) _overpredgenerator->removeVocabulary(vocabulary);
+	if (overloaded())
+		_overpredgenerator->removeVocabulary(vocabulary);
 	if (_vocabularies.empty()) {
 		delete (this);
 		return true;
@@ -440,7 +421,8 @@ bool Predicate::removeVocabulary(const Vocabulary* vocabulary) {
 
 void Predicate::addVocabulary(const Vocabulary* vocabulary) {
 	_vocabularies.insert(vocabulary);
-	if (overloaded()) _overpredgenerator->addVocabulary(vocabulary);
+	if (overloaded())
+		_overpredgenerator->addVocabulary(vocabulary);
 }
 
 Predicate::Predicate(const std::string& name, const std::vector<Sort*>& sorts, const ParseInfo& pi, bool infix) :
@@ -548,7 +530,8 @@ Predicate* Predicate::disambiguate(const vector<Sort*>& sorts, const Vocabulary*
 		return _overpredgenerator->disambiguate(sorts, vocabulary);
 	else {
 		for (size_t n = 0; n < _sorts.size(); ++n) {
-			if (_sorts[n] && !SortUtils::resolve(sorts[n], _sorts[n], vocabulary)) return 0;
+			if (_sorts[n] && !SortUtils::resolve(sorts[n], _sorts[n], vocabulary))
+				return 0;
 		}
 		return this;
 	}
@@ -559,13 +542,14 @@ set<Predicate*> Predicate::nonbuiltins() {
 		return _overpredgenerator->nonbuiltins();
 	else {
 		set<Predicate*> sp;
-		if (not _interpretation) sp.insert(this);
+		if (not _interpretation)
+			sp.insert(this);
 		return sp;
 	}
 }
 
-ostream& Predicate::put(ostream& output, bool longnames) const {
-	if (longnames) {
+ostream& Predicate::put(ostream& output) const {
+	if (getOption(BoolType::LONGNAMES)) {
 		for (auto it = _vocabularies.cbegin(); it != _vocabularies.cend(); ++it) {
 			if (not (*it)->pred(_name)->overloaded()) {
 				(*it)->putName(output);
@@ -575,13 +559,13 @@ ostream& Predicate::put(ostream& output, bool longnames) const {
 		}
 	}
 	output << _name.substr(0, _name.rfind('/'));
-	if (longnames && not overloaded()) {
+	if (getOption(BoolType::LONGNAMES) && not overloaded()) {
 		if (nrSorts() > 0) {
 			output << '[';
-			sort(0)->put(output, longnames);
+			sort(0)->put(output);
 			for (size_t n = 1; n < nrSorts(); ++n) {
 				output << ',';
-				sort(n)->put(output, longnames);
+				sort(n)->put(output);
 			}
 			output << ']';
 		}
@@ -631,7 +615,8 @@ EnumeratedPredGenerator::EnumeratedPredGenerator(const set<Predicate*>& overpred
 
 bool EnumeratedPredGenerator::contains(const Predicate* predicate) const {
 	for (auto it = _overpreds.cbegin(); it != _overpreds.cend(); ++it) {
-		if ((*it)->contains(predicate)) return true;
+		if ((*it)->contains(predicate))
+			return true;
 	}
 	return false;
 }
@@ -706,7 +691,8 @@ ComparisonPredGenerator::ComparisonPredGenerator(const string& name, PredInterGe
 ComparisonPredGenerator::~ComparisonPredGenerator() {
 	delete (_interpretation);
 	for (auto it = _overpreds.cbegin(); it != _overpreds.cend(); ++it) {
-		if (!it->second->hasVocabularies()) delete (it->second);
+		if (!it->second->hasVocabularies())
+			delete (it->second);
 	}
 }
 
@@ -748,16 +734,16 @@ Predicate* ComparisonPredGenerator::disambiguate(const vector<Sort*>& sorts, con
 	Sort* predSort = NULL;
 	bool sortsContainsZero = false;
 	for (auto it = sorts.cbegin(); it != sorts.cend(); ++it) {
-		if((*it)==NULL){
+		if ((*it) == NULL) {
 			sortsContainsZero = true;
 			continue;
 		}
-		if (predSort!=NULL) {
+		if (predSort != NULL) {
 			predSort = SortUtils::resolve(predSort, *it, vocabulary);
-			if (predSort==NULL){
+			if (predSort == NULL) {
 				return NULL;
 			}
-		} else{
+		} else {
 			predSort = *it;
 		}
 	}
@@ -791,7 +777,8 @@ void ComparisonPredGenerator::removeVocabulary(const Vocabulary* vocabulary) {
 	for (auto it = _overpreds.begin(); it != _overpreds.end();) {
 		map<Sort*, Predicate*>::iterator jt = it;
 		++it;
-		if (jt->second->removeVocabulary(vocabulary)) _overpreds.erase(jt);
+		if (jt->second->removeVocabulary(vocabulary))
+			_overpreds.erase(jt);
 	}
 }
 
@@ -804,7 +791,8 @@ namespace PredUtils {
 
 Predicate* overload(Predicate* p1, Predicate* p2) {
 	Assert(p1->name() == p2->name());
-	if (p1 == p2) return p1;
+	if (p1 == p2)
+		return p1;
 	set<Predicate*> sp;
 	sp.insert(p1);
 	sp.insert(p2);
@@ -868,13 +856,16 @@ Function::Function(FuncGenerator* generator) :
 }
 
 Function::~Function() {
-	if (_interpretation) delete (_interpretation);
-	if (_overfuncgenerator) delete (_overfuncgenerator);
+	if (_interpretation)
+		delete (_interpretation);
+	if (_overfuncgenerator)
+		delete (_overfuncgenerator);
 }
 
 bool Function::removeVocabulary(const Vocabulary* vocabulary) {
 	_vocabularies.erase(vocabulary);
-	if (overloaded()) _overfuncgenerator->removeVocabulary(vocabulary);
+	if (overloaded())
+		_overfuncgenerator->removeVocabulary(vocabulary);
 	if (_vocabularies.empty()) {
 		delete (this);
 		return true;
@@ -884,7 +875,8 @@ bool Function::removeVocabulary(const Vocabulary* vocabulary) {
 
 void Function::addVocabulary(const Vocabulary* vocabulary) {
 	_vocabularies.insert(vocabulary);
-	if (overloaded()) _overfuncgenerator->addVocabulary(vocabulary);
+	if (overloaded())
+		_overfuncgenerator->addVocabulary(vocabulary);
 }
 
 void Function::partial(bool b) {
@@ -912,7 +904,7 @@ bool Function::partial() const {
 }
 
 bool Function::builtin() const {
-	return _interpretation!=NULL || Vocabulary::std()->contains(this);
+	return _interpretation != NULL || Vocabulary::std()->contains(this);
 }
 
 bool Function::overloaded() const {
@@ -984,11 +976,11 @@ Function* Function::resolve(const vector<Sort*>& sorts) {
  *		- vocabulary:	the vocabulary used for resolving the sorts. Defaults to 0.
  */
 Function* Function::disambiguate(const vector<Sort*>& sorts, const Vocabulary* vocabulary) {
-	if (overloaded()){
+	if (overloaded()) {
 		return _overfuncgenerator->disambiguate(sorts, vocabulary);
-	}else {
+	} else {
 		for (unsigned int n = 0; n < _sorts.size(); ++n) {
-			if (sorts[n]!=NULL && not SortUtils::resolve(sorts[n], _sorts[n], vocabulary)){
+			if (sorts[n] != NULL && not SortUtils::resolve(sorts[n], _sorts[n], vocabulary)) {
 				return NULL;
 			}
 		}
@@ -1008,8 +1000,8 @@ set<Function*> Function::nonbuiltins() {
 	}
 }
 
-ostream& Function::put(ostream& output, bool longnames) const {
-	if (longnames) {
+ostream& Function::put(ostream& output) const {
+	if (getOption(BoolType::LONGNAMES)) {
 		for (auto it = _vocabularies.cbegin(); it != _vocabularies.cend(); ++it) {
 			if (not (*it)->func(_name)->overloaded()) {
 				(*it)->putName(output);
@@ -1019,17 +1011,17 @@ ostream& Function::put(ostream& output, bool longnames) const {
 		}
 	}
 	output << _name.substr(0, _name.rfind('/'));
-	if (longnames && not overloaded()) {
+	if (getOption(BoolType::LONGNAMES) && not overloaded()) {
 		output << '[';
 		if (_insorts.size() > 0) {
-			_insorts[0]->put(output, longnames);
+			_insorts[0]->put(output);
 			for (size_t n = 1; n < _insorts.size(); ++n) {
 				output << ',';
-				_insorts[n]->put(output, longnames);
+				_insorts[n]->put(output);
 			}
 		}
 		output << " : ";
-		_outsort->put(output, longnames);
+		_outsort->put(output);
 		output << ']';
 	}
 	return output;
@@ -1396,10 +1388,10 @@ void Vocabulary::add(Sort* s) {
 }
 
 // TODO cleaner?
-void Vocabulary::add(PFSymbol* symbol){
-	if(sametypeid<Predicate>(*symbol)){
+void Vocabulary::add(PFSymbol* symbol) {
+	if (sametypeid<Predicate>(*symbol)) {
 		add(dynamic_cast<Predicate*>(symbol));
-	}else{
+	} else {
 		Assert(sametypeid<Function>(*symbol));
 		add(dynamic_cast<Function*>(symbol));
 	}
@@ -1409,7 +1401,7 @@ void Vocabulary::add(Predicate* p) {
 	if (contains(p)) {
 		return;
 	}
-	if(p->type()!=ST_NONE){
+	if (p->type() != ST_NONE) {
 		Warning::triedAddingSubtypeToVocabulary(p->name(), p->parent()->name(), this->name());
 		add(p->parent());
 	}
@@ -1696,46 +1688,40 @@ ostream& Vocabulary::putName(ostream& output) const {
 	return output;
 }
 
-ostream& Vocabulary::put(ostream& output, size_t tabs, bool longnames) const {
-	//TODO Use put methods + add longnames option...
-	printTabs(output, tabs);
+ostream& Vocabulary::put(ostream& output) const {
 	output << "Vocabulary " << _name << ":\n";
-	++tabs;
-	printTabs(output, tabs);
+	pushtab();
+	output << tabs();
 	output << "Sorts:\n";
-	++tabs;
+	pushtab();
 	for (auto it = _name2sort.cbegin(); it != _name2sort.cend(); ++it) {
 		for (auto jt = (it->second).cbegin(); jt != (it->second).cend(); ++jt) {
-			printTabs(output, tabs);
-			(*jt)->put(output, longnames);
+			output << tabs();
+			(*jt)->put(output);
 			output << '\n';
 		}
 	}
-	--tabs;
-	printTabs(output, tabs);
+	poptab();
+	output << tabs();
 	output << "Predicates:\n";
-	++tabs;
+	pushtab();
 	for (auto it = _name2pred.cbegin(); it != _name2pred.cend(); ++it) {
-		printTabs(output, tabs);
-		it->second->put(output, longnames);
+		output << tabs();
+		it->second->put(output);
 		output << '\n';
 	}
-	--tabs;
-	printTabs(output, tabs);
+	poptab();
+	output << tabs();
 	output << "Functions:\n";
-	++tabs;
+	pushtab();
 	for (auto it = _name2func.cbegin(); it != _name2func.cend(); ++it) {
-		printTabs(output, tabs);
-		it->second->put(output, longnames);
+		output << tabs();
+		it->second->put(output);
 		output << '\n';
 	}
+	poptab();
+	poptab();
 	return output;
-}
-
-string Vocabulary::toString(size_t tabs, bool longnames) const {
-	stringstream ss;
-	put(ss, tabs, longnames);
-	return ss.str();
 }
 
 ostream& operator<<(ostream& output, const Vocabulary& voc) {

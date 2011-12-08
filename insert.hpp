@@ -13,6 +13,7 @@
 #include <sstream>
 #include "commontypes.hpp"
 #include "parseinfo.hpp"
+#include <ostream>
 
 class Sort;
 class Predicate;
@@ -68,8 +69,7 @@ struct NSPair {
 	void includePredArity();
 	void includeFuncArity();
 	void includeArity(unsigned int n);
-
-	std::string toString();
+	std::ostream& put(std::ostream&  output) const;
 };
 
 // TODO no idea of meaning

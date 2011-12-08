@@ -77,7 +77,6 @@ public:
 	DomainElementValue value() const; //!< Returns the value of the element
 
 	std::ostream& put(std::ostream&) const;
-	std::string toString() const;
 
 	friend class DomainElementFactory;
 	friend class DomElemContainer;

@@ -173,7 +173,7 @@ unsigned int GroundTranslator::addSymbol(PFSymbol* pfs) {
 	return symbols.size() - 1;
 }
 
-string GroundTranslator::printLit(const Lit& lit, bool longnames) const {
+string GroundTranslator::printLit(const Lit& lit) const {
 	stringstream s;
 	int nr = lit;
 	if (nr == _true) {
@@ -193,7 +193,7 @@ string GroundTranslator::printLit(const Lit& lit, bool longnames) const {
 	switch (atomtype[nr]) {
 	case AtomType::INPUT: {
 		PFSymbol* pfs = getSymbol(nr);
-		s << pfs->toString(longnames);
+		s << toString(pfs);
 		auto tuples = getArgs(nr);
 		if (not tuples.empty()) {
 			s << "(";
@@ -203,7 +203,7 @@ string GroundTranslator::printLit(const Lit& lit, bool longnames) const {
 					s << ", ";
 				}
 				begin = false;
-				s << (*i)->toString();
+				s << toString(*i);
 			}
 			s << ")";
 		}

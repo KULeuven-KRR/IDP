@@ -11,7 +11,7 @@ using namespace std;
 void UnnestTerms::contextProblem(Term* t) {
 	if (t->pi().original()) {
 		if (TermUtils::isPartial(t)) {
-			Warning::ambigpartialterm(t->pi().original()->toString(), t->pi());
+			Warning::ambigpartialterm(toString(t->pi().original()), t->pi());
 		}
 	}
 }

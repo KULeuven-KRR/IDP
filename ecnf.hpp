@@ -311,8 +311,7 @@ public:
 	}
 
 	// Debugging
-	std::ostream& put(std::ostream&, bool longnames = true, unsigned int spaces = 0) const;
-	std::string toString(unsigned int spaces = 0) const;
+	std::ostream& put(std::ostream&) const;
 };
 
 /****************************************
