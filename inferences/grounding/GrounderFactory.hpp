@@ -46,7 +46,6 @@ private:
 	Options* _options;
 	int _verbosity;
 	bool _cpsupport;
-	bool _longnames;
 
 	// Context
 	GroundingContext _context;

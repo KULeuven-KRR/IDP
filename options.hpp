@@ -234,7 +234,6 @@ public:
 
 	std::string 	printAllowedValues	(const std::string& option) const;
 	std::ostream&	put					(std::ostream&)	const;
-	std::string		toString			()			const;
 
 	Language		language() const;
 

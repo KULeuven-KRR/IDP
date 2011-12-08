@@ -1,15 +1,12 @@
-/************************************
-	TheoryVisitor.cpp
-	this file belongs to GidL 2.0
-	(c) K.U.Leuven
-************************************/
-
-#include "visitors/TheoryVisitor.hpp"
+#include "TheoryVisitor.hpp"
 
 #include "vocabulary.hpp"
 #include "theory.hpp"
 #include "term.hpp"
 #include "error.hpp"
+
+#include "groundtheories/GroundPolicy.hpp"
+#include "groundtheories/GroundTheory.hpp"
 
 using namespace std;
 
@@ -27,7 +24,11 @@ void TheoryVisitor::visit(const Theory* t) {
 }
 
 void TheoryVisitor::visit(const AbstractGroundTheory* ) {
-	// TODO
+	thrownotyetimplemented("Visiting of ground theories");
+}
+
+void TheoryVisitor::visit(const GroundTheory<GroundPolicy>* t){
+	thrownotyetimplemented("Visiting of ground theories");
 }
 
 class DefaultFormulaVisitor: TheoryVisitor{
@@ -129,3 +130,24 @@ void TheoryVisitor::visit(const QuantSetExpr* qs) {
 	traverse(qs);
 }
 
+void TheoryVisitor::visit(const GroundDefinition* d) {
+	for (auto it = d->begin(); it != d->end(); ++it) {
+		(*it).second->accept(this);
+	}
+}
+
+void TheoryVisitor::visit(const AggGroundRule*) {
+	thrownotyetimplemented("Visiting of ground theories");
+}
+
+void TheoryVisitor::visit(const PCGroundRule*) {
+	thrownotyetimplemented("Visiting of ground theories");
+}
+
+void TheoryVisitor::visit(const GroundSet*) {
+	thrownotyetimplemented("Visiting of ground theories");
+}
+
+void TheoryVisitor::visit(const GroundAggregate*) {
+	thrownotyetimplemented("Visiting of ground theories");
+}

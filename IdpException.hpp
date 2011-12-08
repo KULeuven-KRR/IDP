@@ -1,25 +1,40 @@
 #ifndef IDP_IDPEXCEPTION_HPP_
 #define IDP_IDPEXCEPTION_HPP_
 
-#include <exception>
-#include <string>
 #include <sstream>
+#include <string>
 
-class IdpException: public std::exception{
+class Exception{
+public:
+	~Exception(){}
+	virtual std::string getMessage() const = 0;
+};
+
+class AssertionException: public Exception{
 private:
 	std::string message;
-
 public:
-	IdpException(const std::string& message): message(message){
+	AssertionException(std::string message): message(message){
 
 	}
+	std::string getMessage() const{
+		std::stringstream ss;
+		ss <<"AssertionException: " <<message;
+		return ss.str();
+	}
+};
 
-	virtual ~IdpException() throw(){}
+class IdpException: public Exception{
+private:
+	std::string message;
+public:
+	IdpException(std::string message): message(message){
 
-	const char* what() const throw(){
+	}
+	std::string getMessage() const{
 		std::stringstream ss;
 		ss <<"IdpException: " <<message;
-		return ss.str().c_str();
+		return ss.str();
 	}
 };
 

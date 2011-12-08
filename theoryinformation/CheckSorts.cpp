@@ -16,7 +16,7 @@ void CheckSorts::visit(const PredForm* pf) {
 		Sort* s2 = (*jt)->sort();
 		if (s1 && s2) {
 			if (!SortUtils::resolve(s1, s2, _vocab)) {
-				Error::wrongsort((*jt)->toString(), s2->name(), s1->name(), (*jt)->pi());
+				Error::wrongsort(toString(*jt), s2->name(), s1->name(), (*jt)->pi());
 			}
 		}
 	}
@@ -32,7 +32,7 @@ void CheckSorts::visit(const FuncTerm* ft) {
 		Sort* s2 = (*jt)->sort();
 		if (s1 && s2) {
 			if (!SortUtils::resolve(s1, s2, _vocab)) {
-				Error::wrongsort((*jt)->toString(), s2->name(), s1->name(), (*jt)->pi());
+				Error::wrongsort(toString(*jt), s2->name(), s1->name(), (*jt)->pi());
 			}
 		}
 	}
@@ -50,7 +50,7 @@ void CheckSorts::visit(const EqChainForm* ef) {
 		Sort* t = (*it)->sort();
 		if (t) {
 			if (!SortUtils::resolve(s, t, _vocab)) {
-				Error::wrongsort((*it)->toString(), t->name(), s->name(), (*it)->pi());
+				Error::wrongsort(toString(*it), t->name(), s->name(), (*it)->pi());
 			}
 		}
 	}
@@ -65,7 +65,7 @@ void CheckSorts::visit(const AggTerm* at) {
 	auto subterms = at->set()->subterms();
 	for (auto it = subterms.cbegin(); it != subterms.cend(); ++it) {
 		if ((*it)->sort() != NULL && !isNumeric((*it)->sort(), _vocab)) {
-			Error::wrongsort((*it)->toString(), (*it)->sort()->name(), "int or float", (*it)->pi());
+			Error::wrongsort(toString(*it), (*it)->sort()->name(), "int or float", (*it)->pi());
 		}
 	}
 	traverse(at);

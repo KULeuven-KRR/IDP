@@ -99,8 +99,7 @@ public:
 	bool contains(const Variable*) const; //!< true iff the term contains the variable
 
 	// Output
-	virtual std::ostream& put(std::ostream&, bool longnames = false) const = 0;
-	std::string toString(bool longnames = false) const;
+	virtual std::ostream& put(std::ostream&) const = 0;
 
 	friend class VarTerm;
 };
@@ -137,7 +136,7 @@ public:
 		return _var;
 	}
 
-	std::ostream& put(std::ostream&, bool longnames = false) const;
+	std::ostream& put(std::ostream&) const;
 };
 
 /**
@@ -176,7 +175,7 @@ public:
 		return subterms();
 	}
 
-	std::ostream& put(std::ostream&, bool longnames = false) const;
+	std::ostream& put(std::ostream&) const;
 };
 
 /**
@@ -212,7 +211,7 @@ public:
 		return _value;
 	}
 
-	std::ostream& put(std::ostream&, bool longnames = false) const;
+	std::ostream& put(std::ostream&) const;
 };
 
 /**
@@ -246,7 +245,7 @@ public:
 		return _function;
 	}
 
-	std::ostream& put(std::ostream&, bool longnames = false) const;
+	std::ostream& put(std::ostream&) const;
 };
 
 namespace TermUtils {
@@ -374,8 +373,7 @@ public:
 	}
 
 	// Output
-	virtual std::ostream& put(std::ostream&, bool longnames = false) const = 0;
-	std::string toString(bool longnames = false) const;
+	virtual std::ostream& put(std::ostream&) const = 0;
 };
 
 std::ostream& operator<<(std::ostream&, const SetExpr&);
@@ -404,7 +402,7 @@ public:
 
 	Sort* sort() const;
 
-	std::ostream& put(std::ostream&, bool longnames = false) const;
+	std::ostream& put(std::ostream&) const;
 };
 
 /** 
@@ -424,7 +422,7 @@ public:
 
 	Sort* sort() const;
 
-	std::ostream& put(std::ostream&, bool longnames = false) const;
+	std::ostream& put(std::ostream&) const;
 };
 
 #endif 

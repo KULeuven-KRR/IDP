@@ -27,11 +27,11 @@ template<typename Transformer, typename ReturnType, typename Construct, typename
 ReturnType transform(Construct* object, Values ... parameters) {
 	Transformer t;
 	if(getOption(IntType::GROUNDVERBOSITY)>1){
-		std::cerr <<"Executing " <<typeid(Transformer).name() <<" on: " <<toString(object) <<"\nResulted in: ";
+		std::clog <<"Executing " <<typeid(Transformer).name() <<" on: " <<toString(object) <<"\nResulted in: ";
 	}
 	ReturnType result = t.execute(object, parameters...);
 	if(getOption(IntType::GROUNDVERBOSITY)>1){
-		std::cerr <<"\n";
+		std::clog <<toString(result) <<"\n";
 		//FIXME make everything printable? std::clog <<toString(result) <<"\n";
 		// => create a static checkable condition whether something is printable via put! If not, do <<
 	}
@@ -42,7 +42,7 @@ template<typename Transformer, typename Construct, typename ... Values>
 void transform(Construct* object, Values ... parameters) {
 	Transformer t;
 	if(getOption(IntType::GROUNDVERBOSITY)>1){
-		std::cerr <<"Executing " <<typeid(Transformer).name() <<" on: " <<toString(object) <<"\nResulted in: ";
+		std::clog <<"Executing " <<typeid(Transformer).name() <<" on: " <<toString(object) <<"\nResulted in: ";
 	}
 	t.execute(object, parameters...);
 }

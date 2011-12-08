@@ -92,10 +92,10 @@ void TheorySupportedChecker::visit(const EqChainForm* f) {
 void TheorySupportedChecker::visit(const FuncTerm* f) {
 	std::string arithmeticFunction[10] = { "+", "-", "/", "*", "%", "abs", "MAX", "MIN", "SUCC", "PRED" };
 	for (unsigned int n = 0; n < 5; ++n) {
-		if (f->function()->toString(false) == arithmeticFunction[n])
+		if (toString(f->function()) == arithmeticFunction[n])
 			_arithmeticFound = true;
 	}
-	if (f->function()->toString(false) == "%")
+	if (toString(f->function()) == "%")
 		_theorySupported = false;
 	if (!_arithmeticFound) {
 		traverse(f);

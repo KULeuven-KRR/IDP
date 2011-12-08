@@ -219,7 +219,7 @@ public:
 
 	// Inspectors
 	const AbstractStructure* getStructure() const;
-	string toString() const;
+	ostream& put(ostream& output) const;
 
 	//	Mutators
 	pair<int, int> getOccurrences(const DomainElement*, PFSymbol*, Sort*);
@@ -318,17 +318,16 @@ map<const DomainElement*, vector<int> > OccurrencesCounter::getOccurrences(const
 	return result;
 }
 
-string OccurrencesCounter::toString() const {
-	stringstream ss;
-	ss << "COUNTER:" << endl;
-	ss << "structure: " << getStructure()->name() << endl;
+ostream& OccurrencesCounter::put(ostream& output) const{
+	output << "COUNTER:" << endl;
+	output << "structure: " << getStructure()->name() << endl;
 	for (auto occurrences_it = occurrences_.cbegin(); occurrences_it != occurrences_.cend(); ++occurrences_it) {
-		ss << occurrences_it->first.first->toString(false) << "-" << occurrences_it->first.second->toString(false) << endl; // TODO longnames?
+		output << toString(occurrences_it->first.first) << "-" << toString(occurrences_it->first.second) << endl;
 		for (auto element_it = occurrences_it->second.cbegin(); element_it != occurrences_it->second.cend(); ++element_it) {
-			ss << "   " << element_it->first->toString() << ": " << element_it->second.first << "," << element_it->second.second << endl;
+			output << "   " << toString(element_it->first) << ": " << element_it->second.first << "," << element_it->second.second << endl;
 		}
 	}
-	return ss.str();
+	return output;
 }
 
 /**********
@@ -361,24 +360,23 @@ IVSet::IVSet(const AbstractStructure* s, const set<const DomainElement*> element
 	Assert(elements_.size()>1);
 }
 
-string IVSet::toString() const {
-	stringstream ss;
-	ss << "structure: " << getStructure()->name() << endl;
-	for (auto sorts_it = getSorts().cbegin(); sorts_it != getSorts().cend(); ++sorts_it) {
-		ss << (*sorts_it)->toString(false) << " | "; // TODO longnames?
-	}
-	ss << endl;
-	for (auto relations_it = getRelations().cbegin(); relations_it != getRelations().cend(); ++relations_it) {
-		ss << (*relations_it)->toString(false) << " | "; // TODO longnames?
-	}
-	ss << endl;
-	ss << getElements().size() << ": ";
-	for (auto elements_it = getElements().cbegin(); elements_it != getElements().cend(); ++elements_it) {
-		ss << (*elements_it)->toString() << " | ";
-	}
-	ss << endl;
-	ss << "Enkelvoudig? " << isEnkelvoudig() << endl;
-	return ss.str();
+ostream& IVSet::put(ostream& output) const{
+	output << "structure: " << getStructure()->name() << endl;
+		for (auto sorts_it = getSorts().cbegin(); sorts_it != getSorts().cend(); ++sorts_it) {
+			output << toString(*sorts_it) << " | ";
+		}
+		output << endl;
+		for (auto relations_it = getRelations().cbegin(); relations_it != getRelations().cend(); ++relations_it) {
+			output << toString(*relations_it) << " | ";
+		}
+		output << endl;
+		output << getElements().size() << ": ";
+		for (auto elements_it = getElements().cbegin(); elements_it != getElements().cend(); ++elements_it) {
+			output << toString(*elements_it) << " | ";
+		}
+		output << endl;
+		output << "Enkelvoudig? " << isEnkelvoudig() << endl;
+		return output;
 }
 
 /**
@@ -583,7 +581,7 @@ pair<list<int>, list<int> > IVSet::getSymmetricLiterals(AbstractGroundTheory* gt
 			}
 		}
 	}
-	return pair<list<int>, list<int> >(originals, symmetricals);
+	return pair < list<int>, list<int> > (originals, symmetricals);
 }
 
 /**
@@ -708,7 +706,7 @@ public:
 			structure_(s) {
 	}
 
-	void analyze(const AbstractTheory* t){
+	void analyze(const AbstractTheory* t) {
 		t->accept(this);
 	}
 
@@ -885,7 +883,7 @@ set<const IVSet*> initializeIVSets(const AbstractStructure* s, const AbstractThe
 	}
 	cout << "forbiddenSorts:" << endl;
 	for (auto it = forbiddenSorts.cbegin(); it != forbiddenSorts.cend(); ++it) {
-		cout << (*it)->toString(false) << endl; // TODO longnames?
+		cout << toString(*it) << endl;
 	}
 
 	set<Sort*> allowedSorts;
@@ -899,7 +897,7 @@ set<const IVSet*> initializeIVSets(const AbstractStructure* s, const AbstractThe
 
 	cout << "allowedSorts:" << endl;
 	for (auto it = allowedSorts.cbegin(); it != allowedSorts.cend(); ++it) {
-		cout << (*it)->toString(false) << endl; // TODO longnames?
+		cout << toString(*it) << endl;
 	}
 
 	map<Sort*, set<const DomainElement*> > elementsForSorts = findElementsForSorts(s, allowedSorts, tsa.getForbiddenElements());
@@ -1001,13 +999,13 @@ vector<const IVSet*> findIVSets(const AbstractTheory* t, const AbstractStructure
 
 	vector<const IVSet*> result = extractDontCares(potentials);
 	for (auto result_it = result.cbegin(); result_it != result.cend(); ++result_it) {
-		cout << "##########" << endl << (*result_it)->toString() << endl;
+		cout << "##########" << endl << toString(*result_it) << endl;
 	}
 
 	splitByOccurrences(potentials);
 	splitByBinarySymmetries(potentials);
 	for (auto result_it = potentials.cbegin(); result_it != potentials.cend(); ++result_it) {
-		cout << "@@@@@@@@@@" << endl << (*result_it)->toString() << endl;
+		cout << "@@@@@@@@@@" << endl << toString(*result_it) << endl;
 	}
 	result.insert(result.end(), potentials.cbegin(), potentials.cend());
 	return result;

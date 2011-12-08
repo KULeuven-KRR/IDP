@@ -52,6 +52,9 @@ public:
 	void addTerminationMonitor(TerminateMonitor* m){
 		monitors.push_back(m);
 	}
+	void reset(){
+		_terminateRequested = false;
+	}
 	void notifyTerminateRequested() {
 		_terminateRequested = true;
 		for(auto i=monitors.cbegin(); i<monitors.cend(); ++i){

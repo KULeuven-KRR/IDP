@@ -11,7 +11,7 @@ using namespace std;
 void UnnestTerms::contextProblem(Term* t) {
 	if (t->pi().original()) {
 		if (TermUtils::isPartial(t)) {
-			Warning::ambigpartialterm(t->pi().original()->toString(), t->pi());
+			Warning::ambigpartialterm(toString(t->pi().original()), t->pi());
 		}
 	}
 }
@@ -220,6 +220,9 @@ Formula* UnnestTerms::visit(PredForm* predform) {
 // Special treatment for (in)equalities: possibly only one side needs to be moved
 	bool moveonlyleft = false;
 	bool moveonlyright = false;
+	Assert(predform!=NULL);
+	Assert(predform->symbol()!=NULL);
+	Assert(predform->symbol()->name()!="");
 	string symbolname = predform->symbol()->name();
 	if (symbolname == "=/2" || symbolname == "</2" || symbolname == ">/2") {
 		Term* leftterm = predform->subterms()[0];

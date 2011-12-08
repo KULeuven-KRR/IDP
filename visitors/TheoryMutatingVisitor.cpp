@@ -1,14 +1,9 @@
-/************************************
-	TheoryMutatingVisitor.cpp
-	this file belongs to GidL 2.0
-	(c) K.U.Leuven
-************************************/
-
-#include "visitors/TheoryMutatingVisitor.hpp"
+#include "TheoryMutatingVisitor.hpp"
 
 #include "vocabulary.hpp"
 #include "theory.hpp"
 #include "term.hpp"
+#include "ecnf.hpp"
 #include "error.hpp"
 
 using namespace std;
@@ -28,7 +23,7 @@ Theory* TheoryMutatingVisitor::visit(Theory* t) {
 }
 
 AbstractGroundTheory* TheoryMutatingVisitor::visit(AbstractGroundTheory* t) {
-	// TODO
+	thrownotyetimplemented("Visiting of ground theories");
 	return t;
 }
 
@@ -130,4 +125,21 @@ SetExpr* TheoryMutatingVisitor::visit(EnumSetExpr* es) {
 
 SetExpr* TheoryMutatingVisitor::visit(QuantSetExpr* qs) {
 	return traverse(qs);
+}
+
+GroundDefinition* TheoryMutatingVisitor::visit(GroundDefinition* d) {
+	for (auto it = d->begin(); it != d->end(); ++it) {
+		(*it).second = (*it).second->accept(this);
+	}
+	return d;
+}
+
+GroundRule* TheoryMutatingVisitor::visit(AggGroundRule* r) {
+	thrownotyetimplemented("Visiting of ground theories");
+	return r;
+}
+
+GroundRule* TheoryMutatingVisitor::visit(PCGroundRule* r) {
+	thrownotyetimplemented("Visiting of ground theories");
+	return r;
 }

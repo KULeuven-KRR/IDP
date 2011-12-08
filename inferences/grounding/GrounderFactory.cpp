@@ -59,8 +59,7 @@ double MCPA = 1; // TODO: constant currently used when pruning bdds. Should be m
 
 GrounderFactory::GrounderFactory(AbstractStructure* structure, GenerateBDDAccordingToBounds* symstructure) :
 		_structure(structure), _symstructure(symstructure), _options(GlobalData::instance()->getOptions()), 
-		_verbosity(_options->getValue(IntType::GROUNDVERBOSITY)), _cpsupport(_options->getValue(BoolType::CPSUPPORT)), 
-		_longnames(_options->getValue(BoolType::LONGNAMES)) {
+		_verbosity(_options->getValue(IntType::GROUNDVERBOSITY)), _cpsupport(_options->getValue(BoolType::CPSUPPORT)) {
 
 	Assert(_symstructure!=NULL);
 
@@ -101,7 +100,7 @@ set<const PFSymbol*> GrounderFactory::findCPSymbols(const AbstractTheory* theory
 	if (_verbosity > 1) {
 		clog << "User-defined symbols that can be handled by the constraint solver: ";
 		for (auto it = _cpsymbols.cbegin(); it != _cpsymbols.cend(); ++it) {
-			clog << (*it)->toString(false) << " "; // TODO longnames?
+			clog << toString(*it) << " ";
 		}
 		clog << "\n";
 	}
@@ -356,7 +355,7 @@ void GrounderFactory::visit(const Theory* theory) {
 	for (size_t n = 0; n < components.size(); ++n) {
 		if (_verbosity > 0) {
 			clog << "Creating a grounder for ";
-			components[n]->put(clog, _longnames);
+			components[n]->put(clog);
 			clog << "\n";
 		}
 		components[n]->accept(this);
@@ -776,9 +775,9 @@ void GrounderFactory::visit(const AggForm* af) {
 	if (typeid(*transaf) != typeid(AggForm)) { // The rewriting changed the atom
 		if (_verbosity > 1) {
 			clog << "Rewritten ";
-			af->put(clog, _longnames);
+			af->put(clog);
 			clog << " to ";
-			transaf->put(clog, _longnames);
+			transaf->put(clog);
 			clog << "\n";
 		}
 		transaf->accept(this);
@@ -970,9 +969,9 @@ void GrounderFactory::visit(const QuantSetExpr* origqs) {
 	if (not sametypeid<QuantSetExpr>(*transqs)) {
 		if (_verbosity > 1) {
 			clog << "Rewritten ";
-			origqs->put(clog, _longnames);
+			origqs->put(clog);
 			clog << " to ";
-			transqs->put(clog, _longnames);
+			transqs->put(clog);
 			clog << "\n";
 		}
 		transqs->accept(this);

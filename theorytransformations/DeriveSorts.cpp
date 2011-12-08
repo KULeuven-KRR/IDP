@@ -331,6 +331,6 @@ void DeriveSorts::check() {
 		Error::nofuncsort((*it)->function()->name(), (*it)->pi());
 	}
 	for (auto it = _domelements.cbegin(); it != _domelements.cend(); ++it) {
-		Error::nodomsort((*it)->toString(), (*it)->pi());
+		Error::nodomsort(toString(*it), (*it)->pi());
 	}
 }

@@ -44,7 +44,7 @@ Options::Options(const string& name, const ParseInfo& pi) : _name(name), _pi(pi)
 	BoolPol::createOption(BoolType::CREATETRANSLATION, "createtranslation", boolvalues, false, _option2name);
 	BoolPol::createOption(BoolType::MXRANDOMPOLARITYCHOICE, "randomvaluechoice", boolvalues, false, _option2name);
 	BoolPol::createOption(BoolType::GROUNDLAZILY, "groundlazily", boolvalues, false, _option2name);
-	BoolPol::createOption(BoolType::GROUNDWITHBOUNDS, "groundwithbounds", boolvalues, true, _option2name);
+	BoolPol::createOption(BoolType::GROUNDWITHBOUNDS, "groundwithbounds", boolvalues, false, _option2name);
 	BoolPol::createOption(BoolType::MODELCOUNTEQUIVALENCE, "nbmodelequivalent", boolvalues, false, _option2name);
 
 	IntPol::createOption(IntType::SATVERBOSITY, "satverbosity", 0,numeric_limits<int>::max(),0, _option2name);
@@ -223,9 +223,4 @@ ostream& Options::put(ostream& output) const {
 	return output;
 }
 
-string Options::toString() const {
-	stringstream sstr;
-	put(sstr);
-	return sstr.str();
-}
  

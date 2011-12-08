@@ -17,7 +17,6 @@ template<typename Stream>
 class IDPPrinter: public StreamPrinter<Stream> {
 	VISITORFRIENDS()
 private:
-	bool _longnames;
 	const GroundTranslator* _translator;
 	const GroundTermTranslator* _termtranslator;
 
@@ -34,13 +33,10 @@ private:
 	using StreamPrinter<Stream>::openTheory;
 
 public:
-	IDPPrinter(bool longnames, Stream& stream) :
-			StreamPrinter<Stream>(stream), _longnames(longnames), _translator(NULL), _termtranslator(NULL) {
+	IDPPrinter(Stream& stream) :
+			StreamPrinter<Stream>(stream),  _translator(NULL), _termtranslator(NULL) {
 	}
 
-	virtual void setLongNames(bool longnames) {
-		_longnames = longnames;
-	}
 	virtual void setTranslator(GroundTranslator* t) {
 		_translator = t;
 	}
@@ -63,7 +59,7 @@ public:
 			for (auto jt = it->second.cbegin(); jt != it->second.cend(); ++jt) {
 				Sort* s = *jt;
 				if (not s->builtin()) {
-					output() << s->toString(_longnames) << " = ";
+					output() << toString(s) << " = ";
 					SortTable* st = structure->inter(s);
 					visit(st);
 					output() << '\n';
@@ -77,17 +73,17 @@ public:
 				if (p->arity() != 1 || p->sorts()[0]->pred() != p) {
 					PredInter* pi = structure->inter(p);
 					if (pi->approxTwoValued()) {
-						output() << p->toString(_longnames) << " = ";
+						output() << toString(p) << " = ";
 						const PredTable* pt = pi->ct();
 						visit(pt);
 						output() << '\n';
 					} else {
 						const PredTable* ct = pi->ct();
-						output() << p->toString(_longnames) << "<ct> = ";
+						output() << toString(p) << "<ct> = ";
 						visit(ct);
 						output() << '\n';
 						const PredTable* cf = pi->cf();
-						output() << p->toString(_longnames) << "<cf> = ";
+						output() << toString(p) << "<cf> = ";
 						visit(cf);
 						output() << '\n';
 					}
@@ -101,17 +97,17 @@ public:
 				FuncInter* fi = structure->inter(f);
 				if (fi->approxTwoValued()) {
 					FuncTable* ft = fi->funcTable();
-					output() << f->toString(_longnames) << " = ";
+					output() << toString(f) << " = ";
 					visit(ft);
 					output() << '\n';
 				} else {
 					PredInter* pi = fi->graphInter();
 					const PredTable* ct = pi->ct();
-					output() << f->toString(_longnames) << "<ct> = ";
+					output() << toString(f) << "<ct> = ";
 					printAsFunc(ct);
 					output() << '\n';
 					const PredTable* cf = pi->cf();
-					output() << f->toString(_longnames) << "<cf> = ";
+					output() << toString(f) << "<cf> = ";
 					printAsFunc(cf);
 					output() << '\n';
 				}
@@ -201,30 +197,28 @@ public:
 		}
 	}
 
+	template<typename Visitor, typename List>
+	void visitList(Visitor v, const List& list){
+		for(auto i=list.cbegin(); i<list.cend(); ++i){
+			(*i)->accept(v);
+		}
+	}
+
 	void visit(const GroundTheory<GroundPolicy>* g) {
 		Assert(isTheoryOpen());
 		_translator = g->translator();
 		_termtranslator = g->termtranslator();
-		for (size_t n = 0; n < g->nrClauses(); ++n) {
-			visit(g->clause(n));
+		for(auto i=g->getClauses().cbegin(); i<g->getClauses().cend(); ++i){
+			visit(*i);
 		}
-		for (auto i = g->definitions().cbegin(); i != g->definitions().cend(); i++) {
+		visitList(this, g->getCPReifications());
+		visitList(this, g->getSets());
+		visitList(this, g->getAggregates());
+		visitList(this, g->getFixpDefinitions());
+		for (auto i = g->getDefinitions().cbegin(); i != g->getDefinitions().cend(); i++) {
 			openDefinition((*i).second->id());
 			(*i).second->accept(this);
 			closeDefinition();
-		}
-
-		for (size_t n = 0; n < g->nrSets(); ++n) {
-			g->set(n)->accept(this);
-		}
-		for (size_t n = 0; n < g->nrAggregates(); ++n) {
-			g->aggregate(n)->accept(this);
-		}
-		for (size_t n = 0; n < g->nrFixpDefs(); ++n) {
-			g->fixpdef(n)->accept(this);
-		}
-		for (size_t n = 0; n < g->nrCPReifications(); ++n) {
-			g->cpreification(n)->accept(this);
 		}
 	}
 
@@ -233,7 +227,7 @@ public:
 	void visit(const PredForm* f) {
 		Assert(isTheoryOpen());
 		if (isNeg(f->sign())) output() << "~";
-		output() << f->symbol()->toString(_longnames);
+		output() << toString(f->symbol());
 		if (not f->subterms().empty()) {
 			output() << "(";
 			f->subterms()[0]->accept(this);
@@ -389,7 +383,7 @@ public:
 
 	void visit(const FuncTerm* t) {
 		Assert(isTheoryOpen());
-		output() << t->function()->toString(_longnames);
+		output() << toString(t->function());
 		if (not t->subterms().empty()) {
 			output() << "(";
 			t->subterms()[0]->accept(this);
@@ -403,7 +397,7 @@ public:
 
 	void visit(const DomainTerm* t) {
 		Assert(isTheoryOpen());
-		std::string str = t->value()->toString();
+		std::string str = toString(t->value());
 		if (t->sort()) {
 			if (SortUtils::isSubsort(t->sort(), VocabularyUtils::charsort())) {
 				output() << '\'' << str << '\'';
@@ -654,7 +648,7 @@ public:
 							output() <<',';
 						}
 						begintuple = false;
-						output() <<(*lt)->toString();
+						output() <<toString(*lt);
 					}
 				}
 			}
@@ -674,23 +668,23 @@ public:
 			if (not kt.isAtEnd()) {
 				ElementTuple tuple = *kt;
 				if (tuple.size() > 1) {
-					output() << tuple[0]->toString();
+					output() << toString(tuple[0]);
 				}
 				for (size_t n = 1; n < tuple.size() - 1; ++n) {
-					output() << ',' << tuple[n]->toString();
+					output() << ',' << toString(tuple[n]);
 				}
-				output() << "->" << tuple.back()->toString();
+				output() << "->" << toString(tuple.back());
 				++kt;
 				for (; not kt.isAtEnd(); ++kt) {
 					output() << "; ";
 					tuple = *kt;
 					if (tuple.size() > 1) {
-						output() << tuple[0]->toString();
+						output() << toString(tuple[0]);
 					}
 					for (size_t n = 1; n < tuple.size() - 1; ++n) {
-						output() << ',' << tuple[n]->toString();
+						output() << ',' << toString(tuple[n]);
 					}
-					output() << "->" << tuple.back()->toString();
+					output() << "->" << toString(tuple.back());
 				}
 			}
 			output() << " }";
@@ -709,25 +703,25 @@ public:
 				output() << "{ ";
 				if (not kt.isAtEnd()) {
 					ElementTuple tuple = *kt;
-					output() << tuple[0]->toString();
+					output() << toString(tuple[0]);
 					for (unsigned int n = 1; n < tuple.size() - 1; ++n) {
-						output() << ',' << tuple[n]->toString();
+						output() << ',' << toString(tuple[n]);
 					}
-					output() << "->" << tuple.back()->toString();
+					output() << "->" << toString(tuple.back());
 					++kt;
 					for (; not kt.isAtEnd(); ++kt) {
 						output() << "; ";
 						tuple = *kt;
-						output() << tuple[0]->toString();
+						output() << toString(tuple[0]);
 						for (unsigned int n = 1; n < tuple.size() - 1; ++n) {
-							output() << ',' << tuple[n]->toString();
+							output() << ',' << toString(tuple[n]);
 						}
-						output() << "->" << tuple.back()->toString();
+						output() << "->" << toString(tuple.back());
 					}
 				}
 				output() << " }";
 			} else if (not kt.isAtEnd())
-				output() << (*kt)[0]->toString();
+				output() << toString((*kt)[0]);
 			else
 				output() << "{ }";
 		} else
@@ -788,10 +782,10 @@ public:
 		SortIterator it = table->sortBegin();
 		output() << "{ ";
 		if (not it.isAtEnd()) {
-			output() << (*it)->toString();
+			output() << toString((*it));
 			++it;
 			for (; not it.isAtEnd(); ++it) {
-				output() << "; " << (*it)->toString();
+				output() << "; " << toString((*it));
 			}
 		}
 		output() << " }";
@@ -849,7 +843,7 @@ private:
 			if (not args.empty()) {
 				output() << "(";
 				for (size_t n = 0; n < args.size(); ++n) {
-					output() << args[n]->toString();
+					output() << toString(args[n]);
 					if (n != args.size() - 1) {
 						output() << ",";
 					}
@@ -861,14 +855,14 @@ private:
 			if (args.size() > 1) {
 				output() << "(";
 				for (size_t n = 0; n < args.size() - 1; ++n) {
-					output() << args[n]->toString();
+					output() << toString(args[n]);
 					if (n != args.size() - 2) {
 						output() << ",";
 					}
 				}
 				output() << ")";
 			}
-			output() << " = " << args.back()->toString();
+			output() << " = " << toString(args.back());
 		}
 	}
 
@@ -907,7 +901,7 @@ private:
 					if ((*gtit).isVariable) {
 						printTerm((*gtit)._varid);
 					} else {
-						output() << (*gtit)._domelement->toString();
+						output() << toString((*gtit)._domelement);
 					}
 				}
 				output() << ")";
@@ -951,21 +945,21 @@ private:
 		if (not kt.isAtEnd()) {
 			ElementTuple tuple = *kt;
 			if (tuple.size() > 1) {
-				output() << tuple[0]->toString();
+				output() << toString(tuple[0]);
 			}
 			for (unsigned int n = 1; n < tuple.size() - 1; ++n) {
-				output() << ',' << tuple[n]->toString();
+				output() << ',' << toString(tuple[n]);
 			}
-			output() << "->" << tuple.back()->toString();
+			output() << "->" << toString(tuple.back());
 			++kt;
 			for (; not kt.isAtEnd(); ++kt) {
 				output() << "; ";
 				tuple = *kt;
-				if (tuple.size() > 1) output() << tuple[0]->toString();
+				if (tuple.size() > 1) output() << toString(tuple[0]);
 				for (unsigned int n = 1; n < tuple.size() - 1; ++n) {
-					output() << ',' << tuple[n]->toString();
+					output() << ',' << toString(tuple[n]);
 				}
-				output() << "->" << tuple.back()->toString();
+				output() << "->" << toString(tuple.back());
 			}
 		}
 		output() << " }";

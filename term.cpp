@@ -1,9 +1,3 @@
-/************************************
- term.cpp
- this file belongs to GidL 2.0
- (c) K.U.Leuven
- ************************************/
-
 #include <sstream>
 #include "vocabulary.hpp"
 #include "structure.hpp"
@@ -17,6 +11,13 @@ using namespace std;
 /*********************
  Abstract terms
  *********************/
+
+IMPLACCEPTBOTH(VarTerm, Term)
+IMPLACCEPTBOTH(FuncTerm, Term)
+IMPLACCEPTBOTH(AggTerm, Term)
+IMPLACCEPTBOTH(DomainTerm, Term)
+IMPLACCEPTBOTH(QuantSetExpr, SetExpr)
+IMPLACCEPTBOTH(EnumSetExpr, SetExpr)
 
 void Term::setFreeVars() {
 	_freevars.clear();
@@ -57,11 +58,6 @@ bool Term::contains(const Variable* v) const {
 	return false;
 }
 
-string Term::toString(bool longnames) const {
-	stringstream sstr;
-	put(sstr, longnames);
-	return sstr.str();
-}
 
 ostream& operator<<(ostream& output, const Term& t) {
 	return t.put(output);
@@ -106,8 +102,8 @@ inline Sort* VarTerm::sort() const {
 	return _var->sort();
 }
 
-ostream& VarTerm::put(std::ostream& output, bool longnames) const {
-	var()->put(output, longnames);
+ostream& VarTerm::put(std::ostream& output) const {
+	var()->put(output);
 	return output;
 }
 
@@ -145,14 +141,14 @@ Sort* FuncTerm::sort() const {
 	return _function->outsort();
 }
 
-ostream& FuncTerm::put(ostream& output, bool longnames) const {
-	function()->put(output, longnames);
+ostream& FuncTerm::put(ostream& output) const {
+	function()->put(output);
 	if (not subterms().empty()) {
 		output << '(';
-		subterms()[0]->put(output, longnames);
+		subterms()[0]->put(output);
 		for (size_t n = 1; n < subterms().size(); ++n) {
 			output << ',';
-			subterms()[n]->put(output, longnames);
+			subterms()[n]->put(output);
 		}
 		output << ')';
 	}
@@ -185,7 +181,7 @@ DomainTerm* DomainTerm::clone(const map<Variable*, Variable*>& mvv) const {
 	return new DomainTerm(_sort, _value, _pi.clone(mvv));
 }
 
-ostream& DomainTerm::put(ostream& output, bool) const {
+ostream& DomainTerm::put(ostream& output) const {
 	value()->put(output);
 	return output;
 }
@@ -222,9 +218,9 @@ Sort* AggTerm::sort() const {
 	}
 }
 
-ostream& AggTerm::put(ostream& output, bool longnames) const {
+ostream& AggTerm::put(ostream& output) const {
 	output << function();
-	subsets()[0]->put(output, longnames);
+	subsets()[0]->put(output);
 	return output;
 }
 
@@ -280,12 +276,6 @@ bool SetExpr::contains(const Variable* v) const {
 		}
 	}
 	return false;
-}
-
-std::string SetExpr::toString(bool longnames) const {
-	stringstream sstr;
-	put(sstr, longnames);
-	return sstr.str();
 }
 
 ostream& operator<<(ostream& output, const SetExpr& set) {
@@ -398,14 +388,14 @@ Sort* EnumSetExpr::sort() const {
 		return 0;
 }
 
-ostream& EnumSetExpr::put(ostream& output, bool longnames) const {
+ostream& EnumSetExpr::put(ostream& output) const {
 	output << "[ ";
 	if (not subformulas().empty()) {
 		for (size_t n = 0; n < subformulas().size(); ++n) {
 			output << '(';
-			subformulas()[n]->put(output, longnames);
+			subformulas()[n]->put(output);
 			output << ',';
-			subterms()[n]->put(output, longnames);
+			subterms()[n]->put(output);
 			output << ')';
 			if (n < subformulas().size() - 1) {
 				output << "; ";
@@ -502,16 +492,16 @@ Sort* QuantSetExpr::sort() const {
 	}
 }
 
-ostream& QuantSetExpr::put(ostream& output, bool longnames) const {
+ostream& QuantSetExpr::put(ostream& output) const {
 	output << "{";
 	for (auto it = quantVars().cbegin(); it != quantVars().cend(); ++it) {
 		output << ' ';
-		(*it)->put(output, longnames);
+		(*it)->put(output);
 	}
 	output << " : ";
-	subformulas()[0]->put(output, longnames);
+	subformulas()[0]->put(output);
 	output << " : ";
-	subterms()[0]->put(output, longnames);
+	subterms()[0]->put(output);
 	output << " }";
 	return output;
 }

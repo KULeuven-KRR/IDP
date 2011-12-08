@@ -3,6 +3,8 @@
 
 #include "visitors/VisitorFriends.hpp"
 
+#include "groundtheories/GroundPolicy.hpp"
+
 /**
  * A class for visiting all elements in a logical theory. 
  * The theory is NOT changed.
@@ -22,6 +24,7 @@ protected:
 
 	virtual void visit(const Theory*);
 	virtual void visit(const AbstractGroundTheory*);
+	virtual void visit(const GroundTheory<GroundPolicy>*);
 
 	virtual void visit(const PredForm*);
 	virtual void visit(const EqChainForm*);

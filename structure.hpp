@@ -27,8 +27,8 @@
  */
 
 /**********************
- Domain elements
- **********************/
+	Domain elements
+**********************/
 
 class Compound;
 class DomainElementFactory;
@@ -77,7 +77,6 @@ public:
 	DomainElementValue value() const; //!< Returns the value of the element
 
 	std::ostream& put(std::ostream&) const;
-	std::string toString() const;
 
 	friend class DomainElementFactory;
 	friend class DomElemContainer;
@@ -283,8 +282,8 @@ const Compound* createCompound(Function* f, const Value& tuple) {
 }
 
 /*******************
- Domain atoms
- *******************/
+	Domain atoms
+*******************/
 
 class DomainAtomFactory;
 class PFSymbol;
@@ -332,8 +331,8 @@ public:
 };
 
 /****************
- Iterators
- ****************/
+	Iterators
+****************/
 
 class InternalTableIterator;
 class InternalSortIterator;
@@ -851,8 +850,8 @@ public:
 };
 
 /********************************************
- Internal tables for predicate symbols
- ********************************************/
+	Internal tables for predicate symbols
+********************************************/
 
 class StructureVisitor;
 
@@ -1245,8 +1244,8 @@ public:
 };
 
 /********************************
- Internal tables for sorts
- ********************************/
+	Internal tables for sorts
+********************************/
 
 /**
  *	This class implements a concrete one-dimensional table
@@ -1609,8 +1608,8 @@ public:
 };
 
 /************************************
- Internal tables for functions
- ************************************/
+	Internal tables for functions
+************************************/
 
 /**
  *		This class implements a concrete associative array mapping tuples of elements to elements
@@ -1920,8 +1919,8 @@ public:
 };
 
 /*********************************************************
- Tables for sorts, predicates, and function symbols
- *********************************************************/
+	Tables for sorts, predicates, and function symbols
+*********************************************************/
 
 /**
  *	This class implements the common functionality of tables for sorts, predicate, and function symbols.
@@ -2120,8 +2119,8 @@ public:
 };
 
 /**********************
- Interpretations
- *********************/
+	Interpretations
+*********************/
 
 /**
  *	Class to represent a four-valued interpretation for a predicate
@@ -2406,8 +2405,8 @@ public:
 };
 
 /*****************
- Structures
- *****************/
+	Structures
+*****************/
 
 /** Abstract base class **/
 
@@ -2510,8 +2509,8 @@ public:
 };
 
 /************************
- Auxiliary methods
- ************************/
+	Auxiliary methods
+************************/
 
 namespace TableUtils {
 PredInter* leastPredInter(const Universe& univ);

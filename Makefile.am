@@ -54,7 +54,7 @@ grounder_SOURCES = \
 		monitors/propagatemonitor.hpp\
 		monitors/luatracemonitor.hpp monitors/luainteractiveprintmonitor.hpp\
 		groundtheories/PrintGroundPolicy.hpp\
-		groundtheories/GroundPolicy.hpp\
+		groundtheories/GroundPolicy.hpp groundtheories/GroundPolicy.cpp\
 		groundtheories/SolverPolicy.hpp groundtheories/SolverPolicy.cpp\
 		groundtheories/AbstractGroundTheory.hpp groundtheories/AbstractGroundTheory.cpp\
 		groundtheories/GroundTheory.hpp\

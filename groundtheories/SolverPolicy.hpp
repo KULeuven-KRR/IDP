@@ -76,7 +76,7 @@ public:
 
 	void polNotifyDefined(const Lit& lit, const ElementTuple& args, std::vector<LazyRuleGrounder*> grounders);
 
-	std::ostream& polPut(std::ostream& s, GroundTranslator*, GroundTermTranslator*, bool)	const { Assert(false); return s;	}
+	std::ostream& polPut(std::ostream& s, GroundTranslator*, GroundTermTranslator*)	const { Assert(false); return s;	}
 	std::string polToString(GroundTranslator*, GroundTermTranslator*, bool) const { Assert(false); return "";		}
 
 private:

@@ -88,31 +88,30 @@ public:
 		output() << '0' << "\n";
 	}
 
+	template<typename Visitor, typename List>
+	void visitList(Visitor v, const List& list){
+		for(auto i=list.cbegin(); i<list.cend(); ++i){
+			(*i)->accept(v);
+		}
+	}
+
 	void visit(const GroundTheory<GroundPolicy>* g) {
 		Assert(isTheoryOpen());
 		setStructure(g->structure());
 		setTermTranslator(g->termtranslator());
 		startTheory();
-		for(unsigned int n = 0; n < g->nrClauses(); ++n) {
-			visit(g->clause(n));
+		for(auto i=g->getClauses().cbegin(); i<g->getClauses().cend(); ++i){
+			visit(*i);
 		}
-		for(auto i=g->definitions().cbegin(); i!=g->definitions().cend(); i++){
+		visitList(this, g->getCPReifications());
+		visitList(this, g->getSets()); //IMPORTANT: Print sets before aggregates!!
+		visitList(this, g->getAggregates());
+		visitList(this, g->getFixpDefinitions());
+		for (auto i = g->getDefinitions().cbegin(); i != g->getDefinitions().cend(); i++) {
 			_currentdefnr= (*i).second->id();
 			openDefinition(_currentdefnr);
 			(*i).second->accept(this);
 			closeDefinition();
-		}
-		for(unsigned int n = 0; n < g->nrSets(); ++n){ //IMPORTANT: Print sets before aggregates!!
-			g->set(n)->accept(this);
-		}
-		for(unsigned int n = 0; n < g->nrAggregates(); ++n){
-			g->aggregate(n)->accept(this);
-		}
-		for(unsigned int n = 0; n < g->nrFixpDefs(); ++n){
-			g->fixpdef(n)->accept(this);
-		}
-		for(unsigned int n = 0; n < g->nrCPReifications(); ++n) {
-			g->cpreification(n)->accept(this);
 		}
 
 		if(writeTranlation()){
@@ -121,7 +120,7 @@ public:
 			int atom = 1;
 			while(translator->isStored(atom)){
 				if(translator->isInputAtom(atom)){
-					output() << atom <<"|" <<translator->printLit(atom, false) <<"\n"; // TODO longnames?
+					output() << atom <<"|" <<translator->printLit(atom) <<"\n";
 				}
 				atom++;
 			}

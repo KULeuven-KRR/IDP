@@ -91,10 +91,7 @@ double toDouble(const string& s) {
 		return d;
 }
 
-void printTabs(ostream& output, unsigned int tabs) {
-	for (unsigned int n = 0; n < tabs; ++n)
-		output << ' ';
-}
+
 
 double applyAgg(const AggFunction& agg, const vector<double>& args) {
 	double d;
@@ -131,35 +128,11 @@ double applyAgg(const AggFunction& agg, const vector<double>& args) {
 }
 
 // TODO remove when all are using gcc 4.5
-vector<int> fillMap() {
-	vector<int> comp2int;
-	comp2int.resize(((int) CompType::EQ) + 1, 0);
-	comp2int.resize(((int) CompType::NEQ) + 1, 0);
-	comp2int.resize(((int) CompType::LT) + 1, 0);
-	comp2int.resize(((int) CompType::GT) + 1, 0);
-	comp2int.resize(((int) CompType::LEQ) + 1, 0);
-	comp2int.resize(((int) CompType::GEQ) + 1, 0);
-	comp2int[(int) CompType::EQ] = (int) CompType::EQ;
-	comp2int[(int) CompType::NEQ] = (int) CompType::NEQ;
-	comp2int[(int) CompType::LT] = (int) CompType::LT;
-	comp2int[(int) CompType::GT] = (int) CompType::GT;
-	comp2int[(int) CompType::LEQ] = (int) CompType::LEQ;
-	comp2int[(int) CompType::GEQ] = (int) CompType::GEQ;
-	return comp2int;
-}
-
-vector<int> comp2int = fillMap();
 bool operator==(CompType left, CompType right) {
-	if (comp2int.size() == 0) {
-		fillMap();
-	}
-	return comp2int[(int) left] == comp2int[(int) right];
+	return (int) left == (int) right;
 }
 bool operator>(CompType left, CompType right) {
-	if (comp2int.size() == 0) {
-		fillMap();
-	}
-	return comp2int[(int) left] > comp2int[(int) right];
+	return (int) left > (int) right;
 }
 
 bool operator<(CompType left, CompType right) {
