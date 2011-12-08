@@ -116,17 +116,16 @@ PredForm* PredForm::clone(const map<Variable*, Variable*>& mvv) const {
 	return pf;
 }
 
-ostream& PredForm::put(ostream& output, bool longnames, unsigned int spaces) const {
-	printTabs(output, spaces);
+ostream& PredForm::put(ostream& output) const {
 	if (isNeg(sign())) {
 		output << '~';
 	}
-	_symbol->put(output, longnames);
+	_symbol->put(output);
 	if (typeid(*_symbol) == typeid(Predicate)) {
 		if (not subterms().empty()) {
 			output << '(';
 			for (size_t n = 0; n < subterms().size(); ++n) {
-				subterms()[n]->put(output, longnames);
+				subterms()[n]->put(output);
 				if (n < subterms().size() - 1) {
 					output << ',';
 				}
@@ -138,7 +137,7 @@ ostream& PredForm::put(ostream& output, bool longnames, unsigned int spaces) con
 		if (subterms().size() > 1) {
 			output << '(';
 			for (size_t n = 0; n < subterms().size() - 1; ++n) {
-				subterms()[n]->put(output, longnames);
+				subterms()[n]->put(output);
 				if (n + 1 < subterms().size() - 1) {
 					output << ',';
 				}
@@ -146,7 +145,7 @@ ostream& PredForm::put(ostream& output, bool longnames, unsigned int spaces) con
 			output << ')';
 		}
 		output << " = ";
-		subterms().back()->put(output, longnames);
+		subterms().back()->put(output);
 	}
 	return output;
 }
@@ -178,17 +177,16 @@ EqChainForm* EqChainForm::clone(const map<Variable*, Variable*>& mvv) const {
 	return ef;
 }
 
-ostream& EqChainForm::put(ostream& output, bool longnames, unsigned int spaces) const {
-	printTabs(output, spaces);
+ostream& EqChainForm::put(ostream& output) const {
 	if (isNeg(sign())) { output << '~'; }
 	output << '(';
-	subterms()[0]->put(output, longnames);
+	subterms()[0]->put(output);
 	for (size_t n = 0; n < _comps.size(); ++n) {
 		output << ' ' << comps()[n] << ' ';
-		subterms()[n + 1]->put(output, longnames);
+		subterms()[n + 1]->put(output);
 		if (not _conj && n + 1 < _comps.size()) {
 			output << " | ";
-			subterms()[n + 1]->put(output, longnames);
+			subterms()[n + 1]->put(output);
 		}
 	}
 	output << ')';
@@ -218,12 +216,11 @@ EquivForm* EquivForm::clone(const map<Variable*, Variable*>& mvv) const {
 	return ef;
 }
 
-ostream& EquivForm::put(ostream& output, bool longnames, unsigned int spaces) const {
-	printTabs(output, spaces);
+ostream& EquivForm::put(ostream& output) const {
 	output << '(';
-	left()->put(output, longnames);
+	left()->put(output);
 	output << " <=> ";
-	right()->put(output, longnames);
+	right()->put(output);
 	output << ')';
 	return output;
 }
@@ -255,8 +252,7 @@ BoolForm* BoolForm::clone(const map<Variable*, Variable*>& mvv) const {
 	return bf;
 }
 
-ostream& BoolForm::put(ostream& output, bool longnames, unsigned int spaces) const {
-	printTabs(output, spaces);
+ostream& BoolForm::put(ostream& output) const {
 	if (subformulas().empty()) {
 		if (isConjWithSign()) {
 			output << "true";
@@ -267,7 +263,7 @@ ostream& BoolForm::put(ostream& output, bool longnames, unsigned int spaces) con
 		if (isNeg(sign())) { output << '~'; }
 		output << '(';
 		for (size_t n = 0; n < subformulas().size(); ++n) {
-			subformulas()[n]->put(output, longnames);
+			subformulas()[n]->put(output);
 			if (n < subformulas().size() - 1) {
 				output << (_conj ? " & " : " | ");
 			}
@@ -304,17 +300,16 @@ QuantForm* QuantForm::clone(const map<Variable*, Variable*>& mvv) const {
 	return qf;
 }
 
-ostream& QuantForm::put(ostream& output, bool longnames, unsigned int spaces) const {
-	printTabs(output, spaces);
+ostream& QuantForm::put(ostream& output) const {
 	if (isNeg(sign())) { output << '~'; }
 	output << '(';
 	output << (isUniv() ? '!' : '?');
 	for (auto it = quantVars().cbegin(); it != quantVars().cend(); ++it) {
 		output << ' ';
-		(*it)->put(output, longnames);
+		(*it)->put(output);
 	}
 	output << " : ";
-	subformula()->put(output, longnames);
+	subformula()->put(output);
 	output << ')';
 	return output;
 }
@@ -346,13 +341,12 @@ AggForm* AggForm::clone(const map<Variable*, Variable*>& mvv) const {
 	return new AggForm(sign(), nl, _comp, nr, pi().clone(mvv));
 }
 
-ostream& AggForm::put(ostream& output, bool longnames, unsigned int spaces) const {
-	printTabs(output, spaces);
+ostream& AggForm::put(ostream& output) const {
 	if (isNeg(sign())) { output << '~'; }
 	output << '(';
-	left()->put(output, longnames);
+	left()->put(output);
 	output << ' ' << _comp << ' ';
-	right()->put(output, longnames);
+	right()->put(output);
 	output << ')';
 	return output;
 }
@@ -381,27 +375,20 @@ void Rule::recursiveDelete() {
 	delete (this);
 }
 
-ostream& Rule::put(ostream& output, bool longnames, unsigned int spaces) const {
-	printTabs(output, spaces);
+ostream& Rule::put(ostream& output) const {
 	if (not _quantvars.empty()) {
 		output << "!";
 		for (auto it = _quantvars.cbegin(); it != _quantvars.cend(); ++it) {
 			output << ' ';
-			(*it)->put(output, longnames);
+			(*it)->put(output);
 		}
 		output << " : ";
 	}
-	_head->put(output, longnames);
+	_head->put(output);
 	output << " <- ";
-	_body->put(output, longnames);
+	_body->put(output);
 	output << '.';
 	return output;
-}
-
-string Rule::toString(unsigned int spaces) const {
-	stringstream sstr;
-	put(sstr, spaces);
-	return sstr.str();
 }
 
 ostream& operator<<(ostream& output, const Rule& r) {
@@ -440,15 +427,17 @@ void Definition::rule(unsigned int n, Rule* r) {
 	}
 }
 
-ostream& Definition::put(ostream& output, bool longnames, unsigned int spaces) const {
-	printTabs(output, spaces);
+ostream& Definition::put(ostream& output) const {
 	output << "{ ";
 	if (not _rules.empty()) {
-		_rules[0]->put(output, longnames);
+		_rules[0]->put(output);
+		pushtab();
 		for (size_t n = 1; n < _rules.size(); ++n) {
 			output << '\n';
-			_rules[n]->put(output, longnames, spaces + 2);
+			output << tabs();
+			_rules[n]->put(output);
 		}
+		poptab();
 	}
 	output << '}';
 	return output;
@@ -492,20 +481,23 @@ void FixpDef::rule(unsigned int n, Rule* r) {
 	}
 }
 
-ostream& FixpDef::put(ostream& output, bool longnames, unsigned int spaces) const {
-	printTabs(output, spaces);
+ostream& FixpDef::put(ostream& output) const {
 	output << (_lfp ? "LFD [  " : "GFD [  ");
 	if (not _rules.empty()) {
-		_rules[0]->put(output, longnames);
+		_rules[0]->put(output);
+		pushtab();
 		for (size_t n = 1; n < _rules.size(); ++n) {
-			output << '\n';
-			_rules[n]->put(output, longnames, spaces + 2);
+			output << '\n'<<tabs();
+			_rules[n]->put(output);
 		}
+		poptab();
 	}
+	pushtab();
 	for (auto it = _defs.cbegin(); it != _defs.cend(); ++it) {
-		output << '\n';
-		(*it)->put(output, longnames, spaces + 2);
+		output << '\n' << tabs();
+		(*it)->put(output);
 	}
+	poptab();
 	output << " ]";
 	return output;
 }

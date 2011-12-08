@@ -64,7 +64,7 @@ public:
 		return _offset2function[offset];
 	}
 
-	std::string printTerm(const VarId&, bool longnames) const;
+	std::string printTerm(const VarId&) const;
 };
 
 #endif /* GROUNDTERMTRANSLATOR_HPP_ */

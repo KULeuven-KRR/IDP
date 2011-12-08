@@ -27,7 +27,7 @@ std::string getPathOfLuaInternals();
 std::string getPathOfIdpInternals();
 std::string getPathOfConfigFile();
 
-template<bool condition, typename Type, typename Stream>
+template<bool isPointer, bool isFundamental, typename Type, typename Stream>
 struct PutInStream{
 	void operator() (const Type& object, Stream& ss) {
 		object->put(ss);
@@ -36,18 +36,75 @@ struct PutInStream{
 
 
 template<typename Type, typename Stream>
-struct PutInStream<false, Type, Stream>{
+struct PutInStream<false, false, Type, Stream>{
 	void operator() (const Type& object, Stream& ss) {
 		object.put(ss);
+	}
+};
+
+template<typename Type, typename Stream>
+struct PutInStream<false, true, Type, Stream>{
+	void operator() (const Type& object, Stream& ss) {
+		ss << object;
 	}
 };
 
 template<typename Type>
 std::string toString(const Type& object) {
 	std::stringstream ss;
-	PutInStream<Loki::TypeTraits<Type>::isPointer, Type, std::stringstream>()(object, ss);
+	PutInStream<Loki::TypeTraits<Type>::isPointer,Loki::TypeTraits<Type>::isFundamental,  Type, std::stringstream>()(object, ss);
 	return ss.str();
 }
+
+
+template<typename Type>
+std::string toString(const std::vector<Type>& v) {
+	std::stringstream ss;
+	ss << "(";
+	for(auto obj = v.cbegin(); obj != v.cend();){
+		ss << toString(*obj);
+		++obj;
+		if(obj != v.cend()){
+			ss <<", ";
+		}
+	}
+	ss << ")";
+	return ss.str();
+}
+template<typename Type>
+std::string toString(const std::set<Type>& v) {
+	std::stringstream ss;
+	ss << "{";
+	for(auto obj = v.cbegin(); obj != v.cend();){
+		ss << toString(*obj);
+		++obj;
+		if(obj != v.cend()){
+			ss <<", ";
+		}
+	}
+	ss << "}";
+	return ss.str();
+}
+
+template<typename Type1, typename Type2>
+std::string toString(const std::map<Type1, Type2>& v) {
+	std::stringstream ss;
+	ss << "(";
+	for(auto obj = v.cbegin(); obj != v.cend();){
+		ss << toString((*obj).first);
+		ss << "->";
+		ss << toString((*obj).second);
+		++obj;
+		if(obj != v.cend()){
+			ss <<"; ";
+		}
+	}
+	ss << ")";
+	return ss.str();
+}
+
+
+
 
 /**
  * HOW TO PRINT INFORMATION CONSISTENCTLY!
@@ -84,8 +141,6 @@ std::string convertToString(T element) {
 }
 int toInt(const std::string&); //!< convert string to int
 double toDouble(const std::string&); //!< convert string to double
-
-void printTabs(std::ostream&, unsigned int tabs); //!< write a given number of tabs
 
 double applyAgg(const AggFunction&, const std::vector<double>& args); //!< apply an aggregate function to arguments
 

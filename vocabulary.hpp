@@ -75,8 +75,7 @@ public:
 	std::set<const Vocabulary*>::const_iterator lastVocabulary() const ;
 
 	// Output
-	std::ostream& put(std::ostream&, bool longnames = false) const;
-	std::string toString(bool longnames = false) const;
+	std::ostream& put(std::ostream&) const;
 
 	friend class Vocabulary;
 };
@@ -123,8 +122,7 @@ public:
 	const ParseInfo& pi() const; //!< Returns the parse info of the variable
 
 	// Output
-	std::ostream& put(std::ostream&, bool longnames = false) const;
-	std::string toString(bool longnames = false) const;
+	std::ostream& put(std::ostream&) const;
 };
 
 std::ostream& operator<<(std::ostream&, const Variable&);
@@ -194,8 +192,7 @@ public:
 	virtual PFSymbol* disambiguate(const std::vector<Sort*>&, const Vocabulary* v = 0) = 0;
 
 	// Output
-	virtual std::ostream& put(std::ostream&, bool longnames = false) const = 0;
-	std::string toString(bool longnames = false) const;
+	virtual std::ostream& put(std::ostream&) const = 0;
 
 	friend class Vocabulary;
 };
@@ -260,7 +257,7 @@ public:
 										//!< and that are overloaded by 'this'.
 
 										// Output
-	std::ostream& put(std::ostream&, bool longnames = false) const;
+	std::ostream& put(std::ostream&) const;
 
 	friend class Sort;
 	friend class Vocabulary;
@@ -414,8 +411,7 @@ public:
 									   //!< and that are overloaded by 'this'.
 
 									   // Output
-	std::ostream& put(std::ostream&, bool longnames = false) const;
-	std::string toString(bool longnames = false) const;
+	std::ostream& put(std::ostream&) const;
 
 	friend class Vocabulary;
 };
@@ -646,8 +642,7 @@ public:
 
 	// Output
 	std::ostream& putName(std::ostream&) const;
-	std::ostream& put(std::ostream&, size_t tabs = 0, bool longnames = false) const;
-	std::string toString(size_t tabs = 0, bool longnames = false) const;
+	std::ostream& put(std::ostream&) const;
 
 	friend class Namespace;
 };

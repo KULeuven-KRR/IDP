@@ -91,10 +91,7 @@ double toDouble(const string& s) {
 		return d;
 }
 
-void printTabs(ostream& output, unsigned int tabs) {
-	for (unsigned int n = 0; n < tabs; ++n)
-		output << ' ';
-}
+
 
 double applyAgg(const AggFunction& agg, const vector<double>& args) {
 	double d;

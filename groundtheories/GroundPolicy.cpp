@@ -67,7 +67,7 @@ void GroundPolicy::polAdd(int defnr, AggGroundRule* rule) {
 	_definitions.at(defnr)->addAggRule(rule->head(), rule->setnr(), rule->aggtype(), rule->lower(), rule->bound(), rule->recursive());
 }
 
-std::ostream& GroundPolicy::polPut(std::ostream& s, GroundTranslator* translator, GroundTermTranslator* termtranslator, bool longnames) const {
+std::ostream& GroundPolicy::polPut(std::ostream& s, GroundTranslator* translator, GroundTermTranslator* termtranslator) const {
 	std::cerr << "Printing ground theory\n";
 	std::cerr << "Has " << _clauses.size() << " clauses." << "\n";
 	for (auto i = _clauses.cbegin(); i < _clauses.cend(); ++i) {
@@ -82,7 +82,7 @@ std::ostream& GroundPolicy::polPut(std::ostream& s, GroundTranslator* translator
 				s << " | ";
 			}
 			begin = false;
-			s << translator->printLit((*j), longnames);
+			s << translator->printLit((*j));
 		}
 		s << ".\n";
 	}
@@ -99,7 +99,7 @@ std::ostream& GroundPolicy::polPut(std::ostream& s, GroundTranslator* translator
 				s << "; ";
 			}
 			begin = false;
-			s << "(" << translator->printLit((*i)->literal(m), longnames);
+			s << "(" << translator->printLit((*i)->literal(m));
 			s << " = " << (*i)->weight(m) << ")";
 		}
 		s << "].\n";
@@ -107,7 +107,7 @@ std::ostream& GroundPolicy::polPut(std::ostream& s, GroundTranslator* translator
 	std::cerr << "Has " << _aggregates.size() << " aggregates." << "\n";
 	for (auto i = _aggregates.cbegin(); i != _aggregates.cend(); ++i) {
 		auto agg = (*i);
-		s << translator->printLit(agg->head(), longnames) << ' ';
+		s << translator->printLit(agg->head()) << ' ';
 		s << agg->arrow() << ' ';
 		s << agg->bound();
 		s << (agg->lower() ? " =< " : " >= ");
@@ -116,7 +116,7 @@ std::ostream& GroundPolicy::polPut(std::ostream& s, GroundTranslator* translator
 	//TODO: repeat above for fixpoint definitions
 	for (auto it = _cpreifications.begin(); it != _cpreifications.end(); ++it) {
 		CPReification* cpr = *it;
-		s << translator->printLit(cpr->_head, longnames) << ' ' << cpr->_body->type() << ' ';
+		s << translator->printLit(cpr->_head) << ' ' << cpr->_body->type() << ' ';
 		CPTerm* left = cpr->_body->left();
 		if (typeid(*left) == typeid(CPSumTerm)) {
 			CPSumTerm* cpt = dynamic_cast<CPSumTerm*>(left);
@@ -127,7 +127,7 @@ std::ostream& GroundPolicy::polPut(std::ostream& s, GroundTranslator* translator
 					s << "; ";
 				}
 				begin = false;
-				s << termtranslator->printTerm(*vit, longnames);
+				s << termtranslator->printTerm(*vit);
 			}
 			s << " ]";
 		} else if (typeid(*left) == typeid(CPWSumTerm)) {
@@ -141,18 +141,18 @@ std::ostream& GroundPolicy::polPut(std::ostream& s, GroundTranslator* translator
 					s << "; ";
 				}
 				begin = false;
-				s << '(' << termtranslator->printTerm(*vit, longnames) << '=' << *wit << ')';
+				s << '(' << termtranslator->printTerm(*vit) << '=' << *wit << ')';
 			}
 			s << " ]";
 		} else {
 			Assert(typeid(*left) == typeid(CPVarTerm));
 			CPVarTerm* cpt = dynamic_cast<CPVarTerm*>(left);
-			s << termtranslator->printTerm(cpt->varid(), longnames);
+			s << termtranslator->printTerm(cpt->varid());
 		}
 		s << ' ' << cpr->_body->comp() << ' ';
 		CPBound right = cpr->_body->right();
 		if (right._isvarid) {
-			s << termtranslator->printTerm(right._varid, longnames);
+			s << termtranslator->printTerm(right._varid);
 		} else {
 			s << right._bound;
 		}
@@ -161,8 +161,8 @@ std::ostream& GroundPolicy::polPut(std::ostream& s, GroundTranslator* translator
 	return s;
 }
 
-std::string GroundPolicy::polToString(GroundTranslator* translator, GroundTermTranslator* termtranslator, bool longnames) const {
+std::string GroundPolicy::polToString(GroundTranslator* translator, GroundTermTranslator* termtranslator) const {
 	std::stringstream s;
-	polPut(s, translator, termtranslator, longnames);
+	polPut(s, translator, termtranslator);
 	return s.str();
 }

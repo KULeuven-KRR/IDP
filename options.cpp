@@ -223,9 +223,4 @@ ostream& Options::put(ostream& output) const {
 	return output;
 }
 
-string Options::toString() const {
-	stringstream sstr;
-	put(sstr);
-	return sstr.str();
-}
  

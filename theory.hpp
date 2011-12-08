@@ -46,7 +46,7 @@ public:
 	virtual void				accept(TheoryVisitor*)			const = 0;
 	virtual TheoryComponent*	accept(TheoryMutatingVisitor*) 	= 0;
 
-	virtual std::ostream&	put(std::ostream&, bool longnames = false, unsigned int spaces = 0)	const = 0;
+	virtual std::ostream&	put(std::ostream&)	const = 0;
 };
 
 std::ostream& operator<<(std::ostream&, const TheoryComponent&);
@@ -115,7 +115,7 @@ public:
 	const std::vector<Formula*>&	subformulas()	const { return _subformulas;	}
 
 	// Output
-	virtual std::ostream& put(std::ostream&, bool longnames = false, unsigned int spaces = 0) const = 0;
+	virtual std::ostream& put(std::ostream&) const = 0;
 
 private:
 	void	setFreeVars();		//!< compute the free variables of the formula
@@ -152,7 +152,7 @@ public:
 	const std::vector<Term*>&	args()		const { return subterms();	}
 
 	// Output
-	std::ostream& put(std::ostream&, bool longnames = false, unsigned int spaces = 0) const;
+	std::ostream& put(std::ostream&) const;
 };
 
 /** 
@@ -190,7 +190,7 @@ public:
 	const std::vector<CompType>&	comps()	const { return _comps;	}
 
 	// Output
-	std::ostream& put(std::ostream&, bool longnames = false, unsigned int spaces = 0) const;
+	std::ostream& put(std::ostream&) const;
 };
 
 /** 
@@ -219,7 +219,7 @@ public:
 	Formula*		right()		const { return subformulas().back();		}
 
 	// Output
-	std::ostream& put(std::ostream&, bool longnames = false, unsigned int spaces = 0) const;
+	std::ostream& put(std::ostream&) const;
 };
 
 /** 
@@ -255,7 +255,7 @@ public:
 	bool 	isConjWithSign() const { return (conj() && isPos(sign())) || (not conj() && isNeg(sign())); }
 
 	// Debugging
-	std::ostream& put(std::ostream&, bool longnames = false, unsigned int spaces = 0)	const;
+	std::ostream& put(std::ostream&)	const;
 };
 
 /** 
@@ -291,7 +291,7 @@ public:
 	bool 		isUnivWithSign() const { return (_quantifier==QUANT::UNIV && isPos(sign())) || (_quantifier==QUANT::EXIST && isNeg(sign())); }
 
 	// Output
-	std::ostream& put(std::ostream&, bool longnames = false, unsigned int spaces = 0)	const;
+	std::ostream& put(std::ostream&)	const;
 };
 
 /** 
@@ -326,7 +326,7 @@ public:
 	CompType	comp()		const { return _comp;			}
 
 	// Output
-	std::ostream& put(std::ostream&, bool longnames = false, unsigned int spaces = 0)	const;
+	std::ostream& put(std::ostream&)	const;
 };
 
 /******************
@@ -367,7 +367,7 @@ public:
 	const std::set<Variable*>&	quantVars()		const { return _quantvars;	}
 
 	// Output
-	std::ostream&	put(std::ostream&, bool longnames = false, unsigned int spaces = 0) 	const;
+	std::ostream&	put(std::ostream&) 	const;
 	std::string		toString(unsigned int spaces = 0)									const;
 };
 
@@ -406,7 +406,7 @@ public:
 	const std::vector<Rule*>&		rules()			const { return _rules;		}
 	const std::set<PFSymbol*>&		defsymbols()	const { return _defsyms;	}
 
-	std::ostream& put(std::ostream&, bool longnames = false, unsigned int spaces = 0) const;
+	std::ostream& put(std::ostream&) const;
 };
 
 
@@ -449,7 +449,7 @@ public:
 	const std::vector<Rule*>&		rules()		const { return _rules;		}
 	const std::set<PFSymbol*>&		defsyms()	const { return _defsyms;	}
 
-	std::ostream& put(std::ostream&, bool longnames = false, unsigned int spaces = 0) const;
+	std::ostream& put(std::ostream&) const;
 };
 
 

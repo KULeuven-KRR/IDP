@@ -2,7 +2,6 @@
 
 #include <iostream>
 #include "vocabulary.hpp"
-#include "common.hpp"
 #include "ecnf.hpp"
 #include "inferences/grounding/grounders/TermGrounders.hpp"
 #include "inferences/grounding/grounders/SetGrounders.hpp"
@@ -46,9 +45,9 @@ void FormulaGrounder::printorig() const {
 	if (not _origform->freeVars().empty()) {
 		clog << " with instance ";
 		for (auto it = _origform->freeVars().cbegin(); it != _origform->freeVars().cend(); ++it) {
-			clog << (*it)->toString() << " = ";
+			clog << toString(*it) << " = ";
 			const DomainElement* e = _origvarmap.find(*it)->second->get();
-			clog << e->toString() << ' ';
+			clog << toString(e) << ' ';
 		}
 	}
 	clog << "\n";
@@ -122,7 +121,7 @@ Lit AtomGrounder::run() const {
 	if (_cchecker->check()) { // Literal decides formula if checker succeeds
 		if (verbosity() > 2) {
 			clog << "Certain checker succeeded\n";
-			clog << "Result is " << translator()->printLit(gentype == GenType::CANMAKETRUE ? _true : _false, false) << "\n"; //TODO longnames?
+			clog << "Result is " << translator()->printLit(gentype == GenType::CANMAKETRUE ? _true : _false) << "\n";
 		}
 		return gentype == GenType::CANMAKETRUE ? _true : _false;
 	}
@@ -139,7 +138,7 @@ Lit AtomGrounder::run() const {
 		lit = -lit;
 	}
 	if (verbosity() > 2) {
-		clog << "Result is " << translator()->printLit(lit, false) << "\n"; // TODO longnames?
+		clog << "Result is " << translator()->printLit(lit) << "\n";
 	}
 	return lit;
 }

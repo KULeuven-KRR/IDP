@@ -74,21 +74,21 @@ size_t GroundTermTranslator::addFunction(Function* func) {
 	}
 }
 
-string GroundTermTranslator::printTerm(const VarId& varid, bool longnames) const {
+string GroundTermTranslator::printTerm(const VarId& varid) const {
 	stringstream s;
 	if (varid >= _varid2function.size()) {
 		return "error";
 	}
 	const Function* func = function(varid);
 	if (func) {
-		s << func->toString(longnames);
+		s << toString(func);
 		if (not args(varid).empty()) {
 			s << "(";
 			for (auto gtit = args(varid).cbegin(); gtit != args(varid).cend(); ++gtit) {
 				if ((*gtit).isVariable) {
-					s << printTerm((*gtit)._varid, longnames);
+					s << printTerm((*gtit)._varid);
 				} else {
-					s << (*gtit)._domelement->toString();
+					s << toString((*gtit)._domelement);
 				}
 				if (gtit != args(varid).cend() - 1) {
 					s << ",";

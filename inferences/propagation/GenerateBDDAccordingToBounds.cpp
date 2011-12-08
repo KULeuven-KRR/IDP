@@ -31,11 +31,11 @@ const FOBDD* GenerateBDDAccordingToBounds::evaluate(Formula* f, TruthType type) 
 	return _result;
 }
 
-bool needFalse(TruthType value){
+bool needFalse(TruthType value) {
 	return value == TruthType::CERTAIN_FALSE || value == TruthType::POSS_FALSE;
 }
 
-bool needPossible(TruthType value){
+bool needPossible(TruthType value) {
 	return value == TruthType::POSS_TRUE || value == TruthType::POSS_FALSE;
 }
 
@@ -44,7 +44,7 @@ void GenerateBDDAccordingToBounds::visit(const PredForm* atom) {
 
 	if (_ctbounds.find(atom->symbol()) == _ctbounds.cend()) {
 		auto bdd = factory.turnIntoBdd(atom);
-		if(needFalse(_type)){
+		if (needFalse(_type)) {
 			bdd = _manager->negation(bdd);
 		}
 		_result = bdd;
@@ -60,7 +60,7 @@ void GenerateBDDAccordingToBounds::visit(const PredForm* atom) {
 			mva[vars[n]] = factory.turnIntoBdd(atom->subterms()[n]);
 		}
 		bdd = _manager->substitute(bdd, mva);
-		if (needPossible(_type)){ // Negate because we have CERTAIN bounds
+		if (needPossible(_type)) { // Negate because we have CERTAIN bounds
 			bdd = _manager->negation(bdd);
 		}
 		_result = bdd;
@@ -69,15 +69,15 @@ void GenerateBDDAccordingToBounds::visit(const PredForm* atom) {
 
 void GenerateBDDAccordingToBounds::visit(const BoolForm* boolform) {
 	bool conjunction = boolform->isConjWithSign();
-	if(needFalse(_type)){
+	if (needFalse(_type)) {
 		conjunction = not conjunction;
 	}
 	auto rectype = boolform->sign() == SIGN::POS ? _type : swapTF(_type);
 
 	const FOBDD* currbdd = NULL;
-	if (conjunction){
+	if (conjunction) {
 		currbdd = _manager->truebdd();
-	}else{
+	} else {
 		currbdd = _manager->falsebdd();
 	}
 
@@ -90,7 +90,7 @@ void GenerateBDDAccordingToBounds::visit(const BoolForm* boolform) {
 
 void GenerateBDDAccordingToBounds::visit(const QuantForm* quantform) {
 	bool universal = quantform->isUnivWithSign();
-	if(needFalse(_type)){
+	if (needFalse(_type)) {
 		universal = not universal;
 	}
 	auto rectype = quantform->sign() == SIGN::POS ? _type : swapTF(_type);
@@ -115,20 +115,21 @@ void GenerateBDDAccordingToBounds::visit(const EquivForm* equivform) {
 
 void GenerateBDDAccordingToBounds::visit(const AggForm*) {
 	// TODO: better evaluation function?
-	if (_type == TruthType::POSS_TRUE || _type == TruthType::POSS_FALSE){
+	if (_type == TruthType::POSS_TRUE || _type == TruthType::POSS_FALSE) {
 		_result = _manager->truebdd();
-	}else{
+	} else {
 		_result = _manager->falsebdd();
 	}
 }
 
-const FOBDD* GenerateBDDAccordingToBounds::prunebdd(const FOBDD* bdd, const vector<const FOBDDVariable*>& bddvars, AbstractStructure* structure, double mcpa) {
+const FOBDD* GenerateBDDAccordingToBounds::prunebdd(const FOBDD* bdd, const vector<const FOBDDVariable*>& bddvars, AbstractStructure* structure,
+		double mcpa) {
 	// 1. Optimize the query
 	FOBDDManager optimizemanager;
 	auto copybdd = optimizemanager.getBDD(bdd, _manager);
 	set<const FOBDDVariable*> copyvars;
 	set<const FOBDDDeBruijnIndex*> indices;
-	for (auto it = bddvars.cbegin(); it != bddvars.cend(); ++it){
+	for (auto it = bddvars.cbegin(); it != bddvars.cend(); ++it) {
 		copyvars.insert(optimizemanager.getVariable((*it)->variable()));
 	}
 	optimizemanager.optimizequery(copybdd, copyvars, indices, structure);
@@ -153,18 +154,20 @@ ostream& GenerateBDDAccordingToBounds::put(ostream& output) const {
 	for (auto it = _vars.cbegin(); it != _vars.cend(); ++it) {
 		output << "   ";
 		(it->first)->put(output);
-		output << endl;
+		output << endl<< tabs();
 		output << "      vars:";
 		for (auto jt = it->second.cbegin(); jt != it->second.cend(); ++jt) {
 			output << ' ';
 			_manager->put(output, *jt);
 		}
 		output << '\n';
-		output << "      ct:" << endl;
-		_manager->put(output, _ctbounds.find(it->first)->second, 10);
-		output << "      cf:" << endl;
-		_manager->put(output, _cfbounds.find(it->first)->second, 10);
-		output << "\n";
+		output << tabs();
+		output << "      ct:" << endl << tabs();
+		pushtab();
+		_manager->put(output, _ctbounds.find(it->first)->second);
+		output << "      cf:" << endl << tabs();
+		_manager->put(output, _cfbounds.find(it->first)->second);
+		poptab();
 	}
 	return output;
 }

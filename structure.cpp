@@ -106,12 +106,6 @@ ostream& DomainElement::put(ostream& output) const {
 	return output;
 }
 
-string DomainElement::toString() const {
-	stringstream sstr;
-	put(sstr);
-	return sstr.str();
-}
-
 ostream& operator<<(ostream& output, const DomainElement& d) {
 	return d.put(output);
 }
@@ -4092,9 +4086,9 @@ void completeSortTable(const PredTable* pt, PFSymbol* symbol, const string& stru
 					pt->universe().tables()[col]->add(tuple[col]);
 				} else if (!pt->universe().tables()[col]->contains(tuple[col])) {
 					if (typeid(*symbol) == typeid(Predicate)) {
-						Error::predelnotinsort(tuple[col]->toString(), symbol->name(), symbol->sorts()[col]->name(), structname);
+						Error::predelnotinsort(toString(tuple[col]), symbol->name(), symbol->sorts()[col]->name(), structname);
 					} else {
-						Error::funcelnotinsort(tuple[col]->toString(), symbol->name(), symbol->sorts()[col]->name(), structname);
+						Error::funcelnotinsort(toString(tuple[col]), symbol->name(), symbol->sorts()[col]->name(), structname);
 					}
 				}
 			}
@@ -4191,7 +4185,7 @@ void Structure::autocomplete() {
 					if (st->approxFinite()) {
 						for (SortIterator lt = st->sortBegin(); not lt.isAtEnd(); ++lt) {
 							if (!kst->contains(*lt))
-								Error::sortelnotinsort((*lt)->toString(), s->name(), (*kt)->name(), _name);
+								Error::sortelnotinsort(toString(*lt), s->name(), (*kt)->name(), _name);
 						}
 					} else {
 						// TODO
@@ -4225,7 +4219,7 @@ void Structure::functionCheck() {
 						const ElementTuple& tuple = *it;
 						vector<string> vstr;
 						for (unsigned int c = 0; c < f->arity(); ++c)
-							vstr.push_back(tuple[c]->toString());
+							vstr.push_back(toString(tuple[c]));
 						Error::notfunction(f->name(), name(), vstr);
 						do {
 							++it;

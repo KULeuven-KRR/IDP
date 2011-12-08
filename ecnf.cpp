@@ -195,10 +195,10 @@ void GroundDefinition::addAggRule(int head, int setnr, AggFunction aggtype, bool
 	}
 }
 
-ostream& GroundDefinition::put(ostream& s, bool longnames, unsigned int) const {
+ostream& GroundDefinition::put(ostream& s) const {
 	s << "{\n";
 	for (auto it = _rules.cbegin(); it != _rules.cend(); ++it) {
-		s << _translator->printLit((*it).second->head(), longnames) << " <- ";
+		s << _translator->printLit((*it).second->head()) << " <- ";
 		auto body = (*it).second;
 		if (body->type() == RT_AGG) {
 			const AggGroundRule* grb = dynamic_cast<const AggGroundRule*>(body);
@@ -211,13 +211,13 @@ ostream& GroundDefinition::put(ostream& s, bool longnames, unsigned int) const {
 				if (grb->body()[0] < 0) {
 					s << '~';
 				}
-				s << _translator->printLit(grb->body()[0], longnames);
+				s << _translator->printLit(grb->body()[0]);
 				for (size_t n = 1; n < grb->body().size(); ++n) {
 					s << ' ' << c << ' ';
 					if (grb->body()[n] < 0) {
 						s << '~';
 					}
-					s << _translator->printLit(grb->body()[n], longnames);
+					s << _translator->printLit(grb->body()[n]);
 				}
 			} else if (grb->type() == RT_CONJ) {
 				s << "true";
@@ -231,11 +231,6 @@ ostream& GroundDefinition::put(ostream& s, bool longnames, unsigned int) const {
 	return s;
 }
 
-string GroundDefinition::toString(unsigned int) const {
-	stringstream sstr;
-	put(sstr);
-	return sstr.str();
-}
 
 
 bool operator==(const GroundTerm& a, const GroundTerm& b) {

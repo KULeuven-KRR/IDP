@@ -54,9 +54,9 @@ public:
 	void polAdd(int defnr, PCGroundRule* rule);
 	void polAdd(int defnr, AggGroundRule* rule);
 
-	std::ostream& polPut(std::ostream& s, GroundTranslator* translator, GroundTermTranslator* termtranslator, bool longnames) const;
+	std::ostream& polPut(std::ostream& s, GroundTranslator* translator, GroundTermTranslator* termtranslator) const;
 
-	std::string polToString(GroundTranslator* translator, GroundTermTranslator* termtranslator, bool longnames) const;
+	std::string polToString(GroundTranslator* translator, GroundTermTranslator* termtranslator) const;
 };
 
 #endif /* GROUNDTHEORY_HPP_ */

@@ -40,7 +40,9 @@ FOPropBDDDomainFactory::FOPropBDDDomainFactory() {
 }
 
 ostream& FOPropBDDDomainFactory::put(ostream& output, FOPropBDDDomain* domain) const {
-	_manager->put(output, domain->bdd(), 6);
+	pushtab();
+	_manager->put(output, domain->bdd());
+	poptab();
 	return output;
 }
 
@@ -258,17 +260,17 @@ void TypedFOPropagator<Factory, DomainType>::doPropagation() {
 			cerr << "  Propagate ";
 			if (_direction == DOWN) {
 				cerr << "downward from " << (_ct ? "the ct-bound of " : "the cf-bound of ");
-				p->put(cerr, _options->getValue(BoolType::LONGNAMES));
+				p->put(cerr);
 				if (_child) {
 					cerr << " to ";
-					_child->put(cerr, _options->getValue(BoolType::LONGNAMES));
+					_child->put(cerr);
 				}
 			} else {
 				cerr << "upward to " << ((_ct == isPos(p->sign())) ? "the ct-bound of " : "the cf-bound of ");
-				p->put(cerr, _options->getValue(BoolType::LONGNAMES));
+				p->put(cerr);
 				if (_child) {
 					cerr << " from ";
-					_child->put(cerr, _options->getValue(BoolType::LONGNAMES));
+					_child->put(cerr);
 				}
 			}
 			cerr << "\n";

@@ -98,11 +98,11 @@ public:
 		delete (reif);
 	}
 
-	std::ostream& polPut(std::ostream& s, GroundTranslator*, GroundTermTranslator*, bool longnames = false) const {
+	std::ostream& polPut(std::ostream& s, GroundTranslator*, GroundTermTranslator*) const {
 		Assert(false);
 		return s;
 	}
-	std::string polToString(GroundTranslator*, GroundTermTranslator*, bool longnames = false) const {
+	std::string polToString(GroundTranslator*, GroundTermTranslator*) const {
 		Assert(false);
 		return "";
 	}
