@@ -135,10 +135,10 @@ GroundTerm SumTermGrounder::run() const {
 			_domain = new SortTable(new IntRangeInternalSortTable(min,max));
 		} else {
 			if(leftdomain && not leftdomain->approxFinite()) {
-				cerr << "Left domain is infinite..." << endl;
+				clog << "Left domain is infinite..." << endl;
 			}
 			if(rightdomain && not rightdomain->approxFinite()) {
-				cerr << "Right domain is infinite..." << endl;
+				clog << "Right domain is infinite..." << endl;
 			}
 			//TODO one of the domains is unknown or infinite...
 			//TODO one case when left or right is a domain element!

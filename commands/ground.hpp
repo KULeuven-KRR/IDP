@@ -20,7 +20,7 @@ private:
 		auto grounder = factory.create(theory);
 		grounder->toplevelRun();
 		auto grounding = grounder->grounding();
-		//DEBUG CODE: std::cerr <<toString(grounding) <<"\n";
+		//DEBUG CODE: std::clog <<toString(grounding) <<"\n";
 		delete(grounder);
 
 		return grounding;

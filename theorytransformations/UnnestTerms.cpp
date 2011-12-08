@@ -8,6 +8,11 @@
 
 using namespace std;
 
+UnnestTerms::UnnestTerms() :
+		_vocabulary(NULL), _chosenVarSort(NULL) {
+
+}
+
 void UnnestTerms::contextProblem(Term* t) {
 	if (t->pi().original()) {
 		if (TermUtils::isPartial(t)) {
@@ -32,7 +37,7 @@ VarTerm* UnnestTerms::move(Term* term) {
 	if (_context == Context::BOTH)
 		contextProblem(term);
 
-	Variable* introduced_var = new Variable(term->sort());
+	Variable* introduced_var = new Variable(_chosenVarSort == NULL?term->sort() : _chosenVarSort);
 
 	VarTerm* introduced_subst_term = new VarTerm(introduced_var, TermParseInfo(term->pi()));
 	VarTerm* introduced_eq_term = new VarTerm(introduced_var, TermParseInfo(term->pi()));
@@ -225,8 +230,8 @@ Formula* UnnestTerms::visit(PredForm* predform) {
 	Assert(predform->symbol()->name()!="");
 	string symbolname = predform->symbol()->name();
 	if (symbolname == "=/2" || symbolname == "</2" || symbolname == ">/2") {
-		Term* leftterm = predform->subterms()[0];
-		Term* rightterm = predform->subterms()[1];
+		auto leftterm = predform->subterms()[0];
+		auto rightterm = predform->subterms()[1];
 		if (leftterm->type() == TT_AGG) {
 			moveonlyright = true;
 		} else if (rightterm->type() == TT_AGG) {
@@ -236,6 +241,17 @@ Formula* UnnestTerms::visit(PredForm* predform) {
 		} else {
 			setAllowedToUnnest(true);
 		}
+
+		if (symbolname == "=/2") {
+			auto leftsort = leftterm->sort();
+			auto rightsort = rightterm->sort();
+			if (SortUtils::isSubsort(leftsort, rightsort)) {
+				_chosenVarSort = leftsort;
+			} else {
+				_chosenVarSort = rightsort;
+			}
+		}
+
 	} else {
 		setAllowedToUnnest(true);
 	}
@@ -251,6 +267,7 @@ Formula* UnnestTerms::visit(PredForm* predform) {
 	} else {
 		traverse(predform);
 	}
+	_chosenVarSort = NULL;
 	setAllowedToUnnest(savemovecontext);
 
 // Change the atom

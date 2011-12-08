@@ -22,7 +22,7 @@ int verbosity(){
 //TODO: a lot of the "int" returns here should be "Lit": Issue 57199
 
 FormulaGrounder::FormulaGrounder(AbstractGroundTheory* grounding, const GroundingContext& ct) :
-		Grounder(grounding, ct) {
+		Grounder(grounding, ct), _origform(NULL) {
 }
 
 GroundTranslator* FormulaGrounder::translator() const {
@@ -41,6 +41,9 @@ void FormulaGrounder::setOrig(const Formula* f, const map<Variable*, const DomEl
 }
 
 void FormulaGrounder::printorig() const {
+	if(_origform==NULL){
+		return;
+	}
 	clog << "Grounding formula " << toString(_origform);
 	if (not _origform->freeVars().empty()) {
 		clog << " with instance ";

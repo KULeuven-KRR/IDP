@@ -84,7 +84,7 @@ FOPropagatorFactory<InterpretationFactory, PropDomain>::FOPropagatorFactory(Inte
 
 template<class Factory, class Domain>
 void FOPropagatorFactory<Factory, Domain>::createleafconnector(PFSymbol* symbol) {
-	if(_verbosity > 1) { cerr << "  Creating a leaf connector for " << *symbol << "\n";	}
+	if(_verbosity > 1) { clog << "  Creating a leaf connector for " << *symbol << "\n";	}
 	vector<Variable*> vars = VarUtils::makeNewVariables(symbol->sorts());
 	vector<Term*> args = TermUtils::makeNewVarTerms(vars);
 	PredForm* leafconnector = new PredForm(SIGN::POS,symbol,args,FormulaParseInfo());
@@ -93,7 +93,7 @@ void FOPropagatorFactory<Factory, Domain>::createleafconnector(PFSymbol* symbol)
 	switch(_initbounds[symbol]) {
 		case IBT_TWOVAL:
 			_propagator->setDomain(leafconnector, ThreeValuedDomain<Domain>(_propagator->getFactory(),leafconnector));
-			if(_verbosity > 1) { cerr << "    The leaf connector is twovalued\n";	}
+			if(_verbosity > 1) { clog << "    The leaf connector is twovalued\n";	}
 			break;
 		case IBT_BOTH:
 		case IBT_CT:
@@ -102,14 +102,14 @@ void FOPropagatorFactory<Factory, Domain>::createleafconnector(PFSymbol* symbol)
 			break;
 		case IBT_NONE:
 			initFalse(leafconnector);
-			if(_verbosity > 1) { cerr << "    The leaf connector is completely unknown\n";	}
+			if(_verbosity > 1) { clog << "    The leaf connector is completely unknown\n";	}
 			break;
 	}
 }
 
 template<class Factory, class Domain>
 TypedFOPropagator<Factory, Domain>* FOPropagatorFactory<Factory, Domain>::create(const AbstractTheory* theory) {
-	if(_verbosity > 1) { cerr << "=== initialize propagation datastructures\n";	}
+	if(_verbosity > 1) { clog << "=== initialize propagation datastructures\n";	}
 
 	// transform theory to a suitable normal form
 	AbstractTheory* newtheo = theory->clone();
@@ -201,7 +201,7 @@ void FOPropagatorFactory<Factory, Domain>::visit(const Theory* theory) {
 
 template<class Factory, class Domain>
 void FOPropagatorFactory<Factory, Domain>::initFalse(const Formula* f) {
-	if(_verbosity > 2) { cerr << "  Assigning the least precise bounds to " << *f << "\n";	}
+	if(_verbosity > 2) { clog << "  Assigning the least precise bounds to " << *f << "\n";	}
 	if(not _propagator->hasDomain(f)) {
 		_propagator->setDomain(f, ThreeValuedDomain<Domain>(_propagator->getFactory(),false,false,f));
 	}

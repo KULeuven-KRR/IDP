@@ -78,6 +78,12 @@ void Sort::generatePred(SortTable* inter) {
 }
 
 /**
+ * Only to be used from unionsort!
+ */
+Sort::Sort(): _name(""), _pi(), _interpretation(NULL) {
+}
+
+/**
  * Create an internal sort
  */
 Sort::Sort(const string& name, SortTable* inter) :
@@ -196,10 +202,16 @@ ostream& Sort::put(ostream& output) const {
 	return output;
 }
 
+UnionSort::UnionSort(const std::vector<Sort*>& sorts): sorts(sorts){
+	stringstream ss;
+	for(auto i=sorts.cbegin(); i<sorts.cend(); ++i){
+		ss <<(*i)->name() <<"-";
+	}
+	setPred(new Predicate(ss.str() + "/1", {this}, pi()));
+}
 
-
-ostream& operator<<(ostream& output, const Sort& sort) {
-	return sort.put(output);
+bool UnionSort::builtin() const{
+	return false;
 }
 
 namespace SortUtils {

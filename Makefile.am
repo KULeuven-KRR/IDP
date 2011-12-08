@@ -164,6 +164,7 @@ grounder_SOURCES = \
 		theorytransformations/SplitComparisonChains.hpp theorytransformations/SplitComparisonChains.cpp\
 		theorytransformations/SubstituteTerm.hpp\
 		theorytransformations/UnnestPartialTerms.hpp\
+		theorytransformations/SplitIntoMonotoneAgg.hpp\
 		theorytransformations/UnnestTerms.hpp theorytransformations/UnnestTerms.cpp\
 		theorytransformations/UnnestThreeValuedTerms.hpp theorytransformations/UnnestThreeValuedTerms.cpp\
 		utils/TheoryUtils.hpp utils/TheoryUtils.cpp\

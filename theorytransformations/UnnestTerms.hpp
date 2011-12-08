@@ -25,6 +25,7 @@ private:
 	bool 					_allowedToUnnest; // Indicates whether in the current context, it is allowed to unnest terms
 	std::vector<Formula*> 	_equalities; //!< used to temporarily store the equalities generated when moving terms
 	std::set<Variable*> 	_variables; //!< used to temporarily store the freshly introduced variables
+	Sort* 					_chosenVarSort;
 
 	void contextProblem(Term* t);
 
@@ -40,6 +41,7 @@ protected:
 	void setContext(const Context& context) { _context = context; }
 
 public:
+	UnnestTerms();
 	template<typename T>
 	T execute(T t, Context context = Context::POSITIVE, Vocabulary* v = NULL){
 		_context = context;

@@ -363,11 +363,11 @@ FOBDDDeBruijnIndex* FOBDDManager::addDeBruijnIndex(Sort* sort, unsigned int inde
 
 const FOBDDArgument* FOBDDManager::getFuncTerm(Function* func, const vector<const FOBDDArgument*>& args) {
 
-//cerr << "Get functerm on function " << *func << " and arguments ";
+//clog << "Get functerm on function " << *func << " and arguments ";
 //for(auto it = args.cbegin(); it != args.cend(); ++it) {
-//	put(cerr,*it); cerr << "   ";
+//	put(clog,*it); clog << "   ";
 //}
-//cerr << endl;
+//clog << endl;
 
 	// Arithmetic rewriting
 	// 1. Remove unary minus
@@ -1108,7 +1108,7 @@ ostream& FOBDDManager::put(ostream& output, const FOBDDKernel* kernel) const {
 	} else if (typeid(*kernel) == typeid(FOBDDQuantKernel)) {
 		const FOBDDQuantKernel* quantkernel = dynamic_cast<const FOBDDQuantKernel*>(kernel);
 		output << tabs();
-		output << "EXISTS(" << *(quantkernel->sort()) << ") {\n";
+		output << "EXISTS(" << toString(quantkernel->sort()) << ") {\n";
 		pushtab();
 		put(output, quantkernel->bdd());
 		poptab();
@@ -1127,7 +1127,7 @@ ostream& FOBDDManager::put(ostream& output, const FOBDDArgument* arg) const {
 		var->variable()->put(output);
 	} else if (typeid(*arg) == typeid(FOBDDDeBruijnIndex)) {
 		const FOBDDDeBruijnIndex* dbr = dynamic_cast<const FOBDDDeBruijnIndex*>(arg);
-		output << "<" << dbr->index() << ">[" << *(dbr->sort()) << "]";
+		output << "<" << dbr->index() << ">[" << toString(dbr->sort()) << "]";
 	} else if (typeid(*arg) == typeid(FOBDDFuncTerm)) {
 		const FOBDDFuncTerm* ft = dynamic_cast<const FOBDDFuncTerm*>(arg);
 		Function* f = ft->func();
@@ -1143,7 +1143,7 @@ ostream& FOBDDManager::put(ostream& output, const FOBDDArgument* arg) const {
 		}
 	} else if (typeid(*arg) == typeid(FOBDDDomainTerm)) {
 		const FOBDDDomainTerm* dt = dynamic_cast<const FOBDDDomainTerm*>(arg);
-		output << *(dt->value()) << "[" << *(dt->sort()) << "]";
+		output << *(dt->value()) << "[" << toString(dt->sort()) << "]";
 	} else {
 		thrownotyetimplemented("Cannot print bddterm, missing case in switch.");
 	}

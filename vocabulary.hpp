@@ -29,10 +29,6 @@ class Predicate;
 class Vocabulary;
 class SortTable;
 
-/**
- * DESCRIPTION
- *		Class to represent sorts
- */
 class Sort {
 private:
 	std::string _name; //!< Name of the sort
@@ -44,16 +40,18 @@ private:
 	SortTable* _interpretation; //!< The interpretation of the sort if it is built-in.
 								//!< A null-pointer otherwise.
 
-	~Sort(); //!< Destructor
 	void removeParent(Sort* p); //!< Removes parent p
 	void removeChild(Sort* c); //!< Removes child c
+
 	void generatePred(SortTable*); //!< Generate the predicate that corresponds to the sort
 
-	void removeVocabulary(const Vocabulary*); //!< Removes a vocabulary from the list of vocabularies
-	void addVocabulary(const Vocabulary*); //!< Add a vocabulary to the list of vocabularies
+protected:
+	Sort();
+	virtual ~Sort();
+
+	void setPred(Predicate* p){ _pred = p; }
 
 public:
-	// Constructors
 	Sort(const std::string& name, SortTable* inter = 0); //!< Create an internal sort
 	Sort(const std::string& name, const ParseInfo& pi, SortTable* inter = 0); //!< Create a user-declared sort
 
@@ -69,15 +67,32 @@ public:
 	const std::set<Sort*>& children() const;
 	std::set<Sort*> ancestors(const Vocabulary* v = 0) const; //!< Returns the ancestors of the sort
 	std::set<Sort*> descendents(const Vocabulary* v = 0) const; //!< Returns the descendents of the sort
-	bool builtin() const; //!< True iff the sort is built-in
-	SortTable* interpretation() const; //!< Returns the interpretaion for built-in sorts
+	virtual bool builtin() const; //!< True iff the sort is built-in
+	SortTable* interpretation() const; //!< Returns the interpretation for built-in sorts
 	std::set<const Vocabulary*>::const_iterator  firstVocabulary() const ;
 	std::set<const Vocabulary*>::const_iterator lastVocabulary() const ;
 
-	// Output
-	std::ostream& put(std::ostream&) const;
+	void removeVocabulary(const Vocabulary*); //!< Removes a vocabulary from the list of vocabularies
+	void addVocabulary(const Vocabulary*); //!< Add a vocabulary to the list of vocabularies
 
-	friend class Vocabulary;
+	virtual std::vector<Sort*> getSortsForTable() { return std::vector<Sort*>{this}; }
+
+	std::ostream& put(std::ostream&) const;
+};
+
+class UnionSort: public Sort {
+private:
+	std::vector<Sort*> sorts;
+	~UnionSort(){
+
+	}
+
+public:
+	UnionSort(const std::vector<Sort*>& sorts);
+
+	bool builtin() const;
+
+	virtual std::vector<Sort*> getSortsForTable() { return sorts; }
 };
 
 std::ostream& operator<<(std::ostream&, const Sort&);

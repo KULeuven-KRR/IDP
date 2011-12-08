@@ -33,6 +33,9 @@ std::vector<AbstractStructure*> ModelExpansion::expand(AbstractTheory* theory, A
 	// Calculate known definitions
 	// FIXME currently skipping if working lazily!
 	if (not opts->getValue(BoolType::GROUNDLAZILY) && sametypeid<Theory>(*theory)) {
+		if(getOption(IntType::GROUNDVERBOSITY)>=1){
+			clog <<"Calculating known definitions\n";
+		}
 		bool satisfiable = calculateKnownDefinitions(dynamic_cast<Theory*>(theory), structure);
 		if (not satisfiable) {
 			return std::vector<AbstractStructure*> { };
@@ -41,12 +44,12 @@ std::vector<AbstractStructure*> ModelExpansion::expand(AbstractTheory* theory, A
 
 	// Create solver and grounder
 	SATSolver* solver = createsolver();
-	if(getOption(IntType::GROUNDVERBOSITY)>1){
+	if(getOption(IntType::GROUNDVERBOSITY)>=1){
 		clog <<"Approximation\n";
 	}
 	auto symstructure = generateNaiveApproxBounds(theory, structure);
 	// TODO bugged! auto symstructure = generateApproxBounds(theory, structure);
-	if(getOption(IntType::GROUNDVERBOSITY)>1){
+	if(getOption(IntType::GROUNDVERBOSITY)>=1){
 		clog <<"Grounding\n";
 	}
 	GrounderFactory grounderfactory(structure, symstructure);
@@ -56,7 +59,7 @@ std::vector<AbstractStructure*> ModelExpansion::expand(AbstractTheory* theory, A
 
 	// Execute symmetry breaking
 	if (opts->getValue(IntType::SYMMETRY) != 0) {
-		if(getOption(IntType::GROUNDVERBOSITY)>1){
+		if(getOption(IntType::GROUNDVERBOSITY)>=1){
 			clog <<"Symmetry breaking\n";
 		}
 		clock_t start = clock();
@@ -79,7 +82,7 @@ std::vector<AbstractStructure*> ModelExpansion::expand(AbstractTheory* theory, A
 				}
 			}
 		} else {
-			std::cerr << "Unknown symmetry option...\n";
+			std::clog << "Unknown symmetry option...\n";
 		}
 	}
 
@@ -89,7 +92,7 @@ std::vector<AbstractStructure*> ModelExpansion::expand(AbstractTheory* theory, A
 		monitor->setTranslator(grounding->translator());
 		monitor->setSolver(solver);
 	}
-	if(getOption(IntType::GROUNDVERBOSITY)>1){
+	if(getOption(IntType::GROUNDVERBOSITY)>=1){
 		clog <<"Solving\n";
 	}
 	getGlobal()->addTerminationMonitor(new SolverTermination());
@@ -101,7 +104,7 @@ std::vector<AbstractStructure*> ModelExpansion::expand(AbstractTheory* theory, A
 	// Collect solutions
 	//FIXME propagator code broken structure = propagator->currstructure(structure);
 	std::vector<AbstractStructure*> solutions;
-	if(getOption(IntType::GROUNDVERBOSITY)>1){
+	if(getOption(IntType::GROUNDVERBOSITY)>=1){
 		clog <<"Generate 2-valued models\n";
 	}
 	for (auto model = abstractsolutions->getModels().cbegin(); model != abstractsolutions->getModels().cend(); ++model) {

@@ -3739,8 +3739,8 @@ bool approxTotalityCheck(const FuncInter* funcinter) {
 	vst.pop_back();
 	tablesize nroftuples = Universe(vst).size();
 	tablesize nrofvalues = funcinter->graphInter()->ct()->size();
-//cerr << "Checking totality of " << *function << " -- nroftuples=" << nroftuples.second << " and nrofvalues=" << nrofvalues.second;
-//cerr << " (trust=" << (nroftuples.first && nrofvalues.first) << ")" << "\n";
+//clog << "Checking totality of " << *function << " -- nroftuples=" << nroftuples.second << " and nrofvalues=" << nrofvalues.second;
+//clog << " (trust=" << (nroftuples.first && nrofvalues.first) << ")" << "\n";
 	if (nroftuples._type == TST_EXACT && nrofvalues._type == TST_EXACT) {
 		return nroftuples._size == nrofvalues._size;
 	} else
@@ -4260,9 +4260,18 @@ SortTable* Structure::inter(Sort* s) const {
 	if (s->builtin()) {
 		return s->interpretation();
 	} else {
-		auto it = _sortinter.find(s);
-		Assert(it != _sortinter.cend());
-		return it->second;
+		vector<SortTable*> tables;
+		auto list = s->getSortsForTable();
+		for(auto i=list.cbegin(); i<list.cend(); ++i){
+			auto it = _sortinter.find(*i);
+			Assert(it != _sortinter.cend());
+			tables.push_back((*it).second);
+		}
+		if(tables.size()==1){
+			return tables.back();
+		}else{
+			return new SortTable(new UnionInternalSortTable({}, tables));
+		}
 	}
 }
 

@@ -51,7 +51,7 @@ void idp_rl_start() {
 	}
 	success = read_history(NULL);
 	if(success!=0){
-		std::cerr <<"The interactive shell history could not be saved. No history will be maintained across sessions.\n";
+		std::clog <<"The interactive shell history could not be saved. No history will be maintained across sessions.\n";
 	}
 }
 

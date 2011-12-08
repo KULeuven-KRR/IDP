@@ -488,8 +488,8 @@ void GrounderFactory::visit(const PredForm* pf) {
 		certtable = new PredTable(new InverseInternalPredTable(new FullInternalPredTable()), Universe(tables));
 	}
 
-	auto possch = GeneratorFactory::create(posstable, vector<Pattern>(checkargs.size(), Pattern::INPUT), checkargs, Universe(tables));
-	auto certainch = GeneratorFactory::create(certtable, vector<Pattern>(checkargs.size(), Pattern::INPUT), checkargs, Universe(tables));
+	auto possch = GeneratorFactory::create(posstable, vector<Pattern>(checkargs.size(), Pattern::INPUT), checkargs, Universe(tables), pf);
+	auto certainch = GeneratorFactory::create(certtable, vector<Pattern>(checkargs.size(), Pattern::INPUT), checkargs, Universe(tables), pf);
 	if (getOption(IntType::GROUNDVERBOSITY) > 3) {
 		clog << "Certainly table: \n" << toString(certtable) << "\n";
 		clog << "Possible table: \n" << toString(posstable) << "\n";
@@ -771,6 +771,9 @@ void GrounderFactory::visit(const AggForm* af) {
 
 	AggForm* newaf = af->clone();
 	Formula* transaf = FormulaUtils::unnestThreeValuedTerms(newaf, _structure, _context._funccontext, _cpsupport, _cpsymbols);
+	if(recursive(transaf)){
+		transaf = FormulaUtils::splitIntoMonotoneAgg(transaf);
+	}
 
 	if (typeid(*transaf) != typeid(AggForm)) { // The rewriting changed the atom
 		if (_verbosity > 1) {
@@ -930,17 +933,6 @@ GrounderFactory::GenAndChecker GrounderFactory::createVarsAndGenerators(Formula*
 		tables.push_back(st);
 	}
 
-	// Check for infinite grounding
-	for (auto it = tables.cbegin(); it < tables.cend(); ++it) {
-		if (not (*it)->finite()) {
-			Warning::possiblyInfiniteGrounding(orig->pi().original() != NULL ? toString(orig->pi().original()) : "", toString(orig));
-			if(not getOption(BoolType::GROUNDWITHBOUNDS)){ // TODO and not lazy?
-				// If not grounding with bounds, we will certainly ground infinitely, so do not even start
-				throw IdpException("Infinite grounding");
-			}
-		}
-	}
-
 	// FIXME => unsafe to have to pass in fovars explicitly (order is never checked?)
 	PredTable *gentable = NULL, *checktable = NULL;
 	if(getOption(BoolType::GROUNDWITHBOUNDS)){
@@ -955,8 +947,8 @@ GrounderFactory::GenAndChecker GrounderFactory::createVarsAndGenerators(Formula*
 		checktable = new PredTable(new InverseInternalPredTable(new FullInternalPredTable), Universe(tables));
 	}
 
-	auto gen = GeneratorFactory::create(gentable, pattern, vars, Universe(tables));
-	auto check = GeneratorFactory::create(checktable, vector<Pattern>(vars.size(), Pattern::INPUT), vars, Universe(tables));
+	auto gen = GeneratorFactory::create(gentable, pattern, vars, Universe(tables), subformula);
+	auto check = GeneratorFactory::create(checktable, vector<Pattern>(vars.size(), Pattern::INPUT), vars, Universe(tables), subformula);
 	return GenAndChecker(gen, check);
 }
 
@@ -1032,7 +1024,7 @@ void GrounderFactory::visit(const Definition* def) {
 }
 
 template<class VarList>
-InstGenerator* GrounderFactory::createVarMapAndGenerator(const VarList& vars) {
+InstGenerator* GrounderFactory::createVarMapAndGenerator(const Formula* original, const VarList& vars) {
 	vector<SortTable*> hvst;
 	vector<const DomElemContainer*> hvars;
 	for (auto it = vars.cbegin(); it != vars.cend(); ++it) {
@@ -1042,14 +1034,9 @@ InstGenerator* GrounderFactory::createVarMapAndGenerator(const VarList& vars) {
 		hvst.push_back(sorttable);
 	}
 	GeneratorFactory gf;
-	return gf.create(hvars, hvst);
+	return gf.create(hvars, hvst, original);
 }
 
-/**
- * void GrounderFactory::visit(const Rule* rule)
- * DESCRIPTION
- * 		Creates a grounder for a definitional rule.
- */
 void GrounderFactory::visit(const Rule* rule) {
 	if (_verbosity > 3) {
 			clog << "Grounderfactory visiting: " <<toString(rule) << "\n";
@@ -1074,7 +1061,7 @@ void GrounderFactory::visit(const Rule* rule) {
 			}
 		}
 
-		bodygen = createVarMapAndGenerator(bodyvars);
+		bodygen = createVarMapAndGenerator(rule->head(), bodyvars);
 	} else {
 		// Split the quantified variables in two categories:
 		//		1. the variables that only occur in the head
@@ -1090,8 +1077,8 @@ void GrounderFactory::visit(const Rule* rule) {
 			}
 		}
 
-		headgen = createVarMapAndGenerator(headvars);
-		bodygen = createVarMapAndGenerator(bodyvars);
+		headgen = createVarMapAndGenerator(rule->head(), headvars);
+		bodygen = createVarMapAndGenerator(rule->body(), bodyvars);
 	}
 
 	// Create head grounder

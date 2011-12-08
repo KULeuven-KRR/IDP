@@ -8,6 +8,7 @@
 #include "fobdds/FoBddManager.hpp"
 #include "term.hpp"
 #include "theory.hpp"
+#include "error.hpp"
 
 #include "generators/GeneratorFactory.hpp"
 
@@ -29,7 +30,22 @@
 #include "generators/InverseAbsValueGenerator.hpp"
 using namespace std;
 
-InstGenerator* GeneratorFactory::create(const vector<const DomElemContainer*>& vars, const vector<SortTable*>& tabs) {
+// NOTE original can be NULL
+template<typename Table>
+void checkInfinity(Table t, const Formula* original){
+	if (not t->finite()) {
+		if(original!=NULL){
+			Warning::possiblyInfiniteGrounding(original->pi().original() != NULL ? toString(original->pi().original()) : "", toString(original));
+		}
+		if(not getOption(BoolType::GROUNDWITHBOUNDS)){ // TODO and not lazy?
+			// If not grounding with bounds, we will certainly ground infinitely, so do not even start
+			throw IdpException("Infinite grounding");
+		}
+	}
+}
+
+
+InstGenerator* GeneratorFactory::create(const vector<const DomElemContainer*>& vars, const vector<SortTable*>& tabs, const Formula* original) {
 	Assert(vars.size()==tabs.size());
 	if(vars.size()==0){
 		return new FullGenerator(); // TODO check if this is always correct?
@@ -38,6 +54,7 @@ InstGenerator* GeneratorFactory::create(const vector<const DomElemContainer*>& v
 	GeneratorNode* node = NULL;
 	auto jt = tabs.crbegin();
 	for (auto it = vars.crbegin(); it != vars.crend(); ++it, ++jt) {
+		checkInfinity((*jt)->internTable(), original);
 		auto tig = new SortInstGenerator((*jt)->internTable(), *it);
 		if (vars.size() == 1) {
 			gen = tig;
@@ -55,8 +72,16 @@ InstGenerator* GeneratorFactory::create(const vector<const DomElemContainer*>& v
 }
 
 InstGenerator* GeneratorFactory::create(const PredTable* pt, const vector<Pattern>& pattern, const vector<const DomElemContainer*>& vars,
-		const Universe& universe) {
+		const Universe& universe, const Formula* original) {
 	GeneratorFactory factory;
+
+	// Check for infinite grounding
+	for(int i=0; i<universe.tables().size(); ++i){
+		if (pattern[i]==Pattern::OUTPUT) {
+			checkInfinity(universe.tables()[i], original);
+		}
+	}
+
 	return factory.internalCreate(pt, pattern, vars, universe);
 }
 
@@ -89,7 +114,7 @@ InstGenerator* GeneratorFactory::create(const PredForm* atom, AbstractStructure*
 		auto inter = structure->inter(dynamic_cast<Function*>(symbol))->graphInter();
 		table = inverse ? inter->cf() : inter->ct();
 	}
-	return GeneratorFactory::create(table, pattern, vars, universe);
+	return GeneratorFactory::create(table, pattern, vars, universe, atom);
 }
 
 InstGenerator* GeneratorFactory::internalCreate(const PredTable* pt, vector<Pattern> pattern, const vector<const DomElemContainer*>& vars,

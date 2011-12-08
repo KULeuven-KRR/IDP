@@ -130,6 +130,7 @@ void handleAndRun(const string& proc, const DomainElement** result) {
 	try {
 		*result = Insert::exec(proc);
 	} catch (const Exception& ex) {
+		clog.flush();
 		stringstream ss;
 		ss << "Exception caught: " << ex.getMessage() << ".\n";
 		Error::error(ss.str());
@@ -150,14 +151,14 @@ void setStop(bool value) {
 
 void monitorShutdown() {
 	int monitoringtime = 0;
-	setOption(IntType::GROUNDVERBOSITY, 4);
-	cerr <<"Verbosity set to " <<getOption(IntType::GROUNDVERBOSITY) <<"\n";
-	while(not hasStopped && monitoringtime<3000000){
+//	setOption(IntType::GROUNDVERBOSITY, 10);
+//	setOption(IntType::SATVERBOSITY, 10);
+	while(not hasStopped && monitoringtime<10000){
 		usleep(1000);
 		monitoringtime+=1000;
 	}
 	if(not hasStopped){
-		cerr <<"Shutdown failed, aborting.\n";
+		clog <<"Shutdown failed, aborting.\n";
 		abort();
 	}
 }
@@ -165,7 +166,7 @@ void monitorShutdown() {
 void timeout() {
 	int time = 0;
 	int sleep = 10;
-	//cerr <<"Timeout: " <<getOption(IntType::TIMEOUT) <<", currently at " <<time/1000 <<"\n";
+	//clog <<"Timeout: " <<getOption(IntType::TIMEOUT) <<", currently at " <<time/1000 <<"\n";
 	while (not shouldStop()) {
 		time += sleep;
 		usleep(sleep * 1000);
@@ -176,9 +177,9 @@ void timeout() {
 				sleep += 100;
 			}
 		}
-		//cerr <<"Timeout: " <<getOption(IntType::TIMEOUT) <<", currently at " <<time/1000 <<"\n";
+		//clog <<"Timeout: " <<getOption(IntType::TIMEOUT) <<", currently at " <<time/1000 <<"\n";
 		if (getOption(IntType::TIMEOUT) < time / 1000) {
-			cerr << "Timed-out\n";
+			clog << "Timed-out\n";
 			getGlobal()->notifyTerminateRequested();
 			thread shutdown(monitorShutdown);
 			shutdown.join();
@@ -194,6 +195,8 @@ void SIGINT_handler(int) {
 	if(not shouldStop() && running){
 		GlobalData::instance()->notifyTerminateRequested();
 	}else{
+		// TODO conform to other shells, should just go to a new line in the shell.
+		// TODO ctrl-d should exit
 		exit(1);
 	}
 }
@@ -224,23 +227,22 @@ const DomainElement* executeProcedure(const string& proc) {
 
 		thread signalhandling(timeout);
 
-		bool throwex = false;
-		std::exception newex;
 		try{
 			handleAndRun(temp, &result);
 		}catch(const std::exception& ex){
-			throwex = true;
-			newex = ex;
+			clog.flush();
+			clog <<"Error caught: " <<ex.what() <<"\n";
+			hasStopped = true;
+			running = false;
+			setStop(true);
+			signalhandling.join();
+			throw ex;
 		}
 
 		hasStopped = true;
 		running = false;
 		setStop(true);
 		signalhandling.join();
-
-		if(throwex){
-			throw newex;
-		}
 	}
 
 	return result;
@@ -299,7 +301,14 @@ public:
 Status test(const std::vector<std::string>& inputfileurls) {
 	DataManager m;
 
-	parse(inputfileurls);
+	try {
+		parse(inputfileurls);
+	} catch (const Exception& ex) {
+		stringstream ss;
+		ss << "Exception caught: " << ex.getMessage() << ".\n";
+		Error::error(ss.str());
+		clog.flush();
+	}
 
 	Status result = Status::FAIL;
 	if (Error::nr_of_errors() == 0) {
@@ -323,7 +332,16 @@ int run(int argc, char* argv[]) {
 
 	CLOptions cloptions;
 	vector<string> inputfiles = read_options(argc, argv, cloptions);
-	parse(inputfiles);
+
+	try {
+		parse(inputfiles);
+	} catch (const Exception& ex) {
+		stringstream ss;
+		ss << "Exception caught: " << ex.getMessage() << ".\n";
+		Error::error(ss.str());
+		clog.flush();
+	}
+
 	if (cloptions._readfromstdin)
 		parsestdin();
 	if (cloptions._exec == "") {

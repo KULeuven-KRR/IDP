@@ -1245,6 +1245,39 @@ Formula* Insert::predform(NSPair* t, YYLTYPE l) const {
 	return predform(t, vt, l);
 }
 
+Formula* Insert::equalityhead(Term* left, Term* right, YYLTYPE l) const{
+	if(not sametypeid<FuncTerm>(*left) && not sametypeid<FuncTerm>(*right)){
+		Error::funcnameexpectedinhead(left->pi());
+		for (unsigned int n = 0; n < left->subterms().size(); ++n) {
+			if(left->subterms()[n]!=NULL){
+				delete(left->subterms()[n]);
+			}
+		}
+		if(right!=NULL){
+			delete(right);
+		}
+		return NULL;
+	}
+	if(not sametypeid<FuncTerm>(*left)){
+		auto temp = left;
+		left = right;
+		right = temp;
+	}
+	auto ft = dynamic_cast<FuncTerm*>(left);
+	vector<Term*> vt2(left->subterms());
+	vt2.push_back(right);
+	vector<Term*> vtpi;
+	for (auto it = vt2.cbegin(); it != vt2.cend(); ++it) {
+		if ((*it)->pi().original()){
+			vtpi.push_back((*it)->pi().original()->clone());
+		} else{
+			vtpi.push_back((*it)->clone());
+		}
+	}
+	FormulaParseInfo pi = formparseinfo(new PredForm(SIGN::POS, ft->function(), vtpi, FormulaParseInfo()), l);
+	return new PredForm(SIGN::POS, ft->function(), vt2, pi);
+}
+
 Formula* Insert::funcgraphform(NSPair* nst, const vector<Term*>& vt, Term* t, YYLTYPE l) const {
 	if (nst->_sortsincluded) {
 		if ((nst->_sorts).size() != vt.size() + 1) Error::incompatiblearity(toString(nst), nst->_pi);

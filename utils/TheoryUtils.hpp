@@ -81,6 +81,8 @@ Formula* graphAggregates(Formula* f);
 
 Formula* splitProducts(Formula* f);
 
+Formula* splitIntoMonotoneAgg(Formula* f);
+
 /** Recursively move all partial terms outside atoms **/
 Formula* unnestPartialTerms(Formula* f, Context context, Vocabulary* voc = NULL);
 
