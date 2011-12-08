@@ -153,9 +153,9 @@ void monitorShutdown() {
 	int monitoringtime = 0;
 //	setOption(IntType::GROUNDVERBOSITY, 10);
 //	setOption(IntType::SATVERBOSITY, 10);
-	while(not hasStopped && monitoringtime<10000){
-		usleep(1000);
-		monitoringtime+=1000;
+	while(not hasStopped && monitoringtime<3000000){
+		usleep(10000);
+		monitoringtime+=10000;
 	}
 	if(not hasStopped){
 		clog <<"Shutdown failed, aborting.\n";

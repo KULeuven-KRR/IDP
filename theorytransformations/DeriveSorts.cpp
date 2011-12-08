@@ -40,6 +40,7 @@ SetExpr* DeriveSorts::visit(QuantSetExpr* qs) {
 }
 
 Term* DeriveSorts::visit(VarTerm* vt) {
+//	cerr <<toString(vt) <<"\n";
 	if(_underivable){
 		_underivableVariables.insert(vt->var());
 		return vt;
@@ -54,6 +55,7 @@ Term* DeriveSorts::visit(VarTerm* vt) {
 		if(newsort==NULL){
 			_underivableVariables.insert(vt->var());
 		}else{
+			//Warning::derivevarsort(vt->var()->name(), newsort->name(), vt->pi());
 			vt->sort(newsort);
 		}
 	}
@@ -84,6 +86,7 @@ Term* DeriveSorts::visit(AggTerm* t) {
 
 Term* DeriveSorts::visit(FuncTerm* term) {
 	auto f = term->function();
+//	cerr <<toString(term) <<(f->overloaded()?"overloaded":"") <<(f->builtin()?"builtin":"") <<"\n";
 
 	if(_assertsort != NULL && term->sort()!=NULL){
 		Assert(SortUtils::resolve(_assertsort, term->sort())!=NULL);
@@ -91,22 +94,29 @@ Term* DeriveSorts::visit(FuncTerm* term) {
 	_assertsort = NULL;
 
 	auto origunderivable = _underivable;
+
 	if (f->overloaded()) {
 		_overloadedterms.insert(term);
-		if(f->builtin()){
-			for (auto i = term->subterms().cbegin(); i!= term->subterms().cend(); ++i) {
-				(*i)->accept(this);
-				_assertsort = NULL;
-			}
-			return term;
-		}else{
+		if(not f->builtin()){
 			_underivable = true;
 		}
+	}
+
+	// TODO currently, overloading is resolved iteratively, so it can be that a builtin goes from overloaded to set, but +/2: is set incorrectly!
+	if(f->builtin()){
+		for (auto i = term->subterms().cbegin(); i!= term->subterms().cend(); ++i) {
+			(*i)->accept(this);
+			_assertsort = NULL;
+		}
+		return term;
 	}
 
 	auto it = f->insorts().cbegin();
 	auto jt = term->subterms().cbegin();
 	for (; it != f->insorts().cend(); ++it, ++jt) {
+/*		if((*it)!=NULL){
+			cerr <<"Chosen sort "<<toString(*it) <<"\n";
+		}*/
 		_assertsort = *it;
 		(*jt)->accept(this);
 		_assertsort = NULL;
@@ -117,6 +127,7 @@ Term* DeriveSorts::visit(FuncTerm* term) {
 
 Formula* DeriveSorts::visit(PredForm* f) {
 	auto p = f->symbol();
+//	cerr <<toString(p) <<"\n";
 
 	auto origunderivable = _underivable;
 	if(p->overloaded()){
@@ -142,6 +153,9 @@ Formula* DeriveSorts::visit(PredForm* f) {
 		}
 		for (auto i = f->subterms().cbegin(); i != f->subterms().cend(); ++i) {
 			_assertsort = temp;
+			/*if((temp)!=NULL){
+				cerr <<"Chosen sort "<<toString(temp) <<"\n";
+			}*/
 			(*i)->accept(this);
 			_assertsort = NULL;
 		}
@@ -149,6 +163,9 @@ Formula* DeriveSorts::visit(PredForm* f) {
 		auto it = p->sorts().cbegin();
 		auto jt = f->subterms().cbegin();
 		for (; it != p->sorts().cend(); ++it, ++jt) {
+			/*if((*it)!=NULL){
+				cerr <<"Chosen sort "<<toString(*it) <<"\n";
+			}*/
 			_assertsort = *it;
 			(*jt)->accept(this);
 			_assertsort = NULL;
