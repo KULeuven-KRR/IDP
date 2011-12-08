@@ -71,6 +71,7 @@ class SplitProducts;
 class AbstractTheory;
 class Theory;
 class AbstractGroundTheory;
+class GroundPolicy;
 template<typename T> class GroundTheory;
 class Formula;
 class PredForm;
@@ -146,17 +147,24 @@ protected:\
 #define ACCEPTNONMUTATING()\
 protected:\
 	VISITORS()\
-	virtual void accept(TheoryVisitor* v) const {\
-		v->visit(this);\
-	}
+	virtual void accept(TheoryVisitor* v) const;
 
 #define ACCEPTBOTH(Type)\
 protected:\
 	VISITORS()\
-	virtual void accept(TheoryVisitor* v) const {\
+	virtual void accept(TheoryVisitor* v) const;\
+	virtual Type* accept(TheoryMutatingVisitor* v);
+
+#define IMPLACCEPTNONMUTATING(VisitingType)\
+	void VisitingType::accept(TheoryVisitor* v) const {\
+		v->visit(this);\
+	}
+
+#define IMPLACCEPTBOTH(VisitingType, Type)\
+	void VisitingType::accept(TheoryVisitor* v) const {\
 		v->visit(this);\
 	}\
-	virtual Type* accept(TheoryMutatingVisitor* v) {\
+	Type* VisitingType::accept(TheoryMutatingVisitor* v) {\
 		return v->visit(this);\
 	}
 

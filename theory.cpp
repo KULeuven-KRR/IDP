@@ -24,6 +24,17 @@ using namespace std;
 	Formula
 **************/
 
+IMPLACCEPTBOTH(AggForm, Formula)
+IMPLACCEPTBOTH(BoolForm, Formula)
+IMPLACCEPTBOTH(EqChainForm, Formula)
+IMPLACCEPTBOTH(EquivForm, Formula)
+IMPLACCEPTBOTH(QuantForm, Formula)
+IMPLACCEPTBOTH(PredForm, Formula)
+IMPLACCEPTBOTH(Definition, Definition)
+IMPLACCEPTBOTH(FixpDef, FixpDef)
+IMPLACCEPTBOTH(Rule, Rule)
+IMPLACCEPTBOTH(Theory, AbstractTheory)
+
 void Formula::setFreeVars() {
 	_freevars.clear();
 	for (auto it = _subterms.cbegin(); it != _subterms.cend(); ++it) {

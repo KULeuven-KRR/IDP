@@ -13,6 +13,8 @@
 
 #include "GeneralUtils.hpp"
 
+#include "external/TerminationManagement.hpp"
+
 using namespace std;
 
 // seed
@@ -121,12 +123,15 @@ void parse(const vector<string>& inputfiles) {
 // TODO add threading and signal handling code to kill the process by using the signalhandling thread in an infinite loop and some mutexes
 #include <thread>
 
+//TODO willen we een run van een lua procedure timen of eigenlijk een command op zich?
+// is misschien nogal vreemd om lua uitvoering te timen?
+
 void handleAndRun(const string& proc, const DomainElement** result) {
 	try {
 		*result = Insert::exec(proc);
-	} catch (const std::exception& ex) {
+	} catch (const Exception& ex) {
 		stringstream ss;
-		ss << "Exception caught: " << ex.what() << ".\n";
+		ss << "Exception caught: " << ex.getMessage() << ".\n";
 		Error::error(ss.str());
 		*result = NULL;
 	}
@@ -145,7 +150,7 @@ void setStop(bool value) {
 
 void monitorShutdown() {
 	int monitoringtime = 0;
-	while(not hasStopped && monitoringtime<1000000){
+	while(not hasStopped && monitoringtime<3000000){
 		usleep(1000);
 		monitoringtime+=1000;
 	}
@@ -205,6 +210,9 @@ const DomainElement* executeProcedure(const string& proc) {
 		setStop(false);
 		hasStopped = false;
 		running = true;
+		getGlobal()->reset();
+		startInference(); // NOTE: have to tell the solver to reset its instance
+		// FIXME should not be here, but in a less error-prone place. Or should pass an adapated time-out to the solver?
 
 		struct sigaction sigIntHandler;
 		sigIntHandler.sa_handler = SIGINT_handler;
@@ -214,12 +222,23 @@ const DomainElement* executeProcedure(const string& proc) {
 
 		thread signalhandling(timeout);
 
-		handleAndRun(temp, &result);
+		bool throwex = false;
+		std::exception newex;
+		try{
+			handleAndRun(temp, &result);
+		}catch(const std::exception& ex){
+			throwex = true;
+			newex = ex;
+		}
 
 		hasStopped = true;
 		running = false;
 		setStop(true);
 		signalhandling.join();
+
+		if(throwex){
+			throw newex;
+		}
 	}
 
 	return result;

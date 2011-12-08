@@ -1,9 +1,3 @@
-/************************************
- term.cpp
- this file belongs to GidL 2.0
- (c) K.U.Leuven
- ************************************/
-
 #include <sstream>
 #include "vocabulary.hpp"
 #include "structure.hpp"
@@ -17,6 +11,13 @@ using namespace std;
 /*********************
  Abstract terms
  *********************/
+
+IMPLACCEPTBOTH(VarTerm, Term)
+IMPLACCEPTBOTH(FuncTerm, Term)
+IMPLACCEPTBOTH(AggTerm, Term)
+IMPLACCEPTBOTH(DomainTerm, Term)
+IMPLACCEPTBOTH(QuantSetExpr, SetExpr)
+IMPLACCEPTBOTH(EnumSetExpr, SetExpr)
 
 void Term::setFreeVars() {
 	_freevars.clear();

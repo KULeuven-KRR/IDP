@@ -23,6 +23,18 @@ using namespace std;
  Ground definitions
  *************************/
 
+IMPLACCEPTBOTH(PCGroundRule, GroundRule)
+IMPLACCEPTBOTH(AggGroundRule, GroundRule)
+IMPLACCEPTBOTH(GroundDefinition, AbstractDefinition)
+
+IMPLACCEPTNONMUTATING(CPVarTerm)
+IMPLACCEPTNONMUTATING(CPSumTerm)
+IMPLACCEPTNONMUTATING(CPWSumTerm)
+
+IMPLACCEPTNONMUTATING(GroundSet)
+IMPLACCEPTNONMUTATING(GroundAggregate)
+IMPLACCEPTNONMUTATING(CPReification)
+
 PCGroundRule::PCGroundRule(int head, PCTsBody* body, bool rec) :
 		GroundRule(head, body->conj() ? RT_CONJ : RT_DISJ, rec), _body(body->body()) {
 }
@@ -220,48 +232,6 @@ ostream& GroundDefinition::put(ostream& s) const {
 }
 
 
-/**************
- Visitor
- **************/
-
-void TheoryVisitor::visit(const GroundDefinition* d) {
-	for (auto it = d->begin(); it != d->end(); ++it) {
-		(*it).second->accept(this);
-	}
-}
-
-void TheoryVisitor::visit(const AggGroundRule*) {
-	// TODO
-}
-
-void TheoryVisitor::visit(const PCGroundRule*) {
-	// TODO
-}
-
-void TheoryVisitor::visit(const GroundSet*) {
-	// TODO
-}
-
-void TheoryVisitor::visit(const GroundAggregate*) {
-	// TODO
-}
-
-GroundDefinition* TheoryMutatingVisitor::visit(GroundDefinition* d) {
-	for (auto it = d->begin(); it != d->end(); ++it) {
-		(*it).second = (*it).second->accept(this);
-	}
-	return d;
-}
-
-GroundRule* TheoryMutatingVisitor::visit(AggGroundRule* r) {
-	// TODO
-	return r;
-}
-
-GroundRule* TheoryMutatingVisitor::visit(PCGroundRule* r) {
-	// TODO
-	return r;
-}
 
 bool operator==(const GroundTerm& a, const GroundTerm& b) {
 	if (a.isVariable == b.isVariable) {

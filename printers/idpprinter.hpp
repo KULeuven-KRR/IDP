@@ -197,30 +197,28 @@ public:
 		}
 	}
 
+	template<typename Visitor, typename List>
+	void visitList(Visitor v, const List& list){
+		for(auto i=list.cbegin(); i<list.cend(); ++i){
+			(*i)->accept(v);
+		}
+	}
+
 	void visit(const GroundTheory<GroundPolicy>* g) {
 		Assert(isTheoryOpen());
 		_translator = g->translator();
 		_termtranslator = g->termtranslator();
-		for (size_t n = 0; n < g->nrClauses(); ++n) {
-			visit(g->clause(n));
+		for(auto i=g->getClauses().cbegin(); i<g->getClauses().cend(); ++i){
+			visit(*i);
 		}
-		for (auto i = g->definitions().cbegin(); i != g->definitions().cend(); i++) {
+		visitList(this, g->getCPReifications());
+		visitList(this, g->getSets());
+		visitList(this, g->getAggregates());
+		visitList(this, g->getFixpDefinitions());
+		for (auto i = g->getDefinitions().cbegin(); i != g->getDefinitions().cend(); i++) {
 			openDefinition((*i).second->id());
 			(*i).second->accept(this);
 			closeDefinition();
-		}
-
-		for (size_t n = 0; n < g->nrSets(); ++n) {
-			g->set(n)->accept(this);
-		}
-		for (size_t n = 0; n < g->nrAggregates(); ++n) {
-			g->aggregate(n)->accept(this);
-		}
-		for (size_t n = 0; n < g->nrFixpDefs(); ++n) {
-			g->fixpdef(n)->accept(this);
-		}
-		for (size_t n = 0; n < g->nrCPReifications(); ++n) {
-			g->cpreification(n)->accept(this);
 		}
 	}
 

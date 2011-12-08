@@ -568,6 +568,9 @@ void BoolGrounder::run(ConjOrDisj& formula, bool negate) const {
 		printorig();
 	formula.type = conn_;
 	for (auto g = _subgrounders.cbegin(); g < _subgrounders.cend(); g++) {
+		if(GlobalData::instance()->terminateRequested()){
+			throw IdpException("Terminate requested");
+		}
 		if (runSubGrounder(*g, context()._conjunctivePathFromRoot, formula, negate) == FormStat::DECIDED) {
 			return;
 		}
