@@ -36,9 +36,9 @@ protected:
 	virtual GroundRule*	visit(AggGroundRule*);
 	virtual GroundRule*	visit(PCGroundRule*);
 
-	virtual Rule*		visit(Rule*);
+	virtual Rule* visit(Rule*);
 	virtual Definition*	visit(Definition*);
-	virtual FixpDef*	visit(FixpDef*);
+	virtual FixpDef* visit(FixpDef*);
 
 	virtual Term* visit(VarTerm*);
 	virtual Term* visit(FuncTerm*);

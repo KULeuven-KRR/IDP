@@ -1792,7 +1792,7 @@ Predicate* greaterThan(Sort* s) {
 
 bool isComparisonPredicate(const PFSymbol* symbol) {
 	string name = symbol->name();
-	return (typeid(*symbol) == typeid(Predicate)) && (name == "=/2" || name == "</2" || name == ">/2");
+	return (sametypeid<Predicate>(*symbol)) && (name == "=/2" || name == "</2" || name == ">/2");
 }
 
 bool isNumeric(Sort* s) {

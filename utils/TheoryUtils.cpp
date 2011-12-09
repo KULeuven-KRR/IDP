@@ -22,6 +22,7 @@
 #include "theorytransformations/AddCompletion.hpp"
 #include "theorytransformations/GraphFunctions.hpp"
 #include "theorytransformations/GraphAggregates.hpp"
+#include "theorytransformations/GraphFuncsAndAggs.hpp"
 #include "theorytransformations/RemoveEquivalences.hpp"
 #include "theorytransformations/PushQuantifications.hpp"
 #include "theorytransformations/SplitComparisonChains.hpp"
@@ -99,6 +100,10 @@ Formula* graphFunctions(Formula* f) {
 
 Formula* graphAggregates(Formula* f) {
 	return transform<GraphAggregates, Formula*>(f);
+}
+
+Formula* graphFuncsAndAggs(Formula* f) {
+	return transform<GraphFuncsAndAggs, Formula*>(f);
 }
 
 Formula* splitProducts(Formula* f){

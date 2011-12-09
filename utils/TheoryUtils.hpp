@@ -59,7 +59,7 @@ Formula* splitComparisonChains(Formula*, Vocabulary* v = NULL);
 double estimatedCostAll(PredForm* query, const std::set<Variable*> freevars, bool inverse, AbstractStructure* structure);
 
 /** Recursively remove all nested terms **/
-Formula* unnestTerms(Formula*, Context poscontext);
+Formula* unnestTerms(Formula*, Context context = Context::POSITIVE);
 
 /** Rewrite all equivalences into impiclations **/
 Formula* removeEquivalences(Formula*);
@@ -78,6 +78,7 @@ void deriveSorts(Vocabulary* v, Formula* f);
 /** Recursively rewrite all function terms to their predicate form **/
 Formula* graphFunctions(Formula* f);
 Formula* graphAggregates(Formula* f);
+Formula* graphFuncsAndAggs(Formula* f);
 
 Formula* splitProducts(Formula* f);
 

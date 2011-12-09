@@ -395,8 +395,9 @@ void GrounderFactory::visit(const PredForm* pf) {
 	transpf = FormulaUtils::splitComparisonChains(transpf, NULL);
 	if (not _cpsupport) { // TODO Check not present in quantgrounder
 		// NOTE: Graph aggregates before graphing functions! Ambiguity in (FuncTerm = AggTerm).
-		transpf = FormulaUtils::graphAggregates(transpf); // FIXME where does this all have to be added
-		transpf = FormulaUtils::graphFunctions(transpf);
+		//transpf = FormulaUtils::graphAggregates(transpf); // FIXME where does this all have to be added
+		//transpf = FormulaUtils::graphFunctions(transpf);
+		transpf = FormulaUtils::graphFuncsAndAggs(transpf);
 	}
 
 	if (not sametypeid<PredForm>(*transpf)) { // The rewriting changed the atom
@@ -611,7 +612,8 @@ void GrounderFactory::visit(const QuantForm* qf) {
 	Formula* newsubformula = qf->subformula()->clone();
 	newsubformula = FormulaUtils::unnestThreeValuedTerms(newsubformula, _structure, _context._funccontext);
 	newsubformula = FormulaUtils::splitComparisonChains(newsubformula, NULL);
-	newsubformula = FormulaUtils::graphFunctions(newsubformula);
+	//newsubformula = FormulaUtils::graphFunctions(newsubformula);
+	newsubformula = FormulaUtils::graphFuncsAndAggs(newsubformula);
 
 	// NOTE: if the checker return valid, then the value of the formula can be decided from the value of the checked instantiation
 	//	for universal: checker valid => formula false, for existential: checker valid => formula true
@@ -982,7 +984,8 @@ void GrounderFactory::visit(const QuantSetExpr* origqs) {
 	Formula* clonedformula = newqs->subformulas()[0]->clone();
 	Formula* newsubformula = FormulaUtils::unnestThreeValuedTerms(clonedformula, _structure, Context::POSITIVE);
 	newsubformula = FormulaUtils::splitComparisonChains(newsubformula, NULL);
-	newsubformula = FormulaUtils::graphFunctions(newsubformula);
+	//newsubformula = FormulaUtils::graphFunctions(newsubformula);
+	newsubformula = FormulaUtils::graphFuncsAndAggs(newsubformula);
 
 	// NOTE: generator generates possibly true instances, checker checks the certainly true ones
 	GenAndChecker gc = createVarsAndGenerators(newsubformula, newqs, TruthType::POSS_TRUE, TruthType::CERTAIN_TRUE);
