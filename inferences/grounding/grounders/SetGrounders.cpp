@@ -38,7 +38,7 @@ int EnumSetGrounder::run() const {
 	vector<int>	literals;
 	vector<double> weights;
 	vector<double> trueweights;
-	InstChecker* checker = new TrueInstChecker();
+	InstChecker* checker = new FalseInstChecker();
 	for(unsigned int n = 0; n < _subgrounders.size(); ++n) {
 		groundSetLiteral(*_subgrounders[n], *_subtermgrounders[n], literals, weights, trueweights, *checker);
 	}

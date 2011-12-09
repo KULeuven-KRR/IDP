@@ -9,7 +9,7 @@ vocabulary V{
 }
 
 theory T : V { 
-	A=B
+	A=B.
 }
 
 structure S : V{ 
