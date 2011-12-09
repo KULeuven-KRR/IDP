@@ -70,6 +70,10 @@ protected:
 	virtual Term* visit(FuncTerm* ft);
 	virtual SetExpr* visit(EnumSetExpr* s);
 	virtual SetExpr* visit(QuantSetExpr* s);
+
+private:
+	template<typename T>
+	Formula* doRewrite(T origformula);
 };
 
 #endif /* MOVETERMS_HPP_ */

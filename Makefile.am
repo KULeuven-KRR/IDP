@@ -122,7 +122,7 @@ grounder_SOURCES = \
 		generators/BasicGenerators.hpp\
 		generators/EnumLookupGenerator.hpp\
 		generators/FalseQuantKernelGenerator.hpp\
-		generators/InstGenerator.hpp\
+		generators/InstGenerator.hpp generators/InstGenerator.cpp\
 		generators/InverseAbsValueGenerator.hpp\
 		generators/InverseUnaFunctionGenerator.hpp\
 		generators/InvertNumericGenerator.hpp\

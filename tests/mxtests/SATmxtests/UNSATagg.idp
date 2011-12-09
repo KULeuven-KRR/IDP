@@ -5,16 +5,13 @@ procedure getExpectedAModel(){
 vocabulary V{
 	type Num isa int
 	type Cost isa int
-	
 
- 
 	P(Num, Cost)
 	Q(Num, Cost)
 	R(Num, Cost)
 	S(Num, Cost)
 	T(Num, Cost)
 	U(Num, Cost)
-
 }
 
 theory T : V { 
@@ -28,9 +25,7 @@ theory T : V {
 
 //unsat versie
 	!x[Num]: 4=< min{ y[Cost] :  P(x, y):y } =<10.
-	!x[Num]: 1=< sum{ y[Cost] :  P(x, y):y } =<3.
-
-	
+	//!x[Num]: 1=< sum{ y[Cost] :  P(x, y):y } =<3.
 }
 
 structure S : V{ 

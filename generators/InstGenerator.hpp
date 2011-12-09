@@ -1,9 +1,3 @@
-/************************************
- Generators.hpp
- this file belongs to GidL 2.0
- (c) K.U.Leuven
- ************************************/
-
 #ifndef INSTGENERATOR_HPP_
 #define INSTGENERATOR_HPP_
 
@@ -20,9 +14,7 @@ public:
 	// NOTE: should be a deep clone
 	virtual InstChecker* clone() const = 0; // FIXME need to reimplemnt some as a deep clone!
 
-	virtual void put(std::ostream& stream){
-		stream <<"generate: " <<typeid(*this).name();
-	}
+	virtual void put(std::ostream& stream);
 };
 
 class InstGenerator: public InstChecker {
@@ -43,30 +35,21 @@ protected:
 public:
 	virtual ~InstGenerator(){}
 
-	virtual bool check() {
+	virtual bool check() { // TODO probably do not need to be virtual any longer
 		begin();
 		return not isAtEnd();
 	}
 
 	// Can also be used for resets
 	// SETS the instance to the FIRST value if it exists
-	void begin(){
-		end = false;
-		reset();
-		if(not isAtEnd()){
-			next();
-		}
-	}
+	void begin();
 
 	/**
 	 * Returns true if the last element has already been set as an instance
 	 */
 	bool isAtEnd() const { return end; }
 
-	void operator++() {
-		Assert(not isAtEnd());
-		next();
-	}
+	void operator++();
 
 	virtual InstGenerator* clone() const = 0;
 };

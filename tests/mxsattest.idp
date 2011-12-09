@@ -4,7 +4,7 @@ procedure main(){
 	stdoptions.nrmodels=1
 	stdoptions.timeout = 20
 	stdoptions.nbmodelequivalent = true
-	stdoptions.groundwithbounds = false
+	stdoptions.groundwithbounds = true
 	stdoptions.groundverbosity=0
 	solution = mx::one(T, S, stdoptions)
 	if solution == nil then

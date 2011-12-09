@@ -158,6 +158,7 @@ void monitorShutdown() {
 		monitoringtime+=10000;
 	}
 	if(not hasStopped){
+		// TODO add for debugging (need execution thread id) pthread_kill(executionthread.native_handle(), SIGUSR1);
 		clog <<"Shutdown failed, aborting.\n";
 		abort();
 	}
@@ -201,6 +202,19 @@ void SIGINT_handler(int) {
 	}
 }
 
+void SIGUSR1_handler(int) {
+	sleep(1000000);
+}
+
+template<typename Handler, typename SIGNAL>
+void registerHandler(Handler f, SIGNAL s){
+	struct sigaction sigIntHandler;
+	sigIntHandler.sa_handler = f;
+	sigemptyset(&sigIntHandler.sa_mask);
+	sigIntHandler.sa_flags = 0;
+	sigaction(s, &sigIntHandler, NULL);
+}
+
 /**
  * @return the return value of the executed lua procedure if applicable
  */
@@ -219,11 +233,8 @@ const DomainElement* executeProcedure(const string& proc) {
 		startInference(); // NOTE: have to tell the solver to reset its instance
 		// FIXME should not be here, but in a less error-prone place. Or should pass an adapated time-out to the solver?
 
-		struct sigaction sigIntHandler;
-		sigIntHandler.sa_handler = SIGINT_handler;
-		sigemptyset(&sigIntHandler.sa_mask);
-		sigIntHandler.sa_flags = 0;
-		sigaction(SIGINT, &sigIntHandler, NULL);
+		registerHandler(SIGINT_handler,SIGINT);
+		registerHandler(SIGUSR1_handler,SIGUSR1);
 
 		thread signalhandling(timeout);
 

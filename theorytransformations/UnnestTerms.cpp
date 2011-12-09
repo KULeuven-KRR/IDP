@@ -80,6 +80,16 @@ Formula* UnnestTerms::rewrite(Formula* formula) {
 	return formula;
 }
 
+template<typename T>
+Formula* UnnestTerms::doRewrite(T origformula){
+	auto rewrittenformula = rewrite(origformula);
+	if (rewrittenformula == origformula) {
+		return origformula;
+	} else {
+		return rewrittenformula->accept(this);
+	}
+}
+
 /**
  *	Visit all parts of the theory, assuming positive context for sentences
  */
@@ -159,23 +169,18 @@ Formula* UnnestTerms::traverse(PredForm* f) {
 Formula* UnnestTerms::visit(EquivForm* ef) {
 	Context savecontext = _context;
 	_context = Context::BOTH;
-	Formula* f = traverse(ef);
+	auto f = traverse(ef);
 	_context = savecontext;
-	return f;
+	return doRewrite(f);
 }
 
 Formula* UnnestTerms::visit(AggForm* af) {
-	traverse(af);
-	Formula* rewrittenformula = rewrite(af);
-	if (rewrittenformula == af) {
-		return af;
-	} else {
-		return rewrittenformula->accept(this);
-	}
+	auto newaf = traverse(af);
+	return doRewrite(newaf);
 }
 
 Formula* UnnestTerms::visit(EqChainForm* ef) {
-	if (ef->comps().size() == 1) { // Rewrite to an normal atom
+	if (ef->comps().size() == 1) { // Rewrite to a normal atom
 		SIGN atomsign = ef->sign();
 		Sort* atomsort = SortUtils::resolve(ef->subterms()[0]->sort(), ef->subterms()[1]->sort(), _vocabulary);
 		Predicate* comppred;
@@ -210,13 +215,9 @@ Formula* UnnestTerms::visit(EqChainForm* ef) {
 	} else { // Simple recursive call
 		bool savemovecontext = getAllowedToUnnest();
 		setAllowedToUnnest(true);
-		Formula* rewrittenformula = TheoryMutatingVisitor::traverse(ef);
+		auto rewrittenformula = TheoryMutatingVisitor::traverse(ef); // TODO why super call?
 		setAllowedToUnnest(savemovecontext);
-		if (rewrittenformula == ef) {
-			return ef;
-		} else {
-			return rewrittenformula->accept(this);
-		}
+		return doRewrite(rewrittenformula);
 	}
 }
 
@@ -256,6 +257,7 @@ Formula* UnnestTerms::visit(PredForm* predform) {
 		setAllowedToUnnest(true);
 	}
 // Traverse the atom
+	Formula* newf = predform;
 	if (moveonlyleft) {
 		predform->subterm(1, predform->subterms()[1]->accept(this));
 		setAllowedToUnnest(true);
@@ -265,18 +267,12 @@ Formula* UnnestTerms::visit(PredForm* predform) {
 		setAllowedToUnnest(true);
 		predform->subterm(1, predform->subterms()[1]->accept(this));
 	} else {
-		traverse(predform);
+		newf = traverse(predform);
 	}
 	_chosenVarSort = NULL;
 	setAllowedToUnnest(savemovecontext);
 
-// Change the atom
-	Formula* rewrittenformula = rewrite(predform);
-	if (rewrittenformula == predform) {
-		return predform;
-	} else {
-		return rewrittenformula->accept(this);
-	}
+	return doRewrite(newf);
 }
 
 Term* UnnestTerms::traverse(Term* term) {

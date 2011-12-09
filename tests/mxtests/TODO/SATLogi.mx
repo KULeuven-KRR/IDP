@@ -1,0 +1,59 @@
+procedure getExpectedAModel(){
+	return true
+}
+
+/********************************************
+	Logiquiz
+********************************************/
+
+vocabulary V{
+	type Consumptie = {Coctails;Diner;Koffie;Lunch;Thee}
+	type Naam = {Aad;Jeroen;Menno;Joop;Han}
+	type Datum isa int = {5;7;10;15;20}
+	type Status = {Acteur;Effect;Olie;Project;Secretaris}
+
+
+ 
+HeeftStatus(Naam,Status)
+HeeftDatum(Naam,Datum)
+HeeftConsumptie(Naam,Consumptie)
+
+}
+
+theory T : V { 
+// Aanwijzing 1
+! x : HeeftDatum(x,5) => HeeftConsumptie(x,Coctails).
+! x : HeeftStatus(x,Effect) => ~(HeeftDatum(x,5) | HeeftDatum(x,10)).
+
+// Aanwijzing 2
+! x : HeeftDatum(x,7) => HeeftStatus(x,Secretaris).
+
+// Aanwijzing 3
+! x t t2 : HeeftDatum(Menno,t) & HeeftDatum(x,t2) & HeeftConsumptie(x,Lunch) => t = t2 + 10.
+
+// Aanwijzing 4
+HeeftConsumptie(Aad,Diner).
+! x t t2: HeeftDatum(x,t) & HeeftDatum(Aad,t2) & HeeftStatus(x,Acteur) => t > t2.
+
+// Aanwijzing 5
+HeeftStatus(Joop,Olie).
+
+// Aanwijzing 6
+! x : HeeftConsumptie(x,Koffie) => HeeftStatus(x,Project).
+~HeeftConsumptie(Jeroen,Koffie).
+! x : HeeftConsumptie(x,Koffie) => ~HeeftDatum(x,20).
+
+// Voor elke persoon is er een status, consumptie en datum.
+! n : ? c : HeeftConsumptie(n,c).
+! n : ? c : HeeftStatus(n,c).
+! n : ? c : HeeftDatum(n,c).
+
+// Geen twee verschillende personen kunnen eenzelfde consumptie hebben
+! n1 n2 c : HeeftConsumptie(n1,c) & HeeftConsumptie(n2,c) => n1 = n2.
+! n1 n2 c : HeeftDatum(n1,c) & HeeftDatum(n2,c) => n1 = n2.
+! n1 n2 c : HeeftStatus(n1,c) & HeeftStatus(n2,c) => n1 = n2.
+
+}
+
+structure S : V{ 
+}
