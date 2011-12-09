@@ -1,0 +1,19 @@
+vocabulary V{
+	type x isa int
+	p(x)
+	q
+}
+
+theory T:V{
+	sum[(!x: p(x),1);(q,2)]=1 | sum[(!x: p(x),1);(q,2)]=2 .
+}
+
+structure S:V{
+	x = {0..1}
+}
+
+procedure getExpectedNbOfModels(){
+//  q= true, p is not T,T => 3 models
+// !x p(x) and q false => 1 model 
+	return 4
+}
