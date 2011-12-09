@@ -126,6 +126,7 @@ void parse(const vector<string>& inputfiles) {
 //TODO willen we een run van een lua procedure timen of eigenlijk een command op zich?
 // is misschien nogal vreemd om lua uitvoering te timen?
 
+bool throwfromexecution = false;
 void handleAndRun(const string& proc, const DomainElement** result) {
 	try {
 		*result = Insert::exec(proc);
@@ -135,9 +136,16 @@ void handleAndRun(const string& proc, const DomainElement** result) {
 		ss << "Exception caught: " << ex.getMessage() << ".\n";
 		Error::error(ss.str());
 		*result = NULL;
+	}catch(const std::exception& ex){
+		clog.flush();
+		stringstream ss;
+		ss << "Exception caught: " << ex.what() << ".\n";
+		Error::error(ss.str());
+		throwfromexecution = true;
 	}
 }
 
+std::thread::native_handle_type executionhandle;
 bool stoptiming = true;
 bool hasStopped = true;
 bool running = false;
@@ -158,7 +166,8 @@ void monitorShutdown() {
 		monitoringtime+=10000;
 	}
 	if(not hasStopped){
-		// TODO add for debugging (need execution thread id) pthread_kill(executionthread.native_handle(), SIGUSR1);
+		// TODO add for debugging (need execution thread id)
+		pthread_kill(executionhandle, SIGUSR1);
 		clog <<"Shutdown failed, aborting.\n";
 		abort();
 	}
@@ -229,6 +238,7 @@ const DomainElement* executeProcedure(const string& proc) {
 		setStop(false);
 		hasStopped = false;
 		running = true;
+		throwfromexecution = false;
 		getGlobal()->reset();
 		startInference(); // NOTE: have to tell the solver to reset its instance
 		// FIXME should not be here, but in a less error-prone place. Or should pass an adapated time-out to the solver?
@@ -238,22 +248,17 @@ const DomainElement* executeProcedure(const string& proc) {
 
 		thread signalhandling(timeout);
 
-		try{
-			handleAndRun(temp, &result);
-		}catch(const std::exception& ex){
-			clog.flush();
-			clog <<"Error caught: " <<ex.what() <<"\n";
-			hasStopped = true;
-			running = false;
-			setStop(true);
-			signalhandling.join();
-			throw ex;
-		}
+		thread execution(handleAndRun, temp, &result);
+		executionhandle = execution.native_handle();
+		execution.join();
 
 		hasStopped = true;
 		running = false;
 		setStop(true);
 		signalhandling.join();
+		if(throwfromexecution){
+			throw std::exception();
+		}
 	}
 
 	return result;

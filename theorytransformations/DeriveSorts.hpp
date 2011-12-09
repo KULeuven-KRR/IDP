@@ -43,8 +43,6 @@ public:
 		deriveSorts(f);
 	}
 
-	void put(std::ostream& stream);
-
 protected:
 	Formula* visit(QuantForm*);
 	Formula* visit(PredForm*);
