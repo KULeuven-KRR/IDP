@@ -1,8 +1,3 @@
-/************************************
- this file belongs to GidL 2.0
- (c) K.U.Leuven
- ************************************/
-
 /**************************
  Connection with Lua
  **************************/
@@ -900,8 +895,10 @@ int vocabularyIndex(lua_State* L) {
 	InternalArgument index = createArgument(2, L);
 	if (index._type == AT_STRING) {
 		unsigned int emptycounter = 0;
-		const set<Sort*>* sorts = voc->sort(*(index._value._string));
-		if ((!sorts) || sorts->empty()) ++emptycounter;
+		Sort* sort = voc->sort(*(index._value._string));
+		if (sort==NULL){
+			++emptycounter;
+		}
 		set<Predicate*> preds = voc->pred_no_arity(*(index._value._string));
 		if (preds.empty()) ++emptycounter;
 		set<Function*> funcs = voc->func_no_arity(*(index._value._string));
@@ -909,8 +906,8 @@ int vocabularyIndex(lua_State* L) {
 		if (emptycounter == 3)
 			return 0;
 		else if (emptycounter == 2) {
-			if (sorts && !sorts->empty()) {
-				set<Sort*>* newsorts = new set<Sort*>(*sorts);
+			if (sort!=NULL) {
+				set<Sort*>* newsorts = new set<Sort*>{sort};
 				InternalArgument ns(newsorts);
 				return convertToLua(L, ns);
 			} else if (!preds.empty()) {
@@ -925,9 +922,8 @@ int vocabularyIndex(lua_State* L) {
 			}
 		} else {
 			OverloadedSymbol* os = new OverloadedSymbol();
-			if (sorts) {
-				for (auto it = sorts->begin(); it != sorts->end(); ++it)
-					os->insert(*it);
+			if (sort!=NULL) {
+				os->insert(sort);
 			}
 			for (auto it = preds.cbegin(); it != preds.cend(); ++it)
 				os->insert(*it);

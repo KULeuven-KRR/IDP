@@ -61,8 +61,8 @@ protected:
 
 	void visit(const Vocabulary* v) {
 		for(auto it = v->firstSort(); it != v->lastSort(); ++it) {
-			for(auto jt = it->second.cbegin(); jt != it->second.cend(); ++jt) {
-				if(not (*jt)->builtin() || v == Vocabulary::std()) { visit(*jt); }
+			if(not it->second->builtin() || v == Vocabulary::std()) {
+				visit(it->second);
 			}
 		}
 		for(auto it = v->firstPred(); it != v->lastPred(); ++it) {

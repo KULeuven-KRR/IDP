@@ -13,7 +13,7 @@ vocabulary V{
 
 theory T : V { 
 { 	
-	Sp(x ,y ,l ) <- l = min{u : Cp(x ,y ,u) : u }.
+//	Sp(x ,y ,l ) <- l = min{u : Cp(x ,y ,u) : u }.
 	Cp(x ,y ,l ) <-  Edge(x ,y ,l ).
 	Cp(x ,y ,l1 + l2) <- Sp(x ,y ,l1) & Edge(x ,y ,l2). 
 }

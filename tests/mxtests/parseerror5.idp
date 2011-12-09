@@ -1,0 +1,5 @@
+vocabulary V{
+	type X
+	P(X)
+	P(X)
+}

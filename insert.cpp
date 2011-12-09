@@ -245,18 +245,11 @@ Predicate* Insert::predInScope(const vector<string>& vs, const ParseInfo& pi) co
 Sort* Insert::sortInScope(const string& name, const ParseInfo& pi) const {
 	Sort* s = 0;
 	for (unsigned int n = 0; n < _usingvocab.size(); ++n) {
-		const std::set<Sort*>* temp = _usingvocab[n]->sort(name);
-		if (temp) {
-			if (s) {
-				Error::overloadedsort(s->name(), s->pi(), (*(temp->begin()))->pi(), pi);
-			} else if (temp->size() > 1) {
-				std::set<Sort*>::iterator it = temp->begin();
-				Sort* s1 = *it;
-				++it;
-				Sort* s2 = *it;
-				Error::overloadedsort(s1->name(), s1->pi(), s2->pi(), pi);
-			} else
-				s = *(temp->begin());
+		auto temp = _usingvocab[n]->sort(name);
+		if (s!=NULL) {
+			Error::overloadedsort(s->name(), s->pi(), temp->pi(), pi);
+		} else{
+			s = temp;
 		}
 	}
 	return s;
@@ -272,20 +265,10 @@ Sort* Insert::sortInScope(const vector<string>& vs, const ParseInfo& pi) const {
 			vv[n] = vs[n];
 		Vocabulary* v = vocabularyInScope(vv, pi);
 		if (v) {
-			const std::set<Sort*>* ss = v->sort(vs.back());
-			if (ss) {
-				if (ss->size() > 1) {
-					std::set<Sort*>::iterator it = ss->begin();
-					Sort* s1 = *it;
-					++it;
-					Sort* s2 = *it;
-					Error::overloadedsort(s1->name(), s1->pi(), s2->pi(), pi);
-				}
-				return *(ss->begin());
-			} else
-				return 0;
-		} else
-			return 0;
+			return v->sort(vs.back());
+		} else{
+			return NULL;
+		}
 	}
 }
 
@@ -959,7 +942,11 @@ Sort* Insert::sort(const string& name, const vector<Sort*> sups, const vector<So
 	Sort* s = new Sort(name, pi);
 
 	// Add the sort to the current vocabulary
-	_currvocabulary->add(s);
+	if(_currvocabulary->contains(s)){
+		Error::error("An identical sort already exists" + name + "\n");
+	}else{
+		_currvocabulary->add(s);
+	}
 
 	// Collect the ancestors of all super- and subsorts
 	vector<std::set<Sort*> > supsa(sups.size());
@@ -1039,6 +1026,14 @@ Predicate* Insert::predicate(const string& name, const vector<Sort*>& sorts, YYL
 		if (!sorts[n]) return 0;
 	}
 	Predicate* p = new Predicate(nar, sorts, pi);
+	if(_currvocabulary->containsOverloaded(p)){
+		auto oldp = _currvocabulary->pred(p->name());
+
+		auto existsp = oldp->resolve(sorts);
+		if(existsp!=NULL){
+			Error::error("An identical predicate already exists" + name + "\n");
+		}
+	}
 	_currvocabulary->add(p);
 	return p;
 }
@@ -1056,6 +1051,16 @@ Function* Insert::function(const string& name, const vector<Sort*>& insorts, Sor
 	}
 	if (!outsort) return 0;
 	Function* f = new Function(nar, insorts, outsort, pi);
+	if(_currvocabulary->containsOverloaded(f)){
+		auto oldp = _currvocabulary->func(f->name());
+
+		auto v = insorts;
+		v.push_back(outsort);
+		auto existsp = oldp->resolve(v);
+		if(existsp!=NULL){
+			Error::error("An identical function already exists" + name + "\n");
+		}
+	}
 	_currvocabulary->add(f);
 	return f;
 }

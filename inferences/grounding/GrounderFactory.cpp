@@ -84,7 +84,7 @@ set<const PFSymbol*> GrounderFactory::findCPSymbols(const AbstractTheory* theory
 		Function* function = funcit->second;
 		bool passtocp = false;
 		// Check whether the (user-defined) function's outsort is over integers
-		Sort* intsort = *(vocabulary->sort("int")->begin());
+		auto intsort = VocabularyUtils::intsort();
 		if (function->overloaded()) {
 			set<Function*> nonbuiltins = function->nonbuiltins();
 			for (auto nbfit = nonbuiltins.cbegin(); nbfit != nonbuiltins.cend(); ++nbfit) {

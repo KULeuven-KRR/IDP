@@ -132,7 +132,7 @@ Formula* DeriveSorts::visit(PredForm* f) {
 
 	if (p->builtin()) {
 		Sort* temp = NULL;
-		if (not _firstvisit/* && p->name() == "=/2"*/) {
+		if (not _firstvisit && p->name() == "=/2") {
 			for (auto i = f->subterms().cbegin(); i != f->subterms().cend(); ++i) {
 				if ((*i)->sort() != NULL) {
 					if (temp == NULL) {
@@ -197,11 +197,11 @@ void DeriveSorts::derivefuncs() {
 		for (auto kt = (*it)->subterms().cbegin(); kt != (*it)->subterms().cend(); ++kt) {
 			vs.push_back((*kt)->sort());
 		}
-		if(f->builtin()){
-			vs.push_back(VocabularyUtils::intsort()); // FIXME very incorrect
-		}else{
+//		if(f->builtin()){
+//			vs.push_back(VocabularyUtils::intsort()); // FIXME very incorrect
+//		}else{
 			vs.push_back(NULL); // TODO should become expected output positions (to get even more derivation)
-		}
+//		}
 		auto rf = f->disambiguate(vs, _vocab);
 		if (rf != NULL) {
 			(*it)->function(rf);
