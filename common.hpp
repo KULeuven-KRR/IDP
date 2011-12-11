@@ -30,7 +30,11 @@ std::string getPathOfConfigFile();
 template<bool isPointer, bool isFundamental, typename Type, typename Stream>
 struct PutInStream{
 	void operator() (const Type& object, Stream& ss) {
-		object->put(ss);
+		if(object==NULL){
+			ss <<"NULL";
+		}else{
+			object->put(ss);
+		}
 	}
 };
 

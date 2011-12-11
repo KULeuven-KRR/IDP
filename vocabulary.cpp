@@ -84,6 +84,12 @@ void Sort::generatePred(SortTable* inter) {
 }
 
 /**
+ * Only to be used from unionsort!
+ */
+Sort::Sort(): _name(""), _pi(), _interpretation(NULL) {
+}
+
+/**
  * Create an internal sort
  */
 Sort::Sort(const string& name, SortTable* inter) 
@@ -191,7 +197,7 @@ std::set<const Vocabulary*>::const_iterator Sort::lastVocabulary() const {
 ostream& Sort::put(ostream& output) const {
 	if (getOption(BoolType::LONGNAMES)) {
 		for (auto it = _vocabularies.cbegin(); it != _vocabularies.cend(); ++it) {
-			if (not (*it)->sort(_name)->empty()) {
+			if ((*it)->sort(_name)==NULL) {
 				(*it)->putName(output);
 				output << "::";
 				break;
@@ -202,10 +208,16 @@ ostream& Sort::put(ostream& output) const {
 	return output;
 }
 
+UnionSort::UnionSort(const std::vector<Sort*>& sorts): sorts(sorts){
+	stringstream ss;
+	for(auto i=sorts.cbegin(); i<sorts.cend(); ++i){
+		ss <<(*i)->name() <<"-";
+	}
+	setPred(new Predicate(ss.str() + "/1", {this}, pi()));
+}
 
-
-ostream& operator<<(ostream& output, const Sort& sort) {
-	return sort.put(output);
+bool UnionSort::builtin() const{
+	return false;
 }
 
 namespace SortUtils {
@@ -265,7 +277,7 @@ bool isSubsort(Sort* a, Sort* b) {
 	Variables
 ****************/
 
-int Variable::_nvnr = 0;
+int Variable::_nvnr = 0; // TODO global variable numbers
 
 Variable::~Variable() {
 }
@@ -660,12 +672,12 @@ Predicate* EnumeratedPredGenerator::resolve(const vector<Sort*>& sorts) {
  * \brief Returns a null-pointer if such a predicate does not exist or is not unique
  */
 Predicate* EnumeratedPredGenerator::disambiguate(const vector<Sort*>& sorts, const Vocabulary* vocabulary) {
-	Predicate* candidate = 0;
+	Predicate* candidate = NULL;
 	for (auto it = _overpreds.cbegin(); it != _overpreds.cend(); ++it) {
 		Predicate* newcandidate = (*it)->disambiguate(sorts, vocabulary);
 		if (candidate && candidate != newcandidate) {
-			return 0;
-		} else {
+			return NULL;
+		} else{
 			candidate = newcandidate;
 		}
 	}
@@ -825,11 +837,11 @@ Predicate* overload(Predicate* p1, Predicate* p2) {
 
 Predicate* overload(const set<Predicate*>& sp) {
 	if (sp.empty()) {
-		return 0;
+		return NULL;
 	} else if (sp.size() == 1) {
 		return *(sp.cbegin());
 	} else {
-		EnumeratedPredGenerator* epg = new EnumeratedPredGenerator(sp);
+		auto epg = new EnumeratedPredGenerator(sp);
 		return new Predicate(epg);
 	}
 }
@@ -1164,8 +1176,8 @@ bool IntFloatFuncGenerator::contains(const Function* function) const {
 Function* IntFloatFuncGenerator::resolve(const vector<Sort*>& sorts) {
 	Assert(sorts.size() == 2 || sorts.size() == 3);
 	if (sorts[0] == sorts[1] && (sorts.size() == 2 || sorts[1] == sorts[2])) {
-		Sort* intsort = *((Vocabulary::std()->sort("int"))->begin());
-		Sort* floatsort = *((Vocabulary::std()->sort("float"))->begin());
+		auto intsort = Vocabulary::std()->sort("int");
+		auto floatsort = Vocabulary::std()->sort("float");
 		if (sorts[0] == intsort) {
 			return _intfunction;
 		} else if (sorts[0] == floatsort) {
@@ -1186,8 +1198,8 @@ Function* IntFloatFuncGenerator::resolve(const vector<Sort*>& sorts) {
 Function* IntFloatFuncGenerator::disambiguate(const vector<Sort*>& sorts, const Vocabulary* vocabulary) {
 	unsigned int zerocounter = 0;
 	bool isfloat = false;
-	Sort* intsort = *((Vocabulary::std()->sort("int"))->begin());
-	Sort* floatsort = *((Vocabulary::std()->sort("float"))->begin());
+	auto intsort = Vocabulary::std()->sort("int");
+	auto floatsort = Vocabulary::std()->sort("float");
 	for (auto it = sorts.cbegin(); it != sorts.cend(); ++it) {
 		if (*it) {
 			if (SortUtils::resolve(intsort, *it, vocabulary) != intsort) {
@@ -1212,8 +1224,8 @@ Function* IntFloatFuncGenerator::disambiguate(const vector<Sort*>& sorts, const 
  */
 set<Sort*> IntFloatFuncGenerator::allsorts() const {
 	set<Sort*> ss;
-	ss.insert(*(Vocabulary::std()->sort("int")->begin()));
-	ss.insert(*(Vocabulary::std()->sort("float")->begin()));
+	ss.insert(Vocabulary::std()->sort("int"));
+	ss.insert(Vocabulary::std()->sort("float"));
 	return ss;
 }
 
@@ -1403,18 +1415,18 @@ Vocabulary::~Vocabulary() {
 		it->second->removeVocabulary(this);
 	}
 	for (auto it = _name2sort.cbegin(); it != _name2sort.cend(); ++it) {
-		for (auto jt = it->second.cbegin(); jt != it->second.cend(); ++jt) {
-			(*jt)->removeVocabulary(this);
-		}
+		(*it).second->removeVocabulary(this);
 	}
 }
 
 void Vocabulary::add(Sort* s) {
-	if (not contains(s)) {
-		_name2sort[s->name()].insert(s);
-		s->addVocabulary(this);
-		add(s->pred());
+	if(contains(s)){
+		return;
 	}
+
+	_name2sort[s->name()] = s;
+	s->addVocabulary(this);
+	add(s->pred());
 }
 
 // TODO cleaner?
@@ -1450,26 +1462,26 @@ void Vocabulary::add(Predicate* p) {
 }
 
 void Vocabulary::add(Function* f) {
-	if (not contains(f)) {
-		if (_name2func.find(f->name()) == _name2func.cend()) {
-			_name2func[f->name()] = f;
-		} else {
-			Function* ovf = FuncUtils::overload(f, _name2func[f->name()]);
-			_name2func[f->name()] = ovf;
-		}
-		set<Sort*> ss = f->allsorts();
-		for (auto it = ss.cbegin(); it != ss.cend(); ++it) {
-			add(*it);
-		}
-		f->addVocabulary(this);
+	if(contains(f)){
+		return;
 	}
+
+	if (_name2func.find(f->name()) == _name2func.cend()) {
+		_name2func[f->name()] = f;
+	} else {
+		Function* ovf = FuncUtils::overload(f, _name2func[f->name()]);
+		_name2func[f->name()] = ovf;
+	}
+	set<Sort*> ss = f->allsorts();
+	for (auto it = ss.cbegin(); it != ss.cend(); ++it) {
+		add(*it);
+	}
+	f->addVocabulary(this);
 }
 
 void Vocabulary::add(Vocabulary* v) {
 	for (auto it = v->firstSort(); it != v->lastSort(); ++it) {
-		for (auto jt = (it->second).cbegin(); jt != (it->second).cend(); ++jt) {
-			add(*jt);
-		}
+		add((*it).second);
 	}
 	for (auto it = v->firstPred(); it != v->lastPred(); ++it) {
 		add(it->second);
@@ -1624,13 +1636,27 @@ const ParseInfo& Vocabulary::pi() const {
 
 bool Vocabulary::contains(const Sort* s) const {
 	auto it = _name2sort.find(s->name());
-	if (it != _name2sort.cend()) {
-		if (it->second.find(const_cast<Sort*>(s)) != (it->second).cend()) { // TODO const cast ugly but no way around?
-			return true;
-		}
-	}
+	return it!=_name2sort.cend();
+}
 
-	return false;
+bool Vocabulary::containsOverloaded(const Predicate* p) const {
+	auto it = _name2pred.find(p->name());
+	if (it != _name2pred.cend()) {
+		Assert(it->second!=NULL);
+		return true;
+	} else {
+		return false;
+	}
+}
+
+bool Vocabulary::containsOverloaded(const Function* f) const {
+	auto it = _name2func.find(f->name());
+	if (it != _name2func.cend()) {
+		Assert(it->second!=NULL);
+		return true;
+	} else {
+		return false;
+	}
 }
 
 bool Vocabulary::contains(const Predicate* p) const {
@@ -1660,17 +1686,17 @@ bool Vocabulary::contains(const PFSymbol* s) const {
 	}
 }
 
-const set<Sort*>* Vocabulary::sort(const string& name) const {
-	map<string, set<Sort*> >::const_iterator it = _name2sort.find(name);
+Sort* Vocabulary::sort(const string& name) const {
+	auto it = _name2sort.find(name);
 	if (it != _name2sort.cend()) {
-		return &(it->second);
+		return it->second;
 	} else {
-		return 0;
+		return NULL;
 	}
 }
 
 Predicate* Vocabulary::pred(const string& name) const {
-	map<string, Predicate*>::const_iterator it = _name2pred.find(name);
+	auto it = _name2pred.find(name);
 	if (it != _name2pred.cend()) {
 		return it->second;
 	} else {
@@ -1679,7 +1705,7 @@ Predicate* Vocabulary::pred(const string& name) const {
 }
 
 Function* Vocabulary::func(const string& name) const {
-	map<string, Function*>::const_iterator it = _name2func.find(name);
+	auto it = _name2func.find(name);
 	if (it != _name2func.cend()) {
 		return it->second;
 	} else {
@@ -1725,11 +1751,9 @@ ostream& Vocabulary::put(ostream& output) const {
 	output << "Sorts:\n";
 	pushtab();
 	for (auto it = _name2sort.cbegin(); it != _name2sort.cend(); ++it) {
-		for (auto jt = (it->second).cbegin(); jt != (it->second).cend(); ++jt) {
-			output << tabs();
-			(*jt)->put(output);
-			output << '\n';
-		}
+		output << tabs();
+		(*it).second->put(output);
+		output << '\n';
 	}
 	poptab();
 	output << tabs();
@@ -1760,19 +1784,19 @@ ostream& operator<<(ostream& output, const Vocabulary& voc) {
 
 namespace VocabularyUtils {
 Sort* natsort() {
-	return *(Vocabulary::std()->sort("nat")->begin());
+	return Vocabulary::std()->sort("nat");
 }
 Sort* intsort() {
-	return *(Vocabulary::std()->sort("int")->begin());
+	return Vocabulary::std()->sort("int");
 }
 Sort* floatsort() {
-	return *(Vocabulary::std()->sort("float")->begin());
+	return Vocabulary::std()->sort("float");
 }
 Sort* stringsort() {
-	return *(Vocabulary::std()->sort("string")->begin());
+	return Vocabulary::std()->sort("string");
 }
 Sort* charsort() {
-	return *(Vocabulary::std()->sort("char")->begin());
+	return Vocabulary::std()->sort("char");
 }
 
 Predicate* equal(Sort* s) {

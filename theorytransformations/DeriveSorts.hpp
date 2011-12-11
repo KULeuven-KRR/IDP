@@ -21,8 +21,6 @@ class Vocabulary;
  */
 
 // TODO default behavior by macros
-// TODO friend macros and protected visits
-// TODO run always in constructor? Or just never? Now it cannot be called multiple times here
 class DeriveSorts: public TheoryMutatingVisitor {
 	VISITORFRIENDS()
 private:
@@ -42,8 +40,6 @@ public:
 		_vocab = v;
 		deriveSorts(f);
 	}
-
-	void put(std::ostream& stream);
 
 protected:
 	Formula* visit(QuantForm*);

@@ -26,6 +26,7 @@ template<typename Stream> class TPTPPrinter;
 template<typename Stream> class EcnfPrinter;
 template<typename Stream> class IDPPrinter;
 class SplitProducts;
+class SplitIntoMonotoneAgg;
 
 #define VISITORS() \
 		friend class TheoryVisitor; \
@@ -67,7 +68,8 @@ class SplitProducts;
 		friend class UnnestTerms; \
 		friend class UnnestPartialTerms; \
 		friend class SplitProducts; \
-		friend class UnnestThreeValuedTerms;
+		friend class UnnestThreeValuedTerms;\
+		friend class SplitIntoMonotoneAgg;
 
 class AbstractTheory;
 class Theory;

@@ -5,6 +5,7 @@ procedure main(){
 	stdoptions.timeout = 20
 	stdoptions.nbmodelequivalent = true
 	stdoptions.groundwithbounds = false
+	stdoptions.groundverbosity=0
 	solution = mx::one(T, S, stdoptions)
 	if solution == nil then
 		io.stderr:write("Found UNSAT, expected ")

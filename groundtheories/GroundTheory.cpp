@@ -236,7 +236,7 @@ void GroundTheory<Policy>::addFuncConstraints() {
 		 do {
 		 if (it->first != tuple) {
 		 addUnitClause(-(it->second));
-		 std::cerr << "add unit clause " << -(it->second) << "\n";
+		 std::clog << "add unit clause " << -(it->second) << "\n";
 		 }
 		 ++it;
 		 } while (it != tuples.end() && tuplesFirstNEqual(tuple, it->first));

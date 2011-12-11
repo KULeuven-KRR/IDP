@@ -1,0 +1,6 @@
+vocabulary V{
+	type X
+	type Y
+	f(X):Y
+	f(X):Y
+}

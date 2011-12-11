@@ -31,6 +31,7 @@
 #include "theorytransformations/UnnestTerms.hpp"
 #include "theorytransformations/UnnestThreeValuedTerms.hpp"
 #include "theorytransformations/SplitProducts.hpp"
+#include "theorytransformations/SplitIntoMonotoneAgg.hpp"
 
 using namespace std;
 
@@ -110,6 +111,9 @@ Formula* splitProducts(Formula* f){
 	return transform<SplitProducts, Formula*>(f);
 }
 
+Formula* splitIntoMonotoneAgg(Formula* f) {
+	return transform<SplitIntoMonotoneAgg, Formula*>(f);
+}
 
 Formula* unnestPartialTerms(Formula* f, Context context, Vocabulary* voc) {
 	return transform<UnnestPartialTerms, Formula*>(f, context, voc);

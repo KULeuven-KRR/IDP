@@ -171,11 +171,7 @@ typedef std::list<isp>				lisp;
 %type <fun> func_decl
 %type <fun> full_func_decl
 %type <fun> arit_func_decl
-%type <ter> term
-%type <ter> domterm
-%type <ter> function
-%type <ter> arterm
-%type <ter> aggterm
+%type <ter> term domterm function arterm aggterm
 %type <fom> predicate
 %type <fom> head
 %type <fom> formula
@@ -440,12 +436,10 @@ rule		: '!' variables ':' head "<-" formula	{ $$ = getInserter().rule(*$2,$4,$6,
 			| head									{ $$ = getInserter().rule($1,@1);		}
 			;
 
-head		: predicate										{ $$ = $1;												}
-			| intern_pointer '(' term_tuple ')' '=' term	{ $$ = getInserter().funcgraphform($1,*$3,$6,@1); delete($3);	}
-			| intern_pointer '(' ')' '=' term				{ $$ = getInserter().funcgraphform($1,$5,@1);					}
-			| intern_pointer '=' term						{ $$ = getInserter().funcgraphform($1,$3,@1);					}
+head		: predicate			{ $$ = $1;										}
+			| term '=' term		{ $$ = getInserter().equalityhead($1,$3,@1);	}
 			;
-
+			
 
 /** Fixpoint definitions **/
 
@@ -891,7 +885,7 @@ extern void reset();
 void yyerror(const char* s) {
 	ParseInfo pi(yylloc.first_line,yylloc.first_column,getInserter().currfile());
 	Error::error(pi);
-	std::cerr << s << std::endl;
+	std::clog << s << std::endl;
 }
 
 void parsefile(const std::string& str) {

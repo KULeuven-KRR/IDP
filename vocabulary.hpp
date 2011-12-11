@@ -29,10 +29,6 @@ class Predicate;
 class Vocabulary;
 class SortTable;
 
-/**
- * DESCRIPTION
- *		Class to represent sorts
- */
 class Sort {
 private:
 	std::string _name; //!< Name of the sort
@@ -44,16 +40,18 @@ private:
 	SortTable* _interpretation; //!< The interpretation of the sort if it is built-in.
 								//!< A null-pointer otherwise.
 
-	~Sort(); //!< Destructor
 	void removeParent(Sort* p); //!< Removes parent p
 	void removeChild(Sort* c); //!< Removes child c
+
 	void generatePred(SortTable*); //!< Generate the predicate that corresponds to the sort
 
-	void removeVocabulary(const Vocabulary*); //!< Removes a vocabulary from the list of vocabularies
-	void addVocabulary(const Vocabulary*); //!< Add a vocabulary to the list of vocabularies
+protected:
+	Sort();
+	virtual ~Sort();
+
+	void setPred(Predicate* p){ _pred = p; }
 
 public:
-	// Constructors
 	Sort(const std::string& name, SortTable* inter = 0); //!< Create an internal sort
 	Sort(const std::string& name, const ParseInfo& pi, SortTable* inter = 0); //!< Create a user-declared sort
 
@@ -69,15 +67,32 @@ public:
 	const std::set<Sort*>& children() const;
 	std::set<Sort*> ancestors(const Vocabulary* v = 0) const; //!< Returns the ancestors of the sort
 	std::set<Sort*> descendents(const Vocabulary* v = 0) const; //!< Returns the descendents of the sort
-	bool builtin() const; //!< True iff the sort is built-in
-	SortTable* interpretation() const; //!< Returns the interpretaion for built-in sorts
+	virtual bool builtin() const; //!< True iff the sort is built-in
+	SortTable* interpretation() const; //!< Returns the interpretation for built-in sorts
 	std::set<const Vocabulary*>::const_iterator  firstVocabulary() const ;
 	std::set<const Vocabulary*>::const_iterator lastVocabulary() const ;
 
-	// Output
-	std::ostream& put(std::ostream&) const;
+	void removeVocabulary(const Vocabulary*); //!< Removes a vocabulary from the list of vocabularies
+	void addVocabulary(const Vocabulary*); //!< Add a vocabulary to the list of vocabularies
 
-	friend class Vocabulary;
+	virtual std::vector<Sort*> getSortsForTable() { return std::vector<Sort*>{this}; }
+
+	std::ostream& put(std::ostream&) const;
+};
+
+class UnionSort: public Sort {
+private:
+	std::vector<Sort*> sorts;
+	~UnionSort(){
+
+	}
+
+public:
+	UnionSort(const std::vector<Sort*>& sorts);
+
+	bool builtin() const;
+
+	virtual std::vector<Sort*> getSortsForTable() { return sorts; }
 };
 
 std::ostream& operator<<(std::ostream&, const Sort&);
@@ -545,7 +560,6 @@ bool isIntSum(const Function* function, const Vocabulary* voc);
  Vocabulary
  *****************/
 
-class InfArg;
 class Namespace;
 
 class Vocabulary {
@@ -554,7 +568,7 @@ private:
 	ParseInfo _pi; //!< Place where the vocabulary was parsed
 	Namespace* _namespace; //!< The namespace the vocabulary belongs to.
 
-	std::map<std::string, std::set<Sort*> > _name2sort; //!< Map a name to the sorts having that name in the vocabulary
+	std::map<std::string, Sort*> _name2sort; //!< Map a name to the sort having that name in the vocabulary
 	std::map<std::string, Predicate*> _name2pred; //!< Map a name to the (overloaded) predicate having
 												  //!< that name in the vocabulary. Name should end on /arity.
 	std::map<std::string, Function*> _name2func; //!< Map a name to the (overloaded) function having
@@ -569,25 +583,27 @@ public:
 	~Vocabulary();
 
 	// Mutators
-	void add(Sort*); //!< Add the given sort (and its ancestors) to the vocabulary
-	void add(PFSymbol*); //!< Add the given predicate (and its sorts) to the vocabulary
-	void add(Predicate*); //!< Add the given predicate (and its sorts) to the vocabulary
-	void add(Function*); //!< Add the given function (and its sorts) to the vocabulary
 	void add(Vocabulary*); //!< Add all symbols of a given vocabulary to the vocabulary
 	void setNamespace(Namespace* n) {
 		_namespace = n;
 	}
+	void add(Sort*); //!< Add the given sort (and its ancestors) to the vocabulary
+	void add(PFSymbol*); //!< Add the given predicate (and its sorts) to the vocabulary
+	void add(Predicate*); //!< Add the given predicate (and its sorts) to the vocabulary
+	void add(Function*); //!< Add the given function (and its sorts) to the vocabulary
 
 	// Inspectors
 	static Vocabulary* std(); //!< Returns the standard vocabulary
 	const std::string& name() const; //!< Returns the name of the vocabulary
 	const ParseInfo& pi() const; //!< Returns the parse info of the vocabulary
 	bool contains(const Sort* s) const; //!< True iff the vocabulary contains the sort
+	bool containsOverloaded(const Predicate* p) const; //!< True iff the vocabulary contains the predicate
+	bool containsOverloaded(const Function* f) const; //!< True iff the vocabulary contains the function
 	bool contains(const Predicate* p) const; //!< True iff the vocabulary contains the predicate
 	bool contains(const Function* f) const; //!< True iff the vocabulary contains the function
 	bool contains(const PFSymbol* s) const; //!< True iff the vocabulary contains the symbol
 
-	std::map<std::string, std::set<Sort*> >::iterator firstSort() {
+	std::map<std::string, Sort*>::iterator firstSort() {
 		return _name2sort.begin();
 	}
 	std::map<std::string, Predicate*>::iterator firstPred() {
@@ -596,7 +612,7 @@ public:
 	std::map<std::string, Function*>::iterator firstFunc() {
 		return _name2func.begin();
 	}
-	std::map<std::string, std::set<Sort*> >::iterator lastSort() {
+	std::map<std::string, Sort*>::iterator lastSort() {
 		return _name2sort.end();
 	}
 	std::map<std::string, Predicate*>::iterator lastPred() {
@@ -606,7 +622,7 @@ public:
 		return _name2func.end();
 	}
 
-	std::map<std::string, std::set<Sort*> >::const_iterator firstSort() const {
+	std::map<std::string, Sort*>::const_iterator firstSort() const {
 		return _name2sort.cbegin();
 	}
 	std::map<std::string, Predicate*>::const_iterator firstPred() const {
@@ -615,7 +631,7 @@ public:
 	std::map<std::string, Function*>::const_iterator firstFunc() const {
 		return _name2func.cbegin();
 	}
-	std::map<std::string, std::set<Sort*> >::const_iterator lastSort() const {
+	std::map<std::string, Sort*>::const_iterator lastSort() const {
 		return _name2sort.cend();
 	}
 	std::map<std::string, Predicate*>::const_iterator lastPred() const {
@@ -625,7 +641,7 @@ public:
 		return _name2func.cend();
 	}
 
-	const std::set<Sort*>* sort(const std::string&) const;
+	Sort* sort(const std::string&) const;
 	//!< return the sorts with the given name
 	Predicate* pred(const std::string&) const;
 	//!< return the predicate with the given name (ending on /arity)
@@ -636,9 +652,6 @@ public:
 	//!< return all predicates with the given name (not including the arity)
 	std::set<Function*> func_no_arity(const std::string&) const;
 	//!< return all functions with the given name (not including the arity)
-
-	// Lua
-	InfArg getObject(const std::string& str) const;
 
 	// Output
 	std::ostream& putName(std::ostream&) const;

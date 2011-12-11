@@ -3,9 +3,6 @@ procedure getExpectedAModel(){
 }
 
 vocabulary V{
-
-	int Row
-	int Col
 	type Num isa int
 	type Row isa int
 	type Col isa int
@@ -20,7 +17,6 @@ vocabulary V{
  
 	ContL(Row,Col)
  
-	ContN(Row,Col,Num)
 	Illum(Row,Col)
 	Illum(Row,Col,Dir)
 	NextTo(Row,Col,Row,Col)

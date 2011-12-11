@@ -88,7 +88,7 @@ private:
 
 	const DomElemContainer* createVarMapping(Variable * const var);
 	template<class VarList>
-	InstGenerator* createVarMapAndGenerator(const VarList& vars);
+	InstGenerator* createVarMapAndGenerator(const Formula* original, const VarList& vars);
 
 	struct GenAndChecker {
 		InstGenerator* _generator;

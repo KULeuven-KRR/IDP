@@ -63,8 +63,8 @@ private:
 	InstGenerator* internalCreate(const PredTable*, std::vector<Pattern> pattern, const std::vector<const DomElemContainer*>&, const Universe&);
 
 public:
-	static InstGenerator* create(const std::vector<const DomElemContainer*>&, const std::vector<SortTable*>&);
-	static InstGenerator* create(const PredTable*, const std::vector<Pattern>& pattern, const std::vector<const DomElemContainer*>&, const Universe&);
+	static InstGenerator* create(const std::vector<const DomElemContainer*>&, const std::vector<SortTable*>&, const Formula* original = NULL);
+	static InstGenerator* create(const PredTable*, const std::vector<Pattern>& pattern, const std::vector<const DomElemContainer*>&, const Universe&, const Formula* original = NULL);
 	static InstGenerator* create(const PredForm* atom, AbstractStructure* structure, bool inverse, const std::vector<Pattern>& pattern, const std::vector<const DomElemContainer*>& vars,
 			const Universe& universe);
 };

@@ -323,7 +323,7 @@ COMMENTLINE		"//".*
 									  BEGIN(data.includecaller);
 								  }
 								  else {
-									  cerr << "Type a value for constant " << temp << endl << "> "; 
+									  clog << "Type a value for constant " << temp << endl << "> "; 
 									  string str;
 									  getline(cin,str);
 									  data.start_include(str);
@@ -483,7 +483,7 @@ COMMENTLINE		"//".*
 							  string temp(yytext);
 							  temp = temp.substr(1,temp.size()-1);
 							  if(GlobalData::instance()->getConstValues().find(temp)== GlobalData::instance()->getConstValues().end()) {
-								  cerr << "Type a value for constant " << temp << endl << "> "; 
+								  clog << "Type a value for constant " << temp << endl << "> "; 
 								  string str;
 								  getline(cin,str);
 								  GlobalData::instance()->setConstValue(temp,str);

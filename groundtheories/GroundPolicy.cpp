@@ -68,8 +68,8 @@ void GroundPolicy::polAdd(int defnr, AggGroundRule* rule) {
 }
 
 std::ostream& GroundPolicy::polPut(std::ostream& s, GroundTranslator* translator, GroundTermTranslator* termtranslator) const {
-	std::cerr << "Printing ground theory\n";
-	std::cerr << "Has " << _clauses.size() << " clauses." << "\n";
+	std::clog << "Printing ground theory\n";
+	std::clog << "Has " << _clauses.size() << " clauses." << "\n";
 	for (auto i = _clauses.cbegin(); i < _clauses.cend(); ++i) {
 		if ((*i).empty()) {
 			s << "false";
@@ -86,11 +86,11 @@ std::ostream& GroundPolicy::polPut(std::ostream& s, GroundTranslator* translator
 		}
 		s << ".\n";
 	}
-	std::cerr << "Has " << _definitions.size() << " definitions." << "\n";
+	std::clog << "Has " << _definitions.size() << " definitions." << "\n";
 	for (auto i = _definitions.cbegin(); i != _definitions.cend(); ++i) {
 		s << toString((*i).second);
 	}
-	std::cerr << "Has " << _sets.size() << " sets." << "\n";
+	std::clog << "Has " << _sets.size() << " sets." << "\n";
 	for (auto i = _sets.cbegin(); i != _sets.cend(); ++i) {
 		s << "Set nr. " << (*i)->setnr() << " = [ ";
 		bool begin = true;
@@ -104,7 +104,7 @@ std::ostream& GroundPolicy::polPut(std::ostream& s, GroundTranslator* translator
 		}
 		s << "].\n";
 	}
-	std::cerr << "Has " << _aggregates.size() << " aggregates." << "\n";
+	std::clog << "Has " << _aggregates.size() << " aggregates." << "\n";
 	for (auto i = _aggregates.cbegin(); i != _aggregates.cend(); ++i) {
 		auto agg = (*i);
 		s << translator->printLit(agg->head()) << ' ';

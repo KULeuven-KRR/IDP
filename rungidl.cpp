@@ -126,17 +126,26 @@ void parse(const vector<string>& inputfiles) {
 //TODO willen we een run van een lua procedure timen of eigenlijk een command op zich?
 // is misschien nogal vreemd om lua uitvoering te timen?
 
+bool throwfromexecution = false;
 void handleAndRun(const string& proc, const DomainElement** result) {
 	try {
 		*result = Insert::exec(proc);
 	} catch (const Exception& ex) {
+		clog.flush();
 		stringstream ss;
 		ss << "Exception caught: " << ex.getMessage() << ".\n";
 		Error::error(ss.str());
 		*result = NULL;
+	}catch(const std::exception& ex){
+		clog.flush();
+		stringstream ss;
+		ss << "Exception caught: " << ex.what() << ".\n";
+		Error::error(ss.str());
+		throwfromexecution = true;
 	}
 }
 
+std::thread::native_handle_type executionhandle;
 bool stoptiming = true;
 bool hasStopped = true;
 bool running = false;
@@ -150,12 +159,16 @@ void setStop(bool value) {
 
 void monitorShutdown() {
 	int monitoringtime = 0;
+//	setOption(IntType::GROUNDVERBOSITY, 10);
+//	setOption(IntType::SATVERBOSITY, 10);
 	while(not hasStopped && monitoringtime<3000000){
-		usleep(1000);
-		monitoringtime+=1000;
+		usleep(10000);
+		monitoringtime+=10000;
 	}
 	if(not hasStopped){
-		cerr <<"Shutdown failed, aborting.\n";
+		// TODO add for debugging (need execution thread id)
+		pthread_kill(executionhandle, SIGUSR1);
+		clog <<"Shutdown failed, aborting.\n";
 		abort();
 	}
 }
@@ -163,7 +176,7 @@ void monitorShutdown() {
 void timeout() {
 	int time = 0;
 	int sleep = 10;
-	//cerr <<"Timeout: " <<getOption(IntType::TIMEOUT) <<", currently at " <<time/1000 <<"\n";
+	//clog <<"Timeout: " <<getOption(IntType::TIMEOUT) <<", currently at " <<time/1000 <<"\n";
 	while (not shouldStop()) {
 		time += sleep;
 		usleep(sleep * 1000);
@@ -174,9 +187,9 @@ void timeout() {
 				sleep += 100;
 			}
 		}
-		//cerr <<"Timeout: " <<getOption(IntType::TIMEOUT) <<", currently at " <<time/1000 <<"\n";
+		//clog <<"Timeout: " <<getOption(IntType::TIMEOUT) <<", currently at " <<time/1000 <<"\n";
 		if (getOption(IntType::TIMEOUT) < time / 1000) {
-			cerr << "Timed-out\n";
+			clog << "Timed-out\n";
 			getGlobal()->notifyTerminateRequested();
 			thread shutdown(monitorShutdown);
 			shutdown.join();
@@ -192,8 +205,23 @@ void SIGINT_handler(int) {
 	if(not shouldStop() && running){
 		GlobalData::instance()->notifyTerminateRequested();
 	}else{
+		// TODO conform to other shells, should just go to a new line in the shell.
+		// TODO ctrl-d should exit
 		exit(1);
 	}
+}
+
+void SIGUSR1_handler(int) {
+	sleep(1000000);
+}
+
+template<typename Handler, typename SIGNAL>
+void registerHandler(Handler f, SIGNAL s){
+	struct sigaction sigIntHandler;
+	sigIntHandler.sa_handler = f;
+	sigemptyset(&sigIntHandler.sa_mask);
+	sigIntHandler.sa_flags = 0;
+	sigaction(s, &sigIntHandler, NULL);
 }
 
 /**
@@ -210,34 +238,26 @@ const DomainElement* executeProcedure(const string& proc) {
 		setStop(false);
 		hasStopped = false;
 		running = true;
+		throwfromexecution = false;
 		getGlobal()->reset();
 		startInference(); // NOTE: have to tell the solver to reset its instance
 		// FIXME should not be here, but in a less error-prone place. Or should pass an adapated time-out to the solver?
 
-		struct sigaction sigIntHandler;
-		sigIntHandler.sa_handler = SIGINT_handler;
-		sigemptyset(&sigIntHandler.sa_mask);
-		sigIntHandler.sa_flags = 0;
-		sigaction(SIGINT, &sigIntHandler, NULL);
+		registerHandler(SIGINT_handler,SIGINT);
+		registerHandler(SIGUSR1_handler,SIGUSR1);
 
 		thread signalhandling(timeout);
 
-		bool throwex = false;
-		std::exception newex;
-		try{
-			handleAndRun(temp, &result);
-		}catch(const std::exception& ex){
-			throwex = true;
-			newex = ex;
-		}
+		thread execution(handleAndRun, temp, &result);
+		executionhandle = execution.native_handle();
+		execution.join();
 
 		hasStopped = true;
 		running = false;
 		setStop(true);
 		signalhandling.join();
-
-		if(throwex){
-			throw newex;
+		if(throwfromexecution){
+			throw std::exception();
 		}
 	}
 
@@ -297,7 +317,14 @@ public:
 Status test(const std::vector<std::string>& inputfileurls) {
 	DataManager m;
 
-	parse(inputfileurls);
+	try {
+		parse(inputfileurls);
+	} catch (const Exception& ex) {
+		stringstream ss;
+		ss << "Exception caught: " << ex.getMessage() << ".\n";
+		Error::error(ss.str());
+		clog.flush();
+	}
 
 	Status result = Status::FAIL;
 	if (Error::nr_of_errors() == 0) {
@@ -321,7 +348,16 @@ int run(int argc, char* argv[]) {
 
 	CLOptions cloptions;
 	vector<string> inputfiles = read_options(argc, argv, cloptions);
-	parse(inputfiles);
+
+	try {
+		parse(inputfiles);
+	} catch (const Exception& ex) {
+		stringstream ss;
+		ss << "Exception caught: " << ex.getMessage() << ".\n";
+		Error::error(ss.str());
+		clog.flush();
+	}
+
 	if (cloptions._readfromstdin)
 		parsestdin();
 	if (cloptions._exec == "") {

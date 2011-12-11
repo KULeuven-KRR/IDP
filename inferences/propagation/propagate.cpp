@@ -208,7 +208,7 @@ FOPropTableDomain* FOPropTableDomainFactory::exists(FOPropTableDomain* domain, c
 	}
 
 	if (not domain->table()->approxFinite()) {
-		cerr << "Probably entering an infinte loop when trying to project a possibly infinite table...\n";
+		clog << "Probably entering an infinte loop when trying to project a possibly infinite table...\n";
 	}
 	PredTable* npt = new PredTable(new EnumeratedInternalPredTable(), Universe(newunivcols));
 	for (TableIterator it = domain->table()->begin(); not it.isAtEnd(); ++it) {
@@ -248,7 +248,7 @@ TypedFOPropagator<FOPropBDDDomainFactory, FOPropBDDDomain>::TypedFOPropagator(FO
 template<class Factory, class DomainType>
 void TypedFOPropagator<Factory, DomainType>::doPropagation() {
 	if (_verbosity > 1) {
-		cerr << "=== Start propagation ===\n";
+		clog << "=== Start propagation ===\n";
 	}
 	while (_scheduler->hasNext()) {
 		FOPropagation* propagation = _scheduler->next();
@@ -257,29 +257,29 @@ void TypedFOPropagator<Factory, DomainType>::doPropagation() {
 		_child = propagation->getChild();
 		if (_verbosity > 1) {
 			const Formula* p = propagation->getParent();
-			cerr << "  Propagate ";
+			clog << "  Propagate ";
 			if (_direction == DOWN) {
-				cerr << "downward from " << (_ct ? "the ct-bound of " : "the cf-bound of ");
-				p->put(cerr);
+				clog << "downward from " << (_ct ? "the ct-bound of " : "the cf-bound of ");
+				p->put(clog);
 				if (_child) {
-					cerr << " to ";
-					_child->put(cerr);
+					clog << " to ";
+					_child->put(clog);
 				}
 			} else {
-				cerr << "upward to " << ((_ct == isPos(p->sign())) ? "the ct-bound of " : "the cf-bound of ");
-				p->put(cerr);
+				clog << "upward to " << ((_ct == isPos(p->sign())) ? "the ct-bound of " : "the cf-bound of ");
+				p->put(clog);
 				if (_child) {
-					cerr << " from ";
-					_child->put(cerr);
+					clog << " from ";
+					_child->put(clog);
 				}
 			}
-			cerr << "\n";
+			clog << "\n";
 		}
 		propagation->getParent()->accept(this);
 		delete (propagation);
 	}
 	if (_verbosity > 1) {
-		cerr << "=== End propagation ===\n";
+		clog << "=== End propagation ===\n";
 	}
 }
 
@@ -385,19 +385,19 @@ void TypedFOPropagator<Factory, Domain>::schedule(const Formula* p, FOPropDirect
 		--_maxsteps;
 		_scheduler->add(new FOPropagation(p, dir, ct, c));
 		if (_verbosity > 1) {
-			cerr << "  Schedule ";
+			clog << "  Schedule ";
 			if (dir == DOWN) {
-				cerr << "downward propagation from " << (ct ? "the ct-bound of " : "the cf-bound of ") << *p;
+				clog << "downward propagation from " << (ct ? "the ct-bound of " : "the cf-bound of ") << *p;
 				if (c) {
-					cerr << " towards " << *c;
+					clog << " towards " << *c;
 				}
 			} else {
-				cerr << "upward propagation to " << ((ct == isPos(p->sign())) ? "the ct-bound of " : "the cf-bound of ") << *p;
+				clog << "upward propagation to " << ((ct == isPos(p->sign())) ? "the ct-bound of " : "the cf-bound of ") << *p;
 				if (c) {
-					cerr << ". Propagation comes from " << *c;
+					clog << ". Propagation comes from " << *c;
 				}
 			}
-			cerr << "\n";
+			clog << "\n";
 		}
 	}
 }
@@ -406,8 +406,8 @@ template<class Factory, class Domain>
 void TypedFOPropagator<Factory, Domain>::updateDomain(const Formula* f, FOPropDirection dir, bool ct, Domain* newdomain, const Formula* child) {
 	Assert(newdomain!=NULL && f!=NULL && hasDomain(f));
 	if (_verbosity > 2) {
-		cerr << "    Derived the following " << (ct ? "ct " : "cf ") << "domain for " << *f << ":\n";
-		_factory->put(cerr, newdomain);
+		clog << "    Derived the following " << (ct ? "ct " : "cf ") << "domain for " << *f << ":\n";
+		_factory->put(clog, newdomain);
 	}
 
 	Domain* olddom = ct ? getDomain(f)._ctdomain : getDomain(f)._cfdomain;

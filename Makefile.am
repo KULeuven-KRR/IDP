@@ -122,7 +122,7 @@ grounder_SOURCES = \
 		generators/BasicGenerators.hpp\
 		generators/EnumLookupGenerator.hpp\
 		generators/FalseQuantKernelGenerator.hpp\
-		generators/InstGenerator.hpp\
+		generators/InstGenerator.hpp generators/InstGenerator.cpp\
 		generators/InverseAbsValueGenerator.hpp\
 		generators/InverseUnaFunctionGenerator.hpp\
 		generators/InvertNumericGenerator.hpp\
@@ -165,6 +165,7 @@ grounder_SOURCES = \
 		theorytransformations/SplitComparisonChains.hpp theorytransformations/SplitComparisonChains.cpp\
 		theorytransformations/SubstituteTerm.hpp\
 		theorytransformations/UnnestPartialTerms.hpp\
+		theorytransformations/SplitIntoMonotoneAgg.hpp\
 		theorytransformations/UnnestTerms.hpp theorytransformations/UnnestTerms.cpp\
 		theorytransformations/UnnestThreeValuedTerms.hpp theorytransformations/UnnestThreeValuedTerms.cpp\
 		utils/TheoryUtils.hpp utils/TheoryUtils.cpp\

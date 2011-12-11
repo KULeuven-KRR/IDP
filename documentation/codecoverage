@@ -1,0 +1,8 @@
+cd to builddirectory
+make check -j 5 CXXFLAGS="-fprofile-arcs -ftest-coverage" LDFLAGS="-static -fprofile-arcs" install
+lcov --directory `pwd`  --zerocounters
+execute the code
+lcov -b `pwd` --directory `pwd` --capture --output-file app.info
+genhtml --output-directory . app.info
+
+issues: pcsolver 

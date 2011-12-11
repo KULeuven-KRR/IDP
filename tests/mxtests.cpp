@@ -99,7 +99,37 @@ void throwexc() {
 	throw exception();
 }
 
+TEST(ParsingTest, Fail){
+	string testfile1(string(TESTDIR) + "mxtests/parseerror.idp");
+	ASSERT_EQ(Status::FAIL, test( { testfile1 }));
+}
+
+TEST(ParsingTest, OverloadedType){
+	string testfile1(string(TESTDIR) + "mxtests/parseerror2.idp");
+	ASSERT_EQ(Status::FAIL, test( { testfile1 }));
+}
+
+TEST(ParsingTest, IdenticalType){
+	string testfile1(string(TESTDIR) + "mxtests/parseerror3.idp");
+	ASSERT_EQ(Status::FAIL, test( { testfile1 }));
+}
+
+TEST(ParsingTest, IdenticalFunction){
+	string testfile1(string(TESTDIR) + "mxtests/parseerror4.idp");
+	ASSERT_EQ(Status::FAIL, test( { testfile1 }));
+}
+
+TEST(ParsingTest, IdenticalPredicate){
+	string testfile1(string(TESTDIR) + "mxtests/parseerror5.idp");
+	ASSERT_EQ(Status::FAIL, test( { testfile1 }));
+}
+
 TEST(ParsingTest, FailAndContinue){
+	string testfile1(string(TESTDIR) + "mxtests/parseerror.idp");
+	ASSERT_EQ(Status::FAIL, test( { testfile1 }));
+}
+
+TEST(RestartTest, FailAndContinue){
 	string testfile1(string(TESTDIR) + "mxtests/parseerror.idp");
 	string testfile2(string(TESTDIR) + "mxtests/simplemxtests/atom.idp");
 	string testfilemx(string(TESTDIR) + "mxlazynbofmodelstest.idp");

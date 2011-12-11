@@ -301,6 +301,9 @@ public:
 	FixpDef* createFD() const; //!< create a new fixpoint definition
 	void makeLFD(FixpDef*, bool) const; //!< make the fixpointdefinition a least or greatest fixpoint definition
 
+	// Create an equality formula for a rule head, so one of both terms should be a function and not the other one
+	Formula* equalityhead(Term* left, Term* right, YYLTYPE) const;
+
 	Formula* trueform(YYLTYPE) const;
 	//!< create a new true formula
 	Formula* falseform(YYLTYPE) const;

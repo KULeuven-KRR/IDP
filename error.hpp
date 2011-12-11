@@ -52,6 +52,8 @@ namespace Error {
 	void funcnameexpected(const ParseInfo& pi);
 	void funcnotconstr(const std::string& s, const ParseInfo& pi);
 
+	void funcnameexpectedinhead(const ParseInfo& pi);
+
 	/** Invalid interpretations **/
 	void multpredinter(const std::string& s, const ParseInfo& pi);
 	void multfuncinter(const std::string& s, const ParseInfo& pi);

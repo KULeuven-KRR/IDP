@@ -8,10 +8,10 @@
 
 using namespace std;
 
-void DeriveSorts::checkVars(const set<Variable*>& quantvars){
+void DeriveSorts::checkVars(const set<Variable*>& quantvars) {
 	if (_firstvisit) {
 		for (auto it = quantvars.cbegin(); it != quantvars.cend(); ++it) {
-			if ((*it)->sort()==NULL) {
+			if ((*it)->sort() == NULL) {
 				_untypedvariables.insert(*it);
 				_changed = true;
 			}
@@ -40,20 +40,20 @@ SetExpr* DeriveSorts::visit(QuantSetExpr* qs) {
 }
 
 Term* DeriveSorts::visit(VarTerm* vt) {
-	if(_underivable){
+	if (_underivable) {
 		_underivableVariables.insert(vt->var());
 		return vt;
 	}
-	if(_assertsort!=NULL && _untypedvariables.find(vt->var())!=_untypedvariables.end()){
+	if (_assertsort != NULL && _untypedvariables.find(vt->var()) != _untypedvariables.end()) {
 		Sort* newsort = NULL;
-		if(vt->sort()==NULL){
+		if (vt->sort() == NULL) {
 			newsort = _assertsort;
-		}else{
+		} else {
 			newsort = SortUtils::resolve(vt->sort(), _assertsort);
 		}
-		if(newsort==NULL){
+		if (newsort == NULL) {
 			_underivableVariables.insert(vt->var());
-		}else{
+		} else {
 			vt->sort(newsort);
 		}
 	}
@@ -61,12 +61,11 @@ Term* DeriveSorts::visit(VarTerm* vt) {
 }
 
 Term* DeriveSorts::visit(DomainTerm* dt) {
-	if (_firstvisit && dt->sort()==NULL) {
+	if (_firstvisit && dt->sort() == NULL) {
 		_domelements.insert(dt);
 	}
 
-	// TODO assert that it has to be a valid sort?
-	if (dt->sort()==NULL && _assertsort!=NULL) {
+	if (dt->sort() == NULL && _assertsort != NULL) {
 		dt->sort(_assertsort);
 		_changed = true;
 		_domelements.erase(dt);
@@ -75,33 +74,38 @@ Term* DeriveSorts::visit(DomainTerm* dt) {
 }
 
 Term* DeriveSorts::visit(AggTerm* t) {
-	if(_assertsort != NULL){
+	if (_assertsort != NULL) {
 		Assert(SortUtils::resolve(_assertsort, VocabularyUtils::intsort())!=NULL);
 	}
-	_assertsort = NULL; // TODO reset afterwards?
+	_assertsort = NULL;
 	return TheoryMutatingVisitor::visit(t);
 }
 
 Term* DeriveSorts::visit(FuncTerm* term) {
 	auto f = term->function();
 
-	if(_assertsort != NULL && term->sort()!=NULL){
+	if (_assertsort != NULL && term->sort() != NULL) {
 		Assert(SortUtils::resolve(_assertsort, term->sort())!=NULL);
 	}
 	_assertsort = NULL;
 
 	auto origunderivable = _underivable;
+
 	if (f->overloaded()) {
 		_overloadedterms.insert(term);
-		if(f->builtin()){
-			for (auto i = term->subterms().cbegin(); i!= term->subterms().cend(); ++i) {
-				(*i)->accept(this);
-				_assertsort = NULL;
-			}
-			return term;
-		}else{
+		if (not f->builtin()) {
 			_underivable = true;
 		}
+	}
+
+	// Currently, overloading is resolved iteratively, so it can be that a builtin goes from overloaded to set, but the arguments of the builtins, eg +/2:, are set too broadly (int+int:int)
+	// TODO review if more builtins are added?
+	if (f->builtin()) {
+		for (auto i = term->subterms().cbegin(); i != term->subterms().cend(); ++i) {
+			(*i)->accept(this);
+			_assertsort = NULL;
+		}
+		return term;
 	}
 
 	auto it = f->insorts().cbegin();
@@ -119,22 +123,21 @@ Formula* DeriveSorts::visit(PredForm* f) {
 	auto p = f->symbol();
 
 	auto origunderivable = _underivable;
-	if(p->overloaded()){
+	if (p->overloaded()) {
 		_overloadedatoms.insert(f);
-		if(not p->builtin()){
+		if (not p->builtin()) {
 			_underivable = true;
 		}
 	}
 
-	if(p->builtin()){
-		// TODO for which builtins which action?
+	if (p->builtin()) {
 		Sort* temp = NULL;
-		if(not _firstvisit){
+		if (not _firstvisit && p->name() == "=/2") {
 			for (auto i = f->subterms().cbegin(); i != f->subterms().cend(); ++i) {
-				if((*i)->sort()!=NULL){
-					if(temp==NULL){
+				if ((*i)->sort() != NULL) {
+					if (temp == NULL) {
 						temp = (*i)->sort();
-					}else{
+					} else {
 						temp = SortUtils::resolve(temp, (*i)->sort());
 					}
 				}
@@ -145,7 +148,7 @@ Formula* DeriveSorts::visit(PredForm* f) {
 			(*i)->accept(this);
 			_assertsort = NULL;
 		}
-	}else{
+	} else {
 		auto it = p->sorts().cbegin();
 		auto jt = f->subterms().cbegin();
 		for (; it != p->sorts().cend(); ++it, ++jt) {
@@ -164,10 +167,10 @@ Formula* DeriveSorts::visit(EqChainForm* formula) {
 	Sort* temp = NULL;
 	if (not _firstvisit) {
 		for (auto i = formula->subterms().cbegin(); i != formula->subterms().cend(); ++i) {
-			if((*i)->sort()!=NULL){
-				if(temp==NULL){
+			if ((*i)->sort() != NULL) {
+				if (temp == NULL) {
 					temp = (*i)->sort();
-				}else{
+				} else {
 					temp = SortUtils::resolve(temp, (*i)->sort());
 				}
 			}
@@ -182,31 +185,7 @@ Formula* DeriveSorts::visit(EqChainForm* formula) {
 }
 
 void DeriveSorts::derivesorts() {
-/*	for (auto it = _untyped.begin(); it != _untyped.end();) {
-		if ((*it).second.empty()) {
-			 ++it;
-			continue;
-		}
 
-		auto sortit = (*it).second.cbegin();
-		auto sort = *sortit;
-		++sortit;
-		for (; sortit != (*it).second.cend(); ++sortit) {
-			sort = SortUtils::resolve(sort, *sortit, _vocab);
-			if (sort == NULL) { // In case of conflicting sorts, assign the first sort.
-				// Error message will be given during final check.
-				sort = *((*it).second.cbegin());
-				break;
-			}
-		}
-		assert(sort!=NULL);
-		if ((*it).second.size() > 1 || sort->builtin()) { // Warning when the sort was resolved or builtin
-			Warning::derivevarsort(it->first->name(), sort->name(), (*it).first->pi());
-		}
-		(*it).first->sort(sort);
-		_untyped.erase(it++); // NOTE: erases the original and sets it correctly to the next element
-		_changed = true;
-	}*/
 }
 
 void DeriveSorts::derivefuncs() {
@@ -218,13 +197,13 @@ void DeriveSorts::derivefuncs() {
 		for (auto kt = (*it)->subterms().cbegin(); kt != (*it)->subterms().cend(); ++kt) {
 			vs.push_back((*kt)->sort());
 		}
-		if(f->builtin()){
-			vs.push_back(VocabularyUtils::intsort()); // FIXME very incorrect
-		}else{
-			vs.push_back(NULL); // TODO should be output position
-		}
+//		if(f->builtin()){
+//			vs.push_back(VocabularyUtils::intsort()); // FIXME very incorrect
+//		}else{
+			vs.push_back(NULL); // TODO should become expected output positions (to get even more derivation)
+//		}
 		auto rf = f->disambiguate(vs, _vocab);
-		if (rf!=NULL) {
+		if (rf != NULL) {
 			(*it)->function(rf);
 			if (not rf->overloaded()) {
 				_overloadedterms.erase(it);
@@ -245,7 +224,7 @@ void DeriveSorts::derivepreds() {
 			vs.push_back((*kt)->sort());
 		}
 		auto rp = p->disambiguate(vs, _vocab);
-		if (rp!=NULL) {
+		if (rp != NULL) {
 			(*it)->symbol(rp);
 			if (not rp->overloaded()) {
 				_overloadedatoms.erase(it);
@@ -253,31 +232,6 @@ void DeriveSorts::derivepreds() {
 			_changed = true;
 		}
 		it = jt;
-	}
-}
-
-void DeriveSorts::put(ostream& stream) {
-/*	for (auto i = _untyped.cbegin(); i != _untyped.cend(); ++i) {
-		stream << "Variable " << toString((*i).first) << " has possible sorts ";
-		bool begin = true;
-		for (auto j = (*i).second.cbegin(); j != (*i).second.cend(); ++j) {
-			if (not begin) {
-				stream << ", ";
-			}
-			begin = false;
-			stream << toString(*j);
-		}
-		stream << "\n" << tabs();
-	}
-	for (auto i = _overloadedterms.cbegin(); i != _overloadedterms.cend(); ++i) {
-		if((*i).second==NULL){
-			stream << "Functerm " << toString((*i).first) << " does not have a sort yet." << "\n" << tabs();
-		}else{
-			stream << "Functerm " << toString((*i).first) << " has sort " << toString((*i).second) << "\n" << tabs();
-		}
-	}*/
-	for (auto i = _domelements.cbegin(); i != _domelements.cend(); ++i) {
-		stream << "Untyped domainterms " << toString(*i) << "\n" << tabs();
 	}
 }
 
@@ -311,14 +265,14 @@ void DeriveSorts::execute(Rule* r, Vocabulary* v) {
 }
 
 void DeriveSorts::check() {
-	for(auto i=_untypedvariables.cbegin(); i!=_untypedvariables.cend(); ++i) {
-		if ((*i)->sort()==NULL) {
+	for (auto i = _untypedvariables.cbegin(); i != _untypedvariables.cend(); ++i) {
+		if ((*i)->sort() == NULL) {
 			Error::novarsort((*i)->name(), (*i)->pi());
-		}else{
+		} else {
 			Warning::derivevarsort((*i)->name(), (*i)->sort()->name(), (*i)->pi());
 		}
 	}
-	for(auto i=_underivableVariables.cbegin(); i!=_underivableVariables.cend(); ++i) {
+	for (auto i = _underivableVariables.cbegin(); i != _underivableVariables.cend(); ++i) {
 		Error::novarsort((*i)->name(), (*i)->pi());
 	}
 	for (auto it = _overloadedatoms.cbegin(); it != _overloadedatoms.cend(); ++it) {

@@ -1,8 +1,3 @@
-/************************************
- this file belongs to GidL 2.0
- (c) K.U.Leuven
- ************************************/
-
 /**************************
  Connection with Lua
  **************************/
@@ -140,11 +135,11 @@ void compile(UserProcedure* procedure, lua_State* state) {
 		ss << "return " << procedure->name() << "(...)\n";
 
 		// Compile
-		//cerr << "compiling:\n" << ss.str() << "\n";
+		//clog << "compiling:\n" << ss.str() << "\n";
 		int err = luaL_loadstring(state, ss.str().c_str());
 		if (err) {
 			Error::error(procedure->pi());
-			cerr << string(lua_tostring(state,-1)) << "\n";
+			clog << string(lua_tostring(state,-1)) << "\n";
 			lua_pop(state, 1);
 			return;
 		}
@@ -565,7 +560,7 @@ int internalCall(lua_State* L) {
 	//otherwise lua should have thrown an exception
 
 //		for(auto i=procs->begin(); i!=procs->end(); ++i){
-//			cerr <<(*i).second->getName() <<"/" <<(*i).second->getArgumentTypes().size() <<"\n";
+//			clog <<(*i).second->getName() <<"/" <<(*i).second->getArgumentTypes().size() <<"\n";
 //		}
 
 	lua_remove(L, 1); // The function itself is the first argument
@@ -900,8 +895,10 @@ int vocabularyIndex(lua_State* L) {
 	InternalArgument index = createArgument(2, L);
 	if (index._type == AT_STRING) {
 		unsigned int emptycounter = 0;
-		const set<Sort*>* sorts = voc->sort(*(index._value._string));
-		if ((!sorts) || sorts->empty()) ++emptycounter;
+		Sort* sort = voc->sort(*(index._value._string));
+		if (sort==NULL){
+			++emptycounter;
+		}
 		set<Predicate*> preds = voc->pred_no_arity(*(index._value._string));
 		if (preds.empty()) ++emptycounter;
 		set<Function*> funcs = voc->func_no_arity(*(index._value._string));
@@ -909,8 +906,8 @@ int vocabularyIndex(lua_State* L) {
 		if (emptycounter == 3)
 			return 0;
 		else if (emptycounter == 2) {
-			if (sorts && !sorts->empty()) {
-				set<Sort*>* newsorts = new set<Sort*>(*sorts);
+			if (sort!=NULL) {
+				set<Sort*>* newsorts = new set<Sort*>{sort};
 				InternalArgument ns(newsorts);
 				return convertToLua(L, ns);
 			} else if (!preds.empty()) {
@@ -925,9 +922,8 @@ int vocabularyIndex(lua_State* L) {
 			}
 		} else {
 			OverloadedSymbol* os = new OverloadedSymbol();
-			if (sorts) {
-				for (auto it = sorts->begin(); it != sorts->end(); ++it)
-					os->insert(*it);
+			if (sort!=NULL) {
+				os->insert(sort);
 			}
 			for (auto it = preds.cbegin(); it != preds.cend(); ++it)
 				os->insert(*it);
@@ -1439,7 +1435,7 @@ int optionsNewIndex(lua_State* L) {
 		ss << "There is no option named " << option << ".\n";
 		lua_pushstring(L, ss.str().c_str());
 		// FIXME lua errors are not printed anymore?
-		cerr << ss.str();
+		clog << ss.str();
 		return lua_error(L);
 	}
 	switch (value._type) {
@@ -1883,8 +1879,8 @@ void makeLuaConnection() {
 	// Overwrite some standard lua procedures
 	int err = luaL_dofile(_state,getPathOfLuaInternals().c_str());
 	if (err) {
-		cerr << lua_tostring(_state,-1) << "\n";
-		cerr << "Error in " << getPathOfLuaInternals() << ".\n";
+		clog << lua_tostring(_state,-1) << "\n";
+		clog << "Error in " << getPathOfLuaInternals() << ".\n";
 		exit(1);
 	}
 
@@ -1898,7 +1894,7 @@ void makeLuaConnection() {
 	// Parse configuration file
 	err = luaL_dofile(_state,getPathOfConfigFile().c_str());
 	if (err) {
-		cerr << "Error in configuration file\n";
+		clog << "Error in configuration file\n";
 		exit(1);
 	}
 
@@ -1920,7 +1916,7 @@ const DomainElement* execute(const std::string& chunk) {
 	int err = luaL_dostring(_state,chunk.c_str());
 	if (err) {
 		Error::error();
-		cerr << string(lua_tostring(_state,-1)) << "\n";
+		clog << string(lua_tostring(_state,-1)) << "\n";
 		lua_pop(_state, 1);
 		return NULL;
 	}
@@ -1936,7 +1932,7 @@ void pushglobal(const vector<string>& name, const ParseInfo& pi) {
 			lua_remove(_state, -2);
 		} else {
 			Error::error(pi);
-			cerr << "unknown object" << "\n";
+			clog << "unknown object" << "\n";
 		}
 	}
 }
@@ -1948,7 +1944,7 @@ InternalArgument* call(const vector<string>& proc, const vector<vector<string> >
 	int err = lua_pcall(_state, args.size(), 1, 0);
 	if (err) {
 		Error::error(pi);
-		cerr << lua_tostring(_state,-1) << "\n";
+		clog << lua_tostring(_state,-1) << "\n";
 		lua_pop(_state, 1);
 		return 0;
 	} else {
@@ -1966,7 +1962,7 @@ const DomainElement* funccall(string* procedure, const ElementTuple& input) {
 	int err = lua_pcall(_state, input.size(), 1, 0);
 	if (err) {
 		Error::error();
-		cerr << string(lua_tostring(_state,-1)) << "\n";
+		clog << string(lua_tostring(_state,-1)) << "\n";
 		lua_pop(_state, 1);
 		return 0;
 	} else {
@@ -1984,7 +1980,7 @@ bool predcall(string* procedure, const ElementTuple& input) {
 	int err = lua_pcall(_state, input.size(), 1, 0);
 	if (err) {
 		Error::error();
-		cerr << string(lua_tostring(_state,-1)) << "\n";
+		clog << string(lua_tostring(_state,-1)) << "\n";
 		lua_pop(_state, 1);
 		return 0;
 	} else {

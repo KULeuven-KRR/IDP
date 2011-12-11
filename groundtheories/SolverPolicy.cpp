@@ -246,26 +246,26 @@ void SolverPolicy::polAddAggregate(int definitionID, int head, bool lowerbound, 
 	switch (aggtype) {
 		case AggFunction::CARD:
 			agg.type = MinisatID::CARD;
-			if(_verbosity > 0) std::clog << "card ";
+			if(_verbosity > 1) std::clog << "card ";
 			break;
 		case AggFunction::SUM:
 			agg.type = MinisatID::SUM;
-			if(_verbosity > 0) std::clog << "sum ";
+			if(_verbosity > 1) std::clog << "sum ";
 			break;
 		case AggFunction::PROD:
 			agg.type = MinisatID::PROD;
-			if(_verbosity > 0) std::clog << "prod ";
+			if(_verbosity > 1) std::clog << "prod ";
 			break;
 		case AggFunction::MIN:
 			agg.type = MinisatID::MIN;
-			if(_verbosity > 0) std::clog << "min ";
+			if(_verbosity > 1) std::clog << "min ";
 			break;
 		case AggFunction::MAX:
-			if(_verbosity > 0) std::clog << "max ";
+			if(_verbosity > 1) std::clog << "max ";
 			agg.type = MinisatID::MAX;
 			break;
 	}
-	if(_verbosity > 0) std::clog << setnr << ' ';
+	if(_verbosity > 1) std::clog << setnr << ' ';
 	switch(sem) {
 		case TsType::EQ: case TsType::IMPL: case TsType::RIMPL:
 			agg.sem = MinisatID::COMP;
@@ -274,7 +274,7 @@ void SolverPolicy::polAddAggregate(int definitionID, int head, bool lowerbound, 
 			agg.sem = MinisatID::DEF;
 			break;
 	}
-	if(_verbosity > 0) std::clog << (lowerbound ? " >= " : " =< ") << bound << "\n";
+	if(_verbosity > 1) std::clog << (lowerbound ? " >= " : " =< ") << bound << "\n";
 	agg.defID = definitionID;
 	agg.head = createAtom(head);
 	agg.bound = createWeight(bound);

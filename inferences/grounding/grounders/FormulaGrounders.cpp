@@ -15,10 +15,14 @@
 
 using namespace std;
 
+int verbosity(){
+	return getOption(IntType::GROUNDVERBOSITY);
+}
+
 //TODO: a lot of the "int" returns here should be "Lit": Issue 57199
 
 FormulaGrounder::FormulaGrounder(AbstractGroundTheory* grounding, const GroundingContext& ct) :
-		Grounder(grounding, ct), _verbosity(0) {
+		Grounder(grounding, ct), _origform(NULL) {
 }
 
 GroundTranslator* FormulaGrounder::translator() const {
@@ -26,7 +30,6 @@ GroundTranslator* FormulaGrounder::translator() const {
 }
 
 void FormulaGrounder::setOrig(const Formula* f, const map<Variable*, const DomElemContainer*>& mvd, int verb) {
-	_verbosity = verb;
 	map<Variable*, Variable*> mvv;
 	for (auto it = f->freeVars().cbegin(); it != f->freeVars().cend(); ++it) {
 		Variable* v = new Variable((*it)->name(), (*it)->sort(), ParseInfo());
@@ -38,6 +41,9 @@ void FormulaGrounder::setOrig(const Formula* f, const map<Variable*, const DomEl
 }
 
 void FormulaGrounder::printorig() const {
+	if(_origform==NULL){
+		return;
+	}
 	clog << "Grounding formula " << toString(_origform);
 	if (not _origform->freeVars().empty()) {
 		clog << " with instance ";

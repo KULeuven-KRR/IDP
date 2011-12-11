@@ -56,14 +56,12 @@ public:
 		Vocabulary* voc = structure->vocabulary();
 
 		for (auto it = voc->firstSort(); it != voc->lastSort(); ++it) {
-			for (auto jt = it->second.cbegin(); jt != it->second.cend(); ++jt) {
-				Sort* s = *jt;
-				if (not s->builtin()) {
-					output() << toString(s) << " = ";
-					SortTable* st = structure->inter(s);
-					visit(st);
-					output() << '\n';
-				}
+			Sort* s = it->second;
+			if (not s->builtin()) {
+				output() << toString(s) << " = ";
+				SortTable* st = structure->inter(s);
+				visit(st);
+				output() << '\n';
 			}
 		}
 		for (auto it = voc->firstPred(); it != voc->lastPred(); ++it) {
@@ -118,10 +116,8 @@ public:
 	void visit(const Vocabulary* v) {
 		Assert(isTheoryOpen());
 		for (auto it = v->firstSort(); it != v->lastSort(); ++it) {
-			for (auto jt = it->second.cbegin(); jt != it->second.cend(); ++jt) {
-				if (not (*jt)->builtin() || v == Vocabulary::std()) {
-					visit(*jt);
-				}
+			if (not it->second->builtin() || v == Vocabulary::std()) {
+				visit(it->second);
 			}
 		}
 		for (auto it = v->firstPred(); it != v->lastPred(); ++it) {

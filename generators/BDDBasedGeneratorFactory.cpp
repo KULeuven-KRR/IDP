@@ -273,8 +273,8 @@ InstGenerator* BDDToGenerator::createFromPredForm(PredForm* atom, const vector<P
 
 		// NOTE should now have a predicate formula which is allinput or does not contain equality
 		//Assert(allinput || atom->symbol()->name() != "=/2");
-		//cerr <<"Allinput: " <<(allinput?"true":"false") <<"\n";
-		//cerr <<"Atom: "; atom->put(cerr); cerr <<"\n";
+		//clog <<"Allinput: " <<(allinput?"true":"false") <<"\n";
+		//clog <<"Atom: "; atom->put(clog); clog <<"\n";
 	}
 
 	// NOTE: have an atom which has no aggregate terms and no equality at the root (or all is input)
