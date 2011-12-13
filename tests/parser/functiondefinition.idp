@@ -1,3 +1,5 @@
+// Define function only on left hand side!
+
 vocabulary V{
 	type t
 	f(t):t
@@ -15,7 +17,6 @@ structure S:V{
 	q = {1;2}
 }
 
-procedure getExpectedNbOfModels(){
-	-- !!! should parse, idem to deffunc.idp
-	return 0 --no value for f(3)
+procedure main(){
+	return 1
 }

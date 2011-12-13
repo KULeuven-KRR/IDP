@@ -72,6 +72,8 @@ grounder_SOURCES = \
 		inferences/grounding/GrounderFactory.hpp inferences/grounding/GrounderFactory.cpp\
 		inferences/grounding/grounders/Grounder.hpp inferences/grounding/grounders/Grounder.cpp\
 		inferences/modelexpansion/ModelExpansion.hpp inferences/modelexpansion/ModelExpansion.cpp\
+		inferences/CalculateDefinitions.hpp inferences/CalculateDefinitions.cpp\
+		inferences/InferenceSolverConnection.hpp inferences/InferenceSolverConnection.cpp\
 		inferences/propagation/SymbolicPropagation.hpp\
 		inferences/propagation/OptimalPropagation.hpp\
 		inferences/propagation/GroundingPropagation.hpp\
@@ -244,6 +246,7 @@ alltests_SOURCES = \
 		tests/generatortests.cpp\
 		tests/bddtests.cpp\
 		tests/grounderfactorytests.cpp\
+		tests/definitiontests.cpp\
 		tests/propagationtests.cpp\
 		tests/parsertests.cpp\
 		tests/transformationtests.cpp\

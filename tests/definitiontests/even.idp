@@ -1,0 +1,22 @@
+vocabulary V{
+	type x isa int
+	even(x)
+}
+
+theory T:V{
+	{ even(0).
+	!t: even(t) <- even(t-2).
+	}
+}
+
+structure S:V{
+	x = {0..4}
+}
+
+procedure assertions(){
+	return (
+		assert2(S[V::even].ct,{0,2,4},"even<ct>") 
+		and assert2(S[V::even].cf,{1,3},"even<cf>")
+	)
+}
+
