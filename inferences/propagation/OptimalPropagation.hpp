@@ -6,13 +6,14 @@
 #include <set>
 #include "theory.hpp"
 #include "structure.hpp"
+#include "vocabulary.hpp"
 
 #include "groundtheories/AbstractGroundTheory.hpp"
 #include "groundtheories/SolverPolicy.hpp"
 #include "inferences/grounding/grounders/Grounder.hpp"
+#include "inferences/grounding/GrounderFactory.hpp"
+#include "inferences/grounding/GroundTranslator.hpp"
 #include "PropagatorFactory.hpp"
-
-#include "structure.hpp"
 
 template<typename Structure>
 void makeInconsistent(Structure* structure){

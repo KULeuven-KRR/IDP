@@ -1,0 +1,22 @@
+vocabulary V{
+	type x
+	p(x)
+}
+
+theory T:V{
+	{
+		!x:p(x) <-true.
+	}
+}
+
+structure S:V{
+	x={1..3}
+	p={1;2}
+}
+
+procedure assertions(){
+	return (
+		assert2(S[V::p].ct,{1,2,3},"p<ct>") 
+		and assert2(S[V::p].cf,{3},"p<cf>") 
+	)
+}

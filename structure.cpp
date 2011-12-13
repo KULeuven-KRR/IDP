@@ -4366,6 +4366,7 @@ void Structure::materialize() {
 	}
 }
 
+
 //TODO Shouldn't this be approxClean?
 void Structure::clean() {
 	for (auto it = _predinter.cbegin(); it != _predinter.cend(); ++it) {

@@ -2435,6 +2435,7 @@ public:
 	virtual void inter(Function* f, FuncInter* i) = 0; //!< set the interpretation of f to i
 	virtual void clean() = 0; //!< make three-valued interpretations that are in fact
 							  //!< two-valued, two-valued.
+
 	virtual void materialize() = 0; //!< Convert symbolic tables containing a finite number of tuples to enumerated tables.
 
 	// Inspectors
@@ -2489,6 +2490,7 @@ public:
 
 	void clean(); //!< Try to represent two-valued interpretations by one table instead of two.
 	void materialize(); //!< Convert symbolic tables containing a finite number of tuples to enumerated tables.
+
 
 	void functionCheck(); //!< check the correctness of the function tables
 	void autocomplete(); //!< make the domains consistent with the predicate and function tables
