@@ -233,8 +233,8 @@ namespace SortUtils {
  *	\return	The unique nearest common ancestor if it exists, a null-pointer otherwise.
  */
 Sort* resolve(Sort* s1, Sort* s2, const Vocabulary* vocabulary) {
-	if ((s1 == 0) || s2 == 0) {
-		return 0;
+	if ((s1 == NULL) || s2 == NULL) {
+		return NULL;
 	}
 	set<Sort*> ss1 = s1->ancestors(vocabulary);
 	ss1.insert(s1);
@@ -248,7 +248,7 @@ Sort* resolve(Sort* s1, Sort* s2, const Vocabulary* vocabulary) {
 	}
 	vector<Sort*> vs = vector<Sort*>(ss.cbegin(), ss.cend());
 	if (vs.empty()) {
-		return 0;
+		return NULL;
 	} else if (vs.size() == 1) {
 		return vs[0];
 	} else {
@@ -262,7 +262,7 @@ Sort* resolve(Sort* s1, Sort* s2, const Vocabulary* vocabulary) {
 		if (vs.size() == 1) {
 			return vs[0];
 		} else {
-			return 0;
+			return NULL;
 		}
 	}
 }
