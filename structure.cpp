@@ -23,8 +23,8 @@
 using namespace std;
 
 /**********************
- Domain elements
- **********************/
+	Domain elements
+**********************/
 
 ostream& operator<<(ostream& out, const DomainElementType& domeltype) {
 	string DomElTypeStrings[4] = { "int", "double", "string", "compound" };
@@ -506,8 +506,8 @@ const DomainAtom* DomainAtomFactory::create(PFSymbol* s, const ElementTuple& tup
 }
 
 /****************
- Iterators
- ****************/
+	Iterators
+****************/
 
 TableIterator::TableIterator(const TableIterator& tab) {
 	_iterator = tab.iterator()->clone();
@@ -1010,8 +1010,8 @@ void CharInternalSortIterator::operator++() {
 }
 
 /*************************
- Internal predtable
- *************************/
+	Internal predtable
+*************************/
 
 bool Universe::empty() const {
 	for (auto it = _tables.cbegin(); it != _tables.cend(); ++it) {
@@ -1825,8 +1825,8 @@ InternalTableIterator* StrGreaterInternalPredTable::begin(const Universe& univ) 
 }
 
 /*************************
- Internal sorttable
- *************************/
+	Internal sorttable
+*************************/
 
 InternalTableIterator* InternalSortTable::begin() const {
 	return new SortInternalTableIterator(sortBegin());
@@ -2449,8 +2449,8 @@ tablesize AllChars::size() const {
 }
 
 /*************************
- Internal functable
- *************************/
+	Internal functable
+*************************/
 
 inline void InternalFuncTable::incrementRef() {
 	++_nrRefs;
@@ -2839,8 +2839,8 @@ void SortTable::put(std::ostream& stream) const {
 }
 
 /****************
- PredTable
- ****************/
+	PredTable
+****************/
 
 PredTable::PredTable(InternalPredTable* table, const Universe& univ) :
 		_table(table), _universe(univ) {
@@ -2852,8 +2852,9 @@ PredTable::~PredTable() {
 }
 
 void PredTable::add(const ElementTuple& tuple) {
-	if (_table->contains(tuple, _universe))
+	if (_table->contains(tuple, _universe)) {
 		return;
+	}
 	InternalPredTable* temp = _table;
 	_table = _table->add(tuple);
 	if (temp != _table) {
@@ -2863,8 +2864,9 @@ void PredTable::add(const ElementTuple& tuple) {
 }
 
 void PredTable::remove(const ElementTuple& tuple) {
-	if (!_table->contains(tuple, _universe))
+	if (not _table->contains(tuple, _universe)) {
 		return;
+	}
 	InternalPredTable* temp = _table;
 	_table = _table->remove(tuple);
 	if (temp != _table) {
@@ -2880,8 +2882,9 @@ TableIterator PredTable::begin() const {
 
 void InternalPredTable::decrementRef() {
 	--_nrRefs;
-	if (_nrRefs == 0)
+	if (_nrRefs == 0) {
 		delete (this);
+	}
 }
 
 void InternalPredTable::incrementRef() {
@@ -2918,8 +2921,9 @@ bool ProcInternalPredTable::approxEmpty(const Universe& univ) const {
 bool ProcInternalPredTable::contains(const ElementTuple& tuple, const Universe& univ) const {
 	if (univ.contains(tuple)) {
 		return LuaConnection::predcall(_procedure, tuple);
-	} else
+	} else {
 		return false;
+	}
 }
 
 InternalPredTable* ProcInternalPredTable::add(const ElementTuple&) {
@@ -2950,13 +2954,14 @@ void InverseInternalPredTable::internTable(InternalPredTable* ipt) {
  *		Returns true iff the table is finite
  */
 bool InverseInternalPredTable::finite(const Universe& univ) const {
-	if (approxFinite(univ))
+	if (approxFinite(univ)) {
 		return true;
-	if (univ.finite())
+	}
+	if (univ.finite()) {
 		return true;
-	else if (_invtable->finite(univ))
+	} else if (_invtable->finite(univ)) {
 		return false;
-	else {
+	} else {
 		notyetimplemented("Exact finiteness test on inverse predicate tables");
 		return approxEmpty(univ);
 	}
@@ -2966,10 +2971,12 @@ bool InverseInternalPredTable::finite(const Universe& univ) const {
  *		Returns true iff the table is empty
  */
 bool InverseInternalPredTable::empty(const Universe& univ) const {
-	if (approxEmpty(univ))
+	if (approxEmpty(univ)) {
 		return true;
-	if (univ.empty())
+	}
+	if (univ.empty()) {
 		return true;
+	}
 	if (finite(univ)) {
 		TableIterator ti = TableIterator(begin(univ));
 		return ti.isAtEnd();
@@ -2996,23 +3003,27 @@ bool InverseInternalPredTable::approxEmpty(const Universe& univ) const {
 tablesize InverseInternalPredTable::size(const Universe& univ) const {
 	tablesize univsize = univ.size();
 	tablesize invsize = _invtable->size(univ);
-	if (univsize._type == TST_UNKNOWN)
+	if (univsize._type == TST_UNKNOWN) {
 		return univsize;
-	else if (univsize._type == TST_INFINITE) {
-		if (invsize._type == TST_APPROXIMATED || invsize._type == TST_EXACT)
+	} else if (univsize._type == TST_INFINITE) {
+		if (invsize._type == TST_APPROXIMATED || invsize._type == TST_EXACT) {
 			return tablesize(TST_INFINITE, 0);
-		else
+		} else {
 			return tablesize(TST_UNKNOWN, 0);
+		}
 	} else if (invsize._type == TST_APPROXIMATED || invsize._type == TST_EXACT) {
 		unsigned int result = 0;
-		if (univsize._size > invsize._size)
+		if (univsize._size > invsize._size) {
 			result = univsize._size - invsize._size;
-		if (invsize._type == TST_EXACT && univsize._type == TST_EXACT)
+		}
+		if (invsize._type == TST_EXACT && univsize._type == TST_EXACT) {
 			return tablesize(TST_EXACT, result);
-		else
+		} else {
 			return tablesize(TST_APPROXIMATED, result);
-	} else
+		}
+	} else {
 		return tablesize(TST_UNKNOWN, 0);
+	}
 }
 
 /**
@@ -3022,12 +3033,13 @@ tablesize InverseInternalPredTable::size(const Universe& univ) const {
  *		tuple	- the given tuple
  */
 bool InverseInternalPredTable::contains(const ElementTuple& tuple, const Universe& univ) const {
-	if (_invtable->contains(tuple, univ))
+	if (_invtable->contains(tuple, univ)) {
 		return false;
-	else if (univ.contains(tuple))
+	} else if (univ.contains(tuple)) {
 		return true;
-	else
+	} else {
 		return false;
+	}
 }
 
 /**
@@ -3091,8 +3103,8 @@ InternalTableIterator* InverseInternalPredTable::begin(const Universe& univ) con
 }
 
 /****************
- SortTable
- ****************/
+	SortTable
+****************/
 
 SortTable::SortTable(InternalSortTable* table) :
 		_table(table) {
@@ -3122,8 +3134,9 @@ void SortTable::internTable(InternalSortTable* table) {
 }
 
 void SortTable::add(const ElementTuple& tuple) {
-	if (_table->contains(tuple))
+	if (_table->contains(tuple)) {
 		return;
+	}
 	InternalSortTable* temp = _table;
 	_table = _table->add(tuple);
 	if (temp != _table) {
@@ -3133,8 +3146,9 @@ void SortTable::add(const ElementTuple& tuple) {
 }
 
 void SortTable::add(const DomainElement* el) {
-	if (_table->contains(el))
+	if (_table->contains(el)) {
 		return;
+	}
 	InternalSortTable* temp = _table;
 	_table = _table->add(el);
 	if (temp != _table) {
@@ -3153,8 +3167,9 @@ void SortTable::add(int i1, int i2) {
 }
 
 void SortTable::remove(const ElementTuple& tuple) {
-	if (!_table->contains(tuple))
+	if (not _table->contains(tuple)) {
 		return;
+	}
 	InternalSortTable* temp = _table;
 	_table = _table->remove(tuple);
 	if (temp != _table) {
@@ -3164,8 +3179,9 @@ void SortTable::remove(const ElementTuple& tuple) {
 }
 
 void SortTable::remove(const DomainElement* el) {
-	if (!_table->contains(el))
+	if (not _table->contains(el)) {
 		return;
+	}
 	InternalSortTable* temp = _table;
 	_table = _table->remove(el);
 	if (temp != _table) {
@@ -3175,8 +3191,8 @@ void SortTable::remove(const DomainElement* el) {
 }
 
 /****************
- FuncTable
- ****************/
+	FuncTable
+****************/
 
 FuncTable::FuncTable(InternalFuncTable* table, const Universe& univ) :
 		_table(table), _universe(univ) {
@@ -3188,8 +3204,9 @@ FuncTable::~FuncTable() {
 }
 
 void FuncTable::add(const ElementTuple& tuple) {
-	if (_table->contains(tuple, _universe))
+	if (_table->contains(tuple, _universe)) {
 		return;
+	}
 	InternalFuncTable* temp = _table;
 	_table = _table->add(tuple);
 	if (temp != _table) {
@@ -3199,8 +3216,9 @@ void FuncTable::add(const ElementTuple& tuple) {
 }
 
 void FuncTable::remove(const ElementTuple& tuple) {
-	if (!_table->contains(tuple, _universe))
+	if (not _table->contains(tuple, _universe)) {
 		return;
+	}
 	InternalFuncTable* temp = _table;
 	_table = _table->remove(tuple);
 	if (temp != _table) {
@@ -3231,8 +3249,8 @@ TableIterator FuncTable::begin() const {
 }
 
 /********************************
- Predicate interpretations
- ********************************/
+	Predicate interpretations
+********************************/
 
 /**
  * \brief Create a three- or four-valued interpretation
@@ -3580,8 +3598,8 @@ StrLessThanInterGenerator* StrLessThanInterGeneratorGenerator::get(const std::ve
 }
 
 /*******************************
- Function interpretations
- *******************************/
+	Function interpretations
+*******************************/
 
 FuncInter::FuncInter(FuncTable* ft) :
 		_functable(ft) {
@@ -3701,8 +3719,8 @@ InvSuccInterGenerator* InvSuccInterGeneratorGenerator::get(const vector<Sort*>& 
 }
 
 /*****************
- TableUtils
- *****************/
+	TableUtils
+*****************/
 
 namespace TableUtils {
 
@@ -3747,19 +3765,21 @@ bool approxTotalityCheck(const FuncInter* funcinter) {
 }
 
 /*****************
- Structures
- *****************/
+	Structures
+*****************/
 
 /** Destructor **/
 
 Structure::~Structure() {
-	for (auto it = _sortinter.cbegin(); it != _sortinter.cend(); ++it)
+	for (auto it = _sortinter.cbegin(); it != _sortinter.cend(); ++it) {
 		delete (it->second);
-	for (auto it = _predinter.cbegin(); it != _predinter.cend(); ++it)
+	}
+	for (auto it = _predinter.cbegin(); it != _predinter.cend(); ++it) {
 		delete (it->second);
-	for (auto it = _funcinter.cbegin(); it != _funcinter.cend(); ++it)
+	}
+	for (auto it = _funcinter.cbegin(); it != _funcinter.cend(); ++it) {
 		delete (it->second);
-
+	}
 	deleteList<PredInter>(_intersToDelete);
 }
 
@@ -3789,7 +3809,7 @@ void Structure::vocabulary(Vocabulary* v) {
 	for (auto it = _sortinter.begin(); it != _sortinter.end();) {
 		map<Sort*, SortTable*>::iterator jt = it;
 		++it;
-		if (!v->contains(jt->first)) {
+		if (not v->contains(jt->first)) {
 			delete (jt->second);
 			_sortinter.erase(jt);
 		}
@@ -3797,7 +3817,7 @@ void Structure::vocabulary(Vocabulary* v) {
 	for (auto it = _predinter.begin(); it != _predinter.end();) {
 		map<Predicate*, PredInter*>::iterator jt = it;
 		++it;
-		if (!v->contains(jt->first)) {
+		if (not v->contains(jt->first)) {
 			delete (jt->second);
 			_predinter.erase(jt);
 		}
@@ -3805,7 +3825,7 @@ void Structure::vocabulary(Vocabulary* v) {
 	for (auto it = _funcinter.begin(); it != _funcinter.end();) {
 		map<Function*, FuncInter*>::iterator jt = it;
 		++it;
-		if (!v->contains(jt->first)) {
+		if (not v->contains(jt->first)) {
 			delete (jt->second);
 			_funcinter.erase(jt);
 		}
@@ -3813,7 +3833,7 @@ void Structure::vocabulary(Vocabulary* v) {
 	// Create empty tables for new symbols
 	for (auto it = _vocabulary->firstSort(); it != _vocabulary->lastSort(); ++it) {
 		auto sort = it->second;
-		if (!sort->builtin()) {
+		if (not sort->builtin()) {
 			if (_sortinter.find(sort) == _sortinter.cend()) {
 				SortTable* st = new SortTable(new EnumeratedInternalSortTable());
 				_sortinter[sort] = st;
@@ -3858,40 +3878,40 @@ void Structure::inter(Function* f, FuncInter* i) {
 	delete (_funcinter[f]);
 	_funcinter[f] = i;
 }
+
 bool Structure::approxTwoValued() const {
 	for (std::map<Function*, FuncInter*>::const_iterator funcInterIterator = _funcinter.cbegin(); funcInterIterator != _funcinter.cend();
 			funcInterIterator++) {
 		FuncInter* fi = (*funcInterIterator).second;
-		if (!fi->approxTwoValued()) {
+		if (not fi->approxTwoValued()) {
 			return false;
 		}
 	}
 	for (std::map<Predicate*, PredInter*>::const_iterator predInterIterator = _predinter.cbegin(); predInterIterator != _predinter.cend();
 			predInterIterator++) {
 		PredInter* pi = (*predInterIterator).second;
-		if (!pi->approxTwoValued()) {
+		if (not pi->approxTwoValued()) {
 			return false;
 		}
 	}
-
 	return true;
 }
+
 bool Structure::isConsistent() const {
 	for (std::map<Function*, FuncInter*>::const_iterator funcInterIterator = _funcinter.cbegin(); funcInterIterator != _funcinter.cend();
 			funcInterIterator++) {
 		FuncInter* fi = (*funcInterIterator).second;
-		if (!fi->isConsistent()) {
+		if (not fi->isConsistent()) {
 			return false;
 		}
 	}
 	for (std::map<Predicate*, PredInter*>::const_iterator predInterIterator = _predinter.cbegin(); predInterIterator != _predinter.cend();
 			predInterIterator++) {
 		PredInter* pi = (*predInterIterator).second;
-		if (!pi->isConsistent()) {
+		if (not pi->isConsistent()) {
 			return false;
 		}
 	}
-
 	return true;
 }
 
@@ -4392,8 +4412,8 @@ void Structure::clean() {
 }
 
 /**************
- Visitor
- **************/
+	Visitor
+**************/
 
 void ProcInternalPredTable::accept(StructureVisitor* v) const {
 	v->visit(this);
@@ -4484,8 +4504,8 @@ void ModInternalFuncTable::accept(StructureVisitor* v) const {
 }
 
 /******************
- Materialize
- ******************/
+	Materialize
+******************/
 
 SortTable* SortTable::materialize() const {
 	EnumerateSymbolicTable m;

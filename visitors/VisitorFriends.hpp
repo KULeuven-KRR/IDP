@@ -59,6 +59,7 @@ class SplitIntoMonotoneAgg;
 		friend class Flatten; \
 		friend class GraphAggregates; \
 		friend class GraphFunctions; \
+		friend class GraphFuncsAndAggs; \
 		friend class PushNegations; \
 		friend class PushQuantifications; \
 		friend class RemoveEquivalences; \

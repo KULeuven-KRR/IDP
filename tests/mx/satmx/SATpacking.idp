@@ -1,0 +1,78 @@
+procedure getExpectedAModel() {
+  return true
+}
+
+/**
+Given a rectangular area of a known dimension and a set of squares, each of which has a known dimension, the problem is to pack all the squares into the rectangular area such that no two squares overlap each other. There can be wasted spaces in the rectangular area.
+The rectangular area forms a coordinate plane where the left upper corner of the area is the origin, the top edge is the x-axis, and the left edge is the y-axis. 
+*/
+
+vocabulary V {
+	type square isa nat
+	type sizeType isa nat
+	type x isa int
+	type y isa int
+	
+  /* Properties of the area */
+  width: x
+  height: y
+
+  /* Properties of squares */
+	size(square): sizeType
+
+  xPos(square): x
+  yPos(square): y
+
+	validPos(square)
+  leftOf(square,square)
+  above(square,square)
+	noOverlap(square,square)
+
+	largest: square
+}
+
+theory T : V {
+  /*** Dimensions of the area ***/
+  width = MAX[:x].
+  height = MAX[:y].
+
+  /*** Constraints ***/
+  /* All squares should have a valid position */
+	! Sqr : validPos(Sqr).
+  { validPos(Sqr) <- (xPos(Sqr)+size(Sqr) =< width) & (yPos(Sqr)+size(Sqr) =< height). }
+
+  /* Two squares should not overlap */
+	! Sqr1 Sqr2 : noOverlap(Sqr1,Sqr2).
+  { leftOf(Sqr1,Sqr2) <- xPos(Sqr1)+size(Sqr1) =< xPos(Sqr2).
+	  above(Sqr1,Sqr2)   <- yPos(Sqr1)+size(Sqr1) =< yPos(Sqr2).
+	  noOverlap(Sqr,Sqr).
+	  noOverlap(Sqr1,Sqr2) <- leftOf(Sqr1,Sqr2) | leftOf(Sqr2,Sqr1) | above(Sqr1,Sqr2) | above(Sqr2,Sqr1). }
+
+  /* Put largest square with smallest identifier in a corner */
+  largest = min{ Sqr : size(Sqr) = max{ Sqr : square(Sqr) : size(Sqr) } : Sqr }.
+  xPos(largest) = yPos(largest) = 0.
+  //TODO manually rewritten above constraints, should be done automatically... or some other solution??
+  //! Sqr : (Sqr = largest) => (xPos(Sqr) = 0) & (yPos(Sqr) = 0).
+
+	/* When two squares have the same size, put the one with smallest identifier closest to the origin */
+  ! Sqr1 Sqr2 : (Sqr1 < Sqr2) & (size(Sqr1) = size(Sqr2)) => (xPos(Sqr1) < xPos(Sqr2)) | (yPos(Sqr1) < yPos(Sqr2)).
+	
+	/* Sum of areas of squares should be less or equal to total area */
+  //sum{ Sqr : square(Sqr) : size(Sqr)^2 } =< (width * height).
+
+  /* Optimal solution? */
+  //! Sqr1 Sqr2 X[x] Y[y] : (xPos(Sqr1) < X < xPos(Sqr1)+size(Sqr1)-1) & (yPos(Sqr1) < Y < yPos(Sqr1)+size(Sqr1)-1) => ~(xPos(Sqr2) = X & yPos(Sqr2) = Y).
+}
+
+structure S : V {
+  x = {0..6}
+  y = {0..4}
+  size = {1->4; 2->2; 3->2}
+}
+
+structure S9 : V {
+	x = {0..13}
+	y = {0..7}
+	size = {1->5; 2->5; 3->2; 4->2; 5->2; 6->2; 7->2; 8->2; 9->2}
+}
+

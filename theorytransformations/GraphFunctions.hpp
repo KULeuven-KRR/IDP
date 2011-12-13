@@ -4,8 +4,8 @@
 #include "visitors/TheoryMutatingVisitor.hpp"
 
 /***********************************
- Replace F(x) = y by P_F(x,y)
- ***********************************/
+	Replace F(x) = y by P_F(x,y)
+***********************************/
 
 class GraphFunctions: public TheoryMutatingVisitor {
 	VISITORFRIENDS()

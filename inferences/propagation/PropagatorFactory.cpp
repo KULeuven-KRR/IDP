@@ -115,9 +115,8 @@ TypedFOPropagator<Factory, Domain>* FOPropagatorFactory<Factory, Domain>::create
 	AbstractTheory* newtheo = theory->clone();
 	FormulaUtils::addCompletion(newtheo);
 	FormulaUtils::unnestTerms(newtheo);	// FIXME: remove nesting does not change F(x)=y to F(x,y) anymore, which is probably needed here
-	FormulaUtils::graphFunctions(newtheo);
-	FormulaUtils::graphAggregates(newtheo);
 	FormulaUtils::splitComparisonChains(newtheo);
+	FormulaUtils::graphFuncsAndAggs(newtheo);
 
 	// Add function constraints
 	for(auto it = _initbounds.cbegin(); it != _initbounds.cend(); ++it) {

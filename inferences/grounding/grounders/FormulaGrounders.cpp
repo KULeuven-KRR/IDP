@@ -15,7 +15,7 @@
 
 using namespace std;
 
-int verbosity(){
+int verbosity() {
 	return getOption(IntType::GROUNDVERBOSITY);
 }
 
@@ -41,7 +41,7 @@ void FormulaGrounder::setOrig(const Formula* f, const map<Variable*, const DomEl
 }
 
 void FormulaGrounder::printorig() const {
-	if(_origform==NULL){
+	if (_origform == NULL) {
 		return;
 	}
 	clog << "Grounding formula " << toString(_origform);
@@ -129,9 +129,15 @@ Lit AtomGrounder::run() const {
 		return gentype == GenType::CANMAKETRUE ? _true : _false;
 	}
 	if (_inter->isTrue(args)) {
+		if (verbosity() > 2) {
+			clog << "Result is " << (isPos(_sign) ? "true" : "false") << "\n";
+		}
 		return isPos(_sign) ? _true : _false;
 	}
 	if (_inter->isFalse(args)) {
+		if (verbosity() > 2) {
+			clog << "Result is " << (isPos(_sign) ? "false" : "true") << "\n";
+		}
 		return isPos(_sign) ? _false : _true;
 	}
 
@@ -422,27 +428,84 @@ Lit AggGrounder::run() const {
 	}
 	case AggFunction::MIN:
 		// Compute the minimum possible value of the set.
-		for (unsigned int n = 0; n < tsset.size(); ++n) {
+		for (unsigned int n = 0; n < tsset.size();) {
 			minpossvalue = (tsset.weight(n) < minpossvalue) ? tsset.weight(n) : minpossvalue;
-			// Decrease all weights greater than truevalue to truevalue. // TODO why not just drop all those?
-			// FIXME: what if some set is used in multiple expressions? Then we are changing weights???
-			// TODO: what advantage does this have? -> Issue 55773
-			if (tsset.weight(n) > truevalue)
-				tsset.setWeight(n, truevalue);
+			// TODO: what if some set is used in multiple expressions? Then we are changing the set???
+			if (tsset.weight(n) >= truevalue) {
+				tsset.removeLit(n);
+			} else {
+				++n;
+			}
 		}
-		// Finish
-		tseitin = finish(boundvalue, boundvalue, minpossvalue, maxpossvalue, setnr);
+		//INVAR: we know that the real value of the aggregate is at most truevalue.
+		if(boundvalue > truevalue){
+			if(_comp == CompType::EQ || _comp == CompType::LEQ || _comp==CompType::LT){
+				return isPos(_sign) ? _false : _true;
+			}
+			else{
+				return isPos(_sign) ? _true : _false;
+			}
+		}
+		else if(boundvalue == truevalue){
+			if(_comp == CompType::EQ||_comp==CompType::LEQ){
+				tseitin = -translator()->translate(tsset.literals(),false,TsType::EQ);
+				tseitin = isPos(_sign)? tseitin : - tseitin;
+			}
+			else if(_comp == CompType::NEQ|| _comp == CompType::GT){
+				tseitin = translator()->translate(tsset.literals(),false,TsType::EQ);
+				tseitin = isPos(_sign)? tseitin : - tseitin;
+			}
+			else if(_comp == CompType::GEQ){
+				return isPos(_sign) ? _true : _false;
+			}
+			else if(_comp == CompType::LT){
+				return isPos(_sign) ?  _false: _true;
+			}
+		}
+		else{ //boundvalue < truevalue
+			// Finish
+			tseitin = finish(boundvalue, boundvalue, minpossvalue, maxpossvalue, setnr);
+		}
 		break;
 	case AggFunction::MAX:
 		// Compute the maximum possible value of the set.
-		for (unsigned int n = 0; n < tsset.size(); ++n) {
+		for (unsigned int n = 0; n < tsset.size();) {
 			maxpossvalue = (tsset.weight(n) > maxpossvalue) ? tsset.weight(n) : maxpossvalue;
-			// Increase all weights less than truevalue to truevalue. // TODO why not just drop all those?
-			if (tsset.weight(n) < truevalue)
-				tsset.setWeight(n, truevalue);
+			if (tsset.weight(n) <= truevalue) {
+				tsset.removeLit(n);
+			} else {
+				++n;
+			}
 		}
-		// Finish
-		tseitin = finish(boundvalue, boundvalue, minpossvalue, maxpossvalue, setnr);
+		//INVAR: we know that the real value of the aggregate is at least truevalue.
+		if(boundvalue < truevalue){
+			if(_comp == CompType::NEQ || _comp == CompType::LEQ || _comp==CompType::LT){
+				return isPos(_sign) ?  _true: _false;
+			}
+			else{
+				return isPos(_sign) ?  _false: _true;
+			}
+		}
+		else if(boundvalue == truevalue){
+			if(_comp == CompType::EQ||_comp==CompType::GEQ){
+				tseitin = - translator()->translate(tsset.literals(),false,TsType::EQ);
+				tseitin = isPos(_sign)? tseitin : - tseitin;
+			}
+			else if(_comp == CompType::NEQ|| _comp == CompType::LT){
+				tseitin = translator()->translate(tsset.literals(),false,TsType::EQ);
+				tseitin = isPos(_sign)? tseitin : - tseitin;
+			}
+			else if(_comp == CompType::LEQ){
+				return isPos(_sign) ? _true : _false;
+			}
+			else if(_comp == CompType::GT){
+				return isPos(_sign) ?  _false: _true;
+			}
+		}
+		else{ //boundvalue > truevalue
+			// Finish
+			tseitin = finish(boundvalue, boundvalue, minpossvalue, maxpossvalue, setnr);
+		}
 		break;
 	}
 	return tseitin;

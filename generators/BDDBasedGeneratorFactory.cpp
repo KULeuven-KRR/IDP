@@ -282,8 +282,7 @@ InstGenerator* BDDToGenerator::createFromPredForm(PredForm* atom, const vector<P
 	if (FormulaUtils::containsFuncTerms(atom)) {
 		auto newform = FormulaUtils::unnestTerms(atom, Context::NEGATIVE);
 		newform = FormulaUtils::splitComparisonChains(newform);
-		newform = FormulaUtils::graphFunctions(newform);
-		newform = FormulaUtils::graphAggregates(newform);
+		newform = FormulaUtils::graphFuncsAndAggs(newform);
 		newform = FormulaUtils::flatten(newform);
 		if(not sametypeid<QuantForm>(*newform)){
 			thrownotyetimplemented("Creating a bdd in which unnesting does not introduce quantifiers.");
@@ -308,7 +307,7 @@ InstGenerator* BDDToGenerator::createFromPredForm(PredForm* atom, const vector<P
 		}
 		set<PredForm*> atoms_to_order(conjunction.cbegin(), conjunction.cend());
 		vector<PredForm*> orderedconjunction;
-		while (!atoms_to_order.empty()) {
+		while (not atoms_to_order.empty()) {
 			PredForm* bestatom = 0;
 			double bestcost = numeric_limits<double>::max();
 			for (auto it = atoms_to_order.cbegin(); it != atoms_to_order.cend(); ++it) {

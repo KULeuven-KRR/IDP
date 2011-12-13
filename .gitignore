@@ -24,3 +24,5 @@ ylwrap
 *ltmain.sh
 documentation/generateddocs
 documentation/generateddocs/*
+m4/*
+doxy/*

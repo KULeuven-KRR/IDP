@@ -107,7 +107,7 @@ public:
 	// Factory method
 	Grounder* create(const AbstractTheory*);
 	Grounder* create(const AbstractTheory*, MinisatID::WrappedPCSolver*);
-	Grounder* create(const AbstractTheory* theory, InteractivePrintMonitor* monitor);
+	Grounder* create(const AbstractTheory*, InteractivePrintMonitor*);
 
 	// Determine what should be passed to CP solver
 	std::set<const PFSymbol*> findCPSymbols(const AbstractTheory*);

@@ -131,6 +131,7 @@ double applyAgg(const AggFunction& agg, const vector<double>& args) {
 bool operator==(CompType left, CompType right) {
 	return (int) left == (int) right;
 }
+
 bool operator>(CompType left, CompType right) {
 	return (int) left > (int) right;
 }
@@ -138,7 +139,6 @@ bool operator>(CompType left, CompType right) {
 bool operator<(CompType left, CompType right) {
 	return not (left == right || left > right);
 }
-
 
 
 TsType reverseImplication(TsType type) {
@@ -154,6 +154,7 @@ TsType reverseImplication(TsType type) {
 bool isPos(SIGN s) {
 	return s == SIGN::POS;
 }
+
 bool isNeg(SIGN s) {
 	return s == SIGN::NEG;
 }

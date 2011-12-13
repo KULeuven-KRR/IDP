@@ -158,8 +158,9 @@ grounder_SOURCES = \
 		theorytransformations/DeriveSorts.hpp theorytransformations/DeriveSorts.cpp\
 		theorytransformations/AddCompletion.hpp theorytransformations/AddCompletion.cpp\
 		theorytransformations/GraphFunctions.hpp theorytransformations/GraphFunctions.cpp\
-		theorytransformations/SplitProducts.hpp theorytransformations/SplitProducts.cpp\
 		theorytransformations/GraphAggregates.hpp theorytransformations/GraphAggregates.cpp\
+		theorytransformations/GraphFuncsAndAggs.hpp theorytransformations/GraphFuncsAndAggs.cpp\
+		theorytransformations/SplitProducts.hpp theorytransformations/SplitProducts.cpp\
 		theorytransformations/PushQuantifications.hpp theorytransformations/PushQuantifications.cpp\
 		theorytransformations/RemoveEquivalences.hpp theorytransformations/RemoveEquivalences.cpp\
 		theorytransformations/SplitComparisonChains.hpp theorytransformations/SplitComparisonChains.cpp\
@@ -237,15 +238,18 @@ if BUILDTESTS
 bin_PROGRAMS += alltests
 endif 
 
-alltests_SOURCES = tests/testsuite.cpp \
+alltests_SOURCES = \
+		tests/testsuite.cpp\
 		tests/mxtests.cpp\
 		tests/generatortests.cpp\
 		tests/bddtests.cpp\
 		tests/grounderfactorytests.cpp\
 		tests/propagationtests.cpp\
 		tests/parsertests.cpp\
+		tests/transformationtests.cpp\
+		tests/testingtools.hpp tests/testingtools.cpp\
 		$(grounder_SOURCES)
-		
+
 alltests_LDADD = -lgtest -lpthread $(gidl_LDADD)
 
 AM_CXXFLAGS += -DTESTDIR=\"$(abs_srcdir)/tests/\"
