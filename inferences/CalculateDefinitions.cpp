@@ -1,5 +1,6 @@
 #include "inferences/CalculateDefinitions.hpp"
 #include "inferences/InferenceSolverConnection.hpp"
+#include "inferences/propagation/OptimalPropagation.hpp"
 
 #include "commands/propagate.hpp"
 
@@ -34,6 +35,8 @@ bool CalculateDefinitions::calculateDefinition(Definition* definition, AbstractS
 
 	// Collect solutions
 	if (abstractsolutions->getModels().empty()) {
+		notyetimplemented("Making this structure inconsistent");
+		//makeInconsistent(structure); //TODO doesn't work yet.  Has something to do with the fact that this will make every function inconsistent (also *, %,...)
 		return false;
 	} else {
 		Assert(abstractsolutions->getModels().size() == 1);
@@ -47,7 +50,7 @@ bool CalculateDefinitions::calculateDefinition(Definition* definition, AbstractS
 	grounding->recursiveDelete();
 	delete (solver);
 	delete (abstractsolutions);
-
+	std::cerr << toString(structure);
 	return structure->isConsistent();
 }
 
