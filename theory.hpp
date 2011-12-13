@@ -406,6 +406,10 @@ public:
 	const std::vector<Rule*>&		rules()			const { return _rules;		}
 	const std::set<PFSymbol*>&		defsymbols()	const { return _defsyms;	}
 
+	unsigned int getNumberOfRules() const {
+		return _rules.size();
+	}
+
 	std::ostream& put(std::ostream&) const;
 };
 

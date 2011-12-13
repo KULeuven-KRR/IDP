@@ -19,7 +19,7 @@ private:
 		GrounderFactory factory(structure,symstructure);
 		auto grounder = factory.create(theory);
 		grounder->toplevelRun();
-		auto grounding = grounder->grounding();
+		auto grounding = grounder->getGrounding();
 		//DEBUG CODE: std::clog <<toString(grounding) <<"\n";
 		delete(grounder);
 
@@ -49,7 +49,7 @@ private:
 		GrounderFactory factory(structure, symstructure);
 		auto grounder = factory.create(theory,monitor);
 		grounder->toplevelRun();
-		auto grounding = grounder->grounding();
+		auto grounding = grounder->getGrounding();
 		delete(grounder);
 		monitor->flush();
 		return grounding;

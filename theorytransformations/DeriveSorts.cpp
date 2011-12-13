@@ -53,7 +53,8 @@ Term* DeriveSorts::visit(VarTerm* vt) {
 		}
 		if (newsort == NULL) {
 			_underivableVariables.insert(vt->var());
-		} else {
+		} else if(vt->sort()!=newsort){
+			_changed = true;
 			vt->sort(newsort);
 		}
 	}
@@ -197,11 +198,10 @@ void DeriveSorts::derivefuncs() {
 		for (auto kt = (*it)->subterms().cbegin(); kt != (*it)->subterms().cend(); ++kt) {
 			vs.push_back((*kt)->sort());
 		}
-//		if(f->builtin()){
-//			vs.push_back(VocabularyUtils::intsort()); // FIXME very incorrect
-//		}else{
-			vs.push_back(NULL); // TODO should become expected output positions (to get even more derivation)
-//		}
+		vs.push_back(NULL);
+
+		//cerr <<"Disambiguating for " <<f->name() <<" with " <<toString(vs) <<"\n";
+
 		auto rf = f->disambiguate(vs, _vocab);
 		if (rf != NULL) {
 			(*it)->function(rf);

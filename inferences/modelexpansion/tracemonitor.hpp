@@ -1,9 +1,3 @@
-/************************************
-	tracemonitor.hpp
-	this file belongs to GidL 2.0
-	(c) K.U.Leuven
-************************************/
-
 #ifndef TRACEMONITOR_HPP_
 #define TRACEMONITOR_HPP_
 
@@ -22,7 +16,6 @@ public:
 	virtual ~TraceMonitor(){}
 	virtual void backtrack(int dl) = 0;
 	virtual void propagate(MinisatID::Literal lit, int dl) = 0;
-	virtual std::string* index() const = 0;
 	virtual void setTranslator(GroundTranslator* translator) = 0;
 	virtual void setSolver(MinisatID::SATSolver* solver) = 0;
 };

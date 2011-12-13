@@ -313,6 +313,8 @@ public:
 /**
  * Runs the main method given a number of inputfiles and checks whether the main method returns the int 1.
  * In that case, test return SUCCESS, in all other cases it returns FAIL.
+ *
+ * NOTE: for any test, it has to have a main() method which returns 1 if success, even for parser tests!
  */
 Status test(const std::vector<std::string>& inputfileurls) {
 	DataManager m;

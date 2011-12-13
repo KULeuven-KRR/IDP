@@ -38,7 +38,7 @@ int getIDForUndefined();
 class Printer : public TheoryVisitor {
 	VISITORFRIENDS()
 private:
-	int	opendef_; 	//the id of the currenlty open definition
+	int	opendef_; 	//the id of the currently open definition
 	bool theoryopen_;
 	std::set<int> _pastopendefs;
 protected:
@@ -50,7 +50,7 @@ protected:
 	void openDef(int defid) { opendef_ = defid; }
 
 	bool isTheoryOpen() const { return theoryopen_; }
-	void closeTheory() { theoryopen_ = false; }
+	virtual void closeTheory() { theoryopen_ = false; }
 	void openTheory() { theoryopen_ = true; }
 
 protected:
@@ -70,13 +70,14 @@ protected:
 
 public:
 	// Factory method
-	template<class Stream> static Printer* create(Options* opts, Stream& stream);
-	template<class Stream> static Printer* create(Options* opts, Stream& stream, bool arithmetic);
+	template<class Stream> static Printer* create(Stream& stream);
+	template<class Stream> static Printer* create(Stream& stream, bool arithmetic);
 
-	void checkOrOpen(int defid) {
+	virtual void checkOrOpen(int defid) {
 		if(!isDefOpen(defid)){
 			_pastopendefs.insert(opendef_);
 			Assert(_pastopendefs.find(defid)==_pastopendefs.cend());
+			openDef(defid);
 		}
 	}
 
@@ -122,6 +123,11 @@ protected:
 		for(unsigned int n = 0; n < getIndentation(); ++n){
 			output() << "  ";
 		}
+	}
+
+	virtual void closeTheory() {
+		_out.flush();
+		Printer::closeTheory();
 	}
 };
 

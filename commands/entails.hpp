@@ -198,7 +198,7 @@ public:
 		std::stringstream stream;
 		TPTPPrinter<std::stringstream>* printer;
 		try {
-			printer = dynamic_cast<TPTPPrinter<std::stringstream>*>(Printer::create<std::stringstream>(opts, stream, arithmeticFound));} catch (std::bad_cast&) {
+			printer = dynamic_cast<TPTPPrinter<std::stringstream>*>(Printer::create<std::stringstream>(stream, arithmeticFound));} catch (std::bad_cast&) {
 			Error::error("\"entails\" requires the printer to be set to the TPTPPrinter.\n");
 			return nilarg();
 		}

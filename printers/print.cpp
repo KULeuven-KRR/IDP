@@ -14,12 +14,12 @@ const int ID_FOR_UNDEFINED = -1;
 int getIDForUndefined() { return ID_FOR_UNDEFINED; }
 
 template<class Stream>
-Printer* Printer::create(Options* opts, Stream& stream) {
-	switch(opts->language()) {
+Printer* Printer::create(Stream& stream) {
+	switch(getGlobal()->getOptions()->language()) {
 		case Language::IDP:
 			return new IDPPrinter<Stream>(stream);
 		case Language::ECNF:
-			return new EcnfPrinter<Stream>(opts->getValue(BoolType::CREATETRANSLATION), stream);
+			return new EcnfPrinter<Stream>(getOption(BoolType::CREATETRANSLATION), stream);
 		case Language::TPTP:
 			return new TPTPPrinter<Stream>(false, stream);
 		default:
@@ -29,17 +29,17 @@ Printer* Printer::create(Options* opts, Stream& stream) {
 }
 
 template<class Stream>
-Printer* Printer::create(Options* opts, Stream& stream, bool arithmetic) {
-	if (opts->language() == Language::TPTP) {
+Printer* Printer::create(Stream& stream, bool arithmetic) {
+	if (getGlobal()->getOptions()->language() == Language::TPTP) {
 		return new TPTPPrinter<Stream>(arithmetic, stream);
 	} else {
-		return create<Stream>(opts, stream);
+		return create<Stream>(stream);
 	}
 }
 
-template Printer* Printer::create<stringstream>(Options*, stringstream&);
-template Printer* Printer::create<stringstream>(Options*, stringstream&, bool);
-template Printer* Printer::create<InteractivePrintMonitor>(Options*, InteractivePrintMonitor&);
+template Printer* Printer::create<stringstream>(stringstream&);
+template Printer* Printer::create<stringstream>(stringstream&, bool);
+template Printer* Printer::create<InteractivePrintMonitor>(InteractivePrintMonitor&);
 
 void Printer::visit(const AbstractTheory* t){
 	t->accept(this);

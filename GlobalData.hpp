@@ -113,4 +113,10 @@ void setOption(OptionType type, typename OptionTypeTraits<OptionType>::ValueType
 	return getGlobal()->getOptions()->setValue(type, value);
 }
 
+// TODO improve check by bool flag!
+#define CHECKTERMINATION \
+	if(GlobalData::instance()->terminateRequested()){\
+			throw IdpException("Terminate requested");\
+	}
+
 #endif /* GLOBALDATA_HPP_ */

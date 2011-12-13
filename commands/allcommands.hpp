@@ -1,8 +1,3 @@
-/************************************
-	this file belongs to GidL 2.0
-	(c) K.U.Leuven
-************************************/
-
 #ifndef ALLCOMMANDS_HPP_
 #define ALLCOMMANDS_HPP_
 
@@ -74,6 +69,7 @@ std::vector<Inference*> getAllInferences(){
 	inferences.push_back(new NewTheoryInference());
 	inferences.push_back(new CloneStructureInference());
 	inferences.push_back(new ModelExpandInference());
+	inferences.push_back(new ModelExpandWithTraceInference());
 	inferences.push_back(new NewOptionsInference());
 	inferences.push_back(new NewStructureInference());
 	inferences.push_back(new CloneTheoryInference());

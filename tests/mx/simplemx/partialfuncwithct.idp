@@ -1,0 +1,25 @@
+// TODO bug on this file, but also need to get him to ground the full function
+vocabulary V{
+	type t isa int
+	partial f(t):t
+	A
+	B
+	C
+}
+
+theory T:V{
+	A <=> !x: ?y: f(x)=y.
+	A | B | C.
+	A | ~B | C.
+	~C.
+}
+
+structure S:V{
+	t = {1..3}
+	f<ct> = {1->1}
+	f<cf> = {2->1;2->2;}
+}
+
+procedure getExpectedNbOfModels(){
+	return 3
+}

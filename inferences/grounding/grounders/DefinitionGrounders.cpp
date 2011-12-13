@@ -28,7 +28,7 @@ void DefinitionGrounder::run(ConjOrDisj& formula) const {
 	for(auto grounder = _subgrounders.cbegin(); grounder<_subgrounders.cend(); ++grounder){
 		(*grounder)->run(id(), _grounddefinition);
 	}
-	grounding()->add(_grounddefinition); // FIXME check how it is handled in the lazy part
+	getGrounding()->add(_grounddefinition); // FIXME check how it is handled in the lazy part
 
 	formula.type = Conn::CONJ; // Empty conjunction, so always true
 }

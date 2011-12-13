@@ -16,9 +16,9 @@
 #include "vocabulary.hpp"
 
 template<class Object>
-std::string print(Object o, Options* opts){
+std::string print(Object o){
 	std::stringstream stream;
-	Printer* printer = Printer::create<std::stringstream>(opts, stream);
+	Printer* printer = Printer::create<std::stringstream>(stream);
 	printer->startTheory();
 	printer->print(o);
 	printer->endTheory();
@@ -34,10 +34,10 @@ public:
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
 		AbstractStructure* structure = args[0].structure();
-		Options* opts = args[1].options();
+		getGlobal()->setOptions(args[1].options());
 		structure->materialize();
 		structure->clean();
-		return InternalArgument(StringPointer(print(structure, opts)));
+		return InternalArgument(StringPointer(print(structure)));
 	}
 };
 
@@ -50,8 +50,8 @@ public:
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
 		Namespace* space = args[0].space();
-		Options* opts = args[1].options();
-		return InternalArgument(StringPointer(print(space, opts)));
+		getGlobal()->setOptions(args[1].options());
+		return InternalArgument(StringPointer(print(space)));
 	}
 };
 
@@ -64,8 +64,8 @@ public:
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
 		AbstractTheory* theory = args[0].theory();
-		Options* opts = args[1].options();
-		return InternalArgument(StringPointer(print(theory, opts)));
+		getGlobal()->setOptions(args[1].options());
+		return InternalArgument(StringPointer(print(theory)));
 	}
 };
 
@@ -78,8 +78,8 @@ public:
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
 		Formula* f = args[0]._value._formula;
-		Options* opts = args[1].options();
-		return InternalArgument(StringPointer(print(f, opts)));
+		getGlobal()->setOptions(args[1].options());
+		return InternalArgument(StringPointer(print(f)));
 	}
 };
 
@@ -92,8 +92,8 @@ public:
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
 		Vocabulary* vocabulary = args[0].vocabulary();
-		Options* opts = args[1].options();
-		return InternalArgument(StringPointer(print(vocabulary, opts)));
+		getGlobal()->setOptions(args[1].options());
+		return InternalArgument(StringPointer(print(vocabulary)));
 	}
 };
 

@@ -1,7 +1,7 @@
 #include <ctime>
 #include "ModelExpansion.hpp"
 
-#include "monitors/tracemonitor.hpp"
+#include "tracemonitor.hpp"
 #include "commands/propagate.hpp"
 #include "symmetry.hpp"
 
@@ -26,7 +26,7 @@ public:
 	}
 };
 
-std::vector<AbstractStructure*> ModelExpansion::expand(AbstractTheory* theory, AbstractStructure* structure, TraceMonitor* monitor) const {
+std::vector<AbstractStructure*> ModelExpansion::expand() const {
 	auto opts = GlobalData::instance()->getOptions();
 	// TODO Option::pushOptions(options);
 
@@ -36,7 +36,7 @@ std::vector<AbstractStructure*> ModelExpansion::expand(AbstractTheory* theory, A
 		if(getOption(IntType::GROUNDVERBOSITY)>=1){
 			clog <<"Calculating known definitions\n";
 		}
-		bool satisfiable = calculateKnownDefinitions(dynamic_cast<Theory*>(theory), structure);
+		bool satisfiable = calculateKnownDefinitions(dynamic_cast<Theory*>(theory));
 		if (not satisfiable) {
 			return std::vector<AbstractStructure*> { };
 		}
@@ -54,8 +54,12 @@ std::vector<AbstractStructure*> ModelExpansion::expand(AbstractTheory* theory, A
 	}
 	GrounderFactory grounderfactory(structure, symstructure);
 	Grounder* grounder = grounderfactory.create(theory, solver);
+	if (getOption(BoolType::TRACE)) {
+		tracemonitor->setTranslator(grounder->getTranslator());
+		tracemonitor->setSolver(solver);
+	}
 	grounder->toplevelRun();
-	AbstractGroundTheory* grounding = grounder->grounding();
+	AbstractGroundTheory* grounding = grounder->getGrounding();
 
 	// Execute symmetry breaking
 	if (opts->getValue(IntType::SYMMETRY) != 0) {
@@ -88,10 +92,6 @@ std::vector<AbstractStructure*> ModelExpansion::expand(AbstractTheory* theory, A
 
 	// Run solver
 	MinisatID::Solution* abstractsolutions = initsolution();
-	if (opts->getValue(BoolType::TRACE)) {
-		monitor->setTranslator(grounding->translator());
-		monitor->setSolver(solver);
-	}
 	if(getOption(IntType::GROUNDVERBOSITY)>=1){
 		clog <<"Solving\n";
 	}
@@ -123,7 +123,7 @@ std::vector<AbstractStructure*> ModelExpansion::expand(AbstractTheory* theory, A
 	return solutions;
 }
 
-bool ModelExpansion::calculateDefinition(Definition* definition, AbstractStructure* structure) const {
+bool ModelExpansion::calculateDefinition(Definition* definition) const {
 	// Create solver and grounder
 	SATSolver* solver = createsolver();
 	Theory theory("", structure->vocabulary(), ParseInfo());
@@ -132,9 +132,12 @@ bool ModelExpansion::calculateDefinition(Definition* definition, AbstractStructu
 	auto symstructure = generateNaiveApproxBounds(&theory, structure);
 	GrounderFactory grounderfactory(structure, symstructure);
 	Grounder* grounder = grounderfactory.create(&theory, solver);
-
+	if (getOption(BoolType::TRACE)) {
+		tracemonitor->setTranslator(grounder->getTranslator());
+		tracemonitor->setSolver(solver);
+	}
 	grounder->toplevelRun();
-	AbstractGroundTheory* grounding = dynamic_cast<GroundTheory<SolverPolicy>*>(grounder->grounding());
+	AbstractGroundTheory* grounding = dynamic_cast<GroundTheory<SolverPolicy>*>(grounder->getGrounding());
 
 	// Run solver
 	MinisatID::Solution* abstractsolutions = initsolution();
@@ -162,7 +165,7 @@ bool ModelExpansion::calculateDefinition(Definition* definition, AbstractStructu
 	return true;
 }
 
-bool ModelExpansion::calculateKnownDefinitions(Theory* theory, AbstractStructure* structure) const {
+bool ModelExpansion::calculateKnownDefinitions(Theory* theory) const {
 	// Collect the open symbols of all definitions
 	std::map<Definition*, std::set<PFSymbol*> > opens;
 	for (auto it = theory->definitions().cbegin(); it != theory->definitions().cend(); ++it) {
@@ -185,7 +188,7 @@ bool ModelExpansion::calculateKnownDefinitions(Theory* theory, AbstractStructure
 			}
 			// If no opens are left, calculate the interpretation of the defined atoms
 			if (currentdefinition->second.empty()) {
-				bool satisfiable = calculateDefinition(currentdefinition->first, structure);
+				bool satisfiable = calculateDefinition(currentdefinition->first);
 				if (not satisfiable) {
 					return false;
 				}

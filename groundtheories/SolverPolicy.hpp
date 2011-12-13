@@ -50,23 +50,12 @@ public:
 	void initialize(SATSolver* solver, int verbosity, GroundTermTranslator* termtranslator);
 
 	void polAdd(const GroundClause& cl);
-
 	void polAdd(const TsSet& tsset, int setnr, bool weighted);
-
-	void polAdd(GroundDefinition* def);
-
-	// NOTE: this method can be safely called from outside
 	void polAdd(int defnr, PCGroundRule* rule);
-
-	// NOTE: this method can be safely called from outside
 	void polAdd(int defnr, AggGroundRule* rule);
-
 	void polAdd(int defnr, int head, AggGroundRule* body, bool);
-
 	void polAdd(int head, AggTsBody* body);
-
 	void polAddWeightedSum(const MinisatID::Atom& head, const std::vector<VarId>& varids, const std::vector<int> weights, const int& bound, MinisatID::EqType rel, SATSolver& solver);
-
 	void polAdd(int tseitin, CPTsBody* body);
 
 	// FIXME probably already exists in transform for add?

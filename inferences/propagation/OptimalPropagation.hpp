@@ -49,7 +49,7 @@ public:
 		GrounderFactory grounderfactory(structure, symstructure);
 		Grounder* grounder = grounderfactory.create(theory, &solver);
 		grounder->toplevelRun();
-		AbstractGroundTheory* grounding = grounder->grounding();
+		AbstractGroundTheory* grounding = grounder->getGrounding();
 		MinisatID::ModelExpandOptions opts;
 		opts.nbmodelstofind = options.getValue(IntType::NRMODELS);
 		opts.printmodels = MinisatID::PRINT_NONE;

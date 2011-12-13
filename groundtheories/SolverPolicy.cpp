@@ -50,23 +50,10 @@ void SolverPolicy::polAdd(const TsSet& tsset, int setnr, bool weighted) {
 	}
 }
 
-void SolverPolicy::polAdd(GroundDefinition* def){
-	for(auto i=def->begin(); i!=def->end(); ++i){
-		if(typeid(*(*i).second)==typeid(PCGroundRule)) {
-			polAdd(def->id(),dynamic_cast<PCGroundRule*>((*i).second));
-		} else {
-			Assert(typeid(*(*i).second)==typeid(AggGroundRule));
-			polAdd(def->id(),dynamic_cast<AggGroundRule*>((*i).second));
-		}
-	}
-}
-
-// NOTE: this method can be safely called from outside
 void SolverPolicy::polAdd(int defnr, PCGroundRule* rule) {
 	polAddPCRule(defnr,rule->head(),rule->body(),(rule->type() == RT_CONJ), rule->recursive());
 }
 
-// NOTE: this method can be safely called from outside
 void SolverPolicy::polAdd(int defnr, AggGroundRule* rule) {
 	polAddAggregate(defnr,rule->head(),rule->lower(),rule->setnr(),rule->aggtype(),TsType::RULE,rule->bound());
 }

@@ -14,6 +14,8 @@
 #include "visitors/TheoryVisitor.hpp"
 #include "visitors/VisitorFriends.hpp"
 
+#include <iostream>
+
 template<class Policy>
 class GroundTheory: public AbstractGroundTheory, public Policy {
 	//ACCEPTBOTH(AbstractTheory)
@@ -71,17 +73,18 @@ public:
 	void add(GroundDefinition* def) {
 		for (auto i = def->begin(); i != def->end(); ++i) {
 			if (sametypeid<PCGroundRule>(*(*i).second)) {
-				PCGroundRule* rule = dynamic_cast<PCGroundRule*>((*i).second);
+				auto rule = dynamic_cast<PCGroundRule*>((*i).second);
 				transformForAdd(rule->body(), (rule->type() == RT_CONJ ? VIT_CONJ : VIT_DISJ), def->id());
+				Policy::polAdd(def->id(), rule);
 				notifyDefined(rule->head());
 			} else {
 				Assert(sametypeid<AggGroundRule>(*(*i).second));
-				AggGroundRule* rule = dynamic_cast<AggGroundRule*>((*i).second);
+				auto rule = dynamic_cast<AggGroundRule*>((*i).second);
 				add(rule->setnr(), def->id(), (rule->aggtype() != AggFunction::CARD));
+				Policy::polAdd(def->id(), rule);
 				notifyDefined(rule->head());
 			}
 		}
-		Policy::polAdd(def);
 	}
 
 private:
@@ -272,66 +275,77 @@ public:
 				throw IdpException("Terminate requested");
 			}
 			auto pfs = translator()->getManagedSymbol(n);
-			if (typeid(*pfs) != typeid(Function)) {
+			if (not sametypeid<Function>(*pfs)) {
 				continue;
 			}
-			auto f = dynamic_cast<Function*>(pfs); //TODO: use the template-version check?
+			auto f = dynamic_cast<Function*>(pfs);
 
-			//TODO: optimization: if tuples.size = domain.size, we can use tuples instead of pt... This avoids calling the translator every time...
-			auto tuples = translator()->getTuples(n);
-
-			if (tuples.empty()) {
+			if (translator()->getTuples(n).empty()) {
 				continue;
 			}
 
-			StrictWeakNTupleEquality tuplesFirstNEqual(f->arity());
+			FirstNElementsEqual equalDomain(f->arity());
 			StrictWeakNTupleOrdering tuplesFirstNSmaller(f->arity());
 
-			const PredTable* ct = structure()->inter(f)->graphInter()->ct();
-			const PredTable* pt = structure()->inter(f)->graphInter()->pt();
-			SortTable* outSortTable = structure()->inter(f->outsort());
+			auto ct = structure()->inter(f)->graphInter()->ct();
+			auto pt = structure()->inter(f)->graphInter()->pt();
+			auto outSortTable = structure()->inter(f->outsort());
 			if (not pt->finite()) {
-				thrownotyetimplemented("Functions using infinite types");
+				thrownotyetimplemented("Cannot ground functions with infinite sorts.");
 				//FIXME make this work for functions with infintie domains and/or infinite out-sorts.  Take a look at lower code...
 			}
 
-			ElementTuple domainElement(f->arity(), 0);
+			ElementTuple domainElement, certainly;
 			TableIterator ctIterator = ct->begin();
-			SortIterator outSortIterator = outSortTable->sortBegin();
-			std::vector<litlist> sets; //NOTE: for every domain element (x1,x2): one set containing all (x1,x2,y).  The cardinality of this set should be 1
-
+			bool begin = true, newdomain = true, testcertainly = false;
+			litlist tupleset; // Set of tuples with same domain but different range, for which the cardinality should be 1
 			for (auto ptIterator = pt->begin(); not ptIterator.isAtEnd(); ++ptIterator) {
-				if(GlobalData::instance()->terminateRequested()){
-					throw IdpException("Terminate requested");
-				}
+				CHECKTERMINATION
 				ElementTuple current((*ptIterator));
-				if (not tuplesFirstNEqual(current, domainElement) || sets.empty()) {
-					if (not ctIterator.isAtEnd()) {
-						const ElementTuple& certainly(*ctIterator);
-						if (tuplesFirstNEqual(certainly, current)) {
-							if (current != certainly) {
-								Lit translation = translator()->translate(f, current);
-								addUnitClause(-translation);
-							}
-							continue;
-						} else if (tuplesFirstNSmaller(certainly, current)) {
-							do {
-								if(GlobalData::instance()->terminateRequested()){
-									throw IdpException("Terminate requested");
-								}
-								++ctIterator;
-							} while (not ctIterator.isAtEnd() && tuplesFirstNSmaller(*ctIterator, current));
-							continue;
-						}
-					}
-					sets.push_back(std::vector<int>(0));
+
+				if(begin){
 					domainElement = current;
-					domainElement.pop_back();
-					outSortIterator = outSortTable->sortBegin();
+					begin = false;
 				}
 
-				Lit translation = translator()->translate(f, (*ptIterator));
-				sets.back().push_back(translation);
+				if(not equalDomain(current, domainElement)){
+					newdomain = true;
+					if(not testcertainly){
+						addRangeConstraint(f, tupleset, outSortTable);
+					}
+					tupleset.clear();
+				}
+
+				if(newdomain){
+					domainElement = current;
+					newdomain = false;
+
+					// CERTAINLY TRUE OPTIMIZATION / PROPAGATION: if some in the domain is certainly true, assert all other ones false
+					while(not ctIterator.isAtEnd() && tuplesFirstNSmaller(*ctIterator, current)){
+						CHECKTERMINATION
+						++ctIterator;
+					}
+					if(not ctIterator.isAtEnd() && equalDomain(*ctIterator, current)){
+						certainly = *ctIterator;
+						testcertainly = true;
+					}else{
+						testcertainly = false;
+					}
+				}
+
+				if (testcertainly && equalDomain(certainly, current)) {
+					if (current != certainly) { // Assert current false
+						Lit translation = translator()->translate(f, current);
+						addUnitClause(-translation);
+					}
+					continue;
+				}else{
+					Lit translation = translator()->translate(f, current);
+					tupleset.push_back(translation);
+				}
+			}
+			if(not testcertainly){
+				addRangeConstraint(f, tupleset, outSortTable);
 			}
 
 			//OLD CODE that might work for infintite domains... First we should find out what exactly is the meaning of the grounding in case of infinite domains...
@@ -385,20 +399,6 @@ public:
 			 outSortIterator = outSortTable->sortBegin();
 			 }
 			 }*/
-			for (size_t s = 0; s < sets.size(); ++s) {
-				if(GlobalData::instance()->terminateRequested()){
-					throw IdpException("Terminate requested");
-				}
-				std::vector<double> lw(sets[s].size(), 1);
-				int setnr = translator()->translateSet(sets[s], lw, { });
-				int tseitin;
-				if (f->partial() || (not outSortTable->finite())) {
-					tseitin = translator()->translate(1, CompType::GT, AggFunction::CARD, setnr, TsType::IMPL);
-				} else {
-					tseitin = translator()->translate(1, CompType::EQ, AggFunction::CARD, setnr, TsType::IMPL);
-				}
-				addUnitClause(tseitin);
-			}
 		}
 	}
 
@@ -425,6 +425,20 @@ public:
 			}
 
 		}
+	}
+
+private:
+	void addRangeConstraint(Function* f, const litlist& set, SortTable* outSortTable){
+		CHECKTERMINATION
+		std::vector<double> lw(set.size(), 1);
+		int setnr = translator()->translateSet(set, lw, { });
+		int tseitin;
+		if (f->partial() || (not outSortTable->finite())) {
+			tseitin = translator()->translate(1, CompType::GEQ, AggFunction::CARD, setnr, TsType::IMPL);
+		} else {
+			tseitin = translator()->translate(1, CompType::EQ, AggFunction::CARD, setnr, TsType::IMPL);
+		}
+		addUnitClause(tseitin);
 	}
 };
 

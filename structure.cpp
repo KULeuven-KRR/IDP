@@ -1079,10 +1079,11 @@ bool Universe::contains(const ElementTuple& tuple) const {
 	return true;
 }
 
-bool StrictWeakNTupleEquality::operator()(const ElementTuple& t1, const ElementTuple& t2) const {
+bool FirstNElementsEqual::operator()(const ElementTuple& t1, const ElementTuple& t2) const {
 	for (unsigned int n = 0; n < _arity; ++n) {
-		if (t1[n] != t2[n])
+		if (t1[n] != t2[n]){
 			return false;
+		}
 	}
 	return true;
 }
@@ -3340,7 +3341,7 @@ bool PredInter::isConsistent() const {
 	auto ctIterator = _ct->begin();
 	auto cfIterator = _cf->begin();
 
-	StrictWeakNTupleEquality eq(_ct->arity());
+	FirstNElementsEqual eq(_ct->arity());
 	StrictWeakNTupleOrdering so(_ct->arity());
 	for (; not ctIterator.isAtEnd(); ++ctIterator) {
 //#ifdef DEBUG
@@ -3624,7 +3625,7 @@ void FuncInter::materialize() {
 }
 
 bool FuncInter::isConsistent() const {
-	if (not _functable == NULL) {
+	if (_functable!= NULL) {
 		return true; //TODO ok?
 	} else
 		return _graphinter->isConsistent();
@@ -3988,7 +3989,7 @@ std::vector<AbstractStructure*> Structure::generateAllTwoValuedExtensions() cons
 
 			auto ctIterator = ct->begin();
 			auto cfIterator = cf->begin();
-			StrictWeakNTupleEquality eq((*i).first->arity());
+			FirstNElementsEqual eq((*i).first->arity());
 			StrictWeakNTupleOrdering so((*i).first->arity());
 
 			for (; not allempty && not domainIterator.isAtEnd(); ++domainIterator) {
@@ -4202,7 +4203,7 @@ void Structure::functionCheck() {
 			const PredTable* ct = pt->ct();
 			// Check if the interpretation is indeed a function
 			bool isfunc = true;
-			StrictWeakNTupleEquality eq(f->arity());
+			FirstNElementsEqual eq(f->arity());
 			TableIterator it = ct->begin();
 			if (not it.isAtEnd()) {
 				TableIterator jt = ct->begin();

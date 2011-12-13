@@ -50,9 +50,10 @@ grounder_SOURCES = \
 		ecnf.hpp ecnf.cpp\
         symmetry.hpp symmetry.cpp\
 		monitors/interactiveprintmonitor.hpp\
-		monitors/tracemonitor.hpp\
-		monitors/propagatemonitor.hpp\
-		monitors/luatracemonitor.hpp monitors/luainteractiveprintmonitor.hpp\
+		inferences/modelexpansion/tracemonitor.hpp\
+		inferences/modelexpansion/propagatemonitor.hpp\
+		inferences/modelexpansion/LuaTraceMonitor.hpp inferences/modelexpansion/LuaTraceMonitor.cpp\
+		monitors/luainteractiveprintmonitor.hpp\
 		groundtheories/PrintGroundPolicy.hpp\
 		groundtheories/GroundPolicy.hpp groundtheories/GroundPolicy.cpp\
 		groundtheories/SolverPolicy.hpp groundtheories/SolverPolicy.cpp\
@@ -70,7 +71,7 @@ grounder_SOURCES = \
 		inferences/grounding/Utils.hpp\
 		inferences/grounding/GrounderFactory.hpp inferences/grounding/GrounderFactory.cpp\
 		inferences/grounding/grounders/Grounder.hpp inferences/grounding/grounders/Grounder.cpp\
-		inferences/ModelExpansion.hpp inferences/ModelExpansion.cpp\
+		inferences/modelexpansion/ModelExpansion.hpp inferences/modelexpansion/ModelExpansion.cpp\
 		inferences/propagation/SymbolicPropagation.hpp\
 		inferences/propagation/OptimalPropagation.hpp\
 		inferences/propagation/GroundingPropagation.hpp\
@@ -236,7 +237,15 @@ if BUILDTESTS
 bin_PROGRAMS += alltests
 endif 
 
-alltests_SOURCES = tests/testsuite.cpp tests/mxtests.cpp tests/generatortests.cpp tests/bddtests.cpp tests/grounderfactorytests.cpp tests/propagationtests.cpp $(grounder_SOURCES)
+alltests_SOURCES = tests/testsuite.cpp \
+		tests/mxtests.cpp\
+		tests/generatortests.cpp\
+		tests/bddtests.cpp\
+		tests/grounderfactorytests.cpp\
+		tests/propagationtests.cpp\
+		tests/parsertests.cpp\
+		$(grounder_SOURCES)
+		
 alltests_LDADD = -lgtest -lpthread $(gidl_LDADD)
 
 AM_CXXFLAGS += -DTESTDIR=\"$(abs_srcdir)/tests/\"

@@ -36,10 +36,9 @@ public:
 		return *printer_;
 	}
 
-	void initialize(InteractivePrintMonitor* monitor, AbstractStructure* str, GroundTranslator* translator, GroundTermTranslator* termtranslator,
-			Options* opts) {
+	void initialize(InteractivePrintMonitor* monitor, AbstractStructure* str, GroundTranslator* translator, GroundTermTranslator* termtranslator) {
 		monitor_ = monitor;
-		printer_ = Printer::create(opts, *monitor);
+		printer_ = Printer::create(*monitor);
 		//TODO translation option as argument to constructor
 		printer().setTranslator(translator);
 		printer().setTermTranslator(termtranslator);
@@ -68,17 +67,6 @@ public:
 		auto agg = new GroundAggregate(body->aggtype(), body->lower(), body->type(), head, body->setnr(), body->bound());
 		printer().print(agg);
 		delete (agg);
-	}
-
-	void polAdd(GroundDefinition* def) {
-		for (auto i = def->begin(); i != def->end(); ++i) {
-			if(sametypeid<PCGroundRule>(*(*i).second)){
-				polAdd(def->id(), dynamic_cast<PCGroundRule*>((*i).second));
-			} else {
-				Assert(sametypeid<AggGroundRule>(*(*i).second));
-				polAdd(def->id(), dynamic_cast<AggGroundRule*>((*i).second));
-			}
-		}
 	}
 
 	void polAdd(int defnr, PCGroundRule* rule) {

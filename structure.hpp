@@ -168,9 +168,9 @@ typedef std::set<ElementTuple, Compare<ElementTuple> > SortedElementTable;
 typedef std::set<const DomainElement*, Compare<DomainElement> > SortedElementTuple; // TODO naam trekt er niet op?
 typedef std::map<ElementTuple, const DomainElement*, Compare<ElementTuple> > Tuple2Elem;
 
-struct StrictWeakNTupleEquality {
+struct FirstNElementsEqual {
 	unsigned int _arity;
-	StrictWeakNTupleEquality(unsigned int arity) :
+	FirstNElementsEqual(unsigned int arity) :
 			_arity(arity) {
 	}
 	bool operator()(const ElementTuple&, const ElementTuple&) const;

@@ -6,7 +6,7 @@
 #include <set>
 #include "theory.hpp"
 #include "structure.hpp"
-#include "monitors/propagatemonitor.hpp"
+#include "inferences/modelexpansion/propagatemonitor.hpp"
 
 #include "groundtheories/AbstractGroundTheory.hpp"
 #include "groundtheories/SolverPolicy.hpp"
@@ -30,7 +30,7 @@ public:
 		modes.nbmodels = 0;
 		modes.verbosity = 0;
 		//modes.remap = false;
-		MinisatID::SATSolver* solver = new SATSolver(modes);
+		MinisatID::WrappedPCSolver* solver = new SATSolver(modes);
 		Options options("", ParseInfo());
 		options.setValue(IntType::NRMODELS, 0);
 		auto origoptions = GlobalData::instance()->getOptions();
@@ -39,18 +39,20 @@ public:
 		GrounderFactory grounderfactory(structure, symstructure);
 		auto grounder = grounderfactory.create(theory, solver);
 		grounder->toplevelRun();
-		auto grounding = grounder->grounding();
+		auto grounding = grounder->getGrounding();
 		MinisatID::ModelExpandOptions opts;
 		opts.nbmodelstofind = options.getValue(IntType::NRMODELS);
 		opts.printmodels = MinisatID::PRINT_NONE;
 		opts.savemodels = MinisatID::SAVE_ALL;
 		opts.search = MinisatID::PROPAGATE;
 		MinisatID::Solution* abstractsolutions = new MinisatID::Solution(opts);
+		monitor->setTranslator(grounder->getTranslator());
 		monitor->setSolver(solver);
 		solver->solve(abstractsolutions);
 
 		GroundTranslator* translator = grounding->translator();
 		AbstractStructure* result = structure->clone();
+		// Use the propagation monitor to assert everything that was propagated without search
 		for (auto literal = monitor->model().cbegin(); literal != monitor->model().cend(); ++literal) {
 			int atomnr = literal->getAtom().getValue();
 

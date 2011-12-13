@@ -26,10 +26,10 @@ FormulaGrounder::FormulaGrounder(AbstractGroundTheory* grounding, const Groundin
 }
 
 GroundTranslator* FormulaGrounder::translator() const {
-	return grounding()->translator();
+	return getGrounding()->translator();
 }
 
-void FormulaGrounder::setOrig(const Formula* f, const map<Variable*, const DomElemContainer*>& mvd, int verb) {
+void FormulaGrounder::setOrig(const Formula* f, const map<Variable*, const DomElemContainer*>& mvd) {
 	map<Variable*, Variable*> mvv;
 	for (auto it = f->freeVars().cbegin(); it != f->freeVars().cend(); ++it) {
 		Variable* v = new Variable((*it)->name(), (*it)->sort(), ParseInfo());
@@ -521,6 +521,7 @@ void ClauseGrounder::run(ConjOrDisj& formula) const {
 }
 
 FormStat ClauseGrounder::runSubGrounder(Grounder* subgrounder, bool conjFromRoot, ConjOrDisj& formula, bool negated) const {
+	Assert(formula.type==conn_);
 	ConjOrDisj subformula;
 	subgrounder->run(subformula);
 
@@ -553,10 +554,10 @@ FormStat ClauseGrounder::runSubGrounder(Grounder* subgrounder, bool conjFromRoot
 	if (conjFromRoot && conjunctive()) {
 		if (subformula.type == Conn::CONJ) {
 			for (auto i = subformula.literals.cbegin(); i < subformula.literals.cend(); ++i) {
-				grounding()->addUnitClause(*i);
+				getGrounding()->addUnitClause(*i);
 			}
 		} else {
-			grounding()->add(subformula.literals);
+			getGrounding()->add(subformula.literals);
 		}
 	} else {
 		if (subformula.type == formula.type) {
@@ -574,16 +575,12 @@ void BoolGrounder::run(ConjOrDisj& formula, bool negate) const {
 		printorig();
 	formula.type = conn_;
 	for (auto g = _subgrounders.cbegin(); g < _subgrounders.cend(); g++) {
-		if(GlobalData::instance()->terminateRequested()){
-			throw IdpException("Terminate requested");
-		}
+		CHECKTERMINATION
 		if (runSubGrounder(*g, context()._conjunctivePathFromRoot, formula, negate) == FormStat::DECIDED) {
 			return;
 		}
 	}
 }
-
-// TODO do toplevel checks in all grounders
 
 void QuantGrounder::run(ConjOrDisj& formula, bool negated) const {
 	if (verbosity() > 2)
@@ -592,16 +589,10 @@ void QuantGrounder::run(ConjOrDisj& formula, bool negated) const {
 	formula.type = conn_;
 
 	for (_generator->begin(); not _generator->isAtEnd(); _generator->operator ++()) {
+		CHECKTERMINATION
 		if (_checker->check()) {
 			formula.literals = litlist { context().gentype == GenType::CANMAKETRUE ? _false : _true };
 			return;
-		}
-
-		// Allows to jump out when grounding infinitely
-		// TODO should be a faster check?
-		// TODO add on other places
-		if (GlobalData::instance()->terminateRequested()) {
-			throw IdpException("Terminate requested");
 		}
 
 		if (runSubGrounder(_subgrounder, context()._conjunctivePathFromRoot, formula, negated) == FormStat::DECIDED) {
@@ -610,19 +601,40 @@ void QuantGrounder::run(ConjOrDisj& formula, bool negated) const {
 	}
 }
 
+Lit EquivGrounder::getLitEquivWith(const ConjOrDisj& form) const{
+	if(form.literals.size()>2){
+		return getReification(form);
+	}
+	if(form.literals.size()==0){
+		if(form.type==Conn::CONJ){
+			return _true;
+		}else{
+			return _false;
+		}
+	}else{
+		return form.literals[0];
+	}
+}
+
 void EquivGrounder::run(ConjOrDisj& formula, bool negated) const {
 	Assert(not negated);
-	if (verbosity() > 2)
+	if (verbosity() > 2){
 		printorig();
+
+		clog <<"Current formula: " <<(negated?"~":"");
+		_leftgrounder->printorig();
+		clog <<" <=> ";
+		_rightgrounder->printorig();
+	}
 
 	// Run subgrounders
 	ConjOrDisj leftformula, rightformula;
+	leftformula.type = conn_;
+	rightformula.type = conn_;
 	runSubGrounder(_leftgrounder, false, leftformula, false);
 	runSubGrounder(_rightgrounder, false, rightformula, false);
-	Assert(leftformula.literals.size()==1);
-	Assert(rightformula.literals.size()==1);
-	Lit left = leftformula.literals[0];
-	Lit right = rightformula.literals[0];
+	auto left = getLitEquivWith(leftformula);
+	auto right = getLitEquivWith(rightformula);
 
 	if (left == right) {
 		formula.literals = litlist { isPositive() ? _true : _false };
