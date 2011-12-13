@@ -20,8 +20,6 @@
 #include "theorytransformations/Flatten.hpp"
 #include "theorytransformations/DeriveSorts.hpp"
 #include "theorytransformations/AddCompletion.hpp"
-#include "theorytransformations/GraphFunctions.hpp"
-#include "theorytransformations/GraphAggregates.hpp"
 #include "theorytransformations/GraphFuncsAndAggs.hpp"
 #include "theorytransformations/RemoveEquivalences.hpp"
 #include "theorytransformations/PushQuantifications.hpp"
@@ -72,7 +70,7 @@ Formula* removeEquivalences(Formula* f) {
 }
 
 Formula* flatten(Formula* f) {
-	return transform<RemoveEquivalences, Formula*>(f);
+	return transform<Flatten, Formula*>(f);
 }
 
 void checkSorts(Vocabulary* v, Rule* f){
@@ -93,14 +91,6 @@ void deriveSorts(Vocabulary* v, Formula* f){
 }
 void deriveSorts(Vocabulary* v, Term* f){
 	transform<DeriveSorts>(f, v);
-}
-
-Formula* graphFunctions(Formula* f) {
-	return transform<GraphFunctions, Formula*>(f);
-}
-
-Formula* graphAggregates(Formula* f) {
-	return transform<GraphAggregates, Formula*>(f);
 }
 
 Formula* graphFuncsAndAggs(Formula* f) {
@@ -145,8 +135,8 @@ AbstractTheory* pushNegations(AbstractTheory* f) {
 	return transform<PushNegations, AbstractTheory*>(f);
 }
 
-AbstractTheory* graphFunctions(AbstractTheory* f) {
-	return transform<GraphFunctions, AbstractTheory*>(f);
+AbstractTheory* graphFuncsAndAggs(AbstractTheory* f) {
+	return transform<GraphFuncsAndAggs, AbstractTheory*>(f);
 }
 
 AbstractTheory* unnestTerms(AbstractTheory* f) {
@@ -171,10 +161,6 @@ AbstractTheory* splitComparisonChains(AbstractTheory* f) {
 
 AbstractTheory* pushQuantifiers(AbstractTheory* f) {
 	return transform<PushQuantifications, AbstractTheory*>(f);
-}
-
-AbstractTheory* graphAggregates(AbstractTheory* f) {
-	return transform<GraphAggregates, AbstractTheory*>(f);
 }
 
 AbstractTheory* addCompletion(AbstractTheory* f) {

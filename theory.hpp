@@ -90,14 +90,14 @@ public:
 	void	negate()	{ _sign = !_sign; if(_pi.original()) _pi.original()->negate();		}
 		//!< swap the sign of the formula
 
-	void	addSubterm(Term* t)								{ _subterms.push_back(t); setFreeVars();		}
+	void	addSubterm(Term* t)								{ _subterms.push_back(t); setFreeVars();	}
 	void	addSubformula(Formula* f)						{ _subformulas.push_back(f); setFreeVars();	}
-	void	addQuantVar(Variable* v)						{ _quantvars.insert(v); setFreeVars();			}
-	void	subterm(unsigned int n, Term* t)				{ _subterms[n] = t; setFreeVars();				}
-	void	subformula(unsigned int n, Formula* f)			{ _subformulas[n] = f; setFreeVars();			}
-	void	subterms(const std::vector<Term*>& vt)			{ _subterms = vt; setFreeVars();				}
+	void	addQuantVar(Variable* v)						{ _quantvars.insert(v); setFreeVars();		}
+	void	subterm(unsigned int n, Term* t)				{ _subterms[n] = t; setFreeVars();			}
+	void	subformula(unsigned int n, Formula* f)			{ _subformulas[n] = f; setFreeVars();		}
+	void	subterms(const std::vector<Term*>& vt)			{ _subterms = vt; setFreeVars();			}
 	void	subformulas(const std::vector<Formula*>& vf)	{ _subformulas = vf; setFreeVars();			}
-	void	quantVars(const std::set<Variable*>& sv)		{ _quantvars = sv; setFreeVars();				}
+	void	quantVars(const std::set<Variable*>& sv)		{ _quantvars = sv; setFreeVars();			}
 
 	// Inspectors
 			SIGN					sign()						const { return _sign;			}

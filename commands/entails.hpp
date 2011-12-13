@@ -186,10 +186,10 @@ public:
 
 		// Turn functions into predicates (for partial function support)
 		axioms = FormulaUtils::unnestTerms(axioms);
-		axioms = FormulaUtils::graphFunctions(axioms);
+		axioms = FormulaUtils::graphFuncsAndAggs(axioms);
 
 		conjectures = FormulaUtils::unnestTerms(conjectures);
-		conjectures = FormulaUtils::graphFunctions(conjectures);
+		conjectures = FormulaUtils::graphFuncsAndAggs(conjectures);
 
 		// Clean up possibly existing files
 		remove(".tptpfile.tptp");

@@ -17,7 +17,7 @@ Formula* Flatten::visit(BoolForm* bf) {
 	vector<Formula*> newsubf;
 	traverse(bf);
 	for (auto it = bf->subformulas().cbegin(); it != bf->subformulas().cend(); ++it) {
-		if (typeid(*(*it)) == typeid(BoolForm)) {
+		if (sametypeid<BoolForm>(*(*it))) {
 			BoolForm* sbf = dynamic_cast<BoolForm*>(*it);
 			if ((bf->conj() == sbf->conj()) && isPos(sbf->sign())) {
 				for (auto jt = sbf->subformulas().cbegin(); jt != sbf->subformulas().cend(); ++jt) {
@@ -37,7 +37,7 @@ Formula* Flatten::visit(BoolForm* bf) {
 
 Formula* Flatten::visit(QuantForm* qf) {
 	traverse(qf);
-	if (typeid(*(qf->subformula())) == typeid(QuantForm)) {
+	if (sametypeid<QuantForm>(*(qf->subformula()))) {
 		QuantForm* sqf = dynamic_cast<QuantForm*>(qf->subformula());
 		if ((qf->quant() == sqf->quant()) && isPos(sqf->sign())) {
 			qf->subformula(sqf->subformula());
