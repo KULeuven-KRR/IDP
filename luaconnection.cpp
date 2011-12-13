@@ -1,7 +1,3 @@
-/**************************
- Connection with Lua
- **************************/
-
 #include "luaconnection.hpp"
 #include <set>
 #include <iostream>
@@ -19,7 +15,7 @@
 #include "GlobalData.hpp"
 #include "commands/allcommands.hpp"
 #include "monitors/luainteractiveprintmonitor.hpp"
-#include "monitors/luatracemonitor.hpp"
+#include "inferences/modelexpansion/LuaTraceMonitor.hpp"
 #include "IdpException.hpp"
 using namespace std;
 using namespace LuaConnection;
@@ -64,7 +60,7 @@ const char* toCString(ArgType type) {
 				"predicate_table_iterator")(AT_DOMAINITERATOR, "domain_iterator")(AT_DOMAINATOM, "domain_atom")(AT_QUERY, "query")(AT_TERM, "term")(
 				AT_FORMULA, "formula")(AT_THEORY, "theory")(AT_OPTIONS, "options")(AT_NAMESPACE, "namespace")(AT_NIL, "nil")(AT_INT, "number")(
 				AT_DOUBLE, "number")(AT_BOOLEAN, "boolean")(AT_STRING, "string")(AT_TABLE, "table")(AT_PROCEDURE, "function")(AT_OVERLOADED,
-				"overloaded")(AT_MULT, "mult")(AT_REGISTRY, "registry");
+				"overloaded")(AT_MULT, "mult")(AT_REGISTRY, "registry")(AT_TRACEMONITOR, "tracemonitor");
 		init = true;
 	}
 	return argType2Name.at(type);
@@ -110,11 +106,16 @@ int InternalProcedure::operator()(lua_State* L) const {
 	if (inference_->needPrintMonitor()) {
 		inference_->addPrintMonitor(new LuaInteractivePrintMonitor(L));
 	}
-	if (inference_->needTraceMonitor()) {
-		inference_->addTraceMonitor(new LuaTraceMonitor(L));
+	LuaTraceMonitor* tracer = NULL;
+	if (getOption(BoolType::TRACE)) {
+		tracer = new LuaTraceMonitor(L);
+		args.push_back(InternalArgument(tracer));
 	}
 	InternalArgument result = inference_->execute(args);
 	inference_->clean();
+	if(tracer!=NULL){
+		delete(tracer);
+	}
 	return LuaConnection::convertToLua(L, result);
 }
 
@@ -295,10 +296,12 @@ int convertToLua(lua_State* L, InternalArgument arg) {
 		return 1;
 	}
 	case AT_STRING: {
+		Assert(arg._value._string!=NULL);
 		lua_pushstring(L, arg._value._string->c_str());
 		return 1;
 	}
 	case AT_TABLE: {
+		Assert(arg._value._table!=NULL);
 		lua_newtable(L);
 		for (unsigned int n = 0; n < arg._value._table->size(); ++n) {
 			lua_pushinteger(L, n + 1);
@@ -308,6 +311,7 @@ int convertToLua(lua_State* L, InternalArgument arg) {
 		return 1;
 	}
 	case AT_PROCEDURE: {
+		Assert(arg._value._string!=NULL);
 		lua_getfield(L, LUA_REGISTRYINDEX, arg._value._string->c_str());
 		return 1;
 	}
@@ -315,6 +319,7 @@ int convertToLua(lua_State* L, InternalArgument arg) {
 		return addUserData(L, arg._value._overloaded, arg._type);
 	}
 	case AT_MULT: {
+		Assert(arg._value._table!=NULL);
 		int nrres = 0;
 		for (unsigned int n = 0; n < arg._value._table->size(); ++n) {
 			nrres += convertToLua(L, (*(arg._value._table))[n]);
@@ -322,6 +327,7 @@ int convertToLua(lua_State* L, InternalArgument arg) {
 		return nrres;
 	}
 	case AT_REGISTRY:
+		Assert(arg._value._string!=NULL);
 		lua_getfield(L, LUA_REGISTRYINDEX, arg._value._string->c_str());
 		return 1;
 	}

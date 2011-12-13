@@ -437,7 +437,7 @@ rule		: '!' variables ':' head "<-" formula	{ $$ = getInserter().rule(*$2,$4,$6,
 			;
 
 head		: predicate			{ $$ = $1;										}
-			| term '=' term		{ $$ = getInserter().equalityhead($1,$3,@1);	}
+			| function '=' term		{ $$ = getInserter().equalityhead($1,$3,@1);	}
 			;
 			
 

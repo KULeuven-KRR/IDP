@@ -31,6 +31,10 @@ namespace Root{
 	}
 }
 
+procedure main(){
+	return 1
+}
+
 procedure main2(){
 	Root::B::main()
 }

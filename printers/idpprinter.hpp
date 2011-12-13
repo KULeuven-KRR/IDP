@@ -6,6 +6,7 @@
 #include "vocabulary.hpp"
 #include "ecnf.hpp"
 #include "namespace.hpp"
+#include <iostream>
 
 #include "groundtheories/GroundTheory.hpp"
 #include "groundtheories/GroundPolicy.hpp"
@@ -488,7 +489,7 @@ public:
 		output() << "}\n";
 	}
 
-	void visit(GroundDefinition* d) {
+	void visit(const GroundDefinition* d) {
 		Assert(isTheoryOpen());
 		for (auto it = d->begin(); it != d->end(); ++it) {
 			(*it).second->accept(this);

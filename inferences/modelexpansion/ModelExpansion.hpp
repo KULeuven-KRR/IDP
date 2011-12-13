@@ -1,9 +1,3 @@
-/************************************
-	ModelExpansion.hpp
-	this file belongs to GidL 2.0
-	(c) K.U.Leuven
-************************************/
-
 #ifndef MODELEXPANSION_HPP_
 #define MODELEXPANSION_HPP_
 
@@ -29,23 +23,25 @@ namespace MinisatID{
 class ModelExpansion {
 public:
 	static std::vector<AbstractStructure*> doModelExpansion(AbstractTheory* theory, AbstractStructure* structure, TraceMonitor* tracemonitor){
-		ModelExpansion m;
-		return m.expand(theory, structure, tracemonitor);
+		ModelExpansion m(theory, structure, tracemonitor);
+		return m.expand();
 	}
 
 private:
-	std::vector<AbstractStructure*> expand(AbstractTheory* theory, AbstractStructure* structure, TraceMonitor* tracemonitor) const;
+	AbstractTheory* theory;
+	AbstractStructure* structure;
+	TraceMonitor* tracemonitor;
+	ModelExpansion(AbstractTheory* theory, AbstractStructure* structure, TraceMonitor* tracemonitor):
+			theory(theory), structure(structure), tracemonitor(tracemonitor){
 
-	bool calculateDefinition(Definition* definition, AbstractStructure* structure) const;
-
-	bool calculateKnownDefinitions(Theory* theory, AbstractStructure* structure) const;
-
+	}
+	std::vector<AbstractStructure*> expand() const;
+	bool calculateDefinition(Definition* definition) const;
+	bool calculateKnownDefinitions(Theory* theory) const;
 	MinisatID::WrappedPCSolver* createsolver() const;
-
 	MinisatID::Solution* initsolution() const;
 
 	void addLiterals(MinisatID::Model* model, GroundTranslator* translator, AbstractStructure* init) const;
-
 	void addTerms(MinisatID::Model* model, GroundTermTranslator* termtranslator, AbstractStructure* init) const;
 };
 

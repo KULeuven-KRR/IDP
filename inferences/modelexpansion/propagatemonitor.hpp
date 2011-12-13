@@ -1,7 +1,8 @@
 #ifndef PROPAGATEMONITOR_HPP_
 #define PROPAGATEMONITOR_HPP_
 
-#include "monitors/tracemonitor.hpp"
+#include <iostream>
+#include "tracemonitor.hpp"
 #include "external/SearchMonitor.hpp"
 #include "external/ExternalInterface.hpp"
 
@@ -19,23 +20,20 @@ public:
 		delete (_solvermonitor);
 	}
 
-	void backtrack(int) {
-		thrownotyetimplemented("Backtrack in a propagatemonitor.");
+	void backtrack(int level) {
+		// TODO implement (currenlty only used to do unit propagation!)
 	}
-	void propagate(MinisatID::Literal lit, int) {
+	void propagate(MinisatID::Literal lit, int level) {
 		_partialmodel.push_back(lit);
-	}
-	std::string* index() const {
-		thrownotyetimplemented("Getting the current index.");
-	}
-	void setTranslator(GroundTranslator*) {
-		thrownotyetimplemented("Changing the translator.");
 	}
 	virtual void setSolver(MinisatID::WrappedPCSolver* solver) {
 		solver->addMonitor(_solvermonitor);
 	}
 	const std::vector<MinisatID::Literal>& model() {
 		return _partialmodel;
+	}
+	void setTranslator(GroundTranslator* translator) {
+		// TODO Currently noop, as we return the original literals
 	}
 };
 

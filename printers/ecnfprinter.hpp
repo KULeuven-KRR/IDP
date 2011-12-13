@@ -65,6 +65,11 @@ public:
 		}
 	}
 
+	virtual void checkOrOpen(int defid) {
+		Printer::checkOrOpen(defid);
+		_currentdefnr = defid;
+	}
+
 	virtual void setStructure(AbstractStructure* t){ _structure = t; }
 	virtual void setTermTranslator(GroundTermTranslator* t){ _termtranslator = t; }
 
@@ -154,6 +159,7 @@ public:
 
 	void visit(const PCGroundRule* b) {
 		Assert(isTheoryOpen());
+		Assert(isDefOpen(_currentdefnr));
 		output() << (b->type() == RT_CONJ ? "C " : "D ");
 		output() << "<- " << _currentdefnr << ' ' << b->head() << ' ';
 		for(unsigned int n = 0; n < b->size(); ++n){
@@ -164,11 +170,13 @@ public:
 
 	void visit(const AggGroundRule* a) {
 		Assert(isTheoryOpen());
+		Assert(isDefOpen(_currentdefnr));
 		printAggregate(a->aggtype(),TsType::RULE,_currentdefnr,a->lower(),a->head(),a->setnr(),a->bound());
 	}
 
 	void visit(const GroundAggregate* b) {
 		Assert(isTheoryOpen());
+		Assert(b->type()!=TsType::RULE);
 		//TODO -1 should be the minisatid constant for an undefined aggregate (or create some shared ecnf format)
 		printAggregate(b->type(),b->arrow(),-1,b->lower(),b->head(),b->setnr(),b->bound());
 	}

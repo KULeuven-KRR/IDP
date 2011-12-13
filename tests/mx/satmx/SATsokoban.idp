@@ -6,7 +6,7 @@ vocabulary V{
 	type  Step isa int
 	type  Row isa int
 	type  Col isa int
-	type  PushLength
+	type  PushLength isa int
 	type Dir 
 	Down:Dir
 	Up:Dir

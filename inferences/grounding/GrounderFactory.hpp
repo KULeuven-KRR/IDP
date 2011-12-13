@@ -42,11 +42,6 @@ private:
 	GenerateBDDAccordingToBounds* _symstructure; //!< Used approximation
 	AbstractGroundTheory* _grounding; //!< The ground theory that will be produced
 
-	// Options
-	Options* _options;
-	int _verbosity;
-	bool _cpsupport;
-
 	// Context
 	GroundingContext _context;
 	std::stack<GroundingContext> _contextstack;

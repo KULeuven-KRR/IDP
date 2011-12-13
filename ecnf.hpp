@@ -290,6 +290,10 @@ public:
 		return _id;
 	}
 
+	unsigned int getNumberOfRules() const {
+		return _rules.size();
+	}
+
 	typedef std::map<int, GroundRule*>::iterator ruleiterator;
 	ruleiterator begin() {
 		return _rules.begin();

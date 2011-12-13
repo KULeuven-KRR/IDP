@@ -45,7 +45,7 @@ public:
 
 	// TODO resolve this note?
 	// NOTE: required for correctness because it creates the associated varmap!
-	void setOrig(const Formula* f, const std::map<Variable*, const DomElemContainer*>& mvd, int);
+	void setOrig(const Formula* f, const std::map<Variable*, const DomElemContainer*>& mvd);
 
 	void printorig() const;
 
@@ -128,7 +128,7 @@ enum class FormStat { UNKNOWN, DECIDED};
 
 class ClauseGrounder: public FormulaGrounder {
 protected:
-	SIGN sign_; // FIXME when can such a sign not be removed?
+	SIGN sign_;
 	Conn conn_;
 
 	TsType getTseitinType() const;
@@ -211,6 +211,7 @@ private:
 
 protected:
 	virtual void run(ConjOrDisj& literals, bool negatedformula) const;
+	Lit getLitEquivWith(const ConjOrDisj& form) const;
 
 public:
 	EquivGrounder(AbstractGroundTheory* grounding, FormulaGrounder* lg, FormulaGrounder* rg, SIGN sign, const GroundingContext& ct) :

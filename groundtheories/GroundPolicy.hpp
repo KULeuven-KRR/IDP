@@ -50,7 +50,6 @@ public:
 	void polAdd(int head, AggTsBody* body);
 	void polAdd(int tseitin, CPTsBody* body);
 	void polAdd(const TsSet& tsset, int setnr, bool);
-	void polAdd(GroundDefinition* d);
 	void polAdd(int defnr, PCGroundRule* rule);
 	void polAdd(int defnr, AggGroundRule* rule);
 

@@ -18,6 +18,8 @@
 #include "options.hpp"
 #include "namespace.hpp"
 
+class LuaTraceMonitor;
+
 /**
  * Types of arguments given to, or results produced by internal procedures
  */
@@ -66,8 +68,10 @@ enum ArgType {
 
 	// Additional return values
 	AT_MULT, //!< multiple arguments	(only used as return value)
-	AT_REGISTRY
-//!< a value stored in the registry of the lua state
+	AT_REGISTRY, //!< a value stored in the registry of the lua state
+
+	// Also passable via lua
+	AT_TRACEMONITOR
 };
 
 template<class T>
@@ -277,6 +281,8 @@ struct InternalArgument {
 
 		OverloadedSymbol* _symbol;
 		OverloadedObject* _overloaded;
+
+		LuaTraceMonitor* _tracemonitor;
 	} _value;
 
 	// Constructors
@@ -397,6 +403,10 @@ struct InternalArgument {
 			_value._compound = el->value()._compound;
 			break;
 		}
+	}
+	InternalArgument(LuaTraceMonitor* v) :
+			_type(AT_TRACEMONITOR) {
+		_value._tracemonitor = v;
 	}
 
 	// Inspectors

@@ -49,10 +49,6 @@ void GroundPolicy::polAdd(const TsSet& tsset, int setnr, bool) {
 	_sets.push_back(new GroundSet(setnr, tsset.literals(), tsset.weights()));
 }
 
-void GroundPolicy::polAdd(GroundDefinition* d) {
-	_definitions.insert(std::pair<int, GroundDefinition*>(d->id(), d));
-}
-
 void GroundPolicy::polAdd(int defnr, PCGroundRule* rule) {
 	if (_definitions.find(defnr) == _definitions.end()) {
 		_definitions.insert(std::pair<int, GroundDefinition*>(defnr, new GroundDefinition(defnr, _translator)));
