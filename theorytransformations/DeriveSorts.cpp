@@ -1,5 +1,7 @@
-#include "common.hpp"
 #include "theorytransformations/DeriveSorts.hpp"
+
+#include "common.hpp"
+#include "GlobalData.hpp"
 
 #include "vocabulary.hpp"
 #include "theory.hpp"
@@ -268,7 +270,7 @@ void DeriveSorts::check() {
 	for (auto i = _untypedvariables.cbegin(); i != _untypedvariables.cend(); ++i) {
 		if ((*i)->sort() == NULL) {
 			Error::novarsort((*i)->name(), (*i)->pi());
-		} else {
+		} else if (getOption(BoolType::SHOWWARNINGS)) {
 			Warning::derivevarsort((*i)->name(), (*i)->sort()->name(), (*i)->pi());
 		}
 	}

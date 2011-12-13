@@ -37,6 +37,8 @@ TEST(FlattenTest,BoolForm) {
 
 	EXPECT_TRUE(sametypeid<BoolForm>(*result));
 	EXPECT_EQ(result->subformulas().size(),3);
+
+	delete result; //TODO Does this delete all of the other elements as well?
 }
 
 TEST(FlattenTest,QuantForm) {
@@ -59,6 +61,8 @@ TEST(FlattenTest,QuantForm) {
 
 	EXPECT_TRUE(sametypeid<QuantForm>(*result));
 	EXPECT_EQ(result->quantVars().size(),2);
+
+	delete result;
 }
 
 TEST(FlattenTest,Theory) {
@@ -104,6 +108,8 @@ TEST(FlattenTest,Theory) {
 	auto ressubformula = resformula->subformulas()[0];
 	EXPECT_TRUE(sametypeid<BoolForm>(*ressubformula));
 	EXPECT_EQ(ressubformula->subformulas().size(),3);
+
+	delete result;
 }
 
 // GraphFuncsAndAggs - formula,theory
@@ -127,6 +133,8 @@ TEST(GraphFuncsAndAggsTest,OneFuncTerm) {
 	auto respredform = dynamic_cast<PredForm*>(result);
 	EXPECT_TRUE(sametypeid<Function>(*(respredform->symbol())));
 	EXPECT_EQ(respredform->symbol()->name(),f->name());
+
+	delete result;
 }
 
 TEST(GraphFuncsAndAggsTest,OneAggTerm) {
@@ -156,6 +164,8 @@ TEST(GraphFuncsAndAggsTest,OneAggTerm) {
 	EXPECT_EQ(resaggform->left(),nullterm);
 	EXPECT_EQ(resaggform->comp(),CompType::EQ);
 	EXPECT_EQ(resaggform->right(),sumterm);
+
+	delete result;
 }
 
 TEST(GraphFuncsAndAggsTest,TwoFuncTerms) {
@@ -193,6 +203,8 @@ TEST(GraphFuncsAndAggsTest,TwoFuncTerms) {
 	//	auto respredform = dynamic_cast<PredForm*>(result);
 	//	EXPECT_TRUE(sametypeid<Function>(*(respredform->symbol())));
 	//}
+
+	delete result;
 }
 
 //TEST(GraphFuncsAndAggsTest,TwoAggTerm) {

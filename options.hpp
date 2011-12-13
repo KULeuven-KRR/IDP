@@ -12,11 +12,13 @@ enum Format { THREEVALUED, ALL, TWOVALUED };
 enum StringType {
 	LANGUAGE, MODELFORMAT
 };
+
 enum IntType {
 	SATVERBOSITY, GROUNDVERBOSITY, PROPAGATEVERBOSITY, NRMODELS, NRPROPSTEPS, LONGESTBRANCH, SYMMETRY, PROVERTIMEOUT, TIMEOUT
 };
 
 enum BoolType{
+	SHOWWARNINGS, // TODO Temporary solution to be able to disable warnings in tests
 	PRINTTYPES, 
 	CPSUPPORT, 
 	TRACE, 
@@ -29,6 +31,7 @@ enum BoolType{
 	GROUNDWITHBOUNDS,
 	MODELCOUNTEQUIVALENCE // TODO the equivalence might in fact become an enum itself?
 };
+
 enum DoubleType{
 
 };

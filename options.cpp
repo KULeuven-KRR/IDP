@@ -35,6 +35,7 @@ std::string str(Format choice){
 
 Options::Options(const string& name, const ParseInfo& pi) : _name(name), _pi(pi) {
 	std::set<bool> boolvalues{true, false};
+	BoolPol::createOption(BoolType::SHOWWARNINGS, "showwarnings", boolvalues, true, _option2name); // TODO Temporary solution to be able to disable warnings in tests
 	BoolPol::createOption(BoolType::PRINTTYPES, "printtypes", boolvalues, true, _option2name);
 	BoolPol::createOption(BoolType::CPSUPPORT, "cpsupport", boolvalues, false, _option2name);
 	BoolPol::createOption(BoolType::TRACE, "trace", boolvalues, false, _option2name);
@@ -89,6 +90,7 @@ void OptionPolicy<EnumType, ValueType>::createOption(EnumType type, const std::s
 	}
 	options[type] =  newoption;
 }
+
 template<class EnumType, class ValueType>
 void OptionPolicy<EnumType, ValueType>::createOption(EnumType type, const std::string& name, const std::set<ValueType>& values, const ValueType& defaultValue, std::vector<std::string>& option2name){
 	_name2type[name] = type;
@@ -135,6 +137,7 @@ std::string EnumeratedOption<BoolType, bool>::printOption() const {
 	ss <<"]";
 	return ss.str();
 }
+
 template<class EnumType, class ConcreteType>
 std::string EnumeratedOption<EnumType, ConcreteType>::printOption() const {
 	std::stringstream ss;

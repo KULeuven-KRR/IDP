@@ -36,10 +36,13 @@ void usage() {
 	cout << "Usage:\n" << "   gidl [options] [filename [filename [...]]]\n\n";
 	cout << "Options:\n";
 	cout << "    -i, --interactive    run in interactive mode\n";
-	cout << "    -e \"<proc>\"          run procedure <proc> after parsing\n"
-			<< "    -c <name1>=<name2>   substitute <name2> for <name1> in the input\n"
-			<< "    --seed=N             use N as seed for the random generator\n" << "    -I                   read from stdin\n"
-			<< "    -v, --version        show version number and stop\n" << "    -h, --help           show this help message\n\n";
+	cout << "    -e \"<proc>\"          run procedure <proc> after parsing\n";
+	cout << "    -c <name1>=<name2>   substitute <name2> for <name1> in the input\n";
+	cout << "    --nowarnings         disable warnings\n";
+	cout << "    --seed=N             use N as seed for the random generator\n"; 
+	cout << "    -I                   read from stdin\n";
+	cout << "    -v, --version        show version number and stop\n";
+	cout << "    -h, --help           show this help message\n\n";
 	exit(0);
 }
 
@@ -79,7 +82,9 @@ vector<string> read_options(int argc, char* argv[], CLOptions& cloptions) {
 			argv++;
 		}
 #ifdef USEINTERACTIVE
-		else if(str == "-i" || str == "--interactive") {cloptions._interactive = true;}
+		else if(str == "-i" || str == "--interactive") {
+			cloptions._interactive = true;
+		}
 #endif
 		else if (str == "-c") {
 			str = argv[0];
@@ -92,6 +97,8 @@ vector<string> read_options(int argc, char* argv[], CLOptions& cloptions) {
 				Error::constsetexp();
 			argc--;
 			argv++;
+		} else if (str == "--nowarnings") {
+			setOption(BoolType::SHOWWARNINGS,false);
 		} else if (str.substr(0, 7) == "--seed=") {
 			global_seed = toInt(str.substr(7, str.size()));
 		} else if (str == "-I") {
@@ -310,12 +317,15 @@ public:
 		GlobalData::close();
 	}
 };
+
 /**
  * Runs the main method given a number of inputfiles and checks whether the main method returns the int 1.
  * In that case, test return SUCCESS, in all other cases it returns FAIL.
  */
 Status test(const std::vector<std::string>& inputfileurls) {
 	DataManager m;
+	
+	setOption(BoolType::SHOWWARNINGS,false); //XXX Temporary solution to disable warnigns...
 
 	try {
 		parse(inputfileurls);

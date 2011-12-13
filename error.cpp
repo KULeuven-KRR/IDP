@@ -745,7 +745,6 @@ void ambigpartialterm(const string& term, const ParseInfo& thisplace) {
 }
 
 /** Ambiguous statements **/
-
 void varcouldbeconst(const string& name, const ParseInfo& thisplace) {
 	warning(thisplace);
 	clog << "'" << name << "' could be a variable or a constant. GidL assumes it is a variable.\n";

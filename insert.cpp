@@ -555,7 +555,9 @@ set<Variable*> Insert::freevars(const ParseInfo& pi) {
 		vv.insert(i->_var);
 		vs = vs + ' ' + i->_name;
 	}
-	if (!vv.empty()) Warning::freevars(vs, pi);
+	if (not vv.empty() && getOption(BoolType::SHOWWARNINGS)) {
+		Warning::freevars(vs, pi);
+	}
 	_curr_vars.clear();
 	return vv;
 }
