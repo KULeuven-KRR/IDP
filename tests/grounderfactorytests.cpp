@@ -22,7 +22,7 @@
 #include "theory.hpp"
 #include "term.hpp"
 #include "IdpException.hpp"
-#include "tests/testingtools.hpp"
+#include "testingtools.hpp"
 #include "inferences/propagation/GenerateBDDAccordingToBounds.hpp"
 #include "fobdds/FoBddManager.hpp"
 
