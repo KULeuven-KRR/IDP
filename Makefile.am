@@ -71,6 +71,8 @@ grounder_SOURCES = \
 		inferences/grounding/GrounderFactory.hpp inferences/grounding/GrounderFactory.cpp\
 		inferences/grounding/grounders/Grounder.hpp inferences/grounding/grounders/Grounder.cpp\
 		inferences/ModelExpansion.hpp inferences/ModelExpansion.cpp\
+		inferences/CalculateDefinitions.hpp inferences/CalculateDefinitions.cpp\
+		inferences/InferenceSolverConnection.hpp inferences/InferenceSolverConnection.cpp\
 		inferences/propagation/SymbolicPropagation.hpp\
 		inferences/propagation/OptimalPropagation.hpp\
 		inferences/propagation/GroundingPropagation.hpp\
@@ -236,7 +238,7 @@ if BUILDTESTS
 bin_PROGRAMS += alltests
 endif 
 
-alltests_SOURCES = tests/testsuite.cpp tests/mxtests.cpp tests/generatortests.cpp tests/bddtests.cpp tests/grounderfactorytests.cpp tests/propagationtests.cpp $(grounder_SOURCES)
+alltests_SOURCES = tests/testsuite.cpp tests/mxtests.cpp tests/definitiontests.cpp tests/generatortests.cpp tests/bddtests.cpp tests/grounderfactorytests.cpp tests/propagationtests.cpp $(grounder_SOURCES)
 alltests_LDADD = -lgtest -lpthread $(gidl_LDADD)
 
 AM_CXXFLAGS += -DTESTDIR=\"$(abs_srcdir)/tests/\"

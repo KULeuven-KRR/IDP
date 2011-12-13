@@ -99,6 +99,14 @@ procedure modelexpand(T,S,Opts) {
 }
 
 /**
+ * Calculate all definitions known definitions of a theory T given a structure S
+ * Modifies the structure S
+ */
+procedure calculatedefinitions(T,S){
+	idp_intern.calculatedefinitions(T,S)
+}
+
+/**
  * Create the reduced grounding of theory T and structure S
  */
 procedure ground(T,S,Opts) {

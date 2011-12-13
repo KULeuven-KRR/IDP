@@ -1,0 +1,21 @@
+vocabulary V{
+	type x isa int
+	p(x)
+	q
+}
+
+theory T:V{
+	{ !x: p(x) <- q.}
+}
+
+structure S:V{
+	x = {0..1}
+}
+
+procedure assertions(){
+	return (
+		assert2(S[V::p].ct,{},"p<ct>") 
+		and assert2(S[V::p].cf,{},"p<cf>") 		
+	)
+}
+
