@@ -3,6 +3,7 @@
 
 #include "common.hpp"
 #include "vocabulary.hpp"
+#include "term.hpp"
 #include "theory.hpp"
 #include "structure.hpp"
 
@@ -27,12 +28,46 @@
 
 Sort* sort(const std::string& name, int min, int max) {
 	auto sorttable = new SortTable(new IntRangeInternalSortTable(min, max));
-	return new Sort(name, sorttable);
+	auto sort = new Sort(name, sorttable);
+	sort->addParent(VocabularyUtils::intsort());
+	return sort;
+}
+
+const DomainElement* domainelement(int v) {
+	return DomainElementFactory::createGlobal()->create(v);
+}
+
+DomainTerm* domainterm(Sort* s, int v) {
+	auto domainelement = DomainElementFactory::createGlobal()->create(v);
+	return new DomainTerm(s,domainelement,TermParseInfo());
+}
+
+Variable* var(Sort* s) {
+	return new Variable(s);
 }
 
 VarTerm* varterm(Sort* s) {
 	auto variable = new Variable(s);
 	return new VarTerm(variable, TermParseInfo());
+}
+
+Term& functerm(Function* f, const std::vector<Variable*>& vars) {
+	std::vector<Term*> terms;
+	for (auto i = vars.cbegin(); i < vars.cend(); ++i) {
+		terms.push_back(new VarTerm(*i, TermParseInfo()));
+	}
+	return *new FuncTerm(f, terms, TermParseInfo());
+}
+
+Term& functerm(Function* f, const std::vector<Term*>& terms) {
+	return *new FuncTerm(f, terms, TermParseInfo());
+}
+
+Formula& operator==(Term& left, Term& right) {
+	auto sort = SortUtils::resolve(left.sort(),right.sort());
+	Assert(sort != NULL);
+	auto eq = VocabularyUtils::equal(sort);
+	return *new PredForm(SIGN::POS, eq, { &left, &right }, FormulaParseInfo());
 }
 
 Formula& operator&(Formula& left, Formula& right) {
@@ -70,10 +105,7 @@ class PredWrapper {
 private:
 	Predicate* _p;
 public:
-	PredWrapper(Predicate* p) :
-			_p(p) {
-
-	}
+	PredWrapper(Predicate* p) : _p(p) { }
 	Formula& operator()(const std::vector<Variable*>& vars) {
 		return atom(_p, vars);
 	}
@@ -83,7 +115,27 @@ public:
 };
 
 PredWrapper pred(const std::string& name, const std::vector<Sort*>& sorts) {
-	return PredWrapper(new Predicate(name, sorts, false));
+	return PredWrapper(new Predicate(name, sorts));
+}
+
+class FuncWrapper {
+private:
+	Function* _f;
+public:
+	FuncWrapper(Function* f) : _f(f) { }
+	Term& operator()(const std::vector<Variable*>& vars) {
+		return functerm(_f, vars);
+	}
+	Term& operator()(const std::vector<Term*>& terms) {
+		return functerm(_f, terms);
+	}
+	Function* f() const {
+		return _f;
+	}
+};
+
+FuncWrapper func(const std::string& name, const std::vector<Sort*>& insorts, Sort* outsort) {
+	return FuncWrapper(new Function(name, insorts, outsort)); 
 }
 
 #endif /* CPPINTERFACE_HPP_ */
