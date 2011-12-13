@@ -10,6 +10,11 @@ using namespace std;
 
 namespace Tests {
 
+TEST(ParsingTest, FunctionDefinition){
+	string testfile1(string(TESTDIR) + "parser/functiondefinition.idp");
+	ASSERT_EQ(Status::FAIL, test( { testfile1 }));
+}
+
 TEST(ParsingTest, Fail){
 	string testfile1(string(TESTDIR) + "parser/parseerror.idp");
 	ASSERT_EQ(Status::FAIL, test( { testfile1 }));
