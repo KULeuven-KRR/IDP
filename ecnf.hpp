@@ -376,6 +376,12 @@ public:
 	void setWeight(unsigned int n, double w) {
 		_litweights[n] = w;
 	}
+	void removeLit(unsigned int n){
+		_setlits[n] = _setlits.back();
+		_litweights[n] = _litweights.back();
+		_setlits.pop_back();
+		_litweights.pop_back();
+	}
 	// Inspectors
 	std::vector<int> literals() const {
 		return _setlits;
