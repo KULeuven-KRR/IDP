@@ -24,8 +24,10 @@ public:
 		// TODO implement (currenlty only used to do unit propagation!)
 	}
 	void propagate(MinisatID::Literal lit, int level) {
+		std::cerr << "PROPAGATING";
 		_partialmodel.push_back(lit);
 	}
+
 	virtual void setSolver(MinisatID::WrappedPCSolver* solver) {
 		solver->addMonitor(_solvermonitor);
 	}

@@ -5,8 +5,9 @@ procedure main(){
 	stdoptions.timeout = 5
 	stdoptions.nbmodelequivalent = true
 	stdoptions.groundwithbounds = false
-	calculatedefinitions(T,S)
+	S=calculatedefinitions(T,S)
 	return(assertions())
+	
 }
 
 procedure assert(table,valuefirst,name,expected){
@@ -69,4 +70,22 @@ procedure assert2(table, values, name){
 	end
 	return result
 	
+}
+
+procedure consistent(expected){
+	if expected == 1 then
+		if isconsistent(S) == 1 then
+			return 1
+		else
+			io.stderr:write("FAIL!  expected a consistent structure, but was inconsistent\n")
+			return 0
+		end
+	else
+		if isconsistent(S) == 0 then
+			return 1
+		else
+			io.stderr:write("FAIL!  expected an inconsistent structure, but was consistent\n")
+			return 0
+		end
+	end
 }

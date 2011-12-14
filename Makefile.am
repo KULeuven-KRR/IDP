@@ -103,6 +103,7 @@ grounder_SOURCES = \
 		commands/tableiterator.hpp\
 		commands/propagate.hpp\
 		commands/query.hpp\
+		commands/structureproperties.hpp\
 		commands/createtuple.hpp\
 		commands/ground.hpp\
 		commands/completion.hpp\

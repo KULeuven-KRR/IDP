@@ -26,35 +26,49 @@ public:
 		// TODO: make a clean version of this implementation
 		// TODO: doens't work with cp support (because a.o.(?) backtranslation is not implemented)
 		auto monitor = new PropagateMonitor();
+
+		//Set MinisatID solver options
 		MinisatID::SolverOption modes;
 		modes.nbmodels = 0;
-		modes.verbosity = 0;
+		modes.verbosity = getOption(IntType::SATVERBOSITY);
 		//modes.remap = false;
 		MinisatID::WrappedPCSolver* solver = new SATSolver(modes);
-		Options options("", ParseInfo());
-		options.setValue(IntType::NRMODELS, 0);
-		auto origoptions = GlobalData::instance()->getOptions();
-		GlobalData::instance()->setOptions(&options);
+
+		//I think the following is not needed.  (NRmodels is passed to MINISATID)
+//		auto origoptions = GlobalData::instance()->getOptions();
+//		Options options("temp",ParseInfo());
+//		options.copyValues(origoptions);
+//		options.setValue(IntType::NRMODELS, 0);
+//		GlobalData::instance()->setOptions(&options);
+
+		//Create and execute grounder
 		auto symstructure = generateNaiveApproxBounds(theory, structure);
 		GrounderFactory grounderfactory(structure, symstructure);
 		auto grounder = grounderfactory.create(theory, solver);
+		monitor->setTranslator(grounder->getTranslator());
+		monitor->setSolver(solver);
 		grounder->toplevelRun();
 		auto grounding = grounder->getGrounding();
+
+		//Set MinisatID mx options
 		MinisatID::ModelExpandOptions opts;
-		opts.nbmodelstofind = options.getValue(IntType::NRMODELS);
+		opts.nbmodelstofind = 0;
 		opts.printmodels = MinisatID::PRINT_NONE;
 		opts.savemodels = MinisatID::SAVE_ALL;
 		opts.search = MinisatID::PROPAGATE;
 		MinisatID::Solution* abstractsolutions = new MinisatID::Solution(opts);
-		monitor->setTranslator(grounder->getTranslator());
-		monitor->setSolver(solver);
+
+		//Execute MinisatID
 		solver->solve(abstractsolutions);
 
 		GroundTranslator* translator = grounding->translator();
 		AbstractStructure* result = structure->clone();
 		// Use the propagation monitor to assert everything that was propagated without search
+		std::cerr << "here";
 		for (auto literal = monitor->model().cbegin(); literal != monitor->model().cend(); ++literal) {
 			int atomnr = literal->getAtom().getValue();
+			std::cerr << translator->printLit(atomnr);
+			std::cerr << " has " << translator->isInputAtom(atomnr) << "\n";
 
 			if (translator->isInputAtom(atomnr)) {
 				PFSymbol* symbol = translator->getSymbol(atomnr);
@@ -77,7 +91,7 @@ public:
 			}
 		}
 		result->clean();
-		GlobalData::instance()->setOptions(origoptions);
+		//GlobalData::instance()->setOptions(origoptions);
 		delete (monitor);
 		delete (solver);
 

@@ -13,9 +13,6 @@ structure S:V{
 }
 
 procedure assertions(){
-	return (
-		assert2(S[V::p].ct,{0,1},"p<ct>") 
-		and assert2(S[V::p].cf,{1},"p<cf>") 		
-	)
+	return consistent(0)
 }
 

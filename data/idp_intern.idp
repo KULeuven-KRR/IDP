@@ -100,10 +100,11 @@ procedure modelexpand(T,S,Opts) {
 
 /**
  * Calculate all definitions known definitions of a theory T given a structure S
- * Modifies the structure S
+ * Returns a structure that is more precise than S or an inconsistent structure 
  */
 procedure calculatedefinitions(T,S){
-	idp_intern.calculatedefinitions(T,S)
+	if not Opts then Opts = stdoptions end
+	return idp_intern.calculatedefinitions(T,S,Opts)
 }
 
 /**
@@ -130,7 +131,28 @@ procedure printgrounding(T,S,Opts) {
 }
 
 /**
- * Apply unit propagation on a theory T and structure S
+ * Apply full propagation on a theory T and structure S
+ * Less efficient than "propagate" but complete: calculates all consequences of T
+ */
+procedure optimalpropagate(T,S,Opts) {
+	if not Opts then Opts = stdoptions end
+	return idp_intern.optimalpropagate(T,S,Opts)
+}
+
+
+/**
+ * Apply ground unit propagation on a theory T and structure S
+ * Less efficient than "propagate" but more complete.
+ */
+procedure groundpropagate(T,S,Opts) {
+	if not Opts then Opts = stdoptions end
+	return idp_intern.groundpropagate(T,S,Opts)
+}
+
+
+/**
+ * Apply symbolic propagation on a theory T and structure S.
+ * Efficient, but incomplete
  */
 procedure propagate(T,S,Opts) {
 	if not Opts then Opts = stdoptions end
@@ -189,4 +211,15 @@ procedure entails(T1,T2) {
 	)
 	stdoptions.language = tmplang
 	return result
+}
+
+/**********************
+	Inspectors
+**********************/
+
+/**
+ * returns 1 if the structure is consistent, 0 otherwise
+ */
+procedure isconsistent(S) {
+	return idp_intern.isconsistent(S) 
 }
