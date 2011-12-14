@@ -330,6 +330,8 @@ int convertToLua(lua_State* L, InternalArgument arg) {
 		Assert(arg._value._string!=NULL);
 		lua_getfield(L, LUA_REGISTRYINDEX, arg._value._string->c_str());
 		return 1;
+	case AT_TRACEMONITOR:
+		throw IdpException("Tracemonitors cannot be passed to lua.");
 	}
 }
 
@@ -453,7 +455,7 @@ InternalArgument createArgument(int arg, lua_State* L) {
 			ia._value._overloaded = *(OverloadedObject**) lua_touserdata(L, arg);
 			break;
 		default:
-			thrownotyetimplemented("Encountered a lua USERDATA for which not internal type exists (or it is not handled correctly).");
+			throw notyetimplemented("Encountered a lua USERDATA for which not internal type exists (or it is not handled correctly).");
 		}
 		break;
 	}
@@ -1129,86 +1131,87 @@ int optionsIndex(lua_State* L) {
 int namespaceIndex(lua_State* L) {
 	Namespace* ns = *(Namespace**) lua_touserdata(L, 1);
 	InternalArgument index = createArgument(2, L);
-	if (index._type == AT_STRING) {
-		string str = *(index._value._string);
-		unsigned int counter = 0;
-		Namespace* subsp = 0;
-		if (ns->isSubspace(str)) {
-			subsp = ns->subspace(str);
-			++counter;
-		}
-		Vocabulary* vocab = 0;
-		if (ns->isVocab(str)) {
-			vocab = ns->vocabulary(str);
-			++counter;
-		}
-		AbstractTheory* theo = 0;
-		if (ns->isTheory(str)) {
-			theo = ns->theory(str);
-			++counter;
-		}
-		AbstractStructure* structure = 0;
-		if (ns->isStructure(str)) {
-			structure = ns->structure(str);
-			++counter;
-		}
-		Options* opts = 0;
-		if (ns->isOptions(str)) {
-			opts = ns->options(str);
-			++counter;
-		}
-		UserProcedure* proc = 0;
-		if (ns->isProc(str)) {
-			proc = ns->procedure(str);
-			++counter;
-		}
-		Query* query = 0;
-		if (ns->isQuery(str)) {
-			query = ns->query(str);
-			++counter;
-		}
-		Term* term = 0;
-		if (ns->isTerm(str)) {
-			term = ns->term(str);
-			++counter;
-		}
-
-		if (counter == 0)
-			return 0;
-		else if (counter == 1) {
-			if (subsp) return convertToLua(L, InternalArgument(subsp));
-			if (vocab) return convertToLua(L, InternalArgument(vocab));
-			if (theo) return convertToLua(L, InternalArgument(theo));
-			if (structure) return convertToLua(L, InternalArgument(structure));
-			if (opts) return convertToLua(L, InternalArgument(opts));
-			if (proc) {
-				compile(proc, L);
-				lua_getfield(L, LUA_REGISTRYINDEX, proc->registryindex().c_str());
-				return 1;
-			}
-			if (query) {
-				return convertToLua(L, InternalArgument(query));
-			}
-			if (term) {
-				return convertToLua(L, InternalArgument(term));
-			}
-			thrownotyetimplemented("Some element could not be transformed into a lua object.");
-		} else {
-			OverloadedObject* oo = new OverloadedObject();
-			oo->insert(subsp);
-			oo->insert(vocab);
-			oo->insert(theo);
-			oo->insert(structure);
-			oo->insert(opts);
-			oo->insert(proc);
-			oo->insert(query);
-			oo->insert(term);
-			return convertToLua(L, InternalArgument(oo));
-		}
-	} else {
+	if(index._type != AT_STRING){
 		lua_pushstring(L, "Namespaces can only be indexed by strings");
 		return lua_error(L);
 	}
+	string str = *(index._value._string);
+	unsigned int counter = 0;
+	Namespace* subsp = 0;
+	if (ns->isSubspace(str)) {
+		subsp = ns->subspace(str);
+		++counter;
+	}
+	Vocabulary* vocab = 0;
+	if (ns->isVocab(str)) {
+		vocab = ns->vocabulary(str);
+		++counter;
+	}
+	AbstractTheory* theo = 0;
+	if (ns->isTheory(str)) {
+		theo = ns->theory(str);
+		++counter;
+	}
+	AbstractStructure* structure = 0;
+	if (ns->isStructure(str)) {
+		structure = ns->structure(str);
+		++counter;
+	}
+	Options* opts = 0;
+	if (ns->isOptions(str)) {
+		opts = ns->options(str);
+		++counter;
+	}
+	UserProcedure* proc = 0;
+	if (ns->isProc(str)) {
+		proc = ns->procedure(str);
+		++counter;
+	}
+	Query* query = 0;
+	if (ns->isQuery(str)) {
+		query = ns->query(str);
+		++counter;
+	}
+	Term* term = 0;
+	if (ns->isTerm(str)) {
+		term = ns->term(str);
+		++counter;
+	}
+
+	if(counter==0){
+		return 0;
+	}
+	if(counter>1){
+		OverloadedObject* oo = new OverloadedObject();
+		oo->insert(subsp);
+		oo->insert(vocab);
+		oo->insert(theo);
+		oo->insert(structure);
+		oo->insert(opts);
+		oo->insert(proc);
+		oo->insert(query);
+		oo->insert(term);
+		return convertToLua(L, InternalArgument(oo));
+	}
+
+	Assert(counter==1); // Only one element on the stack
+	if (subsp) return convertToLua(L, InternalArgument(subsp));
+	if (vocab) return convertToLua(L, InternalArgument(vocab));
+	if (theo) return convertToLua(L, InternalArgument(theo));
+	if (structure) return convertToLua(L, InternalArgument(structure));
+	if (opts) return convertToLua(L, InternalArgument(opts));
+	if (proc) {
+		compile(proc, L);
+		lua_getfield(L, LUA_REGISTRYINDEX, proc->registryindex().c_str());
+		return 1;
+	}
+	if (query) {
+		return convertToLua(L, InternalArgument(query));
+	}
+	if (term) {
+		return convertToLua(L, InternalArgument(term));
+	}
+	throw notyetimplemented("Some element could not be transformed into a lua object.");
 }
 
 SortTable* toDomain(vector<InternalArgument>* table, lua_State* L) {

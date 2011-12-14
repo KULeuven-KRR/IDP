@@ -1,4 +1,3 @@
-#include <ctime>
 #include "ModelExpansion.hpp"
 #include "inferences/CalculateDefinitions.hpp"
 #include "inferences/InferenceSolverConnection.hpp"
@@ -19,16 +18,15 @@
 
 using namespace std;
 
-class SolverTermination: public TerminateMonitor{
+class SolverTermination: public TerminateMonitor {
 public:
-	void notifyTerminateRequested(){
+	void notifyTerminateRequested() {
 		requestTermination();
 	}
 };
 
 std::vector<AbstractStructure*> ModelExpansion::expand() const {
 	auto opts = GlobalData::instance()->getOptions();
-	// TODO Option::pushOptions(options);
 
 	// Calculate known definitions
 	// FIXME currently skipping if working lazily!
@@ -44,13 +42,13 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 
 	// Create solver and grounder
 	SATSolver* solver = InferenceSolverConnection::createsolver();
-	if(getOption(IntType::GROUNDVERBOSITY)>=1){
-		clog <<"Approximation\n";
+	if (getOption(IntType::GROUNDVERBOSITY) >= 1) {
+		clog << "Approximation\n";
 	}
 	auto symstructure = generateNaiveApproxBounds(theory, newstructure);
 	// TODO bugged! auto symstructure = generateApproxBounds(theory, structure);
-	if(getOption(IntType::GROUNDVERBOSITY)>=1){
-		clog <<"Grounding\n";
+	if (getOption(IntType::GROUNDVERBOSITY) >= 1) {
+		clog << "Grounding\n";
 	}
 	GrounderFactory grounderfactory(newstructure, symstructure);
 	Grounder* grounder = grounderfactory.create(theory, solver);
@@ -63,12 +61,10 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 
 	// Execute symmetry breaking
 	if (opts->getValue(IntType::SYMMETRY) != 0) {
-		if(getOption(IntType::GROUNDVERBOSITY)>=1){
-			clog <<"Symmetry breaking\n";
+		if (getOption(IntType::GROUNDVERBOSITY) >= 1) {
+			clog << "Symmetry breaking\n";
 		}
-		clock_t start = clock();
-		auto ivsets = findIVSets(theory, newstructure);
-		float time = (float) (clock() - start) / CLOCKS_PER_SEC;
+		auto ivsets = findIVSets(theory, structure);
 		if (opts->getValue(IntType::SYMMETRY) == 1) {
 			addSymBreakingPredicates(grounding, ivsets);
 		} else if (opts->getValue(IntType::SYMMETRY) == 2) {
@@ -92,20 +88,20 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 
 	// Run solver
 	MinisatID::Solution* abstractsolutions = InferenceSolverConnection::initsolution();
-	if(getOption(IntType::GROUNDVERBOSITY)>=1){
-		clog <<"Solving\n";
+	if (getOption(IntType::GROUNDVERBOSITY) >= 1) {
+		clog << "Solving\n";
 	}
 	getGlobal()->addTerminationMonitor(new SolverTermination());
 	solver->solve(abstractsolutions);
-	if(getGlobal()->terminateRequested()){
+	if (getGlobal()->terminateRequested()) {
 		throw IdpException("Solver was terminated");
 	}
 
 	// Collect solutions
 	//FIXME propagator code broken structure = propagator->currstructure(structure);
 	std::vector<AbstractStructure*> solutions;
-	if(getOption(IntType::GROUNDVERBOSITY)>=1){
-		clog <<"Generate 2-valued models\n";
+	if (getOption(IntType::GROUNDVERBOSITY) >= 1) {
+		clog << "Generate 2-valued models\n";
 	}
 	for (auto model = abstractsolutions->getModels().cbegin(); model != abstractsolutions->getModels().cend(); ++model) {
 		AbstractStructure* newsolution = newstructure->clone();

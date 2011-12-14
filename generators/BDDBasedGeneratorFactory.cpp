@@ -285,7 +285,7 @@ InstGenerator* BDDToGenerator::createFromPredForm(PredForm* atom, const vector<P
 		newform = FormulaUtils::graphFuncsAndAggs(newform);
 		newform = FormulaUtils::flatten(newform);
 		if(not sametypeid<QuantForm>(*newform)){
-			thrownotyetimplemented("Creating a bdd in which unnesting does not introduce quantifiers.");
+			throw notyetimplemented("Creating a bdd in which unnesting does not introduce quantifiers.");
 		}
 		QuantForm* quantform = dynamic_cast<QuantForm*>(newform);
 		Assert(sametypeid<BoolForm>(*(quantform->subformula())));

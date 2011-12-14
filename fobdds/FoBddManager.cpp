@@ -26,9 +26,9 @@ using namespace std;
 
 extern int global_seed; // TODO part of global data or options!
 
-static int STANDARDCATEGORY = 1;
-static int DEBRUIJNCATEGORY = 2;
-static int TRUEFALSECATEGORY = 3;
+static unsigned int STANDARDCATEGORY = 1;
+static unsigned int DEBRUIJNCATEGORY = 2;
+static unsigned int TRUEFALSECATEGORY = 3;
 
 KernelOrder FOBDDManager::newOrder(unsigned int category) {
 	KernelOrder order(category, _nextorder[category]);
@@ -1115,7 +1115,7 @@ ostream& FOBDDManager::put(ostream& output, const FOBDDKernel* kernel) const {
 		output << tabs();
 		output << "}";
 	} else {
-		thrownotyetimplemented("Cannot print kerneltype, missing case in switch.");
+		throw notyetimplemented("Cannot print kerneltype, missing case in switch.");
 	}
 	output << '\n';
 	return output;
@@ -1145,7 +1145,7 @@ ostream& FOBDDManager::put(ostream& output, const FOBDDArgument* arg) const {
 		const FOBDDDomainTerm* dt = dynamic_cast<const FOBDDDomainTerm*>(arg);
 		output << *(dt->value()) << "[" << toString(dt->sort()) << "]";
 	} else {
-		thrownotyetimplemented("Cannot print bddterm, missing case in switch.");
+		throw notyetimplemented("Cannot print bddterm, missing case in switch.");
 	}
 	return output;
 }

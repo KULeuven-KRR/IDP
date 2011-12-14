@@ -32,7 +32,6 @@ bool CalculateDefinitions::calculateDefinition(Definition* definition, AbstractS
 	if (getGlobal()->terminateRequested()) {
 		throw IdpException("Solver was terminated");
 	}
-	std::cerr << abstractsolutions->getModels().size();
 
 	// Collect solutions
 	if (abstractsolutions->getModels().empty()) {

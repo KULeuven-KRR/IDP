@@ -413,7 +413,7 @@ void GrounderFactory::visit(const PredForm* pf) {
 	vector<TermGrounder*> subtermgrounders;
 	vector<SortTable*> argsorttables;
 	SaveContext();
-	for (auto n = 0; n < newpf->subterms().size(); ++n) {
+	for (unsigned int n = 0; n < newpf->subterms().size(); ++n) {
 		descend(newpf->subterms()[n]);
 		subtermgrounders.push_back(_termgrounder);
 		argsorttables.push_back(_structure->inter(newpf->symbol()->sorts()[n]));

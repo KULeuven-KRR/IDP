@@ -59,7 +59,8 @@ void idp_rl_end() {
 	saveHistory();
 }
 
-int commandindex, len;
+unsigned int commandindex;
+int len;
 char * dupstr (const char* s);
 char* my_generator(const char* text, int state){
 	if (not state) {
@@ -81,7 +82,8 @@ char* my_generator(const char* text, int state){
 
 }
 
-char** completion( const char * text , int start,  int end){
+// last int is the end index
+char** completion( const char * text , int start,  int){
 	char **matches;
 
 	matches = (char **)NULL;

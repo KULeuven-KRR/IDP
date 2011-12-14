@@ -3916,7 +3916,7 @@ bool Structure::isConsistent() const {
 }
 
 void generateMorePreciseStructures(const PredTable* cf, const ElementTuple& domainElementWithoutValue, const SortTable* imageSort, Function* function,
-		const FuncInter* inter, vector<AbstractStructure*>& extensions) {
+		vector<AbstractStructure*>& extensions) {
 	// go over all saved structures and generate a new structure for each possible value for it
 	vector<AbstractStructure*> newstructs;
 	auto imageIterator = SortIterator(imageSort->internTable()->sortBegin());
@@ -4020,10 +4020,10 @@ std::vector<AbstractStructure*> Structure::generateAllTwoValuedExtensions() cons
 				if (not ctIterator.isAtEnd() && eq(domainElementWithoutValue, *ctIterator)) {
 					continue;
 				}
-				generateMorePreciseStructures(cf, domainElementWithoutValue, sorts.back(), function, inter, extensions);
+				generateMorePreciseStructures(cf, domainElementWithoutValue, sorts.back(), function, extensions);
 			}
 		} else {
-			generateMorePreciseStructures(cf, domainElementWithoutValue, sorts.back(), function, inter, extensions);
+			generateMorePreciseStructures(cf, domainElementWithoutValue, sorts.back(), function, extensions);
 		}
 		if (GlobalData::instance()->terminateRequested()) {
 			throw IdpException("Terminate requested");
@@ -4146,7 +4146,7 @@ void completeSortTable(const PredTable* pt, PFSymbol* symbol, const string& stru
 }
 
 void addUNAPattern(Function*) {
-	thrownotyetimplemented("una pattern type");
+	throw notyetimplemented("una pattern type");
 }
 
 void Structure::autocomplete() {

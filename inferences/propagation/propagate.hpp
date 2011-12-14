@@ -193,6 +193,7 @@ struct ThreeValuedDomain {
 	}
 
 	ThreeValuedDomain(const FOPropDomainFactory<DomainType>* factory, const PredForm* pf, InitBoundType ibt) {
+		Assert(ibt!=IBT_TWOVAL && ibt!=IBT_NONE); // TODO what with these cases?
 		_twovalued = false;
 		switch(ibt) {
 		case IBT_CT:
@@ -207,9 +208,10 @@ struct ThreeValuedDomain {
 			_ctdomain = factory->ctDomain(pf);
 			_cfdomain = factory->cfDomain(pf);
 			break;
+		case IBT_TWOVAL:
+		case IBT_NONE:
+			break;
 		}
-		Assert(_ctdomain!=NULL);
-		Assert(_cfdomain!=NULL);
 	}
 };
 

@@ -57,7 +57,7 @@ public:
 		printer().print(cl);
 	}
 
-	void polAdd(const TsSet& tsset, int setnr, bool weighted) {
+	void polAdd(const TsSet& tsset, int setnr, bool) {
 		auto set = new GroundSet(setnr, tsset.literals(), tsset.weights());
 		printer().print(set);
 		delete (set);
