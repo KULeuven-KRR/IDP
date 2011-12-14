@@ -21,7 +21,6 @@ typedef std::map<PFSymbol*, const FOBDD*> Bound;
 GenerateBDDAccordingToBounds* generateApproxBounds(AbstractTheory* theory, AbstractStructure* structure){
 	SymbolicPropagation propinference;
 	std::map<PFSymbol*,InitBoundType> mpi = propinference.propagateVocabulary(theory,structure);
-	Assert(getOption(BoolType::GROUNDWITHBOUNDS)); // TODO can only generate this if bdds are used, otherwise cannot get a symbolic structure
 	auto propagator = createPropagator(theory,structure, mpi);
 	propagator->doPropagation();
 	return propagator->symbolicstructure();
@@ -68,19 +67,19 @@ GenerateBDDAccordingToBounds* generateNaiveApproxBounds(AbstractTheory*, Abstrac
 }
 
 FOPropagator* createPropagator(AbstractTheory* theory, AbstractStructure*, const std::map<PFSymbol*,InitBoundType> mpi) {
-	if(getOption(BoolType::GROUNDWITHBOUNDS)){
+//	if(getOption(BoolType::GROUNDWITHBOUNDS)){
 		auto domainfactory = new FOPropBDDDomainFactory();
 		auto scheduler = new FOPropScheduler();
 		FOPropagatorFactory<FOPropBDDDomainFactory, FOPropBDDDomain> propfactory(domainfactory,scheduler,true,mpi);
 		return propfactory.create(theory);
-	}else{
-		notyetimplemented("Propagation without bdds.");
+//	}else{
+//		TODO notyetimplemented("Propagation without bdds.");
 		/*auto domainfactory = new FOPropTableDomainFactory(s);
 		auto scheduler = new FOPropScheduler();
 		FOPropagatorFactory<FOPropTableDomainFactory, FOPropTableDomain> propfactory(domainfactory,scheduler,true,mpi);
 		return propfactory.create(theory);*/
-		return NULL;
-	}
+//		return NULL;
+//	}
 }
 
 template<class InterpretationFactory, class PropDomain>
