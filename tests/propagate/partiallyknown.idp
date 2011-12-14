@@ -1,0 +1,31 @@
+vocabulary V{
+	type x
+	p(x)
+	q(x)
+}
+
+theory T:V{
+	!x: p(x) <= q(x).
+}
+
+structure S:V{
+	x = {1..3}
+	p<ct>={1}
+	q<ct>={2}
+	p<cf>={3}
+}
+
+procedure weakassertions(newS){
+	return (
+		assert(newS[V.p].ct,1,"p(1)","true")
+		and assert(newS[V.q].ct,2,"q(2)","true")
+		and assert(newS[V.p].cf,3,"p(3)","false")
+		and assert(newS[V.p].ct,2,"p(2)","true")
+		and assert(newS[V.q].cf,3,"q(3)","false")
+		and consistent(1,newS)
+	)
+}
+
+procedure strongassertions(newS){
+	return 1
+}

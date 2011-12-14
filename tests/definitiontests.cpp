@@ -53,5 +53,5 @@ TEST_P(DefinitionTest, CalculatesDefinition) {
 	ASSERT_EQ(result, Status::SUCCESS);
 }
 
-INSTANTIATE_TEST_CASE_P(Inferences, DefinitionTest,  ::testing::ValuesIn(generateListOfDefFiles()));
+INSTANTIATE_TEST_CASE_P(CalculateDefinitions, DefinitionTest,  ::testing::ValuesIn(generateListOfDefFiles()));
 }

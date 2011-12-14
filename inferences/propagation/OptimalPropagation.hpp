@@ -27,22 +27,24 @@ public:
 		// TODO: make a clean version of the implementation
 		// TODO: doens't work with cp support (because a.o.(?) backtranslation is not implemented)
 		// Compute all models
+
+		//MinisatID solveroptions
 		MinisatID::SolverOption modes;
 		modes.nbmodels = 0;
 		modes.verbosity = 0;
 		//modes.remap = false;
 		SATSolver solver(modes);
-		Options options("", ParseInfo());
-		options.setValue(IntType::NRMODELS, 0);
-		auto origoptions = GlobalData::instance()->getOptions();
-		GlobalData::instance()->setOptions(&options);
+
+		//Grounding
 		auto symstructure = generateNaiveApproxBounds(theory, structure);
 		GrounderFactory grounderfactory(structure, symstructure);
 		Grounder* grounder = grounderfactory.create(theory, &solver);
 		grounder->toplevelRun();
 		AbstractGroundTheory* grounding = grounder->getGrounding();
+
+		//MinisatID modelexpandoptions
 		MinisatID::ModelExpandOptions opts;
-		opts.nbmodelstofind = options.getValue(IntType::NRMODELS);
+		opts.nbmodelstofind = 0;
 		opts.printmodels = MinisatID::PRINT_NONE;
 		opts.savemodels = MinisatID::SAVE_ALL;
 		opts.search = MinisatID::MODELEXPAND;
@@ -66,6 +68,7 @@ public:
 			}
 		}
 
+		//Translate the result
 		GroundTranslator* translator = grounding->translator();
 		AbstractStructure* result = structure->clone();
 		for (auto literal = intersection.cbegin(); literal != intersection.cend(); ++literal) {
@@ -73,7 +76,7 @@ public:
 			if (translator->isInputAtom(atomnr)) {
 				PFSymbol* symbol = translator->getSymbol(atomnr);
 				const ElementTuple& args = translator->getArgs(atomnr);
-				if (typeid(*symbol) == typeid(Predicate)) {
+				if (sametypeid<Predicate>(*symbol)) {
 					Predicate* pred = dynamic_cast<Predicate*>(symbol);
 					if (*literal < 0) {
 						result->inter(pred)->makeFalse(args);
@@ -81,6 +84,7 @@ public:
 						result->inter(pred)->makeTrue(args);
 					}
 				} else {
+					Assert(sametypeid<Function>(*symbol));
 					Function* func = dynamic_cast<Function*>(symbol);
 					if (*literal < 0) {
 						result->inter(func)->graphInter()->makeFalse(args);
@@ -91,7 +95,6 @@ public:
 			}
 		}
 		result->clean();
-		GlobalData::instance()->setOptions(origoptions);
 		return result;
 	}
 };

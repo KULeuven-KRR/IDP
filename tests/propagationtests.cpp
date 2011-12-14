@@ -109,7 +109,7 @@ TEST_P(LuaPropagationTest, OptimalAndGroundPropagation) {
 	ASSERT_EQ(result, Status::SUCCESS);
 }
 
-INSTANTIATE_TEST_CASE_P(Inferences, LuaPropagationTest,  ::testing::ValuesIn(generateListOfPropFiles()));
+INSTANTIATE_TEST_CASE_P(Propagation, LuaPropagationTest,  ::testing::ValuesIn(generateListOfPropFiles()));
 
 /*TEST(PropagationTest, EquivForm){
  auto sorttable = new SortTable(new IntRangeInternalSortTable(-2, 2));

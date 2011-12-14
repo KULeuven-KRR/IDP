@@ -34,13 +34,6 @@ public:
 		//modes.remap = false;
 		MinisatID::WrappedPCSolver* solver = new SATSolver(modes);
 
-		//I think the following is not needed.  (NRmodels is passed to MINISATID)
-//		auto origoptions = GlobalData::instance()->getOptions();
-//		Options options("temp",ParseInfo());
-//		options.copyValues(origoptions);
-//		options.setValue(IntType::NRMODELS, 0);
-//		GlobalData::instance()->setOptions(&options);
-
 		//Create and execute grounder
 		auto symstructure = generateNaiveApproxBounds(theory, structure);
 		GrounderFactory grounderfactory(structure, symstructure);
@@ -69,7 +62,7 @@ public:
 			if (translator->isInputAtom(atomnr)) {
 				PFSymbol* symbol = translator->getSymbol(atomnr);
 				const ElementTuple& args = translator->getArgs(atomnr);
-				if (typeid(*symbol) == typeid(Predicate)) {
+				if (sametypeid<Predicate>(*symbol)) {
 					Predicate* pred = dynamic_cast<Predicate*>(symbol);
 					if (literal->hasSign()) {
 						result->inter(pred)->makeFalse(args);
@@ -77,6 +70,7 @@ public:
 						result->inter(pred)->makeTrue(args);
 					}
 				} else {
+					Assert(sametypeid<Function>(*symbol));
 					Function* func = dynamic_cast<Function*>(symbol);
 					if (literal->hasSign()) {
 						result->inter(func)->graphInter()->makeFalse(args);
@@ -87,7 +81,6 @@ public:
 			}
 		}
 		result->clean();
-		//GlobalData::instance()->setOptions(origoptions);
 		delete (monitor);
 		delete (solver);
 

@@ -1,0 +1,27 @@
+vocabulary V{
+type t
+P
+Q(t)
+R
+}
+
+theory T:V{
+!t: P | (Q(t) | R).
+!t: P <= (Q(t) | R).
+
+}
+
+structure S:V{
+	t={1..3}
+	P=false
+}
+
+procedure weakassertions(newS){
+	return 	assertEmpty(newS[V.P].ct,"P<ct>") == 1 and assertNotEmpty(newS[V.P].cf,"P<cf>") == 1
+	
+}
+
+procedure strongassertions(newS){
+	return 
+		consistent(0,NewS)
+}
