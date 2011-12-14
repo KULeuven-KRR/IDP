@@ -20,7 +20,6 @@ using namespace std;
 namespace Tests {
 
 // TODO prevent infinite running bugs
-// TODO on parsing error of one of the files, a lot of later ones will also fail!
 vector<string> generateListOfDefFiles() {
 	vector<string> deftests;
 	DIR *dir;

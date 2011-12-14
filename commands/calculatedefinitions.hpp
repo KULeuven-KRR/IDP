@@ -34,7 +34,7 @@ public:
 		auto clone = structure->clone();
 		auto result = CalculateDefinitions::doCalculateDefinitions(theory, clone);
 		if (not result->isConsistent() ) {
-			if (getOption(IntType::GROUNDVERBOSITY) >= 1) { //TODO see issue 18. Fix the options
+			if (getOption(IntType::GROUNDVERBOSITY) >= 1) {
 				std::clog << "Calculating definitions resulted in inconsistent model. \n" << "Theory is unsatisfiable.\n";
 			}
 		}

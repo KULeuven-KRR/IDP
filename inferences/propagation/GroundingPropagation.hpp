@@ -64,12 +64,8 @@ public:
 		GroundTranslator* translator = grounding->translator();
 		AbstractStructure* result = structure->clone();
 		// Use the propagation monitor to assert everything that was propagated without search
-		std::cerr << "here";
 		for (auto literal = monitor->model().cbegin(); literal != monitor->model().cend(); ++literal) {
 			int atomnr = literal->getAtom().getValue();
-			std::cerr << translator->printLit(atomnr);
-			std::cerr << " has " << translator->isInputAtom(atomnr) << "\n";
-
 			if (translator->isInputAtom(atomnr)) {
 				PFSymbol* symbol = translator->getSymbol(atomnr);
 				const ElementTuple& args = translator->getArgs(atomnr);
