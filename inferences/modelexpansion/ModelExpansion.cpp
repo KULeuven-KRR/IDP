@@ -30,24 +30,27 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 
 	// Calculate known definitions
 	// FIXME currently skipping if working lazily!
+	auto newstructure = structure;
 	if (not opts->getValue(BoolType::GROUNDLAZILY) && sametypeid<Theory>(*theory)) {
-		bool satisfiable = CalculateDefinitions::doCalculateDefinitions(dynamic_cast<Theory*>(theory), structure);
-		if (not satisfiable) {
+
+		newstructure = CalculateDefinitions::doCalculateDefinitions(dynamic_cast<Theory*>(theory), structure);
+		if (not newstructure->isConsistent()) {
 			return std::vector<AbstractStructure*> { };
 		}
 	}
+
 
 	// Create solver and grounder
 	SATSolver* solver = InferenceSolverConnection::createsolver();
 	if (getOption(IntType::GROUNDVERBOSITY) >= 1) {
 		clog << "Approximation\n";
 	}
-	auto symstructure = generateNaiveApproxBounds(theory, structure);
+	auto symstructure = generateNaiveApproxBounds(theory, newstructure);
 	// TODO bugged! auto symstructure = generateApproxBounds(theory, structure);
 	if (getOption(IntType::GROUNDVERBOSITY) >= 1) {
 		clog << "Grounding\n";
 	}
-	GrounderFactory grounderfactory(structure, symstructure);
+	GrounderFactory grounderfactory(newstructure, symstructure);
 	Grounder* grounder = grounderfactory.create(theory, solver);
 	if (getOption(BoolType::TRACE)) {
 		tracemonitor->setTranslator(grounder->getTranslator());
@@ -101,7 +104,7 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 		clog << "Generate 2-valued models\n";
 	}
 	for (auto model = abstractsolutions->getModels().cbegin(); model != abstractsolutions->getModels().cend(); ++model) {
-		AbstractStructure* newsolution = structure->clone();
+		AbstractStructure* newsolution = newstructure->clone();
 		InferenceSolverConnection::addLiterals(*model, grounding->translator(), newsolution);
 		InferenceSolverConnection::addTerms(*model, grounding->termtranslator(), newsolution);
 		newsolution->clean();

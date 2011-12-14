@@ -26,6 +26,7 @@ public:
 	void propagate(MinisatID::Literal lit, int) {
 		_partialmodel.push_back(lit);
 	}
+
 	virtual void setSolver(MinisatID::WrappedPCSolver* solver) {
 		solver->addMonitor(_solvermonitor);
 	}

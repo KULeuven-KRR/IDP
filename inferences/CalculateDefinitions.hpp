@@ -16,7 +16,7 @@ class Definition;
 
 class CalculateDefinitions {
 public:
-	static bool doCalculateDefinitions(Theory* theory, AbstractStructure* structure){
+	static AbstractStructure* doCalculateDefinitions(Theory* theory, AbstractStructure* structure){
 		CalculateDefinitions c;
 		return c.calculateKnownDefinitions( theory,  structure);
 	}
@@ -24,7 +24,7 @@ private:
 
 	bool calculateDefinition(Definition* definition, AbstractStructure* structure) const;
 
-	bool calculateKnownDefinitions(Theory* theory, AbstractStructure* structure) const;
+	AbstractStructure* calculateKnownDefinitions(Theory* theory, AbstractStructure* structure) const;
 
 
 };

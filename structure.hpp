@@ -27,8 +27,8 @@
  */
 
 /**********************
-	Domain elements
-**********************/
+ Domain elements
+ **********************/
 
 class Compound;
 class DomainElementFactory;
@@ -282,8 +282,8 @@ const Compound* createCompound(Function* f, const Value& tuple) {
 }
 
 /*******************
-	Domain atoms
-*******************/
+ Domain atoms
+ *******************/
 
 class DomainAtomFactory;
 class PFSymbol;
@@ -331,8 +331,8 @@ public:
 };
 
 /****************
-	Iterators
-****************/
+ Iterators
+ ****************/
 
 class InternalTableIterator;
 class InternalSortIterator;
@@ -751,7 +751,7 @@ private:
 		++_iter;
 	}
 public:
-	FloatInternalSortIterator(double iter = - std::numeric_limits<double>::max()) :
+	FloatInternalSortIterator(double iter = -std::numeric_limits<double>::max()) :
 			_iter(iter) {
 	}
 	~FloatInternalSortIterator() {
@@ -850,8 +850,8 @@ public:
 };
 
 /********************************************
-	Internal tables for predicate symbols
-********************************************/
+ Internal tables for predicate symbols
+ ********************************************/
 
 class StructureVisitor;
 
@@ -1244,8 +1244,8 @@ public:
 };
 
 /********************************
-	Internal tables for sorts
-********************************/
+ Internal tables for sorts
+ ********************************/
 
 /**
  *	This class implements a concrete one-dimensional table
@@ -1608,8 +1608,8 @@ public:
 };
 
 /************************************
-	Internal tables for functions
-************************************/
+ Internal tables for functions
+ ************************************/
 
 /**
  *		This class implements a concrete associative array mapping tuples of elements to elements
@@ -1919,8 +1919,8 @@ public:
 };
 
 /*********************************************************
-	Tables for sorts, predicates, and function symbols
-*********************************************************/
+ Tables for sorts, predicates, and function symbols
+ *********************************************************/
 
 /**
  *	This class implements the common functionality of tables for sorts, predicate, and function symbols.
@@ -2096,7 +2096,6 @@ public:
 		return _table->size(_universe);
 	}
 
-
 	const DomainElement* operator[](const ElementTuple& tuple) const {
 		return _table->operator[](tuple);
 	}
@@ -2119,8 +2118,8 @@ public:
 };
 
 /**********************
-	Interpretations
-*********************/
+ Interpretations
+ *********************/
 
 /**
  *	Class to represent a four-valued interpretation for a predicate
@@ -2208,7 +2207,7 @@ private:
 	Predicate* _predicate;
 public:
 	InconsistentPredInterGenerator(Predicate* predicate) :
-			_predicate(predicate){
+			_predicate(predicate) {
 	}
 	PredInter* get(const AbstractStructure* structure);
 };
@@ -2331,7 +2330,7 @@ private:
 	Function* _function;
 public:
 	InconsistentFuncInterGenerator(Function* function) :
-		_function(function){
+			_function(function) {
 	}
 	FuncInter* get(const AbstractStructure* structure);
 };
@@ -2405,8 +2404,8 @@ public:
 };
 
 /*****************
-	Structures
-*****************/
+ Structures
+ *****************/
 
 /** Abstract base class **/
 
@@ -2464,7 +2463,8 @@ public:
 
 	virtual void makeTwoValued() = 0;
 
-	virtual void put(std::ostream&){} // TODO implement
+	virtual void put(std::ostream&) {
+	} // TODO implement
 };
 
 /** Structures as constructed by the parser **/
@@ -2493,7 +2493,6 @@ public:
 	void clean(); //!< Try to represent two-valued interpretations by one table instead of two.
 	void materialize(); //!< Convert symbolic tables containing a finite number of tuples to enumerated tables.
 
-
 	void functionCheck(); //!< check the correctness of the function tables
 	void autocomplete(); //!< make the domains consistent with the predicate and function tables
 
@@ -2519,11 +2518,47 @@ public:
 	Universe universe(const PFSymbol*) const;
 };
 
+/**Class to represent inconsistent structures **/
+class InconsistentStructure: public AbstractStructure {
+public:
+	InconsistentStructure() :
+			AbstractStructure("Inconsistent Structure", ParseInfo()) {
+	}
+	InconsistentStructure(const std::string& name, const ParseInfo& pi) :
+			AbstractStructure(name, pi) {
+	}
+	~InconsistentStructure(){}
+	void inter(Predicate* p, PredInter* i); //!< set the interpretation of p to i
+	void inter(Function* f, FuncInter* i); //!< set the interpretation of f to i
+	void clean() {
+	} //!< make three-valued interpretations that are in fact
+	  //!< two-valued, two-valued.
+	void materialize() {
+	} //!< Convert symbolic tables containing a finite number of tuples to enumerated tables.
+
+	SortTable* inter(Sort* s) const; // Return the domain of s.
+	PredInter* inter(Predicate* p) const; // Return the interpretation of p.
+	FuncInter* inter(Function* f) const; // Return the interpretation of f.
+	PredInter* inter(PFSymbol* s) const; // Return the interpretation of s.
+
+	const std::map<Predicate*, PredInter*>& getPredInters() const;
+	const std::map<Function*, FuncInter*>& getFuncInters() const;
+
+	AbstractStructure* clone() const; // take a clone of this structure
+
+	Universe universe(const PFSymbol*) const;
+
+	bool approxTwoValued() const;
+	bool isConsistent() const;
+
+	void makeTwoValued();
+};
+
 std::vector<AbstractStructure*> generateAllTwoValuedExtensions(AbstractStructure* s);
 
 /************************
-	Auxiliary methods
-************************/
+ Auxiliary methods
+ ************************/
 
 namespace TableUtils {
 PredInter* leastPredInter(const Universe& univ);
