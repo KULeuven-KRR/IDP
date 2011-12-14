@@ -76,7 +76,7 @@ InstGenerator* GeneratorFactory::create(const PredTable* pt, const vector<Patter
 	GeneratorFactory factory;
 
 	// Check for infinite grounding
-	for(int i=0; i<universe.tables().size(); ++i){
+	for(unsigned int i=0; i<universe.tables().size(); ++i){
 		if (pattern[i]==Pattern::OUTPUT) {
 			checkInfinity(universe.tables()[i], original);
 		}
@@ -171,7 +171,6 @@ void GeneratorFactory::visit(const BDDInternalPredTable* table) {
 	// Add necessary types to the bdd to ensure, if possible, finite querying
 	FOBDDManager optimizemanager;
 	data.bdd = optimizemanager.getBDD(table->bdd(), table->manager());
-	// TODO
 
 	// Optimize the bdd for querying
 	set<const FOBDDVariable*> outvars;
@@ -207,11 +206,11 @@ void GeneratorFactory::visit(const FuncInternalPredTable* fipt) {
 }
 
 void GeneratorFactory::visit(const UnionInternalPredTable*) {
-	thrownotyetimplemented("Create a generator from a union pred table");
+	throw notyetimplemented("Create a generator from a union pred table");
 }
 
 void GeneratorFactory::visit(const UnionInternalSortTable*) {
-	thrownotyetimplemented("Create a generator from a union sort table");
+	throw notyetimplemented("Create a generator from a union sort table");
 }
 
 void GeneratorFactory::visit(const AllNaturalNumbers* t) {
@@ -281,7 +280,8 @@ void GeneratorFactory::visit(const EnumeratedInternalPredTable*) {
 		const auto& tuple = *it;
 		bool validunderocc = true;
 		for (unsigned int n = 0; n < _pattern.size(); ++n) {
-			// Skip tuples which do no have the same values for multiple occurrences of some variable // TODO: Use dynamic programming to improve this
+			// Skip tuples which do no have the same values for multiple occurrences of some variable
+			// TODO: Use dynamic programming to improve this
 			if (_firstocc[n] != n && tuple[n] != tuple[_firstocc[n]]) {
 				validunderocc = false;
 				break;
@@ -327,7 +327,7 @@ void GeneratorFactory::visit(const EqualInternalPredTable*) {
 }
 
 void GeneratorFactory::visit(const StrLessInternalPredTable*) {
-	if (_firstocc[1] == 0) { // If both variables are the same, this will never hold any tuples. TODO can we check equality of variables (or should we be able to anyway?)?
+	if (_firstocc[1] == 0) { // If both variables are the same, this will never hold any tuples.
 		_generator = new EmptyGenerator();
 		return;
 	}
@@ -436,7 +436,7 @@ void GeneratorFactory::visit(const PlusInternalFuncTable* pift) {
 		_generator = new DivGenerator(_vars[2], twopointer, _vars[0], NumType::POSSIBLYINT, _universe.tables()[0]);
 		//}
 	} else {
-		thrownotyetimplemented("Infinite generator for addition pattern (out,out,in)");
+		throw notyetimplemented("Infinite generator for addition pattern (out,out,in)");
 	}
 }
 
@@ -446,9 +446,9 @@ void GeneratorFactory::visit(const MinusInternalFuncTable* pift) {
 	} else if (_pattern[1] == Pattern::INPUT) {
 		_generator = new PlusGenerator(_vars[1], _vars[2], _vars[0], pift->getType(), _universe.tables()[0]);
 	} else if (_firstocc[1] == 0) {
-		thrownotyetimplemented("Create a generator for x-x=y, with x output");
+		throw notyetimplemented("Create a generator for x-x=y, with x output");
 	} else {
-		thrownotyetimplemented("Infinite generator for subtraction pattern (out,out,in)");
+		throw notyetimplemented("Infinite generator for subtraction pattern (out,out,in)");
 	}
 }
 
@@ -458,9 +458,9 @@ void GeneratorFactory::visit(const TimesInternalFuncTable* pift) {
 	} else if (_pattern[1] == Pattern::INPUT) {
 		_generator = new DivGenerator(_vars[2], _vars[1], _vars[0], pift->getType(), _universe.tables()[0]);
 	} else if (_firstocc[1] == 0) {
-		thrownotyetimplemented("Create a generator for x*x=y, with x output");
+		throw notyetimplemented("Create a generator for x*x=y, with x output");
 	} else {
-		thrownotyetimplemented("Infinite generator for multiplication pattern (out,out,in)");
+		throw notyetimplemented("Infinite generator for multiplication pattern (out,out,in)");
 	}
 }
 
@@ -468,21 +468,24 @@ void GeneratorFactory::visit(const DivInternalFuncTable* pift) {
 	if (_pattern[0] == Pattern::INPUT) {
 		_generator = new DivGenerator(_vars[0], _vars[2], _vars[1], pift->getType(), _universe.tables()[1]);
 	} else if (_pattern[1] == Pattern::INPUT) {
-		// TODO: wrong in case of integers. E.g., a / 2 = 1 should result in a \in { 2,3 } instead of a \in { 2 }
+		if(pift->getType()==NumType::CERTAINLYINT){
+			// TODO E.g., a / 2 = 1 should result in a \in { 2,3 } instead of a \in { 2 }
+			throw notyetimplemented("Generation for x/y=z, given x, in the case of integers.");
+		}
 		_generator = new TimesGenerator(_vars[1], _vars[2], _vars[0], pift->getType(), _universe.tables()[0]);
 	} else if (_firstocc[1] == 0) {
-		thrownotyetimplemented("Create a generator for x/x=y, with x output");
+		throw notyetimplemented("Create a generator for x/x=y, with x output");
 	} else {
-		thrownotyetimplemented("Infinite generator for division pattern (out,out,in)");
+		throw notyetimplemented("Infinite generator for division pattern (out,out,in)");
 	}
 }
 
 void GeneratorFactory::visit(const ExpInternalFuncTable*) {
-	thrownotyetimplemented("Infinite generator for exponentiation pattern (?,?,in)");
+	throw notyetimplemented("Infinite generator for exponentiation pattern (?,?,in)");
 }
 
 void GeneratorFactory::visit(const ModInternalFuncTable*) {
-	thrownotyetimplemented("Infinite generator for remainder pattern (?,?,in)");
+	throw notyetimplemented("Infinite generator for remainder pattern (?,?,in)");
 }
 
 void GeneratorFactory::visit(const AbsInternalFuncTable* aift) {

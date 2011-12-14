@@ -173,10 +173,10 @@ int nrSubformulas(AbstractTheory* f) {
 
 AbstractTheory* merge(AbstractTheory* at1, AbstractTheory* at2) {
 	if (typeid(*at1) != typeid(Theory) || typeid(*at2) != typeid(Theory)) {
-		thrownotyetimplemented("Only merging of normal theories has been implemented...");
+		throw notyetimplemented("Only merging of normal theories has been implemented...");
 	}
 	if (at1->vocabulary() != at2->vocabulary()) {
-		thrownotyetimplemented("Only merging of theories over the same vocabularies has been implemented...");
+		throw notyetimplemented("Only merging of theories over the same vocabularies has been implemented...");
 	}
 	AbstractTheory* at = at1->clone();
 	Theory* t2 = static_cast<Theory*>(at2);

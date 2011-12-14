@@ -19,6 +19,7 @@ structure S:V{
 procedure assertions(){
 	return (
 		assert2multi(S[V::f].graph.ct,{{1,2},{2,3},{3,1}},"f_graphed<ct>") 
+		and consistent(1)
 	)
 }
 

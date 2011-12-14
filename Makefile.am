@@ -103,6 +103,7 @@ grounder_SOURCES = \
 		commands/tableiterator.hpp\
 		commands/propagate.hpp\
 		commands/query.hpp\
+		commands/structureproperties.hpp\
 		commands/createtuple.hpp\
 		commands/ground.hpp\
 		commands/completion.hpp\
@@ -142,7 +143,6 @@ grounder_SOURCES = \
 		generators/TrueQuantKernelGenerator.hpp\
 		generators/GeneratorFactory.hpp generators/GeneratorFactory.cpp\
 		generators/BDDBasedGeneratorFactory.hpp generators/BDDBasedGeneratorFactory.cpp\
-		OptionsStack.hpp OptionsStack.cpp\
 		visitors/StructureVisitor.hpp visitors/StructureVisitor.cpp\
 		visitors/TheoryVisitor.hpp visitors/TheoryVisitor.cpp\
 		visitors/TheoryMutatingVisitor.hpp visitors/TheoryMutatingVisitor.cpp\

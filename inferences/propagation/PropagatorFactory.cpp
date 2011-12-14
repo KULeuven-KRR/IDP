@@ -21,7 +21,7 @@ typedef std::map<PFSymbol*, const FOBDD*> Bound;
 GenerateBDDAccordingToBounds* generateApproxBounds(AbstractTheory* theory, AbstractStructure* structure){
 	SymbolicPropagation propinference;
 	std::map<PFSymbol*,InitBoundType> mpi = propinference.propagateVocabulary(theory,structure);
-	auto propagator = createPropagator(theory,mpi);
+	auto propagator = createPropagator(theory,structure, mpi);
 	propagator->doPropagation();
 	return propagator->symbolicstructure();
 }
@@ -46,7 +46,7 @@ void generateNaiveBounds(FOBDDManager& manager, AbstractStructure* structure, PF
 	cfbounds[symbol] = manager.getBDD(cfkernel, manager.truebdd(), manager.falsebdd());
 }
 
-GenerateBDDAccordingToBounds* generateNaiveApproxBounds(AbstractTheory* theory, AbstractStructure* structure){
+GenerateBDDAccordingToBounds* generateNaiveApproxBounds(AbstractTheory*, AbstractStructure* structure){
 	auto manager = new FOBDDManager();
 	Bound ctbounds, cfbounds;
 	std::map<PFSymbol*, std::vector<const FOBDDVariable*> > vars;
@@ -66,12 +66,20 @@ GenerateBDDAccordingToBounds* generateNaiveApproxBounds(AbstractTheory* theory, 
 	return new GenerateBDDAccordingToBounds(manager, ctbounds, cfbounds, vars);
 }
 
-FOPropagator* createPropagator(AbstractTheory* theory, const std::map<PFSymbol*,InitBoundType> mpi) {
-	auto domainfactory = new FOPropBDDDomainFactory();
-	auto scheduler = new FOPropScheduler();
-	FOPropagatorFactory<FOPropBDDDomainFactory, FOPropBDDDomain> propfactory(domainfactory,scheduler,true,mpi);
-	auto propagator = propfactory.create(theory);
-	return propagator;
+FOPropagator* createPropagator(AbstractTheory* theory, AbstractStructure*, const std::map<PFSymbol*,InitBoundType> mpi) {
+//	if(getOption(BoolType::GROUNDWITHBOUNDS)){
+		auto domainfactory = new FOPropBDDDomainFactory();
+		auto scheduler = new FOPropScheduler();
+		FOPropagatorFactory<FOPropBDDDomainFactory, FOPropBDDDomain> propfactory(domainfactory,scheduler,true,mpi);
+		return propfactory.create(theory);
+//	}else{
+//		TODO notyetimplemented("Propagation without bdds.");
+		/*auto domainfactory = new FOPropTableDomainFactory(s);
+		auto scheduler = new FOPropScheduler();
+		FOPropagatorFactory<FOPropTableDomainFactory, FOPropTableDomain> propfactory(domainfactory,scheduler,true,mpi);
+		return propfactory.create(theory);*/
+//		return NULL;
+//	}
 }
 
 template<class InterpretationFactory, class PropDomain>
@@ -274,7 +282,7 @@ void FOPropagatorFactory<Factory, Domain>::visit(const AggForm* af) {
 
 template<class Factory, class Domain>
 void FOPropagatorFactory<Factory, Domain>::visit(const EqChainForm* ) {
-	thrownotyetimplemented("Creating a propagator for comparison chains has not yet been implemented.");
+	throw notyetimplemented("Creating a propagator for comparison chains has not yet been implemented.");
 }
 
 template<class Factory, class Domain>

@@ -35,8 +35,6 @@ bool CalculateDefinitions::calculateDefinition(Definition* definition, AbstractS
 
 	// Collect solutions
 	if (abstractsolutions->getModels().empty()) {
-		notyetimplemented("Making this structure inconsistent");
-		//makeInconsistent(structure); //TODO doesn't work yet.  Has something to do with the fact that this will make every function inconsistent (also *, %,...)
 		return false;
 	} else {
 		Assert(abstractsolutions->getModels().size() == 1);
@@ -50,11 +48,11 @@ bool CalculateDefinitions::calculateDefinition(Definition* definition, AbstractS
 	grounding->recursiveDelete();
 	delete (solver);
 	delete (abstractsolutions);
-	std::cerr << toString(structure);
 	return structure->isConsistent();
 }
 
-bool CalculateDefinitions::calculateKnownDefinitions(Theory* theory, AbstractStructure* structure) const {
+AbstractStructure*  CalculateDefinitions::calculateKnownDefinitions(Theory* theory, AbstractStructure* originalStructure) const {
+	auto structure = originalStructure->clone();
 	if (getOption(IntType::GROUNDVERBOSITY) >= 1) {
 		clog << "Calculating known definitions\n";
 	}
@@ -82,7 +80,7 @@ bool CalculateDefinitions::calculateKnownDefinitions(Theory* theory, AbstractStr
 			if (currentdefinition->second.empty()) {
 				bool satisfiable = calculateDefinition(currentdefinition->first, structure);
 				if (not satisfiable) {
-					return false;
+					return new InconsistentStructure(structure->name(),structure->pi());
 				}
 				theory->remove(currentdefinition->first);
 				opens.erase(currentdefinition);
@@ -90,6 +88,6 @@ bool CalculateDefinitions::calculateKnownDefinitions(Theory* theory, AbstractStr
 			}
 		}
 	}
-	return true;
+	return structure;
 }
 

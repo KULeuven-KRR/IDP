@@ -14,12 +14,6 @@ structure S:V{
 }
 
 procedure assertions(){
-	return (
-		assert2(S[V::p].ct,{},"p<ct>") 
-		and assert2(S[V::p].cf,{},"p<cf>") 
-		and assert2(S[V::q].ct,{},"q<ct>") 
-		and assert2(S[V::q].cf,{},"q<cf>") 
-		and 0 --what should this be???? Inconsistent structure?
-	)
+	return consistent(0)
 }
 

@@ -35,7 +35,7 @@ private:
 
 public:
 	IDPPrinter(Stream& stream) :
-			StreamPrinter<Stream>(stream),  _translator(NULL), _termtranslator(NULL) {
+			StreamPrinter<Stream>(stream), _translator(NULL), _termtranslator(NULL) {
 	}
 
 	virtual void setTranslator(GroundTranslator* t) {
@@ -54,6 +54,11 @@ public:
 
 	void visit(const AbstractStructure* structure) {
 		Assert(isTheoryOpen());
+
+		if (not structure->isConsistent()) {
+			output() << "INCONSISTENT STRUCTURE";
+			return;
+		}
 		Vocabulary* voc = structure->vocabulary();
 
 		for (auto it = voc->firstSort(); it != voc->lastSort(); ++it) {
@@ -195,8 +200,8 @@ public:
 	}
 
 	template<typename Visitor, typename List>
-	void visitList(Visitor v, const List& list){
-		for(auto i=list.cbegin(); i<list.cend(); ++i){
+	void visitList(Visitor v, const List& list) {
+		for (auto i = list.cbegin(); i < list.cend(); ++i) {
 			(*i)->accept(v);
 		}
 	}
@@ -205,7 +210,7 @@ public:
 		Assert(isTheoryOpen());
 		_translator = g->translator();
 		_termtranslator = g->termtranslator();
-		for(auto i=g->getClauses().cbegin(); i<g->getClauses().cend(); ++i){
+		for (auto i = g->getClauses().cbegin(); i < g->getClauses().cend(); ++i) {
 			visit(*i);
 		}
 		visitList(this, g->getCPReifications());
@@ -223,7 +228,8 @@ public:
 
 	void visit(const PredForm* f) {
 		Assert(isTheoryOpen());
-		if (isNeg(f->sign())) output() << "~";
+		if (isNeg(f->sign()))
+			output() << "~";
 		output() << toString(f->symbol());
 		if (not f->subterms().empty()) {
 			output() << "(";
@@ -466,9 +472,11 @@ public:
 			output() << "false";
 		} else {
 			for (unsigned int m = 0; m < g.size(); ++m) {
-				if (g[m] < 0) output() << '~';
+				if (g[m] < 0)
+					output() << '~';
 				printAtom(g[m]);
-				if (m < g.size() - 1) output() << " | ";
+				if (m < g.size() - 1)
+					output() << " | ";
 			}
 		}
 		output() << "." << "\n";
@@ -599,7 +607,8 @@ public:
 		output() << "sum[ ";
 		for (auto vit = cpt->varids().cbegin(); vit != cpt->varids().cend(); ++vit) {
 			printTerm(*vit);
-			if (*vit != cpt->varids().back()) output() << "; ";
+			if (*vit != cpt->varids().back())
+				output() << "; ";
 		}
 		output() << " ]";
 	}
@@ -613,7 +622,8 @@ public:
 			output() << '(';
 			printTerm(*vit);
 			output() << ',' << *wit << ')';
-			if (*vit != cpt->varids().back()) output() << "; ";
+			if (*vit != cpt->varids().back())
+				output() << "; ";
 		}
 		output() << " ]";
 	}
@@ -629,30 +639,30 @@ public:
 			output() << "possibly infinite table";
 		}
 		TableIterator kt = table->begin();
-		if (table->arity()>0) {
+		if (table->arity() > 0) {
 			output() << "{ ";
 			if (not kt.isAtEnd()) {
-				bool begintuple = true, beginlist = true;
+				bool beginlist = true;
 				for (; not kt.isAtEnd(); ++kt) {
-					if(not beginlist){
+					if (not beginlist) {
 						output() << "; ";
 					}
 					beginlist = false;
 					ElementTuple tuple = *kt;
 					bool begintuple = true;
 					for (auto lt = tuple.cbegin(); lt != tuple.cend(); ++lt) {
-						if(not begintuple){
-							output() <<',';
+						if (not begintuple) {
+							output() << ',';
 						}
 						begintuple = false;
-						output() <<toString(*lt);
+						output() << toString(*lt);
 					}
 				}
 			}
 			output() << " }";
-		} else if (not kt.isAtEnd()){
+		} else if (not kt.isAtEnd()) {
 			output() << "true";
-		}else{
+		} else {
 			output() << "false";
 		}
 	}
@@ -762,7 +772,8 @@ public:
 		if (f->overloaded()) {
 			output() << "overloaded function " << f->name() << '\n';
 		} else {
-			if (f->partial()) output() << "partial ";
+			if (f->partial())
+				output() << "partial ";
 			output() << f->name().substr(0, f->name().find('/'));
 			if (f->arity() > 0) {
 				output() << "(" << f->insort(0)->name();
@@ -792,10 +803,13 @@ public:
 		Assert(isTheoryOpen());
 		output() << "set_" << s->setnr() << " = [ ";
 		for (unsigned int n = 0; n < s->size(); ++n) {
-			if (s->weighted()) output() << '(';
+			if (s->weighted())
+				output() << '(';
 			printAtom(s->literal(n));
-			if (s->weighted()) output() << ',' << s->weight(n) << ')';
-			if (n < s->size() - 1) output() << "; ";
+			if (s->weighted())
+				output() << ',' << s->weight(n) << ')';
+			if (n < s->size() - 1)
+				output() << "; ";
 		}
 		output() << " ]\n";
 	}
@@ -952,7 +966,8 @@ private:
 			for (; not kt.isAtEnd(); ++kt) {
 				output() << "; ";
 				tuple = *kt;
-				if (tuple.size() > 1) output() << toString(tuple[0]);
+				if (tuple.size() > 1)
+					output() << toString(tuple[0]);
 				for (unsigned int n = 1; n < tuple.size() - 1; ++n) {
 					output() << ',' << toString(tuple[n]);
 				}

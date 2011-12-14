@@ -1,9 +1,3 @@
-/************************************
- entails.hpp
- this file belongs to GidL 2.0
- (c) K.U.Leuven
- ************************************/
-
 #ifndef ENTAILS_HPP_
 #define ENTAILS_HPP_
 

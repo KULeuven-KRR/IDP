@@ -152,6 +152,10 @@ bool FOPropBDDDomainFactory::approxequals(FOPropBDDDomain* domain1, FOPropBDDDom
 	return domain1->bdd() == domain2->bdd();
 }
 
+bool FOPropTableDomainFactory::approxequals(FOPropTableDomain* left, FOPropTableDomain* right) const{
+	return left->table()==right->table();
+}
+
 PredInter* FOPropBDDDomainFactory::inter(const vector<Variable*>& vars, const ThreeValuedDomain<FOPropBDDDomain>& dom, AbstractStructure* str) const {
 	// Construct the universe of the interpretation and two sets of new variables
 	vector<SortTable*> vst;
@@ -516,7 +520,7 @@ void TypedFOPropagator<Factory, Domain>::visit(const PredForm* pf) {
 
 template<class Factory, class Domain>
 void TypedFOPropagator<Factory, Domain>::visit(const EqChainForm*) {
-	thrownotyetimplemented("Creating a propagator for comparison chains has not yet been implemented.");
+	throw notyetimplemented("Creating a propagator for comparison chains has not yet been implemented.");
 }
 
 template<class Factory, class Domain>

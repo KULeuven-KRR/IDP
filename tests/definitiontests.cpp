@@ -20,7 +20,6 @@ using namespace std;
 namespace Tests {
 
 // TODO prevent infinite running bugs
-// TODO on parsing error of one of the files, a lot of later ones will also fail!
 vector<string> generateListOfDefFiles() {
 	vector<string> deftests;
 	DIR *dir;
@@ -54,5 +53,5 @@ TEST_P(DefinitionTest, CalculatesDefinition) {
 	ASSERT_EQ(result, Status::SUCCESS);
 }
 
-INSTANTIATE_TEST_CASE_P(Inferences, DefinitionTest,  ::testing::ValuesIn(generateListOfDefFiles()));
+INSTANTIATE_TEST_CASE_P(CalculateDefinitions, DefinitionTest,  ::testing::ValuesIn(generateListOfDefFiles()));
 }

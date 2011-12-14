@@ -22,6 +22,7 @@ public:
 			Inference("calculatedefinitions") {
 		add(AT_THEORY);
 		add(AT_STRUCTURE);
+		add(AT_OPTIONS);
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
@@ -29,12 +30,15 @@ public:
 		Assert(sametypeid<Structure>(*(args[1].structure())));
 		auto theory = dynamic_cast<Theory*>(args[0].theory());
 		auto structure = dynamic_cast<Structure*>(args[1].structure());
-		if (not CalculateDefinitions::doCalculateDefinitions(theory, structure)) {
-			if (getOption(IntType::GROUNDVERBOSITY) >= 1) { //TODO see issue 18. Fix the options
+		GlobalData::instance()->setOptions(args[2].options());
+		auto clone = structure->clone();
+		auto result = CalculateDefinitions::doCalculateDefinitions(theory, clone);
+		if (not result->isConsistent() ) {
+			if (getOption(IntType::GROUNDVERBOSITY) >= 1) {
 				std::clog << "Calculating definitions resulted in inconsistent model. \n" << "Theory is unsatisfiable.\n";
 			}
 		}
-		return InternalArgument(); //TODO is this ok?
+		return InternalArgument(result);
 	}
 };
 

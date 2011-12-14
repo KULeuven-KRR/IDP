@@ -82,7 +82,7 @@ Lit AtomGrounder::run() const {
 			args[n] = groundsubterms[n]._domelement;
 			// Check partial functions
 			if (args[n] == NULL) {
-				thrownotyetimplemented("Partial function issue in grounding an atom.");
+				throw notyetimplemented("Partial function issue in grounding an atom.");
 				// FIXME what should happen here?
 				/*//TODO: produce a warning!
 				 if(context()._funccontext == Context::BOTH) {
@@ -167,16 +167,17 @@ Lit ComparisonGrounder::run() const {
 
 	//TODO??? out-of-bounds check. Can out-of-bounds ever occur on </2, >/2, =/2???
 
+	Lit result;
 	if (left.isVariable) {
 		CPTerm* leftterm = new CPVarTerm(left._varid);
 		if (right.isVariable) {
 			CPBound rightbound(right._varid);
-			return translator()->translate(leftterm, _comparator, rightbound, TsType::EQ); //TODO use _context._tseitin?
+			result = translator()->translate(leftterm, _comparator, rightbound, TsType::EQ); //TODO use _context._tseitin?
 		} else {
 			Assert(not right.isVariable);
 			int rightvalue = right._domelement->value()._int;
 			CPBound rightbound(rightvalue);
-			return translator()->translate(leftterm, _comparator, rightbound, TsType::EQ); //TODO use _context._tseitin?
+			result = translator()->translate(leftterm, _comparator, rightbound, TsType::EQ); //TODO use _context._tseitin?
 		}
 	} else {
 		Assert(not left.isVariable);
@@ -184,26 +185,27 @@ Lit ComparisonGrounder::run() const {
 		if (right.isVariable) {
 			CPTerm* rightterm = new CPVarTerm(right._varid);
 			CPBound leftbound(leftvalue);
-			return translator()->translate(rightterm, invertComp(_comparator), leftbound, TsType::EQ); //TODO use _context._tseitin?
+			result = translator()->translate(rightterm, invertComp(_comparator), leftbound, TsType::EQ); //TODO use _context._tseitin?
 		} else {
 			Assert(not right.isVariable);
 			int rightvalue = right._domelement->value()._int;
 			switch (_comparator) {
 			case CompType::EQ:
-				return leftvalue == rightvalue ? _true : _false;
+				result = leftvalue == rightvalue ? _true : _false; break;
 			case CompType::NEQ:
-				return leftvalue != rightvalue ? _true : _false;
+				result = leftvalue != rightvalue ? _true : _false; break;
 			case CompType::LEQ:
-				return leftvalue <= rightvalue ? _true : _false;
+				result = leftvalue <= rightvalue ? _true : _false; break;
 			case CompType::GEQ:
-				return leftvalue >= rightvalue ? _true : _false;
+				result = leftvalue >= rightvalue ? _true : _false; break;
 			case CompType::LT:
-				return leftvalue < rightvalue ? _true : _false;
+				result = leftvalue < rightvalue ? _true : _false; break;
 			case CompType::GT:
-				return leftvalue > rightvalue ? _true : _false;
+				result = leftvalue > rightvalue ? _true : _false; break;
 			}
 		}
 	}
+	return result;
 }
 
 void ComparisonGrounder::run(ConjOrDisj& formula) const {

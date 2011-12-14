@@ -1,0 +1,25 @@
+vocabulary V{
+A
+}
+
+theory T:V{
+false | A.
+}
+
+structure S:V{
+
+}
+
+
+
+	
+procedure weakassertions(newS){
+	return
+		(assertNotEmpty(newS[V.A].ct,"A<ct>") == 1
+		and assertEmpty(newS[V.A].cf,"A<cf>")==1 )
+	
+}
+
+procedure strongassertions(newS){
+	return 1
+}

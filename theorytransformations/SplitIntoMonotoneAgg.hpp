@@ -15,7 +15,7 @@ protected:
 		if (not FormulaUtils::isMonotone(agg) && not FormulaUtils::isAntimonotone(agg)) {
 			std::stringstream ss;
 			ss << "Splitting into monotone aggregates not supported for " << toString(agg);
-			thrownotyetimplemented(ss.str());
+			throw notyetimplemented(ss.str());
 		}
 	}
 	Formula* splitInto(AggForm* f, CompType left, CompType right) {

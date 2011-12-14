@@ -22,7 +22,7 @@ public:
 	// TODO: free allocated memory
 	AbstractStructure* propagate(AbstractTheory* theory, AbstractStructure* structure) {
 		auto mpi = propagateVocabulary(theory, structure);
-		auto propagator = createPropagator(theory, mpi);
+		auto propagator = createPropagator(theory, structure, mpi);
 		propagator->doPropagation();
 		return propagator->currstructure(structure);
 	}

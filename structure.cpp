@@ -3916,7 +3916,7 @@ bool Structure::isConsistent() const {
 }
 
 void generateMorePreciseStructures(const PredTable* cf, const ElementTuple& domainElementWithoutValue, const SortTable* imageSort, Function* function,
-		const FuncInter* inter, vector<AbstractStructure*>& extensions) {
+		vector<AbstractStructure*>& extensions) {
 	// go over all saved structures and generate a new structure for each possible value for it
 	vector<AbstractStructure*> newstructs;
 	auto imageIterator = SortIterator(imageSort->internTable()->sortBegin());
@@ -4008,7 +4008,6 @@ std::vector<AbstractStructure*> Structure::generateAllTwoValuedExtensions() cons
 			TableIterator domainIterator(internaliterator);
 
 			auto ctIterator = ct->begin();
-			auto cfIterator = cf->begin();
 			FirstNElementsEqual eq((*i).first->arity());
 			StrictWeakNTupleOrdering so((*i).first->arity());
 
@@ -4021,17 +4020,10 @@ std::vector<AbstractStructure*> Structure::generateAllTwoValuedExtensions() cons
 				if (not ctIterator.isAtEnd() && eq(domainElementWithoutValue, *ctIterator)) {
 					continue;
 				}
-				while (not cfIterator.isAtEnd() && so(*cfIterator, domainElementWithoutValue)) {
-					++cfIterator;
-				}
-				if (not cfIterator.isAtEnd() && eq(domainElementWithoutValue, *cfIterator)) {
-					continue;
-				}
-
-				generateMorePreciseStructures(cf, domainElementWithoutValue, sorts.back(), function, inter, extensions);
+				generateMorePreciseStructures(cf, domainElementWithoutValue, sorts.back(), function, extensions);
 			}
 		} else {
-			generateMorePreciseStructures(cf, domainElementWithoutValue, sorts.back(), function, inter, extensions);
+			generateMorePreciseStructures(cf, domainElementWithoutValue, sorts.back(), function, extensions);
 		}
 		if (GlobalData::instance()->terminateRequested()) {
 			throw IdpException("Terminate requested");
@@ -4081,6 +4073,47 @@ std::vector<AbstractStructure*> Structure::generateAllTwoValuedExtensions() cons
 	return extensions;
 }
 
+
+void InconsistentStructure::inter(Predicate* p, PredInter* i){
+	throw new IdpException("Trying to set the interpretation of a predicate for an inconsistent structure");
+}
+void InconsistentStructure::inter(Function* f, FuncInter* i){
+	throw new IdpException("Trying to set the interpretation of a functions for an inconsistent structure");
+}
+
+SortTable* InconsistentStructure::inter(Sort* s) const{
+	throw new IdpException("Trying to get the interpretation of a sort in an inconsistent structure");
+}
+PredInter* InconsistentStructure::inter(Predicate* p) const{
+	throw new IdpException("Trying to get the interpretation of a predicate in an inconsistent structure");
+} ;
+FuncInter* InconsistentStructure::inter(Function* f) const{
+	throw new IdpException("Trying to get the interpretation of a function in an inconsistent structure");
+} ;
+PredInter* InconsistentStructure::inter(PFSymbol* s) const{
+	throw new IdpException("Trying to get the interpretation of a symbol in an inconsistent structure");
+} ;
+
+AbstractStructure* InconsistentStructure::clone() const{
+	return new InconsistentStructure(_name,_pi);
+}
+
+Universe InconsistentStructure::universe(const PFSymbol*) const {
+	throw new IdpException("Trying to get the universe for a symbol in an inconsistent structure");
+}
+
+bool InconsistentStructure::approxTwoValued() const{
+	return false;
+}
+bool InconsistentStructure::isConsistent() const{
+	return false;
+}
+
+std::vector<AbstractStructure*> InconsistentStructure::generateAllTwoValuedExtensions() const{
+	return {};
+}
+
+
 void computescore(Sort* s, map<Sort*, unsigned int>& scores) {
 	if (scores.find(s) == scores.cend()) {
 		unsigned int sc = 0;
@@ -4113,7 +4146,7 @@ void completeSortTable(const PredTable* pt, PFSymbol* symbol, const string& stru
 }
 
 void addUNAPattern(Function*) {
-	thrownotyetimplemented("una pattern type");
+	throw notyetimplemented("una pattern type");
 }
 
 void Structure::autocomplete() {

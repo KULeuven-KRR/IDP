@@ -120,7 +120,7 @@ private:
 
 		FOBDDVisitor::visit(quantkernel->bdd());
 
-		auto quantvar = _dbrmapping[_manager->getDeBruijnIndex(quantkernel->sort(), NULL)];
+		auto quantvar = _dbrmapping[_manager->getDeBruijnIndex(quantkernel->sort(), 0)];
 		_dbrmapping = savedmapping;
 		_currformula = new QuantForm(SIGN::POS, QUANT::EXIST, {quantvar}, _currformula, FormulaParseInfo());
 	}

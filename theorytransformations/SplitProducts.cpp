@@ -56,9 +56,7 @@ Formula* SplitProducts::visit(AggForm* af) {
 	auto noNulOccurences = new AggForm(SIGN::POS, nulterm, CompType::EQ, new AggTerm(nulset, AggFunction::CARD, aggterm->pi()), af->pi()); //#{x: p(x) & f(x) = 0:f(x)}= 0
 
 	auto intsort = VocabularyUtils::intsort();
-	auto one = DomainElementFactory::createGlobal()->create(1);
 	auto minusone = DomainElementFactory::createGlobal()->create(-1);
-	auto oneterm = new DomainTerm(intsort, one, aggterm->pi());
 	auto minusoneterm = new DomainTerm(intsort, minusone, aggterm->pi());
 
 	auto prodPos = new AggTerm(posset, AggFunction::PROD, aggterm->pi());

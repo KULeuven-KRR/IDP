@@ -226,9 +226,6 @@ Formula* UnnestTerms::visit(PredForm* predform) {
 // Special treatment for (in)equalities: possibly only one side needs to be moved
 	bool moveonlyleft = false;
 	bool moveonlyright = false;
-	Assert(predform!=NULL);
-	Assert(predform->symbol()!=NULL);
-	Assert(predform->symbol()->name()!="");
 	string symbolname = predform->symbol()->name();
 	if (symbolname == "=/2" || symbolname == "</2" || symbolname == ">/2") {
 		auto leftterm = predform->subterms()[0];

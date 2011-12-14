@@ -16,6 +16,7 @@ procedure assertions(){
 	return (
 		assert2(S[V::p].ct,{},"p<ct>") 
 		and assert2(S[V::p].cf,{},"p<cf>") 		
+		and consistent(1)
 	)
 }
 

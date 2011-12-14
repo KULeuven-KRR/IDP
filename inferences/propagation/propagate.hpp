@@ -160,6 +160,7 @@ class FOPropTableDomainFactory : public FOPropDomainFactory<FOPropTableDomain> {
 		FOPropTableDomain*	disjunction(FOPropTableDomain*,FOPropTableDomain*) const;
 		FOPropTableDomain*	substitute(FOPropTableDomain*,const std::map<Variable*,Variable*>&) const;
 		bool				equals(FOPropTableDomain*,FOPropTableDomain*)	const;
+		bool				approxequals(FOPropTableDomain*,FOPropTableDomain*)	const;
 		PredInter*			inter(const std::vector<Variable*>&, const ThreeValuedDomain<FOPropTableDomain>&, AbstractStructure*) const;
 		std::ostream&		put(std::ostream&,FOPropTableDomain*) const;
 };
@@ -192,6 +193,7 @@ struct ThreeValuedDomain {
 	}
 
 	ThreeValuedDomain(const FOPropDomainFactory<DomainType>* factory, const PredForm* pf, InitBoundType ibt) {
+		Assert(ibt!=IBT_TWOVAL && ibt!=IBT_NONE); // TODO what with these cases?
 		_twovalued = false;
 		switch(ibt) {
 		case IBT_CT:
@@ -206,9 +208,10 @@ struct ThreeValuedDomain {
 			_ctdomain = factory->ctDomain(pf);
 			_cfdomain = factory->cfDomain(pf);
 			break;
+		case IBT_TWOVAL:
+		case IBT_NONE:
+			break;
 		}
-		Assert(_ctdomain!=NULL);
-		Assert(_cfdomain!=NULL);
 	}
 };
 

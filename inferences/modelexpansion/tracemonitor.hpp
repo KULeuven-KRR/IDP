@@ -17,6 +17,9 @@ public:
 	virtual void backtrack(int dl) = 0;
 	virtual void propagate(MinisatID::Literal lit, int dl) = 0;
 	virtual void setTranslator(GroundTranslator* translator) = 0;
+
+	//NOTE: should be called BEFORE the grounding
+	//(else, we don't keep track of propagations that occur immediately after adding a unit clause)
 	virtual void setSolver(MinisatID::SATSolver* solver) = 0;
 };
 

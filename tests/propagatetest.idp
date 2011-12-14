@@ -2,9 +2,13 @@ procedure main(){
 	stdoptions.timeout = 5
 	stdoptions.nbmodelequivalent = true
 	stdoptions.groundwithbounds = false
-	S=calculatedefinitions(T,S)
-	return(assertions())
-	
+	S1=groundpropagate(T,S)
+	S2=optimalpropagate(T,S)
+	if weakassertions(S1) and weakassertions(S2) and strongassertions(S2) then
+		return 1
+	else
+		return 0
+	end
 }
 
 procedure assert(table,valuefirst,name,expected){
@@ -26,6 +30,22 @@ procedure assertnot(table,valuefirst,name,expected){
 	end
 	if found == 1 then
 		io.stderr:write("FAIL!  expected that "..name.." is not certainly"..expected..", but assertion failed\n")
+		return 0
+	end
+	return 1
+}
+
+procedure assertNotEmpty(table, name){
+	for t in tuples(table) do 
+		return 1
+	end
+	io.stderr:write("Expected that "..name.."is an empty table, but it is not \n")
+	return 0
+}
+
+procedure assertEmpty(table, name){
+	for t in tuples(table) do 
+		io.stderr:write("Expected that "..name.."is not an empty table, but it is\n")
 		return 0
 	end
 	return 1
@@ -69,16 +89,19 @@ procedure assert2(table, values, name){
 	
 }
 
-procedure consistent(expected){
+
+
+procedure consistent(expected, Struct){
+	if not Struct then Struct = S end
 	if expected == 1 then
-		if isconsistent(S) == 1 then
+		if isconsistent(Struct) == 1 then
 			return 1
 		else
 			io.stderr:write("FAIL!  expected a consistent structure, but was inconsistent\n")
 			return 0
 		end
 	else
-		if isconsistent(S) == 0 then
+		if isconsistent(Struct) == 0 then
 			return 1
 		else
 			io.stderr:write("FAIL!  expected an inconsistent structure, but was consistent\n")

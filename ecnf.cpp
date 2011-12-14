@@ -43,7 +43,7 @@ AggGroundRule::AggGroundRule(int head, AggTsBody* body, bool rec) :
 }
 
 GroundDefinition* GroundDefinition::clone() const {
-	thrownotyetimplemented("Cloning grounddefinitions is not implemented.");
+	throw notyetimplemented("Cloning grounddefinitions is not implemented.");
 	GroundDefinition* newdef = new GroundDefinition(_id, _translator);
 //	for(ruleit = _rules.cbegin(); ruleit != _rules.cend(); ++ruleit)
 	//TODO clone rules...

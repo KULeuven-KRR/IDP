@@ -286,7 +286,7 @@ struct InternalArgument {
 	} _value;
 
 	// Constructors
-	InternalArgument() {
+	InternalArgument(): _type(AT_NIL) {
 	}
 	InternalArgument(const InternalArgument& orig) :
 			_type(orig._type), _value(orig._value) {
