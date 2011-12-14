@@ -4008,7 +4008,6 @@ std::vector<AbstractStructure*> Structure::generateAllTwoValuedExtensions() cons
 			TableIterator domainIterator(internaliterator);
 
 			auto ctIterator = ct->begin();
-			auto cfIterator = cf->begin();
 			FirstNElementsEqual eq((*i).first->arity());
 			StrictWeakNTupleOrdering so((*i).first->arity());
 
@@ -4021,13 +4020,6 @@ std::vector<AbstractStructure*> Structure::generateAllTwoValuedExtensions() cons
 				if (not ctIterator.isAtEnd() && eq(domainElementWithoutValue, *ctIterator)) {
 					continue;
 				}
-				while (not cfIterator.isAtEnd() && so(*cfIterator, domainElementWithoutValue)) {
-					++cfIterator;
-				}
-				if (not cfIterator.isAtEnd() && eq(domainElementWithoutValue, *cfIterator)) {
-					continue;
-				}
-
 				generateMorePreciseStructures(cf, domainElementWithoutValue, sorts.back(), function, inter, extensions);
 			}
 		} else {
