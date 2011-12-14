@@ -3359,14 +3359,20 @@ bool PredInter::isConsistent() const {
 	auto ctIterator = _ct->begin();
 	auto cfIterator = _cf->begin();
 
+	if(not _ct->approxFinite() || not _cf->approxFinite()){
+		throw notyetimplemented("Check consistency of infinite tables");
+	}
+
 	FirstNElementsEqual eq(_ct->arity());
 	StrictWeakNTupleOrdering so(_ct->arity());
 	for (; not ctIterator.isAtEnd(); ++ctIterator) {
+		cerr <<toString(*ctIterator) <<"\n";
 //#ifdef DEBUG
 //			Assert(not _pf->contains(*ctIterator));
 //#endif
 		// get unassigned domain element
 		while (not cfIterator.isAtEnd() && so(*cfIterator, *ctIterator)) {
+			cerr <<toString(*cfIterator) <<"\n";
 			++cfIterator;
 //#ifdef DEBUG
 //			Assert(not _pt->contains(*cfIterator));

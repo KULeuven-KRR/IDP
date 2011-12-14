@@ -32,7 +32,6 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 	// FIXME currently skipping if working lazily!
 	auto newstructure = structure;
 	if (not opts->getValue(BoolType::GROUNDLAZILY) && sametypeid<Theory>(*theory)) {
-
 		newstructure = CalculateDefinitions::doCalculateDefinitions(dynamic_cast<Theory*>(theory), structure);
 		if (not newstructure->isConsistent()) {
 			return std::vector<AbstractStructure*> { };

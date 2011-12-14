@@ -667,17 +667,16 @@ void QuantGrounder::run(ConjOrDisj& formula, bool negated) const {
 }
 
 Lit EquivGrounder::getLitEquivWith(const ConjOrDisj& form) const{
-	if(form.literals.size()>2){
-		return getReification(form);
-	}
 	if(form.literals.size()==0){
 		if(form.type==Conn::CONJ){
 			return _true;
 		}else{
 			return _false;
 		}
-	}else{
+	}else if(form.literals.size()==1){
 		return form.literals[0];
+	}else{
+		return getReification(form);
 	}
 }
 
