@@ -23,8 +23,8 @@
 using namespace std;
 
 /**********************
-	Domain elements
-**********************/
+ Domain elements
+ **********************/
 
 ostream& operator<<(ostream& out, const DomainElementType& domeltype) {
 	string DomElTypeStrings[4] = { "int", "double", "string", "compound" };
@@ -506,8 +506,8 @@ const DomainAtom* DomainAtomFactory::create(PFSymbol* s, const ElementTuple& tup
 }
 
 /****************
-	Iterators
-****************/
+ Iterators
+ ****************/
 
 TableIterator::TableIterator(const TableIterator& tab) {
 	_iterator = tab.iterator()->clone();
@@ -1010,8 +1010,8 @@ void CharInternalSortIterator::operator++() {
 }
 
 /*************************
-	Internal predtable
-*************************/
+ Internal predtable
+ *************************/
 
 bool Universe::empty() const {
 	for (auto it = _tables.cbegin(); it != _tables.cend(); ++it) {
@@ -1081,7 +1081,7 @@ bool Universe::contains(const ElementTuple& tuple) const {
 
 bool FirstNElementsEqual::operator()(const ElementTuple& t1, const ElementTuple& t2) const {
 	for (unsigned int n = 0; n < _arity; ++n) {
-		if (t1[n] != t2[n]){
+		if (t1[n] != t2[n]) {
 			return false;
 		}
 	}
@@ -1825,8 +1825,8 @@ InternalTableIterator* StrGreaterInternalPredTable::begin(const Universe& univ) 
 }
 
 /*************************
-	Internal sorttable
-*************************/
+ Internal sorttable
+ *************************/
 
 InternalTableIterator* InternalSortTable::begin() const {
 	return new SortInternalTableIterator(sortBegin());
@@ -2449,8 +2449,8 @@ tablesize AllChars::size() const {
 }
 
 /*************************
-	Internal functable
-*************************/
+ Internal functable
+ *************************/
 
 inline void InternalFuncTable::incrementRef() {
 	++_nrRefs;
@@ -2839,8 +2839,8 @@ void SortTable::put(std::ostream& stream) const {
 }
 
 /****************
-	PredTable
-****************/
+ PredTable
+ ****************/
 
 PredTable::PredTable(InternalPredTable* table, const Universe& univ) :
 		_table(table), _universe(univ) {
@@ -3103,8 +3103,8 @@ InternalTableIterator* InverseInternalPredTable::begin(const Universe& univ) con
 }
 
 /****************
-	SortTable
-****************/
+ SortTable
+ ****************/
 
 SortTable::SortTable(InternalSortTable* table) :
 		_table(table) {
@@ -3191,8 +3191,8 @@ void SortTable::remove(const DomainElement* el) {
 }
 
 /****************
-	FuncTable
-****************/
+ FuncTable
+ ****************/
 
 FuncTable::FuncTable(InternalFuncTable* table, const Universe& univ) :
 		_table(table), _universe(univ) {
@@ -3249,8 +3249,8 @@ TableIterator FuncTable::begin() const {
 }
 
 /********************************
-	Predicate interpretations
-********************************/
+ Predicate interpretations
+ ********************************/
 
 /**
  * \brief Create a three- or four-valued interpretation
@@ -3598,8 +3598,8 @@ StrLessThanInterGenerator* StrLessThanInterGeneratorGenerator::get(const std::ve
 }
 
 /*******************************
-	Function interpretations
-*******************************/
+ Function interpretations
+ *******************************/
 
 FuncInter::FuncInter(FuncTable* ft) :
 		_functable(ft) {
@@ -3643,7 +3643,7 @@ void FuncInter::materialize() {
 }
 
 bool FuncInter::isConsistent() const {
-	if (_functable!= NULL) {
+	if (_functable != NULL) {
 		return true; //TODO ok?
 	} else
 		return _graphinter->isConsistent();
@@ -3719,8 +3719,8 @@ InvSuccInterGenerator* InvSuccInterGeneratorGenerator::get(const vector<Sort*>& 
 }
 
 /*****************
-	TableUtils
-*****************/
+ TableUtils
+ *****************/
 
 namespace TableUtils {
 
@@ -3765,8 +3765,8 @@ bool approxTotalityCheck(const FuncInter* funcinter) {
 }
 
 /*****************
-	Structures
-*****************/
+ Structures
+ *****************/
 
 /** Destructor **/
 
@@ -3915,10 +3915,21 @@ bool Structure::isConsistent() const {
 	return true;
 }
 
+bool needMoreModels(unsigned int found){
+	auto expected = getOption(IntType::NRMODELS);
+	return expected==0 || found<expected;
+}
+
+bool needFixedNumberOfModels() {
+	auto expected = getOption(IntType::NRMODELS);
+	return expected!=0 && expected<numeric_limits<int>::max();
+}
+
 void generateMorePreciseStructures(const PredTable* cf, const ElementTuple& domainElementWithoutValue, const SortTable* imageSort, Function* function,
 		vector<AbstractStructure*>& extensions) {
+	int currentnb = extensions.size();
+
 	// go over all saved structures and generate a new structure for each possible value for it
-	vector<AbstractStructure*> newstructs;
 	auto imageIterator = SortIterator(imageSort->internTable()->sortBegin());
 	vector<AbstractStructure*> partialfalsestructs;
 	if (function->partial()) {
@@ -3929,6 +3940,8 @@ void generateMorePreciseStructures(const PredTable* cf, const ElementTuple& doma
 			partialfalsestructs.push_back((*j)->clone());
 		}
 	}
+
+	vector<AbstractStructure*> newstructs;
 	for (; not imageIterator.isAtEnd(); ++imageIterator) {
 		if (GlobalData::instance()->terminateRequested()) {
 			throw IdpException("Terminate requested");
@@ -3939,7 +3952,7 @@ void generateMorePreciseStructures(const PredTable* cf, const ElementTuple& doma
 			continue;
 		}
 
-		for (auto j = extensions.begin(); j < extensions.end(); ++j) {
+		for (auto j = extensions.begin(); j < extensions.end() && needMoreModels(currentnb); ++j) {
 			if (GlobalData::instance()->terminateRequested()) {
 				throw IdpException("Terminate requested");
 			}
@@ -3947,6 +3960,7 @@ void generateMorePreciseStructures(const PredTable* cf, const ElementTuple& doma
 			news->inter(function)->graphInter()->makeTrue(tuple);
 			news->clean();
 			newstructs.push_back(news);
+			currentnb++;
 		}
 		for (auto j = partialfalsestructs.begin(); j < partialfalsestructs.end(); ++j) {
 			if (GlobalData::instance()->terminateRequested()) {
@@ -3959,22 +3973,11 @@ void generateMorePreciseStructures(const PredTable* cf, const ElementTuple& doma
 	extensions.insert(extensions.end(), partialfalsestructs.cbegin(), partialfalsestructs.cend());
 }
 
-/*
- * Can only be called if this structure is cleaned; calculates all more precise two-valued structures
- * TODO Assert(iscleaned) and refactor methods
- */
-std::vector<AbstractStructure*> Structure::generateAllTwoValuedExtensions() const {
-	vector<AbstractStructure*> extensions;
-
-	extensions.push_back(this->clone());
-
-	if (approxTwoValued()) {
-		return extensions;
+void Structure::makeTwoValued() {
+	if(approxTwoValued()){
+		return;
 	}
-
-	// TODO if going through the vocabulary, it is not guaranteed that the struct has an interpretation for it (otherwise, could make this a global method). But is this logical, or should a monitor be added such that a struct is extended if its vocabulary changes?
 	for (auto i = _funcinter.begin(); i != _funcinter.end(); ++i) {
-		auto function = (*i).first;
 		auto inter = (*i).second;
 		if (inter->approxTwoValued()) {
 			continue;
@@ -3990,10 +3993,6 @@ std::vector<AbstractStructure*> Structure::generateAllTwoValuedExtensions() cons
 			domainIterators.push_back(temp);
 			if (not temp.isAtEnd()) {
 				allempty = false;
-			}
-
-			if (GlobalData::instance()->terminateRequested()) {
-				throw IdpException("Terminate requested");
 			}
 		}
 		domainIterators.pop_back();
@@ -4020,10 +4019,27 @@ std::vector<AbstractStructure*> Structure::generateAllTwoValuedExtensions() cons
 				if (not ctIterator.isAtEnd() && eq(domainElementWithoutValue, *ctIterator)) {
 					continue;
 				}
-				generateMorePreciseStructures(cf, domainElementWithoutValue, sorts.back(), function, extensions);
+
+				auto imageIterator = SortIterator(sorts.back()->internTable()->sortBegin());
+				for (; not imageIterator.isAtEnd(); ++imageIterator) {
+					ElementTuple tuple(domainElementWithoutValue);
+					tuple.push_back(*imageIterator);
+					if (cf->contains(tuple)) {
+						continue;
+					}
+					inter->graphInter()->makeTrue(tuple);
+				}
 			}
 		} else {
-			generateMorePreciseStructures(cf, domainElementWithoutValue, sorts.back(), function, extensions);
+			auto imageIterator = SortIterator(sorts.back()->internTable()->sortBegin());
+			for (; not imageIterator.isAtEnd(); ++imageIterator) {
+				ElementTuple tuple(domainElementWithoutValue);
+				tuple.push_back(*imageIterator);
+				if (cf->contains(tuple)) {
+					continue;
+				}
+				inter->graphInter()->makeTrue(tuple);
+			}
 		}
 		if (GlobalData::instance()->terminateRequested()) {
 			throw IdpException("Terminate requested");
@@ -4032,9 +4048,99 @@ std::vector<AbstractStructure*> Structure::generateAllTwoValuedExtensions() cons
 
 	//If some predicate is not two-valued, calculate all structures that are more precise in which this function is two-valued
 	for (auto i = _predinter.begin(); i != _predinter.end(); i++) {
-		if (GlobalData::instance()->terminateRequested()) {
-			throw IdpException("Terminate requested");
+		auto inter = (*i).second;
+		Assert(inter!=NULL);
+		if (inter->approxTwoValued()) {
+			continue;
 		}
+
+		auto pf = inter->pf();
+		for (TableIterator ptIterator = inter->pt()->begin(); not ptIterator.isAtEnd(); ++ptIterator) {
+			if (not pf->contains(*ptIterator)) {
+				continue;
+			}
+
+			inter->makeTrue(*ptIterator);
+		}
+	}
+	clean();
+	Assert(approxTwoValued());
+}
+
+/*
+ * Can only be called if this structure is cleaned; calculates all more precise two-valued structures
+ * TODO refactor into clean methods!
+ */
+std::vector<AbstractStructure*> generateAllTwoValuedExtensions(AbstractStructure* original) {
+	vector<AbstractStructure*> extensions;
+
+	extensions.push_back(original->clone());
+
+	if (original->approxTwoValued()) {
+		return extensions;
+	}
+
+	if(not original->isConsistent()){
+		throw IdpException("Cannot generate two-valued extensions of a four-valued (inconsistent) structure.");
+	}
+
+	// TODO if going through the vocabulary, it is not guaranteed that the struct has an interpretation for it (otherwise, could make this a global method). But is this logical, or should a monitor be added such that a struct is extended if its vocabulary changes?
+	for (auto i = original->getFuncInters().cbegin(); i != original->getFuncInters().cend() && needMoreModels(extensions.size()); ++i) {
+		CHECKTERMINATION
+		auto function = (*i).first;
+		auto inter = (*i).second;
+		if (inter->approxTwoValued()) {
+			continue;
+		}
+		// create a generator for the interpretation
+		auto universe = inter->graphInter()->universe();
+		const auto& sorts = universe.tables();
+
+		vector<SortIterator> domainIterators;
+		bool allempty = true;
+		for (auto sort = sorts.cbegin(); sort != sorts.cend(); ++sort) {
+			CHECKTERMINATION
+			const auto& temp = SortIterator((*sort)->internTable()->sortBegin());
+			domainIterators.push_back(temp);
+			if (not temp.isAtEnd()) {
+				allempty = false;
+			}
+		}
+		domainIterators.pop_back();
+
+		auto ct = inter->graphInter()->ct();
+		auto cf = inter->graphInter()->cf();
+
+		//Now, choose an image for this domainelement
+		ElementTuple domainElementWithoutValue;
+		if (sorts.size() > 0) {
+			auto internaliterator = new CartesianInternalTableIterator(domainIterators, domainIterators, not allempty);
+			TableIterator domainIterator(internaliterator);
+
+			auto ctIterator = ct->begin();
+			FirstNElementsEqual eq((*i).first->arity());
+			StrictWeakNTupleOrdering so((*i).first->arity());
+
+			for (; not allempty && not domainIterator.isAtEnd() && needMoreModels(extensions.size()); ++domainIterator) {
+				CHECKTERMINATION
+				// get unassigned domain element
+				domainElementWithoutValue = *domainIterator;
+				while (not ctIterator.isAtEnd() && so(*ctIterator, domainElementWithoutValue)) {
+					++ctIterator;
+				}
+				if (not ctIterator.isAtEnd() && eq(domainElementWithoutValue, *ctIterator)) {
+					continue;
+				}
+				generateMorePreciseStructures(cf, domainElementWithoutValue, sorts.back(), function, extensions);
+			}
+		} else {
+			generateMorePreciseStructures(cf, domainElementWithoutValue, sorts.back(), function, extensions);
+		}
+	}
+
+	//If some predicate is not two-valued, calculate all structures that are more precise in which this function is two-valued
+	for (auto i = original->getPredInters().cbegin(); i != original->getPredInters().end() && needMoreModels(extensions.size()); i++) {
+		CHECKTERMINATION
 		auto pred = (*i).first;
 		auto inter = (*i).second;
 		Assert(inter!=NULL);
@@ -4043,32 +4149,46 @@ std::vector<AbstractStructure*> Structure::generateAllTwoValuedExtensions() cons
 		}
 
 		const PredTable* pf = inter->pf();
+		int count = 0;
 		for (TableIterator ptIterator = inter->pt()->begin(); not ptIterator.isAtEnd(); ++ptIterator) {
-			if (GlobalData::instance()->terminateRequested()) {
-				throw IdpException("Terminate requested");
-			}
-
+			CHECKTERMINATION
 			if (not pf->contains(*ptIterator)) {
 				continue;
 			}
 
 			vector<AbstractStructure*> newstructs;
-			for (auto j = extensions.begin(); j < extensions.end(); ++j) {
-				if (GlobalData::instance()->terminateRequested()) {
-					throw IdpException("Terminate requested");
-				}
+			for (auto j = extensions.begin(); j < extensions.end() && needMoreModels(count); ++j) {
+				CHECKTERMINATION
 				auto news = (*j)->clone();
 				news->inter(pred)->makeTrue(*ptIterator);
 				newstructs.push_back(news);
+				count++;
+				if (not needMoreModels(count)) {
+					break;
+				}
 				news = (*j)->clone();
 				news->inter(pred)->makeFalse(*ptIterator);
 				newstructs.push_back(news);
+				count++;
 			}
 			extensions = newstructs;
 		}
 	}
 
-	// TODO delete all structures which are clone and discarded afterwards
+	if (needFixedNumberOfModels()) {
+		Assert(not needMoreModels(extensions.size()));
+		// In this case, not all structures might be two-valued, so just choose a value for each of their elements
+		for (auto j = extensions.begin(); j < extensions.end(); ++j) {
+			(*j)->makeTwoValued();
+		}
+	}
+
+	for (auto j = extensions.begin(); j < extensions.end(); ++j) {
+		(*j)->clean();
+		Assert((*j)->approxTwoValued());
+	}
+
+	// TODO delete all structures which were cloned and discarded
 
 	return extensions;
 }
@@ -4358,7 +4478,6 @@ void Structure::materialize() {
 	}
 }
 
-
 //TODO Shouldn't this be approxClean?
 void Structure::clean() {
 	for (auto it = _predinter.cbegin(); it != _predinter.cend(); ++it) {
@@ -4405,8 +4524,8 @@ void Structure::clean() {
 }
 
 /**************
-	Visitor
-**************/
+ Visitor
+ **************/
 
 void ProcInternalPredTable::accept(StructureVisitor* v) const {
 	v->visit(this);
@@ -4497,8 +4616,8 @@ void ModInternalFuncTable::accept(StructureVisitor* v) const {
 }
 
 /******************
-	Materialize
-******************/
+ Materialize
+ ******************/
 
 SortTable* SortTable::materialize() const {
 	EnumerateSymbolicTable m;

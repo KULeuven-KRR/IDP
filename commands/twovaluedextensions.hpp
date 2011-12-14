@@ -22,7 +22,7 @@ public:
 
 	void addAllMorePreciseToResult(AbstractStructure *s, std::vector<InternalArgument> *& result) const {
 		if (!s->approxTwoValued()) {
-			auto extensions = s->generateAllTwoValuedExtensions();
+			auto extensions = generateAllTwoValuedExtensions(s);
 			result->insert(result->end(), extensions.begin(), extensions.end());
 
 		} else {

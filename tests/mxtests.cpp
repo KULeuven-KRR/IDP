@@ -31,7 +31,7 @@ vector<string> getAllFilesInDirs(const vector<string>& testdirs){
 }
 
 vector<string> generateListOfMXnbFiles() {
-	vector<string> testdirs {"simplemx/"};
+	vector<string> testdirs {"simplemx/", "numberknown/"};
 	return getAllFilesInDirs(testdirs);
 }
 vector<string> generateListOfMXsatFiles() {

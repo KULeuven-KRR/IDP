@@ -2452,6 +2452,8 @@ public:
 	virtual PredInter* inter(Predicate* p) const = 0; // Return the interpretation of p.
 	virtual FuncInter* inter(Function* f) const = 0; // Return the interpretation of f.
 	virtual PredInter* inter(PFSymbol* s) const = 0; // Return the interpretation of s.
+	virtual const std::map<Predicate*, PredInter*>& getPredInters() const = 0;
+	virtual const std::map<Function*, FuncInter*>& getFuncInters() const = 0;
 
 	virtual AbstractStructure* clone() const = 0; // take a clone of this structure
 
@@ -2460,7 +2462,7 @@ public:
 	virtual bool approxTwoValued() const =0;
 	virtual bool isConsistent() const = 0;
 
-	virtual std::vector<AbstractStructure*> generateAllTwoValuedExtensions() const = 0;
+	virtual void makeTwoValued() = 0;
 
 	virtual void put(std::ostream&){} // TODO implement
 };
@@ -2505,10 +2507,19 @@ public:
 	bool approxTwoValued() const;
 	bool isConsistent() const;
 
-	Universe universe(const PFSymbol*) const;
+	virtual const std::map<Predicate*, PredInter*>& getPredInters() const{
+		return _predinter;
+	}
+	virtual const std::map<Function*, FuncInter*>& getFuncInters() const{
+		return _funcinter;
+	}
 
-	std::vector<AbstractStructure*> generateAllTwoValuedExtensions() const;
+	void makeTwoValued();
+
+	Universe universe(const PFSymbol*) const;
 };
+
+std::vector<AbstractStructure*> generateAllTwoValuedExtensions(AbstractStructure* s);
 
 /************************
 	Auxiliary methods
