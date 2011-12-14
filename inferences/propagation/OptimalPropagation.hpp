@@ -15,16 +15,6 @@
 #include "inferences/grounding/GroundTranslator.hpp"
 #include "PropagatorFactory.hpp"
 
-template<typename Structure>
-void makeInconsistent(Structure* structure){
-	auto voc = structure->vocabulary();
-	for(auto i=voc->firstFunc(); i!=voc->lastFunc(); ++i){
-		structure->inter((*i).second, InconsistentFuncInterGenerator((*i).second).get(structure));
-	}
-	for(auto i=voc->firstPred(); i!=voc->lastPred(); ++i){
-		structure->inter((*i).second, InconsistentPredInterGenerator((*i).second).get(structure));
-	}
-}
 
 /**
  * Given a theory and a structure, return a new structure which is at least as precise as the structure
@@ -61,9 +51,7 @@ public:
 
 		std::set<int> intersection;
 		if (abstractsolutions->getModels().empty()) {
-			AbstractStructure* result = structure->clone();
-			makeInconsistent(result);
-			return result;
+			return new InconsistentStructure(structure->name(),structure->pi());
 		}
 		// Take the intersection of all models
 		MinisatID::Model* firstmodel = *(abstractsolutions->getModels().cbegin());

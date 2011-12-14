@@ -80,7 +80,7 @@ AbstractStructure*  CalculateDefinitions::calculateKnownDefinitions(Theory* theo
 			if (currentdefinition->second.empty()) {
 				bool satisfiable = calculateDefinition(currentdefinition->first, structure);
 				if (not satisfiable) {
-					return new InconsistentStructure();
+					return new InconsistentStructure(structure->name(),structure->pi());
 				}
 				theory->remove(currentdefinition->first);
 				opens.erase(currentdefinition);

@@ -1,7 +1,4 @@
-#include <mx>
-
 procedure main(){
-	stdoptions.nrmodels=0
 	stdoptions.timeout = 5
 	stdoptions.nbmodelequivalent = true
 	stdoptions.groundwithbounds = false
