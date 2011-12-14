@@ -15,10 +15,16 @@ unsigned int LazyQuantGrounder::maxid = 1;
 
 LazyQuantGrounder::LazyQuantGrounder(const std::set<Variable*>& freevars, SolverTheory* groundtheory, FormulaGrounder* sub, SIGN sign, QUANT q,
 		InstGenerator* gen, InstChecker* checker, const GroundingContext& ct) :
-		QuantGrounder(groundtheory, sub, sign, q, gen, checker, ct), id_(maxid++), _negatedformula(false), groundtheory_(groundtheory), currentlyGrounding(
-				false), freevars(freevars) {
-	Assert(not conjunctive()); // TODO: currently, can only lazy ground existential quants
-	Assert(ct._tseitin != TsType::RULE); // TODO: currently only lazy ground formulas outside of definitions
+		QuantGrounder(groundtheory, sub, sign, q, gen, checker, ct),
+		id_(maxid++),
+		groundtheory_(groundtheory),
+		_negatedformula(false),
+		currentlyGrounding(false),
+		freevars(freevars) {
+	Assert(not conjunctive());
+	// TODO: currently, can only lazy ground existential quants
+	Assert(ct._tseitin != TsType::RULE);
+	// TODO: currently only lazy ground formulas outside of definitions
 }
 
 void LazyQuantGrounder::requestGroundMore(ResidualAndFreeInst * instance) {
@@ -32,7 +38,7 @@ void LazyQuantGrounder::requestGroundMore(ResidualAndFreeInst * instance) {
 // NOTE: generators are CLONED, SAVED and REUSED!
 
 void LazyQuantGrounder::groundMore() const {
-	if (verbosity() > 2){
+	if (verbosity() > 2) {
 		printorig();
 	}
 
@@ -43,7 +49,7 @@ void LazyQuantGrounder::groundMore() const {
 		ResidualAndFreeInst* instance = queuedtseitinstoground.front();
 		queuedtseitinstoground.pop();
 
-		if(GlobalData::instance()->terminateRequested()){
+		if (GlobalData::instance()->terminateRequested()) {
 			throw IdpException("Terminate requested");
 		}
 
@@ -68,7 +74,7 @@ void LazyQuantGrounder::groundMore() const {
 			clause.push_back(newresidual);
 			instance->residual = newresidual;
 			groundtheory_->notifyLazyResidual(instance, this); // set on not-decide and add to watchlist
-		}else{
+		} else {
 			// TODO deletion
 		}
 
@@ -80,7 +86,7 @@ void LazyQuantGrounder::groundMore() const {
 
 void LazyQuantGrounder::run(ConjOrDisj& formula, bool negatedformula) const {
 	Assert(not conjunctive());
-	if (verbosity() > 2){
+	if (verbosity() > 2) {
 		printorig();
 	}
 

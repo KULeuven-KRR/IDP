@@ -21,7 +21,7 @@ public:
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& /* args */) const {
-		thrownotyetimplemented("Optimization inference.");
+		throw notyetimplemented("Optimization inference.");
 	}
 };
 

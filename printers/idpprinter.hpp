@@ -632,7 +632,7 @@ public:
 		if (table->arity()>0) {
 			output() << "{ ";
 			if (not kt.isAtEnd()) {
-				bool begintuple = true, beginlist = true;
+				bool beginlist = true;
 				for (; not kt.isAtEnd(); ++kt) {
 					if(not beginlist){
 						output() << "; ";

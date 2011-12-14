@@ -38,6 +38,7 @@ RuleGrounder::RuleGrounder(HeadGrounder* hgr, FormulaGrounder* bgr, InstGenerato
 }
 
 void RuleGrounder::run(unsigned int defid, GroundDefinition* grounddefinition) const {
+	Assert(defid==grounddefinition->id());
 	for(bodygenerator()->begin(); not bodygenerator()->isAtEnd(); bodygenerator()->operator ++()){
 		if(GlobalData::instance()->terminateRequested()){
 			throw IdpException("Terminate requested");
@@ -131,7 +132,7 @@ dominstlist LazyRuleGrounder::createInst(const ElementTuple& headargs){
 	for(uint i=0; i<headargs.size(); ++i){
 		// FIXME what if it is not a VarTermGrounder! (e.g. if it is a constant => we should check whether it can unify with it)
 		if(not sametypeid<VarTermGrounder>(*headgrounder()->subtermgrounders()[i])){
-			thrownotyetimplemented("Lazygrounding with functions.\n");
+			throw notyetimplemented("Lazygrounding with functions.\n");
 		}
 		auto var = (dynamic_cast<VarTermGrounder*>(headgrounder()->subtermgrounders()[i]))->getElement();
 		domlist.push_back(dominst(var, headargs[i]));
@@ -177,6 +178,6 @@ void LazyRuleGrounder::ground(const Lit& head, const ElementTuple& headargs){
 	restoreOrigVars(originstantiation, headvarinstlist);
 }
 
-void LazyRuleGrounder::run(unsigned int defid, GroundDefinition* grounddefinition) const {
-
+void LazyRuleGrounder::run(unsigned int, GroundDefinition*) const {
+	// No-op
 }

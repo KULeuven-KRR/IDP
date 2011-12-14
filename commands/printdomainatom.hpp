@@ -9,18 +9,15 @@
 #include <vector>
 #include "commandinterface.hpp"
 #include "structure.hpp"
-#include "options.hpp"
 
 class PrintDomainAtomInference: public Inference {
 public:
 	PrintDomainAtomInference(): Inference("tostring") {
 		add(AT_DOMAINATOM);
-		add(AT_OPTIONS);
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
 		const DomainAtom* atom = args[0]._value._domainatom;
-		Options* opts = args[1].options();
 		std::stringstream sstr;
 		atom->symbol()->put(sstr);
 		if(typeid(*(atom->symbol())) == typeid(Predicate)) {

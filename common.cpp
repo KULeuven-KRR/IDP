@@ -46,15 +46,15 @@ void poptab(){
 	GlobalData::instance()->resetTabSize();
 }
 
-void notyetimplemented(const string& message) {
+/*void notyetimplemented(const string& message) {
 	clog << "WARNING or ERROR: The following feature is not yet implemented:\n" << '\t' << message << '\n'
 			<< "Please send an e-mail to krr@cs.kuleuven.be if you really need this feature.\n";
-}
+}*/
 
-void thrownotyetimplemented(const string& message) {
+IdpException notyetimplemented(const string& message) {
 	clog << "WARNING or ERROR: The following feature is not yet implemented:\n" << '\t' << message << '\n'
 			<< "Please send an e-mail to krr@cs.kuleuven.be if you really need this feature.\n";
-	throw IdpException("Aborting because of not yet implemented feature.");
+	return IdpException("Aborting because of not yet implemented feature.");
 }
 
 bool isInt(double d) {
@@ -172,14 +172,16 @@ QUANT operator not(QUANT t) {
 }
 
 Context operator not(Context t) {
+	Context result;
 	switch (t) {
 	case Context::BOTH:
-		return Context::BOTH;
+		result = Context::BOTH; break;
 	case Context::POSITIVE:
-		return Context::NEGATIVE;
+		result = Context::NEGATIVE; break;
 	case Context::NEGATIVE:
-		return Context::POSITIVE;
+		result = Context::POSITIVE; break;
 	}
+	return result;
 }
 Context operator~(Context t) {
 	return not t;

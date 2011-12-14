@@ -1,9 +1,3 @@
-/************************************
-	ecnfprinter.hpp
-	this file belongs to GidL 2.0
-	(c) K.U.Leuven
-************************************/
-
 #ifndef ECNFPRINTER_HPP_
 #define ECNFPRINTER_HPP_
 
@@ -14,8 +8,6 @@
 
 #include "groundtheories/GroundTheory.hpp"
 #include "groundtheories/GroundPolicy.hpp"
-
-// FIXME rewrite the printers to correctly handle visiting incrementally, making sure all arguments are instantiated, ...
 
 template<typename Stream>
 class EcnfPrinter : public StreamPrinter<Stream> {
@@ -176,7 +168,7 @@ public:
 
 	void visit(const GroundAggregate* b) {
 		Assert(isTheoryOpen());
-		Assert(b->type()!=TsType::RULE);
+		Assert(b->arrow()!=TsType::RULE);
 		//TODO -1 should be the minisatid constant for an undefined aggregate (or create some shared ecnf format)
 		printAggregate(b->type(),b->arrow(),-1,b->lower(),b->head(),b->setnr(),b->bound());
 	}

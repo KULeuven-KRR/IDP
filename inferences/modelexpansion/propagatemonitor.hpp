@@ -20,10 +20,10 @@ public:
 		delete (_solvermonitor);
 	}
 
-	void backtrack(int level) {
-		// TODO implement (currenlty only used to do unit propagation!)
+	void backtrack(int) {
+		// TODO implement (currently only used to do unit propagation!)
 	}
-	void propagate(MinisatID::Literal lit, int level) {
+	void propagate(MinisatID::Literal lit, int) {
 		_partialmodel.push_back(lit);
 	}
 	virtual void setSolver(MinisatID::WrappedPCSolver* solver) {
@@ -32,8 +32,8 @@ public:
 	const std::vector<MinisatID::Literal>& model() {
 		return _partialmodel;
 	}
-	void setTranslator(GroundTranslator* translator) {
-		// TODO Currently noop, as we return the original literals
+	void setTranslator(GroundTranslator*) {
+		// Note: no-op as we return the original literals // TODO should we do this?
 	}
 };
 

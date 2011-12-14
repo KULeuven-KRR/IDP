@@ -23,12 +23,12 @@ void TheoryVisitor::visit(const Theory* t) {
 	}
 }
 
-void TheoryVisitor::visit(const AbstractGroundTheory* ) {
-	thrownotyetimplemented("Visiting of ground theories");
+void TheoryVisitor::visit(const AbstractGroundTheory*) {
+	throw notyetimplemented("Visiting of ground theories");
 }
 
-void TheoryVisitor::visit(const GroundTheory<GroundPolicy>* t){
-	thrownotyetimplemented("Visiting of ground theories");
+void TheoryVisitor::visit(const GroundTheory<GroundPolicy>*){
+	throw notyetimplemented("Visiting of ground theories");
 }
 
 class DefaultFormulaVisitor: TheoryVisitor{
@@ -137,17 +137,17 @@ void TheoryVisitor::visit(const GroundDefinition* d) {
 }
 
 void TheoryVisitor::visit(const AggGroundRule*) {
-	thrownotyetimplemented("Visiting of ground theories");
+	throw notyetimplemented("Visiting of ground theories");
 }
 
 void TheoryVisitor::visit(const PCGroundRule*) {
-	thrownotyetimplemented("Visiting of ground theories");
+	throw notyetimplemented("Visiting of ground theories");
 }
 
 void TheoryVisitor::visit(const GroundSet*) {
-	thrownotyetimplemented("Visiting of ground theories");
+	throw notyetimplemented("Visiting of ground theories");
 }
 
 void TheoryVisitor::visit(const GroundAggregate*) {
-	thrownotyetimplemented("Visiting of ground theories");
+	throw notyetimplemented("Visiting of ground theories");
 }

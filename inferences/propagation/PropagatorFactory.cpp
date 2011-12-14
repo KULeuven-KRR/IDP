@@ -47,7 +47,7 @@ void generateNaiveBounds(FOBDDManager& manager, AbstractStructure* structure, PF
 	cfbounds[symbol] = manager.getBDD(cfkernel, manager.truebdd(), manager.falsebdd());
 }
 
-GenerateBDDAccordingToBounds* generateNaiveApproxBounds(AbstractTheory* theory, AbstractStructure* structure){
+GenerateBDDAccordingToBounds* generateNaiveApproxBounds(AbstractTheory*, AbstractStructure* structure){
 	auto manager = new FOBDDManager();
 	Bound ctbounds, cfbounds;
 	std::map<PFSymbol*, std::vector<const FOBDDVariable*> > vars;
@@ -67,7 +67,7 @@ GenerateBDDAccordingToBounds* generateNaiveApproxBounds(AbstractTheory* theory, 
 	return new GenerateBDDAccordingToBounds(manager, ctbounds, cfbounds, vars);
 }
 
-FOPropagator* createPropagator(AbstractTheory* theory, AbstractStructure* s, const std::map<PFSymbol*,InitBoundType> mpi) {
+FOPropagator* createPropagator(AbstractTheory* theory, AbstractStructure*, const std::map<PFSymbol*,InitBoundType> mpi) {
 	if(getOption(BoolType::GROUNDWITHBOUNDS)){
 		auto domainfactory = new FOPropBDDDomainFactory();
 		auto scheduler = new FOPropScheduler();
@@ -283,7 +283,7 @@ void FOPropagatorFactory<Factory, Domain>::visit(const AggForm* af) {
 
 template<class Factory, class Domain>
 void FOPropagatorFactory<Factory, Domain>::visit(const EqChainForm* ) {
-	thrownotyetimplemented("Creating a propagator for comparison chains has not yet been implemented.");
+	throw notyetimplemented("Creating a propagator for comparison chains has not yet been implemented.");
 }
 
 template<class Factory, class Domain>

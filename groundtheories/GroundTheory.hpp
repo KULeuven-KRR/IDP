@@ -291,7 +291,7 @@ public:
 			auto pt = structure()->inter(f)->graphInter()->pt();
 			auto outSortTable = structure()->inter(f->outsort());
 			if (not pt->finite()) {
-				thrownotyetimplemented("Cannot ground functions with infinite sorts.");
+				throw notyetimplemented("Cannot ground functions with infinite sorts.");
 				//FIXME make this work for functions with infintie domains and/or infinite out-sorts.  Take a look at lower code...
 			}
 

@@ -128,10 +128,8 @@ std::string tabs();
 void pushtab();
 void poptab();
 
-void notyetimplemented(const std::string&);
-// Guaranteed to throw (but cannot tell this to gcc unfortunately)
-// Counts as a TODO (but cannot tell this to eclipse unfortunately)
-void thrownotyetimplemented(const std::string&);
+//void notyetimplemented(const std::string&);
+IdpException notyetimplemented(const std::string&);
 
 bool isInt(double); //!< true iff the given double is an integer
 bool isInt(const std::string&); //!< true iff the given string is an integer

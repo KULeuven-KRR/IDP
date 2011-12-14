@@ -23,7 +23,7 @@ Theory* TheoryMutatingVisitor::visit(Theory* t) {
 }
 
 AbstractGroundTheory* TheoryMutatingVisitor::visit(AbstractGroundTheory* t) {
-	thrownotyetimplemented("Visiting of ground theories");
+	throw notyetimplemented("Visiting of ground theories");
 	return t;
 }
 
@@ -135,11 +135,11 @@ GroundDefinition* TheoryMutatingVisitor::visit(GroundDefinition* d) {
 }
 
 GroundRule* TheoryMutatingVisitor::visit(AggGroundRule* r) {
-	thrownotyetimplemented("Visiting of ground theories");
+	throw notyetimplemented("Visiting of ground theories");
 	return r;
 }
 
 GroundRule* TheoryMutatingVisitor::visit(PCGroundRule* r) {
-	thrownotyetimplemented("Visiting of ground theories");
+	throw notyetimplemented("Visiting of ground theories");
 	return r;
 }
