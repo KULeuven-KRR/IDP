@@ -160,6 +160,7 @@ class FOPropTableDomainFactory : public FOPropDomainFactory<FOPropTableDomain> {
 		FOPropTableDomain*	disjunction(FOPropTableDomain*,FOPropTableDomain*) const;
 		FOPropTableDomain*	substitute(FOPropTableDomain*,const std::map<Variable*,Variable*>&) const;
 		bool				equals(FOPropTableDomain*,FOPropTableDomain*)	const;
+		bool				approxequals(FOPropTableDomain*,FOPropTableDomain*)	const;
 		PredInter*			inter(const std::vector<Variable*>&, const ThreeValuedDomain<FOPropTableDomain>&, AbstractStructure*) const;
 		std::ostream&		put(std::ostream&,FOPropTableDomain*) const;
 };
