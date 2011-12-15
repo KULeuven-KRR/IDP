@@ -61,14 +61,13 @@ InternalArgument createArgument(int arg, lua_State* L);
 
 class InternalProcedure {
 private:
-	Inference* inference_;
+	Inference* inference_; // NOTE: does not have pointer authority
 
 public:
 	InternalProcedure(Inference* inference) :
 			inference_(inference) {
 	}
 	~InternalProcedure() {
-		delete (inference_);
 	}
 
 	int operator()(lua_State* L) const;

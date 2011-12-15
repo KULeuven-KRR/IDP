@@ -293,7 +293,7 @@ void interactive() {
 	<< "  Type 'help' for help\n\n";
 
 	idp_rl_start();
-	while(true) {
+	while(not idp_terminateInteractive()) {
 		char* userline = rl_gets();
 		if(userline==NULL) {
 			cout << "\n";

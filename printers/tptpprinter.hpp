@@ -15,6 +15,8 @@
 #include "theory.hpp"
 #include "vocabulary.hpp"
 #include "namespace.hpp"
+#include "term.hpp"
+#include "structure.hpp"
 
 #include <iostream>
 

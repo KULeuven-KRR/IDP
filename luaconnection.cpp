@@ -1856,8 +1856,7 @@ void addInternalProcedure(Inference* inf) {
 }
 
 void addInternalProcedures(lua_State* L) {
-	std::vector<Inference*> inferences = getAllInferences();
-	for (auto i = inferences.cbegin(); i != inferences.cend(); ++i) {
+	for (auto i = getAllInferences().cbegin(); i != getAllInferences().cend(); ++i) {
 		addInternalProcedure(*i);
 	}
 

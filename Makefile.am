@@ -88,8 +88,9 @@ grounder_SOURCES = \
 		inferences/propagation/propagate.hpp inferences/propagation/propagate.cpp\
 		inferences/propagation/PropagatorFactory.hpp inferences/propagation/PropagatorFactory.cpp\
 		inferences/propagation/GenerateBDDAccordingToBounds.hpp inferences/propagation/GenerateBDDAccordingToBounds.cpp\
+		inferences/Entails.hpp inferences/Entails.cpp\
 		rungidl.hpp rungidl.cpp\
-		commands/allcommands.hpp\
+		commands/allcommands.hpp commands/allcommands.cpp\
 		commands/commandinterface.hpp\
 		commands/optimization.hpp\
 		commands/printblocks.hpp\
@@ -219,7 +220,8 @@ grounder_SOURCES = \
 		fobdds/bddvisitors/ApplyDistributivity.hpp\
 		fobdds/bddvisitors/FirstConstTermInFunc.hpp\
 		fobdds/bddvisitors/CollectSameOperationTerms.hpp\
-		IdpException.hpp
+		IdpException.hpp\
+		lib/linenoise/linenoise.cpp lib/linenoise/utf8.cpp
 		
 gidl_SOURCES = main.cpp $(grounder_SOURCES)
 
@@ -233,6 +235,9 @@ AM_LDFLAGS += -lpthread
 
 # CALLBACK FRAMEWORK
 AM_CXXFLAGS += -I $(LIBSRCDIR)/pluscallback1.7/
+
+# READLINE FRAMEWORK
+AM_CXXFLAGS += -I $(LIBSRCDIR)/linenoise/
 
 data_stddir = $(datadir)/std
 

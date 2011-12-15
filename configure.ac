@@ -132,7 +132,14 @@ AC_ARG_ENABLE([tests],
 	*) AC_MSG_ERROR([bad value ${enableval} for --enable-tests]) ;;
 esac],[ tests=yes ])
 
-#lua should never use readline
+AC_ARG_WITH(
+  [readline],
+  [AC_HELP_STRING([--with-readline], [Use readline for interpreter input [default=no]])],
+  [use_readline=$withval],
+  [use_readline=no]
+)
+
+#lua should never use readline TODO this does not seem to work, have to pass it as an option?
 use_readline=no
 
 AC_ARG_WITH(
@@ -141,24 +148,6 @@ AC_ARG_WITH(
   [interactive=$withval],
   [interactive=yes]
 )
-
-# Check for readline
-if test "x$interactive" == "xyes"; then
-  AC_CHECK_LIB([readline], [readline], [], [interactive=no], [])
-  if test "x$interactive" == "xno"; then
-  AC_CHECK_LIB([readline], [readline], [lib=" -lncurses "], [interactive=no], [-lncurses])
-  fi
-  if test "x$interactive" == "xno"; then
-	AC_CHECK_LIB([readline], [readline], [lib=" -ltermcap "], [interactive=no], [-ltermcap])
-  fi
-  AC_CHECK_LIB([readline], [readline], [], [interactive=no], [$lib])
-  AC_CHECK_HEADERS([readline/readline.h readline/history.h], [], [interactive=no])
-  if test "x$interactive" == "xno"; then
-    AC_MSG_WARN([readline headers could not be found, disabling readline support])
-  else
-    AC_LDFLAGS+=" -lreadline -ldl $lib "
-  fi
-fi
 
 AM_CONDITIONAL([BUILDTESTS],[test x$enabletests = xyes])
 AM_CONDITIONAL([USEINTERACTIVE],[test x$interactive = xyes])
