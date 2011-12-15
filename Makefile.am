@@ -1,5 +1,5 @@
 SUBDIRS = lib pcsolver parser
-AM_CXXFLAGS = @AC_CXXFLAGS@ -Wall -Wextra\
+AM_CXXFLAGS = -Wall -Wextra\
 		-std=c++0x\
 		-I$(srcdir)/lib/loki/include\
 		-I$(srcdir)/lib/lua/etc -I$(srcdir)/lib/lua/src\
@@ -11,16 +11,15 @@ AM_CXXFLAGS = @AC_CXXFLAGS@ -Wall -Wextra\
 if USEINTERACTIVE
 AM_CXXFLAGS += -DUSEINTERACTIVE
 endif
-		
+
 AM_LDFLAGS = @AC_LDFLAGS@
 
 AM_YFLAGS = -d -v
 
 bin_PROGRAMS = gidl
 
-gidl_LDADD = $(builddir)/lib/lua/src/.libs/liblua.la
+gidl_LDADD = $(builddir)/lib/lua/src/.libs/liblua.la -ldl
 gidl_LDADD += $(builddir)/pcsolver/src/libminisatid-2.0.la
-
 
 BUILT_SOURCES = parser/parser.h
 
@@ -253,7 +252,8 @@ alltests_SOURCES = \
 		tests/testingtools.hpp tests/testingtools.cpp\
 		$(grounder_SOURCES)
 
-alltests_LDADD = -lgtest -lpthread $(gidl_LDADD)
+alltests_LDADD = $(gidl_LDADD)
+alltests_LDFLAGS = -lgtest -lpthread
 
 AM_CXXFLAGS += -DTESTDIR=\"$(abs_srcdir)/tests/\"
 
