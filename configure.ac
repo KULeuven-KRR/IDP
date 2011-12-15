@@ -134,29 +134,23 @@ esac],[ tests=yes ])
 
 AC_ARG_WITH(
   [readline],
-  [AC_HELP_STRING([--with-readline], [Use readline for interpreter input [default=yes]])],
+  [AC_HELP_STRING([--with-readline], [Use readline for interpreter input [default=no]])],
   [use_readline=$withval],
-  [use_readline=yes]
+  [use_readline=no]
 )
 
-# Check for readline
-if test "x$use_readline" == "xyes"; then
-  AC_CHECK_LIB([readline], [readline], [lib=" -lncurses "], [use_readline=no], [-lncurses])
-  if test "x$use_readline" == "xno"; then
-	AC_CHECK_LIB([readline], [readline], [lib=" -ltermcap "], [use_readline=no], [-ltermcap])
-  fi
-  AC_CHECK_LIB([readline], [readline], [], [use_readline=no], [$lib])
-  AC_CHECK_HEADERS([readline/readline.h readline/history.h], [], [use_readline=no])
-  if test "x$use_readline" == "xno"; then
-    AC_MSG_WARN([readline headers could not be found, disabling readline support])
-  else
-    AC_LDFLAGS+=" -lreadline $lib "
-  fi
-fi
+#lua should never use readline TODO this does not seem to work, have to pass it as an option?
+use_readline=no
+
+AC_ARG_WITH(
+  [interactive],
+  [AC_HELP_STRING([--with-interactive], [Compile with support for interactive usage [default=yes]])],
+  [interactive=$withval],
+  [interactive=yes]
+)
 
 AM_CONDITIONAL([BUILDTESTS],[test x$enabletests = xyes])
-AM_CONDITIONAL([USEREADLINE],[test x$use_readline = xyes])
-AM_CONDITIONAL([USEINTERACTIVE],[test x$use_readline = xyes])
+AM_CONDITIONAL([USEINTERACTIVE],[test x$interactive = xyes])
 
 AC_CONFIG_SUBDIRS([lib/lua pcsolver])
 AC_CONFIG_FILES([Makefile lib/Makefile parser/Makefile])

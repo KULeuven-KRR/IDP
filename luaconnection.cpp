@@ -1,3 +1,13 @@
+/****************************************************************
+* Copyright 2010-2012 Katholieke Universiteit Leuven
+*  
+* Use of this software is governed by the GNU LGPLv3.0 license
+* 
+* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+* Celestijnenlaan 200A, B-3001 Leuven, Belgium
+****************************************************************/
+
 #include "luaconnection.hpp"
 #include <set>
 #include <iostream>
@@ -1846,8 +1856,7 @@ void addInternalProcedure(Inference* inf) {
 }
 
 void addInternalProcedures(lua_State* L) {
-	std::vector<Inference*> inferences = getAllInferences();
-	for (auto i = inferences.cbegin(); i != inferences.cend(); ++i) {
+	for (auto i = getAllInferences().cbegin(); i != getAllInferences().cend(); ++i) {
 		addInternalProcedure(*i);
 	}
 

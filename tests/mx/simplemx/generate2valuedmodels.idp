@@ -1,0 +1,17 @@
+procedure getExpectedNbOfModels(){
+	return 4096
+}
+
+vocabulary V{
+	type A
+	type B
+	Sp(A,B)
+}
+
+theory T : V { 
+}
+
+structure S : V{ 
+	A = {a..d}
+	B = {a..c}
+}

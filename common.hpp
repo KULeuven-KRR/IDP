@@ -1,3 +1,13 @@
+/****************************************************************
+* Copyright 2010-2012 Katholieke Universiteit Leuven
+*  
+* Use of this software is governed by the GNU LGPLv3.0 license
+* 
+* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+* Celestijnenlaan 200A, B-3001 Leuven, Belgium
+****************************************************************/
+
 #ifndef COMMON_HPP
 #define COMMON_HPP
 
@@ -106,9 +116,18 @@ std::string toString(const std::map<Type1, Type2>& v) {
 	ss << ")";
 	return ss.str();
 }
+template<>
+std::string toString(const CompType& type);
 
+#if __GNUC__ < 4 || \
+              (__GNUC__ == 4 && __GNUC_MINOR__ < 6)
 
-
+template<typename Stream>
+Stream& operator<<(Stream& out, CompType ct) {
+	out << toString(ct);
+	return out;
+}
+#endif
 
 /**
  * HOW TO PRINT INFORMATION CONSISTENCTLY!
@@ -227,31 +246,6 @@ Stream& operator<<(Stream& out, const TsType& tstype) {
 		break;
 	}
 	return out;
-}
-
-template<class Stream>
-Stream& operator<<(Stream& output, const CompType& type) {
-	switch (type) {
-	case CompType::EQ:
-		output << " = ";
-		break;
-	case CompType::NEQ:
-		output << " ~= ";
-		break;
-	case CompType::LT:
-		output << " < ";
-		break;
-	case CompType::GT:
-		output << " > ";
-		break;
-	case CompType::LEQ:
-		output << " =< ";
-		break;
-	case CompType::GEQ:
-		output << " >= ";
-		break;
-	}
-	return output;
 }
 
 std::string* StringPointer(const char* str); //!< Returns a shared pointer to the given string

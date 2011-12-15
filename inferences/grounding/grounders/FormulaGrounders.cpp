@@ -1,3 +1,13 @@
+/****************************************************************
+* Copyright 2010-2012 Katholieke Universiteit Leuven
+*  
+* Use of this software is governed by the GNU LGPLv3.0 license
+* 
+* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+* Celestijnenlaan 200A, B-3001 Leuven, Belgium
+****************************************************************/
+
 #include "inferences/grounding/grounders/FormulaGrounders.hpp"
 
 #include <iostream>
@@ -10,7 +20,6 @@
 #include "common.hpp"
 #include "generators/InstGenerator.hpp"
 #include "groundtheories/AbstractGroundTheory.hpp"
-#include "checker.hpp"
 #include <cmath>
 
 using namespace std;
@@ -667,17 +676,16 @@ void QuantGrounder::run(ConjOrDisj& formula, bool negated) const {
 }
 
 Lit EquivGrounder::getLitEquivWith(const ConjOrDisj& form) const{
-	if(form.literals.size()>2){
-		return getReification(form);
-	}
 	if(form.literals.size()==0){
 		if(form.type==Conn::CONJ){
 			return _true;
 		}else{
 			return _false;
 		}
-	}else{
+	}else if(form.literals.size()==1){
 		return form.literals[0];
+	}else{
+		return getReification(form);
 	}
 }
 

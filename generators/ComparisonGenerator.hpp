@@ -1,3 +1,13 @@
+/****************************************************************
+* Copyright 2010-2012 Katholieke Universiteit Leuven
+*  
+* Use of this software is governed by the GNU LGPLv3.0 license
+* 
+* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+* Celestijnenlaan 200A, B-3001 Leuven, Belgium
+****************************************************************/
+
 #ifndef GTGenerator_HPP_
 #define GTGenerator_HPP_
 
@@ -48,7 +58,7 @@ public:
 
 	virtual void put(std::ostream& stream){
 		stream <<_leftvar <<"[" <<toString(_leftsort) <<"]" <<(_input!=Input::NONE?"(in)":"(out)");
-		stream <<comparison;
+		stream <<toString(comparison);
 		stream <<_rightvar <<"[" <<toString(_rightsort) <<"]" <<(_input==Input::BOTH?"(in)":"(out)");
 	}
 

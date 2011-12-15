@@ -1,5 +1,5 @@
-procedure getExpectedAModel(){
-	return true
+procedure getExpectedNbOfModels(){
+	return 20
 }
 
 /******************
@@ -7,17 +7,14 @@ procedure getExpectedAModel(){
 ******************/
 
 vocabulary V{
-	
-		type Players 
-		type Groups 
-		type Weeks
-		type Size isa int
+	type Players 
+	type Groups 
+	type Weeks
+	type Size isa int
 	
 	Groupsize : Size
-
  
 	Plays(Weeks,Groups,Players)
-
 }
 
 theory T : V { 
@@ -29,13 +26,12 @@ theory T : V {
 
 	// Each pair of players meets at most once.
 	! p1 p2 : p1 ~= p2 => #{ w : ? g : Plays(w,g,p1) & Plays(w,g,p2)  } =< 1.
-
 }
 
 structure S : V{ 
-Players = {1..6}
-Groups = {1..2}
-Weeks = {1}
-Size = {3}
-Groupsize = 3
+	Players = {1..6}
+	Groups = {1..2}
+	Weeks = {1}
+	Size = {3}
+	Groupsize = 3
 }

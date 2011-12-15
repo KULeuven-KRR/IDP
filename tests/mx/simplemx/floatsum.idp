@@ -1,0 +1,17 @@
+vocabulary V{
+	type x isa float
+	p(x)
+}
+
+theory T:V{
+	sum{x: p(x): x}=7.
+}
+
+structure S:V{
+	x = {0.5;3.1;5.5;3.9}
+}
+
+procedure getExpectedNbOfModels(){
+	io.stderr:write("see issue 68\n")
+	return 1
+}

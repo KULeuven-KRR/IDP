@@ -1,3 +1,13 @@
+/****************************************************************
+* Copyright 2010-2012 Katholieke Universiteit Leuven
+*  
+* Use of this software is governed by the GNU LGPLv3.0 license
+* 
+* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+* Celestijnenlaan 200A, B-3001 Leuven, Belgium
+****************************************************************/
+
 #include "ModelExpansion.hpp"
 #include "inferences/CalculateDefinitions.hpp"
 #include "inferences/InferenceSolverConnection.hpp"
@@ -32,7 +42,6 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 	// FIXME currently skipping if working lazily!
 	auto newstructure = structure;
 	if (not opts->getValue(BoolType::GROUNDLAZILY) && sametypeid<Theory>(*theory)) {
-
 		newstructure = CalculateDefinitions::doCalculateDefinitions(dynamic_cast<Theory*>(theory), structure);
 		if (not newstructure->isConsistent()) {
 			return std::vector<AbstractStructure*> { };

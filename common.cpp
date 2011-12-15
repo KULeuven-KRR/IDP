@@ -1,3 +1,13 @@
+/****************************************************************
+* Copyright 2010-2012 Katholieke Universiteit Leuven
+*  
+* Use of this software is governed by the GNU LGPLv3.0 license
+* 
+* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+* Celestijnenlaan 200A, B-3001 Leuven, Belgium
+****************************************************************/
+
 #include <iostream>
 #include <ostream>
 #include <limits>
@@ -189,6 +199,32 @@ Context operator~(Context t) {
 
 bool isConj(SIGN sign, bool conj) {
 	return (sign == SIGN::POS && conj) || (sign == SIGN::NEG && ~conj);
+}
+
+template<>
+std::string toString(const CompType& type) {
+	std::stringstream output;
+	switch (type) {
+	case CompType::EQ:
+		output << " = ";
+		break;
+	case CompType::NEQ:
+		output << " ~= ";
+		break;
+	case CompType::LT:
+		output << " < ";
+		break;
+	case CompType::GT:
+		output << " > ";
+		break;
+	case CompType::LEQ:
+		output << " =< ";
+		break;
+	case CompType::GEQ:
+		output << " >= ";
+		break;
+	}
+	return output.str();
 }
 
 /*********************

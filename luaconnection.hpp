@@ -1,7 +1,12 @@
-/************************************
- this file belongs to GidL 2.0
- (c) K.U.Leuven
- ************************************/
+/****************************************************************
+* Copyright 2010-2012 Katholieke Universiteit Leuven
+*  
+* Use of this software is governed by the GNU LGPLv3.0 license
+* 
+* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+* Celestijnenlaan 200A, B-3001 Leuven, Belgium
+****************************************************************/
 
 #ifndef LUACONNECTION_HPP_
 #define LUACONNECTION_HPP_
@@ -56,14 +61,13 @@ InternalArgument createArgument(int arg, lua_State* L);
 
 class InternalProcedure {
 private:
-	Inference* inference_;
+	Inference* inference_; // NOTE: does not have pointer authority
 
 public:
 	InternalProcedure(Inference* inference) :
 			inference_(inference) {
 	}
 	~InternalProcedure() {
-		delete (inference_);
 	}
 
 	int operator()(lua_State* L) const;

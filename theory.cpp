@@ -1,3 +1,13 @@
+/****************************************************************
+* Copyright 2010-2012 Katholieke Universiteit Leuven
+*  
+* Use of this software is governed by the GNU LGPLv3.0 license
+* 
+* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+* Celestijnenlaan 200A, B-3001 Leuven, Belgium
+****************************************************************/
+
 #include "common.hpp"
 #include <sstream>
 #include <iostream>
@@ -182,7 +192,7 @@ ostream& EqChainForm::put(ostream& output) const {
 	output << '(';
 	subterms()[0]->put(output);
 	for (size_t n = 0; n < _comps.size(); ++n) {
-		output << ' ' << comps()[n] << ' ';
+		output << ' ' << toString(comps()[n]) << ' ';
 		subterms()[n + 1]->put(output);
 		if (not _conj && n + 1 < _comps.size()) {
 			output << " | ";
@@ -345,7 +355,7 @@ ostream& AggForm::put(ostream& output) const {
 	if (isNeg(sign())) { output << '~'; }
 	output << '(';
 	left()->put(output);
-	output << ' ' << _comp << ' ';
+	output << ' ' << toString(_comp) << ' ';
 	right()->put(output);
 	output << ')';
 	return output;

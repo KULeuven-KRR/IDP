@@ -1,3 +1,13 @@
+/****************************************************************
+* Copyright 2010-2012 Katholieke Universiteit Leuven
+*  
+* Use of this software is governed by the GNU LGPLv3.0 license
+* 
+* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+* Celestijnenlaan 200A, B-3001 Leuven, Belgium
+****************************************************************/
+
 #ifndef STRUCTURE_HPP
 #define STRUCTURE_HPP
 
@@ -634,7 +644,7 @@ private:
 	InternalPredTable* _outtable;
 	mutable bool _end;
 	mutable ElementTuple _currtuple;
-	mutable std::vector<ElementTuple> _deref;
+	mutable ElementTuple _deref;
 
 	bool hasNext() const;
 	const ElementTuple& operator*() const;
@@ -2451,15 +2461,18 @@ public:
 	virtual PredInter* inter(Predicate* p) const = 0; // Return the interpretation of p.
 	virtual FuncInter* inter(Function* f) const = 0; // Return the interpretation of f.
 	virtual PredInter* inter(PFSymbol* s) const = 0; // Return the interpretation of s.
+	virtual const std::map<Predicate*, PredInter*>& getPredInters() const = 0;
+	virtual const std::map<Function*, FuncInter*>& getFuncInters() const = 0;
 
 	virtual AbstractStructure* clone() const = 0; // take a clone of this structure
 
 	virtual Universe universe(const PFSymbol*) const = 0;
 
 	virtual bool approxTwoValued() const =0;
+	// Note: loops over all tuples of all tables, SLOW!
 	virtual bool isConsistent() const = 0;
 
-	virtual std::vector<AbstractStructure*> generateAllTwoValuedExtensions() const = 0;
+	virtual void makeTwoValued() = 0;
 
 	virtual void put(std::ostream&) {
 	} // TODO implement
@@ -2504,9 +2517,16 @@ public:
 	bool approxTwoValued() const;
 	bool isConsistent() const;
 
-	Universe universe(const PFSymbol*) const;
+	virtual const std::map<Predicate*, PredInter*>& getPredInters() const{
+		return _predinter;
+	}
+	virtual const std::map<Function*, FuncInter*>& getFuncInters() const{
+		return _funcinter;
+	}
 
-	std::vector<AbstractStructure*> generateAllTwoValuedExtensions() const;
+	void makeTwoValued();
+
+	Universe universe(const PFSymbol*) const;
 };
 
 /**Class to represent inconsistent structures **/
@@ -2532,6 +2552,9 @@ public:
 	FuncInter* inter(Function* f) const; // Return the interpretation of f.
 	PredInter* inter(PFSymbol* s) const; // Return the interpretation of s.
 
+	const std::map<Predicate*, PredInter*>& getPredInters() const;
+	const std::map<Function*, FuncInter*>& getFuncInters() const;
+
 	AbstractStructure* clone() const; // take a clone of this structure
 
 	Universe universe(const PFSymbol*) const;
@@ -2539,8 +2562,11 @@ public:
 	bool approxTwoValued() const;
 	bool isConsistent() const;
 
-	std::vector<AbstractStructure*> generateAllTwoValuedExtensions() const;
+	void makeTwoValued();
 };
+
+std::vector<AbstractStructure*> generateAllTwoValuedExtensions(AbstractStructure* s);
+
 /************************
  Auxiliary methods
  ************************/

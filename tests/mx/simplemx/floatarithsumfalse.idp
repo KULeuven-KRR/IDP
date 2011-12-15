@@ -1,0 +1,15 @@
+vocabulary V{
+	type t isa float
+}
+
+theory T:V{
+	? x[t] y[t] z[t]: x+y=0. 
+}
+
+structure S:V{
+	t = {1;2;3;2.5;2.4;1.02356884455}
+}
+
+procedure getExpectedNbOfModels(){
+	return 0
+}

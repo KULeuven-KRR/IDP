@@ -1,5 +1,15 @@
+####################################################################
+#Copyright 2010-2012 Katholieke Universiteit Leuven
+# 
+#Use of this software is governed by the GNU LGPLv3.0 license
+#
+#Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+#and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+#Celestijnenlaan 200A, B-3001 Leuven, Belgium
+####################################################################
+
 SUBDIRS = lib pcsolver parser
-AM_CXXFLAGS = @AC_CXXFLAGS@ -Wall -Wextra\
+AM_CXXFLAGS = -Wall -Wextra\
 		-std=c++0x\
 		-I$(srcdir)/lib/loki/include\
 		-I$(srcdir)/lib/lua/etc -I$(srcdir)/lib/lua/src\
@@ -11,16 +21,15 @@ AM_CXXFLAGS = @AC_CXXFLAGS@ -Wall -Wextra\
 if USEINTERACTIVE
 AM_CXXFLAGS += -DUSEINTERACTIVE
 endif
-		
+
 AM_LDFLAGS = @AC_LDFLAGS@
 
 AM_YFLAGS = -d -v
 
 bin_PROGRAMS = gidl
 
-gidl_LDADD = $(builddir)/lib/lua/src/.libs/liblua.la
+gidl_LDADD = $(builddir)/lib/lua/src/.libs/liblua.la -ldl
 gidl_LDADD += $(builddir)/pcsolver/src/libminisatid-2.0.la
-
 
 BUILT_SOURCES = parser/parser.h
 
@@ -46,7 +55,6 @@ grounder_SOURCES = \
 		interactive.hpp interactive.cpp\
 		printers/print.hpp printers/print.cpp\
 		printers/idpprinter.hpp printers/ecnfprinter.hpp printers/tptpprinter.hpp\
-		checker.hpp checker.cpp\
 		ecnf.hpp ecnf.cpp\
         symmetry.hpp symmetry.cpp\
 		monitors/interactiveprintmonitor.hpp\
@@ -80,8 +88,9 @@ grounder_SOURCES = \
 		inferences/propagation/propagate.hpp inferences/propagation/propagate.cpp\
 		inferences/propagation/PropagatorFactory.hpp inferences/propagation/PropagatorFactory.cpp\
 		inferences/propagation/GenerateBDDAccordingToBounds.hpp inferences/propagation/GenerateBDDAccordingToBounds.cpp\
+		inferences/Entails.hpp inferences/Entails.cpp\
 		rungidl.hpp rungidl.cpp\
-		commands/allcommands.hpp\
+		commands/allcommands.hpp commands/allcommands.cpp\
 		commands/commandinterface.hpp\
 		commands/optimization.hpp\
 		commands/printblocks.hpp\
@@ -211,7 +220,8 @@ grounder_SOURCES = \
 		fobdds/bddvisitors/ApplyDistributivity.hpp\
 		fobdds/bddvisitors/FirstConstTermInFunc.hpp\
 		fobdds/bddvisitors/CollectSameOperationTerms.hpp\
-		IdpException.hpp
+		IdpException.hpp\
+		lib/linenoise/linenoise.cpp lib/linenoise/utf8.cpp
 		
 gidl_SOURCES = main.cpp $(grounder_SOURCES)
 
@@ -225,6 +235,9 @@ AM_LDFLAGS += -lpthread
 
 # CALLBACK FRAMEWORK
 AM_CXXFLAGS += -I $(LIBSRCDIR)/pluscallback1.7/
+
+# READLINE FRAMEWORK
+AM_CXXFLAGS += -I $(LIBSRCDIR)/linenoise/
 
 data_stddir = $(datadir)/std
 
@@ -254,7 +267,8 @@ alltests_SOURCES = \
 		tests/testingtools.hpp tests/testingtools.cpp\
 		$(grounder_SOURCES)
 
-alltests_LDADD = -lgtest -lpthread $(gidl_LDADD)
+alltests_LDADD = $(gidl_LDADD)
+alltests_LDFLAGS = -lgtest -lpthread
 
 AM_CXXFLAGS += -DTESTDIR=\"$(abs_srcdir)/tests/\"
 
