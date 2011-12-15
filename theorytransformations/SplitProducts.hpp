@@ -20,10 +20,12 @@
  * IMPORTANT: if you call this twice, it will keep on splitting.  There are no checks to see if something is allready split.
  */
 class SplitProducts: public TheoryMutatingVisitor {
+	VISITORFRIENDS()
 public:
-	SplitProducts() { }
-
-	Formula* execute(Formula* af);
+	template<typename T>
+	T execute(T t){
+		return t->accept(this);
+	}
 
 protected:
 	Formula* visit(AggForm* af);

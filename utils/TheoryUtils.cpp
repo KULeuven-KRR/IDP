@@ -45,12 +45,12 @@ using namespace std;
 
 /* TermUtils */
 namespace TermUtils {
-void checkSorts(Vocabulary* v, Term* f){
-	transform<CheckSorts>(f, v);
+void checkSorts(Vocabulary* voc, Term* term) {
+	transform<CheckSorts>(term, voc);
 }
 
-void deriveSorts(Vocabulary* v, Term* f){
-	transform<DeriveSorts>(f, v);
+void deriveSorts(Vocabulary* voc, Term* term) {
+	transform<DeriveSorts>(term, voc);
 }
 
 bool isPartial(Term* term) {
@@ -64,36 +64,36 @@ bool approxTwoValued(SetExpr* exp, AbstractStructure* str) {
 	return transform<ApproxCheckTwoValued, bool>(str, exp);
 }
 
-SetExpr* moveThreeValuedTerms(SetExpr* f, AbstractStructure* structure, Context context, 
+SetExpr* moveThreeValuedTerms(SetExpr* exp, AbstractStructure* structure, Context context, 
 		bool cpsupport, const std::set<const PFSymbol*> cpsymbols) {
-	transform<UnnestThreeValuedTerms>(f, structure, context, cpsupport, cpsymbols);
-	return f;
+	transform<UnnestThreeValuedTerms>(exp, structure, context, cpsupport, cpsymbols);
+	return exp;
 }
 }
 
 /* DefinitionUtils */
 namespace DefinitionUtils {
-void checkSorts(Vocabulary* v, Rule* f){
-	transform<CheckSorts>(f, v);
+void checkSorts(Vocabulary* voc, Rule* rule) {
+	transform<CheckSorts>(rule, voc);
 }
 
-void deriveSorts(Vocabulary* v, Rule* f){
-	transform<DeriveSorts>(f, v);
+void deriveSorts(Vocabulary* voc, Rule* rule) {
+	transform<DeriveSorts>(rule, voc);
 }
 
 std::set<PFSymbol*> opens(Definition* d) {
 	return transform<CollectOpensOfDefinitions, std::set<PFSymbol*>>(d);
 }
 
-Rule* unnestThreeValuedTerms(Rule* r, AbstractStructure* structure, Context context, 
+Rule* unnestThreeValuedTerms(Rule* rule, AbstractStructure* structure, Context context, 
 		bool cpsupport, const std::set<const PFSymbol*> cpsymbols) {
-	return transform<UnnestThreeValuedTerms, Rule*>(r, structure, context, cpsupport, cpsymbols);
+	return transform<UnnestThreeValuedTerms, Rule*>(rule, structure, context, cpsupport, cpsymbols);
 }
 }
 
 /* FormulaUtils */
 namespace FormulaUtils {
-void checkSorts(Vocabulary* v, Formula* f){
+void checkSorts(Vocabulary* v, Formula* f) {
 	transform<CheckSorts>(f, v);
 }
 
@@ -160,40 +160,44 @@ Formula* unnestThreeValuedTerms(Formula* f, AbstractStructure* structure, Contex
 
 
 
-AbstractTheory* addCompletion(AbstractTheory* f) {
-	return transform<AddCompletion, AbstractTheory*>(f);
+AbstractTheory* addCompletion(AbstractTheory* t) {
+	return transform<AddCompletion, AbstractTheory*>(t);
 }
 
-AbstractTheory* flatten(AbstractTheory* f) {
-	return transform<Flatten, AbstractTheory*>(f);
+AbstractTheory* flatten(AbstractTheory* t) {
+	return transform<Flatten, AbstractTheory*>(t);
 }
 
-AbstractTheory* graphFuncsAndAggs(AbstractTheory* f) {
-	return transform<GraphFuncsAndAggs, AbstractTheory*>(f);
+AbstractTheory* graphFuncsAndAggs(AbstractTheory* t) {
+	return transform<GraphFuncsAndAggs, AbstractTheory*>(t);
 }
 
-AbstractTheory* pushNegations(AbstractTheory* f) {
-	return transform<PushNegations, AbstractTheory*>(f);
+AbstractTheory* pushNegations(AbstractTheory* t) {
+	return transform<PushNegations, AbstractTheory*>(t);
 }
 
-AbstractTheory* pushQuantifiers(AbstractTheory* f) {
-	return transform<PushQuantifications, AbstractTheory*>(f);
+AbstractTheory* pushQuantifiers(AbstractTheory* t) {
+	return transform<PushQuantifications, AbstractTheory*>(t);
 }
 
-AbstractTheory* removeEquivalences(AbstractTheory* f) {
-	return transform<RemoveEquivalences, AbstractTheory*>(f);
+AbstractTheory* removeEquivalences(AbstractTheory* t) {
+	return transform<RemoveEquivalences, AbstractTheory*>(t);
 }
 
-AbstractTheory* splitComparisonChains(AbstractTheory* f) {
-	return transform<SplitComparisonChains, AbstractTheory*>(f);
+AbstractTheory* splitComparisonChains(AbstractTheory* t) {
+	return transform<SplitComparisonChains, AbstractTheory*>(t);
 }
 
-AbstractTheory* unnestTerms(AbstractTheory* f) {
-	return transform<UnnestTerms, AbstractTheory*>(f);
+AbstractTheory* splitProducts(AbstractTheory* t) {
+	return transform<SplitProducts, AbstractTheory*>(t);
 }
 
-int nrSubformulas(AbstractTheory* f) {
-	return transform<CountNbOfSubFormulas, int>(f);
+AbstractTheory* unnestTerms(AbstractTheory* t) {
+	return transform<UnnestTerms, AbstractTheory*>(t);
+}
+
+int nrSubformulas(AbstractTheory* t) {
+	return transform<CountNbOfSubFormulas, int>(t);
 }
 
 AbstractTheory* merge(AbstractTheory* at1, AbstractTheory* at2) {
