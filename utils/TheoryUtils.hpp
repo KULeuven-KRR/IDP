@@ -48,8 +48,30 @@ void transform(Construct* object, Values ... parameters) {
 }
 
 namespace FormulaUtils {
-/** Recursively rewrite all EqChainForms in the given formula to BoolForms **/
-Formula* splitComparisonChains(Formula*, Vocabulary* v = NULL);
+/** Returns true iff the aggregate formula is anti-monotone **/
+bool isAntimonotone(const AggForm* af);
+
+/** Returns true iff the aggregate formula is monotone **/
+bool isMonotone(const AggForm* af);
+
+/** Create the formula 'true' **/
+BoolForm* trueFormula();
+
+/** Create the formula 'false' **/
+BoolForm* falseFormula();
+
+
+
+/** Check sorts in the given formula **/
+void checkSorts(Vocabulary* v, Formula* f);
+
+/** Returns true iff at least one FuncTerm/AggTerm occurs in the given formula **/
+bool containsFuncTerms(Formula* f);
+bool containsAggTerms(Formula* f);
+bool containsSymbol(const PFSymbol* s, const Formula* f);
+
+/** Derive sorts in the given formula **/
+void deriveSorts(Vocabulary* v, Formula* f);
 
 /** Estimate the cost of the given query
  *		Precondition:
@@ -58,109 +80,106 @@ Formula* splitComparisonChains(Formula*, Vocabulary* v = NULL);
  */
 double estimatedCostAll(PredForm* query, const std::set<Variable*> freevars, bool inverse, AbstractStructure* structure);
 
-/** Recursively remove all nested terms **/
-Formula* unnestTerms(Formula*, Context context = Context::POSITIVE);
-
-/** Rewrite all equivalences into implications **/
-Formula* removeEquivalences(Formula*);
-
 /** Flatten all nested formulas **/
 Formula* flatten(Formula*);
-
-void checkSorts(Vocabulary* v, Term* f);
-void checkSorts(Vocabulary* v, Rule* f);
-void checkSorts(Vocabulary* v, Formula* f);
-
-void deriveSorts(Vocabulary* v, Term* f);
-void deriveSorts(Vocabulary* v, Rule* f);
-void deriveSorts(Vocabulary* v, Formula* f);
 
 /** Recursively rewrite all function terms to their predicate form **/
 Formula* graphFuncsAndAggs(Formula* f);
 
-Formula* splitProducts(Formula* f);
+/** Push negations inside **/
+Formula* pushNegations(Formula* f);
+
+/** Rewrite all equivalences into implications **/
+Formula* removeEquivalences(Formula*);
+
+/** Recursively rewrite all EqChainForms in the given formula to BoolForms **/
+Formula* splitComparisonChains(Formula*, Vocabulary* v = NULL);
 
 Formula* splitIntoMonotoneAgg(Formula* f);
 
-/** Recursively move all partial terms outside atoms **/
-Formula* unnestPartialTerms(Formula* f, Context context, Vocabulary* voc = NULL);
-
-/** Non-recursively move terms that are three-valued in a given structure outside of the given atom **/
-Formula* unnestThreeValuedTerms(Formula*, AbstractStructure*, Context context, bool cpsupport = false, const std::set<const PFSymbol*> cpsymbols =
-		std::set<const PFSymbol*>());
-
-/** Non-recursively move terms that are three-valued in a given structure outside of the head of the rule **/
-Rule* unnestThreeValuedTerms(Rule*, AbstractStructure*, Context context, bool cpsupport = false, const std::set<const PFSymbol*> cpsymbols =
-		std::set<const PFSymbol*>());
-
-/** Returns true iff at least one FuncTerm/AggTerm occurs in the given formula **/
-bool containsFuncTerms(Formula* f);
-bool containsAggTerms(Formula* f);
-bool containsSymbol(const PFSymbol* s, const Formula* f);
+/** Split product aggregates in aggregates conaining only positive values. **/
+Formula* splitProducts(Formula* f);
 
 /** Replace the given term by the given variable in the given formula **/
 Formula* substituteTerm(Formula*, Term*, Variable*);
 
-/** Returns true iff the aggregate formula is monotone **/
-bool isMonotone(const AggForm* af);
+/** Recursively move all partial terms outside atoms **/
+Formula* unnestPartialTerms(Formula* f, Context context, Vocabulary* voc = NULL);
 
-/** Returns true iff the aggregate formula is anti-monotone **/
-bool isAntimonotone(const AggForm* af);
+/** Recursively remove all nested terms **/
+Formula* unnestTerms(Formula*, Context context = Context::POSITIVE);
 
-/** Create the formula 'true' **/
-BoolForm* trueFormula();
+/** Non-recursively move terms that are three-valued in a given structure outside of the given atom **/
+Formula* unnestThreeValuedTerms(Formula*, AbstractStructure*, Context context, bool cpsupport = false, const std::set<const PFSymbol*> cpsymbols = std::set<const PFSymbol*>());
 
-/** Create the formula 'false' **/
-BoolForm* falseFormula();
 
-/** Push negations inside **/
-AbstractTheory* pushNegations(AbstractTheory*);
 
-/** Rewrite A <=> B to (A => B) & (B => A) **/
-AbstractTheory* removeEquivalences(AbstractTheory*);
+/** Replace all definitions in the theory by their completion **/
+AbstractTheory* addCompletion(AbstractTheory*);
 
 /** Rewrite (! x : ! y : phi) to (! x y : phi), rewrite ((A & B) & C) to (A & B & C), etc. **/
 AbstractTheory* flatten(AbstractTheory*);
-
-/** Rewrite chains of equalities to a conjunction or disjunction of atoms. **/
-AbstractTheory* splitComparisonChains(AbstractTheory*);
-
-/** Rewrite (! x : phi & chi) to ((! x : phi) & (!x : chi)), and similarly for ?. **/
-AbstractTheory* pushQuantifiers(AbstractTheory*);
-
-/** Rewrite the theory so that there are no nested terms **/
-AbstractTheory* unnestTerms(AbstractTheory*);
 
 /** Rewrite (F(x) = y) or (y = F(x)) to Graph_F(x,y) 
   * Rewrite (AggTerm op BoundTerm) to an aggregate formula (op = '=', '<', or '>') **/
 AbstractTheory* graphFuncsAndAggs(AbstractTheory*);
 
-AbstractTheory* splitProducts(AbstractTheory* f);
-
-/** Replace all definitions in the theory by their completion **/
-AbstractTheory* addCompletion(AbstractTheory*);
+/** Merge two theories **/
+AbstractTheory* merge(AbstractTheory*, AbstractTheory*);
 
 /** Count the number of subformulas in the theory **/
 int nrSubformulas(AbstractTheory*);
 
-/** Merge two theories **/
-AbstractTheory* merge(AbstractTheory*, AbstractTheory*);
+/** Push negations inside **/
+AbstractTheory* pushNegations(AbstractTheory*);
+
+/** Rewrite (! x : phi & chi) to ((! x : phi) & (!x : chi)), and similarly for ?. **/
+AbstractTheory* pushQuantifiers(AbstractTheory*);
+
+/** Rewrite A <=> B to (A => B) & (B => A) **/
+AbstractTheory* removeEquivalences(AbstractTheory*);
+
+/** Rewrite chains of equalities to a conjunction or disjunction of atoms. **/
+AbstractTheory* splitComparisonChains(AbstractTheory*);
+
+/** Split product aggregates in aggregates conaining only positive values. **/
+AbstractTheory* splitProducts(AbstractTheory* f);
+
+/** Rewrite the theory so that there are no nested terms **/
+AbstractTheory* unnestTerms(AbstractTheory*);
 }
 
 namespace TermUtils {
-/** Rewrite set expressions by moving three-valued terms **/
-SetExpr* moveThreeValuedTerms(SetExpr*, AbstractStructure*, Context context, bool cpsupport = false, const std::set<const PFSymbol*> cpsymbols = std::set<const PFSymbol*>());
+/** Check sorts in the given term **/
+void checkSorts(Vocabulary*, Term*);
+
+/** Derive sorts in the given term **/
+void deriveSorts(Vocabulary*, Term*);
+
+bool isPartial(Term*);
 }
 
 namespace SetUtils {
 /** Returns false if the set expression is not two-valued in the given structure. 
 May return true if the set expression is two-valued in the structure. **/
 bool approxTwoValued(SetExpr*,AbstractStructure*);	
+
+/** Rewrite set expressions by moving three-valued terms **/
+SetExpr* moveThreeValuedTerms(SetExpr*, AbstractStructure*, Context context, bool cpsupport = false, const std::set<const PFSymbol*> cpsymbols = std::set<const PFSymbol*>());
 }
 
 namespace DefinitionUtils {
+/** Check sorts in the given rule **/
+void checkSorts(Vocabulary* v, Rule* f);
+
+/** Derive sorts in the given rule **/
+void deriveSorts(Vocabulary* v, Rule* f);
+
 /** Compute the open symbols of a definition **/
 std::set<PFSymbol*> opens(Definition*);
+
+/** Non-recursively move terms that are three-valued in a given structure outside of the head of the rule **/
+Rule* unnestThreeValuedTerms(Rule*, AbstractStructure*, Context context, bool cpsupport = false, const std::set<const PFSymbol*> cpsymbols = std::set<const PFSymbol*>());
 }
 
 #endif /* THEORYUTILS_HPP_ */

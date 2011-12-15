@@ -761,8 +761,8 @@ void Insert::closeterm(Term* t) {
 	if (t == NULL) {
 		return;
 	}
-	FormulaUtils::deriveSorts(_currvocabulary, t);
-	FormulaUtils::checkSorts(_currvocabulary, t);
+	TermUtils::deriveSorts(_currvocabulary, t);
+	TermUtils::checkSorts(_currvocabulary, t);
 	_currspace->add(_currterm, t);
 	if (_currspace->isGlobal()) {
 		LuaConnection::addGlobal(_currterm, t);
@@ -1162,7 +1162,7 @@ Rule* Insert::rule(const std::set<Variable*>& qv, Formula* head, Formula* body, 
 		auto pfhead = dynamic_cast<PredForm*>(head);
 		auto r = new Rule(hv, pfhead, body, pi);
 		// Sort derivation
-		FormulaUtils::deriveSorts(_currvocabulary, r);
+		DefinitionUtils::deriveSorts(_currvocabulary, r);
 		// Return the rule
 		return r;
 	} else {

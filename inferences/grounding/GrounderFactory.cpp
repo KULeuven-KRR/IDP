@@ -954,7 +954,7 @@ void GrounderFactory::visit(const QuantSetExpr* origqs) {
 	_context._conjPathUntilNode = false;
 
 	// Move three-valued terms in the set expression
-	auto transqs = TermUtils::moveThreeValuedTerms(origqs->clone(), _structure, _context._funccontext, getOption(BoolType::CPSUPPORT), _cpsymbols);
+	auto transqs = SetUtils::moveThreeValuedTerms(origqs->clone(), _structure, _context._funccontext, getOption(BoolType::CPSUPPORT), _cpsymbols);
 	if (not sametypeid<QuantSetExpr>(*transqs)) {
 		if (getOption(IntType::GROUNDVERBOSITY) > 1) {
 			clog << "Rewritten ";
@@ -1042,7 +1042,7 @@ void GrounderFactory::visit(const Rule* rule) {
 	_context._conjPathUntilNode = false;
 
 	// TODO for lazygroundrules, we need a generator for all variables NOT occurring in the head!
-	Rule* newrule = FormulaUtils::unnestThreeValuedTerms(rule->clone(), _structure, _context._funccontext, getOption(BoolType::CPSUPPORT), _cpsymbols);
+	Rule* newrule = DefinitionUtils::unnestThreeValuedTerms(rule->clone(), _structure, _context._funccontext, getOption(BoolType::CPSUPPORT), _cpsymbols);
 	InstGenerator *headgen = NULL, *bodygen = NULL;
 
 	if (getOption(BoolType::GROUNDLAZILY)) {

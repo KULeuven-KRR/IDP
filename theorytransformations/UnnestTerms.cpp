@@ -34,10 +34,11 @@ bool UnnestTerms::shouldMove(Term* t) {
  * Create a variable and an equation for the given term
  */
 VarTerm* UnnestTerms::move(Term* term) {
-	if (_context == Context::BOTH)
+	if (_context == Context::BOTH) {
 		contextProblem(term);
+	}
 
-	Variable* introduced_var = new Variable(_chosenVarSort == NULL?term->sort() : _chosenVarSort);
+	Variable* introduced_var = new Variable(_chosenVarSort == NULL ? term->sort() : _chosenVarSort);
 
 	VarTerm* introduced_subst_term = new VarTerm(introduced_var, TermParseInfo(term->pi()));
 	VarTerm* introduced_eq_term = new VarTerm(introduced_var, TermParseInfo(term->pi()));
@@ -74,7 +75,7 @@ Formula* UnnestTerms::rewrite(Formula* formula) {
 		_equalities.clear();
 	}
 	if (not _variables.empty()) {
-		formula = new QuantForm(SIGN::POS, univ_and_disj ? QUANT::UNIV : QUANT::EXIST, _variables, formula, origpi);
+		formula = new QuantForm(SIGN::POS, (univ_and_disj ? QUANT::UNIV : QUANT::EXIST), _variables, formula, origpi);
 		_variables.clear();
 	}
 	return formula;
