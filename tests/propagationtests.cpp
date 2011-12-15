@@ -105,7 +105,7 @@ TEST(PropagationTest, PredFormBound) {
 	for (gen->begin(); not gen->isAtEnd(); gen->operator ++()) {
 		counter++;
 	}
-	ASSERT_EQ(counter, 5);
+	ASSERT_EQ(5, counter);
 }
 class LuaPropagationTest: public ::testing::TestWithParam<string> {
 
@@ -116,7 +116,7 @@ TEST_P(LuaPropagationTest, OptimalAndGroundPropagation) {
 	cerr << "Testing " << string(TESTDIR) + GetParam() << "\n";
 	Status result = Status::FAIL;
 	ASSERT_NO_THROW( result = test( { string(TESTDIR) + GetParam(), testfile }););
-	ASSERT_EQ(result, Status::SUCCESS);
+	ASSERT_EQ(Status::SUCCESS,result);
 }
 
 INSTANTIATE_TEST_CASE_P(Propagation, LuaPropagationTest,  ::testing::ValuesIn(generateListOfPropFiles()));
@@ -189,6 +189,6 @@ TEST(PropagationTest, INF) {
 	for (gen->begin(); not gen->isAtEnd(); gen->operator ++()) {
 		counter++;
 	}
-	ASSERT_EQ(counter, 5);
+	ASSERT_EQ(5, counter);
 }
 }
