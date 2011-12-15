@@ -250,6 +250,7 @@ alltests_SOURCES = \
 		tests/propagationtests.cpp\
 		tests/parsertests.cpp\
 		tests/transformationtests.cpp\
+		tests/cppinterface.hpp tests/cppinterface.cpp\
 		tests/testingtools.hpp tests/testingtools.cpp\
 		$(grounder_SOURCES)
 
