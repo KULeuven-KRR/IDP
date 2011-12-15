@@ -1,3 +1,13 @@
+####################################################################
+#Copyright 2010-2012 Katholieke Universiteit Leuven
+# 
+#Use of this software is governed by the GNU LGPLv3.0 license
+#
+#Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+#and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+#Celestijnenlaan 200A, B-3001 Leuven, Belgium
+####################################################################
+
 SUBDIRS = lib pcsolver parser
 AM_CXXFLAGS = -Wall -Wextra\
 		-std=c++0x\
@@ -45,7 +55,6 @@ grounder_SOURCES = \
 		interactive.hpp interactive.cpp\
 		printers/print.hpp printers/print.cpp\
 		printers/idpprinter.hpp printers/ecnfprinter.hpp printers/tptpprinter.hpp\
-		checker.hpp checker.cpp\
 		ecnf.hpp ecnf.cpp\
         symmetry.hpp symmetry.cpp\
 		monitors/interactiveprintmonitor.hpp\

@@ -1,8 +1,12 @@
-/************************************
-	vocabulary.cpp
-	this file belongs to GidL 2.0
-	(c) K.U.Leuven
-************************************/
+/****************************************************************
+* Copyright 2010-2012 Katholieke Universiteit Leuven
+*  
+* Use of this software is governed by the GNU LGPLv3.0 license
+* 
+* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+* Celestijnenlaan 200A, B-3001 Leuven, Belgium
+****************************************************************/
 
 #include <sstream>
 #include <iostream>
@@ -233,8 +237,8 @@ namespace SortUtils {
  *	\return	The unique nearest common ancestor if it exists, a null-pointer otherwise.
  */
 Sort* resolve(Sort* s1, Sort* s2, const Vocabulary* vocabulary) {
-	if ((s1 == 0) || s2 == 0) {
-		return 0;
+	if ((s1 == NULL) || s2 == NULL) {
+		return NULL;
 	}
 	set<Sort*> ss1 = s1->ancestors(vocabulary);
 	ss1.insert(s1);
@@ -248,7 +252,7 @@ Sort* resolve(Sort* s1, Sort* s2, const Vocabulary* vocabulary) {
 	}
 	vector<Sort*> vs = vector<Sort*>(ss.cbegin(), ss.cend());
 	if (vs.empty()) {
-		return 0;
+		return NULL;
 	} else if (vs.size() == 1) {
 		return vs[0];
 	} else {
@@ -262,7 +266,7 @@ Sort* resolve(Sort* s1, Sort* s2, const Vocabulary* vocabulary) {
 		if (vs.size() == 1) {
 			return vs[0];
 		} else {
-			return 0;
+			return NULL;
 		}
 	}
 }

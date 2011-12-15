@@ -1,3 +1,13 @@
+/****************************************************************
+* Copyright 2010-2012 Katholieke Universiteit Leuven
+*  
+* Use of this software is governed by the GNU LGPLv3.0 license
+* 
+* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+* Celestijnenlaan 200A, B-3001 Leuven, Belgium
+****************************************************************/
+
 #include <sstream>
 #include "vocabulary.hpp"
 #include "structure.hpp"
@@ -6,6 +16,8 @@
 #include "visitors/TheoryVisitor.hpp"
 #include "visitors/TheoryMutatingVisitor.hpp"
 #include "common.hpp"
+#include "error.hpp"
+
 using namespace std;
 
 /*********************
@@ -371,10 +383,10 @@ Sort* EnumSetExpr::sort() const {
 		if ((*it)->sort()) {
 			currsort = SortUtils::resolve(currsort, (*it)->sort());
 		} else {
-			return 0;
+			return NULL;
 		}
 	}
-	if (currsort) {
+	if (currsort != NULL) {
 		if (SortUtils::isSubsort(currsort, VocabularyUtils::natsort())) {
 			return VocabularyUtils::natsort();
 		} else if (SortUtils::isSubsort(currsort, VocabularyUtils::intsort())) {
@@ -382,10 +394,13 @@ Sort* EnumSetExpr::sort() const {
 		} else if (SortUtils::isSubsort(currsort, VocabularyUtils::floatsort())) {
 			return VocabularyUtils::floatsort();
 		} else {
-			return 0;
+			Error::notsubsort(currsort->name(),VocabularyUtils::floatsort()->name(),pi());
+			return NULL;
 		}
-	} else
-		return 0;
+	} else {
+		//TODO There should be some error or warning thrown here!
+		return NULL;
+	}
 }
 
 ostream& EnumSetExpr::put(ostream& output) const {
@@ -430,7 +445,6 @@ QuantSetExpr* QuantSetExpr::cloneKeepVars() const {
 }
 
 QuantSetExpr* QuantSetExpr::clone(const map<Variable*, Variable*>& mvv) const {
-
 	set<Variable*> newvars;
 	map<Variable*, Variable*> nmvv = mvv;
 	for (auto it = quantVars().cbegin(); it != quantVars().cend(); ++it) {
@@ -453,6 +467,7 @@ QuantSetExpr* QuantSetExpr::positiveSubset() const {
 	auto newform = new BoolForm(SIGN::POS, true, { form, termpos }, form->pi());
 	return new QuantSetExpr(_quantvars, newform, term, _pi);
 }
+
 QuantSetExpr* QuantSetExpr::negativeSubset() const {
 	auto form = _subformulas.at(0);
 	auto term = _subterms.at(0);
@@ -477,7 +492,7 @@ QuantSetExpr* QuantSetExpr::zeroSubset() const {
 
 Sort* QuantSetExpr::sort() const {
 	Sort* termsort = (*_subterms.cbegin())->sort();
-	if (termsort) {
+	if (termsort != NULL) {
 		if (SortUtils::isSubsort(termsort, VocabularyUtils::natsort())) {
 			return VocabularyUtils::natsort();
 		} else if (SortUtils::isSubsort(termsort, VocabularyUtils::intsort())) {
@@ -485,10 +500,12 @@ Sort* QuantSetExpr::sort() const {
 		} else if (SortUtils::isSubsort(termsort, VocabularyUtils::floatsort())) {
 			return VocabularyUtils::floatsort();
 		} else {
-			return 0;
+			Error::notsubsort(termsort->name(),VocabularyUtils::floatsort()->name(),pi());
+			return NULL;
 		}
 	} else {
-		return 0;
+		//TODO There should be some error or warning thrown here!
+		return NULL;
 	}
 }
 

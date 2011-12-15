@@ -2,7 +2,7 @@ procedure getExpectedAModel(){
 	return true
 }
 
-vocabulary V{
+vocabulary V {
 	type Dim isa int
 	type Num isa int
  
@@ -11,10 +11,10 @@ vocabulary V{
 
 theory T : V { 
 	! n : ?1 r c : In(r,c) = n.
-	! r1 r2 : r1 < r2 => sum{ n c : In(r1,c) = n: n } = sum{ n c : In(r2,c) = n :n}.
+	! r1 r2 : r1 < r2 => sum{ n c : In(r1,c) = n : n } = sum{ n c : In(r2,c) = n : n }.
 }
 
-structure S : V{ 
+structure S : V {
 	Num = {1..4}
 	Dim = {1..2}
 }

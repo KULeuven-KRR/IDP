@@ -1,0 +1,25 @@
+vocabulary V{
+	type x isa int
+	p(x)
+}
+
+theory T:V{
+	sum{x: p(x): x}=7.
+}
+
+structure S:V{
+	x = {1..10}
+}
+
+procedure weakassertions(newS){
+	return (
+		assert(newS[V.p].cf,10,"p(10)","false")
+		and assert(newS[V.p].cf,9,"p(9)","false")
+		and assert(newS[V.p].cf,8,"p(8)","false")
+		and assertnot(newS[V.p].cf,7,"p(7)","false")
+	)
+}
+
+procedure strongassertions(newS){
+	return 1
+}

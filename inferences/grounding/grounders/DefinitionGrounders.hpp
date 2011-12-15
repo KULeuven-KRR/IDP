@@ -1,3 +1,13 @@
+/****************************************************************
+* Copyright 2010-2012 Katholieke Universiteit Leuven
+*  
+* Use of this software is governed by the GNU LGPLv3.0 license
+* 
+* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+* Celestijnenlaan 200A, B-3001 Leuven, Belgium
+****************************************************************/
+
 #ifndef DEFINITIONGROUNDERS_HPP_
 #define DEFINITIONGROUNDERS_HPP_
 
@@ -84,14 +94,14 @@ class HeadGrounder {
 private:
 	AbstractGroundTheory* _grounding;
 	std::vector<TermGrounder*> _subtermgrounders;
-	InstanceChecker* _truechecker;
-	InstanceChecker* _falsechecker;
+	const PredTable* _ct;
+	const PredTable* _cf;
 	unsigned int _symbol;
 	std::vector<SortTable*> _tables;
 	PFSymbol* _pfsymbol;
 
 public:
-	HeadGrounder(AbstractGroundTheory* gt, InstanceChecker* pc, InstanceChecker* cc, PFSymbol* s, const std::vector<TermGrounder*>&,
+	HeadGrounder(AbstractGroundTheory* gt, const PredTable* ct,const PredTable* cf, PFSymbol* s, const std::vector<TermGrounder*>&,
 			const std::vector<SortTable*>&);
 	Lit run() const;
 

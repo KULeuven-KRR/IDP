@@ -1,8 +1,12 @@
-/************************************
- vocabulary.hpp
- this file belongs to GidL 2.0
- (c) K.U.Leuven
- ************************************/
+/****************************************************************
+* Copyright 2010-2012 Katholieke Universiteit Leuven
+*  
+* Use of this software is governed by the GNU LGPLv3.0 license
+* 
+* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+* Celestijnenlaan 200A, B-3001 Leuven, Belgium
+****************************************************************/
 
 #ifndef VOCABULARY_HPP
 #define VOCABULARY_HPP
@@ -675,7 +679,6 @@ Predicate* greaterThan(Sort* s); //!< returns the predicate >/2 with sorts (s,s)
 
 bool isComparisonPredicate(const PFSymbol*); //!< returns true iff the given symbol is =/2, </2, or >/2
 bool isNumeric(Sort*); //!< returns true iff the given sort is a subsort of float
-
 }
 
 #endif

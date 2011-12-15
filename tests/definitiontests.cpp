@@ -1,3 +1,13 @@
+/****************************************************************
+* Copyright 2010-2012 Katholieke Universiteit Leuven
+*  
+* Use of this software is governed by the GNU LGPLv3.0 license
+* 
+* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+* Celestijnenlaan 200A, B-3001 Leuven, Belgium
+****************************************************************/
+
 /*
  * Copyright 2007-2011 Katholieke Universiteit Leuven
  *
@@ -20,7 +30,6 @@ using namespace std;
 namespace Tests {
 
 // TODO prevent infinite running bugs
-// TODO on parsing error of one of the files, a lot of later ones will also fail!
 vector<string> generateListOfDefFiles() {
 	vector<string> deftests;
 	DIR *dir;
@@ -54,5 +63,5 @@ TEST_P(DefinitionTest, CalculatesDefinition) {
 	ASSERT_EQ(result, Status::SUCCESS);
 }
 
-INSTANTIATE_TEST_CASE_P(Inferences, DefinitionTest,  ::testing::ValuesIn(generateListOfDefFiles()));
+INSTANTIATE_TEST_CASE_P(CalculateDefinitions, DefinitionTest,  ::testing::ValuesIn(generateListOfDefFiles()));
 }

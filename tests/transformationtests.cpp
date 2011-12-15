@@ -1,5 +1,15 @@
+/****************************************************************
+* Copyright 2010-2012 Katholieke Universiteit Leuven
+*  
+* Use of this software is governed by the GNU LGPLv3.0 license
+* 
+* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+* Celestijnenlaan 200A, B-3001 Leuven, Belgium
+****************************************************************/
+
 #include "gtest/gtest.h"
-//#include "testingtools.hpp"
+#include "cppinterface.hpp"
 
 #include "common.hpp"
 #include "vocabulary.hpp"
@@ -21,19 +31,14 @@ namespace Tests {
 
 // Flatten - formula,theory - boolform,quantform
 TEST(FlattenTest,BoolForm) {
-	auto p = new Predicate("P",{});
-	auto q = new Predicate("Q",{});
-	auto r = new Predicate("R",{});
+	auto p = pred("P",{});
+	auto q = pred("Q",{});
+	auto r = pred("R",{});
 
-	auto pform = new PredForm(SIGN::POS,p,{},FormulaParseInfo());
-	auto qform = new PredForm(SIGN::POS,q,{},FormulaParseInfo());
-	auto rform = new PredForm(SIGN::POS,r,{},FormulaParseInfo());
-
-	auto qvr = new BoolForm(SIGN::POS,false,qform,rform,FormulaParseInfo());
-	auto pvqvr = new BoolForm(SIGN::POS,false,pform,qvr,FormulaParseInfo());
+	Formula& pvqvr = p({}) | (q({}) | r({}));
 
 	// Flattening (P | (Q | R)) to (P | Q | R).
-	auto result = FormulaUtils::flatten(pvqvr);
+	auto result = FormulaUtils::flatten(&pvqvr);
 
 	EXPECT_TRUE(sametypeid<BoolForm>(*result));
 	EXPECT_EQ(result->subformulas().size(),3);
@@ -42,22 +47,15 @@ TEST(FlattenTest,BoolForm) {
 }
 
 TEST(FlattenTest,QuantForm) {
-	auto sorttable = new SortTable(new IntRangeInternalSortTable(-2,2));
-	auto sort = new Sort("sort",sorttable);
+	auto s = sort("S",-2,2);
+	auto x = var(s);
+	auto y = var(s);
+	auto p = pred("P",{s,s});
 
-	auto x = new Variable(sort);
-	auto y = new Variable(sort);
-	auto xterm = new VarTerm(x,TermParseInfo());
-	auto yterm = new VarTerm(y,TermParseInfo());
-
-	auto p = new Predicate("P",{ sort,sort });
-	auto pxy = new PredForm(SIGN::POS,p,{ xterm,yterm },FormulaParseInfo());
-
-	auto aypxy = new QuantForm(SIGN::POS,QUANT::UNIV,{ y },pxy,FormulaParseInfo());
-	auto axaypxy = new QuantForm(SIGN::POS,QUANT::UNIV,{ x },aypxy,FormulaParseInfo());
+	Formula& axaypxy = all(x, all(y, p({x,y})));
 
 	// Flattening (! x : ! y : P(x,y)) to (! x y : P(x,y)).
-	auto result = FormulaUtils::flatten(axaypxy);
+	auto result = FormulaUtils::flatten(&axaypxy);
 
 	EXPECT_TRUE(sametypeid<QuantForm>(*result));
 	EXPECT_EQ(result->quantVars().size(),2);
@@ -66,34 +64,23 @@ TEST(FlattenTest,QuantForm) {
 }
 
 TEST(FlattenTest,Theory) {
-	auto sorttable = new SortTable(new IntRangeInternalSortTable(-2,2));
-	auto sort = new Sort("sort",sorttable);
-
-	auto x = new Variable(sort);
-	auto xterm = new VarTerm(x,TermParseInfo());
-	auto y = new Variable(sort);
-	auto yterm = new VarTerm(y,TermParseInfo());
-
-	auto p = new Predicate("P",{ sort,sort });
-	auto pxy = new PredForm(SIGN::POS,p,{ xterm,yterm },FormulaParseInfo());
-	auto q = new Predicate("Q",{ sort,sort });
-	auto qxy = new PredForm(SIGN::POS,q,{ xterm,yterm },FormulaParseInfo());
-	auto r = new Predicate("R",{ sort,sort });
-	auto rxy = new PredForm(SIGN::POS,r,{ xterm,yterm },FormulaParseInfo());
-
-	auto qvr = new BoolForm(SIGN::POS,false,qxy,rxy,FormulaParseInfo());
-	auto pvqvr = new BoolForm(SIGN::POS,false,pxy,qvr,FormulaParseInfo());
-	auto aypvqvr = new QuantForm(SIGN::POS,QUANT::UNIV,{ y },pvqvr,FormulaParseInfo());
-	auto axaypvqvr = new QuantForm(SIGN::POS,QUANT::UNIV,{ x },aypvqvr,FormulaParseInfo());
+	auto s = sort("S",-2,2);
+	auto x = var(s);
+	auto y = var(s);
+	auto p = pred("P",{s,s});
+	auto q = pred("Q",{s,s});
+	auto r = pred("R",{s,s});
 
 	auto voc = new Vocabulary("V");
-	voc->add(sort);
-	voc->add(p);
-	voc->add(q);
-	voc->add(r);
+	voc->add(s);
+	voc->add(p.p());
+	voc->add(q.p());
+	voc->add(r.p());
+
+	Formula& axaypvqvr = all(x, all(y, p({x,y}) | (q({x,y}) | r({x,y})) ));
 
 	auto theory = new Theory("T",voc,ParseInfo());
-	theory->add(axaypvqvr);
+	theory->add(&axaypvqvr);
 
 	// Flattening (! x : ! y : P(x,y) | (Q(x,y) | R(x,y))) to (! x y : P(x,y) | Q(x,y) | R(x,y)).
 	auto result = FormulaUtils::flatten(theory);
@@ -114,54 +101,43 @@ TEST(FlattenTest,Theory) {
 
 // GraphFuncsAndAggs - formula,theory
 TEST(GraphFuncsAndAggsTest,OneFuncTerm) {
-	auto sorttable = new SortTable(new IntRangeInternalSortTable(-2,2));
-	auto sort = new Sort("sort",sorttable);
+	auto s = sort("X",-2,2);
+	auto one = domainterm(s,1);
+	auto f = func("F",{s},s);
 
-	auto null = DomainElementFactory::createGlobal()->create(0);
-	auto nullterm = new DomainTerm(sort,null,TermParseInfo());
-
-	auto f = new Function("F",{ sort },sort,ParseInfo());
-	auto fterm = new FuncTerm(f,{ nullterm },TermParseInfo());
-
-	auto eq = VocabularyUtils::equal(sort);
-	auto eqf00 = new PredForm(SIGN::POS,eq,{ fterm,nullterm },FormulaParseInfo());
+	Formula& eqf00 = (f({one}) == *one);
 
 	// Rewrite (F(0) = 0) to (F(0,0))
-	auto result = FormulaUtils::graphFuncsAndAggs(eqf00);
+	auto result = FormulaUtils::graphFuncsAndAggs(&eqf00);
 
 	ASSERT_TRUE(sametypeid<PredForm>(*result));
 	auto respredform = dynamic_cast<PredForm*>(result);
 	EXPECT_TRUE(sametypeid<Function>(*(respredform->symbol())));
-	EXPECT_EQ(respredform->symbol()->name(),f->name());
+	EXPECT_EQ(respredform->symbol()->name(),f.f()->name());
 
 	delete result;
 }
 
 TEST(GraphFuncsAndAggsTest,OneAggTerm) {
-	auto sorttable = new SortTable(new IntRangeInternalSortTable(-2,2));
-	auto sort = new Sort("sort",sorttable);
+	auto s = sort("X",-2,2);
+	auto one = domainterm(s,1);
+	auto xt = varterm(s);
+	auto x = xt->var();
+	auto p = pred("P",{s});
 
-	auto null = DomainElementFactory::createGlobal()->create(0);
-	auto nullterm = new DomainTerm(sort,null,TermParseInfo());
+	Formula& px = p({x});
 
-	auto x = new Variable(sort);
-	auto xterm = new VarTerm(x,TermParseInfo());
-
-	auto p = new Predicate("P",{ sort });
-	auto px = new PredForm(SIGN::POS,p,{ xterm },FormulaParseInfo());
-
-	auto setpx = new QuantSetExpr({ x },px,xterm,SetParseInfo());
+	auto setpx = new QuantSetExpr({x},&px,xt,SetParseInfo());
 	auto sumterm = new AggTerm(setpx,AggFunction::SUM,TermParseInfo());
 
-	auto eq = VocabularyUtils::equal(sort);
-	auto eq0sumterm = new PredForm(SIGN::POS,eq,{ nullterm,sumterm },FormulaParseInfo());
+	Formula& eq0sumterm = (*one == *sumterm);
 
 	// Rewrite (0 = sum{ x : P(x) : x })
-	auto result = FormulaUtils::graphFuncsAndAggs(eq0sumterm);
+	auto result = FormulaUtils::graphFuncsAndAggs(&eq0sumterm);
 
 	ASSERT_TRUE(sametypeid<AggForm>(*result));
 	auto resaggform = dynamic_cast<AggForm*>(result);
-	EXPECT_EQ(resaggform->left(),nullterm);
+	EXPECT_EQ(resaggform->left(),one);
 	EXPECT_EQ(resaggform->comp(),CompType::EQ);
 	EXPECT_EQ(resaggform->right(),sumterm);
 
@@ -169,28 +145,17 @@ TEST(GraphFuncsAndAggsTest,OneAggTerm) {
 }
 
 TEST(GraphFuncsAndAggsTest,TwoFuncTerms) {
-	auto sorttable = new SortTable(new IntRangeInternalSortTable(-2,2));
-	auto sort = new Sort("sort",sorttable);
+	auto s = sort("X",-2,2); //TODO isa int
+	auto x = var(s);
+	auto y = var(s);
+	auto f = func("F",{s},s);
+	auto g = func("G",{s},s);
 
-	auto null = DomainElementFactory::createGlobal()->create(0);
-	auto nullterm = new DomainTerm(sort,null,TermParseInfo());
+	Formula& eqf0g0 = (f({x}) == g({y}));
 
-	auto x = new Variable(sort);
-	auto xterm = new VarTerm(x,TermParseInfo());
-	auto y = new Variable(sort);
-	auto yterm = new VarTerm(y,TermParseInfo());
-
-	auto f = new Function("F",{ sort },sort,ParseInfo());
-	auto fterm = new FuncTerm(f,{ xterm },TermParseInfo());
-	auto g = new Function("G",{ sort },sort,ParseInfo());
-	auto gterm = new FuncTerm(g,{ yterm },TermParseInfo());
-
-	auto eq = VocabularyUtils::equal(sort);
-	auto eqf0g0 = new PredForm(SIGN::POS,eq,{ fterm,gterm },FormulaParseInfo());
-
-	// Rewrite (F(0) = G(0)) to (! x : 
-	//std::clog << "Transforming " << toString(eqf0g0) << "\n";
-	auto result = FormulaUtils::graphFuncsAndAggs(eqf0g0);
+	// Rewrite (F(x) = G(y)) to (! z : G(y) = z => F(x) = z) 
+	//std::clog << "Transforming " << toString(&eqf0g0) << "\n";
+	auto result = FormulaUtils::graphFuncsAndAggs(&eqf0g0);
 	//std::clog << "Resulted in " << toString(result) << "\n";
 
 	EXPECT_TRUE(sametypeid<QuantForm>(*result));

@@ -1,8 +1,12 @@
-/************************************
- calculatedefinitions.hpp
- this file belongs to GidL 2.0
- (c) K.U.Leuven
- ************************************/
+/****************************************************************
+* Copyright 2010-2012 Katholieke Universiteit Leuven
+*  
+* Use of this software is governed by the GNU LGPLv3.0 license
+* 
+* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+* Celestijnenlaan 200A, B-3001 Leuven, Belgium
+****************************************************************/
 
 #ifndef CALCULATEDEFINITIONSCOMMAND_HPP_
 #define CALCULATEDEFINITIONSCOMMAND_HPP_
@@ -34,7 +38,7 @@ public:
 		auto clone = structure->clone();
 		auto result = CalculateDefinitions::doCalculateDefinitions(theory, clone);
 		if (not result->isConsistent() ) {
-			if (getOption(IntType::GROUNDVERBOSITY) >= 1) { //TODO see issue 18. Fix the options
+			if (getOption(IntType::GROUNDVERBOSITY) >= 1) {
 				std::clog << "Calculating definitions resulted in inconsistent model. \n" << "Theory is unsatisfiable.\n";
 			}
 		}

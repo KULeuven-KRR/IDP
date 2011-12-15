@@ -1,3 +1,13 @@
+/****************************************************************
+* Copyright 2010-2012 Katholieke Universiteit Leuven
+*  
+* Use of this software is governed by the GNU LGPLv3.0 license
+* 
+* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+* Celestijnenlaan 200A, B-3001 Leuven, Belgium
+****************************************************************/
+
 #include "GrounderFactory.hpp"
 #include "common.hpp"
 
@@ -15,7 +25,6 @@
 #include "options.hpp"
 #include "generators/GeneratorFactory.hpp"
 #include "generators/InstGenerator.hpp"
-#include "checker.hpp"
 #include "common.hpp"
 #include "GeneralUtils.hpp"
 #include "monitors/interactiveprintmonitor.hpp"
@@ -443,10 +452,7 @@ void GrounderFactory::visit(const PredForm* pf) {
 
 	if (_context._component == CompContext::HEAD) {
 		PredInter* inter = _structure->inter(newpf->symbol());
-		CheckerFactory checkfactory;
-		InstanceChecker* truech = checkfactory.create(inter, TruthType::CERTAIN_TRUE);
-		InstanceChecker* falsech = checkfactory.create(inter, TruthType::CERTAIN_FALSE);
-		_headgrounder = new HeadGrounder(_grounding, truech, falsech, newpf->symbol(), subtermgrounders, argsorttables);
+		_headgrounder = new HeadGrounder(_grounding, inter->ct(), inter->cf(), newpf->symbol(), subtermgrounders, argsorttables);
 		return;
 	}
 

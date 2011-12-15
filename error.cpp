@@ -1,3 +1,13 @@
+/****************************************************************
+* Copyright 2010-2012 Katholieke Universiteit Leuven
+*  
+* Use of this software is governed by the GNU LGPLv3.0 license
+* 
+* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+* Celestijnenlaan 200A, B-3001 Leuven, Belgium
+****************************************************************/
+
 #include <iostream>
 #include "parseinfo.hpp"
 #include "error.hpp"
@@ -412,22 +422,22 @@ void funcnotintheovoc(const string& fname, const string& tname, const ParseInfo&
 
 void symbnotinstructvoc(const string& name, const string& sname, const ParseInfo& thisplace) {
 	error(thisplace);
-	clog << "Symbol " << name << " does not belong to the vocabulary of structrure " << sname << "." << "\n";
+	clog << "Symbol " << name << " does not belong to the vocabulary of structure " << sname << "." << "\n";
 }
 
 void sortnotinstructvoc(const string& name, const string& sname, const ParseInfo& thisplace) {
 	error(thisplace);
-	clog << "Sort " << name << " does not belong to the vocabulary of structrure " << sname << "." << "\n";
+	clog << "Sort " << name << " does not belong to the vocabulary of structure " << sname << "." << "\n";
 }
 
 void prednotinstructvoc(const string& name, const string& sname, const ParseInfo& thisplace) {
 	error(thisplace);
-	clog << "Predicate " << name << " does not belong to the vocabulary of structrure " << sname << "." << "\n";
+	clog << "Predicate " << name << " does not belong to the vocabulary of structure " << sname << "." << "\n";
 }
 
 void funcnotinstructvoc(const string& name, const string& sname, const ParseInfo& thisplace) {
 	error(thisplace);
-	clog << "Function " << name << " does not belong to the vocabulary of structrure " << sname << "." << "\n";
+	clog << "Function " << name << " does not belong to the vocabulary of structure " << sname << "." << "\n";
 }
 
 /** Using overlapping symbols **/

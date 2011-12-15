@@ -1,0 +1,27 @@
+vocabulary V{
+P
+Q
+R
+}
+
+theory T:V{
+P | (Q & R).
+~P | (Q & R).
+
+}
+
+structure S:V{
+
+}
+
+procedure weakassertions(newS){
+	return 1
+	
+}
+
+procedure strongassertions(newS){
+	return 
+		(assertNotEmpty(newS[V.Q].ct,"Q<ct>") == 1
+		and assertNotEmpty(newS[V.R].ct,"R<ct>") == 1 
+		and assertEmpty(newS[V.P].ct,"P<ct>") == 1)
+}

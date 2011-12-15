@@ -1,0 +1,23 @@
+vocabulary V{
+	type x isa int
+	p(x)
+}
+
+theory T:V{
+	!y[x]: min{x: p(x): x}~=y.
+}
+
+structure S:V{
+	x = {0..5}
+
+}
+
+procedure weakassertions(newS){
+	return
+		1
+	
+}
+
+procedure strongassertions(newS){
+	return (assert2(newS[V.p].ct,{},"p<ct>")==1 and assert2(newS[V.p].cf,{0,1,2,3,4,5},"p<cf>")==1)
+}
