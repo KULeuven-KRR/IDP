@@ -1,0 +1,16 @@
+vocabulary V{
+	type t isa int
+}
+
+theory T:V{
+	? x[t] y[t]: x/y=4.5. 
+}
+
+structure S:V{
+	t = {9;0;2}
+}
+
+procedure getExpectedNbOfModels(){
+	io.stderr:write("see issue 34\n")
+	return 1
+}

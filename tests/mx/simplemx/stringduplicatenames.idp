@@ -1,0 +1,19 @@
+vocabulary V{
+	type s isa string
+	type x isa int
+	p(s,x)
+}
+
+theory T:V{
+	!y: max{x: p(y,x): x}=<48.
+}
+
+structure S:V{
+	x = {47..49}
+	s = {Infinity;47;V}
+}
+
+procedure getExpectedNbOfModels(){
+	return 64
+	--	return 27 this is the mathematically correct answer, but our convention is that the empty set has maximum -\infty, which is smaller than 48
+}

@@ -1,0 +1,18 @@
+vocabulary V{
+	type t isa string
+	partial f(t):t
+}
+
+theory T:V{
+	?x y: f(x)=y.
+}
+
+structure S:V{
+	t = {Welkom;121;"pp!dcd"}
+	f<ct> = {Welkom->Welkom}
+	f<cf> = {"pp!dcd"->Welkom;"pp!dcd"->"pp!dcd";}
+}
+
+procedure getExpectedNbOfModels(){
+	return 8
+}
