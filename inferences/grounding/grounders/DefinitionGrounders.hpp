@@ -84,14 +84,14 @@ class HeadGrounder {
 private:
 	AbstractGroundTheory* _grounding;
 	std::vector<TermGrounder*> _subtermgrounders;
-	InstanceChecker* _truechecker;
-	InstanceChecker* _falsechecker;
+	const PredTable* _ct;
+	const PredTable* _cf;
 	unsigned int _symbol;
 	std::vector<SortTable*> _tables;
 	PFSymbol* _pfsymbol;
 
 public:
-	HeadGrounder(AbstractGroundTheory* gt, InstanceChecker* pc, InstanceChecker* cc, PFSymbol* s, const std::vector<TermGrounder*>&,
+	HeadGrounder(AbstractGroundTheory* gt, const PredTable* ct,const PredTable* cf, PFSymbol* s, const std::vector<TermGrounder*>&,
 			const std::vector<SortTable*>&);
 	Lit run() const;
 

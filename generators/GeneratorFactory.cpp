@@ -2,7 +2,6 @@
 #include "parseinfo.hpp"
 #include "vocabulary.hpp"
 #include "structure.hpp"
-#include "checker.hpp"
 #include "fobdds/FoBdd.hpp"
 #include "fobdds/FoBddFactory.hpp"
 #include "fobdds/FoBddManager.hpp"

@@ -46,7 +46,6 @@ grounder_SOURCES = \
 		interactive.hpp interactive.cpp\
 		printers/print.hpp printers/print.cpp\
 		printers/idpprinter.hpp printers/ecnfprinter.hpp printers/tptpprinter.hpp\
-		checker.hpp checker.cpp\
 		ecnf.hpp ecnf.cpp\
         symmetry.hpp symmetry.cpp\
 		monitors/interactiveprintmonitor.hpp\

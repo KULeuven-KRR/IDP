@@ -10,7 +10,6 @@
 #include "common.hpp"
 #include "generators/InstGenerator.hpp"
 #include "groundtheories/AbstractGroundTheory.hpp"
-#include "checker.hpp"
 #include <cmath>
 
 using namespace std;
