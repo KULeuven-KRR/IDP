@@ -250,7 +250,7 @@ public:
 		output() << "(";
 		f->subterms()[0]->accept(this);
 		for (size_t n = 0; n < f->comps().size(); ++n) {
-			output() << ' ' << f->comps()[n] << ' ';
+			output() << ' ' <<toString(f->comps()[n]) << ' ';
 			f->subterms()[n + 1]->accept(this);
 			if (not f->conj() && (n + 1 < f->comps().size())) {
 				output() << " | ";
@@ -323,7 +323,7 @@ public:
 		}
 		output() << '(';
 		f->left()->accept(this);
-		output() << ' ' << f->comp() << ' ';
+		output() << ' ' <<toString(f->comp()) << ' ';
 		f->right()->accept(this);
 		output() << ')';
 	}

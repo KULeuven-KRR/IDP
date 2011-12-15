@@ -634,7 +634,7 @@ private:
 	InternalPredTable* _outtable;
 	mutable bool _end;
 	mutable ElementTuple _currtuple;
-	mutable std::vector<ElementTuple> _deref;
+	mutable ElementTuple _deref;
 
 	bool hasNext() const;
 	const ElementTuple& operator*() const;

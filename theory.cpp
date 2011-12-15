@@ -182,7 +182,7 @@ ostream& EqChainForm::put(ostream& output) const {
 	output << '(';
 	subterms()[0]->put(output);
 	for (size_t n = 0; n < _comps.size(); ++n) {
-		output << ' ' << comps()[n] << ' ';
+		output << ' ' << toString(comps()[n]) << ' ';
 		subterms()[n + 1]->put(output);
 		if (not _conj && n + 1 < _comps.size()) {
 			output << " | ";
@@ -345,7 +345,7 @@ ostream& AggForm::put(ostream& output) const {
 	if (isNeg(sign())) { output << '~'; }
 	output << '(';
 	left()->put(output);
-	output << ' ' << _comp << ' ';
+	output << ' ' << toString(_comp) << ' ';
 	right()->put(output);
 	output << ')';
 	return output;

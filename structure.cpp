@@ -517,7 +517,6 @@ TableIterator& TableIterator::operator=(const TableIterator& tab) {
 	if (this != &tab) {
 		delete (_iterator);
 		_iterator = tab.iterator()->clone();
-
 	}
 	return *this;
 }
@@ -819,8 +818,8 @@ bool InverseInternalIterator::hasNext() const {
 }
 
 const ElementTuple& InverseInternalIterator::operator*() const {
-	_deref.push_back(_currtuple);
-	return _deref.back();
+	_deref = _currtuple;
+	return _deref;
 }
 
 void InverseInternalIterator::operator++() {
@@ -3366,17 +3365,9 @@ bool PredInter::isConsistent() const {
 	FirstNElementsEqual eq(_ct->arity());
 	StrictWeakNTupleOrdering so(_ct->arity());
 	for (; not ctIterator.isAtEnd(); ++ctIterator) {
-		cerr <<toString(*ctIterator) <<"\n";
-//#ifdef DEBUG
-//			Assert(not _pf->contains(*ctIterator));
-//#endif
 		// get unassigned domain element
 		while (not cfIterator.isAtEnd() && so(*cfIterator, *ctIterator)) {
-			cerr <<toString(*cfIterator) <<"\n";
 			++cfIterator;
-//#ifdef DEBUG
-//			Assert(not _pt->contains(*cfIterator));
-//#endif
 		}
 		if (not cfIterator.isAtEnd() && eq(*cfIterator, *ctIterator)) {
 			return false;

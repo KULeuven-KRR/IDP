@@ -106,9 +106,8 @@ std::string toString(const std::map<Type1, Type2>& v) {
 	ss << ")";
 	return ss.str();
 }
-
-
-
+template<>
+std::string toString(const CompType& type);
 
 /**
  * HOW TO PRINT INFORMATION CONSISTENCTLY!
@@ -227,31 +226,6 @@ Stream& operator<<(Stream& out, const TsType& tstype) {
 		break;
 	}
 	return out;
-}
-
-template<class Stream>
-Stream& operator<<(Stream& output, const CompType& type) {
-	switch (type) {
-	case CompType::EQ:
-		output << " = ";
-		break;
-	case CompType::NEQ:
-		output << " ~= ";
-		break;
-	case CompType::LT:
-		output << " < ";
-		break;
-	case CompType::GT:
-		output << " > ";
-		break;
-	case CompType::LEQ:
-		output << " =< ";
-		break;
-	case CompType::GEQ:
-		output << " >= ";
-		break;
-	}
-	return output;
 }
 
 std::string* StringPointer(const char* str); //!< Returns a shared pointer to the given string

@@ -191,6 +191,32 @@ bool isConj(SIGN sign, bool conj) {
 	return (sign == SIGN::POS && conj) || (sign == SIGN::NEG && ~conj);
 }
 
+template<>
+std::string toString(const CompType& type) {
+	std::stringstream output;
+	switch (type) {
+	case CompType::EQ:
+		output << " = ";
+		break;
+	case CompType::NEQ:
+		output << " ~= ";
+		break;
+	case CompType::LT:
+		output << " < ";
+		break;
+	case CompType::GT:
+		output << " > ";
+		break;
+	case CompType::LEQ:
+		output << " =< ";
+		break;
+	case CompType::GEQ:
+		output << " >= ";
+		break;
+	}
+	return output.str();
+}
+
 /*********************
  Shared strings
  *********************/

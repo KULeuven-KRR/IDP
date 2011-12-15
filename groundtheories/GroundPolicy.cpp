@@ -145,7 +145,7 @@ std::ostream& GroundPolicy::polPut(std::ostream& s, GroundTranslator* translator
 			CPVarTerm* cpt = dynamic_cast<CPVarTerm*>(left);
 			s << termtranslator->printTerm(cpt->varid());
 		}
-		s << ' ' << cpr->_body->comp() << ' ';
+		s << ' ' <<toString(cpr->_body->comp()) << ' ';
 		CPBound right = cpr->_body->right();
 		if (right._isvarid) {
 			s << termtranslator->printTerm(right._varid);

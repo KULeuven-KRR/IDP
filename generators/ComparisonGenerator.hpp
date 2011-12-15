@@ -48,7 +48,7 @@ public:
 
 	virtual void put(std::ostream& stream){
 		stream <<_leftvar <<"[" <<toString(_leftsort) <<"]" <<(_input!=Input::NONE?"(in)":"(out)");
-		stream <<comparison;
+		stream <<toString(comparison);
 		stream <<_rightvar <<"[" <<toString(_rightsort) <<"]" <<(_input==Input::BOTH?"(in)":"(out)");
 	}
 
