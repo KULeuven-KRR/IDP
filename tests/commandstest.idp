@@ -1,0 +1,88 @@
+procedure main(){
+	stdoptions.timeout = 5
+	stdoptions.nbmodelequivalent = true
+	stdoptions.groundwithbounds = false
+	S=calculatedefinitions(T,S)
+	return(assertions())
+	
+}
+
+procedure assert(table,valuefirst,name,expected){
+	for t in tuples(table) do 
+		if t[1] == valuefirst then 
+			return 1	
+		end
+	end
+	io.stderr:write("FAIL!  expected that "..name.." is certainly "..expected..", but assertion failed\n")
+	return 0
+}
+
+procedure assertnot(table,valuefirst,name,expected){
+	found = 0
+	for t in tuples(table) do 
+		if t[1] == valuefirst then 
+			found = 1	
+		end
+	end
+	if found == 1 then
+		io.stderr:write("FAIL!  expected that "..name.." is not certainly"..expected..", but assertion failed\n")
+		return 0
+	end
+	return 1
+}
+
+
+procedure assert2multi(table, values, name){
+ 	--note: order is important!!!
+	result = 1
+	index = 1
+	for t in tuples(table) do 
+		currval= values[index]
+		for index2=1,#currval,1 do	
+			if t[index2] ~= currval[index2] then 
+				result = 0	
+			end
+		end
+		index = index+1
+	end 
+	if result == 0 or #values ~= index-1 then
+			result = 0
+			io.stderr:write("FAIL!  table "..name.." is not as expected\n")
+	end
+	return result
+	
+}
+
+procedure assert2(table, values, name){
+	result = 1
+	index = 1
+	for t in tuples(table) do 
+		if t[1] ~= values[index] then 
+			result = 0	
+		end
+		index = index+1
+	end 
+	if result == 0 or #values ~= index-1 then
+			io.stderr:write("FAIL!  table "..name.." is not as expected\n")
+	end
+	return result
+	
+}
+
+procedure consistent(expected){
+	if expected == 1 then
+		if isconsistent(S) == 1 then
+			return 1
+		else
+			io.stderr:write("FAIL!  expected a consistent structure, but was inconsistent\n")
+			return 0
+		end
+	else
+		if isconsistent(S) == 0 then
+			return 1
+		else
+			io.stderr:write("FAIL!  expected an inconsistent structure, but was consistent\n")
+			return 0
+		end
+	end
+}

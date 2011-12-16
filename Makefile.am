@@ -222,7 +222,8 @@ grounder_SOURCES = \
 		fobdds/bddvisitors/FirstConstTermInFunc.hpp\
 		fobdds/bddvisitors/CollectSameOperationTerms.hpp\
 		IdpException.hpp\
-		lib/linenoise/linenoise.cpp lib/linenoise/utf8.cpp
+		lib/linenoise/linenoise.cpp lib/linenoise/utf8.cpp\
+		utils/FileManagement.hpp utils/FileManagement.cpp
 		
 gidl_SOURCES = main.cpp $(grounder_SOURCES)
 

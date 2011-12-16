@@ -12,45 +12,25 @@
 
 #include "gtest/gtest.h"
 #include "rungidl.hpp"
+#include "utils/FileManagement.hpp"
 
-#include <dirent.h>
 #include <exception>
 
 using namespace std;
 
 namespace Tests {
 
-vector<string> getAllFilesInDirs(const vector<string>& testdirs){
-	vector<string> mxtests;
-	DIR *dir;
-	struct dirent *ent;
-	for (auto currTestDir = testdirs.cbegin(); currTestDir != testdirs.cend(); ++currTestDir) {
-		dir = opendir((string(TESTDIR) + "mx/" + (*currTestDir)).c_str());
-		if (dir != NULL) {
-			while ((ent = readdir(dir)) != NULL) {
-				if (ent->d_name[0] != '.') {
-					mxtests.push_back("mx/" + (*currTestDir) +ent->d_name);
-				}
-			}
-			closedir(dir);
-		} else {
-			cerr << "FAIL    |  Could not open directory of MX tests.\n";
-		}
-	}
-	return mxtests;
-}
-
 vector<string> generateListOfMXnbFiles() {
 	vector<string> testdirs {"simplemx/", "numberknown/"};
-	return getAllFilesInDirs(testdirs);
+	return getAllFilesInDirs(string(TESTDIR) + "mx/", testdirs);
 }
 vector<string> generateListOfMXsatFiles() {
 	vector<string> testdirs {"satmx/"};
-	return getAllFilesInDirs(testdirs);
+	return getAllFilesInDirs(string(TESTDIR) + "mx/", testdirs);
 }
 vector<string> generateListOfSlowMXsatFiles() {
 	vector<string> testdirs {"satmxlongrunning/"};
-	return getAllFilesInDirs(testdirs);
+	return getAllFilesInDirs(string(TESTDIR) + "mx/", testdirs);
 }
 
 class MXnbTest: public ::testing::TestWithParam<string> {
@@ -70,9 +50,9 @@ void throwexc() {
 
 TEST_P(MXnbTest, DoesMX) {
 	string testfile(string(TESTDIR) + "mxnbofmodelstest.idp");
-	cerr << "Testing " << string(TESTDIR) + GetParam() << "\n";
+	cerr << "Testing " << GetParam() << "\n";
 	Status result = Status::FAIL;
-	ASSERT_NO_THROW( result = test( { string(TESTDIR) + GetParam(), testfile }););
+	ASSERT_NO_THROW( result = test( { GetParam(), testfile }););
 	ASSERT_EQ(result, Status::SUCCESS);
 }
 
@@ -86,17 +66,17 @@ TEST_P(MXnbTest, DoesMX) {
 
 TEST_P(MXsatTest, DoesMX) {
 	string testfile(string(TESTDIR) + "mxsattest.idp");
-	cerr << "Testing " << string(TESTDIR) + GetParam() << "\n";
+	cerr << "Testing " << GetParam() << "\n";
 	Status result = Status::FAIL;
-	ASSERT_NO_THROW( result = test( { string(TESTDIR) + GetParam(), testfile }););
+	ASSERT_NO_THROW( result = test( { GetParam(), testfile }););
 	ASSERT_EQ(result, Status::SUCCESS);
 }
 
 TEST_P(SlowMXnbTest, DoesSlowMX) {
 	string testfile(string(TESTDIR) + "mxsattestslow.idp");
-	cerr << "Testing " << string(TESTDIR) + GetParam() << "\n";
+	cerr << "Testing " << GetParam() << "\n";
 	Status result = Status::FAIL;
-	ASSERT_NO_THROW( result = test( { string(TESTDIR) + GetParam(), testfile }););
+	ASSERT_NO_THROW( result = test( { GetParam(), testfile }););
 	ASSERT_EQ(result, Status::SUCCESS);
 }
 
