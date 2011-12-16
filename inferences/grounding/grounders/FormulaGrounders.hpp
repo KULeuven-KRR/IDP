@@ -1,12 +1,12 @@
 /****************************************************************
-* Copyright 2010-2012 Katholieke Universiteit Leuven
-*  
-* Use of this software is governed by the GNU LGPLv3.0 license
-* 
-* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
-* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
-* Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ * Copyright 2010-2012 Katholieke Universiteit Leuven
+ *
+ * Use of this software is governed by the GNU LGPLv3.0 license
+ *
+ * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+ * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+ * Celestijnenlaan 200A, B-3001 Leuven, Belgium
+ ****************************************************************/
 
 #ifndef FORMULAGROUNDERS_HPP_
 #define FORMULAGROUNDERS_HPP_
@@ -36,13 +36,13 @@ class FormulaGrounder: public Grounder {
 private:
 	var2dommap _varmap; // Maps the effective variables in the current formula to their instantiation;
 
-	const Formula* _origform;
 	var2dommap _origvarmap; // Maps the (cloned) variables in the original formula to their instantiation
 
 protected:
 	const var2dommap& varmap() const {
 		return _varmap;
 	}
+	const Formula* _origform;
 	GroundTranslator* translator() const;
 
 public:
@@ -74,8 +74,9 @@ protected:
 
 	Lit run() const;
 public:
-	AtomGrounder(AbstractGroundTheory* grounding, SIGN sign, PFSymbol*, const std::vector<TermGrounder*>&, const std::vector<const DomElemContainer*>& checkargs,
-			InstChecker*, InstChecker*, PredInter* inter, const std::vector<SortTable*>&, const GroundingContext&);
+	AtomGrounder(AbstractGroundTheory* grounding, SIGN sign, PFSymbol*, const std::vector<TermGrounder*>&,
+			const std::vector<const DomElemContainer*>& checkargs, InstChecker*, InstChecker*, PredInter* inter, const std::vector<SortTable*>&,
+			const GroundingContext&);
 	void run(ConjOrDisj& formula) const;
 	bool conjunctive() const {
 		return true;
@@ -121,7 +122,7 @@ private:
 public:
 	AggGrounder(AbstractGroundTheory* grounding, GroundingContext gc, AggFunction tp, SetGrounder* sg, TermGrounder* bg, CompType comp, SIGN sign) :
 			FormulaGrounder(grounding, gc), _setgrounder(sg), _boundgrounder(bg), _type(tp), _comp(comp), _sign(sign) {
-		bool noAggComp = comp ==CompType::NEQ ||comp ==CompType::LEQ||comp ==CompType::GEQ ;
+		bool noAggComp = comp == CompType::NEQ || comp == CompType::LEQ || comp == CompType::GEQ;
 		bool signPosIfStrict = isPos(_sign) == not noAggComp;
 		_doublenegtseitin = (gc._tseitin == TsType::RULE)
 				&& ((gc._monotone == Context::POSITIVE && signPosIfStrict) || (gc._monotone == Context::NEGATIVE && not signPosIfStrict));
@@ -132,7 +133,9 @@ public:
 	}
 };
 
-enum class FormStat { UNKNOWN, DECIDED};
+enum class FormStat {
+	UNKNOWN, DECIDED
+};
 
 class ClauseGrounder: public FormulaGrounder {
 protected:
@@ -185,7 +188,7 @@ public:
 			ClauseGrounder(grounding, sign, conj, ct), _subgrounders(sub) {
 	}
 
-	std::vector<Grounder*> getSubGrounders(){
+	std::vector<Grounder*> getSubGrounders() {
 		return _subgrounders;
 	}
 
@@ -207,7 +210,7 @@ public:
 	}
 
 	//Getter
-	FormulaGrounder* getSubGrounder(){
+	FormulaGrounder* getSubGrounder() {
 		return _subgrounder;
 	}
 };
