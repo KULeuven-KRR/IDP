@@ -1,0 +1,23 @@
+vocabulary V{
+	type x isa int
+	p(x)
+	q(x)
+	r(x)
+}
+
+theory T:V{
+	{ 
+		!x: p(x) <- q(x).
+		!x: q(x) <- ~r(x).
+		!x: r(x) <- ~p(x).
+	}
+}
+
+structure S:V{
+	x = {0..7}
+}
+
+procedure assertions(){
+	return consistent(0)
+}
+
