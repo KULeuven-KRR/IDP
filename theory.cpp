@@ -131,31 +131,15 @@ ostream& PredForm::put(ostream& output) const {
 		output << '~';
 	}
 	_symbol->put(output);
-	if (typeid(*_symbol) == typeid(Predicate)) {
-		if (not subterms().empty()) {
-			output << '(';
-			for (size_t n = 0; n < subterms().size(); ++n) {
-				subterms()[n]->put(output);
-				if (n < subterms().size() - 1) {
-					output << ',';
-				}
+	if (not subterms().empty()) {
+		output << '(';
+		for (size_t n = 0; n < subterms().size(); ++n) {
+			subterms()[n]->put(output);
+			if (n < subterms().size() - 1) {
+				output << ',';
 			}
-			output << ')';
 		}
-	} else {
-		Assert(typeid(*_symbol) == typeid(Function));
-		if (subterms().size() > 1) {
-			output << '(';
-			for (size_t n = 0; n < subterms().size() - 1; ++n) {
-				subterms()[n]->put(output);
-				if (n + 1 < subterms().size() - 1) {
-					output << ',';
-				}
-			}
-			output << ')';
-		}
-		output << " = ";
-		subterms().back()->put(output);
+		output << ')';
 	}
 	return output;
 }
@@ -169,7 +153,7 @@ EqChainForm* EqChainForm::clone() const {
 	return clone(mvv);
 }
 
-EqChainForm*	EqChainForm::cloneKeepVars() const{
+EqChainForm* EqChainForm::cloneKeepVars() const{
 	vector<Term*> nt;
 	for (auto it = subterms().cbegin(); it != subterms().cend(); ++it) {
 		nt.push_back((*it)->cloneKeepVars());
