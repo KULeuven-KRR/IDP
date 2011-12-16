@@ -20,6 +20,14 @@ public:
 	virtual std::string getMessage() const = 0;
 };
 
+class NoSuchProcedureException: public Exception{
+	std::string getMessage() const{
+		std::stringstream ss;
+		ss <<"No such lua procedure";
+		return ss.str();
+	}
+};
+
 class AssertionException: public Exception{
 private:
 	std::string message;

@@ -577,10 +577,6 @@ int internalCall(lua_State* L) {
 	Assert(!procs->empty());
 	//otherwise lua should have thrown an exception
 
-//		for(auto i=procs->begin(); i!=procs->end(); ++i){
-//			clog <<(*i).second->getName() <<"/" <<(*i).second->getArgumentTypes().size() <<"\n";
-//		}
-
 	lua_remove(L, 1); // The function itself is the first argument
 
 	// get the list of possible argument types
@@ -626,7 +622,7 @@ int internalCall(lua_State* L) {
 
 	if (proc == NULL) {
 		errorNoSuchProcedure(procs);
-		return 0;
+		throw NoSuchProcedureException();
 	}
 
 	return (*proc)(L);
@@ -1931,12 +1927,16 @@ void closeLuaConnection() {
 }
 
 const DomainElement* execute(const std::string& chunk) {
-	int err = luaL_dostring(_state,chunk.c_str());
-	if (err) {
-		Error::error();
-		clog << string(lua_tostring(_state,-1)) << "\n";
-		lua_pop(_state, 1);
-		return NULL;
+	try{
+		int err = luaL_dostring(_state,chunk.c_str());
+		if (err) {
+			Error::error();
+			clog << string(lua_tostring(_state,-1)) << "\n";
+			lua_pop(_state, 1);
+			return NULL;
+		}
+	}catch(NoSuchProcedureException& e){
+		// Stops execution of further commands, as expected
 	}
 
 	return convertToElement(-1, _state);

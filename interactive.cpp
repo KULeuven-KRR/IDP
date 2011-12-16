@@ -16,6 +16,7 @@
 #ifdef USEINTERACTIVE
 #include "linenoise.h"
 #include <cstdlib>
+#include <cstdio>
 #include <iostream>
 #include <vector>
 #include <set>
@@ -24,6 +25,8 @@
 #include "commands/allcommands.hpp"
 
 using namespace std;
+
+const char* historyfilename = ".history";
 
 bool idp_terminateInteractive(){
 	return requestedInteractiveTermination();
@@ -38,7 +41,7 @@ char* rl_gets() {
 	line_read = linenoise("> ");
 	if (line_read!=NULL){
 		linenoiseHistoryAdd(line_read);
-		linenoiseHistorySave("history.txt"); /* Save every new entry */
+		linenoiseHistoryAppend(historyfilename, line_read); /* Save every new entry */
 	}
 	return (line_read);
 }
@@ -70,11 +73,20 @@ void idp_rl_start() {
 
 	bool success = false;
 	/* Load the history at startup */
+
+	// Create it first if it does not yet exist
+	FILE* f = fopen(historyfilename, "r");
+	if(f==NULL){
+		f = fopen(historyfilename, "w");
+		if(f!=NULL){
+			fclose(f);
+		}
+	}
 	if(linenoiseHistoryLoad(".history")==0){
 		success = true;
 	}
 
-	if(success!=0){
+	if(not success){
 		std::clog <<"The interactive shell history could not be saved. No history will be maintained across sessions.\n";
 	}
 }

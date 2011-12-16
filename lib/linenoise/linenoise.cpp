@@ -1337,6 +1337,33 @@ int linenoiseHistorySave(const char *filename) {
     return 0;
 }
 
+int linenoiseHistoryAppend(const char *filename, const char* line) {
+    FILE *fp = fopen(filename,"a");
+    int j;
+
+    if (fp == NULL){
+    	return -1;
+    }
+
+	while (*line) {
+		if (*line == '\\') {
+			fputs("\\\\", fp);
+		}else if (*line == '\n') {
+			fputs("\\n", fp);
+		}else if (*line == '\r') {
+			fputs("\\r", fp);
+		}else {
+			fputc(*line, fp);
+		}
+		line++;
+	}
+	fputc('\n', fp);
+
+    fclose(fp);
+    return 0;
+}
+
+
 /* Load the history from the specified file. If the file does not exist
  * zero is returned and no operation is performed.
  *
