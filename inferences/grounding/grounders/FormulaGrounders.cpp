@@ -55,12 +55,14 @@ void FormulaGrounder::printorig() const {
 	}
 	clog << "\n" << tabs() << "Grounding formula " << toString(_origform);
 	if (not _origform->freeVars().empty()) {
+		pushtab();
 		clog << "\n" << tabs() << "with instance ";
 		for (auto it = _origform->freeVars().cbegin(); it != _origform->freeVars().cend(); ++it) {
 			clog << toString(*it) << " = ";
 			const DomainElement* e = _origvarmap.find(*it)->second->get();
 			clog << toString(e) << ' ';
 		}
+		poptab();
 	}
 	clog << "\n" << tabs();
 }
@@ -111,7 +113,8 @@ Lit AtomGrounder::run() const {
 				if (verbosity() > 2) {
 					clog << "Term value out of predicate type\n" << tabs();
 					clog << "Result is " << (isPos(_sign) ? "false" : "true") << "\n";
-					if(_origform != NULL)poptab();
+					if (_origform != NULL)
+						poptab();
 					clog << tabs();
 				}
 
@@ -132,7 +135,8 @@ Lit AtomGrounder::run() const {
 		if (verbosity() > 2) {
 			clog << "Possible checker failed\n" << tabs();
 			clog << "Result is " << (gentype == GenType::CANMAKETRUE ? "false" : "true");
-			if(_origform != NULL)poptab();
+			if (_origform != NULL)
+				poptab();
 			clog << "\n" << tabs();
 		}
 		return gentype == GenType::CANMAKETRUE ? _false : _true;
@@ -141,7 +145,8 @@ Lit AtomGrounder::run() const {
 		if (verbosity() > 2) {
 			clog << "Certain checker succeeded\n" << tabs();
 			clog << "Result is " << translator()->printLit(gentype == GenType::CANMAKETRUE ? _true : _false);
-			if(_origform != NULL)poptab();
+			if (_origform != NULL)
+				poptab();
 			clog << "\n" << tabs();
 		}
 		return gentype == GenType::CANMAKETRUE ? _true : _false;
@@ -149,7 +154,8 @@ Lit AtomGrounder::run() const {
 	if (_inter->isTrue(args)) {
 		if (verbosity() > 2) {
 			clog << "Result is " << (isPos(_sign) ? "true" : "false");
-			if(_origform != NULL)poptab();
+			if (_origform != NULL)
+				poptab();
 			clog << "\n" << tabs();
 		}
 		return isPos(_sign) ? _true : _false;
@@ -157,7 +163,8 @@ Lit AtomGrounder::run() const {
 	if (_inter->isFalse(args)) {
 		if (verbosity() > 2) {
 			clog << "Result is " << (isPos(_sign) ? "false" : "true");
-			if(_origform != NULL)poptab();
+			if (_origform != NULL)
+				poptab();
 			clog << "\n" << tabs();
 		}
 		return isPos(_sign) ? _false : _true;
@@ -170,7 +177,8 @@ Lit AtomGrounder::run() const {
 	}
 	if (verbosity() > 2) {
 		clog << "Result is " << translator()->printLit(lit);
-		if(_origform != NULL)poptab();
+		if (_origform != NULL)
+			poptab();
 		clog << "\n" << tabs();
 	}
 	return lit;
@@ -656,7 +664,8 @@ FormStat ClauseGrounder::runSubGrounder(Grounder* subgrounder, bool conjFromRoot
 void BoolGrounder::run(ConjOrDisj& formula, bool negate) const {
 	if (verbosity() > 2) {
 		printorig();
-		if(_origform != NULL)pushtab();
+		if (_origform != NULL)
+			pushtab();
 	}
 	formula.type = conn_;
 	for (auto g = _subgrounders.cbegin(); g < _subgrounders.cend(); g++) {
@@ -669,14 +678,16 @@ void BoolGrounder::run(ConjOrDisj& formula, bool negate) const {
 		}
 	}
 	if (verbosity() > 2) {
-		if(_origform != NULL)poptab();
+		if (_origform != NULL)
+			poptab();
 	}
 }
 
 void QuantGrounder::run(ConjOrDisj& formula, bool negated) const {
 	if (verbosity() > 2) {
 		printorig();
-		if(_origform != NULL)pushtab();
+		if (_origform != NULL)
+			pushtab();
 	}
 
 	formula.type = conn_;
@@ -686,18 +697,22 @@ void QuantGrounder::run(ConjOrDisj& formula, bool negated) const {
 		if (_checker->check()) {
 			formula.literals = litlist { context().gentype == GenType::CANMAKETRUE ? _false : _true };
 			if (verbosity() > 2) {
-				if(_origform != NULL)poptab();
-						}
+				if (_origform != NULL)
+					poptab();
+			}
 			return;
 		}
 
 		if (runSubGrounder(_subgrounder, context()._conjunctivePathFromRoot, formula, negated) == FormStat::DECIDED) {
 			if (verbosity() > 2) {
-				if(_origform != NULL)poptab();
-						}
+				if (_origform != NULL)
+					poptab();
+			}
 			return;
 		}
 	}
+	if (_origform != NULL)
+						poptab();
 }
 
 Lit EquivGrounder::getLitEquivWith(const ConjOrDisj& form) const {
@@ -718,7 +733,8 @@ void EquivGrounder::run(ConjOrDisj& formula, bool negated) const {
 	Assert(not negated);
 	if (verbosity() > 2) {
 		printorig();
-		if(_origform != NULL)pushtab();
+		if (_origform != NULL)
+			pushtab();
 
 		clog << "Current formula: " << (negated ? "~" : "");
 		_leftgrounder->printorig();
@@ -765,6 +781,7 @@ void EquivGrounder::run(ConjOrDisj& formula, bool negated) const {
 		formula.type = Conn::CONJ;
 	}
 	if (verbosity() > 2) {
-		if(_origform != NULL)poptab();
-							}
+		if (_origform != NULL)
+			poptab();
+	}
 }
