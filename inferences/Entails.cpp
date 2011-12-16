@@ -122,7 +122,7 @@ State Entails::checkEntailment(EntailmentData* data) const {
 #else
 #define COMMANDS_INDEX 3 // TODO purely for compilation, should remove this
 		Error::error("\"entails\" is not supported on this platform.\n");
-		return nilarg();
+		return State::UNKNOWN;
 #endif
 	InternalArgument& fofCommand = data->fofCommands[COMMANDS_INDEX];
 	InternalArgument& tffCommand = data->tffCommands[COMMANDS_INDEX];

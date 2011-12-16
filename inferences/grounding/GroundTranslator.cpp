@@ -85,7 +85,7 @@ void GroundTranslator::notifyDefined(PFSymbol* pfs, LazyRuleGrounder* const grou
 	int symbolnumber = addSymbol(pfs);
 	auto it = symbol2rulegrounder.find(symbolnumber);
 	if (symbol2rulegrounder.find(symbolnumber) == symbol2rulegrounder.cend()) {
-		it = symbol2rulegrounder.insert(pair<uint, std::vector<LazyRuleGrounder*> >(symbolnumber, { })).first;
+		it = symbol2rulegrounder.insert(pair<unsigned int, std::vector<LazyRuleGrounder*> >(symbolnumber, { })).first;
 	}
 	for (auto grounderit = it->second.cbegin(); grounderit < it->second.cend(); ++grounderit) {
 		if (grounder == *grounderit) {

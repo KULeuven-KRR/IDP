@@ -65,7 +65,7 @@ private:
 	std::vector<SymbolAndTuple*> atom2Tuple; // Pointers manager by the translator!
 	std::vector<tspair> atom2TsBody; // Pointers manager by the translator!
 
-	std::map<uint, std::vector<LazyRuleGrounder*> > symbol2rulegrounder; // map a symbol to the rulegrounders in which the symbol occurs as a head
+	std::map<unsigned int, std::vector<LazyRuleGrounder*> > symbol2rulegrounder; // map a symbol to the rulegrounders in which the symbol occurs as a head
 
 	std::queue<int> _freenumbers; // keeps atom numbers that were freed and can be used again
 	std::queue<int> _freesetnumbers; // keeps set numbers that were freed and can be used again
@@ -94,7 +94,7 @@ public:
 	unsigned int addSymbol(PFSymbol* pfs);
 
 	bool isStored(Lit atom) const {
-		return atom > 0 && atomtype.size() > (uint)atom;
+		return atom > 0 && atomtype.size() > (unsigned int)atom;
 	}
 	AtomType getType(Lit atom) const {
 		return atomtype[atom];
@@ -125,7 +125,7 @@ public:
 	}
 
 	bool isSet(int setID) const {
-		return _sets.size() > (uint)setID;
+		return _sets.size() > (unsigned int)setID;
 	}
 
 	const TsSet& groundset(int setID) const {
@@ -137,17 +137,17 @@ public:
 		return _sets[setID];
 	}
 
-	bool isManagingSymbol(uint n) const {
+	bool isManagingSymbol(unsigned int n) const {
 		return symbols.size() > n;
 	}
 	unsigned int nbManagedSymbols() const {
 		return symbols.size();
 	}
-	PFSymbol* getManagedSymbol(uint n) const {
+	PFSymbol* getManagedSymbol(unsigned int n) const {
 		Assert(isManagingSymbol(n));
 		return symbols[n].symbol;
 	}
-	const Tuple2AtomMap& getTuples(uint n) const {
+	const Tuple2AtomMap& getTuples(unsigned int n) const {
 		Assert(isManagingSymbol(n));
 		return symbols[n].tuple2atom;
 	}
