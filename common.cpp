@@ -26,12 +26,12 @@ string getTablenameForInternals() {
 
 string getPathOfLuaInternals() {
 	stringstream ss;
-	ss << DATADIR << INTERNALLIBARYLUA;
+	ss << IDPDATADIR << INTERNALLIBARYLUA;
 	return ss.str();
 }
 string getPathOfIdpInternals() {
 	stringstream ss;
-	ss << DATADIR << INTERNALLIBARYIDP;
+	ss << IDPDATADIR << INTERNALLIBARYIDP;
 	return ss.str();
 }
 string getPathOfConfigFile() {
