@@ -14,7 +14,7 @@ AM_CXXFLAGS = -Wall -Wextra\
 		-I$(srcdir)/lib/loki/include\
 		-I$(srcdir)/lib/lua/etc -I$(srcdir)/lib/lua/src\
 		-I$(builddir)/lib/lua/src  -I $(srcdir)/lib/\
-		-DDATADIR=\"$(datadir)\" -DRCDIR=\"$(localstatedir)\"\
+		-DIDPDATADIR=\"$(datadir)\" -DRCDIR=\"$(localstatedir)\"\
 		-DINTERNALLIBARYLUA=\"/std/idp_intern.lua\"\
 		-DINTERNALLIBARYIDP=\"/std/idp_intern.idp\" -DCONFIGFILENAME=\"/idp/.idprc\"\
 		-DGIDLVERSION=\"$(GIDL_VERSION)\"
