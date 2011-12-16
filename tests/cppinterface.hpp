@@ -11,12 +11,6 @@
 #ifndef CPPINTERFACE_HPP_
 #define CPPINTERFACE_HPP_
 
-#include "common.hpp"
-#include "vocabulary.hpp"
-#include "term.hpp"
-#include "theory.hpp"
-#include "structure.hpp"
-
 /**
  * Preliminary version of an interface to easily create vocs, theories and structures from c++
  *
@@ -36,80 +30,49 @@
  Formula& formula = all(x, (not p({x})) | q({x})) & all(x, (not q({x})) | r({x}));
  */
 
-Sort* sort(const std::string& name, int min, int max) {
-	auto sorttable = new SortTable(new IntRangeInternalSortTable(min, max));
-	auto sort = new Sort(name, sorttable);
-	sort->addParent(VocabularyUtils::intsort());
-	return sort;
-}
+#include <string>
+#include <set>
+#include <vector>
 
-const DomainElement* domainelement(int v) {
-	return DomainElementFactory::createGlobal()->create(v);
-}
+class Sort;
+class DomainElement;
+class DomainTerm;
+class Variable;
+class VarTerm;
+class SetExpr;
+class Term;
+class AggTerm;
+class Function;
+class Formula;
+class Predicate;
+class Vocabulary;
+class PFSymbol;
 
-DomainTerm* domainterm(Sort* s, int v) {
-	auto domainelement = DomainElementFactory::createGlobal()->create(v);
-	return new DomainTerm(s,domainelement,TermParseInfo());
-}
+namespace Tests {
 
-Variable* var(Sort* s) {
-	return new Variable(s);
-}
+Sort* sort(const std::string& name, int min, int max);
 
-VarTerm* varterm(Sort* s) {
-	auto variable = new Variable(s);
-	return new VarTerm(variable, TermParseInfo());
-}
+const DomainElement* domainelement(int value);
+DomainTerm* domainterm(Sort*, int value);
 
-Term& functerm(Function* f, const std::vector<Variable*>& vars) {
-	std::vector<Term*> terms;
-	for (auto i = vars.cbegin(); i < vars.cend(); ++i) {
-		terms.push_back(new VarTerm(*i, TermParseInfo()));
-	}
-	return *new FuncTerm(f, terms, TermParseInfo());
-}
+Variable* var(Sort*);
+VarTerm* varterm(Sort*);
 
-Term& functerm(Function* f, const std::vector<Term*>& terms) {
-	return *new FuncTerm(f, terms, TermParseInfo());
-}
+SetExpr* qset(const std::set<Variable*>&, Formula&, Term*);
+AggTerm* sum(SetExpr*);
 
-Formula& operator==(Term& left, Term& right) {
-	auto sort = SortUtils::resolve(left.sort(),right.sort());
-	Assert(sort != NULL);
-	auto eq = VocabularyUtils::equal(sort);
-	return *new PredForm(SIGN::POS, eq, { &left, &right }, FormulaParseInfo());
-}
+Term& functerm(Function*, const std::vector<Variable*>&);
+Term& functerm(Function*, const std::vector<Term*>&);
 
-Formula& operator&(Formula& left, Formula& right) {
-	return *new BoolForm(SIGN::POS, true, &left, &right, FormulaParseInfo());
-}
+Formula& operator==(Term& left, Term& right);
+Formula& operator&(Formula& left, Formula& right);
+Formula& operator|(Formula& left, Formula& right);
+Formula& operator not(Formula&);
 
-Formula& operator|(Formula& left, Formula& right) {
-	return *new BoolForm(SIGN::POS, false, &left, &right, FormulaParseInfo());
-}
+Formula& all(Variable*, Formula&);
+Formula& atom(Predicate*, const std::vector<Variable*>&);
 
-Formula& operator not(Formula& f) {
-	f.negate();
-	return f;
-}
-
-Formula& all(Variable* var, Formula& formula) {
-	return *new QuantForm(SIGN::POS, QUANT::UNIV, { var }, &formula, FormulaParseInfo());
-}
-
-Formula& atom(Predicate* p, const std::vector<Variable*>& vars) {
-	std::vector<Term*> terms;
-	for (auto i = vars.cbegin(); i < vars.cend(); ++i) {
-		terms.push_back(new VarTerm(*i, TermParseInfo()));
-	}
-	return *new PredForm(SIGN::POS, p, terms, FormulaParseInfo());
-}
-
-void add(Vocabulary* v, const std::vector<PFSymbol*> symbols) {
-	for (auto i = symbols.cbegin(); i < symbols.cend(); ++i) {
-		v->add(*i);
-	}
-}
+void add(Vocabulary*, const std::vector<PFSymbol*>);
 
 class PredWrapper {
 private:
@@ -123,10 +86,6 @@ public:
 		return _p;
 	}
 };
-
-PredWrapper pred(const std::string& name, const std::vector<Sort*>& sorts) {
-	return PredWrapper(new Predicate(name, sorts));
-}
 
 class FuncWrapper {
 private:
@@ -144,8 +103,9 @@ public:
 	}
 };
 
-FuncWrapper func(const std::string& name, const std::vector<Sort*>& insorts, Sort* outsort) {
-	return FuncWrapper(new Function(name, insorts, outsort)); 
-}
+PredWrapper pred(const std::string& name, const std::vector<Sort*>& sorts);
+FuncWrapper func(const std::string& name, const std::vector<Sort*>& insorts, Sort* outsort);
+
+} /* namespace Tests */
 
 #endif /* CPPINTERFACE_HPP_ */

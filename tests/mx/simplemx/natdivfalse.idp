@@ -1,0 +1,15 @@
+vocabulary V{
+	type t isa nat
+}
+
+theory T:V{
+	! x[t] y[t]: x/y=4. 
+}
+
+structure S:V{
+	t = {0..3}
+}
+
+procedure getExpectedNbOfModels(){
+	return 0
+}

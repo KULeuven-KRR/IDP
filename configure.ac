@@ -38,6 +38,8 @@ AC_SUBST([AC_LDFLAGS])
 AC_SUBST([LIBS])
 
 GIDL_VERSION=m4_esyscmd([./m4/version.m4 | tr -d '\n'])
+AC_SUBST([GIDL_VERSION])
+
 AC_CXXFLAGS=" "
 AC_LDFLAGS=" "
 

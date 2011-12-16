@@ -389,7 +389,9 @@ void GrounderFactory::visit(const Theory* theory) {
  */
 void GrounderFactory::visit(const PredForm* pf) {
 	if (getOption(IntType::GROUNDVERBOSITY) > 3) {
-		clog << "Grounderfactory visiting: " <<toString(pf) << "\n";
+		clog << "Grounderfactory visiting: " <<toString(pf);
+		pushtab();
+		clog << "\n"<<tabs();
 	}
 	_context._conjunctivePathFromRoot = _context._conjPathUntilNode;
 	_context._conjPathUntilNode = false;
@@ -408,10 +410,11 @@ void GrounderFactory::visit(const PredForm* pf) {
 	if (not sametypeid<PredForm>(*transpf)) { // The rewriting changed the atom
 		Assert(_context._component != CompContext::HEAD);
 		if (getOption(IntType::GROUNDVERBOSITY) > 1) {
-			clog << "Rewritten " <<toString(pf) << " to " <<toString(transpf) << "\n";
+			clog << "Rewritten " <<toString(pf) << " to " <<toString(transpf) << "\n"<<tabs();
 		}
 		transpf->accept(this);
 		transpf->recursiveDelete();
+		if (getOption(IntType::GROUNDVERBOSITY) > 3) poptab();
 		return;
 	}
 
@@ -447,12 +450,14 @@ void GrounderFactory::visit(const PredForm* pf) {
 		if (_context._component == CompContext::SENTENCE) { // TODO Refactor outside?
 			_topgrounder = _formgrounder;
 		}
+		if (getOption(IntType::GROUNDVERBOSITY) > 3) poptab();
 		return;
 	}
 
 	if (_context._component == CompContext::HEAD) {
 		PredInter* inter = _structure->inter(newpf->symbol());
 		_headgrounder = new HeadGrounder(_grounding, inter->ct(), inter->cf(), newpf->symbol(), subtermgrounders, argsorttables);
+		if (getOption(IntType::GROUNDVERBOSITY) > 3) poptab();
 		return;
 	}
 
@@ -494,10 +499,10 @@ void GrounderFactory::visit(const PredForm* pf) {
 	auto possch = GeneratorFactory::create(posstable, vector<Pattern>(checkargs.size(), Pattern::INPUT), checkargs, Universe(tables), pf);
 	auto certainch = GeneratorFactory::create(certtable, vector<Pattern>(checkargs.size(), Pattern::INPUT), checkargs, Universe(tables), pf);
 	if (getOption(IntType::GROUNDVERBOSITY) > 3) {
-		clog << "Certainly table: \n" << toString(certtable) << "\n";
-		clog << "Possible table: \n" << toString(posstable) << "\n";
-		clog << "Possible checker: \n" << toString(possch) << "\n";
-		clog << "Certain checker: \n" << toString(certainch) << "\n";
+		clog << "Certainly table: \n"<< tabs() << toString(certtable) << "\n" << tabs();
+		clog << "Possible table: \n" <<tabs()<< toString(posstable) << "\n"<<tabs();
+		clog << "Possible checker: \n"<<tabs() << toString(possch) << "\n"<<tabs();
+		clog << "Certain checker: \n" <<tabs()<< toString(certainch) << "\n"<<tabs();
 	}
 
 	_formgrounder = new AtomGrounder(_grounding, newpf->sign(), newpf->symbol(), subtermgrounders, checkargs, possch, certainch,
@@ -508,6 +513,7 @@ void GrounderFactory::visit(const PredForm* pf) {
 		_topgrounder = _formgrounder;
 	}
 	newpf->recursiveDelete();
+	if (getOption(IntType::GROUNDVERBOSITY) > 3) poptab();
 }
 
 /**
@@ -526,7 +532,9 @@ void GrounderFactory::visit(const PredForm* pf) {
  */
 void GrounderFactory::visit(const BoolForm* bf) {
 	if (getOption(IntType::GROUNDVERBOSITY) > 3) {
-		clog << "Grounderfactory visiting: " <<toString(bf) << "\n";
+		clog << "Grounderfactory visiting: " <<toString(bf);
+		pushtab();
+		clog << "\n"<<tabs();
 	}
 
 	_context._conjunctivePathFromRoot = _context._conjPathUntilNode;
@@ -579,6 +587,7 @@ void GrounderFactory::visit(const BoolForm* bf) {
 			_topgrounder = _formgrounder;
 		}
 	}
+	if (getOption(IntType::GROUNDVERBOSITY) > 3)poptab();
 }
 
 const DomElemContainer* GrounderFactory::createVarMapping(Variable * const var) {
@@ -604,7 +613,9 @@ const DomElemContainer* GrounderFactory::createVarMapping(Variable * const var) 
  */
 void GrounderFactory::visit(const QuantForm* qf) {
 	if (getOption(IntType::GROUNDVERBOSITY) > 3) {
-		clog << "Grounderfactory visiting: " <<toString(qf) << "\n";
+		clog << "Grounderfactory visiting: " <<toString(qf) ;
+		pushtab();
+		clog << "\n"<<tabs();
 	}
 	_context._conjunctivePathFromRoot = _context._conjPathUntilNode;
 	_context._conjPathUntilNode = _context._conjunctivePathFromRoot && qf->isUnivWithSign();
@@ -686,6 +697,7 @@ void GrounderFactory::visit(const QuantForm* qf) {
 
 	}
 	newsubformula->recursiveDelete();
+	if (getOption(IntType::GROUNDVERBOSITY) > 3) poptab();
 
 }
 
@@ -960,7 +972,7 @@ void GrounderFactory::visit(const QuantSetExpr* origqs) {
 	_context._conjPathUntilNode = false;
 
 	// Move three-valued terms in the set expression
-	auto transqs = TermUtils::moveThreeValuedTerms(origqs->clone(), _structure, _context._funccontext, getOption(BoolType::CPSUPPORT), _cpsymbols);
+	auto transqs = SetUtils::moveThreeValuedTerms(origqs->clone(), _structure, _context._funccontext, getOption(BoolType::CPSUPPORT), _cpsymbols);
 	if (not sametypeid<QuantSetExpr>(*transqs)) {
 		if (getOption(IntType::GROUNDVERBOSITY) > 1) {
 			clog << "Rewritten ";
@@ -1004,7 +1016,9 @@ void GrounderFactory::visit(const QuantSetExpr* origqs) {
  */
 void GrounderFactory::visit(const Definition* def) {
 	if (getOption(IntType::GROUNDVERBOSITY) > 3) {
-			clog << "Grounderfactory visiting: " <<toString(def) << "\n";
+			clog << "Grounderfactory visiting: " <<toString(def);
+			pushtab();
+			clog << "\n"<<tabs();
 		}
 	_context._conjunctivePathFromRoot = _context._conjPathUntilNode;
 	_context._conjPathUntilNode = false;
@@ -1024,6 +1038,7 @@ void GrounderFactory::visit(const Definition* def) {
 	_topgrounder = new DefinitionGrounder(_grounding, subgrounders, _context);
 
 	_context._defined.clear();
+	if (getOption(IntType::GROUNDVERBOSITY) > 3) poptab();
 }
 
 template<class VarList>
@@ -1042,13 +1057,15 @@ InstGenerator* GrounderFactory::createVarMapAndGenerator(const Formula* original
 
 void GrounderFactory::visit(const Rule* rule) {
 	if (getOption(IntType::GROUNDVERBOSITY) > 3) {
-			clog << "Grounderfactory visiting: " <<toString(rule) << "\n";
+			clog << "Grounderfactory visiting: " <<toString(rule);
+			pushtab();
+			clog << "\n"<<tabs();
 		}
 	_context._conjunctivePathFromRoot = _context._conjPathUntilNode;
 	_context._conjPathUntilNode = false;
 
 	// TODO for lazygroundrules, we need a generator for all variables NOT occurring in the head!
-	Rule* newrule = FormulaUtils::unnestThreeValuedTerms(rule->clone(), _structure, _context._funccontext, getOption(BoolType::CPSUPPORT), _cpsymbols);
+	Rule* newrule = DefinitionUtils::unnestThreeValuedTerms(rule->clone(), _structure, _context._funccontext, getOption(BoolType::CPSUPPORT), _cpsymbols);
 	InstGenerator *headgen = NULL, *bodygen = NULL;
 
 	if (getOption(BoolType::GROUNDLAZILY)) {
@@ -1113,4 +1130,5 @@ void GrounderFactory::visit(const Rule* rule) {
 		_rulegrounder = new RuleGrounder(headgr, bodygr, headgen, bodygen, _context);
 	}
 	RestoreContext();
+	if (getOption(IntType::GROUNDVERBOSITY) > 3) poptab();
 }

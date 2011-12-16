@@ -10,6 +10,7 @@
 
 #include "common.hpp"
 #include "theorytransformations/SplitComparisonChains.hpp"
+#include <cstddef>
 
 #include "vocabulary.hpp"
 #include "theory.hpp"

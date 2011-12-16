@@ -32,7 +32,6 @@ protected:
 	void visit(const EqChainForm*);
 	void visit(const FuncTerm*);
 	void visit(const AggTerm*);
-
 };
 
 #endif /* CHECKSORTS_HPP_ */

@@ -52,30 +52,10 @@ Formula* PushNegations::visit(PredForm* pf) {
 	return traverse(pf);
 }
 
-Formula* PushNegations::traverse(Formula* f) {
-	for (auto it = f->subformulas().cbegin(); it != f->subformulas().cend(); ++it) {
-		(*it)->accept(this);
-	}
-	for (auto it = f->subterms().cbegin(); it != f->subterms().cend(); ++it) {
-		(*it)->accept(this);
-	}
-	return f;
-}
-
-Term* PushNegations::traverse(Term* t) {
-	for (auto it = t->subterms().cbegin(); it != t->subterms().cend(); ++it) {
-		(*it)->accept(this);
-	}
-	for (auto it = t->subsets().cbegin(); it != t->subsets().cend(); ++it) {
-		(*it)->accept(this);
-	}
-	return t;
-}
-
 Formula* PushNegations::visit(EqChainForm* f) {
 	if (isNeg(f->sign())) {
 		f->negate();
-		f->conj(!f->conj());
+		f->conj(not f->conj());
 		for (size_t n = 0; n < f->comps().size(); ++n) {
 			f->comp(n, negateComp(f->comps()[n]));
 		}
@@ -94,9 +74,10 @@ Formula* PushNegations::visit(EquivForm* f) {
 Formula* PushNegations::visit(BoolForm* f) {
 	if (isNeg(f->sign())) {
 		f->negate();
-		for (auto it = f->subformulas().cbegin(); it != f->subformulas().cend(); ++it)
+		for (auto it = f->subformulas().cbegin(); it != f->subformulas().cend(); ++it) {
 			(*it)->negate();
-		f->conj(!f->conj());
+		}
+		f->conj(not f->conj());
 	}
 	return traverse(f);
 }

@@ -13,8 +13,6 @@
 
 #include "visitors/TheoryMutatingVisitor.hpp"
 
-#include "theory.hpp"
-
 class RemoveEquivalences: public TheoryMutatingVisitor {
 	VISITORFRIENDS()
 public:
@@ -24,7 +22,7 @@ public:
 	}
 
 protected:
-	BoolForm* visit(EquivForm*);
+	Formula* visit(EquivForm*);
 };
 
 #endif /* REMOVEEQUIVALENCES_HPP_ */

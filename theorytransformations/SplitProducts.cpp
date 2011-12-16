@@ -10,7 +10,6 @@
 
 #include <vector>
 #include <cassert>
-#include <iostream> //TODO remove (debug only)
 #include "theorytransformations/SplitProducts.hpp"
 #include "theorytransformations/SplitComparisonChains.hpp"
 #include "theorytransformations/DeriveSorts.hpp"
@@ -23,10 +22,6 @@
 #include "term.hpp"
 
 using namespace std;
-
-Formula* SplitProducts::execute(Formula* af){
-	return af->accept(this);
-}
 
 /*Here, we transform something of the form PROD{x:p(x):f(x)} = c to
  *

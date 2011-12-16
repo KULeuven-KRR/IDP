@@ -14,7 +14,6 @@
 #include <string>
 #include <sstream>
 #include "internalargument.hpp"
-#include "lua.hpp"
 #include "commands/commandinterface.hpp"
 
 class Vocabulary;

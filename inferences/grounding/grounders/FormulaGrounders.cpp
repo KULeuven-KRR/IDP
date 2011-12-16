@@ -1,12 +1,12 @@
 /****************************************************************
-* Copyright 2010-2012 Katholieke Universiteit Leuven
-*  
-* Use of this software is governed by the GNU LGPLv3.0 license
-* 
-* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
-* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
-* Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ * Copyright 2010-2012 Katholieke Universiteit Leuven
+ *
+ * Use of this software is governed by the GNU LGPLv3.0 license
+ *
+ * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+ * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+ * Celestijnenlaan 200A, B-3001 Leuven, Belgium
+ ****************************************************************/
 
 #include "inferences/grounding/grounders/FormulaGrounders.hpp"
 
@@ -53,16 +53,16 @@ void FormulaGrounder::printorig() const {
 	if (_origform == NULL) {
 		return;
 	}
-	clog << "Grounding formula " << toString(_origform);
+	clog << "\n" << tabs() << "Grounding formula " << toString(_origform);
 	if (not _origform->freeVars().empty()) {
-		clog << " with instance ";
+		clog << "\n" << tabs() << "with instance ";
 		for (auto it = _origform->freeVars().cbegin(); it != _origform->freeVars().cend(); ++it) {
 			clog << toString(*it) << " = ";
 			const DomainElement* e = _origvarmap.find(*it)->second->get();
 			clog << toString(e) << ' ';
 		}
 	}
-	clog << "\n";
+	clog << "\n" << tabs();
 }
 
 AtomGrounder::AtomGrounder(AbstractGroundTheory* grounding, SIGN sign, PFSymbol* s, const vector<TermGrounder*>& sg,
@@ -76,6 +76,8 @@ AtomGrounder::AtomGrounder(AbstractGroundTheory* grounding, SIGN sign, PFSymbol*
 Lit AtomGrounder::run() const {
 	if (verbosity() > 2) {
 		printorig();
+		if (_origform != NULL)
+			pushtab();
 	}
 
 	// Run subterm grounders
@@ -107,9 +109,12 @@ Lit AtomGrounder::run() const {
 			// Checking out-of-bounds
 			if (not _tables[n]->contains(args[n])) {
 				if (verbosity() > 2) {
-					clog << "Term value out of predicate type\n";
+					clog << "Term value out of predicate type\n" << tabs();
 					clog << "Result is " << (isPos(_sign) ? "false" : "true") << "\n";
+					if(_origform != NULL)poptab();
+					clog << tabs();
 				}
+
 				return isPos(_sign) ? _false : _true;
 			}
 		}
@@ -125,27 +130,35 @@ Lit AtomGrounder::run() const {
 	}
 	if (not _pchecker->check()) { // Literal is irrelevant in its occurrences
 		if (verbosity() > 2) {
-			clog << "Possible checker failed\n";
-			clog << "Result is " << (gentype == GenType::CANMAKETRUE ? "false" : "true") << "\n";
+			clog << "Possible checker failed\n" << tabs();
+			clog << "Result is " << (gentype == GenType::CANMAKETRUE ? "false" : "true");
+			if(_origform != NULL)poptab();
+			clog << "\n" << tabs();
 		}
 		return gentype == GenType::CANMAKETRUE ? _false : _true;
 	}
 	if (_cchecker->check()) { // Literal decides formula if checker succeeds
 		if (verbosity() > 2) {
-			clog << "Certain checker succeeded\n";
-			clog << "Result is " << translator()->printLit(gentype == GenType::CANMAKETRUE ? _true : _false) << "\n";
+			clog << "Certain checker succeeded\n" << tabs();
+			clog << "Result is " << translator()->printLit(gentype == GenType::CANMAKETRUE ? _true : _false);
+			if(_origform != NULL)poptab();
+			clog << "\n" << tabs();
 		}
 		return gentype == GenType::CANMAKETRUE ? _true : _false;
 	}
 	if (_inter->isTrue(args)) {
 		if (verbosity() > 2) {
-			clog << "Result is " << (isPos(_sign) ? "true" : "false") << "\n";
+			clog << "Result is " << (isPos(_sign) ? "true" : "false");
+			if(_origform != NULL)poptab();
+			clog << "\n" << tabs();
 		}
 		return isPos(_sign) ? _true : _false;
 	}
 	if (_inter->isFalse(args)) {
 		if (verbosity() > 2) {
-			clog << "Result is " << (isPos(_sign) ? "false" : "true") << "\n";
+			clog << "Result is " << (isPos(_sign) ? "false" : "true");
+			if(_origform != NULL)poptab();
+			clog << "\n" << tabs();
 		}
 		return isPos(_sign) ? _false : _true;
 	}
@@ -156,7 +169,9 @@ Lit AtomGrounder::run() const {
 		lit = -lit;
 	}
 	if (verbosity() > 2) {
-		clog << "Result is " << translator()->printLit(lit) << "\n";
+		clog << "Result is " << translator()->printLit(lit);
+		if(_origform != NULL)poptab();
+		clog << "\n" << tabs();
 	}
 	return lit;
 }
@@ -200,17 +215,23 @@ Lit ComparisonGrounder::run() const {
 			int rightvalue = right._domelement->value()._int;
 			switch (_comparator) {
 			case CompType::EQ:
-				result = leftvalue == rightvalue ? _true : _false; break;
+				result = leftvalue == rightvalue ? _true : _false;
+				break;
 			case CompType::NEQ:
-				result = leftvalue != rightvalue ? _true : _false; break;
+				result = leftvalue != rightvalue ? _true : _false;
+				break;
 			case CompType::LEQ:
-				result = leftvalue <= rightvalue ? _true : _false; break;
+				result = leftvalue <= rightvalue ? _true : _false;
+				break;
 			case CompType::GEQ:
-				result = leftvalue >= rightvalue ? _true : _false; break;
+				result = leftvalue >= rightvalue ? _true : _false;
+				break;
 			case CompType::LT:
-				result = leftvalue < rightvalue ? _true : _false; break;
+				result = leftvalue < rightvalue ? _true : _false;
+				break;
 			case CompType::GT:
-				result = leftvalue > rightvalue ? _true : _false; break;
+				result = leftvalue > rightvalue ? _true : _false;
+				break;
 			}
 		}
 	}
@@ -449,32 +470,26 @@ Lit AggGrounder::run() const {
 			}
 		}
 		//INVAR: we know that the real value of the aggregate is at most truevalue.
-		if(boundvalue > truevalue){
-			if(_comp == CompType::EQ || _comp == CompType::LEQ || _comp==CompType::LT){
+		if (boundvalue > truevalue) {
+			if (_comp == CompType::EQ || _comp == CompType::LEQ || _comp == CompType::LT) {
+				return isPos(_sign) ? _false : _true;
+			} else {
+				return isPos(_sign) ? _true : _false;
+			}
+		} else if (boundvalue == truevalue) {
+			if (_comp == CompType::EQ || _comp == CompType::LEQ) {
+				tseitin = -translator()->translate(tsset.literals(), false, TsType::EQ);
+				tseitin = isPos(_sign) ? tseitin : -tseitin;
+			} else if (_comp == CompType::NEQ || _comp == CompType::GT) {
+				tseitin = translator()->translate(tsset.literals(), false, TsType::EQ);
+				tseitin = isPos(_sign) ? tseitin : -tseitin;
+			} else if (_comp == CompType::GEQ) {
+				return isPos(_sign) ? _true : _false;
+			} else if (_comp == CompType::LT) {
 				return isPos(_sign) ? _false : _true;
 			}
-			else{
-				return isPos(_sign) ? _true : _false;
-			}
-		}
-		else if(boundvalue == truevalue){
-			if(_comp == CompType::EQ||_comp==CompType::LEQ){
-				tseitin = -translator()->translate(tsset.literals(),false,TsType::EQ);
-				tseitin = isPos(_sign)? tseitin : - tseitin;
-			}
-			else if(_comp == CompType::NEQ|| _comp == CompType::GT){
-				tseitin = translator()->translate(tsset.literals(),false,TsType::EQ);
-				tseitin = isPos(_sign)? tseitin : - tseitin;
-			}
-			else if(_comp == CompType::GEQ){
-				return isPos(_sign) ? _true : _false;
-			}
-			else if(_comp == CompType::LT){
-				return isPos(_sign) ?  _false: _true;
-			}
-		}
-		else{ //boundvalue < truevalue
-			// Finish
+		} else { //boundvalue < truevalue
+				 // Finish
 			tseitin = finish(boundvalue, boundvalue, minpossvalue, maxpossvalue, setnr);
 		}
 		break;
@@ -489,32 +504,26 @@ Lit AggGrounder::run() const {
 			}
 		}
 		//INVAR: we know that the real value of the aggregate is at least truevalue.
-		if(boundvalue < truevalue){
-			if(_comp == CompType::NEQ || _comp == CompType::LEQ || _comp==CompType::LT){
-				return isPos(_sign) ?  _true: _false;
-			}
-			else{
-				return isPos(_sign) ?  _false: _true;
-			}
-		}
-		else if(boundvalue == truevalue){
-			if(_comp == CompType::EQ||_comp==CompType::GEQ){
-				tseitin = - translator()->translate(tsset.literals(),false,TsType::EQ);
-				tseitin = isPos(_sign)? tseitin : - tseitin;
-			}
-			else if(_comp == CompType::NEQ|| _comp == CompType::LT){
-				tseitin = translator()->translate(tsset.literals(),false,TsType::EQ);
-				tseitin = isPos(_sign)? tseitin : - tseitin;
-			}
-			else if(_comp == CompType::LEQ){
+		if (boundvalue < truevalue) {
+			if (_comp == CompType::NEQ || _comp == CompType::LEQ || _comp == CompType::LT) {
 				return isPos(_sign) ? _true : _false;
+			} else {
+				return isPos(_sign) ? _false : _true;
 			}
-			else if(_comp == CompType::GT){
-				return isPos(_sign) ?  _false: _true;
+		} else if (boundvalue == truevalue) {
+			if (_comp == CompType::EQ || _comp == CompType::GEQ) {
+				tseitin = -translator()->translate(tsset.literals(), false, TsType::EQ);
+				tseitin = isPos(_sign) ? tseitin : -tseitin;
+			} else if (_comp == CompType::NEQ || _comp == CompType::LT) {
+				tseitin = translator()->translate(tsset.literals(), false, TsType::EQ);
+				tseitin = isPos(_sign) ? tseitin : -tseitin;
+			} else if (_comp == CompType::LEQ) {
+				return isPos(_sign) ? _true : _false;
+			} else if (_comp == CompType::GT) {
+				return isPos(_sign) ? _false : _true;
 			}
-		}
-		else{ //boundvalue > truevalue
-			// Finish
+		} else { //boundvalue > truevalue
+				 // Finish
 			tseitin = finish(boundvalue, boundvalue, minpossvalue, maxpossvalue, setnr);
 		}
 		break;
@@ -645,20 +654,30 @@ FormStat ClauseGrounder::runSubGrounder(Grounder* subgrounder, bool conjFromRoot
 
 // NOTE: Optimized to avoid looping over the formula after construction
 void BoolGrounder::run(ConjOrDisj& formula, bool negate) const {
-	if (verbosity() > 2)
+	if (verbosity() > 2) {
 		printorig();
+		if(_origform != NULL)pushtab();
+	}
 	formula.type = conn_;
 	for (auto g = _subgrounders.cbegin(); g < _subgrounders.cend(); g++) {
 		CHECKTERMINATION
 		if (runSubGrounder(*g, context()._conjunctivePathFromRoot, formula, negate) == FormStat::DECIDED) {
+			if (verbosity() > 2) {
+				poptab();
+			}
 			return;
 		}
+	}
+	if (verbosity() > 2) {
+		if(_origform != NULL)poptab();
 	}
 }
 
 void QuantGrounder::run(ConjOrDisj& formula, bool negated) const {
-	if (verbosity() > 2)
+	if (verbosity() > 2) {
 		printorig();
+		if(_origform != NULL)pushtab();
+	}
 
 	formula.type = conn_;
 
@@ -666,37 +685,44 @@ void QuantGrounder::run(ConjOrDisj& formula, bool negated) const {
 		CHECKTERMINATION
 		if (_checker->check()) {
 			formula.literals = litlist { context().gentype == GenType::CANMAKETRUE ? _false : _true };
+			if (verbosity() > 2) {
+				if(_origform != NULL)poptab();
+						}
 			return;
 		}
 
 		if (runSubGrounder(_subgrounder, context()._conjunctivePathFromRoot, formula, negated) == FormStat::DECIDED) {
+			if (verbosity() > 2) {
+				if(_origform != NULL)poptab();
+						}
 			return;
 		}
 	}
 }
 
-Lit EquivGrounder::getLitEquivWith(const ConjOrDisj& form) const{
-	if(form.literals.size()==0){
-		if(form.type==Conn::CONJ){
+Lit EquivGrounder::getLitEquivWith(const ConjOrDisj& form) const {
+	if (form.literals.size() == 0) {
+		if (form.type == Conn::CONJ) {
 			return _true;
-		}else{
+		} else {
 			return _false;
 		}
-	}else if(form.literals.size()==1){
+	} else if (form.literals.size() == 1) {
 		return form.literals[0];
-	}else{
+	} else {
 		return getReification(form);
 	}
 }
 
 void EquivGrounder::run(ConjOrDisj& formula, bool negated) const {
 	Assert(not negated);
-	if (verbosity() > 2){
+	if (verbosity() > 2) {
 		printorig();
+		if(_origform != NULL)pushtab();
 
-		clog <<"Current formula: " <<(negated?"~":"");
+		clog << "Current formula: " << (negated ? "~" : "");
 		_leftgrounder->printorig();
-		clog <<" <=> ";
+		clog << " <=> ";
 		_rightgrounder->printorig();
 	}
 
@@ -738,4 +764,7 @@ void EquivGrounder::run(ConjOrDisj& formula, bool negated) const {
 		formula.literals = litlist { ts1, ts2 };
 		formula.type = Conn::CONJ;
 	}
+	if (verbosity() > 2) {
+		if(_origform != NULL)poptab();
+							}
 }

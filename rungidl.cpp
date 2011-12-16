@@ -20,6 +20,7 @@
 #include "insert.hpp"
 #include "GlobalData.hpp"
 #include <csignal>
+#include "utils/stringutils.hpp"
 
 #include "GeneralUtils.hpp"
 
@@ -45,7 +46,9 @@ std::ostream& operator<<(std::ostream& stream, Status status) {
 void usage() {
 	cout << "Usage:\n" << "   gidl [options] [filename [filename [...]]]\n\n";
 	cout << "Options:\n";
+#ifdef USEINTERACTIVE
 	cout << "    -i, --interactive    run in interactive mode\n";
+#endif
 	cout << "    -e \"<proc>\"          run procedure <proc> after parsing\n";
 	cout << "    -c <name1>=<name2>   substitute <name2> for <name1> in the input\n";
 	cout << "    --nowarnings         disable warnings\n";
@@ -114,7 +117,7 @@ vector<string> read_options(int argc, char* argv[], CLOptions& cloptions) {
 		} else if (str == "-I") {
 			cloptions._readfromstdin = true;
 		} else if (str == "-v" || str == "--version") {
-			cout << "GidL 2.0.1\n";
+			cout <<GIDLVERSION <<"\n";
 			exit(0);
 		} else if (str == "-h" || str == "--help") {
 			usage();
@@ -148,18 +151,16 @@ void handleAndRun(const string& proc, const DomainElement** result) {
 	try {
 		*result = Insert::exec(proc);
 	} catch (const Exception& ex) {
-		clog.flush();
 		stringstream ss;
 		ss << "Exception caught: " << ex.getMessage() << ".\n";
 		Error::error(ss.str());
-		*result = NULL;
 	}catch(const std::exception& ex){
-		clog.flush();
 		stringstream ss;
 		ss << "Exception caught: " << ex.what() << ".\n";
 		Error::error(ss.str());
 		throwfromexecution = true;
 	}
+	clog.flush();
 }
 
 std::thread::native_handle_type executionhandle;
@@ -176,15 +177,14 @@ void setStop(bool value) {
 
 void monitorShutdown() {
 	int monitoringtime = 0;
-//	setOption(IntType::GROUNDVERBOSITY, 10);
-//	setOption(IntType::SATVERBOSITY, 10);
 	while(not hasStopped && monitoringtime<3000000){
 		usleep(10000);
 		monitoringtime+=10000;
 	}
 	if(not hasStopped){
-		// TODO add for debugging (need execution thread id)
+#ifdef DEBUGTHREADS // For debugging, we notify the other thread to sleep indefinitely, so we can debug properly
 		pthread_kill(executionhandle, SIGUSR1);
+#endif
 		clog <<"Shutdown failed, aborting.\n";
 		abort();
 	}
@@ -222,8 +222,6 @@ void SIGINT_handler(int) {
 	if(not shouldStop() && running){
 		GlobalData::instance()->notifyTerminateRequested();
 	}else{
-		// TODO conform to other shells, should just go to a new line in the shell.
-		// TODO ctrl-d should exit
 		exit(1);
 	}
 }
@@ -286,11 +284,7 @@ const DomainElement* executeProcedure(const string& proc) {
  * Interactive mode 
  **/
 void interactive() {
-	string help1 = "help", help2 = "help()", exit1 = "exit", exit2 = "exit()";
-
-	cout << "Running GidL in interactive mode.\n"
-	<< "  Type 'exit' to quit.\n"
-	<< "  Type 'help' for help\n\n";
+	cout << "Running GidL in interactive mode.\n";
 
 	idp_rl_start();
 	while(not idp_terminateInteractive()) {
@@ -301,13 +295,14 @@ void interactive() {
 		}
 
 		string command(userline);
-		if(command==exit1 || command==exit2) {
+		command = trim(command);
+		if(command=="exit" || command=="quit" || command=="exit()" || command=="quit()") {
 			free(userline);
 			idp_rl_end();
 			return;
 		}
-		if(command==help1) {
-			command = help2;
+		if(command=="help") {
+			command = "help()";
 		}
 		executeProcedure(command);
 	}

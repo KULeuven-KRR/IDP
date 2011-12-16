@@ -26,9 +26,6 @@ protected:
 	Formula* visit(EquivForm*);
 	Formula* visit(BoolForm*);
 	Formula* visit(QuantForm*);
-
-	Formula* traverse(Formula*);
-	Term* traverse(Term*);
 };
 
 #endif /* PUSHNEGATIONS_HPP_ */

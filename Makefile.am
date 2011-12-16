@@ -16,7 +16,8 @@ AM_CXXFLAGS = -Wall -Wextra\
 		-I$(builddir)/lib/lua/src  -I $(srcdir)/lib/\
 		-DDATADIR=\"$(datadir)\" -DRCDIR=\"$(localstatedir)\"\
 		-DINTERNALLIBARYLUA=\"/std/idp_intern.lua\"\
-		-DINTERNALLIBARYIDP=\"/std/idp_intern.idp\" -DCONFIGFILENAME=\"/idp/.idprc\"
+		-DINTERNALLIBARYIDP=\"/std/idp_intern.idp\" -DCONFIGFILENAME=\"/idp/.idprc\"\
+		-DGIDLVERSION=\"$(GIDL_VERSION)\"
 		
 if USEINTERACTIVE
 AM_CXXFLAGS += -DUSEINTERACTIVE
@@ -263,6 +264,7 @@ alltests_SOURCES = \
 		tests/propagationtests.cpp\
 		tests/parsertests.cpp\
 		tests/transformationtests.cpp\
+		tests/cppinterface.hpp tests/cppinterface.cpp\
 		tests/testingtools.hpp tests/testingtools.cpp\
 		$(grounder_SOURCES)
 

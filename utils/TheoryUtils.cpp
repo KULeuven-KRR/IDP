@@ -43,10 +43,14 @@
 
 using namespace std;
 
+/* TermUtils */
 namespace TermUtils {
-SetExpr* moveThreeValuedTerms(SetExpr* f, AbstractStructure* structure, Context context, bool cpsupport, const std::set<const PFSymbol*> cpsymbols) {
-	transform<UnnestThreeValuedTerms>(f, structure, context, cpsupport, cpsymbols);
-	return f;
+void checkSorts(Vocabulary* voc, Term* term) {
+	transform<CheckSorts>(term, voc);
+}
+
+void deriveSorts(Vocabulary* voc, Term* term) {
+	transform<DeriveSorts>(term, voc);
 }
 
 bool isPartial(Term* term) {
@@ -54,79 +58,43 @@ bool isPartial(Term* term) {
 }
 }
 
+/* SetUtils */
 namespace SetUtils {
 bool approxTwoValued(SetExpr* exp, AbstractStructure* str) {
 	return transform<ApproxCheckTwoValued, bool>(str, exp);
 }
+
+SetExpr* moveThreeValuedTerms(SetExpr* exp, AbstractStructure* structure, Context context, 
+		bool cpsupport, const std::set<const PFSymbol*> cpsymbols) {
+	transform<UnnestThreeValuedTerms>(exp, structure, context, cpsupport, cpsymbols);
+	return exp;
+}
 }
 
+/* DefinitionUtils */
 namespace DefinitionUtils {
+void checkSorts(Vocabulary* voc, Rule* rule) {
+	transform<CheckSorts>(rule, voc);
+}
+
+void deriveSorts(Vocabulary* voc, Rule* rule) {
+	transform<DeriveSorts>(rule, voc);
+}
+
 std::set<PFSymbol*> opens(Definition* d) {
 	return transform<CollectOpensOfDefinitions, std::set<PFSymbol*>>(d);
 }
+
+Rule* unnestThreeValuedTerms(Rule* rule, AbstractStructure* structure, Context context, 
+		bool cpsupport, const std::set<const PFSymbol*> cpsymbols) {
+	return transform<UnnestThreeValuedTerms, Rule*>(rule, structure, context, cpsupport, cpsymbols);
+}
 }
 
+/* FormulaUtils */
 namespace FormulaUtils {
-Formula* splitComparisonChains(Formula* f, Vocabulary* v) {
-	return transform<SplitComparisonChains, Formula*>(f, v);
-}
-
-Formula* unnestTerms(Formula* f, Context poscontext) {
-	return transform<UnnestTerms, Formula*>(f, poscontext);
-}
-
-Formula* removeEquivalences(Formula* f) {
-	return transform<RemoveEquivalences, Formula*>(f);
-}
-
-Formula* flatten(Formula* f) {
-	return transform<Flatten, Formula*>(f);
-}
-
-void checkSorts(Vocabulary* v, Rule* f){
+void checkSorts(Vocabulary* v, Formula* f) {
 	transform<CheckSorts>(f, v);
-}
-void checkSorts(Vocabulary* v, Formula* f){
-	transform<CheckSorts>(f, v);
-}
-void checkSorts(Vocabulary* v, Term* f){
-	transform<CheckSorts>(f, v);
-}
-
-void deriveSorts(Vocabulary* v, Rule* f){
-	transform<DeriveSorts>(f, v);
-}
-void deriveSorts(Vocabulary* v, Formula* f){
-	transform<DeriveSorts>(f, v);
-}
-void deriveSorts(Vocabulary* v, Term* f){
-	transform<DeriveSorts>(f, v);
-}
-
-Formula* graphFuncsAndAggs(Formula* f) {
-	return transform<GraphFuncsAndAggs, Formula*>(f);
-}
-
-Formula* splitProducts(Formula* f){
-	return transform<SplitProducts, Formula*>(f);
-}
-
-Formula* splitIntoMonotoneAgg(Formula* f) {
-	return transform<SplitIntoMonotoneAgg, Formula*>(f);
-}
-
-Formula* unnestPartialTerms(Formula* f, Context context, Vocabulary* voc) {
-	return transform<UnnestPartialTerms, Formula*>(f, context, voc);
-}
-
-Formula* unnestThreeValuedTerms(Formula* f, AbstractStructure* structure, Context context, bool cpsupport,
-		const std::set<const PFSymbol*> cpsymbols) {
-	return transform<UnnestThreeValuedTerms, Formula*>(f, structure, context, cpsupport, cpsymbols);
-}
-
-Rule* unnestThreeValuedTerms(Rule* r, AbstractStructure* structure, Context context, bool cpsupport,
-		const std::set<const PFSymbol*> cpsymbols) {
-	return transform<UnnestThreeValuedTerms, Rule*>(r, structure, context, cpsupport, cpsymbols);
 }
 
 bool containsFuncTerms(Formula* f) {
@@ -141,44 +109,95 @@ bool containsSymbol(const PFSymbol* s, const Formula* f) {
 	return transform<CheckContainment, bool>(s, f);
 }
 
-AbstractTheory* pushNegations(AbstractTheory* f) {
-	return transform<PushNegations, AbstractTheory*>(f);
+void deriveSorts(Vocabulary* v, Formula* f){
+	transform<DeriveSorts>(f, v);
 }
 
-AbstractTheory* graphFuncsAndAggs(AbstractTheory* f) {
-	return transform<GraphFuncsAndAggs, AbstractTheory*>(f);
+Formula* flatten(Formula* f) {
+	return transform<Flatten, Formula*>(f);
 }
 
-AbstractTheory* unnestTerms(AbstractTheory* f) {
-	return transform<UnnestTerms, AbstractTheory*>(f);
+Formula* graphFuncsAndAggs(Formula* f) {
+	return transform<GraphFuncsAndAggs, Formula*>(f);
+}
+
+Formula* pushNegations(Formula* f) {
+	return transform<PushNegations, Formula*>(f);
+}
+
+Formula* removeEquivalences(Formula* f) {
+	return transform<RemoveEquivalences, Formula*>(f);
+}
+
+Formula* splitComparisonChains(Formula* f, Vocabulary* v) {
+	return transform<SplitComparisonChains, Formula*>(f, v);
+}
+
+Formula* splitIntoMonotoneAgg(Formula* f) {
+	return transform<SplitIntoMonotoneAgg, Formula*>(f);
+}
+
+Formula* splitProducts(Formula* f){
+	return transform<SplitProducts, Formula*>(f);
 }
 
 Formula* substituteTerm(Formula* f, Term* t, Variable* v) {
 	return transform<SubstituteTerm, Formula*>(f, t, v);
 }
 
-AbstractTheory* removeEquivalences(AbstractTheory* f) {
-	return transform<RemoveEquivalences, AbstractTheory*>(f);
+Formula* unnestPartialTerms(Formula* f, Context context, Vocabulary* voc) {
+	return transform<UnnestPartialTerms, Formula*>(f, context, voc);
 }
 
-AbstractTheory* flatten(AbstractTheory* f) {
-	return transform<Flatten, AbstractTheory*>(f);
+Formula* unnestTerms(Formula* f, Context poscontext) {
+	return transform<UnnestTerms, Formula*>(f, poscontext);
 }
 
-AbstractTheory* splitComparisonChains(AbstractTheory* f) {
-	return transform<SplitComparisonChains, AbstractTheory*>(f);
+Formula* unnestThreeValuedTerms(Formula* f, AbstractStructure* structure, Context context, 
+		bool cpsupport, const std::set<const PFSymbol*> cpsymbols) {
+	return transform<UnnestThreeValuedTerms, Formula*>(f, structure, context, cpsupport, cpsymbols);
 }
 
-AbstractTheory* pushQuantifiers(AbstractTheory* f) {
-	return transform<PushQuantifications, AbstractTheory*>(f);
+
+
+AbstractTheory* addCompletion(AbstractTheory* t) {
+	return transform<AddCompletion, AbstractTheory*>(t);
 }
 
-AbstractTheory* addCompletion(AbstractTheory* f) {
-	return transform<AddCompletion, AbstractTheory*>(f);
+AbstractTheory* flatten(AbstractTheory* t) {
+	return transform<Flatten, AbstractTheory*>(t);
 }
 
-int nrSubformulas(AbstractTheory* f) {
-	return transform<CountNbOfSubFormulas, int>(f);
+AbstractTheory* graphFuncsAndAggs(AbstractTheory* t) {
+	return transform<GraphFuncsAndAggs, AbstractTheory*>(t);
+}
+
+AbstractTheory* pushNegations(AbstractTheory* t) {
+	return transform<PushNegations, AbstractTheory*>(t);
+}
+
+AbstractTheory* pushQuantifiers(AbstractTheory* t) {
+	return transform<PushQuantifications, AbstractTheory*>(t);
+}
+
+AbstractTheory* removeEquivalences(AbstractTheory* t) {
+	return transform<RemoveEquivalences, AbstractTheory*>(t);
+}
+
+AbstractTheory* splitComparisonChains(AbstractTheory* t) {
+	return transform<SplitComparisonChains, AbstractTheory*>(t);
+}
+
+AbstractTheory* splitProducts(AbstractTheory* t) {
+	return transform<SplitProducts, AbstractTheory*>(t);
+}
+
+AbstractTheory* unnestTerms(AbstractTheory* t) {
+	return transform<UnnestTerms, AbstractTheory*>(t);
+}
+
+int nrSubformulas(AbstractTheory* t) {
+	return transform<CountNbOfSubFormulas, int>(t);
 }
 
 AbstractTheory* merge(AbstractTheory* at1, AbstractTheory* at2) {

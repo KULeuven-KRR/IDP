@@ -62,8 +62,8 @@ void poptab(){
 }*/
 
 IdpException notyetimplemented(const string& message) {
-	clog << "WARNING or ERROR: The following feature is not yet implemented:\n" << '\t' << message << '\n'
-			<< "Please send an e-mail to krr@cs.kuleuven.be if you really need this feature.\n";
+	clog << "WARNING or ERROR: The following feature is not yet implemented:\n" << tabs()<<'\t' << message << '\n' << tabs()
+			<< "Please send an e-mail to krr@cs.kuleuven.be if you really need this feature.\n" << tabs();
 	return IdpException("Aborting because of not yet implemented feature.");
 }
 

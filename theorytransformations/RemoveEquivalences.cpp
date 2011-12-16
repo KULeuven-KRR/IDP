@@ -16,7 +16,7 @@
 
 using namespace std;
 
-BoolForm* RemoveEquivalences::visit(EquivForm* ef) {
+Formula* RemoveEquivalences::visit(EquivForm* ef) {
 	Formula* nl = ef->left()->accept(this);
 	Formula* nr = ef->right()->accept(this);
 	vector<Formula*> vf1(2);

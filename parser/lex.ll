@@ -250,7 +250,12 @@ COMMENTLINE		"//".*
 							  }
 							  else (*data.luacode) << '}';
 							}
-<lua>[^{}:\n*]*				{ data.advancecol();	
+<lua>"//"					{data.advanceline();}
+<lua>"/*"					{ data.commentcaller = YY_START;
+							 	 BEGIN(comment); 
+							 	 data.advancecol();				
+							}
+<lua>[^/{}:\n*]*				{ data.advancecol();	
 							  (*data.luacode) << yytext;
 							}
 <lua>{STR}					{ data.advancecol(); (*data.luacode) << yytext;	}

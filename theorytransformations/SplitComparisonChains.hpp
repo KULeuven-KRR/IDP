@@ -10,7 +10,7 @@
 
 #ifndef REMOVEEQUATIONCHAINS_HPP_
 #define REMOVEEQUATIONCHAINS_HPP_
-
+#include <cstddef>
 #include <vector>
 #include "visitors/TheoryMutatingVisitor.hpp"
 
