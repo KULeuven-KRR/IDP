@@ -37,13 +37,13 @@ template<typename Transformer, typename ReturnType, typename Construct, typename
 ReturnType transform(Construct* object, Values ... parameters) {
 	Transformer t;
 	if(getOption(IntType::GROUNDVERBOSITY)>1){
-		std::clog <<"Executing " <<typeid(Transformer).name() <<" on: " <<toString(object) <<"\nResulted in: ";
+		std::clog <<"\n"<<tabs()<<"Executing " <<typeid(Transformer).name() <<" on: " <<toString(object);
+		pushtab();
 	}
 	ReturnType result = t.execute(object, parameters...);
 	if(getOption(IntType::GROUNDVERBOSITY)>1){
-		std::clog <<toString(result) <<"\n";
-		//FIXME make everything printable? std::clog <<toString(result) <<"\n";
-		// => create a static checkable condition whether something is printable via put! If not, do <<
+		poptab();
+		std::clog <<"\n"<<tabs()<<"Resulted in: "<<toString(result) <<"\n"<<tabs();
 	}
 	return result;
 }

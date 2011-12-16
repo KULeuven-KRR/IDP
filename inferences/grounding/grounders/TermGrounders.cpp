@@ -1,12 +1,12 @@
 /****************************************************************
-* Copyright 2010-2012 Katholieke Universiteit Leuven
-*  
-* Use of this software is governed by the GNU LGPLv3.0 license
-* 
-* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
-* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
-* Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ * Copyright 2010-2012 Katholieke Universiteit Leuven
+ *
+ * Use of this software is governed by the GNU LGPLv3.0 license
+ *
+ * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+ * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+ * Celestijnenlaan 200A, B-3001 Leuven, Belgium
+ ****************************************************************/
 
 #include "TermGrounders.hpp"
 
@@ -24,11 +24,11 @@
 
 using namespace std;
 
-void TermGrounder::setOrig(const Term* t, const map<Variable*,const DomElemContainer*>& mvd, int verb) {
+void TermGrounder::setOrig(const Term* t, const map<Variable*, const DomElemContainer*>& mvd, int verb) {
 	_verbosity = verb;
-	map<Variable*,Variable*> mvv;
-	for(auto it = t->freeVars().cbegin(); it != t->freeVars().cend(); ++it) {
-		Variable* v = new Variable((*it)->name(),(*it)->sort(),ParseInfo());
+	map<Variable*, Variable*> mvv;
+	for (auto it = t->freeVars().cbegin(); it != t->freeVars().cend(); ++it) {
+		Variable* v = new Variable((*it)->name(), (*it)->sort(), ParseInfo());
 		mvv[*it] = v;
 		_varmap[v] = mvd.find(*it)->second;
 	}
@@ -36,16 +36,16 @@ void TermGrounder::setOrig(const Term* t, const map<Variable*,const DomElemConta
 }
 
 void TermGrounder::printOrig() const {
-	clog << "Grounding term " << toString(_origterm);
-	if(not _origterm->freeVars().empty()) {
-		clog << " with instance ";
-		for(auto it = _origterm->freeVars().cbegin(); it != _origterm->freeVars().cend(); ++it) {
+	clog << "\n" << tabs() << "Grounding term " << toString(_origterm);
+	if (not _origterm->freeVars().empty()) {
+		clog << "\n" << tabs() << " with instance ";
+		for (auto it = _origterm->freeVars().cbegin(); it != _origterm->freeVars().cend(); ++it) {
 			clog << toString(*it) << " = ";
 			const DomainElement* e = _varmap.find(*it)->second->get();
 			clog << toString(e) << ' ';
 		}
 	}
-	clog << "\n";
+	clog << "\n" << tabs();
 }
 
 GroundTerm DomTermGrounder::run() const {
@@ -59,58 +59,64 @@ GroundTerm VarTermGrounder::run() const {
 }
 
 GroundTerm FuncTermGrounder::run() const {
-	if(_verbosity > 2) {
+	if (_verbosity > 2) {
 		printOrig();
+		pushtab();
 	}
 	bool calculable = true;
 	vector<GroundTerm> groundsubterms(_subtermgrounders.size());
 	ElementTuple args(_subtermgrounders.size());
-	for(unsigned int n = 0; n < _subtermgrounders.size(); ++n) {
-		if(GlobalData::instance()->terminateRequested()){
+	for (unsigned int n = 0; n < _subtermgrounders.size(); ++n) {
+		if (GlobalData::instance()->terminateRequested()) {
 			throw IdpException("Terminate requested");
 		}
 		groundsubterms[n] = _subtermgrounders[n]->run();
-		if(groundsubterms[n].isVariable) {
+		if (groundsubterms[n].isVariable) {
 			calculable = false;
 		} else {
 			Assert(groundsubterms[n]._domelement!=NULL);
 			args[n] = groundsubterms[n]._domelement;
 		}
 	}
-	if(calculable && _functable) { // All ground subterms are domain elements!
+	if (calculable && _functable) { // All ground subterms are domain elements!
 		const DomainElement* result = (*_functable)[args];
-		if(result) {
-			if(_verbosity > 2) {
-				clog << "Result = " << *result << "\n";
+		if (result) {
+			if (_verbosity > 2) {
+				clog << "Result = " << *result;
+				poptab();
+				clog << "\n" << tabs();
 			}
 			return GroundTerm(result);
 		}
 	}
 	// Assert(isCPSymbol(_function->symbol())) && some of the ground subterms are CP terms.
-	VarId varid = _termtranslator->translate(_function,groundsubterms);
-	if(_verbosity > 2) {
-		clog << "Result = " << _termtranslator->printTerm(varid) << "\n";
+	VarId varid = _termtranslator->translate(_function, groundsubterms);
+	if (_verbosity > 2) {
+		clog << "Result = " << _termtranslator->printTerm(varid);
+		poptab();
+		clog << "\n" << tabs();
 	}
 	return GroundTerm(varid);
 }
 
 CPTerm* createSumTerm(SumType type, const VarId& left, const VarId& right) {
-	if(type == ST_MINUS) {
+	if (type == ST_MINUS) {
 		vector<VarId> varids(2); //XXX vector<VarId> varids[] = { left, right }; ?
 		varids[0] = left;
 		varids[1] = right;
 		vector<int> weights(2);
 		weights[0] = 1;
 		weights[1] = -1;
-		return new CPWSumTerm(varids,weights);
+		return new CPWSumTerm(varids, weights);
 	} else {
-		return new CPSumTerm(left,right);
+		return new CPSumTerm(left, right);
 	}
 }
 
 GroundTerm SumTermGrounder::run() const {
-	if(_verbosity > 2) {
+	if (_verbosity > 2) {
 		printOrig();
+		pushtab();
 	}
 	// Run subtermgrounders
 	const GroundTerm& left = _lefttermgrounder->run();
@@ -119,35 +125,37 @@ GroundTerm SumTermGrounder::run() const {
 	SortTable* rightdomain = _righttermgrounder->getDomain();
 
 	// Compute domain for the sum term
-	if(not _domain || not _domain->approxFinite()) {
-		if(not left.isVariable) {
+	if (not _domain || not _domain->approxFinite()) {
+		if (not left.isVariable) {
 			leftdomain = new SortTable(new EnumeratedInternalSortTable());
 			leftdomain->add(left._domelement);
 		}
-		if(not right.isVariable) {
+		if (not right.isVariable) {
 			rightdomain = new SortTable(new EnumeratedInternalSortTable());
 			rightdomain->add(right._domelement);
 		}
-		if(leftdomain && rightdomain && leftdomain->approxFinite() && rightdomain->approxFinite()) {
+		if (leftdomain && rightdomain && leftdomain->approxFinite() && rightdomain->approxFinite()) {
 			int leftmin = leftdomain->first()->value()._int;
 			int rightmin = rightdomain->first()->value()._int;
 			int leftmax = leftdomain->last()->value()._int;
 			int rightmax = rightdomain->last()->value()._int;
-			int min, max; 
-			if(_type == ST_PLUS) {
+			int min, max;
+			if (_type == ST_PLUS) {
 				min = leftmin + rightmin;
 				max = leftmax + rightmax;
 			} else if (_type == ST_MINUS) {
 				min = leftmin - rightmin;
 				max = leftmax - rightmax;
 			}
-			if(max < min) { swap(min,max); }
-			_domain = new SortTable(new IntRangeInternalSortTable(min,max));
+			if (max < min) {
+				swap(min, max);
+			}
+			_domain = new SortTable(new IntRangeInternalSortTable(min, max));
 		} else {
-			if(leftdomain && not leftdomain->approxFinite()) {
+			if (leftdomain && not leftdomain->approxFinite()) {
 				clog << "Left domain is infinite..." << endl;
 			}
-			if(rightdomain && not rightdomain->approxFinite()) {
+			if (rightdomain && not rightdomain->approxFinite()) {
 				clog << "Right domain is infinite..." << endl;
 			}
 			//TODO one of the domains is unknown or infinite...
@@ -157,41 +165,45 @@ GroundTerm SumTermGrounder::run() const {
 	}
 
 	VarId varid;
-	if(left.isVariable) {
-		if(right.isVariable) {
-			CPTerm* sumterm = createSumTerm(_type,left._varid,right._varid);
-			varid = _termtranslator->translate(sumterm,_domain);
+	if (left.isVariable) {
+		if (right.isVariable) {
+			CPTerm* sumterm = createSumTerm(_type, left._varid, right._varid);
+			varid = _termtranslator->translate(sumterm, _domain);
 		} else {
 			Assert(not right.isVariable);
 			VarId rightvarid = _termtranslator->translate(right._domelement);
 			// Create tseitin
 			CPTsBody* cpelement = _termtranslator->cprelation(rightvarid);
-			Lit tseitin = _grounding->translator()->translate(cpelement->left(),cpelement->comp(),cpelement->right(),TsType::EQ);
+			Lit tseitin = _grounding->translator()->translate(cpelement->left(), cpelement->comp(), cpelement->right(), TsType::EQ);
 			_grounding->addUnitClause(tseitin);
 			// Create cp sum term
-			CPTerm* sumterm = createSumTerm(_type,left._varid,rightvarid);
-			varid = _termtranslator->translate(sumterm,_domain);
+			CPTerm* sumterm = createSumTerm(_type, left._varid, rightvarid);
+			varid = _termtranslator->translate(sumterm, _domain);
 		}
 	} else {
 		Assert(not left.isVariable);
 
-		if(right.isVariable) {
+		if (right.isVariable) {
 			VarId leftvarid = _termtranslator->translate(left._domelement);
 			// Create tseitin
 			CPTsBody* cpelement = _termtranslator->cprelation(leftvarid);
-			int tseitin = _grounding->translator()->translate(cpelement->left(),cpelement->comp(),cpelement->right(),TsType::EQ);
+			int tseitin = _grounding->translator()->translate(cpelement->left(), cpelement->comp(), cpelement->right(), TsType::EQ);
 			_grounding->addUnitClause(tseitin);
 			// Create cp sum term
-			CPTerm* sumterm = createSumTerm(_type,leftvarid,right._varid);
-			varid = _termtranslator->translate(sumterm,_domain);
+			CPTerm* sumterm = createSumTerm(_type, leftvarid, right._varid);
+			varid = _termtranslator->translate(sumterm, _domain);
 		} else { // Both subterms are domain elements, so lookup the result in the function table.
 			Assert(not right.isVariable);
 			Assert(_functable);
-			ElementTuple args(2); args[0] = left._domelement; args[1] = right._domelement;
+			ElementTuple args(2);
+			args[0] = left._domelement;
+			args[1] = right._domelement;
 			const DomainElement* result = (*_functable)[args];
 			Assert(result);
-			if(_verbosity > 2) {
-				clog << "Result = " << *result << "\n";
+			if (_verbosity > 2) {
+				clog << "Result = " << *result;
+				poptab();
+				clog << "\n" << tabs();
 			}
 			return GroundTerm(result);
 		}
@@ -204,24 +216,29 @@ GroundTerm SumTermGrounder::run() const {
 	//_grounding->addUnitClause(sumtseitin);
 
 	// Return result
-	if(_verbosity > 2) {
-		clog << "Result = " << _termtranslator->printTerm(varid) << "\n";
+	if (_verbosity > 2) {
+		clog << "Result = " << _termtranslator->printTerm(varid);
+		poptab();
+		clog << "\n" << tabs();
 	}
 	return GroundTerm(varid);
 }
 
 GroundTerm AggTermGrounder::run() const {
 //TODO Should this grounder return a VarId in some cases?
-	if(_verbosity > 2) {
+	if (_verbosity > 2) {
 		printOrig();
+		pushtab();
 	}
 	int setnr = _setgrounder->run();
 	const TsSet& tsset = _translator->groundset(setnr);
 	Assert(not tsset.empty());
-	double value = applyAgg(_type,tsset.trueweights());
+	double value = applyAgg(_type, tsset.trueweights());
 	const DomainElement* result = createDomElem(value);
-	if(_verbosity > 2) {
-		clog << "Result = " << *result << "\n";
+	if (_verbosity > 2) {
+		clog << "Result = " << *result;
+		poptab();
+		clog << "\n"<<tabs();
 	}
 	// FIXME if grounding aggregates, with an upper and lower bound, should not return a domelem from the subgrounder, but a vardomain or something?
 	return GroundTerm(result);
