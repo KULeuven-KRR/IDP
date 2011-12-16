@@ -1,12 +1,12 @@
 /****************************************************************
-* Copyright 2010-2012 Katholieke Universiteit Leuven
-*  
-* Use of this software is governed by the GNU LGPLv3.0 license
-* 
-* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
-* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
-* Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ * Copyright 2010-2012 Katholieke Universiteit Leuven
+ *
+ * Use of this software is governed by the GNU LGPLv3.0 license
+ *
+ * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+ * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+ * Celestijnenlaan 200A, B-3001 Leuven, Belgium
+ ****************************************************************/
 
 #ifndef THEORYUTILS_HPP_
 #define THEORYUTILS_HPP_
@@ -36,14 +36,14 @@ class AggForm;
 template<typename Transformer, typename ReturnType, typename Construct, typename ... Values>
 ReturnType transform(Construct* object, Values ... parameters) {
 	Transformer t;
-	if(getOption(IntType::GROUNDVERBOSITY)>1){
-		std::clog <<"\n"<<tabs()<<"Executing " <<typeid(Transformer).name() <<" on: " <<toString(object);
+	if (getOption(IntType::GROUNDVERBOSITY) > 1) {
+		std::clog << "\n" << tabs() << "Executing " << typeid(Transformer).name() << " on: " << toString(object);
 		pushtab();
 	}
 	ReturnType result = t.execute(object, parameters...);
-	if(getOption(IntType::GROUNDVERBOSITY)>1){
+	if (getOption(IntType::GROUNDVERBOSITY) > 1) {
 		poptab();
-		std::clog <<"\n"<<tabs()<<"Resulted in: "<<toString(result) <<"\n"<<tabs();
+		std::clog << "\n" << tabs() << "Resulted in: " << toString(result) << "\n" << tabs();
 	}
 	return result;
 }
@@ -51,10 +51,15 @@ ReturnType transform(Construct* object, Values ... parameters) {
 template<typename Transformer, typename Construct, typename ... Values>
 void transform(Construct* object, Values ... parameters) {
 	Transformer t;
-	if(getOption(IntType::GROUNDVERBOSITY)>1){
-		std::clog <<"Executing " <<typeid(Transformer).name() <<" on: " <<toString(object) <<"\nResulted in: ";
+	if (getOption(IntType::GROUNDVERBOSITY) > 1) {
+		std::clog << "Executing " << typeid(Transformer).name() << " on: " << toString(object);
+		pushtab();
 	}
 	t.execute(object, parameters...);
+	if (getOption(IntType::GROUNDVERBOSITY) > 1) {
+		poptab();
+		std::clog << "\n" << tabs() << "Resulted in: " << toString(object) << "\n" << tabs();
+	}
 }
 
 namespace FormulaUtils {
@@ -69,8 +74,6 @@ BoolForm* trueFormula();
 
 /** Create the formula 'false' **/
 BoolForm* falseFormula();
-
-
 
 /** Check sorts in the given formula **/
 void checkSorts(Vocabulary* v, Formula* f);
@@ -120,9 +123,8 @@ Formula* unnestPartialTerms(Formula* f, Context context, Vocabulary* voc = NULL)
 Formula* unnestTerms(Formula*, Context context = Context::POSITIVE);
 
 /** Non-recursively move terms that are three-valued in a given structure outside of the given atom **/
-Formula* unnestThreeValuedTerms(Formula*, AbstractStructure*, Context context, bool cpsupport = false, const std::set<const PFSymbol*> cpsymbols = std::set<const PFSymbol*>());
-
-
+Formula* unnestThreeValuedTerms(Formula*, AbstractStructure*, Context context, bool cpsupport = false, const std::set<const PFSymbol*> cpsymbols =
+		std::set<const PFSymbol*>());
 
 /** Replace all definitions in the theory by their completion **/
 AbstractTheory* addCompletion(AbstractTheory*);
@@ -131,7 +133,7 @@ AbstractTheory* addCompletion(AbstractTheory*);
 AbstractTheory* flatten(AbstractTheory*);
 
 /** Rewrite (F(x) = y) or (y = F(x)) to Graph_F(x,y) 
-  * Rewrite (AggTerm op BoundTerm) to an aggregate formula (op = '=', '<', or '>') **/
+ * Rewrite (AggTerm op BoundTerm) to an aggregate formula (op = '=', '<', or '>') **/
 AbstractTheory* graphFuncsAndAggs(AbstractTheory*);
 
 /** Merge two theories **/
@@ -171,11 +173,12 @@ bool isPartial(Term*);
 
 namespace SetUtils {
 /** Returns false if the set expression is not two-valued in the given structure. 
-May return true if the set expression is two-valued in the structure. **/
-bool approxTwoValued(SetExpr*,AbstractStructure*);	
+ May return true if the set expression is two-valued in the structure. **/
+bool approxTwoValued(SetExpr*, AbstractStructure*);
 
 /** Rewrite set expressions by moving three-valued terms **/
-SetExpr* moveThreeValuedTerms(SetExpr*, AbstractStructure*, Context context, bool cpsupport = false, const std::set<const PFSymbol*> cpsymbols = std::set<const PFSymbol*>());
+SetExpr* moveThreeValuedTerms(SetExpr*, AbstractStructure*, Context context, bool cpsupport = false, const std::set<const PFSymbol*> cpsymbols =
+		std::set<const PFSymbol*>());
 }
 
 namespace DefinitionUtils {
@@ -189,7 +192,8 @@ void deriveSorts(Vocabulary* v, Rule* f);
 std::set<PFSymbol*> opens(Definition*);
 
 /** Non-recursively move terms that are three-valued in a given structure outside of the head of the rule **/
-Rule* unnestThreeValuedTerms(Rule*, AbstractStructure*, Context context, bool cpsupport = false, const std::set<const PFSymbol*> cpsymbols = std::set<const PFSymbol*>());
+Rule* unnestThreeValuedTerms(Rule*, AbstractStructure*, Context context, bool cpsupport = false,
+		const std::set<const PFSymbol*> cpsymbols = std::set<const PFSymbol*>());
 }
 
 #endif /* THEORYUTILS_HPP_ */
