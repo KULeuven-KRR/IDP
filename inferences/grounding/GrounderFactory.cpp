@@ -37,7 +37,6 @@
 #include "inferences/grounding/grounders/SetGrounders.hpp"
 #include "inferences/grounding/grounders/DefinitionGrounders.hpp"
 #include "inferences/grounding/grounders/LazyQuantGrounder.hpp"
-#include "theorytransformations/SplitProducts.hpp"
 #include "visitors/TheoryMutatingVisitor.hpp"
 
 #include "generators/BasicGenerators.hpp"
@@ -81,25 +80,17 @@ GrounderFactory::GrounderFactory(AbstractStructure* structure, GenerateBDDAccord
 
 set<const PFSymbol*> GrounderFactory::findCPSymbols(const AbstractTheory* theory) {
 	Vocabulary* vocabulary = theory->vocabulary();
-// TODO
-//	for(auto predit = vocabulary->firstpred(); predit != vocabulary->lastpred(); ++predit) {
-//		Predicate* predicate = predit->second;
-//		if(VocabularyUtils::isComparisonPredicate(predicate)) {
-//			_cpsymbols.insert(predicate);
-//		}
-//	}
 	for (auto funcit = vocabulary->firstFunc(); funcit != vocabulary->lastFunc(); ++funcit) {
 		Function* function = funcit->second;
 		bool passtocp = false;
 		// Check whether the (user-defined) function's outsort is over integers
-		auto intsort = VocabularyUtils::intsort();
 		if (function->overloaded()) {
 			set<Function*> nonbuiltins = function->nonbuiltins();
 			for (auto nbfit = nonbuiltins.cbegin(); nbfit != nonbuiltins.cend(); ++nbfit) {
-				passtocp = (SortUtils::resolve(function->outsort(), intsort, vocabulary) == intsort);
+				passtocp = FuncUtils::isIntFunc(function,vocabulary); 
 			}
 		} else if (not function->builtin()) {
-			passtocp = (SortUtils::resolve(function->outsort(), intsort, vocabulary) == intsort);
+			passtocp = FuncUtils::isIntFunc(function,vocabulary); 
 		}
 		if (passtocp) {
 			_cpsymbols.insert(function);
@@ -193,20 +184,26 @@ void GrounderFactory::DeeperContext(SIGN sign) {
 	if (isNeg(sign)) {
 		_context.gentype = not _context.gentype;
 
-		if (_context._funccontext == Context::POSITIVE)
-			_context._funccontext = Context::NEGATIVE;
-		else if (_context._funccontext == Context::NEGATIVE)
-			_context._funccontext = Context::POSITIVE;
-		if (_context._monotone == Context::POSITIVE)
-			_context._monotone = Context::NEGATIVE;
-		else if (_context._monotone == Context::NEGATIVE)
-			_context._monotone = Context::POSITIVE;
+		_context._funccontext = not _context._funccontext;
+		//if (_context._funccontext == Context::POSITIVE) {
+		//	_context._funccontext = Context::NEGATIVE;
+		//} else if (_context._funccontext == Context::NEGATIVE) {
+		//	_context._funccontext = Context::POSITIVE;
+		//}
 
-		if (_context._tseitin == TsType::IMPL)
-			_context._tseitin = TsType::RIMPL;
-		else if (_context._tseitin == TsType::RIMPL)
-			_context._tseitin = TsType::IMPL;
+		_context._monotone = not _context._monotone;
+		//if (_context._monotone == Context::POSITIVE) {
+		//	_context._monotone = Context::NEGATIVE;
+		//} else if (_context._monotone == Context::NEGATIVE) {
+		//	_context._monotone = Context::POSITIVE;
+		//}
 
+		_context._tseitin = reverseImplication(_context._tseitin);
+		//if (_context._tseitin == TsType::IMPL) {
+		//	_context._tseitin = TsType::RIMPL;
+		//} else if (_context._tseitin == TsType::RIMPL) {
+		//	_context._tseitin = TsType::IMPL;
+		//}
 	}
 }
 
@@ -350,14 +347,21 @@ Grounder* GrounderFactory::create(const AbstractTheory* theory, SATSolver* solve
  *		_toplevelgrounder is equal to the created grounder
  */
 void GrounderFactory::visit(const Theory* theory) {
+	//TODO issue #23.  I think that HERE, we should graphaggregate, graphfunctions, splitproducts (splitEQchains?), ...
+	//TODO issue #24.  Splitproducts
+	AbstractTheory* tmptheory = theory->clone();
+	if (not getOption(BoolType::CPSUPPORT)) {
+		tmptheory = FormulaUtils::splitComparisonChains(tmptheory,_structure->vocabulary());
+		tmptheory = FormulaUtils::graphFuncsAndAggs(tmptheory,_structure);
+		tmptheory = FormulaUtils::splitProducts(tmptheory);
+	}
+	Assert(sametypeid<Theory*>(tmptheory));
+	auto newtheory = dynamic_cast<Theory*>(tmptheory);
+
 	// Collect all components (sentences, definitions, and fixpoint definitions) of the theory
-
-	set<TheoryComponent*> tcomps = theory->components();
+	set<TheoryComponent*> tcomps = newtheory->components();
 	vector<TheoryComponent*> components(tcomps.cbegin(), tcomps.cend());
-
-	// Order components the components to optimize the grounding process
-	// TODO issue 57048.  I think that HERE, we should graphaggregate, graphfunctions, splitproducts (splitEQchains?), ...
-	// TODO issue 54941.  Splitproducts
+	//TODO Order components the components to optimize the grounding process
 
 	InitContext();
 
@@ -388,7 +392,7 @@ void GrounderFactory::visit(const Theory* theory) {
  *		According to _context, the created grounder is assigned to
  *			CompContext::SENTENCE:	_toplevelgrounder
  *			CompContext::HEAD:		_headgrounder
- *			CompContext::FORMULA:		_formgrounder
+ *			CompContext::FORMULA:	_formgrounder
  */
 void GrounderFactory::visit(const PredForm* pf) {
 	if (getOption(IntType::GROUNDVERBOSITY) > 3) {
@@ -403,13 +407,12 @@ void GrounderFactory::visit(const PredForm* pf) {
 	// to _structure outside the atom. To avoid changing the original atom,
 	// we first clone it.
 	// FIXME verkeerde type afgeleid voor vergelijkingen a=b (zou bvb range die beide omvat moeten zijn, is nu niet het geval).
-	// FIXME aggregaten moeten correct worden herschreven als ze niet tweewaardig zijn -> issue 57048?
-	Formula* transpf = FormulaUtils::unnestThreeValuedTerms(pf->clone(), _structure, _context._funccontext, getOption(BoolType::CPSUPPORT),
-			_cpsymbols);
-	transpf = FormulaUtils::splitComparisonChains(transpf, NULL);
+	// FIXME aggregaten moeten correct worden herschreven als ze niet tweewaardig zijn -> issue #23?
+	Formula* transpf = FormulaUtils::unnestThreeValuedTerms(pf->clone(), _structure, _context._funccontext, getOption(BoolType::CPSUPPORT), _cpsymbols);
+	//transpf = FormulaUtils::splitComparisonChains(transpf);
 	if (not getOption(BoolType::CPSUPPORT)) { // TODO Check not present in quantgrounder
-		transpf = FormulaUtils::graphFuncsAndAggs(transpf);
-	}
+		transpf = FormulaUtils::graphFuncsAndAggs(transpf,_structure,_context._funccontext);
+	} //TODO issue #23
 
 	if (not sametypeid<PredForm>(*transpf)) { // The rewriting changed the atom
 		Assert(_context._component != CompContext::HEAD);
@@ -429,7 +432,7 @@ void GrounderFactory::visit(const PredForm* pf) {
 	vector<TermGrounder*> subtermgrounders;
 	vector<SortTable*> argsorttables;
 	SaveContext();
-	for (unsigned int n = 0; n < newpf->subterms().size(); ++n) {
+	for (size_t n = 0; n < newpf->subterms().size(); ++n) {
 		descend(newpf->subterms()[n]);
 		subtermgrounders.push_back(_termgrounder);
 		argsorttables.push_back(_structure->inter(newpf->symbol()->sorts()[n]));
@@ -638,8 +641,8 @@ void GrounderFactory::visit(const QuantForm* qf) {
 	// Create instance generator
 	Formula* newsubformula = qf->subformula()->clone();
 	newsubformula = FormulaUtils::unnestThreeValuedTerms(newsubformula, _structure, _context._funccontext);
-	newsubformula = FormulaUtils::splitComparisonChains(newsubformula, NULL);
-	newsubformula = FormulaUtils::graphFuncsAndAggs(newsubformula);
+	//newsubformula = FormulaUtils::splitComparisonChains(newsubformula);
+	newsubformula = FormulaUtils::graphFuncsAndAggs(newsubformula,_structure,_context._funccontext);
 
 	// NOTE: if the checker return valid, then the value of the formula can be decided from the value of the checked instantiation
 	//	for universal: checker valid => formula false, for existential: checker valid => formula true
@@ -801,17 +804,14 @@ void GrounderFactory::visit(const AggForm* af) {
 
 	AggForm* newaf = af->clone();
 	Formula* transaf = FormulaUtils::unnestThreeValuedTerms(newaf, _structure, _context._funccontext, getOption(BoolType::CPSUPPORT), _cpsymbols);
+	transaf = FormulaUtils::graphFuncsAndAggs(newaf, _structure, _context._funccontext);
 	if (recursive(transaf)) {
 		transaf = FormulaUtils::splitIntoMonotoneAgg(transaf);
 	}
 
-	if (typeid(*transaf) != typeid(AggForm)) { // The rewriting changed the atom
+	if (not sametypeid<AggForm>(*transaf)) { // The rewriting changed the atom
 		if (getOption(IntType::GROUNDVERBOSITY) > 1) {
-			clog << "Rewritten ";
-			af->put(clog);
-			clog << " to ";
-			transaf->put(clog);
-			clog << "\n";
+			clog << "Rewritten " << toString(af) << " to " << toString(transaf) << "\n";
 		}
 		transaf->accept(this);
 	} else { // The rewriting did not change the atom
@@ -883,8 +883,9 @@ void GrounderFactory::visit(const FuncTerm* t) {
 	vector<TermGrounder*> subtermgrounders;
 	for (auto it = t->subterms().cbegin(); it != t->subterms().cend(); ++it) {
 		(*it)->accept(this);
-		if (_termgrounder)
+		if (_termgrounder) {
 			subtermgrounders.push_back(_termgrounder);
+		}
 	}
 
 	// Create term grounder
@@ -988,14 +989,10 @@ void GrounderFactory::visit(const QuantSetExpr* origqs) {
 	_context._conjPathUntilNode = false;
 
 	// Move three-valued terms in the set expression
-	auto transqs = SetUtils::moveThreeValuedTerms(origqs->clone(), _structure, _context._funccontext, getOption(BoolType::CPSUPPORT), _cpsymbols);
+	auto transqs = SetUtils::unnestThreeValuedTerms(origqs->clone(), _structure, _context._funccontext, getOption(BoolType::CPSUPPORT), _cpsymbols);
 	if (not sametypeid<QuantSetExpr>(*transqs)) {
 		if (getOption(IntType::GROUNDVERBOSITY) > 1) {
-			clog << "Rewritten ";
-			origqs->put(clog);
-			clog << " to ";
-			transqs->put(clog);
-			clog << "\n";
+			clog << "Rewritten " << toString(origqs) << " to " << toString(transqs) << "\n";
 		}
 		transqs->accept(this);
 		return;
@@ -1004,8 +1001,8 @@ void GrounderFactory::visit(const QuantSetExpr* origqs) {
 	auto newqs = dynamic_cast<QuantSetExpr*>(transqs);
 	Formula* clonedformula = newqs->subformulas()[0]->clone();
 	Formula* newsubformula = FormulaUtils::unnestThreeValuedTerms(clonedformula, _structure, Context::POSITIVE);
-	newsubformula = FormulaUtils::splitComparisonChains(newsubformula, NULL);
-	newsubformula = FormulaUtils::graphFuncsAndAggs(newsubformula);
+	//newsubformula = FormulaUtils::splitComparisonChains(newsubformula);
+	newsubformula = FormulaUtils::graphFuncsAndAggs(newsubformula,_structure,_context._funccontext); //TODO issue #23
 
 	// NOTE: generator generates possibly true instances, checker checks the certainly true ones
 	GenAndChecker gc = createVarsAndGenerators(newsubformula, newqs, TruthType::POSS_TRUE, TruthType::CERTAIN_TRUE);

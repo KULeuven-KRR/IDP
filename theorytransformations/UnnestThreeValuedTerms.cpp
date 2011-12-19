@@ -42,7 +42,6 @@ bool UnnestThreeValuedTerms::shouldMove(Term* t) {
 	return false;
 }
 
-// BUG: allowed to unnest is default false???
 Formula* UnnestThreeValuedTerms::traverse(PredForm* f) {
 	Context savecontext = getContext();
 	bool savemovecontext = getAllowedToUnnest();
@@ -60,4 +59,7 @@ Formula* UnnestThreeValuedTerms::traverse(PredForm* f) {
 	return f;
 }
 
-
+Rule* UnnestThreeValuedTerms::traverse(Rule* r) {
+	notyetimplemented("Unnesting of three-valued terms in rules is not implemented yet.");
+	return r;
+}
