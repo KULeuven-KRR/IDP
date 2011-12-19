@@ -144,8 +144,8 @@ GroundTerm SumTermGrounder::run() const {
 				min = leftmin + rightmin;
 				max = leftmax + rightmax;
 			} else if (_type == ST_MINUS) {
-				min = leftmin - rightmin;
-				max = leftmax - rightmax;
+				min = leftmin - rightmax;
+				max = leftmax - rightmin;
 			}
 			if (max < min) {
 				swap(min, max);
