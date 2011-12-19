@@ -43,7 +43,6 @@ theory T : V {
 	{ Assigned(s,l) <- True(s,l) | True(s,Neg(l)). }
 	! s l : ChoiceLit(s)=l => ~Assigned(s,l).
 	! s : s < MaxStep <=> (? l : ChoiceLit(s)=l).
-//	! s : s < MaxStep <=> (? l : ChoiceLit(s)=l).
 
 	// Unit propagation
 	{ PropTrue(s,l) <- ChoiceLit(s)=l.
@@ -68,7 +67,8 @@ theory T : V {
 	  BTStep(s+1,s+1) <- ~Conflict(s).
 	  BTStep(s+1,bt) <- bt =< s & Conflict(s) & BTStep(bt,bt) & ~BackTracked(s,bt) & ! obt : s >= obt > bt => (~BTStep(obt,obt) | BackTracked(s,obt)).
 	}
-	! s bt : Conflict(s) & BTStep(s,bt) & s < 20 => ChoiceLit(s+1)=Neg(ChoiceLit(bt)). //20 zelfde als max Step!
+	//! s bt : Conflict(s) & BTStep(s,bt) & s < 20 => ChoiceLit(s+1)=Neg(ChoiceLit(bt)). //20 zelfde als max Step!
+	! s bt : Conflict(s) & BTStep(s,bt) & s < MaxStep => ChoiceLit(s+1)=Neg(ChoiceLit(bt)).
 
 	// SAT, UNSAT and UNKNOWN
 	{ SAT(s) <- ! l : (True(s,l) | True(s,Neg(l))). 

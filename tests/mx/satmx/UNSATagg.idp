@@ -24,8 +24,8 @@ theory T : V {
 //werkt nog niet !x[Num]: 1=< prod{ y[Cost] :  U(x, y) } =<10.
 
 //unsat versie
-	!x[Num]: 4=< min{ y[Cost] :  P(x, y):y } =<10.
-	//!x[Num]: 1=< sum{ y[Cost] :  P(x, y):y } =<3.
+	!x[Num]: 4 =< min{ y[Cost] : P(x,y) : y } =< 10.
+	//!x[Num]: 1 =< sum{ y[Cost] : P(x,y) : y } =<3.
 }
 
 structure S : V{ 

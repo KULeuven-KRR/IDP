@@ -60,6 +60,13 @@ Formula& operator==(Term& left, Term& right) {
 	return *new PredForm(SIGN::POS, eq, { &left, &right }, FormulaParseInfo());
 }
 
+Formula& operator<(Term& left, Term& right) {
+	auto sort = SortUtils::resolve(left.sort(),right.sort());
+	Assert(sort != NULL);
+	auto lt = VocabularyUtils::lessThan(sort);
+	return *new PredForm(SIGN::POS, lt, { &left, &right }, FormulaParseInfo());
+}
+
 Formula& operator&(Formula& left, Formula& right) {
 	return *new BoolForm(SIGN::POS, true, &left, &right, FormulaParseInfo());
 }

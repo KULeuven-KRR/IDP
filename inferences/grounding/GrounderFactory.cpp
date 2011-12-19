@@ -183,27 +183,9 @@ void GrounderFactory::DeeperContext(SIGN sign) {
 	// Swap positive, truegen and tseitin according to sign
 	if (isNeg(sign)) {
 		_context.gentype = not _context.gentype;
-
 		_context._funccontext = not _context._funccontext;
-		//if (_context._funccontext == Context::POSITIVE) {
-		//	_context._funccontext = Context::NEGATIVE;
-		//} else if (_context._funccontext == Context::NEGATIVE) {
-		//	_context._funccontext = Context::POSITIVE;
-		//}
-
 		_context._monotone = not _context._monotone;
-		//if (_context._monotone == Context::POSITIVE) {
-		//	_context._monotone = Context::NEGATIVE;
-		//} else if (_context._monotone == Context::NEGATIVE) {
-		//	_context._monotone = Context::POSITIVE;
-		//}
-
 		_context._tseitin = reverseImplication(_context._tseitin);
-		//if (_context._tseitin == TsType::IMPL) {
-		//	_context._tseitin = TsType::RIMPL;
-		//} else if (_context._tseitin == TsType::RIMPL) {
-		//	_context._tseitin = TsType::IMPL;
-		//}
 	}
 }
 
@@ -350,8 +332,8 @@ void GrounderFactory::visit(const Theory* theory) {
 	//TODO issue #23.  I think that HERE, we should graphaggregate, graphfunctions, splitproducts (splitEQchains?), ...
 	//TODO issue #24.  Splitproducts
 	AbstractTheory* tmptheory = theory->clone();
+	tmptheory = FormulaUtils::splitComparisonChains(tmptheory,_structure->vocabulary());
 	if (not getOption(BoolType::CPSUPPORT)) {
-		tmptheory = FormulaUtils::splitComparisonChains(tmptheory,_structure->vocabulary());
 		tmptheory = FormulaUtils::graphFuncsAndAggs(tmptheory,_structure);
 		tmptheory = FormulaUtils::splitProducts(tmptheory);
 	}
