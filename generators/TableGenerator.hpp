@@ -19,7 +19,7 @@ private:
 	PredTable* _outputtable;
 	std::vector<const DomElemContainer*> _allvars;
 	std::vector<const DomElemContainer*> _outvars;
-	std::vector<uint> _outvaroccurence, _uniqueoutvarindex;
+	std::vector<unsigned int> _outvaroccurence, _uniqueoutvarindex;
 	ElementTuple _currenttuple;
 	bool _reset;
 	TableIterator _current;
@@ -72,7 +72,7 @@ public:
 private:
 	bool inFullTable(){
 		const auto& values = *_current;
-		for(uint i=0; i<values.size(); ++i){
+		for(unsigned int i=0; i<values.size(); ++i){
 			_currenttuple[_outvaroccurence[i]] = values[_uniqueoutvarindex[i]];
 		}
 		return _fulltable->contains(_currenttuple);

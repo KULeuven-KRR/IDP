@@ -241,17 +241,12 @@ State Entails::checkEntailment(EntailmentData* data) const {
 	arguments.replace(pos, 2, ".tptpresult.txt");
 
 	// Call the prover with timeout.
-	// TODO replace signals with sigaction structures
-	if (!setjmp(_timeoutJump)) {
-		signal(SIGALRM, &timeout);
-		ualarm(data->options->getValue(IntType::PROVERTIMEOUT), 0);
-		system((applicationStream.str() + " " + arguments).c_str());
-	} else {
-		Info::print("The theorem prover did not finish within the specified timeout.");
-		return State::UNKNOWN;
-	}
-	alarm(0);
-	signal(SIGALRM, SIG_DFL);
+	auto callresult = system((applicationStream.str() + " " + arguments).c_str());
+	// TODO call the prover with the prover timeout
+	//if(callresult!=0)
+	//	Info::print("The theorem prover did not finish within the specified timeout.");
+	//	return State::UNKNOWN;
+	//}
 
 	std::vector<InternalArgument> theoremStrings;
 	std::vector<InternalArgument> counterSatisfiableStrings;

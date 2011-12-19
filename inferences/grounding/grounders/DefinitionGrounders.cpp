@@ -132,7 +132,7 @@ dominstlist LazyRuleGrounder::createInst(const ElementTuple& headargs) {
 	dominstlist domlist;
 
 	// set the variable instantiations
-	for (uint i = 0; i < headargs.size(); ++i) {
+	for (unsigned int i = 0; i < headargs.size(); ++i) {
 		// FIXME what if it is not a VarTermGrounder! (e.g. if it is a constant => we should check whether it can unify with it)
 		if (not sametypeid<VarTermGrounder>(*headgrounder()->subtermgrounders()[i])) {
 			throw notyetimplemented("Lazygrounding with functions.\n");

@@ -60,11 +60,11 @@ public:
 			Assert(_resvar->get()->type() == DET_COMPOUND);
 			const Compound* c = _resvar->get()->value()._compound;
 #ifdef DEBUG
-			for (uint n = 0; n < _inpos.size(); ++n) {
+			for (unsigned int n = 0; n < _inpos.size(); ++n) {
 				Assert(_invars[n]->get()==c->arg(_inpos[n]));
 			}
 #endif
-			for (uint n = 0; n < _outpos.size(); ++n) {
+			for (unsigned int n = 0; n < _outpos.size(); ++n) {
 				if (_universe.tables()[_outpos[n]]->contains(c->arg(_outpos[n]))) {
 					*(_outvars[n]) = c->arg(_outpos[n]);
 				} else {

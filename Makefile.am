@@ -12,6 +12,9 @@ SUBDIRS = lib pcsolver parser
 AM_CXXFLAGS = -Wall -Wextra\
 		-std=c++0x\
 		-I$(srcdir)/lib/loki/include\
+		-I$(srcdir)/lib/tinythread/source\
+		-I $(top_srcdir)/pcsolver/src/\
+		-I$(srcdir)/lib/linenoise/include\
 		-I$(srcdir)/lib/lua/etc -I$(srcdir)/lib/lua/src\
 		-I$(builddir)/lib/lua/src  -I $(srcdir)/lib/\
 		-DIDPDATADIR=\"$(datadir)\" -DRCDIR=\"$(localstatedir)\"\
@@ -29,8 +32,10 @@ AM_YFLAGS = -d -v
 
 bin_PROGRAMS = gidl
 
-gidl_LDADD = $(builddir)/lib/lua/src/.libs/liblua.la -ldl
+gidl_LDADD = $(builddir)/lib/lua/src/.libs/liblua.la
 gidl_LDADD += $(builddir)/pcsolver/src/libminisatid-2.0.la
+gidl_LDADD += $(builddir)/lib/linenoise/liblinenoise-1.0.la
+gidl_LDADD += $(builddir)/lib/tinythread/source/libtinythread-1.0.la
 
 BUILT_SOURCES = parser/parser.h
 
@@ -222,18 +227,12 @@ grounder_SOURCES = \
 		fobdds/bddvisitors/FirstConstTermInFunc.hpp\
 		fobdds/bddvisitors/CollectSameOperationTerms.hpp\
 		IdpException.hpp\
-		lib/linenoise/linenoise.cpp lib/linenoise/utf8.cpp\
 		utils/FileManagement.hpp utils/FileManagement.cpp
 		
 gidl_SOURCES = main.cpp $(grounder_SOURCES)
 
-AM_CXXFLAGS+=-I $(top_srcdir)/pcsolver/src/ 
-
 LIBSRCDIR = $(srcdir)/lib
 LIBBLDDIR = $(builddir)/lib
-
-# THREADING SUPPORT
-AM_LDFLAGS += -lpthread
 
 # CALLBACK FRAMEWORK
 AM_CXXFLAGS += -I $(LIBSRCDIR)/pluscallback1.7/

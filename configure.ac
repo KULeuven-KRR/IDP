@@ -135,16 +135,6 @@ AC_ARG_ENABLE([tests],
 esac],[ tests=yes ])
 
 AC_ARG_WITH(
-  [readline],
-  [AC_HELP_STRING([--with-readline], [Use readline for interpreter input [default=no]])],
-  [use_readline=$withval],
-  [use_readline=no]
-)
-
-#lua should never use readline TODO this does not seem to work, have to pass it as an option?
-use_readline=no
-
-AC_ARG_WITH(
   [interactive],
   [AC_HELP_STRING([--with-interactive], [Compile with support for interactive usage [default=yes]])],
   [interactive=$withval],
@@ -155,6 +145,6 @@ AM_CONDITIONAL([BUILDTESTS],[test x$enabletests = xyes])
 AM_CONDITIONAL([USEINTERACTIVE],[test x$interactive = xyes])
 
 AC_CONFIG_SUBDIRS([lib/lua pcsolver])
-AC_CONFIG_FILES([Makefile lib/Makefile parser/Makefile])
+AC_CONFIG_FILES([Makefile lib/Makefile parser/Makefile lib/tinythread/Makefile lib/tinythread/source/Makefile lib/linenoise/Makefile])
 
 AC_OUTPUT

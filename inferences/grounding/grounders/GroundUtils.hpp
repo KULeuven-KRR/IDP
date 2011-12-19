@@ -24,7 +24,7 @@ void overwriteVars(DomElemList& originst, const DomInstList& freevarinst){
 
 template<typename DomElemList, typename DomInstList>
 void restoreOrigVars(DomElemList& originst, const DomInstList& freevarinst){
-	for(uint i=0; i<freevarinst.size(); ++i){
+	for(unsigned int i=0; i<freevarinst.size(); ++i){
 		(*freevarinst[i].first)=originst[i];
 	}
 }

@@ -141,10 +141,17 @@ void parse(const vector<string>& inputfiles) {
 }
 
 // TODO add threading and signal handling code to kill the process by using the signalhandling thread in an infinite loop and some mutexes
-#include <thread>
 
-//TODO willen we een run van een lua procedure timen of eigenlijk een command op zich?
-// is misschien nogal vreemd om lua uitvoering te timen?
+bool stoptiming = true;
+bool hasStopped = true;
+bool running = false;
+bool shouldStop() {
+	return stoptiming;
+}
+
+void setStop(bool value) {
+	stoptiming = value;
+}
 
 bool throwfromexecution = false;
 void handleAndRun(const string& proc, const DomainElement** result) {
@@ -163,32 +170,20 @@ void handleAndRun(const string& proc, const DomainElement** result) {
 	clog.flush();
 }
 
+void monitorShutdown();
+
+#ifdef __MINGW32__
+#include <windows.h>
+#define sleep(n) Sleep(1000*n)
+#else
+#include <thread>
+//#include <tinythread.h>
+//using namespace tthread;
+
+//TODO willen we een run van een lua procedure timen of eigenlijk een command op zich?
+// is misschien nogal vreemd om lua uitvoering te timen?
+
 std::thread::native_handle_type executionhandle;
-bool stoptiming = true;
-bool hasStopped = true;
-bool running = false;
-bool shouldStop() {
-	return stoptiming;
-}
-
-void setStop(bool value) {
-	stoptiming = value;
-}
-
-void monitorShutdown() {
-	int monitoringtime = 0;
-	while(not hasStopped && monitoringtime<3000000){
-		usleep(10000);
-		monitoringtime+=10000;
-	}
-	if(not hasStopped){
-#ifdef DEBUGTHREADS // For debugging, we notify the other thread to sleep indefinitely, so we can debug properly
-		pthread_kill(executionhandle, SIGUSR1);
-#endif
-		clog <<"Shutdown failed, aborting.\n";
-		abort();
-	}
-}
 
 void timeout() {
 	int time = 0;
@@ -208,7 +203,7 @@ void timeout() {
 		if (getOption(IntType::TIMEOUT) < time / 1000) {
 			clog << "Timed-out\n";
 			getGlobal()->notifyTerminateRequested();
-			thread shutdown(monitorShutdown);
+			std::thread shutdown(&monitorShutdown);
 			shutdown.join();
 			break;
 		}
@@ -232,11 +227,30 @@ void SIGUSR1_handler(int) {
 
 template<typename Handler, typename SIGNAL>
 void registerHandler(Handler f, SIGNAL s){
-	struct sigaction sigIntHandler;
+	signal(s, f);
+/*	NON ISO - NON PORTABLE
+  	struct sigaction sigIntHandler;
 	sigIntHandler.sa_handler = f;
 	sigemptyset(&sigIntHandler.sa_mask);
 	sigIntHandler.sa_flags = 0;
-	sigaction(s, &sigIntHandler, NULL);
+	sigaction(s, &sigIntHandler, NULL);*/
+}
+
+#endif
+
+void monitorShutdown() {
+	int monitoringtime = 0;
+	while(not hasStopped && monitoringtime<3000000){
+		sleep(10);
+		monitoringtime+=10000;
+	}
+	if(not hasStopped){
+#ifdef DEBUGTHREADS // For debugging, we notify the other thread to sleep indefinitely, so we can debug properly
+		pthread_kill(executionhandle, SIGUSR1);
+#endif
+		clog <<"Shutdown failed, aborting.\n";
+		abort();
+	}
 }
 
 /**
@@ -258,19 +272,25 @@ const DomainElement* executeProcedure(const string& proc) {
 		startInference(); // NOTE: have to tell the solver to reset its instance
 		// FIXME should not be here, but in a less error-prone place. Or should pass an adapated time-out to the solver?
 
+#ifndef __MINGW32__
 		registerHandler(SIGINT_handler,SIGINT);
 		registerHandler(SIGUSR1_handler,SIGUSR1);
 
-		thread signalhandling(timeout);
+		std::thread signalhandling(&timeout);
 
-		thread execution(handleAndRun, temp, &result);
+		std::thread execution(&handleAndRun, temp, &result);
 		executionhandle = execution.native_handle();
 		execution.join();
+#else
+		handleAndRun(temp, &result);
+#endif
 
 		hasStopped = true;
 		running = false;
 		setStop(true);
+#ifndef __MINGW32__
 		signalhandling.join();
+#endif
 		if(throwfromexecution){
 			throw std::exception();
 		}
