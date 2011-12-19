@@ -177,8 +177,9 @@ grounder_SOURCES = \
 		theorytransformations/RemoveEquivalences.hpp theorytransformations/RemoveEquivalences.cpp\
 		theorytransformations/SplitComparisonChains.hpp theorytransformations/SplitComparisonChains.cpp\
 		theorytransformations/SubstituteTerm.hpp\
-		theorytransformations/UnnestPartialTerms.hpp\
 		theorytransformations/SplitIntoMonotoneAgg.hpp\
+		theorytransformations/UnnestFuncsAndAggs.hpp theorytransformations/UnnestFuncsAndAggs.cpp\
+		theorytransformations/UnnestPartialTerms.hpp\
 		theorytransformations/UnnestTerms.hpp theorytransformations/UnnestTerms.cpp\
 		theorytransformations/UnnestThreeValuedTerms.hpp theorytransformations/UnnestThreeValuedTerms.cpp\
 		utils/TheoryUtils.hpp utils/TheoryUtils.cpp\

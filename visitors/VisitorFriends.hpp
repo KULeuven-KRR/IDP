@@ -76,9 +76,10 @@ class SplitIntoMonotoneAgg;
 		friend class SplitComparisonChains; \
 		friend class SubstituteTerm; \
 		friend class UnnestTerms; \
+		friend class UnnestFuncsAndAggs; \
 		friend class UnnestPartialTerms; \
-		friend class SplitProducts; \
 		friend class UnnestThreeValuedTerms;\
+		friend class SplitProducts; \
 		friend class SplitIntoMonotoneAgg;
 
 class AbstractTheory;
