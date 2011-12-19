@@ -106,9 +106,9 @@ public:
 	FILE* openFile(const char* filename, const char* mode);
 	void closeFile(FILE* file);
 
-	void setTabSize(unsigned int);
+	void setTabSize(size_t);
 	void resetTabSize();
-	unsigned int getTabSize() const;
+	size_t getTabSize() const;
 };
 
 GlobalData* getGlobal();

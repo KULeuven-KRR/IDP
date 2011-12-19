@@ -42,8 +42,8 @@ string getPathOfConfigFile() {
 
 std::string tabs(){
 	stringstream ss;
-	unsigned int nb = GlobalData::instance()->getTabSize();
-	for(unsigned int i=0; i<nb; ++i){
+	auto nb = GlobalData::instance()->getTabSize();
+	for(size_t i=0; i<nb; ++i){
 		ss <<"    ";
 	}
 	return ss.str();
@@ -86,22 +86,22 @@ bool isDouble(const string& s) {
 int toInt(const string& s) {
 	stringstream i(s);
 	int n;
-	if (!(i >> n))
+	if (not (i >> n)) {
 		return 0;
-	else
+	} else {
 		return n;
+	}
 }
 
 double toDouble(const string& s) {
 	stringstream i(s);
 	double d;
-	if (!(i >> d))
+	if (not (i >> d)) {
 		return 0;
-	else
+	} else {
 		return d;
+	}
 }
-
-
 
 double applyAgg(const AggFunction& agg, const vector<double>& args) {
 	double d;
@@ -269,37 +269,53 @@ string* StringPointer(const string& str) {
 }
 
 CompType invertComp(CompType comp) {
+	CompType result;
 	switch (comp) {
 	case CompType::EQ:
-		return comp;
+		result = comp;
+		break;
 	case CompType::NEQ:
-		return comp;
+		result = comp;
+		break;
 	case CompType::LT:
-		return CompType::GT;
+		result = CompType::GT;
+		break;
 	case CompType::GT:
-		return CompType::LT;
+		result = CompType::LT;
+		break;
 	case CompType::LEQ:
-		return CompType::GEQ;
+		result = CompType::GEQ;
+		break;
 	case CompType::GEQ:
-		return CompType::LEQ;
+		result = CompType::LEQ;
+		break;
 	}
+	return result;
 }
 
 CompType negateComp(CompType comp) {
+	CompType result;
 	switch (comp) {
 	case CompType::EQ:
-		return CompType::NEQ;
+		result = CompType::NEQ;
+		break;
 	case CompType::NEQ:
-		return CompType::EQ;
+		result = CompType::EQ;
+		break;
 	case CompType::LT:
-		return CompType::GEQ;
+		result = CompType::GEQ;
+		break;
 	case CompType::GT:
-		return CompType::LEQ;
+		result = CompType::LEQ;
+		break;
 	case CompType::LEQ:
-		return CompType::GT;
+		result = CompType::GT;
+		break;
 	case CompType::GEQ:
-		return CompType::LT;
+		result = CompType::LT;
+		break;
 	}
+	return result;
 }
 
 ostream& operator<<(ostream& out, AggFunction aggtype) {

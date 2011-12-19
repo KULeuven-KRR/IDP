@@ -54,12 +54,10 @@ enum TsType { EQ, RULE, IMPL, RIMPL };
  */
 enum class CompType { EQ, NEQ, LT, GT, LEQ, GEQ };
 
-/**
- * The context of a subformula
- */
+/** The context of a subformula */
 enum class Context { POSITIVE, NEGATIVE, BOTH };
 
-// The sign of a formula (NEG is a negation in front)
+/** The sign of a formula (NEG is a negation in front) */
 enum class SIGN { NEG, POS };
 
 enum class QUANT { UNIV, EXIST };

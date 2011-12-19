@@ -2135,7 +2135,7 @@ InternalSortTable* UnionInternalSortTable::add(int i1, int i2) {
 }
 
 InternalSortTable* UnionInternalSortTable::add(const DomainElement* d) {
-	if (!contains(d)) {
+	if (not contains(d)) {
 		if (_nrRefs > 1) {
 			vector<SortTable*> newin;
 			vector<SortTable*> newout;
@@ -2151,27 +2151,29 @@ InternalSortTable* UnionInternalSortTable::add(const DomainElement* d) {
 			return newtable;
 		} else {
 			bool in = false;
-			for (unsigned int n = 0; n < _intables.size(); ++n) {
+			for (size_t n = 0; n < _intables.size(); ++n) {
 				if (_intables[n]->contains(d)) {
 					in = true;
 					break;
 				}
 			}
 			if (in) {
-				for (unsigned int n = 0; n < _outtables.size(); ++n)
+				for (size_t n = 0; n < _outtables.size(); ++n) {
 					_outtables[n]->remove(d);
+				}
 			} else {
 				Assert(!_intables.empty());
 				_intables[0]->add(d);
 			}
 			return this;
 		}
-	} else
+	} else {
 		return this;
+	}
 }
 
 InternalSortTable* UnionInternalSortTable::remove(const DomainElement* d) {
-	Assert(!_outtables.empty());
+	Assert(not _outtables.empty());
 	if (_nrRefs > 1) {
 		vector<SortTable*> newin;
 		vector<SortTable*> newout;
