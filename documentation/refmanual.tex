@@ -1,17 +1,19 @@
-\documentclass{book}
-
+\documentclass[a4]{article}
+\usepackage{geometry}
 \usepackage{xspace}
 \usepackage{url}
 
 \newcommand{\idp}{{\sc idp}\xspace}
 %% Source code fragments
 \usepackage[usenames,dvipsnames]{color}
+\usepackage{amssymb, amsmath}
 \usepackage{listings}
+
 \lstdefinelanguage{idp}
 {
-	morekeywords=[1]{vocabulary,theory,structure,procedure},
-	morekeywords=[2]{type,isa},
-	morekeywords=[3]{int,float,char,string},
+	morekeywords=[1]{namespace, vocabulary,theory,structure,procedure},
+	morekeywords=[2]{include, using, type,isa, contains, partial, extern, LFD, GFD},
+	morekeywords=[3]{int,float,char,string, nat},
 	morecomment=[s]{/*}{*/},	
 	morecomment=[l]{//}
 }
@@ -23,22 +25,88 @@
 	commentstyle=\color{Gray},
 	keywordstyle=[1]\color{BrickRed}\bfseries,
 	keywordstyle=[2]\color{OliveGreen}\bfseries,
-	keywordstyle=[3]\color{Magenta}\bfseries,
+	keywordstyle=[3]\color{Blue}\bfseries,
 }
+\newcommand{\code}[1]{{\tt #1}}
+\newcommand{\todo}[1]{\textcolor{blue}{#1}}
+
+%% Logic
+\newcommand{\lir}{\Rightarrow}
+\newcommand{\ril}{\Leftarrow}
+\newcommand{\rul}{\leftarrow}
+
 
 \title{The \idp system reference manual}
 \author{Johan Wittocx}
 \begin{document}
 \maketitle
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\chapter{Comments}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
+\setlength{\parindent}{0pt}
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\chapter{Vocabularies}
+\section{Installation}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\todo{Broes?}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Comments}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+Everything betwee \code{/*} and \code{*/} is a comment, as well as everything between \code{//} and the end of the line.  If a comment block starts with \code{/**}, but not with \code{/***}, then the comment is added as a description to the first thing after that comment block that can have a description.  Currently, only procedures can have a description.
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Include statements}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+Everywhere in an \idp file, a statement 
+\begin{lstlisting}
+	#include "path/to/file"
+\end{lstlisting}
+is replaced by the contents of the file \code{path/to/file}.
+A statement
+\begin{lstlisting}
+	#include <filename>
+\end{lstlisting}
+
+is replaced by the contents of the standard library file \code{filename}.  Currently the following standard library files are available:
+\begin{description}
+\item[mx] Contains some useful model expansion procedures
+\item[theory] Contains procedures to transform theories
+\item[domain] Contains procedures to create ranges
+\end{description}
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Namespaces}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+A namespace with name \code{MySpace} is declared by
+\begin{lstlisting}
+	namespace MySpace \{
+		// content of the namespace
+	\}
+\end{lstlisting}
+
+An object with name \code{MyName} declared in namaespace \code{MySpace} can be reffered to \code{MySpace::MyName}.  Inside \code{MySpace}, \code{MyName} can simply be refered to by \code{MyName}.
+
+A Namespace can contain namespaces, vocabularies, theories, structures, procedures, optionas and using statements.  A using statement is of one of the following forms
+\begin{lstlisting}
+	using namespace MySpace
+	using vocabulary MyVoc
+\end{lstlisting}
+where \code{MySpace} is the name of a namespace, and \code{MyVoc} the name of a vocabulary.  Below such a using statement, objects \code{MyObj} declared in \code{MySpace}, respectively \code{MyVoc}, can be referred to by \code{MyObj}, instead of \code{MySpace::Myobj}, respectively \code{MyVoc::MyObj}.
+
+Every object that is declared outside a  namespace, is considered to be part of the global namespace.  The name of the global namespace is \code{global\_namespace}.  In other words, eery \idp file implicitely starts with \code{namespace global\_namespace \{} and ends wit han extra \code{\}}.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Vocabularies}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 A vocabulary with name {\tt MyVoc} is declared by
@@ -47,23 +115,381 @@ A vocabulary with name {\tt MyVoc} is declared by
 		// contents of the vocabulary
 	}
 \end{lstlisting}
+A vocabulary can contain symbol declarations, symbol pointers, and other vocabularies. Symbols are types (sorts), predicate and functions symbols.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Symbol delcarations}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\label{ssec:symbols}
+A type with name \code{MyType} is declared by
+\begin{lstlisting}
+	type MyType
+\end{lstlisting}
+When declaring a type, it can be stated that this type is a subtype or supertype of a set of other types.  The followint declares \code{MyType} to be a supbtype of the previously declared types \code{A1} and \code{A2}, and a supertype of the previously declared types \code{B1} and {B2}:
+\begin{lstlisting}
+	type MyType isa A1, A2 contains B1, B2
+\end{lstlisting}
+A predicate with name \code{MyPred} and types \code{T1},\code{T2},\code{T3} is declared by
+\begin{lstlisting}
+	MyPred(T1,T2,T3)
+\end{lstlisting}
+
+A predicate with arity zero can be declared by \code{MyPred()} or \code{MyPred}.
+
+A function with name \code{MyFunc}, input types \code{T1},\code{T2},\code{T3} and output type \code{T}  is declared by
+\begin{lstlisting}
+	MyFunc(T1,T2,T3):T
+\end{lstlisting}
+
+A partial function is declared by 
+\begin{lstlisting}
+	partial MyFunc(T1,T2,T3):T
+\end{lstlisting}
+
+Constants of type \code{T} can be declared by \code{MyConst:T} or \code{MyConst():T}.  Besides functinos with an identifier as name, functions of arity two with names \code{+,-,*,/,\%}  and \code{\textasciicircum} can be declared, as well as unary functions iwth names \code{-} and \code{abs}.
 
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\chapter{Theories}
+\subsection{Symbol pointers}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+To include a type, predicate, or function from a previously declared vocabulary \code{V} in another vocabulary \code{W}, write
+\begin{lstlisting}
+	/* Declaration of vocabulary V*/
+	vocabulary V{
+		//...
+		type A
+		P(A)
+		F(A,A):A
+		//...
+	}
+
+	vocabulary W{
+		extern type V::A
+		extern V::P[A]	//also possible: extern V::P/1
+		extern V::F[A,A:A]	also possible: extern V::F/2:1
+	}
+\end{lstlisting}
+
+In the example, explicitly including type \code{A} of vocabulary \code{V} in \code{W} is not needed, since types of included predicates or functions are automatically included themselves.  To include the whole vocabulary \code{V} in \code{W} at once, used
+\begin{lstlisting}
+	vocabulary W{
+		extern vocabulary V
+	}
+\end{lstlisting}
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{The standard vocabulary}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+The global namespace contains a fixed vocabulary \code{std}, withc is defined as follows:
+
+\begin{lstlisting}
+	vocabulary std{
+		type nat	
+		type int contains nat
+		type float contains int
+		type char
+		type string contains char
+
+		+(int,int) : int
+		-(int,int) : int
+		*(int,int) : int
+		/(int,int) : int
+		%(int,int) : int
+		abs(int) : int
+		-(int) : int
+		
+		+(float,float) : float
+		-(float,float) : float
+		*(float,float) : float
+		/(float,float) : float
+		^(float,float) : float
+		abs(float) : float
+		-(float) : float
+	}
+\end{lstlisting}
+Every vocabulary implicitly contains all symbols of \code{std}.  Also, every vocabulary contains for each of its types \code{A} the predicates \code{=(A,A)}, \code{<(A,A)}, and \code{>(A,A)} and the functions \code{MIN:A}, \code{MAX:A}, \code{SUCC(A):A} and \code{PRED(A):A}. In every structure, the symbols of \code{std} have the following interpretation:
+
+\begin{center}
+	
+\begin{tabular}{l|l}
+\code{nat} & all natural numbers \\
+\code{int} & all integer numbers \\ 
+\code{float} & all floating point numbers \\
+\code{char} & all characters \\
+\code{string} & all strings \\
+\code{+(int,int) : int} & integer addition \\
+\code{-(int,int) : int } &integer subtraction \\
+\code{*(int,int) : int} & integer multiplication \\
+\code{/(int,int) : int} & integer division \\
+\code{\%(int,int) : int} & remainder \\
+\code{abs(int) : int} & absolute value \\
+\code{-(int) : int} & unary minus \\
+\code{+(float,float) : float} & floating point addition \\
+\code{-(float,float) : float} & floating point subtraction \\
+\code{*(float,float) : float} & floating point multiplication \\
+\code{/(float,float) : float} & floating point division \\ 
+\code{\textasciicircum(float,float) : float} & floating point exponentiation \\
+\code{abs(float) : float} & absolute value \\
+\code{-(float) : float} & unary minus
+\end{tabular} 
+
+\end{center}
+
+The predicate \code{=/2} is always interpreted by equality.  The order $<_{dom}$ on domain elements is defined by
+\begin{itemize}
+	\item numers are smaller than non-numers;
+\item strings are smaller than compound domain elements (see bolow for a definitions of a compound domain element);
+\item $d_1<_{dom} d_2$ if $d_1$ and $d_2$ are numbers and $d_1<d_2$;
+\item $d_1<_{dom} d_2$ if $d_1$ and $d_2$ are strings that are nut numbers and $d_1$ is before $d_2$ in the lexicographic ordering;
+\item $d_1<_{dom} d_2$ is some total order on compound domain elements (which we do not specify).
+\end{itemize}
+
+Every structure contains the following fixed interpretations:
+
+\begin{center}
+	
+\begin{tabular}{l|l}
+\code{<(A,A)} & the projection of $<_{dom}$ to the domain of A \\
+\code{>(A,A)} & the projection of $>_{dom}$ to the domain of A \\
+\code{MIN:A]} & the $<_{dom}$-least element in the domain of A \\
+\code{MAX:A} & the $<_{dom}$-greatest element in the domain of A \\
+\code{SUCC(A):A} & the partial function that maps an element a  of the domain of \code{A} \\ & to the $<_{dom}$-least element of the domain of A that is strictly larger than a \\
+\code{PRED(A):A} & the partial function that maps an element a  of the domain of \code{A} \\ & to the $<_{dom}$-greatest element of the domain of A that is strictly smaller than a \\
+\end{tabular} 
+
+\end{center}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Theories}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+A theory with name \code{MyTheory} over a vocabulary \code{MyVoc} is declared by
+\begin{lstlisting}
+	theory MyTheory : MyVoc{
+		// contents of the theory
+	}
+\end{lstlisting}
+A theory contains sentences, inductive definitions, and fixpoint definitions.
+
+\subsection{Sentences}
+
+
+\subsubsection{Terms}
+
+Before explaining the syntax for sentences, we need to introduce the concept of a term and a formula. We also give the syntax for terms and formulas in \idp.\\
+
+
+A \emph{term} is inductively defined as follows:
+\begin{itemize}
+	\item a variable is a term;
+	\item a constant is a term;
+	\item if $F$ is a function symbol with $n$ input arguments and $t_1, \ldots, t_n$ are terms, then $F(t_1,\ldots,t_n)$ is a term. 
+\end{itemize}
+In \idp, variables start with a letter and may contain letters, digits and underscores. When writing a term in \idp, the constant and function symbols occurring in that term should be declared before. \\
+The \emph{type of a term} is defined as its return type (see section~\ref{ssec:symbols}) in the case of constants and functions. The type of a variable is derived from its occurrences in formulas (see section~\ref{ssec:vtype}). If a term occurs in an input position of a function, then the type of the term and the type of the input position must have a common ancestor type. 
+
+\subsubsection{Formulas and Sentences}
+
+A \emph{formula} is inductively defined by:
+\begin{itemize}
+	\item \textbf{true} and \textbf{false} are formulas;
+	\item if $P$ is a predicate symbol with arity $n$ and $t_1,\ldots,t_n$ are terms, then $P(t_1,\ldots,t_n)$ is a formula;
+	\item if $t_1$ and $t_2$ are terms, then $t_1 = t_2$ is a formula;
+	\item if $\varphi$ and $\psi$ are formulas and $x$ is a variable, then the following are formulas: $\neg \varphi$, $\varphi \wedge \psi$, $\varphi \vee \psi$, $\varphi \lir \psi$, $\varphi \ril \psi$, $\varphi \equiv \psi$, $\forall x\ \varphi$, and $\exists x\ \varphi$.
+\end{itemize}
+The following order of binding is used: $\neg$ binds tightest, next $\wedge$ and $\vee$, then $\lir$ and $\equiv$, and finally $\forall$ and $\exists$. Desambiguation can be done using brackets `(' and `)'. E.g. the formula $\forall x\ P(x) \wedge \neg Q(x) \lir R(x)$ is equivalent to the formula $\forall x\ ((P(x) \wedge (\neg Q(x))) \lir R(x))$.
+
+As for terms, if term $t$ occurs in predicate $P$, then the type of $t$ and the type of the input position of $P$ where it occurs must have a common ancestor type. For formulas of the form $t_1 = t_2$, $t_1$ and $t_2$ must have a common ancestor type.
+
+
+The \emph{scope} of a quantification $\forall x$ or $\exists x$, is the quantified formula. E.g., in $\forall x\ \psi$, the scope of $\forall x$ is the formula $\psi$. An occurrence of a variable $x$ that is not inside the scope of a quantification $\forall x$ or $\exists x$ is called \emph{free}. A \emph{sentence} is a formula containing no free occurrences of variables. If an \idp problem specification contains formulas that are not sentences, the system will implicitly quantify this variable universally and return a warning message, specifying which variables occur free. Each sentence in \idp should end with a dot `.'.
+
+The \idp syntax of the different symbols in formulas are given in the table below. Also the informal meaning of the symbols is given.
+\begin{center}
+\begin{tabular}{c|c|l}
+Logic & \idp & Declarative reading \\
+\hline
+$\wedge$		& {\tt \&}	& and \\
+$\vee$		& {\tt |}	& or	\\
+$\neg$		& \verb1~1	& not \\
+$\lir$		& {\tt =>}	& implies \\
+$\ril$		& {\tt <=}	& is implied by \\
+$\equiv$		& {\tt <=>}	& is equivalent to \\
+$\forall$	& {\tt !}	& for each \\
+$\exists$	& {\tt ?}	& there exists \\
+$=$			& {\tt =}	& equals \\
+$\neq$		& \verb1~=1	& does not equal \\ 
+\end{tabular}
+\end{center}
+
+Besides this, for every natural number $n$, \idp also supports the following quantifiers (with their respective meanings):
+
+\begin{center}
+\begin{tabular}{c|c|l}
+\idp & Declarative reading \\
+\hline
+\code{?n}	& there exist $n$ different elements such that \\
+\code{?<n} & there exist less than $n$ \\
+\code{?=<n} & there exist at most $n$\\
+\code{?=n} & there exist exactly $n$\\
+\code{?>n} & there exist more than $n$
+\end{tabular}
+\end{center}
+
+A universally quantified formula $\forall x\ P(x)$ becomes `{\tt !\,x\,:\,P(x)}' in \idp syntax, and similarly for existentially quantified formulas. As a shorthand for the formula `{\tt !\,x\,:\,!\,y\,:\,!\,z\,:\,Q(x,y,z).}', one can write `{\tt !\,x y z\,:\,Q(x,y,z)}'. 
+
+
+
+In \idp, every variable has a type. The informal meaning of a sentence of the form $\forall x\ \psi$, respectively $\exists x\ \psi$, where $x$ has type $T$ is then `for each object $x$ of type $T$, $\psi$ must be true', respectively `there exists at least one object $x$ of type $T$ such that $\psi$ is true'. The type of a variable can be declared by the user, or derived by \idp (see section~\ref{ssec:vtype}).
+
+
+\subsubsection{Definitions}
+A definition defines a concept, i.e. a predicate, in terms of other predicates. Formally, a definition is a set of rules of the form 
+\[ \forall x_1,\ldots,x_n\ P(t_1,\ldots,t_m) \rul \varphi \]
+where $P$ is a predicate symbol, $t_1,\ldots,t_m$ are terms that may contain the variables $x_1,\ldots,x_n$ and $\varphi$ a formula that may contain these variables. $P(t_1,\ldots,t_m)$ is called the \emph{head} of the rule and $\psi$ the \emph{body}. 
+
+A definition in \idp syntax consists of a set of rules, enclosed by `{\tt \{}' and `{\tt \}}'. Each rule ends with a `{\tt .}'. The definitional implication $\rul$ is written `{\tt <-}'. The quantifications before the head may be omitted in \idp, i.e., all free variables of a rule are implicitly universally quantified. If the body of a rule is empty, the rule symbol `{\tt <-}' can be omitted. Recursive definitions are allowed in \idp. \todo{something about semantics?}
+
+
+\subsection{The Type of a Variable}\label{ssec:vtype}
+There are two ways to assign a type $t$ to a variable $v$:
+\begin{itemize}
+	\item Explicitely mention the type of $v$ between `{\tt [}' and `{\tt ]}' when $v$ is quantified. Then $v$ gets type $t$ in the scope of the quantifier. E.g.,
+	\begin{lstlisting}
+	theory T:V{
+		! MyVar [MyType] : ? MyVar2 [MyType2] MyVar3 [MyType3] : MyPred(MyVar1,MyVar2,MyVar3).
+	}
+	\end{lstlisting}
+	To specify that a variable should range over all integers, one can write `{\tt [int]}'.
+	\item Do not mention the type of $v$ but let the system automatically derive it. The rest of this section explains how this is done.
+\end{itemize}
+
+\subsubsection{Automatic derivation of types for variables}
+\todo{
+IMPORTANT: this section should be rewritten to the new type derivation system!!!}
+Moet alleszins bevatten:
+A predicate or function symbol can be disambiguated by scecifying its vocabluary and / or types.  E.g.,
+
+\begin{lstlisting}
+	! x: MyVoc::P[A,A](x,x).
+	! y: ?1 x : F[A:A](x) = y.
+	MyVoc::C[:A] > 2.
+\end{lstlisting}
+
+
+We distinguish between \emph{typed} and \emph{untyped} occurrences. The following are typed occurrences of a variable $x$:
+\begin{itemize}
+	\item an occurrence as argument of a predicate: $P(\ldots,x,\ldots)$;
+	\item an occurrence as argument of a function: $F(\ldots,x,\ldots) = \ldots$;
+	\item an occurrence as return value of a function: $F(\ldots) = x$ or $F(\ldots) \neq x$. 
+	\item an occurrence as argument or return value of a arithmetic function. 
+\end{itemize}
+All others positions are untyped. 
+
+Basically, if a variable occurs in a typed position, it gets the type of that position.  If the predicate or function symbol is overloaded, not type derivation is done.
+If a declared variable with type {\tt T\_1} occurs in a typed position of type {\tt T\_2}, then {\tt T\_1} and {\tt T\_2} should have a common ancestor type.
+
+
+The more complicated cases arise when a variable does not occur in any typed position, or it occurs in two typed positions with a different type. The system is designed to give a reasonable type to such variables. However, the choices made by the system are ad hoc and are probably not the ones the user intended. %When in doubt, one can explicitely assign types to variables, or run \gidl with option {\tt --data} to check the derived types.
+
+First consider the case where a variable occurs in typed positions with different types. The \idp system will then give a warning. If all the typed positions where the variable occurs have a common ancestor type $T$, then the variable is assigned this type $T$. If they do not have a common ancestor, but are all of an integer type, then the variable is assumed to range over all integers.
+
+
+Now consider the case where a variable does not occur in a typed position. If it occurs in a position where it is forced to be of an integer type, then it ranges over all integers. Else, the \idp system reports an error.
+\begin{lstlisting}
+	! x : ? y : x = y.  // error: cannot derive 
+		// the types of variables x and y
+
+	! x : 1 < x & x < 5 => x ~= 10	// Ok. Since x 
+		// is compared to integers, it must have an 
+		// integer type.  Hence, x is assumed to range 
+		// over all integers.
+\end{lstlisting}
+
+Because of the architecture of the system, problems can only be solved if all variables with an integer type range over a finite number of integers. Sometimes, however, if a variable ranges over all integers, only a finite interval of them is relevant. E.g., the constraint 
+`{\tt ! x : 1 < x \& x < 5 => x ~= 10}' is certainly satisfied for all {\tt x}'s outside the interval $[2..4]$, so only this interval is relevant to look at. Therefore, this constraint does not yield an error message. It is beyond the scope of this manual to describe when the system can find a finite relevant interval and when it cannot. When it cannot, one of the following error messages is returned:
+\begin{lstlisting}
+ERROR: Could not derive an upper bound for integer 
+		 variable 'x'.
+ERROR: Could not derive a lower bound for integer 
+		 variable 'x'.
+ERROR: Could not derive bounds for integer 
+		 variable 'x'.
+\end{lstlisting}
+To avoid these errors, one can add bounds: 
+\begin{itemize}
+	\item If {\tt x} is universally quantified, i.e., it occurs as `{\tt ! x : ...}', then write `{\tt ! x : phi(x) => ...}' instead, where {\tt phi} is a formula that can obviously only be true for a finite interval of {\tt x}'s. E.g., {\tt phi} is the formula `{\tt 1 < x \& x < 5}'.
+	\item If {\tt x} is existentially quantified, then write `{\tt ? x : phi(x) \& ...}' instead of `{\tt ? x : ...}', where {\tt phi} is as above.
+\end{itemize}
+
+
+\subsubsection{Chains of (in)equalities}
+As in mathematics, one can write chains of (in)equalities in \idp. They can be used as shorthands for conjunctions of (in)equalities. E.g.:
+\begin{lstlisting}
+	! x y : (1 =< x < y =< 5) => ...
+	// is a shorthand for
+	! x y : (1 =< x) & (x < y) & (y =< 5) => ...
+\end{lstlisting}
+
+\subsection{Aggregates}
+Aggregates are functions that take a set as argument, instead of a simple variable. \idp supports some aggregates that map a set to an integer. As such, they can be seen as integer terms.
+
+There are two kinds of sets in \idp. 
+\begin{itemize}
+	\item An expression of the form `{\tt [ (phi\_1,t\_1) ; (phi\_2,t\_2) ; ... ; (phi\_n,t\_n) ]}', where each {\tt phi\_i} is a formula and each \code{t\_i} is a term.  %This set denotes the set of all the {\tt t\_i} for which {\tt phi\_i} that are true.
+	\item An expression of the form `{\tt \{ x\_1 x\_2 ... x\_n : phi:t \}}', where the {\tt x\_i} are variables, {\tt phi} is a formula and $t$ is a term.  %This denotes the set of all tuples  {\tt (a\_1,a\_2, ...,a\_n)} of objects such that {\tt phi} is true if each occurrence of an {\tt x\_i} in {\tt phi} is replaced by {\tt a\_i}. 
+\end{itemize} 
+The current system has support for five aggregate functions:
+\begin{description}
+	\item[Cardinality:] The cardinality of a set is the number of elements in that set. The \idp syntax for the cardinality of a set $S$ is `{\tt card} $S$' or `{\tt \#} $S$'. For the first kind of sets, this denotes the number of formulas {\tt phi\_i} that are true.  For the second kind, this is interpreted as the number of tuples {\tt(a\_1,a\_2,..., a\_n)} such that {\tt phi} is true.
+	\item[Sum:] Let $S$ be a set of the second form, i.e., of the form `{\tt \{ x\_1 x\_2 ... x\_n : phi: t \}}'. Then the interpretation of `{\tt sum} $S$' denotes the number
+	\[ \sum_{{\tt(a\_1,a\_2,..., a\_n)} | I\vDash {\tt phi}} {\tt t }, \]
+	i.e., it is the sum of all the terms for which there exist {\tt a\_1,\ldots, a\_n} that make the formula {\tt phi} true. For sets of the first sort, this is interpreted as 
+\[ \sum_{i | I\vDash {\tt phi\_i}} {\tt t_i }. \]
+	\item[Product:] Products are defined similar to sum.  
+	\item[Maximum:] One can write `{\tt max} $S$' to denote the maximum value of the term in $S$, i.e.,
+	\[ \textrm{max}(\{ {\tt t} \mid {\tt(a\_1,a\_2,..., a\_n)} | I\vDash {\tt phi} {\tt t },\}) \] for sets of the second sort.  Sets of the first sort are handled analogously. %{\tt(a\_1,a\_2,..., a\_n)} \in S} {\tt a\_1 }, \]
+	\item[Minimum:] To get the minimum value, write `{\tt min} $S$'.
+\end{description}
+When using cardinality, the terms do not matter.  You can choose to write $1$ for every term, but are also allowed to leave out the terms.
+%{\color{Red}IMPORTANT NOTE}: At the moment, the solver cannot handle negative numbers in product aggregates.
+
+\subsection{Partial functions}\label{ssec:partial}
+A normal function is total: it assigns an output value to each of its input values. On the other hand, \emph{partial} functions do not necessarily have this property. In \idp, partial function $F$ can arise in different situations. Either $F$ is explicitely declared as partial function, or it is declared total, but its input types or output type are subtypes or integer types.
+
+The semantics of a partial function $F$ is given by transforming constraints and rules where $F$ occurs as follows:
+\begin{itemize}
+	\item in a \emph{positive} context, $P(\ldots,F(x),\ldots)$ is transformed to $\forall y\ (F(x) = y \lir P(\ldots,y,\ldots)$;
+	\item in a negative context, $P(\ldots,F(x),\ldots)$ is transformed to $\exists y\ (F(y) = y \land P(\ldots,y,\ldots)$.
+\end{itemize}
+Here, $P(\ldots,F(x),\ldots)$ occurs in a positive context if it occurs in sentence and in the scope of an even number of negations, or it occurs in a body of a rule and in the scope of an odd number of negations. All other occurrences are in a negative context. 
+
+\todo{DIT KAN TOCH NIET MEER? wat hierna komt}
+
+If a function $F$ is explicitely declared partial, one can specify a domain for which it is total in the form of a formula $\varphi$. Then, for all input arguments for which $\varphi$ is true, and only for these, $F$ has an output. To declare the domain of a partial function, the keyword `{\tt domain}' can be used, as is shown in the following example. 
+
+\subsection{Fixpoint definitions}
+\todo{nog niet getest!! in plaatsen?}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Structures}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\chapter{Structures}
+\section{Options}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\chapter{Options}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\chapter{Procedures}
+\section{Procedures}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
