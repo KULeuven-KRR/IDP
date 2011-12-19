@@ -8,8 +8,8 @@
 * Celestijnenlaan 200A, B-3001 Leuven, Belgium
 ****************************************************************/
 
-#ifndef MOVETERMS_HPP_
-#define MOVETERMS_HPP_
+#ifndef UNNESTTERMS_HPP_
+#define UNNESTTERMS_HPP_
 
 #include <set>
 #include <vector>
@@ -29,8 +29,11 @@ class Variable;
  */
 class UnnestTerms: public TheoryMutatingVisitor {
 	VISITORFRIENDS()
-private:
+protected:
+	AbstractStructure*		_structure; //!< Used to find bounds on introduced variables for aggregates
 	Vocabulary* 			_vocabulary; //!< Used to do type derivation during rewrites
+
+private:
 	Context 				_context; //!< Keeps track of the current context where terms are moved
 	bool 					_allowedToUnnest; // Indicates whether in the current context, it is allowed to unnest terms
 	std::vector<Formula*> 	_equalities; //!< used to temporarily store the equalities generated when moving terms
@@ -41,21 +44,28 @@ private:
 
 protected:
 	virtual bool shouldMove(Term* t);
-	bool getAllowedToUnnest(){
+
+	bool getAllowedToUnnest() const {
 		return _allowedToUnnest;
 	}
-	void setAllowedToUnnest(bool allowed){
+	void setAllowedToUnnest(bool allowed) {
 		_allowedToUnnest = allowed;
 	}
-	Context getContext() { return _context; }
-	void setContext(const Context& context) { _context = context; }
+	const Context& getContext() const { 
+		return _context; 
+	}
+	void setContext(const Context& context) { 
+		_context = context; 
+	}
 
 public:
 	UnnestTerms();
+
 	template<typename T>
-	T execute(T t, Context context = Context::POSITIVE, Vocabulary* v = NULL){
-		_context = context;
-		_vocabulary = v;
+	T execute(T t, Context con = Context::POSITIVE, AbstractStructure* str = NULL, Vocabulary* voc = NULL) {
+		_context = con;
+		_structure = str;
+		_vocabulary = voc;
 		_allowedToUnnest = false;
 		return t->accept(this);
 	}
@@ -84,6 +94,9 @@ protected:
 private:
 	template<typename T>
 	Formula* doRewrite(T origformula);
+
+	Sort* deriveSort(const FuncTerm*);
+	Sort* deriveSort(const AggTerm*);
 };
 
-#endif /* MOVETERMS_HPP_ */
+#endif /* UNNESTTERMS_HPP_ */
