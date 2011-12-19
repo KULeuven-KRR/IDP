@@ -562,15 +562,14 @@ std::ostream& Theory::put(std::ostream& output) const {
 	}
 	output << " {\n";
 	pushtab();
-	output <<tabs();
 	for (auto it = _sentences.cbegin(); it != _sentences.cend(); ++it) {
-		output <<toString(*it);
+		output << tabs() << toString(*it) << "\n";
 	}
 	for (auto it = _definitions.cbegin(); it != _definitions.cend(); ++it) {
-		output <<toString(*it);
+		output << tabs() << toString(*it) << "\n";
 	}
 	for (auto it = _fixpdefs.cbegin(); it != _fixpdefs.cend(); ++it) {
-		output <<toString(*it);
+		output << tabs() << toString(*it) << "\n";
 	}
 	poptab();
 	output << "}";
