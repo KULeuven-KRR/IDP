@@ -23,7 +23,7 @@
 
 using namespace std;
 
-/*Here, we transform something of the form PROD{x:p(x):f(x)} = c to
+/** Here, we transform something of the form PROD{x:p(x):f(x)} = c to
  *
  * (c = 0 <=> #{x: p(x) & f(x) = 0:f(x)}~= 0) &
  * (c ~= 0 <=>
@@ -34,7 +34,7 @@ using namespace std;
  *  		|
  *				(prod{x : p(x) & x>0 : x} * prod{x : p(x) & x<0 : -x} * -1 = c)
  *  			& card{x : p(x) & x<0}%2~=0))
- *  */
+ */
 Formula* SplitProducts::visit(AggForm* af) {
 	auto aggterm = af->right();
 	auto otherterm = af->left();
@@ -42,7 +42,7 @@ Formula* SplitProducts::visit(AggForm* af) {
 		return af;
 	}
 
-	//TODO: opitmize: first check: are there possible zero/negative values? Only than start splitting
+	//TODO: opitmize: first check: are there possible zero/negative values? Only then start splitting
 
 	auto set = aggterm->set();
 	auto posset = set->positiveSubset();

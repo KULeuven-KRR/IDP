@@ -1,0 +1,16 @@
+vocabulary /*testje*/ A{ 
+	type x // blablabla
+}
+
+procedure main(){
+	result = -1
+//	return 0
+	result = result+1
+	//	return 0
+/*
+	return 0
+*/
+-- 	return 0
+	result = result+1 // return 0
+	return result
+}

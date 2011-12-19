@@ -11,7 +11,7 @@
 #ifndef UTILS_HPP_
 #define UTILS_HPP_
 
-#include <common.hpp>
+#include "common.hpp"
 #include "GroundingContext.hpp"
 
 class Variable;

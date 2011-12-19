@@ -107,16 +107,24 @@ public:
 	}
 
 	void operator=(const DomElemContainer* container) const {
+		if (del) {
+			delete (domelem_);
+		}
 		del = false;
-		delete (domelem_);
 		domelem_ = container->get();
 	}
 	void operator=(const DomElemContainer& container) const {
+		if (del) {
+			delete (domelem_);
+		}
 		del = false;
-		delete (domelem_);
 		domelem_ = container.get();
 	}
 	void operator=(const DomainElement* domelem) const {
+		if (del) {
+			delete (domelem_);
+		}
+		del = false;
 		domelem_ = domelem;
 	}
 
@@ -133,6 +141,10 @@ public:
 	}
 	bool operator>(const DomElemContainer& right) const {
 		return get() > right.get();
+	}
+
+	std::ostream& put(std::ostream& stream) const {
+		return get()->put(stream);
 	}
 };
 

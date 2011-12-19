@@ -253,11 +253,11 @@ private:
 
 	void printAggregate(AggFunction aggtype, TsType arrow, unsigned int defnr, bool lower, int head, unsigned int setnr, double bound) {
 		switch(aggtype) {
-			case AggFunction::CARD: 	output() << "Card "; break;
-			case AggFunction::SUM: 	output() << "Sum "; break;
-			case AggFunction::PROD: 	output() << "Prod "; break;
-			case AggFunction::MIN: 	output() << "Min "; break;
-			case AggFunction::MAX: 	output() << "Max "; break;
+			case AggFunction::CARD:	output() << "Card "; break;
+			case AggFunction::SUM:	output() << "Sum "; break;
+			case AggFunction::PROD:	output() << "Prod "; break;
+			case AggFunction::MIN:	output() << "Min "; break;
+			case AggFunction::MAX:	output() << "Max "; break;
 		}
 		#warning "Replacing implication by equivalence in ecnfprinter, should change in future.";
 		switch(arrow) {

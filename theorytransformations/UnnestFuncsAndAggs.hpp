@@ -8,25 +8,28 @@
 * Celestijnenlaan 200A, B-3001 Leuven, Belgium
 ****************************************************************/
 
-#ifndef GRAPHAGGREGATES_HPP_
-#define GRAPHAGGREGATES_HPP_
+#ifndef UNNESTFUNCSANDAGGS_HPP_
+#define UNNESTFUNCSANDAGGS_HPP_
 
-#include "visitors/TheoryMutatingVisitor.hpp"
+#include "theorytransformations/UnnestTerms.hpp"
 
-class GraphAggregates: public TheoryMutatingVisitor {
+#include "commontypes.hpp"
+#include "structure.hpp"
+
+class AbstractStructure;
+class Term;
+
+class UnnestFuncsAndAggs: public UnnestTerms {
 	VISITORFRIENDS()
-private:
-	bool _recursive;
 public:
 	template<typename T>
-	T execute(T t, bool recursive = false){
-		_recursive = recursive;
-		return t->accept(this);
+	T execute(T t, AbstractStructure* str, Context con) {
+		auto voc = (str != NULL) ? str->vocabulary() : NULL;
+		return UnnestTerms::execute(t, con, str, voc);
 	}
 
 protected:
-	Formula* visit(PredForm* pf);
-	Formula* visit(EqChainForm* ef);
+	bool shouldMove(Term* t);
 };
 
-#endif /* GRAPHAGGREGATES_HPP_ */
+#endif /* UNNESTFUNCSANDAGGS_HPP_ */

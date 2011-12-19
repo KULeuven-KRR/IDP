@@ -92,7 +92,7 @@ void GlobalData::closeFile(FILE* filepointer){
 	fclose(filepointer);
 }
 
-void GlobalData::setTabSize(unsigned int size){
+void GlobalData::setTabSize(size_t size){
 	_tabsizestack.push(size);
 }
 void GlobalData::resetTabSize(){
@@ -100,7 +100,7 @@ void GlobalData::resetTabSize(){
 		_tabsizestack.pop();
 	}
 }
-unsigned int GlobalData::getTabSize() const{
+size_t GlobalData::getTabSize() const{
 	return _tabsizestack.top();
 }
 

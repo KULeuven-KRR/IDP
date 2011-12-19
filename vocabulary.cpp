@@ -19,9 +19,9 @@
 
 using namespace std;
 
-/************
-	Sorts
-************/
+/***********
+ *	Sorts
+ **********/
 
 /**
  * Destructor for sorts. 
@@ -76,7 +76,7 @@ void Sort::removeChild(Sort* child) {
 void Sort::generatePred(SortTable* inter) {
 	string predname(_name + "/1");
 	vector<Sort*> predsorts(1, this);
-	if (inter) {
+	if (inter != NULL) {
 		Universe univ(vector<SortTable*>(1, inter));
 		PredTable* pt = new PredTable(new FullInternalPredTable(), univ);
 		PredInter* pinter = new PredInter(pt, true);
@@ -225,24 +225,23 @@ bool UnionSort::builtin() const{
 }
 
 namespace SortUtils {
-
 /**
  *	\brief	Return the unique nearest common ancestor of two sorts.
  *
  *	\param s1			the first sort
  *	\param s2			the second sort
- *	\param vocabulary	if not 0, search for the nearest common ancestor in the projection of the sort hiearchy on
- *						this vocabulary
+ *	\param vocabulary	if not NULL, search for the nearest common ancestor in the projection 
+ *						of the sort hiearchy on this vocabulary
  *
  *	\return	The unique nearest common ancestor if it exists, a null-pointer otherwise.
  */
-Sort* resolve(Sort* s1, Sort* s2, const Vocabulary* vocabulary) {
+Sort* resolve(Sort* s1, Sort* s2, const Vocabulary* voc) {
 	if ((s1 == NULL) || s2 == NULL) {
 		return NULL;
 	}
-	set<Sort*> ss1 = s1->ancestors(vocabulary);
+	auto ss1 = s1->ancestors(voc);
 	ss1.insert(s1);
-	set<Sort*> ss2 = s2->ancestors(vocabulary);
+	auto ss2 = s2->ancestors(voc);
 	ss2.insert(s2);
 	set<Sort*> ss;
 	for (auto it = ss1.cbegin(); it != ss1.cend(); ++it) {
@@ -250,14 +249,14 @@ Sort* resolve(Sort* s1, Sort* s2, const Vocabulary* vocabulary) {
 			ss.insert(*it);
 		}
 	}
-	vector<Sort*> vs = vector<Sort*>(ss.cbegin(), ss.cend());
+	auto vs = vector<Sort*>(ss.cbegin(), ss.cend());
 	if (vs.empty()) {
 		return NULL;
 	} else if (vs.size() == 1) {
 		return vs[0];
 	} else {
 		for (size_t n = 0; n < vs.size(); ++n) {
-			set<Sort*> ds = vs[n]->ancestors(vocabulary);
+			auto ds = vs[n]->ancestors(voc);
 			for (auto it = ds.cbegin(); it != ds.cend(); ++it) {
 				ss.erase(*it);
 			}
@@ -271,15 +270,15 @@ Sort* resolve(Sort* s1, Sort* s2, const Vocabulary* vocabulary) {
 	}
 }
 
-bool isSubsort(Sort* a, Sort* b) {
-	return resolve(a, b) == b;
+bool isSubsort(Sort* a, Sort* b, const Vocabulary* voc) {
+	return resolve(a, b, voc) == b;
 }
 
 }
 
-/****************
-	Variables
-****************/
+/***************
+ *	Variables
+ **************/
 
 int Variable::_nvnr = 0; // TODO global variable numbers
 
@@ -334,9 +333,9 @@ vector<Variable*> VarUtils::makeNewVariables(const vector<Sort*>& sorts) {
 	return vars;
 }
 
-/*******************************
-	Predicates and functions
-*******************************/
+/******************************
+ *	Predicates and functions
+ *****************************/
 
 PFSymbol::~PFSymbol() {
 	for (auto it = _derivedsymbols.cbegin(); it != _derivedsymbols.cend(); ++it) {
@@ -1351,7 +1350,6 @@ set<Function*> OrderFuncGenerator::nonbuiltins() const {
 }
 
 namespace FuncUtils {
-
 Function* overload(Function* f1, Function* f2) {
 	Assert(f1->name() == f2->name());
 	if (f1 == f2) {
@@ -1375,34 +1373,34 @@ Function* overload(const set<Function*>& sf) {
 }
 
 bool isIntFunc(const Function* func, const Vocabulary* voc) {
-	return SortUtils::resolve(func->outsort(), VocabularyUtils::intsort(), voc) == VocabularyUtils::intsort();
+	return SortUtils::isSubsort(func->outsort(), VocabularyUtils::intsort(), voc);
 }
 
 bool isIntSum(const Function* function, const Vocabulary* voc) {
 	if (function->name() == "+/2" || function->name() == "-/2") {
 		bool allintsorts = isIntFunc(function, voc);
 		for (auto it = function->insorts().cbegin(); it != function->insorts().cend(); ++it) {
-			allintsorts *= (SortUtils::resolve(*it, VocabularyUtils::intsort(), voc) == VocabularyUtils::intsort());
+			allintsorts *= SortUtils::isSubsort(*it, VocabularyUtils::intsort(), voc);
 		}
 		return allintsorts;
 	}
 	return false;
 }
-}
+} /* FuncUtils */
 
-/*****************
- Vocabulary
- *****************/
+/****************
+ *	Vocabulary
+ ***************/
 
-Vocabulary::Vocabulary(const string& name) :
-		_name(name), _namespace(0) {
+Vocabulary::Vocabulary(const string& name) 
+		: _name(name), _namespace(0) {
 	if (_name != "std") {
 		add(Vocabulary::std());
 	}
 }
 
-Vocabulary::Vocabulary(const string& name, const ParseInfo& pi) :
-		_name(name), _pi(pi), _namespace(0) {
+Vocabulary::Vocabulary(const string& name, const ParseInfo& pi) 
+		: _name(name), _pi(pi), _namespace(0) {
 	if (_name != "std") {
 		add(Vocabulary::std());
 	}
@@ -1557,28 +1555,22 @@ Vocabulary* Vocabulary::std() {
 		vector<Sort*> threefloats(3, floatsort);
 
 		SingleFuncInterGenerator* intplusgen = new SingleFuncInterGenerator(new FuncInter(new FuncTable(new PlusInternalFuncTable(true), threeint)));
-		SingleFuncInterGenerator* floatplusgen = new SingleFuncInterGenerator(
-				new FuncInter(new FuncTable(new PlusInternalFuncTable(false), threefloat)));
+		SingleFuncInterGenerator* floatplusgen = new SingleFuncInterGenerator(new FuncInter(new FuncTable(new PlusInternalFuncTable(false), threefloat)));
 		Function* intplus = new Function("+/2", threeints, intplusgen, 200);
 		Function* floatplus = new Function("+/2", threefloats, floatplusgen, 200);
 
-		SingleFuncInterGenerator* intminusgen = new SingleFuncInterGenerator(
-				new FuncInter(new FuncTable(new MinusInternalFuncTable(true), threeint)));
-		SingleFuncInterGenerator* floatminusgen = new SingleFuncInterGenerator(
-				new FuncInter(new FuncTable(new MinusInternalFuncTable(false), threefloat)));
+		SingleFuncInterGenerator* intminusgen = new SingleFuncInterGenerator(new FuncInter(new FuncTable(new MinusInternalFuncTable(true), threeint)));
+		SingleFuncInterGenerator* floatminusgen = new SingleFuncInterGenerator(new FuncInter(new FuncTable(new MinusInternalFuncTable(false), threefloat)));
 		Function* intminus = new Function("-/2", threeints, intminusgen, 200);
 		Function* floatminus = new Function("-/2", threefloats, floatminusgen, 200);
 
-		SingleFuncInterGenerator* inttimesgen = new SingleFuncInterGenerator(
-				new FuncInter(new FuncTable(new TimesInternalFuncTable(true), threeint)));
-		SingleFuncInterGenerator* floattimesgen = new SingleFuncInterGenerator(
-				new FuncInter(new FuncTable(new TimesInternalFuncTable(false), threefloat)));
+		SingleFuncInterGenerator* inttimesgen = new SingleFuncInterGenerator(new FuncInter(new FuncTable(new TimesInternalFuncTable(true), threeint)));
+		SingleFuncInterGenerator* floattimesgen = new SingleFuncInterGenerator(new FuncInter(new FuncTable(new TimesInternalFuncTable(false), threefloat)));
 		Function* inttimes = new Function("*/2", threeints, inttimesgen, 300);
 		Function* floattimes = new Function("*/2", threefloats, floattimesgen, 300);
 
 		SingleFuncInterGenerator* intdivgen = new SingleFuncInterGenerator(new FuncInter(new FuncTable(new DivInternalFuncTable(true), threeint)));
-		SingleFuncInterGenerator* floatdivgen = new SingleFuncInterGenerator(
-				new FuncInter(new FuncTable(new DivInternalFuncTable(false), threefloat)));
+		SingleFuncInterGenerator* floatdivgen = new SingleFuncInterGenerator(new FuncInter(new FuncTable(new DivInternalFuncTable(false), threefloat)));
 		Function* intdiv = new Function("//2", threeints, intdivgen, 300);
 		Function* floatdiv = new Function("//2", threefloats, floatdivgen, 300);
 
@@ -1588,8 +1580,7 @@ Vocabulary* Vocabulary::std() {
 		Function* floatabs = new Function("abs/1", twofloats, floatabsgen, 0);
 
 		SingleFuncInterGenerator* intumingen = new SingleFuncInterGenerator(new FuncInter(new FuncTable(new UminInternalFuncTable(true), twoint)));
-		SingleFuncInterGenerator* floatumingen = new SingleFuncInterGenerator(
-				new FuncInter(new FuncTable(new UminInternalFuncTable(false), twofloat)));
+		SingleFuncInterGenerator* floatumingen = new SingleFuncInterGenerator(new FuncInter(new FuncTable(new UminInternalFuncTable(false), twofloat)));
 		Function* intumin = new Function("-/1", twoints, intumingen, 500);
 		Function* floatumin = new Function("-/1", twofloats, floatumingen, 500);
 
@@ -1682,10 +1673,10 @@ bool Vocabulary::contains(const Function* f) const {
 }
 
 bool Vocabulary::contains(const PFSymbol* s) const {
-	if (typeid(*s) == typeid(Predicate)) {
+	if (sametypeid<Predicate>(*s)) {
 		return contains(dynamic_cast<const Predicate*>(s));
 	} else {
-		Assert(typeid(*s) == typeid(Function));
+		Assert(sametypeid<Function>(*s));
 		return contains(dynamic_cast<const Function*>(s));
 	}
 }
@@ -1826,4 +1817,5 @@ bool isComparisonPredicate(const PFSymbol* symbol) {
 bool isNumeric(Sort* s) {
 	return SortUtils::isSubsort(s, floatsort());
 }
-}
+
+} /* VocabularyUtils */

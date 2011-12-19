@@ -169,16 +169,15 @@ grounder_SOURCES = \
 		theorytransformations/Flatten.hpp theorytransformations/Flatten.cpp\
 		theorytransformations/DeriveSorts.hpp theorytransformations/DeriveSorts.cpp\
 		theorytransformations/AddCompletion.hpp theorytransformations/AddCompletion.cpp\
-		theorytransformations/GraphFunctions.hpp theorytransformations/GraphFunctions.cpp\
-		theorytransformations/GraphAggregates.hpp theorytransformations/GraphAggregates.cpp\
 		theorytransformations/GraphFuncsAndAggs.hpp theorytransformations/GraphFuncsAndAggs.cpp\
 		theorytransformations/SplitProducts.hpp theorytransformations/SplitProducts.cpp\
 		theorytransformations/PushQuantifications.hpp theorytransformations/PushQuantifications.cpp\
 		theorytransformations/RemoveEquivalences.hpp theorytransformations/RemoveEquivalences.cpp\
 		theorytransformations/SplitComparisonChains.hpp theorytransformations/SplitComparisonChains.cpp\
 		theorytransformations/SubstituteTerm.hpp\
-		theorytransformations/UnnestPartialTerms.hpp\
 		theorytransformations/SplitIntoMonotoneAgg.hpp\
+		theorytransformations/UnnestFuncsAndAggs.hpp theorytransformations/UnnestFuncsAndAggs.cpp\
+		theorytransformations/UnnestPartialTerms.hpp\
 		theorytransformations/UnnestTerms.hpp theorytransformations/UnnestTerms.cpp\
 		theorytransformations/UnnestThreeValuedTerms.hpp theorytransformations/UnnestThreeValuedTerms.cpp\
 		utils/TheoryUtils.hpp utils/TheoryUtils.cpp\
@@ -222,7 +221,8 @@ grounder_SOURCES = \
 		fobdds/bddvisitors/FirstConstTermInFunc.hpp\
 		fobdds/bddvisitors/CollectSameOperationTerms.hpp\
 		IdpException.hpp\
-		lib/linenoise/linenoise.cpp lib/linenoise/utf8.cpp
+		lib/linenoise/linenoise.cpp lib/linenoise/utf8.cpp\
+		utils/FileManagement.hpp utils/FileManagement.cpp
 		
 gidl_SOURCES = main.cpp $(grounder_SOURCES)
 

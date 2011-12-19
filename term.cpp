@@ -354,9 +354,9 @@ EnumSetExpr* EnumSetExpr::negativeSubset() const {
 	for (auto form = _subformulas.cbegin(); form < _subformulas.cend(); form++, term++) {
 
 		auto nulterm = new DomainTerm((*term)->sort(), nul, (*term)->pi());
-		auto minSymbol = (*((*term)->sort()->firstVocabulary()))->func("-/2");
+		auto minSymbol = (*((*term)->sort()->firstVocabulary()))->func("-/1");
 
-		newterms.push_back(new FuncTerm(minSymbol, { nulterm, *term }, (*term)->pi()));
+		newterms.push_back(new FuncTerm(minSymbol, { *term }, (*term)->pi()));
 		auto termneg = new EqChainForm(SIGN::POS, true, { *term, nulterm }, { CompType::LT }, (*form)->pi());
 		newsubforms.push_back(new BoolForm(SIGN::POS, true, { *form, termneg }, (*form)->pi()));
 	}
@@ -473,8 +473,8 @@ QuantSetExpr* QuantSetExpr::negativeSubset() const {
 	auto term = _subterms.at(0);
 	auto nul = DomainElementFactory::createGlobal()->create(0);
 	auto nulterm = new DomainTerm(term->sort(), nul, term->pi());
-	auto minSymbol = (*(term->sort()->firstVocabulary()))->func("-/2");
-	auto newterm = new FuncTerm(minSymbol, { nulterm, term }, term->pi());
+	auto minSymbol = (*(term->sort()->firstVocabulary()))->func("-/1");
+	auto newterm = new FuncTerm(minSymbol, { term }, term->pi());
 	auto termneg = new EqChainForm(SIGN::POS, true, { term, nulterm }, { CompType::LT }, form->pi());
 	auto newform = new BoolForm(SIGN::POS, true, { form, termneg }, form->pi());
 	return new QuantSetExpr(_quantvars, newform, newterm, _pi);

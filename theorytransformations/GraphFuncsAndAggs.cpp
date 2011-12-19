@@ -56,7 +56,7 @@ Formula* GraphFuncsAndAggs::visit(PredForm* pf) {
 		
 		if ((subterm1->type() == TT_FUNC || subterm1->type() == TT_AGG) 
 				&& (subterm2->type() == TT_FUNC || subterm2->type() == TT_AGG)) {
-			auto splitformula = FormulaUtils::unnestTerms(pf,Context::POSITIVE);
+			auto splitformula = FormulaUtils::unnestFuncsAndAggs(pf,_structure,_context);
 			return splitformula->accept(this);
 		}
 

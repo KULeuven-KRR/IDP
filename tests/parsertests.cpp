@@ -13,47 +13,39 @@
 #include "gtest/gtest.h"
 #include "rungidl.hpp"
 
-#include <dirent.h>
+#include "utils/FileManagement.hpp"
 #include <exception>
 
 using namespace std;
 
 namespace Tests {
 
-TEST(ParsingTest, FunctionDefinition){
-	string testfile1(string(TESTDIR) + "parser/functiondefinition.idp");
-	ASSERT_EQ(Status::FAIL, test( { testfile1 }));
+vector<string> generateListOfInvalidParseFiles() {
+	vector<string> testdirs {"parser/invalidinput/"};
+	return getAllFilesInDirs(string(TESTDIR), testdirs);
 }
 
-TEST(ParsingTest, Fail){
-	string testfile1(string(TESTDIR) + "parser/parseerror.idp");
-	ASSERT_EQ(Status::FAIL, test( { testfile1 }));
+vector<string> generateListOfValidParseFiles() {
+	vector<string> testdirs {"parser/validinput/"};
+	return getAllFilesInDirs(string(TESTDIR), testdirs);
 }
 
-TEST(ParsingTest, OverloadedType){
-	string testfile1(string(TESTDIR) + "parser/parseerror2.idp");
-	ASSERT_EQ(Status::FAIL, test( { testfile1 }));
+class ValidParserTest: public ::testing::TestWithParam<string> {
+};
+class InvalidParserTest: public ::testing::TestWithParam<string> {
+};
+
+TEST_P(ValidParserTest, Parse) {
+	cerr << "Testing " << GetParam() << "\n";
+	ASSERT_EQ(Status::SUCCESS, test({ GetParam()}));
+}
+TEST_P(InvalidParserTest, Parse) {
+	cerr << "Testing " << GetParam() << "\n";
+	ASSERT_EQ(Status::FAIL, test({ GetParam()}));
 }
 
-TEST(ParsingTest, IdenticalType){
-	string testfile1(string(TESTDIR) + "parser/parseerror3.idp");
-	ASSERT_EQ(Status::FAIL, test( { testfile1 }));
-}
-
-TEST(ParsingTest, IdenticalFunction){
-	string testfile1(string(TESTDIR) + "parser/parseerror4.idp");
-	ASSERT_EQ(Status::FAIL, test( { testfile1 }));
-}
-
-TEST(ParsingTest, IdenticalPredicate){
-	string testfile1(string(TESTDIR) + "parser/parseerror5.idp");
-	ASSERT_EQ(Status::FAIL, test( { testfile1 }));
-}
-
-TEST(ParsingTest, FailAndContinue){
-	string testfile1(string(TESTDIR) + "parser/parseerror.idp");
-	ASSERT_EQ(Status::FAIL, test( { testfile1 }));
-}
+INSTANTIATE_TEST_CASE_P(Parsing, ValidParserTest, ::testing::ValuesIn(generateListOfValidParseFiles()));
+INSTANTIATE_TEST_CASE_P(Parsing, InvalidParserTest, ::testing::ValuesIn(generateListOfInvalidParseFiles()));
 
 TEST(RestartTest, FailAndContinue){
 	string testfile1(string(TESTDIR) + "parser/parseerror.idp");
@@ -61,11 +53,6 @@ TEST(RestartTest, FailAndContinue){
 	string testfilemx(string(TESTDIR) + "mxnbofmodelstest.idp");
 	ASSERT_EQ(Status::FAIL, test( { testfile1, testfilemx }));
 	ASSERT_EQ(Status::SUCCESS, test( { testfile2, testfilemx }));
-}
-
-TEST(ParsingTest, ValidScopes){
-	string testfile1(string(TESTDIR) + "parser/scoping.idp");
-	ASSERT_EQ(Status::SUCCESS, test( { testfile1 }));
 }
 
 }

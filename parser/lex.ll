@@ -250,17 +250,13 @@ COMMENTLINE		"//".*
 							  }
 							  else (*data.luacode) << '}';
 							}
-<lua>"//"					{data.advanceline();}
-<lua>"/*"					{ data.commentcaller = YY_START;
-							 	 BEGIN(comment); 
-							 	 data.advancecol();				
-							}
-<lua>[^/{}:\n*]*				{ data.advancecol();	
-							  (*data.luacode) << yytext;
+<lua>\n						{ data.advanceline(); (*data.luacode) << '\n';	}
+<lua>[^/{}:\n*]*				{  // //, :, { and } and \n are matched before (single / FALLS THROUGH to last one (.) )
+								data.advancecol();	
+								(*data.luacode) << yytext;
 							}
 <lua>{STR}					{ data.advancecol(); (*data.luacode) << yytext;	}
 <lua>{CHR}					{ data.advancecol();	(*data.luacode) << yytext;	}
-<lua>\n						{ data.advanceline(); (*data.luacode) << '\n';	}
 <lua>.						{ data.advancecol(); (*data.luacode) << *yytext;	}
 
 
@@ -309,7 +305,7 @@ COMMENTLINE		"//".*
 								}
 <include>"<"[a-zA-Z0-9_/]*">"	{ data.advancecol();
 								  char* temp = yytext; ++temp;
-								  string str = string(DATADIR) + "/std/" + string(temp,yyleng-2) + ".idp";
+								  string str = string(IDPDATADIR) + "/std/" + string(temp,yyleng-2) + ".idp";
 								  data.start_include(str);	
 								  BEGIN(data.includecaller);
 								}

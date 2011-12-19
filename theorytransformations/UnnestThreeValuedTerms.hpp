@@ -11,19 +11,20 @@
 #ifndef REMOVETHREEVALUEDTERMS_HPP_
 #define REMOVETHREEVALUEDTERMS_HPP_
 
-#include <set>
+#include "theorytransformations/UnnestTerms.hpp"
 
 #include "commontypes.hpp"
-#include "theory.hpp"
-#include "term.hpp"
 #include "structure.hpp"
 
-#include "theorytransformations/UnnestTerms.hpp"
+#include <set>
 
 class Vocabulary;
 class Variable;
 class AbstractStructure;
 class PFSymbol;
+class Formula;
+class PredForm; 
+class Term;
 
 /**
  *	Non-recursively moves terms that are three-valued according to a given structure
@@ -47,24 +48,28 @@ class PFSymbol;
 class UnnestThreeValuedTerms: public UnnestTerms {
 	VISITORFRIENDS()
 private:
-	AbstractStructure* 				_structure;
-	bool 							_cpsupport;
-	std::set<const PFSymbol*> _cpsymbols;
+	bool 						_cpsupport;
+	std::set<const PFSymbol*> 	_cpsymbols;
 
 public:
 	template<typename T>
-	T execute(T t, AbstractStructure* str, Context context, bool cpsupport, const std::set<const PFSymbol*>& cpsymbols){
+	T execute(T t, AbstractStructure* str, Context context, bool cpsupport, 
+			const std::set<const PFSymbol*>& cpsymbols) {
 		_structure = str;
+		_vocabulary = (str != NULL) ? str->vocabulary() : NULL;
+		setContext(context);
+		setAllowedToUnnest(false);
 		_cpsupport = cpsupport;
 		_cpsymbols = cpsymbols;
-		return UnnestTerms::execute(t, context, str->vocabulary());
+		return t->accept(this);
+		//return UnnestTerms::execute(t, context, str, str->vocabulary());
 	}
 
 protected:
 	bool shouldMove(Term* t);
 
 	Formula* traverse(PredForm* f);
-	Rule* traverse(Rule* r);
+	Rule* traverse(Rule* r); //TODO should this have non-standard behavior?
 
 private:
 	bool isCPSymbol(const PFSymbol* symbol) const;

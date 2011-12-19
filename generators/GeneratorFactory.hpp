@@ -75,8 +75,7 @@ private:
 public:
 	static InstGenerator* create(const std::vector<const DomElemContainer*>&, const std::vector<SortTable*>&, const Formula* original = NULL);
 	static InstGenerator* create(const PredTable*, const std::vector<Pattern>& pattern, const std::vector<const DomElemContainer*>&, const Universe&, const Formula* original = NULL);
-	static InstGenerator* create(const PredForm* atom, AbstractStructure* structure, bool inverse, const std::vector<Pattern>& pattern, const std::vector<const DomElemContainer*>& vars,
-			const Universe& universe);
+	static InstGenerator* create(const PredForm* atom, AbstractStructure* structure, bool inverse, const std::vector<Pattern>& pattern, const std::vector<const DomElemContainer*>& vars, const Universe& universe);
 };
 
 #endif /* GENERATORFACTORY_HPP */

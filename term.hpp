@@ -167,13 +167,11 @@ public:
 	FuncTerm* cloneKeepVars() const;
 	FuncTerm* clone(const std::map<Variable*, Variable*>&) const;
 
-	~FuncTerm() {
-	}
+	~FuncTerm() {}
 
 	void function(Function* f) {
 		_function = f;
 	}
-
 	Sort* sort() const;
 	TermType type() const {
 		return TT_FUNC;
@@ -337,8 +335,7 @@ public:
 	//!< generate the subset of zero terms ({x:p(x):t(x)} becomes {x:p(x)&t(x)=0: 0})
 
 	// Destructors
-	virtual ~SetExpr() {
-	} //!< Delete the set, but not
+	virtual ~SetExpr() {} //!< Delete the set, but not its subformulas and subterms
 	void recursiveDelete(); //!< Delete the set and its subformulas and subterms
 
 	// Mutators
@@ -406,9 +403,6 @@ public:
 	EnumSetExpr* positiveSubset() const;
 	EnumSetExpr* negativeSubset() const;
 	EnumSetExpr* zeroSubset() const;
-
-	~EnumSetExpr() {
-	}
 
 	Sort* sort() const;
 
