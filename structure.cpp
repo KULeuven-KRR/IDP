@@ -3380,10 +3380,13 @@ bool PredInter::isConsistent() const {
 		// get unassigned domain element
 		while (not cfIterator.isAtEnd() && so(*cfIterator, *ctIterator)) {
 			++cfIterator;
+			Assert(not _pt->contains(*cfIterator)); //Should always be true...
+
 		}
 		if (not cfIterator.isAtEnd() && eq(*cfIterator, *ctIterator)) {
 			return false;
 		}
+		Assert(not _pf->contains(*ctIterator));//Should always be true...
 	}
 	return true;
 }
