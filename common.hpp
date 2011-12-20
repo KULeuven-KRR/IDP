@@ -258,4 +258,4 @@ bool sametypeid(const T& object) {
 	return typeid(object) == typeid(T2);
 }
 
-#endif //COMMON_HPP
+#endif /* COMMON_HPP */

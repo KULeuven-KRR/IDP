@@ -56,8 +56,8 @@ protected:
 	void setPred(Predicate* p){ _pred = p; }
 
 public:
-	Sort(const std::string& name, SortTable* inter = 0); //!< Create an internal sort
-	Sort(const std::string& name, const ParseInfo& pi, SortTable* inter = 0); //!< Create a user-declared sort
+	Sort(const std::string& name, SortTable* inter = NULL); //!< Create an internal sort
+	Sort(const std::string& name, const ParseInfo& pi, SortTable* inter = NULL); //!< Create a user-declared sort
 
 	// Mutators
 	void addParent(Sort* p); //!< Adds p as a parent. Also adds this as a child of p.
@@ -69,8 +69,8 @@ public:
 	Predicate* pred() const; //!< Returns the corresponding predicate
 	const std::set<Sort*>& parents() const;
 	const std::set<Sort*>& children() const;
-	std::set<Sort*> ancestors(const Vocabulary* v = 0) const; //!< Returns the ancestors of the sort
-	std::set<Sort*> descendents(const Vocabulary* v = 0) const; //!< Returns the descendents of the sort
+	std::set<Sort*> ancestors(const Vocabulary* v = NULL) const; //!< Returns the ancestors of the sort
+	std::set<Sort*> descendents(const Vocabulary* v = NULL) const; //!< Returns the descendents of the sort
 	virtual bool builtin() const; //!< True iff the sort is built-in
 	SortTable* interpretation() const; //!< Returns the interpretation for built-in sorts
 	std::set<const Vocabulary*>::const_iterator firstVocabulary() const;
