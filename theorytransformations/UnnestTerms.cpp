@@ -16,6 +16,7 @@
 #include "term.hpp"
 #include "structure.hpp"
 #include "error.hpp"
+#include "utils/TheoryUtils.hpp"
 
 #include <numeric> // for accumulate
 #include <functional> // for multiplies
@@ -44,162 +45,19 @@ bool UnnestTerms::shouldMove(Term* t) {
 	Assert(t->type() != TT_VAR && t->type() != TT_DOM);
 	return getAllowedToUnnest();
 }
-
-//TODO Where to put these functions?
-//TODO Where should they be called? --> seems that DeriveSorts transformer could use this as well, e.g. SATSokoban.mx: -(s[Step],1,os[int])
-Sort* UnnestTerms::deriveSort(const FuncTerm* functerm) {
-	auto sort = functerm->sort();
-	auto function = functerm->function();
-	//cerr << "*** Deriving sort for " << toString(functerm) << ", it's function is " << (function->builtin() ? "" : "not ") << "builtin.\n";
-	if (_structure != NULL && function->builtin()) {
-		auto domain = _structure->inter(functerm->sort());
-		if (domain != NULL && not domain->approxFinite()) {
-			ElementTuple firsts, lasts;
-			for (auto it = functerm->subterms().cbegin(); it != functerm->subterms().cend(); ++it) {
-				//cerr << "*** Deriving sort for " << toString(functerm) << ", sort of subterm " << toString(*it) << " is " << toString((*it)->sort()) << ".\n";
-				if ((*it)->type() == TT_DOM) {
-					auto value = dynamic_cast<DomainTerm*>(*it)->value();
-					firsts.push_back(value);
-					lasts.push_back(value);
-				} else {
-					auto subtermdomain = _structure->inter((*it)->sort());
-					//cerr << "*** Deriving sort for " << toString(functerm) << ", domain of subterm " << toString(*it) << " is " << (subtermdomain->approxFinite() ? "" : "not ") << "finite.\n";
-					if (subtermdomain == NULL || not subtermdomain->approxFinite()) {
-						return functerm->sort();
-					}
-					firsts.push_back(subtermdomain->first());
-					lasts.push_back(subtermdomain->last());
-				}
-			}
-			Assert(firsts.size() == functerm->subterms().size());
-			Assert(lasts.size() == functerm->subterms().size());
-
-			// Calculate min and max.
-			auto functable = function->interpretation(_structure)->funcTable();
-			DomElemContainer min, max;
-			if (function->name() == "+/2") {
-				min = (*functable)[firsts];
-				max = (*functable)[lasts];
-			} else if (function->name() == "-/2") {
-				min = (*functable)[ElementTuple{ firsts[0],lasts[1] }];
-				max = (*functable)[ElementTuple{ lasts[0],firsts[1] }];
-			} else if (function->name() == "abs/1") {
-				min = createDomElem(0);
-				max = std::max((*functable)[firsts],(*functable)[lasts]);
-			} else if (function->name() == "-/1") {
-				min = lasts[0];
-				max = firsts[0];
-			} else {
-				return functerm->sort();
-			}
-
-			if (SortUtils::isSubsort(functerm->sort(),VocabularyUtils::intsort(),_vocabulary)) {
-				int intmin = min.get()->value()._int;
-				int intmax = max.get()->value()._int;
-				//cerr << "*** Deriving sort for " << toString(functerm) << ", intmin = " << intmin << " and intmax = " << intmax << "\n";
-				stringstream ss; ss << "_sort_" << intmin << '_' << intmax;
-				sort = new Sort(ss.str(), new SortTable(new IntRangeInternalSortTable(intmin,intmax)));
-			}
-
-		}
-	}
-	return sort;
-}
-
-Sort* UnnestTerms::deriveSort(const AggTerm* aggterm) {
-	auto sort = aggterm->sort();
-	auto aggfunction = aggterm->function();
-	if (_structure != NULL) { 
-		auto domain = _structure->inter(aggterm->sort());
-		if (domain != NULL && not domain->approxFinite()) {
-			auto set = aggterm->set();
-			if (sametypeid<QuantSetExpr>(*set)) {
-				auto qvars = set->quantVars();
-				vector<SortTable*> qvardomains;
-				vector<size_t> qvardomainsizes;
-				for (auto it = qvars.cbegin(); it != qvars.cend(); ++it) {
-					auto qvardomain = _structure->inter((*it)->sort());
-					if (qvardomain == NULL || not qvardomain->approxFinite() ||	qvardomain->size()._type != TST_EXACT) {
-						return aggterm->sort();
-					}
-					qvardomains.push_back(qvardomain);
-					qvardomainsizes.push_back(qvardomain->size()._size);
-				}
-				Assert(qvardomains.size() == qvars.size());
-				Assert(qvardomainsizes.size() == qvars.size());
-
-				auto subterm = set->subterms()[0];
-				if (aggfunction != AggFunction::CARD && not SortUtils::isSubsort(subterm->sort(),VocabularyUtils::intsort(),_vocabulary)) {
-					return aggterm->sort();
-				}
-				auto subtermdomain = _structure->inter(subterm->sort());
-				if (subtermdomain == NULL || not subtermdomain->approxFinite()) {
-					return aggterm->sort();
-				}
-
-				int intmin, intmax;
-				switch (aggfunction) {
-				case AggFunction::CARD:
-					intmin = 0;
-					intmax = accumulate(qvardomainsizes.cbegin(),qvardomainsizes.cend(),1,multiplies<size_t>());
-					break;
-				case AggFunction::SUM:
-				case AggFunction::PROD:
-					//TODO
-					return aggterm->sort();
-				case AggFunction::MIN:
-				case AggFunction::MAX:
-					intmin = subtermdomain->first()->value()._int;
-					intmax = subtermdomain->last()->value()._int;
-				}
-
-				stringstream ss; ss << "_sort_" << intmin << '_' << intmax;
-				sort = new Sort(ss.str(), new SortTable(new IntRangeInternalSortTable(intmin,intmax)));
-
-			} else if (sametypeid<EnumSetExpr>(*set)) {
-				ElementTuple firsts, lasts;
-				for (auto it = set->subterms().cbegin(); it != set->subterms().cend(); ++it) {
-					if (not SortUtils::isSubsort((*it)->sort(),VocabularyUtils::intsort(),_vocabulary)) {
-						return aggterm->sort();
-					} else if ((*it)->type() == TT_DOM) {
-						auto value = dynamic_cast<DomainTerm*>(*it)->value();
-						firsts.push_back(value);
-						lasts.push_back(value);
-					} else {
-						auto subtermdomain = _structure->inter((*it)->sort());
-						if (subtermdomain == NULL || not subtermdomain->approxFinite()) {
-							return aggterm->sort();
-						}
-						firsts.push_back(subtermdomain->first());
-						lasts.push_back(subtermdomain->last());
-					}
-				}
-				Assert(firsts.size() == set->subterms().size());
-				Assert(lasts.size() == set->subterms().size());
-
-				int intmin, intmax;
-				switch (aggfunction) {
-				case AggFunction::CARD:
-					intmin = 0;
-					intmax = set->subformulas().size();
-					break;
-				case AggFunction::SUM:
-				case AggFunction::PROD:
-					//TODO
-					return aggterm->sort();
-				case AggFunction::MIN:
-					intmin = (*min_element(firsts.cbegin(),firsts.cend()))->value()._int;
-					intmax = (*min_element(lasts.cbegin(),lasts.cend()))->value()._int;
-					break;
-				case AggFunction::MAX:
-					intmin = (*max_element(firsts.cbegin(),firsts.cend()))->value()._int;
-					intmax = (*max_element(lasts.cbegin(),lasts.cend()))->value()._int;
-					break;
-				}
-
-				stringstream ss; ss << "_sort_" << intmin << '_' << intmax;
-				sort = new Sort(ss.str(), new SortTable(new IntRangeInternalSortTable(intmin,intmax)));
-			}
+/**
+ * Tries to derive a sort for the term given a structure.
+ */
+Sort* UnnestTerms::deriveSort(Term* term) {
+	auto sort = (_chosenVarSort != NULL) ? _chosenVarSort : term->sort();
+	if (_structure != NULL && SortUtils::isSubsort(term->sort(),VocabularyUtils::intsort(),_vocabulary)) {
+		auto bounds = TermUtils::deriveTermBounds(term,_structure);
+		if (bounds[0] != NULL && bounds[1] != NULL && bounds[0]->type() == DET_INT && bounds[1]->type() == DET_INT) {
+			auto intmin = bounds[0]->value()._int;
+			auto intmax = bounds[1]->value()._int;
+			stringstream ss; ss << "_sort_" << intmin << '_' << intmax;
+			sort = new Sort(ss.str(), new SortTable(new IntRangeInternalSortTable(intmin,intmax)));
+			sort->addParent(VocabularyUtils::intsort());
 		}
 	}
 	return sort;
@@ -213,16 +71,14 @@ VarTerm* UnnestTerms::move(Term* term) {
 		contextProblem(term);
 	}
 
-	if (term->type() == TT_FUNC) {
-		_chosenVarSort = deriveSort(dynamic_cast<FuncTerm*>(term));
-	} else if (term->type() == TT_AGG) {
-		_chosenVarSort = deriveSort(dynamic_cast<AggTerm*>(term));
-	}
+	_chosenVarSort = deriveSort(term);
+	Assert(_chosenVarSort != NULL);
 
 	//cerr << "*** Sort chosen for Term " << toString(term) << " is " << toString(_chosenVarSort == NULL ? term->sort() : _chosenVarSort);
 	//cerr << " (term->sort() is " << toString(term->sort()) << " and _chosenVarSort was " << toString(_chosenVarSort) << ")\n";
 
-	auto introduced_var = new Variable((_chosenVarSort == NULL) ? term->sort() : _chosenVarSort);
+	auto introduced_var = new Variable(_chosenVarSort);
+	Warning::introducedvar(introduced_var->name(), introduced_var->sort()->name(), toString(term));
 	_variables.insert(introduced_var);
 
 	auto introduced_eq_term = new VarTerm(introduced_var, TermParseInfo(term->pi()));

@@ -776,6 +776,12 @@ void derivevarsort(const string& varname, const string& sortname, const ParseInf
 	clog << "Derived sort " << sortname << " for variable " << varname << ".\n";
 }
 
+/** Introduced variable **/
+void introducedvar(const string&, const string& sortname, const string& term) {
+	warning();
+	clog << "Introduced a variable with sort " << sortname << " for term " << term << ".\n";
+}
+
 /** Autocompletion **/
 void addingeltosort(const string& elname, const string& sortname, const string& structname) {
 	warning();

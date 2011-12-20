@@ -49,6 +49,7 @@ class SplitIntoMonotoneAgg;
 		friend class CollectOpensOfDefinitions; \
 		friend class CountNbOfSubFormulas; \
 		friend class DefaultFormulaVisitor; \
+		friend class DeriveTermBounds; \
 		friend class FOBDDFactory; \
 		friend class FOPropagator; \
 		template<class InterpretationFactory, class PropDomain> friend class TypedFOPropagator; \

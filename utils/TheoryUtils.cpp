@@ -26,6 +26,7 @@
 #include "theoryinformation/CheckSorts.hpp"
 #include "theoryinformation/CollectOpensOfDefinitions.hpp"
 #include "theoryinformation/CountNbOfSubFormulas.hpp"
+#include "theoryinformation/DeriveTermBounds.hpp"
 #include "theorytransformations/PushNegations.hpp"
 #include "theorytransformations/Flatten.hpp"
 #include "theorytransformations/DeriveSorts.hpp"
@@ -52,6 +53,10 @@ void checkSorts(Vocabulary* voc, Term* term) {
 
 void deriveSorts(Vocabulary* voc, Term* term) {
 	transform<DeriveSorts>(term, voc);
+}
+
+ElementTuple deriveTermBounds(Term* term, const AbstractStructure* str) {
+	return transform<DeriveTermBounds, ElementTuple>(term, str);
 }
 
 bool isPartial(Term* term) {

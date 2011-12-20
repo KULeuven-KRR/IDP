@@ -11,16 +11,19 @@
 #ifndef UNNESTTERMS_HPP_
 #define UNNESTTERMS_HPP_
 
+#include "visitors/TheoryMutatingVisitor.hpp"
+#include "commontypes.hpp"
 #include <set>
 #include <vector>
-#include "commontypes.hpp"
 #include "theory.hpp"
 #include "term.hpp"
 
-#include "visitors/TheoryMutatingVisitor.hpp"
-
+class AbstractStructure;
 class Vocabulary;
+class Formula;
 class Variable;
+class Sort;
+class Term;
 
 /**
  * Moves nested terms out
@@ -95,8 +98,7 @@ private:
 	template<typename T>
 	Formula* doRewrite(T origformula);
 
-	Sort* deriveSort(const FuncTerm*);
-	Sort* deriveSort(const AggTerm*);
+	Sort* deriveSort(Term* term);
 };
 
 #endif /* UNNESTTERMS_HPP_ */

@@ -179,6 +179,9 @@ void checkSorts(Vocabulary*, Term*);
 /** Derive sorts in the given term */
 void deriveSorts(Vocabulary*, Term*);
 
+/** Derive bounds of the given term in the given structure */
+std::vector<const DomainElement*> deriveTermBounds(Term*, const AbstractStructure*);
+
 /** Check whether the term is partial (contains partial functions) */
 bool isPartial(Term*);
 }
