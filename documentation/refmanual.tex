@@ -4,6 +4,9 @@
 \usepackage{url}
 
 \newcommand{\idp}{{\sc idp}\xspace}
+\newcommand{\msid}{{\sc MiniSAT(ID)}\xspace}
+\newcommand{\minisatid}{\msid}
+\newcommand{\gidl}{{\sc GidL}\xspace}
 %% Source code fragments
 \usepackage[usenames,dvipsnames]{color}
 \usepackage{amssymb, amsmath}
@@ -28,7 +31,7 @@
 	keywordstyle=[3]\color{Blue}\bfseries,
 }
 \newcommand{\code}[1]{{\tt #1}}
-\newcommand{\todo}[1]{\textcolor{blue}{#1}}
+\newcommand{\todo}[1]{\textcolor{blue}{TODO: #1}}
 
 %% Logic
 \newcommand{\lir}{\Rightarrow}
@@ -44,10 +47,11 @@
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Installation}
+\section{Installing And Running}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \todo{Broes?}
+commandline options...
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Comments}
@@ -258,7 +262,7 @@ Every structure contains the following fixed interpretations:
 \begin{tabular}{l|l}
 \code{<(A,A)} & the projection of $<_{dom}$ to the domain of A \\
 \code{>(A,A)} & the projection of $>_{dom}$ to the domain of A \\
-\code{MIN:A]} & the $<_{dom}$-least element in the domain of A \\
+\code{MIN:A} & the $<_{dom}$-least element in the domain of A \\
 \code{MAX:A} & the $<_{dom}$-greatest element in the domain of A \\
 \code{SUCC(A):A} & the partial function that maps an element a  of the domain of \code{A} \\ & to the $<_{dom}$-least element of the domain of A that is strictly larger than a \\
 \code{PRED(A):A} & the partial function that maps an element a  of the domain of \code{A} \\ & to the $<_{dom}$-greatest element of the domain of A that is strictly smaller than a \\
@@ -359,79 +363,10 @@ where $P$ is a predicate symbol, $t_1,\ldots,t_m$ are terms that may contain the
 A definition in \idp syntax consists of a set of rules, enclosed by `{\tt \{}' and `{\tt \}}'. Each rule ends with a `{\tt .}'. The definitional implication $\rul$ is written `{\tt <-}'. The quantifications before the head may be omitted in \idp, i.e., all free variables of a rule are implicitly universally quantified. If the body of a rule is empty, the rule symbol `{\tt <-}' can be omitted. Recursive definitions are allowed in \idp. \todo{something about semantics?}
 
 
-\subsection{The Type of a Variable}\label{ssec:vtype}
-There are two ways to assign a type $t$ to a variable $v$:
-\begin{itemize}
-	\item Explicitely mention the type of $v$ between `{\tt [}' and `{\tt ]}' when $v$ is quantified. Then $v$ gets type $t$ in the scope of the quantifier. E.g.,
-	\begin{lstlisting}
-	theory T:V{
-		! MyVar [MyType] : ? MyVar2 [MyType2] MyVar3 [MyType3] : MyPred(MyVar1,MyVar2,MyVar3).
-	}
-	\end{lstlisting}
-	To specify that a variable should range over all integers, one can write `{\tt [int]}'.
-	\item Do not mention the type of $v$ but let the system automatically derive it. The rest of this section explains how this is done.
-\end{itemize}
-
-\subsubsection{Automatic derivation of types for variables}
-\todo{
-IMPORTANT: this section should be rewritten to the new type derivation system!!!}
-Moet alleszins bevatten:
-A predicate or function symbol can be disambiguated by scecifying its vocabluary and / or types.  E.g.,
-
-\begin{lstlisting}
-	! x: MyVoc::P[A,A](x,x).
-	! y: ?1 x : F[A:A](x) = y.
-	MyVoc::C[:A] > 2.
-\end{lstlisting}
 
 
-We distinguish between \emph{typed} and \emph{untyped} occurrences. The following are typed occurrences of a variable $x$:
-\begin{itemize}
-	\item an occurrence as argument of a predicate: $P(\ldots,x,\ldots)$;
-	\item an occurrence as argument of a function: $F(\ldots,x,\ldots) = \ldots$;
-	\item an occurrence as return value of a function: $F(\ldots) = x$ or $F(\ldots) \neq x$. 
-	\item an occurrence as argument or return value of a arithmetic function. 
-\end{itemize}
-All others positions are untyped. 
 
-Basically, if a variable occurs in a typed position, it gets the type of that position.  If the predicate or function symbol is overloaded, not type derivation is done.
-If a declared variable with type {\tt T\_1} occurs in a typed position of type {\tt T\_2}, then {\tt T\_1} and {\tt T\_2} should have a common ancestor type.
-
-
-The more complicated cases arise when a variable does not occur in any typed position, or it occurs in two typed positions with a different type. The system is designed to give a reasonable type to such variables. However, the choices made by the system are ad hoc and are probably not the ones the user intended. %When in doubt, one can explicitely assign types to variables, or run \gidl with option {\tt --data} to check the derived types.
-
-First consider the case where a variable occurs in typed positions with different types. The \idp system will then give a warning. If all the typed positions where the variable occurs have a common ancestor type $T$, then the variable is assigned this type $T$. If they do not have a common ancestor, but are all of an integer type, then the variable is assumed to range over all integers.
-
-
-Now consider the case where a variable does not occur in a typed position. If it occurs in a position where it is forced to be of an integer type, then it ranges over all integers. Else, the \idp system reports an error.
-\begin{lstlisting}
-	! x : ? y : x = y.  // error: cannot derive 
-		// the types of variables x and y
-
-	! x : 1 < x & x < 5 => x ~= 10	// Ok. Since x 
-		// is compared to integers, it must have an 
-		// integer type.  Hence, x is assumed to range 
-		// over all integers.
-\end{lstlisting}
-
-Because of the architecture of the system, problems can only be solved if all variables with an integer type range over a finite number of integers. Sometimes, however, if a variable ranges over all integers, only a finite interval of them is relevant. E.g., the constraint 
-`{\tt ! x : 1 < x \& x < 5 => x ~= 10}' is certainly satisfied for all {\tt x}'s outside the interval $[2..4]$, so only this interval is relevant to look at. Therefore, this constraint does not yield an error message. It is beyond the scope of this manual to describe when the system can find a finite relevant interval and when it cannot. When it cannot, one of the following error messages is returned:
-\begin{lstlisting}
-ERROR: Could not derive an upper bound for integer 
-		 variable 'x'.
-ERROR: Could not derive a lower bound for integer 
-		 variable 'x'.
-ERROR: Could not derive bounds for integer 
-		 variable 'x'.
-\end{lstlisting}
-To avoid these errors, one can add bounds: 
-\begin{itemize}
-	\item If {\tt x} is universally quantified, i.e., it occurs as `{\tt ! x : ...}', then write `{\tt ! x : phi(x) => ...}' instead, where {\tt phi} is a formula that can obviously only be true for a finite interval of {\tt x}'s. E.g., {\tt phi} is the formula `{\tt 1 < x \& x < 5}'.
-	\item If {\tt x} is existentially quantified, then write `{\tt ? x : phi(x) \& ...}' instead of `{\tt ? x : ...}', where {\tt phi} is as above.
-\end{itemize}
-
-
-\subsubsection{Chains of (in)equalities}
+\subsection{Chains of (in)equalities}
 As in mathematics, one can write chains of (in)equalities in \idp. They can be used as shorthands for conjunctions of (in)equalities. E.g.:
 \begin{lstlisting}
 	! x y : (1 =< x < y =< 5) => ...
@@ -472,28 +407,180 @@ The semantics of a partial function $F$ is given by transforming constraints and
 \end{itemize}
 Here, $P(\ldots,F(x),\ldots)$ occurs in a positive context if it occurs in sentence and in the scope of an even number of negations, or it occurs in a body of a rule and in the scope of an odd number of negations. All other occurrences are in a negative context. 
 
-\todo{DIT KAN TOCH NIET MEER? wat hierna komt}
+\todo{DIT KAN TOCH NIET MEER, of wel?}
 
 If a function $F$ is explicitely declared partial, one can specify a domain for which it is total in the form of a formula $\varphi$. Then, for all input arguments for which $\varphi$ is true, and only for these, $F$ has an output. To declare the domain of a partial function, the keyword `{\tt domain}' can be used, as is shown in the following example. 
 
 \subsection{Fixpoint definitions}
-\todo{nog niet getest!! in plaatsen?}
+\todo{nog niet getest. ik vermoed dat er hier niets over komt}
+
+                                                              \subsection{The Type of a Variable}\label{ssec:vtype}
+There are two ways to assign a type $t$ to a variable $v$:
+\begin{itemize}
+	\item Explicitely mention the type of $v$ between `{\tt [}' and `{\tt ]}' when $v$ is quantified. Then $v$ gets type $t$ in the scope of the quantifier. E.g.,
+	\begin{lstlisting}
+	theory T:V{
+		! MyVar[MyType] : ? MyVar2[MyType2] MyVar3[MyType3] : //...
+	}
+	\end{lstlisting}
+	\item Do not mention the type of $v$ but let the system automatically derive it. The rest of this section explains how this is done.
+\end{itemize}
+
+\subsubsection{Automatic derivation of types for variables}
+
+
+
+We distinguish between \emph{typed} and \emph{untyped} occurrences. The following are typed occurrences of a variable $x$:
+\begin{itemize}
+	\item an occurrence as argument of a non-overloaded predicate: $P(\ldots,x,\ldots)$;
+	\item an occurrence as argument of a non-overloaded function: $F(\ldots,x,\ldots) = \ldots$;
+	\item an occurrence as return value of a non-overloaded function: $F(\ldots) = x$ or $F(\ldots) \neq x$. 
+\end{itemize}
+All others positions are untyped. 
+
+An overloaded predicate or function symbol can be disambiguated by scecifying its vocabluary and / or types.  E.g.,
+\begin{lstlisting}
+	! x: MyVoc::P[A,A](x,x).
+	! y: ?1 x : F[A:A](x) = y.
+	MyVoc::C[:A] > 2.
+\end{lstlisting}
+In this case, te occurences of all variables are typed.
+
+
+Basically, if a variable occurs in a typed position, it gets the type of that position.  
+If a declared variable with type {\tt T\_1} occurs in a typed position of type {\tt T\_2}, then {\tt T\_1} and {\tt T\_2} should have a common ancestor type.
+
+
+The more complicated cases arise when a variable does not occur in any typed position, or it occurs in two typed positions with a different type. The system is designed to give a reasonable type to such variables. However, the choices made by the system are ad hoc and are probably not the ones the user intended. %When in doubt, one can explicitely assign types to variables, or run \gidl with option {\tt --data} to check the derived types.
+Since built-in functions are overloaded...\todo{stukje over wat typederivation precies doet voor gelijkheid en zo.. Broes?}
+
+First consider the case where a variable occurs in typed positions with different types. The \idp system will then give a warning. If all the typed positions where the variable occurs have a common ancestor type $T$, then the variable is assigned this type $T$. If they do not have a common ancestor, but are all of an integer type, then the variable is assumed to range over all integers.
+
+
+Now consider the case where a variable does not occur in a typed position. Then, the \idp system reports an error.
+
+Because of the architecture of the system, problems can only be solved if all variables with an integer type range over a finite number of integers. Sometimes, however, if a variable ranges over all integers, only a finite interval of them is relevant. E.g., the constraint 
+`{\tt ! x : 1 < x \& x < 5 => x ~= 10}' is certainly satisfied for all {\tt x}'s outside the interval $[2..4]$, so only this interval is relevant to look at. Therefore, this constraint does not yield an error message. It is beyond the scope of this manual to describe when the system can find a finite relevant interval and when it cannot. When it cannot, an error messages is returned.
+
+To avoid these errors, one can add bounds: 
+\begin{itemize}
+	\item If {\tt x} is universally quantified, i.e., it occurs as `{\tt ! x : ...}', then write `{\tt ! x : phi(x) => ...}' instead, where {\tt phi} is a formula that can obviously only be true for a finite interval of {\tt x}'s. E.g., {\tt phi} is the formula `{\tt 1 < x \& x < 5}'.
+	\item If {\tt x} is existentially quantified, then write `{\tt ? x : phi(x) \& ...}' instead of `{\tt ? x : ...}', where {\tt phi} is as above.
+\end{itemize}
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Structures}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+A (three-valued) structure with name \code{MyStruct} over a vocabulary \code{MyVoc} is declared by
+\begin{lstlisting}
+	structure MyStruct: MyVoc{
+		//contents of the structures
+	}
+\end{lstlisting}
+or by 
+\begin{lstlisting}
+	asp_structure MyStruct: MyVoc{
+		//contents of the structures
+	}
+\end{lstlisting}
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Options}
+\subsection{Contents of a structure}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+A particular input to a problem can be given by giving a (three valued) interpretation to all types and some predicate and function symbols of a given vocabulary. Here, we describe the different ways to specify a structure.
+
+\subsubsection{Type Enumeration}
+The syntax for a type enumeration is 
+\begin{lstlisting}
+	MyType = { El_1; El_2; ... ; El_n }
+\end{lstlisting}
+where {\tt MyType} is the name of the enumerated type and {\tt El\_1; El\_2; ... ; El\_n } are the names of the objects of that type. Names of objects can be (positive and negative) integers, strings, chars, compound domain elements, or identifiers that start with an upper- or lowercase letter. In the case all subtypes of a given type are specified, the supertype is derived to be the union of all elements of the subtypes.  If a type is not specified, all domain elements of that type that occur in a predicate or function interpretation (see below) are automatically added to that type.  
+
+
+\subsubsection{Predicate Enumeration}
+The syntax for enumerating all tuples for which a predicate {\tt MyPred} with $n$ arguments is true is as follows.
+\begin{lstlisting}
+	MyPred = { El_1_1,..., El_1_n; 
+				  ... ; 
+				  El_m_1,..., El_m_n 
+				}
+\end{lstlisting}
+
+It is also possible to write parentheses around tuples.
+\begin{lstlisting}
+	MyPred = { (El_1_1,..., El_1_n); 
+				  ... ; 
+				  (El_m_1,..., El_m_n) 
+				}
+\end{lstlisting}
+This notation makes it possible to state that a proposition (a predicate with no arguments) is true, by using an empty tuple.
+\begin{lstlisting}
+	true = { () }
+	false = { }
+\end{lstlisting}
+However, it might be easier to use \code{true} and \code{false} instead of \code{\{ () \}} and \code{\{\}}.
+
+\subsubsection{Function Enumeration}
+The syntax for enumerating a function {\tt MyFunc} with $n$ arguments is 
+\begin{lstlisting}
+	MyFunc = { El_1_1,...,El_1_n -> El_1;
+		...;
+		El_m_1,...,El_m_n -> El_m
+	}
+\end{lstlisting}
+To give the interpretation of a constant, one can simply write `{\tt MyConst = El}' instead of `{\tt MyConst = \{ -> El \}}'.
+
+\subsubsection{Compound Domain Elements}
+A function applied to a tuple of domain elements can be used as a domain element.  We call such a domain element a \textit{compound domain element}.  An example is the domain element \code{F(1,a)}. If \code{F/n} is a function then 
+\begin{lstlisting}
+	F = generate
+\end{lstlisting}
+specifies that the interpretation of \code{F} is the two-valued interpretation that maps each tuple \code{(d\_1,\ldots,d\_n)} to the compound domain element \code{F(d\_1,\ldots,d\_n)}.
+
+\subsubsection{Three-Valued Predicate/Function interpretations}
+Three-valued interpretations are given by either
+\begin{itemize}
+	\item enumerating the certainly true and certainly false tuples;
+	\item enumerating the certainly true and the unknown tuples;
+	\item enumerating the unknown and the certainly false tuples.
+\end{itemize}
+To sepcify which tuples are enumerated, use \code{<ct>}, \code{<cf>} and \code{<u>}.  For example
+\begin{lstlisting}
+	P<ct> = { /* enumeration of the certainly true tuples of P */ }
+	P<u> = { /* enumeration of the unknown tuples of P */ }
+\end{lstlisting}
+
+\subsubsection{Interpretation by Procedures}
+The syntax 
+\begin{lstlisting}
+	P = procedure MyProc
+\end{lstlisting}
+is used to interpret a predicate or function symbol \code{P} by a procedure \code{MyProc} (see below).  If \code{P} is an $n$-ary predicate, then \code{MyProc} should be an $n$-ary procedure that returns a boolean.  If \code{P} is an $n$-ary function, then \code{MyProc} should be and $n$-ary function that returns a number, string, or compound domain element.
+
+
+\subsubsection{Shorthands}
+Shorthands like `{\tt MyType = \{1..10; 15..20\}}' or `{\tt MyType = \{ a..e; A..E \}}' may be used for enumerating types or predicates with only one argument.
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{ASP structures}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+An ASP structure consists of a list of facts in the usual ASP syntax.  In particular, everything from a \code{\%} till the end of the line is considered a comment, and \code{-} before an atom denotes classical negation (negation as failure is not available).  A fact about functions is written like \code{F(a) =b} or \code{-F(c)=d}.
+
+
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Procedures}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Declaring a procedure}
+\subsection{Declaring a procedure}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 A procedure with name {\tt MyProc} and arguments {\tt A1}, \ldots, {\tt An} is declared by 
@@ -505,7 +592,7 @@ A procedure with name {\tt MyProc} and arguments {\tt A1}, \ldots, {\tt An} is d
 Inside a procedure, any chunk of Lua code can be written. For Lua's reference manual, see \url{http://www.lua.org/manual/5.1/}. In the following, we assume that the reader is familiar with the basic concepts of Lua.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{\idp types}
+\subsection{\idp types}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 Besides the standard types of variables available in Lua, the following extra types are available in \idp procedures.
@@ -526,5 +613,59 @@ Besides the standard types of variables available in Lua, the following extra ty
 	\item[namespace] A namespace.
 	\item[overloaded] An overloaded object.
 \end{description}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Built-in procedures}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+A lot of procedures are allready built in.  Typing \code{help} in interactive mode shows an overview of the available procedures, together with a description.  
+
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Options}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\todo{stukje over: Hoe opties zetten en gebruiken?}
+
+\todo{Opties die we niet supporten in commentaar zetten}
+\begin{description}
+	\item[autocomplete = [false, true]] Turn autocompletion on or off
+	\item[cpsupport = [false, true]] Enable/disable cp-support (running a cp-solver together with the SAT-solver)
+	\item[createtranslation = [false, true]] \todo{watdoetdit?}
+	\item[groundlazily = [false, true]] Enable/disable lazy grounding
+	\item[groundverbosity = [0..2147483647]] Verbosity of the grounder.  The higher the verbosity, the more debug information is printed.
+	\item[groundwithbounds = [false, true]] Enable/disable the BDD's.  BDD's provide ct and cf bounds for formulas to reduce the size of the grounding.
+	\item[language = [asp, ecnf, idp, latex, tptp, txt]] The language used when printing objects. \todo{remove latex en zo.. die crashen}
+	\item[longestbranch = [0..2147483647]] \todo{}
+	\item[longnames = [false, true]] If true, everything is printed with reference to their vocabulary.  For example, a predicate \code{P} from vocabulary \code{V} will be printed \code{V::P} instead of \code{P}.
+	\item[modelformat = [all, threevalued, twovalued]] \todo{wat doet dit?}
+	\item[nbmodelequivalent = [false, true]] \todo{wat doet dit?}
+	\item[nrmodels = [0..2147483647]] Set the number of models wanted from the modelexpansion inference.  If set to 0, all models are returned.
+	\item[nrpropsteps = [0..2147483647]] \todo{ietsmetbddsmaarwat?}
+	\item[printtypes = [false, true]] \todo{doet niets voor de moment?}
+	\item[propagateverbosity = [0..2147483647]]Like groundverbosity, but controls the verbosity of the propagation.
+	\item[provertimeout = [0..2147483647]] \todo{?}
+	\item[randomvaluechoice =  [false, true]] \todo{?}
+	\item[relativepropsteps =  [false, true]] \todo{?}
+	\item[satverbosity = [0..2147483647]] Like groundverbosity, but controls the verbosity of \minisatid
+	\item[showwarnings = [false, true]] Enable/disable the warnings.
+	\item[symmetry = [0..2147483647]] \todo{?}
+	\item[timeout = [0..2147483647]] Set the timeout for inferences (in seconds)
+	\item[trace = [false, true]] If true, the procedure modelexpand produces also an execution trace of \minisatid 
+
+\end{description}
+
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Coming Soon}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\todo{section over wat er nog komt?}
 
 \end{document}
