@@ -9,7 +9,7 @@
 ####################################################################
 
 SUBDIRS = lib pcsolver parser
-AM_CXXFLAGS = -Wall -Wextra\
+AM_CXXFLAGS = @AC_CXXFLAGS@ -Wall -Wextra\
 		-std=c++0x\
 		-I$(srcdir)/lib/loki/include\
 		-I$(srcdir)/lib/lua/etc -I$(srcdir)/lib/lua/src\

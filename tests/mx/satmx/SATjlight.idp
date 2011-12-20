@@ -41,7 +41,7 @@ theory T : V {
 	{ IllumBy(ws,l) <- ContainLight(l) & CanIllumC(l,ws).
 	  IllumBy(ws,l) <- ContainLight(l) & CanIllumR(l,ws). }
 
-	! s n : ContainNumber(s,n) => n = #{ w : NextTo(w,s) & ContainLight(w)}.
+	! s n[Num] : ContainNumber(s,n) => n = #{ w : NextTo(w,s) & ContainLight(w)}.
 	! ws : ~ContainLight(ws) <=> (? l : IllumBy(ws,l)).
 	
 
