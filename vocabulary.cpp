@@ -201,7 +201,7 @@ std::set<const Vocabulary*>::const_iterator Sort::lastVocabulary() const {
 ostream& Sort::put(ostream& output) const {
 	if (getOption(BoolType::LONGNAMES)) {
 		for (auto it = _vocabularies.cbegin(); it != _vocabularies.cend(); ++it) {
-			if ((*it)->sort(_name)==NULL) {
+			if ((*it)->sort(_name)!=NULL) {
 				(*it)->putName(output);
 				output << "::";
 				break;

@@ -199,13 +199,15 @@ public:
 		Assert(isTheoryOpen());
 		for (auto it = t->sentences().cbegin(); it != t->sentences().cend(); ++it) {
 			(*it)->accept(this);
-			output() << ".\n";
+			output() << ".\n" << tabs();
 		}
 		for (auto it = t->definitions().cbegin(); it != t->definitions().cend(); ++it) {
 			(*it)->accept(this);
+			output() << ".\n" << tabs();
 		}
 		for (auto it = t->fixpdefs().cbegin(); it != t->fixpdefs().cend(); ++it) {
 			(*it)->accept(this);
+			output() << ".\n" << tabs();
 		}
 	}
 
@@ -367,7 +369,7 @@ public:
 		}
 		unindent();
 		printTab();
-		output() << "}\n";
+		output() << "}";
 	}
 
 	void visit(const FixpDef* d) {
@@ -384,7 +386,7 @@ public:
 		}
 		unindent();
 		printTab();
-		output() << "]\n";
+		output() << "]";
 	}
 
 	/** Terms **/

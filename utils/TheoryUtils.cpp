@@ -52,7 +52,8 @@ void checkSorts(Vocabulary* voc, Term* term) {
 }
 
 void deriveSorts(Vocabulary* voc, Term* term) {
-	transform<DeriveSorts>(term, voc);
+	transform<DeriveSorts>(term, voc, false);
+	transform<DeriveSorts>(term, voc, true);
 }
 
 ElementTuple deriveTermBounds(Term* term, const AbstractStructure* str) {
@@ -83,7 +84,8 @@ void checkSorts(Vocabulary* voc, Rule* rule) {
 }
 
 void deriveSorts(Vocabulary* voc, Rule* rule) {
-	transform<DeriveSorts>(rule, voc);
+	transform<DeriveSorts>(rule, voc, false);
+	transform<DeriveSorts>(rule, voc, true);
 }
 
 std::set<PFSymbol*> opens(Definition* d) {
@@ -115,7 +117,8 @@ bool containsSymbol(const PFSymbol* s, const Formula* f) {
 }
 
 void deriveSorts(Vocabulary* v, Formula* f){
-	transform<DeriveSorts>(f, v);
+	transform<DeriveSorts>(f, v, false);
+	transform<DeriveSorts>(f, v, true);
 }
 
 Formula* flatten(Formula* f) {
