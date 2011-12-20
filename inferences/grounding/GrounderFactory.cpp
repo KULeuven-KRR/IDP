@@ -337,7 +337,7 @@ void GrounderFactory::visit(const Theory* theory) {
 		tmptheory = FormulaUtils::graphFuncsAndAggs(tmptheory,_structure);
 		tmptheory = FormulaUtils::splitProducts(tmptheory);
 	}
-	Assert(sametypeid<Theory*>(tmptheory));
+	Assert(sametypeid<Theory>(*tmptheory));
 	auto newtheory = dynamic_cast<Theory*>(tmptheory);
 
 	// Collect all components (sentences, definitions, and fixpoint definitions) of the theory
