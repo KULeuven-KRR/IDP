@@ -126,7 +126,7 @@ grounder_SOURCES = \
 		commands/tobdd.hpp\
 		commands/clean.hpp\
 		commands/help.hpp\
-		commands/changevocabulary.hpp\
+		commands/setvocabulary.hpp\
 		commands/estimatecosts.hpp\
 		commands/detectsymmetry.hpp\
 		commands/derefandincrement.hpp\
@@ -186,7 +186,7 @@ grounder_SOURCES = \
 		theorytransformations/UnnestFuncsAndAggs.hpp theorytransformations/UnnestFuncsAndAggs.cpp\
 		theorytransformations/UnnestPartialTerms.hpp\
 		theorytransformations/UnnestTerms.hpp theorytransformations/UnnestTerms.cpp\
-		theorytransformations/UnnestThreeValuedTerms.hpp theorytransformations/UnnestThreeValuedTerms.cpp\	
+		theorytransformations/UnnestThreeValuedTerms.hpp theorytransformations/UnnestThreeValuedTerms.cpp\
 		GlobalData.hpp GlobalData.cpp\
 		fobdds/FoBdd.hpp fobdds/FoBdd.cpp\
 		fobdds/FoBddKernel.hpp\
@@ -244,7 +244,7 @@ AM_CXXFLAGS += -I $(LIBSRCDIR)/linenoise/
 
 data_stddir = $(datadir)/std
 
-data_std_DATA = data/idp_intern.idp data/idp_intern.lua data/mx.idp data/domain.idp
+data_std_DATA = data/idp_intern.idp data/idp_intern.lua data/mx.idp
 
 data_localdir = $(localstatedir)/idp
 data_local_DATA = data/.idprc

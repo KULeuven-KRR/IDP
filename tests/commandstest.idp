@@ -1,8 +1,88 @@
-procedure main(){
-	stdoptions.timeout = 5
-	stdoptions.nbmodelequivalent = true
-	stdoptions.groundwithbounds = false
-	S=calculatedefinitions(T,S)
-	return(assertions())
+#include <mx>
+
+namespace N{
+	namespace N2{
+		vocabulary V{
+			p
+			q
+			r
+			f
+			type x
+			P(x)
+		}
+		vocabulary Ve {
+			e
+		}
+		
+		vocabulary V2{
+			extern vocabulary V
+			g
+			extern Ve::e/0
+		}
+	}
 	
+	using namespace N2
+
+	theory T:V{
+		{
+			q <- ~~~p.
+		}
+		~(p | q | r).
+	}
+	
+	structure S:V{
+		p = true
+		r<cf> = true
+		x = {1..3}
+		P<ct> = {1;2}
+	}
+}
+
+procedure main(){
+	stdoptions.language="idp"
+	clean(N::S)
+	T2 = clone(N::T)
+	S2 = clone(N::S)
+	print(S2)
+	setvocabulary(S2, N::N2::V2)
+	S3 = newstructure(N::N2::Ve, "new")
+	print(S3)
+	maketrue(S2[N::N2::V2::f], {})
+	makefalse(S2[N::N2::V2::P], {3})
+	makeunknown(S2[N::N2::V2::P], {2})
+	clean(S2)
+	help()
+	help(N)
+	help(mx)
+	print(N)
+	print(N::V)
+	print(idpglobal)
+	removenesting(T2)
+	pushnegations(T2)
+	flatten(T2)
+	completion(T2)
+	print(T2)
+	print(S2)
+	twovals = alltwovaluedextensions(S2)
+	for i,t in pairs(twovals)
+	do
+		isconsistent(t)
+		print(t)
+	end
+	options = newoptions()
+	setascurrentoptions(options)
+	options.language="idp"
+	print(ground(T2, S2))
+	printgrounding(T2, S2)
+	options.language="ecnf"
+	print(ground(T2, S2))
+	printgrounding(T2, S2)
+	setascurrentoptions(stdoptions)
+	mx::printmodels(modelexpand(T2, S2))
+	mx::printmodels(mx::all(T2, S2))
+	print(mx::one(T2, S2))
+	//entails
+	//range
+	//query
+	// propagations
 }

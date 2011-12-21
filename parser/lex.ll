@@ -441,6 +441,10 @@ COMMENTLINE		"//".*
 <*>"using namespace"		{ data.advancecol();
 							  return USINGNAMESPACE;			
 							}
+<*>"using"					{
+								cerr <<"Can only use the keyword \"using\" as \"using vocabulary\" or \"using namespace\".\n";
+								yyterminate();
+							}
 <*>{CH}						{ data.advancecol();
 							  yylval.chr = *yytext;
 							  return CHARACTER;			}

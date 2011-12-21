@@ -17,7 +17,7 @@
 typedef TypedInference<LIST(int, int)> CreateRangeInferenceBase;
 class CreateRangeInference: public CreateRangeInferenceBase {
 public:
-	CreateRangeInference(): CreateRangeInferenceBase("range", "Creates a new table which is the range between the first and the second argument") {
+	CreateRangeInference(): CreateRangeInferenceBase("range", "Create a domain containing all integers between First and Last") {
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
