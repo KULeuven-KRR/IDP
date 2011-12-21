@@ -50,8 +50,8 @@ private:
 
 public:
 	// Constructors
-	Term(const TermParseInfo& pi) :
-			_pi(pi) {
+	Term(const TermParseInfo& pi) 
+		: _pi(pi) {
 	}
 
 	virtual Term* clone() const = 0;
@@ -74,11 +74,11 @@ public:
 		_subsets.push_back(s);
 		setFreeVars();
 	}
-	void subterm(unsigned int n, Term* t) {
+	void subterm(size_t n, Term* t) {
 		_subterms[n] = t;
 		setFreeVars();
 	}
-	void subset(unsigned int n, SetExpr* s) {
+	void subset(size_t n, SetExpr* s) {
 		_subsets[n] = s;
 		setFreeVars();
 	}
@@ -93,6 +93,7 @@ public:
 	}
 	virtual Sort* sort() const = 0; //!< Returns the sort of the term
 	virtual TermType type() const = 0;
+	bool contains(const Variable*) const; //!< true iff the term contains the variable
 	const std::set<Variable*>& freeVars() const {
 		return _freevars;
 	}
@@ -102,8 +103,6 @@ public:
 	const std::vector<SetExpr*>& subsets() const {
 		return _subsets;
 	}
-
-	bool contains(const Variable*) const; //!< true iff the term contains the variable
 
 	// Output
 	virtual std::ostream& put(std::ostream&) const = 0;
@@ -130,8 +129,7 @@ public:
 	VarTerm* cloneKeepVars() const;
 	VarTerm* clone(const std::map<Variable*, Variable*>&) const;
 
-	~VarTerm() {
-	}
+	~VarTerm() {}
 
 	void sort(Sort* s);
 
@@ -201,8 +199,7 @@ public:
 	DomainTerm* cloneKeepVars() const;
 	DomainTerm* clone(const std::map<Variable*, Variable*>&) const;
 
-	~DomainTerm() {
-	}
+	~DomainTerm() {}
 
 	void sort(Sort* s);
 
@@ -236,8 +233,7 @@ public:
 	AggTerm* cloneKeepVars() const;
 	AggTerm* clone(const std::map<Variable*, Variable*>&) const;
 
-	~AggTerm() {
-	}
+	~AggTerm() {}
 
 	Sort* sort() const;
 	TermType type() const {
@@ -263,9 +259,9 @@ std::vector<Term*> makeNewVarTerms(const std::vector<Variable*>&); //!< Make a v
 bool isPartial(Term*);
 }
 
-/**************
- Queries
- **************/
+/*************
+ *	Queries
+ ************/
 
 /**
  * Class to represent a first-order query
@@ -433,4 +429,4 @@ public:
 	std::ostream& put(std::ostream&) const;
 };
 
-#endif 
+#endif /* TERM_HPP_ */
