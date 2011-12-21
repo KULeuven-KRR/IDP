@@ -96,14 +96,12 @@ typedef std::list<isp>				lisp;
 %token ASP_HEADER
 %token NAMESPACE_HEADER
 %token PROCEDURE_HEADER
-%token OPTION_HEADER
 %token QUERY_HEADER
 %token TERM_HEADER
 
 /** Keywords **/
 %token CONSTRUCTOR
 %token PROCEDURE
-%token OPTIONS
 %token PARTIAL
 %token EXTENDS
 %token EXTERN
@@ -229,7 +227,6 @@ idp		: /* empty */
 				| idp structure
 				| idp asp_structure
 				| idp instructions
-				| idp options
 				| idp namedquery
 				| idp namedterm
 				| idp using
@@ -845,32 +842,6 @@ proc_sig			: '(' ')'
 args				: args ',' identifier	{ getInserter().procarg(*$3);		}
 					| identifier			{ getInserter().procarg(*$1);		}
 					;
-
-
-/**************
-	Options
-**************/
-
-options	: OPTION_HEADER option_name '{' optassigns '}'	{ getInserter().closeoptions();	}
-		| OPTION_HEADER option_name 
-			EXTERN pointer_name { getInserter().externoption(*$4,@4);	delete($4);	}
-			'{' optassigns '}'	{ getInserter().closeoptions();	}
-		; // Second rule allows to define an option as using by default the values of the provided option
-
-option_name	: identifier	{ getInserter().openoptions(*$1,@1);	}
-			;
-
-optassigns	: /* empty */
-			| optassigns optassign	
-			;
-
-optassign	: identifier '=' strelement		{ getInserter().option(*$1,*$3,@1);	}
-			| identifier '=' floatnr		{ getInserter().option(*$1,$3,@1);		}
-			| identifier '=' integer		{ getInserter().option(*$1,$3,@1);		}
-			| identifier '=' TRUE			{ getInserter().option(*$1,true,@1);	}
-			| identifier '=' FALSE			{ getInserter().option(*$1,false,@1);	}
-			;
-
 
 %%
 

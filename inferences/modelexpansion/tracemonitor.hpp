@@ -30,7 +30,7 @@ public:
 
 	//NOTE: should be called BEFORE the grounding
 	//(else, we don't keep track of propagations that occur immediately after adding a unit clause)
-	virtual void setSolver(MinisatID::SATSolver* solver) = 0;
+	virtual void setSolver(MinisatID::WrappedPCSolver* solver) = 0;
 };
 
 

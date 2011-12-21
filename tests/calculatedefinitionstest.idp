@@ -71,14 +71,14 @@ procedure assert2(table, values, name){
 
 procedure consistent(expected){
 	if expected == 1 then
-		if isconsistent(S) == 1 then
+		if isconsistent(S) == true then
 			return 1
 		else
 			io.stderr:write("FAIL!  expected a consistent structure, but was inconsistent\n")
 			return 0
 		end
 	else
-		if isconsistent(S) == 0 then
+		if isconsistent(S) == false then
 			return 1
 		else
 			io.stderr:write("FAIL!  expected an inconsistent structure, but was consistent\n")

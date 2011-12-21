@@ -127,8 +127,8 @@ State Entails::checkEntailment(EntailmentData* data) const {
 	InternalArgument& fofCommand = data->fofCommands[COMMANDS_INDEX];
 	InternalArgument& tffCommand = data->tffCommands[COMMANDS_INDEX];
 
-	auto& axioms = data->axioms;
-	auto& conjectures = data->conjectures;
+	auto axioms = data->axioms->clone();
+	auto conjectures = data->conjectures->clone();
 
 	// Determine whether the theories are compatible with this inference
 	// and whether arithmetic support is required
@@ -137,7 +137,7 @@ State Entails::checkEntailment(EntailmentData* data) const {
 	if (sc.definitionFound()) {
 		Info::print("Replacing a definition by its (potentially weaker) completion. "
 				"The prover may wrongly decide that the first theory does not entail the second theory.");
-		axioms = FormulaUtils::addCompletion(axioms);
+		FormulaUtils::addCompletion(axioms);
 		sc.definitionFound(false);
 	}
 	sc.runCheck(conjectures);
@@ -153,10 +153,10 @@ State Entails::checkEntailment(EntailmentData* data) const {
 	bool arithmeticFound = sc.arithmeticFound();
 
 	// Turn functions into predicates (for partial function support)
-	axioms = FormulaUtils::unnestTerms(axioms);
+	FormulaUtils::unnestTerms(axioms);
 	axioms = FormulaUtils::graphFuncsAndAggs(axioms);
 
-	conjectures = FormulaUtils::unnestTerms(conjectures);
+	FormulaUtils::unnestTerms(conjectures);
 	conjectures = FormulaUtils::graphFuncsAndAggs(conjectures);
 
 	// Clean up possibly existing files

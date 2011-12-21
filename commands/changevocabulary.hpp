@@ -11,22 +11,19 @@
 #ifndef CHANGEVOCABULARY_HPP_
 #define CHANGEVOCABULARY_HPP_
 
-#include <vector>
 #include "commandinterface.hpp"
-#include "vocabulary.hpp"
 #include "structure.hpp"
 
-class ChangeVocabularyInference: public Inference {
+class ChangeVocabularyInference: public TypedInference<LIST(AbstractStructure*, Vocabulary*)> {
 public:
-	ChangeVocabularyInference(): Inference("changevocabulary") {
-		add(AT_STRUCTURE);
-		add(AT_VOCABULARY);
+	ChangeVocabularyInference(): TypedInference("setvocabulary", "Changes the vocabulary of a structure to the given one.") {
+		 //If some symbol occurs both in V and in the previous vocabulary of S, its interpretation in S is kept.
+		 //For all symbols that belong to V but not to the previous vocabulary of S,
+		 //the interpretation in S is initialized to the least precise interpretation.
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
-		AbstractStructure* s = args[0].structure();
-		Vocabulary* v = args[1].vocabulary();
-		s->vocabulary(v);
+		get<0>(args)->vocabulary(get<1>(args));
 		return nilarg();
 	}
 };

@@ -43,8 +43,7 @@ namespace Tests {
 TEST(Grounderfactory, Context) {
 	TestingSet1 ts = getTestingSet1();
 
-
-	auto options = new Options("opt", ParseInfo());
+	auto options = new Options();
 	//TODO: move the following line to the constructor of GrounderFactory for in case no GenerateBDD... is given?
 	auto gddatb = new GenerateBDDAccordingToBounds(new FOBDDManager(),*(new Bound()),  *(new Bound()),*(new std::map<PFSymbol*, std::vector<const FOBDDVariable*> >()));
 

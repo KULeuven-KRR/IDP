@@ -15,43 +15,30 @@
 #include "printdomainatom.hpp"
 #include "printoptions.hpp"
 #include "newstructure.hpp"
-#include "newtheory.hpp"
 #include "modelexpand.hpp"
 #include "newoptions.hpp"
-#include "clonestructure.hpp"
-#include "clonetheory.hpp"
-#include "pushnegations.hpp"
+#include "clone.hpp"
 #include "mergetheories.hpp"
-#include "flatten.hpp"
 #include "idptype.hpp"
 #include "setatomvalue.hpp"
 #include "settablevalue.hpp"
-#include "domainiterator.hpp"
-#include "tableiterator.hpp"
 #include "propagate.hpp"
 #include "query.hpp"
-#include "createtuple.hpp"
 #include "createrange.hpp"
 #include "ground.hpp"
-#include "completion.hpp"
-#include "tobdd.hpp"
+#include "transformations.hpp"
 #include "clean.hpp"
-#include "materialize.hpp"
 #include "changevocabulary.hpp"
-#include "estimatecosts.hpp"
-#include "derefandincrement.hpp"
 #include "help.hpp"
-#include "optimization.hpp"
-#include "detectsymmetry.hpp"
+#include "iterators.hpp"
 #include "entails.hpp"
-#include "removenesting.hpp"
 #include "simplify.hpp"
 #include "tablesize.hpp"
 #include "twovaluedextensions.hpp"
 #include "calculatedefinitions.hpp"
 #include "structureproperties.hpp"
-
-//TODO add support for easily using these inferences directly in lua, by also providing a help/usage text and replacing idp_intern. with something easier
+#include "setAsCurrentOptions.hpp"
+#include "createdummytuple.hpp"
 
 #include <vector>
 
@@ -69,6 +56,8 @@ const std::vector<Inference*>& getAllInferences() {
 		inferences.push_back(new TableSizeInference());
 		inferences.push_back(new DomainIteratorInference());
 		inferences.push_back(new TableIteratorInference());
+		inferences.push_back(new TableDerefAndIncrementInference());
+		inferences.push_back(new DomainDerefAndIncrementInference());
 		inferences.push_back(new OptimalPropagateInference());
 		inferences.push_back(new GroundPropagateInference());
 		inferences.push_back(new PropagateInference());
@@ -79,46 +68,32 @@ const std::vector<Inference*>& getAllInferences() {
 		inferences.push_back(new PrintNamespaceInference());
 		inferences.push_back(new PrintOptionInference());
 		inferences.push_back(new PrintStructureInference());
-		inferences.push_back(new NewTheoryInference());
-		inferences.push_back(new CloneStructureInference());
 		inferences.push_back(new ModelExpandInference());
-		inferences.push_back(new ModelExpandWithTraceInference());
 		inferences.push_back(new NewOptionsInference());
 		inferences.push_back(new NewStructureInference());
+		inferences.push_back(new CloneStructureInference());
 		inferences.push_back(new CloneTheoryInference());
 		inferences.push_back(new IdpTypeInference());
 		inferences.push_back(new FlattenInference());
 		inferences.push_back(new MergeTheoriesInference());
 		inferences.push_back(new PushNegationsInference());
 		inferences.push_back(new QueryInference());
-		inferences.push_back(new CreateTupleInference());
 		inferences.push_back(new CreateRangeInference());
 		inferences.push_back(new GroundInference());
 		inferences.push_back(new CompletionInference());
 		inferences.push_back(new CleanInference());
-		inferences.push_back(new MaterializeInference());
-		inferences.push_back(new ToBDDInference(AT_FORMULA));
-		inferences.push_back(new ToBDDInference(AT_QUERY));
 		inferences.push_back(new ChangeVocabularyInference());
-		inferences.push_back(new EstimateBDDCostInference());
-		inferences.push_back(new EstimateNumberOfAnswersInference());
-		inferences.push_back(new TableDerefAndIncrementInference());
-		inferences.push_back(new IntDerefAndIncrementInference());
-		inferences.push_back(new StringDerefAndIncrementInference());
-		inferences.push_back(new DoubleDerefAndIncrementInference());
-		inferences.push_back(new CompoundDerefAndIncrementInference());
-		inferences.push_back(new GlobalHelpInference());
 		inferences.push_back(new HelpInference());
-		inferences.push_back(new GroundAndPrintInference());
-		inferences.push_back(new OptimizationInference());
-		inferences.push_back(new DetectSymmetryInference());
+		inferences.push_back(new PrintGroundingInference());
 		inferences.push_back(new EntailsInference());
 		inferences.push_back(new RemoveNestingInference());
 		inferences.push_back(new SimplifyInference());
-		inferences.push_back(new TwoValuedExtensionsInference(AT_TABLE));
-		inferences.push_back(new TwoValuedExtensionsInference(AT_STRUCTURE));
+		inferences.push_back(new TwoValuedExtensionsOfTableInference());
+		inferences.push_back(new TwoValuedExtensionsOfStructureInference());
 		inferences.push_back(new CalculateDefinitionInference());
 		inferences.push_back(new IsConsistentInference());
+		inferences.push_back(new SetOptionsInference());
+		inferences.push_back(new CreateTupleInference());
 	}
 	return inferences;
 }

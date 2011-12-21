@@ -158,22 +158,23 @@ Formula* unnestThreeValuedTerms(Formula* f, AbstractStructure* structure, Contex
 	return transform<UnnestThreeValuedTerms, Formula*>(f, structure, context, cpsupport, cpsymbols);
 }
 
-
-
-AbstractTheory* addCompletion(AbstractTheory* t) {
-	return transform<AddCompletion, AbstractTheory*>(t);
+void addCompletion(AbstractTheory* t) {
+	auto newt = transform<AddCompletion, AbstractTheory*>(t);
+	Assert(newt==t);
 }
 
-AbstractTheory* flatten(AbstractTheory* t) {
-	return transform<Flatten, AbstractTheory*>(t);
+void flatten(AbstractTheory* t) {
+	auto newt = transform<Flatten, AbstractTheory*>(t);
+	Assert(newt==t);
 }
 
 AbstractTheory* graphFuncsAndAggs(AbstractTheory* t) {
 	return transform<GraphFuncsAndAggs, AbstractTheory*>(t);
 }
 
-AbstractTheory* pushNegations(AbstractTheory* t) {
-	return transform<PushNegations, AbstractTheory*>(t);
+void pushNegations(AbstractTheory* t) {
+	auto newt = transform<PushNegations, AbstractTheory*>(t);
+	Assert(newt==t);
 }
 
 AbstractTheory* pushQuantifiers(AbstractTheory* t) {
@@ -192,8 +193,9 @@ AbstractTheory* splitProducts(AbstractTheory* t) {
 	return transform<SplitProducts, AbstractTheory*>(t);
 }
 
-AbstractTheory* unnestTerms(AbstractTheory* t) {
-	return transform<UnnestTerms, AbstractTheory*>(t);
+void unnestTerms(AbstractTheory* t) {
+	auto newt = transform<UnnestTerms, AbstractTheory*>(t);
+	Assert(newt==t);
 }
 
 int nrSubformulas(AbstractTheory* t) {

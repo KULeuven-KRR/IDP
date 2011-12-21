@@ -210,19 +210,13 @@ struct OptionTypeTraits<StringType>{
  */
 class Options: public IntPol, public BoolPol, public DoublePol, public StringPol{
 private:
-	std::string		_name;	//!< The name of the options block
-	ParseInfo		_pi;	//!< The place where the options were parsed
-
 	std::vector<std::string> _option2name;
 
 public:
-	Options(const std::string& name, const ParseInfo& pi);
+	Options();
 	~Options(){}
 
-	const std::string&	name()	const	{ return _name;	}
-	const ParseInfo&	pi()	const	{ return _pi;	}
-
-	bool			isOption(const std::string&) const;
+	bool isOption(const std::string&) const;
 
 	template<class ValueType>
 	bool isOptionOfType(const std::string& optname) const{

@@ -16,16 +16,14 @@
 #include "vocabulary.hpp"
 #include "structure.hpp"
 
-class NewStructureInference: public Inference {
+class NewStructureInference: public TypedInference<LIST(Vocabulary*, std::string*)> {
 public:
-	NewStructureInference(): Inference("newstructure") {
-		add(AT_VOCABULARY);
+	NewStructureInference(): TypedInference("newstructure", "Create an empty structure with the given name over the given vocabulary.") {
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
-		Vocabulary* v = args[0].vocabulary();
-		Structure* s = new Structure("",ParseInfo());
-		s->vocabulary(v);
+		auto s = new Structure(*get<1>(args),ParseInfo());
+		s->vocabulary(get<0>(args));
 		return InternalArgument(s);
 	}
 };

@@ -37,7 +37,7 @@ std::string str(Format choice){
 
 // TODO add descriptions to options
 
-Options::Options(const string& name, const ParseInfo& pi) : _name(name), _pi(pi) {
+Options::Options() {
 	std::set<bool> boolvalues{true, false};
 	BoolPol::createOption(BoolType::SHOWWARNINGS, "showwarnings", boolvalues, true, _option2name); // TODO Temporary solution to be able to disable warnings in tests
 	BoolPol::createOption(BoolType::PRINTTYPES, "printtypes", boolvalues, true, _option2name);
@@ -229,5 +229,3 @@ ostream& Options::put(ostream& output) const {
 
 	return output;
 }
-
- 

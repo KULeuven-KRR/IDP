@@ -1,30 +1,30 @@
 /****************************************************************
 * Copyright 2010-2012 Katholieke Universiteit Leuven
-*  
+*
 * Use of this software is governed by the GNU LGPLv3.0 license
-* 
+*
 * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
 * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
 * Celestijnenlaan 200A, B-3001 Leuven, Belgium
 ****************************************************************/
 
-#ifndef CREATETUPLE_HPP_
-#define CREATETUPLE_HPP_
+#ifndef QUERY_HPP_
+#define QUERY_HPP_
 
-#include <vector>
-#include "commandinterface.hpp"
+class PredTable;
+class Query;
+class AbstractStructure;
 
-class CreateTupleInference: public Inference {
+class Querying {
 public:
-	CreateTupleInference(): Inference("dummytuple") {
+	static PredTable* doSolveQuery(Query* q, AbstractStructure* s) {
+		Querying c;
+		return c.solveQuery(q, s);
 	}
 
-	InternalArgument execute(const std::vector<InternalArgument>&) const {
-		InternalArgument ia;
-		ia._type = AT_TUPLE;
-		ia._value._tuple = 0;
-		return ia;
-	}
+private:
+	PredTable* solveQuery(Query* q, AbstractStructure* s) const;
 };
 
-#endif /* CREATETUPLE_HPP_ */
+
+#endif /* QUERY_HPP_ */

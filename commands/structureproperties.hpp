@@ -16,16 +16,17 @@
 #include "theory.hpp"
 #include "structure.hpp"
 
-class IsConsistentInference: public Inference {
+class IsConsistentInference: public TypedInference<LIST(AbstractStructure*)> {
 public:
 	IsConsistentInference() :
-			Inference("isconsistent") {
-		add(AT_STRUCTURE);
+			TypedInference("isconsistent", "Check whether the structure is consistent") {
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
-		bool consistent = args[0].structure()->isConsistent();
-		return InternalArgument(consistent?1:0);
+		InternalArgument ia;
+		ia._type = AT_BOOLEAN;
+		ia._value._boolean = get<0>(args)->isConsistent();
+		return ia;
 	}
 };
 

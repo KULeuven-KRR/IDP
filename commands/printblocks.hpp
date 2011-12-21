@@ -11,7 +11,6 @@
 #ifndef PRINTSTRUCTURE_HPP_
 #define PRINTSTRUCTURE_HPP_
 
-#include <vector>
 #include "commandinterface.hpp"
 #include "printers/print.hpp"
 #include "structure.hpp"
@@ -23,81 +22,71 @@
 template<class Object>
 std::string print(Object o){
 	std::stringstream stream;
-	Printer* printer = Printer::create<std::stringstream>(stream);
+	auto printer = Printer::create<std::stringstream>(stream);
 	printer->startTheory();
 	printer->print(o);
 	printer->endTheory();
 	return stream.str();
 }
 
-class PrintStructureInference: public Inference {
+class PrintStructureInference: public TypedInference<LIST(AbstractStructure*)> {
 public:
-	PrintStructureInference(): Inference("tostring") {
-		add(AT_STRUCTURE);
-		add(AT_OPTIONS);
+	PrintStructureInference(): TypedInference("tostring", "Prints the given structure.") {
+		setNameSpace(getInternalNamespaceName());
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
-		AbstractStructure* structure = args[0].structure();
-		getGlobal()->setOptions(args[1].options());
+		auto structure = get<0>(args);
 		structure->materialize();
 		structure->clean();
 		return InternalArgument(StringPointer(print(structure)));
 	}
 };
 
-class PrintNamespaceInference: public Inference {
+class PrintNamespaceInference: public TypedInference<LIST(Namespace*)> {
 public:
-	PrintNamespaceInference(): Inference("tostring") {
-		add(AT_NAMESPACE);
-		add(AT_OPTIONS);
+	PrintNamespaceInference(): TypedInference("tostring", "Prints the given namespace.") {
+		setNameSpace(getInternalNamespaceName());
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
-		Namespace* space = args[0].space();
-		getGlobal()->setOptions(args[1].options());
+		auto space = get<0>(args);
 		return InternalArgument(StringPointer(print(space)));
 	}
 };
 
-class PrintTheoryInference: public Inference {
+class PrintTheoryInference: public TypedInference<LIST(AbstractTheory*)> {
 public:
-	PrintTheoryInference(): Inference("tostring") {
-		add(AT_THEORY);
-		add(AT_OPTIONS);
+	PrintTheoryInference(): TypedInference("tostring", "Prints the given theory.") {
+		setNameSpace(getInternalNamespaceName());
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
-		AbstractTheory* theory = args[0].theory();
-		getGlobal()->setOptions(args[1].options());
+		auto theory = get<0>(args);
 		return InternalArgument(StringPointer(print(theory)));
 	}
 };
 
-class PrintFormulaInference: public Inference {
+class PrintFormulaInference: public TypedInference<LIST(Formula*)> {
 public:
-	PrintFormulaInference(): Inference("tostring") {
-		add(AT_FORMULA);
-		add(AT_OPTIONS);
+	PrintFormulaInference(): TypedInference("tostring", "Prints the given formula.") {
+		setNameSpace(getInternalNamespaceName());
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
-		Formula* f = args[0]._value._formula;
-		getGlobal()->setOptions(args[1].options());
+		auto f = get<0>(args);
 		return InternalArgument(StringPointer(print(f)));
 	}
 };
 
-class PrintVocabularyInference: public Inference {
+class PrintVocabularyInference: public TypedInference<LIST(Vocabulary*)> {
 public:
-	PrintVocabularyInference(): Inference("tostring") {
-		add(AT_VOCABULARY);
-		add(AT_OPTIONS);
+	PrintVocabularyInference(): TypedInference("tostring", "Prints the given vocabulary.") {
+		setNameSpace(getInternalNamespaceName());
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
-		Vocabulary* vocabulary = args[0].vocabulary();
-		getGlobal()->setOptions(args[1].options());
+		auto vocabulary = get<0>(args);
 		return InternalArgument(StringPointer(print(vocabulary)));
 	}
 };

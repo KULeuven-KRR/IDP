@@ -20,8 +20,11 @@
 
 using namespace std;
 
-string getTablenameForInternals() {
-	return "idp_intern";
+std::string getGlobalNamespaceName(){
+	return "idpglobal"; // NOTE: this string is also used in idp_intern.idp
+}
+std::string getInternalNamespaceName(){
+	return "idpintern";
 }
 
 string getPathOfLuaInternals() {

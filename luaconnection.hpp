@@ -14,13 +14,13 @@
 #include <string>
 #include <sstream>
 #include "internalargument.hpp"
-#include "commands/commandinterface.hpp"
 
 class Vocabulary;
 class AbstractStructure;
 class AbstractTheory;
 class DomainElement;
 class InternalArgument;
+class Inference;
 
 namespace LuaConnection {
 
@@ -71,13 +71,12 @@ public:
 
 	int operator()(lua_State* L) const;
 
-	const std::string& getName() const {
-		return inference_->getName();
-	}
-	const std::vector<ArgType>& getArgumentTypes() const {
-		return inference_->getArgumentTypes();
-	}
+	const std::string& getName() const;
+	const std::vector<ArgType>& getArgumentTypes() const;
+	const std::string& getNameSpace() const;
 };
+
+LuaTraceMonitor* getLuaTraceMonitor();
 
 }
 

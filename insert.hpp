@@ -1,12 +1,12 @@
 /****************************************************************
-* Copyright 2010-2012 Katholieke Universiteit Leuven
-*  
-* Use of this software is governed by the GNU LGPLv3.0 license
-* 
-* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
-* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
-* Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ * Copyright 2010-2012 Katholieke Universiteit Leuven
+ *
+ * Use of this software is governed by the GNU LGPLv3.0 license
+ *
+ * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+ * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+ * Celestijnenlaan 200A, B-3001 Leuven, Belgium
+ ****************************************************************/
 
 #ifndef INSERT_HPP
 #define INSERT_HPP
@@ -73,7 +73,7 @@ struct NSPair {
 	void includePredArity();
 	void includeFuncArity();
 	void includeArity(unsigned int n);
-	std::ostream& put(std::ostream&  output) const;
+	std::ostream& put(std::ostream& output) const;
 };
 
 // TODO no idea of meaning
@@ -122,10 +122,7 @@ enum UTF {
 };
 
 class Insert {
-
 private:
-	Options* _options;
-
 	lua_State* _state; //!< the lua state objects are added to
 
 	std::string* _currfile; //!< the file that is currently being parsed
@@ -189,8 +186,6 @@ private:
 	AbstractStructure* structureInScope(const longname&, const ParseInfo&) const;
 	UserProcedure* procedureInScope(const std::string&, const ParseInfo&) const;
 	UserProcedure* procedureInScope(const longname&, const ParseInfo&) const;
-	Options* optionsInScope(const std::string&, const ParseInfo&) const;
-	Options* optionsInScope(const longname&, const ParseInfo&) const;
 
 	bool belongsToVoc(Predicate*) const;
 	bool belongsToVoc(Function*) const;
@@ -219,7 +214,6 @@ public:
 	void openterm(const std::string& tname, YYLTYPE); //!< Open a new named term
 	void openstructure(const std::string& name, YYLTYPE); //!< Open a new structure
 	void openprocedure(const std::string& name, YYLTYPE); //!< Open a procedure
-	void openoptions(const std::string& name, YYLTYPE); //!< Open a new options block
 	void openexec(); //!< Start parsing a command
 	void closespace(); //!< Close the current namespace
 	void closevocab(); //!< Close the current vocabulary
@@ -228,7 +222,6 @@ public:
 	void closeterm(Term*); //!< Close the current named term
 	void closestructure(); //!< Close the current structure
 	void closeprocedure(std::stringstream*); //!< Close the current procedure
-	void closeoptions(); //!< Close the current options
 
 	void usingvocab(const longname& vname, YYLTYPE); //!< use vocabulary 'vname' when parsing
 	void usingspace(const longname& sname, YYLTYPE); //!< use namespace 'sname' when parsing

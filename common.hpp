@@ -26,13 +26,15 @@
 #include "loki/static_check.h"
 #include <typeinfo>
 
-#ifdef DEBUG
+#ifndef NDEBUG
 #define Assert(condition) { if(!(condition)){ std::stringstream ss; ss << "ASSERT FAILED: " << #condition << " @ " << __FILE__ << " (" << __LINE__ << ")"; throw AssertionException(ss.str());} }
 #else
 #define Assert(x) do {} while(0)
 #endif
 
-std::string getTablenameForInternals();
+std::string getGlobalNamespaceName();
+std::string getInternalNamespaceName();
+
 std::string getPathOfLuaInternals();
 std::string getPathOfIdpInternals();
 std::string getPathOfConfigFile();

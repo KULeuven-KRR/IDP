@@ -66,7 +66,23 @@ void idp_rl_start() {
 	commands = {"help()", "quit()", "exit()"};
 	// TODO ask lua also what are the user defined parsed commands
 	for(auto i = getAllInferences().cbegin(); i<getAllInferences().cend(); ++i){
-		commands.insert((*i)->getName());
+		if((*i)->getArgumentTypes().size()==0){
+			commands.insert((*i)->getName() + "()");
+		}else{
+			stringstream ss;
+			ss <<(*i)->getName() <<"(";
+			bool begin = true;
+			for(auto j=(*i)->getArgumentTypes().cbegin(); j<(*i)->getArgumentTypes().cend(); ++j){
+				if(not begin){
+					ss <<",";
+				}
+				begin = false;
+				ss <<toCString(*j);
+			}
+			ss <<")";
+			commands.insert(ss.str());
+			commands.insert((*i)->getName() + "(");
+		}
 	}
 
 	linenoiseHistorySetMaxLen(30);

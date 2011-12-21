@@ -11,30 +11,27 @@
 #ifndef MODELEXPAND_HPP_
 #define MODELEXPAND_HPP_
 
-#include <vector>
-#include <string>
 #include <iostream>
 #include "commandinterface.hpp"
 
 #include "inferences/modelexpansion/ModelExpansion.hpp"
 #include "inferences/modelexpansion/LuaTraceMonitor.hpp"
+#include "luaconnection.hpp"
 
-class ModelExpandInference: public Inference {
+class ModelExpandInference: public TypedInference<LIST(AbstractTheory*, AbstractStructure*)> {
 public:
 	ModelExpandInference() :
-			Inference("modelexpand", false) {
-		add(AT_THEORY);
-		add(AT_STRUCTURE);
-		add(AT_OPTIONS);
+			TypedInference("modelexpand", "Return a list of 2-valued models of the theory which are more precise than the given structure", false) {
+		setNameSpace(getInternalNamespaceName());
 	}
 
 	// TODO trace is returned as the SECOND return value of the lua call
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
-		AbstractTheory* theory = args[0].theory()->clone();
-		AbstractStructure* structure = args[1].structure()->clone();
-		GlobalData::instance()->setOptions(args[2].options());
-
-		auto models = ModelExpansion::doModelExpansion(theory, structure, NULL);
+		LuaTraceMonitor* tracer = NULL;
+		if(getOption(BoolType::TRACE)){
+			tracer = LuaConnection::getLuaTraceMonitor();
+		}
+		auto models = ModelExpansion::doModelExpansion(get<0>(args), get<1>(args), tracer);
 
 		// Convert to internal arguments
 		InternalArgument result;
@@ -44,45 +41,16 @@ public:
 			result._value._table->push_back(InternalArgument(*it));
 		}
 
-		return result;
-	}
-};
-
-class ModelExpandWithTraceInference: public Inference {
-public:
-	ModelExpandWithTraceInference() :
-			Inference("modelexpand", false) {
-		add(AT_THEORY);
-		add(AT_STRUCTURE);
-		add(AT_OPTIONS);
-		add(AT_TRACEMONITOR);
-	}
-
-	// TODO trace is returned as the SECOND return value of the lua call
-	InternalArgument execute(const std::vector<InternalArgument>& args) const {
-		AbstractTheory* theory = args[0].theory()->clone();
-		AbstractStructure* structure = args[1].structure()->clone();
-		GlobalData::instance()->setOptions(args[2].options());
-		LuaTraceMonitor* tracemonitor = args[3]._value._tracemonitor;
-
-		auto models = ModelExpansion::doModelExpansion(theory, structure, tracemonitor);
-
-		// Convert to internal arguments
-		InternalArgument result;
-		result._type = AT_TABLE;
-		result._value._table = new std::vector<InternalArgument>();
-		for (auto it = models.cbegin(); it != models.cend(); ++it) {
-			result._value._table->push_back(InternalArgument(*it));
+		if(tracer!=NULL){
+			InternalArgument randt;
+			randt._type = AT_MULT;
+			randt._value._table = new std::vector<InternalArgument>(1, result);
+			InternalArgument trace;
+			trace._type = AT_REGISTRY;
+			trace._value._string = tracer->index();
+			randt._value._table->push_back(trace);
+			result = randt;
 		}
-
-		InternalArgument randt;
-		randt._type = AT_MULT;
-		randt._value._table = new std::vector<InternalArgument>(1, result);
-		InternalArgument trace;
-		trace._type = AT_REGISTRY;
-		trace._value._string = tracemonitor->index();
-		randt._value._table->push_back(trace);
-		result = randt;
 
 		return result;
 	}

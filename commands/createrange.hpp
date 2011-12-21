@@ -11,26 +11,24 @@
 #ifndef CREATERANGE_HPP_
 #define CREATERANGE_HPP_
 
-#include <vector>
 #include "commandinterface.hpp"
+#include "error.hpp"
 
-class CreateRangeInference: public Inference {
+class CreateRangeInference: public TypedInference<LIST(int, int)> {
 public:
-	CreateRangeInference(): Inference("range") {
-		add(AT_INT);
-		add(AT_INT);
+	CreateRangeInference(): TypedInference("range", "Creates a new table which is the range between the first and the second argument") {
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
-		int n1 = args[0]._value._int;
-		int n2 = args[1]._value._int;
+		int n1 = get<0>(args);
+		int n2 = get<1>(args);
 		InternalArgument ia;
 		ia._type = AT_DOMAIN;
-		if(n1 <= n2) {
-			ia._value._domain = new SortTable(new IntRangeInternalSortTable(n1,n2));
-		}else{
-			ia._value._domain = new SortTable(new EnumeratedInternalSortTable());
+		if(n2>n1){
+			Error::error("Begin should be lower or equal than end");
+			return nilarg();
 		}
+		ia._value._domain = new SortTable(new IntRangeInternalSortTable(n1,n2));
 		addToGarbageCollection(ia._value._domain);
 		return ia;
 	}

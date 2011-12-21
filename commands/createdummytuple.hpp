@@ -8,25 +8,23 @@
 * Celestijnenlaan 200A, B-3001 Leuven, Belgium
 ****************************************************************/
 
-#ifndef CMD_PUSHNEGATIONS_HPP_
-#define CMD_PUSHNEGATIONS_HPP_
+#ifndef CREATETUPLE_HPP_
+#define CREATETUPLE_HPP_
 
 #include <vector>
 #include "commandinterface.hpp"
-#include "theory.hpp"
-#include "utils/TheoryUtils.hpp"
 
-class PushNegationsInference: public Inference {
+class CreateTupleInference: public TypedInference<LIST()> {
 public:
-	PushNegationsInference(): Inference("pushnegations") {
-		add(AT_THEORY);
+	CreateTupleInference(): TypedInference("createdummytuple", "Create a dummy empty tuple") {
 	}
 
-	InternalArgument execute(const std::vector<InternalArgument>& args) const {
-		AbstractTheory* t = args[0].theory();
-		t = FormulaUtils::pushNegations(t);
-		return InternalArgument(t);
+	InternalArgument execute(const std::vector<InternalArgument>&) const {
+		InternalArgument ia;
+		ia._type = AT_TUPLE;
+		ia._value._tuple = 0;
+		return ia;
 	}
 };
 
-#endif /* CMD_PUSHNEGATIONS_HPP_ */
+#endif /* CREATETUPLE_HPP_ */

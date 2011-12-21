@@ -293,7 +293,7 @@ InstGenerator* BDDToGenerator::createFromPredForm(PredForm* atom, const vector<P
 		auto newform = FormulaUtils::unnestTerms(atom, Context::NEGATIVE);
 		newform = FormulaUtils::splitComparisonChains(newform);
 		newform = FormulaUtils::graphFuncsAndAggs(newform);
-		newform = FormulaUtils::flatten(newform);
+		FormulaUtils::flatten(newform);
 		if(not sametypeid<QuantForm>(*newform)){
 			throw notyetimplemented("Creating a bdd in which unnesting does not introduce quantifiers.");
 		}

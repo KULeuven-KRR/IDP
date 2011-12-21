@@ -14,16 +14,25 @@
 #include <vector>
 #include "commandinterface.hpp"
 #include "structure.hpp"
+#include "theory.hpp"
 
-class CloneStructureInference: public Inference {
+class CloneStructureInference: public TypedInference<LIST(AbstractStructure*)> {
 public:
-	CloneStructureInference(): Inference("clone") {
-		add(AT_STRUCTURE);
+	CloneStructureInference(): TypedInference("clone", "Clones the given structure.") {
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
-		AbstractStructure* s = args[0].structure();
-		return InternalArgument(s->clone());
+		return InternalArgument(get<0>(args)->clone());
+	}
+};
+
+class CloneTheoryInference: public TypedInference<LIST(AbstractTheory*)> {
+public:
+	CloneTheoryInference(): TypedInference("clone", "Clones the given theory.") {
+	}
+
+	InternalArgument execute(const std::vector<InternalArgument>& args) const {
+		return InternalArgument(get<0>(args)->clone());
 	}
 };
 

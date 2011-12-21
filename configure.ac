@@ -43,7 +43,7 @@ AC_SUBST([GIDL_VERSION])
 AC_CXXFLAGS=" "
 AC_LDFLAGS=" "
 
-AC_CXXFLAGS+="-Wall -Wextra -pedantic "
+AC_CXXFLAGS+="-Wall -Wextra -pedantic -pthread "
 
 AC_ARG_ENABLE([build],
 [  --enable-build    Turn on debugging (debug), profiling (profile), release version(release), static release version (static) or code cover building (codecover)],

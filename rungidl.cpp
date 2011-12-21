@@ -1,12 +1,12 @@
 /****************************************************************
-* Copyright 2010-2012 Katholieke Universiteit Leuven
-*  
-* Use of this software is governed by the GNU LGPLv3.0 license
-* 
-* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
-* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
-* Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ * Copyright 2010-2012 Katholieke Universiteit Leuven
+ *
+ * Use of this software is governed by the GNU LGPLv3.0 license
+ *
+ * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+ * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+ * Celestijnenlaan 200A, B-3001 Leuven, Belgium
+ ****************************************************************/
 
 #include <cstdio>
 #include <iostream>
@@ -20,7 +20,7 @@
 #include "insert.hpp"
 #include "GlobalData.hpp"
 #include <csignal>
-#include "utils/stringutils.hpp"
+#include "utils/StringUtils.hpp"
 
 #include "GeneralUtils.hpp"
 
@@ -52,7 +52,7 @@ void usage() {
 	cout << "    -e \"<proc>\"          run procedure <proc> after parsing\n";
 	cout << "    -c <name1>=<name2>   substitute <name2> for <name1> in the input\n";
 	cout << "    --nowarnings         disable warnings\n";
-	cout << "    --seed=N             use N as seed for the random generator\n"; 
+	cout << "    --seed=N             use N as seed for the random generator\n";
 	cout << "    -I                   read from stdin\n";
 	cout << "    -v, --version        show version number and stop\n";
 	cout << "    -h, --help           show this help message\n\n";
@@ -65,16 +65,10 @@ void usage() {
 
 struct CLOptions {
 	string _exec;
-#ifdef USEINTERACTIVE
 	bool _interactive;
-#endif
 	bool _readfromstdin;
 	CLOptions() :
-			_exec("")
-#ifdef USEINTERACTIVE
-					, _interactive(false)
-#endif
-					, _readfromstdin(false) {
+			_exec(""), _interactive(false), _readfromstdin(false) {
 	}
 };
 
@@ -95,7 +89,7 @@ vector<string> read_options(int argc, char* argv[], CLOptions& cloptions) {
 			argv++;
 		}
 #ifdef USEINTERACTIVE
-		else if(str == "-i" || str == "--interactive") {
+		else if (str == "-i" || str == "--interactive") {
 			cloptions._interactive = true;
 		}
 #endif
@@ -111,13 +105,13 @@ vector<string> read_options(int argc, char* argv[], CLOptions& cloptions) {
 			argc--;
 			argv++;
 		} else if (str == "--nowarnings") {
-			setOption(BoolType::SHOWWARNINGS,false);
+			setOption(BoolType::SHOWWARNINGS, false);
 		} else if (str.substr(0, 7) == "--seed=") {
 			global_seed = toInt(str.substr(7, str.size()));
 		} else if (str == "-I") {
 			cloptions._readfromstdin = true;
 		} else if (str == "-v" || str == "--version") {
-			cout <<GIDLVERSION <<"\n";
+			cout << GIDLVERSION << "\n";
 			exit(0);
 		} else if (str == "-h" || str == "--help") {
 			usage();
@@ -161,7 +155,7 @@ void handleAndRun(const string& proc, const DomainElement** result) {
 		stringstream ss;
 		ss << "Exception caught: " << ex.getMessage() << ".\n";
 		Error::error(ss.str());
-	}catch(const std::exception& ex){
+	} catch (const std::exception& ex) {
 		stringstream ss;
 		ss << "Exception caught: " << ex.what() << ".\n";
 		Error::error(ss.str());
@@ -214,9 +208,9 @@ void timeout() {
 }
 
 void SIGINT_handler(int) {
-	if(not shouldStop() && running){
+	if (not shouldStop() && running) {
 		GlobalData::instance()->notifyTerminateRequested();
-	}else{
+	} else {
 		exit(1);
 	}
 }
@@ -226,29 +220,29 @@ void SIGUSR1_handler(int) {
 }
 
 template<typename Handler, typename SIGNAL>
-void registerHandler(Handler f, SIGNAL s){
+void registerHandler(Handler f, SIGNAL s) {
 	signal(s, f);
-/*	NON ISO - NON PORTABLE
-  	struct sigaction sigIntHandler;
-	sigIntHandler.sa_handler = f;
-	sigemptyset(&sigIntHandler.sa_mask);
-	sigIntHandler.sa_flags = 0;
-	sigaction(s, &sigIntHandler, NULL);*/
+	/*	NON ISO - NON PORTABLE
+	 struct sigaction sigIntHandler;
+	 sigIntHandler.sa_handler = f;
+	 sigemptyset(&sigIntHandler.sa_mask);
+	 sigIntHandler.sa_flags = 0;
+	 sigaction(s, &sigIntHandler, NULL);*/
 }
 
 #endif
 
 void monitorShutdown() {
 	int monitoringtime = 0;
-	while(not hasStopped && monitoringtime<3000000){
+	while (not hasStopped && monitoringtime < 3000000) {
 		sleep(10);
-		monitoringtime+=10000;
+		monitoringtime += 10000;
 	}
-	if(not hasStopped){
+	if (not hasStopped) {
 #ifdef DEBUGTHREADS // For debugging, we notify the other thread to sleep indefinitely, so we can debug properly
 		pthread_kill(executionhandle, SIGUSR1);
 #endif
-		clog <<"Shutdown failed, aborting.\n";
+		clog << "Shutdown failed, aborting.\n";
 		abort();
 	}
 }
@@ -273,8 +267,8 @@ const DomainElement* executeProcedure(const string& proc) {
 		// FIXME should not be here, but in a less error-prone place. Or should pass an adapated time-out to the solver?
 
 #ifndef __MINGW32__
-		registerHandler(SIGINT_handler,SIGINT);
-		registerHandler(SIGUSR1_handler,SIGUSR1);
+		registerHandler(SIGINT_handler, SIGINT);
+		registerHandler(SIGUSR1_handler, SIGUSR1);
 
 		std::thread signalhandling(&timeout);
 
@@ -291,7 +285,7 @@ const DomainElement* executeProcedure(const string& proc) {
 #ifndef __MINGW32__
 		signalhandling.join();
 #endif
-		if(throwfromexecution){
+		if (throwfromexecution) {
 			throw std::exception();
 		}
 	}
@@ -307,21 +301,21 @@ void interactive() {
 	cout << "Running GidL in interactive mode.\n";
 
 	idp_rl_start();
-	while(not idp_terminateInteractive()) {
+	while (not idp_terminateInteractive()) {
 		char* userline = rl_gets();
-		if(userline==NULL) {
+		if (userline == NULL) {
 			cout << "\n";
 			continue;
 		}
 
 		string command(userline);
 		command = trim(command);
-		if(command=="exit" || command=="quit" || command=="exit()" || command=="quit()") {
+		if (command == "exit" || command == "quit" || command == "exit()" || command == "quit()") {
 			free(userline);
 			idp_rl_end();
 			return;
 		}
-		if(command=="help") {
+		if (command == "help") {
 			command = "help()";
 		}
 		executeProcedure(command);
@@ -351,8 +345,8 @@ public:
  */
 Status test(const std::vector<std::string>& inputfileurls) {
 	DataManager m;
-	
-	setOption(BoolType::SHOWWARNINGS,false); //XXX Temporary solution to disable warnigns...
+
+	setOption(BoolType::SHOWWARNINGS, false); //XXX Temporary solution to disable warnigns...
 
 	try {
 		parse(inputfileurls);
@@ -366,7 +360,7 @@ Status test(const std::vector<std::string>& inputfileurls) {
 	Status result = Status::FAIL;
 	if (Error::nr_of_errors() == 0) {
 		stringstream ss;
-		ss << "return " << getTablenameForInternals() << ".main()";
+		ss << "return " << getGlobalNamespaceName() << ".main()";
 		auto value = executeProcedure(ss.str());
 		if (value != NULL && value->type() == DomainElementType::DET_INT && value->value()._int == 1) {
 			result = Status::SUCCESS;
@@ -386,6 +380,11 @@ int run(int argc, char* argv[]) {
 	CLOptions cloptions;
 	vector<string> inputfiles = read_options(argc, argv, cloptions);
 
+	// NOTE: if no input is given, we abort soon, because otherwise we get an error that no main could be found, which is a but ugly
+	if (inputfiles.size() == 0 && not cloptions._readfromstdin && not cloptions._interactive) {
+		return 0;
+	}
+
 	try {
 		parse(inputfiles);
 	} catch (const Exception& ex) {
@@ -399,13 +398,13 @@ int run(int argc, char* argv[]) {
 		parsestdin();
 	if (cloptions._exec == "") {
 		stringstream ss;
-		ss << "return " << getTablenameForInternals() << ".main()";
+		ss << "return " << getGlobalNamespaceName() << ".main()";
 		cloptions._exec = ss.str();
 	}
 
 	if (Error::nr_of_errors() == 0) {
 #ifdef USEINTERACTIVE
-		if(cloptions._interactive) {
+		if (cloptions._interactive) {
 			interactive();
 		} else {
 			executeProcedure(cloptions._exec);

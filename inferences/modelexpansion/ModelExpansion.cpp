@@ -12,7 +12,6 @@
 #include "inferences/CalculateDefinitions.hpp"
 #include "inferences/InferenceSolverConnection.hpp"
 
-#include "commands/propagate.hpp"
 #include "symmetry.hpp"
 
 #include "utils/TheoryUtils.hpp"
@@ -23,8 +22,12 @@
 #include "inferences/grounding/GroundTranslator.hpp"
 
 #include "inferences/propagation/PropagatorFactory.hpp"
+#include "inferences/grounding/GrounderFactory.hpp"
+#include "inferences/grounding/grounders/Grounder.hpp"
 
 #include "external/TerminationManagement.hpp"
+
+#include "tracemonitor.hpp"
 
 using namespace std;
 

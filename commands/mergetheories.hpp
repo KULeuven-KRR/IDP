@@ -11,23 +11,17 @@
 #ifndef MERGETHEORIES_HPP_
 #define MERGETHEORIES_HPP_
 
-#include <vector>
 #include "commandinterface.hpp"
 #include "theory.hpp"
 #include "utils/TheoryUtils.hpp"
 
-class MergeTheoriesInference: public Inference {
+class MergeTheoriesInference: public TypedInference<LIST(AbstractTheory*, AbstractTheory*)> {
 public:
-	MergeTheoriesInference(): Inference("merge") {
-		add(AT_THEORY);
-		add(AT_THEORY);
+	MergeTheoriesInference(): TypedInference("merge", "Create a new theory which is the result of combining both input theories") {
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
-		AbstractTheory* t1 = args[0].theory();
-		AbstractTheory* t2 = args[1].theory();
-		AbstractTheory* t = FormulaUtils::merge(t1,t2);
-		return InternalArgument(t);
+		return InternalArgument(FormulaUtils::merge(get<0>(args), get<1>(args)));
 	}
 };
 

@@ -1,5 +1,4 @@
 namespace mx {
-
 	/**
 	 * FIXME should NEVER override the options of the user
 	 *     rather, should give an error if one of the options is not the expected value?
@@ -9,11 +8,10 @@ namespace mx {
 		if (not Opts) then Opts = stdoptions end
 		local oldnrmodels = Opts.nrmodels
 		Opts.nrmodels = 1
-		local solutions = modelexpand(T,S,Opts)
+		local solutions = modelexpand(T,S,Opts, nil)
 		Opts.nrmodels = oldnrmodels
 		return solutions[1]
 	}
-
 
 	/**
 	 * Returns all solutions to the model expansion problem with input theory T and structure S
@@ -23,7 +21,7 @@ namespace mx {
 		local oldnrmodels = Opts.nrmodels
 		Opts.nrmodels = 0
 		Opts.nbmodelequivalent = true
-		local solutions = modelexpand(T,S,Opts)
+		local solutions = modelexpand(T,S,Opts, nil)
 		Opts.nrmodels = oldnrmodels
 		return solutions
 	}

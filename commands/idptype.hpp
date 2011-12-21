@@ -11,17 +11,15 @@
 #ifndef IDPTYPE_HPP_
 #define IDPTYPE_HPP_
 
-#include <vector>
 #include "commandinterface.hpp"
 
-class IdpTypeInference: public Inference {
+class IdpTypeInference: public TypedInference<LIST(int) > {
 public:
-	IdpTypeInference(): Inference("idptype") {
-		add(AT_INT);
+	IdpTypeInference(): TypedInference("idptype", "Returns custom typeids for first-class idp citizens.") {
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
-		ArgType tp = (ArgType)args[0]._value._int;
+		auto tp = (ArgType)get<0>(args);
 		return InternalArgument(StringPointer(toCString(tp)));
 	}
 };
