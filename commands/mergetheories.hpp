@@ -15,9 +15,10 @@
 #include "theory.hpp"
 #include "utils/TheoryUtils.hpp"
 
-class MergeTheoriesInference: public TypedInference<LIST(AbstractTheory*, AbstractTheory*)> {
+typedef TypedInference<LIST(AbstractTheory*, AbstractTheory*)> MergeTheoriesInferenceBase;
+class MergeTheoriesInference: public MergeTheoriesInferenceBase {
 public:
-	MergeTheoriesInference(): TypedInference("merge", "Create a new theory which is the result of combining both input theories") {
+	MergeTheoriesInference(): MergeTheoriesInferenceBase("merge", "Create a new theory which is the result of combining both input theories") {
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {

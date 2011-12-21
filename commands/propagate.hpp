@@ -20,10 +20,10 @@
 /**
  * Implements symbolic propagation, followed by an evaluation of the BDDs to obtain a concrete structure
  */
-class PropagateInference: public TypedInference<LIST(AbstractTheory*, AbstractStructure*)> {
+class PropagateInference: public TheoryStructureBase {
 public:
 	PropagateInference() :
-			TypedInference("propagate", "Return a structure, made more precise than the input by doing symbolic propagation on the theory.") {
+		TheoryStructureBase("propagate", "Return a structure, made more precise than the input by doing symbolic propagation on the theory.") {
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
@@ -35,10 +35,10 @@ public:
 /**
  * Implements propagation by grounding and applying unit propagation on the ground theory
  */
-class GroundPropagateInference: public TypedInference<LIST(AbstractTheory*, AbstractStructure*)> {
+class GroundPropagateInference: public TheoryStructureBase {
 public:
 	GroundPropagateInference() :
-			TypedInference("groundpropagate", "Return a structure, made more precise than the input by grounding and unit propagation on the theory.") {
+		TheoryStructureBase("groundpropagate", "Return a structure, made more precise than the input by grounding and unit propagation on the theory.") {
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
@@ -51,10 +51,10 @@ public:
  * Implements the optimal propagator by computing all models of the theory and then taking the intersection
  */
 
-class OptimalPropagateInference: public TypedInference<LIST(AbstractTheory*, AbstractStructure*)> {
+class OptimalPropagateInference: public TheoryStructureBase {
 public:
 	OptimalPropagateInference() :
-			TypedInference("optimalpropagate", "Return a structure, made more precise than the input by generating all models and checking which literals always have the same truth value.") {
+		TheoryStructureBase("optimalpropagate", "Return a structure, made more precise than the input by generating all models and checking which literals always have the same truth value.") {
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {

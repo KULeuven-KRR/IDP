@@ -11,15 +11,14 @@
 #ifndef STRUCTPROPERTIES_HPP_
 #define STRUCTPROPERTIES_HPP_
 
-#include <vector>
 #include "commandinterface.hpp"
 #include "theory.hpp"
 #include "structure.hpp"
 
-class IsConsistentInference: public TypedInference<LIST(AbstractStructure*)> {
+class IsConsistentInference: public StructureBase {
 public:
 	IsConsistentInference() :
-			TypedInference("isconsistent", "Check whether the structure is consistent") {
+		StructureBase("isconsistent", "Check whether the structure is consistent") {
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {

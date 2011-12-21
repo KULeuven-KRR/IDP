@@ -15,9 +15,9 @@
 #include "commandinterface.hpp"
 #include "structure.hpp"
 
-class DomainIteratorInference: public TypedInference<LIST(SortTable*)> {
+class DomainIteratorInference: public SortTableBase {
 public:
-	DomainIteratorInference(): TypedInference("iterator", "Create an iterator for the given sorttable.") {
+	DomainIteratorInference(): SortTableBase("iterator", "Create an iterator for the given sorttable.") {
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
@@ -32,9 +32,9 @@ public:
 /**
  * Returns an iterator for a given predicate table
  */
-class TableIteratorInference: public TypedInference<LIST(const PredTable*)> {
+class TableIteratorInference: public PredTableBase {
 public:
-	TableIteratorInference(): TypedInference("iterator", "Create an iterator for the given predtable.") {
+	TableIteratorInference(): PredTableBase("iterator", "Create an iterator for the given predtable.") {
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
@@ -46,10 +46,11 @@ public:
 	}
 };
 
-class TableDerefAndIncrementInference: public TypedInference<LIST(TableIterator*, ElementTuple*)> {
+typedef TypedInference<LIST(TableIterator*, ElementTuple*)> TableDerefAndIncrementInferenceBase;
+class TableDerefAndIncrementInference: public TableDerefAndIncrementInferenceBase {
 public:
 	TableDerefAndIncrementInference() :
-		TypedInference("deref_and_increment", "Returns the current value and increments the tableiterator.") {
+		TableDerefAndIncrementInferenceBase("deref_and_increment", "Returns the current value and increments the tableiterator.") {
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
@@ -67,10 +68,11 @@ public:
 	}
 };
 
-class DomainDerefAndIncrementInference: public TypedInference<LIST(SortIterator*, ElementTuple*)> {
+typedef TypedInference<LIST(SortIterator*, ElementTuple*)> DomainDerefAndIncrementInferenceBase;
+class DomainDerefAndIncrementInference: public DomainDerefAndIncrementInferenceBase {
 public:
 	DomainDerefAndIncrementInference() :
-			TypedInference("deref_and_increment", "Returns the current value and increments the sortiterator") {
+		DomainDerefAndIncrementInferenceBase("deref_and_increment", "Returns the current value and increments the sortiterator") {
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {

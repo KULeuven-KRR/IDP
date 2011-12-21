@@ -18,10 +18,11 @@
 #include "inferences/modelexpansion/LuaTraceMonitor.hpp"
 #include "luaconnection.hpp"
 
-class ModelExpandInference: public TypedInference<LIST(AbstractTheory*, AbstractStructure*)> {
+typedef TypedInference<LIST(AbstractTheory*, AbstractStructure*)> ModelExpandInferenceBase;
+class ModelExpandInference: public ModelExpandInferenceBase {
 public:
 	ModelExpandInference() :
-			TypedInference("modelexpand", "Return a list of 2-valued models of the theory which are more precise than the given structure", false) {
+		ModelExpandInferenceBase("modelexpand", "Return a list of 2-valued models of the theory which are more precise than the given structure", false) {
 		setNameSpace(getInternalNamespaceName());
 	}
 

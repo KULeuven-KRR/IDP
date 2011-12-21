@@ -14,9 +14,9 @@
 #include "commandinterface.hpp"
 #include "structure.hpp"
 
-class TableSizeInference: public TypedInference<LIST(const PredTable*)> {
+class TableSizeInference: public PredTableBase {
 public:
-	TableSizeInference(): TypedInference("size", "Get the size of the given table") {
+	TableSizeInference(): PredTableBase("size", "Get the size of the given table") {
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {

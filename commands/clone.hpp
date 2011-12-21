@@ -11,14 +11,13 @@
 #ifndef CLONESTRUCTURE_HPP_
 #define CLONESTRUCTURE_HPP_
 
-#include <vector>
 #include "commandinterface.hpp"
 #include "structure.hpp"
 #include "theory.hpp"
 
-class CloneStructureInference: public TypedInference<LIST(AbstractStructure*)> {
+class CloneStructureInference: public StructureBase {
 public:
-	CloneStructureInference(): TypedInference("clone", "Clones the given structure.") {
+	CloneStructureInference(): StructureBase("clone", "Clones the given structure.") {
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
@@ -26,9 +25,9 @@ public:
 	}
 };
 
-class CloneTheoryInference: public TypedInference<LIST(AbstractTheory*)> {
+class CloneTheoryInference: public TheoryBase {
 public:
-	CloneTheoryInference(): TypedInference("clone", "Clones the given theory.") {
+	CloneTheoryInference(): TheoryBase("clone", "Clones the given theory.") {
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {

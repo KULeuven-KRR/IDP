@@ -17,7 +17,8 @@
 /**
  * Implements maketrue, makefalse, and makeunknown on a predicate interpretation and a tuple
  */
-class SetAtomValueInference: public TypedInference<LIST(PredInter*, ElementTuple*)> {
+typedef TypedInference<LIST(PredInter*, ElementTuple*)> SetAtomValueInferenceBase;
+class SetAtomValueInference: public SetAtomValueInferenceBase {
 private:
 	enum SETVALUE {
 		SET_TRUE, SET_FALSE, SET_UNKNOWN
@@ -36,7 +37,7 @@ public:
 	}
 
 	SetAtomValueInference(const char* command, const char* description, SETVALUE value) :
-			TypedInference(command, description, true), value_(value) {
+		SetAtomValueInferenceBase(command, description, true), value_(value) {
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
