@@ -29,9 +29,10 @@ std::string print(Object o){
 	return stream.str();
 }
 
-class PrintStructureInference: public TypedInference<LIST(AbstractStructure*)> {
+typedef TypedInference<LIST(AbstractStructure*)> PrintStructureInferenceBase;
+class PrintStructureInference: public PrintStructureInferenceBase{
 public:
-	PrintStructureInference(): TypedInference("tostring", "Prints the given structure.") {
+	PrintStructureInference(): PrintStructureInferenceBase("tostring", "Prints the given structure.") {
 		setNameSpace(getInternalNamespaceName());
 	}
 
@@ -43,9 +44,10 @@ public:
 	}
 };
 
-class PrintNamespaceInference: public TypedInference<LIST(Namespace*)> {
+typedef TypedInference<LIST(Namespace*)> PrintNamespaceInferenceBase;
+class PrintNamespaceInference: public  PrintNamespaceInferenceBase{
 public:
-	PrintNamespaceInference(): TypedInference("tostring", "Prints the given namespace.") {
+	PrintNamespaceInference(): PrintNamespaceInferenceBase("tostring", "Prints the given namespace.") {
 		setNameSpace(getInternalNamespaceName());
 	}
 
@@ -55,9 +57,10 @@ public:
 	}
 };
 
-class PrintTheoryInference: public TypedInference<LIST(AbstractTheory*)> {
+typedef TypedInference<LIST(AbstractTheory*)> PrintTheoryInferenceBase;
+class PrintTheoryInference: public PrintTheoryInferenceBase {
 public:
-	PrintTheoryInference(): TypedInference("tostring", "Prints the given theory.") {
+	PrintTheoryInference(): PrintTheoryInferenceBase("tostring", "Prints the given theory.") {
 		setNameSpace(getInternalNamespaceName());
 	}
 
@@ -67,9 +70,10 @@ public:
 	}
 };
 
-class PrintFormulaInference: public TypedInference<LIST(Formula*)> {
+typedef TypedInference<LIST(Formula*)> PrintFormulaInferenceBase;
+class PrintFormulaInference: public PrintFormulaInferenceBase {
 public:
-	PrintFormulaInference(): TypedInference("tostring", "Prints the given formula.") {
+	PrintFormulaInference(): PrintFormulaInferenceBase("tostring", "Prints the given formula.") {
 		setNameSpace(getInternalNamespaceName());
 	}
 
@@ -79,9 +83,10 @@ public:
 	}
 };
 
-class PrintVocabularyInference: public TypedInference<LIST(Vocabulary*)> {
+typedef TypedInference<LIST(Vocabulary*)> PrintVocabularyInferenceBase;
+class PrintVocabularyInference: public PrintVocabularyInferenceBase {
 public:
-	PrintVocabularyInference(): TypedInference("tostring", "Prints the given vocabulary.") {
+	PrintVocabularyInference(): PrintVocabularyInferenceBase("tostring", "Prints the given vocabulary.") {
 		setNameSpace(getInternalNamespaceName());
 	}
 

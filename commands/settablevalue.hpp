@@ -18,7 +18,8 @@
 /**
  * Implements makeTrue, makeFalse, and makeUnknown on a predicate interpretation and lua table
  */
-class SetTableValueInference: public TypedInference<LIST(PredInter*, std::vector<InternalArgument>*)> {
+typedef TypedInference<LIST(PredInter*, std::vector<InternalArgument>*)> SetTableValueInferenceBase;
+class SetTableValueInference: public SetTableValueInferenceBase {
 private:
 	enum SETVALUE {
 		SET_TRUE, SET_FALSE, SET_UNKNOWN
@@ -36,7 +37,7 @@ public:
 	}
 
 	SetTableValueInference(const char* command, const char* description, SETVALUE value) :
-		TypedInference(command, description, true), value_(value) {
+		SetTableValueInferenceBase(command, description, true), value_(value) {
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {

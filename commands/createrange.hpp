@@ -14,9 +14,10 @@
 #include "commandinterface.hpp"
 #include "error.hpp"
 
-class CreateRangeInference: public TypedInference<LIST(int, int)> {
+typedef TypedInference<LIST(int, int)> CreateRangeInferenceBase;
+class CreateRangeInference: public CreateRangeInferenceBase {
 public:
-	CreateRangeInference(): TypedInference("range", "Creates a new table which is the range between the first and the second argument") {
+	CreateRangeInference(): CreateRangeInferenceBase("range", "Creates a new table which is the range between the first and the second argument") {
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {

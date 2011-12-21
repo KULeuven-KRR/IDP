@@ -145,4 +145,13 @@ struct AddTypes<Loki::NullType, FullList>{
 	}
 };
 
+typedef TypedInference<LIST()> EmptyBase;
+typedef TypedInference<LIST(AbstractStructure*)> StructureBase;
+typedef TypedInference<LIST(AbstractTheory*)> TheoryBase;
+typedef TypedInference<LIST(AbstractTheory*, AbstractStructure*)> TheoryStructureBase;
+typedef TypedInference<LIST(SortTable*)> SortTableBase;
+typedef TypedInference<LIST(const PredTable*)> PredTableBase;
+typedef TypedInference<LIST(Query*)> QueryBase;
+typedef TypedInference<LIST(Options*)> OptionsBase;
+
 #endif /* COMMANDINTERFACE_HPP_ */

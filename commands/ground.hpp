@@ -18,9 +18,10 @@
 #include "inferences/grounding/grounders/Grounder.hpp"
 #include "inferences/grounding/GrounderFactory.hpp"
 
-class GroundInference: public TypedInference<LIST(AbstractTheory*, AbstractStructure*)> {
+typedef TypedInference<LIST(AbstractTheory*, AbstractStructure*)> GroundBase;
+class GroundInference: public GroundBase {
 public:
-	GroundInference(): TypedInference("ground", "Returns theory which is the grounding of the given theory in the given structure.") {
+	GroundInference(): GroundBase("ground", "Returns theory which is the grounding of the given theory in the given structure.") {
 		setNameSpace(getInternalNamespaceName());
 	}
 
@@ -43,9 +44,9 @@ private:
 
 // TODO add an option to write to a file instead to stdout.
 
-class PrintGroundingInference: public TypedInference<LIST(AbstractTheory*, AbstractStructure*)> {
+class PrintGroundingInference: public GroundBase {
 public:
-	PrintGroundingInference(): TypedInference("printgrounding", "Prints the grounding to cout.", true) {
+	PrintGroundingInference(): GroundBase("printgrounding", "Prints the grounding to cout.", true) {
 		setNameSpace(getInternalNamespaceName());
 	}
 

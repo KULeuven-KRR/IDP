@@ -15,10 +15,11 @@
 #include "inferences/CalculateDefinitions.hpp"
 #include "error.hpp"
 
-class CalculateDefinitionInference: public TypedInference<LIST(AbstractTheory*, AbstractStructure*)> {
+typedef TypedInference<LIST(AbstractTheory*, AbstractStructure*)> CalculateDefinitionInferenceBase;
+class CalculateDefinitionInference: public CalculateDefinitionInferenceBase {
 public:
 	CalculateDefinitionInference() :
-		TypedInference("calculatedefinitions", "Make the structure more precise than the given one by evaluating all definitions with known open symbols.") {
+		CalculateDefinitionInferenceBase("calculatedefinitions", "Make the structure more precise than the given one by evaluating all definitions with known open symbols.") {
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {

@@ -14,9 +14,10 @@
 #include "commandinterface.hpp"
 #include "inferences/Query.hpp"
 
-class QueryInference: public TypedInference<LIST(Query*, AbstractStructure*)> {
+typedef TypedInference<LIST(Query*, AbstractStructure*)> QueryInferenceBase;
+class QueryInference: public QueryInferenceBase {
 public:
-	QueryInference(): TypedInference("query", "Generate all solutions to the given query in the given structure") {
+	QueryInference(): QueryInferenceBase("query", "Generate all solutions to the given query in the given structure") {
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {

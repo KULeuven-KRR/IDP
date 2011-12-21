@@ -15,10 +15,10 @@
 #include "vocabulary.hpp"
 #include "structure.hpp"
 
-class TwoValuedExtensionsOfStructureInference: public TypedInference<LIST(AbstractStructure*)> {
+class TwoValuedExtensionsOfStructureInference: public StructureBase {
 public:
 	TwoValuedExtensionsOfStructureInference() :
-			TypedInference("alltwovaluedextensions", "Generate all two-valued extensions of the given structure.") {
+		StructureBase("alltwovaluedextensions", "Generate all two-valued extensions of the given structure.") {
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument> & args) const {
@@ -42,10 +42,11 @@ public:
 	}
 };
 
-class TwoValuedExtensionsOfTableInference: public TypedInference<LIST(std::vector<InternalArgument>*)> {
+typedef TypedInference<LIST(std::vector<InternalArgument>*)> TwoValuedExtensionsOfTableInferenceBase;
+class TwoValuedExtensionsOfTableInference: public TwoValuedExtensionsOfTableInferenceBase {
 public:
 	TwoValuedExtensionsOfTableInference() :
-			TypedInference("alltwovaluedextensions", "Generate all two-valued extensions of the given structure.") {
+		TwoValuedExtensionsOfTableInferenceBase("alltwovaluedextensions", "Generate all two-valued extensions of the given structure.") {
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument> & args) const {

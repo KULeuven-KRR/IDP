@@ -20,9 +20,9 @@
  *	Class to test simplification of bdds.
  *  Gets a query as input and returns a string representation of the simplified bdd associated to the query.
  */
-class SimplifyInference : public TypedInference<LIST(Query*)> {
+class SimplifyInference : public QueryBase {
 public:
-	SimplifyInference() : TypedInference("simplify", "Simplifies the given query if applicable, using bdds.") {
+	SimplifyInference() : QueryBase("simplify", "Simplifies the given query if applicable, using bdds.") {
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {

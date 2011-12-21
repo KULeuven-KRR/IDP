@@ -13,9 +13,10 @@
 
 #include "commandinterface.hpp"
 
-class IdpTypeInference: public TypedInference<LIST(int) > {
+typedef TypedInference<LIST(int)> IdpTypeInferenceBase;
+class IdpTypeInference: public IdpTypeInferenceBase {
 public:
-	IdpTypeInference(): TypedInference("idptype", "Returns custom typeids for first-class idp citizens.") {
+	IdpTypeInference(): IdpTypeInferenceBase("idptype", "Returns custom typeids for first-class idp citizens.") {
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {

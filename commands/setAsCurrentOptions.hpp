@@ -13,9 +13,9 @@
 
 #include "commandinterface.hpp"
 
-class SetOptionsInference: public TypedInference<LIST(Options*)> {
+class SetOptionsInference: public OptionsBase {
 public:
-	SetOptionsInference(): TypedInference("setascurrentoptions", "Sets the given options as the current options, used by all other commands.") {
+	SetOptionsInference(): OptionsBase("setascurrentoptions", "Sets the given options as the current options, used by all other commands.") {
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
