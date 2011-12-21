@@ -1,4 +1,5 @@
 procedure getExpectedAModel(){
+	io.stderr:write("see issue 50, needs bdds\n")
 	return true
 }
 
