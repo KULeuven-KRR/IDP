@@ -15,16 +15,14 @@
 #include "commandinterface.hpp"
 #include "structure.hpp"
 
-class CleanInference: public Inference {
+class CleanInference: public TypedInference<LIST(AbstractStructure*)> {
 public:
-	CleanInference(): Inference("clean") {
-		add(AT_STRUCTURE);
+	CleanInference(): TypedInference("clean", "Combines fully specified three-valued relations into two-valued ones.") {
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
-		AbstractStructure* s = args[0].structure();
-		s->clean();
-		return InternalArgument(s);
+		get<0>(args)->clean();
+		return nilarg();
 	}
 };
 

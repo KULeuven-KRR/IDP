@@ -178,7 +178,7 @@ protected:
 
 public:
 	// Constructors
-	PFSymbol(const std::string& name, size_t nrsorts, bool infix = false);
+	PFSymbol(const std::string& name, std::size_t nrsorts, bool infix = false);
 	PFSymbol(const std::string& name, const std::vector<Sort*>& sorts, bool infix = false);
 	PFSymbol(const std::string& name, const std::vector<Sort*>& sorts, const ParseInfo& pi, bool infix = false);
 
@@ -189,9 +189,9 @@ public:
 	// Inspectors
 	const std::string& name() const; //!< Returns the name of the symbol (ends on /arity)
 	const ParseInfo& pi() const; //!< Returns the parse info of the symbol
-	size_t nrSorts() const; //!< Returns the number of sorts of the symbol
+	std::size_t nrSorts() const; //!< Returns the number of sorts of the symbol
 							//!< (arity for predicates, arity+1 for functions)
-	Sort* sort(size_t n) const; //!< Returns the n'th sort of the symbol
+	Sort* sort(std::size_t n) const; //!< Returns the n'th sort of the symbol
 	const std::vector<Sort*>& sorts() const; //!< Returns the sorts of the symbol
 	bool infix() const; //!< True iff the symbol is infix
 	bool hasVocabularies() const; //!< Returns true iff the symbol occurs in a

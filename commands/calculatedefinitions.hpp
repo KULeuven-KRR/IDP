@@ -11,38 +11,27 @@
 #ifndef CALCULATEDEFINITIONSCOMMAND_HPP_
 #define CALCULATEDEFINITIONSCOMMAND_HPP_
 
-#include <vector>
-#include <iostream>
 #include "commandinterface.hpp"
-#include "theory.hpp"
-#include "structure.hpp"
-#include "common.hpp"
-#include "utils/TheoryUtils.hpp"
 #include "inferences/CalculateDefinitions.hpp"
+#include "error.hpp"
 
-class CalculateDefinitionInference: public Inference {
+class CalculateDefinitionInference: public TypedInference<LIST(AbstractTheory*, AbstractStructure*)> {
 public:
 	CalculateDefinitionInference() :
-			Inference("calculatedefinitions") {
-		add(AT_THEORY);
-		add(AT_STRUCTURE);
-		add(AT_OPTIONS);
+		TypedInference("calculatedefinitions", "Make the structure more precise than the given one by evaluating all definitions with known open symbols.") {
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
-		Assert(sametypeid<Theory>(*(args[0].theory())));
-		Assert(sametypeid<Structure>(*(args[1].structure())));
-		auto theory = dynamic_cast<Theory*>(args[0].theory());
-		auto structure = dynamic_cast<Structure*>(args[1].structure());
-		GlobalData::instance()->setOptions(args[2].options());
-		auto clone = structure->clone();
-		auto result = CalculateDefinitions::doCalculateDefinitions(theory, clone);
-		if (not result->isConsistent() ) {
-			if (getOption(IntType::GROUNDVERBOSITY) >= 1) {
-				std::clog << "Calculating definitions resulted in inconsistent model. \n" << "Theory is unsatisfiable.\n";
-			}
+		auto t = get<0>(args);
+		Theory* theory = NULL;
+		if(sametypeid<Theory>(*t)){
+			theory = dynamic_cast<Theory*>(t);
+		}else{
+			Error::error("Can only calculate definitions with a non-ground theory.");
+			return nilarg();
 		}
-		return InternalArgument(result);
+		// FIXME this should not return a new structure! (solve creating inconsistentstructure then)
+		return InternalArgument(CalculateDefinitions::doCalculateDefinitions(theory, get<1>(args)));
 	}
 };
 

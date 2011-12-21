@@ -69,7 +69,7 @@ enum ArgType {
 	AT_TABLE, //!< a table
 	AT_PROCEDURE, //!< a procedure
 
-	AT_OVERLOADED, //!< an overloaded object
+	AT_OVERLOADED, //!< an overloaded object // Used to allow any object in a namespace to be indexed correctly by its type
 
 	// Additional return values
 	AT_MULT, //!< multiple arguments	(only used as return value)
@@ -99,8 +99,13 @@ template<typename T> map_init_helper<T> map_init(T& container) {
 
 const char* toCString(ArgType type);
 
+// TODO are these used an
 void addToGarbageCollection(SortTable* table);
 void garbageCollect(SortTable* table);
+void addToGarbageCollection(std::vector<InternalArgument>* table);
+void garbageCollect(std::vector<InternalArgument>* table);
+void addToGarbageCollection(AbstractStructure* structure);
+void garbageCollect(AbstractStructure* structure);
 
 /**
  * Objects to overload sorts, predicate, and function symbols
@@ -424,6 +429,9 @@ struct InternalArgument {
 		}
 		return 0;
 	}
+
+	template<typename ValueType>
+	ValueType get();
 
 	AbstractTheory* theory() const {
 		if (_type == AT_THEORY) {

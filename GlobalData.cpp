@@ -21,7 +21,7 @@ using namespace std;
 GlobalData::GlobalData() :
 		_globalNamespace(Namespace::createGlobal()), _inserter(_globalNamespace), _domainelemFactory(DomainElementFactory::createGlobal()),
 		_terminateRequested(false),
-		_options(new Options("stdoptions", ParseInfo())), _tabsizestack(), _errorcount(0) {
+		_options(new Options()), _tabsizestack(), _errorcount(0) {
 	_tabsizestack.push(0);
 }
 

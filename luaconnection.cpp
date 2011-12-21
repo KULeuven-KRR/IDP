@@ -1,12 +1,12 @@
 /****************************************************************
-* Copyright 2010-2012 Katholieke Universiteit Leuven
-*  
-* Use of this software is governed by the GNU LGPLv3.0 license
-* 
-* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
-* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
-* Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ * Copyright 2010-2012 Katholieke Universiteit Leuven
+ *
+ * Use of this software is governed by the GNU LGPLv3.0 license
+ *
+ * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+ * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+ * Celestijnenlaan 200A, B-3001 Leuven, Belgium
+ ****************************************************************/
 
 #include "luaconnection.hpp"
 #include <set>
@@ -31,6 +31,16 @@ using namespace std;
 using namespace LuaConnection;
 
 extern void parsefile(const string&);
+
+const std::string& InternalProcedure::getName() const {
+	return inference_->getName();
+}
+const std::string& InternalProcedure::getNameSpace() const {
+	return inference_->getNamespace();
+}
+const std::vector<ArgType>& InternalProcedure::getArgumentTypes() const {
+	return inference_->getArgumentTypes();
+}
 
 int UserProcedure::_compilenumber = 0;
 int LuaTraceMonitor::_tracenr = 0;
@@ -119,12 +129,14 @@ int InternalProcedure::operator()(lua_State* L) const {
 	LuaTraceMonitor* tracer = NULL;
 	if (getOption(BoolType::TRACE)) {
 		tracer = new LuaTraceMonitor(L);
-		args.push_back(InternalArgument(tracer));
+		assert(args.back()._type==AT_NIL);
+		// FIXME this is quite hacky!
+		args[args.size() - 1] = InternalArgument(tracer);
 	}
 	InternalArgument result = inference_->execute(args);
 	inference_->clean();
-	if(tracer!=NULL){
-		delete(tracer);
+	if (tracer != NULL) {
+		delete (tracer);
 	}
 	return LuaConnection::convertToLua(L, result);
 }
@@ -278,11 +290,10 @@ int convertToLua(lua_State* L, InternalArgument arg) {
 		(*ptr) = arg._value._options;
 		luaL_getmetatable(L, toCString(arg._type));
 		lua_setmetatable(L, -2);
-		if (arg._value._options->pi().line() == 0) {
-			if (_luaoptions.find(arg._value._options) != _luaoptions.cend())
-				++_luaoptions[arg._value._options];
-			else
-				_luaoptions[arg._value._options] = 1;
+		if (_luaoptions.find(arg._value._options) != _luaoptions.cend()) {
+			++_luaoptions[arg._value._options];
+		} else {
+			_luaoptions[arg._value._options] = 1;
 		}
 		return 1;
 	}
@@ -534,10 +545,26 @@ vector<ArgType> getArgTypes(lua_State* L, unsigned int arg) {
 	return result;
 }
 
-void errorNoSuchProcedure(map<vector<ArgType>, InternalProcedure*> const * const procs) {
+void errorNoSuchProcedure(const vector<vector<ArgType> >& passedtypes, map<vector<ArgType>, InternalProcedure*> const * const procs) {
 	string name = procs->begin()->second->getName();
 	stringstream ss;
-	ss << "There is no procedure " << name << " with the provided arguments.\n";
+	ss << "There is no procedure " << name << " with the provided arguments <";
+	bool begini = true;
+	for(auto i=passedtypes.cbegin(); i<passedtypes.cend(); ++i){
+		if(not begini){
+			ss <<",";
+		}
+		begini=false;
+		bool beginj = true;
+		for(auto j=i->cbegin(); j<i->cend(); ++j){
+			if(not beginj){
+				ss <<"/";
+			}
+			beginj=false;
+			ss <<toCString(*j);
+		}
+	}
+	ss <<">\n";
 	ss << "Did you intend to use:\n";
 	for (auto i = procs->begin(); i != procs->end(); ++i) {
 		ss << "\t" << name << "(";
@@ -621,7 +648,7 @@ int internalCall(lua_State* L) {
 	}
 
 	if (proc == NULL) {
-		errorNoSuchProcedure(procs);
+		errorNoSuchProcedure(argtypes, procs);
 		throw NoSuchProcedureException();
 	}
 
@@ -767,7 +794,8 @@ int predicateIndex(lua_State* L) {
 		for (auto it = sort->begin(); it != sort->end(); ++it) {
 			for (auto jt = pred->begin(); jt != pred->end(); ++jt) {
 				if ((*jt)->arity() == 1) {
-					if ((*jt)->resolve(vector<Sort*>(1, (*it)))) newpred->insert(*jt);
+					if ((*jt)->resolve(vector<Sort*>(1, (*it))))
+						newpred->insert(*jt);
 				}
 			}
 		}
@@ -791,7 +819,8 @@ int predicateIndex(lua_State* L) {
 				currsorts[n] = *(carry[n]);
 			for (auto it = pred->begin(); it != pred->end(); ++it) {
 				if ((*it)->arity() == table->size()) {
-					if ((*it)->resolve(currsorts)) newpred->insert(*it);
+					if ((*it)->resolve(currsorts))
+						newpred->insert(*it);
 				}
 			}
 			unsigned int c = 0;
@@ -802,7 +831,8 @@ int predicateIndex(lua_State* L) {
 				else
 					carry[c] = (*table)[c].sort()->begin();
 			}
-			if (c == table->size()) break;
+			if (c == table->size())
+				break;
 		}
 		InternalArgument np(newpred);
 		return convertToLua(L, np);
@@ -843,7 +873,8 @@ int functionIndex(lua_State* L) {
 				currsorts[n] = *(carry[n]);
 			for (auto it = func->begin(); it != func->end(); ++it) {
 				if ((*it)->arity() == newtable.size()) {
-					if ((*it)->resolve(currsorts)) newfunc->insert(*it);
+					if ((*it)->resolve(currsorts))
+						newfunc->insert(*it);
 				}
 			}
 			unsigned int c = 0;
@@ -854,7 +885,8 @@ int functionIndex(lua_State* L) {
 				else
 					carry[c] = newtable[c].sort()->begin();
 			}
-			if (c == newtable.size()) break;
+			if (c == newtable.size())
+				break;
 		}
 		InternalArgument nf(newfunc);
 		return convertToLua(L, nf);
@@ -910,18 +942,20 @@ int vocabularyIndex(lua_State* L) {
 	if (index._type == AT_STRING) {
 		unsigned int emptycounter = 0;
 		Sort* sort = voc->sort(*(index._value._string));
-		if (sort==NULL){
+		if (sort == NULL) {
 			++emptycounter;
 		}
 		set<Predicate*> preds = voc->pred_no_arity(*(index._value._string));
-		if (preds.empty()) ++emptycounter;
+		if (preds.empty())
+			++emptycounter;
 		set<Function*> funcs = voc->func_no_arity(*(index._value._string));
-		if (funcs.empty()) ++emptycounter;
+		if (funcs.empty())
+			++emptycounter;
 		if (emptycounter == 3)
 			return 0;
 		else if (emptycounter == 2) {
-			if (sort!=NULL) {
-				set<Sort*>* newsorts = new set<Sort*>{sort};
+			if (sort != NULL) {
+				set<Sort*>* newsorts = new set<Sort*> { sort };
 				InternalArgument ns(newsorts);
 				return convertToLua(L, ns);
 			} else if (!preds.empty()) {
@@ -936,7 +970,7 @@ int vocabularyIndex(lua_State* L) {
 			}
 		} else {
 			OverloadedSymbol* os = new OverloadedSymbol();
-			if (sort!=NULL) {
+			if (sort != NULL) {
 				os->insert(sort);
 			}
 			for (auto it = preds.cbegin(); it != preds.cend(); ++it)
@@ -1137,7 +1171,7 @@ int optionsIndex(lua_State* L) {
 int namespaceIndex(lua_State* L) {
 	Namespace* ns = *(Namespace**) lua_touserdata(L, 1);
 	InternalArgument index = createArgument(2, L);
-	if(index._type != AT_STRING){
+	if (index._type != AT_STRING) {
 		lua_pushstring(L, "Namespaces can only be indexed by strings");
 		return lua_error(L);
 	}
@@ -1164,10 +1198,6 @@ int namespaceIndex(lua_State* L) {
 		++counter;
 	}
 	Options* opts = 0;
-	if (ns->isOptions(str)) {
-		opts = ns->options(str);
-		++counter;
-	}
 	UserProcedure* proc = 0;
 	if (ns->isProc(str)) {
 		proc = ns->procedure(str);
@@ -1184,10 +1214,10 @@ int namespaceIndex(lua_State* L) {
 		++counter;
 	}
 
-	if(counter==0){
+	if (counter == 0) {
 		return 0;
 	}
-	if(counter>1){
+	if (counter > 1) {
 		OverloadedObject* oo = new OverloadedObject();
 		oo->insert(subsp);
 		oo->insert(vocab);
@@ -1200,12 +1230,18 @@ int namespaceIndex(lua_State* L) {
 		return convertToLua(L, InternalArgument(oo));
 	}
 
-	Assert(counter==1); // Only one element on the stack
-	if (subsp) return convertToLua(L, InternalArgument(subsp));
-	if (vocab) return convertToLua(L, InternalArgument(vocab));
-	if (theo) return convertToLua(L, InternalArgument(theo));
-	if (structure) return convertToLua(L, InternalArgument(structure));
-	if (opts) return convertToLua(L, InternalArgument(opts));
+	Assert(counter==1);
+	// Only one element on the stack
+	if (subsp)
+		return convertToLua(L, InternalArgument(subsp));
+	if (vocab)
+		return convertToLua(L, InternalArgument(vocab));
+	if (theo)
+		return convertToLua(L, InternalArgument(theo));
+	if (structure)
+		return convertToLua(L, InternalArgument(structure));
+	if (opts)
+		return convertToLua(L, InternalArgument(opts));
 	if (proc) {
 		compile(proc, L);
 		lua_getfield(L, LUA_REGISTRYINDEX, proc->registryindex().c_str());
@@ -1572,7 +1608,8 @@ int predicateArity(lua_State* L) {
 	if (arity._type == AT_INT) {
 		set<Predicate*>* newpred = new set<Predicate*>();
 		for (auto it = pred->begin(); it != pred->end(); ++it) {
-			if ((int) (*it)->arity() == arity._value._int) newpred->insert(*it);
+			if ((int) (*it)->arity() == arity._value._int)
+				newpred->insert(*it);
 		}
 		InternalArgument np(newpred);
 		return convertToLua(L, np);
@@ -1591,7 +1628,8 @@ int functionArity(lua_State* L) {
 	if (arity._type == AT_INT) {
 		set<Function*>* newfunc = new set<Function*>();
 		for (auto it = func->begin(); it != func->end(); ++it) {
-			if ((int) (*it)->arity() == arity._value._int) newfunc->insert(*it);
+			if ((int) (*it)->arity() == arity._value._int)
+				newfunc->insert(*it);
 		}
 		InternalArgument nf(newfunc);
 		return convertToLua(L, nf);
@@ -1845,10 +1883,11 @@ void createMetaTables(lua_State* L) {
 typedef map<vector<ArgType>, InternalProcedure*> internalprocargmap;
 
 // The mapping of all possible procedure names to a map with all their possible arguments and associated effective internal procedures
-map<string, internalprocargmap> name2procedures;
+map<string, map<string, internalprocargmap>> ns2name2procedures;
 
 void addInternalProcedure(Inference* inf) {
-	name2procedures[inf->getName()][inf->getArgumentTypes()] = new InternalProcedure(inf);
+	auto proc = new InternalProcedure(inf);
+	ns2name2procedures[inf->getNamespace()][inf->getName()][inf->getArgumentTypes()] = proc;
 }
 
 void addInternalProcedures(lua_State* L) {
@@ -1856,20 +1895,28 @@ void addInternalProcedures(lua_State* L) {
 		addInternalProcedure(*i);
 	}
 
-	// Add the internal procedures to lua
-	// FIXME here, all hard coded internal procedures are added to the table with name getLibraryName(),
-	// in future, we might add some procedures to the basic namespace
-	lua_getglobal(L, getTablenameForInternals().c_str());
+	set<string> namespaces;
+	for (auto i = ns2name2procedures.cbegin(); i != ns2name2procedures.cend(); ++i) {
+		auto nsspace = i->first;
+		if (namespaces.find(nsspace) == namespaces.cend()) {
+			lua_newtable(_state);
+			lua_setglobal(_state, nsspace.c_str());
+			namespaces.insert(nsspace);
+		}lua_getglobal(_state, nsspace.c_str());
+		for (auto j = i->second.cbegin(); j != i->second.cend(); ++j) {
+			auto possiblearguments = new internalprocargmap(j->second);
+			// FIXME "internalprocedure" is the name of the metatable which is the type of the internal procedures, so should also not be hardcoded strings
+			addUserData(_state, possiblearguments, "internalprocedure");
 
-	// For each procedurename, add a metatable with a map from its possible arguments to compiled procedures as argument
-	for (auto it = name2procedures.cbegin(); it != name2procedures.cend(); ++it) {
-		const string& procedurename = it->first;
-		internalprocargmap* possiblearguments = new internalprocargmap(it->second);
-		// FIXME "internalprocedure" is the name of the metatable which is the type of the internal procedures, so should also not be hardcoded strings
-		addUserData(L, possiblearguments, "internalprocedure");
-		lua_setfield(L, -2, procedurename.c_str());
+			// TODO this turned out to be the crucial part, any idea why??
+			if (nsspace == getGlobalNamespaceName()) {
+				lua_setglobal(_state, j->first.c_str());
+			} else {
+				lua_setfield(_state, -2, j->first.c_str());
+			}
+		}
+		lua_pop(_state, 1);
 	}
-	lua_pop(L, 1);
 }
 
 /**
@@ -1882,10 +1929,6 @@ void makeLuaConnection() {
 
 	// Create all metatables
 	createMetaTables(_state);
-
-	// Create the global table for the internal library
-	lua_newtable(_state);
-	lua_setglobal(_state, getTablenameForInternals().c_str());
 
 	// Add internal procedures
 	addInternalProcedures(_state);
@@ -1900,7 +1943,7 @@ void makeLuaConnection() {
 
 	// Add the global namespace and standard options
 	addGlobal(GlobalData::getGlobalNamespace());
-	addGlobal(GlobalData::getGlobalNamespace()->options("stdoptions"));
+	addGlobal("stdoptions", GlobalData::instance()->getOptions()); // TODO string "stdoptions" used twice, also in data/idp_intern.lua
 
 	// Parse standard input file
 	parsefile(getPathOfIdpInternals());
@@ -1919,15 +1962,17 @@ void makeLuaConnection() {
  */
 void closeLuaConnection() {
 	lua_close(_state);
-	for (auto it = name2procedures.cbegin(); it != name2procedures.cend(); ++it) {
-		for (auto jt = it->second.cbegin(); jt != it->second.cend(); ++jt) {
-			delete (jt->second);
+	for (auto i = ns2name2procedures.cbegin(); i != ns2name2procedures.cend(); ++i) {
+		for (auto j = i->second.cbegin(); j != i->second.cend(); ++j) {
+			for (auto k = j->second.cbegin(); k != j->second.cend(); ++k) {
+				delete (k->second);
+			}
 		}
 	}
 }
 
 const DomainElement* execute(const std::string& chunk) {
-	try{
+	try {
 		int err = luaL_dostring(_state,chunk.c_str());
 		if (err) {
 			Error::error();
@@ -1935,7 +1980,7 @@ const DomainElement* execute(const std::string& chunk) {
 			lua_pop(_state, 1);
 			return NULL;
 		}
-	}catch(NoSuchProcedureException& e){
+	} catch (NoSuchProcedureException& e) {
 		// Stops execution of further commands, as expected
 	}
 
@@ -2039,4 +2084,12 @@ string* getProcedure(const std::vector<std::string>& name, const ParseInfo& pi) 
 	} else
 		return 0;
 }
+
+LuaTraceMonitor* getLuaTraceMonitor(){
+	if(getState()==NULL){
+		return NULL;
+	}
+	return new LuaTraceMonitor(getState());
+}
+
 }

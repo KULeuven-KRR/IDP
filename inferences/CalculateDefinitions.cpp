@@ -12,8 +12,6 @@
 #include "inferences/InferenceSolverConnection.hpp"
 #include "inferences/propagation/OptimalPropagation.hpp"
 
-#include "commands/propagate.hpp"
-
 #include "utils/TheoryUtils.hpp"
 
 #include "groundtheories/GroundTheory.hpp"
@@ -96,6 +94,11 @@ AbstractStructure*  CalculateDefinitions::calculateKnownDefinitions(Theory* theo
 				opens.erase(currentdefinition);
 				fixpoint = false;
 			}
+		}
+	}
+	if (not structure->isConsistent() ) {
+		if (getOption(IntType::GROUNDVERBOSITY) >= 1) {
+			std::clog << "Calculating definitions resulted in inconsistent model. \n" << "Theory is unsatisfiable.\n";
 		}
 	}
 	return structure;

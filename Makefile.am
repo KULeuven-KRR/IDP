@@ -12,6 +12,9 @@ SUBDIRS = lib pcsolver parser
 AM_CXXFLAGS = @AC_CXXFLAGS@ -Wall -Wextra\
 		-std=c++0x\
 		-I$(srcdir)/lib/loki/include\
+		-I$(srcdir)/lib/tinythread/source\
+		-I $(top_srcdir)/pcsolver/src/\
+		-I$(srcdir)/lib/linenoise/include\
 		-I$(srcdir)/lib/lua/etc -I$(srcdir)/lib/lua/src\
 		-I$(builddir)/lib/lua/src  -I $(srcdir)/lib/\
 		-DIDPDATADIR=\"$(datadir)\" -DRCDIR=\"$(localstatedir)\"\
@@ -29,8 +32,10 @@ AM_YFLAGS = -d -v
 
 bin_PROGRAMS = gidl
 
-gidl_LDADD = $(builddir)/lib/lua/src/.libs/liblua.la -ldl
+gidl_LDADD = $(builddir)/lib/lua/src/.libs/liblua.la
 gidl_LDADD += $(builddir)/pcsolver/src/libminisatid-2.0.la
+gidl_LDADD += $(builddir)/lib/linenoise/liblinenoise-1.0.la
+gidl_LDADD += $(builddir)/lib/tinythread/source/libtinythread-1.0.la
 
 BUILT_SOURCES = parser/parser.h
 
@@ -90,6 +95,7 @@ grounder_SOURCES = \
 		inferences/propagation/PropagatorFactory.hpp inferences/propagation/PropagatorFactory.cpp\
 		inferences/propagation/GenerateBDDAccordingToBounds.hpp inferences/propagation/GenerateBDDAccordingToBounds.cpp\
 		inferences/Entails.hpp inferences/Entails.cpp\
+		inferences/Query.hpp inferences/Query.cpp\
 		rungidl.hpp rungidl.cpp\
 		commands/allcommands.hpp commands/allcommands.cpp\
 		commands/commandinterface.hpp\
@@ -180,8 +186,7 @@ grounder_SOURCES = \
 		theorytransformations/UnnestFuncsAndAggs.hpp theorytransformations/UnnestFuncsAndAggs.cpp\
 		theorytransformations/UnnestPartialTerms.hpp\
 		theorytransformations/UnnestTerms.hpp theorytransformations/UnnestTerms.cpp\
-		theorytransformations/UnnestThreeValuedTerms.hpp theorytransformations/UnnestThreeValuedTerms.cpp\
-		utils/TheoryUtils.hpp utils/TheoryUtils.cpp\
+		theorytransformations/UnnestThreeValuedTerms.hpp theorytransformations/UnnestThreeValuedTerms.cpp\	
 		GlobalData.hpp GlobalData.cpp\
 		fobdds/FoBdd.hpp fobdds/FoBdd.cpp\
 		fobdds/FoBddKernel.hpp\
@@ -222,18 +227,14 @@ grounder_SOURCES = \
 		fobdds/bddvisitors/FirstConstTermInFunc.hpp\
 		fobdds/bddvisitors/CollectSameOperationTerms.hpp\
 		IdpException.hpp\
-		lib/linenoise/linenoise.cpp lib/linenoise/utf8.cpp\
-		utils/FileManagement.hpp utils/FileManagement.cpp
+		utils/FileManagement.hpp utils/FileManagement.cpp\
+		utils/TheoryUtils.hpp utils/TheoryUtils.cpp\
+		utils/StringUtils.hpp utils/StringUtils.cpp
 		
 gidl_SOURCES = main.cpp $(grounder_SOURCES)
 
-AM_CXXFLAGS+=-I $(top_srcdir)/pcsolver/src/ 
-
 LIBSRCDIR = $(srcdir)/lib
 LIBBLDDIR = $(builddir)/lib
-
-# THREADING SUPPORT
-AM_LDFLAGS += -lpthread
 
 # CALLBACK FRAMEWORK
 AM_CXXFLAGS += -I $(LIBSRCDIR)/pluscallback1.7/
@@ -243,7 +244,7 @@ AM_CXXFLAGS += -I $(LIBSRCDIR)/linenoise/
 
 data_stddir = $(datadir)/std
 
-data_std_DATA = data/idp_intern.idp data/idp_intern.lua data/mx.idp data/theory.idp data/domain.idp
+data_std_DATA = data/idp_intern.idp data/idp_intern.lua data/mx.idp data/domain.idp
 
 data_localdir = $(localstatedir)/idp
 data_local_DATA = data/.idprc

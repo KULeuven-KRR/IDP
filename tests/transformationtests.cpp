@@ -80,12 +80,10 @@ TEST(FlattenTest,Theory) {
 	theory->add(&axaypvqvr);
 
 	// Flattening (! x : ! y : P(x,y) | (Q(x,y) | R(x,y))) to (! x y : P(x,y) | Q(x,y) | R(x,y)).
-	auto result = FormulaUtils::flatten(theory);
+	FormulaUtils::flatten(theory);
 
-	ASSERT_TRUE(sametypeid<Theory>(*result));
-	auto restheory = dynamic_cast<Theory*>(result);
-	ASSERT_EQ(1,restheory->sentences().size());
-	auto resformula = restheory->sentences()[0];
+	ASSERT_EQ(1,theory->sentences().size());
+	auto resformula = theory->sentences()[0];
 	EXPECT_TRUE(sametypeid<QuantForm>(*resformula));
 	EXPECT_EQ(2,resformula->quantVars().size());
 	ASSERT_EQ(1,resformula->subformulas().size());
@@ -93,7 +91,7 @@ TEST(FlattenTest,Theory) {
 	EXPECT_TRUE(sametypeid<BoolForm>(*ressubformula));
 	EXPECT_EQ(3,ressubformula->subformulas().size());
 
-	delete result;
+	delete theory;
 }
 
 // GraphFuncsAndAggs - formula,theory
@@ -309,10 +307,8 @@ TEST(PushNegationsTest,Theory) {
 	auto theory = new Theory("T",voc,ParseInfo());
 	theory->add(&bf);
 
-	auto result = FormulaUtils::pushNegations(theory);
-
-	ASSERT_TRUE(sametypeid<Theory>(*result));
-	auto restheory = dynamic_cast<Theory*>(result);
+	FormulaUtils::pushNegations(theory);
+	auto restheory = dynamic_cast<Theory*>(theory);
 	ASSERT_EQ(1,restheory->sentences().size());
 	auto resformula = restheory->sentences()[0];
 	EXPECT_TRUE(sametypeid<BoolForm>(*resformula));
@@ -320,7 +316,7 @@ TEST(PushNegationsTest,Theory) {
 	EXPECT_TRUE(isNeg(resformula->subformulas()[0]->sign()));
 	EXPECT_TRUE(isNeg(resformula->subformulas()[1]->sign()));
 
-	delete result;
+	delete theory;
 }
 
 // PushQuantifiers - theory

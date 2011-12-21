@@ -1,0 +1,30 @@
+/****************************************************************
+* Copyright 2010-2012 Katholieke Universiteit Leuven
+*  
+* Use of this software is governed by the GNU LGPLv3.0 license
+* 
+* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+* Celestijnenlaan 200A, B-3001 Leuven, Belgium
+****************************************************************/
+
+#ifndef CREATETUPLE_HPP_
+#define CREATETUPLE_HPP_
+
+#include <vector>
+#include "commandinterface.hpp"
+
+class CreateTupleInference: public TypedInference<LIST()> {
+public:
+	CreateTupleInference(): TypedInference("createdummytuple", "Create a dummy empty tuple") {
+	}
+
+	InternalArgument execute(const std::vector<InternalArgument>&) const {
+		InternalArgument ia;
+		ia._type = AT_TUPLE;
+		ia._value._tuple = 0;
+		return ia;
+	}
+};
+
+#endif /* CREATETUPLE_HPP_ */

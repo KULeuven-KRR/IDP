@@ -33,7 +33,7 @@ public:
 			: _reset(true){
 		std::vector<const DomElemContainer*> outvars;
 		std::vector<SortTable*> temptables;
-		for(uint i=0; i<pattern.size(); ++i){
+		for(unsigned int i=0; i<pattern.size(); ++i){
 			if(pattern[i]==Pattern::OUTPUT){
 				outvars.push_back(vars[i]);
 				temptables.push_back(table->universe().tables()[i]);

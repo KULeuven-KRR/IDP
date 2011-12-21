@@ -11,18 +11,17 @@
 #ifndef PRINTDOMAINATOM_HPP_
 #define PRINTDOMAINATOM_HPP_
 
-#include <vector>
 #include "commandinterface.hpp"
 #include "structure.hpp"
 
-class PrintDomainAtomInference: public Inference {
+class PrintDomainAtomInference: public TypedInference<LIST(const DomainAtom*)> {
 public:
-	PrintDomainAtomInference(): Inference("tostring") {
-		add(AT_DOMAINATOM);
+	PrintDomainAtomInference(): TypedInference("tostring", "Prints a domainatom") {
+		setNameSpace(getInternalNamespaceName());
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
-		const DomainAtom* atom = args[0]._value._domainatom;
+		auto atom = get<0>(args);
 		std::stringstream sstr;
 		atom->symbol()->put(sstr);
 		if(typeid(*(atom->symbol())) == typeid(Predicate)) {

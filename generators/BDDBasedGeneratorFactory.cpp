@@ -54,8 +54,8 @@ Term* solve(FOBDDManager& manager, PredForm* atom, Variable* var) {
 	}
 }
 
-vector<uint> detectDoubleOccurences(const vector<const DomElemContainer*>& vars) {
-	vector<uint> firstocc;
+vector<unsigned int> detectDoubleOccurences(const vector<const DomElemContainer*>& vars) {
+	vector<unsigned int> firstocc;
 	for (unsigned int n = 0; n < vars.size(); ++n) {
 		firstocc.push_back(n);
 		for (unsigned int m = 0; m < n; ++m) {
@@ -133,7 +133,7 @@ GeneratorNode* BDDToGenerator::createnode(const BddGeneratorData& data) {
 			kernvars.push_back(data.vars[n]);
 			if (data.pattern[n] == Pattern::OUTPUT) {
 				bool firstocc = true;
-				for (uint m = 0; m < kernoutputvars.size(); ++m) {
+				for (unsigned int m = 0; m < kernoutputvars.size(); ++m) {
 					if (kernoutputvars[m] == kernvars.back()) {
 						firstocc = false;
 						break;
@@ -293,7 +293,7 @@ InstGenerator* BDDToGenerator::createFromPredForm(PredForm* atom, const vector<P
 		auto newform = FormulaUtils::unnestTerms(atom, Context::NEGATIVE);
 		newform = FormulaUtils::splitComparisonChains(newform);
 		newform = FormulaUtils::graphFuncsAndAggs(newform);
-		newform = FormulaUtils::flatten(newform);
+		FormulaUtils::flatten(newform);
 		if(not sametypeid<QuantForm>(*newform)){
 			throw notyetimplemented("Creating a bdd in which unnesting does not introduce quantifiers.");
 		}

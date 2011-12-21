@@ -30,7 +30,6 @@ struct EntailmentData {
 	std::vector<InternalArgument> tffCounterSatisfiableStrings;
 	AbstractTheory* axioms;
 	AbstractTheory* conjectures;
-	Options* options;
 };
 
 class Entails {

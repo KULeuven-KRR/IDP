@@ -12,6 +12,7 @@ structure S:V{
 }
 
 procedure getExpectedNbOfModels(){
+	io.stderr:write("see issue 24\n")
 	return 2
 }
 	//we test for product of empty sets: solutions are {} and {1}

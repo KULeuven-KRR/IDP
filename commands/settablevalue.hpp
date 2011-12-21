@@ -11,7 +11,6 @@
 #ifndef MAKETABTRUE_HPP_
 #define MAKETABTRUE_HPP_
 
-#include <vector>
 #include "commandinterface.hpp"
 #include "monitors/interactiveprintmonitor.hpp"
 #include "structure.hpp"
@@ -19,32 +18,30 @@
 /**
  * Implements makeTrue, makeFalse, and makeUnknown on a predicate interpretation and lua table
  */
-class SetTableValueInference: public Inference {
+class SetTableValueInference: public TypedInference<LIST(PredInter*, std::vector<InternalArgument>*)> {
+private:
 	enum SETVALUE {
 		SET_TRUE, SET_FALSE, SET_UNKNOWN
 	};
-private:
 	SETVALUE value_;
 public:
 	static Inference* getMakeTableTrueInference() {
-		return new SetTableValueInference("maketrue", SET_TRUE);
+		return new SetTableValueInference("maketrue", "Sets the given tuple to true", SET_TRUE);
 	}
 	static Inference* getMakeTableFalseInference() {
-		return new SetTableValueInference("makefalse", SET_FALSE);
+		return new SetTableValueInference("makefalse", "Sets the given tuple to false", SET_FALSE);
 	}
 	static Inference* getMakeTableUnknownInference() {
-		return new SetTableValueInference("makeunknown", SET_UNKNOWN);
+		return new SetTableValueInference("makeunknown", "Sets the given tuple to unknown", SET_UNKNOWN);
 	}
 
-	SetTableValueInference(const char* command, SETVALUE value) :
-			Inference(command, true), value_(value) {
-		add(AT_PREDINTER);
-		add(AT_TABLE);
+	SetTableValueInference(const char* command, const char* description, SETVALUE value) :
+		TypedInference(command, description, true), value_(value) {
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
-		PredInter* pri = args[0]._value._predinter;
-		ElementTuple tuple = toTuple(args[1]._value._table, *printmonitor());
+		auto pri = get<0>(args);
+		auto tuple = toTuple(get<1>(args), *printmonitor());
 		switch (value_) {
 		case SET_TRUE:
 			pri->makeTrue(tuple);

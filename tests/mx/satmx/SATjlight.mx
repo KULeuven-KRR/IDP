@@ -44,7 +44,7 @@ theory T : V {
 structure S : V{ 
 	Dir = {l;r;u;d}
 	Left = l
-	Right = l
+	Right = r
 	Up = u
 	Down = d
 	Row = {1..7}

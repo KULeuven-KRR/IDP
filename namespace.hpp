@@ -41,7 +41,6 @@ private:
 	std::map<std::string, Vocabulary*> _vocabularies; //!< Map a name to the corresponding vocabulary
 	std::map<std::string, AbstractStructure*> _structures; //!< Map a name to the corresponding structure
 	std::map<std::string, AbstractTheory*> _theories; //!< Map a name to the corresponding theory
-	std::map<std::string, Options*> _options; //!< Map a name to the corresponding options
 	std::map<std::string, UserProcedure*> _procedures; //!< Map a name+arity to the corresponding procedure
 	std::map<std::string, Query*> _queries; //!< Map a name to the corresponding query
 	std::map<std::string, Term*> _terms; //!< Map a name to the corresponding term
@@ -80,13 +79,11 @@ public:
 	bool isQuery(const std::string&) const;
 	bool isTerm(const std::string&) const;
 	bool isStructure(const std::string&) const;
-	bool isOptions(const std::string&) const;
 	bool isProc(const std::string&) const;
 	Namespace* subspace(const std::string&) const;
 	Vocabulary* vocabulary(const std::string&) const;
 	AbstractTheory* theory(const std::string&) const;
 	AbstractStructure* structure(const std::string&) const;
-	Options* options(const std::string&) const; // FIXME waarom heeft een namespace options?
 	UserProcedure* procedure(const std::string&) const;
 	Query* query(const std::string&) const;
 	Term* term(const std::string&) const;
@@ -106,9 +103,6 @@ public:
 	const std::map<std::string, AbstractTheory*>& theories() const {
 		return _theories;
 	}
-	const std::map<std::string, Options*>& options() const {
-		return _options;
-	}
 	const std::map<std::string, Query*>& queries() const {
 		return _queries;
 	}
@@ -121,7 +115,6 @@ public:
 	void add(Namespace* n);
 	void add(AbstractStructure* s);
 	void add(AbstractTheory* t);
-	void add(Options* o);
 	void add(UserProcedure* l);
 	void add(const std::string& name, Query*);
 	void add(const std::string& name, Term*);

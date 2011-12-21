@@ -11,38 +11,35 @@
 #ifndef SIMPLIFY_HPP_
 #define SIMPLIFY_HPP_
 
-#include <vector>
 #include "commandinterface.hpp"
 #include "fobdds/FoBdd.hpp"
 #include "fobdds/FoBddManager.hpp"
 #include "fobdds/FoBddFactory.hpp"
 
 /**
- *	Class to test simplification of bdds. 
+ *	Class to test simplification of bdds.
  *  Gets a query as input and returns a string representation of the simplified bdd associated to the query.
  */
-class SimplifyInference : public Inference {
+class SimplifyInference : public TypedInference<LIST(Query*)> {
 public:
-	SimplifyInference() : Inference("simplify") {
-		add(AT_QUERY);
+	SimplifyInference() : TypedInference("simplify", "Simplifies the given query if applicable, using bdds.") {
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
-		Query* q = args[0]._value._query;
+		auto q = get<0>(args);
 
 		// Translate the query to a bdd
 		FOBDDManager manager;
 		FOBDDFactory factory(&manager);
-		const FOBDD* bdd = factory.turnIntoBdd(q->query());
+		auto bdd = factory.turnIntoBdd(q->query());
 		
 		// Simplify the bdd
-		const FOBDD* simplifiedbdd = manager.simplify(bdd);
+		auto simplifiedbdd = manager.simplify(bdd);
 
 		// Return the result
 		std::stringstream sstr;
 		manager.put(sstr,simplifiedbdd);
-		InternalArgument ia(StringPointer(sstr.str()));
-		return ia;
+		return InternalArgument(StringPointer(sstr.str()));
 	}
 };
 

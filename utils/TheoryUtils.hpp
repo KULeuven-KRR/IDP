@@ -130,13 +130,11 @@ Formula* unnestTerms(Formula*, Context con = Context::POSITIVE, AbstractStructur
 Formula* unnestThreeValuedTerms(Formula*, AbstractStructure*, Context context, 
 		bool cpsupport = false, const std::set<const PFSymbol*> cpsymbols = std::set<const PFSymbol*>());
 
-
-
 /** Replace all definitions in the theory by their completion */
-AbstractTheory* addCompletion(AbstractTheory*);
+void addCompletion(AbstractTheory*);
 
 /** Rewrite (! x : ! y : phi) to (! x y : phi), rewrite ((A & B) & C) to (A & B & C), etc. */
-AbstractTheory* flatten(AbstractTheory*);
+void flatten(AbstractTheory*);
 
 /** Rewrite (F(x) = y) or (y = F(x)) to Graph_F(x,y) 
   * Rewrite (AggTerm op BoundTerm) to an aggregate formula (op = '=', '<', or '>') */
@@ -149,7 +147,7 @@ AbstractTheory* merge(AbstractTheory*, AbstractTheory*);
 int nrSubformulas(AbstractTheory*);
 
 /** Push negations inside */
-AbstractTheory* pushNegations(AbstractTheory*);
+void pushNegations(AbstractTheory*);
 
 /** Rewrite (! x : phi & chi) to ((! x : phi) & (!x : chi)), and similarly for ?. */
 AbstractTheory* pushQuantifiers(AbstractTheory*);
@@ -168,7 +166,7 @@ AbstractTheory* unnestFuncsAndAggs(AbstractTheory*, AbstractStructure* str = NUL
 		Context con = Context::POSITIVE);
 
 /** Rewrite the theory so that there are no nested terms */
-AbstractTheory* unnestTerms(AbstractTheory*, Context con = Context::POSITIVE, 
+void unnestTerms(AbstractTheory*, Context con = Context::POSITIVE, 
 		AbstractStructure* str = NULL, Vocabulary* voc = NULL);
 }
 

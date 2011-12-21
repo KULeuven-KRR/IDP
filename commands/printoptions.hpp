@@ -11,19 +11,18 @@
 #ifndef PRINTOPTIONS_HPP_
 #define PRINTOPTIONS_HPP_
 
-#include <vector>
 #include "commandinterface.hpp"
 #include "options.hpp"
+#include <iostream>
 
-class PrintOptionInference: public Inference {
+class PrintOptionInference: public TypedInference<LIST(Options*)> {
 public:
-	PrintOptionInference(): Inference("tostring") {
-		add(AT_OPTIONS);
-		add(AT_OPTIONS);
+	PrintOptionInference(): TypedInference("tostring", "Prints the given optionsblock.") {
+		setNameSpace(getInternalNamespaceName());
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
-		Options* opts = args[0].options();
+		auto opts = get<0>(args);
 		return InternalArgument(StringPointer(toString(opts)));
 	}
 };

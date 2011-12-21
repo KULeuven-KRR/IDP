@@ -89,8 +89,6 @@ procedure assert2(table, values, name){
 	
 }
 
-
-
 procedure consistent(expected, Struct){
 	if not Struct then Struct = S end
 	if expected == 1 then

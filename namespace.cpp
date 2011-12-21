@@ -20,9 +20,8 @@ using namespace std;
 
 Namespace* Namespace::createGlobal() {
 	ParseInfo pi(1,1,0);
-	auto global = new Namespace("global_namespace",0,pi);
+	auto global = new Namespace(getGlobalNamespaceName(),0,pi);
 	global->add(Vocabulary::std());
-	global->add(new Options("stdoptions",pi));
 	return global;
 }
 
@@ -33,8 +32,6 @@ Namespace::~Namespace() {
 		delete(it->second);
 	for(auto it = _theories.cbegin(); it != _theories.cend(); ++it)
 		it->second->recursiveDelete();
-	for(auto it = _options.cbegin(); it != _options.cend(); ++it)
-		delete(it->second);
 	for(auto it = _procedures.cbegin(); it != _procedures.cend(); ++it)
 		delete(it->second);
 	for(auto it = _vocabularies.cbegin(); it != _vocabularies.cend(); ++it)
@@ -45,7 +42,6 @@ void Namespace::add(Vocabulary* v) 			{ _vocabularies[v->name()] = v;	v->setName
 void Namespace::add(Namespace* n)			{ _subspaces[n->name()] = n; 		}
 void Namespace::add(AbstractStructure* s)	{ _structures[s->name()] = s;		}
 void Namespace::add(AbstractTheory* t)		{ _theories[t->name()] = t; 		}
-void Namespace::add(Options* o)				{ _options[o->name()] = o; 			}
 void Namespace::add(UserProcedure* l)		{ _procedures[l->name()] = l;		}
 void Namespace::add(const string& name, Query* f)	{ _queries[name] = f;	}
 void Namespace::add(const string& name, Term* t)	{ _terms[name] = t;		}
@@ -72,10 +68,6 @@ bool Namespace::isTheory(const string& tn) const {
 
 bool Namespace::isStructure(const string& sn) const {
 	return (_structures.find(sn) != _structures.cend());
-}
-
-bool Namespace::isOptions(const string& on) const {
-	return (_options.find(on) != _options.cend());
 }
 
 bool Namespace::isProc(const string& lp) const {
@@ -110,11 +102,6 @@ Term* Namespace::term(const string& tn) const {
 AbstractStructure* Namespace::structure(const string& sn) const {
 	Assert(isStructure(sn));
 	return ((_structures.find(sn))->second);
-}
-
-Options* Namespace::options(const string& on) const {
-	Assert(isOptions(on));
-	return ((_options.find(on))->second);
 }
 
 UserProcedure* Namespace::procedure(const string& lp) const { 

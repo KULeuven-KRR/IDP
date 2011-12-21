@@ -41,7 +41,7 @@ private:
 	Universe _universe;
 
 public:
-	SimpleFuncGenerator(const FuncTable* ft, const std::vector<Pattern>& pattern, const std::vector<const DomElemContainer*>& vars, const Universe& univ, const std::vector<uint>& firstocc)
+	SimpleFuncGenerator(const FuncTable* ft, const std::vector<Pattern>& pattern, const std::vector<const DomElemContainer*>& vars, const Universe& univ, const std::vector<unsigned int>& firstocc)
 			: _function(ft), _rangevar(vars.back()), _vars(vars), _universe(univ) {
 		Assert(pattern.back()==Pattern::OUTPUT);
 		auto domainpattern = pattern;
@@ -67,7 +67,7 @@ public:
 
 		_univgen = GeneratorFactory::create(_outvars,outtabs);
 
-		for(uint i = 0; i<domainpattern.size(); ++i){
+		for(unsigned int i = 0; i<domainpattern.size(); ++i){
 			_currenttuple.push_back(_vars[i]->get());
 		}
 		_currenttuple.push_back(_rangevar->get());
@@ -87,10 +87,10 @@ public:
 			_reset = false;
 			_univgen->begin();
 
-			for(uint i = 0; i<_vars.size(); ++i){
+			for(unsigned int i = 0; i<_vars.size(); ++i){
 				_currenttuple[i] = _vars[i]->get();
 			}
-			for(uint i=0; i<_inpos.size(); ++i){
+			for(unsigned int i=0; i<_inpos.size(); ++i){
 				_currenttuple[_inpos[i]] = _invars[i]->get();
 			}
 		}
@@ -98,7 +98,7 @@ public:
 			notifyAtEnd();
 		}
 
-		for(uint i=0; i<_outpos.size(); ++i){
+		for(unsigned int i=0; i<_outpos.size(); ++i){
 			_currenttuple[_outpos[i]] = _outvars[i]->get();
 		}
 		_rangevar->operator =(_function->operator [](_currenttuple));

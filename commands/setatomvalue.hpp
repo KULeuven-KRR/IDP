@@ -1,58 +1,59 @@
 /****************************************************************
-* Copyright 2010-2012 Katholieke Universiteit Leuven
-*  
-* Use of this software is governed by the GNU LGPLv3.0 license
-* 
-* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
-* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
-* Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ * Copyright 2010-2012 Katholieke Universiteit Leuven
+ *
+ * Use of this software is governed by the GNU LGPLv3.0 license
+ *
+ * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+ * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+ * Celestijnenlaan 200A, B-3001 Leuven, Belgium
+ ****************************************************************/
 
 #ifndef MAKEFALSE_HPP_
 #define MAKEFALSE_HPP_
 
-#include <vector>
-#include "internalargument.hpp"
+#include "commandinterface.hpp"
 #include "structure.hpp"
 
 /**
  * Implements maketrue, makefalse, and makeunknown on a predicate interpretation and a tuple
  */
-class SetAtomValueInference: public Inference {
-	enum SETVALUE { SET_TRUE, SET_FALSE, SET_UNKNOWN };
+class SetAtomValueInference: public TypedInference<LIST(PredInter*, ElementTuple*)> {
 private:
+	enum SETVALUE {
+		SET_TRUE, SET_FALSE, SET_UNKNOWN
+	};
 	SETVALUE value_;
+
 public:
-	static Inference* getMakeAtomTrueInference(){
-		return new SetAtomValueInference("maketrue",SET_TRUE);
+	static Inference* getMakeAtomTrueInference() {
+		return new SetAtomValueInference("maketrue", "Sets the given tuple to true", SET_TRUE);
 	}
-	static Inference* getMakeAtomFalseInference(){
-		return new SetAtomValueInference("makefalse",SET_FALSE);
+	static Inference* getMakeAtomFalseInference() {
+		return new SetAtomValueInference("makefalse", "Sets the given tuple to false", SET_FALSE);
 	}
-	static Inference* getMakeAtomUnknownInference(){
-		return new SetAtomValueInference("makeunknown",SET_UNKNOWN);
+	static Inference* getMakeAtomUnknownInference() {
+		return new SetAtomValueInference("makeunknown", "Sets the given tuple to unknown", SET_UNKNOWN);
 	}
 
-	SetAtomValueInference(const char* command, SETVALUE value): Inference(command,true), value_(value) {
-		add(AT_PREDINTER);
-		add(AT_TUPLE);
+	SetAtomValueInference(const char* command, const char* description, SETVALUE value) :
+			TypedInference(command, description, true), value_(value) {
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
-		PredInter* pri = args[0]._value._predinter;
-		ElementTuple* tuple = args[1]._value._tuple;
+		auto pri = get<0>(args);
+		auto tuple = get<1>(args);
 		switch (value_) {
-			case SET_TRUE:
-				pri->makeTrue(*tuple);
-				break;
-			case SET_FALSE:
-				pri->makeFalse(*tuple);
-				break;
-			case SET_UNKNOWN:
-				pri->makeUnknown(*tuple);
-				break;
-			default:
-				break;
+		case SET_TRUE:
+			pri->makeTrue(*tuple);
+			break;
+		case SET_FALSE:
+			pri->makeFalse(*tuple);
+			break;
+		case SET_UNKNOWN:
+			pri->makeUnknown(*tuple);
+			break;
+		default:
+			break;
 		}
 		return nilarg();
 	}

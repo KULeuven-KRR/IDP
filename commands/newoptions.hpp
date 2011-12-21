@@ -11,17 +11,16 @@
 #ifndef NEWOPTIONS_HPP_
 #define NEWOPTIONS_HPP_
 
-#include <vector>
 #include "commandinterface.hpp"
 #include "options.hpp"
 
-class NewOptionsInference: public Inference {
+class NewOptionsInference: public TypedInference<LIST()> {
 public:
-	NewOptionsInference(): Inference("newoptions") {
+	NewOptionsInference(): TypedInference("newoptions", "Create new options, set to the standard options") {
 	}
 
-	InternalArgument execute(const std::vector<InternalArgument>&) const {
-		Options* opts = new Options("",ParseInfo());
+	InternalArgument execute(const std::vector<InternalArgument>& args) const {
+		auto opts = new Options();
 		return InternalArgument(opts);
 	}
 };

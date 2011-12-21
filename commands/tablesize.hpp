@@ -11,21 +11,16 @@
 #ifndef TABLESIZE_HPP_
 #define TABLESIZE_HPP_
 
-#include <vector>
 #include "commandinterface.hpp"
 #include "structure.hpp"
 
-/**
- * Returns the size of a table
- */
-class TableSizeInference: public Inference {
+class TableSizeInference: public TypedInference<LIST(const PredTable*)> {
 public:
-	TableSizeInference(): Inference("size") {
-		add(AT_PREDTABLE);
+	TableSizeInference(): TypedInference("size", "Get the size of the given table") {
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
-		const PredTable* pt = args[0]._value._predtable;
+		auto pt = get<0>(args);
 		const auto& size = pt->size();
 
 		InternalArgument ia; ia._type = AT_INT;

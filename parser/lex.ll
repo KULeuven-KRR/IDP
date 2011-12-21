@@ -162,8 +162,7 @@ void reset(){
 %x vocabulary
 %x structure
 %x aspstructure
-%x theory 
-%x option
+%x theory
 %x include
 %x procedure
 %x lua
@@ -282,10 +281,6 @@ COMMENTLINE		"//".*
 "procedure"				{ BEGIN(procedure);
 						  data.advancecol();
 						  return PROCEDURE_HEADER;	}
-"options"				{ BEGIN(option);
-						  data.advancecol();
-						  return OPTION_HEADER;
-						}
 "query"					{ BEGIN(theory);
 						  data.advancecol();
 						  return QUERY_HEADER;
@@ -356,20 +351,6 @@ COMMENTLINE		"//".*
 								  return EXTERN;			}
 <vocabulary>"extern vocabulary"	{ data.advancecol();
 								  return EXTERNVOCABULARY;	}
-	
-	/**************
-		Options
-	**************/
-
-<option>"extern"				{ data.advancecol();
-								  return EXTERN;			}
-<option>"options"				{ data.advancecol();	
-								  return OPTIONS;			}
-<option>"true"					{ data.advancecol();
-								  return TRUE;				}
-<option>"false"					{ data.advancecol();
-								  return FALSE;				}
-
 
 	/*************
 		Theory
