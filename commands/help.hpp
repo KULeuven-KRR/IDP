@@ -17,10 +17,11 @@
 #include "monitors/interactiveprintmonitor.hpp"
 #include "utils/StringUtils.hpp"
 
-class HelpInference: public TypedInference<LIST(Namespace*)> {
+typedef TypedInference<LIST(Namespace*)> HelpInferenceBase;
+class HelpInference: public HelpInferenceBase {
 public:
 	HelpInference() :
-			TypedInference("help", "Print information about the given namespace.", true) {
+		HelpInferenceBase("help", "Print information about the given namespace.", true) {
 		setNameSpace(getInternalNamespaceName());
 	}
 
@@ -56,7 +57,7 @@ private:
 
 		sstr << ")\n";
 		auto tempdesc = replaceAllAndTrimEachLine(description, "\n", "\n\t\t");
-		if(tempdesc.back()!='\n'){
+		if(tempdesc.at(tempdesc.length()-1)!='\n'){
 			tempdesc+='\n';
 		}
 		sstr << "\t\t" << tempdesc;

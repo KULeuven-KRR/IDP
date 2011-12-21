@@ -15,22 +15,24 @@
 #include "inferences/Entails.hpp"
 #include "error.hpp"
 
-class EntailsInference: public TypedInference<LIST(AbstractTheory*, AbstractTheory*, std::vector<InternalArgument>*, std::vector<InternalArgument>*, std::vector<InternalArgument>*, std::vector<InternalArgument>*,std::vector<InternalArgument>*, std::vector<InternalArgument>*)> {
+typedef std::vector<InternalArgument> ialist;
+typedef TypedInference<LIST(AbstractTheory*, AbstractTheory*, ialist*, ialist*, ialist*, ialist*, ialist*, ialist*)> EntailsInferenceBase;
+class EntailsInference: public EntailsInferenceBase {
 public:
 	EntailsInference() :
-		TypedInference("entails", "Checks whether the first theory entails the second, ") {
+			EntailsInferenceBase("entails", "Checks whether the first theory entails the second, ") {
 		setNameSpace(getInternalNamespaceName());
-/*		add(AT_THEORY);
-		add(AT_THEORY);
-		// Prover commands
-		add(AT_TABLE); // fof
-		add(AT_TABLE); // tff
-		// theorem/countersatisfiable strings
-		add(AT_TABLE); // fof theorem
-		add(AT_TABLE); // fof countersatisfiable
-		add(AT_TABLE); // tff theorem
-		add(AT_TABLE); // tff countersatisfiable
-		add(AT_OPTIONS);*/
+		/*		add(AT_THEORY);
+		 add(AT_THEORY);
+		 // Prover commands
+		 add(AT_TABLE); // fof
+		 add(AT_TABLE); // tff
+		 // theorem/countersatisfiable strings
+		 add(AT_TABLE); // fof theorem
+		 add(AT_TABLE); // fof countersatisfiable
+		 add(AT_TABLE); // tff theorem
+		 add(AT_TABLE); // tff countersatisfiable
+		 add(AT_OPTIONS);*/
 	}
 
 	// TODO passing options as internalarguments (e.g. the xsb path) is very ugly and absolutely not intended!
@@ -40,9 +42,9 @@ public:
 		data->fofCommands = *get<2>(args);
 		data->tffCommands = *get<3>(args);
 
-		data->fofTheoremStrings = *get<4>(args);;
+		data->fofTheoremStrings = *get<4>(args);
 		data->fofCounterSatisfiableStrings = *get<5>(args);
-		data->tffTheoremStrings = *get<6>(args);;
+		data->tffTheoremStrings = *get<6>(args);
 		data->tffCounterSatisfiableStrings = *get<7>(args);
 
 		data->axioms = get<0>(args)->clone();
@@ -55,18 +57,15 @@ public:
 		State state = Entails::doCheckEntailment(data);
 		delete (data);
 
-		InternalArgument result;
 		switch (state) {
 		case State::PROVEN:
-			result = InternalArgument(true);
+			return InternalArgument(true);
 		case State::DISPROVEN:
-			result = InternalArgument(false);
+			return InternalArgument(false);
 		case State::UNKNOWN:
-			result = nilarg();
+			return nilarg();
 		}
-		return result;
 	}
-}
-;
+};
 
 #endif /* ENTAILSINFERENCE_HPP_ */

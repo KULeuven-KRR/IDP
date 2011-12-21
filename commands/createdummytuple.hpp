@@ -11,12 +11,11 @@
 #ifndef CREATETUPLE_HPP_
 #define CREATETUPLE_HPP_
 
-#include <vector>
 #include "commandinterface.hpp"
 
-class CreateTupleInference: public TypedInference<LIST()> {
+class CreateTupleInference: public EmptyBase {
 public:
-	CreateTupleInference(): TypedInference("createdummytuple", "Create a dummy empty tuple") {
+	CreateTupleInference(): EmptyBase("createdummytuple", "Create a dummy empty tuple") {
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>&) const {

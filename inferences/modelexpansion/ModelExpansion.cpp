@@ -40,12 +40,12 @@ public:
 
 std::vector<AbstractStructure*> ModelExpansion::expand() const {
 	auto opts = GlobalData::instance()->getOptions();
-
 	// Calculate known definitions
 	// FIXME currently skipping if working lazily!
+	auto clonetheory = theory->clone(); //We only clone if needed for calculatedefinitions (which changes the theory)
 	auto newstructure = structure;
-	if (not opts->getValue(BoolType::GROUNDLAZILY) && sametypeid<Theory>(*theory)) {
-		newstructure = CalculateDefinitions::doCalculateDefinitions(dynamic_cast<Theory*>(theory), structure);
+	if (not opts->getValue(BoolType::GROUNDLAZILY) && sametypeid<Theory>(*clonetheory)) {
+		newstructure = CalculateDefinitions::doCalculateDefinitions(dynamic_cast<Theory*>(clonetheory), structure);
 		if (not newstructure->isConsistent()) {
 			return std::vector<AbstractStructure*> { };
 		}
@@ -57,13 +57,13 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 	if (getOption(IntType::GROUNDVERBOSITY) >= 1) {
 		clog << "Approximation\n";
 	}
-	auto symstructure = generateNaiveApproxBounds(theory, newstructure);
+	auto symstructure = generateNaiveApproxBounds(clonetheory, newstructure);
 	// TODO bugged! auto symstructure = generateApproxBounds(theory, structure);
 	if (getOption(IntType::GROUNDVERBOSITY) >= 1) {
 		clog << "Grounding\n";
 	}
 	GrounderFactory grounderfactory(newstructure, symstructure);
-	Grounder* grounder = grounderfactory.create(theory, solver);
+	Grounder* grounder = grounderfactory.create(clonetheory, solver);
 	if (getOption(BoolType::TRACE)) {
 		tracemonitor->setTranslator(grounder->getTranslator());
 		tracemonitor->setSolver(solver);
@@ -76,7 +76,7 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 		if (getOption(IntType::GROUNDVERBOSITY) >= 1) {
 			clog << "Symmetry breaking\n";
 		}
-		auto ivsets = findIVSets(theory, structure);
+		auto ivsets = findIVSets(clonetheory, structure);
 		if (opts->getValue(IntType::SYMMETRY) == 1) {
 			addSymBreakingPredicates(grounding, ivsets);
 		} else if (opts->getValue(IntType::SYMMETRY) == 2) {

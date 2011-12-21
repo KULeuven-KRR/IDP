@@ -14,9 +14,10 @@
 #include "commandinterface.hpp"
 #include "structure.hpp"
 
-class PrintDomainAtomInference: public TypedInference<LIST(const DomainAtom*)> {
+typedef TypedInference<LIST(const DomainAtom*)> PrintDomainAtomInferenceBase;
+class PrintDomainAtomInference: public PrintDomainAtomInferenceBase {
 public:
-	PrintDomainAtomInference(): TypedInference("tostring", "Prints a domainatom") {
+	PrintDomainAtomInference(): PrintDomainAtomInferenceBase("tostring", "Prints a domainatom") {
 		setNameSpace(getInternalNamespaceName());
 	}
 

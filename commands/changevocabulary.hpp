@@ -14,9 +14,10 @@
 #include "commandinterface.hpp"
 #include "structure.hpp"
 
-class ChangeVocabularyInference: public TypedInference<LIST(AbstractStructure*, Vocabulary*)> {
+typedef TypedInference<LIST(AbstractStructure*, Vocabulary*)> ChangeVocabularyInferenceBase;
+class ChangeVocabularyInference: public ChangeVocabularyInferenceBase {
 public:
-	ChangeVocabularyInference(): TypedInference("setvocabulary", "Changes the vocabulary of a structure to the given one.") {
+	ChangeVocabularyInference(): ChangeVocabularyInferenceBase("setvocabulary", "Changes the vocabulary of a structure to the given one.") {
 		 //If some symbol occurs both in V and in the previous vocabulary of S, its interpretation in S is kept.
 		 //For all symbols that belong to V but not to the previous vocabulary of S,
 		 //the interpretation in S is initialized to the least precise interpretation.

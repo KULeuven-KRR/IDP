@@ -15,17 +15,18 @@
 #include "inferences/CalculateDefinitions.hpp"
 #include "error.hpp"
 
-class CalculateDefinitionInference: public TypedInference<LIST(AbstractTheory*, AbstractStructure*)> {
+typedef TypedInference<LIST(AbstractTheory*, AbstractStructure*)> CalculateDefinitionInferenceBase;
+class CalculateDefinitionInference: public CalculateDefinitionInferenceBase {
 public:
 	CalculateDefinitionInference() :
-		TypedInference("calculatedefinitions", "Make the structure more precise than the given one by evaluating all definitions with known open symbols.") {
+		CalculateDefinitionInferenceBase("calculatedefinitions", "Make the structure more precise than the given one by evaluating all definitions with known open symbols.") {
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
 		auto t = get<0>(args);
 		Theory* theory = NULL;
 		if(sametypeid<Theory>(*t)){
-			theory = dynamic_cast<Theory*>(t);
+			theory = (dynamic_cast<Theory*>(t))->clone(); //Because the doCalculateDefinitions Inferences changes the theory.
 		}else{
 			Error::error("Can only calculate definitions with a non-ground theory.");
 			return nilarg();

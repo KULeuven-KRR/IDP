@@ -15,9 +15,9 @@
 #include "theory.hpp"
 #include "utils/TheoryUtils.hpp"
 
-class RemoveNestingInference : public TypedInference<LIST(AbstractTheory*)> {
+class RemoveNestingInference : public TheoryBase {
 public:
-	RemoveNestingInference (): TypedInference("removenesting", "Move nested terms (except equality) out.") {
+	RemoveNestingInference (): TheoryBase("removenesting", "Move nested terms (except equality) out.") {
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
@@ -26,9 +26,9 @@ public:
 	}
 };
 
-class PushNegationsInference: public TypedInference<LIST(AbstractTheory*)>{
+class PushNegationsInference: public TheoryBase{
 public:
-	PushNegationsInference(): TypedInference("pushnegations", "Push negations inwards until they are before literals.") {
+	PushNegationsInference(): TheoryBase("pushnegations", "Push negations inwards until they are before literals.") {
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
@@ -37,9 +37,9 @@ public:
 	}
 };
 
-class FlattenInference: public TypedInference<LIST(AbstractTheory*)> {
+class FlattenInference: public TheoryBase {
 public:
-	FlattenInference(): TypedInference("flatten", "Rewrites formulas with the same operations in their child formulas by reducing the nesting") {
+	FlattenInference(): TheoryBase("flatten", "Rewrites formulas with the same operations in their child formulas by reducing the nesting") {
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
@@ -48,9 +48,9 @@ public:
 	}
 };
 
-class CompletionInference: public TypedInference<LIST(AbstractTheory*)> {
+class CompletionInference: public TheoryBase {
 public:
-	CompletionInference(): TypedInference("completion", "Add definitional completion to the given theory.") {
+	CompletionInference(): TheoryBase("completion", "Add definitional completion to the given theory.") {
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {

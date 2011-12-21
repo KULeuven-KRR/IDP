@@ -14,9 +14,9 @@
 #include "commandinterface.hpp"
 #include "options.hpp"
 
-class NewOptionsInference: public TypedInference<LIST()> {
+class NewOptionsInference: public EmptyBase {
 public:
-	NewOptionsInference(): TypedInference("newoptions", "Create new options, set to the standard options") {
+	NewOptionsInference(): EmptyBase("newoptions", "Create new options, set to the standard options") {
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {

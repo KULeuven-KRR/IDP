@@ -11,13 +11,13 @@
 #ifndef CLEAN_HPP_
 #define CLEAN_HPP_
 
-#include <vector>
 #include "commandinterface.hpp"
 #include "structure.hpp"
 
-class CleanInference: public TypedInference<LIST(AbstractStructure*)> {
+
+class CleanInference: public StructureBase {
 public:
-	CleanInference(): TypedInference("clean", "Combines fully specified three-valued relations into two-valued ones.") {
+	CleanInference(): StructureBase("clean", "Combines fully specified three-valued relations into two-valued ones.") {
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {

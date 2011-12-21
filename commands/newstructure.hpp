@@ -16,9 +16,10 @@
 #include "vocabulary.hpp"
 #include "structure.hpp"
 
-class NewStructureInference: public TypedInference<LIST(Vocabulary*, std::string*)> {
+typedef TypedInference<LIST(Vocabulary*, std::string*)> NewStructureInferenceBase;
+class NewStructureInference: public NewStructureInferenceBase {
 public:
-	NewStructureInference(): TypedInference("newstructure", "Create an empty structure with the given name over the given vocabulary.") {
+	NewStructureInference(): NewStructureInferenceBase("newstructure", "Create an empty structure with the given name over the given vocabulary.") {
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {

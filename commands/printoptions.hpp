@@ -15,9 +15,9 @@
 #include "options.hpp"
 #include <iostream>
 
-class PrintOptionInference: public TypedInference<LIST(Options*)> {
+class PrintOptionInference: public OptionsBase {
 public:
-	PrintOptionInference(): TypedInference("tostring", "Prints the given optionsblock.") {
+	PrintOptionInference(): OptionsBase("tostring", "Prints the given optionsblock.") {
 		setNameSpace(getInternalNamespaceName());
 	}
 
