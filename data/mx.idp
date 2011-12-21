@@ -29,7 +29,7 @@ namespace mx {
 	/**
 	 * Prints a given list of models or unsatisfiable if the list is empty
 	 */
-	procedure printsols(sols){
+	procedure printmodels(sols){
 		if #sols == 0 then
 			print("Unsatisfiable")
 		end

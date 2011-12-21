@@ -1,8 +1,0 @@
-namespace domain {
-	/**
-	 * Create a domain containing all integers between First and Last
-	 */
-	procedure range(First,Last) {
-		return idpintern.range(First,Last)
-	}
-}
