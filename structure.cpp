@@ -4474,7 +4474,8 @@ void completeSortTable(const PredTable* pt, PFSymbol* symbol, const string& stru
 		for (TableIterator jt = pt->begin(); not jt.isAtEnd(); ++jt) {
 			const ElementTuple& tuple = *jt;
 			for (unsigned int col = 0; col < tuple.size(); ++col) {
-				if (!symbol->sorts()[col]->builtin()) {
+				if (not symbol->sorts()[col]->builtin()) {
+					//TODO This should only happen when this table has no user-specified interpretation, see issue 64
 					pt->universe().tables()[col]->add(tuple[col]);
 				} else if (!pt->universe().tables()[col]->contains(tuple[col])) {
 					if (typeid(*symbol) == typeid(Predicate)) {
