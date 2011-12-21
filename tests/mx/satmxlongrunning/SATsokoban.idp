@@ -51,8 +51,8 @@ theory T : V {
 	! s r1 c1 r2 c2 : MoveTo(s,r1,c1) & MoveTo(s,r2,c2) => (r1 = r2 & c1 = c2).
 	
 	// Only stop at FinalStep
-	! s : s >= 0 & s < FinalStep => ? r c : MoveTo(s,r,c).
-	! s r c : s >= FinalStep => ~MoveTo(s,r,c).
+	! s[Step] : s >= 0 & s < FinalStep => ? r c : MoveTo(s,r,c).
+	! s[Step] r c : s >= FinalStep => ~MoveTo(s,r,c).
 
 	// Only move next to a block
 	! s r c : Push(s) = Up & MoveTo(s,r,c) => Block(s,r-1,c).

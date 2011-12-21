@@ -11,7 +11,6 @@
 #ifndef STRUCTURE_HPP
 #define STRUCTURE_HPP
 
-#include "common.hpp"
 #include <limits>
 #include <cstdlib>
 #include "parseinfo.hpp"
@@ -107,16 +106,24 @@ public:
 	}
 
 	void operator=(const DomElemContainer* container) const {
+		if (del) {
+			delete (domelem_);
+		}
 		del = false;
-		delete (domelem_);
 		domelem_ = container->get();
 	}
 	void operator=(const DomElemContainer& container) const {
+		if (del) {
+			delete (domelem_);
+		}
 		del = false;
-		delete (domelem_);
 		domelem_ = container.get();
 	}
 	void operator=(const DomainElement* domelem) const {
+		if (del) {
+			delete (domelem_);
+		}
+		del = false;
 		domelem_ = domelem;
 	}
 
@@ -133,6 +140,10 @@ public:
 	}
 	bool operator>(const DomElemContainer& right) const {
 		return get() > right.get();
+	}
+
+	std::ostream& put(std::ostream& stream) const {
+		return get()->put(stream);
 	}
 };
 
@@ -160,7 +171,7 @@ struct Compare {
 		if (t1.size() < t2.size()) {
 			return true;
 		}
-		for (unsigned int n = 0; n < t1.size(); ++n) {
+		for (size_t n = 0; n < t1.size(); ++n) {
 			if (*(t1[n]) < *(t2[n])) {
 				return true;
 			} else if (*(t1[n]) > *(t2[n])) {
@@ -232,13 +243,13 @@ std::ostream& operator<<(std::ostream&, const Compound&);
 
 /**
  *	Class to create domain elements. This class is a singleton class that ensures all domain elements
- *	with the same value are stored at the same address in memory. As a result, two domain elements are equal
- *	iff they have the same address. It also ensures that all Compounds with the same function and arguments are
- *	stored at the same address.
+ *	with the same value are stored at the same address in memory. As a result, two domain elements are
+ *	equal iff they have the same address. It also ensures that all Compounds with the same function
+ *	and arguments are stored at the same address.
  *
- *	Obtaining the address of a domain element with a given value and type should take logaritmic time in the number
- *	of created domain elements of that type. For a specified integer range, obtaining the address is optimized to
- *	constant time.
+ *	Obtaining the address of a domain element with a given value and type should take logaritmic time
+ *	in the number of created domain elements of that type. For a specified integer range, obtaining
+ *	the address is optimized to constant time.
  */
 class DomainElementFactory {
 private:
@@ -290,6 +301,12 @@ template<typename Function, typename Value>
 const Compound* createCompound(Function* f, const Value& tuple) {
 	return GlobalData::getGlobalDomElemFactory()->compound(f, tuple);
 }
+
+const DomainElement* domElemSum(const DomainElement* d1, const DomainElement* d2);
+const DomainElement* domElemProd(const DomainElement* d1, const DomainElement* d2);
+const DomainElement* domElemPow(const DomainElement* d1, const DomainElement* d2);
+const DomainElement* domElemAbs(const DomainElement* d);
+const DomainElement* domElemUmin(const DomainElement* d);
 
 /*******************
  Domain atoms
@@ -503,14 +520,15 @@ class InternalPredTable;
 enum TableSizeType {
 	TST_APPROXIMATED, TST_INFINITE, TST_EXACT, TST_UNKNOWN
 };
+
 struct tablesize {
 	TableSizeType _type;
-	unsigned int _size;
-	tablesize(TableSizeType tp, unsigned int sz) :
-			_type(tp), _size(sz) {
+	size_t _size;
+	tablesize(TableSizeType tp, size_t sz) 
+		: _type(tp), _size(sz) {
 	}
-	tablesize() :
-			_type(TST_UNKNOWN), _size(0) {
+	tablesize() 
+		: _type(TST_UNKNOWN), _size(0) {
 	}
 };
 
@@ -2469,6 +2487,7 @@ public:
 	virtual Universe universe(const PFSymbol*) const = 0;
 
 	virtual bool approxTwoValued() const =0;
+
 	// Note: loops over all tuples of all tables, SLOW!
 	virtual bool isConsistent() const = 0;
 

@@ -171,20 +171,20 @@ grounder_SOURCES = \
 		theoryinformation/CheckFuncTerms.hpp\
 		theoryinformation/CheckPartialTerm.hpp\
 		theoryinformation/ApproxCheckTwoValued.hpp theoryinformation/ApproxCheckTwoValued.cpp\
+		theoryinformation/DeriveTermBounds.hpp theoryinformation/DeriveTermBounds.cpp\
 		theorytransformations/PushNegations.hpp theorytransformations/PushNegations.cpp\
 		theorytransformations/Flatten.hpp theorytransformations/Flatten.cpp\
 		theorytransformations/DeriveSorts.hpp theorytransformations/DeriveSorts.cpp\
 		theorytransformations/AddCompletion.hpp theorytransformations/AddCompletion.cpp\
-		theorytransformations/GraphFunctions.hpp theorytransformations/GraphFunctions.cpp\
-		theorytransformations/GraphAggregates.hpp theorytransformations/GraphAggregates.cpp\
 		theorytransformations/GraphFuncsAndAggs.hpp theorytransformations/GraphFuncsAndAggs.cpp\
 		theorytransformations/SplitProducts.hpp theorytransformations/SplitProducts.cpp\
 		theorytransformations/PushQuantifications.hpp theorytransformations/PushQuantifications.cpp\
 		theorytransformations/RemoveEquivalences.hpp theorytransformations/RemoveEquivalences.cpp\
 		theorytransformations/SplitComparisonChains.hpp theorytransformations/SplitComparisonChains.cpp\
 		theorytransformations/SubstituteTerm.hpp\
-		theorytransformations/UnnestPartialTerms.hpp\
 		theorytransformations/SplitIntoMonotoneAgg.hpp\
+		theorytransformations/UnnestFuncsAndAggs.hpp theorytransformations/UnnestFuncsAndAggs.cpp\
+		theorytransformations/UnnestPartialTerms.hpp\
 		theorytransformations/UnnestTerms.hpp theorytransformations/UnnestTerms.cpp\
 		theorytransformations/UnnestThreeValuedTerms.hpp theorytransformations/UnnestThreeValuedTerms.cpp\	
 		GlobalData.hpp GlobalData.cpp\

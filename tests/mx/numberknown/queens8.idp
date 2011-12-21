@@ -20,3 +20,7 @@ Col = {1..8}
 procedure getExpectedNbOfModels(){
 	return 92
 }
+
+procedure getExpectedAModel(){
+	return true
+}

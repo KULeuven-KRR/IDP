@@ -8,6 +8,10 @@
 *.or
 *.project
 *.cproject
+*.aux
+*.log
+*.tex.backup
+*.tex~
 *depend.mk
 *Makefile.in
 aclocal.m4

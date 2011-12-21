@@ -26,6 +26,7 @@
 #include "theoryinformation/CheckSorts.hpp"
 #include "theoryinformation/CollectOpensOfDefinitions.hpp"
 #include "theoryinformation/CountNbOfSubFormulas.hpp"
+#include "theoryinformation/DeriveTermBounds.hpp"
 #include "theorytransformations/PushNegations.hpp"
 #include "theorytransformations/Flatten.hpp"
 #include "theorytransformations/DeriveSorts.hpp"
@@ -35,6 +36,7 @@
 #include "theorytransformations/PushQuantifications.hpp"
 #include "theorytransformations/SplitComparisonChains.hpp"
 #include "theorytransformations/SubstituteTerm.hpp"
+#include "theorytransformations/UnnestFuncsAndAggs.hpp"
 #include "theorytransformations/UnnestPartialTerms.hpp"
 #include "theorytransformations/UnnestTerms.hpp"
 #include "theorytransformations/UnnestThreeValuedTerms.hpp"
@@ -50,7 +52,12 @@ void checkSorts(Vocabulary* voc, Term* term) {
 }
 
 void deriveSorts(Vocabulary* voc, Term* term) {
-	transform<DeriveSorts>(term, voc);
+	transform<DeriveSorts>(term, voc, false);
+	transform<DeriveSorts>(term, voc, true);
+}
+
+ElementTuple deriveTermBounds(Term* term, const AbstractStructure* str) {
+	return transform<DeriveTermBounds, ElementTuple>(term, str);
 }
 
 bool isPartial(Term* term) {
@@ -64,10 +71,9 @@ bool approxTwoValued(SetExpr* exp, AbstractStructure* str) {
 	return transform<ApproxCheckTwoValued, bool>(str, exp);
 }
 
-SetExpr* moveThreeValuedTerms(SetExpr* exp, AbstractStructure* structure, Context context, 
+SetExpr* unnestThreeValuedTerms(SetExpr* exp, AbstractStructure* structure, Context context, 
 		bool cpsupport, const std::set<const PFSymbol*> cpsymbols) {
-	transform<UnnestThreeValuedTerms>(exp, structure, context, cpsupport, cpsymbols);
-	return exp;
+	return transform<UnnestThreeValuedTerms, SetExpr*>(exp, structure, context, cpsupport, cpsymbols);
 }
 }
 
@@ -78,7 +84,8 @@ void checkSorts(Vocabulary* voc, Rule* rule) {
 }
 
 void deriveSorts(Vocabulary* voc, Rule* rule) {
-	transform<DeriveSorts>(rule, voc);
+	transform<DeriveSorts>(rule, voc, false);
+	transform<DeriveSorts>(rule, voc, true);
 }
 
 std::set<PFSymbol*> opens(Definition* d) {
@@ -110,15 +117,16 @@ bool containsSymbol(const PFSymbol* s, const Formula* f) {
 }
 
 void deriveSorts(Vocabulary* v, Formula* f){
-	transform<DeriveSorts>(f, v);
+	transform<DeriveSorts>(f, v, false);
+	transform<DeriveSorts>(f, v, true);
 }
 
 Formula* flatten(Formula* f) {
 	return transform<Flatten, Formula*>(f);
 }
 
-Formula* graphFuncsAndAggs(Formula* f) {
-	return transform<GraphFuncsAndAggs, Formula*>(f);
+Formula* graphFuncsAndAggs(Formula* f, AbstractStructure* str, Context con) {
+	return transform<GraphFuncsAndAggs, Formula*>(f,str,con);
 }
 
 Formula* pushNegations(Formula* f) {
@@ -145,12 +153,16 @@ Formula* substituteTerm(Formula* f, Term* t, Variable* v) {
 	return transform<SubstituteTerm, Formula*>(f, t, v);
 }
 
-Formula* unnestPartialTerms(Formula* f, Context context, Vocabulary* voc) {
-	return transform<UnnestPartialTerms, Formula*>(f, context, voc);
+Formula* unnestFuncsAndAggs(Formula* f, AbstractStructure* str, Context con) {
+	return transform<UnnestFuncsAndAggs, Formula*>(f, str, con);
 }
 
-Formula* unnestTerms(Formula* f, Context poscontext) {
-	return transform<UnnestTerms, Formula*>(f, poscontext);
+Formula* unnestPartialTerms(Formula* f, Context con, AbstractStructure* str, Vocabulary* voc) {
+	return transform<UnnestPartialTerms, Formula*>(f, con, str, voc);
+}
+
+Formula* unnestTerms(Formula* f, Context con, AbstractStructure* str, Vocabulary* voc) {
+	return transform<UnnestTerms, Formula*>(f, con, str, voc);
 }
 
 Formula* unnestThreeValuedTerms(Formula* f, AbstractStructure* structure, Context context, 
@@ -168,8 +180,8 @@ void flatten(AbstractTheory* t) {
 	Assert(newt==t);
 }
 
-AbstractTheory* graphFuncsAndAggs(AbstractTheory* t) {
-	return transform<GraphFuncsAndAggs, AbstractTheory*>(t);
+AbstractTheory* graphFuncsAndAggs(AbstractTheory* t, AbstractStructure* str, Context con) {
+	return transform<GraphFuncsAndAggs, AbstractTheory*>(t,str,con);
 }
 
 void pushNegations(AbstractTheory* t) {
@@ -185,16 +197,20 @@ AbstractTheory* removeEquivalences(AbstractTheory* t) {
 	return transform<RemoveEquivalences, AbstractTheory*>(t);
 }
 
-AbstractTheory* splitComparisonChains(AbstractTheory* t) {
-	return transform<SplitComparisonChains, AbstractTheory*>(t);
+AbstractTheory* splitComparisonChains(AbstractTheory* t, Vocabulary* voc) {
+	return transform<SplitComparisonChains, AbstractTheory*>(t, voc);
 }
 
 AbstractTheory* splitProducts(AbstractTheory* t) {
 	return transform<SplitProducts, AbstractTheory*>(t);
 }
 
-void unnestTerms(AbstractTheory* t) {
-	auto newt = transform<UnnestTerms, AbstractTheory*>(t);
+AbstractTheory* unnestFuncsAndAggs(AbstractTheory* t, AbstractStructure* str, Context con) {
+	return transform<UnnestFuncsAndAggs, AbstractTheory*>(t, str, con);
+}
+
+void unnestTerms(AbstractTheory* t, Context con, AbstractStructure* str, Vocabulary* voc) {
+	auto newt = transform<UnnestTerms, AbstractTheory*>(t, con, str, voc);
 	Assert(newt==t);
 }
 
@@ -203,7 +219,7 @@ int nrSubformulas(AbstractTheory* t) {
 }
 
 AbstractTheory* merge(AbstractTheory* at1, AbstractTheory* at2) {
-	if (typeid(*at1) != typeid(Theory) || typeid(*at2) != typeid(Theory)) {
+	if (not sametypeid<Theory>(*at1) || not sametypeid<Theory>(*at2)) {
 		throw notyetimplemented("Only merging of normal theories has been implemented...");
 	}
 	if (at1->vocabulary() != at2->vocabulary()) {

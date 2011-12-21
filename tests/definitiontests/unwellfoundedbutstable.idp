@@ -18,6 +18,7 @@ structure S:V{
 }
 
 procedure assertions(){
+	io.stderr:write("see issue 66")
 	return consistent(0)
 }
 

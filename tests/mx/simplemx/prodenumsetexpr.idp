@@ -13,6 +13,7 @@ structure S:V{
 }
 
 procedure getExpectedNbOfModels(){
+	io.stderr:write("see issue 24\n")
  --P(0) is vrij, de rest kan nooit waar zijn
 	return 2
 }

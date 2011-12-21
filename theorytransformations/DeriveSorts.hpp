@@ -43,10 +43,14 @@ private:
 	bool _changed, _firstvisit, _underivable;
 	Sort* _assertsort;
 	const Vocabulary* _vocab;
+	bool _useBuiltIns;
 
 public:
 	template<typename T>
-	void execute(T f, Vocabulary* v) {
+	//Note: always run this twice: first with useBuiltins false, then with useBuiltIns true.
+	//This allows for better type-derivation.
+	void execute(T f, Vocabulary* v, bool useBuiltIns) {
+		_useBuiltIns = useBuiltIns;
 		_assertsort = NULL;
 		_vocab = v;
 		deriveSorts(f);
@@ -79,7 +83,9 @@ private:
 			derivepreds();
 			f->accept(this); // Next visit: type derivation over overloaded predicates or functions.
 		}
-		check();
+		if(_useBuiltIns){
+			check();
+		}
 	}
 
 	void derivesorts(); // derive the sorts of the variables, based on the sorts in _untyped
@@ -92,6 +98,6 @@ private:
 };
 
 class Rule;
-template<> void DeriveSorts::execute(Rule* r, Vocabulary* v);
+template<> void DeriveSorts::execute(Rule* r, Vocabulary* v, bool useBuiltins);
 
 #endif /* DERIVESORTS_HPP_ */

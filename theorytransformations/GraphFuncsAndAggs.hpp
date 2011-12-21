@@ -12,17 +12,28 @@
 #define GRAPHFUNCSANDAGGS_HPP_
 
 #include "visitors/TheoryMutatingVisitor.hpp"
-#include "parseinfo.hpp"
+//#include "parseinfo.hpp"
 #include "commontypes.hpp"
+
+class AbstractStructure;
+class FormulaParseInfo;
+
+//TODO issue #23
+//TODO Check recursion issue... Think about nested aggregates!
+//TODO if this transformer works completely like it should, 
+// then we should probably remove graphFunctions and graphAggregates, 
+// because they should not be used anymore..
 
 class GraphFuncsAndAggs : public TheoryMutatingVisitor {
 	VISITORFRIENDS()
-//private:
-//	bool _recursive;
+private:
+	AbstractStructure* 	_structure;
+	Context 			_context;
 public:
 	template<typename T>
-	T execute(T t/*, bool recursive = false*/){
-//		_recursive = recursive;
+	T execute(T t, AbstractStructure* str = NULL, Context c = Context::POSITIVE) {
+		_structure = str;
+		_context = c;
 		return t->accept(this);
 	}
 protected:

@@ -25,9 +25,9 @@
  *		- class to represent a vocabulary.
  */
 
-/*************
- Sorts
- *************/
+/*********
+ * Sorts
+ ********/
 
 class Predicate;
 class Vocabulary;
@@ -56,8 +56,8 @@ protected:
 	void setPred(Predicate* p){ _pred = p; }
 
 public:
-	Sort(const std::string& name, SortTable* inter = 0); //!< Create an internal sort
-	Sort(const std::string& name, const ParseInfo& pi, SortTable* inter = 0); //!< Create a user-declared sort
+	Sort(const std::string& name, SortTable* inter = NULL); //!< Create an internal sort
+	Sort(const std::string& name, const ParseInfo& pi, SortTable* inter = NULL); //!< Create a user-declared sort
 
 	// Mutators
 	void addParent(Sort* p); //!< Adds p as a parent. Also adds this as a child of p.
@@ -69,12 +69,12 @@ public:
 	Predicate* pred() const; //!< Returns the corresponding predicate
 	const std::set<Sort*>& parents() const;
 	const std::set<Sort*>& children() const;
-	std::set<Sort*> ancestors(const Vocabulary* v = 0) const; //!< Returns the ancestors of the sort
-	std::set<Sort*> descendents(const Vocabulary* v = 0) const; //!< Returns the descendents of the sort
+	std::set<Sort*> ancestors(const Vocabulary* v = NULL) const; //!< Returns the ancestors of the sort
+	std::set<Sort*> descendents(const Vocabulary* v = NULL) const; //!< Returns the descendents of the sort
 	virtual bool builtin() const; //!< True iff the sort is built-in
 	SortTable* interpretation() const; //!< Returns the interpretation for built-in sorts
-	std::set<const Vocabulary*>::const_iterator  firstVocabulary() const ;
-	std::set<const Vocabulary*>::const_iterator lastVocabulary() const ;
+	std::set<const Vocabulary*>::const_iterator firstVocabulary() const;
+	std::set<const Vocabulary*>::const_iterator lastVocabulary() const;
 
 	void removeVocabulary(const Vocabulary*); //!< Removes a vocabulary from the list of vocabularies
 	void addVocabulary(const Vocabulary*); //!< Add a vocabulary to the list of vocabularies
@@ -87,9 +87,7 @@ public:
 class UnionSort: public Sort {
 private:
 	std::vector<Sort*> sorts;
-	~UnionSort(){
-
-	}
+	~UnionSort(){}
 
 public:
 	UnionSort(const std::vector<Sort*>& sorts);
@@ -102,15 +100,16 @@ public:
 std::ostream& operator<<(std::ostream&, const Sort&);
 
 namespace SortUtils {
-Sort* resolve(Sort* s1, Sort* s2, const Vocabulary* v = 0);
-//!< Return the unique nearest common ancestor of two sorts
-bool isSubsort(Sort* a, Sort* b);
-//!< returns true iff sort a is a subsort of sort b
+/** Return the unique nearest common ancestor of two sorts */
+Sort* resolve(Sort* a, Sort* b, const Vocabulary* voc = NULL);
+
+/** Return true iff sort a is a subsort of sort b */
+bool isSubsort(Sort* a, Sort* b, const Vocabulary* voc = NULL);
 }
 
-/****************
- Variables
- ****************/
+/**************
+ * Variables
+ *************/
 
 /**
  *	\brief	Class to represent variables.
@@ -153,9 +152,9 @@ namespace VarUtils {
 std::vector<Variable*> makeNewVariables(const std::vector<Sort*>&);
 }
 
-/*************************************
- Predicate and function symbols
- *************************************/
+/**********************************
+ * Predicate and function symbols
+ *********************************/
 
 enum SymbolType {
 	ST_NONE, ST_CT, ST_CF, ST_PT, ST_PF
@@ -539,30 +538,22 @@ public:
 };
 
 namespace FuncUtils {
-/**
- * return an new overloaded function containing the two given functions
- */
+/** Return an new overloaded function containing the two given functions **/
 Function* overload(Function* p1, Function* p2);
 
-/**
- * return a new overloaded function containing the given functions
- */
+/** Return a new overloaded function containing the given functions **/
 Function* overload(const std::set<Function*>&);
 
-/**
- * check whether the output sort of a function is integer
- */
+/** Check whether the output sort of a function is integer **/
 bool isIntFunc(const Function*, const Vocabulary*);
 
-/**
- * check whether the function is a sum over integers
- */
+/** Check whether the function is a sum over integers **/
 bool isIntSum(const Function* function, const Vocabulary* voc);
 }
 
-/*****************
- Vocabulary
- *****************/
+/**************
+ * Vocabulary
+ *************/
 
 class Namespace;
 

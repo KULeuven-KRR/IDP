@@ -122,7 +122,7 @@ TEST(GraphFuncsAndAggsTest,TwoFuncTerms) {
 
 	Formula& eqf0g0 = (f({x}) == g({y}));
 
-	// Rewriting (F(x) = G(y)) to (! z : G(y) = z => F(x) = z) 
+	// Rewriting (F(x) = G(y)) to (! z : ~G(y,z) | F(x,z)) 
 	//std::clog << "Transforming " << toString(&eqf0g0) << "\n";
 	auto result = FormulaUtils::graphFuncsAndAggs(&eqf0g0);
 	//std::clog << "Resulted in " << toString(result) << "\n";
@@ -434,10 +434,99 @@ TEST(SubstituteTermTest,Formula) {
 //TODO
 
 // UnnestTerms - formula,theory
-//TODO
+TEST(UnnestTermsTest,TwoFuncTermsEQ) {
+	auto s = sort("X",-2,2);
+	auto f = func("F",{s},s);
+	auto g = func("G",{s},s);
+	auto x = var(s);
+
+	Formula& eqfxgx = (f({x}) == g({x}));
+
+	// Rewriting (F(x) = G(x)) to (! y : ~=(y,G(x)) | =(F(x),y)).
+	//std::clog << "Transforming " << toString(&eqfxgx) << "\n";
+	auto result = FormulaUtils::unnestTerms(&eqfxgx);
+	//std::clog << "Resulted in " << toString(result) << "\n";
+
+	EXPECT_TRUE(sametypeid<QuantForm>(*result));
+	ASSERT_EQ(1,result->subformulas().size());
+	auto ressubformula = result->subformulas()[0];
+	EXPECT_TRUE(sametypeid<BoolForm>(*ressubformula));
+	ASSERT_EQ(2,ressubformula->subformulas().size());
+	ASSERT_TRUE(sametypeid<PredForm>(*ressubformula->subformulas()[0]));
+	ASSERT_TRUE(sametypeid<PredForm>(*ressubformula->subformulas()[1]));
+
+	delete result;
+}
+
+TEST(UnnestTermsTest,TwoFuncTermsLT) {
+	auto s = sort("X",-2,2);
+	auto f = func("F",{s},s);
+	auto g = func("G",{s},s);
+	auto x = var(s);
+
+	Formula& ltfxgx = (f({x}) < g({x}));
+
+	// Rewriting (F(x) < G(x)) to (! y z : ~=(y,F(x)) | ~=(z,G(x)) | <(y,z)).
+	auto result = FormulaUtils::unnestTerms(&ltfxgx);
+
+	EXPECT_TRUE(sametypeid<QuantForm>(*result));
+	ASSERT_EQ(1,result->subformulas().size());
+	auto ressubformula = result->subformulas()[0];
+	EXPECT_TRUE(sametypeid<BoolForm>(*ressubformula));
+	ASSERT_EQ(3,ressubformula->subformulas().size());
+	ASSERT_TRUE(sametypeid<PredForm>(*ressubformula->subformulas()[0]));
+	ASSERT_TRUE(sametypeid<PredForm>(*ressubformula->subformulas()[1]));
+	ASSERT_TRUE(sametypeid<PredForm>(*ressubformula->subformulas()[2]));
+
+	delete result;
+}
+
+TEST(UnnestTermsTest,TwoVarTermsEQ) {
+	auto s = sort("X",-2,2);
+	auto xt = varterm(s);
+	auto yt = varterm(s);
+
+	Formula& eqxy = (*xt == *yt);
+
+	// Rewriting (x = y) to (x = y).
+	auto result = FormulaUtils::unnestTerms(&eqxy);
+
+	ASSERT_EQ(&eqxy,result);
+
+	delete result;
+}
+
+TEST(UnnestTermsTest,NestedFuncTerms) {
+	auto s = sort("X",-2,2);
+	auto f = func("F",{s},s);
+	auto g = func("G",{s},s);
+	auto h = func("H",{s},s);
+	auto x = var(s);
+
+	Formula& eqfgxhx = (f({&g({x})}) == h({x}));
+
+	//std::clog << "Transforming " << toString(&eqfgxhx) << "\n";
+	auto result = FormulaUtils::unnestTerms(&eqfgxhx);
+	//std::clog << "Resulted in " << toString(result) << "\n";
+
+	EXPECT_TRUE(sametypeid<QuantForm>(*result));
+	ASSERT_EQ(1,result->subformulas().size());
+	auto ressubformula = result->subformulas()[0];
+	EXPECT_TRUE(sametypeid<BoolForm>(*ressubformula));
+	ASSERT_EQ(3,ressubformula->subformulas().size());
+	ASSERT_TRUE(sametypeid<PredForm>(*ressubformula->subformulas()[0]));
+	ASSERT_TRUE(sametypeid<PredForm>(*ressubformula->subformulas()[1]));
+	ASSERT_TRUE(sametypeid<PredForm>(*ressubformula->subformulas()[2]));
+
+	delete result;
+}
+
+//TEST(UnnestTermsTest,NestedAggTerms) {
+//	//TODO
+//}
 
 // UnnestThreeValuedTerms - formula,rule
 //TODO
 
 
-}
+} /* namespace Tests */

@@ -14,13 +14,19 @@
 #include "vocabulary.hpp"
 #include "theory.hpp"
 #include "term.hpp"
+#include "structure.hpp"
 #include "error.hpp"
+#include "utils/TheoryUtils.hpp"
+
+#include <numeric> // for accumulate
+#include <functional> // for multiplies
+#include <algorithm> // for min_element and max_element
 
 using namespace std;
 
-UnnestTerms::UnnestTerms() :
-		_vocabulary(NULL), _chosenVarSort(NULL) {
-
+UnnestTerms::UnnestTerms() 
+	: _structure(NULL), _vocabulary(NULL), _context(Context::POSITIVE), 
+		_allowedToUnnest(false), _chosenVarSort(NULL) {
 }
 
 void UnnestTerms::contextProblem(Term* t) {
@@ -36,30 +42,51 @@ void UnnestTerms::contextProblem(Term* t) {
  * (this is the most important method to overwrite in subclasses)
  */
 bool UnnestTerms::shouldMove(Term* t) {
-	Assert(t->type() != TT_VAR);
+	Assert(t->type() != TT_VAR && t->type() != TT_DOM);
 	return getAllowedToUnnest();
+}
+/**
+ * Tries to derive a sort for the term given a structure.
+ */
+Sort* UnnestTerms::deriveSort(Term* term) {
+	auto sort = (_chosenVarSort != NULL) ? _chosenVarSort : term->sort();
+	if (_structure != NULL && SortUtils::isSubsort(term->sort(),VocabularyUtils::intsort(),_vocabulary)) {
+		auto bounds = TermUtils::deriveTermBounds(term,_structure);
+		if (bounds[0] != NULL && bounds[1] != NULL && bounds[0]->type() == DET_INT && bounds[1]->type() == DET_INT) {
+			auto intmin = bounds[0]->value()._int;
+			auto intmax = bounds[1]->value()._int;
+			stringstream ss; ss << "_sort_" << intmin << '_' << intmax;
+			sort = new Sort(ss.str(), new SortTable(new IntRangeInternalSortTable(intmin,intmax)));
+			sort->addParent(VocabularyUtils::intsort());
+		}
+	}
+	return sort;
 }
 
 /**
  * Create a variable and an equation for the given term
  */
 VarTerm* UnnestTerms::move(Term* term) {
-	if (_context == Context::BOTH) {
+	if (getContext() == Context::BOTH) {
 		contextProblem(term);
 	}
 
-	Variable* introduced_var = new Variable(_chosenVarSort == NULL ? term->sort() : _chosenVarSort);
+	_chosenVarSort = deriveSort(term);
+	Assert(_chosenVarSort != NULL);
 
-	VarTerm* introduced_subst_term = new VarTerm(introduced_var, TermParseInfo(term->pi()));
-	VarTerm* introduced_eq_term = new VarTerm(introduced_var, TermParseInfo(term->pi()));
-	vector<Term*> equality_args(2);
-	equality_args[0] = introduced_eq_term;
-	equality_args[1] = term;
-	Predicate* equalpred = VocabularyUtils::equal(term->sort());
-	PredForm* equalatom = new PredForm(SIGN::POS, equalpred, equality_args, FormulaParseInfo());
+	//cerr << "*** Sort chosen for Term " << toString(term) << " is " << toString(_chosenVarSort == NULL ? term->sort() : _chosenVarSort);
+	//cerr << " (term->sort() is " << toString(term->sort()) << " and _chosenVarSort was " << toString(_chosenVarSort) << ")\n";
 
-	_equalities.push_back(equalatom);
+	auto introduced_var = new Variable(_chosenVarSort);
+	Warning::introducedvar(introduced_var->name(), introduced_var->sort()->name(), toString(term));
 	_variables.insert(introduced_var);
+
+	auto introduced_eq_term = new VarTerm(introduced_var, TermParseInfo(term->pi()));
+	auto equalpred = VocabularyUtils::equal(term->sort());
+	auto equalatom = new PredForm(SIGN::POS, equalpred, { introduced_eq_term, term }, FormulaParseInfo());
+	_equalities.push_back(equalatom);
+
+	auto introduced_subst_term = new VarTerm(introduced_var, TermParseInfo(term->pi()));
 	return introduced_subst_term;
 }
 
@@ -69,7 +96,7 @@ VarTerm* UnnestTerms::move(Term* term) {
 Formula* UnnestTerms::rewrite(Formula* formula) {
 	const FormulaParseInfo& origpi = formula->pi();
 	bool univ_and_disj = false;
-	if (_context == Context::POSITIVE) {
+	if (getContext() == Context::POSITIVE) {
 		univ_and_disj = true;
 		for (auto it = _equalities.cbegin(); it != _equalities.cend(); ++it) {
 			(*it)->negate();
@@ -105,16 +132,16 @@ Formula* UnnestTerms::doRewrite(T origformula){
  *	Visit all parts of the theory, assuming positive context for sentences
  */
 Theory* UnnestTerms::visit(Theory* theory) {
-	for (size_t n = 0; n < theory->sentences().size(); ++n) {
-		_context = Context::POSITIVE;
+	for (auto it = theory->sentences().begin(); it != theory->sentences().end(); ++it) {
+		setContext(Context::POSITIVE);
 		setAllowedToUnnest(false);
-		theory->sentence(n, theory->sentences()[n]->accept(this));
+		*it = (*it)->accept(this);
 	}
-	for (auto it = theory->definitions().cbegin(); it != theory->definitions().cend(); ++it) {
-		(*it)->accept(this);
+	for (auto it = theory->definitions().begin(); it != theory->definitions().end(); ++it) {
+		*it = (*it)->accept(this);
 	}
-	for (auto it = theory->fixpdefs().cbegin(); it != theory->fixpdefs().cend(); ++it) {
-		(*it)->accept(this);
+	for (auto it = theory->fixpdefs().begin(); it != theory->fixpdefs().end(); ++it) {
+		*it = (*it)->accept(this);
 	}
 	return theory;
 }
@@ -159,7 +186,7 @@ Formula* UnnestTerms::traverse(Formula* f) {
 	Context savecontext = _context;
 	bool savemovecontext = getAllowedToUnnest();
 	if (isNeg(f->sign())) {
-		_context = not _context;
+		setContext(not _context);
 	}
 	for (size_t n = 0; n < f->subterms().size(); ++n) {
 		f->subterm(n, f->subterms()[n]->accept(this));
@@ -167,7 +194,7 @@ Formula* UnnestTerms::traverse(Formula* f) {
 	for (size_t n = 0; n < f->subformulas().size(); ++n) {
 		f->subformula(n, f->subformulas()[n]->accept(this));
 	}
-	_context = savecontext;
+	setContext(savecontext);
 	setAllowedToUnnest(savemovecontext);
 	return f;
 }
@@ -178,11 +205,11 @@ Formula* UnnestTerms::traverse(PredForm* f) {
 }
 
 Formula* UnnestTerms::visit(EquivForm* ef) {
-	Context savecontext = _context;
-	_context = Context::BOTH;
-	auto f = traverse(ef);
-	_context = savecontext;
-	return doRewrite(f);
+	Context savecontext = getContext();
+	setContext(Context::BOTH);
+	auto newef = traverse(ef);
+	setContext(savecontext);
+	return doRewrite(newef);
 }
 
 Formula* UnnestTerms::visit(AggForm* af) {
@@ -190,12 +217,12 @@ Formula* UnnestTerms::visit(AggForm* af) {
 	return doRewrite(newaf);
 }
 
-Formula* UnnestTerms::visit(EqChainForm* ef) {
-	if (ef->comps().size() == 1) { // Rewrite to a normal atom
-		SIGN atomsign = ef->sign();
-		Sort* atomsort = SortUtils::resolve(ef->subterms()[0]->sort(), ef->subterms()[1]->sort(), _vocabulary);
+Formula* UnnestTerms::visit(EqChainForm* ecf) {
+	if (ecf->comps().size() == 1) { // Rewrite to a normal atom
+		SIGN atomsign = ecf->sign();
+		Sort* atomsort = SortUtils::resolve(ecf->subterms()[0]->sort(), ecf->subterms()[1]->sort(), _vocabulary);
 		Predicate* comppred;
-		switch (ef->comps()[0]) {
+		switch (ecf->comps()[0]) {
 		case CompType::EQ:
 			comppred = VocabularyUtils::equal(atomsort);
 			break;
@@ -218,17 +245,15 @@ Formula* UnnestTerms::visit(EqChainForm* ef) {
 			atomsign = not atomsign;
 			break;
 		}
-		vector<Term*> atomargs(2);
-		atomargs[0] = ef->subterms()[0];
-		atomargs[1] = ef->subterms()[1];
-		PredForm* atom = new PredForm(atomsign, comppred, atomargs, ef->pi());
+		vector<Term*> atomargs = { ecf->subterms()[0], ecf->subterms()[1] };
+		PredForm* atom = new PredForm(atomsign, comppred, atomargs, ecf->pi());
 		return atom->accept(this);
 	} else { // Simple recursive call
 		bool savemovecontext = getAllowedToUnnest();
 		setAllowedToUnnest(true);
-		auto rewrittenformula = TheoryMutatingVisitor::traverse(ef); // TODO why super call?
+		auto newecf = traverse(ecf);
 		setAllowedToUnnest(savemovecontext);
-		return doRewrite(rewrittenformula);
+		return doRewrite(newecf);
 	}
 }
 
@@ -237,21 +262,20 @@ Formula* UnnestTerms::visit(PredForm* predform) {
 // Special treatment for (in)equalities: possibly only one side needs to be moved
 	bool moveonlyleft = false;
 	bool moveonlyright = false;
-	string symbolname = predform->symbol()->name();
-	if (symbolname == "=/2" || symbolname == "</2" || symbolname == ">/2") {
+	if (VocabularyUtils::isComparisonPredicate(predform->symbol())) {
 		auto leftterm = predform->subterms()[0];
 		auto rightterm = predform->subterms()[1];
 		if (leftterm->type() == TT_AGG) {
 			moveonlyright = true;
 		} else if (rightterm->type() == TT_AGG) {
 			moveonlyleft = true;
-		} else if (symbolname == "=/2") {
+		} else if (predform->symbol()->name() == "=/2") {
 			moveonlyright = (leftterm->type() != TT_VAR) && (rightterm->type() != TT_VAR);
 		} else {
 			setAllowedToUnnest(true);
 		}
 
-		if (symbolname == "=/2") {
+		if (predform->symbol()->name() == "=/2") {
 			auto leftsort = leftterm->sort();
 			auto rightsort = rightterm->sort();
 			if (SortUtils::isSubsort(leftsort, rightsort)) {
@@ -277,14 +301,14 @@ Formula* UnnestTerms::visit(PredForm* predform) {
 	} else {
 		newf = traverse(predform);
 	}
+	
 	_chosenVarSort = NULL;
 	setAllowedToUnnest(savemovecontext);
-
 	return doRewrite(newf);
 }
 
 Term* UnnestTerms::traverse(Term* term) {
-	Context savecontext = _context;
+	Context savecontext = getContext();
 	bool savemovecontext = getAllowedToUnnest();
 	for (size_t n = 0; n < term->subterms().size(); ++n) {
 		term->subterm(n, term->subterms()[n]->accept(this));
@@ -292,7 +316,7 @@ Term* UnnestTerms::traverse(Term* term) {
 	for (size_t n = 0; n < term->subsets().size(); ++n) {
 		term->subset(n, term->subsets()[n]->accept(this));
 	}
-	_context = savecontext;
+	setContext(savecontext);
 	setAllowedToUnnest(savemovecontext);
 	return term;
 }
@@ -302,16 +326,13 @@ VarTerm* UnnestTerms::visit(VarTerm* t) {
 }
 
 Term* UnnestTerms::visit(DomainTerm* t) {
-	if (getAllowedToUnnest() && shouldMove(t)) {
-		return move(t);
-	} else {
-		return t;
-	}
+	return t;
 }
 
 Term* UnnestTerms::visit(AggTerm* t) {
+	//FIXME shouldn't this term be traversed before it is (possibly) moved?
 	if (getAllowedToUnnest() && shouldMove(t)) {
-		return move(t);
+		return traverse(move(t)); //TODO Check whether this is correct: traverse after move...
 	} else {
 		return traverse(t);
 	}
@@ -320,7 +341,7 @@ Term* UnnestTerms::visit(AggTerm* t) {
 Term* UnnestTerms::visit(FuncTerm* ft) {
 	bool savemovecontext = getAllowedToUnnest();
 	setAllowedToUnnest(true);
-	Term* result = traverse(ft);
+	auto result = traverse(ft);
 	setAllowedToUnnest(savemovecontext);
 	if (getAllowedToUnnest() && shouldMove(result)) {
 		return move(result);
@@ -336,7 +357,7 @@ SetExpr* UnnestTerms::visit(EnumSetExpr* s) {
 	_variables.clear();
 	bool savemovecontext = getAllowedToUnnest();
 	setAllowedToUnnest(true);
-	Context savecontext = _context;
+	Context savecontext = getContext();
 
 	for (size_t n = 0; n < s->subterms().size(); ++n) {
 		s->subterm(n, s->subterms()[n]->accept(this));
@@ -349,12 +370,12 @@ SetExpr* UnnestTerms::visit(EnumSetExpr* s) {
 		}
 	}
 
-	_context = Context::POSITIVE;
+	setContext(Context::POSITIVE);
 	setAllowedToUnnest(false);
 	for (size_t n = 0; n < s->subformulas().size(); ++n) {
 		s->subformula(n, s->subformulas()[n]->accept(this));
 	}
-	_context = savecontext;
+	setContext(savecontext);
 	setAllowedToUnnest(savemovecontext);
 	_variables = savevars;
 	_equalities = saveequalities;
@@ -368,8 +389,8 @@ SetExpr* UnnestTerms::visit(QuantSetExpr* s) {
 	_variables.clear();
 	bool savemovecontext = getAllowedToUnnest();
 	setAllowedToUnnest(true);
-	Context savecontext = _context;
-	_context = Context::POSITIVE;
+	Context savecontext = getContext();
+	setContext(Context::POSITIVE);
 
 	s->subterm(0, s->subterms()[0]->accept(this));
 	if (not _equalities.empty()) {
@@ -384,12 +405,11 @@ SetExpr* UnnestTerms::visit(QuantSetExpr* s) {
 	}
 
 	setAllowedToUnnest(false);
-	_context = Context::POSITIVE;
+	setContext(Context::POSITIVE);
 	s->subformula(0, s->subformulas()[0]->accept(this));
-
+	setContext(savecontext);
+	setAllowedToUnnest(savemovecontext);
 	_variables = savevars;
 	_equalities = saveequalities;
-	_context = savecontext;
-	setAllowedToUnnest(savemovecontext);
 	return s;
 }

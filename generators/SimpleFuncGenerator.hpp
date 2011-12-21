@@ -109,28 +109,28 @@ public:
 		}
 	}
 
-	virtual void put(std::ostream& stream){
-		stream <<toString(_function) <<"(";
+	virtual void put(std::ostream& stream) {
+		stream << toString(_function) <<"(";
 		bool begin = true;
-		for(unsigned int n = 0; n<_vars.size()-1; ++n){
+		for(size_t n = 0; n<_vars.size()-1; ++n){
 			if(not begin){
-				stream <<", ";
+				stream << ", ";
 			}
 			begin = false;
-			stream <<_vars[n];
-			stream <<toString(_universe.tables()[n]);
+			stream << toString(_vars[n]);
+			stream << toString(_universe.tables()[n]);
 			for(auto i=_outpos.begin(); i<_outpos.end(); ++i){
 				if(n==*i){
-					stream <<"(out)";
+					stream << "(out)";
 				}
 			}
 			for(auto i=_inpos.begin(); i<_inpos.end(); ++i){
 				if(n==*i){
-					stream <<"(in)";
+					stream << "(in)";
 				}
 			}
 		}
-		stream <<"):" <<_rangevar <<toString(_universe.tables().back()) <<"(out)";
+		stream <<"):" << toString(_rangevar) << toString(_universe.tables().back()) <<"(out)";
 	}
 };
 

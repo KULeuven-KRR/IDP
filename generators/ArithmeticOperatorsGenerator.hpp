@@ -104,12 +104,12 @@ public:
 		ArithOpGenerator(in1, in2, out, requestedType, dom) {
 	}
 
-	DivGenerator* clone() const{
+	DivGenerator* clone() const {
 		return new DivGenerator(*this);
 	}
 
-	virtual void put(std::ostream& stream){
-		stream <<getIn1() <<"(in)" <<" / " <<getIn2() <<"(in)" <<" = " <<getOutDom() <<"["<<toString(getOutDom()) <<"]" <<"(out)";
+	virtual void put(std::ostream& stream) {
+		stream << toString(getIn1()) << "(in)" << " / " << toString(getIn2()) << "(in)" << " = " << toString(getOutDom()) << "[" << toString(getOutDom()) << "]" << "(out)";
 	}
 };
 
@@ -124,12 +124,12 @@ public:
 		ArithOpGenerator(in1, in2, out, requestedType, dom) {
 	}
 
-	TimesGenerator* clone() const{
+	TimesGenerator* clone() const {
 		return new TimesGenerator(*this);
 	}
 
-	virtual void put(std::ostream& stream){
-		stream <<getIn1() <<"(in)" <<" * " <<getIn2() <<"(in)" <<" = " <<getOutDom() <<"["<<toString(getOutDom()) <<"]" <<"(out)";
+	virtual void put(std::ostream& stream) {
+		stream << toString(getIn1()) << "(in)" << " * " << toString(getIn2()) << "(in)" << " = " << toString(getOutDom()) << "[" << toString(getOutDom()) << "]" << "(out)";
 	}
 };
 
@@ -144,12 +144,12 @@ public:
 		ArithOpGenerator(in1, in2, out, requestedType, dom) {
 	}
 
-	MinusGenerator* clone() const{
+	MinusGenerator* clone() const {
 		return new MinusGenerator(*this);
 	}
 
-	virtual void put(std::ostream& stream){
-		stream <<getIn1() <<"(in)" <<" - " <<getIn2() <<"(in)" <<" = " <<getOutDom() <<"["<<toString(getOutDom()) <<"]" <<"(out)";
+	virtual void put(std::ostream& stream) {
+		stream << toString(getIn1()) << "(in)" << " - " << toString(getIn2()) << "(in)" << " = " << toString(getOutDom()) << "[" << toString(getOutDom()) << "]" << "(out)";
 	}
 };
 
@@ -164,12 +164,12 @@ public:
 		ArithOpGenerator(in1, in2, out, requestedType, dom) {
 	}
 
-	PlusGenerator* clone() const{
+	PlusGenerator* clone() const {
 		return new PlusGenerator(*this);
 	}
 
-	virtual void put(std::ostream& stream){
-		stream <<getIn1() <<"(in)" <<" + " <<getIn2() <<"(in)" <<" = " <<getOutDom() <<"["<<toString(getOutDom()) <<"]" <<"(out)";
+	virtual void put(std::ostream& stream) {
+		stream << toString(getIn1()) << "(in)" << " + " << toString(getIn2()) << "(in)" << " = " << toString(getOutDom()) << "[" << toString(getOutDom()) << "]" << "(out)";
 	}
 };
 

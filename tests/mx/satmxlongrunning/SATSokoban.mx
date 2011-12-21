@@ -1,0 +1,134 @@
+procedure getExpectedAModel() {
+	return true
+}
+
+/**********************************
+   Sokoban
+**********************************/
+
+vocabulary V {
+  type Row isa int
+  type Col isa int
+  type Step isa int
+  type Dir 
+  Left: Dir
+  Right: Dir
+  Up: Dir
+  Down: Dir
+
+  Square(Row,Col)
+  GoalSquare(Row,Col)
+  StartPos(Row,Col)
+  StartBlock(Row,Col)
+  FinalStep : Step
+ 
+  Move(Dir,Step)
+ 
+  HasBlock(Row,Col,Step)
+  CurrPos(Row,Col,Step)
+  AllowedMove(Dir,Step)
+  Free(Row,Col,Step)
+  PosAfterMove(Row,Col,Dir,Row,Col)
+}
+
+theory T : V { 
+  { HasBlock(r,c,0) <- StartBlock(r,c) & Square(r,c).
+    HasBlock(r,c,s) <- s - 1 = os & 
+                       HasBlock(r,c,os) & 
+                       ~CurrPos(r,c,s) & 
+                       Square(r,c). 
+    HasBlock(r,c,s) <- s - 1 = os &
+                       Move(d,os) &
+                       CurrPos(cr,cc,s) &
+                       PosAfterMove(r,c,d,cr,cc) &
+                       HasBlock(cr,cc,os). }
+
+  { CurrPos(r,c,0) <- StartPos(r,c). 
+    CurrPos(r,c,s) <- s - 1 = os & Move(d,os) & CurrPos(or,oc,os) & PosAfterMove(r,c,d,or,oc). }
+
+  { Free(r,c,t) <- Square(r,c) & ~HasBlock(r,c,t). }
+
+  { PosAfterMove(r1,c1,Up,r2,c1)    <- r2 - 1 = r1 & Square(r1,c1).
+    PosAfterMove(r1,c1,Down,r2,c1)  <- r1 - 1 = r2 & Square(r1,c1).
+    PosAfterMove(r1,c1,Left,r1,c2)  <- c2 - 1 = c1 & Square(r1,c1).
+    PosAfterMove(r1,c1,Right,r1,c2) <- c1 - 1 = c2 & Square(r1,c1). }
+
+  ! d s : Move(d,s) => AllowedMove(d,s).
+  
+  { AllowedMove(d,s) <- CurrPos(r,c,s) &
+                        PosAfterMove(nr,nc,d,r,c) & 
+                        Free(nr,nc,s).
+    AllowedMove(d,s) <- CurrPos(r,c,s) & 
+                        PosAfterMove(nr,nc,d,r,c) & 
+                        HasBlock(nr,nc,s) &
+                        PosAfterMove(nnr,nnc,d,nr,nc) &
+                        Free(nnr,nnc,s). }
+
+  // Make only one move at each timestep.
+  ! d1 d2 s : Move(d1,s) & Move(d2,s) => d1 = d2.
+
+  // Before the final time, do a move at each timestep. Do not move after the final timestep.
+  ! s : s < FinalStep => (? d : Move(d,s)).
+  ! s : s >= FinalStep => (! d : ~Move(d,s)).
+
+  ! r c : HasBlock(r,c,FinalStep) => GoalSquare(r,c).
+}
+
+structure S : V{ 
+  Dir = {l;r;u;d}
+  Left = l
+  Right = r
+  Up = u
+  Down = d
+
+  Row = {1..4}
+  Col = {1..7}
+  Step = {0..41}
+
+  FinalStep = 41
+
+  Square = {         1,3;1,4;
+  			     2,1;2,2;2,3;2,4;2,5;2,6;2,7; 
+  			     3,1;    3,3;3,4;    3,6;3,7; 
+  			     4,1;4,2;4,3;4,4;    4,6;4,7  }
+
+  GoalSquare = { 4,2; 4,4 }
+
+  StartPos = {4,6}
+  StartBlock = {3,6;2,6}
+}
+
+//structure S : V { 
+/*****************************
+           __
+          | G|
+     __ __|__|
+    | S|  | B|
+    |__|__|__|
+       |  |  |
+       |__|__|
+
+   S = Startposition
+   B = Block
+   G = Goalposition
+    
+******************************/
+
+//Row = {1..3}
+//Col = {1..3}
+//Step = {0..4}
+
+//FinalStep = 4
+
+/*Square = { 1,3;
+           2,1;
+           2,2;
+           2,3;
+           3,2;
+           3,3 }
+
+GoalSquare = { 1,3 }
+
+StartPos = {2,1}
+StartBlock = {2,3}*/
+//}

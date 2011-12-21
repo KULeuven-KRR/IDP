@@ -1,5 +1,5 @@
-procedure getExpectedAModel(){
-	return false
+procedure getExpectedAModel() {
+	return true
 }
 
 vocabulary V{
@@ -23,9 +23,9 @@ theory T : V {
 	!x[Num]: ?1 y[Cost]: T(x, y).*/
 //werkt nog niet !x[Num]: 1=< prod{ y[Cost] :  U(x, y) } =<10.
 
-//unsat versie
-	!x[Num]: 4=< min{ y[Cost] :  P(x, y):y } =<10.
-	//!x[Num]: 1=< sum{ y[Cost] :  P(x, y):y } =<3.
+//unsat versie (is toch sat?)
+	!x[Num]: 4 =< min{ y[Cost] : P(x,y) : y } =< 10.
+	//!x[Num]: 1 =< sum{ y[Cost] : P(x,y) : y } =<3.
 }
 
 structure S : V{ 

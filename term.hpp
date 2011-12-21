@@ -13,10 +13,7 @@
 
 #include "parseinfo.hpp"
 #include "common.hpp"
-
 #include "visitors/VisitorFriends.hpp"
-#include "visitors/TheoryVisitor.hpp"
-#include "visitors/TheoryMutatingVisitor.hpp"
 
 class Sort;
 class Variable;
@@ -25,9 +22,9 @@ class DomainElement;
 class TheoryVisitor;
 class TheoryMutatingVisitor;
 
-/************
- Terms
- ************/
+/***********
+ *  Terms
+ **********/
 
 enum TermType {
 	TT_VAR, TT_FUNC, TT_AGG, TT_DOM
@@ -167,13 +164,11 @@ public:
 	FuncTerm* cloneKeepVars() const;
 	FuncTerm* clone(const std::map<Variable*, Variable*>&) const;
 
-	~FuncTerm() {
-	}
+	~FuncTerm() {}
 
 	void function(Function* f) {
 		_function = f;
 	}
-
 	Sort* sort() const;
 	TermType type() const {
 		return TT_FUNC;
@@ -299,9 +294,12 @@ public:
 	}
 };
 
-/**********************
- Set expressions
- **********************/
+/*********************
+ *  Set expressions
+ ********************/
+
+class AbstractStructure;
+struct tablesize;
 
 /** 
  *	\brief Abstract base class for first-order set expressions
@@ -330,23 +328,22 @@ public:
 	virtual SetExpr* clone(const std::map<Variable*, Variable*>&) const = 0;
 	//!< create a copy of the set and substitute the free variables according to the given map
 	virtual SetExpr* positiveSubset() const = 0;
-	//!< generate the subset of positive terms ({x:p(x):t(x)} becomes {x:p(x)&t(x)>0: t(x)})
+	//!< generate the subset of positive terms ({x:p(x):t(x)} becomes {x:p(x)&t(x)>0:t(x)})
 	virtual SetExpr* negativeSubset() const = 0;
-	//!< generate the subset of negated negative terms ({x:p(x):t(x)} becomes {x:p(x)&t(x)<0: -t(x)})
+	//!< generate the subset of negated negative terms ({x:p(x):t(x)} becomes {x:p(x)&t(x)<0:-t(x)})
 	virtual SetExpr* zeroSubset() const = 0;
-	//!< generate the subset of zero terms ({x:p(x):t(x)} becomes {x:p(x)&t(x)=0: 0})
+	//!< generate the subset of zero terms ({x:p(x):t(x)} becomes {x:p(x)&t(x)=0:0})
 
 	// Destructors
-	virtual ~SetExpr() {
-	} //!< Delete the set, but not
+	virtual ~SetExpr() {} //!< Delete the set, but not its subformulas and subterms
 	void recursiveDelete(); //!< Delete the set and its subformulas and subterms
 
 	// Mutators
-	void subterm(unsigned int n, Term* t) {
+	void subterm(size_t n, Term* t) {
 		_subterms[n] = t;
 		setFreeVars();
 	}
-	void subformula(unsigned int n, Formula* f) {
+	void subformula(size_t n, Formula* f) {
 		_subformulas[n] = f;
 		setFreeVars();
 	}
@@ -365,13 +362,15 @@ public:
 
 	// Inspectors
 	virtual Sort* sort() const = 0; //!< Returns the sort of the set
+	virtual tablesize maxSize(const AbstractStructure* str = NULL) const = 0;
+
+	bool contains(const Variable*) const;
 	const std::set<Variable*>& freeVars() const {
 		return _freevars;
 	}
 	const std::set<Variable*>& quantVars() const {
 		return _quantvars;
 	}
-	bool contains(const Variable*) const;
 	const std::vector<Formula*>& subformulas() const {
 		return _subformulas;
 	}
@@ -407,10 +406,8 @@ public:
 	EnumSetExpr* negativeSubset() const;
 	EnumSetExpr* zeroSubset() const;
 
-	~EnumSetExpr() {
-	}
-
 	Sort* sort() const;
+	tablesize maxSize(const AbstractStructure* str = NULL) const;
 
 	std::ostream& put(std::ostream&) const;
 };
@@ -431,6 +428,7 @@ public:
 	QuantSetExpr* zeroSubset() const;
 
 	Sort* sort() const;
+	tablesize maxSize(const AbstractStructure* str = NULL) const;
 
 	std::ostream& put(std::ostream&) const;
 };

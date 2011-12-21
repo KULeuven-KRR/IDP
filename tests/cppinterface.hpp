@@ -65,6 +65,8 @@ Term& functerm(Function*, const std::vector<Variable*>&);
 Term& functerm(Function*, const std::vector<Term*>&);
 
 Formula& operator==(Term& left, Term& right);
+Formula& operator<(Term& left, Term& right);
+
 Formula& operator&(Formula& left, Formula& right);
 Formula& operator|(Formula& left, Formula& right);
 Formula& operator not(Formula&);

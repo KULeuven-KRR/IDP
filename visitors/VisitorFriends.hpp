@@ -49,6 +49,7 @@ class SplitIntoMonotoneAgg;
 		friend class CollectOpensOfDefinitions; \
 		friend class CountNbOfSubFormulas; \
 		friend class DefaultFormulaVisitor; \
+		friend class DeriveTermBounds; \
 		friend class FOBDDFactory; \
 		friend class FOPropagator; \
 		template<class InterpretationFactory, class PropDomain> friend class TypedFOPropagator; \
@@ -76,9 +77,10 @@ class SplitIntoMonotoneAgg;
 		friend class SplitComparisonChains; \
 		friend class SubstituteTerm; \
 		friend class UnnestTerms; \
+		friend class UnnestFuncsAndAggs; \
 		friend class UnnestPartialTerms; \
-		friend class SplitProducts; \
 		friend class UnnestThreeValuedTerms;\
+		friend class SplitProducts; \
 		friend class SplitIntoMonotoneAgg;
 
 class AbstractTheory;

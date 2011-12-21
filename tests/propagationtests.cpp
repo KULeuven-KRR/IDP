@@ -107,8 +107,8 @@ TEST(PropagationTest, PredFormBound) {
 	}
 	ASSERT_EQ(5, counter);
 }
-class LuaPropagationTest: public ::testing::TestWithParam<string> {
 
+class LuaPropagationTest: public ::testing::TestWithParam<string> {
 };
 
 TEST_P(LuaPropagationTest, OptimalAndGroundPropagation) {

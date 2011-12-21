@@ -345,8 +345,8 @@ public:
  */
 Status test(const std::vector<std::string>& inputfileurls) {
 	DataManager m;
-
-	setOption(BoolType::SHOWWARNINGS, false); //XXX Temporary solution to disable warnigns...
+	
+	setOption(BoolType::SHOWWARNINGS,true); //XXX Temporary solution to disable warnigns...
 
 	try {
 		parse(inputfileurls);

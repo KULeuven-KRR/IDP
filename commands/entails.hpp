@@ -54,14 +54,17 @@ public:
 
 		State state = Entails::doCheckEntailment(data);
 		delete (data);
+
+		InternalArgument result;
 		switch (state) {
 		case State::PROVEN:
-			return InternalArgument(true);
+			result = InternalArgument(true);
 		case State::DISPROVEN:
-			return InternalArgument(false);
+			result = InternalArgument(false);
 		case State::UNKNOWN:
-			return nilarg();
+			result = nilarg();
 		}
+		return result;
 	}
 }
 ;

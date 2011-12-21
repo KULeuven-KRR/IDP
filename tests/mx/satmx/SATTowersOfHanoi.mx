@@ -28,8 +28,8 @@ At_pos(Block,Pos,Step)
 theory T : V { 
 //Move(1,Left,7).
 { At_pos(x,Left,0).
-  At_pos(x,p,s2) <- s2 - 1 = s1 & Move(x,p,s1).
-  At_pos(x,p,s2) <- s2 - 1 = s1 & At_pos(x,p,s1) & ~(? pn : Move(x,pn,s1)). 
+  At_pos(x,p,s2) <-?s1[Step]:  s2 - 1 = s1 & Move(x,p,s1).
+  At_pos(x,p,s2) <- ?s1[Step]:  s2 - 1 = s1 & At_pos(x,p,s1) & ~(? pn : Move(x,pn,s1)). 
 }
 
 

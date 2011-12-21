@@ -15,8 +15,6 @@
 #include <vector>
 #include "common.hpp"
 #include "parseinfo.hpp"
-#include "visitors/TheoryVisitor.hpp"
-#include "visitors/TheoryMutatingVisitor.hpp"
 #include "visitors/VisitorFriends.hpp"
 
 /*****************************************************************************
