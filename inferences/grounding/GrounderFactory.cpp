@@ -786,7 +786,7 @@ void GrounderFactory::visit(const AggForm* af) {
 
 	AggForm* newaf = af->clone();
 	Formula* transaf = FormulaUtils::unnestThreeValuedTerms(newaf, _structure, _context._funccontext, getOption(BoolType::CPSUPPORT), _cpsymbols);
-	transaf = FormulaUtils::graphFuncsAndAggs(newaf, _structure, _context._funccontext);
+	transaf = FormulaUtils::graphFuncsAndAggs(transaf, _structure, _context._funccontext);
 	if (recursive(transaf)) {
 		transaf = FormulaUtils::splitIntoMonotoneAgg(transaf);
 	}
