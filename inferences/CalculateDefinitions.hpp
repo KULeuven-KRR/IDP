@@ -17,6 +17,7 @@ class Definition;
 
 class CalculateDefinitions {
 public:
+	//!Removes calculated definitions from the theory.  Clone your theory before doing this!
 	static AbstractStructure* doCalculateDefinitions(Theory* theory, AbstractStructure* structure) {
 		CalculateDefinitions c;
 		return c.calculateKnownDefinitions(theory, structure);
