@@ -28,11 +28,11 @@
 #include "ground.hpp"
 #include "transformations.hpp"
 #include "clean.hpp"
-#include "changevocabulary.hpp"
+#include "setvocabulary.hpp"
 #include "help.hpp"
 #include "iterators.hpp"
 #include "entails.hpp"
-#include "simplify.hpp"
+// TODO issue #50 bdds #include "simplify.hpp"
 #include "tablesize.hpp"
 #include "twovaluedextensions.hpp"
 #include "calculatedefinitions.hpp"
@@ -87,7 +87,7 @@ const std::vector<Inference*>& getAllInferences() {
 		inferences.push_back(new PrintGroundingInference());
 		inferences.push_back(new EntailsInference());
 		inferences.push_back(new RemoveNestingInference());
-		inferences.push_back(new SimplifyInference());
+		// TODO issue #50 bdds inferences.push_back(new SimplifyInference());
 		inferences.push_back(new TwoValuedExtensionsOfTableInference());
 		inferences.push_back(new TwoValuedExtensionsOfStructureInference());
 		inferences.push_back(new CalculateDefinitionInference());
