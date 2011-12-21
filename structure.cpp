@@ -3585,9 +3585,8 @@ bool PredInter::isConsistent() const {
 	for (; not ctIterator.isAtEnd(); ++ctIterator) {
 		// get unassigned domain element
 		while (not cfIterator.isAtEnd() && so(*cfIterator, *ctIterator)) {
-			++cfIterator;
 			Assert(not _pt->contains(*cfIterator)); //Should always be true...
-
+			++cfIterator;
 		}
 		if (not cfIterator.isAtEnd() && eq(*cfIterator, *ctIterator)) {
 			return false;

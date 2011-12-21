@@ -336,7 +336,8 @@ EnumSetExpr* EnumSetExpr::clone(const map<Variable*, Variable*>& mvv) const {
 EnumSetExpr* EnumSetExpr::positiveSubset() const {
 	std::vector<Formula*> newsubforms(0);
 	auto nul = DomainElementFactory::createGlobal()->create(0);
-	for (auto term = _subterms.cbegin(), form = _subformulas.cbegin(); form != _subformulas.cend(); ++term, ++form) {
+	auto form = _subformulas.cbegin();
+	for (auto term = _subterms.cbegin(); form != _subformulas.cend(); ++term, ++form) {
 		auto nulterm = new DomainTerm((*term)->sort(), nul, (*term)->pi());
 		auto termpos = new EqChainForm(SIGN::POS, true, { *term, nulterm }, { CompType::GT }, (*form)->pi());
 		newsubforms.push_back(new BoolForm(SIGN::POS, true, { *form, termpos }, (*form)->pi()));
@@ -348,7 +349,8 @@ EnumSetExpr* EnumSetExpr::negativeSubset() const {
 	std::vector<Formula*> newsubforms(0);
 	std::vector<Term*> newterms(0);
 	auto nul = DomainElementFactory::createGlobal()->create(0);
-	for (auto term = _subterms.cbegin(), form = _subformulas.cbegin(); form != _subformulas.cend(); ++term, ++form) {
+	auto form = _subformulas.cbegin();
+	for (auto term = _subterms.cbegin(); form != _subformulas.cend(); ++term, ++form) {
 		auto nulterm = new DomainTerm((*term)->sort(), nul, (*term)->pi());
 		auto minSymbol = (*((*term)->sort()->firstVocabulary()))->func("-/1");
 		newterms.push_back(new FuncTerm(minSymbol, { *term }, (*term)->pi()));
@@ -362,7 +364,8 @@ EnumSetExpr* EnumSetExpr::zeroSubset() const {
 	std::vector<Formula*> newsubforms(0);
 	std::vector<Term*> newterms(0);
 	auto nul = DomainElementFactory::createGlobal()->create(0);
-	for (auto term = _subterms.cbegin(), form = _subformulas.cbegin(); form != _subformulas.cend(); ++term, ++form) {
+	auto form = _subformulas.cbegin();
+	for (auto term = _subterms.cbegin(); form != _subformulas.cend(); ++term, ++form) {
 		auto nulterm = new DomainTerm((*term)->sort(), nul, (*term)->pi());
 		newterms.push_back(nulterm);
 		auto termisnul = new EqChainForm(SIGN::POS, true, { *term, nulterm }, { CompType::EQ }, (*form)->pi());
