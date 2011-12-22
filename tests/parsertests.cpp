@@ -12,6 +12,7 @@
 
 #include "gtest/gtest.h"
 #include "rungidl.hpp"
+#include "TestUtils.hpp"
 
 #include "utils/FileManagement.hpp"
 #include <exception>
@@ -22,12 +23,12 @@ namespace Tests {
 
 vector<string> generateListOfInvalidParseFiles() {
 	vector<string> testdirs {"parser/invalidinput/"};
-	return getAllFilesInDirs(string(TESTDIR), testdirs);
+	return getAllFilesInDirs(getTestDirectory(), testdirs);
 }
 
 vector<string> generateListOfValidParseFiles() {
 	vector<string> testdirs {"parser/validinput/"};
-	return getAllFilesInDirs(string(TESTDIR), testdirs);
+	return getAllFilesInDirs(getTestDirectory(), testdirs);
 }
 
 class ValidParserTest: public ::testing::TestWithParam<string> {
@@ -48,9 +49,9 @@ INSTANTIATE_TEST_CASE_P(Parsing, ValidParserTest, ::testing::ValuesIn(generateLi
 INSTANTIATE_TEST_CASE_P(Parsing, InvalidParserTest, ::testing::ValuesIn(generateListOfInvalidParseFiles()));
 
 TEST(RestartTest, FailAndContinue){
-	string testfile1(string(TESTDIR) + "parser/parseerror.idp");
-	string testfile2(string(TESTDIR) + "mx/simplemx/atom.idp");
-	string testfilemx(string(TESTDIR) + "mxnbofmodelstest.idp");
+	string testfile1(getTestDirectory() + "parser/parseerror.idp");
+	string testfile2(getTestDirectory() + "mx/simplemx/atom.idp");
+	string testfilemx(getTestDirectory() + "mxnbofmodelstest.idp");
 	ASSERT_EQ(Status::FAIL, test( { testfile1, testfilemx }));
 	ASSERT_EQ(Status::SUCCESS, test( { testfile2, testfilemx }));
 }

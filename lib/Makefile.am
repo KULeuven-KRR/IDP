@@ -1,3 +1,3 @@
-SUBDIRS = lua tinythread linenoise
+SUBDIRS = lua pcsolver tinythread linenoise
 
-EXTRA_DIST = pluscallback1.7
+EXTRA_DIST = pluscallback1.7 loki

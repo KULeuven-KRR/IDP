@@ -1,9 +1,6 @@
 [submodule "pcsolver"]
-	path = pcsolver
+	path = lib/pcsolver
 	url = <NAME/SNUMBER>+git@cwrepo:/repos/minisatid
-[submodule "autotoolized-lua"]
-	path = autotoolized-lua
-	url = git://github.com/broesdecat/autotoolized-lua.git
 [submodule "lib/lua"]
 	path = lib/lua
 	url = git://github.com/broesdecat/autotoolized-lua.git

@@ -8,15 +8,6 @@
 * Celestijnenlaan 200A, B-3001 Leuven, Belgium
 ****************************************************************/
 
-/*
- * Copyright 2007-2011 Katholieke Universiteit Leuven
- *
- * Use of this software is governed by the GNU LGPLv3.0 license
- *
- * Written by Broes De Cat and Maarten Mariën, K.U.Leuven, Departement
- * Computerwetenschappen, Celestijnenlaan 200A, B-3001 Leuven, Belgium
- */
-
 #include <cmath>
 
 #include <dirent.h>
@@ -40,6 +31,8 @@
 #include "IdpException.hpp"
 #include "inferences/propagation/PropagatorFactory.hpp"
 #include "inferences/propagation/GenerateBDDAccordingToBounds.hpp"
+#include "TestUtils.hpp"
+#include "utils/FileManagement.hpp"
 
 using namespace std;
 
@@ -50,26 +43,10 @@ const DomainElement* domelem(T t) {
 
 namespace Tests {
 
-vector<string> generateListOfPropFiles() {
-	vector<string> deftests;
-	DIR *dir;
-	struct dirent *ent;
-	std::string defdir = "propagate/";
-	dir = opendir((string(TESTDIR) + defdir).c_str());
-	if (dir != NULL) {
-		while ((ent = readdir(dir)) != NULL) {
-			if (ent->d_name[0] != '.') {
-				deftests.push_back(defdir + ent->d_name);
-			}
-		}
-		closedir(dir);
-	} else {
-		cerr << "FAIL    |  Could not open directory of propagation tests.\n";
-	}
-
-	return deftests;
+vector<string> generateListOfPropagationFiles() {
+	vector<string> testdirs {"propagate/"};
+	return getAllFilesInDirs(getTestDirectory(), testdirs);
 }
-
 
 TEST(PropagationTest, PredFormBound) {
 	auto sorttable = new SortTable(new IntRangeInternalSortTable(-2, 2));
@@ -112,14 +89,14 @@ class LuaPropagationTest: public ::testing::TestWithParam<string> {
 };
 
 TEST_P(LuaPropagationTest, OptimalAndGroundPropagation) {
-	string testfile(string(TESTDIR) + "propagatetest.idp");
-	cerr << "Testing " << string(TESTDIR) + GetParam() << "\n";
+	string testfile(getTestDirectory() + "propagatetest.idp");
+	cerr << "Testing " << GetParam() << "\n";
 	Status result = Status::FAIL;
-	ASSERT_NO_THROW( result = test( { string(TESTDIR) + GetParam(), testfile }););
+	ASSERT_NO_THROW( result = test( { GetParam(), testfile }););
 	ASSERT_EQ(Status::SUCCESS,result);
 }
 
-INSTANTIATE_TEST_CASE_P(Propagation, LuaPropagationTest,  ::testing::ValuesIn(generateListOfPropFiles()));
+INSTANTIATE_TEST_CASE_P(Propagation, LuaPropagationTest,  ::testing::ValuesIn(generateListOfPropagationFiles()));
 
 /*TEST(PropagationTest, EquivForm){
  auto sorttable = new SortTable(new IntRangeInternalSortTable(-2, 2));
