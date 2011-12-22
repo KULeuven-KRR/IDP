@@ -1,3 +1,0 @@
-[submodule "src/satsolver/minisat22"]
-	path = src/satsolver/minisat2-2
-	url = https://github.com/broesdecat/minisat.git
