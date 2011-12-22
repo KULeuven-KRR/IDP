@@ -16,7 +16,7 @@
 #include "common.hpp"
 #include "vocabulary.hpp"
 #include "structure.hpp"
-#include "pcsolver/src/external/ExternalInterface.hpp"
+#include "external/ExternalInterface.hpp"
 
 #include "inferences/grounding/GroundTranslator.hpp"
 #include "inferences/grounding/grounders/LazyQuantGrounder.hpp"

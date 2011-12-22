@@ -5,4 +5,4 @@ execute the code
 lcov -b `pwd` --directory `pwd` --capture --output-file app.info
 genhtml --output-directory . app.info
 
-issues: pcsolver 
+issues: minisatid 
