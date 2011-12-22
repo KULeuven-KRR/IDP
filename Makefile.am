@@ -11,3 +11,12 @@
 SUBDIRS = lib src tests
 
 dist_doc_DATA = README 
+
+data_stddir = $(datadir)/std
+
+data_std_DATA = data/std/idp_intern.idp data/std/idp_intern.lua data/std/mx.idp
+
+data_localdir = $(localstatedir)/idp
+data_local_DATA = data/std/.idprc
+
+dist_doc_DATA = $(data_std_DATA) $(data_local_DATA)

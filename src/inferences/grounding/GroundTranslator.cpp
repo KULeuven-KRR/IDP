@@ -23,8 +23,15 @@ GroundTranslator::GroundTranslator() :
 	atom2TsBody.push_back(std::pair<Lit, TsBody*>(0, (TsBody*) NULL));
 }
 
+
+
 GroundTranslator::~GroundTranslator() {
-	deleteList<SymbolAndTuple>(atom2Tuple);
+	for(auto i=atom2Tuple.cbegin(); i!=atom2Tuple.cend(); ++i){
+		if(*i!=NULL){
+			delete(*i);
+		}
+	}
+	atom2Tuple.clear();
 	for (auto i = atom2TsBody.cbegin(); i < atom2TsBody.cend(); ++i) {
 		delete ((*i).second);
 	}

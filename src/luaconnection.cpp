@@ -27,6 +27,8 @@
 #include "monitors/luainteractiveprintmonitor.hpp"
 #include "inferences/modelexpansion/LuaTraceMonitor.hpp"
 #include "IdpException.hpp"
+#include "lauxlib.h"
+#include "lualib.h"
 using namespace std;
 using namespace LuaConnection;
 

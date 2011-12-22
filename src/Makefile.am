@@ -248,12 +248,3 @@ libgidl_2_0_la_SOURCES = \
 bin_PROGRAMS = idp
 idp_LDADD = $(builddir)/libgidl-2.0.la
 idp_SOURCES = main.cpp
-
-data_stddir = $(datadir)/std
-
-data_std_DATA = data/idp_intern.idp data/idp_intern.lua data/mx.idp
-
-data_localdir = $(localstatedir)/idp
-data_local_DATA = data/.idprc
-
-dist_doc_DATA = $(data_std_DATA) $(data_local_DATA)

@@ -49,7 +49,8 @@ void usage() {
 #ifdef USEINTERACTIVE
 	cout << "    -i, --interactive    run in interactive mode\n";
 #endif
-	cout << "    -e \"<proc>\"          run procedure <proc> after parsing\n";
+	cout << "    -e \"<proc>\"        run procedure <proc> after parsing\n";
+	cout << "    -d <dirpath>         search for datafiles in the given directory\n";
 	cout << "    -c <name1>=<name2>   substitute <name2> for <name1> in the input\n";
 	cout << "    --nowarnings         disable warnings\n";
 	cout << "    --seed=N             use N as seed for the random generator\n";
@@ -79,7 +80,7 @@ vector<string> read_options(int argc, char* argv[], CLOptions& cloptions) {
 	vector<string> inputfiles;
 	argc--;
 	argv++;
-	while (argc) {
+	while (argc!=0) {
 		string str(argv[0]);
 		argc--;
 		argv++;
@@ -93,6 +94,16 @@ vector<string> read_options(int argc, char* argv[], CLOptions& cloptions) {
 			cloptions._interactive = true;
 		}
 #endif
+		else if (str == "-d"){
+			if(argc==0){
+				Error::error("-d option should be followed by a directorypath\n");
+				continue;
+			}
+			str = argv[0];
+			setDataFileDirectoryPath(str);
+			argc--;
+			argv++;
+		}
 		else if (str == "-c") {
 			str = argv[0];
 			if (argc && (str.find('=') != string::npos)) {
@@ -100,8 +111,9 @@ vector<string> read_options(int argc, char* argv[], CLOptions& cloptions) {
 				string name1 = str.substr(0, p);
 				string name2 = str.substr(p + 1, str.size());
 				GlobalData::instance()->setConstValue(name1, name2);
-			} else
+			} else {
 				Error::constsetexp();
+			}
 			argc--;
 			argv++;
 		} else if (str == "--nowarnings") {
@@ -375,10 +387,10 @@ Status test(const std::vector<std::string>& inputfileurls) {
 }
 
 int run(int argc, char* argv[]) {
-	DataManager m;
-
 	CLOptions cloptions;
 	vector<string> inputfiles = read_options(argc, argv, cloptions);
+
+	DataManager m;
 
 	// NOTE: if no input is given, we abort soon, because otherwise we get an error that no main could be found, which is a but ugly
 	if (inputfiles.size() == 0 && not cloptions._readfromstdin && not cloptions._interactive) {

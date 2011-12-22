@@ -12,7 +12,7 @@
 #define LUATRACEMONITOR_HPP_
 
 #include "tracemonitor.hpp"
-#include "lua.hpp"
+#include "lua.h"
 
 namespace MinisatID{
  	 class WrappedPCSolver;

@@ -27,14 +27,22 @@ std::string getInternalNamespaceName(){
 	return "idpintern";
 }
 
+std::string datafiledirectorypath = IDPDATADIR;
+void setDataFileDirectoryPath(const std::string& dirpath){
+	datafiledirectorypath = dirpath;
+}
+std::string getDataFilesDirectoryPath(){
+	return datafiledirectorypath;
+}
+
 string getPathOfLuaInternals() {
 	stringstream ss;
-	ss << IDPDATADIR << INTERNALLIBARYLUA;
+	ss << getDataFilesDirectoryPath() << INTERNALLIBARYLUA;
 	return ss.str();
 }
 string getPathOfIdpInternals() {
 	stringstream ss;
-	ss << IDPDATADIR << INTERNALLIBARYIDP;
+	ss << getDataFilesDirectoryPath() << INTERNALLIBARYIDP;
 	return ss.str();
 }
 string getPathOfConfigFile() {

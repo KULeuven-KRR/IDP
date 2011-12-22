@@ -14,7 +14,7 @@
 #include <set>
 #include <iostream>
 #include <cstdlib>
-#include "lua.hpp"
+#include "lua.h"
 #include "common.hpp"
 #include "vocabulary.hpp"
 #include "structure.hpp"

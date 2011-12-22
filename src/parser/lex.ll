@@ -8,7 +8,7 @@
 #include <typeinfo>
 #include "parser/clconst.hpp"
 #include "insert.hpp"
-#include "parser/parser.h"
+#include "parser.hh"
 #include "error.hpp"
 #include "common.hpp"
 #include "GlobalData.hpp"
