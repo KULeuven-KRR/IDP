@@ -15,7 +15,7 @@ AM_CXXFLAGS = @AC_CXXFLAGS@ -Wall -Wextra -std=c++0x\
 		-I $(libsrcdir)/loki/include\
 		-I $(top_srcdir)/src\
 		-I $(libsrcdir)/tinythread/source\
-		-I $(libsrcdir)/pcsolver/src/\
+		-I $(libsrcdir)/minisatid/src/\
 		-I $(libsrcdir)/pluscallback1.7/\
 		-I $(libsrcdir)/linenoise/include\
 		-I $(libsrcdir)/lua/etc -I$(libsrcdir)/lua/src -I $(libbuilddir)/lua/src
