@@ -49,20 +49,19 @@ Formula* SplitProducts::visit(AggForm* af) {
 	auto nulset = set->zeroSubset();
 	auto negset = set->negativeSubset();
 
-	auto sort = aggterm->sort();
-	auto voc = *(sort->firstVocabulary());
+	//auto sort = aggterm->sort();
+	auto voc = *(aggterm->sort()->firstVocabulary());
 	auto equalitySymbol = voc->pred("=/2");
 
 	auto nul = DomainElementFactory::createGlobal()->create(0);
-	auto nulterm = new DomainTerm(sort, nul, aggterm->pi());
+	auto nulterm = new DomainTerm(VocabularyUtils::intRangeSort(0,0), nul, aggterm->pi());
 	auto otherTermNul = new PredForm(SIGN::POS, equalitySymbol, { otherterm, nulterm }, FormulaParseInfo()); //c = 0
 	auto otherTermNotNul = new PredForm(SIGN::NEG, equalitySymbol, { otherterm, nulterm }, FormulaParseInfo()); //c ~= 0
 	auto nulOccurences = new AggForm(SIGN::POS, nulterm, CompType::NEQ, new AggTerm(nulset, AggFunction::CARD, aggterm->pi()), af->pi()); //#{x: p(x) & f(x) = 0:f(x)}~= 0
 	auto noNulOccurences = new AggForm(SIGN::POS, nulterm, CompType::EQ, new AggTerm(nulset, AggFunction::CARD, aggterm->pi()), af->pi()); //#{x: p(x) & f(x) = 0:f(x)}= 0
 
-	auto intsort = VocabularyUtils::intsort();
 	auto minusone = DomainElementFactory::createGlobal()->create(-1);
-	auto minusoneterm = new DomainTerm(intsort, minusone, aggterm->pi());
+	auto minusoneterm = new DomainTerm(VocabularyUtils::intRangeSort(-1,-1), minusone, aggterm->pi());
 
 	auto prodPos = new AggTerm(posset, AggFunction::PROD, aggterm->pi());
 
@@ -78,7 +77,7 @@ Formula* SplitProducts::visit(AggForm* af) {
 	auto prodWithMinusOne = new AggForm(SIGN::POS, otherterm, af->comp(), prodminusone, af->pi()); //prod{x : p(x) & x>0 : x} * prod{x : p(x) & x<0 : -x} * -1= c)
 
 	auto two = DomainElementFactory::createGlobal()->create(2);
-	auto twoterm = new DomainTerm(intsort, two, aggterm->pi());
+	auto twoterm = new DomainTerm(VocabularyUtils::intRangeSort(2,2), two, aggterm->pi());
 
 	auto cardNeg = new AggTerm(negset, AggFunction::CARD, aggterm->pi());
 	auto modSymbol = voc->func("%/2");

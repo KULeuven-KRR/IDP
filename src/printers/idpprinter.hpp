@@ -452,11 +452,17 @@ public:
 	void visit(const EnumSetExpr* s) {
 		output() << "[ ";
 		if (not s->subformulas().empty()) {
+			output() << "( ";
 			s->subformulas()[0]->accept(this);
+			output() << ", ";
+			s->subterms()[0]->accept(this);
 			for (unsigned int n = 1; n < s->subformulas().size(); ++n) {
-				output() << ";";
+				output() << ") ; (";
 				s->subformulas()[n]->accept(this);
+				output() << ", ";
+				s->subterms()[n]->accept(this);
 			}
+			output() << ")";
 		}
 		output() << " ]";
 	}
