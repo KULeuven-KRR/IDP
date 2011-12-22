@@ -331,8 +331,7 @@ Grounder* GrounderFactory::create(const AbstractTheory* theory, SATSolver* solve
 void GrounderFactory::visit(const Theory* theory) {
 	//TODO issue #23.  I think that HERE, we should graphaggregate, graphfunctions, splitproducts (splitEQchains?), ...
 	//TODO issue #24.  Splitproducts
-	AbstractTheory* tmptheory = theory->clone();
-	tmptheory = FormulaUtils::splitComparisonChains(tmptheory,_structure->vocabulary());
+	auto tmptheory = FormulaUtils::splitComparisonChains(theory->clone(),_structure->vocabulary());
 	if (not getOption(BoolType::CPSUPPORT)) {
 		tmptheory = FormulaUtils::graphFuncsAndAggs(tmptheory,_structure);
 		tmptheory = FormulaUtils::splitProducts(tmptheory);
@@ -784,8 +783,7 @@ void GrounderFactory::visit(const AggForm* af) {
 	_context._conjunctivePathFromRoot = _context._conjPathUntilNode;
 	_context._conjPathUntilNode = false;
 
-	AggForm* newaf = af->clone();
-	Formula* transaf = FormulaUtils::unnestThreeValuedTerms(newaf, _structure, _context._funccontext, getOption(BoolType::CPSUPPORT), _cpsymbols);
+	Formula* transaf = FormulaUtils::unnestThreeValuedTerms(af->clone(), _structure, _context._funccontext, getOption(BoolType::CPSUPPORT), _cpsymbols);
 	transaf = FormulaUtils::graphFuncsAndAggs(transaf, _structure, _context._funccontext);
 	if (recursive(transaf)) {
 		transaf = FormulaUtils::splitIntoMonotoneAgg(transaf);

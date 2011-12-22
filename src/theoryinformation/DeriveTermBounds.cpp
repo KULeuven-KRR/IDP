@@ -155,7 +155,8 @@ void DeriveTermBounds::visit(const AggTerm* t) {
 		} else {
 			auto maxsubtermvalue = std::max(
 					domElemAbs(*max_element(_subtermminimums.cbegin(),_subtermminimums.cend(),absCompare)),
-					domElemAbs(*max_element(_subtermmaximums.cbegin(),_subtermmaximums.cend(),absCompare)));
+					domElemAbs(*max_element(_subtermmaximums.cbegin(),_subtermmaximums.cend(),absCompare)),
+					Compare<DomainElement>());
 			_minimum = domElemUmin(domElemPow(maxsubtermvalue,maxsizeElem));
 			_maximum = domElemPow(maxsubtermvalue,maxsizeElem);
 		}

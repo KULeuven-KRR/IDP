@@ -1784,6 +1784,13 @@ Sort* natsort() {
 Sort* intsort() {
 	return Vocabulary::std()->sort("int");
 }
+
+Sort* intRangeSort(int min, int max){
+	stringstream ss; ss << "_sort_" << min << '_' << max;
+	auto sort = new Sort(ss.str(), new SortTable(new IntRangeInternalSortTable(min,max)));
+	sort->addParent(VocabularyUtils::intsort());
+	return sort;
+}
 Sort* floatsort() {
 	return Vocabulary::std()->sort("float");
 }
