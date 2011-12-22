@@ -332,8 +332,8 @@ void GrounderFactory::visit(const Theory* theory) {
 	//TODO issue #23.  I think that HERE, we should graphaggregate, graphfunctions, splitproducts (splitEQchains?), ...
 	//TODO issue #24.  Splitproducts
 	AbstractTheory* tmptheory = theory->clone();
-	tmptheory = FormulaUtils::splitComparisonChains(tmptheory,_structure->vocabulary());
 	if (not getOption(BoolType::CPSUPPORT)) {
+		tmptheory = FormulaUtils::splitComparisonChains(tmptheory,_structure->vocabulary());
 		tmptheory = FormulaUtils::graphFuncsAndAggs(tmptheory,_structure);
 		tmptheory = FormulaUtils::splitProducts(tmptheory);
 	}
@@ -388,7 +388,6 @@ void GrounderFactory::visit(const PredForm* pf) {
 	// Move all functions and aggregates that are three-valued according
 	// to _structure outside the atom. To avoid changing the original atom,
 	// we first clone it.
-	// FIXME verkeerde type afgeleid voor vergelijkingen a=b (zou bvb range die beide omvat moeten zijn, is nu niet het geval).
 	// FIXME aggregaten moeten correct worden herschreven als ze niet tweewaardig zijn -> issue #23?
 	Formula* transpf = FormulaUtils::unnestThreeValuedTerms(pf->clone(), _structure, _context._funccontext, getOption(BoolType::CPSUPPORT), _cpsymbols);
 	//transpf = FormulaUtils::splitComparisonChains(transpf);
