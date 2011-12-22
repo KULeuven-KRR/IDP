@@ -144,7 +144,7 @@ AC_ARG_WITH(
 AM_CONDITIONAL([BUILDTESTS],[test x$enabletests = xyes])
 AM_CONDITIONAL([USEINTERACTIVE],[test x$interactive = xyes])
 
-AC_CONFIG_SUBDIRS([lib/lua lib/pcsolver])
+AC_CONFIG_SUBDIRS([lib/lua lib/minisatid])
 AC_CONFIG_FILES([Makefile src/Makefile tests/Makefile lib/Makefile src/parser/Makefile lib/tinythread/Makefile lib/tinythread/source/Makefile lib/linenoise/Makefile])
 
 AC_OUTPUT

@@ -17,7 +17,7 @@ AM_CXXFLAGS = @AC_CXXFLAGS@ -Wall -Wextra\
 		-std=c++0x\
 		-I$(libsrcdir)/loki/include\
 		-I$(libsrcdir)/tinythread/source\
-		-I $(libsrcdir)/pcsolver/src/\
+		-I $(libsrcdir)/minisatid/src/\
 		-I$(libsrcdir)/linenoise/include\
 		-I$(libsrcdir)/lua/etc -I$(libsrcdir)/lua/src\
 		-I$(libbuilddir)/lua/src\
@@ -47,7 +47,7 @@ gidl_includedir = $(includedir)/gidl-2.0/
 # do not forget ldconfig after installing ;)
 libgidl_2_0_la_LIBADD = \
 		$(libbuilddir)/lua/src/.libs/liblua.la\
-		$(libbuilddir)/pcsolver/src/libminisatid-2.0.la\
+		$(libbuilddir)/minisatid/src/libminisatid-2.0.la\
 		$(libbuilddir)/linenoise/liblinenoise-1.0.la\
 		$(libbuilddir)/tinythread/source/libtinythread-1.0.la
 
