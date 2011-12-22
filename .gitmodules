@@ -1,8 +1,5 @@
-[submodule "lua"]
+[submodule "lib/lua"]
 	path = lib/lua
-	url = git://github.com/broesdecat/autotoolized-lua.git
-[submodule "lib./lua"]
-	path = lib./lua
 	url = git@github.com:broesdecat/autotoolized-lua.git
 [submodule "lib/minisatid"]
 	path = lib/minisatid
