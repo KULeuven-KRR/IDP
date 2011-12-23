@@ -109,8 +109,6 @@ Formula* splitComparisonChains(Formula*, Vocabulary* voc = NULL);
 
 Formula* splitIntoMonotoneAgg(Formula* f);
 
-/** Split product aggregates in aggregates conaining only positive values. */
-Formula* splitProducts(Formula* f);
 
 /** Replace the given term by the given variable in the given formula */
 Formula* substituteTerm(Formula*, Term*, Variable*);
@@ -158,8 +156,6 @@ AbstractTheory* removeEquivalences(AbstractTheory*);
 /** Rewrite chains of equalities to a conjunction or disjunction of atoms. */
 AbstractTheory* splitComparisonChains(AbstractTheory*, Vocabulary* voc = NULL);
 
-/** Split product aggregates in aggregates conaining only positive values. */
-AbstractTheory* splitProducts(AbstractTheory* f);
 
 /** Recursively move all function and aggregate terms */
 AbstractTheory* unnestFuncsAndAggs(AbstractTheory*, AbstractStructure* str = NULL,
