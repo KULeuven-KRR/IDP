@@ -75,8 +75,11 @@ VarTerm* UnnestTerms::move(Term* term) {
 	Assert(newsort != NULL);
 
 	auto introduced_var = new Variable(newsort);
-	Warning::introducedvar(introduced_var->name(), introduced_var->sort()->name(), toString(term));
 	_variables.insert(introduced_var);
+
+	if (getOption(IntType::GROUNDVERBOSITY) > 1) {
+		Warning::introducedvar(introduced_var->name(), introduced_var->sort()->name(), toString(term));
+	}
 
 	auto introduced_eq_term = new VarTerm(introduced_var, TermParseInfo(term->pi()));
 	auto equalpred = VocabularyUtils::equal(term->sort());

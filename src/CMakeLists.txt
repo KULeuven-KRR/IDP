@@ -216,11 +216,13 @@ target_link_libraries(idp minisatid lua linenoise)
 set_target_properties(idp PROPERTIES LINK_FLAGS "-pthread ")
 
 add_executable(idp-bin main.cpp)
-if(${CMAKE_BUILD_TYPE} MATCHES "StaticRelease")
-	set_target_properties(idp-bin PROPERTIES LINK_FLAGS "-static -all-static ")
+if(BUILD_IDP_STATIC)
+	set_target_properties(idp-bin PROPERTIES LINK_FLAGS "-pthread -static -all-static ")
+	set_target_properties(idp PROPERTIES LINK_FLAGS "-static -all-static ")
+else()
+	set_target_properties(idp-bin PROPERTIES LINK_FLAGS "-pthread ")
 endif()
 target_link_libraries(idp-bin idp lua)
-set_target_properties(idp-bin PROPERTIES LINK_FLAGS "-pthread ")
 set_target_properties(idp-bin PROPERTIES OUTPUT_NAME idp)
 
 # add the install targets
