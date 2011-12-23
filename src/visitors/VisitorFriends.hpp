@@ -35,7 +35,6 @@ class TheorySymmetryAnalyzer;
 template<typename Stream> class TPTPPrinter;
 template<typename Stream> class EcnfPrinter;
 template<typename Stream> class IDPPrinter;
-class SplitProducts;
 class SplitIntoMonotoneAgg;
 
 #define VISITORS() \
@@ -80,7 +79,6 @@ class SplitIntoMonotoneAgg;
 		friend class UnnestFuncsAndAggs; \
 		friend class UnnestPartialTerms; \
 		friend class UnnestThreeValuedTerms;\
-		friend class SplitProducts; \
 		friend class SplitIntoMonotoneAgg;
 
 class AbstractTheory;

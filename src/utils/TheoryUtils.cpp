@@ -40,7 +40,6 @@
 #include "theorytransformations/UnnestPartialTerms.hpp"
 #include "theorytransformations/UnnestTerms.hpp"
 #include "theorytransformations/UnnestThreeValuedTerms.hpp"
-#include "theorytransformations/SplitProducts.hpp"
 #include "theorytransformations/SplitIntoMonotoneAgg.hpp"
 
 using namespace std;
@@ -145,10 +144,6 @@ Formula* splitIntoMonotoneAgg(Formula* f) {
 	return transform<SplitIntoMonotoneAgg, Formula*>(f);
 }
 
-Formula* splitProducts(Formula* f){
-	return transform<SplitProducts, Formula*>(f);
-}
-
 Formula* substituteTerm(Formula* f, Term* t, Variable* v) {
 	return transform<SubstituteTerm, Formula*>(f, t, v);
 }
@@ -199,10 +194,6 @@ AbstractTheory* removeEquivalences(AbstractTheory* t) {
 
 AbstractTheory* splitComparisonChains(AbstractTheory* t, Vocabulary* voc) {
 	return transform<SplitComparisonChains, AbstractTheory*>(t, voc);
-}
-
-AbstractTheory* splitProducts(AbstractTheory* t) {
-	return transform<SplitProducts, AbstractTheory*>(t);
 }
 
 AbstractTheory* unnestFuncsAndAggs(AbstractTheory* t, AbstractStructure* str, Context con) {

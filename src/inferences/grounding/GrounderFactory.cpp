@@ -329,13 +329,11 @@ Grounder* GrounderFactory::create(const AbstractTheory* theory, SATSolver* solve
  *		_toplevelgrounder is equal to the created grounder
  */
 void GrounderFactory::visit(const Theory* theory) {
-	//TODO issue #23.  I think that HERE, we should graphaggregate, graphfunctions, splitproducts (splitEQchains?), ...
-	//TODO issue #24.  Splitproducts
 	AbstractTheory* tmptheory = theory->clone();
+	tmptheory = FormulaUtils::splitComparisonChains(tmptheory,_structure->vocabulary());
 	if (not getOption(BoolType::CPSUPPORT)) {
 		tmptheory = FormulaUtils::splitComparisonChains(tmptheory,_structure->vocabulary());
 		tmptheory = FormulaUtils::graphFuncsAndAggs(tmptheory,_structure);
-		tmptheory = FormulaUtils::splitProducts(tmptheory);
 	}
 	Assert(sametypeid<Theory>(*tmptheory));
 	auto newtheory = dynamic_cast<Theory*>(tmptheory);

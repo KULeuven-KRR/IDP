@@ -191,7 +191,7 @@ In the example, explicitly including type \code{A} of vocabulary \code{V} in \co
 \subsection{The standard vocabulary}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-The global namespace contains a fixed vocabulary \code{std}, withc is defined as follows:
+The global namespace contains a fixed vocabulary \code{std}, which is defined as follows:
 
 \begin{lstlisting}
 	vocabulary std{
@@ -360,7 +360,7 @@ A definition defines a concept, i.e. a predicate, in terms of other predicates. 
 \[ \forall x_1,\ldots,x_n\ P(t_1,\ldots,t_m) \rul \varphi \]
 where $P$ is a predicate symbol, $t_1,\ldots,t_m$ are terms that may contain the variables $x_1,\ldots,x_n$ and $\varphi$ a formula that may contain these variables. $P(t_1,\ldots,t_m)$ is called the \emph{head} of the rule and $\psi$ the \emph{body}. 
 
-A definition in \idp syntax consists of a set of rules, enclosed by `{\tt \{}' and `{\tt \}}'. Each rule ends with a `{\tt .}'. The definitional implication $\rul$ is written `{\tt <-}'. The quantifications before the head may be omitted in \idp, i.e., all free variables of a rule are implicitly universally quantified. If the body of a rule is empty, the rule symbol `{\tt <-}' can be omitted. Recursive definitions are allowed in \idp. \todo{something about semantics?}
+A definition in \idp syntax consists of a set of rules, enclosed by `{\tt \{}' and `{\tt \}}'. Each rule ends with a `{\tt .}'. The definitional implication $\rul$ is written `{\tt <-}'. The quantifications before the head may be omitted in \idp, i.e., all free variables of a rule are implicitly universally quantified. If the body of a rule is empty, the rule symbol `{\tt <-}' can be omitted. Recursive definitions are allowed in \idp. The semantics for a definitions are the wellfounded semantics \todo{reference}.
 
 
 
@@ -407,14 +407,11 @@ The semantics of a partial function $F$ is given by transforming constraints and
 \end{itemize}
 Here, $P(\ldots,F(x),\ldots)$ occurs in a positive context if it occurs in sentence and in the scope of an even number of negations, or it occurs in a body of a rule and in the scope of an odd number of negations. All other occurrences are in a negative context. 
 
-\todo{DIT KAN TOCH NIET MEER, of wel?}
-
-If a function $F$ is explicitely declared partial, one can specify a domain for which it is total in the form of a formula $\varphi$. Then, for all input arguments for which $\varphi$ is true, and only for these, $F$ has an output. To declare the domain of a partial function, the keyword `{\tt domain}' can be used, as is shown in the following example. 
-
 \subsection{Fixpoint definitions}
 \todo{nog niet getest. ik vermoed dat er hier niets over komt}
 
-                                                              \subsection{The Type of a Variable}\label{ssec:vtype}
+                                                              
+\subsection{The Type of a Variable}\label{ssec:vtype}
 There are two ways to assign a type $t$ to a variable $v$:
 \begin{itemize}
 	\item Explicitely mention the type of $v$ between `{\tt [}' and `{\tt ]}' when $v$ is quantified. Then $v$ gets type $t$ in the scope of the quantifier. E.g.,
@@ -436,6 +433,7 @@ We distinguish between \emph{typed} and \emph{untyped} occurrences. The followin
 	\item an occurrence as argument of a non-overloaded function: $F(\ldots,x,\ldots) = \ldots$;
 	\item an occurrence as return value of a non-overloaded function: $F(\ldots) = x$ or $F(\ldots) \neq x$. 
 \end{itemize}
+
 All others positions are untyped. 
 
 An overloaded predicate or function symbol can be disambiguated by scecifying its vocabluary and / or types.  E.g.,
@@ -452,21 +450,12 @@ If a declared variable with type {\tt T\_1} occurs in a typed position of type {
 
 
 The more complicated cases arise when a variable does not occur in any typed position, or it occurs in two typed positions with a different type. The system is designed to give a reasonable type to such variables. However, the choices made by the system are ad hoc and are probably not the ones the user intended. %When in doubt, one can explicitely assign types to variables, or run \gidl with option {\tt --data} to check the derived types.
-Since built-in functions are overloaded...\todo{stukje over wat typederivation precies doet voor gelijkheid en zo.. Broes?}
+\todo{stukje over wat typederivation precies doet voor gelijkheid en zo.. Broes?}
 
-First consider the case where a variable occurs in typed positions with different types. The \idp system will then give a warning. If all the typed positions where the variable occurs have a common ancestor type $T$, then the variable is assigned this type $T$. If they do not have a common ancestor, but are all of an integer type, then the variable is assumed to range over all integers.
+First consider the case where a variable occurs in typed positions with different types. The \idp system will then give a warning. If all the typed positions where the variable occurs have a common ancestor type $T$, then the variable is assigned this type $T$. If they do not have a common ancestor, no derivation is done.
 
+Now consider the case where a variable does not occur in a typed position. Then, the \idp system tries to find out what the type of the variable should be using its occurences in untyped position in built-in overloaded functions.  For example, when a variable $x$ only occurs in $x=t$, then $x$ will get the same type as $t$.  This behaviour might not always be the desired, so the \idp system will give a warning, including which type it derived for the variable.  It's always safer to declare a type for the variable in this case.  If it is not possible to derive a type for $x$ in this way either, the \idp system reports an error.
 
-Now consider the case where a variable does not occur in a typed position. Then, the \idp system reports an error.
-
-Because of the architecture of the system, problems can only be solved if all variables with an integer type range over a finite number of integers. Sometimes, however, if a variable ranges over all integers, only a finite interval of them is relevant. E.g., the constraint 
-`{\tt ! x : 1 < x \& x < 5 => x ~= 10}' is certainly satisfied for all {\tt x}'s outside the interval $[2..4]$, so only this interval is relevant to look at. Therefore, this constraint does not yield an error message. It is beyond the scope of this manual to describe when the system can find a finite relevant interval and when it cannot. When it cannot, an error messages is returned.
-
-To avoid these errors, one can add bounds: 
-\begin{itemize}
-	\item If {\tt x} is universally quantified, i.e., it occurs as `{\tt ! x : ...}', then write `{\tt ! x : phi(x) => ...}' instead, where {\tt phi} is a formula that can obviously only be true for a finite interval of {\tt x}'s. E.g., {\tt phi} is the formula `{\tt 1 < x \& x < 5}'.
-	\item If {\tt x} is existentially quantified, then write `{\tt ? x : phi(x) \& ...}' instead of `{\tt ? x : ...}', where {\tt phi} is as above.
-\end{itemize}
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -628,7 +617,18 @@ A lot of procedures are allready built in.  Typing \code{help} in interactive mo
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Options}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\todo{stukje over: Hoe opties zetten en gebruiken?}
+The \idp system has various options.  To set an option, you can use the following lua-code
+\begin{lstlisting}
+	stdoptions.MyOption = MyValue
+\end{lstlisting}
+where \code{MyOption} is the name of the option and \code{MyValue} is the value you want to give it. If you want to have multiple option sets, you can make them with them with
+\begin{lstlisting}
+	FirstOptionSet = newOptions()
+	SecondOptionSet = newOptions()
+	FirstOptionSet.MyOption = MyValue
+	SecondOptionSet.MyOption = MyValue
+\end{lstlisting}
+To activate an option set, use the procedure \code{setascurrentoptions(MyOptionSet)}.  From that moment, \code{MyOptionSet} will be used in all comands.
 
 \todo{Opties die we niet supporten in commentaar zetten}
 \begin{description}
@@ -640,7 +640,7 @@ A lot of procedures are allready built in.  Typing \code{help} in interactive mo
 	\item[groundwithbounds = [false, true]] Enable/disable the BDD's.  BDD's provide ct and cf bounds for formulas to reduce the size of the grounding.
 	\item[language = [asp, ecnf, idp, latex, tptp, txt]] The language used when printing objects. \todo{remove latex en zo.. die crashen}
 	\item[longestbranch = [0..2147483647]] \todo{}
-	\item[longnames = [false, true]] If true, everything is printed with reference to their vocabulary.  For example, a predicate \code{P} from vocabulary \code{V} will be printed \code{V::P} instead of \code{P}.
+	\item[longnames = [false, true]] If true, everything is printed with reference to their vocabulary.  For example, a predicate \code{P} from vocabulary \code{V} will be printed as \code{V::P} instead of \code{P}.
 	\item[modelformat = [all, threevalued, twovalued]] \todo{wat doet dit?}
 	\item[nbmodelequivalent = [false, true]] \todo{wat doet dit?}
 	\item[nrmodels = [0..2147483647]] Set the number of models wanted from the modelexpansion inference.  If set to 0, all models are returned.
@@ -660,12 +660,5 @@ A lot of procedures are allready built in.  Typing \code{help} in interactive mo
 
 
 
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Coming Soon}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-\todo{section over wat er nog komt?}
 
 \end{document}
