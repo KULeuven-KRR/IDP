@@ -17,7 +17,7 @@
 
 class RemoveNestingInference : public TheoryBase {
 public:
-	RemoveNestingInference (): TheoryBase("removenesting", "Move nested terms (except equality) out.") {
+	RemoveNestingInference (): TheoryBase("removenesting", "Move nested terms (except equality) out.\nModifies the given theory.") {
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
@@ -28,7 +28,7 @@ public:
 
 class PushNegationsInference: public TheoryBase{
 public:
-	PushNegationsInference(): TheoryBase("pushnegations", "Push negations inwards until they are before literals.") {
+	PushNegationsInference(): TheoryBase("pushnegations", "Push negations inwards until they are before literals.\nModifies the given theory.") {
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
@@ -39,7 +39,7 @@ public:
 
 class FlattenInference: public TheoryBase {
 public:
-	FlattenInference(): TheoryBase("flatten", "Rewrites formulas with the same operations in their child formulas by reducing the nesting") {
+	FlattenInference(): TheoryBase("flatten", "Rewrites formulas with the same operations in their child formulas by reducing the nesting.\nModifies the given theory.") {
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {

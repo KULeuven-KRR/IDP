@@ -514,7 +514,7 @@ protected:
 public:
 	// Constructors
 	UserProcedure(const std::string& name, const ParseInfo& pi, std::stringstream* des) :
-			_name(name), _pi(pi), _registryindex(""), _description(des ? des->str() : "(undocumented)\n") {
+			_name(name), _pi(pi), _registryindex(""), _description(des ? des->str() : "(undocumented)") {
 	}
 
 	void addarg(const std::string& name) {

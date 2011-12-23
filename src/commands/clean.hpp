@@ -17,7 +17,7 @@
 
 class CleanInference: public StructureBase {
 public:
-	CleanInference(): StructureBase("clean", "Combines fully specified three-valued relations into two-valued ones.") {
+	CleanInference(): StructureBase("clean", "Combines fully specified three-valued relations into two-valued ones.\nModifies its argument and does not return anything.") {
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
