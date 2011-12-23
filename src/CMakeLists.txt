@@ -21,10 +21,6 @@ include_directories (
 )
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D GIDLVERSION=\\\"${idp_VERSION_MAJOR}-${idp_VERSION_MINOR}\\\" -D IDPDATADIR=\\\"$(datadir)\\\" -D RCDIR=\\\"$(localstatedir)\\\" -D INTERNALLIBARYLUA=\\\"/std/idp_intern.lua\\\" -D INTERNALLIBARYIDP=\\\"/std/idp_intern.idp\\\" -D CONFIGFILENAME=\\\"/idp/.idprc\\\" ")
 
-if(${BUILD_SHARED_LIBS} MATCHES OFF})
-	set_target_properties(idp PROPERTIES LINK_FLAGS "-static")
-endif()
-
 find_package(BISON)
 find_package(FLEX)
 
@@ -213,10 +209,15 @@ add_library(idp
 		${BISON_myparser_OUTPUTS} ${FLEX_myscanner_OUTPUTS}
 )
 
+if(${CMAKE_BUILD_TYPE} MATCHES "StaticRelease")
+	set_target_properties(idp PROPERTIES LINK_FLAGS "-static -all-static ")
+endif()
+
 target_link_libraries(idp minisatid lua linenoise)
 
 add_executable(idp-bin main.cpp)
 target_link_libraries(idp-bin idp lua)
+set_target_properties(idp-bin PROPERTIES LINK_FLAGS "-static -all-static ")
 set_target_properties(idp-bin PROPERTIES OUTPUT_NAME idp)
 
 # add the install targets
