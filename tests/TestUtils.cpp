@@ -13,5 +13,5 @@
 using namespace std;
 
 std::string getTestDirectory(){
-	return string(TESTDIR);
+	return string(TESTDIR) + '/';
 }

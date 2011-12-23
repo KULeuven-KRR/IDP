@@ -28,7 +28,7 @@ vector<string> getAllFilesInDirs(const std::string& prefix, const vector<string>
 			}
 			closedir(dir);
 		} else {
-			cerr << "FAIL    |  Could not open directory.\n";
+			cerr << "FAIL    |  Could not open directory " <<*currTestDir <<"\n.";
 		}
 	}
 	return files;

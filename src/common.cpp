@@ -27,19 +27,27 @@ std::string getInternalNamespaceName(){
 	return "idpintern";
 }
 
+std::string installdirectorypath = IDPINSTALLDIR;
+void setInstallDirectoryPath(const std::string& dirpath){
+	installdirectorypath = dirpath;
+}
+std::string getInstallDirectoryPath(){
+	return installdirectorypath;
+}
+
 string getPathOfLuaInternals() {
 	stringstream ss;
-	ss << IDPDATADIR << INTERNALLIBARYLUA;
+	ss << getInstallDirectoryPath() <<INTERNALLIBARYLUA;
 	return ss.str();
 }
 string getPathOfIdpInternals() {
 	stringstream ss;
-	ss << IDPDATADIR << INTERNALLIBARYIDP;
+	ss << getInstallDirectoryPath() <<INTERNALLIBARYIDP;
 	return ss.str();
 }
 string getPathOfConfigFile() {
 	stringstream ss;
-	ss << RCDIR << CONFIGFILENAME;
+	ss << getInstallDirectoryPath() <<CONFIGFILENAME;
 	return ss.str();
 }
 

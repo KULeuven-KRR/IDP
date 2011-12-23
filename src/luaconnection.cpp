@@ -1951,7 +1951,7 @@ void makeLuaConnection() {
 	// Parse configuration file
 	err = luaL_dofile(_state,getPathOfConfigFile().c_str());
 	if (err) {
-		clog << "Error in configuration file\n";
+		clog << "Error in configuration file, searched in " <<getPathOfConfigFile() <<"\n";
 		exit(1);
 	}
 
