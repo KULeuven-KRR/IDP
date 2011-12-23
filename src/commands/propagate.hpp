@@ -17,6 +17,8 @@
 #include "inferences/propagation/SymbolicPropagation.hpp"
 #include "inferences/propagation/OptimalPropagation.hpp"
 
+
+
 /**
  * Implements symbolic propagation, followed by an evaluation of the BDDs to obtain a concrete structure
  */
@@ -41,6 +43,8 @@ class GroundPropagateInference: public TheoryStructureBase {
 public:
 	GroundPropagateInference() :
 		TheoryStructureBase("groundpropagate", "Return a structure, made more precise than the input by grounding and unit propagation on the theory.") {
+		setNameSpace(getInternalNamespaceName());
+
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
@@ -57,6 +61,8 @@ class OptimalPropagateInference: public TheoryStructureBase {
 public:
 	OptimalPropagateInference() :
 		TheoryStructureBase("optimalpropagate", "Return a structure, made more precise than the input by generating all models and checking which literals always have the same truth value.\nThis propagation is complete: everything that can be derived from the theory will be derived.") {
+		setNameSpace(getInternalNamespaceName());
+
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
