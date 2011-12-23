@@ -71,13 +71,10 @@ VarTerm* UnnestTerms::move(Term* term) {
 		contextProblem(term);
 	}
 
-	_chosenVarSort = deriveSort(term);
-	Assert(_chosenVarSort != NULL);
+	auto newsort = deriveSort(term);
+	Assert(newsort != NULL);
 
-	//cerr << "*** Sort chosen for Term " << toString(term) << " is " << toString(_chosenVarSort == NULL ? term->sort() : _chosenVarSort);
-	//cerr << " (term->sort() is " << toString(term->sort()) << " and _chosenVarSort was " << toString(_chosenVarSort) << ")\n";
-
-	auto introduced_var = new Variable(_chosenVarSort);
+	auto introduced_var = new Variable(newsort);
 	Warning::introducedvar(introduced_var->name(), introduced_var->sort()->name(), toString(term));
 	_variables.insert(introduced_var);
 
