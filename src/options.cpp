@@ -17,20 +17,20 @@ using namespace std;
 
 std::string str(Language choice) {
 	switch (choice) {
-	case Language::TXT:
-		return "txt";
+	//case Language::TXT:
+	//	return "txt";
 	case Language::IDP:
 		return "idp";
 	case Language::ECNF:
 		return "ecnf";
 	case Language::TPTP:
 		return "tptp";
-	case Language::CNF:
-		return "cnf";
-	case Language::ASP:
-		return "asp";
-	case Language::LATEX:
-		return "latex";
+		//case Language::CNF:
+		//	return "cnf";
+		//case Language::ASP:
+		//	return "asp";
+		//case Language::LATEX:
+		//	return "latex";
 	}
 }
 
@@ -50,7 +50,7 @@ std::string str(Format choice) {
 Options::Options() {
 	std::set<bool> boolvalues { true, false };
 	BoolPol::createOption(BoolType::SHOWWARNINGS, "showwarnings", boolvalues, true, _option2name, false); // TODO Temporary solution to be able to disable warnings in tests
-	BoolPol::createOption(BoolType::PRINTTYPES, "printtypes", boolvalues, true, _option2name);
+	//BoolPol::createOption(BoolType::PRINTTYPES, "printtypes", boolvalues, true, _option2name); DOET NIETS!
 	BoolPol::createOption(BoolType::CPSUPPORT, "cpsupport", boolvalues, false, _option2name, false);
 	BoolPol::createOption(BoolType::TRACE, "trace", boolvalues, false, _option2name);
 	BoolPol::createOption(BoolType::AUTOCOMPLETE, "autocomplete", boolvalues, true, _option2name);
@@ -73,12 +73,11 @@ Options::Options() {
 	// NOTE: set this to infinity, so he always starts timing, even when the options have not been read in yet.
 	// Afterwards, setting them to 0 stops the timing
 	IntPol::createOption(IntType::TIMEOUT, "timeout", 0, numeric_limits<int>::max(), numeric_limits<int>::max(), _option2name);
-
 	IntPol::createOption(IntType::PROVERTIMEOUT, "provertimeout", 0, numeric_limits<int>::max(), numeric_limits<int>::max(), _option2name, false);
 
-	StringPol::createOption(StringType::LANGUAGE, "language", std::set<std::string> { str(Language::TXT), str(Language::IDP), /*str(Language::LATEX),*/
-			str(Language::ECNF), str(Language::ASP), str(Language::TPTP) }, str(Language::IDP), _option2name); //TODO EDIT: remove LaTeX and stuff.. tXT TESTEN
-	}
+	StringPol::createOption(StringType::LANGUAGE, "language", std::set<std::string> { /*str(Language::TXT),*/str(Language::IDP), /*str(Language::LATEX),*/
+	str(Language::ECNF), /*str(Language::ASP),*/str(Language::TPTP) }, str(Language::IDP), _option2name);
+}
 
 template<class EnumType, class ValueType>
 void OptionPolicy<EnumType, ValueType>::createOption(EnumType type, const std::string& name, const ValueType& lowerbound, const ValueType& upperbound,
@@ -119,18 +118,19 @@ void OptionPolicy<EnumType, ValueType>::copyValues(Options* opts) {
 
 template<class EnumType, class ConcreteType>
 std::string RangeOption<EnumType, ConcreteType>::printOption() const {
-	std::stringstream ss; // TODO correct usage
 	if (TypedOption<EnumType, ConcreteType>::shouldPrint()) {
+		std::stringstream ss; // TODO correct usage
 		ss << "\t" << TypedOption<EnumType, ConcreteType>::getName() << " = " << TypedOption<EnumType, ConcreteType>::getValue();
 		ss << "\n\t\t => between " << lower() << " and " << upper() << ".\n";
-	}
-	return ss.str();
+		return ss.str();
+	} else
+		return "";
 }
 
 template<>
 std::string EnumeratedOption<BoolType, bool>::printOption() const {
-	std::stringstream ss;
 	if (TypedOption<BoolType, bool>::shouldPrint()) {
+		std::stringstream ss;
 		ss << "\t" << TypedOption<BoolType, bool>::getName() << " = " << (TypedOption<BoolType, bool>::getValue() ? "true" : "false");
 		ss << "\n\t\t => one of [";
 		bool begin = true;
@@ -142,14 +142,15 @@ std::string EnumeratedOption<BoolType, bool>::printOption() const {
 			ss << ((*i) ? "true" : "false");
 		}
 		ss << "]\n";
-	}
-	return ss.str();
+		return ss.str();
+	} else
+		return "";
 }
 
 template<class EnumType, class ConcreteType>
 std::string EnumeratedOption<EnumType, ConcreteType>::printOption() const {
-	std::stringstream ss;
 	if (TypedOption<EnumType, ConcreteType>::shouldPrint()) {
+		std::stringstream ss;
 		ss << "\t" << TypedOption<EnumType, ConcreteType>::getName() << " = " << TypedOption<EnumType, ConcreteType>::getValue();
 		ss << "\n\t\t => one of [";
 		bool begin = true;
@@ -161,25 +162,31 @@ std::string EnumeratedOption<EnumType, ConcreteType>::printOption() const {
 			ss << *i;
 		}
 		ss << "]\n";
-	}
-	return ss.str();
+		return ss.str();
+	} else
+		return "";
 }
 
 Language Options::language() const {
 	const std::string& value = StringPol::getValue(StringType::LANGUAGE);
-	if (value.compare(str(Language::TXT)) == 0) {
-		return Language::TXT;
-	} else if (value.compare("tptp") == 0) {
+	/*if (value.compare(str(Language::TXT)) == 0) {
+	 return Language::TXT;
+	 } else*/
+	if (value.compare("tptp") == 0) {
 		return Language::TPTP;
 	} else if (value.compare("idp") == 0) {
 		return Language::IDP;
 	} else if (value.compare("ecnf") == 0) {
 		return Language::ECNF;
-	} else if (value.compare("asp") == 0) {
-		return Language::ASP;
-	} else {
-		Assert(value.compare("latex")==0);
-		return Language::LATEX;
+	} /*else if (value.compare("asp") == 0) {
+	 return Language::ASP;
+	 } else {
+	 Assert(value.compare("latex")==0);
+	 return Language::LATEX;
+	 }*/
+	else {
+		Assert(false);
+		return Language::ECNF;
 	}
 }
 
@@ -226,7 +233,7 @@ ostream& Options::put(ostream& output) const {
 
 	sort(optionslines.begin(), optionslines.end());
 	for (auto i = optionslines.cbegin(); i < optionslines.cend(); ++i) {
-		output << *i ;
+		output << *i;
 	}
 
 	return output;

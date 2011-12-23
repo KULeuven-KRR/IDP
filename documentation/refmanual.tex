@@ -57,7 +57,7 @@ commandline options...
 \section{Comments}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-Everything betwee \code{/*} and \code{*/} is a comment, as well as everything between \code{//} and the end of the line.  If a comment block starts with \code{/**}, but not with \code{/***}, then the comment is added as a description to the first thing after that comment block that can have a description.  Currently, only procedures can have a description.
+Everything between \code{/*} and \code{*/} is a comment, as well as everything between \code{//} and the end of the line.  If a comment block starts with \code{/**}, but not with \code{/***}, then the comment is added as a description to the first thing after that comment block that can have a description.  Currently, only procedures can have a description.
 
 
 
@@ -633,26 +633,26 @@ To activate an option set, use the procedure \code{setascurrentoptions(MyOptionS
 \todo{Opties die we niet supporten in commentaar zetten}
 \begin{description}
 	\item[autocomplete = [false, true]] Turn autocompletion on or off
-	\item[cpsupport = [false, true]] Enable/disable cp-support (running a cp-solver together with the SAT-solver)
-	\item[createtranslation = [false, true]] \todo{watdoetdit?}
-	\item[groundlazily = [false, true]] Enable/disable lazy grounding
+	%\item[cpsupport = [false, true]] Enable/disable cp-support (running a cp-solver together with the SAT-solver)
+	%\item[createtranslation = [false, true]] \todo{watdoetdit?}
+	%\item[groundlazily = [false, true]] Enable/disable lazy grounding
 	\item[groundverbosity = [0..2147483647]] Verbosity of the grounder.  The higher the verbosity, the more debug information is printed.
-	\item[groundwithbounds = [false, true]] Enable/disable the BDD's.  BDD's provide ct and cf bounds for formulas to reduce the size of the grounding.
-	\item[language = [asp, ecnf, idp, latex, tptp, txt]] The language used when printing objects. \todo{remove latex en zo.. die crashen}
-	\item[longestbranch = [0..2147483647]] \todo{}
+	%\item[groundwithbounds = [false, true]] Enable/disable the BDD's.  BDD's provide ct and cf bounds for formulas to reduce the size of the grounding.
+	\item[language = [ecnf, idp, %latex, asp, txt
+				tptp]] The language used when printing objects. 
+	%\item[longestbranch = [0..2147483647]] \todo{}
 	\item[longnames = [false, true]] If true, everything is printed with reference to their vocabulary.  For example, a predicate \code{P} from vocabulary \code{V} will be printed as \code{V::P} instead of \code{P}.
-	\item[modelformat = [all, threevalued, twovalued]] \todo{wat doet dit?}
-	\item[nbmodelequivalent = [false, true]] \todo{wat doet dit?}
+	\item[nbmodelequivalent = [false, true]] If set true, the result of modelexpansion will be \textbf{all} models.  If set false, some models might be left out for efficiency.
 	\item[nrmodels = [0..2147483647]] Set the number of models wanted from the modelexpansion inference.  If set to 0, all models are returned.
-	\item[nrpropsteps = [0..2147483647]] \todo{ietsmetbddsmaarwat?}
-	\item[printtypes = [false, true]] \todo{doet niets voor de moment?}
-	\item[propagateverbosity = [0..2147483647]]Like groundverbosity, but controls the verbosity of the propagation.
-	\item[provertimeout = [0..2147483647]] \todo{?}
-	\item[randomvaluechoice =  [false, true]] \todo{?}
-	\item[relativepropsteps =  [false, true]] \todo{?}
+	%\item[nrpropsteps = [0..2147483647]] \todo{ietsmetbddsmaarwat?}
+	%\item[printtypes = [false, true]] \todo{doet niets voor de moment?}
+	%\item[propagateverbosity = [0..2147483647]]Like groundverbosity, but controls the verbosity of the propagation.
+	%\item[provertimeout = [0..2147483647]] \todo{?}
+	%\item[randomvaluechoice =  [false, true]] \todo{?}
+	%\item[relativepropsteps =  [false, true]] \todo{?}
 	\item[satverbosity = [0..2147483647]] Like groundverbosity, but controls the verbosity of \minisatid
-	\item[showwarnings = [false, true]] Enable/disable the warnings.
-	\item[symmetry = [0..2147483647]] \todo{?}
+	%\item[showwarnings = [false, true]] Enable/disable the warnings.
+	%\item[symmetry = [0..2147483647]] \todo{?} 1 is static, 0 is none, higher = ?
 	\item[timeout = [0..2147483647]] Set the timeout for inferences (in seconds)
 	\item[trace = [false, true]] If true, the procedure modelexpand produces also an execution trace of \minisatid 
 
