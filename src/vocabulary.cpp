@@ -851,44 +851,33 @@ Predicate* overload(const set<Predicate*>& sp) {
 
 }
 
-set<Sort*> Function::allsorts() const {
-	set<Sort*> ss;
-	ss.insert(_sorts.cbegin(), _sorts.cend());
-	if (_overfuncgenerator) {
-		set<Sort*> os = _overfuncgenerator->allsorts();
-		ss.insert(os.cbegin(), os.cend());
-	}
-	ss.erase(0);
-	return ss;
-}
-
 Function::Function(const std::string& name, const std::vector<Sort*>& is, Sort* os, const ParseInfo& pi, unsigned int binding) 
-	: PFSymbol(name, is, pi), _partial(false), _insorts(is), _outsort(os), _interpretation(0), _overfuncgenerator(0), _binding(binding) {
+	: PFSymbol(name, is, pi), _partial(false), _insorts(is), _outsort(os), _interpretation(NULL), _overfuncgenerator(NULL), _binding(binding) {
 	_sorts.push_back(os);
 }
 
 Function::Function(const std::string& name, const std::vector<Sort*>& sorts, const ParseInfo& pi, unsigned int binding) 
-	: PFSymbol(name, sorts, pi), _partial(false), _insorts(sorts), _outsort(sorts.back()), _interpretation(0), _overfuncgenerator(0), _binding(binding) {
+	: PFSymbol(name, sorts, pi), _partial(false), _insorts(sorts), _outsort(sorts.back()), _interpretation(NULL), _overfuncgenerator(NULL), _binding(binding) {
 	_insorts.pop_back();
 }
 
 Function::Function(const std::string& name, const std::vector<Sort*>& is, Sort* os, unsigned int binding) 
-	: PFSymbol(name, is), _partial(false), _insorts(is), _outsort(os), _interpretation(0), _overfuncgenerator(0), _binding(binding) {
+	: PFSymbol(name, is), _partial(false), _insorts(is), _outsort(os), _interpretation(NULL), _overfuncgenerator(NULL), _binding(binding) {
 	_sorts.push_back(os);
 }
 
 Function::Function(const std::string& name, const std::vector<Sort*>& sorts, unsigned int binding) 
-	: PFSymbol(name, sorts), _partial(false), _insorts(sorts), _outsort(sorts.back()), _interpretation(0), _overfuncgenerator(0), _binding(binding) {
+	: PFSymbol(name, sorts), _partial(false), _insorts(sorts), _outsort(sorts.back()), _interpretation(NULL), _overfuncgenerator(NULL), _binding(binding) {
 	_insorts.pop_back();
 }
 
 Function::Function(const std::string& name, const std::vector<Sort*>& sorts, FuncInterGenerator* inter, unsigned int binding) 
-	: PFSymbol(name, sorts, binding != 0), _partial(false), _insorts(sorts), _outsort(sorts.back()), _interpretation(inter), _overfuncgenerator(0), _binding(binding) {
+	: PFSymbol(name, sorts, binding != 0), _partial(false), _insorts(sorts), _outsort(sorts.back()), _interpretation(inter), _overfuncgenerator(NULL), _binding(binding) {
 	_insorts.pop_back();
 }
 
 Function::Function(FuncGenerator* generator) 
-	: PFSymbol(generator->name(), generator->arity() + 1, generator->binding() != 0), _partial(true), _insorts(generator->arity(), 0), _outsort(0), _interpretation(0), _overfuncgenerator(generator) {
+	: PFSymbol(generator->name(), generator->arity() + 1, generator->binding() != 0), _partial(true), _insorts(generator->arity(), NULL), _outsort(NULL), _interpretation(NULL), _overfuncgenerator(generator) {
 }
 
 Function::~Function() {
@@ -898,6 +887,10 @@ Function::~Function() {
 	if (_overfuncgenerator) {
 		delete (_overfuncgenerator);
 	}
+}
+
+void Function::partial(bool b) {
+	_partial = b;
 }
 
 bool Function::removeVocabulary(const Vocabulary* vocabulary) {
@@ -919,8 +912,15 @@ void Function::addVocabulary(const Vocabulary* vocabulary) {
 	}
 }
 
-void Function::partial(bool b) {
-	_partial = b;
+set<Sort*> Function::allsorts() const {
+	set<Sort*> ss;
+	ss.insert(_sorts.cbegin(), _sorts.cend());
+	if (_overfuncgenerator != NULL) {
+		set<Sort*> os = _overfuncgenerator->allsorts();
+		ss.insert(os.cbegin(), os.cend());
+	}
+	ss.erase(NULL);
+	return ss;
 }
 
 const vector<Sort*>& Function::insorts() const {
@@ -959,15 +959,15 @@ unsigned int Function::binding() const {
  * \brief Returns the interpretation of a built-in function
  *
  * PARAMETERS
- *		 - structure: for some functions, e.g. //2 over a type A, the interpretation of A is 
- *		 needed to generate the interpretation for //2. The structure contains the interpretation of the 
- *		 relevant sorts.
+ *		- structure: for some functions, e.g. //2 over a type A, the interpretation of A is 
+ *		needed to generate the interpretation for //2. The structure contains the interpretation of 
+ *		the relevant sorts.
  */
 FuncInter* Function::interpretation(const AbstractStructure* structure) const {
 	if (_interpretation) {
 		return _interpretation->get(structure);
 	} else {
-		return 0;
+		return NULL;
 	}
 }
 
@@ -997,7 +997,8 @@ bool Function::contains(const Function* function) const {
  *		- The function itself if it is not overloaded and matches the given sorts.
  *		- A null-pointer if there is more than one function that is overloaded by the function
  *		  and matches the given sorts.
- *		- Otherwise, the unique function that is overloaded by the function and matches the given sorts.
+ *		- Otherwise, the unique function that is overloaded by the function and matches the 
+ *		  given sorts.
  */
 Function* Function::resolve(const vector<Sort*>& sorts) {
 	if (overloaded()) {
@@ -1005,7 +1006,7 @@ Function* Function::resolve(const vector<Sort*>& sorts) {
 	} else if (_sorts == sorts) {
 		return this;
 	} else {
-		return 0;
+		return NULL;
 	}
 }
 
@@ -1104,11 +1105,11 @@ bool EnumeratedFuncGenerator::contains(const Function* function) const {
  * \brief Returns a null-pointer if such a function does not exist or is not unique
  */
 Function* EnumeratedFuncGenerator::resolve(const vector<Sort*>& sorts) {
-	Function* candidate = 0;
+	Function* candidate = NULL;
 	for (auto it = _overfuncs.cbegin(); it != _overfuncs.cend(); ++it) {
 		Function* newcandidate = (*it)->resolve(sorts);
 		if (candidate && candidate != newcandidate) {
-			return 0;
+			return NULL;
 		} else {
 			candidate = newcandidate;
 		}
@@ -1121,11 +1122,11 @@ Function* EnumeratedFuncGenerator::resolve(const vector<Sort*>& sorts) {
  * \brief Returns a null-pointer if such a function does not exist or is not unique
  */
 Function* EnumeratedFuncGenerator::disambiguate(const vector<Sort*>& sorts, const Vocabulary* vocabulary) {
-	Function* candidate = 0;
+	Function* candidate = NULL;
 	for (auto it = _overfuncs.cbegin(); it != _overfuncs.cend(); ++it) {
 		Function* newcandidate = (*it)->disambiguate(sorts, vocabulary);
-		if (candidate && candidate != newcandidate) {
-			return 0;
+		if (candidate != NULL && candidate != newcandidate) {
+			return NULL;
 		} else {
 			candidate = newcandidate;
 		}
@@ -1179,17 +1180,15 @@ bool IntFloatFuncGenerator::contains(const Function* function) const {
 Function* IntFloatFuncGenerator::resolve(const vector<Sort*>& sorts) {
 	Assert(sorts.size() == 2 || sorts.size() == 3);
 	if (sorts[0] == sorts[1] && (sorts.size() == 2 || sorts[1] == sorts[2])) {
-		auto intsort = Vocabulary::std()->sort("int");
-		auto floatsort = Vocabulary::std()->sort("float");
-		if (sorts[0] == intsort) {
+		if (sorts[0] == VocabularyUtils::intsort()) {
 			return _intfunction;
-		} else if (sorts[0] == floatsort) {
+		} else if (sorts[0] == VocabularyUtils::floatsort()) {
 			return _floatfunction;
 		} else {
-			return 0;
+			return NULL;
 		}
 	}
-	return 0;
+	return NULL;
 }
 
 /**
@@ -1199,27 +1198,25 @@ Function* IntFloatFuncGenerator::resolve(const vector<Sort*>& sorts) {
  * and the float function if at least one sort is not a subsort of _int.
  */
 Function* IntFloatFuncGenerator::disambiguate(const vector<Sort*>& sorts, const Vocabulary* vocabulary) {
-	unsigned int zerocounter = 0;
-	bool isfloat = false;
-	auto intsort = Vocabulary::std()->sort("int");
-	auto floatsort = Vocabulary::std()->sort("float");
+	size_t zerocounter = 0;
+	bool isfloatbutnotint = false;
+	auto intsort = VocabularyUtils::intsort();
+	auto floatsort = VocabularyUtils::floatsort();
 	for (auto it = sorts.cbegin(); it != sorts.cend(); ++it) {
-		if (*it) {
-			if (SortUtils::resolve(intsort, *it, vocabulary) != intsort) {
-				if (SortUtils::resolve(floatsort, *it, vocabulary) == floatsort) {
-					isfloat = true;
-				} else {
-					return 0;
-				}
+		if (*it == NULL) {
+			if (++zerocounter > 1) {
+				return NULL;
 			}
+		} else if (not SortUtils::isSubsort(*it, floatsort, vocabulary)) {
+			return NULL;
 		} else {
-			++zerocounter;
-			if (zerocounter > 1) {
-				return 0;
+			Assert(SortUtils::isSubsort(*it, floatsort, vocabulary));
+			if (not SortUtils::isSubsort(*it, intsort, vocabulary)) {
+				isfloatbutnotint = true;
 			}
 		}
 	}
-	return (isfloat ? _floatfunction : _intfunction);
+	return (isfloatbutnotint ? _floatfunction : _intfunction);
 }
 
 /**
@@ -1227,8 +1224,8 @@ Function* IntFloatFuncGenerator::disambiguate(const vector<Sort*>& sorts, const 
  */
 set<Sort*> IntFloatFuncGenerator::allsorts() const {
 	set<Sort*> ss;
-	ss.insert(Vocabulary::std()->sort("int"));
-	ss.insert(Vocabulary::std()->sort("float"));
+	ss.insert(VocabularyUtils::intsort());
+	ss.insert(VocabularyUtils::floatsort());
 	return ss;
 }
 
@@ -1282,7 +1279,7 @@ bool OrderFuncGenerator::contains(const Function* function) const {
 Function* OrderFuncGenerator::resolve(const vector<Sort*>& sorts) {
 	for (size_t n = 1; n < sorts.size(); ++n) {
 		if (sorts[n] != sorts[n - 1]) {
-			return 0;
+			return NULL;
 		}
 	}
 	Assert(not sorts.empty());
@@ -1299,12 +1296,12 @@ Function* OrderFuncGenerator::resolve(const vector<Sort*>& sorts) {
  * \brief among the given sorts.
  */
 Function* OrderFuncGenerator::disambiguate(const vector<Sort*>& sorts, const Vocabulary*) {
-	Sort* funcSort = 0;
+	Sort* funcSort = NULL;
 	for (auto it = sorts.cbegin(); it != sorts.cend(); ++it) {
-		if (*it) {
-			if (funcSort) {
+		if (*it != NULL) {
+			if (funcSort != NULL) {
 				if (funcSort != *it) {
-					return 0;
+					return NULL;
 				}
 			} else {
 				funcSort = *it;
@@ -1312,8 +1309,8 @@ Function* OrderFuncGenerator::disambiguate(const vector<Sort*>& sorts, const Voc
 		}
 	}
 
-	Function* func = 0;
-	if (funcSort) {
+	Function* func = NULL;
+	if (funcSort != NULL) {
 		map<Sort*, Function*>::const_iterator it = _overfuncs.find(funcSort);
 		if (it != _overfuncs.cend()) {
 			func = it->second;
@@ -1363,7 +1360,7 @@ Function* overload(Function* f1, Function* f2) {
 
 Function* overload(const set<Function*>& sf) {
 	if (sf.empty()) {
-		return 0;
+		return NULL;
 	} else if (sf.size() == 1) {
 		return *(sf.cbegin());
 	} else {
@@ -1569,9 +1566,9 @@ Vocabulary* Vocabulary::std() {
 		Function* inttimes = new Function("*/2", threeints, inttimesgen, 300);
 		Function* floattimes = new Function("*/2", threefloats, floattimesgen, 300);
 
-		SingleFuncInterGenerator* intdivgen = new SingleFuncInterGenerator(new FuncInter(new FuncTable(new DivInternalFuncTable(true), threeint)));
+		//SingleFuncInterGenerator* intdivgen = new SingleFuncInterGenerator(new FuncInter(new FuncTable(new DivInternalFuncTable(true), threeint)));
 		SingleFuncInterGenerator* floatdivgen = new SingleFuncInterGenerator(new FuncInter(new FuncTable(new DivInternalFuncTable(false), threefloat)));
-		Function* intdiv = new Function("//2", threeints, intdivgen, 300);
+		//Function* intdiv = new Function("//2", threeints, intdivgen, 300);
 		Function* floatdiv = new Function("//2", threefloats, floatdivgen, 300);
 
 		SingleFuncInterGenerator* intabsgen = new SingleFuncInterGenerator(new FuncInter(new FuncTable(new AbsInternalFuncTable(true), twoint)));
@@ -1593,7 +1590,7 @@ Vocabulary* Vocabulary::std() {
 		IntFloatFuncGenerator* plusgen = new IntFloatFuncGenerator(intplus, floatplus);
 		IntFloatFuncGenerator* minusgen = new IntFloatFuncGenerator(intminus, floatminus);
 		IntFloatFuncGenerator* timesgen = new IntFloatFuncGenerator(inttimes, floattimes);
-		IntFloatFuncGenerator* divgen = new IntFloatFuncGenerator(intdiv, floatdiv);
+		//IntFloatFuncGenerator* divgen = new IntFloatFuncGenerator(intdiv, floatdiv);
 		IntFloatFuncGenerator* absgen = new IntFloatFuncGenerator(intabs, floatabs);
 		IntFloatFuncGenerator* umingen = new IntFloatFuncGenerator(intumin, floatumin);
 		OrderFuncGenerator* mingen = new OrderFuncGenerator("MIN/0", 0, minigengen);
@@ -1607,10 +1604,11 @@ Vocabulary* Vocabulary::std() {
 		Function* expfunc = new Function(string("^/2"), threefloats, expgen, 400);
 		_std->add(modfunc);
 		_std->add(expfunc);
+		_std->add(floatdiv);
 		_std->add(new Function(plusgen));
 		_std->add(new Function(minusgen));
 		_std->add(new Function(timesgen));
-		_std->add(new Function(divgen));
+		//_std->add(new Function(divgen));
 		_std->add(new Function(absgen));
 		_std->add(new Function(umingen));
 		_std->add(new Function(mingen));
@@ -1785,7 +1783,7 @@ Sort* intsort() {
 	return Vocabulary::std()->sort("int");
 }
 
-Sort* intRangeSort(int min, int max){
+Sort* intRangeSort(int min, int max) {
 	stringstream ss; ss << "_sort_" << min << '_' << max;
 	auto sort = new Sort(ss.str(), new SortTable(new IntRangeInternalSortTable(min,max)));
 	sort->addParent(VocabularyUtils::intsort());
