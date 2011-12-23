@@ -19,7 +19,7 @@ include_directories ("
 ") 
 
 if(${BUILDTESTS})
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D TESTDIR=\\\"`pwd`\\\" ")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D TESTDIR=\\\"${PROJECT_SOURCE_DIR}/tests\\\" ")
 add_executable(idptests
 		testsuite.cpp
 		mxtests.cpp
@@ -35,5 +35,6 @@ add_executable(idptests
 		TestUtils.hpp TestUtils.cpp
 )
 target_link_libraries(idptests idp gtest)
-add_test(googletests alltests)
+set_target_properties(idptests PROPERTIES LINK_FLAGS "-pthread ")
+add_test(idptests idptests)
 endif()

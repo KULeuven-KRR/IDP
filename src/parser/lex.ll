@@ -300,7 +300,7 @@ COMMENTLINE		"//".*
 								}
 <include>"<"[a-zA-Z0-9_/]*">"	{ data.advancecol();
 								  char* temp = yytext; ++temp;
-								  string str = string(IDPDATADIR) + "/std/" + string(temp,yyleng-2) + ".idp";
+								  string str = getInstallDirectoryPath() + "share/std/" + string(temp,yyleng-2) + ".idp";
 								  data.start_include(str);	
 								  BEGIN(data.includecaller);
 								}

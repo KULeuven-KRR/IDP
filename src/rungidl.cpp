@@ -100,7 +100,7 @@ vector<string> read_options(int argc, char* argv[], CLOptions& cloptions) {
 				continue;
 			}
 			str = argv[0];
-			setDataFileDirectoryPath(str);
+			setInstallDirectoryPath(str);
 			argc--;
 			argv++;
 		}
