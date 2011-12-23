@@ -216,7 +216,7 @@ add_library(idp
 target_link_libraries(idp minisatid lua linenoise)
 
 add_executable(idp-bin main.cpp)
-target_link_libraries(idp-bin idp)
+target_link_libraries(idp-bin idp lua)
 set_target_properties(idp-bin PROPERTIES OUTPUT_NAME idp)
 
 # add the install targets
