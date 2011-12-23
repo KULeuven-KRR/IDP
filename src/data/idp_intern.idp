@@ -5,11 +5,15 @@
 ***********/
 
 /**
- * List the procedures in the given namespace 
- */
+ * List the procedures in the given namespace  */
 procedure help(namespace) {
 	if (not namespace) then namespace = idpglobal end
-	idpintern.help(namespace)
+	if type(namespace) == "namespace" then
+		idpintern.help(namespace)
+	else
+		print("Error: namespace expected")
+	end
+	
 }
 
 /**************************
@@ -19,8 +23,7 @@ procedure help(namespace) {
 /**
  * Returns a procedure, iterator, and a tuple such that 
  *    for t in tuples(table) do ... end
- * iterates over all tuples in the given predicate table
- */
+ * iterates over all tuples in the given predicate table */
 procedure tuples(table) {
 	if type(table) == "predicate_table" then
 		return deref_and_increment, iterator(table), createdummytuple()
@@ -32,8 +35,7 @@ procedure tuples(table) {
 /**
  * Returns a procedure, iterator, and 0 such that
  *    for e in elements(d) do ... end
- * iterates over all elements in the given domain d
- */
+ * iterates over all elements in the given domain d */
 procedure elements(d) {
 	if type(d) == "domain" then
 		return deref_and_increment, iterator(d), 0
@@ -48,42 +50,64 @@ procedure elements(d) {
 
 /**
  * Apply model expansion to theory T, structure S, and options Opts. Opts defaults to stdoptions.
- * The result is a table of structures and, if Opts.trace == true, a trace of the solver
- */
+ * The result is a table of structures and, if Opts.trace == true, a trace of the solver */
 procedure modelexpand(theory, structure) {
-	local clonetheo = clone(theory)
-	pushnegations(clonetheo)
-	flatten(clonetheo)
-	local solutions, trace = idpintern.modelexpand(clonetheo,structure) 
-	local solutions2 = alltwovaluedextensions(solutions)
-	return solutions2, trace
+	if type(theory) == "theory" then
+		if type(structure) == "structure" then
+			local clonetheo = clone(theory)
+			pushnegations(clonetheo)
+			flatten(clonetheo)
+			local solutions, trace = idpintern.modelexpand(clonetheo,structure) 
+			local solutions2 = alltwovaluedextensions(solutions)
+			return solutions2, trace
+		else
+			print("Error: structure expected")
+		end
+	else
+		print("Error: theory expected")
+	end
 }
 
 /**
- * Create the reduced grounding of the given theory and structure
- */
+ * Create the reduced grounding of the given theory and structure */
 procedure ground(theory, structure) {
-	local clonetheo = clone(theory)
-	pushnegations(clonetheo)
-	flatten(clonetheo)
-	return idpintern.ground(clonetheo,structure) 
+	if type(theory) == "theory" then
+		if type(structure) == "structure" then
+			local clonetheo = clone(theory)
+			pushnegations(clonetheo)
+			flatten(clonetheo)
+			return idpintern.ground(clonetheo,structure) 
+		else
+			print("Error: structure expected")
+		end
+	else
+		print("Error: theory expected")
+	end
 }
+
 
 /**
  * Print the reduced grounding of the given theory and structure
- * MEMORY EFFICIENT: does not store the grounding internally
- */
+ * MEMORY EFFICIENT: does not store the grounding internally */
 procedure printgrounding(theory, structure) {
-	local clonetheo = clone(theory)
-	pushnegations(clonetheo)
-	flatten(clonetheo)
-	return idpintern.printgrounding(clonetheo,structure) 
+	if type(theory) == "theory" then
+		if type(structure) == "structure" then
+			local clonetheo = clone(theory)
+			pushnegations(clonetheo)
+			flatten(clonetheo)
+			return idpintern.printgrounding(clonetheo,structure) 
+		else
+			print("Error: structure expected")
+		end
+	else
+		print("Error: theory expected")
+	end
 }
 
-/**
- * Check whether first theory entails the second
- */
-procedure entails(theory1, theory2) {
+
+/*/**
+ * Check whether first theory entails the second */
+/*procedure entails(theory1, theory2) {
 	tmplang = stdoptions.language
 	stdoptions.language = "tptp"
 	fof_commands = {idp_intern.prover_fof_linux, idp_intern.prover_fof_win, idp_intern.prover_fof_osx}
@@ -100,4 +124,4 @@ procedure entails(theory1, theory2) {
 	)
 	stdoptions.language = tmplang
 	return result
-}
+}*/
