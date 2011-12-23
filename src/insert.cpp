@@ -1279,6 +1279,9 @@ Formula* Insert::predform(NSPair* t, YYLTYPE l) const {
 
 // NOTE: The lefthand functon is considered defined!
 Formula* Insert::equalityhead(Term* left, Term* right, YYLTYPE l) const {
+	if (left == NULL) {
+		return NULL;
+	}
 	if (not sametypeid<FuncTerm>(*left)) {
 		Error::funcnameexpected(left->pi());
 		return NULL;
