@@ -75,7 +75,6 @@ std::string toString(const Type& object) {
 	return ss.str();
 }
 
-
 template<typename Type>
 std::string toString(const std::vector<Type>& v) {
 	std::stringstream ss;
@@ -90,6 +89,7 @@ std::string toString(const std::vector<Type>& v) {
 	ss << ")";
 	return ss.str();
 }
+
 template<typename Type>
 std::string toString(const std::set<Type>& v) {
 	std::stringstream ss;
@@ -121,6 +121,7 @@ std::string toString(const std::map<Type1, Type2>& v) {
 	ss << ")";
 	return ss.str();
 }
+
 template<>
 std::string toString(const CompType& type);
 

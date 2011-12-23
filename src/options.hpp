@@ -59,7 +59,7 @@ public:
 	~TypedOption(){}
 
 	const std::string& getName() const { return name; }
-	const bool shouldPrint() const { return _visible; }
+	bool shouldPrint() const { return _visible; }
 
 	EnumType getType() const { return type; }
 

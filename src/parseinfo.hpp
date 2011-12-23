@@ -32,7 +32,6 @@
  *		Objects that are not parsed (e.g., internally created variables) have line number 0 in their ParseInfo.
  */
 class ParseInfo {
-
 	protected:
 		unsigned int	_line;	//!< line number where the object is declared (0 for non-parsed objects)
 		unsigned int	_col;	//!< column number where the object is declared
