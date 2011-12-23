@@ -50,14 +50,17 @@ template<class EnumType, class ConcreteType>
 class TypedOption {
 private:
 	EnumType type;
+	bool _visible;
 	const std::string name;
 	ConcreteType chosenvalue_;
 
 public:
-	TypedOption(EnumType type, const std::string& name): type(type), name(name){}
+	TypedOption(EnumType type, const std::string& name, bool visible): _visible(visible), type(type), name(name){}
 	~TypedOption(){}
 
 	const std::string& getName() const { return name; }
+	const bool shouldPrint() const { return _visible; }
+
 	EnumType getType() const { return type; }
 
 	virtual bool 		isAllowedValue(const ConcreteType& value) = 0;
@@ -79,8 +82,8 @@ private:
 	const ConcreteType&	upper() const { return upperbound_;  }
 
 public:
-	RangeOption(EnumType type, const std::string& name, const ConcreteType& lowerbound, const ConcreteType& upperbound)
-		: TypedOption<EnumType, ConcreteType>(type, name), lowerbound_(lowerbound), upperbound_(upperbound) { }
+	RangeOption(EnumType type, const std::string& name, const ConcreteType& lowerbound, const ConcreteType& upperbound, bool visible)
+		: TypedOption<EnumType, ConcreteType>(type, name, visible), lowerbound_(lowerbound), upperbound_(upperbound) { }
 
 	bool isAllowedValue(const ConcreteType& value){
 		return value >= lower() && value <= upper();
@@ -96,8 +99,8 @@ private:
 	const std::set<ConcreteType>& getAllowedValues() const { return allowedvalues_; }
 
 public:
-	EnumeratedOption(EnumType type, const std::string& name, const std::set<ConcreteType>& allowedvalues)
-		: TypedOption<EnumType, ConcreteType>(type, name), allowedvalues_(allowedvalues) { }
+	EnumeratedOption(EnumType type, const std::string& name, const std::set<ConcreteType>& allowedvalues, bool visible)
+		: TypedOption<EnumType, ConcreteType>(type, name, visible), allowedvalues_(allowedvalues) { }
 
 	bool isAllowedValue(const ConcreteType& value){
 		return getAllowedValues().find(value)!=getAllowedValues().cend();
@@ -114,8 +117,8 @@ private:
 	std::vector<TypedOption<EnumType, ValueType>* > _options;
 	std::map<std::string, EnumType> _name2type;
 protected:
-	void createOption(EnumType type, const std::string& name, const ValueType& lowerbound, const ValueType& upperbound, const ValueType& defaultValue, std::vector<std::string>& option2name);
-	void createOption(EnumType type, const std::string& name, const std::set<ValueType>& values, const ValueType& defaultValue, std::vector<std::string>& option2name);
+	void createOption(EnumType type, const std::string& name, const ValueType& lowerbound, const ValueType& upperbound, const ValueType& defaultValue, std::vector<std::string>& option2name, bool visible= true);
+	void createOption(EnumType type, const std::string& name, const std::set<ValueType>& values, const ValueType& defaultValue, std::vector<std::string>& option2name, bool visible= true);
 public:
 	~OptionPolicy(){
 		for(auto i=_options.cbegin(); i!=_options.cend(); ++i) {
