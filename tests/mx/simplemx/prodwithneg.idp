@@ -8,7 +8,7 @@ theory T:V{
 }
 
 structure S:V{
-	x = {1..2}
+	x = {-1..2}
 }
 
 procedure getExpectedNbOfModels(){

@@ -405,9 +405,6 @@ TEST(SplitComparisonChainsTest,WeirdEqChainForm) {
 // SplitIntoMonotoneAgg
 //TODO
 
-// SplitProducts - formula,theory
-//TODO
-
 // SubstituteTerm - formula
 TEST(SubstituteTermTest,Formula) {
 	auto s = sort("X",-2,2);

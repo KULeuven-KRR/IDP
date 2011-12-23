@@ -362,9 +362,10 @@ SetExpr* UnnestTerms::visit(EnumSetExpr* s) {
 	for (size_t n = 0; n < s->subterms().size(); ++n) {
 		s->subterm(n, s->subterms()[n]->accept(this));
 		if (not _equalities.empty()) {
-			_equalities.push_back(s->subformulas()[n]);
-			s->subformula(n, new BoolForm(SIGN::POS, true, _equalities, FormulaParseInfo()));
+			//_equalities.push_back(s->subformulas()[n]);
+			//s->subformula(n, new BoolForm(SIGN::POS, true, _equalities, FormulaParseInfo()));
 			savevars.insert(_variables.cbegin(), _variables.cend());
+			saveequalities.insert(saveequalities.end(),_equalities.cbegin(), _equalities.cend());
 			_equalities.clear();
 			_variables.clear();
 		}

@@ -339,7 +339,7 @@ EnumSetExpr* EnumSetExpr::positiveSubset() const {
 	auto nul = DomainElementFactory::createGlobal()->create(0);
 	auto form = _subformulas.cbegin();
 	for (auto term = _subterms.cbegin(); form != _subformulas.cend(); ++term, ++form) {
-		auto nulterm = new DomainTerm((*term)->sort(), nul, (*term)->pi());
+		auto nulterm = new DomainTerm(VocabularyUtils::intRangeSort(0,0), nul, (*term)->pi());
 		auto termpos = new EqChainForm(SIGN::POS, true, { (*term)->clone(), nulterm }, { CompType::GT }, (*form)->pi());
 		newsubforms.push_back(new BoolForm(SIGN::POS, true, { (*form)->clone(), termpos }, (*form)->pi()));
 		newsubterms.push_back((*term)->clone());
@@ -353,7 +353,7 @@ EnumSetExpr* EnumSetExpr::negativeSubset() const {
 	auto nul = DomainElementFactory::createGlobal()->create(0);
 	auto form = _subformulas.cbegin();
 	for (auto term = _subterms.cbegin(); form != _subformulas.cend(); ++term, ++form) {
-		auto nulterm = new DomainTerm((*term)->sort(), nul, (*term)->pi());
+		auto nulterm = new DomainTerm(VocabularyUtils::intRangeSort(0,0), nul, (*term)->pi());
 		auto minSymbol = (*((*term)->sort()->firstVocabulary()))->func("-/1");
 		newsubterms.push_back(new FuncTerm(minSymbol, { (*term)->clone() }, (*term)->pi()));
 		auto termneg = new EqChainForm(SIGN::POS, true, { (*term)->clone(), nulterm }, { CompType::LT }, (*form)->pi());
@@ -368,7 +368,7 @@ EnumSetExpr* EnumSetExpr::zeroSubset() const {
 	auto nul = DomainElementFactory::createGlobal()->create(0);
 	auto form = _subformulas.cbegin();
 	for (auto term = _subterms.cbegin(); form != _subformulas.cend(); ++term, ++form) {
-		auto nulterm = new DomainTerm((*term)->sort(), nul, (*term)->pi());
+		auto nulterm = new DomainTerm(VocabularyUtils::intRangeSort(0,0), nul, (*term)->pi());
 		newsubterms.push_back(nulterm);
 		auto termisnul = new EqChainForm(SIGN::POS, true, { (*term)->clone(), nulterm }, { CompType::EQ }, (*form)->pi());
 		newsubforms.push_back(new BoolForm(SIGN::POS, true, { (*form)->clone(), termisnul }, (*form)->pi()));
@@ -465,7 +465,7 @@ QuantSetExpr* QuantSetExpr::positiveSubset() const {
 	auto form = newset->subformulas()[0];
 	auto term = newset->subterms()[0];
 	auto nul = DomainElementFactory::createGlobal()->create(0);
-	auto nulterm = new DomainTerm(term->sort(), nul, TermParseInfo());
+	auto nulterm = new DomainTerm(VocabularyUtils::intRangeSort(0,0), nul, TermParseInfo());
 	auto termpos = new EqChainForm(SIGN::POS, true, { term->clone(), nulterm }, { CompType::GT }, form->pi());
 	auto newform = new BoolForm(SIGN::POS, true, { form, termpos }, form->pi());
 	newset->subformula(0,newform);
@@ -477,7 +477,7 @@ QuantSetExpr* QuantSetExpr::negativeSubset() const {
 	auto form = newset->subformulas()[0];
 	auto term = newset->subterms()[0];
 	auto nul = DomainElementFactory::createGlobal()->create(0);
-	auto nulterm = new DomainTerm(term->sort(), nul, TermParseInfo());
+	auto nulterm = new DomainTerm(VocabularyUtils::intRangeSort(0,0), nul, TermParseInfo());
 	auto termneg = new EqChainForm(SIGN::POS, true, { term->clone(), nulterm }, { CompType::LT }, form->pi());
 	auto newform = new BoolForm(SIGN::POS, true, { form, termneg }, form->pi());
 	newset->subformula(0,newform);
@@ -492,7 +492,7 @@ QuantSetExpr* QuantSetExpr::zeroSubset() const {
 	auto form = newset->subformulas()[0];
 	auto term = newset->subterms()[0];
 	auto nul = DomainElementFactory::createGlobal()->create(0);
-	auto nulterm = new DomainTerm(term->sort(), nul, TermParseInfo());
+	auto nulterm = new DomainTerm(VocabularyUtils::intRangeSort(0,0), nul, TermParseInfo());
 	auto termisnul = new EqChainForm(SIGN::POS, true, { term->clone(), nulterm }, { CompType::EQ }, form->pi());
 	auto newform = new BoolForm(SIGN::POS, true, { form, termisnul }, form->pi());
 	newset->subformula(0,newform);

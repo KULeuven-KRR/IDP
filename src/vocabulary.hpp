@@ -380,7 +380,6 @@ class FuncInterGenerator;
  * \brief	Class to represent function symbols
  */
 class Function: public PFSymbol {
-
 private:
 	bool _partial; //!< true iff the function is declared as partial function
 	std::vector<Sort*> _insorts; //!< the input sorts of the function symbol
@@ -428,7 +427,7 @@ public:
 	std::set<Function*> nonbuiltins(); //!< Returns the set of predicates that are not builtin
 									   //!< and that are overloaded by 'this'.
 
-									   // Output
+	// Output
 	std::ostream& put(std::ostream&) const;
 
 	friend class Vocabulary;
@@ -660,6 +659,7 @@ std::ostream& operator<<(std::ostream&, const Vocabulary&);
 namespace VocabularyUtils {
 Sort* natsort(); //!< returns the sort 'nat' of the standard vocabulary
 Sort* intsort(); //!< returns the sort 'int' of the standard vocabulary
+Sort* intRangeSort(int min, int max); //returns a range sort [min,max]
 Sort* floatsort(); //!< returns the sort 'float' of the standard vocabulary
 Sort* stringsort(); //!< returns the sort 'string' of the standard vocabulary
 Sort* charsort(); //!< returns the sort 'char' of the standard vocabulary

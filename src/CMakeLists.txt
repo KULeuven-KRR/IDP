@@ -157,7 +157,6 @@ add_library(idp
 	theorytransformations/DeriveSorts.hpp theorytransformations/DeriveSorts.cpp
 	theorytransformations/AddCompletion.hpp theorytransformations/AddCompletion.cpp
 	theorytransformations/GraphFuncsAndAggs.hpp theorytransformations/GraphFuncsAndAggs.cpp
-	theorytransformations/SplitProducts.hpp theorytransformations/SplitProducts.cpp
 	theorytransformations/PushQuantifications.hpp theorytransformations/PushQuantifications.cpp
 	theorytransformations/RemoveEquivalences.hpp theorytransformations/RemoveEquivalences.cpp
 	theorytransformations/SplitComparisonChains.hpp theorytransformations/SplitComparisonChains.cpp

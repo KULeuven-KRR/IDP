@@ -1591,8 +1591,9 @@ BDDInternalPredTable::BDDInternalPredTable(const FOBDD* bdd, FOBDDManager* manag
 bool BDDInternalPredTable::finite(const Universe& univ) const {
 	if (univ.finite()) {
 		return true;
-	} else
+	} else {
 		return approxFinite(univ);
+	}
 }
 
 bool BDDInternalPredTable::empty(const Universe& univ) const {
@@ -3031,7 +3032,7 @@ InternalTableIterator* UminInternalFuncTable::begin(const Universe& univ) const 
 }
 
 void PredTable::put(std::ostream& stream) const {
-	if (not finite()) {
+	if (not approxFinite()) {
 		stream << "infinite interpretation";
 		return;
 	}
@@ -3194,7 +3195,7 @@ bool InverseInternalPredTable::empty(const Universe& univ) const {
 	if (univ.empty()) {
 		return true;
 	}
-	if (finite(univ)) {
+	if (approxFinite(univ)) {
 		TableIterator ti = TableIterator(begin(univ));
 		return ti.isAtEnd();
 	} else {
@@ -4498,13 +4499,15 @@ void Structure::autocomplete() {
 	for (auto it = _predinter.cbegin(); it != _predinter.cend(); ++it) {
 		if (it->first->arity() != 1 || it->first->sorts()[0]->pred() != it->first) {
 			const PredTable* pt1 = it->second->ct();
-			if (typeid(*(pt1->internTable())) == typeid(InverseInternalPredTable))
+			if (typeid(*(pt1->internTable())) == typeid(InverseInternalPredTable)) {
 				pt1 = it->second->pf();
+			}
 			completeSortTable(pt1, it->first, _name);
 			if (!it->second->approxTwoValued()) {
 				const PredTable* pt2 = it->second->cf();
-				if (typeid(*(pt2->internTable())) == typeid(InverseInternalPredTable))
+				if (typeid(*(pt2->internTable())) == typeid(InverseInternalPredTable)) {
 					pt2 = it->second->pt();
+				}
 				completeSortTable(pt2, it->first, _name);
 			}
 		}
@@ -4515,13 +4518,15 @@ void Structure::autocomplete() {
 			addUNAPattern(it->first);
 		} else {
 			const PredTable* pt1 = it->second->graphInter()->ct();
-			if (typeid(*(pt1->internTable())) == typeid(InverseInternalPredTable))
+			if (typeid(*(pt1->internTable())) == typeid(InverseInternalPredTable)) {
 				pt1 = it->second->graphInter()->pf();
+			}
 			completeSortTable(pt1, it->first, _name);
 			if (!it->second->approxTwoValued()) {
 				const PredTable* pt2 = it->second->graphInter()->cf();
-				if (typeid(*(pt2->internTable())) == typeid(InverseInternalPredTable))
+				if (typeid(*(pt2->internTable())) == typeid(InverseInternalPredTable)) {
 					pt2 = it->second->graphInter()->pt();
+				}
 				completeSortTable(pt2, it->first, _name);
 			}
 		}

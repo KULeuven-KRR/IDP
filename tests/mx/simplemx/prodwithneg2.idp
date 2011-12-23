@@ -4,11 +4,11 @@ vocabulary V{
 }
 
 theory T:V{
-	prod{x: p(x): x}=2.
+	prod{x: p(x): x}=-2.
 }
 
 structure S:V{
-	x = {1..2}
+	x = {-1..2}
 }
 
 procedure getExpectedNbOfModels(){
