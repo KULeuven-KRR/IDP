@@ -27,13 +27,13 @@ private:
 
 public:
 	static Inference* getMakeAtomTrueInference() {
-		return new SetAtomValueInference("maketrue", "Sets the given tuple to true", SET_TRUE);
+		return new SetAtomValueInference("maketrue", "Sets the interpretation of the given tuple to true.\nModifies the table-interpretation.", SET_TRUE);
 	}
 	static Inference* getMakeAtomFalseInference() {
-		return new SetAtomValueInference("makefalse", "Sets the given tuple to false", SET_FALSE);
+		return new SetAtomValueInference("makefalse", "Sets the interpretaion of the given tuple to false.\nModifies the table-interpretation.", SET_FALSE);
 	}
 	static Inference* getMakeAtomUnknownInference() {
-		return new SetAtomValueInference("makeunknown", "Sets the given tuple to unknown", SET_UNKNOWN);
+		return new SetAtomValueInference("makeunknown", "Sets the interpretaion of the given tuple to unknown.\nModifies the table-interpretation.", SET_UNKNOWN);
 	}
 
 	SetAtomValueInference(const char* command, const char* description, SETVALUE value) :

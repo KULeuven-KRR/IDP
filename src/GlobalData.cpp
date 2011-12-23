@@ -33,6 +33,7 @@ GlobalData::~GlobalData() {
 	}
 }
 
+//setoptions can only be called from the setoptionsinference! Otherwise, we could change the user-defined options
 void GlobalData::setOptions(Options* options) {
 	Assert(_options!=NULL);
 	_options = options;

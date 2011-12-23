@@ -145,7 +145,7 @@ void DeriveTermBounds::visit(const AggTerm* t) {
 			}
 		}
 		else{
-			Assert(sametypeid<EnumSetExpr>(*(t->set())))
+			Assert(sametypeid<EnumSetExpr>(*(t->set())));
 		}
 		break;
 	case AggFunction::PROD:

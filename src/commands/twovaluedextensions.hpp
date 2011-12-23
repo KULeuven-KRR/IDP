@@ -46,7 +46,7 @@ typedef TypedInference<LIST(std::vector<InternalArgument>*)> TwoValuedExtensions
 class TwoValuedExtensionsOfTableInference: public TwoValuedExtensionsOfTableInferenceBase {
 public:
 	TwoValuedExtensionsOfTableInference() :
-		TwoValuedExtensionsOfTableInferenceBase("alltwovaluedextensions", "Generate all two-valued extensions of the given structure.") {
+		TwoValuedExtensionsOfTableInferenceBase("alltwovaluedextensions", "Generate all two-valued extensions of all of the given structures.") {
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument> & args) const {

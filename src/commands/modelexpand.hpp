@@ -22,7 +22,7 @@ typedef TypedInference<LIST(AbstractTheory*, AbstractStructure*)> ModelExpandInf
 class ModelExpandInference: public ModelExpandInferenceBase {
 public:
 	ModelExpandInference() :
-		ModelExpandInferenceBase("modelexpand", "Return a list of 2-valued models of the theory which are more precise than the given structure", false) {
+		ModelExpandInferenceBase("modelexpand", "Return a list containing all 2-valued models of the theory which are more precise than the given structure.", false) {
 		setNameSpace(getInternalNamespaceName());
 	}
 

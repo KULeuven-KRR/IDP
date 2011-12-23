@@ -21,7 +21,7 @@ typedef TypedInference<LIST(Namespace*)> HelpInferenceBase;
 class HelpInference: public HelpInferenceBase {
 public:
 	HelpInference() :
-		HelpInferenceBase("help", "Print information about the given namespace.", true) {
+		HelpInferenceBase("help", "Print information about the given namespace, when left blank, print information about the global namespace.", true) {
 		setNameSpace(getInternalNamespaceName());
 	}
 

@@ -72,7 +72,7 @@ typedef TypedInference<LIST(SortIterator*, ElementTuple*)> DomainDerefAndIncreme
 class DomainDerefAndIncrementInference: public DomainDerefAndIncrementInferenceBase {
 public:
 	DomainDerefAndIncrementInference() :
-		DomainDerefAndIncrementInferenceBase("deref_and_increment", "Returns the current value and increments the sortiterator") {
+		DomainDerefAndIncrementInferenceBase("deref_and_increment", "Returns the current value and increments the sortiterator.") {
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {

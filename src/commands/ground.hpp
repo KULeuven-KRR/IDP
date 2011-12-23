@@ -21,7 +21,7 @@
 typedef TypedInference<LIST(AbstractTheory*, AbstractStructure*)> GroundBase;
 class GroundInference: public GroundBase {
 public:
-	GroundInference(): GroundBase("ground", "Returns theory which is the grounding of the given theory in the given structure.") {
+	GroundInference(): GroundBase("ground", "Returns theory which is the grounding of the given theory in the given structure.\n Does not change its input argument.") {
 		setNameSpace(getInternalNamespaceName());
 	}
 

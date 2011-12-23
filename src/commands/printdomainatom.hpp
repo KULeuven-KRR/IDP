@@ -17,7 +17,7 @@
 typedef TypedInference<LIST(const DomainAtom*)> PrintDomainAtomInferenceBase;
 class PrintDomainAtomInference: public PrintDomainAtomInferenceBase {
 public:
-	PrintDomainAtomInference(): PrintDomainAtomInferenceBase("tostring", "Prints a domainatom") {
+	PrintDomainAtomInference(): PrintDomainAtomInferenceBase("tostring", "Prints a domainatom.") {
 		setNameSpace(getInternalNamespaceName());
 	}
 

@@ -18,7 +18,7 @@
 class IsConsistentInference: public StructureBase {
 public:
 	IsConsistentInference() :
-		StructureBase("isconsistent", "Check whether the structure is consistent") {
+		StructureBase("isconsistent", "Check whether the structure is consistent.") {
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {

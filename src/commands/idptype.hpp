@@ -17,6 +17,7 @@ typedef TypedInference<LIST(int)> IdpTypeInferenceBase;
 class IdpTypeInference: public IdpTypeInferenceBase {
 public:
 	IdpTypeInference(): IdpTypeInferenceBase("idptype", "Returns custom typeids for first-class idp citizens.") {
+		setNameSpace(getInternalNamespaceName());
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
