@@ -106,7 +106,7 @@ procedure printgrounding(theory, structure) {
 
 /**
 * Returns custom typeids for first-class idp citizens.*/
-idptype(something){
+procedure idptype(something){
 	return idpintern.idptype(something)
 }
 
