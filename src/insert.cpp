@@ -1985,9 +1985,7 @@ PredTable* Insert::createPredTable(unsigned int arity) const {
 }
 
 void Insert::addTuple(PredTable* pt, ElementTuple& tuple, YYLTYPE l) const {
-	if (tuple.size() == pt->arity()) {
-		pt->add(tuple);
-	} else if (pt->empty()) {
+	if (tuple.size() == pt->arity() || pt->empty()) {
 		pt->add(tuple);
 	} else {
 		ParseInfo pi = parseinfo(l);
