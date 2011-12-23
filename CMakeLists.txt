@@ -5,17 +5,20 @@ project (idp)
 set (idp_VERSION_MAJOR 3)
 set (idp_VERSION_MINOR 0)
 
-SET(BUILD_SHARED_LIBS OFF)
-
 OPTION(BUILDTESTS  "Run the gtest tests" ON)
 
 ENABLE_TESTING()
 
 OPTION(GMP  "Enable gmp support" OFF)
 if(GMP)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D GMP")	
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D GMP")
 else()
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D NO_GMP")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D NO_GMP")
+endif()
+
+OPTION(CP  "Enable cp support" OFF)
+if(CP)
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D CPSUPPORT")
 endif()
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -Wall -Wextra ")
