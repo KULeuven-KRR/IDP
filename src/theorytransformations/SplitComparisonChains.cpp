@@ -45,9 +45,9 @@ Formula* SplitComparisonChains::visit(EqChainForm* ef) {
 		vs[0] = ef->subterms()[n]->sort();
 		vs[1] = ef->subterms()[n + 1]->sort();
 		p = p->disambiguate(vs, _vocab);
-		Assert(p);
+		Assert(p != NULL);
 		vector<Term*> vt(2);
-		if (n) {
+		if (n > 0) {
 			vt[0] = ef->subterms()[n]->clone();
 		} else {
 			vt[0] = ef->subterms()[n];
@@ -57,7 +57,9 @@ Formula* SplitComparisonChains::visit(EqChainForm* ef) {
 		vf.push_back(pf);
 	}
 	if (vf.size() == 1) {
-		if (isNeg(ef->sign())) vf[0]->negate();
+		if (isNeg(ef->sign())) {
+			vf[0]->negate();
+		}
 		delete (ef);
 		return vf[0];
 	} else {

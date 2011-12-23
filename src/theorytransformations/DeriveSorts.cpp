@@ -285,7 +285,6 @@ void DeriveSorts::execute(Rule* r, Vocabulary* v, bool useBuiltins) {
 }
 
 void DeriveSorts::check() {
-
 	for (auto i = _untypedvariables.cbegin(); i != _untypedvariables.cend(); ++i) {
 		if ((*i)->sort() == NULL) {
 			if(_useBuiltIns) Error::novarsort((*i)->name(), (*i)->pi());

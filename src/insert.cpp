@@ -1019,27 +1019,28 @@ Sort* Insert::sort(const string& name, YYLTYPE l) const {
  *
  * \param name		the name of the sort
  * \param supbs		the super- or subsorts of the sort
- * \param p			true if supbs are the supersorts, false if supbs are the subsorts
+ * \param super		true if supbs are the supersorts, false if supbs are the subsorts
  */
-Sort* Insert::sort(const string& name, const vector<Sort*> supbs, bool p, YYLTYPE l) const {
+Sort* Insert::sort(const string& name, const vector<Sort*> supbs, bool super, YYLTYPE l) const {
 	vector<Sort*> vs(0);
-	if (p)
+	if (super) {
 		return sort(name, supbs, vs, l);
-	else
+	} else {
 		return sort(name, vs, supbs, l);
+	}
 }
 
 Predicate* Insert::predicate(const string& name, const vector<Sort*>& sorts, YYLTYPE l) const {
 	ParseInfo pi = parseinfo(l);
 	string nar = string(name) + '/' + convertToString(sorts.size());
-	for (unsigned int n = 0; n < sorts.size(); ++n) {
-		if (!sorts[n])
-			return 0;
+	for (size_t n = 0; n < sorts.size(); ++n) {
+		if (sorts[n] == NULL) {
+			return NULL;
+		}
 	}
 	Predicate* p = new Predicate(nar, sorts, pi);
 	if (_currvocabulary->containsOverloaded(p)) {
 		auto oldp = _currvocabulary->pred(p->name());
-
 		auto existsp = oldp->resolve(sorts);
 		if (existsp != NULL) {
 			Error::error("An identical predicate already exists" + name + "\n");
@@ -1057,20 +1058,21 @@ Predicate* Insert::predicate(const string& name, YYLTYPE l) const {
 Function* Insert::function(const string& name, const vector<Sort*>& insorts, Sort* outsort, YYLTYPE l) const {
 	ParseInfo pi = parseinfo(l);
 	string nar = string(name) + '/' + convertToString(insorts.size());
-	for (unsigned int n = 0; n < insorts.size(); ++n) {
-		if (!insorts[n])
-			return 0;
+	for (size_t n = 0; n < insorts.size(); ++n) {
+		if (insorts[n] == NULL) {
+			return NULL;
+		}
 	}
-	if (!outsort)
-		return 0;
+	if (outsort == NULL) {
+		return NULL;
+	}
 	Function* f = new Function(nar, insorts, outsort, pi);
 	if (_currvocabulary->containsOverloaded(f)) {
-		auto oldp = _currvocabulary->func(f->name());
-
+		auto oldf = _currvocabulary->func(f->name());
 		auto v = insorts;
 		v.push_back(outsort);
-		auto existsp = oldp->resolve(v);
-		if (existsp != NULL) {
+		auto existsf = oldf->resolve(v);
+		if (existsf != NULL) {
 			Error::error("An identical function already exists" + name + "\n");
 		}
 	}
@@ -1085,9 +1087,10 @@ Function* Insert::function(const string& name, Sort* outsort, YYLTYPE l) const {
 
 Function* Insert::aritfunction(const string& name, const vector<Sort*>& sorts, YYLTYPE l) const {
 	ParseInfo pi = parseinfo(l);
-	for (unsigned int n = 0; n < sorts.size(); ++n) {
-		if (!sorts[n])
-			return 0;
+	for (size_t n = 0; n < sorts.size(); ++n) {
+		if (sorts[n] == NULL) {
+			return NULL;
+		}
 	}
 	Function* orig = _currvocabulary->func(name);
 	unsigned int binding = orig ? orig->binding() : 0;
@@ -1107,8 +1110,9 @@ InternalArgument* Insert::call(const longname& proc, YYLTYPE l) const {
 }
 
 void Insert::definition(Definition* d) const {
-	if (d)
+	if (d != NULL) {
 		_currtheory->add(d);
+	}
 }
 
 void Insert::sentence(Formula* f) {
@@ -1453,7 +1457,7 @@ void Insert::negate(Formula* f) const {
 
 Formula* Insert::eqchain(CompType c, Formula* f, Term* t, YYLTYPE) const {
 	if (f && t) {
-		Assert(typeid(*f) == typeid(EqChainForm));
+		Assert(sametypeid<EqChainForm>(*f));
 		EqChainForm* ecf = dynamic_cast<EqChainForm*>(f);
 		ecf->add(c, t);
 		Formula* orig = ecf->pi().original();
@@ -1476,8 +1480,9 @@ Formula* Insert::eqchain(CompType c, Term* left, Term* right, YYLTYPE l) const {
 		EqChainForm* ecf = new EqChainForm(SIGN::POS, true, left, fpi);
 		ecf->add(c, right);
 		return ecf;
-	} else
-		return 0;
+	} else {
+		return NULL;
+	}
 }
 
 Variable* Insert::quantifiedvar(const string& name, YYLTYPE l) {
@@ -1514,45 +1519,52 @@ Sort* Insert::theosortpointer(const vector<string>& vs, YYLTYPE l) const {
 
 Term* Insert::functerm(NSPair* nst, const vector<Term*>& vt) {
 	if (nst->_sortsincluded) {
-		if ((nst->_sorts).size() != vt.size() + 1)
+		if ((nst->_sorts).size() != vt.size() + 1) {
 			Error::incompatiblearity(toString(nst), nst->_pi);
-		if (!nst->_func)
+		}
+		if (not nst->_func) {
 			Error::funcnameexpected(nst->_pi);
+		}
 	}
 	nst->includeArity(vt.size());
 	Function* f = funcInScope(nst->_name, nst->_pi);
-	if (f && nst->_sortsincluded && (nst->_sorts).size() == vt.size() + 1)
+	if (f != NULL && nst->_sortsincluded && (nst->_sorts).size() == vt.size() + 1) {
 		f = f->resolve(nst->_sorts);
+	}
 
-	FuncTerm* t = 0;
-	if (f) {
+	FuncTerm* t = NULL;
+	if (f != NULL) {
 		if (belongsToVoc(f)) {
-			unsigned int n = 0;
+			size_t n = 0;
 			for (; n < vt.size(); ++n) {
-				if (!vt[n])
+				if (vt[n] == NULL)
 					break;
 			}
 			if (n == vt.size()) {
 				vector<Term*> vtpi;
 				for (auto it = vt.cbegin(); it != vt.cend(); ++it) {
-					if ((*it)->pi().original())
+					if ((*it)->pi().original()) {
 						vtpi.push_back((*it)->pi().original()->clone());
-					else
+					} else {
 						vtpi.push_back((*it)->clone());
+					}
 				}
 				TermParseInfo pi = termparseinfo(new FuncTerm(f, vtpi, TermParseInfo()), nst->_pi);
 				t = new FuncTerm(f, vt, pi);
 			}
-		} else
+		} else {
 			Error::funcnotintheovoc(f->name(), _currtheory->name(), nst->_pi);
-	} else
+		}
+	} else {
 		Error::undeclfunc(toString(nst), nst->_pi);
+	}
 
 	// Cleanup
-	if (!t) {
-		for (unsigned int n = 0; n < vt.size(); ++n) {
-			if (vt[n])
+	if (t == NULL) {
+		for (size_t n = 0; n < vt.size(); ++n) {
+			if (vt[n] != NULL) {
 				delete (vt[n]);
+			}
 		}
 	}
 	delete (nst);
@@ -1562,10 +1574,11 @@ Term* Insert::functerm(NSPair* nst, const vector<Term*>& vt) {
 
 Variable* Insert::getVar(const string& name) const {
 	for (auto i = _curr_vars.cbegin(); i != _curr_vars.cend(); ++i) {
-		if (name == i->_name)
+		if (name == i->_name) {
 			return i->_var;
+		}
 	}
-	return 0;
+	return NULL;
 }
 
 Term* Insert::functerm(NSPair* nst) {
@@ -1573,17 +1586,18 @@ Term* Insert::functerm(NSPair* nst) {
 		vector<Term*> vt = vector<Term*>(0);
 		return functerm(nst, vt);
 	} else {
-		Term* t = 0;
+		Term* t = NULL;
 		string name = (nst->_name)[0];
 		Variable* v = getVar(name);
 		nst->includeArity(0);
 		Function* f = funcInScope(nst->_name, nst->_pi);
-		if (v) {
-			if (f)
+		if (v != NULL) {
+			if (f != NULL) {
 				Warning::varcouldbeconst((nst->_name)[0], nst->_pi);
+			}
 			t = new VarTerm(v, termparseinfo(new VarTerm(v, TermParseInfo()), nst->_pi));
 			delete (nst);
-		} else if (f) {
+		} else if (f != NULL) {
 			vector<Term*> vt(0);
 			nst->_name = vector<string>(1, name);
 			nst->_arityincluded = false;
@@ -1604,19 +1618,19 @@ Term* Insert::arterm(char c, Term* lt, Term* rt, YYLTYPE l) const {
 	if (lt && rt) {
 		Function* f = _currvocabulary->func(string(1, c) + "/2");
 		Assert(f);
-		vector<Term*> vt(2);
-		vt[0] = lt;
-		vt[1] = rt;
+		vector<Term*> vt = { lt, rt };
 		vector<Term*> pivt(2);
 		pivt[0] = lt->pi().original() ? lt->pi().original()->clone() : lt->clone();
 		pivt[1] = rt->pi().original() ? rt->pi().original()->clone() : rt->clone();
 		return new FuncTerm(f, vt, termparseinfo(new FuncTerm(f, pivt, TermParseInfo()), l));
 	} else {
-		if (lt)
+		if (lt) {
 			delete (lt);
-		if (rt)
+		}
+		if (rt) {
 			delete (rt);
-		return 0;
+		}
+		return NULL;
 	}
 }
 
@@ -1629,7 +1643,7 @@ Term* Insert::arterm(const string& s, Term* t, YYLTYPE l) const {
 		return new FuncTerm(f, vt, termparseinfo(new FuncTerm(f, pivt, TermParseInfo()), l));
 	} else {
 		delete (t);
-		return 0;
+		return NULL;
 	}
 }
 
