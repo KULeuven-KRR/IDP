@@ -17,7 +17,7 @@ structure S:V{
 }
 
 procedure weakassertions(newS){
-	return 	assertEmpty(newS[V.P].ct,"P<ct>") == 1 and assertNotEmpty(newS[V.P].cf,"P<cf>") == 1
+	return 	assertEmpty(newS[V.P].ct,"P<ct>")  and assertNotEmpty(newS[V.P].cf,"P<cf>") 
 	
 }
 

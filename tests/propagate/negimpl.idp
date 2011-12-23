@@ -15,13 +15,13 @@ structure S:V{
 
 procedure weakassertions(newS){
 	return (
-		assert2(newS[V.p].cf,{},"p<cf>")==1 
-		and assert2(newS[V.q].cf,{1,2,3},"q<cf>")==1
-		and assert2(newS[V.p].ct,{1,2,3},"p<ct>")==1
-		and	assert2(newS[V.q].ct,{},"q<ct>")==1 
+		assert2(newS[V.p].cf,{},"p<cf>")
+		and assert2(newS[V.q].cf,{1,2,3},"q<cf>")
+		and assert2(newS[V.p].ct,{1,2,3},"p<ct>")
+		and	assert2(newS[V.q].ct,{},"q<ct>")
 	)
 }
 
 procedure strongassertions(newS){
-	return 1
+	return true
 }

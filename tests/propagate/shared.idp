@@ -15,13 +15,13 @@ structure S:V{
 }
 
 procedure weakassertions(newS){
-	return 1
+	return true
 	
 }
 
 procedure strongassertions(newS){
 	return 
-		(assertNotEmpty(newS[V.Q].ct,"Q<ct>") == 1
-		and assertNotEmpty(newS[V.R].ct,"R<ct>") == 1 
-		and assertEmpty(newS[V.P].ct,"P<ct>") == 1)
+		(assertNotEmpty(newS[V.Q].ct,"Q<ct>") 
+		and assertNotEmpty(newS[V.R].ct,"R<ct>") 
+		and assertEmpty(newS[V.P].ct,"P<ct>") )
 }
