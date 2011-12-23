@@ -8,8 +8,8 @@
 * Celestijnenlaan 200A, B-3001 Leuven, Belgium
 ****************************************************************/
 
-#ifndef GENUTILS_HPP_
-#define GENUTILS_HPP_
+#ifndef IDP_GENUTILS_HPP_
+#define IDP_GENUTILS_HPP_
 
 #include <vector>
 #include <map>

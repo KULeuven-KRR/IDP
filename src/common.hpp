@@ -35,6 +35,9 @@
 std::string getGlobalNamespaceName();
 std::string getInternalNamespaceName();
 
+void setInstallDirectoryPath(const std::string& dirpath);
+std::string getInstallDirectoryPath();
+
 std::string getPathOfLuaInternals();
 std::string getPathOfIdpInternals();
 std::string getPathOfConfigFile();

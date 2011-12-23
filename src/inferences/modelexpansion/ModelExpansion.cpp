@@ -80,19 +80,20 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 		if (opts->getValue(IntType::SYMMETRY) == 1) {
 			addSymBreakingPredicates(grounding, ivsets);
 		} else if (opts->getValue(IntType::SYMMETRY) == 2) {
-			for (auto ivsets_it = ivsets.cbegin(); ivsets_it != ivsets.cend(); ++ivsets_it) {
-				std::vector<std::map<int, int> > breakingSymmetries = (*ivsets_it)->getBreakingSymmetries(grounding);
-				for (auto bs_it = breakingSymmetries.cbegin(); bs_it != breakingSymmetries.cend(); ++bs_it) {
-					MinisatID::Symmetry symmetry;
-					for (auto s_it = bs_it->begin(); s_it != bs_it->end(); ++s_it) {
-						MinisatID::Atom a1 = MinisatID::Atom(s_it->first);
-						MinisatID::Atom a2 = MinisatID::Atom(s_it->second);
-						std::pair<MinisatID::Atom, MinisatID::Atom> entry = std::pair<MinisatID::Atom, MinisatID::Atom>(a1, a2);
-						symmetry.symmetry.insert(entry);
-					}
-					solver->add(symmetry);
-				}
-			}
+			std::clog << "Dynamic symmetry breaking not yet implemented...\n";
+//			for (auto ivsets_it = ivsets.cbegin(); ivsets_it != ivsets.cend(); ++ivsets_it) {
+//				std::vector<std::map<int, int> > breakingSymmetries = (*ivsets_it)->getBreakingSymmetries(grounding);
+//				for (auto bs_it = breakingSymmetries.cbegin(); bs_it != breakingSymmetries.cend(); ++bs_it) {
+//					MinisatID::Symmetry symmetry;
+//					for (auto s_it = bs_it->begin(); s_it != bs_it->end(); ++s_it) {
+//						MinisatID::Atom a1 = MinisatID::Atom(s_it->first);
+//						MinisatID::Atom a2 = MinisatID::Atom(s_it->second);
+//						std::pair<MinisatID::Atom, MinisatID::Atom> entry = std::pair<MinisatID::Atom, MinisatID::Atom>(a1, a2);
+//						symmetry.symmetry.insert(entry);
+//					}
+//					solver->add(symmetry);
+//				}
+//			}
 		} else {
 			std::clog << "Unknown symmetry option...\n";
 		}

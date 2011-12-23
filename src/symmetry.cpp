@@ -714,6 +714,9 @@ private:
 public:
 	TheorySymmetryAnalyzer(const AbstractStructure* s) :
 			structure_(s) {
+		markAsUnfitForSymmetry(VocabularyUtils::intsort());
+		markAsUnfitForSymmetry(VocabularyUtils::floatsort());
+		markAsUnfitForSymmetry(VocabularyUtils::natsort());
 	}
 
 	void analyze(const AbstractTheory* t) {
