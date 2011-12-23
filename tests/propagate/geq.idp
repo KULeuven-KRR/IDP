@@ -17,11 +17,11 @@ structure S:V{
 
 procedure weakassertions(newS){
 	return
-		1
+		true
 	
 }
 
 procedure strongassertions(newS){
-	return (assert(newS[V.a].graph.cf,0,"a<cf>(0)","true") == 1)
+	return (assert(newS[V.a].graph.cf,0,"a<cf>(0)","true") )
 }
 

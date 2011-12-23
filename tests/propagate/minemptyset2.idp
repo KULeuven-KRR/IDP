@@ -19,5 +19,5 @@ procedure weakassertions(newS){
 }
 
 procedure strongassertions(newS){
-	return (assert2(newS[V.p].ct,{},"p<ct>")==1 and assert2(newS[V.p].cf,{0,1,2,3,4,5},"p<cf>")==1)
+	return (assert2(newS[V.p].ct,{},"p<ct>") and assert2(newS[V.p].cf,{0,1,2,3,4,5},"p<cf>"))
 }
