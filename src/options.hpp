@@ -16,11 +16,11 @@
 
 // TODO enum class does not yet support comparison operators in 4.4.3
 
-enum Language { TXT, IDP, ECNF, LATEX, ASP, CNF, TPTP };
+enum Language {/* TXT,*/ IDP, ECNF, /*LATEX, ASP, CNF, */TPTP };
 enum Format { THREEVALUED, ALL, TWOVALUED };
 
 enum StringType {
-	LANGUAGE, MODELFORMAT
+	LANGUAGE
 };
 
 enum IntType {
@@ -29,7 +29,7 @@ enum IntType {
 
 enum BoolType{
 	SHOWWARNINGS, // TODO Temporary solution to be able to disable warnings in tests
-	PRINTTYPES, 
+	//PRINTTYPES,
 	CPSUPPORT, 
 	TRACE, 
 	AUTOCOMPLETE, 
