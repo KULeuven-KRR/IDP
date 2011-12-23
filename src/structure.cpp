@@ -223,8 +223,7 @@ const DomainElement* domElemSum(const DomainElement* d1, const DomainElement* d2
 			return createDomElem(double(d1->value()._int) + d2->value()._double);
 		case DET_STRING:
 		case DET_COMPOUND:
-			notyetimplemented("Sum of domain elements of nonnumerical types");
-			break;
+			throw notyetimplemented("Sum of domain elements of nonnumerical types");
 		}
 		break;
 	case DET_DOUBLE:
@@ -235,14 +234,12 @@ const DomainElement* domElemSum(const DomainElement* d1, const DomainElement* d2
 			return createDomElem(d1->value()._double + d2->value()._double);
 		case DET_STRING:
 		case DET_COMPOUND:
-			notyetimplemented("Sum of domain elements of nonnumerical types");
-			break;
+			throw notyetimplemented("Sum of domain elements of nonnumerical types");
 		}
 		break;
 	case DET_STRING:
 	case DET_COMPOUND:
-		notyetimplemented("Sum of domain elements of nonnumerical types");
-		break;
+		throw notyetimplemented("Sum of domain elements of nonnumerical types");
 	}
 }
 
@@ -256,8 +253,7 @@ const DomainElement* domElemProd(const DomainElement* d1, const DomainElement* d
 			return createDomElem(double(d1->value()._int) * d2->value()._double);
 		case DET_STRING:
 		case DET_COMPOUND:
-			notyetimplemented("Product of domain elements of nonnumerical types");
-			break;
+			throw notyetimplemented("Product of domain elements of nonnumerical types");
 		}
 		break;
 	case DET_DOUBLE:
@@ -268,14 +264,12 @@ const DomainElement* domElemProd(const DomainElement* d1, const DomainElement* d
 			return createDomElem(d1->value()._double * d2->value()._double);
 		case DET_STRING:
 		case DET_COMPOUND:
-			notyetimplemented("Product of domain elements of nonnumerical types");
-			break;
+			throw notyetimplemented("Product of domain elements of nonnumerical types");
 		}
 		break;
 	case DET_STRING:
 	case DET_COMPOUND:
-		notyetimplemented("Product of domain elements of nonnumerical types");
-		break;
+		throw notyetimplemented("Product of domain elements of nonnumerical types");
 	}
 }
 
@@ -287,8 +281,7 @@ const DomainElement* domElemAbs(const DomainElement* d) {
 		return createDomElem(std::abs(d->value()._double));
 	case DET_STRING:
 	case DET_COMPOUND:
-		notyetimplemented("Absolute value of domain elements of nonnumerical types");
-		break;
+		throw notyetimplemented("Absolute value of domain elements of nonnumerical types");
 	}
 }
 
@@ -300,8 +293,7 @@ const DomainElement* domElemUmin(const DomainElement* d) {
 		return createDomElem(-d->value()._double);
 	case DET_STRING:
 	case DET_COMPOUND:
-		notyetimplemented("Negative value of domain elements of nonnumerical types");
-		break;
+		throw notyetimplemented("Negative value of domain elements of nonnumerical types");
 	}
 }
 
@@ -315,8 +307,7 @@ const DomainElement* domElemPow(const DomainElement* d1, const DomainElement* d2
 			return createDomElem(std::pow(double(d1->value()._int),d2->value()._double));
 		case DET_STRING:
 		case DET_COMPOUND:
-			notyetimplemented("Power of domain elements of nonnumerical types");
-			break;
+			throw notyetimplemented("Power of domain elements of nonnumerical types");
 		}
 		break;
 	case DET_DOUBLE:
@@ -327,14 +318,12 @@ const DomainElement* domElemPow(const DomainElement* d1, const DomainElement* d2
 			return createDomElem(std::pow(d1->value()._double, d2->value()._double));
 		case DET_STRING:
 		case DET_COMPOUND:
-			notyetimplemented("Power of domain elements of nonnumerical types");
-			break;
+			throw notyetimplemented("Power of domain elements of nonnumerical types");
 		}
 		break;
 	case DET_STRING:
 	case DET_COMPOUND:
-		notyetimplemented("Product of domain elements of nonnumerical types");
-		break;
+		throw notyetimplemented("Product of domain elements of nonnumerical types");
 	}
 }
 
@@ -4471,19 +4460,21 @@ void computescore(Sort* s, map<Sort*, unsigned int>& scores) {
 }
 
 void completeSortTable(const PredTable* pt, PFSymbol* symbol, const string& structname) {
-	if (pt->approxFinite()) {
-		for (TableIterator jt = pt->begin(); not jt.isAtEnd(); ++jt) {
-			const ElementTuple& tuple = *jt;
-			for (unsigned int col = 0; col < tuple.size(); ++col) {
-				if (not symbol->sorts()[col]->builtin()) {
-					//TODO This should only happen when this table has no user-specified interpretation, see issue 64
-					pt->universe().tables()[col]->add(tuple[col]);
-				} else if (!pt->universe().tables()[col]->contains(tuple[col])) {
-					if (typeid(*symbol) == typeid(Predicate)) {
-						Error::predelnotinsort(toString(tuple[col]), symbol->name(), symbol->sorts()[col]->name(), structname);
-					} else {
-						Error::funcelnotinsort(toString(tuple[col]), symbol->name(), symbol->sorts()[col]->name(), structname);
-					}
+	if(not pt->approxFinite()){
+		return;
+	}
+	for (auto jt = pt->begin(); not jt.isAtEnd(); ++jt) {
+		const ElementTuple& tuple = *jt;
+		for (unsigned int col = 0; col < tuple.size(); ++col) {
+			auto sort = symbol->sorts()[col];
+			// NOTE: we do not use predicate/function interpretations to autocomplete user provided sorts, this is a bug more often than not
+			if (not sort->builtin() && not getGlobal()->getInserter().interpretationSpecifiedByUser(sort)) {
+				pt->universe().tables()[col]->add(tuple[col]);
+			} else if (!pt->universe().tables()[col]->contains(tuple[col])) {
+				if (typeid(*symbol) == typeid(Predicate)) {
+					Error::predelnotinsort(toString(tuple[col]), symbol->name(), sort->name(), structname);
+				} else {
+					Error::funcelnotinsort(toString(tuple[col]), symbol->name(), sort->name(), structname);
 				}
 			}
 		}
@@ -4543,7 +4534,7 @@ void Structure::autocomplete() {
 			invscores[it->second].push_back(it->first);
 		}
 	}
-	for (map<unsigned int, vector<Sort*> >::const_reverse_iterator it = invscores.rbegin(); it != invscores.rend(); ++it) {
+	for (auto it = invscores.rbegin(); it != invscores.rend(); ++it) {
 		for (auto jt = it->second.cbegin(); jt != it->second.cend(); ++jt) {
 			Sort* s = *jt;
 			set<Sort*> notextend;
