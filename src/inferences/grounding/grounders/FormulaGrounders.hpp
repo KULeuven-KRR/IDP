@@ -116,6 +116,7 @@ private:
 	Lit finishProduct(double truevalue, double boundvalue, int setnr) const;
 	Lit finishMaximum(double truevalue, double boundvalue, int setnr) const;
 	Lit finishMinimum(double truevalue, double boundvalue, int setnr) const;
+	Lit splitproducts(double boundvalue, double newboundvalue, double minpossvalue, double maxpossvalue, int setnr) const;
 	Lit finish(double boundvalue, double newboundvalue, double maxpossvalue, double minpossvalue, int setnr) const;
 
 	Lit run() const;

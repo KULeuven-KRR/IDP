@@ -357,6 +357,80 @@ Lit AggGrounder::finishCard(double truevalue, double boundvalue, int setnr) cons
 }
 
 /**
+ * This method is only made because the solver cannot handle products with sets containing zeros or negative values.
+ * If the solver improves, this should be deleted.
+ *
+ * TODO Can be optimized more (for special cases like in the "finish"-method, but won't be called often ayway.
+ */
+Lit AggGrounder::splitproducts(double boundvalue, double newboundvalue, double minpossvalue, double maxpossvalue, int setnr) const {
+	Assert(_type==AggFunction::PROD);
+	TsSet& tsset = translator()->groundset(setnr);
+	std::vector<int> zerolits;
+	std::vector<double> zeroweights;
+
+	//All literals (made positive) (including the negative)
+	//IMPORTANT: This is NOT only the positives!!!!!!!!!!!
+	std::vector<int> poslits;
+	std::vector<double> posweights;
+
+	//Only the negatives! with weights 1 (for cardinalities)
+	std::vector<int> neglits;
+	std::vector<double> negweights;
+
+	for (auto i = 0; i < tsset.literals().size(); i++) {
+		if (tsset.weight(i) < 0) {
+			poslits.push_back(tsset.literal(i));
+			posweights.push_back(-tsset.weight(i));
+			neglits.push_back(tsset.literal(i));
+			negweights.push_back(1);
+		} else if (tsset.weight(i) > 0) {
+			poslits.push_back(tsset.literal(i));
+			posweights.push_back(tsset.weight(i));
+		} else {
+			zerolits.push_back(tsset.literal(i));
+			zeroweights.push_back(0);
+		}
+	}
+
+	int zerosetnumber = translator()->translateSet(zerolits, zeroweights, { });
+	int possetnumber = translator()->translateSet(poslits, posweights, tsset.trueweights());
+	int negsetnumber = translator()->translateSet(neglits, negweights, { });
+
+	auto tp = context()._tseitin;
+	if (isNeg(_sign)) {
+		if (tp == TsType::IMPL)
+			tp = TsType::RIMPL;
+		else if (tp == TsType::RIMPL)
+			tp = TsType::IMPL;
+	}
+	Lit tseitin;
+	if (newboundvalue == 0) {
+		tseitin = translator()->translate(zerolits, false, tp);
+	} else {
+		Lit nozeros = -translator()->translate(zerolits, false, tp);
+		Lit prodright = translator()->translate(abs(newboundvalue), _comp, AggFunction::PROD, possetnumber, tp);
+		std::vector<Lit> possiblecards;
+		if (newboundvalue > 0) {
+			int nonegatives = - translator()->translate(neglits,false,tp); //solver cannot handle empty sets.
+			possiblecards.push_back(nonegatives);
+			for (int i = 2; i <= neglits.size(); i = i + 2) {
+				Lit cardisi = translator()->translate(i, CompType::EQ, AggFunction::CARD, negsetnumber, tp);
+				possiblecards.push_back(cardisi);
+			}
+		} else {
+			for (int i = 1; i <= neglits.size(); i = i + 2) {
+				Lit cardisi = translator()->translate(i, CompType::EQ, AggFunction::CARD, negsetnumber, tp);
+				possiblecards.push_back(cardisi);			}
+		}
+		Lit cardright = translator()->translate(possiblecards, false, tp);
+		tseitin = translator()->translate( { nozeros, prodright, cardright }, true, tp);
+
+	}
+	return isPos(_sign) ? tseitin : -tseitin;
+
+}
+
+/**
  * General finish method for grounding of sum, product, minimum and maximum aggregates.
  * Checks whether the aggregate will be certainly true or false, based on minimum and maximum possible values and the given bound;
  * and creates a tseitin, handling double negation when necessary;
@@ -451,19 +525,31 @@ Lit AggGrounder::run() const {
 	case AggFunction::PROD: {
 		// Compute the minimum and maximum possible value of the product.
 		bool containsneg = false;
+		bool containszero = false;
 		for (unsigned int n = 0; n < tsset.size(); ++n) {
 			if (abs(tsset.weight(n)) > 1) {
 				maxpossvalue *= abs(tsset.weight(n));
 			} else if (tsset.weight(n) != 0) {
 				minpossvalue *= abs(tsset.weight(n));
 			}
-			if (tsset.weight(n) < 0)
+			if (tsset.weight(n) == 0) {
+				containszero = true;
+			}
+			if (tsset.weight(n) < 0) {
 				containsneg = true;
+			}
+		}
+		if (truevalue == 0) {
+			return boundvalue == 0 ? _true : _false;
 		}
 		if (containsneg)
 			minpossvalue = (-maxpossvalue < minpossvalue ? -maxpossvalue : minpossvalue);
-		// Finish
-		tseitin = finish(boundvalue, (boundvalue / truevalue), minpossvalue, maxpossvalue, setnr);
+		if (containsneg || containszero) {
+			tseitin = splitproducts(boundvalue, (boundvalue / truevalue), minpossvalue, maxpossvalue, setnr);
+		} else {
+			// Finish
+			tseitin = finish(boundvalue, (boundvalue / truevalue), minpossvalue, maxpossvalue, setnr);
+		}
 		break;
 	}
 	case AggFunction::MIN:
@@ -712,7 +798,7 @@ void QuantGrounder::run(ConjOrDisj& formula, bool negated) const {
 		}
 	}
 	if (_origform != NULL)
-						poptab();
+		poptab();
 }
 
 Lit EquivGrounder::getLitEquivWith(const ConjOrDisj& form) const {
