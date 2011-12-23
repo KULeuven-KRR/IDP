@@ -104,6 +104,12 @@ procedure printgrounding(theory, structure) {
 	end
 }
 
+/**
+* Returns custom typeids for first-class idp citizens.*/
+idptype(something){
+	return idpintern.idptype(something)
+}
+
 
 /*/**
  * Check whether first theory entails the second */

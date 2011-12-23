@@ -24,6 +24,8 @@ class PropagateInference: public TheoryStructureBase {
 public:
 	PropagateInference() :
 		TheoryStructureBase("propagate", "Return a structure, made more precise than the input by doing symbolic propagation on the theory.") {
+		setNameSpace(getInternalNamespaceName());
+
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
@@ -54,7 +56,7 @@ public:
 class OptimalPropagateInference: public TheoryStructureBase {
 public:
 	OptimalPropagateInference() :
-		TheoryStructureBase("optimalpropagate", "Return a structure, made more precise than the input by generating all models and checking which literals always have the same truth value.") {
+		TheoryStructureBase("optimalpropagate", "Return a structure, made more precise than the input by generating all models and checking which literals always have the same truth value.\nThis propagation is complete: everything that can be derived from the theory will be derived.") {
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {

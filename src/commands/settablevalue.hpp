@@ -27,13 +27,13 @@ private:
 	SETVALUE value_;
 public:
 	static Inference* getMakeTableTrueInference() {
-		return new SetTableValueInference("maketrue", "Sets the given tuple to true", SET_TRUE);
+		return new SetTableValueInference("maketrue", "Sets all tuples of the given table to true.\nModifies the table-interpretation.", SET_TRUE);
 	}
 	static Inference* getMakeTableFalseInference() {
-		return new SetTableValueInference("makefalse", "Sets the given tuple to false", SET_FALSE);
+		return new SetTableValueInference("makefalse", "Sets all tuples of the given table to false.\nModifies the table-interpretation.", SET_FALSE);
 	}
 	static Inference* getMakeTableUnknownInference() {
-		return new SetTableValueInference("makeunknown", "Sets the given tuple to unknown", SET_UNKNOWN);
+		return new SetTableValueInference("makeunknown", "Sets all tuples of the given table to unknown.\nModifies the table-interpretation.", SET_UNKNOWN);
 	}
 
 	SetTableValueInference(const char* command, const char* description, SETVALUE value) :

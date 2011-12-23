@@ -20,7 +20,7 @@ typedef TypedInference<LIST(AbstractTheory*, AbstractTheory*, ialist*, ialist*, 
 class EntailsInference: public EntailsInferenceBase {
 public:
 	EntailsInference() :
-			EntailsInferenceBase("entails", "Checks whether the first theory entails the second, ") {
+			EntailsInferenceBase("entails", "Checks whether the first theory entails the second. ") {
 		setNameSpace(getInternalNamespaceName());
 		/*		add(AT_THEORY);
 		 add(AT_THEORY);
@@ -38,7 +38,7 @@ public:
 	// TODO passing options as internalarguments (e.g. the xsb path) is very ugly and absolutely not intended!
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
 		EntailmentData* data = new EntailmentData();
-
+		//TODO: check that no input is changed by this command.
 		data->fofCommands = *get<2>(args);
 		data->tffCommands = *get<3>(args);
 
