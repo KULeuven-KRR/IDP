@@ -284,7 +284,7 @@ A theory with name \code{MyTheory} over a vocabulary \code{MyVoc} is declared by
 		// contents of the theory
 	}
 \end{lstlisting}
-A theory contains sentences, inductive definitions, and fixpoint definitions.
+A theory contains sentences and inductive definitions.
 
 \subsection{Sentences}
 
@@ -409,9 +409,6 @@ The semantics of a partial function $F$ is given by transforming constraints and
 	\item in a negative context, $P(\ldots,F(x),\ldots)$ is transformed to $\exists y\ (F(y) = y \land P(\ldots,y,\ldots)$.
 \end{itemize}
 Here, $P(\ldots,F(x),\ldots)$ occurs in a positive context if it occurs in sentence and in the scope of an even number of negations, or it occurs in a body of a rule and in the scope of an odd number of negations. All other occurrences are in a negative context. 
-
-\subsection{Fixpoint definitions}
-\todo{nog niet getest. ik vermoed dat er hier niets over komt}
 
                                                               
 \subsection{The Type of a Variable}\label{ssec:vtype}
@@ -633,7 +630,6 @@ where \code{MyOption} is the name of the option and \code{MyValue} is the value 
 \end{lstlisting}
 To activate an option set, use the procedure \code{setascurrentoptions(MyOptionSet)}.  From that moment, \code{MyOptionSet} will be used in all comands.
 
-\todo{Opties die we niet supporten in commentaar zetten}
 \begin{description}
 	\item[autocomplete = [false, true]] Turn autocompletion on or off
 	%\item[cpsupport = [false, true]] Enable/disable cp-support (running a cp-solver together with the SAT-solver)
