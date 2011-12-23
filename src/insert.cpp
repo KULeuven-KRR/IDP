@@ -1896,10 +1896,10 @@ void Insert::constructor(NSPair* nst) const {
 	}
 }
 
-void Insert::sortinter(NSPair* nst, SortTable* t) const {
+void Insert::sortinter(NSPair* nst, SortTable* t) {
 	ParseInfo pi = nst->_pi;
 	longname name = nst->_name;
-	Sort* s = sortInScope(name, pi);
+	auto s = sortInScope(name, pi);
 	if (nst->_sortsincluded) {
 		if ((nst->_sorts).size() != 1)
 			Error::incompatiblearity(toString(nst), pi);
@@ -1914,20 +1914,28 @@ void Insert::sortinter(NSPair* nst, SortTable* t) const {
 		if (belongsToVoc(s)) {
 			SortTable* st = _currstructure->inter(s);
 			st->internTable(t->internTable());
+			sortsOccurringInUserDefinedStructure.insert(s);
 			delete (t);
-		} else
+		} else{
 			Error::sortnotinstructvoc(toString(name), _currstructure->name(), pi);
+		}
 	} else if (p) {
 		if (belongsToVoc(p)) {
 			PredTable* pt = new PredTable(t->internTable(), _currstructure->universe(p));
 			PredInter* i = _currstructure->inter(p);
 			i->ctpt(pt);
 			delete (t);
-		} else
+		} else{
 			Error::prednotinstructvoc(toString(nst), _currstructure->name(), pi);
-	} else
+		}
+	} else{
 		Error::undeclpred(toString(nst), pi);
+	}
 	delete (nst);
+}
+
+bool Insert::interpretationSpecifiedByUser(Sort *s) const{
+	return sortsOccurringInUserDefinedStructure.find(s)!=sortsOccurringInUserDefinedStructure.cend();
 }
 
 void Insert::addElement(SortTable* s, int i) const {
