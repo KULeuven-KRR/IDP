@@ -1279,6 +1279,9 @@ Formula* Insert::predform(NSPair* t, YYLTYPE l) const {
 
 // NOTE: The lefthand functon is considered defined!
 Formula* Insert::equalityhead(Term* left, Term* right, YYLTYPE l) const {
+	if (left == NULL) {
+		return NULL;
+	}
 	if (not sametypeid<FuncTerm>(*left)) {
 		Error::funcnameexpected(left->pi());
 		return NULL;
@@ -1982,9 +1985,7 @@ PredTable* Insert::createPredTable(unsigned int arity) const {
 }
 
 void Insert::addTuple(PredTable* pt, ElementTuple& tuple, YYLTYPE l) const {
-	if (tuple.size() == pt->arity()) {
-		pt->add(tuple);
-	} else if (pt->empty()) {
+	if (tuple.size() == pt->arity() || pt->empty()) {
 		pt->add(tuple);
 	} else {
 		ParseInfo pi = parseinfo(l);

@@ -310,7 +310,7 @@ const DomainElement* executeProcedure(const string& proc) {
  * Interactive mode 
  **/
 void interactive() {
-	cout << "Running GidL in interactive mode.\n";
+	cout << "Running IDP in interactive mode.\n";
 
 	idp_rl_start();
 	while (not idp_terminateInteractive()) {

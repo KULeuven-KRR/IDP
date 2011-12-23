@@ -1,4 +1,5 @@
 \documentclass[a4]{article}
+\usepackage[english]{babel}
 \usepackage{geometry}
 \usepackage{xspace}
 \usepackage{url}
@@ -7,16 +8,18 @@
 \newcommand{\msid}{{\sc MiniSAT(ID)}\xspace}
 \newcommand{\minisatid}{\msid}
 \newcommand{\gidl}{{\sc GidL}\xspace}
+\newcommand{\fodotidp}{{\tt FO($\cdot$)$^{\mathtt{\tiny IDP}}$}\xspace}
+\newcommand{\fodot}{FO($\cdot$)\xspace}
+
 %% Source code fragments
 \usepackage[usenames,dvipsnames]{color}
 \usepackage{amssymb, amsmath}
 \usepackage{listings}
 
-\lstdefinelanguage{idp}
-{
-	morekeywords=[1]{namespace, vocabulary,theory,structure,procedure},
-	morekeywords=[2]{include, using, type,isa, contains, partial, extern, LFD, GFD},
-	morekeywords=[3]{int,float,char,string, nat},
+\lstdefinelanguage{idp}{
+	morekeywords=[1]{namespace,vocabulary,theory,structure,procedure},
+	morekeywords=[2]{include,using,type,isa,contains,partial,extern,LFD,GFD},
+	morekeywords=[3]{int,float,char,string,nat},
 	morecomment=[s]{/*}{*/},	
 	morecomment=[l]{//}
 }
@@ -78,9 +81,9 @@ A statement
 
 is replaced by the contents of the standard library file \code{filename}.  Currently the following standard library files are available:
 \begin{description}
-\item[mx] Contains some useful model expansion procedures
-\item[theory] Contains procedures to transform theories
-\item[domain] Contains procedures to create ranges
+\item[mx] Contains some useful model expansion procedures.
+\item[theory] Contains procedures to transform theories.
+\item[domain] Contains procedures to create ranges.
 \end{description}
 
 
@@ -92,21 +95,21 @@ is replaced by the contents of the standard library file \code{filename}.  Curre
 
 A namespace with name \code{MySpace} is declared by
 \begin{lstlisting}
-	namespace MySpace \{
+	namespace MySpace {
 		// content of the namespace
-	\}
+	}
 \end{lstlisting}
 
-An object with name \code{MyName} declared in namaespace \code{MySpace} can be reffered to \code{MySpace::MyName}.  Inside \code{MySpace}, \code{MyName} can simply be refered to by \code{MyName}.
+An object with name \code{MyName} declared in namespace \code{MySpace} can be referred to by \code{MySpace::MyName}.  Inside \code{MySpace}, \code{MyName} can simply be referred to by \code{MyName}.
 
-A Namespace can contain namespaces, vocabularies, theories, structures, procedures, optionas and using statements.  A using statement is of one of the following forms
+A Namespace can contain namespaces, vocabularies, theories, structures, procedures, options and using statements.  A using statement is of one of the following forms
 \begin{lstlisting}
 	using namespace MySpace
 	using vocabulary MyVoc
 \end{lstlisting}
 where \code{MySpace} is the name of a namespace, and \code{MyVoc} the name of a vocabulary.  Below such a using statement, objects \code{MyObj} declared in \code{MySpace}, respectively \code{MyVoc}, can be referred to by \code{MyObj}, instead of \code{MySpace::Myobj}, respectively \code{MyVoc::MyObj}.
 
-Every object that is declared outside a  namespace, is considered to be part of the global namespace.  The name of the global namespace is \code{global\_namespace}.  In other words, eery \idp file implicitely starts with \code{namespace global\_namespace \{} and ends wit han extra \code{\}}.
+Every object that is declared outside a namespace, is considered to be part of the global namespace.  The name of the global namespace is \code{global\_namespace}.  In other words, eery \idp file implicitely starts with \code{namespace global\_namespace \{} and ends wit han extra \code{\}}.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -123,7 +126,7 @@ A vocabulary can contain symbol declarations, symbol pointers, and other vocabul
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection{Symbol delcarations}
+\subsection{Symbol declarations}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \label{ssec:symbols}
 A type with name \code{MyType} is declared by

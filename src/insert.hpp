@@ -392,6 +392,9 @@ public:
 	void addElement(SortTable*, int, int) const;
 	void addElement(SortTable*, char, char) const;
 
+	// TODO in this code, it is not assumed that the sorts are already filled, this is not even checked.
+	// 		apparently, this happens later, which introduces big holes in the semantics:
+	//		addtuple, add interpretation to structure and check sorts, add more tuples => not in sorts!
 	PredTable* createPredTable(unsigned int arity) const;
 	void addTuple(PredTable*, std::vector<const DomainElement*>&, YYLTYPE) const;
 	void addTuple(PredTable*, YYLTYPE) const;
