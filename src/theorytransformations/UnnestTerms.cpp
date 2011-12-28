@@ -330,18 +330,29 @@ Term* UnnestTerms::visit(DomainTerm* t) {
 }
 
 Term* UnnestTerms::visit(AggTerm* t) {
-	//FIXME shouldn't this term be traversed before it is (possibly) moved?
-	if (getAllowedToUnnest() && shouldMove(t)) {
-		return traverse(move(t)); //TODO Check whether this is correct: traverse after move...
+	bool savemovecontext = getAllowedToUnnest();
+	//TODO Check what should be done with AllowedToUnnest...
+	auto result = traverse(t);
+	setAllowedToUnnest(savemovecontext);
+	if (getAllowedToUnnest() && shouldMove(result)) {
+		return move(result);
 	} else {
-		return traverse(t);
+		return result;
 	}
 }
 
-Term* UnnestTerms::visit(FuncTerm* ft) {
+Term* UnnestTerms::visit(FuncTerm* t) {
 	bool savemovecontext = getAllowedToUnnest();
-	setAllowedToUnnest(true);
-	auto result = traverse(ft);
+	auto function = t->function();
+	if (not getOption(BoolType::GROUNDWITHBOUNDS) && _structure != NULL) {
+		auto finter = _structure->inter(function);
+		if (finter->approxTwoValued()) {
+			setAllowedToUnnest(false);
+		} 
+	} else {
+			setAllowedToUnnest(true);
+	}
+	auto result = traverse(t);
 	setAllowedToUnnest(savemovecontext);
 	if (getAllowedToUnnest() && shouldMove(result)) {
 		return move(result);

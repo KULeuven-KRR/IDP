@@ -200,6 +200,8 @@ private:
 	std::map<Function*, UTF> _cfuncs;
 	void assignunknowntables();
 
+	std::set<Sort*> sortsOccurringInUserDefinedStructure;
+
 public:
 	Insert(Namespace* ns);
 
@@ -369,7 +371,7 @@ public:
 	//!< Add a tuple (phi,t) to an EnumSetExpr
 
 	void emptyinter(NSPair*) const; //!< Assign the empty interpretation
-	void sortinter(NSPair*, SortTable* t) const; //!< Assign a one dimensional table
+	void sortinter(NSPair*, SortTable* t); //!< Assign a one dimensional table
 	void predinter(NSPair*, PredTable* t) const; //!< Assign a predicate table
 	void funcinter(NSPair*, FuncTable* t) const; //!< Assign a function table
 	void truepredinter(NSPair*) const; //!< Assign true
@@ -435,6 +437,11 @@ public:
 	void option(const std::string& opt, double val, YYLTYPE) const;
 	void option(const std::string& opt, int val, YYLTYPE) const;
 	void option(const std::string& opt, bool val, YYLTYPE) const;
+
+	/**
+	 * Returns true if this sort occurred in the user provided theory.
+	 */
+	bool interpretationSpecifiedByUser(Sort *s) const;
 };
 
 #endif
