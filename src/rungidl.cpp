@@ -204,7 +204,12 @@ void timeout(void*) {
 	//clog <<"Timeout: " <<getOption(IntType::TIMEOUT) <<", currently at " <<time/1000 <<"\n";
 	while (not shouldStop()) {
 		time += sleep;
+#ifdef __MINGW32__
+		Sleep(sleep);
+#else
 		usleep(sleep * 1000);
+#endif
+		
 		if (sleep < 1000) {
 			if (sleep < 100) {
 				sleep += 10;
@@ -256,9 +261,10 @@ void monitorShutdown(void*) {
 		monitoringtime += 10000;
 	}
 	if (not hasStopped) {
-#ifdef DEBUGTHREADS // For debugging, we notify the other thread to sleep indefinitely, so we can debug properly
-		pthread_kill(executionhandle, SIGUSR1);
-#endif
+	// TODO does not work in windows
+//#if defined(DEBUGTHREADS) // For debugging, we notify the other thread to sleep indefinitely, so we can debug properly
+//		pthread_kill(executionhandle, SIGUSR1);
+//#endif
 		clog << "Shutdown failed, aborting.\n";
 		abort();
 	}
@@ -284,7 +290,7 @@ const DomainElement* executeProcedure(const string& proc) {
 		// FIXME should not be here, but in a less error-prone place. Or should pass an adapated time-out to the solver?
 
 		registerHandler(SIGINT_handler, SIGINT);
-		registerHandler(SIGUSR1_handler, SIGUSR1);
+		//TODO registerHandler(SIGUSR1_handler, SIGUSR1);
 
 		thread signalhandling(&timeout, NULL);
 
