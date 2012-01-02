@@ -1,0 +1,157 @@
+Scoping regels:
+
+Standaard kan je enkel objecten gebruiken uit de scope waar je in zit. Ik gebruik objecten als naam voor logische symbolen, vocs, theories, structures en procedures.
+Zit je in een namespace of in een subobject daarvan, dan kan je rechtstreeks aan vocs, theories, structures en procedures uit die namespace. Zit je in een vocabulary, kan je rechtstreeks aan wat daarin zit. Voor structures en theories kan je ook steeds aan de inhoud van hun vocabularium.
+	
+namespace A{
+	vocabulary vocA{
+		C
+	}
+	
+	theory theoryA: vocA{
+		C.
+	}
+	
+	structure structA: vocA{
+	}
+	
+	procedure main(){
+		mx(theoryA, structA)
+	}
+}
+
+	
+Als je naar de INHOUD van een van de bereikbare objecten wilt refereren, moet je dat qualificeren (best) vanaf het dichstre bereikbare object. 
+
+namespace A{
+	vocabulary vocA{
+		C
+	}
+	
+	theory theoryA: vocA{
+		C.
+	}
+	
+	structure structA: vocA{
+	}
+	
+	procedure main(){
+		mx(theoryA, structA)
+		print(vocA::C)
+	}
+}
+
+Als je naar iets hoger of in een andere namespace wilt verwijzen, moet je vanaf de root qualificeren.
+
+namespace Root{
+	namespace A{
+		vocabulary vocA{
+			C
+		}
+	
+		theory theoryA: vocA{
+			C.
+		}
+	
+		structure structA: vocA{
+		}
+	}
+	
+	namespace B{
+		procedure main(){
+			mx(A::theoryA, A::structA)
+			print(A::vocA::C)
+		}
+	}
+}
+
+procedure main2(){
+	Root::B::main()
+}
+
+
+Om de soms lange qualificaties vermijden, is het using keyword beschikbaar: using <name>.  beschouw de objecten die bevat zitten in het using argument alsof die rechtstreeks beschikbaar waren op de huidige plaats. Alle code na de using (ook volgende usings), mogen de extra scopeinhoud gebruiken.
+
+namespace Root{
+	namespace A{
+		vocabulary vocA{
+			C
+		}
+	
+		theory theoryA: vocA{
+			C.
+		}
+	
+		structure structA: vocA{
+		}
+	}
+	
+	namespace B{
+		using A
+		using vocA
+
+		procedure main(){
+			mx(theoryA, structA)
+			print(C)
+		}
+	}
+}
+
+procedure main2(){
+	Root::B::main()
+}
+
+(Include wilt zeggen, plak de inhoud van een of andere file er hier ook bij (maar je moet nog steeds volledig qualificeren naar de inhoud).)
+
+Nog even iets over functies:
+Er zijn in de code twee objecten die soms functies worden genoemd => de logische symbolen die functies zijn, bvb som(int, int):int, ... Deze zijn deel van een vocabularium. Procedures worden soms ook functies genoemd (dit zijn dus blokken lua code).
+Logische functiesymbolen mogen niet gebruikt worden als aanroep in namespaces en procedures (want dat heeft geen betekenis).
+
+Bvb bij het toekennen van theorieen en dergelijke
+theory T = func()
+mag func enkel een procedure zijn.
+
+Een volledig voorbeeld:
+
+file1:
+namespace Root{
+	namespace A{
+		vocabulary vocA{
+			C
+		}
+		
+		vocabulary vocA2{
+			C
+		}
+	
+		theory theoryA: vocA{
+			C.
+		}
+	
+		structure structA: vocA{
+		}
+	}
+}
+
+file2:
+
+#include "file1"
+namespace Root{
+	namespace B{
+		using namespace A
+		using vocabulary vocA
+		
+		theory theoryB: vocA{
+			C.
+		}
+
+		procedure main(){
+			mx(theoryA, structA)
+			print(C)
+		}
+	}
+}
+
+procedure main2(){
+	Root::B::main() // volledige kwantificatie noodzakelijk
+}
