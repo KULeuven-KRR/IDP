@@ -36,6 +36,6 @@ add_executable(idptests
 )
 target_link_libraries(idptests idp gtest)
 set_target_properties(idptests PROPERTIES LINK_FLAGS "-pthread ")
-add_test(idptests idptests --test-command)
+add_test(idptests idptests "--gtest_color=yes")
 add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} -V DEPENDS idptests)
 endif()

@@ -39,10 +39,6 @@ endfunction()
 
 AssureOutOfSourceBuilds()
 
-if("${PROJECT_SOURCE_DIR}" STREQUAL "${PROJECT_BINARY_DIR}")
-   message(SEND_ERROR "In-source builds are not allowed.")
-endif("${PROJECT_SOURCE_DIR}" STREQUAL "${PROJECT_BINARY_DIR}")
-
 OPTION(BUILDTESTS  "Run the gtest tests" ON)
 
 ENABLE_TESTING()
