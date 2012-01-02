@@ -25,7 +25,7 @@ public:
 		int n2 = get<1>(args);
 		InternalArgument ia;
 		ia._type = AT_DOMAIN;
-		if(n2>n1){
+		if(n2<n1){
 			Error::error("Begin should be lower or equal than end");
 			return nilarg();
 		}
