@@ -23,11 +23,11 @@ structure S: V{
 	P=eP
 }
 
-procedure main(){
+/*procedure main(){
 	//print(type(S[V::Formula.predicate].ct))
 	//print(size(S[V::Formula.predicate].ct))
-	if(size(S[V::Formula.predicate].ct)==2) // P should not be in Formula, because we did not specify it
-	then return 1
+	//if(size(S[V::Formula.predicate].ct)==2) // P should not be in Formula, because we did not specify it
+	//then return 1
 	else return 0
 	end 
-}
+}*/

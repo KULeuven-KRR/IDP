@@ -74,31 +74,31 @@ public:
 	}
 
 protected:
-	Formula* rewrite(Formula* formula);
+	Formula* rewrite(Formula*);
 
-	VarTerm* move(Term* term);
+	VarTerm* move(Term*);
 
-	Theory* visit(Theory* theory);
-	virtual Rule* visit(Rule* rule);
-	virtual Formula* traverse(Formula* f);
-	virtual Formula* traverse(PredForm* f);
-	virtual Formula* visit(EquivForm* ef);
-	virtual Formula* visit(AggForm* af);
-	virtual Formula* visit(EqChainForm* ef);
-	virtual Formula* visit(PredForm* predform);
-	virtual Term* traverse(Term* term);
-	VarTerm* visit(VarTerm* t);
-	virtual Term* visit(DomainTerm* t) ;
-	virtual Term* visit(AggTerm* t);
-	virtual Term* visit(FuncTerm* ft);
-	virtual SetExpr* visit(EnumSetExpr* s);
-	virtual SetExpr* visit(QuantSetExpr* s);
+	Theory* visit(Theory*);
+	virtual Rule* visit(Rule*);
+	virtual Formula* traverse(Formula*);
+	virtual Formula* traverse(PredForm*);
+	virtual Formula* visit(EquivForm*);
+	virtual Formula* visit(AggForm*);
+	virtual Formula* visit(EqChainForm*);
+	virtual Formula* visit(PredForm*);
+	virtual Term* traverse(Term*);
+	VarTerm* visit(VarTerm*);
+	virtual Term* visit(DomainTerm*) ;
+	virtual Term* visit(AggTerm*);
+	virtual Term* visit(FuncTerm*);
+	virtual SetExpr* visit(EnumSetExpr*);
+	virtual SetExpr* visit(QuantSetExpr*);
 
 private:
 	template<typename T>
 	Formula* doRewrite(T origformula);
 
-	Sort* deriveSort(Term* term);
+	Sort* deriveSort(Term*);
 };
 
 #endif /* UNNESTTERMS_HPP_ */

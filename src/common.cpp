@@ -27,7 +27,7 @@ std::string getInternalNamespaceName(){
 	return "idpintern";
 }
 
-std::string installdirectorypath = IDPINSTALLDIR;
+std::string installdirectorypath = string(IDPINSTALLDIR);
 void setInstallDirectoryPath(const std::string& dirpath){
 	installdirectorypath = dirpath;
 }

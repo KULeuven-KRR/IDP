@@ -18,12 +18,17 @@ include_directories (
 	"${CMAKE_CURRENT_BINARY_DIR}"
 	"${PROJECT_SOURCE_DIR}/lib/pluscallback1.7/"
 	"${PROJECT_SOURCE_DIR}/lib/linenoise/"
+	"${PROJECT_SOURCE_DIR}/lib/tinythread/"
 )
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D GIDLVERSION=\\\"${idp_VERSION_MAJOR}-${idp_VERSION_MINOR}\\\" ")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D IDPINSTALLDIR=\\\"${CMAKE_INSTALL_PREFIX}/\\\" ")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D IDPINSTALLDIR=\\\"\"${CMAKE_INSTALL_PREFIX}/\\\"\" ")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D INTERNALLIBARYLUA=\\\"share/std/idp_intern.lua\\\" ")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D INTERNALLIBARYIDP=\\\"share/std/idp_intern.idp\\\" ") 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D CONFIGFILENAME=\\\"var/.idprc\\\" ")
+if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
+endif()
+
 
 find_package(BISON)
 find_package(FLEX)
@@ -212,17 +217,14 @@ add_library(idp
 	${BISON_myparser_OUTPUTS} ${FLEX_myscanner_OUTPUTS}
 )
 
-target_link_libraries(idp minisatid lua linenoise)
-set_target_properties(idp PROPERTIES LINK_FLAGS "-pthread ")
+target_link_libraries(idp minisatid lua linenoise tinythread)
 
 add_executable(idp-bin main.cpp)
 if(BUILD_IDP_STATIC)
-	set_target_properties(idp-bin PROPERTIES LINK_FLAGS "-pthread -static -all-static ")
-	set_target_properties(idp PROPERTIES LINK_FLAGS "-static -all-static ")
-else()
-	set_target_properties(idp-bin PROPERTIES LINK_FLAGS "-pthread ")
+	set_target_properties(idp-bin PROPERTIES LINK_FLAGS "-static ")
+	set_target_properties(idp PROPERTIES LINK_FLAGS "-static ")
 endif()
-target_link_libraries(idp-bin idp lua)
+target_link_libraries(idp-bin idp)
 set_target_properties(idp-bin PROPERTIES OUTPUT_NAME idp)
 
 # add the install targets
