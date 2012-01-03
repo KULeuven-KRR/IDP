@@ -319,7 +319,7 @@ InstGenerator* BDDToGenerator::createFromPredForm(PredForm* atom, const vector<P
 		vector<PredForm*> orderedconjunction;
 		while (not atoms_to_order.empty()) {
 			PredForm* bestatom = 0;
-			double bestcost = numeric_limits<double>::max();
+			double bestcost = getMaxElem<double>();
 			for (auto it = atoms_to_order.cbegin(); it != atoms_to_order.cend(); ++it) {
 				bool currinverse = false;
 				if (*it == origatom) {

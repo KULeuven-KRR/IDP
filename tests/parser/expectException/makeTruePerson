@@ -1,0 +1,16 @@
+#include <mx>
+
+vocabulary V{
+	type number isa int
+	type person
+	age(person, number)	
+}
+
+structure S : V{
+	person = {Dirk}
+	number = {0..100}
+}
+
+procedure main(){
+	maketrue(S[V::age], {Jos, 50})
+}

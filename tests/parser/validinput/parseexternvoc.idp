@@ -5,3 +5,6 @@ vocabulary V2 {
   extern vocabulary V
 }
 
+procedure main(){
+	return 1
+}

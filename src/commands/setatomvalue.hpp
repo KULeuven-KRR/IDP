@@ -16,6 +16,7 @@
 
 /**
  * Implements maketrue, makefalse, and makeunknown on a predicate interpretation and a tuple
+ * The base interpretation
  */
 typedef TypedInference<LIST(PredInter*, ElementTuple*)> SetAtomValueInferenceBase;
 class SetAtomValueInference: public SetAtomValueInferenceBase {

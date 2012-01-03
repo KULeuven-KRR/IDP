@@ -11,12 +11,12 @@
 #ifndef STRUCTURE_HPP
 #define STRUCTURE_HPP
 
-#include <limits>
 #include <cstdlib>
 #include "parseinfo.hpp"
 #include "common.hpp"
 
 #include "GlobalData.hpp"
+#include "utils/NumericLimits.hpp"
 
 /**
  * \file structure.hpp
@@ -756,7 +756,7 @@ private:
 		++_iter;
 	}
 public:
-	IntInternalSortIterator(int iter = std::numeric_limits<int>::min()) :
+	IntInternalSortIterator(int iter = getMinElem<int>()) :
 			_iter(iter) {
 	}
 	~IntInternalSortIterator() {
@@ -779,7 +779,7 @@ private:
 		++_iter;
 	}
 public:
-	FloatInternalSortIterator(double iter = -std::numeric_limits<double>::max()) :
+	FloatInternalSortIterator(double iter = getMinElem<double>()) :
 			_iter(iter) {
 	}
 	~FloatInternalSortIterator() {
@@ -818,7 +818,7 @@ private:
 	const DomainElement* operator*() const;
 	void operator++();
 public:
-	CharInternalSortIterator(char iter = std::numeric_limits<char>::min(), bool end = false) :
+	CharInternalSortIterator(char iter = getMinElem<char>(), bool end = false) :
 			_iter(iter), _end(end) {
 	}
 	~CharInternalSortIterator() {
@@ -2200,6 +2200,9 @@ public:
 		return _ct->universe();
 	}
 	PredInter* clone(const Universe&) const;
+
+private:
+	void moveTupleFromTo(const ElementTuple& tuple, PredTable* from, PredTable* to);
 };
 
 std::ostream& operator<<(std::ostream& stream, const PredInter& interpretation);
@@ -2305,14 +2308,13 @@ public:
 	FuncInter(PredInter* pt) :
 			_functable(0), _graphinter(pt) {
 	}
-
 	~FuncInter();
 
 	void graphInter(PredInter*);
 	void funcTable(FuncTable*);
-	void makeTrue(const ElementTuple&);
-	void makeFalse(const ElementTuple&);
-	void materialize(); //!< Replace symbolic tables by enumerated ones if possible
+
+	bool isConsistent() const;
+	void materialize();
 
 	PredInter* graphInter() const {
 		return _graphinter;
@@ -2323,7 +2325,6 @@ public:
 	bool approxTwoValued() const {
 		return _functable != 0;
 	}
-	bool isConsistent() const;
 
 	const Universe& universe() const {
 		return _graphinter->universe();

@@ -212,6 +212,7 @@ add_library(idp
 	fobdds/bddvisitors/CollectSameOperationTerms.hpp
 	IdpException.hpp
 	utils/FileManagement.hpp utils/FileManagement.cpp
+	utils/NumericLimits.hpp utils/NumericLimits.cpp
 	utils/TheoryUtils.hpp utils/TheoryUtils.cpp
 	utils/StringUtils.hpp utils/StringUtils.cpp
 	${BISON_myparser_OUTPUTS} ${FLEX_myscanner_OUTPUTS}

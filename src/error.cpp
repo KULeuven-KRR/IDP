@@ -725,6 +725,11 @@ void warning() {
 	clog << "WARNING: ";
 }
 
+void warning(const std::string& message) {
+	warningcounter++;
+	clog << "WARNING: " <<message;
+}
+
 void warning(const ParseInfo& p) {
 	warningcounter++;
 	clog << "WARNING at line " << p.line() << ", column " << p.col();

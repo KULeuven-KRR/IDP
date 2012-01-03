@@ -89,9 +89,8 @@ private:
 	const var2dommap& varmapping() const {
 		return _varmapping;
 	}
-	//var2dommap& varmapping() { return _varmapping; }
 
-	const DomElemContainer* createVarMapping(Variable * const var);
+	DomElemContainer* createVarMapping(Variable * const var);
 	template<class VarList>
 	InstGenerator* createVarMapAndGenerator(const Formula* original, const VarList& vars);
 

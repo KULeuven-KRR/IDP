@@ -487,7 +487,10 @@ The syntax for a type enumeration is
 \begin{lstlisting}
 	MyType = { El_1; El_2; ... ; El_n }
 \end{lstlisting}
-where {\tt MyType} is the name of the enumerated type and {\tt El\_1; El\_2; ... ; El\_n } are the names of the objects of that type. Names of objects can be (positive and negative) integers, strings, chars, compound domain elements, or identifiers that start with an upper- or lowercase letter. If one type is a subtype of another.  All elements of the subtype are added to the supertype also.  In the case all subtypes of a given type are specified, the supertype is derived to be the union of all elements of the subtypes.  If a type is not specified, all domain elements of that type that occur in a predicate or function interpretation (see below) are automatically added to that type.  
+where {\tt MyType} is the name of the enumerated type and {\tt El\_1; El\_2; ... ; El\_n } are the names of the objects of that type. Names of objects can be (positive and negative) integers, strings, chars, compound domain elements, or identifiers that start with an upper- or lowercase letter. 
+Identifiers are shorthands for strings (without the quotes) and can be interchanged.
+\todo{Important: in the lua code, the identifiers cannot be used safely, only their string equivalent}
+If one type is a subtype of another, all elements of the subtype are added to the supertype also.  In the case all subtypes of a given type are specified, the supertype is derived to be the union of all elements of the subtypes.  If a type is not specified, all domain elements of that type that occur in a predicate or function interpretation (see below) are automatically added to that type.  
 
 
 \subsubsection{Predicate Enumeration}

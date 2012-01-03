@@ -134,6 +134,8 @@ void GrounderFactory::InitContext() {
 	_context._defined.clear();
 	_context._conjunctivePathFromRoot = true; // NOTE: default true: needs to be set to false in each visit in grounderfactory in which it is no longer the case
 	_context._conjPathUntilNode = true;
+
+	_varmapping.clear();
 }
 
 void GrounderFactory::AggContext() {
@@ -343,11 +345,11 @@ void GrounderFactory::visit(const Theory* theory) {
 	vector<TheoryComponent*> components(tcomps.cbegin(), tcomps.cend());
 	//TODO Order components the components to optimize the grounding process
 
-	InitContext();
-
 	// Create grounders for all components
 	vector<Grounder*> children(components.size());
 	for (size_t n = 0; n < components.size(); ++n) {
+		InitContext();
+
 		if (getOption(IntType::GROUNDVERBOSITY) > 0) {
 			clog << "Creating a grounder for ";
 			components[n]->put(clog);
@@ -577,20 +579,13 @@ void GrounderFactory::visit(const BoolForm* bf) {
 	}
 	_formgrounder = new BoolGrounder(_grounding, sub, bf->sign(), bf->conj(), _context);
 	RestoreContext();
-	_formgrounder->setOrig(bf, _varmapping);
+	_formgrounder->setOrig(bf, varmapping());
 	if (_context._component == CompContext::SENTENCE) {
 		_topgrounder = _formgrounder;
 	}
 
 	if (getOption(IntType::GROUNDVERBOSITY) > 3)
 		poptab();
-}
-
-const DomElemContainer* GrounderFactory::createVarMapping(Variable * const var) {
-	const DomElemContainer* d = new DomElemContainer();
-	Assert(varmapping().find(var)==varmapping().cend());
-	_varmapping[var] = d;
-	return d;
 }
 
 /**
@@ -685,7 +680,7 @@ void GrounderFactory::visit(const QuantForm* qf) {
 		}
 		RestoreContext();
 
-		_formgrounder->setOrig(qf, _varmapping);
+		_formgrounder->setOrig(qf, varmapping());
 
 		if (_context._component == CompContext::SENTENCE) {
 			_topgrounder = _formgrounder;
@@ -927,13 +922,12 @@ GrounderFactory::GenAndChecker GrounderFactory::createVarsAndGenerators(Formula*
 
 	for (auto it = subformula->freeVars().cbegin(); it != subformula->freeVars().cend(); ++it) {
 		if (orig->quantVars().find(*it) == orig->quantVars().cend()) { // It is a free var of the quantified formula
-			Assert(_varmapping.find(*it) != _varmapping.cend());
+			Assert(varmapping().find(*it) != varmapping().cend());
 			// So should already have a varmapping
-			vars.push_back(_varmapping[*it]);
+			vars.push_back(varmapping().at(*it));
 			pattern.push_back(Pattern::INPUT);
 		} else { // It is a var quantified in the orig formula, so should create a new varmapping for it
-			const DomElemContainer* d = new const DomElemContainer();
-			_varmapping[*it] = d;
+			auto d = createVarMapping(*it);
 			vars.push_back(d);
 			pattern.push_back(Pattern::OUTPUT);
 			quantfovars.push_back(*it);
@@ -1045,6 +1039,13 @@ InstGenerator* GrounderFactory::createVarMapAndGenerator(const Formula* original
 	}
 	GeneratorFactory gf;
 	return gf.create(hvars, hvst, original);
+}
+
+DomElemContainer* GrounderFactory::createVarMapping(Variable * const var) {
+	Assert(varmapping().find(var)==varmapping().cend());
+	auto d = new DomElemContainer();
+	_varmapping[var] = d;
+	return d;
 }
 
 void GrounderFactory::visit(const Rule* rule) {

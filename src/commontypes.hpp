@@ -11,12 +11,12 @@
 #ifndef COMMONTYPES_HPP
 #define COMMONTYPES_HPP
 
-#include <limits>
 #include <vector>
 #include <map>
 #include <set>
 #include <string>
 #include <queue>
+#include "utils/NumericLimits.hpp"
 
 /**
  *	\file This file contains some frequently used typedefs and enumerations
@@ -71,7 +71,7 @@ typedef int Lit;
 typedef std::vector<Lit> litlist;
 
 // TODO dynamically initialized global: no init order, so cannot safely use in other globals, might be unsafe?
-const Lit _true(std::numeric_limits<int>::max());
-const Lit _false(-std::numeric_limits<int>::max());
+const Lit _true(getMaxElem<int>());
+const Lit _false(getMinElem<int>());
 
 #endif
