@@ -27,10 +27,9 @@ enum IntType {
 	SATVERBOSITY, GROUNDVERBOSITY, PROPAGATEVERBOSITY, NRMODELS, NRPROPSTEPS, LONGESTBRANCH, SYMMETRY, PROVERTIMEOUT, TIMEOUT
 };
 
-enum BoolType{
+enum BoolType {
 	SHOWWARNINGS, // TODO Temporary solution to be able to disable warnings in tests
 	//PRINTTYPES,
-	CPSUPPORT, 
 	TRACE, 
 	AUTOCOMPLETE, 
 	LONGNAMES, 
@@ -39,7 +38,8 @@ enum BoolType{
 	MXRANDOMPOLARITYCHOICE, 
 	GROUNDLAZILY,
 	GROUNDWITHBOUNDS,
-	MODELCOUNTEQUIVALENCE // TODO the equivalence might in fact become an enum itself?
+	MODELCOUNTEQUIVALENCE, // TODO the equivalence might in fact become an enum itself?
+	CPSUPPORT
 };
 
 enum DoubleType{

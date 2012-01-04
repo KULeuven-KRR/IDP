@@ -43,26 +43,25 @@ std::string getPathOfIdpInternals();
 std::string getPathOfConfigFile();
 
 template<bool isPointer, bool isFundamental, typename Type, typename Stream>
-struct PutInStream{
+struct PutInStream {
 	void operator() (const Type& object, Stream& ss) {
-		if(object==NULL){
-			ss <<"NULL";
-		}else{
+		if(object==NULL) {
+			ss << "NULL";
+		} else {
 			object->put(ss);
 		}
 	}
 };
 
-
 template<typename Type, typename Stream>
-struct PutInStream<false, false, Type, Stream>{
+struct PutInStream<false, false, Type, Stream> {
 	void operator() (const Type& object, Stream& ss) {
 		object.put(ss);
 	}
 };
 
 template<typename Type, typename Stream>
-struct PutInStream<false, true, Type, Stream>{
+struct PutInStream<false, true, Type, Stream> {
 	void operator() (const Type& object, Stream& ss) {
 		ss << object;
 	}
@@ -71,7 +70,7 @@ struct PutInStream<false, true, Type, Stream>{
 template<typename Type>
 std::string toString(const Type& object) {
 	std::stringstream ss;
-	PutInStream<Loki::TypeTraits<Type>::isPointer,Loki::TypeTraits<Type>::isFundamental,  Type, std::stringstream>()(object, ss);
+	PutInStream<Loki::TypeTraits<Type>::isPointer, Loki::TypeTraits<Type>::isFundamental, Type, std::stringstream>()(object, ss);
 	return ss.str();
 }
 
@@ -82,7 +81,7 @@ std::string toString(const std::vector<Type>& v) {
 	for(auto obj = v.cbegin(); obj != v.cend();){
 		ss << toString(*obj);
 		++obj;
-		if(obj != v.cend()){
+		if (obj != v.cend()) {
 			ss <<", ";
 		}
 	}

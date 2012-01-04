@@ -83,8 +83,8 @@ template<class T>
 struct map_init_helper {
 	T& container_;
 
-	map_init_helper(T& container) :
-			container_(container) {
+	map_init_helper(T& container)
+			: container_(container) {
 	}
 
 	map_init_helper& operator()(const typename T::key_type& key, const char* value) {
@@ -135,15 +135,17 @@ public:
 	std::set<Function*>* funcs() {
 		return &_funcs;
 	}
-
 	std::vector<ArgType> types() {
 		std::vector<ArgType> result;
-		if (!_sorts.empty())
+		if (not _sorts.empty()) {
 			result.push_back(AT_SORT);
-		if (!_preds.empty())
+		}
+		if (not _preds.empty()) {
 			result.push_back(AT_PREDICATE);
-		if (!_funcs.empty())
+		}
+		if (not _funcs.empty()) {
 			result.push_back(AT_FUNCTION);
+		}
 		return result;
 	}
 };
@@ -169,9 +171,9 @@ private:
 
 public:
 	// Constructor
-	OverloadedObject() :
-			_namespace(NULL), _vocabulary(NULL), _theory(NULL), _structure(NULL), _options(NULL), _procedure(NULL), _formula(NULL), _query(NULL), _term(
-					NULL) {
+	OverloadedObject()
+			: _namespace(NULL), _vocabulary(NULL), _theory(NULL), _structure(NULL), _options(NULL), _procedure(NULL),
+				_formula(NULL), _query(NULL), _term(NULL) {
 	}
 
 	void insert(Namespace* n) {
@@ -296,101 +298,102 @@ struct InternalArgument {
 	} _value;
 
 	// Constructors
-	InternalArgument(): _type(AT_NIL) {
+	InternalArgument()
+			: _type(AT_NIL) {
 	}
-	InternalArgument(const InternalArgument& orig) :
-			_type(orig._type), _value(orig._value) {
+	InternalArgument(const InternalArgument& orig)
+			: _type(orig._type), _value(orig._value) {
 	}
-	InternalArgument(Vocabulary* v) :
-			_type(AT_VOCABULARY) {
+	InternalArgument(Vocabulary* v)
+			: _type(AT_VOCABULARY) {
 		_value._vocabulary = v;
 	}
-	InternalArgument(PredInter* p) :
-			_type(AT_PREDINTER) {
+	InternalArgument(PredInter* p)
+			: _type(AT_PREDINTER) {
 		_value._predinter = p;
 	}
-	InternalArgument(FuncInter* f) :
-			_type(AT_FUNCINTER) {
+	InternalArgument(FuncInter* f)
+			: _type(AT_FUNCINTER) {
 		_value._funcinter = f;
 	}
-	InternalArgument(AbstractStructure* s) :
-			_type(AT_STRUCTURE) {
+	InternalArgument(AbstractStructure* s)
+			: _type(AT_STRUCTURE) {
 		_value._structure = s;
 	}
-	InternalArgument(AbstractTheory* t) :
-			_type(AT_THEORY) {
+	InternalArgument(AbstractTheory* t)
+			: _type(AT_THEORY) {
 		_value._theory = t;
 	}
-	InternalArgument(Options* o) :
-			_type(AT_OPTIONS) {
+	InternalArgument(Options* o)
+			: _type(AT_OPTIONS) {
 		_value._options = o;
 	}
-	InternalArgument(Namespace* n) :
-			_type(AT_NAMESPACE) {
+	InternalArgument(Namespace* n)
+			: _type(AT_NAMESPACE) {
 		_value._namespace = n;
 	}
-	InternalArgument(int i) :
-			_type(AT_INT) {
+	InternalArgument(int i)
+			: _type(AT_INT) {
 		_value._int = i;
 	}
-	InternalArgument(double d) :
-			_type(AT_DOUBLE) {
+	InternalArgument(double d)
+			: _type(AT_DOUBLE) {
 		_value._double = d;
 	}
-	InternalArgument(std::string* s) :
-			_type(AT_STRING) {
+	InternalArgument(std::string* s)
+			: _type(AT_STRING) {
 		_value._string = s;
 	}
-	InternalArgument(std::vector<InternalArgument>* t) :
-			_type(AT_TABLE) {
+	InternalArgument(std::vector<InternalArgument>* t)
+			: _type(AT_TABLE) {
 		_value._table = t;
 	}
-	InternalArgument(std::set<Sort*>* s) :
-			_type(AT_SORT) {
+	InternalArgument(std::set<Sort*>* s)
+			: _type(AT_SORT) {
 		_value._sort = s;
 	}
-	InternalArgument(std::set<Predicate*>* p) :
-			_type(AT_PREDICATE) {
+	InternalArgument(std::set<Predicate*>* p)
+			: _type(AT_PREDICATE) {
 		_value._predicate = p;
 	}
-	InternalArgument(std::set<Function*>* f) :
-			_type(AT_FUNCTION) {
+	InternalArgument(std::set<Function*>* f)
+			: _type(AT_FUNCTION) {
 		_value._function = f;
 	}
-	InternalArgument(OverloadedSymbol* s) :
-			_type(AT_SYMBOL) {
+	InternalArgument(OverloadedSymbol* s)
+			: _type(AT_SYMBOL) {
 		_value._symbol = s;
 	}
-	InternalArgument(const PredTable* t) :
-			_type(AT_PREDTABLE) {
+	InternalArgument(const PredTable* t)
+			: _type(AT_PREDTABLE) {
 		_value._predtable = t;
 	}
-	InternalArgument(SortTable* t) :
-			_type(AT_DOMAIN) {
+	InternalArgument(SortTable* t)
+			: _type(AT_DOMAIN) {
 		_value._domain = t;
 	}
-	InternalArgument(const Compound* c) :
-			_type(AT_COMPOUND) {
+	InternalArgument(const Compound* c)
+			: _type(AT_COMPOUND) {
 		_value._compound = c;
 	}
-	InternalArgument(const DomainAtom* a) :
-			_type(AT_DOMAINATOM) {
+	InternalArgument(const DomainAtom* a)
+			: _type(AT_DOMAINATOM) {
 		_value._domainatom = a;
 	}
-	InternalArgument(OverloadedObject* o) :
-			_type(AT_OVERLOADED) {
+	InternalArgument(OverloadedObject* o)
+			: _type(AT_OVERLOADED) {
 		_value._overloaded = o;
 	}
-	InternalArgument(Formula* f) :
-			_type(AT_FORMULA) {
+	InternalArgument(Formula* f)
+			: _type(AT_FORMULA) {
 		_value._formula = f;
 	}
-	InternalArgument(Query* q) :
-			_type(AT_QUERY) {
+	InternalArgument(Query* q)
+			: _type(AT_QUERY) {
 		_value._query = q;
 	}
-	InternalArgument(Term* t) :
-			_type(AT_TERM) {
+	InternalArgument(Term* t)
+			: _type(AT_TERM) {
 		_value._term = t;
 	}
 	InternalArgument(const DomainElement* el) {
@@ -414,8 +417,8 @@ struct InternalArgument {
 			break;
 		}
 	}
-	InternalArgument(LuaTraceMonitor* v) :
-			_type(AT_TRACEMONITOR) {
+	InternalArgument(LuaTraceMonitor* v)
+			: _type(AT_TRACEMONITOR) {
 		_value._tracemonitor = v;
 	}
 
@@ -427,7 +430,7 @@ struct InternalArgument {
 		if (_type == AT_SYMBOL) {
 			return _value._symbol->sorts();
 		}
-		return 0;
+		return NULL;
 	}
 
 	template<typename ValueType>
@@ -440,7 +443,7 @@ struct InternalArgument {
 		if (_type == AT_OVERLOADED) {
 			return _value._overloaded->theory();
 		}
-		return 0;
+		return NULL;
 	}
 
 	AbstractStructure* structure() const {
@@ -450,7 +453,7 @@ struct InternalArgument {
 		if (_type == AT_OVERLOADED) {
 			return _value._overloaded->structure();
 		}
-		return 0;
+		return NULL;
 	}
 
 	Options* options() const {
@@ -460,7 +463,7 @@ struct InternalArgument {
 		if (_type == AT_OVERLOADED) {
 			return _value._overloaded->options();
 		}
-		return 0;
+		return NULL;
 	}
 
 	Namespace* space() const {
@@ -470,7 +473,7 @@ struct InternalArgument {
 		if (_type == AT_OVERLOADED) {
 			return _value._overloaded->space();
 		}
-		return 0;
+		return NULL;
 	}
 
 	Vocabulary* vocabulary() const {
@@ -480,7 +483,7 @@ struct InternalArgument {
 		if (_type == AT_OVERLOADED) {
 			return _value._overloaded->vocabulary();
 		}
-		return 0;
+		return NULL;
 	}
 };
 
@@ -513,8 +516,8 @@ protected:
 
 public:
 	// Constructors
-	UserProcedure(const std::string& name, const ParseInfo& pi, std::stringstream* des) :
-			_name(name), _pi(pi), _registryindex(""), _description(des ? des->str() : "(undocumented)") {
+	UserProcedure(const std::string& name, const ParseInfo& pi, std::stringstream* des)
+			: _name(name), _pi(pi), _registryindex(""), _description(des ? des->str() : "(undocumented)") {
 	}
 
 	void addarg(const std::string& name) {

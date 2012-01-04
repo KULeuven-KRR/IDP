@@ -329,7 +329,7 @@ const DomainElement* domElemPow(const DomainElement* d1, const DomainElement* d2
 
 Compound::Compound(Function* function, const ElementTuple& arguments) :
 		_function(function), _arguments(arguments) {
-	Assert(function != 0);
+	Assert(function != NULL);
 }
 
 /**
@@ -1526,7 +1526,7 @@ InternalPredTable* UnionInternalPredTable::add(const ElementTuple& tuple) {
 			temp->incrementRef();
 			_intables[0] = temp;
 		}
-		for (unsigned int n = 0; n < _outtables.size(); ++n) {
+		for (size_t n = 0; n < _outtables.size(); ++n) {
 			InternalPredTable* temp2 = _outtables[n]->remove(tuple);
 			if (temp2 != _outtables[n]) {
 				_outtables[n]->decrementRef();
@@ -1644,8 +1644,7 @@ std::vector<const DomElemContainer*> createVarSubstitutionFrom(const ElementTupl
 bool BDDInternalPredTable::contains(const ElementTuple& tuple, const Universe& univ) const {
 	BDDInternalPredTable* temporary = new BDDInternalPredTable(_bdd, _manager, _vars, _structure);
 	PredTable temptable(temporary, univ);
-	InstChecker* checker = GeneratorFactory::create(&temptable, vector<Pattern>(univ.tables().size(), Pattern::INPUT),
-			createVarSubstitutionFrom(tuple), univ);
+	InstChecker* checker = GeneratorFactory::create(&temptable, vector<Pattern>(univ.tables().size(), Pattern::INPUT), createVarSubstitutionFrom(tuple), univ);
 	bool result = checker->check();
 	delete (checker);
 	return result;
@@ -1655,8 +1654,7 @@ InternalPredTable* BDDInternalPredTable::add(const ElementTuple& tuple) {
 	UnionInternalPredTable* upt = new UnionInternalPredTable();
 	upt->addInTable(this);
 	InternalPredTable* temp = upt->add(tuple);
-	if (temp != upt)
-		delete (upt);
+	if (temp != upt) { delete (upt); }
 	return temp;
 }
 
@@ -1664,8 +1662,7 @@ InternalPredTable* BDDInternalPredTable::remove(const ElementTuple& tuple) {
 	UnionInternalPredTable* upt = new UnionInternalPredTable();
 	upt->addInTable(this);
 	InternalPredTable* temp = upt->remove(tuple);
-	if (temp != upt)
-		delete (upt);
+	if (temp != upt) { delete (upt); }
 	return temp;
 }
 
@@ -1687,10 +1684,11 @@ InternalTableIterator* BDDInternalPredTable::begin(const Universe& univ) const {
  *		tuple	- the given tuple
  */
 bool EnumeratedInternalPredTable::contains(const ElementTuple& tuple, const Universe&) const {
-	if (_table.empty())
+	if (_table.empty()) {
 		return false;
-	else
+	} else {
 		return _table.find(tuple) != _table.cend();
+	}
 }
 
 /**
@@ -3059,6 +3057,7 @@ PredTable::~PredTable() {
 }
 
 void PredTable::add(const ElementTuple& tuple) {
+	Assert(arity() == tuple.size());
 	if (_table->contains(tuple, _universe)) {
 		return;
 	}
@@ -3071,6 +3070,7 @@ void PredTable::add(const ElementTuple& tuple) {
 }
 
 void PredTable::remove(const ElementTuple& tuple) {
+	Assert(arity() == tuple.size());
 	if (not _table->contains(tuple, _universe)) {
 		return;
 	}
@@ -3596,7 +3596,7 @@ bool PredInter::approxTwoValued() const {
 }
 
 void PredInter::makeUnknown(const ElementTuple& tuple) {
-	if (typeid(*(_pf->internTable())) == typeid(InverseInternalPredTable)) {
+	if (sametypeid<InverseInternalPredTable>(*(_pf->internTable()))) {
 		_ct->internTable()->decrementRef();
 		InternalPredTable* old = _ct->internTable();
 		_ct->remove(tuple);
@@ -3615,7 +3615,7 @@ void PredInter::makeUnknown(const ElementTuple& tuple) {
 			internct->internTable(_pf->internTable());
 		}
 	}
-	if (typeid(*(_pt->internTable())) == typeid(InverseInternalPredTable)) {
+	if (sametypeid<InverseInternalPredTable>(*(_pt->internTable()))) {
 		_cf->internTable()->decrementRef();
 		InternalPredTable* old = _cf->internTable();
 		_cf->remove(tuple);
@@ -3637,7 +3637,7 @@ void PredInter::makeUnknown(const ElementTuple& tuple) {
 }
 
 void PredInter::makeTrue(const ElementTuple& tuple) {
-	if (typeid(*(_pf->internTable())) == typeid(InverseInternalPredTable)) {
+	if (sametypeid<InverseInternalPredTable>(*(_pf->internTable()))) {
 		_ct->internTable()->decrementRef();
 		InternalPredTable* old = _ct->internTable();
 		_ct->add(tuple);
@@ -3659,7 +3659,7 @@ void PredInter::makeTrue(const ElementTuple& tuple) {
 }
 
 void PredInter::makeFalse(const ElementTuple& tuple) {
-	if (typeid(*(_pt->internTable())) == typeid(InverseInternalPredTable)) {
+	if (sametypeid<InverseInternalPredTable>(*(_pt->internTable()))) {
 		_cf->internTable()->decrementRef();
 		InternalPredTable* old = _cf->internTable();
 		_cf->add(tuple);
@@ -4087,15 +4087,13 @@ void Structure::inter(Function* f, FuncInter* i) {
 }
 
 bool Structure::approxTwoValued() const {
-	for (auto funcInterIterator = _funcinter.cbegin(); funcInterIterator != _funcinter.cend();
-			++funcInterIterator) {
+	for (auto funcInterIterator = _funcinter.cbegin(); funcInterIterator != _funcinter.cend(); ++funcInterIterator) {
 		FuncInter* fi = (*funcInterIterator).second;
 		if (not fi->approxTwoValued()) {
 			return false;
 		}
 	}
-	for (auto predInterIterator = _predinter.cbegin(); predInterIterator != _predinter.cend();
-			++predInterIterator) {
+	for (auto predInterIterator = _predinter.cbegin(); predInterIterator != _predinter.cend(); ++predInterIterator) {
 		PredInter* pi = (*predInterIterator).second;
 		if (not pi->approxTwoValued()) {
 			return false;
@@ -4181,7 +4179,7 @@ void generateMorePreciseStructures(const PredTable* cf, const ElementTuple& doma
 }
 
 void Structure::makeTwoValued() {
-	if(approxTwoValued()){
+	if (approxTwoValued()) {
 		return;
 	}
 	for (auto i = _funcinter.begin(); i != _funcinter.end(); ++i) {

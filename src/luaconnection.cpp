@@ -65,6 +65,7 @@ const char* _typefield = "type"; //!< Field index containing the type of userdat
 const char* getTypeField() {
 	return _typefield;
 }
+
 int& argProcNumber() {
 	return ArgProcNumber;
 }
@@ -73,7 +74,7 @@ std::map<ArgType, const char*> argType2Name;
 bool init = false;
 
 const char* toCString(ArgType type) {
-	if (!init) {
+	if (not init) {
 		map_init(argType2Name)(AT_SORT, "type")(AT_PREDICATE, "predicate_symbol")(AT_FUNCTION, "function_symbol")(AT_SYMBOL, "symbol")(AT_VOCABULARY,
 				"vocabulary")(AT_COMPOUND, "compound")(AT_TUPLE, "tuple")(AT_DOMAIN, "domain")(AT_PREDTABLE, "predicate_table")(AT_PREDINTER,
 				"predicate_interpretation")(AT_FUNCINTER, "function_interpretation")(AT_STRUCTURE, "structure")(AT_TABLEITERATOR,
@@ -98,7 +99,7 @@ InternalArgument nilarg() {
 const DomainElement* convertToElement(int arg, lua_State* L) {
 	switch (lua_type(L, arg)) {
 	case LUA_TNIL:
-		return 0;
+		return NULL;
 	case LUA_TSTRING:
 		return createDomElem(StringPointer(lua_tostring(L,arg)));
 	case LUA_TNUMBER:
@@ -112,7 +113,7 @@ const DomainElement* convertToElement(int arg, lua_State* L) {
 		return type == AT_COMPOUND ? createDomElem(*(Compound**) lua_touserdata(L, arg)) : NULL;
 	}
 	default:
-		return 0;
+		return NULL;
 	}
 }
 
@@ -142,7 +143,7 @@ int InternalProcedure::operator()(lua_State* L) const {
 }
 
 void compile(UserProcedure* procedure, lua_State* state) {
-	if (!procedure->iscompiled()) {
+	if (not procedure->iscompiled()) {
 		// Compose function header, body, and return statement
 		stringstream ss;
 		ss << "local function " << procedure->name() << "(";
@@ -324,7 +325,7 @@ int convertToLua(lua_State* L, InternalArgument arg) {
 	case AT_TABLE: {
 		Assert(arg._value._table!=NULL);
 		lua_newtable(L);
-		for (unsigned int n = 0; n < arg._value._table->size(); ++n) {
+		for (size_t n = 0; n < arg._value._table->size(); ++n) {
 			lua_pushinteger(L, n + 1);
 			convertToLua(L, (*(arg._value._table))[n]);
 			lua_settable(L, -3);
@@ -342,7 +343,7 @@ int convertToLua(lua_State* L, InternalArgument arg) {
 	case AT_MULT: {
 		Assert(arg._value._table!=NULL);
 		int nrres = 0;
-		for (unsigned int n = 0; n < arg._value._table->size(); ++n) {
+		for (size_t n = 0; n < arg._value._table->size(); ++n) {
 			nrres += convertToLua(L, (*(arg._value._table))[n]);
 		}
 		return nrres;
@@ -514,10 +515,11 @@ vector<ArgType> getArgTypes(lua_State* L, unsigned int arg) {
 		result.push_back(AT_PROCEDURE);
 		break;
 	case LUA_TNUMBER: {
-		if (isInt(lua_tonumber(L, arg)))
+		if (isInt(lua_tonumber(L, arg))) {
 			result.push_back(AT_INT);
-		else
+		} else {
 			result.push_back(AT_DOUBLE);
+		}
 		break;
 	}
 	case LUA_TUSERDATA: {
@@ -570,7 +572,7 @@ void errorNoSuchProcedure(const vector<vector<ArgType> >& passedtypes, map<vecto
 		ss << "\t" << name << "(";
 		bool begin = true;
 		for (auto j = (*i).second->getArgumentTypes().cbegin(); j != (*i).second->getArgumentTypes().cend(); ++j) {
-			if (!begin) {
+			if (not begin) {
 				ss << ", ";
 			}
 			begin = false;
@@ -1534,6 +1536,7 @@ int predtableCall(lua_State* L) {
 				tuple = *(currarg._value._tuple);
 				break;
 			}
+			break;
 		default:
 			lua_pushstring(L, "Only numbers, strings, and compounds can be arguments of a predicate table");
 			lua_error(L);
@@ -2009,7 +2012,7 @@ InternalArgument* call(const vector<string>& proc, const vector<vector<string> >
 		Error::error(pi);
 		clog << lua_tostring(_state,-1) << "\n";
 		lua_pop(_state, 1);
-		return 0;
+		return NULL;
 	} else {
 		InternalArgument* ia = new InternalArgument(createArgument(-1, _state));
 		lua_pop(_state, 1);
@@ -2027,7 +2030,7 @@ const DomainElement* funccall(string* procedure, const ElementTuple& input) {
 		Error::error();
 		clog << string(lua_tostring(_state,-1)) << "\n";
 		lua_pop(_state, 1);
-		return 0;
+		return NULL;
 	} else {
 		const DomainElement* d = convertToElement(-1, _state);
 		lua_pop(_state, 1);
@@ -2045,7 +2048,7 @@ bool predcall(string* procedure, const ElementTuple& input) {
 		Error::error();
 		clog << string(lua_tostring(_state,-1)) << "\n";
 		lua_pop(_state, 1);
-		return 0;
+		return NULL;
 	} else {
 		bool b = lua_toboolean(_state, -1);
 		lua_pop(_state, 1);

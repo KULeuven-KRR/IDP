@@ -2321,7 +2321,7 @@ public:
 		return _functable;
 	}
 	bool approxTwoValued() const {
-		return _functable != 0;
+		return _functable != NULL;
 	}
 	bool isConsistent() const;
 
