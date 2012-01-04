@@ -17,14 +17,16 @@
 
 class DomainIteratorInference: public SortTableBase {
 public:
-	DomainIteratorInference(): SortTableBase("iterator", "Create an iterator for the given sorttable.") {
+	DomainIteratorInference()
+			: SortTableBase("iterator", "Create an iterator for the given sorttable.") {
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
 		auto st = get<0>(args);
-		auto it = new SortIterator(st->sortBegin());
-		InternalArgument ia; ia._type = AT_DOMAINITERATOR;
-		ia._value._sortiterator = it;
+		auto sit = new SortIterator(st->sortBegin());
+		InternalArgument ia;
+		ia._type = AT_DOMAINITERATOR;
+		ia._value._sortiterator = sit;
 		return ia;
 	}
 };
@@ -34,13 +36,15 @@ public:
  */
 class TableIteratorInference: public PredTableBase {
 public:
-	TableIteratorInference(): PredTableBase("iterator", "Create an iterator for the given predtable.") {
+	TableIteratorInference()
+			: PredTableBase("iterator", "Create an iterator for the given predtable.") {
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
 		auto pt = get<0>(args);
 		auto tit = new TableIterator(pt->begin());
-		InternalArgument ia; ia._type = AT_TABLEITERATOR;
+		InternalArgument ia;
+		ia._type = AT_TABLEITERATOR;
 		ia._value._tableiterator = tit;
 		return ia;
 	}
@@ -49,8 +53,9 @@ public:
 typedef TypedInference<LIST(TableIterator*, ElementTuple*)> TableDerefAndIncrementInferenceBase;
 class TableDerefAndIncrementInference: public TableDerefAndIncrementInferenceBase {
 public:
-	TableDerefAndIncrementInference() :
-		TableDerefAndIncrementInferenceBase("deref_and_increment", "Returns the current value and increments the tableiterator.") {
+	TableDerefAndIncrementInference()
+			: TableDerefAndIncrementInferenceBase("deref_and_increment",
+					"Returns the current value and increments the tableiterator.") {
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
@@ -68,19 +73,23 @@ public:
 	}
 };
 
-typedef TypedInference<LIST(SortIterator*, ElementTuple*)> DomainDerefAndIncrementInferenceBase;
-class DomainDerefAndIncrementInference: public DomainDerefAndIncrementInferenceBase {
+template<typename T>
+class DomainDerefAndIncrementInference: public Inference {
 public:
-	DomainDerefAndIncrementInference() :
-		DomainDerefAndIncrementInferenceBase("deref_and_increment", "Returns the current value and increments the sortiterator.") {
+	DomainDerefAndIncrementInference()
+			: Inference("deref_and_increment",
+					"Returns the current value and increments the sortiterator.") {
+		addType(Type2Value<SortIterator*>::get());
+		addType(Type2Value<T>::get());
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
-		auto it = get<0>(args);
+		auto arg = args[0];
+		Assert(arg._type == getArgType(0));
+		auto it = arg.get<SortIterator*>();
 		if (it->isAtEnd()) {
 			return nilarg();
 		}
-
 		auto element = **it;
 		it->operator++();
 		InternalArgument ia(element);

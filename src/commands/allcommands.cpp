@@ -57,7 +57,10 @@ const std::vector<Inference*>& getAllInferences() {
 		inferences.push_back(new DomainIteratorInference());
 		inferences.push_back(new TableIteratorInference());
 		inferences.push_back(new TableDerefAndIncrementInference());
-		inferences.push_back(new DomainDerefAndIncrementInference());
+		inferences.push_back(new DomainDerefAndIncrementInference<int>());
+		inferences.push_back(new DomainDerefAndIncrementInference<double>());
+		inferences.push_back(new DomainDerefAndIncrementInference<std::string*>());
+		inferences.push_back(new DomainDerefAndIncrementInference<const Compound*>());
 		inferences.push_back(new OptimalPropagateInference());
 		inferences.push_back(new GroundPropagateInference());
 		inferences.push_back(new PropagateInference());
