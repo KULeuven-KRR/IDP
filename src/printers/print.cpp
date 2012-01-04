@@ -47,6 +47,8 @@ Printer* Printer::create(Stream& stream, bool arithmetic) {
 	}
 }
 
+template Printer* Printer::create<ostream>(ostream&);
+template Printer* Printer::create<ostream>(ostream&, bool);
 template Printer* Printer::create<stringstream>(stringstream&);
 template Printer* Printer::create<stringstream>(stringstream&, bool);
 template Printer* Printer::create<InteractivePrintMonitor>(InteractivePrintMonitor&);

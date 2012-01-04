@@ -6,7 +6,7 @@ procedure main(){
 	stdoptions.nbmodelequivalent = true
 	stdoptions.groundwithbounds = false
 	stdoptions.groundverbosity=0
-	solution = mx::one(T, S, stdoptions)
+	solution = mx::one(T, S)
 	if solution == nil then
 		io.stderr:write("Found UNSAT, expected ")
 	else

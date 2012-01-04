@@ -165,6 +165,7 @@ namespace Warning {
 
 	/** Global warning message **/
 	void warning(const ParseInfo& p);
+	void warning(const std::string& message);
 
 	/** Ambiguous statements **/
 	void varcouldbeconst(const std::string&, const ParseInfo& thisplace);

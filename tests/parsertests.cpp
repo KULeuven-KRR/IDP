@@ -56,4 +56,19 @@ TEST(RestartTest, FailAndContinue){
 	ASSERT_EQ(Status::SUCCESS, test( { testfile2, testfilemx }));
 }
 
+TEST(MakeTrueTest, NoPerson){
+	string testfile(getTestDirectory() + "parser/expectException/makeTrueNoPerson");
+	ASSERT_EQ(Status::FAIL, test( { testfile}));
+}
+
+TEST(MakeTrueTest, NoString){
+	string testfile(getTestDirectory() + "parser/expectException/makeTrueNoString");
+	ASSERT_EQ(Status::FAIL, test( { testfile}));
+}
+
+TEST(MakeTrueTest, NoAge){
+	string testfile(getTestDirectory() + "parser/expectException/makeTrueNoAge");
+	ASSERT_EQ(Status::FAIL, test( { testfile}));
+}
+
 }

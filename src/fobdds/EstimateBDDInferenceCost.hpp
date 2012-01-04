@@ -12,8 +12,8 @@
 #define TABLECOSTESTIMATOR_HPP_
 
 #include <vector>
-#include <limits>
 #include <cmath>
+#include "utils/NumericLimits.hpp"
 
 #include "visitors/StructureVisitor.hpp"
 
@@ -26,7 +26,7 @@ private:
 	double _result;
 
 	double maxCost(){
-		return std::numeric_limits<double>::max();
+		return getMaxElem<double>();
 	}
 public:
 

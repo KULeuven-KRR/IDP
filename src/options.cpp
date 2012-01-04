@@ -9,10 +9,10 @@
  ****************************************************************/
 
 #include <sstream>
-#include <limits>
 #include "options.hpp"
 #include "error.hpp"
 #include <algorithm>
+#include "utils/NumericLimits.hpp"
 using namespace std;
 
 std::string str(Language choice) {
@@ -62,18 +62,18 @@ Options::Options() {
 	BoolPol::createOption(BoolType::GROUNDWITHBOUNDS, "groundwithbounds", boolvalues, false, _option2name, false);
 	BoolPol::createOption(BoolType::MODELCOUNTEQUIVALENCE, "nbmodelequivalent", boolvalues, false, _option2name); //zorgt dat de grounding het aantal modellen behoudt false => SAT
 
-	IntPol::createOption(IntType::SATVERBOSITY, "satverbosity", 0, numeric_limits<int>::max(), 0, _option2name);
-	IntPol::createOption(IntType::GROUNDVERBOSITY, "groundverbosity", 0, numeric_limits<int>::max(), 0, _option2name);
-	IntPol::createOption(IntType::PROPAGATEVERBOSITY, "propagateverbosity", 0, numeric_limits<int>::max(), 0, _option2name, false);
-	IntPol::createOption(IntType::NRMODELS, "nrmodels", 0, numeric_limits<int>::max(), 1, _option2name);
-	IntPol::createOption(IntType::NRPROPSTEPS, "nrpropsteps", 0, numeric_limits<int>::max(), 4, _option2name, false);
-	IntPol::createOption(IntType::LONGESTBRANCH, "longestbranch", 0, numeric_limits<int>::max(), 8, _option2name, false);
-	IntPol::createOption(IntType::SYMMETRY, "symmetry", 0, numeric_limits<int>::max(), 0, _option2name, false); //TODO: testing!
+	IntPol::createOption(IntType::SATVERBOSITY, "satverbosity", 0, getMaxElem<int>(), 0, _option2name);
+	IntPol::createOption(IntType::GROUNDVERBOSITY, "groundverbosity", 0, getMaxElem<int>(), 0, _option2name);
+	IntPol::createOption(IntType::PROPAGATEVERBOSITY, "propagateverbosity", 0, getMaxElem<int>(), 0, _option2name, false);
+	IntPol::createOption(IntType::NRMODELS, "nrmodels", 0, getMaxElem<int>(), 1, _option2name);
+	IntPol::createOption(IntType::NRPROPSTEPS, "nrpropsteps", 0, getMaxElem<int>(), 4, _option2name, false);
+	IntPol::createOption(IntType::LONGESTBRANCH, "longestbranch", 0, getMaxElem<int>(), 8, _option2name, false);
+	IntPol::createOption(IntType::SYMMETRY, "symmetry", 0, getMaxElem<int>(), 0, _option2name, false); //TODO: testing!
 
 	// NOTE: set this to infinity, so he always starts timing, even when the options have not been read in yet.
 	// Afterwards, setting them to 0 stops the timing
-	IntPol::createOption(IntType::TIMEOUT, "timeout", 0, numeric_limits<int>::max(), numeric_limits<int>::max(), _option2name);
-	IntPol::createOption(IntType::PROVERTIMEOUT, "provertimeout", 0, numeric_limits<int>::max(), numeric_limits<int>::max(), _option2name, false);
+	IntPol::createOption(IntType::TIMEOUT, "timeout", 0, getMaxElem<int>(), getMaxElem<int>(), _option2name);
+	IntPol::createOption(IntType::PROVERTIMEOUT, "provertimeout", 0, getMaxElem<int>(), getMaxElem<int>(), _option2name, false);
 
 	StringPol::createOption(StringType::LANGUAGE, "language", std::set<std::string> { /*str(Language::TXT),*/str(Language::IDP), /*str(Language::LATEX),*/
 	str(Language::ECNF), /*str(Language::ASP),*/str(Language::TPTP) }, str(Language::IDP), _option2name);

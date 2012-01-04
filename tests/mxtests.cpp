@@ -98,4 +98,11 @@ INSTANTIATE_TEST_CASE_P(LazyModelExpansion, LazyMXnbTest, ::testing::ValuesIn(ge
 #ifdef NDEBUG
 INSTANTIATE_TEST_CASE_P(ModelExpansionLong, SlowMXnbTest, ::testing::ValuesIn(generateListOfSlowMXsatFiles()));
 #endif
+
+TEST(MakeTrueTest, Correct) {
+	Status result = Status::FAIL;
+	ASSERT_NO_THROW( result = test( { getTestDirectory() + "mx/maketrue.idp" }););
+	ASSERT_EQ(result, Status::SUCCESS);
+}
+
 }

@@ -17,6 +17,7 @@
 
 /**
  * Implements makeTrue, makeFalse, and makeUnknown on a predicate interpretation and lua table
+ * An additional implementation because we currently (TODO) have no auto-cast mechanism to automatically cast the second argument to an elementtuple
  */
 typedef TypedInference<LIST(PredInter*, std::vector<InternalArgument>*)> SetTableValueInferenceBase;
 class SetTableValueInference: public SetTableValueInferenceBase {

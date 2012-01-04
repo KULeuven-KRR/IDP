@@ -1,0 +1,27 @@
+#include <mx>
+
+vocabulary V{
+	type number isa int
+	type person
+	age(person, number)	
+}
+
+theory T : V{
+	?1 person: ?age: age(person, age).
+	?1 person: ?1age: age(person, age).
+}
+
+structure S : V{
+	person = {Jos; Dirk}
+	number = {0..100}
+}
+
+procedure main(){
+	maketrue(S[V::age], {"Jos", 50})
+	if(#(mx::all(T, S))==1)
+	then
+		return 1
+	else
+		return 0
+	end
+}

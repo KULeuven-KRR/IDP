@@ -39,6 +39,7 @@ typedef std::vector<int> GroundClause;
 
 int getIDForUndefined();
 
+// NOTE: open and close theory have to be called externally, to guarantee the printer that it is closed correctly (and not reopened too soon)
 class Printer : public TheoryVisitor {
 	VISITORFRIENDS()
 private:
