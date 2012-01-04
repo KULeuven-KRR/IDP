@@ -15,22 +15,6 @@
 #include "commandinterface.hpp"
 #include "structure.hpp"
 
-class DomainIteratorInference: public SortTableBase {
-public:
-	DomainIteratorInference()
-			: SortTableBase("iterator", "Create an iterator for the given sorttable.") {
-	}
-
-	InternalArgument execute(const std::vector<InternalArgument>& args) const {
-		auto st = get<0>(args);
-		auto sit = new SortIterator(st->sortBegin());
-		InternalArgument ia;
-		ia._type = AT_DOMAINITERATOR;
-		ia._value._sortiterator = sit;
-		return ia;
-	}
-};
-
 /**
  * Returns an iterator for a given predicate table
  */
@@ -46,6 +30,22 @@ public:
 		InternalArgument ia;
 		ia._type = AT_TABLEITERATOR;
 		ia._value._tableiterator = tit;
+		return ia;
+	}
+};
+
+class DomainIteratorInference: public SortTableBase {
+public:
+	DomainIteratorInference()
+			: SortTableBase("iterator", "Create an iterator for the given sorttable.") {
+	}
+
+	InternalArgument execute(const std::vector<InternalArgument>& args) const {
+		auto st = get<0>(args);
+		auto sit = new SortIterator(st->sortBegin());
+		InternalArgument ia;
+		ia._type = AT_DOMAINITERATOR;
+		ia._value._sortiterator = sit;
 		return ia;
 	}
 };

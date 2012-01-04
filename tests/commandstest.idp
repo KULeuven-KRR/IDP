@@ -1,20 +1,21 @@
 #include <mx>
 
-namespace N{
-	namespace N2{
-		vocabulary V{
+namespace N {
+	namespace N2 {
+		vocabulary V {
 			p
 			q
 			r
 			f
 			type x
+			type person
 			P(x)
 		}
 		vocabulary Ve {
 			e
 		}
 		
-		vocabulary V2{
+		vocabulary V2 {
 			extern vocabulary V
 			g
 			extern Ve::e/0
@@ -23,28 +24,29 @@ namespace N{
 	
 	using namespace N2
 
-	theory T:V{
+	theory T: V {
 		{
 			q <- ~~~p.
 		}
 		~(p | q | r).
 	}
 	
-	structure S:V{
+	structure S: V {
 		p = true
 		r<cf> = true
 		x = {1..3}
 		P<ct> = {1;2}
+		person = {Dirk;Jos}
 	}
 }
 
-procedure main(){
+procedure main() {
 	stdoptions.language="idp"
 	clean(N::S)
 	T2 = clone(N::T)
 	S2 = clone(N::S)
 	print(S2)
-	setvocabulary(S2, N::N2::V2)
+	idpintern.setvocabulary(S2, N::N2::V2)
 	S3 = newstructure(N::N2::Ve, "new")
 	print(S3)
 	maketrue(S2[N::N2::V2::f], {})
@@ -64,11 +66,15 @@ procedure main(){
 	print(T2)
 	print(S2)
 	twovals = alltwovaluedextensions(S2)
-	for i,t in pairs(twovals)
-	do
+	for i,t in pairs(twovals) do
 		isconsistent(t)
 		print(t)
 	end
+	for e in elements(N::S[N::N2::V::person.type]) do print(e) end
+	for e in elements(N::S[N::N2::V::x.type]) do print(e) end
+	for t in tuples(N::S[N::N2::V::P].ct) do 
+		for i,e in pairs(t) do print(e) end
+	end 
 	options = newoptions()
 	setascurrentoptions(options)
 	options.language="idp"
@@ -84,5 +90,5 @@ procedure main(){
 	//entails
 	//range
 	//query
-	// propagations
+	//propagations
 }
