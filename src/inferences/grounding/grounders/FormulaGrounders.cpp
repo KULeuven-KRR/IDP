@@ -30,8 +30,8 @@ int verbosity() {
 
 //TODO: a lot of the "int" returns here should be "Lit": Issue 57199
 
-FormulaGrounder::FormulaGrounder(AbstractGroundTheory* grounding, const GroundingContext& ct) :
-		Grounder(grounding, ct), _origform(NULL) {
+FormulaGrounder::FormulaGrounder(AbstractGroundTheory* grounding, const GroundingContext& ct)
+		: Grounder(grounding, ct), _origform(NULL) {
 }
 
 GroundTranslator* FormulaGrounder::translator() const {
@@ -68,18 +68,19 @@ void FormulaGrounder::printorig() const {
 }
 
 AtomGrounder::AtomGrounder(AbstractGroundTheory* grounding, SIGN sign, PFSymbol* s, const vector<TermGrounder*>& sg,
-		const vector<const DomElemContainer*>& checkargs, InstChecker* pic, InstChecker* cic, PredInter* inter, const vector<SortTable*>& vst,
-		const GroundingContext& ct) :
-		FormulaGrounder(grounding, ct), _subtermgrounders(sg), _pchecker(pic), _cchecker(cic), _symbol(translator()->addSymbol(s)), _tables(vst), _sign(
-				sign), _checkargs(checkargs), _inter(inter) {
+		const vector<const DomElemContainer*>& checkargs, InstChecker* pic, InstChecker* cic, PredInter* inter,
+		const vector<SortTable*>& vst, const GroundingContext& ct)
+		: FormulaGrounder(grounding, ct), _subtermgrounders(sg), _pchecker(pic), _cchecker(cic),
+			_symbol(translator()->addSymbol(s)), _tables(vst), _sign(sign), _checkargs(checkargs), _inter(inter) {
 	gentype = ct.gentype;
 }
 
 Lit AtomGrounder::run() const {
 	if (verbosity() > 2) {
 		printorig();
-		if (_origform != NULL)
+		if (_origform != NULL) {
 			pushtab();
+		}
 	}
 
 	// Run subterm grounders
@@ -113,8 +114,9 @@ Lit AtomGrounder::run() const {
 				if (verbosity() > 2) {
 					clog << "Term value out of predicate type\n" << tabs();
 					clog << "Result is " << (isPos(_sign) ? "false" : "true") << "\n";
-					if (_origform != NULL)
+					if (_origform != NULL) {
 						poptab();
+					}
 					clog << tabs();
 				}
 
@@ -135,8 +137,9 @@ Lit AtomGrounder::run() const {
 		if (verbosity() > 2) {
 			clog << "Possible checker failed\n" << tabs();
 			clog << "Result is " << (gentype == GenType::CANMAKETRUE ? "false" : "true");
-			if (_origform != NULL)
+			if (_origform != NULL) {
 				poptab();
+			}
 			clog << "\n" << tabs();
 		}
 		return gentype == GenType::CANMAKETRUE ? _false : _true;
@@ -145,8 +148,9 @@ Lit AtomGrounder::run() const {
 		if (verbosity() > 2) {
 			clog << "Certain checker succeeded\n" << tabs();
 			clog << "Result is " << translator()->printLit(gentype == GenType::CANMAKETRUE ? _true : _false);
-			if (_origform != NULL)
+			if (_origform != NULL) {
 				poptab();
+			}
 			clog << "\n" << tabs();
 		}
 		return gentype == GenType::CANMAKETRUE ? _true : _false;
@@ -154,8 +158,9 @@ Lit AtomGrounder::run() const {
 	if (_inter->isTrue(args)) {
 		if (verbosity() > 2) {
 			clog << "Result is " << (isPos(_sign) ? "true" : "false");
-			if (_origform != NULL)
+			if (_origform != NULL) {
 				poptab();
+			}
 			clog << "\n" << tabs();
 		}
 		return isPos(_sign) ? _true : _false;
@@ -163,8 +168,9 @@ Lit AtomGrounder::run() const {
 	if (_inter->isFalse(args)) {
 		if (verbosity() > 2) {
 			clog << "Result is " << (isPos(_sign) ? "false" : "true");
-			if (_origform != NULL)
+			if (_origform != NULL) {
 				poptab();
+			}
 			clog << "\n" << tabs();
 		}
 		return isPos(_sign) ? _false : _true;
@@ -177,8 +183,9 @@ Lit AtomGrounder::run() const {
 	}
 	if (verbosity() > 2) {
 		clog << "Result is " << translator()->printLit(lit);
-		if (_origform != NULL)
+		if (_origform != NULL) {
 			poptab();
+		}
 		clog << "\n" << tabs();
 	}
 	return lit;
@@ -365,19 +372,19 @@ Lit AggGrounder::finishCard(double truevalue, double boundvalue, int setnr) cons
 Lit AggGrounder::splitproducts(double boundvalue, double newboundvalue, double minpossvalue, double maxpossvalue, int setnr) const {
 	Assert(_type==AggFunction::PROD);
 	TsSet& tsset = translator()->groundset(setnr);
-	std::vector<int> zerolits;
+	std::vector<Lit> zerolits;
 	std::vector<double> zeroweights;
 
 	//All literals (made positive) (including the negative)
 	//IMPORTANT: This is NOT only the positives!!!!!!!!!!!
-	std::vector<int> poslits;
+	std::vector<Lit> poslits;
 	std::vector<double> posweights;
 
 	//Only the negatives! with weights 1 (for cardinalities)
-	std::vector<int> neglits;
+	std::vector<Lit> neglits;
 	std::vector<double> negweights;
 
-	for (auto i = 0; i < tsset.literals().size(); i++) {
+	for (size_t i = 0; i < tsset.literals().size(); ++i) {
 		if (tsset.weight(i) < 0) {
 			poslits.push_back(tsset.literal(i));
 			posweights.push_back(-tsset.weight(i));
@@ -398,10 +405,11 @@ Lit AggGrounder::splitproducts(double boundvalue, double newboundvalue, double m
 
 	auto tp = context()._tseitin;
 	if (isNeg(_sign)) {
-		if (tp == TsType::IMPL)
+		if (tp == TsType::IMPL) {
 			tp = TsType::RIMPL;
-		else if (tp == TsType::RIMPL)
+		} else if (tp == TsType::RIMPL) {
 			tp = TsType::IMPL;
+		}
 	}
 	Lit tseitin;
 	if (newboundvalue == 0) {
@@ -411,16 +419,17 @@ Lit AggGrounder::splitproducts(double boundvalue, double newboundvalue, double m
 		Lit prodright = translator()->translate(abs(newboundvalue), _comp, AggFunction::PROD, possetnumber, tp);
 		std::vector<Lit> possiblecards;
 		if (newboundvalue > 0) {
-			int nonegatives = - translator()->translate(neglits,false,tp); //solver cannot handle empty sets.
+			Lit nonegatives = -translator()->translate(neglits, false, tp); //solver cannot handle empty sets.
 			possiblecards.push_back(nonegatives);
-			for (int i = 2; i <= neglits.size(); i = i + 2) {
+			for (size_t i = 2; i <= neglits.size(); i = i + 2) {
 				Lit cardisi = translator()->translate(i, CompType::EQ, AggFunction::CARD, negsetnumber, tp);
 				possiblecards.push_back(cardisi);
 			}
 		} else {
-			for (int i = 1; i <= neglits.size(); i = i + 2) {
+			for (size_t i = 1; i <= neglits.size(); i = i + 2) {
 				Lit cardisi = translator()->translate(i, CompType::EQ, AggFunction::CARD, negsetnumber, tp);
-				possiblecards.push_back(cardisi);			}
+				possiblecards.push_back(cardisi);
+			}
 		}
 		Lit cardright = translator()->translate(possiblecards, false, tp);
 		tseitin = translator()->translate( { nozeros, prodright, cardright }, true, tp);
@@ -750,8 +759,9 @@ FormStat ClauseGrounder::runSubGrounder(Grounder* subgrounder, bool conjFromRoot
 void BoolGrounder::run(ConjOrDisj& formula, bool negate) const {
 	if (verbosity() > 2) {
 		printorig();
-		if (_origform != NULL)
+		if (_origform != NULL) {
 			pushtab();
+		}
 	}
 	formula.type = conn_;
 	for (auto g = _subgrounders.cbegin(); g < _subgrounders.cend(); g++) {
@@ -764,16 +774,18 @@ void BoolGrounder::run(ConjOrDisj& formula, bool negate) const {
 		}
 	}
 	if (verbosity() > 2) {
-		if (_origform != NULL)
+		if (_origform != NULL) {
 			poptab();
+		}
 	}
 }
 
 void QuantGrounder::run(ConjOrDisj& formula, bool negated) const {
 	if (verbosity() > 2) {
 		printorig();
-		if (_origform != NULL)
+		if (_origform != NULL) {
 			pushtab();
+		}
 	}
 
 	formula.type = conn_;
@@ -783,22 +795,25 @@ void QuantGrounder::run(ConjOrDisj& formula, bool negated) const {
 		if (_checker->check()) {
 			formula.literals = litlist { context().gentype == GenType::CANMAKETRUE ? _false : _true };
 			if (verbosity() > 2) {
-				if (_origform != NULL)
+				if (_origform != NULL) {
 					poptab();
+				}
 			}
 			return;
 		}
 
 		if (runSubGrounder(_subgrounder, context()._conjunctivePathFromRoot, formula, negated) == FormStat::DECIDED) {
 			if (verbosity() > 2) {
-				if (_origform != NULL)
+				if (_origform != NULL) {
 					poptab();
+				}
 			}
 			return;
 		}
 	}
-	if (_origform != NULL)
+	if (_origform != NULL) {
 		poptab();
+	}
 }
 
 Lit EquivGrounder::getLitEquivWith(const ConjOrDisj& form) const {
@@ -819,8 +834,9 @@ void EquivGrounder::run(ConjOrDisj& formula, bool negated) const {
 	Assert(not negated);
 	if (verbosity() > 2) {
 		printorig();
-		if (_origform != NULL)
+		if (_origform != NULL) {
 			pushtab();
+		}
 
 		clog << "Current formula: " << (negated ? "~" : "");
 		_leftgrounder->printorig();
@@ -867,7 +883,8 @@ void EquivGrounder::run(ConjOrDisj& formula, bool negated) const {
 		formula.type = Conn::CONJ;
 	}
 	if (verbosity() > 2) {
-		if (_origform != NULL)
+		if (_origform != NULL) {
 			poptab();
+		}
 	}
 }

@@ -50,13 +50,15 @@ template<class EnumType, class ConcreteType>
 class TypedOption {
 private:
 	EnumType type;
-	bool _visible;
 	const std::string name;
+	bool _visible;
 	ConcreteType chosenvalue_;
 
 public:
-	TypedOption(EnumType type, const std::string& name, bool visible): _visible(visible), type(type), name(name){}
-	~TypedOption(){}
+	TypedOption(EnumType type, const std::string& name, bool visible)
+			: type(type), name(name), _visible(visible) {
+	}
+	~TypedOption() {}
 
 	const std::string& getName() const { return name; }
 	bool shouldPrint() const { return _visible; }
@@ -67,7 +69,7 @@ public:
 	virtual std::string printOption() const = 0;
 
 	const ConcreteType&	getValue() const { return chosenvalue_; }
-	void setValue(const ConcreteType& chosenvalue){
+	void setValue(const ConcreteType& chosenvalue) {
 		Assert(isAllowedValue(chosenvalue));
 		chosenvalue_ = chosenvalue;
 	}

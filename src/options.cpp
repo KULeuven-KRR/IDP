@@ -31,6 +31,8 @@ std::string str(Language choice) {
 		//	return "asp";
 		//case Language::LATEX:
 		//	return "latex";
+	default:
+		return "unknown";
 	}
 }
 
@@ -42,6 +44,8 @@ std::string str(Format choice) {
 		return "threevalued";
 	case Format::ALL:
 		return "all";
+	default:
+		return "unknown";
 	}
 }
 
