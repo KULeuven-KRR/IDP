@@ -36,10 +36,8 @@ vector<string> generateListOfSlowMXsatFiles() {
 
 class MXnbTest: public ::testing::TestWithParam<string> {
 };
-
 class MXsatTest: public ::testing::TestWithParam<string> {
 };
-
 class LazyMXnbTest: public ::testing::TestWithParam<string> {
 };
 class SlowMXnbTest: public ::testing::TestWithParam<string> {
@@ -67,6 +65,14 @@ TEST_P(MXnbTest, DoesMX) {
 
 TEST_P(MXsatTest, DoesMX) {
 	string testfile(getTestDirectory() + "mxsattest.idp");
+	cerr << "Testing " << GetParam() << "\n";
+	Status result = Status::FAIL;
+	ASSERT_NO_THROW( result = test( { GetParam(), testfile }););
+	ASSERT_EQ(result, Status::SUCCESS);
+}
+
+TEST_P(MXsatTest, DoesMXWithSymmetryBreaking) {
+	string testfile(getTestDirectory() + "mxsattestwithsymmetrybreaking.idp");
 	cerr << "Testing " << GetParam() << "\n";
 	Status result = Status::FAIL;
 	ASSERT_NO_THROW( result = test( { GetParam(), testfile }););

@@ -285,7 +285,7 @@ map<const DomainElement*, pair<int, int> > OccurrencesCounter::count(PFSymbol* r
  */
 pair<int, int> OccurrencesCounter::getOccurrences(const DomainElement* element, PFSymbol* relation, Sort* sort) {
 	Assert(!relation->argumentNrs(sort).empty());
-	auto occurrences_it = occurrences_.find(pair<const PFSymbol*, const Sort*>(relation, sort));
+	auto occurrences_it = occurrences_.find(pair<const PFSymbol*, const Sort*>{relation, sort});
 	if (occurrences_it != occurrences_.cend()) {
 		auto result_it = occurrences_it->second.find(element);
 		if (result_it != occurrences_it->second.cend()) {
@@ -307,8 +307,7 @@ pair<int, int> OccurrencesCounter::getOccurrences(const DomainElement* element, 
 /**
  *	Requests the occurrences of some domain elements of certain sorts for certain PFSymbols for both ct and cf tables.
  */
-map<const DomainElement*, vector<int> > OccurrencesCounter::getOccurrences(const set<const DomainElement*>& elements, const set<PFSymbol*>& relations,
-		const set<Sort*>& sorts) {
+map<const DomainElement*, vector<int> > OccurrencesCounter::getOccurrences(const set<const DomainElement*>& elements, const set<PFSymbol*>& relations, const set<Sort*>& sorts) {
 	map<const DomainElement*, vector<int> > result;
 	for (auto elements_it = elements.cbegin(); elements_it != elements.cend(); ++elements_it) {
 		vector<int> values;
@@ -329,12 +328,12 @@ map<const DomainElement*, vector<int> > OccurrencesCounter::getOccurrences(const
 }
 
 ostream& OccurrencesCounter::put(ostream& output) const{
-	output << "COUNTER:" << endl;
-	output << "structure: " << getStructure()->name() << endl;
+	output << "COUNTER:\n";
+	output << "structure: " << getStructure()->name() << "\n";
 	for (auto occurrences_it = occurrences_.cbegin(); occurrences_it != occurrences_.cend(); ++occurrences_it) {
-		output << toString(occurrences_it->first.first) << "-" << toString(occurrences_it->first.second) << endl;
+		output << toString(occurrences_it->first.first) << "-" << toString(occurrences_it->first.second) << "\n";
 		for (auto element_it = occurrences_it->second.cbegin(); element_it != occurrences_it->second.cend(); ++element_it) {
-			output << "   " << toString(element_it->first) << ": " << element_it->second.first << "," << element_it->second.second << endl;
+			output << "   " << toString(element_it->first) << ": " << element_it->second.first << "," << element_it->second.second << "\n";
 		}
 	}
 	return output;
@@ -365,27 +364,27 @@ const AbstractStructure* IVSet::getStructure() const {
  * 	Since an IVSet is immutable, it is sufficient to check its invariants in the constructor to enforce those invariants.
  * 	The second invariant however, is not checked, and thus not enforced :(
  */
-IVSet::IVSet(const AbstractStructure* s, const set<const DomainElement*> elements, const set<Sort*> sorts, const set<PFSymbol*> relations) :
-		structure_(s), elements_(elements), sorts_(sorts), relations_(relations) {
+IVSet::IVSet(const AbstractStructure* s, const set<const DomainElement*> elements, const set<Sort*> sorts, const set<PFSymbol*> relations)
+		: structure_(s), elements_(elements), sorts_(sorts), relations_(relations) {
 	Assert(elements_.size()>1);
 }
 
 ostream& IVSet::put(ostream& output) const{
-	output << "structure: " << getStructure()->name() << endl;
+	output << "structure: " << getStructure()->name() << "\n";
 		for (auto sorts_it = getSorts().cbegin(); sorts_it != getSorts().cend(); ++sorts_it) {
 			output << toString(*sorts_it) << " | ";
 		}
-		output << endl;
+		output << "\n";
 		for (auto relations_it = getRelations().cbegin(); relations_it != getRelations().cend(); ++relations_it) {
 			output << toString(*relations_it) << " | ";
 		}
-		output << endl;
+		output << "\n";
 		output << getElements().size() << ": ";
 		for (auto elements_it = getElements().cbegin(); elements_it != getElements().cend(); ++elements_it) {
 			output << toString(*elements_it) << " | ";
 		}
-		output << endl;
-		output << "Enkelvoudig? " << isEnkelvoudig() << endl;
+		output << "\n";
+		output << "Enkelvoudig? " << isEnkelvoudig() << "\n";
 		return output;
 }
 
@@ -894,9 +893,13 @@ set<const IVSet*> initializeIVSets(const AbstractStructure* s, const AbstractThe
 			forbiddenSorts.insert(*sort_it2);
 		}
 	}
-	cout << "forbiddenSorts:" << endl;
-	for (auto it = forbiddenSorts.cbegin(); it != forbiddenSorts.cend(); ++it) {
-		cout << toString(*it) << endl;
+
+	if (getOption(IntType::GROUNDVERBOSITY) > 0) {
+		clog << "forbiddenSorts: ";
+		for (auto it = forbiddenSorts.cbegin(); it != forbiddenSorts.cend(); ++it) {
+			clog << toString(*it) << " ";
+		}
+		clog << "\n";
 	}
 
 	set<Sort*> allowedSorts;
@@ -908,9 +911,12 @@ set<const IVSet*> initializeIVSets(const AbstractStructure* s, const AbstractThe
 		}
 	}
 
-	cout << "allowedSorts:" << endl;
-	for (auto it = allowedSorts.cbegin(); it != allowedSorts.cend(); ++it) {
-		cout << toString(*it) << endl;
+	if (getOption(IntType::GROUNDVERBOSITY) > 0) {
+		clog << "allowedSorts: ";
+		for (auto it = allowedSorts.cbegin(); it != allowedSorts.cend(); ++it) {
+			clog << toString(*it) << " ";
+		}
+		clog << "\n";
 	}
 
 	map<Sort*, set<const DomainElement*> > elementsForSorts = findElementsForSorts(s, allowedSorts, tsa.getForbiddenElements());
@@ -1004,21 +1010,27 @@ void splitByBinarySymmetries(set<const IVSet*>& potentials) {
 vector<const IVSet*> findIVSets(const AbstractTheory* t, const AbstractStructure* s) {
 	Assert(t->vocabulary()==s->vocabulary());
 
-	cout << "initialize ivsets..." << endl;
-
+	if (getOption(IntType::GROUNDVERBOSITY) > 0) {
+		clog << "initialize ivsets...\n";
+	}
 	set<const IVSet*> potentials = initializeIVSets(s, t);
 
-	cout << "extract dont cares..." << endl;
-
+	if (getOption(IntType::GROUNDVERBOSITY) > 0) {
+		clog << "extract dont cares...\n";
+	}
 	vector<const IVSet*> result = extractDontCares(potentials);
-	for (auto result_it = result.cbegin(); result_it != result.cend(); ++result_it) {
-		cout << "##########" << endl << toString(*result_it) << endl;
+	if (getOption(IntType::GROUNDVERBOSITY) > 0) {
+		for (auto result_it = result.cbegin(); result_it != result.cend(); ++result_it) {
+			clog << "##########\n" << toString(*result_it) << "\n";
+		}
 	}
 
 	splitByOccurrences(potentials);
 	splitByBinarySymmetries(potentials);
-	for (auto result_it = potentials.cbegin(); result_it != potentials.cend(); ++result_it) {
-		cout << "@@@@@@@@@@" << endl << toString(*result_it) << endl;
+	if (getOption(IntType::GROUNDVERBOSITY) > 0) {
+		for (auto result_it = potentials.cbegin(); result_it != potentials.cend(); ++result_it) {
+			clog << "@@@@@@@@@@\n" << toString(*result_it) << "\n";
+		}
 	}
 	result.insert(result.end(), potentials.cbegin(), potentials.cend());
 	return result;

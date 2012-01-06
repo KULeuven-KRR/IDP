@@ -7,6 +7,7 @@ procedure main() {
 	stdoptions.groundwithbounds = false
 	stdoptions.groundverbosity = 0
 	stdoptions.satverbosity = 0
+	stdoptions.symmetry = 1
 	
 	solution = mx::one(T,S)
 	

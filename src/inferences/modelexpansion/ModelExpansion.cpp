@@ -76,7 +76,7 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 		if (getOption(IntType::GROUNDVERBOSITY) >= 1) {
 			clog << "Symmetry breaking\n";
 		}
-		auto ivsets = findIVSets(clonetheory, structure);
+		auto ivsets = findIVSets(clonetheory, newstructure);
 		if (opts->getValue(IntType::SYMMETRY) == 1) {
 			addSymBreakingPredicates(grounding, ivsets);
 		} else if (opts->getValue(IntType::SYMMETRY) == 2) {
