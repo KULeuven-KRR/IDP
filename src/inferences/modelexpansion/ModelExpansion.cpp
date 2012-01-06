@@ -44,13 +44,13 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 	// FIXME currently skipping if working lazily!
 	auto clonetheory = theory->clone(); //We only clone if needed for calculatedefinitions (which changes the theory)
 	auto newstructure = structure;
+
 	if (not opts->getValue(BoolType::GROUNDLAZILY) && sametypeid<Theory>(*clonetheory)) {
 		newstructure = CalculateDefinitions::doCalculateDefinitions(dynamic_cast<Theory*>(clonetheory), structure);
 		if (not newstructure->isConsistent()) {
 			return std::vector<AbstractStructure*> { };
 		}
 	}
-
 
 	// Create solver and grounder
 	SATSolver* solver = InferenceSolverConnection::createsolver();

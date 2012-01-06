@@ -8,9 +8,9 @@ namespace mx {
 		if (not Opts) then Opts = stdoptions end
 		local oldnrmodels = Opts.nrmodels
 		Opts.nrmodels = 1
-		local solutions = modelexpand(T,S,Opts, nil)
+		local solutions, trace = modelexpand(T,S)
 		Opts.nrmodels = oldnrmodels
-		return solutions[1]
+		return solutions[1], trace
 	}
 
 	/**
@@ -21,15 +21,15 @@ namespace mx {
 		local oldnrmodels = Opts.nrmodels
 		Opts.nrmodels = 0
 		Opts.nbmodelequivalent = true
-		local solutions = modelexpand(T,S,Opts, nil)
+		local solutions, trace = modelexpand(T,S)
 		Opts.nrmodels = oldnrmodels
-		return solutions
+		return solutions, trace
 	}
 	
 	/**
 	 * Prints a given list of models or unsatisfiable if the list is empty
 	 */
-	procedure printmodels(sols){
+	procedure printmodels(sols) {
 		if #sols == 0 then
 			print("Unsatisfiable")
 		end

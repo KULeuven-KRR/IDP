@@ -127,18 +127,8 @@ int InternalProcedure::operator()(lua_State* L) const {
 	if (inference_->needPrintMonitor()) {
 		inference_->addPrintMonitor(new LuaInteractivePrintMonitor(L));
 	}
-	LuaTraceMonitor* tracer = NULL;
-	if (getOption(BoolType::TRACE)) {
-		tracer = new LuaTraceMonitor(L);
-		assert(args.back()._type==AT_NIL);
-		// FIXME this is quite hacky!
-		args[args.size() - 1] = InternalArgument(tracer);
-	}
 	InternalArgument result = inference_->execute(args);
 	inference_->clean();
-	if (tracer != NULL) {
-		delete (tracer);
-	}
 	return LuaConnection::convertToLua(L, result);
 }
 

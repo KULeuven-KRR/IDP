@@ -51,6 +51,7 @@ public:
 			trace._value._string = tracer->index();
 			randt._value._table->push_back(trace);
 			result = randt;
+			delete(tracer);
 		}
 
 		return result;
