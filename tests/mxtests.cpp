@@ -55,6 +55,14 @@ TEST_P(MXnbTest, DoesMX) {
 	ASSERT_EQ(result, Status::SUCCESS);
 }
 
+TEST_P(MXnbTest, DoesMXWithSymmetryBreaking) {
+	string testfile(getTestDirectory() + "mxnbofmodelstestwithsymmetrybreaking.idp");
+	cerr << "Testing " << GetParam() << "\n";
+	Status result = Status::FAIL;
+	ASSERT_NO_THROW( result = test( { GetParam(), testfile }););
+	ASSERT_EQ(result, Status::SUCCESS);
+}
+
 /*TEST_P(MXnbTest, DoesMXWithBounds) {
 	string testfile(string(TESTDIR) + "mxnbofmodelstestwithbounds.idp");
 	cerr << "Testing " << string(TESTDIR) + GetParam() << "\n";
