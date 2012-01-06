@@ -49,11 +49,13 @@ INSTANTIATE_TEST_CASE_P(Parsing, ValidParserTest, ::testing::ValuesIn(generateLi
 INSTANTIATE_TEST_CASE_P(Parsing, InvalidParserTest, ::testing::ValuesIn(generateListOfInvalidParseFiles()));
 
 TEST(RestartTest, FailAndContinue){
-	string testfile1(getTestDirectory() + "parser/parseerror.idp");
-	string testfile2(getTestDirectory() + "mx/simplemx/atom.idp");
+	string testfile1(getTestDirectory() + "parser/invalidinput/parseerror.idp");
+	string testfile2(getTestDirectory() + "nonexistingfile.idp");
+	string testfile3(getTestDirectory() + "mx/simplemx/atom.idp");
 	string testfilemx(getTestDirectory() + "mxnbofmodelstest.idp");
 	ASSERT_EQ(Status::FAIL, test( { testfile1, testfilemx }));
-	ASSERT_EQ(Status::SUCCESS, test( { testfile2, testfilemx }));
+	ASSERT_EQ(Status::FAIL, test( { testfile2, testfilemx }));
+	ASSERT_EQ(Status::SUCCESS, test( { testfile3, testfilemx }));
 }
 
 TEST(MakeTrueTest, NoPerson){
