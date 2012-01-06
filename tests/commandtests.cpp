@@ -14,6 +14,8 @@
 #include "common.hpp"
 #include "structure.hpp"
 
+using namespace std;
+
 namespace Tests {
 
 TEST(IteratorInferenceTest, IntDomain) {
@@ -72,7 +74,7 @@ TEST(IteratorInferenceTest, StringDomain) {
 	ASSERT_TRUE(itRes._type == AT_DOMAINITERATOR);
 	ASSERT_TRUE(sametypeid<SortIterator>(*(itRes._value._sortiterator)));
 
-	auto daiInf = DomainDerefAndIncrementInference<double>();
+	auto daiInf = DomainDerefAndIncrementInference<std::string*>();
 	auto daiRes1 = daiInf.execute({ itRes, InternalArgument(0) });
 
 	ASSERT_TRUE(daiRes1._type == AT_STRING);
