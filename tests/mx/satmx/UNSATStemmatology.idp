@@ -1,0 +1,48 @@
+procedure getExpectedAModel() {
+	return false
+}
+
+vocabulary V {
+	type Vertex 
+	G(Vertex,Vertex)
+	Eq(Vertex,Vertex)
+	
+	TEq(Vertex,Vertex)
+	Group(Vertex)
+	EQ(Vertex,Vertex)
+	TG(Vertex,Vertex)
+	Con(Vertex,Vertex)
+}
+
+theory T: V {
+	// EQ is symmetric, transitive closure of Eq
+	! x y: Eq(x,y) => EQ(x,y). 
+	! x y: EQ(x,y) => EQ(y,x).             //symmetrisch
+	! x y z: EQ(x,z) & EQ(z,y) => EQ(x,y). //transitief
+	
+	// TEq is symmetric, transitive closure of Eq
+	{ !x y: TEq(x,y) <- Eq(x,y).
+	  !x y: TEq(x,y) <- TEq(y,x).                  //symmetrisch
+	  !x y: TEq(x,y) <- ?z: TEq(x,z) & TEq(z,y). } //transitief
+	
+	{ !x : Group(x) <- ? y: TEq(x,y). }
+	
+	! x y: Group(x) & Group(y) & ~TEq(x,y) => ~EQ(x,y). 
+	
+	// TG is transitive closure of G
+	{ !x  : TG(x,x) <- EQ(x,x).
+	  !x y: TG(x,y) <- ?z: EQ(x,z) & G(x,z) & TG(z,y). }
+	
+	// Connection between elements of a grouping
+	{ !x y: Con(x,y) <- TG(x,y) | TG(y,x).
+	  !x y: Con(x,y) <- ?z: TG(z,x) & TG(z,y). } //common ancestor z
+	
+	// Main constraint: There needs to be a connection between different elements of a grouping
+	! x y: EQ(x,y) => Con(x,y).
+}
+
+structure S: V {
+	Vertex = { A; B; C; D; F; J; L; M; S; T2; U; V; omega }
+	Eq = { F,B; F,D; F,F; F,J; F,M; F,U; L,L; S,A; S,C; S,S; S,V }
+	G = { A,C; A,J; A,U; B,L; C,F; C,M; C,S; S,D; T2,A; U,F; U,V; U,omega; omega,B }
+}

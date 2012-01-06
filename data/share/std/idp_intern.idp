@@ -22,8 +22,8 @@ procedure help(namespace) {
 
 /**
  * Returns a procedure, iterator, and a tuple such that 
- *    for t in tuples(table) do ... end
- * iterates over all tuples in the given predicate table */
+ * for t in tuples(table) do ... end
+ * iterates over all tuples in the given predicate table. */
 procedure tuples(table) {
 	if type(table) == "predicate_table" then
 		return deref_and_increment, iterator(table), createdummytuple()
@@ -34,8 +34,8 @@ procedure tuples(table) {
 
 /**
  * Returns a procedure, iterator, and 0 such that
- *    for e in elements(d) do ... end
- * iterates over all elements in the given domain d */
+ * for e in elements(d) do ... end
+ * iterates over all elements in the given domain d. */
 procedure elements(d) {
 	if type(d) == "domain" then
 		return deref_and_increment, iterator(d), 0
