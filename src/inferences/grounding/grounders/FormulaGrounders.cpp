@@ -192,6 +192,7 @@ Lit AtomGrounder::run() const {
 }
 
 void AtomGrounder::run(ConjOrDisj& formula) const {
+	formula.setType(Conn::CONJ);
 	formula.literals.push_back(run());
 }
 
@@ -254,6 +255,7 @@ Lit ComparisonGrounder::run() const {
 }
 
 void ComparisonGrounder::run(ConjOrDisj& formula) const {
+	formula.setType(Conn::CONJ);
 	formula.literals.push_back(run()); // TODO can do better?
 }
 
@@ -399,7 +401,6 @@ Lit AggGrounder::splitproducts(double boundvalue, double newboundvalue, double m
 		}
 	}
 
-	int zerosetnumber = translator()->translateSet(zerolits, zeroweights, { });
 	int possetnumber = translator()->translateSet(poslits, posweights, tsset.trueweights());
 	int negsetnumber = translator()->translateSet(neglits, negweights, { });
 
@@ -635,6 +636,7 @@ Lit AggGrounder::run() const {
 }
 
 void AggGrounder::run(ConjOrDisj& formula) const {
+	formula.setType(Conn::CONJ);
 	formula.literals.push_back(run()); // TODO can do better?
 }
 
@@ -682,7 +684,7 @@ Lit ClauseGrounder::createTseitin(const ConjOrDisj& formula) const {
 	}
 
 	Lit tseitin;
-	bool asConjunction = formula.type == Conn::CONJ;
+	bool asConjunction = formula.getType() == Conn::CONJ;
 	if (negativeDefinedContext()) {
 		asConjunction = not asConjunction;
 	}
@@ -707,19 +709,19 @@ void ClauseGrounder::run(ConjOrDisj& formula) const {
 }
 
 FormStat ClauseGrounder::runSubGrounder(Grounder* subgrounder, bool conjFromRoot, ConjOrDisj& formula, bool negated) const {
-	Assert(formula.type==conn_);
+	Assert(formula.getType()==conn_);
 	ConjOrDisj subformula;
 	subgrounder->run(subformula);
 
 	if (subformula.literals.size() == 0) {
-		Lit value = subformula.type == Conn::CONJ ? _true : _false;
+		Lit value = subformula.getType() == Conn::CONJ ? _true : _false;
 		if (makesFormulaTrue(value, negated)) {
 			formula.literals = litlist { negated ? -_true : _true };
 			return FormStat::DECIDED;
 		} else if (makesFormulaFalse(value, negated)) {
 			formula.literals = litlist { negated ? -_false : _false };
 			return FormStat::DECIDED;
-		} else if (subformula.type != formula.type) {
+		} else if (subformula.getType() != formula.getType()) {
 			formula.literals.push_back(negated ? -value : value);
 			return (FormStat::UNKNOWN);
 		}
@@ -738,7 +740,7 @@ FormStat ClauseGrounder::runSubGrounder(Grounder* subgrounder, bool conjFromRoot
 		return FormStat::UNKNOWN;
 	} // otherwise INVAR: subformula is not true nor false and does not contain true nor false literals
 	if (conjFromRoot && conjunctive()) {
-		if (subformula.type == Conn::CONJ) {
+		if (subformula.getType() == Conn::CONJ) {
 			for (auto i = subformula.literals.cbegin(); i < subformula.literals.cend(); ++i) {
 				getGrounding()->addUnitClause(*i);
 			}
@@ -746,7 +748,7 @@ FormStat ClauseGrounder::runSubGrounder(Grounder* subgrounder, bool conjFromRoot
 			getGrounding()->add(subformula.literals);
 		}
 	} else {
-		if (subformula.type == formula.type) {
+		if (subformula.getType() == formula.getType()) {
 			formula.literals.insert(formula.literals.begin(), subformula.literals.cbegin(), subformula.literals.cend());
 		} else {
 			formula.literals.push_back(getReification(subformula));
@@ -763,7 +765,7 @@ void BoolGrounder::run(ConjOrDisj& formula, bool negate) const {
 			pushtab();
 		}
 	}
-	formula.type = conn_;
+	formula.setType(conn_);
 	for (auto g = _subgrounders.cbegin(); g < _subgrounders.cend(); g++) {
 		CHECKTERMINATION
 		if (runSubGrounder(*g, context()._conjunctivePathFromRoot, formula, negate) == FormStat::DECIDED) {
@@ -788,7 +790,7 @@ void QuantGrounder::run(ConjOrDisj& formula, bool negated) const {
 		}
 	}
 
-	formula.type = conn_;
+	formula.setType(conn_);
 
 	for (_generator->begin(); not _generator->isAtEnd(); _generator->operator ++()) {
 		CHECKTERMINATION
@@ -818,7 +820,7 @@ void QuantGrounder::run(ConjOrDisj& formula, bool negated) const {
 
 Lit EquivGrounder::getLitEquivWith(const ConjOrDisj& form) const {
 	if (form.literals.size() == 0) {
-		if (form.type == Conn::CONJ) {
+		if (form.getType() == Conn::CONJ) {
 			return _true;
 		} else {
 			return _false;
@@ -846,13 +848,14 @@ void EquivGrounder::run(ConjOrDisj& formula, bool negated) const {
 
 	// Run subgrounders
 	ConjOrDisj leftformula, rightformula;
-	leftformula.type = conn_;
-	rightformula.type = conn_;
+	leftformula.setType(conn_);
+	rightformula.setType(conn_);
 	runSubGrounder(_leftgrounder, false, leftformula, false);
 	runSubGrounder(_rightgrounder, false, rightformula, false);
 	auto left = getLitEquivWith(leftformula);
 	auto right = getLitEquivWith(rightformula);
 
+	formula.setType(Conn::CONJ); // Does not matter for all those 1-literal lists
 	if (left == right) {
 		formula.literals = litlist { isPositive() ? _true : _false };
 	} else if (left == _true) {
@@ -880,7 +883,7 @@ void EquivGrounder::run(ConjOrDisj& formula, bool negated) const {
 		Lit ts1 = translator()->translate(aornotb, false, tp);
 		Lit ts2 = translator()->translate(notaorb, false, tp);
 		formula.literals = litlist { ts1, ts2 };
-		formula.type = Conn::CONJ;
+		formula.setType(Conn::CONJ);
 	}
 	if (verbosity() > 2) {
 		if (_origform != NULL) {

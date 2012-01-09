@@ -52,10 +52,11 @@ Sort* UnnestTerms::deriveSort(Term* term) {
 	auto sort = (_chosenVarSort != NULL) ? _chosenVarSort : term->sort();
 	if (_structure != NULL && SortUtils::isSubsort(term->sort(),VocabularyUtils::intsort(),_vocabulary)) {
 		auto bounds = TermUtils::deriveTermBounds(term,_structure);
+		Assert(bounds.size()==2);
 		if (bounds[0] != NULL && bounds[1] != NULL && bounds[0]->type() == DET_INT && bounds[1]->type() == DET_INT) {
 			auto intmin = bounds[0]->value()._int;
 			auto intmax = bounds[1]->value()._int;
-			stringstream ss; ss << "_sort_" << intmin << '_' << intmax;
+			stringstream ss; ss << "_sort[" << intmin << '-' << intmax <<"]";
 			sort = new Sort(ss.str(), new SortTable(new IntRangeInternalSortTable(intmin,intmax)));
 			sort->addParent(VocabularyUtils::intsort());
 		}

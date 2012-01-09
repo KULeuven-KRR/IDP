@@ -41,9 +41,6 @@ public:
 		return std::vector<const DomainElement*>{ _minimum, _maximum };
 	}
 
-	const DomainElement* getMinimum() { return _minimum; }
-	const DomainElement* getMaximum() { return _maximum; }
-
 protected:
 	void traverse(const Term*);
 	void traverse(const SetExpr*);
@@ -53,36 +50,36 @@ protected:
 	void visit(const AggTerm*);
 
 	// Disable all other visit methods..
-	void traverse(const Formula*) {}
+	void traverse(const Formula*) { Assert(false); }
 
-	void visit(const EnumSetExpr*) {}
-	void visit(const QuantSetExpr*) {}
+	void visit(const EnumSetExpr*) { Assert(false); }
+	void visit(const QuantSetExpr*) { Assert(false); }
 
-	void visit(const Theory*) {}
-	void visit(const AbstractGroundTheory*) {}
-	void visit(const GroundTheory<GroundPolicy>*) {}
+	void visit(const Theory*) { Assert(false); }
+	void visit(const AbstractGroundTheory*) { Assert(false); }
+	void visit(const GroundTheory<GroundPolicy>*) { Assert(false); }
 
-	void visit(const PredForm*) {}
-	void visit(const EqChainForm*) {}
-	void visit(const EquivForm*) {}
-	void visit(const BoolForm*) {}
-	void visit(const QuantForm*) {}
-	void visit(const AggForm*) {}
+	void visit(const PredForm*) { Assert(false); }
+	void visit(const EqChainForm*) { Assert(false); }
+	void visit(const EquivForm*) { Assert(false); }
+	void visit(const BoolForm*) { Assert(false); }
+	void visit(const QuantForm*) { Assert(false); }
+	void visit(const AggForm*) { Assert(false); }
 
-	void visit(const Rule*) {}
-	void visit(const Definition*) {}
-	void visit(const FixpDef*) {}
+	void visit(const Rule*) { Assert(false); }
+	void visit(const Definition*) { Assert(false); }
+	void visit(const FixpDef*) { Assert(false); }
 
-	void visit(const GroundDefinition*) {}
-	void visit(const PCGroundRule*) {}
-	void visit(const AggGroundRule*) {}
-	void visit(const GroundSet*) {}
-	void visit(const GroundAggregate*) {}
+	void visit(const GroundDefinition*) { Assert(false); }
+	void visit(const PCGroundRule*) { Assert(false); }
+	void visit(const AggGroundRule*) { Assert(false); }
+	void visit(const GroundSet*) { Assert(false); }
+	void visit(const GroundAggregate*) { Assert(false); }
 
-	void visit(const CPReification*) {}
-	void visit(const CPVarTerm*) {}
-	void visit(const CPWSumTerm*) {}
-	void visit(const CPSumTerm*) {}
+	void visit(const CPReification*) { Assert(false); }
+	void visit(const CPVarTerm*) { Assert(false); }
+	void visit(const CPWSumTerm*) { Assert(false); }
+	void visit(const CPSumTerm*) { Assert(false); }
 };
 
 #endif /* DERIVEBOUNDS_HPP_ */

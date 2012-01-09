@@ -39,7 +39,7 @@ void DefinitionGrounder::run(ConjOrDisj& formula) const {
 	}
 	getGrounding()->add(_grounddefinition); // FIXME check how it is handled in the lazy part
 
-	formula.type = Conn::CONJ; // Empty conjunction, so always true
+	formula.setType(Conn::CONJ); // Empty conjunction, so always true
 }
 
 RuleGrounder::RuleGrounder(HeadGrounder* hgr, FormulaGrounder* bgr, InstGenerator* hig, InstGenerator* big, GroundingContext& ct) :
@@ -54,7 +54,7 @@ void RuleGrounder::run(unsigned int defid, GroundDefinition* grounddefinition) c
 		}
 		ConjOrDisj body;
 		_bodygrounder->run(body);
-		bool conj = body.type == Conn::CONJ;
+		bool conj = body.getType() == Conn::CONJ;
 		bool falsebody = (body.literals.empty() && !conj) || (body.literals.size() == 1 && body.literals[0] == _false);
 		bool truebody = (body.literals.empty() && conj) || (body.literals.size() == 1 && body.literals[0] == _true);
 		if (falsebody) {
@@ -163,7 +163,7 @@ void LazyRuleGrounder::ground(const Lit& head, const ElementTuple& headargs) {
 
 		ConjOrDisj body;
 		bodygrounder()->run(body);
-		bool conj = body.type == Conn::CONJ;
+		bool conj = body.getType() == Conn::CONJ;
 		bool falsebody = (body.literals.empty() && !conj) || (body.literals.size() == 1 && body.literals[0] == _false);
 		bool truebody = (body.literals.empty() && conj) || (body.literals.size() == 1 && body.literals[0] == _true);
 		if (falsebody) {

@@ -2125,6 +2125,7 @@ public:
 	}
 
 	const DomainElement* operator[](const ElementTuple& tuple) const {
+		Assert(tuple.size()==arity());
 		return _table->operator[](tuple);
 	}
 	bool contains(const ElementTuple& tuple) const;

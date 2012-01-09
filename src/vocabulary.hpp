@@ -118,7 +118,6 @@ class Variable {
 private:
 	std::string _name; //!< Name of the variable
 	Sort* _sort; //!< Sort of the variable (0 if the sort is not derived)
-	static int _nvnr; //!< Used to create unique new names for internal variables
 	ParseInfo _pi; //!< The place where the variable was quantified
 
 public:
@@ -230,7 +229,6 @@ private:
 	SymbolType _type; //!< The type of the symbol
 	PFSymbol* _parent; //!< The symbol this predicate is derived from.
 					   //!< Nullpointer if _type == ST_NONE.
-	static int _npnr; //!< Used to create unique new names for internal predicates
 	PredInterGenerator* _interpretation; //!< The interpretation if the predicate is built-in, a null-pointer
 										 //!< otherwise.
 	PredGenerator* _overpredgenerator; //!< Generates new built-in, overloaded predicates.

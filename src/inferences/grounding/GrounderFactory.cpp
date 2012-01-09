@@ -508,6 +508,16 @@ void GrounderFactory::visit(const PredForm* pf) {
 }
 
 /**
+ * Recursively deletes an object AND sets its reference to NULL (causing sigsev is calling it later, instead of not failing at all)
+ * TODO should use this throughout
+ */
+template<class T>
+void deleteDeep(T& object){
+	object->recursiveDelete();
+	object = NULL;
+}
+
+/**
  * void GrounderFactory::visit(const BoolForm* bf)
  * DESCRIPTION
  *		Creates a grounder for a conjunction or disjunction of formulas
@@ -535,7 +545,7 @@ void GrounderFactory::visit(const BoolForm* bf) {
 	if (_context._conjPathUntilNode) {
 		// If bf is a negated disjunction, push the negation one level deeper.
 		// Take a clone to avoid changing bf;
-		BoolForm* newbf = bf->clone();
+		auto newbf = bf->clone();
 		if (not newbf->conj()) {
 			newbf->conj(true);
 			newbf->negate();
@@ -552,11 +562,12 @@ void GrounderFactory::visit(const BoolForm* bf) {
 			RestoreContext();
 			sub.push_back(_topgrounder);
 		}
-		newbf->recursiveDelete();
-
 		_topgrounder = new BoolGrounder(_grounding, sub, newbf->sign(), true, _context);
-		if (getOption(IntType::GROUNDVERBOSITY) > 3)
+		deleteDeep(newbf);
+
+		if (getOption(IntType::GROUNDVERBOSITY) > 3){
 			poptab();
+		}
 		return;
 
 	}
