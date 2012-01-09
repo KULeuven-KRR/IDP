@@ -555,6 +555,7 @@ Lit AggGrounder::run() const {
 		if (containsneg)
 			minpossvalue = (-maxpossvalue < minpossvalue ? -maxpossvalue : minpossvalue);
 		if (containsneg || containszero) {
+			Assert(truevalue != 0);//division is safe (see higher check for truevalue ==0)
 			tseitin = splitproducts(boundvalue, (boundvalue / truevalue), minpossvalue, maxpossvalue, setnr);
 		} else {
 			// Finish
