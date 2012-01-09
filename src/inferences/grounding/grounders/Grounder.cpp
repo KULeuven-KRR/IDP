@@ -19,7 +19,7 @@ void ConjOrDisj::put(std::ostream& stream) const{
 	bool begin = true;
 	for(auto i=literals.cbegin(); i<literals.cend(); ++i){
 		if(not begin){
-			switch(type){
+			switch(getType()){
 			case Conn::DISJ:
 				stream <<" | ";
 				break;
@@ -42,7 +42,7 @@ void Grounder::toplevelRun() const{
 	ConjOrDisj formula;
 	run(formula);
 	if(formula.literals.size()==0){
-		if(formula.type==Conn::DISJ){ // UNSAT
+		if(formula.getType()==Conn::DISJ){ // UNSAT
 			getGrounding()->addUnitClause(1);
 			getGrounding()->addUnitClause(-1);
 		}
@@ -50,7 +50,7 @@ void Grounder::toplevelRun() const{
 		Lit l = formula.literals.back();
 
 		if(l==_true || l==_false){
-			if(formula.type==Conn::CONJ && l==_false){ // UNSAT
+			if(formula.getType()==Conn::CONJ && l==_false){ // UNSAT
 				getGrounding()->addUnitClause(1);
 				getGrounding()->addUnitClause(-1);
 			} // else SAT or irrelevant (TODO correct?)
@@ -58,7 +58,7 @@ void Grounder::toplevelRun() const{
 			getGrounding()->addUnitClause(l);
 		}
 	}else{
-		if(formula.type==Conn::CONJ){
+		if(formula.getType()==Conn::CONJ){
 			for(auto i=formula.literals.cbegin(); i<formula.literals.cend(); ++i){
 				getGrounding()->addUnitClause(*i);
 			}
@@ -73,7 +73,7 @@ Lit Grounder::groundAndReturnLit() const{
 	ConjOrDisj formula;
 	run(formula);
 	if(formula.literals.size()==0){
-		if(formula.type==Conn::DISJ){
+		if(formula.getType()==Conn::DISJ){
 			return _false;
 		}else{
 			return _true;
@@ -81,6 +81,6 @@ Lit Grounder::groundAndReturnLit() const{
 	}else if(formula.literals.size()==1){
 		return formula.literals.back();
 	}else{
-		return getGrounding()->translator()->translate(formula.literals, formula.type==Conn::CONJ, context()._tseitin);
+		return getGrounding()->translator()->translate(formula.literals, formula.getType()==Conn::CONJ, context()._tseitin);
 	}
 }

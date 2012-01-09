@@ -6,6 +6,7 @@
 # *~
 *.o
 *.or
+*.texlipse
 *.project
 *.cproject
 *.aux

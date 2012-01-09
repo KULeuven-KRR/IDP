@@ -1,12 +1,12 @@
 /****************************************************************
-* Copyright 2010-2012 Katholieke Universiteit Leuven
-*  
-* Use of this software is governed by the GNU LGPLv3.0 license
-* 
-* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
-* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
-* Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ * Copyright 2010-2012 Katholieke Universiteit Leuven
+ *
+ * Use of this software is governed by the GNU LGPLv3.0 license
+ *
+ * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+ * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+ * Celestijnenlaan 200A, B-3001 Leuven, Belgium
+ ****************************************************************/
 
 #include "DeriveTermBounds.hpp"
 
@@ -17,27 +17,28 @@
 
 #include <numeric> // for accumulate
 #include <algorithm> // for min_element and max_element
-
 using namespace std;
 
 void DeriveTermBounds::traverse(const Term* t) {
-	_subtermminimums.clear();
-	_subtermmaximums.clear();
-	for(auto it = t->subterms().cbegin(); it != t->subterms().cend(); ++it) {
+	ElementTuple minsubterms, maxsubterms;
+	for (auto it = t->subterms().cbegin(); it != t->subterms().cend(); ++it) {
 		(*it)->accept(this);
-		_subtermminimums.push_back(_minimum);
-		_subtermmaximums.push_back(_maximum);
+		minsubterms.push_back(_minimum);
+		maxsubterms.push_back(_maximum);
 	}
+	_subtermminimums = minsubterms;
+	_subtermmaximums = maxsubterms;
 }
 
 void DeriveTermBounds::traverse(const SetExpr* e) {
-	_subtermminimums.clear();
-	_subtermmaximums.clear();
-	for(auto it = e->subterms().cbegin(); it != e->subterms().cend(); ++it) {
+	ElementTuple minsubterms, maxsubterms;
+	for (auto it = e->subterms().cbegin(); it != e->subterms().cend(); ++it) {
 		(*it)->accept(this);
-		_subtermminimums.push_back(_minimum);
-		_subtermmaximums.push_back(_maximum);
+		minsubterms.push_back(_minimum);
+		maxsubterms.push_back(_maximum);
 	}
+	_subtermminimums = minsubterms;
+	_subtermmaximums = maxsubterms;
 }
 
 void DeriveTermBounds::visit(const DomainTerm* t) {
@@ -60,12 +61,11 @@ void DeriveTermBounds::visit(const VarTerm* t) {
 
 void DeriveTermBounds::visit(const FuncTerm* t) {
 	Assert(_structure != NULL);
-	
-	// Derive bounds of subterms of the set
+
+	// Derive bounds on subterms of the set
 	traverse(t);
 
 	auto function = t->function();
-
 	if (function->builtin()) {
 		Assert(function->interpretation(_structure) != NULL);
 		auto functable = function->interpretation(_structure)->funcTable();
@@ -73,11 +73,11 @@ void DeriveTermBounds::visit(const FuncTerm* t) {
 			_minimum = (*functable)[_subtermminimums];
 			_maximum = (*functable)[_subtermmaximums];
 		} else if (function->name() == "-/2") {
-			_minimum = (*functable)[ElementTuple{ _subtermminimums[0],_subtermmaximums[1] }];
-			_maximum = (*functable)[ElementTuple{ _subtermmaximums[0],_subtermminimums[1] }];
+			_minimum = (*functable)[ElementTuple { _subtermminimums[0], _subtermmaximums[1] }];
+			_maximum = (*functable)[ElementTuple { _subtermmaximums[0], _subtermminimums[1] }];
 		} else if (function->name() == "abs/1") {
 			_minimum = createDomElem(0);
-			_maximum = std::max((*functable)[_subtermminimums],(*functable)[_subtermmaximums]);
+			_maximum = std::max((*functable)[_subtermminimums], (*functable)[_subtermmaximums]);
 		} else if (function->name() == "-/1") {
 			_minimum = (*functable)[_subtermmaximums];
 			_maximum = (*functable)[_subtermminimums];
@@ -101,12 +101,12 @@ void DeriveTermBounds::visit(const FuncTerm* t) {
 
 const DomainElement* sumPositive(const DomainElement* a, const DomainElement* b) {
 	auto zero = createDomElem(0);
-	return domElemSum(max(a,zero,Compare<DomainElement>()), max(b,zero,Compare<DomainElement>()));
+	return domElemSum(max(a, zero, Compare<DomainElement>()), max(b, zero, Compare<DomainElement>()));
 }
 
 const DomainElement* sumNegative(const DomainElement* a, const DomainElement* b) {
 	auto zero = createDomElem(0);
-	return domElemSum(min(a,zero,Compare<DomainElement>()), min(b,zero,Compare<DomainElement>()));
+	return domElemSum(min(a, zero, Compare<DomainElement>()), min(b, zero, Compare<DomainElement>()));
 }
 
 bool absCompare(const DomainElement* a, const DomainElement* b) {
@@ -122,11 +122,11 @@ void DeriveTermBounds::visit(const AggTerm* t) {
 	}
 
 	auto maxsize = t->set()->maxSize(_structure);
-	auto maxsizeElem = createDomElem(maxsize._size,NumType::CERTAINLYINT);
+	auto maxsizeElem = createDomElem(maxsize._size, NumType::CERTAINLYINT);
 	auto zero = createDomElem(0);
-	
+
 	switch (t->function()) {
-	case AggFunction::CARD: 
+	case AggFunction::CARD:
 		_minimum = zero;
 		if (maxsize._type != TST_EXACT) {
 			_maximum = NULL; // This means that the upperbound is unknown.
@@ -135,16 +135,15 @@ void DeriveTermBounds::visit(const AggTerm* t) {
 		}
 		break;
 	case AggFunction::SUM:
-		_minimum = accumulate(_subtermminimums.cbegin(),_subtermminimums.cend(),zero,sumNegative);
-		_maximum = accumulate(_subtermmaximums.cbegin(),_subtermmaximums.cend(),zero,sumPositive);
-		if(sametypeid<QuantSetExpr>(*(t->set()))){
+		_minimum = accumulate(_subtermminimums.cbegin(), _subtermminimums.cend(), zero, sumNegative);
+		_maximum = accumulate(_subtermmaximums.cbegin(), _subtermmaximums.cend(), zero, sumPositive);
+		if (sametypeid<QuantSetExpr>(*(t->set()))) {
 			if (maxsize._type != TST_EXACT) {
 				_maximum = NULL; // This means that the upperbound is unknown.
 			} else {
-				_maximum = domElemProd(maxsizeElem,_maximum);
+				_maximum = domElemProd(maxsizeElem, _maximum);
 			}
-		}
-		else{
+		} else {
 			Assert(sametypeid<EnumSetExpr>(*(t->set())));
 		}
 		break;
@@ -153,21 +152,19 @@ void DeriveTermBounds::visit(const AggTerm* t) {
 			_minimum = NULL;
 			_maximum = NULL;
 		} else {
-			auto maxsubtermvalue = std::max(
-					domElemAbs(*max_element(_subtermminimums.cbegin(),_subtermminimums.cend(),absCompare)),
-					domElemAbs(*max_element(_subtermmaximums.cbegin(),_subtermmaximums.cend(),absCompare)),
-					Compare<DomainElement>());
-			_minimum = domElemUmin(domElemPow(maxsubtermvalue,maxsizeElem));
-			_maximum = domElemPow(maxsubtermvalue,maxsizeElem);
+			auto maxsubtermvalue = std::max(domElemAbs(*max_element(_subtermminimums.cbegin(), _subtermminimums.cend(), absCompare)),
+					domElemAbs(*max_element(_subtermmaximums.cbegin(), _subtermmaximums.cend(), absCompare)), Compare<DomainElement>());
+			_minimum = domElemUmin(domElemPow(maxsubtermvalue, maxsizeElem));
+			_maximum = domElemPow(maxsubtermvalue, maxsizeElem);
 		}
 		break;
 	case AggFunction::MIN:
-		_minimum = *min_element(_subtermminimums.cbegin(),_subtermminimums.cend());
-		_maximum = *min_element(_subtermmaximums.cbegin(),_subtermmaximums.cend());
+		_minimum = *min_element(_subtermminimums.cbegin(), _subtermminimums.cend());
+		_maximum = *min_element(_subtermmaximums.cbegin(), _subtermmaximums.cend());
 		break;
 	case AggFunction::MAX:
-		_minimum = *max_element(_subtermminimums.cbegin(),_subtermminimums.cend());
-		_maximum = *max_element(_subtermmaximums.cbegin(),_subtermmaximums.cend());
+		_minimum = *max_element(_subtermminimums.cbegin(), _subtermminimums.cend());
+		_maximum = *max_element(_subtermmaximums.cbegin(), _subtermmaximums.cend());
 		break;
 	}
 }

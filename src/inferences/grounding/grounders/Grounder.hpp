@@ -19,9 +19,24 @@ enum class Conn {
 
 struct ConjOrDisj {
 	litlist literals;
-	Conn type;
+private:
+	Conn _type;
+	bool _settype; // NOTE: true if the type has been set externally. Allows to check whether grounder have forgotten to set the value (only runtime check)
+public:
+	Conn getType() const {
+		Assert(_settype);
+		return _type;
+	}
+	void setType(Conn c){
+		_settype = true;
+		_type = c;
+	}
 
 	void put(std::ostream& stream) const;
+
+	ConjOrDisj():_type(Conn::DISJ), _settype(false){
+
+	}
 };
 
 class AbstractGroundTheory;

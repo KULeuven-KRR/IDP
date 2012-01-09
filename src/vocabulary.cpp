@@ -280,8 +280,6 @@ bool isSubsort(Sort* a, Sort* b, const Vocabulary* voc) {
  *	Variables
  **************/
 
-int Variable::_nvnr = 0; // TODO global variable numbers
-
 Variable::~Variable() {
 }
 
@@ -291,8 +289,7 @@ Variable::Variable(const std::string& name, Sort* sort, const ParseInfo& pi)
 
 Variable::Variable(Sort* s) 
 	: _sort(s) {
-	_name = "_var_" + s->name() + "_" + convertToString(Variable::_nvnr);
-	++_nvnr;
+	_name = "_var_" + s->name() + "_" + convertToString(getGlobal()->getNewID());
 }
 
 void Variable::sort(Sort* s) {
@@ -410,8 +407,6 @@ ostream& operator<<(ostream& output, const PFSymbol& s) {
 	return s.put(output);
 }
 
-int Predicate::_npnr = 0;
-
 set<Sort*> Predicate::allsorts() const {
 	set<Sort*> ss;
 	ss.insert(_sorts.cbegin(), _sorts.cend());
@@ -461,8 +456,7 @@ Predicate::Predicate(const std::string& name, const std::vector<Sort*>& sorts, b
 
 Predicate::Predicate(const vector<Sort*>& sorts) 
 	: PFSymbol("", sorts, ParseInfo()), _type(ST_NONE), _parent(0), _interpretation(0), _overpredgenerator(0) {
-	_name = "_internal_predicate_" + convertToString(_npnr) + "/" + convertToString(sorts.size());
-	++_npnr;
+	_name = "_internal_predicate_" + convertToString(getGlobal()->getNewID()) + "/" + convertToString(sorts.size());
 }
 
 Predicate::Predicate(const std::string& name, const std::vector<Sort*>& sorts, PredInterGenerator* inter, bool infix) 

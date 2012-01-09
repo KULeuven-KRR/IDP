@@ -71,7 +71,7 @@ void GroundDefinition::addFalseRule(int head) {
 
 void GroundDefinition::addPCRule(int head, const vector<int>& body, bool conj, bool recursive) {
 	// Search for a rule with the same head
-	map<int, GroundRule*>::iterator it = _rules.find(head);
+	auto it = _rules.find(head);
 	if (it == _rules.cend()) { // There is not yet a rule with the same head
 		_rules[head] = new PCGroundRule(head, (conj ? RT_CONJ : RT_DISJ), body, recursive);
 	} else if ((it->second)->isFalse()) { // The existing rule is false

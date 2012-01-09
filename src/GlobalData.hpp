@@ -37,6 +37,7 @@ private:
 	Insert _inserter;
 	std::map<std::string,CLConst*> clconsts;
 	DomainElementFactory* _domainelemFactory;
+	int _idcounter;
 
 	bool _terminateRequested;
 
@@ -52,6 +53,10 @@ private:
 
 public:
 	~GlobalData();
+
+	int getNewID(){
+		return ++_idcounter;
+	}
 
 	static GlobalData* instance();
 	static DomainElementFactory* getGlobalDomElemFactory();

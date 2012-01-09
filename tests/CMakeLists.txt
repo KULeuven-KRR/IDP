@@ -15,6 +15,7 @@ include_directories ("
 	"${PROJECT_SOURCE_DIR}/src"
 	"${PROJECT_BUILD_DIR}/lua/src"
 	"${PROJECT_SOURCE_DIR}/lib/pluscallback1.7/"
+	"${PROJECT_SOURCE_DIR}/lib/gtest-1.6.0/include/"
 	"${PROJECT_SOURCE_DIR}/lib/linenoise/"
 ") 
 

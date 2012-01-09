@@ -62,7 +62,6 @@ function(handleRPATHUnix)
 	ENDIF()
 endfunction()
 
-
 ### GMP HANDLING
 OPTION(GMP  "Enable gmp support" OFF)
 if(GMP)
@@ -70,7 +69,6 @@ if(GMP)
 else()
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D NO_GMP")
 endif()
-
 
 ### CP HANDLING 
 OPTION(CP  "Enable cp support" OFF)
@@ -94,15 +92,18 @@ else()
 		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -DNDEBUG ")
 		set(BUILD_SHARED_LIBS ON)
 		handleRPATHUnix()
-	else() 
+	else() #debug builds
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -ggdb -DDEBUG -D_GLIBCXX_DEBUG ")
 		if(${CMAKE_BUILD_TYPE} MATCHES "StaticDebug")
-			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -ggdb -DDEBUG ")
 			set(BUILD_SHARED_LIBS OFF) # to allow stepping
 			set(BUILD_IDP_STATIC ON)   # to allow stepping
-		else() #default debug
-			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -ggdb -DDEBUG ")
-			set(BUILD_SHARED_LIBS ON)
-			handleRPATHUnix()
+		else()
+			if(${CMAKE_BUILD_TYPE} MATCHES "Debug")
+				set(BUILD_SHARED_LIBS ON)
+				handleRPATHUnix()
+			else()
+				message(ERROR "Unsupported build-type, only Debug, StaticDebug, Release and StaticRelease are allowed.")
+			endif()
 		endif()
 	endif()
 endif()
@@ -117,6 +118,7 @@ endif()
 
 add_subdirectory(lib/minisatid)
 add_subdirectory(lib/linenoise)
+add_subdirectory(lib/gtest-1.6.0)
 add_subdirectory(lib/lua)
 add_subdirectory(lib/tinythread/source)
 add_subdirectory(src)
