@@ -47,7 +47,7 @@ private:
 	unsigned int _errorcount;
 	std::set<FILE*> _openfiles;
 
-	std::vector<TerminateMonitor*> monitors;
+	std::vector<TerminateMonitor*> _monitors;
 
 	GlobalData();
 
@@ -65,14 +65,14 @@ public:
 
 	bool terminateRequested() const { return _terminateRequested; }
 	void addTerminationMonitor(TerminateMonitor* m){
-		monitors.push_back(m);
+		_monitors.push_back(m);
 	}
 	void reset(){
 		_terminateRequested = false;
 	}
 	void notifyTerminateRequested() {
 		_terminateRequested = true;
-		for(auto i=monitors.cbegin(); i<monitors.cend(); ++i){
+		for(auto i=_monitors.cbegin(); i<_monitors.cend(); ++i){
 			(*i)->notifyTerminateRequested();
 		}
 	}
