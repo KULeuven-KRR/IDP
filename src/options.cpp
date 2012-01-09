@@ -53,39 +53,39 @@ std::string str(Format choice) {
 
 Options::Options() {
 	std::set<bool> boolvalues { true, false };
-	BoolPol::createOption(BoolType::SHOWWARNINGS, "showwarnings", boolvalues, true, _option2name, false); // TODO Temporary solution to be able to disable warnings in tests
+	BoolPol::createOption(BoolType::SHOWWARNINGS, "showwarnings", boolvalues, true, _option2name, PrintBehaviour::DONOTPRINT); // TODO Temporary solution to be able to disable warnings in tests
 	//BoolPol::createOption(BoolType::PRINTTYPES, "printtypes", boolvalues, true, _option2name); DOET NIETS!
-	BoolPol::createOption(BoolType::CPSUPPORT, "cpsupport", boolvalues, false, _option2name, false);
-	BoolPol::createOption(BoolType::TRACE, "trace", boolvalues, false, _option2name);
-	BoolPol::createOption(BoolType::AUTOCOMPLETE, "autocomplete", boolvalues, true, _option2name);
-	BoolPol::createOption(BoolType::LONGNAMES, "longnames", boolvalues, false, _option2name);
-	BoolPol::createOption(BoolType::RELATIVEPROPAGATIONSTEPS, "relativepropsteps", boolvalues, true, _option2name, false);
-	BoolPol::createOption(BoolType::CREATETRANSLATION, "createtranslation", boolvalues, false, _option2name, false); //show? bugged: when grounding: write out the information about which string belongs to which cnf number
-	BoolPol::createOption(BoolType::MXRANDOMPOLARITYCHOICE, "randomvaluechoice", boolvalues, false, _option2name, false); //belongs to bdds : something about random seeds
-	BoolPol::createOption(BoolType::GROUNDLAZILY, "groundlazily", boolvalues, false, _option2name, false);
-	BoolPol::createOption(BoolType::GROUNDWITHBOUNDS, "groundwithbounds", boolvalues, false, _option2name, false);
-	BoolPol::createOption(BoolType::MODELCOUNTEQUIVALENCE, "nbmodelequivalent", boolvalues, false, _option2name); //zorgt dat de grounding het aantal modellen behoudt false => SAT
+	BoolPol::createOption(BoolType::CPSUPPORT, "cpsupport", boolvalues, false, _option2name, PrintBehaviour::DONOTPRINT);
+	BoolPol::createOption(BoolType::TRACE, "trace", boolvalues, false, _option2name, PrintBehaviour::PRINT);
+	BoolPol::createOption(BoolType::AUTOCOMPLETE, "autocomplete", boolvalues, true, _option2name, PrintBehaviour::PRINT);
+	BoolPol::createOption(BoolType::LONGNAMES, "longnames", boolvalues, false, _option2name, PrintBehaviour::PRINT);
+	BoolPol::createOption(BoolType::RELATIVEPROPAGATIONSTEPS, "relativepropsteps", boolvalues, true, _option2name, PrintBehaviour::DONOTPRINT);
+	BoolPol::createOption(BoolType::CREATETRANSLATION, "createtranslation", boolvalues, false, _option2name, PrintBehaviour::DONOTPRINT); //show? bugged: when grounding: write out the information about which string belongs to which cnf number
+	BoolPol::createOption(BoolType::MXRANDOMPOLARITYCHOICE, "randomvaluechoice", boolvalues, false, _option2name, PrintBehaviour::DONOTPRINT); //belongs to bdds : something about random seeds
+	BoolPol::createOption(BoolType::GROUNDLAZILY, "groundlazily", boolvalues, false, _option2name, PrintBehaviour::DONOTPRINT);
+	BoolPol::createOption(BoolType::GROUNDWITHBOUNDS, "groundwithbounds", boolvalues, false, _option2name, PrintBehaviour::DONOTPRINT);
+	BoolPol::createOption(BoolType::MODELCOUNTEQUIVALENCE, "nbmodelequivalent", boolvalues, false, _option2name, PrintBehaviour::PRINT); //zorgt dat de grounding het aantal modellen behoudt false => SAT
 
-	IntPol::createOption(IntType::SATVERBOSITY, "satverbosity", 0, getMaxElem<int>(), 0, _option2name);
-	IntPol::createOption(IntType::GROUNDVERBOSITY, "groundverbosity", 0, getMaxElem<int>(), 0, _option2name);
-	IntPol::createOption(IntType::PROPAGATEVERBOSITY, "propagateverbosity", 0, getMaxElem<int>(), 0, _option2name, false);
-	IntPol::createOption(IntType::NRMODELS, "nrmodels", 0, getMaxElem<int>(), 1, _option2name);
-	IntPol::createOption(IntType::NRPROPSTEPS, "nrpropsteps", 0, getMaxElem<int>(), 4, _option2name, false);
-	IntPol::createOption(IntType::LONGESTBRANCH, "longestbranch", 0, getMaxElem<int>(), 8, _option2name, false);
-	IntPol::createOption(IntType::SYMMETRY, "symmetry", 0, getMaxElem<int>(), 0, _option2name, false); //TODO: testing!
+	IntPol::createOption(IntType::SATVERBOSITY, "satverbosity", 0, getMaxElem<int>(), 0, _option2name, PrintBehaviour::PRINT);
+	IntPol::createOption(IntType::GROUNDVERBOSITY, "groundverbosity", 0, getMaxElem<int>(), 0, _option2name, PrintBehaviour::PRINT);
+	IntPol::createOption(IntType::PROPAGATEVERBOSITY, "propagateverbosity", 0, getMaxElem<int>(), 0, _option2name, PrintBehaviour::DONOTPRINT);
+	IntPol::createOption(IntType::NRMODELS, "nrmodels", 0, getMaxElem<int>(), 1, _option2name, PrintBehaviour::PRINT);
+	IntPol::createOption(IntType::NRPROPSTEPS, "nrpropsteps", 0, getMaxElem<int>(), 4, _option2name, PrintBehaviour::DONOTPRINT);
+	IntPol::createOption(IntType::LONGESTBRANCH, "longestbranch", 0, getMaxElem<int>(), 8, _option2name, PrintBehaviour::DONOTPRINT);
+	IntPol::createOption(IntType::SYMMETRY, "symmetry", 0, getMaxElem<int>(), 0, _option2name, PrintBehaviour::DONOTPRINT); //TODO: testing!
 
 	// NOTE: set this to infinity, so he always starts timing, even when the options have not been read in yet.
 	// Afterwards, setting them to 0 stops the timing
-	IntPol::createOption(IntType::TIMEOUT, "timeout", 0, getMaxElem<int>(), getMaxElem<int>(), _option2name);
-	IntPol::createOption(IntType::PROVERTIMEOUT, "provertimeout", 0, getMaxElem<int>(), getMaxElem<int>(), _option2name, false);
+	IntPol::createOption(IntType::TIMEOUT, "timeout", 0, getMaxElem<int>(), getMaxElem<int>(), _option2name, PrintBehaviour::PRINT);
+	IntPol::createOption(IntType::PROVERTIMEOUT, "provertimeout", 0, getMaxElem<int>(), getMaxElem<int>(), _option2name, PrintBehaviour::DONOTPRINT);
 
 	StringPol::createOption(StringType::LANGUAGE, "language", std::set<std::string> { /*str(Language::TXT),*/str(Language::IDP), /*str(Language::LATEX),*/
-	str(Language::ECNF), /*str(Language::ASP),*/str(Language::TPTP) }, str(Language::IDP), _option2name);
+	str(Language::ECNF), /*str(Language::ASP),*/str(Language::TPTP) }, str(Language::IDP), _option2name, PrintBehaviour::PRINT);
 }
 
 template<class EnumType, class ValueType>
 void OptionPolicy<EnumType, ValueType>::createOption(EnumType type, const std::string& name, const ValueType& lowerbound, const ValueType& upperbound,
-		const ValueType& defaultValue, std::vector<std::string>& option2name, bool visible) {
+		const ValueType& defaultValue, std::vector<std::string>& option2name, PrintBehaviour visible) {
 	_name2type[name] = type;
 	auto newoption = new RangeOption<EnumType, ValueType>(type, name, lowerbound, upperbound, visible);
 	newoption->setValue(defaultValue);
@@ -100,7 +100,7 @@ void OptionPolicy<EnumType, ValueType>::createOption(EnumType type, const std::s
 
 template<class EnumType, class ValueType>
 void OptionPolicy<EnumType, ValueType>::createOption(EnumType type, const std::string& name, const std::set<ValueType>& values,
-		const ValueType& defaultValue, std::vector<std::string>& option2name, bool visible) {
+		const ValueType& defaultValue, std::vector<std::string>& option2name, PrintBehaviour visible) {
 	_name2type[name] = type;
 	auto newoption = new EnumeratedOption<EnumType, ValueType>(type, name, values, visible);
 	newoption->setValue(defaultValue);
