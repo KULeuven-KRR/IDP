@@ -371,7 +371,7 @@ Lit AggGrounder::finishCard(double truevalue, double boundvalue, int setnr) cons
  */
 Lit AggGrounder::splitproducts(double boundvalue, double newboundvalue, double minpossvalue, double maxpossvalue, int setnr) const {
 	Assert(_type==AggFunction::PROD);
-	TsSet& tsset = translator()->groundset(setnr);
+	auto tsset = translator()->groundset(setnr);
 	std::vector<Lit> zerolits;
 	std::vector<double> zeroweights;
 
@@ -498,7 +498,7 @@ Lit AggGrounder::run() const {
 	const DomainElement* bound = groundbound._domelement;
 
 	// Retrieve the set, note that weights might be changed when handling min and max aggregates.
-	TsSet& tsset = translator()->groundset(setnr);
+	auto tsset = translator()->groundset(setnr);
 
 	// Retrieve the value of the bound
 	double boundvalue = bound->type() == DET_INT ? (double) bound->value()._int : bound->value()._double;
@@ -554,6 +554,7 @@ Lit AggGrounder::run() const {
 		if (containsneg)
 			minpossvalue = (-maxpossvalue < minpossvalue ? -maxpossvalue : minpossvalue);
 		if (containsneg || containszero) {
+			Assert(truevalue != 0);//division is safe (see higher check for truevalue ==0)
 			tseitin = splitproducts(boundvalue, (boundvalue / truevalue), minpossvalue, maxpossvalue, setnr);
 		} else {
 			// Finish

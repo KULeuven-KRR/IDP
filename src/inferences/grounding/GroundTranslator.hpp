@@ -128,11 +128,8 @@ public:
 		return _sets.size() > (unsigned int)setID;
 	}
 
-	const TsSet& groundset(int setID) const {
-		Assert(isSet(setID));
-		return _sets[setID];
-	}
-	TsSet& groundset(int setID) {
+	//TODO: when _sets contains pointers instead of objects, this should return a TsSet*
+	const TsSet groundset(int setID) const {
 		Assert(isSet(setID));
 		return _sets[setID];
 	}
