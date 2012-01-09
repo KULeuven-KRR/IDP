@@ -2495,8 +2495,7 @@ public:
 
 	virtual void makeTwoValued() = 0;
 
-	virtual void put(std::ostream&) {
-	} // TODO implement
+	void put(std::ostream& s) ;
 };
 
 /** Structures as constructed by the parser **/
