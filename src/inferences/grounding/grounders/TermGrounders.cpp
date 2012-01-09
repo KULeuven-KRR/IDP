@@ -231,7 +231,7 @@ GroundTerm AggTermGrounder::run() const {
 		pushtab();
 	}
 	int setnr = _setgrounder->run();
-	const TsSet& tsset = _translator->groundset(setnr);
+	auto tsset = _translator->groundset(setnr);
 	Assert(not tsset.empty());
 	double value = applyAgg(_type, tsset.trueweights());
 	const DomainElement* result = createDomElem(value);

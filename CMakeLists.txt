@@ -78,8 +78,9 @@ endif()
 
 
 # Set default compile flags for GCC
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -Wall ")
 if(CMAKE_COMPILER_IS_GNUCXX)
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -Wall -Wextra ")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wextra ")
 endif()
 
 if(${CMAKE_BUILD_TYPE} MATCHES "StaticRelease")
@@ -118,7 +119,9 @@ endif()
 
 add_subdirectory(lib/minisatid)
 add_subdirectory(lib/linenoise)
-add_subdirectory(lib/gtest-1.6.0)
+if(NOT TARGET gtest)
+	add_subdirectory(lib/gtest-1.6.0)
+endif() 
 add_subdirectory(lib/lua)
 add_subdirectory(lib/tinythread/source)
 add_subdirectory(src)

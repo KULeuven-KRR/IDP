@@ -271,7 +271,7 @@ Lit AggGrounder::handleDoubleNegation(double boundvalue, int setnr) const {
 
 Lit AggGrounder::finishCard(double truevalue, double boundvalue, int setnr) const {
 	int leftvalue = int(boundvalue - truevalue);
-	const TsSet& tsset = translator()->groundset(setnr);
+	auto tsset = translator()->groundset(setnr);
 	int maxposscard = tsset.size();
 	TsType tp = context()._tseitin;
 	bool simplify = false;
