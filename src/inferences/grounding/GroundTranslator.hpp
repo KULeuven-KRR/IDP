@@ -128,11 +128,8 @@ public:
 		return _sets.size() > (unsigned int)setID;
 	}
 
-	const TsSet& groundset(int setID) const {
-		Assert(isSet(setID));
-		return _sets[setID];
-	}
-	TsSet& groundset(int setID) {
+	// FIXME should make pointers so we cannot have reference invalidation because of changing the vector!
+	TsSet groundset(int setID) const {
 		Assert(isSet(setID));
 		return _sets[setID];
 	}

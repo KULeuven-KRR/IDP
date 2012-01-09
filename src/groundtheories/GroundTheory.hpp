@@ -128,7 +128,7 @@ public:
 	void add(int setnr, unsigned int defnr, bool weighted) {
 		if (_printedsets.find(setnr) == _printedsets.end()) {
 			_printedsets.insert(setnr);
-			TsSet& tsset = translator()->groundset(setnr);
+			auto tsset = translator()->groundset(setnr);
 			transformForAdd(tsset.literals(), VIT_SET, defnr);
 			std::vector<double> weights;
 			if (weighted) {
