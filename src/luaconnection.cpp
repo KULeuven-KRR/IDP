@@ -1885,7 +1885,7 @@ void addInternalProcedure(Inference* inf) {
 
 void addInternalProcedures(lua_State* L) {
 	for (auto i = getAllInferences().cbegin(); i != getAllInferences().cend(); ++i) {
-		addInternalProcedure(*i);
+		addInternalProcedure((*i).get());
 	}
 
 	set<string> namespaces;
