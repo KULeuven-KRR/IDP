@@ -42,7 +42,7 @@ private:
 	bool _terminateRequested;
 
 	Options* _options;
-	std::stack<unsigned int> _tabsizestack;
+	std::stack<size_t> _tabsizestack;
 
 	unsigned int _errorcount;
 	std::set<FILE*> _openfiles;

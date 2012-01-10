@@ -98,11 +98,14 @@ void GlobalData::setTabSize(size_t size) {
 	_tabsizestack.push(size);
 }
 void GlobalData::resetTabSize() {
-	if (_tabsizestack.size() > 0) {
+	Assert(_tabsizestack.size() > 1);
+	// Note: always leave the first element
+	if (_tabsizestack.size() > 1) {
 		_tabsizestack.pop();
 	}
 }
 size_t GlobalData::getTabSize() const {
+	Assert(not _tabsizestack.empty());
 	return _tabsizestack.top();
 }
 
