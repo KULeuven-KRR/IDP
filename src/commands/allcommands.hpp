@@ -15,8 +15,9 @@
 
 #include <vector>
 #include "commandinterface.hpp"
+#include <memory>
 
 // Important: pointer owner is transferred to receiver!
-const std::vector<Inference*>& getAllInferences();
+const std::vector<std::shared_ptr<Inference>>& getAllInferences();
 
 #endif /* ALLCOMMANDS_HPP_ */

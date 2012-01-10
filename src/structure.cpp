@@ -2870,8 +2870,9 @@ EnumeratedInternalFuncTable* EnumeratedInternalFuncTable::remove(const ElementTu
 			_table.erase(key);
 			return this;
 		}
-	} else
+	} else {
 		return this;
+	}
 }
 
 InternalTableIterator* EnumeratedInternalFuncTable::begin(const Universe&) const {
@@ -4199,6 +4200,7 @@ void Structure::makeTwoValued() {
 						continue;
 					}
 					inter->graphInter()->makeTrue(tuple);
+					break;
 				}
 			}
 		} else {
@@ -4216,7 +4218,6 @@ void Structure::makeTwoValued() {
 			throw IdpException("Terminate requested");
 		}
 	}
-
 	//If some predicate is not two-valued, calculate all structures that are more precise in which this function is two-valued
 	for (auto i = _predinter.begin(); i != _predinter.end(); i++) {
 		auto inter = (*i).second;
@@ -4450,6 +4451,13 @@ void completeSortTable(const PredTable* pt, PFSymbol* symbol, const string& stru
 
 void addUNAPattern(Function*) {
 	throw notyetimplemented("una pattern type");
+}
+
+void AbstractStructure::put(std::ostream& s){
+	IDPPrinter<std::ostream> p = IDPPrinter<std::ostream>(s);
+	p.startTheory();
+	p.visit(this);
+	p.endTheory();
 }
 
 void Structure::autocomplete() {

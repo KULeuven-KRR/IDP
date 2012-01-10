@@ -1169,38 +1169,38 @@ int namespaceIndex(lua_State* L) {
 	}
 	string str = *(index._value._string);
 	unsigned int counter = 0;
-	Namespace* subsp = 0;
+	Namespace* subsp = NULL;
 	if (ns->isSubspace(str)) {
 		subsp = ns->subspace(str);
 		++counter;
 	}
-	Vocabulary* vocab = 0;
+	Vocabulary* vocab = NULL;
 	if (ns->isVocab(str)) {
 		vocab = ns->vocabulary(str);
 		++counter;
 	}
-	AbstractTheory* theo = 0;
+	AbstractTheory* theo = NULL;
 	if (ns->isTheory(str)) {
 		theo = ns->theory(str);
 		++counter;
 	}
-	AbstractStructure* structure = 0;
+	AbstractStructure* structure = NULL;
 	if (ns->isStructure(str)) {
 		structure = ns->structure(str);
 		++counter;
 	}
-	Options* opts = 0;
-	UserProcedure* proc = 0;
+	Options* opts = NULL;
+	UserProcedure* proc = NULL;
 	if (ns->isProc(str)) {
 		proc = ns->procedure(str);
 		++counter;
 	}
-	Query* query = 0;
+	Query* query = NULL;
 	if (ns->isQuery(str)) {
 		query = ns->query(str);
 		++counter;
 	}
-	Term* term = 0;
+	Term* term = NULL;
 	if (ns->isTerm(str)) {
 		term = ns->term(str);
 		++counter;
@@ -1885,7 +1885,7 @@ void addInternalProcedure(Inference* inf) {
 
 void addInternalProcedures(lua_State* L) {
 	for (auto i = getAllInferences().cbegin(); i != getAllInferences().cend(); ++i) {
-		addInternalProcedure(*i);
+		addInternalProcedure((*i).get());
 	}
 
 	set<string> namespaces;

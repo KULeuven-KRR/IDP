@@ -1,12 +1,12 @@
 /****************************************************************
-* Copyright 2010-2012 Katholieke Universiteit Leuven
-*  
-* Use of this software is governed by the GNU LGPLv3.0 license
-* 
-* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
-* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
-* Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ * Copyright 2010-2012 Katholieke Universiteit Leuven
+ *
+ * Use of this software is governed by the GNU LGPLv3.0 license
+ *
+ * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+ * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+ * Celestijnenlaan 200A, B-3001 Leuven, Belgium
+ ****************************************************************/
 
 #include <iostream>
 #include <ostream>
@@ -20,61 +20,61 @@
 
 using namespace std;
 
-std::string getGlobalNamespaceName(){
+std::string getGlobalNamespaceName() {
 	return "idpglobal"; // NOTE: this string is also used in idp_intern.idp
 }
-std::string getInternalNamespaceName(){
+std::string getInternalNamespaceName() {
 	return "idpintern";
 }
 
 std::string installdirectorypath = string(IDPINSTALLDIR);
-void setInstallDirectoryPath(const std::string& dirpath){
+void setInstallDirectoryPath(const std::string& dirpath) {
 	installdirectorypath = dirpath;
 }
-std::string getInstallDirectoryPath(){
+std::string getInstallDirectoryPath() {
 	return installdirectorypath;
 }
 
 string getPathOfLuaInternals() {
 	stringstream ss;
-	ss << getInstallDirectoryPath() <<INTERNALLIBARYLUA;
+	ss << getInstallDirectoryPath() << INTERNALLIBARYLUA;
 	return ss.str();
 }
 string getPathOfIdpInternals() {
 	stringstream ss;
-	ss << getInstallDirectoryPath() <<INTERNALLIBARYIDP;
+	ss << getInstallDirectoryPath() << INTERNALLIBARYIDP;
 	return ss.str();
 }
 string getPathOfConfigFile() {
 	stringstream ss;
-	ss << getInstallDirectoryPath() <<CONFIGFILENAME;
+	ss << getInstallDirectoryPath() << CONFIGFILENAME;
 	return ss.str();
 }
 
-std::string tabs(){
+std::string tabs() {
 	stringstream ss;
 	auto nb = GlobalData::instance()->getTabSize();
-	for(size_t i=0; i<nb; ++i){
-		ss <<"    ";
+	for (size_t i = 0; i < nb; ++i) {
+		ss << "    ";
 	}
 	return ss.str();
 }
 
-void pushtab(){
-	GlobalData::instance()->setTabSize(GlobalData::instance()->getTabSize()+1);
+void pushtab() {
+	GlobalData::instance()->setTabSize(GlobalData::instance()->getTabSize() + 1);
 }
-void poptab(){
+void poptab() {
 	GlobalData::instance()->resetTabSize();
 }
 
 /*void notyetimplemented(const string& message) {
-	clog << "WARNING or ERROR: The following feature is not yet implemented:\n" << '\t' << message << '\n'
-			<< "Please send an e-mail to krr@cs.kuleuven.be if you really need this feature.\n";
-}*/
+ clog << "WARNING or ERROR: The following feature is not yet implemented:\n" << '\t' << message << '\n'
+ << "Please send an e-mail to krr@cs.kuleuven.be if you really need this feature.\n";
+ }*/
 
 IdpException notyetimplemented(const string& message) {
-	clog << "WARNING or ERROR: The following feature is not yet implemented:\n" << tabs()<<'\t' << message << '\n' << tabs()
-			<< "Please send an e-mail to krr@cs.kuleuven.be if you really need this feature.\n" << tabs();
+	clog << "WARNING or ERROR: The following feature is not yet implemented:\n" << tabs() << '\t' << message << '\n';
+	clog << tabs() << "Please send an e-mail to krr@cs.kuleuven.be if you really need this feature.\n" << tabs();
 	return IdpException("Aborting because of not yet implemented feature.");
 }
 
@@ -161,7 +161,6 @@ bool operator<(CompType left, CompType right) {
 	return not (left == right || left > right);
 }
 
-
 TsType reverseImplication(TsType type) {
 	if (type == TsType::IMPL) {
 		return TsType::RIMPL;
@@ -196,11 +195,14 @@ Context operator not(Context t) {
 	Context result;
 	switch (t) {
 	case Context::BOTH:
-		result = Context::BOTH; break;
+		result = Context::BOTH;
+		break;
 	case Context::POSITIVE:
-		result = Context::NEGATIVE; break;
+		result = Context::NEGATIVE;
+		break;
 	case Context::NEGATIVE:
-		result = Context::POSITIVE; break;
+		result = Context::POSITIVE;
+		break;
 	}
 	return result;
 }
@@ -242,8 +244,8 @@ std::string toString(const CompType& type) {
  Shared strings
  *********************/
 
-#include <tr1/unordered_map>
-typedef std::tr1::unordered_map<std::string, std::string*> MSSP;
+#include <unordered_map>
+typedef std::unordered_map<std::string, std::string*> MSSP;
 class StringPointers {
 private:
 	MSSP _sharedstrings; //!< map a string to its shared pointer
