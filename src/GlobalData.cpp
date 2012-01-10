@@ -31,11 +31,16 @@ GlobalData::~GlobalData() {
 	for (auto i = _openfiles.cbegin(); i != _openfiles.cend(); ++i) {
 		fclose(*i);
 	}
+	for (auto m = _monitors.begin(); m != _monitors.end(); ++m) {
+		delete (*m);
+	}
+	// Note: Options are handled by Lua's garbage collection.
 }
 
 //setoptions can only be called from the setoptionsinference! Otherwise, we could change the user-defined options
 void GlobalData::setOptions(Options* options) {
 	Assert(_options!=NULL);
+	//TODO should the old options be deleted?
 	_options = options;
 }
 
