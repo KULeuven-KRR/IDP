@@ -30,8 +30,8 @@ int verbosity() {
 
 //TODO: a lot of the "int" returns here should be "Lit": Issue 57199
 
-FormulaGrounder::FormulaGrounder(AbstractGroundTheory* grounding, const GroundingContext& ct)
-		: Grounder(grounding, ct), _origform(NULL) {
+FormulaGrounder::FormulaGrounder(AbstractGroundTheory* grounding, const GroundingContext& ct) :
+		Grounder(grounding, ct), _origform(NULL) {
 }
 
 GroundTranslator* FormulaGrounder::translator() const {
@@ -68,10 +68,10 @@ void FormulaGrounder::printorig() const {
 }
 
 AtomGrounder::AtomGrounder(AbstractGroundTheory* grounding, SIGN sign, PFSymbol* s, const vector<TermGrounder*>& sg,
-		const vector<const DomElemContainer*>& checkargs, InstChecker* pic, InstChecker* cic, PredInter* inter,
-		const vector<SortTable*>& vst, const GroundingContext& ct)
-		: FormulaGrounder(grounding, ct), _subtermgrounders(sg), _pchecker(pic), _cchecker(cic),
-			_symbol(translator()->addSymbol(s)), _tables(vst), _sign(sign), _checkargs(checkargs), _inter(inter) {
+		const vector<const DomElemContainer*>& checkargs, InstChecker* pic, InstChecker* cic, PredInter* inter, const vector<SortTable*>& vst,
+		const GroundingContext& ct) :
+		FormulaGrounder(grounding, ct), _subtermgrounders(sg), _pchecker(pic), _cchecker(cic), _symbol(translator()->addSymbol(s)), _tables(vst), _sign(
+				sign), _checkargs(checkargs), _inter(inter) {
 	gentype = ct.gentype;
 }
 
@@ -555,7 +555,8 @@ Lit AggGrounder::run() const {
 		if (containsneg)
 			minpossvalue = (-maxpossvalue < minpossvalue ? -maxpossvalue : minpossvalue);
 		if (containsneg || containszero) {
-			Assert(truevalue != 0);//division is safe (see higher check for truevalue ==0)
+			Assert(truevalue != 0);
+			//division is safe (see higher check for truevalue ==0)
 			tseitin = splitproducts(boundvalue, (boundvalue / truevalue), minpossvalue, maxpossvalue, setnr);
 		} else {
 			// Finish
@@ -773,6 +774,9 @@ void BoolGrounder::run(ConjOrDisj& formula, bool negate) const {
 			if (verbosity() > 2) {
 				poptab();
 			}
+			if (negate) {
+				formula.setType(negateConn(formula.getType()));
+			}
 			return;
 		}
 	}
@@ -781,6 +785,10 @@ void BoolGrounder::run(ConjOrDisj& formula, bool negate) const {
 			poptab();
 		}
 	}
+	if (negate) {
+		formula.setType(negateConn(formula.getType()));
+	}
+
 }
 
 void QuantGrounder::run(ConjOrDisj& formula, bool negated) const {

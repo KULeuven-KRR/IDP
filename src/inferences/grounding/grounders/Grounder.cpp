@@ -15,6 +15,19 @@
 
 using namespace std;
 
+Conn negateConn(Conn c) {
+	Conn result;
+	switch (c) {
+	case Conn::DISJ:
+		result = Conn::CONJ;
+		break;
+	case Conn::CONJ:
+		result = Conn::DISJ;
+		break;
+	}
+	return result;
+}
+
 void ConjOrDisj::put(std::ostream& stream) const{
 	bool begin = true;
 	for(auto i=literals.cbegin(); i<literals.cend(); ++i){
