@@ -24,6 +24,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D TESTDIR=\\\"${PROJECT_SOURCE_DIR}/tes
 add_executable(idptests
 		testsuite.cpp
 		mxtests.cpp
+		simpletests.cpp
 		testingtools.hpp testingtools.cpp
 		TestUtils.hpp TestUtils.cpp
 )

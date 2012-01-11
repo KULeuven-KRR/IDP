@@ -17,7 +17,7 @@ enum class Conn {
 	DISJ, CONJ
 };
 
-Conn negateConn(Conn c) ;
+Conn negateConn(Conn c);
 
 struct ConjOrDisj {
 	litlist literals;
@@ -33,6 +33,7 @@ public:
 		_settype = true;
 		_type = c;
 	}
+	void negate();
 
 	void put(std::ostream& stream) const;
 

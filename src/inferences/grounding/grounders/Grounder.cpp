@@ -45,6 +45,12 @@ void ConjOrDisj::put(std::ostream& stream) const{
 		stream <<toString(*i);
 	}
 }
+void ConjOrDisj::negate() {
+	_type = negateConn(_type);
+	for(auto i = 0; i<literals.size();++i){
+		literals[i]= - literals.at(i);
+	}
+}
 
 GroundTranslator* Grounder::getTranslator() const {
 	return _grounding->translator();
