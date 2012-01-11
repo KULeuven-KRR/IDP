@@ -34,7 +34,7 @@ namespace Error {
 	void constsetexp();
 	void stringconsexp(const std::string&, const ParseInfo& pi);
 	void twicestdin(const ParseInfo& pi);
-	void nrmodelsnegative();
+	void nbmodelsnegative();
 
 	/** File errors **/
 	void cyclicinclude(const std::string&, const ParseInfo& pi);

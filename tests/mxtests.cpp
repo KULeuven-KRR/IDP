@@ -79,13 +79,7 @@ TEST_P(MXsatTest, DoesMX) {
 	ASSERT_EQ(result, Status::SUCCESS);
 }
 
-TEST_P(MXsatTest, DoesMXWithSymmetryBreaking) {
-	string testfile(getTestDirectory() + "mxsattestwithsymmetrybreaking.idp");
-	cerr << "Testing " << GetParam() << "\n";
-	Status result = Status::FAIL;
-	ASSERT_NO_THROW( result = test( { GetParam(), testfile }););
-	ASSERT_EQ(result, Status::SUCCESS);
-}
+
 
 TEST_P(SlowMXnbTest, DoesSlowMX) {
 	string testfile(getTestDirectory() + "mxsattestslow.idp");
@@ -110,6 +104,14 @@ INSTANTIATE_TEST_CASE_P(ModelExpansion, MXsatTest, ::testing::ValuesIn(generateL
 INSTANTIATE_TEST_CASE_P(LazyModelExpansion, LazyMXnbTest, ::testing::ValuesIn(generateListOfMXnbFiles()));
 
 #ifdef NDEBUG
+TEST_P(MXsatTest, DoesMXWithSymmetryBreaking) {
+	string testfile(getTestDirectory() + "mxsattestwithsymmetrybreaking.idp");
+	cerr << "Testing " << GetParam() << "\n";
+	Status result = Status::FAIL;
+	ASSERT_NO_THROW( result = test( { GetParam(), testfile }););
+	ASSERT_EQ(result, Status::SUCCESS);
+}
+
 INSTANTIATE_TEST_CASE_P(ModelExpansionLong, SlowMXnbTest, ::testing::ValuesIn(generateListOfSlowMXsatFiles()));
 #endif
 

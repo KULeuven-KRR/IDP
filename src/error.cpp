@@ -82,7 +82,7 @@ void twicestdin(const ParseInfo& pi) {
 	clog << "stdin can be parsed only once.\n";
 }
 
-void nrmodelsnegative() {
+void nbmodelsnegative() {
 	error();
 	clog << "Expected a non-negative integer after '-n'" << "\n";
 }
