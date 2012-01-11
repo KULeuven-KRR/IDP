@@ -1,1 +1,0 @@
-/usr/bin/c++    -std=c++0x -Wall -Wextra  -O0 -ggdb -DDEBUG     CMakeFiles/gtestparser.dir/Main.cpp.o CMakeFiles/gtestparser.dir/parser.cc.o CMakeFiles/gtestparser.dir/lexer.cc.o  -o gtestparser -rdynamic 
