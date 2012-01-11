@@ -2870,8 +2870,9 @@ EnumeratedInternalFuncTable* EnumeratedInternalFuncTable::remove(const ElementTu
 			_table.erase(key);
 			return this;
 		}
-	} else
+	} else {
 		return this;
+	}
 }
 
 InternalTableIterator* EnumeratedInternalFuncTable::begin(const Universe&) const {

@@ -42,61 +42,63 @@
 
 #include <vector>
 
-std::vector<Inference*> inferences; // TODO move to globaldata and delete them there!
+using namespace std;
+
+vector<shared_ptr<Inference>> inferences; // TODO move to globaldata and delete them there!
 
 // Important: pointer owner is transferred to receiver!
-const std::vector<Inference*>& getAllInferences() {
+const vector<shared_ptr<Inference>>& getAllInferences() {
 	if (inferences.size() == 0) {
-		inferences.push_back(SetAtomValueInference::getMakeAtomTrueInference());
-		inferences.push_back(SetAtomValueInference::getMakeAtomFalseInference());
-		inferences.push_back(SetAtomValueInference::getMakeAtomUnknownInference());
-		inferences.push_back(SetTableValueInference::getMakeTableTrueInference());
-		inferences.push_back(SetTableValueInference::getMakeTableFalseInference());
-		inferences.push_back(SetTableValueInference::getMakeTableUnknownInference());
-		inferences.push_back(new TableSizeInference());
-		inferences.push_back(new DomainIteratorInference());
-		inferences.push_back(new TableIteratorInference());
-		inferences.push_back(new TableDerefAndIncrementInference());
-		inferences.push_back(new DomainDerefAndIncrementInference<int>());
-		inferences.push_back(new DomainDerefAndIncrementInference<double>());
-		inferences.push_back(new DomainDerefAndIncrementInference<std::string*>());
-		inferences.push_back(new DomainDerefAndIncrementInference<const Compound*>());
-		inferences.push_back(new OptimalPropagateInference());
-		inferences.push_back(new GroundPropagateInference());
-		inferences.push_back(new PropagateInference());
-		inferences.push_back(new PrintVocabularyInference());
-		inferences.push_back(new PrintTheoryInference());
-		inferences.push_back(new PrintDomainAtomInference());
-		inferences.push_back(new PrintFormulaInference());
-		inferences.push_back(new PrintNamespaceInference());
-		inferences.push_back(new PrintOptionInference());
-		inferences.push_back(new PrintStructureInference());
-		inferences.push_back(new ModelExpandInference());
-		inferences.push_back(new NewOptionsInference());
-		inferences.push_back(new NewStructureInference());
-		inferences.push_back(new CloneStructureInference());
-		inferences.push_back(new CloneTheoryInference());
-		inferences.push_back(new IdpTypeInference());
-		inferences.push_back(new FlattenInference());
-		inferences.push_back(new MergeTheoriesInference());
-		inferences.push_back(new PushNegationsInference());
-		inferences.push_back(new QueryInference());
-		inferences.push_back(new CreateRangeInference());
-		inferences.push_back(new GroundInference());
-		inferences.push_back(new CompletionInference());
-		inferences.push_back(new CleanInference());
-		inferences.push_back(new ChangeVocabularyInference());
-		inferences.push_back(new HelpInference());
-		inferences.push_back(new PrintGroundingInference());
-		inferences.push_back(new EntailsInference());
-		inferences.push_back(new RemoveNestingInference());
+		inferences.push_back(shared_ptr<Inference>(SetAtomValueInference::getMakeAtomTrueInference()));
+		inferences.push_back(shared_ptr<Inference>(SetAtomValueInference::getMakeAtomFalseInference()));
+		inferences.push_back(shared_ptr<Inference>(SetAtomValueInference::getMakeAtomUnknownInference()));
+		inferences.push_back(shared_ptr<Inference>(SetTableValueInference::getMakeTableTrueInference()));
+		inferences.push_back(shared_ptr<Inference>(SetTableValueInference::getMakeTableFalseInference()));
+		inferences.push_back(shared_ptr<Inference>(SetTableValueInference::getMakeTableUnknownInference()));
+		inferences.push_back(make_shared<TableSizeInference>());
+		inferences.push_back(make_shared<DomainIteratorInference>());
+		inferences.push_back(make_shared<TableIteratorInference>());
+		inferences.push_back(make_shared<TableDerefAndIncrementInference>());
+		inferences.push_back(make_shared<DomainDerefAndIncrementInference<int>>());
+		inferences.push_back(make_shared<DomainDerefAndIncrementInference<double>>());
+		inferences.push_back(make_shared<DomainDerefAndIncrementInference<std::string*>>());
+		inferences.push_back(make_shared<DomainDerefAndIncrementInference<const Compound*>>());
+		inferences.push_back(make_shared<OptimalPropagateInference>());
+		inferences.push_back(make_shared<GroundPropagateInference>());
+		inferences.push_back(make_shared<PropagateInference>());
+		inferences.push_back(make_shared<PrintVocabularyInference>());
+		inferences.push_back(make_shared<PrintTheoryInference>());
+		inferences.push_back(make_shared<PrintDomainAtomInference>());
+		inferences.push_back(make_shared<PrintFormulaInference>());
+		inferences.push_back(make_shared<PrintNamespaceInference>());
+		inferences.push_back(make_shared<PrintOptionInference>());
+		inferences.push_back(make_shared<PrintStructureInference>());
+		inferences.push_back(make_shared<ModelExpandInference>());
+		inferences.push_back(make_shared<NewOptionsInference>());
+		inferences.push_back(make_shared<NewStructureInference>());
+		inferences.push_back(make_shared<CloneStructureInference>());
+		inferences.push_back(make_shared<CloneTheoryInference>());
+		inferences.push_back(make_shared<IdpTypeInference>());
+		inferences.push_back(make_shared<FlattenInference>());
+		inferences.push_back(make_shared<MergeTheoriesInference>());
+		inferences.push_back(make_shared<PushNegationsInference>());
+		inferences.push_back(make_shared<QueryInference>());
+		inferences.push_back(make_shared<CreateRangeInference>());
+		inferences.push_back(make_shared<GroundInference>());
+		inferences.push_back(make_shared<CompletionInference>());
+		inferences.push_back(make_shared<CleanInference>());
+		inferences.push_back(make_shared<ChangeVocabularyInference>());
+		inferences.push_back(make_shared<HelpInference>());
+		inferences.push_back(make_shared<PrintGroundingInference>());
+		inferences.push_back(make_shared<EntailsInference>());
+		inferences.push_back(make_shared<RemoveNestingInference>());
 		// TODO issue #50 bdds inferences.push_back(new SimplifyInference());
-		inferences.push_back(new TwoValuedExtensionsOfTableInference());
-		inferences.push_back(new TwoValuedExtensionsOfStructureInference());
-		inferences.push_back(new CalculateDefinitionInference());
-		inferences.push_back(new IsConsistentInference());
-		inferences.push_back(new SetOptionsInference());
-		inferences.push_back(new CreateTupleInference());
+		inferences.push_back(make_shared<TwoValuedExtensionsOfTableInference>());
+		inferences.push_back(make_shared<TwoValuedExtensionsOfStructureInference>());
+		inferences.push_back(make_shared<CalculateDefinitionInference>());
+		inferences.push_back(make_shared<IsConsistentInference>());
+		inferences.push_back(make_shared<SetOptionsInference>());
+		inferences.push_back(make_shared<CreateTupleInference>());
 	}
 	return inferences;
 }

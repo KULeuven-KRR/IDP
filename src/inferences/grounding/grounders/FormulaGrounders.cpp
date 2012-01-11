@@ -774,16 +774,14 @@ void BoolGrounder::internalRun(ConjOrDisj& formula) const {
 	for (auto g = _subgrounders.cbegin(); g < _subgrounders.cend(); g++) {
 		CHECKTERMINATION
 		if (runSubGrounder(*g, context()._conjunctivePathFromRoot, formula) == FormStat::DECIDED) {
-			if (verbosity() > 2) {
+			if (verbosity() > 2 and _origform != NULL) {
 				poptab();
 			}
 			return;
 		}
 	}
-	if (verbosity() > 2) {
-		if (_origform != NULL) {
-			poptab();
-		}
+	if (verbosity() > 2 and _origform != NULL) {
+		poptab();
 	}
 }
 
@@ -801,24 +799,20 @@ void QuantGrounder::internalRun(ConjOrDisj& formula) const {
 		CHECKTERMINATION
 		if (_checker->check()) {
 			formula.literals = litlist { context().gentype == GenType::CANMAKETRUE ? _false : _true };
-			if (verbosity() > 2) {
-				if (_origform != NULL) {
-					poptab();
-				}
+			if (verbosity() > 2 and _origform != NULL) {
+				poptab();
 			}
 			return;
 		}
 
 		if (runSubGrounder(_subgrounder, context()._conjunctivePathFromRoot, formula) == FormStat::DECIDED) {
-			if (verbosity() > 2) {
-				if (_origform != NULL) {
-					poptab();
-				}
+			if (verbosity() > 2 and _origform != NULL) {
+				poptab();
 			}
 			return;
 		}
 	}
-	if (_origform != NULL) {
+	if (verbosity() > 2 and _origform != NULL) {
 		poptab();
 	}
 }
@@ -890,9 +884,7 @@ void EquivGrounder::internalRun(ConjOrDisj& formula) const {
 		formula.literals = litlist { ts1, ts2 };
 		formula.setType(Conn::CONJ);
 	}
-	if (verbosity() > 2) {
-		if (_origform != NULL) {
-			poptab();
-		}
+	if (verbosity() > 2 and _origform != NULL) {
+		poptab();
 	}
 }

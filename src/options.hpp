@@ -60,7 +60,7 @@ public:
 	TypedOption(EnumType type, const std::string& name, PrintBehaviour visible)
 			: type(type), name(name), _visible(visible) {
 	}
-	~TypedOption() {}
+	virtual ~TypedOption() {}
 
 	const std::string& getName() const { return name; }
 	bool shouldPrint() const { return _visible == PrintBehaviour::PRINT; }

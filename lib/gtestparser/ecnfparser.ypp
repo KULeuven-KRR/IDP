@@ -1,0 +1,52 @@
+%{
+#include <iostream>
+#include <string>
+#include <sstream>
+
+using namespace std;
+
+extern int yylex();
+
+//Auxiliary variables, used while parsing.
+int lineNo = 1;
+int charPos = 1;
+
+void yyerror(const char* msg);
+
+%}
+
+%debug
+%locations
+%error-verbose
+%defines
+
+%union {
+	std::string* str;
+}
+
+%token <str> SUCCESS FAIL
+
+%start init
+
+%%
+
+init	: /**/
+		| init FAIL { clog <<"Failed: " <<*$2 <<"\n"; delete($2); }
+		| init SUCCESS { /*cerr <<"Success: " <<*$2 <<"\n";*/ delete($2); }
+		;
+
+%%
+
+int yywrap() {
+	cerr << "End of file reached before it was expected... bailing out.\n";
+	return 1;
+}
+
+void yyinit(){ }
+
+void yydestroy(){
+}
+
+void yyerror(const char* msg) {
+	abort();
+}

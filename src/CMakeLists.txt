@@ -231,7 +231,7 @@ set_target_properties(idp-bin PROPERTIES OUTPUT_NAME idp)
 # add the install targets
 install (TARGETS idp-bin DESTINATION bin)
 install (TARGETS idp DESTINATION lib)
-install (FILES ${PROJECT_SOURCE_DIR}/scripts/runidp.sh DESTINATION bin PERMISSIONS OWNER_READ OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
+install (FILES ${PROJECT_SOURCE_DIR}/scripts/runidp.sh ${PROJECT_SOURCE_DIR}/scripts/runidp.bat DESTINATION bin PERMISSIONS OWNER_READ OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
 install (FILES ${PROJECT_SOURCE_DIR}/data/var/.idprc DESTINATION var)
 install (FILES ${PROJECT_SOURCE_DIR}/data/share/std/mx.idp 
 				${PROJECT_SOURCE_DIR}/data/share/std/idp_intern.idp 
