@@ -23,11 +23,20 @@ include_directories ("
 if(${BUILDTESTS})
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D TESTDIR=\\\"${PROJECT_SOURCE_DIR}/tests\\\" ")
 	add_executable(idptests
-			testsuite.cpp
-			mxtests.cpp
-			simpletests.cpp
-			testingtools.hpp testingtools.cpp
-			TestUtils.hpp TestUtils.cpp
+		mxtests.cpp
+		generatortests.cpp
+		bddtests.cpp
+		grounderfactorytests.cpp
+		definitiontests.cpp
+		propagationtests.cpp
+		parsertests.cpp
+		transformationtests.cpp
+                commandtests.cpp
+		cppinterface.hpp cppinterface.cpp
+		testingtools.hpp testingtools.cpp
+		TestUtils.hpp TestUtils.cpp
+		testsuite.cpp
+		simpletests.cpp
 	)
 	target_link_libraries(idptests idp gtest)
 	if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
