@@ -2,6 +2,5 @@
 
 procedure main(){
 	stdoptions.nbmodels=0
-	stdoptions.nbmodelequivalent = true
 	mx::printsols(mx::all(T, S))
 }

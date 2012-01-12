@@ -20,7 +20,6 @@ namespace mx {
 		if (not Opts) then Opts = stdoptions end
 		local oldnbmodels = Opts.nbmodels
 		Opts.nbmodels = 0
-		Opts.nbmodelequivalent = true
 		local solutions, trace = modelexpand(T,S)
 		Opts.nbmodels = oldnbmodels
 		return solutions, trace

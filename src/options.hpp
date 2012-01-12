@@ -38,7 +38,7 @@ enum BoolType {
 	MXRANDOMPOLARITYCHOICE, 
 	GROUNDLAZILY,
 	GROUNDWITHBOUNDS,
-	MODELCOUNTEQUIVALENCE, // TODO the equivalence might in fact become an enum itself?
+	//MODELCOUNTEQUIVALENCE, // TODO the equivalence might in fact become an enum itself?
 	CPSUPPORT
 };
 
