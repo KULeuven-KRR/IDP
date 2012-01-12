@@ -1,9 +1,8 @@
 #include <mx>
 
 procedure main() {
-	stdoptions.nrmodels = 1
+	stdoptions.nbmodels = 1
 	stdoptions.timeout = 15
-	stdoptions.nbmodelequivalent = true
 	stdoptions.groundwithbounds = false
 	stdoptions.groundverbosity = 0
 	stdoptions.satverbosity = 0

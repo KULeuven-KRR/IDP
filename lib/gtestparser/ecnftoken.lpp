@@ -1,0 +1,25 @@
+%{
+#include <iostream>
+#include <string>
+#include <sstream>
+using namespace std;
+
+#include "parser.hh"
+
+stringstream ss;
+%}
+
+/* lex definitions: */
+%option noyywrap never-interactive 
+
+%s block
+
+%%
+
+<*>"[ RUN      ]"		{BEGIN(block);}
+<block>"[  FAILED  ]"	{yylval.str = new string(ss.str()); BEGIN(INITIAL); ss.str(""); return FAIL;}
+<block>"[       OK ]" 	{yylval.str = new string(ss.str()); BEGIN(INITIAL); ss.str(""); return SUCCESS;}
+<block>[^\[]*			{ss <<yytext; }
+<block>.				{ss <<yytext; }
+<*>[^\[*]*				{  }
+<*>.					{  }

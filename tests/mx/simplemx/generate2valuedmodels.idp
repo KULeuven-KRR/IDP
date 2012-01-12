@@ -1,5 +1,5 @@
 procedure getExpectedNbOfModels(){
-	return 4096
+	return 64
 }
 
 vocabulary V{
@@ -12,6 +12,6 @@ theory T : V {
 }
 
 structure S : V{ 
-	A = {a..d}
+	A = {a..b}
 	B = {a..c}
 }

@@ -25,6 +25,7 @@ if(${BUILDTESTS})
 	add_executable(idptests
 			testsuite.cpp
 			mxtests.cpp
+			simpletests.cpp
 			testingtools.hpp testingtools.cpp
 			TestUtils.hpp TestUtils.cpp
 	)
